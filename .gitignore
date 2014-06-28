@@ -52,3 +52,7 @@ coverage.xml
 # Sphinx documentation
 docs/_build/
 
+# GAM specific
+client_secrets.json
+oauth2.txt*
+oauth2service*
