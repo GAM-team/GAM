@@ -835,6 +835,28 @@ def showReport():
             row[u'ip'] = u'unknown'
           doc_attr.append(row)
     output_csv(doc_attr, titles, u'Docs Activity Report', to_drive)
+  elif report == u'drive':
+    page_message = u'Got %%num_items%% items'
+    drive_activities = callGAPIpages(service=rep.activities(), function=u'list', page_message=page_message, applicationName=u'drive', userKey=userKey, customerId=customerId, actorIpAddress=actorIpAddress, startTime=startTime, endTime=endTime, eventName=eventName, filters=filters)
+    drive_attributes = []
+    titles = []
+    for drive_report in drive_activities:
+      try:
+        for report_item in drive_report[u'parameters']:
+          items = report_item.values()
+          name = items[1]
+          value = items[0]
+          if not name in titles:
+            titles.append(name)
+          row[name] = value
+      except KeyError:
+        pass
+      drive_attributes.append(row)
+    header = {}
+    for title in titles:
+      header[title] = title
+    drive_attributes.insert(0, header)
+    output_csv(drive_attributes, titles, u'Drive Activity Report', to_drive)
   elif report == u'admin':
     admin_activity = callGAPIpages(service=rep.activities(), function=u'list', applicationName=u'admin', userKey=userKey, customerId=customerId, actorIpAddress=actorIpAddress, startTime=startTime, endTime=endTime, eventName=eventName, filters=filters)
     admin_attr = []
