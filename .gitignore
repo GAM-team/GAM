@@ -56,3 +56,8 @@ docs/_build/
 client_secrets.json
 oauth2.txt*
 oauth2service*
+debug.gam
+lastupdatecheck.txt
+noupdatecheck.txt
+nodito.txt
+gamcache/
