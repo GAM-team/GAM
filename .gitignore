@@ -60,6 +60,7 @@ debug.gam
 lastupdatecheck.txt
 noupdatecheck.txt
 nodito.txt
+nobrowser.txt
 nocache.txt
 noverifyssl.txt
 gamcache/
