@@ -2256,15 +2256,9 @@ def downloadDriveFile(users):
       i += 2
     elif sys.argv[i].lower() == u'format':
       gdownload_format = sys.argv[i+1].lower()
-      if gdownload_format == u'openoffice':
-        export_formats = [u'application/vnd.oasis.opendocument.text',
-                          u'application/x-vnd.oasis.opendocument.spreadsheet']
-      elif gdownload_format in [u'ms', u'microsoft', u'micro$oft']:
-        export_formats = [u'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                          u'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                          u'application/vnd.openxmlformats-officedocument.presentationml.presentation']
-      elif gdownload_format == u'pdf':
-        export_formats = [u'application/pdf',]
+      if gdownload_format not in [u'openoffice', u'ms', u'microsoft', u'micro$oft', u'pdf']:
+        print 'Error: format must be one of openoffice, microsoft or pdf. Got %s' % gdownload_format
+        sys.exit(4)
       i += 2
     elif sys.argv[i].lower().replace('_', '') == u'targetfolder':
       target_folder = sys.argv[i+1]
@@ -2277,6 +2271,15 @@ def downloadDriveFile(users):
                        u'application/vnd.openxmlformats-officedocument.presentationml.presentation': u'.pptx',
                        u'application/vnd.oasis.opendocument.text': u'.odt',
                        u'application/x-vnd.oasis.opendocument.spreadsheet': u'.ods'}
+  if gdownload_format == u'openoffice':
+    export_formats = [u'application/vnd.oasis.opendocument.text',
+                      u'application/x-vnd.oasis.opendocument.spreadsheet']
+  elif gdownload_format in [u'ms', u'microsoft', u'micro$oft']:
+    export_formats = [u'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                      u'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                      u'application/vnd.openxmlformats-officedocument.presentationml.presentation']
+  elif gdownload_format == u'pdf':
+    export_formats = [u'application/pdf',]
   if not query and not fileIds:
     print u'ERROR: need to specify a file ID with id parameter or a search query with the query parameter.'
     sys.exit(9)
