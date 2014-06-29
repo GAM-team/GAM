@@ -1044,6 +1044,10 @@ def doDelegates(users):
     if delete_alias:
       doDeleteAlias(alias_email=use_delegate_address)
 
+def gen_sha512_hash(password):
+  from passlib.hash import sha512_crypt
+  return sha512_crypt(password)
+
 def getDelegates(users):
   emailsettings = getEmailSettingsObject()
   csv_format = False
@@ -3500,10 +3504,10 @@ def doCreateUser():
   if need_password:
     body[u'password'] = u''.join(random.sample(u'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789~`!@#$%^&*()-=_+:;"\'{}[]\\|', 25))
   if need_to_hash_password:
-    newhash = hashlib.sha1()
-    newhash.update(body[u'password'])
-    body[u'password'] = newhash.hexdigest()
-    body[u'hashFunction'] = u'SHA-1'
+    #newhash = hashlib.sha1()
+    #newhash.update(body[u'password'])
+    body[u'password'] = gen_sha512_hash(body[u'password'])
+    body[u'hashFunction'] = u'crypt'
   print u"Creating account for %s" % body[u'primaryEmail']
   callGAPI(service=cd.users(), function='insert', body=body)
   if do_admin:
@@ -3956,10 +3960,10 @@ def doUpdateUser(users):
       print u'Error: didn\'t expect %s command at position %s' % (sys.argv[i], i)
       sys.exit(2)
   if gotPassword and not (isSHA1 or isMD5 or isCrypt or nohash):
-    newhash = hashlib.sha1()
-    newhash.update(body[u'password'])
-    body[u'password'] = newhash.hexdigest()
-    body[u'hashFunction'] = u'SHA-1'
+    #newhash = hashlib.sha1()
+    #newhash.update(body[u'password'])
+    body[u'password'] = gen_sha512_hash(body[u'password'])
+    body[u'hashFunction'] = u'crypt'
   for user in users:
     if user[:4].lower() == u'uid:':
       user = user[4:]
