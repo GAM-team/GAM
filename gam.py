@@ -1048,7 +1048,7 @@ def doDelegates(users):
 
 def gen_sha512_hash(password):
   from passlib.hash import sha512_crypt
-  return sha512_crypt(password)
+  return sha512_crypt.encrypt(password, rounds=500000)
 
 def getDelegates(users):
   emailsettings = getEmailSettingsObject()
