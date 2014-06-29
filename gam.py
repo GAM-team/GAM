@@ -486,6 +486,8 @@ def getAPIVer(api):
     return u'v1'
   elif api == u'siteVerification':
     return u'v1'
+  elif api == u'gmail':
+    return u'v1'
   return u'v1'
 
 def getAPIScope(api):
@@ -6526,28 +6528,19 @@ def doWatchExportRequest():
       time.sleep(300)
 
 def send_email(msg_subj, msg_txt, msg_rcpt=None):
-  import smtplib
   from email.mime.text import MIMEText
-  cd = buildGAPIObject(u'directory')
-  access_token = cd._http.request.credentials.access_token
-  sender_email = cd._http.request.credentials.id_token[u'email']
+  gmail = buildGAPIObject(u'gmail')
+  sender_email = gmail._http.request.credentials.id_token[u'email']
   if not msg_rcpt:
     msg_rcpt = sender_email
-  xoauth_string = u"user=%s\001auth=OAuth %s\001\001" % (sender_email, access_token)
   msg = MIMEText(msg_txt)
   msg[u'Subject'] = msg_subj
   msg[u'From'] = sender_email
   msg[u'To'] = msg_rcpt
-  smtp_conn = smtplib.SMTP(u'smtp.gmail.com', 587)
-  if os.path.isfile(getGamPath()+u'debug.gam'):
-    smtp_conn.set_debuglevel(4)
-  smtp_conn.ehlo(u'gam')
-  smtp_conn.starttls()
-  smtp_conn.docmd(u'AUTH XOAUTH2 %s' % base64.b64encode(xoauth_string))
-  try:
-    smtp_conn.sendmail(sender_email, sender_email, msg.as_string())
-  except smtplib.SMTPSenderRefused, e:
-    print u'ERROR: %s' % e
+  msg_string = msg.as_string()
+  msg_b64 = base64.b64encode(msg_string)
+  msg_raw = msg_b64.replace(u'/', u'_').replace(u'+', u'-')
+  callGAPI(service=gmail.users().messages(), function=u'send', userId=sender_email, body={u'raw': msg_raw})
 
 def doDownloadExportRequest():
   user = sys.argv[4].lower()
