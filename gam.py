@@ -5297,7 +5297,7 @@ def output_csv(csv_list, titles, list_type, todrive):
       msg_txt = u'Drive file uploaded to:\n %s' % file_url
       msg_subj = u'%s - %s' % (domain, list_type)
       send_email(msg_subj, msg_txt)
-      print file_url
+      print msg_txt
     else:
       import webbrowser
       webbrowser.open(file_url)
