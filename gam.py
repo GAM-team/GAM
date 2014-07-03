@@ -23,8 +23,8 @@ For more information, see http://code.google.com/p/google-apps-manager
 
 """
 
-__author__ = u'Jay Lee <jay@ditoweb.com>'
-__version__ = u'3.21'
+__author__ = u'Jay Lee <jay0lee@gmail.com>'
+__version__ = u'3.3'
 __license__ = u'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 import sys, os, time, datetime, random, socket, csv, platform, re, calendar, base64, hashlib
@@ -151,7 +151,7 @@ def getGamPath():
 
 def doGAMVersion():
   import struct
-  print u'Dito GAM %s\n%s\nPython %s.%s.%s %s-bit %s\ngoogle-api-python-client %s\n%s %s\nPath: %s' % (__version__, __author__,
+  print u'Dito GAM %s - http://git.io/gam\n%s\nPython %s.%s.%s %s-bit %s\ngoogle-api-python-client %s\n%s %s\nPath: %s' % (__version__, __author__,
                    sys.version_info[0], sys.version_info[1], sys.version_info[2], struct.calcsize('P')*8, sys.version_info[3], apiclient.__version__,
                    platform.platform(), platform.machine(), getGamPath())
 
@@ -514,7 +514,7 @@ def buildGAPIObject(api):
   if credentials is None or credentials.invalid:
     doRequestOAuth()
     credentials = storage.get()
-  credentials.user_agent = u'Dito GAM %s / %s / Python %s.%s.%s %s / %s %s /' % (__version__, __author__,
+  credentials.user_agent = u'Dito GAM %s - http://git.io/gam / %s / Python %s.%s.%s %s / %s %s /' % (__version__, __author__,
                    sys.version_info[0], sys.version_info[1], sys.version_info[2], sys.version_info[3],
                    platform.platform(), platform.machine())
   disable_ssl_certificate_validation = False
@@ -587,7 +587,7 @@ def buildGAPIServiceObject(api, act_as=None):
     credentials = oauth2client.client.SignedJwtAssertionCredentials(SERVICE_ACCOUNT_EMAIL, key, scope=scope)
   else:
     credentials = oauth2client.client.SignedJwtAssertionCredentials(SERVICE_ACCOUNT_EMAIL, key, scope=scope, sub=act_as)
-  credentials.user_agent = u'Dito GAM %s / %s / Python %s.%s.%s %s / %s %s /' % (__version__, __author__,
+  credentials.user_agent = u'Dito GAM %s - http://git.io/gam / %s / Python %s.%s.%s %s / %s %s /' % (__version__, __author__,
                    sys.version_info[0], sys.version_info[1], sys.version_info[2], sys.version_info[3],
                    platform.platform(), platform.machine())
   disable_ssl_certificate_validation = False
@@ -819,128 +819,33 @@ def showReport():
     for app in auth_apps: # put apps at bottom
       cust_attributes.append(app)
     output_csv(csv_list=cust_attributes, titles=titles, list_type=u'Customer Report - %s' % try_date, todrive=to_drive)
-  elif report in [u'doc', u'docs']:
+  elif report in [u'doc', u'docs', u'login', u'admin', u'drive']:
+    if report == u'doc':
+      report = u'docs'
     page_message = u'Got %%num_items%% items\n'
-    doc_activities = callGAPIpages(service=rep.activities(), function=u'list', page_message=page_message, applicationName=u'docs', userKey=userKey, customerId=customerId, actorIpAddress=actorIpAddress, startTime=startTime, endTime=endTime, eventName=eventName, filters=filters)
-    doc_attr = [{u'user': u'user', u'event': u'event', u'doc_id': u'doc_id', u'time': u'time', u'ip': u'ip'}]
-    titles = [u'user', u'event', u'doc_id', u'time', u'ip']
-    for doc_activity in doc_activities:
-      for event in doc_activity[u'events']:
-        for parameter in event[u'parameters']:
-          row = {u'user': doc_activity[u'actor'][u'email'],
-                 'event': event[u'name'],
-                 'doc_id': parameter[u'value'],
-                 'time': doc_activity[u'id'][u'time']}
-          try:
-            row[u'ip'] = doc_activity[u'ipAddress']
-          except KeyError:
-            row[u'ip'] = u'unknown'
-          doc_attr.append(row)
-    output_csv(doc_attr, titles, u'Docs Activity Report', to_drive)
-  elif report == u'drive':
-    page_message = u'Got %%num_items%% items'
-    drive_activities = callGAPIpages(service=rep.activities(), function=u'list', page_message=page_message, applicationName=u'drive', userKey=userKey, customerId=customerId, actorIpAddress=actorIpAddress, startTime=startTime, endTime=endTime, eventName=eventName, filters=filters)
-    drive_attributes = []
+    activities = callGAPIpages(service=rep.activities(), function=u'list', page_message=page_message, applicationName=report, userKey=userKey, customerId=customerId, actorIpAddress=actorIpAddress, startTime=startTime, endTime=endTime, eventName=eventName, filters=filters)
+    attrs = []
     titles = []
-    for drive_report in drive_activities:
-      try:
-        for report_item in drive_report[u'parameters']:
-          items = report_item.values()
-          name = items[1]
-          value = items[0]
-          if not name in titles:
-            titles.append(name)
-          row[name] = value
-      except KeyError:
-        pass
-      drive_attributes.append(row)
+    for activity in activities:
+      events = activity[u'events']
+      del activity[u'events']
+      activity_row = flatten_json(activity)
+      for event in events:
+        row = flatten_json(event)
+        row.update(activity_row)
+        for item in row.keys():
+          if item not in titles:
+            titles.append(item)
+        attrs.append(row)
     header = {}
+    titles.remove(u'name')
+    titles = sorted(titles)
+    titles.insert(0, u'name')
     for title in titles:
       header[title] = title
-    drive_attributes.insert(0, header)
-    output_csv(drive_attributes, titles, u'Drive Activity Report', to_drive)
-  elif report == u'admin':
-    admin_activity = callGAPIpages(service=rep.activities(), function=u'list', applicationName=u'admin', userKey=userKey, customerId=customerId, actorIpAddress=actorIpAddress, startTime=startTime, endTime=endTime, eventName=eventName, filters=filters)
-    admin_attr = []
-    titles = [u'time', u'user', u'event', u'ip']
-    for activity in admin_activity:
-      for event in activity[u'events']:
-        row = {}
-        try:
-          row[u'event'] = event[u'name']
-        except KeyError:
-          pass
-        try:
-          row[u'time'] = activity[u'id'][u'time']
-        except KeyError:
-          pass
-        try:
-          row[u'user'] = activity[u'actor'][u'email']
-        except KeyError:
-          pass
-        try:
-          row[u'ip'] = activity[u'ipAddress']
-        except KeyError:
-          row[u'ip'] = u'unknown'
-        try:
-          for parameter in event[u'parameters']:
-            try:
-              if not parameter[u'name'].lower() in titles:
-                titles.append(parameter[u'name'].lower())
-              row[parameter[u'name'].lower()] = parameter[u'value']
-            except KeyError:
-              pass
-        except KeyError:
-          pass
-        admin_attr.append(row)
-    header = {}
-    for title in titles:
-      header[title] = title
-    admin_attr.insert(0, header)
-    output_csv(admin_attr, titles, u'Admin Audit Report', to_drive)
-  elif report in [u'login', u'logins']:
-    page_message = u'Got %%num_items%% logins\n'
-    login_activity = callGAPIpages(service=rep.activities(), function=u'list', page_message=page_message, applicationName=u'login', userKey=userKey, customerId=customerId, actorIpAddress=actorIpAddress, startTime=startTime, endTime=endTime, eventName=eventName, filters=filters)
-    login_attr = []
-    titles = [u'time', u'user', u'event', u'ip']
-    for activity in login_activity:
-      for event in activity[u'events']:
-        row = {}
-        try:
-          row[u'event'] = event[u'name']
-        except KeyError:
-          pass
-        try:
-          row[u'time'] = activity[u'id'][u'time']
-        except KeyError:
-          pass
-        try:
-          row[u'user'] = activity[u'actor'][u'email']
-        except KeyError:
-          pass
-        try:
-          row[u'ip'] = activity[u'ipAddress']
-        except KeyError:
-          row[u'ip'] = u'unknown'
-        try:
-          for parameter in event[u'parameters']:
-            try:
-              if not parameter[u'name'].lower() in titles:
-                titles.append(parameter[u'name'].lower())
-              if u'value' in parameter:
-                row[parameter[u'name'].lower()] = parameter[u'value']
-              elif u'boolValue' in parameter:
-                row[parameter[u'name'].lower()] = parameter[u'boolValue']
-            except KeyError:
-              pass
-        except KeyError:
-          pass
-        login_attr.append(row)
-    header = {}
-    for title in titles:
-      header[title] = title
-    login_attr.insert(0, header)
-    output_csv(login_attr, titles, u'Login Audit Report', to_drive)
+    attrs.insert(0, header)
+    cap_report = u'%s%s' % (report[0].upper(), report[1:])
+    output_csv(attrs, titles, u'%s Activity Report' % cap_report, to_drive)
 
 def doDelegates(users):
   emailsettings = getEmailSettingsObject()
@@ -3506,8 +3411,6 @@ def doCreateUser():
   if need_password:
     body[u'password'] = u''.join(random.sample(u'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789~`!@#$%^&*()-=_+:;"\'{}[]\\|', 25))
   if need_to_hash_password:
-    #newhash = hashlib.sha1()
-    #newhash.update(body[u'password'])
     body[u'password'] = gen_sha512_hash(body[u'password'])
     body[u'hashFunction'] = u'crypt'
   print u"Creating account for %s" % body[u'primaryEmail']
@@ -3962,8 +3865,6 @@ def doUpdateUser(users):
       print u'Error: didn\'t expect %s command at position %s' % (sys.argv[i], i)
       sys.exit(2)
   if gotPassword and not (isSHA1 or isMD5 or isCrypt or nohash):
-    #newhash = hashlib.sha1()
-    #newhash.update(body[u'password'])
     body[u'password'] = gen_sha512_hash(body[u'password'])
     body[u'hashFunction'] = u'crypt'
   for user in users:
@@ -4371,7 +4272,7 @@ def doGetUserInfo(user_email=None):
     user_email = user_email[4:]
   elif user_email.find(u'@') == -1:
     user_email = u'%s@%s' % (user_email, domain)
-  getAliases = getGroups = True
+  getAliases = getGroups = getLicenses = True
   i = 4
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'noaliases':
@@ -4379,6 +4280,9 @@ def doGetUserInfo(user_email=None):
       i += 1
     elif sys.argv[i].lower() == u'nogroups':
       getGroups = False
+      i += 1
+    elif sys.argv[i].lower() == u'nolicenses':
+      getLicenses = False
       i += 1
     else:
       print u'%s is not a valid argument for gam info user' % sys.argv[i]
@@ -4499,6 +4403,21 @@ def doGetUserInfo(user_email=None):
         print u'   %s <%s>' % (group[u'name'], group[u'email'])
     except KeyError:
       pass
+  if getLicenses:
+    print
+    print u'Licenses:'
+    lic = buildGAPIObject(api='licensing')
+    for sku in [u'Google-Apps', u'Google-Apps-For-Business', u'Google-Apps-Unlimited', u'Google-Apps-For-Postini', 
+                u'Google-Coordinate', u'Google-Drive-storage-20GB', u'Google-Drive-storage-50GB', u'Google-Drive-storage-200GB',
+                u'Google-Drive-storage-400GB', u'Google-Drive-storage-1TB', u'Google-Drive-storage-2TB',
+                u'Google-Drive-storage-4TB', u'Google-Drive-storage-8TB', u'Google-Drive-storage-16TB', u'Google-Vault',
+                u'Google-Vault-Former-Employee']:
+      productId, skuId = getProductAndSKU(sku)
+      try:
+        result = callGAPI(service=lic.licenseAssignments(), function=u'get', throw_reasons=['notFound'], userId=user_email,  productId=productId, skuId=skuId)
+      except apiclient.errors.HttpError:
+        continue
+      print u' %s' % result[u'skuId']
 
 def doGetGroupInfo(group_name=None):
   if group_name == None:
@@ -5366,7 +5285,7 @@ def output_csv(csv_list, titles, list_type, todrive):
     rows = len(csv_list)
     cell_count = rows * columns
     convert = True
-    if cell_count > 400000 or columns > 256:
+    if cell_count > 500000 or columns > 256:
       print u'Warning: results are to large for Google Spreadsheets. Uploading as a regular CSV file.'
       convert = False
     drive = buildGAPIObject(u'drive')
@@ -5378,32 +5297,42 @@ def output_csv(csv_list, titles, list_type, todrive):
       msg_txt = u'Drive file uploaded to:\n %s' % file_url
       msg_subj = u'%s - %s' % (domain, list_type)
       send_email(msg_subj, msg_txt)
+      print file_url
     else:
       import webbrowser
       webbrowser.open(file_url)
 
+def flatten_json(structure, key="", path="", flattened=None):
+  if flattened == None:
+    flattened = {}
+  if type(structure) not in(dict, list):
+    flattened[((path + ".") if path else "") + key] = structure
+  elif isinstance(structure, list):
+    for i, item in enumerate(structure):
+      flatten_json(item, "%d" % i, ".".join(filter(None,[path,key])), flattened)
+  else:
+    for new_key, value in structure.items():
+      if new_key in [u'kind', u'etag']:
+        continue
+      if value == u'1970-01-01T00:00:00.000Z':
+        value = u'Never'
+      flatten_json(value, new_key, ".".join(filter(None,[path,key])), flattened)
+  return flattened
+
 def doPrintUsers():
   cd = buildGAPIObject(u'directory')
-  fields = u'nextPageToken,users(primaryEmail'
+  user_fields = [u'primaryEmail',]
+  fields = u''
   customer = customerId
   domain = None
   query = None
   getGroupFeed = getLicenseFeed = False
-  firstname = lastname = username = ou = suspended = changepassword = agreed2terms = admin = aliases = groups = id = creationtime = lastlogintime = fullname = gal = todrive = photo = phone = False
+  todrive = False
   deleted_only = orderBy = sortOrder = None
-  user_attributes = []
-  # the titles list ensures the CSV output has its parameters in the specified order. 
-  # Python's dicts can be listed in any order, and the order often changes between the
-  # header (user_attributes[0]) and the actual data rows.
-  titles = [u'Email']
-  user_attributes.append({u'Email': u'Email'})
   i = 3
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'allfields':
-      fields = u'*'
-      firstname = lastname = username = ou = suspended = changepassword = agreed2terms = admin = aliases = id = creationtime = lastlogintime = fullname = gal = photo = phone = True
-      user_attributes[0].update(Firstname=u'Firstname', Lastname=u'Lastname', Fullname=u'Fullname', Username=u'Username', OU=u'OU', Suspended=u'Suspended', SuspensionReason=u'SuspensionReason', ChangePassword=u'ChangePassword', AgreedToTerms=u'AgreedToTerms', DelegatedAdmin=u'DelegatedAdmin', Admin=u'Admin', CreationTime=u'CreationTime', LastLoginTime=u'LastLoginTime', Aliases=u'Aliases', NonEditableAliases=u'NonEditableAliases', ID=u'ID', IncludeInGlobalAddressList=u'IncludeInGlobalAddressList', thumbnailPhotoUrl=u'thumbnailPhotoUrl')
-      titles += [u'Firstname', u'Lastname', u'Fullname', u'Username', u'OU', u'Suspended', u'SuspensionReason', u'ChangePassword', u'AgreedToTerms', u'DelegatedAdmin', u'Admin', u'CreationTime', u'LastLoginTime', u'Aliases', u'NonEditableAliases', u'ID', u'IncludeInGlobalAddressList', u'thumbnailPhotoUrl']
+      fields = None
       i += 1
     elif sys.argv[i].lower() == u'todrive':
       todrive = True
@@ -5431,230 +5360,102 @@ def doPrintUsers():
     elif sys.argv[i].lower() == u'query':
       query = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower() in [u'firstname', u'givenname']:
-      fields += u',name'
-      firstname = True
-      user_attributes[0].update(Firstname=u'Firstname')
-      titles.append(u'Firstname')
-      i += 1
-    elif sys.argv[i].lower() in [u'lastname', u'familyname']:
-      if fields[-5:] != u',name':
-        fields += u',name'
-      lastname = True
-      user_attributes[0].update(Lastname=u'Lastname')
-      titles.append(u'Lastname')
-      i += 1
-    elif sys.argv[i].lower() == u'fullname':
-      if fields[-5:] != u',name':
-        fields += u',name'
-      fullname = True
-      user_attributes[0].update(Fullname=u'Fullname')
-      titles.append(u'Fullname')
-      i += 1
-    elif sys.argv[i].lower() == u'username':
-      username = True
-      user_attributes[0].update(Username=u'Username')
-      titles.append(u'Username')
+    elif sys.argv[i].lower() in [u'firstname', u'givenname', u'lastname', u'familyName', u'fullname']:
+      user_fields.append(u'name')
       i += 1
     elif sys.argv[i].lower() == u'ou':
-      fields += u',orgUnitPath'
-      ou = True
-      user_attributes[0].update(OU=u'OU')
-      titles.append(u'OU')
+      user_fields.append(u'orgUnitPath')
       i += 1
     elif sys.argv[i].lower() == u'suspended':
-      fields += u',suspended,suspensionReason'
-      suspended = True
-      user_attributes[0].update(Suspended=u'Suspended')
-      titles.append(u'Suspended')
-      user_attributes[0].update(SuspensionReason=u'SuspensionReason')
-      titles.append(u'SuspensionReason')
+      user_fields.append(u'suspended')
+      user_fields.append(u'suspensionReason')
       i += 1
     elif sys.argv[i].lower() == u'changepassword':
-      fields += u',changePasswordAtNextLogin'
-      changepassword = True
-      user_attributes[0].update(ChangePassword=u'ChangePassword')
-      titles.append(u'ChangePassword')
+      user_fields.append(u'changePasswordAtNextLogin')
       i += 1
     elif sys.argv[i].lower() == u'agreed2terms':
-      fields += u',agreedToTerms'
-      agreed2terms = True
-      user_attributes[0].update(AgreedToTerms=u'AgreedToTerms')
-      titles.append(u'AgreedToTerms')
+      user_fields.append(u'agreedToTerms')
       i += 1
     elif sys.argv[i].lower() == u'admin':
-      fields += u',isAdmin,isDelegatedAdmin'
-      admin = True
-      user_attributes[0].update(Admin=u'Admin')
-      titles.append(u'Admin')
-      user_attributes[0].update(DelegatedAdmin=u'DelegatedAdmin')
-      titles.append(u'DelegatedAdmin')
+      user_fields.append(u'isAdmin')
+      user_fields.append(u'isDelegatedAdmin')
       i += 1
     elif sys.argv[i].lower() == u'gal':
-      fields += u',includeInGlobalAddressList'
-      gal = True
-      user_attributes[0].update(IncludeInGlobalAddressList=u'IncludeInGlobalAddressList')
-      titles.append(u'IncludeInGlobalAddressList')
+      user_fields.append(u'includeInGlobalAddressList')
       i += 1
     elif sys.argv[i].lower() in ['photo', 'photourl']:
-      fields += u',thumbnailPhotoUrl'
-      photo = True
-      user_attributes[0].update(thumbnailPhotoUrl=u'thumbnailPhotoUrl')
-      titles.append(u'thumbnailPhotoUrl')
+      user_fields.append(u'thumbnailPhotoUrl')
       i += 1
     elif sys.argv[i].lower() == u'id':
-      fields += u',id'
-      id = True
-      user_attributes[0].update(ID=u'ID')
-      titles.append(u'ID')
+      user_fields.append(u',id')
       i += 1
     elif sys.argv[i].lower() == u'creationtime':
-      fields += u',creationTime'
-      creationtime = True
-      user_attributes[0].update(CreationTime=u'CreationTime')
-      titles.append(u'CreationTime')
+      user_fields.append(u'creationTime')
       i += 1
     elif sys.argv[i].lower() == u'lastlogintime':
-      fields += u',lastLoginTime'
-      lastlogintime = True
-      user_attributes[0].update(LastLoginTime=u'LastLoginTime')
-      titles.append(u'LastLoginTime')
+      user_fields.append(u'lastLoginTime')
       i += 1
-    elif sys.argv[i].lower() == u'nicknames' or sys.argv[i].lower() == u'aliases':
-      fields += u',aliases,nonEditableAliases'
-      aliases = True
-      user_attributes[0].update(Aliases=u'Aliases')
-      titles.append(u'Aliases')
-      user_attributes[0].update(NonEditableAliases=u'NonEditableAliases')
-      titles.append(u'NonEditableAliases')
+    elif sys.argv[i].lower() in [u'nicknames', u'aliases']:
+      user_fields.append(u'aliases')
+      user_fields.append(u'nonEditableAliases')
+      i += 1
+    elif sys.argv[i].lower() in [u'im', u'ims']:
+      user_fields.append(u'ims')
+      i += 1
+    elif sys.argv[i].lower() in [u'emails', u'email']:
+      user_fields.append(u'emails')
+      i += 1
+    elif sys.argv[i].lower().replace(u'_', u'') in [u'externalids', u'externalid']:
+      user_fields.append(u'externalIds')
+      i += 1
+    elif sys.argv[i].lower() in [u'relation', u'relations']:
+      user_fields.append(u'relations')
+      i += 1
+    elif sys.argv[i].lower() in [u'address', u'addresses']:
+      user_fields.append(u'addresses')
+      i += 1
+    elif sys.argv[i].lower() in [u'organization', u'organizations']:
+      user_fields.append(u'organizations')
+      i += 1
+    elif sys.argv[i].lower() in [u'phone', u'phones']:
+      user_fields.append(u'phones')
       i += 1
     elif sys.argv[i].lower() == u'groups':
       getGroupFeed = True
-      groups = True
-      user_attributes[0].update(Groups=u'Groups')
-      titles.append(u'Groups')
       i += 1
     elif sys.argv[i].lower() in [u'license', u'licenses']:
       getLicenseFeed = True
-      user_attributes[0].update(Licenses=u'Licenses')
-      titles.append(u'Licenses')
       i += 1
     else:
       showUsage()
       exit(5)
-  if fields != u'*':
-    fields += u')'
+  if fields != None:
+    user_fields = set(user_fields)
+    fields = u'nextPageToken,users(%s)' % u','.join(user_fields)
   sys.stderr.write(u"Getting all users in Google Apps account (may take some time on a large account)...\n")
   page_message = u'Got %%total_items%% users: %%first_item%% - %%last_item%%\n'
   all_users = callGAPIpages(service=cd.users(), function=u'list', items=u'users', page_message=page_message, message_attribute=u'primaryEmail', customer=customer, domain=domain, fields=fields, showDeleted=deleted_only, maxResults=500, orderBy=orderBy, sortOrder=sortOrder, query=query)
+  titles = []
+  attributes = []
   for user in all_users:
-    email = user[u'primaryEmail'].lower()
-    domain = email[email.find(u'@')+1:]
-    if domain == u'gtempaccount.com':
-      continue
-    if email[:2] == u'.@' or email[:11] == u'gcc_websvc@' or email[:27] == u'secure-data-connector-user@':  # not real users, skip em
-      continue
-    user_attributes.append({u'Email': email})
-    location = 0
-    try:
-      location = user_attributes.index({u'Email': email})
-      if username:
-          user_attributes[location].update(Username=email[:email.find(u'@')])
-      if ou:
-          user_attributes[location].update(OU=user[u'orgUnitPath'])
-      if firstname:
-        try:
-          user_attributes[location].update(Firstname=user[u'name'][u'givenName'])
-        except KeyError:
-          pass
-      if lastname:
-        try:
-          user_attributes[location].update(Lastname=user[u'name'][u'familyName'])
-        except KeyError:
-          pass
-      if fullname:
-        try:
-          user_attributes[location].update(Fullname=user[u'name'][u'fullName'])
-        except KeyError:
-          pass
-      if suspended:
-        try:
-          user_attributes[location].update(Suspended=user[u'suspended'])
-          user_attributes[location].update(SuspensionReason=user[u'suspensionReason'])
-        except KeyError:
-          pass
-      if gal:
-        try:
-          user_attributes[location].update(IncludeInGlobalAddressList=user[u'includeInGlobalAddressList'])
-        except KeyError:
-          pass
-      if photo:
-        try:
-          user_attributes[location].update(thumbnailPhotoUrl=user[u'thumbnailPhotoUrl'])
-        except KeyError:
-          pass
-      if agreed2terms:
-        try:
-          user_attributes[location].update(AgreedToTerms=user[u'agreedToTerms'])
-        except KeyError:
-          pass
-      if changepassword:
-        try:
-          user_attributes[location].update(ChangePassword=user[u'changePasswordAtNextLogin'])
-        except KeyError:
-          pass
-      if admin:
-        try:
-          user_attributes[location].update(Admin=user[u'isAdmin'])
-          user_attributes[location].update(DelegatedAdmin=user[u'isDelegatedAdmin'])
-        except KeyError:
-          pass
-      if id:
-        try:
-          user_attributes[location].update(ID=user[u'id'])
-        except KeyError:
-          pass
-      if creationtime:
-        try:
-          user_attributes[location].update(CreationTime=user[u'creationTime'])
-        except KeyError:
-          pass
-      if lastlogintime:
-        try:
-          if user[u'lastLoginTime'] == u'1970-01-01T00:00:00.000Z':
-            user_attributes[location].update(LastLoginTime=u'Never')
-          else:
-            user_attributes[location].update(LastLoginTime=user[u'lastLoginTime'])
-        except KeyError:
-          pass
-      if aliases:
-        try:
-          user_aliases = u''
-          for alias in user[u'aliases']:
-            user_aliases += u' %s' % alias
-          if len(user_aliases) > 0:
-            user_aliases = user_aliases[1:]
-          user_attributes[location].update(Aliases=user_aliases)
-        except KeyError:
-          pass
-        try:
-          ne_aliases = ''
-          for alias in user[u'nonEditableAliases']:
-            ne_aliases += u' %s' % alias
-          if len(ne_aliases) > 0:
-            ne_aliases = ne_aliases[1:]
-          user_attributes[location].update(NonEditableAliases=ne_aliases)
-        except KeyError:
-          pass
-    except ValueError:
-      raise
-    except KeyError:
-      pass
+    attributes.append(flatten_json(user))
+    for item in attributes[-1].keys():
+      if item not in titles:
+        titles.append(item)
+  titles.remove(u'primaryEmail')
+  titles = sorted(titles)
+  titles = [u'primaryEmail'] + titles
+  header = {}
+  for title in titles:
+    header[title] = title
+  attributes.insert(0, header)
   if getGroupFeed:
-    total_users = len(user_attributes) - 1
+    total_users = len(attributes) - 1
     user_count = 1
-    for user in user_attributes[1:]:
-      user_email = user[u'Email']
+    titles.append(u'Groups')
+    attributes[0].update(Groups=u'Groups')
+    for user in attributes[1:]:
+      user_email = user[u'primaryEmail']
       sys.stderr.write(u"Getting Group Membership for %s (%s/%s)\r\n" % (user_email, user_count, total_users))
       groups = callGAPIpages(service=cd.groups(), function=u'list', items=u'groups', userKey=user_email)
       grouplist = u''
@@ -5665,15 +5466,17 @@ def doPrintUsers():
       user.update(Groups=grouplist)
       user_count += 1
   if getLicenseFeed:
+    titles.append(u'Licenses')
+    attributes[0].update(Licenses=u'Licenses')
     licenses = doPrintLicenses(return_list=True)
     if len(licenses) > 1:
-      for user in user_attributes[1:]:
+      for user in attributes[1:]:
         user_licenses = []
         for license in licenses:
-          if license[u'userId'].lower() == user[u'Email'].lower():
+          if license[u'userId'].lower() == user[u'primaryEmail'].lower():
             user_licenses.append(license[u'skuId'])
         user.update(Licenses=u' '.join(user_licenses))
-  output_csv(user_attributes, titles, u'Users', todrive)
+  output_csv(attributes, titles, u'Users', todrive)
 
 def doPrintGroups():
   i = 3
@@ -6118,7 +5921,7 @@ def doPrintLicenses(return_list=False):
   for productId in products:
     page_message = u'Got %%%%total_items%%%% Licenses for %s...\n' % productId
     try:
-      licenses = callGAPIpages(service=lic.licenseAssignments(), function=u'listForProduct', throw_reasons=[u'invalid', u'forbidden'], page_message=page_message, customerId=domain, productId=productId, maxResults=1000)
+      licenses = callGAPIpages(service=lic.licenseAssignments(), function=u'listForProduct', throw_reasons=[u'invalid', u'forbidden'], page_message=page_message, customerId=domain, productId=productId, fields=u'items(productId,skuId,userId),nextPageToken')
     except apiclient.errors.HttpError:
       licenses = []
     for license in licenses:
@@ -6732,7 +6535,7 @@ def OAuthInfo():
       domain = credentials.id_token[u'hd']
     except TypeError:
       domain = u'Unknown'
-    credentials.user_agent = u'Dito GAM %s / %s / Python %s.%s.%s %s / %s %s /' % (__version__, __author__,
+    credentials.user_agent = u'Dito GAM %s - http://git.io/gam / %s / Python %s.%s.%s %s / %s %s /' % (__version__, __author__,
                      sys.version_info[0], sys.version_info[1], sys.version_info[2],
                      sys.version_info[3], platform.platform(), platform.machine())
     disable_ssl_certificate_validation = False
