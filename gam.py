@@ -6381,7 +6381,6 @@ def doUploadAuditKey():
   auditkey = sys.stdin.read()
   audit = getAuditObject()
   results = callGData(service=audit, function=u'updatePGPKey', pgpkey=auditkey)
-  print results
 
 def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=False, member_type=None):
   global domain, customerId
