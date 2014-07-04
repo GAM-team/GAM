@@ -8,7 +8,7 @@ del /q /f gam-%1-windows.zip
 del /q /f gam-%1-windows-x64.zip
 
 \python27-32\python.exe setup.py py2exe
-xcopy LICENSE.txt gam\
+xcopy LICENSE gam\
 xcopy whatsnew.txt gam\
 xcopy cacert.pem gam\
 xcopy adminsettings-v1.json gam\
@@ -16,7 +16,7 @@ del gam\w9xpopen.exe
 "%ProgramFiles%\7-Zip\7z.exe" a -tzip gam-%1-windows.zip gam\ -xr!.svn
 
 \python27\python.exe setup-64.py py2exe
-xcopy LICENSE.txt gam-64\
+xcopy LICENSE gam-64\
 xcopy whatsnew.txt gam-64\
 xcopy cacert.pem gam-64\
 xcopy adminsettings-v1.json gam-64\
@@ -31,7 +31,7 @@ mkdir python-src-%1\oauth2client
 mkdir python-src-%1\simplejson
 mkdir python-src-%1\uritemplate
 xcopy gam.py python-src-%1\
-xcopy LICENSE.txt python-src-%1\
+xcopy LICENSE python-src-%1\
 xcopy whatsnew.txt python-src-%1\
 xcopy /e gdata\*.* python-src-%1\gdata
 xcopy /e atom\*.* python-src-%1\atom
