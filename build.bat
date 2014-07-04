@@ -11,7 +11,7 @@ del /q /f gam-%1-windows-x64.zip
 xcopy LICENSE gam\
 xcopy whatsnew.txt gam\
 xcopy cacert.pem gam\
-xcopy adminsettings-v1.json gam\
+xcopy admin-settings-v1.json gam\
 del gam\w9xpopen.exe
 "%ProgramFiles%\7-Zip\7z.exe" a -tzip gam-%1-windows.zip gam\ -xr!.svn
 
@@ -19,7 +19,7 @@ del gam\w9xpopen.exe
 xcopy LICENSE gam-64\
 xcopy whatsnew.txt gam-64\
 xcopy cacert.pem gam-64\
-xcopy adminsettings-v1.json gam-64\
+xcopy admin-settings-v1.json gam-64\
 "%ProgramFiles%\7-Zip\7z.exe" a -tzip gam-%1-windows-x64.zip gam-64\ -xr!.svn
 
 mkdir python-src-%1
@@ -41,7 +41,7 @@ xcopy /e oauth2client\*.* python-src-%1\oauth2client
 xcopy /e simplejson\*.* python-src-%1\simplejson
 xcopy /e uritemplate\*.* python-src-%1\uritemplate
 xcopy cacert.pem python-src-%1\
-xcopy adminsettings-v1.json python-src-%1\
+xcopy admin-settings-v1.json python-src-%1\
 
 cd python-src-%1
 "%ProgramFiles%\7-Zip\7z.exe" a -tzip ..\gam-%1-python-src.zip * -xr!.svn
