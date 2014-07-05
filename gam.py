@@ -3875,11 +3875,25 @@ def doUpdateUser(users):
       user = user[4:]
     elif user.find(u'@') == -1:
       user = u'%s@%s' % (user, domain)
+    if body[u'primaryEmail'][:4].lower() == u'vfe@':
+      if user.find(u'@') == -1:
+        body[u'primaryEmail'] = u'vfe.%s.%05d@%s' % (user, random.randint(1,99999), domain)
+      else:
+        body[u'primaryEmail'] = u'vfe.%s.%05d@%s' % (user[:user.find(u'@')], random.randint(1,99999), user[user.find(u'@')+1:])
     sys.stderr.write(u'updating user %s...\n' % user)
     if do_update_user:
       result = callGAPI(service=cd.users(), function=u'patch', soft_errors=True, userKey=user, body=body)
     if do_admin_user:
       result2 = callGAPI(service=cd.users(), function=u'makeAdmin', soft_errors=True, userKey=user, body={u'status': is_admin})
+
+def doRemoveUsersAliases(users):
+  cd = buildGAPIObject(u'directory')
+  for user in users:
+    user_aliases = callGAPI(service=cd.users(), function=u'get', userKey=user, fields=u'aliases,id,primaryEmail')
+    if u'aliases' in user_aliases:
+      for an_alias in user_aliases[u'aliases']:
+        print u'Removing alias %s for %s...' % (an_alias, user_aliases[u'primaryEmail'])
+        callGAPI(service=cd.users().aliases(), function=u'delete', userKey=user_aliases[u'id'], alias=an_alias)
 
 def doRemoveUsersGroups(users):
   cd = buildGAPIObject(u'directory')
@@ -5390,7 +5404,7 @@ def doPrintUsers():
       user_fields.append(u'thumbnailPhotoUrl')
       i += 1
     elif sys.argv[i].lower() == u'id':
-      user_fields.append(u',id')
+      user_fields.append(u'id')
       i += 1
     elif sys.argv[i].lower() == u'creationtime':
       user_fields.append(u'creationTime')
@@ -7129,6 +7143,8 @@ try:
       doDelTokens(users)
     elif delWhat in [u'group', u'groups']:
       doRemoveUsersGroups(users)
+    elif delWhat in [u'alias', u'aliases']:
+      doRemoveUsersAliases(users)
     elif delWhat in [u'emptydrivefolders']:
       deleteEmptyDriveFolders(users)
     elif delWhat in [u'drivefile']:
