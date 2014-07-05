@@ -3847,6 +3847,20 @@ def doUpdateUser(users):
       except KeyError:
         body[u'relations'] = [relation,]
       i += 1
+    elif sys.argv[i].lower() == u'otheremail':
+      do_update_user = True
+      an_email = dict()
+      i += 1
+      an_email[u'type'] = sys.argv[i]
+      if an_email[u'type'].lower() not in [u'custom', u'home', u'other', u'work']:
+        an_email[u'type'] = u'custom'
+        an_email[u'customType'] = sys.argv[i]
+      i += 1
+      an_email[u'address'] = sys.argv[i]
+      if u'emails' not in body:
+        body[u'emails'] = list()
+      body[u'emails'].append(an_email)
+      i += 1
     elif sys.argv[i].lower() == u'externalid':
       do_update_user = True
       externalid = dict()
@@ -3875,11 +3889,14 @@ def doUpdateUser(users):
       user = user[4:]
     elif user.find(u'@') == -1:
       user = u'%s@%s' % (user, domain)
-    if body[u'primaryEmail'][:4].lower() == u'vfe@':
-      if user.find(u'@') == -1:
-        body[u'primaryEmail'] = u'vfe.%s.%05d@%s' % (user, random.randint(1,99999), domain)
-      else:
-        body[u'primaryEmail'] = u'vfe.%s.%05d@%s' % (user[:user.find(u'@')], random.randint(1,99999), user[user.find(u'@')+1:])
+    if u'primaryEmail' in body and body[u'primaryEmail'][:4].lower() == u'vfe@':
+      user_primary = callGAPI(service=cd.users(), function=u'get', userKey=user, fields=u'primaryEmail,id')
+      user = user_primary[u'id']
+      user_primary = user_primary[u'primaryEmail']
+      user_name = user_primary[:user_primary.find(u'@')]
+      user_domain = user_primary[user_primary.find(u'@')+1:]
+      body[u'primaryEmail'] = u'vfe.%s.%05d@%s' % (user_name, random.randint(1,99999), user_domain)
+      body[u'emails'] = [{u'type': u'custom', u'customType': u'former_employee', u'primary': False, u'address': user_primary}]
     sys.stderr.write(u'updating user %s...\n' % user)
     if do_update_user:
       result = callGAPI(service=cd.users(), function=u'patch', soft_errors=True, userKey=user, body=body)
@@ -4341,40 +4358,46 @@ def doGetUserInfo(user_email=None):
     print u'Photo URL: %s\n' % user[u'thumbnailPhotoUrl']
   except KeyError:
     pass
-  print u'IMs:'
-  try:
+  if u'ims' in user:
+    print u'IMs:'
     for im in user[u'ims']:
       for key in im.keys():
         print u' %s: %s' % (key, im[key])
       print u''
-  except KeyError:
-    pass
-  print u'Addresses:'
-  try:
+  if u'addresses' in user:
+    print u'Addresses:'
     for address in user[u'addresses']:
       for key in address.keys():
         print u' %s: %s' % (key, address[key])
       print ''
-  except KeyError:
-    pass
-  print u'Organizations:'
-  try:
+  if u'organizations' in user:
+    print u'Organizations:'
     for org in user[u'organizations']:
       for key in org.keys():
         print u' %s: %s' % (key, org[key])
       print u''
-  except KeyError:
-    pass
-  print u'Phones:'
-  try:
+  if u'phones' in user:
+    print u'Phones:'
     for phone in user[u'phones']:
       for key in phone.keys():
         print u' %s: %s' % (key, phone[key])
       print u''
-  except KeyError:
-    pass
-  print u'Relations:'
-  try:
+  if u'emails' in user:
+    if len(user[u'emails']) > 1:
+      print u'Other Emails:'
+      for an_email in user[u'emails']:
+        if an_email[u'address'].lower() == user[u'primaryEmail'].lower():
+          continue
+        for key in an_email.keys():
+          if key == u'type' and an_email[key] == u'custom':
+            continue
+          if key == u'customType':
+            print u' type: %s' % an_email[key]
+          else:
+            print u' %s: %s' % (key, an_email[key])
+        print u''
+  if u'relations' in user:
+    print u'Relations:'
     for relation in user[u'relations']:
       for key in relation.keys():
         if key == u'type' and relation[key] == u'custom':
@@ -4384,10 +4407,8 @@ def doGetUserInfo(user_email=None):
         else:
           print u' %s: %s' % (key, relation[key])
       print u''
-  except KeyError:
-    pass
-  print u'External IDs:'
-  try:
+  if u'externalIds' in user:
+    print u'External IDs:'
     for id in user[u'externalIds']:
       for key in id.keys():
         if key == u'type' and id[key] == u'custom':
@@ -4397,31 +4418,22 @@ def doGetUserInfo(user_email=None):
         else:
           print u' %s: %s' % (key, id[key])
       print u''
-  except KeyError:
-    pass
   if getAliases:
-    print u'Email Aliases:'
-    try:
+    if u'aliases' in user:
+      print u'Email Aliases:'
       for alias in user[u'aliases']:
-        print u'  ' + alias
-    except KeyError:
-      pass
-    print u'Non-Editable Aliases:'
-    try:
+        print u'  %s' % alias
+    if u'nonEditableAliases' in user:
+      print u'Non-Editable Aliases:'
       for alias in user[u'nonEditableAliases']:
         print u'  ' + alias
-    except KeyError:
-      pass
   if getGroups:
     groups = callGAPI(service=cd.groups(), function=u'list', userKey=user_email)
-    print u'Groups:'
-    try:
+    if u'groups' in groups:
+      print u'Groups:'
       for group in groups[u'groups']:
         print u'   %s <%s>' % (group[u'name'], group[u'email'])
-    except KeyError:
-      pass
   if getLicenses:
-    print
     print u'Licenses:'
     lic = buildGAPIObject(api='licensing')
     for sku in [u'Google-Apps', u'Google-Apps-For-Business', u'Google-Apps-Unlimited', u'Google-Apps-For-Postini', 
