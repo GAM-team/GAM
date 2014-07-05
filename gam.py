@@ -201,7 +201,7 @@ def doGAMCheckForUpdates():
 
 def commonAppsObjInit(appsObj):
   #Identify GAM to Google's Servers
-  appsObj.source = u'Dito GAM %s / %s / Python %s.%s.%s %s / %s %s /' % (__version__, __author__,
+  appsObj.source = u'Dito GAM %s - http://git.io/gam / %s / Python %s.%s.%s %s / %s %s /' % (__version__, __author__,
                    sys.version_info[0], sys.version_info[1], sys.version_info[2], sys.version_info[3],
                    platform.platform(), platform.machine())
   #Show debugging output if debug.gam exists
@@ -819,33 +819,36 @@ def showReport():
     for app in auth_apps: # put apps at bottom
       cust_attributes.append(app)
     output_csv(csv_list=cust_attributes, titles=titles, list_type=u'Customer Report - %s' % try_date, todrive=to_drive)
-  elif report in [u'doc', u'docs', u'login', u'admin', u'drive']:
+  elif report in [u'doc', u'docs', u'login', u'logins', u'admin', u'drive']:
     if report == u'doc':
       report = u'docs'
+    elif report == u'logins':
+      report = u'login'
     page_message = u'Got %%num_items%% items\n'
     activities = callGAPIpages(service=rep.activities(), function=u'list', page_message=page_message, applicationName=report, userKey=userKey, customerId=customerId, actorIpAddress=actorIpAddress, startTime=startTime, endTime=endTime, eventName=eventName, filters=filters)
-    attrs = []
-    titles = []
-    for activity in activities:
-      events = activity[u'events']
-      del activity[u'events']
-      activity_row = flatten_json(activity)
-      for event in events:
-        row = flatten_json(event)
-        row.update(activity_row)
-        for item in row.keys():
-          if item not in titles:
-            titles.append(item)
-        attrs.append(row)
-    header = {}
-    titles.remove(u'name')
-    titles = sorted(titles)
-    titles.insert(0, u'name')
-    for title in titles:
-      header[title] = title
-    attrs.insert(0, header)
-    cap_report = u'%s%s' % (report[0].upper(), report[1:])
-    output_csv(attrs, titles, u'%s Activity Report' % cap_report, to_drive)
+    if len(activities) > 0:
+      attrs = []
+      titles = []
+      for activity in activities:
+        events = activity[u'events']
+        del activity[u'events']
+        activity_row = flatten_json(activity)
+        for event in events:
+          row = flatten_json(event)
+          row.update(activity_row)
+          for item in row.keys():
+            if item not in titles:
+              titles.append(item)
+          attrs.append(row)
+      header = {}
+      titles.remove(u'name')
+      titles = sorted(titles)
+      titles.insert(0, u'name')
+      for title in titles:
+        header[title] = title
+      attrs.insert(0, header)
+      cap_report = u'%s%s' % (report[0].upper(), report[1:])
+      output_csv(attrs, titles, u'%s Activity Report' % cap_report, to_drive)
 
 def doDelegates(users):
   emailsettings = getEmailSettingsObject()
