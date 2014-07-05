@@ -24,7 +24,7 @@ For more information, see http://code.google.com/p/google-apps-manager
 """
 
 __author__ = u'Jay Lee <jay0lee@gmail.com>'
-__version__ = u'3.3'
+__version__ = u'3.31'
 __license__ = u'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 import sys, os, time, datetime, random, socket, csv, platform, re, calendar, base64, hashlib
@@ -426,6 +426,10 @@ def callGAPI(service, function, silent_errors=False, soft_errors=False, throw_re
       print u'Error: %s' % e
       sys.exit(4)
 
+def restart_line():
+  sys.stderr.write('\r')
+  sys.stderr.flush()
+
 def callGAPIpages(service, function, items=u'items', nextPageToken=u'nextPageToken', page_message=None, message_attribute=None, **kwargs):
   pageToken = None
   all_pages = list()
@@ -456,6 +460,7 @@ def callGAPIpages(service, function, items=u'items', nextPageToken=u'nextPageTok
         except KeyError:
           show_message = show_message.replace(u'%%first_item%%', '')
           show_message = show_message.replace(u'%%last_item%%', '')
+      restart_line()
       sys.stderr.write(show_message)
     try:
       all_pages += this_page[items]
@@ -4261,7 +4266,7 @@ def doWhatIs():
   if email.find(u'@') == -1:
     email = u'%s@%s' % (email, domain)
   try:
-    user_or_alias = callGAPI(service=cd.users(), function=u'get', throw_reasons=[u'badRequest', u'invalid'], userKey=email, fields=u'primaryEmail')
+    user_or_alias = callGAPI(service=cd.users(), function=u'get', throw_reasons=[u'notFound', u'badRequest', u'invalid'], userKey=email, fields=u'primaryEmail')
     if user_or_alias[u'primaryEmail'].lower() == email.lower():
           sys.stderr.write(u'%s is a user\n\n' % email)
           doGetUserInfo(user_email=email)
@@ -4274,10 +4279,10 @@ def doWhatIs():
     sys.stderr.write(u'%s is not a user...\n' % email)
     sys.stderr.write(u'%s is not a user alias...\n' % email)
   try:
-    group = callGAPI(service=cd.groups(), function=u'get', throw_reasons=u'badRequest', groupKey=email, fields=u'email')
+    group = callGAPI(service=cd.groups(), function=u'get', throw_reasons=[u'notFound', u'badRequest'], groupKey=email, fields=u'email')
   except apiclient.errors.HttpError:
-    sys.stderr.write(u'%s is not a group either!\n\nDoesn\'t seem to exist!' % email)
-    sys.exit(0)
+    sys.stderr.write(u'%s is not a group either!\n\nDoesn\'t seem to exist!\n\n' % email)
+    sys.exit(1)
   if group[u'email'].lower() == email.lower():
     sys.stderr.write(u'%s is a group\n\n' % email)
     doGetGroupInfo(group_name=email)
@@ -6438,7 +6443,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
     page_message = None
     if not silent:
       sys.stderr.write(u"Getting %s of %s (may take some time for large groups)..." % (member_type_message, group))
-      page_message = u'Got %%%%num_items%%%% %s...\n' % member_type_message
+      page_message = u'Got %%%%total_items%%%% %s...' % member_type_message
     members = callGAPIpages(service=cd.members(), function=u'list', page_message=page_message, groupKey=group, roles=member_type, fields=u'nextPageToken,members(email,id)')
     users = []
     for member in members:
@@ -6455,7 +6460,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
     page_message = None
     if not silent:
       sys.stderr.write(u"Getting all users in the Google Apps organization (may take some time on a large domain)...\n")
-      page_message = u'Got %%num_items%% users.\n'
+      page_message = u'Got %%total_items%% users...'
     members = callGAPIpages(service=cd.users(), function=u'list', items=u'users', page_message=page_message, customer=customerId, fields=u'nextPageToken,users(primaryEmail,id,orgUnitPath)', query=u"orgUnitPath='%s'" % ou, maxResults=500)
     for member in members:
       if ou.lower() != member[u'orgUnitPath'].lower():
@@ -6474,7 +6479,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
     page_message = None
     if not silent:
       sys.stderr.write(u"Getting all users in the Google Apps organization (may take some time on a large domain)...\n")
-      page_message = u'Got %%num_items%% users\n'
+      page_message = u'Got %%total_items%% users..'
     members = callGAPIpages(service=cd.users(), function=u'list', items=u'users', page_message=page_message, customer=customerId, fields=u'nextPageToken,users(primaryEmail,id)', query=u"orgUnitPath='%s'" % ou, maxResults=500)
     for member in members:
       if return_uids:
@@ -6486,7 +6491,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
     got_uids = True
     users = []
     if not silent: sys.stderr.write(u"Getting all users that match query %s (may take some time on a large domain)...\n" % entity)
-    page_message = u'Got %%num_items%% users\n'
+    page_message = u'Got %%total_items%% users...'
     members = callGAPIpages(service=cd.users(), function=u'list', items=u'users', page_message=page_message, customer=customerId, fields=u'nextPageToken,users(primaryEmail,id)', query=entity, maxResults=500)
     for member in members:
       if return_uids:
@@ -6507,8 +6512,8 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
     got_uids = True
     users = []
     if entity == u'users':
-      if not silent: sys.stderr.write(u"Getting all users in Google Apps account (may take some time on a large account)...")
-      page_message = u'Got %%num_items%% users\n'
+      if not silent: sys.stderr.write(u"Getting all users in Google Apps account (may take some time on a large account)...\n")
+      page_message = u'Got %%total_items%% users...'
       all_users = callGAPIpages(service=cd.users(), function=u'list', items=u'users', page_message=page_message, customer=customerId, fields=u'nextPageToken,users(primaryEmail,suspended,id)', maxResults=500)
       for member in all_users:
         if member[u'suspended'] == False:
