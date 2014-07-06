@@ -4328,41 +4328,43 @@ def doGetUserInfo(user_email=None):
       sys.exit(3)
   user = callGAPI(service=cd.users(), function=u'get', userKey=user_email)
   print u'User: %s' % user[u'primaryEmail']
-  try:
+  if u'name' in user and u'givenName' in user[u'name']:
     print u'First Name: %s' % user[u'name'][u'givenName']
-  except KeyError:
-    print u'First Name: <blank>'
-  try:
+  if u'name' in user and u'familyName' in user[u'name']:
     print u'Last Name: %s' % user[u'name'][u'familyName']
-  except KeyError:
-    print u'Last Name: <blank>'
-  print u'Is a Super Admin: %s' % user[u'isAdmin']
-  print u'Is Delegated Admin: %s' % user[u'isDelegatedAdmin']
-  print u'Has Agreed to Terms: %s' % user[u'agreedToTerms']
-  print u'IP Whitelisted: %s' % user[u'ipWhitelisted']
-  print u'Account Suspended: %s' % user[u'suspended']
-  try:
+  if u'isAdmin' in user:
+    print u'Is a Super Admin: %s' % user[u'isAdmin']
+  if u'isDelegatedAdmin' in user:
+    print u'Is Delegated Admin: %s' % user[u'isDelegatedAdmin']
+  if u'agreedToTerms' in user:
+    print u'Has Agreed to Terms: %s' % user[u'agreedToTerms']
+  if u'ipWhitelisted' in user:
+    print u'IP Whitelisted: %s' % user[u'ipWhitelisted']
+  if u'suspended' in user:
+    print u'Account Suspended: %s' % user[u'suspended']
+  if u'suspensionReason' in user:
     print u'Suspension Reason: %s' % user[u'suspensionReason']
-  except KeyError:
-    pass
-  print u'Must Change Password: %s' % user[u'changePasswordAtNextLogin']
-  print u'Google Unique ID: %s' % user[u'id']
-  print u'Customer ID: %s' % user[u'customerId']
-  print u'Mailbox is setup: %s' % user[u'isMailboxSetup']
-  print u'Included in GAL: %s' % user[u'includeInGlobalAddressList']
-  print u'Creation Time: %s' % user[u'creationTime']
-  if user[u'lastLoginTime'] == u'1970-01-01T00:00:00.000Z':
-    print u'Last login time: Never'
-  else:
-    print u'Last login time: %s' % user[u'lastLoginTime']
-  try:
+  if u'changePasswordAtNextLogin' in user:
+    print u'Must Change Password: %s' % user[u'changePasswordAtNextLogin']
+  if u'id' in user:
+    print u'Google Unique ID: %s' % user[u'id']
+  if u'customerId' in user:
+    print u'Customer ID: %s' % user[u'customerId']
+  if u'isMailboxSetup' in user:
+    print u'Mailbox is setup: %s' % user[u'isMailboxSetup']
+  if u'includeInGlobalAddressList' in user:
+    print u'Included in GAL: %s' % user[u'includeInGlobalAddressList']
+  if u'creationTime' in user:
+    print u'Creation Time: %s' % user[u'creationTime']
+  if u'lastLoginTime' in user:
+    if user[u'lastLoginTime'] == u'1970-01-01T00:00:00.000Z':
+      print u'Last login time: Never'
+    else:
+      print u'Last login time: %s' % user[u'lastLoginTime']
+  if u'orgUnitPath' in user:
     print u'Google Org Unit Path: %s\n' % user[u'orgUnitPath']
-  except KeyError:
-    print u'Google Org Unit Path: Unknown\n'
-  try:
+  if u'thumbnailPhotoUrl' in user:
     print u'Photo URL: %s\n' % user[u'thumbnailPhotoUrl']
-  except KeyError:
-    pass
   if u'ims' in user:
     print u'IMs:'
     for im in user[u'ims']:
@@ -4400,7 +4402,7 @@ def doGetUserInfo(user_email=None):
             print u' type: %s' % an_email[key]
           else:
             print u' %s: %s' % (key, an_email[key])
-        print u''
+      print u''
   if u'relations' in user:
     print u'Relations:'
     for relation in user[u'relations']:
@@ -4431,7 +4433,7 @@ def doGetUserInfo(user_email=None):
     if u'nonEditableAliases' in user:
       print u'Non-Editable Aliases:'
       for alias in user[u'nonEditableAliases']:
-        print u'  ' + alias
+        print u'  %s' % alias
   if getGroups:
     groups = callGAPI(service=cd.groups(), function=u'list', userKey=user_email)
     if u'groups' in groups:
