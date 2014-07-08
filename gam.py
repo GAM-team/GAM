@@ -2242,6 +2242,9 @@ def downloadDriveFile(users):
     for fileId in fileIds:
       extension = None
       result = callGAPI(service=drive.files(), function=u'get', fileId=fileId, fields=u'fileSize,title,mimeType,downloadUrl,exportLinks')
+      if result[u'mimeType'] == u'application/vnd.google-apps.folder':
+        print u'Skipping download of folder %s' % result[u'title']
+        continue
       try:
         result[u'fileSize'] = int(result[u'fileSize'])
         if result[u'fileSize'] < 1024:
@@ -3912,9 +3915,12 @@ def doRemoveUsersAliases(users):
   cd = buildGAPIObject(u'directory')
   for user in users:
     user_aliases = callGAPI(service=cd.users(), function=u'get', userKey=user, fields=u'aliases,id,primaryEmail')
+    user_id = user_aliases[u'id']
+    user_primary = user_aliases[u'primaryEmail']
+    print u'%s has %s aliases' % (user_primary, len(user_aliases[u'aliases']))
     if u'aliases' in user_aliases:
       for an_alias in user_aliases[u'aliases']:
-        print u'Removing alias %s for %s...' % (an_alias, user_aliases[u'primaryEmail'])
+        print u' removing alias %s for %s...' % (an_alias, user_aliases[u'primaryEmail'])
         callGAPI(service=cd.users().aliases(), function=u'delete', userKey=user_aliases[u'id'], alias=an_alias)
 
 def doRemoveUsersGroups(users):
