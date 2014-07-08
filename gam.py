@@ -1552,7 +1552,7 @@ def deletePhoto(users):
       user = user[4:]
     elif user.find('@') == -1:
       user = u'%s@%s' % (user, domain)
-    print u"Deleting photo for %s to %s (%s of %s)" % (user, filename, i, count)
+    print u"Deleting photo for %s (%s of %s)" % (user, i, count)
     callGAPI(service=cd.users().photos(), function='delete', userKey=user)
     i += 1
 
