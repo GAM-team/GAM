@@ -255,8 +255,8 @@ def safename(filename):
     filename = re_slash.sub(",", filename)
 
     # limit length of filename
-    if len(filename)>200:
-        filename=filename[:200]
+    if len(filename)>64:
+        filename=filename[:64]
     return ",".join((filename, filemd5))
 
 NORMALIZE_SPACE = re.compile(r'(?:\r\n)?[ \t]+')
