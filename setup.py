@@ -10,6 +10,7 @@ setup(
   options = {'py2exe': 
               {'optimize': 2,
                'bundle_files': 1,
+               'includes': ['passlib.handlers.sha2_crypt']'
                'dist_dir' : 'gam'}
             }
   )
