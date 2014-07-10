@@ -5947,47 +5947,47 @@ def doPrintCrosDevices():
   output_csv(cros_attributes, titles, 'CrOS', todrive)
 
 def doPrintLicenses(return_list=False):
-    lic = buildGAPIObject(u'licensing')
-    products = [u'Google-Apps', u'Google-Drive-storage',
-                u'Google-Coordinate', u'Google-Vault']
-    lic_attributes = [{}]
-    todrive = False
-    i = 3
-    while i < len(sys.argv) and not return_list:
-        if sys.argv[i].lower() == u'todrive':
-            todrive = True
-            i += 1
-        elif sys.argv[i].lower() in [u'products', u'product']:
-            products = sys.argv[i+1].split(',')
-            i += 2
-        else:
-            print(u'Error: %s is not a valid argument to gam print licenses' %
-                  sys.argv[i])
-            sys.exit(3)
-    for productId in products:
-        page_message = (u'Got %%%%total_items%%%% Licenses for '
-                        u'%s...\n' % productId)
-        try:
-            licenses = callGAPIpages(service=lic.licenseAssignments(),
-                    function=u'listForProduct',
-                    throw_reasons=[u'invalid', u'forbidden'],
-                    page_message=page_message, customerId=domain,
-                    productId=productId,
-                    fields=u'items(productId,skuId,userId),nextPageToken')
-        except apiclient.errors.HttpError:
-            licenses = []
-        for license in licenses:
-            a_license = dict()
-            for title in license.keys():
-                if title in [u'kind', u'etags', u'selfLink']:
-                    continue
-                if title not in lic_attributes[0]:
-                    lic_attributes[0][title] = title
-                a_license[title] = license[title]
-            lic_attributes.append(a_license)
-    if return_list:
-        return lic_attributes
-    output_csv(lic_attributes, lic_attributes[0], u'Licenses', todrive)
+  lic = buildGAPIObject(u'licensing')
+  products = [u'Google-Apps', u'Google-Drive-storage',
+              u'Google-Coordinate', u'Google-Vault']
+  lic_attributes = [{}]
+  todrive = False
+  i = 3
+  while i < len(sys.argv) and not return_list:
+    if sys.argv[i].lower() == u'todrive':
+      todrive = True
+      i += 1
+    elif sys.argv[i].lower() in [u'products', u'product']:
+      products = sys.argv[i+1].split(',')
+      i += 2
+    else:
+      print(u'Error: %s is not a valid argument to gam print licenses' %
+            sys.argv[i])
+      sys.exit(3)
+  for productId in products:
+    page_message = (u'Got %%%%total_items%%%% Licenses for '
+                    u'%s...\n' % productId)
+    try:
+      licenses = callGAPIpages(service=lic.licenseAssignments(),
+          function=u'listForProduct',
+          throw_reasons=[u'invalid', u'forbidden'],
+          page_message=page_message, customerId=domain,
+          productId=productId,
+          fields=u'items(productId,skuId,userId),nextPageToken')
+    except apiclient.errors.HttpError:
+      licenses = []
+    for license in licenses:
+      a_license = dict()
+      for title in license.keys():
+        if title in [u'kind', u'etags', u'selfLink']:
+          continue
+        if title not in lic_attributes[0]:
+          lic_attributes[0][title] = title
+        a_license[title] = license[title]
+      lic_attributes.append(a_license)
+  if return_list:
+    return lic_attributes
+  output_csv(lic_attributes, lic_attributes[0], u'Licenses', todrive)
 
 def doPrintTokens():
   todrive = False
@@ -6376,43 +6376,43 @@ def doStatusExportRequests():
       print u''
 
 def doWatchExportRequest():
-    audit = getAuditObject()
-    user = sys.argv[4].lower()
-    if user.find(u'@') > 0:
-        audit.domain = user[user.find(u'@')+1:]
-        user = user[:user.find(u'@')]
-    request_id = sys.argv[5].lower()
-    while True:
-        results = callGData(service=audit,
-                function=u'getMailboxExportRequestStatus', user=user,
-                request_id=request_id)
-        if results[u'status'] != u'PENDING':
-            print u'status is %s. Sending email.' % results[u'status']
-            msg_txt = u"\n"
-            msg_txt += u"  Request ID: %s\n" % results[u'requestId']
-            msg_txt += u"  User: %s\n" % results[u'userEmailAddress']
-            msg_txt += u"  Status: %s\n" % results[u'status']
-            msg_txt += u"  Request Date: %s\n" % results[u'requestDate']
-            msg_txt += u"  Requested By: %s\n" % results[u'adminEmailAddress']
-            msg_txt += u"  Requested Parts: %s\n" % results[u'packageContent']
-            msg_txt += u"  Request Filter: %s\n" % results.get(u'searchQuery',
-                                                               u'None')
-            msg_txt += u"  Include Deleted: %s\n" % results[u'includeDeleted']
-            try:
-                msg_txt += u"  Number Of Files: %s\n" % (
-                        results[u'numberOfFiles'])
-                for i in range(int(results['numberOfFiles'])):
-                    msg_txt += u"  Url%s: %s\n" % (i, results[u'fileUrl%s' % i])
-            except KeyError:
-                pass
-            msg_subj = u'Export #%s for %s status is %s' % (
-                        results[u'requestId'], results[u'userEmailAddress'],
-                        results[u'status'])
-            send_email(msg_subj, msg_txt)
-            break
-        else:
-            print u'status still PENDING, will check again in 5 minutes...'
-            time.sleep(300)
+  audit = getAuditObject()
+  user = sys.argv[4].lower()
+  if user.find(u'@') > 0:
+    audit.domain = user[user.find(u'@')+1:]
+    user = user[:user.find(u'@')]
+  request_id = sys.argv[5].lower()
+  while True:
+    results = callGData(service=audit,
+        function=u'getMailboxExportRequestStatus', user=user,
+        request_id=request_id)
+    if results[u'status'] != u'PENDING':
+      print u'status is %s. Sending email.' % results[u'status']
+      msg_txt = u"\n"
+      msg_txt += u"  Request ID: %s\n" % results[u'requestId']
+      msg_txt += u"  User: %s\n" % results[u'userEmailAddress']
+      msg_txt += u"  Status: %s\n" % results[u'status']
+      msg_txt += u"  Request Date: %s\n" % results[u'requestDate']
+      msg_txt += u"  Requested By: %s\n" % results[u'adminEmailAddress']
+      msg_txt += u"  Requested Parts: %s\n" % results[u'packageContent']
+      msg_txt += u"  Request Filter: %s\n" % results.get(u'searchQuery',
+                                                         u'None')
+      msg_txt += u"  Include Deleted: %s\n" % results[u'includeDeleted']
+      try:
+        msg_txt += u"  Number Of Files: %s\n" % (
+            results[u'numberOfFiles'])
+        for i in range(int(results['numberOfFiles'])):
+          msg_txt += u"  Url%s: %s\n" % (i, results[u'fileUrl%s' % i])
+      except KeyError:
+        pass
+      msg_subj = u'Export #%s for %s status is %s' % (
+          results[u'requestId'], results[u'userEmailAddress'],
+          results[u'status'])
+      send_email(msg_subj, msg_txt)
+      break
+    else:
+      print u'status still PENDING, will check again in 5 minutes...'
+      time.sleep(300)
 
 def send_email(msg_subj, msg_txt, msg_rcpt=None):
   from email.mime.text import MIMEText
