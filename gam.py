@@ -1622,9 +1622,7 @@ def doPhoto(users):
       except IOError, e:
         print u' couldn\'t open %s: %s' % (filename, e.strerror)
         continue
-    image_data = base64.b64encode(image_data)
-    image_data = image_data.replace(u'/', u'_')
-    image_data = image_data.replace(u'+', u'-')
+    image_data = base64.urlsafe_b64encode(image_data)
     body = {u'photoData': image_data}
     callGAPI(service=cd.users().photos(), function=u'update', soft_errors=True, userKey=user, body=body)
 
@@ -1648,9 +1646,7 @@ def getPhoto(users):
       continue
     try:
       photo_data = photo[u'photoData']
-      photo_data = photo_data.replace(u'_', u'/')
-      photo_data = photo_data.replace(u'-', u'+')
-      photo_data = base64.b64decode(photo_data)
+      photo_data = base64.urlsafe_b64decode(photo_data)
     except KeyError:
       print u' no photo for %s' % user
       continue
@@ -3588,7 +3584,7 @@ def doCreateUser():
     body[u'password'] = gen_sha512_hash(body[u'password'])
     body[u'hashFunction'] = u'crypt'
   print u"Creating account for %s" % body[u'primaryEmail']
-  callGAPI(service=cd.users(), function='insert', body=body)
+  callGAPI(service=cd.users(), function='insert', body=body, fields=u'primaryEmail')
   if do_admin:
     print u' Changing admin status for %s to %s' % (body[u'primaryEmail'], admin_body[u'status'])
     callGAPI(service=cd.users(), function=u'makeAdmin', userKey=body[u'primaryEmail'], body=admin_body)
@@ -6655,11 +6651,9 @@ def send_email(msg_subj, msg_txt, msg_rcpt=None):
   msg[u'From'] = sender_email
   msg[u'To'] = msg_rcpt
   msg_string = msg.as_string()
-  msg_b64 = base64.b64encode(msg_string)
-  msg_raw = msg_b64.replace(u'/', u'_').replace(u'+', u'-')
+  msg_raw = base64.urlsafe_b64encode(msg_string)
   callGAPI(service=gmail.users().messages(), function=u'send',
            userId=sender_email, body={u'raw': msg_raw})
-
 
 def doDownloadExportRequest():
   user = sys.argv[4].lower()
