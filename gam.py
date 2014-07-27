@@ -4026,7 +4026,7 @@ def doUpdateGroup():
         gs_object = buildDiscoveryObject(u'groupssettings')
         matches_gs_setting = False
         for (attrib, params) in gs_object[u'schemas'][u'Groups'][u'properties'].items():
-          if attrib in [u'kind', u'etag', u'email', u'name', u'description']:
+          if attrib in [u'kind', u'etag', u'email']:
             continue
           if sys.argv[i].lower().replace(u'_', u'') == attrib.lower():
             matches_gs_setting = True
@@ -4052,7 +4052,7 @@ def doUpdateGroup():
                 value = u'false'
             break
         if not matches_gs_setting:
-          print u'ERROR: %s is not a valid argument for "gam create group..."' % sys.argv[i]
+          print u'ERROR: %s is not a valid argument for "gam update group..."' % sys.argv[i]
           sys.exit(9)
         gs_body[attrib] = value
         use_gs_api = True
