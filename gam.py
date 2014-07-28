@@ -6447,7 +6447,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
     if not silent:
       sys.stderr.write(u"Getting %s of %s (may take some time for large groups)..." % (member_type_message, group))
       page_message = u'Got %%%%total_items%%%% %s...' % member_type_message
-    members = callGAPIpages(service=cd.members(), function=u'list', page_message=page_message, groupKey=group, roles=member_type, fields=u'nextPageToken,members(email,id)')
+    members = callGAPIpages(service=cd.members(), function=u'list', items=u'members', page_message=page_message, groupKey=group, roles=member_type, fields=u'nextPageToken,members(email,id)')
     users = []
     for member in members:
       if return_uids:
