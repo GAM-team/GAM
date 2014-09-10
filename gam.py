@@ -24,7 +24,7 @@ For more information, see http://code.google.com/p/google-apps-manager
 """
 
 __author__ = u'Jay Lee <jay0lee@gmail.com>'
-__version__ = u'3.31'
+__version__ = u'3.32-unreleased'
 __license__ = u'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 import sys, os, time, datetime, random, socket, csv, platform, re, calendar, base64, hashlib
@@ -6096,6 +6096,8 @@ def doPrintCrosDevices():
 def doPrintLicenses(return_list=False):
   lic = buildGAPIObject(u'licensing')
   products = [u'Google-Apps', u'Google-Drive-storage', u'Google-Coordinate', u'Google-Vault']
+  skus = None
+  licenses = []
   lic_attributes = [{}]
   todrive = False
   i = 3
@@ -6106,24 +6108,36 @@ def doPrintLicenses(return_list=False):
     elif sys.argv[i].lower() in [u'products', u'product']:
       products = sys.argv[i+1].split(',')
       i += 2
+    elif sys.argv[i].lower() in [u'sku', u'skus']:
+      skus = sys.argv[i+1].split(',')
+      i += 2
     else:
       print u'Error: %s is not a valid argument to gam print licenses' % sys.argv[i]
       sys.exit(3)
-  for productId in products:
-    page_message = u'Got %%%%total_items%%%% Licenses for %s...\n' % productId
-    try:
-      licenses = callGAPIpages(service=lic.licenseAssignments(), function=u'listForProduct', throw_reasons=[u'invalid', u'forbidden'], page_message=page_message, customerId=domain, productId=productId, fields=u'items(productId,skuId,userId),nextPageToken')
-    except apiclient.errors.HttpError:
-      licenses = []
-    for license in licenses:
-      a_license = dict()
-      for title in license.keys():
-        if title in [u'kind', u'etags', u'selfLink']:
-          continue
-        if title not in lic_attributes[0]:
-          lic_attributes[0][title] = title
-        a_license[title] = license[title]
-      lic_attributes.append(a_license)
+  if skus:
+    for sku in skus:
+      product, sku = getProductAndSKU(sku)
+      page_message = u'Got %%%%total_items%%%% Licenses for %s...\n' % sku
+      try:
+        licenses += callGAPIpages(service=lic.licenseAssignments(), function=u'listForProductAndSku', throw_reasons=[u'invalid', u'forbidden'], page_message=page_message, customerId=domain, productId=product, skuId=sku, fields=u'items(productId,skuId,userId),nextPageToken')
+      except apiclient.errors.HttpError:
+        licenses += []
+  else:
+    for productId in products:
+      page_message = u'Got %%%%total_items%%%% Licenses for %s...\n' % productId
+      try:
+        licenses += callGAPIpages(service=lic.licenseAssignments(), function=u'listForProduct', throw_reasons=[u'invalid', u'forbidden'], page_message=page_message, customerId=domain, productId=productId, fields=u'items(productId,skuId,userId),nextPageToken')
+      except apiclient.errors.HttpError:
+        licenses = +[]
+  for license in licenses:
+    a_license = dict()
+    for title in license.keys():
+      if title in [u'kind', u'etags', u'selfLink']:
+        continue
+      if title not in lic_attributes[0]:
+        lic_attributes[0][title] = title
+      a_license[title] = license[title]
+    lic_attributes.append(a_license)
   if return_list:
     return lic_attributes
   output_csv(lic_attributes, lic_attributes[0], u'Licenses', todrive)
