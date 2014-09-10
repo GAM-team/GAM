@@ -506,6 +506,8 @@ def getAPIScope(api):
     return [u'https://www.googleapis.com/auth/plus.me',
             u'https://www.googleapis.com/auth/plus.circles.read',
             u'https://www.googleapis.com/auth/plus.circles.write']
+  elif api == u'gmail':
+    return [u'https://mail.google.com/']
 
 def buildGAPIObject(api):
   global domain, customerId, prettyPrint
@@ -577,16 +579,22 @@ def buildGAPIServiceObject(api, act_as=None):
   try:
     json_string = open(oauth2servicefilejson).read()
     json_data = json.loads(json_string)
-    SERVICE_ACCOUNT_EMAIL = json_data[u'web'][u'client_email']
-    SERVICE_ACCOUNT_CLIENT_ID = json_data[u'web'][u'client_id']
-    f = file(oauth2servicefilep12, 'rb')
-    key = f.read()
-    f.close()
-  except IOError, e:
-    print u'Error: %s' % e
-    print u''
-    print u'Please follow the instructions at:\n\nhttps://code.google.com/p/google-apps-manager/wiki/GAM3OAuthServiceAccountSetup\n\nto setup a Service Account'
-    sys.exit(6)
+    try:
+      SERVICE_ACCOUNT_EMAIL = json_data[u'web'][u'client_email']
+      SERVICE_ACCOUNT_CLIENT_ID = json_data[u'web'][u'client_id']
+      f = file(oauth2servicefilep12, 'rb')
+      key = f.read()
+      f.close()
+    except IOError, e:
+      print u'Error: %s' % e
+      print u''
+      print u'Please follow the instructions at:\n\nhttps://code.google.com/p/google-apps-manager/wiki/GAM3OAuthServiceAccountSetup\n\nto setup a Service Account'
+      sys.exit(6)
+  except KeyError:
+    # new format with config and data in the .json file...
+    SERVICE_ACCOUNT_EMAIL = json_data[u'client_email']
+    SERVICE_ACCOUNT_CLIENT_ID = json_data[u'client_id']
+    key = json_data[u'private_key']
   scope = getAPIScope(api)
   if act_as == None:
     credentials = oauth2client.client.SignedJwtAssertionCredentials(SERVICE_ACCOUNT_EMAIL, key, scope=scope)
@@ -802,13 +810,13 @@ def showReport():
         try_date = match_date.group(1)
     cust_attributes = [{u'name': u'name', u'value': u'value', u'client_id': u'client_id'}]
     titles = [u'name', u'value', u'client_id']
+    auth_apps = list()
     for item in usage[0][u'parameters']:
       name = item[u'name']
       try:
         value = item[u'intValue']
       except KeyError:
         if name == u'accounts:authorized_apps':
-          auth_apps = list()
           for subitem in item[u'msgValue']:
             app = dict()
             for an_item in subitem:
@@ -1594,6 +1602,12 @@ def showCalSettings(users):
         print u'%s: %s' % (setting[u'id'], setting[u'value'])
 
 def showDriveSettings(users):
+  todrive = False
+  try:
+    if sys.argv[5].lower() == u'todrive':
+      todrive = True
+  except IndexError:
+    pass
   dont_show = [u'kind', u'selfLink', u'exportFormats', u'importFormats', u'maxUploadSizes', u'additionalRoleInfo', u'etag', u'features', u'user', u'isCurrentAppInstalled']
   count = 1
   drive_attr = []
@@ -1602,13 +1616,21 @@ def showDriveSettings(users):
     sys.stderr.write(u'Getting Drive settings for %s (%s of %s)\n' % (user, count, len(users)))
     count += 1
     drive = buildGAPIServiceObject(u'drive', user)
-    feed = callGAPI(service=drive.about(), function=u'get')
+    feed = callGAPI(service=drive.about(), function=u'get', soft_errors=True)
+    if feed == None:
+      continue
     row = {u'email': user}
     for setting in feed:
       if setting in dont_show:
         continue
-      if setting.find(u'quota') != -1:
-        feed[setting] = u'%smb' % (int(feed[setting]) / 1024 / 1024)
+      if setting == u'quotaBytesByService':
+        for subsetting in feed[setting]:
+          my_name = subsetting[u'serviceName']
+          my_bytes = int(subsetting[u'bytesUsed'])
+          row[my_name] = u'%smb' % (my_bytes / 1024 / 1024)
+          if my_name not in titles:
+            titles.append(my_name)
+        continue
       row[setting] = feed[setting]
       if setting not in titles:
         titles.append(setting)
@@ -1617,7 +1639,7 @@ def showDriveSettings(users):
   for title in titles:
     headers[title] = title
   drive_attr.insert(0, headers)
-  output_csv(drive_attr, titles, u'User Drive Settings', False)
+  output_csv(drive_attr, titles, u'User Drive Settings', todrive)
 
 def showDriveFileACL(users):
   fileId = sys.argv[5]
@@ -1925,6 +1947,7 @@ def deleteEmptyDriveFolders(users):
 
 def doUpdateDriveFile(users):
   convert = ocr = ocrLanguage = parent_query = local_filepath = media_body = fileIds = drivefilename = None
+  operation = u'update'
   i = 5
   body = {}
   while i < len(sys.argv):
@@ -1938,6 +1961,9 @@ def doUpdateDriveFile(users):
       body[u'title'] = local_filename
       body[u'mimeType'] = mimetype
       i += 2
+    elif sys.argv[i].lower() == u'copy':
+      operation = u'copy'
+      i += 1
     elif sys.argv[i].lower() == u'id':
       fileIds = [sys.argv[i+1],]
       i += 2
@@ -2063,14 +2089,18 @@ def doUpdateDriveFile(users):
     if local_filepath:
       media_body = apiclient.http.MediaFileUpload(local_filepath, mimetype=mimetype, resumable=True)
     for fileId in fileIds:
-      if media_body:
-        result = callGAPI(service=drive.files(), function=u'update', fileId=fileId, convert=convert, ocr=ocr, ocrLanguage=ocrLanguage, media_body=media_body, body=body, fields='id')
+      if operation == u'update':
+        if media_body:
+          result = callGAPI(service=drive.files(), function=u'update', fileId=fileId, convert=convert, ocr=ocr, ocrLanguage=ocrLanguage, media_body=media_body, body=body, fields='id')
+        else:
+          result = callGAPI(service=drive.files(), function=u'patch', fileId=fileId, convert=convert, ocr=ocr, ocrLanguage=ocrLanguage, body=body, fields='id,labels')
+        try:
+          print u'Successfully updated %s drive file with content from %s' % (result[u'id'], local_filename)
+        except UnboundLocalError:
+          print u'Successfully updated drive file/folder ID %s' % (result[u'id'])
       else:
-        result = callGAPI(service=drive.files(), function=u'patch', fileId=fileId, convert=convert, ocr=ocr, ocrLanguage=ocrLanguage, body=body, fields='id,labels')
-      try:
-        print u'Successfully updated %s drive file with content from %s' % (result[u'id'], local_filename)
-      except UnboundLocalError:
-        print u'Successfully updated drive file/folder ID %s' % (result[u'id'])
+        result = callGAPI(service=drive.files(), function=u'copy', fileId=fileId, convert=convert, ocr=ocr, ocrLanguage=ocrLanguage, body=body, fields=u'id,labels')
+        print u'Successfully copied %s to %s' % (fileId, result[u'id'])
 
 def createDriveFile(users):
   convert = ocr = ocrLanguage = parent_query = local_filepath = media_body = None
@@ -2362,7 +2392,7 @@ def transferDriveFiles(users):
     for source_drive_file in source_drive_files:
       all_source_file_ids.append(source_drive_file[u'id'])
     total_count = len(source_drive_files)
-    print u"Getting folder list for target user: %s..." % user
+    print u"Getting folder list for target user: %s..." % target_user
     page_message = u'  got %%total_items%% folders\n'
     target_folders = callGAPIpages(service=target_drive.files(), function=u'list', page_message=page_message, q=u"'me' in owners and mimeType = 'application/vnd.google-apps.folder'", fields=u'items(id,title),nextPageToken')
     got_top_folder = False
@@ -2397,9 +2427,9 @@ def transferDriveFiles(users):
         else:
           transferred_files.append(drive_file[u'id'])
         counter += 1
-        print u'Changing owner for file %s of %s' % (counter, total_count)
+        print u'Changing owner for file %s (%s/%s)' % (drive_file[u'id'], counter, total_count)
         body = {u'role': u'owner', u'type': u'user', u'value': target_user}
-        callGAPI(service=source_drive.permissions(), function=u'insert', soft_errors=True, fileId=file_id, sendNotificationEmails=False, body=body)
+        callGAPI(service=source_drive.permissions(), function=u'insert',  soft_errors=True, fileId=file_id, sendNotificationEmails=False, body=body)
         target_parents = []
         for parent in source_parents:
           try:
@@ -2735,92 +2765,215 @@ def doSnippets(users):
 
 def doLabel(users):
   label = sys.argv[4]
-  emailsettings = getEmailSettingsObject()
   count = len(users)
   i = 1
-  for user in users:
-    if user.find(u'@') > 0:
-      emailsettings.domain = user[user.find(u'@')+1:]
-      user = user[:user.find(u'@')]
+  n = 5
+  if sys.argv[3].lower() == u'add':
+    n = 6
+    label = sys.argv[5]
+  body = {u'name': label}
+  while n < len(sys.argv):
+    if sys.argv[n].lower().replace(u'_', u'') == u'labellistvisibility':
+      if sys.argv[n+1].lower().replace(u'_', u'') == u'hide':
+        body[u'labelListVisibility'] = u'labelHide'
+      elif sys.argv[n+1].lower().replace(u'_', u'') == u'show':
+        body[u'labelListVisibility'] = u'labelShow'
+      elif sys.argv[n+1].lower().replace(u'_', u'') == u'showifunread':
+        body[u'labelListVisibility'] = u'labelShowIfUnread'
+      else:
+        print u'Error: label_list_visibility must be one of hide, show or show_if_unread, got %s' % sys.argv[n+1]
+        sys.exit(3)
+      n += 2
+    elif sys.argv[n].lower().replace(u'_', u'') == u'messagelistvisibility':
+      if sys.argv[n+1].lower().replace(u'_', u'') == u'hide':
+        body[u'messageListVisibility'] = u'hide'
+      elif sys.argv[n+1].lower().replace(u'_', u'') == u'show':
+        body[u'messageListVisibility'] = u'show'
+      else:
+        print u'Error: message_list_visibility must be one of hide or show, got %s' % sys.argv[n+1]
+        sys.exit(3)
+      n += 2
     else:
-      emailsettings.domain = domain #make sure it's back at default domain
-    print u"Creating label %s for %s (%s of %s)" % (label, user+u'@'+emailsettings.domain, i, count)
+      print u'Error: %s is not a valid argument for this command.' % sys.argv[n]
+      sys.exit(3)
+  for user in users:
+    gmail = buildGAPIServiceObject(u'gmail', act_as=user)
+    print u"Creating label %s for %s (%s of %s)" % (label, user, i, count)
     i += 1
-    callGData(service=emailsettings, function=u'CreateLabel', soft_errors=True, username=user, label=label)
+    callGAPI(service=gmail.users().labels(), function=u'create', soft_errors=True, userId=user, body=body)
 
 def doDeleteLabel(users):
   label = sys.argv[5]
-  emailsettings = getEmailSettingsObject()
   count = len(users)
-  i = 1
   for user in users:
-    if user.find(u'@') > 0:
-      emailsettings.domain = user[user.find(u'@')+1:]
-      user = user[:user.find(u'@')]
-    else:
-      emailsettings.domain = domain
+    gmail = buildGAPIServiceObject(u'gmail', act_as=user)
+    print u'Getting all labels for %s...' % user
+    labels = callGAPI(service=gmail.users().labels(), function=u'list', userId=user, fields=u'labels(name,id,type)')
+    del_labels = []
     if label == u'--ALL_LABELS--':
-      print u'Getting all labels...'
-      labels = callGData(service=emailsettings, function=u'GetLabels', soft_errors=True, username=user)
-      count = len(labels)
-      y = 0
-      for del_label in labels:
-        y += 1
-        print u'Deleting "%s" (%s/%s)' % (del_label[u'label'], y, count)
-        try:
-          callGData(service=emailsettings, function=u'DeleteLabel', soft_errors=True, throw_errors=[1000,], username=user, label=del_label[u'label'])
-        except gdata.apps.service.AppsForYourDomainException:
+      count = len(labels[u'labels'])
+      for del_label in labels[u'labels']:
+        if del_label[u'type'] == u'system':
           continue
+        del_labels.append(del_label)
     elif label[:6].lower() == u'regex:':
       regex = label[6:]
       p = re.compile(regex)
-      print u'Getting all labels...'
-      labels = callGData(service=emailsettings, function=u'GetLabels', soft_errors=True, username=user)
-      count = len(labels)
-      y = 0
-      for del_label in labels:
-        y += 1
-        if p.match(del_label[u'label']):
-          print u'Deleting "%s" (%s/%s)' % (del_label[u'label'], y, count)
-          try:
-            callGData(service=emailsettings, function=u'DeleteLabel', soft_errors=True, throw_errors=[1000,], username=user, label=del_label[u'label'])
-          except gdata.apps.service.AppsForYourDomainException:
-            continue
-        else:
-          print u'Skipping "%s" (%s/%s)' % (del_label[u'label'], y, count)
+      for del_label in labels[u'labels']:
+        if del_label[u'type'] == u'system':
+          continue
+        elif p.match(del_label[u'name']):
+          del_labels.append(del_label)
     else:
-      print u"Deleting label %s for %s (%s of %s)" % (label, user+u'@'+emailsettings.domain, i, count)
-      callGData(service=emailsettings, function=u'DeleteLabel', soft_errors=True, username=user, label=label)
-    i += 1
+      got_label = False
+      for del_label in labels[u'labels']:
+        if label.lower() == del_label[u'name'].lower():
+          del_labels.append(del_label)
+          got_label = True
+          break
+      if not got_label:
+        print u' Error: no such label for %s' % user
+        continue
+    del_me_count = len(del_labels)
+    i = 1
+    dbatch = apiclient.http.BatchHttpRequest()
+    for del_me in del_labels:
+      print u' deleting label %s (%s/%s)' % (del_me[u'name'], i, del_me_count)
+      i += 1
+      dbatch.add(gmail.users().labels().delete(userId=user, id=del_me[u'id']), callback=label_del_result)
+      if len(dbatch._order) == 25:
+        dbatch.execute()
+        dbatch = apiclient.http.BatchHttpRequest()
+    if len(dbatch._order) > 0:
+      dbatch.execute()
+
+def label_del_result(request_id, response, exception):
+  if exception is not None:
+    print exception
 
 def showLabels(users):
-  emailsettings = getEmailSettingsObject()
-  csv_format = False
-  try:
-    if sys.argv[5].lower() == u'csv':
-      print u'user,numLabels'
-      csv_format = True
-  except IndexError:
-    pass
-  for user in users:
-    if user.find(u'@') > 0:
-      emailsettings.domain = user[user.find('@')+1:]
-      user = user[:user.find(u'@')]
+  i = 5
+  show_system = True
+  while i < len(sys.argv):
+    if sys.argv[i].lower().replace(u'_', u'') == u'onlyuser':
+      show_system = False
+      i += 1
     else:
-      emailsettings.domain = domain
-    if not csv_format:
-      print u'%s has the following labels:' %  (user+u'@'+emailsettings.domain)
-    labels = callGData(service=emailsettings, function=u'GetLabels', soft_errors=True, username=user)
-    try:
-      if csv_format:
-        print u'%s,%s' % (user, len(labels))
+      print u'Error: %s is not a valid argument' % sys.argv[i]
+      sys.exit(3)
+  for user in users:
+    gmail = buildGAPIServiceObject(u'gmail', act_as=user)
+    labels = callGAPI(service=gmail.users().labels(), function=u'list', userId=user)
+    for label in labels[u'labels']:
+      if label[u'type'] == u'system' and not show_system:
         continue
+      print label[u'name']
+      for a_key in label.keys():
+        if a_key == u'name':
+          continue
+        print u' %s: %s' % (a_key, label[a_key])
+      print u''
+
+def updateLabels(users):
+  label_name = sys.argv[5]
+  body = {}
+  i = 6
+  while i < len(sys.argv):
+    if sys.argv[i].lower() == u'name':
+      body[u'name'] = sys.argv[i+1]
+      i += 2
+    elif sys.argv[i].lower().replace(u'_', '') == u'messagelistvisibility':
+      body[u'messageListVisibility'] = sys.argv[i+1].lower()
+      if body[u'messageListVisibility'] not in [u'hide', u'show']:
+        print 'Error: message_list_visibility should be show or hide, got %s' % sys.argv[i+1]
+        sys.exit(3)
+      i += 2
+    elif sys.argv[i].lower().replace(u' ', '') == u'labellistvisibility':
+      if sys.argv[i+1].lower().replace(u'_', u'') == u'showifunread':
+        body[u'labelListVisibility'] = u'labelShowIfUnread'
+      elif sys.argv[i+1].lower().replace(u'_', u'') == u'show':
+        body[u'labelListVisibility'] = u'labelShow'
+      elif sys.argv[i+1].lower().replace(u'_', u'') == u'hide':
+        body[u'labelListVisibility'] = u'labelHide'
       else:
-        for label in labels:
-          print u' %s  Unread:%s  Visibility:%s' % (label[u'label'], label[u'unreadCount'], label[u'visibility'])
-        print u''
-    except TypeError:
-      pass
+        print 'Error: label_list_visibility should be hide, show or show_if_unread, got %s' % sys.argv[i+1]
+        sys.exit(3)
+      i += 2
+    else:
+      print 'Error: %s is not a valid argument' % sys.argv[i]
+      sys.exit(3)
+  for user in users:
+    gmail = buildGAPIServiceObject(u'gmail', act_as=user)
+    labels = callGAPI(service=gmail.users().labels(), function=u'list', userId=user, fields=u'labels(id,name)')
+    label_id = None
+    for label in labels[u'labels']:
+      if label[u'name'].lower() == label_name.lower():
+        label_id = label[u'id']
+        break
+    if not label_id:
+      print 'Error: user does not have a label named %s' % label_name
+    callGAPI(service=gmail.users().labels(), function=u'patch', soft_errors=True, userId=user, id=label_id, body=body)
+
+def renameLabels(users):
+  search = u'^Inbox/(.*)$'
+  replace = u'%s'
+  merge = False
+  i = 5
+  while i < len(sys.argv):
+    if sys.argv[i].lower() == u'search':
+      search = sys.argv[i+1]
+    elif sys.argv[i].lower() == u'replace':
+      replace = sys.argv[i+1]
+    elif sys.argv[i].lower() == u'merge':
+      merge = True
+    else:
+      print u'Error: %s is not a valid argument to rename label'
+      sys.exit(3)
+    i += 2
+  pattern = re.compile(search, re.IGNORECASE)
+  for user in users:
+    gmail = buildGAPIServiceObject(u'gmail', act_as=user)
+    labels = callGAPI(service=gmail.users().labels(), function=u'list', userId=user)
+    already_renamed_parents = list()
+    for label in labels[u'labels']:
+      if label[u'type'] == u'system':
+        continue
+      already_renamed_child = False
+      for already_renamed_parent in already_renamed_parents:
+        parent_length = len(already_renamed_parent)
+        if label[u'name'][:parent_length+1] == '%s/' % already_renamed_parent:
+          already_renamed_child = True
+          break
+      if already_renamed_child:
+        continue
+      match_result = re.search(pattern, label[u'name'])
+      if match_result != None:
+        new_label_name = replace % match_result.groups()
+        print u' Renaming "%s" to "%s"' % (label[u'name'], new_label_name)
+        try:
+          callGAPI(service=gmail.users().labels(), function=u'patch', soft_errors=True, throw_reasons=[u'aborted'], id=label[u'id'], userId=user, body={u'name': new_label_name})
+        except apiclient.errors.HttpError:
+          if merge:
+            print u'  Merging %s label to existing %s label' % (label[u'name'], new_label_name)
+            q = u'label:"%s"' % label[u'name']
+            print q
+            messages_to_relabel = callGAPIpages(service=gmail.users().messages(), function=u'list', items=u'messages', userId=user, q=q)
+            for new_label in labels[u'labels']:
+              if new_label[u'name'].lower() == new_label_name.lower():
+                new_label_id = new_label[u'id']
+                body = {u'addLabelIds': [new_label_id]}
+                break
+            i = 1
+            for message_to_relabel in messages_to_relabel:
+              print u'    relabeling message %s (%s/%s)' % (message_to_relabel[u'id'], i, len(messages_to_relabel))
+              callGAPI(service=gmail.users().messages(), function=u'modify', userId=user, id=message_to_relabel[u'id'], body=body)
+              i += 1
+            print u'   Deleting label %s' % label[u'name']
+            callGAPI(service=gmail.users().labels(), function=u'delete', id=label[u'id'], userId=user)
+          else:
+            print u'  Error: looks like %s already exists, not renaming. Use the "merge" argument to merge the labels' % new_label_name
+        continue
+        already_renamed_parents.append(label)
 
 def doFilter(users):
   i = 4 # filter arguments start here
@@ -7184,6 +7337,8 @@ try:
       doLicense(users, u'insert')
     elif addWhat in [u'drivefileacl', u'drivefileacls']:
       addDriveFileACL(users)
+    elif addWhat in [u'label', u'labels']:
+      doLabel(users)
     else:
       print u'Error: invalid argument to "gam <users> add..."'
       sys.exit(2)
@@ -7204,6 +7359,10 @@ try:
       doUpdateDriveFile(users)
     elif sys.argv[4].lower() in [u'drivefileacls', u'drivefileacl']:
       updateDriveFileACL(users)
+    elif sys.argv[4].lower() in [u'label', u'labels']:
+      renameLabels(users)
+    elif sys.argv[4].lower() in [u'labelsettings']:
+      updateLabels(users)
     else:
       print u'Error: invalid argument to "gam <users> update..."'
       sys.exit(2)
