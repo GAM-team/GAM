@@ -2482,12 +2482,18 @@ def getImap(users):
     i += 1
 
 def getProductAndSKU(sku):
-  if sku.lower() == u'apps':
+  if sku.lower() in [u'apps', 'gafb']:
     sku = u'Google-Apps-For-Business'
+  elif sku.lower() in [u'gams',]:
+    sku = u'Google-Apps-For-Postini'
+  elif sku.lower() in [u'gau', u'unlimited']:
+    sku = u'Google-Apps-Unlimited'
   elif sku.lower() == u'coordinate':
     sku = u'Google-Coordinate'
   elif sku.lower() == u'vault':
     sku = u'Google-Vault'
+  elif sku.lower() in [u'vfe',]:
+    sku = u'Google-Vault-Former-Employee'
   elif sku.lower() in [u'drive-20gb', u'drive20gb', u'20gb']:
     sku = u'Google-Drive-storage-20GB'
   elif sku.lower() in [u'drive-50gb', u'drive50gb', u'50gb']:
