@@ -1,9 +1,7 @@
 rmdir /q /s gam
 rmdir /q /s gam-64
-rmdir /q /s python-src-%1
 rmdir /q /s build
 rmdir /q /s dist
-del /q /f gam-%1-python-src.zip
 del /q /f gam-%1-windows.zip
 del /q /f gam-%1-windows-x64.zip
 
