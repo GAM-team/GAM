@@ -6831,6 +6831,9 @@ found at:
 
 with information from the APIs Console <https://code.google.com/apis/console>.
 
+See https://code.google.com/p/google-apps-manager/wiki/CreatingClientSecretsFile
+for instructions.
+
 """ % CLIENT_SECRETS
 
   selected_scopes = [u'*'] * 19
