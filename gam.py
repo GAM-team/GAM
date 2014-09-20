@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Dito GAM 
+# Dito GAM
 #
 # Copyright 2013 Dito, LLC All Rights Reserved.
 #
@@ -47,7 +47,7 @@ import uritemplate
 global true_values, false_values, prettyPrint, customerId, domain
 true_values = [u'on', u'yes', u'enabled', u'true', u'1']
 false_values = [u'off', u'no', u'disabled', u'false', u'0']
-  
+
 def convertUTF8(data):
     import collections
     if isinstance(data, str):
@@ -220,7 +220,7 @@ def checkErrorCode(e, service):
     pass
   if e[0]['body'][:34] in [u'Required field must not be blank: ', u'These characters are not allowed: ']:
     return e[0]['body']
-  if e.error_code == 600 and e[0][u'body'] == u'Quota exceeded for the current request' or e[0][u'reason'] == u'Bad Gateway': 
+  if e.error_code == 600 and e[0][u'body'] == u'Quota exceeded for the current request' or e[0][u'reason'] == u'Bad Gateway':
     return False
   if e.error_code == 600 and e[0][u'reason'] == u'Token invalid - Invalid token: Token disabled, revoked, or expired.':
     return u'403 - Token disabled, revoked, or expired. Please delete and re-create oauth.txt'
@@ -671,7 +671,7 @@ def getAdminSettingsObject():
     tryOAuth(adminsettings)
   adminsettings = commonAppsObjInit(adminsettings)
   return adminsettings
-  
+
 def getAuditObject():
   import gdata.apps.audit.service
   auditObj = gdata.apps.audit.service.AuditService()
@@ -952,7 +952,7 @@ def doDelegates(users):
           if delete_alias:
             doDeleteAlias(alias_email=use_delegate_address)
           sys.exit(5)
-        
+
         # Guess it was just a normal backoff error then?
         if n == retries:
           sys.stderr.write(u' - giving up.')
@@ -1068,7 +1068,7 @@ def changeCalendarAttendees(users):
         try:
           if not allevents and event[u'organizer'][u'email'].lower() != user:
             #print ' skipping not-my-event %s' % event_summary
-            continue          
+            continue
         except KeyError,e:
           pass # no email for organizer
         needs_update = False
@@ -1235,7 +1235,7 @@ def updateCalendar(users):
         body[u'defaultReminders'].append({u'method': method, u'minutes': minutes})
       except KeyError:
         body[u'defaultReminders'] = [{u'method': method, u'minutes': minutes}]
-      i = i + 3    
+      i = i + 3
     else:
       showUsage()
       print u'%s is not a valid argument for "gam update calendar"' % sys.argv[i]
@@ -1449,10 +1449,10 @@ def doCalendarAddEvent():
         body[a_time][u'timeZone'] = timeZone
       except KeyError:
         pass
-  
+
   callGAPI(service=cal.events(), function=u'insert', calendarId=calendarId, sendNotifications=sendNotifications, body=body)
-    
-          
+
+
 def doProfile(users):
   if sys.argv[4].lower() == u'share' or sys.argv[4].lower() == u'shared':
     body = {u'includeInGlobalAddressList': True}
@@ -1746,7 +1746,7 @@ def updateDriveFileACL(users):
     print u'updating permissions for %s to file %s' % (permissionId, fileId)
     result = callGAPI(service=drive.permissions(), function=u'patch', fileId=fileId, permissionId=permissionId, transferOwnership=transferOwnership, body=body)
     print result
-  
+
 def showDriveFiles(users):
   files_attr = [{u'Owner': u'Owner',}]
   titles = [u'Owner',]
@@ -1901,9 +1901,10 @@ def deleteDriveFile(users):
       else:
         print u'purging %s for %s (%s of %s)' % (fileId, user, i, len(file_ids))
       callGAPI(service=drive.files(), function=function, fileId=fileId)
-    
+
 def printDriveFolderContents(feed, folderId, indent):
   for file in feed:
+    print file[u'parents']
     for parent in file[u'parents']:
         if folderId == parent[u'id']:
           print u'%s%s' % (' ' * indent, file[u'title'])
@@ -1945,9 +1946,48 @@ def deleteEmptyDriveFolders(users):
         else:
           print u' not deleting folder %s because it contains at least 1 item (%s)' % (folder[u'title'], children[u'items'][0][u'id'])
 
+def doRecursiveDriveCopy(user, folderId, newdrivefilename, parentid):
+  convert = ocr = ocrLanguage =  None
+  new_folderid = doCreateDriveFolder(user, newdrivefilename, parentid)
+
+  drive = buildGAPIServiceObject(u'drive', user)
+  source_children = callGAPI(service=drive.children(), function=u'list', folderId=folderId, fields=u'items(id)')
+
+  if not u'items' in source_children or len(source_children[u'items']) == 0:
+    print u' Folder %s is empty, doing nothing' % folderId
+  else:
+    for child in source_children[u'items']:
+      file_metadata = callGAPI(service=drive.files(), function=u'get', fileId=child[u'id'])
+      if file_metadata[u'mimeType'] in u'application/vnd.google-apps.folder':
+        doRecursiveDriveCopy(user, child[u'id'], file_metadata[u'title'], new_folderid)
+      else:
+        fileId = file_metadata[u'id']
+        body = {}
+        body[u'title'] = file_metadata[u'title']
+        body[u'parents'] = list()
+        body[u'parents'].append({u'id': new_folderid})
+        callGAPI(service=drive.files(), function=u'copy', fileId=fileId, convert=convert, ocr=ocr, ocrLanguage=ocrLanguage, body=body, fields=u'id')
+
+  print u'Successfully performed recursive copy of folder ID %s into %s ID %s' % (folderId, newdrivefilename, new_folderid)
+
+def doCreateDriveFolder(user, title, parentid):
+  body = {}
+  body[u'title'] = title
+  body[u'mimeType'] = 'application/vnd.google-apps.folder'
+  body[u'parents'] = list()
+  if parentid:
+    body[u'parents'].append({u'id': parentid})
+
+  drive = buildGAPIServiceObject(u'drive', user)
+  result = callGAPI(service=drive.files(), function=u'insert', body=body, fields='id')
+  print u'Successfully created folder %s ID %s' % (title, result[u'id'])
+  return result[u'id']
+
+
 def doUpdateDriveFile(users):
-  convert = ocr = ocrLanguage = parent_query = local_filepath = media_body = fileIds = drivefilename = None
+  convert = ocr = ocrLanguage = parent_query = local_filepath = media_body = fileIds = drivefilename = newdrivefilename = newparentid = None
   operation = u'update'
+  recursive = False
   i = 5
   body = {}
   while i < len(sys.argv):
@@ -2067,6 +2107,15 @@ def doUpdateDriveFile(users):
     elif sys.argv[i].lower() in [u'writerscantshare']:
       body[u'writersCanShare'] = False
       i += 1
+    elif sys.argv[i].lower() in [u'recursive']:
+      i += 1
+      recursive = True
+    elif sys.argv[i].lower() in [u'newdrivefilename']:
+      newdrivefilename = sys.argv[i+1]
+      i += 2
+    elif sys.argv[i].lower() in [u'newparentid']:
+      newparentid = sys.argv[i+1]
+      i += 2
     else:
       print u'Error: %s is not a valid argument for "gam ... create file"' % sys.argv[i]
       sys.exit(3)
@@ -2075,6 +2124,9 @@ def doUpdateDriveFile(users):
     sys.exit(9)
   elif fileIds and drivefilename:
     print u'ERROR: you cannot specify both an id and a query.'
+    sys.exit(9)
+  elif recursive and operation != u'copy':
+    print u'ERROR: you cannot specify recursive without copy'
     sys.exit(9)
   for user in users:
     drive = buildGAPIServiceObject(u'drive', user)
@@ -2099,8 +2151,16 @@ def doUpdateDriveFile(users):
         except UnboundLocalError:
           print u'Successfully updated drive file/folder ID %s' % (result[u'id'])
       else:
-        result = callGAPI(service=drive.files(), function=u'copy', fileId=fileId, convert=convert, ocr=ocr, ocrLanguage=ocrLanguage, body=body, fields=u'id,labels')
-        print u'Successfully copied %s to %s' % (fileId, result[u'id'])
+        metadata = callGAPI(service=drive.files(), function=u'get', fileId=fileId)
+        if recursive and metadata[u'mimeType'] in u'application/vnd.google-apps.folder':
+          newdrivefilename = newdrivefilename or u'Copy of %s' % metadata[u'title']
+          doRecursiveDriveCopy(user, fileId, newdrivefilename, newparentid)
+        elif not recursive and metadata[u'mimeType'] in u'application/vnd.google-apps.folder':
+          print u'ERROR: Source ID %s is of type folder, add recursive flag to copy the folder' % (fileId)
+          sys.exit(9)
+        else:
+          result = callGAPI(service=drive.files(), function=u'copy', fileId=fileId, convert=convert, ocr=ocr, ocrLanguage=ocrLanguage, body=body, fields=u'id,labels')
+          print u'Successfully copied %s to %s' % (fileId, result[u'id'])
 
 def createDriveFile(users):
   convert = ocr = ocrLanguage = parent_query = local_filepath = media_body = None
@@ -4115,7 +4175,7 @@ def doUpdateGroup():
         try:
           if sys.argv[4].lower() == u'add':
             body = {u'role': role}
-            body[u'email'] = user_email 
+            body[u'email'] = user_email
             result = callGAPI(service=cd.members(), function=u'insert', soft_errors=True, groupKey=group, body=body)
           elif sys.argv[4].lower() == u'update':
             result = callGAPI(service=cd.members(), function=u'update', soft_errors=True, groupKey=group, memberKey=user_email, body={u'email': user_email, u'role': role})
@@ -4604,7 +4664,7 @@ def doGetUserInfo(user_email=None):
   if getLicenses:
     print u'Licenses:'
     lic = buildGAPIObject(api='licensing')
-    for sku in [u'Google-Apps', u'Google-Apps-For-Business', u'Google-Apps-Unlimited', u'Google-Apps-For-Postini', 
+    for sku in [u'Google-Apps', u'Google-Apps-For-Business', u'Google-Apps-Unlimited', u'Google-Apps-For-Postini',
                 u'Google-Coordinate', u'Google-Drive-storage-20GB', u'Google-Drive-storage-50GB', u'Google-Drive-storage-200GB',
                 u'Google-Drive-storage-400GB', u'Google-Drive-storage-1TB', u'Google-Drive-storage-2TB',
                 u'Google-Drive-storage-4TB', u'Google-Drive-storage-8TB', u'Google-Drive-storage-16TB', u'Google-Vault',
@@ -4745,7 +4805,7 @@ def doUpdateNotification():
       i += 1
     elif sys.argv[i].lower() == u'id':
       if sys.argv[i+1].lower() == u'all':
-        get_all = True  
+        get_all = True
       else:
         ids.append(sys.argv[i+1])
       i += 2
@@ -4777,7 +4837,7 @@ def doDeleteNotification():
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'id':
       if sys.argv[i+1].lower() == u'all':
-        get_all = True  
+        get_all = True
       else:
         ids.append(sys.argv[i+1])
       i += 2
@@ -4997,7 +5057,7 @@ def doDelASP(users):
   for user in users:
     asps = callGAPI(service=cd.asps(), function=u'delete', userKey=user, codeId=codeId)
     print u'deleted ASP %s for %s' % (codeId, user)
-  
+
 def doGetBackupCodes(users):
   cd = buildGAPIObject(u'directory')
   for user in users:
@@ -5185,7 +5245,7 @@ def doUpdateDomain():
         else:
           print u'Error: value for use_domain_specific_issuer must be true or false, got %s' % sys.argv[i+1]
           sys.exit(9)
-        i += 2 
+        i += 2
       else:
         print u'Error: unknown option for "gam update domain sso_settings...": %s' % sys.argv[i]
         sys.exit(9)
@@ -5225,7 +5285,7 @@ def doUpdateDomain():
           rewrite_to = True
         elif rewrite_to == u'false':
           rewrite_to = False
-        else: 
+        else:
           print u'Error: value for rewrite_to must be true or false, got %s' % sys.argv[i+1]
           sys.exit(9)
         i += 2
@@ -5379,7 +5439,7 @@ def doUndeleteUser():
     if sys.argv[3].lower() in [u'ou', u'org']:
       orgUnit = sys.argv[4]
   except IndexError:
-    pass 
+    pass
   cd = buildGAPIObject(u'directory')
   if user[:4].lower() == u'uid:':
     user_uid = user[4:]
@@ -5998,7 +6058,7 @@ def doPrintGroupMembers():
     i += 1
   titles = member_attributes[0].keys()
   output_csv(member_attributes, titles, u'Group Members', todrive)
-            
+
 def doPrintMobileDevices():
   cd = buildGAPIObject(u'directory')
   mobile_attributes = [{}]
@@ -6186,7 +6246,7 @@ def doPrintTokens():
     except KeyError:
       pass
   output_csv(token_attributes, titles, u'OAuth Tokens', todrive)
-  
+
 def doPrintResources():
   i = 3
   res_attributes = []
@@ -6807,9 +6867,9 @@ def doDeleteOAuth():
 
 class cmd_flags(object):
   def __init__(self):
-    self.short_url = True 
+    self.short_url = True
     self.noauth_local_webserver = False
-    self.logging_level = u'ERROR' 
+    self.logging_level = u'ERROR'
     self.auth_host_name = u'localhost'
     self.auth_host_port = [8080, 9090]
 
@@ -7289,6 +7349,7 @@ try:
     elif readWhat == u'drivesettings':
       showDriveSettings(users)
     elif readWhat == u'drivefileacl':
+      print sys.argv
       showDriveFileACL(users)
     elif readWhat == u'filelist':
       showDriveFiles(users)
