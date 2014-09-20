@@ -7349,7 +7349,6 @@ try:
     elif readWhat == u'drivesettings':
       showDriveSettings(users)
     elif readWhat == u'drivefileacl':
-      print sys.argv
       showDriveFileACL(users)
     elif readWhat == u'filelist':
       showDriveFiles(users)
