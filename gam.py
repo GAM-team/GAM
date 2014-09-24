@@ -2667,7 +2667,7 @@ def showSendAs(users):
     print u''
 
 def doLanguage(users):
-  language = sys.argv[4].lower()
+  language = sys.argv[4]
   emailsettings = getEmailSettingsObject()
   count = len(users)
   i = 1
