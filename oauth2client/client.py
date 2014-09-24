@@ -1269,7 +1269,7 @@ class OAuth2WebServerFlow(Flow):
         'client_secret': self.client_secret,
         'code': code,
         'redirect_uri': self.redirect_uri,
-        'scope': self.scope,
+#        'scope': self.scope,
         })
     headers = {
         'content-type': 'application/x-www-form-urlencoded',

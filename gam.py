@@ -6829,14 +6829,14 @@ found at:
 
    %s
 
-with information from the APIs Console <https://code.google.com/apis/console>.
+with information from the APIs Console <https://cloud.google.com/console>.
 
 See https://code.google.com/p/google-apps-manager/wiki/CreatingClientSecretsFile
 for instructions.
 
 """ % CLIENT_SECRETS
 
-  selected_scopes = [u'*'] * 19
+  selected_scopes = [u'*'] * 20
   menu = u'''Select the authorized scopes for this token. Include a 'r' to grant read-only
 access or an 'a' to grant action-only access.
 
@@ -6859,10 +6859,11 @@ access or an 'a' to grant action-only access.
 [%s] 16)  Notifications Directory API
 [%s] 17)  Site Verification API
 (%s) 18)  IMAP/SMTP Access (send notifications to admin)
+(%s) 19)  User Schemas (supports read-only)
 
-     19)  Select all scopes
-     20)  Unselect all scopes
-     21)  Continue
+     20)  Select all scopes
+     21)  Unselect all scopes
+     22)  Continue
 '''
   os.system([u'clear', u'cls'][os.name == u'nt'])
   while True:
@@ -6870,7 +6871,7 @@ access or an 'a' to grant action-only access.
     try:
       if selection.lower().find(u'r') != -1:
         selection = int(selection.lower().replace(u'r', u''))
-        if selection not in [0, 1, 2, 3, 4, 10]:
+        if selection not in [0, 1, 2, 3, 4, 10, 19]:
           os.system([u'clear', u'cls'][os.name == u'nt'])
           print u'THAT SCOPE DOES NOT SUPPORT READ-ONLY MODE!\n'
           continue
@@ -6882,18 +6883,18 @@ access or an 'a' to grant action-only access.
           print u'THAT SCOPE DOES NOT SUPPORT ACTION-ONLY MODE!\n'
           continue
         selected_scopes[selection] = u'A'
-      elif int(selection) > -1 and int(selection) <= 18:
+      elif int(selection) > -1 and int(selection) <= 19:
         if selected_scopes[int(selection)] == u' ':
           selected_scopes[int(selection)] = u'*'
         else:
           selected_scopes[int(selection)] = u' '
-      elif selection == u'19':
-        for i in range(0, len(selected_scopes)):
-          selected_scopes[i] = u'*'
       elif selection == u'20':
         for i in range(0, len(selected_scopes)):
-           selected_scopes[i] = u' '
+          selected_scopes[i] = u'*'
       elif selection == u'21':
+        for i in range(0, len(selected_scopes)):
+           selected_scopes[i] = u' '
+      elif selection == u'22':
         at_least_one = False
         for i in range(0, len(selected_scopes)):
           if selected_scopes[i] in [u'*', u'R', u'A']:
@@ -6932,7 +6933,8 @@ access or an 'a' to grant action-only access.
                      u'https://www.googleapis.com/auth/admin.directory.user.security',    # User Security Directory API
                      u'https://www.googleapis.com/auth/admin.directory.notifications',    # Notifications Directory API
                      u'https://www.googleapis.com/auth/siteverification',                 # Site Verification API
-                     u'https://mail.google.com/']                                         # IMAP/SMTP authentication for admin notifications
+                     u'https://mail.google.com/',                                         # IMAP/SMTP authentication for admin notifications
+                     u'https://www.googleapis.com/auth/admin.directory.userschema']       # Customer User Schema
   if incremental_auth:
     scopes = []
   else:
