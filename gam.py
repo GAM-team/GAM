@@ -447,17 +447,17 @@ def callGAPIpages(service, function, items=u'items', nextPageToken=u'nextPageTok
       show_message = page_message
       try:
         show_message = show_message.replace(u'%%num_items%%', str(page_items))
-      except KeyError:
+      except (IndexError, KeyError):
         show_message = show_message.replace(u'%%num_items%%', '0')
       try:
         show_message = show_message.replace(u'%%total_items%%', str(total_items))
-      except KeyError:
+      except (IndexError, KeyError):
         show_message = show_message.replace(u'%%total_items%%', '0')
       if message_attribute:
         try:
           show_message = show_message.replace(u'%%first_item%%', str(this_page[items][0][message_attribute]))
           show_message = show_message.replace(u'%%last_item%%', str(this_page[items][-1][message_attribute]))
-        except KeyError:
+        except (IndexError, KeyError):
           show_message = show_message.replace(u'%%first_item%%', '')
           show_message = show_message.replace(u'%%last_item%%', '')
       restart_line()
