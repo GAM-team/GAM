@@ -24,7 +24,7 @@ For more information, see http://code.google.com/p/google-apps-manager
 """
 
 __author__ = u'Jay Lee <jay0lee@gmail.com>'
-__version__ = u'3.32'
+__version__ = u'3.4'
 __license__ = u'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 import sys, os, time, datetime, random, socket, csv, platform, re, calendar, base64, hashlib
