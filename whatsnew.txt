@@ -1,3 +1,36 @@
+GAM 3.4 "Oktoberfest"
+  -Support for creating and setting custom user schemas http://goo.gl/M9rQrI
+  -End user view of print users and user info commands.
+  -fix updating name/description for groups
+  -fix groups sync commands
+  -gam print groups members no longer fails on zero member groups
+  -make sure downloaded Drive file names are safe for OS filenames.
+  -gam info domain should no longer crash on getting customer ID
+  -other minor bug fixes
+
+GAM 3.32
+  -fix service account json files downloaded from new cloud console don't work with GAM
+  -use the new Gmail API for label command. Offers ability to rename labels and show/hide labels from the label and message list.
+  -copy Google drive files with commands like gam user <email> update drivefile id <fileid> copy
+  -print only one SKU for licenses with commands like gam print licenses sku vault
+  -short license names for Google Apps Message Security (gams), Google Apps Unlimtied (gau) and Google Vault Former Employee (vfe)
+
+GAM 3.31
+  -New command "gam user delete aliases" clears all aliases for user.
+  -"gam update user email vfe" will rename user to vfe.oldname.XXXXX@olddomain.com
+  -fix delete photo command
+  -fix password update/create for Windows builds
+
+GAM 3.3
+  -Major rewrites of "gam report" and "gam print users". Note that CSV headers have changed. Better performance and print users now supports "rich" fields like organization, phone, relations, etc.
+  -"gam report drive" now works for Google Apps Unlimited domains.
+  -"gam info user" now shows the user's licenses. Use "nolicenses" to prevent showing licenses.
+  -fix "gam print licenses" fails in large domains by reducing page size from 1000 to 100
+  -GAM now sends a sha-512 salted hashed password on user create and update for better security.
+  -cleanup unused features of old GData library.
+  -fix for Drive file downloading default format.
+  -upgrade to httplib v0.9 which may help with httplib.BadStatus errors.
+
 GAM 3.21
   -Fix crash when attempting to perform Drive operations for users with Drive service disabled.
   -Fix "gam info org" only prints first 100 users in org.
