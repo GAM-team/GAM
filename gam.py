@@ -3270,6 +3270,88 @@ def getVacation(users):
     except TypeError:
       pass
 
+
+def doDelSchema():
+  cd = buildGAPIObject(u'directory')
+  schemaKey = sys.argv[3]
+  callGAPI(service=cd.customer().schemas(), function=u'delete', customerId=customerId, schemaKey=schemaKey)
+  print u'Deleted schema %s' % schemaKey
+
+def doCreateOrUpdateUserSchema():
+  cd = buildGAPIObject(u'directory')
+  schemaName = sys.argv[3]
+  body = {u'schemaName': schemaName, u'fields': []}
+  i = 4
+  while i < len(sys.argv):
+    if sys.argv[i] in [u'field']:
+      a_field = {u'fieldName': sys.argv[i+1]}
+      i += 2
+      while True:
+        if sys.argv[i].lower() in [u'type']:
+          a_field[u'fieldType'] = sys.argv[i+1].upper()
+          if a_field[u'fieldType'] not in [u'BOOL', u'DOUBLE', u'EMAIL', u'INT64', u'PHONE', u'STRING']:
+            print 'Error: type must be bool, double, email, int64, phone or string. Got %s' % a_field[u'fieldType']
+            sys.exit(3)
+          i += 2
+        elif sys.argv[i].lower() in [u'multivalued']:
+          a_field[u'multiValued'] = True
+          i += 1
+        elif sys.argv[i].lower() in [u'indexed']:
+          a_field[u'indexed'] = True
+          i += 1
+        elif sys.argv[i].lower() in [u'restricted']:
+          a_field[u'readAccessType'] = u'ADMINS_AND_SELF'
+          i += 1
+        elif sys.argv[i].lower() in [u'range']:
+          a_field[u'numericIndexingSpec'] = {u'minValue': sys.argv[i+1], u'maxValue': sys.argv[i+2]}
+          i += 3
+        elif sys.argv[i].lower() in [u'endfield']:
+          body[u'fields'].append(a_field)
+          i += 1
+          break
+        else:
+          print 'Error: %s is not a valid argument to gam create schema' % sys.argv[i]
+          sys.exit(4)
+  if sys.argv[1].lower() == u'create':
+    result = callGAPI(service=cd.customer().schemas(), function=u'insert', customerId=customerId, body=body)
+    print 'Created user schema %s' % result[u'schemaName']
+  elif sys.argv[1].lower() == u'update':
+    result = callGAPI(service=cd.customer().schemas(), function=u'update', customerId=customerId, body=body, schemaKey=schemaName)
+    print 'Updated user schema %s' % result[u'schemaName']
+
+def doPrintUserSchemas():
+  cd = buildGAPIObject(u'directory')
+  schemas = callGAPI(service=cd.customer().schemas(), function=u'list', customerId=customerId)
+  for schema in schemas[u'schemas']:
+    print u'Schema: %s' % schema[u'schemaName']
+    for a_key in schema.keys():
+      if a_key not in [u'schemaName', u'fields', u'etag', u'kind']:
+        print '%s: %s' % (a_key, schema[a_key])
+    print
+    for field in schema[u'fields']:
+      print u' Field: %s' % field[u'fieldName']
+      for a_key in field.keys():
+        if a_key not in [u'fieldName', u'kind', u'etag']:
+          print '  %s: %s' % (a_key, field[a_key])
+      print
+    print
+
+def doGetUserSchema():
+  cd = buildGAPIObject(u'directory')
+  schemaKey = sys.argv[3]
+  schema = callGAPI(service=cd.customer().schemas(), function=u'get', customerId=customerId, schemaKey=schemaKey)
+  print u'Schema: %s' % schema[u'schemaName']
+  for a_key in schema.keys():
+    if a_key not in [u'schemaName', u'fields', u'etag', u'kind']:
+      print '%s: %s' % (a_key, schema[a_key])
+  print
+  for field in schema[u'fields']:
+    print u' Field: %s' % field[u'fieldName']
+    for a_key in field.keys():
+      if a_key not in [u'fieldName', u'kind', u'etag']:
+        print '  %s: %s' % (a_key, field[a_key])
+    print
+
 def doCreateUser():
   cd = buildGAPIObject(u'directory')
   body = dict()
@@ -3567,9 +3649,33 @@ def doCreateUser():
       except KeyError:
         body[u'externalIds'] = [externalid,]
       i += 1
+#    else:
+#      showUsage()
+#      sys.exit(2)
     else:
-      showUsage()
-      sys.exit(2)
+      if u'customSchemas' not in body:
+        body[u'customSchemas'] = {}
+      try:
+        (schemaName, fieldName) = sys.argv[i].split(u'.')
+      except ValueError:
+        print 'Error: %s is not a valid create user argument or custom schema name.' % sys.argv[i]
+        sys.exit(3)
+      field_value = sys.argv[i+1]
+      is_multivalue = False
+      if field_value.lower() in [u'multivalue', u'multivalued', u'value']:
+        is_multivalue = True
+        field_value = sys.argv[i+2]
+      if schemaName not in body[u'customSchemas']:
+        body[u'customSchemas'][schemaName] = {}
+      if is_multivalue:
+        if fieldName not in body[u'customSchemas'][schemaName]:
+          body[u'customSchemas'][schemaName][fieldName] = []
+        body[u'customSchemas'][schemaName][fieldName].append({u'value': field_value})
+      else:
+        body[u'customSchemas'][schemaName][fieldName] = field_value
+      i += 2
+      if is_multivalue:
+        i += 1
   if not gotFirstName:
     body[u'name'][u'givenName'] = u'Unknown'
   if not gotLastName:
@@ -4039,11 +4145,36 @@ def doUpdateUser(users):
       except KeyError:
         body[u'externalIds'] = [externalid,]
       i += 1
+#    else:
+#      showUsage()
+#      print u''
+#      print u'Error: didn\'t expect %s command at position %s' % (sys.argv[i], i)
+#      sys.exit(2)
     else:
-      showUsage()
-      print u''
-      print u'Error: didn\'t expect %s command at position %s' % (sys.argv[i], i)
-      sys.exit(2)
+      do_update_user = True
+      if u'customSchemas' not in body:
+        body[u'customSchemas'] = {}
+      try:
+        (schemaName, fieldName) = sys.argv[i].split(u'.')
+      except ValueError:
+        print u'Error: %s is not a valid user update argument or custom schema name' % sys.argv[i]
+        sys.exit(3)
+      field_value = sys.argv[i+1]
+      is_multivalue = False
+      if field_value.lower() == u'multivalue':
+        is_multivalue = True
+        field_value = sys.argv[i+2]
+      if schemaName not in body[u'customSchemas']:
+        body[u'customSchemas'][schemaName] = {}
+      if is_multivalue:
+        if fieldName not in body[u'customSchemas'][schemaName]:
+          body[u'customSchemas'][schemaName][fieldName] = []
+        body[u'customSchemas'][schemaName][fieldName].append({u'value': field_value})
+      else:
+        body[u'customSchemas'][schemaName][fieldName] = field_value
+      i += 2
+      if is_multivalue:
+        i += 1
   if gotPassword and not (isSHA1 or isMD5 or isCrypt or nohash):
     body[u'password'] = gen_sha512_hash(body[u'password'])
     body[u'hashFunction'] = u'crypt'
@@ -4472,7 +4603,9 @@ def doGetUserInfo(user_email=None):
     user_email = user_email[4:]
   elif user_email.find(u'@') == -1:
     user_email = u'%s@%s' % (user_email, domain)
-  getAliases = getGroups = getLicenses = True
+  getSchemas = getAliases = getGroups = getLicenses = True
+  projection = u'full'
+  customFieldMask = viewType = None
   i = 4
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'noaliases':
@@ -4484,10 +4617,23 @@ def doGetUserInfo(user_email=None):
     elif sys.argv[i].lower() == u'nolicenses':
       getLicenses = False
       i += 1
+    elif sys.argv[i].lower() == u'noschemas':
+      getSchemas = False
+      projection = u'basic'
+      i += 1
+    elif sys.argv[i].lower() == u'schemas':
+      getSchemas = True
+      projection = u'custom'
+      customFieldMask = sys.argv[i+1]
+      i += 2
+    elif sys.argv[i].lower() == u'userview':
+      viewType = u'domain_public'
+      getGroups = getLicenses = False
+      i += 1
     else:
       print u'%s is not a valid argument for gam info user' % sys.argv[i]
       sys.exit(3)
-  user = callGAPI(service=cd.users(), function=u'get', userKey=user_email)
+  user = callGAPI(service=cd.users(), function=u'get', userKey=user_email, projection=projection, customFieldMask=customFieldMask, viewType=viewType)
   print u'User: %s' % user[u'primaryEmail']
   if u'name' in user and u'givenName' in user[u'name']:
     print u'First Name: %s' % user[u'name'][u'givenName']
@@ -4586,6 +4732,19 @@ def doGetUserInfo(user_email=None):
         else:
           print u' %s: %s' % (key, id[key])
       print u''
+  if getSchemas:
+    print u'Custom Schemas:'
+    if u'customSchemas' in user:
+      for schema in user[u'customSchemas']:
+        print u' Schema: %s' % schema
+        for field in user[u'customSchemas'][schema]:
+          if type(user[u'customSchemas'][schema][field]) is list:
+            print '  %s:' % field
+            for an_item in user[u'customSchemas'][schema][field]:
+              print '   %s' % an_item[u'value']
+          else:
+            print u'  %s: %s' % (field, user[u'customSchemas'][schema][field])
+        print
   if getAliases:
     if u'aliases' in user:
       print u'Email Aliases:'
@@ -5523,14 +5682,24 @@ def doPrintUsers():
   customer = customerId
   domain = None
   query = None
-  getGroupFeed = getLicenseFeed = False
+  projection = u'basic'
+  customFieldMask = None
+  getGroupFeed = getLicenseFeed = email_parts = False
   todrive = False
-  deleted_only = orderBy = sortOrder = None
+  viewType = deleted_only = orderBy = sortOrder = None
   i = 3
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'allfields':
       fields = None
       i += 1
+    elif sys.argv[i].lower() == u'custom':
+      user_fields.append(u'customSchemas')
+      if sys.argv[i+1].lower() == u'all':
+        projection = u'full'
+      else:
+        projection = u'custom'
+        customFieldMask = sys.argv[i+1]
+      i += 2
     elif sys.argv[i].lower() == u'todrive':
       todrive = True
       i += 1
@@ -5547,6 +5716,9 @@ def doPrintUsers():
       elif orderBy.lower() in [u'givenname', u'firstname']:
         orderBy= u'givenName'
       i += 2
+    elif sys.argv[i].lower() == u'userview':
+      viewType = u'domain_public'
+      i += 1
     elif sys.argv[i].lower() in [u'ascending', u'descending']:
       sortOrder = sys.argv[i].upper()
       i += 1
@@ -5631,7 +5803,7 @@ def doPrintUsers():
     fields = u'nextPageToken,users(%s)' % u','.join(user_fields)
   sys.stderr.write(u"Getting all users in Google Apps account (may take some time on a large account)...\n")
   page_message = u'Got %%total_items%% users: %%first_item%% - %%last_item%%\n'
-  all_users = callGAPIpages(service=cd.users(), function=u'list', items=u'users', page_message=page_message, message_attribute=u'primaryEmail', customer=customer, domain=domain, fields=fields, showDeleted=deleted_only, maxResults=500, orderBy=orderBy, sortOrder=sortOrder, query=query)
+  all_users = callGAPIpages(service=cd.users(), function=u'list', items=u'users', page_message=page_message, message_attribute=u'primaryEmail', customer=customer, domain=domain, fields=fields, showDeleted=deleted_only, maxResults=500, orderBy=orderBy, sortOrder=sortOrder, viewType=viewType, query=query, projection=projection, customFieldMask=customFieldMask)
   titles = []
   attributes = []
   for user in all_users:
@@ -7078,6 +7250,8 @@ try:
       doCreateResource()
     elif sys.argv[2].lower() in [u'verify', u'verification']:
       doSiteVerifyShow()
+    elif sys.argv[2].lower() in [u'schema']:
+      doCreateOrUpdateUserSchema()
     else:
       print u'Error: invalid argument to "gam create..."'
       sys.exit(2)
@@ -7103,6 +7277,8 @@ try:
       doUpdateNotification()
     elif sys.argv[2].lower() in [u'verify', u'verification']:
       doSiteVerifyAttempt()
+    elif sys.argv[2].lower() in [u'schema', u'schemas']:
+      doCreateOrUpdateUserSchema()
     else:
       showUsage()
       print u'Error: invalid argument to "gam update..."'
@@ -7129,6 +7305,8 @@ try:
       doGetNotifications()
     elif sys.argv[2].lower() in [u'verify', u'verification']:
       doGetSiteVerifications()
+    elif sys.argv[2].lower() in [u'schema', u'schemas']:
+      doGetUserSchema()
     else:
       print u'Error: invalid argument to "gam info..."'
       sys.exit(2)
@@ -7150,6 +7328,8 @@ try:
       doDeleteNotification()
     elif sys.argv[2].lower() in [u'verify', u'verification']:
       doDelSiteVerify()
+    elif sys.argv[2].lower() in [u'schema', u'schemas']:
+      doDelSchema()
     else:
       print u'Error: invalid argument to "gam delete"'
       sys.exit(2)
@@ -7227,6 +7407,8 @@ try:
       doPrintLicenses()
     elif sys.argv[2].lower() in [u'token', u'tokens']:
       doPrintTokens()
+    elif sys.argv[2].lower() in [u'schema', u'schemas']:
+      doPrintUserSchemas()
     else:
       print u'Error: invalid argument to "gam print..."'
       sys.exit(2)
