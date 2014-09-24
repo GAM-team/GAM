@@ -7254,7 +7254,7 @@ try:
       doCreateGroup()
     elif sys.argv[2].lower() in [u'nickname', u'alias']:
       doCreateAlias()
-    elif sys.argv[2].lower() == u'org':
+    elif sys.argv[2].lower() in [u'org', 'ou']:
       doCreateOrg()
     elif sys.argv[2].lower() == u'resource':
       doCreateResource()
