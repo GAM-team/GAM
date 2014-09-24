@@ -3273,11 +3273,27 @@ def getVacation(users):
     except TypeError:
       pass
 
+def doCreateDomain():
+  cd = buildGAPIObject(u'directory')
+  domain_name = sys.argv[3]
+  domain_type = sys.argv[4].upper()
+  if domain_type.replace(u'_', '') in [u'ALIAS', u'MIRROR', u'DOMAINALIAS', u'ALIAS_DOMAIN']:
+    domain_type = u'DOMAIN_ALIAS'
+  elif domain_type.replace(u'_', '') in [u'SECONDARY', u'SEPARATE', u'MULTIDOMAIN', u'MULTI']:
+    domain_type = u'MULTI_DOMAIN'
+  elif domain_type.replace(u'_', '') in [u'PRIMARY', u'PRIMARYDOMAIN', u'HOME']:
+    domain_type = u'PRIMARY'
+  elif domain_type != u'UNKNOWN':
+    print u'Error: domain type should be alias, secondary, primary or unknown. Got %s' % domain_type
+    sys.exit(4)
+  body = {u'domain_name': domain_name, u'domain_type': domain_type}
+  callGAPI(service=cd.domains(), function=u'insert', customerId=customerId, body=body)
+  print u'Added domain %s' % domain_name
 
 def doDelSchema():
   cd = buildGAPIObject(u'directory')
   schemaKey = sys.argv[3]
-  callGAPI(service=cd.customer().schemas(), function=u'delete', customerId=customerId, schemaKey=schemaKey)
+  callGAPI(service=cd.schemas(), function=u'delete', customerId=customerId, schemaKey=schemaKey)
   print u'Deleted schema %s' % schemaKey
 
 def doCreateOrUpdateUserSchema():
@@ -3316,15 +3332,15 @@ def doCreateOrUpdateUserSchema():
           print 'Error: %s is not a valid argument to gam create schema' % sys.argv[i]
           sys.exit(4)
   if sys.argv[1].lower() == u'create':
-    result = callGAPI(service=cd.customer().schemas(), function=u'insert', customerId=customerId, body=body)
+    result = callGAPI(service=cd.schemas(), function=u'insert', customerId=customerId, body=body)
     print 'Created user schema %s' % result[u'schemaName']
   elif sys.argv[1].lower() == u'update':
-    result = callGAPI(service=cd.customer().schemas(), function=u'update', customerId=customerId, body=body, schemaKey=schemaName)
+    result = callGAPI(service=cd.schemas(), function=u'update', customerId=customerId, body=body, schemaKey=schemaName)
     print 'Updated user schema %s' % result[u'schemaName']
 
 def doPrintUserSchemas():
   cd = buildGAPIObject(u'directory')
-  schemas = callGAPI(service=cd.customer().schemas(), function=u'list', customerId=customerId)
+  schemas = callGAPI(service=cd.schemas(), function=u'list', customerId=customerId)
   for schema in schemas[u'schemas']:
     print u'Schema: %s' % schema[u'schemaName']
     for a_key in schema.keys():
@@ -3342,7 +3358,7 @@ def doPrintUserSchemas():
 def doGetUserSchema():
   cd = buildGAPIObject(u'directory')
   schemaKey = sys.argv[3]
-  schema = callGAPI(service=cd.customer().schemas(), function=u'get', customerId=customerId, schemaKey=schemaKey)
+  schema = callGAPI(service=cd.schemas(), function=u'get', customerId=customerId, schemaKey=schemaKey)
   print u'Schema: %s' % schema[u'schemaName']
   for a_key in schema.keys():
     if a_key not in [u'schemaName', u'fields', u'etag', u'kind']:
