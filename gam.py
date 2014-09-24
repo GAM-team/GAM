@@ -467,7 +467,7 @@ def callGAPIpages(service, function, items=u'items', nextPageToken=u'nextPageTok
       pageToken = this_page[nextPageToken]
       if pageToken == '':
         return all_pages
-    except KeyError:
+    except (IndexError, KeyError):
       return all_pages
 
 def getAPIVer(api):
@@ -2214,6 +2214,7 @@ def downloadDriveFile(users):
   query = fileIds = None
   gdownload_format = u'openoffice'
   target_folder = getGamPath()
+  safe_filename_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'id':
       fileIds = [sys.argv[i+1],]
@@ -2263,7 +2264,7 @@ def downloadDriveFile(users):
         if fileIds[0].find('/') != -1:
           fileIds[0] = fileIds[0][:fileIds[0].find('/')]
     if not fileIds:
-      print u'No files to delete for %s' % user
+      print u'No files to download for %s' % user
     i = 0
     for fileId in fileIds:
       extension = None
@@ -2295,7 +2296,9 @@ def downloadDriveFile(users):
             except KeyError:
               pass
             break
-      filename = u'%s/%s' % (target_folder, result[u'title'])
+      file_title = result[u'title']
+      safe_file_title = ''.join(c for c in file_title if c in safe_filename_chars)
+      filename = u'%s/%s' % (target_folder, safe_file_title)
       if extension and filename.lower()[:len(extension)] != extension:
         filename = u'%s%s' % (filename, extension)
       y = 0
