@@ -695,7 +695,10 @@ def geturl(url, dst):
   u = urllib2.urlopen(url)
   f = open(dst, 'wb')
   meta = u.info()
-  file_size = int(meta.getheaders(u'Content-Length')[0])
+  try:
+    file_size = int(meta.getheaders(u'Content-Length')[0])
+  except IndexError:
+    file_size = -1
   file_size_dl = 0
   block_sz = 8192
   while True:
@@ -704,8 +707,11 @@ def geturl(url, dst):
         break
     file_size_dl += len(buffer)
     f.write(buffer)
-    status = r"%10d  [%3.2f%%]" % (file_size_dl, file_size_dl * 100. / file_size)
-    status = status + chr(8)*(len(status)+1)
+    if file_size != -1:
+      status = r"%10d  [%3.2f%%]" % (file_size_dl, file_size_dl * 100. / file_size)
+    else:
+      status = r"%10d [unknown size]" % (file_size_dl)
+    status = status + chr(8)*(len(status)+1) 
     print status,
   f.close()
 
