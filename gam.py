@@ -2540,9 +2540,9 @@ def doLicense(users, operation):
     if user.find(u'@') == -1:
       user = u'%s@%s' % (user, domain)
     if operation == u'delete':
-      callGAPI(service=lic.licenseAssignments(), function=operation, productId=productId, skuId=skuId, userId=user)
+      callGAPI(service=lic.licenseAssignments(), function=operation, soft_errors=True, productId=productId, skuId=skuId, userId=user)
     elif operation == u'insert':
-      callGAPI(service=lic.licenseAssignments(), function=operation, productId=productId, skuId=skuId, body={u'userId': user})
+      callGAPI(service=lic.licenseAssignments(), function=operation, soft_errors=True, productId=productId, skuId=skuId, body={u'userId': user})
     elif operation == u'patch':
       try:
         old_sku = sys.argv[6]
@@ -2552,7 +2552,7 @@ def doLicense(users, operation):
         print u'You need to specify the user\'s old SKU as the last argument'
         sys.exit(5)
       old_product, old_sku = getProductAndSKU(old_sku)
-      callGAPI(service=lic.licenseAssignments(), function=operation, productId=productId, skuId=old_sku, userId=user, body={u'skuId': skuId})
+      callGAPI(service=lic.licenseAssignments(), function=operation, soft_errors=True, productId=productId, skuId=old_sku, userId=user, body={u'skuId': skuId})
 
 def doPop(users):
   if sys.argv[4].lower() in true_values:
