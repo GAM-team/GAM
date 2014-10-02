@@ -5476,7 +5476,7 @@ def doGetDomainInfo():
   if customerId != u'my_customer':
     customer_id = customerId
   else:
-    result = callGAPI(service=cd.users(), function=u'list', fields=u'users(customerId)', customer=customerId, maxResults=1, sortOrder=u'DESCENDING')
+    result = callGAPI(service=cd.users(), function=u'list', fields=u'users(customerId)', customer=customerId, sortOrder=u'DESCENDING')
     customer_id = result[u'users'][0][u'customerId']
   print u'Customer ID: %s' % customer_id
   default_language = callGAPI(service=adm.defaultLanguage(), function=u'get', domainName=domain)
