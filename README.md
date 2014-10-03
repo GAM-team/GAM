@@ -1,7 +1,6 @@
-GAM, the Google Apps Manager
+Dito GAM
 ============================
-
-Dito GAM is a free, open source command line tool for
+GAM is a free, open source command line tool for
 Google Apps Administrators to efficiently manage
 domain and user settings quickly and easily. GAM has support
 for many features, such as
@@ -18,46 +17,33 @@ for many features, such as
 * generating detailed reports for users, groups, resources,
   account activity, email clients, and quotas.
 
-
-Resources
-========
-
-There are a number of GAM resources available via several different
-websites.
-
-Source Repository
------------------
-
-The official GAM source repository is on [Github][github].
-
-
 Downloads
 ---------
-
 You can download current GAM from 
 the [Github Releases][github releases] page.
 
-
-Wiki Documentation
-----
-
+Documentation
+------------------
 The GAM documentation is currently hosted in the [GitHub Wiki][github wiki]
 
 Mailing List / Discussion group
 -------------------------------
-
 The GAM mailing list / discussion group is hosted
-on [Google Groups].  You can join the list and interact
+on [google groups].  You can join the list and interact
 via email, or just post from the web itself.
 
+Source Repository
+-----------------
+
+The official GAM source repository is on [GitHub][github].
 
 Author
-======
+------
 
 GAM is maintained by <a href="mailto:jay0lee@gmail.com">Jay Lee</a>.
 
-THANKS TO
-=========
+Thanks To
+---------
 
 GAM is made possible and maintained by the work of Dito.
 Who is Dito?
@@ -74,9 +60,7 @@ Need a Google Apps Expert?
 [free premium GAM support](http://www.ditoweb.com/dito-gam)
 for domains that sign up through Dito.
 
-
 [github releases]: https://github.com/jay0lee/GAM/releases
 [github]: https://github.com/jay0lee/GAM/
 [github wiki]: https://github.com/jay0lee/GAM/wiki/
-[gam wiki]: https://code.google.com/p/google-apps-manager/wiki/GAM3GettingStarted
 [google groups]: http://groups.google.com/group/google-apps-manager
