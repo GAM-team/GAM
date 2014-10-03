@@ -20,7 +20,7 @@ for many features, such as
 Downloads
 ---------
 You can download current GAM from 
-the [Github Releases][github releases] page.
+the [GitHub Releases][github releases] page.
 
 Documentation
 ------------------
