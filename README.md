@@ -20,22 +20,22 @@ for many features, such as
 Downloads
 ---------
 You can download current GAM from 
-the [GitHub Releases][github releases] page.
+the [GitHub Releases] page.
 
 Documentation
 ------------------
-The GAM documentation is currently hosted in the [GitHub Wiki][github wiki]
+The GAM documentation is currently hosted in the [GitHub Wiki]
 
 Mailing List / Discussion group
 -------------------------------
 The GAM mailing list / discussion group is hosted
-on [google groups].  You can join the list and interact
+on [Google Groups].  You can join the list and interact
 via email, or just post from the web itself.
 
 Source Repository
 -----------------
 
-The official GAM source repository is on [GitHub][github].
+The official GAM source repository is on [GitHub].
 
 Author
 ------
@@ -60,7 +60,7 @@ Need a Google Apps Expert?
 [free premium GAM support](http://www.ditoweb.com/dito-gam)
 for domains that sign up through Dito.
 
-[github releases]: https://github.com/jay0lee/GAM/releases
-[github]: https://github.com/jay0lee/GAM/
-[github wiki]: https://github.com/jay0lee/GAM/wiki/
-[google groups]: http://groups.google.com/group/google-apps-manager
+[GitHub Releases]: https://github.com/jay0lee/GAM/releases
+[GitHub]: https://github.com/jay0lee/GAM/
+[GitHub Wiki]: https://github.com/jay0lee/GAM/wiki/
+[Google Groups]: http://groups.google.com/group/google-apps-manager
