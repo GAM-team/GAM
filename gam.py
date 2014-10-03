@@ -5873,18 +5873,29 @@ def doPrintUsers():
     elif sys.argv[i].lower() in [u'license', u'licenses']:
       getLicenseFeed = True
       i += 1
+    elif sys.argv[i].lower() in [u'emailpart', u'emailparts', u'username']:
+      email_parts = True
+      i += 1
     else:
       showUsage()
-      exit(5)
+      sys.exit(5)
   if fields != None:
     user_fields = set(user_fields)
     fields = u'nextPageToken,users(%s)' % u','.join(user_fields)
   sys.stderr.write(u"Getting all users in Google Apps account (may take some time on a large account)...\n")
   page_message = u'Got %%total_items%% users: %%first_item%% - %%last_item%%\n'
   all_users = callGAPIpages(service=cd.users(), function=u'list', items=u'users', page_message=page_message, message_attribute=u'primaryEmail', customer=customer, domain=domain, fields=fields, showDeleted=deleted_only, maxResults=500, orderBy=orderBy, sortOrder=sortOrder, viewType=viewType, query=query, projection=projection, customFieldMask=customFieldMask)
-  titles = []
+  titles = [u'primaryEmail',]
   attributes = []
   for user in all_users:
+    if email_parts:
+      try:
+        user_email = user[u'primaryEmail']
+        if user_email.find(u'@') != -1:
+          user[u'primaryEmailLocal'] = user_email[:user_email.find(u'@')]
+          user[u'primaryEmailDomain'] = user_email[user_email.find(u'@')+1:]
+      except KeyError:
+        pass
     attributes.append(flatten_json(user))
     for item in attributes[-1].keys():
       if item not in titles:
