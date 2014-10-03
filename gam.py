@@ -1478,7 +1478,7 @@ def doProfile(users):
     elif user.find(u'@') == -1:
       user = u'%s@%s' % (user, domain)
     print u'Setting Profile Sharing to %s for %s (%s of %s)' % (body[u'includeInGlobalAddressList'], user, i, count)
-    callGAPI(service=cd.users(), function=u'patch', userKey=user, body=body)
+    callGAPI(service=cd.users(), function=u'patch', soft_errors=True, userKey=user, body=body)
     i += 1
 
 def showProfile(users):
