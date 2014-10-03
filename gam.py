@@ -4265,11 +4265,13 @@ def doRemoveUsersAliases(users):
     user_aliases = callGAPI(service=cd.users(), function=u'get', userKey=user, fields=u'aliases,id,primaryEmail')
     user_id = user_aliases[u'id']
     user_primary = user_aliases[u'primaryEmail']
-    print u'%s has %s aliases' % (user_primary, len(user_aliases[u'aliases']))
     if u'aliases' in user_aliases:
+      print u'%s has %s aliases' % (user_primary, len(user_aliases[u'aliases']))
       for an_alias in user_aliases[u'aliases']:
         print u' removing alias %s for %s...' % (an_alias, user_aliases[u'primaryEmail'])
         callGAPI(service=cd.users().aliases(), function=u'delete', userKey=user_aliases[u'id'], alias=an_alias)
+    else:
+      print u'%s has no aliases' % user_primary
 
 def doRemoveUsersGroups(users):
   cd = buildGAPIObject(u'directory')
@@ -5267,7 +5269,11 @@ def doGenBackupCodes(users):
 def doDelBackupCodes(users):
   cd = buildGAPIObject(u'directory')
   for user in users:
-    codes = callGAPI(service=cd.verificationCodes(), function=u'invalidate', soft_errors=True, userKey=user)
+    try:
+      codes = callGAPI(service=cd.verificationCodes(), function=u'invalidate', soft_errors=True, throw_reasons=[u'invalid',], userKey=user)
+    except apiclient.errors.HttpError:
+      print u'No 2SV backup codes for %s' % user
+      continue
     print u'2SV backup codes for %s invalidated' % user
 
 def commonClientIds(clientId):
@@ -5340,7 +5346,10 @@ def doDeprovUser(users):
     except KeyError:
       print u'No ASPs'
     print u'Invalidating 2SV Backup Codes for %s' % user
-    codes = callGAPI(service=cd.verificationCodes(), function=u'invalidate', soft_errors=True, userKey=user)
+    try:
+      codes = callGAPI(service=cd.verificationCodes(), function=u'invalidate', soft_errors=True, throw_reasons=[u'invalid'], userKey=user)
+    except apiclient.errors.HttpError:
+      print u'No 2SV Backup Codes'
     print u'Getting tokens for %s...' % user
     tokens = callGAPI(service=cd.tokens(), function=u'list', userKey=user, fields=u'items/clientId')
     i = 1
