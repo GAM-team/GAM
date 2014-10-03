@@ -34,16 +34,14 @@ The official GAM source repository is on [Github][github].
 Downloads
 ---------
 
-You can download current and pre-released versions of GAM from 
-the [Github Releases][github releases] page.  Final releases
-are also available on [Google Drive][google drive]
+You can download current GAM from 
+the [Github Releases][github releases] page.
 
 
 Wiki Documentation
 ----
 
-The GAM documentation is currently hosted on Google Code
-and can be found at the [Gam Getting Started Wiki][gam wiki]
+The GAM documentation is currently hosted in the [GitHub Wiki][github wiki]
 
 Mailing List / Discussion group
 -------------------------------
@@ -79,7 +77,6 @@ for domains that sign up through Dito.
 
 [github releases]: https://github.com/jay0lee/GAM/releases
 [github]: https://github.com/jay0lee/GAM/
-[google code downloads]: https://code.google.com/p/google-apps-manager/wiki/Downloads
-[google drive]: https://googledrive.com/host/0B0YvUuHHn3MnbFl6N0k1UXcwdVk/
+[github wiki]: https://github.com/jay0lee/GAM/wiki/
 [gam wiki]: https://code.google.com/p/google-apps-manager/wiki/GAM3GettingStarted
 [google groups]: http://groups.google.com/group/google-apps-manager
