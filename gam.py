@@ -3508,7 +3508,7 @@ def doCreateUser():
       i += 2
     elif sys.argv[i].lower() in [u'org', u'ou']:
       org = sys.argv[i+1]
-      if org[1] != u'/':
+      if org[0] != u'/':
         org = u'/%s' % org
       body[u'orgUnitPath'] = org
       i += 2
