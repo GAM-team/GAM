@@ -493,6 +493,8 @@ def getAPIVer(api):
     return u'v1'
   elif api == u'gmail':
     return u'v1'
+  elif api == u'appsactivity':
+    return u'v1'
   return u'v1'
 
 def getAPIScope(api):
@@ -508,6 +510,9 @@ def getAPIScope(api):
             u'https://www.googleapis.com/auth/plus.circles.write']
   elif api == u'gmail':
     return [u'https://mail.google.com/']
+  elif api == u'appsactivity':
+    return [u'https://www.googleapis.com/auth/activity',
+            u'https://www.googleapis.com/auth/drive']
 
 def buildGAPIObject(api):
   global domain, customerId, prettyPrint
@@ -1646,6 +1651,38 @@ def showDriveSettings(users):
     headers[title] = title
   drive_attr.insert(0, headers)
   output_csv(drive_attr, titles, u'User Drive Settings', todrive)
+
+def doDriveActivity(users):
+  drive_ancestorId = u'root'
+  drive_fileId = None
+  todrive = False
+  i = 5
+  while i < len(sys.argv):
+    activity_object = sys.argv[i].lower().replace(u'_', '')
+    if activity_object == u'fileid':
+      drive_fileId = sys.argv[i+1]
+      drive_ancestorId = None
+      i += 2
+    elif activity_object == u'folderid':
+      drive_ancestorId = sys.argv[i+1]
+      i += 2
+    elif activity_object == u'todrive':
+      todrive = True
+      i += 1
+    else:
+      print u'Error: %s is not a valid argument to gam <users> show driveactivity'
+      sys.exit(3)
+  activity_attributes = [{},]
+  for user in users:
+    activity = buildGAPIServiceObject(u'appsactivity', user)
+    page_message = u'Retrieved %%%%total_items%%%% activities for %s' % user
+    feed = callGAPIpages(service=activity.activities(), function=u'list', items=u'activities', page_message=page_message, source=u'drive.google.com', userId=u'me', drive_ancestorId=drive_ancestorId, pageSize=100)
+    for item in feed:
+      activity_attributes.append(flatten_json(item))
+      for an_item in activity_attributes[-1].keys():
+        if an_item not in activity_attributes[0]:
+          activity_attributes[0][an_item] = an_item
+  output_csv(activity_attributes, activity_attributes[0], u'Drive Activity', todrive)
 
 def showDriveFileACL(users):
   fileId = sys.argv[5]
@@ -7532,6 +7569,8 @@ try:
       doGetASPs(users)
     elif readWhat in [u'token', u'tokens', u'oauth', u'3lo']:
       doGetTokens(users)
+    elif readWhat in [u'driveactivity']:
+      doDriveActivity(users)
     else:
       print u'Error: invalid argument to "gam <users> show..."'
       sys.exit(2)
