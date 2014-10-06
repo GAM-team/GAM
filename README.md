@@ -35,7 +35,7 @@ via email, or just post from the web itself.
 Source Repository
 -----------------
 
-The official GAM source repository is on [GitHub].
+The official GAM source repository is on [GitHub] in the master branch.
 
 Author
 ------
