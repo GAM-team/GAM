@@ -61,6 +61,6 @@ Need a Google Apps Expert?
 for domains that sign up through Dito.
 
 [GitHub Releases]: https://github.com/jay0lee/GAM/releases
-[GitHub]: https://github.com/jay0lee/GAM/
+[GitHub]: https://github.com/jay0lee/GAM/tree/master
 [GitHub Wiki]: https://github.com/jay0lee/GAM/wiki/
 [Google Groups]: http://groups.google.com/group/google-apps-manager
