@@ -9,11 +9,10 @@ domain and user settings quickly and easily. GAM supports
 * modifying user email settings such as IMAP, signatures,
   vacation messages, profile sharing, email forwarding,
   send as address, labels, and features.
-* delegating mailboxes and calendars to other users
 * modifying calendar access rights for users and resource calendars.
-* auditing user accounts and mailboxes
 * generating detailed reports for users, groups, resources,
   account activity, email clients, and quotas.
+* and many more commands
 
 Downloads
 ---------
