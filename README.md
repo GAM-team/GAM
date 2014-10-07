@@ -1,9 +1,8 @@
 Dito GAM
 ============================
 GAM is a free, open source command line tool for
-Google Apps Administrators to efficiently manage
-domain and user settings quickly and easily. GAM has support
-for many features, such as
+Google Apps Administrators to manage
+domain and user settings quickly and easily. GAM supports
 
 * creating, deleting, and updating users, aliases, groups, 
   organizations, and resource calendars
@@ -12,19 +11,18 @@ for many features, such as
   send as address, labels, and features.
 * delegating mailboxes and calendars to other users
 * modifying calendar access rights for users and resource calendars.
-* auditing user accounts and mailboes
-* monitoring incoming and outgoing email
+* auditing user accounts and mailboxes
 * generating detailed reports for users, groups, resources,
   account activity, email clients, and quotas.
 
 Downloads
 ---------
-You can download current GAM from 
+You can download the current GAM release from 
 the [GitHub Releases] page.
 
 Documentation
 ------------------
-The GAM documentation is currently hosted in the [GitHub Wiki]
+The GAM documentation is hosted in the [GitHub Wiki]
 
 Mailing List / Discussion group
 -------------------------------
@@ -34,17 +32,14 @@ via email, or just post from the web itself.
 
 Source Repository
 -----------------
-
 The official GAM source repository is on [GitHub] in the master branch.
 
 Author
 ------
-
 GAM is maintained by <a href="mailto:jay0lee@gmail.com">Jay Lee</a>.
 
 Thanks To
 ---------
-
 GAM is made possible and maintained by the work of Dito.
 Who is Dito?
 
