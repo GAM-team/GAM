@@ -1946,29 +1946,26 @@ def deleteEmptyDriveFolders(users):
         else:
           print u' not deleting folder %s because it contains at least 1 item (%s)' % (folder[u'title'], children[u'items'][0][u'id'])
 
-def doRecursiveDriveCopy(user, folderId, newdrivefilename, parentid):
-  convert = ocr = ocrLanguage =  None
-  new_folderid = doCreateDriveFolder(user, newdrivefilename, parentid)
-
+def doRecursiveDriveCopy(user, folderId, newfilename, parentid):
+  convert = ocr = ocrLanguage = None
+  newfolderid = doCreateDriveFolder(user, newfilename, parentid)
   drive = buildGAPIServiceObject(u'drive', user)
   source_children = callGAPI(service=drive.children(), function=u'list', folderId=folderId, fields=u'items(id)')
-
   if not u'items' in source_children or len(source_children[u'items']) == 0:
     print u' Folder %s is empty, doing nothing' % folderId
   else:
     for child in source_children[u'items']:
       file_metadata = callGAPI(service=drive.files(), function=u'get', fileId=child[u'id'])
       if file_metadata[u'mimeType'] in u'application/vnd.google-apps.folder':
-        doRecursiveDriveCopy(user, child[u'id'], file_metadata[u'title'], new_folderid)
+        doRecursiveDriveCopy(user, child[u'id'], file_metadata[u'title'], newfolderid)
       else:
         fileId = file_metadata[u'id']
         body = {}
         body[u'title'] = file_metadata[u'title']
         body[u'parents'] = list()
-        body[u'parents'].append({u'id': new_folderid})
+        body[u'parents'].append({u'id': newfolderid})
         callGAPI(service=drive.files(), function=u'copy', fileId=fileId, convert=convert, ocr=ocr, ocrLanguage=ocrLanguage, body=body, fields=u'id')
-
-  print u'Successfully performed recursive copy of folder ID %s into %s ID %s' % (folderId, newdrivefilename, new_folderid)
+  print u'Successfully performed recursive copy of folder ID %s into %s ID %s' % (folderId, newfilename, newfolderid)
 
 def doCreateDriveFolder(user, title, parentid):
   body = {}
@@ -1977,17 +1974,53 @@ def doCreateDriveFolder(user, title, parentid):
   body[u'parents'] = list()
   if parentid:
     body[u'parents'].append({u'id': parentid})
-
   drive = buildGAPIServiceObject(u'drive', user)
   result = callGAPI(service=drive.files(), function=u'insert', body=body, fields='id')
   print u'Successfully created folder %s ID %s' % (title, result[u'id'])
   return result[u'id']
 
 
-def doUpdateDriveFile(users):
-  convert = ocr = ocrLanguage = parent_query = local_filepath = media_body = fileIds = drivefilename = newdrivefilename = newparentid = None
-  operation = u'update'
+def doCopyDriveFile(users):
+  convert = ocr = ocrLanguage = fileIds = parentid = None
   recursive = False
+  i = 5
+  body = {}
+  while i < len(sys.argv):
+    if sys.argv[i].lower() == u'id':
+      fileIds = [sys.argv[i+1],]
+      i += 2
+    elif sys.argv[i].lower() in [u'recursive']:
+      recursive = True
+      i += 1
+    elif sys.argv[i].lower() in [u'newfilename']:
+      newfilename = sys.argv[i+1]
+      body[u'title'] = newfilename
+      i += 2
+    elif sys.argv[i].lower() in [u'parentid']:
+      parentid = sys.argv[i+1]
+      if u'parents' not in body.keys():
+        body[u'parents'] = list()
+      body[u'parents'].append({u'id': sys.argv[i+1]})
+      i += 2
+  if not fileIds:
+    print u'ERROR: you need to specify an id to copy'
+    sys.exit(9)
+  for user in users:
+    drive = buildGAPIServiceObject(u'drive', user)
+    for fileId in fileIds:
+      metadata = callGAPI(service=drive.files(), function=u'get', fileId=fileId)
+      if recursive and metadata[u'mimeType'] in u'application/vnd.google-apps.folder':
+        newfilename = newfilename or u'Copy of %s' % metadata[u'title']
+        doRecursiveDriveCopy(user, fileId, newfilename, parentid)
+      elif not recursive and metadata[u'mimeType'] in u'application/vnd.google-apps.folder':
+        print u'ERROR: Source ID %s is of type folder, add recursive flag to copy the folder' % (fileId)
+        sys.exit(9)
+      else:
+        result = callGAPI(service=drive.files(), function=u'copy', fileId=fileId, convert=convert, ocr=ocr, ocrLanguage=ocrLanguage, body=body, fields=u'id,labels')
+        print u'Successfully copied %s to %s' % (fileId, result[u'id'])
+
+def doUpdateDriveFile(users):
+  convert = ocr = ocrLanguage = parent_query = local_filepath = media_body = fileIds = drivefilename = None
   i = 5
   body = {}
   while i < len(sys.argv):
@@ -2001,9 +2034,6 @@ def doUpdateDriveFile(users):
       body[u'title'] = local_filename
       body[u'mimeType'] = mimetype
       i += 2
-    elif sys.argv[i].lower() == u'copy':
-      operation = u'copy'
-      i += 1
     elif sys.argv[i].lower() == u'id':
       fileIds = [sys.argv[i+1],]
       i += 2
@@ -2107,15 +2137,6 @@ def doUpdateDriveFile(users):
     elif sys.argv[i].lower() in [u'writerscantshare']:
       body[u'writersCanShare'] = False
       i += 1
-    elif sys.argv[i].lower() in [u'recursive']:
-      i += 1
-      recursive = True
-    elif sys.argv[i].lower() in [u'newdrivefilename']:
-      newdrivefilename = sys.argv[i+1]
-      i += 2
-    elif sys.argv[i].lower() in [u'newparentid']:
-      newparentid = sys.argv[i+1]
-      i += 2
     else:
       print u'Error: %s is not a valid argument for "gam ... create file"' % sys.argv[i]
       sys.exit(3)
@@ -2124,9 +2145,6 @@ def doUpdateDriveFile(users):
     sys.exit(9)
   elif fileIds and drivefilename:
     print u'ERROR: you cannot specify both an id and a query.'
-    sys.exit(9)
-  elif recursive and operation != u'copy':
-    print u'ERROR: you cannot specify recursive without copy'
     sys.exit(9)
   for user in users:
     drive = buildGAPIServiceObject(u'drive', user)
@@ -2141,26 +2159,14 @@ def doUpdateDriveFile(users):
     if local_filepath:
       media_body = apiclient.http.MediaFileUpload(local_filepath, mimetype=mimetype, resumable=True)
     for fileId in fileIds:
-      if operation == u'update':
-        if media_body:
-          result = callGAPI(service=drive.files(), function=u'update', fileId=fileId, convert=convert, ocr=ocr, ocrLanguage=ocrLanguage, media_body=media_body, body=body, fields='id')
-        else:
-          result = callGAPI(service=drive.files(), function=u'patch', fileId=fileId, convert=convert, ocr=ocr, ocrLanguage=ocrLanguage, body=body, fields='id,labels')
-        try:
-          print u'Successfully updated %s drive file with content from %s' % (result[u'id'], local_filename)
-        except UnboundLocalError:
-          print u'Successfully updated drive file/folder ID %s' % (result[u'id'])
+      if media_body:
+        result = callGAPI(service=drive.files(), function=u'update', fileId=fileId, convert=convert, ocr=ocr, ocrLanguage=ocrLanguage, media_body=media_body, body=body, fields='id')
       else:
-        metadata = callGAPI(service=drive.files(), function=u'get', fileId=fileId)
-        if recursive and metadata[u'mimeType'] in u'application/vnd.google-apps.folder':
-          newdrivefilename = newdrivefilename or u'Copy of %s' % metadata[u'title']
-          doRecursiveDriveCopy(user, fileId, newdrivefilename, newparentid)
-        elif not recursive and metadata[u'mimeType'] in u'application/vnd.google-apps.folder':
-          print u'ERROR: Source ID %s is of type folder, add recursive flag to copy the folder' % (fileId)
-          sys.exit(9)
-        else:
-          result = callGAPI(service=drive.files(), function=u'copy', fileId=fileId, convert=convert, ocr=ocr, ocrLanguage=ocrLanguage, body=body, fields=u'id,labels')
-          print u'Successfully copied %s to %s' % (fileId, result[u'id'])
+        result = callGAPI(service=drive.files(), function=u'patch', fileId=fileId, convert=convert, ocr=ocr, ocrLanguage=ocrLanguage, body=body, fields='id,labels')
+      try:
+        print u'Successfully updated %s drive file with content from %s' % (result[u'id'], local_filename)
+      except UnboundLocalError:
+        print u'Successfully updated drive file/folder ID %s' % (result[u'id'])
 
 def createDriveFile(users):
   convert = ocr = ocrLanguage = parent_query = local_filepath = media_body = None
@@ -7425,6 +7431,9 @@ try:
     else:
       print u'Error: invalid argument to "gam <users> add..."'
       sys.exit(2)
+  elif command == u'copy':
+    if sys.argv[4].lower() == u'drivefile':
+      doCopyDriveFile(users)
   elif command == u'update':
     if sys.argv[4].lower() == u'calendar':
       updateCalendar(users)
