@@ -1960,18 +1960,13 @@ def doRecursiveDriveCopy(user, folderId, newfilename, parentid):
         doRecursiveDriveCopy(user, child[u'id'], file_metadata[u'title'], newfolderid)
       else:
         fileId = file_metadata[u'id']
-        body = {}
-        body[u'title'] = file_metadata[u'title']
-        body[u'parents'] = list()
+        body = dict({u'title': file_metadata[u'title'], u'parents': list()})
         body[u'parents'].append({u'id': newfolderid})
         callGAPI(service=drive.files(), function=u'copy', fileId=fileId, convert=convert, ocr=ocr, ocrLanguage=ocrLanguage, body=body, fields=u'id')
   print u'Successfully performed recursive copy of folder ID %s into %s ID %s' % (folderId, newfilename, newfolderid)
 
 def doCreateDriveFolder(user, title, parentid):
-  body = {}
-  body[u'title'] = title
-  body[u'mimeType'] = 'application/vnd.google-apps.folder'
-  body[u'parents'] = list()
+  body = dict({u'title': title, u'mimeType': u'application/vnd.google-apps.folder', u'parents': list()})
   if parentid:
     body[u'parents'].append({u'id': parentid})
   drive = buildGAPIServiceObject(u'drive', user)
