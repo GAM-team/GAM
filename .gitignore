@@ -64,3 +64,6 @@ nobrowser.txt
 nocache.txt
 noverifyssl.txt
 gamcache/
+
+# Mac OS X specific
+.DS_Store
