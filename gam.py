@@ -716,7 +716,7 @@ def geturl(url, dst):
       status = r"%10d  [%3.2f%%]" % (file_size_dl, file_size_dl * 100. / file_size)
     else:
       status = r"%10d [unknown size]" % (file_size_dl)
-    status = status + chr(8)*(len(status)+1) 
+    status = status + chr(8)*(len(status)+1)
     print status,
   f.close()
 
@@ -2019,7 +2019,7 @@ def doCreateDriveFolder(user, title, parentid):
 
 
 def doCopyDriveFile(users):
-  convert = ocr = ocrLanguage = fileIds = parentid = None
+  convert = ocr = ocrLanguage = fileIds = parentid = newfilename = None
   recursive = False
   i = 5
   body = {}
