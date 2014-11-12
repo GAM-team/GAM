@@ -1,4 +1,4 @@
-Dito GAM
+GAM
 ============================
 GAM is a free, open source command line tool for
 Google Apps Administrators to manage
@@ -36,23 +36,6 @@ The official GAM source repository is on [GitHub] in the master branch.
 Author
 ------
 GAM is maintained by <a href="mailto:jay0lee@gmail.com">Jay Lee</a>.
-
-Thanks To
----------
-GAM is made possible and maintained by the work of Dito.
-Who is Dito?
-
-*Dito is solely focused on moving organizations to Google's
-cloud. After hundreds of successful deployments over the
-last 5 years, we have gained notoriety for our complete
-understanding of the platform, our change management &
-training ability, and our rock-star deployment engineers.
-We are known worldwide as the Google Apps Experts.*
-
-Need a Google Apps Expert? 
-[Contact Dito](http://ditoweb.com/contact), which offers
-[free premium GAM support](http://www.ditoweb.com/dito-gam)
-for domains that sign up through Dito.
 
 [GitHub Releases]: https://github.com/jay0lee/GAM/releases
 [GitHub]: https://github.com/jay0lee/GAM/tree/master
