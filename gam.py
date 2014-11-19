@@ -572,18 +572,18 @@ def buildGAPIServiceObject(api, act_as=None, soft_errors=False):
   oauth2servicefilep12 = u'%s.p12' % oauth2servicefile
   try:
     json_string = open(oauth2servicefilejson).read()
-    json_data = json.loads(json_string)
-    try:
-      SERVICE_ACCOUNT_EMAIL = json_data[u'web'][u'client_email']
-      SERVICE_ACCOUNT_CLIENT_ID = json_data[u'web'][u'client_id']
-      f = file(oauth2servicefilep12, 'rb')
-      key = f.read()
-      f.close()
-    except IOError, e:
-      print u'Error: %s' % e
-      print u''
-      print u'Please follow the instructions at:\n\nhttps://github.com/jay0lee/GAM/wiki/CreatingClientSecretsFile#creating-your-own-oauth2servicejson\n\nto setup a Service Account'
-      sys.exit(6)
+  except IOError, e:
+    print u'Error: %s' % e
+    print u''
+    print u'Please follow the instructions at:\n\nhttps://github.com/jay0lee/GAM/wiki/CreatingClientSecretsFile#creating-your-own-oauth2servicejson\n\nto setup a Service Account'
+    sys.exit(6)
+  json_data = json.loads(json_string)
+  try:
+    SERVICE_ACCOUNT_EMAIL = json_data[u'web'][u'client_email']
+    SERVICE_ACCOUNT_CLIENT_ID = json_data[u'web'][u'client_id']
+    f = file(oauth2servicefilep12, 'rb')
+    key = f.read()
+    f.close()
   except KeyError:
     # new format with config and data in the .json file...
     SERVICE_ACCOUNT_EMAIL = json_data[u'client_email']
