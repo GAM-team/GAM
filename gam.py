@@ -1508,7 +1508,7 @@ def doPhoto(users):
       import urllib2
       try:
         f = urllib2.urlopen(filename)
-        image_data = f.read()
+        image_data = str(f.read())
       except urllib2.HTTPError, e:
         print e
         continue
@@ -1542,7 +1542,8 @@ def getPhoto(users):
       print u' no photo for %s' % user
       continue
     try:
-      photo_data = photo[u'photoData']
+      photo_data = str(photo[u'photoData'])
+      print photo_data
       photo_data = base64.urlsafe_b64decode(photo_data)
     except KeyError:
       print u' no photo for %s' % user
