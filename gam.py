@@ -4946,21 +4946,34 @@ def doGetCrosInfo():
   deviceId = sys.argv[3]
   cd = buildGAPIObject(u'directory')
   info = callGAPI(service=cd.chromeosdevices(), function=u'get', customerId=customerId, deviceId=deviceId)
-  for key, value in info.items():
-    if key in [u'kind', u'etag']:
-      continue
-    print u' %s: %s' % (key, value)
+  print_json(None, info)
 
 def doGetMobileInfo():
   deviceId = sys.argv[3]
   cd = buildGAPIObject(u'directory')
   info = callGAPI(service=cd.mobiledevices(), function=u'get', customerId=customerId, resourceId=deviceId)
-  for key, value in info.items():
-    if key == u'kind':
-      continue
-    if key in [u'name', u'email']:
-      value = value[0]
-    print u' %s: %s' % (key, value)
+  print_json(None, info)
+
+def print_json(object_name, object_value, spacing=u''):
+  if object_name in [u'kind', u'etag', u'etags']:
+    return
+  if object_name != None:
+    sys.stdout.write(u'%s%s: ' % (spacing, object_name))
+  if type(object_value) is list:
+    if len(object_value) == 1:
+      sys.stdout.write(u'%s\n' % object_value[0])
+      return
+    sys.stdout.write(u'\n')
+    for a_value in object_value:
+      if type(a_value) in (str, unicode):
+        print u' %s%s' % (spacing, a_value)
+      else:
+        print_json(object_name=None, object_value=a_value, spacing=u' %s' % spacing)
+  elif type(object_value) is dict:
+    for another_object in object_value.keys():
+      print_json(object_name=another_object, object_value=object_value[another_object], spacing=spacing)
+  else:
+    sys.stdout.write(u'%s\n' % (object_value))
 
 def doUpdateNotification():
   cd = buildGAPIObject(u'directory')
