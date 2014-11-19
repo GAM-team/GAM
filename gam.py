@@ -7316,7 +7316,7 @@ try:
       argv = shlex.split(line)
       if argv[0] in [u'#', u' ', u''] or len(argv) < 2:
         continue
-      elif argv.pop(0).lower() != u'gam':
+      elif argv.pop(0).lower() not in [u'gam', u'commit-batch']:
         print u'Error: "%s" is not a valid gam command' % line
         continue
       items.append(python_cmd+argv)
