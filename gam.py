@@ -398,17 +398,6 @@ def callGAPI(service, function, silent_errors=False, soft_errors=False, throw_re
         time.sleep(wait_on_fail)
         if n > 3: sys.stderr.write(u'attempt %s/%s\n' % (n+1, retries))
         continue
-      '''if reason == 'insufficientPermissions':
-        oauth2file = getGamPath()+'oauth2.txt'
-        try:
-          oauth2file = getGamPath()+os.environ['OAUTHFILE']
-        except KeyError:
-          pass
-        doRequestOAuth(incremental_auth=True)
-        storage = oauth2client.file.Storage(oauth2file)
-        credentials = storage.get()
-        service._http.request.credentials.access_token = credentials.access_token
-        continue'''
       sys.stderr.write(u'Error %s: %s - %s\n\n' % (http_status, message, reason))
       if soft_errors:
         if n != 1:
