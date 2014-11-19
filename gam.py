@@ -4831,10 +4831,10 @@ def doGetUserInfo(user_email=None):
       for alias in user[u'nonEditableAliases']:
         print u'  %s' % alias
   if getGroups:
-    groups = callGAPI(service=cd.groups(), function=u'list', userKey=user_email)
-    if u'groups' in groups:
-      print u'Groups:'
-      for group in groups[u'groups']:
+    groups = callGAPIpages(service=cd.groups(), function=u'list', items=u'groups', userKey=user_email, fields=u'groups(name,email),nextPageToken')
+    if len(groups) > 0:
+      print u'Groups: (%s)' % len(groups)
+      for group in groups:
         print u'   %s <%s>' % (group[u'name'], group[u'email'])
   if getLicenses:
     print u'Licenses:'
