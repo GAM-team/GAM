@@ -29,11 +29,7 @@ __license__ = u'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 import sys, os, time, datetime, random, socket, csv, platform, re, calendar, base64, hashlib
 
-try:
-  import json
-except ImportError:
-  import simplejson as json
-
+import json
 import httplib2
 import apiclient
 import apiclient.discovery
