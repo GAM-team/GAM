@@ -124,7 +124,7 @@ Usage: gam [OPTIONS]...
 
 Dito GAM. Retrieve or set Google Apps domain,
 user, group and alias settings. Exhaustive list of commands
-can be found at: http://code.google.com/p/google-apps-manager/wiki
+can be found at: https://github.com/jay0lee/GAM/wiki 
 
 Examples:
 gam info domain
@@ -184,7 +184,7 @@ def doGAMCheckForUpdates():
     visit_gam = raw_input(u"\n\nHit Y to visit the GAM website and download the latest release. Hit Enter to just continue with this boring old version. GAM won't bother you with this announcemnt for 1 week or you can create a file named noupdatecheck.txt in the same location as gam.py or gam.exe and GAM won't ever check for updates: ")
     if visit_gam.lower() == u'y':
       import webbrowser
-      webbrowser.open(u'http://google-apps-manager.googlecode.com')
+      webbrowser.open(u'https://github.com/jay0lee/GAM/releases')
       print u'GAM is now exiting so that you can overwrite this old version with the latest release'
       sys.exit(0)
     f = open(getGamPath()+u'lastupdatecheck.txt', 'w')
@@ -589,7 +589,7 @@ def buildGAPIServiceObject(api, act_as=None):
     except IOError, e:
       print u'Error: %s' % e
       print u''
-      print u'Please follow the instructions at:\n\nhttps://code.google.com/p/google-apps-manager/wiki/GAM3OAuthServiceAccountSetup\n\nto setup a Service Account'
+      print u'Please follow the instructions at:\n\nhttps://github.com/jay0lee/GAM/wiki/CreatingClientSecretsFile#creating-your-own-oauth2servicejson\n\nto setup a Service Account'
       sys.exit(6)
   except KeyError:
     # new format with config and data in the .json file...
@@ -7077,7 +7077,10 @@ found at:
 
 with information from the APIs Console <https://cloud.google.com/console>.
 
-See https://code.google.com/p/google-apps-manager/wiki/CreatingClientSecretsFile
+See:
+
+https://github.com/jay0lee/GAM/wiki/CreatingClientSecretsFile
+ 
 for instructions.
 
 """ % CLIENT_SECRETS
