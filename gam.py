@@ -6387,10 +6387,9 @@ def doPrintCrosDevices():
     cros_attributes.append(crosdevice)
   output_csv(cros_attributes, titles, 'CrOS', todrive)
 
-def doPrintLicenses(return_list=False):
+def doPrintLicenses(return_list=False, skus=None):
   lic = buildGAPIObject(u'licensing')
   products = [u'Google-Apps', u'Google-Drive-storage', u'Google-Coordinate', u'Google-Vault']
-  skus = None
   licenses = []
   lic_attributes = [{}]
   todrive = False
@@ -6963,6 +6962,14 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
       else:
         users.append(member[u'primaryEmail'])
     if not silent: sys.stderr.write(u"done.\r\n")
+  elif entity_type in [u'license', u'licenses']:
+    users = []
+    licenses = doPrintLicenses(return_list=True, skus=entity.split(u','))
+    for row in licenses[1:]: # skip header
+      try:
+        users.append(row[u'userId'])
+      except KeyError:
+        pass
   elif entity_type == u'file':
     users = []
     filename = entity
