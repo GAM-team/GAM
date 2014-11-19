@@ -7079,12 +7079,6 @@ class cmd_flags(object):
     self.auth_host_port = [8080, 9090]
 
 def doRequestOAuth(incremental_auth=False):
-  if not os.path.isfile(getGamPath()+u'nodito.txt'):
-    print u"\n\nGAM is made possible and maintained by the work of Dito. Who is Dito?\n\nDito is solely focused on moving organizations to Google's cloud.  After hundreds of successful deployments over the last 5 years, we have gained notoriety for our complete understanding of the platform, our change management & training ability, and our rock-star deployment engineers.  We are known worldwide as the Google Apps Experts.\n"
-    visit_dito = raw_input(u"Want to learn more about Dito? Hit Y to visit our website (you can switch back to this window when you're done). Hit Enter to continue without visiting Dito: ")
-    if visit_dito.lower() == u'y':
-      import webbrowser
-      webbrowser.open(u'http://www.ditoweb.com?s=gam')
   CLIENT_SECRETS = getGamPath()+u'client_secrets.json'
   MISSING_CLIENT_SECRETS_MESSAGE = u"""
 WARNING: Please configure OAuth 2.0
