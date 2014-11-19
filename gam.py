@@ -27,7 +27,7 @@ __author__ = u'Jay Lee <jay0lee@gmail.com>'
 __version__ = u'3.41'
 __license__ = u'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
-import sys, os, time, datetime, random, socket, csv, platform, re, calendar, base64, hashlib
+import sys, os, time, datetime, random, socket, csv, platform, re, calendar, base64, hashlib, string
 
 import json
 import httplib2
