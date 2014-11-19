@@ -5841,6 +5841,9 @@ def doPrintUsers():
       user_fields.append(u'suspended')
       user_fields.append(u'suspensionReason')
       i += 1
+    elif sys.argv[i].lower() == u'ismailboxsetup':
+      user_fields.append(u'isMailboxSetup')
+      i += 1
     elif sys.argv[i].lower() == u'changepassword':
       user_fields.append(u'changePasswordAtNextLogin')
       i += 1
