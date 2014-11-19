@@ -4536,8 +4536,10 @@ def doUpdateMobile():
       action_body[u'action'] = sys.argv[i+1].lower()
       if action_body[u'action'] == u'wipe':
         action_body[u'action'] = u'admin_remote_wipe'
-      if action_body[u'action'] not in [u'admin_remote_wipe', u'approve', u'block', u'cancel_remote_wipe_then_activate', u'cancel_remote_wipe_then_block']:
-        print u'Error: action must be wipe, approve, block, cancel_remote_wipe_then_activate or cancel_remote_wipe_then_block. Got %s' % action_body[u'action']
+      elif action_body[u'action'].replace(u'_', '') in [u'accountwipe', u'wipeaccount']:
+        action_body[u'action'] = u'admin_account_wipe'
+      if action_body[u'action'] not in [u'admin_remote_wipe', u'admin_account_wipe', u'approve', u'block', u'cancel_remote_wipe_then_activate', u'cancel_remote_wipe_then_block']:
+        print u'Error: action must be wipe, wipeaccount, approve, block, cancel_remote_wipe_then_activate or cancel_remote_wipe_then_block. Got %s' % action_body[u'action']
         sys.exit(5)
       doAction = True
       i += 2
