@@ -19,7 +19,7 @@
 u"""Dito GAM is a command line tool which allows Administrators to control their Google Apps domain and accounts.
 
 With GAM you can programatically create users, turn on/off services for users like POP and Forwarding and much more.
-For more information, see http://code.google.com/p/google-apps-manager
+For more information, see http://git.io/gam
 
 """
 
