@@ -561,7 +561,7 @@ def buildGAPIObject(api):
     customerId = u'my_customer'
   return service
 
-def buildGAPIServiceObject(api, act_as=None):
+def buildGAPIServiceObject(api, act_as=None, soft_errors=False):
   global prettyPrint
   oauth2servicefile = getGamPath()+u'oauth2service'
   try:
@@ -619,6 +619,8 @@ def buildGAPIServiceObject(api, act_as=None):
       sys.exit(5)
     else:
       print u'Error: %s' % e
+      if soft_errors:
+        return False
       sys.exit(4)
 
 def buildDiscoveryObject(api):
@@ -2918,6 +2920,29 @@ def showLabels(users):
           continue
         print u' %s: %s' % (a_key, label[a_key])
       print u''
+
+def showGmailProfile(users):
+  todrive = False
+  i = 6
+  while i < len(sys.argv):
+    if sys.argv[i].lower() == u'todrive':
+      todrive = True
+      i += 1
+    else:
+      print u'Error %s is not a valid argument for gam ... show gmailprofiles.'
+      sys.exit(1)
+  profiles = [{}]
+  for user in users:
+    print 'Getting Gmail profile for %s' % user
+    gmail = buildGAPIServiceObject(u'gmail', act_as=user, soft_errors=True)
+    if not gmail:
+      continue
+    results = callGAPI(service=gmail.users(), function=u'getProfile', userId=u'me', soft_errors=True)
+    for item in results.keys():
+      if item not in profiles[0]:
+        profiles[0][item] = item
+    profiles.append(results)
+  output_csv(csv_list=profiles, titles=profiles[0], list_type=u'Gmail Profiles', todrive=todrive)
 
 def updateLabels(users):
   label_name = sys.argv[5]
@@ -7554,6 +7579,8 @@ try:
       showDriveFileInfo(users)
     elif readWhat == u'sendas':
       showSendAs(users)
+    elif readWhat == u'gmailprofile':
+      showGmailProfile(users)
     elif readWhat in [u'sig', u'signature']:
       getSignature(users)
     elif readWhat == u'forward':
