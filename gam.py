@@ -5318,7 +5318,7 @@ def doGetTokens(users):
             print u' %s:' % item
             for it in token[item]:
               print u'  %s' % it
-          if type(token[item]) is unicode:
+          if type(token[item]) in (unicode, bool):
             try:
               print u' %s: %s' % (item, token[item])
             except UnicodeEncodeError:
