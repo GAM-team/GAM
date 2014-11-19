@@ -1,6 +1,6 @@
 #!/usr/bin/python2.5
 #
-# Copyright 2010 the Melange authors.
+# Copyright 2014 the Melange authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,14 +17,13 @@
 """Helper methods for creating & verifying XSRF tokens."""
 
 __authors__ = [
-  '"Doug Coker" <dcoker@google.com>',
-  '"Joe Gregorio" <jcgregorio@google.com>',
+    '"Doug Coker" <dcoker@google.com>',
+    '"Joe Gregorio" <jcgregorio@google.com>',
 ]
 
 
 import base64
 import hmac
-import os  # for urandom
 import time
 
 from oauth2client import util

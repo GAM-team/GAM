@@ -1,4 +1,4 @@
-# Copyright (C) 2012 Google Inc.
+# Copyright 2014 Google Inc. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,11 +19,12 @@ A Storage for Credentials that uses the keyring module.
 
 __author__ = 'jcgregorio@google.com (Joe Gregorio)'
 
-import keyring
 import threading
 
-from client import Storage as BaseStorage
-from client import Credentials
+import keyring
+
+from oauth2client.client import Credentials
+from oauth2client.client import Storage as BaseStorage
 
 
 class Storage(BaseStorage):

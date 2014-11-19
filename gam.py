@@ -31,10 +31,10 @@ import sys, os, time, datetime, random, socket, csv, platform, re, calendar, bas
 
 import json
 import httplib2
-import apiclient
-import apiclient.discovery
-import apiclient.errors
-import apiclient.http
+import googleapiclient
+import googleapiclient.discovery
+import googleapiclient.errors
+import googleapiclient.http
 import oauth2client.client
 import oauth2client.file
 import oauth2client.tools
@@ -148,7 +148,7 @@ def getGamPath():
 def doGAMVersion():
   import struct
   print u'Dito GAM %s - http://git.io/gam\n%s\nPython %s.%s.%s %s-bit %s\ngoogle-api-python-client %s\n%s %s\nPath: %s' % (__version__, __author__,
-                   sys.version_info[0], sys.version_info[1], sys.version_info[2], struct.calcsize('P')*8, sys.version_info[3], apiclient.__version__,
+                   sys.version_info[0], sys.version_info[1], sys.version_info[2], struct.calcsize('P')*8, sys.version_info[3], googleapiclient.__version__,
                    platform.platform(), platform.machine(), getGamPath())
 
 def doGAMCheckForUpdates():
@@ -368,7 +368,7 @@ def callGAPI(service, function, silent_errors=False, soft_errors=False, throw_re
   for n in range(1, retries+1):
     try:
       return method(prettyPrint=prettyPrint, **kwargs).execute()
-    except apiclient.errors.HttpError, e:
+    except googleapiclient.errors.HttpError, e:
       try:
         error = json.loads(e.content)
       except ValueError:
@@ -542,14 +542,14 @@ def buildGAPIObject(api):
   if api in [u'directory', u'reports']:
     api = u'admin'
   try:
-    service = apiclient.discovery.build(api, version, http=http)
-  except apiclient.errors.UnknownApiNameOrVersion:
+    service = googleapiclient.discovery.build(api, version, http=http)
+  except googleapiclient.errors.UnknownApiNameOrVersion:
     disc_file = getGamPath()+u'%s-%s.json' % (api, version)
     if os.path.isfile(disc_file):
       f = file(disc_file, 'rb')
       discovery = f.read()
       f.close()
-      service = apiclient.discovery.build_from_document(discovery, base=u'https://www.googleapis.com', http=http)
+      service = googleapiclient.discovery.build_from_document(discovery, base=u'https://www.googleapis.com', http=http)
     else:
       raise
   except httplib2.CertificateValidationUnsupported:
@@ -619,7 +619,7 @@ def buildGAPIServiceObject(api, act_as=None):
   http = credentials.authorize(http)
   version = getAPIVer(api)
   try:
-    return apiclient.discovery.build(api, version, http=http)
+    return googleapiclient.discovery.build(api, version, http=http)
   except oauth2client.client.AccessTokenRefreshError, e:
     if e.message == u'access_denied':
       print u'Error: Access Denied. Please make sure the Client Name:\n\n%s\n\nis authorized for the API Scope(s):\n\n%s\n\nThis can be configured in your Control Panel under:\n\nSecurity -->\nAdvanced Settings -->\nManage third party OAuth Client access' % (SERVICE_ACCOUNT_CLIENT_ID, ','.join(scope))
@@ -643,10 +643,10 @@ def buildDiscoveryObject(api):
   if not os.path.isfile(getGamPath()+u'nocache.txt'):
     cache = u'%sgamcache' % getGamPath()
   http = httplib2.Http(ca_certs=getGamPath()+u'cacert.pem', disable_ssl_certificate_validation=disable_ssl_certificate_validation, cache=cache)
-  requested_url = uritemplate.expand(apiclient.discovery.DISCOVERY_URI, params)
+  requested_url = uritemplate.expand(googleapiclient.discovery.DISCOVERY_URI, params)
   resp, content = http.request(requested_url)
   if resp.status == 404:
-    raise apiclient.errors.UnknownApiNameOrVersion("name: %s  version: %s" % (api, version))
+    raise googleapiclient.errors.UnknownApiNameOrVersion("name: %s  version: %s" % (api, version))
   if resp.status >= 400:
     raise HttpError(resp, content, uri=requested_url)
   try:
@@ -766,7 +766,7 @@ def showReport():
         page_message = u'Got %%num_items%% users\n'
         usage = callGAPIpages(service=rep.userUsageReport(), function=u'get', items=u'usageReports', page_message=page_message, throw_reasons=[u'invalid'], date=str(try_date), userKey=userKey, customerId=customerId, filters=filters, parameters=parameters)
         break
-      except apiclient.errors.HttpError, e:
+      except googleapiclient.errors.HttpError, e:
         error = json.loads(e.content)
       try:
         message = error[u'error'][u'errors'][0][u'message']
@@ -803,7 +803,7 @@ def showReport():
       try:
         usage = callGAPIpages(service=rep.customerUsageReports(), function=u'get', items=u'usageReports', throw_reasons=[u'invalid'], customerId=customerId, date=str(try_date), parameters=parameters)
         break
-      except apiclient.errors.HttpError, e:
+      except googleapiclient.errors.HttpError, e:
         error = json.loads(e.content)
       try:
         message = error[u'error'][u'errors'][0][u'message']
@@ -1543,7 +1543,7 @@ def getPhoto(users):
     i += 1
     try:
       photo = callGAPI(service=cd.users().photos(), function=u'get', throw_reasons=[u'notFound'], userKey=user)
-    except apiclient.errors.HttpError:
+    except googleapiclient.errors.HttpError:
       print u' no photo for %s' % user
       continue
     try:
@@ -2128,7 +2128,7 @@ def doUpdateDriveFile(users):
     if drivefilename:
       fileIds = doDriveSearch(drive, query=u'"me" in owners and title = "%s"' % drivefilename)
     if local_filepath:
-      media_body = apiclient.http.MediaFileUpload(local_filepath, mimetype=mimetype, resumable=True)
+      media_body = googleapiclient.http.MediaFileUpload(local_filepath, mimetype=mimetype, resumable=True)
     for fileId in fileIds:
       if operation == u'update':
         if media_body:
@@ -2243,7 +2243,7 @@ def createDriveFile(users):
       for a_parent in more_parents:
         body[u'parents'].append({u'id': a_parent})
     if local_filepath:
-      media_body = apiclient.http.MediaFileUpload(local_filepath, mimetype=mimetype, resumable=True)
+      media_body = googleapiclient.http.MediaFileUpload(local_filepath, mimetype=mimetype, resumable=True)
     result = callGAPI(service=drive.files(), function=u'insert', convert=convert, ocr=ocr, ocrLanguage=ocrLanguage, media_body=media_body, body=body, fields='id')
     try:
       print u'Successfully uploaded %s to Drive file ID %s' % (local_filename, result[u'id'])
@@ -2886,14 +2886,14 @@ def doDeleteLabel(users):
         continue
     del_me_count = len(del_labels)
     i = 1
-    dbatch = apiclient.http.BatchHttpRequest()
+    dbatch = googleapiclient.http.BatchHttpRequest()
     for del_me in del_labels:
       print u' deleting label %s (%s/%s)' % (del_me[u'name'], i, del_me_count)
       i += 1
       dbatch.add(gmail.users().labels().delete(userId=user, id=del_me[u'id']), callback=label_del_result)
       if len(dbatch._order) == 25:
         dbatch.execute()
-        dbatch = apiclient.http.BatchHttpRequest()
+        dbatch = googleapiclient.http.BatchHttpRequest()
     if len(dbatch._order) > 0:
       dbatch.execute()
 
@@ -2993,7 +2993,7 @@ def renameLabels(users):
         print u' Renaming "%s" to "%s"' % (label[u'name'], new_label_name)
         try:
           callGAPI(service=gmail.users().labels(), function=u'patch', soft_errors=True, throw_reasons=[u'aborted'], id=label[u'id'], userId=user, body={u'name': new_label_name})
-        except apiclient.errors.HttpError:
+        except googleapiclient.errors.HttpError:
           if merge:
             print u'  Merging %s label to existing %s label' % (label[u'name'], new_label_name)
             q = u'label:"%s"' % label[u'name']
@@ -3826,7 +3826,7 @@ def doCreateAlias():
   elif target_type == u'target':
     try:
       callGAPI(service=cd.users().aliases(), function=u'insert', throw_reasons=[u'invalid'], userKey=targetKey, body=body)
-    except apiclient.errors.HttpError:
+    except googleapiclient.errors.HttpError:
       callGAPI(service=cd.groups().aliases(), function=u'insert', groupKey=targetKey, body=body)
 
 def doCreateOrg():
@@ -4310,7 +4310,7 @@ def doUpdateGroup():
               print u'added %s to group' % result[u'email']
           except TypeError:
             pass
-        except apiclient.errors.HttpError:
+        except googleapiclient.errors.HttpError:
           pass
     elif sys.argv[4].lower() == u'sync':
       role = sys.argv[5].upper()
@@ -4328,7 +4328,7 @@ def doUpdateGroup():
         sys.stderr.write(u' adding %s %s\n' % (role, user_email))
         try:
           result = callGAPI(service=cd.members(), function=u'insert', soft_errors=True, throw_reasons=[u'duplicate'], groupKey=group, body={u'email': user_email, u'role': role})
-        except apiclient.errors.HttpError:
+        except googleapiclient.errors.HttpError:
           result = callGAPI(service=cd.members(), function=u'update', soft_errors=True, groupKey=group, memberKey=user_email, body={u'email': user_email, u'role': role})
       for user_email in to_remove:
         sys.stderr.write(u' removing %s\n' % user_email)
@@ -4435,7 +4435,7 @@ def doUpdateAlias():
     target_email = u'%s@%s' % (target_email, domain)
   try:
     callGAPI(service=cd.users().aliases(), function=u'delete', throw_reasons=[u'invalid'], userKey=alias, alias=alias)
-  except apiclient.errors.HttpError:
+  except googleapiclient.errors.HttpError:
     callGAPI(service=cd.groups().aliases(), function=u'delete', groupKey=alias, alias=alias)
   if target_type == u'user':
     callGAPI(service=cd.users().aliases(), function=u'insert', userKey=target_email, body={u'alias': alias})
@@ -4444,7 +4444,7 @@ def doUpdateAlias():
   elif target_type == u'target':
     try:
       callGAPI(service=cd.users().aliases(), function=u'insert', throw_reasons=[u'invalid'], userKey=target_email, body={u'alias': alias})
-    except apiclient.errors.HttpError:
+    except googleapiclient.errors.HttpError:
       callGAPI(service=cd.groups().aliases(), function=u'insert', groupKey=target_email, body={u'alias': alias})
   print u'updated alias %s' % alias
 
@@ -4579,7 +4579,7 @@ def doUpdateOrg():
         sys.stderr.write(u' moving %s to %s (%s/%s)\n' % (user, orgUnitPath, current_user, user_count))
         try:
           callGAPI(service=cd.users(), function=u'patch', throw_reasons=[u'conditionNotMet'], userKey=user, body={u'orgUnitPath': orgUnitPath})
-        except apiclient.errors.HttpError:
+        except googleapiclient.errors.HttpError:
           pass
         current_user += 1
   else:
@@ -4622,12 +4622,12 @@ def doWhatIs():
       sys.stderr.write(u'%s is a user alias\n\n' % email)
       doGetAliasInfo(alias_email=email)
       return
-  except apiclient.errors.HttpError:
+  except googleapiclient.errors.HttpError:
     sys.stderr.write(u'%s is not a user...\n' % email)
     sys.stderr.write(u'%s is not a user alias...\n' % email)
   try:
     group = callGAPI(service=cd.groups(), function=u'get', throw_reasons=[u'notFound', u'badRequest'], groupKey=email, fields=u'email')
-  except apiclient.errors.HttpError:
+  except googleapiclient.errors.HttpError:
     sys.stderr.write(u'%s is not a group either!\n\nDoesn\'t seem to exist!\n\n' % email)
     sys.exit(1)
   if group[u'email'].lower() == email.lower():
@@ -4826,7 +4826,7 @@ def doGetUserInfo(user_email=None):
       productId, skuId = getProductAndSKU(sku)
       try:
         result = callGAPI(service=lic.licenseAssignments(), function=u'get', throw_reasons=['notFound'], userId=user_email,  productId=productId, skuId=skuId)
-      except apiclient.errors.HttpError:
+      except googleapiclient.errors.HttpError:
         continue
       print u' %s' % result[u'skuId']
 
@@ -4848,7 +4848,7 @@ def doGetGroupInfo(group_name=None):
   basic_info = callGAPI(service=cd.groups(), function=u'get', groupKey=group_name)
   try:
     settings = callGAPI(service=gs.groups(), function=u'get', retry_reasons=[u'serviceLimit'], groupUniqueId=basic_info[u'email'], throw_reasons=u'authError') # Use email address retrieved from cd since GS API doesn't support uid
-  except apiclient.errors.HttpError:
+  except googleapiclient.errors.HttpError:
     pass
   print u''
   print u'Group Settings:'
@@ -4894,7 +4894,7 @@ def doGetAliasInfo(alias_email=None):
     alias_email = u'%s@%s' % (alias_email, domain)
   try:
     result = callGAPI(service=cd.users(), function=u'get', throw_reasons=[u'invalid', u'badRequest'], userKey=alias_email)
-  except apiclient.errors.HttpError:
+  except googleapiclient.errors.HttpError:
     result = callGAPI(service=cd.groups(), function=u'get', groupKey=alias_email)
   print u' Alias Email: %s' % alias_email
   try:
@@ -5066,7 +5066,7 @@ def doSiteVerifyAttempt():
   body = {u'site':{u'type':verify_type, u'identifier':identifier}, u'verificationMethod':verificationMethod}
   try:
     verify_result = callGAPI(service=verif.webResource(), function=u'insert', throw_reasons=[u'badRequest'], verificationMethod=verificationMethod, body=body)
-  except apiclient.errors.HttpError, e:
+  except googleapiclient.errors.HttpError, e:
     error = json.loads(e.content)
     message = error[u'error'][u'errors'][0][u'message']
     print u'ERROR: %s' % message
@@ -5223,7 +5223,7 @@ def doGetBackupCodes(users):
   for user in users:
     try:
       codes = callGAPI(service=cd.verificationCodes(), function=u'list', throw_reasons=[u'invalidArgument', u'invalid'], userKey=user)
-    except apiclient.errors.HttpError:
+    except googleapiclient.errors.HttpError:
       codes = dict()
       codes[u'items'] = list()
     print u'Backup verification codes for %s' % user
@@ -5262,7 +5262,7 @@ def doDelBackupCodes(users):
   for user in users:
     try:
       codes = callGAPI(service=cd.verificationCodes(), function=u'invalidate', soft_errors=True, throw_reasons=[u'invalid',], userKey=user)
-    except apiclient.errors.HttpError:
+    except googleapiclient.errors.HttpError:
       print u'No 2SV backup codes for %s' % user
       continue
     print u'2SV backup codes for %s invalidated' % user
@@ -5288,7 +5288,7 @@ def doGetTokens(users):
     for user in users:
       try:
         token = callGAPI(service=cd.tokens(), function=u'get', throw_reasons=[u'notFound',], userKey=user, clientId=clientId, fields=u'clientId')
-      except apiclient.errors.HttpError:
+      except googleapiclient.errors.HttpError:
         continue
       print u'%s has allowed this token' % user
     return
@@ -5339,7 +5339,7 @@ def doDeprovUser(users):
     print u'Invalidating 2SV Backup Codes for %s' % user
     try:
       codes = callGAPI(service=cd.verificationCodes(), function=u'invalidate', soft_errors=True, throw_reasons=[u'invalid'], userKey=user)
-    except apiclient.errors.HttpError:
+    except googleapiclient.errors.HttpError:
       print u'No 2SV Backup Codes'
     print u'Getting tokens for %s...' % user
     tokens = callGAPI(service=cd.tokens(), function=u'list', userKey=user, fields=u'items/clientId')
@@ -5673,7 +5673,7 @@ def doDeleteAlias(alias_email=None):
     try:
       callGAPI(service=cd.users().aliases(), function=u'delete', throw_reasons=[u'invalid', u'badRequest', u'notFound'], userKey=alias_email, alias=alias_email)
       return
-    except apiclient.errors.HttpError, e:
+    except googleapiclient.errors.HttpError, e:
       error = json.loads(e.content)
       reason = error[u'error'][u'errors'][0][u'reason']
       if reason == u'notFound':
@@ -5715,7 +5715,7 @@ def output_csv(csv_list, titles, list_type, todrive):
       convert = False
     drive = buildGAPIObject(u'drive')
     string_data = string_file.getvalue()
-    media = apiclient.http.MediaInMemoryUpload(string_data, mimetype=u'text/csv')
+    media = googleapiclient.http.MediaInMemoryUpload(string_data, mimetype=u'text/csv')
     result = callGAPI(service=drive.files(), function=u'insert', convert=convert, body={u'description': u' '.join(sys.argv), u'title': u'%s - %s' % (domain, list_type), u'mimeType': u'text/csv'}, media_body=media)
     file_url = result[u'alternateLink']
     if os.path.isfile(getGamPath()+u'nobrowser.txt'):
@@ -6378,14 +6378,14 @@ def doPrintLicenses(return_list=False):
       page_message = u'Got %%%%total_items%%%% Licenses for %s...\n' % sku
       try:
         licenses += callGAPIpages(service=lic.licenseAssignments(), function=u'listForProductAndSku', throw_reasons=[u'invalid', u'forbidden'], page_message=page_message, customerId=domain, productId=product, skuId=sku, fields=u'items(productId,skuId,userId),nextPageToken')
-      except apiclient.errors.HttpError:
+      except googleapiclient.errors.HttpError:
         licenses += []
   else:
     for productId in products:
       page_message = u'Got %%%%total_items%%%% Licenses for %s...\n' % productId
       try:
         licenses += callGAPIpages(service=lic.licenseAssignments(), function=u'listForProduct', throw_reasons=[u'invalid', u'forbidden'], page_message=page_message, customerId=domain, productId=productId, fields=u'items(productId,skuId,userId),nextPageToken')
-      except apiclient.errors.HttpError:
+      except googleapiclient.errors.HttpError:
         licenses = +[]
   for license in licenses:
     a_license = dict()

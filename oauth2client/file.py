@@ -1,4 +1,4 @@
-# Copyright (C) 2010 Google Inc.
+# Copyright 2014 Google Inc. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,12 +21,10 @@ credentials.
 __author__ = 'jcgregorio@google.com (Joe Gregorio)'
 
 import os
-import stat
 import threading
 
-from anyjson import simplejson
-from client import Storage as BaseStorage
-from client import Credentials
+from oauth2client.client import Credentials
+from oauth2client.client import Storage as BaseStorage
 
 
 class CredentialsFileSymbolicLinkError(Exception):

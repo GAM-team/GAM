@@ -1,4 +1,4 @@
-# Copyright (C) 2013 Google Inc.
+# Copyright 2014 Google Inc. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -96,7 +96,7 @@ def run(flow, storage, http=None):
       try:
         httpd = ClientRedirectServer((FLAGS.auth_host_name, port),
                                      ClientRedirectHandler)
-      except socket.error, e:
+      except socket.error as e:
         pass
       else:
         success = True
@@ -150,7 +150,7 @@ def run(flow, storage, http=None):
 
   try:
     credential = flow.step2_exchange(code, http=http)
-  except client.FlowExchangeError, e:
+  except client.FlowExchangeError as e:
     sys.exit('Authentication has failed: %s' % e)
 
   storage.put(credential)

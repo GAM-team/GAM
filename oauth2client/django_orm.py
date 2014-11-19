@@ -1,4 +1,4 @@
-# Copyright (C) 2010 Google Inc.
+# Copyright 2014 Google Inc. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -116,14 +116,21 @@ class Storage(BaseStorage):
         credential.set_store(self)
     return credential
 
-  def locked_put(self, credentials):
+  def locked_put(self, credentials, overwrite=False):
     """Write a Credentials to the datastore.
 
     Args:
       credentials: Credentials, the credentials to store.
+      overwrite: Boolean, indicates whether you would like these credentials to
+                          overwrite any existing stored credentials.
     """
     args = {self.key_name: self.key_value}
-    entity = self.model_class(**args)
+
+    if overwrite:
+      entity, unused_is_new = self.model_class.objects.get_or_create(**args)
+    else:
+      entity = self.model_class(**args)
+
     setattr(entity, self.property_name, credentials)
     entity.save()
 

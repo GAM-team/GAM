@@ -1,4 +1,4 @@
-# Copyright (C) 2010 Google Inc.
+# Copyright 2014 Google Inc. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,14 +19,14 @@ Utilities for making it easier to use OAuth 2.0 on Google App Engine.
 
 __author__ = 'jcgregorio@google.com (Joe Gregorio)'
 
-import base64
 import cgi
-import httplib2
+import json
 import logging
 import os
 import pickle
 import threading
-import time
+
+import httplib2
 
 from google.appengine.api import app_identity
 from google.appengine.api import memcache
@@ -41,7 +41,6 @@ from oauth2client import GOOGLE_TOKEN_URI
 from oauth2client import clientsecrets
 from oauth2client import util
 from oauth2client import xsrfutil
-from oauth2client.anyjson import simplejson
 from oauth2client.client import AccessTokenRefreshError
 from oauth2client.client import AssertionCredentials
 from oauth2client.client import Credentials
@@ -159,15 +158,20 @@ class AppAssertionCredentials(AssertionCredentials):
     Args:
       scope: string or iterable of strings, scope(s) of the credentials being
         requested.
+      **kwargs: optional keyword args, including:
+        service_account_id: service account id of the application. If None or
+          unspecified, the default service account for the app is used.
     """
     self.scope = util.scopes_to_string(scope)
+    self._kwargs = kwargs
+    self.service_account_id = kwargs.get('service_account_id', None)
 
     # Assertion type is no longer used, but still in the parent class signature.
     super(AppAssertionCredentials, self).__init__(None)
 
   @classmethod
-  def from_json(cls, json):
-    data = simplejson.loads(json)
+  def from_json(cls, json_data):
+    data = json.loads(json_data)
     return AppAssertionCredentials(data['scope'])
 
   def _refresh(self, http_request):
@@ -186,10 +190,21 @@ class AppAssertionCredentials(AssertionCredentials):
     """
     try:
       scopes = self.scope.split()
-      (token, _) = app_identity.get_access_token(scopes)
-    except app_identity.Error, e:
+      (token, _) = app_identity.get_access_token(
+          scopes, service_account_id=self.service_account_id)
+    except app_identity.Error as e:
       raise AccessTokenRefreshError(str(e))
     self.access_token = token
+
+  @property
+  def serialization_data(self):
+    raise NotImplementedError('Cannot serialize credentials for AppEngine.')
+
+  def create_scoped_required(self):
+    return not self.scope
+
+  def create_scoped(self, scopes):
+    return AppAssertionCredentials(scopes, **self._kwargs)
 
 
 class FlowProperty(db.Property):
@@ -434,6 +449,7 @@ class StorageByKeyName(Storage):
       entity_key = db.Key.from_path(self._model.kind(), self._key_name)
       db.delete(entity_key)
 
+  @db.non_transactional(allow_existing=True)
   def locked_get(self):
     """Retrieve Credential from datastore.
 
@@ -456,6 +472,7 @@ class StorageByKeyName(Storage):
       credentials.set_store(self)
     return credentials
 
+  @db.non_transactional(allow_existing=True)
   def locked_put(self, credentials):
     """Write a Credentials to the datastore.
 
@@ -468,6 +485,7 @@ class StorageByKeyName(Storage):
     if self._cache:
       self._cache.set(self._key_name, credentials.to_json())
 
+  @db.non_transactional(allow_existing=True)
   def locked_delete(self):
     """Delete Credential from datastore."""
 
@@ -650,8 +668,9 @@ class OAuth2Decorator(object):
         provided to this constructor. A string indicating the name of the field
         on the _credentials_class where a Credentials object will be stored.
         Defaults to 'credentials'.
-      **kwargs: dict, Keyword arguments are be passed along as kwargs to the
-        OAuth2WebServerFlow constructor.
+      **kwargs: dict, Keyword arguments are passed along as kwargs to
+        the OAuth2WebServerFlow constructor.
+
     """
     self._tls = threading.local()
     self.flow = None
@@ -798,14 +817,18 @@ class OAuth2Decorator(object):
     url = self.flow.step1_get_authorize_url()
     return str(url)
 
-  def http(self):
+  def http(self, *args, **kwargs):
     """Returns an authorized http instance.
 
     Must only be called from within an @oauth_required decorated method, or
     from within an @oauth_aware decorated method where has_credentials()
     returns True.
+
+    Args:
+        *args: Positional arguments passed to httplib2.Http constructor.
+        **kwargs: Positional arguments passed to httplib2.Http constructor.
     """
-    return self.credentials.authorize(httplib2.Http())
+    return self.credentials.authorize(httplib2.Http(*args, **kwargs))
 
   @property
   def callback_path(self):
@@ -858,7 +881,7 @@ class OAuth2Decorator(object):
                                             user)
 
           if decorator._token_response_param and credentials.token_response:
-            resp_json = simplejson.dumps(credentials.token_response)
+            resp_json = json.dumps(credentials.token_response)
             redirect_uri = util._add_query_parameter(
                 redirect_uri, decorator._token_response_param, resp_json)
 
@@ -904,7 +927,7 @@ class OAuth2DecoratorFromClientSecrets(OAuth2Decorator):
   """
 
   @util.positional(3)
-  def __init__(self, filename, scope, message=None, cache=None):
+  def __init__(self, filename, scope, message=None, cache=None, **kwargs):
     """Constructor
 
     Args:
@@ -917,17 +940,20 @@ class OAuth2DecoratorFromClientSecrets(OAuth2Decorator):
         decorator.
       cache: An optional cache service client that implements get() and set()
         methods. See clientsecrets.loadfile() for details.
+      **kwargs: dict, Keyword arguments are passed along as kwargs to
+        the OAuth2WebServerFlow constructor.
     """
     client_type, client_info = clientsecrets.loadfile(filename, cache=cache)
     if client_type not in [
         clientsecrets.TYPE_WEB, clientsecrets.TYPE_INSTALLED]:
       raise InvalidClientSecretsError(
-          'OAuth2Decorator doesn\'t support this OAuth 2.0 flow.')
-    constructor_kwargs = {
-      'auth_uri': client_info['auth_uri'],
-      'token_uri': client_info['token_uri'],
-      'message': message,
-    }
+          "OAuth2Decorator doesn't support this OAuth 2.0 flow.")
+    constructor_kwargs = dict(kwargs)
+    constructor_kwargs.update({
+        'auth_uri': client_info['auth_uri'],
+        'token_uri': client_info['token_uri'],
+        'message': message,
+    })
     revoke_uri = client_info.get('revoke_uri')
     if revoke_uri is not None:
       constructor_kwargs['revoke_uri'] = revoke_uri
