@@ -2988,17 +2988,8 @@ def renameLabels(users):
   for user in users:
     gmail = buildGAPIServiceObject(u'gmail', act_as=user)
     labels = callGAPI(service=gmail.users().labels(), function=u'list', userId=user)
-    already_renamed_parents = list()
     for label in labels[u'labels']:
       if label[u'type'] == u'system':
-        continue
-      already_renamed_child = False
-      for already_renamed_parent in already_renamed_parents:
-        parent_length = len(already_renamed_parent)
-        if label[u'name'][:parent_length+1] == '%s/' % already_renamed_parent:
-          already_renamed_child = True
-          break
-      if already_renamed_child:
         continue
       match_result = re.search(pattern, label[u'name'])
       if match_result != None:
@@ -3010,24 +3001,24 @@ def renameLabels(users):
           if merge:
             print u'  Merging %s label to existing %s label' % (label[u'name'], new_label_name)
             q = u'label:"%s"' % label[u'name']
-            print q
             messages_to_relabel = callGAPIpages(service=gmail.users().messages(), function=u'list', items=u'messages', userId=user, q=q)
-            for new_label in labels[u'labels']:
-              if new_label[u'name'].lower() == new_label_name.lower():
-                new_label_id = new_label[u'id']
-                body = {u'addLabelIds': [new_label_id]}
-                break
-            i = 1
-            for message_to_relabel in messages_to_relabel:
-              print u'    relabeling message %s (%s/%s)' % (message_to_relabel[u'id'], i, len(messages_to_relabel))
-              callGAPI(service=gmail.users().messages(), function=u'modify', userId=user, id=message_to_relabel[u'id'], body=body)
-              i += 1
+            if len(messages_to_relabel) > 0:
+              for new_label in labels[u'labels']:
+                if new_label[u'name'].lower() == new_label_name.lower():
+                  new_label_id = new_label[u'id']
+                  body = {u'addLabelIds': [new_label_id]}
+                  break
+              i = 1
+              for message_to_relabel in messages_to_relabel:
+                print u'    relabeling message %s (%s/%s)' % (message_to_relabel[u'id'], i, len(messages_to_relabel))
+                callGAPI(service=gmail.users().messages(), function=u'modify', userId=user, id=message_to_relabel[u'id'], body=body)
+                i += 1
+            else:
+              print u'   no messages with %s label' % label[u'name']
             print u'   Deleting label %s' % label[u'name']
             callGAPI(service=gmail.users().labels(), function=u'delete', id=label[u'id'], userId=user)
           else:
             print u'  Error: looks like %s already exists, not renaming. Use the "merge" argument to merge the labels' % new_label_name
-        continue
-        already_renamed_parents.append(label)
 
 def doFilter(users):
   i = 4 # filter arguments start here
