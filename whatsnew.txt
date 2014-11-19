@@ -1,3 +1,18 @@
+GAM 3.42
+  -"gam <users> show driveactivity" displays Drive activity for user
+  -"gam report tokens" displays user OAuth activity report
+  -"gam mobile <id> action accountwipe" wipes account only on Android devices
+  -"gam <users> update labels" removes Inbox/ prefix from label names
+  -upgrades to oauth2client and googleapiclient libraries which GAM depends on
+  -"gam <users> show gmailprofile" shows Gmail mailbox details
+  -"gam license <sku>" commands to perform actions only on users with a given license
+  -bug fixes, lots of bug fixes
+
+GAM 3.41
+  -fix Google servers not returning file size on audit export download
+  -soft fail on license change errors
+  -fix for gam info domain errors
+
 GAM 3.4 "Oktoberfest"
   -Support for creating and setting custom user schemas http://goo.gl/M9rQrI
   -End user view of print users and user info commands.
