@@ -40,10 +40,14 @@ import oauth2client.file
 import oauth2client.tools
 import uritemplate
 
-global true_values, false_values, prettyPrint, customerId, domain
+global true_values, false_values, prettyPrint, customerId, domain, usergroup_types
 true_values = [u'on', u'yes', u'enabled', u'true', u'1']
 false_values = [u'off', u'no', u'disabled', u'false', u'0']
-  
+usergroup_types = [u'user', u'users', u'group', u'ou', u'org',
+                   u'ou_and_children', u'ou_and_child', u'query',
+                   u'license', u'licenses', u'file', u'all',
+                   u'cros']
+
 def convertUTF8(data):
     import collections
     if isinstance(data, str):
@@ -4288,7 +4292,7 @@ def doUpdateGroup():
       if role not in [u'OWNER', u'MANAGER', u'MEMBER']:
         role = u'MEMBER'
         i = 5
-      if sys.argv[i].lower() in [u'user', u'users', u'group', u'ou', u'org', u'query', u'file', u'all']:
+      if sys.argv[i].lower() in usergroup_types:
         users_email = getUsersToModify(entity_type=sys.argv[i], entity=sys.argv[i+1])
       else:
         users_email = [sys.argv[i],]
@@ -4337,7 +4341,7 @@ def doUpdateGroup():
       i = 5
       if sys.argv[i].lower() in [u'member', u'manager', u'owner']:
         i += 1
-      if sys.argv[i].lower() in [u'user', u'users', u'group', u'ou', u'org', u'query', u'file', u'all']:
+      if sys.argv[i].lower() in usergroup_types:
         user_emails = getUsersToModify(entity_type=sys.argv[i], entity=sys.argv[i+1])
       else:
         user_emails = [sys.argv[i],]
@@ -4559,7 +4563,7 @@ def doUpdateOrg():
   orgUnitPath = sys.argv[3]
   cd = buildGAPIObject(u'directory')
   if sys.argv[4].lower() in [u'move', u'add']:
-    if sys.argv[5].lower() in [u'user', u'users', u'cros', u'group', u'ou', u'org', u'query', u'file', u'all']:
+    if sys.argv[5].lower() in usergroup_types:
       users = getUsersToModify(entity_type=sys.argv[5], entity=sys.argv[6])
     else:
       users = getUsersToModify(entity_type=u'user', entity=sys.argv[5])
@@ -6409,7 +6413,7 @@ def doPrintTokens():
     if sys.argv[i].lower() == u'todrive':
       todrive = True
       i += 1
-    elif sys.argv[i].lower() in [u'user', u'users', u'group', u'ou', u'org', u'query', u'file', u'all']:
+    elif sys.argv[i].lower() in usergroup_types:
       entity_type = sys.argv[i].lower()
       entity = sys.argv[i+1].lower()
       i += 2
