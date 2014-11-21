@@ -1701,7 +1701,11 @@ def delDriveFileACL(users):
   permissionId = unicode(sys.argv[6])
   for user in users:
     drive = buildGAPIServiceObject(u'drive', user)
-    if not permissionId.isnumeric() and permissionId.lower() not in [u'anyone',]:
+    if permissionId[:3].lower() == u'id:':
+      permissionId = permissionId[3:]
+    elif permissionId.lower() in [u'anyone']:
+      pass
+    else:
       permissionId = callGAPI(service=drive.permissions(), function=u'getIdForEmail', email=permissionId, fields=u'id')[u'id']
     print u'Removing permission for %s from %s' % (permissionId, fileId)
     callGAPI(service=drive.permissions(), function=u'delete', fileId=fileId, permissionId=permissionId)
@@ -1752,7 +1756,7 @@ def updateDriveFileACL(users):
   fileId = sys.argv[5]
   permissionId = unicode(sys.argv[6])
   transferOwnership = None
-  body = {u'type': perm_type}
+  body = {}
   i = 7
   while i < len(sys.argv):
     if sys.argv[i].lower().replace(u'_', u'') == u'withlink':
@@ -1780,7 +1784,9 @@ def updateDriveFileACL(users):
       sys.exit(9)
   for user in users:
     drive = buildGAPIServiceObject(u'drive', user)
-    if not permissionId.isnumeric():
+    if permissionId[:3].lower() == u'id:':
+      permissionId = permissionId[3:]
+    else:
       permissionId = callGAPI(service=drive.permissions(), function=u'getIdForEmail', email=permissionId, fields=u'id')[u'id']
     print u'updating permissions for %s to file %s' % (permissionId, fileId)
     result = callGAPI(service=drive.permissions(), function=u'patch', fileId=fileId, permissionId=permissionId, transferOwnership=transferOwnership, body=body)
