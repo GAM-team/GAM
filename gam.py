@@ -614,7 +614,7 @@ def buildGAPIServiceObject(api, act_as=None, soft_errors=False):
   try:
     return googleapiclient.discovery.build(api, version, http=http)
   except oauth2client.client.AccessTokenRefreshError, e:
-    if e.message == u'access_denied':
+    if e.message in [u'access_denied', u'unauthorized_client: Unauthorized client or scope in request.']:
       print u'Error: Access Denied. Please make sure the Client Name:\n\n%s\n\nis authorized for the API Scope(s):\n\n%s\n\nThis can be configured in your Control Panel under:\n\nSecurity -->\nAdvanced Settings -->\nManage third party OAuth Client access' % (SERVICE_ACCOUNT_CLIENT_ID, ','.join(scope))
       sys.exit(5)
     else:
