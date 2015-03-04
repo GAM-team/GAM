@@ -1321,7 +1321,7 @@ def doCalendarAddACL(calendarId=None, act_as=None, role=None, scope=None, entity
   if body[u'scope'][u'type'] == u'domain':
     try:
       body[u'scope'][u'value'] = sys.argv[6].lower()
-    except KeyError:
+    except IndexError:
       body[u'scope'][u'value'] = domain
   callGAPI(service=cal.acl(), function=u'insert', calendarId=calendarId, body=body)
 
@@ -1337,7 +1337,7 @@ def doCalendarUpdateACL():
 
 def doCalendarDelACL():
   calendarId = sys.argv[2]
-  entity = sys.argv[4].lower()
+  entity = sys.argv[5].lower()
   scope = u'user'
   if entity == u'domain':
     scope = u'domain'
