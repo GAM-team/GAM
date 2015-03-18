@@ -1,3 +1,9 @@
+GAM 3.43
+  -Fix crash when authenticating GAM related to Short URLs
+  -minor fixes to Drive and Calendar commands
+  -catch unauthorized service account errors and offer nice instructions.
+  -execute bit for gam.py (Thanks daethnir)
+
 GAM 3.42
   -"gam <users> show driveactivity" displays Drive activity for user
   -"gam report tokens" displays user OAuth activity report
@@ -104,7 +110,7 @@ GAM 2.992
 
 GAM 2.991
   -gam print commands now support a "todrive" argument. When specified, instead of displaying the CSV output locally (or piping it to a file), GAM will upload the CSV data to a Google Docs Spreadsheet owned by the admin you've authenticated as. The spreadsheet will be opened automatically or, if you've created nobrowser.txt, a URL will be shown.
-  -GAM should handle non-English input characters better. Commands like: "gam.py update user rpinaya lastname Piñaya" should work without issue on Windows.
+  -GAM should handle non-English input characters better. Commands like: "gam.py update user rpinaya lastname PiÃ±aya" should work without issue on Windows.
   -Improved errors in various places (less "explosions" more meaningful instructions.
   -gam undelete user is fixed to always use the user's id rather than email address. If an email address is supplied, GAM converts it to a id before attempting to delete. If more than 1 deleted user exists with that address, GAM displays the options.
 
