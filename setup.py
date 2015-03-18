@@ -9,7 +9,7 @@ setup(
   zipfile = None,
   options = {'py2exe': 
               {'optimize': 2,
-               'bundle_files': 1,
+               'bundle_files': 3,
                'includes': ['passlib.handlers.sha2_crypt'],
                'dist_dir' : 'gam'}
             }
