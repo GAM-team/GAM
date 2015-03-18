@@ -178,11 +178,14 @@ def run_flow(flow, storage, flags, http=None):
   authorize_url = flow.step1_get_authorize_url()
 
   if flags.short_url:
-    from googleapiclient.discovery import build
-    service = build('urlshortener', 'v1', http=http)
-    url_result = service.url().insert(body={'longUrl': authorize_url}).execute()
-    authorize_url = url_result['id']
-
+    try:
+      from googleapiclient.discovery import build
+      service = build('urlshortener', 'v1', http=http)
+      url_result = service.url().insert(body={'longUrl': authorize_url},
+        key=u'AIzaSyBlmgbii8QfJSYmC9VTMOfqrAt5Vj5wtzE').execute()
+      authorize_url = url_result['id']
+    except:
+      pass
   if not flags.noauth_local_webserver:
     webbrowser.open(authorize_url, new=1, autoraise=True)
     print 'Your browser has been opened to visit:'
