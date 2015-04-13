@@ -4528,7 +4528,7 @@ def doUpdateCros():
       #annotatedAssetID - Handle Asset Tag Field 2015-04-13
 	  body[u'annotatedAssetID'] = sys.argv[i+1]
       i += 2
-	elif sys.argv[i].lower() in [u'ou', u'org']:
+    elif sys.argv[i].lower() in [u'ou', u'org']:
       body[u'orgUnitPath'] = sys.argv[i+1]
       if body[u'orgUnitPath'][0] != '/':
         body[u'orgUnitPath'] = u'/%s' % body[u'orgUnitPath']
