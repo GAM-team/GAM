@@ -4981,7 +4981,7 @@ def print_json(object_name, object_value, spacing=u''):
   if object_name != None:
     sys.stdout.write(u'%s%s: ' % (spacing, object_name))
   if type(object_value) is list:
-    if len(object_value) == 1:
+    if len(object_value) == 1 and type(object_value[0]) in (str, unicode, int):
       sys.stdout.write(u'%s\n' % object_value[0])
       return
     sys.stdout.write(u'\n')
@@ -6395,17 +6395,11 @@ def doPrintCrosDevices():
   page_message = u'Got %%num_items%% Chrome devices...\n'
   all_cros = callGAPIpages(service=cd.chromeosdevices(), function=u'list', items=u'chromeosdevices', page_message=page_message, query=query, customerId=customerId, sortOrder=sortOrder)
   for cros in all_cros:
-    crosdevice = dict()
-    for title in cros.keys():
-      if title in [u'kind', u'etag']:
-        continue
-      try:
-        cros_attributes[0][title]
-      except KeyError:
-        cros_attributes[0][title] = title
-        titles.append(title)
-      crosdevice[title] = cros[title]
-    cros_attributes.append(crosdevice)
+    cros_attributes.append(flatten_json(cros))
+    for item in cros_attributes[-1].keys():
+      if item not in titles:
+        titles.append(item)
+        cros_attributes[0][item] = item
   output_csv(cros_attributes, titles, 'CrOS', todrive)
 
 def doPrintLicenses(return_list=False, skus=None):
