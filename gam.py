@@ -5210,26 +5210,14 @@ def doGetOrgInfo():
   except IndexError:
     pass
   if name == u'/':
-    print u"Organization Unit: /"
-    print u"Description: Root OU"
-    print u"Parent Org: <none>"
-    print u"Full Org Path: /"
-    print u"Block Inheritance: False"
-  else:
-    if len(name) > 1 and name[0] == u'/':
-      name = name[1:]
-    result = callGAPI(service=cd.orgunits(), function=u'get', customerId=customerId, orgUnitPath=name)
-    print u'Organization Unit: %s' % result[u'name']
-    try:
-      print u'Description: %s' % result[u'description']
-    except KeyError:
-      print u'Description: '
-    print u'Parent Org: %s' % result[u'parentOrgUnitPath']
-    print u'Full Org Path: %s' % result[u'orgUnitPath']
-    try:
-      print u'Block Inheritance: %s' % result[u'blockInheritance']
-    except KeyError:
-      print u'Block Inheritance: False'
+    orgs = callGAPI(service=cd.orgunits(), function=u'list',
+      customerId=customerId, type=u'children',
+      fields=u'organizationUnits/parentOrgUnitId')
+    name = orgs[u'organizationUnits'][0][u'parentOrgUnitId']
+  if len(name) > 1 and name[0] == u'/':
+    name = name[1:]
+  result = callGAPI(service=cd.orgunits(), function=u'get', customerId=customerId, orgUnitPath=name)
+  print_json(None, result)
   if get_users:
     if name != u'/':
       name = u'/%s' % name
@@ -6157,12 +6145,14 @@ def doPrintOrgs():
   printname = printdesc = printparent = printinherit = todrive = False
   type = u'all'
   orgUnitPath = u"/"
-  org_attributes = []
-  org_attributes.append({u'Path': u'Path'})
+  org_attributes = [{}]
   fields = u'organizationUnits(orgUnitPath)'
-  titles = [u'Path']
+  titles = []
   while i < len(sys.argv):
-    if sys.argv[i].lower() == u'name':
+    if sys.argv[i].lower() == u'allfields':
+      fields = None
+      i += 1
+    elif sys.argv[i].lower() == u'name':
       printname = True
       org_attributes[0].update(Name=u'Name')
       fields += u',organizationUnits(name)'
@@ -6198,6 +6188,9 @@ def doPrintOrgs():
     else:
       showUsage()
       exit(8)
+  if fields:
+    org_attributes[0][u'Path'] = u'Path'
+    titles.append(u'Path')
   cd = buildGAPIObject(u'directory')
   sys.stderr.write(u"Retrieving All Organizational Units for your account (may take some time on large domain)...")
   orgs = callGAPI(service=cd.orgunits(), function=u'list', customerId=customerId, fields=fields, type=type, orgUnitPath=orgUnitPath)
@@ -6207,30 +6200,37 @@ def doPrintOrgs():
     return
   for org_vals in orgs[u'organizationUnits']:
     orgUnit = {}
-    orgUnit.update({u'Path': org_vals[u'orgUnitPath']})
-    if printname:
-      name = org_vals[u'name']
-      if name == None:
-        name = u''
-      orgUnit.update({u'Name': name})
-    if printdesc:
-      try:
-        desc = org_vals[u'description']
-        if desc == None:
-          desc = u''
-      except KeyError:
-        pass
-      orgUnit.update({u'Description': desc})
-    if printparent:
-      parent = org_vals[u'parentOrgUnitPath']
-      if parent == None:
-        parent = ''
-      orgUnit.update({u'Parent': parent})
-    if printinherit:
-      try:
-        orgUnit.update({u'InheritanceBlocked': org_vals[u'blockInheritance']})
-      except KeyError:
-        pass
+    if not fields:
+      orgUnit = flatten_json(org_vals)
+      for row in orgUnit:
+        if row not in titles:
+          titles.append(row)
+          org_attributes[0][row] = row
+    else:
+      orgUnit.update({u'Path': org_vals[u'orgUnitPath']})
+      if printname:
+        name = org_vals[u'name']
+        if name == None:
+          name = u''
+        orgUnit.update({u'Name': name})
+      if printdesc:
+        try:
+          desc = org_vals[u'description']
+          if desc == None:
+            desc = u''
+        except KeyError:
+          pass
+        orgUnit.update({u'Description': desc})
+      if printparent:
+        parent = org_vals[u'parentOrgUnitPath']
+        if parent == None:
+          parent = ''
+        orgUnit.update({u'Parent': parent})
+      if printinherit:
+        try:
+          orgUnit.update({u'InheritanceBlocked': org_vals[u'blockInheritance']})
+        except KeyError:
+          pass
     org_attributes.append(orgUnit)
   output_csv(org_attributes, titles, u'Orgs', todrive)
 
