@@ -2530,11 +2530,11 @@ def getImap(users):
     i += 1
 
 def getProductAndSKU(sku):
-  if sku.lower() in [u'apps', 'gafb']:
+  if sku.lower() in [u'apps', u'gafb', u'gafw']:
     sku = u'Google-Apps-For-Business'
   elif sku.lower() in [u'gams',]:
     sku = u'Google-Apps-For-Postini'
-  elif sku.lower() in [u'gau', u'unlimited']:
+  elif sku.lower() in [u'gau', u'unlimited', u'd4w', u'dfw']:
     sku = u'Google-Apps-Unlimited'
   elif sku.lower() == u'coordinate':
     sku = u'Google-Coordinate'
