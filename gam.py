@@ -972,7 +972,7 @@ def doDelegates(users):
       doDeleteAlias(alias_email=use_delegate_address)
 
 def gen_sha512_hash(password):
-  from passlib.hash import sha512_crypt
+  from passlib.handlers.sha2_crypt import sha512_crypt
   return sha512_crypt.encrypt(password, rounds=500000)
 
 def getDelegates(users):
