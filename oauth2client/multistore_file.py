@@ -19,30 +19,34 @@ credentials can be stored in one file. That file supports locking
 both in a single process and across processes.
 
 The credential themselves are keyed off of:
+
 * client_id
 * user_agent
 * scope
 
-The format of the stored data is like so:
-{
-  'file_version': 1,
-  'data': [
-    {
-      'key': {
-        'clientId': '<client id>',
-        'userAgent': '<user agent>',
-        'scope': '<scope>'
-      },
-      'credential': {
-        # JSON serialized Credentials.
+The format of the stored data is like so::
+
+  {
+    'file_version': 1,
+    'data': [
+      {
+        'key': {
+          'clientId': '<client id>',
+          'userAgent': '<user agent>',
+          'scope': '<scope>'
+        },
+        'credential': {
+          # JSON serialized Credentials.
+        }
       }
-    }
-  ]
-}
+    ]
+  }
+
 """
 
 __author__ = 'jbeda@google.com (Joe Beda)'
 
+import errno
 import json
 import logging
 import os
@@ -62,12 +66,10 @@ _multistores_lock = threading.Lock()
 
 class Error(Exception):
   """Base error for this module."""
-  pass
 
 
 class NewerCredentialStoreError(Error):
-  """The credential store is a newer version that supported."""
-  pass
+  """The credential store is a newer version than supported."""
 
 
 @util.positional(4)
@@ -191,7 +193,7 @@ class _MultiStore(object):
 
     This will create the file if necessary.
     """
-    self._file = LockedFile(filename, 'r+b', 'rb')
+    self._file = LockedFile(filename, 'r+', 'r')
     self._thread_lock = threading.Lock()
     self._read_only = False
     self._warn_on_readonly = warn_on_readonly
@@ -269,7 +271,7 @@ class _MultiStore(object):
     simple version of "touch" to ensure the file has been created.
     """
     if not os.path.exists(self._file.filename()):
-      old_umask = os.umask(0177)
+      old_umask = os.umask(0o177)
       try:
         open(self._file.filename(), 'a+b').close()
       finally:
@@ -278,7 +280,17 @@ class _MultiStore(object):
   def _lock(self):
     """Lock the entire multistore."""
     self._thread_lock.acquire()
-    self._file.open_and_lock()
+    try:
+      self._file.open_and_lock()
+    except IOError as e:
+      if e.errno == errno.ENOSYS:
+        logger.warn('File system does not support locking the credentials '
+                    'file.')
+      elif e.errno ==  errno.ENOLCK:
+        logger.warn('File system is out of resources for writing the '
+                    'credentials file (is your disk full?).')
+      else:
+        raise
     if not self._file.is_locked():
       self._read_only = True
       if self._warn_on_readonly:

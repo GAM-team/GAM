@@ -19,6 +19,7 @@ This credentials class is implemented on top of rsa library.
 
 import base64
 import json
+import six
 import time
 
 from pyasn1.codec.ber import decoder
@@ -64,7 +65,7 @@ class _ServiceAccountCredentials(AssertionCredentials):
         'kid': self._private_key_id
     }
 
-    now = long(time.time())
+    now = int(time.time())
     payload = {
         'aud': self._token_uri,
         'scope': self._scopes,
@@ -74,17 +75,21 @@ class _ServiceAccountCredentials(AssertionCredentials):
     }
     payload.update(self._kwargs)
 
-    assertion_input = '%s.%s' % (
-        _urlsafe_b64encode(header),
-        _urlsafe_b64encode(payload))
+    assertion_input = (_urlsafe_b64encode(header) + b'.' +
+                       _urlsafe_b64encode(payload))
 
     # Sign the assertion.
-    signature = base64.urlsafe_b64encode(rsa.pkcs1.sign(
-        assertion_input, self._private_key, 'SHA-256')).rstrip('=')
+    rsa_bytes = rsa.pkcs1.sign(assertion_input, self._private_key, 'SHA-256')
+    signature = base64.urlsafe_b64encode(rsa_bytes).rstrip(b'=')
 
-    return '%s.%s' % (assertion_input, signature)
+    return assertion_input + b'.' + signature
 
   def sign_blob(self, blob):
+    # Ensure that it is bytes
+    try:
+      blob = blob.encode('utf-8')
+    except AttributeError:
+      pass
     return (self._private_key_id,
             rsa.pkcs1.sign(blob, self._private_key, 'SHA-256'))
 
@@ -119,12 +124,14 @@ class _ServiceAccountCredentials(AssertionCredentials):
 
 def _urlsafe_b64encode(data):
   return base64.urlsafe_b64encode(
-      json.dumps(data, separators=(',', ':')).encode('UTF-8')).rstrip('=')
+      json.dumps(data, separators=(',', ':')).encode('UTF-8')).rstrip(b'=')
 
 
 def _get_private_key(private_key_pkcs8_text):
   """Get an RSA private key object from a pkcs8 representation."""
 
+  if not isinstance(private_key_pkcs8_text, six.binary_type):
+    private_key_pkcs8_text = private_key_pkcs8_text.encode('ascii')
   der = rsa.pem.load_pem(private_key_pkcs8_text, 'PRIVATE KEY')
   asn1_private_key, _ = decoder.decode(der, asn1Spec=PrivateKeyInfo())
   return rsa.PrivateKey.load_pkcs1(

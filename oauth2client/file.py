@@ -39,7 +39,6 @@ class Storage(BaseStorage):
     self._lock = threading.Lock()
 
   def _validate_file(self):
-    return
     if os.path.islink(self._filename):
       raise CredentialsFileSymbolicLinkError(
           'File: %s is a symbolic link.' % self._filename)
@@ -91,7 +90,7 @@ class Storage(BaseStorage):
     simple version of "touch" to ensure the file has been created.
     """
     if not os.path.exists(self._filename):
-      old_umask = os.umask(0177)
+      old_umask = os.umask(0o177)
       try:
         open(self._filename, 'a+b').close()
       finally:
@@ -109,7 +108,7 @@ class Storage(BaseStorage):
 
     self._create_file_if_needed()
     self._validate_file()
-    f = open(self._filename, 'wb')
+    f = open(self._filename, 'w')
     f.write(credentials.to_json())
     f.close()
 

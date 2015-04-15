@@ -571,16 +571,14 @@ class OAuth2Decorator(object):
   Instantiate and then use with oauth_required or oauth_aware
   as decorators on webapp.RequestHandler methods.
 
-  Example:
+  ::
 
     decorator = OAuth2Decorator(
         client_id='837...ent.com',
         client_secret='Qh...wwI',
         scope='https://www.googleapis.com/auth/plus')
 
-
     class MainHandler(webapp.RequestHandler):
-
       @decorator.oauth_required
       def get(self):
         http = decorator.http()
@@ -847,7 +845,8 @@ class OAuth2Decorator(object):
   def callback_handler(self):
     """RequestHandler for the OAuth 2.0 redirect callback.
 
-    Usage:
+    Usage::
+
        app = webapp.WSGIApplication([
          ('/index', MyIndexHandler),
          ...,
@@ -910,20 +909,19 @@ class OAuth2DecoratorFromClientSecrets(OAuth2Decorator):
   Uses a clientsecrets file as the source for all the information when
   constructing an OAuth2Decorator.
 
-  Example:
+  ::
 
     decorator = OAuth2DecoratorFromClientSecrets(
       os.path.join(os.path.dirname(__file__), 'client_secrets.json')
       scope='https://www.googleapis.com/auth/plus')
 
-
     class MainHandler(webapp.RequestHandler):
-
       @decorator.oauth_required
       def get(self):
         http = decorator.http()
         # http is authorized with the user's Credentials and can be used
         # in API calls
+
   """
 
   @util.positional(3)

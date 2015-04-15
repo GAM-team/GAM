@@ -21,6 +21,7 @@ an OAuth 2.0 protected service.
 __author__ = 'jcgregorio@google.com (Joe Gregorio)'
 
 import json
+import six
 
 
 # Properties that make a client_secrets.json file valid.
@@ -68,11 +69,21 @@ class InvalidClientSecretsError(Error):
 
 
 def _validate_clientsecrets(obj):
-  if obj is None or len(obj) != 1:
-    raise InvalidClientSecretsError('Invalid file format.')
-  client_type = obj.keys()[0]
-  if client_type not in VALID_CLIENT.keys():
-    raise InvalidClientSecretsError('Unknown client type: %s.' % client_type)
+  _INVALID_FILE_FORMAT_MSG = (
+    'Invalid file format. See '
+    'https://developers.google.com/api-client-library/'
+    'python/guide/aaa_client_secrets')
+
+  if obj is None:
+    raise InvalidClientSecretsError(_INVALID_FILE_FORMAT_MSG)
+  if len(obj) != 1:
+    raise InvalidClientSecretsError(
+      _INVALID_FILE_FORMAT_MSG + ' '
+      'Expected a JSON object with a single property for a "web" or '
+      '"installed" application')
+  client_type = tuple(obj)[0]
+  if client_type not in VALID_CLIENT:
+    raise InvalidClientSecretsError('Unknown client type: %s.' % (client_type,))
   client_info = obj[client_type]
   for prop_name in VALID_CLIENT[client_type]['required']:
     if prop_name not in client_info:
@@ -98,11 +109,8 @@ def loads(s):
 
 def _loadfile(filename):
   try:
-    fp = file(filename, 'r')
-    try:
+    with open(filename, 'r') as fp:
       obj = json.load(fp)
-    finally:
-      fp.close()
   except IOError:
     raise InvalidClientSecretsError('File not found: "%s"' % filename)
   return _validate_clientsecrets(obj)
@@ -114,10 +122,12 @@ def loadfile(filename, cache=None):
   Typical cache storage would be App Engine memcache service,
   but you can pass in any other cache client that implements
   these methods:
-    - get(key, namespace=ns)
-    - set(key, value, namespace=ns)
 
-  Usage:
+  * ``get(key, namespace=ns)``
+  * ``set(key, value, namespace=ns)``
+
+  Usage::
+
     # without caching
     client_type, client_info = loadfile('secrets.json')
     # using App Engine memcache service
@@ -150,4 +160,4 @@ def loadfile(filename, cache=None):
     obj = {client_type: client_info}
     cache.set(filename, obj, namespace=_SECRET_NAMESPACE)
 
-  return obj.iteritems().next()
+  return next(six.iteritems(obj))

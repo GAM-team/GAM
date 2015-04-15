@@ -17,16 +17,20 @@
 This module first tries to use fcntl locking to ensure serialized access
 to a file, then falls back on a lock file if that is unavialable.
 
-Usage:
+Usage::
+
     f = LockedFile('filename', 'r+b', 'rb')
     f.open_and_lock()
     if f.is_locked():
-      print 'Acquired filename with r+b mode'
+      print('Acquired filename with r+b mode')
       f.file_handle().write('locked data')
     else:
-      print 'Aquired filename with rb mode'
+      print('Acquired filename with rb mode')
     f.unlock_and_close()
+
 """
+
+from __future__ import print_function
 
 __author__ = 'cache@google.com (David T McWherter)'
 
@@ -208,9 +212,9 @@ try:
         except IOError as e:
           # If not retrying, then just pass on the error.
           if timeout == 0:
-            raise e
+            raise
           if e.errno != errno.EACCES:
-            raise e
+            raise
           # We could not acquire the lock. Try again.
           if (time.time() - start_time) >= timeout:
             logger.warn('Could not lock %s in %s seconds',
@@ -287,7 +291,7 @@ try:
           return
         except pywintypes.error as e:
           if timeout == 0:
-            raise e
+            raise
 
           # If the error is not that the file is already in use, raise.
           if e[0] != _Win32Opener.FILE_IN_USE_ERROR:

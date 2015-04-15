@@ -1,5 +1,3 @@
-#!/usr/bin/python2.4
-#
 # Copyright 2014 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,15 +19,18 @@ as JSON, Atom, etc. The model classes are responsible
 for converting between the wire format and the Python
 object representation.
 """
+from __future__ import absolute_import
+import six
 
 __author__ = 'jcgregorio@google.com (Joe Gregorio)'
 
 import json
 import logging
-import urllib
+
+from six.moves.urllib.parse import urlencode
 
 from googleapiclient import __version__
-from errors import HttpError
+from googleapiclient.errors import HttpError
 
 
 dump_request_response = False
@@ -106,11 +107,11 @@ class BaseModel(Model):
     if dump_request_response:
       logging.info('--request-start--')
       logging.info('-headers-start-')
-      for h, v in headers.iteritems():
+      for h, v in six.iteritems(headers):
         logging.info('%s: %s', h, v)
       logging.info('-headers-end-')
       logging.info('-path-parameters-start-')
-      for h, v in path_params.iteritems():
+      for h, v in six.iteritems(path_params):
         logging.info('%s: %s', h, v)
       logging.info('-path-parameters-end-')
       logging.info('body: %s', body)
@@ -161,22 +162,22 @@ class BaseModel(Model):
     if self.alt_param is not None:
       params.update({'alt': self.alt_param})
     astuples = []
-    for key, value in params.iteritems():
+    for key, value in six.iteritems(params):
       if type(value) == type([]):
         for x in value:
           x = x.encode('utf-8')
           astuples.append((key, x))
       else:
-        if getattr(value, 'encode', False) and callable(value.encode):
+        if isinstance(value, six.text_type) and callable(value.encode):
           value = value.encode('utf-8')
         astuples.append((key, value))
-    return '?' + urllib.urlencode(astuples)
+    return '?' + urlencode(astuples)
 
   def _log_response(self, resp, content):
     """Logs debugging information about the response if requested."""
     if dump_request_response:
       logging.info('--response-start--')
-      for h, v in resp.iteritems():
+      for h, v in six.iteritems(resp):
         logging.info('%s: %s', h, v)
       if content:
         logging.info(content)
@@ -257,7 +258,10 @@ class JsonModel(BaseModel):
     return json.dumps(body_value)
 
   def deserialize(self, content):
-    content = content.decode('utf-8')
+    try:
+        content = content.decode('utf-8')
+    except AttributeError:
+        pass
     body = json.loads(content)
     if self._data_wrapper and isinstance(body, dict) and 'data' in body:
       body = body['data']
@@ -361,7 +365,7 @@ def makepatch(original, modified):
       body=makepatch(original, item)).execute()
   """
   patch = {}
-  for key, original_value in original.iteritems():
+  for key, original_value in six.iteritems(original):
     modified_value = modified.get(key, None)
     if modified_value is None:
       # Use None to signal that the element is deleted

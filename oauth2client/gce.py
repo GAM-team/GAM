@@ -21,7 +21,7 @@ __author__ = 'jcgregorio@google.com (Joe Gregorio)'
 
 import json
 import logging
-import urllib
+from six.moves import urllib
 
 from oauth2client import util
 from oauth2client.client import AccessTokenRefreshError
@@ -78,13 +78,13 @@ class AppAssertionCredentials(AssertionCredentials):
     Raises:
       AccessTokenRefreshError: When the refresh fails.
     """
-    query = '?scope=%s' % urllib.quote(self.scope, '')
+    query = '?scope=%s' % urllib.parse.quote(self.scope, '')
     uri = META.replace('{?scope}', query)
     response, content = http_request(uri)
     if response.status == 200:
       try:
         d = json.loads(content)
-      except StandardError as e:
+      except Exception as e:
         raise AccessTokenRefreshError(str(e))
       self.access_token = d['accessToken']
     else:

@@ -1,5 +1,3 @@
-#!/usr/bin/python2.4
-#
 # Copyright 2014 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,6 +17,7 @@
 All exceptions defined by the library
 should be defined in this file.
 """
+from __future__ import absolute_import
 
 __author__ = 'jcgregorio@google.com (Joe Gregorio)'
 

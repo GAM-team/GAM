@@ -26,10 +26,11 @@ import datetime
 import json
 import logging
 import os
+import socket
 import sys
 import time
-import urllib
-import urlparse
+import six
+from six.moves import urllib
 
 import httplib2
 from oauth2client import clientsecrets
@@ -89,6 +90,15 @@ ADC_HELP_MSG = (
 # The access token along with the seconds in which it expires.
 AccessTokenInfo = collections.namedtuple(
     'AccessTokenInfo', ['access_token', 'expires_in'])
+
+DEFAULT_ENV_NAME = 'UNKNOWN'
+
+# If set to True _get_environment avoid GCE check (_detect_gce_environment)
+NO_GCE_CHECK = os.environ.setdefault('NO_GCE_CHECK', 'False')
+
+class SETTINGS(object):
+  """Settings namespace for globally defined values."""
+  env_name = None
 
 
 class Error(Exception):
@@ -231,6 +241,9 @@ class Credentials(object):
     # Add in information we will need later to reconsistitue this instance.
     d['_class'] = t.__name__
     d['_module'] = t.__module__
+    for key, val in d.items():
+      if isinstance(val, bytes):
+        d[key] = val.decode('utf-8')
     return json.dumps(d)
 
   def to_json(self):
@@ -254,6 +267,8 @@ class Credentials(object):
       An instance of the subclass of Credentials that was serialized with
       to_json().
     """
+    if six.PY3 and isinstance(s, bytes):
+      s = s.decode('utf-8')
     data = json.loads(s)
     # Find and call the right classmethod from_json() to restore the object.
     module = data['_module']
@@ -398,8 +413,10 @@ def clean_headers(headers):
   """
   clean = {}
   try:
-    for k, v in headers.iteritems():
-      clean[str(k)] = str(v)
+    for k, v in six.iteritems(headers):
+      clean_k = k if isinstance(k, bytes) else str(k).encode('ascii')
+      clean_v = v if isinstance(v, bytes) else str(v).encode('ascii')
+      clean[clean_k] = clean_v
   except UnicodeEncodeError:
     raise NonAsciiHeaderError(k + ': ' + v)
   return clean
@@ -415,11 +432,11 @@ def _update_query_params(uri, params):
   Returns:
     The same URI but with the new query parameters added.
   """
-  parts = urlparse.urlparse(uri)
-  query_params = dict(urlparse.parse_qsl(parts.query))
+  parts = urllib.parse.urlparse(uri)
+  query_params = dict(urllib.parse.parse_qsl(parts.query))
   query_params.update(params)
-  new_parts = parts._replace(query=urllib.urlencode(query_params))
-  return urlparse.urlunparse(new_parts)
+  new_parts = parts._replace(query=urllib.parse.urlencode(query_params))
+  return urllib.parse.urlunparse(new_parts)
 
 
 class OAuth2Credentials(Credentials):
@@ -487,13 +504,13 @@ class OAuth2Credentials(Credentials):
     it.
 
     Args:
-       http: An instance of httplib2.Http
-         or something that acts like it.
+       http: An instance of ``httplib2.Http`` or something that acts
+         like it.
 
     Returns:
        A modified instance of http that was passed in.
 
-    Example:
+    Example::
 
       h = httplib2.Http()
       h = credentials.authorize(h)
@@ -503,6 +520,7 @@ class OAuth2Credentials(Credentials):
     signing. So instead we have to overload 'request' with a closure
     that adds in the Authorization header and then calls the original
     version of 'request()'.
+
     """
     request_orig = http.request
 
@@ -589,6 +607,8 @@ class OAuth2Credentials(Credentials):
     Returns:
       An instance of a Credentials subclass.
     """
+    if six.PY3 and isinstance(s, bytes):
+      s = s.decode('utf-8')
     data = json.loads(s)
     if (data.get('token_expiry') and
         not isinstance(data['token_expiry'], datetime.datetime)):
@@ -691,7 +711,7 @@ class OAuth2Credentials(Credentials):
 
   def _generate_refresh_request_body(self):
     """Generate the body that will be used in the refresh request."""
-    body = urllib.urlencode({
+    body = urllib.parse.urlencode({
         'grant_type': 'refresh_token',
         'client_id': self.client_id,
         'client_secret': self.client_secret,
@@ -755,8 +775,9 @@ class OAuth2Credentials(Credentials):
     logger.info('Refreshing access_token')
     resp, content = http_request(
         self.token_uri, method='POST', body=body, headers=headers)
+    if six.PY3 and isinstance(content, bytes):
+      content = content.decode('utf-8')
     if resp.status == 200:
-      # TODO(jcgregorio) Raise an error if loads fails?
       d = json.loads(content)
       self.token_response = d
       self.access_token = d['access_token']
@@ -785,21 +806,21 @@ class OAuth2Credentials(Credentials):
           self.invalid = True
           if self.store:
             self.store.locked_put(self)
-      except StandardError:
+      except (TypeError, ValueError):
         pass
       raise AccessTokenRefreshError(error_msg)
 
   def _revoke(self, http_request):
-    """Revokes the refresh_token and deletes the store if available.
+    """Revokes this credential and deletes the stored copy (if it exists).
 
     Args:
       http_request: callable, a callable that matches the method signature of
         httplib2.Http.request, used to make the revoke request.
     """
-    self._do_revoke(http_request, self.refresh_token)
+    self._do_revoke(http_request, self.refresh_token or self.access_token)
 
   def _do_revoke(self, http_request, token):
-    """Revokes the credentials and deletes the store if available.
+    """Revokes this credential and deletes the stored copy (if it exists).
 
     Args:
       http_request: callable, a callable that matches the method signature of
@@ -822,7 +843,7 @@ class OAuth2Credentials(Credentials):
         d = json.loads(content)
         if 'error' in d:
           error_msg = d['error']
-      except StandardError:
+      except (TypeError, ValueError):
         pass
       raise TokenRevokeError(error_msg)
 
@@ -844,7 +865,8 @@ class AccessTokenCredentials(OAuth2Credentials):
 
   AccessTokenCredentials objects may be safely pickled and unpickled.
 
-  Usage:
+  Usage::
+
     credentials = AccessTokenCredentials('<an access token>',
       'my-user-agent/1.0')
     http = httplib2.Http()
@@ -880,10 +902,12 @@ class AccessTokenCredentials(OAuth2Credentials):
 
   @classmethod
   def from_json(cls, s):
+    if six.PY3 and isinstance(s, bytes):
+      s = s.decode('utf-8')
     data = json.loads(s)
     retval = AccessTokenCredentials(
-        data['access_token'],
-        data['user_agent'])
+      data['access_token'],
+      data['user_agent'])
     return retval
 
   def _refresh(self, http_request):
@@ -900,36 +924,60 @@ class AccessTokenCredentials(OAuth2Credentials):
     self._do_revoke(http_request, self.access_token)
 
 
-_env_name = None
+def _detect_gce_environment(urlopen=None):
+  """Determine if the current environment is Compute Engine.
+
+  Args:
+      urlopen: Optional argument. Function used to open a connection to a URL.
+
+  Returns:
+      Boolean indicating whether or not the current environment is Google
+          Compute Engine.
+  """
+  urlopen = urlopen or urllib.request.urlopen
+  # Note: the explicit `timeout` below is a workaround. The underlying
+  # issue is that resolving an unknown host on some networks will take
+  # 20-30 seconds; making this timeout short fixes the issue, but
+  # could lead to false negatives in the event that we are on GCE, but
+  # the metadata resolution was particularly slow. The latter case is
+  # "unlikely".
+  try:
+    response = urlopen('http://169.254.169.254/', timeout=1)
+    return response.info().get('Metadata-Flavor', '') == 'Google'
+  except socket.timeout:
+    logger.info('Timeout attempting to reach GCE metadata service.')
+    return False
+  except urllib.error.URLError as e:
+    if isinstance(getattr(e, 'reason', None), socket.timeout):
+      logger.info('Timeout attempting to reach GCE metadata service.')
+    return False
 
 
-def _get_environment(urllib2_urlopen=None):
-  """Detect the environment the code is being run on."""
+def _get_environment(urlopen=None):
+  """Detect the environment the code is being run on.
 
-  global _env_name
+  Args:
+      urlopen: Optional argument. Function used to open a connection to a URL.
 
-  if _env_name:
-    return _env_name
+  Returns:
+      The value of SETTINGS.env_name after being set. If already
+          set, simply returns the value.
+  """
+  if SETTINGS.env_name is not None:
+    return SETTINGS.env_name
+
+  # None is an unset value, not the default.
+  SETTINGS.env_name = DEFAULT_ENV_NAME
 
   server_software = os.environ.get('SERVER_SOFTWARE', '')
   if server_software.startswith('Google App Engine/'):
-    _env_name = 'GAE_PRODUCTION'
+    SETTINGS.env_name = 'GAE_PRODUCTION'
   elif server_software.startswith('Development/'):
-    _env_name = 'GAE_LOCAL'
-  else:
-    import urllib2
-    try:
-      if urllib2_urlopen is None:
-        urllib2_urlopen = urllib2.urlopen
-      response = urllib2_urlopen('http://metadata.google.internal')
-      if any('Metadata-Flavor: Google' in h for h in response.info().headers):
-        _env_name = 'GCE_PRODUCTION'
-      else:
-        _env_name = 'UNKNOWN'
-    except urllib2.URLError:
-      _env_name = 'UNKNOWN'
+    SETTINGS.env_name = 'GAE_LOCAL'
+  elif NO_GCE_CHECK != 'True' and _detect_gce_environment(urlopen=urlopen):
+    SETTINGS.env_name = 'GCE_PRODUCTION'
 
-  return _env_name
+  return SETTINGS.env_name
 
 
 class GoogleCredentials(OAuth2Credentials):
@@ -943,36 +991,19 @@ class GoogleCredentials(OAuth2Credentials):
   Here is an example of how to use the Application Default Credentials for a
   service that requires authentication:
 
-  <code>
-  from googleapiclient.discovery import build
-  from oauth2client.client import GoogleCredentials
+      from googleapiclient.discovery import build
+      from oauth2client.client import GoogleCredentials
 
-  PROJECT = 'bamboo-machine-422'  # replace this with one of your projects
-  ZONE = 'us-central1-a'          # replace this with the zone you care about
+      credentials = GoogleCredentials.get_application_default()
+      service = build('compute', 'v1', credentials=credentials)
 
-  credentials = GoogleCredentials.get_application_default()
-  service = build('compute', 'v1', credentials=credentials)
+      PROJECT = 'bamboo-machine-422'
+      ZONE = 'us-central1-a'
+      request = service.instances().list(project=PROJECT, zone=ZONE)
+      response = request.execute()
 
-  request = service.instances().list(project=PROJECT, zone=ZONE)
-  response = request.execute()
-
-  print response
-  </code>
-
-  A service that does not require authentication does not need credentials
-  to be passed in:
-
-  <code>
-  from googleapiclient.discovery import build
-
-  service = build('discovery', 'v1')
-
-  request = service.apis().list()
-  response = request.execute()
-
-  print response
-  </code>
-  """
+      print(response)
+ """
 
   def __init__(self, access_token, client_id, client_secret, refresh_token,
                token_expiry, token_uri, user_agent,
@@ -1025,6 +1056,116 @@ class GoogleCredentials(OAuth2Credentials):
     }
 
   @staticmethod
+  def _implicit_credentials_from_gae(env_name=None):
+    """Attempts to get implicit credentials in Google App Engine env.
+
+    If the current environment is not detected as App Engine, returns None,
+    indicating no Google App Engine credentials can be detected from the
+    current environment.
+
+    Args:
+        env_name: String, indicating current environment.
+
+    Returns:
+        None, if not in GAE, else an appengine.AppAssertionCredentials object.
+    """
+    env_name = env_name or _get_environment()
+    if env_name not in ('GAE_PRODUCTION', 'GAE_LOCAL'):
+      return None
+
+    return _get_application_default_credential_GAE()
+
+  @staticmethod
+  def _implicit_credentials_from_gce(env_name=None):
+    """Attempts to get implicit credentials in Google Compute Engine env.
+
+    If the current environment is not detected as Compute Engine, returns None,
+    indicating no Google Compute Engine credentials can be detected from the
+    current environment.
+
+    Args:
+        env_name: String, indicating current environment.
+
+    Returns:
+        None, if not in GCE, else a gce.AppAssertionCredentials object.
+    """
+    env_name = env_name or _get_environment()
+    if env_name != 'GCE_PRODUCTION':
+      return None
+
+    return _get_application_default_credential_GCE()
+
+  @staticmethod
+  def _implicit_credentials_from_files(env_name=None):
+    """Attempts to get implicit credentials from local credential files.
+
+    First checks if the environment variable GOOGLE_APPLICATION_CREDENTIALS
+    is set with a filename and then falls back to a configuration file (the
+    "well known" file) associated with the 'gcloud' command line tool.
+
+    Args:
+        env_name: Unused argument.
+
+    Returns:
+        Credentials object associated with the GOOGLE_APPLICATION_CREDENTIALS
+            file or the "well known" file if either exist. If neither file is
+            define, returns None, indicating no credentials from a file can
+            detected from the current environment.
+    """
+    credentials_filename = _get_environment_variable_file()
+    if not credentials_filename:
+      credentials_filename = _get_well_known_file()
+      if os.path.isfile(credentials_filename):
+        extra_help = (' (produced automatically when running'
+                      ' "gcloud auth login" command)')
+      else:
+        credentials_filename = None
+    else:
+      extra_help = (' (pointed to by ' + GOOGLE_APPLICATION_CREDENTIALS +
+                    ' environment variable)')
+
+    if not credentials_filename:
+      return
+
+    try:
+      return _get_application_default_credential_from_file(credentials_filename)
+    except (ApplicationDefaultCredentialsError, ValueError) as error:
+      _raise_exception_for_reading_json(credentials_filename, extra_help, error)
+
+  @classmethod
+  def _get_implicit_credentials(cls):
+    """Gets credentials implicitly from the environment.
+
+    Checks environment in order of precedence:
+    - Google App Engine (production and testing)
+    - Environment variable GOOGLE_APPLICATION_CREDENTIALS pointing to
+      a file with stored credentials information.
+    - Stored "well known" file associated with `gcloud` command line tool.
+    - Google Compute Engine production environment.
+
+    Exceptions:
+      ApplicationDefaultCredentialsError: raised when the credentials fail
+          to be retrieved.
+    """
+    env_name = _get_environment()
+
+    # Environ checks (in order). Assumes each checker takes `env_name`
+    # as a kwarg.
+    environ_checkers = [
+      cls._implicit_credentials_from_gae,
+      cls._implicit_credentials_from_files,
+      cls._implicit_credentials_from_gce,
+    ]
+
+    for checker in environ_checkers:
+      credentials = checker(env_name=env_name)
+      if credentials is not None:
+        return credentials
+
+    # If no credentials, fail.
+    raise ApplicationDefaultCredentialsError(ADC_HELP_MSG)
+
+  @staticmethod
   def get_application_default():
     """Get the Application Default Credentials for the current environment.
 
@@ -1032,42 +1173,7 @@ class GoogleCredentials(OAuth2Credentials):
       ApplicationDefaultCredentialsError: raised when the credentials fail
                                           to be retrieved.
     """
-
-    env_name = _get_environment()
-
-    if env_name in ('GAE_PRODUCTION', 'GAE_LOCAL'):
-      # if we are running inside Google App Engine
-      # there is no need to look for credentials in local files
-      application_default_credential_filename = None
-      well_known_file = None
-    else:
-      application_default_credential_filename = _get_environment_variable_file()
-      well_known_file = _get_well_known_file()
-      if not os.path.isfile(well_known_file):
-        well_known_file = None
-
-    if application_default_credential_filename:
-      try:
-        return _get_application_default_credential_from_file(
-            application_default_credential_filename)
-      except (ApplicationDefaultCredentialsError, ValueError) as error:
-        extra_help = (' (pointed to by ' + GOOGLE_APPLICATION_CREDENTIALS +
-                      ' environment variable)')
-        _raise_exception_for_reading_json(
-            application_default_credential_filename, extra_help, error)
-    elif well_known_file:
-      try:
-        return _get_application_default_credential_from_file(well_known_file)
-      except (ApplicationDefaultCredentialsError, ValueError) as error:
-        extra_help = (' (produced automatically when running'
-                      ' "gcloud auth login" command)')
-        _raise_exception_for_reading_json(well_known_file, extra_help, error)
-    elif env_name in ('GAE_PRODUCTION', 'GAE_LOCAL'):
-      return _get_application_default_credential_GAE()
-    elif env_name == 'GCE_PRODUCTION':
-      return _get_application_default_credential_GCE()
-    else:
-      raise ApplicationDefaultCredentialsError(ADC_HELP_MSG)
+    return GoogleCredentials._get_implicit_credentials()
 
   @staticmethod
   def from_stream(credential_filename):
@@ -1164,16 +1270,14 @@ def _get_well_known_file():
   return default_config_path
 
 
-def _get_application_default_credential_from_file(
-    application_default_credential_filename):
+def _get_application_default_credential_from_file(filename):
   """Build the Application Default Credentials from file."""
 
-  import service_account
+  from oauth2client import service_account
 
   # read the credentials from the file
-  with open(application_default_credential_filename) as (
-      application_default_credential):
-    client_credentials = json.load(application_default_credential)
+  with open(filename) as file_obj:
+    client_credentials = json.load(file_obj)
 
   credentials_type = client_credentials.get('type')
   if credentials_type == AUTHORIZED_USER:
@@ -1274,7 +1378,7 @@ class AssertionCredentials(GoogleCredentials):
   def _generate_refresh_request_body(self):
     assertion = self._generate_assertion()
 
-    body = urllib.urlencode({
+    body = urllib.parse.urlencode({
         'assertion': assertion,
         'grant_type': 'urn:ietf:params:oauth:grant-type:jwt-bearer',
         })
@@ -1363,6 +1467,8 @@ class SignedJwtAssertionCredentials(AssertionCredentials):
 
     # Keep base64 encoded so it can be stored in JSON.
     self.private_key = base64.b64encode(private_key)
+    if isinstance(self.private_key, six.text_type):
+      self.private_key = self.private_key.encode('utf-8')
 
     self.private_key_password = private_key_password
     self.service_account_name = service_account_name
@@ -1386,7 +1492,7 @@ class SignedJwtAssertionCredentials(AssertionCredentials):
 
   def _generate_assertion(self):
     """Generate the assertion that will be used in the request."""
-    now = long(time.time())
+    now = int(time.time())
     payload = {
         'aud': self.token_uri,
         'scope': self.scope,
@@ -1435,7 +1541,7 @@ def verify_id_token(id_token, audience, http=None,
   resp, content = http.request(cert_uri)
 
   if resp.status == 200:
-    certs = json.loads(content)
+    certs = json.loads(content.decode('utf-8'))
     return crypt.verify_signed_jwt_with_certs(id_token, certs, audience)
   else:
     raise VerifyJwtTokenError('Status code: %d' % resp.status)
@@ -1443,8 +1549,9 @@ def verify_id_token(id_token, audience, http=None,
 
 def _urlsafe_b64decode(b64string):
   # Guard against unicode strings, which base64 can't handle.
-  b64string = b64string.encode('ascii')
-  padded = b64string + '=' * (4 - len(b64string) % 4)
+  if isinstance(b64string, six.text_type):
+    b64string = b64string.encode('ascii')
+  padded = b64string + b'=' * (4 - len(b64string) % 4)
   return base64.urlsafe_b64decode(padded)
 
 
@@ -1454,18 +1561,21 @@ def _extract_id_token(id_token):
   Does the extraction w/o checking the signature.
 
   Args:
-    id_token: string, OAuth 2.0 id_token.
+    id_token: string or bytestring, OAuth 2.0 id_token.
 
   Returns:
     object, The deserialized JSON payload.
   """
-  segments = id_token.split('.')
+  if type(id_token) == bytes:
+    segments = id_token.split(b'.')
+  else:
+    segments = id_token.split(u'.')
 
   if len(segments) != 3:
     raise VerifyJwtTokenError(
         'Wrong number of segments in token: %s' % id_token)
 
-  return json.loads(_urlsafe_b64decode(segments[1]))
+  return json.loads(_urlsafe_b64decode(segments[1]).decode('utf-8'))
 
 
 def _parse_exchange_token_response(content):
@@ -1483,11 +1593,12 @@ def _parse_exchange_token_response(content):
   """
   resp = {}
   try:
-    resp = json.loads(content)
-  except StandardError:
+    resp = json.loads(content.decode('utf-8'))
+  except Exception:
     # different JSON libs raise different exceptions,
     # so we just do a catch-all here
-    resp = dict(urlparse.parse_qsl(content))
+    content = content.decode('utf-8')
+    resp = dict(urllib.parse.parse_qsl(content))
 
   # some providers respond with 'expires', others with 'expires_in'
   if resp and 'expires' in resp:
@@ -1509,7 +1620,7 @@ def credentials_from_code(client_id, client_secret, scope, code,
     client_id: string, client identifier.
     client_secret: string, client secret.
     scope: string or iterable of strings, scope(s) to request.
-    code: string, An authroization code, most likely passed down from
+    code: string, An authorization code, most likely passed down from
       the client
     redirect_uri: string, this is generally set to 'postmessage' to match the
       redirect_uri that the client specified
@@ -1593,8 +1704,8 @@ class DeviceFlowInfo(collections.namedtuple('DeviceFlowInfo', (
   def FromResponse(cls, response):
     """Create a DeviceFlowInfo from a server response.
 
-    The response should be a dict containing entries as described
-    here:
+    The response should be a dict containing entries as described here:
+
       http://tools.ietf.org/html/draft-ietf-oauth-v2-05#section-3.7.1
     """
     # device_code, user_code, and verification_url are required.
@@ -1726,7 +1837,7 @@ class OAuth2WebServerFlow(Flow):
     if self.device_uri is None:
       raise ValueError('The value of device_uri must not be None.')
 
-    body = urllib.urlencode({
+    body = urllib.parse.urlencode({
         'client_id': self.client_id,
         'scope': self.scope,
     })
@@ -1767,10 +1878,10 @@ class OAuth2WebServerFlow(Flow):
 
     Args:
 
-      code: string, dict or None. For a non-device flow, this is
-          either the response code as a string, or a dictionary of
-          query parameters to the redirect_uri. For a device flow,
-          this should be None.
+      code: string, a dict-like object, or None. For a non-device
+          flow, this is either the response code as a string, or a
+          dictionary of query parameters to the redirect_uri. For a
+          device flow, this should be None.
       http: httplib2.Http, optional http instance to use when fetching
           credentials.
       device_flow_info: DeviceFlowInfo, return value from step1 in the
@@ -1780,7 +1891,7 @@ class OAuth2WebServerFlow(Flow):
       An OAuth2Credentials object that can be used to authorize requests.
 
     Raises:
-      FlowExchangeError: if a problem occured exchanging the code for a
+      FlowExchangeError: if a problem occurred exchanging the code for a
           refresh_token.
       ValueError: if code and device_flow_info are both provided or both
           missing.
@@ -1793,7 +1904,7 @@ class OAuth2WebServerFlow(Flow):
 
     if code is None:
       code = device_flow_info.device_code
-    elif isinstance(code, dict):
+    elif not isinstance(code, six.string_types):
       if 'code' not in code:
         raise FlowExchangeError(code.get(
             'error', 'No code was supplied in the query parameters.'))
@@ -1803,14 +1914,14 @@ class OAuth2WebServerFlow(Flow):
         'client_id': self.client_id,
         'client_secret': self.client_secret,
         'code': code,
-#        'scope': self.scope,
+        'scope': self.scope,
     }
     if device_flow_info is not None:
       post_data['grant_type'] = 'http://oauth.net/grant_type/device/1.0'
     else:
       post_data['grant_type'] = 'authorization_code'
       post_data['redirect_uri'] = self.redirect_uri
-    body = urllib.urlencode(post_data)
+    body = urllib.parse.urlencode(post_data)
     headers = {
         'content-type': 'application/x-www-form-urlencoded',
     }
@@ -1836,21 +1947,22 @@ class OAuth2WebServerFlow(Flow):
         token_expiry = datetime.datetime.utcnow() + datetime.timedelta(
             seconds=int(d['expires_in']))
 
+      extracted_id_token = None
       if 'id_token' in d:
-        d['id_token'] = _extract_id_token(d['id_token'])
+        extracted_id_token = _extract_id_token(d['id_token'])
 
       logger.info('Successfully retrieved access token')
       return OAuth2Credentials(access_token, self.client_id,
                                self.client_secret, refresh_token, token_expiry,
                                self.token_uri, self.user_agent,
                                revoke_uri=self.revoke_uri,
-                               id_token=d.get('id_token', None),
+                               id_token=extracted_id_token,
                                token_response=d)
     else:
       logger.info('Failed to retrieve access token: %s', content)
       if 'error' in d:
         # you never know what those providers got to say
-        error_msg = unicode(d['error'])
+        error_msg = str(d['error']) + str(d.get('error_description', ''))
       else:
         error_msg = 'Invalid response: %s.' % str(resp.status)
       raise FlowExchangeError(error_msg)
