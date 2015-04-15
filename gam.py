@@ -40,7 +40,8 @@ import oauth2client.file
 import oauth2client.tools
 import uritemplate
 
-global true_values, false_values, prettyPrint, customerId, domain, usergroup_types
+global true_values, false_values, extra_args, customerId, domain, usergroup_types
+extra_args = {u'prettyPrint': False}
 true_values = [u'on', u'yes', u'enabled', u'true', u'1']
 false_values = [u'off', u'no', u'disabled', u'false', u'0']
 usergroup_types = [u'user', u'users', u'group', u'ou', u'org',
@@ -369,9 +370,10 @@ def callGData(service, function, soft_errors=False, throw_errors=[], **kwargs):
 def callGAPI(service, function, silent_errors=False, soft_errors=False, throw_reasons=[], retry_reasons=[], **kwargs):
   method = getattr(service, function)
   retries = 10
+  parameters = dict(kwargs.items() + extra_args.items())
   for n in range(1, retries+1):
     try:
-      return method(prettyPrint=prettyPrint, **kwargs).execute()
+      return method(**parameters).execute()
     except googleapiclient.errors.HttpError, e:
       try:
         error = json.loads(e.content)
@@ -504,7 +506,7 @@ def getAPIScope(api):
             u'https://www.googleapis.com/auth/drive']
 
 def buildGAPIObject(api):
-  global domain, customerId, prettyPrint
+  global domain, customerId, extra_args
   oauth2file = getGamPath()+u'oauth2.txt'
   try:
     oauth2file = getGamPath()+os.environ[u'OAUTHFILE']
@@ -527,9 +529,13 @@ def buildGAPIObject(api):
   http = httplib2.Http(ca_certs=getGamPath()+u'cacert.pem', disable_ssl_certificate_validation=disable_ssl_certificate_validation, cache=cache)
   if os.path.isfile(getGamPath()+u'debug.gam'):
     httplib2.debuglevel = 4
-    prettyPrint = True
-  else:
-    prettyPrint = False
+    extra_args[u'prettyPrint'] = True
+  if os.path.isfile(getGamPath()+u'extra-args.txt'):
+    import ConfigParser
+    config = ConfigParser.ConfigParser()
+    config.optionxform = str
+    config.read(getGamPath()+u'extra-args.txt')
+    extra_args.update(dict(config.items(u'extra-args')))
   http = credentials.authorize(http)
   version = getAPIVer(api)
   if api in [u'directory', u'reports']:
@@ -562,7 +568,7 @@ def buildGAPIObject(api):
   return service
 
 def buildGAPIServiceObject(api, act_as=None, soft_errors=False):
-  global prettyPrint
+  global extra_args
   oauth2servicefile = getGamPath()+u'oauth2service'
   try:
     oauth2servicefile = getGamPath()+os.environ[u'OAUTHSERVICEFILE']
@@ -606,9 +612,13 @@ def buildGAPIServiceObject(api, act_as=None, soft_errors=False):
   http = httplib2.Http(ca_certs=getGamPath()+u'cacert.pem', disable_ssl_certificate_validation=disable_ssl_certificate_validation, cache=cache)
   if os.path.isfile(getGamPath()+u'debug.gam'):
     httplib2.debuglevel = 4
-    prettyPrint = True
-  else:
-    prettyPrint = False
+    extra_args[u'prettyPrint'] = True
+  if os.path.isfile(getGamPath()+u'extra-args.txt'):
+    import ConfigParser
+    config = ConfigParser.ConfigParser()
+    config.optionxform = str
+    config.read(getGamPath()+u'extra-args.txt')
+    extra_args.update(dict(config.items(u'extra-args')))
   http = credentials.authorize(http)
   version = getAPIVer(api)
   try:
@@ -7270,9 +7280,7 @@ access or an 'a' to grant action-only access.
     http = httplib2.Http(ca_certs=certFile, disable_ssl_certificate_validation=disable_ssl_certificate_validation)
     if os.path.isfile(getGamPath()+u'debug.gam'):
       httplib2.debuglevel = 4
-      prettyPrint = True
-    else:
-      prettyPrint = False
+      extra_args[u'prettyPrint'] = True
     try:
       credentials = oauth2client.tools.run_flow(flow=FLOW, storage=storage, flags=flags, http=http)
     except httplib2.CertificateValidationUnsupported:
