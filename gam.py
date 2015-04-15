@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 #
-# Dito GAM 
+# GAM 
 #
-# Copyright 2013 Dito, LLC All Rights Reserved.
+# Copyright 2015, LLC All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-u"""Dito GAM is a command line tool which allows Administrators to control their Google Apps domain and accounts.
+u"""GAM is a command line tool which allows Administrators to control their Google Apps domain and accounts.
 
 With GAM you can programatically create users, turn on/off services for users like POP and Forwarding and much more.
 For more information, see http://git.io/gam
@@ -24,7 +24,7 @@ For more information, see http://git.io/gam
 """
 
 __author__ = u'Jay Lee <jay0lee@gmail.com>'
-__version__ = u'3.43'
+__version__ = u'3.44'
 __license__ = u'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 import sys, os, time, datetime, random, socket, csv, platform, re, calendar, base64, hashlib, string
@@ -40,7 +40,8 @@ import oauth2client.file
 import oauth2client.tools
 import uritemplate
 
-global true_values, false_values, extra_args, customerId, domain, usergroup_types
+global true_values, false_values, extra_args, customerId, domain, usergroup_types, is_frozen
+is_frozen = getattr(sys, 'frozen', '')
 extra_args = {u'prettyPrint': False}
 true_values = [u'on', u'yes', u'enabled', u'true', u'1']
 false_values = [u'off', u'no', u'disabled', u'false', u'0']
@@ -127,7 +128,7 @@ def showUsage():
   print u'''
 Usage: gam [OPTIONS]...
 
-Dito GAM. Retrieve or set Google Apps domain,
+GAM. Retrieve or set Google Apps domain,
 user, group and alias settings. Exhaustive list of commands
 can be found at: https://github.com/jay0lee/GAM/wiki 
 
@@ -141,9 +142,6 @@ gam.exe update group announcements add member jsmith
 '''
 
 def getGamPath():
-  is_frozen = getattr(sys, 'frozen', '')
-  if is_frozen == 'console_exe':
-    return os.path.dirname(sys.executable)+'\\'
   if os.name == 'windows' or os.name == 'nt':
     divider = '\\'
   else:
@@ -152,7 +150,7 @@ def getGamPath():
 
 def doGAMVersion():
   import struct
-  print u'Dito GAM %s - http://git.io/gam\n%s\nPython %s.%s.%s %s-bit %s\ngoogle-api-python-client %s\n%s %s\nPath: %s' % (__version__, __author__,
+  print u'GAM %s - http://git.io/gam\n%s\nPython %s.%s.%s %s-bit %s\ngoogle-api-python-client %s\n%s %s\nPath: %s' % (__version__, __author__,
                    sys.version_info[0], sys.version_info[1], sys.version_info[2], struct.calcsize('P')*8, sys.version_info[3], googleapiclient.__version__,
                    platform.platform(), platform.machine(), getGamPath())
 
@@ -202,7 +200,7 @@ def doGAMCheckForUpdates():
 
 def commonAppsObjInit(appsObj):
   #Identify GAM to Google's Servers
-  appsObj.source = u'Dito GAM %s - http://git.io/gam / %s / Python %s.%s.%s %s / %s %s /' % (__version__, __author__,
+  appsObj.source = u'GAM %s - http://git.io/gam / %s / Python %s.%s.%s %s / %s %s /' % (__version__, __author__,
                    sys.version_info[0], sys.version_info[1], sys.version_info[2], sys.version_info[3],
                    platform.platform(), platform.machine())
   #Show debugging output if debug.gam exists
@@ -517,7 +515,7 @@ def buildGAPIObject(api):
   if credentials is None or credentials.invalid:
     doRequestOAuth()
     credentials = storage.get()
-  credentials.user_agent = u'Dito GAM %s - http://git.io/gam / %s / Python %s.%s.%s %s / %s %s /' % (__version__, __author__,
+  credentials.user_agent = u'GAM %s - http://git.io/gam / %s / Python %s.%s.%s %s / %s %s /' % (__version__, __author__,
                    sys.version_info[0], sys.version_info[1], sys.version_info[2], sys.version_info[3],
                    platform.platform(), platform.machine())
   disable_ssl_certificate_validation = False
@@ -600,7 +598,7 @@ def buildGAPIServiceObject(api, act_as=None, soft_errors=False):
     credentials = oauth2client.client.SignedJwtAssertionCredentials(SERVICE_ACCOUNT_EMAIL, key, scope=scope)
   else:
     credentials = oauth2client.client.SignedJwtAssertionCredentials(SERVICE_ACCOUNT_EMAIL, key, scope=scope, sub=act_as)
-  credentials.user_agent = u'Dito GAM %s - http://git.io/gam / %s / Python %s.%s.%s %s / %s %s /' % (__version__, __author__,
+  credentials.user_agent = u'GAM %s - http://git.io/gam / %s / Python %s.%s.%s %s / %s %s /' % (__version__, __author__,
                    sys.version_info[0], sys.version_info[1], sys.version_info[2], sys.version_info[3],
                    platform.platform(), platform.machine())
   disable_ssl_certificate_validation = False
@@ -7054,7 +7052,7 @@ def OAuthInfo():
       domain = credentials.id_token[u'hd']
     except TypeError:
       domain = u'Unknown'
-    credentials.user_agent = u'Dito GAM %s - http://git.io/gam / %s / Python %s.%s.%s %s / %s %s /' % (__version__, __author__,
+    credentials.user_agent = u'GAM %s - http://git.io/gam / %s / Python %s.%s.%s %s / %s %s /' % (__version__, __author__,
                      sys.version_info[0], sys.version_info[1], sys.version_info[2],
                      sys.version_info[3], platform.platform(), platform.machine())
     disable_ssl_certificate_validation = False
@@ -7320,9 +7318,8 @@ try:
   if sys.argv[1].lower() == u'batch':
     import shlex, subprocess
     python_cmd = [sys.executable.lower(),]
-    is_frozen = getattr(sys, u'frozen', '')
-    if not is_frozen == u'console_exe':
-      python_cmd = [sys.executable.lower(), os.path.realpath(sys.argv[0])]
+    if not getattr(sys, 'frozen', False): # we're not frozen
+      python_cmd.append(os.path.realpath(sys.argv[0]))
     f = file(sys.argv[2], 'rb')
     items = list()
     for line in f:
@@ -7338,9 +7335,8 @@ try:
   elif sys.argv[1].lower() == 'csv':
     import subprocess
     python_cmd = [sys.executable.lower(),]
-    is_frozen = getattr(sys, u'frozen', '')
-    if not is_frozen == u'console_exe':
-      python_cmd = [sys.executable.lower(), os.path.realpath(sys.argv[0])]
+    if not getattr(sys, 'frozen', False): # we're not frozen
+      python_cmd.append(os.path.realpath(sys.argv[0]))
     csv_filename = sys.argv[2]
     if csv_filename == u'-':
       import StringIO
