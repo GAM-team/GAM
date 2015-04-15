@@ -1,3 +1,9 @@
+GAM 3.44
+  -"gam update cros <id> assetid <asset>" allows updating of Chrome OS device Asset ID field. Thanks Erik Pitti!
+  -Windows versions of GAM now use pyinstaller instead of py2exe.
+  -upgraded versions of the googleapiclient and oauth2client libraries.
+  -"gam print cros" should produce a cleaner CSV now.
+
 GAM 3.43
   -Fix crash when authenticating GAM related to Short URLs
   -minor fixes to Drive and Calendar commands
