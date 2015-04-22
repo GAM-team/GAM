@@ -116,7 +116,7 @@ class _DeHTMLParser(HTMLParser):
 def dehtml(text):
     try:
         parser = _DeHTMLParser()
-        parser.feed(text)
+        parser.feed(text.encode('utf-8'))
         parser.close()
         return parser.text()
     except:
@@ -1959,7 +1959,7 @@ def printDriveFolderContents(feed, folderId, indent):
   for file in feed:
     for parent in file[u'parents']:
         if folderId == parent[u'id']:
-          print u'%s%s' % (' ' * indent, file[u'title'])
+          print ' ' * indent, convertUTF8(file[u'title'])
           if file[u'mimeType'] == u'application/vnd.google-apps.folder':
             printDriveFolderContents(feed, file[u'id'], indent+1)
 
@@ -2929,7 +2929,7 @@ def showLabels(users):
     for label in labels[u'labels']:
       if label[u'type'] == u'system' and not show_system:
         continue
-      print label[u'name']
+      print convertUTF8(label[u'name'])
       for a_key in label.keys():
         if a_key == u'name':
           continue
@@ -5219,8 +5219,7 @@ def doGetOrgInfo():
   result = callGAPI(service=cd.orgunits(), function=u'get', customerId=customerId, orgUnitPath=name)
   print_json(None, result)
   if get_users:
-    if name != u'/':
-      name = u'/%s' % name
+    name = result[u'orgUnitPath']
     print u'Users: '
     page_message = u'Got %%total_items%% users: %%first_item%% - %%last_item%%\n'
     users = callGAPIpages(service=cd.users(), function=u'list', items=u'users', page_message=page_message, message_attribute=u'primaryEmail', customer=customerId, query=u"orgUnitPath='%s'" % name, maxResults=500, fields=u'users(primaryEmail,orgUnitPath),nextPageToken')
