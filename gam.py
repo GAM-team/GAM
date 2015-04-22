@@ -1680,9 +1680,9 @@ def doDriveActivity(users):
     page_message = u'Retrieved %%%%total_items%%%% activities for %s' % user
     feed = callGAPIpages(service=activity.activities(), function=u'list', items=u'activities',
                          page_message=page_message, source=u'drive.google.com', userId=u'me',
-                         drive_ancestorId=drive_ancestorId, groupingStrategy=u'none', pageSize=500)
+                         drive_ancestorId=drive_ancestorId, drive_fileId=drive_fileId, groupingStrategy=u'none', pageSize=500)
     for item in feed:
-      activity_attributes.append(flatten_json(item)[u'combinedEvent'])
+      activity_attributes.append(flatten_json(item[u'combinedEvent']))
       for an_item in activity_attributes[-1].keys():
         if an_item not in activity_attributes[0]:
           activity_attributes[0][an_item] = an_item
