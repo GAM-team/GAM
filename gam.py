@@ -6902,10 +6902,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
   if entity_type == u'user':
     users = [entity,]
   elif entity_type == u'users':
-    if entity.find(u' ') != -1:
-      users = entity.split(u' ')
-    else:
-      users = entity.split(u',')
+    users = entity.replace(u',',u' ').split()
   elif entity_type == u'group':
     got_uids = True
     group = entity
