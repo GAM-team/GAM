@@ -1992,11 +1992,13 @@ def deleteEmptyDriveFolders(users):
       for folder in feed:
         children = callGAPI(service=drive.children(), function=u'list', folderId=folder[u'id'], maxResults=1, fields=u'items(id)')
         if not u'items' in children or len(children[u'items']) == 0:
-          print u' deleting empty folder %s...' % folder[u'title']
+          msg = u' deleting empty folder '+folder[u'title']+'...'
+          print convertUTF8(msg)
           callGAPI(service=drive.files(), function=u'delete', fileId=folder[u'id'])
           deleted_empty = True
         else:
-          print u' not deleting folder %s because it contains at least 1 item (%s)' % (folder[u'title'], children[u'items'][0][u'id'])
+          msg = u' not deleting folder '+folder[u'title']+u' because it contains at least 1 item ('+children[u'items'][0][u'id']+u')'
+          print convertUTF8(msg)
 
 def doUpdateDriveFile(users):
   convert = ocr = ocrLanguage = parent_query = local_filepath = media_body = fileIds = drivefilename = None
@@ -5973,6 +5975,7 @@ def doPrintGroups():
   i = 3
   printname = printdesc = printid = members = owners = managers = settings = admin_created = aliases = todrive = False
   usedomain = usemember = None
+  listSeparator = u'\n'
   group_attributes = [{u'Email': u'Email'}]
   titles = [u'Email']
   fields = u'nextPageToken,groups(email)'
@@ -5983,6 +5986,9 @@ def doPrintGroups():
     elif sys.argv[i].lower() == u'todrive':
       todrive = True
       i += 1
+    elif sys.argv[i].lower() == u'listseparator':
+      listSeparator = sys.argv[i+1]
+      i += 2
     elif sys.argv[i].lower() == u'member':
       usemember = sys.argv[i+1].lower()
       i += 2
@@ -6117,11 +6123,11 @@ def doPrintGroups():
        except KeyError:
          all_true_members.append(member_email)
       if members:
-        group.update({u'Members': u"\n".join(all_true_members)})
+        group.update({u'Members': listSeparator.join(all_true_members)})
       if managers:
-        group.update({u'Managers': u"\n".join(all_managers)})
+        group.update({u'Managers': listSeparator.join(all_managers)})
       if owners:
-        group.update({u'Owners': u"\n".join(all_owners)})
+        group.update({u'Owners': listSeparator.join(all_owners)})
     if settings:
       sys.stderr.write(u" Retrieving Settings for group %s (%s of %s)...\r\n" % (group_vals[u'email'], count, total_groups))
       gs = buildGAPIObject(u'groupssettings')
