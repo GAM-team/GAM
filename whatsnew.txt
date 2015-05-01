@@ -1,3 +1,9 @@
+GAM 3.45
+  -add six.py to solve compatability issues on OS X and Linux
+  -be conservative with password hashing to prevent timeouts
+  
+  If you see issues setting user passwords with GAM 3.44 or older, please upgrade to 3.45.
+
 GAM 3.44
   -"gam update cros <id> assetid <asset>" allows updating of Chrome OS device Asset ID field. Thanks Erik Pitti!
   -Windows versions of GAM now use pyinstaller instead of py2exe.

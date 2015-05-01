@@ -24,7 +24,7 @@ For more information, see http://git.io/gam
 """
 
 __author__ = u'Jay Lee <jay0lee@gmail.com>'
-__version__ = u'3.44'
+__version__ = u'3.45'
 __license__ = u'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 import sys, os, time, datetime, random, socket, csv, platform, re, calendar, base64, hashlib, string
@@ -981,7 +981,7 @@ def doDelegates(users):
 
 def gen_sha512_hash(password):
   from passlib.handlers.sha2_crypt import sha512_crypt
-  return sha512_crypt.encrypt(password, rounds=500000)
+  return sha512_crypt.encrypt(password, rounds=5000)
 
 def getDelegates(users):
   emailsettings = getEmailSettingsObject()
