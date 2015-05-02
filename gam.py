@@ -40,7 +40,7 @@ import oauth2client.file
 import oauth2client.tools
 import uritemplate
 
-global true_values, false_values, extra_args, customerId, domain, usergroup_types, is_frozen
+global true_values, false_values, extra_args, customerId, domain, q, usergroup_types, is_frozen
 is_frozen = getattr(sys, 'frozen', '')
 extra_args = {u'prettyPrint': False}
 true_values = [u'on', u'yes', u'enabled', u'true', u'1']
@@ -49,6 +49,9 @@ usergroup_types = [u'user', u'users', u'group', u'ou', u'org',
                    u'ou_and_children', u'ou_and_child', u'query',
                    u'license', u'licenses', u'file', u'all',
                    u'cros']
+customerId = None
+domain = None
+q = None
 
 def convertUTF8(data):
     import collections
@@ -3788,7 +3791,6 @@ def doCreateGroup():
     body[u'email'] = u'%s@%s' % (body[u'email'], domain)
   got_name = False
   i = 4
-  true_false = [u'true', u'false']
   gs_body = dict()
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'name':
@@ -4313,6 +4315,7 @@ def doRemoveUsersGroups(users):
 
 def doUpdateGroup():
   group = sys.argv[3]
+  true_false = [u'true', u'false']
   if sys.argv[4].lower() in [u'add', u'update', u'sync', u'remove']:
     cd = buildGAPIObject(u'directory')
     if group[0:3].lower() == u'uid:':
@@ -4398,7 +4401,7 @@ def doUpdateGroup():
         use_cd_api = True
         cd_body[u'adminCreated'] = sys.argv[i+1].lower()
         if cd_body[u'adminCreated'] not in true_false:
-          print u'Error: Value for admincreated must be true or false. Got %s' % admin_created
+          print u'Error: Value for admincreated must be true or false. Got %s' % cd_body[u'adminCreated']
           sys.exit(9)
         i += 2
       else:
@@ -5540,6 +5543,7 @@ def doGetDomainInfo():
   adm = buildGAPIObject(u'admin-settings')
   if len(sys.argv) > 4 and sys.argv[3].lower() == u'logo':
     target_file = sys.argv[4]
+    adminObj = getAdminSettingsObject()
     logo_image = adminObj.GetDomainLogo()
     try:
       fp = open(target_file, 'wb')
