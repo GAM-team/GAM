@@ -7357,10 +7357,10 @@ try:
       for arg in argv_template:
         if arg[0] != '~':
           argv.append(arg)
-        elif arg[1:] in row:
+        elif arg[1:] in row.keys():
           argv.append(row[arg[1:]])
         else:
-          print 'Error: header "%s" not found in CSV headers of "%s", giving up.' % (arg[1:], ','.join(row.keys()))
+          print 'Error: header "%s" not found in CSV headers of %s, giving up.' % (row.keys(), arg[1:])
           sys.exit(0)
       items.append(python_cmd+argv)
     run_batch(items)
