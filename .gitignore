@@ -68,3 +68,5 @@ gam/
 gam-64/
 gam.spec
 *.zip
+
+*.py~
