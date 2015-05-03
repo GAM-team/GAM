@@ -5979,7 +5979,7 @@ def doPrintGroups():
   i = 3
   printname = printdesc = printid = members = owners = managers = settings = admin_created = aliases = todrive = False
   usedomain = usemember = None
-  listSeparator = u'\n'
+  listDelimiter = u'\n'
   group_attributes = [{u'Email': u'Email'}]
   titles = [u'Email']
   fields = u'nextPageToken,groups(email)'
@@ -5990,8 +5990,8 @@ def doPrintGroups():
     elif sys.argv[i].lower() == u'todrive':
       todrive = True
       i += 1
-    elif sys.argv[i].lower() == u'listseparator':
-      listSeparator = sys.argv[i+1]
+    elif sys.argv[i].lower() == u'delimiter':
+      listDelimiter = sys.argv[i+1]
       i += 2
     elif sys.argv[i].lower() == u'member':
       usemember = sys.argv[i+1].lower()
@@ -6127,11 +6127,11 @@ def doPrintGroups():
        except KeyError:
          all_true_members.append(member_email)
       if members:
-        group.update({u'Members': listSeparator.join(all_true_members)})
+        group.update({u'Members': listDelimiter.join(all_true_members)})
       if managers:
-        group.update({u'Managers': listSeparator.join(all_managers)})
+        group.update({u'Managers': listDelimiter.join(all_managers)})
       if owners:
-        group.update({u'Owners': listSeparator.join(all_owners)})
+        group.update({u'Owners': listDelimiter.join(all_owners)})
     if settings:
       sys.stderr.write(u" Retrieving Settings for group %s (%s of %s)...\r\n" % (group_vals[u'email'], count, total_groups))
       gs = buildGAPIObject(u'groupssettings')
