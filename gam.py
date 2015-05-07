@@ -184,7 +184,7 @@ def doGAMCheckForUpdates():
       f.write(str(now_time))
       f.close()
       return
-    a = urllib2.urlopen(u'https://gam-update.appspot.com/latest-version-announcement.txt?v=%s')
+    a = urllib2.urlopen(u'https://gam-update.appspot.com/latest-version-announcement.txt')
     announcement = a.read()
     sys.stderr.write(announcement)
     visit_gam = raw_input(u"\n\nHit Y to visit the GAM website and download the latest release. Hit Enter to just continue with this boring old version. GAM won't bother you with this announcemnt for 1 week or you can create a file named noupdatecheck.txt in the same location as gam.py or gam.exe and GAM won't ever check for updates: ")
@@ -5688,7 +5688,7 @@ def doUndeleteUser():
     else:
       user_uid = matching_users[0][u'id']
   print u"Undeleting account for %s" % user
-  callGAPI(service=cd.users(), function=u'undelete', userKey=user_uid, body={u'orgUnit': orgUnit})
+  callGAPI(service=cd.users(), function=u'undelete', userKey=user_uid, body={u'orgUnitPath': orgUnit})
 
 def doDeleteGroup():
   group = sys.argv[3]
