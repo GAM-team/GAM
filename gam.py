@@ -847,7 +847,9 @@ def showReport():
     output_csv(csv_list=cust_attributes, titles=titles, list_type=u'Customer Report - %s' % try_date, todrive=to_drive)
   elif report in [u'doc', u'docs', u'calendar', u'calendars', u'login', u'logins', u'admin', u'drive', u'token', u'tokens']:
     if report == u'doc':
-      report = u'docs'
+      report = u'drive'
+    elif report == u'docs':
+      report = u'drive'
     elif report == u'calendars':
       report = u'calendar'
     elif report == u'logins':
