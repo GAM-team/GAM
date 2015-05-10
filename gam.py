@@ -1081,7 +1081,7 @@ def changeCalendarAttendees(users):
           #print ' skipping cancelled event'
           continue
         try:
-          event_summary = str(event[u'summary'])
+          event_summary = convertUTF8(event[u'summary'])
         except (KeyError, UnicodeEncodeError, UnicodeDecodeError):
           event_summary = event[u'id']
         try:
@@ -1586,9 +1586,11 @@ def showCalendars(users):
     feed = callGAPI(service=cal.calendarList(), function=u'list')
     for calendar in feed[u'items']:
       print u'  Name: %s' % calendar['id']
-      print u'  Summary: %s' % calendar['summary']
+      msg = u'  Summary: '+calendar['summary']
+      print convertUTF8(msg)
       try:
-        print u'    Description: %s' % calendar['description']
+        msg = u'    Description: '+calendar['description']
+        print convertUTF8(msg)
       except KeyError:
         print u'    Description: '
       print u'    Access Level: %s' % calendar['accessRole']
@@ -6090,7 +6092,7 @@ def doPrintGroups():
       try:
         group.update({u'Aliases': ' '.join(group_vals[u'aliases'])})
         for alias in group_vals[u'aliases']:
-          print u'%s,%s' % (group_vals[u'email'].lower(), alias.lower())
+          sys.stderr.write(u'%s,%s' % (group_vals[u'email'].lower(), alias.lower()))
       except KeyError:
         pass
       try:
