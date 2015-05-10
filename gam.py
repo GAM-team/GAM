@@ -3497,7 +3497,7 @@ def doCreateUser():
       need_to_hash_password = False
       i += 1
     elif sys.argv[i].lower() == u'crypt':
-      body[u'hashFunction'] = u'CRYPT'
+      body[u'hashFunction'] = u'crypt'
       need_to_hash_password = False
       i += 1
     elif sys.argv[i].lower() == u'nohash':
