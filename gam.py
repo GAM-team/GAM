@@ -1596,7 +1596,8 @@ def showCalendars(users):
       print u'    Access Level: %s' % calendar['accessRole']
       print u'    Timezone: %s' % calendar['timeZone']
       try:
-        print u'    Location: %s' % calendar['location']
+        msg = u'    Location: '+calendar['location']
+        print convertUTF8(msg)
       except KeyError:
         pass
       try:
