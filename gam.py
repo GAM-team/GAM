@@ -4703,7 +4703,7 @@ def doGetUserInfo(user_email=None):
       credentials = storage.get()
       if credentials is None or credentials.invalid:
         doRequestOAuth()
-      credentials = storage.get()
+        credentials = storage.get()
       user_email = credentials.id_token[u'email']
   if user_email[:4].lower() == u'uid:':
     user_email = user_email[4:]
@@ -6348,6 +6348,9 @@ def doPrintMobileDevices():
     elif sys.argv[i].lower() in [u'ascending', u'descending']:
       sortOrder = sys.argv[i].upper()
       i += 1
+    else:
+      print 'Error: %s is not a valid argument to "gam print mobile"' % sys.argv[i]
+      sys.exit(3)
   sys.stderr.write(u'Retrieving All Mobile Devices for organization (may take some time for large accounts)...\n')
   page_message = u'Got %%num_items%% mobile devices...\n'
   all_mobile = callGAPIpages(service=cd.mobiledevices(), function=u'list', items=u'mobiledevices', page_message=page_message, customerId=customerId, query=query, orderBy=orderBy, sortOrder=sortOrder)
@@ -6405,6 +6408,9 @@ def doPrintCrosDevices():
     elif sys.argv[i].lower() in [u'ascending', u'descending']:
       sortOrder = sys.argv[i].upper()
       i += 1
+    else:
+      print 'Error: %s is not a valid argument to "gam print cros"' % sys.argv[i]
+      sys.exit(3)
   sys.stderr.write(u'Retrieving All Chrome OS Devices for organization (may take some time for large accounts)...\n')
   page_message = u'Got %%num_items%% Chrome devices...\n'
   all_cros = callGAPIpages(service=cd.chromeosdevices(), function=u'list', items=u'chromeosdevices', page_message=page_message, query=query, customerId=customerId, sortOrder=sortOrder)
