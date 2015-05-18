@@ -6298,6 +6298,7 @@ def doPrintGroupMembers():
       sys.exit(3)
   cd = buildGAPIObject(u'directory')
   member_attributes = [{u'group': u'group'},]
+  titles = [u'group']
   if not all_groups:
     all_groups = callGAPIpages(service=cd.groups(), function=u'list', items=u'groups', message_attribute=u'email', customer=customerId, fields=u'nextPageToken,groups(email)')
   total_groups = len(all_groups)
@@ -6313,13 +6314,12 @@ def doPrintGroupMembers():
           continue
         try:
           member_attributes[0][title]
-          member_attr[title] = member[title]
         except KeyError:
           member_attributes[0][title] = title
-          member_attr[title] = member[title]
+          titles.append(title)
+        member_attr[title] = member[title]
       member_attributes.append(member_attr)
     i += 1
-  titles = member_attributes[0].keys()
   output_csv(member_attributes, titles, u'Group Members', todrive)
             
 def doPrintMobileDevices():
@@ -6344,6 +6344,8 @@ def doPrintMobileDevices():
         sys.exit(3)
       elif orderBy == u'lastsync':
         orderBy = u'lastSync'
+      elif orderBy == u'deviceid':
+        orderBy = u'deviceId'
       i += 2
     elif sys.argv[i].lower() in [u'ascending', u'descending']:
       sortOrder = sys.argv[i].upper()
