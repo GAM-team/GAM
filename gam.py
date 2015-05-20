@@ -1515,7 +1515,7 @@ def doPhoto(users):
     elif user.find('@') == -1:
       user = u'%s@%s' % (user, domain)
     filename = sys.argv[5].replace(u'#user#', user)
-    filename = sys.argv[5].replace(u'#email#', user)
+    filename = filename.replace(u'#email#', user)
     filename = filename.replace(u'#username#', user[:user.find(u'@')])
     print u"Updating photo for %s with %s (%s of %s)" % (user, filename, i, count)
     i += 1
