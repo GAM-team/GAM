@@ -3420,6 +3420,8 @@ def doCreateOrUpdateUserSchema():
 def doPrintUserSchemas():
   cd = buildGAPIObject(u'directory')
   schemas = callGAPI(service=cd.schemas(), function=u'list', customerId=customerId)
+  if not schemas or u'schemas' not in schemas:
+      return
   for schema in schemas[u'schemas']:
     print u'Schema: %s' % schema[u'schemaName']
     for a_key in schema.keys():
