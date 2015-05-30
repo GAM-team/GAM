@@ -6322,6 +6322,7 @@ def doPrintGroupMembers():
         member_attr[title] = member[title]
       member_attributes.append(member_attr)
     i += 1
+  titles = member_attributes[0].keys()
   output_csv(member_attributes, titles, u'Group Members', todrive)
             
 def doPrintMobileDevices():
