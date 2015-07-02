@@ -43,7 +43,7 @@ import uritemplate
 import mimetypes
 import ntpath
 
-global true_values, false_values, extra_args, customerId, domain, usergroup_types, is_frozen
+global true_values, false_values, extra_args, customerId, domain, q, usergroup_types, is_frozen
 is_frozen = getattr(sys, 'frozen', '')
 extra_args = {u'prettyPrint': False}
 true_values = [u'on', u'yes', u'enabled', u'true', u'1']
@@ -52,6 +52,9 @@ usergroup_types = [u'user', u'users', u'group', u'ou', u'org',
                    u'ou_and_children', u'ou_and_child', u'query',
                    u'license', u'licenses', u'licence', u'licences', u'file', u'all',
                    u'cros']
+customerId = None
+domain = None
+q = None
 
 def convertUTF8(data):
     import collections
@@ -119,7 +122,7 @@ class _DeHTMLParser(HTMLParser):
 def dehtml(text):
     try:
         parser = _DeHTMLParser()
-        parser.feed(text)
+        parser.feed(text.encode('utf-8'))
         parser.close()
         return parser.text()
     except:
@@ -184,7 +187,7 @@ def doGAMCheckForUpdates():
       f.write(str(now_time))
       f.close()
       return
-    a = urllib2.urlopen(u'https://gam-update.appspot.com/latest-version-announcement.txt?v=%s')
+    a = urllib2.urlopen(u'https://gam-update.appspot.com/latest-version-announcement.txt')
     announcement = a.read()
     sys.stderr.write(announcement)
     try:
@@ -860,9 +863,13 @@ def showReport():
     for app in auth_apps: # put apps at bottom
       cust_attributes.append(app)
     output_csv(csv_list=cust_attributes, titles=titles, list_type=u'Customer Report - %s' % try_date, todrive=to_drive)
-  elif report in [u'doc', u'docs', u'login', u'logins', u'admin', u'drive', u'token', u'tokens']:
+  elif report in [u'doc', u'docs', u'calendar', u'calendars', u'login', u'logins', u'admin', u'drive', u'token', u'tokens']:
     if report == u'doc':
-      report = u'docs'
+      report = u'drive'
+    elif report == u'docs':
+      report = u'drive'
+    elif report == u'calendars':
+      report = u'calendar'
     elif report == u'logins':
       report = u'login'
     elif report == u'tokens':
@@ -1491,7 +1498,7 @@ def changeCalendarAttendees(users):
           #print ' skipping cancelled event'
           continue
         try:
-          event_summary = str(event[u'summary'])
+          event_summary = convertUTF8(event[u'summary'])
         except (KeyError, UnicodeEncodeError, UnicodeDecodeError):
           event_summary = event[u'id']
         try:
@@ -2246,7 +2253,7 @@ def doPhoto(users):
     elif user.find('@') == -1:
       user = u'%s@%s' % (user, domain)
     filename = sys.argv[5].replace(u'#user#', user)
-    filename = sys.argv[5].replace(u'#email#', user)
+    filename = filename.replace(u'#email#', user)
     filename = filename.replace(u'#username#', user[:user.find(u'@')])
     print u"Updating photo for %s with %s (%s of %s)" % (user, filename, i, count)
     i += 1
@@ -2317,15 +2324,18 @@ def showCalendars(users):
     feed = callGAPI(service=cal.calendarList(), function=u'list')
     for calendar in feed[u'items']:
       print u'  Name: %s' % calendar['id']
-      print u'  Summary: %s' % calendar['summary']
+      msg = u'  Summary: '+calendar['summary']
+      print convertUTF8(msg)
       try:
-        print u'    Description: %s' % calendar['description']
+        msg = u'    Description: '+calendar['description']
+        print convertUTF8(msg)
       except KeyError:
         print u'    Description: '
       print u'    Access Level: %s' % calendar['accessRole']
       print u'    Timezone: %s' % calendar['timeZone']
       try:
-        print u'    Location: %s' % calendar['location']
+        msg = u'    Location: '+calendar['location']
+        print convertUTF8(msg)
       except KeyError:
         pass
       try:
@@ -2418,9 +2428,9 @@ def doDriveActivity(users):
     page_message = u'Retrieved %%%%total_items%%%% activities for %s' % user
     feed = callGAPIpages(service=activity.activities(), function=u'list', items=u'activities',
                          page_message=page_message, source=u'drive.google.com', userId=u'me',
-                         drive_ancestorId=drive_ancestorId, groupingStrategy=u'none', pageSize=500)
+                         drive_ancestorId=drive_ancestorId, drive_fileId=drive_fileId, groupingStrategy=u'none', pageSize=500)
     for item in feed:
-      activity_attributes.append(flatten_json(item)[u'combinedEvent'])
+      activity_attributes.append(flatten_json(item[u'combinedEvent']))
       for an_item in activity_attributes[-1].keys():
         if an_item not in activity_attributes[0]:
           activity_attributes[0][an_item] = an_item
@@ -2697,7 +2707,7 @@ def printDriveFolderContents(feed, folderId, indent):
   for file in feed:
     for parent in file[u'parents']:
         if folderId == parent[u'id']:
-          print u'%s%s' % (' ' * indent, file[u'title'])
+          print ' ' * indent, convertUTF8(file[u'title'])
           if file[u'mimeType'] == u'application/vnd.google-apps.folder':
             printDriveFolderContents(feed, file[u'id'], indent+1)
 
@@ -2730,11 +2740,13 @@ def deleteEmptyDriveFolders(users):
       for folder in feed:
         children = callGAPI(service=drive.children(), function=u'list', folderId=folder[u'id'], maxResults=1, fields=u'items(id)')
         if not u'items' in children or len(children[u'items']) == 0:
-          print u' deleting empty folder %s...' % folder[u'title']
+          msg = u' deleting empty folder '+folder[u'title']+'...'
+          print convertUTF8(msg)
           callGAPI(service=drive.files(), function=u'delete', fileId=folder[u'id'])
           deleted_empty = True
         else:
-          print u' not deleting folder %s because it contains at least 1 item (%s)' % (folder[u'title'], children[u'items'][0][u'id'])
+          msg = u' not deleting folder '+folder[u'title']+u' because it contains at least 1 item ('+children[u'items'][0][u'id']+u')'
+          print convertUTF8(msg)
 
 def doUpdateDriveFile(users):
   convert = ocr = ocrLanguage = parent_query = local_filepath = media_body = fileIds = drivefilename = None
@@ -3666,7 +3678,7 @@ def showLabels(users):
     for label in labels[u'labels']:
       if label[u'type'] == u'system' and not show_system:
         continue
-      print label[u'name']
+      print convertUTF8(label[u'name'])
       for a_key in label.keys():
         if a_key == u'name':
           continue
@@ -4145,6 +4157,8 @@ def doCreateOrUpdateUserSchema():
 def doPrintUserSchemas():
   cd = buildGAPIObject(u'directory')
   schemas = callGAPI(service=cd.schemas(), function=u'list', customerId=customerId)
+  if not schemas or u'schemas' not in schemas:
+      return
   for schema in schemas[u'schemas']:
     print u'Schema: %s' % schema[u'schemaName']
     for a_key in schema.keys():
@@ -4523,7 +4537,6 @@ def doCreateGroup():
     body[u'email'] = u'%s@%s' % (body[u'email'], domain)
   got_name = False
   i = 4
-  true_false = [u'true', u'false']
   gs_body = dict()
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'name':
@@ -5049,6 +5062,7 @@ def doRemoveUsersGroups(users):
 
 def doUpdateGroup():
   group = sys.argv[3]
+  true_false = [u'true', u'false']
   if sys.argv[4].lower() in [u'add', u'update', u'sync', u'remove']:
     cd = buildGAPIObject(u'directory')
     if group[0:3].lower() == u'uid:':
@@ -5134,7 +5148,7 @@ def doUpdateGroup():
         use_cd_api = True
         cd_body[u'adminCreated'] = sys.argv[i+1].lower()
         if cd_body[u'adminCreated'] not in true_false:
-          print u'Error: Value for admincreated must be true or false. Got %s' % admin_created
+          print u'Error: Value for admincreated must be true or false. Got %s' % cd_body[u'adminCreated']
           sys.exit(9)
         i += 2
       else:
@@ -5429,7 +5443,7 @@ def doGetUserInfo(user_email=None):
       credentials = storage.get()
       if credentials is None or credentials.invalid:
         doRequestOAuth()
-      credentials = storage.get()
+        credentials = storage.get()
       user_email = credentials.id_token[u'email']
   if user_email[:4].lower() == u'uid:':
     user_email = user_email[4:]
@@ -5957,8 +5971,7 @@ def doGetOrgInfo():
   result = callGAPI(service=cd.orgunits(), function=u'get', customerId=customerId, orgUnitPath=name)
   print_json(None, result)
   if get_users:
-    if name != u'/':
-      name = u'/%s' % name
+    name = result[u'orgUnitPath']
     print u'Users: '
     page_message = u'Got %%total_items%% users: %%first_item%% - %%last_item%%\n'
     users = callGAPIpages(service=cd.users(), function=u'list', items=u'users', page_message=page_message, message_attribute=u'primaryEmail', customer=customerId, query=u"orgUnitPath='%s'" % name, maxResults=500, fields=u'users(primaryEmail,orgUnitPath),nextPageToken')
@@ -6277,6 +6290,7 @@ def doGetDomainInfo():
   adm = buildGAPIObject(u'admin-settings')
   if len(sys.argv) > 4 and sys.argv[3].lower() == u'logo':
     target_file = sys.argv[4]
+    adminObj = getAdminSettingsObject()
     logo_image = adminObj.GetDomainLogo()
     try:
       fp = open(target_file, 'wb')
@@ -6421,7 +6435,7 @@ def doUndeleteUser():
     else:
       user_uid = matching_users[0][u'id']
   print u"Undeleting account for %s" % user
-  callGAPI(service=cd.users(), function=u'undelete', userKey=user_uid, body={u'orgUnit': orgUnit})
+  callGAPI(service=cd.users(), function=u'undelete', userKey=user_uid, body={u'orgUnitPath': orgUnit})
 
 def doDeleteGroup():
   group = sys.argv[3]
@@ -6712,6 +6726,7 @@ def doPrintGroups():
   i = 3
   printname = printdesc = printid = members = owners = managers = settings = admin_created = aliases = todrive = False
   usedomain = usemember = None
+  listDelimiter = u'\n'
   group_attributes = [{u'Email': u'Email'}]
   titles = [u'Email']
   fields = u'nextPageToken,groups(email)'
@@ -6722,6 +6737,9 @@ def doPrintGroups():
     elif sys.argv[i].lower() == u'todrive':
       todrive = True
       i += 1
+    elif sys.argv[i].lower() == u'delimiter':
+      listDelimiter = sys.argv[i+1]
+      i += 2
     elif sys.argv[i].lower() == u'member':
       usemember = sys.argv[i+1].lower()
       i += 2
@@ -6815,7 +6833,7 @@ def doPrintGroups():
       try:
         group.update({u'Aliases': ' '.join(group_vals[u'aliases'])})
         for alias in group_vals[u'aliases']:
-          print u'%s,%s' % (group_vals[u'email'].lower(), alias.lower())
+          sys.stderr.write(u'%s,%s' % (group_vals[u'email'].lower(), alias.lower()))
       except KeyError:
         pass
       try:
@@ -6856,11 +6874,11 @@ def doPrintGroups():
        except KeyError:
          all_true_members.append(member_email)
       if members:
-        group.update({u'Members': u"\n".join(all_true_members)})
+        group.update({u'Members': listDelimiter.join(all_true_members)})
       if managers:
-        group.update({u'Managers': u"\n".join(all_managers)})
+        group.update({u'Managers': listDelimiter.join(all_managers)})
       if owners:
-        group.update({u'Owners': u"\n".join(all_owners)})
+        group.update({u'Owners': listDelimiter.join(all_owners)})
     if settings:
       sys.stderr.write(u" Retrieving Settings for group %s (%s of %s)...\r\n" % (group_vals[u'email'], count, total_groups))
       gs = buildGAPIObject(u'groupssettings')
@@ -7020,6 +7038,7 @@ def doPrintGroupMembers():
       sys.exit(3)
   cd = buildGAPIObject(u'directory')
   member_attributes = [{u'group': u'group'},]
+  titles = [u'group']
   if not all_groups:
     all_groups = callGAPIpages(service=cd.groups(), function=u'list', items=u'groups', message_attribute=u'email', customer=customerId, fields=u'nextPageToken,groups(email)')
   total_groups = len(all_groups)
@@ -7035,10 +7054,10 @@ def doPrintGroupMembers():
           continue
         try:
           member_attributes[0][title]
-          member_attr[title] = member[title]
         except KeyError:
           member_attributes[0][title] = title
-          member_attr[title] = member[title]
+          titles.append(title)
+        member_attr[title] = member[title]
       member_attributes.append(member_attr)
     i += 1
   titles = member_attributes[0].keys()
@@ -7066,10 +7085,15 @@ def doPrintMobileDevices():
         sys.exit(3)
       elif orderBy == u'lastsync':
         orderBy = u'lastSync'
+      elif orderBy == u'deviceid':
+        orderBy = u'deviceId'
       i += 2
     elif sys.argv[i].lower() in [u'ascending', u'descending']:
       sortOrder = sys.argv[i].upper()
       i += 1
+    else:
+      print 'Error: %s is not a valid argument to "gam print mobile"' % sys.argv[i]
+      sys.exit(3)
   sys.stderr.write(u'Retrieving All Mobile Devices for organization (may take some time for large accounts)...\n')
   page_message = u'Got %%num_items%% mobile devices...\n'
   all_mobile = callGAPIpages(service=cd.mobiledevices(), function=u'list', items=u'mobiledevices', page_message=page_message, customerId=customerId, query=query, orderBy=orderBy, sortOrder=sortOrder)
@@ -7127,6 +7151,9 @@ def doPrintCrosDevices():
     elif sys.argv[i].lower() in [u'ascending', u'descending']:
       sortOrder = sys.argv[i].upper()
       i += 1
+    else:
+      print 'Error: %s is not a valid argument to "gam print cros"' % sys.argv[i]
+      sys.exit(3)
   sys.stderr.write(u'Retrieving All Chrome OS Devices for organization (may take some time for large accounts)...\n')
   page_message = u'Got %%num_items%% Chrome devices...\n'
   all_cros = callGAPIpages(service=cd.chromeosdevices(), function=u'list', items=u'chromeosdevices', page_message=page_message, query=query, customerId=customerId, sortOrder=sortOrder)
@@ -7641,10 +7668,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
   if entity_type == u'user':
     users = [entity,]
   elif entity_type == u'users':
-    if entity.find(u' ') != -1:
-      users = entity.split(u' ')
-    else:
-      users = entity.split(u',')
+    users = entity.replace(u',',u' ').split()
   elif entity_type == u'group':
     got_uids = True
     group = entity
@@ -8114,10 +8138,10 @@ try:
       for arg in argv_template:
         if arg[0] != '~':
           argv.append(arg)
-        elif arg[1:] in row.keys():
+        elif arg[1:] in row:
           argv.append(row[arg[1:]])
         else:
-          print 'Error: header "%s" not found in CSV headers of %s, giving up.' % (row.keys(), arg[1:])
+          print 'Error: header "%s" not found in CSV headers of "%s", giving up.' % (arg[1:], ','.join(row.keys()))
           sys.exit(0)
       items.append(argv)
     run_batch(items)
