@@ -1120,10 +1120,6 @@ class BatchHttpRequest(object):
     g.flatten(msg, unixfrom=False)
     body = fp.getvalue()
 
-    # Strip off the \n\n that the MIME lib tacks onto the end of the payload.
-    if request.body is None:
-      body = body[:-2]
-
     return status_line + body
 
   def _deserialize_response(self, payload):
@@ -1252,11 +1248,12 @@ class BatchHttpRequest(object):
     if resp.status >= 300:
       raise HttpError(resp, content, uri=self._batch_uri)
 
-    # Now break out the individual responses and store each one.
-    boundary, _ = content.split(None, 1)
-
     # Prepend with a content-type header so FeedParser can handle it.
     header = 'content-type: %s\r\n\r\n' % resp['content-type']
+    # PY3's FeedParser only accepts unicode. So we should decode content
+    # here, and encode each payload again.
+    if six.PY3:
+      content = content.decode('utf-8')
     for_parser = header + content
 
     parser = FeedParser()
@@ -1270,6 +1267,9 @@ class BatchHttpRequest(object):
     for part in mime_response.get_payload():
       request_id = self._header_to_id(part['Content-ID'])
       response, content = self._deserialize_response(part.get_payload())
+      # We encode content here to emulate normal http response.
+      if isinstance(content, six.text_type):
+        content = content.encode('utf-8')
       self._responses[request_id] = (response, content)
 
   @util.positional(1)
@@ -1458,7 +1458,7 @@ class HttpMock(object):
       headers: dict, header to return with response
     """
     if headers is None:
-      headers = {'status': '200 OK'}
+      headers = {'status': '200'}
     if filename:
       f = open(filename, 'r')
       self.data = f.read()
@@ -1536,6 +1536,8 @@ class HttpMockSequence(object):
         content = body
     elif content == 'echo_request_uri':
       content = uri
+    if isinstance(content, six.text_type):
+      content = content.encode('utf-8')
     return httplib2.Response(resp), content
 
 

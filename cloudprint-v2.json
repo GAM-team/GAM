@@ -1,0 +1,486 @@
+{
+ "kind": "discovery#restDescription",
+ "discoveryVersion": "v1",
+ "id": "cloudprint:v2",
+ "name": "cloudprint",
+ "version": "v2",
+ "revision": "20150605",
+ "title": "Cloud Print API",
+ "description": "Lets you access Cloud Print Printers",
+ "ownerDomain": "google.com",
+ "ownerName": "Google",
+ "icons": {
+  "x16": "http://www.google.com/images/icons/product/search-16.gif",
+  "x32": "http://www.google.com/images/icons/product/search-32.gif"
+ },
+ "documentationLink": "https://developers.google.com/cloud-print",
+ "protocol": "rest",
+ "baseUrl": "https://www.google.com/",
+ "basePath": "/cloudprint/",
+ "rootUrl": "https://www.google.com/",
+ "servicePath": "/cloudprint/",
+ "parameters": {
+  "prettyPrint": {
+   "type": "boolean",
+   "description": "Returns response with indentations and line breaks.",
+   "default": "true",
+   "location": "query"
+  }
+ },
+ "auth": {
+  "oauth2": {
+   "scopes": {
+    "https://www.googleapis.com/auth/cloudprint": {
+     "description": "Manage Cloud Print"
+    }
+   }
+  }
+ },
+ "schemas": {
+  "Job": {
+   "id": "Job",
+   "type": "object",
+   "description": "Job Object",
+   "properties": {
+    "title": {
+     "type": "string",
+     "description": "Job Title"
+    },
+    "id": {
+     "type": "string",
+     "description": "Unique ID"
+    }
+   }
+  },
+  "Jobs": {
+   "id": "Jobs",
+   "type": "object",
+   "description": "List of Jobs.",
+   "properties": {
+    "jobs": {
+     "type": "array",
+     "description": "List of job objects.",
+     "items": {
+      "$ref": "Job"
+     }
+    }
+   }
+  },
+  "Printer": {
+   "id": "Printer",
+   "type": "object",
+   "description": "Printer Object",
+   "properties": {
+    "displayName": {
+     "type": "string",
+     "description": "Display Name"
+    },
+    "id": {
+     "type": "string",
+     "description": "Unique ID"
+    }
+   }
+  },
+  "Printers": {
+   "id": "Printers",
+   "type": "object",
+   "description": "List of Printers.",
+   "properties": {
+    "printers": {
+     "type": "array",
+     "description": "List of printer objects.",
+     "items": {
+      "$ref": "Printer"
+     }
+    }
+   }
+  }
+ },
+ "resources": {
+  "jobs": {
+   "methods": {
+    "delete": {
+     "id": "cloudprint.jobs.delete",
+     "path": "deletejob",
+     "httpMethod": "GET",
+     "parameters": {
+      "jobid": {
+       "type": "string",
+       "location": "query",
+       "required": "true"
+      }
+     }
+    },
+    "fetch": {
+     "id": "cloudprint.jobs.fetch",
+     "path": "fetch",
+     "httpMethod": "GET",
+     "parameters": {
+      "printerid": {
+       "type": "string",
+       "required": "true",
+       "location": "query"
+      }
+     },
+     "response": {
+      "$ref": "Jobs"
+     }
+    },
+    "getticket": {
+     "id": "cloudprint.jobs.getticket",
+     "path": "ticket",
+     "httpMethod": "GET",
+     "parameters": {
+      "jobid": {
+       "type": "string",
+       "required": "true",
+       "location": "query"
+      },
+      "use_cjt": {
+       "type": "boolean",
+       "required": "true",
+       "location": "query"
+      }
+     }
+    }, 
+    "list": {
+     "id": "cloudprint.jobs.list",
+     "path": "jobs",
+     "httpMethod": "GET",
+     "parameters": {
+      "printerid": {
+       "type": "string",
+       "location": "query"
+      },
+      "owner": {
+       "type": "string",
+       "location": "query"
+      },
+      "status": {
+       "type": "string",
+       "location": "query"
+      },
+      "q": {
+       "type": "string",
+       "location": "query"
+      },
+      "offset": {
+       "type": "string",
+       "location": "query"
+      },
+      "limit": {
+       "type": "string",
+       "location": "query"
+      },
+      "sortorder": {
+       "type": "string",
+       "location": "query"
+      }
+     },
+     "response": {
+      "$ref": "Jobs"
+     }
+    },
+    "update": {
+     "id": "cloudprint.jobs.update",
+     "path": "control",
+     "httpMethod": "GET",
+     "parameters": {
+      "jobid": {
+       "type": "string",
+       "required": "true",
+       "location": "query"
+      },
+      "semantic_state_diff": {
+       "type": "string",
+       "required": "true",
+       "location": "query"
+      }
+     },
+     "response": {
+      "$ref": "Jobs"
+     }
+    },
+    "resubmit": {
+     "id": "cloudprint.jobs.resubmit",
+     "path": "resubmit",
+     "httpMethod": "POST",
+     "description": "resubmit a job to new printer.",
+     "parameters": {
+      "printerid": {
+       "type": "string",
+       "required": "true",
+       "location": "query"
+      },
+      "jobid": {
+       "type": "string",
+       "required": "true",
+       "location": "query"
+      },
+      "ticket": {
+       "type": "string",
+       "location": "query"
+      }
+     },
+     "response": {
+      "$ref": "Job"
+     }
+    },
+    "submit": {
+     "id": "cloudprint.jobs.submit",
+     "path": "submit",
+     "httpMethod": "POST",
+     "description": "Send a print job to cloud print.",
+     "request": {
+      "printerid": {
+       "type": "string",
+       "required": "true",
+       "location": "query"
+      },
+      "title": {
+       "type": "string",
+       "location": "query"
+      },
+      "ticket": {
+       "type": "string",
+       "location": "query"
+      },
+      "content": {
+       "type": "string",
+       "location": "query"
+      },
+      "contentType": {
+       "type": "string",
+       "location": "query"
+      },
+      "tag": {
+       "type": "string",
+       "location": "query"
+      }
+     },
+     "response": {
+      "$ref": "Job"
+     }
+    }
+   }
+  },
+  "printers": {
+   "methods": {
+    "get": {
+     "id": "cloudprint.printers.get",
+     "path": "printer",
+     "httpMethod": "GET",
+     "parameters": {
+      "printerid": {
+       "type": "string",
+       "required": "true",
+       "location": "query"
+      },
+      "extra_fields": {
+       "type": "string",
+       "location": "query"
+      }
+     },
+     "response": {
+      "$ref": "Printer"
+     }
+    },
+    "list": {
+     "id": "cloudprint.printers.list",
+     "path": "search",
+     "httpMethod": "GET",
+     "description": "List all printers",
+     "parameters": {
+      "q": {
+       "type": "string",
+       "description": "Query list of printers",
+       "location": "query"
+      },
+      "type": {
+       "type": "string",
+       "description": "limit results to printers of type",
+       "location": "query"
+       },
+      "connection_status": {
+       "type": "string",
+       "description": "limit results to printers with this status",
+       "location": "query"
+      },
+      "extra_fields": {
+       "type": "string",
+       "description": "include extra fields",
+       "location": "query"
+      }
+     },
+     "response": {
+      "$ref": "Printers"
+     }
+    },
+    "share": {
+     "id": "cloudprint.printers.share",
+     "path": "share",
+     "httpMethod": "GET",
+     "description": "Share printer with user, group or domain",
+     "parameters": {
+      "printerid": {
+       "type": "string",
+       "required": "true",
+       "location": "query"
+      },
+      "scope": {
+       "type": "string",
+       "location": "query"
+      },
+      "role": {
+       "type": "string",
+       "location": "query"
+      },
+      "type": {
+        "type": "string",
+        "location": "query"
+      },
+      "skip_notification": {
+       "type": "boolean",
+       "location": "query"
+      },
+      "public": {
+       "type": "boolean",
+       "location": "query"
+      }
+     } 
+    },
+    "unshare": {
+     "id": "cloudprint.printers.unshare",
+     "path": "unshare",
+     "httpMethod": "GET",
+     "description": "unshare printer with user, group or domain",
+     "parameters": {
+      "printerid": {
+       "type": "string",
+       "required": "true",
+       "location": "query"
+      },
+      "scope": {
+       "type": "string",
+       "location": "query"
+      },
+      "public": {
+       "type": "string",
+       "location": "query"
+      }
+     }
+    },
+    "delete": {
+     "id": "cloudprint.printers.delete",
+     "path": "delete",
+     "httpMethod": "GET",
+     "description": "delete a printer",
+     "parameters": {
+      "printerid": {
+       "type": "string",
+       "required": "true",
+       "location": "query"
+      }
+     }
+    },
+    "update": {
+     "id": "cloudprint.printers.update",
+     "path": "update",
+     "httpMethod": "GET",
+     "description": "update a printer",
+     "parameters": {
+      "isTosAccepted": {
+       "type": "boolean",
+       "location": "query"
+      },
+      "gcpVersion": {
+       "type": "string",
+       "location": "query"
+      },
+      "setupUrl": {
+       "type": "string",
+       "location": "query"
+      },
+      "supportUrl": {
+       "type": "string",
+       "location": "query"
+      },
+      "firmware": {
+       "type": "string",
+       "location": "query"
+      },
+      "currentQuota": {
+       "type": "string",
+       "location": "query"
+      },
+      "type": {
+       "type": "string",
+       "location": "query"
+      },
+      "public": {
+       "type": "boolean",
+       "location": "query"
+      },
+      "status": {
+       "type": "string",
+       "location": "query"
+      },
+      "proxy": {
+       "type": "string",
+       "location": "query"
+      },
+      "manufacturer": {
+       "type": "string",
+       "location": "query"
+      },
+      "defaultDisplayName": {
+       "type": "string",
+       "location": "query"
+      },
+      "displayName": {
+       "type": "string",
+       "location": "query"
+      },
+      "name": {
+       "type": "string",
+       "location": "query"
+      },
+      "uuid": {
+       "type": "string",
+       "location": "query"
+      },
+      "updateUrl": {
+       "type": "string",
+       "location": "query"
+      },
+      "ownerId": {
+       "type": "string",
+       "location": "query"
+      },
+      "model": {
+       "type": "string",
+       "location": "query"
+      },
+      "description": {
+       "type": "string",
+       "location": "query"
+      },
+      "printerid": {
+       "type": "string",
+       "required": "true",
+       "location": "query"
+      },
+      "quotaEnabled": {
+       "type": "boolean",
+       "location": "query"
+      },
+      "dailyQuota": {
+       "type": "string",
+       "location": "query"
+      }
+     }
+    } 
+   }
+  }
+ }
+}

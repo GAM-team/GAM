@@ -1,3 +1,14 @@
+GAM 3.5
+  -Support for the new Google Classroom API.
+   -create, update, info and delete courses
+   -add, remove and sync course teachers and students
+   -print courses and course participants
+  -Google CloudPrint API Support
+   -update, info, delete and report printers
+   -share, unshare and get ACLs for printers
+   -submit, cancel, report and delete print jobs
+  -Bug fixes and improvements to GAM batch commands
+
 GAM 3.45
   -add six.py to solve compatability issues on OS X and Linux
   -be conservative with password hashing to prevent timeouts

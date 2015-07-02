@@ -24,10 +24,11 @@ For more information, see http://git.io/gam
 """
 
 __author__ = u'Jay Lee <jay0lee@gmail.com>'
-__version__ = u'3.45'
+__version__ = u'3.5'
 __license__ = u'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 import sys, os, time, datetime, random, socket, csv, platform, re, calendar, base64, hashlib, string
+import subprocess
 
 import json
 import httplib2
@@ -39,6 +40,8 @@ import oauth2client.client
 import oauth2client.file
 import oauth2client.tools
 import uritemplate
+import mimetypes
+import ntpath
 
 global true_values, false_values, extra_args, customerId, domain, usergroup_types, is_frozen
 is_frozen = getattr(sys, 'frozen', '')
@@ -47,7 +50,7 @@ true_values = [u'on', u'yes', u'enabled', u'true', u'1']
 false_values = [u'off', u'no', u'disabled', u'false', u'0']
 usergroup_types = [u'user', u'users', u'group', u'ou', u'org',
                    u'ou_and_children', u'ou_and_child', u'query',
-                   u'license', u'licenses', u'file', u'all',
+                   u'license', u'licenses', u'licence', u'licences', u'file', u'all',
                    u'cros']
 
 def convertUTF8(data):
@@ -184,8 +187,10 @@ def doGAMCheckForUpdates():
     a = urllib2.urlopen(u'https://gam-update.appspot.com/latest-version-announcement.txt?v=%s')
     announcement = a.read()
     sys.stderr.write(announcement)
-    visit_gam = raw_input(u"\n\nHit Y to visit the GAM website and download the latest release. Hit Enter to just continue with this boring old version. GAM won't bother you with this announcemnt for 1 week or you can create a file named noupdatecheck.txt in the same location as gam.py or gam.exe and GAM won't ever check for updates: ")
-    if visit_gam.lower() == u'y':
+    try:
+      print u"\n\nHit CTRL+C to visit the GAM website and download the latest release or wait 15 seconds continue with this boring old version. GAM won't bother you with this announcement for 1 week or you can create a file named noupdatecheck.txt in the same location as gam.py or gam.exe and GAM won't ever check for updates."
+      time.sleep(15)
+    except KeyboardInterrupt:
       import webbrowser
       webbrowser.open(u'https://github.com/jay0lee/GAM/releases')
       print u'GAM is now exiting so that you can overwrite this old version with the latest release'
@@ -376,6 +381,14 @@ def callGAPI(service, function, silent_errors=False, soft_errors=False, throw_re
       try:
         error = json.loads(e.content)
       except ValueError:
+        if n < 3:
+          disable_ssl_certificate_validation = False
+          if os.path.isfile(getGamPath()+u'noverifyssl.txt'):
+            disable_ssl_certificate_validation = True
+          service._http.request.credentials.refresh(
+            httplib2.Http(ca_certs=getGamPath()+u'cacert.pem',
+            disable_ssl_certificate_validation=disable_ssl_certificate_validation))
+          continue
         if not silent_errors:
           print u'ERROR: %s' % e.content
         if soft_errors:
@@ -484,6 +497,10 @@ def getAPIVer(api):
     return u'v1'
   elif api == u'appsactivity':
     return u'v1'
+  elif api == u'classroom':
+    return u'v1'
+  elif api == u'cloudprint':
+    return u'v2'
   return u'v1'
 
 def getAPIScope(api):
@@ -548,6 +565,7 @@ def buildGAPIObject(api):
       f.close()
       service = googleapiclient.discovery.build_from_document(discovery, base=u'https://www.googleapis.com', http=http)
     else:
+      print 'No online discovery doc and %s does not exist locally' % disc_file
       raise
   except httplib2.CertificateValidationUnsupported:
     print u'Error: You don\'t have the Python ssl module installed so we can\'t verify SSL Certificates. You can fix this by installing the Python SSL module or you can live on the edge and turn SSL validation off by creating a file called noverifyssl.txt in the same location as gam.exe / gam.py'
@@ -560,7 +578,7 @@ def buildGAPIObject(api):
   except KeyError:
     try:
       domain = credentials.id_token[u'hd']
-    except TypeError:
+    except (TypeError, KeyError):
       domain = u'Unknown'
     customerId = u'my_customer'
   return service
@@ -1029,6 +1047,405 @@ def deleteDelegate(users):
     i += 1
     callGData(service=emailsettings, function=u'DeleteDelegate', delegate=delegate, delegator=user)
 
+def doAddCourseParticipant():
+  croom = buildGAPIObject(u'classroom')
+  courseId = sys.argv[2]
+  if not courseId.isdigit() and courseId[:2] != u'd:':
+    courseId = u'd:%s' % courseId
+  participant_type = sys.argv[4].lower()
+  if participant_type in [u'teacher', u'teachers']:
+    service = croom.courses().teachers()
+  elif participant_type in [u'students', u'student']:
+    service = croom.courses().students()
+  else:
+    print 'ERROR: expected course participant type of teacher or student, got %s' % participant_type
+    sys.exit(4)
+  userId = sys.argv[5]
+  body = {u'userId': userId}
+  result = callGAPI(service=service, function=u'create', courseId=courseId, body=body)
+  if courseId[:2] == u'd:':
+    courseId = courseId[2:]
+  print u'Added %s as a %s of course %s' % (userId, participant_type, courseId)
+
+def doSyncCourseParticipants():
+  courseId = sys.argv[2]
+  if not courseId.isdigit() and courseId[:2] != u'd:':
+    courseId = u'd:%s' % courseId
+  participant_type = sys.argv[4].lower()
+  diff_entity_type = sys.argv[5]
+  diff_entity = sys.argv[6]
+  current_course_users = getUsersToModify(entity_type=participant_type, entity=courseId)
+  print
+  current_course_users = [x.lower() for x in current_course_users]
+  diff_against_users = getUsersToModify(entity_type=diff_entity_type, entity=diff_entity)
+  print
+  diff_against_users = [x.lower() for x in diff_against_users]
+  to_add = list(set(diff_against_users) - set(current_course_users))
+  to_remove = list(set(current_course_users) - set(diff_against_users))
+  gam_commands = []
+  for add_email in to_add:
+    gam_commands.append([u'course', courseId, u'add', participant_type, add_email])
+  for remove_email in to_remove:
+    gam_commands.append([u'course', courseId, u'remove', participant_type, remove_email])
+  run_batch(items=gam_commands)
+ 
+def doDelCourseParticipant():
+  croom = buildGAPIObject(u'classroom')
+  courseId = sys.argv[2]
+  if not courseId.isdigit() and courseId[:2] != u'd:':
+    courseId = u'd:%s' % courseId
+  participant_type = sys.argv[4].lower()
+  if participant_type in [u'teacher', u'teachers']:
+    service = croom.courses().teachers()
+  elif participant_type in [u'student', u'students']:
+    service = croom.courses().students()
+  else:
+    print 'ERROR: expected course participant type of teacher or students, got %s' % participant_type
+    sys.exit(4)
+  userId = sys.argv[5]
+  callGAPI(service=service, function=u'delete', courseId=courseId, userId=userId)
+  if courseId[:2] == u'd:':
+    courseId = courseId[2:]
+  print u'Removed %s as a %s of course %s' % (userId, participant_type, courseId)
+
+def doDelCourse():
+  croom = buildGAPIObject(u'classroom')
+  courseId= sys.argv[3]
+  if not courseId.isdigit():
+    courseId = u'd:%s' % courseId
+  result = callGAPI(service=croom.courses(), function=u'delete', id=courseId)
+  print u'Deleted Course %s' % courseId
+
+def doUpdateCourse():
+  croom = buildGAPIObject(u'classroom')
+  courseId = sys.argv[3]
+  if not courseId.isdigit():
+    courseId = u'd:%s' % courseId
+  body = {'id': courseId}
+  i = 4
+  while i < len(sys.argv):
+    if sys.argv[i].lower() == u'name':
+      body[u'name'] = sys.argv[i+1]
+      i += 2
+    elif sys.argv[i].lower() == u'section':
+      body[u'section'] = sys.argv[i+1]
+      i += 2
+    elif sys.argv[i].lower() == u'heading':
+      body[u'descriptionHeading'] = sys.argv[i+1]
+      i += 2
+    elif sys.argv[i].lower() == u'description':
+      body[u'description'] = sys.argv[i+1]
+      i += 2
+    elif sys.argv[i].lower() == u'room':
+      body[u'room'] = sys.argv[i+1]
+      i += 2
+    elif sys.argv[i].lower() in [u'state', u'status']:
+      body[u'courseState'] = sys.argv[i+1].upper()
+      if body[u'courseState'] not in [u'ACTIVE', u'ARCHIVED', u'PROVISIONED', u'DECLINED']:
+        print 'ERROR: course state can be active or archived. Got %s' % body[u'courseState']
+        sys.exit(3)
+      i += 2
+    else:
+      print u'ERROR: %s is not a valid argument to "gam update course"' % sys.argv[i]
+      sys.exit(3)
+  updatemask_keys = body.keys()
+  updatemask_keys = filter(lambda a: a != u'id', updatemask_keys)
+  updateMask = u','.join(updatemask_keys)
+  result = callGAPI(service=croom.courses(), function=u'patch', id=courseId, body=body, updateMask=updateMask)
+  print u'Updated Course %s' % result[u'id']
+
+def doCreateCourse():
+  croom = buildGAPIObject(u'classroom')
+  body = dict()
+  i = 3
+  while i < len(sys.argv):
+    if sys.argv[i].lower() == u'name':
+      body[u'name'] = sys.argv[i+1]
+      i += 2
+    elif sys.argv[i].lower() in [u'alias', u'id']:
+      body[u'id'] = u'd:%s' % sys.argv[i+1]
+      i += 2
+    elif sys.argv[i].lower() == u'section':
+      body[u'section'] = sys.argv[i+1]
+      i += 2
+    elif sys.argv[i].lower() == u'heading':
+      body[u'descriptionHeading'] = sys.argv[i+1]
+      i += 2
+    elif sys.argv[i].lower() == u'description':
+      body[u'description'] = sys.argv[i+1]
+      i += 2
+    elif sys.argv[i].lower() == u'room':
+      body[u'room'] = sys.argv[i+1]
+      i += 2
+    elif sys.argv[i].lower() == u'teacher':
+      body[u'ownerId'] = sys.argv[i+1]
+      i += 2
+    elif sys.argv[i].lower() in [u'state', u'status']:
+      body[u'courseState'] = sys.argv[i+1].upper()
+      if body[u'courseState'] not in [u'ACTIVE', u'ARCHIVED', u'PROVISIONED', u'DECLINED']:
+        print 'ERROR: course state can be active or archived. Got %s' % body[u'courseState']
+        sys.exit(3)
+      i += 2
+    else:
+      print u'ERROR: %s is not a valid argument to "gam create course".' % sys.argv[i]
+      sys.exit(3)
+  if not u'ownerId' in body.keys():
+    body['ownerId'] = u'me'
+  if not u'name' in body.keys():
+    body['name'] = u'Unknown Course'
+  result = callGAPI(service=croom.courses(), function=u'create', body=body)
+  print u'Created course %s' % result[u'id']
+
+def doGetCourseInfo():
+  courseId = sys.argv[3]
+  if not courseId.isdigit():
+    courseId = u'd:%s' % courseId
+  croom = buildGAPIObject(u'classroom')
+  info = callGAPI(service=croom.courses(), function=u'get', id=courseId)
+  print_json(None, info)
+  teachers = callGAPIpages(service=croom.courses().teachers(), function=u'list', items=u'teachers', courseId=courseId)
+  students = callGAPIpages(service=croom.courses().students(), function=u'list', items=u'students', courseId=courseId)
+  try:
+    aliases = callGAPIpages(service=croom.courses().aliases(), function=u'list', items=u'aliases', throw_reasons=[u'notImplemented'], courseId=courseId)
+  except googleapiclient.errors.HttpError:
+    aliases = []
+  if aliases:
+    print u'Aliases:'
+    for alias in aliases:
+      print u'  %s' % alias[u'alias'][2:]
+  print u'Participants:'
+  print u' Teachers:'
+  for teacher in teachers:
+    try:
+      print u'  %s - %s' % (teacher[u'profile'][u'name'][u'fullName'], teacher[u'profile'][u'emailAddress'])
+    except KeyError:
+      print u'  %s' % teacher[u'profile'][u'name'][u'fullName']
+  print u' Students:'
+  for student in students:
+    try:
+      print u'  %s - %s' % (student[u'profile'][u'name'][u'fullName'], student[u'profile'][u'emailAddress'])
+    except KeyError:
+      print u'  %s' % student[u'profile'][u'name'][u'fullName']
+
+def doPrintCourses():
+  croom = buildGAPIObject(u'classroom')
+  croom_attributes = [{}]
+  titles = []
+  todrive = False
+  teacherId = None
+  studentId = None
+  i = 3
+  while i < len(sys.argv):
+    if sys.argv[i].lower() == u'teacher':
+      teacherId = sys.argv[i+1]
+      i += 2
+    elif sys.argv[i].lower() == u'student':
+      studentId = sys.argv[i+1]
+      i += 2
+    elif sys.argv[i].lower() == u'todrive':
+      todrive = True
+      i += 1
+    else:
+      print u'ERROR: %s is not a valid argument to "gam print courses".'
+      sys.exit(3)
+  sys.stderr.write(u'Retrieving courses for organization (may take some time for large accounts)...\n')
+  page_message = u'Got %%num_items%% courses...\n'
+  all_courses = callGAPIpages(service=croom.courses(), function=u'list', items=u'courses', page_message=page_message, teacherId=teacherId, studentId=studentId)
+  for course in all_courses:
+    croom_attributes.append(flatten_json(course))
+    for item in croom_attributes[-1].keys():
+      if item not in titles:
+        titles.append(item)
+        croom_attributes[0][item] = item
+  output_csv(croom_attributes, titles, u'Courses', todrive)
+
+def doPrintCourseParticipants():
+  croom = buildGAPIObject(u'classroom')
+  participants_attributes = [{}]
+  titles = []
+  todrive = False
+  courses = []
+  teacherId = None
+  studentId = None
+  i = 3
+  while i < len(sys.argv):
+    if sys.argv[i].lower() in [u'course', u'class']:
+      course = sys.argv[i+1]
+      if not course.isdigit():
+        course = u'd:%s' % course
+      courses.append(course)
+      i += 2
+    elif sys.argv[i].lower() == u'teacher':
+      teacherId = sys.argv[i+1]
+      i += 2
+    elif sys.argv[i].lower() == u'student':
+      studentId = sys.argv[i+1]
+      i += 2
+    elif sys.argv[i].lower() == u'todrive':
+      todrive = True
+      i += 1
+    else:
+      print u'ERROR: %s is not a valid argument to "gam print course-participants".'
+      sys.exit(3)
+    sys.stderr.write(u'Retrieving courses for organization (may take some time for large accounts)...\n')
+  if len(courses) == 0:
+    page_message = u'Got %%num_items%% courses...\n'
+    all_courses = callGAPIpages(service=croom.courses(), function=u'list', items=u'courses', page_message=page_message, teacherId=teacherId, studentId=studentId)
+    for course in all_courses:
+      courses.append(course[u'id'])
+  else:
+    all_courses = []
+    for course in courses:
+      all_courses.append(callGAPI(service=croom.courses(), function=u'get', id=course))
+  y = 1
+  num_courses = len(all_courses)
+  for course in all_courses:
+    course_id = course[u'id']
+    teacher_message = u' got %%%%num_items%%%% teachers for course %s (%s/%s)' % (course_id, y, num_courses)
+    student_message = u' got %%%%num_items%%%% students for course %s (%s/%s)' % (course_id, y, num_courses)
+    teachers = callGAPIpages(service=croom.courses().teachers(), function=u'list', items=u'teachers', page_message=teacher_message, courseId=course_id)
+    students = callGAPIpages(service=croom.courses().students(), function=u'list', items=u'students', page_message=student_message, courseId=course_id)
+    for teacher in teachers:
+      participant = flatten_json(teacher)
+      participant[u'courseId'] = course_id
+      participant[u'courseName'] = course[u'name']
+      participant[u'userRole'] = u'TEACHER'
+      participants_attributes.append(participant)
+      for item in participant.keys():
+        if item not in titles:
+          titles.append(item)
+          participants_attributes[0][item] = item
+    for student in students:
+      participant = flatten_json(student)
+      participant[u'courseId'] = course_id
+      participant[u'courseName'] = course[u'name']
+      participant[u'userRole'] = u'STUDENT'
+      participants_attributes.append(participant)
+      for item in participant.keys():
+        if item not in titles:
+          titles.append(item)
+          participants_attributes[0][item] = item
+    y += 1
+  output_csv(participants_attributes, titles, u'Course Participants', todrive)
+
+def doPrintPrintJobs():
+  cp = buildGAPIObject(u'cloudprint')
+  job_attributes = [{}]
+  titles = []
+  todrive = False
+  printerid = None
+  owner = None
+  status = None
+  query = None
+  i = 3
+  age = None
+  older_or_newer = None
+  while i < len(sys.argv):
+    if sys.argv[i].lower() == u'todrive':
+      todrive = True
+      i += 1
+    elif sys.argv[i].lower().replace(u'_', u'') in [u'olderthan', u'newerthan']:
+      if sys.argv[i].lower().replace(u'_', u'') == u'olderthan':
+        older_or_newer = u'older'
+      else:
+        older_or_newer = u'newer'
+      age_number = sys.argv[i+1][:-1]
+      if not age_number.isdigit():
+        print u'ERROR: expected a number, got %s' % age_number
+        sys.exit(3)
+      age_unit = sys.argv[i+1][-1].lower()
+      if age_unit == u'm':
+        age = int(time.time()) - (int(age_number) * 60)
+      elif age_unit == u'h':
+        age = int(time.time()) - (int(age_number) * 60 * 60)
+      elif age_unit == u'd':
+        age = int(time.time()) - (int(age_number) * 60 * 60 * 24)
+      else:
+        print u'ERROR: expected m (minutes), h (hours) or d (days), got %s' % age_unit
+        sys.exit(3)
+      i += 2
+    elif sys.argv[i].lower() == u'query':
+      query = sys.argv[i+1]
+      i += 2
+    elif sys.argv[i].lower() == u'status':
+      status = sys.argv[i+1]
+      i += 2
+    elif sys.argv[i].lower() in [u'printer', u'printerid']:
+      printerid = sys.argv[i+1]
+      i += 2
+    elif sys.argv[i].lower() in [u'owner', u'user']:
+      owner = sys.argv[i+1]
+      i += 2
+      sys.exit(3)
+    else:
+      print u'ERROR: %s is not a valid argument to "gam print printjobs"' % sys.argv[i]
+      sys.exit(3)
+  jobs = callGAPI(service=cp.jobs(), function=u'list', q=query, status=status, printerid=printerid, owner=owner)
+  checkCloudPrintResult(jobs)
+  for job in jobs[u'jobs']:
+    createTime = int(job[u'createTime'])/1000
+    if older_or_newer:
+      if older_or_newer == u'older' and createTime > age:
+        continue
+      elif older_or_newer == u'newer' and createTime < age:
+        continue
+    updateTime = int(job[u'updateTime'])/1000
+    job[u'createTime'] = datetime.datetime.fromtimestamp(createTime).strftime(u'%Y-%m-%d %H:%M:%S')
+    job[u'updateTime'] = datetime.datetime.fromtimestamp(updateTime).strftime(u'%Y-%m-%d %H:%M:%S')
+    job[u'tags'] = u' '.join(job[u'tags'])
+    job_attributes.append(flatten_json(job))
+    for item in job_attributes[-1].keys():
+      if item not in titles:
+        titles.append(item)
+        job_attributes[0][item] = item
+  output_csv(job_attributes, titles, u'Print Jobs', todrive)
+
+def doPrintPrinters():
+  cp = buildGAPIObject(u'cloudprint')
+  printer_attributes = [{}]
+  titles = []
+  todrive = False
+  query = None
+  type = None
+  connection_status = None
+  extra_fields = None
+  i = 3
+  while i < len(sys.argv):
+    if sys.argv[i].lower() == u'query':
+      query = sys.argv[i+1]
+      i += 2
+    elif sys.argv[i].lower() == u'type':
+      type = sys.argv[i+1]
+      i += 2
+    elif sys.argv[i].lower() == u'status':
+      connection_status = sys.argv[i+1]
+      i += 2
+    elif sys.argv[i].lower().replace(u'_', u'') == u'extrafields':
+      extra_fields = sys.argv[i+1]
+      i += 2
+    elif sys.argv[i].lower() == u'todrive':
+      todrive = True
+      i += 1
+    else:
+      print u'ERROR: %s is not a valid argument to "gam print printers".'
+      sys.exit(3)
+  printers = callGAPI(service=cp.printers(), function=u'list', q=query, type=type, connection_status=connection_status, extra_fields=extra_fields)
+  checkCloudPrintResult(printers)
+  for printer in printers[u'printers']:
+    createTime = int(printer[u'createTime'])/1000
+    accessTime = int(printer[u'accessTime'])/1000
+    updateTime = int(printer[u'updateTime'])/1000
+    printer[u'createTime'] = datetime.datetime.fromtimestamp(createTime).strftime(u'%Y-%m-%d %H:%M:%S')
+    printer[u'accessTime'] = datetime.datetime.fromtimestamp(accessTime).strftime(u'%Y-%m-%d %H:%M:%S')
+    printer[u'updateTime'] = datetime.datetime.fromtimestamp(updateTime).strftime(u'%Y-%m-%d %H:%M:%S')
+    printer[u'tags'] = u' '.join(printer[u'tags'])
+    printer_attributes.append(flatten_json(printer))
+    for item in printer_attributes[-1].keys():
+      if item not in titles:
+        titles.append(item)
+        printer_attributes[0][item] = item
+  output_csv(printer_attributes, titles, u'Printers', todrive)
+
 def changeCalendarAttendees(users):
   cal = buildGAPIServiceObject(u'calendar', users[0])
   count = len(users)
@@ -1257,6 +1674,327 @@ def updateCalendar(users):
     print u"Updating %s's subscription to calendar %s (%s of %s)" % (user, calendarId, i, count)
     cal = buildGAPIServiceObject(u'calendar', user)
     callGAPI(service=cal.calendarList(), function=u'update', calendarId=calendarId, body=body)
+
+def doPrinterShowACL():
+  show_printer = sys.argv[2]
+  cp = buildGAPIObject(u'cloudprint')
+  printer_info = callGAPI(service=cp.printers(), function=u'get', printerid=show_printer)
+  checkCloudPrintResult(printer_info)
+  for acl in printer_info[u'printers'][0][u'access']:
+    if u'key' in acl.keys():
+      acl[u'accessURL'] = u'https://www.google.com/cloudprint/addpublicprinter.html?printerid=%s&key=%s' % (show_printer, acl[u'key'])
+    print_json(None, acl)
+    print
+
+def doPrinterAddACL():
+  printer = sys.argv[2]
+  role = sys.argv[4].upper()
+  scope = sys.argv[5]
+  public = None
+  skip_notification = True
+  if scope.lower() == u'public':
+    public = True
+    scope = None
+    role = None
+    skip_notification = None
+  elif scope.find(u'@') == -1:
+    scope = u'/hd/domain/%s' % scope
+  cp = buildGAPIObject(u'cloudprint')
+  result = callGAPI(service=cp.printers(), function=u'share', printerid=printer, role=role, scope=scope, public=public, skip_notification=skip_notification)
+  checkCloudPrintResult(result)
+  who = scope
+  if who == None:
+    who = 'public'
+    role = 'user'
+  print u'Added %s %s' % (role, who)
+
+def doPrinterDelACL():
+  printer = sys.argv[2]
+  scope = sys.argv[4]
+  public = None
+  if scope.lower() == u'public':
+    public = True
+    scope = None
+  elif scope.find(u'@') == -1:
+    scope = u'/hd/domain/%s' % scope
+  cp = buildGAPIObject(u'cloudprint')
+  result = callGAPI(service=cp.printers(), function=u'unshare', printerid=printer, scope=scope, public=public)
+  checkCloudPrintResult(result)
+  who = scope
+  if who == None:
+    who = u'public'
+  print u'Removed %s' % who
+
+def encode_multipart(fields, files, boundary=None):
+  def escape_quote(s):
+    return s.replace('"', '\\"')
+
+  def getFormDataLine(name, value, boundary):
+    return '--{0}'.format(boundary), 'Content-Disposition: form-data; name="{0}"'.format(escape_quote(name)), '', str(value)
+
+  if boundary is None:
+    boundary = ''.join(random.choice(string.digits + string.ascii_letters) for i in range(30))
+  lines = []
+  for name, value in fields.items():
+    if name == u'tags':
+      for tag in value:
+        lines.extend(getFormDataLine('tag', tag, boundary))
+    else:
+      lines.extend(getFormDataLine(name, value, boundary))
+  for name, value in files.items():
+    filename = value['filename']
+    mimetype = value['mimetype']
+    lines.extend((
+      '--{0}'.format(boundary),
+      'Content-Disposition: form-data; name="{0}"; filename="{1}"'.format(
+        escape_quote(name), escape_quote(filename)),
+      'Content-Type: {0}'.format(mimetype),
+      '',
+      value['content'],
+    ))
+  lines.extend((
+    '--{0}--'.format(boundary),
+    '',
+  ))
+  body = '\r\n'.join(lines)
+  headers = {
+    'Content-Type': 'multipart/form-data; boundary={0}'.format(boundary),
+    'Content-Length': str(len(body)),
+  }
+  return (body, headers)
+
+def doPrintJobFetch():
+  cp = buildGAPIObject(u'cloudprint')
+  printer = sys.argv[2]
+  #result = callGAPI(service=cp.jobs(), function=u'fetch', printerid=printer)
+  result = callGAPI(service=cp.jobs(), function=u'list')
+  if u'errorCode' in result.keys() and result[u'errorCode'] == 413:
+    print u'No print jobs.'
+    sys.exit(0)
+  checkCloudPrintResult(result)
+  valid_chars = u'-_.() abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+  ssd = '''{
+  "state": {"type": "DONE"}
+}'''
+  for job in result[u'jobs']:
+    fileUrl = job[u'fileUrl']
+    jobid = job[u'id']
+    fileName = job[u'title']
+    fileName =  u''.join(c if c in valid_chars else u'_' for c in fileName)
+    fileName = u'%s-%s' % (fileName, jobid)
+    resp, content = cp._http.request(fileUrl)
+    f = open(fileName, 'wb')
+    f.write(content)
+    f.close()
+    #ticket = callGAPI(service=cp.jobs(), function=u'getticket', jobid=jobid, use_cjt=True)
+    result = callGAPI(service=cp.jobs(), function=u'update', jobid=jobid, semantic_state_diff=ssd)
+    checkCloudPrintResult(result)
+    print u'Printed job %s to %s' % (jobid, fileName)
+
+def doDelPrinter():
+  cp = buildGAPIObject(u'cloudprint')
+  printerid = sys.argv[3]
+  result = callGAPI(service=cp.printers(), function=u'delete', printerid=printerid)
+  checkCloudPrintResult(result)
+
+def doGetPrinterInfo():
+  cp = buildGAPIObject(u'cloudprint')
+  printerid = sys.argv[3]
+  everything = False
+  i = 4
+  while i < len(sys.argv):
+    if sys.argv[i] == u'everything':
+      everything = True
+      i += 1
+    else:
+      print u'ERROR: %s is not a valid argument to "gam info printer..."'
+      sys.exit(3)
+  result = callGAPI(service=cp.printers(), function=u'get', printerid=printerid)
+  checkCloudPrintResult(result)
+  printer_info = result[u'printers'][0]
+  createTime = int(printer_info[u'createTime'])/1000
+  accessTime = int(printer_info[u'accessTime'])/1000
+  updateTime = int(printer_info[u'updateTime'])/1000
+  printer_info[u'createTime'] = datetime.datetime.fromtimestamp(createTime).strftime(u'%Y-%m-%d %H:%M:%S')
+  printer_info[u'accessTime'] = datetime.datetime.fromtimestamp(accessTime).strftime(u'%Y-%m-%d %H:%M:%S')
+  printer_info[u'updateTime'] = datetime.datetime.fromtimestamp(updateTime).strftime(u'%Y-%m-%d %H:%M:%S')
+  printer_info[u'tags'] = u' '.join(printer_info[u'tags'])
+  if not everything:
+    del printer_info[u'capabilities']
+    del printer_info[u'access']
+  print_json(None, printer_info)
+
+def doUpdatePrinter():
+  cp = buildGAPIObject(u'cloudprint')
+  printerid = sys.argv[3]
+  kwargs = {}
+  i = 4
+  update_items = [u'isTosAccepted', u'gcpVersion', u'setupUrl',
+    u'quotaEnabled', u'id', u'supportUrl', u'firmware',
+    u'currentQuota', u'type', u'public', u'status', u'description',
+    u'defaultDisplayName', u'proxy', u'dailyQuota', u'manufacturer',
+    u'displayName', u'name', u'uuid', u'updateUrl', u'ownerId', u'model']
+  while i < len(sys.argv):
+    arg_in_item = False
+    for item in update_items:
+      if item.lower() == sys.argv[i].lower():
+        kwargs[item] = sys.argv[i+1]
+        i += 2
+        arg_in_item = True
+        break
+    if not arg_in_item:
+      print u'ERROR: %s is not a valid argument to "gam update printer"' % sys.argv[i]
+      sys.exit(3)
+  result = callGAPI(service=cp.printers(), function=u'update', printerid=printerid, **kwargs)
+  checkCloudPrintResult(result)
+  print u'Updated printer %s' % printerid
+
+def doPrinterRegister():
+  cp = buildGAPIObject(u'cloudprint')
+  form_fields = {u'name': u'GAM',
+    u'proxy': u'GAM',
+    u'uuid': cp._http.request.credentials.id_token[u'sub'],
+    u'manufacturer': __author__,
+    u'model': u'cp1',
+    u'gcp_version': u'2.0',
+    u'setup_url': u'http://git.io/gam',
+    u'support_url': u'https://groups.google.com/forum/#!forum/google-apps-manager',
+    u'update_url': u'http://git.io/gamreleases',
+    u'firmware': __version__,
+    u'semantic_state': {
+      "version": "1.0",
+      "printer": {
+        "state": "IDLE",
+      }
+    },
+    u'use_cdd': True,
+    u'capabilities': {
+      "version": "1.0",
+      "printer": {
+        "supported_content_type": [
+          {"content_type": "application/pdf", "min_version": "1.5"},
+          {"content_type": "image/jpeg"},
+          {"content_type": "text/plain"}
+        ],
+        "copies": {
+          "default": 1,
+          "max": 100
+        },
+        "media_size": {
+          "option": [
+            {
+              "name": "ISO_A4",
+              "width_microns": 210000,
+              "height_microns": 297000
+            },
+            {
+              "name": "NA_LEGAL",
+              "width_microns": 215900,
+              "height_microns": 355600
+            },
+            {
+              "name": "NA_LETTER",
+              "width_microns": 215900,
+              "height_microns": 279400,
+              "is_default": True
+            }
+          ]
+        }
+      }
+    },
+    u'tags': [u'GAM', u'http://git.io/gam'],
+  }
+  form_files = {}
+  body, headers = encode_multipart(form_fields, form_files)
+  #Get the printer first to make sure our OAuth access token is fresh
+  callGAPI(service=cp.printers(), function=u'list')
+  resp, result = cp._http.request(uri='https://www.google.com/cloudprint/register', method='POST', body=body, headers=headers)
+  result = json.loads(result)
+  checkCloudPrintResult(result)
+  print u'Created printer %s' % result[u'printers'][0][u'id']
+
+def doPrintJobResubmit():
+  jobid = sys.argv[2]
+  printerid = sys.argv[4]
+  cp = buildGAPIObject(u'cloudprint')
+  ssd = '''{
+  "state": {"type": "HELD"}
+}'''
+  result = callGAPI(service=cp.jobs(), function=u'update', jobid=jobid, semantic_state_diff=ssd)
+  checkCloudPrintResult(result)
+  ticket = callGAPI(service=cp.jobs(), function=u'getticket', jobid=jobid, use_cjt=True)
+  result = callGAPI(service=cp.jobs(), function=u'resubmit', printerid=printerid, jobid=jobid, ticket=ticket)
+  checkCloudPrintResult(result)
+  print u'Success resubmitting %s as job %s to printer %s' % (jobid, result[u'job'][u'id'], printerid)
+
+def doPrintJobSubmit():
+  printer = sys.argv[2]
+  cp = buildGAPIObject(u'cloudprint')
+  content = sys.argv[4]
+  form_fields = {u'printerid': printer,
+    u'title': content,
+    u'ticket': u'{"version": "1.0"}',
+    u'tags': [u'GAM', u'http://git.io/gam']}
+  i = 5
+  while i < len(sys.argv):
+    if sys.argv[i].lower() == u'tag':
+      form_fields[u'tags'].append(sys.argv[i+1])
+      i += 2
+    elif sys.argv[i].lower() in [u'name', u'title']:
+      form_fields[u'title'] = sys.argv[i+1]
+      i += 2
+    else:
+      print u'ERROR: %s is not a valid argument for "gam printer ... print"'
+      sys.exit(3)
+  form_files = {}
+  if content[:4] == u'http':
+    form_fields[u'content'] = content
+    form_fields[u'contentType'] = u'url'
+  else:
+    filepath = content
+    content = ntpath.basename(content)
+    mimetype = mimetypes.guess_type(filepath)[0]
+    if mimetype == None:
+      mimetype = u'application/octet-stream'
+    f = open(filepath)
+    filecontent = f.read()
+    f.close()
+    form_files[u'content'] = {u'filename': content, u'content': filecontent, u'mimetype': mimetype}
+  #result = callGAPI(service=cp.printers(), function=u'submit', body=body)
+  body, headers = encode_multipart(form_fields, form_files)
+  #Get the printer first to make sure our OAuth access token is fresh
+  callGAPI(service=cp.printers(), function=u'get', printerid=printer)
+  resp, result = cp._http.request(uri='https://www.google.com/cloudprint/submit', method='POST', body=body, headers=headers)
+  checkCloudPrintResult(result)
+  if type(result) is str:
+    result = json.loads(result)
+  print u'Submitted print job %s' % result[u'job'][u'id']
+
+def doDeletePrintJob():
+  job = sys.argv[2]
+  cp = buildGAPIObject(u'cloudprint')
+  result = callGAPI(service=cp.jobs(), function=u'delete', jobid=job)
+  checkCloudPrintResult(result)
+  print u'Print Job %s deleted' % job
+
+def doCancelPrintJob():
+  job = sys.argv[2]
+  cp = buildGAPIObject(u'cloudprint')
+  ssd = '{"state": {"type": "ABORTED", "user_action_cause": {"action_code": "CANCELLED"}}}'
+  result = callGAPI(service=cp.jobs(), function=u'update', jobid=job, semantic_state_diff=ssd)
+  checkCloudPrintResult(result)
+  print u'Print Job %s cancelled' % job
+
+def checkCloudPrintResult(result):
+  if type(result) is str:
+    try:
+      result = json.loads(result)
+    except ValueError:
+      print u'ERROR: unexpected response: %s' % result
+      sys.exit(3) 
+  if not result[u'success']:
+    print u'ERROR %s: %s' % (result[u'errorCode'], result[u'message'])
+    sys.exit(result[u'errorCode'])
 
 def doCalendarShowACL():
   show_cal = sys.argv[2]
@@ -2005,7 +2743,6 @@ def doUpdateDriveFile(users):
   body = {}
   while i < len(sys.argv):
     if sys.argv[i].lower().replace(u'_', u'') == u'localfile':
-      import mimetypes, ntpath
       local_filepath = sys.argv[i+1]
       local_filename = ntpath.basename(local_filepath)
       mimetype = mimetypes.guess_type(local_filepath)[0]
@@ -4279,9 +5016,9 @@ def doUpdateUser(users):
       body[u'emails'] = [{u'type': u'custom', u'customType': u'former_employee', u'primary': False, u'address': user_primary}]
     sys.stderr.write(u'updating user %s...\n' % user)
     if do_update_user:
-      result = callGAPI(service=cd.users(), function=u'patch', soft_errors=True, userKey=user, body=body)
+      result = callGAPI(service=cd.users(), function=u'patch', userKey=user, body=body)
     if do_admin_user:
-      result2 = callGAPI(service=cd.users(), function=u'makeAdmin', soft_errors=True, userKey=user, body={u'status': is_admin})
+      result2 = callGAPI(service=cd.users(), function=u'makeAdmin', userKey=user, body={u'status': is_admin})
 
 def doRemoveUsersAliases(users):
   cd = buildGAPIObject(u'directory')
@@ -4307,6 +5044,7 @@ def doRemoveUsersGroups(users):
     for user_group in user_groups:
       print u' removing %s from %s (%s/%s)' % (user, user_group[u'email'], i, num_groups)
       callGAPI(service=cd.members(), function=u'delete', soft_errors=True, groupKey=user_group[u'id'], memberKey=user)
+      i += 1
     print u''
 
 def doUpdateGroup():
@@ -4538,7 +5276,7 @@ def doUpdateCros():
 	  i += 2
     elif sys.argv[i].lower() in [u'ou', u'org']:
       body[u'orgUnitPath'] = sys.argv[i + 1]
-      if body[u'orgUnitPath'][0] != '/':
+      if body[u'orgUnitPath'][0] != u'/':
         body[u'orgUnitPath'] = u'/%s' % body[u'orgUnitPath']
       i += 2
     else:
@@ -4708,7 +5446,7 @@ def doGetUserInfo(user_email=None):
     elif sys.argv[i].lower() == u'nogroups':
       getGroups = False
       i += 1
-    elif sys.argv[i].lower() == u'nolicenses':
+    elif sys.argv[i].lower() in [u'nolicenses', u'nolicences']:
       getLicenses = False
       i += 1
     elif sys.argv[i].lower() == u'noschemas':
@@ -5904,7 +6642,7 @@ def doPrintUsers():
     elif sys.argv[i].lower() == u'groups':
       getGroupFeed = True
       i += 1
-    elif sys.argv[i].lower() in [u'license', u'licenses']:
+    elif sys.argv[i].lower() in [u'license', u'licenses', u'licence', u'licences']:
       getLicenseFeed = True
       i += 1
     elif sys.argv[i].lower() in [u'emailpart', u'emailparts', u'username']:
@@ -6975,7 +7713,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
       else:
         users.append(member[u'primaryEmail'])
     if not silent: sys.stderr.write(u"done.\r\n")
-  elif entity_type in [u'license', u'licenses']:
+  elif entity_type in [u'license', u'licenses', u'licence', u'licences']:
     users = []
     licenses = doPrintLicenses(return_list=True, skus=entity.split(u','))
     for row in licenses[1:]: # skip header
@@ -6992,6 +7730,21 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
         users.append(row.pop())
       except IndexError:
         pass
+  elif entity_type in [u'courseparticipants', u'teachers', u'students']:
+    croom = buildGAPIObject(u'classroom')
+    users = []
+    if not entity.isdigit() and entity[:2] != u'd:':
+      entity = u'd:%s' % entity
+    if entity_type in [u'courseparticipants', u'teachers']:
+      page_message = u'Got %%total_items%% teachers...'
+      teachers = callGAPIpages(service=croom.courses().teachers(), function=u'list', items=u'teachers', page_message=page_message, courseId=entity)
+      for teacher in teachers:
+        users.append(teacher[u'profile'][u'emailAddress'])
+    if entity_type in [u'courseparticipants', u'students']:
+      page_message = u'Got %%total_items%% students...'
+      students = callGAPIpages(service=croom.courses().students(), function=u'list', page_message=page_message, items=u'students', courseId=entity)
+      for student in students:
+        users.append(student[u'profile'][u'emailAddress'])
   elif entity_type == u'all':
     got_uids = True
     users = []
@@ -7141,7 +7894,7 @@ for instructions.
 
 """ % CLIENT_SECRETS
 
-  selected_scopes = [u'*'] * 20
+  selected_scopes = [u'*'] * 22
   menu = u'''Select the authorized scopes for this token. Include a 'r' to grant read-only
 access or an 'a' to grant action-only access.
 
@@ -7165,10 +7918,12 @@ access or an 'a' to grant action-only access.
 [%s] 17)  Site Verification API
 (%s) 18)  IMAP/SMTP Access (send notifications to admin)
 (%s) 19)  User Schemas (supports read-only)
+(%s) 20)  Classroom API
+(%s) 21)  Cloud Print API
 
-     20)  Select all scopes
-     21)  Unselect all scopes
-     22)  Continue
+     22)  Select all scopes
+     23)  Unselect all scopes
+     24)  Continue
 '''
   os.system([u'clear', u'cls'][os.name == u'nt'])
   while True:
@@ -7188,18 +7943,18 @@ access or an 'a' to grant action-only access.
           print u'THAT SCOPE DOES NOT SUPPORT ACTION-ONLY MODE!\n'
           continue
         selected_scopes[selection] = u'A'
-      elif int(selection) > -1 and int(selection) <= 19:
+      elif int(selection) > -1 and int(selection) <= 21:
         if selected_scopes[int(selection)] == u' ':
           selected_scopes[int(selection)] = u'*'
         else:
           selected_scopes[int(selection)] = u' '
-      elif selection == u'20':
+      elif selection == u'22':
         for i in range(0, len(selected_scopes)):
           selected_scopes[i] = u'*'
-      elif selection == u'21':
+      elif selection == u'23':
         for i in range(0, len(selected_scopes)):
            selected_scopes[i] = u' '
-      elif selection == u'22':
+      elif selection == u'24':
         at_least_one = False
         for i in range(0, len(selected_scopes)):
           if selected_scopes[i] in [u'*', u'R', u'A']:
@@ -7239,7 +7994,9 @@ access or an 'a' to grant action-only access.
                      u'https://www.googleapis.com/auth/admin.directory.notifications',    # Notifications Directory API
                      u'https://www.googleapis.com/auth/siteverification',                 # Site Verification API
                      u'https://mail.google.com/',                                         # IMAP/SMTP authentication for admin notifications
-                     u'https://www.googleapis.com/auth/admin.directory.userschema']       # Customer User Schema
+                     u'https://www.googleapis.com/auth/admin.directory.userschema',       # Customer User Schema
+                     u'https://www.googleapis.com/auth/classroom.rosters https://www.googleapis.com/auth/classroom.courses https://www.googleapis.com/auth/classroom.profile.emails https://www.googleapis.com/auth/classroom.profile.photos',          # Classroom API
+                     u'https://www.googleapis.com/auth/cloudprint']
   if incremental_auth:
     scopes = []
   else:
@@ -7286,6 +8043,11 @@ def batch_worker():
     q.task_done()
 
 def run_batch(items):
+  total_items = len(items)
+  current_item = 0
+  python_cmd = [sys.executable.lower(),]
+  if not getattr(sys, 'frozen', False): # we're not frozen
+    python_cmd.append(os.path.realpath(sys.argv[0]))
   try:
     num_worker_threads = int(os.environ[u'GAM_THREADS'])
   except KeyError:
@@ -7293,19 +8055,21 @@ def run_batch(items):
   import Queue, threading
   global q
   q = Queue.Queue(maxsize=num_worker_threads) # q.put() gets blocked when trying to create more items than there are workers
-  print 'starting %s worker threads...' % num_worker_threads
+  print u'starting %s worker threads...' % num_worker_threads
   for i in range(num_worker_threads):
     t = threading.Thread(target=batch_worker)
     t.daemon = True
     t.start()
   for item in items:
-    if item[-1] == u'commit-batch':
+    current_item += 1
+    if not current_item % 100:
+      print u'starting job %s / %s' % (current_item, total_items)
+    if item[0] == u'commit-batch':
       sys.stderr.write(u'commit-batch - waiting for running processes to finish before proceeding...')
-      while q.qsize() > 0: # sleep until the queue is empty
-        time.sleep(.1)
+      q.join()
       sys.stderr.write(u'done with commit-batch\n')
       continue
-    q.put(item)
+    q.put(python_cmd+item)
   q.join()
 
 # Main
@@ -7316,27 +8080,22 @@ try:
     sys.argv = win32_unicode_argv() # cleanup sys.argv on Windows
   doGAMCheckForUpdates()
   if sys.argv[1].lower() == u'batch':
-    import shlex, subprocess
-    python_cmd = [sys.executable.lower(),]
-    if not getattr(sys, 'frozen', False): # we're not frozen
-      python_cmd.append(os.path.realpath(sys.argv[0]))
+    import shlex
     f = file(sys.argv[2], 'rb')
     items = list()
     for line in f:
       argv = shlex.split(line)
-      if argv[0] in [u'#', u' ', u''] or len(argv) < 2:
+      if (argv[0] in [u'#', u' ', u''] or len(argv) < 2) and argv != [u'commit-batch']:
         continue
-      elif argv.pop(0).lower() not in [u'gam', u'commit-batch']:
+      elif argv[0] not in [u'gam', u'commit-batch']:
         print u'Error: "%s" is not a valid gam command' % line
         continue
-      items.append(python_cmd+argv)
+      if argv[0] == u'gam':
+        argv = argv[1:]
+      items.append(argv)
     run_batch(items)
     sys.exit(0)
   elif sys.argv[1].lower() == 'csv':
-    import subprocess
-    python_cmd = [sys.executable.lower(),]
-    if not getattr(sys, 'frozen', False): # we're not frozen
-      python_cmd.append(os.path.realpath(sys.argv[0]))
     csv_filename = sys.argv[2]
     if csv_filename == u'-':
       import StringIO
@@ -7360,7 +8119,7 @@ try:
         else:
           print 'Error: header "%s" not found in CSV headers of %s, giving up.' % (row.keys(), arg[1:])
           sys.exit(0)
-      items.append(python_cmd+argv)
+      items.append(argv)
     run_batch(items)
     sys.exit(0)
   elif sys.argv[1].lower() == u'version':
@@ -7381,6 +8140,8 @@ try:
       doSiteVerifyShow()
     elif sys.argv[2].lower() in [u'schema']:
       doCreateOrUpdateUserSchema()
+    elif sys.argv[2].lower() in [u'course', u'class']:
+      doCreateCourse()
     else:
       print u'Error: invalid argument to "gam create..."'
       sys.exit(2)
@@ -7408,6 +8169,10 @@ try:
       doSiteVerifyAttempt()
     elif sys.argv[2].lower() in [u'schema', u'schemas']:
       doCreateOrUpdateUserSchema()
+    elif sys.argv[2].lower() in [u'course', u'class']:
+      doUpdateCourse()
+    elif sys.argv[2].lower() in [u'printer', u'print']:
+      doUpdatePrinter()
     else:
       showUsage()
       print u'Error: invalid argument to "gam update..."'
@@ -7436,6 +8201,10 @@ try:
       doGetSiteVerifications()
     elif sys.argv[2].lower() in [u'schema', u'schemas']:
       doGetUserSchema()
+    elif sys.argv[2].lower() in [u'course', u'class']:
+      doGetCourseInfo()
+    elif sys.argv[2].lower() in [u'printer', u'print']:
+      doGetPrinterInfo()
     else:
       print u'Error: invalid argument to "gam info..."'
       sys.exit(2)
@@ -7459,6 +8228,10 @@ try:
       doDelSiteVerify()
     elif sys.argv[2].lower() in [u'schema', u'schemas']:
       doDelSchema()
+    elif sys.argv[2].lower() in [u'course', u'class']:
+      doDelCourse()
+    elif sys.argv[2].lower() in [u'printer', u'printers']:
+      doDelPrinter()
     else:
       print u'Error: invalid argument to "gam delete"'
       sys.exit(2)
@@ -7532,12 +8305,20 @@ try:
       doPrintCrosDevices()
     elif sys.argv[2].lower() == u'mobile':
       doPrintMobileDevices()
-    elif sys.argv[2].lower() in [u'license',  u'licenses']:
+    elif sys.argv[2].lower() in [u'license',  u'licenses', u'licence', u'licences']:
       doPrintLicenses()
     elif sys.argv[2].lower() in [u'token', u'tokens']:
       doPrintTokens()
     elif sys.argv[2].lower() in [u'schema', u'schemas']:
       doPrintUserSchemas()
+    elif sys.argv[2].lower() in [u'courses', u'classes']:
+      doPrintCourses()
+    elif sys.argv[2].lower() in [u'course-participants', u'class-participants']:
+      doPrintCourseParticipants()
+    elif sys.argv[2].lower() in [u'printers']:
+      doPrintPrinters()
+    elif sys.argv[2].lower() in [u'printjobs']:
+      doPrintPrintJobs()
     else:
       print u'Error: invalid argument to "gam print..."'
       sys.exit(2)
@@ -7572,13 +8353,60 @@ try:
       print u'Error: invalid argument to "gam calendar..."'
       sys.exit(2)
     sys.exit(0)
+  elif sys.argv[1].lower() == u'printer':
+    if sys.argv[3].lower() == u'showacl':
+      doPrinterShowACL()
+    elif sys.argv[3].lower() == u'add':
+      doPrinterAddACL()
+    elif sys.argv[3].lower() in [u'del', u'delete', u'remove']:
+      doPrinterDelACL()
+    elif sys.argv[3].lower() == u'register':
+      doPrinterRegister()
+    else:
+      print u'Error: invalid argument to "gam printer..."'
+      sys.exit(2)
+    sys.exit(0)
+  elif sys.argv[1].lower() == u'printjob':
+    if sys.argv[3].lower() == u'delete':
+      doDeletePrintJob()
+    elif sys.argv[3].lower() == u'cancel':
+      doCancelPrintJob()
+    elif sys.argv[3].lower() == u'submit':
+      doPrintJobSubmit()
+    elif sys.argv[3].lower() == u'fetch':
+      doPrintJobFetch()
+    elif sys.argv[3].lower() == u'resubmit':
+      doPrintJobResubmit()
+    else:
+      print u'ERROR: invalid argument to "gam printjob..."'
+      sys.exit(2)
+    sys.exit(0)
   elif sys.argv[1].lower() == u'report':
     showReport()
     sys.exit(0)
   elif sys.argv[1].lower() == u'whatis':
     doWhatIs()
     sys.exit(0)
+  elif sys.argv[1].lower() in [u'course', u'class']:
+    if sys.argv[3].lower() in [u'add', u'create']:
+      doAddCourseParticipant()
+      sys.exit(0)
+    elif sys.argv[3].lower() in [u'del', u'delete', u'remove']:
+      doDelCourseParticipant()
+      sys.exit(0)
+    elif sys.argv[3].lower() == u'sync':
+      doSyncCourseParticipants()
+      sys.exit(0)
+    else:
+      print u'Error: invalid argument to "gam course..."'
+      sys.exit(2)
   users = getUsersToModify()
+  if len(users) > 1:
+    items = []
+    for user in users:
+      items.append([u'user', user] + sys.argv[3:])
+    run_batch(items)
+    sys.exit(0)
   command = sys.argv[3].lower()
   if command == u'print':
     for user in users:
@@ -7646,7 +8474,7 @@ try:
       doDeleteLabel(users)
     elif delWhat == u'photo':
       deletePhoto(users)
-    elif delWhat == u'license':
+    elif delWhat in [u'license', u'licence']:
       doLicense(users, u'delete')
     elif delWhat in [u'backupcode', u'backupcodes', u'verificationcodes']:
       doDelBackupCodes(users)
@@ -7673,7 +8501,7 @@ try:
       addCalendar(users)
     elif addWhat == u'drivefile':
       createDriveFile(users)
-    elif addWhat == u'license':
+    elif addWhat in [u'license', u'licence']:
       doLicense(users, u'insert')
     elif addWhat in [u'drivefileacl', u'drivefileacls']:
       addDriveFileACL(users)
@@ -7689,7 +8517,7 @@ try:
       changeCalendarAttendees(users)
     elif sys.argv[4].lower() == u'photo':
       doPhoto(users)
-    elif sys.argv[4].lower() == u'license':
+    elif sys.argv[4].lower() in [u'license', u'licence']:
       doLicense(users, u'patch')
     elif sys.argv[4].lower() == u'user':
       doUpdateUser(users)
