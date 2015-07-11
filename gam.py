@@ -24,7 +24,7 @@ For more information, see http://git.io/gam
 """
 
 __author__ = u'Jay Lee <jay0lee@gmail.com>'
-__version__ = u'3.5'
+__version__ = u'3.51'
 __license__ = u'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 import sys, os, time, datetime, random, socket, csv, platform, re, calendar, base64, hashlib, string
@@ -470,6 +470,8 @@ def callGAPIpages(service, function, items=u'items', nextPageToken=u'nextPageTok
       if pageToken == '':
         return all_pages
     except (IndexError, KeyError):
+      if page_message:
+        sys.stderr.write(u'\n')
       return all_pages
 
 def getAPIVer(api):
@@ -1050,22 +1052,30 @@ def deleteDelegate(users):
 def doAddCourseParticipant():
   croom = buildGAPIObject(u'classroom')
   courseId = sys.argv[2]
-  if not courseId.isdigit() and courseId[:2] != u'd:':
+  body_attribute = u'userId'
+  if len(courseId) < 3 or (not courseId.isdigit() and courseId[:2] != u'd:'):
     courseId = u'd:%s' % courseId
   participant_type = sys.argv[4].lower()
+  new_id = sys.argv[5]
   if participant_type in [u'teacher', u'teachers']:
     service = croom.courses().teachers()
   elif participant_type in [u'students', u'student']:
     service = croom.courses().students()
+  elif participant_type in [u'alias']:
+    service = croom.courses().aliases() 
+    body_attribute = u'alias'
+    if new_id[1] != u':':
+      new_id = u'd:%s' % new_id
   else:
     print 'ERROR: expected course participant type of teacher or student, got %s' % participant_type
     sys.exit(4)
-  userId = sys.argv[5]
-  body = {u'userId': userId}
+  body = {body_attribute: new_id}
   result = callGAPI(service=service, function=u'create', courseId=courseId, body=body)
   if courseId[:2] == u'd:':
     courseId = courseId[2:]
-  print u'Added %s as a %s of course %s' % (userId, participant_type, courseId)
+  if new_id[:2] == u'd:':
+    new_id = new_id[2:]
+  print u'Added %s as a %s of course %s' % (new_id, participant_type, courseId)
 
 def doSyncCourseParticipants():
   courseId = sys.argv[2]
@@ -1095,18 +1105,28 @@ def doDelCourseParticipant():
   if not courseId.isdigit() and courseId[:2] != u'd:':
     courseId = u'd:%s' % courseId
   participant_type = sys.argv[4].lower()
+  remove_id = sys.argv[5]
+  kwargs = {}
   if participant_type in [u'teacher', u'teachers']:
     service = croom.courses().teachers()
+    kwargs[u'userId'] = remove_id
   elif participant_type in [u'student', u'students']:
     service = croom.courses().students()
+    kwargs[u'userId'] = remove_id
+  elif participant_type in [u'alias']:
+    service = croom.courses().aliases()
+    if remove_id[1] != u':':
+      remove_id = u'd:%s' % remove_id
+    kwargs[u'alias'] = remove_id
   else:
     print 'ERROR: expected course participant type of teacher or students, got %s' % participant_type
     sys.exit(4)
-  userId = sys.argv[5]
-  callGAPI(service=service, function=u'delete', courseId=courseId, userId=userId)
+  callGAPI(service=service, function=u'delete', courseId=courseId, **kwargs)
   if courseId[:2] == u'd:':
     courseId = courseId[2:]
-  print u'Removed %s as a %s of course %s' % (userId, participant_type, courseId)
+  if remove_id[:2] == u'd:':
+    remove_id = remove_id[2:]
+  print u'Removed %s as a %s of course %s' % (remove_id, participant_type, courseId)
 
 def doDelCourse():
   croom = buildGAPIObject(u'classroom')
@@ -1234,6 +1254,7 @@ def doPrintCourses():
   todrive = False
   teacherId = None
   studentId = None
+  get_aliases = False
   i = 3
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'teacher':
@@ -1244,6 +1265,9 @@ def doPrintCourses():
       i += 2
     elif sys.argv[i].lower() == u'todrive':
       todrive = True
+      i += 1
+    elif sys.argv[i].lower() in [u'alias', u'aliases']:
+      get_aliases = True
       i += 1
     else:
       print u'ERROR: %s is not a valid argument to "gam print courses".'
@@ -1257,6 +1281,19 @@ def doPrintCourses():
       if item not in titles:
         titles.append(item)
         croom_attributes[0][item] = item
+  if get_aliases:
+    titles.append(u'Aliases')
+    croom_attributes[0].update(Aliases=u'Aliases')
+    num_courses = len(croom_attributes[1:])
+    i = 1
+    for course in croom_attributes[1:]:
+      sys.stderr.write('Getting aliases for course %s (%s/%s)\n' % (course[u'id'], i, num_courses))
+      course_aliases = callGAPIpages(service=croom.courses().aliases(), function=u'list', items=u'aliases', courseId=course[u'id'])
+      my_aliases = []
+      for alias in course_aliases:
+        my_aliases.append(alias[u'alias'][2:])
+      course.update(Aliases=u' '.join(my_aliases))
+      i += 1
   output_csv(croom_attributes, titles, u'Courses', todrive)
 
 def doPrintCourseParticipants():
@@ -3601,6 +3638,64 @@ def doLabel(users):
     i += 1
     callGAPI(service=gmail.users().labels(), function=u'create', soft_errors=True, userId=user, body=body)
 
+def doDeleteMessages(trashOrDelete, users):
+  query = None
+  doIt = False
+  maxToDelete = 1
+  i = 5
+  while i < len(sys.argv):
+    if sys.argv[i].lower() == u'query':
+      query = sys.argv[i+1]
+      i += 2
+    elif sys.argv[i].lower() == u'doit':
+      doIt = True
+      i += 1
+    elif sys.argv[i].lower().replace(u'_', u'')  == u'maxtodelete':
+      maxToDelete = int(sys.argv[i+1])
+      i += 2
+    else:
+      print u'ERROR: %s is not a valid argument for gam <users> delete messages.' % sys.argv[i]
+      sys.exit(3)
+  if not query:
+    print u'ERROR: No query specified. You must specify some query!'
+    sys.exit(4)
+  for user in users:
+    gmail = buildGAPIServiceObject(u'gmail', act_as=user)
+    page_message = u'Got %%%%total_items%%%% messages for user %s' % user
+    listResult = callGAPIpages(service=gmail.users().messages(),
+      function=u'list', items=u'messages', page_message=page_message,
+      userId=u'me', q=query, includeSpamTrash=True)
+    del_count = len(listResult)
+    if not doIt:
+      print u'would try to delete %s messages for user %s (max %s)\n' % (del_count, user, maxToDelete)
+      continue
+    elif del_count > maxToDelete:
+      print u'WARNING: refusing to delete ANY messages for %s since max_to_delete is %s and messages to be deleted is %s\n' % (user, maxToDelete, del_count)
+      continue
+    i = 1
+    # Batch seemed like a good idea but it kills
+    # Gmail UI for users :-(
+    '''dbatch = googleapiclient.http.BatchHttpRequest()
+    for del_me in listResult:
+      print u' deleting message %s for user %s (%s/%s)' % (del_me[u'id'], user, i, del_count)
+      i += 1
+      if trashOrDelete == u'trash':
+        dbatch.add(gmail.users().messages().trash(userId=u'me',
+         id=del_me[u'id']), callback=gmail_del_result)
+      elif trashOrDelete == u'delete':
+        dbatch.add(gmail.users().messages().delete(userId=u'me',
+         id=del_me[u'id']), callback=gmail_del_result)
+      if len(dbatch._order) == 5:
+        dbatch.execute()
+        dbatch = googleapiclient.http.BatchHttpRequest()
+    if len(dbatch._order) > 0:
+      dbatch.execute()'''
+    for del_me in listResult:
+      print u' %s message %s for user %s (%s/%s)' % (trashOrDelete, del_me[u'id'], user, i, del_count)
+      i += 1
+      callGAPI(service=gmail.users().messages(), function=trashOrDelete,
+       id=del_me[u'id'], userId=u'me')
+
 def doDeleteLabel(users):
   label = sys.argv[5]
   count = len(users)
@@ -3639,14 +3734,14 @@ def doDeleteLabel(users):
     for del_me in del_labels:
       print u' deleting label %s (%s/%s)' % (del_me[u'name'], i, del_me_count)
       i += 1
-      dbatch.add(gmail.users().labels().delete(userId=user, id=del_me[u'id']), callback=label_del_result)
-      if len(dbatch._order) == 25:
+      dbatch.add(gmail.users().labels().delete(userId=user, id=del_me[u'id']), callback=gmail_del_result)
+      if len(dbatch._order) == 10:
         dbatch.execute()
         dbatch = googleapiclient.http.BatchHttpRequest()
     if len(dbatch._order) > 0:
       dbatch.execute()
 
-def label_del_result(request_id, response, exception):
+def gmail_del_result(request_id, response, exception):
   if exception is not None:
     print exception
 
@@ -6715,6 +6810,7 @@ def doPrintGroups():
   group_attributes = [{u'Email': u'Email'}]
   titles = [u'Email']
   fields = u'nextPageToken,groups(email)'
+  user = None
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'domain':
       usedomain = sys.argv[i+1].lower()
@@ -6784,7 +6880,7 @@ def doPrintGroups():
     customerId = None
   sys.stderr.write(u"Retrieving All Groups for Google Apps account (may take some time on a large account)...\n")
   page_message = u'Got %%num_items%% groups: %%first_item%% - %%last_item%%\n'
-  all_groups = callGAPIpages(service=cd.groups(), function=u'list', items=u'groups', page_message=page_message, message_attribute=u'email', customer=customerId, domain=usedomain, fields=fields)
+  all_groups = callGAPIpages(service=cd.groups(), function=u'list', items=u'groups', page_message=page_message, message_attribute=u'email', customer=customerId, domain=usedomain, userKey=usemember, fields=fields)
   total_groups = len(all_groups)
   count = 0
   for group_vals in all_groups:
@@ -8464,6 +8560,12 @@ try:
     else:
       print u'Error: invalid argument to "gam <users> show..."'
       sys.exit(2)
+  elif command == u'trash':
+    if sys.argv[4].lower() in [u'message', u'messages']:
+      doDeleteMessages(trashOrDelete=u'trash', users=users)
+    else:
+      print u'ERROR: invalid argument to "gam <users> trash..."'
+      sys.exit(2)
   elif command == u'delete' or command == u'del':
     delWhat = sys.argv[4].lower()
     if delWhat == u'delegate':
@@ -8472,6 +8574,8 @@ try:
       deleteCalendar(users)
     elif delWhat == u'label':
       doDeleteLabel(users)
+    elif delWhat in [u'message', u'messages']:
+      doDeleteMessages(trashOrDelete=u'delete', users=users)
     elif delWhat == u'photo':
       deletePhoto(users)
     elif delWhat in [u'license', u'licence']:
