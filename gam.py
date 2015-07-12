@@ -5231,7 +5231,7 @@ def doUpdateGroup():
       elif sys.argv[i].lower() == u'admincreated':
         use_cd_api = True
         cd_body[u'adminCreated'] = sys.argv[i+1].lower()
-        if cd_body[u'adminCreated'] not in true_false:
+        if cd_body[u'adminCreated'] not in [u'true', u'false']:
           print u'Error: Value for admincreated must be true or false. Got %s' % cd_body[u'adminCreated']
           sys.exit(9)
         i += 2
