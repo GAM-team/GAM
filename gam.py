@@ -2580,7 +2580,7 @@ def updateDriveFileACL(users):
 def showDriveFiles(users):
   files_attr = [{u'Owner': u'Owner',}]
   titles = [u'Owner',]
-  fields = u'nextPageToken,items(title,alternateLink'
+  fields = u'nextPageToken,items(title,owners,alternateLink'
   todrive = False
   query = u'"me" in owners'
   user_query = ''
@@ -2678,7 +2678,7 @@ def showDriveFiles(users):
     page_message = u' got %%%%total_items%%%% files for %s...\n' % user
     feed = callGAPIpages(service=drive.files(), function=u'list', page_message=page_message, soft_errors=True, q=query, maxResults=1000, fields=fields)
     for file in feed:
-      a_file = {u'Owner': user}
+      a_file = {u'Owner': file['owners'][0]['emailAddress']}
       for attrib in file.keys():
         if attrib in [u'kind', u'etags', u'etag', u'owners', 'parents']:
           continue
