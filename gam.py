@@ -2580,9 +2580,10 @@ def updateDriveFileACL(users):
 def showDriveFiles(users):
   files_attr = [{u'Owner': u'Owner',}]
   titles = [u'Owner',]
-  fields = u'nextPageToken,items(title,alternateLink'
+  fields = u'nextPageToken,items(title,owners,alternateLink'
   todrive = False
   query = u'"me" in owners'
+  user_query = ''
   i = 5
   labels = list()
   while i < len(sys.argv):
@@ -2590,8 +2591,11 @@ def showDriveFiles(users):
     if my_arg == u'todrive':
       todrive = True
       i += 1
+    elif my_arg == u'anyowner':
+      query = ''
+      i += 1
     elif my_arg == u'query':
-      query += u' and %s' % sys.argv[i+1]
+      user_query = sys.argv[i+1]
       i += 2
     elif my_arg == u'allfields':
       fields = u'*'
@@ -2656,6 +2660,11 @@ def showDriveFiles(users):
     else:
       print u'Error: %s is not a valid argument for "gam ... show filelist"' % my_arg
       sys.exit(3)
+  if len(user_query) > 0:
+      if len(query) > 0:
+        query = '%s and %s' % (query, user_query)
+      else:
+        query = user_query
   if len(labels) > 0:
     fields += ',labels(%s)' % ','.join(labels)
   if fields != u'*':
@@ -2669,7 +2678,7 @@ def showDriveFiles(users):
     page_message = u' got %%%%total_items%%%% files for %s...\n' % user
     feed = callGAPIpages(service=drive.files(), function=u'list', page_message=page_message, soft_errors=True, q=query, maxResults=1000, fields=fields)
     for file in feed:
-      a_file = {u'Owner': user}
+      a_file = {u'Owner': file['owners'][0]['emailAddress']}
       for attrib in file.keys():
         if attrib in [u'kind', u'etags', u'etag', u'owners', 'parents']:
           continue
