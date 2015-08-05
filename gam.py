@@ -3698,6 +3698,47 @@ def doDeleteMessages(trashOrDelete, users):
       callGAPI(service=gmail.users().messages(), function=trashOrDelete,
        id=del_me[u'id'], userId=u'me')
 
+def doSpamMessages(users):
+  query = None
+  doIt = False
+  maxToMove = 1
+  i = 5
+  while i < len(sys.argv):
+    if sys.argv[i].lower() == u'query':
+      query = sys.argv[i+1]
+      i += 2
+    elif sys.argv[i].lower() == u'doit':
+      doIt = True
+      i += 1
+    elif sys.argv[i].lower().replace(u'_', u'')  == u'maxtomove':
+      maxToMove = int(sys.argv[i+1])
+      i += 2
+    else:
+      print u'ERROR: %s is not a valid argument for gam <users> spam messages.' % sys.argv[i]
+      sys.exit(3)
+  if not query:
+    print u'ERROR: No query specified. You must specify some query!'
+    sys.exit(4)
+  for user in users:
+    gmail = buildGAPIServiceObject(u'gmail', act_as=user)
+    page_message = u'Got %%%%total_items%%%% messages for user %s' % user
+    listResult = callGAPIpages(service=gmail.users().messages(),
+      function=u'list', items=u'messages', page_message=page_message,
+      userId=u'me', q=query, includeSpamTrash=False)
+    del_count = len(listResult)
+    if not doIt:
+      print u'would try to mark as spam %s messages for user %s (max %s)\n' % (del_count, user, maxToMove)
+      continue
+    elif del_count > maxToMove:
+      print u'WARNING: refusing to move ANY messages for %s since max_to_move is %s and messages to be moved is %s\n' % (user, maxToDelete, del_count)
+      continue
+    i = 1
+    for move_me in listResult:
+      print u' moving message %s for user %s (%s/%s)' % (move_me[u'id'], user, i, move_count)
+      i += 1
+      callGAPI(service=gmail.users().messages(), function=u'modify',
+               id=move_me[u'id'], userId=u'me', body={u'addLabelIds': ['SPAM'], u'removeLabelIds': ['INBOX'])
+
 def doDeleteLabel(users):
   label = sys.argv[5]
   count = len(users)
@@ -8575,6 +8616,9 @@ try:
     else:
       print u'ERROR: invalid argument to "gam <users> trash..."'
       sys.exit(2)
+  elif command == u'spam':
+    if sys.argv[4].lower() in [u'message', u'messages']:
+      doSpamMessages(users=users)
   elif command == u'delete' or command == u'del':
     delWhat = sys.argv[4].lower()
     if delWhat == u'delegate':
