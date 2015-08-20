@@ -3729,7 +3729,7 @@ def doSpamMessages(users):
     if not doIt:
       print u'would try to mark as spam %s messages for user %s (max %s)\n' % (move_count, user, maxToMove)
       continue
-    elif del_count > maxToMove:
+    elif move_count > maxToMove:
       print u'WARNING: refusing to move ANY messages for %s since max_to_move is %s and messages to be moved is %s\n' % (user, maxToMove, move_count)
       continue
     i = 1
