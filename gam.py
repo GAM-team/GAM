@@ -157,28 +157,17 @@ def setGamDirs():
 
   gamPath = os.path.dirname(os.path.realpath(sys.argv[0]))
   try:
-    useAppdirs = os.environ[u'USEAPPDIRS']
-  except:
-    useAppdirs = True
-  if useAppdirs:
-    from appdirs.appdirs import AppDirs
-    dirs = AppDirs(u'GAM', u'GAM')
-    gamSiteConfigDir = dirs.site_data_dir
-    gamUserConfigDir = dirs.user_data_dir
-    gamCacheDir = dirs.user_cache_dir
-  else:
-    try:
-      gamSiteConfigDir = os.environ[u'GAMSITECONFIGDIR']
-    except KeyError:
-      gamSiteConfigDir = gamPath
-    try:
-      gamUserConfigDir = os.environ[u'GAMUSERCONFIGDIR']
-    except KeyError:
-      gamUserConfigDir = gamPath
-    try:
-      gamCacheDir = os.environ[u'GAMCACHEDIR']
-    except KeyError:
-      gamCacheDir = os.path.join(gamPath, u'gamcache')
+    gamSiteConfigDir = os.environ[u'GAMSITECONFIGDIR']
+  except KeyError:
+    gamSiteConfigDir = gamPath
+  try:
+    gamUserConfigDir = os.environ[u'GAMUSERCONFIGDIR']
+  except KeyError:
+    gamUserConfigDir = gamPath
+  try:
+    gamCacheDir = os.environ[u'GAMCACHEDIR']
+  except KeyError:
+    gamCacheDir = os.path.join(gamPath, u'gamcache')
   try:
     gamDriveDir = os.environ[u'GAMDRIVEDIR']
   except KeyError:
@@ -186,12 +175,6 @@ def setGamDirs():
 
   if os.path.isfile(os.path.join(gamUserConfigDir, u'nocache.txt')):
     gamCacheDir = None
-
-def getGamSiteConfigFile(filename):
-  return os.path.join(gamSiteConfigDir, filename)
-
-def getGamUserConfigFile(filename):
-  return os.path.join(gamUserConfigDir, filename)
 
 def doGAMVersion():
   import struct
@@ -201,14 +184,14 @@ def doGAMVersion():
 
 def doGAMCheckForUpdates():
   import urllib2
-  if os.path.isfile(getGamUserConfigFile(u'noupdatecheck.txt')):
+  if os.path.isfile(os.path.join(gamUserConfigDir, u'noupdatecheck.txt')):
     return
   try:
     current_version = float(__version__)
   except ValueError:
     return
-  if os.path.isfile(getGamUserConfigFile(u'lastupdatecheck.txt')):
-    f = open(getGamUserConfigFile(u'lastupdatecheck.txt'), 'r')
+  if os.path.isfile(os.path.join(gamUserConfigDir, u'lastupdatecheck.txt')):
+    f = open(os.path.join(gamUserConfigDir, u'lastupdatecheck.txt'), 'r')
     last_check_time = int(f.readline())
     f.close()
   else:
@@ -224,7 +207,7 @@ def doGAMCheckForUpdates():
     except ValueError:
       return
     if latest_version <= current_version:
-      f = open(getGamUserConfigFile(u'lastupdatecheck.txt'), 'w')
+      f = open(os.path.join(gamUserConfigDir, u'lastupdatecheck.txt'), 'w')
       f.write(str(now_time))
       f.close()
       return
@@ -239,7 +222,7 @@ def doGAMCheckForUpdates():
       webbrowser.open(u'https://github.com/jay0lee/GAM/releases')
       print u'GAM is now exiting so that you can overwrite this old version with the latest release'
       sys.exit(0)
-    f = open(getGamUserConfigFile(u'lastupdatecheck.txt'), 'w')
+    f = open(os.path.join(gamUserConfigDir, u'lastupdatecheck.txt'), 'w')
     f.write(str(now_time))
     f.close()
   except urllib2.HTTPError:
@@ -253,7 +236,7 @@ def commonAppsObjInit(appsObj):
                    sys.version_info[0], sys.version_info[1], sys.version_info[2], sys.version_info[3],
                    platform.platform(), platform.machine())
   #Show debugging output if debug.gam exists
-  if os.path.isfile(getGamUserConfigFile(u'debug.gam')):
+  if os.path.isfile(os.path.join(gamUserConfigDir, u'debug.gam')):
     appsObj.debug = True
   return appsObj
 
@@ -360,9 +343,9 @@ def tryOAuth(gdataObject):
   global domain
   global customerId
   try:
-    oauth2file = getGamUserConfigFile(os.environ[u'OAUTHFILE'])
+    oauth2file = os.path.join(gamUserConfigDir, os.environ[u'OAUTHFILE'])
   except KeyError:
-    oauth2file = getGamUserConfigFile(u'oauth2.txt')
+    oauth2file = os.path.join(gamUserConfigDir, u'oauth2.txt')
   storage = oauth2client.file.Storage(oauth2file)
   credentials = storage.get()
   if credentials is None or credentials.invalid:
@@ -370,9 +353,10 @@ def tryOAuth(gdataObject):
     credentials = storage.get()
   if credentials.access_token_expired:
     disable_ssl_certificate_validation = False
-    if os.path.isfile(getGamUserConfigFile(u'noverifyssl.txt')):
+    if os.path.isfile(os.path.join(gamUserConfigDir, u'noverifyssl.txt')):
       disable_ssl_certificate_validation = True
-    credentials.refresh(httplib2.Http(ca_certs=getGamSiteConfigFile(u'cacert.pem'), disable_ssl_certificate_validation=disable_ssl_certificate_validation))
+    credentials.refresh(httplib2.Http(ca_certs=os.path.join(gamSiteConfigDir, u'cacert.pem'),
+                                      disable_ssl_certificate_validation=disable_ssl_certificate_validation))
   gdataObject.additional_headers = {u'Authorization': u'Bearer %s' % credentials.access_token}
   try:
     domain = os.environ[u'GA_DOMAIN'].lower()
@@ -427,9 +411,9 @@ def callGAPI(service, function, silent_errors=False, soft_errors=False, throw_re
       except ValueError:
         if n < 3:
           disable_ssl_certificate_validation = False
-          if os.path.isfile(getGamUserConfigFile(u'noverifyssl.txt')):
+          if os.path.isfile(os.path.join(gamUserConfigDir, u'noverifyssl.txt')):
             disable_ssl_certificate_validation = True
-          service._http.request.credentials.refresh(httplib2.Http(ca_certs=getGamSiteConfigFile(u'cacert.pem'),
+          service._http.request.credentials.refresh(httplib2.Http(ca_certs=os.path.join(gamSiteConfigDir, u'cacert.pem'),
                                                                   disable_ssl_certificate_validation=disable_ssl_certificate_validation))
           continue
         if (e.resp[u'status'] == u'503') and (e.content == u'Quota exceeded for the current request'):
@@ -573,9 +557,9 @@ def getAPIScope(api):
 def buildGAPIObject(api):
   global domain, customerId
   try:
-    oauth2file = getGamUserConfigFile(os.environ[u'OAUTHFILE'])
+    oauth2file = os.path.join(gamUserConfigDir, os.environ[u'OAUTHFILE'])
   except KeyError:
-    oauth2file = getGamUserConfigFile(u'oauth2.txt')
+    oauth2file = os.path.join(gamUserConfigDir, u'oauth2.txt')
   storage = oauth2client.file.Storage(oauth2file)
   credentials = storage.get()
   if credentials is None or credentials.invalid:
@@ -585,17 +569,18 @@ def buildGAPIObject(api):
                    sys.version_info[0], sys.version_info[1], sys.version_info[2], sys.version_info[3],
                    platform.platform(), platform.machine())
   disable_ssl_certificate_validation = False
-  if os.path.isfile(getGamUserConfigFile(u'noverifyssl.txt')):
+  if os.path.isfile(os.path.join(gamUserConfigDir, u'noverifyssl.txt')):
     disable_ssl_certificate_validation = True
-  http = httplib2.Http(ca_certs=getGamSiteConfigFile(u'cacert.pem'), disable_ssl_certificate_validation=disable_ssl_certificate_validation, cache=gamCacheDir)
-  if os.path.isfile(getGamUserConfigFile(u'debug.gam')):
+  http = httplib2.Http(ca_certs=os.path.join(gamSiteConfigDir, u'cacert.pem'),
+                       disable_ssl_certificate_validation=disable_ssl_certificate_validation, cache=gamCacheDir)
+  if os.path.isfile(os.path.join(gamUserConfigDir, u'debug.gam')):
     httplib2.debuglevel = 4
     extra_args[u'prettyPrint'] = True
-  if os.path.isfile(getGamUserConfigFile(u'extra-args.txt')):
+  if os.path.isfile(os.path.join(gamUserConfigDir, u'extra-args.txt')):
     import ConfigParser
     config = ConfigParser.ConfigParser()
     config.optionxform = str
-    config.read(getGamUserConfigFile(u'extra-args.txt'))
+    config.read(os.path.join(gamUserConfigDir, u'extra-args.txt'))
     extra_args.update(dict(config.items(u'extra-args')))
   http = credentials.authorize(http)
   version = getAPIVer(api)
@@ -604,7 +589,7 @@ def buildGAPIObject(api):
   try:
     service = googleapiclient.discovery.build(api, version, http=http)
   except googleapiclient.errors.UnknownApiNameOrVersion:
-    disc_file = getGamSiteConfigFile(u'%s-%s.json' % (api, version))
+    disc_file = os.path.join(gamSiteConfigDir, u'%s-%s.json' % (api, version))
     if os.path.isfile(disc_file):
       f = file(disc_file, 'rb')
       discovery = f.read()
@@ -631,9 +616,9 @@ def buildGAPIObject(api):
 
 def buildGAPIServiceObject(api, act_as=None, soft_errors=False):
   try:
-    oauth2servicefile = getGamUserConfigFile(os.environ[u'OAUTHSERVICEFILE'])
+    oauth2servicefile = os.path.join(gamUserConfigDir, os.environ[u'OAUTHSERVICEFILE'])
   except KeyError:
-    oauth2servicefile = getGamUserConfigFile(u'oauth2service')
+    oauth2servicefile = os.path.join(gamUserConfigDir, u'oauth2service')
   oauth2servicefilejson = u'%s.json' % oauth2servicefile
   oauth2servicefilep12 = u'%s.p12' % oauth2servicefile
   try:
@@ -664,17 +649,18 @@ def buildGAPIServiceObject(api, act_as=None, soft_errors=False):
                    sys.version_info[0], sys.version_info[1], sys.version_info[2], sys.version_info[3],
                    platform.platform(), platform.machine())
   disable_ssl_certificate_validation = False
-  if os.path.isfile(getGamUserConfigFile(u'noverifyssl.txt')):
+  if os.path.isfile(os.path.join(gamUserConfigDir, u'noverifyssl.txt')):
     disable_ssl_certificate_validation = True
-  http = httplib2.Http(ca_certs=getGamSiteConfigFile(u'cacert.pem'), disable_ssl_certificate_validation=disable_ssl_certificate_validation, cache=gamCacheDir)
-  if os.path.isfile(getGamUserConfigFile(u'debug.gam')):
+  http = httplib2.Http(ca_certs=os.path.join(gamSiteConfigDir, u'cacert.pem'),
+                       disable_ssl_certificate_validation=disable_ssl_certificate_validation, cache=gamCacheDir)
+  if os.path.isfile(os.path.join(gamUserConfigDir, u'debug.gam')):
     httplib2.debuglevel = 4
     extra_args[u'prettyPrint'] = True
-  if os.path.isfile(getGamUserConfigFile(u'extra-args.txt')):
+  if os.path.isfile(os.path.join(gamUserConfigDir, u'extra-args.txt')):
     import ConfigParser
     config = ConfigParser.ConfigParser()
     config.optionxform = str
-    config.read(getGamUserConfigFile(u'extra-args.txt'))
+    config.read(os.path.join(gamUserConfigDir, u'extra-args.txt'))
     extra_args.update(dict(config.items(u'extra-args')))
   http = credentials.authorize(http)
   version = getAPIVer(api)
@@ -697,9 +683,10 @@ def buildDiscoveryObject(api):
     api = u'admin'
   params = {'api': api, 'apiVersion': version}
   disable_ssl_certificate_validation = False
-  if os.path.isfile(getGamUserConfigFile(u'noverifyssl.txt')):
+  if os.path.isfile(os.path.join(gamUserConfigDir, u'noverifyssl.txt')):
     disable_ssl_certificate_validation = True
-  http = httplib2.Http(ca_certs=getGamSiteConfigFile(u'cacert.pem'), disable_ssl_certificate_validation=disable_ssl_certificate_validation, cache=gamCacheDir)
+  http = httplib2.Http(ca_certs=os.path.join(gamSiteConfigDir, u'cacert.pem'),
+                       disable_ssl_certificate_validation=disable_ssl_certificate_validation, cache=gamCacheDir)
   requested_url = uritemplate.expand(googleapiclient.discovery.DISCOVERY_URI, params)
   resp, content = http.request(requested_url)
   if resp.status == 404:
@@ -5609,9 +5596,9 @@ def doGetUserInfo(user_email=None):
       user_email = sys.argv[3]
     except IndexError:
       try:
-        oauth2file = getGamUserConfigFile(os.environ[u'OAUTHFILE'])
+        oauth2file = os.path.join(gamUserConfigDir, os.environ[u'OAUTHFILE'])
       except KeyError:
-        oauth2file = getGamUserConfigFile(u'oauth2.txt')
+        oauth2file = os.path.join(gamUserConfigDir, u'oauth2.txt')
       storage = oauth2client.file.Storage(oauth2file)
       credentials = storage.get()
       if credentials is None or credentials.invalid:
@@ -6682,7 +6669,7 @@ def output_csv(csv_list, titles, list_type, todrive):
     media = googleapiclient.http.MediaInMemoryUpload(string_data, mimetype=u'text/csv')
     result = callGAPI(service=drive.files(), function=u'insert', convert=convert, body={u'description': u' '.join(sys.argv), u'title': u'%s - %s' % (domain, list_type), u'mimeType': u'text/csv'}, media_body=media)
     file_url = result[u'alternateLink']
-    if os.path.isfile(getGamUserConfigFile(u'nobrowser.txt')):
+    if os.path.isfile(os.path.join(gamUserConfigDir, u'nobrowser.txt')):
       msg_txt = u'Drive file uploaded to:\n %s' % file_url
       msg_subj = u'%s - %s' % (domain, list_type)
       send_email(msg_subj, msg_txt)
@@ -8043,9 +8030,9 @@ def OAuthInfo():
     access_token = sys.argv[3]
   except IndexError:
     try:
-      oauth2file = getGamUserConfigFile(os.environ[u'OAUTHFILE'])
+      oauth2file = os.path.join(gamUserConfigDir, os.environ[u'OAUTHFILE'])
     except KeyError:
-      oauth2file = getGamUserConfigFile(u'oauth2.txt')
+      oauth2file = os.path.join(gamUserConfigDir, u'oauth2.txt')
     storage = oauth2client.file.Storage(oauth2file)
     credentials = storage.get()
     if credentials is None or credentials.invalid:
@@ -8055,10 +8042,11 @@ def OAuthInfo():
                                                                                                   sys.version_info[0], sys.version_info[1], sys.version_info[2],
                                                                                                   sys.version_info[3], platform.platform(), platform.machine())
     disable_ssl_certificate_validation = False
-    if os.path.isfile(getGamUserConfigFile(u'noverifyssl.txt')):
+    if os.path.isfile(os.path.join(gamUserConfigDir, u'noverifyssl.txt')):
       disable_ssl_certificate_validation = True
-    http = httplib2.Http(ca_certs=getGamSiteConfigFile(u'cacert.pem'), disable_ssl_certificate_validation=disable_ssl_certificate_validation)
-    if os.path.isfile(getGamUserConfigFile(u'debug.gam')):
+    http = httplib2.Http(ca_certs=os.path.join(gamSiteConfigDir, u'cacert.pem'),
+                         disable_ssl_certificate_validation=disable_ssl_certificate_validation)
+    if os.path.isfile(os.path.join(gamUserConfigDir, u'debug.gam')):
       httplib2.debuglevel = 4
     if credentials.access_token_expired:
       credentials.refresh(http)
@@ -8081,9 +8069,9 @@ def OAuthInfo():
 
 def doDeleteOAuth():
   try:
-    oauth2file = getGamUserConfigFile(os.environ[u'OAUTHFILE'])
+    oauth2file = os.path.join(gamUserConfigDir, os.environ[u'OAUTHFILE'])
   except KeyError:
-    oauth2file = getGamUserConfigFile(u'oauth2.txt')
+    oauth2file = os.path.join(gamUserConfigDir, u'oauth2.txt')
   storage = oauth2client.file.Storage(oauth2file)
   credentials = storage.get()
   try:
@@ -8091,12 +8079,12 @@ def doDeleteOAuth():
   except AttributeError:
     print u'Error: Authorization doesn\'t exist'
     sys.exit(1)
-  certFile = getGamSiteConfigFile(u'cacert.pem')
+  certFile = os.path.join(gamSiteConfigDir, u'cacert.pem')
   disable_ssl_certificate_validation = False
-  if os.path.isfile(getGamUserConfigFile(u'noverifyssl.txt')):
+  if os.path.isfile(os.path.join(gamUserConfigDir, u'noverifyssl.txt')):
     disable_ssl_certificate_validation = True
   http = httplib2.Http(ca_certs=certFile, disable_ssl_certificate_validation=disable_ssl_certificate_validation)
-  if os.path.isfile(getGamUserConfigFile(u'debug.gam')):
+  if os.path.isfile(os.path.join(gamUserConfigDir, u'debug.gam')):
     httplib2.debuglevel = 4
   sys.stderr.write(u'This OAuth token will self-destruct in 3...')
   time.sleep(1)
@@ -8144,9 +8132,9 @@ possible_scopes = [u'https://www.googleapis.com/auth/admin.directory.group',    
 
 def doRequestOAuth(incremental_auth=False):
   try:
-    CLIENT_SECRETS = getGamUserConfigFile(os.environ[u'CLIENTSECRETSFILE'])
+    CLIENT_SECRETS = os.path.join(gamUserConfigDir, os.environ[u'CLIENTSECRETSFILE'])
   except KeyError:
-    CLIENT_SECRETS = getGamUserConfigFile(u'client_secrets.json')
+    CLIENT_SECRETS = os.path.join(gamUserConfigDir, u'client_secrets.json')
   MISSING_CLIENT_SECRETS_MESSAGE = u"""
 WARNING: Please configure OAuth 2.0
 
@@ -8268,21 +8256,21 @@ access or an 'a' to grant action-only access.
                                                      scope=scopes,
                                                      message=MISSING_CLIENT_SECRETS_MESSAGE)
   try:
-    oauth2file = getGamUserConfigFile(os.environ[u'OAUTHFILE'])
+    oauth2file = os.path.join(gamUserConfigDir, os.environ[u'OAUTHFILE'])
   except KeyError:
-    oauth2file = getGamUserConfigFile(u'oauth2.txt')
+    oauth2file = os.path.join(gamUserConfigDir, u'oauth2.txt')
   storage = oauth2client.file.Storage(oauth2file)
   credentials = storage.get()
   flags = cmd_flags()
-  if os.path.isfile(getGamUserConfigFile(u'nobrowser.txt')):
+  if os.path.isfile(os.path.join(gamUserConfigDir, u'nobrowser.txt')):
     flags.noauth_local_webserver = True
   if credentials is None or credentials.invalid or incremental_auth:
-    certFile = getGamSiteConfigFile(u'cacert.pem')
+    certFile = os.path.join(gamSiteConfigDir, u'cacert.pem')
     disable_ssl_certificate_validation = False
-    if os.path.isfile(getGamUserConfigFile(u'noverifyssl.txt')):
+    if os.path.isfile(os.path.join(gamUserConfigDir, u'noverifyssl.txt')):
       disable_ssl_certificate_validation = True
     http = httplib2.Http(ca_certs=certFile, disable_ssl_certificate_validation=disable_ssl_certificate_validation)
-    if os.path.isfile(getGamUserConfigFile(u'debug.gam')):
+    if os.path.isfile(os.path.join(gamUserConfigDir, u'debug.gam')):
       httplib2.debuglevel = 4
       extra_args[u'prettyPrint'] = True
     try:
