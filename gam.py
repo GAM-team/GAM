@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# GAM 
+# GAM
 #
 # Copyright 2015, LLC All Rights Reserved.
 #
@@ -133,7 +133,7 @@ Usage: gam [OPTIONS]...
 
 GAM. Retrieve or set Google Apps domain,
 user, group and alias settings. Exhaustive list of commands
-can be found at: https://github.com/jay0lee/GAM/wiki 
+can be found at: https://github.com/jay0lee/GAM/wiki
 
 Examples:
 gam info domain
@@ -224,7 +224,7 @@ def checkErrorCode(e, service):
     pass
   if e[0]['body'][:34] in [u'Required field must not be blank: ', u'These characters are not allowed: ']:
     return e[0]['body']
-  if e.error_code == 600 and e[0][u'body'] == u'Quota exceeded for the current request' or e[0][u'reason'] == u'Bad Gateway': 
+  if e.error_code == 600 and e[0][u'body'] == u'Quota exceeded for the current request' or e[0][u'reason'] == u'Bad Gateway':
     return False
   if e.error_code == 600 and e[0][u'reason'] == u'Token invalid - Invalid token: Token disabled, revoked, or expired.':
     return u'403 - Token disabled, revoked, or expired. Please delete and re-create oauth.txt'
@@ -695,7 +695,7 @@ def getAdminSettingsObject():
     tryOAuth(adminsettings)
   adminsettings = commonAppsObjInit(adminsettings)
   return adminsettings
-  
+
 def getAuditObject():
   import gdata.apps.audit.service
   auditObj = gdata.apps.audit.service.AuditService()
@@ -735,7 +735,7 @@ def geturl(url, dst):
       status = r"%10d  [%3.2f%%]" % (file_size_dl, file_size_dl * 100. / file_size)
     else:
       status = r"%10d [unknown size]" % (file_size_dl)
-    status = status + chr(8)*(len(status)+1) 
+    status = status + chr(8)*(len(status)+1)
     print status,
   f.close()
 
@@ -866,7 +866,7 @@ def showReport():
     if report in [u'doc', u'docs']:
       report = u'drive'
     elif report in [u'calendars']:
-      report = u'calendar'  
+      report = u'calendar'
     elif report == u'logins':
       report = u'login'
     elif report == u'tokens':
@@ -986,7 +986,7 @@ def doDelegates(users):
           if delete_alias:
             doDeleteAlias(alias_email=use_delegate_address)
           sys.exit(5)
-        
+
         # Guess it was just a normal backoff error then?
         if n == retries:
           sys.stderr.write(u' - giving up.')
@@ -1064,7 +1064,7 @@ def doAddCourseParticipant():
   elif participant_type in [u'students', u'student']:
     service = croom.courses().students()
   elif participant_type in [u'alias']:
-    service = croom.courses().aliases() 
+    service = croom.courses().aliases()
     body_attribute = u'alias'
     if new_id[1] != u':':
       new_id = u'd:%s' % new_id
@@ -1100,7 +1100,7 @@ def doSyncCourseParticipants():
   for remove_email in to_remove:
     gam_commands.append([u'course', courseId, u'remove', participant_type, remove_email])
   run_batch(items=gam_commands)
- 
+
 def doDelCourseParticipant():
   croom = buildGAPIObject(u'classroom')
   courseId = sys.argv[2]
@@ -1535,7 +1535,7 @@ def changeCalendarAttendees(users):
         try:
           if not allevents and event[u'organizer'][u'email'].lower() != user:
             #print ' skipping not-my-event %s' % event_summary
-            continue          
+            continue
         except KeyError,e:
           pass # no email for organizer
         needs_update = False
@@ -1702,7 +1702,7 @@ def updateCalendar(users):
         body[u'defaultReminders'].append({u'method': method, u'minutes': minutes})
       except KeyError:
         body[u'defaultReminders'] = [{u'method': method, u'minutes': minutes}]
-      i = i + 3    
+      i = i + 3
     else:
       showUsage()
       print u'%s is not a valid argument for "gam update calendar"' % sys.argv[i]
@@ -2029,7 +2029,7 @@ def checkCloudPrintResult(result):
       result = json.loads(result)
     except ValueError:
       print u'ERROR: unexpected response: %s' % result
-      sys.exit(3) 
+      sys.exit(3)
   if not result[u'success']:
     print u'ERROR %s: %s' % (result[u'errorCode'], result[u'message'])
     sys.exit(result[u'errorCode'])
@@ -2237,10 +2237,10 @@ def doCalendarAddEvent():
         body[a_time][u'timeZone'] = timeZone
       except KeyError:
         pass
-  
+
   callGAPI(service=cal.events(), function=u'insert', calendarId=calendarId, sendNotifications=sendNotifications, body=body)
-    
-          
+
+
 def doProfile(users):
   if sys.argv[4].lower() == u'share' or sys.argv[4].lower() == u'shared':
     body = {u'includeInGlobalAddressList': True}
@@ -2576,7 +2576,7 @@ def updateDriveFileACL(users):
     print u'updating permissions for %s to file %s' % (permissionId, fileId)
     result = callGAPI(service=drive.permissions(), function=u'patch', fileId=fileId, permissionId=permissionId, transferOwnership=transferOwnership, body=body)
     print result
-  
+
 def showDriveFiles(users):
   files_attr = [{u'Owner': u'Owner',}]
   titles = [u'Owner',]
@@ -2731,7 +2731,7 @@ def deleteDriveFile(users):
       else:
         print u'purging %s for %s (%s of %s)' % (fileId, user, i, len(file_ids))
       callGAPI(service=drive.files(), function=function, fileId=fileId)
-    
+
 def printDriveFolderContents(feed, folderId, indent):
   for file in feed:
     for parent in file[u'parents']:
@@ -3697,6 +3697,47 @@ def doDeleteMessages(trashOrDelete, users):
       i += 1
       callGAPI(service=gmail.users().messages(), function=trashOrDelete,
        id=del_me[u'id'], userId=u'me')
+
+def doSpamMessages(users):
+  query = None
+  doIt = False
+  maxToMove = 1
+  i = 5
+  while i < len(sys.argv):
+    if sys.argv[i].lower() == u'query':
+      query = sys.argv[i+1]
+      i += 2
+    elif sys.argv[i].lower() == u'doit':
+      doIt = True
+      i += 1
+    elif sys.argv[i].lower().replace(u'_', u'')  == u'maxtomove':
+      maxToMove = int(sys.argv[i+1])
+      i += 2
+    else:
+      print u'ERROR: %s is not a valid argument for gam <users> spam messages.' % sys.argv[i]
+      sys.exit(3)
+  if not query:
+    print u'ERROR: No query specified. You must specify some query!'
+    sys.exit(4)
+  for user in users:
+    gmail = buildGAPIServiceObject(u'gmail', act_as=user)
+    page_message = u'Got %%%%total_items%%%% messages for user %s' % user
+    listResult = callGAPIpages(service=gmail.users().messages(),
+      function=u'list', items=u'messages', page_message=page_message,
+      userId=u'me', q=query, includeSpamTrash=False)
+    move_count = len(listResult)
+    if not doIt:
+      print u'would try to mark as spam %s messages for user %s (max %s)\n' % (move_count, user, maxToMove)
+      continue
+    elif del_count > maxToMove:
+      print u'WARNING: refusing to move ANY messages for %s since max_to_move is %s and messages to be moved is %s\n' % (user, maxToMove, move_count)
+      continue
+    i = 1
+    for move_me in listResult:
+      print u' moving message %s for user %s (%s/%s)' % (move_me[u'id'], user, i, move_count)
+      i += 1
+      callGAPI(service=gmail.users().messages(), function=u'modify',
+               id=move_me[u'id'], userId=u'me', body={u'addLabelIds': ['SPAM'], u'removeLabelIds': ['INBOX']})
 
 def doDeleteLabel(users):
   label = sys.argv[5]
@@ -5170,7 +5211,7 @@ def doUpdateGroup():
         try:
           if sys.argv[4].lower() == u'add':
             body = {u'role': role}
-            body[u'email'] = user_email 
+            body[u'email'] = user_email
             result = callGAPI(service=cd.members(), function=u'insert', soft_errors=True, groupKey=group, body=body)
           elif sys.argv[4].lower() == u'update':
             result = callGAPI(service=cd.members(), function=u'update', soft_errors=True, groupKey=group, memberKey=user_email, body={u'email': user_email, u'role': role})
@@ -5693,7 +5734,7 @@ def doGetUserInfo(user_email=None):
   if getLicenses:
     print u'Licenses:'
     lic = buildGAPIObject(api='licensing')
-    for sku in [u'Google-Apps', u'Google-Apps-For-Business', u'Google-Apps-Unlimited', u'Google-Apps-For-Postini', 
+    for sku in [u'Google-Apps', u'Google-Apps-For-Business', u'Google-Apps-Unlimited', u'Google-Apps-For-Postini',
                 u'Google-Coordinate', u'Google-Drive-storage-20GB', u'Google-Drive-storage-50GB', u'Google-Drive-storage-200GB',
                 u'Google-Drive-storage-400GB', u'Google-Drive-storage-1TB', u'Google-Drive-storage-2TB',
                 u'Google-Drive-storage-4TB', u'Google-Drive-storage-8TB', u'Google-Drive-storage-16TB', u'Google-Vault',
@@ -5847,7 +5888,7 @@ def doUpdateNotification():
       i += 1
     elif sys.argv[i].lower() == u'id':
       if sys.argv[i+1].lower() == u'all':
-        get_all = True  
+        get_all = True
       else:
         ids.append(sys.argv[i+1])
       i += 2
@@ -5879,7 +5920,7 @@ def doDeleteNotification():
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'id':
       if sys.argv[i+1].lower() == u'all':
-        get_all = True  
+        get_all = True
       else:
         ids.append(sys.argv[i+1])
       i += 2
@@ -6092,7 +6133,7 @@ def doDelASP(users):
   for user in users:
     asps = callGAPI(service=cd.asps(), function=u'delete', userKey=user, codeId=codeId)
     print u'deleted ASP %s for %s' % (codeId, user)
-  
+
 def doGetBackupCodes(users):
   cd = buildGAPIObject(u'directory')
   for user in users:
@@ -6287,7 +6328,7 @@ def doUpdateDomain():
         else:
           print u'Error: value for use_domain_specific_issuer must be true or false, got %s' % sys.argv[i+1]
           sys.exit(9)
-        i += 2 
+        i += 2
       else:
         print u'Error: unknown option for "gam update domain sso_settings...": %s' % sys.argv[i]
         sys.exit(9)
@@ -6327,7 +6368,7 @@ def doUpdateDomain():
           rewrite_to = True
         elif rewrite_to == u'false':
           rewrite_to = False
-        else: 
+        else:
           print u'Error: value for rewrite_to must be true or false, got %s' % sys.argv[i+1]
           sys.exit(9)
         i += 2
@@ -6483,7 +6524,7 @@ def doUndeleteUser():
     if sys.argv[4].lower() in [u'ou', u'org']:
       orgUnit = sys.argv[5]
   except IndexError:
-    pass 
+    pass
   cd = buildGAPIObject(u'directory')
   if user[:4].lower() == u'uid:':
     user_uid = user[4:]
@@ -7143,7 +7184,7 @@ def doPrintGroupMembers():
     i += 1
   titles = member_attributes[0].keys()
   output_csv(member_attributes, titles, u'Group Members', todrive)
-            
+
 def doPrintMobileDevices():
   cd = buildGAPIObject(u'directory')
   mobile_attributes = [{}]
@@ -7332,7 +7373,7 @@ def doPrintTokens():
     except KeyError:
       pass
   output_csv(token_attributes, titles, u'OAuth Tokens', todrive)
-  
+
 def doPrintResources():
   i = 3
   res_attributes = []
@@ -7973,9 +8014,9 @@ def doDeleteOAuth():
 
 class cmd_flags(object):
   def __init__(self):
-    self.short_url = True 
+    self.short_url = True
     self.noauth_local_webserver = False
-    self.logging_level = u'ERROR' 
+    self.logging_level = u'ERROR'
     self.auth_host_name = u'localhost'
     self.auth_host_port = [8080, 9090]
 
@@ -7994,7 +8035,7 @@ with information from the APIs Console <https://cloud.google.com/console>.
 See:
 
 https://github.com/jay0lee/GAM/wiki/CreatingClientSecretsFile
- 
+
 for instructions.
 
 """ % CLIENT_SECRETS
@@ -8575,6 +8616,9 @@ try:
     else:
       print u'ERROR: invalid argument to "gam <users> trash..."'
       sys.exit(2)
+  elif command == u'spam':
+    if sys.argv[4].lower() in [u'message', u'messages']:
+      doSpamMessages(users=users)
   elif command == u'delete' or command == u'del':
     delWhat = sys.argv[4].lower()
     if delWhat == u'delegate':
