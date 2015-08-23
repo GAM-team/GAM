@@ -78,16 +78,17 @@ extra_args = {u'prettyPrint': False}
 #
 # Command line section/options arguments
 SELECT_CMD = u'select'
+SELECT_SAVE_CMD = u'save'
 OPTIONS_CMD = u'options'
 OPTIONS_CREATE_CMD = u'create'
 OPTIONS_DELETE_CMD = u'delete'
-OPTIONS_SELECT_CMD = SELECT_CMD
+OPTIONS_SELECT_CMD = u'select'
 OPTIONS_RESET_CMD = u'reset'
 OPTIONS_SAVE_CMD = u'save'
 OPTIONS_SET_CMD = u'set'
 OPTIONS_VERIFY_CMD = u'verify'
 OPTIONS_DONE_CMD = u'done'
-GC_OPTION_COMMANDS = [OPTIONS_CREATE_CMD, OPTIONS_DELETE_CMD, OPTIONS_SELECT_CMD, OPTIONS_RESET_CMD, OPTIONS_SET_CMD, OPTIONS_SAVE_CMD, OPTIONS_VERIFY_CMD, OPTIONS_DONE_CMD]
+OPTIONS_SUB_CMDS = [OPTIONS_CREATE_CMD, OPTIONS_DELETE_CMD, OPTIONS_SELECT_CMD, OPTIONS_RESET_CMD, OPTIONS_SET_CMD, OPTIONS_SAVE_CMD, OPTIONS_VERIFY_CMD, OPTIONS_DONE_CMD]
 #
 # Gam configuration file
 GAM_CFG = u'gam.cfg'
@@ -422,21 +423,29 @@ def setGlobalVariables():
   else:
     _readConfigFile()
   i = 1
+# select <SectionName> [save]
   if sys.argv[i] == SELECT_CMD:
     sectionName = sys.argv[i+1]
     i += 2
-    if sectionName.upper() == ConfigParser.DEFAULTSECT:
+    if (not sectionName) or (sectionName.upper() == ConfigParser.DEFAULTSECT):
       sectionName = ConfigParser.DEFAULTSECT
     elif not config.has_section(sectionName):
       sys.stderr.write(u'ERROR: Section: {0}, Not Found\n'.format(sectionName))
       sys.exit(3)
-  else:
-    sectionName = _getCfgSection(ConfigParser.DEFAULTSECT, GC_SECTION)
-  if sys.argv[i] == OPTIONS_CMD:
+    if sys.argv[i] == SELECT_SAVE_CMD:
+      i += 1
+      config.set(ConfigParser.DEFAULTSECT, GC_SECTION, sectionName)
+      saveRequired = True
+# options ((create <SectionName>)|(delete <SectionName>)|(select <SectionName>)|(reset <VariableName>)|(set <VariableName> <Value>)| save|verify)* [done]
+  elif sys.argv[i] == OPTIONS_CMD:
     i += 1
+    sectionName = _getCfgSection(ConfigParser.DEFAULTSECT, GC_SECTION)
     while i < len(sys.argv):
       my_arg = sys.argv[i].lower()
       i += 1
+      if my_arg not in OPTIONS_SUB_CMDS:
+        sys.stderr.write(u'ERROR: options cmd  should be {0}. Got {1}\n'.format(u','.join(OPTIONS_SUB_CMDS), my_arg))
+        sys.exit(3)
       if my_arg == OPTIONS_CREATE_CMD: # Create section
         value = sys.argv[i]
         i += 1
@@ -534,6 +543,9 @@ def setGlobalVariables():
         verifyRequired = True
       else: # elif my_arg == OPTIONS_DONE_CMD:
         break
+# Use default section
+  else:
+    sectionName = _getCfgSection(ConfigParser.DEFAULTSECT, GC_SECTION)
   gamConfigDir = _getCfgDirectory(sectionName, GC_CONFIG_DIR)
   if _getCfgBoolean(sectionName, GC_NO_CACHE):
     gamCacheDir = None
