@@ -43,24 +43,147 @@ import mimetypes
 import ntpath
 
 is_frozen = getattr(sys, 'frozen', '')
-extra_args = {u'prettyPrint': False}
-true_values = [u'on', u'yes', u'enabled', u'true', u'1']
-false_values = [u'off', u'no', u'disabled', u'false', u'0']
+
+GAM = u'GAM'
+GAMCACHE = u'gamcache'
+TRUE = u'true'
+FALSE = u'false'
+TRUE_VALUES = [TRUE, u'on', u'yes', u'enabled', u'1']
+FALSE_VALUES = [FALSE, u'off', u'no', u'disabled', u'0']
+TRUE_FALSE = [TRUE, FALSE]
 usergroup_types = [u'user', u'users', u'group', u'ou', u'org',
                    u'ou_and_children', u'ou_and_child', u'query',
                    u'license', u'licenses', u'licence', u'licences', u'file', u'all',
                    u'cros']
 
-customerId = None
-domain = None
 q = None
 
 gamPath = None
-gamSiteConfigDir = None
-gamUserConfigDir = None
 gamDriveDir = None
 gamCacheDir = None
+noBrowser = False
+disable_ssl_certificate_validation = False
+showLicenses = True
+autoBatchMin = 0
+gamDebugLevel = 0
+maxMessagesToDelete = 1
+numThreads = 5
+domain = None
+customerId = None
+cacert_pem = None
+client_secrets_json = None
+oauth2_txt = None
+oauth2service_json = None
+extra_args = {u'prettyPrint': False}
+#
+# Command line section/options arguments
+SELECT_CMD = u'select'
+OPTIONS_CMD = u'options'
+OPTIONS_CREATE_CMD = u'create'
+OPTIONS_DELETE_CMD = u'delete'
+OPTIONS_SELECT_CMD = SELECT_CMD
+OPTIONS_RESET_CMD = u'reset'
+OPTIONS_SAVE_CMD = u'save'
+OPTIONS_SET_CMD = u'set'
+OPTIONS_VERIFY_CMD = u'verify'
+OPTIONS_DONE_CMD = u'done'
+GC_OPTION_COMMANDS = [OPTIONS_CREATE_CMD, OPTIONS_DELETE_CMD, OPTIONS_SELECT_CMD, OPTIONS_RESET_CMD, OPTIONS_SET_CMD, OPTIONS_SAVE_CMD, OPTIONS_VERIFY_CMD, OPTIONS_DONE_CMD]
+#
+# Gam configuration file
+GAM_CFG = u'gam.cfg'
+#
+GC_AUTO_BATCH_MIN = u'auto_batch_min'
+GC_CACHE_DIR = u'cache_dir'
+GC_CLIENT_SECRETS_JSON = u'client_secrets_json'
+GC_CONFIG_DIR = u'config_dir'
+GC_CUSTOMER_ID = u'customer_id'
+GC_DEBUG_LEVEL = u'debug_level'
+GC_DOMAIN = u'domain'
+GC_DRIVE_DIR = u'drive_dir'
+GC_LAST_UPDATE_CHECK = u'last_update_check'
+GC_MAX_MESSAGES_TO_DELETE = u'max_messages_to_delete'
+GC_NO_BROWSER = u'no_browser'
+GC_NO_CACHE = u'no_cache'
+GC_NO_UPDATE_CHECK = u'no_update_check'
+GC_NO_VERIFY_SSL = u'no_verify_ssl'
+GC_NUM_THREADS = u'num_threads'
+GC_OAUTH2_TXT = u'oauth2_txt'
+GC_OAUTH2SERVICE_JSON = u'oauth2service_json'
+GC_SECTION = u'section'
+GC_SHOW_LICENSES = u'show_licenses'
 
+GC_VARIABLES = {
+  GC_AUTO_BATCH_MIN: 0,
+  GC_CACHE_DIR: u'',
+  GC_CLIENT_SECRETS_JSON: u'client_secrets.json',
+  GC_CONFIG_DIR: u'',
+  GC_CUSTOMER_ID: u'',
+  GC_DEBUG_LEVEL: 0,
+  GC_DOMAIN: u'',
+  GC_DRIVE_DIR: u'',
+  GC_LAST_UPDATE_CHECK: 0,
+  GC_MAX_MESSAGES_TO_DELETE: 1,
+  GC_NO_BROWSER: FALSE,
+  GC_NO_CACHE: FALSE,
+  GC_NO_UPDATE_CHECK: FALSE,
+  GC_NO_VERIFY_SSL: FALSE,
+  GC_NUM_THREADS: 5,
+  GC_OAUTH2_TXT: u'oauth2.txt',
+  GC_OAUTH2SERVICE_JSON: u'oauth2service.json',
+  GC_SECTION: u'',
+  GC_SHOW_LICENSES: TRUE,
+  }
+
+GC_TYPE_BOOLEAN = u'bool'
+GC_TYPE_DIRECTORY = u'dire'
+GC_TYPE_FILE = u'file'
+GC_TYPE_INTEGER = u'inte'
+GC_TYPE_STRING = u'stri'
+
+GC_VAR_INFO = {
+  GC_AUTO_BATCH_MIN: {u'type': GC_TYPE_INTEGER, u'limits': (0, None)},
+  GC_CACHE_DIR: {u'type': GC_TYPE_DIRECTORY},
+  GC_CLIENT_SECRETS_JSON: {u'type': GC_TYPE_FILE},
+  GC_CONFIG_DIR: {u'type': GC_TYPE_DIRECTORY},
+  GC_CUSTOMER_ID: {u'type': GC_TYPE_STRING},
+  GC_DEBUG_LEVEL: {u'type': GC_TYPE_INTEGER, u'limits': (0, None)},
+  GC_DOMAIN: {u'type': GC_TYPE_STRING},
+  GC_DRIVE_DIR: {u'type': GC_TYPE_DIRECTORY},
+  GC_LAST_UPDATE_CHECK: {u'type': GC_TYPE_INTEGER, u'limits': (0, None)},
+  GC_MAX_MESSAGES_TO_DELETE: {u'type': GC_TYPE_INTEGER, u'limits': (0, None)},
+  GC_NO_BROWSER: {u'type': GC_TYPE_BOOLEAN},
+  GC_NO_CACHE: {u'type': GC_TYPE_BOOLEAN},
+  GC_NO_UPDATE_CHECK: {u'type': GC_TYPE_BOOLEAN},
+  GC_NO_VERIFY_SSL: {u'type': GC_TYPE_BOOLEAN},
+  GC_NUM_THREADS: {u'type': GC_TYPE_INTEGER, u'limits': (1, None)},
+  GC_OAUTH2_TXT: {u'type': GC_TYPE_FILE},
+  GC_OAUTH2SERVICE_JSON: {u'type': GC_TYPE_FILE},
+  GC_SECTION: {u'type': GC_TYPE_STRING},
+  GC_SHOW_LICENSES: {u'type': GC_TYPE_BOOLEAN},
+  }
+
+GC_VAR_ALIASES = {
+  u'autobatchmin':  u'auto_batch_min',
+  u'cachedir':  u'cache_dir',
+  u'clientsecretsjson':  u'client_secrets_json',
+  u'configdir':  u'config_dir',
+  u'customerid':  u'customer_id',
+  u'debuglevel':  u'debug_level',
+  u'domain':  u'domain',
+  u'drivedir':  u'drive_dir',
+  u'lastupdatecheck':  u'last_update_check',
+  u'maxmessagestodelete':  u'max_messages_to_delete',
+  u'nobrowser':  u'no_browser',
+  u'nocache':  u'no_cache',
+  u'noupdatecheck':  u'no_update_check',
+  u'noverifyssl':  u'no_verify_ssl',
+  u'numthreads':  u'num_threads',
+  u'oauth2txt':  u'oauth2_txt',
+  u'oauth2servicejson':  u'oauth2service_json',
+  u'section':  u'section',
+  u'showlicenses':  u'show_licenses',
+  }
+#
 def convertUTF8(data):
   import collections
   if isinstance(data, str):
@@ -151,30 +274,320 @@ gam.exe update group announcements add member jsmith
 ...
 
 '''
+def integerLimits(minVal, maxVal):
+  if (minVal != None) and (maxVal != None):
+    return u'integer {0}<=x<={1}'.format(minVal, maxVal)
+  if minVal != None:
+    return u'integer x>={0}'.format(minVal)
+  if maxVal != None:
+    return u'integer x<={0}'.format(maxVal)
+  return u'integer x'
+#
+# Set global variables from config file
+# Check for GAM updates based on status of NoUpdateCheck in config file
+#
+def setGlobalVariables():
+  import ConfigParser, collections
+  from appdirs import user_config_dir, user_cache_dir
 
-def setGamDirs():
-  global gamPath, gamSiteConfigDir, gamUserConfigDir, gamDriveDir, gamCacheDir
+  global gamPath, gamDriveDir, gamCacheDir
+  global domain, customerId
+  global maxMessagesToDelete
+  global numThreads, autoBatchMin, showLicenses
+  global oauth2_txt, oauth2service_json, client_secrets_json, cacert_pem
+  global disable_ssl_certificate_validation, gamDebugLevel, noBrowser
 
+  def _getOldEnvVar(itemName, envVar):
+    try:
+      value = os.environ[envVar]
+      config.set(ConfigParser.DEFAULTSECT, itemName, value)
+    except KeyError:
+      config.set(ConfigParser.DEFAULTSECT, itemName, str(GC_VARIABLES[itemName]))
+
+  def _getOldSignalFile(itemName, fileName, trueValue=TRUE, falseValue=FALSE):
+    config.set(ConfigParser.DEFAULTSECT, itemName, trueValue if os.path.isfile(os.path.join(gamPath, fileName)) else falseValue)
+
+  def _getOldEnvVarsSignalFiles():
+    _getOldEnvVar(GC_CONFIG_DIR, u'GAMUSERCONFIGDIR')
+    _getOldEnvVar(GC_CACHE_DIR, u'GAMCACHEDIR')
+    _getOldEnvVar(GC_DRIVE_DIR, u'GAMDRIVEDIR')
+    _getOldEnvVar(GC_OAUTH2_TXT, u'OAUTHFILE')
+    _getOldEnvVar(GC_OAUTH2SERVICE_JSON, u'OAUTHSERVICEFILE')
+    _getOldEnvVar(GC_CLIENT_SECRETS_JSON, u'CLIENTSECRETSFILE')
+    _getOldEnvVar(GC_DOMAIN, u'GA_DOMAIN')
+    _getOldEnvVar(GC_CUSTOMER_ID, u'CUSTOMER_ID')
+    _getOldEnvVar(GC_NUM_THREADS, u'GAM_THREADS')
+    _getOldEnvVar(GC_AUTO_BATCH_MIN, u'GAM_AUTOBATCH')
+    _getOldSignalFile(GC_DEBUG_LEVEL, u'debug.gam', trueValue=u'4', falseValue=u'0')
+    _getOldSignalFile(GC_NO_VERIFY_SSL, u'noverifyssl.txt')
+    _getOldSignalFile(GC_NO_BROWSER, u'nobrowser.txt')
+    _getOldSignalFile(GC_NO_CACHE, u'nocache.txt')
+    _getOldSignalFile(GC_NO_UPDATE_CHECK, u'noupdatecheck.txt')
+    try:
+      with open(os.path.join(gamPath, u'lastupdatecheck.txt'), 'r') as f:
+        latestUpdateCheck = int(f.readline())
+    except:
+      latestUpdateCheck = 0
+    config.set(ConfigParser.DEFAULTSECT, GC_LAST_UPDATE_CHECK, str(latestUpdateCheck))
+
+  def _getCfgBoolean(sectionName, itemName):
+    value = config.get(sectionName, itemName, raw=True)
+    if value in TRUE_VALUES:
+      return True
+    if value in FALSE_VALUES:
+      return False
+    sys.stderr.write(u'ERROR: Config File: {0}, Section: {1}, Item: {2}, Value: {3}, expected {4}\n'.format(configFileName, sectionName, itemName, value, u','.join(TRUE_FALSE)))
+    status[u'errors'] = True
+    return False
+
+  def _getCfgInteger(sectionName, itemName):
+    value = config.get(sectionName, itemName, raw=True)
+    minVal, maxVal = GC_VAR_INFO[itemName][u'limits']
+    try:
+      number = int(value)
+      if (number >= minVal) and (not maxVal or (number <= maxVal)):
+        return number
+    except ValueError:
+      pass
+    sys.stderr.write(u'ERROR: Config File: {0}, Section: {1}, Item: {2}, Value: {3}, expected {4}\n'.format(configFileName, sectionName, itemName, value, integerLimits(minVal, maxVal)))
+    status[u'errors'] = True
+    return 0
+
+  def _getCfgSection(sectionName, itemName):
+    value = config.get(sectionName, itemName, raw=True)
+    if not value:
+      return ConfigParser.DEFAULTSECT
+    if config.has_section(value):
+      return value
+    sys.stderr.write(u'ERROR: Config File: {0}, Section: {1}, Item: {2}, Value: {3}, Not Found\n'.format(configFileName, sectionName, itemName, value))
+    status[u'errors'] = True
+    return ConfigParser.DEFAULTSECT
+
+  def _getCfgString(sectionName, itemName):
+    return config.get(sectionName, itemName, raw=True)
+
+  def _getCfgDirectory(sectionName, itemName, append=u''):
+    value = config.get(sectionName, itemName, raw=True)
+    if not value:
+      value = os.path.join(gamPath, append)
+    if os.path.isdir(value):
+      return value
+    sys.stderr.write(u'ERROR: Config File: {0}, Section: {1}, Item: {2}, Value: {3}, Invalid Path\n'.format(configFileName, sectionName, itemName, value))
+    status[u'errors'] = True
+    return u'.'
+
+  def _getCfgFile(sectionName, itemName, path):
+    value = os.path.join(path, config.get(sectionName, itemName, raw=True))
+    if os.path.isfile(value):
+      return value
+    sys.stderr.write(u'ERROR: Config File: {0}, Section: {1}, Item: {2}, Value: {3}, Not Found\n'.format(configFileName, sectionName, itemName, value))
+    status[u'errors'] = True
+    return u''
+
+  def _readConfigFile():
+    try:
+      with open(configFileName, 'rb') as f:
+        config.readfp(f)
+    except (ConfigParser.MissingSectionHeaderError, ConfigParser.ParsingError) as e:
+      sys.stderr.write(u'ERROR: Config File: {0}, Invalid: {1}\n'.format(configFileName, e.message))
+      sys.exit(13)
+    except IOError as e:
+      sys.stderr.write(u'ERROR: {0}\n'.format(e))
+      sys.exit(13)
+
+  def _writeConfigFile():
+    try:
+      with open(configFileName, 'wb') as f:
+        config.write(f)
+      print u'Config File: {0}, Updated'.format(configFileName)
+    except IOError as e:
+      sys.stderr.write(u'ERROR: {0}\n'.format(e))
+
+  status = {u'errors': False}
+  saveRequired = verifyRequired = False
   gamPath = os.path.dirname(os.path.realpath(sys.argv[0]))
-  try:
-    gamSiteConfigDir = os.environ[u'GAMSITECONFIGDIR']
-  except KeyError:
-    gamSiteConfigDir = gamPath
-  try:
-    gamUserConfigDir = os.environ[u'GAMUSERCONFIGDIR']
-  except KeyError:
-    gamUserConfigDir = gamPath
-  try:
-    gamCacheDir = os.environ[u'GAMCACHEDIR']
-  except KeyError:
-    gamCacheDir = os.path.join(gamPath, u'gamcache')
-  try:
-    gamDriveDir = os.environ[u'GAMDRIVEDIR']
-  except KeyError:
-    gamDriveDir = gamPath
+  GC_VARIABLES[GC_CONFIG_DIR] = user_config_dir(appname=GAM, appauthor=False)
+  if not os.path.exists(GC_VARIABLES[GC_CONFIG_DIR]):
+    GC_VARIABLES[GC_CONFIG_DIR] = gamPath
+  GC_VARIABLES[GC_CACHE_DIR] = user_cache_dir(appname=GAM, appauthor=False)
+  if not os.path.exists(GC_VARIABLES[GC_CACHE_DIR]):
+    GC_VARIABLES[GC_CACHE_DIR] = os.path.join(gamPath, GAMCACHE)
+  GC_VARIABLES[GC_DRIVE_DIR] = gamPath
 
-  if os.path.isfile(os.path.join(gamUserConfigDir, u'nocache.txt')):
+  config = ConfigParser.SafeConfigParser(defaults=collections.OrderedDict(sorted(GC_VARIABLES.items(), key=lambda t: t[0])))
+  configFileName = os.path.join(GC_VARIABLES[GC_CONFIG_DIR], GAM_CFG)
+  if not os.path.isfile(configFileName):
+    _getOldEnvVarsSignalFiles()
+    saveRequired = True
+  else:
+    _readConfigFile()
+  i = 1
+  if sys.argv[i] == SELECT_CMD:
+    sectionName = sys.argv[i+1]
+    i += 2
+    if sectionName.upper() == ConfigParser.DEFAULTSECT:
+      sectionName = ConfigParser.DEFAULTSECT
+    elif not config.has_section(sectionName):
+      sys.stderr.write(u'ERROR: Section: {0}, Not Found\n'.format(sectionName))
+      sys.exit(3)
+  else:
+    sectionName = _getCfgSection(ConfigParser.DEFAULTSECT, GC_SECTION)
+  if sys.argv[i] == OPTIONS_CMD:
+    i += 1
+    while i < len(sys.argv):
+      my_arg = sys.argv[i].lower()
+      i += 1
+      if my_arg == OPTIONS_CREATE_CMD: # Create section
+        value = sys.argv[i]
+        i += 1
+        if value.upper() == ConfigParser.DEFAULTSECT:
+          sys.stderr.write(u'ERROR: Section: {0}, Invalid\n'.format(value))
+          sys.exit(3)
+        if config.has_section(value):
+          sys.stderr.write(u'ERROR: Section: {0}, Duplicate\n'.format(value))
+          sys.exit(3)
+        config.add_section(value)
+        sectionName = value
+      elif my_arg == OPTIONS_DELETE_CMD: # Delete section
+        value = sys.argv[i]
+        i += 1
+        if value.upper() == ConfigParser.DEFAULTSECT:
+          sys.stderr.write(u'ERROR: Section: {0}, Invalid\n'.format(value))
+          sys.exit(3)
+        if not config.has_section(value):
+          sys.stderr.write(u'ERROR: Section: {0}, Not Found\n'.format(value))
+          sys.exit(3)
+        config.remove_section(value)
+        sectionName = ConfigParser.DEFAULTSECT
+        if config.get(ConfigParser.DEFAULTSECT, GC_SECTION, raw=True) == value:
+          config.set(ConfigParser.DEFAULTSECT, GC_SECTION, u'')
+      elif my_arg == OPTIONS_SELECT_CMD: # Select section
+        value = sys.argv[i]
+        i += 1
+        if (not value) or (value.upper() == ConfigParser.DEFAULTSECT):
+          value = u''
+          sectionName = ConfigParser.DEFAULTSECT
+        elif not config.has_section(value):
+          sys.stderr.write(u'ERROR: Section: {0}, Not Found\n'.format(value))
+          sys.exit(3)
+        else:
+          sectionName = value
+      elif my_arg == OPTIONS_RESET_CMD: # Reset variable
+        itemName = sys.argv[i].lower().replace(u'_', u'')
+        i += 1
+        if itemName not in GC_VAR_ALIASES:
+          sys.stderr.write(u'ERROR: key should be {0}. Got {1}\n'.format(u','.join(sorted(GC_VARIABLES.keys())), itemName))
+          sys.exit(3)
+        itemName = GC_VAR_ALIASES[itemName]
+        if itemName != GC_SECTION:
+          if sectionName != ConfigParser.DEFAULTSECT:
+            config.remove_option(sectionName, itemName)
+          else:
+            config.set(ConfigParser.DEFAULTSECT, itemName, str(GC_VARIABLES[itemName]))
+        else:
+          config.set(ConfigParser.DEFAULTSECT, itemName, u'')
+      elif my_arg == OPTIONS_SET_CMD: # Set variable
+        itemName = sys.argv[i].lower().replace(u'_', u'')
+        i += 1
+        if itemName not in GC_VAR_ALIASES:
+          sys.stderr.write(u'ERROR: key should be {0}. Got {1}\n'.format(u','.join(sorted(GC_VARIABLES.keys())), itemName))
+          sys.exit(3)
+        itemName = GC_VAR_ALIASES[itemName]
+        value = sys.argv[i]
+        i += 1
+        if itemName == GC_SECTION:
+          if (not value) or (value.upper() == ConfigParser.DEFAULTSECT):
+            value = u''
+          elif not config.has_section(value):
+            sys.stderr.write(u'ERROR: Section: {0}, Not Found\n'.format(value))
+            sys.exit(3)
+          config.set(ConfigParser.DEFAULTSECT, GC_SECTION, value)
+          continue
+        elif GC_VAR_INFO[itemName][u'type'] == GC_TYPE_BOOLEAN:
+          value = value.lower()
+          if (value not in TRUE_VALUES) and (value not in FALSE_VALUES):
+            sys.stderr.write(u'ERROR: expected {0}, got {1}\n'.format(u'|'.join(TRUE_FALSE), value))
+            sys.exit(3)
+        elif GC_VAR_INFO[itemName][u'type'] == GC_TYPE_INTEGER:
+          minVal, maxVal = GC_VAR_INFO[itemName][u'limits']
+          try:
+            value = int(value)
+            if (value < minVal) or (maxVal and (value > maxVal)):
+              sys.stderr.write(u'ERROR: expected {0}, got {1}\n'.format(integerLimits(minVal, maxVal), value))
+              sys.exit(3)
+            value = str(value)
+          except ValueError:
+            sys.stderr.write(u'ERROR: expected {0}, got {1}\n'.format(integerLimits(minVal, maxVal), value))
+            sys.exit(3)
+        elif GC_VAR_INFO[itemName][u'type'] == GC_TYPE_DIRECTORY:
+          if not os.path.isdir(value):
+            sys.stderr.write(u'ERROR: {0}, invalid path\n'.format(value))
+            sys.exit(3)
+        elif GC_VAR_INFO[itemName][u'type'] == GC_TYPE_FILE:
+          if not value:
+            sys.stderr.write(u'ERROR: expected filename, got {0}\n'.format(value))
+            sys.exit(3)
+        config.set(sectionName, itemName, value)
+      elif my_arg == OPTIONS_SAVE_CMD: # Save config file
+        saveRequired = True
+      elif my_arg == OPTIONS_VERIFY_CMD: # Verify section values
+        verifyRequired = True
+      else: # elif my_arg == OPTIONS_DONE_CMD:
+        break
+  gamConfigDir = _getCfgDirectory(sectionName, GC_CONFIG_DIR)
+  if _getCfgBoolean(sectionName, GC_NO_CACHE):
     gamCacheDir = None
+  else:
+    gamCacheDir = _getCfgDirectory(sectionName, GC_CACHE_DIR, append=GAMCACHE)
+  gamDriveDir = _getCfgDirectory(sectionName, GC_DRIVE_DIR)
+  noBrowser = _getCfgBoolean(sectionName, GC_NO_BROWSER)
+  if not _getCfgBoolean(sectionName, GC_NO_UPDATE_CHECK):
+    lastUpdateCheck = _getCfgInteger(ConfigParser.DEFAULTSECT, GC_LAST_UPDATE_CHECK)
+    latestUpdateCheck = doGAMCheckForUpdates(lastUpdateCheck)
+    if latestUpdateCheck != lastUpdateCheck:
+      config.set(ConfigParser.DEFAULTSECT, GC_LAST_UPDATE_CHECK, str(latestUpdateCheck))
+      saveRequired = True
+  disable_ssl_certificate_validation = _getCfgBoolean(sectionName, GC_NO_VERIFY_SSL)
+  showLicenses = _getCfgBoolean(sectionName, GC_SHOW_LICENSES)
+  autoBatchMin = _getCfgInteger(sectionName, GC_AUTO_BATCH_MIN)
+  gamDebugLevel = _getCfgInteger(sectionName, GC_DEBUG_LEVEL)
+  extra_args[u'prettyPrint'] = gamDebugLevel > 0
+  httplib2.debuglevel = gamDebugLevel
+  maxMessagesToDelete = _getCfgInteger(sectionName, GC_MAX_MESSAGES_TO_DELETE)
+  numThreads = _getCfgInteger(sectionName, GC_NUM_THREADS)
+  domain = _getCfgString(sectionName, GC_DOMAIN)
+  customerId = _getCfgString(sectionName, GC_CUSTOMER_ID)
+  client_secrets_json = _getCfgFile(sectionName, GC_CLIENT_SECRETS_JSON, gamConfigDir)
+  oauth2_txt = _getCfgFile(sectionName, GC_OAUTH2_TXT, gamConfigDir)
+  oauth2service_json = _getCfgFile(sectionName, GC_OAUTH2SERVICE_JSON, gamConfigDir)
+  if status[u'errors']:
+    sys.exit(13)
+  if saveRequired:
+    _writeConfigFile()
+  if verifyRequired:
+    print u'Section: {0}'.format(sectionName)
+    for itemName in sorted(GC_VAR_INFO):
+      if (itemName != GC_SECTION) or (sectionName == ConfigParser.DEFAULTSECT):
+        print u'  {0}: {1}'.format(itemName, config.get(sectionName, itemName, raw=True))
+  cacert_pem = os.path.join(gamPath, u'cacert.pem')
+  if os.path.isfile(os.path.join(gamConfigDir, u'extra_args.txt')):
+    ea_config = ConfigParser.ConfigParser()
+    ea_config.optionxform = str
+    ea_config.read(os.path.join(gamConfigDir, u'extra_args.txt'))
+    extra_args.update(dict(ea_config.items(u'extra-args')))
+# Return True if no section/options commands were executed
+  if i == 1:
+    return True
+# Move remaining args down to 1
+  j = 1
+  while i < len(sys.argv):
+    sys.argv[j] = sys.argv[i]
+    j += 1
+    i += 1
+  del sys.argv[j:]
+# Return True if section/options commands were executed and there are more arguments
+# Return False if section/options commands were executed and there are no more arguments
+  return j < len(sys.argv)
 
 def doGAMVersion():
   import struct
@@ -182,24 +595,15 @@ def doGAMVersion():
                    sys.version_info[0], sys.version_info[1], sys.version_info[2], struct.calcsize('P')*8, sys.version_info[3], googleapiclient.__version__,
                    platform.platform(), platform.machine(), gamPath)
 
-def doGAMCheckForUpdates():
+def doGAMCheckForUpdates(lastUpdateCheck):
   import urllib2
-  if os.path.isfile(os.path.join(gamUserConfigDir, u'noupdatecheck.txt')):
-    return
   try:
     current_version = float(__version__)
   except ValueError:
     return
-  if os.path.isfile(os.path.join(gamUserConfigDir, u'lastupdatecheck.txt')):
-    f = open(os.path.join(gamUserConfigDir, u'lastupdatecheck.txt'), 'r')
-    last_check_time = int(f.readline())
-    f.close()
-  else:
-    last_check_time = 0
   now_time = calendar.timegm(time.gmtime())
-  one_week_ago_time = now_time - 604800
-  if last_check_time > one_week_ago_time:
-    return
+  if lastUpdateCheck > now_time - 604800:
+    return lastUpdateCheck
   try:
     c = urllib2.urlopen(u'https://gam-update.appspot.com/latest-version.txt?v=%s' % __version__)
     try:
@@ -207,10 +611,7 @@ def doGAMCheckForUpdates():
     except ValueError:
       return
     if latest_version <= current_version:
-      f = open(os.path.join(gamUserConfigDir, u'lastupdatecheck.txt'), 'w')
-      f.write(str(now_time))
-      f.close()
-      return
+      return now_time
     a = urllib2.urlopen(u'https://gam-update.appspot.com/latest-version-announcement.txt?v=%s' % __version__)
     announcement = a.read()
     sys.stderr.write(announcement)
@@ -222,13 +623,9 @@ def doGAMCheckForUpdates():
       webbrowser.open(u'https://github.com/jay0lee/GAM/releases')
       print u'GAM is now exiting so that you can overwrite this old version with the latest release'
       sys.exit(0)
-    f = open(os.path.join(gamUserConfigDir, u'lastupdatecheck.txt'), 'w')
-    f.write(str(now_time))
-    f.close()
-  except urllib2.HTTPError:
-    return
-  except urllib2.URLError:
-    return
+    return now_time
+  except (urllib2.HTTPError, urllib2.URLError):
+    return lastUpdateCheck
 
 def commonAppsObjInit(appsObj):
   #Identify GAM to Google's Servers
@@ -236,7 +633,7 @@ def commonAppsObjInit(appsObj):
                    sys.version_info[0], sys.version_info[1], sys.version_info[2], sys.version_info[3],
                    platform.platform(), platform.machine())
   #Show debugging output if debug.gam exists
-  if os.path.isfile(os.path.join(gamUserConfigDir, u'debug.gam')):
+  if gamDebugLevel > 0:
     appsObj.debug = True
   return appsObj
 
@@ -342,20 +739,13 @@ def checkErrorCode(e, service):
 def tryOAuth(gdataObject):
   global domain
   global customerId
-  try:
-    oauth2file = os.path.join(gamUserConfigDir, os.environ[u'OAUTHFILE'])
-  except KeyError:
-    oauth2file = os.path.join(gamUserConfigDir, u'oauth2.txt')
-  storage = oauth2client.file.Storage(oauth2file)
+  storage = oauth2client.file.Storage(oauth2_txt)
   credentials = storage.get()
   if credentials is None or credentials.invalid:
     doRequestOAuth()
     credentials = storage.get()
   if credentials.access_token_expired:
-    disable_ssl_certificate_validation = False
-    if os.path.isfile(os.path.join(gamUserConfigDir, u'noverifyssl.txt')):
-      disable_ssl_certificate_validation = True
-    credentials.refresh(httplib2.Http(ca_certs=os.path.join(gamSiteConfigDir, u'cacert.pem'),
+    credentials.refresh(httplib2.Http(ca_certs=cacert_pem,
                                       disable_ssl_certificate_validation=disable_ssl_certificate_validation))
   gdataObject.additional_headers = {u'Authorization': u'Bearer %s' % credentials.access_token}
   try:
@@ -410,10 +800,7 @@ def callGAPI(service, function, silent_errors=False, soft_errors=False, throw_re
         error = json.loads(e.content)
       except ValueError:
         if n < 3:
-          disable_ssl_certificate_validation = False
-          if os.path.isfile(os.path.join(gamUserConfigDir, u'noverifyssl.txt')):
-            disable_ssl_certificate_validation = True
-          service._http.request.credentials.refresh(httplib2.Http(ca_certs=os.path.join(gamSiteConfigDir, u'cacert.pem'),
+          service._http.request.credentials.refresh(httplib2.Http(ca_certs=cacert_pem,
                                                                   disable_ssl_certificate_validation=disable_ssl_certificate_validation))
           continue
         if (e.resp[u'status'] == u'503') and (e.content == u'Quota exceeded for the current request'):
@@ -556,11 +943,7 @@ def getAPIScope(api):
 
 def buildGAPIObject(api):
   global domain, customerId
-  try:
-    oauth2file = os.path.join(gamUserConfigDir, os.environ[u'OAUTHFILE'])
-  except KeyError:
-    oauth2file = os.path.join(gamUserConfigDir, u'oauth2.txt')
-  storage = oauth2client.file.Storage(oauth2file)
+  storage = oauth2client.file.Storage(oauth2_txt)
   credentials = storage.get()
   if credentials is None or credentials.invalid:
     doRequestOAuth()
@@ -568,20 +951,9 @@ def buildGAPIObject(api):
   credentials.user_agent = u'GAM %s - http://git.io/gam / %s / Python %s.%s.%s %s / %s %s /' % (__version__, __author__,
                    sys.version_info[0], sys.version_info[1], sys.version_info[2], sys.version_info[3],
                    platform.platform(), platform.machine())
-  disable_ssl_certificate_validation = False
-  if os.path.isfile(os.path.join(gamUserConfigDir, u'noverifyssl.txt')):
-    disable_ssl_certificate_validation = True
-  http = httplib2.Http(ca_certs=os.path.join(gamSiteConfigDir, u'cacert.pem'),
-                       disable_ssl_certificate_validation=disable_ssl_certificate_validation, cache=gamCacheDir)
-  if os.path.isfile(os.path.join(gamUserConfigDir, u'debug.gam')):
-    httplib2.debuglevel = 4
-    extra_args[u'prettyPrint'] = True
-  if os.path.isfile(os.path.join(gamUserConfigDir, u'extra-args.txt')):
-    import ConfigParser
-    config = ConfigParser.ConfigParser()
-    config.optionxform = str
-    config.read(os.path.join(gamUserConfigDir, u'extra-args.txt'))
-    extra_args.update(dict(config.items(u'extra-args')))
+  http = httplib2.Http(ca_certs=cacert_pem,
+                       disable_ssl_certificate_validation=disable_ssl_certificate_validation,
+                       cache=gamCacheDir)
   http = credentials.authorize(http)
   version = getAPIVer(api)
   if api in [u'directory', u'reports']:
@@ -589,7 +961,7 @@ def buildGAPIObject(api):
   try:
     service = googleapiclient.discovery.build(api, version, http=http)
   except googleapiclient.errors.UnknownApiNameOrVersion:
-    disc_file = os.path.join(gamSiteConfigDir, u'%s-%s.json' % (api, version))
+    disc_file = os.path.join(gamPath, u'%s-%s.json' % (api, version))
     if os.path.isfile(disc_file):
       f = file(disc_file, 'rb')
       discovery = f.read()
@@ -616,13 +988,7 @@ def buildGAPIObject(api):
 
 def buildGAPIServiceObject(api, act_as=None, soft_errors=False):
   try:
-    oauth2servicefile = os.path.join(gamUserConfigDir, os.environ[u'OAUTHSERVICEFILE'])
-  except KeyError:
-    oauth2servicefile = os.path.join(gamUserConfigDir, u'oauth2service')
-  oauth2servicefilejson = u'%s.json' % oauth2servicefile
-  oauth2servicefilep12 = u'%s.p12' % oauth2servicefile
-  try:
-    json_string = open(oauth2servicefilejson).read()
+    json_string = open(oauth2service_json).read()
   except IOError, e:
     print u'Error: %s' % e
     print u''
@@ -632,7 +998,7 @@ def buildGAPIServiceObject(api, act_as=None, soft_errors=False):
   try:
     SERVICE_ACCOUNT_EMAIL = json_data[u'web'][u'client_email']
     SERVICE_ACCOUNT_CLIENT_ID = json_data[u'web'][u'client_id']
-    f = file(oauth2servicefilep12, 'rb')
+    f = file(oauth2service_json.replace(u'.json', u'.p12'), 'rb')
     key = f.read()
     f.close()
   except KeyError:
@@ -648,20 +1014,9 @@ def buildGAPIServiceObject(api, act_as=None, soft_errors=False):
   credentials.user_agent = u'GAM %s - http://git.io/gam / %s / Python %s.%s.%s %s / %s %s /' % (__version__, __author__,
                    sys.version_info[0], sys.version_info[1], sys.version_info[2], sys.version_info[3],
                    platform.platform(), platform.machine())
-  disable_ssl_certificate_validation = False
-  if os.path.isfile(os.path.join(gamUserConfigDir, u'noverifyssl.txt')):
-    disable_ssl_certificate_validation = True
-  http = httplib2.Http(ca_certs=os.path.join(gamSiteConfigDir, u'cacert.pem'),
-                       disable_ssl_certificate_validation=disable_ssl_certificate_validation, cache=gamCacheDir)
-  if os.path.isfile(os.path.join(gamUserConfigDir, u'debug.gam')):
-    httplib2.debuglevel = 4
-    extra_args[u'prettyPrint'] = True
-  if os.path.isfile(os.path.join(gamUserConfigDir, u'extra-args.txt')):
-    import ConfigParser
-    config = ConfigParser.ConfigParser()
-    config.optionxform = str
-    config.read(os.path.join(gamUserConfigDir, u'extra-args.txt'))
-    extra_args.update(dict(config.items(u'extra-args')))
+  http = httplib2.Http(ca_certs=cacert_pem,
+                       disable_ssl_certificate_validation=disable_ssl_certificate_validation,
+                       cache=gamCacheDir)
   http = credentials.authorize(http)
   version = getAPIVer(api)
   try:
@@ -682,11 +1037,9 @@ def buildDiscoveryObject(api):
   if api in [u'directory', u'reports']:
     api = u'admin'
   params = {'api': api, 'apiVersion': version}
-  disable_ssl_certificate_validation = False
-  if os.path.isfile(os.path.join(gamUserConfigDir, u'noverifyssl.txt')):
-    disable_ssl_certificate_validation = True
-  http = httplib2.Http(ca_certs=os.path.join(gamSiteConfigDir, u'cacert.pem'),
-                       disable_ssl_certificate_validation=disable_ssl_certificate_validation, cache=gamCacheDir)
+  http = httplib2.Http(ca_certs=cacert_pem,
+                       disable_ssl_certificate_validation=disable_ssl_certificate_validation,
+                       cache=gamCacheDir)
   requested_url = uritemplate.expand(googleapiclient.discovery.DISCOVERY_URI, params)
   resp, content = http.request(requested_url)
   if resp.status == 404:
@@ -808,7 +1161,8 @@ def showReport():
     while True:
       try:
         page_message = u'Got %%num_items%% users\n'
-        usage = callGAPIpages(service=rep.userUsageReport(), function=u'get', items=u'usageReports', page_message=page_message, throw_reasons=[u'invalid'], date=str(try_date), userKey=userKey, customerId=customerId, filters=filters, parameters=parameters)
+        usage = callGAPIpages(service=rep.userUsageReport(), function=u'get', items=u'usageReports', page_message=page_message,
+                              throw_reasons=[u'invalid'], date=str(try_date), userKey=userKey, customerId=customerId, filters=filters, parameters=parameters)
         break
       except googleapiclient.errors.HttpError, e:
         error = json.loads(e.content)
@@ -893,7 +1247,9 @@ def showReport():
     elif report == u'tokens':
       report = u'token'
     page_message = u'Got %%num_items%% items\n'
-    activities = callGAPIpages(service=rep.activities(), function=u'list', page_message=page_message, applicationName=report, userKey=userKey, customerId=customerId, actorIpAddress=actorIpAddress, startTime=startTime, endTime=endTime, eventName=eventName, filters=filters)
+    activities = callGAPIpages(service=rep.activities(), function=u'list', page_message=page_message,
+                               applicationName=report, userKey=userKey, customerId=customerId, actorIpAddress=actorIpAddress,
+                               startTime=startTime, endTime=endTime, eventName=eventName, filters=filters)
     if len(activities) > 0:
       attrs = []
       titles = []
@@ -1050,7 +1406,9 @@ def getDelegates(users):
         if csv_format:
           print u'%s,%s,%s' % (user + u'@' + emailsettings.domain, delegate[u'address'], delegate[u'status'])
         else:
-          print u"Delegator: %s\n Delegate: %s\n Status: %s\n Delegate Email: %s\n Delegate ID: %s\n" % (user, delegate[u'delegate'], delegate[u'status'], delegate[u'address'], delegate[u'delegationId'])
+          print u"Delegator: %s\n Delegate: %s\n Status: %s\n Delegate Email: %s\n Delegate ID: %s\n" % (user, delegate[u'delegate'],
+                                                                                                         delegate[u'status'], delegate[u'address'],
+                                                                                                         delegate[u'delegationId'])
     except TypeError:
       pass
 
@@ -1644,9 +2002,9 @@ def addCalendar(users):
   i = 6
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'selected':
-      if sys.argv[i+1].lower() in true_values:
+      if sys.argv[i+1].lower() in TRUE_VALUES:
         body[u'selected'] = True
-      elif sys.argv[i+1].lower() in false_values:
+      elif sys.argv[i+1].lower() in FALSE_VALUES:
         body[u'selected'] = False
       else:
         showUsage()
@@ -1654,9 +2012,9 @@ def addCalendar(users):
         exit(4)
       i += 2
     elif sys.argv[i].lower() == u'hidden':
-      if sys.argv[i+1].lower() in true_values:
+      if sys.argv[i+1].lower() in TRUE_VALUES:
         body[u'hidden'] = True
-      elif sys.argv[i+1].lower() in false_values:
+      elif sys.argv[i+1].lower() in FALSE_VALUES:
         body[u'hidden'] = False
       else:
         showUsage()
@@ -1710,9 +2068,9 @@ def updateCalendar(users):
   colorRgbFormat = False
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'selected':
-      if sys.argv[i+1].lower() in true_values:
+      if sys.argv[i+1].lower() in TRUE_VALUES:
         body[u'selected'] = True
-      elif sys.argv[i+1].lower() in false_values:
+      elif sys.argv[i+1].lower() in FALSE_VALUES:
         body[u'selected'] = False
       else:
         showUsage()
@@ -1720,9 +2078,9 @@ def updateCalendar(users):
         exit(4)
       i += 2
     elif sys.argv[i].lower() == u'hidden':
-      if sys.argv[i+1].lower() in true_values:
+      if sys.argv[i+1].lower() in TRUE_VALUES:
         body[u'hidden'] = True
-      elif sys.argv[i+1].lower() in false_values:
+      elif sys.argv[i+1].lower() in FALSE_VALUES:
         body[u'hidden'] = False
       else:
         showUsage()
@@ -2652,9 +3010,9 @@ def updateDriveFileACL(users):
         body[u'additionalRoles'] = [u'commenter']
       i += 2
     elif sys.argv[i].lower().replace(u'_', u'') == u'transferownership':
-      if sys.argv[i+1].lower() in true_values:
+      if sys.argv[i+1].lower() in TRUE_VALUES:
         transferOwnership = True
-      elif sys.argv[i+1].lower() in false_values:
+      elif sys.argv[i+1].lower() in FALSE_VALUES:
         transferOwnership = False
       else:
         print u'ERROR: transferownership should be true or false, got %s' % sys.argv[i+1].lower()
@@ -2908,9 +3266,9 @@ def doUpdateDriveFile(users):
     elif sys.argv[i].lower() in [u'restrict', 'restricted']:
       if 'labels' not in body.keys():
         body[u'labels'] = dict()
-      if sys.argv[i+1] in true_values:
+      if sys.argv[i+1] in TRUE_VALUES:
         body[u'labels'][u'restricted'] = True
-      elif sys.argv[i+1] in false_values:
+      elif sys.argv[i+1] in FALSE_VALUES:
         body[u'labels'][u'restricted'] = False
       else:
         print u'ERROR: value for restricted must be true or false, got %s' % sys.argv[i+1]
@@ -2919,9 +3277,9 @@ def doUpdateDriveFile(users):
     elif sys.argv[i].lower() in [u'star', u'starred']:
       if u'labels' not in body.keys():
         body[u'labels'] = dict()
-      if sys.argv[i+1] in true_values:
+      if sys.argv[i+1] in TRUE_VALUES:
         body[u'labels'][u'starred'] = True
-      elif sys.argv[i+1] in false_values:
+      elif sys.argv[i+1] in FALSE_VALUES:
         body[u'labels'][u'starred'] = False
       else:
         print u'ERROR: value for starred must be true or false, got %s' % sys.argv[i+1]
@@ -2930,9 +3288,9 @@ def doUpdateDriveFile(users):
     elif sys.argv[i].lower() in [u'trash', u'trashed']:
       if u'labels' not in body.keys():
         body[u'labels'] = dict()
-      if sys.argv[i+1] in true_values:
+      if sys.argv[i+1] in TRUE_VALUES:
         body[u'labels'][u'trashed'] = True
-      elif sys.argv[i+1] in false_values:
+      elif sys.argv[i+1] in FALSE_VALUES:
         body[u'labels'][u'trashed'] = False
       else:
         print u'ERROR: value for trashed must be true or false, got %s' % sys.argv[i+1]
@@ -2941,9 +3299,9 @@ def doUpdateDriveFile(users):
     elif sys.argv[i].lower() in [u'view', u'viewed']:
       if u'labels' not in body.keys():
         body[u'labels'] = dict()
-      if sys.argv[i+1] in true_values:
+      if sys.argv[i+1] in TRUE_VALUES:
         body[u'labels'][u'viewed'] = True
-      elif sys.argv[i+1] in false_values:
+      elif sys.argv[i+1] in FALSE_VALUES:
         body[u'labels'][u'viewed'] = False
       else:
         print u'ERROR: value for viewed must be true or false, got %s' % sys.argv[i+1]
@@ -3310,14 +3668,16 @@ def transferDriveFiles(users):
     source_permissionid = source_about[u'permissionId']
     print u"Getting file list for source user: %s..." % user
     page_message = u'  got %%total_items%% files\n'
-    source_drive_files = callGAPIpages(service=source_drive.files(), function=u'list', page_message=page_message, q=u"'me' in owners and trashed = false", fields=u'items(id,parents,mimeType),nextPageToken')
+    source_drive_files = callGAPIpages(service=source_drive.files(), function=u'list', page_message=page_message,
+                                       q=u"'me' in owners and trashed = false", fields=u'items(id,parents,mimeType),nextPageToken')
     all_source_file_ids = []
     for source_drive_file in source_drive_files:
       all_source_file_ids.append(source_drive_file[u'id'])
     total_count = len(source_drive_files)
     print u"Getting folder list for target user: %s..." % target_user
     page_message = u'  got %%total_items%% folders\n'
-    target_folders = callGAPIpages(service=target_drive.files(), function=u'list', page_message=page_message, q=u"'me' in owners and mimeType = 'application/vnd.google-apps.folder'", fields=u'items(id,title),nextPageToken')
+    target_folders = callGAPIpages(service=target_drive.files(), function=u'list', page_message=page_message,
+                                   q=u"'me' in owners and mimeType = 'application/vnd.google-apps.folder'", fields=u'items(id,title),nextPageToken')
     got_top_folder = False
     all_target_folder_ids = []
     for target_folder in target_folders:
@@ -3326,7 +3686,8 @@ def transferDriveFiles(users):
         target_top_folder = target_folder[u'id']
         got_top_folder = True
     if not got_top_folder:
-      create_folder = callGAPI(service=target_drive.files(), function=u'insert', body={u'title': u'%s old files' % user, u'mimeType': u'application/vnd.google-apps.folder'}, fields=u'id')
+      create_folder = callGAPI(service=target_drive.files(), function=u'insert',
+                               body={u'title': u'%s old files' % user, u'mimeType': u'application/vnd.google-apps.folder'}, fields=u'id')
       target_top_folder = create_folder[u'id']
     transferred_files = []
     while True: # we loop thru, skipping files until all of their parents are done
@@ -3368,9 +3729,9 @@ def transferDriveFiles(users):
         break
 
 def doImap(users):
-  if sys.argv[4].lower() in true_values:
+  if sys.argv[4].lower() in TRUE_VALUES:
     enable = True
-  elif sys.argv[4].lower() in false_values:
+  elif sys.argv[4].lower() in FALSE_VALUES:
     enable = False
   emailsettings = getEmailSettingsObject()
   count = len(users)
@@ -3465,9 +3826,9 @@ def doLicense(users, operation):
       callGAPI(service=lic.licenseAssignments(), function=operation, soft_errors=True, productId=productId, skuId=old_sku, userId=user, body={u'skuId': skuId})
 
 def doPop(users):
-  if sys.argv[4].lower() in true_values:
+  if sys.argv[4].lower() in TRUE_VALUES:
     enable = True
-  elif sys.argv[4].lower() in false_values:
+  elif sys.argv[4].lower() in FALSE_VALUES:
     enable = False
   enable_for = u'ALL_MAIL'
   action = u'KEEP'
@@ -3597,9 +3958,9 @@ def doLanguage(users):
     callGData(service=emailsettings, function=u'UpdateLanguage', soft_errors=True, username=user, language=language)
 
 def doUTF(users):
-  if sys.argv[4].lower() in true_values:
+  if sys.argv[4].lower() in TRUE_VALUES:
     SetUTF = True
-  elif sys.argv[4].lower() in false_values:
+  elif sys.argv[4].lower() in FALSE_VALUES:
     SetUTF = False
   emailsettings = getEmailSettingsObject()
   count = len(users)
@@ -3634,9 +3995,9 @@ def doPageSize(users):
     callGData(service=emailsettings, function=u'UpdateGeneral', soft_errors=True, username=user, page_size=PageSize)
 
 def doShortCuts(users):
-  if sys.argv[4].lower() in true_values:
+  if sys.argv[4].lower() in TRUE_VALUES:
     SetShortCuts = True
-  elif sys.argv[4].lower() in false_values:
+  elif sys.argv[4].lower() in FALSE_VALUES:
     SetShortCuts = False
   emailsettings = getEmailSettingsObject()
   count = len(users)
@@ -3652,9 +4013,9 @@ def doShortCuts(users):
     callGData(service=emailsettings, function=u'UpdateGeneral', soft_errors=True, username=user, shortcuts=SetShortCuts)
 
 def doArrows(users):
-  if sys.argv[4].lower() in true_values:
+  if sys.argv[4].lower() in TRUE_VALUES:
     SetArrows = True
-  elif sys.argv[4].lower() in false_values:
+  elif sys.argv[4].lower() in FALSE_VALUES:
     SetArrows = False
   emailsettings = getEmailSettingsObject()
   count = len(users)
@@ -3670,9 +4031,9 @@ def doArrows(users):
     callGData(service=emailsettings, function=u'UpdateGeneral', soft_errors=True, username=user, arrows=SetArrows)
 
 def doSnippets(users):
-  if sys.argv[4].lower() in true_values:
+  if sys.argv[4].lower() in TRUE_VALUES:
     SetSnippets = True
-  elif sys.argv[4].lower() in false_values:
+  elif sys.argv[4].lower() in FALSE_VALUES:
     SetSnippets = False
   emailsettings = getEmailSettingsObject()
   count = len(users)
@@ -3729,7 +4090,7 @@ def doLabel(users):
 def doDeleteMessages(trashOrDelete, users):
   query = None
   doIt = False
-  maxToDelete = 1
+  maxToDelete = maxMessagesToDelete
   i = 5
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'query':
@@ -4048,14 +4409,17 @@ def doFilter(users):
       emailsettings.domain = domain #make sure it's back at default domain
     print u"Creating filter for %s (%s of %s)" % (user+'@'+emailsettings.domain, i, count)
     i += 1
-    callGData(service=emailsettings, function=u'CreateFilter', soft_errors=True, username=user, from_=from_, to=to, subject=subject, has_the_word=has_the_word, does_not_have_the_word=does_not_have_the_word, has_attachment=has_attachment, label=label, should_mark_as_read=should_mark_as_read, should_archive=should_archive, should_star=should_star, forward_to=forward_to, should_trash=should_trash, should_not_spam=should_not_spam)
+    callGData(service=emailsettings, function=u'CreateFilter', soft_errors=True,
+              username=user, from_=from_, to=to, subject=subject, has_the_word=has_the_word, does_not_have_the_word=does_not_have_the_word,
+              has_attachment=has_attachment, label=label, should_mark_as_read=should_mark_as_read, should_archive=should_archive,
+              should_star=should_star, forward_to=forward_to, should_trash=should_trash, should_not_spam=should_not_spam)
 
 def doForward(users):
   action = forward_to = None
   gotAction = gotForward = False
-  if sys.argv[4] in true_values:
+  if sys.argv[4] in TRUE_VALUES:
     enable = True
-  elif sys.argv[4] in false_values:
+  elif sys.argv[4] in FALSE_VALUES:
     enable = False
   else:
     showUsage()
@@ -4147,9 +4511,9 @@ def getSignature(users):
       pass
 
 def doWebClips(users):
-  if sys.argv[4].lower() in true_values:
+  if sys.argv[4].lower() in TRUE_VALUES:
     enable = True
-  elif sys.argv[4].lower() in false_values:
+  elif sys.argv[4].lower() in FALSE_VALUES:
     enable = False
   else:
     showUsage()
@@ -4170,9 +4534,9 @@ def doWebClips(users):
 def doVacation(users):
   import cgi
   subject = message = u''
-  if sys.argv[4] in true_values:
+  if sys.argv[4] in TRUE_VALUES:
     enable = u'true'
-  elif sys.argv[4] in false_values:
+  elif sys.argv[4] in FALSE_VALUES:
     enable = u'false'
   else:
     showUsage()
@@ -4381,18 +4745,18 @@ def doCreateUser():
       need_password = False
       i += 2
     elif sys.argv[i].lower() == u'suspended':
-      if sys.argv[i+1].lower() in true_values:
+      if sys.argv[i+1].lower() in TRUE_VALUES:
         body[u'suspended'] = True
-      elif sys.argv[i+1].lower() in false_values:
+      elif sys.argv[i+1].lower() in FALSE_VALUES:
         body[u'suspended'] = False
       else:
         print u'Error: suspended should be on or off, not %s' % sys.argv[i+1]
         sys.exit(5)
       i += 2
     elif sys.argv[i].lower() == u'gal':
-      if sys.argv[i+1].lower() in true_values:
+      if sys.argv[i+1].lower() in TRUE_VALUES:
         body[u'includeInGlobalAddressList'] = True
-      elif sys.argv[i+1].lower() in false_values:
+      elif sys.argv[i+1].lower() in FALSE_VALUES:
         body[u'includeInGlobalAddressList'] = False
       else:
         print u'Error: gal should be on or off, not %s' % sys.argv[i+1]
@@ -4414,36 +4778,36 @@ def doCreateUser():
       need_to_hash_password = False
       i += 1
     elif sys.argv[i].lower() == u'changepassword':
-      if sys.argv[i+1] in true_values:
+      if sys.argv[i+1] in TRUE_VALUES:
         body[u'changePasswordAtNextLogin'] = True
-      elif sys.argv[i+1] in false_values:
+      elif sys.argv[i+1] in FALSE_VALUES:
         body[u'changePasswordAtNextLogin'] = False
       else:
         print u'Error: changepassword should be on or off, not %s' % sys.argv[i+1]
         sys.exit(5)
       i += 2
     elif sys.argv[i].lower() == u'ipwhitelisted':
-      if sys.argv[i+1] in true_values:
+      if sys.argv[i+1] in TRUE_VALUES:
         body[u'ipWhitelisted'] = True
-      elif sys.argv[i+1] in false_values:
+      elif sys.argv[i+1] in FALSE_VALUES:
         body[u'ipWhitelisted'] = False
       else:
         print u'Error: ipwhitelisted should be on or off, not %s' % sys.argv[i+1]
       i += 2
     elif sys.argv[i].lower() == u'admin':
       do_admin = True
-      if sys.argv[i+1].lower() in true_values:
+      if sys.argv[i+1].lower() in TRUE_VALUES:
         admin_body = {u'status': True}
-      elif sys.argv[i+1].lower() in false_values:
+      elif sys.argv[i+1].lower() in FALSE_VALUES:
         admin_body = {u'status': False}
       else:
         print u'Error: admin should be on or off, not %s' % sys.argv[i+1]
         sys.exit(5)
       i += 2
     elif sys.argv[i].lower() == u'agreedtoterms':
-      if sys.argv[i+1] in true_values:
+      if sys.argv[i+1] in TRUE_VALUES:
         body[u'agreedToTerms'] = True
-      elif sys.argv[i+1] in false_values:
+      elif sys.argv[i+1] in FALSE_VALUES:
         body[u'agreedToTerms'] = False
       else:
         print u'Error: agreedtoterms should be on or off, not %s' % sys.argv[i+1]
@@ -4737,9 +5101,9 @@ def doCreateGroup():
           elif params[u'type'] == u'string':
             if params[u'description'].find(value.upper()) != -1: # ugly hack because API wants some values uppercased.
               value = value.upper()
-            elif value.lower() in true_values:
+            elif value.lower() in TRUE_VALUES:
               value = u'true'
-            elif value.lower() in false_values:
+            elif value.lower() in FALSE_VALUES:
               value = u'false'
           break
       if not matches_gs_setting:
@@ -4855,23 +5219,23 @@ def doUpdateUser(users):
       gotPassword = True
     elif sys.argv[i].lower() == u'admin':
       do_admin_user = True
-      if sys.argv[i+1].lower() in true_values:
+      if sys.argv[i+1].lower() in TRUE_VALUES:
         is_admin = True
-      elif sys.argv[i+1].lower() in false_values:
+      elif sys.argv[i+1].lower() in FALSE_VALUES:
         is_admin = False
       i += 2
     elif sys.argv[i].lower() == u'suspended':
       do_update_user = True
-      if sys.argv[i+1].lower() in true_values:
+      if sys.argv[i+1].lower() in TRUE_VALUES:
         body[u'suspended'] = True
-      elif sys.argv[i+1].lower() in false_values:
+      elif sys.argv[i+1].lower() in FALSE_VALUES:
         body[u'suspended'] = False
       i += 2
     elif sys.argv[i].lower() == u'gal':
       do_update_user = True
-      if sys.argv[i+1].lower() in true_values:
+      if sys.argv[i+1].lower() in TRUE_VALUES:
         body[u'includeInGlobalAddressList'] = True
-      elif sys.argv[i+1].lower() in false_values:
+      elif sys.argv[i+1].lower() in FALSE_VALUES:
         body[u'includeInGlobalAddressList'] = False
       else:
         print u'Error: gal should be on or off, not %s' % sys.argv[i+1]
@@ -4879,9 +5243,9 @@ def doUpdateUser(users):
       i += 2
     elif sys.argv[i].lower() == u'ipwhitelisted':
       do_update_user = True
-      if sys.argv[i+1].lower() in true_values:
+      if sys.argv[i+1].lower() in TRUE_VALUES:
         body[u'ipWhitelisted'] = True
-      elif sys.argv[i+1].lower() in false_values:
+      elif sys.argv[i+1].lower() in FALSE_VALUES:
         body[u'ipWhitelisted'] = False
       i += 2
     elif sys.argv[i].lower() in [u'sha', u'sha1', u'sha-1']:
@@ -4904,9 +5268,9 @@ def doUpdateUser(users):
       i += 1
     elif sys.argv[i].lower() == u'changepassword':
       do_update_user = True
-      if sys.argv[i+1].lower() in true_values:
+      if sys.argv[i+1].lower() in TRUE_VALUES:
         body[u'changePasswordAtNextLogin'] = True
-      elif sys.argv[i+1].lower() in false_values:
+      elif sys.argv[i+1].lower() in FALSE_VALUES:
         body[u'changePasswordAtNextLogin'] = False
       i += 2
     elif sys.argv[i].lower() in ['org', u'ou']:
@@ -4917,9 +5281,9 @@ def doUpdateUser(users):
       i += 2
     elif sys.argv[i].lower() == u'agreedtoterms':
       do_update_user = True
-      if sys.argv[i+1].lower() in true_values:
+      if sys.argv[i+1].lower() in TRUE_VALUES:
         body[u'agreedToTerms'] = True
-      elif sys.argv[i+1].lower() in false_values:
+      elif sys.argv[i+1].lower() in FALSE_VALUES:
         body[u'agreedToTerms'] = False
       i += 2
     elif sys.argv[i].lower() == u'customerid':
@@ -5337,9 +5701,9 @@ def doUpdateGroup():
             elif params[u'type'] == u'string':
               if params[u'description'].find(value.upper()) != -1: # ugly hack because API wants some values uppercased.
                 value = value.upper()
-              elif value.lower() in true_values:
+              elif value.lower() in TRUE_VALUES:
                 value = u'true'
-              elif value.lower() in false_values:
+              elif value.lower() in FALSE_VALUES:
                 value = u'false'
             break
         if not matches_gs_setting:
@@ -5595,11 +5959,7 @@ def doGetUserInfo(user_email=None):
     try:
       user_email = sys.argv[3]
     except IndexError:
-      try:
-        oauth2file = os.path.join(gamUserConfigDir, os.environ[u'OAUTHFILE'])
-      except KeyError:
-        oauth2file = os.path.join(gamUserConfigDir, u'oauth2.txt')
-      storage = oauth2client.file.Storage(oauth2file)
+      storage = oauth2client.file.Storage(oauth2_txt)
       credentials = storage.get()
       if credentials is None or credentials.invalid:
         doRequestOAuth()
@@ -5609,7 +5969,8 @@ def doGetUserInfo(user_email=None):
     user_email = user_email[4:]
   elif user_email.find(u'@') == -1:
     user_email = u'%s@%s' % (user_email, domain)
-  getSchemas = getAliases = getGroups = getLicenses = True
+  getSchemas = getAliases = getGroups = True
+  getLicenses = showLicenses
   projection = u'full'
   customFieldMask = viewType = None
   i = 4
@@ -5798,7 +6159,8 @@ def doGetGroupInfo(group_name=None):
     group_name = group_name+u'@'+domain
   basic_info = callGAPI(service=cd.groups(), function=u'get', groupKey=group_name)
   try:
-    settings = callGAPI(service=gs.groups(), function=u'get', retry_reasons=[u'serviceLimit'], groupUniqueId=basic_info[u'email'], throw_reasons=u'authError') # Use email address retrieved from cd since GS API doesn't support uid
+    settings = callGAPI(service=gs.groups(), function=u'get', retry_reasons=[u'serviceLimit'], throw_reasons=u'authError',
+                        groupUniqueId=basic_info[u'email']) # Use email address retrieved from cd since GS API doesn't support uid
   except googleapiclient.errors.HttpError:
     pass
   print u''
@@ -6134,7 +6496,9 @@ def doGetOrgInfo():
     name = result[u'orgUnitPath']
     print u'Users: '
     page_message = u'Got %%total_items%% users: %%first_item%% - %%last_item%%\n'
-    users = callGAPIpages(service=cd.users(), function=u'list', items=u'users', page_message=page_message, message_attribute=u'primaryEmail', customer=customerId, query=u"orgUnitPath='%s'" % name, maxResults=500, fields=u'users(primaryEmail,orgUnitPath),nextPageToken')
+    users = callGAPIpages(service=cd.users(), function=u'list', items=u'users', page_message=page_message,
+                          message_attribute=u'primaryEmail', customer=customerId, query=u"orgUnitPath='%s'" % name,
+                          maxResults=500, fields=u'users(primaryEmail,orgUnitPath),nextPageToken')
     for user in users:
       if show_children or (name.lower() == user[u'orgUnitPath'].lower()):
         sys.stdout.write(u' %s' % user[u'primaryEmail'])
@@ -6367,7 +6731,10 @@ def doUpdateDomain():
       else:
         print u'Error: unknown option for "gam update domain sso_settings...": %s' % sys.argv[i]
         sys.exit(9)
-    callGData(service=adminObj, function=u'UpdateSSOSettings', enableSSO=enableSSO, samlSignonUri=samlSignonUri, samlLogoutUri=samlLogoutUri, changePasswordUri=changePasswordUri, ssoWhitelist=ssoWhitelist, useDomainSpecificIssuer=useDomainSpecificIssuer)
+    callGData(service=adminObj, function=u'UpdateSSOSettings', enableSSO=enableSSO,
+              samlSignonUri=samlSignonUri, samlLogoutUri=samlLogoutUri,
+              changePasswordUri=changePasswordUri, ssoWhitelist=ssoWhitelist,
+              useDomainSpecificIssuer=useDomainSpecificIssuer)
   elif command == u'sso_key':
     key_file = sys.argv[4]
     try:
@@ -6442,7 +6809,8 @@ def doUpdateDomain():
       else:
         print u'Error: invalid setting for "gam update domain email_route..."'
         sys.exit(10)
-    callGData(service=adminObj, function=u'AddEmailRoute', routeDestination=destination, routeRewriteTo=rewrite_to, routeEnabled=enabled, bounceNotifications=bounce_notifications, accountHandling=account_handling)
+    callGData(service=adminObj, function=u'AddEmailRoute', routeDestination=destination, routeRewriteTo=rewrite_to, routeEnabled=enabled,
+              bounceNotifications=bounce_notifications, accountHandling=account_handling)
   else:
     print u'Error: that is not a valid "gam update domain" command'
 
@@ -6667,9 +7035,11 @@ def output_csv(csv_list, titles, list_type, todrive):
     drive = buildGAPIObject(u'drive')
     string_data = string_file.getvalue()
     media = googleapiclient.http.MediaInMemoryUpload(string_data, mimetype=u'text/csv')
-    result = callGAPI(service=drive.files(), function=u'insert', convert=convert, body={u'description': u' '.join(sys.argv), u'title': u'%s - %s' % (domain, list_type), u'mimeType': u'text/csv'}, media_body=media)
+    result = callGAPI(service=drive.files(), function=u'insert', convert=convert,
+                      body={u'description': u' '.join(sys.argv), u'title': u'%s - %s' % (domain, list_type), u'mimeType': u'text/csv'},
+                      media_body=media)
     file_url = result[u'alternateLink']
-    if os.path.isfile(os.path.join(gamUserConfigDir, u'nobrowser.txt')):
+    if noBrowser:
       msg_txt = u'Drive file uploaded to:\n %s' % file_url
       msg_subj = u'%s - %s' % (domain, list_type)
       send_email(msg_subj, msg_txt)
@@ -6829,7 +7199,10 @@ def doPrintUsers():
     fields = u'nextPageToken,users(%s)' % u','.join(user_fields)
   sys.stderr.write(u"Getting all users in Google Apps account (may take some time on a large account)...\n")
   page_message = u'Got %%total_items%% users: %%first_item%% - %%last_item%%\n'
-  all_users = callGAPIpages(service=cd.users(), function=u'list', items=u'users', page_message=page_message, message_attribute=u'primaryEmail', customer=customer, domain=domain, fields=fields, showDeleted=deleted_only, maxResults=500, orderBy=orderBy, sortOrder=sortOrder, viewType=viewType, query=query, projection=projection, customFieldMask=customFieldMask)
+  all_users = callGAPIpages(service=cd.users(), function=u'list', items=u'users', page_message=page_message,
+                            message_attribute=u'primaryEmail', customer=customer, domain=domain, fields=fields,
+                            showDeleted=deleted_only, maxResults=500, orderBy=orderBy, sortOrder=sortOrder, viewType=viewType,
+                            query=query, projection=projection, customFieldMask=customFieldMask)
   titles = [u'primaryEmail',]
   attributes = []
   for user in all_users:
@@ -6961,7 +7334,8 @@ def doPrintGroups():
     customerId = None
   sys.stderr.write(u"Retrieving All Groups for Google Apps account (may take some time on a large account)...\n")
   page_message = u'Got %%num_items%% groups: %%first_item%% - %%last_item%%\n'
-  all_groups = callGAPIpages(service=cd.groups(), function=u'list', items=u'groups', page_message=page_message, message_attribute=u'email', customer=customerId, domain=usedomain, userKey=usemember, fields=fields)
+  all_groups = callGAPIpages(service=cd.groups(), function=u'list', items=u'groups', page_message=page_message,
+                             message_attribute=u'email', customer=customerId, domain=usedomain, userKey=usemember, fields=fields)
   total_groups = len(all_groups)
   count = 0
   for group_vals in all_groups:
@@ -7008,7 +7382,8 @@ def doPrintGroups():
       roles = u','.join(roles)
       sys.stderr.write(u' Getting %s for %s (%s of %s)\n' % (roles, group_vals[u'email'], count, total_groups))
       page_message = u'Got %%num_items%% members: %%first_item%% - %%last_item%%\n'
-      all_group_members = callGAPIpages(service=cd.members(), function=u'list', items=u'members', page_message=page_message, message_attribute=u'email', groupKey=group_vals[u'email'], roles=roles, fields=u'nextPageToken,members(email,role)')
+      all_group_members = callGAPIpages(service=cd.members(), function=u'list', items=u'members', page_message=page_message,
+                                        message_attribute=u'email', groupKey=group_vals[u'email'], roles=roles, fields=u'nextPageToken,members(email,role)')
       if members:
         all_true_members = list()
       if managers:
@@ -7162,7 +7537,8 @@ def doPrintAliases():
   titles = [u'Alias', u'Target', u'TargetType']
   sys.stderr.write(u"Retrieving All User Aliases for %s organization (may take some time on large domain)...\n" % domain)
   page_message = u'Got %%num_items%% users %%first_item%% - %%last_item%%\n'
-  all_users = callGAPIpages(service=cd.users(), function=u'list', items=u'users', page_message=page_message, message_attribute=u'primaryEmail', customer=customerId, fields=u'users(primaryEmail,aliases),nextPageToken', maxResults=500)
+  all_users = callGAPIpages(service=cd.users(), function=u'list', items=u'users', page_message=page_message,
+                            message_attribute=u'primaryEmail', customer=customerId, fields=u'users(primaryEmail,aliases),nextPageToken', maxResults=500)
   for user in all_users:
     try:
       for alias in user[u'aliases']:
@@ -7171,7 +7547,8 @@ def doPrintAliases():
       continue
   sys.stderr.write(u"Retrieving All User Aliases for %s organization (may take some time on large domain)...\n" % domain)
   page_message = u'Got %%num_items%% groups %%first_item%% - %%last_item%%\n'
-  all_groups = callGAPIpages(service=cd.groups(), function=u'list', items=u'groups', page_message=page_message, message_attribute=u'email', customer=customerId, fields=u'groups(email,aliases),nextPageToken')
+  all_groups = callGAPIpages(service=cd.groups(), function=u'list', items=u'groups', page_message=page_message,
+                             message_attribute=u'email', customer=customerId, fields=u'groups(email,aliases),nextPageToken')
   for group in all_groups:
     try:
       for alias in group[u'aliases']:
@@ -7397,14 +7774,16 @@ def doPrintLicenses(return_list=False, skus=None):
       product, sku = getProductAndSKU(sku)
       page_message = u'Got %%%%total_items%%%% Licenses for %s...\n' % sku
       try:
-        licenses += callGAPIpages(service=lic.licenseAssignments(), function=u'listForProductAndSku', throw_reasons=[u'invalid', u'forbidden'], page_message=page_message, customerId=domain, productId=product, skuId=sku, fields=u'items(productId,skuId,userId),nextPageToken')
+        licenses += callGAPIpages(service=lic.licenseAssignments(), function=u'listForProductAndSku', throw_reasons=[u'invalid', u'forbidden'],
+                                  page_message=page_message, customerId=domain, productId=product, skuId=sku, fields=u'items(productId,skuId,userId),nextPageToken')
       except googleapiclient.errors.HttpError:
         licenses += []
   else:
     for productId in products:
       page_message = u'Got %%%%total_items%%%% Licenses for %s...\n' % productId
       try:
-        licenses += callGAPIpages(service=lic.licenseAssignments(), function=u'listForProduct', throw_reasons=[u'invalid', u'forbidden'], page_message=page_message, customerId=domain, productId=productId, fields=u'items(productId,skuId,userId),nextPageToken')
+        licenses += callGAPIpages(service=lic.licenseAssignments(), function=u'listForProduct', throw_reasons=[u'invalid', u'forbidden'],
+                                  page_message=page_message, customerId=domain, productId=productId, fields=u'items(productId,skuId,userId),nextPageToken')
       except googleapiclient.errors.HttpError:
         licenses = +[]
   for u_license in licenses:
@@ -7905,7 +8284,9 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
     if not silent:
       sys.stderr.write(u"Getting all users in the Google Apps organization (may take some time on a large domain)...\n")
       page_message = u'Got %%total_items%% users...'
-    members = callGAPIpages(service=cd.users(), function=u'list', items=u'users', page_message=page_message, customer=customerId, fields=u'nextPageToken,users(primaryEmail,id,orgUnitPath)', query=u"orgUnitPath='%s'" % ou, maxResults=500)
+    members = callGAPIpages(service=cd.users(), function=u'list', items=u'users', page_message=page_message,
+                            customer=customerId, fields=u'nextPageToken,users(primaryEmail,id,orgUnitPath)',
+                            query=u"orgUnitPath='%s'" % ou, maxResults=500)
     for member in members:
       if ou.lower() != member[u'orgUnitPath'].lower():
         continue
@@ -7925,7 +8306,8 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
     if not silent:
       sys.stderr.write(u"Getting all users in the Google Apps organization (may take some time on a large domain)...\n")
       page_message = u'Got %%total_items%% users..'
-    members = callGAPIpages(service=cd.users(), function=u'list', items=u'users', page_message=page_message, customer=customerId, fields=u'nextPageToken,users(primaryEmail,id)', query=u"orgUnitPath='%s'" % ou, maxResults=500)
+    members = callGAPIpages(service=cd.users(), function=u'list', items=u'users', page_message=page_message,
+                            customer=customerId, fields=u'nextPageToken,users(primaryEmail,id)', query=u"orgUnitPath='%s'" % ou, maxResults=500)
     for member in members:
       if return_uids:
         users.append(member[u'id'])
@@ -7939,7 +8321,8 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
     if not silent:
       sys.stderr.write(u"Getting all users that match query %s (may take some time on a large domain)...\n" % entity)
     page_message = u'Got %%total_items%% users...'
-    members = callGAPIpages(service=cd.users(), function=u'list', items=u'users', page_message=page_message, customer=customerId, fields=u'nextPageToken,users(primaryEmail,id)', query=entity, maxResults=500)
+    members = callGAPIpages(service=cd.users(), function=u'list', items=u'users', page_message=page_message,
+                            customer=customerId, fields=u'nextPageToken,users(primaryEmail,id)', query=entity, maxResults=500)
     for member in members:
       if return_uids:
         users.append(member[u'id'])
@@ -7976,7 +8359,8 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
         users.append(teacher[u'profile'][u'emailAddress'])
     if entity_type in [u'courseparticipants', u'students']:
       page_message = u'Got %%total_items%% students...'
-      students = callGAPIpages(service=croom.courses().students(), function=u'list', page_message=page_message, items=u'students', courseId=entity)
+      students = callGAPIpages(service=croom.courses().students(), function=u'list',
+                               page_message=page_message, items=u'students', courseId=entity)
       for student in students:
         users.append(student[u'profile'][u'emailAddress'])
   elif entity_type == u'all':
@@ -7986,7 +8370,8 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
       if not silent:
         sys.stderr.write(u"Getting all users in Google Apps account (may take some time on a large account)...\n")
       page_message = u'Got %%total_items%% users...'
-      all_users = callGAPIpages(service=cd.users(), function=u'list', items=u'users', page_message=page_message, customer=customerId, fields=u'nextPageToken,users(primaryEmail,suspended,id)', maxResults=500)
+      all_users = callGAPIpages(service=cd.users(), function=u'list', items=u'users', page_message=page_message,
+                                customer=customerId, fields=u'nextPageToken,users(primaryEmail,suspended,id)', maxResults=500)
       for member in all_users:
         if member[u'suspended'] == False:
           if return_uids:
@@ -8029,11 +8414,7 @@ def OAuthInfo():
   try:
     access_token = sys.argv[3]
   except IndexError:
-    try:
-      oauth2file = os.path.join(gamUserConfigDir, os.environ[u'OAUTHFILE'])
-    except KeyError:
-      oauth2file = os.path.join(gamUserConfigDir, u'oauth2.txt')
-    storage = oauth2client.file.Storage(oauth2file)
+    storage = oauth2client.file.Storage(oauth2_txt)
     credentials = storage.get()
     if credentials is None or credentials.invalid:
       doRequestOAuth()
@@ -8041,17 +8422,12 @@ def OAuthInfo():
     credentials.user_agent = u'GAM %s - http://git.io/gam / %s / Python %s.%s.%s %s / %s %s /' % (__version__, __author__,
                                                                                                   sys.version_info[0], sys.version_info[1], sys.version_info[2],
                                                                                                   sys.version_info[3], platform.platform(), platform.machine())
-    disable_ssl_certificate_validation = False
-    if os.path.isfile(os.path.join(gamUserConfigDir, u'noverifyssl.txt')):
-      disable_ssl_certificate_validation = True
-    http = httplib2.Http(ca_certs=os.path.join(gamSiteConfigDir, u'cacert.pem'),
+    http = httplib2.Http(ca_certs=cacert_pem,
                          disable_ssl_certificate_validation=disable_ssl_certificate_validation)
-    if os.path.isfile(os.path.join(gamUserConfigDir, u'debug.gam')):
-      httplib2.debuglevel = 4
     if credentials.access_token_expired:
       credentials.refresh(http)
     access_token = credentials.access_token
-    print u"\nOAuth File: %s" % oauth2file
+    print u"\nOAuth File: %s" % oauth2_txt
   oa2 = buildGAPIObject(u'oauth2')
   token_info = callGAPI(service=oa2, function=u'tokeninfo', access_token=access_token)
   print u"Client ID: %s" % token_info[u'issued_to']
@@ -8068,24 +8444,15 @@ def OAuthInfo():
     print u'Google Apps Admin: Unknown'
 
 def doDeleteOAuth():
-  try:
-    oauth2file = os.path.join(gamUserConfigDir, os.environ[u'OAUTHFILE'])
-  except KeyError:
-    oauth2file = os.path.join(gamUserConfigDir, u'oauth2.txt')
-  storage = oauth2client.file.Storage(oauth2file)
+  storage = oauth2client.file.Storage(oauth2_txt)
   credentials = storage.get()
   try:
     credentials.revoke_uri = oauth2client.GOOGLE_REVOKE_URI
   except AttributeError:
     print u'Error: Authorization doesn\'t exist'
     sys.exit(1)
-  certFile = os.path.join(gamSiteConfigDir, u'cacert.pem')
-  disable_ssl_certificate_validation = False
-  if os.path.isfile(os.path.join(gamUserConfigDir, u'noverifyssl.txt')):
-    disable_ssl_certificate_validation = True
-  http = httplib2.Http(ca_certs=certFile, disable_ssl_certificate_validation=disable_ssl_certificate_validation)
-  if os.path.isfile(os.path.join(gamUserConfigDir, u'debug.gam')):
-    httplib2.debuglevel = 4
+  http = httplib2.Http(ca_certs=cacert_pem,
+                       disable_ssl_certificate_validation=disable_ssl_certificate_validation)
   sys.stderr.write(u'This OAuth token will self-destruct in 3...')
   time.sleep(1)
   sys.stderr.write(u'2...')
@@ -8097,7 +8464,7 @@ def doDeleteOAuth():
     credentials.revoke(http)
   except oauth2client.client.TokenRevokeError, e:
     print u'Error: %s' % e
-    os.remove(oauth2file)
+    os.remove(oauth2_txt)
 
 class cmd_flags(object):
   def __init__(self):
@@ -8131,10 +8498,6 @@ possible_scopes = [u'https://www.googleapis.com/auth/admin.directory.group',    
                    u'https://www.googleapis.com/auth/cloudprint']			  # Cloudprint API
 
 def doRequestOAuth(incremental_auth=False):
-  try:
-    CLIENT_SECRETS = os.path.join(gamUserConfigDir, os.environ[u'CLIENTSECRETSFILE'])
-  except KeyError:
-    CLIENT_SECRETS = os.path.join(gamUserConfigDir, u'client_secrets.json')
   MISSING_CLIENT_SECRETS_MESSAGE = u"""
 WARNING: Please configure OAuth 2.0
 
@@ -8151,7 +8514,7 @@ https://github.com/jay0lee/GAM/wiki/CreatingClientSecretsFile
 
 for instructions.
 
-""" % CLIENT_SECRETS
+""" % client_secrets_json
 
   menu = u'''Select the authorized scopes for this token. Include a 'r' to grant read-only
 access or an 'a' to grant action-only access.
@@ -8252,27 +8615,18 @@ access or an 'a' to grant action-only access.
       scopes.append(u'%s.readonly' % possible_scopes[i])
     elif selected_scopes[i] == u'A':
       scopes.append(u'%s.action' % possible_scopes[i])
-  FLOW = oauth2client.client.flow_from_clientsecrets(CLIENT_SECRETS,
+  FLOW = oauth2client.client.flow_from_clientsecrets(client_secrets_json,
                                                      scope=scopes,
                                                      message=MISSING_CLIENT_SECRETS_MESSAGE)
-  try:
-    oauth2file = os.path.join(gamUserConfigDir, os.environ[u'OAUTHFILE'])
-  except KeyError:
-    oauth2file = os.path.join(gamUserConfigDir, u'oauth2.txt')
-  storage = oauth2client.file.Storage(oauth2file)
+  storage = oauth2client.file.Storage(oauth2_txt)
   credentials = storage.get()
   flags = cmd_flags()
-  if os.path.isfile(os.path.join(gamUserConfigDir, u'nobrowser.txt')):
+  if noBrowser:
     flags.noauth_local_webserver = True
   if credentials is None or credentials.invalid or incremental_auth:
-    certFile = os.path.join(gamSiteConfigDir, u'cacert.pem')
-    disable_ssl_certificate_validation = False
-    if os.path.isfile(os.path.join(gamUserConfigDir, u'noverifyssl.txt')):
-      disable_ssl_certificate_validation = True
-    http = httplib2.Http(ca_certs=certFile, disable_ssl_certificate_validation=disable_ssl_certificate_validation)
-    if os.path.isfile(os.path.join(gamUserConfigDir, u'debug.gam')):
-      httplib2.debuglevel = 4
-      extra_args[u'prettyPrint'] = True
+    http = httplib2.Http(ca_certs=cacert_pem,
+                         disable_ssl_certificate_validation=disable_ssl_certificate_validation)
+    extra_args[u'prettyPrint'] = True
     try:
       credentials = oauth2client.tools.run_flow(flow=FLOW, storage=storage, flags=flags, http=http)
     except httplib2.CertificateValidationUnsupported:
@@ -8291,15 +8645,11 @@ def run_batch(items):
   python_cmd = [sys.executable.lower(),]
   if not getattr(sys, 'frozen', False): # we're not frozen
     python_cmd.append(os.path.realpath(sys.argv[0]))
-  try:
-    num_worker_threads = int(os.environ[u'GAM_THREADS'])
-  except (TypeError, KeyError):
-    num_worker_threads = 5
   import Queue, threading
   global q
-  q = Queue.Queue(maxsize=num_worker_threads) # q.put() gets blocked when trying to create more items than there are workers
-  print u'starting %s worker threads...' % num_worker_threads
-  for i in range(num_worker_threads):
+  q = Queue.Queue(maxsize=numThreads) # q.put() gets blocked when trying to create more items than there are workers
+  print u'starting %s worker threads...' % numThreads
+  for i in range(numThreads):
     t = threading.Thread(target=batch_worker)
     t.daemon = True
     t.start()
@@ -8321,8 +8671,9 @@ sys.setdefaultencoding(u'UTF-8')
 try:
   if os.name == u'nt':
     sys.argv = win32_unicode_argv() # cleanup sys.argv on Windows
-  setGamDirs()
-  doGAMCheckForUpdates()
+# If the only commands concerned the config file, exit without showing usage
+  if not setGlobalVariables():
+    sys.exit(0)
   if sys.argv[1].lower() == u'batch':
     import shlex
     f = file(sys.argv[2], 'rb')
@@ -8645,8 +8996,7 @@ try:
       print user
       sys.exit(0)
   try:
-    autoBatch = int(os.environ[u'GAM_AUTOBATCH'])
-    if len(users) > autoBatch:
+    if (autoBatchMin > 0) and (len(users) > autoBatchMin):
       items = []
       for user in users:
         items.append([u'user', user] + sys.argv[3:])
