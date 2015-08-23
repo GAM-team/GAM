@@ -500,7 +500,7 @@ def _get_win_folder_with_jna(csidl_name):
     if has_high_char:
         buf = array.zeros('c', buf_size)
         kernel = win32.Kernel32.INSTANCE
-        if kernal.GetShortPathName(dir, buf, buf_size):
+        if kernel.GetShortPathName(dir, buf, buf_size):
             dir = jna.Native.toString(buf.tostring()).rstrip("\0")
 
     return dir

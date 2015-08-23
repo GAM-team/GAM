@@ -396,11 +396,11 @@ def setGlobalVariables():
       sys.stderr.write(u'ERROR: {0}\n'.format(e))
       sys.exit(13)
 
-  def _writeConfigFile():
+  def _writeConfigFile(action):
     try:
       with open(configFileName, 'wb') as f:
         config.write(f)
-      print u'Config File: {0}, Updated'.format(configFileName)
+      print u'Config File: {0}, {1}'.format(configFileName, action)
     except IOError as e:
       sys.stderr.write(u'ERROR: {0}\n'.format(e))
 
@@ -419,9 +419,15 @@ def setGlobalVariables():
   configFileName = os.path.join(GC_VARIABLES[GC_CONFIG_DIR], GAM_CFG)
   if not os.path.isfile(configFileName):
     _getOldEnvVarsSignalFiles()
-    saveRequired = True
+    _writeConfigFile(u'Initialized')
   else:
     _readConfigFile()
+  if not _getCfgBoolean(ConfigParser.DEFAULTSECT, GC_NO_UPDATE_CHECK):
+    lastUpdateCheck = _getCfgInteger(ConfigParser.DEFAULTSECT, GC_LAST_UPDATE_CHECK)
+    latestUpdateCheck = doGAMCheckForUpdates(lastUpdateCheck)
+    if latestUpdateCheck != lastUpdateCheck:
+      config.set(ConfigParser.DEFAULTSECT, GC_LAST_UPDATE_CHECK, str(latestUpdateCheck))
+      _writeConfigFile(u'{0} Updated'.format(GC_LAST_UPDATE_CHECK))
   i = 1
 # select <SectionName> [save]
   if sys.argv[i] == SELECT_CMD:
@@ -553,12 +559,6 @@ def setGlobalVariables():
     gamCacheDir = _getCfgDirectory(sectionName, GC_CACHE_DIR, append=GAMCACHE)
   gamDriveDir = _getCfgDirectory(sectionName, GC_DRIVE_DIR)
   noBrowser = _getCfgBoolean(sectionName, GC_NO_BROWSER)
-  if not _getCfgBoolean(sectionName, GC_NO_UPDATE_CHECK):
-    lastUpdateCheck = _getCfgInteger(ConfigParser.DEFAULTSECT, GC_LAST_UPDATE_CHECK)
-    latestUpdateCheck = doGAMCheckForUpdates(lastUpdateCheck)
-    if latestUpdateCheck != lastUpdateCheck:
-      config.set(ConfigParser.DEFAULTSECT, GC_LAST_UPDATE_CHECK, str(latestUpdateCheck))
-      saveRequired = True
   disable_ssl_certificate_validation = _getCfgBoolean(sectionName, GC_NO_VERIFY_SSL)
   showLicenses = _getCfgBoolean(sectionName, GC_SHOW_LICENSES)
   autoBatchMin = _getCfgInteger(sectionName, GC_AUTO_BATCH_MIN)
@@ -575,7 +575,7 @@ def setGlobalVariables():
   if status[u'errors']:
     sys.exit(13)
   if saveRequired:
-    _writeConfigFile()
+    _writeConfigFile(u'Updated')
   if verifyRequired:
     print u'Section: {0}'.format(sectionName)
     for itemName in sorted(GC_VAR_INFO):
