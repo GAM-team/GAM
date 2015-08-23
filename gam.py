@@ -58,25 +58,44 @@ usergroup_types = [u'user', u'users', u'group', u'ou', u'org',
 
 q = None
 
+# Path to gam, assigned in setGlobalVariables after the command line is cleaned up for Windows
 gamPath = None
-gamDriveDir = None
+# GAM cache directory. If no_cache is specified, this variable will be set to None
 gamCacheDir = None
-noBrowser = False
+# Google Drive download directory
+gamDriveDir = None
+# Disable SSL certificate validation
 disable_ssl_certificate_validation = False
-showLicenses = True
-autoBatchMin = 0
-gamDebugLevel = 0
-maxMessagesToDelete = 1
-numThreads = 5
+# If no_browser is False, writeCSVfile won't open a browser when todrive is set
+# and doRequestOAuth prints a link and waits for the verification code when oauth2.txt is being created
+no_browser = False
+# Default value for gam info user foo@bar.com
+show_licenses = True
+# Automatically generate gam batch command if number of users specified in gam users xxx command exceeds this number
+# Default: 0, don't automatically generate gam batch commands
+auto_batch_min = 0
+# If gam_debug_level > 0: extra_args[u'prettyPrint'] = True, httplib2.debuglevel = gam_debug_level, appsObj.debug = True
+gam_debug_level = 0
+# Maximum number of items to delete without confirmation
+max_messages_to_delete = 1
+# Number of gam threads for batch
+num_threads = 5
+# Domain from gam.cfg or oauth2.txt
 domain = None
+# custmerId from gam.cfg or retrieved from Google
 customerId = None
+# Full path to cacert.pem
 cacert_pem = None
+# Full path to client_secrets.json
 client_secrets_json = None
+# Full path tooauth2.txt
 oauth2_txt = None
+# Full path to oauth2service.json
 oauth2service_json = None
+# Extra arguments to pass to GAPI functions
 extra_args = {u'prettyPrint': False}
 #
-# Command line section/options arguments
+# Command line select/options arguments
 SELECT_CMD = u'select'
 SELECT_SAVE_CMD = u'save'
 OPTIONS_CMD = u'options'
@@ -285,18 +304,17 @@ def integerLimits(minVal, maxVal):
   return u'integer x'
 #
 # Set global variables from config file
-# Check for GAM updates based on status of NoUpdateCheck in config file
+# Check for GAM updates based on status of no_update_check in config file
 #
 def setGlobalVariables():
   import ConfigParser, collections
   from appdirs import user_config_dir, user_cache_dir
 
   global gamPath, gamDriveDir, gamCacheDir
+  global disable_ssl_certificate_validation, no_browser, show_licenses
+  global auto_batch_min, gam_debug_level, max_messages_to_delete, num_threads
   global domain, customerId
-  global maxMessagesToDelete
-  global numThreads, autoBatchMin, showLicenses
-  global oauth2_txt, oauth2service_json, client_secrets_json, cacert_pem
-  global disable_ssl_certificate_validation, gamDebugLevel, noBrowser
+  global cacert_pem, client_secrets_json, oauth2_txt, oauth2service_json
 
   def _getOldEnvVar(itemName, envVar):
     try:
@@ -558,15 +576,13 @@ def setGlobalVariables():
   else:
     gamCacheDir = _getCfgDirectory(sectionName, GC_CACHE_DIR, append=GAMCACHE)
   gamDriveDir = _getCfgDirectory(sectionName, GC_DRIVE_DIR)
-  noBrowser = _getCfgBoolean(sectionName, GC_NO_BROWSER)
+  no_browser = _getCfgBoolean(sectionName, GC_NO_BROWSER)
   disable_ssl_certificate_validation = _getCfgBoolean(sectionName, GC_NO_VERIFY_SSL)
-  showLicenses = _getCfgBoolean(sectionName, GC_SHOW_LICENSES)
-  autoBatchMin = _getCfgInteger(sectionName, GC_AUTO_BATCH_MIN)
-  gamDebugLevel = _getCfgInteger(sectionName, GC_DEBUG_LEVEL)
-  extra_args[u'prettyPrint'] = gamDebugLevel > 0
-  httplib2.debuglevel = gamDebugLevel
-  maxMessagesToDelete = _getCfgInteger(sectionName, GC_MAX_MESSAGES_TO_DELETE)
-  numThreads = _getCfgInteger(sectionName, GC_NUM_THREADS)
+  show_licenses = _getCfgBoolean(sectionName, GC_SHOW_LICENSES)
+  auto_batch_min = _getCfgInteger(sectionName, GC_AUTO_BATCH_MIN)
+  gam_debug_level = _getCfgInteger(sectionName, GC_DEBUG_LEVEL)
+  max_messages_to_delete = _getCfgInteger(sectionName, GC_MAX_MESSAGES_TO_DELETE)
+  num_threads = _getCfgInteger(sectionName, GC_NUM_THREADS)
   domain = _getCfgString(sectionName, GC_DOMAIN)
   customerId = _getCfgString(sectionName, GC_CUSTOMER_ID)
   client_secrets_json = _getCfgFile(sectionName, GC_CLIENT_SECRETS_JSON, gamConfigDir)
@@ -581,6 +597,8 @@ def setGlobalVariables():
     for itemName in sorted(GC_VAR_INFO):
       if (itemName != GC_SECTION) or (sectionName == ConfigParser.DEFAULTSECT):
         print u'  {0}: {1}'.format(itemName, config.get(sectionName, itemName, raw=True))
+  extra_args[u'prettyPrint'] = gam_debug_level > 0
+  httplib2.debuglevel = gam_debug_level
   cacert_pem = os.path.join(gamPath, u'cacert.pem')
   if os.path.isfile(os.path.join(gamConfigDir, u'extra_args.txt')):
     ea_config = ConfigParser.ConfigParser()
@@ -645,7 +663,7 @@ def commonAppsObjInit(appsObj):
                    sys.version_info[0], sys.version_info[1], sys.version_info[2], sys.version_info[3],
                    platform.platform(), platform.machine())
   #Show debugging output if debug.gam exists
-  if gamDebugLevel > 0:
+  if gam_debug_level > 0:
     appsObj.debug = True
   return appsObj
 
@@ -760,13 +778,9 @@ def tryOAuth(gdataObject):
     credentials.refresh(httplib2.Http(ca_certs=cacert_pem,
                                       disable_ssl_certificate_validation=disable_ssl_certificate_validation))
   gdataObject.additional_headers = {u'Authorization': u'Bearer %s' % credentials.access_token}
-  try:
-    domain = os.environ[u'GA_DOMAIN'].lower()
-  except KeyError:
+  if not domain:
     domain = credentials.id_token[u'hd'].lower()
-  try:
-    customerId = os.environ[u'CUSTOMER_ID']
-  except KeyError:
+  if not customerId:
     customerId = u'my_customer'
   gdataObject.domain = domain
   return True
@@ -985,12 +999,28 @@ def buildGAPIObject(api):
   except httplib2.CertificateValidationUnsupported:
     print u'Error: You don\'t have the Python ssl module installed so we can\'t verify SSL Certificates. You can fix this by installing the Python SSL module or you can live on the edge and turn SSL validation off by creating a file called noverifyssl.txt in the same location as gam.exe / gam.py'
     sys.exit(8)
-  try:
-    domain = os.environ[u'GA_DOMAIN']
-    _, customerId_result = service._http.request(u'https://www.googleapis.com/admin/directory/v1/users?domain=%s&maxResults=1&fields=users(customerId)' % domain)
-    customerId_obj = json.loads(customerId_result)
-    customerId = customerId_obj[u'users'][0][u'customerId']
-  except KeyError:
+  except httplib2.ServerNotFoundError as e:
+    print u'ERROR: %s' % (e)
+    sys.exit(8)
+  if domain and not customerId:
+    resp, result = service._http.request(u'https://www.googleapis.com/admin/directory/v1/users?domain=%s&maxResults=1&fields=users(customerId)' % domain)
+    try:
+      resultObj = json.loads(result)
+    except ValueError:
+      print u'ERROR: unexpected response: %s' % result
+      sys.exit(8)
+    if resp[u'status'] == u'403':
+      try:
+        message = resultObj[u'error'][u'errors'][0][u'message']
+      except KeyError:
+        message = resultObj[u'error'][u'message']
+      print u'ERROR: %s' % (message)
+      sys.exit(8)
+    try:
+      customerId = resultObj[u'users'][0][u'customerId']
+    except KeyError:
+      domain = None
+  if (not domain) or (not customerId):
     try:
       domain = credentials.id_token[u'hd']
     except (TypeError, KeyError):
@@ -4102,7 +4132,7 @@ def doLabel(users):
 def doDeleteMessages(trashOrDelete, users):
   query = None
   doIt = False
-  maxToDelete = maxMessagesToDelete
+  maxToDelete = max_messages_to_delete
   i = 5
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'query':
@@ -5982,7 +6012,7 @@ def doGetUserInfo(user_email=None):
   elif user_email.find(u'@') == -1:
     user_email = u'%s@%s' % (user_email, domain)
   getSchemas = getAliases = getGroups = True
-  getLicenses = showLicenses
+  getLicenses = show_licenses
   projection = u'full'
   customFieldMask = viewType = None
   i = 4
@@ -7051,7 +7081,7 @@ def output_csv(csv_list, titles, list_type, todrive):
                       body={u'description': u' '.join(sys.argv), u'title': u'%s - %s' % (domain, list_type), u'mimeType': u'text/csv'},
                       media_body=media)
     file_url = result[u'alternateLink']
-    if noBrowser:
+    if no_browser:
       msg_txt = u'Drive file uploaded to:\n %s' % file_url
       msg_subj = u'%s - %s' % (domain, list_type)
       send_email(msg_subj, msg_txt)
@@ -8633,7 +8663,7 @@ access or an 'a' to grant action-only access.
   storage = oauth2client.file.Storage(oauth2_txt)
   credentials = storage.get()
   flags = cmd_flags()
-  if noBrowser:
+  if no_browser:
     flags.noauth_local_webserver = True
   if credentials is None or credentials.invalid or incremental_auth:
     http = httplib2.Http(ca_certs=cacert_pem,
@@ -8659,9 +8689,9 @@ def run_batch(items):
     python_cmd.append(os.path.realpath(sys.argv[0]))
   import Queue, threading
   global q
-  q = Queue.Queue(maxsize=numThreads) # q.put() gets blocked when trying to create more items than there are workers
-  print u'starting %s worker threads...' % numThreads
-  for i in range(numThreads):
+  q = Queue.Queue(maxsize=num_threads) # q.put() gets blocked when trying to create more items than there are workers
+  print u'starting %s worker threads...' % num_threads
+  for i in range(num_threads):
     t = threading.Thread(target=batch_worker)
     t.daemon = True
     t.start()
@@ -9007,7 +9037,7 @@ try:
     for user in users:
       print user
       sys.exit(0)
-  if (autoBatchMin > 0) and (len(users) > autoBatchMin):
+  if (auto_batch_min > 0) and (len(users) > auto_batch_min):
     items = []
     for user in users:
       items.append([u'user', user] + sys.argv[3:])
