@@ -9007,15 +9007,12 @@ try:
     for user in users:
       print user
       sys.exit(0)
-  try:
-    if (autoBatchMin > 0) and (len(users) > autoBatchMin):
-      items = []
-      for user in users:
-        items.append([u'user', user] + sys.argv[3:])
-      run_batch(items)
-      sys.exit(0)
-  except (TypeError, KeyError):
-    pass
+  if (autoBatchMin > 0) and (len(users) > autoBatchMin):
+    items = []
+    for user in users:
+      items.append([u'user', user] + sys.argv[3:])
+    run_batch(items)
+    sys.exit(0)
   if command == u'transfer':
     transferWhat = sys.argv[4].lower()
     if transferWhat == u'drive':
