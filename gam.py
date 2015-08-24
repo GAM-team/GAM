@@ -780,7 +780,7 @@ def tryOAuth(gdataObject):
   if not GC_Values[GC_DOMAIN]:
     GC_Values[GC_DOMAIN] = credentials.id_token[u'hd'].lower()
   if not GC_Values[GC_CUSTOMER_ID]:
-    GC_Values[GC_CUSTOMER_ID] = u'my_customer'
+    GC_Values[GC_CUSTOMER_ID] = MY_CUSTOMER
   gdataObject.domain = GC_Values[GC_DOMAIN]
   return True
 
@@ -1023,7 +1023,7 @@ def buildGAPIObject(api):
       GC_Values[GC_DOMAIN] = credentials.id_token[u'hd']
     except (TypeError, KeyError):
       GC_Values[GC_DOMAIN] = u'Unknown'
-    GC_Values[GC_CUSTOMER_ID] = u'my_customer'
+    GC_Values[GC_CUSTOMER_ID] = MY_CUSTOMER
   return service
 
 def buildGAPIServiceObject(api, act_as=None, soft_errors=False):
@@ -1156,7 +1156,7 @@ def geturl(url, dst):
 def showReport():
   report = sys.argv[2].lower()
   rep = buildGAPIObject(u'reports')
-  if GC_Values[GC_CUSTOMER_ID] == u'my_customer':
+  if GC_Values[GC_CUSTOMER_ID] == MY_CUSTOMER:
     GC_Values[GC_CUSTOMER_ID] = None
   date = filters = parameters = actorIpAddress = startTime = endTime = eventName = None
   to_drive = False
@@ -6869,7 +6869,7 @@ def doGetDomainInfo():
     sys.exit(0)
   print u'Google Apps Domain: %s' % GC_Values[GC_DOMAIN]
   cd = buildGAPIObject(u'directory')
-  if GC_Values[GC_CUSTOMER_ID] != u'my_customer':
+  if GC_Values[GC_CUSTOMER_ID] != MY_CUSTOMER:
     customer_id = GC_Values[GC_CUSTOMER_ID]
   else:
     result = callGAPI(service=cd.users(), function=u'list', fields=u'users(customerId)', customer=GC_Values[GC_CUSTOMER_ID], sortOrder=u'DESCENDING')
@@ -7296,6 +7296,7 @@ def doPrintUsers():
 def doPrintGroups():
   i = 3
   printname = printdesc = printid = members = owners = managers = settings = admin_created = aliases = todrive = False
+  customer = GC_Values[GC_CUSTOMER_ID]
   usedomain = usemember = None
   listDelimiter = u'\n'
   group_attributes = [{u'Email': u'Email'}]
@@ -7304,6 +7305,7 @@ def doPrintGroups():
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'domain':
       usedomain = sys.argv[i+1].lower()
+      customer = None
       i += 2
     elif sys.argv[i].lower() == u'todrive':
       todrive = True
@@ -7313,6 +7315,7 @@ def doPrintGroups():
       i += 2
     elif sys.argv[i].lower() == u'member':
       usemember = sys.argv[i+1].lower()
+      customer = None
       i += 2
     elif sys.argv[i].lower() == u'name':
       fields += u',groups(name)'
@@ -7368,12 +7371,10 @@ def doPrintGroups():
       showUsage()
       sys.exit(7)
   cd = buildGAPIObject(u'directory')
-  if usedomain or usemember:
-    GC_Values[GC_CUSTOMER_ID] = None
   sys.stderr.write(u"Retrieving All Groups for Google Apps account (may take some time on a large account)...\n")
   page_message = u'Got %%num_items%% groups: %%first_item%% - %%last_item%%\n'
   all_groups = callGAPIpages(service=cd.groups(), function=u'list', items=u'groups', page_message=page_message,
-                             message_attribute=u'email', customer=GC_Values[GC_CUSTOMER_ID], domain=usedomain, userKey=usemember, fields=fields)
+                             message_attribute=u'email', customer=customer, domain=usedomain, userKey=usemember, fields=fields)
   total_groups = len(all_groups)
   count = 0
   for group_vals in all_groups:
@@ -7666,7 +7667,8 @@ def doPrintMobileDevices():
       sys.exit(3)
   sys.stderr.write(u'Retrieving All Mobile Devices for organization (may take some time for large accounts)...\n')
   page_message = u'Got %%num_items%% mobile devices...\n'
-  all_mobile = callGAPIpages(service=cd.mobiledevices(), function=u'list', items=u'mobiledevices', page_message=page_message, customerId=GC_Values[GC_CUSTOMER_ID], query=query, orderBy=orderBy, sortOrder=sortOrder)
+  all_mobile = callGAPIpages(service=cd.mobiledevices(), function=u'list', items=u'mobiledevices', page_message=page_message,
+                             customerId=GC_Values[GC_CUSTOMER_ID], query=query, orderBy=orderBy, sortOrder=sortOrder)
   for mobile in all_mobile:
     mobiledevice = dict()
     for title in mobile.keys():
@@ -8421,7 +8423,8 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
     elif entity == u'cros':
       if not silent:
         sys.stderr.write(u"Getting all CrOS devices in Google Apps account (may take some time on a large account)...\n")
-      all_cros = callGAPIpages(service=cd.chromeosdevices(), function=u'list', items=u'chromeosdevices', customerId=GC_Values[GC_CUSTOMER_ID], fields=u'nextPageToken,chromeosdevices(deviceId)')
+      all_cros = callGAPIpages(service=cd.chromeosdevices(), function=u'list', items=u'chromeosdevices',
+                               customerId=GC_Values[GC_CUSTOMER_ID], fields=u'nextPageToken,chromeosdevices(deviceId)')
       for member in all_cros:
         users.append(member[u'deviceId'])
       if not silent:
