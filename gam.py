@@ -5189,7 +5189,7 @@ def doUpdateUser(users):
       user_domain = user_primary[user_primary.find(u'@')+1:]
       body[u'primaryEmail'] = u'vfe.%s.%05d@%s' % (user_name, random.randint(1, 99999), user_domain)
       body[u'emails'] = [{u'type': u'custom', u'customType': u'former_employee', u'primary': False, u'address': user_primary}]
-    sys.stdout.write(u'updating user %s...\n' % user)
+    sys.stderr.write(u'updating user %s...\n' % user)
     if do_update_user:
       callGAPI(service=cd.users(), function=u'update', userKey=user, body=body)
     if do_admin_user:
