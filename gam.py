@@ -5594,7 +5594,8 @@ def doUpdateUser(users):
       body[u'emails'] = [{u'type': u'custom', u'customType': u'former_employee', u'primary': False, u'address': user_primary}]
     sys.stderr.write(u'updating user %s...\n' % user)
     if do_update_user:
-      callGAPI(service=cd.users(), function=u'patch', userKey=user, body=body)
+#      callGAPI(service=cd.users(), function=u'patch', userKey=user, body=body)
+      callGAPI(service=cd.users(), function=u'update', userKey=user, body=body)
     if do_admin_user:
       callGAPI(service=cd.users(), function=u'makeAdmin', userKey=user, body={u'status': is_admin})
 
