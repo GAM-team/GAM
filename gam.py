@@ -5961,7 +5961,8 @@ def doUpdateOrg():
         i += 1
     if orgUnitPath[0] == u'/': # we don't want a / at the beginning for OU updates
       orgUnitPath = orgUnitPath[1:]
-    callGAPI(service=cd.orgunits(), function=u'patch', customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=orgUnitPath, body=body)
+#    callGAPI(service=cd.orgunits(), function=u'patch', customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=orgUnitPath, body=body)
+    callGAPI(service=cd.orgunits(), function=u'update', customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=orgUnitPath, body=body)
 
 def doWhatIs():
   email = sys.argv[2]
