@@ -43,168 +43,24 @@ import mimetypes
 import ntpath
 
 is_frozen = getattr(sys, 'frozen', '')
-
-GAM = u'GAM'
-TRUE = u'true'
-FALSE = u'false'
-TRUE_VALUES = [TRUE, u'on', u'yes', u'enabled', u'1']
-FALSE_VALUES = [FALSE, u'off', u'no', u'disabled', u'0']
-TRUE_FALSE = [TRUE, FALSE]
+extra_args = {u'prettyPrint': False}
+true_values = [u'on', u'yes', u'enabled', u'true', u'1']
+false_values = [u'off', u'no', u'disabled', u'false', u'0']
 usergroup_types = [u'user', u'users', u'group', u'ou', u'org',
                    u'ou_and_children', u'ou_and_child', u'query',
                    u'license', u'licenses', u'licence', u'licences', u'file', u'all',
                    u'cros']
-GAMCACHE = u'gamcache'
-MY_CUSTOMER = u'my_customer'
-UNKNOWN_DOMAIN = u'Unknown'
-FN_CACERT_PEM = u'cacert.pem'
-FN_CLIENT_SECRETS_JSON = u'client_secrets.json'
-FN_OAUTH2_TXT = u'oauth2.txt'
-FN_OAUTH2SERVICE_JSON = u'oauth2service.json'
-FN_EXTRA_ARGS_TXT = u'extra-args.txt'
 
+customerId = None
+domain = None
 q = None
 
-#
-# Gam configuration file
-GAM_CFG = u'gam.cfg'
-# Path to gam, assigned in setGlobalVariables after the command line is cleaned up for Windows
-GC_GAM_PATH = u'gam_path'
-# Full path to cacert.pem
-GC_CACERT_PEM = u'cacert_pem'
-# Extra arguments to pass to GAPI functions
-GC_EXTRA_ARGS = u'extra_args'
-#
-# Automatically generate gam batch command if number of users specified in gam users xxx command exceeds this number
-# Default: 0, don't automatically generate gam batch commands
-GC_AUTO_BATCH_MIN = u'auto_batch_min'
-# GAM cache directory. If no_cache is specified, this variable will be set to None
-GC_CACHE_DIR = u'cache_dir'
-# Full path to client_secrets.json
-GC_CLIENT_SECRETS_JSON = u'client_secrets_json'
-# Directory containing client_secrets.json, oauth2.txt, oauth2service.json, extra_args.txt
-GC_CONFIG_DIR = u'config_dir'
-# custmerId from gam.cfg or retrieved from Google
-GC_CUSTOMER_ID = u'customer_id'
-# If gam_debug_level > 0: extra_args[u'prettyPrint'] = True, httplib2.debuglevel = gam_debug_level, appsObj.debug = True
-GC_DEBUG_LEVEL = u'debug_level'
-# Domain from gam.cfg or oauth2.txt
-GC_DOMAIN = u'domain'
-# Google Drive download directory
-GC_DRIVE_DIR = u'drive_dir'
-# Time of last GAM update check
-GC_LAST_UPDATE_CHECK = u'last_update_check'
-# Maximum number of items to delete without confirmation
-GC_MAX_MESSAGES_TO_DELETE = u'max_messages_to_delete'
-# If no_browser is False, writeCSVfile won't open a browser when todrive is set
-# and doRequestOAuth prints a link and waits for the verification code when oauth2.txt is being created
-GC_NO_BROWSER = u'no_browser'
-# Disable GAM API caching
-GC_NO_CACHE = u'no_cache'
-# Disable GAM update check
-GC_NO_UPDATE_CHECK = u'no_update_check'
-# Disable SSL certificate validation
-GC_NO_VERIFY_SSL = u'no_verify_ssl'
-# Number of gam threads for batch
-GC_NUM_THREADS = u'num_threads'
-# Full path to oauth2.txt
-GC_OAUTH2_TXT = u'oauth2_txt'
-# Full path to oauth2service.json
-GC_OAUTH2SERVICE_JSON = u'oauth2service_json'
-# Default section to user for processing
-GC_SECTION = u'section'
-# Default value for gam info user foo@bar.com
-GC_SHOW_LICENSES = u'show_licenses'
+gamPath = None
+gamSiteConfigDir = None
+gamUserConfigDir = None
+gamDriveDir = None
+gamCacheDir = None
 
-GC_DEFAULTS = {
-  GC_AUTO_BATCH_MIN: 0,
-  GC_CACHE_DIR: u'',
-  GC_CLIENT_SECRETS_JSON: FN_CLIENT_SECRETS_JSON,
-  GC_CONFIG_DIR: u'',
-  GC_CUSTOMER_ID: u'',
-  GC_DEBUG_LEVEL: 0,
-  GC_DOMAIN: u'',
-  GC_DRIVE_DIR: u'',
-  GC_LAST_UPDATE_CHECK: 0,
-  GC_MAX_MESSAGES_TO_DELETE: 1,
-  GC_NO_BROWSER: FALSE,
-  GC_NO_CACHE: FALSE,
-  GC_NO_UPDATE_CHECK: FALSE,
-  GC_NO_VERIFY_SSL: FALSE,
-  GC_NUM_THREADS: 5,
-  GC_OAUTH2_TXT: FN_OAUTH2_TXT,
-  GC_OAUTH2SERVICE_JSON: FN_OAUTH2SERVICE_JSON,
-  GC_SECTION: u'',
-  GC_SHOW_LICENSES: TRUE,
-  }
-
-GC_Values = {}
-
-GC_TYPE_BOOLEAN = u'bool'
-GC_TYPE_DIRECTORY = u'dire'
-GC_TYPE_FILE = u'file'
-GC_TYPE_INTEGER = u'inte'
-GC_TYPE_STRING = u'stri'
-
-GC_VAR_INFO = {
-  GC_AUTO_BATCH_MIN: {u'type': GC_TYPE_INTEGER, u'limits': (0, None)},
-  GC_CACHE_DIR: {u'type': GC_TYPE_DIRECTORY, u'append': GAMCACHE},
-  GC_CLIENT_SECRETS_JSON: {u'type': GC_TYPE_FILE},
-  GC_CONFIG_DIR: {u'type': GC_TYPE_DIRECTORY, u'append': u''},
-  GC_CUSTOMER_ID: {u'type': GC_TYPE_STRING},
-  GC_DEBUG_LEVEL: {u'type': GC_TYPE_INTEGER, u'limits': (0, None)},
-  GC_DOMAIN: {u'type': GC_TYPE_STRING},
-  GC_DRIVE_DIR: {u'type': GC_TYPE_DIRECTORY, u'append': u'',},
-  GC_LAST_UPDATE_CHECK: {u'type': GC_TYPE_INTEGER, u'limits': (0, None)},
-  GC_MAX_MESSAGES_TO_DELETE: {u'type': GC_TYPE_INTEGER, u'limits': (0, None)},
-  GC_NO_BROWSER: {u'type': GC_TYPE_BOOLEAN},
-  GC_NO_CACHE: {u'type': GC_TYPE_BOOLEAN},
-  GC_NO_UPDATE_CHECK: {u'type': GC_TYPE_BOOLEAN},
-  GC_NO_VERIFY_SSL: {u'type': GC_TYPE_BOOLEAN},
-  GC_NUM_THREADS: {u'type': GC_TYPE_INTEGER, u'limits': (1, None)},
-  GC_OAUTH2_TXT: {u'type': GC_TYPE_FILE},
-  GC_OAUTH2SERVICE_JSON: {u'type': GC_TYPE_FILE},
-  GC_SECTION: {u'type': GC_TYPE_STRING},
-  GC_SHOW_LICENSES: {u'type': GC_TYPE_BOOLEAN},
-  }
-
-GC_VAR_ALIASES = {
-  u'autobatchmin':  u'auto_batch_min',
-  u'cachedir':  u'cache_dir',
-  u'clientsecretsjson':  u'client_secrets_json',
-  u'configdir':  u'config_dir',
-  u'customerid':  u'customer_id',
-  u'debuglevel':  u'debug_level',
-  u'domain':  u'domain',
-  u'drivedir':  u'drive_dir',
-  u'lastupdatecheck':  u'last_update_check',
-  u'maxmessagestodelete':  u'max_messages_to_delete',
-  u'nobrowser':  u'no_browser',
-  u'nocache':  u'no_cache',
-  u'noupdatecheck':  u'no_update_check',
-  u'noverifyssl':  u'no_verify_ssl',
-  u'numthreads':  u'num_threads',
-  u'oauth2txt':  u'oauth2_txt',
-  u'oauth2servicejson':  u'oauth2service_json',
-  u'section':  u'section',
-  u'showlicenses':  u'show_licenses',
-  }
-
-# Command line select/options arguments
-SELECT_CMD = u'select'
-SELECT_SAVE_CMD = u'save'
-SELECT_VERIFY_CMD = u'verify'
-OPTIONS_CMD = u'options'
-OPTIONS_CREATE_CMD = u'create'
-OPTIONS_DELETE_CMD = u'delete'
-OPTIONS_SELECT_CMD = u'select'
-OPTIONS_RESET_CMD = u'reset'
-OPTIONS_SAVE_CMD = u'save'
-OPTIONS_SET_CMD = u'set'
-OPTIONS_VERIFY_CMD = u'verify'
-OPTIONS_DONE_CMD = u'done'
-OPTIONS_SUB_CMDS = [OPTIONS_CREATE_CMD, OPTIONS_DELETE_CMD, OPTIONS_SELECT_CMD, OPTIONS_RESET_CMD, OPTIONS_SET_CMD, OPTIONS_SAVE_CMD, OPTIONS_VERIFY_CMD, OPTIONS_DONE_CMD]
-#
 def convertUTF8(data):
   import collections
   if isinstance(data, str):
@@ -295,346 +151,55 @@ gam.exe update group announcements add member jsmith
 ...
 
 '''
-def integerLimits(minVal, maxVal):
-  if (minVal != None) and (maxVal != None):
-    return u'integer {0}<=x<={1}'.format(minVal, maxVal)
-  if minVal != None:
-    return u'integer x>={0}'.format(minVal)
-  if maxVal != None:
-    return u'integer x<={0}'.format(maxVal)
-  return u'integer x'
-#
-# Set global variables from config file
-# Check for GAM updates based on status of no_update_check in config file
-#
-def setGlobalVariables():
-  import ConfigParser, collections
-  from appdirs import user_config_dir, user_cache_dir
 
-  def _getOldEnvVar(itemName, envVar):
-    try:
-      value = os.environ[envVar]
-      config.set(ConfigParser.DEFAULTSECT, itemName, value)
-    except KeyError:
-      config.set(ConfigParser.DEFAULTSECT, itemName, str(GC_DEFAULTS[itemName]))
+def setGamDirs():
+  global gamPath, gamSiteConfigDir, gamUserConfigDir, gamDriveDir, gamCacheDir
 
-  def _getOldSignalFile(itemName, fileName, trueValue=TRUE, falseValue=FALSE):
-    config.set(ConfigParser.DEFAULTSECT, itemName, trueValue if os.path.isfile(os.path.join(GC_Values[GC_GAM_PATH], fileName)) else falseValue)
+  gamPath = os.path.dirname(os.path.realpath(sys.argv[0]))
+  try:
+    gamSiteConfigDir = os.environ[u'GAMSITECONFIGDIR']
+  except KeyError:
+    gamSiteConfigDir = gamPath
+  try:
+    gamUserConfigDir = os.environ[u'GAMUSERCONFIGDIR']
+  except KeyError:
+    gamUserConfigDir = gamPath
+  try:
+    gamCacheDir = os.environ[u'GAMCACHEDIR']
+  except KeyError:
+    gamCacheDir = os.path.join(gamPath, u'gamcache')
+  try:
+    gamDriveDir = os.environ[u'GAMDRIVEDIR']
+  except KeyError:
+    gamDriveDir = gamPath
 
-  def _getOldEnvVarsSignalFiles():
-    _getOldEnvVar(GC_CONFIG_DIR, u'GAMUSERCONFIGDIR')
-    _getOldEnvVar(GC_CACHE_DIR, u'GAMCACHEDIR')
-    _getOldEnvVar(GC_DRIVE_DIR, u'GAMDRIVEDIR')
-    _getOldEnvVar(GC_OAUTH2_TXT, u'OAUTHFILE')
-    _getOldEnvVar(GC_OAUTH2SERVICE_JSON, u'OAUTHSERVICEFILE')
-    _getOldEnvVar(GC_CLIENT_SECRETS_JSON, u'CLIENTSECRETSFILE')
-    _getOldEnvVar(GC_DOMAIN, u'GA_DOMAIN')
-    _getOldEnvVar(GC_CUSTOMER_ID, u'CUSTOMER_ID')
-    _getOldEnvVar(GC_NUM_THREADS, u'GAM_THREADS')
-    _getOldEnvVar(GC_AUTO_BATCH_MIN, u'GAM_AUTOBATCH')
-    _getOldSignalFile(GC_DEBUG_LEVEL, u'debug.gam', trueValue=u'4', falseValue=u'0')
-    _getOldSignalFile(GC_NO_VERIFY_SSL, u'noverifyssl.txt')
-    _getOldSignalFile(GC_NO_BROWSER, u'nobrowser.txt')
-    _getOldSignalFile(GC_NO_CACHE, u'nocache.txt')
-    _getOldSignalFile(GC_NO_UPDATE_CHECK, u'noupdatecheck.txt')
-    try:
-      with open(os.path.join(GC_Values[GC_GAM_PATH], u'lastupdatecheck.txt'), 'r') as f:
-        latestUpdateCheck = int(f.readline())
-    except:
-      latestUpdateCheck = 0
-    config.set(ConfigParser.DEFAULTSECT, GC_LAST_UPDATE_CHECK, str(latestUpdateCheck))
-
-  def _getCfgBoolean(sectionName, itemName):
-    value = config.get(sectionName, itemName, raw=True)
-    if value in TRUE_VALUES:
-      return True
-    if value in FALSE_VALUES:
-      return False
-    sys.stderr.write(u'ERROR: Config File: {0}, Section: {1}, Item: {2}, Value: {3}, expected {4}\n'.format(configFileName, sectionName, itemName, value, u','.join(TRUE_FALSE)))
-    status[u'errors'] = True
-    return False
-
-  def _getCfgInteger(sectionName, itemName):
-    value = config.get(sectionName, itemName, raw=True)
-    minVal, maxVal = GC_VAR_INFO[itemName][u'limits']
-    try:
-      number = int(value)
-      if (number >= minVal) and (not maxVal or (number <= maxVal)):
-        return number
-    except ValueError:
-      pass
-    sys.stderr.write(u'ERROR: Config File: {0}, Section: {1}, Item: {2}, Value: {3}, expected {4}\n'.format(configFileName, sectionName, itemName, value, integerLimits(minVal, maxVal)))
-    status[u'errors'] = True
-    return 0
-
-  def _getCfgSection(sectionName, itemName):
-    value = config.get(sectionName, itemName, raw=True)
-    if not value:
-      return ConfigParser.DEFAULTSECT
-    if config.has_section(value):
-      return value
-    sys.stderr.write(u'ERROR: Config File: {0}, Section: {1}, Item: {2}, Value: {3}, Not Found\n'.format(configFileName, sectionName, itemName, value))
-    status[u'errors'] = True
-    return ConfigParser.DEFAULTSECT
-
-  def _getCfgString(sectionName, itemName):
-    return config.get(sectionName, itemName, raw=True)
-
-  def _getCfgDirectory(sectionName, itemName, append=u''):
-    value = config.get(sectionName, itemName, raw=True)
-    if not value:
-      value = os.path.join(GC_Values[GC_GAM_PATH], append)
-    if os.path.isdir(value):
-      return value
-    sys.stderr.write(u'ERROR: Config File: {0}, Section: {1}, Item: {2}, Value: {3}, Invalid Path\n'.format(configFileName, sectionName, itemName, value))
-    status[u'errors'] = True
-    return u'.'
-
-  def _getCfgFile(sectionName, itemName, path):
-    value = os.path.join(path, config.get(sectionName, itemName, raw=True))
-    if os.path.isfile(value):
-      return value
-    sys.stderr.write(u'ERROR: Config File: {0}, Section: {1}, Item: {2}, Value: {3}, Not Found\n'.format(configFileName, sectionName, itemName, value))
-    status[u'errors'] = True
-    return u''
-
-  def _readConfigFile():
-    try:
-      with open(configFileName, 'rb') as f:
-        config.readfp(f)
-    except (ConfigParser.MissingSectionHeaderError, ConfigParser.ParsingError) as e:
-      sys.stderr.write(u'ERROR: Config File: {0}, Invalid: {1}\n'.format(configFileName, e.message))
-      sys.exit(13)
-    except IOError as e:
-      sys.stderr.write(u'ERROR: {0}\n'.format(e))
-      sys.exit(13)
-
-  def _writeConfigFile(action):
-    try:
-      with open(configFileName, 'wb') as f:
-        config.write(f)
-      print u'Config File: {0}, {1}'.format(configFileName, action)
-    except IOError as e:
-      sys.stderr.write(u'ERROR: {0}\n'.format(e))
-
-  status = {u'errors': False}
-  saveRequired = verifyRequired = False
-  GC_Values[GC_GAM_PATH] = os.path.dirname(os.path.realpath(sys.argv[0]))
-  GC_DEFAULTS[GC_CONFIG_DIR] = user_config_dir(appname=GAM, appauthor=False)
-  if not os.path.exists(GC_DEFAULTS[GC_CONFIG_DIR]):
-    GC_DEFAULTS[GC_CONFIG_DIR] = GC_Values[GC_GAM_PATH]
-  GC_DEFAULTS[GC_CACHE_DIR] = user_cache_dir(appname=GAM, appauthor=False)
-  if not os.path.exists(GC_DEFAULTS[GC_CACHE_DIR]):
-    GC_DEFAULTS[GC_CACHE_DIR] = os.path.join(GC_Values[GC_GAM_PATH], GAMCACHE)
-  GC_DEFAULTS[GC_DRIVE_DIR] = GC_Values[GC_GAM_PATH]
-
-  config = ConfigParser.SafeConfigParser(defaults=collections.OrderedDict(sorted(GC_DEFAULTS.items(), key=lambda t: t[0])))
-  configFileName = os.path.join(GC_DEFAULTS[GC_CONFIG_DIR], GAM_CFG)
-  if not os.path.isfile(configFileName):
-    _getOldEnvVarsSignalFiles()
-    _writeConfigFile(u'Initialized')
-  else:
-    _readConfigFile()
-  if not _getCfgBoolean(ConfigParser.DEFAULTSECT, GC_NO_UPDATE_CHECK):
-    lastUpdateCheck = _getCfgInteger(ConfigParser.DEFAULTSECT, GC_LAST_UPDATE_CHECK)
-    latestUpdateCheck = doGAMCheckForUpdates(lastUpdateCheck)
-    if latestUpdateCheck != lastUpdateCheck:
-      config.set(ConfigParser.DEFAULTSECT, GC_LAST_UPDATE_CHECK, str(latestUpdateCheck))
-      _writeConfigFile(u'{0} Updated'.format(GC_LAST_UPDATE_CHECK))
-  i = 1
-# select <SectionName> [save]
-  if sys.argv[i] == SELECT_CMD:
-    sectionName = sys.argv[i+1]
-    i += 2
-    if (not sectionName) or (sectionName.upper() == ConfigParser.DEFAULTSECT):
-      sectionName = ConfigParser.DEFAULTSECT
-    elif not config.has_section(sectionName):
-      sys.stderr.write(u'ERROR: Section: {0}, Not Found\n'.format(sectionName))
-      sys.exit(3)
-    while i < len(sys.argv):
-      my_arg = sys.argv[i].lower()
-      if my_arg == SELECT_SAVE_CMD:
-        i += 1
-        config.set(ConfigParser.DEFAULTSECT, GC_SECTION, sectionName)
-        saveRequired = True
-      elif my_arg == SELECT_VERIFY_CMD:
-        i += 1
-        verifyRequired = True
-      else:
-        break
-# options ((create <SectionName>)|(delete <SectionName>)|(select <SectionName>)|(reset <VariableName>)|(set <VariableName> <Value>)| save|verify)* [done]
-  elif sys.argv[i] == OPTIONS_CMD:
-    i += 1
-    sectionName = _getCfgSection(ConfigParser.DEFAULTSECT, GC_SECTION)
-    while i < len(sys.argv):
-      my_arg = sys.argv[i].lower()
-      if my_arg not in OPTIONS_SUB_CMDS:
-        sys.stderr.write(u'ERROR: options cmd  should be {0}. Got {1}\n'.format(u','.join(OPTIONS_SUB_CMDS), my_arg))
-        sys.exit(3)
-      i += 1
-      if my_arg == OPTIONS_CREATE_CMD: # Create section
-        value = sys.argv[i]
-        i += 1
-        if value.upper() == ConfigParser.DEFAULTSECT:
-          sys.stderr.write(u'ERROR: Section: {0}, Invalid\n'.format(value))
-          sys.exit(3)
-        if config.has_section(value):
-          sys.stderr.write(u'ERROR: Section: {0}, Duplicate\n'.format(value))
-          sys.exit(3)
-        config.add_section(value)
-        sectionName = value
-      elif my_arg == OPTIONS_DELETE_CMD: # Delete section
-        value = sys.argv[i]
-        i += 1
-        if value.upper() == ConfigParser.DEFAULTSECT:
-          sys.stderr.write(u'ERROR: Section: {0}, Invalid\n'.format(value))
-          sys.exit(3)
-        if not config.has_section(value):
-          sys.stderr.write(u'ERROR: Section: {0}, Not Found\n'.format(value))
-          sys.exit(3)
-        config.remove_section(value)
-        sectionName = ConfigParser.DEFAULTSECT
-        if config.get(ConfigParser.DEFAULTSECT, GC_SECTION, raw=True) == value:
-          config.set(ConfigParser.DEFAULTSECT, GC_SECTION, u'')
-      elif my_arg == OPTIONS_SELECT_CMD: # Select section
-        value = sys.argv[i]
-        i += 1
-        if (not value) or (value.upper() == ConfigParser.DEFAULTSECT):
-          value = u''
-          sectionName = ConfigParser.DEFAULTSECT
-        elif not config.has_section(value):
-          sys.stderr.write(u'ERROR: Section: {0}, Not Found\n'.format(value))
-          sys.exit(3)
-        else:
-          sectionName = value
-      elif my_arg == OPTIONS_RESET_CMD: # Reset variable
-        itemName = sys.argv[i].lower().replace(u'_', u'')
-        i += 1
-        if itemName not in GC_VAR_ALIASES:
-          sys.stderr.write(u'ERROR: key should be {0}. Got {1}\n'.format(u','.join(sorted(GC_DEFAULTS.keys())), itemName))
-          sys.exit(3)
-        itemName = GC_VAR_ALIASES[itemName]
-        if itemName != GC_SECTION:
-          if sectionName != ConfigParser.DEFAULTSECT:
-            config.remove_option(sectionName, itemName)
-          else:
-            config.set(ConfigParser.DEFAULTSECT, itemName, str(GC_DEFAULTS[itemName]))
-        else:
-          config.set(ConfigParser.DEFAULTSECT, itemName, u'')
-      elif my_arg == OPTIONS_SET_CMD: # Set variable
-        itemName = sys.argv[i].lower().replace(u'_', u'')
-        i += 1
-        if itemName not in GC_VAR_ALIASES:
-          sys.stderr.write(u'ERROR: key should be {0}. Got {1}\n'.format(u','.join(sorted(GC_DEFAULTS.keys())), itemName))
-          sys.exit(3)
-        itemName = GC_VAR_ALIASES[itemName]
-        value = sys.argv[i]
-        i += 1
-        if itemName == GC_SECTION:
-          if (not value) or (value.upper() == ConfigParser.DEFAULTSECT):
-            value = u''
-          elif not config.has_section(value):
-            sys.stderr.write(u'ERROR: Section: {0}, Not Found\n'.format(value))
-            sys.exit(3)
-          config.set(ConfigParser.DEFAULTSECT, GC_SECTION, value)
-          continue
-        elif GC_VAR_INFO[itemName][u'type'] == GC_TYPE_BOOLEAN:
-          value = value.lower()
-          if (value not in TRUE_VALUES) and (value not in FALSE_VALUES):
-            sys.stderr.write(u'ERROR: expected {0}, got {1}\n'.format(u'|'.join(TRUE_FALSE), value))
-            sys.exit(3)
-        elif GC_VAR_INFO[itemName][u'type'] == GC_TYPE_INTEGER:
-          minVal, maxVal = GC_VAR_INFO[itemName][u'limits']
-          try:
-            value = int(value)
-            if (value < minVal) or (maxVal and (value > maxVal)):
-              sys.stderr.write(u'ERROR: expected {0}, got {1}\n'.format(integerLimits(minVal, maxVal), value))
-              sys.exit(3)
-            value = str(value)
-          except ValueError:
-            sys.stderr.write(u'ERROR: expected {0}, got {1}\n'.format(integerLimits(minVal, maxVal), value))
-            sys.exit(3)
-        elif GC_VAR_INFO[itemName][u'type'] == GC_TYPE_DIRECTORY:
-          if not os.path.isdir(value):
-            sys.stderr.write(u'ERROR: {0}, invalid path\n'.format(value))
-            sys.exit(3)
-        elif GC_VAR_INFO[itemName][u'type'] == GC_TYPE_FILE:
-          if not value:
-            sys.stderr.write(u'ERROR: expected filename, got {0}\n'.format(value))
-            sys.exit(3)
-        config.set(sectionName, itemName, value)
-      elif my_arg == OPTIONS_SAVE_CMD: # Save config file
-        saveRequired = True
-      elif my_arg == OPTIONS_VERIFY_CMD: # Verify section values
-        verifyRequired = True
-      else: # elif my_arg == OPTIONS_DONE_CMD:
-        break
-# Use default section
-  else:
-    sectionName = _getCfgSection(ConfigParser.DEFAULTSECT, GC_SECTION)
-# Assign directories first
-  for itemName in [GC_CONFIG_DIR, GC_CACHE_DIR, GC_DRIVE_DIR]:
-    GC_Values[itemName] = _getCfgDirectory(sectionName, itemName, append=GC_VAR_INFO[itemName][u'append'])
-# Everything else
-  for itemName in GC_VAR_INFO:
-    varType = GC_VAR_INFO[itemName][u'type']
-    if varType == GC_TYPE_BOOLEAN:
-      GC_Values[itemName] = _getCfgBoolean(sectionName, itemName)
-    elif varType == GC_TYPE_INTEGER:
-      GC_Values[itemName] = _getCfgInteger(sectionName, itemName)
-    elif varType == GC_TYPE_STRING:
-      GC_Values[itemName] = _getCfgString(sectionName, itemName)
-    elif varType == GC_TYPE_FILE:
-      GC_Values[itemName] = _getCfgFile(sectionName, itemName, GC_Values[GC_CONFIG_DIR])
-  if GC_Values[GC_NO_CACHE]:
-    GC_Values[GC_CACHE_DIR] = None
-  if status[u'errors']:
-    sys.exit(13)
-  if saveRequired:
-    _writeConfigFile(u'Updated')
-  if verifyRequired:
-    print u'Section: {0}'.format(sectionName)
-    for itemName in sorted(GC_VAR_INFO):
-      if (itemName != GC_SECTION) or (sectionName == ConfigParser.DEFAULTSECT):
-        print u'  {0}: {1}'.format(itemName, GC_Values[itemName])
-# Globals derived from config file values
-  GC_Values[GC_CACERT_PEM] = os.path.join(GC_Values[GC_GAM_PATH], FN_CACERT_PEM)
-  GC_Values[GC_EXTRA_ARGS] = {u'prettyPrint': GC_Values[GC_DEBUG_LEVEL] > 0}
-  httplib2.debuglevel = GC_Values[GC_DEBUG_LEVEL]
-  if os.path.isfile(os.path.join(GC_Values[GC_CONFIG_DIR], FN_EXTRA_ARGS_TXT)):
-    ea_config = ConfigParser.ConfigParser()
-    ea_config.optionxform = str
-    ea_config.read(os.path.join(GC_Values[GC_CONFIG_DIR], FN_EXTRA_ARGS_TXT))
-    GC_Values[GC_EXTRA_ARGS].update(dict(ea_config.items(u'extra-args')))
-# Return True if no section/options commands were executed
-  if i == 1:
-    return True
-# Move remaining args down to 1
-  j = 1
-  while i < len(sys.argv):
-    sys.argv[j] = sys.argv[i]
-    j += 1
-    i += 1
-  del sys.argv[j:]
-# Return True if section/options commands were executed and there are more arguments
-# Return False if section/options commands were executed and there are no more arguments
-  return j < len(sys.argv)
+  if os.path.isfile(os.path.join(gamUserConfigDir, u'nocache.txt')):
+    gamCacheDir = None
 
 def doGAMVersion():
   import struct
   print u'GAM %s - http://git.io/gam\n%s\nPython %s.%s.%s %s-bit %s\ngoogle-api-python-client %s\n%s %s\nPath: %s' % (__version__, __author__,
                    sys.version_info[0], sys.version_info[1], sys.version_info[2], struct.calcsize('P')*8, sys.version_info[3], googleapiclient.__version__,
-                   platform.platform(), platform.machine(), GC_Values[GC_GAM_PATH])
+                   platform.platform(), platform.machine(), gamPath)
 
-def doGAMCheckForUpdates(lastUpdateCheck):
+def doGAMCheckForUpdates():
   import urllib2
+  if os.path.isfile(os.path.join(gamUserConfigDir, u'noupdatecheck.txt')):
+    return
   try:
     current_version = float(__version__)
   except ValueError:
     return
+  if os.path.isfile(os.path.join(gamUserConfigDir, u'lastupdatecheck.txt')):
+    f = open(os.path.join(gamUserConfigDir, u'lastupdatecheck.txt'), 'r')
+    last_check_time = int(f.readline())
+    f.close()
+  else:
+    last_check_time = 0
   now_time = calendar.timegm(time.gmtime())
-  if lastUpdateCheck > now_time - 604800:
-    return lastUpdateCheck
+  one_week_ago_time = now_time - 604800
+  if last_check_time > one_week_ago_time:
+    return
   try:
     c = urllib2.urlopen(u'https://gam-update.appspot.com/latest-version.txt?v=%s' % __version__)
     try:
@@ -642,7 +207,10 @@ def doGAMCheckForUpdates(lastUpdateCheck):
     except ValueError:
       return
     if latest_version <= current_version:
-      return now_time
+      f = open(os.path.join(gamUserConfigDir, u'lastupdatecheck.txt'), 'w')
+      f.write(str(now_time))
+      f.close()
+      return
     a = urllib2.urlopen(u'https://gam-update.appspot.com/latest-version-announcement.txt?v=%s' % __version__)
     announcement = a.read()
     sys.stderr.write(announcement)
@@ -654,9 +222,13 @@ def doGAMCheckForUpdates(lastUpdateCheck):
       webbrowser.open(u'https://github.com/jay0lee/GAM/releases')
       print u'GAM is now exiting so that you can overwrite this old version with the latest release'
       sys.exit(0)
-    return now_time
-  except (urllib2.HTTPError, urllib2.URLError):
-    return lastUpdateCheck
+    f = open(os.path.join(gamUserConfigDir, u'lastupdatecheck.txt'), 'w')
+    f.write(str(now_time))
+    f.close()
+  except urllib2.HTTPError:
+    return
+  except urllib2.URLError:
+    return
 
 def commonAppsObjInit(appsObj):
   #Identify GAM to Google's Servers
@@ -664,7 +236,7 @@ def commonAppsObjInit(appsObj):
                    sys.version_info[0], sys.version_info[1], sys.version_info[2], sys.version_info[3],
                    platform.platform(), platform.machine())
   #Show debugging output if debug.gam exists
-  if GC_Values[GC_DEBUG_LEVEL] > 0:
+  if os.path.isfile(os.path.join(gamUserConfigDir, u'debug.gam')):
     appsObj.debug = True
   return appsObj
 
@@ -768,20 +340,33 @@ def checkErrorCode(e, service):
     return u'%s: Unknown Error: %s' % (e.error_code, str(e))
 
 def tryOAuth(gdataObject):
-  storage = oauth2client.file.Storage(GC_Values[GC_OAUTH2_TXT])
+  global domain
+  global customerId
+  try:
+    oauth2file = os.path.join(gamUserConfigDir, os.environ[u'OAUTHFILE'])
+  except KeyError:
+    oauth2file = os.path.join(gamUserConfigDir, u'oauth2.txt')
+  storage = oauth2client.file.Storage(oauth2file)
   credentials = storage.get()
   if credentials is None or credentials.invalid:
     doRequestOAuth()
     credentials = storage.get()
   if credentials.access_token_expired:
-    credentials.refresh(httplib2.Http(ca_certs=GC_Values[GC_CACERT_PEM],
-                                      disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL]))
+    disable_ssl_certificate_validation = False
+    if os.path.isfile(os.path.join(gamUserConfigDir, u'noverifyssl.txt')):
+      disable_ssl_certificate_validation = True
+    credentials.refresh(httplib2.Http(ca_certs=os.path.join(gamSiteConfigDir, u'cacert.pem'),
+                                      disable_ssl_certificate_validation=disable_ssl_certificate_validation))
   gdataObject.additional_headers = {u'Authorization': u'Bearer %s' % credentials.access_token}
-  if not GC_Values[GC_DOMAIN]:
-    GC_Values[GC_DOMAIN] = credentials.id_token[u'hd'].lower()
-  if not GC_Values[GC_CUSTOMER_ID]:
-    GC_Values[GC_CUSTOMER_ID] = MY_CUSTOMER
-  gdataObject.domain = GC_Values[GC_DOMAIN]
+  try:
+    domain = os.environ[u'GA_DOMAIN'].lower()
+  except KeyError:
+    domain = credentials.id_token[u'hd'].lower()
+  try:
+    customerId = os.environ[u'CUSTOMER_ID']
+  except KeyError:
+    customerId = u'my_customer'
+  gdataObject.domain = domain
   return True
 
 def callGData(service, function, soft_errors=False, throw_errors=[], **kwargs):
@@ -816,7 +401,7 @@ def callGData(service, function, soft_errors=False, throw_errors=[], **kwargs):
 def callGAPI(service, function, silent_errors=False, soft_errors=False, throw_reasons=[], retry_reasons=[], **kwargs):
   method = getattr(service, function)
   retries = 10
-  parameters = dict(kwargs.items() + GC_Values[GC_EXTRA_ARGS].items())
+  parameters = dict(kwargs.items() + extra_args.items())
   for n in range(1, retries+1):
     try:
       return method(**parameters).execute()
@@ -825,8 +410,11 @@ def callGAPI(service, function, silent_errors=False, soft_errors=False, throw_re
         error = json.loads(e.content)
       except ValueError:
         if n < 3:
-          service._http.request.credentials.refresh(httplib2.Http(ca_certs=GC_Values[GC_CACERT_PEM],
-                                                                  disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL]))
+          disable_ssl_certificate_validation = False
+          if os.path.isfile(os.path.join(gamUserConfigDir, u'noverifyssl.txt')):
+            disable_ssl_certificate_validation = True
+          service._http.request.credentials.refresh(httplib2.Http(ca_certs=os.path.join(gamSiteConfigDir, u'cacert.pem'),
+                                                                  disable_ssl_certificate_validation=disable_ssl_certificate_validation))
           continue
         if (e.resp[u'status'] == u'503') and (e.content == u'Quota exceeded for the current request'):
           time.sleep(1)
@@ -967,7 +555,12 @@ def getAPIScope(api):
             u'https://www.googleapis.com/auth/drive']
 
 def buildGAPIObject(api):
-  storage = oauth2client.file.Storage(GC_Values[GC_OAUTH2_TXT])
+  global domain, customerId
+  try:
+    oauth2file = os.path.join(gamUserConfigDir, os.environ[u'OAUTHFILE'])
+  except KeyError:
+    oauth2file = os.path.join(gamUserConfigDir, u'oauth2.txt')
+  storage = oauth2client.file.Storage(oauth2file)
   credentials = storage.get()
   if credentials is None or credentials.invalid:
     doRequestOAuth()
@@ -975,9 +568,20 @@ def buildGAPIObject(api):
   credentials.user_agent = u'GAM %s - http://git.io/gam / %s / Python %s.%s.%s %s / %s %s /' % (__version__, __author__,
                    sys.version_info[0], sys.version_info[1], sys.version_info[2], sys.version_info[3],
                    platform.platform(), platform.machine())
-  http = httplib2.Http(ca_certs=GC_Values[GC_CACERT_PEM],
-                       disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL],
-                       cache=GC_Values[GC_CACHE_DIR])
+  disable_ssl_certificate_validation = False
+  if os.path.isfile(os.path.join(gamUserConfigDir, u'noverifyssl.txt')):
+    disable_ssl_certificate_validation = True
+  http = httplib2.Http(ca_certs=os.path.join(gamSiteConfigDir, u'cacert.pem'),
+                       disable_ssl_certificate_validation=disable_ssl_certificate_validation, cache=gamCacheDir)
+  if os.path.isfile(os.path.join(gamUserConfigDir, u'debug.gam')):
+    httplib2.debuglevel = 4
+    extra_args[u'prettyPrint'] = True
+  if os.path.isfile(os.path.join(gamUserConfigDir, u'extra-args.txt')):
+    import ConfigParser
+    config = ConfigParser.ConfigParser()
+    config.optionxform = str
+    config.read(os.path.join(gamUserConfigDir, u'extra-args.txt'))
+    extra_args.update(dict(config.items(u'extra-args')))
   http = credentials.authorize(http)
   version = getAPIVer(api)
   if api in [u'directory', u'reports']:
@@ -985,7 +589,7 @@ def buildGAPIObject(api):
   try:
     service = googleapiclient.discovery.build(api, version, http=http)
   except googleapiclient.errors.UnknownApiNameOrVersion:
-    disc_file = os.path.join(GC_Values[GC_GAM_PATH], u'%s-%s.json' % (api, version))
+    disc_file = os.path.join(gamSiteConfigDir, u'%s-%s.json' % (api, version))
     if os.path.isfile(disc_file):
       f = file(disc_file, 'rb')
       discovery = f.read()
@@ -997,38 +601,28 @@ def buildGAPIObject(api):
   except httplib2.CertificateValidationUnsupported:
     print u'Error: You don\'t have the Python ssl module installed so we can\'t verify SSL Certificates. You can fix this by installing the Python SSL module or you can live on the edge and turn SSL validation off by creating a file called noverifyssl.txt in the same location as gam.exe / gam.py'
     sys.exit(8)
-  except httplib2.ServerNotFoundError as e:
-    print u'ERROR: %s' % (e)
-    sys.exit(8)
-  if GC_Values[GC_DOMAIN] and not GC_Values[GC_CUSTOMER_ID]:
-    resp, result = service._http.request(u'https://www.googleapis.com/admin/directory/v1/users?domain=%s&maxResults=1&fields=users(customerId)' % GC_Values[GC_DOMAIN])
+  try:
+    domain = os.environ[u'GA_DOMAIN']
+    _, customerId_result = service._http.request(u'https://www.googleapis.com/admin/directory/v1/users?domain=%s&maxResults=1&fields=users(customerId)' % domain)
+    customerId_obj = json.loads(customerId_result)
+    customerId = customerId_obj[u'users'][0][u'customerId']
+  except KeyError:
     try:
-      resultObj = json.loads(result)
-    except ValueError:
-      print u'ERROR: unexpected response: %s' % result
-      sys.exit(8)
-    if resp[u'status'] == u'403':
-      try:
-        message = resultObj[u'error'][u'errors'][0][u'message']
-      except KeyError:
-        message = resultObj[u'error'][u'message']
-      print u'ERROR: %s' % (message)
-      sys.exit(8)
-    try:
-      GC_Values[GC_CUSTOMER_ID] = resultObj[u'users'][0][u'customerId']
-    except KeyError:
-      GC_Values[GC_DOMAIN] = None
-  if (not GC_Values[GC_DOMAIN]) or (not GC_Values[GC_CUSTOMER_ID]):
-    try:
-      GC_Values[GC_DOMAIN] = credentials.id_token[u'hd']
+      domain = credentials.id_token[u'hd']
     except (TypeError, KeyError):
-      GC_Values[GC_DOMAIN] = u'Unknown'
-    GC_Values[GC_CUSTOMER_ID] = MY_CUSTOMER
+      domain = u'Unknown'
+    customerId = u'my_customer'
   return service
 
 def buildGAPIServiceObject(api, act_as=None, soft_errors=False):
   try:
-    json_string = open(GC_Values[GC_OAUTH2SERVICE_JSON]).read()
+    oauth2servicefile = os.path.join(gamUserConfigDir, os.environ[u'OAUTHSERVICEFILE'])
+  except KeyError:
+    oauth2servicefile = os.path.join(gamUserConfigDir, u'oauth2service')
+  oauth2servicefilejson = u'%s.json' % oauth2servicefile
+  oauth2servicefilep12 = u'%s.p12' % oauth2servicefile
+  try:
+    json_string = open(oauth2servicefilejson).read()
   except IOError, e:
     print u'Error: %s' % e
     print u''
@@ -1038,7 +632,7 @@ def buildGAPIServiceObject(api, act_as=None, soft_errors=False):
   try:
     SERVICE_ACCOUNT_EMAIL = json_data[u'web'][u'client_email']
     SERVICE_ACCOUNT_CLIENT_ID = json_data[u'web'][u'client_id']
-    f = file(GC_Values[GC_OAUTH2SERVICE_JSON].replace(u'.json', u'.p12'), 'rb')
+    f = file(oauth2servicefilep12, 'rb')
     key = f.read()
     f.close()
   except KeyError:
@@ -1054,9 +648,20 @@ def buildGAPIServiceObject(api, act_as=None, soft_errors=False):
   credentials.user_agent = u'GAM %s - http://git.io/gam / %s / Python %s.%s.%s %s / %s %s /' % (__version__, __author__,
                    sys.version_info[0], sys.version_info[1], sys.version_info[2], sys.version_info[3],
                    platform.platform(), platform.machine())
-  http = httplib2.Http(ca_certs=GC_Values[GC_CACERT_PEM],
-                       disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL],
-                       cache=GC_Values[GC_CACHE_DIR])
+  disable_ssl_certificate_validation = False
+  if os.path.isfile(os.path.join(gamUserConfigDir, u'noverifyssl.txt')):
+    disable_ssl_certificate_validation = True
+  http = httplib2.Http(ca_certs=os.path.join(gamSiteConfigDir, u'cacert.pem'),
+                       disable_ssl_certificate_validation=disable_ssl_certificate_validation, cache=gamCacheDir)
+  if os.path.isfile(os.path.join(gamUserConfigDir, u'debug.gam')):
+    httplib2.debuglevel = 4
+    extra_args[u'prettyPrint'] = True
+  if os.path.isfile(os.path.join(gamUserConfigDir, u'extra-args.txt')):
+    import ConfigParser
+    config = ConfigParser.ConfigParser()
+    config.optionxform = str
+    config.read(os.path.join(gamUserConfigDir, u'extra-args.txt'))
+    extra_args.update(dict(config.items(u'extra-args')))
   http = credentials.authorize(http)
   version = getAPIVer(api)
   try:
@@ -1077,9 +682,11 @@ def buildDiscoveryObject(api):
   if api in [u'directory', u'reports']:
     api = u'admin'
   params = {'api': api, 'apiVersion': version}
-  http = httplib2.Http(ca_certs=GC_Values[GC_CACERT_PEM],
-                       disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL],
-                       cache=GC_Values[GC_CACHE_DIR])
+  disable_ssl_certificate_validation = False
+  if os.path.isfile(os.path.join(gamUserConfigDir, u'noverifyssl.txt')):
+    disable_ssl_certificate_validation = True
+  http = httplib2.Http(ca_certs=os.path.join(gamSiteConfigDir, u'cacert.pem'),
+                       disable_ssl_certificate_validation=disable_ssl_certificate_validation, cache=gamCacheDir)
   requested_url = uritemplate.expand(googleapiclient.discovery.DISCOVERY_URI, params)
   resp, content = http.request(requested_url)
   if resp.status == 404:
@@ -1155,9 +762,10 @@ def geturl(url, dst):
 
 def showReport():
   report = sys.argv[2].lower()
+  global customerId
   rep = buildGAPIObject(u'reports')
-  if GC_Values[GC_CUSTOMER_ID] == MY_CUSTOMER:
-    GC_Values[GC_CUSTOMER_ID] = None
+  if customerId == u'my_customer':
+    customerId = None
   date = filters = parameters = actorIpAddress = startTime = endTime = eventName = None
   to_drive = False
   userKey = 'all'
@@ -1200,8 +808,7 @@ def showReport():
     while True:
       try:
         page_message = u'Got %%num_items%% users\n'
-        usage = callGAPIpages(service=rep.userUsageReport(), function=u'get', items=u'usageReports', page_message=page_message,
-                              throw_reasons=[u'invalid'], date=str(try_date), userKey=userKey, customerId=GC_Values[GC_CUSTOMER_ID], filters=filters, parameters=parameters)
+        usage = callGAPIpages(service=rep.userUsageReport(), function=u'get', items=u'usageReports', page_message=page_message, throw_reasons=[u'invalid'], date=str(try_date), userKey=userKey, customerId=customerId, filters=filters, parameters=parameters)
         break
       except googleapiclient.errors.HttpError, e:
         error = json.loads(e.content)
@@ -1238,7 +845,7 @@ def showReport():
   elif report in [u'customer', u'customers', u'domain']:
     while True:
       try:
-        usage = callGAPIpages(service=rep.customerUsageReports(), function=u'get', items=u'usageReports', throw_reasons=[u'invalid'], customerId=GC_Values[GC_CUSTOMER_ID], date=str(try_date), parameters=parameters)
+        usage = callGAPIpages(service=rep.customerUsageReports(), function=u'get', items=u'usageReports', throw_reasons=[u'invalid'], customerId=customerId, date=str(try_date), parameters=parameters)
         break
       except googleapiclient.errors.HttpError, e:
         error = json.loads(e.content)
@@ -1286,9 +893,7 @@ def showReport():
     elif report == u'tokens':
       report = u'token'
     page_message = u'Got %%num_items%% items\n'
-    activities = callGAPIpages(service=rep.activities(), function=u'list', page_message=page_message,
-                               applicationName=report, userKey=userKey, customerId=GC_Values[GC_CUSTOMER_ID], actorIpAddress=actorIpAddress,
-                               startTime=startTime, endTime=endTime, eventName=eventName, filters=filters)
+    activities = callGAPIpages(service=rep.activities(), function=u'list', page_message=page_message, applicationName=report, userKey=userKey, customerId=customerId, actorIpAddress=actorIpAddress, startTime=startTime, endTime=endTime, eventName=eventName, filters=filters)
     if len(activities) > 0:
       attrs = []
       titles = []
@@ -1319,7 +924,7 @@ def doDelegates(users):
   if sys.argv[4].lower() == u'to':
     delegate = sys.argv[5].lower()
     if not delegate.find(u'@') > 0:
-      delegate_domain = GC_Values[GC_DOMAIN].lower()
+      delegate_domain = domain.lower()
       delegate_email = u'%s@%s' % (delegate, delegate_domain)
     else:
       delegate_domain = delegate[delegate.find(u'@')+1:].lower()
@@ -1335,7 +940,7 @@ def doDelegates(users):
       delegator_email = delegator
       delegator = delegator[:delegator.find('@')]
     else:
-      delegator_domain = GC_Values[GC_DOMAIN].lower()
+      delegator_domain = domain.lower()
       delegator_email = u'%s@%s' % (delegator, delegator_domain)
     emailsettings.domain = delegator_domain
     print u"Giving %s delegate access to %s (%s of %s)" % (delegate_email, delegator_email, i, count)
@@ -1437,7 +1042,7 @@ def getDelegates(users):
       emailsettings.domain = user[user.find('@')+1:]
       user = user[:user.find('@')]
     else:
-      emailsettings.domain = GC_Values[GC_DOMAIN]
+      emailsettings.domain = domain
     sys.stderr.write(u"Getting delegates for %s...\n" % (user + '@' + emailsettings.domain))
     delegates = callGData(service=emailsettings, function=u'GetDelegates', soft_errors=True, delegator=user)
     try:
@@ -1445,9 +1050,7 @@ def getDelegates(users):
         if csv_format:
           print u'%s,%s,%s' % (user + u'@' + emailsettings.domain, delegate[u'address'], delegate[u'status'])
         else:
-          print u"Delegator: %s\n Delegate: %s\n Status: %s\n Delegate Email: %s\n Delegate ID: %s\n" % (user, delegate[u'delegate'],
-                                                                                                         delegate[u'status'], delegate[u'address'],
-                                                                                                         delegate[u'delegationId'])
+          print u"Delegator: %s\n Delegate: %s\n Status: %s\n Delegate Email: %s\n Delegate ID: %s\n" % (user, delegate[u'delegate'], delegate[u'status'], delegate[u'address'], delegate[u'delegationId'])
     except TypeError:
       pass
 
@@ -1458,7 +1061,7 @@ def deleteDelegate(users):
     if users[0].find(u'@') > 0:
       delegatedomain = users[0][users[0].find(u'@')+1:]
     else:
-      delegatedomain = GC_Values[GC_DOMAIN]
+      delegatedomain = domain
     delegate = delegate+u'@'+delegatedomain
   count = len(users)
   i = 1
@@ -1467,7 +1070,7 @@ def deleteDelegate(users):
       emailsettings.domain = user[user.find(u'@')+1:]
       user = user[:user.find(u'@')]
     else:
-      emailsettings.domain = GC_Values[GC_DOMAIN] #make sure it's back at default domain
+      emailsettings.domain = domain #make sure it's back at default domain
     print u"Deleting %s delegate access to %s (%s of %s)" % (delegate, user+u'@'+emailsettings.domain, i, count)
     i += 1
     callGData(service=emailsettings, function=u'DeleteDelegate', delegate=delegate, delegator=user)
@@ -1967,7 +1570,7 @@ def changeCalendarAttendees(users):
   for user in users:
     sys.stdout.write(u'Checking user %s\n' % user)
     if user.find(u'@') == -1:
-      user = u'%s@%s' % (user, GC_Values[GC_DOMAIN])
+      user = u'%s@%s' % (user, domain)
     cal = buildGAPIServiceObject(u'calendar', user)
     page_token = None
     while True:
@@ -2021,10 +1624,10 @@ def deleteCalendar(users):
   cal = buildGAPIServiceObject(u'calendar', users[0])
   calendarId = sys.argv[5]
   if calendarId.find(u'@') == -1:
-    calendarId = u'%s@%s' % (calendarId, GC_Values[GC_DOMAIN])
+    calendarId = u'%s@%s' % (calendarId, domain)
   for user in users:
     if user.find(u'@') == -1:
-      user = u'%s@%s' % (user, GC_Values[GC_DOMAIN])
+      user = u'%s@%s' % (user, domain)
     cal = buildGAPIServiceObject(u'calendar', user)
     callGAPI(service=cal.calendarList(), function=u'delete', calendarId=calendarId)
 
@@ -2034,16 +1637,16 @@ def addCalendar(users):
   body[u'defaultReminders'] = list()
   body[u'id'] = sys.argv[5]
   if body[u'id'].find(u'@') == -1:
-    body[u'id'] = u'%s@%s' % (body[u'id'], GC_Values[GC_DOMAIN])
+    body[u'id'] = u'%s@%s' % (body[u'id'], domain)
   body[u'selected'] = True
   body[u'hidden'] = False
   colorRgbFormat = False
   i = 6
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'selected':
-      if sys.argv[i+1].lower() in TRUE_VALUES:
+      if sys.argv[i+1].lower() in true_values:
         body[u'selected'] = True
-      elif sys.argv[i+1].lower() in FALSE_VALUES:
+      elif sys.argv[i+1].lower() in false_values:
         body[u'selected'] = False
       else:
         showUsage()
@@ -2051,9 +1654,9 @@ def addCalendar(users):
         exit(4)
       i += 2
     elif sys.argv[i].lower() == u'hidden':
-      if sys.argv[i+1].lower() in TRUE_VALUES:
+      if sys.argv[i+1].lower() in true_values:
         body[u'hidden'] = True
-      elif sys.argv[i+1].lower() in FALSE_VALUES:
+      elif sys.argv[i+1].lower() in false_values:
         body[u'hidden'] = False
       else:
         showUsage()
@@ -2093,7 +1696,7 @@ def addCalendar(users):
   count = len(users)
   for user in users:
     if user.find(u'@') == -1:
-      user = u'%s@%s' % (user, GC_Values[GC_DOMAIN])
+      user = u'%s@%s' % (user, domain)
     print u"Subscribing %s to %s calendar (%s of %s)" % (user, body['id'], i, count)
     cal = buildGAPIServiceObject(u'calendar', user)
     callGAPI(service=cal.calendarList(), function=u'insert', body=body, colorRgbFormat=colorRgbFormat)
@@ -2107,9 +1710,9 @@ def updateCalendar(users):
   colorRgbFormat = False
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'selected':
-      if sys.argv[i+1].lower() in TRUE_VALUES:
+      if sys.argv[i+1].lower() in true_values:
         body[u'selected'] = True
-      elif sys.argv[i+1].lower() in FALSE_VALUES:
+      elif sys.argv[i+1].lower() in false_values:
         body[u'selected'] = False
       else:
         showUsage()
@@ -2117,9 +1720,9 @@ def updateCalendar(users):
         exit(4)
       i += 2
     elif sys.argv[i].lower() == u'hidden':
-      if sys.argv[i+1].lower() in TRUE_VALUES:
+      if sys.argv[i+1].lower() in true_values:
         body[u'hidden'] = True
-      elif sys.argv[i+1].lower() in FALSE_VALUES:
+      elif sys.argv[i+1].lower() in false_values:
         body[u'hidden'] = False
       else:
         showUsage()
@@ -2527,7 +2130,7 @@ def doCalendarShowACL():
   show_cal = sys.argv[2]
   cal = buildGAPIObject(u'calendar')
   if show_cal.find(u'@') == -1:
-    show_cal = u'%s@%s' % (show_cal, GC_Values[GC_DOMAIN])
+    show_cal = u'%s@%s' % (show_cal, domain)
   acls = callGAPI(service=cal.acl(), function=u'list', calendarId=show_cal)
   try:
     for rule in acls[u'items']:
@@ -2547,7 +2150,7 @@ def doCalendarAddACL(calendarId=None, act_as=None, role=None, scope=None, entity
   if calendarId == None:
     calendarId = sys.argv[2]
   if calendarId.find(u'@') == -1:
-    calendarId = u'%s@%s' % (calendarId, GC_Values[GC_DOMAIN])
+    calendarId = u'%s@%s' % (calendarId, domain)
   if role != None:
     body[u'role'] = role
   else:
@@ -2575,14 +2178,14 @@ def doCalendarAddACL(calendarId=None, act_as=None, role=None, scope=None, entity
     else:
       body[u'scope'][u'value'] = sys.argv[i].lower()
     if (body[u'scope'][u'type'] in [u'user', u'group']) and body[u'scope'][u'value'].find(u'@') == -1:
-      body[u'scope'][u'value'] = u'%s@%s' % (body[u'scope'][u'value'], GC_Values[GC_DOMAIN])
+      body[u'scope'][u'value'] = u'%s@%s' % (body[u'scope'][u'value'], domain)
   except IndexError:
     pass
   if body[u'scope'][u'type'] == u'domain':
     try:
       body[u'scope'][u'value'] = sys.argv[6].lower()
     except IndexError:
-      body[u'scope'][u'value'] = GC_Values[GC_DOMAIN]
+      body[u'scope'][u'value'] = domain
   callGAPI(service=cal.acl(), function=u'insert', calendarId=calendarId, body=body)
 
 def doCalendarUpdateACL():
@@ -2610,7 +2213,7 @@ def doCalendarWipeData():
   calendarId = sys.argv[2]
   cal = buildGAPIServiceObject(u'calendar', calendarId)
   if calendarId.find(u'@') == -1:
-    calendarId = u'%s@%s' % (calendarId, GC_Values[GC_DOMAIN])
+    calendarId = u'%s@%s' % (calendarId, domain)
   callGAPI(service=cal.calendars(), function=u'clear', calendarId=calendarId)
 
 def doCalendarAddEvent():
@@ -2745,7 +2348,7 @@ def doProfile(users):
     if user[:4].lower() == u'uid:':
       user = user[4:]
     elif user.find(u'@') == -1:
-      user = u'%s@%s' % (user, GC_Values[GC_DOMAIN])
+      user = u'%s@%s' % (user, domain)
     print u'Setting Profile Sharing to %s for %s (%s of %s)' % (body[u'includeInGlobalAddressList'], user, i, count)
     callGAPI(service=cd.users(), function=u'patch', soft_errors=True, userKey=user, body=body)
     i += 1
@@ -2758,7 +2361,7 @@ def showProfile(users):
     if user[:4].lower() == u'uid:':
       user = user[4:]
     elif user.find(u'@') == -1:
-      user = u'%s@%s' % (user, GC_Values[GC_DOMAIN])
+      user = u'%s@%s' % (user, domain)
     result = callGAPI(service=cd.users(), function=u'get', userKey=user, fields=u'includeInGlobalAddressList')
     try:
       print u'User: %s  Profile Shared: %s (%s/%s)' % (user, result[u'includeInGlobalAddressList'], i, count)
@@ -2774,7 +2377,7 @@ def doPhoto(users):
     if user[:4].lower() == u'uid:':
       user = user[4:]
     elif user.find('@') == -1:
-      user = u'%s@%s' % (user, GC_Values[GC_DOMAIN])
+      user = u'%s@%s' % (user, domain)
     filename = sys.argv[5].replace(u'#user#', user)
     filename = filename.replace(u'#email#', user)
     filename = filename.replace(u'#username#', user[:user.find(u'@')])
@@ -2808,7 +2411,7 @@ def getPhoto(users):
     if user[:4].lower() == u'uid:':
       user = user[4:]
     elif user.find(u'@') == -1:
-      user = u'%s@%s' % (user, GC_Values[GC_DOMAIN])
+      user = u'%s@%s' % (user, domain)
     filename = u'%s.jpg' % user
     print u"Saving photo to %s (%s/%s)" % (filename, i, count)
     i += 1
@@ -2836,7 +2439,7 @@ def deletePhoto(users):
     if user[:4].lower() == u'uid:':
       user = user[4:]
     elif user.find('@') == -1:
-      user = u'%s@%s' % (user, GC_Values[GC_DOMAIN])
+      user = u'%s@%s' % (user, domain)
     print u"Deleting photo for %s (%s of %s)" % (user, i, count)
     callGAPI(service=cd.users().photos(), function='delete', userKey=user)
     i += 1
@@ -3049,9 +2652,9 @@ def updateDriveFileACL(users):
         body[u'additionalRoles'] = [u'commenter']
       i += 2
     elif sys.argv[i].lower().replace(u'_', u'') == u'transferownership':
-      if sys.argv[i+1].lower() in TRUE_VALUES:
+      if sys.argv[i+1].lower() in true_values:
         transferOwnership = True
-      elif sys.argv[i+1].lower() in FALSE_VALUES:
+      elif sys.argv[i+1].lower() in false_values:
         transferOwnership = False
       else:
         print u'ERROR: transferownership should be true or false, got %s' % sys.argv[i+1].lower()
@@ -3184,7 +2787,7 @@ def showDriveFiles(users):
         else:
           print attrib_type
       files_attr.append(a_file)
-  output_csv(files_attr, titles, u'%s %s %s Drive Files' % (GC_Values[GC_DOMAIN], sys.argv[1], sys.argv[2]), todrive)
+  output_csv(files_attr, titles, u'%s %s %s Drive Files' % (domain, sys.argv[1], sys.argv[2]), todrive)
 
 def doDriveSearch(drive, query=None):
   print u'Searching for files with query: "%s"...' % query
@@ -3305,9 +2908,9 @@ def doUpdateDriveFile(users):
     elif sys.argv[i].lower() in [u'restrict', 'restricted']:
       if 'labels' not in body.keys():
         body[u'labels'] = dict()
-      if sys.argv[i+1] in TRUE_VALUES:
+      if sys.argv[i+1] in true_values:
         body[u'labels'][u'restricted'] = True
-      elif sys.argv[i+1] in FALSE_VALUES:
+      elif sys.argv[i+1] in false_values:
         body[u'labels'][u'restricted'] = False
       else:
         print u'ERROR: value for restricted must be true or false, got %s' % sys.argv[i+1]
@@ -3316,9 +2919,9 @@ def doUpdateDriveFile(users):
     elif sys.argv[i].lower() in [u'star', u'starred']:
       if u'labels' not in body.keys():
         body[u'labels'] = dict()
-      if sys.argv[i+1] in TRUE_VALUES:
+      if sys.argv[i+1] in true_values:
         body[u'labels'][u'starred'] = True
-      elif sys.argv[i+1] in FALSE_VALUES:
+      elif sys.argv[i+1] in false_values:
         body[u'labels'][u'starred'] = False
       else:
         print u'ERROR: value for starred must be true or false, got %s' % sys.argv[i+1]
@@ -3327,9 +2930,9 @@ def doUpdateDriveFile(users):
     elif sys.argv[i].lower() in [u'trash', u'trashed']:
       if u'labels' not in body.keys():
         body[u'labels'] = dict()
-      if sys.argv[i+1] in TRUE_VALUES:
+      if sys.argv[i+1] in true_values:
         body[u'labels'][u'trashed'] = True
-      elif sys.argv[i+1] in FALSE_VALUES:
+      elif sys.argv[i+1] in false_values:
         body[u'labels'][u'trashed'] = False
       else:
         print u'ERROR: value for trashed must be true or false, got %s' % sys.argv[i+1]
@@ -3338,9 +2941,9 @@ def doUpdateDriveFile(users):
     elif sys.argv[i].lower() in [u'view', u'viewed']:
       if u'labels' not in body.keys():
         body[u'labels'] = dict()
-      if sys.argv[i+1] in TRUE_VALUES:
+      if sys.argv[i+1] in true_values:
         body[u'labels'][u'viewed'] = True
-      elif sys.argv[i+1] in FALSE_VALUES:
+      elif sys.argv[i+1] in false_values:
         body[u'labels'][u'viewed'] = False
       else:
         print u'ERROR: value for viewed must be true or false, got %s' % sys.argv[i+1]
@@ -3532,7 +3135,7 @@ def downloadDriveFile(users):
   i = 5
   query = fileIds = None
   gdownload_format = u'openoffice'
-  target_folder = GC_Values[GC_DRIVE_DIR]
+  target_folder = gamDriveDir
   safe_filename_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'id':
@@ -3707,16 +3310,14 @@ def transferDriveFiles(users):
     source_permissionid = source_about[u'permissionId']
     print u"Getting file list for source user: %s..." % user
     page_message = u'  got %%total_items%% files\n'
-    source_drive_files = callGAPIpages(service=source_drive.files(), function=u'list', page_message=page_message,
-                                       q=u"'me' in owners and trashed = false", fields=u'items(id,parents,mimeType),nextPageToken')
+    source_drive_files = callGAPIpages(service=source_drive.files(), function=u'list', page_message=page_message, q=u"'me' in owners and trashed = false", fields=u'items(id,parents,mimeType),nextPageToken')
     all_source_file_ids = []
     for source_drive_file in source_drive_files:
       all_source_file_ids.append(source_drive_file[u'id'])
     total_count = len(source_drive_files)
     print u"Getting folder list for target user: %s..." % target_user
     page_message = u'  got %%total_items%% folders\n'
-    target_folders = callGAPIpages(service=target_drive.files(), function=u'list', page_message=page_message,
-                                   q=u"'me' in owners and mimeType = 'application/vnd.google-apps.folder'", fields=u'items(id,title),nextPageToken')
+    target_folders = callGAPIpages(service=target_drive.files(), function=u'list', page_message=page_message, q=u"'me' in owners and mimeType = 'application/vnd.google-apps.folder'", fields=u'items(id,title),nextPageToken')
     got_top_folder = False
     all_target_folder_ids = []
     for target_folder in target_folders:
@@ -3725,8 +3326,7 @@ def transferDriveFiles(users):
         target_top_folder = target_folder[u'id']
         got_top_folder = True
     if not got_top_folder:
-      create_folder = callGAPI(service=target_drive.files(), function=u'insert',
-                               body={u'title': u'%s old files' % user, u'mimeType': u'application/vnd.google-apps.folder'}, fields=u'id')
+      create_folder = callGAPI(service=target_drive.files(), function=u'insert', body={u'title': u'%s old files' % user, u'mimeType': u'application/vnd.google-apps.folder'}, fields=u'id')
       target_top_folder = create_folder[u'id']
     transferred_files = []
     while True: # we loop thru, skipping files until all of their parents are done
@@ -3768,9 +3368,9 @@ def transferDriveFiles(users):
         break
 
 def doImap(users):
-  if sys.argv[4].lower() in TRUE_VALUES:
+  if sys.argv[4].lower() in true_values:
     enable = True
-  elif sys.argv[4].lower() in FALSE_VALUES:
+  elif sys.argv[4].lower() in false_values:
     enable = False
   emailsettings = getEmailSettingsObject()
   count = len(users)
@@ -3780,7 +3380,7 @@ def doImap(users):
       emailsettings.domain = user[user.find(u'@')+1:]
       user = user[:user.find(u'@')]
     else:
-      emailsettings.domain = GC_Values[GC_DOMAIN] #make sure it's back at default domain
+      emailsettings.domain = domain #make sure it's back at default domain
     print u"Setting IMAP Access to %s for %s (%s of %s)" % (str(enable), user+u'@'+emailsettings.domain, i, count)
     i += 1
     callGData(service=emailsettings, function=u'UpdateImap', soft_errors=True, username=user, enable=enable)
@@ -3794,7 +3394,7 @@ def getImap(users):
       emailsettings.domain = user[user.find(u'@')+1:]
       user = user[:user.find(u'@')]
     else:
-      emailsettings.domain = GC_Values[GC_DOMAIN]
+      emailsettings.domain = domain
     imapsettings = callGData(service=emailsettings, function=u'GetImap', soft_errors=True, username=user)
     try:
       print u'User %s  IMAP Enabled:%s (%s of %s)' % (user+u'@'+emailsettings.domain, imapsettings[u'enable'], i, count)
@@ -3848,7 +3448,7 @@ def doLicense(users, operation):
   productId, skuId = getProductAndSKU(sku)
   for user in users:
     if user.find(u'@') == -1:
-      user = u'%s@%s' % (user, GC_Values[GC_DOMAIN])
+      user = u'%s@%s' % (user, domain)
     if operation == u'delete':
       callGAPI(service=lic.licenseAssignments(), function=operation, soft_errors=True, productId=productId, skuId=skuId, userId=user)
     elif operation == u'insert':
@@ -3865,9 +3465,9 @@ def doLicense(users, operation):
       callGAPI(service=lic.licenseAssignments(), function=operation, soft_errors=True, productId=productId, skuId=old_sku, userId=user, body={u'skuId': skuId})
 
 def doPop(users):
-  if sys.argv[4].lower() in TRUE_VALUES:
+  if sys.argv[4].lower() in true_values:
     enable = True
-  elif sys.argv[4].lower() in FALSE_VALUES:
+  elif sys.argv[4].lower() in false_values:
     enable = False
   enable_for = u'ALL_MAIL'
   action = u'KEEP'
@@ -3903,7 +3503,7 @@ def doPop(users):
       emailsettings.domain = user[user.find(u'@')+1:]
       user = user[:user.find(u'@')]
     else:
-      emailsettings.domain = GC_Values[GC_DOMAIN] #make sure it's back at default domain
+      emailsettings.domain = domain #make sure it's back at default domain
     print u"Setting POP Access to %s for %s (%s of %s)" % (str(enable), user+u'@'+emailsettings.domain, i, count)
     i += 1
     callGData(service=emailsettings, function=u'UpdatePop', soft_errors=True, username=user, enable=enable, enable_for=enable_for, action=action)
@@ -3915,7 +3515,7 @@ def getPop(users):
       emailsettings.domain = user[user.find(u'@')+1:]
       user = user[:user.find(u'@')]
     else:
-      emailsettings.domain = GC_Values[GC_DOMAIN]
+      emailsettings.domain = domain
     popsettings = callGData(service=emailsettings, function=u'GetPop', soft_errors=True, username=user)
     try:
       print u'User %s  POP Enabled:%s  Action:%s' % (user+u'@'+emailsettings.domain, popsettings[u'enable'], popsettings[u'action'])
@@ -3939,7 +3539,7 @@ def doSendAs(users):
       sys.exit(2)
   emailsettings = getEmailSettingsObject()
   if sendas.find(u'@') < 0:
-    sendas = sendas+u'@'+GC_Values[GC_DOMAIN]
+    sendas = sendas+u'@'+domain
   count = len(users)
   i = 1
   for user in users:
@@ -3947,7 +3547,7 @@ def doSendAs(users):
       emailsettings.domain = user[user.find(u'@')+1:]
       user = user[:user.find(u'@')]
     else:
-      emailsettings.domain = GC_Values[GC_DOMAIN] #make sure it's back at default domain
+      emailsettings.domain = domain #make sure it's back at default domain
     print u"Allowing %s to send as %s (%s of %s)" % (user+u'@'+emailsettings.domain, sendas, i, count)
     i += 1
     callGData(service=emailsettings, function=u'CreateSendAsAlias', soft_errors=True, username=user, name=sendasName, address=sendas, make_default=make_default, reply_to=reply_to)
@@ -3959,7 +3559,7 @@ def showSendAs(users):
       emailsettings.domain = user[user.find(u'@')+1:]
       user = user[:user.find(u'@')]
     else:
-      emailsettings.domain = GC_Values[GC_DOMAIN]
+      emailsettings.domain = domain
     print u'%s has the following send as aliases:' %  (user+u'@'+emailsettings.domain)
     sendases = callGData(service=emailsettings, function=u'GetSendAsAlias', soft_errors=True, username=user)
     try:
@@ -3991,15 +3591,15 @@ def doLanguage(users):
       emailsettings.domain = user[user.find('@')+1:]
       user = user[:user.find('@')]
     else:
-      emailsettings.domain = GC_Values[GC_DOMAIN] #make sure it's back at default domain
+      emailsettings.domain = domain #make sure it's back at default domain
     print u"Setting the language for %s to %s (%s of %s)" % (user+u'@'+emailsettings.domain, language, i, count)
     i += 1
     callGData(service=emailsettings, function=u'UpdateLanguage', soft_errors=True, username=user, language=language)
 
 def doUTF(users):
-  if sys.argv[4].lower() in TRUE_VALUES:
+  if sys.argv[4].lower() in true_values:
     SetUTF = True
-  elif sys.argv[4].lower() in FALSE_VALUES:
+  elif sys.argv[4].lower() in false_values:
     SetUTF = False
   emailsettings = getEmailSettingsObject()
   count = len(users)
@@ -4009,7 +3609,7 @@ def doUTF(users):
       emailsettings.domain = user[user.find(u'@')+1:]
       user = user[:user.find(u'@')]
     else:
-      emailsettings.domain = GC_Values[GC_DOMAIN] #make sure it's back at default domain
+      emailsettings.domain = domain #make sure it's back at default domain
     print u"Setting UTF-8 to %s for %s (%s of %s)" % (str(SetUTF), user+u'@'+emailsettings.domain, i, count)
     i += 1
     callGData(service=emailsettings, function=u'UpdateGeneral', soft_errors=True, username=user, unicode=SetUTF)
@@ -4028,15 +3628,15 @@ def doPageSize(users):
       emailsettings.domain = user[user.find(u'@')+1:]
       user = user[:user.find(u'@')]
     else:
-      emailsettings.domain = GC_Values[GC_DOMAIN] #make sure it's back at default domain
+      emailsettings.domain = domain #make sure it's back at default domain
     print u"Setting Page Size to %s for %s (%s of %s)" % (PageSize, user+u'@'+emailsettings.domain, i, count)
     i += 1
     callGData(service=emailsettings, function=u'UpdateGeneral', soft_errors=True, username=user, page_size=PageSize)
 
 def doShortCuts(users):
-  if sys.argv[4].lower() in TRUE_VALUES:
+  if sys.argv[4].lower() in true_values:
     SetShortCuts = True
-  elif sys.argv[4].lower() in FALSE_VALUES:
+  elif sys.argv[4].lower() in false_values:
     SetShortCuts = False
   emailsettings = getEmailSettingsObject()
   count = len(users)
@@ -4046,15 +3646,15 @@ def doShortCuts(users):
       emailsettings.domain = user[user.find(u'@')+1:]
       user = user[:user.find(u'@')]
     else:
-      emailsettings.domain = GC_Values[GC_DOMAIN] #make sure it's back at default domain
+      emailsettings.domain = domain #make sure it's back at default domain
     print u"Setting Keyboard Short Cuts to %s for %s (%s of %s)" % (str(SetShortCuts), user+u'@'+emailsettings.domain, i, count)
     i += 1
     callGData(service=emailsettings, function=u'UpdateGeneral', soft_errors=True, username=user, shortcuts=SetShortCuts)
 
 def doArrows(users):
-  if sys.argv[4].lower() in TRUE_VALUES:
+  if sys.argv[4].lower() in true_values:
     SetArrows = True
-  elif sys.argv[4].lower() in FALSE_VALUES:
+  elif sys.argv[4].lower() in false_values:
     SetArrows = False
   emailsettings = getEmailSettingsObject()
   count = len(users)
@@ -4064,15 +3664,15 @@ def doArrows(users):
       emailsettings.domain = user[user.find(u'@')+1:]
       user = user[:user.find(u'@')]
     else:
-      emailsettings.domain = GC_Values[GC_DOMAIN] #make sure it's back at default domain
+      emailsettings.domain = domain #make sure it's back at default domain
     print u"Setting Personal Indicator Arrows to %s for %s (%s of %s)" % (str(SetArrows), user+u'@'+emailsettings.domain, i, count)
     i += 1
     callGData(service=emailsettings, function=u'UpdateGeneral', soft_errors=True, username=user, arrows=SetArrows)
 
 def doSnippets(users):
-  if sys.argv[4].lower() in TRUE_VALUES:
+  if sys.argv[4].lower() in true_values:
     SetSnippets = True
-  elif sys.argv[4].lower() in FALSE_VALUES:
+  elif sys.argv[4].lower() in false_values:
     SetSnippets = False
   emailsettings = getEmailSettingsObject()
   count = len(users)
@@ -4082,7 +3682,7 @@ def doSnippets(users):
       emailsettings.domain = user[user.find(u'@')+1:]
       user = user[:user.find(u'@')]
     else:
-      emailsettings.domain = GC_Values[GC_DOMAIN] #make sure it's back at default domain
+      emailsettings.domain = domain #make sure it's back at default domain
     print u"Setting Preview Snippets to %s for %s (%s of %s)" % (str(SetSnippets), user+u'@'+emailsettings.domain, i, count)
     i += 1
     callGData(service=emailsettings, function=u'UpdateGeneral', soft_errors=True, username=user, snippets=SetSnippets)
@@ -4129,7 +3729,7 @@ def doLabel(users):
 def doDeleteMessages(trashOrDelete, users):
   query = None
   doIt = False
-  maxToDelete = GC_Values[GC_MAX_MESSAGES_TO_DELETE]
+  maxToDelete = 1
   i = 5
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'query':
@@ -4445,20 +4045,17 @@ def doFilter(users):
       emailsettings.domain = user[user.find(u'@')+1:]
       user = user[:user.find(u'@')]
     else:
-      emailsettings.domain = GC_Values[GC_DOMAIN] #make sure it's back at default domain
+      emailsettings.domain = domain #make sure it's back at default domain
     print u"Creating filter for %s (%s of %s)" % (user+'@'+emailsettings.domain, i, count)
     i += 1
-    callGData(service=emailsettings, function=u'CreateFilter', soft_errors=True,
-              username=user, from_=from_, to=to, subject=subject, has_the_word=has_the_word, does_not_have_the_word=does_not_have_the_word,
-              has_attachment=has_attachment, label=label, should_mark_as_read=should_mark_as_read, should_archive=should_archive,
-              should_star=should_star, forward_to=forward_to, should_trash=should_trash, should_not_spam=should_not_spam)
+    callGData(service=emailsettings, function=u'CreateFilter', soft_errors=True, username=user, from_=from_, to=to, subject=subject, has_the_word=has_the_word, does_not_have_the_word=does_not_have_the_word, has_attachment=has_attachment, label=label, should_mark_as_read=should_mark_as_read, should_archive=should_archive, should_star=should_star, forward_to=forward_to, should_trash=should_trash, should_not_spam=should_not_spam)
 
 def doForward(users):
   action = forward_to = None
   gotAction = gotForward = False
-  if sys.argv[4] in TRUE_VALUES:
+  if sys.argv[4] in true_values:
     enable = True
-  elif sys.argv[4] in FALSE_VALUES:
+  elif sys.argv[4] in false_values:
     enable = False
   else:
     showUsage()
@@ -4489,7 +4086,7 @@ def doForward(users):
       emailsettings.domain = user[user.find(u'@')+1:]
       user = user[:user.find(u'@')]
     else:
-      emailsettings.domain = GC_Values[GC_DOMAIN] #make sure it's back at default domain
+      emailsettings.domain = domain #make sure it's back at default domain
     print u"Turning forward %s for %s, emails will be %s (%s of %s)" % (sys.argv[4], user+'@'+emailsettings.domain, action, i, count)
     i += 1
     callGData(service=emailsettings, function=u'UpdateForwarding', soft_errors=True, username=user, enable=enable, action=action, forward_to=forward_to)
@@ -4501,7 +4098,7 @@ def getForward(users):
       emailsettings.domain = user[user.find('@')+1:]
       user = user[:user.find(u'@')]
     else:
-      emailsettings.domain = GC_Values[GC_DOMAIN]
+      emailsettings.domain = domain
     forward = callGData(service=emailsettings, function=u'GetForward', soft_errors=True, username=user)
     try:
       print u"User %s:  Forward To:%s  Enabled:%s  Action:%s" % (user+u'@'+emailsettings.domain, forward[u'forwardTo'], forward[u'enable'], forward[u'action'])
@@ -4528,7 +4125,7 @@ def doSignature(users):
       emailsettings.domain = user[user.find(u'@')+1:]
       user = user[:user.find(u'@')]
     else:
-      emailsettings.domain = GC_Values[GC_DOMAIN] #make sure it's back at default domain
+      emailsettings.domain = domain #make sure it's back at default domain
     print u"Setting Signature for %s (%s of %s)" % (user+u'@'+emailsettings.domain, i, count)
     uri = u'https://apps-apis.google.com/a/feeds/emailsettings/2.0/%s/%s/signature' % (emailsettings.domain, user)
     i += 1
@@ -4541,7 +4138,7 @@ def getSignature(users):
       emailsettings.domain = user[user.find(u'@')+1:]
       user = user[:user.find(u'@')]
     else:
-      emailsettings.domain = GC_Values[GC_DOMAIN]
+      emailsettings.domain = domain
     signature = callGData(service=emailsettings, function=u'GetSignature', soft_errors=True, username=user)
     try:
       sys.stderr.write(u"User %s signature:\n  " % (user+u'@'+emailsettings.domain))
@@ -4550,9 +4147,9 @@ def getSignature(users):
       pass
 
 def doWebClips(users):
-  if sys.argv[4].lower() in TRUE_VALUES:
+  if sys.argv[4].lower() in true_values:
     enable = True
-  elif sys.argv[4].lower() in FALSE_VALUES:
+  elif sys.argv[4].lower() in false_values:
     enable = False
   else:
     showUsage()
@@ -4565,7 +4162,7 @@ def doWebClips(users):
       emailsettings.domain = user[user.find('@')+1:]
       user = user[:user.find(u'@')]
     else:
-      emailsettings.domain = GC_Values[GC_DOMAIN] #make sure it's back at default domain
+      emailsettings.domain = domain #make sure it's back at default domain
     print u"Turning Web Clips %s for %s (%s of %s)" % (sys.argv[4], user+u'@'+emailsettings.domain, i, count)
     i += 1
     callGData(service=emailsettings, function=u'UpdateWebClipSettings', soft_errors=True, username=user, enable=enable)
@@ -4573,9 +4170,9 @@ def doWebClips(users):
 def doVacation(users):
   import cgi
   subject = message = u''
-  if sys.argv[4] in TRUE_VALUES:
+  if sys.argv[4] in true_values:
     enable = u'true'
-  elif sys.argv[4] in FALSE_VALUES:
+  elif sys.argv[4] in false_values:
     enable = u'false'
   else:
     showUsage()
@@ -4631,7 +4228,7 @@ def doVacation(users):
       emailsettings.domain = user[user.find(u'@')+1:]
       user = user[:user.find(u'@')]
     else:
-      emailsettings.domain = GC_Values[GC_DOMAIN] #make sure it's back at default domain
+      emailsettings.domain = domain #make sure it's back at default domain
     print u"Setting Vacation for %s (%s of %s)" % (user+'@'+emailsettings.domain, i, count)
     uri = u'https://apps-apis.google.com/a/feeds/emailsettings/2.0/%s/%s/vacation' % (emailsettings.domain, user)
     i += 1
@@ -4644,7 +4241,7 @@ def getVacation(users):
       emailsettings.domain = user[user.find(u'@')+1:]
       user = user[:user.find(u'@')]
     else:
-      emailsettings.domain = GC_Values[GC_DOMAIN]
+      emailsettings.domain = domain
     vacationsettings = callGData(service=emailsettings, function=u'GetVacation', soft_errors=True, username=user)
     try:
       print u'''User %s
@@ -4674,13 +4271,13 @@ def doCreateDomain():
     print u'Error: domain type should be alias, secondary, primary or unknown. Got %s' % domain_type
     sys.exit(4)
   body = {u'domain_name': domain_name, u'domain_type': domain_type}
-  callGAPI(service=cd.domains(), function=u'insert', customerId=GC_Values[GC_CUSTOMER_ID], body=body)
+  callGAPI(service=cd.domains(), function=u'insert', customerId=customerId, body=body)
   print u'Added domain %s' % domain_name
 
 def doDelSchema():
   cd = buildGAPIObject(u'directory')
   schemaKey = sys.argv[3]
-  callGAPI(service=cd.schemas(), function=u'delete', customerId=GC_Values[GC_CUSTOMER_ID], schemaKey=schemaKey)
+  callGAPI(service=cd.schemas(), function=u'delete', customerId=customerId, schemaKey=schemaKey)
   print u'Deleted schema %s' % schemaKey
 
 def doCreateOrUpdateUserSchema():
@@ -4719,15 +4316,15 @@ def doCreateOrUpdateUserSchema():
           print 'Error: %s is not a valid argument to gam create schema' % sys.argv[i]
           sys.exit(4)
   if sys.argv[1].lower() == u'create':
-    result = callGAPI(service=cd.schemas(), function=u'insert', customerId=GC_Values[GC_CUSTOMER_ID], body=body)
+    result = callGAPI(service=cd.schemas(), function=u'insert', customerId=customerId, body=body)
     print 'Created user schema %s' % result[u'schemaName']
   elif sys.argv[1].lower() == u'update':
-    result = callGAPI(service=cd.schemas(), function=u'update', customerId=GC_Values[GC_CUSTOMER_ID], body=body, schemaKey=schemaName)
+    result = callGAPI(service=cd.schemas(), function=u'update', customerId=customerId, body=body, schemaKey=schemaName)
     print 'Updated user schema %s' % result[u'schemaName']
 
 def doPrintUserSchemas():
   cd = buildGAPIObject(u'directory')
-  schemas = callGAPI(service=cd.schemas(), function=u'list', customerId=GC_Values[GC_CUSTOMER_ID])
+  schemas = callGAPI(service=cd.schemas(), function=u'list', customerId=customerId)
   if not schemas or u'schemas' not in schemas:
     return
   for schema in schemas[u'schemas']:
@@ -4747,7 +4344,7 @@ def doPrintUserSchemas():
 def doGetUserSchema():
   cd = buildGAPIObject(u'directory')
   schemaKey = sys.argv[3]
-  schema = callGAPI(service=cd.schemas(), function=u'get', customerId=GC_Values[GC_CUSTOMER_ID], schemaKey=schemaKey)
+  schema = callGAPI(service=cd.schemas(), function=u'get', customerId=customerId, schemaKey=schemaKey)
   print u'Schema: %s' % schema[u'schemaName']
   for a_key in schema.keys():
     if a_key not in [u'schemaName', u'fields', u'etag', u'kind']:
@@ -4766,7 +4363,7 @@ def doCreateUser():
   body[u'name'] = dict()
   body[u'primaryEmail'] = sys.argv[3]
   if body[u'primaryEmail'].find(u'@') == -1:
-    body[u'primaryEmail'] = u'%s@%s' % (body[u'primaryEmail'], GC_Values[GC_DOMAIN])
+    body[u'primaryEmail'] = u'%s@%s' % (body[u'primaryEmail'], domain)
   gotFirstName = gotLastName = do_admin = False
   need_to_hash_password = need_password = True
   i = 4
@@ -4784,18 +4381,18 @@ def doCreateUser():
       need_password = False
       i += 2
     elif sys.argv[i].lower() == u'suspended':
-      if sys.argv[i+1].lower() in TRUE_VALUES:
+      if sys.argv[i+1].lower() in true_values:
         body[u'suspended'] = True
-      elif sys.argv[i+1].lower() in FALSE_VALUES:
+      elif sys.argv[i+1].lower() in false_values:
         body[u'suspended'] = False
       else:
         print u'Error: suspended should be on or off, not %s' % sys.argv[i+1]
         sys.exit(5)
       i += 2
     elif sys.argv[i].lower() == u'gal':
-      if sys.argv[i+1].lower() in TRUE_VALUES:
+      if sys.argv[i+1].lower() in true_values:
         body[u'includeInGlobalAddressList'] = True
-      elif sys.argv[i+1].lower() in FALSE_VALUES:
+      elif sys.argv[i+1].lower() in false_values:
         body[u'includeInGlobalAddressList'] = False
       else:
         print u'Error: gal should be on or off, not %s' % sys.argv[i+1]
@@ -4817,36 +4414,36 @@ def doCreateUser():
       need_to_hash_password = False
       i += 1
     elif sys.argv[i].lower() == u'changepassword':
-      if sys.argv[i+1] in TRUE_VALUES:
+      if sys.argv[i+1] in true_values:
         body[u'changePasswordAtNextLogin'] = True
-      elif sys.argv[i+1] in FALSE_VALUES:
+      elif sys.argv[i+1] in false_values:
         body[u'changePasswordAtNextLogin'] = False
       else:
         print u'Error: changepassword should be on or off, not %s' % sys.argv[i+1]
         sys.exit(5)
       i += 2
     elif sys.argv[i].lower() == u'ipwhitelisted':
-      if sys.argv[i+1] in TRUE_VALUES:
+      if sys.argv[i+1] in true_values:
         body[u'ipWhitelisted'] = True
-      elif sys.argv[i+1] in FALSE_VALUES:
+      elif sys.argv[i+1] in false_values:
         body[u'ipWhitelisted'] = False
       else:
         print u'Error: ipwhitelisted should be on or off, not %s' % sys.argv[i+1]
       i += 2
     elif sys.argv[i].lower() == u'admin':
       do_admin = True
-      if sys.argv[i+1].lower() in TRUE_VALUES:
+      if sys.argv[i+1].lower() in true_values:
         admin_body = {u'status': True}
-      elif sys.argv[i+1].lower() in FALSE_VALUES:
+      elif sys.argv[i+1].lower() in false_values:
         admin_body = {u'status': False}
       else:
         print u'Error: admin should be on or off, not %s' % sys.argv[i+1]
         sys.exit(5)
       i += 2
     elif sys.argv[i].lower() == u'agreedtoterms':
-      if sys.argv[i+1] in TRUE_VALUES:
+      if sys.argv[i+1] in true_values:
         body[u'agreedToTerms'] = True
-      elif sys.argv[i+1] in FALSE_VALUES:
+      elif sys.argv[i+1] in false_values:
         body[u'agreedToTerms'] = False
       else:
         print u'Error: agreedtoterms should be on or off, not %s' % sys.argv[i+1]
@@ -5103,7 +4700,7 @@ def doCreateGroup():
   body = dict()
   body[u'email'] = sys.argv[3]
   if body[u'email'].find(u'@') == -1:
-    body[u'email'] = u'%s@%s' % (body[u'email'], GC_Values[GC_DOMAIN])
+    body[u'email'] = u'%s@%s' % (body[u'email'], domain)
   got_name = False
   i = 4
   gs_body = dict()
@@ -5140,9 +4737,9 @@ def doCreateGroup():
           elif params[u'type'] == u'string':
             if params[u'description'].find(value.upper()) != -1: # ugly hack because API wants some values uppercased.
               value = value.upper()
-            elif value.lower() in TRUE_VALUES:
+            elif value.lower() in true_values:
               value = u'true'
-            elif value.lower() in FALSE_VALUES:
+            elif value.lower() in false_values:
               value = u'false'
           break
       if not matches_gs_setting:
@@ -5164,14 +4761,14 @@ def doCreateAlias():
   body = dict()
   body[u'alias'] = sys.argv[3]
   if body[u'alias'].find(u'@') == -1:
-    body[u'alias'] = u'%s@%s' % (body[u'alias'], GC_Values[GC_DOMAIN])
+    body[u'alias'] = u'%s@%s' % (body[u'alias'], domain)
   target_type = sys.argv[4].lower()
   if target_type not in [u'user', u'group', u'target']:
     print u'Error: type of target should be user or group. Got %s' % target_type
     sys.exit(3)
   targetKey = sys.argv[5]
   if targetKey.find(u'@') == -1:
-    targetKey = u'%s@%s' % (targetKey, GC_Values[GC_DOMAIN])
+    targetKey = u'%s@%s' % (targetKey, domain)
   print u'Creating alias %s for %s %s' % (body[u'alias'], target_type, targetKey)
   if target_type == u'user':
     callGAPI(service=cd.users().aliases(), function=u'insert', userKey=targetKey, body=body)
@@ -5201,7 +4798,7 @@ def doCreateOrg():
     elif sys.argv[i].lower() == u'noinherit':
       body[u'blockInheritance'] = True
       i += 1
-  callGAPI(service=cd.orgunits(), function=u'insert', customerId=GC_Values[GC_CUSTOMER_ID], body=body)
+  callGAPI(service=cd.orgunits(), function=u'insert', customerId=customerId, body=body)
 
 def doCreateResource():
   resId = sys.argv[3]
@@ -5247,7 +4844,7 @@ def doUpdateUser(users):
       do_update_user = True
       body[u'primaryEmail'] = sys.argv[i+1]
       if body[u'primaryEmail'].find(u'@') == -1:
-        body[u'primaryEmail'] = u'%s@%s' % (body[u'primaryEmail'], GC_Values[GC_DOMAIN])
+        body[u'primaryEmail'] = u'%s@%s' % (body[u'primaryEmail'], domain)
       i += 2
     elif sys.argv[i].lower() == u'password':
       do_update_user = True
@@ -5258,23 +4855,23 @@ def doUpdateUser(users):
       gotPassword = True
     elif sys.argv[i].lower() == u'admin':
       do_admin_user = True
-      if sys.argv[i+1].lower() in TRUE_VALUES:
+      if sys.argv[i+1].lower() in true_values:
         is_admin = True
-      elif sys.argv[i+1].lower() in FALSE_VALUES:
+      elif sys.argv[i+1].lower() in false_values:
         is_admin = False
       i += 2
     elif sys.argv[i].lower() == u'suspended':
       do_update_user = True
-      if sys.argv[i+1].lower() in TRUE_VALUES:
+      if sys.argv[i+1].lower() in true_values:
         body[u'suspended'] = True
-      elif sys.argv[i+1].lower() in FALSE_VALUES:
+      elif sys.argv[i+1].lower() in false_values:
         body[u'suspended'] = False
       i += 2
     elif sys.argv[i].lower() == u'gal':
       do_update_user = True
-      if sys.argv[i+1].lower() in TRUE_VALUES:
+      if sys.argv[i+1].lower() in true_values:
         body[u'includeInGlobalAddressList'] = True
-      elif sys.argv[i+1].lower() in FALSE_VALUES:
+      elif sys.argv[i+1].lower() in false_values:
         body[u'includeInGlobalAddressList'] = False
       else:
         print u'Error: gal should be on or off, not %s' % sys.argv[i+1]
@@ -5282,9 +4879,9 @@ def doUpdateUser(users):
       i += 2
     elif sys.argv[i].lower() == u'ipwhitelisted':
       do_update_user = True
-      if sys.argv[i+1].lower() in TRUE_VALUES:
+      if sys.argv[i+1].lower() in true_values:
         body[u'ipWhitelisted'] = True
-      elif sys.argv[i+1].lower() in FALSE_VALUES:
+      elif sys.argv[i+1].lower() in false_values:
         body[u'ipWhitelisted'] = False
       i += 2
     elif sys.argv[i].lower() in [u'sha', u'sha1', u'sha-1']:
@@ -5307,9 +4904,9 @@ def doUpdateUser(users):
       i += 1
     elif sys.argv[i].lower() == u'changepassword':
       do_update_user = True
-      if sys.argv[i+1].lower() in TRUE_VALUES:
+      if sys.argv[i+1].lower() in true_values:
         body[u'changePasswordAtNextLogin'] = True
-      elif sys.argv[i+1].lower() in FALSE_VALUES:
+      elif sys.argv[i+1].lower() in false_values:
         body[u'changePasswordAtNextLogin'] = False
       i += 2
     elif sys.argv[i].lower() in ['org', u'ou']:
@@ -5320,9 +4917,9 @@ def doUpdateUser(users):
       i += 2
     elif sys.argv[i].lower() == u'agreedtoterms':
       do_update_user = True
-      if sys.argv[i+1].lower() in TRUE_VALUES:
+      if sys.argv[i+1].lower() in true_values:
         body[u'agreedToTerms'] = True
-      elif sys.argv[i+1].lower() in FALSE_VALUES:
+      elif sys.argv[i+1].lower() in false_values:
         body[u'agreedToTerms'] = False
       i += 2
     elif sys.argv[i].lower() == u'customerid':
@@ -5583,7 +5180,7 @@ def doUpdateUser(users):
     if user[:4].lower() == u'uid:':
       user = user[4:]
     elif user.find(u'@') == -1:
-      user = u'%s@%s' % (user, GC_Values[GC_DOMAIN])
+      user = u'%s@%s' % (user, domain)
     if u'primaryEmail' in body and body[u'primaryEmail'][:4].lower() == u'vfe@':
       user_primary = callGAPI(service=cd.users(), function=u'get', userKey=user, fields=u'primaryEmail,id')
       user = user_primary[u'id']
@@ -5592,7 +5189,7 @@ def doUpdateUser(users):
       user_domain = user_primary[user_primary.find(u'@')+1:]
       body[u'primaryEmail'] = u'vfe.%s.%05d@%s' % (user_name, random.randint(1, 99999), user_domain)
       body[u'emails'] = [{u'type': u'custom', u'customType': u'former_employee', u'primary': False, u'address': user_primary}]
-    sys.stderr.write(u'updating user %s...\n' % user)
+    sys.stdout.write(u'updating user %s...\n' % user)
     if do_update_user:
       callGAPI(service=cd.users(), function=u'update', userKey=user, body=body)
     if do_admin_user:
@@ -5632,7 +5229,7 @@ def doUpdateGroup():
     if group[0:3].lower() == u'uid:':
       group = group[4:]
     elif group.find(u'@') == -1:
-      group = u'%s@%s' % (group, GC_Values[GC_DOMAIN])
+      group = u'%s@%s' % (group, domain)
     if sys.argv[4].lower() in [u'add', u'update']:
       role = sys.argv[5].upper()
       i = 6
@@ -5645,7 +5242,7 @@ def doUpdateGroup():
         users_email = [sys.argv[i],]
       for user_email in users_email:
         if user_email != u'*' and user_email.find(u'@') == -1:
-          user_email = u'%s@%s' % (user_email, GC_Values[GC_DOMAIN])
+          user_email = u'%s@%s' % (user_email, domain)
         sys.stderr.write(u' %sing %s %s...' % (sys.argv[4].lower(), role.lower(), user_email))
         try:
           if sys.argv[4].lower() == u'add':
@@ -5694,7 +5291,7 @@ def doUpdateGroup():
         user_emails = [sys.argv[i],]
       for user_email in user_emails:
         if user_email != u'*' and user_email.find(u'@') == -1:
-          user_email = u'%s@%s' % (user_email, GC_Values[GC_DOMAIN])
+          user_email = u'%s@%s' % (user_email, domain)
         sys.stderr.write(u' removing %s\n' % user_email)
         result = callGAPI(service=cd.members(), function=u'delete', soft_errors=True, groupKey=group, memberKey=user_email)
   else:
@@ -5740,9 +5337,9 @@ def doUpdateGroup():
             elif params[u'type'] == u'string':
               if params[u'description'].find(value.upper()) != -1: # ugly hack because API wants some values uppercased.
                 value = value.upper()
-              elif value.lower() in TRUE_VALUES:
+              elif value.lower() in true_values:
                 value = u'true'
-              elif value.lower() in FALSE_VALUES:
+              elif value.lower() in false_values:
                 value = u'false'
             break
         if not matches_gs_setting:
@@ -5756,12 +5353,12 @@ def doUpdateGroup():
       group = group[4:]
     elif group.find(u'@') == -1:
       cd = buildGAPIObject(u'directory')
-      group = u'%s@%s' % (group, GC_Values[GC_DOMAIN])
+      group = u'%s@%s' % (group, domain)
     if use_cd_api:
       cd = buildGAPIObject(u'directory')
       try:
         if cd_body[u'email'].find('@') == -1:
-          cd_body[u'email'] = u'%s@%s' % (cd_body[u'email'], GC_Values[GC_DOMAIN])
+          cd_body[u'email'] = u'%s@%s' % (cd_body[u'email'], domain)
       except KeyError:
         pass
       cd_result = callGAPI(service=cd.groups(), function=u'patch', groupKey=group, body=cd_body)
@@ -5781,9 +5378,9 @@ def doUpdateAlias():
   target_email = sys.argv[5]
   cd = buildGAPIObject(u'directory')
   if alias.find(u'@') == -1:
-    alias = u'%s@%s' % (alias, GC_Values[GC_DOMAIN])
+    alias = u'%s@%s' % (alias, domain)
   if target_email.find(u'@') == -1:
-    target_email = u'%s@%s' % (target_email, GC_Values[GC_DOMAIN])
+    target_email = u'%s@%s' % (target_email, domain)
   try:
     callGAPI(service=cd.users().aliases(), function=u'delete', throw_reasons=[u'invalid'], userKey=alias, alias=alias)
   except googleapiclient.errors.HttpError:
@@ -5824,7 +5421,7 @@ def doUpdateCros():
   cd = buildGAPIObject(u'directory')
   if deviceId[:6].lower() == u'query:':
     query = deviceId[6:]
-    devices_result = callGAPIpages(service=cd.chromeosdevices(), function=u'list', items=u'chromeosdevices', query=query, customerId=GC_Values[GC_CUSTOMER_ID], fields=u'chromeosdevices/deviceId,nextPageToken')
+    devices_result = callGAPIpages(service=cd.chromeosdevices(), function=u'list', items=u'chromeosdevices', query=query, customerId=customerId, fields=u'chromeosdevices/deviceId,nextPageToken')
     devices = list()
     for a_device in devices_result:
       devices.append(a_device[u'deviceId'])
@@ -5864,7 +5461,7 @@ def doUpdateCros():
   i = 1
   for this_device in devices:
     print u' updating %s (%s of %s)' % (this_device, i, device_count)
-    callGAPI(service=cd.chromeosdevices(), function=u'patch', deviceId=this_device, body=body, customerId=GC_Values[GC_CUSTOMER_ID])
+    callGAPI(service=cd.chromeosdevices(), function=u'patch', deviceId=this_device, body=body, customerId=customerId)
     i += 1
 
 def doUpdateMobile():
@@ -5901,14 +5498,14 @@ def doUpdateMobile():
       print u'Error: %s is not a valid argument for gam update cros' % sys.argv[i]
       sys.exit(5)
   if doPatch:
-    callGAPI(service=cd.mobiledevices(), function=u'patch', resourceId=resourceId, body=patch_body, customerId=GC_Values[GC_CUSTOMER_ID])
+    callGAPI(service=cd.mobiledevices(), function=u'patch', resourceId=resourceId, body=patch_body, customerId=customerId)
   if doAction:
-    callGAPI(service=cd.mobiledevices(), function=u'action', resourceId=resourceId, body=action_body, customerId=GC_Values[GC_CUSTOMER_ID])
+    callGAPI(service=cd.mobiledevices(), function=u'action', resourceId=resourceId, body=action_body, customerId=customerId)
 
 def doDeleteMobile():
   cd = buildGAPIObject(u'directory')
   resourceId = sys.argv[3]
-  callGAPI(service=cd.mobiledevices(), function='delete', resourceId=resourceId, customerId=GC_Values[GC_CUSTOMER_ID])
+  callGAPI(service=cd.mobiledevices(), function='delete', resourceId=resourceId, customerId=customerId)
 
 def doUpdateOrg():
   orgUnitPath = sys.argv[3]
@@ -5923,7 +5520,7 @@ def doUpdateOrg():
       current_cros = 1
       for cros in users:
         sys.stderr.write(u' moving %s to %s (%s/%s)\n' % (cros, orgUnitPath, current_cros, cros_count))
-        callGAPI(service=cd.chromeosdevices(), function=u'update', soft_errors=True, customerId=GC_Values[GC_CUSTOMER_ID], deviceId=cros, body={u'orgUnitPath': '//%s' % orgUnitPath})
+        callGAPI(service=cd.chromeosdevices(), function=u'update', soft_errors=True, customerId=customerId, deviceId=cros, body={u'orgUnitPath': '//%s' % orgUnitPath})
         current_cros += 1
     else:
       user_count = len(users)
@@ -5960,13 +5557,13 @@ def doUpdateOrg():
         i += 1
     if orgUnitPath[0] == u'/': # we don't want a / at the beginning for OU updates
       orgUnitPath = orgUnitPath[1:]
-    callGAPI(service=cd.orgunits(), function=u'update', customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=orgUnitPath, body=body)
+    callGAPI(service=cd.orgunits(), function=u'update', customerId=customerId, orgUnitPath=orgUnitPath, body=body)
 
 def doWhatIs():
   email = sys.argv[2]
   cd = buildGAPIObject(u'directory')
   if email.find(u'@') == -1:
-    email = u'%s@%s' % (email, GC_Values[GC_DOMAIN])
+    email = u'%s@%s' % (email, domain)
   try:
     user_or_alias = callGAPI(service=cd.users(), function=u'get', throw_reasons=[u'notFound', u'badRequest', u'invalid'], userKey=email, fields=u'primaryEmail')
     if user_or_alias[u'primaryEmail'].lower() == email.lower():
@@ -5998,7 +5595,11 @@ def doGetUserInfo(user_email=None):
     try:
       user_email = sys.argv[3]
     except IndexError:
-      storage = oauth2client.file.Storage(GC_Values[GC_OAUTH2_TXT])
+      try:
+        oauth2file = os.path.join(gamUserConfigDir, os.environ[u'OAUTHFILE'])
+      except KeyError:
+        oauth2file = os.path.join(gamUserConfigDir, u'oauth2.txt')
+      storage = oauth2client.file.Storage(oauth2file)
       credentials = storage.get()
       if credentials is None or credentials.invalid:
         doRequestOAuth()
@@ -6007,9 +5608,8 @@ def doGetUserInfo(user_email=None):
   if user_email[:4].lower() == u'uid:':
     user_email = user_email[4:]
   elif user_email.find(u'@') == -1:
-    user_email = u'%s@%s' % (user_email, GC_Values[GC_DOMAIN])
-  getSchemas = getAliases = getGroups = True
-  getLicenses = GC_Values[GC_SHOW_LICENSES]
+    user_email = u'%s@%s' % (user_email, domain)
+  getSchemas = getAliases = getGroups = getLicenses = True
   projection = u'full'
   customFieldMask = viewType = None
   i = 4
@@ -6195,11 +5795,10 @@ def doGetGroupInfo(group_name=None):
   if group_name[:4].lower() == u'uid:':
     group_name = group_name[4:]
   elif group_name.find(u'@') == -1:
-    group_name = group_name+u'@'+GC_Values[GC_DOMAIN]
+    group_name = group_name+u'@'+domain
   basic_info = callGAPI(service=cd.groups(), function=u'get', groupKey=group_name)
   try:
-    settings = callGAPI(service=gs.groups(), function=u'get', retry_reasons=[u'serviceLimit'], throw_reasons=u'authError',
-                        groupUniqueId=basic_info[u'email']) # Use email address retrieved from cd since GS API doesn't support uid
+    settings = callGAPI(service=gs.groups(), function=u'get', retry_reasons=[u'serviceLimit'], groupUniqueId=basic_info[u'email'], throw_reasons=u'authError') # Use email address retrieved from cd since GS API doesn't support uid
   except googleapiclient.errors.HttpError:
     pass
   print u''
@@ -6243,7 +5842,7 @@ def doGetAliasInfo(alias_email=None):
     alias_email = sys.argv[3]
   cd = buildGAPIObject(u'directory')
   if alias_email.find(u'@') == -1:
-    alias_email = u'%s@%s' % (alias_email, GC_Values[GC_DOMAIN])
+    alias_email = u'%s@%s' % (alias_email, domain)
   try:
     result = callGAPI(service=cd.users(), function=u'get', throw_reasons=[u'invalid', u'badRequest'], userKey=alias_email)
   except googleapiclient.errors.HttpError:
@@ -6277,13 +5876,13 @@ def doGetResourceCalendarInfo():
 def doGetCrosInfo():
   deviceId = sys.argv[3]
   cd = buildGAPIObject(u'directory')
-  info = callGAPI(service=cd.chromeosdevices(), function=u'get', customerId=GC_Values[GC_CUSTOMER_ID], deviceId=deviceId)
+  info = callGAPI(service=cd.chromeosdevices(), function=u'get', customerId=customerId, deviceId=deviceId)
   print_json(None, info)
 
 def doGetMobileInfo():
   deviceId = sys.argv[3]
   cd = buildGAPIObject(u'directory')
-  info = callGAPI(service=cd.mobiledevices(), function=u'get', customerId=GC_Values[GC_CUSTOMER_ID], resourceId=deviceId)
+  info = callGAPI(service=cd.mobiledevices(), function=u'get', customerId=customerId, resourceId=deviceId)
   print_json(None, info)
 
 def print_json(object_name, object_value, spacing=u''):
@@ -6335,13 +5934,13 @@ def doUpdateNotification():
     print u'Error: notifications need to be marked as read or unread.'
     sys.exit(3)
   if get_all:
-    notifications = callGAPIpages(service=cd.notifications(), function=u'list', customer=GC_Values[GC_CUSTOMER_ID], fields=u'items(notificationId,isUnread),nextPageToken')
+    notifications = callGAPIpages(service=cd.notifications(), function=u'list', customer=customerId, fields=u'items(notificationId,isUnread),nextPageToken')
     for noti in notifications:
       if noti[u'isUnread'] != isUnread:
         ids.append(noti[u'notificationId'])
   print u'Marking %s notification(s) as %s...' % (len(ids), mark_as)
   for notificationId in ids:
-    result = callGAPI(service=cd.notifications(), function=u'patch', customer=GC_Values[GC_CUSTOMER_ID], notificationId=notificationId, body={u'isUnread': isUnread}, fields=u'notificationId,isUnread')
+    result = callGAPI(service=cd.notifications(), function=u'patch', customer=customerId, notificationId=notificationId, body={u'isUnread': isUnread}, fields=u'notificationId,isUnread')
     if result[u'isUnread']:
       read_result = u'unread'
     else:
@@ -6364,12 +5963,12 @@ def doDeleteNotification():
       print u'Error: expected id, got %s' % sys.argv[i]
       sys.exit(3)
   if get_all:
-    notifications = callGAPIpages(service=cd.notifications(), function=u'list', customer=GC_Values[GC_CUSTOMER_ID], fields=u'items(notificationId),nextPageToken')
+    notifications = callGAPIpages(service=cd.notifications(), function=u'list', customer=customerId, fields=u'items(notificationId),nextPageToken')
     for noti in notifications:
       ids.append(noti[u'notificationId'])
   print u'Deleting %s notification(s)...' % len(ids)
   for notificationId in ids:
-    callGAPI(service=cd.notifications(), function=u'delete', customer=GC_Values[GC_CUSTOMER_ID], notificationId=notificationId)
+    callGAPI(service=cd.notifications(), function=u'delete', customer=customerId, notificationId=notificationId)
     print u'deleted %s' % id
 
 def doSiteVerifyShow():
@@ -6479,7 +6078,7 @@ def doSiteVerifyAttempt():
   except KeyError:
     pass
   print
-  print u'You can now add %s or it\'s subdomains as secondary or domain aliases of the %s Google Apps Account.' % (a_domain, GC_Values[GC_DOMAIN])
+  print u'You can now add %s or it\'s subdomains as secondary or domain aliases of the %s Google Apps Account.' % (a_domain, domain)
 
 def doGetNotifications():
   cd = buildGAPIObject(u'directory')
@@ -6492,7 +6091,7 @@ def doGetNotifications():
       print u'Error: expected unreadonly argument, got %s' % sys.argv[i]
       sys.exit(3)
     i += 1
-  notifications = callGAPIpages(service=cd.notifications(), function=u'list', customer=GC_Values[GC_CUSTOMER_ID])
+  notifications = callGAPIpages(service=cd.notifications(), function=u'list', customer=customerId)
   for notification in notifications:
     if unread_only and not notification[u'isUnread']:
       continue
@@ -6524,20 +6123,18 @@ def doGetOrgInfo():
     pass
   if name == u'/':
     orgs = callGAPI(service=cd.orgunits(), function=u'list',
-                    customerId=GC_Values[GC_CUSTOMER_ID], type=u'children',
+                    customerId=customerId, type=u'children',
                     fields=u'organizationUnits/parentOrgUnitId')
     name = orgs[u'organizationUnits'][0][u'parentOrgUnitId']
   if len(name) > 1 and name[0] == u'/':
     name = name[1:]
-  result = callGAPI(service=cd.orgunits(), function=u'get', customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=name)
+  result = callGAPI(service=cd.orgunits(), function=u'get', customerId=customerId, orgUnitPath=name)
   print_json(None, result)
   if get_users:
     name = result[u'orgUnitPath']
     print u'Users: '
     page_message = u'Got %%total_items%% users: %%first_item%% - %%last_item%%\n'
-    users = callGAPIpages(service=cd.users(), function=u'list', items=u'users', page_message=page_message,
-                          message_attribute=u'primaryEmail', customer=GC_Values[GC_CUSTOMER_ID], query=u"orgUnitPath='%s'" % name,
-                          maxResults=500, fields=u'users(primaryEmail,orgUnitPath),nextPageToken')
+    users = callGAPIpages(service=cd.users(), function=u'list', items=u'users', page_message=page_message, message_attribute=u'primaryEmail', customer=customerId, query=u"orgUnitPath='%s'" % name, maxResults=500, fields=u'users(primaryEmail,orgUnitPath),nextPageToken')
     for user in users:
       if show_children or (name.lower() == user[u'orgUnitPath'].lower()):
         sys.stdout.write(u' %s' % user[u'primaryEmail'])
@@ -6770,10 +6367,7 @@ def doUpdateDomain():
       else:
         print u'Error: unknown option for "gam update domain sso_settings...": %s' % sys.argv[i]
         sys.exit(9)
-    callGData(service=adminObj, function=u'UpdateSSOSettings', enableSSO=enableSSO,
-              samlSignonUri=samlSignonUri, samlLogoutUri=samlLogoutUri,
-              changePasswordUri=changePasswordUri, ssoWhitelist=ssoWhitelist,
-              useDomainSpecificIssuer=useDomainSpecificIssuer)
+    callGData(service=adminObj, function=u'UpdateSSOSettings', enableSSO=enableSSO, samlSignonUri=samlSignonUri, samlLogoutUri=samlLogoutUri, changePasswordUri=changePasswordUri, ssoWhitelist=ssoWhitelist, useDomainSpecificIssuer=useDomainSpecificIssuer)
   elif command == u'sso_key':
     key_file = sys.argv[4]
     try:
@@ -6848,8 +6442,7 @@ def doUpdateDomain():
       else:
         print u'Error: invalid setting for "gam update domain email_route..."'
         sys.exit(10)
-    callGData(service=adminObj, function=u'AddEmailRoute', routeDestination=destination, routeRewriteTo=rewrite_to, routeEnabled=enabled,
-              bounceNotifications=bounce_notifications, accountHandling=account_handling)
+    callGData(service=adminObj, function=u'AddEmailRoute', routeDestination=destination, routeRewriteTo=rewrite_to, routeEnabled=enabled, bounceNotifications=bounce_notifications, accountHandling=account_handling)
   else:
     print u'Error: that is not a valid "gam update domain" command'
 
@@ -6867,45 +6460,45 @@ def doGetDomainInfo():
       print u'Error: can\'t open file %s for writing' % target_file
       sys.exit(11)
     sys.exit(0)
-  print u'Google Apps Domain: %s' % GC_Values[GC_DOMAIN]
+  print u'Google Apps Domain: %s' % domain
   cd = buildGAPIObject(u'directory')
-  if GC_Values[GC_CUSTOMER_ID] != MY_CUSTOMER:
-    customer_id = GC_Values[GC_CUSTOMER_ID]
+  if customerId != u'my_customer':
+    customer_id = customerId
   else:
-    result = callGAPI(service=cd.users(), function=u'list', fields=u'users(customerId)', customer=GC_Values[GC_CUSTOMER_ID], sortOrder=u'DESCENDING')
+    result = callGAPI(service=cd.users(), function=u'list', fields=u'users(customerId)', customer=customerId, sortOrder=u'DESCENDING')
     customer_id = result[u'users'][0][u'customerId']
   print u'Customer ID: %s' % customer_id
-  default_language = callGAPI(service=adm.defaultLanguage(), function=u'get', domainName=GC_Values[GC_DOMAIN])
+  default_language = callGAPI(service=adm.defaultLanguage(), function=u'get', domainName=domain)
   print u'Default Language: %s' % default_language[u'entry'][u'apps$property'][0][u'value']
-  org_name = callGAPI(service=adm.organizationName(), function='get', domainName=GC_Values[GC_DOMAIN])
+  org_name = callGAPI(service=adm.organizationName(), function='get', domainName=domain)
   print u'Organization Name: %s' % org_name[u'entry'][u'apps$property'][0][u'value']
-  admin_email = callGAPI(service=adm.adminSecondaryEmail(), function='get', domainName=GC_Values[GC_DOMAIN])
+  admin_email = callGAPI(service=adm.adminSecondaryEmail(), function='get', domainName=domain)
   print u'Admin Secondary Email: %s' % admin_email[u'entry'][u'apps$property'][0][u'value']
-  max_users = callGAPI(service=adm.maximumNumberOfUsers(), function=u'get', domainName=GC_Values[GC_DOMAIN])
+  max_users = callGAPI(service=adm.maximumNumberOfUsers(), function=u'get', domainName=domain)
   print u'Maximum Users: %s' % max_users[u'entry'][u'apps$property'][0][u'value']
-  current_users = callGAPI(service=adm.currentNumberOfUsers(), function=u'get', domainName=GC_Values[GC_DOMAIN])
+  current_users = callGAPI(service=adm.currentNumberOfUsers(), function=u'get', domainName=domain)
   print u'Current Users: %s' % current_users[u'entry'][u'apps$property'][0][u'value']
-  is_dom_verified = callGAPI(service=adm.isVerified(), function=u'get', domainName=GC_Values[GC_DOMAIN])
+  is_dom_verified = callGAPI(service=adm.isVerified(), function=u'get', domainName=domain)
   print u'Domain is Verified: %s' % is_dom_verified[u'entry'][u'apps$property'][0][u'value']
-  domain_edition = callGAPI(service=adm.edition(), function=u'get', domainName=GC_Values[GC_DOMAIN])
+  domain_edition = callGAPI(service=adm.edition(), function=u'get', domainName=domain)
   print u'Domain Edition: %s' % domain_edition[u'entry'][u'apps$property'][0][u'value']
-  customer_pin = callGAPI(service=adm.customerPIN(), function=u'get', domainName=GC_Values[GC_DOMAIN])
+  customer_pin = callGAPI(service=adm.customerPIN(), function=u'get', domainName=domain)
   print u'Customer PIN: %s' % customer_pin[u'entry'][u'apps$property'][0][u'value']
-  creation_time = callGAPI(service=adm.creationTime(), function=u'get', domainName=GC_Values[GC_DOMAIN])
+  creation_time = callGAPI(service=adm.creationTime(), function=u'get', domainName=domain)
   my_date = creation_time[u'entry'][u'apps$property'][0][u'value']
   my_date = my_date[:15]
   my_offset = creation_time[u'entry'][u'apps$property'][0][u'value'][19:]
   nice_time = datetime.datetime.strptime(my_date, u"%Y%m%dT%H%M%S")
   print u'Domain Creation Time: %s %s' % (nice_time, my_offset)
-  country_code = callGAPI(service=adm.countryCode(), function=u'get', domainName=GC_Values[GC_DOMAIN])
+  country_code = callGAPI(service=adm.countryCode(), function=u'get', domainName=domain)
   print u'Domain Country Code: %s' % country_code[u'entry'][u'apps$property'][0][u'value']
-  mxverificationstatus = callGAPI(service=adm.mxVerification(), function=u'get', domainName=GC_Values[GC_DOMAIN])
+  mxverificationstatus = callGAPI(service=adm.mxVerification(), function=u'get', domainName=domain)
   for entry in mxverificationstatus[u'entry'][u'apps$property']:
     if entry[u'name'] == u'verified':
       print u'MX Verification Verified: %s' % entry[u'value']
     elif entry[u'name'] == u'verificationMethod':
       print u'MX Verification Method: %s' % entry[u'value']
-  ssosettings = callGAPI(service=adm.ssoGeneral(), function=u'get', domainName=GC_Values[GC_DOMAIN])
+  ssosettings = callGAPI(service=adm.ssoGeneral(), function=u'get', domainName=domain)
   for entry in ssosettings[u'entry'][u'apps$property']:
     if entry[u'name'] == u'enableSSO':
       print u'SSO Enabled: %s' % entry[u'value']
@@ -6919,7 +6512,7 @@ def doGetDomainInfo():
       print u'SSO Whitelist IPs: %s' % entry[u'value']
     elif entry[u'name'] == u'useDomainSpecificIssuer':
       print u'SSO Use Domain Specific Issuer: %s' % entry[u'value']
-  ssokey = callGAPI(service=adm.ssoSigningKey(), function=u'get', silent_errors=True, soft_errors=True, domainName=GC_Values[GC_DOMAIN])
+  ssokey = callGAPI(service=adm.ssoSigningKey(), function=u'get', silent_errors=True, soft_errors=True, domainName=domain)
   try:
     for entry in ssokey[u'entry'][u'apps$property']:
       if entry[u'name'] == u'algorithm':
@@ -6936,10 +6529,10 @@ def doGetDomainInfo():
         print u'Full SSO Key: %s' % entry[u'value']
   except TypeError:
     pass
-  migration_status = callGAPI(service=adm.userEmailMigrationEnabled(), function=u'get', domainName=GC_Values[GC_DOMAIN])
+  migration_status = callGAPI(service=adm.userEmailMigrationEnabled(), function=u'get', domainName=domain)
   print u'User Migration Enabled: %s' %  migration_status[u'entry'][u'apps$property'][0][u'value']
   outbound_gateway_settings = {u'smartHost': u'', u'smtpMode': u''} # Initialize blank in case we get an 1801 Error
-  outbound_gateway_settings = callGAPI(service=adm.outboundGateway(), function=u'get', domainName=GC_Values[GC_DOMAIN])
+  outbound_gateway_settings = callGAPI(service=adm.outboundGateway(), function=u'get', domainName=domain)
   try:
     for entry in outbound_gateway_settings[u'entry'][u'apps$property']:
       if entry[u'name'] == u'smartHost':
@@ -6956,7 +6549,7 @@ def doDeleteUser():
   if user_email[:4].lower() == u'uid:':
     user_email = user_email[4:]
   elif user_email.find(u'@') == -1:
-    user_email = u'%s@%s' % (user_email, GC_Values[GC_DOMAIN])
+    user_email = u'%s@%s' % (user_email, domain)
   print u"Deleting account for %s" % (user_email)
   callGAPI(service=cd.users(), function=u'delete', userKey=user_email)
 
@@ -6973,10 +6566,10 @@ def doUndeleteUser():
   if user[:4].lower() == u'uid:':
     user_uid = user[4:]
   elif user.find(u'@') == -1:
-    user = u'%s@%s' % (user, GC_Values[GC_DOMAIN])
+    user = u'%s@%s' % (user, domain)
   if not user_uid:
     print u'Looking up UID for %s...' % user
-    deleted_users = callGAPIpages(service=cd.users(), function=u'list', items=u'users', customer=GC_Values[GC_CUSTOMER_ID], showDeleted=True, maxResults=500)
+    deleted_users = callGAPIpages(service=cd.users(), function=u'list', items=u'users', customer=customerId, showDeleted=True, maxResults=500)
     matching_users = list()
     for deleted_user in deleted_users:
       if str(deleted_user[u'primaryEmail']).lower() == user:
@@ -7009,7 +6602,7 @@ def doDeleteGroup():
   if group[:4].lower() == u'uid:':
     group = group[4:]
   elif group.find(u'@') == -1:
-    group = u'%s@%s' % (group, GC_Values[GC_DOMAIN])
+    group = u'%s@%s' % (group, domain)
   print u"Deleting group %s" % group
   callGAPI(service=cd.groups(), function=u'delete', groupKey=group)
 
@@ -7025,7 +6618,7 @@ def doDeleteAlias(alias_email=None):
     alias_email = sys.argv[4]
   cd = buildGAPIObject(u'directory')
   if alias_email.find(u'@') == -1:
-    alias_email = u'%s@%s' % (alias_email, GC_Values[GC_DOMAIN])
+    alias_email = u'%s@%s' % (alias_email, domain)
   print u"Deleting alias %s" % alias_email
   if is_user or (not is_user and not is_group):
     try:
@@ -7052,7 +6645,7 @@ def doDeleteOrg():
   if name[0] == u'/':
     name = name[1:]
   print u"Deleting organization %s" % name
-  callGAPI(service=cd.orgunits(), function=u'delete', customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=name)
+  callGAPI(service=cd.orgunits(), function=u'delete', customerId=customerId, orgUnitPath=name)
 
 def output_csv(csv_list, titles, list_type, todrive):
   csv.register_dialect(u'nixstdout', lineterminator=u'\n')
@@ -7074,13 +6667,11 @@ def output_csv(csv_list, titles, list_type, todrive):
     drive = buildGAPIObject(u'drive')
     string_data = string_file.getvalue()
     media = googleapiclient.http.MediaInMemoryUpload(string_data, mimetype=u'text/csv')
-    result = callGAPI(service=drive.files(), function=u'insert', convert=convert,
-                      body={u'description': u' '.join(sys.argv), u'title': u'%s - %s' % (GC_Values[GC_DOMAIN], list_type), u'mimeType': u'text/csv'},
-                      media_body=media)
+    result = callGAPI(service=drive.files(), function=u'insert', convert=convert, body={u'description': u' '.join(sys.argv), u'title': u'%s - %s' % (domain, list_type), u'mimeType': u'text/csv'}, media_body=media)
     file_url = result[u'alternateLink']
-    if GC_Values[GC_NO_BROWSER]:
+    if os.path.isfile(os.path.join(gamUserConfigDir, u'nobrowser.txt')):
       msg_txt = u'Drive file uploaded to:\n %s' % file_url
-      msg_subj = u'%s - %s' % (GC_Values[GC_DOMAIN], list_type)
+      msg_subj = u'%s - %s' % (domain, list_type)
       send_email(msg_subj, msg_txt)
       print msg_txt
     else:
@@ -7108,8 +6699,8 @@ def doPrintUsers():
   cd = buildGAPIObject(u'directory')
   user_fields = [u'primaryEmail',]
   fields = u''
-  customer = GC_Values[GC_CUSTOMER_ID]
-  printDomain = None
+  customer = customerId
+  domain = None
   query = None
   projection = u'basic'
   customFieldMask = None
@@ -7152,7 +6743,7 @@ def doPrintUsers():
       sortOrder = sys.argv[i].upper()
       i += 1
     elif sys.argv[i].lower() == u'domain':
-      printDomain = sys.argv[i+1]
+      domain = sys.argv[i+1]
       customer = None
       i += 2
     elif sys.argv[i].lower() == u'query':
@@ -7238,10 +6829,7 @@ def doPrintUsers():
     fields = u'nextPageToken,users(%s)' % u','.join(user_fields)
   sys.stderr.write(u"Getting all users in Google Apps account (may take some time on a large account)...\n")
   page_message = u'Got %%total_items%% users: %%first_item%% - %%last_item%%\n'
-  all_users = callGAPIpages(service=cd.users(), function=u'list', items=u'users', page_message=page_message,
-                            message_attribute=u'primaryEmail', customer=customer, domain=printDomain, fields=fields,
-                            showDeleted=deleted_only, maxResults=500, orderBy=orderBy, sortOrder=sortOrder, viewType=viewType,
-                            query=query, projection=projection, customFieldMask=customFieldMask)
+  all_users = callGAPIpages(service=cd.users(), function=u'list', items=u'users', page_message=page_message, message_attribute=u'primaryEmail', customer=customer, domain=domain, fields=fields, showDeleted=deleted_only, maxResults=500, orderBy=orderBy, sortOrder=sortOrder, viewType=viewType, query=query, projection=projection, customFieldMask=customFieldMask)
   titles = [u'primaryEmail',]
   attributes = []
   for user in all_users:
@@ -7296,7 +6884,6 @@ def doPrintUsers():
 def doPrintGroups():
   i = 3
   printname = printdesc = printid = members = owners = managers = settings = admin_created = aliases = todrive = False
-  customer = GC_Values[GC_CUSTOMER_ID]
   usedomain = usemember = None
   listDelimiter = u'\n'
   group_attributes = [{u'Email': u'Email'}]
@@ -7305,7 +6892,6 @@ def doPrintGroups():
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'domain':
       usedomain = sys.argv[i+1].lower()
-      customer = None
       i += 2
     elif sys.argv[i].lower() == u'todrive':
       todrive = True
@@ -7315,7 +6901,6 @@ def doPrintGroups():
       i += 2
     elif sys.argv[i].lower() == u'member':
       usemember = sys.argv[i+1].lower()
-      customer = None
       i += 2
     elif sys.argv[i].lower() == u'name':
       fields += u',groups(name)'
@@ -7371,10 +6956,12 @@ def doPrintGroups():
       showUsage()
       sys.exit(7)
   cd = buildGAPIObject(u'directory')
+  global customerId
+  if usedomain or usemember:
+    customerId = None
   sys.stderr.write(u"Retrieving All Groups for Google Apps account (may take some time on a large account)...\n")
   page_message = u'Got %%num_items%% groups: %%first_item%% - %%last_item%%\n'
-  all_groups = callGAPIpages(service=cd.groups(), function=u'list', items=u'groups', page_message=page_message,
-                             message_attribute=u'email', customer=customer, domain=usedomain, userKey=usemember, fields=fields)
+  all_groups = callGAPIpages(service=cd.groups(), function=u'list', items=u'groups', page_message=page_message, message_attribute=u'email', customer=customerId, domain=usedomain, userKey=usemember, fields=fields)
   total_groups = len(all_groups)
   count = 0
   for group_vals in all_groups:
@@ -7421,8 +7008,7 @@ def doPrintGroups():
       roles = u','.join(roles)
       sys.stderr.write(u' Getting %s for %s (%s of %s)\n' % (roles, group_vals[u'email'], count, total_groups))
       page_message = u'Got %%num_items%% members: %%first_item%% - %%last_item%%\n'
-      all_group_members = callGAPIpages(service=cd.members(), function=u'list', items=u'members', page_message=page_message,
-                                        message_attribute=u'email', groupKey=group_vals[u'email'], roles=roles, fields=u'nextPageToken,members(email,role)')
+      all_group_members = callGAPIpages(service=cd.members(), function=u'list', items=u'members', page_message=page_message, message_attribute=u'email', groupKey=group_vals[u'email'], roles=roles, fields=u'nextPageToken,members(email,role)')
       if members:
         all_true_members = list()
       if managers:
@@ -7520,7 +7106,7 @@ def doPrintOrgs():
     titles.append(u'Path')
   cd = buildGAPIObject(u'directory')
   sys.stderr.write(u"Retrieving All Organizational Units for your account (may take some time on large domain)...")
-  orgs = callGAPI(service=cd.orgunits(), function=u'list', customerId=GC_Values[GC_CUSTOMER_ID], fields=fields, type=listType, orgUnitPath=orgUnitPath)
+  orgs = callGAPI(service=cd.orgunits(), function=u'list', customerId=customerId, fields=fields, type=listType, orgUnitPath=orgUnitPath)
   sys.stderr.write(u"done\n")
   if not u'organizationUnits' in orgs:
     print u'0 org units in this Google Apps instance...'
@@ -7574,20 +7160,18 @@ def doPrintAliases():
   alias_attributes[0].update(Target=u'Target')
   alias_attributes[0].update(TargetType=u'TargetType')
   titles = [u'Alias', u'Target', u'TargetType']
-  sys.stderr.write(u"Retrieving All User Aliases for %s organization (may take some time on large domain)...\n" % GC_Values[GC_DOMAIN])
+  sys.stderr.write(u"Retrieving All User Aliases for %s organization (may take some time on large domain)...\n" % domain)
   page_message = u'Got %%num_items%% users %%first_item%% - %%last_item%%\n'
-  all_users = callGAPIpages(service=cd.users(), function=u'list', items=u'users', page_message=page_message,
-                            message_attribute=u'primaryEmail', customer=GC_Values[GC_CUSTOMER_ID], fields=u'users(primaryEmail,aliases),nextPageToken', maxResults=500)
+  all_users = callGAPIpages(service=cd.users(), function=u'list', items=u'users', page_message=page_message, message_attribute=u'primaryEmail', customer=customerId, fields=u'users(primaryEmail,aliases),nextPageToken', maxResults=500)
   for user in all_users:
     try:
       for alias in user[u'aliases']:
         alias_attributes.append({u'Alias': alias, u'Target': user[u'primaryEmail'], u'TargetType': u'User'})
     except KeyError:
       continue
-  sys.stderr.write(u"Retrieving All User Aliases for %s organization (may take some time on large domain)...\n" % GC_Values[GC_DOMAIN])
+  sys.stderr.write(u"Retrieving All User Aliases for %s organization (may take some time on large domain)...\n" % domain)
   page_message = u'Got %%num_items%% groups %%first_item%% - %%last_item%%\n'
-  all_groups = callGAPIpages(service=cd.groups(), function=u'list', items=u'groups', page_message=page_message,
-                             message_attribute=u'email', customer=GC_Values[GC_CUSTOMER_ID], fields=u'groups(email,aliases),nextPageToken')
+  all_groups = callGAPIpages(service=cd.groups(), function=u'list', items=u'groups', page_message=page_message, message_attribute=u'email', customer=customerId, fields=u'groups(email,aliases),nextPageToken')
   for group in all_groups:
     try:
       for alias in group[u'aliases']:
@@ -7612,7 +7196,7 @@ def doPrintGroupMembers():
   cd = buildGAPIObject(u'directory')
   member_attributes = [{u'group': u'group'},]
   if not all_groups:
-    all_groups = callGAPIpages(service=cd.groups(), function=u'list', items=u'groups', message_attribute=u'email', customer=GC_Values[GC_CUSTOMER_ID], fields=u'nextPageToken,groups(email)')
+    all_groups = callGAPIpages(service=cd.groups(), function=u'list', items=u'groups', message_attribute=u'email', customer=customerId, fields=u'nextPageToken,groups(email)')
   total_groups = len(all_groups)
   i = 1
   for group in all_groups:
@@ -7667,8 +7251,7 @@ def doPrintMobileDevices():
       sys.exit(3)
   sys.stderr.write(u'Retrieving All Mobile Devices for organization (may take some time for large accounts)...\n')
   page_message = u'Got %%num_items%% mobile devices...\n'
-  all_mobile = callGAPIpages(service=cd.mobiledevices(), function=u'list', items=u'mobiledevices', page_message=page_message,
-                             customerId=GC_Values[GC_CUSTOMER_ID], query=query, orderBy=orderBy, sortOrder=sortOrder)
+  all_mobile = callGAPIpages(service=cd.mobiledevices(), function=u'list', items=u'mobiledevices', page_message=page_message, customerId=customerId, query=query, orderBy=orderBy, sortOrder=sortOrder)
   for mobile in all_mobile:
     mobiledevice = dict()
     for title in mobile.keys():
@@ -7749,7 +7332,7 @@ def doPrintCrosDevices():
   sys.stderr.write(u'Retrieving All Chrome OS Devices for organization (may take some time for large accounts)...\n')
   page_message = u'Got %%num_items%% Chrome devices...\n'
   all_cros = callGAPIpages(service=cd.chromeosdevices(), function=u'list', items=u'chromeosdevices', page_message=page_message,
-                           query=query, customerId=GC_Values[GC_CUSTOMER_ID], projection=projection, orderBy=orderBy, sortOrder=sortOrder)
+                           query=query, customerId=customerId, projection=projection, orderBy=orderBy, sortOrder=sortOrder)
   if all_cros:
     if (not noLists) and (not selectAttrib):
       for cros in all_cros:
@@ -7814,16 +7397,14 @@ def doPrintLicenses(return_list=False, skus=None):
       product, sku = getProductAndSKU(sku)
       page_message = u'Got %%%%total_items%%%% Licenses for %s...\n' % sku
       try:
-        licenses += callGAPIpages(service=lic.licenseAssignments(), function=u'listForProductAndSku', throw_reasons=[u'invalid', u'forbidden'],
-                                  page_message=page_message, customerId=GC_Values[GC_DOMAIN], productId=product, skuId=sku, fields=u'items(productId,skuId,userId),nextPageToken')
+        licenses += callGAPIpages(service=lic.licenseAssignments(), function=u'listForProductAndSku', throw_reasons=[u'invalid', u'forbidden'], page_message=page_message, customerId=domain, productId=product, skuId=sku, fields=u'items(productId,skuId,userId),nextPageToken')
       except googleapiclient.errors.HttpError:
         licenses += []
   else:
     for productId in products:
       page_message = u'Got %%%%total_items%%%% Licenses for %s...\n' % productId
       try:
-        licenses += callGAPIpages(service=lic.licenseAssignments(), function=u'listForProduct', throw_reasons=[u'invalid', u'forbidden'],
-                                  page_message=page_message, customerId=GC_Values[GC_DOMAIN], productId=productId, fields=u'items(productId,skuId,userId),nextPageToken')
+        licenses += callGAPIpages(service=lic.licenseAssignments(), function=u'listForProduct', throw_reasons=[u'invalid', u'forbidden'], page_message=page_message, customerId=domain, productId=productId, fields=u'items(productId,skuId,userId),nextPageToken')
       except googleapiclient.errors.HttpError:
         licenses = +[]
   for u_license in licenses:
@@ -8302,7 +7883,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
     else:
       member_type_message = u'%ss' % member_type.lower()
     if group.find(u'@') == -1:
-      group = u'%s@%s' % (group, GC_Values[GC_DOMAIN])
+      group = u'%s@%s' % (group, domain)
     page_message = None
     if not silent:
       sys.stderr.write(u"Getting %s of %s (may take some time for large groups)..." % (member_type_message, group))
@@ -8324,9 +7905,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
     if not silent:
       sys.stderr.write(u"Getting all users in the Google Apps organization (may take some time on a large domain)...\n")
       page_message = u'Got %%total_items%% users...'
-    members = callGAPIpages(service=cd.users(), function=u'list', items=u'users', page_message=page_message,
-                            customer=GC_Values[GC_CUSTOMER_ID], fields=u'nextPageToken,users(primaryEmail,id,orgUnitPath)',
-                            query=u"orgUnitPath='%s'" % ou, maxResults=500)
+    members = callGAPIpages(service=cd.users(), function=u'list', items=u'users', page_message=page_message, customer=customerId, fields=u'nextPageToken,users(primaryEmail,id,orgUnitPath)', query=u"orgUnitPath='%s'" % ou, maxResults=500)
     for member in members:
       if ou.lower() != member[u'orgUnitPath'].lower():
         continue
@@ -8346,8 +7925,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
     if not silent:
       sys.stderr.write(u"Getting all users in the Google Apps organization (may take some time on a large domain)...\n")
       page_message = u'Got %%total_items%% users..'
-    members = callGAPIpages(service=cd.users(), function=u'list', items=u'users', page_message=page_message,
-                            customer=GC_Values[GC_CUSTOMER_ID], fields=u'nextPageToken,users(primaryEmail,id)', query=u"orgUnitPath='%s'" % ou, maxResults=500)
+    members = callGAPIpages(service=cd.users(), function=u'list', items=u'users', page_message=page_message, customer=customerId, fields=u'nextPageToken,users(primaryEmail,id)', query=u"orgUnitPath='%s'" % ou, maxResults=500)
     for member in members:
       if return_uids:
         users.append(member[u'id'])
@@ -8361,8 +7939,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
     if not silent:
       sys.stderr.write(u"Getting all users that match query %s (may take some time on a large domain)...\n" % entity)
     page_message = u'Got %%total_items%% users...'
-    members = callGAPIpages(service=cd.users(), function=u'list', items=u'users', page_message=page_message,
-                            customer=GC_Values[GC_CUSTOMER_ID], fields=u'nextPageToken,users(primaryEmail,id)', query=entity, maxResults=500)
+    members = callGAPIpages(service=cd.users(), function=u'list', items=u'users', page_message=page_message, customer=customerId, fields=u'nextPageToken,users(primaryEmail,id)', query=entity, maxResults=500)
     for member in members:
       if return_uids:
         users.append(member[u'id'])
@@ -8399,8 +7976,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
         users.append(teacher[u'profile'][u'emailAddress'])
     if entity_type in [u'courseparticipants', u'students']:
       page_message = u'Got %%total_items%% students...'
-      students = callGAPIpages(service=croom.courses().students(), function=u'list',
-                               page_message=page_message, items=u'students', courseId=entity)
+      students = callGAPIpages(service=croom.courses().students(), function=u'list', page_message=page_message, items=u'students', courseId=entity)
       for student in students:
         users.append(student[u'profile'][u'emailAddress'])
   elif entity_type == u'all':
@@ -8410,8 +7986,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
       if not silent:
         sys.stderr.write(u"Getting all users in Google Apps account (may take some time on a large account)...\n")
       page_message = u'Got %%total_items%% users...'
-      all_users = callGAPIpages(service=cd.users(), function=u'list', items=u'users', page_message=page_message,
-                                customer=GC_Values[GC_CUSTOMER_ID], fields=u'nextPageToken,users(primaryEmail,suspended,id)', maxResults=500)
+      all_users = callGAPIpages(service=cd.users(), function=u'list', items=u'users', page_message=page_message, customer=customerId, fields=u'nextPageToken,users(primaryEmail,suspended,id)', maxResults=500)
       for member in all_users:
         if member[u'suspended'] == False:
           if return_uids:
@@ -8423,8 +7998,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
     elif entity == u'cros':
       if not silent:
         sys.stderr.write(u"Getting all CrOS devices in Google Apps account (may take some time on a large account)...\n")
-      all_cros = callGAPIpages(service=cd.chromeosdevices(), function=u'list', items=u'chromeosdevices',
-                               customerId=GC_Values[GC_CUSTOMER_ID], fields=u'nextPageToken,chromeosdevices(deviceId)')
+      all_cros = callGAPIpages(service=cd.chromeosdevices(), function=u'list', items=u'chromeosdevices', customerId=customerId, fields=u'nextPageToken,chromeosdevices(deviceId)')
       for member in all_cros:
         users.append(member[u'deviceId'])
       if not silent:
@@ -8438,7 +8012,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
       if user[:4] == u'uid:':
         full_users.append(user[4:])
       elif user.find(u'@') == -1:
-        full_users.append(u'%s@%s' % (user, GC_Values[GC_DOMAIN]))
+        full_users.append(u'%s@%s' % (user, domain))
       else:
         full_users.append(user)
   else:
@@ -8455,7 +8029,11 @@ def OAuthInfo():
   try:
     access_token = sys.argv[3]
   except IndexError:
-    storage = oauth2client.file.Storage(GC_Values[GC_OAUTH2_TXT])
+    try:
+      oauth2file = os.path.join(gamUserConfigDir, os.environ[u'OAUTHFILE'])
+    except KeyError:
+      oauth2file = os.path.join(gamUserConfigDir, u'oauth2.txt')
+    storage = oauth2client.file.Storage(oauth2file)
     credentials = storage.get()
     if credentials is None or credentials.invalid:
       doRequestOAuth()
@@ -8463,12 +8041,17 @@ def OAuthInfo():
     credentials.user_agent = u'GAM %s - http://git.io/gam / %s / Python %s.%s.%s %s / %s %s /' % (__version__, __author__,
                                                                                                   sys.version_info[0], sys.version_info[1], sys.version_info[2],
                                                                                                   sys.version_info[3], platform.platform(), platform.machine())
-    http = httplib2.Http(ca_certs=GC_Values[GC_CACERT_PEM],
-                         disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL])
+    disable_ssl_certificate_validation = False
+    if os.path.isfile(os.path.join(gamUserConfigDir, u'noverifyssl.txt')):
+      disable_ssl_certificate_validation = True
+    http = httplib2.Http(ca_certs=os.path.join(gamSiteConfigDir, u'cacert.pem'),
+                         disable_ssl_certificate_validation=disable_ssl_certificate_validation)
+    if os.path.isfile(os.path.join(gamUserConfigDir, u'debug.gam')):
+      httplib2.debuglevel = 4
     if credentials.access_token_expired:
       credentials.refresh(http)
     access_token = credentials.access_token
-    print u"\nOAuth File: %s" % GC_Values[GC_OAUTH2_TXT]
+    print u"\nOAuth File: %s" % oauth2file
   oa2 = buildGAPIObject(u'oauth2')
   token_info = callGAPI(service=oa2, function=u'tokeninfo', access_token=access_token)
   print u"Client ID: %s" % token_info[u'issued_to']
@@ -8485,15 +8068,24 @@ def OAuthInfo():
     print u'Google Apps Admin: Unknown'
 
 def doDeleteOAuth():
-  storage = oauth2client.file.Storage(GC_Values[GC_OAUTH2_TXT])
+  try:
+    oauth2file = os.path.join(gamUserConfigDir, os.environ[u'OAUTHFILE'])
+  except KeyError:
+    oauth2file = os.path.join(gamUserConfigDir, u'oauth2.txt')
+  storage = oauth2client.file.Storage(oauth2file)
   credentials = storage.get()
   try:
     credentials.revoke_uri = oauth2client.GOOGLE_REVOKE_URI
   except AttributeError:
     print u'Error: Authorization doesn\'t exist'
     sys.exit(1)
-  http = httplib2.Http(ca_certs=GC_Values[GC_CACERT_PEM],
-                       disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL])
+  certFile = os.path.join(gamSiteConfigDir, u'cacert.pem')
+  disable_ssl_certificate_validation = False
+  if os.path.isfile(os.path.join(gamUserConfigDir, u'noverifyssl.txt')):
+    disable_ssl_certificate_validation = True
+  http = httplib2.Http(ca_certs=certFile, disable_ssl_certificate_validation=disable_ssl_certificate_validation)
+  if os.path.isfile(os.path.join(gamUserConfigDir, u'debug.gam')):
+    httplib2.debuglevel = 4
   sys.stderr.write(u'This OAuth token will self-destruct in 3...')
   time.sleep(1)
   sys.stderr.write(u'2...')
@@ -8505,7 +8097,7 @@ def doDeleteOAuth():
     credentials.revoke(http)
   except oauth2client.client.TokenRevokeError, e:
     print u'Error: %s' % e
-    os.remove(GC_Values[GC_OAUTH2_TXT])
+    os.remove(oauth2file)
 
 class cmd_flags(object):
   def __init__(self):
@@ -8539,6 +8131,10 @@ possible_scopes = [u'https://www.googleapis.com/auth/admin.directory.group',    
                    u'https://www.googleapis.com/auth/cloudprint']			  # Cloudprint API
 
 def doRequestOAuth(incremental_auth=False):
+  try:
+    CLIENT_SECRETS = os.path.join(gamUserConfigDir, os.environ[u'CLIENTSECRETSFILE'])
+  except KeyError:
+    CLIENT_SECRETS = os.path.join(gamUserConfigDir, u'client_secrets.json')
   MISSING_CLIENT_SECRETS_MESSAGE = u"""
 WARNING: Please configure OAuth 2.0
 
@@ -8555,7 +8151,7 @@ https://github.com/jay0lee/GAM/wiki/CreatingClientSecretsFile
 
 for instructions.
 
-""" % GC_Values[GC_CLIENT_SECRETS_JSON]
+""" % CLIENT_SECRETS
 
   menu = u'''Select the authorized scopes for this token. Include a 'r' to grant read-only
 access or an 'a' to grant action-only access.
@@ -8656,18 +8252,27 @@ access or an 'a' to grant action-only access.
       scopes.append(u'%s.readonly' % possible_scopes[i])
     elif selected_scopes[i] == u'A':
       scopes.append(u'%s.action' % possible_scopes[i])
-  FLOW = oauth2client.client.flow_from_clientsecrets(GC_Values[GC_CLIENT_SECRETS_JSON],
+  FLOW = oauth2client.client.flow_from_clientsecrets(CLIENT_SECRETS,
                                                      scope=scopes,
                                                      message=MISSING_CLIENT_SECRETS_MESSAGE)
-  storage = oauth2client.file.Storage(GC_Values[GC_OAUTH2_TXT])
+  try:
+    oauth2file = os.path.join(gamUserConfigDir, os.environ[u'OAUTHFILE'])
+  except KeyError:
+    oauth2file = os.path.join(gamUserConfigDir, u'oauth2.txt')
+  storage = oauth2client.file.Storage(oauth2file)
   credentials = storage.get()
   flags = cmd_flags()
-  if GC_Values[GC_NO_BROWSER]:
+  if os.path.isfile(os.path.join(gamUserConfigDir, u'nobrowser.txt')):
     flags.noauth_local_webserver = True
   if credentials is None or credentials.invalid or incremental_auth:
-    http = httplib2.Http(ca_certs=GC_Values[GC_CACERT_PEM],
-                         disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL])
-    GC_Values[GC_EXTRA_ARGS][u'prettyPrint'] = True
+    certFile = os.path.join(gamSiteConfigDir, u'cacert.pem')
+    disable_ssl_certificate_validation = False
+    if os.path.isfile(os.path.join(gamUserConfigDir, u'noverifyssl.txt')):
+      disable_ssl_certificate_validation = True
+    http = httplib2.Http(ca_certs=certFile, disable_ssl_certificate_validation=disable_ssl_certificate_validation)
+    if os.path.isfile(os.path.join(gamUserConfigDir, u'debug.gam')):
+      httplib2.debuglevel = 4
+      extra_args[u'prettyPrint'] = True
     try:
       credentials = oauth2client.tools.run_flow(flow=FLOW, storage=storage, flags=flags, http=http)
     except httplib2.CertificateValidationUnsupported:
@@ -8686,11 +8291,15 @@ def run_batch(items):
   python_cmd = [sys.executable.lower(),]
   if not getattr(sys, 'frozen', False): # we're not frozen
     python_cmd.append(os.path.realpath(sys.argv[0]))
+  try:
+    num_worker_threads = int(os.environ[u'GAM_THREADS'])
+  except (TypeError, KeyError):
+    num_worker_threads = 5
   import Queue, threading
   global q
-  q = Queue.Queue(maxsize=GC_Values[GC_NUM_THREADS]) # q.put() gets blocked when trying to create more items than there are workers
-  print u'starting %s worker threads...' % GC_Values[GC_NUM_THREADS]
-  for i in range(GC_Values[GC_NUM_THREADS]):
+  q = Queue.Queue(maxsize=num_worker_threads) # q.put() gets blocked when trying to create more items than there are workers
+  print u'starting %s worker threads...' % num_worker_threads
+  for i in range(num_worker_threads):
     t = threading.Thread(target=batch_worker)
     t.daemon = True
     t.start()
@@ -8712,9 +8321,8 @@ sys.setdefaultencoding(u'UTF-8')
 try:
   if os.name == u'nt':
     sys.argv = win32_unicode_argv() # cleanup sys.argv on Windows
-# If the only commands concerned the config file, exit without showing usage
-  if not setGlobalVariables():
-    sys.exit(0)
+  setGamDirs()
+  doGAMCheckForUpdates()
   if sys.argv[1].lower() == u'batch':
     import shlex
     f = file(sys.argv[2], 'rb')
@@ -9036,12 +8644,16 @@ try:
     for user in users:
       print user
       sys.exit(0)
-  if (GC_Values[GC_AUTO_BATCH_MIN] > 0) and (len(users) > GC_Values[GC_AUTO_BATCH_MIN]):
-    items = []
-    for user in users:
-      items.append([u'user', user] + sys.argv[3:])
-    run_batch(items)
-    sys.exit(0)
+  try:
+    autoBatch = int(os.environ[u'GAM_AUTOBATCH'])
+    if len(users) > autoBatch:
+      items = []
+      for user in users:
+        items.append([u'user', user] + sys.argv[3:])
+      run_batch(items)
+      sys.exit(0)
+  except (TypeError, KeyError):
+    pass
   if command == u'transfer':
     transferWhat = sys.argv[4].lower()
     if transferWhat == u'drive':
