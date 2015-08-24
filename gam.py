@@ -5594,7 +5594,6 @@ def doUpdateUser(users):
       body[u'emails'] = [{u'type': u'custom', u'customType': u'former_employee', u'primary': False, u'address': user_primary}]
     sys.stderr.write(u'updating user %s...\n' % user)
     if do_update_user:
-#      callGAPI(service=cd.users(), function=u'patch', userKey=user, body=body)
       callGAPI(service=cd.users(), function=u'update', userKey=user, body=body)
     if do_admin_user:
       callGAPI(service=cd.users(), function=u'makeAdmin', userKey=user, body={u'status': is_admin})
@@ -5924,7 +5923,7 @@ def doUpdateOrg():
       current_cros = 1
       for cros in users:
         sys.stderr.write(u' moving %s to %s (%s/%s)\n' % (cros, orgUnitPath, current_cros, cros_count))
-        callGAPI(service=cd.chromeosdevices(), function=u'patch', soft_errors=True, customerId=GC_Values[GC_CUSTOMER_ID], deviceId=cros, body={u'orgUnitPath': '//%s' % orgUnitPath})
+        callGAPI(service=cd.chromeosdevices(), function=u'update', soft_errors=True, customerId=GC_Values[GC_CUSTOMER_ID], deviceId=cros, body={u'orgUnitPath': '//%s' % orgUnitPath})
         current_cros += 1
     else:
       user_count = len(users)
@@ -5934,7 +5933,7 @@ def doUpdateOrg():
       for user in users:
         sys.stderr.write(u' moving %s to %s (%s/%s)\n' % (user, orgUnitPath, current_user, user_count))
         try:
-          callGAPI(service=cd.users(), function=u'patch', throw_reasons=[u'conditionNotMet'], userKey=user, body={u'orgUnitPath': orgUnitPath})
+          callGAPI(service=cd.users(), function=u'update', throw_reasons=[u'conditionNotMet'], userKey=user, body={u'orgUnitPath': orgUnitPath})
         except googleapiclient.errors.HttpError:
           pass
         current_user += 1
@@ -5961,7 +5960,6 @@ def doUpdateOrg():
         i += 1
     if orgUnitPath[0] == u'/': # we don't want a / at the beginning for OU updates
       orgUnitPath = orgUnitPath[1:]
-#    callGAPI(service=cd.orgunits(), function=u'patch', customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=orgUnitPath, body=body)
     callGAPI(service=cd.orgunits(), function=u'update', customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=orgUnitPath, body=body)
 
 def doWhatIs():
