@@ -47,33 +47,44 @@ is_frozen = getattr(sys, 'frozen', '')
 GAM = u'GAM'
 TRUE = u'true'
 FALSE = u'false'
-TRUE_VALUES = [TRUE, u'on', u'yes', u'enabled', u'1']
-FALSE_VALUES = [FALSE, u'off', u'no', u'disabled', u'0']
 TRUE_FALSE = [TRUE, FALSE]
+true_values = [TRUE, u'on', u'yes', u'enabled', u'1']
+false_values = [FALSE, u'off', u'no', u'disabled', u'0']
 usergroup_types = [u'user', u'users', u'group', u'ou', u'org',
                    u'ou_and_children', u'ou_and_child', u'query',
                    u'license', u'licenses', u'licence', u'licences', u'file', u'all',
                    u'cros']
-GAMCACHE = u'gamcache'
-MY_CUSTOMER = u'my_customer'
-UNKNOWN_DOMAIN = u'Unknown'
+ERROR = u'ERROR'
+ERROR_PREFIX = ERROR+u': '
+WARNING = u'WARNING'
+WARNING_PREFIX = WARNING+u': '
 FN_CACERT_PEM = u'cacert.pem'
 FN_CLIENT_SECRETS_JSON = u'client_secrets.json'
 FN_OAUTH2_TXT = u'oauth2.txt'
 FN_OAUTH2SERVICE_JSON = u'oauth2service.json'
 FN_EXTRA_ARGS_TXT = u'extra-args.txt'
+GAMCACHE = u'gamcache'
+MY_CUSTOMER = u'my_customer'
+UNKNOWN_DOMAIN = u'Unknown'
 
 q = None
 
-#
-# Gam configuration file
+# Location of gam.cfg, if not set, appdirs user_config_dir will be used
+EV_GAM_CFG_HOME = u'GAM_CFG_HOME'
+# Name of config file
 GAM_CFG = u'gam.cfg'
+GAM_BAK = u'gam.bak'
 # Path to gam, assigned in setGlobalVariables after the command line is cleaned up for Windows
 GC_GAM_PATH = u'gam_path'
+#
+# Global variables derived from values in gam.cfg
+#
 # Full path to cacert.pem
 GC_CACERT_PEM = u'cacert_pem'
 # Extra arguments to pass to GAPI functions
 GC_EXTRA_ARGS = u'extra_args'
+#
+# Global variables defined in  gam.cfg
 #
 # Automatically generate gam batch command if number of users specified in gam users xxx command exceeds this number
 # Default: 0, don't automatically generate gam batch commands
@@ -94,8 +105,8 @@ GC_DOMAIN = u'domain'
 GC_DRIVE_DIR = u'drive_dir'
 # Time of last GAM update check
 GC_LAST_UPDATE_CHECK = u'last_update_check'
-# Maximum number of items to delete without confirmation
-GC_MAX_MESSAGES_TO_DELETE = u'max_messages_to_delete'
+# Maximum number of items to process without confirmation
+GC_MAX_MESSAGES_TO_PROCESS = u'max_messages_to_process'
 # If no_browser is False, writeCSVfile won't open a browser when todrive is set
 # and doRequestOAuth prints a link and waits for the verification code when oauth2.txt is being created
 GC_NO_BROWSER = u'no_browser'
@@ -126,7 +137,7 @@ GC_DEFAULTS = {
   GC_DOMAIN: u'',
   GC_DRIVE_DIR: u'',
   GC_LAST_UPDATE_CHECK: 0,
-  GC_MAX_MESSAGES_TO_DELETE: 1,
+  GC_MAX_MESSAGES_TO_PROCESS: 1,
   GC_NO_BROWSER: FALSE,
   GC_NO_CACHE: FALSE,
   GC_NO_UPDATE_CHECK: FALSE,
@@ -146,26 +157,29 @@ GC_TYPE_FILE = u'file'
 GC_TYPE_INTEGER = u'inte'
 GC_TYPE_STRING = u'stri'
 
+GC_VAR_TYPE_KEY = u'type'
+GC_VAR_LIMITS_KEY = u'limits'
+
 GC_VAR_INFO = {
-  GC_AUTO_BATCH_MIN: {u'type': GC_TYPE_INTEGER, u'limits': (0, None)},
-  GC_CACHE_DIR: {u'type': GC_TYPE_DIRECTORY, u'append': GAMCACHE},
-  GC_CLIENT_SECRETS_JSON: {u'type': GC_TYPE_FILE},
-  GC_CONFIG_DIR: {u'type': GC_TYPE_DIRECTORY, u'append': u''},
-  GC_CUSTOMER_ID: {u'type': GC_TYPE_STRING},
-  GC_DEBUG_LEVEL: {u'type': GC_TYPE_INTEGER, u'limits': (0, None)},
-  GC_DOMAIN: {u'type': GC_TYPE_STRING},
-  GC_DRIVE_DIR: {u'type': GC_TYPE_DIRECTORY, u'append': u'',},
-  GC_LAST_UPDATE_CHECK: {u'type': GC_TYPE_INTEGER, u'limits': (0, None)},
-  GC_MAX_MESSAGES_TO_DELETE: {u'type': GC_TYPE_INTEGER, u'limits': (0, None)},
-  GC_NO_BROWSER: {u'type': GC_TYPE_BOOLEAN},
-  GC_NO_CACHE: {u'type': GC_TYPE_BOOLEAN},
-  GC_NO_UPDATE_CHECK: {u'type': GC_TYPE_BOOLEAN},
-  GC_NO_VERIFY_SSL: {u'type': GC_TYPE_BOOLEAN},
-  GC_NUM_THREADS: {u'type': GC_TYPE_INTEGER, u'limits': (1, None)},
-  GC_OAUTH2_TXT: {u'type': GC_TYPE_FILE},
-  GC_OAUTH2SERVICE_JSON: {u'type': GC_TYPE_FILE},
-  GC_SECTION: {u'type': GC_TYPE_STRING},
-  GC_SHOW_LICENSES: {u'type': GC_TYPE_BOOLEAN},
+  GC_AUTO_BATCH_MIN: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_LIMITS_KEY: (0, None)},
+  GC_CACHE_DIR: {GC_VAR_TYPE_KEY: GC_TYPE_DIRECTORY},
+  GC_CLIENT_SECRETS_JSON: {GC_VAR_TYPE_KEY: GC_TYPE_FILE},
+  GC_CONFIG_DIR: {GC_VAR_TYPE_KEY: GC_TYPE_DIRECTORY},
+  GC_CUSTOMER_ID: {GC_VAR_TYPE_KEY: GC_TYPE_STRING},
+  GC_DEBUG_LEVEL: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_LIMITS_KEY: (0, None)},
+  GC_DOMAIN: {GC_VAR_TYPE_KEY: GC_TYPE_STRING},
+  GC_DRIVE_DIR: {GC_VAR_TYPE_KEY: GC_TYPE_DIRECTORY},
+  GC_LAST_UPDATE_CHECK: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_LIMITS_KEY: (0, None)},
+  GC_MAX_MESSAGES_TO_PROCESS: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_LIMITS_KEY: (0, None)},
+  GC_NO_BROWSER: {GC_VAR_TYPE_KEY: GC_TYPE_BOOLEAN},
+  GC_NO_CACHE: {GC_VAR_TYPE_KEY: GC_TYPE_BOOLEAN},
+  GC_NO_UPDATE_CHECK: {GC_VAR_TYPE_KEY: GC_TYPE_BOOLEAN},
+  GC_NO_VERIFY_SSL: {GC_VAR_TYPE_KEY: GC_TYPE_BOOLEAN},
+  GC_NUM_THREADS: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_LIMITS_KEY: (1, None)},
+  GC_OAUTH2_TXT: {GC_VAR_TYPE_KEY: GC_TYPE_FILE},
+  GC_OAUTH2SERVICE_JSON: {GC_VAR_TYPE_KEY: GC_TYPE_FILE},
+  GC_SECTION: {GC_VAR_TYPE_KEY: GC_TYPE_STRING},
+  GC_SHOW_LICENSES: {GC_VAR_TYPE_KEY: GC_TYPE_BOOLEAN},
   }
 
 GC_VAR_ALIASES = {
@@ -178,7 +192,7 @@ GC_VAR_ALIASES = {
   u'domain':  u'domain',
   u'drivedir':  u'drive_dir',
   u'lastupdatecheck':  u'last_update_check',
-  u'maxmessagestodelete':  u'max_messages_to_delete',
+  u'maxmessagestoprocess':  u'max_messages_to_process',
   u'nobrowser':  u'no_browser',
   u'nocache':  u'no_cache',
   u'noupdatecheck':  u'no_update_check',
@@ -194,16 +208,27 @@ GC_VAR_ALIASES = {
 SELECT_CMD = u'select'
 SELECT_SAVE_CMD = u'save'
 SELECT_VERIFY_CMD = u'verify'
-OPTIONS_CMD = u'options'
-OPTIONS_CREATE_CMD = u'create'
-OPTIONS_DELETE_CMD = u'delete'
-OPTIONS_SELECT_CMD = u'select'
-OPTIONS_RESET_CMD = u'reset'
-OPTIONS_SAVE_CMD = u'save'
-OPTIONS_SET_CMD = u'set'
-OPTIONS_VERIFY_CMD = u'verify'
-OPTIONS_DONE_CMD = u'done'
-OPTIONS_SUB_CMDS = [OPTIONS_CREATE_CMD, OPTIONS_DELETE_CMD, OPTIONS_SELECT_CMD, OPTIONS_RESET_CMD, OPTIONS_SET_CMD, OPTIONS_SAVE_CMD, OPTIONS_VERIFY_CMD, OPTIONS_DONE_CMD]
+CONFIG_CMD = u'config'
+CONFIG_CREATE_CMD = u'create'
+CONFIG_CREATE_OVERWRITE_CMD = u'overwrite'
+CONFIG_DELETE_CMD = u'delete'
+CONFIG_SELECT_CMD = u'select'
+CONFIG_MAKE_CMD = u'make'
+CONFIG_COPY_CMD = u'copy'
+CONFIG_RESET_CMD = u'reset'
+CONFIG_SET_CMD = u'set'
+CONFIG_SAVE_CMD = u'save'
+CONFIG_BACKUP_CMD = u'backup'
+CONFIG_RESTORE_CMD = u'restore'
+CONFIG_VERIFY_CMD = u'verify'
+CONFIG_PRINT_CMD = u'print'
+CONFIG_SUB_CMDS = [CONFIG_CREATE_CMD, CONFIG_DELETE_CMD, CONFIG_SELECT_CMD,
+                   CONFIG_MAKE_CMD, CONFIG_COPY_CMD,
+                   CONFIG_RESET_CMD, CONFIG_SET_CMD,
+                   CONFIG_SAVE_CMD, CONFIG_BACKUP_CMD, CONFIG_RESTORE_CMD,
+                   CONFIG_VERIFY_CMD, CONFIG_PRINT_CMD,
+                   CONFIG_CMD,
+                  ]
 #
 def convertUTF8(data):
   import collections
@@ -304,6 +329,35 @@ def integerLimits(minVal, maxVal):
     return u'integer x<={0}'.format(maxVal)
   return u'integer x'
 #
+# Read a file
+#
+def readFile(filename, mode='rb', continueOnError=False, displayError=True):
+  try:
+    if filename != u'-':
+      with open(filename, mode) as f:
+        return f.read()
+    else:
+      return unicode(sys.stdin.read())
+  except IOError as e:
+    if displayError:
+      sys.stderr.write(u'{0}{1}\n'.format(WARNING_PREFIX, e))
+    if continueOnError:
+      return None
+    sys.exit(6)
+#
+# Write a file
+#
+def writeFile(filename, data, mode='wb', continueOnError=False):
+  try:
+    with open(filename, mode) as f:
+      f.write(data)
+    return True
+  except IOError as e:
+    sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, e))
+    if continueOnError:
+      return False
+    sys.exit(6)
+#
 # Set global variables from config file
 # Check for GAM updates based on status of no_update_check in config file
 #
@@ -314,20 +368,30 @@ def setGlobalVariables():
   def _getOldEnvVar(itemName, envVar):
     try:
       value = os.environ[envVar]
+      if GC_VAR_INFO[itemName][GC_VAR_TYPE_KEY] == GC_TYPE_INTEGER:
+        try:
+          number = int(value)
+          minVal, maxVal = GC_VAR_INFO[itemName][GC_VAR_LIMITS_KEY]
+          if number < minVal:
+            number = minVal
+          elif maxVal and (number > maxVal):
+            number = maxVal
+        except ValueError:
+          value = GC_DEFAULTS[itemName]
+        value = str(number)
       config.set(ConfigParser.DEFAULTSECT, itemName, value)
     except KeyError:
-      config.set(ConfigParser.DEFAULTSECT, itemName, str(GC_DEFAULTS[itemName]))
+      config.set(ConfigParser.DEFAULTSECT, itemName, unicode(GC_DEFAULTS[itemName]))
 
   def _getOldSignalFile(itemName, fileName, trueValue=TRUE, falseValue=FALSE):
     config.set(ConfigParser.DEFAULTSECT, itemName, trueValue if os.path.isfile(os.path.join(GC_Values[GC_GAM_PATH], fileName)) else falseValue)
 
   def _getOldEnvVarsSignalFiles():
-    _getOldEnvVar(GC_CONFIG_DIR, u'GAMUSERCONFIGDIR')
+    _getOldEnvVar(GC_CONFIG_DIR, u'GAMCONFIGDIR')
     _getOldEnvVar(GC_CACHE_DIR, u'GAMCACHEDIR')
     _getOldEnvVar(GC_DRIVE_DIR, u'GAMDRIVEDIR')
     _getOldEnvVar(GC_OAUTH2_TXT, u'OAUTHFILE')
     _getOldEnvVar(GC_OAUTH2SERVICE_JSON, u'OAUTHSERVICEFILE')
-    _getOldEnvVar(GC_CLIENT_SECRETS_JSON, u'CLIENTSECRETSFILE')
     _getOldEnvVar(GC_DOMAIN, u'GA_DOMAIN')
     _getOldEnvVar(GC_CUSTOMER_ID, u'CUSTOMER_ID')
     _getOldEnvVar(GC_NUM_THREADS, u'GAM_THREADS')
@@ -344,26 +408,43 @@ def setGlobalVariables():
       latestUpdateCheck = 0
     config.set(ConfigParser.DEFAULTSECT, GC_LAST_UPDATE_CHECK, str(latestUpdateCheck))
 
+  def _checkMakeDir(itemName):
+    if not os.path.isdir(GC_DEFAULTS[itemName]):
+      try:
+        os.makedirs(GC_DEFAULTS[itemName])
+      except OSError as e:
+        if not os.path.isdir(GC_DEFAULTS[itemName]):
+          sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, e))
+          sys.exit(13)
+
+  def _copyConfigFile(itemName):
+    srcFile = os.path.join(GC_Values[GC_GAM_PATH], config.get(ConfigParser.DEFAULTSECT, itemName, raw=True))
+    dstFile = os.path.join(GC_DEFAULTS[GC_CONFIG_DIR], os.path.basename(srcFile))
+    data = readFile(srcFile, continueOnError=True, displayError=False)
+    if (data != None) and writeFile(dstFile, data, continueOnError=True):
+      writeFile(dstFile, data)
+      config.set(ConfigParser.DEFAULTSECT, itemName, os.path.basename(srcFile))
+
   def _getCfgBoolean(sectionName, itemName):
     value = config.get(sectionName, itemName, raw=True)
-    if value in TRUE_VALUES:
+    if value in true_values:
       return True
-    if value in FALSE_VALUES:
+    if value in false_values:
       return False
-    sys.stderr.write(u'ERROR: Config File: {0}, Section: {1}, Item: {2}, Value: {3}, expected {4}\n'.format(configFileName, sectionName, itemName, value, u','.join(TRUE_FALSE)))
+    sys.stderr.write(u'{0}Config File: {1}, Section: {2}, Item: {3}, Value: {4}, expected {5}\n'.format(ERROR_PREFIX, configFileName, sectionName, itemName, value, u','.join(TRUE_FALSE)))
     status[u'errors'] = True
     return False
 
   def _getCfgInteger(sectionName, itemName):
     value = config.get(sectionName, itemName, raw=True)
-    minVal, maxVal = GC_VAR_INFO[itemName][u'limits']
+    minVal, maxVal = GC_VAR_INFO[itemName][GC_VAR_LIMITS_KEY]
     try:
       number = int(value)
       if (number >= minVal) and (not maxVal or (number <= maxVal)):
         return number
     except ValueError:
       pass
-    sys.stderr.write(u'ERROR: Config File: {0}, Section: {1}, Item: {2}, Value: {3}, expected {4}\n'.format(configFileName, sectionName, itemName, value, integerLimits(minVal, maxVal)))
+    sys.stderr.write(u'{0}Config File: {1}, Section: {2}, Item: {3}, Value: {4}, expected {5}\n'.format(ERROR_PREFIX, configFileName, sectionName, itemName, value, integerLimits(minVal, maxVal)))
     status[u'errors'] = True
     return 0
 
@@ -373,159 +454,240 @@ def setGlobalVariables():
       return ConfigParser.DEFAULTSECT
     if config.has_section(value):
       return value
-    sys.stderr.write(u'ERROR: Config File: {0}, Section: {1}, Item: {2}, Value: {3}, Not Found\n'.format(configFileName, sectionName, itemName, value))
+    sys.stderr.write(u'{0}Config File: {1}, Section: {2}, Item: {3}, Value: {4}, Not Found\n'.format(ERROR_PREFIX, configFileName, sectionName, itemName, value))
     status[u'errors'] = True
     return ConfigParser.DEFAULTSECT
 
   def _getCfgString(sectionName, itemName):
     return config.get(sectionName, itemName, raw=True)
 
-  def _getCfgDirectory(sectionName, itemName, append=u''):
-    value = config.get(sectionName, itemName, raw=True)
-    if not value:
-      value = os.path.join(GC_Values[GC_GAM_PATH], append)
-    if os.path.isdir(value):
-      return value
-    sys.stderr.write(u'ERROR: Config File: {0}, Section: {1}, Item: {2}, Value: {3}, Invalid Path\n'.format(configFileName, sectionName, itemName, value))
-    status[u'errors'] = True
-    return u'.'
+  def _getCfgDirectory(sectionName, itemName):
+    dirPath = os.path.expanduser(config.get(sectionName, itemName, raw=True))
+    if (not dirPath) or (not os.path.isabs(dirPath)):
+      if sectionName != ConfigParser.DEFAULTSECT:
+        dirPath = os.path.join(os.path.expanduser(config.get(ConfigParser.DEFAULTSECT, itemName, raw=True)), dirPath)
+      if not os.path.isabs(dirPath):
+        dirPath = os.path.join(GC_DEFAULTS[itemName], dirPath)
+    return dirPath
 
-  def _getCfgFile(sectionName, itemName, path):
-    value = os.path.join(path, config.get(sectionName, itemName, raw=True))
-    if os.path.isfile(value):
-      return value
-    sys.stderr.write(u'ERROR: Config File: {0}, Section: {1}, Item: {2}, Value: {3}, Not Found\n'.format(configFileName, sectionName, itemName, value))
-    status[u'errors'] = True
-    return u''
+  def _getCfgFile(sectionName, itemName):
+    value = os.path.expanduser(config.get(sectionName, itemName, raw=True))
+    if not os.path.isabs(value):
+      value = os.path.expanduser(os.path.join(_getCfgDirectory(sectionName, GC_CONFIG_DIR), value))
+    return value
 
-  def _readConfigFile():
+  def _readConfigFile(fileName, action=None):
     try:
-      with open(configFileName, 'rb') as f:
+      with open(fileName, 'rb') as f:
         config.readfp(f)
+      if action:
+        print u'Config File: {0}, {1}'.format(fileName, action)
     except (ConfigParser.MissingSectionHeaderError, ConfigParser.ParsingError) as e:
-      sys.stderr.write(u'ERROR: Config File: {0}, Invalid: {1}\n'.format(configFileName, e.message))
+      sys.stderr.write(u'{0}Config File: {1}, Invalid: {2}\n'.format(ERROR_PREFIX, fileName, e.message))
       sys.exit(13)
     except IOError as e:
-      sys.stderr.write(u'ERROR: {0}\n'.format(e))
+      sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, e))
       sys.exit(13)
 
-  def _writeConfigFile(action):
+  def _writeConfigFile(fileName, action=None):
     try:
-      with open(configFileName, 'wb') as f:
+      with open(fileName, 'wb') as f:
         config.write(f)
-      print u'Config File: {0}, {1}'.format(configFileName, action)
+      if action:
+        print u'Config File: {0}, {1}'.format(fileName, action)
     except IOError as e:
-      sys.stderr.write(u'ERROR: {0}\n'.format(e))
+      sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, e))
+
+  def _verifyValues():
+    print u'Section: {0}'.format(sectionName)
+    for itemName in sorted(GC_VAR_INFO):
+      cfgValue = config.get(sectionName, itemName, raw=True)
+      if GC_VAR_INFO[itemName][GC_VAR_TYPE_KEY] == GC_TYPE_FILE:
+        expdValue = _getCfgFile(sectionName, itemName)
+        if cfgValue != expdValue:
+          cfgValue = u'{0} ; {1}'.format(cfgValue, expdValue)
+      elif GC_VAR_INFO[itemName][GC_VAR_TYPE_KEY] == GC_TYPE_DIRECTORY:
+        expdValue = _getCfgDirectory(sectionName, itemName)
+        if cfgValue != expdValue:
+          cfgValue = u'{0} ; {1}'.format(cfgValue, expdValue)
+      elif (itemName == GC_SECTION) and (sectionName != ConfigParser.DEFAULTSECT):
+        continue
+      print u'  {0} = {1}'.format(itemName, cfgValue)
+
+  def _chkCfgDirectories(sectionName):
+    result = True
+    for itemName in GC_VAR_INFO:
+      if GC_VAR_INFO[itemName][GC_VAR_TYPE_KEY] == GC_TYPE_DIRECTORY:
+        dirPath = GC_Values[itemName]
+        if not os.path.isdir(dirPath):
+          sys.stderr.write(u'{0}Config File: {1}, Section: {2}, Item: {3}, Value: {4}, Invalid Path\n'.format(ERROR_PREFIX, configFileName, sectionName, itemName, dirPath))
+          result = False
+    return result
+
+  def _chkCfgFiles(sectionName):
+    result = True
+    for itemName in GC_VAR_INFO:
+      if GC_VAR_INFO[itemName][GC_VAR_TYPE_KEY] == GC_TYPE_FILE:
+        fileName = GC_Values[itemName]
+        if not os.path.isfile(fileName):
+          sys.stderr.write(u'{0}Config File: {1}, Section: {2}, Item: {3}, Value: {4}, Not Found\n'.format(WARNING_PREFIX, configFileName, sectionName, itemName, fileName))
+          result = False
+    return result
 
   status = {u'errors': False}
-  saveRequired = verifyRequired = False
   GC_Values[GC_GAM_PATH] = os.path.dirname(os.path.realpath(sys.argv[0]))
-  GC_DEFAULTS[GC_CONFIG_DIR] = user_config_dir(appname=GAM, appauthor=False)
-  if not os.path.exists(GC_DEFAULTS[GC_CONFIG_DIR]):
-    GC_DEFAULTS[GC_CONFIG_DIR] = GC_Values[GC_GAM_PATH]
-  GC_DEFAULTS[GC_CACHE_DIR] = user_cache_dir(appname=GAM, appauthor=False)
-  if not os.path.exists(GC_DEFAULTS[GC_CACHE_DIR]):
+  try:
+# If GAM_CFG_HOME environment is set, use it for config path, use gamPath/gamcache for cache and gamPath for drive
+    gamCfgHome = os.environ[EV_GAM_CFG_HOME]
     GC_DEFAULTS[GC_CACHE_DIR] = os.path.join(GC_Values[GC_GAM_PATH], GAMCACHE)
-  GC_DEFAULTS[GC_DRIVE_DIR] = GC_Values[GC_GAM_PATH]
+    GC_DEFAULTS[GC_DRIVE_DIR] = GC_Values[GC_GAM_PATH]
+  except KeyError:
+# If GAM_CFG_HOME environment is not set, use appdirs for config/cache paths, use ~/Downloads for drive
+    gamCfgHome = user_config_dir(appname=GAM, appauthor=False)
+    GC_DEFAULTS[GC_CACHE_DIR] = user_cache_dir(appname=GAM, appauthor=False)
+    GC_DEFAULTS[GC_DRIVE_DIR] = os.path.expanduser(u'~/Downloads')
+  GC_DEFAULTS[GC_CONFIG_DIR] = gamCfgHome
 
   config = ConfigParser.SafeConfigParser(defaults=collections.OrderedDict(sorted(GC_DEFAULTS.items(), key=lambda t: t[0])))
   configFileName = os.path.join(GC_DEFAULTS[GC_CONFIG_DIR], GAM_CFG)
   if not os.path.isfile(configFileName):
     _getOldEnvVarsSignalFiles()
-    _writeConfigFile(u'Initialized')
+    _checkMakeDir(GC_CONFIG_DIR)
+    _checkMakeDir(GC_CACHE_DIR)
+    if GC_DEFAULTS[GC_CONFIG_DIR] != GC_Values[GC_GAM_PATH]:
+      for itemName in [GC_CLIENT_SECRETS_JSON, GC_OAUTH2_TXT, GC_OAUTH2SERVICE_JSON]:
+        _copyConfigFile(itemName)
+    _writeConfigFile(configFileName, action=u'Initialized')
   else:
-    _readConfigFile()
-  if not _getCfgBoolean(ConfigParser.DEFAULTSECT, GC_NO_UPDATE_CHECK):
-    lastUpdateCheck = _getCfgInteger(ConfigParser.DEFAULTSECT, GC_LAST_UPDATE_CHECK)
-    latestUpdateCheck = doGAMCheckForUpdates(lastUpdateCheck)
-    if latestUpdateCheck != lastUpdateCheck:
-      config.set(ConfigParser.DEFAULTSECT, GC_LAST_UPDATE_CHECK, str(latestUpdateCheck))
-      _writeConfigFile(u'{0} Updated'.format(GC_LAST_UPDATE_CHECK))
+    _readConfigFile(configFileName)
   i = 1
-# select <SectionName> [save]
+# select <SectionName> [save] [verify]
   if sys.argv[i] == SELECT_CMD:
     sectionName = sys.argv[i+1]
     i += 2
     if (not sectionName) or (sectionName.upper() == ConfigParser.DEFAULTSECT):
       sectionName = ConfigParser.DEFAULTSECT
     elif not config.has_section(sectionName):
-      sys.stderr.write(u'ERROR: Section: {0}, Not Found\n'.format(sectionName))
+      sys.stderr.write(u'{0}Section: {1}, Not Found\n'.format(ERROR_PREFIX, sectionName))
       sys.exit(3)
     while i < len(sys.argv):
       my_arg = sys.argv[i].lower()
       if my_arg == SELECT_SAVE_CMD:
         i += 1
         config.set(ConfigParser.DEFAULTSECT, GC_SECTION, sectionName)
-        saveRequired = True
+        _writeConfigFile(configFileName, action=u'Saved')
       elif my_arg == SELECT_VERIFY_CMD:
         i += 1
-        verifyRequired = True
+        _verifyValues()
       else:
         break
-# options ((create <SectionName>)|(delete <SectionName>)|(select <SectionName>)|(reset <VariableName>)|(set <VariableName> <Value>)| save|verify)* [done]
-  elif sys.argv[i] == OPTIONS_CMD:
+# config ((create <SectionName> [overwrite])|(delete <SectionName>)|(select <SectionName>)|
+#         (make <Directory>)|(copy <FromFile> <ToFile)|
+#         (reset <VariableName>)|(set <VariableName> <Value>)|
+#         save|(backup <FileName>)|(restore <FileName>)|
+#         verify|print
+#        )* [config]
+  elif sys.argv[i] == CONFIG_CMD:
     i += 1
     sectionName = _getCfgSection(ConfigParser.DEFAULTSECT, GC_SECTION)
     while i < len(sys.argv):
       my_arg = sys.argv[i].lower()
-      if my_arg not in OPTIONS_SUB_CMDS:
-        sys.stderr.write(u'ERROR: options cmd  should be {0}. Got {1}\n'.format(u','.join(OPTIONS_SUB_CMDS), my_arg))
+      if my_arg not in CONFIG_SUB_CMDS:
+        sys.stderr.write(u'{0}options cmd  should be {1}. Got {2}\n'.format(ERROR_PREFIX, u','.join(CONFIG_SUB_CMDS), my_arg))
         sys.exit(3)
       i += 1
-      if my_arg == OPTIONS_CREATE_CMD: # Create section
+# create <SectionName> [overwrite]
+      if my_arg == CONFIG_CREATE_CMD:
         value = sys.argv[i]
         i += 1
         if value.upper() == ConfigParser.DEFAULTSECT:
-          sys.stderr.write(u'ERROR: Section: {0}, Invalid\n'.format(value))
+          sys.stderr.write(u'{0}Section: {1}, Invalid\n'.format(ERROR_PREFIX, value))
           sys.exit(3)
+        if (i < len(sys.argv)) and (sys.argv[i].lower() == CONFIG_CREATE_OVERWRITE_CMD):
+          overwrite = True
+          i += 1
+        else:
+          overwrite = False
         if config.has_section(value):
-          sys.stderr.write(u'ERROR: Section: {0}, Duplicate\n'.format(value))
-          sys.exit(3)
-        config.add_section(value)
+          if not overwrite:
+            sys.stderr.write(u'{0}Section: {1}, Duplicate\n'.format(ERROR_PREFIX, value))
+            sys.exit(3)
+          i += 1
+        else:
+          config.add_section(value)
         sectionName = value
-      elif my_arg == OPTIONS_DELETE_CMD: # Delete section
+# delete <SectionName>
+      elif my_arg == CONFIG_DELETE_CMD:
         value = sys.argv[i]
         i += 1
         if value.upper() == ConfigParser.DEFAULTSECT:
-          sys.stderr.write(u'ERROR: Section: {0}, Invalid\n'.format(value))
+          sys.stderr.write(u'{0}Section: {1}, Invalid\n'.format(ERROR_PREFIX, value))
           sys.exit(3)
         if not config.has_section(value):
-          sys.stderr.write(u'ERROR: Section: {0}, Not Found\n'.format(value))
+          sys.stderr.write(u'{0}Section: {1}, Not Found\n'.format(ERROR_PREFIX, value))
           sys.exit(3)
         config.remove_section(value)
         sectionName = ConfigParser.DEFAULTSECT
         if config.get(ConfigParser.DEFAULTSECT, GC_SECTION, raw=True) == value:
           config.set(ConfigParser.DEFAULTSECT, GC_SECTION, u'')
-      elif my_arg == OPTIONS_SELECT_CMD: # Select section
+# select <SectionName>
+      elif my_arg == CONFIG_SELECT_CMD:
         value = sys.argv[i]
         i += 1
         if (not value) or (value.upper() == ConfigParser.DEFAULTSECT):
           value = u''
           sectionName = ConfigParser.DEFAULTSECT
         elif not config.has_section(value):
-          sys.stderr.write(u'ERROR: Section: {0}, Not Found\n'.format(value))
+          sys.stderr.write(u'{0}Section: {1}, Not Found\n'.format(ERROR_PREFIX, value))
           sys.exit(3)
         else:
           sectionName = value
-      elif my_arg == OPTIONS_RESET_CMD: # Reset variable
+# make <Directory>
+      elif my_arg == CONFIG_MAKE_CMD:
+        dstPath = os.path.expanduser(sys.argv[i])
+        i += 1
+        if not os.path.isabs(dstPath):
+          dstPath = os.path.join(config.get(ConfigParser.DEFAULTSECT, GC_CONFIG_DIR, raw=True), dstPath)
+        if not os.path.isdir(dstPath):
+          try:
+            os.makedirs(dstPath)
+          except OSError as e:
+            if not os.path.isdir(dstPath):
+              sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, e))
+              sys.exit(6)
+# copy <FromFile> <ToFile
+      elif my_arg == CONFIG_COPY_CMD:
+        srcFile = os.path.expanduser(sys.argv[i])
+        i += 1
+        if not os.path.isabs(srcFile):
+          srcFile = os.path.join(GC_Values[GC_GAM_PATH], srcFile)
+        dstFile = os.path.expanduser(sys.argv[i])
+        i += 1
+        if not os.path.isabs(dstFile):
+          dstFile = os.path.join(config.get(sectionName, GC_CONFIG_DIR, raw=True), dstFile)
+        data = readFile(srcFile)
+        writeFile(dstFile, data)
+# reset <VariableName>
+      elif my_arg == CONFIG_RESET_CMD:
         itemName = sys.argv[i].lower().replace(u'_', u'')
         i += 1
         if itemName not in GC_VAR_ALIASES:
-          sys.stderr.write(u'ERROR: key should be {0}. Got {1}\n'.format(u','.join(sorted(GC_DEFAULTS.keys())), itemName))
+          sys.stderr.write(u'{0}key should be {1}. Got {2}\n'.format(ERROR_PREFIX, u','.join(sorted(GC_DEFAULTS.keys())), itemName))
           sys.exit(3)
         itemName = GC_VAR_ALIASES[itemName]
         if itemName != GC_SECTION:
           if sectionName != ConfigParser.DEFAULTSECT:
             config.remove_option(sectionName, itemName)
           else:
-            config.set(ConfigParser.DEFAULTSECT, itemName, str(GC_DEFAULTS[itemName]))
+            config.set(ConfigParser.DEFAULTSECT, itemName, unicode(GC_DEFAULTS[itemName]))
         else:
           config.set(ConfigParser.DEFAULTSECT, itemName, u'')
-      elif my_arg == OPTIONS_SET_CMD: # Set variable
+# set <VariableName> <Value>
+      elif my_arg == CONFIG_SET_CMD:
         itemName = sys.argv[i].lower().replace(u'_', u'')
         i += 1
         if itemName not in GC_VAR_ALIASES:
-          sys.stderr.write(u'ERROR: key should be {0}. Got {1}\n'.format(u','.join(sorted(GC_DEFAULTS.keys())), itemName))
+          sys.stderr.write(u'{0}key should be {1}. Got {2}\n'.format(ERROR_PREFIX, u','.join(sorted(GC_DEFAULTS.keys())), itemName))
           sys.exit(3)
         itemName = GC_VAR_ALIASES[itemName]
         value = sys.argv[i]
@@ -534,50 +696,74 @@ def setGlobalVariables():
           if (not value) or (value.upper() == ConfigParser.DEFAULTSECT):
             value = u''
           elif not config.has_section(value):
-            sys.stderr.write(u'ERROR: Section: {0}, Not Found\n'.format(value))
+            sys.stderr.write(u'{0}Section: {1}, Not Found\n'.format(ERROR_PREFIX, value))
             sys.exit(3)
           config.set(ConfigParser.DEFAULTSECT, GC_SECTION, value)
           continue
-        elif GC_VAR_INFO[itemName][u'type'] == GC_TYPE_BOOLEAN:
+        elif GC_VAR_INFO[itemName][GC_VAR_TYPE_KEY] == GC_TYPE_BOOLEAN:
           value = value.lower()
-          if (value not in TRUE_VALUES) and (value not in FALSE_VALUES):
-            sys.stderr.write(u'ERROR: expected {0}, got {1}\n'.format(u'|'.join(TRUE_FALSE), value))
+          if (value not in true_values) and (value not in false_values):
+            sys.stderr.write(u'{0}expected {1}, got {2}\n'.format(ERROR_PREFIX, u'|'.join(TRUE_FALSE), value))
             sys.exit(3)
-        elif GC_VAR_INFO[itemName][u'type'] == GC_TYPE_INTEGER:
-          minVal, maxVal = GC_VAR_INFO[itemName][u'limits']
+        elif GC_VAR_INFO[itemName][GC_VAR_TYPE_KEY] == GC_TYPE_INTEGER:
+          minVal, maxVal = GC_VAR_INFO[itemName][GC_VAR_LIMITS_KEY]
           try:
             value = int(value)
             if (value < minVal) or (maxVal and (value > maxVal)):
-              sys.stderr.write(u'ERROR: expected {0}, got {1}\n'.format(integerLimits(minVal, maxVal), value))
+              sys.stderr.write(u'{0}expected {1}, got {2}\n'.format(ERROR_PREFIX, integerLimits(minVal, maxVal), value))
               sys.exit(3)
             value = str(value)
           except ValueError:
-            sys.stderr.write(u'ERROR: expected {0}, got {1}\n'.format(integerLimits(minVal, maxVal), value))
+            sys.stderr.write(u'{0}expected {1}, got {2}\n'.format(ERROR_PREFIX, integerLimits(minVal, maxVal), value))
             sys.exit(3)
-        elif GC_VAR_INFO[itemName][u'type'] == GC_TYPE_DIRECTORY:
-          if not os.path.isdir(value):
-            sys.stderr.write(u'ERROR: {0}, invalid path\n'.format(value))
+        elif GC_VAR_INFO[itemName][GC_VAR_TYPE_KEY] == GC_TYPE_DIRECTORY:
+          fullPath = os.path.expanduser(value)
+          if (sectionName != ConfigParser.DEFAULTSECT) and (not os.path.isabs(fullPath)):
+            fullPath = os.path.join(config.get(ConfigParser.DEFAULTSECT, itemName, raw=True), fullPath)
+          if not os.path.isdir(fullPath):
+            sys.stderr.write(u'{0}{1}, invalid path\n'.format(ERROR_PREFIX, value))
             sys.exit(3)
-        elif GC_VAR_INFO[itemName][u'type'] == GC_TYPE_FILE:
-          if not value:
-            sys.stderr.write(u'ERROR: expected filename, got {0}\n'.format(value))
-            sys.exit(3)
+        elif GC_VAR_INFO[itemName][GC_VAR_TYPE_KEY] == GC_TYPE_FILE:
+          pass
         config.set(sectionName, itemName, value)
-      elif my_arg == OPTIONS_SAVE_CMD: # Save config file
-        saveRequired = True
-      elif my_arg == OPTIONS_VERIFY_CMD: # Verify section values
-        verifyRequired = True
-      else: # elif my_arg == OPTIONS_DONE_CMD:
+# save
+      elif my_arg == CONFIG_SAVE_CMD:
+        _writeConfigFile(configFileName, action=u'Saved')
+# backup <FileName>
+      elif my_arg == CONFIG_BACKUP_CMD:
+        fileName = os.path.expanduser(sys.argv[i])
+        i += 1
+        if not os.path.isabs(fileName):
+          fileName = os.path.join(gamCfgHome, fileName)
+        _writeConfigFile(fileName, action=u'Backed up')
+# restore <FileName>
+      elif my_arg == CONFIG_RESTORE_CMD:
+        fileName = os.path.expanduser(sys.argv[i])
+        i += 1
+        if not os.path.isabs(fileName):
+          fileName = os.path.join(gamCfgHome, fileName)
+        _readConfigFile(fileName, action=u'Restored')
+# verify
+      elif my_arg == CONFIG_VERIFY_CMD:
+        _verifyValues()
+# print
+      elif my_arg == CONFIG_PRINT_CMD:
+        value = readFile(configFileName)
+        for line in value:
+          sys.stdout.write(line)
+# config
+      else:
         break
 # Use default section
   else:
     sectionName = _getCfgSection(ConfigParser.DEFAULTSECT, GC_SECTION)
 # Assign directories first
   for itemName in [GC_CONFIG_DIR, GC_CACHE_DIR, GC_DRIVE_DIR]:
-    GC_Values[itemName] = _getCfgDirectory(sectionName, itemName, append=GC_VAR_INFO[itemName][u'append'])
+    if GC_VAR_INFO[itemName][GC_VAR_TYPE_KEY] == GC_TYPE_DIRECTORY:
+      GC_Values[itemName] = _getCfgDirectory(sectionName, itemName)
 # Everything else
   for itemName in GC_VAR_INFO:
-    varType = GC_VAR_INFO[itemName][u'type']
+    varType = GC_VAR_INFO[itemName][GC_VAR_TYPE_KEY]
     if varType == GC_TYPE_BOOLEAN:
       GC_Values[itemName] = _getCfgBoolean(sectionName, itemName)
     elif varType == GC_TYPE_INTEGER:
@@ -585,18 +771,16 @@ def setGlobalVariables():
     elif varType == GC_TYPE_STRING:
       GC_Values[itemName] = _getCfgString(sectionName, itemName)
     elif varType == GC_TYPE_FILE:
-      GC_Values[itemName] = _getCfgFile(sectionName, itemName, GC_Values[GC_CONFIG_DIR])
-  if GC_Values[GC_NO_CACHE]:
-    GC_Values[GC_CACHE_DIR] = None
+      GC_Values[itemName] = _getCfgFile(sectionName, itemName)
   if status[u'errors']:
     sys.exit(13)
-  if saveRequired:
-    _writeConfigFile(u'Updated')
-  if verifyRequired:
-    print u'Section: {0}'.format(sectionName)
-    for itemName in sorted(GC_VAR_INFO):
-      if (itemName != GC_SECTION) or (sectionName == ConfigParser.DEFAULTSECT):
-        print u'  {0}: {1}'.format(itemName, GC_Values[itemName])
+  if not GC_Values[GC_NO_UPDATE_CHECK]:
+    previousUpdateCheck = GC_Values[GC_LAST_UPDATE_CHECK]
+    GC_Values[GC_LAST_UPDATE_CHECK] = doGAMCheckForUpdates(previousUpdateCheck)
+    if GC_Values[GC_LAST_UPDATE_CHECK] != previousUpdateCheck:
+      config.set(ConfigParser.DEFAULTSECT, GC_LAST_UPDATE_CHECK, str(GC_Values[GC_LAST_UPDATE_CHECK]))
+      _readConfigFile(configFileName)
+      _writeConfigFile(configFileName, action=u'{0} Updated'.format(GC_LAST_UPDATE_CHECK))
 # Globals derived from config file values
   GC_Values[GC_CACERT_PEM] = os.path.join(GC_Values[GC_GAM_PATH], FN_CACERT_PEM)
   GC_Values[GC_EXTRA_ARGS] = {u'prettyPrint': GC_Values[GC_DEBUG_LEVEL] > 0}
@@ -606,19 +790,24 @@ def setGlobalVariables():
     ea_config.optionxform = str
     ea_config.read(os.path.join(GC_Values[GC_CONFIG_DIR], FN_EXTRA_ARGS_TXT))
     GC_Values[GC_EXTRA_ARGS].update(dict(ea_config.items(u'extra-args')))
-# Return True if no section/options commands were executed
-  if i == 1:
-    return True
+# If no select/options commands were executed or some were and there are more arguments on the command line,
+# warn if the json files are missing and return True
+  if (i == 1) or (i < len(sys.argv)):
+    if i > 1:
 # Move remaining args down to 1
-  j = 1
-  while i < len(sys.argv):
-    sys.argv[j] = sys.argv[i]
-    j += 1
-    i += 1
-  del sys.argv[j:]
-# Return True if section/options commands were executed and there are more arguments
-# Return False if section/options commands were executed and there are no more arguments
-  return j < len(sys.argv)
+      j = 1
+      while i < len(sys.argv):
+        sys.argv[j] = sys.argv[i]
+        j += 1
+        i += 1
+      del sys.argv[j:]
+    _chkCfgDirectories(sectionName)
+    _chkCfgFiles(sectionName)
+    if GC_Values[GC_NO_CACHE]:
+      GC_Values[GC_CACHE_DIR] = None
+    return True
+# We're done, nothing else to do
+  return False
 
 def doGAMVersion():
   import struct
@@ -647,7 +836,7 @@ def doGAMCheckForUpdates(lastUpdateCheck):
     announcement = a.read()
     sys.stderr.write(announcement)
     try:
-      print u"\n\nHit CTRL+C to visit the GAM website and download the latest release or wait 15 seconds continue with this boring old version. GAM won't bother you with this announcement for 1 week or you can create a file named noupdatecheck.txt in the same location as gam.py or gam.exe and GAM won't ever check for updates."
+      print u'\n\nHit CTRL+C to visit the GAM website and download the latest release or wait 15 seconds continue with this boring old version. GAM won\'t bother you with this announcement for 1 week or you can turn off update checks with the command: "gam config select default set no_update_check true save"'
       time.sleep(15)
     except KeyboardInterrupt:
       import webbrowser
@@ -2041,9 +2230,9 @@ def addCalendar(users):
   i = 6
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'selected':
-      if sys.argv[i+1].lower() in TRUE_VALUES:
+      if sys.argv[i+1].lower() in true_values:
         body[u'selected'] = True
-      elif sys.argv[i+1].lower() in FALSE_VALUES:
+      elif sys.argv[i+1].lower() in false_values:
         body[u'selected'] = False
       else:
         showUsage()
@@ -2051,9 +2240,9 @@ def addCalendar(users):
         exit(4)
       i += 2
     elif sys.argv[i].lower() == u'hidden':
-      if sys.argv[i+1].lower() in TRUE_VALUES:
+      if sys.argv[i+1].lower() in true_values:
         body[u'hidden'] = True
-      elif sys.argv[i+1].lower() in FALSE_VALUES:
+      elif sys.argv[i+1].lower() in false_values:
         body[u'hidden'] = False
       else:
         showUsage()
@@ -2107,9 +2296,9 @@ def updateCalendar(users):
   colorRgbFormat = False
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'selected':
-      if sys.argv[i+1].lower() in TRUE_VALUES:
+      if sys.argv[i+1].lower() in true_values:
         body[u'selected'] = True
-      elif sys.argv[i+1].lower() in FALSE_VALUES:
+      elif sys.argv[i+1].lower() in false_values:
         body[u'selected'] = False
       else:
         showUsage()
@@ -2117,9 +2306,9 @@ def updateCalendar(users):
         exit(4)
       i += 2
     elif sys.argv[i].lower() == u'hidden':
-      if sys.argv[i+1].lower() in TRUE_VALUES:
+      if sys.argv[i+1].lower() in true_values:
         body[u'hidden'] = True
-      elif sys.argv[i+1].lower() in FALSE_VALUES:
+      elif sys.argv[i+1].lower() in false_values:
         body[u'hidden'] = False
       else:
         showUsage()
@@ -3049,9 +3238,9 @@ def updateDriveFileACL(users):
         body[u'additionalRoles'] = [u'commenter']
       i += 2
     elif sys.argv[i].lower().replace(u'_', u'') == u'transferownership':
-      if sys.argv[i+1].lower() in TRUE_VALUES:
+      if sys.argv[i+1].lower() in true_values:
         transferOwnership = True
-      elif sys.argv[i+1].lower() in FALSE_VALUES:
+      elif sys.argv[i+1].lower() in false_values:
         transferOwnership = False
       else:
         print u'ERROR: transferownership should be true or false, got %s' % sys.argv[i+1].lower()
@@ -3305,9 +3494,9 @@ def doUpdateDriveFile(users):
     elif sys.argv[i].lower() in [u'restrict', 'restricted']:
       if 'labels' not in body.keys():
         body[u'labels'] = dict()
-      if sys.argv[i+1] in TRUE_VALUES:
+      if sys.argv[i+1] in true_values:
         body[u'labels'][u'restricted'] = True
-      elif sys.argv[i+1] in FALSE_VALUES:
+      elif sys.argv[i+1] in false_values:
         body[u'labels'][u'restricted'] = False
       else:
         print u'ERROR: value for restricted must be true or false, got %s' % sys.argv[i+1]
@@ -3316,9 +3505,9 @@ def doUpdateDriveFile(users):
     elif sys.argv[i].lower() in [u'star', u'starred']:
       if u'labels' not in body.keys():
         body[u'labels'] = dict()
-      if sys.argv[i+1] in TRUE_VALUES:
+      if sys.argv[i+1] in true_values:
         body[u'labels'][u'starred'] = True
-      elif sys.argv[i+1] in FALSE_VALUES:
+      elif sys.argv[i+1] in false_values:
         body[u'labels'][u'starred'] = False
       else:
         print u'ERROR: value for starred must be true or false, got %s' % sys.argv[i+1]
@@ -3327,9 +3516,9 @@ def doUpdateDriveFile(users):
     elif sys.argv[i].lower() in [u'trash', u'trashed']:
       if u'labels' not in body.keys():
         body[u'labels'] = dict()
-      if sys.argv[i+1] in TRUE_VALUES:
+      if sys.argv[i+1] in true_values:
         body[u'labels'][u'trashed'] = True
-      elif sys.argv[i+1] in FALSE_VALUES:
+      elif sys.argv[i+1] in false_values:
         body[u'labels'][u'trashed'] = False
       else:
         print u'ERROR: value for trashed must be true or false, got %s' % sys.argv[i+1]
@@ -3338,9 +3527,9 @@ def doUpdateDriveFile(users):
     elif sys.argv[i].lower() in [u'view', u'viewed']:
       if u'labels' not in body.keys():
         body[u'labels'] = dict()
-      if sys.argv[i+1] in TRUE_VALUES:
+      if sys.argv[i+1] in true_values:
         body[u'labels'][u'viewed'] = True
-      elif sys.argv[i+1] in FALSE_VALUES:
+      elif sys.argv[i+1] in false_values:
         body[u'labels'][u'viewed'] = False
       else:
         print u'ERROR: value for viewed must be true or false, got %s' % sys.argv[i+1]
@@ -3768,9 +3957,9 @@ def transferDriveFiles(users):
         break
 
 def doImap(users):
-  if sys.argv[4].lower() in TRUE_VALUES:
+  if sys.argv[4].lower() in true_values:
     enable = True
-  elif sys.argv[4].lower() in FALSE_VALUES:
+  elif sys.argv[4].lower() in false_values:
     enable = False
   emailsettings = getEmailSettingsObject()
   count = len(users)
@@ -3865,9 +4054,9 @@ def doLicense(users, operation):
       callGAPI(service=lic.licenseAssignments(), function=operation, soft_errors=True, productId=productId, skuId=old_sku, userId=user, body={u'skuId': skuId})
 
 def doPop(users):
-  if sys.argv[4].lower() in TRUE_VALUES:
+  if sys.argv[4].lower() in true_values:
     enable = True
-  elif sys.argv[4].lower() in FALSE_VALUES:
+  elif sys.argv[4].lower() in false_values:
     enable = False
   enable_for = u'ALL_MAIL'
   action = u'KEEP'
@@ -3997,9 +4186,9 @@ def doLanguage(users):
     callGData(service=emailsettings, function=u'UpdateLanguage', soft_errors=True, username=user, language=language)
 
 def doUTF(users):
-  if sys.argv[4].lower() in TRUE_VALUES:
+  if sys.argv[4].lower() in true_values:
     SetUTF = True
-  elif sys.argv[4].lower() in FALSE_VALUES:
+  elif sys.argv[4].lower() in false_values:
     SetUTF = False
   emailsettings = getEmailSettingsObject()
   count = len(users)
@@ -4034,9 +4223,9 @@ def doPageSize(users):
     callGData(service=emailsettings, function=u'UpdateGeneral', soft_errors=True, username=user, page_size=PageSize)
 
 def doShortCuts(users):
-  if sys.argv[4].lower() in TRUE_VALUES:
+  if sys.argv[4].lower() in true_values:
     SetShortCuts = True
-  elif sys.argv[4].lower() in FALSE_VALUES:
+  elif sys.argv[4].lower() in false_values:
     SetShortCuts = False
   emailsettings = getEmailSettingsObject()
   count = len(users)
@@ -4052,9 +4241,9 @@ def doShortCuts(users):
     callGData(service=emailsettings, function=u'UpdateGeneral', soft_errors=True, username=user, shortcuts=SetShortCuts)
 
 def doArrows(users):
-  if sys.argv[4].lower() in TRUE_VALUES:
+  if sys.argv[4].lower() in true_values:
     SetArrows = True
-  elif sys.argv[4].lower() in FALSE_VALUES:
+  elif sys.argv[4].lower() in false_values:
     SetArrows = False
   emailsettings = getEmailSettingsObject()
   count = len(users)
@@ -4070,9 +4259,9 @@ def doArrows(users):
     callGData(service=emailsettings, function=u'UpdateGeneral', soft_errors=True, username=user, arrows=SetArrows)
 
 def doSnippets(users):
-  if sys.argv[4].lower() in TRUE_VALUES:
+  if sys.argv[4].lower() in true_values:
     SetSnippets = True
-  elif sys.argv[4].lower() in FALSE_VALUES:
+  elif sys.argv[4].lower() in false_values:
     SetSnippets = False
   emailsettings = getEmailSettingsObject()
   count = len(users)
@@ -4126,10 +4315,10 @@ def doLabel(users):
     i += 1
     callGAPI(service=gmail.users().labels(), function=u'create', soft_errors=True, userId=user, body=body)
 
-def doDeleteMessages(trashOrDelete, users):
+def doDeleteMessages(users, trashOrDelete):
   query = None
   doIt = False
-  maxToDelete = GC_Values[GC_MAX_MESSAGES_TO_DELETE]
+  maxToProcess = GC_Values[GC_MAX_MESSAGES_TO_PROCESS]
   i = 5
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'query':
@@ -4139,7 +4328,7 @@ def doDeleteMessages(trashOrDelete, users):
       doIt = True
       i += 1
     elif sys.argv[i].lower().replace(u'_', u'') == u'maxtodelete':
-      maxToDelete = int(sys.argv[i+1])
+      maxToProcess = int(sys.argv[i+1])
       i += 2
     else:
       print u'ERROR: %s is not a valid argument for gam <users> delete messages.' % sys.argv[i]
@@ -4155,10 +4344,10 @@ def doDeleteMessages(trashOrDelete, users):
                                userId=u'me', q=query, includeSpamTrash=True)
     del_count = len(listResult)
     if not doIt:
-      print u'would try to delete %s messages for user %s (max %s)\n' % (del_count, user, maxToDelete)
+      print u'would try to delete %s messages for user %s (max %s)\n' % (del_count, user, maxToProcess)
       continue
-    elif del_count > maxToDelete:
-      print u'WARNING: refusing to delete ANY messages for %s since max_to_delete is %s and messages to be deleted is %s\n' % (user, maxToDelete, del_count)
+    elif del_count > maxToProcess:
+      print u'WARNING: refusing to delete ANY messages for %s since max_to_delete is %s and messages to be deleted is %s\n' % (user, maxToProcess, del_count)
       continue
     i = 1
     # Batch seemed like a good idea but it kills
@@ -4183,6 +4372,46 @@ def doDeleteMessages(trashOrDelete, users):
       i += 1
       callGAPI(service=gmail.users().messages(), function=trashOrDelete,
                id=del_me[u'id'], userId=u'me')
+
+def doSpamMessages(users):
+  query = None
+  doIt = False
+  maxToProcess = GC_Values[GC_MAX_MESSAGES_TO_PROCESS]
+  i = 5
+  while i < len(sys.argv):
+    if sys.argv[i].lower() == u'query':
+      query = sys.argv[i+1]
+      i += 2
+    elif sys.argv[i].lower() == u'doit':
+      doIt = True
+      i += 1
+    elif sys.argv[i].lower().replace(u'_', u'') == u'maxtomove':
+      maxToProcess = int(sys.argv[i+1])
+      i += 2
+    else:
+      print u'ERROR: %s is not a valid argument for gam <users> spam messages.' % sys.argv[i]
+      sys.exit(3)
+  if not query:
+    print u'ERROR: No query specified. You must specify some query!'
+    sys.exit(4)
+  for user in users:
+    gmail = buildGAPIServiceObject(u'gmail', act_as=user)
+    page_message = u'Got %%%%total_items%%%% messages for user %s' % user
+    listResult = callGAPIpages(service=gmail.users().messages(), function=u'list', items=u'messages', page_message=page_message,
+                               userId=u'me', q=query, includeSpamTrash=False)
+    move_count = len(listResult)
+    if not doIt:
+      print u'would try to mark as spam %s messages for user %s (max %s)\n' % (move_count, user, maxToProcess)
+      continue
+    elif move_count > maxToProcess:
+      print u'WARNING: refusing to move ANY messages for %s since max_to_move is %s and messages to be moved is %s\n' % (user, maxToProcess, move_count)
+      continue
+    i = 1
+    for move_me in listResult:
+      print u' moving message %s for user %s (%s/%s)' % (move_me[u'id'], user, i, move_count)
+      i += 1
+      callGAPI(service=gmail.users().messages(), function=u'modify',
+               id=move_me[u'id'], userId=u'me', body={u'addLabelIds': ['SPAM'], u'removeLabelIds': ['INBOX']})
 
 def doDeleteLabel(users):
   label = sys.argv[5]
@@ -4456,9 +4685,9 @@ def doFilter(users):
 def doForward(users):
   action = forward_to = None
   gotAction = gotForward = False
-  if sys.argv[4] in TRUE_VALUES:
+  if sys.argv[4] in true_values:
     enable = True
-  elif sys.argv[4] in FALSE_VALUES:
+  elif sys.argv[4] in false_values:
     enable = False
   else:
     showUsage()
@@ -4550,9 +4779,9 @@ def getSignature(users):
       pass
 
 def doWebClips(users):
-  if sys.argv[4].lower() in TRUE_VALUES:
+  if sys.argv[4].lower() in true_values:
     enable = True
-  elif sys.argv[4].lower() in FALSE_VALUES:
+  elif sys.argv[4].lower() in false_values:
     enable = False
   else:
     showUsage()
@@ -4573,9 +4802,9 @@ def doWebClips(users):
 def doVacation(users):
   import cgi
   subject = message = u''
-  if sys.argv[4] in TRUE_VALUES:
+  if sys.argv[4] in true_values:
     enable = u'true'
-  elif sys.argv[4] in FALSE_VALUES:
+  elif sys.argv[4] in false_values:
     enable = u'false'
   else:
     showUsage()
@@ -4784,18 +5013,18 @@ def doCreateUser():
       need_password = False
       i += 2
     elif sys.argv[i].lower() == u'suspended':
-      if sys.argv[i+1].lower() in TRUE_VALUES:
+      if sys.argv[i+1].lower() in true_values:
         body[u'suspended'] = True
-      elif sys.argv[i+1].lower() in FALSE_VALUES:
+      elif sys.argv[i+1].lower() in false_values:
         body[u'suspended'] = False
       else:
         print u'Error: suspended should be on or off, not %s' % sys.argv[i+1]
         sys.exit(5)
       i += 2
     elif sys.argv[i].lower() == u'gal':
-      if sys.argv[i+1].lower() in TRUE_VALUES:
+      if sys.argv[i+1].lower() in true_values:
         body[u'includeInGlobalAddressList'] = True
-      elif sys.argv[i+1].lower() in FALSE_VALUES:
+      elif sys.argv[i+1].lower() in false_values:
         body[u'includeInGlobalAddressList'] = False
       else:
         print u'Error: gal should be on or off, not %s' % sys.argv[i+1]
@@ -4817,36 +5046,36 @@ def doCreateUser():
       need_to_hash_password = False
       i += 1
     elif sys.argv[i].lower() == u'changepassword':
-      if sys.argv[i+1] in TRUE_VALUES:
+      if sys.argv[i+1] in true_values:
         body[u'changePasswordAtNextLogin'] = True
-      elif sys.argv[i+1] in FALSE_VALUES:
+      elif sys.argv[i+1] in false_values:
         body[u'changePasswordAtNextLogin'] = False
       else:
         print u'Error: changepassword should be on or off, not %s' % sys.argv[i+1]
         sys.exit(5)
       i += 2
     elif sys.argv[i].lower() == u'ipwhitelisted':
-      if sys.argv[i+1] in TRUE_VALUES:
+      if sys.argv[i+1] in true_values:
         body[u'ipWhitelisted'] = True
-      elif sys.argv[i+1] in FALSE_VALUES:
+      elif sys.argv[i+1] in false_values:
         body[u'ipWhitelisted'] = False
       else:
         print u'Error: ipwhitelisted should be on or off, not %s' % sys.argv[i+1]
       i += 2
     elif sys.argv[i].lower() == u'admin':
       do_admin = True
-      if sys.argv[i+1].lower() in TRUE_VALUES:
+      if sys.argv[i+1].lower() in true_values:
         admin_body = {u'status': True}
-      elif sys.argv[i+1].lower() in FALSE_VALUES:
+      elif sys.argv[i+1].lower() in false_values:
         admin_body = {u'status': False}
       else:
         print u'Error: admin should be on or off, not %s' % sys.argv[i+1]
         sys.exit(5)
       i += 2
     elif sys.argv[i].lower() == u'agreedtoterms':
-      if sys.argv[i+1] in TRUE_VALUES:
+      if sys.argv[i+1] in true_values:
         body[u'agreedToTerms'] = True
-      elif sys.argv[i+1] in FALSE_VALUES:
+      elif sys.argv[i+1] in false_values:
         body[u'agreedToTerms'] = False
       else:
         print u'Error: agreedtoterms should be on or off, not %s' % sys.argv[i+1]
@@ -5140,9 +5369,9 @@ def doCreateGroup():
           elif params[u'type'] == u'string':
             if params[u'description'].find(value.upper()) != -1: # ugly hack because API wants some values uppercased.
               value = value.upper()
-            elif value.lower() in TRUE_VALUES:
+            elif value.lower() in true_values:
               value = u'true'
-            elif value.lower() in FALSE_VALUES:
+            elif value.lower() in false_values:
               value = u'false'
           break
       if not matches_gs_setting:
@@ -5258,23 +5487,23 @@ def doUpdateUser(users):
       gotPassword = True
     elif sys.argv[i].lower() == u'admin':
       do_admin_user = True
-      if sys.argv[i+1].lower() in TRUE_VALUES:
+      if sys.argv[i+1].lower() in true_values:
         is_admin = True
-      elif sys.argv[i+1].lower() in FALSE_VALUES:
+      elif sys.argv[i+1].lower() in false_values:
         is_admin = False
       i += 2
     elif sys.argv[i].lower() == u'suspended':
       do_update_user = True
-      if sys.argv[i+1].lower() in TRUE_VALUES:
+      if sys.argv[i+1].lower() in true_values:
         body[u'suspended'] = True
-      elif sys.argv[i+1].lower() in FALSE_VALUES:
+      elif sys.argv[i+1].lower() in false_values:
         body[u'suspended'] = False
       i += 2
     elif sys.argv[i].lower() == u'gal':
       do_update_user = True
-      if sys.argv[i+1].lower() in TRUE_VALUES:
+      if sys.argv[i+1].lower() in true_values:
         body[u'includeInGlobalAddressList'] = True
-      elif sys.argv[i+1].lower() in FALSE_VALUES:
+      elif sys.argv[i+1].lower() in false_values:
         body[u'includeInGlobalAddressList'] = False
       else:
         print u'Error: gal should be on or off, not %s' % sys.argv[i+1]
@@ -5282,9 +5511,9 @@ def doUpdateUser(users):
       i += 2
     elif sys.argv[i].lower() == u'ipwhitelisted':
       do_update_user = True
-      if sys.argv[i+1].lower() in TRUE_VALUES:
+      if sys.argv[i+1].lower() in true_values:
         body[u'ipWhitelisted'] = True
-      elif sys.argv[i+1].lower() in FALSE_VALUES:
+      elif sys.argv[i+1].lower() in false_values:
         body[u'ipWhitelisted'] = False
       i += 2
     elif sys.argv[i].lower() in [u'sha', u'sha1', u'sha-1']:
@@ -5307,9 +5536,9 @@ def doUpdateUser(users):
       i += 1
     elif sys.argv[i].lower() == u'changepassword':
       do_update_user = True
-      if sys.argv[i+1].lower() in TRUE_VALUES:
+      if sys.argv[i+1].lower() in true_values:
         body[u'changePasswordAtNextLogin'] = True
-      elif sys.argv[i+1].lower() in FALSE_VALUES:
+      elif sys.argv[i+1].lower() in false_values:
         body[u'changePasswordAtNextLogin'] = False
       i += 2
     elif sys.argv[i].lower() in ['org', u'ou']:
@@ -5320,9 +5549,9 @@ def doUpdateUser(users):
       i += 2
     elif sys.argv[i].lower() == u'agreedtoterms':
       do_update_user = True
-      if sys.argv[i+1].lower() in TRUE_VALUES:
+      if sys.argv[i+1].lower() in true_values:
         body[u'agreedToTerms'] = True
-      elif sys.argv[i+1].lower() in FALSE_VALUES:
+      elif sys.argv[i+1].lower() in false_values:
         body[u'agreedToTerms'] = False
       i += 2
     elif sys.argv[i].lower() == u'customerid':
@@ -5592,9 +5821,9 @@ def doUpdateUser(users):
       user_domain = user_primary[user_primary.find(u'@')+1:]
       body[u'primaryEmail'] = u'vfe.%s.%05d@%s' % (user_name, random.randint(1, 99999), user_domain)
       body[u'emails'] = [{u'type': u'custom', u'customType': u'former_employee', u'primary': False, u'address': user_primary}]
-    sys.stderr.write(u'updating user %s...\n' % user)
+    sys.stdout.write(u'updating user %s...\n' % user)
     if do_update_user:
-      callGAPI(service=cd.users(), function=u'patch', userKey=user, body=body)
+      callGAPI(service=cd.users(), function=u'update', userKey=user, body=body)
     if do_admin_user:
       callGAPI(service=cd.users(), function=u'makeAdmin', userKey=user, body={u'status': is_admin})
 
@@ -5740,9 +5969,9 @@ def doUpdateGroup():
             elif params[u'type'] == u'string':
               if params[u'description'].find(value.upper()) != -1: # ugly hack because API wants some values uppercased.
                 value = value.upper()
-              elif value.lower() in TRUE_VALUES:
+              elif value.lower() in true_values:
                 value = u'true'
-              elif value.lower() in FALSE_VALUES:
+              elif value.lower() in false_values:
                 value = u'false'
             break
         if not matches_gs_setting:
@@ -5923,7 +6152,7 @@ def doUpdateOrg():
       current_cros = 1
       for cros in users:
         sys.stderr.write(u' moving %s to %s (%s/%s)\n' % (cros, orgUnitPath, current_cros, cros_count))
-        callGAPI(service=cd.chromeosdevices(), function=u'patch', soft_errors=True, customerId=GC_Values[GC_CUSTOMER_ID], deviceId=cros, body={u'orgUnitPath': '//%s' % orgUnitPath})
+        callGAPI(service=cd.chromeosdevices(), function=u'update', soft_errors=True, customerId=GC_Values[GC_CUSTOMER_ID], deviceId=cros, body={u'orgUnitPath': '//%s' % orgUnitPath})
         current_cros += 1
     else:
       user_count = len(users)
@@ -5933,7 +6162,7 @@ def doUpdateOrg():
       for user in users:
         sys.stderr.write(u' moving %s to %s (%s/%s)\n' % (user, orgUnitPath, current_user, user_count))
         try:
-          callGAPI(service=cd.users(), function=u'patch', throw_reasons=[u'conditionNotMet'], userKey=user, body={u'orgUnitPath': orgUnitPath})
+          callGAPI(service=cd.users(), function=u'update', throw_reasons=[u'conditionNotMet'], userKey=user, body={u'orgUnitPath': orgUnitPath})
         except googleapiclient.errors.HttpError:
           pass
         current_user += 1
@@ -5960,7 +6189,7 @@ def doUpdateOrg():
         i += 1
     if orgUnitPath[0] == u'/': # we don't want a / at the beginning for OU updates
       orgUnitPath = orgUnitPath[1:]
-    callGAPI(service=cd.orgunits(), function=u'patch', customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=orgUnitPath, body=body)
+    callGAPI(service=cd.orgunits(), function=u'update', customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=orgUnitPath, body=body)
 
 def doWhatIs():
   email = sys.argv[2]
@@ -8504,7 +8733,7 @@ def doDeleteOAuth():
   try:
     credentials.revoke(http)
   except oauth2client.client.TokenRevokeError, e:
-    print u'Error: %s' % e
+    print u'Error: %s' % e.message
     os.remove(GC_Values[GC_OAUTH2_TXT])
 
 class cmd_flags(object):
@@ -8542,10 +8771,10 @@ def doRequestOAuth(incremental_auth=False):
   MISSING_CLIENT_SECRETS_MESSAGE = u"""
 WARNING: Please configure OAuth 2.0
 
-To make GAM run you will need to populate the client_secrets.json file
+To make GAM run you will need to populate the {0} file
 found at:
 
-   %s
+   {1}
 
 with information from the APIs Console <https://cloud.google.com/console>.
 
@@ -8555,7 +8784,7 @@ https://github.com/jay0lee/GAM/wiki/CreatingClientSecretsFile
 
 for instructions.
 
-""" % GC_Values[GC_CLIENT_SECRETS_JSON]
+""".format(FN_CLIENT_SECRETS_JSON, GC_Values[GC_CLIENT_SECRETS_JSON])
 
   menu = u'''Select the authorized scopes for this token. Include a 'r' to grant read-only
 access or an 'a' to grant action-only access.
@@ -8583,9 +8812,9 @@ access or an 'a' to grant action-only access.
 [%s] 20)  Classroom API
 [%s] 21)  Cloud Print API
 
-     22)  Select all scopes
-     23)  Unselect all scopes
-     24)  Continue
+     %s)  Select all scopes
+     %s)  Unselect all scopes
+     %s)  Continue
 '''
   num_scopes = len(possible_scopes)
   selected_scopes = [u'*'] * num_scopes
@@ -8671,7 +8900,7 @@ access or an 'a' to grant action-only access.
     try:
       credentials = oauth2client.tools.run_flow(flow=FLOW, storage=storage, flags=flags, http=http)
     except httplib2.CertificateValidationUnsupported:
-      print u'\nError: You don\'t have the Python ssl module installed so we can\'t verify SSL Certificates.\n\nYou can fix this by installing the Python SSL module or you can live on dangerously and turn SSL validation off by creating a file called noverifyssl.txt in the same location as gam.exe / gam.py'
+      print u'\nError: You don\'t have the Python ssl module installed so we can\'t verify SSL Certificates.\n\nYou can fix this by installing the Python SSL module or you can live on dangerously and turn SSL validation off with the command: "gam config select default set no_verify_ssl true save"'
       sys.exit(8)
 
 def batch_worker():
@@ -9097,9 +9326,15 @@ try:
       sys.exit(2)
   elif command == u'trash':
     if sys.argv[4].lower() in [u'message', u'messages']:
-      doDeleteMessages(trashOrDelete=u'trash', users=users)
+      doDeleteMessages(users, u'trash')
     else:
       print u'ERROR: invalid argument to "gam <users> trash..."'
+      sys.exit(2)
+  elif command == u'spam':
+    if sys.argv[4].lower() in [u'message', u'messages']:
+      doSpamMessages(users)
+    else:
+      print u'ERROR: invalid argument to "gam <users> spam..."'
       sys.exit(2)
   elif command == u'delete' or command == u'del':
     delWhat = sys.argv[4].lower()
@@ -9110,7 +9345,7 @@ try:
     elif delWhat == u'label':
       doDeleteLabel(users)
     elif delWhat in [u'message', u'messages']:
-      doDeleteMessages(trashOrDelete=u'delete', users=users)
+      doDeleteMessages(users, u'delete')
     elif delWhat == u'photo':
       deletePhoto(users)
     elif delWhat in [u'license', u'licence']:
