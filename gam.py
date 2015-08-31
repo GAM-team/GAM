@@ -379,9 +379,9 @@ def setGlobalVariables():
         except ValueError:
           value = GC_DEFAULTS[itemName]
         value = str(number)
-      config.set(ConfigParser.DEFAULTSECT, itemName, value)
     except KeyError:
-      config.set(ConfigParser.DEFAULTSECT, itemName, unicode(GC_DEFAULTS[itemName]))
+      value = GC_DEFAULTS[itemName]
+    config.set(ConfigParser.DEFAULTSECT, itemName, unicode(value))
 
   def _getOldSignalFile(itemName, fileName, trueValue=TRUE, falseValue=FALSE):
     config.set(ConfigParser.DEFAULTSECT, itemName, trueValue if os.path.isfile(os.path.join(GC_Values[GC_GAM_PATH], fileName)) else falseValue)
@@ -392,6 +392,10 @@ def setGlobalVariables():
     _getOldEnvVar(GC_DRIVE_DIR, u'GAMDRIVEDIR')
     _getOldEnvVar(GC_OAUTH2_TXT, u'OAUTHFILE')
     _getOldEnvVar(GC_OAUTH2SERVICE_JSON, u'OAUTHSERVICEFILE')
+    value = config.get(ConfigParser.DEFAULTSECT, GC_OAUTH2SERVICE_JSON, raw=True)
+    if value.find(u'.') == -1:
+      config.set(ConfigParser.DEFAULTSECT, GC_OAUTH2SERVICE_JSON, value+u'.json')
+    _getOldEnvVar(GC_CLIENT_SECRETS_JSON, u'CLIENTSECRETS')
     _getOldEnvVar(GC_DOMAIN, u'GA_DOMAIN')
     _getOldEnvVar(GC_CUSTOMER_ID, u'CUSTOMER_ID')
     _getOldEnvVar(GC_NUM_THREADS, u'GAM_THREADS')
@@ -418,12 +422,15 @@ def setGlobalVariables():
           sys.exit(13)
 
   def _copyConfigFile(itemName):
-    srcFile = os.path.join(GC_Values[GC_GAM_PATH], config.get(ConfigParser.DEFAULTSECT, itemName, raw=True))
+    srcFile = os.path.expanduser(config.get(ConfigParser.DEFAULTSECT, itemName, raw=True))
+    if not os.path.isabs(srcFile):
+      srcFile = os.path.join(GC_Values[GC_GAM_PATH], srcFile)
     dstFile = os.path.join(GC_DEFAULTS[GC_CONFIG_DIR], os.path.basename(srcFile))
-    data = readFile(srcFile, continueOnError=True, displayError=False)
-    if (data != None) and writeFile(dstFile, data, continueOnError=True):
-      writeFile(dstFile, data)
-      config.set(ConfigParser.DEFAULTSECT, itemName, os.path.basename(srcFile))
+    if srcFile != dstFile:
+      data = readFile(srcFile, continueOnError=True, displayError=False)
+      if (data != None) and writeFile(dstFile, data, continueOnError=True):
+        writeFile(dstFile, data)
+        config.set(ConfigParser.DEFAULTSECT, itemName, os.path.basename(srcFile))
 
   def _getCfgBoolean(sectionName, itemName):
     value = config.get(sectionName, itemName, raw=True)
@@ -464,10 +471,10 @@ def setGlobalVariables():
   def _getCfgDirectory(sectionName, itemName):
     dirPath = os.path.expanduser(config.get(sectionName, itemName, raw=True))
     if (not dirPath) or (not os.path.isabs(dirPath)):
-      if sectionName != ConfigParser.DEFAULTSECT:
+      if (sectionName != ConfigParser.DEFAULTSECT) and (config.has_option(sectionName, itemName)):
         dirPath = os.path.join(os.path.expanduser(config.get(ConfigParser.DEFAULTSECT, itemName, raw=True)), dirPath)
       if not os.path.isabs(dirPath):
-        dirPath = os.path.join(GC_DEFAULTS[itemName], dirPath)
+        dirPath = os.path.join(gamCfgHome, dirPath)
     return dirPath
 
   def _getCfgFile(sectionName, itemName):
@@ -549,13 +556,13 @@ def setGlobalVariables():
   GC_DEFAULTS[GC_CONFIG_DIR] = gamCfgHome
 
   config = ConfigParser.SafeConfigParser(defaults=collections.OrderedDict(sorted(GC_DEFAULTS.items(), key=lambda t: t[0])))
-  configFileName = os.path.join(GC_DEFAULTS[GC_CONFIG_DIR], GAM_CFG)
+  configFileName = os.path.join(gamCfgHome, GAM_CFG)
   if not os.path.isfile(configFileName):
     _getOldEnvVarsSignalFiles()
     _checkMakeDir(GC_CONFIG_DIR)
     _checkMakeDir(GC_CACHE_DIR)
-    if GC_DEFAULTS[GC_CONFIG_DIR] != GC_Values[GC_GAM_PATH]:
-      for itemName in [GC_CLIENT_SECRETS_JSON, GC_OAUTH2_TXT, GC_OAUTH2SERVICE_JSON]:
+    for itemName in GC_VAR_INFO:
+      if GC_VAR_INFO[itemName][GC_VAR_TYPE_KEY] == GC_TYPE_FILE:
         _copyConfigFile(itemName)
     _writeConfigFile(configFileName, action=u'Initialized')
   else:
