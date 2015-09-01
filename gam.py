@@ -800,8 +800,9 @@ def ProcessGAMConfigFile(args):
 # If no select/options commands were executed or some were and there are more arguments on the command line,
 # warn if the json files are missing and return True
   if (i == 1) or (i < len(args)):
+    if args != sys.argv:
+      sys.argv = args[:]
     if i > 1:
-      sys.argv[0] = args[0]
 # Move remaining args down to 1
       j = 1
       while i < len(args):
