@@ -74,7 +74,7 @@ EV_GAM_CFG_HOME = u'GAM_CFG_HOME'
 # Name of config file
 GAM_CFG = u'gam.cfg'
 GAM_BAK = u'gam.bak'
-# Path to gam, assigned in setGlobalVariables after the command line is cleaned up for Windows
+# Path to gam, assigned in ProcessGAMConfigFile after the command line is cleaned up for Windows
 GC_GAM_PATH = u'gam_path'
 #
 # Global variables derived from values in gam.cfg
@@ -361,7 +361,7 @@ def writeFile(filename, data, mode='wb', continueOnError=False):
 # Set global variables from config file
 # Check for GAM updates based on status of no_update_check in config file
 #
-def setGlobalVariables():
+def ProcessGAMConfigFile(args):
   import ConfigParser, collections
   from appdirs import user_config_dir, user_cache_dir
 
@@ -542,7 +542,7 @@ def setGlobalVariables():
     return result
 
   status = {u'errors': False}
-  GC_Values[GC_GAM_PATH] = os.path.dirname(os.path.realpath(sys.argv[0]))
+  GC_Values[GC_GAM_PATH] = os.path.dirname(os.path.realpath(args[0]))
   try:
 # If GAM_CFG_HOME environment is set, use it for config path, use gamPath/gamcache for cache and gamPath for drive
     gamCfgHome = os.environ[EV_GAM_CFG_HOME]
@@ -569,16 +569,16 @@ def setGlobalVariables():
     _readConfigFile(configFileName)
   i = 1
 # select <SectionName> [save] [verify]
-  if sys.argv[i] == SELECT_CMD:
-    sectionName = sys.argv[i+1]
+  if args[i] == SELECT_CMD:
+    sectionName = args[i+1]
     i += 2
     if (not sectionName) or (sectionName.upper() == ConfigParser.DEFAULTSECT):
       sectionName = ConfigParser.DEFAULTSECT
     elif not config.has_section(sectionName):
       sys.stderr.write(u'{0}Section: {1}, Not Found\n'.format(ERROR_PREFIX, sectionName))
       sys.exit(3)
-    while i < len(sys.argv):
-      my_arg = sys.argv[i].lower()
+    while i < len(args):
+      my_arg = args[i].lower()
       if my_arg == SELECT_SAVE_CMD:
         i += 1
         config.set(ConfigParser.DEFAULTSECT, GC_SECTION, sectionName)
@@ -594,23 +594,23 @@ def setGlobalVariables():
 #         save|(backup <FileName>)|(restore <FileName>)|
 #         verify|print
 #        )* [config]
-  elif sys.argv[i] == CONFIG_CMD:
+  elif args[i] == CONFIG_CMD:
     i += 1
     sectionName = _getCfgSection(ConfigParser.DEFAULTSECT, GC_SECTION)
-    while i < len(sys.argv):
-      my_arg = sys.argv[i].lower()
+    while i < len(args):
+      my_arg = args[i].lower()
       if my_arg not in CONFIG_SUB_CMDS:
         sys.stderr.write(u'{0}options cmd  should be {1}. Got {2}\n'.format(ERROR_PREFIX, u','.join(CONFIG_SUB_CMDS), my_arg))
         sys.exit(3)
       i += 1
 # create <SectionName> [overwrite]
       if my_arg == CONFIG_CREATE_CMD:
-        value = sys.argv[i]
+        value = args[i]
         i += 1
         if value.upper() == ConfigParser.DEFAULTSECT:
           sys.stderr.write(u'{0}Section: {1}, Invalid\n'.format(ERROR_PREFIX, value))
           sys.exit(3)
-        if (i < len(sys.argv)) and (sys.argv[i].lower() == CONFIG_CREATE_OVERWRITE_CMD):
+        if (i < len(args)) and (args[i].lower() == CONFIG_CREATE_OVERWRITE_CMD):
           overwrite = True
           i += 1
         else:
@@ -625,7 +625,7 @@ def setGlobalVariables():
         sectionName = value
 # delete <SectionName>
       elif my_arg == CONFIG_DELETE_CMD:
-        value = sys.argv[i]
+        value = args[i]
         i += 1
         if value.upper() == ConfigParser.DEFAULTSECT:
           sys.stderr.write(u'{0}Section: {1}, Invalid\n'.format(ERROR_PREFIX, value))
@@ -639,7 +639,7 @@ def setGlobalVariables():
           config.set(ConfigParser.DEFAULTSECT, GC_SECTION, u'')
 # select <SectionName>
       elif my_arg == CONFIG_SELECT_CMD:
-        value = sys.argv[i]
+        value = args[i]
         i += 1
         if (not value) or (value.upper() == ConfigParser.DEFAULTSECT):
           value = u''
@@ -651,7 +651,7 @@ def setGlobalVariables():
           sectionName = value
 # make <Directory>
       elif my_arg == CONFIG_MAKE_CMD:
-        dstPath = os.path.expanduser(sys.argv[i])
+        dstPath = os.path.expanduser(args[i])
         i += 1
         if not os.path.isabs(dstPath):
           dstPath = os.path.join(config.get(ConfigParser.DEFAULTSECT, GC_CONFIG_DIR, raw=True), dstPath)
@@ -664,11 +664,11 @@ def setGlobalVariables():
               sys.exit(6)
 # copy <FromFile> <ToFile
       elif my_arg == CONFIG_COPY_CMD:
-        srcFile = os.path.expanduser(sys.argv[i])
+        srcFile = os.path.expanduser(args[i])
         i += 1
         if not os.path.isabs(srcFile):
           srcFile = os.path.join(GC_Values[GC_GAM_PATH], srcFile)
-        dstFile = os.path.expanduser(sys.argv[i])
+        dstFile = os.path.expanduser(args[i])
         i += 1
         if not os.path.isabs(dstFile):
           dstFile = os.path.join(config.get(sectionName, GC_CONFIG_DIR, raw=True), dstFile)
@@ -676,7 +676,7 @@ def setGlobalVariables():
         writeFile(dstFile, data)
 # reset <VariableName>
       elif my_arg == CONFIG_RESET_CMD:
-        itemName = sys.argv[i].lower().replace(u'_', u'')
+        itemName = args[i].lower().replace(u'_', u'')
         i += 1
         if itemName not in GC_VAR_ALIASES:
           sys.stderr.write(u'{0}key should be {1}. Got {2}\n'.format(ERROR_PREFIX, u','.join(sorted(GC_DEFAULTS.keys())), itemName))
@@ -691,13 +691,13 @@ def setGlobalVariables():
           config.set(ConfigParser.DEFAULTSECT, itemName, u'')
 # set <VariableName> <Value>
       elif my_arg == CONFIG_SET_CMD:
-        itemName = sys.argv[i].lower().replace(u'_', u'')
+        itemName = args[i].lower().replace(u'_', u'')
         i += 1
         if itemName not in GC_VAR_ALIASES:
           sys.stderr.write(u'{0}key should be {1}. Got {2}\n'.format(ERROR_PREFIX, u','.join(sorted(GC_DEFAULTS.keys())), itemName))
           sys.exit(3)
         itemName = GC_VAR_ALIASES[itemName]
-        value = sys.argv[i]
+        value = args[i]
         i += 1
         if itemName == GC_SECTION:
           if (not value) or (value.upper() == ConfigParser.DEFAULTSECT):
@@ -738,14 +738,14 @@ def setGlobalVariables():
         _writeConfigFile(configFileName, action=u'Saved')
 # backup <FileName>
       elif my_arg == CONFIG_BACKUP_CMD:
-        fileName = os.path.expanduser(sys.argv[i])
+        fileName = os.path.expanduser(args[i])
         i += 1
         if not os.path.isabs(fileName):
           fileName = os.path.join(gamCfgHome, fileName)
         _writeConfigFile(fileName, action=u'Backed up')
 # restore <FileName>
       elif my_arg == CONFIG_RESTORE_CMD:
-        fileName = os.path.expanduser(sys.argv[i])
+        fileName = os.path.expanduser(args[i])
         i += 1
         if not os.path.isabs(fileName):
           fileName = os.path.join(gamCfgHome, fileName)
@@ -799,15 +799,15 @@ def setGlobalVariables():
     GC_Values[GC_EXTRA_ARGS].update(dict(ea_config.items(u'extra-args')))
 # If no select/options commands were executed or some were and there are more arguments on the command line,
 # warn if the json files are missing and return True
-  if (i == 1) or (i < len(sys.argv)):
+  if (i == 1) or (i < len(args)):
     if i > 1:
 # Move remaining args down to 1
       j = 1
-      while i < len(sys.argv):
-        sys.argv[j] = sys.argv[i]
+      while i < len(args):
+        args[j] = args[i]
         j += 1
         i += 1
-      del sys.argv[j:]
+      del args[j:]
     _chkCfgDirectories(sectionName)
     _chkCfgFiles(sectionName)
     if GC_Values[GC_NO_CACHE]:
@@ -4581,12 +4581,13 @@ def renameLabels(users):
         new_label_name = replace % match_result.groups()
         print u' Renaming "%s" to "%s"' % (label[u'name'], new_label_name)
         try:
-          callGAPI(service=gmail.users().labels(), function=u'patch', soft_errors=True, throw_reasons=[u'aborted'], id=label[u'id'], userId=user, body={u'name': new_label_name})
+          callGAPI(service=gmail.users().labels(), function=u'patch', soft_errors=True, throw_reasons=[u'aborted'],
+                   id=label[u'id'], userId=user, body={u'name': new_label_name})
         except googleapiclient.errors.HttpError:
           if merge:
             print u'  Merging %s label to existing %s label' % (label[u'name'], new_label_name)
-            q = u'label:"%s"' % label[u'name']
-            messages_to_relabel = callGAPIpages(service=gmail.users().messages(), function=u'list', items=u'messages', userId=user, q=q)
+            messages_to_relabel = callGAPIpages(service=gmail.users().messages(), function=u'list', items=u'messages',
+                                                userId=user, q=u'label:"%s"' % (label[u'name']))
             if len(messages_to_relabel) > 0:
               for new_label in labels[u'labels']:
                 if new_label[u'name'].lower() == new_label_name.lower():
@@ -8997,16 +8998,10 @@ def run_batch(items):
       continue
     q.put(python_cmd+item)
   q.join()
-
-# Main
-reload(sys)
-sys.setdefaultencoding(u'UTF-8')
-try:
-  if os.name == u'nt':
-    sys.argv = win32_unicode_argv() # cleanup sys.argv on Windows
-# If the only commands concerned the config file, exit without showing usage
-  if not setGlobalVariables():
-    sys.exit(0)
+#
+# Process GAM command
+#
+def ProcessGAMCommand():
   if sys.argv[1].lower() == u'batch':
     import shlex
     f = file(sys.argv[2], 'rb')
@@ -9515,14 +9510,32 @@ try:
   else:
     print u'Error: %s is not a valid gam command' % command
     sys.exit(2)
-except IndexError:
-  showUsage()
-  sys.exit(2)
-except KeyboardInterrupt:
-  sys.exit(50)
-except socket.error, e:
-  print u'\nError: %s' % e
-  sys.exit(3)
-except MemoryError:
-  print u'Error: GAM has run out of memory. If this is a large Google Apps instance, you should use a 64-bit version of GAM on Windows or a 64-bit version of Python on other systems.'
-  sys.exit(99)
+
+# Main
+def main():
+  try:
+# If the only commands concerned the config file, exit without showing usage
+    if not ProcessGAMConfigFile(sys.argv):
+      sys.exit(0)
+#
+    ProcessGAMCommand()
+    sys.exit(0)
+#
+  except IndexError:
+    showUsage()
+    sys.exit(2)
+  except KeyboardInterrupt:
+    sys.exit(50)
+  except socket.error, e:
+    print u'\nError: %s' % e
+    sys.exit(3)
+  except MemoryError:
+    print u'Error: GAM has run out of memory. If this is a large Google Apps instance, you should use a 64-bit version of GAM on Windows or a 64-bit version of Python on other systems.'
+    sys.exit(99)
+#
+if __name__ == "__main__":
+  reload(sys)
+  sys.setdefaultencoding(u'UTF-8')
+  if os.name == u'nt':
+    sys.argv = win32_unicode_argv() # cleanup sys.argv on Windows
+  main()
