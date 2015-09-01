@@ -4996,6 +4996,17 @@ def doGetUserSchema():
         print '  %s: %s' % (a_key, field[a_key])
     print
 
+def clearBodyList(body, itemName):
+  if itemName in body:
+    del body[itemName]
+  body.setdefault(itemName, None)
+
+def appendItemToBodyList(body, itemName, itemValue):
+  if (itemName in body) and (body[itemName] == None):
+    del body[itemName]
+  body.setdefault(itemName, [])
+  body[itemName].append(itemValue)
+
 def doCreateUser():
   cd = buildGAPIObject(u'directory')
   body = dict()
@@ -5095,15 +5106,19 @@ def doCreateUser():
       body[u'orgUnitPath'] = org
       i += 2
     elif sys.argv[i].lower() == u'im':
-      im = dict()
       i += 1
+      if sys.argv[i].lower() == u'clear':
+        i += 1
+        clearBodyList(body, u'ims')
+        continue
+      im = dict()
       if sys.argv[i].lower() != u'type':
         print u'Error: wrong format for account im details. Expected type got %s' % sys.argv[i]
         sys.exit(6)
       i += 1
       im[u'type'] = sys.argv[i].lower()
       if im[u'type'] not in [u'custom', u'home', u'other', u'work']:
-        print u'Error: type should be custom, home, other or work. Got %s' % im['type']
+        print u'Error: type should be custom, home, other or work. Got %s' % im[u'type']
         sys.exit(7)
       if im[u'type'] == u'custom':
         i += 1
@@ -5124,14 +5139,15 @@ def doCreateUser():
         im[u'primary'] = True
         i += 1
       im[u'im'] = sys.argv[i]
-      try:
-        body[u'ims'].append(im)
-      except KeyError:
-        body[u'ims'] = [im,]
       i += 1
+      appendItemToBodyList(body, u'ims', im)
     elif sys.argv[i].lower() == u'address':
-      address = dict()
       i += 1
+      if sys.argv[i].lower() == u'clear':
+        i += 1
+        clearBodyList(body, u'addresses')
+        continue
+      address = dict()
       if sys.argv[i].lower() != u'type':
         print u'Error: wrong format for account address details. Expected type got %s' % sys.argv[i]
         sys.exit(9)
@@ -5182,13 +5198,14 @@ def doCreateUser():
           address[u'primary'] = True
           i += 1
           break
-      try:
-        body[u'addresses'].append(address)
-      except KeyError:
-        body[u'addresses'] = [address,]
+      appendItemToBodyList(body, u'addresses', address)
     elif sys.argv[i].lower() == u'organization':
-      organization = dict()
       i += 1
+      if sys.argv[i].lower() == u'clear':
+        i += 1
+        clearBodyList(body, u'organizations')
+        continue
+      organization = dict()
       while True:
         argument = sys.argv[i].lower()
         if argument == u'name':
@@ -5231,13 +5248,14 @@ def doCreateUser():
           organization[u'primary'] = True
           i += 1
           break
-      try:
-        body[u'organizations'].append(organization)
-      except KeyError:
-        body[u'organizations'] = [organization,]
+      appendItemToBodyList(body, u'organizations', organization)
     elif sys.argv[i].lower() == u'phone':
-      phone = dict()
       i += 1
+      if sys.argv[i].lower() == u'clear':
+        i += 1
+        clearBodyList(body, u'phones')
+        continue
+      phone = dict()
       while True:
         argument = sys.argv[i].lower()
         if argument == u'value':
@@ -5259,38 +5277,52 @@ def doCreateUser():
           phone[u'primary'] = True
           i += 1
           break
-      try:
-        body[u'phones'].append(phone)
-      except KeyError:
-        body[u'phones'] = [phone,]
+      appendItemToBodyList(body, u'phones', phone)
     elif sys.argv[i].lower() == u'relation':
-      relation = dict()
       i += 1
+      if sys.argv[i].lower() == u'clear':
+        i += 1
+        clearBodyList(body, u'relations')
+        continue
+      relation = dict()
       relation[u'type'] = sys.argv[i]
       if relation[u'type'].lower() not in [u'mother', u'father', u'sister', u'brother', u'manager', u'assistant', u'partner']:
         relation[u'type'] = u'custom'
         relation[u'customType'] = sys.argv[i]
       i += 1
       relation[u'value'] = sys.argv[i]
-      try:
-        body[u'relations'].append(relation)
-      except KeyError:
-        body[u'relations'] = [relation,]
       i += 1
+      appendItemToBodyList(body, u'relations', relation)
     elif sys.argv[i].lower() == u'externalid':
-      externalid = dict()
       i += 1
+      if sys.argv[i].lower() == u'clear':
+        i += 1
+        clearBodyList(body, u'externalIds')
+        continue
+      externalid = dict()
       externalid[u'type'] = sys.argv[i]
       if externalid[u'type'].lower() not in [u'account', u'customer', u'network', u'organization']:
         externalid[u'type'] = u'custom'
         externalid[u'customType'] = sys.argv[i]
       i += 1
       externalid[u'value'] = sys.argv[i]
-      try:
-        body[u'externalIds'].append(externalid)
-      except KeyError:
-        body[u'externalIds'] = [externalid,]
       i += 1
+      appendItemToBodyList(body, u'externalIds', externalid)
+    elif sys.argv[i].lower() == u'website':
+      i += 1
+      if sys.argv[i].lower() == u'clear':
+        i += 1
+        clearBodyList(body, u'websites')
+        continue
+      website = dict()
+      website[u'type'] = sys.argv[i]
+      if website[u'type'].lower() not in [u'home_page', u'blog', u'profile', u'work', u'home', u'other', u'ftp', u'reservations', u'app_install_page']:
+        website[u'type'] = u'custom'
+        website[u'customType'] = sys.argv[i]
+      i += 1
+      website[u'value'] = sys.argv[i]
+      i += 1
+      appendItemToBodyList(body, u'websites', website)
 #    else:
 #      showUsage()
 #      sys.exit(2)
@@ -5566,9 +5598,13 @@ def doUpdateUser(users):
       body[u'customerId'] = sys.argv[i+1]
       i += 2
     elif sys.argv[i].lower() == u'im':
-      do_update_user = True
-      im = dict()
       i += 1
+      do_update_user = True
+      if sys.argv[i].lower() == u'clear':
+        i += 1
+        clearBodyList(body, u'ims')
+        continue
+      im = dict()
       if sys.argv[i].lower() != u'type':
         print u'Error: wrong format for account im details. Expected type got %s' % sys.argv[i]
         sys.exit(6)
@@ -5597,14 +5633,15 @@ def doUpdateUser(users):
         i += 1
       im[u'im'] = sys.argv[i]
       i += 1
-      try:
-        body[u'ims'].append(im)
-      except KeyError:
-        body[u'ims'] = [im,]
+      appendItemToBodyList(body, u'ims', im)
     elif sys.argv[i].lower() == u'address':
-      do_update_user = True
-      address = dict()
       i += 1
+      do_update_user = True
+      if sys.argv[i].lower() == u'clear':
+        i += 1
+        clearBodyList(body, u'addresses')
+        continue
+      address = dict()
       if sys.argv[i].lower() != u'type':
         print u'Error: wrong format for account address details. Expected type got %s' % sys.argv[i]
         sys.exit(9)
@@ -5655,14 +5692,15 @@ def doUpdateUser(users):
           address[u'primary'] = True
           i += 1
           break
-      try:
-        body[u'addresses'].append(address)
-      except KeyError:
-        body[u'addresses'] = [address,]
+      appendItemToBodyList(body, u'addresses', address)
     elif sys.argv[i].lower() == u'organization':
-      do_update_user = True
-      organization = dict()
       i += 1
+      do_update_user = True
+      if sys.argv[i].lower() == u'clear':
+        i += 1
+        clearBodyList(body, u'organizations')
+        continue
+      organization = dict()
       while True:
         argument = sys.argv[i].lower()
         if argument == u'name':
@@ -5676,7 +5714,7 @@ def doUpdateUser(users):
           i += 2
         elif argument == u'type':
           organization[u'type'] = sys.argv[i+1].lower()
-          if organization[u'type'] not in [u'domain_only', 'school', 'unknown', 'work']:
+          if organization[u'type'] not in [u'domain_only', u'school', u'unknown', u'work']:
             print u'Error: organization type must be domain_only, school, unknown or work. Got %s' % organization[u'type']
             sys.exit(11)
           i += 2
@@ -5705,14 +5743,15 @@ def doUpdateUser(users):
           organization[u'primary'] = True
           i += 1
           break
-      try:
-        body[u'organizations'].append(organization)
-      except KeyError:
-        body[u'organizations'] = [organization,]
+      appendItemToBodyList(body, u'organizations', organization)
     elif sys.argv[i].lower() == u'phone':
-      do_update_user = True
-      phone = dict()
       i += 1
+      do_update_user = True
+      if sys.argv[i].lower() == u'clear':
+        i += 1
+        clearBodyList(body, u'phones')
+        continue
+      phone = dict()
       while True:
         argument = sys.argv[i].lower()
         if argument == u'value':
@@ -5734,54 +5773,71 @@ def doUpdateUser(users):
           phone[u'primary'] = True
           i += 1
           break
-      try:
-        body[u'phones'].append(phone)
-      except KeyError:
-        body[u'phones'] = [phone,]
+      appendItemToBodyList(body, u'phones', phone)
     elif sys.argv[i].lower() == u'relation':
-      do_update_user = True
-      relation = dict()
       i += 1
+      do_update_user = True
+      if sys.argv[i].lower() == u'clear':
+        i += 1
+        clearBodyList(body, u'relations')
+        continue
+      relation = dict()
       relation[u'type'] = sys.argv[i]
       if relation[u'type'].lower() not in [u'mother', u'father', u'sister', u'brother', u'manager', u'assistant', u'partner']:
         relation[u'type'] = u'custom'
         relation[u'customType'] = sys.argv[i]
       i += 1
       relation[u'value'] = sys.argv[i]
-      try:
-        body[u'relations'].append(relation)
-      except KeyError:
-        body[u'relations'] = [relation,]
       i += 1
+      appendItemToBodyList(body, u'relations', relation)
     elif sys.argv[i].lower() == u'otheremail':
-      do_update_user = True
-      an_email = dict()
       i += 1
+      do_update_user = True
+      if sys.argv[i].lower() == u'clear':
+        i += 1
+        clearBodyList(body, u'emails')
+        continue
+      an_email = dict()
       an_email[u'type'] = sys.argv[i]
       if an_email[u'type'].lower() not in [u'custom', u'home', u'other', u'work']:
         an_email[u'type'] = u'custom'
         an_email[u'customType'] = sys.argv[i]
       i += 1
       an_email[u'address'] = sys.argv[i]
-      if u'emails' not in body:
-        body[u'emails'] = list()
-      body[u'emails'].append(an_email)
       i += 1
+      appendItemToBodyList(body, u'emails', an_email)
     elif sys.argv[i].lower() == u'externalid':
-      do_update_user = True
-      externalid = dict()
       i += 1
+      do_update_user = True
+      if sys.argv[i].lower() == u'clear':
+        i += 1
+        clearBodyList(body, u'externalIds')
+        continue
+      externalid = dict()
       externalid[u'type'] = sys.argv[i]
       if externalid[u'type'].lower() not in [u'account', u'customer', u'network', u'organization']:
         externalid[u'type'] = u'custom'
         externalid[u'customType'] = sys.argv[i]
       i += 1
       externalid[u'value'] = sys.argv[i]
-      try:
-        body[u'externalIds'].append(externalid)
-      except KeyError:
-        body[u'externalIds'] = [externalid,]
       i += 1
+      appendItemToBodyList(body, u'externalIds', externalid)
+    elif sys.argv[i].lower() == u'website':
+      i += 1
+      do_update_user = True
+      if sys.argv[i].lower() == u'clear':
+        i += 1
+        clearBodyList(body, u'websites')
+        continue
+      website = dict()
+      website[u'type'] = sys.argv[i]
+      if website[u'type'].lower() not in [u'home_page', u'blog', u'profile', u'work', u'home', u'other', u'ftp', u'reservations', u'app_install_page']:
+        website[u'type'] = u'custom'
+        website[u'customType'] = sys.argv[i]
+      i += 1
+      website[u'value'] = sys.argv[i]
+      i += 1
+      appendItemToBodyList(body, u'websites', website)
 #    else:
 #      showUsage()
 #      print u''
@@ -6000,7 +6056,7 @@ def doUpdateGroup():
           cd_body[u'email'] = u'%s@%s' % (cd_body[u'email'], GC_Values[GC_DOMAIN])
       except KeyError:
         pass
-      cd_result = callGAPI(service=cd.groups(), function=u'patch', groupKey=group, body=cd_body)
+      cd_result = callGAPI(service=cd.groups(), function=u'update', groupKey=group, body=cd_body)
     if use_gs_api:
       gs = buildGAPIObject(u'groupssettings')
       if use_cd_api:
