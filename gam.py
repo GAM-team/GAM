@@ -801,13 +801,14 @@ def ProcessGAMConfigFile(args):
 # warn if the json files are missing and return True
   if (i == 1) or (i < len(args)):
     if i > 1:
+      sys.argv[0] = args[0]
 # Move remaining args down to 1
       j = 1
       while i < len(args):
-        args[j] = args[i]
+        sys.argv[j] = args[i]
         j += 1
         i += 1
-      del args[j:]
+      del sys.argv[j:]
     _chkCfgDirectories(sectionName)
     _chkCfgFiles(sectionName)
     if GC_Values[GC_NO_CACHE]:
@@ -9001,7 +9002,9 @@ def run_batch(items):
 #
 # Process GAM command
 #
-def ProcessGAMCommand():
+def ProcessGAMCommand(args):
+  if args != sys.argv:
+    sys.argv = args[:]
   if sys.argv[1].lower() == u'batch':
     import shlex
     f = file(sys.argv[2], 'rb')
@@ -9518,7 +9521,7 @@ def main():
     if not ProcessGAMConfigFile(sys.argv):
       sys.exit(0)
 #
-    rc = ProcessGAMCommand()
+    rc = ProcessGAMCommand(sys.argv)
     sys.exit(rc)
 #
   except IndexError:
