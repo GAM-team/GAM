@@ -90,6 +90,7 @@ Environment variable: GAMCACHEDIR, Config file variable: cache_dir, Default: Gam
 Environment variable: GAMDRIVEDIR, Config file variable: drive_dir, Default: GamDriveDir
 Environment variable: OAUTHFILE, Config file variable: oauth2_txt, Default: oauth2.txt
 Environment variable: OAUTHSERVICEFILE, Config file variable: oauth2service_json, Default: oauth2service.json
+Environment variable: CLIENTSECRETS, Config file variable: client_secrets_json, Default: client_secrets.json
 Environment variable: GA_DOMAIN, Config file variable: domain, Default: Blank
 Environment variable: CUSTOMER_ID, Config file variable: customer_id, Default: Blank
 Environment variable: GAM_THREADS, Config file variable: num_threads, Default: 5
@@ -101,7 +102,7 @@ Signal file: noupdatecheck.txt, Config file variable: no_update_check, Default: 
 Signal file: debug.gam, Config file variable: debug_level, Default: 4 if found, 0 otherwise
 Signal file: lastupdatecheck.txt, Config file variable: last_update_check, Default: 0
 
-GAM will copy the following files from GamPath to the GamConfigDir if the two directories are not the same.
+GAM will copy the following files from GamPath to GamConfigDir if the two directories are not the same.
         client_secrets.json, oauth2.txt, oauth2service.json
 
 How will gam.cfg be used? At its simplest, it is created once and you can ignore it.
