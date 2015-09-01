@@ -569,7 +569,7 @@ def ProcessGAMConfigFile(args):
     _readConfigFile(configFileName)
   i = 1
 # select <SectionName> [save] [verify]
-  if args[i] == SELECT_CMD:
+  if (i < len(args)) and (args[i] == SELECT_CMD):
     sectionName = args[i+1]
     i += 2
     if (not sectionName) or (sectionName.upper() == ConfigParser.DEFAULTSECT):
@@ -594,7 +594,7 @@ def ProcessGAMConfigFile(args):
 #         save|(backup <FileName>)|(restore <FileName>)|
 #         verify|print
 #        )* [config]
-  elif args[i] == CONFIG_CMD:
+  elif (i < len(args)) and (args[i] == CONFIG_CMD):
     i += 1
     sectionName = _getCfgSection(ConfigParser.DEFAULTSECT, GC_SECTION)
     while i < len(args):
@@ -9017,7 +9017,7 @@ def ProcessGAMCommand():
         argv = argv[1:]
       items.append(argv)
     run_batch(items)
-    sys.exit(0)
+    return 0
   elif sys.argv[1].lower() == 'csv':
     csv_filename = sys.argv[2]
     if csv_filename == u'-':
@@ -9029,7 +9029,7 @@ def ProcessGAMCommand():
     input_file = csv.DictReader(f)
     if sys.argv[3].lower() != 'gam':
       print 'Error: "gam csv <filename>" should be followed by a full GAM command...'
-      sys.exit(3)
+      return 3
     argv_template = sys.argv[4:]
     items = list()
     for row in input_file:
@@ -9041,13 +9041,13 @@ def ProcessGAMCommand():
           argv.append(row[arg[1:]])
         else:
           print 'Error: header "%s" not found in CSV headers of "%s", giving up.' % (arg[1:], ','.join(row.keys()))
-          sys.exit(0)
+          return 0
       items.append(argv)
     run_batch(items)
-    sys.exit(0)
+    return 0
   elif sys.argv[1].lower() == u'version':
     doGAMVersion()
-    sys.exit(0)
+    return 0
   elif sys.argv[1].lower() == u'create':
     if sys.argv[2].lower() == u'user':
       doCreateUser()
@@ -9067,8 +9067,8 @@ def ProcessGAMCommand():
       doCreateCourse()
     else:
       print u'Error: invalid argument to "gam create..."'
-      sys.exit(2)
-    sys.exit(0)
+      return 2
+    return 0
   elif sys.argv[1].lower() == u'update':
     if sys.argv[2].lower() == u'user':
       doUpdateUser([sys.argv[3],])
@@ -9099,8 +9099,8 @@ def ProcessGAMCommand():
     else:
       showUsage()
       print u'Error: invalid argument to "gam update..."'
-      sys.exit(2)
-    sys.exit(0)
+      return 2
+    return 0
   elif sys.argv[1].lower() == u'info':
     if sys.argv[2].lower() == u'user':
       doGetUserInfo()
@@ -9130,8 +9130,8 @@ def ProcessGAMCommand():
       doGetPrinterInfo()
     else:
       print u'Error: invalid argument to "gam info..."'
-      sys.exit(2)
-    sys.exit(0)
+      return 2
+    return 0
   elif sys.argv[1].lower() == u'delete':
     if sys.argv[2].lower() == u'user':
       doDeleteUser()
@@ -9155,15 +9155,15 @@ def ProcessGAMCommand():
       doDelPrinter()
     else:
       print u'Error: invalid argument to "gam delete"'
-      sys.exit(2)
-    sys.exit(0)
+      return 2
+    return 0
   elif sys.argv[1].lower() == u'undelete':
     if sys.argv[2].lower() == u'user':
       doUndeleteUser()
     else:
       print u'Error: invalid argument to "gam undelete..."'
-      sys.exit(2)
-    sys.exit(0)
+      return 2
+    return 0
   elif sys.argv[1].lower() == u'audit':
     if sys.argv[2].lower() == u'monitor':
       if sys.argv[3].lower() == u'create':
@@ -9174,7 +9174,7 @@ def ProcessGAMCommand():
         doDeleteMonitor()
       else:
         print u'Error: invalid argument to "gam audit monitor..."'
-        sys.exit(2)
+        return 2
     elif sys.argv[2].lower() == u'activity':
       if sys.argv[3].lower() == u'request':
         doRequestActivity()
@@ -9186,7 +9186,7 @@ def ProcessGAMCommand():
         doDeleteActivityRequest()
       else:
         print u'Error: invalid argument to "gam audit activity..."'
-        sys.exit(2)
+        return 2
     elif sys.argv[2].lower() == u'export':
       if sys.argv[3].lower() == u'status':
         doStatusExportRequests()
@@ -9200,13 +9200,13 @@ def ProcessGAMCommand():
         doDeleteExport()
       else:
         print u'Error: invalid argument to "gam audit export..."'
-        sys.exit(2)
+        return 2
     elif sys.argv[2].lower() == u'uploadkey':
       doUploadAuditKey()
     else:
       print u'Error: invalid argument to "gam audit..."'
-      sys.exit(2)
-    sys.exit(0)
+      return 2
+    return 0
   elif sys.argv[1].lower() == u'print':
     if sys.argv[2].lower() == u'users':
       doPrintUsers()
@@ -9240,8 +9240,8 @@ def ProcessGAMCommand():
       doPrintPrintJobs()
     else:
       print u'Error: invalid argument to "gam print..."'
-      sys.exit(2)
-    sys.exit(0)
+      return 2
+    return 0
   elif sys.argv[1].lower() in [u'oauth', u'oauth2']:
     if sys.argv[2].lower() in [u'request', u'create']:
       doRequestOAuth()
@@ -9251,8 +9251,8 @@ def ProcessGAMCommand():
       doDeleteOAuth()
     else:
       print u'Error: invalid argument to "gam oauth..."'
-      sys.exit(2)
-    sys.exit(0)
+      return 2
+    return 0
   elif sys.argv[1].lower() == u'calendar':
     if sys.argv[3].lower() == u'showacl':
       doCalendarShowACL()
@@ -9268,8 +9268,8 @@ def ProcessGAMCommand():
       doCalendarAddEvent()
     else:
       print u'Error: invalid argument to "gam calendar..."'
-      sys.exit(2)
-    sys.exit(0)
+      return 2
+    return 0
   elif sys.argv[1].lower() == u'printer':
     if sys.argv[3].lower() == u'showacl':
       doPrinterShowACL()
@@ -9281,8 +9281,8 @@ def ProcessGAMCommand():
       doPrinterRegister()
     else:
       print u'Error: invalid argument to "gam printer..."'
-      sys.exit(2)
-    sys.exit(0)
+      return 2
+    return 0
   elif sys.argv[1].lower() == u'printjob':
     if sys.argv[3].lower() == u'delete':
       doDeletePrintJob()
@@ -9296,39 +9296,39 @@ def ProcessGAMCommand():
       doPrintJobResubmit()
     else:
       print u'ERROR: invalid argument to "gam printjob..."'
-      sys.exit(2)
-    sys.exit(0)
+      return 2
+    return 0
   elif sys.argv[1].lower() == u'report':
     showReport()
-    sys.exit(0)
+    return 0
   elif sys.argv[1].lower() == u'whatis':
     doWhatIs()
-    sys.exit(0)
+    return 0
   elif sys.argv[1].lower() in [u'course', u'class']:
     if sys.argv[3].lower() in [u'add', u'create']:
       doAddCourseParticipant()
-      sys.exit(0)
+      return 0
     elif sys.argv[3].lower() in [u'del', u'delete', u'remove']:
       doDelCourseParticipant()
-      sys.exit(0)
+      return 0
     elif sys.argv[3].lower() == u'sync':
       doSyncCourseParticipants()
-      sys.exit(0)
+      return 0
     else:
       print u'Error: invalid argument to "gam course..."'
-      sys.exit(2)
+      return 2
   users = getUsersToModify()
   command = sys.argv[3].lower()
   if command == u'print':
     for user in users:
       print user
-      sys.exit(0)
+      return 0
   if (GC_Values[GC_AUTO_BATCH_MIN] > 0) and (len(users) > GC_Values[GC_AUTO_BATCH_MIN]):
     items = []
     for user in users:
       items.append([u'user', user] + sys.argv[3:])
     run_batch(items)
-    sys.exit(0)
+    return 0
   if command == u'transfer':
     transferWhat = sys.argv[4].lower()
     if transferWhat == u'drive':
@@ -9381,19 +9381,19 @@ def ProcessGAMCommand():
       doDriveActivity(users)
     else:
       print u'Error: invalid argument to "gam <users> show..."'
-      sys.exit(2)
+      return 2
   elif command == u'trash':
     if sys.argv[4].lower() in [u'message', u'messages']:
       doDeleteMessages(users, u'trash')
     else:
       print u'ERROR: invalid argument to "gam <users> trash..."'
-      sys.exit(2)
+      return 2
   elif command == u'spam':
     if sys.argv[4].lower() in [u'message', u'messages']:
       doSpamMessages(users)
     else:
       print u'ERROR: invalid argument to "gam <users> spam..."'
-      sys.exit(2)
+      return 2
   elif command == u'delete' or command == u'del':
     delWhat = sys.argv[4].lower()
     if delWhat == u'delegate':
@@ -9426,7 +9426,7 @@ def ProcessGAMCommand():
       delDriveFileACL(users)
     else:
       print u'Error: invalid argument to "gam <users> delete..."'
-      sys.exit(2)
+      return 2
   elif command == u'add':
     addWhat = sys.argv[4].lower()
     if addWhat == u'calendar':
@@ -9441,7 +9441,7 @@ def ProcessGAMCommand():
       doLabel(users)
     else:
       print u'Error: invalid argument to "gam <users> add..."'
-      sys.exit(2)
+      return 2
   elif command == u'update':
     if sys.argv[4].lower() == u'calendar':
       updateCalendar(users)
@@ -9465,7 +9465,7 @@ def ProcessGAMCommand():
       updateLabels(users)
     else:
       print u'Error: invalid argument to "gam <users> update..."'
-      sys.exit(2)
+      return 2
   elif command in [u'deprov', u'deprovision']:
     doDeprovUser(users)
   elif command == u'get':
@@ -9509,7 +9509,7 @@ def ProcessGAMCommand():
     doDelegates(users)
   else:
     print u'Error: %s is not a valid gam command' % command
-    sys.exit(2)
+    return 2
 
 # Main
 def main():
@@ -9518,8 +9518,8 @@ def main():
     if not ProcessGAMConfigFile(sys.argv):
       sys.exit(0)
 #
-    ProcessGAMCommand()
-    sys.exit(0)
+    rc = ProcessGAMCommand()
+    sys.exit(rc)
 #
   except IndexError:
     showUsage()
