@@ -207,8 +207,8 @@ def run_flow(flow, storage, flags, http=None):
     print()
     print('    ' + authorize_url)
     print()
-    print('If your browser is on a different machine then exit and re-run this')
-    print('after creating a file called nobrowser.txt in the same path as GAM.')
+    print('If your browser is on a different machine then exit and re-run this command')
+    print('after executing the command: "gam config select default set no_browser true save"')
     print()
   else:
     print('Go to the following link in your browser:')
