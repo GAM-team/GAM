@@ -74,7 +74,7 @@ EV_GAM_CFG_HOME = u'GAM_CFG_HOME'
 # Name of config file
 GAM_CFG = u'gam.cfg'
 GAM_BAK = u'gam.bak'
-# Path to gam, assigned in ProcessGAMConfigFile after the command line is cleaned up for Windows
+# Path to gam, assigned in SetGlobalVariables after the command line is cleaned up for Windows
 GC_GAM_PATH = u'gam_path'
 #
 # Global variables derived from values in gam.cfg
@@ -361,7 +361,8 @@ def writeFile(filename, data, mode='wb', continueOnError=False):
 # Set global variables from config file
 # Check for GAM updates based on status of no_update_check in config file
 #
-def ProcessGAMConfigFile(args):
+def SetGlobalVariables():
+  global GC_Values
   import ConfigParser, collections
   from appdirs import user_config_dir, user_cache_dir
 
@@ -541,8 +542,8 @@ def ProcessGAMConfigFile(args):
           result = False
     return result
 
+  GC_Values = {GC_GAM_PATH: os.path.dirname(os.path.realpath(sys.argv[0]))}
   status = {u'errors': False}
-  GC_Values[GC_GAM_PATH] = os.path.dirname(os.path.realpath(args[0]))
   try:
 # If GAM_CFG_HOME environment is set, use it for config path, use gamPath/gamcache for cache and gamPath for drive
     gamCfgHome = os.environ[EV_GAM_CFG_HOME]
@@ -569,16 +570,16 @@ def ProcessGAMConfigFile(args):
     _readConfigFile(configFileName)
   i = 1
 # select <SectionName> [save] [verify]
-  if (i < len(args)) and (args[i] == SELECT_CMD):
-    sectionName = args[i+1]
+  if (i < len(sys.argv)) and (sys.argv[i] == SELECT_CMD):
+    sectionName = sys.argv[i+1]
     i += 2
     if (not sectionName) or (sectionName.upper() == ConfigParser.DEFAULTSECT):
       sectionName = ConfigParser.DEFAULTSECT
     elif not config.has_section(sectionName):
       sys.stderr.write(u'{0}Section: {1}, Not Found\n'.format(ERROR_PREFIX, sectionName))
       sys.exit(3)
-    while i < len(args):
-      my_arg = args[i].lower()
+    while i < len(sys.argv):
+      my_arg = sys.argv[i].lower()
       if my_arg == SELECT_SAVE_CMD:
         i += 1
         config.set(ConfigParser.DEFAULTSECT, GC_SECTION, sectionName)
@@ -594,23 +595,23 @@ def ProcessGAMConfigFile(args):
 #         save|(backup <FileName>)|(restore <FileName>)|
 #         verify|print
 #        )* [config]
-  elif (i < len(args)) and (args[i] == CONFIG_CMD):
+  elif (i < len(sys.argv)) and (sys.argv[i] == CONFIG_CMD):
     i += 1
     sectionName = _getCfgSection(ConfigParser.DEFAULTSECT, GC_SECTION)
-    while i < len(args):
-      my_arg = args[i].lower()
+    while i < len(sys.argv):
+      my_arg = sys.argv[i].lower()
       if my_arg not in CONFIG_SUB_CMDS:
         sys.stderr.write(u'{0}options cmd  should be {1}. Got {2}\n'.format(ERROR_PREFIX, u','.join(CONFIG_SUB_CMDS), my_arg))
         sys.exit(3)
       i += 1
 # create <SectionName> [overwrite]
       if my_arg == CONFIG_CREATE_CMD:
-        value = args[i]
+        value = sys.argv[i]
         i += 1
         if value.upper() == ConfigParser.DEFAULTSECT:
           sys.stderr.write(u'{0}Section: {1}, Invalid\n'.format(ERROR_PREFIX, value))
           sys.exit(3)
-        if (i < len(args)) and (args[i].lower() == CONFIG_CREATE_OVERWRITE_CMD):
+        if (i < len(sys.argv)) and (sys.argv[i].lower() == CONFIG_CREATE_OVERWRITE_CMD):
           overwrite = True
           i += 1
         else:
@@ -625,7 +626,7 @@ def ProcessGAMConfigFile(args):
         sectionName = value
 # delete <SectionName>
       elif my_arg == CONFIG_DELETE_CMD:
-        value = args[i]
+        value = sys.argv[i]
         i += 1
         if value.upper() == ConfigParser.DEFAULTSECT:
           sys.stderr.write(u'{0}Section: {1}, Invalid\n'.format(ERROR_PREFIX, value))
@@ -639,7 +640,7 @@ def ProcessGAMConfigFile(args):
           config.set(ConfigParser.DEFAULTSECT, GC_SECTION, u'')
 # select <SectionName>
       elif my_arg == CONFIG_SELECT_CMD:
-        value = args[i]
+        value = sys.argv[i]
         i += 1
         if (not value) or (value.upper() == ConfigParser.DEFAULTSECT):
           value = u''
@@ -651,7 +652,7 @@ def ProcessGAMConfigFile(args):
           sectionName = value
 # make <Directory>
       elif my_arg == CONFIG_MAKE_CMD:
-        dstPath = os.path.expanduser(args[i])
+        dstPath = os.path.expanduser(sys.argv[i])
         i += 1
         if not os.path.isabs(dstPath):
           dstPath = os.path.join(config.get(ConfigParser.DEFAULTSECT, GC_CONFIG_DIR, raw=True), dstPath)
@@ -664,11 +665,11 @@ def ProcessGAMConfigFile(args):
               sys.exit(6)
 # copy <FromFile> <ToFile
       elif my_arg == CONFIG_COPY_CMD:
-        srcFile = os.path.expanduser(args[i])
+        srcFile = os.path.expanduser(sys.argv[i])
         i += 1
         if not os.path.isabs(srcFile):
           srcFile = os.path.join(GC_Values[GC_GAM_PATH], srcFile)
-        dstFile = os.path.expanduser(args[i])
+        dstFile = os.path.expanduser(sys.argv[i])
         i += 1
         if not os.path.isabs(dstFile):
           dstFile = os.path.join(config.get(sectionName, GC_CONFIG_DIR, raw=True), dstFile)
@@ -676,7 +677,7 @@ def ProcessGAMConfigFile(args):
         writeFile(dstFile, data)
 # reset <VariableName>
       elif my_arg == CONFIG_RESET_CMD:
-        itemName = args[i].lower().replace(u'_', u'')
+        itemName = sys.argv[i].lower().replace(u'_', u'')
         i += 1
         if itemName not in GC_VAR_ALIASES:
           sys.stderr.write(u'{0}key should be {1}. Got {2}\n'.format(ERROR_PREFIX, u','.join(sorted(GC_DEFAULTS.keys())), itemName))
@@ -691,13 +692,13 @@ def ProcessGAMConfigFile(args):
           config.set(ConfigParser.DEFAULTSECT, itemName, u'')
 # set <VariableName> <Value>
       elif my_arg == CONFIG_SET_CMD:
-        itemName = args[i].lower().replace(u'_', u'')
+        itemName = sys.argv[i].lower().replace(u'_', u'')
         i += 1
         if itemName not in GC_VAR_ALIASES:
           sys.stderr.write(u'{0}key should be {1}. Got {2}\n'.format(ERROR_PREFIX, u','.join(sorted(GC_DEFAULTS.keys())), itemName))
           sys.exit(3)
         itemName = GC_VAR_ALIASES[itemName]
-        value = args[i]
+        value = sys.argv[i]
         i += 1
         if itemName == GC_SECTION:
           if (not value) or (value.upper() == ConfigParser.DEFAULTSECT):
@@ -738,14 +739,14 @@ def ProcessGAMConfigFile(args):
         _writeConfigFile(configFileName, action=u'Saved')
 # backup <FileName>
       elif my_arg == CONFIG_BACKUP_CMD:
-        fileName = os.path.expanduser(args[i])
+        fileName = os.path.expanduser(sys.argv[i])
         i += 1
         if not os.path.isabs(fileName):
           fileName = os.path.join(gamCfgHome, fileName)
         _writeConfigFile(fileName, action=u'Backed up')
 # restore <FileName>
       elif my_arg == CONFIG_RESTORE_CMD:
-        fileName = os.path.expanduser(args[i])
+        fileName = os.path.expanduser(sys.argv[i])
         i += 1
         if not os.path.isabs(fileName):
           fileName = os.path.join(gamCfgHome, fileName)
@@ -799,14 +800,12 @@ def ProcessGAMConfigFile(args):
     GC_Values[GC_EXTRA_ARGS].update(dict(ea_config.items(u'extra-args')))
 # If no select/options commands were executed or some were and there are more arguments on the command line,
 # warn if the json files are missing and return True
-  if (i == 1) or (i < len(args)):
-    if args != sys.argv:
-      sys.argv = args[:]
+  if (i == 1) or (i < len(sys.argv)):
     if i > 1:
 # Move remaining args down to 1
       j = 1
-      while i < len(args):
-        sys.argv[j] = args[i]
+      while i < len(sys.argv):
+        sys.argv[j] = sys.argv[i]
         j += 1
         i += 1
       del sys.argv[j:]
@@ -9006,540 +9005,544 @@ def run_batch(items):
 def ProcessGAMCommand(args):
   if args != sys.argv:
     sys.argv = args[:]
-  if sys.argv[1].lower() == u'batch':
-    import shlex
-    f = file(sys.argv[2], 'rb')
-    items = list()
-    for line in f:
-      argv = shlex.split(line)
-      if (argv[0] in [u'#', u' ', u''] or len(argv) < 2) and argv != [u'commit-batch']:
-        continue
-      elif argv[0] not in [u'gam', u'commit-batch']:
-        print u'Error: "%s" is not a valid gam command' % line
-        continue
-      if argv[0] == u'gam':
-        argv = argv[1:]
-      items.append(argv)
-    run_batch(items)
-    return 0
-  elif sys.argv[1].lower() == 'csv':
-    csv_filename = sys.argv[2]
-    if csv_filename == u'-':
-      import StringIO
-      input_string = unicode(sys.stdin.read())
-      f = StringIO.StringIO(input_string)
-    else:
-      f = file(csv_filename, 'rb')
-    input_file = csv.DictReader(f)
-    if sys.argv[3].lower() != 'gam':
-      print 'Error: "gam csv <filename>" should be followed by a full GAM command...'
-      return 3
-    argv_template = sys.argv[4:]
-    items = list()
-    for row in input_file:
-      argv = list()
-      for arg in argv_template:
-        if arg[0] != '~':
-          argv.append(arg)
-        elif arg[1:] in row:
-          argv.append(row[arg[1:]])
-        else:
-          print 'Error: header "%s" not found in CSV headers of "%s", giving up.' % (arg[1:], ','.join(row.keys()))
-          return 0
-      items.append(argv)
-    run_batch(items)
-    return 0
-  elif sys.argv[1].lower() == u'version':
-    doGAMVersion()
-    return 0
-  elif sys.argv[1].lower() == u'create':
-    if sys.argv[2].lower() == u'user':
-      doCreateUser()
-    elif sys.argv[2].lower() == u'group':
-      doCreateGroup()
-    elif sys.argv[2].lower() in [u'nickname', u'alias']:
-      doCreateAlias()
-    elif sys.argv[2].lower() in [u'org', 'ou']:
-      doCreateOrg()
-    elif sys.argv[2].lower() == u'resource':
-      doCreateResource()
-    elif sys.argv[2].lower() in [u'verify', u'verification']:
-      doSiteVerifyShow()
-    elif sys.argv[2].lower() in [u'schema']:
-      doCreateOrUpdateUserSchema()
-    elif sys.argv[2].lower() in [u'course', u'class']:
-      doCreateCourse()
-    else:
-      print u'Error: invalid argument to "gam create..."'
-      return 2
-    return 0
-  elif sys.argv[1].lower() == u'update':
-    if sys.argv[2].lower() == u'user':
-      doUpdateUser([sys.argv[3],])
-    elif sys.argv[2].lower() == u'group':
-      doUpdateGroup()
-    elif sys.argv[2].lower() in [u'nickname', u'alias']:
-      doUpdateAlias()
-    elif sys.argv[2].lower() in [u'ou', u'org']:
-      doUpdateOrg()
-    elif sys.argv[2].lower() == u'resource':
-      doUpdateResourceCalendar()
-    elif sys.argv[2].lower() == u'domain':
-      doUpdateDomain()
-    elif sys.argv[2].lower() == u'cros':
-      doUpdateCros()
-    elif sys.argv[2].lower() == u'mobile':
-      doUpdateMobile()
-    elif sys.argv[2].lower() in [u'notification', u'notifications']:
-      doUpdateNotification()
-    elif sys.argv[2].lower() in [u'verify', u'verification']:
-      doSiteVerifyAttempt()
-    elif sys.argv[2].lower() in [u'schema', u'schemas']:
-      doCreateOrUpdateUserSchema()
-    elif sys.argv[2].lower() in [u'course', u'class']:
-      doUpdateCourse()
-    elif sys.argv[2].lower() in [u'printer', u'print']:
-      doUpdatePrinter()
-    else:
-      showUsage()
-      print u'Error: invalid argument to "gam update..."'
-      return 2
-    return 0
-  elif sys.argv[1].lower() == u'info':
-    if sys.argv[2].lower() == u'user':
-      doGetUserInfo()
-    elif sys.argv[2].lower() == u'group':
-      doGetGroupInfo()
-    elif sys.argv[2].lower() in [u'nickname', u'alias']:
-      doGetAliasInfo()
-    elif sys.argv[2].lower() == u'domain':
-      doGetDomainInfo()
-    elif sys.argv[2].lower() in [u'org', u'ou']:
-      doGetOrgInfo()
-    elif sys.argv[2].lower() == u'resource':
-      doGetResourceCalendarInfo()
-    elif sys.argv[2].lower() == u'cros':
-      doGetCrosInfo()
-    elif sys.argv[2].lower() == u'mobile':
-      doGetMobileInfo()
-    elif sys.argv[2].lower() in [u'notifications', u'notification']:
-      doGetNotifications()
-    elif sys.argv[2].lower() in [u'verify', u'verification']:
-      doGetSiteVerifications()
-    elif sys.argv[2].lower() in [u'schema', u'schemas']:
-      doGetUserSchema()
-    elif sys.argv[2].lower() in [u'course', u'class']:
-      doGetCourseInfo()
-    elif sys.argv[2].lower() in [u'printer', u'print']:
-      doGetPrinterInfo()
-    else:
-      print u'Error: invalid argument to "gam info..."'
-      return 2
-    return 0
-  elif sys.argv[1].lower() == u'delete':
-    if sys.argv[2].lower() == u'user':
-      doDeleteUser()
-    elif sys.argv[2].lower() == u'group':
-      doDeleteGroup()
-    elif sys.argv[2].lower() in [u'nickname', u'alias']:
-      doDeleteAlias()
-    elif sys.argv[2].lower() == u'org':
-      doDeleteOrg()
-    elif sys.argv[2].lower() == u'resource':
-      doDeleteResourceCalendar()
-    elif sys.argv[2].lower() == u'mobile':
-      doDeleteMobile()
-    elif sys.argv[2].lower() in [u'notification', u'notifications']:
-      doDeleteNotification()
-    elif sys.argv[2].lower() in [u'schema', u'schemas']:
-      doDelSchema()
-    elif sys.argv[2].lower() in [u'course', u'class']:
-      doDelCourse()
-    elif sys.argv[2].lower() in [u'printer', u'printers']:
-      doDelPrinter()
-    else:
-      print u'Error: invalid argument to "gam delete"'
-      return 2
-    return 0
-  elif sys.argv[1].lower() == u'undelete':
-    if sys.argv[2].lower() == u'user':
-      doUndeleteUser()
-    else:
-      print u'Error: invalid argument to "gam undelete..."'
-      return 2
-    return 0
-  elif sys.argv[1].lower() == u'audit':
-    if sys.argv[2].lower() == u'monitor':
-      if sys.argv[3].lower() == u'create':
-        doCreateMonitor()
-      elif sys.argv[3].lower() == u'list':
-        doShowMonitors()
-      elif sys.argv[3].lower() == u'delete':
-        doDeleteMonitor()
-      else:
-        print u'Error: invalid argument to "gam audit monitor..."'
-        return 2
-    elif sys.argv[2].lower() == u'activity':
-      if sys.argv[3].lower() == u'request':
-        doRequestActivity()
-      elif sys.argv[3].lower() == u'status':
-        doStatusActivityRequests()
-      elif sys.argv[3].lower() == u'download':
-        doDownloadActivityRequest()
-      elif sys.argv[3].lower() == u'delete':
-        doDeleteActivityRequest()
-      else:
-        print u'Error: invalid argument to "gam audit activity..."'
-        return 2
-    elif sys.argv[2].lower() == u'export':
-      if sys.argv[3].lower() == u'status':
-        doStatusExportRequests()
-      elif sys.argv[3].lower() == u'watch':
-        doWatchExportRequest()
-      elif sys.argv[3].lower() == u'download':
-        doDownloadExportRequest()
-      elif sys.argv[3].lower() == u'request':
-        doRequestExport()
-      elif sys.argv[3].lower() == u'delete':
-        doDeleteExport()
-      else:
-        print u'Error: invalid argument to "gam audit export..."'
-        return 2
-    elif sys.argv[2].lower() == u'uploadkey':
-      doUploadAuditKey()
-    else:
-      print u'Error: invalid argument to "gam audit..."'
-      return 2
-    return 0
-  elif sys.argv[1].lower() == u'print':
-    if sys.argv[2].lower() == u'users':
-      doPrintUsers()
-    elif sys.argv[2].lower() == u'nicknames' or sys.argv[2].lower() == u'aliases':
-      doPrintAliases()
-    elif sys.argv[2].lower() == u'groups':
-      doPrintGroups()
-    elif sys.argv[2].lower() in [u'group-members', u'groups-members']:
-      doPrintGroupMembers()
-    elif sys.argv[2].lower() in [u'orgs', u'ous']:
-      doPrintOrgs()
-    elif sys.argv[2].lower() == u'resources':
-      doPrintResources()
-    elif sys.argv[2].lower() == u'cros':
-      doPrintCrosDevices()
-    elif sys.argv[2].lower() == u'mobile':
-      doPrintMobileDevices()
-    elif sys.argv[2].lower() in [u'license', u'licenses', u'licence', u'licences']:
-      doPrintLicenses()
-    elif sys.argv[2].lower() in [u'token', u'tokens']:
-      doPrintTokens()
-    elif sys.argv[2].lower() in [u'schema', u'schemas']:
-      doPrintUserSchemas()
-    elif sys.argv[2].lower() in [u'courses', u'classes']:
-      doPrintCourses()
-    elif sys.argv[2].lower() in [u'course-participants', u'class-participants']:
-      doPrintCourseParticipants()
-    elif sys.argv[2].lower() in [u'printers']:
-      doPrintPrinters()
-    elif sys.argv[2].lower() in [u'printjobs']:
-      doPrintPrintJobs()
-    else:
-      print u'Error: invalid argument to "gam print..."'
-      return 2
-    return 0
-  elif sys.argv[1].lower() in [u'oauth', u'oauth2']:
-    if sys.argv[2].lower() in [u'request', u'create']:
-      doRequestOAuth()
-    elif sys.argv[2].lower() == u'info':
-      OAuthInfo()
-    elif sys.argv[2].lower() in [u'delete', u'revoke']:
-      doDeleteOAuth()
-    else:
-      print u'Error: invalid argument to "gam oauth..."'
-      return 2
-    return 0
-  elif sys.argv[1].lower() == u'calendar':
-    if sys.argv[3].lower() == u'showacl':
-      doCalendarShowACL()
-    elif sys.argv[3].lower() == u'add':
-      doCalendarAddACL()
-    elif sys.argv[3].lower() in [u'del', u'delete']:
-      doCalendarDelACL()
-    elif sys.argv[3].lower() == u'update':
-      doCalendarUpdateACL()
-    elif sys.argv[3].lower() == u'wipe':
-      doCalendarWipeData()
-    elif sys.argv[3].lower() == u'addevent':
-      doCalendarAddEvent()
-    else:
-      print u'Error: invalid argument to "gam calendar..."'
-      return 2
-    return 0
-  elif sys.argv[1].lower() == u'printer':
-    if sys.argv[3].lower() == u'showacl':
-      doPrinterShowACL()
-    elif sys.argv[3].lower() == u'add':
-      doPrinterAddACL()
-    elif sys.argv[3].lower() in [u'del', u'delete', u'remove']:
-      doPrinterDelACL()
-    elif sys.argv[3].lower() == u'register':
-      doPrinterRegister()
-    else:
-      print u'Error: invalid argument to "gam printer..."'
-      return 2
-    return 0
-  elif sys.argv[1].lower() == u'printjob':
-    if sys.argv[3].lower() == u'delete':
-      doDeletePrintJob()
-    elif sys.argv[3].lower() == u'cancel':
-      doCancelPrintJob()
-    elif sys.argv[3].lower() == u'submit':
-      doPrintJobSubmit()
-    elif sys.argv[3].lower() == u'fetch':
-      doPrintJobFetch()
-    elif sys.argv[3].lower() == u'resubmit':
-      doPrintJobResubmit()
-    else:
-      print u'ERROR: invalid argument to "gam printjob..."'
-      return 2
-    return 0
-  elif sys.argv[1].lower() == u'report':
-    showReport()
-    return 0
-  elif sys.argv[1].lower() == u'whatis':
-    doWhatIs()
-    return 0
-  elif sys.argv[1].lower() in [u'course', u'class']:
-    if sys.argv[3].lower() in [u'add', u'create']:
-      doAddCourseParticipant()
-      return 0
-    elif sys.argv[3].lower() in [u'del', u'delete', u'remove']:
-      doDelCourseParticipant()
-      return 0
-    elif sys.argv[3].lower() == u'sync':
-      doSyncCourseParticipants()
-      return 0
-    else:
-      print u'Error: invalid argument to "gam course..."'
-      return 2
-  users = getUsersToModify()
-  command = sys.argv[3].lower()
-  if command == u'print':
-    for user in users:
-      print user
-      return 0
-  if (GC_Values[GC_AUTO_BATCH_MIN] > 0) and (len(users) > GC_Values[GC_AUTO_BATCH_MIN]):
-    items = []
-    for user in users:
-      items.append([u'user', user] + sys.argv[3:])
-    run_batch(items)
-    return 0
-  if command == u'transfer':
-    transferWhat = sys.argv[4].lower()
-    if transferWhat == u'drive':
-      transferDriveFiles(users)
-    elif transferWhat == u'seccals':
-      transferSecCals(users)
-  elif command == u'show':
-    readWhat = sys.argv[4].lower()
-    if readWhat in [u'labels', u'label']:
-      showLabels(users)
-    elif readWhat == u'profile':
-      showProfile(users)
-    elif readWhat == u'calendars':
-      showCalendars(users)
-    elif readWhat == u'calsettings':
-      showCalSettings(users)
-    elif readWhat == u'drivesettings':
-      showDriveSettings(users)
-    elif readWhat == u'drivefileacl':
-      showDriveFileACL(users)
-    elif readWhat == u'filelist':
-      showDriveFiles(users)
-    elif readWhat == u'filetree':
-      showDriveFileTree(users)
-    elif readWhat == u'fileinfo':
-      showDriveFileInfo(users)
-    elif readWhat == u'sendas':
-      showSendAs(users)
-    elif readWhat == u'gmailprofile':
-      showGmailProfile(users)
-    elif readWhat in [u'sig', u'signature']:
-      getSignature(users)
-    elif readWhat == u'forward':
-      getForward(users)
-    elif readWhat in [u'pop', u'pop3']:
-      getPop(users)
-    elif readWhat in [u'imap', u'imap4']:
-      getImap(users)
-    elif readWhat == u'vacation':
-      getVacation(users)
-    elif readWhat in [u'delegate', u'delegates']:
-      getDelegates(users)
-    elif readWhat in [u'backupcode', u'backupcodes', u'verificationcodes']:
-      doGetBackupCodes(users)
-    elif readWhat in [u'asp', u'asps', u'applicationspecificpasswords']:
-      doGetASPs(users)
-    elif readWhat in [u'token', u'tokens', u'oauth', u'3lo']:
-      doGetTokens(users)
-    elif readWhat in [u'driveactivity']:
-      doDriveActivity(users)
-    else:
-      print u'Error: invalid argument to "gam <users> show..."'
-      return 2
-  elif command == u'trash':
-    if sys.argv[4].lower() in [u'message', u'messages']:
-      doDeleteMessages(users, u'trash')
-    else:
-      print u'ERROR: invalid argument to "gam <users> trash..."'
-      return 2
-  elif command == u'spam':
-    if sys.argv[4].lower() in [u'message', u'messages']:
-      doSpamMessages(users)
-    else:
-      print u'ERROR: invalid argument to "gam <users> spam..."'
-      return 2
-  elif command == u'delete' or command == u'del':
-    delWhat = sys.argv[4].lower()
-    if delWhat == u'delegate':
-      deleteDelegate(users)
-    elif delWhat == u'calendar':
-      deleteCalendar(users)
-    elif delWhat == u'label':
-      doDeleteLabel(users)
-    elif delWhat in [u'message', u'messages']:
-      doDeleteMessages(users, u'delete')
-    elif delWhat == u'photo':
-      deletePhoto(users)
-    elif delWhat in [u'license', u'licence']:
-      doLicense(users, u'delete')
-    elif delWhat in [u'backupcode', u'backupcodes', u'verificationcodes']:
-      doDelBackupCodes(users)
-    elif delWhat in [u'asp', u'asps', u'applicationspecificpasswords']:
-      doDelASP(users)
-    elif delWhat in [u'token', u'tokens', u'oauth', u'3lo']:
-      doDelTokens(users)
-    elif delWhat in [u'group', u'groups']:
-      doRemoveUsersGroups(users)
-    elif delWhat in [u'alias', u'aliases']:
-      doRemoveUsersAliases(users)
-    elif delWhat in [u'emptydrivefolders']:
-      deleteEmptyDriveFolders(users)
-    elif delWhat in [u'drivefile']:
-      deleteDriveFile(users)
-    elif delWhat in [u'drivefileacl', u'drivefileacls']:
-      delDriveFileACL(users)
-    else:
-      print u'Error: invalid argument to "gam <users> delete..."'
-      return 2
-  elif command == u'add':
-    addWhat = sys.argv[4].lower()
-    if addWhat == u'calendar':
-      addCalendar(users)
-    elif addWhat == u'drivefile':
-      createDriveFile(users)
-    elif addWhat in [u'license', u'licence']:
-      doLicense(users, u'insert')
-    elif addWhat in [u'drivefileacl', u'drivefileacls']:
-      addDriveFileACL(users)
-    elif addWhat in [u'label', u'labels']:
-      doLabel(users)
-    else:
-      print u'Error: invalid argument to "gam <users> add..."'
-      return 2
-  elif command == u'update':
-    if sys.argv[4].lower() == u'calendar':
-      updateCalendar(users)
-    elif sys.argv[4].lower() == u'calattendees':
-      changeCalendarAttendees(users)
-    elif sys.argv[4].lower() == u'photo':
-      doPhoto(users)
-    elif sys.argv[4].lower() in [u'license', u'licence']:
-      doLicense(users, u'patch')
-    elif sys.argv[4].lower() == u'user':
-      doUpdateUser(users)
-    elif sys.argv[4].lower() in [u'backupcode', u'backupcodes', u'verificationcodes']:
-      doGenBackupCodes(users)
-    elif sys.argv[4].lower() in [u'drivefile']:
-      doUpdateDriveFile(users)
-    elif sys.argv[4].lower() in [u'drivefileacls', u'drivefileacl']:
-      updateDriveFileACL(users)
-    elif sys.argv[4].lower() in [u'label', u'labels']:
-      renameLabels(users)
-    elif sys.argv[4].lower() in [u'labelsettings']:
-      updateLabels(users)
-    else:
-      print u'Error: invalid argument to "gam <users> update..."'
-      return 2
-  elif command in [u'deprov', u'deprovision']:
-    doDeprovUser(users)
-  elif command == u'get':
-    if sys.argv[4].lower() == u'photo':
-      getPhoto(users)
-    elif sys.argv[4].lower() == u'drivefile':
-      downloadDriveFile(users)
-  elif command == u'profile':
-    doProfile(users)
-  elif command == u'imap':
-    doImap(users)
-  elif command in [u'pop', u'pop3']:
-    doPop(users)
-  elif command == u'sendas':
-    doSendAs(users)
-  elif command == u'language':
-    doLanguage(users)
-  elif command in [u'utf', u'utf8', u'utf-8', u'unicode']:
-    doUTF(users)
-  elif command == u'pagesize':
-    doPageSize(users)
-  elif command == u'shortcuts':
-    doShortCuts(users)
-  elif command == u'arrows':
-    doArrows(users)
-  elif command == u'snippets':
-    doSnippets(users)
-  elif command == u'label':
-    doLabel(users)
-  elif command == u'filter':
-    doFilter(users)
-  elif command == u'forward':
-    doForward(users)
-  elif command in [u'sig', u'signature']:
-    doSignature(users)
-  elif command == u'vacation':
-    doVacation(users)
-  elif command == u'webclips':
-    doWebClips(users)
-  elif command in [u'delegate', u'delegates']:
-    doDelegates(users)
-  else:
-    print u'Error: %s is not a valid gam command' % command
-    return 2
-
-# Main
-def main():
   try:
-# If the only commands concerned the config file, exit without showing usage
-    if not ProcessGAMConfigFile(sys.argv):
-      sys.exit(0)
-#
-    rc = ProcessGAMCommand(sys.argv)
-    sys.exit(rc)
-#
+    if not SetGlobalVariables():
+      return 0
+    if sys.argv[1].lower() == u'batch':
+      import shlex
+      f = file(sys.argv[2], 'rb')
+      items = list()
+      for line in f:
+        argv = shlex.split(line)
+        if (argv[0] in [u'#', u' ', u''] or len(argv) < 2) and argv != [u'commit-batch']:
+          continue
+        elif argv[0] not in [u'gam', u'commit-batch']:
+          print u'Error: "%s" is not a valid gam command' % line
+          continue
+        if argv[0] == u'gam':
+          argv = argv[1:]
+        items.append(argv)
+      run_batch(items)
+      return 0
+    elif sys.argv[1].lower() == 'csv':
+      csv_filename = sys.argv[2]
+      if csv_filename == u'-':
+        import StringIO
+        input_string = unicode(sys.stdin.read())
+        f = StringIO.StringIO(input_string)
+      else:
+        f = file(csv_filename, 'rb')
+      input_file = csv.DictReader(f)
+      if sys.argv[3].lower() != 'gam':
+        print 'Error: "gam csv <filename>" should be followed by a full GAM command...'
+        return 3
+      argv_template = sys.argv[4:]
+      items = list()
+      for row in input_file:
+        argv = list()
+        for arg in argv_template:
+          if arg[0] != '~':
+            argv.append(arg)
+          elif arg[1:] in row:
+            argv.append(row[arg[1:]])
+          else:
+            print 'Error: header "%s" not found in CSV headers of "%s", giving up.' % (arg[1:], ','.join(row.keys()))
+            return 0
+        items.append(argv)
+      run_batch(items)
+      return 0
+    elif sys.argv[1].lower() == u'version':
+      doGAMVersion()
+      return 0
+    elif sys.argv[1].lower() == u'create':
+      if sys.argv[2].lower() == u'user':
+        doCreateUser()
+      elif sys.argv[2].lower() == u'group':
+        doCreateGroup()
+      elif sys.argv[2].lower() in [u'nickname', u'alias']:
+        doCreateAlias()
+      elif sys.argv[2].lower() in [u'org', 'ou']:
+        doCreateOrg()
+      elif sys.argv[2].lower() == u'resource':
+        doCreateResource()
+      elif sys.argv[2].lower() in [u'verify', u'verification']:
+        doSiteVerifyShow()
+      elif sys.argv[2].lower() in [u'schema']:
+        doCreateOrUpdateUserSchema()
+      elif sys.argv[2].lower() in [u'course', u'class']:
+        doCreateCourse()
+      else:
+        print u'Error: invalid argument to "gam create..."'
+        return 2
+      return 0
+    elif sys.argv[1].lower() == u'update':
+      if sys.argv[2].lower() == u'user':
+        doUpdateUser([sys.argv[3],])
+      elif sys.argv[2].lower() == u'group':
+        doUpdateGroup()
+      elif sys.argv[2].lower() in [u'nickname', u'alias']:
+        doUpdateAlias()
+      elif sys.argv[2].lower() in [u'ou', u'org']:
+        doUpdateOrg()
+      elif sys.argv[2].lower() == u'resource':
+        doUpdateResourceCalendar()
+      elif sys.argv[2].lower() == u'domain':
+        doUpdateDomain()
+      elif sys.argv[2].lower() == u'cros':
+        doUpdateCros()
+      elif sys.argv[2].lower() == u'mobile':
+        doUpdateMobile()
+      elif sys.argv[2].lower() in [u'notification', u'notifications']:
+        doUpdateNotification()
+      elif sys.argv[2].lower() in [u'verify', u'verification']:
+        doSiteVerifyAttempt()
+      elif sys.argv[2].lower() in [u'schema', u'schemas']:
+        doCreateOrUpdateUserSchema()
+      elif sys.argv[2].lower() in [u'course', u'class']:
+        doUpdateCourse()
+      elif sys.argv[2].lower() in [u'printer', u'print']:
+        doUpdatePrinter()
+      else:
+        showUsage()
+        print u'Error: invalid argument to "gam update..."'
+        return 2
+      return 0
+    elif sys.argv[1].lower() == u'info':
+      if sys.argv[2].lower() == u'user':
+        doGetUserInfo()
+      elif sys.argv[2].lower() == u'group':
+        doGetGroupInfo()
+      elif sys.argv[2].lower() in [u'nickname', u'alias']:
+        doGetAliasInfo()
+      elif sys.argv[2].lower() == u'domain':
+        doGetDomainInfo()
+      elif sys.argv[2].lower() in [u'org', u'ou']:
+        doGetOrgInfo()
+      elif sys.argv[2].lower() == u'resource':
+        doGetResourceCalendarInfo()
+      elif sys.argv[2].lower() == u'cros':
+        doGetCrosInfo()
+      elif sys.argv[2].lower() == u'mobile':
+        doGetMobileInfo()
+      elif sys.argv[2].lower() in [u'notifications', u'notification']:
+        doGetNotifications()
+      elif sys.argv[2].lower() in [u'verify', u'verification']:
+        doGetSiteVerifications()
+      elif sys.argv[2].lower() in [u'schema', u'schemas']:
+        doGetUserSchema()
+      elif sys.argv[2].lower() in [u'course', u'class']:
+        doGetCourseInfo()
+      elif sys.argv[2].lower() in [u'printer', u'print']:
+        doGetPrinterInfo()
+      else:
+        print u'Error: invalid argument to "gam info..."'
+        return 2
+      return 0
+    elif sys.argv[1].lower() == u'delete':
+      if sys.argv[2].lower() == u'user':
+        doDeleteUser()
+      elif sys.argv[2].lower() == u'group':
+        doDeleteGroup()
+      elif sys.argv[2].lower() in [u'nickname', u'alias']:
+        doDeleteAlias()
+      elif sys.argv[2].lower() == u'org':
+        doDeleteOrg()
+      elif sys.argv[2].lower() == u'resource':
+        doDeleteResourceCalendar()
+      elif sys.argv[2].lower() == u'mobile':
+        doDeleteMobile()
+      elif sys.argv[2].lower() in [u'notification', u'notifications']:
+        doDeleteNotification()
+      elif sys.argv[2].lower() in [u'schema', u'schemas']:
+        doDelSchema()
+      elif sys.argv[2].lower() in [u'course', u'class']:
+        doDelCourse()
+      elif sys.argv[2].lower() in [u'printer', u'printers']:
+        doDelPrinter()
+      else:
+        print u'Error: invalid argument to "gam delete"'
+        return 2
+      return 0
+    elif sys.argv[1].lower() == u'undelete':
+      if sys.argv[2].lower() == u'user':
+        doUndeleteUser()
+      else:
+        print u'Error: invalid argument to "gam undelete..."'
+        return 2
+      return 0
+    elif sys.argv[1].lower() == u'audit':
+      if sys.argv[2].lower() == u'monitor':
+        if sys.argv[3].lower() == u'create':
+          doCreateMonitor()
+        elif sys.argv[3].lower() == u'list':
+          doShowMonitors()
+        elif sys.argv[3].lower() == u'delete':
+          doDeleteMonitor()
+        else:
+          print u'Error: invalid argument to "gam audit monitor..."'
+          return 2
+      elif sys.argv[2].lower() == u'activity':
+        if sys.argv[3].lower() == u'request':
+          doRequestActivity()
+        elif sys.argv[3].lower() == u'status':
+          doStatusActivityRequests()
+        elif sys.argv[3].lower() == u'download':
+          doDownloadActivityRequest()
+        elif sys.argv[3].lower() == u'delete':
+          doDeleteActivityRequest()
+        else:
+          print u'Error: invalid argument to "gam audit activity..."'
+          return 2
+      elif sys.argv[2].lower() == u'export':
+        if sys.argv[3].lower() == u'status':
+          doStatusExportRequests()
+        elif sys.argv[3].lower() == u'watch':
+          doWatchExportRequest()
+        elif sys.argv[3].lower() == u'download':
+          doDownloadExportRequest()
+        elif sys.argv[3].lower() == u'request':
+          doRequestExport()
+        elif sys.argv[3].lower() == u'delete':
+          doDeleteExport()
+        else:
+          print u'Error: invalid argument to "gam audit export..."'
+          return 2
+      elif sys.argv[2].lower() == u'uploadkey':
+        doUploadAuditKey()
+      else:
+        print u'Error: invalid argument to "gam audit..."'
+        return 2
+      return 0
+    elif sys.argv[1].lower() == u'print':
+      if sys.argv[2].lower() == u'users':
+        doPrintUsers()
+      elif sys.argv[2].lower() == u'nicknames' or sys.argv[2].lower() == u'aliases':
+        doPrintAliases()
+      elif sys.argv[2].lower() == u'groups':
+        doPrintGroups()
+      elif sys.argv[2].lower() in [u'group-members', u'groups-members']:
+        doPrintGroupMembers()
+      elif sys.argv[2].lower() in [u'orgs', u'ous']:
+        doPrintOrgs()
+      elif sys.argv[2].lower() == u'resources':
+        doPrintResources()
+      elif sys.argv[2].lower() == u'cros':
+        doPrintCrosDevices()
+      elif sys.argv[2].lower() == u'mobile':
+        doPrintMobileDevices()
+      elif sys.argv[2].lower() in [u'license', u'licenses', u'licence', u'licences']:
+        doPrintLicenses()
+      elif sys.argv[2].lower() in [u'token', u'tokens']:
+        doPrintTokens()
+      elif sys.argv[2].lower() in [u'schema', u'schemas']:
+        doPrintUserSchemas()
+      elif sys.argv[2].lower() in [u'courses', u'classes']:
+        doPrintCourses()
+      elif sys.argv[2].lower() in [u'course-participants', u'class-participants']:
+        doPrintCourseParticipants()
+      elif sys.argv[2].lower() in [u'printers']:
+        doPrintPrinters()
+      elif sys.argv[2].lower() in [u'printjobs']:
+        doPrintPrintJobs()
+      else:
+        print u'Error: invalid argument to "gam print..."'
+        return 2
+      return 0
+    elif sys.argv[1].lower() in [u'oauth', u'oauth2']:
+      if sys.argv[2].lower() in [u'request', u'create']:
+        doRequestOAuth()
+      elif sys.argv[2].lower() == u'info':
+        OAuthInfo()
+      elif sys.argv[2].lower() in [u'delete', u'revoke']:
+        doDeleteOAuth()
+      else:
+        print u'Error: invalid argument to "gam oauth..."'
+        return 2
+      return 0
+    elif sys.argv[1].lower() == u'calendar':
+      if sys.argv[3].lower() == u'showacl':
+        doCalendarShowACL()
+      elif sys.argv[3].lower() == u'add':
+        doCalendarAddACL()
+      elif sys.argv[3].lower() in [u'del', u'delete']:
+        doCalendarDelACL()
+      elif sys.argv[3].lower() == u'update':
+        doCalendarUpdateACL()
+      elif sys.argv[3].lower() == u'wipe':
+        doCalendarWipeData()
+      elif sys.argv[3].lower() == u'addevent':
+        doCalendarAddEvent()
+      else:
+        print u'Error: invalid argument to "gam calendar..."'
+        return 2
+      return 0
+    elif sys.argv[1].lower() == u'printer':
+      if sys.argv[3].lower() == u'showacl':
+        doPrinterShowACL()
+      elif sys.argv[3].lower() == u'add':
+        doPrinterAddACL()
+      elif sys.argv[3].lower() in [u'del', u'delete', u'remove']:
+        doPrinterDelACL()
+      elif sys.argv[3].lower() == u'register':
+        doPrinterRegister()
+      else:
+        print u'Error: invalid argument to "gam printer..."'
+        return 2
+      return 0
+    elif sys.argv[1].lower() == u'printjob':
+      if sys.argv[3].lower() == u'delete':
+        doDeletePrintJob()
+      elif sys.argv[3].lower() == u'cancel':
+        doCancelPrintJob()
+      elif sys.argv[3].lower() == u'submit':
+        doPrintJobSubmit()
+      elif sys.argv[3].lower() == u'fetch':
+        doPrintJobFetch()
+      elif sys.argv[3].lower() == u'resubmit':
+        doPrintJobResubmit()
+      else:
+        print u'ERROR: invalid argument to "gam printjob..."'
+        return 2
+      return 0
+    elif sys.argv[1].lower() == u'report':
+      showReport()
+      return 0
+    elif sys.argv[1].lower() == u'whatis':
+      doWhatIs()
+      return 0
+    elif sys.argv[1].lower() in [u'course', u'class']:
+      if sys.argv[3].lower() in [u'add', u'create']:
+        doAddCourseParticipant()
+        return 0
+      elif sys.argv[3].lower() in [u'del', u'delete', u'remove']:
+        doDelCourseParticipant()
+        return 0
+      elif sys.argv[3].lower() == u'sync':
+        doSyncCourseParticipants()
+        return 0
+      else:
+        print u'Error: invalid argument to "gam course..."'
+        return 2
+    users = getUsersToModify()
+    command = sys.argv[3].lower()
+    if command == u'print':
+      for user in users:
+        print user
+        return 0
+    if (GC_Values[GC_AUTO_BATCH_MIN] > 0) and (len(users) > GC_Values[GC_AUTO_BATCH_MIN]):
+      items = []
+      for user in users:
+        items.append([u'user', user] + sys.argv[3:])
+      run_batch(items)
+      return 0
+    if command == u'transfer':
+      transferWhat = sys.argv[4].lower()
+      if transferWhat == u'drive':
+        transferDriveFiles(users)
+      elif transferWhat == u'seccals':
+        transferSecCals(users)
+    elif command == u'show':
+      readWhat = sys.argv[4].lower()
+      if readWhat in [u'labels', u'label']:
+        showLabels(users)
+      elif readWhat == u'profile':
+        showProfile(users)
+      elif readWhat == u'calendars':
+        showCalendars(users)
+      elif readWhat == u'calsettings':
+        showCalSettings(users)
+      elif readWhat == u'drivesettings':
+        showDriveSettings(users)
+      elif readWhat == u'drivefileacl':
+        showDriveFileACL(users)
+      elif readWhat == u'filelist':
+        showDriveFiles(users)
+      elif readWhat == u'filetree':
+        showDriveFileTree(users)
+      elif readWhat == u'fileinfo':
+        showDriveFileInfo(users)
+      elif readWhat == u'sendas':
+        showSendAs(users)
+      elif readWhat == u'gmailprofile':
+        showGmailProfile(users)
+      elif readWhat in [u'sig', u'signature']:
+        getSignature(users)
+      elif readWhat == u'forward':
+        getForward(users)
+      elif readWhat in [u'pop', u'pop3']:
+        getPop(users)
+      elif readWhat in [u'imap', u'imap4']:
+        getImap(users)
+      elif readWhat == u'vacation':
+        getVacation(users)
+      elif readWhat in [u'delegate', u'delegates']:
+        getDelegates(users)
+      elif readWhat in [u'backupcode', u'backupcodes', u'verificationcodes']:
+        doGetBackupCodes(users)
+      elif readWhat in [u'asp', u'asps', u'applicationspecificpasswords']:
+        doGetASPs(users)
+      elif readWhat in [u'token', u'tokens', u'oauth', u'3lo']:
+        doGetTokens(users)
+      elif readWhat in [u'driveactivity']:
+        doDriveActivity(users)
+      else:
+        print u'Error: invalid argument to "gam <users> show..."'
+        return 2
+    elif command == u'trash':
+      if sys.argv[4].lower() in [u'message', u'messages']:
+        doDeleteMessages(users, u'trash')
+      else:
+        print u'ERROR: invalid argument to "gam <users> trash..."'
+        return 2
+    elif command == u'spam':
+      if sys.argv[4].lower() in [u'message', u'messages']:
+        doSpamMessages(users)
+      else:
+        print u'ERROR: invalid argument to "gam <users> spam..."'
+        return 2
+    elif command == u'delete' or command == u'del':
+      delWhat = sys.argv[4].lower()
+      if delWhat == u'delegate':
+        deleteDelegate(users)
+      elif delWhat == u'calendar':
+        deleteCalendar(users)
+      elif delWhat == u'label':
+        doDeleteLabel(users)
+      elif delWhat in [u'message', u'messages']:
+        doDeleteMessages(users, u'delete')
+      elif delWhat == u'photo':
+        deletePhoto(users)
+      elif delWhat in [u'license', u'licence']:
+        doLicense(users, u'delete')
+      elif delWhat in [u'backupcode', u'backupcodes', u'verificationcodes']:
+        doDelBackupCodes(users)
+      elif delWhat in [u'asp', u'asps', u'applicationspecificpasswords']:
+        doDelASP(users)
+      elif delWhat in [u'token', u'tokens', u'oauth', u'3lo']:
+        doDelTokens(users)
+      elif delWhat in [u'group', u'groups']:
+        doRemoveUsersGroups(users)
+      elif delWhat in [u'alias', u'aliases']:
+        doRemoveUsersAliases(users)
+      elif delWhat in [u'emptydrivefolders']:
+        deleteEmptyDriveFolders(users)
+      elif delWhat in [u'drivefile']:
+        deleteDriveFile(users)
+      elif delWhat in [u'drivefileacl', u'drivefileacls']:
+        delDriveFileACL(users)
+      else:
+        print u'Error: invalid argument to "gam <users> delete..."'
+        return 2
+    elif command == u'add':
+      addWhat = sys.argv[4].lower()
+      if addWhat == u'calendar':
+        addCalendar(users)
+      elif addWhat == u'drivefile':
+        createDriveFile(users)
+      elif addWhat in [u'license', u'licence']:
+        doLicense(users, u'insert')
+      elif addWhat in [u'drivefileacl', u'drivefileacls']:
+        addDriveFileACL(users)
+      elif addWhat in [u'label', u'labels']:
+        doLabel(users)
+      else:
+        print u'Error: invalid argument to "gam <users> add..."'
+        return 2
+    elif command == u'update':
+      if sys.argv[4].lower() == u'calendar':
+        updateCalendar(users)
+      elif sys.argv[4].lower() == u'calattendees':
+        changeCalendarAttendees(users)
+      elif sys.argv[4].lower() == u'photo':
+        doPhoto(users)
+      elif sys.argv[4].lower() in [u'license', u'licence']:
+        doLicense(users, u'patch')
+      elif sys.argv[4].lower() == u'user':
+        doUpdateUser(users)
+      elif sys.argv[4].lower() in [u'backupcode', u'backupcodes', u'verificationcodes']:
+        doGenBackupCodes(users)
+      elif sys.argv[4].lower() in [u'drivefile']:
+        doUpdateDriveFile(users)
+      elif sys.argv[4].lower() in [u'drivefileacls', u'drivefileacl']:
+        updateDriveFileACL(users)
+      elif sys.argv[4].lower() in [u'label', u'labels']:
+        renameLabels(users)
+      elif sys.argv[4].lower() in [u'labelsettings']:
+        updateLabels(users)
+      else:
+        print u'Error: invalid argument to "gam <users> update..."'
+        return 2
+    elif command in [u'deprov', u'deprovision']:
+      doDeprovUser(users)
+    elif command == u'get':
+      if sys.argv[4].lower() == u'photo':
+        getPhoto(users)
+      elif sys.argv[4].lower() == u'drivefile':
+        downloadDriveFile(users)
+    elif command == u'profile':
+      doProfile(users)
+    elif command == u'imap':
+      doImap(users)
+    elif command in [u'pop', u'pop3']:
+      doPop(users)
+    elif command == u'sendas':
+      doSendAs(users)
+    elif command == u'language':
+      doLanguage(users)
+    elif command in [u'utf', u'utf8', u'utf-8', u'unicode']:
+      doUTF(users)
+    elif command == u'pagesize':
+      doPageSize(users)
+    elif command == u'shortcuts':
+      doShortCuts(users)
+    elif command == u'arrows':
+      doArrows(users)
+    elif command == u'snippets':
+      doSnippets(users)
+    elif command == u'label':
+      doLabel(users)
+    elif command == u'filter':
+      doFilter(users)
+    elif command == u'forward':
+      doForward(users)
+    elif command in [u'sig', u'signature']:
+      doSignature(users)
+    elif command == u'vacation':
+      doVacation(users)
+    elif command == u'webclips':
+      doWebClips(users)
+    elif command in [u'delegate', u'delegates']:
+      doDelegates(users)
+    else:
+      print u'Error: %s is not a valid gam command' % command
+      return 2
   except IndexError:
     showUsage()
-    sys.exit(2)
+    return 2
   except KeyboardInterrupt:
-    sys.exit(50)
+    return 50
   except socket.error, e:
-    print u'\nError: %s' % e
-    sys.exit(3)
+    sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, e))
+    return 3
   except MemoryError:
-    print u'Error: GAM has run out of memory. If this is a large Google Apps instance, you should use a 64-bit version of GAM on Windows or a 64-bit version of Python on other systems.'
-    sys.exit(99)
+    sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, u'GAM has run out of memory. If this is a large Google Apps instance, you should use a 64-bit version of GAM on Windows or a 64-bit version of Python on other systems.'))
+    return 99
+  except IOError as e:
+    sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, e))
+    return 3
+  except Exception as e:
+    import traceback
+    traceback.print_exc(file=sys.stdout)
+    return 1
+  except SystemExit as rc:
+    return rc
+#
+# Run from command line
 #
 if __name__ == "__main__":
   reload(sys)
   sys.setdefaultencoding(u'UTF-8')
   if os.name == u'nt':
     sys.argv = win32_unicode_argv() # cleanup sys.argv on Windows
-  main()
+  rc = ProcessGAMCommand(sys.argv)
+  sys.exit(rc)
