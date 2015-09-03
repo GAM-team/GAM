@@ -382,10 +382,10 @@ def SetGlobalVariables():
         value = str(number)
     except KeyError:
       value = GC_DEFAULTS[itemName]
-    config.set(ConfigParser.DEFAULTSECT, itemName, unicode(value))
+    gamcfg.set(ConfigParser.DEFAULTSECT, itemName, unicode(value))
 
   def _getOldSignalFile(itemName, fileName, trueValue=TRUE, falseValue=FALSE):
-    config.set(ConfigParser.DEFAULTSECT, itemName, trueValue if os.path.isfile(os.path.join(GC_Values[GC_GAM_PATH], fileName)) else falseValue)
+    gamcfg.set(ConfigParser.DEFAULTSECT, itemName, trueValue if os.path.isfile(os.path.join(GC_Values[GC_GAM_PATH], fileName)) else falseValue)
 
   def _getOldEnvVarsSignalFiles():
     _getOldEnvVar(GC_CONFIG_DIR, u'GAMCONFIGDIR')
@@ -393,9 +393,9 @@ def SetGlobalVariables():
     _getOldEnvVar(GC_DRIVE_DIR, u'GAMDRIVEDIR')
     _getOldEnvVar(GC_OAUTH2_TXT, u'OAUTHFILE')
     _getOldEnvVar(GC_OAUTH2SERVICE_JSON, u'OAUTHSERVICEFILE')
-    value = config.get(ConfigParser.DEFAULTSECT, GC_OAUTH2SERVICE_JSON, raw=True)
+    value = gamcfg.get(ConfigParser.DEFAULTSECT, GC_OAUTH2SERVICE_JSON, raw=True)
     if value.find(u'.') == -1:
-      config.set(ConfigParser.DEFAULTSECT, GC_OAUTH2SERVICE_JSON, value+u'.json')
+      gamcfg.set(ConfigParser.DEFAULTSECT, GC_OAUTH2SERVICE_JSON, value+u'.json')
     _getOldEnvVar(GC_CLIENT_SECRETS_JSON, u'CLIENTSECRETS')
     _getOldEnvVar(GC_DOMAIN, u'GA_DOMAIN')
     _getOldEnvVar(GC_CUSTOMER_ID, u'CUSTOMER_ID')
@@ -411,7 +411,7 @@ def SetGlobalVariables():
         latestUpdateCheck = int(f.readline())
     except:
       latestUpdateCheck = 0
-    config.set(ConfigParser.DEFAULTSECT, GC_LAST_UPDATE_CHECK, str(latestUpdateCheck))
+    gamcfg.set(ConfigParser.DEFAULTSECT, GC_LAST_UPDATE_CHECK, str(latestUpdateCheck))
 
   def _checkMakeDir(itemName):
     if not os.path.isdir(GC_DEFAULTS[itemName]):
@@ -423,7 +423,7 @@ def SetGlobalVariables():
           sys.exit(13)
 
   def _copyConfigFile(itemName):
-    srcFile = os.path.expanduser(config.get(ConfigParser.DEFAULTSECT, itemName, raw=True))
+    srcFile = os.path.expanduser(gamcfg.get(ConfigParser.DEFAULTSECT, itemName, raw=True))
     if not os.path.isabs(srcFile):
       srcFile = os.path.join(GC_Values[GC_GAM_PATH], srcFile)
     dstFile = os.path.join(GC_DEFAULTS[GC_CONFIG_DIR], os.path.basename(srcFile))
@@ -431,10 +431,10 @@ def SetGlobalVariables():
       data = readFile(srcFile, continueOnError=True, displayError=False)
       if (data != None) and writeFile(dstFile, data, continueOnError=True):
         writeFile(dstFile, data)
-        config.set(ConfigParser.DEFAULTSECT, itemName, os.path.basename(srcFile))
+        gamcfg.set(ConfigParser.DEFAULTSECT, itemName, os.path.basename(srcFile))
 
   def _getCfgBoolean(sectionName, itemName):
-    value = config.get(sectionName, itemName, raw=True)
+    value = gamcfg.get(sectionName, itemName, raw=True)
     if value in true_values:
       return True
     if value in false_values:
@@ -444,7 +444,7 @@ def SetGlobalVariables():
     return False
 
   def _getCfgInteger(sectionName, itemName):
-    value = config.get(sectionName, itemName, raw=True)
+    value = gamcfg.get(sectionName, itemName, raw=True)
     minVal, maxVal = GC_VAR_INFO[itemName][GC_VAR_LIMITS_KEY]
     try:
       number = int(value)
@@ -457,34 +457,34 @@ def SetGlobalVariables():
     return 0
 
   def _getCfgSection(sectionName, itemName):
-    value = config.get(sectionName, itemName, raw=True)
+    value = gamcfg.get(sectionName, itemName, raw=True)
     if not value:
       return ConfigParser.DEFAULTSECT
-    if config.has_section(value):
+    if gamcfg.has_section(value):
       return value
     sys.stderr.write(u'{0}Config File: {1}, Section: {2}, Item: {3}, Value: {4}, Not Found\n'.format(ERROR_PREFIX, configFileName, sectionName, itemName, value))
     status[u'errors'] = True
     return ConfigParser.DEFAULTSECT
 
   def _getCfgString(sectionName, itemName):
-    return config.get(sectionName, itemName, raw=True)
+    return gamcfg.get(sectionName, itemName, raw=True)
 
   def _getCfgDirectory(sectionName, itemName):
-    dirPath = os.path.expanduser(config.get(sectionName, itemName, raw=True))
+    dirPath = os.path.expanduser(gamcfg.get(sectionName, itemName, raw=True))
     if (not dirPath) or (not os.path.isabs(dirPath)):
-      if (sectionName != ConfigParser.DEFAULTSECT) and (config.has_option(sectionName, itemName)):
-        dirPath = os.path.join(os.path.expanduser(config.get(ConfigParser.DEFAULTSECT, itemName, raw=True)), dirPath)
+      if (sectionName != ConfigParser.DEFAULTSECT) and (gamcfg.has_option(sectionName, itemName)):
+        dirPath = os.path.join(os.path.expanduser(gamcfg.get(ConfigParser.DEFAULTSECT, itemName, raw=True)), dirPath)
       if not os.path.isabs(dirPath):
         dirPath = os.path.join(gamCfgHome, dirPath)
     return dirPath
 
   def _getCfgFile(sectionName, itemName):
-    value = os.path.expanduser(config.get(sectionName, itemName, raw=True))
+    value = os.path.expanduser(gamcfg.get(sectionName, itemName, raw=True))
     if not os.path.isabs(value):
       value = os.path.expanduser(os.path.join(_getCfgDirectory(sectionName, GC_CONFIG_DIR), value))
     return value
 
-  def _readConfigFile(fileName, action=None):
+  def _readConfigFile(config, fileName, action=None):
     try:
       with open(fileName, 'rb') as f:
         config.readfp(f)
@@ -497,7 +497,7 @@ def SetGlobalVariables():
       sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, e))
       sys.exit(13)
 
-  def _writeConfigFile(fileName, action=None):
+  def _writeConfigFile(config, fileName, action=None):
     try:
       with open(fileName, 'wb') as f:
         config.write(f)
@@ -509,7 +509,7 @@ def SetGlobalVariables():
   def _verifyValues():
     print u'Section: {0}'.format(sectionName)
     for itemName in sorted(GC_VAR_INFO):
-      cfgValue = config.get(sectionName, itemName, raw=True)
+      cfgValue = gamcfg.get(sectionName, itemName, raw=True)
       if GC_VAR_INFO[itemName][GC_VAR_TYPE_KEY] == GC_TYPE_FILE:
         expdValue = _getCfgFile(sectionName, itemName)
         if cfgValue != expdValue:
@@ -556,7 +556,7 @@ def SetGlobalVariables():
     GC_DEFAULTS[GC_DRIVE_DIR] = os.path.expanduser(u'~/Downloads')
   GC_DEFAULTS[GC_CONFIG_DIR] = gamCfgHome
 
-  config = ConfigParser.SafeConfigParser(defaults=collections.OrderedDict(sorted(GC_DEFAULTS.items(), key=lambda t: t[0])))
+  gamcfg = ConfigParser.SafeConfigParser(defaults=collections.OrderedDict(sorted(GC_DEFAULTS.items(), key=lambda t: t[0])))
   configFileName = os.path.join(gamCfgHome, GAM_CFG)
   if not os.path.isfile(configFileName):
     _getOldEnvVarsSignalFiles()
@@ -565,9 +565,9 @@ def SetGlobalVariables():
     for itemName in GC_VAR_INFO:
       if GC_VAR_INFO[itemName][GC_VAR_TYPE_KEY] == GC_TYPE_FILE:
         _copyConfigFile(itemName)
-    _writeConfigFile(configFileName, action=u'Initialized')
+    _writeConfigFile(gamcfg, configFileName, action=u'Initialized')
   else:
-    _readConfigFile(configFileName)
+    _readConfigFile(gamcfg, configFileName)
   i = 1
 # select <SectionName> [save] [verify]
   if (i < len(sys.argv)) and (sys.argv[i] == SELECT_CMD):
@@ -575,15 +575,15 @@ def SetGlobalVariables():
     i += 2
     if (not sectionName) or (sectionName.upper() == ConfigParser.DEFAULTSECT):
       sectionName = ConfigParser.DEFAULTSECT
-    elif not config.has_section(sectionName):
+    elif not gamcfg.has_section(sectionName):
       sys.stderr.write(u'{0}Section: {1}, Not Found\n'.format(ERROR_PREFIX, sectionName))
       sys.exit(3)
     while i < len(sys.argv):
       my_arg = sys.argv[i].lower()
       if my_arg == SELECT_SAVE_CMD:
         i += 1
-        config.set(ConfigParser.DEFAULTSECT, GC_SECTION, sectionName)
-        _writeConfigFile(configFileName, action=u'Saved')
+        gamcfg.set(ConfigParser.DEFAULTSECT, GC_SECTION, sectionName)
+        _writeConfigFile(gamcfg, configFileName, action=u'Saved')
       elif my_arg == SELECT_VERIFY_CMD:
         i += 1
         _verifyValues()
@@ -616,13 +616,13 @@ def SetGlobalVariables():
           i += 1
         else:
           overwrite = False
-        if config.has_section(value):
+        if gamcfg.has_section(value):
           if not overwrite:
             sys.stderr.write(u'{0}Section: {1}, Duplicate\n'.format(ERROR_PREFIX, value))
             sys.exit(3)
           i += 1
         else:
-          config.add_section(value)
+          gamcfg.add_section(value)
         sectionName = value
 # delete <SectionName>
       elif my_arg == CONFIG_DELETE_CMD:
@@ -631,13 +631,13 @@ def SetGlobalVariables():
         if value.upper() == ConfigParser.DEFAULTSECT:
           sys.stderr.write(u'{0}Section: {1}, Invalid\n'.format(ERROR_PREFIX, value))
           sys.exit(3)
-        if not config.has_section(value):
+        if not gamcfg.has_section(value):
           sys.stderr.write(u'{0}Section: {1}, Not Found\n'.format(ERROR_PREFIX, value))
           sys.exit(3)
-        config.remove_section(value)
+        gamcfg.remove_section(value)
         sectionName = ConfigParser.DEFAULTSECT
-        if config.get(ConfigParser.DEFAULTSECT, GC_SECTION, raw=True) == value:
-          config.set(ConfigParser.DEFAULTSECT, GC_SECTION, u'')
+        if gamcfg.get(ConfigParser.DEFAULTSECT, GC_SECTION, raw=True) == value:
+          gamcfg.set(ConfigParser.DEFAULTSECT, GC_SECTION, u'')
 # select <SectionName>
       elif my_arg == CONFIG_SELECT_CMD:
         value = sys.argv[i]
@@ -645,7 +645,7 @@ def SetGlobalVariables():
         if (not value) or (value.upper() == ConfigParser.DEFAULTSECT):
           value = u''
           sectionName = ConfigParser.DEFAULTSECT
-        elif not config.has_section(value):
+        elif not gamcfg.has_section(value):
           sys.stderr.write(u'{0}Section: {1}, Not Found\n'.format(ERROR_PREFIX, value))
           sys.exit(3)
         else:
@@ -655,7 +655,7 @@ def SetGlobalVariables():
         dstPath = os.path.expanduser(sys.argv[i])
         i += 1
         if not os.path.isabs(dstPath):
-          dstPath = os.path.join(config.get(ConfigParser.DEFAULTSECT, GC_CONFIG_DIR, raw=True), dstPath)
+          dstPath = os.path.join(gamcfg.get(ConfigParser.DEFAULTSECT, GC_CONFIG_DIR, raw=True), dstPath)
         if not os.path.isdir(dstPath):
           try:
             os.makedirs(dstPath)
@@ -672,7 +672,7 @@ def SetGlobalVariables():
         dstFile = os.path.expanduser(sys.argv[i])
         i += 1
         if not os.path.isabs(dstFile):
-          dstFile = os.path.join(config.get(sectionName, GC_CONFIG_DIR, raw=True), dstFile)
+          dstFile = os.path.join(gamcfg.get(sectionName, GC_CONFIG_DIR, raw=True), dstFile)
         data = readFile(srcFile)
         writeFile(dstFile, data)
 # reset <VariableName>
@@ -683,13 +683,15 @@ def SetGlobalVariables():
           sys.stderr.write(u'{0}key should be {1}. Got {2}\n'.format(ERROR_PREFIX, u','.join(sorted(GC_DEFAULTS.keys())), itemName))
           sys.exit(3)
         itemName = GC_VAR_ALIASES[itemName]
-        if itemName != GC_SECTION:
+        if itemName in [GC_NO_UPDATE_CHECK, GC_LAST_UPDATE_CHECK]:
+          gamcfg.set(ConfigParser.DEFAULTSECT, itemName, unicode(GC_DEFAULTS[itemName]))
+        elif itemName != GC_SECTION:
           if sectionName != ConfigParser.DEFAULTSECT:
-            config.remove_option(sectionName, itemName)
+            gamcfg.remove_option(sectionName, itemName)
           else:
-            config.set(ConfigParser.DEFAULTSECT, itemName, unicode(GC_DEFAULTS[itemName]))
+            gamcfg.set(ConfigParser.DEFAULTSECT, itemName, unicode(GC_DEFAULTS[itemName]))
         else:
-          config.set(ConfigParser.DEFAULTSECT, itemName, u'')
+          gamcfg.set(ConfigParser.DEFAULTSECT, itemName, u'')
 # set <VariableName> <Value>
       elif my_arg == CONFIG_SET_CMD:
         itemName = sys.argv[i].lower().replace(u'_', u'')
@@ -703,16 +705,19 @@ def SetGlobalVariables():
         if itemName == GC_SECTION:
           if (not value) or (value.upper() == ConfigParser.DEFAULTSECT):
             value = u''
-          elif not config.has_section(value):
+          elif not gamcfg.has_section(value):
             sys.stderr.write(u'{0}Section: {1}, Not Found\n'.format(ERROR_PREFIX, value))
             sys.exit(3)
-          config.set(ConfigParser.DEFAULTSECT, GC_SECTION, value)
+          gamcfg.set(ConfigParser.DEFAULTSECT, GC_SECTION, value)
           continue
         elif GC_VAR_INFO[itemName][GC_VAR_TYPE_KEY] == GC_TYPE_BOOLEAN:
           value = value.lower()
           if (value not in true_values) and (value not in false_values):
             sys.stderr.write(u'{0}expected {1}, got {2}\n'.format(ERROR_PREFIX, u'|'.join(TRUE_FALSE), value))
             sys.exit(3)
+          if itemName == GC_NO_UPDATE_CHECK:
+            gamcfg.set(ConfigParser.DEFAULTSECT, itemName, value)
+            continue
         elif GC_VAR_INFO[itemName][GC_VAR_TYPE_KEY] == GC_TYPE_INTEGER:
           minVal, maxVal = GC_VAR_INFO[itemName][GC_VAR_LIMITS_KEY]
           try:
@@ -724,33 +729,36 @@ def SetGlobalVariables():
           except ValueError:
             sys.stderr.write(u'{0}expected {1}, got {2}\n'.format(ERROR_PREFIX, integerLimits(minVal, maxVal), value))
             sys.exit(3)
+          if itemName == GC_LAST_UPDATE_CHECK:
+            gamcfg.set(ConfigParser.DEFAULTSECT, itemName, value)
+            continue
         elif GC_VAR_INFO[itemName][GC_VAR_TYPE_KEY] == GC_TYPE_DIRECTORY:
           fullPath = os.path.expanduser(value)
           if (sectionName != ConfigParser.DEFAULTSECT) and (not os.path.isabs(fullPath)):
-            fullPath = os.path.join(config.get(ConfigParser.DEFAULTSECT, itemName, raw=True), fullPath)
+            fullPath = os.path.join(gamcfg.get(ConfigParser.DEFAULTSECT, itemName, raw=True), fullPath)
           if not os.path.isdir(fullPath):
             sys.stderr.write(u'{0}{1}, invalid path\n'.format(ERROR_PREFIX, value))
             sys.exit(3)
         elif GC_VAR_INFO[itemName][GC_VAR_TYPE_KEY] == GC_TYPE_FILE:
           pass
-        config.set(sectionName, itemName, value)
+        gamcfg.set(sectionName, itemName, value)
 # save
       elif my_arg == CONFIG_SAVE_CMD:
-        _writeConfigFile(configFileName, action=u'Saved')
+        _writeConfigFile(gamcfg, configFileName, action=u'Saved')
 # backup <FileName>
       elif my_arg == CONFIG_BACKUP_CMD:
         fileName = os.path.expanduser(sys.argv[i])
         i += 1
         if not os.path.isabs(fileName):
           fileName = os.path.join(gamCfgHome, fileName)
-        _writeConfigFile(fileName, action=u'Backed up')
+        _writeConfigFile(gamcfg, fileName, action=u'Backed up')
 # restore <FileName>
       elif my_arg == CONFIG_RESTORE_CMD:
         fileName = os.path.expanduser(sys.argv[i])
         i += 1
         if not os.path.isabs(fileName):
           fileName = os.path.join(gamCfgHome, fileName)
-        _readConfigFile(fileName, action=u'Restored')
+        _readConfigFile(gamcfg, fileName, action=u'Restored')
 # verify
       elif my_arg == CONFIG_VERIFY_CMD:
         _verifyValues()
@@ -786,9 +794,10 @@ def SetGlobalVariables():
     previousUpdateCheck = GC_Values[GC_LAST_UPDATE_CHECK]
     GC_Values[GC_LAST_UPDATE_CHECK] = doGAMCheckForUpdates(previousUpdateCheck)
     if GC_Values[GC_LAST_UPDATE_CHECK] != previousUpdateCheck:
-      _readConfigFile(configFileName)
-      config.set(ConfigParser.DEFAULTSECT, GC_LAST_UPDATE_CHECK, str(GC_Values[GC_LAST_UPDATE_CHECK]))
-      _writeConfigFile(configFileName, action=u'{0} Updated'.format(GC_LAST_UPDATE_CHECK))
+      luc_config = ConfigParser.SafeConfigParser(defaults=collections.OrderedDict(sorted(GC_DEFAULTS.items(), key=lambda t: t[0])))
+      _readConfigFile(luc_config, configFileName)
+      luc_config.set(ConfigParser.DEFAULTSECT, GC_LAST_UPDATE_CHECK, str(GC_Values[GC_LAST_UPDATE_CHECK]))
+      _writeConfigFile(luc_config, configFileName, action=u'{0} Updated'.format(GC_LAST_UPDATE_CHECK))
 # Globals derived from config file values
   GC_Values[GC_CACERT_PEM] = os.path.join(GC_Values[GC_GAM_PATH], FN_CACERT_PEM)
   GC_Values[GC_EXTRA_ARGS] = {u'prettyPrint': GC_Values[GC_DEBUG_LEVEL] > 0}
