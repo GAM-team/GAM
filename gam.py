@@ -9011,11 +9011,11 @@ def run_batch(items):
 #
 # Process GAM command
 #
-def ProcessGAMCommand(args):
+def ProcessGAMCommand(args, processGamCfg=True):
   if args != sys.argv:
     sys.argv = args[:]
   try:
-    if not SetGlobalVariables():
+    if processGamCfg and (not SetGlobalVariables()):
       return 0
     if sys.argv[1].lower() == u'batch':
       import shlex
