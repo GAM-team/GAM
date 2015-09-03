@@ -786,8 +786,8 @@ def SetGlobalVariables():
     previousUpdateCheck = GC_Values[GC_LAST_UPDATE_CHECK]
     GC_Values[GC_LAST_UPDATE_CHECK] = doGAMCheckForUpdates(previousUpdateCheck)
     if GC_Values[GC_LAST_UPDATE_CHECK] != previousUpdateCheck:
-      config.set(ConfigParser.DEFAULTSECT, GC_LAST_UPDATE_CHECK, str(GC_Values[GC_LAST_UPDATE_CHECK]))
       _readConfigFile(configFileName)
+      config.set(ConfigParser.DEFAULTSECT, GC_LAST_UPDATE_CHECK, str(GC_Values[GC_LAST_UPDATE_CHECK]))
       _writeConfigFile(configFileName, action=u'{0} Updated'.format(GC_LAST_UPDATE_CHECK))
 # Globals derived from config file values
   GC_Values[GC_CACERT_PEM] = os.path.join(GC_Values[GC_GAM_PATH], FN_CACERT_PEM)
