@@ -9085,22 +9085,33 @@ def ProcessGAMCommand(args, processGamCfg=True):
         f = StringIO.StringIO(input_string)
       else:
         f = open(csv_filename, 'rU')
-      input_file = csv.DictReader(f)
-      if sys.argv[3].lower() != 'gam':
-        print 'Error: "gam csv <filename>" should be followed by a full GAM command...'
+      csvFile = csv.DictReader(f)
+      if (len(sys.argv) < 4) or (sys.argv[3].lower() != 'gam'):
+        sys.stderr.write('{0}"gam csv {1}" should be followed by a full GAM command...\n'.format(ERROR_PREFIX, csv_filename))
         return 3
-      argv_template = sys.argv[4:]
-      items = list()
-      for row in input_file:
-        argv = list()
-        for arg in argv_template:
-          if arg[0] != '~':
-            argv.append(arg)
-          elif arg[1:] in row:
-            argv.append(row[arg[1:]])
+      optionalSubs = {}
+      GAM_argv = []
+      GAM_argvI = len(GAM_argv)
+      for arg in sys.argv[4:]:
+        if arg[0] != '~':
+          GAM_argv.append(arg)
+        else:
+          fieldName = arg[1:]
+          if fieldName in csvFile.fieldnames:
+            optionalSubs[GAM_argvI] = fieldName
+            GAM_argv.append(fieldName)
           else:
-            print 'Error: header "%s" not found in CSV headers of "%s", giving up.' % (arg[1:], ','.join(row.keys()))
-            return 0
+            sys.stderr.write('{0}header "{1}" not found in CSV headers of "{2}", giving up.\n'.format(ERROR_PREFIX, fieldName, ','.join(csvFile.fieldnames)))
+            return 3
+        GAM_argvI += 1
+      items = list()
+      for row in csvFile:
+        argv = GAM_argv[:]
+        for GAM_argvI, fieldName in optionalSubs.iteritems():
+          if row[fieldName]:
+            argv[GAM_argvI] = row[fieldName]
+          else:
+            argv[GAM_argvI] = u''
         items.append(argv)
       run_batch(items)
       return 0
