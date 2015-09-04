@@ -407,7 +407,7 @@ def SetGlobalVariables():
     _getOldSignalFile(GC_NO_CACHE, u'nocache.txt')
     _getOldSignalFile(GC_NO_UPDATE_CHECK, u'noupdatecheck.txt')
     try:
-      with open(os.path.join(GC_Values[GC_GAM_PATH], u'lastupdatecheck.txt'), 'r') as f:
+      with open(os.path.join(GC_Values[GC_GAM_PATH], u'lastupdatecheck.txt'), 'rU') as f:
         latestUpdateCheck = int(f.readline())
     except:
       latestUpdateCheck = 0
@@ -428,7 +428,7 @@ def SetGlobalVariables():
       srcFile = os.path.join(GC_Values[GC_GAM_PATH], srcFile)
     dstFile = os.path.join(GC_DEFAULTS[GC_CONFIG_DIR], os.path.basename(srcFile))
     if srcFile != dstFile:
-      data = readFile(srcFile, continueOnError=True, displayError=False)
+      data = readFile(srcFile, mode=u'rU', continueOnError=True, displayError=False)
       if (data != None) and writeFile(dstFile, data, continueOnError=True):
         writeFile(dstFile, data)
         gamcfg.set(ConfigParser.DEFAULTSECT, itemName, os.path.basename(srcFile))
@@ -486,7 +486,7 @@ def SetGlobalVariables():
 
   def _readConfigFile(config, fileName, action=None):
     try:
-      with open(fileName, 'rb') as f:
+      with open(fileName, 'rU') as f:
         config.readfp(f)
       if action:
         print u'Config File: {0}, {1}'.format(fileName, action)
@@ -673,7 +673,7 @@ def SetGlobalVariables():
         i += 1
         if not os.path.isabs(dstFile):
           dstFile = os.path.join(gamcfg.get(sectionName, GC_CONFIG_DIR, raw=True), dstFile)
-        data = readFile(srcFile)
+        data = readFile(srcFile, mode=u'rU')
         writeFile(dstFile, data)
 # reset <VariableName>
       elif my_arg == CONFIG_RESET_CMD:
@@ -764,7 +764,7 @@ def SetGlobalVariables():
         _verifyValues()
 # print
       elif my_arg == CONFIG_PRINT_CMD:
-        value = readFile(configFileName)
+        value = readFile(configFileName, mode=u'rU')
         for line in value:
           sys.stdout.write(line)
 # config
@@ -1193,7 +1193,7 @@ def buildGAPIObject(api):
   except googleapiclient.errors.UnknownApiNameOrVersion:
     disc_file = os.path.join(GC_Values[GC_GAM_PATH], u'%s-%s.json' % (api, version))
     if os.path.isfile(disc_file):
-      f = file(disc_file, 'rb')
+      f = open(disc_file, 'rb')
       discovery = f.read()
       f.close()
       service = googleapiclient.discovery.build_from_document(discovery, base=u'https://www.googleapis.com', http=http)
@@ -1244,7 +1244,7 @@ def buildGAPIServiceObject(api, act_as=None, soft_errors=False):
   try:
     SERVICE_ACCOUNT_EMAIL = json_data[u'web'][u'client_email']
     SERVICE_ACCOUNT_CLIENT_ID = json_data[u'web'][u'client_id']
-    f = file(GC_Values[GC_OAUTH2SERVICE_JSON].replace(u'.json', u'.p12'), 'rb')
+    f = open(GC_Values[GC_OAUTH2SERVICE_JSON].replace(u'.json', u'.p12'), 'rb')
     key = f.read()
     f.close()
   except KeyError:
@@ -2167,7 +2167,7 @@ def changeCalendarAttendees(users):
       print u'%s is not a valid argument.'
       sys.exit(3)
   attendee_map = dict()
-  csvfile = csv.reader(open(csv_file, 'rb'))
+  csvfile = csv.reader(open(csv_file, 'rU'))
   for row in csvfile:
     attendee_map[row[0].lower()] = row[1].lower()
   for user in users:
@@ -8684,7 +8684,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
   elif entity_type == u'file':
     users = []
     filename = entity
-    usernames = csv.reader(open(filename, 'rb'))
+    usernames = csv.reader(open(filename, 'rU'))
     for row in usernames:
       try:
         users.append(row.pop())
@@ -9019,7 +9019,13 @@ def ProcessGAMCommand(args, processGamCfg=True):
       return 0
     if sys.argv[1].lower() == u'batch':
       import shlex
-      f = file(sys.argv[2], 'rb')
+      bat_filename = sys.argv[2]
+      if bat_filename == u'-':
+        import StringIO
+        input_string = unicode(sys.stdin.read())
+        f = StringIO.StringIO(input_string)
+      else:
+        f = open(bat_filename, 'rU')
       items = list()
       for line in f:
         argv = shlex.split(line)
@@ -9040,7 +9046,7 @@ def ProcessGAMCommand(args, processGamCfg=True):
         input_string = unicode(sys.stdin.read())
         f = StringIO.StringIO(input_string)
       else:
-        f = file(csv_filename, 'rb')
+        f = open(csv_filename, 'rU')
       input_file = csv.DictReader(f)
       if sys.argv[3].lower() != 'gam':
         print 'Error: "gam csv <filename>" should be followed by a full GAM command...'
