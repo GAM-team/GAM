@@ -206,6 +206,10 @@ GC_VAR_ALIASES = {
   u'showlicenses':  u'show_licenses',
   }
 
+# Command line batch/csv keywords
+COMMIT_BATCH_CMD = u'commit-batch'
+GAM_CMD = u'gam'
+#
 # Command line select/options arguments
 SELECT_CMD = u'select'
 SELECT_SAVE_CMD = u'save'
@@ -1762,7 +1766,7 @@ def doSyncCourseParticipants():
     gam_commands.append([u'course', courseId, u'add', participant_type, add_email])
   for remove_email in to_remove:
     gam_commands.append([u'course', courseId, u'remove', participant_type, remove_email])
-  run_batch(items=gam_commands)
+  run_batch(gam_commands, len(gam_commands))
 
 def doDelCourseParticipant():
   croom = buildGAPIObject(u'classroom')
@@ -9021,17 +9025,17 @@ def batch_worker():
     subprocess.call(item, stderr=subprocess.STDOUT)
     q.task_done()
 
-def run_batch(items):
-  total_items = len(items)
+def run_batch(items, total_items):
+  import Queue, threading
+  global q
   current_item = 0
   python_cmd = [sys.executable.lower(),]
   if not getattr(sys, 'frozen', False): # we're not frozen
     python_cmd.append(os.path.realpath(sys.argv[0]))
-  import Queue, threading
-  global q
-  q = Queue.Queue(maxsize=GC_Values[GC_NUM_THREADS]) # q.put() gets blocked when trying to create more items than there are workers
-  print u'starting %s worker threads...' % GC_Values[GC_NUM_THREADS]
-  for i in range(GC_Values[GC_NUM_THREADS]):
+  num_threads = min(total_items, GC_Values[GC_NUM_THREADS])
+  q = Queue.Queue(maxsize=num_threads) # q.put() gets blocked when trying to create more items than there are workers
+  print u'starting %s worker threads...' % num_threads
+  for i in range(num_threads):
     t = threading.Thread(target=batch_worker)
     t.daemon = True
     t.start()
@@ -9039,10 +9043,10 @@ def run_batch(items):
     current_item += 1
     if not current_item % 100:
       print u'starting job %s / %s' % (current_item, total_items)
-    if item[0] == u'commit-batch':
-      sys.stderr.write(u'commit-batch - waiting for running processes to finish before proceeding...')
+    if item[0] == COMMIT_BATCH_CMD:
+      sys.stderr.write(u'{0} - waiting for running processes to finish before proceeding...\n'.format(COMMIT_BATCH_CMD))
       q.join()
-      sys.stderr.write(u'done with commit-batch\n')
+      sys.stderr.write(u'{0} - complete\n'.format(COMMIT_BATCH_CMD))
       continue
     q.put(python_cmd+item)
   q.join()
@@ -9064,18 +9068,23 @@ def ProcessGAMCommand(args, processGamCfg=True):
         f = StringIO.StringIO(input_string)
       else:
         f = open(bat_filename, 'rU')
-      items = list()
+      items = []
+      cmdCount = 0
       for line in f:
         argv = shlex.split(line)
-        if (argv[0] in [u'#', u' ', u''] or len(argv) < 2) and argv != [u'commit-batch']:
-          continue
-        elif argv[0] not in [u'gam', u'commit-batch']:
-          print u'Error: "%s" is not a valid gam command' % line
-          continue
-        if argv[0] == u'gam':
-          argv = argv[1:]
-        items.append(argv)
-      run_batch(items)
+        if len(argv) > 0:
+          cmd = argv[0].strip()
+          if (not cmd) or cmd.startswith(u'#') or ((len(argv) == 1) and (cmd != COMMIT_BATCH_CMD)):
+            continue
+          if cmd == GAM_CMD:
+            items.append(argv[1:])
+            cmdCount += 1
+          elif cmd == COMMIT_BATCH_CMD:
+            items.append(argv)
+          else:
+            sys.stderr.write(u'{0}"{1}" is not a valid gam command\n'.format(ERROR_PREFIX, line.strip()))
+      f.close()
+      run_batch(items, cmdCount)
       return 0
     elif sys.argv[1].lower() == 'csv':
       csv_filename = sys.argv[2]
@@ -9086,12 +9095,12 @@ def ProcessGAMCommand(args, processGamCfg=True):
       else:
         f = open(csv_filename, 'rU')
       csvFile = csv.DictReader(f)
-      if (len(sys.argv) < 4) or (sys.argv[3].lower() != 'gam'):
+      if (len(sys.argv) < 4) or (sys.argv[3].lower() != GAM_CMD):
         sys.stderr.write('{0}"gam csv {1}" should be followed by a full GAM command...\n'.format(ERROR_PREFIX, csv_filename))
         return 3
       optionalSubs = {}
       GAM_argv = []
-      GAM_argvI = len(GAM_argv)
+      GAM_argvI = 0
       for arg in sys.argv[4:]:
         if arg[0] != '~':
           GAM_argv.append(arg)
@@ -9104,7 +9113,7 @@ def ProcessGAMCommand(args, processGamCfg=True):
             sys.stderr.write('{0}header "{1}" not found in CSV headers of "{2}", giving up.\n'.format(ERROR_PREFIX, fieldName, ','.join(csvFile.fieldnames)))
             return 3
         GAM_argvI += 1
-      items = list()
+      items = []
       for row in csvFile:
         argv = GAM_argv[:]
         for GAM_argvI, fieldName in optionalSubs.iteritems():
@@ -9113,7 +9122,8 @@ def ProcessGAMCommand(args, processGamCfg=True):
           else:
             argv[GAM_argvI] = u''
         items.append(argv)
-      run_batch(items)
+      f.close()
+      run_batch(items, len(items))
       return 0
     elif sys.argv[1].lower() == u'version':
       doGAMVersion()
@@ -9397,7 +9407,7 @@ def ProcessGAMCommand(args, processGamCfg=True):
       items = []
       for user in users:
         items.append([u'user', user] + sys.argv[3:])
-      run_batch(items)
+      run_batch(items, len(items))
       return 0
     if command == u'transfer':
       transferWhat = sys.argv[4].lower()
