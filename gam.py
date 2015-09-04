@@ -76,6 +76,8 @@ GAM_CFG = u'gam.cfg'
 GAM_BAK = u'gam.bak'
 # Path to gam, assigned in SetGlobalVariables after the command line is cleaned up for Windows
 GC_GAM_PATH = u'gam_path'
+# Where will CSV files be written
+GC_CSVFILE = u'csvfile'
 #
 # Global variables derived from values in gam.cfg
 #
@@ -208,6 +210,7 @@ GC_VAR_ALIASES = {
 SELECT_CMD = u'select'
 SELECT_SAVE_CMD = u'save'
 SELECT_VERIFY_CMD = u'verify'
+SELECT_CSVFILE_CMD = u'csvfile'
 CONFIG_CMD = u'config'
 CONFIG_CREATE_CMD = u'create'
 CONFIG_CREATE_OVERWRITE_CMD = u'overwrite'
@@ -222,11 +225,13 @@ CONFIG_BACKUP_CMD = u'backup'
 CONFIG_RESTORE_CMD = u'restore'
 CONFIG_VERIFY_CMD = u'verify'
 CONFIG_PRINT_CMD = u'print'
+CONFIG_CSVFILE_CMD = u'csvfile'
 CONFIG_SUB_CMDS = [CONFIG_CREATE_CMD, CONFIG_DELETE_CMD, CONFIG_SELECT_CMD,
                    CONFIG_MAKE_CMD, CONFIG_COPY_CMD,
                    CONFIG_RESET_CMD, CONFIG_SET_CMD,
                    CONFIG_SAVE_CMD, CONFIG_BACKUP_CMD, CONFIG_RESTORE_CMD,
                    CONFIG_VERIFY_CMD, CONFIG_PRINT_CMD,
+                   CONFIG_CSVFILE_CMD,
                    CONFIG_CMD,
                   ]
 #
@@ -328,6 +333,20 @@ def integerLimits(minVal, maxVal):
   if maxVal != None:
     return u'integer x<={0}'.format(maxVal)
   return u'integer x'
+#
+# Open a file
+#
+def openFile(filename, mode='rb'):
+  try:
+    if filename != u'-':
+      f = open(filename, mode)
+    else:
+      import StringIO
+      f = StringIO.StringIO(unicode(sys.stdin.read()))
+    return f
+  except IOError as e:
+    sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, e))
+    sys.exit(6)
 #
 # Read a file
 #
@@ -522,6 +541,12 @@ def SetGlobalVariables():
         continue
       print u'  {0} = {1}'.format(itemName, cfgValue)
 
+  def _setCSVFile(csvFile):
+    csvFile = os.path.expanduser(csvFile)
+    if not os.path.isabs(csvFile):
+      csvFile = os.path.join(gamcfg.get(sectionName, GC_DRIVE_DIR, raw=True), csvFile)
+    GC_Values[GC_CSVFILE] = openFile(csvFile, mode='w')
+
   def _chkCfgDirectories(sectionName):
     result = True
     for itemName in GC_VAR_INFO:
@@ -542,7 +567,7 @@ def SetGlobalVariables():
           result = False
     return result
 
-  GC_Values = {GC_GAM_PATH: os.path.dirname(os.path.realpath(sys.argv[0]))}
+  GC_Values = {GC_GAM_PATH: os.path.dirname(os.path.realpath(sys.argv[0])), GC_CSVFILE: sys.stdout}
   status = {u'errors': False}
   try:
 # If GAM_CFG_HOME environment is set, use it for config path, use gamPath/gamcache for cache and gamPath for drive
@@ -569,7 +594,7 @@ def SetGlobalVariables():
   else:
     _readConfigFile(gamcfg, configFileName)
   i = 1
-# select <SectionName> [save] [verify]
+# select <SectionName> [save] [verify] [csvfile <FileName>]
   if (i < len(sys.argv)) and (sys.argv[i] == SELECT_CMD):
     sectionName = sys.argv[i+1]
     i += 2
@@ -587,13 +612,18 @@ def SetGlobalVariables():
       elif my_arg == SELECT_VERIFY_CMD:
         i += 1
         _verifyValues()
+      elif my_arg == SELECT_CSVFILE_CMD:
+        i += 1
+        _setCSVFile(sys.argv[i])
+        i += 1
       else:
         break
 # config ((create <SectionName> [overwrite])|(delete <SectionName>)|(select <SectionName>)|
 #         (make <Directory>)|(copy <FromFile> <ToFile)|
 #         (reset <VariableName>)|(set <VariableName> <Value>)|
 #         save|(backup <FileName>)|(restore <FileName>)|
-#         verify|print
+#         verify|print|
+#         csvfile <FileName>
 #        )* [config]
   elif (i < len(sys.argv)) and (sys.argv[i] == CONFIG_CMD):
     i += 1
@@ -767,6 +797,10 @@ def SetGlobalVariables():
         value = readFile(configFileName, mode=u'rU')
         for line in value:
           sys.stdout.write(line)
+# csvfile <FileName>
+      elif my_arg == CONFIG_CSVFILE_CMD:
+        _setCSVFile(sys.argv[i])
+        i += 1
 # config
       else:
         break
@@ -7364,7 +7398,7 @@ def output_csv(csv_list, titles, list_type, todrive):
     string_file = StringIO.StringIO()
     writer = csv.DictWriter(string_file, fieldnames=titles, dialect=u'nixstdout', quoting=csv.QUOTE_MINIMAL)
   else:
-    writer = csv.DictWriter(sys.stdout, fieldnames=titles, dialect=u'nixstdout', quoting=csv.QUOTE_MINIMAL)
+    writer = csv.DictWriter(GC_Values[GC_CSVFILE], fieldnames=titles, dialect=u'nixstdout', quoting=csv.QUOTE_MINIMAL)
   writer.writerows(csv_list)
   if todrive:
     columns = len(csv_list[0])
@@ -7419,6 +7453,7 @@ def doPrintUsers():
   getGroupFeed = getLicenseFeed = email_parts = False
   todrive = False
   viewType = deleted_only = orderBy = sortOrder = None
+  groupsDelimiter = u' '
   i = 3
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'allfields':
@@ -7438,6 +7473,9 @@ def doPrintUsers():
     elif sys.argv[i].lower() in [u'deleted_only', u'only_deleted']:
       deleted_only = True
       i += 1
+    elif sys.argv[i].lower() == u'delimiter':
+      groupsDelimiter = sys.argv[i+1]
+      i += 2
     elif sys.argv[i].lower() == u'orderby':
       orderBy = sys.argv[i+1]
       if orderBy.lower() not in [u'email', u'familyname', u'givenname', u'firstname', u'lastname']:
@@ -7578,8 +7616,8 @@ def doPrintUsers():
       groups = callGAPIpages(service=cd.groups(), function=u'list', items=u'groups', userKey=user_email)
       grouplist = u''
       for groupname in groups:
-        grouplist += groupname[u'email']+' '
-      if grouplist[-1:] == u' ':
+        grouplist += groupname[u'email']+groupsDelimiter
+      if grouplist[-1:] == groupsDelimiter:
         grouplist = grouplist[:-1]
       user.update(Groups=grouplist)
       user_count += 1
