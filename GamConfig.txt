@@ -161,7 +161,7 @@ The new arguments are optional and mutually exclusive and must be the first argu
 The select argument specifies the section of gam.cfg to use for processing the rest of the GAM command; its how
 you quickly switch from from one client to another.
 
-select <SectionName> [save] [verify] [csvfile sectionname|<FileName>]
+select <SectionName> [save] [verify]
 	Use this section for the current GAM command.
     save
 	Set section = <SectionName> in the DEFAULT section
@@ -172,10 +172,6 @@ select <SectionName> [save] [verify] [csvfile sectionname|<FileName>]
 	Current section
 	DEFAULT section
 	Program default
-    csvfile sectionname|<FileName>
-	If sectionname is specified, <FileName> will be set to <SectionName>.csv
-	If the GAM command writes a CSV file, write it to <FileName> rather than stdout
-	If <FileName> is relative, it is appended to drive_dir in the current section if defined or drive_dir in DEFAULT
 
 The config argument is used to manage gam.cfg via the command line, no hand editting required.
 
@@ -184,7 +180,6 @@ config ((create <SectionName> [overwrite])|(delete <SectionName>)|(select <Secti
         (reset <VariableName>)|(set <VariableName> <Value>)|
         save|(backup <FileName>)|(restore <FileName>)|
 	verify|print|
-	csvfile sectionname|<FileName>
        )* [config]
 
     create <SectionName> [overwrite]
@@ -225,10 +220,6 @@ config ((create <SectionName> [overwrite])|(delete <SectionName>)|(select <Secti
 	Program default
     print
 	Print gam.cfg to stdout
-    csvfile sectionname|<FileName>
-	If sectionname is specified, <FileName> will be set to <SectionName>.csv
-	If the GAM command writes a CSV file, write it to <FileName> rather than stdout
-	If <FileName> is relative, it is appended to drive_dir in the current section if defined or drive_dir in DEFAULT
     config
 	Required if subsequent GAM arguments are to be processed
 
@@ -242,6 +233,23 @@ To view the variable values for s specific section.
 	gam select default verify
 To view the entrie gam.cfg file
 	gam config print
+
+The redirect argument must follow select/config if they appear but does not require that they be present. It can appear
+multiple times as required:
+
+redirect (csv sectionname|<FileName>)|(stdout write|append sectionname|<FileName>)|(stderr write|append sectionname|<FileName>)
+    csv sectionname|<FileName>
+	If sectionname is specified, <FileName> will be set to <SectionName>.csv where <SectionName> is the name of the current section.
+	If <FileName> is relative, it is appended to drive_dir in the current section if defined or drive_dir in DEFAULT
+	If the GAM command writes a CSV file, it will be written to <FileName> rather than stdout
+    stdout write|append sectionname|<FileName>
+	If sectionname is specified, <FileName> will be set to <SectionName>.out where <SectionName> is the name of the current section.
+	If <FileName> is relative, it is appended to drive_dir in the current section if defined or drive_dir in DEFAULT
+	GAM output to stdout will be written to <FileName>
+    stderr write|append sectionname|<FileName>
+	If sectionname is specified, <FileName> will be set to <SectionName>.err where <SectionName> is the name of the current section.
+	If <FileName> is relative, it is appended to drive_dir in the current section if defined or drive_dir in DEFAULT
+	GAM output to stderr will be written to <FileName>
 
 Here's how the sample gam.cfg shown at the top is created.
 You have four clients: foo, goo, shared1 and shared2.

@@ -216,6 +216,12 @@ COMMIT_BATCH_CMD = u'commit-batch'
 GAM_CMD = u'gam'
 #
 # Command line select/options arguments
+REDIRECT_CMD = 'redirect'
+REDIRECT_CSV_CMD = 'csv'
+REDIRECT_STDOUT_CMD = 'stdout'
+REDIRECT_STDERR_CMD = 'stderr'
+REDIRECT_SUB_CMDS = [REDIRECT_CSV_CMD, REDIRECT_STDOUT_CMD, REDIRECT_STDERR_CMD]
+REDIRECT_MODE_MAP = {u'append': 'a', u'write': 'w'}
 SELECT_CMD = u'select'
 SELECT_SAVE_CMD = u'save'
 SELECT_VERIFY_CMD = u'verify'
@@ -234,13 +240,11 @@ CONFIG_BACKUP_CMD = u'backup'
 CONFIG_RESTORE_CMD = u'restore'
 CONFIG_VERIFY_CMD = u'verify'
 CONFIG_PRINT_CMD = u'print'
-CONFIG_CSVFILE_CMD = u'csvfile'
 CONFIG_SUB_CMDS = [CONFIG_CREATE_CMD, CONFIG_DELETE_CMD, CONFIG_SELECT_CMD,
                    CONFIG_MAKE_CMD, CONFIG_COPY_CMD,
                    CONFIG_RESET_CMD, CONFIG_SET_CMD,
                    CONFIG_SAVE_CMD, CONFIG_BACKUP_CMD, CONFIG_RESTORE_CMD,
                    CONFIG_VERIFY_CMD, CONFIG_PRINT_CMD,
-                   CONFIG_CSVFILE_CMD,
                    CONFIG_CMD,
                   ]
 #
@@ -558,6 +562,17 @@ def SetGlobalVariables():
       csvFile = os.path.join(gamcfg.get(sectionName, GC_DRIVE_DIR, raw=True), csvFile)
     GC_Values[GC_CSVFILE] = openFile(csvFile, mode='w')
 
+  def _setSTDFile(stdfile, ext, mode):
+    if stdfile.replace(u'_', u'') == u'sectionname':
+      stdfile = sectionName+'.'+ext
+    stdfile = os.path.expanduser(stdfile)
+    if not os.path.isabs(stdfile):
+      stdfile = os.path.join(gamcfg.get(sectionName, GC_DRIVE_DIR, raw=True), stdfile)
+    if ext == u'out':
+      sys.stdout = openFile(stdfile, mode=mode)
+    else:
+      sys.stderr = openFile(stdfile, mode=mode)
+
   def _chkCfgDirectories(sectionName):
     result = True
     for itemName in GC_VAR_INFO:
@@ -605,14 +620,18 @@ def SetGlobalVariables():
   else:
     _readConfigFile(gamcfg, configFileName)
   i = 1
-# select <SectionName> [save] [verify] [csvfile <FileName>]
+# select <SectionName> [save] [verify]
   if (i < len(sys.argv)) and (sys.argv[i] == SELECT_CMD):
-    sectionName = sys.argv[i+1]
-    i += 2
+    i += 1
+    if i == len(sys.argv):
+      sys.stderr.write(u'{0}{1} "", should be <SectionName>\n'.format(ERROR_PREFIX, SELECT_CMD))
+      sys.exit(3)
+    sectionName = sys.argv[i]
+    i += 1
     if (not sectionName) or (sectionName.upper() == ConfigParser.DEFAULTSECT):
       sectionName = ConfigParser.DEFAULTSECT
     elif not gamcfg.has_section(sectionName):
-      sys.stderr.write(u'{0}Section: {1}, Not Found\n'.format(ERROR_PREFIX, sectionName))
+      sys.stderr.write(u'{0}{1} "{2}", Not Found\n'.format(ERROR_PREFIX, SELECT_CMD, sectionName))
       sys.exit(3)
     while i < len(sys.argv):
       my_arg = sys.argv[i].lower()
@@ -623,10 +642,6 @@ def SetGlobalVariables():
       elif my_arg == SELECT_VERIFY_CMD:
         i += 1
         _verifyValues()
-      elif my_arg == SELECT_CSVFILE_CMD:
-        i += 1
-        _setCSVFile(sys.argv[i])
-        i += 1
       else:
         break
 # config ((create <SectionName> [overwrite])|(delete <SectionName>)|(select <SectionName>)|
@@ -634,7 +649,6 @@ def SetGlobalVariables():
 #         (reset <VariableName>)|(set <VariableName> <Value>)|
 #         save|(backup <FileName>)|(restore <FileName>)|
 #         verify|print|
-#         csvfile <FileName>
 #        )* [config]
   elif (i < len(sys.argv)) and (sys.argv[i] == CONFIG_CMD):
     i += 1
@@ -642,15 +656,18 @@ def SetGlobalVariables():
     while i < len(sys.argv):
       my_arg = sys.argv[i].lower()
       if my_arg not in CONFIG_SUB_CMDS:
-        sys.stderr.write(u'{0}options cmd  should be {1}. Got {2}\n'.format(ERROR_PREFIX, u','.join(CONFIG_SUB_CMDS), my_arg))
+        sys.stderr.write(u'{0}{1} "{2}", should be {3}\n'.format(ERROR_PREFIX, CONFIG_CMD, my_arg, u','.join(CONFIG_SUB_CMDS)))
         sys.exit(3)
       i += 1
 # create <SectionName> [overwrite]
       if my_arg == CONFIG_CREATE_CMD:
+        if i == len(sys.argv):
+          sys.stderr.write(u'{0}{1} "", should be <SectionName>\n'.format(ERROR_PREFIX, my_arg))
+          sys.exit(3)
         value = sys.argv[i]
         i += 1
         if value.upper() == ConfigParser.DEFAULTSECT:
-          sys.stderr.write(u'{0}Section: {1}, Invalid\n'.format(ERROR_PREFIX, value))
+          sys.stderr.write(u'{0}{1} "{2}", Invalid\n'.format(ERROR_PREFIX, my_arg, value))
           sys.exit(3)
         if (i < len(sys.argv)) and (sys.argv[i].lower() == CONFIG_CREATE_OVERWRITE_CMD):
           overwrite = True
@@ -659,21 +676,23 @@ def SetGlobalVariables():
           overwrite = False
         if gamcfg.has_section(value):
           if not overwrite:
-            sys.stderr.write(u'{0}Section: {1}, Duplicate\n'.format(ERROR_PREFIX, value))
+            sys.stderr.write(u'{0}{1} "{2}", Duplicate\n'.format(ERROR_PREFIX, my_arg, value))
             sys.exit(3)
-          i += 1
         else:
           gamcfg.add_section(value)
         sectionName = value
 # delete <SectionName>
       elif my_arg == CONFIG_DELETE_CMD:
+        if i == len(sys.argv):
+          sys.stderr.write(u'{0}{1} "", should be <SectionName>\n'.format(ERROR_PREFIX, my_arg))
+          sys.exit(3)
         value = sys.argv[i]
         i += 1
         if value.upper() == ConfigParser.DEFAULTSECT:
-          sys.stderr.write(u'{0}Section: {1}, Invalid\n'.format(ERROR_PREFIX, value))
+          sys.stderr.write(u'{0}{1} "{2}", Invalid\n'.format(ERROR_PREFIX, my_arg, value))
           sys.exit(3)
         if not gamcfg.has_section(value):
-          sys.stderr.write(u'{0}Section: {1}, Not Found\n'.format(ERROR_PREFIX, value))
+          sys.stderr.write(u'{0}{1} "{2}", Not Found\n'.format(ERROR_PREFIX, my_arg, value))
           sys.exit(3)
         gamcfg.remove_section(value)
         sectionName = ConfigParser.DEFAULTSECT
@@ -681,18 +700,24 @@ def SetGlobalVariables():
           gamcfg.set(ConfigParser.DEFAULTSECT, GC_SECTION, u'')
 # select <SectionName>
       elif my_arg == CONFIG_SELECT_CMD:
+        if i == len(sys.argv):
+          sys.stderr.write(u'{0}{1} "", should be <SectionName>\n'.format(ERROR_PREFIX, my_arg))
+          sys.exit(3)
         value = sys.argv[i]
         i += 1
         if (not value) or (value.upper() == ConfigParser.DEFAULTSECT):
           value = u''
           sectionName = ConfigParser.DEFAULTSECT
         elif not gamcfg.has_section(value):
-          sys.stderr.write(u'{0}Section: {1}, Not Found\n'.format(ERROR_PREFIX, value))
+          sys.stderr.write(u'{0}{1} "{2}", Not Found\n'.format(ERROR_PREFIX, my_arg, value))
           sys.exit(3)
         else:
           sectionName = value
 # make <Directory>
       elif my_arg == CONFIG_MAKE_CMD:
+        if i == len(sys.argv):
+          sys.stderr.write(u'{0}{1} "", should be <Directory>\n'.format(ERROR_PREFIX, my_arg))
+          sys.exit(3)
         dstPath = os.path.expanduser(sys.argv[i])
         i += 1
         if not os.path.isabs(dstPath):
@@ -704,12 +729,19 @@ def SetGlobalVariables():
             if not os.path.isdir(dstPath):
               sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, e))
               sys.exit(6)
-# copy <FromFile> <ToFile
+# copy <FromFile> <ToFile>
       elif my_arg == CONFIG_COPY_CMD:
-        srcFile = os.path.expanduser(sys.argv[i])
+        if i == len(sys.argv):
+          sys.stderr.write(u'{0}{1} "", should be <FromFile>\n'.format(ERROR_PREFIX, my_arg))
+          sys.exit(3)
+        value = sys.argv[i]
         i += 1
+        srcFile = os.path.expanduser(value)
         if not os.path.isabs(srcFile):
           srcFile = os.path.join(GC_Values[GC_GAM_PATH], srcFile)
+        if i == len(sys.argv):
+          sys.stderr.write(u'{0}{1} {2} "", should be <ToFile>\n'.format(ERROR_PREFIX, my_arg, value))
+          sys.exit(3)
         dstFile = os.path.expanduser(sys.argv[i])
         i += 1
         if not os.path.isabs(dstFile):
@@ -718,10 +750,13 @@ def SetGlobalVariables():
         writeFile(dstFile, data)
 # reset <VariableName>
       elif my_arg == CONFIG_RESET_CMD:
-        itemName = sys.argv[i].lower().replace(u'_', u'')
-        i += 1
+        if i < len(sys.argv):
+          itemName = sys.argv[i].lower().replace(u'_', u'')
+          i += 1
+        else:
+          itemName = u''
         if itemName not in GC_VAR_ALIASES:
-          sys.stderr.write(u'{0}key should be {1}. Got {2}\n'.format(ERROR_PREFIX, u','.join(sorted(GC_DEFAULTS.keys())), itemName))
+          sys.stderr.write(u'{0}{1} "{2}", should be {3}\n'.format(ERROR_PREFIX, my_arg, itemName, u'|'.join(sorted(GC_DEFAULTS.keys()))))
           sys.exit(3)
         itemName = GC_VAR_ALIASES[itemName]
         if itemName in [GC_NO_UPDATE_CHECK, GC_LAST_UPDATE_CHECK]:
@@ -735,26 +770,32 @@ def SetGlobalVariables():
           gamcfg.set(ConfigParser.DEFAULTSECT, itemName, u'')
 # set <VariableName> <Value>
       elif my_arg == CONFIG_SET_CMD:
-        itemName = sys.argv[i].lower().replace(u'_', u'')
-        i += 1
+        if i < len(sys.argv):
+          itemName = sys.argv[i].lower().replace(u'_', u'')
+          i += 1
+        else:
+          itemName = u''
         if itemName not in GC_VAR_ALIASES:
-          sys.stderr.write(u'{0}key should be {1}. Got {2}\n'.format(ERROR_PREFIX, u','.join(sorted(GC_DEFAULTS.keys())), itemName))
+          sys.stderr.write(u'{0}{1} "{2}", should be {3}\n'.format(ERROR_PREFIX, my_arg, itemName, u'|'.join(sorted(GC_DEFAULTS.keys()))))
           sys.exit(3)
         itemName = GC_VAR_ALIASES[itemName]
+        if i == len(sys.argv):
+          sys.stderr.write(u'{0}{1} {2} "", should be <Value>\n'.format(ERROR_PREFIX, my_arg, itemName))
+          sys.exit(3)
         value = sys.argv[i]
         i += 1
         if itemName == GC_SECTION:
           if (not value) or (value.upper() == ConfigParser.DEFAULTSECT):
             value = u''
           elif not gamcfg.has_section(value):
-            sys.stderr.write(u'{0}Section: {1}, Not Found\n'.format(ERROR_PREFIX, value))
+            sys.stderr.write(u'{0}{1} {2} "{3}", Not Found \n'.format(ERROR_PREFIX, CONFIG_SET_CMD, itemName, value))
             sys.exit(3)
           gamcfg.set(ConfigParser.DEFAULTSECT, GC_SECTION, value)
           continue
         elif GC_VAR_INFO[itemName][GC_VAR_TYPE_KEY] == GC_TYPE_BOOLEAN:
           value = value.lower()
           if (value not in true_values) and (value not in false_values):
-            sys.stderr.write(u'{0}expected {1}, got {2}\n'.format(ERROR_PREFIX, u'|'.join(TRUE_FALSE), value))
+            sys.stderr.write(u'{0}{1} {2} "{3}", should be {4}\n'.format(ERROR_PREFIX, CONFIG_SET_CMD, itemName, value, u'|'.join(TRUE_FALSE)))
             sys.exit(3)
           if itemName == GC_NO_UPDATE_CHECK:
             gamcfg.set(ConfigParser.DEFAULTSECT, itemName, value)
@@ -764,11 +805,11 @@ def SetGlobalVariables():
           try:
             value = int(value)
             if (value < minVal) or (maxVal and (value > maxVal)):
-              sys.stderr.write(u'{0}expected {1}, got {2}\n'.format(ERROR_PREFIX, integerLimits(minVal, maxVal), value))
+              sys.stderr.write(u'{0}{1} {2} "{3}", should be {4}\n'.format(ERROR_PREFIX, CONFIG_SET_CMD, itemName, value, integerLimits(minVal, maxVal)))
               sys.exit(3)
             value = str(value)
           except ValueError:
-            sys.stderr.write(u'{0}expected {1}, got {2}\n'.format(ERROR_PREFIX, integerLimits(minVal, maxVal), value))
+            sys.stderr.write(u'{0}{1} {2} "{3}", should be {4}\n'.format(ERROR_PREFIX, CONFIG_SET_CMD, itemName, value, integerLimits(minVal, maxVal)))
             sys.exit(3)
           if itemName == GC_LAST_UPDATE_CHECK:
             gamcfg.set(ConfigParser.DEFAULTSECT, itemName, value)
@@ -778,7 +819,7 @@ def SetGlobalVariables():
           if (sectionName != ConfigParser.DEFAULTSECT) and (not os.path.isabs(fullPath)):
             fullPath = os.path.join(gamcfg.get(ConfigParser.DEFAULTSECT, itemName, raw=True), fullPath)
           if not os.path.isdir(fullPath):
-            sys.stderr.write(u'{0}{1}, invalid path\n'.format(ERROR_PREFIX, value))
+            sys.stderr.write(u'{0}{1} {2} "{3}", invalid path\n'.format(ERROR_PREFIX, CONFIG_SET_CMD, itemName, value))
             sys.exit(3)
         elif GC_VAR_INFO[itemName][GC_VAR_TYPE_KEY] == GC_TYPE_FILE:
           pass
@@ -788,6 +829,9 @@ def SetGlobalVariables():
         _writeConfigFile(gamcfg, configFileName, action=u'Saved')
 # backup <FileName>
       elif my_arg == CONFIG_BACKUP_CMD:
+        if i == len(sys.argv):
+          sys.stderr.write(u'{0}{1} "", should be <FileName>\n'.format(ERROR_PREFIX, my_arg))
+          sys.exit(3)
         fileName = os.path.expanduser(sys.argv[i])
         i += 1
         if not os.path.isabs(fileName):
@@ -795,6 +839,9 @@ def SetGlobalVariables():
         _writeConfigFile(gamcfg, fileName, action=u'Backed up')
 # restore <FileName>
       elif my_arg == CONFIG_RESTORE_CMD:
+        if i == len(sys.argv):
+          sys.stderr.write(u'{0}{1} "", should be <FileName>\n'.format(ERROR_PREFIX, my_arg))
+          sys.exit(3)
         fileName = os.path.expanduser(sys.argv[i])
         i += 1
         if not os.path.isabs(fileName):
@@ -808,10 +855,6 @@ def SetGlobalVariables():
         value = readFile(configFileName, mode=u'rU')
         for line in value:
           sys.stdout.write(line)
-# csvfile <FileName>
-      elif my_arg == CONFIG_CSVFILE_CMD:
-        _setCSVFile(sys.argv[i])
-        i += 1
 # config
       else:
         break
@@ -843,6 +886,41 @@ def SetGlobalVariables():
       _readConfigFile(luc_config, configFileName)
       luc_config.set(ConfigParser.DEFAULTSECT, GC_LAST_UPDATE_CHECK, str(GC_Values[GC_LAST_UPDATE_CHECK]))
       _writeConfigFile(luc_config, configFileName, action=u'{0} Updated'.format(GC_LAST_UPDATE_CHECK))
+# redirect (csv sectionname|<FileName>)|(stdout write|append sectionname|<FileName>)|(stderr write|append sectionname|<FileName>)
+  while (i < len(sys.argv)) and (sys.argv[i] == REDIRECT_CMD):
+    i += 1
+    if i < len(sys.argv):
+      my_arg = sys.argv[i].lower()
+      i += 1
+    else:
+      my_arg = u''
+    if my_arg not in REDIRECT_SUB_CMDS:
+      sys.stderr.write(u'{0}{1} "{2}", should be {3}\n'.format(ERROR_PREFIX, REDIRECT_CMD, my_arg, u'|'.join(REDIRECT_SUB_CMDS)))
+      sys.exit(3)
+# csv sectionname|<FileName>
+    if my_arg == REDIRECT_CSV_CMD:
+      if i == len(sys.argv):
+        sys.stderr.write(u'{0}{1} {2} "", should be <FileName>\n'.format(ERROR_PREFIX, REDIRECT_CMD, my_arg))
+        sys.exit(3)
+      _setCSVFile(sys.argv[i])
+      i += 1
+# stdout write|append sectionname|<FileName>
+# stderr write|append sectionname|<FileName>
+    else:
+      ext = u'out' if my_arg == REDIRECT_STDOUT_CMD else u'err'
+      if i < len(sys.argv):
+        mode = sys.argv[i].lower()
+        i += 1
+      else:
+        mode = u''
+      if mode not in REDIRECT_MODE_MAP:
+        sys.stderr.write(u'{0}{1} {2} "{3}", should be {4}\n'.format(ERROR_PREFIX, REDIRECT_CMD, my_arg, mode, u'|'.join(REDIRECT_MODE_MAP)))
+        sys.exit(3)
+      if i == len(sys.argv):
+        sys.stderr.write(u'{0}{1} {2} {3} "", should be <FileName>\n'.format(ERROR_PREFIX, REDIRECT_CMD, my_arg, mode))
+        sys.exit(3)
+      _setSTDFile(sys.argv[i], ext, REDIRECT_MODE_MAP[mode])
+      i += 1
 # Globals derived from config file values
   GC_Values[GC_CACERT_PEM] = os.path.join(GC_Values[GC_GAM_PATH], FN_CACERT_PEM)
   GC_Values[GC_EXTRA_ARGS] = {u'prettyPrint': GC_Values[GC_DEBUG_LEVEL] > 0}
