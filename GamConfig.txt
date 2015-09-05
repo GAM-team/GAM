@@ -19,6 +19,7 @@ num_threads = 5
 oauth2_txt = oauth2.txt
 oauth2service_json = oauth2service.json
 section = 
+show_gettings = true
 show_licenses = true
 
 [foo]
@@ -44,6 +45,50 @@ oauth2service_json = Shared2/oauth2service.json
 client_secrets_json = SharedSecret/client_secrets.json
 domain = shared2.com
 customer_id = 4444444444
+
+Variables:
+auto_batch_min
+	Automatically generate gam batch command if number of users specified in gam users xxx command exceeds this number
+	Default: 0, don't automatically generate gam batch commands
+cache_dir
+	GAM cache directory. If no_cache is specified, this variable will be set to None
+client_secrets_json
+	Path to client_secrets.json
+config_dir
+	GAM config directory containing client_secrets.json, oauth2.txt, oauth2service.json, extra_args.txt
+customer_id
+	Google Custmer ID
+debug_level
+	If debug_level > 0: extra_args[u'prettyPrint'] = True, httplib2.debuglevel = gam_debug_level, appsObj.debug = True
+domain
+	Google Domain
+drive_dir
+	Directory for get drivefile and CSV files
+last_update_check
+	Time of last GAM update check
+max_messages_to_process
+	Maximum number of email message to process without confirmation
+no_browser
+	If no_browser is False, GAM won't open a browser if todrive is set when creating CSV files
+	and GAM  prints a link and waits for the verification code when oauth2.txt is being created
+no_cache
+	Disable GAM API caching
+no_update_check
+	Disable GAM update check
+no_verify_ssl
+	Disable SSL certificate validation
+num_threads
+	Number of threads for gam batch
+oauth2_txt
+	Path to oauth2.txt
+oauth2service_json
+	Path to oauth2service.json
+section
+	Default section to use for processing
+show_gettings
+	Enable/disable "Getting ... " messages
+show_licenses
+	If False, add nolicenses to  gam info user foo@bar.com
 
 In the following discussion, these names will be used to refer to directories:
     GamPath: location of gam.py or gam.exe
@@ -116,7 +161,7 @@ The new arguments are optional and mutually exclusive and must be the first argu
 The select argument specifies the section of gam.cfg to use for processing the rest of the GAM command; its how
 you quickly switch from from one client to another.
 
-select <SectionName> [save] [verify] [csvfile <FileName>]
+select <SectionName> [save] [verify] [csvfile sectionname|<FileName>]
 	Use this section for the current GAM command.
     save
 	Set section = <SectionName> in the DEFAULT section
@@ -127,9 +172,10 @@ select <SectionName> [save] [verify] [csvfile <FileName>]
 	Current section
 	DEFAULT section
 	Program default
-    csvfile <CSVFile>
-	If the GAM command writes a CSV file, write it to <CSVFile> rather than stdout
-	If <CSVFile> is relative, it is appended to drive_dir in the current section if defined or drive_dir in DEFAULT
+    csvfile sectionname|<FileName>
+	If sectionname is specified, <FileName> will be set to <SectionName>.csv
+	If the GAM command writes a CSV file, write it to <FileName> rather than stdout
+	If <FileName> is relative, it is appended to drive_dir in the current section if defined or drive_dir in DEFAULT
 
 The config argument is used to manage gam.cfg via the command line, no hand editting required.
 
@@ -138,7 +184,7 @@ config ((create <SectionName> [overwrite])|(delete <SectionName>)|(select <Secti
         (reset <VariableName>)|(set <VariableName> <Value>)|
         save|(backup <FileName>)|(restore <FileName>)|
 	verify|print|
-	csvfile <CSVFile>
+	csvfile sectionname|<FileName>
        )* [config]
 
     create <SectionName> [overwrite]
@@ -179,9 +225,10 @@ config ((create <SectionName> [overwrite])|(delete <SectionName>)|(select <Secti
 	Program default
     print
 	Print gam.cfg to stdout
-    csvfile <CSVFile>
-	If the GAM command writes a CSV file, write it to <CSVFile> rather than stdout
-	If <CSVFile> is relative, it is appended to drive_dir in the current section if defined or drive_dir in DEFAULT
+    csvfile sectionname|<FileName>
+	If sectionname is specified, <FileName> will be set to <SectionName>.csv
+	If the GAM command writes a CSV file, write it to <FileName> rather than stdout
+	If <FileName> is relative, it is appended to drive_dir in the current section if defined or drive_dir in DEFAULT
     config
 	Required if subsequent GAM arguments are to be processed
 
