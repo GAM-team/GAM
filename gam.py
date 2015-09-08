@@ -4924,7 +4924,7 @@ def getSignature(users):
       emailsettings.domain = GC_Values[GC_DOMAIN]
     signature = callGData(service=emailsettings, function=u'GetSignature', soft_errors=True, username=user)
     try:
-      sys.stderr.write(u"User %s signature:\n  " % (user+u'@'+emailsettings.domain))
+      sys.stdout.write(u"User %s signature:\n  " % (user+u'@'+emailsettings.domain))
       print u" %s" % signature[u'signature']
     except TypeError:
       pass
@@ -6719,8 +6719,11 @@ def doGetCrosInfo():
 def doGetMobileInfo():
   deviceId = sys.argv[3]
   cd = buildGAPIObject(u'directory')
-  info = callGAPI(service=cd.mobiledevices(), function=u'get', customerId=GC_Values[GC_CUSTOMER_ID], resourceId=deviceId)
-  print_json(None, info)
+  try:
+    info = callGAPI(service=cd.mobiledevices(), function=u'get', throw_reasons=[u'internalError'], customerId=GC_Values[GC_CUSTOMER_ID], resourceId=deviceId)
+    print_json(None, info)
+  except:
+    sys.stderr.write(u'Error: Resource Not Found: {0} - notFound\n'.format(deviceId))
 
 def print_json(object_name, object_value, spacing=u''):
   if object_name in [u'kind', u'etag', u'etags']:
