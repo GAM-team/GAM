@@ -9708,8 +9708,12 @@ def ProcessGAMCommand(args, processGamCfg=True):
     sysExitRC = 1
   except SystemExit as sysExitRC:
     pass
-  sys.stdout = savedStdout
-  sys.stderr = savedStderr
+  if sys.stdout != savedStdout:
+    sys.stdout.close()
+    sys.stdout = savedStdout
+  if sys.stderr != savedStderr:
+    sys.stderr.close()
+    sys.stderr = savedStderr
   return sysExitRC
 #
 # Run from command line
