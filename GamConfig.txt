@@ -19,6 +19,7 @@ num_threads = 5
 oauth2_txt = oauth2.txt
 oauth2service_json = oauth2service.json
 section = 
+show_gettings = true
 show_licenses = true
 
 [foo]
@@ -45,6 +46,50 @@ client_secrets_json = SharedSecret/client_secrets.json
 domain = shared2.com
 customer_id = 4444444444
 
+Variables:
+auto_batch_min
+	Automatically generate gam batch command if number of users specified in gam users xxx command exceeds this number
+	Default: 0, don't automatically generate gam batch commands
+cache_dir
+	GAM cache directory. If no_cache is specified, this variable will be ignored.
+client_secrets_json
+	Path to client_secrets.json
+config_dir
+	GAM config directory containing client_secrets.json, oauth2.txt, oauth2service.json, extra_args.txt
+customer_id
+	Google Custmer ID
+debug_level
+	If debug_level > 0: extra_args[u'prettyPrint'] = True, httplib2.debuglevel = gam_debug_level, appsObj.debug = True
+domain
+	Google Domain
+drive_dir
+	Directory for get drivefile and CSV files
+last_update_check
+	Time of last GAM update check
+max_messages_to_process
+	Maximum number of email message to process without confirmation
+no_browser
+	If no_browser is False, GAM won't open a browser if todrive is set when creating CSV files
+	and GAM  prints a link and waits for the verification code when oauth2.txt is being created
+no_cache
+	Disable GAM API caching
+no_update_check
+	Disable GAM update check
+no_verify_ssl
+	Disable SSL certificate validation
+num_threads
+	Number of threads for gam batch
+oauth2_txt
+	Path to oauth2.txt
+oauth2service_json
+	Path to oauth2service.json
+section
+	Default section to use for processing
+show_gettings
+	Enable/disable "Getting ... " messages
+show_licenses
+	If False, add nolicenses to  gam info user foo@bar.com
+
 In the following discussion, these names will be used to refer to directories:
     GamPath: location of gam.py or gam.exe
     GamCfgHome: location of gam.cfg
@@ -60,24 +105,24 @@ In GAM 3.51 and below, the following locations are used:
     GamDriveDir:
 	GamPath
 
-These will be the new locations:
+These are suggested new locations:
     GamCfgHome:
         Mac OS X:   ~/Library/Application Support/GAM
-        Unix:       ~/.config/GAM     # or in $XDG_CONFIG_HOME, if defined
+        Unix:       ~/.config/GAM
         Windows:    C:\Users\<username>\AppData\Local\GAM
     GamConfigDir:
         Mac OS X:   ~/Library/Application Support/GAM
-        Unix:       ~/.config/GAM     # or in $XDG_CONFIG_HOME, if defined
+        Unix:       ~/.config/GAM
         Windows:    C:\Users\<username>\AppData\Local\GAM
     GamCacheDir:
         Mac OS X:   ~/Library/Caches/GAM
-        Unix:       ~/.cache/GAM (XDG default)
+        Unix:       ~/.cache/GAM
         Windows:    C:\Users\<username>\AppData\Local\GAM\Cache
     GamDriveDir:
 	~/Downloads
 
 If you are an existing GAM user and want to use the existing locations or if you simply don't like the
-new locations or you already have some other scheme in use, set GAM_CFG_HOME to the desired path for gam.cfg.
+suggested locations or you already have some other scheme in use, set GAM_CFG_HOME to the desired path for gam.cfg.
 In gam.cfg, you specify the desired values for the other locations. If multiple users run GAM, you may want to
 implement a user independent choice of direcories.
 
@@ -85,9 +130,9 @@ If gam.cfg is not found in GamCfgHome, GAM will create one; the GamCfgHome direc
 What will go into the newly created gam.cfg? GAM will read the following environment variables and signal files;
 their values if found, or the program default values, will be used to create an initial gam.cfg.
 
-Environment variable: GAMCONFIGDIR, Config file variable: config_dir, Default: GamConfigDir
-Environment variable: GAMCACHEDIR, Config file variable: cache_dir, Default: GamCacheDir
-Environment variable: GAMDRIVEDIR, Config file variable: drive_dir, Default: GamDriveDir
+Environment variable: GAMCONFIGDIR, Config file variable: config_dir, Default: GamPath
+Environment variable: GAMCACHEDIR, Config file variable: cache_dir, Default: GamPath/gamcache
+Environment variable: GAMDRIVEDIR, Config file variable: drive_dir, Default: GamPath
 Environment variable: OAUTHFILE, Config file variable: oauth2_txt, Default: oauth2.txt
 Environment variable: OAUTHSERVICEFILE, Config file variable: oauth2service_json, Default: oauth2service.json
 Environment variable: CLIENTSECRETS, Config file variable: client_secrets_json, Default: client_secrets.json
@@ -116,7 +161,7 @@ The new arguments are optional and mutually exclusive and must be the first argu
 The select argument specifies the section of gam.cfg to use for processing the rest of the GAM command; its how
 you quickly switch from from one client to another.
 
-select <SectionName> [save] [verify] [csvfile <FileName>]
+select <SectionName> [save] [verify]
 	Use this section for the current GAM command.
     save
 	Set section = <SectionName> in the DEFAULT section
@@ -127,9 +172,6 @@ select <SectionName> [save] [verify] [csvfile <FileName>]
 	Current section
 	DEFAULT section
 	Program default
-    csvfile <CSVFile>
-	If the GAM command writes a CSV file, write it to <CSVFile> rather than stdout
-	If <CSVFile> is relative, it is appended to drive_dir in the current section if defined or drive_dir in DEFAULT
 
 The config argument is used to manage gam.cfg via the command line, no hand editting required.
 
@@ -138,7 +180,6 @@ config ((create <SectionName> [overwrite])|(delete <SectionName>)|(select <Secti
         (reset <VariableName>)|(set <VariableName> <Value>)|
         save|(backup <FileName>)|(restore <FileName>)|
 	verify|print|
-	csvfile <CSVFile>
        )* [config]
 
     create <SectionName> [overwrite]
@@ -179,9 +220,6 @@ config ((create <SectionName> [overwrite])|(delete <SectionName>)|(select <Secti
 	Program default
     print
 	Print gam.cfg to stdout
-    csvfile <CSVFile>
-	If the GAM command writes a CSV file, write it to <CSVFile> rather than stdout
-	If <CSVFile> is relative, it is appended to drive_dir in the current section if defined or drive_dir in DEFAULT
     config
 	Required if subsequent GAM arguments are to be processed
 
@@ -195,6 +233,23 @@ To view the variable values for s specific section.
 	gam select default verify
 To view the entrie gam.cfg file
 	gam config print
+
+The redirect argument must follow select/config if they appear but does not require that they be present. It can appear
+multiple times as required:
+
+redirect (csv sectionname|<FileName>)|(stdout write|append sectionname|<FileName>)|(stderr write|append sectionname|<FileName>)
+    csv sectionname|<FileName>
+	If sectionname is specified, <FileName> will be set to <SectionName>.csv where <SectionName> is the name of the current section.
+	If <FileName> is relative, it is appended to drive_dir in the current section if defined or drive_dir in DEFAULT
+	If the GAM command writes a CSV file, it will be written to <FileName> rather than stdout
+    stdout write|append sectionname|<FileName>
+	If sectionname is specified, <FileName> will be set to <SectionName>.out where <SectionName> is the name of the current section.
+	If <FileName> is relative, it is appended to drive_dir in the current section if defined or drive_dir in DEFAULT
+	GAM output to stdout will be written to <FileName>
+    stderr write|append sectionname|<FileName>
+	If sectionname is specified, <FileName> will be set to <SectionName>.err where <SectionName> is the name of the current section.
+	If <FileName> is relative, it is appended to drive_dir in the current section if defined or drive_dir in DEFAULT
+	GAM output to stderr will be written to <FileName>
 
 Here's how the sample gam.cfg shown at the top is created.
 You have four clients: foo, goo, shared1 and shared2.

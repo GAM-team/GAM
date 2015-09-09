@@ -66,10 +66,13 @@ FN_EXTRA_ARGS_TXT = u'extra-args.txt'
 GAMCACHE = u'gamcache'
 MY_CUSTOMER = u'my_customer'
 UNKNOWN_DOMAIN = u'Unknown'
-
+#
+# Global variables
+#
+# Shared by batch_worker and run_batch
 q = None
-
-# Location of gam.cfg, if not set, appdirs user_config_dir will be used
+#
+# Location of gam.cfg, if not set, gamPath will be used
 EV_GAM_CFG_HOME = u'GAM_CFG_HOME'
 # Name of config file
 GAM_CFG = u'gam.cfg'
@@ -93,13 +96,13 @@ GC_EXTRA_ARGS = u'extra_args'
 GC_AUTO_BATCH_MIN = u'auto_batch_min'
 # GAM cache directory. If no_cache is specified, this variable will be set to None
 GC_CACHE_DIR = u'cache_dir'
-# Full path to client_secrets.json
+# Path to client_secrets.json
 GC_CLIENT_SECRETS_JSON = u'client_secrets_json'
-# Directory containing client_secrets.json, oauth2.txt, oauth2service.json, extra_args.txt
+# GAM config directory containing client_secrets.json, oauth2.txt, oauth2service.json, extra_args.txt
 GC_CONFIG_DIR = u'config_dir'
 # custmerId from gam.cfg or retrieved from Google
 GC_CUSTOMER_ID = u'customer_id'
-# If gam_debug_level > 0: extra_args[u'prettyPrint'] = True, httplib2.debuglevel = gam_debug_level, appsObj.debug = True
+# If debug_level > 0: extra_args[u'prettyPrint'] = True, httplib2.debuglevel = gam_debug_level, appsObj.debug = True
 GC_DEBUG_LEVEL = u'debug_level'
 # Domain from gam.cfg or oauth2.txt
 GC_DOMAIN = u'domain'
@@ -118,14 +121,16 @@ GC_NO_CACHE = u'no_cache'
 GC_NO_UPDATE_CHECK = u'no_update_check'
 # Disable SSL certificate validation
 GC_NO_VERIFY_SSL = u'no_verify_ssl'
-# Number of gam threads for batch
+# Number of threads for gam batch
 GC_NUM_THREADS = u'num_threads'
-# Full path to oauth2.txt
+# Path to oauth2.txt
 GC_OAUTH2_TXT = u'oauth2_txt'
-# Full path to oauth2service.json
+# Path to oauth2service.json
 GC_OAUTH2SERVICE_JSON = u'oauth2service_json'
-# Default section to user for processing
+# Default section to use for processing
 GC_SECTION = u'section'
+# Enable/disable "Getting ... " messages
+GC_SHOW_GETTINGS = u'show_gettings'
 # Default value for gam info user foo@bar.com
 GC_SHOW_LICENSES = u'show_licenses'
 
@@ -148,6 +153,7 @@ GC_DEFAULTS = {
   GC_OAUTH2_TXT: FN_OAUTH2_TXT,
   GC_OAUTH2SERVICE_JSON: FN_OAUTH2SERVICE_JSON,
   GC_SECTION: u'',
+  GC_SHOW_GETTINGS: TRUE,
   GC_SHOW_LICENSES: TRUE,
   }
 
@@ -181,6 +187,7 @@ GC_VAR_INFO = {
   GC_OAUTH2_TXT: {GC_VAR_TYPE_KEY: GC_TYPE_FILE},
   GC_OAUTH2SERVICE_JSON: {GC_VAR_TYPE_KEY: GC_TYPE_FILE},
   GC_SECTION: {GC_VAR_TYPE_KEY: GC_TYPE_STRING},
+  GC_SHOW_GETTINGS: {GC_VAR_TYPE_KEY: GC_TYPE_BOOLEAN},
   GC_SHOW_LICENSES: {GC_VAR_TYPE_KEY: GC_TYPE_BOOLEAN},
   }
 
@@ -203,14 +210,22 @@ GC_VAR_ALIASES = {
   u'oauth2txt':  u'oauth2_txt',
   u'oauth2servicejson':  u'oauth2service_json',
   u'section':  u'section',
+  u'showgettings':  u'show_gettings',
   u'showlicenses':  u'show_licenses',
   }
 
 # Command line batch/csv keywords
-COMMIT_BATCH_CMD = u'commit-batch'
 GAM_CMD = u'gam'
+COMMIT_BATCH_CMD = u'commit-batch'
 #
+# Command line redirect/select/config arguments
 # Command line select/options arguments
+REDIRECT_CMD = 'redirect'
+REDIRECT_CSV_CMD = 'csv'
+REDIRECT_STDOUT_CMD = 'stdout'
+REDIRECT_STDERR_CMD = 'stderr'
+REDIRECT_SUB_CMDS = [REDIRECT_CSV_CMD, REDIRECT_STDOUT_CMD, REDIRECT_STDERR_CMD]
+REDIRECT_MODE_MAP = {u'append': 'a', u'write': 'w'}
 SELECT_CMD = u'select'
 SELECT_SAVE_CMD = u'save'
 SELECT_VERIFY_CMD = u'verify'
@@ -229,13 +244,11 @@ CONFIG_BACKUP_CMD = u'backup'
 CONFIG_RESTORE_CMD = u'restore'
 CONFIG_VERIFY_CMD = u'verify'
 CONFIG_PRINT_CMD = u'print'
-CONFIG_CSVFILE_CMD = u'csvfile'
 CONFIG_SUB_CMDS = [CONFIG_CREATE_CMD, CONFIG_DELETE_CMD, CONFIG_SELECT_CMD,
                    CONFIG_MAKE_CMD, CONFIG_COPY_CMD,
                    CONFIG_RESET_CMD, CONFIG_SET_CMD,
                    CONFIG_SAVE_CMD, CONFIG_BACKUP_CMD, CONFIG_RESTORE_CMD,
                    CONFIG_VERIFY_CMD, CONFIG_PRINT_CMD,
-                   CONFIG_CSVFILE_CMD,
                    CONFIG_CMD,
                   ]
 #
@@ -387,7 +400,6 @@ def writeFile(filename, data, mode='wb', continueOnError=False):
 def SetGlobalVariables():
   global GC_Values
   import ConfigParser, collections
-  from appdirs import user_config_dir, user_cache_dir
 
   def _getOldEnvVar(itemName, envVar):
     try:
@@ -545,12 +557,6 @@ def SetGlobalVariables():
         continue
       print u'  {0} = {1}'.format(itemName, cfgValue)
 
-  def _setCSVFile(csvFile):
-    csvFile = os.path.expanduser(csvFile)
-    if not os.path.isabs(csvFile):
-      csvFile = os.path.join(gamcfg.get(sectionName, GC_DRIVE_DIR, raw=True), csvFile)
-    GC_Values[GC_CSVFILE] = openFile(csvFile, mode='w')
-
   def _chkCfgDirectories(sectionName):
     result = True
     for itemName in GC_VAR_INFO:
@@ -571,18 +577,35 @@ def SetGlobalVariables():
           result = False
     return result
 
-  GC_Values = {GC_GAM_PATH: os.path.dirname(os.path.realpath(sys.argv[0])), GC_CSVFILE: sys.stdout}
+  def _setCSVFile(csvFile):
+    if csvFile.replace(u'_', u'') == u'sectionname':
+      csvFile = sectionName+u'.csv'
+    csvFile = os.path.expanduser(csvFile)
+    if not os.path.isabs(csvFile):
+      csvFile = os.path.join(gamcfg.get(sectionName, GC_DRIVE_DIR, raw=True), csvFile)
+    GC_Values[GC_CSVFILE] = openFile(csvFile, mode='w')
+
+  def _setSTDFile(stdfile, ext, mode):
+    if stdfile.replace(u'_', u'') == u'sectionname':
+      stdfile = sectionName+'.'+ext
+    stdfile = os.path.expanduser(stdfile)
+    if not os.path.isabs(stdfile):
+      stdfile = os.path.join(gamcfg.get(sectionName, GC_DRIVE_DIR, raw=True), stdfile)
+    if ext == u'out':
+      sys.stdout = openFile(stdfile, mode=mode)
+    else:
+      sys.stderr = openFile(stdfile, mode=mode)
+
+  GC_Values = {GC_GAM_PATH: os.path.dirname(os.path.realpath(sys.argv[0]))}
   status = {u'errors': False}
   try:
 # If GAM_CFG_HOME environment is set, use it for config path, use gamPath/gamcache for cache and gamPath for drive
     gamCfgHome = os.environ[EV_GAM_CFG_HOME]
-    GC_DEFAULTS[GC_CACHE_DIR] = os.path.join(GC_Values[GC_GAM_PATH], GAMCACHE)
-    GC_DEFAULTS[GC_DRIVE_DIR] = GC_Values[GC_GAM_PATH]
   except KeyError:
-# If GAM_CFG_HOME environment is not set, use appdirs for config/cache paths, use ~/Downloads for drive
-    gamCfgHome = user_config_dir(appname=GAM, appauthor=False)
-    GC_DEFAULTS[GC_CACHE_DIR] = user_cache_dir(appname=GAM, appauthor=False)
-    GC_DEFAULTS[GC_DRIVE_DIR] = os.path.expanduser(u'~/Downloads')
+# If GAM_CFG_HOME environment is not set, use gamPath
+    gamCfgHome = GC_Values[GC_GAM_PATH]
+  GC_DEFAULTS[GC_CACHE_DIR] = os.path.join(GC_Values[GC_GAM_PATH], GAMCACHE)
+  GC_DEFAULTS[GC_DRIVE_DIR] = GC_Values[GC_GAM_PATH]
   GC_DEFAULTS[GC_CONFIG_DIR] = gamCfgHome
 
   gamcfg = ConfigParser.SafeConfigParser(defaults=collections.OrderedDict(sorted(GC_DEFAULTS.items(), key=lambda t: t[0])))
@@ -598,14 +621,18 @@ def SetGlobalVariables():
   else:
     _readConfigFile(gamcfg, configFileName)
   i = 1
-# select <SectionName> [save] [verify] [csvfile <FileName>]
+# select <SectionName> [save] [verify]
   if (i < len(sys.argv)) and (sys.argv[i] == SELECT_CMD):
-    sectionName = sys.argv[i+1]
-    i += 2
+    i += 1
+    if i == len(sys.argv):
+      sys.stderr.write(u'{0}{1} "", should be <SectionName>\n'.format(ERROR_PREFIX, SELECT_CMD))
+      sys.exit(3)
+    sectionName = sys.argv[i]
+    i += 1
     if (not sectionName) or (sectionName.upper() == ConfigParser.DEFAULTSECT):
       sectionName = ConfigParser.DEFAULTSECT
     elif not gamcfg.has_section(sectionName):
-      sys.stderr.write(u'{0}Section: {1}, Not Found\n'.format(ERROR_PREFIX, sectionName))
+      sys.stderr.write(u'{0}{1} "{2}", Not Found\n'.format(ERROR_PREFIX, SELECT_CMD, sectionName))
       sys.exit(3)
     while i < len(sys.argv):
       my_arg = sys.argv[i].lower()
@@ -616,10 +643,6 @@ def SetGlobalVariables():
       elif my_arg == SELECT_VERIFY_CMD:
         i += 1
         _verifyValues()
-      elif my_arg == SELECT_CSVFILE_CMD:
-        i += 1
-        _setCSVFile(sys.argv[i])
-        i += 1
       else:
         break
 # config ((create <SectionName> [overwrite])|(delete <SectionName>)|(select <SectionName>)|
@@ -627,7 +650,6 @@ def SetGlobalVariables():
 #         (reset <VariableName>)|(set <VariableName> <Value>)|
 #         save|(backup <FileName>)|(restore <FileName>)|
 #         verify|print|
-#         csvfile <FileName>
 #        )* [config]
   elif (i < len(sys.argv)) and (sys.argv[i] == CONFIG_CMD):
     i += 1
@@ -635,15 +657,18 @@ def SetGlobalVariables():
     while i < len(sys.argv):
       my_arg = sys.argv[i].lower()
       if my_arg not in CONFIG_SUB_CMDS:
-        sys.stderr.write(u'{0}options cmd  should be {1}. Got {2}\n'.format(ERROR_PREFIX, u','.join(CONFIG_SUB_CMDS), my_arg))
+        sys.stderr.write(u'{0}{1} "{2}", should be {3}\n'.format(ERROR_PREFIX, CONFIG_CMD, my_arg, u','.join(CONFIG_SUB_CMDS)))
         sys.exit(3)
       i += 1
 # create <SectionName> [overwrite]
       if my_arg == CONFIG_CREATE_CMD:
+        if i == len(sys.argv):
+          sys.stderr.write(u'{0}{1} "", should be <SectionName>\n'.format(ERROR_PREFIX, my_arg))
+          sys.exit(3)
         value = sys.argv[i]
         i += 1
         if value.upper() == ConfigParser.DEFAULTSECT:
-          sys.stderr.write(u'{0}Section: {1}, Invalid\n'.format(ERROR_PREFIX, value))
+          sys.stderr.write(u'{0}{1} "{2}", Invalid\n'.format(ERROR_PREFIX, my_arg, value))
           sys.exit(3)
         if (i < len(sys.argv)) and (sys.argv[i].lower() == CONFIG_CREATE_OVERWRITE_CMD):
           overwrite = True
@@ -652,21 +677,23 @@ def SetGlobalVariables():
           overwrite = False
         if gamcfg.has_section(value):
           if not overwrite:
-            sys.stderr.write(u'{0}Section: {1}, Duplicate\n'.format(ERROR_PREFIX, value))
+            sys.stderr.write(u'{0}{1} "{2}", Duplicate\n'.format(ERROR_PREFIX, my_arg, value))
             sys.exit(3)
-          i += 1
         else:
           gamcfg.add_section(value)
         sectionName = value
 # delete <SectionName>
       elif my_arg == CONFIG_DELETE_CMD:
+        if i == len(sys.argv):
+          sys.stderr.write(u'{0}{1} "", should be <SectionName>\n'.format(ERROR_PREFIX, my_arg))
+          sys.exit(3)
         value = sys.argv[i]
         i += 1
         if value.upper() == ConfigParser.DEFAULTSECT:
-          sys.stderr.write(u'{0}Section: {1}, Invalid\n'.format(ERROR_PREFIX, value))
+          sys.stderr.write(u'{0}{1} "{2}", Invalid\n'.format(ERROR_PREFIX, my_arg, value))
           sys.exit(3)
         if not gamcfg.has_section(value):
-          sys.stderr.write(u'{0}Section: {1}, Not Found\n'.format(ERROR_PREFIX, value))
+          sys.stderr.write(u'{0}{1} "{2}", Not Found\n'.format(ERROR_PREFIX, my_arg, value))
           sys.exit(3)
         gamcfg.remove_section(value)
         sectionName = ConfigParser.DEFAULTSECT
@@ -674,18 +701,24 @@ def SetGlobalVariables():
           gamcfg.set(ConfigParser.DEFAULTSECT, GC_SECTION, u'')
 # select <SectionName>
       elif my_arg == CONFIG_SELECT_CMD:
+        if i == len(sys.argv):
+          sys.stderr.write(u'{0}{1} "", should be <SectionName>\n'.format(ERROR_PREFIX, my_arg))
+          sys.exit(3)
         value = sys.argv[i]
         i += 1
         if (not value) or (value.upper() == ConfigParser.DEFAULTSECT):
           value = u''
           sectionName = ConfigParser.DEFAULTSECT
         elif not gamcfg.has_section(value):
-          sys.stderr.write(u'{0}Section: {1}, Not Found\n'.format(ERROR_PREFIX, value))
+          sys.stderr.write(u'{0}{1} "{2}", Not Found\n'.format(ERROR_PREFIX, my_arg, value))
           sys.exit(3)
         else:
           sectionName = value
 # make <Directory>
       elif my_arg == CONFIG_MAKE_CMD:
+        if i == len(sys.argv):
+          sys.stderr.write(u'{0}{1} "", should be <Directory>\n'.format(ERROR_PREFIX, my_arg))
+          sys.exit(3)
         dstPath = os.path.expanduser(sys.argv[i])
         i += 1
         if not os.path.isabs(dstPath):
@@ -697,12 +730,19 @@ def SetGlobalVariables():
             if not os.path.isdir(dstPath):
               sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, e))
               sys.exit(6)
-# copy <FromFile> <ToFile
+# copy <FromFile> <ToFile>
       elif my_arg == CONFIG_COPY_CMD:
-        srcFile = os.path.expanduser(sys.argv[i])
+        if i == len(sys.argv):
+          sys.stderr.write(u'{0}{1} "", should be <FromFile>\n'.format(ERROR_PREFIX, my_arg))
+          sys.exit(3)
+        value = sys.argv[i]
         i += 1
+        srcFile = os.path.expanduser(value)
         if not os.path.isabs(srcFile):
           srcFile = os.path.join(GC_Values[GC_GAM_PATH], srcFile)
+        if i == len(sys.argv):
+          sys.stderr.write(u'{0}{1} {2} "", should be <ToFile>\n'.format(ERROR_PREFIX, my_arg, value))
+          sys.exit(3)
         dstFile = os.path.expanduser(sys.argv[i])
         i += 1
         if not os.path.isabs(dstFile):
@@ -711,10 +751,13 @@ def SetGlobalVariables():
         writeFile(dstFile, data)
 # reset <VariableName>
       elif my_arg == CONFIG_RESET_CMD:
-        itemName = sys.argv[i].lower().replace(u'_', u'')
-        i += 1
+        if i < len(sys.argv):
+          itemName = sys.argv[i].lower().replace(u'_', u'')
+          i += 1
+        else:
+          itemName = u''
         if itemName not in GC_VAR_ALIASES:
-          sys.stderr.write(u'{0}key should be {1}. Got {2}\n'.format(ERROR_PREFIX, u','.join(sorted(GC_DEFAULTS.keys())), itemName))
+          sys.stderr.write(u'{0}{1} "{2}", should be {3}\n'.format(ERROR_PREFIX, my_arg, itemName, u'|'.join(sorted(GC_DEFAULTS.keys()))))
           sys.exit(3)
         itemName = GC_VAR_ALIASES[itemName]
         if itemName in [GC_NO_UPDATE_CHECK, GC_LAST_UPDATE_CHECK]:
@@ -728,26 +771,32 @@ def SetGlobalVariables():
           gamcfg.set(ConfigParser.DEFAULTSECT, itemName, u'')
 # set <VariableName> <Value>
       elif my_arg == CONFIG_SET_CMD:
-        itemName = sys.argv[i].lower().replace(u'_', u'')
-        i += 1
+        if i < len(sys.argv):
+          itemName = sys.argv[i].lower().replace(u'_', u'')
+          i += 1
+        else:
+          itemName = u''
         if itemName not in GC_VAR_ALIASES:
-          sys.stderr.write(u'{0}key should be {1}. Got {2}\n'.format(ERROR_PREFIX, u','.join(sorted(GC_DEFAULTS.keys())), itemName))
+          sys.stderr.write(u'{0}{1} "{2}", should be {3}\n'.format(ERROR_PREFIX, my_arg, itemName, u'|'.join(sorted(GC_DEFAULTS.keys()))))
           sys.exit(3)
         itemName = GC_VAR_ALIASES[itemName]
+        if i == len(sys.argv):
+          sys.stderr.write(u'{0}{1} {2} "", should be <Value>\n'.format(ERROR_PREFIX, my_arg, itemName))
+          sys.exit(3)
         value = sys.argv[i]
         i += 1
         if itemName == GC_SECTION:
           if (not value) or (value.upper() == ConfigParser.DEFAULTSECT):
             value = u''
           elif not gamcfg.has_section(value):
-            sys.stderr.write(u'{0}Section: {1}, Not Found\n'.format(ERROR_PREFIX, value))
+            sys.stderr.write(u'{0}{1} {2} "{3}", Not Found \n'.format(ERROR_PREFIX, CONFIG_SET_CMD, itemName, value))
             sys.exit(3)
           gamcfg.set(ConfigParser.DEFAULTSECT, GC_SECTION, value)
           continue
         elif GC_VAR_INFO[itemName][GC_VAR_TYPE_KEY] == GC_TYPE_BOOLEAN:
           value = value.lower()
           if (value not in true_values) and (value not in false_values):
-            sys.stderr.write(u'{0}expected {1}, got {2}\n'.format(ERROR_PREFIX, u'|'.join(TRUE_FALSE), value))
+            sys.stderr.write(u'{0}{1} {2} "{3}", should be {4}\n'.format(ERROR_PREFIX, CONFIG_SET_CMD, itemName, value, u'|'.join(TRUE_FALSE)))
             sys.exit(3)
           if itemName == GC_NO_UPDATE_CHECK:
             gamcfg.set(ConfigParser.DEFAULTSECT, itemName, value)
@@ -757,11 +806,11 @@ def SetGlobalVariables():
           try:
             value = int(value)
             if (value < minVal) or (maxVal and (value > maxVal)):
-              sys.stderr.write(u'{0}expected {1}, got {2}\n'.format(ERROR_PREFIX, integerLimits(minVal, maxVal), value))
+              sys.stderr.write(u'{0}{1} {2} "{3}", should be {4}\n'.format(ERROR_PREFIX, CONFIG_SET_CMD, itemName, value, integerLimits(minVal, maxVal)))
               sys.exit(3)
             value = str(value)
           except ValueError:
-            sys.stderr.write(u'{0}expected {1}, got {2}\n'.format(ERROR_PREFIX, integerLimits(minVal, maxVal), value))
+            sys.stderr.write(u'{0}{1} {2} "{3}", should be {4}\n'.format(ERROR_PREFIX, CONFIG_SET_CMD, itemName, value, integerLimits(minVal, maxVal)))
             sys.exit(3)
           if itemName == GC_LAST_UPDATE_CHECK:
             gamcfg.set(ConfigParser.DEFAULTSECT, itemName, value)
@@ -771,7 +820,7 @@ def SetGlobalVariables():
           if (sectionName != ConfigParser.DEFAULTSECT) and (not os.path.isabs(fullPath)):
             fullPath = os.path.join(gamcfg.get(ConfigParser.DEFAULTSECT, itemName, raw=True), fullPath)
           if not os.path.isdir(fullPath):
-            sys.stderr.write(u'{0}{1}, invalid path\n'.format(ERROR_PREFIX, value))
+            sys.stderr.write(u'{0}{1} {2} "{3}", invalid path\n'.format(ERROR_PREFIX, CONFIG_SET_CMD, itemName, value))
             sys.exit(3)
         elif GC_VAR_INFO[itemName][GC_VAR_TYPE_KEY] == GC_TYPE_FILE:
           pass
@@ -781,6 +830,9 @@ def SetGlobalVariables():
         _writeConfigFile(gamcfg, configFileName, action=u'Saved')
 # backup <FileName>
       elif my_arg == CONFIG_BACKUP_CMD:
+        if i == len(sys.argv):
+          sys.stderr.write(u'{0}{1} "", should be <FileName>\n'.format(ERROR_PREFIX, my_arg))
+          sys.exit(3)
         fileName = os.path.expanduser(sys.argv[i])
         i += 1
         if not os.path.isabs(fileName):
@@ -788,6 +840,9 @@ def SetGlobalVariables():
         _writeConfigFile(gamcfg, fileName, action=u'Backed up')
 # restore <FileName>
       elif my_arg == CONFIG_RESTORE_CMD:
+        if i == len(sys.argv):
+          sys.stderr.write(u'{0}{1} "", should be <FileName>\n'.format(ERROR_PREFIX, my_arg))
+          sys.exit(3)
         fileName = os.path.expanduser(sys.argv[i])
         i += 1
         if not os.path.isabs(fileName):
@@ -801,10 +856,6 @@ def SetGlobalVariables():
         value = readFile(configFileName, mode=u'rU')
         for line in value:
           sys.stdout.write(line)
-# csvfile <FileName>
-      elif my_arg == CONFIG_CSVFILE_CMD:
-        _setCSVFile(sys.argv[i])
-        i += 1
 # config
       else:
         break
@@ -836,6 +887,43 @@ def SetGlobalVariables():
       _readConfigFile(luc_config, configFileName)
       luc_config.set(ConfigParser.DEFAULTSECT, GC_LAST_UPDATE_CHECK, str(GC_Values[GC_LAST_UPDATE_CHECK]))
       _writeConfigFile(luc_config, configFileName, action=u'{0} Updated'.format(GC_LAST_UPDATE_CHECK))
+# redirect (csv sectionname|<FileName>)|(stdout write|append sectionname|<FileName>)|(stderr write|append sectionname|<FileName>)
+  while (i < len(sys.argv)) and (sys.argv[i] == REDIRECT_CMD):
+    i += 1
+    if i < len(sys.argv):
+      my_arg = sys.argv[i].lower()
+      i += 1
+    else:
+      my_arg = u''
+    if my_arg not in REDIRECT_SUB_CMDS:
+      sys.stderr.write(u'{0}{1} "{2}", should be {3}\n'.format(ERROR_PREFIX, REDIRECT_CMD, my_arg, u'|'.join(REDIRECT_SUB_CMDS)))
+      sys.exit(3)
+# csv sectionname|<FileName>
+    if my_arg == REDIRECT_CSV_CMD:
+      if i == len(sys.argv):
+        sys.stderr.write(u'{0}{1} {2} "", should be <FileName>\n'.format(ERROR_PREFIX, REDIRECT_CMD, my_arg))
+        sys.exit(3)
+      _setCSVFile(sys.argv[i])
+      i += 1
+# stdout write|append sectionname|<FileName>
+# stderr write|append sectionname|<FileName>
+    else:
+      ext = u'out' if my_arg == REDIRECT_STDOUT_CMD else u'err'
+      if i < len(sys.argv):
+        mode = sys.argv[i].lower()
+        i += 1
+      else:
+        mode = u''
+      if mode not in REDIRECT_MODE_MAP:
+        sys.stderr.write(u'{0}{1} {2} "{3}", should be {4}\n'.format(ERROR_PREFIX, REDIRECT_CMD, my_arg, mode, u'|'.join(REDIRECT_MODE_MAP)))
+        sys.exit(3)
+      if i == len(sys.argv):
+        sys.stderr.write(u'{0}{1} {2} {3} "", should be <FileName>\n'.format(ERROR_PREFIX, REDIRECT_CMD, my_arg, mode))
+        sys.exit(3)
+      _setSTDFile(sys.argv[i], ext, REDIRECT_MODE_MAP[mode])
+      i += 1
+  if GC_CSVFILE not in GC_Values:
+    GC_Values[GC_CSVFILE] = sys.stdout
 # Globals derived from config file values
   GC_Values[GC_CACERT_PEM] = os.path.join(GC_Values[GC_GAM_PATH], FN_CACERT_PEM)
   GC_Values[GC_EXTRA_ARGS] = {u'prettyPrint': GC_Values[GC_DEBUG_LEVEL] > 0}
@@ -1116,9 +1204,29 @@ def callGAPI(service, function, silent_errors=False, soft_errors=False, throw_re
       print u'Error: %s' % e
       sys.exit(4)
 
-def restart_line():
-  sys.stderr.write('\r')
-  sys.stderr.flush()
+def printGettingMessage(message):
+  if GC_Values[GC_SHOW_GETTINGS]:
+    sys.stderr.write(message)
+
+FIRST_ITEM_MARKER = u'%%first_item%%'
+LAST_ITEM_MARKER = u'%%last_item%%'
+NUM_ITEMS_MARKER = u'%%num_items%%'
+TOTAL_ITEMS_MARKER = u'%%total_items%%'
+
+def getPageMessage(entityItem, forWhom=None, showTotal=True, showFirstLastItems=False, noNL=False):
+  if GC_Values[GC_SHOW_GETTINGS]:
+    pageMessage = u'Got {0} {1}'.format(TOTAL_ITEMS_MARKER if showTotal else NUM_ITEMS_MARKER, entityItem)
+    if forWhom:
+      pageMessage += u' for {0}'.format(forWhom)
+    if showFirstLastItems:
+      pageMessage += u': {0} - {1}'.format(FIRST_ITEM_MARKER, LAST_ITEM_MARKER)
+    else:
+      pageMessage += u'...'
+    if not noNL:
+      pageMessage += u'\n'
+    return pageMessage
+  else:
+    return None
 
 def callGAPIpages(service, function, items=u'items', nextPageToken=u'nextPageToken', page_message=None, message_attribute=None, **kwargs):
   pageToken = None
@@ -1126,89 +1234,73 @@ def callGAPIpages(service, function, items=u'items', nextPageToken=u'nextPageTok
   total_items = 0
   while True:
     this_page = callGAPI(service=service, function=function, pageToken=pageToken, **kwargs)
-    if not this_page:
+    if this_page:
+      pageToken = this_page.get(nextPageToken)
+      if items in this_page:
+        page_items = len(this_page[items])
+        total_items += page_items
+        all_pages.extend(this_page[items])
+      else:
+        this_page = {items: []}
+        page_items = 0
+    else:
+      pageToken = None
       this_page = {items: []}
-    try:
-      page_items = len(this_page[items])
-    except KeyError:
       page_items = 0
-    total_items += page_items
     if page_message:
-      show_message = page_message
-      try:
-        show_message = show_message.replace(u'%%num_items%%', str(page_items))
-      except (IndexError, KeyError):
-        show_message = show_message.replace(u'%%num_items%%', '0')
-      try:
-        show_message = show_message.replace(u'%%total_items%%', str(total_items))
-      except (IndexError, KeyError):
-        show_message = show_message.replace(u'%%total_items%%', '0')
+      show_message = page_message.replace(NUM_ITEMS_MARKER, str(page_items))
+      show_message = show_message.replace(TOTAL_ITEMS_MARKER, str(total_items))
       if message_attribute:
         try:
-          show_message = show_message.replace(u'%%first_item%%', str(this_page[items][0][message_attribute]))
-          show_message = show_message.replace(u'%%last_item%%', str(this_page[items][-1][message_attribute]))
+          show_message = show_message.replace(FIRST_ITEM_MARKER, str(this_page[items][0][message_attribute]))
+          show_message = show_message.replace(LAST_ITEM_MARKER, str(this_page[items][-1][message_attribute]))
         except (IndexError, KeyError):
-          show_message = show_message.replace(u'%%first_item%%', '')
-          show_message = show_message.replace(u'%%last_item%%', '')
-      restart_line()
+          show_message = show_message.replace(FIRST_ITEM_MARKER, u'')
+          show_message = show_message.replace(LAST_ITEM_MARKER, u'')
+      sys.stderr.write('\r')
+      sys.stderr.flush()
       sys.stderr.write(show_message)
-    try:
-      all_pages += this_page[items]
-      pageToken = this_page[nextPageToken]
-      if pageToken == '':
-        return all_pages
-    except (IndexError, KeyError):
-      if page_message:
-        sys.stderr.write(u'\n')
+    if not pageToken:
+      if page_message and (page_message[-1] != u'\n'):
+        sys.stderr.write(u'\r\n')
+        sys.stderr.flush()
       return all_pages
 
+API_VER_MAPPING = {
+  u'admin-settings': u'v1',
+  u'appsactivity': u'v1',
+  u'calendar': u'v3',
+  u'classroom': u'v1',
+  u'cloudprint': u'v2',
+  u'directory': u'directory_v1',
+  u'drive': u'v2',
+  u'gmail': u'v1',
+  u'groupssettings': u'v1',
+  u'licensing': u'v1',
+  u'oauth2': u'v2',
+  u'plus': u'v1',
+  u'plusDomains': u'v1',
+  u'reports': u'reports_v1',
+  u'siteVerification': u'v1',
+  }
+
 def getAPIVer(api):
-  if api == u'directory':
-    return u'directory_v1'
-  elif api == u'reports':
-    return u'reports_v1'
-  elif api == u'oauth2':
-    return u'v2'
-  elif api == u'groupssettings':
-    return u'v1'
-  elif api == u'calendar':
-    return u'v3'
-  elif api == u'plus':
-    return u'v1'
-  elif api == u'plusDomains':
-    return u'v1'
-  elif api == u'drive':
-    return u'v2'
-  elif api == u'licensing':
-    return u'v1'
-  elif api == u'siteVerification':
-    return u'v1'
-  elif api == u'gmail':
-    return u'v1'
-  elif api == u'appsactivity':
-    return u'v1'
-  elif api == u'classroom':
-    return u'v1'
-  elif api == u'cloudprint':
-    return u'v2'
-  return u'v1'
+  return API_VER_MAPPING.get(api, u'v1')
+
+API_SCOPE_MAPPING = {
+  u'appsactivity': [u'https://www.googleapis.com/auth/activity',
+                    u'https://www.googleapis.com/auth/drive'],
+  u'calendar': [u'https://www.googleapis.com/auth/calendar',],
+  u'drive': [u'https://www.googleapis.com/auth/drive',],
+  u'gmail': [u'https://mail.google.com/',],
+  u'plus': [u'https://www.googleapis.com/auth/plus.me',],
+  u'plusDomains': [u'https://www.googleapis.com/auth/plus.me',
+                   u'https://www.googleapis.com/auth/plus.circles.read',
+                   u'https://www.googleapis.com/auth/plus.circles.write'],
+}
 
 def getAPIScope(api):
-  if api == u'calendar':
-    return [u'https://www.googleapis.com/auth/calendar',]
-  elif api == u'drive':
-    return [u'https://www.googleapis.com/auth/drive',]
-  elif api == u'plus':
-    return [u'https://www.googleapis.com/auth/plus.me',]
-  elif api == u'plusDomains':
-    return [u'https://www.googleapis.com/auth/plus.me',
-            u'https://www.googleapis.com/auth/plus.circles.read',
-            u'https://www.googleapis.com/auth/plus.circles.write']
-  elif api == u'gmail':
-    return [u'https://mail.google.com/']
-  elif api == u'appsactivity':
-    return [u'https://www.googleapis.com/auth/activity',
-            u'https://www.googleapis.com/auth/drive']
+  return API_SCOPE_MAPPING.get(api, [])
 
 def buildGAPIObject(api):
   storage = oauth2client.file.Storage(GC_Values[GC_OAUTH2_TXT])
@@ -1443,7 +1535,7 @@ def showReport():
   if report in [u'users', u'user']:
     while True:
       try:
-        page_message = u'Got %%num_items%% users\n'
+        page_message = getPageMessage(u'users', showTotal=False)
         usage = callGAPIpages(service=rep.userUsageReport(), function=u'get', items=u'usageReports', page_message=page_message,
                               throw_reasons=[u'invalid'], date=str(try_date), userKey=userKey, customerId=GC_Values[GC_CUSTOMER_ID], filters=filters, parameters=parameters)
         break
@@ -1529,7 +1621,7 @@ def showReport():
       report = u'login'
     elif report == u'tokens':
       report = u'token'
-    page_message = u'Got %%num_items%% items\n'
+    page_message = getPageMessage(u'items', showTotal=False)
     activities = callGAPIpages(service=rep.activities(), function=u'list', page_message=page_message,
                                applicationName=report, userKey=userKey, customerId=GC_Values[GC_CUSTOMER_ID], actorIpAddress=actorIpAddress,
                                startTime=startTime, endTime=endTime, eventName=eventName, filters=filters)
@@ -1682,7 +1774,7 @@ def getDelegates(users):
       user = user[:user.find('@')]
     else:
       emailsettings.domain = GC_Values[GC_DOMAIN]
-    sys.stderr.write(u"Getting delegates for %s...\n" % (user + '@' + emailsettings.domain))
+    printGettingMessage(u"Getting delegates for %s...\n" % (user + '@' + emailsettings.domain))
     delegates = callGData(service=emailsettings, function=u'GetDelegates', soft_errors=True, delegator=user)
     try:
       for delegate in delegates:
@@ -1940,8 +2032,8 @@ def doPrintCourses():
     else:
       print u'ERROR: %s is not a valid argument to "gam print courses".'
       sys.exit(3)
-  sys.stderr.write(u'Retrieving courses for organization (may take some time for large accounts)...\n')
-  page_message = u'Got %%num_items%% courses...\n'
+  printGettingMessage(u'Retrieving courses for organization (may take some time for large accounts)...\n')
+  page_message = getPageMessage(u'courses')
   all_courses = callGAPIpages(service=croom.courses(), function=u'list', items=u'courses', page_message=page_message, teacherId=teacherId, studentId=studentId)
   for course in all_courses:
     croom_attributes.append(flatten_json(course))
@@ -1955,7 +2047,7 @@ def doPrintCourses():
     num_courses = len(croom_attributes[1:])
     i = 1
     for course in croom_attributes[1:]:
-      sys.stderr.write('Getting aliases for course %s (%s/%s)\n' % (course[u'id'], i, num_courses))
+      printGettingMessage('Getting aliases for course %s (%s/%s)\n' % (course[u'id'], i, num_courses))
       course_aliases = callGAPIpages(service=croom.courses().aliases(), function=u'list', items=u'aliases', courseId=course[u'id'])
       my_aliases = []
       for alias in course_aliases:
@@ -1992,9 +2084,9 @@ def doPrintCourseParticipants():
     else:
       print u'ERROR: %s is not a valid argument to "gam print course-participants".'
       sys.exit(3)
-    sys.stderr.write(u'Retrieving courses for organization (may take some time for large accounts)...\n')
+  printGettingMessage(u'Retrieving courses for organization (may take some time for large accounts)...\n')
   if len(courses) == 0:
-    page_message = u'Got %%num_items%% courses...\n'
+    page_message = getPageMessage(u'courses')
     all_courses = callGAPIpages(service=croom.courses(), function=u'list', items=u'courses', page_message=page_message, teacherId=teacherId, studentId=studentId)
     for course in all_courses:
       courses.append(course[u'id'])
@@ -2006,10 +2098,10 @@ def doPrintCourseParticipants():
   num_courses = len(all_courses)
   for course in all_courses:
     course_id = course[u'id']
-    teacher_message = u' got %%%%num_items%%%% teachers for course %s (%s/%s)' % (course_id, y, num_courses)
-    student_message = u' got %%%%num_items%%%% students for course %s (%s/%s)' % (course_id, y, num_courses)
-    teachers = callGAPIpages(service=croom.courses().teachers(), function=u'list', items=u'teachers', page_message=teacher_message, courseId=course_id)
-    students = callGAPIpages(service=croom.courses().students(), function=u'list', items=u'students', page_message=student_message, courseId=course_id)
+    page_message = getPageMessage(u'teachers', forWhom=u'course %s (%s/%s)' % (course_id, y, num_courses), noNL=True)
+    teachers = callGAPIpages(service=croom.courses().teachers(), function=u'list', items=u'teachers', page_message=page_message, courseId=course_id)
+    page_message = getPageMessage(u'students', forWhom=u'course %s (%s/%s)' % (course_id, y, num_courses), noNL=True)
+    students = callGAPIpages(service=croom.courses().students(), function=u'list', items=u'students', page_message=page_message, courseId=course_id)
     for teacher in teachers:
       participant = flatten_json(teacher)
       participant[u'courseId'] = course_id
@@ -3138,7 +3230,7 @@ def showDriveSettings(users):
   drive_attr = []
   titles = [u'email',]
   for user in users:
-    sys.stderr.write(u'Getting Drive settings for %s (%s of %s)\n' % (user, count, len(users)))
+    printGettingMessage(u'Getting Drive settings for %s (%s of %s)\n' % (user, count, len(users)))
     count += 1
     drive = buildGAPIServiceObject(u'drive', user)
     feed = callGAPI(service=drive.about(), function=u'get', soft_errors=True)
@@ -3189,7 +3281,7 @@ def doDriveActivity(users):
   activity_attributes = [{},]
   for user in users:
     activity = buildGAPIServiceObject(u'appsactivity', user)
-    page_message = u'Retrieved %%%%total_items%%%% activities for %s' % user
+    page_message = getPageMessage(u'activities', forWhom=user, noNL=True)
     feed = callGAPIpages(service=activity.activities(), function=u'list', items=u'activities',
                          page_message=page_message, source=u'drive.google.com', userId=u'me',
                          drive_ancestorId=drive_ancestorId, groupingStrategy=u'none',
@@ -3401,13 +3493,13 @@ def showDriveFiles(users):
     if user.find(u'@') == -1:
       print u'Error: got %s, expected a full email address' % user
       sys.exit(3)
-    sys.stderr.write(u'Getting files for %s...\n' % user)
-    page_message = u' got %%%%total_items%%%% files for %s...\n' % user
+    printGettingMessage(u'Getting files for %s...\n' % user)
+    page_message = getPageMessage(u'files', forWhom=user)
     feed = callGAPIpages(service=drive.files(), function=u'list', page_message=page_message, soft_errors=True, q=query, maxResults=1000, fields=fields)
     for f_file in feed:
       a_file = {u'Owner': user}
       for attrib in f_file:
-        if attrib in [u'kind', u'etags', u'etag', u'owners', 'parents']:
+        if attrib in [u'kind', u'etags', u'etag', u'owners', u'parents', u'permissions']:
           continue
         attrib_type = type(f_file[attrib])
         if attrib not in titles and not attrib_type is dict:
@@ -3431,8 +3523,8 @@ def showDriveFiles(users):
   output_csv(files_attr, titles, u'%s %s %s Drive Files' % (GC_Values[GC_DOMAIN], sys.argv[1], sys.argv[2]), todrive)
 
 def doDriveSearch(drive, query=None):
-  print u'Searching for files with query: "%s"...' % query
-  page_message = u' got %%total_items%% files...\n'
+  printGettingMessage(u'Searching for files with query: "%s"...\n' % query)
+  page_message = getPageMessage(u'files')
   files = callGAPIpages(service=drive.files(), function=u'list', page_message=page_message, q=query, fields=u'nextPageToken,items(id)', maxResults=1000)
   ids = list()
   for f_file in files:
@@ -3483,8 +3575,8 @@ def showDriveFileTree(users):
       print u'Error: got %s, expected a full email address' % user
       sys.exit(3)
     root_folder = callGAPI(service=drive.about(), function=u'get', fields=u'rootFolderId')[u'rootFolderId']
-    sys.stderr.write(u'Getting all files for %s...\n' % user)
-    page_message = u' got %%%%total_items%%%% files for %s...\n' % user
+    printGettingMessage(u'Getting all files for %s...\n' % user)
+    page_message = getPageMessage(u'files', forWhom=user)
     feed = callGAPIpages(service=drive.files(), function=u'list', page_message=page_message, maxResults=1000, fields=u'items(id,title,parents(id),mimeType),nextPageToken')
     printDriveFolderContents(feed, root_folder, 0)
 
@@ -3497,8 +3589,8 @@ def deleteEmptyDriveFolders(users):
       sys.exit(3)
     deleted_empty = True
     while deleted_empty:
-      sys.stderr.write(u'Getting folders for %s...\n' % user)
-      page_message = u' got %%%%total_items%%%% folders for %s...\n' % user
+      printGettingMessage(u'Getting folders for %s...\n' % user)
+      page_message = getPageMessage(u'folders', forWhom=user)
       feed = callGAPIpages(service=drive.files(), function=u'list', page_message=page_message, q=query, maxResults=1000, fields=u'items(title,id),nextPageToken')
       deleted_empty = False
       for folder in feed:
@@ -3949,16 +4041,16 @@ def transferDriveFiles(users):
     target_drive_free = target_drive_free - source_drive_size # prep target_drive_free for next user
     source_root = source_about[u'rootFolderId']
     source_permissionid = source_about[u'permissionId']
-    print u"Getting file list for source user: %s..." % user
-    page_message = u'  got %%total_items%% files\n'
+    printGettingMessage(u'Getting file list for source user: %s...\n' % user)
+    page_message = getPageMessage(u'files')
     source_drive_files = callGAPIpages(service=source_drive.files(), function=u'list', page_message=page_message,
                                        q=u"'me' in owners and trashed = false", fields=u'items(id,parents,mimeType),nextPageToken')
     all_source_file_ids = []
     for source_drive_file in source_drive_files:
       all_source_file_ids.append(source_drive_file[u'id'])
     total_count = len(source_drive_files)
-    print u"Getting folder list for target user: %s..." % target_user
-    page_message = u'  got %%total_items%% folders\n'
+    printGettingMessage(u'Getting folder list for target user: %s...\n' % target_user)
+    page_message = getPageMessage(u'folders')
     target_folders = callGAPIpages(service=target_drive.files(), function=u'list', page_message=page_message,
                                    q=u"'me' in owners and mimeType = 'application/vnd.google-apps.folder'", fields=u'items(id,title),nextPageToken')
     got_top_folder = False
@@ -4393,7 +4485,7 @@ def doDeleteMessages(users, trashOrDelete):
     sys.exit(4)
   for user in users:
     gmail = buildGAPIServiceObject(u'gmail', act_as=user)
-    page_message = u'Got %%%%total_items%%%% messages for user %s' % user
+    page_message = getPageMessage(u'messages', forWhom=user)
     listResult = callGAPIpages(service=gmail.users().messages(),
                                function=u'list', items=u'messages', page_message=page_message,
                                userId=u'me', q=query, includeSpamTrash=True)
@@ -4451,7 +4543,7 @@ def doSpamMessages(users):
     sys.exit(4)
   for user in users:
     gmail = buildGAPIServiceObject(u'gmail', act_as=user)
-    page_message = u'Got %%%%total_items%%%% messages for user %s' % user
+    page_message = getPageMessage(u'messages', forWhom=user)
     listResult = callGAPIpages(service=gmail.users().messages(), function=u'list', items=u'messages', page_message=page_message,
                                userId=u'me', q=query, includeSpamTrash=False)
     move_count = len(listResult)
@@ -4472,7 +4564,7 @@ def doDeleteLabel(users):
   label = sys.argv[5]
   for user in users:
     gmail = buildGAPIServiceObject(u'gmail', act_as=user)
-    print u'Getting all labels for %s...' % user
+    printGettingMessage(u'Getting all labels for %s...\n' % user)
     labels = callGAPI(service=gmail.users().labels(), function=u'list', userId=user, fields=u'labels(name,id,type)')
     del_labels = []
     if label == u'--ALL_LABELS--':
@@ -4550,7 +4642,7 @@ def showGmailProfile(users):
       sys.exit(1)
   profiles = [{}]
   for user in users:
-    print 'Getting Gmail profile for %s' % user
+    printGettingMessage('Getting Gmail profile for %s\n' % user)
     gmail = buildGAPIServiceObject(u'gmail', act_as=user, soft_errors=True)
     if not gmail:
       continue
@@ -4829,7 +4921,7 @@ def getSignature(users):
       emailsettings.domain = GC_Values[GC_DOMAIN]
     signature = callGData(service=emailsettings, function=u'GetSignature', soft_errors=True, username=user)
     try:
-      sys.stderr.write(u"User %s signature:\n  " % (user+u'@'+emailsettings.domain))
+      sys.stdout.write(u"User %s signature:\n  " % (user+u'@'+emailsettings.domain))
       print u" %s" % signature[u'signature']
     except TypeError:
       pass
@@ -5372,6 +5464,26 @@ def doCreateUser():
       website[u'value'] = sys.argv[i]
       i += 1
       appendItemToBodyList(body, u'websites', website)
+    elif sys.argv[i].lower() == u'note':
+      i += 1
+      if sys.argv[i].lower() == u'clear':
+        i += 1
+        clearBodyList(body, u'notes')
+        continue
+      note = dict()
+      note[u'contentType'] = sys.argv[i]
+      if note[u'contentType'].lower() not in [u'text_plain', u'text_html']:
+        print u'Error: note type must be %s, got %s' % ('|'.join([u'text_plain', u'text_html']), sys.argv[i])
+        sys.exit(3)
+      i += 1
+      if sys.argv[i].lower() == u'file':
+        i += 1
+        filename = sys.argv[i]
+        note[u'value'] = readFile(filename)
+      else:
+        note[u'value'] = sys.argv[i].replace(u'\\n', u'\n')
+      i += 1
+      appendItemToBodyList(body, u'notes', note)
 #    else:
 #      showUsage()
 #      sys.exit(2)
@@ -5887,6 +5999,27 @@ def doUpdateUser(users):
       website[u'value'] = sys.argv[i]
       i += 1
       appendItemToBodyList(body, u'websites', website)
+    elif sys.argv[i].lower() == u'note':
+      i += 1
+      do_update_user = True
+      if sys.argv[i].lower() == u'clear':
+        i += 1
+        clearBodyList(body, u'notes')
+        continue
+      note = dict()
+      note[u'contentType'] = sys.argv[i]
+      if note[u'contentType'].lower() not in [u'text_plain', u'text_html']:
+        print u'Error: note type must be %s, got %s' % ('|'.join([u'text_plain', u'text_html']), sys.argv[i])
+        sys.exit(3)
+      i += 1
+      if sys.argv[i].lower() == u'file':
+        i += 1
+        filename = sys.argv[i]
+        note[u'value'] = readFile(filename)
+      else:
+        note[u'value'] = sys.argv[i].replace(u'\\n', u'\n')
+      i += 1
+      appendItemToBodyList(body, u'notes', note)
 #    else:
 #      showUsage()
 #      print u''
@@ -6479,6 +6612,30 @@ def doGetUserInfo(user_email=None):
         else:
           print u' %s: %s' % (key, externalId[key])
       print u''
+  if u'websites' in user:
+    print u'Websites:'
+    for website in user[u'websites']:
+      for key in website.keys():
+        if key == u'type' and website[key] == u'custom':
+          continue
+        elif key == u'customType':
+          print u' %s: %s' % (u'type', website[key])
+        else:
+          print u' %s: %s' % (key, website[key])
+      print u''
+  if u'notes' in user:
+    note = user[u'notes']
+    if len(note) > 0:
+      print u'Notes:'
+      if isinstance(note, dict):
+        if (u'contentType' in note) and (note[u'contentType'] == u'text_html'):
+          print u'  %s: %s' % (note[u'type'])
+          print u'  %s' % (dehtml(note[u'value']).replace(u'\n', u'\n  '))
+        else:
+          print convertUTF8(u'  %s' % (note[u'value'].replace(u'\n', u'\n  ')))
+      else:
+        print convertUTF8(u'  %s' % (note.replace(u'\n', u'\n  ')))
+      print u''
   if getSchemas:
     print u'Custom Schemas:'
     if u'customSchemas' in user:
@@ -6624,8 +6781,11 @@ def doGetCrosInfo():
 def doGetMobileInfo():
   deviceId = sys.argv[3]
   cd = buildGAPIObject(u'directory')
-  info = callGAPI(service=cd.mobiledevices(), function=u'get', customerId=GC_Values[GC_CUSTOMER_ID], resourceId=deviceId)
-  print_json(None, info)
+  try:
+    info = callGAPI(service=cd.mobiledevices(), function=u'get', throw_reasons=[u'internalError'], customerId=GC_Values[GC_CUSTOMER_ID], resourceId=deviceId)
+    print_json(None, info)
+  except:
+    sys.stderr.write(u'Error: Resource Not Found: {0} - notFound\n'.format(deviceId))
 
 def print_json(object_name, object_value, spacing=u''):
   if object_name in [u'kind', u'etag', u'etags']:
@@ -6875,7 +7035,7 @@ def doGetOrgInfo():
   if get_users:
     name = result[u'orgUnitPath']
     print u'Users: '
-    page_message = u'Got %%total_items%% users: %%first_item%% - %%last_item%%\n'
+    page_message = getPageMessage(u'users', showFirstLastItems=True)
     users = callGAPIpages(service=cd.users(), function=u'list', items=u'users', page_message=page_message,
                           message_attribute=u'primaryEmail', customer=GC_Values[GC_CUSTOMER_ID], query=u"orgUnitPath='%s'" % name,
                           maxResults=500, fields=u'users(primaryEmail,orgUnitPath),nextPageToken')
@@ -7021,7 +7181,7 @@ def doDelTokens(users):
 def doDeprovUser(users):
   cd = buildGAPIObject(u'directory')
   for user in users:
-    print u'Getting Application Specific Passwords for %s' % user
+    printGettingMessage(u'Getting Application Specific Passwords for %s\n' % user)
     asps = callGAPI(service=cd.asps(), function=u'list', userKey=user, fields=u'items/codeId')
     i = 1
     try:
@@ -7036,7 +7196,7 @@ def doDeprovUser(users):
       callGAPI(service=cd.verificationCodes(), function=u'invalidate', soft_errors=True, throw_reasons=[u'invalid'], userKey=user)
     except googleapiclient.errors.HttpError:
       print u'No 2SV Backup Codes'
-    print u'Getting tokens for %s...' % user
+    printGettingMessage(u'Getting tokens for %s...\n' % user)
     tokens = callGAPI(service=cd.tokens(), function=u'list', userKey=user, fields=u'items/clientId')
     i = 1
     try:
@@ -7581,8 +7741,8 @@ def doPrintUsers():
   if fields != None:
     user_fields = set(user_fields)
     fields = u'nextPageToken,users(%s)' % u','.join(user_fields)
-  sys.stderr.write(u"Getting all users in Google Apps account (may take some time on a large account)...\n")
-  page_message = u'Got %%total_items%% users: %%first_item%% - %%last_item%%\n'
+  printGettingMessage(u"Getting all users in Google Apps account (may take some time on a large account)...\n")
+  page_message = getPageMessage(u'users', showFirstLastItems=True)
   all_users = callGAPIpages(service=cd.users(), function=u'list', items=u'users', page_message=page_message,
                             message_attribute=u'primaryEmail', customer=customer, domain=printDomain, fields=fields,
                             showDeleted=deleted_only, maxResults=500, orderBy=orderBy, sortOrder=sortOrder, viewType=viewType,
@@ -7616,7 +7776,7 @@ def doPrintUsers():
     attributes[0].update(Groups=u'Groups')
     for user in attributes[1:]:
       user_email = user[u'primaryEmail']
-      sys.stderr.write(u"Getting Group Membership for %s (%s/%s)\r\n" % (user_email, user_count, total_users))
+      printGettingMessage(u"Getting Group Membership for %s (%s/%s)\r\n" % (user_email, user_count, total_users))
       groups = callGAPIpages(service=cd.groups(), function=u'list', items=u'groups', userKey=user_email)
       grouplist = u''
       for groupname in groups:
@@ -7716,8 +7876,8 @@ def doPrintGroups():
       showUsage()
       sys.exit(7)
   cd = buildGAPIObject(u'directory')
-  sys.stderr.write(u"Retrieving All Groups for Google Apps account (may take some time on a large account)...\n")
-  page_message = u'Got %%num_items%% groups: %%first_item%% - %%last_item%%\n'
+  printGettingMessage(u"Retrieving All Groups for Google Apps account (may take some time on a large account)...\n")
+  page_message = getPageMessage(u'groups', showTotal=False, showFirstLastItems=True)
   all_groups = callGAPIpages(service=cd.groups(), function=u'list', items=u'groups', page_message=page_message,
                              message_attribute=u'email', customer=customer, domain=usedomain, userKey=usemember, fields=fields)
   total_groups = len(all_groups)
@@ -7764,8 +7924,8 @@ def doPrintGroups():
       if managers:
         roles.append(u'managers')
       roles = u','.join(roles)
-      sys.stderr.write(u' Getting %s for %s (%s of %s)\n' % (roles, group_vals[u'email'], count, total_groups))
-      page_message = u'Got %%num_items%% members: %%first_item%% - %%last_item%%\n'
+      printGettingMessage(u' Getting %s for %s (%s of %s)\n' % (roles, group_vals[u'email'], count, total_groups))
+      page_message = getPageMessage(u'members', showTotal=False, showFirstLastItems=True)
       all_group_members = callGAPIpages(service=cd.members(), function=u'list', items=u'members', page_message=page_message,
                                         message_attribute=u'email', groupKey=group_vals[u'email'], roles=roles, fields=u'nextPageToken,members(email,role)')
       if members:
@@ -7796,7 +7956,7 @@ def doPrintGroups():
       if owners:
         group.update({u'Owners': listDelimiter.join(all_owners)})
     if settings:
-      sys.stderr.write(u" Retrieving Settings for group %s (%s of %s)...\r\n" % (group_vals[u'email'], count, total_groups))
+      printGettingMessage(u" Retrieving Settings for group %s (%s of %s)...\r\n" % (group_vals[u'email'], count, total_groups))
       gs = buildGAPIObject(u'groupssettings')
       settings = callGAPI(service=gs.groups(), function=u'get', retry_reasons=[u'serviceLimit'], groupUniqueId=group_vals[u'email'])
       for key in settings.keys():
@@ -7864,9 +8024,9 @@ def doPrintOrgs():
     org_attributes[0][u'Path'] = u'Path'
     titles.append(u'Path')
   cd = buildGAPIObject(u'directory')
-  sys.stderr.write(u"Retrieving All Organizational Units for your account (may take some time on large domain)...")
+  printGettingMessage(u"Retrieving All Organizational Units for your account (may take some time on large domain)...")
   orgs = callGAPI(service=cd.orgunits(), function=u'list', customerId=GC_Values[GC_CUSTOMER_ID], fields=fields, type=listType, orgUnitPath=orgUnitPath)
-  sys.stderr.write(u"done\n")
+  printGettingMessage(u"done\n")
   if not u'organizationUnits' in orgs:
     print u'0 org units in this Google Apps instance...'
     return
@@ -7919,8 +8079,8 @@ def doPrintAliases():
   alias_attributes[0].update(Target=u'Target')
   alias_attributes[0].update(TargetType=u'TargetType')
   titles = [u'Alias', u'Target', u'TargetType']
-  sys.stderr.write(u"Retrieving All User Aliases for %s organization (may take some time on large domain)...\n" % GC_Values[GC_DOMAIN])
-  page_message = u'Got %%num_items%% users %%first_item%% - %%last_item%%\n'
+  printGettingMessage(u"Retrieving All User Aliases for %s organization (may take some time on large domain)...\n" % GC_Values[GC_DOMAIN])
+  page_message = getPageMessage(u'users', showTotal=False, showFirstLastItems=True)
   all_users = callGAPIpages(service=cd.users(), function=u'list', items=u'users', page_message=page_message,
                             message_attribute=u'primaryEmail', customer=GC_Values[GC_CUSTOMER_ID], fields=u'users(primaryEmail,aliases),nextPageToken', maxResults=500)
   for user in all_users:
@@ -7929,8 +8089,8 @@ def doPrintAliases():
         alias_attributes.append({u'Alias': alias, u'Target': user[u'primaryEmail'], u'TargetType': u'User'})
     except KeyError:
       continue
-  sys.stderr.write(u"Retrieving All User Aliases for %s organization (may take some time on large domain)...\n" % GC_Values[GC_DOMAIN])
-  page_message = u'Got %%num_items%% groups %%first_item%% - %%last_item%%\n'
+  printGettingMessage(u"Retrieving All User Aliases for %s organization (may take some time on large domain)...\n" % GC_Values[GC_DOMAIN])
+  page_message = getPageMessage(u'groups', showTotal=False, showFirstLastItems=True)
   all_groups = callGAPIpages(service=cd.groups(), function=u'list', items=u'groups', page_message=page_message,
                              message_attribute=u'email', customer=GC_Values[GC_CUSTOMER_ID], fields=u'groups(email,aliases),nextPageToken')
   for group in all_groups:
@@ -7962,7 +8122,7 @@ def doPrintGroupMembers():
   i = 1
   for group in all_groups:
     group_email = group[u'email']
-    sys.stderr.write(u'Getting members for %s (%s/%s)\n' % (group_email, i, total_groups))
+    printGettingMessage(u'Getting members for %s (%s/%s)\n' % (group_email, i, total_groups))
     group_members = callGAPIpages(service=cd.members(), function=u'list', items=u'members', message_attribute=u'email', groupKey=group_email)
     for member in group_members:
       member_attr = {u'group': group_email}
@@ -8010,8 +8170,8 @@ def doPrintMobileDevices():
     else:
       print 'Error: %s is not a valid argument to "gam print mobile"' % sys.argv[i]
       sys.exit(3)
-  sys.stderr.write(u'Retrieving All Mobile Devices for organization (may take some time for large accounts)...\n')
-  page_message = u'Got %%num_items%% mobile devices...\n'
+  printGettingMessage(u'Retrieving All Mobile Devices for organization (may take some time for large accounts)...\n')
+  page_message = getPageMessage(u'mobile devices')
   all_mobile = callGAPIpages(service=cd.mobiledevices(), function=u'list', items=u'mobiledevices', page_message=page_message,
                              customerId=GC_Values[GC_CUSTOMER_ID], query=query, orderBy=orderBy, sortOrder=sortOrder)
   for mobile in all_mobile:
@@ -8091,8 +8251,8 @@ def doPrintCrosDevices():
       sys.exit(3)
   if selectAttrib:
     projection = u'FULL'
-  sys.stderr.write(u'Retrieving All Chrome OS Devices for organization (may take some time for large accounts)...\n')
-  page_message = u'Got %%num_items%% Chrome devices...\n'
+  printGettingMessage(u'Retrieving All Chrome OS Devices for organization (may take some time for large accounts)...\n')
+  page_message = getPageMessage(u'Chrome devices')
   all_cros = callGAPIpages(service=cd.chromeosdevices(), function=u'list', items=u'chromeosdevices', page_message=page_message,
                            query=query, customerId=GC_Values[GC_CUSTOMER_ID], projection=projection, orderBy=orderBy, sortOrder=sortOrder)
   if all_cros:
@@ -8157,7 +8317,7 @@ def doPrintLicenses(return_list=False, skus=None):
   if skus:
     for sku in skus:
       product, sku = getProductAndSKU(sku)
-      page_message = u'Got %%%%total_items%%%% Licenses for %s...\n' % sku
+      page_message = getPageMessage(u'Licenses', forWhom=sku)
       try:
         licenses += callGAPIpages(service=lic.licenseAssignments(), function=u'listForProductAndSku', throw_reasons=[u'invalid', u'forbidden'],
                                   page_message=page_message, customerId=GC_Values[GC_DOMAIN], productId=product, skuId=sku, fields=u'items(productId,skuId,userId),nextPageToken')
@@ -8165,7 +8325,7 @@ def doPrintLicenses(return_list=False, skus=None):
         licenses += []
   else:
     for productId in products:
-      page_message = u'Got %%%%total_items%%%% Licenses for %s...\n' % productId
+      page_message = getPageMessage(u'Licenses', forWhom=productId)
       try:
         licenses += callGAPIpages(service=lic.licenseAssignments(), function=u'listForProduct', throw_reasons=[u'invalid', u'forbidden'],
                                   page_message=page_message, customerId=GC_Values[GC_DOMAIN], productId=productId, fields=u'items(productId,skuId,userId),nextPageToken')
@@ -8204,7 +8364,7 @@ def doPrintTokens():
   for title in titles:
     token_attributes[0][title] = title
   for user in all_users:
-    sys.stderr.write(u' getting tokens for %s\n' % user)
+    printGettingMessage(u' getting tokens for %s\n' % user)
     user_tokens = callGAPI(service=cd.tokens(), function='list', userKey=user)
     try:
       for user_token in user_tokens[u'items']:
@@ -8259,7 +8419,7 @@ def doPrintResources():
       showUsage()
       sys.exit(2)
   resObj = getResCalObject()
-  sys.stderr.write(u"Retrieving All Resource Calendars for your account (may take some time on a large domain)")
+  printGettingMessage(u"Retrieving All Resource Calendars for your account (may take some time on a large domain)")
   resources = callGData(service=resObj, function=u'RetrieveAllResourceCalendars')
   for resource in resources:
     resUnit = {}
@@ -8648,10 +8808,9 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
       member_type_message = u'%ss' % member_type.lower()
     if group.find(u'@') == -1:
       group = u'%s@%s' % (group, GC_Values[GC_DOMAIN])
-    page_message = None
     if not silent:
-      sys.stderr.write(u"Getting %s of %s (may take some time for large groups)..." % (member_type_message, group))
-      page_message = u'Got %%%%total_items%%%% %s...' % member_type_message
+      printGettingMessage(u"Getting %s of %s (may take some time for large groups)..." % (member_type_message, group))
+    page_message = getPageMessage(member_type_message, noNL=True)
     members = callGAPIpages(service=cd.members(), function=u'list', items=u'members', page_message=page_message, groupKey=group, roles=member_type, fields=u'nextPageToken,members(email,id)')
     users = []
     for member in members:
@@ -8665,10 +8824,9 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
     if ou[0] != u'/':
       ou = u'/%s' % ou
     users = []
-    page_message = None
     if not silent:
-      sys.stderr.write(u"Getting all users in the Google Apps organization (may take some time on a large domain)...\n")
-      page_message = u'Got %%total_items%% users...'
+      printGettingMessage(u"Getting all users in the Google Apps organization (may take some time on a large domain)...\n")
+    page_message = getPageMessage(u'users', noNL=True)
     members = callGAPIpages(service=cd.users(), function=u'list', items=u'users', page_message=page_message,
                             customer=GC_Values[GC_CUSTOMER_ID], fields=u'nextPageToken,users(primaryEmail,id,orgUnitPath)',
                             query=u"orgUnitPath='%s'" % ou, maxResults=500)
@@ -8680,17 +8838,16 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
       else:
         users.append(member[u'primaryEmail'])
     if not silent:
-      sys.stderr.write(u"%s users are directly in the OU.\n" % len(users))
+      printGettingMessage(u"%s users are directly in the OU.\n" % len(users))
   elif entity_type in [u'ou_and_children', u'ou_and_child']:
     got_uids = True
     ou = entity
     if ou[0] != u'/':
       ou = u'/%s' % ou
     users = []
-    page_message = None
     if not silent:
-      sys.stderr.write(u"Getting all users in the Google Apps organization (may take some time on a large domain)...\n")
-      page_message = u'Got %%total_items%% users..'
+      printGettingMessage(u"Getting all users in the Google Apps organization (may take some time on a large domain)...\n")
+    page_message = getPageMessage(u'users', noNL=True)
     members = callGAPIpages(service=cd.users(), function=u'list', items=u'users', page_message=page_message,
                             customer=GC_Values[GC_CUSTOMER_ID], fields=u'nextPageToken,users(primaryEmail,id)', query=u"orgUnitPath='%s'" % ou, maxResults=500)
     for member in members:
@@ -8699,13 +8856,13 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
       else:
         users.append(member[u'primaryEmail'])
     if not silent:
-      sys.stderr.write(u"done.\r\n")
+      printGettingMessage(u"done.\r\n")
   elif entity_type in [u'query',]:
     got_uids = True
     users = []
     if not silent:
-      sys.stderr.write(u"Getting all users that match query %s (may take some time on a large domain)...\n" % entity)
-    page_message = u'Got %%total_items%% users...'
+      printGettingMessage(u"Getting all users that match query %s (may take some time on a large domain)...\n" % entity)
+    page_message = getPageMessage(u'users', noNL=True)
     members = callGAPIpages(service=cd.users(), function=u'list', items=u'users', page_message=page_message,
                             customer=GC_Values[GC_CUSTOMER_ID], fields=u'nextPageToken,users(primaryEmail,id)', query=entity, maxResults=500)
     for member in members:
@@ -8714,7 +8871,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
       else:
         users.append(member[u'primaryEmail'])
     if not silent:
-      sys.stderr.write(u"done.\r\n")
+      printGettingMessage(u"done.\r\n")
   elif entity_type in [u'license', u'licenses', u'licence', u'licences']:
     users = []
     licenses = doPrintLicenses(return_list=True, skus=entity.split(u','))
@@ -8738,12 +8895,12 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
     if not entity.isdigit() and entity[:2] != u'd:':
       entity = u'd:%s' % entity
     if entity_type in [u'courseparticipants', u'teachers']:
-      page_message = u'Got %%total_items%% teachers...'
+      page_message = getPageMessage(u'teachers', noNL=True)
       teachers = callGAPIpages(service=croom.courses().teachers(), function=u'list', items=u'teachers', page_message=page_message, courseId=entity)
       for teacher in teachers:
         users.append(teacher[u'profile'][u'emailAddress'])
     if entity_type in [u'courseparticipants', u'students']:
-      page_message = u'Got %%total_items%% students...'
+      page_message = getPageMessage(u'students', noNL=True)
       students = callGAPIpages(service=croom.courses().students(), function=u'list',
                                page_message=page_message, items=u'students', courseId=entity)
       for student in students:
@@ -8753,8 +8910,8 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
     users = []
     if entity == u'users':
       if not silent:
-        sys.stderr.write(u"Getting all users in Google Apps account (may take some time on a large account)...\n")
-      page_message = u'Got %%total_items%% users...'
+        printGettingMessage(u"Getting all users in Google Apps account (may take some time on a large account)...\n")
+      page_message = getPageMessage(u'users', noNL=True)
       all_users = callGAPIpages(service=cd.users(), function=u'list', items=u'users', page_message=page_message,
                                 customer=GC_Values[GC_CUSTOMER_ID], fields=u'nextPageToken,users(primaryEmail,suspended,id)', maxResults=500)
       for member in all_users:
@@ -8764,16 +8921,16 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
           else:
             users.append(member[u'primaryEmail'])
       if not silent:
-        sys.stderr.write(u"done getting %s users.\r\n" % len(users))
+        printGettingMessage(u"done getting %s users.\r\n" % len(users))
     elif entity == u'cros':
       if not silent:
-        sys.stderr.write(u"Getting all CrOS devices in Google Apps account (may take some time on a large account)...\n")
+        printGettingMessage(u"Getting all CrOS devices in Google Apps account (may take some time on a large account)...\n")
       all_cros = callGAPIpages(service=cd.chromeosdevices(), function=u'list', items=u'chromeosdevices',
                                customerId=GC_Values[GC_CUSTOMER_ID], fields=u'nextPageToken,chromeosdevices(deviceId)')
       for member in all_cros:
         users.append(member[u'deviceId'])
       if not silent:
-        sys.stderr.write(u"done getting %s CrOS devices.\r\n" % len(users))
+        printGettingMessage(u"done getting %s CrOS devices.\r\n" % len(users))
   else:
     showUsage()
     sys.exit(2)
@@ -9056,9 +9213,11 @@ def run_batch(items, total_items):
 def ProcessGAMCommand(args, processGamCfg=True):
   if args != sys.argv:
     sys.argv = args[:]
+  savedStdout = sys.stdout
+  savedStderr = sys.stderr
   try:
     if processGamCfg and (not SetGlobalVariables()):
-      return 0
+      sys.exit(0)
     if sys.argv[1].lower() == u'batch':
       import shlex
       bat_filename = sys.argv[2]
@@ -9085,7 +9244,7 @@ def ProcessGAMCommand(args, processGamCfg=True):
             sys.stderr.write(u'{0}"{1}" is not a valid gam command\n'.format(ERROR_PREFIX, line.strip()))
       f.close()
       run_batch(items, cmdCount)
-      return 0
+      sys.exit(0)
     elif sys.argv[1].lower() == 'csv':
       csv_filename = sys.argv[2]
       if csv_filename == u'-':
@@ -9097,7 +9256,7 @@ def ProcessGAMCommand(args, processGamCfg=True):
       csvFile = csv.DictReader(f)
       if (len(sys.argv) < 4) or (sys.argv[3].lower() != GAM_CMD):
         sys.stderr.write('{0}"gam csv {1}" should be followed by a full GAM command...\n'.format(ERROR_PREFIX, csv_filename))
-        return 3
+        sys.exit(3)
       optionalSubs = {}
       GAM_argv = []
       GAM_argvI = 0
@@ -9111,7 +9270,7 @@ def ProcessGAMCommand(args, processGamCfg=True):
             GAM_argv.append(fieldName)
           else:
             sys.stderr.write('{0}header "{1}" not found in CSV headers of "{2}", giving up.\n'.format(ERROR_PREFIX, fieldName, ','.join(csvFile.fieldnames)))
-            return 3
+            sys.exit(3)
         GAM_argvI += 1
       items = []
       for row in csvFile:
@@ -9124,10 +9283,10 @@ def ProcessGAMCommand(args, processGamCfg=True):
         items.append(argv)
       f.close()
       run_batch(items, len(items))
-      return 0
+      sys.exit(0)
     elif sys.argv[1].lower() == u'version':
       doGAMVersion()
-      return 0
+      sys.exit(0)
     elif sys.argv[1].lower() == u'create':
       if sys.argv[2].lower() == u'user':
         doCreateUser()
@@ -9147,8 +9306,8 @@ def ProcessGAMCommand(args, processGamCfg=True):
         doCreateCourse()
       else:
         print u'Error: invalid argument to "gam create..."'
-        return 2
-      return 0
+        sys.exit(2)
+      sys.exit(0)
     elif sys.argv[1].lower() == u'update':
       if sys.argv[2].lower() == u'user':
         doUpdateUser([sys.argv[3],])
@@ -9179,8 +9338,8 @@ def ProcessGAMCommand(args, processGamCfg=True):
       else:
         showUsage()
         print u'Error: invalid argument to "gam update..."'
-        return 2
-      return 0
+        sys.exit(2)
+      sys.exit(0)
     elif sys.argv[1].lower() == u'info':
       if sys.argv[2].lower() == u'user':
         doGetUserInfo()
@@ -9210,8 +9369,8 @@ def ProcessGAMCommand(args, processGamCfg=True):
         doGetPrinterInfo()
       else:
         print u'Error: invalid argument to "gam info..."'
-        return 2
-      return 0
+        sys.exit(2)
+      sys.exit(0)
     elif sys.argv[1].lower() == u'delete':
       if sys.argv[2].lower() == u'user':
         doDeleteUser()
@@ -9235,15 +9394,15 @@ def ProcessGAMCommand(args, processGamCfg=True):
         doDelPrinter()
       else:
         print u'Error: invalid argument to "gam delete"'
-        return 2
-      return 0
+        sys.exit(2)
+      sys.exit(0)
     elif sys.argv[1].lower() == u'undelete':
       if sys.argv[2].lower() == u'user':
         doUndeleteUser()
       else:
         print u'Error: invalid argument to "gam undelete..."'
-        return 2
-      return 0
+        sys.exit(2)
+      sys.exit(0)
     elif sys.argv[1].lower() == u'audit':
       if sys.argv[2].lower() == u'monitor':
         if sys.argv[3].lower() == u'create':
@@ -9254,7 +9413,7 @@ def ProcessGAMCommand(args, processGamCfg=True):
           doDeleteMonitor()
         else:
           print u'Error: invalid argument to "gam audit monitor..."'
-          return 2
+          sys.exit(2)
       elif sys.argv[2].lower() == u'activity':
         if sys.argv[3].lower() == u'request':
           doRequestActivity()
@@ -9266,7 +9425,7 @@ def ProcessGAMCommand(args, processGamCfg=True):
           doDeleteActivityRequest()
         else:
           print u'Error: invalid argument to "gam audit activity..."'
-          return 2
+          sys.exit(2)
       elif sys.argv[2].lower() == u'export':
         if sys.argv[3].lower() == u'status':
           doStatusExportRequests()
@@ -9280,13 +9439,13 @@ def ProcessGAMCommand(args, processGamCfg=True):
           doDeleteExport()
         else:
           print u'Error: invalid argument to "gam audit export..."'
-          return 2
+          sys.exit(2)
       elif sys.argv[2].lower() == u'uploadkey':
         doUploadAuditKey()
       else:
         print u'Error: invalid argument to "gam audit..."'
-        return 2
-      return 0
+        sys.exit(2)
+      sys.exit(0)
     elif sys.argv[1].lower() == u'print':
       if sys.argv[2].lower() == u'users':
         doPrintUsers()
@@ -9320,8 +9479,8 @@ def ProcessGAMCommand(args, processGamCfg=True):
         doPrintPrintJobs()
       else:
         print u'Error: invalid argument to "gam print..."'
-        return 2
-      return 0
+        sys.exit(2)
+      sys.exit(0)
     elif sys.argv[1].lower() in [u'oauth', u'oauth2']:
       if sys.argv[2].lower() in [u'request', u'create']:
         doRequestOAuth()
@@ -9331,8 +9490,8 @@ def ProcessGAMCommand(args, processGamCfg=True):
         doDeleteOAuth()
       else:
         print u'Error: invalid argument to "gam oauth..."'
-        return 2
-      return 0
+        sys.exit(2)
+      sys.exit(0)
     elif sys.argv[1].lower() == u'calendar':
       if sys.argv[3].lower() == u'showacl':
         doCalendarShowACL()
@@ -9348,8 +9507,8 @@ def ProcessGAMCommand(args, processGamCfg=True):
         doCalendarAddEvent()
       else:
         print u'Error: invalid argument to "gam calendar..."'
-        return 2
-      return 0
+        sys.exit(2)
+      sys.exit(0)
     elif sys.argv[1].lower() == u'printer':
       if sys.argv[3].lower() == u'showacl':
         doPrinterShowACL()
@@ -9361,8 +9520,8 @@ def ProcessGAMCommand(args, processGamCfg=True):
         doPrinterRegister()
       else:
         print u'Error: invalid argument to "gam printer..."'
-        return 2
-      return 0
+        sys.exit(2)
+      sys.exit(0)
     elif sys.argv[1].lower() == u'printjob':
       if sys.argv[3].lower() == u'delete':
         doDeletePrintJob()
@@ -9376,39 +9535,39 @@ def ProcessGAMCommand(args, processGamCfg=True):
         doPrintJobResubmit()
       else:
         print u'ERROR: invalid argument to "gam printjob..."'
-        return 2
-      return 0
+        sys.exit(2)
+      sys.exit(0)
     elif sys.argv[1].lower() == u'report':
       showReport()
-      return 0
+      sys.exit(0)
     elif sys.argv[1].lower() == u'whatis':
       doWhatIs()
-      return 0
+      sys.exit(0)
     elif sys.argv[1].lower() in [u'course', u'class']:
       if sys.argv[3].lower() in [u'add', u'create']:
         doAddCourseParticipant()
-        return 0
+        sys.exit(0)
       elif sys.argv[3].lower() in [u'del', u'delete', u'remove']:
         doDelCourseParticipant()
-        return 0
+        sys.exit(0)
       elif sys.argv[3].lower() == u'sync':
         doSyncCourseParticipants()
-        return 0
+        sys.exit(0)
       else:
         print u'Error: invalid argument to "gam course..."'
-        return 2
+        sys.exit(2)
     users = getUsersToModify()
     command = sys.argv[3].lower()
     if command == u'print':
       for user in users:
         print user
-        return 0
+        sys.exit(0)
     if (GC_Values[GC_AUTO_BATCH_MIN] > 0) and (len(users) > GC_Values[GC_AUTO_BATCH_MIN]):
       items = []
       for user in users:
         items.append([u'user', user] + sys.argv[3:])
       run_batch(items, len(items))
-      return 0
+      sys.exit(0)
     if command == u'transfer':
       transferWhat = sys.argv[4].lower()
       if transferWhat == u'drive':
@@ -9461,19 +9620,19 @@ def ProcessGAMCommand(args, processGamCfg=True):
         doDriveActivity(users)
       else:
         print u'Error: invalid argument to "gam <users> show..."'
-        return 2
+        sys.exit(2)
     elif command == u'trash':
       if sys.argv[4].lower() in [u'message', u'messages']:
         doDeleteMessages(users, u'trash')
       else:
         print u'ERROR: invalid argument to "gam <users> trash..."'
-        return 2
+        sys.exit(2)
     elif command == u'spam':
       if sys.argv[4].lower() in [u'message', u'messages']:
         doSpamMessages(users)
       else:
         print u'ERROR: invalid argument to "gam <users> spam..."'
-        return 2
+        sys.exit(2)
     elif command == u'delete' or command == u'del':
       delWhat = sys.argv[4].lower()
       if delWhat == u'delegate':
@@ -9506,7 +9665,7 @@ def ProcessGAMCommand(args, processGamCfg=True):
         delDriveFileACL(users)
       else:
         print u'Error: invalid argument to "gam <users> delete..."'
-        return 2
+        sys.exit(2)
     elif command == u'add':
       addWhat = sys.argv[4].lower()
       if addWhat == u'calendar':
@@ -9521,7 +9680,7 @@ def ProcessGAMCommand(args, processGamCfg=True):
         doLabel(users)
       else:
         print u'Error: invalid argument to "gam <users> add..."'
-        return 2
+        sys.exit(2)
     elif command == u'update':
       if sys.argv[4].lower() == u'calendar':
         updateCalendar(users)
@@ -9545,7 +9704,7 @@ def ProcessGAMCommand(args, processGamCfg=True):
         updateLabels(users)
       else:
         print u'Error: invalid argument to "gam <users> update..."'
-        return 2
+        sys.exit(2)
     elif command in [u'deprov', u'deprovision']:
       doDeprovUser(users)
     elif command == u'get':
@@ -9589,27 +9748,35 @@ def ProcessGAMCommand(args, processGamCfg=True):
       doDelegates(users)
     else:
       print u'Error: %s is not a valid gam command' % command
-      return 2
+      sys.exit(2)
+    sys.exit(0)
   except IndexError:
     showUsage()
-    return 2
+    sysExitRC = 2
   except KeyboardInterrupt:
-    return 50
+    sysExitRC = 50
   except socket.error, e:
     sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, e))
-    return 3
+    sysExitRC = 3
   except MemoryError:
     sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, u'GAM has run out of memory. If this is a large Google Apps instance, you should use a 64-bit version of GAM on Windows or a 64-bit version of Python on other systems.'))
-    return 99
+    sysExitRC = 99
   except IOError as e:
     sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, e))
-    return 3
+    sysExitRC = 3
   except Exception as e:
     import traceback
-    traceback.print_exc(file=sys.stdout)
-    return 1
-  except SystemExit as rc:
-    return rc
+    traceback.print_exc(file=savedStderr)
+    sysExitRC = 1
+  except SystemExit as sysExitRC:
+    pass
+  if sys.stdout != savedStdout:
+    sys.stdout.close()
+    sys.stdout = savedStdout
+  if sys.stderr != savedStderr:
+    sys.stderr.close()
+    sys.stderr = savedStderr
+  return sysExitRC
 #
 # Run from command line
 #
