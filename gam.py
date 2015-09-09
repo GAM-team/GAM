@@ -72,11 +72,7 @@ UNKNOWN_DOMAIN = u'Unknown'
 # Shared by batch_worker and run_batch
 q = None
 #
-<<<<<<< HEAD
 # Location of gam.cfg, if not set, gamPath will be used
-=======
-# Location of gam.cfg, if not set, appdirs user_config_dir will be used
->>>>>>> origin/master
 EV_GAM_CFG_HOME = u'GAM_CFG_HOME'
 # Name of config file
 GAM_CFG = u'gam.cfg'
@@ -7729,6 +7725,12 @@ def doPrintUsers():
       i += 1
     elif sys.argv[i].lower() in [u'phone', u'phones']:
       user_fields.append(u'phones')
+      i += 1
+    elif sys.argv[i].lower() in [u'website', u'websites']:
+      user_fields.append(u'websites')
+      i += 1
+    elif sys.argv[i].lower() in [u'note', u'notes']:
+      user_fields.append(u'notes')
       i += 1
     elif sys.argv[i].lower() == u'groups':
       getGroupFeed = True
