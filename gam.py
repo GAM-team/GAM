@@ -72,7 +72,11 @@ UNKNOWN_DOMAIN = u'Unknown'
 # Shared by batch_worker and run_batch
 q = None
 #
+<<<<<<< HEAD
 # Location of gam.cfg, if not set, gamPath will be used
+=======
+# Location of gam.cfg, if not set, appdirs user_config_dir will be used
+>>>>>>> origin/master
 EV_GAM_CFG_HOME = u'GAM_CFG_HOME'
 # Name of config file
 GAM_CFG = u'gam.cfg'
