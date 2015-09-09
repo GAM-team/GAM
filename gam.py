@@ -5467,6 +5467,26 @@ def doCreateUser():
       website[u'value'] = sys.argv[i]
       i += 1
       appendItemToBodyList(body, u'websites', website)
+    elif sys.argv[i].lower() == u'note':
+      i += 1
+      if sys.argv[i].lower() == u'clear':
+        i += 1
+        clearBodyList(body, u'notes')
+        continue
+      note = dict()
+      note[u'contentType'] = sys.argv[i]
+      if note[u'contentType'].lower() not in [u'text_plain', u'text_html']:
+        print u'Error: note type must be %s, got %s' % ('|'.join([u'text_plain', u'text_html']), sys.argv[i])
+        sys.exit(3)
+      i += 1
+      if sys.argv[i].lower() == u'file':
+        i += 1
+        filename = sys.argv[i]
+        note[u'value'] = readFile(filename)
+      else:
+        note[u'value'] = sys.argv[i].replace(u'\\n', u'\n')
+      i += 1
+      appendItemToBodyList(body, u'notes', note)
 #    else:
 #      showUsage()
 #      sys.exit(2)
@@ -5982,6 +6002,27 @@ def doUpdateUser(users):
       website[u'value'] = sys.argv[i]
       i += 1
       appendItemToBodyList(body, u'websites', website)
+    elif sys.argv[i].lower() == u'note':
+      i += 1
+      do_update_user = True
+      if sys.argv[i].lower() == u'clear':
+        i += 1
+        clearBodyList(body, u'notes')
+        continue
+      note = dict()
+      note[u'contentType'] = sys.argv[i]
+      if note[u'contentType'].lower() not in [u'text_plain', u'text_html']:
+        print u'Error: note type must be %s, got %s' % ('|'.join([u'text_plain', u'text_html']), sys.argv[i])
+        sys.exit(3)
+      i += 1
+      if sys.argv[i].lower() == u'file':
+        i += 1
+        filename = sys.argv[i]
+        note[u'value'] = readFile(filename)
+      else:
+        note[u'value'] = sys.argv[i].replace(u'\\n', u'\n')
+      i += 1
+      appendItemToBodyList(body, u'notes', note)
 #    else:
 #      showUsage()
 #      print u''
@@ -6573,6 +6614,30 @@ def doGetUserInfo(user_email=None):
           print u' %s: %s' % (u'type', externalId[key])
         else:
           print u' %s: %s' % (key, externalId[key])
+      print u''
+  if u'websites' in user:
+    print u'Websites:'
+    for website in user[u'websites']:
+      for key in website.keys():
+        if key == u'type' and website[key] == u'custom':
+          continue
+        elif key == u'customType':
+          print u' %s: %s' % (u'type', website[key])
+        else:
+          print u' %s: %s' % (key, website[key])
+      print u''
+  if u'notes' in user:
+    note = user[u'notes']
+    if len(note) > 0:
+      print u'Notes:'
+      if isinstance(note, dict):
+        if (u'contentType' in note) and (note[u'contentType'] == u'text_html'):
+          print u'  %s: %s' % (note[u'type'])
+          print u'  %s' % (dehtml(note[u'value']).replace(u'\n', u'\n  '))
+        else:
+          print convertUTF8(u'  %s' % (note[u'value'].replace(u'\n', u'\n  ')))
+      else:
+        print convertUTF8(u'  %s' % (note.replace(u'\n', u'\n  ')))
       print u''
   if getSchemas:
     print u'Custom Schemas:'
