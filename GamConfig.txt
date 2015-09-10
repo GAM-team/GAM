@@ -51,11 +51,7 @@ auto_batch_min
 	Automatically generate gam batch command if number of users specified in gam users xxx command exceeds this number
 	Default: 0, don't automatically generate gam batch commands
 cache_dir
-<<<<<<< HEAD
 	GAM cache directory. If no_cache is specified, this variable will be ignored.
-=======
-	GAM cache directory. If no_cache is specified, this variable will be set to None
->>>>>>> origin/master
 client_secrets_json
 	Path to client_secrets.json
 config_dir
