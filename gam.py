@@ -6568,6 +6568,8 @@ def doGetUserInfo(user_email=None):
     print u'Organizations:'
     for org in user[u'organizations']:
       for key in org.keys():
+        if key == u'customType' and not org[key]:
+          continue
         print u' %s: %s' % (key, org[key])
       print u''
   if u'phones' in user:
@@ -6637,8 +6639,8 @@ def doGetUserInfo(user_email=None):
         print convertUTF8(u'  %s' % (note.replace(u'\n', u'\n  ')))
       print u''
   if getSchemas:
-    print u'Custom Schemas:'
     if u'customSchemas' in user:
+      print u'Custom Schemas:'
       for schema in user[u'customSchemas']:
         print u' Schema: %s' % schema
         for field in user[u'customSchemas'][schema]:
