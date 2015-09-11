@@ -24,7 +24,7 @@ For more information, see http://git.io/gam
 """
 
 __author__ = u'Jay Lee <jay0lee@gmail.com>'
-__version__ = u'3.51'
+__version__ = u'3.60'
 __license__ = u'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 import sys, os, time, datetime, random, socket, csv, platform, re, calendar, base64, string
@@ -6584,7 +6584,11 @@ def doGetUserInfo(user_email=None):
       for an_email in user[u'emails']:
         if an_email[u'address'].lower() == user[u'primaryEmail'].lower():
           continue
-        for key in an_email.keys():
+        if (u'type' not in an_email) and (u'customType' not in an_email):
+          if not getAliases:
+            continue
+          print u' type: alias'
+        for key in an_email:
           if key == u'type' and an_email[key] == u'custom':
             continue
           if key == u'customType':
