@@ -27,8 +27,7 @@ __author__ = u'Jay Lee <jay0lee@gmail.com>'
 __version__ = u'3.60'
 __license__ = u'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
-import sys, os, time, datetime, random, socket, csv, platform, re, calendar, base64, string
-import subprocess
+import sys, os, time, datetime, random, socket, csv, platform, re, calendar, base64, string, codecs, StringIO, subprocess
 
 import json
 import httplib2
@@ -96,6 +95,8 @@ GC_EXTRA_ARGS = u'extra_args'
 GC_AUTO_BATCH_MIN = u'auto_batch_min'
 # GAM cache directory. If no_cache is specified, this variable will be set to None
 GC_CACHE_DIR = u'cache_dir'
+# Character set of batch, csv, data files
+GC_CHARSET = u'charset'
 # Path to client_secrets.json
 GC_CLIENT_SECRETS_JSON = u'client_secrets_json'
 # GAM config directory containing client_secrets.json, oauth2.txt, oauth2service.json, extra_args.txt
@@ -137,6 +138,7 @@ GC_SHOW_LICENSES = u'show_licenses'
 GC_DEFAULTS = {
   GC_AUTO_BATCH_MIN: 0,
   GC_CACHE_DIR: u'',
+  GC_CHARSET: u'ascii',
   GC_CLIENT_SECRETS_JSON: FN_CLIENT_SECRETS_JSON,
   GC_CONFIG_DIR: u'',
   GC_CUSTOMER_ID: u'',
@@ -171,6 +173,7 @@ GC_VAR_LIMITS_KEY = u'limits'
 GC_VAR_INFO = {
   GC_AUTO_BATCH_MIN: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_LIMITS_KEY: (0, None)},
   GC_CACHE_DIR: {GC_VAR_TYPE_KEY: GC_TYPE_DIRECTORY},
+  GC_CHARSET: {GC_VAR_TYPE_KEY: GC_TYPE_STRING},
   GC_CLIENT_SECRETS_JSON: {GC_VAR_TYPE_KEY: GC_TYPE_FILE},
   GC_CONFIG_DIR: {GC_VAR_TYPE_KEY: GC_TYPE_DIRECTORY},
   GC_CUSTOMER_ID: {GC_VAR_TYPE_KEY: GC_TYPE_STRING},
@@ -194,6 +197,7 @@ GC_VAR_INFO = {
 GC_VAR_ALIASES = {
   u'autobatchmin':  u'auto_batch_min',
   u'cachedir':  u'cache_dir',
+  u'charset':  u'charset',
   u'clientsecretsjson':  u'client_secrets_json',
   u'configdir':  u'config_dir',
   u'customerid':  u'customer_id',
@@ -257,7 +261,10 @@ def convertUTF8(data):
   if isinstance(data, str):
     return data
   elif isinstance(data, unicode):
-    return data.encode('utf-8')
+    if os.name != u'nt':
+      return data.encode('utf-8')
+    else:
+      return data
   elif isinstance(data, collections.Mapping):
     return dict(map(convertUTF8, data.iteritems()))
   elif isinstance(data, collections.Iterable):
@@ -358,7 +365,6 @@ def openFile(filename, mode='rb'):
     if filename != u'-':
       f = open(filename, mode)
     else:
-      import StringIO
       f = StringIO.StringIO(unicode(sys.stdin.read()))
     return f
   except IOError as e:
@@ -393,6 +399,55 @@ def writeFile(filename, data, mode='wb', continueOnError=False):
     if continueOnError:
       return False
     sys.exit(6)
+#
+class UTF8Recoder(object):
+  """
+  Iterator that reads an encoded stream and reencodes the input to UTF-8
+  """
+  def __init__(self, f, encoding):
+    self.reader = codecs.getreader(encoding)(f)
+
+  def __iter__(self):
+    return self
+
+  def next(self):
+    return self.reader.next().encode("utf-8")
+
+class UnicodeDictReader(object):
+  """
+  A CSV reader which will iterate over lines in the CSV file "f",
+  which is encoded in the given encoding.
+  """
+
+  def __init__(self, f, dialect=csv.excel, encoding="utf-8", **kwds):
+    f = UTF8Recoder(f, encoding)
+    self.reader = csv.reader(f, dialect=dialect, **kwds)
+    self.fieldnames = self.reader.next()
+
+  def next(self):
+    row = self.reader.next()
+    vals = [unicode(s, "utf-8") for s in row]
+    return dict((self.fieldnames[x], vals[x]) for x in range(len(self.fieldnames)))
+
+  def __iter__(self):
+    return self
+#
+class UnicodeReader(object):
+  """
+  A file reader which will iterate over lines in the file "f",
+  which is encoded in the given encoding.
+  """
+
+  def __init__(self, f, dialect=csv.excel, encoding="utf-8", **kwds):
+    f = UTF8Recoder(f, encoding)
+    self.reader = csv.reader(f, dialect=dialect, **kwds)
+
+  def next(self):
+    row = self.reader.next()
+    return [unicode(s, "utf-8") for s in row]
+
+  def __iter__(self):
+    return self
 #
 # Set global variables from config file
 # Check for GAM updates based on status of no_update_check in config file
@@ -2280,6 +2335,9 @@ def changeCalendarAttendees(users):
     if sys.argv[i].lower() == u'csv':
       csv_file = sys.argv[i+1]
       i += 2
+      if (len(sys.argv) >= i+2) and (sys.argv[i].lower() == u'charset'):
+        encoding = sys.argv[i+1]
+        i += 2
     elif sys.argv[i].lower() == u'dryrun':
       do_it = False
       i += 1
@@ -2296,10 +2354,15 @@ def changeCalendarAttendees(users):
       showUsage()
       print u'%s is not a valid argument.'
       sys.exit(3)
+  if not csv_file:
+    print u'csv <Filename> required'
+    sys.exit(3)
   attendee_map = dict()
-  csvfile = csv.reader(open(csv_file, 'rU'))
-  for row in csvfile:
+  f = openFile(csv_file)
+  csvFile = UnicodeReader(f, encoding=encoding)
+  for row in csvFile:
     attendee_map[row[0].lower()] = row[1].lower()
+  f.close()
   for user in users:
     sys.stdout.write(u'Checking user %s\n' % user)
     if user.find(u'@') == -1:
@@ -6516,9 +6579,9 @@ def doGetUserInfo(user_email=None):
   user = callGAPI(service=cd.users(), function=u'get', userKey=user_email, projection=projection, customFieldMask=customFieldMask, viewType=viewType)
   print u'User: %s' % user[u'primaryEmail']
   if u'name' in user and u'givenName' in user[u'name']:
-    print u'First Name: %s' % user[u'name'][u'givenName']
+    print convertUTF8(u'First Name: %s' % user[u'name'][u'givenName'])
   if u'name' in user and u'familyName' in user[u'name']:
-    print u'Last Name: %s' % user[u'name'][u'familyName']
+    print convertUTF8(u'Last Name: %s' % user[u'name'][u'familyName'])
   if u'isAdmin' in user:
     print u'Is a Super Admin: %s' % user[u'isAdmin']
   if u'isDelegatedAdmin' in user:
@@ -6562,7 +6625,7 @@ def doGetUserInfo(user_email=None):
     print u'Addresses:'
     for address in user[u'addresses']:
       for key in address.keys():
-        print u' %s: %s' % (key, address[key])
+        print convertUTF8(u' %s: %s' % (key, address[key]))
       print ''
   if u'organizations' in user:
     print u'Organizations:'
@@ -6570,7 +6633,7 @@ def doGetUserInfo(user_email=None):
       for key in org.keys():
         if key == u'customType' and not org[key]:
           continue
-        print u' %s: %s' % (key, org[key])
+        print convertUTF8(u' %s: %s' % (key, org[key]))
       print u''
   if u'phones' in user:
     print u'Phones:'
@@ -6603,9 +6666,9 @@ def doGetUserInfo(user_email=None):
         if key == u'type' and relation[key] == u'custom':
           continue
         elif key == u'customType':
-          print u' %s: %s' % (u'type', relation[key])
+          print convertUTF8(u' %s: %s' % (u'type', relation[key]))
         else:
-          print u' %s: %s' % (key, relation[key])
+          print convertUTF8(u' %s: %s' % (key, relation[key]))
       print u''
   if u'externalIds' in user:
     print u'External IDs:'
@@ -6614,9 +6677,9 @@ def doGetUserInfo(user_email=None):
         if key == u'type' and externalId[key] == u'custom':
           continue
         elif key == u'customType':
-          print u' %s: %s' % (u'type', externalId[key])
+          print convertUTF8(u' %s: %s' % (u'type', externalId[key]))
         else:
-          print u' %s: %s' % (key, externalId[key])
+          print convertUTF8(u' %s: %s' % (key, externalId[key]))
       print u''
   if u'websites' in user:
     print u'Websites:'
@@ -6716,7 +6779,7 @@ def doGetGroupInfo(group_name=None):
       for val in value:
         print u'  %s' % val
     else:
-      print u' %s: %s' % (key, value)
+      print convertUTF8(u' %s: %s' % (key, value))
   try:
     for key, value in settings.items():
       if key in [u'kind', u'etag', u'description', u'email', u'name']:
@@ -7564,7 +7627,6 @@ def doDeleteOrg():
 def output_csv(csv_list, titles, list_type, todrive):
   csv.register_dialect(u'nixstdout', lineterminator=u'\n')
   if todrive:
-    import StringIO
     string_file = StringIO.StringIO()
     writer = csv.DictWriter(string_file, fieldnames=titles, dialect=u'nixstdout', quoting=csv.QUOTE_MINIMAL)
   else:
@@ -9232,23 +9294,25 @@ def ProcessGAMCommand(args, processGamCfg=True):
       sys.exit(0)
     if sys.argv[1].lower() == u'batch':
       import shlex
-      bat_filename = sys.argv[2]
-      if bat_filename == u'-':
-        import StringIO
-        input_string = unicode(sys.stdin.read())
-        f = StringIO.StringIO(input_string)
+      batch_filename = sys.argv[2]
+      i = 3
+      if (len(sys.argv) >= i+2) and (sys.argv[i].lower() == u'charset'):
+        encoding = sys.argv[i+1]
+        i += 2
       else:
-        f = open(bat_filename, 'rU')
+        encoding = GC_Values[GC_CHARSET]
+      f = openFile(batch_filename)
+      batchFile = UTF8Recoder(f, encoding)
       items = []
       cmdCount = 0
-      for line in f:
+      for line in batchFile:
         argv = shlex.split(line)
         if len(argv) > 0:
           cmd = argv[0].strip()
           if (not cmd) or cmd.startswith(u'#') or ((len(argv) == 1) and (cmd != COMMIT_BATCH_CMD)):
             continue
           if cmd == GAM_CMD:
-            items.append(argv[1:])
+            items.append([arg.encode(sys.getfilesystemencoding()) for arg in argv[1:]])
             cmdCount += 1
           elif cmd == COMMIT_BATCH_CMD:
             items.append(argv)
@@ -9259,22 +9323,24 @@ def ProcessGAMCommand(args, processGamCfg=True):
       sys.exit(0)
     elif sys.argv[1].lower() == 'csv':
       csv_filename = sys.argv[2]
-      if csv_filename == u'-':
-        import StringIO
-        input_string = unicode(sys.stdin.read())
-        f = StringIO.StringIO(input_string)
+      i = 3
+      if (len(sys.argv) >= i+2) and (sys.argv[i].lower() == u'charset'):
+        encoding = sys.argv[i+1]
+        i += 2
       else:
-        f = open(csv_filename, 'rU')
-      csvFile = csv.DictReader(f)
-      if (len(sys.argv) < 4) or (sys.argv[3].lower() != GAM_CMD):
+        encoding = GC_Values[GC_CHARSET]
+      f = openFile(csv_filename)
+      csvFile = UnicodeDictReader(f, encoding=encoding)
+      if (len(sys.argv) < i+1) or (sys.argv[i].lower() != GAM_CMD):
         sys.stderr.write('{0}"gam csv {1}" should be followed by a full GAM command...\n'.format(ERROR_PREFIX, csv_filename))
         sys.exit(3)
+      i += 1
       optionalSubs = {}
       GAM_argv = []
       GAM_argvI = 0
-      for arg in sys.argv[4:]:
+      for arg in sys.argv[i:]:
         if arg[0] != '~':
-          GAM_argv.append(arg)
+          GAM_argv.append(arg.encode(sys.getfilesystemencoding()))
         else:
           fieldName = arg[1:]
           if fieldName in csvFile.fieldnames:
@@ -9289,7 +9355,7 @@ def ProcessGAMCommand(args, processGamCfg=True):
         argv = GAM_argv[:]
         for GAM_argvI, fieldName in optionalSubs.iteritems():
           if row[fieldName]:
-            argv[GAM_argvI] = row[fieldName]
+            argv[GAM_argvI] = row[fieldName].encode(sys.getfilesystemencoding())
           else:
             argv[GAM_argvI] = u''
         items.append(argv)

@@ -3,6 +3,7 @@ This is my proposal to replace the GAM environment variables and signal files wi
 [DEFAULT]
 auto_batch_min = 0
 cache_dir = /Users/admin/Library/Caches/GAM
+charset = ascii
 client_secrets_json = client_secrets.json
 config_dir = /Users/admin/Library/Application Support/GAM
 customer_id = 000000000
@@ -52,6 +53,8 @@ auto_batch_min
 	Default: 0, don't automatically generate gam batch commands
 cache_dir
 	GAM cache directory. If no_cache is specified, this variable will be ignored.
+charset
+	Character set of gam batch, gam csv, gam file files. Defaults to ascii, other common values would be latin-1 and utf-16.
 client_secrets_json
 	Path to client_secrets.json
 config_dir
