@@ -1690,7 +1690,7 @@ def showReport():
         for event in events:
           row = flatten_json(event)
           row.update(activity_row)
-          for item in row.keys():
+          for item in row:
             if item not in titles:
               titles.append(item)
           attrs.append(row)
@@ -2024,9 +2024,9 @@ def doCreateCourse():
     else:
       print u'ERROR: %s is not a valid argument to "gam create course".' % sys.argv[i]
       sys.exit(3)
-  if not u'ownerId' in body.keys():
+  if not u'ownerId' in body:
     body['ownerId'] = u'me'
-  if not u'name' in body.keys():
+  if not u'name' in body:
     body['name'] = u'Unknown Course'
   result = callGAPI(service=croom.courses(), function=u'create', body=body)
   print u'Created course %s' % result[u'id']
@@ -2092,7 +2092,7 @@ def doPrintCourses():
   all_courses = callGAPIpages(service=croom.courses(), function=u'list', items=u'courses', page_message=page_message, teacherId=teacherId, studentId=studentId)
   for course in all_courses:
     croom_attributes.append(flatten_json(course))
-    for item in croom_attributes[-1].keys():
+    for item in croom_attributes[-1]:
       if item not in titles:
         titles.append(item)
         croom_attributes[0][item] = item
@@ -2163,7 +2163,7 @@ def doPrintCourseParticipants():
       participant[u'courseName'] = course[u'name']
       participant[u'userRole'] = u'TEACHER'
       participants_attributes.append(participant)
-      for item in participant.keys():
+      for item in participant:
         if item not in titles:
           titles.append(item)
           participants_attributes[0][item] = item
@@ -2173,7 +2173,7 @@ def doPrintCourseParticipants():
       participant[u'courseName'] = course[u'name']
       participant[u'userRole'] = u'STUDENT'
       participants_attributes.append(participant)
-      for item in participant.keys():
+      for item in participant:
         if item not in titles:
           titles.append(item)
           participants_attributes[0][item] = item
@@ -2273,7 +2273,7 @@ def doPrintPrintJobs():
     job[u'updateTime'] = datetime.datetime.fromtimestamp(updateTime).strftime(u'%Y-%m-%d %H:%M:%S')
     job[u'tags'] = u' '.join(job[u'tags'])
     job_attributes.append(flatten_json(job))
-    for item in job_attributes[-1].keys():
+    for item in job_attributes[-1]:
       if item not in titles:
         titles.append(item)
         job_attributes[0][item] = item
@@ -2319,7 +2319,7 @@ def doPrintPrinters():
     printer[u'updateTime'] = datetime.datetime.fromtimestamp(updateTime).strftime(u'%Y-%m-%d %H:%M:%S')
     printer[u'tags'] = u' '.join(printer[u'tags'])
     printer_attributes.append(flatten_json(printer))
-    for item in printer_attributes[-1].keys():
+    for item in printer_attributes[-1]:
       if item not in titles:
         titles.append(item)
         printer_attributes[0][item] = item
@@ -2335,9 +2335,6 @@ def changeCalendarAttendees(users):
     if sys.argv[i].lower() == u'csv':
       csv_file = sys.argv[i+1]
       i += 2
-      if (len(sys.argv) >= i+2) and (sys.argv[i].lower() == u'charset'):
-        encoding = sys.argv[i+1]
-        i += 2
     elif sys.argv[i].lower() == u'dryrun':
       do_it = False
       i += 1
@@ -2359,7 +2356,7 @@ def changeCalendarAttendees(users):
     sys.exit(3)
   attendee_map = dict()
   f = openFile(csv_file)
-  csvFile = UnicodeReader(f, encoding=encoding)
+  csvFile = csv.reader(f)
   for row in csvFile:
     attendee_map[row[0].lower()] = row[1].lower()
   f.close()
@@ -2387,20 +2384,16 @@ def changeCalendarAttendees(users):
         except KeyError:
           pass # no email for organizer
         needs_update = False
-        try:
+        if u'attendees' in event:
           for attendee in event[u'attendees']:
-            try:
-              if attendee[u'email'].lower() in attendee_map.keys():
-                old_email = attendee[u'email'].lower()
-                new_email = attendee_map[attendee[u'email'].lower()]
+            if u'email' in attendee:
+              old_email = attendee[u'email'].lower()
+              if old_email in attendee_map:
+                new_email = attendee_map[old_email]
                 print u' SWITCHING attendee %s to %s for %s' % (old_email, new_email, event_summary)
                 event[u'attendees'].remove(attendee)
                 event[u'attendees'].append({u'email': new_email})
                 needs_update = True
-            except KeyError: # no email for that attendee
-              pass
-        except KeyError:
-          continue # no attendees
         if needs_update:
           body = dict()
           body[u'attendees'] = event[u'attendees']
@@ -2570,7 +2563,7 @@ def doPrinterShowACL():
   printer_info = callGAPI(service=cp.printers(), function=u'get', printerid=show_printer)
   checkCloudPrintResult(printer_info)
   for acl in printer_info[u'printers'][0][u'access']:
-    if u'key' in acl.keys():
+    if u'key' in acl:
       acl[u'accessURL'] = u'https://www.google.com/cloudprint/addpublicprinter.html?printerid=%s&key=%s' % (show_printer, acl[u'key'])
     print_json(None, acl)
     print
@@ -2714,7 +2707,7 @@ def doPrintJobFetch():
   if sortorder and descending:
     sortorder = PRINTJOB_DESCENDINGORDER_MAP[sortorder]
   result = callGAPI(service=cp.jobs(), function=u'list', q=query, status=status, sortorder=sortorder, printerid=printerid, owner=owner)
-  if u'errorCode' in result.keys() and result[u'errorCode'] == 413:
+  if u'errorCode' in result and result[u'errorCode'] == 413:
     print u'No print jobs.'
     sys.exit(0)
   checkCloudPrintResult(result)
@@ -3351,7 +3344,7 @@ def doDriveActivity(users):
                          drive_fileId=drive_fileId, pageSize=500)
     for item in feed:
       activity_attributes.append(flatten_json(item[u'combinedEvent']))
-      for an_item in activity_attributes[-1].keys():
+      for an_item in activity_attributes[-1]:
         if an_item not in activity_attributes[0]:
           activity_attributes[0][an_item] = an_item
   output_csv(activity_attributes, activity_attributes[0], u'Drive Activity', todrive)
@@ -3366,7 +3359,7 @@ def showDriveFileACL(users):
         print permission[u'name']
       except KeyError:
         pass
-      for key in permission.keys():
+      for key in permission:
         if key in [u'name', u'kind', u'etag', u'selfLink',]:
           continue
         print u' %s: %s' % (key, permission[key])
@@ -3573,7 +3566,7 @@ def showDriveFiles(users):
         elif attrib_type is unicode or attrib_type is bool:
           a_file[attrib] = f_file[attrib]
         elif attrib_type is dict:
-          for dict_attrib in f_file[attrib].keys():
+          for dict_attrib in f_file[attrib]:
             if dict_attrib in [u'kind', u'etags', u'etag']:
               continue
             if dict_attrib not in titles:
@@ -3702,7 +3695,7 @@ def doUpdateDriveFile(users):
       ocrLanguage = sys.argv[i+1]
       i += 2
     elif sys.argv[i].lower() in [u'restrict', 'restricted']:
-      if 'labels' not in body.keys():
+      if 'labels' not in body:
         body[u'labels'] = dict()
       if sys.argv[i+1] in true_values:
         body[u'labels'][u'restricted'] = True
@@ -3713,7 +3706,7 @@ def doUpdateDriveFile(users):
         sys.exit(9)
       i += 2
     elif sys.argv[i].lower() in [u'star', u'starred']:
-      if u'labels' not in body.keys():
+      if u'labels' not in body:
         body[u'labels'] = dict()
       if sys.argv[i+1] in true_values:
         body[u'labels'][u'starred'] = True
@@ -3724,7 +3717,7 @@ def doUpdateDriveFile(users):
         sys.exit(9)
       i += 2
     elif sys.argv[i].lower() in [u'trash', u'trashed']:
-      if u'labels' not in body.keys():
+      if u'labels' not in body:
         body[u'labels'] = dict()
       if sys.argv[i+1] in true_values:
         body[u'labels'][u'trashed'] = True
@@ -3735,7 +3728,7 @@ def doUpdateDriveFile(users):
         sys.exit(9)
       i += 2
     elif sys.argv[i].lower() in [u'view', u'viewed']:
-      if u'labels' not in body.keys():
+      if u'labels' not in body:
         body[u'labels'] = dict()
       if sys.argv[i+1] in true_values:
         body[u'labels'][u'viewed'] = True
@@ -3776,7 +3769,7 @@ def doUpdateDriveFile(users):
         body[u'mimeType'] = u'application/vnd.google-apps.spreadsheet'
       i += 2
     elif sys.argv[i].lower() in [u'parentid']:
-      if u'parents' not in body.keys():
+      if u'parents' not in body:
         body[u'parents'] = list()
       body[u'parents'].append({u'id': sys.argv[i+1]})
       i += 2
@@ -3799,7 +3792,7 @@ def doUpdateDriveFile(users):
     drive = buildGAPIServiceObject(u'drive', user)
     if parent_query:
       more_parents = doDriveSearch(drive, query=parent_query)
-      if u'parents' not in body.keys():
+      if u'parents' not in body:
         body[u'parents'] = list()
       for a_parent in more_parents:
         body[u'parents'].append({u'id': a_parent})
@@ -3848,22 +3841,22 @@ def createDriveFile(users):
       ocrLanguage = sys.argv[i+1]
       i += 2
     elif sys.argv[i].lower() in [u'restrict', 'restricted']:
-      if u'labels' not in body.keys():
+      if u'labels' not in body:
         body[u'labels'] = dict()
       body[u'labels'][u'restricted'] = True
       i += 1
     elif sys.argv[i].lower() in [u'star', u'starred']:
-      if u'labels' not in body.keys():
+      if u'labels' not in body:
         body[u'labels'] = dict()
       body[u'labels'][u'starred'] = True
       i += 1
     elif sys.argv[i].lower() in [u'trash', u'trashed']:
-      if u'labels' not in body.keys():
+      if u'labels' not in body:
         body[u'labels'] = dict()
       body[u'labels'][u'trashed'] = True
       i += 1
     elif sys.argv[i].lower() in [u'view', u'viewed']:
-      if u'labels' not in body.keys():
+      if u'labels' not in body:
         body[u'labels'] = dict()
       body[u'labels'][u'viewed'] = True
       i += 1
@@ -3898,7 +3891,7 @@ def createDriveFile(users):
         body[u'mimeType'] = u'application/vnd.google-apps.spreadsheet'
       i += 2
     elif sys.argv[i].lower() in [u'parentid']:
-      if u'parents' not in body.keys():
+      if u'parents' not in body:
         body[u'parents'] = list()
       body[u'parents'].append({u'id': sys.argv[i+1]})
       i += 2
@@ -3915,7 +3908,7 @@ def createDriveFile(users):
     drive = buildGAPIServiceObject(u'drive', user)
     if parent_query:
       more_parents = doDriveSearch(drive, query=parent_query)
-      if u'parents' not in body.keys():
+      if u'parents' not in body:
         body[u'parents'] = list()
       for a_parent in more_parents:
         body[u'parents'].append({u'id': a_parent})
@@ -4006,7 +3999,7 @@ def downloadDriveFile(users):
       if u'downloadUrl' in result:
         download_url = result[u'downloadUrl']
       elif u'exportLinks' in result:
-        for avail_export_format in result[u'exportLinks'].keys():
+        for avail_export_format in result[u'exportLinks']:
           if avail_export_format in export_formats:
             download_url = result[u'exportLinks'][avail_export_format]
             try:
@@ -4040,7 +4033,7 @@ def showDriveFileInfo(users):
     fileId = sys.argv[5]
     drive = buildGAPIServiceObject(u'drive', user)
     feed = callGAPI(service=drive.files(), function=u'get', fileId=fileId)
-    for setting in feed.keys():
+    for setting in feed:
       if setting == u'kind':
         continue
       setting_type = str(type(feed[setting]))
@@ -4051,14 +4044,14 @@ def showDriveFileInfo(users):
             continue
           settin_type = str(type(settin))
           if settin_type == u"<type 'dict'>":
-            for setti in settin.keys():
+            for setti in settin:
               if setti == u'kind':
                 continue
               print u' %s: %s' % (setti, settin[setti])
             print ''
       elif setting_type == u"<type 'dict'>":
         print u'%s:' % setting
-        for settin in feed[setting].keys():
+        for settin in feed[setting]:
           if settin == u'kind':
             continue
           print u' %s: %s' % (settin, feed[setting][settin])
@@ -4687,7 +4680,7 @@ def showLabels(users):
       if label[u'type'] == u'system' and not show_system:
         continue
       print convertUTF8(label[u'name'])
-      for a_key in label.keys():
+      for a_key in label:
         if a_key == u'name':
           continue
         print u' %s: %s' % (a_key, label[a_key])
@@ -4710,7 +4703,7 @@ def showGmailProfile(users):
     if not gmail:
       continue
     results = callGAPI(service=gmail.users(), function=u'getProfile', userId=u'me', soft_errors=True)
-    for item in results.keys():
+    for item in results:
       if item not in profiles[0]:
         profiles[0][item] = item
     profiles.append(results)
@@ -5172,13 +5165,13 @@ def doPrintUserSchemas():
     return
   for schema in schemas[u'schemas']:
     print u'Schema: %s' % schema[u'schemaName']
-    for a_key in schema.keys():
+    for a_key in schema:
       if a_key not in [u'schemaName', u'fields', u'etag', u'kind']:
         print '%s: %s' % (a_key, schema[a_key])
     print
     for field in schema[u'fields']:
       print u' Field: %s' % field[u'fieldName']
-      for a_key in field.keys():
+      for a_key in field:
         if a_key not in [u'fieldName', u'kind', u'etag']:
           print '  %s: %s' % (a_key, field[a_key])
       print
@@ -5189,13 +5182,13 @@ def doGetUserSchema():
   schemaKey = sys.argv[3]
   schema = callGAPI(service=cd.schemas(), function=u'get', customerId=GC_Values[GC_CUSTOMER_ID], schemaKey=schemaKey)
   print u'Schema: %s' % schema[u'schemaName']
-  for a_key in schema.keys():
+  for a_key in schema:
     if a_key not in [u'schemaName', u'fields', u'etag', u'kind']:
       print '%s: %s' % (a_key, schema[a_key])
   print
   for field in schema[u'fields']:
     print u' Field: %s' % field[u'fieldName']
-    for a_key in field.keys():
+    for a_key in field:
       if a_key not in [u'fieldName', u'kind', u'etag']:
         print '  %s: %s' % (a_key, field[a_key])
     print
@@ -6618,19 +6611,19 @@ def doGetUserInfo(user_email=None):
   if u'ims' in user:
     print u'IMs:'
     for im in user[u'ims']:
-      for key in im.keys():
+      for key in im:
         print u' %s: %s' % (key, im[key])
       print u''
   if u'addresses' in user:
     print u'Addresses:'
     for address in user[u'addresses']:
-      for key in address.keys():
+      for key in address:
         print convertUTF8(u' %s: %s' % (key, address[key]))
       print ''
   if u'organizations' in user:
     print u'Organizations:'
     for org in user[u'organizations']:
-      for key in org.keys():
+      for key in org:
         if key == u'customType' and not org[key]:
           continue
         print convertUTF8(u' %s: %s' % (key, org[key]))
@@ -6638,7 +6631,7 @@ def doGetUserInfo(user_email=None):
   if u'phones' in user:
     print u'Phones:'
     for phone in user[u'phones']:
-      for key in phone.keys():
+      for key in phone:
         print u' %s: %s' % (key, phone[key])
       print u''
   if u'emails' in user:
@@ -6662,7 +6655,7 @@ def doGetUserInfo(user_email=None):
   if u'relations' in user:
     print u'Relations:'
     for relation in user[u'relations']:
-      for key in relation.keys():
+      for key in relation:
         if key == u'type' and relation[key] == u'custom':
           continue
         elif key == u'customType':
@@ -6684,7 +6677,7 @@ def doGetUserInfo(user_email=None):
   if u'websites' in user:
     print u'Websites:'
     for website in user[u'websites']:
-      for key in website.keys():
+      for key in website:
         if key == u'type' and website[key] == u'custom':
           continue
         elif key == u'customType':
@@ -6872,7 +6865,7 @@ def print_json(object_name, object_value, spacing=u''):
       else:
         print_json(object_name=None, object_value=a_value, spacing=u' %s' % spacing)
   elif type(object_value) is dict:
-    for another_object in object_value.keys():
+    for another_object in object_value:
       print_json(object_name=another_object, object_value=object_value[another_object], spacing=spacing)
   else:
     sys.stdout.write(u'%s\n' % (object_value))
@@ -7222,7 +7215,7 @@ def doGetTokens(users):
     try:
       for token in tokens[u'items']:
         print u' Client ID: %s' % token[u'clientId']
-        for item in token.keys():
+        for item in token:
           if item in [u'etag', u'kind', u'clientId']:
             continue
           if type(token[item]) is list:
@@ -7833,7 +7826,7 @@ def doPrintUsers():
       except KeyError:
         pass
     attributes.append(flatten_json(user))
-    for item in attributes[-1].keys():
+    for item in attributes[-1]:
       if item not in titles:
         titles.append(item)
   titles.remove(u'primaryEmail')
@@ -8033,7 +8026,7 @@ def doPrintGroups():
       printGettingMessage(u" Retrieving Settings for group %s (%s of %s)...\r\n" % (group_vals[u'email'], count, total_groups))
       gs = buildGAPIObject(u'groupssettings')
       settings = callGAPI(service=gs.groups(), function=u'get', retry_reasons=[u'serviceLimit'], groupUniqueId=group_vals[u'email'])
-      for key in settings.keys():
+      for key in settings:
         if key in [u'email', u'name', u'description', u'kind', u'etag']:
           continue
         setting_value = settings[key]
@@ -8200,7 +8193,7 @@ def doPrintGroupMembers():
     group_members = callGAPIpages(service=cd.members(), function=u'list', items=u'members', message_attribute=u'email', groupKey=group_email)
     for member in group_members:
       member_attr = {u'group': group_email}
-      for title in member.keys():
+      for title in member:
         if title in [u'kind', u'etag']:
           continue
         try:
@@ -8250,7 +8243,7 @@ def doPrintMobileDevices():
                              customerId=GC_Values[GC_CUSTOMER_ID], query=query, orderBy=orderBy, sortOrder=sortOrder)
   for mobile in all_mobile:
     mobiledevice = dict()
-    for title in mobile.keys():
+    for title in mobile:
       try:
         if title in [u'kind', u'etag', u'applications']:
           continue
@@ -8445,7 +8438,7 @@ def doPrintTokens():
         this_token = dict()
         this_token[u'user'] = user
         this_token[u'scopes'] = ' '.join(user_token[u'scopes'])
-        for token_item in user_token.keys():
+        for token_item in user_token:
           if token_item in [u'kind', u'etag', u'scopes']:
             continue
           this_token[token_item] = user_token[token_item]
@@ -8956,13 +8949,12 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
         pass
   elif entity_type == u'file':
     users = []
-    filename = entity
-    usernames = csv.reader(open(filename, 'rU'))
-    for row in usernames:
-      try:
-        users.append(row.pop())
-      except IndexError:
-        pass
+    f = openFile(entity)
+    csvFile = csv.reader(f)
+    for row in csvFile:
+      if len(row) > 0:
+        users.append(row[-1])
+    f.close()
   elif entity_type in [u'courseparticipants', u'teachers', u'students']:
     croom = buildGAPIObject(u'classroom')
     users = []
