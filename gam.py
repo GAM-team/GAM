@@ -478,7 +478,11 @@ def SetGlobalVariables():
     gamcfg.set(ConfigParser.DEFAULTSECT, itemName, trueValue if os.path.isfile(os.path.join(GC_Values[GC_GAM_PATH], fileName)) else falseValue)
 
   def _getOldEnvVarsSignalFiles():
-    _getOldEnvVar(GC_CONFIG_DIR, u'GAMCONFIGDIR')
+    try:
+      if os.environ[u'GAMUSERCONFIGDIR']:
+        _getOldEnvVar(GC_CONFIG_DIR, u'GAMUSERCONFIGDIR')
+    except KeyError:
+      _getOldEnvVar(GC_CONFIG_DIR, u'GAMCONFIGDIR')
     _getOldEnvVar(GC_CACHE_DIR, u'GAMCACHEDIR')
     _getOldEnvVar(GC_DRIVE_DIR, u'GAMDRIVEDIR')
     _getOldEnvVar(GC_OAUTH2_TXT, u'OAUTHFILE')

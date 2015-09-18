@@ -1,0 +1,87 @@
+**Major:**
+Implement configuration file gam.cfg. Documented in GamConfig.txt.
+
+Improve support for languages with accented characters.
+The following commands have been extended to allow specification of the character set used in the file.
+    gam batch Filename [charset <Charset>]
+    gam csv Filename [charset <Charset>] gam ...
+
+<Charset> defaults to ascii, other typical values are: utf-8, utf-16, latin-1.
+The character set may be specified in gam.cfg as well.
+
+**Semi-major:**
+Reorganize gam so that it is importable on Mac OS/Linux.
+This isn't elegant but it's a start.
+You can say:
+    #!/usr/bin/env python
+    import os, sys, shlex
+    from gam import ProcessGAMCommand
+    # Set appropriate values
+    os.environ['GAM_CFG_HOME'] = '/Users/admin/GAM'
+    GAM_STDOUT = '/tmp/gamstdout.out'
+    # Choose how to produce args list
+    rc = ProcessGAMCommand(shlex.split('/Users/admin/GAM/gam.py redirect stdout write {0} info user admin'.format(GAM_STDOUT)))
+    #rc = ProcessGAMCommand(['/Users/admin/GAM/gam.py',
+    #                        'redirect', 'stdout', 'write', GAM_STDOUT,
+    #                        'info', 'user', 'admin'])
+    print 'GAM returned {0}'.format(rc)
+    with open(GAM_STDOUT, 'rU') as f:
+        for line in f:
+            # Process outout
+            print line.strip()
+
+
+All "Getting ...", "Retrieving ...", "Got ..." messages are now written to stderr.
+Most already were but the following commands wrote to stdout:
+    gam user xxx show gmailprofile
+    gam user xxx deprov
+    gam user xxx delete label
+    gam user xxx transfer drive
+    gam user xxx add drivefile
+    gam user xxx update drivefile
+    gam user xxx delete drivefile
+    gam user xxx get drivefile
+
+
+**Not so major:**
+Use API update rather than patch in update user as patch is problematic.
+
+Use API update rather than patch in update org as patch is problematic.
+
+In gam update user foo@bar.com ... allow clear argument after im, address, organization,
+phone, relation, externalid and otheremail so that an array of entries can be cleared.
+    gam update user foo@bar.com phone clear
+
+In gam create user and gam update user support website.
+    website home_page|blog|profile|work|home|other|ftp|reservations|app_install_page|<String> <Value>
+    gam update user foo@bar.com website work www.bar.com
+If <String> is specified instead of one of the pre-defined values, it will be marked custom.
+
+In gam create user and gam update user support note:
+    note text_plain|text_html file <FileName>
+    note text_plain|text_html <String>
+    gam update user foo@bar.com note text_plain "Works weekend shift"
+
+Allow gam batch to read lines from stdin by specifying - instead of a file name.
+    cat foo.bat | gam batch -
+
+A new argument (delimiter <String>) was added to gam print users.
+It is used when the groups argument is specified, String rather than a single space will separate the entries in the groups list.
+    gam print users delimiter ',' groups
+
+Implement pull request #93 to be able to mark messages as spam.
+    gam user foo@bar.com spam message|messages query <Query> [doit] [max_to_move <Number>]
+
+Implement pull request #91.
+    gam user foo@bar.com show filelist ... anyowner ...
+
+oauth2client/tools.py message changed to reflect new way to indicate that you have no browser.
+
+**Problem fixed**
+Fixed problem with gam user foo@bar.com show filelist allfields
+Traceback (most recent call last):
+  File "./gam.py", line 8540, in <module>  showDriveFiles(users)
+  File "./gam.py", line 2681, in showDriveFiles
+    a_file[attrib] = u' '.join(file[attrib])
+TypeError: sequence item 0: expected string or Unicode, dict found
+
