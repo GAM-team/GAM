@@ -1,15 +1,5 @@
-**Major:**
 Implement configuration file gam.cfg. Documented in GamConfig.txt.
 
-Improve support for languages with accented characters.
-The following commands have been extended to allow specification of the character set used in the file.
-    gam batch Filename [charset <Charset>]
-    gam csv Filename [charset <Charset>] gam ...
-
-<Charset> defaults to ascii, other typical values are: utf-8, utf-16, latin-1.
-The character set may be specified in gam.cfg as well.
-
-**Semi-major:**
 Reorganize gam so that it is importable on Mac OS/Linux.
 This isn't elegant but it's a start.
 You can say:
@@ -30,6 +20,58 @@ You can say:
             # Process outout
             print line.strip()
 
+Improve support for languages with accented characters.
+The following commands have been extended to allow specification of the character set used in the file.
+    gam batch <Filename> [charset <Charset>]
+    gam csv <Filename> [charset <Charset>] gam ...
+<Charset> defaults to the value charset in gam.cfg; the default value there is ascii; other typical values are: utf-8, utf-16, latin-1.
+
+Support user website and note properties.
+In gam create user and gam update user add website argument.
+    website home_page|blog|profile|work|home|other|ftp|reservations|app_install_page|<String> <Value>
+    gam update user foo@bar.com website work www.bar.com
+If <String> is specified instead of one of the pre-defined values, it will be marked custom.
+
+In gam create user and gam update user add note argument.
+    note text_plain|text_html file <FileName>
+    note text_plain|text_html <String>
+    gam update user foo@bar.com note text_plain "Works weekend shift"
+
+Allow user properties to be cleared.
+In gam update user allow clear argument after im, address, organization,
+phone, relation, externalid, otheremail, website, note so that the property can be cleared.
+    gam update user foo@bar.com phone clear
+
+Support event notification property in calendars.
+In gam <Users> add calendar and gam <Users> update calendar, add notification argument; it may be repeated.
+   notification email|sms event_creation|event_change|event_cancellation|event_response|agenda
+   gam user foo@bar.com update calendar bar.com_dsoevca1qm34unsejmac3tsbv4@group.calendar.google.com notification email event_creation notification sms event_change
+
+Support user calendar creation/modification/deletion.
+    gam <Users> create calendar summary <String> [description <String>] [location <String>] [timezone <String>]
+    gam <Users> modify calendar <EmailAddress>|primay [summary <String>] [description <String>] [location <String>] [timezone <String>]
+    gam <Users> remove calendar <EmailAddress>
+Summary <string> is required when creating a calendar.
+Primary refers to the user's primary calendar, it is replaced with the user's email address.
+
+Get information about a specific calendar.
+    gam <Users> info calendar <EmailAddress>|primary
+
+Allow gam batch to read lines from stdin by specifying - instead of a file name.
+    cat foo.bat | gam batch -
+
+A new argument (delimiter <String>) is defined in gam print users.
+It is used when the groups argument is specified, <String> rather than a single space will separate the entries in the groups list.
+    gam print users delimiter ',' groups
+
+Implement pull request #93 to be able to mark messages as spam.
+    gam <Users> spam message|messages query <Query> [doit] [max_to_move <Number>]
+<Number> defaults to max_messages_to_process from gam.cfg.
+
+Implement pull request #91.
+    gam <Users> show filelist ... anyowner ...
+
+Command line errors now give a more informative message and are all written to stderr.
 
 All "Getting ...", "Retrieving ...", "Got ..." messages are now written to stderr.
 Most already were but the following commands wrote to stdout:
@@ -42,42 +84,12 @@ Most already were but the following commands wrote to stdout:
     gam user xxx delete drivefile
     gam user xxx get drivefile
 
+Use API update rather than patch in gam update user as patch is problematic.
 
-**Not so major:**
-Use API update rather than patch in update user as patch is problematic.
-
-Use API update rather than patch in update org as patch is problematic.
-
-In gam update user foo@bar.com ... allow clear argument after im, address, organization,
-phone, relation, externalid and otheremail so that an array of entries can be cleared.
-    gam update user foo@bar.com phone clear
-
-In gam create user and gam update user support website.
-    website home_page|blog|profile|work|home|other|ftp|reservations|app_install_page|<String> <Value>
-    gam update user foo@bar.com website work www.bar.com
-If <String> is specified instead of one of the pre-defined values, it will be marked custom.
-
-In gam create user and gam update user support note:
-    note text_plain|text_html file <FileName>
-    note text_plain|text_html <String>
-    gam update user foo@bar.com note text_plain "Works weekend shift"
-
-Allow gam batch to read lines from stdin by specifying - instead of a file name.
-    cat foo.bat | gam batch -
-
-A new argument (delimiter <String>) was added to gam print users.
-It is used when the groups argument is specified, String rather than a single space will separate the entries in the groups list.
-    gam print users delimiter ',' groups
-
-Implement pull request #93 to be able to mark messages as spam.
-    gam user foo@bar.com spam message|messages query <Query> [doit] [max_to_move <Number>]
-
-Implement pull request #91.
-    gam user foo@bar.com show filelist ... anyowner ...
+Use API update rather than patch in gam update org as patch is problematic.
 
 oauth2client/tools.py message changed to reflect new way to indicate that you have no browser.
 
-**Problem fixed**
 Fixed problem with gam user foo@bar.com show filelist allfields
 Traceback (most recent call last):
   File "./gam.py", line 8540, in <module>  showDriveFiles(users)
