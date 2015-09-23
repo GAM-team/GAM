@@ -92,6 +92,9 @@ A new argument (delimiter <String>) is defined in gam print users.
 It is used when the groups argument is specified, <String> rather than a single space will separate the entries in the groups list.
     gam print users delimiter ',' groups
 
+You can for a GAM version check with the following command.
+    gam version check
+
 Implement pull request #93 to be able to mark messages as spam.
     gam <Users> spam message|messages query <Query> [doit] [max_to_move <Number>]
 <Number> defaults to max_messages_to_process from gam.cfg.

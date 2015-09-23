@@ -84,6 +84,9 @@ GAM_BAK = u'gam.bak'
 GC_GAM_PATH = u'gam_path'
 # Where will CSV files be written
 GC_CSVFILE = u'csvfile'
+# File containing time of last GAM update check
+GC_LAST_UPDATE_CHECK_TXT = u'lastupdatecheck'
+LAST_UPDATE_CHECK_TXT = u'lastupdatecheck.txt'
 #
 # Global variables derived from values in gam.cfg
 #
@@ -113,10 +116,6 @@ GC_DEBUG_LEVEL = u'debug_level'
 GC_DOMAIN = u'domain'
 # Google Drive download directory
 GC_DRIVE_DIR = u'drive_dir'
-# Time of last GAM update check
-GC_LAST_UPDATE_CHECK = u'last_update_check'
-# Maximum number of items to process without confirmation
-GC_MAX_MESSAGES_TO_PROCESS = u'max_messages_to_process'
 # If no_browser is False, writeCSVfile won't open a browser when todrive is set
 # and doRequestOAuth prints a link and waits for the verification code when oauth2.txt is being created
 GC_NO_BROWSER = u'no_browser'
@@ -136,8 +135,6 @@ GC_OAUTH2SERVICE_JSON = u'oauth2service_json'
 GC_SECTION = u'section'
 # Enable/disable "Getting ... " messages
 GC_SHOW_GETTINGS = u'show_gettings'
-# Default value for gam info user foo@bar.com
-GC_SHOW_LICENSES = u'show_licenses'
 
 GC_DEFAULTS = {
   GC_AUTO_BATCH_MIN: 0,
@@ -149,8 +146,6 @@ GC_DEFAULTS = {
   GC_DEBUG_LEVEL: 0,
   GC_DOMAIN: u'',
   GC_DRIVE_DIR: u'',
-  GC_LAST_UPDATE_CHECK: 0,
-  GC_MAX_MESSAGES_TO_PROCESS: 1,
   GC_NO_BROWSER: FALSE,
   GC_NO_CACHE: FALSE,
   GC_NO_UPDATE_CHECK: FALSE,
@@ -160,7 +155,6 @@ GC_DEFAULTS = {
   GC_OAUTH2SERVICE_JSON: FN_OAUTH2SERVICE_JSON,
   GC_SECTION: u'',
   GC_SHOW_GETTINGS: TRUE,
-  GC_SHOW_LICENSES: TRUE,
   }
 
 GC_Values = {}
@@ -184,8 +178,6 @@ GC_VAR_INFO = {
   GC_DEBUG_LEVEL: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_LIMITS_KEY: (0, None)},
   GC_DOMAIN: {GC_VAR_TYPE_KEY: GC_TYPE_STRING},
   GC_DRIVE_DIR: {GC_VAR_TYPE_KEY: GC_TYPE_DIRECTORY},
-  GC_LAST_UPDATE_CHECK: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_LIMITS_KEY: (0, None)},
-  GC_MAX_MESSAGES_TO_PROCESS: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_LIMITS_KEY: (0, None)},
   GC_NO_BROWSER: {GC_VAR_TYPE_KEY: GC_TYPE_BOOLEAN},
   GC_NO_CACHE: {GC_VAR_TYPE_KEY: GC_TYPE_BOOLEAN},
   GC_NO_UPDATE_CHECK: {GC_VAR_TYPE_KEY: GC_TYPE_BOOLEAN},
@@ -195,7 +187,6 @@ GC_VAR_INFO = {
   GC_OAUTH2SERVICE_JSON: {GC_VAR_TYPE_KEY: GC_TYPE_FILE},
   GC_SECTION: {GC_VAR_TYPE_KEY: GC_TYPE_STRING},
   GC_SHOW_GETTINGS: {GC_VAR_TYPE_KEY: GC_TYPE_BOOLEAN},
-  GC_SHOW_LICENSES: {GC_VAR_TYPE_KEY: GC_TYPE_BOOLEAN},
   }
 
 GC_VAR_ALIASES = {
@@ -208,8 +199,6 @@ GC_VAR_ALIASES = {
   u'debuglevel':  u'debug_level',
   u'domain':  u'domain',
   u'drivedir':  u'drive_dir',
-  u'lastupdatecheck':  u'last_update_check',
-  u'maxmessagestoprocess':  u'max_messages_to_process',
   u'nobrowser':  u'no_browser',
   u'nocache':  u'no_cache',
   u'noupdatecheck':  u'no_update_check',
@@ -219,7 +208,6 @@ GC_VAR_ALIASES = {
   u'oauth2servicejson':  u'oauth2service_json',
   u'section':  u'section',
   u'showgettings':  u'show_gettings',
-  u'showlicenses':  u'show_licenses',
   }
 
 # Command line batch/csv keywords
@@ -424,7 +412,7 @@ def dehtml(text):
     return text
 
 def showUsage():
-  doGAMVersion()
+  doGAMVersion(checkForCheck=False)
   print u'''
 Usage: gam [OPTIONS]...
 
@@ -562,14 +550,15 @@ def readFile(filename, mode='rb', continueOnError=False, displayError=True):
 #
 # Write a file
 #
-def writeFile(filename, data, mode='wb', continueOnError=False):
+def writeFile(filename, data, mode='wb', continueOnError=False, displayError=True):
   try:
     with open(filename, mode) as f:
       f.write(data)
     return True
   except IOError as e:
-    sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, e))
     if continueOnError:
+      if displayError:
+        sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, e))
       return False
     sys.exit(6)
 #
@@ -673,12 +662,6 @@ def SetGlobalVariables():
     _getOldSignalFile(GC_NO_BROWSER, u'nobrowser.txt')
     _getOldSignalFile(GC_NO_CACHE, u'nocache.txt')
     _getOldSignalFile(GC_NO_UPDATE_CHECK, u'noupdatecheck.txt')
-    try:
-      with open(os.path.join(GC_Values[GC_GAM_PATH], u'lastupdatecheck.txt'), 'rU') as f:
-        latestUpdateCheck = int(f.readline())
-    except:
-      latestUpdateCheck = 0
-    gamcfg.set(ConfigParser.DEFAULTSECT, GC_LAST_UPDATE_CHECK, str(latestUpdateCheck))
 
   def _checkMakeDir(itemName):
     if not os.path.isdir(GC_DEFAULTS[itemName]):
@@ -976,7 +959,7 @@ def SetGlobalVariables():
           invalidChoiceExit(GC_DEFAULTS, i)
         i += 1
         itemName = GC_VAR_ALIASES[itemName]
-        if itemName in [GC_NO_UPDATE_CHECK, GC_LAST_UPDATE_CHECK]:
+        if itemName in [GC_NO_UPDATE_CHECK]:
           gamcfg.set(ConfigParser.DEFAULTSECT, itemName, unicode(GC_DEFAULTS[itemName]))
         elif itemName != GC_SECTION:
           if sectionName != ConfigParser.DEFAULTSECT:
@@ -1021,9 +1004,6 @@ def SetGlobalVariables():
             value = str(value)
           except ValueError:
             invalidArgumentExit(integerLimits(minVal, maxVal), i-1)
-          if itemName == GC_LAST_UPDATE_CHECK:
-            gamcfg.set(ConfigParser.DEFAULTSECT, itemName, value)
-            continue
         elif GC_VAR_INFO[itemName][GC_VAR_TYPE_KEY] == GC_TYPE_DIRECTORY:
           fullPath = os.path.expanduser(value)
           if (sectionName != ConfigParser.DEFAULTSECT) and (not os.path.isabs(fullPath)):
@@ -1085,14 +1065,9 @@ def SetGlobalVariables():
       GC_Values[itemName] = _getCfgFile(sectionName, itemName)
   if status[u'errors']:
     sys.exit(13)
+  GC_Values[GC_LAST_UPDATE_CHECK_TXT] = os.path.join(gamcfg.get(ConfigParser.DEFAULTSECT, GC_CONFIG_DIR, raw=True), LAST_UPDATE_CHECK_TXT)
   if not GC_Values[GC_NO_UPDATE_CHECK]:
-    previousUpdateCheck = GC_Values[GC_LAST_UPDATE_CHECK]
-    GC_Values[GC_LAST_UPDATE_CHECK] = doGAMCheckForUpdates(previousUpdateCheck)
-    if GC_Values[GC_LAST_UPDATE_CHECK] != previousUpdateCheck:
-      luc_config = ConfigParser.SafeConfigParser(defaults=collections.OrderedDict(sorted(GC_DEFAULTS.items(), key=lambda t: t[0])))
-      _readConfigFile(luc_config, configFileName)
-      luc_config.set(ConfigParser.DEFAULTSECT, GC_LAST_UPDATE_CHECK, str(GC_Values[GC_LAST_UPDATE_CHECK]))
-      _writeConfigFile(luc_config, configFileName, action=u'{0} Updated'.format(GC_LAST_UPDATE_CHECK))
+    GAMCheckForUpdates()
 # redirect (csv sectionname|<FileName>)|(stdout write|append sectionname|<FileName>)|(stderr write|append sectionname|<FileName>)
   while (i < len(sys.argv)) and (sys.argv[i] == REDIRECT_CMD):
     i += 1
@@ -1152,29 +1127,29 @@ def SetGlobalVariables():
 # We're done, nothing else to do
   return False
 
-def doGAMVersion():
-  import struct
-  print u'GAM %s - http://git.io/gam\n%s\nPython %s.%s.%s %s-bit %s\ngoogle-api-python-client %s\n%s %s\nPath: %s' % (__version__, __author__,
-                   sys.version_info[0], sys.version_info[1], sys.version_info[2], struct.calcsize('P')*8, sys.version_info[3], googleapiclient.__version__,
-                   platform.platform(), platform.machine(), GC_Values[GC_GAM_PATH])
-
-def doGAMCheckForUpdates(lastUpdateCheck):
+def GAMCheckForUpdates(forceCheck=False):
   import urllib2
   try:
     current_version = float(__version__)
   except ValueError:
     return
   now_time = calendar.timegm(time.gmtime())
-  if lastUpdateCheck > now_time - 604800:
-    return lastUpdateCheck
+  if not forceCheck:
+    last_check_time = readFile(GC_Values[GC_LAST_UPDATE_CHECK_TXT], continueOnError=True, displayError=forceCheck)
+    if last_check_time == None:
+      last_check_time = 0
+    if last_check_time > now_time - 604800:
+      return
   try:
     c = urllib2.urlopen(u'https://gam-update.appspot.com/latest-version.txt?v=%s' % __version__)
     try:
       latest_version = float(c.read())
     except ValueError:
       return
+    print u'Current: {0:.2f}, Latest: {1:.2f}'.format(current_version, latest_version)
     if latest_version <= current_version:
-      return now_time
+      writeFile(GC_Values[GC_LAST_UPDATE_CHECK_TXT], str(now_time), continueOnError=True, displayError=forceCheck)
+      return
     a = urllib2.urlopen(u'https://gam-update.appspot.com/latest-version-announcement.txt?v=%s' % __version__)
     announcement = a.read()
     sys.stderr.write(announcement)
@@ -1186,9 +1161,22 @@ def doGAMCheckForUpdates(lastUpdateCheck):
       webbrowser.open(u'https://github.com/jay0lee/GAM/releases')
       print u'GAM is now exiting so that you can overwrite this old version with the latest release'
       sys.exit(0)
-    return now_time
+    writeFile(GC_Values[GC_LAST_UPDATE_CHECK_TXT], str(now_time), continueOnError=True, displayError=forceCheck)
+    return
   except (urllib2.HTTPError, urllib2.URLError):
-    return lastUpdateCheck
+    return
+
+def doGAMVersion(checkForCheck=True):
+  import struct
+  print u'GAM %s - http://git.io/gam\n%s\nPython %s.%s.%s %s-bit %s\ngoogle-api-python-client %s\n%s %s\nPath: %s' % (__version__, __author__,
+                   sys.version_info[0], sys.version_info[1], sys.version_info[2], struct.calcsize('P')*8, sys.version_info[3], googleapiclient.__version__,
+                   platform.platform(), platform.machine(), GC_Values[GC_GAM_PATH])
+  if checkForCheck:
+    if len(sys.argv) > 2:
+      if sys.argv[2].lower() == u'check':
+        GAMCheckForUpdates(forceCheck=True)
+      else:
+        unknownArgumentExit(2)
 
 def commonAppsObjInit(appsObj):
   #Identify GAM to Google's Servers
@@ -2510,20 +2498,21 @@ def changeCalendarAttendees(users):
   i = 5
   allevents = False
   start_date = end_date = None
-  while len(sys.argv) > i:
-    if sys.argv[i].lower() == u'csv':
+  while i < len(sys.argv):
+    my_arg = sys.argv[i].lower().replace(u'_', u'')
+    if my_arg == u'csv':
       csv_file = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower() == u'dryrun':
+    elif my_arg == u'dryrun':
       do_it = False
       i += 1
-    elif sys.argv[i].lower() == u'start':
+    elif my_arg == u'start':
       start_date = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower() == u'end':
+    elif my_arg == u'end':
       end_date = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower() == u'allevents':
+    elif my_arg == u'allevents':
       allevents = True
       i += 1
     else:
@@ -3202,7 +3191,7 @@ def doCalendarAddACL(calendarId=None, act_as=None, role=None, scope=None, entity
     pass
   if body[u'scope'][u'type'] == u'domain':
     try:
-      body[u'scope'][u'value'] = sys.argv[6].lower()
+      body[u'scope'][u'value'] = sys.argv[i].lower()
     except IndexError:
       body[u'scope'][u'value'] = GC_Values[GC_DOMAIN]
   callGAPI(service=cal.acl(), function=u'insert', calendarId=calendarId, body=body)
@@ -3975,7 +3964,7 @@ def deleteDriveFile(users):
     if fileIds[:6].lower() == u'query:':
       file_ids = doDriveSearch(drive, query=fileIds[6:])
     else:
-      if fileIds[:8].lower() == u'https://' or fileIds[:7].lower == u'http://':
+      if fileIds[:8].lower() == u'https://' or fileIds[:7].lower() == u'http://':
         fileIds = fileIds[fileIds.find(u'/d/')+3:]
         if fileIds.find(u'/') != -1:
           fileIds = fileIds[:fileIds.find(u'/')]
@@ -4311,7 +4300,7 @@ def downloadDriveFile(users):
     if query:
       fileIds = doDriveSearch(drive, query=query)
     else:
-      if fileIds[0][:8].lower() == 'https://' or fileIds[0][:7].lower == 'http://':
+      if fileIds[0][:8].lower() == 'https://' or fileIds[0][:7].lower() == 'http://':
         fileIds[0] = fileIds[0][fileIds[0].find('/d/')+3:]
         if fileIds[0].find('/') != -1:
           fileIds[0] = fileIds[0][:fileIds[0].find('/')]
@@ -4901,7 +4890,7 @@ def doLabel(users):
 def doDeleteMessages(users, trashOrDelete):
   query = None
   doIt = False
-  maxToProcess = GC_Values[GC_MAX_MESSAGES_TO_PROCESS]
+  maxToProcess = 1
   i = 5
   while i < len(sys.argv):
     my_arg = sys.argv[i].lower().replace(u'_', u'')
@@ -4958,7 +4947,7 @@ def doDeleteMessages(users, trashOrDelete):
 def doSpamMessages(users):
   query = None
   doIt = False
-  maxToProcess = GC_Values[GC_MAX_MESSAGES_TO_PROCESS]
+  maxToProcess = 1
   i = 5
   while i < len(sys.argv):
     my_arg = sys.argv[i].lower().replace(u'_', u'')
@@ -6181,6 +6170,8 @@ def doUpdateUser(users):
         body[u'ipWhitelisted'] = True
       elif sys.argv[i+1].lower() in FALSE_VALUES:
         body[u'ipWhitelisted'] = False
+      else:
+        invalidChoiceExit(TRUE_FALSE, i+1)
       i += 2
     elif my_arg in [u'sha', u'sha1', u'sha-1']:
       do_update_user = True
@@ -6970,8 +6961,7 @@ def doGetUserInfo(user_email=None):
     user_email = user_email[4:]
   elif user_email.find(u'@') == -1:
     user_email = u'%s@%s' % (user_email, GC_Values[GC_DOMAIN])
-  getSchemas = getAliases = getGroups = True
-  getLicenses = GC_Values[GC_SHOW_LICENSES]
+  getSchemas = getAliases = getGroups = getLicenses = True
   projection = USER_PROJECTION_FULL
   customFieldMask = viewType = None
   i = 4
@@ -9748,7 +9738,7 @@ def doCSV():
     encoding = GC_Values[GC_CHARSET]
   f = openFile(filename)
   csvFile = UnicodeDictReader(f, encoding=encoding)
-  if (i < len(sys.argv)) and (sys.argv[i].lower == MATCHFIELD_CMD):
+  if (i < len(sys.argv)) and (sys.argv[i].lower() == MATCHFIELD_CMD):
     i += 1
     if i == len(sys.argv):
       missingArgumentExit(u'FieldName')
@@ -9804,15 +9794,13 @@ def ProcessGAMCommand(args, processGamCfg=True):
   savedStdout = sys.stdout
   savedStderr = sys.stderr
   try:
-    if len(sys.argv) > 1:
-      command = sys.argv[1].lower()
-    else:
-      command = None
+    command = sys.argv[1].lower() if len(sys.argv) > 1 else None
     if command == LOOP_CMD:
       doLoop(processGamCfg=True)
       sys.exit(0)
     if processGamCfg and (not SetGlobalVariables()):
       sys.exit(0)
+    command = sys.argv[1].lower() if len(sys.argv) > 1 else None
     if command == LOOP_CMD:
       doLoop(processGamCfg=False)
       sys.exit(0)
@@ -10349,10 +10337,10 @@ def doLoop(processGamCfg=True):
     encoding = sys.argv[i+1]
     i += 2
   else:
-    encoding = GC_Values[GC_CHARSET]
+    encoding = GC_Values.get(GC_CHARSET, u'ascii')
   f = openFile(filename)
   csvFile = UnicodeDictReader(f, encoding=encoding)
-  if (i < len(sys.argv)) and (sys.argv[i].lower == MATCHFIELD_CMD):
+  if (i < len(sys.argv)) and (sys.argv[i].lower() == MATCHFIELD_CMD):
     i += 1
     if i == len(sys.argv):
       missingArgumentExit(u'FieldName')
