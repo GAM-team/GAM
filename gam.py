@@ -225,6 +225,8 @@ GC_VAR_ALIASES = {
 # Command line batch/csv keywords
 GAM_CMD = u'gam'
 COMMIT_BATCH_CMD = u'commit-batch'
+LOOP_CMD = u'loop'
+MATCHFIELD_CMD = u'matchfield'
 #
 # Command line redirect/select/config arguments
 # Command line select/options arguments
@@ -260,6 +262,12 @@ CONFIG_SUB_CMDS = [CONFIG_CREATE_CMD, CONFIG_DELETE_CMD, CONFIG_SELECT_CMD,
                    CONFIG_CMD,
                   ]
 #
+# Google API constants
+NEVER_TIME = u'1970-01-01T00:00:00.000Z'
+NEVER_START_DATE = u'1970-01-01'
+NEVER_END_DATE = u'1969-12-31'
+SORTORDER_CHOICES_MAP = {u'ascending': u'ASCENDING', u'descending': u'DESCENDING'}
+
 # Valid language codes
 LANGUAGE_CODES_MAP = {
   u'af': u'af', #Afrikaans
@@ -471,6 +479,12 @@ def usageErrorExit(message, i):
   sys.stderr.write(u'\n{0}{1}\n'.format(ERROR_PREFIX, message))
   sys.stderr.write(u'\nHelp: Documentation is at {0}\n'.format(GAM_WIKI))
   sys.exit(2)
+#
+# Invalid CSV ~Header
+#
+def csvFieldErrorExit(fieldName, fieldNames, i):
+  usageErrorExit(u'Header "{0}" not found in CSV headers of "{1}"'.format(fieldName, u','.join(fieldNames)), i)
+
 #
 # The last thing shown is unknown
 #
@@ -1821,7 +1835,7 @@ def showReport():
     for app in auth_apps: # put apps at bottom
       cust_attributes.append(app)
     output_csv(csv_list=cust_attributes, titles=titles, list_type=u'Customer Report - %s' % try_date, todrive=to_drive)
-  else:     # u'admin', u'calendar', u'drive', u'login', u'token',
+  else:     # admin, calendar, drive, login, token
     page_message = getPageMessage(u'items', showTotal=False)
     activities = callGAPIpages(service=rep.activities(), function=u'list', page_message=page_message,
                                applicationName=report, userKey=userKey, customerId=GC_Values[GC_CUSTOMER_ID], actorIpAddress=actorIpAddress,
@@ -2368,7 +2382,7 @@ def doPrintPrintJobs():
   owner = None
   status = None
   sortorder = None
-  descending = False
+  ascDesc = None
   query = None
   age = None
   older_or_newer = None
@@ -2405,11 +2419,8 @@ def doPrintPrintJobs():
         invalidChoiceExit(PRINTJOB_STATUS_MAP, i+1)
       status = PRINTJOB_STATUS_MAP[status]
       i += 2
-    elif my_arg == u'ascending':
-      descending = False
-      i += 1
-    elif my_arg == u'descending':
-      descending = True
+    elif my_arg in SORTORDER_CHOICES_MAP:
+      ascDesc = SORTORDER_CHOICES_MAP[my_arg]
       i += 1
     elif my_arg == u'orderby':
       sortorder = sys.argv[i+1].lower().replace(u'_', u'')
@@ -2425,7 +2436,7 @@ def doPrintPrintJobs():
       i += 2
     else:
       unknownArgumentExit(i)
-  if sortorder and descending:
+  if sortorder and (ascDesc == u'DESCENDING'):
     sortorder = PRINTJOB_DESCENDINGORDER_MAP[sortorder]
   jobs = callGAPI(service=cp.jobs(), function=u'list', q=query, status=status, sortorder=sortorder, printerid=printerid, owner=owner)
   checkCloudPrintResult(jobs)
@@ -2843,7 +2854,7 @@ def doPrintJobFetch():
   owner = None
   status = None
   sortorder = None
-  descending = False
+  ascDesc = None
   query = None
   age = None
   older_or_newer = None
@@ -2877,11 +2888,8 @@ def doPrintJobFetch():
         invalidChoiceExit(PRINTJOB_STATUS_MAP, i+1)
       status = PRINTJOB_STATUS_MAP[status]
       i += 2
-    elif my_arg == u'ascending':
-      descending = False
-      i += 1
-    elif my_arg == u'descending':
-      descending = True
+    elif my_arg in SORTORDER_CHOICES_MAP:
+      ascDesc = SORTORDER_CHOICES_MAP[my_arg]
       i += 1
     elif my_arg == u'orderby':
       sortorder = sys.argv[i+1].lower().replace(u'_', u'')
@@ -2894,7 +2902,7 @@ def doPrintJobFetch():
       i += 2
     else:
       unknownArgumentExit(i)
-  if sortorder and descending:
+  if sortorder and (ascDesc == u'DESCENDING'):
     sortorder = PRINTJOB_DESCENDINGORDER_MAP[sortorder]
   result = callGAPI(service=cp.jobs(), function=u'list', q=query, status=status, sortorder=sortorder, printerid=printerid, owner=owner)
   if u'errorCode' in result and result[u'errorCode'] == 413:
@@ -3103,7 +3111,7 @@ def doPrintJobSubmit():
   callGAPI(service=cp.printers(), function=u'get', printerid=printer)
   _, result = cp._http.request(uri='https://www.google.com/cloudprint/submit', method='POST', body=body, headers=headers)
   checkCloudPrintResult(result)
-  if type(result) is str:
+  if isinstance(result, str):
     result = json.loads(result)
   print u'Submitted print job %s' % result[u'job'][u'id']
 
@@ -3123,7 +3131,7 @@ def doCancelPrintJob():
   print u'Print Job %s cancelled' % job
 
 def checkCloudPrintResult(result):
-  if type(result) is str:
+  if isinstance(result, str):
     try:
       result = json.loads(result)
     except ValueError:
@@ -3720,29 +3728,40 @@ def delDriveFileACL(users):
     print u'Removing permission for %s from %s' % (permissionId, fileId)
     callGAPI(service=drive.permissions(), function=u'delete', fileId=fileId, permissionId=permissionId)
 
-DRIVEFILE_ACL_ROLES = [
-  u'commenter',
-  u'editor',
-  u'owner',
-  u'reader',
-  u'writer',
-  ]
+DRIVEFILE_ACL_ROLE_READER = u'reader'
+DRIVEFILE_ACL_ROLE_COMMENTER = u'commenter'
+DRIVEFILE_ACL_ROLE_WRITER = u'writer'
+DRIVEFILE_ACL_ROLE_OWNER = u'owner'
 
-DRIVEFILE_ACL_PERMISSION_TYPES = [
-  u'anyone',
-  u'domain',
-  u'group',
-  u'user',
-  ]
+DRIVEFILE_ACL_ROLES_MAP = {
+  u'commenter': DRIVEFILE_ACL_ROLE_COMMENTER,
+  u'editor': DRIVEFILE_ACL_ROLE_WRITER,
+  u'owner': DRIVEFILE_ACL_ROLE_OWNER,
+  u'reader': DRIVEFILE_ACL_ROLE_READER,
+  u'writer': DRIVEFILE_ACL_ROLE_WRITER,
+  }
+
+DRIVEFILE_ACL_TYPE_USER = u'user'
+DRIVEFILE_ACL_TYPE_GROUP = u'group'
+DRIVEFILE_ACL_TYPE_DOMAIN = u'domain'
+DRIVEFILE_ACL_TYPE_ANYONE = u'anyone'
+
+DRIVEFILE_ACL_PERMISSION_TYPES_MAP = {
+  u'anyone': DRIVEFILE_ACL_TYPE_ANYONE,
+  u'domain': DRIVEFILE_ACL_TYPE_DOMAIN,
+  u'group': DRIVEFILE_ACL_TYPE_GROUP,
+  u'user': DRIVEFILE_ACL_TYPE_USER,
+  }
 
 def addDriveFileACL(users):
-  fileId = sys.argv[5]
-  body = {u'type': sys.argv[6].lower()}
   sendNotificationEmails = False
   emailMessage = None
-  if body[u'type'] not in DRIVEFILE_ACL_PERMISSION_TYPES:
-    invalidChoiceExit(DRIVEFILE_ACL_PERMISSION_TYPES, 6)
-  if body[u'type'] == u'anyone':
+  fileId = sys.argv[5]
+  my_arg = sys.argv[6].lower()
+  if my_arg not in DRIVEFILE_ACL_PERMISSION_TYPES_MAP:
+    invalidChoiceExit(DRIVEFILE_ACL_PERMISSION_TYPES_MAP, 6)
+  body = {u'type': DRIVEFILE_ACL_PERMISSION_TYPES_MAP[my_arg]}
+  if body[u'type'] == DRIVEFILE_ACL_TYPE_ANYONE:
     i = 7
   else:
     body[u'value'] = sys.argv[7]
@@ -3753,14 +3772,13 @@ def addDriveFileACL(users):
       body[u'withLink'] = True
       i += 1
     elif my_arg == u'role':
-      body[u'role'] = sys.argv[i+1]
-      if body[u'role'] not in DRIVEFILE_ACL_ROLES:
-        invalidChoiceExit(DRIVEFILE_ACL_ROLES, i+1)
-      if body[u'role'] == u'commenter':
-        body[u'role'] = u'reader'
-        body[u'additionalRoles'] = [u'commenter']
-      elif body[u'role'] == u'editor':
-        body[u'role'] = u'writer'
+      role = sys.argv[i+1].lower()
+      if role not in DRIVEFILE_ACL_ROLES_MAP:
+        invalidChoiceExit(DRIVEFILE_ACL_ROLES_MAP, i+1)
+      body[u'role'] = DRIVEFILE_ACL_ROLES_MAP[role]
+      if body[u'role'] == DRIVEFILE_ACL_ROLE_COMMENTER:
+        body[u'role'] = DRIVEFILE_ACL_ROLE_READER
+        body[u'additionalRoles'] = [DRIVEFILE_ACL_ROLE_COMMENTER]
       i += 2
     elif my_arg == u'sendemail':
       sendNotificationEmails = True
@@ -3788,14 +3806,13 @@ def updateDriveFileACL(users):
       body[u'withLink'] = True
       i += 1
     elif my_arg == u'role':
-      body[u'role'] = sys.argv[i+1]
-      if body[u'role'] not in DRIVEFILE_ACL_ROLES:
-        invalidChoiceExit(DRIVEFILE_ACL_ROLES, i+1)
-      if body[u'role'] == u'commenter':
-        body[u'role'] = u'reader'
-        body[u'additionalRoles'] = [u'commenter']
-      elif body[u'role'] == u'editor':
-        body[u'role'] = u'writer'
+      role = sys.argv[i+1].lower()
+      if role not in DRIVEFILE_ACL_ROLES_MAP:
+        invalidChoiceExit(DRIVEFILE_ACL_ROLES_MAP, i+1)
+      body[u'role'] = DRIVEFILE_ACL_ROLES_MAP[role]
+      if body[u'role'] == DRIVEFILE_ACL_ROLE_COMMENTER:
+        body[u'role'] = DRIVEFILE_ACL_ROLE_READER
+        body[u'additionalRoles'] = [DRIVEFILE_ACL_ROLE_COMMENTER]
       i += 2
     elif my_arg == u'transferownership':
       if sys.argv[i+1].lower() in TRUE_VALUES:
@@ -4242,6 +4259,12 @@ DOCUMENT_FORMATS_MAP = {
   u'ms': [{u'mime': u'application/vnd.openxmlformats-officedocument.presentationml.presentation', u'.ext': u'.pptx'},
           {u'mime': u'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', u'.ext': u'.xlsx'},
           {u'mime': u'application/vnd.openxmlformats-officedocument.wordprocessingml.document', u'.ext': u'.docx'}],
+  u'microsoft': [{u'mime': u'application/vnd.openxmlformats-officedocument.presentationml.presentation', u'.ext': u'.pptx'},
+                 {u'mime': u'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', u'.ext': u'.xlsx'},
+                 {u'mime': u'application/vnd.openxmlformats-officedocument.wordprocessingml.document', u'.ext': u'.docx'}],
+  u'micro$oft': [{u'mime': u'application/vnd.openxmlformats-officedocument.presentationml.presentation', u'.ext': u'.pptx'},
+                 {u'mime': u'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', u'.ext': u'.xlsx'},
+                 {u'mime': u'application/vnd.openxmlformats-officedocument.wordprocessingml.document', u'.ext': u'.docx'}],
   u'odt': [{u'mime': u'application/vnd.oasis.opendocument.text', u'.ext': u'.odt'}],
   u'ods': [{u'mime': u'application/x-vnd.oasis.opendocument.spreadsheet', u'.ext': u'.ods'}],
   u'openoffice': [{u'mime': u'application/vnd.oasis.opendocument.text', u'.ext': u'.odt'},
@@ -4583,6 +4606,13 @@ def doLicense(users, operation):
         usageErrorExit(u'You must specify the user\'s old SKU as the last argument', i)
       _, old_sku = getProductAndSKU(old_sku)
       callGAPI(service=lic.licenseAssignments(), function=operation, soft_errors=True, productId=productId, skuId=old_sku, userId=user, body={u'skuId': skuId})
+
+EMAILSETTINGS_POP_ACTION_KEEP = u'KEEP'
+EMAILSETTINGS_POP_ACTION_ARCHIVE = u'ARCHIVE'
+EMAILSETTINGS_POP_ACTION_DELETE = u'DELETE'
+
+EMAILSETTINGS_POP_ENABLE_FOR_ALL_MAIL = u'ALL_MAIL'
+EMAILSETTINGS_POP_ENABLE_FOR_MAIL_FROM_NOW_ON = u'MAIL_FROM_NOW_ON'
 
 EMAILSETTINGS_POP_ENABLE_FOR_CHOICES_MAP = {
   u'allmail': u'ALL_MAIL',
@@ -4964,6 +4994,9 @@ def doSpamMessages(users):
       callGAPI(service=gmail.users().messages(), function=u'modify',
                id=move_me[u'id'], userId=u'me', body={u'addLabelIds': ['SPAM'], u'removeLabelIds': ['INBOX']})
 
+LABEL_TYPE_SYSTEM = u'system'
+LABEL_TYPE_USER = u'user'
+
 def doDeleteLabel(users):
   label = sys.argv[5]
   for user in users:
@@ -4973,14 +5006,14 @@ def doDeleteLabel(users):
     del_labels = []
     if label == u'--ALL_LABELS--':
       for del_label in labels[u'labels']:
-        if del_label[u'type'] == u'system':
+        if del_label[u'type'] == LABEL_TYPE_SYSTEM:
           continue
         del_labels.append(del_label)
     elif label[:6].lower() == u'regex:':
       regex = label[6:]
       p = re.compile(regex)
       for del_label in labels[u'labels']:
-        if del_label[u'type'] == u'system':
+        if del_label[u'type'] == LABEL_TYPE_SYSTEM:
           continue
         elif p.match(del_label[u'name']):
           del_labels.append(del_label)
@@ -5012,12 +5045,12 @@ def gmail_del_result(request_id, response, exception):
     print exception
 
 def showLabels(users):
-  show_system = True
+  onlyUser = False
   i = 5
   while i < len(sys.argv):
     my_arg = sys.argv[i].lower().replace(u'_', u'')
     if my_arg == u'onlyuser':
-      show_system = False
+      onlyUser = True
       i += 1
     else:
       unknownArgumentExit(i)
@@ -5025,7 +5058,7 @@ def showLabels(users):
     gmail = buildGAPIServiceObject(u'gmail', act_as=user)
     labels = callGAPI(service=gmail.users().labels(), function=u'list', userId=user)
     for label in labels[u'labels']:
-      if label[u'type'] == u'system' and not show_system:
+      if onlyUser and (label[u'type'] == LABEL_TYPE_SYSTEM):
         continue
       print convertUTF8(label[u'name'])
       for a_key in label:
@@ -5113,7 +5146,7 @@ def renameLabels(users):
     gmail = buildGAPIServiceObject(u'gmail', act_as=user)
     labels = callGAPI(service=gmail.users().labels(), function=u'list', userId=user)
     for label in labels[u'labels']:
-      if label[u'type'] == u'system':
+      if label[u'type'] == LABEL_TYPE_SYSTEM:
         continue
       match_result = re.search(pattern, label[u'name'])
       if match_result != None:
@@ -5254,9 +5287,9 @@ def doFilter(users):
               should_star=should_star, forward_to=forward_to, should_trash=should_trash, should_not_spam=should_not_spam)
 
 EMAILSETTINGS_FORWARD_ACTION_CHOICES_MAP = {
-  u'keep': u'KEEP',
   u'archive': u'ARCHIVE',
   u'delete': u'DELETE',
+  u'keep': u'KEEP',
   }
 
 def doForward(users):
@@ -6780,7 +6813,17 @@ def doUpdateCros():
     callGAPI(service=cd.chromeosdevices(), function=u'patch', deviceId=this_device, body=body, customerId=GC_Values[GC_CUSTOMER_ID])
     i += 1
 
-MOBILE_ACTIONS = [u'admin_remote_wipe', u'admin_account_wipe', u'approve', u'block', u'cancel_remote_wipe_then_activate', u'cancel_remote_wipe_then_block']
+MOBILE_ACTION_CHOICE_MAP = {
+  u'accountwipe': u'admin_account_wipe',
+  u'adminaccountwipe': u'admin_account_wipe',
+  u'wipeaccount': u'admin_account_wipe',
+  u'adminremotewipe': u'admin_remote_wipe',
+  u'wipe': u'admin_remote_wipe',
+  u'approve': u'approve',
+  u'block': u'action_block',
+  u'cancelremotewipethenactivate': u'cancel_remote_wipe_then_activate',
+  u'cancelremotewipethenblock': u'cancel_remote_wipe_then_block',
+  }
 
 def doUpdateMobile():
   resourceId = sys.argv[3]
@@ -6791,13 +6834,10 @@ def doUpdateMobile():
   while i < len(sys.argv):
     my_arg = sys.argv[i].lower().replace(u'_', u'')
     if my_arg == u'action':
-      action_body[u'action'] = sys.argv[i+1].lower()
-      if action_body[u'action'] == u'wipe':
-        action_body[u'action'] = u'admin_remote_wipe'
-      elif action_body[u'action'].replace(u'_', u'') in [u'accountwipe', u'wipeaccount']:
-        action_body[u'action'] = u'admin_account_wipe'
-      if action_body[u'action'] not in MOBILE_ACTIONS:
-        invalidChoiceExit(MOBILE_ACTIONS, i+1)
+      action = sys.argv[i+1].lower().replace(u'_', u'')
+      if action not in MOBILE_ACTION_CHOICE_MAP:
+        invalidChoiceExit(MOBILE_ACTION_CHOICE_MAP, i+1)
+      action_body[u'action'] = MOBILE_ACTION_CHOICE_MAP[action]
       doAction = True
       i += 2
     elif my_arg == u'model':
@@ -6910,6 +6950,10 @@ def doWhatIs():
     sys.stderr.write(u'%s is a group alias\n\n' % email)
     doGetAliasInfo(alias_email=email)
 
+USER_PROJECTION_BASIC = u'basic'
+USER_PROJECTION_CUSTOM = u'custom'
+USER_PROJECTION_FULL = u'full'
+
 def doGetUserInfo(user_email=None):
   cd = buildGAPIObject(u'directory')
   if user_email == None:
@@ -6928,7 +6972,7 @@ def doGetUserInfo(user_email=None):
     user_email = u'%s@%s' % (user_email, GC_Values[GC_DOMAIN])
   getSchemas = getAliases = getGroups = True
   getLicenses = GC_Values[GC_SHOW_LICENSES]
-  projection = u'full'
+  projection = USER_PROJECTION_FULL
   customFieldMask = viewType = None
   i = 4
   while i < len(sys.argv):
@@ -6944,11 +6988,11 @@ def doGetUserInfo(user_email=None):
       i += 1
     elif my_arg == u'noschemas':
       getSchemas = False
-      projection = u'basic'
+      projection = USER_PROJECTION_BASIC
       i += 1
     elif my_arg == u'schemas':
       getSchemas = True
-      projection = u'custom'
+      projection = USER_PROJECTION_CUSTOM
       customFieldMask = sys.argv[i+1]
       i += 2
     elif my_arg == u'userview':
@@ -6988,7 +7032,7 @@ def doGetUserInfo(user_email=None):
   if u'creationTime' in user:
     print u'Creation Time: %s' % user[u'creationTime']
   if u'lastLoginTime' in user:
-    if user[u'lastLoginTime'] == u'1970-01-01T00:00:00.000Z':
+    if user[u'lastLoginTime'] == NEVER_TIME:
       print u'Last login time: Never'
     else:
       print u'Last login time: %s' % user[u'lastLoginTime']
@@ -7092,7 +7136,7 @@ def doGetUserInfo(user_email=None):
       for schema in user[u'customSchemas']:
         print u' Schema: %s' % schema
         for field in user[u'customSchemas'][schema]:
-          if type(user[u'customSchemas'][schema][field]) is list:
+          if isinstance(user[u'customSchemas'][schema][field], list):
             print '  %s:' % field
             for an_item in user[u'customSchemas'][schema][field]:
               print '   %s' % an_item[u'value']
@@ -7157,7 +7201,7 @@ def doGetGroupInfo(group_name=None):
   for key, value in basic_info.items():
     if key in [u'kind', u'etag']:
       continue
-    elif type(value) == type(list()):
+    if isinstance(value, list):
       print u' %s:' % key
       for val in value:
         print u'  %s' % val
@@ -7238,17 +7282,17 @@ def print_json(object_name, object_value, spacing=u''):
     return
   if object_name != None:
     sys.stdout.write(u'%s%s: ' % (spacing, object_name))
-  if type(object_value) is list:
-    if len(object_value) == 1 and type(object_value[0]) in (str, unicode, int):
+  if isinstance(object_value, list):
+    if len(object_value) == 1 and isinstance(object_value[0], (str, unicode, int, bool)):
       sys.stdout.write(u'%s\n' % object_value[0])
       return
     sys.stdout.write(u'\n')
     for a_value in object_value:
-      if type(a_value) in (str, unicode):
+      if isinstance(a_value, (str, unicode, int, bool)):
         print u' %s%s' % (spacing, a_value)
       else:
         print_json(object_name=None, object_value=a_value, spacing=u' %s' % spacing)
-  elif type(object_value) is dict:
+  elif isinstance(object_value, dict):
     for another_object in object_value:
       print_json(object_name=another_object, object_value=object_value[another_object], spacing=spacing)
   else:
@@ -7326,7 +7370,7 @@ SITEVERIFICATION_VERIFICATION_METHOD_DNS_TXT = u'DNS_TXT'
 SITEVERIFICATION_VERIFICATION_METHOD_FILE = u'FILE'
 SITEVERIFICATION_VERIFICATION_METHOD_META = u'META'
 
-VERIFICATION_METHOD_CHOICES_MAP = {
+SITEVERIFICATION_METHOD_CHOICES_MAP = {
   u'cname': SITEVERIFICATION_VERIFICATION_METHOD_DNS_CNAME,
   u'txt': SITEVERIFICATION_VERIFICATION_METHOD_DNS_TXT,
   u'text': SITEVERIFICATION_VERIFICATION_METHOD_DNS_TXT,
@@ -7388,9 +7432,9 @@ def doSiteVerifyAttempt():
   verif = buildGAPIObject(u'siteVerification')
   a_domain = sys.argv[3]
   verificationMethod = sys.argv[4].lower()
-  if verificationMethod not in VERIFICATION_METHOD_CHOICES_MAP:
-    invalidChoiceExit(VERIFICATION_METHOD_CHOICES_MAP, 4)
-  verificationMethod = VERIFICATION_METHOD_CHOICES_MAP[verificationMethod]
+  if verificationMethod not in SITEVERIFICATION_METHOD_CHOICES_MAP:
+    invalidChoiceExit(SITEVERIFICATION_METHOD_CHOICES_MAP, 4)
+  verificationMethod = SITEVERIFICATION_METHOD_CHOICES_MAP[verificationMethod]
   if verificationMethod in [SITEVERIFICATION_VERIFICATION_METHOD_DNS_TXT, SITEVERIFICATION_VERIFICATION_METHOD_DNS_CNAME]:
     verify_type = SITEVERIFICATION_SITE_TYPE_INET_DOMAIN
     identifier = a_domain
@@ -7480,6 +7524,9 @@ def doGetNotifications():
     print u'--------------'
     print u''
 
+ORGANIZATION_QUERY_TYPE_ALL = u'all'
+ORGANIZATION_QUERY_TYPE_CHILDREN = u'children'
+
 def doGetOrgInfo():
   cd = buildGAPIObject(u'directory')
   name = sys.argv[3]
@@ -7496,7 +7543,7 @@ def doGetOrgInfo():
       unknownArgumentExit(i)
   if name == u'/':
     orgs = callGAPI(service=cd.orgunits(), function=u'list',
-                    customerId=GC_Values[GC_CUSTOMER_ID], type=u'children',
+                    customerId=GC_Values[GC_CUSTOMER_ID], type=ORGANIZATION_QUERY_TYPE_CHILDREN,
                     fields=u'organizationUnits/parentOrgUnitId')
     name = orgs[u'organizationUnits'][0][u'parentOrgUnitId']
   if len(name) > 1 and name[0] == u'/':
@@ -7627,11 +7674,11 @@ def doGetTokens(users):
         for item in token:
           if item in [u'etag', u'kind', u'clientId']:
             continue
-          if type(token[item]) is list:
+          if isinstance(token[item], list):
             print u' %s:' % item
             for it in token[item]:
               print u'  %s' % it
-          if type(token[item]) in (unicode, bool):
+          elif isinstance(token[item], (unicode, bool)):
             try:
               print u' %s: %s' % (item, token[item])
             except UnicodeEncodeError:
@@ -7684,6 +7731,10 @@ ADMINSETTINGS_EMAIL_ACCOUNT_HANDLING_CHOICES_MAP = {
   u'provisionedaccounts': u'provisionedAccounts',
   u'unknownaccounts': u'unknownAccounts',
   }
+OUTBOUND_GATEWAY_MODE_CHOICES_MAP = {
+  u'smtp': u'SMTP',
+  u'smtp_tls': u'SMTP_TLS',
+}
 
 def doUpdateDomain():
   adminObj = getAdminSettingsObject()
@@ -7770,7 +7821,10 @@ def doUpdateDomain():
     result = callGData(service=adminObj, function=u'UpdateUserMigrationStatus', enableUserMigration=value)
   elif command == u'outbound_gateway':
     gateway = sys.argv[4]
-    mode = sys.argv[6].upper()
+    mode = sys.argv[6].lower()
+    if mode not in OUTBOUND_GATEWAY_MODE_CHOICES_MAP:
+      invalidChoiceExit(OUTBOUND_GATEWAY_MODE_CHOICES_MAP, 6)
+    mode = OUTBOUND_GATEWAY_MODE_CHOICES_MAP[mode]
     try:
       result = callGData(service=adminObj, function=u'UpdateOutboundGatewaySettings', smartHost=gateway, smtpMode=mode)
     except TypeError:
@@ -7961,7 +8015,7 @@ def doUndeleteUser():
         print u' uid:%s ' % matching_user[u'id']
         for attr_name in [u'creationTime', u'lastLoginTime', u'deletionTime']:
           try:
-            if matching_user[attr_name] == u'1970-01-01T00:00:00.000Z':
+            if matching_user[attr_name] == NEVER_TIME:
               matching_user[attr_name] = u'Never'
             print u'   %s: %s ' % (attr_name, matching_user[attr_name])
           except KeyError:
@@ -8059,7 +8113,7 @@ def output_csv(csv_list, titles, list_type, todrive):
 def flatten_json(structure, key="", path="", flattened=None):
   if flattened == None:
     flattened = {}
-  if type(structure) not in(dict, list):
+  if not isinstance(structure, (dict, list)):
     flattened[((path + ".") if path else "") + key] = structure
   elif isinstance(structure, list):
     for i, item in enumerate(structure):
@@ -8068,7 +8122,7 @@ def flatten_json(structure, key="", path="", flattened=None):
     for new_key, value in structure.items():
       if new_key in [u'kind', u'etag']:
         continue
-      if value == u'1970-01-01T00:00:00.000Z':
+      if value == NEVER_TIME:
         value = u'Never'
       flatten_json(value, new_key, ".".join([item for item in [path, key] if item]), flattened)
   return flattened
@@ -8082,7 +8136,7 @@ def doPrintUsers():
   customer = GC_Values[GC_CUSTOMER_ID]
   printDomain = None
   query = None
-  projection = u'basic'
+  projection = USER_PROJECTION_BASIC
   customFieldMask = None
   getGroupFeed = getLicenseFeed = email_parts = False
   todrive = False
@@ -8097,9 +8151,9 @@ def doPrintUsers():
     elif my_arg == u'custom':
       user_fields.append(u'customSchemas')
       if sys.argv[i+1].lower() == u'all':
-        projection = u'full'
+        projection = USER_PROJECTION_FULL
       else:
-        projection = u'custom'
+        projection = USER_PROJECTION_CUSTOM
         customFieldMask = sys.argv[i+1]
       i += 2
     elif my_arg == u'todrive':
@@ -8123,8 +8177,8 @@ def doPrintUsers():
     elif my_arg == u'userview':
       viewType = u'domain_public'
       i += 1
-    elif my_arg in [u'ascending', u'descending']:
-      sortOrder = sys.argv[i].upper()
+    elif my_arg in SORTORDER_CHOICES_MAP:
+      sortOrder = SORTORDER_CHOICES_MAP[my_arg]
       i += 1
     elif my_arg == u'domain':
       printDomain = sys.argv[i+1]
@@ -8444,7 +8498,7 @@ def doPrintGroups():
 
 def doPrintOrgs():
   printname = printdesc = printparent = printinherit = todrive = False
-  listType = u'all'
+  listType = ORGANIZATION_QUERY_TYPE_ALL
   orgUnitPath = u"/"
   org_attributes = [{}]
   fields = u'organizationUnits(orgUnitPath)'
@@ -8462,7 +8516,7 @@ def doPrintOrgs():
       titles.append(u'Name')
       i += 1
     elif my_arg == u'toplevelonly':
-      listType = u'children'
+      listType = ORGANIZATION_QUERY_TYPE_CHILDREN
       i += 1
     elif my_arg == u'fromparent':
       orgUnitPath = sys.argv[i+1]
@@ -8602,12 +8656,20 @@ MOBILE_ORDERBY_CHOICES_MAP = {
   u'type': u'type',
   }
 
+MOBILE_PROJECTION_BASIC = u'BASIC'
+MOBILE_PROJECTION_FULL = u'FULL'
+
+MOBILE_PROJECTION_CHOICES_MAP = {
+  u'basic': MOBILE_PROJECTION_BASIC,
+  u'full': MOBILE_PROJECTION_FULL,
+  }
+
 def doPrintMobileDevices():
   cd = buildGAPIObject(u'directory')
   mobile_attributes = [{}]
   titles = []
   todrive = False
-  query = orderBy = sortOrder = None
+  query = projection = orderBy = sortOrder = None
   i = 3
   while i < len(sys.argv):
     my_arg = sys.argv[i].lower().replace(u'_', u'')
@@ -8623,15 +8685,19 @@ def doPrintMobileDevices():
         invalidChoiceExit(MOBILE_ORDERBY_CHOICES_MAP, i+1)
       orderBy = MOBILE_ORDERBY_CHOICES_MAP[orderBy]
       i += 2
-    elif my_arg in [u'ascending', u'descending']:
-      sortOrder = sys.argv[i].upper()
+    elif my_arg in SORTORDER_CHOICES_MAP:
+      sortOrder = SORTORDER_CHOICES_MAP[my_arg]
+      i += 1
+    elif my_arg in MOBILE_PROJECTION_CHOICES_MAP:
+      projection = MOBILE_PROJECTION_CHOICES_MAP[my_arg]
       i += 1
     else:
       unknownArgumentExit(i)
   printGettingMessage(u'Retrieving All Mobile Devices for organization (may take some time for large accounts)...\n')
   page_message = getPageMessage(u'mobile devices')
   all_mobile = callGAPIpages(service=cd.mobiledevices(), function=u'list', items=u'mobiledevices', page_message=page_message,
-                             customerId=GC_Values[GC_CUSTOMER_ID], query=query, orderBy=orderBy, sortOrder=sortOrder)
+                             customerId=GC_Values[GC_CUSTOMER_ID], query=query, projection=projection,
+                             orderBy=orderBy, sortOrder=sortOrder)
   for mobile in all_mobile:
     mobiledevice = dict()
     for title in mobile:
@@ -8661,6 +8727,15 @@ CROS_ORDERBY_CHOICES_MAP = {
   u'supportenddate': u'supportEndDate',
   u'user': u'annotatedUser',
   }
+
+CHROMEOSDEVICE_PROJECTION_BASIC = u'BASIC'
+CHROMEOSDEVICE_PROJECTION_FULL = u'FULL'
+
+CROS_PROJECTION_CHOICES_MAP = {
+  u'basic': CHROMEOSDEVICE_PROJECTION_BASIC,
+  u'full': CHROMEOSDEVICE_PROJECTION_FULL,
+  }
+
 
 def doPrintCrosDevices():
   cd = buildGAPIObject(u'directory')
@@ -8697,16 +8772,16 @@ def doPrintCrosDevices():
         invalidChoiceExit(CROS_ORDERBY_CHOICES_MAP, i+1)
       orderBy = CROS_ORDERBY_CHOICES_MAP[orderBy]
       i += 2
-    elif my_arg in [u'ascending', u'descending']:
-      sortOrder = my_arg.upper()
+    elif my_arg in SORTORDER_CHOICES_MAP:
+      sortOrder = SORTORDER_CHOICES_MAP[my_arg]
       i += 1
-    elif my_arg in [u'basic', u'full']:
-      projection = my_arg.upper()
+    elif my_arg in CROS_PROJECTION_CHOICES_MAP:
+      projection = CROS_PROJECTION_CHOICES_MAP[my_arg]
       i += 1
     else:
       unknownArgumentExit(i)
   if selectAttrib:
-    projection = u'FULL'
+    projection = CHROMEOSDEVICE_PROJECTION_FULL
   printGettingMessage(u'Retrieving All Chrome OS Devices for organization (may take some time for large accounts)...\n')
   page_message = getPageMessage(u'Chrome devices')
   all_cros = callGAPIpages(service=cd.chromeosdevices(), function=u'list', items=u'chromeosdevices', page_message=page_message,
@@ -9630,6 +9705,97 @@ def run_batch(items, total_items):
     q.put(python_cmd+item)
   q.join()
 #
+# gam batch <FileName>|- [charset <Charset>]
+#
+def doBatch():
+  import shlex
+  filename = sys.argv[2]
+  i = 3
+  if (len(sys.argv) >= i+2) and (sys.argv[i].lower() == u'charset'):
+    encoding = sys.argv[i+1]
+    i += 2
+  else:
+    encoding = GC_Values[GC_CHARSET]
+  f = openFile(filename)
+  batchFile = UTF8Recoder(f, encoding)
+  items = []
+  cmdCount = 0
+  for line in batchFile:
+    argv = shlex.split(line)
+    if len(argv) > 0:
+      cmd = argv[0].strip()
+      if (not cmd) or cmd.startswith(u'#') or ((len(argv) == 1) and (cmd != COMMIT_BATCH_CMD)):
+        continue
+      if cmd == GAM_CMD:
+        items.append([arg.encode(sys.getfilesystemencoding()) for arg in argv[1:]])
+        cmdCount += 1
+      elif cmd == COMMIT_BATCH_CMD:
+        items.append(argv)
+      else:
+        sys.stderr.write(u'{0}"{1}" is not a valid gam command\n'.format(ERROR_PREFIX, line.strip()))
+  f.close()
+  run_batch(items, cmdCount)
+#
+# gam csv (-|<FileName>) [charset <Charset>] [matchfield <FieldName> <PythonRegularExpression>] gam <GAM argument list>
+#
+def doCSV():
+  filename = sys.argv[2]
+  i = 3
+  if (len(sys.argv) >= i+2) and (sys.argv[i].lower() == u'charset'):
+    encoding = sys.argv[i+1]
+    i += 2
+  else:
+    encoding = GC_Values[GC_CHARSET]
+  f = openFile(filename)
+  csvFile = UnicodeDictReader(f, encoding=encoding)
+  if (i < len(sys.argv)) and (sys.argv[i].lower == MATCHFIELD_CMD):
+    i += 1
+    if i == len(sys.argv):
+      missingArgumentExit(u'FieldName')
+    matchField = sys.argv[i]
+    i += 1
+    if i == len(sys.argv):
+      missingArgumentExit(u'PythonRegularExpress')
+    try:
+      matchPattern = re.compile(sys.argv[i])
+    except re.error as e:
+      usageErrorExit(u'PythonRegularExpression Error: {0}'.format(e), i)
+    i += 1
+  else:
+    matchField = None
+  if (i+1 > len(sys.argv)) or (sys.argv[i].lower() != GAM_CMD):
+    missingArgumentExit(u'GAM argument list')
+  i += 1
+  optionalSubs = {}
+  GAM_argv = []
+  GAM_argvI = 0
+  while i < len(sys.argv):
+    arg = sys.argv[i]
+    if arg[0] != '~':
+      GAM_argv.append(arg.encode(sys.getfilesystemencoding()))
+    else:
+      fieldName = arg[1:]
+      if fieldName in csvFile.fieldnames:
+        optionalSubs[GAM_argvI] = fieldName
+        GAM_argv.append(fieldName)
+      else:
+        csvFieldErrorExit(fieldName, csvFile.fieldnames, i)
+    i += 1
+    GAM_argvI += 1
+  items = []
+  for row in csvFile:
+    if matchField and ((matchField not in row) or (not matchPattern.search(row[matchField]))):
+      continue
+    argv = GAM_argv[:]
+    for GAM_argvI, fieldName in optionalSubs.iteritems():
+      if row[fieldName]:
+        argv[GAM_argvI] = row[fieldName].encode(sys.getfilesystemencoding())
+      else:
+        argv[GAM_argvI] = u''
+    items.append(argv)
+  f.close()
+  run_batch(items, len(items))
+#
 # Process GAM command
 #
 def ProcessGAMCommand(args, processGamCfg=True):
@@ -9638,78 +9804,26 @@ def ProcessGAMCommand(args, processGamCfg=True):
   savedStdout = sys.stdout
   savedStderr = sys.stderr
   try:
+    if len(sys.argv) > 1:
+      command = sys.argv[1].lower()
+    else:
+      command = None
+    if command == LOOP_CMD:
+      doLoop(processGamCfg=True)
+      sys.exit(0)
     if processGamCfg and (not SetGlobalVariables()):
       sys.exit(0)
-    command = sys.argv[1].lower()
+    if command == LOOP_CMD:
+      doLoop(processGamCfg=False)
+      sys.exit(0)
+    if len(sys.argv) == 1:
+      showUsage()
+      sys.exit(0)
     if command == u'batch':
-      import shlex
-      batch_filename = sys.argv[2]
-      i = 3
-      if (len(sys.argv) >= i+2) and (sys.argv[i].lower() == u'charset'):
-        encoding = sys.argv[i+1]
-        i += 2
-      else:
-        encoding = GC_Values[GC_CHARSET]
-      f = openFile(batch_filename)
-      batchFile = UTF8Recoder(f, encoding)
-      items = []
-      cmdCount = 0
-      for line in batchFile:
-        argv = shlex.split(line)
-        if len(argv) > 0:
-          cmd = argv[0].strip()
-          if (not cmd) or cmd.startswith(u'#') or ((len(argv) == 1) and (cmd != COMMIT_BATCH_CMD)):
-            continue
-          if cmd == GAM_CMD:
-            items.append([arg.encode(sys.getfilesystemencoding()) for arg in argv[1:]])
-            cmdCount += 1
-          elif cmd == COMMIT_BATCH_CMD:
-            items.append(argv)
-          else:
-            sys.stderr.write(u'{0}"{1}" is not a valid gam command\n'.format(ERROR_PREFIX, line.strip()))
-      f.close()
-      run_batch(items, cmdCount)
+      doBatch()
       sys.exit(0)
     elif command == 'csv':
-      csv_filename = sys.argv[2]
-      i = 3
-      if (len(sys.argv) >= i+2) and (sys.argv[i].lower() == u'charset'):
-        encoding = sys.argv[i+1]
-        i += 2
-      else:
-        encoding = GC_Values[GC_CHARSET]
-      f = openFile(csv_filename)
-      csvFile = UnicodeDictReader(f, encoding=encoding)
-      if (len(sys.argv) < i+1) or (sys.argv[i].lower() != GAM_CMD):
-        usageErrorExit('"gam csv {0}" must be followed by a full GAM command...'.format(csv_filename), i)
-      i += 1
-      optionalSubs = {}
-      GAM_argv = []
-      GAM_argvI = 0
-      while i < len(sys.argv):
-        arg = sys.argv[i]
-        if arg[0] != '~':
-          GAM_argv.append(arg.encode(sys.getfilesystemencoding()))
-        else:
-          fieldName = arg[1:]
-          if fieldName in csvFile.fieldnames:
-            optionalSubs[GAM_argvI] = fieldName
-            GAM_argv.append(fieldName)
-          else:
-            usageErrorExit('header "{0}" not found in CSV headers of "{1}", giving up.\n'.format(fieldName, ','.join(csvFile.fieldnames)), i)
-        i += 1
-        GAM_argvI += 1
-      items = []
-      for row in csvFile:
-        argv = GAM_argv[:]
-        for GAM_argvI, fieldName in optionalSubs.iteritems():
-          if row[fieldName]:
-            argv[GAM_argvI] = row[fieldName].encode(sys.getfilesystemencoding())
-          else:
-            argv[GAM_argvI] = u''
-        items.append(argv)
-      f.close()
-      run_batch(items, len(items))
+      doCSV()
       sys.exit(0)
     elif command == u'version':
       doGAMVersion()
@@ -10225,6 +10339,82 @@ def ProcessGAMCommand(args, processGamCfg=True):
     sys.stderr.close()
     sys.stderr = savedStderr
   return sysExitRC
+#
+# gam loop (-|<FileName>) [charset <String>] [matchfield <FieldName> <PythonRegularExpression>] gam <GAM argument list>
+#
+def doLoop(processGamCfg=True):
+  filename = sys.argv[2]
+  i = 3
+  if (len(sys.argv) >= i+2) and (sys.argv[i].lower() == u'charset'):
+    encoding = sys.argv[i+1]
+    i += 2
+  else:
+    encoding = GC_Values[GC_CHARSET]
+  f = openFile(filename)
+  csvFile = UnicodeDictReader(f, encoding=encoding)
+  if (i < len(sys.argv)) and (sys.argv[i].lower == MATCHFIELD_CMD):
+    i += 1
+    if i == len(sys.argv):
+      missingArgumentExit(u'FieldName')
+    matchField = sys.argv[i]
+    i += 1
+    if i == len(sys.argv):
+      missingArgumentExit(u'PythonRegularExpression')
+    try:
+      matchPattern = re.compile(sys.argv[i])
+    except re.error as e:
+      usageErrorExit(u'PythonRegularExpression Error: {0}'.format(e), i)
+    i += 1
+  else:
+    matchField = None
+  if (i+1 > len(sys.argv)) or (sys.argv[i].lower() != GAM_CMD):
+    missingArgumentExit(u'GAM argument list')
+  i += 1
+  choice = sys.argv[i].strip().lower()
+  if choice == LOOP_CMD:
+    usageErrorExit(u'Command can not be nested.', i)
+  if processGamCfg:
+    if choice in [REDIRECT_CMD, SELECT_CMD, CONFIG_CMD]:
+# gam loop ... gam redirect|select|config ... process gam.cfg on each iteration
+      nextProcessGamCfg = True
+    else:
+# gam loop ... gam !redirect|select|config ... process gam.cfg on first iteration only
+      nextProcessGamCfg = False
+  else:
+    if choice in [REDIRECT_CMD, SELECT_CMD, CONFIG_CMD]:
+# gam redirect|select|config ... loop ... gam redirect|select|config ... process gam.cfg on each iteration
+      nextProcessGamCfg = processGamCfg = True
+    else:
+# gam redirect|select|config ... loop ... gam !redirect|select|config ... no further processing of gam.cfg
+      nextProcessGamCfg = False
+  optionalSubs = {}
+  GAM_argv = [sys.argv[0]]
+  GAM_argvI = len(GAM_argv)
+  while i < len(sys.argv):
+    arg = sys.argv[i]
+    if arg[0] != u'~':
+      GAM_argv.append(arg.encode(sys.getfilesystemencoding()))
+    else:
+      fieldName = arg[1:]
+      if fieldName in csvFile.fieldnames:
+        optionalSubs[GAM_argvI] = fieldName
+        GAM_argv.append(fieldName)
+      else:
+        csvFieldErrorExit(fieldName, csvFile.fieldnames, i)
+    i += 1
+    GAM_argvI += 1
+  for row in csvFile:
+    if matchField and ((matchField not in row) or (not matchPattern.search(row[matchField]))):
+      continue
+    argv = GAM_argv[:]
+    for GAM_argvI, fieldName in optionalSubs.iteritems():
+      if row[fieldName]:
+        argv[GAM_argvI] = row[fieldName].encode(sys.getfilesystemencoding())
+      else:
+        argv[GAM_argvI] = u''
+    ProcessGAMCommand(argv, processGamCfg=processGamCfg)
+    processGamCfg = nextProcessGamCfg
+  f.close()
 #
 # Run from command line
 #

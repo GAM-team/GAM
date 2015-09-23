@@ -22,9 +22,26 @@ You can say:
 
 Improve support for languages with accented characters.
 The following commands have been extended to allow specification of the character set used in the file.
-    gam batch <Filename> [charset <Charset>]
-    gam csv <Filename> [charset <Charset>] gam ...
+    gam batch <Filename>|- [charset <Charset>]
+    gam csv <Filename>|- [charset <Charset>] gam ...
 <Charset> defaults to the value charset in gam.cfg; the default value there is ascii; other typical values are: utf-8, utf-16, latin-1.
+
+Extend gam csv to select rows from a csv file my matching a field value.
+    gam csv <Filename>|- [charset <Charset>] [matchfield <FieldName> <PythonRegularExpression>] gam ...
+<FieldName> does not have a leading ~ and must be a column heading in <FileName>.
+For documentation on <PythonRegularExpression> see https://docs.python.org/2/library/re.html
+    gam csv DeptGroups.csv matchfield Department Sales gam print group-members group ~Group
+DeptGroups.csv:
+Department,Group
+Sales,sales-ny@bar.com
+Sales,sales-nj@bar.com
+Marketing,mktg-ny@bar.com
+Marketing,mktg-nj@bar.com
+
+Process a csv file without subprocesses. The syntax is exactly the same as gam csv, but, rather than starting
+a subprocess for each line, gam executes the command directly. There is no subprocess creation overhead, cleaner output,
+but it will not execute as fast on large csv files as there is no parallelism.
+    gam loop <Filename>|- [charset <Charset>] [matchfield <FieldName> <PythonRegularExpression>] gam ...
 
 Support user website and note properties.
 In gam create user and gam update user add website argument.
@@ -59,6 +76,17 @@ Get information about a specific calendar.
 
 Allow gam batch to read lines from stdin by specifying - instead of a file name.
     cat foo.bat | gam batch -
+
+The format argument in gam get drivefile is extended to offer more choices of file types and can be a list.
+The possible formats are: csv|html|txt|tsv|jpeg|jpg|png|svg|pdf|rtf|pptx|xlsx|docx|odt|ods|openoffice|ms|microsoft|micro$oft
+ms, microsoft and micro$oft are  shorthand for docx,pptx,xlsx
+openoffice is shorthand for odt,ods
+    gam get drivefile drivefilename XXX format docx,rtf,txt,odt,pdf
+This will get file XXX as long as it is in some text document format. If a file is available in multiple formats, the first
+available format in the list is chosen.
+
+Two new arguments are defined for gam print mobile to set the amount of data retrieved.
+    basic|full
 
 A new argument (delimiter <String>) is defined in gam print users.
 It is used when the groups argument is specified, <String> rather than a single space will separate the entries in the groups list.
