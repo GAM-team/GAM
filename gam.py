@@ -1853,6 +1853,7 @@ def showReport():
 def doDelegates(users):
   import gdata.apps.service
   emailsettings = getEmailSettingsObject()
+  delegate = None
   i = 4
   while i < len(sys.argv):
     my_arg = sys.argv[i].lower().replace(u'_', u'')
@@ -1866,6 +1867,8 @@ def doDelegates(users):
         delegate_email = delegate
     else:
       unknownArgumentExit(i)
+  if not delegate:
+    missingArgumentExit(u'to')
   count = len(users)
   i = 1
   for delegator in users:
