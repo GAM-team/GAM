@@ -104,13 +104,13 @@ In GAM 3.51 and below, the following locations are used:
 
 These are suggested new locations for user-oriented locations:
     GamCfgHome, GamConfigDir:
-        Mac OS X:   ~/Library/Application Support/GAM
-        Unix:       ~/.config/GAM
-        Windows:    C:\Users\<username>\AppData\Local\GAM
+        Mac OS X:   ~/.gam
+        Unix:       ~/.gam
+        Windows:    ~/.gam
     GamCacheDir:
-        Mac OS X:   ~/Library/Caches/GAM
-        Unix:       ~/.cache/GAM
-        Windows:    C:\Users\<username>\AppData\Local\GAM\Cache
+        Mac OS X:   ~/.gam/cache
+        Unix:       ~/.gam/cache
+        Windows:    ~/.gam/cache
     GamDriveDir:
         Mac OS X:   ~/Downloads
         Unix:       ~/Downloads

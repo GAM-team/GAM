@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 #
 # GAM
 #
@@ -815,13 +816,16 @@ def SetGlobalVariables():
   status = {u'errors': False}
   try:
 # If GAM_CFG_HOME environment is set, use it for config path, use gamPath/gamcache for cache and gamPath for drive
-    gamCfgHome = os.environ[EV_GAM_CFG_HOME]
+    GC_DEFAULTS[GC_CONFIG_DIR] = os.environ[EV_GAM_CFG_HOME]
+    GC_DEFAULTS[GC_CACHE_DIR] = os.path.join(GC_Values[GC_GAM_PATH], GAMCACHE)
+    GC_DEFAULTS[GC_DRIVE_DIR] = GC_Values[GC_GAM_PATH]
   except KeyError:
-# If GAM_CFG_HOME environment is not set, use gamPath
-    gamCfgHome = GC_Values[GC_GAM_PATH]
-  GC_DEFAULTS[GC_CACHE_DIR] = os.path.join(GC_Values[GC_GAM_PATH], GAMCACHE)
-  GC_DEFAULTS[GC_DRIVE_DIR] = GC_Values[GC_GAM_PATH]
-  GC_DEFAULTS[GC_CONFIG_DIR] = gamCfgHome
+# If GAM_CFG_HOME environment is not set, use getGAMPaths
+    homePath = os.path.expanduser(u'~')
+    GC_DEFAULTS[GC_CONFIG_DIR] = os.path.join(homePath, u'.gam')
+    GC_DEFAULTS[GC_CACHE_DIR] = os.path.join(homePath, u'.gam', 'cache')
+    GC_DEFAULTS[GC_DRIVE_DIR] = os.path.join(homePath, u'Downloads')
+  gamCfgHome = GC_DEFAULTS[GC_CONFIG_DIR]
 
   gamcfg = ConfigParser.SafeConfigParser(defaults=collections.OrderedDict(sorted(GC_DEFAULTS.items(), key=lambda t: t[0])))
   configFileName = os.path.join(gamCfgHome, GAM_CFG)
@@ -1146,7 +1150,8 @@ def GAMCheckForUpdates(forceCheck=False):
       latest_version = float(c.read())
     except ValueError:
       return
-    print u'Current: {0:.2f}, Latest: {1:.2f}'.format(current_version, latest_version)
+    if forceCheck or (latest_version > current_version):
+      print u'Version: Check, Current: {0:.2f}, Latest: {1:.2f}'.format(current_version, latest_version)
     if latest_version <= current_version:
       writeFile(GC_Values[GC_LAST_UPDATE_CHECK_TXT], str(now_time), continueOnError=True, displayError=forceCheck)
       return
@@ -3949,35 +3954,48 @@ def doDriveSearch(drive, query=None):
     ids.append(f_file[u'id'])
   return ids
 
-def deleteDriveFile(users):
-  fileIds = sys.argv[5]
-  function = u'trash'
-  i = 6
-  while i < len(sys.argv):
-    my_arg = sys.argv[i].lower().replace(u'_', u'')
-    if my_arg == u'purge':
-      function = u'delete'
-    else:
-      unknownArgumentExit(i)
+DELETE_DRIVEFILE_CHOICES_MAP = {
+  u'purge': u'delete',
+  u'trash': u'trash',
+  }
+DRIVEFILE_FUNCTION_TO_ACTION_MAP = {
+  u'delete': u'purging',
+  u'trash': u'trashing',
+  u'untrash': u'untrashing',
+  }
+
+def deleteDriveFile(users, function=None):
+  fileId = sys.argv[5]
+  if not function:
+    function = u'trash'
+    i = 6
+    while i < len(sys.argv):
+      my_arg = sys.argv[i].lower().replace(u'_', u'')
+      if my_arg in DELETE_DRIVEFILE_CHOICES_MAP:
+        function = DELETE_DRIVEFILE_CHOICES_MAP[my_arg]
+      else:
+        unknownArgumentExit(i)
+  action = DRIVEFILE_FUNCTION_TO_ACTION_MAP[function]
   for user in users:
     drive = buildGAPIServiceObject(u'drive', user)
-    if fileIds[:6].lower() == u'query:':
-      file_ids = doDriveSearch(drive, query=fileIds[6:])
+    if fileId[:6].lower() == u'query:':
+      fileIds = doDriveSearch(drive, query=fileId[6:])
+    elif fileId[:14].lower() == u'drivefilename:':
+      fileIds = doDriveSearch(drive, query=u'"me" in owners and title = "%s"' % fileId[14:])
     else:
-      if fileIds[:8].lower() == u'https://' or fileIds[:7].lower() == u'http://':
-        fileIds = fileIds[fileIds.find(u'/d/')+3:]
-        if fileIds.find(u'/') != -1:
-          fileIds = fileIds[:fileIds.find(u'/')]
-      file_ids = [fileIds,]
-    if not file_ids:
-      print u'No files to delete for %s' % user
+      if fileId[:8].lower() == u'https://' or fileId[:7].lower() == u'http://':
+        fileId = fileId[fileId.find(u'/d/')+3:]
+        if fileId.find(u'/') != -1:
+          fileId = fileId[:fileId.find(u'/')]
+      fileIds = [fileId,]
+    if not fileIds:
+      print u'No files to %s for %s' % (function, user)
+      continue
     i = 0
-    for fileId in file_ids:
+    count = len(fileIds)
+    for fileId in fileIds:
       i += 1
-      if function == u'trash':
-        print u'trashing %s for %s (%s of %s)' % (fileId, user, i, len(file_ids))
-      else:
-        print u'purging %s for %s (%s of %s)' % (fileId, user, i, len(file_ids))
+      print u'%s %s for %s (%s of %s)' % (action, fileId, user, i, count)
       callGAPI(service=drive.files(), function=function, fileId=fileId)
 
 def printDriveFolderContents(feed, folderId, indent):
@@ -4048,7 +4066,7 @@ MIMETYPE_CHOICES_MAP = {
   }
 
 def doUpdateDriveFile(users):
-  convert = ocr = ocrLanguage = parent_query = local_filepath = media_body = fileIds = drivefilename = None
+  convert = ocr = ocrLanguage = parent_query = local_filepath = media_body = fileId = None
   operation = u'update'
   body = {}
   i = 5
@@ -4067,10 +4085,13 @@ def doUpdateDriveFile(users):
       operation = u'copy'
       i += 1
     elif my_arg == u'id':
-      fileIds = [sys.argv[i+1],]
+      fileId = sys.argv[i+1]
+      i += 2
+    elif my_arg == 'query':
+      query = sys.argv[i+1]
       i += 2
     elif my_arg == u'drivefilename':
-      drivefilename = sys.argv[i+1]
+      query = u'"me" in owners and title = "%s"' % sys.argv[i+1]
       i += 2
     elif my_arg == u'newfilename':
       body[u'title'] = sys.argv[i+1]
@@ -4124,10 +4145,10 @@ def doUpdateDriveFile(users):
       i += 1
     else:
       unknownArgumentExit(i)
-  if not fileIds and not drivefilename:
-    usageErrorExit(u'You must specify a file ID with id argument or a search query with the query argument.', i)
-  elif fileIds and drivefilename:
-    usageErrorExit(u'You cannot specify both the id and query arguments at the same time.', i)
+  if not query and not fileId:
+    usageErrorExit(u'You must specify a file ID with id argument, a file name with the drivefilename argument, or a search query with the query argument.', i)
+  elif query and fileId:
+    usageErrorExit(u'You cannot specify both the id and query/drivefilename arguments at the same time.', i)
   for user in users:
     drive = buildGAPIServiceObject(u'drive', user)
     if parent_query:
@@ -4135,8 +4156,17 @@ def doUpdateDriveFile(users):
       body.setdefault(u'parents', [])
       for a_parent in more_parents:
         body[u'parents'].append({u'id': a_parent})
-    if drivefilename:
-      fileIds = doDriveSearch(drive, query=u'"me" in owners and title = "%s"' % drivefilename)
+    if query:
+      fileIds = doDriveSearch(drive, query=query)
+    else:
+      if fileId[:8].lower() == 'https://' or fileId[:7].lower() == 'http://':
+        fileId = fileId[fileId.find('/d/')+3:]
+        if fileId.find('/') != -1:
+          fileId = fileId[:fileId.find('/')]
+      fileIds = [fileId,]
+    if not fileIds:
+      print u'No files to update for %s' % user
+      continue
     if local_filepath:
       media_body = googleapiclient.http.MediaFileUpload(local_filepath, mimetype=mimetype, resumable=True)
     for fileId in fileIds:
@@ -4261,7 +4291,7 @@ DOCUMENT_FORMATS_MAP = {
   }
 
 def downloadDriveFile(users):
-  query = fileIds = None
+  query = fileId = None
   exportFormatName = u'openoffice'
   exportFormats = DOCUMENT_FORMATS_MAP[exportFormatName]
   target_folder = GC_Values[GC_DRIVE_DIR]
@@ -4270,10 +4300,13 @@ def downloadDriveFile(users):
   while i < len(sys.argv):
     my_arg = sys.argv[i].lower().replace(u'_', u'')
     if my_arg == u'id':
-      fileIds = [sys.argv[i+1],]
+      fileId = sys.argv[i+1]
       i += 2
     elif my_arg == 'query':
       query = sys.argv[i+1]
+      i += 2
+    elif my_arg == u'drivefilename':
+      query = u'"me" in owners and title = "%s"' % sys.argv[i+1]
       i += 2
     elif my_arg == u'format':
       exportFormatChoices = sys.argv[i+1].replace(u',', u' ').split()
@@ -4291,27 +4324,29 @@ def downloadDriveFile(users):
       i += 2
     else:
       unknownArgumentExit(i)
-  if not query and not fileIds:
-    usageErrorExit(u'You must specify a file ID with id argument or a search query with the query argument.', i)
-  elif query and fileIds:
-    usageErrorExit(u'You cannot specify both the id and query arguments at the same time.', i)
+  if not query and not fileId:
+    usageErrorExit(u'You must specify a file ID with id argument, a file name with the drivefilename argument, or a search query with the query argument.', i)
+  elif query and fileId:
+    usageErrorExit(u'You cannot specify both the id and query/drivefilename arguments at the same time.', i)
   for user in users:
     drive = buildGAPIServiceObject(u'drive', user)
     if query:
       fileIds = doDriveSearch(drive, query=query)
     else:
-      if fileIds[0][:8].lower() == 'https://' or fileIds[0][:7].lower() == 'http://':
-        fileIds[0] = fileIds[0][fileIds[0].find('/d/')+3:]
-        if fileIds[0].find('/') != -1:
-          fileIds[0] = fileIds[0][:fileIds[0].find('/')]
+      if fileId[:8].lower() == 'https://' or fileId[:7].lower() == 'http://':
+        fileId = fileId[fileId.find('/d/')+3:]
+        if fileId.find('/') != -1:
+          fileId = fileId[:fileId.find('/')]
+      fileIds = [fileId,]
     if not fileIds:
       print u'No files to download for %s' % user
+      continue
     i = 0
     for fileId in fileIds:
       extension = None
       result = callGAPI(service=drive.files(), function=u'get', fileId=fileId, fields=u'fileSize,title,mimeType,downloadUrl,exportLinks')
       if result[u'mimeType'] == u'application/vnd.google-apps.folder':
-        print u'Skipping download of folder {0}'.format(result[u'title'])
+        print convertUTF8(u'Skipping download of folder {0}'.format(result[u'title']))
         continue
       try:
         result[u'fileSize'] = int(result[u'fileSize'])
@@ -4335,8 +4370,11 @@ def downloadDriveFile(users):
             extension = exportFormat[u'.ext']
             break
         else:
-          print u'Skipping download of file {0}, Format {1} not available'.format(result[u'title'], ','.join(exportFormatChoices))
+          print convertUTF8(u'Skipping download of file {0}, Format {1} not available'.format(result[u'title'], ','.join(exportFormatChoices)))
           continue
+      else:
+        print convertUTF8(u'Skipping download of file {0}, No export link')
+        continue
       file_title = result[u'title']
       safe_file_title = ''.join(c for c in file_title if c in safe_filename_chars)
       filename = os.path.join(target_folder, safe_file_title)
@@ -4352,41 +4390,55 @@ def downloadDriveFile(users):
           if not os.path.isfile(new_filename):
             break
         filename = new_filename
-      print my_line % filename
+      print convertUTF8(my_line % filename)
       _, content = drive._http.request(download_url)
       f = open(filename, 'wb')
       f.write(content)
       f.close()
 
 def showDriveFileInfo(users):
+  fileId = sys.argv[5]
   for user in users:
-    fileId = sys.argv[5]
     drive = buildGAPIServiceObject(u'drive', user)
-    feed = callGAPI(service=drive.files(), function=u'get', fileId=fileId)
-    for setting in feed:
-      if setting == u'kind':
-        continue
-      setting_type = str(type(feed[setting]))
-      if setting_type == u"<type 'list'>":
-        print u'%s:' % setting
-        for settin in feed[setting]:
-          if settin == u'kind':
-            continue
-          settin_type = str(type(settin))
-          if settin_type == u"<type 'dict'>":
-            for setti in settin:
-              if setti == u'kind':
-                continue
-              print convertUTF8(u' %s: %s' % (setti, settin[setti]))
-            print ''
-      elif setting_type == u"<type 'dict'>":
-        print u'%s:' % setting
-        for settin in feed[setting]:
-          if settin == u'kind':
-            continue
-          print convertUTF8(u' %s: %s' % (settin, feed[setting][settin]))
-      else:
-        print convertUTF8(u'%s: %s' % (setting, feed[setting]))
+    if fileId[:6].lower() == u'query:':
+      fileIds = doDriveSearch(drive, query=fileId[6:])
+    elif fileId[:14].lower() == u'drivefilename:':
+      fileIds = doDriveSearch(drive, query=u'"me" in owners and title = "%s"' % fileId[14:])
+    else:
+      if fileId[:8].lower() == u'https://' or fileId[:7].lower() == u'http://':
+        fileId = fileId[fileId.find(u'/d/')+3:]
+        if fileId.find(u'/') != -1:
+          fileId = fileId[:fileId.find(u'/')]
+      fileIds = [fileId,]
+    if not fileIds:
+      print u'No files to show for %s' % user
+      continue
+    for fileId in fileIds:
+      feed = callGAPI(service=drive.files(), function=u'get', fileId=fileId)
+      for setting in feed:
+        if setting == u'kind':
+          continue
+        setting_type = str(type(feed[setting]))
+        if setting_type == u"<type 'list'>":
+          print u'%s:' % setting
+          for settin in feed[setting]:
+            if settin == u'kind':
+              continue
+            settin_type = str(type(settin))
+            if settin_type == u"<type 'dict'>":
+              for setti in settin:
+                if setti == u'kind':
+                  continue
+                print convertUTF8(u' %s: %s' % (setti, settin[setti]))
+              print ''
+        elif setting_type == u"<type 'dict'>":
+          print u'%s:' % setting
+          for settin in feed[setting]:
+            if settin == u'kind':
+              continue
+            print convertUTF8(u' %s: %s' % (settin, feed[setting][settin]))
+        else:
+          print convertUTF8(u'%s: %s' % (setting, feed[setting]))
 
 def transferSecCals(users):
   target_user = sys.argv[5]
@@ -10190,6 +10242,12 @@ def ProcessGAMCommand(args, processGamCfg=True):
         deleteDriveFile(users)
       elif delWhat in [u'drivefileacl', u'drivefileacls']:
         delDriveFileACL(users)
+      else:
+        unknownArgumentExit(4)
+    elif command == u'undelete':
+      undelWhat = sys.argv[4].lower()
+      if undelWhat == u'drivefile':
+        deleteDriveFile(users, function=u'untrash')
       else:
         unknownArgumentExit(4)
     elif command == u'add':

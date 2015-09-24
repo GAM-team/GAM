@@ -92,6 +92,23 @@ A new argument (delimiter <String>) is defined in gam print users.
 It is used when the groups argument is specified, <String> rather than a single space will separate the entries in the groups list.
     gam print users delimiter ',' groups
 
+The file selection arguments for gam get drivefile and gam update drivefile are now consistent.
+    gam <Users> update drivefile (id <DriveFileID>)|(query <Query>)|(drivefilename <DriveFileName>) [copy] [newfilename <DriveFileName>] [<DriveFileAttributes>]
+    gam <Users> get drivefile (id <DriveFileID>)|(query <Query>)|(drivefilename <DriveFileName>) [format <FileFormatList>] [targetfolder <FilePath>]
+    drivefilename <DriveFileName> is shorthand for query '"me" in owners and title = "DriveFileName"'
+
+The file selection arguments for gam delete drivefile have been extended.
+    gam <Users> delete drivefile <DriveFileID>|query:<Query>|drivefilename:<DriveFileName> [purge]
+    drivefilename:<DriveFileName> is shorthand for query: '"me" in owners and title = "DriveFileName"'
+
+The file selection arguments for gam show fileinfo have been extended.
+    gam <Users> show fileinfo <DriveFileID>|query:<Query>|drivefilename:<DriveFileName>
+    drivefilename:<DriveFileName> is shorthand for query: '"me" in owners and title = "DriveFileName"'
+
+A command has been added to remove drive files from the trash.
+    gam <Users> undelete drivefile <DriveFileID>|query:<Query>|drivefilename:<DriveFileName>
+    drivefilename:<DriveFileName> is shorthand for query: '"me" in owners and title = "DriveFileName"'
+
 You can for a GAM version check with the following command.
     gam version check
 
