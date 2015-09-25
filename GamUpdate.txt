@@ -1,0 +1,147 @@
+Implement configuration file gam.cfg. Documented in GamConfig.txt.
+
+Reorganize gam so that it is importable on Mac OS/Linux.
+This isn't elegant but it's a start.
+You can say:
+    #!/usr/bin/env python
+    import os, sys, shlex
+    from gam import ProcessGAMCommand
+    # Set appropriate values
+    os.environ['GAM_CFG_HOME'] = '/Users/admin/GAM'
+    GAM_STDOUT = '/tmp/gamstdout.out'
+    # Choose how to produce args list
+    rc = ProcessGAMCommand(shlex.split('/Users/admin/GAM/gam.py redirect stdout write {0} info user admin'.format(GAM_STDOUT)))
+    #rc = ProcessGAMCommand(['/Users/admin/GAM/gam.py',
+    #                        'redirect', 'stdout', 'write', GAM_STDOUT,
+    #                        'info', 'user', 'admin'])
+    print 'GAM returned {0}'.format(rc)
+    with open(GAM_STDOUT, 'rU') as f:
+        for line in f:
+            # Process outout
+            print line.strip()
+
+Improve support for languages with accented characters.
+The following commands have been extended to allow specification of the character set used in the file.
+    gam batch <Filename>|- [charset <Charset>]
+    gam csv <Filename>|- [charset <Charset>] gam ...
+<Charset> defaults to the value charset in gam.cfg; the default value there is ascii; other typical values are: utf-8, utf-16, latin-1.
+
+Extend gam csv to select rows from a csv file my matching a field value.
+    gam csv <Filename>|- [charset <Charset>] [matchfield <FieldName> <PythonRegularExpression>] gam ...
+<FieldName> does not have a leading ~ and must be a column heading in <FileName>.
+For documentation on <PythonRegularExpression> see https://docs.python.org/2/library/re.html
+    gam csv DeptGroups.csv matchfield Department Sales gam print group-members group ~Group
+DeptGroups.csv:
+Department,Group
+Sales,sales-ny@bar.com
+Sales,sales-nj@bar.com
+Marketing,mktg-ny@bar.com
+Marketing,mktg-nj@bar.com
+
+Process a csv file without subprocesses. The syntax is exactly the same as gam csv, but, rather than starting
+a subprocess for each line, gam executes the command directly. There is no subprocess creation overhead, cleaner output,
+but it will not execute as fast on large csv files as there is no parallelism.
+    gam loop <Filename>|- [charset <Charset>] [matchfield <FieldName> <PythonRegularExpression>] gam ...
+
+Support user website and note properties.
+In gam create user and gam update user add website argument.
+    website home_page|blog|profile|work|home|other|ftp|reservations|app_install_page|<String> <Value>
+    gam update user foo@bar.com website work www.bar.com
+If <String> is specified instead of one of the pre-defined values, it will be marked custom.
+
+In gam create user and gam update user add note argument.
+    note text_plain|text_html file <FileName>
+    note text_plain|text_html <String>
+    gam update user foo@bar.com note text_plain "Works weekend shift"
+
+Allow user properties to be cleared.
+In gam update user allow clear argument after im, address, organization,
+phone, relation, externalid, otheremail, website, note so that the property can be cleared.
+    gam update user foo@bar.com phone clear
+
+Support event notification property in calendars.
+In gam <Users> add calendar and gam <Users> update calendar, add notification argument; it may be repeated.
+   notification email|sms event_creation|event_change|event_cancellation|event_response|agenda
+   gam user foo@bar.com update calendar bar.com_dsoevca1qm34unsejmac3tsbv4@group.calendar.google.com notification email event_creation notification sms event_change
+
+Support user calendar creation/modification/deletion.
+    gam <Users> create calendar summary <String> [description <String>] [location <String>] [timezone <String>]
+    gam <Users> modify calendar <EmailAddress>|primay [summary <String>] [description <String>] [location <String>] [timezone <String>]
+    gam <Users> remove calendar <EmailAddress>
+Summary <string> is required when creating a calendar.
+Primary refers to the user's primary calendar, it is replaced with the user's email address.
+
+Get information about a specific calendar.
+    gam <Users> info calendar <EmailAddress>|primary
+
+Allow gam batch to read lines from stdin by specifying - instead of a file name.
+    cat foo.bat | gam batch -
+
+The format argument in gam get drivefile is extended to offer more choices of file types and can be a list.
+The possible formats are: csv|html|txt|tsv|jpeg|jpg|png|svg|pdf|rtf|pptx|xlsx|docx|odt|ods|openoffice|ms|microsoft|micro$oft
+ms, microsoft and micro$oft are  shorthand for docx,pptx,xlsx
+openoffice is shorthand for odt,ods
+    gam get drivefile drivefilename XXX format docx,rtf,txt,odt,pdf
+This will get file XXX as long as it is in some text document format. If a file is available in multiple formats, the first
+available format in the list is chosen.
+
+Two new arguments are defined for gam print mobile to set the amount of data retrieved.
+    basic|full
+
+A new argument (delimiter <String>) is defined in gam print users.
+It is used when the groups argument is specified, <String> rather than a single space will separate the entries in the groups list.
+    gam print users delimiter ',' groups
+
+The file selection arguments for gam get drivefile and gam update drivefile are now consistent.
+    gam <Users> update drivefile (id <DriveFileID>)|(query <Query>)|(drivefilename <DriveFileName>) [copy] [newfilename <DriveFileName>] [<DriveFileAttributes>]
+    gam <Users> get drivefile (id <DriveFileID>)|(query <Query>)|(drivefilename <DriveFileName>) [format <FileFormatList>] [targetfolder <FilePath>]
+    drivefilename <DriveFileName> is shorthand for query '"me" in owners and title = "DriveFileName"'
+
+The file selection arguments for gam delete drivefile have been extended.
+    gam <Users> delete drivefile <DriveFileID>|query:<Query>|drivefilename:<DriveFileName> [purge]
+    drivefilename:<DriveFileName> is shorthand for query: '"me" in owners and title = "DriveFileName"'
+
+The file selection arguments for gam show fileinfo have been extended.
+    gam <Users> show fileinfo <DriveFileID>|query:<Query>|drivefilename:<DriveFileName>
+    drivefilename:<DriveFileName> is shorthand for query: '"me" in owners and title = "DriveFileName"'
+
+A command has been added to remove drive files from the trash.
+    gam <Users> undelete drivefile <DriveFileID>|query:<Query>|drivefilename:<DriveFileName>
+    drivefilename:<DriveFileName> is shorthand for query: '"me" in owners and title = "DriveFileName"'
+
+You can for a GAM version check with the following command.
+    gam version check
+
+Implement pull request #93 to be able to mark messages as spam.
+    gam <Users> spam message|messages query <Query> [doit] [max_to_move <Number>]
+<Number> defaults to max_messages_to_process from gam.cfg.
+
+Implement pull request #91.
+    gam <Users> show filelist ... anyowner ...
+
+Command line errors now give a more informative message and are all written to stderr.
+
+All "Getting ...", "Retrieving ...", "Got ..." messages are now written to stderr.
+Most already were but the following commands wrote to stdout:
+    gam user xxx show gmailprofile
+    gam user xxx deprov
+    gam user xxx delete label
+    gam user xxx transfer drive
+    gam user xxx add drivefile
+    gam user xxx update drivefile
+    gam user xxx delete drivefile
+    gam user xxx get drivefile
+
+Use API update rather than patch in gam update user as patch is problematic.
+
+Use API update rather than patch in gam update org as patch is problematic.
+
+oauth2client/tools.py message changed to reflect new way to indicate that you have no browser.
+
+Fixed problem with gam user foo@bar.com show filelist allfields
+Traceback (most recent call last):
+  File "./gam.py", line 8540, in <module>  showDriveFiles(users)
+  File "./gam.py", line 2681, in showDriveFiles
+    a_file[attrib] = u' '.join(file[attrib])
+TypeError: sequence item 0: expected string or Unicode, dict found
+

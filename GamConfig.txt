@@ -1,0 +1,347 @@
+This is my proposal to replace the GAM environment variables and signal files with a configuration file gam.cfg line this:
+
+[DEFAULT]
+auto_batch_min = 0
+cache_dir = /Users/admin/Library/Caches/GAM
+charset = ascii
+client_secrets_json = client_secrets.json
+config_dir = /Users/admin/Library/Application Support/GAM
+customer_id = 000000000
+debug_level = 0
+domain = test.com
+drive_dir = /Users/admin/Downloads
+last_update_check = 1440685439
+no_browser = false
+no_cache = false
+no_update_check = false
+no_verify_ssl = false
+num_threads = 5
+oauth2_txt = oauth2.txt
+oauth2service_json = oauth2service.json
+section = 
+show_gettings = true
+
+[foo]
+config_dir = Foo
+domain = foo.com
+customer_id = 1111111111
+
+[goo]
+config_dir = Goo
+domain = goo.com
+customer_id = 2222222222
+
+[shared1]
+oauth2_txt = Shared1/oauth2.txt
+oauth2service_json = Shared1/oauth2service.json
+client_secrets_json = SharedSecret/client_secrets.json
+domain = shared1.com
+customer_id = 3333333333
+
+[shared2]
+oauth2_txt = Shared2/oauth2.txt
+oauth2service_json = Shared2/oauth2service.json
+client_secrets_json = SharedSecret/client_secrets.json
+domain = shared2.com
+customer_id = 4444444444
+
+Variables:
+auto_batch_min
+	Automatically generate gam batch command if number of users specified in gam users xxx command exceeds this number
+	Default: 0, don't automatically generate gam batch commands
+cache_dir
+	GAM cache directory. If no_cache is specified, this variable will be ignored.
+charset
+	Character set of gam batch, gam csv, gam file files. Defaults to ascii, other common values would be latin-1 and utf-16.
+client_secrets_json
+	Path to client_secrets.json
+config_dir
+	GAM config directory containing client_secrets.json, oauth2.txt, oauth2service.json, extra_args.txt
+customer_id
+	Google Custmer ID
+debug_level
+	If debug_level > 0: extra_args[u'prettyPrint'] = True, httplib2.debuglevel = gam_debug_level, appsObj.debug = True
+domain
+	Google Domain
+drive_dir
+	Directory for get drivefile and CSV files
+last_update_check
+	Time of last GAM update check
+no_browser
+	If no_browser is False, GAM won't open a browser if todrive is set when creating CSV files
+	and GAM  prints a link and waits for the verification code when oauth2.txt is being created
+no_cache
+	Disable GAM API caching
+no_update_check
+	Disable GAM update check
+no_verify_ssl
+	Disable SSL certificate validation
+num_threads
+	Number of threads for gam batch
+oauth2_txt
+	Path to oauth2.txt
+oauth2service_json
+	Path to oauth2service.json
+section
+	Default section to use for processing
+show_gettings
+	Enable/disable "Getting ... " messages
+
+In the following discussion, these names will be used to refer to directories:
+    GamPath: location of gam.py or gam.exe
+    GamCfgHome: location of gam.cfg
+    GamConfigDir: location of client_secrets.json, oauth2.txt, oauth2service.json
+    GamCacheDir: API cache files
+    GamDriveDir: Files downloaded with gam user <User> get drivefile <DriveFileID> when targetfolder <FilePath> is not specified
+
+In GAM 3.51 and below, the following locations are used:
+    GamCfgHome, GamConfigDir:
+	GamPath
+    GamCacheDir:
+	GamPath/gamcache
+    GamDriveDir:
+	GamPath
+
+These are suggested new locations for user-oriented locations:
+    GamCfgHome, GamConfigDir:
+        Mac OS X:   ~/.gam
+        Unix:       ~/.gam
+        Windows:    ~/.gam
+    GamCacheDir:
+        Mac OS X:   ~/.gam/cache
+        Unix:       ~/.gam/cache
+        Windows:    ~/.gam/cache
+    GamDriveDir:
+        Mac OS X:   ~/Downloads
+        Unix:       ~/Downloads
+        Windows:    ~/Downloads
+
+These are suggested new locations for site-oriented locations:
+    GamCfgHome, GamConfigDir:
+        Mac OS X:   /Library/Application Support/GAM
+        Unix:       /etc/xdg/GAM
+        Windows:    C:\ProgramData\GAM
+    GamCacheDir:
+        Mac OS X:   /Library/Caches/GAM
+        Unix:       /usr/share/GAM/Cache
+        Windows:    C:\ProgramData\GAM\Cache
+    GamDriveDir:
+        Mac OS X:   /Library/Application Support/GAM
+        Unix:       /usr/share/GAM
+        Windows:    C:\ProgramData\GAM
+
+If you are an existing GAM user and want to use the existing locations or if you simply don't like the
+suggested locations or you already have some other scheme in use, set GAM_CFG_HOME to the desired path for gam.cfg
+in a system-wide method. In gam.cfg, you specify the desired values for the other locations. If multiple users run GAM,
+you may want to implement a site-oriented choice of directories. 
+
+If gam.cfg is not found in GamCfgHome, GAM will create one; the GamCfgHome directory will be created if necessary.
+What will go into the newly created gam.cfg? GAM will read the following environment variables and signal files;
+their values if found, or the program default values, will be used to create an initial gam.cfg.
+
+Environment variable: GAMCONFIGDIR, Config file variable: config_dir, Default: GamPath
+Environment variable: GAMCACHEDIR, Config file variable: cache_dir, Default: GamPath/gamcache
+Environment variable: GAMDRIVEDIR, Config file variable: drive_dir, Default: GamPath
+Environment variable: OAUTHFILE, Config file variable: oauth2_txt, Default: oauth2.txt
+Environment variable: OAUTHSERVICEFILE, Config file variable: oauth2service_json, Default: oauth2service.json
+Environment variable: CLIENTSECRETS, Config file variable: client_secrets_json, Default: client_secrets.json
+Environment variable: GA_DOMAIN, Config file variable: domain, Default: Blank
+Environment variable: CUSTOMER_ID, Config file variable: customer_id, Default: Blank
+Environment variable: GAM_THREADS, Config file variable: num_threads, Default: 5
+Environment variable: GAM_AUTOBATCH, Config file variable: auto_batch_min, Default: 0
+Signal file: noverifyssl.txt, Config file variable: no_verify_ssl, Default: False
+Signal file: nobrowser.txt, Config file variable: no_browser, Default: False
+Signal file: nocache.txt, Config file variable: no_cache, Default: False
+Signal file: noupdatecheck.txt, Config file variable: no_update_check, Default: False
+Signal file: debug.gam, Config file variable: debug_level, Default: 4 if found, 0 otherwise
+Signal file: lastupdatecheck.txt, Config file variable: last_update_check, Default: 0
+
+GAM will copy the following files from GamPath to GamConfigDir if the two directories are not the same.
+        client_secrets.json, oauth2.txt, oauth2service.json
+
+How will gam.cfg be used? At its simplest, it is created once and you can ignore it.
+Every once in a while, you edit gam.cfg to set some desired values and then you ignore it.
+gam.cfg must be a plain text file, you can edit it with your favorite text editor (emacs, vi, TextWrangler,
+TextEdit, Notepad, Wordpad) as long as you wind up with a plain text file.
+
+If you support multiple clients/domains, there are two new arguments to GAM that should simplify how you use GAM.
+The new arguments are optional and mutually exclusive and must be the first argument before any other GAM arguments.
+
+The select argument specifies the section of gam.cfg to use for processing the rest of the GAM command; its how
+you quickly switch from from one client to another.
+
+select <SectionName> [save] [verify]
+	Use this section for the current GAM command.
+    save
+	Set section = <SectionName> in the DEFAULT section
+	Write configuration data to gam.cfg
+    verify
+	Print the variable values for the current section
+	Values are determined in this order:
+	Current section
+	DEFAULT section
+	Program default
+
+The config argument is used to manage gam.cfg via the command line, no hand editting required.
+
+config ((create <SectionName> [overwrite])|(delete <SectionName>)|(select <SectionName>)|
+        (make <DestinationPath>)|(copy <SourceFile> <DestinationFile)|
+        (reset <VariableName>)|(set <VariableName> <Value>)|
+        save|(backup <FileName>)|(restore <FileName>)|
+	verify|print|
+       )* [config]
+
+    create <SectionName> [overwrite]
+	Create this section, use it for the current GAM command
+	It is an error if <SectionName> already exists unless overwrite is specified
+    delete <SectionName>
+	Delete this section, use the DEFAULT section for the current GAM command
+	If the DEFAULT section had section = <SectionName>, clear it
+    select <SectionName>
+	Use this section for the current GAM command
+    make <DestinationPath>
+	<DestinationPath> is created
+	If <DestinationPath> is relative, it is appended to config_dir in DEFAULTS
+    copy <SourceFile> <DestinationFile>
+	<ScourecFile> is <copied to <DestinationFile>
+        <SourceFile> is the path of a client_secrets.json, oauth2.txt, oauth2service.json file
+	If <SourceFile> is relative, it is appended to GamPath
+	If <DestinationFile> is relative, it is appended to config_dir in the current section if defined or config_dir in DEFAULT
+    reset <VariableName>
+	If the current section is DEFAULT, reset the variable to its program default value
+	Else, delete the variable from the section so that the DEFAULT section value will apply
+    set <VariableName> <Value>
+	Set <VariableName> = <Value> in the current section
+	Note: section, no_update_check, last_update_check are always set in the DEFAULT section
+    save
+	Write configuration data to gam.cfg
+    backup <FileName>
+	Write configuration data to <FileName>
+	If <FileName> is a relative path, it is appended to GamCfgHome
+    restore <FileName>
+	Read configuration data from <FileName>
+	If <FileName> is a relative path, it is appended to GamCfgHome
+    verify
+	Print the variable values for the current section
+	Values are determined in this order:
+	Current section
+	DEFAULT section
+	Program default
+    print
+	Print gam.cfg to stdout
+    config
+	Required if subsequent GAM arguments are to be processed
+
+<SectionName> is case-sensitive except for DEFAULT which is case-insensitive.
+<VariableName> is case-insensitive and can include the _ or not.
+
+To view the variable values for the current section.
+	gam config verify
+To view the variable values for s specific section.
+	gam select foo verify
+	gam select default verify
+To view the entrie gam.cfg file
+	gam config print
+
+The redirect argument must follow select/config if they appear but does not require that they be present. It can appear
+multiple times as required:
+
+redirect (csv sectionname|<FileName>)|(stdout write|append sectionname|<FileName>)|(stderr write|append sectionname|<FileName>)
+    csv sectionname|<FileName>
+	If sectionname is specified, <FileName> will be set to <SectionName>.csv where <SectionName> is the name of the current section.
+	If <FileName> is relative, it is appended to drive_dir in the current section if defined or drive_dir in DEFAULT
+	If the GAM command writes a CSV file, it will be written to <FileName> rather than stdout
+    stdout write|append sectionname|<FileName>
+	If sectionname is specified, <FileName> will be set to <SectionName>.out where <SectionName> is the name of the current section.
+	If <FileName> is relative, it is appended to drive_dir in the current section if defined or drive_dir in DEFAULT
+	GAM output to stdout will be written to <FileName>
+    stderr write|append sectionname|<FileName>
+	If sectionname is specified, <FileName> will be set to <SectionName>.err where <SectionName> is the name of the current section.
+	If <FileName> is relative, it is appended to drive_dir in the current section if defined or drive_dir in DEFAULT
+	GAM output to stderr will be written to <FileName>
+
+Here's how the sample gam.cfg shown at the top is created.
+You have four clients: foo, goo, shared1 and shared2.
+Clients foo and goo have distinct oauth2.txt, oauth2service.json and client_secrets.json files.
+Clients shared1 and shared2 have distinct oauth2.txt and oauth2service.json files but share a client_secrets.json file.
+The files have prefixes to indicate the client, all files are in the GamPath directory.
+You have a test/default account with its own distinct oauth2.txt, oauth2service.json and client_secrets.json files.
+The default files do not have prefixes. All files are in GamPath.
+
+You first GAM command will not find a gam.cfg, so the initial gam.cfg will be created. The unprefixed
+oauth2.txt, oauth2service.json and client_secrets.json files will be copied to the new GamConfigDir.
+	gam config set domain test.com set customer_id 000000000 save
+
+For foo and goo, create a section in gam.cfg, make a sub-directory in GamConfigDir, set that sub-directory as the config_dir
+for the client and copy the files.
+	gam config create foo make Foo set config_dir Foo set domain foo.com set customer_id 1111111111 save
+	gam config select foo copy foo_oauth2.txt oauth2.txt
+	gam config select foo copy foo_oauth2service.json oauth2service.json
+	gam config select foo copy foo_client_secrets.json client_secrets.json
+
+	gam config create goo make Goo set config_dir Goo set domain goo.com set customer_id 2222222222 save
+	gam config select goo copy goo_oauth2.txt oauth2.txt
+	gam config select goo copy goo_oauth2service.json oauth2service.json
+	gam config select goo copy goo_client_secrets.json client_secrets.json
+
+Make the SharedSecret sub-directory, copy in the shared client_secrets.json file.
+	gam config make SharedSecret copy shared_client_secrets.json SharedSecret/client_secrets.json
+
+For shared1 and shared2, create a section in gam.cfg, make a sub-directory in GamConfigDir and copy the files.
+Do not set config_dir but set oauth2_txt, oauth2service_json and client_secrets_json to point to the file
+in the appropriate sub-directory.
+	gam config create shared1 make Shared1 set domain shared1.com set customer_id 3333333333 save
+	gam config select shared1 copy shared1_oauth2.txt Shared1/oauth2.txt set oauth2_txt Shared1/oauth2.txt save
+	gam config select shared1 copy shared1_oauth2service.json Shared1/oauth2service.json set oauth2service_json Shared1/oauth2service.json save
+	gam config select shared1 set client_secrets_json SharedSecret/client_secrets.json save
+
+	gam config create shared2 make Shared2 set domain shared2.com set customer_id 4444444444 save
+	gam config select shared2 copy shared2_oauth2.txt Shared2/oauth2.txt set oauth2_txt Shared2/oauth2.txt save
+	gam config select shared2 copy shared2_oauth2service.json Shared2/oauth2service.json set oauth2service_json Shared2/oauth2service.json save
+	gam config select shared1 set client_secrets_json SharedSecret/client_secrets.json save
+
+	gam config print
+
+Setup is complete, how do you use this? This will give info for test.com, your default.
+	gam info domain
+Google Apps Domain: test.com
+Customer ID: 0000000000
+...
+Select the other clients/domains.
+	gam select foo info domain
+Google Apps Domain: foo.com
+Customer ID: 1111111111
+...
+	gam select shared2 info domain
+Google Apps Domain: shared2.com
+Customer ID: 4444444444
+...
+
+Suppose you want to work with foo for a while, then switch to goo but don't want to keep typing gam select ...
+	gam select foo save
+GAM sets section = foo in the DEFAULT section, updates gam.cfg, selects foo for this and subsequent gam commands so you don't have to use select <SectionName> argument.
+	gam info user admin
+User: admin@foo.com
+...
+
+When it's time to switch to goo, select and save the section.
+	gam select goo save
+GAM sets section = goo in the DEFAULT section, updates gam.cfg, selects goo for this and subsequent gam commands so you don't have to use select <SectionName> argument.
+	gam info user admin
+User: admin@goo.com
+...
+
+If you have to switch back to foo for a single command, just select foo, but don't save it, further commands without a select will be goo.
+	gam select foo info user admin
+User: admin@foo.com
+...
+	gam info user admin
+User: admin@goo.com
+...
+
+To use the DEFAULT section as the selected section, i.e., no automatic selection of a section, select default and save
+	gam select default save
+
+When you use the config argument and want to process additional GAM arguments on the command line, repeat the config argument
+to terminate processinh of config and continue with the additional GAM arguments.
+	gam config select default set num_threads 20 config batch <FileName>
