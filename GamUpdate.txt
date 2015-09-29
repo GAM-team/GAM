@@ -92,6 +92,10 @@ A new argument (delimiter <String>) is defined in gam print users.
 It is used when the groups argument is specified, <String> rather than a single space will separate the entries in the groups list.
     gam print users delimiter ',' groups
 
+A new argument (delimiter <String>) is defined in gam print courses.
+It is used when the aliases argument is specified, <String> rather than a single space will separate the entries in the aliases list.
+    gam print courses delimiter ',' aliases
+
 The file selection arguments for gam get drivefile and gam update drivefile are now consistent.
     gam <Users> update drivefile (id <DriveFileID>)|(query <Query>)|(drivefilename <DriveFileName>) [copy] [newfilename <DriveFileName>] [<DriveFileAttributes>]
     gam <Users> get drivefile (id <DriveFileID>)|(query <Query>)|(drivefilename <DriveFileName>) [format <FileFormatList>] [targetfolder <FilePath>]
@@ -109,7 +113,39 @@ A command has been added to remove drive files from the trash.
     gam <Users> undelete drivefile <DriveFileID>|query:<Query>|drivefilename:<DriveFileName>
     drivefilename:<DriveFileName> is shorthand for query: '"me" in owners and title = "DriveFileName"'
 
-You can for a GAM version check with the following command.
+A new argument has bee added to gam update group that explicitly allows clearing mebmers from a group.
+    gam update group <GroupItem> clear [owner] [manager] [member]
+
+The gam course add and gam course remove commands have been extended to use the same participant selections as gam course sync.
+    gam course <CourseID> add teachers|students <UserTypeEntity>
+    gam course <CourseID> delete teachers|students <UserTypeEntity>
+    gam course <CourseID> sync teachers|students <UserTypeEntity>
+<UserTypeEntity> ::=
+	<EmailAddress>|
+	(all users)|
+	(user <EmailAddress>)|
+	(users <EmailAddressList>)|
+	(group <EmailAddress)|
+	(ou <OrgUnitPath)|
+	(ou_and_children <OrgUnitPath)|
+	(courseparticipants <CourseID>)|
+	(students <CourseID>)|
+	(teachers <CourseID>)|
+	(file <FileName>)|
+	(query <Query>)|
+
+A command has been added to support updating a list of ChromeOS devices.
+The current commands to ChromeOS devices are:
+    gam update cros <DeviceID>|query:<Query> <CrOSAttributes>
+    gam all cros update <CrOSAttributes>
+The new command is:
+    gam cros <DeviceIDList> update <CrOSAttributes>
+
+The gam update org command has been corrected to allow you to specify a list of ChromeOS devices
+to the added to the organization unit.
+    gam update org <OrgUnitPath> add cros <DeviceIDList>
+
+You can force a GAM version check with the following command.
     gam version check
 
 Implement pull request #93 to be able to mark messages as spam.

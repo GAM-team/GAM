@@ -1,0 +1,261 @@
+GAM commands fall into two broad categories based on the format of the command line.
+gam <Objects> <Command> <Arguments>
+gam <Command> <ObjectType> <Objects> <Arguments>
+
+In the first form, <Objects> represents ChromeOS devices or objects that will yield a list of Users, e.g., a Group or Organizational Unit.
+The end result is either a list of ChromeOS devices or a list of Users.
+
+In the second form, <ObjectType> <Objects> yields a list of the following types of objects:
+	Aliases
+	Calendars
+	Courses
+	Chrome OS Devices
+	Drive Files
+	Groups
+	Mobile Devices
+	Organizational Units
+	Printers
+	Print Jobs
+	Resource Calendars
+	Schemas
+	Users
+
+First form, Chrome OS Devices
+
+Selection: all cros
+Yields: All Chrome OS devices in the account
+
+Selection: cros <CrOSList>
+Note: <CrOSList> is a comma separated list of DeviceIDs surrounded by ' (a single command line argument).
+Yields: A list of Chrome OS devices.
+Example: cros '0c4ec369-b128-4b4d-aec2-ec283f849999,0cbe9368-402d-41c3-b75b-175481589999'
+
+Selection: args cros <Marker> <DeviceID>* <Marker>
+Note: <Marker> is a short string that brackets a space separated list of DevicesIDs
+Yields: A list of Chrome OS devices.
+Example: args cros === 0c4ec369-b128-4b4d-aec2-ec283f849999 0cbe9368-402d-41c3-b75b-175481589999 ===
+
+Selection: datafile cros <FileName>
+Note: <FileName> specifies a flat file with no header row, it may have multiple columns, the data is read from the last column.
+Yields: A list of Chrome OS devices.
+Example: datafile cros CrOSFile.lst
+CrOSFile.lst contains:
+0c4ec369-b128-4b4d-aec2-ec283f849999
+0cbe9368-402d-41c3-b75b-175481589999
+...
+
+Selection: csvfile cros <FileName> keyfield <FieldName> [delimiter <Character>] [matchfield <FieldName> <PythonRegularExpression>] [datafield <FieldName> [cros|groups|users] [delimiter <Character>]]
+Note: <FileName> specifies a CSV file, <FieldName>, <FieldName> and <FieldName> are values in the first row that select specific columns.
+Yields: A list of Chrome OS devices.
+The columns are separated by commas. If a keyfield or datafield contains multiple values, delimiter <Character> specifies the character that separates the values.
+The <FieldName> column contains ChromeOS DeviceIDs.
+The <MatchFileName> column contains data that may be used to select a subset of the rows in the CSV file.
+The <FieldName> column selects data that will be used elsewhere in the command.
+<PythonRegularExpression> is a Python regular expression, see: https://docs.python.org/2/library/re.html
+
+Example: csvfile CrOSFile.csv keyfield DeviceID matchfield Model Samsung
+CrOSFile.csv contains:
+Model,DeviceID
+Samsung,0c4ec369-b128-4b4d-aec2-ec283f849999
+HP,0cbe9368-402d-41c3-b75b-175481589999
+...
+
+Example: csvfile CrOSFile.csv keyfield DeviceIDs delimiter ' ' matchfield Office 'Sales-.*'
+CrOSFile.csv contains:
+Office,DeviceIDs
+Engineering-NY,0cbe9368-402d-41c3-b75b-175481589999 0cbe9368-402d-41c3-b75b-175481588888
+Sales-NY,0c4ec369-b128-4b4d-aec2-ec283f849999 0c4ec369-b128-4b4d-aec2-ec283f848888
+Engineering-NJ,0cbe9368-402d-41c3-b75b-175481589999 0cbe9368-402d-41c3-b75b-175481588888
+Sales-NJ,0c4ec369-b128-4b4d-aec2-ec283f849999 0c4ec369-b128-4b4d-aec2-ec283f848888
+...
+
+First form, Users
+
+For Users, the lists can be users or objects that specify users, e.g., Groups or Organizational Units.
+
+<UserItem> ::= <EmailAddress>|<UniqueID>|<String>
+<UserList> ::= '<UserItem>(,<UserItem>)*'
+A single User is specified by an email address (user@example.com), a Google Unique ID (uid:100257245150640561666)
+or the local part of an email address (user).
+
+<GroupItem> ::= <EmailAddress>|<UniqueID>|<String>
+<GroupList> ::= '<GroupItem>(,<GroupItem>)*'
+A single Group is specified by an email address (group@example.com), a Google Unique ID (uid:02nusc192mgyuk3)
+or the local part of an email address (group).
+
+<OrgUnitPath> ::= /|(/<String)+
+<OrgUnitList> ::== '<OrgUnitPath>(,<OrgUnitPath>)*'
+A single Organizational Unit is specified by a path (/Faculty/English).
+
+<UserTypeEntity> ::=
+		(all users)|
+		(file <FileName>)|
+		(license|licenses <SKUIDList>)|
+		(query <String>)|
+		(user <UserItem>)|
+		(group <GroupItem)|
+		(org|ou <OrgUnitPath)|
+		(ou_and_children|ou_and_child <OrgUnitPath)|
+		(users <UserList>)|
+		(groups <GroupList)|
+		(orgs|ous <OrgUnitList)|
+		(ous_and_children|ous_and_child <OrgUnitList)|
+		(args users <Marker> <UserItem>* <Marker>)|
+		(args groups <Marker> <GroupItem>* <Marker>)|
+		(args orgs|ous <Marker> <OrgUnitPath>* <Marker>)|
+		(args ous_and_children|ous_and_child <Marker> <OrgUnitPath>* <Marker>)|
+		(datafile users <FileName>)|
+		(datafile groups <FileName>)|
+		(datafile orgs|ous <FileName>)|
+		(datafile ous_and_children|ous_and_child <FileName>)|
+		(csvfile users <FileName> keyfield <FieldName> [delimiter <String>] [matchfield <FieldName> <PythonRegularExpression>] [datafield <FieldName> [cros|groups|users] [delimiter <String>]])|
+		(csvfile groups <FileName> keyfield <FieldName> [delimiter <String>] [matchfield <FieldName> <PythonRegularExpression>] [datafield <FieldName> [cros|groups|users] [delimiter <String>]])|
+		(csvfile orgs|ous <FileName> keyfield <FieldName> [delimiter <String>] [matchfield <FieldName> <PythonRegularExpression>] [datafield <FieldName> [cros|groups|users] [delimiter <String>]])|
+		(csvfile ous_and_children|ous_and_child <FileName> keyfield <FieldName> [delimiter <String>] [matchfield <FieldName> <PythonRegularExpression>] [datafield <FieldName> [cros|groups|users] [delimiter <String>]])
+
+Selection: all users
+Note: All Users in the account
+
+Selection: file <FileName>	
+Note: <FileName> specifies a flat file with no header row, it may have multiple columns, the data is read from the last column.
+Yields: A list of Users.
+Example: file UserFile.lst
+UserFile.lst contains:
+user1@example.com
+user2@example.com
+
+Selection: license|licenses <SKUIDList>
+Note: <SKUIDList> is a comma separated list of SKU IDs surrounded by ' (a single command line argument).
+Yields: All Users that possess one of the specified licenses.
+Example: licenses '200gb,400gb'
+
+Selection: query <String>
+Note: <String> should be surrounded by ', ' should be used to enclose items within <String>.
+Yields: All users that satisfy the query.
+Example: query 'givenName='Jane''
+
+Selection: user <UserItem>
+Yields: A single User.
+Example: user user@example.com
+
+Selection: group <GroupItem>
+Yields: All Users in the group.
+Example: group group@example.com
+
+Selection: org|ou <OrgUnitPath>
+Note: <OrgUnitPath> should be enclosed in ' if it contains spaces.
+Yields: All Users directly in the Organizational Unit. 
+Example: org '/Staff/New York'
+
+Selection: ou_and_children|ou_and_child <OrgUnitPath>
+Note: <OrgUnitPath> should be enclosed in ' if it contains spaces.
+Yields: All Users in the Organizational Unit and any sub units.
+Example: ou_and_children /Staff
+
+Selection: users <UserList>
+Note: <UserList> is a comma separated list of <UserItem> surrounded by ' (a single command line argument).
+Yields: A list of Users.
+Example: users 'user1@example.com,user2@example.com'
+
+Selection: groups <GroupList>
+Note: <GroupList> is a comma separated list of <GroupItem> surrounded by ' (a single command line argument).
+Yields: All Users from all of the groups.
+Example: group 'group1@example.com,group2@example.com'
+
+Selection: orgs|ous <OrgUnitList>
+Note: <OrgUnitList> is a comma separated list of <OrgUnitPath> surrounded by " (a single command line argument).
+An individual <OrgUnitPath> should be surrounded by ' if it contains spaces.
+Yields: All Users directly in the Organizational Units. 
+Example: org "'/Staff/New York','/Staff/New Jersey'"
+
+Selection: ous_and_children|ous_and_child <OrgUnitList>
+Note: <OrgUnitList> is a comma separated list of <OrgUnitPath> surrounded by " (a single command line argument).
+An individual <OrgUnitPath> should be surrounded by ' if it contains spaces.
+Yields: All Users in the Organizational Units and their sub units. 
+Example: ous_and_children "'/Staff/New York','/Staff/New Jersey'"
+
+Selection: args users <Marker> <UserItem>* <Marker>
+Note: <Marker> is a short string that brackets a space separated list of <UserItems>
+Yields: A list of Users.
+Example: args users === user1@example.com user2@example.com ===
+
+Selection: args groups <Marker> <GroupItem>* <Marker>
+Note: <Marker> is a short string that brackets a space separated list of <GroupItems>
+Yields: All Users from all of the groups.
+Example: args groups === user1@example.com user2@example.com ===
+
+Selection: args orgs|ous <Marker> <OrgUnitPath>* <Marker>
+Note: <Marker> is a short string that brackets a space separated list of <OrgUnitPaths>
+An individual <OrgUnitPath> should be surrounded by " if it contains spaces.
+Yields: All Users directly in the Organizational Units. 
+Example: args orgs === "/Staff/New York" "/Staff/New Jersey" ===
+
+Selection: args ous_and_children|ous_and_child <Marker> <OrgUnitPath>* <Marker>
+Note: <Marker> is a short string that brackets a space separated list of <OrgUnitPaths>
+An individual <OrgUnitPath> should be surrounded by " if it contains spaces.
+Yields: All Users in the Organizational Units and their sub units. 
+Example: args orgs === "/Staff/New York" "/Staff/New Jersey" ===
+
+Selection: datafile users <FileName>	
+Note: <FileName> specifies a flat file with no header row, it may have multiple columns, the data is read from the last column.
+Yields: A list of Users.
+Example: datafile users UserFile.lst
+UserFile.lst contains:
+user1@example.com
+user2@example.com
+
+Selection: datafile groups <FileName>
+Note: <FileName> specifies a flat file with no header row, it may have multiple columns, the data is read from the last column.
+Yields: All Users from all of the groups.
+Example: datafile groups GroupFile.lst
+GroupFile.lst contains:
+group1@example.com
+group2@example.com
+...
+
+Selection: datafile orgs|ous <FileName>
+Note: <FileName> specifies a flat file with no header row, it may have multiple columns, the data is read from the last column.
+Yields: All Users directly in the Organizational Units. 
+Example: datafile orgs OrgsFile.lst
+OrgsFile.lst contains:
+/Staff/New York
+/Staff/New Jersey
+...
+
+Selection: datafile ous_and_children|ous_and_child <FileName>
+Note: <FileName> specifies a flat file with no header row, it may have multiple columns, the data is read from the last column.
+Yields: All Users in the Organizational Units and their sub units. 
+Example: datafile orgs OrgsFile.lst
+OrgsFile.lst contains:
+/Staff/New York
+/Staff/New Jersey
+...
+
+Selection: csvfile users <FileName> keyfield <FieldName> [delimiter <Character>] [matchfield <FieldName> <PythonRegularExpression>] [datafield <FieldName> [cros|groups|users] [delimiter <Character>]]
+Note: <FileName> specifies a CSV file, <FieldName>, <FieldName> and <FieldName> are values in the first row that select specific columns.
+Yields: A list of Users.
+The columns are separated by commas. If a keyfield or datafield contains multiple values, delimiter <Character> specifies the character that separates the values.
+The <FieldName> column contains <UserItems>..
+The <MatchFileName> column contains data that may be used to select a subset of the rows in the CSV file.
+The <FieldName> column selects data that will be used elsewhere in the command.
+<PythonRegularExpression> is a Python regular expression, see: https://docs.python.org/2/library/re.html
+
+Example: csvfile users UserFile.csv keyfield Email matchfield Office 'New York'
+userFile.csv contains:
+Office,Email
+New York,user1@example.com
+New York,user2@example.com
+...
+
+Example: csvfile UserFile.csv keyfield Emails delimiter ' ' matchfield Office 'Sales-.*'
+UserFile.csv contains:
+Office,Emails
+Engineering-NY,user1@example.com user2@example.com
+Sales-NY,user13@example.com user4@example.com
+Engineering-NJ,user15example.com user6@example.com
+Sales-NJ,user7@example.com user8@example.com
+...
+
+Selection: csvfile groups <FileName> keyfield <FieldName> [delimiter <Character>] [matchfield <FieldName> <PythonRegularExpression>] [datafield <FieldName> [cros|groups|users] [delimiter <Character>]]
+Selection: csvfile orgs|ous <FileName> keyfield <FieldName> [delimiter <Character>] [matchfield <FieldName> <PythonRegularExpression>] [datafield <FieldName> [cros|groups|users] [delimiter <Character>]]
+Selection: csvfile ous_and_children|ous_and_child <FileName> keyfield <FieldName> [delimiter <Character>] [matchfield <FieldName> <PythonRegularExpression>] [datafield <FieldName> [cros|groups|users] [delimiter <Character>]]
