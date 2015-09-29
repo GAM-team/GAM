@@ -24,7 +24,7 @@ For more information, see http://git.io/gam
 """
 
 __author__ = u'Jay Lee <jay0lee@gmail.com>'
-__version__ = u'3.51'
+__version__ = u'3.6'
 __license__ = u'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 import sys, os, time, datetime, random, socket, csv, platform, re, calendar, base64, string
@@ -355,8 +355,7 @@ def tryOAuth(gdataObject):
     disable_ssl_certificate_validation = False
     if os.path.isfile(os.path.join(gamUserConfigDir, u'noverifyssl.txt')):
       disable_ssl_certificate_validation = True
-    credentials.refresh(httplib2.Http(ca_certs=os.path.join(gamSiteConfigDir, u'cacert.pem'),
-                                      disable_ssl_certificate_validation=disable_ssl_certificate_validation))
+    credentials.refresh(httplib2.Http(disable_ssl_certificate_validation=disable_ssl_certificate_validation))
   gdataObject.additional_headers = {u'Authorization': u'Bearer %s' % credentials.access_token}
   try:
     domain = os.environ[u'GA_DOMAIN'].lower()
@@ -413,8 +412,7 @@ def callGAPI(service, function, silent_errors=False, soft_errors=False, throw_re
           disable_ssl_certificate_validation = False
           if os.path.isfile(os.path.join(gamUserConfigDir, u'noverifyssl.txt')):
             disable_ssl_certificate_validation = True
-          service._http.request.credentials.refresh(httplib2.Http(ca_certs=os.path.join(gamSiteConfigDir, u'cacert.pem'),
-                                                                  disable_ssl_certificate_validation=disable_ssl_certificate_validation))
+          service._http.request.credentials.refresh(httplib2.Http(disable_ssl_certificate_validation=disable_ssl_certificate_validation))
           continue
         if (e.resp[u'status'] == u'503') and (e.content == u'Quota exceeded for the current request'):
           time.sleep(1)
@@ -511,6 +509,8 @@ def getAPIVer(api):
     return u'directory_v1'
   elif api == u'reports':
     return u'reports_v1'
+  elif api == u'datatransfer':
+    return u'datatransfer_v1'
   elif api == u'oauth2':
     return u'v2'
   elif api == u'groupssettings':
@@ -571,8 +571,7 @@ def buildGAPIObject(api):
   disable_ssl_certificate_validation = False
   if os.path.isfile(os.path.join(gamUserConfigDir, u'noverifyssl.txt')):
     disable_ssl_certificate_validation = True
-  http = httplib2.Http(ca_certs=os.path.join(gamSiteConfigDir, u'cacert.pem'),
-                       disable_ssl_certificate_validation=disable_ssl_certificate_validation, cache=gamCacheDir)
+  http = httplib2.Http(disable_ssl_certificate_validation=disable_ssl_certificate_validation, cache=gamCacheDir)
   if os.path.isfile(os.path.join(gamUserConfigDir, u'debug.gam')):
     httplib2.debuglevel = 4
     extra_args[u'prettyPrint'] = True
@@ -584,7 +583,7 @@ def buildGAPIObject(api):
     extra_args.update(dict(config.items(u'extra-args')))
   http = credentials.authorize(http)
   version = getAPIVer(api)
-  if api in [u'directory', u'reports']:
+  if api in [u'directory', u'reports', u'datatransfer']:
     api = u'admin'
   try:
     service = googleapiclient.discovery.build(api, version, http=http)
@@ -651,8 +650,7 @@ def buildGAPIServiceObject(api, act_as=None, soft_errors=False):
   disable_ssl_certificate_validation = False
   if os.path.isfile(os.path.join(gamUserConfigDir, u'noverifyssl.txt')):
     disable_ssl_certificate_validation = True
-  http = httplib2.Http(ca_certs=os.path.join(gamSiteConfigDir, u'cacert.pem'),
-                       disable_ssl_certificate_validation=disable_ssl_certificate_validation, cache=gamCacheDir)
+  http = httplib2.Http(disable_ssl_certificate_validation=disable_ssl_certificate_validation, cache=gamCacheDir)
   if os.path.isfile(os.path.join(gamUserConfigDir, u'debug.gam')):
     httplib2.debuglevel = 4
     extra_args[u'prettyPrint'] = True
@@ -685,8 +683,7 @@ def buildDiscoveryObject(api):
   disable_ssl_certificate_validation = False
   if os.path.isfile(os.path.join(gamUserConfigDir, u'noverifyssl.txt')):
     disable_ssl_certificate_validation = True
-  http = httplib2.Http(ca_certs=os.path.join(gamSiteConfigDir, u'cacert.pem'),
-                       disable_ssl_certificate_validation=disable_ssl_certificate_validation, cache=gamCacheDir)
+  http = httplib2.Http(disable_ssl_certificate_validation=disable_ssl_certificate_validation, cache=gamCacheDir)
   requested_url = uritemplate.expand(googleapiclient.discovery.DISCOVERY_URI, params)
   resp, content = http.request(requested_url)
   if resp.status == 404:
@@ -1200,6 +1197,320 @@ def doUpdateCourse():
   body[u'id'] = courseId
   result = callGAPI(service=croom.courses(), function=u'patch', id=courseId, body=body, updateMask=updateMask)
   print u'Updated Course %s' % result[u'id']
+
+def doCreateDomain():
+  cd = buildGAPIObject(u'directory')
+  domain_name = sys.argv[3]
+  body = {u'domainName': domain_name}
+  callGAPI(service=cd.domains(), function=u'insert', customer=customerId, body=body)
+  print u'Added domain %s' % domain_name
+
+def doCreateDomainAlias():
+  cd = buildGAPIObject(u'directory')
+  body = {}
+  body[u'domainAliasName'] = sys.argv[3]
+  body[u'parentDomainName'] = sys.argv[4]
+  result = callGAPI(service=cd.domainAliases(), function=u'insert', customer=customerId, body=body)
+
+def doUpdateDomain():
+  cd = buildGAPIObject(u'directory')
+  domain_name = sys.argv[3]
+  i = 4
+  body = {}
+  while i < len(sys.argv):
+    if sys.argv[i].lower() == u'primary':
+      body[u'customerDomain'] = domain_name
+      i += 1
+    else:
+      print u'ERROR: %s is not a valid argument to "gam update domain"' % sys.argv[i]
+      sys.exit(1)
+  result = callGAPI(service=cd.customers(), function=u'update', customerKey=customerId, body=body)
+  print u'%s is now the primary domain.' % domain_name
+
+def doGetDomainInfo():
+  if len(sys.argv) < 4:
+    doGetInstanceInfo()
+    return
+  else:
+    domainName = sys.argv[3]
+  cd = buildGAPIObject(u'directory')
+  result = callGAPI(service=cd.domains(), function=u'get', customer=customerId, domainName=domainName)
+  if u'creationTime' in result:
+    result[u'creationTime'] = unicode(datetime.datetime.fromtimestamp(int(result[u'creationTime'])/1000))
+  if u'domainAliases' in result:
+    for i in range(0, len(result[u'domainAliases'])):
+      if u'creationTime' in result[u'domainAliases'][i]:
+        result[u'domainAliases'][i][u'creationTime'] = unicode(datetime.datetime.fromtimestamp(int(result[u'domainAliases'][i][u'creationTime'])/1000))
+  print_json(None, result)
+
+def doGetDomainAliasInfo():
+  alias = sys.argv[3]
+  cd = buildGAPIObject(u'directory')
+  result = callGAPI(service=cd.domainAliases(), function=u'get', customer=customerId, domainAliasName=alias)
+  if u'creationTime' in result:
+    result[u'creationTime'] = unicode(datetime.datetime.fromtimestamp(int(result[u'creationTime'])/1000))
+  print_json(None, result)
+
+def doGetCustomerInfo():
+  cd = buildGAPIObject(u'directory')
+  customer_info = callGAPI(service=cd.customers(), function=u'get', customerKey=customerId)
+  print_json(None, customer_info)
+
+def doUpdateCustomer():
+  cd = buildGAPIObject(u'directory')
+  body = {}
+  customer = sys.argv[3]
+  i = 3
+  while i < len(sys.argv):
+    myarg = sys.argv[i].lower().replace(u'_', u'')
+    if myarg == u'alternateemail':
+      body[u'alternateEmail'] = sys.argv[i+1]
+      i += 2
+    elif myarg in [u'contactname', u'organizationname', u'locality', u'region', u'countrycode', u'addressline1', u'addressline2', u'addressline3', u'postalcode']:
+      if u'postalAddress' not in body:
+        body[u'postalAddress'] = {}
+      if myarg == u'contactname':
+        myarg = u'contactName'
+      elif myarg == u'organizationname':
+        myarg = u'organizationName'
+      elif myarg == u'countrycode':
+        myarg = u'countryCode'
+      elif myarg == u'addressline1':
+        myarg = u'addressLine1'
+      elif myarg == u'addressline2':
+        myarg = u'addressLine2'
+      elif myarg == u'addressline3':
+        myarg = u'addressLine3'
+      elif myarg == u'postalcode':
+        myarg = u'postalCode'
+      body[u'postalAddress'][myarg] = sys.argv[i+1]
+      i += 2
+    elif myarg in [u'phone', u'phonenumber']:
+      body[u'phoneNumber'] = sys.argv[i+1]
+      i += 2
+    elif myarg == u'language':
+      body[u'language'] = sys.argv[i+1]
+      i += 2
+    else:
+      print u'ERROR: %s is not a valid argument to "gam update customer"' % myarg
+      sys.exit(1)
+  callGAPI(service=cd.customers(), function=u'update', customerKey=customerId, body=body)
+  print u'Updated customer'
+
+def doDelDomain():
+  domainName = sys.argv[3]
+  cd = buildGAPIObject(u'directory')
+  callGAPI(service=cd.domains(), function=u'delete', customer=customerId, domainName=domainName)
+
+def doDelDomainAlias():
+  domainAliasName = sys.argv[3]
+  cd = buildGAPIObject(u'directory')
+  callGAPI(service=cd.domainAliases(), function=u'delete', customer=customerId, domainAliasName=domainAliasName)
+
+def doPrintDomains():
+  titles = []
+  domains_attributes = [{}]
+  todrive = False
+  cd = buildGAPIObject(u'directory')
+  domains = callGAPI(service=cd.domains(), function=u'list', customer=customerId)
+  i = 3
+  while i < len(sys.argv):
+    if sys.argv[i].lower() == u'todrive':
+      todrive = True
+      i += 1
+    else:
+      print u'ERROR: %s is not a valid argument to "gam print domains".' % sys.argv[i]
+      sys.exit(3)
+  for domain in domains[u'domains']:
+    domain_attributes = {}
+    if domain[u'isPrimary'] == True:
+      domain[u'type'] = u'primary'
+    else:
+      domain[u'type'] = u'secondary'
+    for attr in domain.keys():
+      if attr in [u'kind', u'domainAliases', u'etag', u'etags', u'isPrimary']:
+        continue
+      elif attr in [u'creationTime',]:
+        domain[attr] = unicode(datetime.datetime.fromtimestamp(int(domain[attr])/1000))
+      if attr not in titles:
+        titles.append(attr)
+        domains_attributes[0][attr] = attr
+      domain_attributes[attr] = domain[attr]
+    domains_attributes.append(domain_attributes)
+    if u'domainAliases' in domain:
+      for aliasdomain in domain[u'domainAliases']:
+        aliasdomain[u'domainName'] = aliasdomain[u'domainAliasName']
+        del aliasdomain[u'domainAliasName']
+        aliasdomain[u'type'] = u'alias'
+        aliasdomain_attributes = {}
+        for attr in aliasdomain.keys():
+          if attr in [u'kind', u'etag']:
+            continue
+          elif attr in [u'creationTime',]:
+            aliasdomain[attr] = unicode(datetime.datetime.fromtimestamp(int(aliasdomain[attr])/1000))
+          if attr not in titles:
+            titles.append(attr)
+            domains_attributes[0][attr] = attr
+          aliasdomain_attributes[attr] = aliasdomain[attr]
+        domains_attributes.append(aliasdomain_attributes)
+  output_csv(domains_attributes, titles, u'Domains', todrive)
+
+def appID2app(dt, appID):
+  known_services = [
+  {
+   "id": "55656082996",
+   "name": "Drive",
+  },
+  {
+   "id": "553547912911",
+   "name": "Google+"
+  }
+  ]
+  for known_service in known_services:
+    if appID == known_service[u'id']:
+      return known_service[u'name']
+  online_services = callGAPIpages(service=dt.applications(), function=u'list', items=u'applications', customerId=customerId)
+  for online_service in online_services:
+    if appID == online_service[u'id']:
+      return online_service[u'name']
+  print u'ERROR: %s is not a valid app ID for data transfer.' % service
+  sys.exit(3)
+
+def app2appID(dt, app):
+  if app.lower() in [u'googleplus', u'gplus', u'g+']:
+    app = u'Google+'
+  elif app.lower() in [u'googledrive', u'gdrive']:
+    app = u'Drive'
+  known_services = [
+  {
+   "id": "55656082996",
+   "name": "Drive",
+  },
+  {
+   "id": "553547912911",
+   "name": "Google+"
+  }
+  ]
+  for known_service in known_services:
+    if app.lower() == known_service[u'name'].lower():
+      return known_service[u'id']
+  online_services = callGAPIpages(service=dt.applications(), function=u'list', items=u'applications', customerId=customerId)
+  for online_service in online_services:
+    if app.lower() == online_service[u'name'].lower():
+      return online_service[u'id']
+  print u'ERROR: %s is not a valid service for data transfer.' % app
+  sys.exit(3)
+
+def convertToUserID(user):
+  if user[:4].lower() == u'uid:':
+    return user[4:]
+  if user.find(u'@') == -1:
+    user = u'%s@%s' % (user, domain)
+  cd = buildGAPIObject(u'directory')
+  try:
+    return callGAPI(service=cd.users(), function=u'get', throw_reasons=[u'notFound'], userKey=user, fields=u'id')[u'id']
+  except googleapiclient.errors.HttpError:
+    print u'ERROR: no such user %s' % user
+    sys.exit(3)
+
+def convertUserIDtoEmail(id):
+  cd = buildGAPIObject(u'directory')
+  try:
+    return callGAPI(service=cd.users(), function=u'get', throw_reasons=[u'notFound'], userKey=id, fields=u'primaryEmail')[u'primaryEmail']
+  except googleapiclient.errors.HttpError:
+    print u'ERROR: no such user %s' % id
+    sys.exit(3)
+
+def doCreateDataTranfer():
+  dt = buildGAPIObject(u'datatransfer')
+  body = {}
+  old_owner = sys.argv[3]
+  body[u'oldOwnerUserId'] = convertToUserID(old_owner)
+  service = sys.argv[4]
+  new_owner = sys.argv[5]
+  body[u'newOwnerUserId'] = convertToUserID(new_owner)
+  parameters = {}
+  i = 6
+  while i < len(sys.argv):
+    parameters[sys.argv[i].upper()] = sys.argv[i+1].upper().split(u',')
+    i += 2
+  body[u'applicationDataTransfers'] = [{u'applicationId': app2appID(dt, service)}]
+  for key in parameters.keys():
+    if u'applicationDataTransferParams' not in body[u'applicationDataTransfers'][0]:
+      body[u'applicationDataTransfers'][0][u'applicationTransferParams'] = []
+    body[u'applicationDataTransfers'][0][u'applicationTransferParams'].append({u'key': key, u'value': parameters[key]})
+  result = callGAPI(service=dt.transfers(), function=u'insert', body=body, fields=u'id')[u'id']
+  print u'Submitted request id %s to transfer %s from %s to %s' % (result, service, old_owner, new_owner)
+
+def doPrintTransferApps():
+  dt = buildGAPIObject(u'datatransfer')
+  apps = callGAPIpages(service=dt.applications(), function=u'list', items=u'applications', customerId=customerId)
+  for app in apps:
+    print_json(None, app)
+    print
+
+def doPrintDataTransfers():
+  dt = buildGAPIObject(u'datatransfer')
+  i = 3
+  newOwnerUserId = None
+  oldOwnerUserId = None
+  status = None
+  todrive = False
+  while i < len(sys.argv):
+    if sys.argv[i].lower().replace(u'_', '') in [u'olduser', u'oldowner']:
+      oldOwnerUserId = convertToUserID(sys.argv[i+1])
+      i += 2
+    elif sys.argv[i].lower().replace(u'_', '') in [u'newuser', u'newowner']:
+      newOwnerUserId = convertToUserID(sys.argv[i+1])
+      i += 2
+    elif sys.argv[i].lower() == u'status':
+      status = sys.argv[i+1]
+      i += 2
+    elif sys.argv[i].lower() == u'todrive':
+      todrive = True
+    else:
+      print u'ERROR: %s is not a valid argument to "gam print transfers"'
+      sys.exit(3)
+  transfers_attributes = [{}]  
+  transfers = callGAPIpages(service=dt.transfers(), function=u'list',
+   items=u'dataTransfers', customerId=customerId, status=status,
+   newOwnerUserId=newOwnerUserId, oldOwnerUserId=oldOwnerUserId)
+  for transfer in transfers:
+    for i in range(0, len(transfer[u'applicationDataTransfers'])):
+      a_transfer = dict()
+      a_transfer[u'oldOwnerUserEmail'] = convertUserIDtoEmail(transfer[u'oldOwnerUserId'])
+      a_transfer[u'newOwnerUserEmail'] = convertUserIDtoEmail(transfer[u'newOwnerUserId'])
+      a_transfer[u'requestTime'] = transfer[u'requestTime']
+      a_transfer[u'applicationId'] = transfer[u'applicationDataTransfers'][i][u'applicationId']
+      a_transfer[u'application'] = appID2app(dt, a_transfer[u'applicationId'])
+      a_transfer[u'status'] = transfer[u'applicationDataTransfers'][i][u'applicationTransferStatus']
+      a_transfer[u'id'] = transfer[u'id']
+      if u'applicationTransferParams' in transfer[u'applicationDataTransfers'][i]:
+        for param in transfer[u'applicationDataTransfers'][i][u'applicationTransferParams']:
+          a_transfer[param[u'key']] = ','.join(param[u'value'])
+    for title in a_transfer.keys():
+      if title not in transfers_attributes[0]:
+        transfers_attributes[0][title] = title
+    transfers_attributes.append(a_transfer)
+  output_csv(transfers_attributes, transfers_attributes[0], u'Data Transfers', todrive)
+
+def doGetDataTransferInfo():
+  dt = buildGAPIObject(u'datatransfer')
+  id = sys.argv[3]
+  transfer = callGAPI(service=dt.transfers(), function=u'get', dataTransferId=id)
+  print u'Old Owner: %s' % convertUserIDtoEmail(transfer[u'oldOwnerUserId'])
+  print u'New Owner: %s' % convertUserIDtoEmail(transfer[u'newOwnerUserId'])
+  print u'Request Time: %s' % transfer[u'requestTime']
+  for app in transfer[u'applicationDataTransfers']:
+    print u'Application: %s' % appID2app(dt, app[u'applicationId'])
+    print u'Status: %s' % app[u'applicationTransferStatus']
+    print u'Parameters:'
+    if u'applicationTransferParams' in app:
+      for param in app[u'applicationTransferParams']:
+        print   u' %s: %s' % (param[u'key'], u','.join(param[u'value']))
+    else:
+      print u' None'
+    print
 
 def doCreateCourse():
   croom = buildGAPIObject(u'classroom')
@@ -6304,7 +6615,7 @@ def doDeprovUser(users):
       print u'No Tokens'
     print u'Done deprovisioning %s' % user
 
-def doUpdateDomain():
+def doUpdateInstance():
   adminObj = getAdminSettingsObject()
   command = sys.argv[3].lower()
   if command == u'language':
@@ -6446,7 +6757,7 @@ def doUpdateDomain():
   else:
     print u'Error: that is not a valid "gam update domain" command'
 
-def doGetDomainInfo():
+def doGetInstanceInfo():
   adm = buildGAPIObject(u'admin-settings')
   if len(sys.argv) > 4 and sys.argv[3].lower() == u'logo':
     target_file = sys.argv[4]
@@ -8044,8 +8355,7 @@ def OAuthInfo():
     disable_ssl_certificate_validation = False
     if os.path.isfile(os.path.join(gamUserConfigDir, u'noverifyssl.txt')):
       disable_ssl_certificate_validation = True
-    http = httplib2.Http(ca_certs=os.path.join(gamSiteConfigDir, u'cacert.pem'),
-                         disable_ssl_certificate_validation=disable_ssl_certificate_validation)
+    http = httplib2.Http(disable_ssl_certificate_validation=disable_ssl_certificate_validation)
     if os.path.isfile(os.path.join(gamUserConfigDir, u'debug.gam')):
       httplib2.debuglevel = 4
     if credentials.access_token_expired:
@@ -8079,11 +8389,10 @@ def doDeleteOAuth():
   except AttributeError:
     print u'Error: Authorization doesn\'t exist'
     sys.exit(1)
-  certFile = os.path.join(gamSiteConfigDir, u'cacert.pem')
   disable_ssl_certificate_validation = False
   if os.path.isfile(os.path.join(gamUserConfigDir, u'noverifyssl.txt')):
     disable_ssl_certificate_validation = True
-  http = httplib2.Http(ca_certs=certFile, disable_ssl_certificate_validation=disable_ssl_certificate_validation)
+  http = httplib2.Http(disable_ssl_certificate_validation=disable_ssl_certificate_validation)
   if os.path.isfile(os.path.join(gamUserConfigDir, u'debug.gam')):
     httplib2.debuglevel = 4
   sys.stderr.write(u'This OAuth token will self-destruct in 3...')
@@ -8127,8 +8436,11 @@ possible_scopes = [u'https://www.googleapis.com/auth/admin.directory.group',    
                    u'https://www.googleapis.com/auth/siteverification',                 # Site Verification API
                    u'https://mail.google.com/',                                         # IMAP/SMTP authentication for admin notifications
                    u'https://www.googleapis.com/auth/admin.directory.userschema',       # Customer User Schema
-                   u'https://www.googleapis.com/auth/classroom.rosters https://www.googleapis.com/auth/classroom.courses https://www.googleapis.com/auth/classroom.profile.emails https://www.googleapis.com/auth/classroom.profile.photos',          # Classroom API
-                   u'https://www.googleapis.com/auth/cloudprint']			  # Cloudprint API
+                   u'https://www.googleapis.com/auth/classroom.rosters https://www.googleapis.com/auth/classroom.courses https://www.googleapis.com/auth/classroom.profile.emails https://www.googleapis.com/auth/classroom.profile.photos',           # Classroom API
+                   u'https://www.googleapis.com/auth/cloudprint',                       # CloudPrint API
+                   u'https://www.googleapis.com/auth/admin.datatransfer',			          # Data Transfer API
+                   u'https://www.googleapis.com/auth/admin.directory.customer',         # Customer API
+                   u'https://www.googleapis.com/auth/admin.directory.domain']            # Domain API
 
 def doRequestOAuth(incremental_auth=False):
   try:
@@ -8152,38 +8464,40 @@ https://github.com/jay0lee/GAM/wiki/CreatingClientSecretsFile
 for instructions.
 
 """ % CLIENT_SECRETS
-
+  num_scopes = len(possible_scopes)
   menu = u'''Select the authorized scopes for this token. Include a 'r' to grant read-only
 access or an 'a' to grant action-only access.
 
-[%s]  0)  Group Directory API (supports read-only)
-[%s]  1)  Organizational Unit Directory API (supports read-only)
-[%s]  2)  User Directory API (supports read-only)
-[%s]  3)  Chrome OS Device Directory API (supports read-only)
-[%s]  4)  Mobile Device Directory API (supports read-only and action)
-[%s]  5)  User Email Settings API
-[%s]  6)  Calendar Resources API
-[%s]  7)  Audit Monitors, Activity and Mailbox Exports API
-[%s]  8)  Admin Settings API
-[%s]  9)  Groups Settings API
-[%s] 10)  Calendar Data API (supports read-only)
-[%s] 11)  Audit Reports API
-[%s] 12)  Usage Reports API
-[%s] 13)  Drive API (create report documents for admin user only)
-[%s] 14)  License Manager API
-[%s] 15)  User Security Directory API
-[%s] 16)  Notifications Directory API
-[%s] 17)  Site Verification API
-[%s] 18)  IMAP/SMTP Access (send notifications to admin)
-[%s] 19)  User Schemas (supports read-only)
-[%s] 20)  Classroom API
-[%s] 21)  Cloud Print API
+[%%s]  %s)  Group Directory API (supports read-only)
+[%%s]  %s)  Organizational Unit Directory API (supports read-only)
+[%%s]  %s)  User Directory API (supports read-only)
+[%%s]  %s)  Chrome OS Device Directory API (supports read-only)
+[%%s]  %s)  Mobile Device Directory API (supports read-only and action)
+[%%s]  %s)  User Email Settings API
+[%%s]  %s)  Calendar Resources API
+[%%s]  %s)  Audit Monitors, Activity and Mailbox Exports API
+[%%s]  %s)  Admin Settings API
+[%%s]  %s)  Groups Settings API
+[%%s]  %s)  Calendar Data API (supports read-only)
+[%%s]  %s)  Audit Reports API
+[%%s]  %s)  Usage Reports API
+[%%s]  %s)  Drive API (create report documents for admin user only)
+[%%s]  %s)  License Manager API
+[%%s]  %s)  User Security Directory API
+[%%s]  %s)  Notifications Directory API
+[%%s]  %s)  Site Verification API
+[%%s]  %s)  IMAP/SMTP Access (send notifications to admin)
+[%%s]  %s)  User Schemas (supports read-only)
+[%%s]  %s)  Classroom API
+[%%s]  %s)  Cloud Print API
+[%%s]  %s)  Data Transfer API (supports read-only)
+[%%s]  %s)  Customer Directory API (supports read-only)
+[%%s]  %s)  Domains Directory API (supports read-only)
 
-     22)  Select all scopes
-     23)  Unselect all scopes
-     24)  Continue
-'''
-  num_scopes = len(possible_scopes)
+      %%s)  Select all scopes
+      %%s)  Unselect all scopes
+      %%s)  Continue
+''' % tuple(range(0,num_scopes))
   selected_scopes = [u'*'] * num_scopes
   select_all_scopes = unicode(str(num_scopes))
   unselect_all_scopes = unicode(str(num_scopes+1))
@@ -8192,12 +8506,12 @@ access or an 'a' to grant action-only access.
 
   os.system([u'clear', u'cls'][os.name == u'nt'])
   while True:
-    menu_fill = tuple(selected_scopes)+scope_choices
+    menu_fill = tuple(selected_scopes) + scope_choices
     selection = raw_input(menu % menu_fill)
     try:
       if selection.lower().find(u'r') != -1:
         selection = int(selection.lower().replace(u'r', u''))
-        if selection not in [0, 1, 2, 3, 4, 10, 19]:
+        if selection not in [0, 1, 2, 3, 4, 10, 19, 22, 23, 24]:
           os.system([u'clear', u'cls'][os.name == u'nt'])
           print u'THAT SCOPE DOES NOT SUPPORT READ-ONLY MODE!\n'
           continue
@@ -8265,11 +8579,10 @@ access or an 'a' to grant action-only access.
   if os.path.isfile(os.path.join(gamUserConfigDir, u'nobrowser.txt')):
     flags.noauth_local_webserver = True
   if credentials is None or credentials.invalid or incremental_auth:
-    certFile = os.path.join(gamSiteConfigDir, u'cacert.pem')
     disable_ssl_certificate_validation = False
     if os.path.isfile(os.path.join(gamUserConfigDir, u'noverifyssl.txt')):
       disable_ssl_certificate_validation = True
-    http = httplib2.Http(ca_certs=certFile, disable_ssl_certificate_validation=disable_ssl_certificate_validation)
+    http = httplib2.Http(disable_ssl_certificate_validation=disable_ssl_certificate_validation)
     if os.path.isfile(os.path.join(gamUserConfigDir, u'debug.gam')):
       httplib2.debuglevel = 4
       extra_args[u'prettyPrint'] = True
@@ -8386,6 +8699,12 @@ try:
       doCreateOrUpdateUserSchema()
     elif sys.argv[2].lower() in [u'course', u'class']:
       doCreateCourse()
+    elif sys.argv[2].lower() in [u'transfer', u'datatransfer']:
+      doCreateDataTranfer()
+    elif sys.argv[2].lower() in [u'domain',]:
+      doCreateDomain()
+    elif sys.argv[2].lower() in [u'domainalias', u'aliasdomain']:
+      doCreateDomainAlias()
     else:
       print u'Error: invalid argument to "gam create..."'
       sys.exit(2)
@@ -8401,8 +8720,8 @@ try:
       doUpdateOrg()
     elif sys.argv[2].lower() == u'resource':
       doUpdateResourceCalendar()
-    elif sys.argv[2].lower() == u'domain':
-      doUpdateDomain()
+    elif sys.argv[2].lower() == u'instance':
+      doUpdateInstance()
     elif sys.argv[2].lower() == u'cros':
       doUpdateCros()
     elif sys.argv[2].lower() == u'mobile':
@@ -8417,6 +8736,10 @@ try:
       doUpdateCourse()
     elif sys.argv[2].lower() in [u'printer', u'print']:
       doUpdatePrinter()
+    elif sys.argv[2].lower() in [u'domain',]:
+      doUpdateDomain()
+    elif sys.argv[2].lower() in [u'customer',]:
+      doUpdateCustomer()
     else:
       showUsage()
       print u'Error: invalid argument to "gam update..."'
@@ -8429,8 +8752,8 @@ try:
       doGetGroupInfo()
     elif sys.argv[2].lower() in [u'nickname', u'alias']:
       doGetAliasInfo()
-    elif sys.argv[2].lower() == u'domain':
-      doGetDomainInfo()
+    elif sys.argv[2].lower() == u'instance':
+      doGetInstanceInfo()
     elif sys.argv[2].lower() in [u'org', u'ou']:
       doGetOrgInfo()
     elif sys.argv[2].lower() == u'resource':
@@ -8449,6 +8772,14 @@ try:
       doGetCourseInfo()
     elif sys.argv[2].lower() in [u'printer', u'print']:
       doGetPrinterInfo()
+    elif sys.argv[2].lower() in [u'transfer', u'datatransfer']:
+      doGetDataTransferInfo()
+    elif sys.argv[2].lower() in [u'customer',]:
+      doGetCustomerInfo()
+    elif sys.argv[2].lower() in [u'domain',]:
+      doGetDomainInfo()
+    elif sys.argv[2].lower() in [u'domainalias', u'aliasdomain']:
+      doGetDomainAliasInfo()
     else:
       print u'Error: invalid argument to "gam info..."'
       sys.exit(2)
@@ -8474,6 +8805,10 @@ try:
       doDelCourse()
     elif sys.argv[2].lower() in [u'printer', u'printers']:
       doDelPrinter()
+    elif sys.argv[2].lower() in [u'domain',]:
+      doDelDomain()
+    elif sys.argv[2].lower() in [u'domainalias',]:
+      doDelDomainAlias()
     else:
       print u'Error: invalid argument to "gam delete"'
       sys.exit(2)
@@ -8559,6 +8894,12 @@ try:
       doPrintPrinters()
     elif sys.argv[2].lower() in [u'printjobs']:
       doPrintPrintJobs()
+    elif sys.argv[2].lower() in [u'transfers', u'datatransfers']:
+      doPrintDataTransfers()
+    elif sys.argv[2].lower() in [u'transferapps']:
+      doPrintTransferApps()
+    elif sys.argv[2].lower() in [u'domains']:
+      doPrintDomains()
     else:
       print u'Error: invalid argument to "gam print..."'
       sys.exit(2)
