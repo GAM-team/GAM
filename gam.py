@@ -1260,7 +1260,7 @@ def doUpdateCustomer():
   cd = buildGAPIObject(u'directory')
   body = {}
   customer = sys.argv[3]
-  i = 3
+  i = 4
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace(u'_', u'')
     if myarg == u'alternateemail':
@@ -1373,7 +1373,7 @@ def appID2app(dt, appID):
   for online_service in online_services:
     if appID == online_service[u'id']:
       return online_service[u'name']
-  print u'ERROR: %s is not a valid app ID for data transfer.' % service
+  print u'ERROR: %s is not a valid app ID for data transfer.' % appID
   sys.exit(3)
 
 def app2appID(dt, app):
@@ -1413,10 +1413,10 @@ def convertToUserID(user):
     print u'ERROR: no such user %s' % user
     sys.exit(3)
 
-def convertUserIDtoEmail(id):
+def convertUserIDtoEmail(uid):
   cd = buildGAPIObject(u'directory')
   try:
-    return callGAPI(service=cd.users(), function=u'get', throw_reasons=[u'notFound'], userKey=id, fields=u'primaryEmail')[u'primaryEmail']
+    return callGAPI(service=cd.users(), function=u'get', throw_reasons=[u'notFound'], userKey=uid, fields=u'primaryEmail')[u'primaryEmail']
   except googleapiclient.errors.HttpError:
     print u'ERROR: no such user %s' % id
     sys.exit(3)
@@ -1468,10 +1468,11 @@ def doPrintDataTransfers():
       i += 2
     elif sys.argv[i].lower() == u'todrive':
       todrive = True
+      i += 1
     else:
       print u'ERROR: %s is not a valid argument to "gam print transfers"'
       sys.exit(3)
-  transfers_attributes = [{}]  
+  transfers_attributes = [{}]
   transfers = callGAPIpages(service=dt.transfers(), function=u'list',
    items=u'dataTransfers', customerId=customerId, status=status,
    newOwnerUserId=newOwnerUserId, oldOwnerUserId=oldOwnerUserId)
@@ -1496,8 +1497,8 @@ def doPrintDataTransfers():
 
 def doGetDataTransferInfo():
   dt = buildGAPIObject(u'datatransfer')
-  id = sys.argv[3]
-  transfer = callGAPI(service=dt.transfers(), function=u'get', dataTransferId=id)
+  dtId = sys.argv[3]
+  transfer = callGAPI(service=dt.transfers(), function=u'get', dataTransferId=dtId)
   print u'Old Owner: %s' % convertUserIDtoEmail(transfer[u'oldOwnerUserId'])
   print u'New Owner: %s' % convertUserIDtoEmail(transfer[u'newOwnerUserId'])
   print u'Request Time: %s' % transfer[u'requestTime']
