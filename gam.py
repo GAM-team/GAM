@@ -1228,7 +1228,7 @@ def doUpdateDomain():
   print u'%s is now the primary domain.' % domain_name
 
 def doGetDomainInfo():
-  if len(sys.argv) < 4:
+  if (len(sys.argv) < 4) or (sys.argv[3] == u'logo'):
     doGetInstanceInfo()
     return
   else:
