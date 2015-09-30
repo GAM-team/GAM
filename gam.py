@@ -822,8 +822,8 @@ def showReport():
       to_drive = True
       i += 1
     else:
-      print u'Error: did not expect %s as an argument to "gam report"' % sys.argv[i]
-      sys.exit(3)
+      print u'ERROR: %s is not a valid argument to "gam report"' % sys.argv[i]
+      sys.exit(2)
   try_date = date
   if try_date == None:
     try_date = datetime.date.today()
@@ -953,8 +953,8 @@ def doDelegates(users):
       delegate_domain = delegate[delegate.find(u'@')+1:].lower()
       delegate_email = delegate
   else:
-    showUsage()
-    exit(6)
+    print 'ERROR: %s is not a valid argument for "gam <users> delegate", expected to' % sys.argv[4]
+    sys.exit(2)
   count = len(users)
   i = 1
   for delegator in users:
@@ -1116,8 +1116,8 @@ def doAddCourseParticipant():
     if new_id[1] != u':':
       new_id = u'd:%s' % new_id
   else:
-    print 'ERROR: expected course participant type of teacher or student, got %s' % participant_type
-    sys.exit(4)
+    print u'ERROR: %s is not a valid argument to "gam course ID add"' % participant_type
+    sys.exit(2)
   body = {body_attribute: new_id}
   callGAPI(service=service, function=u'create', courseId=courseId, body=body)
   if courseId[:2] == u'd:':
@@ -1170,8 +1170,8 @@ def doDelCourseParticipant():
       remove_id = u'd:%s' % remove_id
     kwargs[u'alias'] = remove_id
   else:
-    print 'ERROR: expected course participant type of teacher or students, got %s' % participant_type
-    sys.exit(4)
+    print u'ERROR: %s is not a valid argument to "gam course ID delete"' % participant_type
+    sys.exit(2)
   callGAPI(service=service, function=u'delete', courseId=courseId, **kwargs)
   if courseId[:2] == u'd:':
     courseId = courseId[2:]
@@ -1214,11 +1214,11 @@ def doUpdateCourse():
       body[u'courseState'] = sys.argv[i+1].upper()
       if body[u'courseState'] not in [u'ACTIVE', u'ARCHIVED', u'PROVISIONED', u'DECLINED']:
         print 'ERROR: course state can be active or archived. Got %s' % body[u'courseState']
-        sys.exit(3)
+        sys.exit(2)
       i += 2
     else:
       print u'ERROR: %s is not a valid argument to "gam update course"' % sys.argv[i]
-      sys.exit(3)
+      sys.exit(2)
   updateMask = u','.join(body.keys())
   body[u'id'] = courseId
   result = callGAPI(service=croom.courses(), function=u'patch', id=courseId, body=body, updateMask=updateMask)
@@ -1236,7 +1236,7 @@ def doCreateDomainAlias():
   body = {}
   body[u'domainAliasName'] = sys.argv[3]
   body[u'parentDomainName'] = sys.argv[4]
-  result = callGAPI(service=cd.domainAliases(), function=u'insert', customer=customerId, body=body)
+  callGAPI(service=cd.domainAliases(), function=u'insert', customer=customerId, body=body)
 
 def doUpdateDomain():
   cd = buildGAPIObject(u'directory')
@@ -1248,9 +1248,9 @@ def doUpdateDomain():
       body[u'customerDomain'] = domain_name
       i += 1
     else:
-      print u'ERROR: %s is not a valid argument to "gam update domain"' % sys.argv[i]
-      sys.exit(1)
-  result = callGAPI(service=cd.customers(), function=u'update', customerKey=customerId, body=body)
+      print u'ERROR: %s is not a valid argument for "gam update domain"' % sys.argv[i]
+      sys.exit(2)
+  callGAPI(service=cd.customers(), function=u'update', customerKey=customerId, body=body)
   print u'%s is now the primary domain.' % domain_name
 
 def doGetDomainInfo():
@@ -1317,8 +1317,8 @@ def doUpdateCustomer():
       body[u'language'] = sys.argv[i+1]
       i += 2
     else:
-      print u'ERROR: %s is not a valid argument to "gam update customer"' % myarg
-      sys.exit(1)
+      print u'ERROR: %s is not a valid argument for "gam update customer"' % myarg
+      sys.exit(2)
   callGAPI(service=cd.customers(), function=u'update', customerKey=customerId, body=body)
   print u'Updated customer'
 
@@ -1344,8 +1344,8 @@ def doPrintDomains():
       todrive = True
       i += 1
     else:
-      print u'ERROR: %s is not a valid argument to "gam print domains".' % sys.argv[i]
-      sys.exit(3)
+      print u'ERROR: %s is not a valid argument for "gam print domains".' % sys.argv[i]
+      sys.exit(2)
   for domain in domains[u'domains']:
     domain_attributes = {}
     if domain[u'isPrimary'] == True:
@@ -1399,7 +1399,7 @@ def appID2app(dt, appID):
     if appID == online_service[u'id']:
       return online_service[u'name']
   print u'ERROR: %s is not a valid app ID for data transfer.' % appID
-  sys.exit(3)
+  sys.exit(2)
 
 def app2appID(dt, app):
   if app.lower() in [u'googleplus', u'gplus', u'g+']:
@@ -1424,7 +1424,7 @@ def app2appID(dt, app):
     if app.lower() == online_service[u'name'].lower():
       return online_service[u'id']
   print u'ERROR: %s is not a valid service for data transfer.' % app
-  sys.exit(3)
+  sys.exit(2)
 
 def convertToUserID(user):
   if user[:4].lower() == u'uid:':
@@ -1495,8 +1495,8 @@ def doPrintDataTransfers():
       todrive = True
       i += 1
     else:
-      print u'ERROR: %s is not a valid argument to "gam print transfers"'
-      sys.exit(3)
+      print u'ERROR: %s is not a valid argument for "gam print transfers"' % sys.argv[i]
+      sys.exit(2)
   transfers_attributes = [{}]
   transfers = callGAPIpages(service=dt.transfers(), function=u'list',
    items=u'dataTransfers', customerId=customerId, status=status,
@@ -1568,11 +1568,11 @@ def doCreateCourse():
       body[u'courseState'] = sys.argv[i+1].upper()
       if body[u'courseState'] not in [u'ACTIVE', u'ARCHIVED', u'PROVISIONED', u'DECLINED']:
         print 'ERROR: course state can be active or archived. Got %s' % body[u'courseState']
-        sys.exit(3)
+        sys.exit(2)
       i += 2
     else:
-      print u'ERROR: %s is not a valid argument to "gam create course".' % sys.argv[i]
-      sys.exit(3)
+      print u'ERROR: %s is not a valid argument for "gam create course".' % sys.argv[i]
+      sys.exit(2)
   if not u'ownerId' in body.keys():
     body['ownerId'] = u'me'
   if not u'name' in body.keys():
@@ -1634,8 +1634,8 @@ def doPrintCourses():
       get_aliases = True
       i += 1
     else:
-      print u'ERROR: %s is not a valid argument to "gam print courses".'
-      sys.exit(3)
+      print u'ERROR: %s is not a valid argument for "gam print courses"' % sys.argv[i]
+      sys.exit(2)
   sys.stderr.write(u'Retrieving courses for organization (may take some time for large accounts)...\n')
   page_message = u'Got %%num_items%% courses...\n'
   all_courses = callGAPIpages(service=croom.courses(), function=u'list', items=u'courses', page_message=page_message, teacherId=teacherId, studentId=studentId)
@@ -1686,8 +1686,8 @@ def doPrintCourseParticipants():
       todrive = True
       i += 1
     else:
-      print u'ERROR: %s is not a valid argument to "gam print course-participants".'
-      sys.exit(3)
+      print u'ERROR: %s is not a valid argument for "gam print course-participants"' % sys.argv[i]
+      sys.exit(2)
     sys.stderr.write(u'Retrieving courses for organization (may take some time for large accounts)...\n')
   if len(courses) == 0:
     page_message = u'Got %%num_items%% courses...\n'
@@ -1766,7 +1766,7 @@ def doPrintPrintJobs():
       age_number = sys.argv[i+1][:-1]
       if not age_number.isdigit():
         print u'ERROR: expected a number, got %s' % age_number
-        sys.exit(3)
+        sys.exit(2)
       age_unit = sys.argv[i+1][-1].lower()
       if age_unit == u'm':
         age = int(time.time()) - (int(age_number) * 60)
@@ -1776,7 +1776,7 @@ def doPrintPrintJobs():
         age = int(time.time()) - (int(age_number) * 60 * 60 * 24)
       else:
         print u'ERROR: expected m (minutes), h (hours) or d (days), got %s' % age_unit
-        sys.exit(3)
+        sys.exit(2)
       i += 2
     elif sys.argv[i].lower() == u'query':
       query = sys.argv[i+1]
@@ -1793,8 +1793,8 @@ def doPrintPrintJobs():
     elif sys.argv[i].lower() == u'orderby':
       sortorder = sys.argv[i+1].lower().replace(u'_', u'')
       if sortorder not in PRINTJOB_ASCENDINGORDER_MAP:
-        print 'Error: orderby must be one of %s. Got %s' % (','.join(PRINTJOB_ASCENDINGORDER_MAP), sortorder)
-        sys.exit(4)
+        print u'ERROR: orderby must be one of %s. Got %s' % (','.join(PRINTJOB_ASCENDINGORDER_MAP), sortorder)
+        sys.exit(2)
       sortorder = PRINTJOB_ASCENDINGORDER_MAP[sortorder]
       i += 2
     elif sys.argv[i].lower() in [u'printer', u'printerid']:
@@ -1804,8 +1804,8 @@ def doPrintPrintJobs():
       owner = sys.argv[i+1]
       i += 2
     else:
-      print u'ERROR: %s is not a valid argument to "gam print printjobs"' % sys.argv[i]
-      sys.exit(3)
+      print u'ERROR: %s is not a valid argument for "gam print printjobs"' % sys.argv[i]
+      sys.exit(2)
   if sortorder and descending:
     sortorder = PRINTJOB_DESCENDINGORDER_MAP[sortorder]
   jobs = callGAPI(service=cp.jobs(), function=u'list', q=query, status=status, sortorder=sortorder, printerid=printerid, owner=owner)
@@ -1855,8 +1855,8 @@ def doPrintPrinters():
       todrive = True
       i += 1
     else:
-      print u'ERROR: %s is not a valid argument to "gam print printers".'
-      sys.exit(3)
+      print u'ERROR: %s is not a valid argument for "gam print printers"' % sys.argv[i]
+      sys.exit(2)
   printers = callGAPI(service=cp.printers(), function=u'list', q=query, type=printer_type, connection_status=connection_status, extra_fields=extra_fields)
   checkCloudPrintResult(printers)
   for printer in printers[u'printers']:
@@ -1897,9 +1897,8 @@ def changeCalendarAttendees(users):
       allevents = True
       i += 1
     else:
-      showUsage()
-      print u'%s is not a valid argument.'
-      sys.exit(3)
+      print u'ERROR: %s is not a valid argument for "gam <users> update calattendees"' % sys.argv[i]
+      sys.exit(2)
   attendee_map = dict()
   csvfile = csv.reader(open(csv_file, 'rb'))
   for row in csvfile:
@@ -1986,9 +1985,8 @@ def addCalendar(users):
       elif sys.argv[i+1].lower() in false_values:
         body[u'selected'] = False
       else:
-        showUsage()
-        print u'Value for selected must be true or false, not %s' % sys.argv[i+1]
-        exit(4)
+        print u'ERROR: Value for selected must be true or false, not %s' % sys.argv[i+1]
+        sys.exit(2)
       i += 2
     elif sys.argv[i].lower() == u'hidden':
       if sys.argv[i+1].lower() in true_values:
@@ -1996,20 +1994,19 @@ def addCalendar(users):
       elif sys.argv[i+1].lower() in false_values:
         body[u'hidden'] = False
       else:
-        showUsage()
-        print u'Value for hidden must be true or false, not %s' % sys.argv[i+1]
-        exit(4)
+        print u'ERROR: Value for hidden must be true or false, not %s' % sys.argv[i+1]
+        sys.exit(2)
       i += 2
     elif sys.argv[i].lower() == u'reminder':
       method = sys.argv[i+1].lower()
       try:
         minutes = int(sys.argv[i+2])
       except ValueError:
-        print u'Error: Reminder time must be specified in minutes, got %s' % sys.argv[i+2]
-        sys.exit(22)
+        print u'ERROR: Reminder time must be specified in minutes, got %s' % sys.argv[i+2]
+        sys.exit(2)
       if method != u'email' and method != u'sms' and method != u'popup':
-        print u'Error: Method must be email, sms or popup. Got %s' % method
-        sys.exit(23)
+        print u'ERROR: Method must be email, sms or popup. Got %s' % method
+        sys.exit(2)
       body[u'defaultReminders'].append({u'method': method, u'minutes': minutes})
       i = i + 3
     elif sys.argv[i].lower() == u'summary':
@@ -2027,8 +2024,8 @@ def addCalendar(users):
       colorRgbFormat = True
       i += 2
     else:
-      showUsage()
-      print u'%s is not a valid argument for "gam add calendar"' % sys.argv[i]
+      print u'ERROR: %s is not a valid argument for "gam add calendar"' % sys.argv[i]
+      sys.exit(2)
   i = 1
   count = len(users)
   for user in users:
@@ -2052,9 +2049,8 @@ def updateCalendar(users):
       elif sys.argv[i+1].lower() in false_values:
         body[u'selected'] = False
       else:
-        showUsage()
-        print u'Value for selected must be true or false, not %s' % sys.argv[i+1]
-        exit(4)
+        print u'ERROR: Value for selected must be true or false, not %s' % sys.argv[i+1]
+        sys.exit(2)
       i += 2
     elif sys.argv[i].lower() == u'hidden':
       if sys.argv[i+1].lower() in true_values:
@@ -2062,9 +2058,8 @@ def updateCalendar(users):
       elif sys.argv[i+1].lower() in false_values:
         body[u'hidden'] = False
       else:
-        showUsage()
-        print u'Value for hidden must be true or false, not %s' % sys.argv[i+1]
-        exit(4)
+        print u'ERROR: Value for hidden must be true or false, not %s' % sys.argv[i+1]
+        sys.exit(2)
       i += 2
     elif sys.argv[i].lower() == u'summary':
       body[u'summaryOverride'] = sys.argv[i+1]
@@ -2085,19 +2080,19 @@ def updateCalendar(users):
       try:
         minutes = int(sys.argv[i+2])
       except ValueError:
-        print u'Error: Reminder time must be specified in minutes, got %s' % sys.argv[i+2]
-        sys.exit(22)
+        print u'ERROR: Reminder time must be specified in minutes, got %s' % sys.argv[i+2]
+        sys.exit(2)
       if method != u'email' and method != u'sms' and method != u'popup':
-        print u'Error: Method must be email, sms or popup. Got %s' % method
-        sys.exit(23)
+        print u'ERROR: Method must be email, sms or popup. Got %s' % method
+        sys.exit(2)
       try:
         body[u'defaultReminders'].append({u'method': method, u'minutes': minutes})
       except KeyError:
         body[u'defaultReminders'] = [{u'method': method, u'minutes': minutes}]
       i = i + 3
     else:
-      showUsage()
-      print u'%s is not a valid argument for "gam update calendar"' % sys.argv[i]
+      print u'ERROR: %s is not a valid argument for "gam update calendar"' % sys.argv[i]
+      sys.exit(2)
   i = 1
   count = len(users)
   for user in users:
@@ -2215,7 +2210,7 @@ def doPrintJobFetch():
       age_number = sys.argv[i+1][:-1]
       if not age_number.isdigit():
         print u'ERROR: expected a number, got %s' % age_number
-        sys.exit(3)
+        sys.exit(2)
       age_unit = sys.argv[i+1][-1].lower()
       if age_unit == u'm':
         age = int(time.time()) - (int(age_number) * 60)
@@ -2225,7 +2220,7 @@ def doPrintJobFetch():
         age = int(time.time()) - (int(age_number) * 60 * 60 * 24)
       else:
         print u'ERROR: expected m (minutes), h (hours) or d (days), got %s' % age_unit
-        sys.exit(3)
+        sys.exit(2)
       i += 2
     elif sys.argv[i].lower() == u'query':
       query = sys.argv[i+1]
@@ -2242,16 +2237,16 @@ def doPrintJobFetch():
     elif sys.argv[i].lower() == u'orderby':
       sortorder = sys.argv[i+1].lower().replace(u'_', u'')
       if sortorder not in PRINTJOB_ASCENDINGORDER_MAP:
-        print 'Error: orderby must be one of %s. Got %s' % (','.join(PRINTJOB_ASCENDINGORDER_MAP), sortorder)
-        sys.exit(4)
+        print 'ERROR: orderby must be one of %s. Got %s' % (','.join(PRINTJOB_ASCENDINGORDER_MAP), sortorder)
+        sys.exit(2)
       sortorder = PRINTJOB_ASCENDINGORDER_MAP[sortorder]
       i += 2
     elif sys.argv[i].lower() in [u'owner', u'user']:
       owner = sys.argv[i+1]
       i += 2
     else:
-      print u'ERROR: %s is not a valid argument to "gam printjobs fetch"' % sys.argv[i]
-      sys.exit(3)
+      print u'ERROR: %s is not a valid argument for "gam printjobs fetch"' % sys.argv[i]
+      sys.exit(2)
   if sortorder and descending:
     sortorder = PRINTJOB_DESCENDINGORDER_MAP[sortorder]
   result = callGAPI(service=cp.jobs(), function=u'list', q=query, status=status, sortorder=sortorder, printerid=printerid, owner=owner)
@@ -2300,8 +2295,8 @@ def doGetPrinterInfo():
       everything = True
       i += 1
     else:
-      print u'ERROR: %s is not a valid argument to "gam info printer..."'
-      sys.exit(3)
+      print u'ERROR: %s is not a valid argument for "gam info printer"' % sys.argv[i]
+      sys.exit(2)
   result = callGAPI(service=cp.printers(), function=u'get', printerid=printerid)
   checkCloudPrintResult(result)
   printer_info = result[u'printers'][0]
@@ -2336,8 +2331,8 @@ def doUpdatePrinter():
         arg_in_item = True
         break
     if not arg_in_item:
-      print u'ERROR: %s is not a valid argument to "gam update printer"' % sys.argv[i]
-      sys.exit(3)
+      print u'ERROR: %s is not a valid argument for "gam update printer"' % sys.argv[i]
+      sys.exit(2)
   result = callGAPI(service=cp.printers(), function=u'update', printerid=printerid, **kwargs)
   checkCloudPrintResult(result)
   print u'Updated printer %s' % printerid
@@ -2411,8 +2406,8 @@ def doPrintJobSubmit():
       form_fields[u'title'] = sys.argv[i+1]
       i += 2
     else:
-      print u'ERROR: %s is not a valid argument for "gam printer ... print"'
-      sys.exit(3)
+      print u'ERROR: %s is not a valid argument for "gam printer ... print"' % sys.argv[i]
+      sys.exit(2)
   form_files = {}
   if content[:4] == u'http':
     form_fields[u'content'] = content
@@ -2493,8 +2488,8 @@ def doCalendarAddACL(calendarId=None, act_as=None, role=None, scope=None, entity
   else:
     body[u'role'] = sys.argv[4].lower()
   if body[u'role'] not in [u'freebusy', u'read', u'editor', u'owner', u'none']:
-    print u'Error: Role must be freebusy, read, editor or owner. Not %s' % body['role']
-    sys.exit(33)
+    print u'ERROR: Role must be freebusy, read, editor or owner. Not %s' % body['role']
+    sys.exit(2)
   if body[u'role'] == u'freebusy':
     body[u'role'] = u'freeBusyReader'
   elif body[u'role'] == u'read':
@@ -2617,8 +2612,8 @@ def doCalendarAddEvent():
       if sys.argv[i+1].lower() in [u'default', u'public', u'private']:
         body[u'visibility'] = sys.argv[i+1].lower()
       else:
-        print 'Error: visibility must be one of default, public or private, got %s' % sys.argv[i+1]
-        sys.exit(3)
+        print 'ERROR: visibility must be one of default, public or private, got %s' % sys.argv[i+1]
+        sys.exit(2)
       i += 2
     elif sys.argv[i].lower() == u'tentative':
       body[u'status'] = u'tentative'
@@ -2659,8 +2654,8 @@ def doCalendarAddEvent():
       body[u'colorId'] = str(sys.argv[i+1])
       i += 2
     else:
-      print 'Error: %s is not a valid argument to "gam calendar..."' % sys.argv[i]
-      sys.exit(4)
+      print u'ERROR: %s is not a valid argument for "gam calendar"' % sys.argv[i]
+      sys.exit(2)
   if not timeZone and u'recurrence' in body:
     timeZone = callGAPI(service=cal.calendars(), function=u'get', calendarId=calendarId, fields=u'timeZone')[u'timeZone']
   if u'recurrence' in body:
@@ -2678,6 +2673,9 @@ def doProfile(users):
     body = {u'includeInGlobalAddressList': True}
   elif sys.argv[4].lower() == u'unshare' or sys.argv[4].lower() == u'unshared':
     body = {u'includeInGlobalAddressList': False}
+  else:
+    print u'ERROR: value for "gam <users> profile" must be true or false, got %s' % sys.argv[4]
+    sys.exit(2)
   cd = buildGAPIObject(u'directory')
   count = len(users)
   i = 1
@@ -2880,8 +2878,8 @@ def doDriveActivity(users):
       todrive = True
       i += 1
     else:
-      print u'Error: %s is not a valid argument to gam <users> show driveactivity'
-      sys.exit(3)
+      print u'ERROR: %s is not a valid argument for "gam <users> show driveactivity"' % sys.argv[i]
+      sys.exit(2)
   activity_attributes = [{},]
   for user in users:
     activity = buildGAPIServiceObject(u'appsactivity', user)
@@ -2947,7 +2945,7 @@ def addDriveFileACL(users):
       body[u'role'] = sys.argv[i+1]
       if body[u'role'] not in [u'reader', u'commenter', u'writer', u'owner', u'editor']:
         print u'ERROR: role must be reader, commenter, writer or owner, got %s' % body[u'role']
-        sys.exit(9)
+        sys.exit(2)
       if body[u'role'] == u'commenter':
         body[u'role'] = u'reader'
         body[u'additionalRoles'] = [u'commenter']
@@ -2962,8 +2960,8 @@ def addDriveFileACL(users):
       emailMessage = sys.argv[i+1]
       i += 2
     else:
-      print u'ERROR: %s is not a valid argument for "gam ... add drivefileacl ..."' % sys.argv[i]
-      sys.exit(9)
+      print u'ERROR: %s is not a valid argument for "gam <users> add drivefileacl"' % sys.argv[i]
+      sys.exit(2)
   for user in users:
     drive = buildGAPIServiceObject(u'drive', user)
     result = callGAPI(service=drive.permissions(), function=u'insert', fileId=fileId, sendNotificationEmails=sendNotificationEmails, emailMessage=emailMessage, body=body)
@@ -2983,7 +2981,7 @@ def updateDriveFileACL(users):
       body[u'role'] = sys.argv[i+1]
       if body[u'role'] not in [u'reader', u'commenter', u'writer', u'owner']:
         print u'ERROR: role must be reader, commenter, writer or owner, got %s' % body[u'role']
-        sys.exit(9)
+        sys.exit(2)
       if body[u'role'] == u'commenter':
         body[u'role'] = u'reader'
         body[u'additionalRoles'] = [u'commenter']
@@ -2997,8 +2995,8 @@ def updateDriveFileACL(users):
         print u'ERROR: transferownership should be true or false, got %s' % sys.argv[i+1].lower()
       i += 2
     else:
-      print u'ERROR: %s is not a valid argument for "gam ... update drivefileacl ..."' % sys.argv[i]
-      sys.exit(9)
+      print u'ERROR: %s is not a valid argument for "gam <users> update drivefileacl"' % sys.argv[i]
+      sys.exit(2)
   for user in users:
     drive = buildGAPIServiceObject(u'drive', user)
     if permissionId[:3].lower() == u'id:':
@@ -3086,8 +3084,8 @@ def showDriveFiles(users):
       fields += u',writersCanShare'
       i += 1
     else:
-      print u'Error: %s is not a valid argument for "gam ... show filelist"' % my_arg
-      sys.exit(3)
+      print u'ERROR: %s is not a valid argument for "gam <users> show filelist"' % my_arg
+      sys.exit(2)
   if len(labels) > 0:
     fields += ',labels(%s)' % ','.join(labels)
   if fields != u'*':
@@ -3095,8 +3093,8 @@ def showDriveFiles(users):
   for user in users:
     drive = buildGAPIServiceObject(u'drive', user)
     if user.find(u'@') == -1:
-      print u'Error: got %s, expected a full email address' % user
-      sys.exit(3)
+      print u'ERROR: got %s, expected a full email address' % user
+      sys.exit(2)
     sys.stderr.write(u'Getting files for %s...\n' % user)
     page_message = u' got %%%%total_items%%%% files for %s...\n' % user
     feed = callGAPIpages(service=drive.files(), function=u'list', page_message=page_message, soft_errors=True, q=query, maxResults=1000, fields=fields)
@@ -3176,8 +3174,8 @@ def showDriveFileTree(users):
   for user in users:
     drive = buildGAPIServiceObject(u'drive', user)
     if user.find(u'@') == -1:
-      print u'Error: got %s, expected a full email address' % user
-      sys.exit(3)
+      print u'ERROR: got %s, expected a full email address' % user
+      sys.exit(2)
     root_folder = callGAPI(service=drive.about(), function=u'get', fields=u'rootFolderId')[u'rootFolderId']
     sys.stderr.write(u'Getting all files for %s...\n' % user)
     page_message = u' got %%%%total_items%%%% files for %s...\n' % user
@@ -3189,8 +3187,8 @@ def deleteEmptyDriveFolders(users):
   for user in users:
     drive = buildGAPIServiceObject(u'drive', user)
     if user.find(u'@') == -1:
-      print u'Error: got %s, expected a full email address' % user
-      sys.exit(3)
+      print u'ERROR: got %s, expected a full email address' % user
+      sys.exit(2)
     deleted_empty = True
     while deleted_empty:
       sys.stderr.write(u'Getting folders for %s...\n' % user)
@@ -3251,7 +3249,7 @@ def doUpdateDriveFile(users):
         body[u'labels'][u'restricted'] = False
       else:
         print u'ERROR: value for restricted must be true or false, got %s' % sys.argv[i+1]
-        sys.exit(9)
+        sys.exit(2)
       i += 2
     elif sys.argv[i].lower() in [u'star', u'starred']:
       if u'labels' not in body.keys():
@@ -3262,7 +3260,7 @@ def doUpdateDriveFile(users):
         body[u'labels'][u'starred'] = False
       else:
         print u'ERROR: value for starred must be true or false, got %s' % sys.argv[i+1]
-        sys.exit(9)
+        sys.exit(2)
       i += 2
     elif sys.argv[i].lower() in [u'trash', u'trashed']:
       if u'labels' not in body.keys():
@@ -3273,7 +3271,7 @@ def doUpdateDriveFile(users):
         body[u'labels'][u'trashed'] = False
       else:
         print u'ERROR: value for trashed must be true or false, got %s' % sys.argv[i+1]
-        sys.exit(9)
+        sys.exit(2)
       i += 2
     elif sys.argv[i].lower() in [u'view', u'viewed']:
       if u'labels' not in body.keys():
@@ -3284,7 +3282,7 @@ def doUpdateDriveFile(users):
         body[u'labels'][u'viewed'] = False
       else:
         print u'ERROR: value for viewed must be true or false, got %s' % sys.argv[i+1]
-        sys.exit(9)
+        sys.exit(2)
       i += 2
     elif sys.argv[i].lower() == u'lastviewedbyme':
       body[u'lastViewedByMe'] = sys.argv[i+1]
@@ -3328,14 +3326,14 @@ def doUpdateDriveFile(users):
       body[u'writersCanShare'] = False
       i += 1
     else:
-      print u'Error: %s is not a valid argument for "gam ... create file"' % sys.argv[i]
-      sys.exit(3)
+      print u'ERROR: %s is not a valid argument for "gam <users> update drivefile"' % sys.argv[i]
+      sys.exit(2)
   if not fileIds and not drivefilename:
     print u'ERROR: you need to specify either id or query in order to determine the file(s) to update'
-    sys.exit(9)
+    sys.exit(2)
   elif fileIds and drivefilename:
     print u'ERROR: you cannot specify both an id and a query.'
-    sys.exit(9)
+    sys.exit(2)
   for user in users:
     drive = buildGAPIServiceObject(u'drive', user)
     if parent_query:
@@ -3450,8 +3448,8 @@ def createDriveFile(users):
       body[u'writersCanShare'] = False
       i += 1
     else:
-      print u'Error: %s is not a valid argument for "gam ... create file"' % sys.argv[i]
-      sys.exit(3)
+      print u'ERROR: %s is not a valid argument for "gam <users> create drivefile"' % sys.argv[i]
+      sys.exit(2)
   for user in users:
     drive = buildGAPIServiceObject(u'drive', user)
     if parent_query:
@@ -3484,14 +3482,17 @@ def downloadDriveFile(users):
     elif sys.argv[i].lower() == u'format':
       gdownload_format = sys.argv[i+1].lower()
       if gdownload_format not in [u'openoffice', u'ms', u'microsoft', u'micro$oft', u'pdf']:
-        print 'Error: format must be one of openoffice, microsoft or pdf. Got %s' % gdownload_format
-        sys.exit(4)
+        print 'ERROR: format must be one of openoffice, microsoft or pdf. Got %s' % gdownload_format
+        sys.exit(2)
       i += 2
     elif sys.argv[i].lower().replace('_', '') == u'targetfolder':
       target_folder = sys.argv[i+1]
       if not os.path.isdir(target_folder):
         os.makedirs(target_folder)
       i += 2
+    else:
+      print u'ERROR: %s is not a valid argument for "gam <users> get drivefile"' % sys.argv[i]
+      sys.exit(2)
   export_extensions = {u'application/pdf': '.pdf',
                        u'application/vnd.openxmlformats-officedocument.wordprocessingml.document': u'.docx',
                        u'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': u'.xlsx',
@@ -3509,10 +3510,10 @@ def downloadDriveFile(users):
     export_formats = [u'application/pdf',]
   if not query and not fileIds:
     print u'ERROR: need to specify a file ID with id parameter or a search query with the query parameter.'
-    sys.exit(9)
+    sys.exit(2)
   elif query and fileIds:
     print u'ERROR: you cannot specify both the id and query parameters at the same time.'
-    sys.exit(9)
+    sys.exit(2)
   for user in users:
     drive = buildGAPIServiceObject(u'drive', user)
     if query:
@@ -3709,6 +3710,9 @@ def doImap(users):
     enable = True
   elif sys.argv[4].lower() in false_values:
     enable = False
+  else:
+    print u'ERROR: value for "gam <users> imap" must be true or false, got %s' % sys.argv[4]
+    sys.exit(2)
   emailsettings = getEmailSettingsObject()
   count = len(users)
   i = 1
@@ -3796,8 +3800,8 @@ def doLicense(users, operation):
         if old_sku.lower() == u'from':
           old_sku = sys.argv[7]
       except KeyError:
-        print u'You need to specify the user\'s old SKU as the last argument'
-        sys.exit(5)
+        print u'ERROR: You need to specify the user\'s old SKU as the last argument'
+        sys.exit(2)
       _, old_sku = getProductAndSKU(old_sku)
       callGAPI(service=lic.licenseAssignments(), function=operation, soft_errors=True, productId=productId, skuId=old_sku, userId=user, body={u'skuId': skuId})
 
@@ -3806,6 +3810,9 @@ def doPop(users):
     enable = True
   elif sys.argv[4].lower() in false_values:
     enable = False
+  else:
+    print u'ERROR: value for "gam <users> pop" must be true or false, got %s' % sys.argv[4]
+    sys.exit(2)
   enable_for = u'ALL_MAIL'
   action = u'KEEP'
   i = 5
@@ -3830,7 +3837,7 @@ def doPop(users):
     elif sys.argv[i].lower() == u'confirm':
       i += 1
     else:
-      showUsage()
+      print u'ERROR: %s is not a valid argument for "gam <users> pop"' % sys.argv[i]
       sys.exit(2)
   emailsettings = getEmailSettingsObject()
   count = len(users)
@@ -3872,7 +3879,7 @@ def doSendAs(users):
       reply_to = sys.argv[i+1]
       i += 2
     else:
-      showUsage()
+      print u'ERROR: %s is not a valid argument for "gam <users> sendas"' % sys.argv[i]
       sys.exit(2)
   emailsettings = getEmailSettingsObject()
   if sendas.find(u'@') < 0:
@@ -3938,6 +3945,9 @@ def doUTF(users):
     SetUTF = True
   elif sys.argv[4].lower() in false_values:
     SetUTF = False
+  else:
+    print u'ERROR: value for "gam <users> utf" must be true or false, got %s' % sys.argv[4]
+    sys.exit(2)
   emailsettings = getEmailSettingsObject()
   count = len(users)
   i = 1
@@ -3955,7 +3965,7 @@ def doPageSize(users):
   if sys.argv[4] == u'25' or sys.argv[4] == u'50' or sys.argv[4] == u'100':
     PageSize = sys.argv[4]
   else:
-    showUsage()
+    print u'ERROR: %s is not a valid argument for "gam <users> pagesize"' % sys.argv[4]
     sys.exit(2)
   emailsettings = getEmailSettingsObject()
   count = len(users)
@@ -3975,6 +3985,9 @@ def doShortCuts(users):
     SetShortCuts = True
   elif sys.argv[4].lower() in false_values:
     SetShortCuts = False
+  else:
+    print u'ERROR: value for "gam <users> shortcuts" must be true or false, got %s' % sys.argv[4]
+    sys.exit(2)
   emailsettings = getEmailSettingsObject()
   count = len(users)
   i = 1
@@ -3993,6 +4006,9 @@ def doArrows(users):
     SetArrows = True
   elif sys.argv[4].lower() in false_values:
     SetArrows = False
+  else:
+    print u'ERROR: value for "gam <users> arrows" must be true or false, got %s' % sys.argv[4]
+    sys.exit(2)
   emailsettings = getEmailSettingsObject()
   count = len(users)
   i = 1
@@ -4011,6 +4027,9 @@ def doSnippets(users):
     SetSnippets = True
   elif sys.argv[4].lower() in false_values:
     SetSnippets = False
+  else:
+    print u'ERROR: value for "gam <users> snippets" must be true or false, got %s' % sys.argv[4]
+    sys.exit(2)
   emailsettings = getEmailSettingsObject()
   count = len(users)
   i = 1
@@ -4042,8 +4061,8 @@ def doLabel(users):
       elif sys.argv[n+1].lower().replace(u'_', u'') == u'showifunread':
         body[u'labelListVisibility'] = u'labelShowIfUnread'
       else:
-        print u'Error: label_list_visibility must be one of hide, show or show_if_unread, got %s' % sys.argv[n+1]
-        sys.exit(3)
+        print u'ERROR: label_list_visibility must be one of hide, show or show_if_unread, got %s' % sys.argv[n+1]
+        sys.exit(2)
       n += 2
     elif sys.argv[n].lower().replace(u'_', u'') == u'messagelistvisibility':
       if sys.argv[n+1].lower().replace(u'_', u'') == u'hide':
@@ -4051,12 +4070,12 @@ def doLabel(users):
       elif sys.argv[n+1].lower().replace(u'_', u'') == u'show':
         body[u'messageListVisibility'] = u'show'
       else:
-        print u'Error: message_list_visibility must be one of hide or show, got %s' % sys.argv[n+1]
-        sys.exit(3)
+        print u'ERROR: message_list_visibility must be one of hide or show, got %s' % sys.argv[n+1]
+        sys.exit(2)
       n += 2
     else:
-      print u'Error: %s is not a valid argument for this command.' % sys.argv[n]
-      sys.exit(3)
+      print u'ERROR: %s is not a valid argument for this command.' % sys.argv[n]
+      sys.exit(2)
   for user in users:
     gmail = buildGAPIServiceObject(u'gmail', act_as=user)
     print u"Creating label %s for %s (%s of %s)" % (label, user, i, count)
@@ -4079,11 +4098,11 @@ def doDeleteMessages(trashOrDelete, users):
       maxToDelete = int(sys.argv[i+1])
       i += 2
     else:
-      print u'ERROR: %s is not a valid argument for gam <users> delete messages.' % sys.argv[i]
-      sys.exit(3)
+      print u'ERROR: %s is not a valid argument for "gam <users> delete messages"' % sys.argv[i]
+      sys.exit(2)
   if not query:
     print u'ERROR: No query specified. You must specify some query!'
-    sys.exit(4)
+    sys.exit(2)
   for user in users:
     gmail = buildGAPIServiceObject(u'gmail', act_as=user)
     page_message = u'Got %%%%total_items%%%% messages for user %s' % user
@@ -4176,8 +4195,8 @@ def showLabels(users):
       show_system = False
       i += 1
     else:
-      print u'Error: %s is not a valid argument' % sys.argv[i]
-      sys.exit(3)
+      print u'ERROR: %s is not a valid argument for "gam <users> show labels"' % sys.argv[i]
+      sys.exit(2)
   for user in users:
     gmail = buildGAPIServiceObject(u'gmail', act_as=user)
     labels = callGAPI(service=gmail.users().labels(), function=u'list', userId=user)
@@ -4199,8 +4218,8 @@ def showGmailProfile(users):
       todrive = True
       i += 1
     else:
-      print u'Error %s is not a valid argument for gam ... show gmailprofiles.'
-      sys.exit(1)
+      print u'ERROR: %s is not a valid argument for gam <users> show gmailprofiles' % sys.argv[i]
+      sys.exit(2)
   profiles = [{}]
   for user in users:
     print 'Getting Gmail profile for %s' % user
@@ -4225,8 +4244,8 @@ def updateLabels(users):
     elif sys.argv[i].lower().replace(u'_', '') == u'messagelistvisibility':
       body[u'messageListVisibility'] = sys.argv[i+1].lower()
       if body[u'messageListVisibility'] not in [u'hide', u'show']:
-        print 'Error: message_list_visibility should be show or hide, got %s' % sys.argv[i+1]
-        sys.exit(3)
+        print 'ERROR: message_list_visibility should be show or hide, got %s' % sys.argv[i+1]
+        sys.exit(2)
       i += 2
     elif sys.argv[i].lower().replace(u' ', '') == u'labellistvisibility':
       if sys.argv[i+1].lower().replace(u'_', u'') == u'showifunread':
@@ -4236,12 +4255,12 @@ def updateLabels(users):
       elif sys.argv[i+1].lower().replace(u'_', u'') == u'hide':
         body[u'labelListVisibility'] = u'labelHide'
       else:
-        print 'Error: label_list_visibility should be hide, show or show_if_unread, got %s' % sys.argv[i+1]
-        sys.exit(3)
+        print 'ERROR: label_list_visibility should be hide, show or show_if_unread, got %s' % sys.argv[i+1]
+        sys.exit(2)
       i += 2
     else:
-      print 'Error: %s is not a valid argument' % sys.argv[i]
-      sys.exit(3)
+      print u'ERROR: %s is not a valid argument for "gam <users> update labels"' % sys.argv[i]
+      sys.exit(2)
   for user in users:
     gmail = buildGAPIServiceObject(u'gmail', act_as=user)
     labels = callGAPI(service=gmail.users().labels(), function=u'list', userId=user, fields=u'labels(id,name)')
@@ -4262,14 +4281,16 @@ def renameLabels(users):
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'search':
       search = sys.argv[i+1]
+      i += 2
     elif sys.argv[i].lower() == u'replace':
       replace = sys.argv[i+1]
+      i += 2
     elif sys.argv[i].lower() == u'merge':
       merge = True
+      i += 1
     else:
-      print u'Error: %s is not a valid argument to rename label'
-      sys.exit(3)
-    i += 2
+      print u'ERROR: %s is not a valid argument for "gam <users> rename label"' % sys.argv[i]
+      sys.exit(2)
   pattern = re.compile(search, re.IGNORECASE)
   for user in users:
     gmail = buildGAPIServiceObject(u'gmail', act_as=user)
@@ -4336,7 +4357,7 @@ def doFilter(users):
       i += 1
       haveCondition = True
   if not haveCondition:
-    showUsage()
+    print u'ERROR: you must specifiy a condition for "gam <users> filter"'
     sys.exit(2)
   haveAction = False
   while i < len(sys.argv):
@@ -4369,10 +4390,10 @@ def doFilter(users):
       i += 1
       haveAction = True
     else:
-      showUsage()
+      print u'ERROR: %s is not a valid argument for "gam <users> filter"' % sys.argv[i]
       sys.exit(2)
   if not haveAction:
-    showUsage()
+    print u'ERROR: you must specifiy an action for "gam <users> filter"'
     sys.exit(2)
   emailsettings = getEmailSettingsObject()
   count = len(users)
@@ -4395,7 +4416,7 @@ def doForward(users):
   elif sys.argv[4] in false_values:
     enable = False
   else:
-    showUsage()
+    print u'ERROR: value for "gam <users> forward" must be true or false, got %s' % sys.argv[4]
     sys.exit(2)
   i = 5
   while i < len(sys.argv):
@@ -4410,11 +4431,11 @@ def doForward(users):
       gotForward = True
       i += 1
     else:
-      showUsage()
+      print u'ERROR: %s is not a valid argument for "gam <users> forward"' % sys.argv[i]
       sys.exit(2)
   if enable and (not gotAction or not gotForward):
-    showUsage()
-    sys.exit()
+    print u'ERROR: you must specify an action and a forwarding address for "gam <users> forward'
+    sys.exit(2)
   emailsettings = getEmailSettingsObject()
   count = len(users)
   i = 1
@@ -4489,7 +4510,7 @@ def doWebClips(users):
   elif sys.argv[4].lower() in false_values:
     enable = False
   else:
-    showUsage()
+    print u'ERROR: value for "gam <users> webclips" must be true or false, got %s' % sys.argv[4]
     sys.exit(2)
   emailsettings = getEmailSettingsObject()
   count = len(users)
@@ -4512,7 +4533,7 @@ def doVacation(users):
   elif sys.argv[4] in false_values:
     enable = u'false'
   else:
-    showUsage()
+    print u'ERROR: value for "gam <users> vacation" must be true or false, got %s' % sys.argv[4]
     sys.exit(2)
   contacts_only = domain_only = u'false'
   start_date = end_date = None
@@ -4542,7 +4563,7 @@ def doVacation(users):
       fp.close()
       i += 2
     else:
-      showUsage()
+      print u'ERROR: %s is not a valid argument for "gam <users> vacation"' % sys.argv[i]
       sys.exit(2)
   i = 1
   count = len(users)
@@ -4613,8 +4634,8 @@ def doCreateOrUpdateUserSchema():
         if sys.argv[i].lower() in [u'type']:
           a_field[u'fieldType'] = sys.argv[i+1].upper()
           if a_field[u'fieldType'] not in [u'BOOL', u'DOUBLE', u'EMAIL', u'INT64', u'PHONE', u'STRING']:
-            print 'Error: type must be bool, double, email, int64, phone or string. Got %s' % a_field[u'fieldType']
-            sys.exit(3)
+            print u'ERROR: type must be bool, double, email, int64, phone or string. Got %s' % a_field[u'fieldType']
+            sys.exit(2)
           i += 2
         elif sys.argv[i].lower() in [u'multivalued']:
           a_field[u'multiValued'] = True
@@ -4633,8 +4654,11 @@ def doCreateOrUpdateUserSchema():
           i += 1
           break
         else:
-          print 'Error: %s is not a valid argument to gam create schema' % sys.argv[i]
-          sys.exit(4)
+          print 'ERROR: %s is not a valid argument for "gam create schema"' % sys.argv[i]
+          sys.exit(2)
+    else:
+      print 'ERROR: %s is not a valid argument for "gam create schema"' % sys.argv[i]
+      sys.exit(2)
   if sys.argv[1].lower() == u'create':
     result = callGAPI(service=cd.schemas(), function=u'insert', customerId=customerId, body=body)
     print 'Created user schema %s' % result[u'schemaName']
@@ -4706,8 +4730,8 @@ def doCreateUser():
       elif sys.argv[i+1].lower() in false_values:
         body[u'suspended'] = False
       else:
-        print u'Error: suspended should be on or off, not %s' % sys.argv[i+1]
-        sys.exit(5)
+        print u'ERROR: suspended should be on or off, not %s' % sys.argv[i+1]
+        sys.exit(2)
       i += 2
     elif sys.argv[i].lower() == u'gal':
       if sys.argv[i+1].lower() in true_values:
@@ -4715,8 +4739,8 @@ def doCreateUser():
       elif sys.argv[i+1].lower() in false_values:
         body[u'includeInGlobalAddressList'] = False
       else:
-        print u'Error: gal should be on or off, not %s' % sys.argv[i+1]
-        sys.exit(5)
+        print u'ERROR: gal should be on or off, not %s' % sys.argv[i+1]
+        sys.exit(52)
       i += 2
     elif sys.argv[i].lower() in [u'sha', u'sha1', u'sha-1']:
       body[u'hashFunction'] = u'SHA-1'
@@ -4739,8 +4763,8 @@ def doCreateUser():
       elif sys.argv[i+1] in false_values:
         body[u'changePasswordAtNextLogin'] = False
       else:
-        print u'Error: changepassword should be on or off, not %s' % sys.argv[i+1]
-        sys.exit(5)
+        print u'ERROR: changepassword should be on or off, not %s' % sys.argv[i+1]
+        sys.exit(2)
       i += 2
     elif sys.argv[i].lower() == u'ipwhitelisted':
       if sys.argv[i+1] in true_values:
@@ -4748,7 +4772,8 @@ def doCreateUser():
       elif sys.argv[i+1] in false_values:
         body[u'ipWhitelisted'] = False
       else:
-        print u'Error: ipwhitelisted should be on or off, not %s' % sys.argv[i+1]
+        print u'ERROR: ipwhitelisted should be on or off, not %s' % sys.argv[i+1]
+        sys.exit(2)
       i += 2
     elif sys.argv[i].lower() == u'admin':
       do_admin = True
@@ -4757,8 +4782,8 @@ def doCreateUser():
       elif sys.argv[i+1].lower() in false_values:
         admin_body = {u'status': False}
       else:
-        print u'Error: admin should be on or off, not %s' % sys.argv[i+1]
-        sys.exit(5)
+        print u'ERROR: admin should be on or off, not %s' % sys.argv[i+1]
+        sys.exit(2)
       i += 2
     elif sys.argv[i].lower() == u'agreedtoterms':
       if sys.argv[i+1] in true_values:
@@ -4766,8 +4791,8 @@ def doCreateUser():
       elif sys.argv[i+1] in false_values:
         body[u'agreedToTerms'] = False
       else:
-        print u'Error: agreedtoterms should be on or off, not %s' % sys.argv[i+1]
-        sys.exit(5)
+        print u'ERROR: agreedtoterms should be on or off, not %s' % sys.argv[i+1]
+        sys.exit(2)
       i += 2
     elif sys.argv[i].lower() in [u'org', u'ou']:
       org = sys.argv[i+1]
@@ -4779,24 +4804,25 @@ def doCreateUser():
       im = dict()
       i += 1
       if sys.argv[i].lower() != u'type':
-        print u'Error: wrong format for account im details. Expected type got %s' % sys.argv[i]
-        sys.exit(6)
+        print u'ERROR: wrong format for account im details. Expected type got %s' % sys.argv[i]
+        sys.exit(2)
       i += 1
       im[u'type'] = sys.argv[i].lower()
       if im[u'type'] not in [u'custom', u'home', u'other', u'work']:
-        print u'Error: type should be custom, home, other or work. Got %s' % im['type']
-        sys.exit(7)
+        print u'ERROR: type should be custom, home, other or work. Got %s' % im['type']
+        sys.exit(2)
       if im[u'type'] == u'custom':
         i += 1
         im[u'customType'] = sys.argv[i]
       i += 1
       if sys.argv[i].lower() != u'protocol':
-        print u'Error: wrong format for account details. Expected protocol got %s' % sys.argv[i]
-        sys.exit(8)
+        print u'ERROR: wrong format for account details. Expected protocol got %s' % sys.argv[i]
+        sys.exit(2)
       i += 1
       im[u'protocol'] = sys.argv[i].lower()
       if im[u'protocol'] not in [u'custom_protocol', u'aim', u'gtalk', u'icq', u'jabber', u'msn', u'net_meeting', u'qq', u'skype', u'yahoo']:
-        print u'Error: protocol should be custom_protocol, aim, gtalk, icq, jabber, msn, net_meeting, qq, skype or yahoo. Got %s' % im[u'protocol']
+        print u'ERROR: protocol should be custom_protocol, aim, gtalk, icq, jabber, msn, net_meeting, qq, skype or yahoo. Got %s' % im[u'protocol']
+        sys.exit(2)
       if im[u'protocol'] == u'custom_protocol':
         i += 1
         im[u'customProtocol'] = sys.argv[i]
@@ -4814,13 +4840,13 @@ def doCreateUser():
       address = dict()
       i += 1
       if sys.argv[i].lower() != u'type':
-        print u'Error: wrong format for account address details. Expected type got %s' % sys.argv[i]
-        sys.exit(9)
+        print u'ERROR: wrong format for account address details. Expected type got %s' % sys.argv[i]
+        sys.exit(2)
       i += 1
       address[u'type'] = sys.argv[i].lower()
       if address[u'type'] not in [u'custom', u'home', u'other', u'work']:
-        print u'Error: wrong type should be custom, home, other or work. Got %s' % address[u'type']
-        sys.exit(10)
+        print u'ERROR: wrong type should be custom, home, other or work. Got %s' % address[u'type']
+        sys.exit(2)
       if address[u'type'] == u'custom':
         i += 1
         address[u'customType'] = sys.argv[i]
@@ -4884,8 +4910,8 @@ def doCreateUser():
         elif argument == u'type':
           organization[u'type'] = sys.argv[i+1].lower()
           if organization[u'type'] not in [u'domain_only', u'school', u'unknown', u'work']:
-            print u'Error: organization type must be domain_only, school, unknown or work. Got %s' % organization[u'type']
-            sys.exit(11)
+            print u'ERROR: organization type must be domain_only, school, unknown or work. Got %s' % organization[u'type']
+            sys.exit(2)
           i += 2
         elif argument == u'department':
           organization[u'department'] = sys.argv[i+1]
@@ -4927,8 +4953,8 @@ def doCreateUser():
         elif argument == u'type':
           phone[u'type'] = sys.argv[i+1].lower()
           if phone[u'type'] not in [u'assistant', u'callback', u'car', u'company_main', u'custom', u'grand_central', u'home', u'home_fax', u'isdn', u'main', u'mobile', u'other', u'other_fax', u'pager', u'radio', u'telex', u'tty_tdd', u'work', u'work_fax', u'work_mobile', u'work_pager']:
-            print u'Error: phone type must be assistant, callback, car, company_main, custom, grand_central, home, home_fax, isdn, main, mobile, other, other_fax, pager, radio, telex, tty_tdd, work, work_fax, work_mobile, work_pager. Got %s' % phone[u'type']
-            sys.exit(12)
+            print u'ERROR: phone type must be assistant, callback, car, company_main, custom, grand_central, home, home_fax, isdn, main, mobile, other, other_fax, pager, radio, telex, tty_tdd, work, work_fax, work_mobile, work_pager. Got %s' % phone[u'type']
+            sys.exit(2)
           i += 2
           if phone[u'type'] == u'custom':
             phone[u'customType'] = sys.argv[i]
@@ -4981,8 +5007,8 @@ def doCreateUser():
       try:
         (schemaName, fieldName) = sys.argv[i].split(u'.')
       except ValueError:
-        print 'Error: %s is not a valid create user argument or custom schema name.' % sys.argv[i]
-        sys.exit(3)
+        print 'ERROR: %s is not a valid create user argument or custom schema name.' % sys.argv[i]
+        sys.exit(2)
       field_value = sys.argv[i+1]
       is_multivalue = False
       if field_value.lower() in [u'multivalue', u'multivalued', u'value']:
@@ -5052,8 +5078,8 @@ def doCreateGroup():
               else:
                 value = int(value)
             except ValueError:
-              print u'Error: %s must be a number ending with M (megabytes), K (kilobytes) or nothing (bytes). Got %s' % value
-              sys.exit(9)
+              print u'ERROR: %s must be a number ending with M (megabytes), K (kilobytes) or nothing (bytes). Got %s' % value
+              sys.exit(2)
           elif params[u'type'] == u'string':
             if params[u'description'].find(value.upper()) != -1: # ugly hack because API wants some values uppercased.
               value = value.upper()
@@ -5063,8 +5089,8 @@ def doCreateGroup():
               value = u'false'
           break
       if not matches_gs_setting:
-        print u'ERROR: %s is not a valid argument for "gam create group..."' % sys.argv[i]
-        sys.exit(9)
+        print u'ERROR: %s is not a valid argument for "gam create group"' % sys.argv[i]
+        sys.exit(2)
       gs_body[attrib] = value
       use_gs_api = True
       i += 2
@@ -5084,8 +5110,8 @@ def doCreateAlias():
     body[u'alias'] = u'%s@%s' % (body[u'alias'], domain)
   target_type = sys.argv[4].lower()
   if target_type not in [u'user', u'group', u'target']:
-    print u'Error: type of target should be user or group. Got %s' % target_type
-    sys.exit(3)
+    print u'ERROR: type of target should be user or group. Got %s' % target_type
+    sys.exit(2)
   targetKey = sys.argv[5]
   if targetKey.find(u'@') == -1:
     targetKey = u'%s@%s' % (targetKey, domain)
@@ -5118,6 +5144,9 @@ def doCreateOrg():
     elif sys.argv[i].lower() == u'noinherit':
       body[u'blockInheritance'] = True
       i += 1
+    else:
+      print u'ERROR: %s is not a valid argument for "gam create org"' % sys.argv[i]
+      sys.exit(2)
   callGAPI(service=cd.orgunits(), function=u'insert', customerId=customerId, body=body)
 
 def doCreateResource():
@@ -5133,6 +5162,9 @@ def doCreateResource():
     elif sys.argv[i].lower() == u'resType':
       resType = sys.argv[i+1]
       i += 2
+    else:
+      print u'ERROR: %s is not a valid argument for "gam create resource"' % sys.argv[i]
+      sys.exit(2)
   rescal = getResCalObject()
   callGData(service=rescal, function=u'CreateResourceCalendar', id=resId, common_name=common_name, description=description, type=resType)
 
@@ -5194,8 +5226,8 @@ def doUpdateUser(users):
       elif sys.argv[i+1].lower() in false_values:
         body[u'includeInGlobalAddressList'] = False
       else:
-        print u'Error: gal should be on or off, not %s' % sys.argv[i+1]
-        sys.exit(5)
+        print u'ERROR: gal should be on or off, not %s' % sys.argv[i+1]
+        sys.exit(2)
       i += 2
     elif sys.argv[i].lower() == u'ipwhitelisted':
       do_update_user = True
@@ -5251,24 +5283,25 @@ def doUpdateUser(users):
       im = dict()
       i += 1
       if sys.argv[i].lower() != u'type':
-        print u'Error: wrong format for account im details. Expected type got %s' % sys.argv[i]
-        sys.exit(6)
+        print u'ERROR: wrong format for account im details. Expected type got %s' % sys.argv[i]
+        sys.exit(2)
       i += 1
       im[u'type'] = sys.argv[i].lower()
       if im[u'type'] not in [u'custom', u'home', u'other', u'work']:
-        print u'Error: type should be custom, home, other or work. Got %s' % im[u'type']
-        sys.exit(7)
+        print u'ERROR: type should be custom, home, other or work. Got %s' % im[u'type']
+        sys.exit(2)
       if im[u'type'] == u'custom':
         i += 1
         im[u'customType'] = sys.argv[i]
       i += 1
       if sys.argv[i].lower() != u'protocol':
-        print u'Error: wrong format for account details. Expected protocol got %s' % sys.argv[i]
-        sys.exit(8)
+        print u'ERROR: wrong format for account details. Expected protocol got %s' % sys.argv[i]
+        sys.exit(2)
       i += 1
       im[u'protocol'] = sys.argv[i].lower()
       if im[u'protocol'] not in [u'custom_protocol', u'aim', u'gtalk', u'icq', u'jabber', u'msn', u'net_meeting', u'qq', u'skype', u'yahoo']:
-        print u'Error: protocol should be custom_protocol, aim, gtalk, icq, jabber, msn, net_meeting, qq, skype or yahoo. Got %s' % im[u'protocol']
+        print u'ERROR: protocol should be custom_protocol, aim, gtalk, icq, jabber, msn, net_meeting, qq, skype or yahoo. Got %s' % im[u'protocol']
+        sys.exit(2)
       if im[u'protocol'] == u'custom_protocol':
         i += 1
         im[u'customProtocol'] = sys.argv[i]
@@ -5287,13 +5320,13 @@ def doUpdateUser(users):
       address = dict()
       i += 1
       if sys.argv[i].lower() != u'type':
-        print u'Error: wrong format for account address details. Expected type got %s' % sys.argv[i]
-        sys.exit(9)
+        print u'ERROR: wrong format for account address details. Expected type got %s' % sys.argv[i]
+        sys.exit(2)
       i += 1
       address[u'type'] = sys.argv[i].lower()
       if address[u'type'] not in [u'custom', u'home', u'other', u'work']:
-        print u'Error: wrong type should be custom, home, other or work. Got %s' % address[u'type']
-        sys.exit(10)
+        print u'ERROR: wrong type should be custom, home, other or work. Got %s' % address[u'type']
+        sys.exit(2)
       if address[u'type'] == u'custom':
         i += 1
         address[u'customType'] = sys.argv[i]
@@ -5358,8 +5391,8 @@ def doUpdateUser(users):
         elif argument == u'type':
           organization[u'type'] = sys.argv[i+1].lower()
           if organization[u'type'] not in [u'domain_only', 'school', 'unknown', 'work']:
-            print u'Error: organization type must be domain_only, school, unknown or work. Got %s' % organization[u'type']
-            sys.exit(11)
+            print u'ERROR: organization type must be domain_only, school, unknown or work. Got %s' % organization[u'type']
+            sys.exit(2)
           i += 2
         elif argument == u'department':
           organization[u'department'] = sys.argv[i+1]
@@ -5402,8 +5435,8 @@ def doUpdateUser(users):
         elif argument == u'type':
           phone[u'type'] = sys.argv[i+1].lower()
           if phone[u'type'] not in [u'assistant', u'callback', u'car', u'company_main', u'custom', u'grand_central', u'home', u'home_fax', u'isdn', u'main', u'mobile', u'other', u'other_fax', u'pager', u'radio', u'telex', u'tty_tdd', u'work', u'work_fax', u'work_mobile', u'work_pager']:
-            print u'Error: phone type must be assistant, callback, car, company_main, custom, grand_central, home, home_fax, isdn, main, mobile, other, other_fax, pager, radio, telex, tty_tdd, work, work_fax, work_mobile, work_pager. Got %s' % phone[u'type']
-            sys.exit(12)
+            print u'ERROR: phone type must be assistant, callback, car, company_main, custom, grand_central, home, home_fax, isdn, main, mobile, other, other_fax, pager, radio, telex, tty_tdd, work, work_fax, work_mobile, work_pager. Got %s' % phone[u'type']
+            sys.exit(2)
           i += 2
           if phone[u'type'] == u'custom':
             phone[u'customType'] = sys.argv[i]
@@ -5466,7 +5499,7 @@ def doUpdateUser(users):
 #    else:
 #      showUsage()
 #      print u''
-#      print u'Error: didn\'t expect %s command at position %s' % (sys.argv[i], i)
+#      print u'ERROR: didn\'t expect %s command at position %s' % (sys.argv[i], i)
 #      sys.exit(2)
     else:
       do_update_user = True
@@ -5475,8 +5508,8 @@ def doUpdateUser(users):
       try:
         (schemaName, fieldName) = sys.argv[i].split(u'.')
       except ValueError:
-        print u'Error: %s is not a valid user update argument or custom schema name' % sys.argv[i]
-        sys.exit(3)
+        print u'ERROR: %s is not a valid user update argument or custom schema name' % sys.argv[i]
+        sys.exit(2)
       field_value = sys.argv[i+1]
       is_multivalue = False
       if field_value.lower() == u'multivalue':
@@ -5629,8 +5662,8 @@ def doUpdateGroup():
         use_cd_api = True
         cd_body[u'adminCreated'] = sys.argv[i+1].lower()
         if cd_body[u'adminCreated'] not in [u'true', u'false']:
-          print u'Error: Value for admincreated must be true or false. Got %s' % cd_body[u'adminCreated']
-          sys.exit(9)
+          print u'ERROR: Value for admincreated must be true or false. Got %s' % cd_body[u'adminCreated']
+          sys.exit(2)
         i += 2
       else:
         value = sys.argv[i+1]
@@ -5652,8 +5685,8 @@ def doUpdateGroup():
                 else:
                   value = int(value)
               except ValueError:
-                print u'Error: %s must be a number ending with M (megabytes), K (kilobytes) or nothing (bytes). Got %s' % value
-                sys.exit(9)
+                print u'ERROR: %s must be a number ending with M (megabytes), K (kilobytes) or nothing (bytes). Got %s' % value
+                sys.exit(2)
             elif params[u'type'] == u'string':
               if params[u'description'].find(value.upper()) != -1: # ugly hack because API wants some values uppercased.
                 value = value.upper()
@@ -5663,8 +5696,8 @@ def doUpdateGroup():
                 value = u'false'
             break
         if not matches_gs_setting:
-          print u'ERROR: %s is not a valid argument for "gam update group..."' % sys.argv[i]
-          sys.exit(9)
+          print u'ERROR: %s is not a valid argument for "gam update group"' % sys.argv[i]
+          sys.exit(2)
         gs_body[attrib] = value
         use_gs_api = True
         i += 2
@@ -5693,7 +5726,7 @@ def doUpdateAlias():
   alias = sys.argv[3]
   target_type = sys.argv[4].lower()
   if target_type not in [u'user', u'group', u'target']:
-    print u'Error: target type should be "user", "group" or "target", got %s' % target_type
+    print u'ERROR: target type should be "user", "group" or "target", got %s' % target_type
     sys.exit(2)
   target_email = sys.argv[5]
   cd = buildGAPIObject(u'directory')
@@ -5732,6 +5765,9 @@ def doUpdateResourceCalendar():
     elif sys.argv[i].lower() == u'type':
       resType = sys.argv[i+1]
       i += 2
+    else:
+      print u'ERROR: %s is not a valid argument for "gam update resource"' % sys.argv[i]
+      sys.exit(2)
   rescal = getResCalObject()
   callGData(service=rescal, function=u'UpdateResourceCalendar', id=resId, common_name=common_name, description=description, type=resType)
   print u'updated resource %s' % resId
@@ -5762,8 +5798,8 @@ def doUpdateCros():
     elif sys.argv[i].lower() == u'status':
       body[u'status'] = sys.argv[i + 1].upper()
       #if body['status'] not in ['ACTIVE', 'DEPROVISIONED']:
-      #  print 'Error: status must be active or deprovisioned, got %s' % body['status']
-      #  sys.exit(3)
+      #  print 'ERROR: status must be active or deprovisioned, got %s' % body['status']
+      #  sys.exit(2)
       i += 2
     elif sys.argv[i].lower() in [u'tag', u'asset', u'assetid']:
       body[u'annotatedAssetId'] = sys.argv[i + 1]
@@ -5775,8 +5811,8 @@ def doUpdateCros():
         body[u'orgUnitPath'] = u'/%s' % body[u'orgUnitPath']
       i += 2
     else:
-      print u'Error: %s is not a valid argument for gam update cros' % sys.argv[i]
-      sys.exit(5)
+      print u'ERROR: %s is not a valid argument for "gam update cros"' % sys.argv[i]
+      sys.exit(2)
   device_count = len(devices)
   i = 1
   for this_device in devices:
@@ -5798,8 +5834,8 @@ def doUpdateMobile():
       elif action_body[u'action'].replace(u'_', '') in [u'accountwipe', u'wipeaccount']:
         action_body[u'action'] = u'admin_account_wipe'
       if action_body[u'action'] not in [u'admin_remote_wipe', u'admin_account_wipe', u'approve', u'block', u'cancel_remote_wipe_then_activate', u'cancel_remote_wipe_then_block']:
-        print u'Error: action must be wipe, wipeaccount, approve, block, cancel_remote_wipe_then_activate or cancel_remote_wipe_then_block. Got %s' % action_body[u'action']
-        sys.exit(5)
+        print u'ERROR: action must be wipe, wipeaccount, approve, block, cancel_remote_wipe_then_activate or cancel_remote_wipe_then_block. Got %s' % action_body[u'action']
+        sys.exit(2)
       doAction = True
       i += 2
     elif sys.argv[i].lower() == u'model':
@@ -5815,8 +5851,8 @@ def doUpdateMobile():
       i += 2
       doPatch = True
     else:
-      print u'Error: %s is not a valid argument for gam update cros' % sys.argv[i]
-      sys.exit(5)
+      print u'ERROR: %s is not a valid argument for "gam update mobile"' % sys.argv[i]
+      sys.exit(2)
   if doPatch:
     callGAPI(service=cd.mobiledevices(), function=u'patch', resourceId=resourceId, body=patch_body, customerId=customerId)
   if doAction:
@@ -5875,6 +5911,9 @@ def doUpdateOrg():
       elif sys.argv[i].lower() == u'inherit':
         body[u'blockInheritance'] = False
         i += 1
+      else:
+        print u'ERROR: %s is not a valid argument for "gam update org"' % sys.argv[i]
+        sys.exit(2)
     if orgUnitPath[0] == u'/': # we don't want a / at the beginning for OU updates
       orgUnitPath = orgUnitPath[1:]
     callGAPI(service=cd.orgunits(), function=u'patch', customerId=customerId, orgUnitPath=orgUnitPath, body=body)
@@ -5957,8 +5996,8 @@ def doGetUserInfo(user_email=None):
       getGroups = getLicenses = False
       i += 1
     else:
-      print u'%s is not a valid argument for gam info user' % sys.argv[i]
-      sys.exit(3)
+      print u'ERROR: %s is not a valid argument for "gam info user"' % sys.argv[i]
+      sys.exit(2)
   user = callGAPI(service=cd.users(), function=u'get', userKey=user_email, projection=projection, customFieldMask=customFieldMask, viewType=viewType)
   print u'User: %s' % user[u'primaryEmail']
   if u'name' in user and u'givenName' in user[u'name']:
@@ -6248,11 +6287,11 @@ def doUpdateNotification():
         ids.append(sys.argv[i+1])
       i += 2
     else:
-      print u'Error: expected read or unread, got %s' % sys.argv[i]
-      sys.exit(3)
+      print 'ERROR: %s is not a valid argument for "gam update notification"' % sys.argv[i]
+      sys.exit(2)
   if isUnread == None:
-    print u'Error: notifications need to be marked as read or unread.'
-    sys.exit(3)
+    print u'ERROR: notifications need to be marked as read or unread.'
+    sys.exit(2)
   if get_all:
     notifications = callGAPIpages(service=cd.notifications(), function=u'list', customer=customerId, fields=u'items(notificationId,isUnread),nextPageToken')
     for noti in notifications:
@@ -6280,8 +6319,8 @@ def doDeleteNotification():
         ids.append(sys.argv[i+1])
       i += 2
     else:
-      print u'Error: expected id, got %s' % sys.argv[i]
-      sys.exit(3)
+      print 'ERROR: %s is not a valid argument for "gam delete notification", expected id' % sys.argv[i]
+      sys.exit(2)
   if get_all:
     notifications = callGAPIpages(service=cd.notifications(), function=u'list', customer=customerId, fields=u'items(notificationId),nextPageToken')
     for noti in notifications:
@@ -6408,8 +6447,8 @@ def doGetNotifications():
     if sys.argv[i].lower() == u'unreadonly':
       unread_only = True
     else:
-      print u'Error: expected unreadonly argument, got %s' % sys.argv[i]
-      sys.exit(3)
+      print 'ERROR: %s is not a valid argument for "gam delete notification", expected unreadonly' % sys.argv[i]
+      sys.exit(2)
     i += 1
   notifications = callGAPIpages(service=cd.notifications(), function=u'list', customer=customerId)
   for notification in notifications:
@@ -6552,8 +6591,8 @@ def doGetTokens(users):
       clientId = sys.argv[i+1]
       i += 2
     else:
-      print u'%s is not a valid argument for gam <users> show tokens' % sys.argv[i]
-      sys.exit(3)
+      print u'ERROR: %s is not a valid argument for gam <users> show tokens' % sys.argv[i]
+      sys.exit(2)
   if clientId:
     clientId = commonClientIds(clientId)
     for user in users:
@@ -6660,8 +6699,8 @@ def doUpdateInstance():
         elif sys.argv[i+1].lower() == u'false':
           enableSSO = False
         else:
-          print u'Error: value for enabled must be true or false, got %s' % sys.argv[i+1]
-          exit(9)
+          print u'ERROR: value for enabled must be true or false, got %s' % sys.argv[i+1]
+          sys.exit(2)
         i += 2
       elif sys.argv[i].lower() == u'sign_on_uri':
         samlSignonUri = sys.argv[i+1]
@@ -6681,12 +6720,12 @@ def doUpdateInstance():
         elif sys.argv[i+1].lower() == u'false':
           useDomainSpecificIssuer = False
         else:
-          print u'Error: value for use_domain_specific_issuer must be true or false, got %s' % sys.argv[i+1]
-          sys.exit(9)
+          print u'ERROR: value for use_domain_specific_issuer must be true or false, got %s' % sys.argv[i+1]
+          sys.exit(2)
         i += 2
       else:
-        print u'Error: unknown option for "gam update domain sso_settings...": %s' % sys.argv[i]
-        sys.exit(9)
+        print u'ERROR: unknown option for "gam update domain sso_settings...": %s' % sys.argv[i]
+        sys.exit(2)
     callGData(service=adminObj, function=u'UpdateSSOSettings', enableSSO=enableSSO, samlSignonUri=samlSignonUri, samlLogoutUri=samlLogoutUri, changePasswordUri=changePasswordUri, ssoWhitelist=ssoWhitelist, useDomainSpecificIssuer=useDomainSpecificIssuer)
   elif command == u'sso_key':
     key_file = sys.argv[4]
@@ -6701,8 +6740,8 @@ def doUpdateInstance():
   elif command == u'user_migrations':
     value = sys.argv[4].lower()
     if value not in [u'true', u'false']:
-      print u'Error: value for user_migrations must be true or false, got %s' % sys.argv[4]
-      sys.exit(9)
+      print u'ERROR: value for user_migrations must be true or false, got %s' % sys.argv[4]
+      sys.exit(2)
     result = callGData(service=adminObj, function=u'UpdateUserMigrationStatus', enableUserMigration=value)
   elif command == u'outbound_gateway':
     gateway = sys.argv[4]
@@ -6724,8 +6763,8 @@ def doUpdateInstance():
         elif rewrite_to == u'false':
           rewrite_to = False
         else:
-          print u'Error: value for rewrite_to must be true or false, got %s' % sys.argv[i+1]
-          sys.exit(9)
+          print u'ERROR: value for rewrite_to must be true or false, got %s' % sys.argv[i+1]
+          sys.exit(2)
         i += 2
       elif sys.argv[i].lower() == u'enabled':
         enabled = sys.argv[i+1].lower()
@@ -6734,8 +6773,8 @@ def doUpdateInstance():
         elif enabled == u'false':
           enabled = False
         else:
-          print u'Error: value for enabled must be true or false, got %s' % sys.argv[i+1]
-          sys.exit(9)
+          print u'ERROR: value for enabled must be true or false, got %s' % sys.argv[i+1]
+          sys.exit(2)
         i += 2
       elif sys.argv[i].lower() == u'bounce_notifications':
         bounce_notifications = sys.argv[i+1].lower()
@@ -6744,8 +6783,8 @@ def doUpdateInstance():
         elif bounce_notifications == u'false':
           bounce_notifications = False
         else:
-          print u'Error: value for bounce_notifications must be true or false, got %s' % sys.argv[i+1]
-          sys.exit(9)
+          print u'ERROR: value for bounce_notifications must be true or false, got %s' % sys.argv[i+1]
+          sys.exit(2)
         i += 2
       elif sys.argv[i].lower() == u'account_handling':
         account_handling = sys.argv[i+1].lower()
@@ -6756,15 +6795,16 @@ def doUpdateInstance():
         elif account_handling == u'unknown_accounts':
           account_handling = u'unknownAccounts'
         else:
-          print u'Error: value for account_handling must be all_accounts, provisioned_account or unknown_accounts. Got %s' % sys.argv[i+1]
-          sys.exit(9)
+          print u'ERROR: value for account_handling must be all_accounts, provisioned_account or unknown_accounts. Got %s' % sys.argv[i+1]
+          sys.exit(2)
         i += 2
       else:
-        print u'Error: invalid setting for "gam update domain email_route..."'
-        sys.exit(10)
+        print u'ERROR: %s is not a valid argument for "gam update instance email_route"' % sys.argv[i]
+        sys.exit(2)
     callGData(service=adminObj, function=u'AddEmailRoute', routeDestination=destination, routeRewriteTo=rewrite_to, routeEnabled=enabled, bounceNotifications=bounce_notifications, accountHandling=account_handling)
   else:
-    print u'Error: that is not a valid "gam update domain" command'
+    print u'ERROR: %s is not a valid argument for "gam update instance"' % command
+    sys.exit(2)
 
 def doGetInstanceInfo():
   adm = buildGAPIObject(u'admin-settings')
@@ -7049,8 +7089,8 @@ def doPrintUsers():
     elif sys.argv[i].lower() == u'orderby':
       orderBy = sys.argv[i+1]
       if orderBy.lower() not in [u'email', u'familyname', u'givenname', u'firstname', u'lastname']:
-        print u'Error: orderby should be email, familyName or givenName. Got %s' % orderBy
-        sys.exit(3)
+        print u'ERROR: orderby should be email, familyName or givenName. Got %s' % orderBy
+        sys.exit(2)
       elif orderBy.lower() in [u'familyname', u'lastname']:
         orderBy = u'familyName'
       elif orderBy.lower() in [u'givenname', u'firstname']:
@@ -7142,8 +7182,8 @@ def doPrintUsers():
       email_parts = True
       i += 1
     else:
-      showUsage()
-      sys.exit(5)
+      print 'ERROR: %s is not a valid argument for "gam print users"' % sys.argv[i]
+      sys.exit(2)
   if fields != None:
     user_fields = set(user_fields)
     fields = u'nextPageToken,users(%s)' % u','.join(user_fields)
@@ -7273,8 +7313,8 @@ def doPrintGroups():
       settings = True
       i += 1
     else:
-      showUsage()
-      sys.exit(7)
+      print 'ERROR: %s is not a valid argument for "gam print groups"' % sys.argv[i]
+      sys.exit(2)
   cd = buildGAPIObject(u'directory')
   global customerId
   if usedomain or usemember:
@@ -7419,8 +7459,8 @@ def doPrintOrgs():
       titles.append(u'InheritanceBlocked')
       i += 1
     else:
-      showUsage()
-      exit(8)
+      print 'ERROR: %s is not a valid argument for "gam print orgs"' % sys.argv[i]
+      sys.exit(2)
   if fields:
     org_attributes[0][u'Path'] = u'Path'
     titles.append(u'Path')
@@ -7473,7 +7513,10 @@ def doPrintAliases():
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'todrive':
       todrive = True
-    i += 1
+      i += 1
+    else:
+      print u'ERROR: %s is not a valid argument for "gam print aliases"' % sys.argv[i]
+      sys.exit(2)
   cd = buildGAPIObject(u'directory')
   alias_attributes = []
   alias_attributes.append({u'Alias': u'Alias'})
@@ -7511,8 +7554,8 @@ def doPrintGroupMembers():
       all_groups = [{u'email': sys.argv[i+1].lower()}]
       i += 2
     else:
-      print 'Error: %s is not a valid argument to "gam print groups"' % sys.argv[i]
-      sys.exit(3)
+      print 'ERROR: %s is not a valid argument for "gam print group-members"' % sys.argv[i]
+      sys.exit(2)
   cd = buildGAPIObject(u'directory')
   member_attributes = [{u'group': u'group'},]
   if not all_groups:
@@ -7556,8 +7599,8 @@ def doPrintMobileDevices():
       orderBy = sys.argv[i+1].lower()
       allowed_values = [u'deviceid', u'email', u'lastsync', u'model', u'name', u'os', u'status', u'type']
       if orderBy.lower() not in allowed_values:
-        print u'Error: orderBy must be one of %s. Got %s' % (u', '.join(allowed_values), orderBy)
-        sys.exit(3)
+        print u'ERROR: orderBy must be one of %s. Got %s' % (u', '.join(allowed_values), orderBy)
+        sys.exit(2)
       elif orderBy == u'lastsync':
         orderBy = u'lastSync'
       elif orderBy == u'deviceid':
@@ -7567,8 +7610,8 @@ def doPrintMobileDevices():
       sortOrder = sys.argv[i].upper()
       i += 1
     else:
-      print 'Error: %s is not a valid argument to "gam print mobile"' % sys.argv[i]
-      sys.exit(3)
+      print 'ERROR: %s is not a valid argument for "gam print mobile"' % sys.argv[i]
+      sys.exit(2)
   sys.stderr.write(u'Retrieving All Mobile Devices for organization (may take some time for large accounts)...\n')
   page_message = u'Got %%num_items%% mobile devices...\n'
   all_mobile = callGAPIpages(service=cd.mobiledevices(), function=u'list', items=u'mobiledevices', page_message=page_message, customerId=customerId, query=query, orderBy=orderBy, sortOrder=sortOrder)
@@ -7625,8 +7668,8 @@ def doPrintCrosDevices():
       orderBy = sys.argv[i+1].lower().replace(u'_', u'')
       allowed_values = [u'location', u'user', u'lastsync', u'notes', u'serialnumber', u'status', u'supportenddate']
       if orderBy not in allowed_values:
-        print u'Error: orderBy must be one of %s. Got %s' % (u', '.join(allowed_values), orderBy)
-        sys.exit(3)
+        print u'ERROR: orderBy must be one of %s. Got %s' % (u', '.join(allowed_values), orderBy)
+        sys.exit(2)
       elif orderBy == u'location':
         orderBy = u'annotatedLocation'
       elif orderBy == u'user':
@@ -7645,8 +7688,8 @@ def doPrintCrosDevices():
       projection = my_arg.upper()
       i += 1
     else:
-      print 'Error: %s is not a valid argument to "gam print cros"' % sys.argv[i]
-      sys.exit(3)
+      print 'ERROR: %s is not a valid argument for "gam print cros"' % sys.argv[i]
+      sys.exit(2)
   if selectAttrib:
     projection = u'FULL'
   sys.stderr.write(u'Retrieving All Chrome OS Devices for organization (may take some time for large accounts)...\n')
@@ -7710,8 +7753,8 @@ def doPrintLicenses(return_list=False, skus=None):
       skus = sys.argv[i+1].split(',')
       i += 2
     else:
-      print u'Error: %s is not a valid argument to gam print licenses' % sys.argv[i]
-      sys.exit(3)
+      print u'ERROR: %s is not a valid argument for "gam print licenses"' % sys.argv[i]
+      sys.exit(2)
   if skus:
     for sku in skus:
       product, sku = getProductAndSKU(sku)
@@ -7753,6 +7796,9 @@ def doPrintTokens():
       entity_type = sys.argv[i].lower()
       entity = sys.argv[i+1].lower()
       i += 2
+    else:
+      print u'ERROR: %s is not a valid argument for "gam print tokens"' % sys.argv[i]
+      sys.exit(2)
   cd = buildGAPIObject(u'directory')
   all_users = getUsersToModify(entity_type=entity_type, entity=entity, silent=False)
   titles = [u'user', u'displayText', u'clientId', u'nativeApp', u'anonymous', u'scopes']
@@ -7812,7 +7858,7 @@ def doPrintResources():
       titles.append(u'Email')
       i += 1
     else:
-      showUsage()
+      print 'ERROR: %s is not a valid argument for "gam print resources"' % sys.argv[i]
       sys.exit(2)
   resObj = getResCalObject()
   sys.stderr.write(u"Retrieving All Resource Calendars for your account (may take some time on a large domain)")
@@ -7868,7 +7914,7 @@ def doCreateMonitor():
       drafts_headers_only = True
       i += 1
     else:
-      showUsage()
+      print 'ERROR: %s is not a valid argument for "gam create monitor"' % sys.argv[i]
       sys.exit(2)
   audit = getAuditObject()
   if source_user.find('@') > 0:
@@ -8009,7 +8055,7 @@ def doRequestExport():
       include_deleted = True
       i += 1
     else:
-      showUsage()
+      print 'ERROR: %s is not a valid argument for "gam export request"' % sys.argv[i]
       sys.exit(2)
   audit = getAuditObject()
   if user.find('@') > 0:
@@ -8324,7 +8370,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
       if not silent:
         sys.stderr.write(u"done getting %s CrOS devices.\r\n" % len(users))
   else:
-    showUsage()
+    print 'ERROR: %s is not a valid argument for "gam"' % entity_type
     sys.exit(2)
   full_users = list()
   if entity != u'cros' and not got_uids:
@@ -8506,7 +8552,7 @@ access or an 'a' to grant action-only access.
       %%s)  Select all scopes
       %%s)  Unselect all scopes
       %%s)  Continue
-''' % tuple(range(0,num_scopes))
+''' % tuple(range(0, num_scopes))
   selected_scopes = [u'*'] * num_scopes
   select_all_scopes = unicode(str(num_scopes))
   unselect_all_scopes = unicode(str(num_scopes+1))
@@ -8654,7 +8700,7 @@ try:
       if (argv[0] in [u'#', u' ', u''] or len(argv) < 2) and argv != [u'commit-batch']:
         continue
       elif argv[0] not in [u'gam', u'commit-batch']:
-        print u'Error: "%s" is not a valid gam command' % line
+        print u'ERROR: "%s" is not a valid gam command' % line
         continue
       if argv[0] == u'gam':
         argv = argv[1:]
@@ -8671,8 +8717,8 @@ try:
       f = file(csv_filename, 'rb')
     input_file = csv.DictReader(f)
     if sys.argv[3].lower() != 'gam':
-      print 'Error: "gam csv <filename>" should be followed by a full GAM command...'
-      sys.exit(3)
+      print 'ERROR: "gam csv <filename>" should be followed by a full GAM command...'
+      sys.exit(2)
     argv_template = sys.argv[4:]
     items = list()
     for row in input_file:
@@ -8683,7 +8729,7 @@ try:
         elif arg[1:] in row:
           argv.append(row[arg[1:]])
         else:
-          print 'Error: header "%s" not found in CSV headers of "%s", giving up.' % (arg[1:], ','.join(row.keys()))
+          print 'ERROR: header "%s" not found in CSV headers of "%s", giving up.' % (arg[1:], ','.join(row.keys()))
           sys.exit(0)
       items.append(argv)
     run_batch(items)
@@ -8715,7 +8761,7 @@ try:
     elif sys.argv[2].lower() in [u'domainalias', u'aliasdomain']:
       doCreateDomainAlias()
     else:
-      print u'Error: invalid argument to "gam create..."'
+      print u'ERROR: %s is not a valid argument for "gam create"' % sys.argv[2]
       sys.exit(2)
     sys.exit(0)
   elif sys.argv[1].lower() == u'update':
@@ -8750,8 +8796,7 @@ try:
     elif sys.argv[2].lower() in [u'customer',]:
       doUpdateCustomer()
     else:
-      showUsage()
-      print u'Error: invalid argument to "gam update..."'
+      print u'ERROR: %s is not a valid argument for "gam update"' % sys.argv[2]
       sys.exit(2)
     sys.exit(0)
   elif sys.argv[1].lower() == u'info':
@@ -8790,7 +8835,7 @@ try:
     elif sys.argv[2].lower() in [u'domainalias', u'aliasdomain']:
       doGetDomainAliasInfo()
     else:
-      print u'Error: invalid argument to "gam info..."'
+      print u'ERROR: %s is not a valid argument for "gam info"' % sys.argv[2]
       sys.exit(2)
     sys.exit(0)
   elif sys.argv[1].lower() == u'delete':
@@ -8819,14 +8864,14 @@ try:
     elif sys.argv[2].lower() in [u'domainalias',]:
       doDelDomainAlias()
     else:
-      print u'Error: invalid argument to "gam delete"'
+      print u'ERROR: %s is not a valid argument for "gam delete"' % sys.argv[2]
       sys.exit(2)
     sys.exit(0)
   elif sys.argv[1].lower() == u'undelete':
     if sys.argv[2].lower() == u'user':
       doUndeleteUser()
     else:
-      print u'Error: invalid argument to "gam undelete..."'
+      print u'ERROR: %s is not a valid argument for "gam undelete"' % sys.argv[2]
       sys.exit(2)
     sys.exit(0)
   elif sys.argv[1].lower() == u'audit':
@@ -8838,7 +8883,7 @@ try:
       elif sys.argv[3].lower() == u'delete':
         doDeleteMonitor()
       else:
-        print u'Error: invalid argument to "gam audit monitor..."'
+        print u'ERROR: %s is not a valid argument for "gam audit monitor"' % sys.argv[3]
         sys.exit(2)
     elif sys.argv[2].lower() == u'activity':
       if sys.argv[3].lower() == u'request':
@@ -8850,7 +8895,7 @@ try:
       elif sys.argv[3].lower() == u'delete':
         doDeleteActivityRequest()
       else:
-        print u'Error: invalid argument to "gam audit activity..."'
+        print u'ERROR: %s is not a valid argument for "gam audit activity"' % sys.argv[3]
         sys.exit(2)
     elif sys.argv[2].lower() == u'export':
       if sys.argv[3].lower() == u'status':
@@ -8864,12 +8909,12 @@ try:
       elif sys.argv[3].lower() == u'delete':
         doDeleteExport()
       else:
-        print u'Error: invalid argument to "gam audit export..."'
+        print u'ERROR: %s is not a valid argument for "gam audit export"' % sys.argv[3]
         sys.exit(2)
     elif sys.argv[2].lower() == u'uploadkey':
       doUploadAuditKey()
     else:
-      print u'Error: invalid argument to "gam audit..."'
+      print u'ERROR: %s is not a valid argument for "gam audit"' % sys.argv[2]
       sys.exit(2)
     sys.exit(0)
   elif sys.argv[1].lower() == u'print':
@@ -8910,7 +8955,7 @@ try:
     elif sys.argv[2].lower() in [u'domains']:
       doPrintDomains()
     else:
-      print u'Error: invalid argument to "gam print..."'
+      print u'ERROR: %s is not a valid argument for "gam print"' % sys.argv[2]
       sys.exit(2)
     sys.exit(0)
   elif sys.argv[1].lower() in [u'oauth', u'oauth2']:
@@ -8921,7 +8966,7 @@ try:
     elif sys.argv[2].lower() in [u'delete', u'revoke']:
       doDeleteOAuth()
     else:
-      print u'Error: invalid argument to "gam oauth..."'
+      print u'ERROR: %s is not a valid argument for "gam oauth"' % sys.argv[2]
       sys.exit(2)
     sys.exit(0)
   elif sys.argv[1].lower() == u'calendar':
@@ -8938,7 +8983,7 @@ try:
     elif sys.argv[3].lower() == u'addevent':
       doCalendarAddEvent()
     else:
-      print u'Error: invalid argument to "gam calendar..."'
+      print u'ERROR: %s is not a valid argument for "gam calendar"' % sys.argv[3]
       sys.exit(2)
     sys.exit(0)
   elif sys.argv[1].lower() == u'printer':
@@ -8951,7 +8996,7 @@ try:
     elif sys.argv[3].lower() == u'register':
       doPrinterRegister()
     else:
-      print u'Error: invalid argument to "gam printer..."'
+      print u'ERROR: invalid argument for "gam printer..."'
       sys.exit(2)
     sys.exit(0)
   elif sys.argv[1].lower() == u'printjob':
@@ -8966,7 +9011,7 @@ try:
     elif sys.argv[3].lower() == u'resubmit':
       doPrintJobResubmit()
     else:
-      print u'ERROR: invalid argument to "gam printjob..."'
+      print u'ERROR: %s is not a valid argument for "gam printjob"' % sys.argv[3]
       sys.exit(2)
     sys.exit(0)
   elif sys.argv[1].lower() == u'report':
@@ -8986,7 +9031,7 @@ try:
       doSyncCourseParticipants()
       sys.exit(0)
     else:
-      print u'Error: invalid argument to "gam course..."'
+      print u'ERROR: %s is not a valid argument for "gam course"' % sys.argv[3]
       sys.exit(2)
   users = getUsersToModify()
   command = sys.argv[3].lower()
@@ -9010,6 +9055,9 @@ try:
       transferDriveFiles(users)
     elif transferWhat == u'seccals':
       transferSecCals(users)
+    else:
+      print u'ERROR: %s is not a valid argument for "gam <users> transfer"' % sys.argv[4]
+      sys.exit(2)
   elif command == u'show':
     readWhat = sys.argv[4].lower()
     if readWhat in [u'labels', u'label']:
@@ -9055,13 +9103,13 @@ try:
     elif readWhat in [u'driveactivity']:
       doDriveActivity(users)
     else:
-      print u'Error: invalid argument to "gam <users> show..."'
+      print u'ERROR: %s is not a valid argument for "gam <users> show"' % sys.argv[4]
       sys.exit(2)
   elif command == u'trash':
     if sys.argv[4].lower() in [u'message', u'messages']:
       doDeleteMessages(trashOrDelete=u'trash', users=users)
     else:
-      print u'ERROR: invalid argument to "gam <users> trash..."'
+      print u'ERROR: %s is not a valid argument for "gam <users> trash"' % sys.argv[4]
       sys.exit(2)
   elif command == u'delete' or command == u'del':
     delWhat = sys.argv[4].lower()
@@ -9094,7 +9142,7 @@ try:
     elif delWhat in [u'drivefileacl', u'drivefileacls']:
       delDriveFileACL(users)
     else:
-      print u'Error: invalid argument to "gam <users> delete..."'
+      print u'ERROR: %s is not a valid argument for "gam <users> delete"' % sys.argv[4]
       sys.exit(2)
   elif command == u'add':
     addWhat = sys.argv[4].lower()
@@ -9109,7 +9157,7 @@ try:
     elif addWhat in [u'label', u'labels']:
       doLabel(users)
     else:
-      print u'Error: invalid argument to "gam <users> add..."'
+      print u'ERROR: %s is not a valid argument for "gam <users> add"' % sys.argv[4]
       sys.exit(2)
   elif command == u'update':
     if sys.argv[4].lower() == u'calendar':
@@ -9133,7 +9181,7 @@ try:
     elif sys.argv[4].lower() in [u'labelsettings']:
       updateLabels(users)
     else:
-      print u'Error: invalid argument to "gam <users> update..."'
+      print u'ERROR: %s is not a valid argument for "gam <users> update"' % sys.argv[4]
       sys.exit(2)
   elif command in [u'deprov', u'deprovision']:
     doDeprovUser(users)
@@ -9177,7 +9225,7 @@ try:
   elif command in [u'delegate', u'delegates']:
     doDelegates(users)
   else:
-    print u'Error: %s is not a valid gam command' % command
+    print u'ERROR: %s is not a valid argument for "gam"' % command
     sys.exit(2)
 except IndexError:
   showUsage()
