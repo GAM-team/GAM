@@ -1,3 +1,17 @@
+GAM 3.61
+  -Various fixes by Ross Scroggs for Domain API and Data Transfer commands
+  -Remove duplicate DoCreateDomain which broke "gam create domain"
+  
+GAM 3.6
+  -Change your primary domain!
+  -Transfer Google Drive and Google+ data between users.
+  -Domains API support includes ability to add, delete, update and print domains.
+
+GAM 3.51
+  -delete or trash messages in mailboxes based on a Gmail search.
+  -create and delete course aliases with Classroom API.
+  -HUGE number of bug fixes, large and small by Ross Scroggs. Many thanks Ross!
+
 GAM 3.5
   -Support for the new Google Classroom API.
    -create, update, info and delete courses
