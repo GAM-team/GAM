@@ -81,7 +81,7 @@ _KS_MASK = 0xfcfcfcfcffffffff
 PCXROT = IE3264 = SPE = CF6464 = None
 
 def _load_tables():
-    "delay loading tables until they are actually needed"
+    """delay loading tables until they are actually needed"""
     global PCXROT, IE3264, SPE, CF6464
 
     #---------------------------------------------------------------
@@ -612,7 +612,7 @@ def _unpack56(value):
 _EXPAND_ITER = irange(49,-7,-7)
 
 def expand_des_key(key):
-    "convert DES from 7 bytes to 8 bytes (by inserting empty parity bits)"
+    """convert DES from 7 bytes to 8 bytes (by inserting empty parity bits)"""
     if isinstance(key, bytes):
         if len(key) != 7:
             raise ValueError("key must be 7 bytes in size")
@@ -631,7 +631,7 @@ def expand_des_key(key):
     return join_byte_values(((key>>shift) & 0x7f)<<1 for shift in _EXPAND_ITER)
 
 def shrink_des_key(key):
-    "convert DES key from 8 bytes to 7 bytes (by discarding the parity bits)"
+    """convert DES key from 8 bytes to 7 bytes (by discarding the parity bits)"""
     if isinstance(key, bytes):
         if len(key) != 8:
             raise ValueError("key must be 8 bytes in size")
@@ -666,7 +666,7 @@ def des_encrypt_block(key, input, salt=0, rounds=1):
 
     :arg salt:
         Optional 24-bit integer used to mutate the base DES algorithm in a
-        manner specific to :class:`~passlib.hash.des_crypt` and it's variants.
+        manner specific to :class:`~passlib.hash.des_crypt` and its variants.
         The default value ``0`` provides the normal (unsalted) DES behavior.
         The salt functions as follows:
         if the ``i``'th bit of ``salt`` is set,
@@ -675,7 +675,7 @@ def des_encrypt_block(key, input, salt=0, rounds=1):
     :arg rounds:
         Optional number of rounds of to apply the DES key schedule.
         the default (``rounds=1``) provides the normal DES behavior,
-        but :class:`~passlib.hash.des_crypt` and it's variants use
+        but :class:`~passlib.hash.des_crypt` and its variants use
         alternate rounds values.
 
     :raises TypeError: if any of the provided args are of the wrong type.
@@ -779,7 +779,7 @@ def des_encrypt_int_block(key, input, salt=0, rounds=1):
     # NOTE: generation was modified to output two elements at a time,
     # so that per-round loop could do two passes at once.
     def _iter_key_schedule(ks_odd):
-        "given 64-bit key, iterates over the 8 (even,odd) key schedule pairs"
+        """given 64-bit key, iterates over the 8 (even,odd) key schedule pairs"""
         for p_even, p_odd in PCXROT:
             ks_even = _permute(ks_odd, p_even)
             ks_odd = _permute(ks_even, p_odd)

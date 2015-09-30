@@ -18,11 +18,11 @@ This package contains two submodules:
 
 Status
 ------
-This implementation is usuable, but is an order of magnitude too slow to be
-usuable with real security. For "ok" security, BCrypt hashes should have at
+This implementation is usable, but is an order of magnitude too slow to be
+usable with real security. For "ok" security, BCrypt hashes should have at
 least 2**11 rounds (as of 2011). Assuming a desired response time <= 100ms,
 this means a BCrypt implementation should get at least 20 rounds/ms in order
-to be both usuable *and* secure. On a 2 ghz cpu, this implementation gets
+to be both usable *and* secure. On a 2 ghz cpu, this implementation gets
 roughly 0.09 rounds/ms under CPython (220x too slow), and 1.9 rounds/ms
 under PyPy (10x too slow).
 
@@ -55,7 +55,7 @@ from itertools import chain
 import struct
 # pkg
 from passlib.utils import bcrypt64, getrandbytes, rng
-from passlib.utils.compat import b, bytes, BytesIO, unicode, u
+from passlib.utils.compat import b, bytes, BytesIO, unicode, u, native_string_types
 from passlib.utils._blowfish.unrolled import BlowfishEngine
 # local
 __all__ = [
@@ -98,19 +98,15 @@ def raw_bcrypt(password, ident, salt, log_rounds):
     #===================================================================
 
     # parse ident
-    assert isinstance(ident, unicode)
-    if ident == u('2'):
-        minor = 0
-    elif ident == u('2a'):
-        minor = 1
-        # XXX: how to indicate caller wants to use crypt_blowfish's
-        # workaround variant of 2a?
+    assert isinstance(ident, native_string_types)
+    add_null_padding = True
+    if ident == u('2a') or ident == u('2y') or ident == u('2b'):
+        pass
+    elif ident == u('2'):
+        add_null_padding = False
     elif ident == u('2x'):
         raise ValueError("crypt_blowfish's buggy '2x' hashes are not "
                          "currently supported")
-    elif ident == u('2y'):
-        # crypt_blowfish compatibility ident which guarantees compat w/ 2a
-        minor = 1
     else:
         raise ValueError("unknown ident: %r" % (ident,))
 
@@ -124,7 +120,7 @@ def raw_bcrypt(password, ident, salt, log_rounds):
 
     # prepare password
     assert isinstance(password, bytes)
-    if minor > 0:
+    if add_null_padding:
         password += BNULL
 
     # validate rounds

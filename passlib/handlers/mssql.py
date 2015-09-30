@@ -64,7 +64,7 @@ BIDENT = b("0x0100")
 UIDENT = u("0x0100")
 
 def _ident_mssql(hash, csize, bsize):
-    "common identify for mssql 2000/2005"
+    """common identify for mssql 2000/2005"""
     if isinstance(hash, unicode):
         if len(hash) == csize and hash.startswith(UIDENT):
             return True
@@ -78,7 +78,7 @@ def _ident_mssql(hash, csize, bsize):
     return False
 
 def _parse_mssql(hash, csize, bsize, handler):
-    "common parser for mssql 2000/2005; returns 4 byte salt + checksum"
+    """common parser for mssql 2000/2005; returns 4 byte salt + checksum"""
     if isinstance(hash, unicode):
         if len(hash) == csize and hash.startswith(UIDENT):
             try:

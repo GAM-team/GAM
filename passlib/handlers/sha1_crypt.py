@@ -47,7 +47,7 @@ class sha1_crypt(uh.HasManyBackends, uh.HasRounds, uh.HasSalt, uh.GenericHandler
     :type rounds: int
     :param rounds:
         Optional number of rounds to use.
-        Defaults to 64000, must be between 1 and 4294967295, inclusive.
+        Defaults to 480000, must be between 1 and 4294967295, inclusive.
 
     :type relaxed: bool
     :param relaxed:
@@ -77,7 +77,7 @@ class sha1_crypt(uh.HasManyBackends, uh.HasRounds, uh.HasSalt, uh.GenericHandler
     salt_chars = uh.HASH64_CHARS
 
     #--HasRounds--
-    default_rounds = 64000 # current passlib default
+    default_rounds = 480000 # current passlib default
     min_rounds = 1 # really, this should be higher.
     max_rounds = 4294967295 # 32-bit integer limit
     rounds_cost = "linear"

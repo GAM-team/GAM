@@ -22,12 +22,12 @@ def hb(source):
 # byte funcs
 #=============================================================================
 class MiscTest(TestCase):
-    "tests various parts of utils module"
+    """tests various parts of utils module"""
 
     # NOTE: could test xor_bytes(), but it's exercised well enough by pbkdf2 test
 
     def test_compat(self):
-        "test compat's lazymodule"
+        """test compat's lazymodule"""
         from passlib.utils import compat
         # "<module 'passlib.utils.compat' from 'passlib/utils/compat.pyc'>"
         self.assertRegex(repr(compat),
@@ -58,7 +58,7 @@ class MiscTest(TestCase):
 
         @deprecated_function(deprecated="1.6", removed="1.8")
         def test_func(*args):
-            "test docstring"
+            """test docstring"""
             return args
 
         self.assertTrue(".. deprecated::" in test_func.__doc__)
@@ -91,7 +91,7 @@ class MiscTest(TestCase):
         self.assertIs(prop.im_func, prop.__func__)
 
     def test_getrandbytes(self):
-        "test getrandbytes()"
+        """test getrandbytes()"""
         from passlib.utils import getrandbytes, rng
         def f(*a,**k):
             return getrandbytes(rng, *a, **k)
@@ -104,7 +104,7 @@ class MiscTest(TestCase):
         self.assertNotEqual(a, b)
 
     def test_getrandstr(self):
-        "test getrandstr()"
+        """test getrandstr()"""
         from passlib.utils import getrandstr, rng
         def f(*a,**k):
             return getrandstr(rng, *a, **k)
@@ -141,7 +141,7 @@ class MiscTest(TestCase):
         self.assertEqual(len(generate_password(15)), 15)
 
     def test_is_crypt_context(self):
-        "test is_crypt_context()"
+        """test is_crypt_context()"""
         from passlib.utils import is_crypt_context
         from passlib.context import CryptContext
         cc = CryptContext(["des_crypt"])
@@ -149,7 +149,7 @@ class MiscTest(TestCase):
         self.assertFalse(not is_crypt_context(cc))
 
     def test_genseed(self):
-        "test genseed()"
+        """test genseed()"""
         import random
         from passlib.utils import genseed
         rng = random.Random(genseed())
@@ -163,7 +163,7 @@ class MiscTest(TestCase):
         rng.seed(genseed(rng))
 
     def test_crypt(self):
-        "test crypt.crypt() wrappers"
+        """test crypt.crypt() wrappers"""
         from passlib.utils import has_crypt, safe_crypt, test_crypt
 
         # test everything is disabled
@@ -220,7 +220,7 @@ class MiscTest(TestCase):
             mod._crypt = orig
 
     def test_consteq(self):
-        "test consteq()"
+        """test consteq()"""
         # NOTE: this test is kind of over the top, but that's only because
         # this is used for the critical task of comparing hashes for equality.
         from passlib.utils import consteq
@@ -304,7 +304,7 @@ class MiscTest(TestCase):
         ##    ##print ", ".join(str(c) for c in [run] + times)
 
     def test_saslprep(self):
-        "test saslprep() unicode normalizer"
+        """test saslprep() unicode normalizer"""
         self.require_stringprep()
         from passlib.utils import saslprep as sp
 
@@ -395,10 +395,10 @@ class MiscTest(TestCase):
 # byte/unicode helpers
 #=============================================================================
 class CodecTest(TestCase):
-    "tests bytes/unicode helpers in passlib.utils"
+    """tests bytes/unicode helpers in passlib.utils"""
 
     def test_bytes(self):
-        "test b() helper, bytes and native str type"
+        """test b() helper, bytes and native str type"""
         if PY3:
             import builtins
             self.assertIs(bytes, builtins.bytes)
@@ -414,7 +414,7 @@ class CodecTest(TestCase):
             self.assertEqual(b('\x00\xff'), "\x00\xff")
 
     def test_to_bytes(self):
-        "test to_bytes()"
+        """test to_bytes()"""
         from passlib.utils import to_bytes
 
         # check unicode inputs
@@ -443,7 +443,7 @@ class CodecTest(TestCase):
         self.assertRaises(TypeError, to_bytes, None)
 
     def test_to_unicode(self):
-        "test to_unicode()"
+        """test to_unicode()"""
         from passlib.utils import to_unicode
 
         # check unicode inputs
@@ -465,7 +465,7 @@ class CodecTest(TestCase):
         self.assertRaises(TypeError, to_unicode, None)
 
     def test_to_native_str(self):
-        "test to_native_str()"
+        """test to_native_str()"""
         from passlib.utils import to_native_str
 
         # test plain ascii
@@ -496,7 +496,7 @@ class CodecTest(TestCase):
         self.assertRaises(TypeError, to_native_str, None, 'ascii')
 
     def test_is_ascii_safe(self):
-        "test is_ascii_safe()"
+        """test is_ascii_safe()"""
         from passlib.utils import is_ascii_safe
         self.assertTrue(is_ascii_safe(b("\x00abc\x7f")))
         self.assertTrue(is_ascii_safe(u("\x00abc\x7f")))
@@ -504,7 +504,7 @@ class CodecTest(TestCase):
         self.assertFalse(is_ascii_safe(u("\x00abc\x80")))
 
     def test_is_same_codec(self):
-        "test is_same_codec()"
+        """test is_same_codec()"""
         from passlib.utils import is_same_codec
 
         self.assertTrue(is_same_codec(None, None))
@@ -523,7 +523,7 @@ class CodecTest(TestCase):
 # base64engine
 #=============================================================================
 class Base64EngineTest(TestCase):
-    "test standalone parts of Base64Engine"
+    """test standalone parts of Base64Engine"""
     # NOTE: most Base64Engine testing done via _Base64Test subclasses below.
 
     def test_constructor(self):
@@ -547,7 +547,7 @@ class Base64EngineTest(TestCase):
         self.assertRaises(ValueError, ab64_decode, "abcde")
 
 class _Base64Test(TestCase):
-    "common tests for all Base64Engine instances"
+    """common tests for all Base64Engine instances"""
     #===================================================================
     # class attrs
     #===================================================================
@@ -566,14 +566,14 @@ class _Base64Test(TestCase):
 
     # helper to generate bytemap-specific strings
     def m(self, *offsets):
-        "generate byte string from offsets"
+        """generate byte string from offsets"""
         return join_bytes(self.engine.bytemap[o:o+1] for o in offsets)
 
     #===================================================================
     # test encode_bytes
     #===================================================================
     def test_encode_bytes(self):
-        "test encode_bytes() against reference inputs"
+        """test encode_bytes() against reference inputs"""
         engine = self.engine
         encode = engine.encode_bytes
         for raw, encoded in self.encoded_data:
@@ -581,7 +581,7 @@ class _Base64Test(TestCase):
             self.assertEqual(result, encoded, "encode %r:" % (raw,))
 
     def test_encode_bytes_bad(self):
-        "test encode_bytes() with bad input"
+        """test encode_bytes() with bad input"""
         engine = self.engine
         encode = engine.encode_bytes
         self.assertRaises(TypeError, encode, u('\x00'))
@@ -591,7 +591,7 @@ class _Base64Test(TestCase):
     # test decode_bytes
     #===================================================================
     def test_decode_bytes(self):
-        "test decode_bytes() against reference inputs"
+        """test decode_bytes() against reference inputs"""
         engine = self.engine
         decode = engine.decode_bytes
         for raw, encoded in self.encoded_data:
@@ -599,7 +599,7 @@ class _Base64Test(TestCase):
             self.assertEqual(result, raw, "decode %r:" % (encoded,))
 
     def test_decode_bytes_padding(self):
-        "test decode_bytes() ignores padding bits"
+        """test decode_bytes() ignores padding bits"""
         bchr = (lambda v: bytes([v])) if PY3 else chr
         engine = self.engine
         m = self.m
@@ -626,7 +626,7 @@ class _Base64Test(TestCase):
                              "%d/2 bits:" % i)
 
     def test_decode_bytes_bad(self):
-        "test decode_bytes() with bad input"
+        """test decode_bytes() with bad input"""
         engine = self.engine
         decode = engine.decode_bytes
 
@@ -645,7 +645,7 @@ class _Base64Test(TestCase):
     # encode_bytes+decode_bytes
     #===================================================================
     def test_codec(self):
-        "test encode_bytes/decode_bytes against random data"
+        """test encode_bytes/decode_bytes against random data"""
         engine = self.engine
         from passlib.utils import getrandbytes, getrandstr
         saw_zero = False
@@ -691,7 +691,7 @@ class _Base64Test(TestCase):
                 self.assertEqual(result, encoded)
 
     def test_repair_unused(self):
-        "test repair_unused()"
+        """test repair_unused()"""
         # NOTE: this test relies on encode_bytes() always returning clear
         # padding bits - which should be ensured by test vectors.
         from passlib.utils import rng, getrandstr
@@ -739,7 +739,7 @@ class _Base64Test(TestCase):
     ]
 
     def test_encode_transposed_bytes(self):
-        "test encode_transposed_bytes()"
+        """test encode_transposed_bytes()"""
         engine = self.engine
         for result, input, offsets in self.transposed + self.transposed_dups:
             tmp = engine.encode_transposed_bytes(input, offsets)
@@ -749,7 +749,7 @@ class _Base64Test(TestCase):
         self.assertRaises(TypeError, engine.encode_transposed_bytes, u("a"), [])
 
     def test_decode_transposed_bytes(self):
-        "test decode_transposed_bytes()"
+        """test decode_transposed_bytes()"""
         engine = self.engine
         for input, result, offsets in self.transposed:
             tmp = engine.encode_bytes(input)
@@ -757,7 +757,7 @@ class _Base64Test(TestCase):
             self.assertEqual(out, result)
 
     def test_decode_transposed_bytes_bad(self):
-        "test decode_transposed_bytes() fails if map is a one-way"
+        """test decode_transposed_bytes() fails if map is a one-way"""
         engine = self.engine
         for input, _, offsets in self.transposed_dups:
             tmp = engine.encode_bytes(input)
@@ -768,7 +768,7 @@ class _Base64Test(TestCase):
     # test 6bit handling
     #===================================================================
     def check_int_pair(self, bits, encoded_pairs):
-        "helper to check encode_intXX & decode_intXX functions"
+        """helper to check encode_intXX & decode_intXX functions"""
         engine = self.engine
         encode = getattr(engine, "encode_int%s" % bits)
         decode = getattr(engine, "decode_int%s" % bits)
@@ -795,7 +795,7 @@ class _Base64Test(TestCase):
         self.assertRaises(TypeError, decode, None)
 
         # do random testing.
-        from passlib.utils import getrandbytes, getrandstr
+        from passlib.utils import getrandstr
         for i in irange(100):
             # generate random value, encode, and then decode
             value = random.randint(0, upper-1)
@@ -844,7 +844,7 @@ class _Base64Test(TestCase):
                     else m(63,63,63,63, 63,63,63,63, 63,63,15))])
 
     def test_encoded_ints(self):
-        "test against reference integer encodings"
+        """test against reference integer encodings"""
         if not self.encoded_ints:
             raise self.skipTests("none defined for class")
         engine = self.engine
@@ -863,7 +863,7 @@ class _Base64Test(TestCase):
 from passlib.utils import h64, h64big
 
 class H64_Test(_Base64Test):
-    "test H64 codec functions"
+    """test H64 codec functions"""
     engine = h64
     descriptionPrefix = "h64 codec"
 
@@ -888,7 +888,7 @@ class H64_Test(_Base64Test):
     ]
 
 class H64Big_Test(_Base64Test):
-    "test H64Big codec functions"
+    """test H64Big codec functions"""
     engine = h64big
     descriptionPrefix = "h64big codec"
 

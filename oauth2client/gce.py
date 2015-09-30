@@ -17,15 +17,17 @@
 Utilities for making it easier to use OAuth 2.0 on Google Compute Engine.
 """
 
-__author__ = 'jcgregorio@google.com (Joe Gregorio)'
-
 import json
 import logging
 from six.moves import urllib
 
+from oauth2client._helpers import _from_bytes
 from oauth2client import util
 from oauth2client.client import AccessTokenRefreshError
 from oauth2client.client import AssertionCredentials
+
+
+__author__ = 'jcgregorio@google.com (Joe Gregorio)'
 
 logger = logging.getLogger(__name__)
 
@@ -35,71 +37,74 @@ META = ('http://metadata.google.internal/0.1/meta-data/service-accounts/'
 
 
 class AppAssertionCredentials(AssertionCredentials):
-  """Credentials object for Compute Engine Assertion Grants
+    """Credentials object for Compute Engine Assertion Grants
 
-  This object will allow a Compute Engine instance to identify itself to
-  Google and other OAuth 2.0 servers that can verify assertions. It can be used
-  for the purpose of accessing data stored under an account assigned to the
-  Compute Engine instance itself.
+    This object will allow a Compute Engine instance to identify itself to
+    Google and other OAuth 2.0 servers that can verify assertions. It can be
+    used for the purpose of accessing data stored under an account assigned to
+    the Compute Engine instance itself.
 
-  This credential does not require a flow to instantiate because it represents
-  a two legged flow, and therefore has all of the required information to
-  generate and refresh its own access tokens.
-  """
-
-  @util.positional(2)
-  def __init__(self, scope, **kwargs):
-    """Constructor for AppAssertionCredentials
-
-    Args:
-      scope: string or iterable of strings, scope(s) of the credentials being
-        requested.
+    This credential does not require a flow to instantiate because it
+    represents a two legged flow, and therefore has all of the required
+    information to generate and refresh its own access tokens.
     """
-    self.scope = util.scopes_to_string(scope)
-    self.kwargs = kwargs
 
-    # Assertion type is no longer used, but still in the parent class signature.
-    super(AppAssertionCredentials, self).__init__(None)
+    @util.positional(2)
+    def __init__(self, scope, **kwargs):
+        """Constructor for AppAssertionCredentials
 
-  @classmethod
-  def from_json(cls, json_data):
-    data = json.loads(json_data)
-    return AppAssertionCredentials(data['scope'])
+        Args:
+            scope: string or iterable of strings, scope(s) of the credentials
+                   being requested.
+        """
+        self.scope = util.scopes_to_string(scope)
+        self.kwargs = kwargs
 
-  def _refresh(self, http_request):
-    """Refreshes the access_token.
+        # Assertion type is no longer used, but still in the
+        # parent class signature.
+        super(AppAssertionCredentials, self).__init__(None)
 
-    Skip all the storage hoops and just refresh using the API.
+    @classmethod
+    def from_json(cls, json_data):
+        data = json.loads(_from_bytes(json_data))
+        return AppAssertionCredentials(data['scope'])
 
-    Args:
-      http_request: callable, a callable that matches the method signature of
-        httplib2.Http.request, used to make the refresh request.
+    def _refresh(self, http_request):
+        """Refreshes the access_token.
 
-    Raises:
-      AccessTokenRefreshError: When the refresh fails.
-    """
-    query = '?scope=%s' % urllib.parse.quote(self.scope, '')
-    uri = META.replace('{?scope}', query)
-    response, content = http_request(uri)
-    if response.status == 200:
-      try:
-        d = json.loads(content)
-      except Exception as e:
-        raise AccessTokenRefreshError(str(e))
-      self.access_token = d['accessToken']
-    else:
-      if response.status == 404:
-        content += (' This can occur if a VM was created'
-                    ' with no service account or scopes.')
-      raise AccessTokenRefreshError(content)
+        Skip all the storage hoops and just refresh using the API.
 
-  @property
-  def serialization_data(self):
-    raise NotImplementedError(
-        'Cannot serialize credentials for GCE service accounts.')
+        Args:
+            http_request: callable, a callable that matches the method
+                          signature of httplib2.Http.request, used to make
+                          the refresh request.
 
-  def create_scoped_required(self):
-    return not self.scope
+        Raises:
+            AccessTokenRefreshError: When the refresh fails.
+        """
+        query = '?scope=%s' % urllib.parse.quote(self.scope, '')
+        uri = META.replace('{?scope}', query)
+        response, content = http_request(uri)
+        content = _from_bytes(content)
+        if response.status == 200:
+            try:
+                d = json.loads(content)
+            except Exception as e:
+                raise AccessTokenRefreshError(str(e))
+            self.access_token = d['accessToken']
+        else:
+            if response.status == 404:
+                content += (' This can occur if a VM was created'
+                            ' with no service account or scopes.')
+            raise AccessTokenRefreshError(content)
 
-  def create_scoped(self, scopes):
-    return AppAssertionCredentials(scopes, **self.kwargs)
+    @property
+    def serialization_data(self):
+        raise NotImplementedError(
+            'Cannot serialize credentials for GCE service accounts.')
+
+    def create_scoped_required(self):
+        return not self.scope
+
+    def create_scoped(self, scopes):
+        return AppAssertionCredentials(scopes, **self.kwargs)

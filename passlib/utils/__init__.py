@@ -130,7 +130,7 @@ class classproperty(object):
 
     @property
     def __func__(self):
-        "py3 compatible alias"
+        """py3 compatible alias"""
         return self.im_func
 
 def deprecated_function(msg=None, deprecated=None, removed=None, updoc=True,
@@ -221,7 +221,7 @@ class memoized_property(object):
 
     @property
     def __func__(self):
-        "py3 alias"
+        """py3 alias"""
         return self.im_func
 
 # works but not used
@@ -253,7 +253,7 @@ def consteq(left, right):
 
     The purpose of this function is to help prevent timing attacks
     during digest comparisons: the standard ``==`` operator aborts
-    after the first mismatched character, causing it's runtime to be
+    after the first mismatched character, causing its runtime to be
     proportional to the longest prefix shared by the two inputs.
     If an attacker is able to predict and control one of the two
     inputs, repeated queries can be leveraged to reveal information about
@@ -456,7 +456,7 @@ def saslprep(source, param="value"):
 # replace saslprep() with stub when stringprep is missing
 if stringprep is None: # pragma: no cover -- runtime detection
     def saslprep(source, param="value"):
-        "stub for saslprep()"
+        """stub for saslprep()"""
         raise NotImplementedError("saslprep() support requires the 'stringprep' "
                             "module, which is " + _stringprep_missing_reason)
 
@@ -503,11 +503,11 @@ add_doc(bytes_to_int, "decode byte string as single big-endian integer")
 add_doc(int_to_bytes, "encode integer as single big-endian byte string")
 
 def xor_bytes(left, right):
-    "Perform bitwise-xor of two byte strings (must be same size)"
+    """Perform bitwise-xor of two byte strings (must be same size)"""
     return int_to_bytes(bytes_to_int(left) ^ bytes_to_int(right), len(left))
 
 def repeat_string(source, size):
-    "repeat or truncate <source> string, so it has length <size>"
+    """repeat or truncate <source> string, so it has length <size>"""
     cur = len(source)
     if size > cur:
         mult = (size+cur-1)//cur
@@ -519,7 +519,7 @@ _BNULL = b("\x00")
 _UNULL = u("\x00")
 
 def right_pad_string(source, size, pad=None):
-    "right-pad or truncate <source> string, so it has length <size>"
+    """right-pad or truncate <source> string, so it has length <size>"""
     cur = len(source)
     if size > cur:
         if pad is None:
@@ -535,11 +535,11 @@ _ASCII_TEST_BYTES = b("\x00\n aA:#!\x7f")
 _ASCII_TEST_UNICODE = _ASCII_TEST_BYTES.decode("ascii")
 
 def is_ascii_codec(codec):
-    "Test if codec is compatible with 7-bit ascii (e.g. latin-1, utf-8; but not utf-16)"
+    """Test if codec is compatible with 7-bit ascii (e.g. latin-1, utf-8; but not utf-16)"""
     return _ASCII_TEST_UNICODE.encode(codec) == _ASCII_TEST_BYTES
 
 def is_same_codec(left, right):
-    "Check if two codec names are aliases for same codec"
+    """Check if two codec names are aliases for same codec"""
     if left == right:
         return True
     if not (left and right):
@@ -549,7 +549,7 @@ def is_same_codec(left, right):
 _B80 = b('\x80')[0]
 _U80 = u('\x80')
 def is_ascii_safe(source):
-    "Check if string (bytes or unicode) contains only 7-bit ascii"
+    """Check if string (bytes or unicode) contains only 7-bit ascii"""
     r = _B80 if isinstance(source, bytes) else _U80
     return all(c < r for c in source)
 
@@ -656,7 +656,7 @@ add_doc(to_native_str,
 
 @deprecated_function(deprecated="1.6", removed="1.7")
 def to_hash_str(source, encoding="ascii"): # pragma: no cover -- deprecated & unused
-    "deprecated, use to_native_str() instead"
+    """deprecated, use to_native_str() instead"""
     return to_native_str(source, encoding, param="hash")
 
 #=============================================================================
@@ -671,7 +671,7 @@ class Base64Engine(object):
         A string of 64 unique characters,
         which will be used to encode successive 6-bit chunks of data.
         A character's position within the string should correspond
-        to it's 6-bit value.
+        to its 6-bit value.
 
     :param big:
         Whether the encoding should be big-endian (default False).
@@ -783,7 +783,7 @@ class Base64Engine(object):
 
     @property
     def charmap(self):
-        "charmap as unicode"
+        """charmap as unicode"""
         return self.bytemap.decode("latin-1")
 
     #===================================================================
@@ -811,7 +811,7 @@ class Base64Engine(object):
         return out
 
     def _encode_bytes_little(self, next_value, chunks, tail):
-        "helper used by encode_bytes() to handle little-endian encoding"
+        """helper used by encode_bytes() to handle little-endian encoding"""
         #
         # output bit layout:
         #
@@ -850,7 +850,7 @@ class Base64Engine(object):
                 yield v2>>4
 
     def _encode_bytes_big(self, next_value, chunks, tail):
-        "helper used by encode_bytes() to handle big-endian encoding"
+        """helper used by encode_bytes() to handle big-endian encoding"""
         #
         # output bit layout:
         #
@@ -916,7 +916,7 @@ class Base64Engine(object):
             raise ValueError("invalid character: %r" % (err.args[0],))
 
     def _decode_bytes_little(self, next_value, chunks, tail):
-        "helper used by decode_bytes() to handle little-endian encoding"
+        """helper used by decode_bytes() to handle little-endian encoding"""
         #
         # input bit layout:
         #
@@ -951,7 +951,7 @@ class Base64Engine(object):
                 yield (v2>>2) | ((v3 & 0xF) << 4)
 
     def _decode_bytes_big(self, next_value, chunks, tail):
-        "helper used by decode_bytes() to handle big-endian encoding"
+        """helper used by decode_bytes() to handle big-endian encoding"""
         #
         # input bit layout:
         #
@@ -993,21 +993,21 @@ class Base64Engine(object):
     # equivalent char with no padding bits set.
 
     def __make_padset(self, bits):
-        "helper to generate set of valid last chars & bytes"
+        """helper to generate set of valid last chars & bytes"""
         pset = set(c for i,c in enumerate(self.bytemap) if not i & bits)
         pset.update(c for i,c in enumerate(self.charmap) if not i & bits)
         return frozenset(pset)
 
     @memoized_property
     def _padinfo2(self):
-        "mask to clear padding bits, and valid last bytes (for strings 2 % 4)"
+        """mask to clear padding bits, and valid last bytes (for strings 2 % 4)"""
         # 4 bits of last char unused (lsb for big, msb for little)
         bits = 15 if self.big else (15<<2)
         return ~bits, self.__make_padset(bits)
 
     @memoized_property
     def _padinfo3(self):
-        "mask to clear padding bits, and valid last bytes (for strings 3 % 4)"
+        """mask to clear padding bits, and valid last bytes (for strings 3 % 4)"""
         # 2 bits of last char unused (lsb for big, msb for little)
         bits = 3 if self.big else (3<<4)
         return ~bits, self.__make_padset(bits)
@@ -1072,14 +1072,14 @@ class Base64Engine(object):
     # transposed encoding/decoding
     #===================================================================
     def encode_transposed_bytes(self, source, offsets):
-        "encode byte string, first transposing source using offset list"
+        """encode byte string, first transposing source using offset list"""
         if not isinstance(source, bytes):
             raise TypeError("source must be bytes, not %s" % (type(source),))
         tmp = join_byte_elems(source[off] for off in offsets)
         return self.encode_bytes(tmp)
 
     def decode_transposed_bytes(self, source, offsets):
-        "decode byte string, then reverse transposition described by offset list"
+        """decode byte string, then reverse transposition described by offset list"""
         # NOTE: if transposition does not use all bytes of source,
         # the original can't be recovered... and join_byte_elems() will throw
         # an error because 1+ values in <buf> will be None.
@@ -1133,7 +1133,7 @@ class Base64Engine(object):
     #---------------------------------------------------------------
 
     def decode_int6(self, source):
-        "decode single character -> 6 bit integer"
+        """decode single character -> 6 bit integer"""
         if not isinstance(source, bytes):
             raise TypeError("source must be bytes, not %s" % (type(source),))
         if len(source) != 1:
@@ -1147,7 +1147,7 @@ class Base64Engine(object):
             raise ValueError("invalid character")
 
     def decode_int12(self, source):
-        "decodes 2 char string -> 12-bit integer"
+        """decodes 2 char string -> 12-bit integer"""
         if not isinstance(source, bytes):
             raise TypeError("source must be bytes, not %s" % (type(source),))
         if len(source) != 2:
@@ -1162,7 +1162,7 @@ class Base64Engine(object):
             raise ValueError("invalid character")
 
     def decode_int24(self, source):
-        "decodes 4 char string -> 24-bit integer"
+        """decodes 4 char string -> 24-bit integer"""
         if not isinstance(source, bytes):
             raise TypeError("source must be bytes, not %s" % (type(source),))
         if len(source) != 4:
@@ -1216,7 +1216,7 @@ class Base64Engine(object):
     #---------------------------------------------------------------
 
     def encode_int6(self, value):
-        "encodes 6-bit integer -> single hash64 character"
+        """encodes 6-bit integer -> single hash64 character"""
         if value < 0 or value > 63:
             raise ValueError("value out of range")
         if PY3:
@@ -1225,7 +1225,7 @@ class Base64Engine(object):
             return self._encode64(value)
 
     def encode_int12(self, value):
-        "encodes 12-bit integer -> 2 char string"
+        """encodes 12-bit integer -> 2 char string"""
         if value < 0 or value > 0xFFF:
             raise ValueError("value out of range")
         raw = [value & 0x3f, (value>>6) & 0x3f]
@@ -1234,7 +1234,7 @@ class Base64Engine(object):
         return join_byte_elems(imap(self._encode64, raw))
 
     def encode_int24(self, value):
-        "encodes 24-bit integer -> 4 char string"
+        """encodes 24-bit integer -> 4 char string"""
         if value < 0 or value > 0xFFFFFF:
             raise ValueError("value out of range")
         raw = [value & 0x3f, (value>>6) & 0x3f,
@@ -1258,7 +1258,7 @@ class Base64Engine(object):
     #===================================================================
 
 class LazyBase64Engine(Base64Engine):
-    "Base64Engine which delays initialization until it's accessed"
+    """Base64Engine which delays initialization until it's accessed"""
     _lazy_opts = None
 
     def __init__(self, *args, **kwds):
@@ -1331,6 +1331,7 @@ def ab64_decode(data):
 try:
     from crypt import crypt as _crypt
 except ImportError: # pragma: no cover
+    _crypt = None
     has_crypt = False
     def safe_crypt(secret, hash):
         return None
@@ -1451,13 +1452,13 @@ except NotImplementedError: # pragma: no cover
     has_urandom = False
 
 def genseed(value=None):
-    "generate prng seed value from system resources"
+    """generate prng seed value from system resources"""
     from hashlib import sha512
     text = u("%s %s %s %s %.15f %.15f %s") % (
         # if caller specified a seed value, mix it in
         value,
 
-        # if caller's seed value was an RNG, mix in bits from it's state
+        # if caller's seed value was an RNG, mix in bits from its state
         value.getrandbits(1<<15) if hasattr(value, "getrandbits") else None,
 
         # add current process id
@@ -1572,7 +1573,7 @@ _handler_attrs = (
         )
 
 def is_crypt_handler(obj):
-    "check if object follows the :ref:`password-hash-api`"
+    """check if object follows the :ref:`password-hash-api`"""
     # XXX: change to use isinstance(obj, PasswordHash) under py26+?
     return all(hasattr(obj, name) for name in _handler_attrs)
 
@@ -1583,7 +1584,7 @@ _context_attrs = (
         )
 
 def is_crypt_context(obj):
-    "check if object appears to be a :class:`~passlib.context.CryptContext` instance"
+    """check if object appears to be a :class:`~passlib.context.CryptContext` instance"""
     # XXX: change to use isinstance(obj, CryptContext)?
     return all(hasattr(obj, name) for name in _context_attrs)
 
@@ -1593,12 +1594,12 @@ def is_crypt_context(obj):
 ##    return hasattr(handler, "set_backend")
 
 def has_rounds_info(handler):
-    "check if handler provides the optional :ref:`rounds information <rounds-attributes>` attributes"
+    """check if handler provides the optional :ref:`rounds information <rounds-attributes>` attributes"""
     return ('rounds' in handler.setting_kwds and
             getattr(handler, "min_rounds", None) is not None)
 
 def has_salt_info(handler):
-    "check if handler provides the optional :ref:`salt information <salt-attributes>` attributes"
+    """check if handler provides the optional :ref:`salt information <salt-attributes>` attributes"""
     return ('salt' in handler.setting_kwds and
             getattr(handler, "min_salt_size", None) is not None)
 

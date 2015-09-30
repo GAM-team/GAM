@@ -29,6 +29,7 @@ __all__ = [
     ]
 
 from six import StringIO
+from six.moves import http_client
 from six.moves.urllib.parse import urlencode, urlparse, urljoin, \
   urlunparse, parse_qsl
 
@@ -149,7 +150,9 @@ def build(serviceName,
           developerKey=None,
           model=None,
           requestBuilder=HttpRequest,
-          credentials=None):
+          credentials=None,
+          cache_discovery=True,
+          cache=None):
   """Construct a Resource for interacting with an API.
 
   Construct a Resource object for interacting with an API. The serviceName and
@@ -171,6 +174,9 @@ def build(serviceName,
       request.
     credentials: oauth2client.Credentials, credentials to be used for
       authentication.
+    cache_discovery: Boolean, whether or not to cache the discovery doc.
+    cache: googleapiclient.discovery_cache.base.CacheBase, an optional
+      cache object for the discovery documents.
 
   Returns:
     A Resource object with methods for interacting with the service.
@@ -185,22 +191,58 @@ def build(serviceName,
 
   requested_url = uritemplate.expand(discoveryServiceUrl, params)
 
+  try:
+    content = _retrieve_discovery_doc(requested_url, http, cache_discovery,
+                                      cache)
+  except HttpError as e:
+    if e.resp.status == http_client.NOT_FOUND:
+      raise UnknownApiNameOrVersion("name: %s  version: %s" % (serviceName,
+                                                               version))
+    else:
+      raise e
+
+  return build_from_document(content, base=discoveryServiceUrl, http=http,
+      developerKey=developerKey, model=model, requestBuilder=requestBuilder,
+      credentials=credentials)
+
+
+def _retrieve_discovery_doc(url, http, cache_discovery, cache=None):
+  """Retrieves the discovery_doc from cache or the internet.
+
+  Args:
+    url: string, the URL of the discovery document.
+    http: httplib2.Http, An instance of httplib2.Http or something that acts
+      like it through which HTTP requests will be made.
+    cache_discovery: Boolean, whether or not to cache the discovery doc.
+    cache: googleapiclient.discovery_cache.base.Cache, an optional cache
+      object for the discovery documents.
+
+  Returns:
+    A unicode string representation of the discovery document.
+  """
+  if cache_discovery:
+    from . import discovery_cache
+    from .discovery_cache import base
+    if cache is None:
+      cache = discovery_cache.autodetect()
+    if cache:
+      content = cache.get(url)
+      if content:
+        return content
+
+  actual_url = url
   # REMOTE_ADDR is defined by the CGI spec [RFC3875] as the environment
   # variable that contains the network address of the client sending the
   # request. If it exists then add that to the request for the discovery
   # document to avoid exceeding the quota on discovery requests.
   if 'REMOTE_ADDR' in os.environ:
-    requested_url = _add_query_parameter(requested_url, 'userIp',
-                                         os.environ['REMOTE_ADDR'])
-  logger.info('URL being requested: GET %s' % requested_url)
+    actual_url = _add_query_parameter(url, 'userIp', os.environ['REMOTE_ADDR'])
+  logger.info('URL being requested: GET %s', actual_url)
 
-  resp, content = http.request(requested_url)
+  resp, content = http.request(actual_url)
 
-  if resp.status == 404:
-    raise UnknownApiNameOrVersion("name: %s  version: %s" % (serviceName,
-                                                            version))
   if resp.status >= 400:
-    raise HttpError(resp, content, uri=requested_url)
+    raise HttpError(resp, content, uri=actual_url)
 
   try:
     content = content.decode('utf-8')
@@ -212,10 +254,9 @@ def build(serviceName,
   except ValueError as e:
     logger.error('Failed to parse as JSON: ' + content)
     raise InvalidJsonError()
-
-  return build_from_document(content, base=discoveryServiceUrl, http=http,
-      developerKey=developerKey, model=model, requestBuilder=requestBuilder,
-      credentials=credentials)
+  if cache_discovery and cache:
+    cache.set(url, content)
+  return content
 
 
 @positional(1)
@@ -253,6 +294,9 @@ def build_from_document(
   Returns:
     A Resource object with methods for interacting with the service.
   """
+
+  if http is None:
+    http = httplib2.Http()
 
   # future is no longer used.
   future = {}
@@ -854,7 +898,7 @@ Returns:
     # Retrieve nextPageToken from previous_response
     # Use as pageToken in previous_request to create new request.
 
-    if 'nextPageToken' not in previous_response:
+    if 'nextPageToken' not in previous_response or not previous_response['nextPageToken']:
       return None
 
     request = copy.copy(previous_request)

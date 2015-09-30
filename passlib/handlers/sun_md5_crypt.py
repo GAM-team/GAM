@@ -82,7 +82,7 @@ _XY_ROUNDS = [
 del xr
 
 def raw_sun_md5_crypt(secret, rounds, salt):
-    "given secret & salt, return encoded sun-md5-crypt checksum"
+    """given secret & salt, return encoded sun-md5-crypt checksum"""
     global MAGIC_HAMLET
     assert isinstance(secret, bytes)
     assert isinstance(salt, bytes)
@@ -193,7 +193,7 @@ class sun_md5_crypt(uh.HasRounds, uh.HasSalt, uh.GenericHandler):
     :type rounds: int
     :param rounds:
         Optional number of rounds to use.
-        Defaults to 5500, must be between 0 and 4294963199, inclusive.
+        Defaults to 34000, must be between 0 and 4294963199, inclusive.
 
     :type bare_salt: bool
     :param bare_salt:
@@ -231,7 +231,7 @@ class sun_md5_crypt(uh.HasRounds, uh.HasSalt, uh.GenericHandler):
     max_salt_size = None
     salt_chars = uh.HASH64_CHARS
 
-    default_rounds = 5500 # current passlib default
+    default_rounds = 34000 # current passlib default
     min_rounds = 0
     max_rounds = 4294963199 ##2**32-1-4096
         # XXX: ^ not sure what it does if past this bound... does 32 int roll over?

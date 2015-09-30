@@ -40,7 +40,7 @@ def _crypt_secret_to_key(secret):
                for i, c in enumerate(secret[:8]))
 
 def _raw_des_crypt(secret, salt):
-    "pure-python backed for des_crypt"
+    """pure-python backed for des_crypt"""
     assert len(salt) == 2
 
     # NOTE: some OSes will accept non-HASH64 characters in the salt,
@@ -73,7 +73,7 @@ def _raw_des_crypt(secret, salt):
     return h64big.encode_int64(result)
 
 def _bsdi_secret_to_key(secret):
-    "covert secret to DES key used by bsdi_crypt"
+    """covert secret to DES key used by bsdi_crypt"""
     key_value = _crypt_secret_to_key(secret)
     idx = 8
     end = len(secret)
@@ -85,7 +85,7 @@ def _bsdi_secret_to_key(secret):
     return key_value
 
 def _raw_bsdi_crypt(secret, rounds, salt):
-    "pure-python backend for bsdi_crypt"
+    """pure-python backend for bsdi_crypt"""
 
     # decode salt
     try:

@@ -88,14 +88,14 @@ _UDOLLAR = u("$")
 _UZERO = u("0")
 
 def validate_secret(secret):
-    "ensure secret has correct type & size"
+    """ensure secret has correct type & size"""
     if not isinstance(secret, base_string_types):
         raise exc.ExpectedStringError(secret, "secret")
     if len(secret) > MAX_PASSWORD_SIZE:
         raise exc.PasswordSizeError()
 
 def to_unicode_for_identify(hash):
-    "convert hash to unicode for identify method"
+    """convert hash to unicode for identify method"""
     if isinstance(hash, unicode):
         return hash
     elif isinstance(hash, bytes):
@@ -584,7 +584,7 @@ class GenericHandler(PasswordHash):
 
     @staticmethod
     def _sanitize(value, char=u("*")):
-        "default method to obscure sensitive fields"
+        """default method to obscure sensitive fields"""
         if value is None:
             return None
         if isinstance(value, bytes):
@@ -606,7 +606,7 @@ class GenericHandler(PasswordHash):
         (with the extra keyword *checksum*).
 
         this method may not work correctly for all hashes,
-        and may not be available on some few. it's interface may
+        and may not be available on some few. its interface may
         change in future releases, if it's kept around at all.
 
         :arg hash: hash to parse
@@ -634,7 +634,7 @@ class GenericHandler(PasswordHash):
 
     @classmethod
     def bitsize(cls, **kwds):
-        "[experimental method] return info about bitsizes of hash"
+        """[experimental method] return info about bitsizes of hash"""
         try:
             info = super(GenericHandler, cls).bitsize(**kwds)
         except AttributeError:
@@ -692,7 +692,7 @@ class StaticHandler(GenericHandler):
 
     @classmethod
     def _norm_hash(cls, hash):
-        "helper for subclasses to normalize case if needed"
+        """helper for subclasses to normalize case if needed"""
         return hash
 
     def to_string(self):
@@ -737,7 +737,7 @@ class StaticHandler(GenericHandler):
         hash = wrapper_cls.genhash(secret, None, **context)
         warn("%r should be updated to implement StaticHandler._calc_checksum() "
              "instead of StaticHandler.genhash(), support for the latter "
-             "style will be removed in Passlib 1.8" % (cls),
+             "style will be removed in Passlib 1.8" % cls,
              DeprecationWarning)
         return str_to_uascii(hash)
 
@@ -920,7 +920,7 @@ class HasSalt(GenericHandler):
 
     Class Attributes
     ================
-    In order for :meth:`!_norm_salt` to do it's job, the following
+    In order for :meth:`!_norm_salt` to do its job, the following
     attributes should be provided by the handler subclass:
 
     .. attribute:: min_salt_size
@@ -986,12 +986,12 @@ class HasSalt(GenericHandler):
 
     @classproperty
     def default_salt_size(cls):
-        "default salt size (defaults to *max_salt_size*)"
+        """default salt size (defaults to *max_salt_size*)"""
         return cls.max_salt_size
 
     @classproperty
     def default_salt_chars(cls):
-        "charset used to generate new salt strings (defaults to *salt_chars*)"
+        """charset used to generate new salt strings (defaults to *salt_chars*)"""
         return cls.salt_chars
 
     # private helpers for HasRawSalt, shouldn't be used by subclasses
@@ -1082,7 +1082,7 @@ class HasSalt(GenericHandler):
     @staticmethod
     def _truncate_salt(salt, mx):
         # NOTE: some hashes (e.g. bcrypt) has structure within their
-        # salt string. this provides a method to overide to perform
+        # salt string. this provides a method to override to perform
         # the truncation properly
         return salt[:mx]
 
@@ -1095,7 +1095,7 @@ class HasSalt(GenericHandler):
 
     @classmethod
     def bitsize(cls, salt_size=None, **kwds):
-        "[experimental method] return info about bitsizes of hash"
+        """[experimental method] return info about bitsizes of hash"""
         info = super(HasSalt, cls).bitsize(**kwds)
         if salt_size is None:
             salt_size = cls.default_salt_size
@@ -1143,7 +1143,7 @@ class HasRounds(GenericHandler):
 
     Class Attributes
     ================
-    In order for :meth:`!_norm_rounds` to do it's job, the following
+    In order for :meth:`!_norm_rounds` to do its job, the following
     attributes must be provided by the handler subclass:
 
     .. attribute:: min_rounds
@@ -1259,7 +1259,7 @@ class HasRounds(GenericHandler):
 
     @classmethod
     def bitsize(cls, rounds=None, vary_rounds=.1, **kwds):
-        "[experimental method] return info about bitsizes of hash"
+        """[experimental method] return info about bitsizes of hash"""
         info = super(HasRounds, cls).bitsize(**kwds)
         # NOTE: this essentially estimates how many bits of "salt"
         # can be added by varying the rounds value just a little bit.
@@ -1448,7 +1448,10 @@ class HasManyBackends(GenericHandler):
         return name
 
     def _calc_checksum_backend(self, secret):
-        "stub for _calc_checksum_backend(), default backend will be selected first time stub is called"
+        """
+        stub for _calc_checksum_backend(),
+        the default backend will be selected the first time stub is called.
+        """
         # if we got here, no backend has been loaded; so load default backend
         assert not self._backend, "set_backend() failed to replace lazy loader"
         self.set_backend()
@@ -1458,7 +1461,7 @@ class HasManyBackends(GenericHandler):
         return self._calc_checksum_backend(secret)
 
     def _calc_checksum(self, secret):
-        "wrapper for backend, for common code"""
+        """wrapper for backend, for common code"""
         return self._calc_checksum_backend(secret)
 
 #=============================================================================
@@ -1605,13 +1608,13 @@ class PrefixWrapper(object):
         return list(attrs)
 
     def __getattr__(self, attr):
-        "proxy most attributes from wrapped class (e.g. rounds, salt size, etc)"
+        """proxy most attributes from wrapped class (e.g. rounds, salt size, etc)"""
         if attr in self._proxy_attrs:
             return getattr(self.wrapped, attr)
         raise AttributeError("missing attribute: %r" % (attr,))
 
     def _unwrap_hash(self, hash):
-        "given hash belonging to wrapper, return orig version"
+        """given hash belonging to wrapper, return orig version"""
         # NOTE: assumes hash has been validated as unicode already
         prefix = self.prefix
         if not hash.startswith(prefix):
@@ -1620,7 +1623,7 @@ class PrefixWrapper(object):
         return self.orig_prefix + hash[len(prefix):]
 
     def _wrap_hash(self, hash):
-        "given orig hash; return one belonging to wrapper"
+        """given orig hash; return one belonging to wrapper"""
         # NOTE: should usually be native string.
         # (which does mean extra work under py2, but not py3)
         if isinstance(hash, bytes):

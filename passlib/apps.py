@@ -77,12 +77,12 @@ custom_app_context = LazyCryptContext(
     all__vary_rounds = 0.1,
 
     # set a good starting point for rounds selection
-    sha512_crypt__min_rounds = 60000,
-    sha256_crypt__min_rounds = 80000,
+    sha512_crypt__min_rounds = 535000,
+    sha256_crypt__min_rounds = 535000,
 
     # if the admin user category is selected, make a much stronger hash,
-    admin__sha512_crypt__min_rounds = 120000,
-    admin__sha256_crypt__min_rounds = 160000,
+    admin__sha512_crypt__min_rounds = 1024000,
+    admin__sha256_crypt__min_rounds = 1024000,
     )
 
 #=============================================================================
@@ -132,7 +132,7 @@ def _iter_ldap_crypt_schemes():
     return ('ldap_' + name for name in unix_crypt_schemes)
 
 def _iter_ldap_schemes():
-    "helper which iterates over supported std ldap schemes"
+    """helper which iterates over supported std ldap schemes"""
     return chain(std_ldap_schemes, _iter_ldap_crypt_schemes())
 ldap_context = LazyCryptContext(_iter_ldap_schemes())
 
@@ -159,7 +159,7 @@ postgres_context = LazyCryptContext(["postgres_md5"])
 # phpass & variants
 #=============================================================================
 def _create_phpass_policy(**kwds):
-    "helper to choose default alg based on bcrypt availability"
+    """helper to choose default alg based on bcrypt availability"""
     kwds['default'] = 'bcrypt' if hash.bcrypt.has_backend() else 'phpass'
     return kwds
 

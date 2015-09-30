@@ -11,6 +11,7 @@ import time
 # site
 # pkg
 from passlib import apache
+from passlib.exc import MissingBackendError
 from passlib.utils.compat import irange, unicode
 from passlib.tests.utils import TestCase, get_file, set_file, catch_warnings, ensure_mtime_changed
 from passlib.utils.compat import b, bytes, u
@@ -18,7 +19,7 @@ from passlib.utils.compat import b, bytes, u
 log = getLogger(__name__)
 
 def backdate_file_mtime(path, offset=10):
-    "backdate file's mtime by specified amount"
+    """backdate file's mtime by specified amount"""
     # NOTE: this is used so we can test code which detects mtime changes,
     #       without having to actually *pause* for that long.
     atime = os.path.getatime(path)
@@ -29,7 +30,7 @@ def backdate_file_mtime(path, offset=10):
 # htpasswd
 #=============================================================================
 class HtpasswdFileTest(TestCase):
-    "test HtpasswdFile class"
+    """test HtpasswdFile class"""
     descriptionPrefix = "HtpasswdFile"
 
     # sample with 4 users
@@ -54,8 +55,17 @@ class HtpasswdFileTest(TestCase):
 
     sample_dup = b('user1:pass1\nuser1:pass2\n')
 
+    # sample with bcrypt & sha256_crypt hashes
+    sample_05 = b('user2:2CHkkwa2AtqGs\n'
+                  'user3:{SHA}3ipNV1GrBtxPmHFC21fCbVCSXIo=\n'
+                  'user4:pass4\n'
+                  'user1:$apr1$t4tc7jTh$GPIWVUo8sQKJlUdV8V5vu0\n'
+                  'user5:$2a$12$yktDxraxijBZ360orOyCOePFGhuis/umyPNJoL5EbsLk.s6SWdrRO\n'
+                  'user6:$5$rounds=110000$cCRp/xUUGVgwR4aP$'
+                      'p0.QKFS5qLNRqw1/47lXYiAcgIjJK.WjCO8nrEKuUK.\n')
+
     def test_00_constructor_autoload(self):
-        "test constructor autoload"
+        """test constructor autoload"""
         # check with existing file
         path = self.mktemp()
         set_file(path, self.sample_01)
@@ -97,7 +107,7 @@ class HtpasswdFileTest(TestCase):
         self.assertFalse(ht.mtime)
 
     def test_01_delete(self):
-        "test delete()"
+        """test delete()"""
         ht = apache.HtpasswdFile.from_string(self.sample_01)
         self.assertTrue(ht.delete("user1")) # should delete both entries
         self.assertTrue(ht.delete("user2"))
@@ -121,7 +131,7 @@ class HtpasswdFileTest(TestCase):
         self.assertEqual(get_file(path), b("user2:pass2\n"))
 
     def test_02_set_password(self):
-        "test set_password()"
+        """test set_password()"""
         ht = apache.HtpasswdFile.from_string(
             self.sample_01, default_scheme="plaintext")
         self.assertTrue(ht.set_password("user2", "pass2x"))
@@ -156,8 +166,29 @@ class HtpasswdFileTest(TestCase):
         ht.set_password("user1", "pass2")
         self.assertEqual(get_file(path), b("user1:pass2\n"))
 
+    def test_02_set_password_default_scheme(self):
+        """test set_password() -- default_scheme"""
+
+        def check(scheme):
+            ht = apache.HtpasswdFile(default_scheme=scheme)
+            ht.set_password("user1", "pass1")
+            return ht.context.identify(ht.get_hash("user1"))
+
+        # explicit scheme
+        self.assertEqual(check("sha256_crypt"), "sha256_crypt")
+        self.assertEqual(check("des_crypt"), "des_crypt")
+
+        # unknown scheme
+        self.assertRaises(KeyError, check, "xxx")
+
+        # portable alias
+        self.assertEqual(check("portable"), apache.portable_scheme)
+
+        # default -- currently same as portable, will be host-specific under passlib 1.7.
+        self.assertEqual(check(None), "apr_md5_crypt")
+
     def test_03_users(self):
-        "test users()"
+        """test users()"""
         ht = apache.HtpasswdFile.from_string(self.sample_01)
         ht.set_password("user5", "pass5")
         ht.delete("user3")
@@ -166,14 +197,23 @@ class HtpasswdFileTest(TestCase):
                                       "user3"])
 
     def test_04_check_password(self):
-        "test check_password()"
-        ht = apache.HtpasswdFile.from_string(self.sample_01)
-        self.assertRaises(TypeError, ht.check_password, 1, 'pass5')
-        self.assertTrue(ht.check_password("user5","pass5") is None)
-        for i in irange(1,5):
+        """test check_password()"""
+        ht = apache.HtpasswdFile.from_string(self.sample_05)
+        self.assertRaises(TypeError, ht.check_password, 1, 'pass9')
+        self.assertTrue(ht.check_password("user9","pass9") is None)
+
+        # users 1..6 of sample_01 run through all the main hash formats,
+        # to make sure they're recognized.
+        for i in irange(1, 7):
             i = str(i)
-            self.assertTrue(ht.check_password("user"+i, "pass"+i))
-            self.assertTrue(ht.check_password("user"+i, "pass5") is False)
+            try:
+                self.assertTrue(ht.check_password("user"+i, "pass"+i))
+                self.assertTrue(ht.check_password("user"+i, "pass9") is False)
+            except MissingBackendError:
+                if i == "5":
+                    # user5 uses bcrypt, which is apparently not available right now
+                    continue
+                raise
 
         self.assertRaises(ValueError, ht.check_password, "user:", "pass")
 
@@ -183,7 +223,7 @@ class HtpasswdFileTest(TestCase):
             self.assertFalse(ht.verify("user1", "pass2"))
 
     def test_05_load(self):
-        "test load()"
+        """test load()"""
         # setup empty file
         path = self.mktemp()
         set_file(path, "")
@@ -220,7 +260,7 @@ class HtpasswdFileTest(TestCase):
     # NOTE: load_string() tested via from_string(), which is used all over this file
 
     def test_06_save(self):
-        "test save()"
+        """test save()"""
         # load from file
         path = self.mktemp()
         set_file(path, self.sample_01)
@@ -242,7 +282,7 @@ class HtpasswdFileTest(TestCase):
         self.assertEqual(get_file(path), b("user1:pass1\n"))
 
     def test_07_encodings(self):
-        "test 'encoding' kwd"
+        """test 'encoding' kwd"""
         # test bad encodings cause failure in constructor
         self.assertRaises(ValueError, apache.HtpasswdFile, encoding="utf-16")
 
@@ -262,7 +302,7 @@ class HtpasswdFileTest(TestCase):
         self.assertEqual(ht.users(), [ u("user\u00e6") ])
 
     def test_08_get_hash(self):
-        "test get_hash()"
+        """test get_hash()"""
         ht = apache.HtpasswdFile.from_string(self.sample_01)
         self.assertEqual(ht.get_hash("user3"), b("{SHA}3ipNV1GrBtxPmHFC21fCbVCSXIo="))
         self.assertEqual(ht.get_hash("user4"), b("pass4"))
@@ -272,7 +312,7 @@ class HtpasswdFileTest(TestCase):
             self.assertEqual(ht.find("user4"), b("pass4"))
 
     def test_09_to_string(self):
-        "test to_string"
+        """test to_string"""
 
         # check with known sample
         ht = apache.HtpasswdFile.from_string(self.sample_01)
@@ -305,7 +345,7 @@ class HtpasswdFileTest(TestCase):
 # htdigest
 #=============================================================================
 class HtdigestFileTest(TestCase):
-    "test HtdigestFile class"
+    """test HtdigestFile class"""
     descriptionPrefix = "HtdigestFile"
 
     # sample with 4 users
@@ -330,7 +370,7 @@ class HtdigestFileTest(TestCase):
     sample_04_latin1 = b('user\xe6:realm\xe6:549d2a5f4659ab39a80dac99e159ab19\n')
 
     def test_00_constructor_autoload(self):
-        "test constructor autoload"
+        """test constructor autoload"""
         # check with existing file
         path = self.mktemp()
         set_file(path, self.sample_01)
@@ -348,7 +388,7 @@ class HtdigestFileTest(TestCase):
         # NOTE: default_realm option checked via other tests.
 
     def test_01_delete(self):
-        "test delete()"
+        """test delete()"""
         ht = apache.HtdigestFile.from_string(self.sample_01)
         self.assertTrue(ht.delete("user1", "realm"))
         self.assertTrue(ht.delete("user2", "realm"))
@@ -377,7 +417,7 @@ class HtdigestFileTest(TestCase):
         self.assertEqual(get_file(path), self.sample_02)
 
     def test_02_set_password(self):
-        "test update()"
+        """test update()"""
         ht = apache.HtdigestFile.from_string(self.sample_01)
         self.assertTrue(ht.set_password("user2", "realm", "pass2x"))
         self.assertFalse(ht.set_password("user5", "realm", "pass5"))
@@ -405,7 +445,7 @@ class HtdigestFileTest(TestCase):
     # TODO: test set_password autosave
 
     def test_03_users(self):
-        "test users()"
+        """test users()"""
         ht = apache.HtdigestFile.from_string(self.sample_01)
         ht.set_password("user5", "realm", "pass5")
         ht.delete("user3", "realm")
@@ -415,7 +455,7 @@ class HtdigestFileTest(TestCase):
         self.assertRaises(TypeError, ht.users, 1)
 
     def test_04_check_password(self):
-        "test check_password()"
+        """test check_password()"""
         ht = apache.HtdigestFile.from_string(self.sample_01)
         self.assertRaises(TypeError, ht.check_password, 1, 'realm', 'pass5')
         self.assertRaises(TypeError, ht.check_password, 'user', 1, 'pass5')
@@ -440,7 +480,7 @@ class HtdigestFileTest(TestCase):
         self.assertRaises(ValueError, ht.check_password, "user:", "realm", "pass")
 
     def test_05_load(self):
-        "test load()"
+        """test load()"""
         # setup empty file
         path = self.mktemp()
         set_file(path, "")
@@ -481,7 +521,7 @@ class HtdigestFileTest(TestCase):
         self.assertEqual(ha.to_string(), b(""))
 
     def test_06_save(self):
-        "test save()"
+        """test save()"""
         # load from file
         path = self.mktemp()
         set_file(path, self.sample_01)
@@ -503,7 +543,7 @@ class HtdigestFileTest(TestCase):
         self.assertEqual(get_file(path), hb.to_string())
 
     def test_07_realms(self):
-        "test realms() & delete_realm()"
+        """test realms() & delete_realm()"""
         ht = apache.HtdigestFile.from_string(self.sample_01)
 
         self.assertEqual(ht.delete_realm("x"), 0)
@@ -514,7 +554,7 @@ class HtdigestFileTest(TestCase):
         self.assertEqual(ht.to_string(), b(""))
 
     def test_08_get_hash(self):
-        "test get_hash()"
+        """test get_hash()"""
         ht = apache.HtdigestFile.from_string(self.sample_01)
         self.assertEqual(ht.get_hash("user3", "realm"), "a500bb8c02f6a9170ae46af10c898744")
         self.assertEqual(ht.get_hash("user4", "realm"), "ab7b5d5f28ccc7666315f508c7358519")
@@ -524,7 +564,7 @@ class HtdigestFileTest(TestCase):
             self.assertEqual(ht.find("user4", "realm"), "ab7b5d5f28ccc7666315f508c7358519")
 
     def test_09_encodings(self):
-        "test encoding parameter"
+        """test encoding parameter"""
         # test bad encodings cause failure in constructor
         self.assertRaises(ValueError, apache.HtdigestFile, encoding="utf-16")
 
@@ -539,7 +579,7 @@ class HtdigestFileTest(TestCase):
         self.assertEqual(ht.users(u("realm\u00e6")), [ u("user\u00e6") ])
 
     def test_10_to_string(self):
-        "test to_string()"
+        """test to_string()"""
 
         # check sample
         ht = apache.HtdigestFile.from_string(self.sample_01)

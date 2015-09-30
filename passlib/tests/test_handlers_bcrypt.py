@@ -71,6 +71,20 @@ class _bcrypt_test(HandlerCase):
                 '$2y$05$/OK.fbVrR/bpIqNJ5ianF.Sa7shbm4.OzKpvFnX1pQLmQW96oUlCq'),
 
         #
+        # bsd wraparound bug (fixed in 2b)
+        #
+
+        # NOTE: if backend is vulnerable, password will hash the same as '0'*72
+        #       ("$2a$04$R1lJ2gkNaoPGdafE.H.16.nVyh2niHsGJhayOHLMiXlI45o8/DU.6"),
+        #       rather than same as ("0123456789"*8)[:72]
+        # 255 should be sufficient, but checking
+        (("0123456789"*26)[:254], '$2a$04$R1lJ2gkNaoPGdafE.H.16.1MKHPvmKwryeulRe225LKProWYwt9Oi'),
+        (("0123456789"*26)[:255], '$2a$04$R1lJ2gkNaoPGdafE.H.16.1MKHPvmKwryeulRe225LKProWYwt9Oi'),
+        (("0123456789"*26)[:256], '$2a$04$R1lJ2gkNaoPGdafE.H.16.1MKHPvmKwryeulRe225LKProWYwt9Oi'),
+        (("0123456789"*26)[:257], '$2a$04$R1lJ2gkNaoPGdafE.H.16.1MKHPvmKwryeulRe225LKProWYwt9Oi'),
+
+
+        #
         # from py-bcrypt tests
         #
         ('', '$2a$06$DCq7YPn5Rq63x1Lad4cll.TV4S6ytwfsfvkgY8jIucDrjc8deX1s.'),
@@ -88,6 +102,11 @@ class _bcrypt_test(HandlerCase):
         # ensures utf-8 used for unicode
         (UPASS_TABLE,
                 '$2a$05$Z17AXnnlpzddNUvnC6cZNOSwMA/8oNiKnHTHTwLlBijfucQQlHjaG'),
+
+        # ensure 2b support
+        (UPASS_TABLE,
+                '$2b$05$Z17AXnnlpzddNUvnC6cZNOSwMA/8oNiKnHTHTwLlBijfucQQlHjaG'),
+
         ]
 
     if TEST_MODE("full"):
@@ -116,7 +135,7 @@ class _bcrypt_test(HandlerCase):
 
     known_unidentified_hashes = [
         # invalid minor version
-        "$2b$12$EXRkfkdmXnagzds2SSitu.MW9.gAVqa9eLS1//RYtYCmB1eLHg.9q",
+        "$2f$12$EXRkfkdmXnagzds2SSitu.MW9.gAVqa9eLS1//RYtYCmB1eLHg.9q",
         "$2`$12$EXRkfkdmXnagzds2SSitu.MW9.gAVqa9eLS1//RYtYCmB1eLHg.9q",
     ]
 
@@ -156,6 +175,7 @@ class _bcrypt_test(HandlerCase):
                 self.addCleanup(os.environ.__delitem__, key)
             os.environ[key] = "enabled"
         super(_bcrypt_test, self).setUp()
+        warnings.filterwarnings("ignore", ".*backend is vulnerable to the bsd wraparound bug.*")
 
     def populate_settings(self, kwds):
         # builtin is still just way too slow.
@@ -167,11 +187,13 @@ class _bcrypt_test(HandlerCase):
     # fuzz testing
     #===================================================================
     def os_supports_ident(self, hash):
-        "check if OS crypt is expected to support given ident"
+        """check if OS crypt is expected to support given ident"""
         if hash is None:
             return True
         # most OSes won't support 2x/2y
         # XXX: definitely not the BSDs, but what about the linux variants?
+        # XXX: replace this all with 'handler._lacks_2{x}_support' feature detection?
+        #      could even just do call to safe_crypt(ident + salt) and see what we get
         from passlib.handlers.bcrypt import IDENT_2X, IDENT_2Y
         if hash.startswith(IDENT_2X) or hash.startswith(IDENT_2Y):
             return False
@@ -179,21 +201,22 @@ class _bcrypt_test(HandlerCase):
 
     def fuzz_verifier_bcrypt(self):
         # test against bcrypt, if available
-        from passlib.handlers.bcrypt import IDENT_2, IDENT_2A, IDENT_2X, IDENT_2Y
+        from passlib.handlers.bcrypt import IDENT_2, IDENT_2A, IDENT_2B, IDENT_2X, IDENT_2Y, _detect_pybcrypt
         from passlib.utils import to_native_str, to_bytes
         try:
             import bcrypt
         except ImportError:
             return
-        if not hasattr(bcrypt, "_ffi"):
+        if _detect_pybcrypt():
             return
         def check_bcrypt(secret, hash):
-            "bcrypt"
+            """bcrypt"""
             secret = to_bytes(secret, self.fuzz_password_encoding)
-            #if hash.startswith(IDENT_2Y):
-            #    hash = IDENT_2A + hash[4:]
-            if hash.startswith(IDENT_2):
-                # bcryptor doesn't support $2$ hashes; but we can fake it
+            if hash.startswith(IDENT_2B):
+                # bcrypt <1.1 lacks 2b support
+                hash = IDENT_2A + hash[4:]
+            elif hash.startswith(IDENT_2):
+                # bcrypt doesn't support $2$ hashes; but we can fake it
                 # using the $2a$ algorithm, by repeating the password until
                 # it's 72 chars in length.
                 hash = IDENT_2A + hash[3:]
@@ -203,23 +226,25 @@ class _bcrypt_test(HandlerCase):
             try:
                 return bcrypt.hashpw(secret, hash) == hash
             except ValueError:
-                raise ValueError("bcrypt rejected hash: %r" % (hash,))
+                raise ValueError("bcrypt rejected hash: %r (secret=%r)" % (hash, secret))
         return check_bcrypt
 
     def fuzz_verifier_pybcrypt(self):
         # test against py-bcrypt, if available
-        from passlib.handlers.bcrypt import IDENT_2, IDENT_2A, IDENT_2X, IDENT_2Y
+        from passlib.handlers.bcrypt import IDENT_2, IDENT_2A, IDENT_2B, IDENT_2X, IDENT_2Y, _detect_pybcrypt
         from passlib.utils import to_native_str
         try:
             import bcrypt
         except ImportError:
             return
-        if hasattr(bcrypt, "_ffi"):
+        if not _detect_pybcrypt():
             return
         def check_pybcrypt(secret, hash):
-            "pybcrypt"
+            """pybcrypt"""
             secret = to_native_str(secret, self.fuzz_password_encoding)
-            if hash.startswith(IDENT_2Y):
+            if len(secret) > 200:  # vulnerable to wraparound bug
+                secret = secret[:200]
+            if hash.startswith((IDENT_2B, IDENT_2Y)):
                 hash = IDENT_2A + hash[4:]
             try:
                 return bcrypt.hashpw(secret, hash) == hash
@@ -229,16 +254,16 @@ class _bcrypt_test(HandlerCase):
 
     def fuzz_verifier_bcryptor(self):
         # test against bcryptor, if available
-        from passlib.handlers.bcrypt import IDENT_2, IDENT_2A, IDENT_2Y
+        from passlib.handlers.bcrypt import IDENT_2, IDENT_2A, IDENT_2Y, IDENT_2B
         from passlib.utils import to_native_str
         try:
             from bcryptor.engine import Engine
         except ImportError:
             return
         def check_bcryptor(secret, hash):
-            "bcryptor"
+            """bcryptor"""
             secret = to_native_str(secret, self.fuzz_password_encoding)
-            if hash.startswith(IDENT_2Y):
+            if hash.startswith((IDENT_2B, IDENT_2Y)):
                 hash = IDENT_2A + hash[4:]
             elif hash.startswith(IDENT_2):
                 # bcryptor doesn't support $2$ hashes; but we can fake it
@@ -297,7 +322,7 @@ class _bcrypt_test(HandlerCase):
     ]
 
     def test_90_bcrypt_padding(self):
-        "test passlib correctly handles bcrypt padding bits"
+        """test passlib correctly handles bcrypt padding bits"""
         self.require_TEST_MODE("full")
         #
         # prevents reccurrence of issue 25 (https://code.google.com/p/passlib/issues/detail?id=25)
@@ -327,10 +352,12 @@ class _bcrypt_test(HandlerCase):
         self.assertEqual(hash, "$2a$05$" + "." * 22)
 
         #
-        # make sure genhash() corrects input
+        # test public methods against good & bad hashes
         #
         samples = self.known_incorrect_padding
         for pwd, bad, good in samples:
+
+            # make sure genhash() corrects bad configs, leaves good unchanged
             with self.assertWarningList([corr_desc]):
                 self.assertEqual(bcrypt.genhash(pwd, bad), good)
             with self.assertWarningList([]):
@@ -437,6 +464,7 @@ class _bcrypt_sha256_test(HandlerCase):
                 self.addCleanup(os.environ.__delitem__, key)
             os.environ[key] = "enabled"
         super(_bcrypt_sha256_test, self).setUp()
+        warnings.filterwarnings("ignore", ".*backend is vulnerable to the bsd wraparound bug.*")
 
     def populate_settings(self, kwds):
         # builtin is still just way too slow.

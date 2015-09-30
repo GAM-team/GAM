@@ -31,7 +31,7 @@ def hb(source):
 # test assorted crypto helpers
 #=============================================================================
 class CryptoTest(TestCase):
-    "test various crypto functions"
+    """test various crypto functions"""
 
     ndn_formats = ["hashlib", "iana"]
     ndn_values = [
@@ -48,7 +48,7 @@ class CryptoTest(TestCase):
     ]
 
     def test_norm_hash_name(self):
-        "test norm_hash_name()"
+        """test norm_hash_name()"""
         from itertools import chain
         from passlib.utils.pbkdf2 import norm_hash_name, _nhn_hash_names
 
@@ -123,7 +123,7 @@ class DesTest(TestCase):
     ]
 
     def test_01_expand(self):
-        "test expand_des_key()"
+        """test expand_des_key()"""
         from passlib.utils.des import expand_des_key, shrink_des_key, \
                                       _KDATA_MASK, INT_56_MASK
 
@@ -147,7 +147,7 @@ class DesTest(TestCase):
         self.assertRaises(ValueError, expand_des_key, b("\x00")*6)
 
     def test_02_shrink(self):
-        "test shrink_des_key()"
+        """test shrink_des_key()"""
         from passlib.utils.des import expand_des_key, shrink_des_key, \
                                       INT_64_MASK
         from passlib.utils import random, getrandbytes
@@ -172,13 +172,13 @@ class DesTest(TestCase):
         self.assertRaises(ValueError, shrink_des_key, b("\x00")*7)
 
     def _random_parity(self, key):
-        "randomize parity bits"
+        """randomize parity bits"""
         from passlib.utils.des import _KDATA_MASK, _KPARITY_MASK, INT_64_MASK
         from passlib.utils import rng
         return (key & _KDATA_MASK) | (rng.randint(0,INT_64_MASK) & _KPARITY_MASK)
 
     def test_03_encrypt_bytes(self):
-        "test des_encrypt_block()"
+        """test des_encrypt_block()"""
         from passlib.utils.des import (des_encrypt_block, shrink_des_key,
                                        _pack64, _unpack64)
 
@@ -224,8 +224,8 @@ class DesTest(TestCase):
         self.assertRaises(ValueError, des_encrypt_block, stub, stub, 0, rounds=0)
 
     def test_04_encrypt_ints(self):
-        "test des_encrypt_int_block()"
-        from passlib.utils.des import (des_encrypt_int_block, shrink_des_key)
+        """test des_encrypt_int_block()"""
+        from passlib.utils.des import des_encrypt_int_block
 
         # run through test vectors
         for key, plaintext, correct in self.des_test_vectors:
@@ -285,7 +285,7 @@ class _MD4_Test(TestCase):
     ]
 
     def test_md4_update(self):
-        "test md4 update"
+        """test md4 update"""
         from passlib.utils.md4 import md4
         h = md4(b(''))
         self.assertEqual(h.hexdigest(), "31d6cfe0d16ae931b73c59d7e0c089c0")
@@ -302,21 +302,21 @@ class _MD4_Test(TestCase):
         self.assertEqual(h.hexdigest(), "d79e1c308aa5bbcdeea8ed63df412da9")
 
     def test_md4_hexdigest(self):
-        "test md4 hexdigest()"
+        """test md4 hexdigest()"""
         from passlib.utils.md4 import md4
         for input, hex in self.vectors:
             out = md4(input).hexdigest()
             self.assertEqual(out, hex)
 
     def test_md4_digest(self):
-        "test md4 digest()"
+        """test md4 digest()"""
         from passlib.utils.md4 import md4
         for input, hex in self.vectors:
             out = bascii_to_str(hexlify(md4(input).digest()))
             self.assertEqual(out, hex)
 
     def test_md4_copy(self):
-        "test md4 copy()"
+        """test md4 copy()"""
         from passlib.utils.md4 import md4
         h = md4(b('abc'))
 
@@ -342,7 +342,7 @@ MD4_Builtin_Test = skipUnless(TEST_MODE("full") or not has_native_md4,
 # test PBKDF1 support
 #=============================================================================
 class Pbkdf1_Test(TestCase):
-    "test kdf helpers"
+    """test kdf helpers"""
     descriptionPrefix = "pbkdf1"
 
     pbkdf1_tests = [
@@ -369,14 +369,14 @@ class Pbkdf1_Test(TestCase):
         )
 
     def test_known(self):
-        "test reference vectors"
+        """test reference vectors"""
         from passlib.utils.pbkdf2 import pbkdf1
         for secret, salt, rounds, keylen, digest, correct in self.pbkdf1_tests:
             result = pbkdf1(secret, salt, rounds, keylen, digest)
             self.assertEqual(result, correct)
 
     def test_border(self):
-        "test border cases"
+        """test border cases"""
         from passlib.utils.pbkdf2 import pbkdf1
         def helper(secret=b('secret'), salt=b('salt'), rounds=1, keylen=1, hash='md5'):
             return pbkdf1(secret, salt, rounds, keylen, hash)
@@ -402,7 +402,7 @@ class Pbkdf1_Test(TestCase):
 # test PBKDF2 support
 #=============================================================================
 class _Pbkdf2_Test(TestCase):
-    "test pbkdf2() support"
+    """test pbkdf2() support"""
     _disable_m2crypto = False
 
     def setUp(self):
@@ -533,7 +533,7 @@ class _Pbkdf2_Test(TestCase):
         ]
 
     def test_known(self):
-        "test reference vectors"
+        """test reference vectors"""
         from passlib.utils.pbkdf2 import pbkdf2
         for row in self.pbkdf2_test_vectors:
             correct, secret, salt, rounds, keylen = row[:5]
@@ -542,7 +542,7 @@ class _Pbkdf2_Test(TestCase):
             self.assertEqual(result, correct)
 
     def test_border(self):
-        "test border cases"
+        """test border cases"""
         from passlib.utils.pbkdf2 import pbkdf2
         def helper(secret=b('password'), salt=b('salt'), rounds=1, keylen=None, prf="hmac-sha1"):
             return pbkdf2(secret, salt, rounds, keylen, prf)
@@ -568,7 +568,7 @@ class _Pbkdf2_Test(TestCase):
         self.assertRaises(TypeError, helper, prf=5)
 
     def test_default_keylen(self):
-        "test keylen==None"
+        """test keylen==None"""
         from passlib.utils.pbkdf2 import pbkdf2
         def helper(secret=b('password'), salt=b('salt'), rounds=1, keylen=None, prf="hmac-sha1"):
             return pbkdf2(secret, salt, rounds, keylen, prf)
@@ -576,7 +576,7 @@ class _Pbkdf2_Test(TestCase):
         self.assertEqual(len(helper(prf='hmac-sha256')), 32)
 
     def test_custom_prf(self):
-        "test custom prf function"
+        """test custom prf function"""
         from passlib.utils.pbkdf2 import pbkdf2
         def prf(key, msg):
             return hashlib.md5(key+msg+b('fooey')).digest()

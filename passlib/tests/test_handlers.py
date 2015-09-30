@@ -30,7 +30,7 @@ UPASS_TABLE = u("t\u00e1\u0411\u2113\u0259")
 PASS_TABLE_UTF8 = b('t\xc3\xa1\xd0\x91\xe2\x84\x93\xc9\x99') # utf-8
 
 def get_handler_case(scheme):
-    "return HandlerCase instance for scheme, used by other tests"
+    """return HandlerCase instance for scheme, used by other tests"""
     from passlib.registry import get_crypt_handler
     handler = get_crypt_handler(scheme)
     if hasattr(handler, "backends") and not hasattr(handler, "wrapped") and handler.name != "django_bcrypt_sha256":
@@ -122,7 +122,7 @@ class bigcrypt_test(HandlerCase):
 # bsdi crypt
 #=============================================================================
 class _bsdi_crypt_test(HandlerCase):
-    "test BSDiCrypt algorithm"
+    """test BSDiCrypt algorithm"""
     handler = hash.bsdi_crypt
 
     known_correct_hashes = [
@@ -291,7 +291,7 @@ class cisco_type7_test(HandlerCase):
     ]
 
     def test_90_decode(self):
-        "test cisco_type7.decode()"
+        """test cisco_type7.decode()"""
         from passlib.utils import to_unicode, to_bytes
 
         handler = self.handler
@@ -305,7 +305,7 @@ class cisco_type7_test(HandlerCase):
                           '0958EDC8A9F495F6F8A5FD', 'ascii')
 
     def test_91_salt(self):
-        "test salt value border cases"
+        """test salt value border cases"""
         handler = self.handler
         self.assertRaises(TypeError, handler, salt=None)
         handler(salt=None, use_defaults=True)
@@ -348,7 +348,7 @@ class crypt16_test(HandlerCase):
 # des crypt
 #=============================================================================
 class _des_crypt_test(HandlerCase):
-    "test des-crypt algorithm"
+    """test des-crypt algorithm"""
     handler = hash.des_crypt
     secret_size = 8
 
@@ -396,7 +396,7 @@ des_crypt_os_crypt_test, des_crypt_builtin_test = \
 # fshp
 #=============================================================================
 class fshp_test(HandlerCase):
-    "test fshp algorithm"
+    """test fshp algorithm"""
     handler = hash.fshp
 
     known_correct_hashes = [
@@ -449,7 +449,7 @@ class fshp_test(HandlerCase):
     ]
 
     def test_90_variant(self):
-        "test variant keyword"
+        """test variant keyword"""
         handler = self.handler
         kwds = dict(salt=b('a'), rounds=1)
 
@@ -546,7 +546,7 @@ class htdigest_test(UserHandlerMixin, HandlerCase):
         raise self.skipTest("test case doesn't support 'realm' keyword")
 
     def populate_context(self, secret, kwds):
-        "insert username into kwds"
+        """insert username into kwds"""
         if isinstance(secret, tuple):
             secret, user, realm = secret
         else:
@@ -702,7 +702,7 @@ ldap_sha1_crypt_os_crypt_test, = _ldap_sha1_crypt_test.create_backend_cases(["os
 class ldap_pbkdf2_test(TestCase):
 
     def test_wrappers(self):
-        "test ldap pbkdf2 wrappers"
+        """test ldap pbkdf2 wrappers"""
 
         self.assertTrue(
             hash.ldap_pbkdf2_sha1.verify(
@@ -768,7 +768,7 @@ class lmhash_test(EncodingHandlerMixin, HandlerCase):
     ]
 
     def test_90_raw(self):
-        "test lmhash.raw() method"
+        """test lmhash.raw() method"""
         from binascii import unhexlify
         from passlib.utils.compat import str_to_bascii
         lmhash = self.handler
@@ -1134,7 +1134,7 @@ class mysql323_test(HandlerCase):
     ]
 
     def test_90_whitespace(self):
-        "check whitespace is ignored per spec"
+        """check whitespace is ignored per spec"""
         h = self.do_encrypt("mypass")
         h2 = self.do_encrypt("my pass")
         self.assertEqual(h, h2)
@@ -1575,7 +1575,7 @@ class scram_test(HandlerCase):
         warnings.filterwarnings("ignore", r"norm_hash_name\(\): unknown hash")
 
     def test_90_algs(self):
-        "test parsing of 'algs' setting"
+        """test parsing of 'algs' setting"""
         defaults = dict(salt=b('A')*10, rounds=1000)
         def parse(algs, **kwds):
             for k in defaults:
@@ -1605,7 +1605,7 @@ class scram_test(HandlerCase):
                           checksum={"sha-1": b("\x00"*20)})
 
     def test_90_checksums(self):
-        "test internal parsing of 'checksum' keyword"
+        """test internal parsing of 'checksum' keyword"""
         # check non-bytes checksum values are rejected
         self.assertRaises(TypeError, self.handler, use_defaults=True,
                           checksum={'sha-1':  u('X')*20})
@@ -1617,7 +1617,7 @@ class scram_test(HandlerCase):
         # XXX: anything else that's not tested by the other code already?
 
     def test_91_extract_digest_info(self):
-        "test scram.extract_digest_info()"
+        """test scram.extract_digest_info()"""
         edi = self.handler.extract_digest_info
 
         # return appropriate value or throw KeyError
@@ -1635,7 +1635,7 @@ class scram_test(HandlerCase):
         self.assertRaises(ValueError, edi, c, "ddd")
 
     def test_92_extract_digest_algs(self):
-        "test scram.extract_digest_algs()"
+        """test scram.extract_digest_algs()"""
         eda = self.handler.extract_digest_algs
 
         self.assertEqual(eda('$scram$4096$QSXCR.Q6sek8bf92$'
@@ -1653,10 +1653,9 @@ class scram_test(HandlerCase):
                           ["sha-1","sha-256","sha-512"])
 
     def test_93_derive_digest(self):
-        "test scram.derive_digest()"
+        """test scram.derive_digest()"""
         # NOTE: this just does a light test, since derive_digest
         # is used by encrypt / verify, and is tested pretty well via those.
-
         hash = self.handler.derive_digest
 
         # check various encodings of password work.
@@ -1679,7 +1678,7 @@ class scram_test(HandlerCase):
         self.assertRaises(TypeError, hash, "IX", u('\x01'), 1000, 'md5')
 
     def test_94_saslprep(self):
-        "test encrypt/verify use saslprep"
+        """test encrypt/verify use saslprep"""
         # NOTE: this just does a light test that saslprep() is being
         # called in various places, relying in saslpreps()'s tests
         # to verify full normalization behavior.
@@ -1699,7 +1698,7 @@ class scram_test(HandlerCase):
         self.assertRaises(ValueError, self.do_verify, u("\uFDD0"), h)
 
     def test_95_context_algs(self):
-        "test handling of 'algs' in context object"
+        """test handling of 'algs' in context object"""
         handler = self.handler
         from passlib.context import CryptContext
         c1 = CryptContext(["scram"], scram__algs="sha1,md5")
@@ -1715,7 +1714,7 @@ class scram_test(HandlerCase):
         self.assertTrue(c2.needs_update(h))
 
     def test_96_full_verify(self):
-        "test verify(full=True) flag"
+        """test verify(full=True) flag"""
         def vpart(s, h):
             return self.handler.verify(s, h)
         def vfull(s, h):
@@ -1803,7 +1802,6 @@ sha1_crypt_os_crypt_test, sha1_crypt_builtin_test = \
 # NOTE: all roundup hashes use PrefixWrapper,
 #       so there's nothing natively to test.
 #       so we just have a few quick cases...
-from passlib.handlers import roundup
 
 class RoundupTest(TestCase):
 
@@ -2125,7 +2123,6 @@ class sun_md5_crypt_test(HandlerCase):
         ("solaris", True),
         ("freebsd|openbsd|netbsd|linux|darwin", False),
     ]
-
     def do_verify(self, secret, hash):
         # override to fake error for "$..." hash strings listed in known_config.
         # these have to be hash strings, in order to test bare salt issue.
@@ -2162,7 +2159,7 @@ class unix_disabled_test(HandlerCase):
         super(unix_disabled_test, self).test_76_hash_border()
 
     def test_90_special(self):
-        "test marker option & special behavior"
+        """test marker option & special behavior"""
         handler = self.handler
 
         # preserve hash if provided
@@ -2194,16 +2191,16 @@ class unix_fallback_test(HandlerCase):
         warnings.filterwarnings("ignore", "'unix_fallback' is deprecated")
 
     def test_90_wildcard(self):
-        "test enable_wildcard flag"
+        """test enable_wildcard flag"""
         h = self.handler
         self.assertTrue(h.verify('password','', enable_wildcard=True))
         self.assertFalse(h.verify('password',''))
-        for c in ("!*x"):
+        for c in "!*x":
             self.assertFalse(h.verify('password',c, enable_wildcard=True))
             self.assertFalse(h.verify('password',c))
 
     def test_91_preserves_existing(self):
-        "test preserves existing disabled hash"
+        """test preserves existing disabled hash"""
         handler = self.handler
 
         # use marker if no hash

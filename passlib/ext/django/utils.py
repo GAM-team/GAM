@@ -123,14 +123,14 @@ DJANGO_PASSLIB_PREFIX = "django_"
 _other_django_hashes = ["hex_md5"]
 
 def passlib_to_hasher_name(passlib_name):
-    "convert passlib handler name -> hasher name"
+    """convert passlib handler name -> hasher name"""
     handler = get_crypt_handler(passlib_name)
     if hasattr(handler, "django_name"):
         return handler.django_name
     return PASSLIB_HASHER_PREFIX + passlib_name
 
 def hasher_to_passlib_name(hasher_name):
-    "convert hasher name -> passlib handler name"
+    """convert hasher name -> passlib handler name"""
     if hasher_name.startswith(PASSLIB_HASHER_PREFIX):
         return hasher_name[len(PASSLIB_HASHER_PREFIX):]
     if hasher_name == "unsalted_sha1":
@@ -186,7 +186,9 @@ class _HasherWrapper(object):
     _translate_kwds = dict(checksum="hash", rounds="iterations")
 
     def safe_summary(self, encoded):
-        from django.contrib.auth.hashers import mask_hash, _, SortedDict
+        from django.contrib.auth.hashers import mask_hash
+        from django.utils.translation import ugettext_noop as _
+        from django.utils.datastructures import SortedDict
         handler = self.passlib_handler
         items = [
             # since this is user-facing, we're reporting passlib's name,
@@ -252,14 +254,14 @@ def get_passlib_hasher(handler, algorithm=None):
         return hasher
 
 def _get_hasher(algorithm):
-    "wrapper to call django.contrib.auth.hashers:get_hasher()"
+    """wrapper to call django.contrib.auth.hashers:get_hasher()"""
     import sys
     module = sys.modules.get("passlib.ext.django.models")
     if module is None:
         # we haven't patched django, so just import directly
         from django.contrib.auth.hashers import get_hasher
     else:
-        # we've patched django, so have to use patch manager to retreive
+        # we've patched django, so have to use patch manager to retrieve
         # original get_hasher() function...
         get_hasher = module._manager.getorig("django.contrib.auth.hashers:get_hasher")
     return get_hasher(algorithm)
@@ -364,7 +366,7 @@ def _get_hasher(algorithm):
 _UNSET = object()
 
 class _PatchManager(object):
-    "helper to manage monkeypatches and run sanity checks"
+    """helper to manage monkeypatches and run sanity checks"""
 
     # NOTE: this could easily use a dict interface,
     #       but keeping it distinct to make clear that it's not a dict,
@@ -383,7 +385,7 @@ class _PatchManager(object):
     __bool__ = __nonzero__ = lambda self: bool(self._state)
 
     def _import_path(self, path):
-        "retrieve obj and final attribute name from resource path"
+        """retrieve obj and final attribute name from resource path"""
         name, attr = path.split(":")
         obj = __import__(name, fromlist=[attr], level=0)
         while '.' in attr:
@@ -393,7 +395,7 @@ class _PatchManager(object):
 
     @staticmethod
     def _is_same_value(left, right):
-        "check if two values are the same (stripping method wrappers, etc)"
+        """check if two values are the same (stripping method wrappers, etc)"""
         return get_method_function(left) == get_method_function(right)
 
     #===================================================================
@@ -404,11 +406,11 @@ class _PatchManager(object):
         return getattr(obj, attr, default)
 
     def get(self, path, default=None):
-        "return current value for path"
+        """return current value for path"""
         return self._get_path(path, default)
 
     def getorig(self, path, default=None):
-        "return original (unpatched) value for path"
+        """return original (unpatched) value for path"""
         try:
             value, _= self._state[path]
         except KeyError:
@@ -439,7 +441,7 @@ class _PatchManager(object):
             setattr(obj, attr, value)
 
     def patch(self, path, value):
-        "monkeypatch object+attr at <path> to have <value>, stores original"
+        """monkeypatch object+attr at <path> to have <value>, stores original"""
         assert value != _UNSET
         current = self._get_path(path)
         try:
@@ -461,7 +463,7 @@ class _PatchManager(object):
     ##        self.patch(path, value)
 
     def monkeypatch(self, parent, name=None, enable=True):
-        "function decorator which patches function of same name in <parent>"
+        """function decorator which patches function of same name in <parent>"""
         def builder(func):
             if enable:
                 sep = "." if ":" in parent else ":"

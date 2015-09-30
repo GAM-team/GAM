@@ -97,6 +97,7 @@ if PY3:
         return s.encode("latin-1")
 
     base_string_types = (unicode, bytes)
+    native_string_types = (unicode,)
 
 else:
     unicode = builtins.unicode
@@ -111,6 +112,7 @@ else:
         return s
 
     base_string_types = basestring
+    native_string_types = (basestring,)
 
 #=============================================================================
 # unicode & bytes helpers
@@ -253,7 +255,7 @@ else:
 if PY_MAX_25:
     _undef = object()
     def next(itr, default=_undef):
-        "compat wrapper for next()"
+        """compat wrapper for next()"""
         if default is _undef:
             return itr.next()
         try:
@@ -282,7 +284,7 @@ else:
 # introspection
 #=============================================================================
 def exc_err():
-    "return current error object (to avoid try/except syntax change)"
+    """return current error object (to avoid try/except syntax change)"""
     return sys.exc_info()[1]
 
 if PY3:
@@ -291,7 +293,7 @@ else:
     method_function_attr = "im_func"
 
 def get_method_function(func):
-    "given (potential) method, return underlying function"
+    """given (potential) method, return underlying function"""
     return getattr(func, method_function_attr, func)
 
 #=============================================================================
@@ -366,7 +368,7 @@ else:
 from types import ModuleType
 
 def _import_object(source):
-    "helper to import object from module; accept format `path.to.object`"
+    """helper to import object from module; accept format `path.to.object`"""
     modname, modattr = source.rsplit(".",1)
     mod = __import__(modname, fromlist=[modattr], level=0)
     return getattr(mod, modattr)

@@ -191,7 +191,7 @@ def _raw_md5_crypt(pwd, salt, use_apr=False):
 # handler
 #=============================================================================
 class _MD5_Common(uh.HasSalt, uh.GenericHandler):
-    "common code for md5_crypt and apr_md5_crypt"
+    """common code for md5_crypt and apr_md5_crypt"""
     #===================================================================
     # class attrs
     #===================================================================

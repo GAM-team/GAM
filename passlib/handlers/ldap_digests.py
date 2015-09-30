@@ -38,7 +38,7 @@ __all__ = [
 # ldap helpers
 #=============================================================================
 class _Base64DigestHelper(uh.StaticHandler):
-    "helper for ldap_md5 / ldap_sha1"
+    """helper for ldap_md5 / ldap_sha1"""
     # XXX: could combine this with hex digests in digests.py
 
     ident = None # required - prefix identifier
@@ -48,7 +48,7 @@ class _Base64DigestHelper(uh.StaticHandler):
 
     @classproperty
     def _hash_prefix(cls):
-        "tell StaticHandler to strip ident from checksum"
+        """tell StaticHandler to strip ident from checksum"""
         return cls.ident
 
     def _calc_checksum(self, secret):
@@ -58,7 +58,7 @@ class _Base64DigestHelper(uh.StaticHandler):
         return b64encode(chk).decode("ascii")
 
 class _SaltedBase64DigestHelper(uh.HasRawSalt, uh.HasRawChecksum, uh.GenericHandler):
-    "helper for ldap_salted_md5 / ldap_salted_sha1"
+    """helper for ldap_salted_md5 / ldap_salted_sha1"""
     setting_kwds = ("salt", "salt_size")
     checksum_chars = uh.PADDED_BASE64_CHARS
 

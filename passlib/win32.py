@@ -51,9 +51,9 @@ LM_MAGIC = b("KGS!@#$%")
 raw_nthash = nthash.raw_nthash
 
 def raw_lmhash(secret, encoding="ascii", hex=False):
-    "encode password using des-based LMHASH algorithm; returns string of raw bytes, or unicode hex"
+    """encode password using des-based LMHASH algorithm; returns string of raw bytes, or unicode hex"""
     # NOTE: various references say LMHASH uses the OEM codepage of the host
-    #       for it's encoding. until a clear reference is found,
+    #       for its encoding. until a clear reference is found,
     #       as well as a path for getting the encoding,
     #       letting this default to "ascii" to prevent incorrect hashes
     #       from being made w/o user explicitly choosing an encoding.

@@ -18,7 +18,7 @@ from passlib.utils import getrandstr, JYTHON, rng
 from passlib.utils.compat import b, bytes, bascii_to_str, str_to_uascii, \
                                  uascii_to_str, unicode, PY_MAX_25, SUPPORTS_DIR_METHOD
 import passlib.utils.handlers as uh
-from passlib.tests.utils import HandlerCase, TestCase, catch_warnings
+from passlib.tests.utils import HandlerCase, TestCase, catch_warnings, patchAttr
 from passlib.utils.compat import u, PY3
 # module
 log = getLogger(__name__)
@@ -27,7 +27,7 @@ log = getLogger(__name__)
 # utils
 #=============================================================================
 def _makelang(alphabet, size):
-    "generate all strings of given size using alphabet"
+    """generate all strings of given size using alphabet"""
     def helper(size):
         if size < 2:
             for char in alphabet:
@@ -42,13 +42,15 @@ def _makelang(alphabet, size):
 # test GenericHandler & associates mixin classes
 #=============================================================================
 class SkeletonTest(TestCase):
-    "test hash support classes"
+    """test hash support classes"""
+
+    patchAttr = patchAttr
 
     #===================================================================
     # StaticHandler
     #===================================================================
     def test_00_static_handler(self):
-        "test StaticHandler class"
+        """test StaticHandler class"""
 
         class d1(uh.StaticHandler):
             name = "d1"
@@ -94,7 +96,7 @@ class SkeletonTest(TestCase):
         self.assertEqual(d1.encrypt('s', flag=True), '_b')
 
     def test_01_calc_checksum_hack(self):
-        "test StaticHandler legacy attr"
+        """test StaticHandler legacy attr"""
         # release 1.5 StaticHandler required genhash(),
         # not _calc_checksum, be implemented. we have backward compat wrapper,
         # this tests that it works.
@@ -103,7 +105,7 @@ class SkeletonTest(TestCase):
             name = "d1"
 
             @classmethod
-            def identify(self, hash):
+            def identify(cls, hash):
                 if not hash or len(hash) != 40:
                     return False
                 try:
@@ -111,7 +113,6 @@ class SkeletonTest(TestCase):
                 except ValueError:
                     return False
                 return True
-
             @classmethod
             def genhash(cls, secret, hash):
                 if secret is None:
@@ -121,7 +122,6 @@ class SkeletonTest(TestCase):
                 if hash is not None and not cls.identify(hash):
                     raise ValueError("invalid hash")
                 return hashlib.sha1(b("xyz") + secret).hexdigest()
-
             @classmethod
             def verify(cls, secret, hash):
                 if hash is None:
@@ -144,9 +144,8 @@ class SkeletonTest(TestCase):
     # GenericHandler & mixins
     #===================================================================
     def test_10_identify(self):
-        "test GenericHandler.identify()"
+        """test GenericHandler.identify()"""
         class d1(uh.GenericHandler):
-
             @classmethod
             def from_string(cls, hash):
                 if isinstance(hash, bytes):
@@ -180,7 +179,7 @@ class SkeletonTest(TestCase):
         del d1.ident
 
     def test_11_norm_checksum(self):
-        "test GenericHandler checksum handling"
+        """test GenericHandler checksum handling"""
         # setup helpers
         class d1(uh.GenericHandler):
             name = 'd1'
@@ -216,7 +215,7 @@ class SkeletonTest(TestCase):
         self.assertIs(norm_checksum(u('zzzz')), None)
 
     def test_12_norm_checksum_raw(self):
-        "test GenericHandler + HasRawChecksum mixin"
+        """test GenericHandler + HasRawChecksum mixin"""
         class d1(uh.HasRawChecksum, uh.GenericHandler):
             name = 'd1'
             checksum_size = 4
@@ -236,7 +235,7 @@ class SkeletonTest(TestCase):
         self.assertIs(norm_checksum(b('0')*4), None)
 
     def test_20_norm_salt(self):
-        "test GenericHandler + HasSalt mixin"
+        """test GenericHandler + HasSalt mixin"""
         # setup helpers
         class d1(uh.HasSalt, uh.GenericHandler):
             name = 'd1'
@@ -312,7 +311,7 @@ class SkeletonTest(TestCase):
     # TODO: test HasRawSalt mixin
 
     def test_30_norm_rounds(self):
-        "test GenericHandler + HasRounds mixin"
+        """test GenericHandler + HasRounds mixin"""
         # setup helpers
         class d1(uh.HasRounds, uh.GenericHandler):
             name = 'd1'
@@ -359,7 +358,7 @@ class SkeletonTest(TestCase):
         self.assertRaises(TypeError, norm_rounds, use_defaults=True)
 
     def test_40_backends(self):
-        "test GenericHandler + HasManyBackends mixin"
+        """test GenericHandler + HasManyBackends mixin"""
         class d1(uh.HasManyBackends, uh.GenericHandler):
             name = 'd1'
             setting_kwds = ()
@@ -412,7 +411,7 @@ class SkeletonTest(TestCase):
         self.assertRaises(ValueError, d1.has_backend, 'c')
 
     def test_50_norm_ident(self):
-        "test GenericHandler + HasManyIdents"
+        """test GenericHandler + HasManyIdents"""
         # setup helpers
         class d1(uh.HasManyIdents, uh.GenericHandler):
             name = 'd1'
@@ -458,7 +457,7 @@ class SkeletonTest(TestCase):
     # but way work correctly for some hashes
     #===================================================================
     def test_91_parsehash(self):
-        "test parsehash()"
+        """test parsehash()"""
         # NOTE: this just tests some existing GenericHandler classes
         from passlib import hash
 
@@ -514,7 +513,7 @@ class SkeletonTest(TestCase):
         ))
 
     def test_92_bitsize(self):
-        "test bitsize()"
+        """test bitsize()"""
         # NOTE: this just tests some existing GenericHandler classes
         from passlib import hash
 
@@ -527,10 +526,14 @@ class SkeletonTest(TestCase):
                          {'checksum': 186, 'salt': 132})
 
         # linear rounds
+        # NOTE: +3 comes from int(math.log(.1,2)),
+        #       where 0.1 = 10% = default allowed variation in rounds
+        self.patchAttr(hash.sha256_crypt, "default_rounds", 1 << (14 + 3))
         self.assertEqual(hash.sha256_crypt.bitsize(),
                          {'checksum': 258, 'rounds': 14, 'salt': 96})
 
         # raw checksum
+        self.patchAttr(hash.pbkdf2_sha1, "default_rounds", 1 << (13 + 3))
         self.assertEqual(hash.pbkdf2_sha1.bitsize(),
                          {'checksum': 160, 'rounds': 13, 'salt': 128})
 
@@ -546,7 +549,7 @@ class SkeletonTest(TestCase):
 # PrefixWrapper
 #=============================================================================
 class dummy_handler_in_registry(object):
-    "context manager that inserts dummy handler in registry"
+    """context manager that inserts dummy handler in registry"""
     def __init__(self, name):
         self.name = name
         self.dummy = type('dummy_' + name, (uh.GenericHandler,), dict(
@@ -566,10 +569,10 @@ class dummy_handler_in_registry(object):
         registry._unload_handler_name(self.name, locations=False)
 
 class PrefixWrapperTest(TestCase):
-    "test PrefixWrapper class"
+    """test PrefixWrapper class"""
 
     def test_00_lazy_loading(self):
-        "test PrefixWrapper lazy loading of handler"
+        """test PrefixWrapper lazy loading of handler"""
         d1 = uh.PrefixWrapper("d1", "ldap_md5", "{XXX}", "{MD5}", lazy=True)
 
         # check base state
@@ -585,7 +588,7 @@ class PrefixWrapperTest(TestCase):
             self.assertIs(d1.wrapped, ldap_md5)
 
     def test_01_active_loading(self):
-        "test PrefixWrapper active loading of handler"
+        """test PrefixWrapper active loading of handler"""
         d1 = uh.PrefixWrapper("d1", "ldap_md5", "{XXX}", "{MD5}")
 
         # check base state
@@ -598,7 +601,7 @@ class PrefixWrapperTest(TestCase):
             self.assertIs(d1.wrapped, ldap_md5)
 
     def test_02_explicit(self):
-        "test PrefixWrapper with explicitly specified handler"
+        """test PrefixWrapper with explicitly specified handler"""
 
         d1 = uh.PrefixWrapper("d1", ldap_md5, "{XXX}", "{MD5}")
 
@@ -696,7 +699,7 @@ class PrefixWrapperTest(TestCase):
         self.assertEqual(h.ident, None)
 
     def test_13_repr(self):
-        "test repr()"
+        """test repr()"""
         h = uh.PrefixWrapper("h2", "md5_crypt", "{XXX}", orig_prefix="$1$")
         self.assertRegex(repr(h),
             r"""(?x)^PrefixWrapper\(
@@ -707,7 +710,7 @@ class PrefixWrapperTest(TestCase):
             \)$""")
 
     def test_14_bad_hash(self):
-        "test orig_prefix sanity check"
+        """test orig_prefix sanity check"""
         # shoudl throw InvalidHashError if wrapped hash doesn't begin
         # with orig_prefix.
         h = uh.PrefixWrapper("h2", "md5_crypt", orig_prefix="$6$")
@@ -719,7 +722,7 @@ class PrefixWrapperTest(TestCase):
 # parts of passlib. they shouldn't be used as actual password schemes.
 #=============================================================================
 class UnsaltedHash(uh.StaticHandler):
-    "test algorithm which lacks a salt"
+    """test algorithm which lacks a salt"""
     name = "unsalted_test_hash"
     checksum_chars = uh.LOWER_HEX_CHARS
     checksum_size = 40
@@ -731,7 +734,7 @@ class UnsaltedHash(uh.StaticHandler):
         return str_to_uascii(hashlib.sha1(data).hexdigest())
 
 class SaltedHash(uh.HasSalt, uh.GenericHandler):
-    "test algorithm with a salt"
+    """test algorithm with a salt"""
     name = "salted_test_hash"
     setting_kwds = ("salt",)
 

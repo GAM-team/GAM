@@ -1,4 +1,4 @@
-"helper for method in test_registry.py"
+"""helper for method in test_registry.py"""
 from passlib.registry import register_crypt_handler
 import passlib.utils.handlers as uh
 

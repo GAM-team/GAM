@@ -12,7 +12,7 @@ import warnings
 import sys
 # site
 # pkg
-from passlib import hash, registry
+from passlib import hash, registry, exc
 from passlib.registry import register_crypt_handler, register_crypt_handler_path, \
     get_crypt_handler, list_crypt_handlers, _unload_handler_name as unload_handler_name
 import passlib.utils.handlers as uh
@@ -40,14 +40,23 @@ dummy_x = 1
 #=============================================================================
 class RegistryTest(TestCase):
 
-    descriptionPrefix = "passlib registry"
+    descriptionPrefix = "passlib.registry"
 
-    def tearDown(self):
-        for name in ("dummy_0", "dummy_1", "dummy_x", "dummy_bad"):
-            unload_handler_name(name)
+    def setUp(self):
+        super(RegistryTest, self).setUp()
+
+        # backup registry state & restore it after test.
+        locations = dict(registry._locations)
+        handlers = dict(registry._handlers)
+        def restore():
+            registry._locations.clear()
+            registry._locations.update(locations)
+            registry._handlers.clear()
+            registry._handlers.update(handlers)
+        self.addCleanup(restore)
 
     def test_hash_proxy(self):
-        "test passlib.hash proxy object"
+        """test passlib.hash proxy object"""
         # check dir works
         dir(hash)
 
@@ -80,7 +89,7 @@ class RegistryTest(TestCase):
         self.assertRaises(ValueError, setattr, hash, "dummy_1x", dummy_1)
 
     def test_register_crypt_handler_path(self):
-        "test register_crypt_handler_path()"
+        """test register_crypt_handler_path()"""
         # NOTE: this messes w/ internals of registry, shouldn't be used publically.
         paths = registry._locations
 
@@ -116,6 +125,7 @@ class RegistryTest(TestCase):
         # check lazy load w/ wrong name fails
         register_crypt_handler_path('alt_dummy_0', __name__)
         self.assertRaises(ValueError, get_crypt_handler, "alt_dummy_0")
+        unload_handler_name("alt_dummy_0")
 
         # TODO: check lazy load which calls register_crypt_handler (warning should be issued)
         sys.modules.pop("passlib.tests._test_bad_register", None)
@@ -127,7 +137,7 @@ class RegistryTest(TestCase):
         self.assertIs(h, tbr.alt_dummy_bad)
 
     def test_register_crypt_handler(self):
-        "test register_crypt_handler()"
+        """test register_crypt_handler()"""
 
         self.assertRaises(TypeError, register_crypt_handler, {})
 
@@ -158,7 +168,7 @@ class RegistryTest(TestCase):
         self.assertTrue('dummy_1' in list_crypt_handlers())
 
     def test_get_crypt_handler(self):
-        "test get_crypt_handler()"
+        """test get_crypt_handler()"""
 
         class dummy_1(uh.StaticHandler):
             name = "dummy_1"
@@ -189,7 +199,7 @@ class RegistryTest(TestCase):
             self.assertIs(get_crypt_handler(name, None), None)
 
     def test_list_crypt_handlers(self):
-        "test list_crypt_handlers()"
+        """test list_crypt_handlers()"""
         from passlib.registry import list_crypt_handlers
 
         # check system & private names aren't returned
@@ -197,17 +207,25 @@ class RegistryTest(TestCase):
         passlib.hash.__dict__["_fake"] = "dummy" # so behavior seen under py2x also
         for name in list_crypt_handlers():
             self.assertFalse(name.startswith("_"), "%r: " % name)
+        unload_handler_name("_fake")
 
     def test_handlers(self):
-        "verify we have tests for all handlers"
+        """verify we have tests for all builtin handlers"""
         from passlib.registry import list_crypt_handlers
         from passlib.tests.test_handlers import get_handler_case
         for name in list_crypt_handlers():
+            # skip some wrappers that don't need independant testing
             if name.startswith("ldap_") and name[5:] in list_crypt_handlers():
                 continue
             if name in ["roundup_plaintext"]:
                 continue
-            self.assertTrue(get_handler_case(name))
+            # check the remaining ones all have a handler
+            try:
+                self.assertTrue(get_handler_case(name))
+            except exc.MissingBackendError:
+                if name in ["bcrypt", "bcrypt_sha256"]: # expected to fail on some setups
+                    continue
+                raise
 
 #=============================================================================
 # eof

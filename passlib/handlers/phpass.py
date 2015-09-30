@@ -42,12 +42,12 @@ class phpass(uh.HasManyIdents, uh.HasRounds, uh.HasSalt, uh.GenericHandler):
     :type rounds: int
     :param rounds:
         Optional number of rounds to use.
-        Defaults to 17, must be between 7 and 30, inclusive.
+        Defaults to 19, must be between 7 and 30, inclusive.
         This value is logarithmic, the actual number of iterations used will be :samp:`2**{rounds}`.
 
     :type ident: str
     :param ident:
-        phpBB3 uses ``H`` instead of ``P`` for it's identifier,
+        phpBB3 uses ``H`` instead of ``P`` for its identifier,
         this may be set to ``H`` in order to generate phpBB3 compatible hashes.
         it defaults to ``P``.
 
@@ -75,7 +75,7 @@ class phpass(uh.HasManyIdents, uh.HasRounds, uh.HasSalt, uh.GenericHandler):
     salt_chars = uh.HASH64_CHARS
 
     #--HasRounds--
-    default_rounds = 17
+    default_rounds = 19
     min_rounds = 7
     max_rounds = 30
     rounds_cost = "log2"

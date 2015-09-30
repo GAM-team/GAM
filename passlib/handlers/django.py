@@ -270,7 +270,7 @@ class django_pbkdf2_sha256(DjangoVariableHash):
     :type rounds: int
     :param rounds:
         Optional number of rounds to use.
-        Defaults to 20000, but must be within ``range(1,1<<32)``.
+        Defaults to 29000, but must be within ``range(1,1<<32)``.
 
     :type relaxed: bool
     :param relaxed:
@@ -323,7 +323,7 @@ class django_pbkdf2_sha1(django_pbkdf2_sha256):
     :type rounds: int
     :param rounds:
         Optional number of rounds to use.
-        Defaults to 60000, but must be within ``range(1,1<<32)``.
+        Defaults to 131000, but must be within ``range(1,1<<32)``.
 
     :type relaxed: bool
     :param relaxed:

@@ -40,7 +40,7 @@ class fshp(uh.HasRounds, uh.HasRawSalt, uh.HasRawChecksum, uh.GenericHandler):
 
     :param rounds:
         Optional number of rounds to use.
-        Defaults to 100000, must be between 1 and 4294967295, inclusive.
+        Defaults to 480000, must be between 1 and 4294967295, inclusive.
 
     :param variant:
         Optionally specifies variant of FSHP to use.
@@ -79,7 +79,7 @@ class fshp(uh.HasRounds, uh.HasRawSalt, uh.HasRawChecksum, uh.GenericHandler):
     #--HasRounds--
     # FIXME: should probably use different default rounds
     # based on the variant. setting for default variant (sha256) for now.
-    default_rounds = 100000 # current passlib default, FSHP uses 4096
+    default_rounds = 480000 # current passlib default, FSHP uses 4096
     min_rounds = 1 # set by FSHP
     max_rounds = 4294967295 # 32-bit integer limit - not set by FSHP
     rounds_cost = "linear"

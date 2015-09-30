@@ -17,7 +17,7 @@ from passlib.tests.utils import TestCase
 # test predefined app contexts
 #=============================================================================
 class HostsTest(TestCase):
-    "perform general tests to make sure contexts work"
+    """perform general tests to make sure contexts work"""
     # NOTE: these tests are not really comprehensive,
     #       since they would do little but duplicate
     #       the presets in apps.py

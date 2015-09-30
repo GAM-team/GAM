@@ -39,6 +39,15 @@ class PasswordSizeError(ValueError):
     # this also prevents a glibc crypt segfault issue, detailed here ...
     # http://www.openwall.com/lists/oss-security/2011/11/15/1
 
+
+class PasslibSecurityError(RuntimeError):
+    """
+    Error raised if critical security issue is detected
+    (e.g. an attempt is made to use a vulnerable version of a bcrypt backend).
+
+    .. versionadded:: 1.6.3
+    """
+
 #=============================================================================
 # warnings
 #=============================================================================
@@ -86,7 +95,7 @@ class PasslibRuntimeWarning(PasslibWarning):
     """Warning issued when something unexpected happens during runtime.
 
     The fact that it's a warning instead of an error means Passlib
-    was able to correct for the issue, but that it's anonmalous enough
+    was able to correct for the issue, but that it's anomalous enough
     that the developers would love to hear under what conditions it occurred.
 
     .. versionadded:: 1.6
@@ -116,7 +125,7 @@ def _get_name(handler):
 # generic helpers
 #------------------------------------------------------------------------
 def type_name(value):
-    "return pretty-printed string containing name of value's type"
+    """return pretty-printed string containing name of value's type"""
     cls = value.__class__
     if cls.__module__ and cls.__module__ not in ["__builtin__", "builtins"]:
         return "%s.%s" % (cls.__module__, cls.__name__)
@@ -126,26 +135,26 @@ def type_name(value):
         return cls.__name__
 
 def ExpectedTypeError(value, expected, param):
-    "error message when param was supposed to be one type, but found another"
+    """error message when param was supposed to be one type, but found another"""
     # NOTE: value is never displayed, since it may sometimes be a password.
     name = type_name(value)
     return TypeError("%s must be %s, not %s" % (param, expected, name))
 
 def ExpectedStringError(value, param):
-    "error message when param was supposed to be unicode or bytes"
+    """error message when param was supposed to be unicode or bytes"""
     return ExpectedTypeError(value, "unicode or bytes", param)
 
 #------------------------------------------------------------------------
 # encrypt/verify parameter errors
 #------------------------------------------------------------------------
 def MissingDigestError(handler=None):
-    "raised when verify() method gets passed config string instead of hash"
+    """raised when verify() method gets passed config string instead of hash"""
     name = _get_name(handler)
     return ValueError("expected %s hash, got %s config string instead" %
                      (name, name))
 
 def NullPasswordError(handler=None):
-    "raised by OS crypt() supporting hashes, which forbid NULLs in password"
+    """raised by OS crypt() supporting hashes, which forbid NULLs in password"""
     name = _get_name(handler)
     return ValueError("%s does not allow NULL bytes in password" % name)
 
@@ -153,25 +162,25 @@ def NullPasswordError(handler=None):
 # errors when parsing hashes
 #------------------------------------------------------------------------
 def InvalidHashError(handler=None):
-    "error raised if unrecognized hash provided to handler"
+    """error raised if unrecognized hash provided to handler"""
     return ValueError("not a valid %s hash" % _get_name(handler))
 
 def MalformedHashError(handler=None, reason=None):
-    "error raised if recognized-but-malformed hash provided to handler"
+    """error raised if recognized-but-malformed hash provided to handler"""
     text = "malformed %s hash" % _get_name(handler)
     if reason:
         text = "%s (%s)" % (text, reason)
     return ValueError(text)
 
 def ZeroPaddedRoundsError(handler=None):
-    "error raised if hash was recognized but contained zero-padded rounds field"
+    """error raised if hash was recognized but contained zero-padded rounds field"""
     return MalformedHashError(handler, "zero-padded rounds")
 
 #------------------------------------------------------------------------
 # settings / hash component errors
 #------------------------------------------------------------------------
 def ChecksumSizeError(handler, raw=False):
-    "error raised if hash was recognized, but checksum was wrong size"
+    """error raised if hash was recognized, but checksum was wrong size"""
     # TODO: if handler.use_defaults is set, this came from app-provided value,
     # not from parsing a hash string, might want different error msg.
     checksum_size = handler.checksum_size

@@ -71,7 +71,7 @@ if has_crypt:
     # and can be introspected and used much more flexibly.
 
     def _iter_os_crypt_schemes():
-        "helper which iterates over supported os_crypt schemes"
+        """helper which iterates over supported os_crypt schemes"""
         found = False
         for name in unix_crypt_schemes:
             handler = get_crypt_handler(name)

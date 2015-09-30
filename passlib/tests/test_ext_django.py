@@ -2,7 +2,10 @@
 #=============================================================================
 # imports
 #=============================================================================
+# NOTE: double __future__ is workaround for py2.5.0 bug, 
+#       per https://bitbucket.org/ecollins/passlib/issues/58#comment-20589295
 from __future__ import with_statement
+from __future__ import absolute_import
 # core
 import logging; log = logging.getLogger(__name__)
 import sys
@@ -76,7 +79,7 @@ if has_django:
     from django.contrib.auth.models import User
 
     class FakeUser(User):
-        "mock user object for use in testing"
+        """mock user object for use in testing"""
         # NOTE: this mainly just overrides .save() to test commit behavior.
 
         @memoized_property
@@ -109,7 +112,27 @@ def create_mock_setter():
 # work up stock django config
 #=============================================================================
 sample_hashes = {} # override sample hashes used in test cases
-if DJANGO_VERSION >= (1,6):
+if DJANGO_VERSION >= (1,8):
+    stock_config = django16_context.to_dict()
+    stock_config.update(
+        deprecated="auto",
+        django_pbkdf2_sha1__default_rounds=20000,
+        django_pbkdf2_sha256__default_rounds=20000,
+    )
+    sample_hashes.update(
+        django_pbkdf2_sha256=("not a password", "pbkdf2_sha256$20000$arJ31mmmlSmO$XNBTUKe4UCUGPeHTmXpYjaKmJaDGAsevd0LWvBtzP18="),
+    )
+elif DJANGO_VERSION >= (1,7):
+    stock_config = django16_context.to_dict()
+    stock_config.update(
+        deprecated="auto",
+        django_pbkdf2_sha1__default_rounds=15000,
+        django_pbkdf2_sha256__default_rounds=15000,
+    )
+    sample_hashes.update(
+        django_pbkdf2_sha256=("not a password", "pbkdf2_sha256$15000$xb2YnidpItz1$uHvLChIjUDc5HVUfQnE6lDMbgkTAiSYknGCtjuX4AVo="),
+    )
+elif DJANGO_VERSION >= (1,6):
     stock_config = django16_context.to_dict()
     stock_config.update(
         deprecated="auto",
@@ -139,7 +162,7 @@ else:
 # test utils
 #=============================================================================
 class _ExtensionSupport(object):
-    "support funcs for loading/unloading extension"
+    """support funcs for loading/unloading extension"""
     #===================================================================
     # support funcs
     #===================================================================
@@ -182,7 +205,7 @@ class _ExtensionSupport(object):
     # verify current patch state
     #===================================================================
     def assert_unpatched(self):
-        "test that django is in unpatched state"
+        """test that django is in unpatched state"""
         # make sure we aren't currently patched
         mod = sys.modules.get("passlib.ext.django.models")
         self.assertFalse(mod and mod._patched, "patch should not be enabled")
@@ -199,7 +222,7 @@ class _ExtensionSupport(object):
                                 (obj, attr, source))
 
     def assert_patched(self, context=None):
-        "helper to ensure django HAS been patched, and is using specified config"
+        """helper to ensure django HAS been patched, and is using specified config"""
         # make sure we're currently patched
         mod = sys.modules.get("passlib.ext.django.models")
         self.assertTrue(mod and mod._patched, "patch should have been enabled")
@@ -225,9 +248,8 @@ class _ExtensionSupport(object):
     # load / unload the extension (and verify it worked)
     #===================================================================
     _config_keys = ["PASSLIB_CONFIG", "PASSLIB_CONTEXT", "PASSLIB_GET_CATEGORY"]
-
     def load_extension(self, check=True, **kwds):
-        "helper to load extension with specified config & patch django"
+        """helper to load extension with specified config & patch django"""
         self.unload_extension()
         if check:
             config = kwds.get("PASSLIB_CONFIG") or kwds.get("PASSLIB_CONTEXT")
@@ -239,7 +261,7 @@ class _ExtensionSupport(object):
             self.assert_patched(context=config)
 
     def unload_extension(self):
-        "helper to remove patches and unload extension"
+        """helper to remove patches and unload extension"""
         # remove patches and unload module
         mod = sys.modules.get("passlib.ext.django.models")
         if mod:
@@ -275,7 +297,7 @@ class _ExtensionTest(TestCase, _ExtensionSupport):
 # extension tests
 #=============================================================================
 class DjangoBehaviorTest(_ExtensionTest):
-    "tests model to verify it matches django's behavior"
+    """tests model to verify it matches django's behavior"""
     descriptionPrefix = "verify django behavior"
     patched = False
     config = stock_config
@@ -593,7 +615,9 @@ class DjangoBehaviorTest(_ExtensionTest):
             if testcase.is_disabled_handler:
                 continue
             if not has_active_backend(handler):
-                assert scheme == "django_bcrypt"
+                # TODO: move this above get_handler_case(),
+                #       and omit MissingBackendError check.
+                assert scheme in ["django_bcrypt", "django_bcrypt_sha256"], "%r scheme should always have active backend" % scheme
                 continue
             try:
                 secret, hash = sample_hashes[scheme]
@@ -680,7 +704,7 @@ class DjangoBehaviorTest(_ExtensionTest):
                 self.assertEqual(name, scheme)
 
 class ExtensionBehaviorTest(DjangoBehaviorTest):
-    "test model to verify passlib.ext.django conforms to it"
+    """test model to verify passlib.ext.django conforms to it"""
     descriptionPrefix = "verify extension behavior"
     patched = True
     config = dict(
@@ -700,7 +724,7 @@ class DjangoExtensionTest(_ExtensionTest):
     # monkeypatch testing
     #===================================================================
     def test_00_patch_control(self):
-        "test set_django_password_context patch/unpatch"
+        """test set_django_password_context patch/unpatch"""
 
         # check config="disabled"
         self.load_extension(PASSLIB_CONFIG="disabled", check=False)
@@ -726,7 +750,7 @@ class DjangoExtensionTest(_ExtensionTest):
         self.unload_extension()
 
     def test_01_overwrite_detection(self):
-        "test detection of foreign monkeypatching"
+        """test detection of foreign monkeypatching"""
         # NOTE: this sets things up, and spot checks two methods,
         #       this should be enough to verify patch manager is working.
         # TODO: test unpatch behavior honors flag.
@@ -756,7 +780,7 @@ class DjangoExtensionTest(_ExtensionTest):
         models.check_password = orig
 
     def test_02_handler_wrapper(self):
-        "test Hasher-compatible handler wrappers"
+        """test Hasher-compatible handler wrappers"""
         if not has_django14:
             raise self.skipTest("Django >= 1.4 not installed")
         from passlib.ext.django.utils import get_passlib_hasher
@@ -795,7 +819,7 @@ class DjangoExtensionTest(_ExtensionTest):
     # PASSLIB_CONFIG settings
     #===================================================================
     def test_11_config_disabled(self):
-        "test PASSLIB_CONFIG='disabled'"
+        """test PASSLIB_CONFIG='disabled'"""
         # test config=None (deprecated)
         with self.assertWarningList("PASSLIB_CONFIG=None is deprecated"):
             self.load_extension(PASSLIB_CONFIG=None, check=False)
@@ -806,7 +830,7 @@ class DjangoExtensionTest(_ExtensionTest):
         self.assert_unpatched()
 
     def test_12_config_presets(self):
-        "test PASSLIB_CONFIG='<preset>'"
+        """test PASSLIB_CONFIG='<preset>'"""
         # test django presets
         self.load_extension(PASSLIB_CONTEXT="django-default", check=False)
         if DJANGO_VERSION >= (1,6):
@@ -824,7 +848,7 @@ class DjangoExtensionTest(_ExtensionTest):
         self.assert_patched(django14_context)
 
     def test_13_config_defaults(self):
-        "test PASSLIB_CONFIG default behavior"
+        """test PASSLIB_CONFIG default behavior"""
         # check implicit default
         from passlib.ext.django.utils import PASSLIB_DEFAULT
         default = CryptContext.from_string(PASSLIB_DEFAULT)
@@ -840,7 +864,7 @@ class DjangoExtensionTest(_ExtensionTest):
         self.assert_patched(PASSLIB_DEFAULT)
 
     def test_14_config_invalid(self):
-        "test PASSLIB_CONFIG type checks"
+        """test PASSLIB_CONFIG type checks"""
         update_settings(PASSLIB_CONTEXT=123, PASSLIB_CONFIG=UNSET)
         self.assertRaises(TypeError, __import__, 'passlib.ext.django.models')
 
@@ -852,7 +876,7 @@ class DjangoExtensionTest(_ExtensionTest):
     # PASSLIB_GET_CATEGORY setting
     #===================================================================
     def test_21_category_setting(self):
-        "test PASSLIB_GET_CATEGORY parameter"
+        """test PASSLIB_GET_CATEGORY parameter"""
         # define config where rounds can be used to detect category
         config = dict(
             schemes = ["sha256_crypt"],
@@ -863,7 +887,7 @@ class DjangoExtensionTest(_ExtensionTest):
         from passlib.hash import sha256_crypt
 
         def run(**kwds):
-            "helper to take in user opts, return rounds used in password"
+            """helper to take in user opts, return rounds used in password"""
             user = FakeUser(**kwds)
             user.set_password("stub")
             return sha256_crypt.from_string(user.password).rounds
@@ -920,14 +944,42 @@ class ContextWithHook(CryptContext):
 
 # hack up the some of the real django tests to run w/ extension loaded,
 # to ensure we mimic their behavior.
-if has_django14:
-    from passlib.tests.utils import patchAttr
-    if DJANGO_VERSION >= (1,6):
-        from django.contrib.auth.tests import test_hashers as _thmod
+# however, the django tests were moved out of the package, and into a source-only location
+# as of django 1.7. so we disable tests from that point on unless test-runner specifies
+test_hashers_mod = None
+hashers_skip_msg = None
+if TEST_MODE(max="quick"):
+    hashers_skip_msg = "requires >= 'default' test mode"
+elif DJANGO_VERSION >= (1, 7):
+    import os
+    import sys
+    source_path = os.environ.get("PASSLIB_TESTS_DJANGO_SOURCE_PATH")
+    if source_path:
+        if not os.path.exists(source_path):
+            raise EnvironmentError("django source path not found: %r" % source_path)
+        if not all(os.path.exists(os.path.join(source_path, name))
+                   for name in ["django", "tests"]):
+            raise EnvironmentError("invalid django source path: %r" % source_path)
+        log.info("using django tests from source path: %r", source_path)
+        tests_path = os.path.join(source_path, "tests")
+        sys.path.insert(0, tests_path)
+        from auth_tests import test_hashers as test_hashers_mod
+        sys.path.remove(tests_path)
     else:
-        from django.contrib.auth.tests import hashers as _thmod
+        hashers_skip_msg = "requires PASSLIB_TESTS_DJANGO_SOURCE_PATH to be set for django 1.7+"
+elif DJANGO_VERSION >= (1, 6):
+    from django.contrib.auth.tests import test_hashers as test_hashers_mod
+elif DJANGO_VERSION >= (1, 4):
+    from django.contrib.auth.tests import hashers as test_hashers_mod
+else:
+    hashers_skip_msg = "requires django 1.4+ to be present"
 
-    class HashersTest(_thmod.TestUtilsHashPass, _ExtensionSupport):
+# hack up the some of the real django tests to run w/ extension loaded,
+# to ensure we mimic their behavior.
+if test_hashers_mod:
+    from passlib.tests.utils import patchAttr
+
+    class HashersTest(test_hashers_mod.TestUtilsHashPass, _ExtensionSupport):
         """run django's hasher unittests against passlib's extension
         and workalike implementations"""
         def setUp(self):
@@ -942,17 +994,17 @@ if has_django14:
                          "check_password",
                          "identify_hasher",
                          "get_hasher"]:
-                patchAttr(self, _thmod, attr, getattr(hashers, attr))
+                patchAttr(self, test_hashers_mod, attr, getattr(hashers, attr))
 
-            # django 1.5 tests expect empty django_des_crypt salt field
-            if DJANGO_VERSION > (1,4):
+            # django 1.4 tests expect empty django_des_crypt salt field
+            if DJANGO_VERSION >= (1,4):
                 from passlib.hash import django_des_crypt
                 patchAttr(self, django_des_crypt, "use_duplicate_salt", False)
 
             # hack: need password_context to keep up to date with hasher.iterations
             if DJANGO_VERSION >= (1,6):
                 def update_hook(self):
-                    rounds = _thmod.get_hasher("pbkdf2_sha256").iterations
+                    rounds = test_hashers_mod.get_hasher("pbkdf2_sha256").iterations
                     self.update(
                         django_pbkdf2_sha256__min_rounds=rounds,
                         django_pbkdf2_sha256__default_rounds=rounds,
@@ -967,9 +1019,12 @@ if has_django14:
         def tearDown(self):
             self.unload_extension()
             super(HashersTest, self).tearDown()
+else:
+    class HashersTest(TestCase):
 
-    HashersTest = skipUnless(TEST_MODE("default"),
-                             "requires >= 'default' test mode")(HashersTest)
+        def test_external_django_hasher_tests(self):
+            """external django hasher tests"""
+            raise self.skipTest(hashers_skip_msg)
 
 #=============================================================================
 # eof

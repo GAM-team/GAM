@@ -61,7 +61,7 @@ def _apply_patch():
     FORMS_PATH = "django.contrib.auth.forms"
 
     #
-    # import UNUSUABLE_PASSWORD and is_password_usuable() helpers
+    # import UNUSABLE_PASSWORD and is_password_usable() helpers
     # (providing stubs for older django versions)
     #
     if VERSION < (1,4):
@@ -72,7 +72,7 @@ def _apply_patch():
             from django.contrib.auth.models import UNUSABLE_PASSWORD
 
         def is_password_usable(encoded):
-            return encoded is not None and encoded != UNUSABLE_PASSWORD
+            return (encoded is not None and encoded != UNUSABLE_PASSWORD)
 
         def is_valid_secret(secret):
             return secret is not None
@@ -128,7 +128,7 @@ def _apply_patch():
     #
     @_manager.monkeypatch(USER_PATH)
     def set_password(user, password):
-        "passlib replacement for User.set_password()"
+        """passlib replacement for User.set_password()"""
         if is_valid_secret(password):
             # NOTE: pulls _get_category from module globals
             cat = _get_category(user)
@@ -138,7 +138,7 @@ def _apply_patch():
 
     @_manager.monkeypatch(USER_PATH)
     def check_password(user, password):
-        "passlib replacement for User.check_password()"
+        """passlib replacement for User.check_password()"""
         hash = user.password
         if not is_valid_secret(password) or not is_password_usable(hash):
             return False
@@ -160,8 +160,8 @@ def _apply_patch():
     @_manager.monkeypatch(HASHERS_PATH, enable=has_hashers)
     @_manager.monkeypatch(MODELS_PATH)
     def check_password(password, encoded, setter=None, preferred="default"):
-        "passlib replacement for check_password()"
-        # XXX: this currently ignores "preferred" keyword, since it's purpose
+        """passlib replacement for check_password()"""
+        # XXX: this currently ignores "preferred" keyword, since its purpose
         #      was for hash migration, and that's handled by the context.
         if not is_valid_secret(password) or not is_password_usable(encoded):
             return False
@@ -178,7 +178,7 @@ def _apply_patch():
         @_manager.monkeypatch(HASHERS_PATH)
         @_manager.monkeypatch(MODELS_PATH)
         def make_password(password, salt=None, hasher="default"):
-            "passlib replacement for make_password()"
+            """passlib replacement for make_password()"""
             if not is_valid_secret(password):
                 return make_unusable_password()
             if hasher == "default":
@@ -187,17 +187,22 @@ def _apply_patch():
                 scheme = hasher_to_passlib_name(hasher)
             kwds = dict(scheme=scheme)
             handler = password_context.handler(scheme)
-            # NOTE: django make specify an empty string for the salt,
-            #       even if scheme doesn't accept a salt. we omit keyword
-            #       in that case.
-            if salt is not None and (salt or 'salt' in handler.setting_kwds):
-                kwds['salt'] = salt
+            if "salt" in handler.setting_kwds:
+                if hasher.startswith("unsalted_"):
+                    # Django 1.4.6+ uses a separate 'unsalted_sha1' hasher for "sha1$$digest",
+                    # but passlib just reuses it's "sha1" handler ("sha1$salt$digest"). To make
+                    # this work, have to explicitly tell the sha1 handler to use an empty salt.
+                    kwds['salt'] = ''
+                elif salt:
+                    # Django make_password() autogenerates a salt if salt is bool False (None / ''),
+                    # so we only pass the keyword on if there's actually a fixed salt.
+                    kwds['salt'] = salt
             return password_context.encrypt(password, **kwds)
 
         @_manager.monkeypatch(HASHERS_PATH)
         @_manager.monkeypatch(FORMS_PATH)
         def get_hasher(algorithm="default"):
-            "passlib replacement for get_hasher()"
+            """passlib replacement for get_hasher()"""
             if algorithm == "default":
                 scheme = None
             else:
@@ -214,7 +219,7 @@ def _apply_patch():
         @_manager.monkeypatch(HASHERS_PATH)
         @_manager.monkeypatch(FORMS_PATH)
         def identify_hasher(encoded):
-            "passlib helper to identify hasher from encoded password"
+            """passlib helper to identify hasher from encoded password"""
             handler = password_context.identify(encoded, resolve=True,
                                                 required=True)
             algorithm = None

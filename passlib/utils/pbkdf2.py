@@ -142,7 +142,7 @@ _trans_5C = join_byte_values((x ^ 0x5C) for x in irange(256))
 _trans_36 = join_byte_values((x ^ 0x36) for x in irange(256))
 
 def _get_hmac_prf(digest):
-    "helper to return HMAC prf for specific digest"
+    """helper to return HMAC prf for specific digest"""
     def tag_wrapper(prf):
         prf.__name__ = "hmac_" + digest
         prf.__doc__ = ("hmac_%s(key, msg) -> digest;"
@@ -150,7 +150,7 @@ def _get_hmac_prf(digest):
                        digest)
 
     if _EVP and digest == "sha1":
-        # use m2crypto function directly for sha1, since that's it's default digest
+        # use m2crypto function directly for sha1, since that's its default digest
         try:
             result = _EVP.hmac(b('x'),b('y'))
         except ValueError: # pragma: no cover
@@ -199,7 +199,7 @@ def _get_hmac_prf(digest):
 _prf_cache = {}
 
 def _clear_prf_cache():
-    "helper for unit tests"
+    """helper for unit tests"""
     _prf_cache.clear()
 
 def get_prf(name):

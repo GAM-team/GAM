@@ -1288,6 +1288,9 @@ class BatchHttpRequest(object):
       httplib2.HttpLib2Error if a transport error has occured.
       googleapiclient.errors.BatchError if the response is the wrong format.
     """
+    # If we have no requests return
+    if len(self._order) == 0:
+      return None
 
     # If http is not supplied use the first valid one given in the requests.
     if http is None:
@@ -1460,7 +1463,7 @@ class HttpMock(object):
     if headers is None:
       headers = {'status': '200'}
     if filename:
-      f = open(filename, 'r')
+      f = open(filename, 'rb')
       self.data = f.read()
       f.close()
     else:

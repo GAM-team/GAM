@@ -1,3 +1,3 @@
-"""passlib - suite of password hashing & generation routinges"""
+"""passlib - suite of password hashing & generation routines"""
 
-__version__ = '1.6.2'
+__version__ = '1.6.5'

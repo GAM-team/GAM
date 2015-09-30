@@ -25,7 +25,7 @@ __all__ = [
 TH_PATH = "passlib.tests.test_handlers"
 
 def do_hash_tests(*args):
-    "return list of hash algorithm tests that match regexes"
+    """return list of hash algorithm tests that match regexes"""
     if not args:
         print(TH_PATH)
         return
@@ -44,7 +44,7 @@ def do_hash_tests(*args):
     return not names
 
 def do_preset_tests(name):
-    "return list of preset test names"
+    """return list of preset test names"""
     if name == "django" or name == "django-hashes":
         do_hash_tests("django_.*_test", "hex_md5_test")
         if name == "django":
@@ -53,7 +53,7 @@ def do_preset_tests(name):
         raise ValueError("unknown name: %r" % name)
 
 def do_setup_gae(path, runtime):
-    "write fake GAE ``app.yaml`` to current directory so nosegae will work"
+    """write fake GAE ``app.yaml`` to current directory so nosegae will work"""
     from passlib.tests.utils import set_file
     set_file(os.path.join(path, "app.yaml"), """\
 application: fake-app

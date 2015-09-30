@@ -339,7 +339,7 @@ class BlowfishEngine(object):
     # blowfish routines
     #===================================================================
     def encipher(self, l, r):
-        "loop version of blowfish encipher routine"
+        """loop version of blowfish encipher routine"""
         P, S = self.P, self.S
         l ^= P[0]
         i = 1
@@ -355,7 +355,7 @@ class BlowfishEngine(object):
     # NOTE: decipher is same as above, just with reversed(P) instead.
 
     def expand(self, key_words):
-        "perform stock Blowfish keyschedule setup"
+        """perform stock Blowfish keyschedule setup"""
         assert len(key_words) >= 18, "key_words must be at least as large as P"
         P, S, encipher = self.P, self.S, self.encipher
 
@@ -379,7 +379,7 @@ class BlowfishEngine(object):
     # eks-blowfish routines
     #===================================================================
     def eks_salted_expand(self, key_words, salt_words):
-        "perform EKS' salted version of Blowfish keyschedule setup"
+        """perform EKS' salted version of Blowfish keyschedule setup"""
         # NOTE: this is the same as expand(), except for the addition
         #       of the operations involving *salt_words*.
 
@@ -416,7 +416,7 @@ class BlowfishEngine(object):
                 i += 2
 
     def eks_repeated_expand(self, key_words, salt_words, rounds):
-        "perform rounds stage of EKS keyschedule setup"
+        """perform rounds stage of EKS keyschedule setup"""
         expand = self.expand
         n = 0
         while n < rounds:
@@ -425,7 +425,7 @@ class BlowfishEngine(object):
             n += 1
 
     def repeat_encipher(self, l, r, count):
-        "repeatedly apply encipher operation to a block"
+        """repeatedly apply encipher operation to a block"""
         encipher = self.encipher
         n = 0
         while n < count:

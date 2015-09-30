@@ -178,7 +178,7 @@ sha512_crypt__min_rounds = 45000
     # constructors
     #===================================================================
     def test_01_constructor(self):
-        "test class constructor"
+        """test class constructor"""
 
         # test blank constructor works correctly
         ctx = CryptContext()
@@ -200,8 +200,12 @@ sha512_crypt__min_rounds = 45000
         ctx = CryptContext(**self.sample_3_dict)
         self.assertEqual(ctx.to_dict(), self.sample_3_dict)
 
+        # test unicode scheme names (issue 54)
+        ctx = CryptContext(schemes=[u("sha256_crypt")])
+        self.assertEqual(ctx.schemes(), ("sha256_crypt",))
+
     def test_02_from_string(self):
-        "test from_string() constructor"
+        """test from_string() constructor"""
         # test sample 1 unicode
         ctx = CryptContext.from_string(self.sample_1_unicode)
         self.assertEqual(ctx.to_dict(), self.sample_1_dict)
@@ -231,7 +235,7 @@ sha512_crypt__min_rounds = 45000
                           self.sample_1_unicode, section="fakesection")
 
     def test_03_from_path(self):
-        "test from_path() constructor"
+        """test from_path() constructor"""
         # make sure sample files exist
         if not os.path.exists(self.sample_1_path):
             raise RuntimeError("can't find data file: %r" % self.sample_1_path)
@@ -258,7 +262,7 @@ sha512_crypt__min_rounds = 45000
                           self.sample_1_path, section="fakesection")
 
     def test_04_copy(self):
-        "test copy() method"
+        """test copy() method"""
         cc1 = CryptContext(**self.sample_1_dict)
 
         # overlay sample 2 onto copy
@@ -287,7 +291,7 @@ sha512_crypt__min_rounds = 45000
         self.assertEqual(cc4.to_dict(), self.sample_12_dict)
 
     def test_09_repr(self):
-        "test repr()"
+        """test repr()"""
         cc1 = CryptContext(**self.sample_1_dict)
         self.assertRegex(repr(cc1), "^<CryptContext at 0x[0-9a-f]+>$")
 
@@ -295,9 +299,9 @@ sha512_crypt__min_rounds = 45000
     # modifiers
     #===================================================================
     def test_10_load(self):
-        "test load() / load_path() method"
+        """test load() / load_path() method"""
         # NOTE: load() is the workhorse that handles all policy parsing,
-        # compilation, and validation. most of it's features are tested
+        # compilation, and validation. most of its features are tested
         # elsewhere, since all the constructors and modifiers are just
         # wrappers for it.
 
@@ -338,7 +342,7 @@ sha512_crypt__min_rounds = 45000
         self.assertEqual(ctx.to_dict(), self.sample_2_dict)
 
     def test_11_load_rollback(self):
-        "test load() errors restore old state"
+        """test load() errors restore old state"""
         # create initial context
         cc = CryptContext(["des_crypt", "sha256_crypt"],
             sha256_crypt__default_rounds=5000,
@@ -362,7 +366,7 @@ sha512_crypt__min_rounds = 45000
         self.assertEqual(cc.to_string(), result)
 
     def test_12_update(self):
-        "test update() method"
+        """test update() method"""
 
         # empty overlay
         ctx = CryptContext(**self.sample_1_dict)
@@ -399,7 +403,7 @@ sha512_crypt__min_rounds = 45000
     # option parsing
     #===================================================================
     def test_20_options(self):
-        "test basic option parsing"
+        """test basic option parsing"""
         def parse(**kwds):
             return CryptContext(**kwds).to_dict()
 
@@ -475,7 +479,7 @@ sha512_crypt__min_rounds = 45000
                                                   all__salt="xx")
 
     def test_21_schemes(self):
-        "test 'schemes' context option parsing"
+        """test 'schemes' context option parsing"""
 
         # schemes can be empty
         cc = CryptContext(schemes=None)
@@ -511,7 +515,7 @@ sha512_crypt__min_rounds = 45000
                           admin__context__schemes=["md5_crypt"])
 
     def test_22_deprecated(self):
-        "test 'deprecated' context option parsing"
+        """test 'deprecated' context option parsing"""
         def getdep(ctx, category=None):
             return [name for name in ctx.schemes()
                     if ctx._is_deprecated_scheme(name, category)]
@@ -603,7 +607,7 @@ sha512_crypt__min_rounds = 45000
         self.assertEqual(getdep(cc, "admin"), [])
 
     def test_23_default(self):
-        "test 'default' context option parsing"
+        """test 'default' context option parsing"""
 
         # anything allowed if no schemes
         self.assertEqual(CryptContext(default="md5_crypt").to_dict(),
@@ -640,7 +644,7 @@ sha512_crypt__min_rounds = 45000
         self.assertEqual(ctx.default_scheme("admin"), "md5_crypt")
 
     def test_24_vary_rounds(self):
-        "test 'vary_rounds' hash option parsing"
+        """test 'vary_rounds' hash option parsing"""
         def parse(v):
             return CryptContext(all__vary_rounds=v).to_dict()['all__vary_rounds']
 
@@ -659,7 +663,7 @@ sha512_crypt__min_rounds = 45000
     # inspection & serialization
     #===================================================================
     def test_30_schemes(self):
-        "test schemes() method"
+        """test schemes() method"""
         # NOTE: also checked under test_21
 
         # test empty
@@ -677,7 +681,7 @@ sha512_crypt__min_rounds = 45000
         self.assertEqual(ctx.schemes(), ())
 
     def test_31_default_scheme(self):
-        "test default_scheme() method"
+        """test default_scheme() method"""
         # NOTE: also checked under test_23
 
         # test empty
@@ -700,7 +704,7 @@ sha512_crypt__min_rounds = 45000
         # categories tested under test_23
 
     def test_32_handler(self):
-        "test handler() method"
+        """test handler() method"""
 
         # default for empty
         ctx = CryptContext()
@@ -729,7 +733,7 @@ sha512_crypt__min_rounds = 45000
             self.assertEqual(ctx.handler(category=u("admin")), hash.md5_crypt)
 
     def test_33_options(self):
-        "test internal _get_record_options() method"
+        """test internal _get_record_options() method"""
         def options(ctx, scheme, category=None):
             return ctx._config._get_record_options_with_flag(scheme, category)[0]
 
@@ -804,14 +808,14 @@ sha512_crypt__min_rounds = 45000
         ))
 
     def test_34_to_dict(self):
-        "test to_dict() method"
+        """test to_dict() method"""
         # NOTE: this is tested all throughout this test case.
         ctx = CryptContext(**self.sample_1_dict)
         self.assertEqual(ctx.to_dict(), self.sample_1_dict)
         self.assertEqual(ctx.to_dict(resolve=True), self.sample_1_resolved_dict)
 
     def test_35_to_string(self):
-        "test to_string() method"
+        """test to_string() method"""
 
         # create ctx and serialize
         ctx = CryptContext(**self.sample_1_dict)
@@ -834,7 +838,6 @@ sha512_crypt__min_rounds = 45000
         self.assertEqual(other, dump.replace("[passlib]","[password-security]"))
 
         # test unmanaged handler warning
-        from passlib import hash
         from passlib.tests.test_utils_handlers import UnsaltedHash
         ctx3 = CryptContext([UnsaltedHash, "md5_crypt"])
         dump = ctx3.to_string()
@@ -852,7 +855,7 @@ sha512_crypt__min_rounds = 45000
         ]
 
     def test_40_basic(self):
-        "test basic encrypt/identify/verify functionality"
+        """test basic encrypt/identify/verify functionality"""
         handlers = [hash.md5_crypt, hash.des_crypt, hash.bsdi_crypt]
         cc = CryptContext(handlers, bsdi_crypt__default_rounds=5)
 
@@ -878,7 +881,7 @@ sha512_crypt__min_rounds = 45000
         self.assertRaises(ValueError, cc.genhash, 'secret', cc.genconfig(), scheme="des_crypt")
 
     def test_41_genconfig(self):
-        "test genconfig() method"
+        """test genconfig() method"""
         cc = CryptContext(schemes=["md5_crypt", "phpass"],
                           phpass__ident="H",
                           phpass__default_rounds=7,
@@ -927,7 +930,7 @@ sha512_crypt__min_rounds = 45000
 
 
     def test_42_genhash(self):
-        "test genhash() method"
+        """test genhash() method"""
 
         #--------------------------------------------------------------
         # border cases
@@ -960,7 +963,7 @@ sha512_crypt__min_rounds = 45000
 
 
     def test_43_encrypt(self):
-        "test encrypt() method"
+        """test encrypt() method"""
         cc = CryptContext(**self.sample_4_dict)
 
         # hash specific settings
@@ -1015,7 +1018,7 @@ sha512_crypt__min_rounds = 45000
 
 
     def test_44_identify(self):
-        "test identify() border cases"
+        """test identify() border cases"""
         handlers = ["md5_crypt", "des_crypt", "bsdi_crypt"]
         cc = CryptContext(handlers, bsdi_crypt__default_rounds=5)
 
@@ -1041,7 +1044,7 @@ sha512_crypt__min_rounds = 45000
         self.assertRaises(TypeError, cc.identify, None, category=1)
 
     def test_45_verify(self):
-        "test verify() scheme kwd"
+        """test verify() scheme kwd"""
         handlers = ["md5_crypt", "des_crypt", "bsdi_crypt"]
         cc = CryptContext(handlers, bsdi_crypt__default_rounds=5)
 
@@ -1087,7 +1090,7 @@ sha512_crypt__min_rounds = 45000
         self.assertRaises(TypeError, cc.verify, 'secret', refhash, category=1)
 
     def test_46_needs_update(self):
-        "test needs_update() method"
+        """test needs_update() method"""
         cc = CryptContext(**self.sample_4_dict)
 
         # check deprecated scheme
@@ -1167,7 +1170,7 @@ sha512_crypt__min_rounds = 45000
         self.assertRaises(TypeError, cc.needs_update, refhash, category=1)
 
     def test_47_verify_and_update(self):
-        "test verify_and_update()"
+        """test verify_and_update()"""
         cc = CryptContext(**self.sample_4_dict)
 
         # create some hashes
@@ -1227,7 +1230,7 @@ sha512_crypt__min_rounds = 45000
     # genconfig(). it's assumed encrypt() takes the same codepath.
 
     def test_50_rounds_limits(self):
-        "test rounds limits"
+        """test rounds limits"""
         cc = CryptContext(schemes=["sha256_crypt"],
                           all__min_rounds=2000,
                           all__max_rounds=3000,
@@ -1344,7 +1347,7 @@ sha512_crypt__min_rounds = 45000
         self.assertRaises(TypeError, CryptContext, "sha256_crypt", all__default_rounds=bad)
 
     def test_51_linear_vary_rounds(self):
-        "test linear vary rounds"
+        """test linear vary rounds"""
         cc = CryptContext(schemes=["sha256_crypt"],
                           all__min_rounds=1995,
                           all__max_rounds=2005,
@@ -1376,7 +1379,7 @@ sha512_crypt__min_rounds = 45000
         self.assert_rounds_range(c2, "sha256_crypt", 1995, 2005)
 
     def test_52_log2_vary_rounds(self):
-        "test log2 vary rounds"
+        """test log2 vary rounds"""
         cc = CryptContext(schemes=["bcrypt"],
                           all__min_rounds=15,
                           all__max_rounds=25,
@@ -1415,7 +1418,7 @@ sha512_crypt__min_rounds = 45000
         self.assert_rounds_range(c2, "bcrypt", 15, 21)
 
     def assert_rounds_range(self, context, scheme, lower, upper):
-        "helper to check vary_rounds covers specified range"
+        """helper to check vary_rounds covers specified range"""
         # NOTE: this runs enough times the min and max *should* be hit,
         # though there's a faint chance it will randomly fail.
         handler = context.handler(scheme)
@@ -1432,7 +1435,7 @@ sha512_crypt__min_rounds = 45000
     # feature tests
     #===================================================================
     def test_60_min_verify_time(self):
-        "test verify() honors min_verify_time"
+        """test verify() honors min_verify_time"""
         delta = .05
         if TICK_RESOLUTION >= delta/10:
             raise self.skipTest("timer not accurate enough")
@@ -1441,7 +1444,7 @@ sha512_crypt__min_rounds = 45000
         max_delay = 8*delta
 
         class TimedHash(uh.StaticHandler):
-            "psuedo hash that takes specified amount of time"
+            """psuedo hash that takes specified amount of time"""
             name = "timed_hash"
             delay = 0
 
@@ -1498,7 +1501,7 @@ sha512_crypt__min_rounds = 45000
         self.assertRaises(ValueError, CryptContext, min_verify_time=-1)
 
     def test_61_autodeprecate(self):
-        "test deprecated='auto' is handled correctly"
+        """test deprecated='auto' is handled correctly"""
 
         def getstate(ctx, category=None):
             return [ctx._is_deprecated_scheme(scheme, category) for scheme in ctx.schemes()]
@@ -1533,7 +1536,7 @@ sha512_crypt__min_rounds = 45000
     # handler deprecation detectors
     #===================================================================
     def test_62_bcrypt_update(self):
-        "test verify_and_update / needs_update corrects bcrypt padding"
+        """test verify_and_update / needs_update corrects bcrypt padding"""
         # see issue 25.
         bcrypt = hash.bcrypt
 
@@ -1554,7 +1557,7 @@ sha512_crypt__min_rounds = 45000
             self.assertTrue(new_hash and new_hash != BAD1)
 
     def test_63_bsdi_crypt_update(self):
-        "test verify_and_update / needs_update corrects bsdi even rounds"
+        """test verify_and_update / needs_update corrects bsdi even rounds"""
         even_hash = '_Y/../cG0zkJa6LY6k4c'
         odd_hash = '_Z/..TgFg0/ptQtpAgws'
         secret = 'test'
@@ -1588,7 +1591,7 @@ class LazyCryptContextTest(TestCase):
         self.addCleanup(unload_handler_name, "dummy_2")
 
     def test_kwd_constructor(self):
-        "test plain kwds"
+        """test plain kwds"""
         self.assertFalse(has_crypt_handler("dummy_2"))
         register_crypt_handler_path("dummy_2", "passlib.tests.test_context")
 

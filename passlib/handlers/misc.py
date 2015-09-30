@@ -37,7 +37,7 @@ class unix_fallback(uh.StaticHandler):
       all passwords will be allowed through if the hash is an empty string.
 
     .. deprecated:: 1.6
-        This has been deprecated due to it's "wildcard" feature,
+        This has been deprecated due to its "wildcard" feature,
         and will be removed in Passlib 1.8. Use :class:`unix_disabled` instead.
     """
     name = "unix_fallback"

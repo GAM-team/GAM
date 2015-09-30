@@ -15,7 +15,7 @@ from passlib.exc import PasslibHashWarning
 from passlib.utils import ab64_decode, ab64_encode, consteq, saslprep, \
                           to_native_str, xor_bytes, splitcomma
 from passlib.utils.compat import b, bytes, bascii_to_str, iteritems, \
-                                 PY3, u, unicode
+                                 PY3, u, unicode, native_string_types
 from passlib.utils.pbkdf2 import pbkdf2, get_prf, norm_hash_name
 import passlib.utils.handlers as uh
 # local
@@ -49,7 +49,7 @@ class scram(uh.HasRounds, uh.HasRawSalt, uh.HasRawChecksum, uh.GenericHandler):
     :type rounds: int
     :param rounds:
         Optional number of rounds to use.
-        Defaults to 20000, but must be within ``range(1,1<<32)``.
+        Defaults to 100000, but must be within ``range(1,1<<32)``.
 
     :type algs: list of strings
     :param algs:
@@ -102,7 +102,7 @@ class scram(uh.HasRounds, uh.HasRawSalt, uh.HasRawChecksum, uh.GenericHandler):
     max_salt_size = 1024
 
     #--HasRounds--
-    default_rounds = 20000
+    default_rounds = 100000
     min_rounds = 1
     max_rounds = 2**32-1
     rounds_cost = "linear"
@@ -317,7 +317,7 @@ class scram(uh.HasRounds, uh.HasRawSalt, uh.HasRawChecksum, uh.GenericHandler):
         return checksum
 
     def _norm_algs(self, algs):
-        "normalize algs parameter"
+        """normalize algs parameter"""
         # determine default algs value
         if algs is None:
             # derive algs list from checksum (if present).
@@ -332,7 +332,7 @@ class scram(uh.HasRounds, uh.HasRawSalt, uh.HasRawChecksum, uh.GenericHandler):
             raise RuntimeError("checksum & algs kwds are mutually exclusive")
 
         # parse args value
-        if isinstance(algs, str):
+        if isinstance(algs, native_string_types):
             algs = splitcomma(algs)
         algs = sorted(norm_hash_name(alg, 'iana') for alg in algs)
         if any(len(alg)>9 for alg in algs):
@@ -348,7 +348,7 @@ class scram(uh.HasRounds, uh.HasRawSalt, uh.HasRawChecksum, uh.GenericHandler):
 
     @classmethod
     def _bind_needs_update(cls, **settings):
-        "generate a deprecation detector for CryptContext to use"
+        """generate a deprecation detector for CryptContext to use"""
         # generate deprecation hook which marks hashes as deprecated
         # if they don't support a superset of current algs.
         algs = frozenset(cls(use_defaults=True, **settings).algs)

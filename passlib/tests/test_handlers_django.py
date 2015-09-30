@@ -43,7 +43,7 @@ class _DjangoHelper(object):
             return None
         from django.contrib.auth.models import check_password
         def verify_django(secret, hash):
-            "django/check_password"
+            """django/check_password"""
             if (1,4) <= DJANGO_VERSION < (1,6) and not secret:
                 return "skip"
             if self.handler.name == "django_bcrypt" and hash.startswith("bcrypt$$2y$"):
@@ -57,7 +57,7 @@ class _DjangoHelper(object):
         return verify_django
 
     def test_90_django_reference(self):
-        "run known correct hashes through Django's check_password()"
+        """run known correct hashes through Django's check_password()"""
         from passlib.tests.test_ext_django import DJANGO_VERSION
         # check_password() not added until 1.0
         min_django_version = max(self.min_django_version, (1,0))
@@ -81,7 +81,7 @@ class _DjangoHelper(object):
     django_has_encoding_glitch = False
 
     def test_91_django_generation(self):
-        "test against output of Django's make_password()"
+        """test against output of Django's make_password()"""
         from passlib.tests.test_ext_django import DJANGO_VERSION
         # make_password() not added until 1.4
         min_django_version = max(self.min_django_version, (1,4))
@@ -106,7 +106,7 @@ class _DjangoHelper(object):
             self.assertFalse(self.do_verify(other, hash))
 
 class django_disabled_test(HandlerCase):
-    "test django_disabled"
+    """test django_disabled"""
     handler = hash.django_disabled
     is_disabled_handler = True
 
@@ -123,7 +123,7 @@ class django_disabled_test(HandlerCase):
     ]
 
 class django_des_crypt_test(HandlerCase, _DjangoHelper):
-    "test django_des_crypt"
+    """test django_des_crypt"""
     handler = hash.django_des_crypt
     secret_size = 8
 
@@ -164,7 +164,7 @@ class django_des_crypt_test(HandlerCase, _DjangoHelper):
     ]
 
 class django_salted_md5_test(HandlerCase, _DjangoHelper):
-    "test django_salted_md5"
+    """test django_salted_md5"""
     handler = hash.django_salted_md5
 
     django_has_encoding_glitch = True
@@ -204,7 +204,7 @@ class django_salted_md5_test(HandlerCase, _DjangoHelper):
         return randintgauss(lower, upper, default, default*.5)
 
 class django_salted_sha1_test(HandlerCase, _DjangoHelper):
-    "test django_salted_sha1"
+    """test django_salted_sha1"""
     handler = hash.django_salted_sha1
 
     django_has_encoding_glitch = True
@@ -236,7 +236,7 @@ class django_salted_sha1_test(HandlerCase, _DjangoHelper):
     fuzz_setting_salt_size = get_method_function(django_salted_md5_test.fuzz_setting_salt_size)
 
 class django_pbkdf2_sha256_test(HandlerCase, _DjangoHelper):
-    "test django_pbkdf2_sha256"
+    """test django_pbkdf2_sha256"""
     handler = hash.django_pbkdf2_sha256
     min_django_version = (1,4)
 
@@ -251,7 +251,7 @@ class django_pbkdf2_sha256_test(HandlerCase, _DjangoHelper):
     ]
 
 class django_pbkdf2_sha1_test(HandlerCase, _DjangoHelper):
-    "test django_pbkdf2_sha1"
+    """test django_pbkdf2_sha1"""
     handler = hash.django_pbkdf2_sha1
     min_django_version = (1,4)
 
@@ -266,7 +266,7 @@ class django_pbkdf2_sha1_test(HandlerCase, _DjangoHelper):
     ]
 
 class django_bcrypt_test(HandlerCase, _DjangoHelper):
-    "test django_bcrypt"
+    """test django_bcrypt"""
     handler = hash.django_bcrypt
     secret_size = 72
     min_django_version = (1,4)
@@ -303,7 +303,7 @@ django_bcrypt_test = skipUnless(hash.bcrypt.has_backend(),
                                 "no bcrypt backends available")(django_bcrypt_test)
 
 class django_bcrypt_sha256_test(HandlerCase, _DjangoHelper):
-    "test django_bcrypt_sha256"
+    """test django_bcrypt_sha256"""
     handler = hash.django_bcrypt_sha256
     min_django_version = (1,6)
     forbidden_characters = None

@@ -1,4 +1,4 @@
-"update version string during build"
+"""update version string during build"""
 #=============================================================================
 # imports
 #=============================================================================
@@ -21,7 +21,7 @@ def get_command_class(opts, name):
     return opts['cmdclass'].get(name) or Distribution().get_command_class(name)
 
 def stamp_source(base_dir, version, dry_run=False):
-    "update version string in passlib dist"
+    """update version string in passlib dist"""
     path = os.path.join(base_dir, "passlib", "__init__.py")
     with open(path) as fh:
         input = fh.read()

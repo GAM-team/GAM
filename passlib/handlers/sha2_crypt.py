@@ -240,7 +240,7 @@ _UZERO = u("0")
 
 class _SHA2_Common(uh.HasManyBackends, uh.HasRounds, uh.HasSalt,
                    uh.GenericHandler):
-    "class containing common code shared by sha256_crypt & sha512_crypt"
+    """class containing common code shared by sha256_crypt & sha512_crypt"""
     #===================================================================
     # class attrs
     #===================================================================
@@ -374,7 +374,7 @@ class sha256_crypt(_SHA2_Common):
     :type rounds: int
     :param rounds:
         Optional number of rounds to use.
-        Defaults to 110000, must be between 1000 and 999999999, inclusive.
+        Defaults to 535000, must be between 1000 and 999999999, inclusive.
 
     :type implicit_rounds: bool
     :param implicit_rounds:
@@ -402,7 +402,7 @@ class sha256_crypt(_SHA2_Common):
     ident = u("$5$")
     checksum_size = 43
     # NOTE: using 25/75 weighting of builtin & os_crypt backends
-    default_rounds = 110000
+    default_rounds = 535000
 
     #===================================================================
     # backends
@@ -435,7 +435,7 @@ class sha512_crypt(_SHA2_Common):
     :type rounds: int
     :param rounds:
         Optional number of rounds to use.
-        Defaults to 100000, must be between 1000 and 999999999, inclusive.
+        Defaults to 656000, must be between 1000 and 999999999, inclusive.
 
     :type implicit_rounds: bool
     :param implicit_rounds:
@@ -465,7 +465,7 @@ class sha512_crypt(_SHA2_Common):
     checksum_size = 86
     _cdb_use_512 = True
     # NOTE: using 25/75 weighting of builtin & os_crypt backends
-    default_rounds = 100000
+    default_rounds = 656000
 
     #===================================================================
     # backend

@@ -22,7 +22,7 @@ __contributors__ = ["Thomas Broyer (t.broyer@ltgt.net)",
                     "Sam Ruby",
                     "Louis Nyffenegger"]
 __license__ = "MIT"
-__version__ = "0.9.1"
+__version__ = "0.9.2"
 
 import re
 import sys
@@ -255,8 +255,8 @@ def safename(filename):
     filename = re_slash.sub(",", filename)
 
     # limit length of filename
-    if len(filename)>64:
-        filename=filename[:64]
+    if len(filename)>200:
+        filename=filename[:200]
     return ",".join((filename, filemd5))
 
 NORMALIZE_SPACE = re.compile(r'(?:\r\n)?[ \t]+')
@@ -1285,8 +1285,9 @@ class Http(object):
                     err = getattr(e, 'args')[0]
                 else:
                     err = e.errno
-                if err == errno.ECONNREFUSED: # Connection refused
-                    raise
+                if err in (errno.ENETUNREACH, errno.EADDRNOTAVAIL) and i < RETRIES:
+                    continue  # retry on potentially transient socket errors
+                raise
             except httplib.HTTPException:
                 # Just because the server closed the connection doesn't apparently mean
                 # that the server didn't send a response.
