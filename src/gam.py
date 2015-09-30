@@ -6770,15 +6770,8 @@ def doGetInstanceInfo():
   adm = buildGAPIObject(u'admin-settings')
   if len(sys.argv) > 4 and sys.argv[3].lower() == u'logo':
     target_file = sys.argv[4]
-    adminObj = getAdminSettingsObject()
-    logo_image = adminObj.GetDomainLogo()
-    try:
-      fp = open(target_file, 'wb')
-      fp.write(logo_image)
-      fp.close()
-    except IOError:
-      print u'Error: can\'t open file %s for writing' % target_file
-      sys.exit(11)
+    url = 'http://www.google.com/a/cpanel/%s/images/logo.gif' % (domain)
+    geturl(url, target_file)
     sys.exit(0)
   print u'Google Apps Domain: %s' % domain
   cd = buildGAPIObject(u'directory')
