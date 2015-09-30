@@ -1319,7 +1319,7 @@ def doUpdateCustomer():
     else:
       print u'ERROR: %s is not a valid argument for "gam update customer"' % myarg
       sys.exit(2)
-  callGAPI(service=cd.customers(), function=u'update', customerKey=customer, body=body)
+  callGAPI(service=cd.customers(), function=u'update', customerKey=customerId, body=body)
   print u'Updated customer'
 
 def doDelDomain():
