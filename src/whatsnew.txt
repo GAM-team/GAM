@@ -1,0 +1,316 @@
+GAM 3.61
+  -Various fixes by Ross Scroggs for Domain API and Data Transfer commands
+  -Remove duplicate DoCreateDomain which broke "gam create domain"
+  
+GAM 3.6
+  -Change your primary domain!
+  -Transfer Google Drive and Google+ data between users.
+  -Domains API support includes ability to add, delete, update and print domains.
+
+GAM 3.51
+  -delete or trash messages in mailboxes based on a Gmail search.
+  -create and delete course aliases with Classroom API.
+  -HUGE number of bug fixes, large and small by Ross Scroggs. Many thanks Ross!
+
+GAM 3.5
+  -Support for the new Google Classroom API.
+   -create, update, info and delete courses
+   -add, remove and sync course teachers and students
+   -print courses and course participants
+  -Google CloudPrint API Support
+   -update, info, delete and report printers
+   -share, unshare and get ACLs for printers
+   -submit, cancel, report and delete print jobs
+  -Bug fixes and improvements to GAM batch commands
+
+GAM 3.45
+  -add six.py to solve compatability issues on OS X and Linux
+  -be conservative with password hashing to prevent timeouts
+  
+  If you see issues setting user passwords with GAM 3.44 or older, please upgrade to 3.45.
+
+GAM 3.44
+  -"gam update cros <id> assetid <asset>" allows updating of Chrome OS device Asset ID field. Thanks Erik Pitti!
+  -Windows versions of GAM now use pyinstaller instead of py2exe.
+  -upgraded versions of the googleapiclient and oauth2client libraries.
+  -"gam print cros" should produce a cleaner CSV now.
+
+GAM 3.43
+  -Fix crash when authenticating GAM related to Short URLs
+  -minor fixes to Drive and Calendar commands
+  -catch unauthorized service account errors and offer nice instructions.
+  -execute bit for gam.py (Thanks daethnir)
+
+GAM 3.42
+  -"gam <users> show driveactivity" displays Drive activity for user
+  -"gam report tokens" displays user OAuth activity report
+  -"gam mobile <id> action accountwipe" wipes account only on Android devices
+  -"gam <users> update labels" removes Inbox/ prefix from label names
+  -upgrades to oauth2client and googleapiclient libraries which GAM depends on
+  -"gam <users> show gmailprofile" shows Gmail mailbox details
+  -"gam license <sku>" commands to perform actions only on users with a given license
+  -bug fixes, lots of bug fixes
+
+GAM 3.41
+  -fix Google servers not returning file size on audit export download
+  -soft fail on license change errors
+  -fix for gam info domain errors
+
+GAM 3.4 "Oktoberfest"
+  -Support for creating and setting custom user schemas http://goo.gl/M9rQrI
+  -End user view of print users and user info commands.
+  -fix updating name/description for groups
+  -fix groups sync commands
+  -gam print groups members no longer fails on zero member groups
+  -make sure downloaded Drive file names are safe for OS filenames.
+  -gam info domain should no longer crash on getting customer ID
+  -other minor bug fixes
+
+GAM 3.32
+  -fix service account json files downloaded from new cloud console don't work with GAM
+  -use the new Gmail API for label command. Offers ability to rename labels and show/hide labels from the label and message list.
+  -copy Google drive files with commands like gam user <email> update drivefile id <fileid> copy
+  -print only one SKU for licenses with commands like gam print licenses sku vault
+  -short license names for Google Apps Message Security (gams), Google Apps Unlimtied (gau) and Google Vault Former Employee (vfe)
+
+GAM 3.31
+  -New command "gam user delete aliases" clears all aliases for user.
+  -"gam update user email vfe" will rename user to vfe.oldname.XXXXX@olddomain.com
+  -fix delete photo command
+  -fix password update/create for Windows builds
+
+GAM 3.3
+  -Major rewrites of "gam report" and "gam print users". Note that CSV headers have changed. Better performance and print users now supports "rich" fields like organization, phone, relations, etc.
+  -"gam report drive" now works for Google Apps Unlimited domains.
+  -"gam info user" now shows the user's licenses. Use "nolicenses" to prevent showing licenses.
+  -fix "gam print licenses" fails in large domains by reducing page size from 1000 to 100
+  -GAM now sends a sha-512 salted hashed password on user create and update for better security.
+  -cleanup unused features of old GData library.
+  -fix for Drive file downloading default format.
+  -upgrade to httplib v0.9 which may help with httplib.BadStatus errors.
+
+GAM 3.21
+  -Fix crash when attempting to perform Drive operations for users with Drive service disabled.
+  -Fix "gam info org" only prints first 100 users in org.
+  
+GAM 3.2
+  -New Google Drive GAM commands: http://goo.gl/l7F8hY
+  -New GAM batch and CSV commands allow bulk parallel GAM operations. Documentation coming at: http://goo.gl/2rsDnc
+
+GAM 3.04
+  -New domain verification commands "gam create verify <domain name>", "gam update verify <domain name> <verify type>" and "gam info verify".
+  -"gam update group sync" commands should now only sync changes to the specified role (member, manager, owner). Other roles should be left alone.
+  -Fix: setting or viewing email signatures and vacation messages with unicode characters caused GAM to crash.
+  -Fix: issues printing out ASPs and backup codes if user had none set.
+  -Fix: "gam print orgs parent" always fails.
+  
+GAM 3.03
+  -New GAM user security commands allow management of OAuth tokens, 2SV backup codes and application specific passwords
+  -Google Vault license commands now work
+  -"gam update user password random" now resets user password to a very long, random string
+  -fixed updating location for Chrome devices
+  -fixed "gam update org" commands broken
+
+GAM 3.02
+  -client_secrets.json is no longer shipped with GAM, you need to create your own with the instructions at http://goo.gl/QYaQ6R
+  -New "gam report logins" command to report on user login times and IP.
+  -Updated "gam report domain" command provides cleaner details of aggregate usage.
+  -"gam report admin" fixed.
+  -Fix "gam ou..." commands (they were hanging forever)
+  -Other minor cleanups and fixes.
+
+GAM 3.01
+  -Fix gamcache errors on Windows by keeping cache filenames much shorter.
+  -add (back) support for setting/updating calendar colors
+  -add support for bulk updating users specified on the command like (gam update users "user1@domain.com user2@domain.com user3@domain.com"... OR gam update users user1@domain.com,user2@domain.com,user3@domain.com...)
+  -fix setting "gal off" during user creation.
+  -rewrite "gam info domain" to use new API library (should help with Unicode/UTF-8 errors)
+  -fix "show pop" and signature commands
+  -handle out of memory errors more gracefully
+
+GAM 3.0
+  -Support for the Enterprise License API. Manage Drive storage and Google Coordinate licenses for users.
+  -Improved compatability with GAM commands from 2.55 and older.
+  -Fixed undelete user command.
+  -New "gam print group-members" command to print user membership of all groups.
+  -New "gam <some users> update user..." command to bulk modify settings for given users. For example, "gam all users update user changepassword on" will force password change for all users, 'gam group class-of-2013@acme.edu update user suspended on' will suspend all members of class-of-2013 group.
+  -Optimizations which should result in modest improvements to GAM startup time and performance.
+
+GAM 2.994
+  -Rewritten "gam reports" commands. gam report users, gam report domain, gam report docs, gam report admin
+  -If CSV file uploaded to drive on "gam report" and "gam print" commands with the todrive parameter are more than 400,000 cells or 256 columns, don't convert to GDoc Spreadsheet.
+  -Remove old Admin Audit API scope (replaced by Reports API).
+  -new command: gam all users prism off
+
+GAM 2.992
+  -Various minor fixes
+
+GAM 2.991
+  -gam print commands now support a "todrive" argument. When specified, instead of displaying the CSV output locally (or piping it to a file), GAM will upload the CSV data to a Google Docs Spreadsheet owned by the admin you've authenticated as. The spreadsheet will be opened automatically or, if you've created nobrowser.txt, a URL will be shown.
+  -GAM should handle non-English input characters better. Commands like: "gam.py update user rpinaya lastname Piñaya" should work without issue on Windows.
+  -Improved errors in various places (less "explosions" more meaningful instructions.
+  -gam undelete user is fixed to always use the user's id rather than email address. If an email address is supplied, GAM converts it to a id before attempting to delete. If more than 1 deleted user exists with that address, GAM displays the options.
+
+GAM 2.99
+  -Support for the newly announced Google Apps Admin SDK offering a richer feature set of management for your users, groups, aliases and other objects.
+  -Simplified OAuth 2.0 authentication
+  -Ability to manage Mobile and Chrome OS devices.
+  -Ability to add managers to groups
+  -Ability to manage group aliases
+  -Increased performance thanks to new Google API formats, caching, compression and partial update features.
+  -To many more features to list here! Download it now to see for yourself.
+
+GAM 2.55
+  -Fix change in Google APIs broke "gam whatis" command.
+  -Fix change in Google APIs broke "gam info domain" command on CNAME Verification Status message.
+
+GAM 2.54
+  -Fix a stupid bug that broke "gam print users" when used without additional attributes.
+  -Another fix for outbound gateway settings on "gam info domain"
+  -Get this whatsnew.txt doc up to date.
+
+GAM 2.53
+  -Two new group settings, spam_moderation_level and include_in_global_address_list allow further customization of your Google Groups.
+  -Error reporting for mailbox delegation has been further improved, GAM does a better job of pinpointing why a delegation failed.
+  -Fixed updating and deleting domain and default users for calendar ACLs
+  -proper error handling for adding and removing group members and owners
+  -Fixed error on gam info domain caused by failure to retrieve outbound gateway settings.
+  -An EXPERIMENTAL 64-bit build of GAM for Windows is now available. I do not expect it will be any bit faster for most GAM commands since most delay
+   is due to network I/O. However, some GAM commands like "gam print users", when run against large domains (10,000+ users), use a large amount of memory
+   and resources due to result size. In these scenarios, the x64 build MIGHT prove faster. If you try the x64 build, please report how it worked back to 
+   the mailing list. "It feels faster" is nice but hard numbers with details of what you did are better :-) Note that if you're using the Python source
+   build and your Python is 64-bit, you're already using 64-bit GAM :-)
+
+GAM 2.52
+  -It's a dud! Major bug caused me to pull this version 10 minutes after release :-)
+
+GAM 2.51
+  -New gam calendar wipe command allows clearing all data off a user's primary calendar
+  -create user and update user commands now support setting user's org.
+  -gam whatis command allows looking up an email address to determine if it's a user, alias or group.
+  -gam delete user no longer renames a user by default since undelete is now in CPanel. Added optional dorename parameter to force old renaming behavior.
+  -Fix issue that broke gam delete resource command
+  -GAM now offers to remember your client secret and key when entered the first time
+  -various other bug fixes
+
+GAM 2.5
+  -GAM now handles and retries errors consistently and provides nice error messages. Long running GAM processes
+   like "gam all users" should be much stabler now. Death to the 1000/Unknown errors!
+   This involved some major changes to the Google API calls so if you run into problems, try
+   downgrading to 2.3.1 and see if they go away. Be sure to submit bug reports!
+  -GAM checks for updates 
+  -New parameters for gam create user and gam update user
+  -New parameters for gam print group: owners, members and settings
+  -GAM now works for delegated admins with user read/create/update/delete API rights
+  -gam update group add owner now only adds the user as a group owner, not a member (Google Group member
+   and owner status are independant of each other)
+  -gam update group add member no longer revokes user's owner rights if they have them
+  -gam info group now shows owners who are not a member of the group
+  -gam now works around the group settings "Backend Error" by making an HTTP request to the groups website.
+   This workaround may cease to work if performed on more than a few hundred groups at a time.
+  -moving large numbers of users to an Organization is now more reliable and is performed 25 users at a time.
+  -gam print users aliases now makes only 1 API call to retrieve all user aliases
+  -New commands "gam oauth info" and "gam oauth revoke" allow further OAuth token management
+  -gam info domain now shows the unique customer id
+
+GAM 2.3.1
+  -Fixes to add calendar command
+  -Allow updating and removal of special Calendar ACL users domain and default
+  -pop commands now work without supplying all arguments (defaults to enable for all mail and keep)
+  -New "file" argument for signature and vacation commands allows specifying a file with message content.
+  -"gam create group" now only requires group name argument, rest are optional.
+  -special user * (everyone in domain) can now be added to a group via GAM
+  -print groups, print resources, print aliases and print orgs commands now output proper CSV
+  -Dito company information now displayed on OAuth token create
+  
+GAM 2.3
+
+  -GAM is now owned by Dito (www.ditoweb.com), the Google Apps Experts! See announcement and details at http://code.google.com/p/google-apps-manager
+  -New user profile photo management commands can update, get and delete user profile photos
+  -GAM now gracefully handles cross-domain mailbox delegations by using (or giving the delegate) an alias in the mailbox's domain.
+  -"gam user XXXX show delegates" now has optional argument "csv" to print existing delegations in CSV format
+  -GAM can now properly rename and delete long usernames by ensuring that the renamed user is max 64 characters in length
+  -"gam print groups" now has optional arguments nousermanagedgroups and onlyusermanagedgroups allowing user managed groups to be excluded from output or print user managed groups exclusively.
+
+GAM 2.2
+
+  -Update Calendar ACLs command, update user calendar settings command and ability to set calendar settings when subscribing user
+  -Delete Gmail labels command
+  -Fixes for *nix CSV formatting
+  -Fixes to make Windows and *nix generated oauth.txt files compatible
+  -"gam info user" now shows mailbox quota and user organization
+  -"gam update user" can now handle change of user's domain in renames. "gam multi" commands now fully deprecated.
+  -Fix reply_to and a few other group settings were never getting updated.
+  -"gam info group" now makes 3 efficient API calls rather than one per member/owner of the group greatly increasing performance with large groups
+  -GAM should do a better job of always printing out full email address instead of just username. If you see GAM reporting only the username and not the full email address, please report it as a bug.
+  -All OAuth scopes are now selected by default.
+
+GAM 2.1.1
+
+  -Fix to prevent unnecessary call to Groups Provisioning API when viewing detailed group settings
+  -should be show_in_group_directory not show_in_groups_directory.
+
+GAM 2.1
+
+  -New Reporting API Support allows you to pull 5 different daily reports: accounts, activity, disk_space, email_clients and summary.
+  -Fix for Adding calendars to a user's list of calendars. Bug in 2.0 meant calendar was always added to the calendar list of the admin who authorized GAM, not the target user.
+  -GAM now looks for an environment variable called OAUTHFILE. If it exists, GAM will use that file instead of oauth.txt for authentication. This allows admins of many Google Apps domains to switch quickly between domains.
+  -Fixes for many "gam print users" issues. Thanks to Craig Box for the patch.
+
+GAM 2.0
+
+-Group Settings commands allow you to update Google Group settings
+-Calendar commands allow you to grant access to calendars and modify user's list of calendars
+-Update Admin Settings like the logo, outbound gateway, email migration and more
+-OAuth is now the default authentication method. Support for username/password ClientLogin has been removed.
+-Vacation/Away messages can now have a start and end date. They can also be limited to within the domain only.
+-Further work to make all GAM commands multi-domain friendly.
+-Lot's more bugfixes! look at the Wiki pages for details
+
+GAM 1.9.1
+
+-"gam print postini" will print all of the Postini Batch commands necessary to "mirror" Google Apps email addresses
+  into a Postini standalone instance.
+
+-"gam version" will print details about the version of GAM you are using.
+
+GAM 1.9 - "Baby Steps"
+
+GAM 1.9 is dedicated to David, my 13 month year old son. Whose just starting to step out into the world this week.
+
+-whatnew.txt is new (is that an oxymoron?)
+
+-Share or Hide users profile from autocomplete and contacts search.
+  "gam user jsmith show profile"
+  "gam user jsmith profile share"
+  "gam group asked-to-be-hidden profile unshare"
+  
+  Profile modifications only work with OAuth, not ClientLogin (username/password entered into GAM). 
+  Since the profile API uses a scope GAM was not previously making use of, you'll need to re-run
+  "gam oauth request" to include the Profile API scope.
+
+-Numerous actions can now be performed for all users in a given Organizational
+  Unit just like they can be for a group or all users. i.e. "gam ou Students webclips off".
+
+-Provisioning API OAuth scope has been subdivided into user, group, alias and ou scopes
+  offering finer granularity.
+
+-"gam all users" will now include all users across primary and secondary domains instead of just primary domain users.
+
+-"gam info user" will show all email aliases for a user, not just those in the primary domain.
+
+-"gam print users" with any extra arguments would fail, this should be fixed now.
+
+-"gam info group" and "gam print groups" should no longer fail for groups with custom permissions.
+
+GAM 1.8
+
+-OAuth Support - GAM now supports OAuth Authentication. Instead of providing GAM your username and password, you grant GAM access to selected APIs from within your Google Account. This has a number of advantages:
+  -With OAuth GAM doesn't need to know your password.
+  -OAuth tokens don't expire, once you grant GAM OAuth access, GAM will have access until you revoke it within your Google account.
+  -OAuth has the concept of scopes, limiting the areas and services that access is granted to. This allows you to only provide GAM with the privileges it needs.
+  -More info about OAuth support is on it's way. But for now, you can try OAuth access by running "gam oauth request".
+
+-The settings filter command http://code.google.com/p/google-apps-manager/wiki/ExamplesEmailSettings#Create_a_Filter now has more actions including forward, star, trash and never send to spam.
+
+-Downloading Audit Exports now has partial resume support. GAM will not re-download files that already exist on the local drive. If a large export download fails you should delete the last file GAM was working on since it's incomplete and then restart the process, GAM will pick up with the last file.
