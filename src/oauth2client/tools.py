@@ -194,6 +194,16 @@ def run_flow(flow, storage, flags, http=None):
     flow.redirect_uri = oauth_callback
     authorize_url = flow.step1_get_authorize_url()
 
+    if flags.short_url:
+        try:
+            from googleapiclient.discovery import build
+            service = build('urlshortener', 'v1', http=http)
+            url_result = service.url().insert(body={'longUrl': authorize_url},
+              key=u'AIzaSyBlmgbii8QfJSYmC9VTMOfqrAt5Vj5wtzE').execute()
+            authorize_url = url_result['id']
+        except:
+          pass
+
     if not flags.noauth_local_webserver:
         import webbrowser
         webbrowser.open(authorize_url, new=1, autoraise=True)
@@ -201,11 +211,8 @@ def run_flow(flow, storage, flags, http=None):
         print()
         print('    ' + authorize_url)
         print()
-        print('If your browser is on a different machine then '
-              'exit and re-run this')
-        print('application with the command-line parameter ')
-        print()
-        print('  --noauth_local_webserver')
+        print('If your browser is on a different machine then exit and re-run this')
+        print('after creating a file called nobrowser.txt in the same path as GAM.')
         print()
     else:
         print('Go to the following link in your browser:')

@@ -593,7 +593,7 @@ def buildGAPIObject(api):
     pyinstaller_disc_file = None
     try:
       pyinstaller_disc_file = os.path.join(sys._MEIPASS, disc_filename)
-    except NameError:
+    except (NameError, AttributeError):
       pass
     if os.path.isfile(disc_file):
       f = file(disc_file, 'rb')
@@ -687,7 +687,7 @@ def buildGAPIServiceObject(api, act_as=None, soft_errors=False):
     pyinstaller_disc_file = None
     try:
       pyinstaller_disc_file = os.path.join(sys._MEIPASS, disc_filename)
-    except NameError:
+    except (NameError, AttributeError):
       pass
     if os.path.isfile(disc_file):
       f = file(disc_file, 'rb')
