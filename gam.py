@@ -24,7 +24,7 @@ For more information, see http://git.io/gam
 """
 
 __author__ = u'Jay Lee <jay0lee@gmail.com>'
-__version__ = u'3.6'
+__version__ = u'3.61'
 __license__ = u'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 import sys, os, time, datetime, random, socket, csv, platform, re, calendar, base64, string
@@ -4568,23 +4568,6 @@ def getVacation(users):
        vacationsettings[u'message'], vacationsettings[u'startDate'], vacationsettings[u'endDate'])
     except TypeError:
       pass
-
-def doCreateDomain():
-  cd = buildGAPIObject(u'directory')
-  domain_name = sys.argv[3]
-  domain_type = sys.argv[4].upper()
-  if domain_type.replace(u'_', '') in [u'ALIAS', u'MIRROR', u'DOMAINALIAS', u'ALIAS_DOMAIN']:
-    domain_type = u'DOMAIN_ALIAS'
-  elif domain_type.replace(u'_', '') in [u'SECONDARY', u'SEPARATE', u'MULTIDOMAIN', u'MULTI']:
-    domain_type = u'MULTI_DOMAIN'
-  elif domain_type.replace(u'_', '') in [u'PRIMARY', u'PRIMARYDOMAIN', u'HOME']:
-    domain_type = u'PRIMARY'
-  elif domain_type != u'UNKNOWN':
-    print u'Error: domain type should be alias, secondary, primary or unknown. Got %s' % domain_type
-    sys.exit(4)
-  body = {u'domain_name': domain_name, u'domain_type': domain_type}
-  callGAPI(service=cd.domains(), function=u'insert', customerId=customerId, body=body)
-  print u'Added domain %s' % domain_name
 
 def doDelSchema():
   cd = buildGAPIObject(u'directory')
