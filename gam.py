@@ -1259,8 +1259,7 @@ def doGetCustomerInfo():
 def doUpdateCustomer():
   cd = buildGAPIObject(u'directory')
   body = {}
-  customer = sys.argv[3]
-  i = 4
+  i = 3
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace(u'_', u'')
     if myarg == u'alternateemail':
