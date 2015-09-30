@@ -66,5 +66,4 @@ noverifyssl.txt
 gamcache/
 gam/
 gam-64/
-gam.spec
 *.zip
