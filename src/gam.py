@@ -588,15 +588,23 @@ def buildGAPIObject(api):
   try:
     service = googleapiclient.discovery.build(api, version, http=http)
   except googleapiclient.errors.UnknownApiNameOrVersion:
-    disc_file = os.path.join(gamSiteConfigDir, u'%s-%s.json' % (api, version))
+    disc_filename =  u'%s-%s.json' % (api, version)
+    disc_file = os.path.join(gamSiteConfigDir, disc_filename)
+    pyinstaller_disc_file = None
+    try:
+      pyinstaller_disc_file = os.path.join(sys._MEIPASS, disc_filename)
+    except NameError:
+      pass
     if os.path.isfile(disc_file):
       f = file(disc_file, 'rb')
-      discovery = f.read()
-      f.close()
-      service = googleapiclient.discovery.build_from_document(discovery, base=u'https://www.googleapis.com', http=http)
+    elif pyinstaller_disc_file:
+      f = file(pyinstaller_disc_file, 'rb')
     else:
       print 'No online discovery doc and %s does not exist locally' % disc_file
       raise
+    discovery = f.read()
+    f.close()
+    service = googleapiclient.discovery.build_from_document(discovery, base=u'https://www.googleapis.com', http=http)
   except httplib2.CertificateValidationUnsupported:
     print u'Error: You don\'t have the Python ssl module installed so we can\'t verify SSL Certificates. You can fix this by installing the Python SSL module or you can live on the edge and turn SSL validation off by creating a file called noverifyssl.txt in the same location as gam.exe / gam.py'
     sys.exit(8)
@@ -673,6 +681,24 @@ def buildGAPIServiceObject(api, act_as=None, soft_errors=False):
       if soft_errors:
         return False
       sys.exit(4)
+  except googleapiclient.errors.UnknownApiNameOrVersion:
+    disc_filename =  u'%s-%s.json' % (api, version)
+    disc_file = os.path.join(gamSiteConfigDir, disc_filename)
+    pyinstaller_disc_file = None
+    try:
+      pyinstaller_disc_file = os.path.join(sys._MEIPASS, disc_filename)
+    except NameError:
+      pass
+    if os.path.isfile(disc_file):
+      f = file(disc_file, 'rb')
+    elif pyinstaller_disc_file:
+      f = file(pyinstaller_disc_file, 'rb')
+    else:
+      print 'No online discovery doc and %s does not exist locally' % disc_file
+      raise
+    discovery = f.read()
+    f.close()
+    return googleapiclient.discovery.build_from_document(discovery, base=u'https://www.googleapis.com', http=http)
 
 def buildDiscoveryObject(api):
   import uritemplate
