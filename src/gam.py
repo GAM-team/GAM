@@ -280,7 +280,7 @@ def checkErrorCode(e, service):
     1801: u'Invalid value %s' % e.invalidInput or ''
   }
 
-  return u'%s - %s' % (e.error_code, error_code_map.get(e.error_code, u'Unknown Error: %s' % (e.error_code, str(e))))
+  return u'%s - %s' % (e.error_code, error_code_map.get(e.error_code, u'Unknown Error: %s' % (str(e))))
 
 def tryOAuth(gdataObject):
   global domain
