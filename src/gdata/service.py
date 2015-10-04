@@ -233,7 +233,7 @@ class GDataService(atom.service.AtomService):
           and remove_token.
     """
     atom.service.AtomService.__init__(self, http_client=http_client, 
-        additional_headers=additional_headers, token_store=token_store)
+        token_store=token_store)
     self.email = email
     self.password = password
     self.account_type = account_type
