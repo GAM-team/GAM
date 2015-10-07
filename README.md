@@ -1,6 +1,6 @@
 GAM
 ============================
-GAM is a free, open source command line tool for
+GAM is a command line tool for
 Google Apps Administrators to manage
 domain and user settings quickly and easily.
 
