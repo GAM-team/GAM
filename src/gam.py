@@ -154,27 +154,15 @@ gam.exe update group announcements add member jsmith
 
 def setGamDirs():
   global gamPath, gamSiteConfigDir, gamUserConfigDir, gamDriveDir, gamCacheDir
-
-  gamPath = os.path.dirname(os.path.realpath(sys.argv[0]))
-  try:
-    gamSiteConfigDir = os.environ[u'GAMSITECONFIGDIR']
-  except KeyError:
-    gamSiteConfigDir = gamPath
-  try:
-    gamUserConfigDir = os.environ[u'GAMUSERCONFIGDIR']
-  except KeyError:
-    gamUserConfigDir = gamPath
-  try:
-    gamCacheDir = os.environ[u'GAMCACHEDIR']
-  except KeyError:
-    gamCacheDir = os.path.join(gamPath, u'gamcache')
-  try:
-    gamDriveDir = os.environ[u'GAMDRIVEDIR']
-  except KeyError:
-    gamDriveDir = gamPath
-
+  gamPath = os.path.dirname(os.path.realpath(__file__))
+  gamSiteConfigDir = os.environ.get(u'GAMSITECONFIGDIR', gamPath)
+  gamUserConfigDir = os.environ.get(u'GAMUSERCONFIGDIR', gamPath)
   if os.path.isfile(os.path.join(gamUserConfigDir, u'nocache.txt')):
     gamCacheDir = None
+  else:
+    gamCacheDir = os.environ.get(u'GAMCACHEDIR', os.path.join(gamPath, u'gamcache'))
+  gamDriveDir = os.environ.get(u'GAMDRIVEDIR', gamPath)
+
 
 def doGAMVersion():
   import struct
@@ -241,111 +229,63 @@ def commonAppsObjInit(appsObj):
   return appsObj
 
 def checkErrorCode(e, service):
-  try:
-    if e[0]['reason'] in [u'Token invalid - Invalid token: Stateless token expired', u'Token invalid - Invalid token: Token not found']:
-      keep_domain = service.domain
-      tryOAuth(service)
-      service.domain = keep_domain
-      return False
-  except KeyError:
-    pass
+
+  # First check for errors that need special handling
+  if e[0].get('reason', '') in [u'Token invalid - Invalid token: Stateless token expired', u'Token invalid - Invalid token: Token not found']:
+    keep_domain = service.domain
+    tryOAuth(service)
+    service.domain = keep_domain
+    return False
   if e[0]['body'][:34] in [u'Required field must not be blank: ', u'These characters are not allowed: ']:
     return e[0]['body']
   if e.error_code == 600 and e[0][u'body'] == u'Quota exceeded for the current request' or e[0][u'reason'] == u'Bad Gateway':
     return False
   if e.error_code == 600 and e[0][u'reason'] == u'Token invalid - Invalid token: Token disabled, revoked, or expired.':
     return u'403 - Token disabled, revoked, or expired. Please delete and re-create oauth.txt'
-  if e.error_code == 1000: # UnknownError
-    return False
-  elif e.error_code == 1001: # ServerBusy
-    return False
-  elif e.error_code == 1002:
-    return u'1002 - Unauthorized and forbidden'
-  elif e.error_code == 1100:
-    return u'1100 - User deleted recently'
-  elif e.error_code == 1200:
-    return u'1200 - Domain user limit exceeded'
-  elif e.error_code == 1201:
-    return u'1201 - Domain alias limit exceeded'
-  elif e.error_code == 1202:
-    return u'1202 - Domain suspended'
-  elif e.error_code == 1203:
-    return u'1203 - Domain feature unavailable'
-  elif e.error_code == 1300:
-    if e.invalidInput != '':
-      return u'1300 - Entity %s exists' % e.invalidInput
-    else:
-      return u'1300 - Entity exists'
-  elif e.error_code == 1301:
-    if e.invalidInput != '':
-      return u'1301 - Entity %s Does Not Exist' % e.invalidInput
-    else:
-      return u'1301 - Entity Does Not Exist'
-  elif e.error_code == 1302:
-    return u'1302 - Entity Name Is Reserved'
-  elif e.error_code == 1303:
-    if e.invalidInput != '':
-      return u'1303 - Entity %s name not valid' % e.invalidInput
-    else:
-      return u'1303 - Entity name not valid'
-  elif e.error_code == 1306:
-    if e.invalidInput != '':
-      return u'1306 - %s has members. Cannot delete.' % e.invalidInput
-    else:
-      return u'1306 - Entity has members. Cannot delete.'
-  elif e.error_code == 1400:
-    return u'1400 - Invalid Given Name'
-  elif e.error_code == 1401:
-    return u'1401 - Invalid Family Name'
-  elif e.error_code == 1402:
-    return u'1402 - Invalid Password'
-  elif e.error_code == 1403:
-    return u'1403 - Invalid Username'
-  elif e.error_code == 1404:
-    return u'1404 - Invalid Hash Function Name'
-  elif e.error_code == 1405:
-    return u'1405 - Invalid Hash Digest Length'
-  elif e.error_code == 1406:
-    return u'1406 - Invalid Email Address'
-  elif e.error_code == 1407:
-    return u'1407 - Invalid Query Parameter Value'
-  elif e.error_code == 1408:
-    return u'1408 - Invalid SSO Signing Key'
-  elif e.error_code == 1409:
-    return u'1409 - Invalid Encryption Public Key'
-  elif e.error_code == 1410:
-    return u'1410 - Feature Unavailable For User'
-  elif e.error_code == 1500:
-    return u'1500 - Too Many Recipients On Email List'
-  elif e.error_code == 1501:
-    return u'1501 - Too Many Aliases For User'
-  elif e.error_code == 1502:
-    return u'1502 - Too Many Delegates For User'
-  elif e.error_code == 1601:
-    return u'1601 - Duplicate Destinations'
-  elif e.error_code == 1602:
-    return u'1602 - Too Many Destinations'
-  elif e.error_code == 1603:
-    return u'1603 - Invalid Route Address'
-  elif e.error_code == 1700:
-    return u'1700 - Group Cannot Contain Cycle'
-  elif e.error_code == 1800:
-    return u'1800 - Invalid Domain Edition'
-  elif e.error_code == 1801:
-    if e.invalidInput != '':
-      return u'1801 - Invalid value %s' % e.invalidInput
-    else:
-      return u'1801 - Invalid Value'
-  else:
-    return u'%s: Unknown Error: %s' % (e.error_code, str(e))
+
+  # We got a "normal" error, define the mapping below
+  error_code_map = {
+    1000: False,
+    1001: False,
+    1002: u'Unauthorized and forbidden',
+    1100: u'User deleted recently',
+    1200: u'Domain user limit exceeded',
+    1201: u'Domain alias limit exceeded',
+    1202: u'Domain suspended',
+    1203: u'Domain feature unavailable',
+    1300:  u'Entity %s exists' % getattr(e, 'invalidInput', "<unknown>"),
+    1301: u'Entity %s Does Not Exist' % getattr(e, 'invalidInput', "<unknown>"),
+    1302: u'Entity Name Is Reserved',
+    1303: u'Entity %s name not valid' % getattr(e, 'invalidInput', "<unknown>"),
+    1306: u'%s has members. Cannot delete.' % getattr(e, 'invalidInput', "<unknown>"),
+    1400: u'Invalid Given Name',
+    1401: u'Invalid Family Name',
+    1402: u'Invalid Password',
+    1403: u'Invalid Username',
+    1404: u'Invalid Hash Function Name',
+    1405: u'Invalid Hash Digest Length',
+    1406: u'Invalid Email Address',
+    1407: u'Invalid Query Parameter Value',
+    1408: u'Invalid SSO Signing Key',
+    1409: u'Invalid Encryption Public Key',
+    1410: u'Feature Unavailable For User',
+    1500: u'Too Many Recipients On Email List',
+    1501: u'Too Many Aliases For User',
+    1502: u'Too Many Delegates For User',
+    1601: u'Duplicate Destinations',
+    1602: u'Too Many Destinations',
+    1603: u'Invalid Route Address',
+    1700: u'Group Cannot Contain Cycle',
+    1800: u'Group Cannot Contain Cycle', 
+    1801: u'Invalid value %s' % getattr(e, 'invalidInput', "<unknown>")
+  }
+
+  return u'%s - %s' % (e.error_code, error_code_map.get(e.error_code, u'Unknown Error: %s' % (str(e))))
 
 def tryOAuth(gdataObject):
   global domain
   global customerId
-  try:
-    oauth2file = os.path.join(gamUserConfigDir, os.environ[u'OAUTHFILE'])
-  except KeyError:
-    oauth2file = os.path.join(gamUserConfigDir, u'oauth2.txt')
+  oauth2file = os.path.join(gamUserConfigDir, os.environ.get(u'OAUTHFILE', 'oauth2.txt'))
   storage = oauth2client.file.Storage(oauth2file)
   credentials = storage.get()
   if credentials is None or credentials.invalid:
@@ -357,14 +297,8 @@ def tryOAuth(gdataObject):
       disable_ssl_certificate_validation = True
     credentials.refresh(httplib2.Http(disable_ssl_certificate_validation=disable_ssl_certificate_validation))
   gdataObject.additional_headers = {u'Authorization': u'Bearer %s' % credentials.access_token}
-  try:
-    domain = os.environ[u'GA_DOMAIN'].lower()
-  except KeyError:
-    domain = credentials.id_token[u'hd'].lower()
-  try:
-    customerId = os.environ[u'CUSTOMER_ID']
-  except KeyError:
-    customerId = u'my_customer'
+  domain = os.environ.get(u'GA_DOMAIN', credentials.id_token[u'hd']).lower()
+  customerId = os.environ.get(u'CUSTOMER_ID', 'my_customer')
   gdataObject.domain = domain
   return True
 
@@ -556,10 +490,7 @@ def getAPIScope(api):
 
 def buildGAPIObject(api):
   global domain, customerId
-  try:
-    oauth2file = os.path.join(gamUserConfigDir, os.environ[u'OAUTHFILE'])
-  except KeyError:
-    oauth2file = os.path.join(gamUserConfigDir, u'oauth2.txt')
+  oauth2file = os.path.join(gamUserConfigDir, os.environ.get(u'OAUTHFILE', 'oauth2.txt'))
   storage = oauth2client.file.Storage(oauth2file)
   credentials = storage.get()
   if credentials is None or credentials.invalid:
@@ -622,10 +553,7 @@ def buildGAPIObject(api):
   return service
 
 def buildGAPIServiceObject(api, act_as=None, soft_errors=False):
-  try:
-    oauth2servicefile = os.path.join(gamUserConfigDir, os.environ[u'OAUTHSERVICEFILE'])
-  except KeyError:
-    oauth2servicefile = os.path.join(gamUserConfigDir, u'oauth2service')
+  oauth2servicefile = os.path.join(gamUserConfigDir, os.environ.get(u'OAUTHSERVICEFILE', 'oauth2service'))
   oauth2servicefilejson = u'%s.json' % oauth2servicefile
   oauth2servicefilep12 = u'%s.p12' % oauth2servicefile
   try:
@@ -5960,10 +5888,7 @@ def doGetUserInfo(user_email=None):
     try:
       user_email = sys.argv[3]
     except IndexError:
-      try:
-        oauth2file = os.path.join(gamUserConfigDir, os.environ[u'OAUTHFILE'])
-      except KeyError:
-        oauth2file = os.path.join(gamUserConfigDir, u'oauth2.txt')
+      oauth2file = os.path.join(gamUserConfigDir, os.environ.get(u'OAUTHFILE'), 'oauth2.txt')
       storage = oauth2client.file.Storage(oauth2file)
       credentials = storage.get()
       if credentials is None or credentials.invalid:
@@ -8396,10 +8321,7 @@ def OAuthInfo():
   try:
     access_token = sys.argv[3]
   except IndexError:
-    try:
-      oauth2file = os.path.join(gamUserConfigDir, os.environ[u'OAUTHFILE'])
-    except KeyError:
-      oauth2file = os.path.join(gamUserConfigDir, u'oauth2.txt')
+    oauth2file = os.path.join(gamUserConfigDir, os.environ.get(u'OAUTHFILE', 'oauth2.txt'))
     storage = oauth2client.file.Storage(oauth2file)
     credentials = storage.get()
     if credentials is None or credentials.invalid:
@@ -8434,10 +8356,7 @@ def OAuthInfo():
     print u'Google Apps Admin: Unknown'
 
 def doDeleteOAuth():
-  try:
-    oauth2file = os.path.join(gamUserConfigDir, os.environ[u'OAUTHFILE'])
-  except KeyError:
-    oauth2file = os.path.join(gamUserConfigDir, u'oauth2.txt')
+  oauth2file = os.path.join(gamUserConfigDir, os.environ.get(u'OAUTHFILE', 'oauth2.txt'))
   storage = oauth2client.file.Storage(oauth2file)
   credentials = storage.get()
   try:
@@ -8499,10 +8418,7 @@ possible_scopes = [u'https://www.googleapis.com/auth/admin.directory.group',    
                    u'https://www.googleapis.com/auth/admin.directory.domain']            # Domain API
 
 def doRequestOAuth(incremental_auth=False):
-  try:
-    CLIENT_SECRETS = os.path.join(gamUserConfigDir, os.environ[u'CLIENTSECRETSFILE'])
-  except KeyError:
-    CLIENT_SECRETS = os.path.join(gamUserConfigDir, u'client_secrets.json')
+  CLIENT_SECRETS = os.path.join(gamUserConfigDir, os.environ.get(u'CLIENTSECRETSFILE', 'client_secrets.json'))
   MISSING_CLIENT_SECRETS_MESSAGE = u"""
 WARNING: Please configure OAuth 2.0
 
@@ -8625,10 +8541,7 @@ access or an 'a' to grant action-only access.
   FLOW = oauth2client.client.flow_from_clientsecrets(CLIENT_SECRETS,
                                                      scope=scopes,
                                                      message=MISSING_CLIENT_SECRETS_MESSAGE)
-  try:
-    oauth2file = os.path.join(gamUserConfigDir, os.environ[u'OAUTHFILE'])
-  except KeyError:
-    oauth2file = os.path.join(gamUserConfigDir, u'oauth2.txt')
+  oauth2file = os.path.join(gamUserConfigDir, os.environ.get(u'OAUTHFILE', 'oauth2.txt'))
   storage = oauth2client.file.Storage(oauth2file)
   credentials = storage.get()
   flags = cmd_flags()
@@ -8661,7 +8574,7 @@ def run_batch(items):
   if not getattr(sys, 'frozen', False): # we're not frozen
     python_cmd.append(os.path.realpath(sys.argv[0]))
   try:
-    num_worker_threads = int(os.environ[u'GAM_THREADS'])
+    num_worker_threads = int(os.environ.get(u'GAM_THREADS', 5))
   except (TypeError, KeyError):
     num_worker_threads = 5
   import Queue, threading
