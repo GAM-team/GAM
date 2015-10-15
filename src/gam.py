@@ -253,11 +253,11 @@ def checkErrorCode(e, service):
     1201: u'Domain alias limit exceeded',
     1202: u'Domain suspended',
     1203: u'Domain feature unavailable',
-    1300:  u'Entity %s exists' % e.invalidInput or '<unknown>',
-    1301: u'Entity %s Does Not Exist' % e.invalidInput or '<unknown>',
+    1300:  u'Entity %s exists' % getattr(e, 'invalidInput', ""),
+    1301: u'Entity %s Does Not Exist' % getattr(e, 'invalidInput', ""),
     1302: u'Entity Name Is Reserved',
-    1303: u'Entity %s name not valid' % e.invalidInput or '<unknown>',
-    1306: u'%s has members. Cannot delete.' % e.invalidInput or '<unknown>',
+    1303: u'Entity %s name not valid' % getattr(e, 'invalidInput', ""),
+    1306: u'%s has members. Cannot delete.' % getattr(e, 'invalidInput', ""),
     1400: u'Invalid Given Name',
     1401: u'Invalid Family Name',
     1402: u'Invalid Password',
@@ -277,7 +277,7 @@ def checkErrorCode(e, service):
     1603: u'Invalid Route Address',
     1700: u'Group Cannot Contain Cycle',
     1800: u'Group Cannot Contain Cycle', 
-    1801: u'Invalid value %s' % e.invalidInput or ''
+    1801: u'Invalid value %s' % getattr(e, 'invalidInput', "")
   }
 
   return u'%s - %s' % (e.error_code, error_code_map.get(e.error_code, u'Unknown Error: %s' % (str(e))))
