@@ -285,10 +285,7 @@ def checkErrorCode(e, service):
 def tryOAuth(gdataObject):
   global domain
   global customerId
-  try:
-    oauth2file = os.path.join(gamUserConfigDir, os.environ[u'OAUTHFILE'])
-  except KeyError:
-    oauth2file = os.path.join(gamUserConfigDir, u'oauth2.txt')
+  oauth2file = os.path.join(gamUserConfigDir, os.environ.get(u'OAUTHFILE', 'oauth2.txt'))
   storage = oauth2client.file.Storage(oauth2file)
   credentials = storage.get()
   if credentials is None or credentials.invalid:
@@ -300,14 +297,8 @@ def tryOAuth(gdataObject):
       disable_ssl_certificate_validation = True
     credentials.refresh(httplib2.Http(disable_ssl_certificate_validation=disable_ssl_certificate_validation))
   gdataObject.additional_headers = {u'Authorization': u'Bearer %s' % credentials.access_token}
-  try:
-    domain = os.environ[u'GA_DOMAIN'].lower()
-  except KeyError:
-    domain = credentials.id_token[u'hd'].lower()
-  try:
-    customerId = os.environ[u'CUSTOMER_ID']
-  except KeyError:
-    customerId = u'my_customer'
+  domain = os.environ.get(u'GA_DOMAIN', credentials.id_token[u'hd']).lower()
+  customerId = os.environ.get(u'CUSTOMER_ID', 'my_customer')
   gdataObject.domain = domain
   return True
 
@@ -499,10 +490,7 @@ def getAPIScope(api):
 
 def buildGAPIObject(api):
   global domain, customerId
-  try:
-    oauth2file = os.path.join(gamUserConfigDir, os.environ[u'OAUTHFILE'])
-  except KeyError:
-    oauth2file = os.path.join(gamUserConfigDir, u'oauth2.txt')
+  oauth2file = os.path.join(gamUserConfigDir, os.environ.get(u'OAUTHFILE', 'oauth2.txt'))
   storage = oauth2client.file.Storage(oauth2file)
   credentials = storage.get()
   if credentials is None or credentials.invalid:
@@ -565,10 +553,7 @@ def buildGAPIObject(api):
   return service
 
 def buildGAPIServiceObject(api, act_as=None, soft_errors=False):
-  try:
-    oauth2servicefile = os.path.join(gamUserConfigDir, os.environ[u'OAUTHSERVICEFILE'])
-  except KeyError:
-    oauth2servicefile = os.path.join(gamUserConfigDir, u'oauth2service')
+  oauth2servicefile = os.path.join(gamUserConfigDir, os.environ.get(u'OAUTHSERVICEFILE', 'oauth2service'))
   oauth2servicefilejson = u'%s.json' % oauth2servicefile
   oauth2servicefilep12 = u'%s.p12' % oauth2servicefile
   try:
@@ -5903,10 +5888,7 @@ def doGetUserInfo(user_email=None):
     try:
       user_email = sys.argv[3]
     except IndexError:
-      try:
-        oauth2file = os.path.join(gamUserConfigDir, os.environ[u'OAUTHFILE'])
-      except KeyError:
-        oauth2file = os.path.join(gamUserConfigDir, u'oauth2.txt')
+      oauth2file = os.path.join(gamUserConfigDir, os.environ.get(u'OAUTHFILE'), 'oauth2.txt')
       storage = oauth2client.file.Storage(oauth2file)
       credentials = storage.get()
       if credentials is None or credentials.invalid:
@@ -8345,10 +8327,7 @@ def OAuthInfo():
   try:
     access_token = sys.argv[3]
   except IndexError:
-    try:
-      oauth2file = os.path.join(gamUserConfigDir, os.environ[u'OAUTHFILE'])
-    except KeyError:
-      oauth2file = os.path.join(gamUserConfigDir, u'oauth2.txt')
+    oauth2file = os.path.join(gamUserConfigDir, os.environ.get(u'OAUTHFILE', 'oauth2.txt'))
     storage = oauth2client.file.Storage(oauth2file)
     credentials = storage.get()
     if credentials is None or credentials.invalid:
@@ -8383,10 +8362,7 @@ def OAuthInfo():
     print u'Google Apps Admin: Unknown'
 
 def doDeleteOAuth():
-  try:
-    oauth2file = os.path.join(gamUserConfigDir, os.environ[u'OAUTHFILE'])
-  except KeyError:
-    oauth2file = os.path.join(gamUserConfigDir, u'oauth2.txt')
+  oauth2file = os.path.join(gamUserConfigDir, os.environ.get(u'OAUTHFILE', 'oauth2.txt'))
   storage = oauth2client.file.Storage(oauth2file)
   credentials = storage.get()
   try:
@@ -8571,10 +8547,7 @@ access or an 'a' to grant action-only access.
   FLOW = oauth2client.client.flow_from_clientsecrets(CLIENT_SECRETS,
                                                      scope=scopes,
                                                      message=MISSING_CLIENT_SECRETS_MESSAGE)
-  try:
-    oauth2file = os.path.join(gamUserConfigDir, os.environ[u'OAUTHFILE'])
-  except KeyError:
-    oauth2file = os.path.join(gamUserConfigDir, u'oauth2.txt')
+  oauth2file = os.path.join(gamUserConfigDir, os.environ.get(u'OAUTHFILE', 'oauth2.txt'))
   storage = oauth2client.file.Storage(oauth2file)
   credentials = storage.get()
   flags = cmd_flags()
@@ -8607,8 +8580,8 @@ def run_batch(items):
   if not getattr(sys, 'frozen', False): # we're not frozen
     python_cmd.append(os.path.realpath(sys.argv[0]))
   try:
-    num_worker_threads = int(os.environ[u'GAM_THREADS'])
-  except (TypeError, KeyError):
+    num_worker_threads = int(os.environ.get(u'GAM_THREADS', '5'))
+  except TypeError:
     num_worker_threads = 5
   import Queue, threading
   global q
@@ -8987,14 +8960,14 @@ try:
       print user
       sys.exit(0)
   try:
-    autoBatch = int(os.environ[u'GAM_AUTOBATCH'])
-    if len(users) > autoBatch:
+    autoBatch = int(os.environ[u'GAM_AUTOBATCH', '0'])
+    if (autoBatch > 0) and (len(users) > autoBatch):
       items = []
       for user in users:
         items.append([u'user', user] + sys.argv[3:])
       run_batch(items)
       sys.exit(0)
-  except (TypeError, KeyError):
+  except TypeError:
     pass
   if command == u'transfer':
     transferWhat = sys.argv[4].lower()
