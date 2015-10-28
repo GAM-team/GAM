@@ -3074,7 +3074,7 @@ def deleteDriveFile(users):
     if fileIds[:6].lower() == u'query:':
       file_ids = doDriveSearch(drive, query=fileIds[6:])
     else:
-      if fileIds[:8].lower() == u'https://' or fileIds[:7].lower == u'http://':
+      if fileIds[:8].lower() == u'https://' or fileIds[:7].lower() == u'http://':
         fileIds = fileIds[fileIds.find(u'/d/')+3:]
         if fileIds.find(u'/') != -1:
           fileIds = fileIds[:fileIds.find(u'/')]
@@ -3447,7 +3447,7 @@ def downloadDriveFile(users):
     if query:
       fileIds = doDriveSearch(drive, query=query)
     else:
-      if fileIds[0][:8].lower() == 'https://' or fileIds[0][:7].lower == 'http://':
+      if fileIds[0][:8].lower() == 'https://' or fileIds[0][:7].lower() == 'http://':
         fileIds[0] = fileIds[0][fileIds[0].find('/d/')+3:]
         if fileIds[0].find('/') != -1:
           fileIds[0] = fileIds[0][:fileIds[0].find('/')]
@@ -5802,10 +5802,10 @@ def doUpdateOrg():
   cd = buildGAPIObject(u'directory')
   if sys.argv[4].lower() in [u'move', u'add']:
     if sys.argv[5].lower() in usergroup_types:
-      users = getUsersToModify(entity_type=sys.argv[5], entity=sys.argv[6])
+      users = getUsersToModify(entity_type=sys.argv[5].lower(), entity=sys.argv[6])
     else:
       users = getUsersToModify(entity_type=u'user', entity=sys.argv[5])
-    if (sys.argv[5].lower() == u'cros') or ((sys.argv[5].lower() == u'all') and (sys.argv[6].lower == u'cros')):
+    if (sys.argv[5].lower() == u'cros') or ((sys.argv[5].lower() == u'all') and (sys.argv[6].lower() == u'cros')):
       cros_count = len(users)
       current_cros = 1
       for cros in users:
@@ -8274,7 +8274,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
   elif entity_type == u'all':
     got_uids = True
     users = []
-    if entity == u'users':
+    if entity.lower() == u'users':
       if not silent:
         sys.stderr.write(u"Getting all users in Google Apps account (may take some time on a large account)...\n")
       page_message = u'Got %%total_items%% users...'
@@ -8287,7 +8287,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
             users.append(member[u'primaryEmail'])
       if not silent:
         sys.stderr.write(u"done getting %s users.\r\n" % len(users))
-    elif entity == u'cros':
+    elif entity.lower() == u'cros':
       if not silent:
         sys.stderr.write(u"Getting all CrOS devices in Google Apps account (may take some time on a large account)...\n")
       all_cros = callGAPIpages(service=cd.chromeosdevices(), function=u'list', items=u'chromeosdevices', customerId=customerId, fields=u'nextPageToken,chromeosdevices(deviceId)')
