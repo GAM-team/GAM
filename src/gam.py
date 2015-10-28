@@ -24,7 +24,7 @@ For more information, see http://git.io/gam
 """
 
 __author__ = u'Jay Lee <jay0lee@gmail.com>'
-__version__ = u'3.61'
+__version__ = u'3.62'
 __license__ = u'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 import sys, os, time, datetime, random, socket, csv, platform, re, calendar, base64, string
@@ -65,14 +65,15 @@ def convertUTF8(data):
   import collections
   if isinstance(data, str):
     return data
-  elif isinstance(data, unicode):
-    return data.encode('utf-8')
-  elif isinstance(data, collections.Mapping):
-    return dict(map(convertUTF8, data.iteritems()))
-  elif isinstance(data, collections.Iterable):
-    return type(data)(map(convertUTF8, data))
-  else:
+  if isinstance(data, unicode):
+    if os.name != u'nt':
+      return data.encode('utf-8')
     return data
+  if isinstance(data, collections.Mapping):
+    return dict(map(convertUTF8, data.iteritems()))
+  if isinstance(data, collections.Iterable):
+    return type(data)(map(convertUTF8, data))
+  return data
 
 def win32_unicode_argv():
   from ctypes import POINTER, byref, cdll, c_int, windll
@@ -163,7 +164,6 @@ def setGamDirs():
     gamCacheDir = os.environ.get(u'GAMCACHEDIR', os.path.join(gamPath, u'gamcache'))
   gamDriveDir = os.environ.get(u'GAMDRIVEDIR', gamPath)
 
-
 def doGAMVersion():
   import struct
   print u'GAM %s - http://git.io/gam\n%s\nPython %s.%s.%s %s-bit %s\ngoogle-api-python-client %s\n%s %s\nPath: %s' % (__version__, __author__,
@@ -253,11 +253,11 @@ def checkErrorCode(e, service):
     1201: u'Domain alias limit exceeded',
     1202: u'Domain suspended',
     1203: u'Domain feature unavailable',
-    1300:  u'Entity %s exists' % e.invalidInput or '<unknown>',
-    1301: u'Entity %s Does Not Exist' % e.invalidInput or '<unknown>',
+    1300: u'Entity %s exists' % getattr(e, u'invalidInput', u'<unknown>'),
+    1301: u'Entity %s Does Not Exist' % getattr(e, u'invalidInput', u'<unknown>'),
     1302: u'Entity Name Is Reserved',
-    1303: u'Entity %s name not valid' % e.invalidInput or '<unknown>',
-    1306: u'%s has members. Cannot delete.' % e.invalidInput or '<unknown>',
+    1303: u'Entity %s name not valid' % getattr(e, u'invalidInput', u'<unknown>'),
+    1306: u'%s has members. Cannot delete.' % getattr(e, u'invalidInput', u'<unknown>'),
     1400: u'Invalid Given Name',
     1401: u'Invalid Family Name',
     1402: u'Invalid Password',
@@ -276,16 +276,19 @@ def checkErrorCode(e, service):
     1602: u'Too Many Destinations',
     1603: u'Invalid Route Address',
     1700: u'Group Cannot Contain Cycle',
-    1800: u'Group Cannot Contain Cycle', 
-    1801: u'Invalid value %s' % e.invalidInput or ''
+    1800: u'Group Cannot Contain Cycle',
+    1801: u'Invalid value %s' % getattr(e, u'invalidInput', u'<unknown>'),
   }
 
-  return u'%s - %s' % (e.error_code, error_code_map.get(e.error_code, u'Unknown Error: %s' % (e.error_code, str(e))))
+  return u'%s - %s' % (e.error_code, error_code_map.get(e.error_code, u'Unknown Error: %s' % (str(e))))
 
 def tryOAuth(gdataObject):
   global domain
   global customerId
-  oauth2file = os.path.join(gamUserConfigDir, os.environ.get(u'OAUTHFILE', 'oauth2.txt'))
+  try:
+    oauth2file = os.path.join(gamUserConfigDir, os.environ[u'OAUTHFILE'])
+  except KeyError:
+    oauth2file = os.path.join(gamUserConfigDir, u'oauth2.txt')
   storage = oauth2client.file.Storage(oauth2file)
   credentials = storage.get()
   if credentials is None or credentials.invalid:
@@ -297,8 +300,14 @@ def tryOAuth(gdataObject):
       disable_ssl_certificate_validation = True
     credentials.refresh(httplib2.Http(disable_ssl_certificate_validation=disable_ssl_certificate_validation))
   gdataObject.additional_headers = {u'Authorization': u'Bearer %s' % credentials.access_token}
-  domain = os.environ.get(u'GA_DOMAIN', credentials.id_token[u'hd']).lower()
-  customerId = os.environ.get(u'CUSTOMER_ID', 'my_customer')
+  try:
+    domain = os.environ[u'GA_DOMAIN'].lower()
+  except KeyError:
+    domain = credentials.id_token[u'hd'].lower()
+  try:
+    customerId = os.environ[u'CUSTOMER_ID']
+  except KeyError:
+    customerId = u'my_customer'
   gdataObject.domain = domain
   return True
 
@@ -490,7 +499,10 @@ def getAPIScope(api):
 
 def buildGAPIObject(api):
   global domain, customerId
-  oauth2file = os.path.join(gamUserConfigDir, os.environ.get(u'OAUTHFILE', 'oauth2.txt'))
+  try:
+    oauth2file = os.path.join(gamUserConfigDir, os.environ[u'OAUTHFILE'])
+  except KeyError:
+    oauth2file = os.path.join(gamUserConfigDir, u'oauth2.txt')
   storage = oauth2client.file.Storage(oauth2file)
   credentials = storage.get()
   if credentials is None or credentials.invalid:
@@ -553,7 +565,10 @@ def buildGAPIObject(api):
   return service
 
 def buildGAPIServiceObject(api, act_as=None, soft_errors=False):
-  oauth2servicefile = os.path.join(gamUserConfigDir, os.environ.get(u'OAUTHSERVICEFILE', 'oauth2service'))
+  try:
+    oauth2servicefile = os.path.join(gamUserConfigDir, os.environ[u'OAUTHSERVICEFILE'])
+  except KeyError:
+    oauth2servicefile = os.path.join(gamUserConfigDir, u'oauth2service')
   oauth2servicefilejson = u'%s.json' % oauth2servicefile
   oauth2servicefilep12 = u'%s.p12' % oauth2servicefile
   try:
@@ -3029,7 +3044,7 @@ def showDriveFiles(users):
     for f_file in feed:
       a_file = {u'Owner': user}
       for attrib in f_file:
-        if attrib in [u'kind', u'etags', u'etag', u'owners', 'parents']:
+        if attrib in [u'kind', u'etags', u'etag', u'owners', u'parents', u'permissions']:
           continue
         attrib_type = type(f_file[attrib])
         if attrib not in titles and not attrib_type is dict:
@@ -5888,7 +5903,10 @@ def doGetUserInfo(user_email=None):
     try:
       user_email = sys.argv[3]
     except IndexError:
-      oauth2file = os.path.join(gamUserConfigDir, os.environ.get(u'OAUTHFILE'), 'oauth2.txt')
+      try:
+        oauth2file = os.path.join(gamUserConfigDir, os.environ[u'OAUTHFILE'])
+      except KeyError:
+        oauth2file = os.path.join(gamUserConfigDir, u'oauth2.txt')
       storage = oauth2client.file.Storage(oauth2file)
       credentials = storage.get()
       if credentials is None or credentials.invalid:
@@ -6751,13 +6769,13 @@ def doGetInstanceInfo():
   if customerId != u'my_customer':
     customer_id = customerId
   else:
-    result = callGAPI(service=cd.users(), function=u'list', fields=u'users(customerId)', customer=customerId, sortOrder=u'DESCENDING')
+    result = callGAPI(service=cd.users(), function=u'list', fields=u'users(customerId)', customer=customerId, maxResults=1)
     customer_id = result[u'users'][0][u'customerId']
   print u'Customer ID: %s' % customer_id
   default_language = callGAPI(service=adm.defaultLanguage(), function=u'get', domainName=domain)
   print u'Default Language: %s' % default_language[u'entry'][u'apps$property'][0][u'value']
   org_name = callGAPI(service=adm.organizationName(), function='get', domainName=domain)
-  print u'Organization Name: %s' % org_name[u'entry'][u'apps$property'][0][u'value']
+  print convertUTF8(u'Organization Name: %s' % org_name[u'entry'][u'apps$property'][0][u'value'])
   admin_email = callGAPI(service=adm.adminSecondaryEmail(), function='get', domainName=domain)
   print u'Admin Secondary Email: %s' % admin_email[u'entry'][u'apps$property'][0][u'value']
   max_users = callGAPI(service=adm.maximumNumberOfUsers(), function=u'get', domainName=domain)
@@ -8327,7 +8345,10 @@ def OAuthInfo():
   try:
     access_token = sys.argv[3]
   except IndexError:
-    oauth2file = os.path.join(gamUserConfigDir, os.environ.get(u'OAUTHFILE', 'oauth2.txt'))
+    try:
+      oauth2file = os.path.join(gamUserConfigDir, os.environ[u'OAUTHFILE'])
+    except KeyError:
+      oauth2file = os.path.join(gamUserConfigDir, u'oauth2.txt')
     storage = oauth2client.file.Storage(oauth2file)
     credentials = storage.get()
     if credentials is None or credentials.invalid:
@@ -8362,7 +8383,10 @@ def OAuthInfo():
     print u'Google Apps Admin: Unknown'
 
 def doDeleteOAuth():
-  oauth2file = os.path.join(gamUserConfigDir, os.environ.get(u'OAUTHFILE', 'oauth2.txt'))
+  try:
+    oauth2file = os.path.join(gamUserConfigDir, os.environ[u'OAUTHFILE'])
+  except KeyError:
+    oauth2file = os.path.join(gamUserConfigDir, u'oauth2.txt')
   storage = oauth2client.file.Storage(oauth2file)
   credentials = storage.get()
   try:
@@ -8547,7 +8571,10 @@ access or an 'a' to grant action-only access.
   FLOW = oauth2client.client.flow_from_clientsecrets(CLIENT_SECRETS,
                                                      scope=scopes,
                                                      message=MISSING_CLIENT_SECRETS_MESSAGE)
-  oauth2file = os.path.join(gamUserConfigDir, os.environ.get(u'OAUTHFILE', 'oauth2.txt'))
+  try:
+    oauth2file = os.path.join(gamUserConfigDir, os.environ[u'OAUTHFILE'])
+  except KeyError:
+    oauth2file = os.path.join(gamUserConfigDir, u'oauth2.txt')
   storage = oauth2client.file.Storage(oauth2file)
   credentials = storage.get()
   flags = cmd_flags()
@@ -8580,7 +8607,7 @@ def run_batch(items):
   if not getattr(sys, 'frozen', False): # we're not frozen
     python_cmd.append(os.path.realpath(sys.argv[0]))
   try:
-    num_worker_threads = int(os.environ.get(u'GAM_THREADS', 5))
+    num_worker_threads = int(os.environ[u'GAM_THREADS'])
   except (TypeError, KeyError):
     num_worker_threads = 5
   import Queue, threading
