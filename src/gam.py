@@ -2416,7 +2416,7 @@ def doCalendarAddACL(calendarId=None, act_as=None, role=None, scope=None, entity
   else:
     body[u'role'] = sys.argv[4].lower()
   if body[u'role'] not in [u'freebusy', u'read', u'editor', u'owner', u'none']:
-    print u'ERROR: Role must be freebusy, read, editor or owner. Not %s' % body['role']
+    print u'ERROR: Role must be freebusy, read, editor, owner or none. Not %s' % body['role']
     sys.exit(2)
   if body[u'role'] == u'freebusy':
     body[u'role'] = u'freeBusyReader'
@@ -5446,7 +5446,7 @@ def doUpdateUser(users):
         sys.exit(2)
       field_value = sys.argv[i+1]
       is_multivalue = False
-      if field_value.lower() == u'multivalue':
+      if field_value.lower() in [u'multivalue', u'multivalued', u'value']:
         is_multivalue = True
         field_value = sys.argv[i+2]
       if schemaName not in body[u'customSchemas']:
@@ -6728,7 +6728,7 @@ def doUpdateInstance():
         elif account_handling == u'unknown_accounts':
           account_handling = u'unknownAccounts'
         else:
-          print u'ERROR: value for account_handling must be all_accounts, provisioned_account or unknown_accounts. Got %s' % sys.argv[i+1]
+          print u'ERROR: value for account_handling must be all_accounts, provisioned_accounts or unknown_accounts. Got %s' % sys.argv[i+1]
           sys.exit(2)
         i += 2
       else:
