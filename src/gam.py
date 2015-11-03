@@ -1529,15 +1529,15 @@ def doGetCourseInfo():
   print u' Teachers:'
   for teacher in teachers:
     try:
-      print u'  %s - %s' % (teacher[u'profile'][u'name'][u'fullName'], teacher[u'profile'][u'emailAddress'])
+      print convertUTF8(u'  %s - %s' % (teacher[u'profile'][u'name'][u'fullName'], teacher[u'profile'][u'emailAddress']))
     except KeyError:
-      print u'  %s' % teacher[u'profile'][u'name'][u'fullName']
+      print convertUTF8(u'  %s' % teacher[u'profile'][u'name'][u'fullName'])
   print u' Students:'
   for student in students:
     try:
-      print u'  %s - %s' % (student[u'profile'][u'name'][u'fullName'], student[u'profile'][u'emailAddress'])
+      print convertUTF8(u'  %s - %s' % (student[u'profile'][u'name'][u'fullName'], student[u'profile'][u'emailAddress']))
     except KeyError:
-      print u'  %s' % student[u'profile'][u'name'][u'fullName']
+      print convertUTF8(u'  %s' % student[u'profile'][u'name'][u'fullName'])
 
 def doPrintCourses():
   croom = buildGAPIObject(u'classroom')
@@ -3458,7 +3458,7 @@ def downloadDriveFile(users):
       extension = None
       result = callGAPI(service=drive.files(), function=u'get', fileId=fileId, fields=u'fileSize,title,mimeType,downloadUrl,exportLinks')
       if result[u'mimeType'] == u'application/vnd.google-apps.folder':
-        print u'Skipping download of folder %s' % result[u'title']
+        print convertUTF8(u'Skipping download of folder %s' % result[u'title'])
         continue
       try:
         result[u'fileSize'] = int(result[u'fileSize'])
@@ -3485,10 +3485,10 @@ def downloadDriveFile(users):
               pass
             break
         else:
-          print u'Skipping download of file {0}, Format {1} not available'.format(result[u'title'], ','.join(export_formats))
+          print convertUTF8(u'Skipping download of file {0}, Format {1} not available'.format(result[u'title'], ','.join(export_formats)))
           continue
       else:
-        print u'Skipping download of file {0}, Format not downloadable'
+        print convertUTF8(u'Skipping download of file {0}, Format not downloadable')
         continue
       file_title = result[u'title']
       safe_file_title = ''.join(c for c in file_title if c in safe_filename_chars)
@@ -3505,7 +3505,7 @@ def downloadDriveFile(users):
           if not os.path.isfile(new_filename):
             break
         filename = new_filename
-      print my_line % filename
+      print convertUTF8(my_line % filename)
       _, content = drive._http.request(download_url)
       f = open(filename, 'wb')
       f.write(content)
@@ -3530,16 +3530,16 @@ def showDriveFileInfo(users):
             for setti in settin:
               if setti == u'kind':
                 continue
-              print u' %s: %s' % (setti, settin[setti])
+              print convertUTF8(u' %s: %s' % (setti, settin[setti]))
             print ''
       elif setting_type == u"<type 'dict'>":
         print u'%s:' % setting
         for settin in feed[setting]:
           if settin == u'kind':
             continue
-          print u' %s: %s' % (settin, feed[setting][settin])
+          print convertUTF8(u' %s: %s' % (settin, feed[setting][settin]))
       else:
-        print u'%s: %s' % (setting, feed[setting])
+        print convertUTF8(u'%s: %s' % (setting, feed[setting]))
 
 def transferSecCals(users):
   target_user = sys.argv[5]
@@ -5932,9 +5932,9 @@ def doGetUserInfo(user_email=None):
   user = callGAPI(service=cd.users(), function=u'get', userKey=user_email, projection=projection, customFieldMask=customFieldMask, viewType=viewType)
   print u'User: %s' % user[u'primaryEmail']
   if u'name' in user and u'givenName' in user[u'name']:
-    print u'First Name: %s' % user[u'name'][u'givenName']
+    print convertUTF8(u'First Name: %s' % user[u'name'][u'givenName'])
   if u'name' in user and u'familyName' in user[u'name']:
-    print u'Last Name: %s' % user[u'name'][u'familyName']
+    print convertUTF8(u'Last Name: %s' % user[u'name'][u'familyName'])
   if u'isAdmin' in user:
     print u'Is a Super Admin: %s' % user[u'isAdmin']
   if u'isDelegatedAdmin' in user:
@@ -5972,13 +5972,13 @@ def doGetUserInfo(user_email=None):
     print u'IMs:'
     for im in user[u'ims']:
       for key in im:
-        print u' %s: %s' % (key, im[key])
+        print convertUTF8(u' %s: %s' % (key, im[key]))
       print u''
   if u'addresses' in user:
     print u'Addresses:'
     for address in user[u'addresses']:
       for key in address:
-        print u' %s: %s' % (key, address[key])
+        print convertUTF8(u' %s: %s' % (key, address[key]))
       print ''
   if u'organizations' in user:
     print u'Organizations:'
@@ -5986,13 +5986,13 @@ def doGetUserInfo(user_email=None):
       for key in org:
         if key == u'customType' and not org[key]:
           continue
-        print u' %s: %s' % (key, org[key])
+        print convertUTF8(u' %s: %s' % (key, org[key]))
       print u''
   if u'phones' in user:
     print u'Phones:'
     for phone in user[u'phones']:
       for key in phone:
-        print u' %s: %s' % (key, phone[key])
+        print convertUTF8(u' %s: %s' % (key, phone[key]))
       print u''
   if u'emails' in user:
     if len(user[u'emails']) > 1:
@@ -6004,9 +6004,9 @@ def doGetUserInfo(user_email=None):
           if key == u'type' and an_email[key] == u'custom':
             continue
           if key == u'customType':
-            print u' type: %s' % an_email[key]
+            print convertUTF8(u' type: %s' % an_email[key])
           else:
-            print u' %s: %s' % (key, an_email[key])
+            print convertUTF8(u' %s: %s' % (key, an_email[key]))
       print u''
   if u'relations' in user:
     print u'Relations:'
@@ -6015,9 +6015,9 @@ def doGetUserInfo(user_email=None):
         if key == u'type' and relation[key] == u'custom':
           continue
         elif key == u'customType':
-          print u' %s: %s' % (u'type', relation[key])
+          print convertUTF8(u' %s: %s' % (u'type', relation[key]))
         else:
-          print u' %s: %s' % (key, relation[key])
+          print convertUTF8(u' %s: %s' % (key, relation[key]))
       print u''
   if u'externalIds' in user:
     print u'External IDs:'
@@ -6026,9 +6026,9 @@ def doGetUserInfo(user_email=None):
         if key == u'type' and externalId[key] == u'custom':
           continue
         elif key == u'customType':
-          print u' %s: %s' % (u'type', externalId[key])
+          print convertUTF8(u' %s: %s' % (u'type', externalId[key]))
         else:
-          print u' %s: %s' % (key, externalId[key])
+          print convertUTF8(u' %s: %s' % (key, externalId[key]))
       print u''
   if getSchemas:
     if u'customSchemas' in user:
@@ -6037,11 +6037,11 @@ def doGetUserInfo(user_email=None):
         print u' Schema: %s' % schema
         for field in user[u'customSchemas'][schema]:
           if type(user[u'customSchemas'][schema][field]) is list:
-            print '  %s:' % field
+            print u'  %s:' % field
             for an_item in user[u'customSchemas'][schema][field]:
-              print '   %s' % an_item[u'value']
+              print convertUTF8(u'   %s' % an_item[u'value'])
           else:
-            print u'  %s: %s' % (field, user[u'customSchemas'][schema][field])
+            print convertUTF8(u'  %s: %s' % (field, user[u'customSchemas'][schema][field]))
         print
   if getAliases:
     if u'aliases' in user:
@@ -6103,7 +6103,7 @@ def doGetGroupInfo(group_name=None):
       for val in value:
         print u'  %s' % val
     else:
-      print u' %s: %s' % (key, value)
+      print convertUTF8(u' %s: %s' % (key, value))
   try:
     for key, value in settings.items():
       if key in [u'kind', u'etag', u'description', u'email', u'name']:
