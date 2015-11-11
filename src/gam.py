@@ -5093,7 +5093,7 @@ def doCreateResource():
     if sys.argv[i].lower() == u'description':
       description = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower() == u'resType':
+    elif sys.argv[i].lower() in [u'resType', u'type']:
       resType = sys.argv[i+1]
       i += 2
     else:
@@ -7756,14 +7756,15 @@ def doPrintResources():
   res_attributes = []
   res_attributes.append({u'Name': u'Name'})
   titles = ['Name']
-  printid = printdesc = printemail = todrive = False
+  printid = printdesc = printemail = printtype = todrive = False
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'allfields':
       printid = printdesc = printemail = True
-      res_attributes[0].update(ID=u'ID', Description=u'Description', Email=u'Email')
+      res_attributes[0].update(ID=u'ID', Description=u'Description', Email=u'Email', Type=u'Type')
       titles.append(u'ID')
       titles.append(u'Description')
       titles.append(u'Email')
+      titles.append(u'Type')
       i += 1
     elif sys.argv[i].lower() == u'todrive':
       todrive = True
@@ -7783,11 +7784,16 @@ def doPrintResources():
       res_attributes[0].update(Email=u'Email')
       titles.append(u'Email')
       i += 1
+    elif sys.argv[i].lower() == u'type':
+      printtype = True
+      res_attributes[0].update(Type=u'Type')
+      titles.append(u'Type')
+      i += 1
     else:
       print 'ERROR: %s is not a valid argument for "gam print resources"' % sys.argv[i]
       sys.exit(2)
   resObj = getResCalObject()
-  sys.stderr.write(u"Retrieving All Resource Calendars for your account (may take some time on a large domain)")
+  sys.stderr.write(u"Retrieving All Resource Calendars for your account (may take some time on a large domain)\n")
   resources = callGData(service=resObj, function=u'RetrieveAllResourceCalendars')
   for resource in resources:
     resUnit = {}
@@ -7802,6 +7808,8 @@ def doPrintResources():
       resUnit.update({u'Description': desc})
     if printemail:
       resUnit.update({u'Email': resource[u'resourceEmail']})
+    if printtype:
+      resUnit.update({u'Type': resource[u'resourceType']})
     res_attributes.append(resUnit)
   output_csv(res_attributes, titles, u'Resources', todrive)
 
