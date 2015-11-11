@@ -5093,7 +5093,7 @@ def doCreateResource():
     if sys.argv[i].lower() == u'description':
       description = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower() in [u'resType', u'type']:
+    elif sys.argv[i].lower() == u'type':
       resType = sys.argv[i+1]
       i += 2
     else:
