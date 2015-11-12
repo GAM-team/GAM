@@ -8273,12 +8273,16 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
       page_message = u'Got %%total_items%% teachers...'
       teachers = callGAPIpages(service=croom.courses().teachers(), function=u'list', items=u'teachers', page_message=page_message, courseId=entity)
       for teacher in teachers:
-        users.append(teacher[u'profile'][u'emailAddress'])
+        email = teacher[u'profile'].get(u'emailAddress', None)
+        if email:
+          users.append(email)
     if entity_type in [u'courseparticipants', u'students']:
       page_message = u'Got %%total_items%% students...'
       students = callGAPIpages(service=croom.courses().students(), function=u'list', page_message=page_message, items=u'students', courseId=entity)
       for student in students:
-        users.append(student[u'profile'][u'emailAddress'])
+        email = student[u'profile'].get(u'emailAddress', None)
+        if email:
+          users.append(email)
   elif entity_type == u'all':
     got_uids = True
     users = []
