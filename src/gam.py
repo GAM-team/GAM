@@ -8968,7 +8968,7 @@ try:
       print user
       sys.exit(0)
   try:
-    autoBatch = int(os.environ[u'GAM_AUTOBATCH', '0'])
+    autoBatch = int(os.environ.get(u'GAM_AUTOBATCH', '0'))
     if (autoBatch > 0) and (len(users) > autoBatch):
       items = []
       for user in users:
