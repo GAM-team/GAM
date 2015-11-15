@@ -43,6 +43,15 @@ import mimetypes
 import ntpath
 
 is_frozen = getattr(sys, 'frozen', '')
+
+GAM_URL = u'http://git.io/gam'
+GAM_INFO = u'GAM {0} - {1} / {2} / Python {3}.{4}.{5} {6} / {7} {8} /'.format(__version__, GAM_URL,
+                                                                              __author__,
+                                                                              sys.version_info[0], sys.version_info[1], sys.version_info[2],
+                                                                              sys.version_info[3],
+                                                                              platform.platform(), platform.machine())
+GAM_RELEASES = u'http://git.io/gamreleases'
+
 extra_args = {u'prettyPrint': False}
 true_values = [u'on', u'yes', u'enabled', u'true', u'1']
 false_values = [u'off', u'no', u'disabled', u'false', u'0']
@@ -166,9 +175,13 @@ def setGamDirs():
 
 def doGAMVersion():
   import struct
-  print u'GAM %s - http://git.io/gam\n%s\nPython %s.%s.%s %s-bit %s\ngoogle-api-python-client %s\n%s %s\nPath: %s' % (__version__, __author__,
-                   sys.version_info[0], sys.version_info[1], sys.version_info[2], struct.calcsize('P')*8, sys.version_info[3], googleapiclient.__version__,
-                   platform.platform(), platform.machine(), gamPath)
+  print u'GAM {0} - {1}\n{2}\nPython {3}.{4}.{5} {6}-bit {7}\ngoogle-api-python-client {8}\n{9} {10}\nPath: {11}'.format(__version__, GAM_URL,
+                                                                                                                         __author__,
+                                                                                                                         sys.version_info[0], sys.version_info[1], sys.version_info[2],
+                                                                                                                         struct.calcsize('P')*8, sys.version_info[3],
+                                                                                                                         googleapiclient.__version__,
+                                                                                                                         platform.platform(), platform.machine(),
+                                                                                                                         gamPath)
 
 def doGAMCheckForUpdates():
   import urllib2
@@ -217,16 +230,6 @@ def doGAMCheckForUpdates():
     return
   except urllib2.URLError:
     return
-
-def commonAppsObjInit(appsObj):
-  #Identify GAM to Google's Servers
-  appsObj.source = u'GAM %s - http://git.io/gam / %s / Python %s.%s.%s %s / %s %s /' % (__version__, __author__,
-                   sys.version_info[0], sys.version_info[1], sys.version_info[2], sys.version_info[3],
-                   platform.platform(), platform.machine())
-  #Show debugging output if debug.gam exists
-  if os.path.isfile(os.path.join(gamUserConfigDir, u'debug.gam')):
-    appsObj.debug = True
-  return appsObj
 
 def checkErrorCode(e, service):
 
@@ -438,67 +441,69 @@ def callGAPIpages(service, function, items=u'items', nextPageToken=u'nextPageTok
         sys.stderr.write(u'\n')
       return all_pages
 
+API_VER_MAPPING = {
+  u'admin-settings': u'v1',
+  u'appsactivity': u'v1',
+  u'calendar': u'v3',
+  u'classroom': u'v1',
+  u'cloudprint': u'v2',
+  u'datatransfer': u'datatransfer_v1',
+  u'directory': u'directory_v1',
+  u'drive': u'v2',
+  u'gmail': u'v1',
+  u'groupssettings': u'v1',
+  u'licensing': u'v1',
+  u'oauth2': u'v2',
+  u'plus': u'v1',
+  u'plusDomains': u'v1',
+  u'reports': u'reports_v1',
+  u'siteVerification': u'v1',
+  }
+
 def getAPIVer(api):
-  if api == u'directory':
-    return u'directory_v1'
-  elif api == u'reports':
-    return u'reports_v1'
-  elif api == u'datatransfer':
-    return u'datatransfer_v1'
-  elif api == u'oauth2':
-    return u'v2'
-  elif api == u'groupssettings':
-    return u'v1'
-  elif api == u'calendar':
-    return u'v3'
-  elif api == u'plus':
-    return u'v1'
-  elif api == u'plusDomains':
-    return u'v1'
-  elif api == u'drive':
-    return u'v2'
-  elif api == u'licensing':
-    return u'v1'
-  elif api == u'siteVerification':
-    return u'v1'
-  elif api == u'gmail':
-    return u'v1'
-  elif api == u'appsactivity':
-    return u'v1'
-  elif api == u'classroom':
-    return u'v1'
-  elif api == u'cloudprint':
-    return u'v2'
-  return u'v1'
+  return API_VER_MAPPING.get(api, u'v1')
+
+API_SCOPE_MAPPING = {
+  u'appsactivity': [u'https://www.googleapis.com/auth/activity',
+                    u'https://www.googleapis.com/auth/drive'],
+  u'calendar': [u'https://www.googleapis.com/auth/calendar',],
+  u'drive': [u'https://www.googleapis.com/auth/drive',],
+  u'gmail': [u'https://mail.google.com/',],
+  u'plus': [u'https://www.googleapis.com/auth/plus.me',],
+  u'plusDomains': [u'https://www.googleapis.com/auth/plus.me',
+                   u'https://www.googleapis.com/auth/plus.circles.read',
+                   u'https://www.googleapis.com/auth/plus.circles.write'],
+}
 
 def getAPIScope(api):
-  if api == u'calendar':
-    return [u'https://www.googleapis.com/auth/calendar',]
-  elif api == u'drive':
-    return [u'https://www.googleapis.com/auth/drive',]
-  elif api == u'plus':
-    return [u'https://www.googleapis.com/auth/plus.me',]
-  elif api == u'plusDomains':
-    return [u'https://www.googleapis.com/auth/plus.me',
-            u'https://www.googleapis.com/auth/plus.circles.read',
-            u'https://www.googleapis.com/auth/plus.circles.write']
-  elif api == u'gmail':
-    return [u'https://mail.google.com/']
-  elif api == u'appsactivity':
-    return [u'https://www.googleapis.com/auth/activity',
-            u'https://www.googleapis.com/auth/drive']
+  return API_SCOPE_MAPPING.get(api, [])
+
+def getServiceFromDiscoveryDocument(api, version, http):
+  disc_filename = u'%s-%s.json' % (api, version)
+  disc_file = os.path.join(gamSiteConfigDir, disc_filename)
+  if hasattr(sys, '_MEIPASS'):
+    pyinstaller_disc_file = os.path.join(sys._MEIPASS, disc_filename)
+  else:
+    pyinstaller_disc_file = None
+  if os.path.isfile(disc_file):
+    with open(disc_file, 'rb') as f:
+      discovery = f.read()
+  elif pyinstaller_disc_file:
+    with open(pyinstaller_disc_file, 'rb') as f:
+      discovery = f.read()
+  else:
+    print u'No online discovery doc and {0} does not exist locally'.format(disc_file)
+    raise
+  return googleapiclient.discovery.build_from_document(discovery, base=u'https://www.googleapis.com', http=http)
 
 def buildGAPIObject(api):
   global domain, customerId
-  oauth2file = os.path.join(gamUserConfigDir, os.environ.get(u'OAUTHFILE', 'oauth2.txt'))
-  storage = oauth2client.file.Storage(oauth2file)
+  storage = oauth2client.file.Storage(os.path.join(gamUserConfigDir, os.environ.get(u'OAUTHFILE', 'oauth2.txt')))
   credentials = storage.get()
   if credentials is None or credentials.invalid:
     doRequestOAuth()
     credentials = storage.get()
-  credentials.user_agent = u'GAM %s - http://git.io/gam / %s / Python %s.%s.%s %s / %s %s /' % (__version__, __author__,
-                   sys.version_info[0], sys.version_info[1], sys.version_info[2], sys.version_info[3],
-                   platform.platform(), platform.machine())
+  credentials.user_agent = GAM_INFO
   disable_ssl_certificate_validation = False
   if os.path.isfile(os.path.join(gamUserConfigDir, u'noverifyssl.txt')):
     disable_ssl_certificate_validation = True
@@ -519,23 +524,7 @@ def buildGAPIObject(api):
   try:
     service = googleapiclient.discovery.build(api, version, http=http)
   except googleapiclient.errors.UnknownApiNameOrVersion:
-    disc_filename = u'%s-%s.json' % (api, version)
-    disc_file = os.path.join(gamSiteConfigDir, disc_filename)
-    pyinstaller_disc_file = None
-    try:
-      pyinstaller_disc_file = os.path.join(sys._MEIPASS, disc_filename)
-    except (NameError, AttributeError):
-      pass
-    if os.path.isfile(disc_file):
-      f = file(disc_file, 'rb')
-    elif pyinstaller_disc_file:
-      f = file(pyinstaller_disc_file, 'rb')
-    else:
-      print 'No online discovery doc and %s does not exist locally' % disc_file
-      raise
-    discovery = f.read()
-    f.close()
-    service = googleapiclient.discovery.build_from_document(discovery, base=u'https://www.googleapis.com', http=http)
+    service = getServiceFromDiscoveryDocument(api, version, http)
   except httplib2.CertificateValidationUnsupported:
     print u'Error: You don\'t have the Python ssl module installed so we can\'t verify SSL Certificates. You can fix this by installing the Python SSL module or you can live on the edge and turn SSL validation off by creating a file called noverifyssl.txt in the same location as gam.exe / gam.py'
     sys.exit(8)
@@ -580,9 +569,7 @@ def buildGAPIServiceObject(api, act_as=None, soft_errors=False):
     credentials = oauth2client.client.SignedJwtAssertionCredentials(SERVICE_ACCOUNT_EMAIL, key, scope=scope)
   else:
     credentials = oauth2client.client.SignedJwtAssertionCredentials(SERVICE_ACCOUNT_EMAIL, key, scope=scope, sub=act_as)
-  credentials.user_agent = u'GAM %s - http://git.io/gam / %s / Python %s.%s.%s %s / %s %s /' % (__version__, __author__,
-                   sys.version_info[0], sys.version_info[1], sys.version_info[2], sys.version_info[3],
-                   platform.platform(), platform.machine())
+  credentials.user_agent = GAM_INFO
   disable_ssl_certificate_validation = False
   if os.path.isfile(os.path.join(gamUserConfigDir, u'noverifyssl.txt')):
     disable_ssl_certificate_validation = True
@@ -600,6 +587,8 @@ def buildGAPIServiceObject(api, act_as=None, soft_errors=False):
   version = getAPIVer(api)
   try:
     return googleapiclient.discovery.build(api, version, http=http)
+  except googleapiclient.errors.UnknownApiNameOrVersion:
+    return getServiceFromDiscoveryDocument(api, version, http)
   except oauth2client.client.AccessTokenRefreshError, e:
     if e.message in [u'access_denied', u'unauthorized_client: Unauthorized client or scope in request.']:
       print u'Error: Access Denied. Please make sure the Client Name:\n\n%s\n\nis authorized for the API Scope(s):\n\n%s\n\nThis can be configured in your Control Panel under:\n\nSecurity -->\nAdvanced Settings -->\nManage third party OAuth Client access' % (SERVICE_ACCOUNT_CLIENT_ID, ','.join(scope))
@@ -609,24 +598,6 @@ def buildGAPIServiceObject(api, act_as=None, soft_errors=False):
       if soft_errors:
         return False
       sys.exit(4)
-  except googleapiclient.errors.UnknownApiNameOrVersion:
-    disc_filename = u'%s-%s.json' % (api, version)
-    disc_file = os.path.join(gamSiteConfigDir, disc_filename)
-    pyinstaller_disc_file = None
-    try:
-      pyinstaller_disc_file = os.path.join(sys._MEIPASS, disc_filename)
-    except (NameError, AttributeError):
-      pass
-    if os.path.isfile(disc_file):
-      f = file(disc_file, 'rb')
-    elif pyinstaller_disc_file:
-      f = file(pyinstaller_disc_file, 'rb')
-    else:
-      print 'No online discovery doc and %s does not exist locally' % disc_file
-      raise
-    discovery = f.read()
-    f.close()
-    return googleapiclient.discovery.build_from_document(discovery, base=u'https://www.googleapis.com', http=http)
 
 def buildDiscoveryObject(api):
   import uritemplate
@@ -650,41 +621,32 @@ def buildDiscoveryObject(api):
     sys.stderr.write(u'Failed to parse as JSON: ' + content+u'\n')
     raise googleapiclient.errors.InvalidJsonError()
 
-def getEmailSettingsObject():
-  import gdata.apps.emailsettings.service
-  emailsettings = gdata.apps.emailsettings.service.EmailSettingsService()
-  if not tryOAuth(emailsettings):
+def commonAppsObjInit(appsObj):
+  if not tryOAuth(appsObj):
     doRequestOAuth()
-    tryOAuth(emailsettings)
-  emailsettings = commonAppsObjInit(emailsettings)
-  return emailsettings
+    tryOAuth(appsObj)
+  #Identify GAM to Google's Servers
+  appsObj.source = GAM_INFO
+  #Show debugging output if debug.gam exists
+  if os.path.isfile(os.path.join(gamUserConfigDir, u'debug.gam')):
+    appsObj.debug = True
+  return appsObj
 
 def getAdminSettingsObject():
   import gdata.apps.adminsettings.service
-  adminsettings = gdata.apps.adminsettings.service.AdminSettingsService()
-  if not tryOAuth(adminsettings):
-    doRequestOAuth()
-    tryOAuth(adminsettings)
-  adminsettings = commonAppsObjInit(adminsettings)
-  return adminsettings
+  return commonAppsObjInit(gdata.apps.adminsettings.service.AdminSettingsService())
 
 def getAuditObject():
   import gdata.apps.audit.service
-  auditObj = gdata.apps.audit.service.AuditService()
-  if not tryOAuth(auditObj):
-    doRequestOAuth()
-    tryOAuth(auditObj)
-  auditObj = commonAppsObjInit(auditObj)
-  return auditObj
+  return commonAppsObjInit(gdata.apps.audit.service.AuditService())
+
+def getEmailSettingsObject():
+  import gdata.apps.emailsettings.service
+  return commonAppsObjInit(gdata.apps.emailsettings.service.EmailSettingsService())
 
 def getResCalObject():
   import gdata.apps.res_cal.service
-  resCalObj = gdata.apps.res_cal.service.ResCalService()
-  if not tryOAuth(resCalObj):
-    doRequestOAuth()
-    tryOAuth(resCalObj)
-  resCalObj = commonAppsObjInit(resCalObj)
-  return resCalObj
+  return commonAppsObjInit(gdata.apps.res_cal.service.ResCalService())
 
 def geturl(url, dst):
   import urllib2
@@ -1308,20 +1270,15 @@ def doPrintDomains():
         domains_attributes.append(aliasdomain_attributes)
   output_csv(domains_attributes, titles, u'Domains', todrive)
 
-def appID2app(dt, appID):
-  known_services = [
-  {
-   "id": "55656082996",
-   "name": "Drive",
-  },
-  {
-   "id": "553547912911",
-   "name": "Google+"
+SERVICE_NAME_TO_ID_MAP = {
+  u'Drive': u'55656082996',
+  u'Google+': '553547912911',
   }
-  ]
-  for known_service in known_services:
-    if appID == known_service[u'id']:
-      return known_service[u'name']
+
+def appID2app(dt, appID):
+  for serviceName, serviceID in SERVICE_NAME_TO_ID_MAP.items():
+    if appID == serviceID:
+      return serviceName
   online_services = callGAPIpages(service=dt.applications(), function=u'list', items=u'applications', customerId=customerId)
   for online_service in online_services:
     if appID == online_service[u'id']:
@@ -1329,27 +1286,21 @@ def appID2app(dt, appID):
   print u'ERROR: %s is not a valid app ID for data transfer.' % appID
   sys.exit(2)
 
-def app2appID(dt, app):
-  if app.lower() in [u'googleplus', u'gplus', u'g+']:
-    app = u'Google+'
-  elif app.lower() in [u'googledrive', u'gdrive']:
-    app = u'Drive'
-  known_services = [
-  {
-   "id": "55656082996",
-   "name": "Drive",
-  },
-  {
-   "id": "553547912911",
-   "name": "Google+"
+SERVICE_NAME_CHOICES_MAP = {
+  u'googleplus': u'Google+',
+  u'gplus': u'Google+',
+  u'g+': u'Google+',
+  u'googledrive': u'Drive',
+  u'gdrive': u'Drive',
   }
-  ]
-  for known_service in known_services:
-    if app.lower() == known_service[u'name'].lower():
-      return known_service[u'id']
+
+def app2appID(dt, app):
+  serviceName = app.lower()
+  if serviceName in SERVICE_NAME_CHOICES_MAP:
+    return (SERVICE_NAME_CHOICES_MAP[serviceName], SERVICE_NAME_TO_ID_MAP[SERVICE_NAME_CHOICES_MAP[serviceName]])
   online_services = callGAPIpages(service=dt.applications(), function=u'list', items=u'applications', customerId=customerId)
   for online_service in online_services:
-    if app.lower() == online_service[u'name'].lower():
+    if serviceName == online_service[u'name'].lower():
       return online_service[u'id']
   print u'ERROR: %s is not a valid service for data transfer.' % app
   sys.exit(2)
@@ -1427,8 +1378,8 @@ def doPrintDataTransfers():
       sys.exit(2)
   transfers_attributes = [{}]
   transfers = callGAPIpages(service=dt.transfers(), function=u'list',
-   items=u'dataTransfers', customerId=customerId, status=status,
-   newOwnerUserId=newOwnerUserId, oldOwnerUserId=oldOwnerUserId)
+                            items=u'dataTransfers', customerId=customerId, status=status,
+                            newOwnerUserId=newOwnerUserId, oldOwnerUserId=oldOwnerUserId)
   for transfer in transfers:
     for i in range(0, len(transfer[u'applicationDataTransfers'])):
       a_transfer = dict()
@@ -2273,9 +2224,9 @@ def doPrinterRegister():
                  u'manufacturer': __author__,
                  u'model': u'cp1',
                  u'gcp_version': u'2.0',
-                 u'setup_url': u'http://git.io/gam',
+                 u'setup_url': GAM_URL,
                  u'support_url': u'https://groups.google.com/forum/#!forum/google-apps-manager',
-                 u'update_url': u'http://git.io/gamreleases',
+                 u'update_url': GAM_RELEASES,
                  u'firmware': __version__,
                  u'semantic_state': {"version": "1.0", "printer": {"state": "IDLE",}},
                  u'use_cdd': True,
@@ -2292,7 +2243,7 @@ def doPrinterRegister():
                                                              },
                                               },
                                   },
-                 u'tags': [u'GAM', u'http://git.io/gam'],
+                 u'tags': [u'GAM', GAM_URL],
                 }
   form_files = {}
   body, headers = encode_multipart(form_fields, form_files)
@@ -2324,7 +2275,7 @@ def doPrintJobSubmit():
   form_fields = {u'printerid': printer,
                  u'title': content,
                  u'ticket': u'{"version": "1.0"}',
-                 u'tags': [u'GAM', u'http://git.io/gam']}
+                 u'tags': [u'GAM', GAM_URL]}
   i = 5
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'tag':
@@ -8345,9 +8296,7 @@ def OAuthInfo():
     if credentials is None or credentials.invalid:
       doRequestOAuth()
       credentials = storage.get()
-    credentials.user_agent = u'GAM %s - http://git.io/gam / %s / Python %s.%s.%s %s / %s %s /' % (__version__, __author__,
-                                                                                                  sys.version_info[0], sys.version_info[1], sys.version_info[2],
-                                                                                                  sys.version_info[3], platform.platform(), platform.machine())
+    credentials.user_agent = GAM_INFO
     disable_ssl_certificate_validation = False
     if os.path.isfile(os.path.join(gamUserConfigDir, u'noverifyssl.txt')):
       disable_ssl_certificate_validation = True
