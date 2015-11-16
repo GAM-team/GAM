@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 #
 # GAM
 #
@@ -27,8 +28,7 @@ __author__ = u'Jay Lee <jay0lee@gmail.com>'
 __version__ = u'3.62'
 __license__ = u'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
-import sys, os, time, datetime, random, socket, csv, platform, re, calendar, base64, string
-import subprocess
+import sys, os, time, datetime, random, socket, csv, platform, re, calendar, base64, string, subprocess
 
 import json
 import httplib2
@@ -42,16 +42,21 @@ import oauth2client.tools
 import mimetypes
 import ntpath
 
-is_frozen = getattr(sys, 'frozen', '')
-
 GAM_URL = u'http://git.io/gam'
 GAM_INFO = u'GAM {0} - {1} / {2} / Python {3}.{4}.{5} {6} / {7} {8} /'.format(__version__, GAM_URL,
                                                                               __author__,
                                                                               sys.version_info[0], sys.version_info[1], sys.version_info[2],
                                                                               sys.version_info[3],
                                                                               platform.platform(), platform.machine())
-GAM_RELEASES = u'http://git.io/gamreleases'
+GAM_RELEASES = u'https://github.com/jay0lee/GAM/releases'
+GAM_WIKI = u'https://github.com/jay0lee/GAM/wiki'
+GAM_WIKI_CREATE_CLIENT_SECRETS = GAM_WIKI+u'/CreatingClientSecretsFile#creating-your-own-oauth2servicejson'
+GAM_APPSPOT = u'https://gam-update.appspot.com'
+GAM_APPSPOT_LATEST_VERSION = GAM_APPSPOT+u'/latest-version.txt?v='+__version__
+GAM_APPSPOT_LATEST_VERSION_ANNOUNCEMENT = GAM_APPSPOT+u'/latest-version-announcement.txt?v='+__version__
 
+TRUE = u'true'
+FALSE = u'false'
 extra_args = {u'prettyPrint': False}
 true_values = [u'on', u'yes', u'enabled', u'true', u'1']
 false_values = [u'off', u'no', u'disabled', u'false', u'0']
@@ -59,6 +64,17 @@ usergroup_types = [u'user', u'users', u'group', u'ou', u'org',
                    u'ou_and_children', u'ou_and_child', u'query',
                    u'license', u'licenses', u'licence', u'licences', u'file', u'all',
                    u'cros']
+ERROR = u'ERROR'
+ERROR_PREFIX = ERROR+u': '
+WARNING = u'WARNING'
+WARNING_PREFIX = WARNING+u': '
+FN_CLIENT_SECRETS_JSON = u'client_secrets.json'
+FN_EXTRA_ARGS_TXT = u'extra-args.txt'
+FN_LAST_UPDATE_CHECK_TXT = u'lastupdatecheck.txt'
+FN_OAUTH2SERVICE_JSON = u'oauth2service.json'
+FN_OAUTH2_TXT = u'oauth2.txt'
+MY_CUSTOMER = u'my_customer'
+UNKNOWN_DOMAIN = u'Unknown'
 
 customerId = None
 domain = None
@@ -69,6 +85,20 @@ gamSiteConfigDir = None
 gamUserConfigDir = None
 gamDriveDir = None
 gamCacheDir = None
+
+MESSAGE_CLIENT_API_ACCESS_DENIED = u'Access Denied. Please make sure the Client Name:\n\n{0}\n\nis authorized for the API Scope(s):\n\n{1}\n\nThis can be configured in your Control Panel under:\n\nSecurity -->\nAdvanced Settings -->\nManage API client access'
+MESSAGE_GAM_EXITING_FOR_UPDATE = u'GAM is now exiting so that you can overwrite this old version with the latest release'
+MESSAGE_GAM_OUT_OF_MEMORY = u'GAM has run out of memory. If this is a large Google Apps instance, you should use a 64-bit version of GAM on Windows or a 64-bit version of Python on other systems.'
+MESSAGE_HEADER_NOT_FOUND_IN_CSV_HEADERS = u'Header "{0}" not found in CSV headers of "{1}".'
+MESSAGE_HIT_CONTROL_C_TO_UPDATE = u'\n\nHit CTRL+C to visit the GAM website and download the latest release or wait 15 seconds continue with this boring old version. GAM won\'t bother you with this announcement for 1 week or you can create a file named noupdatecheck.txt in the same location as gam.py or gam.exe and GAM won\'t ever check for updates.'
+MESSAGE_NO_DISCOVERY_INFORMATION = u'No online discovery doc and {0} does not exist locally'
+MESSAGE_NO_PYTHON_SSL = u'You don\'t have the Python SSL module installed so we can\'t verify SSL Certificates. You can fix this by installing the Python SSL module or you can live on the edge and turn SSL validation off by creating a file named noverifyssl.txt in the same location as gam.exe / gam.py'
+MESSAGE_NO_TRANSFER_LACK_OF_DISK_SPACE = u'Cowardly refusing to perform migration due to lack of target drive space. Source size: {0}mb Target Free: {1}mb'
+MESSAGE_REQUEST_COMPLETED_NO_FILES = u'Request completed but no results/files were returned, try requesting again'
+MESSAGE_REQUEST_NOT_COMPLETE = u'Request needs to be completed before downloading, current status is: {0}'
+MESSAGE_RESULTS_TOO_LARGE_FOR_GOOGLE_SPREADSHEET = u'Results are too large for Google Spreadsheets. Uploading as a regular CSV file.'
+MESSAGE_WIKI_INSTRUCTIONS_OAUTH2SERVICE_JSON = u'Please follow the instructions at this site to setup a Service Account.'
+MESSAGE_OAUTH2SERVICE_JSON_INVALID = u'The file {0} is missing required keys (client_email, client_id or private_key).'
 
 def convertUTF8(data):
   import collections
@@ -162,6 +192,20 @@ gam.exe update group announcements add member jsmith
 
 '''
 
+#
+# Error handling
+#
+def systemErrorExit(sysRC, message):
+  if message:
+    sys.stderr.write(u'\n{0}{1}\n'.format(ERROR_PREFIX, message))
+  sys.exit(sysRC)
+
+def noPythonSSLExit():
+  systemErrorExit(8, MESSAGE_NO_PYTHON_SSL)
+
+def printLine(message):
+  sys.stdout.write(message+u'\n')
+
 def setGamDirs():
   global gamPath, gamSiteConfigDir, gamUserConfigDir, gamDriveDir, gamCacheDir
   gamPath = os.path.dirname(os.path.realpath(__file__))
@@ -191,39 +235,38 @@ def doGAMCheckForUpdates():
     current_version = float(__version__)
   except ValueError:
     return
-  if os.path.isfile(os.path.join(gamUserConfigDir, u'lastupdatecheck.txt')):
-    f = open(os.path.join(gamUserConfigDir, u'lastupdatecheck.txt'), 'r')
+  if os.path.isfile(os.path.join(gamUserConfigDir, FN_LAST_UPDATE_CHECK_TXT)):
+    f = open(os.path.join(gamUserConfigDir, FN_LAST_UPDATE_CHECK_TXT), 'r')
     last_check_time = int(f.readline())
     f.close()
   else:
     last_check_time = 0
   now_time = calendar.timegm(time.gmtime())
-  one_week_ago_time = now_time - 604800
-  if last_check_time > one_week_ago_time:
+  if last_check_time > now_time-604800:
     return
   try:
-    c = urllib2.urlopen(u'https://gam-update.appspot.com/latest-version.txt?v=%s' % __version__)
+    c = urllib2.urlopen(GAM_APPSPOT_LATEST_VERSION)
     try:
       latest_version = float(c.read())
     except ValueError:
       return
     if latest_version <= current_version:
-      f = open(os.path.join(gamUserConfigDir, u'lastupdatecheck.txt'), 'w')
+      f = open(os.path.join(gamUserConfigDir, FN_LAST_UPDATE_CHECK_TXT), 'w')
       f.write(str(now_time))
       f.close()
       return
-    a = urllib2.urlopen(u'https://gam-update.appspot.com/latest-version-announcement.txt?v=%s' % __version__)
+    a = urllib2.urlopen(GAM_APPSPOT_LATEST_VERSION_ANNOUNCEMENT)
     announcement = a.read()
     sys.stderr.write(announcement)
     try:
-      print u"\n\nHit CTRL+C to visit the GAM website and download the latest release or wait 15 seconds continue with this boring old version. GAM won't bother you with this announcement for 1 week or you can create a file named noupdatecheck.txt in the same location as gam.py or gam.exe and GAM won't ever check for updates."
+      printLine(MESSAGE_HIT_CONTROL_C_TO_UPDATE)
       time.sleep(15)
     except KeyboardInterrupt:
       import webbrowser
-      webbrowser.open(u'https://github.com/jay0lee/GAM/releases')
-      print u'GAM is now exiting so that you can overwrite this old version with the latest release'
+      webbrowser.open(GAM_RELEASES)
+      printLine(MESSAGE_GAM_EXITING_FOR_UPDATE)
       sys.exit(0)
-    f = open(os.path.join(gamUserConfigDir, u'lastupdatecheck.txt'), 'w')
+    f = open(os.path.join(gamUserConfigDir, FN_LAST_UPDATE_CHECK_TXT), 'w')
     f.write(str(now_time))
     f.close()
   except urllib2.HTTPError:
@@ -288,7 +331,7 @@ def checkErrorCode(e, service):
 def tryOAuth(gdataObject):
   global domain
   global customerId
-  oauth2file = os.path.join(gamUserConfigDir, os.environ.get(u'OAUTHFILE', 'oauth2.txt'))
+  oauth2file = os.path.join(gamUserConfigDir, os.environ.get(u'OAUTHFILE', FN_OAUTH2_TXT))
   storage = oauth2client.file.Storage(oauth2file)
   credentials = storage.get()
   if credentials is None or credentials.invalid:
@@ -358,8 +401,7 @@ def callGAPI(service, function, silent_errors=False, soft_errors=False, throw_re
           print u'ERROR: %s' % e.content
         if soft_errors:
           return
-        else:
-          sys.exit(5)
+        sys.exit(5)
       http_status = error[u'error'][u'code']
       message = error[u'error'][u'errors'][0][u'message']
       try:
@@ -383,17 +425,14 @@ def callGAPI(service, function, silent_errors=False, soft_errors=False, throw_re
         if n != 1:
           sys.stderr.write(u' - Giving up.\n')
         return
-      else:
-        sys.exit(int(http_status))
+      sys.exit(int(http_status))
     except oauth2client.client.AccessTokenRefreshError, e:
       sys.stderr.write(u'Error: Authentication Token Error - %s' % e)
       sys.exit(403)
     except httplib2.CertificateValidationUnsupported:
-      print u'\nError: You don\'t have the Python ssl module installed so we can\'t verify SSL Certificates.\n\nYou can fix this by installing the Python SSL module or you can live on dangerously and turn SSL validation off by creating a file called noverifyssl.txt in the same location as gam.exe / gam.py'
-      sys.exit(8)
+      noPythonSSLExit()
     except TypeError, e:
-      print u'Error: %s' % e
-      sys.exit(4)
+      systemErrorExit(4, e)
 
 def restart_line():
   sys.stderr.write('\r')
@@ -492,13 +531,12 @@ def getServiceFromDiscoveryDocument(api, version, http):
     with open(pyinstaller_disc_file, 'rb') as f:
       discovery = f.read()
   else:
-    print u'No online discovery doc and {0} does not exist locally'.format(disc_file)
-    raise
+    systemErrorExit(4, MESSAGE_NO_DISCOVERY_INFORMATION.format(disc_file))
   return googleapiclient.discovery.build_from_document(discovery, base=u'https://www.googleapis.com', http=http)
 
 def buildGAPIObject(api):
   global domain, customerId
-  storage = oauth2client.file.Storage(os.path.join(gamUserConfigDir, os.environ.get(u'OAUTHFILE', 'oauth2.txt')))
+  storage = oauth2client.file.Storage(os.path.join(gamUserConfigDir, os.environ.get(u'OAUTHFILE', FN_OAUTH2_TXT)))
   credentials = storage.get()
   if credentials is None or credentials.invalid:
     doRequestOAuth()
@@ -511,11 +549,11 @@ def buildGAPIObject(api):
   if os.path.isfile(os.path.join(gamUserConfigDir, u'debug.gam')):
     httplib2.debuglevel = 4
     extra_args[u'prettyPrint'] = True
-  if os.path.isfile(os.path.join(gamUserConfigDir, u'extra-args.txt')):
+  if os.path.isfile(os.path.join(gamUserConfigDir, FN_EXTRA_ARGS_TXT)):
     import ConfigParser
     config = ConfigParser.ConfigParser()
     config.optionxform = str
-    config.read(os.path.join(gamUserConfigDir, u'extra-args.txt'))
+    config.read(os.path.join(gamUserConfigDir, FN_EXTRA_ARGS_TXT))
     extra_args.update(dict(config.items(u'extra-args')))
   http = credentials.authorize(http)
   version = getAPIVer(api)
@@ -526,8 +564,7 @@ def buildGAPIObject(api):
   except googleapiclient.errors.UnknownApiNameOrVersion:
     service = getServiceFromDiscoveryDocument(api, version, http)
   except httplib2.CertificateValidationUnsupported:
-    print u'Error: You don\'t have the Python ssl module installed so we can\'t verify SSL Certificates. You can fix this by installing the Python SSL module or you can live on the edge and turn SSL validation off by creating a file called noverifyssl.txt in the same location as gam.exe / gam.py'
-    sys.exit(8)
+    noPythonSSLExit()
   try:
     domain = os.environ[u'GA_DOMAIN']
     _, customerId_result = service._http.request(u'https://www.googleapis.com/admin/directory/v1/users?domain=%s&maxResults=1&fields=users(customerId)' % domain)
@@ -537,8 +574,8 @@ def buildGAPIObject(api):
     try:
       domain = credentials.id_token[u'hd']
     except (TypeError, KeyError):
-      domain = u'Unknown'
-    customerId = u'my_customer'
+      domain = UNKNOWN_DOMAIN
+    customerId = MY_CUSTOMER
   return service
 
 def buildGAPIServiceObject(api, act_as=None, soft_errors=False):
@@ -548,9 +585,8 @@ def buildGAPIServiceObject(api, act_as=None, soft_errors=False):
   try:
     json_string = open(oauth2servicefilejson).read()
   except IOError, e:
-    print u'Error: %s' % e
-    print u''
-    print u'Please follow the instructions at:\n\nhttps://github.com/jay0lee/GAM/wiki/CreatingClientSecretsFile#creating-your-own-oauth2servicejson\n\nto setup a Service Account'
+    printLine(MESSAGE_WIKI_INSTRUCTIONS_OAUTH2SERVICE_JSON)
+    printLine(GAM_WIKI_CREATE_CLIENT_SECRETS)
     sys.exit(6)
   json_data = json.loads(json_string)
   try:
@@ -577,11 +613,11 @@ def buildGAPIServiceObject(api, act_as=None, soft_errors=False):
   if os.path.isfile(os.path.join(gamUserConfigDir, u'debug.gam')):
     httplib2.debuglevel = 4
     extra_args[u'prettyPrint'] = True
-  if os.path.isfile(os.path.join(gamUserConfigDir, u'extra-args.txt')):
+  if os.path.isfile(os.path.join(gamUserConfigDir, FN_EXTRA_ARGS_TXT)):
     import ConfigParser
     config = ConfigParser.ConfigParser()
     config.optionxform = str
-    config.read(os.path.join(gamUserConfigDir, u'extra-args.txt'))
+    config.read(os.path.join(gamUserConfigDir, FN_EXTRA_ARGS_TXT))
     extra_args.update(dict(config.items(u'extra-args')))
   http = credentials.authorize(http)
   version = getAPIVer(api)
@@ -591,13 +627,11 @@ def buildGAPIServiceObject(api, act_as=None, soft_errors=False):
     return getServiceFromDiscoveryDocument(api, version, http)
   except oauth2client.client.AccessTokenRefreshError, e:
     if e.message in [u'access_denied', u'unauthorized_client: Unauthorized client or scope in request.']:
-      print u'Error: Access Denied. Please make sure the Client Name:\n\n%s\n\nis authorized for the API Scope(s):\n\n%s\n\nThis can be configured in your Control Panel under:\n\nSecurity -->\nAdvanced Settings -->\nManage third party OAuth Client access' % (SERVICE_ACCOUNT_CLIENT_ID, ','.join(scope))
-      sys.exit(5)
-    else:
-      print u'Error: %s' % e
-      if soft_errors:
-        return False
-      sys.exit(4)
+      systemErrorExit(5, MESSAGE_CLIENT_API_ACCESS_DENIED.format(SERVICE_ACCOUNT_CLIENT_ID, u','.join(scope)))
+    sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, e))
+    if soft_errors:
+      return False
+    sys.exit(4)
 
 def buildDiscoveryObject(api):
   import uritemplate
@@ -677,7 +711,7 @@ def showReport():
   report = sys.argv[2].lower()
   global customerId
   rep = buildGAPIObject(u'reports')
-  if customerId == u'my_customer':
+  if customerId == MY_CUSTOMER:
     customerId = None
   date = filters = parameters = actorIpAddress = startTime = endTime = eventName = None
   to_drive = False
@@ -1126,7 +1160,7 @@ def doCreateDomainAlias():
   body = {}
   body[u'domainAliasName'] = sys.argv[3]
   body[u'parentDomainName'] = sys.argv[4]
-  result = callGAPI(service=cd.domainAliases(), function=u'insert', customer=customerId, body=body)
+  callGAPI(service=cd.domainAliases(), function=u'insert', customer=customerId, body=body)
 
 def doUpdateDomain():
   cd = buildGAPIObject(u'directory')
@@ -1140,7 +1174,7 @@ def doUpdateDomain():
     else:
       print u'ERROR: %s is not a valid argument for "gam update domain"' % sys.argv[i]
       sys.exit(2)
-  result = callGAPI(service=cd.customers(), function=u'update', customerKey=customerId, body=body)
+  callGAPI(service=cd.customers(), function=u'update', customerKey=customerId, body=body)
   print u'%s is now the primary domain.' % domain_name
 
 def doGetDomainInfo():
@@ -3525,8 +3559,7 @@ def transferDriveFiles(users):
     source_about = callGAPI(service=source_drive.about(), function=u'get', fields=u'quotaBytesTotal,quotaBytesUsed,rootFolderId, permissionId')
     source_drive_size = int(source_about[u'quotaBytesUsed'])
     if target_drive_free < source_drive_size:
-      print u'Error: Cowardly refusing to perform migration due to lack of target drive space. Source size: %smb Target Free: %smb' % (source_drive_size / 1024 / 1024, target_drive_free / 1024 / 1024)
-      sys.exit(4)
+      systemErrorExit(4, MESSAGE_NO_TRANSFER_LACK_OF_DISK_SPACE.format(source_drive_size / 1024 / 1024, target_drive_free / 1024 / 1024))
     print u'Source drive size: %smb  Target drive free: %smb' % (source_drive_size / 1024 / 1024, target_drive_free / 1024 / 1024)
     target_drive_free = target_drive_free - source_drive_size # prep target_drive_free for next user
     source_root = source_about[u'rootFolderId']
@@ -5839,7 +5872,7 @@ def doGetUserInfo(user_email=None):
     try:
       user_email = sys.argv[3]
     except IndexError:
-      oauth2file = os.path.join(gamUserConfigDir, os.environ.get(u'OAUTHFILE'), 'oauth2.txt')
+      oauth2file = os.path.join(gamUserConfigDir, os.environ.get(u'OAUTHFILE'), FN_OAUTH2_TXT)
       storage = oauth2client.file.Storage(oauth2file)
       credentials = storage.get()
       if credentials is None or credentials.invalid:
@@ -6699,7 +6732,7 @@ def doGetInstanceInfo():
     sys.exit(0)
   print u'Google Apps Domain: %s' % domain
   cd = buildGAPIObject(u'directory')
-  if customerId != u'my_customer':
+  if customerId != MY_CUSTOMER:
     customer_id = customerId
   else:
     result = callGAPI(service=cd.users(), function=u'list', fields=u'users(customerId)', customer=customerId, maxResults=1)
@@ -6899,7 +6932,7 @@ def output_csv(csv_list, titles, list_type, todrive):
     cell_count = rows * columns
     convert = True
     if cell_count > 500000 or columns > 256:
-      print u'Warning: results are to large for Google Spreadsheets. Uploading as a regular CSV file.'
+      print u'{0}{1}'.format(WARNING_PREFIX, MESSAGE_RESULTS_TOO_LARGE_FOR_GOOGLE_SPREADSHEET)
       convert = False
     drive = buildGAPIObject(u'drive')
     string_data = string_file.getvalue()
@@ -7903,15 +7936,9 @@ def doDownloadActivityRequest():
     user = user[:user.find(u'@')]
   results = callGData(service=audit, function=u'getAccountInformationRequestStatus', user=user, request_id=request_id)
   if results[u'status'] != u'COMPLETED':
-    print u'Request needs to be completed before downloading, current status is: '+results[u'status']
-    sys.exit(4)
-  try:
-    if int(results[u'numberOfFiles']) < 1:
-      print u'ERROR: Request completed but no results were returned, try requesting again'
-      sys.exit(4)
-  except KeyError:
-    print u'ERROR: Request completed but no files were returned, try requesting again'
-    sys.exit(4)
+    systemErrorExit(4, MESSAGE_REQUEST_NOT_COMPLETE.format(results[u'status']))
+  if int(results.get(u'numberOfFiles', u'0')) < 1:
+    systemErrorExit(4, MESSAGE_REQUEST_COMPLETED_NO_FILES)
   for i in range(0, int(results[u'numberOfFiles'])):
     url = results[u'fileUrl'+str(i)]
     filename = u'activity-'+user+'-'+request_id+'-'+unicode(i)+u'.txt.gpg'
@@ -8091,15 +8118,9 @@ def doDownloadExportRequest():
     user = user[:user.find(u'@')]
   results = callGData(service=audit, function=u'getMailboxExportRequestStatus', user=user, request_id=request_id)
   if results[u'status'] != u'COMPLETED':
-    print u'Request needs to be completed before downloading, current status is: '+results[u'status']
-    sys.exit(4)
-  try:
-    if int(results[u'numberOfFiles']) < 1:
-      print u'ERROR: Request completed but no results were returned, try requesting again'
-      sys.exit(4)
-  except KeyError:
-    print u'ERROR: Request completed but no files were returned, try requesting again'
-    sys.exit(4)
+    systemErrorExit(4, MESSAGE_REQUEST_NOT_COMPLETE.format(results[u'status']))
+  if int(results.get(u'numberOfFiles', u'0')) < 1:
+    systemErrorExit(4, MESSAGE_REQUEST_COMPLETED_NO_FILES)
   for i in range(0, int(results['numberOfFiles'])):
     url = results[u'fileUrl'+str(i)]
     filename = u'export-'+user+'-'+request_id+'-'+str(i)+u'.mbox.gpg'
@@ -8290,7 +8311,7 @@ def OAuthInfo():
   try:
     access_token = sys.argv[3]
   except IndexError:
-    oauth2file = os.path.join(gamUserConfigDir, os.environ.get(u'OAUTHFILE', 'oauth2.txt'))
+    oauth2file = os.path.join(gamUserConfigDir, os.environ.get(u'OAUTHFILE', FN_OAUTH2_TXT))
     storage = oauth2client.file.Storage(oauth2file)
     credentials = storage.get()
     if credentials is None or credentials.invalid:
@@ -8323,7 +8344,7 @@ def OAuthInfo():
     print u'Google Apps Admin: Unknown'
 
 def doDeleteOAuth():
-  oauth2file = os.path.join(gamUserConfigDir, os.environ.get(u'OAUTHFILE', 'oauth2.txt'))
+  oauth2file = os.path.join(gamUserConfigDir, os.environ.get(u'OAUTHFILE', FN_OAUTH2_TXT))
   storage = oauth2client.file.Storage(oauth2file)
   credentials = storage.get()
   try:
@@ -8380,12 +8401,12 @@ possible_scopes = [u'https://www.googleapis.com/auth/admin.directory.group',    
                    u'https://www.googleapis.com/auth/admin.directory.userschema',       # Customer User Schema
                    u'https://www.googleapis.com/auth/classroom.rosters https://www.googleapis.com/auth/classroom.courses https://www.googleapis.com/auth/classroom.profile.emails https://www.googleapis.com/auth/classroom.profile.photos',           # Classroom API
                    u'https://www.googleapis.com/auth/cloudprint',                       # CloudPrint API
-                   u'https://www.googleapis.com/auth/admin.datatransfer',			          # Data Transfer API
+                   u'https://www.googleapis.com/auth/admin.datatransfer',		# Data Transfer API
                    u'https://www.googleapis.com/auth/admin.directory.customer',         # Customer API
-                   u'https://www.googleapis.com/auth/admin.directory.domain']            # Domain API
+                   u'https://www.googleapis.com/auth/admin.directory.domain']           # Domain API
 
 def doRequestOAuth(incremental_auth=False):
-  CLIENT_SECRETS = os.path.join(gamUserConfigDir, os.environ.get(u'CLIENTSECRETSFILE', 'client_secrets.json'))
+  CLIENT_SECRETS = os.path.join(gamUserConfigDir, os.environ.get(u'CLIENTSECRETSFILE', FN_CLIENT_SECRETS_JSON))
   MISSING_CLIENT_SECRETS_MESSAGE = u"""
 WARNING: Please configure OAuth 2.0
 
@@ -8508,7 +8529,7 @@ access or an 'a' to grant action-only access.
   FLOW = oauth2client.client.flow_from_clientsecrets(CLIENT_SECRETS,
                                                      scope=scopes,
                                                      message=MISSING_CLIENT_SECRETS_MESSAGE)
-  oauth2file = os.path.join(gamUserConfigDir, os.environ.get(u'OAUTHFILE', 'oauth2.txt'))
+  oauth2file = os.path.join(gamUserConfigDir, os.environ.get(u'OAUTHFILE', FN_OAUTH2_TXT))
   storage = oauth2client.file.Storage(oauth2file)
   credentials = storage.get()
   flags = cmd_flags()
@@ -8525,8 +8546,7 @@ access or an 'a' to grant action-only access.
     try:
       credentials = oauth2client.tools.run_flow(flow=FLOW, storage=storage, flags=flags, http=http)
     except httplib2.CertificateValidationUnsupported:
-      print u'\nError: You don\'t have the Python ssl module installed so we can\'t verify SSL Certificates.\n\nYou can fix this by installing the Python SSL module or you can live on dangerously and turn SSL validation off by creating a file called noverifyssl.txt in the same location as gam.exe / gam.py'
-      sys.exit(8)
+      noPythonSSLExit()
 
 def batch_worker():
   while True:
@@ -8588,7 +8608,7 @@ try:
       items.append(argv)
     run_batch(items)
     sys.exit(0)
-  elif sys.argv[1].lower() == 'csv':
+  elif sys.argv[1].lower() == u'csv':
     csv_filename = sys.argv[2]
     if csv_filename == u'-':
       import StringIO
@@ -8610,8 +8630,7 @@ try:
         elif arg[1:] in row:
           argv.append(row[arg[1:]])
         else:
-          print 'ERROR: header "%s" not found in CSV headers of "%s", giving up.' % (arg[1:], ','.join(row.keys()))
-          sys.exit(0)
+          systemErrorExit(2, MESSAGE_HEADER_NOT_FOUND_IN_CSV_HEADERS.format(arg[1:], ','.join(row.keys())))
       items.append(argv)
     run_batch(items)
     sys.exit(0)
@@ -9114,8 +9133,8 @@ except IndexError:
 except KeyboardInterrupt:
   sys.exit(50)
 except socket.error, e:
-  print u'\nError: %s' % e
+  sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, e))
   sys.exit(3)
 except MemoryError:
-  print u'Error: GAM has run out of memory. If this is a large Google Apps instance, you should use a 64-bit version of GAM on Windows or a 64-bit version of Python on other systems.'
+  sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, MESSAGE_GAM_OUT_OF_MEMORY))
   sys.exit(99)
