@@ -4520,7 +4520,7 @@ def getVacation(users):
       emailsettings.domain = domain
     vacationsettings = callGData(service=emailsettings, function=u'GetVacation', soft_errors=True, username=user)
     try:
-      print u'''User %s
+      print convertUTF8(u'''User %s
  Enabled: %s
  Contacts Only: %s
  Domain Only: %s
@@ -4529,7 +4529,7 @@ def getVacation(users):
  Start Date: %s
  End Date: %s
 ''' % (user+u'@'+emailsettings.domain, vacationsettings[u'enable'], vacationsettings[u'contactsOnly'], vacationsettings[u'domainOnly'], vacationsettings[u'subject'],
-       vacationsettings[u'message'], vacationsettings[u'startDate'], vacationsettings[u'endDate'])
+       vacationsettings[u'message'], vacationsettings[u'startDate'], vacationsettings[u'endDate']))
     except TypeError:
       pass
 
@@ -6364,7 +6364,7 @@ def doGetNotifications():
     if sys.argv[i].lower() == u'unreadonly':
       unread_only = True
     else:
-      print 'ERROR: %s is not a valid argument for "gam delete notification", expected unreadonly' % sys.argv[i]
+      print 'ERROR: %s is not a valid argument for "gam info notification", expected unreadonly' % sys.argv[i]
       sys.exit(2)
     i += 1
   notifications = callGAPIpages(service=cd.notifications(), function=u'list', customer=customerId)
