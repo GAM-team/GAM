@@ -28,7 +28,7 @@ __author__ = u'Jay Lee <jay0lee@gmail.com>'
 __version__ = u'3.62'
 __license__ = u'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
-import sys, os, time, datetime, random, socket, csv, platform, re, calendar, base64, string, subprocess
+import sys, os, time, datetime, random, socket, csv, platform, re, calendar, base64, string, StringIO, subprocess
 
 import json
 import httplib2
@@ -206,6 +206,59 @@ def noPythonSSLExit():
 def printLine(message):
   sys.stdout.write(message+u'\n')
 
+#
+# Open a file
+#
+def openFile(filename, mode='rb'):
+  try:
+    if filename != u'-':
+      return open(filename, mode)
+    if mode.startswith(u'r'):
+      return StringIO.StringIO(unicode(sys.stdin.read()))
+    return sys.stdout
+  except IOError as e:
+    systemErrorExit(6, e)
+#
+# Close a file
+#
+def closeFile(f):
+  try:
+    f.close()
+    return True
+  except IOError as e:
+    sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, e))
+    return False
+#
+# Read a file
+#
+def readFile(filename, mode='rb', continueOnError=False, displayError=True):
+  try:
+    if filename != u'-':
+      with open(filename, mode) as f:
+        return f.read()
+    else:
+      return unicode(sys.stdin.read())
+  except IOError as e:
+    if continueOnError:
+      if displayError:
+        sys.stderr.write(u'{0}{1}\n'.format(WARNING_PREFIX, e))
+      return None
+    systemErrorExit(6, e)
+#
+# Write a file
+#
+def writeFile(filename, data, mode='wb', continueOnError=False, displayError=True):
+  try:
+    with open(filename, mode) as f:
+      f.write(data)
+    return True
+  except IOError as e:
+    if continueOnError:
+      if displayError:
+        sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, e))
+      return False
+    systemErrorExit(6, e)
+
 def setGamDirs():
   global gamPath, gamSiteConfigDir, gamUserConfigDir, gamDriveDir, gamCacheDir
   gamPath = os.path.dirname(os.path.realpath(__file__))
@@ -216,6 +269,8 @@ def setGamDirs():
   else:
     gamCacheDir = os.environ.get(u'GAMCACHEDIR', os.path.join(gamPath, u'gamcache'))
   gamDriveDir = os.environ.get(u'GAMDRIVEDIR', gamPath)
+  if not os.path.isfile(os.path.join(gamUserConfigDir, u'noupdatecheck.txt')):
+    doGAMCheckForUpdates()
 
 def doGAMVersion():
   import struct
@@ -227,33 +282,29 @@ def doGAMVersion():
                                                                                                                          platform.platform(), platform.machine(),
                                                                                                                          gamPath)
 
-def doGAMCheckForUpdates():
+def doGAMCheckForUpdates(forceCheck=False):
   import urllib2
-  if os.path.isfile(os.path.join(gamUserConfigDir, u'noupdatecheck.txt')):
-    return
   try:
     current_version = float(__version__)
   except ValueError:
     return
-  if os.path.isfile(os.path.join(gamUserConfigDir, FN_LAST_UPDATE_CHECK_TXT)):
-    f = open(os.path.join(gamUserConfigDir, FN_LAST_UPDATE_CHECK_TXT), 'r')
-    last_check_time = int(f.readline())
-    f.close()
-  else:
-    last_check_time = 0
   now_time = calendar.timegm(time.gmtime())
-  if last_check_time > now_time-604800:
-    return
+  if not forceCheck:
+    last_check_time = readFile(os.path.join(gamUserConfigDir, FN_LAST_UPDATE_CHECK_TXT), continueOnError=True, displayError=forceCheck)
+    if last_check_time == None:
+      last_check_time = 0
+    if last_check_time > now_time-604800:
+      return
   try:
     c = urllib2.urlopen(GAM_APPSPOT_LATEST_VERSION)
     try:
       latest_version = float(c.read())
     except ValueError:
       return
+    if forceCheck or (latest_version > current_version):
+      print u'Version: Check, Current: {0:.2f}, Latest: {1:.2f}'.format(current_version, latest_version)
     if latest_version <= current_version:
-      f = open(os.path.join(gamUserConfigDir, FN_LAST_UPDATE_CHECK_TXT), 'w')
-      f.write(str(now_time))
-      f.close()
+      writeFile(os.path.join(gamUserConfigDir, FN_LAST_UPDATE_CHECK_TXT), str(now_time), continueOnError=True, displayError=forceCheck)
       return
     a = urllib2.urlopen(GAM_APPSPOT_LATEST_VERSION_ANNOUNCEMENT)
     announcement = a.read()
@@ -266,29 +317,23 @@ def doGAMCheckForUpdates():
       webbrowser.open(GAM_RELEASES)
       printLine(MESSAGE_GAM_EXITING_FOR_UPDATE)
       sys.exit(0)
-    f = open(os.path.join(gamUserConfigDir, FN_LAST_UPDATE_CHECK_TXT), 'w')
-    f.write(str(now_time))
-    f.close()
-  except urllib2.HTTPError:
-    return
-  except urllib2.URLError:
+    writeFile(os.path.join(gamUserConfigDir, FN_LAST_UPDATE_CHECK_TXT), str(now_time), continueOnError=True, displayError=forceCheck)
+  except (urllib2.HTTPError, urllib2.URLError):
     return
 
-def checkErrorCode(e, service):
-
+def checkGDataError(e, service):
   # First check for errors that need special handling
-  if e[0].get('reason', '') in [u'Token invalid - Invalid token: Stateless token expired', u'Token invalid - Invalid token: Token not found']:
+  if e[0].get(u'reason', u'') in [u'Token invalid - Invalid token: Stateless token expired', u'Token invalid - Invalid token: Token not found']:
     keep_domain = service.domain
     tryOAuth(service)
     service.domain = keep_domain
     return False
-  if e[0]['body'][:34] in [u'Required field must not be blank: ', u'These characters are not allowed: ']:
+  if e[0][u'body'].startswith(u'Required field must not be blank:') or e[0][u'body'].startswith(u'These characters are not allowed:'):
     return e[0]['body']
   if e.error_code == 600 and e[0][u'body'] == u'Quota exceeded for the current request' or e[0][u'reason'] == u'Bad Gateway':
     return False
   if e.error_code == 600 and e[0][u'reason'] == u'Token invalid - Invalid token: Token disabled, revoked, or expired.':
     return u'403 - Token disabled, revoked, or expired. Please delete and re-create oauth.txt'
-
   # We got a "normal" error, define the mapping below
   error_code_map = {
     1000: False,
@@ -325,8 +370,7 @@ def checkErrorCode(e, service):
     1800: u'Group Cannot Contain Cycle',
     1801: u'Invalid value %s' % getattr(e, u'invalidInput', u'<unknown>'),
   }
-
-  return u'%s - %s' % (e.error_code, error_code_map.get(e.error_code, u'Unknown Error: %s' % (str(e))))
+  return u'{0} - {1}'.format(e.error_code, error_code_map.get(e.error_code, u'Unknown Error: {0}'.format(str(e))))
 
 def tryOAuth(gdataObject):
   global domain
@@ -356,7 +400,7 @@ def callGData(service, function, soft_errors=False, throw_errors=[], **kwargs):
     try:
       return method(**kwargs)
     except gdata.apps.service.AppsForYourDomainException, e:
-      terminating_error = checkErrorCode(e, service)
+      terminating_error = checkGDataError(e, service)
       if e.error_code in throw_errors:
         raise
       if not terminating_error and n != retries:
@@ -369,13 +413,12 @@ def callGData(service, function, soft_errors=False, throw_errors=[], **kwargs):
         if n > 3:
           sys.stderr.write(u'attempt %s/%s\n' % (n+1, retries))
         continue
-      sys.stderr.write(u'Error: %s' % terminating_error)
+      sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, terminating_error))
       if soft_errors:
         if n != 1:
           sys.stderr.write(u' - Giving up.\n')
         return
-      else:
-        sys.exit(int(e.error_code))
+      sys.exit(int(e.error_code))
 
 def callGAPI(service, function, silent_errors=False, soft_errors=False, throw_reasons=[], retry_reasons=[], **kwargs):
   method = getattr(service, function)
@@ -398,7 +441,7 @@ def callGAPI(service, function, silent_errors=False, soft_errors=False, throw_re
           time.sleep(1)
           continue
         if not silent_errors:
-          print u'ERROR: %s' % e.content
+          sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, e.content))
         if soft_errors:
           return
         sys.exit(5)
@@ -420,14 +463,14 @@ def callGAPI(service, function, silent_errors=False, soft_errors=False, throw_re
         if n > 3:
           sys.stderr.write(u'attempt %s/%s\n' % (n+1, retries))
         continue
-      sys.stderr.write(u'Error %s: %s - %s\n\n' % (http_status, message, reason))
+      sys.stderr.write(u'{0}{1}: {2} - {3}\n'.format(ERROR_PREFIX, http_status, message, reason))
       if soft_errors:
         if n != 1:
           sys.stderr.write(u' - Giving up.\n')
         return
       sys.exit(int(http_status))
     except oauth2client.client.AccessTokenRefreshError, e:
-      sys.stderr.write(u'Error: Authentication Token Error - %s' % e)
+      sys.stderr.write(u'{0}Authentication Token Error: {1}\n'.format(ERROR_PREFIX, e))
       sys.exit(403)
     except httplib2.CertificateValidationUnsupported:
       noPythonSSLExit()
@@ -525,11 +568,9 @@ def getServiceFromDiscoveryDocument(api, version, http):
   else:
     pyinstaller_disc_file = None
   if os.path.isfile(disc_file):
-    with open(disc_file, 'rb') as f:
-      discovery = f.read()
+    discovery = readFile(disc_file)
   elif pyinstaller_disc_file:
-    with open(pyinstaller_disc_file, 'rb') as f:
-      discovery = f.read()
+    discovery = readFile(pyinstaller_disc_file)
   else:
     systemErrorExit(4, MESSAGE_NO_DISCOVERY_INFORMATION.format(disc_file))
   return googleapiclient.discovery.build_from_document(discovery, base=u'https://www.googleapis.com', http=http)
@@ -582,9 +623,8 @@ def buildGAPIServiceObject(api, act_as=None, soft_errors=False):
   oauth2servicefile = os.path.join(gamUserConfigDir, os.environ.get(u'OAUTHSERVICEFILE', 'oauth2service'))
   oauth2servicefilejson = u'%s.json' % oauth2servicefile
   oauth2servicefilep12 = u'%s.p12' % oauth2servicefile
-  try:
-    json_string = open(oauth2servicefilejson).read()
-  except IOError, e:
+  json_string = readFile(oauth2servicefilejson, continueOnError=True, displayError=True)
+  if not json_string:
     printLine(MESSAGE_WIKI_INSTRUCTIONS_OAUTH2SERVICE_JSON)
     printLine(GAM_WIKI_CREATE_CLIENT_SECRETS)
     sys.exit(6)
@@ -592,9 +632,7 @@ def buildGAPIServiceObject(api, act_as=None, soft_errors=False):
   try:
     SERVICE_ACCOUNT_EMAIL = json_data[u'web'][u'client_email']
     SERVICE_ACCOUNT_CLIENT_ID = json_data[u'web'][u'client_id']
-    f = file(oauth2servicefilep12, 'rb')
-    key = f.read()
-    f.close()
+    key = readFile(oauth2servicefilep12)
   except KeyError:
     # new format with config and data in the .json file...
     SERVICE_ACCOUNT_EMAIL = json_data[u'client_email']
@@ -652,7 +690,7 @@ def buildDiscoveryObject(api):
   try:
     return json.loads(content)
   except ValueError:
-    sys.stderr.write(u'Failed to parse as JSON: ' + content+u'\n')
+    sys.stderr.write(u'{0}Failed to parse as JSON: {1}\n'.format(ERROR_PREFIX, content))
     raise googleapiclient.errors.InvalidJsonError()
 
 def commonAppsObjInit(appsObj):
@@ -685,7 +723,7 @@ def getResCalObject():
 def geturl(url, dst):
   import urllib2
   u = urllib2.urlopen(url)
-  f = open(dst, 'wb')
+  f = openFile(dst, 'wb')
   meta = u.info()
   try:
     file_size = int(meta.getheaders(u'Content-Length')[0])
@@ -705,7 +743,7 @@ def geturl(url, dst):
       status = r"%10d [unknown size]" % (file_size_dl)
     status = status + chr(8)*(len(status)+1)
     print status,
-  f.close()
+  closeFile(f)
 
 def showReport():
   report = sys.argv[2].lower()
@@ -1181,8 +1219,7 @@ def doGetDomainInfo():
   if (len(sys.argv) < 4) or (sys.argv[3] == u'logo'):
     doGetInstanceInfo()
     return
-  else:
-    domainName = sys.argv[3]
+  domainName = sys.argv[3]
   cd = buildGAPIObject(u'directory')
   result = callGAPI(service=cd.domains(), function=u'get', customer=customerId, domainName=domainName)
   if u'creationTime' in result:
@@ -2184,13 +2221,11 @@ def doPrintJobFetch():
     fileName = u''.join(c if c in valid_chars else u'_' for c in fileName)
     fileName = u'%s-%s' % (fileName, jobid)
     _, content = cp._http.request(uri=fileUrl, method='GET')
-    f = open(fileName, 'wb')
-    f.write(content)
-    f.close()
-    #ticket = callGAPI(service=cp.jobs(), function=u'getticket', jobid=jobid, use_cjt=True)
-    result = callGAPI(service=cp.jobs(), function=u'update', jobid=jobid, semantic_state_diff=ssd)
-    checkCloudPrintResult(result)
-    print u'Printed job %s to %s' % (jobid, fileName)
+    if writeFile(fileName, content, continueOnError=True):
+#      ticket = callGAPI(service=cp.jobs(), function=u'getticket', jobid=jobid, use_cjt=True)
+      result = callGAPI(service=cp.jobs(), function=u'update', jobid=jobid, semantic_state_diff=ssd)
+      checkCloudPrintResult(result)
+      print u'Printed job %s to %s' % (jobid, fileName)
 
 def doDelPrinter():
   cp = buildGAPIObject(u'cloudprint')
@@ -2331,9 +2366,7 @@ def doPrintJobSubmit():
     mimetype = mimetypes.guess_type(filepath)[0]
     if mimetype == None:
       mimetype = u'application/octet-stream'
-    f = open(filepath, 'rb')
-    filecontent = f.read()
-    f.close()
+    filecontent = readFile(filepath)
     form_files[u'content'] = {u'filename': content, u'content': filecontent, u'mimetype': mimetype}
   #result = callGAPI(service=cp.printers(), function=u'submit', body=body)
   body, headers = encode_multipart(form_fields, form_files)
@@ -2641,9 +2674,8 @@ def doPhoto(users):
         continue
     else:
       try:
-        f = open(filename, 'rb')
-        image_data = f.read()
-        f.close()
+        with open(filename, 'rb') as f:
+          image_data = f.read()
       except IOError, e:
         print u' couldn\'t open %s: %s' % (filename, e.strerror)
         continue
@@ -2675,9 +2707,7 @@ def getPhoto(users):
     except KeyError:
       print u' no photo for %s' % user
       continue
-    photo_file = open(filename, 'wb')
-    photo_file.write(photo_data)
-    photo_file.close()
+    writeFile(filename, photo_data, continueOnError=True)
 
 def deletePhoto(users):
   cd = buildGAPIObject(u'directory')
@@ -3025,13 +3055,21 @@ def showDriveFiles(users):
         elif attrib_type is unicode or attrib_type is bool:
           a_file[attrib] = f_file[attrib]
         elif attrib_type is dict:
-          for dict_attrib in f_file[attrib]:
-            if dict_attrib in [u'kind', u'etags', u'etag']:
-              continue
-            if dict_attrib not in titles:
-              titles.append(dict_attrib)
-              files_attr[0][dict_attrib] = dict_attrib
-            a_file[dict_attrib] = f_file[attrib][dict_attrib]
+          if attrib == u'labels':
+            for dict_attrib in f_file[attrib]:
+              if dict_attrib not in titles:
+                titles.append(dict_attrib)
+                files_attr[0][dict_attrib] = dict_attrib
+              a_file[dict_attrib] = f_file[attrib][dict_attrib]
+          else:
+            for dict_attrib in f_file[attrib]:
+              if dict_attrib in [u'kind', u'etags', u'etag']:
+                continue
+              x_attrib = u'{0}.{1}'.format(attrib, dict_attrib)
+              if x_attrib not in titles:
+                titles.append(x_attrib)
+                files_attr[0][x_attrib] = x_attrib
+              a_file[x_attrib] = f_file[attrib][dict_attrib]
         else:
           print attrib_type
       files_attr.append(a_file)
@@ -3492,9 +3530,7 @@ def downloadDriveFile(users):
         filename = new_filename
       print convertUTF8(my_line % filename)
       _, content = drive._http.request(download_url)
-      f = open(filename, 'wb')
-      f.write(content)
-      f.close()
+      writeFile(filename, content, continueOnError=True)
 
 def showDriveFileInfo(users):
   for user in users:
@@ -3516,7 +3552,7 @@ def showDriveFileInfo(users):
               if setti == u'kind':
                 continue
               print convertUTF8(u' %s: %s' % (setti, settin[setti]))
-            print ''
+            print u''
       elif setting_type == u"<type 'dict'>":
         print u'%s:' % setting
         for settin in feed[setting]:
@@ -4384,9 +4420,7 @@ def getForward(users):
 def doSignature(users):
   import cgi
   if sys.argv[4].lower() == u'file':
-    fp = open(sys.argv[5], 'rb')
-    signature = cgi.escape(fp.read().replace(u'\\n', u'&#xA;').replace(u'"', u"'"))
-    fp.close()
+    signature = cgi.escape(readFile(sys.argv[5]).replace(u'\\n', u'&#xA;').replace(u'"', u"'"))
   else:
     signature = cgi.escape(sys.argv[4]).replace(u'\\n', u'&#xA;').replace(u'"', u"'")
   xmlsig = u'''<?xml version="1.0" encoding="utf-8"?>
@@ -4476,9 +4510,7 @@ def doVacation(users):
       end_date = sys.argv[i+1]
       i += 2
     elif sys.argv[i].lower() == u'file':
-      fp = open(sys.argv[i+1], 'rb')
-      message = fp.read()
-      fp.close()
+      message = readFile(sys.argv[i+1])
       i += 2
     else:
       print u'ERROR: %s is not a valid argument for "gam <users> vacation"' % sys.argv[i]
@@ -4916,9 +4948,6 @@ def doCreateUser():
       except KeyError:
         body[u'externalIds'] = [externalid,]
       i += 1
-#    else:
-#      showUsage()
-#      sys.exit(2)
     else:
       if u'customSchemas' not in body:
         body[u'customSchemas'] = {}
@@ -5963,7 +5992,7 @@ def doGetUserInfo(user_email=None):
     for address in user[u'addresses']:
       for key in address:
         print convertUTF8(u' %s: %s' % (key, address[key]))
-      print ''
+      print u''
   if u'organizations' in user:
     print u'Organizations:'
     for org in user[u'organizations']:
@@ -6265,9 +6294,7 @@ def doSiteVerifyShow():
   webserver_file_record = callGAPI(service=verif.webResource(), function=u'getToken', body={u'site':{u'type':u'SITE', u'identifier':u'http://%s/' % a_domain}, u'verificationMethod':u'FILE'})
   webserver_file_token = webserver_file_record[u'token']
   print u'Saving web server verification file to: %s' % webserver_file_token
-  f = open(webserver_file_token, 'wb')
-  f.write(u'google-site-verification: %s' % webserver_file_token)
-  f.close()
+  writeFile(webserver_file_token, u'google-site-verification: {0}'.format(webserver_file_token), continueOnError=True)
   print u'Verification File URL: http://%s/%s' % (a_domain, webserver_file_token)
   print
   webserver_meta_record = callGAPI(service=verif.webResource(), function=u'getToken', body={u'site':{u'type':u'SITE', u'identifier':u'http://%s/' % a_domain}, u'verificationMethod':u'META'})
@@ -6472,7 +6499,7 @@ def doGenBackupCodes(users):
     callGAPI(service=cd.verificationCodes(), function=u'generate', userKey=user)
     codes = callGAPI(service=cd.verificationCodes(), function=u'list', userKey=user)
     print u'Backup verification codes for %s' % user
-    print ''
+    print u''
     try:
       i = 0
       while True:
@@ -6537,7 +6564,7 @@ def doGetTokens(users):
               print u' %s: %s' % (item, token[item])
             except UnicodeEncodeError:
               print u' %s: %s' % (item, token[item][:-1])
-        print ''
+        print u''
     except KeyError:
       print u' no tokens for %s' % user
     print u''
@@ -6593,15 +6620,9 @@ def doUpdateInstance():
     admin_secondary_email = sys.argv[4]
     callGData(service=adminObj, function=u'UpdateAdminSecondaryEmail', adminSecondaryEmail=admin_secondary_email)
   elif command == u'logo':
-    logo_file = sys.argv[4]
-    try:
-      fp = open(logo_file, 'rb')
-      logo_image = fp.read()
-      fp.close()
-    except IOError:
-      print u'Error: can\'t open file %s' % logo_file
-      sys.exit(11)
-    callGData(service=adminObj, function=u'UpdateDomainLogo', logoImage=logo_image)
+    logoFile = sys.argv[4]
+    logoImage = readFile(logoFile)
+    callGData(service=adminObj, function=u'UpdateDomainLogo', logoImage=logoImage)
   elif command == u'mx_verify':
     result = callGData(service=adminObj, function=u'UpdateMXVerificationStatus')
     print u'Verification Method: %s' % result[u'verificationMethod']
@@ -6645,15 +6666,9 @@ def doUpdateInstance():
         sys.exit(2)
     callGData(service=adminObj, function=u'UpdateSSOSettings', enableSSO=enableSSO, samlSignonUri=samlSignonUri, samlLogoutUri=samlLogoutUri, changePasswordUri=changePasswordUri, ssoWhitelist=ssoWhitelist, useDomainSpecificIssuer=useDomainSpecificIssuer)
   elif command == u'sso_key':
-    key_file = sys.argv[4]
-    try:
-      fp = open(key_file, 'rb')
-      key_data = fp.read()
-      fp.close()
-    except IOError:
-      print u'Error: can\'t open file %s' % logo_file
-      sys.exit(11)
-    callGData(service=adminObj, function=u'UpdateSSOKey', signingKey=key_data)
+    keyFile = sys.argv[4]
+    keyData = readFile(keyFile)
+    callGData(service=adminObj, function=u'UpdateSSOKey', signingKey=keyData)
   elif command == u'user_migrations':
     value = sys.argv[4].lower()
     if value not in [u'true', u'false']:
@@ -6729,7 +6744,7 @@ def doGetInstanceInfo():
     target_file = sys.argv[4]
     url = 'http://www.google.com/a/cpanel/%s/images/logo.gif' % (domain)
     geturl(url, target_file)
-    sys.exit(0)
+    return
   print u'Google Apps Domain: %s' % domain
   cd = buildGAPIObject(u'directory')
   if customerId != MY_CUSTOMER:
@@ -6920,7 +6935,6 @@ def doDeleteOrg():
 def output_csv(csv_list, titles, list_type, todrive):
   csv.register_dialect(u'nixstdout', lineterminator=u'\n')
   if todrive:
-    import StringIO
     string_file = StringIO.StringIO()
     writer = csv.DictWriter(string_file, fieldnames=titles, dialect=u'nixstdout', quoting=csv.QUOTE_MINIMAL)
   else:
@@ -7908,7 +7922,7 @@ def doStatusActivityRequests():
         print u'  Url%s: %s' % (i, results[u'fileUrl%s' % i])
     except KeyError:
       pass
-    print ''
+    print u''
   except IndexError:
     results = callGData(service=audit, function=u'getAllAccountInformationRequestsStatus')
     print u'Current Activity Requests:'
@@ -8350,8 +8364,7 @@ def doDeleteOAuth():
   try:
     credentials.revoke_uri = oauth2client.GOOGLE_REVOKE_URI
   except AttributeError:
-    print u'Error: Authorization doesn\'t exist'
-    sys.exit(1)
+    systemErrorExit(1, u'Authorization doesn\'t exist')
   disable_ssl_certificate_validation = False
   if os.path.isfile(os.path.join(gamUserConfigDir, u'noverifyssl.txt')):
     disable_ssl_certificate_validation = True
@@ -8368,7 +8381,7 @@ def doDeleteOAuth():
   try:
     credentials.revoke(http)
   except oauth2client.client.TokenRevokeError, e:
-    print u'Error: %s' % e
+    sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, e.message))
     os.remove(oauth2file)
 
 class cmd_flags(object):
@@ -8555,6 +8568,8 @@ def batch_worker():
     q.task_done()
 
 def run_batch(items):
+  import Queue, threading
+  global q
   total_items = len(items)
   current_item = 0
   python_cmd = [sys.executable.lower(),]
@@ -8564,8 +8579,7 @@ def run_batch(items):
     num_worker_threads = int(os.environ.get(u'GAM_THREADS', '5'))
   except TypeError:
     num_worker_threads = 5
-  import Queue, threading
-  global q
+  num_worker_threads = min(total_items, num_worker_threads)
   q = Queue.Queue(maxsize=num_worker_threads) # q.put() gets blocked when trying to create more items than there are workers
   print u'starting %s worker threads...' % num_worker_threads
   for i in range(num_worker_threads):
@@ -8591,10 +8605,9 @@ try:
   if os.name == u'nt':
     sys.argv = win32_unicode_argv() # cleanup sys.argv on Windows
   setGamDirs()
-  doGAMCheckForUpdates()
   if sys.argv[1].lower() == u'batch':
     import shlex
-    f = file(sys.argv[2], 'rb')
+    f = openFile(sys.argv[2])
     items = list()
     for line in f:
       argv = shlex.split(line)
@@ -8606,16 +8619,12 @@ try:
       if argv[0] == u'gam':
         argv = argv[1:]
       items.append(argv)
+    closeFile(f)
     run_batch(items)
     sys.exit(0)
   elif sys.argv[1].lower() == u'csv':
     csv_filename = sys.argv[2]
-    if csv_filename == u'-':
-      import StringIO
-      input_string = unicode(sys.stdin.read())
-      f = StringIO.StringIO(input_string)
-    else:
-      f = file(csv_filename, 'rb')
+    f = openFile(csv_filename)
     input_file = csv.DictReader(f)
     if sys.argv[3].lower() != 'gam':
       print 'ERROR: "gam csv <filename>" should be followed by a full GAM command...'
@@ -8632,6 +8641,7 @@ try:
         else:
           systemErrorExit(2, MESSAGE_HEADER_NOT_FOUND_IN_CSV_HEADERS.format(arg[1:], ','.join(row.keys())))
       items.append(argv)
+    closeFile(f)
     run_batch(items)
     sys.exit(0)
   elif sys.argv[1].lower() == u'version':
