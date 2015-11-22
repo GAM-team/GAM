@@ -209,7 +209,7 @@ def printLine(message):
 #
 # Open a file
 #
-def openFile(filename, mode='rb'):
+def openFile(filename, mode=u'rb'):
   try:
     if filename != u'-':
       return open(filename, mode)
@@ -231,7 +231,7 @@ def closeFile(f):
 #
 # Read a file
 #
-def readFile(filename, mode='rb', continueOnError=False, displayError=True):
+def readFile(filename, mode=u'rb', continueOnError=False, displayError=True):
   try:
     if filename != u'-':
       with open(filename, mode) as f:
@@ -247,7 +247,7 @@ def readFile(filename, mode='rb', continueOnError=False, displayError=True):
 #
 # Write a file
 #
-def writeFile(filename, data, mode='wb', continueOnError=False, displayError=True):
+def writeFile(filename, data, mode=u'wb', continueOnError=False, displayError=True):
   try:
     with open(filename, mode) as f:
       f.write(data)
@@ -723,7 +723,7 @@ def getResCalObject():
 def geturl(url, dst):
   import urllib2
   u = urllib2.urlopen(url)
-  f = openFile(dst, 'wb')
+  f = openFile(dst, u'wb')
   meta = u.info()
   try:
     file_size = int(meta.getheaders(u'Content-Length')[0])
@@ -1850,7 +1850,7 @@ def changeCalendarAttendees(users):
       print u'ERROR: %s is not a valid argument for "gam <users> update calattendees"' % sys.argv[i]
       sys.exit(2)
   attendee_map = dict()
-  csvfile = csv.reader(open(csv_file, 'rb'))
+  csvfile = csv.reader(open(csv_file, u'rb'))
   for row in csvfile:
     attendee_map[row[0].lower()] = row[1].lower()
   for user in users:
@@ -2674,7 +2674,7 @@ def doPhoto(users):
         continue
     else:
       try:
-        with open(filename, 'rb') as f:
+        with open(filename, u'rb') as f:
           image_data = f.read()
       except IOError, e:
         print u' couldn\'t open %s: %s' % (filename, e.strerror)
@@ -4478,7 +4478,6 @@ def doWebClips(users):
     callGData(service=emailsettings, function=u'UpdateWebClipSettings', soft_errors=True, username=user, enable=enable)
 
 def doVacation(users):
-  import cgi
   subject = message = u''
   if sys.argv[4] in true_values:
     enable = u'true'
@@ -4518,19 +4517,7 @@ def doVacation(users):
   i = 1
   count = len(users)
   emailsettings = getEmailSettingsObject()
-  message = cgi.escape(message).replace(u'\\n', u'&#xA;').replace(u'"', u"'")
-  vacxml = u'''<?xml version="1.0" encoding="utf-8"?>
-<atom:entry xmlns:atom="http://www.w3.org/2005/Atom" xmlns:apps="http://schemas.google.com/apps/2006">
-    <apps:property name="enable" value="%s" />''' % enable
-  vacxml += u'''<apps:property name="subject" value="%s" />
-    <apps:property name="message" value="%s" />
-    <apps:property name="contactsOnly" value="%s" />
-    <apps:property name="domainOnly" value="%s" />''' % (subject, message, contacts_only, domain_only)
-  if start_date != None:
-    vacxml += u'''<apps:property name="startDate" value="%s" />''' % start_date
-  if end_date != None:
-    vacxml += u'''<apps:property name="endDate" value="%s" />''' % end_date
-  vacxml += u'</atom:entry>'
+  message = message.replace(u'\\n', u'\n')
   for user in users:
     if user.find(u'@') > 0:
       emailsettings.domain = user[user.find(u'@')+1:]
@@ -4538,9 +4525,11 @@ def doVacation(users):
     else:
       emailsettings.domain = domain #make sure it's back at default domain
     print u"Setting Vacation for %s (%s of %s)" % (user+'@'+emailsettings.domain, i, count)
-    uri = u'https://apps-apis.google.com/a/feeds/emailsettings/2.0/%s/%s/vacation' % (emailsettings.domain, user)
     i += 1
-    callGData(service=emailsettings, function=u'Put', soft_errors=True, data=vacxml, uri=uri)
+    callGData(service=emailsettings, function=u'UpdateVacation',
+              soft_errors=True,
+              username=userName, enable=enable, subject=subject, message=message,
+              contacts_only=contacts_only, domain_only=domain_only, start_date=start_date, end_date=end_date)
 
 def getVacation(users):
   emailsettings = getEmailSettingsObject()
@@ -8244,7 +8233,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
   elif entity_type == u'file':
     users = []
     filename = entity
-    usernames = csv.reader(open(filename, 'rb'))
+    usernames = csv.reader(open(filename, u'rb'))
     for row in usernames:
       try:
         users.append(row.pop())
