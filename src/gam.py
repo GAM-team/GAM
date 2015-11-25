@@ -3194,9 +3194,9 @@ def doUpdateDriveFile(users):
     elif sys.argv[i].lower() in [u'restrict', 'restricted']:
       if 'labels' not in body:
         body[u'labels'] = dict()
-      if sys.argv[i+1] in true_values:
+      if sys.argv[i+1].lower() in true_values:
         body[u'labels'][u'restricted'] = True
-      elif sys.argv[i+1] in false_values:
+      elif sys.argv[i+1].lower() in false_values:
         body[u'labels'][u'restricted'] = False
       else:
         print u'ERROR: value for restricted must be true or false, got %s' % sys.argv[i+1]
@@ -3205,9 +3205,9 @@ def doUpdateDriveFile(users):
     elif sys.argv[i].lower() in [u'star', u'starred']:
       if u'labels' not in body:
         body[u'labels'] = dict()
-      if sys.argv[i+1] in true_values:
+      if sys.argv[i+1].lower() in true_values:
         body[u'labels'][u'starred'] = True
-      elif sys.argv[i+1] in false_values:
+      elif sys.argv[i+1].lower() in false_values:
         body[u'labels'][u'starred'] = False
       else:
         print u'ERROR: value for starred must be true or false, got %s' % sys.argv[i+1]
@@ -3216,9 +3216,9 @@ def doUpdateDriveFile(users):
     elif sys.argv[i].lower() in [u'trash', u'trashed']:
       if u'labels' not in body:
         body[u'labels'] = dict()
-      if sys.argv[i+1] in true_values:
+      if sys.argv[i+1].lower() in true_values:
         body[u'labels'][u'trashed'] = True
-      elif sys.argv[i+1] in false_values:
+      elif sys.argv[i+1].lower() in false_values:
         body[u'labels'][u'trashed'] = False
       else:
         print u'ERROR: value for trashed must be true or false, got %s' % sys.argv[i+1]
@@ -3227,9 +3227,9 @@ def doUpdateDriveFile(users):
     elif sys.argv[i].lower() in [u'view', u'viewed']:
       if u'labels' not in body:
         body[u'labels'] = dict()
-      if sys.argv[i+1] in true_values:
+      if sys.argv[i+1].lower() in true_values:
         body[u'labels'][u'viewed'] = True
-      elif sys.argv[i+1] in false_values:
+      elif sys.argv[i+1].lower() in false_values:
         body[u'labels'][u'viewed'] = False
       else:
         print u'ERROR: value for viewed must be true or false, got %s' % sys.argv[i+1]
@@ -4371,9 +4371,9 @@ def doFilter(users):
 def doForward(users):
   action = forward_to = None
   gotAction = gotForward = False
-  if sys.argv[4] in true_values:
+  if sys.argv[4].lower() in true_values:
     enable = True
-  elif sys.argv[4] in false_values:
+  elif sys.argv[4].lower() in false_values:
     enable = False
   else:
     print u'ERROR: value for "gam <users> forward" must be true or false, got %s' % sys.argv[4]
@@ -4485,9 +4485,9 @@ def doWebClips(users):
 
 def doVacation(users):
   subject = message = u''
-  if sys.argv[4] in true_values:
+  if sys.argv[4].lower() in true_values:
     enable = u'true'
-  elif sys.argv[4] in false_values:
+  elif sys.argv[4].lower() in false_values:
     enable = u'false'
   else:
     print u'ERROR: value for "gam <users> vacation" must be true or false, got %s' % sys.argv[4]
