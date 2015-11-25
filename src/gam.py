@@ -2433,12 +2433,12 @@ def doCalendarAddACL(calendarId=None, act_as=None, role=None, scope=None, entity
     body[u'role'] = role
   else:
     body[u'role'] = sys.argv[4].lower()
-  if body[u'role'] not in [u'freebusy', u'read', u'editor', u'owner', u'none']:
+  if body[u'role'] not in [u'freebusy', u'read', u'reader', u'editor', u'owner', u'none']:
     print u'ERROR: Role must be freebusy, read, editor, owner or none. Not %s' % body['role']
     sys.exit(2)
   if body[u'role'] == u'freebusy':
     body[u'role'] = u'freeBusyReader'
-  elif body[u'role'] == u'read':
+  elif body[u'role'] in [u'read', u'reader']:
     body[u'role'] = u'reader'
   elif body[u'role'] == u'editor':
     body[u'role'] = u'writer'
@@ -3778,6 +3778,9 @@ def doPop(users):
       elif sys.argv[i+1].lower() == u'newmail':
         enable_for = u'MAIL_FROM_NOW_ON'
         i += 2
+      else:
+        print u'ERROR: %s is not a valid argument for "gam <users> pop for"' % sys.argv[i]
+        sys.exit(2)
     elif sys.argv[i].lower() == u'action':
       if sys.argv[i+1].lower() == u'keep':
         action = u'KEEP'
@@ -3788,6 +3791,9 @@ def doPop(users):
       elif sys.argv[i+1].lower() == u'delete':
         action = u'DELETE'
         i += 2
+      else:
+        print u'ERROR: %s is not a valid argument for "gam <users> pop action"' % sys.argv[i]
+        sys.exit(2)
     elif sys.argv[i].lower() == u'confirm':
       i += 1
     else:
@@ -4828,6 +4834,9 @@ def doCreateUser():
           address[u'primary'] = True
           i += 1
           break
+        else:
+          print u'ERROR: invalid argument (%s) for account address details' % sys.argv[i]
+          sys.exit(2)
       try:
         body[u'addresses'].append(address)
       except KeyError:
@@ -4877,6 +4886,9 @@ def doCreateUser():
           organization[u'primary'] = True
           i += 1
           break
+        else:
+          print u'ERROR: invalid argument (%s) for account organization details' % sys.argv[i]
+          sys.exit(2)
       try:
         body[u'organizations'].append(organization)
       except KeyError:
@@ -4905,6 +4917,9 @@ def doCreateUser():
           phone[u'primary'] = True
           i += 1
           break
+        else:
+          print u'ERROR: invalid argument (%s) for account phone details' % sys.argv[i]
+          sys.exit(2)
       try:
         body[u'phones'].append(phone)
       except KeyError:
@@ -5305,6 +5320,9 @@ def doUpdateUser(users):
           address[u'primary'] = True
           i += 1
           break
+        else:
+          print u'ERROR: invalid argument (%s) for account address details' % sys.argv[i]
+          sys.exit(2)
       try:
         body[u'addresses'].append(address)
       except KeyError:
@@ -5326,7 +5344,7 @@ def doUpdateUser(users):
           i += 2
         elif argument == u'type':
           organization[u'type'] = sys.argv[i+1].lower()
-          if organization[u'type'] not in [u'domain_only', 'school', 'unknown', 'work']:
+          if organization[u'type'] not in [u'domain_only', u'school', u'unknown', u'work']:
             print u'ERROR: organization type must be domain_only, school, unknown or work. Got %s' % organization[u'type']
             sys.exit(2)
           i += 2
@@ -5355,6 +5373,9 @@ def doUpdateUser(users):
           organization[u'primary'] = True
           i += 1
           break
+        else:
+          print u'ERROR: invalid argument (%s) for account organization details' % sys.argv[i]
+          sys.exit(2)
       try:
         body[u'organizations'].append(organization)
       except KeyError:
@@ -5384,6 +5405,9 @@ def doUpdateUser(users):
           phone[u'primary'] = True
           i += 1
           break
+        else:
+          print u'ERROR: invalid argument (%s) for account phone details' % sys.argv[i]
+          sys.exit(2)
       try:
         body[u'phones'].append(phone)
       except KeyError:
