@@ -4703,18 +4703,18 @@ def doCreateUser():
       need_to_hash_password = False
       i += 1
     elif sys.argv[i].lower() == u'changepassword':
-      if sys.argv[i+1] in true_values:
+      if sys.argv[i+1].lower() in true_values:
         body[u'changePasswordAtNextLogin'] = True
-      elif sys.argv[i+1] in false_values:
+      elif sys.argv[i+1].lower() in false_values:
         body[u'changePasswordAtNextLogin'] = False
       else:
         print u'ERROR: changepassword should be on or off, not %s' % sys.argv[i+1]
         sys.exit(2)
       i += 2
     elif sys.argv[i].lower() == u'ipwhitelisted':
-      if sys.argv[i+1] in true_values:
+      if sys.argv[i+1].lower() in true_values:
         body[u'ipWhitelisted'] = True
-      elif sys.argv[i+1] in false_values:
+      elif sys.argv[i+1].lower() in false_values:
         body[u'ipWhitelisted'] = False
       else:
         print u'ERROR: ipwhitelisted should be on or off, not %s' % sys.argv[i+1]
@@ -4731,9 +4731,9 @@ def doCreateUser():
         sys.exit(2)
       i += 2
     elif sys.argv[i].lower() == u'agreedtoterms':
-      if sys.argv[i+1] in true_values:
+      if sys.argv[i+1].lower() in true_values:
         body[u'agreedToTerms'] = True
-      elif sys.argv[i+1] in false_values:
+      elif sys.argv[i+1].lower() in false_values:
         body[u'agreedToTerms'] = False
       else:
         print u'ERROR: agreedtoterms should be on or off, not %s' % sys.argv[i+1]
