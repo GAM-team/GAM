@@ -344,6 +344,10 @@ def callGAPI(service, function, silent_errors=False, soft_errors=False, throw_re
     except googleapiclient.errors.HttpError, e:
       try:
         error = json.loads(e.content)
+        if (e.resp[u'status'] == u'400'):
+          if error['error']['message'] == u'Mail service not enabled':
+            print 'Error on current user; Mailbox not enabled. Skipping'
+            break
       except ValueError:
         if n < 3:
           disable_ssl_certificate_validation = False
