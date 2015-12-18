@@ -417,7 +417,7 @@ def callGData(service, function, soft_errors=False, throw_errors=[], **kwargs):
       if soft_errors:
         if n != 1:
           sys.stderr.write(u' - Giving up.\n')
-        return
+        return None
       sys.exit(int(e.error_code))
 
 def callGAPI(service, function, silent_errors=False, soft_errors=False, throw_reasons=[], retry_reasons=[], **kwargs):
@@ -443,7 +443,7 @@ def callGAPI(service, function, silent_errors=False, soft_errors=False, throw_re
         if not silent_errors:
           sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, e.content))
         if soft_errors:
-          return
+          return None
         sys.exit(5)
       http_status = error[u'error'][u'code']
       message = error[u'error'][u'errors'][0][u'message']
@@ -467,7 +467,7 @@ def callGAPI(service, function, silent_errors=False, soft_errors=False, throw_re
       if soft_errors:
         if n != 1:
           sys.stderr.write(u' - Giving up.\n')
-        return
+        return None
       sys.exit(int(http_status))
     except oauth2client.client.AccessTokenRefreshError, e:
       sys.stderr.write(u'{0}Authentication Token Error: {1}\n'.format(ERROR_PREFIX, e))
