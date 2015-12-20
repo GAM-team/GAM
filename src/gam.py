@@ -585,8 +585,7 @@ def buildGAPIObject(api):
   except googleapiclient.errors.UnknownApiNameOrVersion:
     service = getServiceFromDiscoveryDocument(api, version, http)
   except httplib2.ServerNotFoundError as e:
-    sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, e))
-    sys.exit(8)
+    systemErrorExit(4, e)
   except httplib2.CertificateValidationUnsupported:
     noPythonSSLExit()
   try:
