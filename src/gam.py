@@ -634,7 +634,9 @@ def buildGAPIServiceObject(api, act_as=None, soft_errors=False):
   except httplib2.ServerNotFoundError as e:
     systemErrorExit(4, e)
   except oauth2client.client.AccessTokenRefreshError, e:
-    if e.message in [u'access_denied', u'unauthorized_client: Unauthorized client or scope in request.']:
+    if e.message in [u'access_denied',
+      u'unauthorized_client: Unauthorized client or scope in request.',
+      u'access_denied: Requested client not authorized.']:
       systemErrorExit(5, MESSAGE_CLIENT_API_ACCESS_DENIED.format(SERVICE_ACCOUNT_CLIENT_ID, u','.join(scope)))
     sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, e))
     if soft_errors:
@@ -4187,11 +4189,12 @@ def doDeleteMessages(trashOrDelete, users):
     print u'ERROR: No query specified. You must specify some query!'
     sys.exit(2)
   for user in users:
+    print u'Searching messages for %s' % user
     gmail = buildGAPIServiceObject(u'gmail', act_as=user)
     page_message = u'Got %%%%total_items%%%% messages for user %s' % user
     listResult = callGAPIpages(service=gmail.users().messages(),
                                function=u'list', items=u'messages', page_message=page_message,
-                               userId=u'me', q=query, includeSpamTrash=True)
+                               userId=u'me', q=query, includeSpamTrash=True, soft_errors=True)
     del_count = len(listResult)
     if not doIt:
       print u'would try to delete %s messages for user %s (max %s)\n' % (del_count, user, maxToDelete)
