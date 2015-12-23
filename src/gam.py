@@ -1618,6 +1618,9 @@ def doPrintAdmins():
           print u'ERROR: %s is not a valid role' % role
           sys.exit(5)
       i += 2
+    else:
+      print u'ERROR: %s is not a valid argument for "gam print admins".' % sys.argv[i]
+      sys.exit(2)
   admins = callGAPIpages(service=cd.roleAssignments(), function=u'list',
                          customer=GC_Values[GC_CUSTOMER_ID], userKey=userKey, roleId=roleId, maxResults=200)
   admins_attrib = [{}]
