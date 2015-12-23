@@ -9001,6 +9001,8 @@ try:
     items = list()
     for line in f:
       argv = shlex.split(line)
+      if not argv:
+        continue
       if (argv[0] in [u'#', u' ', u''] or len(argv) < 2) and argv != [u'commit-batch']:
         continue
       elif argv[0] not in [u'gam', u'commit-batch']:
