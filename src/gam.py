@@ -1608,6 +1608,7 @@ def doPrintAdmins():
   cd = buildGAPIObject(u'directory')
   roleId = None
   userKey = None
+  todrive = False
   i = 3
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'user':
@@ -1623,6 +1624,9 @@ def doPrintAdmins():
           print u'ERROR: %s is not a valid role' % role
           sys.exit(5)
       i += 2
+    elif sys.argv[i].lower() == u'todrive':
+      todrive = True
+      i += 1
     else:
       print u'ERROR: %s is not a valid argument for "gam print admins".' % sys.argv[i]
       sys.exit(2)
@@ -1653,7 +1657,7 @@ def doPrintAdmins():
           admins_attrib[0][u'orgUnit'] = u'orgUnit'
         admin_attrib[u'orgUnit'] = orgUnit
     admins_attrib.append(admin_attrib)
-  output_csv(admins_attrib, admins_attrib[0], u'Admins', False)
+  output_csv(admins_attrib, admins_attrib[0], u'Admins', todrive)
 
 def buildOrgUnitIdToNameMap():
   cd = buildGAPIObject(u'directory')
@@ -4558,10 +4562,11 @@ def showGmailProfile(users):
     if not gmail:
       continue
     results = callGAPI(service=gmail.users(), function=u'getProfile', userId=u'me', soft_errors=True)
-    for item in results:
-      if item not in profiles[0]:
-        profiles[0][item] = item
-    profiles.append(results)
+    if results:
+      for item in results:
+        if item not in profiles[0]:
+          profiles[0][item] = item
+      profiles.append(results)
   output_csv(csv_list=profiles, titles=profiles[0], list_type=u'Gmail Profiles', todrive=todrive)
 
 def updateLabels(users):
