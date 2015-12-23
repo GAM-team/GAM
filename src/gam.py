@@ -809,7 +809,7 @@ def buildGAPIObject(api):
   if api in [u'directory', u'reports', u'datatransfer']:
     api = u'admin'
   try:
-    service = googleapiclient.discovery.build(api, version, http=http)
+    service = googleapiclient.discovery.build(api, version, http=http, cache_discovery=False)
   except googleapiclient.errors.UnknownApiNameOrVersion:
     service = getServiceFromDiscoveryDocument(api, version, http)
   except httplib2.ServerNotFoundError as e:
@@ -870,7 +870,7 @@ def buildGAPIServiceObject(api, act_as, soft_errors=False):
                                              cache=GC_Values[GC_CACHE_DIR]))
   version = getAPIVer(api)
   try:
-    return googleapiclient.discovery.build(api, version, http=http)
+    return googleapiclient.discovery.build(api, version, http=http, cache_discovery=False)
   except googleapiclient.errors.UnknownApiNameOrVersion:
     return getServiceFromDiscoveryDocument(api, version, http)
   except httplib2.ServerNotFoundError as e:
@@ -1608,6 +1608,7 @@ def doPrintAdmins():
   cd = buildGAPIObject(u'directory')
   roleId = None
   userKey = None
+  todrive = False
   i = 3
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'user':
@@ -1623,6 +1624,9 @@ def doPrintAdmins():
           print u'ERROR: %s is not a valid role' % role
           sys.exit(5)
       i += 2
+    elif sys.argv[i].lower() == u'todrive':
+      todrive = True
+      i += 1
     else:
       print u'ERROR: %s is not a valid argument for "gam print admins".' % sys.argv[i]
       sys.exit(2)
@@ -1653,7 +1657,7 @@ def doPrintAdmins():
           admins_attrib[0][u'orgUnit'] = u'orgUnit'
         admin_attrib[u'orgUnit'] = orgUnit
     admins_attrib.append(admin_attrib)
-  output_csv(admins_attrib, admins_attrib[0], u'Admins', False)
+  output_csv(admins_attrib, admins_attrib[0], u'Admins', todrive)
 
 def buildOrgUnitIdToNameMap():
   cd = buildGAPIObject(u'directory')
@@ -1704,7 +1708,7 @@ def buildUserIdToNameMap():
 def user_from_userid(userid):
   if not GM_Globals[GM_MAP_USER_ID_TO_NAME]:
     buildUserIdToNameMap()
-  return GM_Globals[GM_MAP_USER_ID_TO_NAME][userid]
+  return GM_Globals[GM_MAP_USER_ID_TO_NAME].get(userid, '')
 
 SERVICE_NAME_TO_ID_MAP = {
   u'Drive': u'55656082996',
@@ -4530,16 +4534,17 @@ def showLabels(users):
       sys.exit(2)
   for user in users:
     gmail = buildGAPIServiceObject(u'gmail', user)
-    labels = callGAPI(service=gmail.users().labels(), function=u'list', userId=user)
-    for label in labels[u'labels']:
-      if label[u'type'] == u'system' and not show_system:
-        continue
-      print convertUTF8(label[u'name'])
-      for a_key in label:
-        if a_key == u'name':
+    labels = callGAPI(service=gmail.users().labels(), function=u'list', userId=user, soft_errors=True)
+    if labels:
+      for label in labels[u'labels']:
+        if label[u'type'] == u'system' and not show_system:
           continue
-        print u' %s: %s' % (a_key, label[a_key])
-      print u''
+        print convertUTF8(label[u'name'])
+        for a_key in label:
+          if a_key == u'name':
+            continue
+          print u' %s: %s' % (a_key, label[a_key])
+        print u''
 
 def showGmailProfile(users):
   todrive = False
@@ -4558,10 +4563,11 @@ def showGmailProfile(users):
     if not gmail:
       continue
     results = callGAPI(service=gmail.users(), function=u'getProfile', userId=u'me', soft_errors=True)
-    for item in results:
-      if item not in profiles[0]:
-        profiles[0][item] = item
-    profiles.append(results)
+    if results:
+      for item in results:
+        if item not in profiles[0]:
+          profiles[0][item] = item
+      profiles.append(results)
   output_csv(csv_list=profiles, titles=profiles[0], list_type=u'Gmail Profiles', todrive=todrive)
 
 def updateLabels(users):
@@ -8995,6 +9001,8 @@ try:
     items = list()
     for line in f:
       argv = shlex.split(line)
+      if not argv:
+        continue
       if (argv[0] in [u'#', u' ', u''] or len(argv) < 2) and argv != [u'commit-batch']:
         continue
       elif argv[0] not in [u'gam', u'commit-batch']:
