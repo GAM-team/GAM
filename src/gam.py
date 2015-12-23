@@ -1704,7 +1704,7 @@ def buildUserIdToNameMap():
 def user_from_userid(userid):
   if not GM_Globals[GM_MAP_USER_ID_TO_NAME]:
     buildUserIdToNameMap()
-  return GM_Globals[GM_MAP_USER_ID_TO_NAME][userid]
+  return GM_Globals[GM_MAP_USER_ID_TO_NAME].get(userid, '')
 
 SERVICE_NAME_TO_ID_MAP = {
   u'Drive': u'55656082996',
