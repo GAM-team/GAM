@@ -4534,16 +4534,17 @@ def showLabels(users):
       sys.exit(2)
   for user in users:
     gmail = buildGAPIServiceObject(u'gmail', user)
-    labels = callGAPI(service=gmail.users().labels(), function=u'list', userId=user)
-    for label in labels[u'labels']:
-      if label[u'type'] == u'system' and not show_system:
-        continue
-      print convertUTF8(label[u'name'])
-      for a_key in label:
-        if a_key == u'name':
+    labels = callGAPI(service=gmail.users().labels(), function=u'list', userId=user, soft_errors=True)
+    if labels:
+      for label in labels[u'labels']:
+        if label[u'type'] == u'system' and not show_system:
           continue
-        print u' %s: %s' % (a_key, label[a_key])
-      print u''
+        print convertUTF8(label[u'name'])
+        for a_key in label:
+          if a_key == u'name':
+            continue
+          print u' %s: %s' % (a_key, label[a_key])
+        print u''
 
 def showGmailProfile(users):
   todrive = False
