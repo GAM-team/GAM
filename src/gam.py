@@ -809,7 +809,7 @@ def buildGAPIObject(api):
   if api in [u'directory', u'reports', u'datatransfer']:
     api = u'admin'
   try:
-    service = googleapiclient.discovery.build(api, version, http=http)
+    service = googleapiclient.discovery.build(api, version, http=http, cache_discovery=False)
   except googleapiclient.errors.UnknownApiNameOrVersion:
     service = getServiceFromDiscoveryDocument(api, version, http)
   except httplib2.ServerNotFoundError as e:
@@ -870,7 +870,7 @@ def buildGAPIServiceObject(api, act_as, soft_errors=False):
                                              cache=GC_Values[GC_CACHE_DIR]))
   version = getAPIVer(api)
   try:
-    return googleapiclient.discovery.build(api, version, http=http)
+    return googleapiclient.discovery.build(api, version, http=http, cache_discovery=False)
   except googleapiclient.errors.UnknownApiNameOrVersion:
     return getServiceFromDiscoveryDocument(api, version, http)
   except httplib2.ServerNotFoundError as e:
