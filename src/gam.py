@@ -1684,7 +1684,7 @@ def role_from_roleid(roleid):
 def roleid_from_role(role):
   if not GM_Globals[GM_MAP_ROLE_NAME_TO_ID]:
     buildRoleIdToNameToIdMap()
-  return GM_Globals[GM_MAP_ROLE_NAME_TO_ID][role]
+  return GM_Globals[GM_MAP_ROLE_NAME_TO_ID].get(role, None)
 
 def buildUserIdToNameMap():
   cd = buildGAPIObject(u'directory')
