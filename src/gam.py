@@ -1583,8 +1583,8 @@ def doCreateAdmin():
     sys.exit(3)
   if body[u'scopeType'] == u'ORG_UNIT':
     orgUnit = sys.argv[6]
-    if orgUnit[:4] == u'uid:':
-      body[u'orgUnitId'] = orgUnit[4:]
+    if orgUnit[:3] == u'id:':
+      body[u'orgUnitId'] = orgUnit[3:]
     else:
       if orgUnit[0] == u'/':
         orgUnit = orgUnit[1:]
