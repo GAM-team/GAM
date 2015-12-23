@@ -249,6 +249,7 @@ GC_VAR_INFO = {
   }
 
 MESSAGE_CLIENT_API_ACCESS_DENIED = u'Access Denied. Please make sure the Client Name:\n\n{0}\n\nis authorized for the API Scope(s):\n\n{1}\n\nThis can be configured in your Control Panel under:\n\nSecurity -->\nAdvanced Settings -->\nManage API client access'
+MESSAGE_BATCH_CSV_DASH_DEBUG_INCOMPATIBLE = u'"gam {0} - ..." is not compatible with debugging. Disable debugging by deleting debug.gam and try again.'
 MESSAGE_GAM_EXITING_FOR_UPDATE = u'GAM is now exiting so that you can overwrite this old version with the latest release'
 MESSAGE_GAM_OUT_OF_MEMORY = u'GAM has run out of memory. If this is a large Google Apps instance, you should use a 64-bit version of GAM on Windows or a 64-bit version of Python on other systems.'
 MESSAGE_HEADER_NOT_FOUND_IN_CSV_HEADERS = u'Header "{0}" not found in CSV headers of "{1}".'
@@ -1708,7 +1709,7 @@ def buildUserIdToNameMap():
 def user_from_userid(userid):
   if not GM_Globals[GM_MAP_USER_ID_TO_NAME]:
     buildUserIdToNameMap()
-  return GM_Globals[GM_MAP_USER_ID_TO_NAME].get(userid, '')
+  return GM_Globals[GM_MAP_USER_ID_TO_NAME].get(userid, u'')
 
 SERVICE_NAME_TO_ID_MAP = {
   u'Drive': u'55656082996',
@@ -6891,14 +6892,14 @@ def doGetBackupCodes(users):
       codes = callGAPI(service=cd.verificationCodes(), function=u'list', throw_reasons=[u'invalidArgument', u'invalid'], userKey=user)
     except googleapiclient.errors.HttpError:
       codes = None
-    printBackupCodes(user, codes)  
+    printBackupCodes(user, codes)
 
 def doGenBackupCodes(users):
   cd = buildGAPIObject(u'directory')
   for user in users:
     callGAPI(service=cd.verificationCodes(), function=u'generate', userKey=user)
     codes = callGAPI(service=cd.verificationCodes(), function=u'list', userKey=user)
-    printBackupCodes(user, codes)  
+    printBackupCodes(user, codes)
 
 def doDelBackupCodes(users):
   cd = buildGAPIObject(u'directory')
@@ -8997,7 +8998,10 @@ try:
   SetGlobalVariables()
   if sys.argv[1].lower() == u'batch':
     import shlex
-    f = openFile(sys.argv[2])
+    filename = sys.argv[2]
+    if (filename == u'-') and (GC_Values[GC_DEBUG_LEVEL] > 0):
+      systemErrorExit(2, MESSAGE_BATCH_CSV_DASH_DEBUG_INCOMPATIBLE.format(u'batch'))
+    f = openFile(filename)
     items = list()
     for line in f:
       argv = shlex.split(line)
@@ -9015,11 +9019,10 @@ try:
     run_batch(items)
     sys.exit(0)
   elif sys.argv[1].lower() == u'csv':
-    if httplib2.debuglevel > 0:
-      print u'Sorry, CSV commands are not compatible with debug. Delete debug.gam and try again.'
-      sys.exit(1)
-    csv_filename = sys.argv[2]
-    f = openFile(csv_filename)
+    filename = sys.argv[2]
+    if (filename == u'-') and (GC_Values[GC_DEBUG_LEVEL] > 0):
+      systemErrorExit(2, MESSAGE_BATCH_CSV_DASH_DEBUG_INCOMPATIBLE.format(u'csv'))
+    f = openFile(filename)
     input_file = csv.DictReader(f)
     if sys.argv[3].lower() != 'gam':
       print 'ERROR: "gam csv <filename>" should be followed by a full GAM command...'
