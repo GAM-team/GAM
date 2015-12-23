@@ -877,8 +877,8 @@ def buildGAPIServiceObject(api, act_as, soft_errors=False):
     systemErrorExit(4, e)
   except oauth2client.client.AccessTokenRefreshError, e:
     if e.message in [u'access_denied',
-      u'unauthorized_client: Unauthorized client or scope in request.',
-      u'access_denied: Requested client not authorized.']:
+                     u'unauthorized_client: Unauthorized client or scope in request.',
+                     u'access_denied: Requested client not authorized.']:
       systemErrorExit(5, MESSAGE_CLIENT_API_ACCESS_DENIED.format(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID], u','.join(scope)))
     sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, e))
     if soft_errors:
@@ -3933,11 +3933,15 @@ def showDriveFileInfo(users):
 
 def transferSecCals(users):
   target_user = sys.argv[5]
-  try:
-    if sys.argv[6].lower() == u'keepuser':
+  remove_source_user = True
+  i = 6
+  while i < len(sys.argv):
+    if sys.argv[i].lower() == u'keepuser':
       remove_source_user = False
-  except IndexError:
-    remove_source_user = True
+      i += 1
+    else:
+      print u'ERROR: %s is not a valid argument for "gam <users> transfer seccals"' % sys.argv[i]
+      sys.exit(2)
   for user in users:
     source_cal = buildGAPIServiceObject(u'calendar', user)
     source_calendars = callGAPIpages(service=source_cal.calendarList(), function=u'list', minAccessRole=u'owner', showHidden=True, fields=u'items(id),nextPageToken')
@@ -3950,11 +3954,14 @@ def transferSecCals(users):
 def transferDriveFiles(users):
   target_user = sys.argv[5]
   remove_source_user = True
-  try:
-    if sys.argv[6].lower() == u'keepuser':
+  i = 6
+  while i < len(sys.argv):
+    if sys.argv[i].lower() == u'keepuser':
       remove_source_user = False
-  except IndexError:
-    pass
+      i += 1
+    else:
+      print u'ERROR: %s is not a valid argument for "gam <users> transfer drive"' % sys.argv[i]
+      sys.exit(2)
   target_drive = buildGAPIServiceObject(u'drive', target_user)
   target_about = callGAPI(service=target_drive.about(), function=u'get', fields=u'quotaBytesTotal,quotaBytesUsed,rootFolderId')
   target_drive_free = int(target_about[u'quotaBytesTotal']) - int(target_about[u'quotaBytesUsed'])
