@@ -8982,6 +8982,9 @@ try:
     run_batch(items)
     sys.exit(0)
   elif sys.argv[1].lower() == u'csv':
+    if httplib2.debuglevel > 0:
+      print u'Sorry, CSV commands are not compatible with debug. Delete debug.gam and try again.'
+      sys.exit(1)
     csv_filename = sys.argv[2]
     f = openFile(csv_filename)
     input_file = csv.DictReader(f)
