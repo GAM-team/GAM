@@ -1585,6 +1585,8 @@ def doCreateAdmin():
     orgUnit = sys.argv[6]
     if orgUnit[:3] == u'id:':
       body[u'orgUnitId'] = orgUnit[3:]
+    elif orgUnit[:4] == u'uid:':
+      body[u'orgUnitId'] = orgUnit[4:]
     else:
       if orgUnit[0] == u'/':
         orgUnit = orgUnit[1:]
