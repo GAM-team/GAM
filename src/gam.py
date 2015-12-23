@@ -1605,6 +1605,24 @@ def doCreateAdmin():
   callGAPI(service=cd.roleAssignments(), function=u'insert',
            customer=GC_Values[GC_CUSTOMER_ID], body=body)
 
+def doPrintAdminRoles():
+  cd = buildGAPIObject(u'directory')
+  roles = callGAPIpages(service=cd.roles(), function=u'list', items=u'items',
+    customer=GC_Values[GC_CUSTOMER_ID])
+  roles_attrib = [{}]
+  for role in roles:
+    role_attrib = {}
+    for key, value in role.items():
+      if key in [u'kind', u'etag', u'etags']:
+        continue
+      if not isinstance( value, (str, unicode, bool)):
+        continue
+      if key not in roles_attrib[0]:
+        roles_attrib[0][key] = key
+      role_attrib[key] = value
+    roles_attrib.append(role_attrib)
+  output_csv(roles_attrib, roles_attrib[0], u'Admin Roles', False)
+
 def doPrintAdmins():
   cd = buildGAPIObject(u'directory')
   roleId = None
@@ -9274,6 +9292,8 @@ try:
       doPrintDomains()
     elif sys.argv[2].lower() in [u'admins']:
       doPrintAdmins()
+    elif sys.argv[2].lower() in [u'roles', u'adminroles']:
+      doPrintAdminRoles()
     else:
       print u'ERROR: %s is not a valid argument for "gam print"' % sys.argv[2]
       sys.exit(2)
