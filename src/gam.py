@@ -1228,11 +1228,14 @@ def gen_sha512_hash(password):
 def getDelegates(users):
   emailsettings = getEmailSettingsObject()
   csv_format = False
-  try:
-    if sys.argv[5].lower() == u'csv':
+  i = 5
+  while i < len(sys.argv):
+    if sys.argv[i].lower() == u'csv':
       csv_format = True
-  except IndexError:
-    pass
+      i += 1
+    else:
+      print u'ERROR: %s is not a valid argument for "gam <users> show delegates"' % sys.argv[i]
+      sys.exit(2)
   for user in users:
     if user.find(u'@') > 0:
       emailsettings.domain = user[user.find('@')+1:]
@@ -2832,9 +2835,9 @@ def doCalendarUpdateACL():
   calendarId = sys.argv[2]
   role = sys.argv[4].lower()
   scope = sys.argv[5].lower()
-  try:
+  if len(sys.argv) > 6:
     entity = sys.argv[6].lower()
-  except IndexError:
+  else:
     entity = None
   doCalendarAddACL(calendarId=calendarId, role=role, scope=scope, entity=entity)
 
@@ -3127,11 +3130,14 @@ def showCalSettings(users):
 
 def showDriveSettings(users):
   todrive = False
-  try:
-    if sys.argv[5].lower() == u'todrive':
+  i = 5
+  while i < len(sys.argv):
+    if sys.argv[i].lower() == u'todrive':
       todrive = True
-  except IndexError:
-    pass
+      i += 1
+    else:
+      print u'ERROR: %s is not a valid argument for "gam <users> show drivesettings"' % sys.argv[i]
+      sys.exit(2)
   dont_show = [u'kind', u'selfLink', u'exportFormats', u'importFormats', u'maxUploadSizes', u'additionalRoleInfo', u'etag', u'features', u'user', u'isCurrentAppInstalled']
   count = 1
   drive_attr = []
@@ -3453,11 +3459,14 @@ def doDriveSearch(drive, query=None):
 def deleteDriveFile(users):
   fileIds = sys.argv[5]
   function = u'trash'
-  try:
-    if sys.argv[6].lower() == u'purge':
+  i = 6
+  while i < len(sys.argv):
+    if sys.argv[i].lower() == u'purge':
       function = u'delete'
-  except IndexError:
-    pass
+      i += 1
+    else:
+      print u'ERROR: %s is not a valid argument for "gam <users> delete drivefile"' % sys.argv[i]
+      sys.exit(2)
   for user in users:
     drive = buildGAPIServiceObject(u'drive', user)
     if fileIds[:6].lower() == u'query:':
@@ -6277,10 +6286,12 @@ def doWhatIs():
 
 def doGetUserInfo(user_email=None):
   cd = buildGAPIObject(u'directory')
+  i = 3
   if user_email == None:
-    try:
+    if len(sys.argv) > 3:
       user_email = sys.argv[3]
-    except IndexError:
+      i = 4
+    else:
       storage = oauth2client.file.Storage(GC_Values[GC_OAUTH2_TXT])
       credentials = storage.get()
       if credentials is None or credentials.invalid:
@@ -6294,7 +6305,6 @@ def doGetUserInfo(user_email=None):
   getSchemas = getAliases = getGroups = getLicenses = True
   projection = u'full'
   customFieldMask = viewType = None
-  i = 4
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'noaliases':
       getAliases = False
@@ -6468,14 +6478,19 @@ def doGetUserInfo(user_email=None):
 def doGetGroupInfo(group_name=None):
   cd = buildGAPIObject(u'directory')
   gs = buildGAPIObject(u'groupssettings')
+  get_users = True
   if group_name == None:
     group_name = sys.argv[3]
-  get_users = True
-  try:
-    if sys.argv[4].lower() == u'nousers':
+    i = 4
+  else:
+    i = 3
+  while i < len(sys.argv):
+    if sys.argv[i].lower() == u'nousers':
       get_users = False
-  except IndexError:
-    pass
+      i += 1
+    else:
+      print u'ERROR: %s is not a valid argument for "gam info group"' % sys.argv[i]
+      sys.exit(2)
   if group_name[:4].lower() == u'uid:':
     group_name = group_name[4:]
   elif group_name.find(u'@') == -1:
@@ -6791,13 +6806,17 @@ def doGetOrgInfo():
   name = sys.argv[3]
   get_users = True
   show_children = False
-  try:
-    if sys.argv[4].lower() == u'nousers':
+  i = 4
+  while i < len(sys.argv):
+    if sys.argv[i].lower() == u'nousers':
       get_users = False
-    elif sys.argv[4].lower() in [u'children', u'child']:
+      i += 1
+    elif sys.argv[i].lower() in [u'children', u'child']:
       show_children = True
-  except IndexError:
-    pass
+      i += 1
+    else:
+      print u'ERROR: %s is not a valid argument for "gam info org"' % sys.argv[i]
+      sys.exit(2)
   if name == u'/':
     orgs = callGAPI(service=cd.orgunits(), function=u'list',
                     customerId=GC_Values[GC_CUSTOMER_ID], type=u'children',
@@ -6848,44 +6867,32 @@ def doDelASP(users):
     callGAPI(service=cd.asps(), function=u'delete', userKey=user, codeId=codeId)
     print u'deleted ASP %s for %s' % (codeId, user)
 
+def printBackupCodes(user, codes):
+  jcount = len(codes[u'items']) if (codes and (u'items' in codes)) else 0
+  print u'Backup verification codes for {0}'.format(user)
+  print u''
+  if jcount > 0:
+    j = 0
+    for code in codes[u'items']:
+      j += 1
+      print u'{0}. {1}'.format(j, code[u'verificationCode'])
+    print u''
+
 def doGetBackupCodes(users):
   cd = buildGAPIObject(u'directory')
   for user in users:
     try:
       codes = callGAPI(service=cd.verificationCodes(), function=u'list', throw_reasons=[u'invalidArgument', u'invalid'], userKey=user)
     except googleapiclient.errors.HttpError:
-      codes = dict()
-      codes[u'items'] = list()
-    print u'Backup verification codes for %s' % user
-    print u''
-    try:
-      i = 0
-      while True:
-        sys.stdout.write(u'%s. %s\n' % (i+1, codes[u'items'][i][u'verificationCode']))
-        i += 1
-    except IndexError:
-      print u''
-    except KeyError:
-      print u''
-    print u''
+      codes = None
+    printBackupCodes(user, codes)  
 
 def doGenBackupCodes(users):
   cd = buildGAPIObject(u'directory')
   for user in users:
     callGAPI(service=cd.verificationCodes(), function=u'generate', userKey=user)
     codes = callGAPI(service=cd.verificationCodes(), function=u'list', userKey=user)
-    print u'Backup verification codes for %s' % user
-    print u''
-    try:
-      i = 0
-      while True:
-        sys.stdout.write(u'%s. %s\n' % (i+1, codes[u'items'][i][u'verificationCode']))
-        i += 1
-    except IndexError:
-      print u''
-    except KeyError:
-      print u''
-    print u''
+    printBackupCodes(user, codes)  
 
 def doDelBackupCodes(users):
   cd = buildGAPIObject(u'directory')
@@ -7227,11 +7234,14 @@ def doUndeleteUser():
   user = sys.argv[3].lower()
   user_uid = False
   orgUnit = u'/'
-  try:
-    if sys.argv[4].lower() in [u'ou', u'org']:
-      orgUnit = sys.argv[5]
-  except IndexError:
-    pass
+  i = 4
+  while i < len(sys.argv):
+    if sys.argv[i].lower() in [u'ou', u'org']:
+      orgUnit = sys.argv[i+1]
+      i += 2
+    else:
+      print u'ERROR: %s is not a valid argument for "gam undelete user"' % sys.argv[i]
+      sys.exit(2)
   if user[:4].lower() == u'uid:':
     user_uid = user[4:]
   elif user.find(u'@') == -1:
@@ -8718,9 +8728,9 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
   return full_users
 
 def OAuthInfo():
-  try:
+  if len(sys.argv) > 3:
     access_token = sys.argv[3]
-  except IndexError:
+  else:
     storage = oauth2client.file.Storage(GC_Values[GC_OAUTH2_TXT])
     credentials = storage.get()
     if credentials is None or credentials.invalid:
