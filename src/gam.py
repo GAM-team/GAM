@@ -4884,13 +4884,13 @@ def doWebClips(users):
 def doVacation(users):
   subject = message = u''
   if sys.argv[4].lower() in true_values:
-    enable = u'true'
+    enable = True
   elif sys.argv[4].lower() in false_values:
-    enable = u'false'
+    enable = False
   else:
     print u'ERROR: value for "gam <users> vacation" must be true or false, got %s' % sys.argv[4]
     sys.exit(2)
-  contacts_only = domain_only = u'false'
+  contacts_only = domain_only = False
   start_date = end_date = None
   i = 5
   while i < len(sys.argv):
@@ -4901,10 +4901,10 @@ def doVacation(users):
       message = sys.argv[i+1]
       i += 2
     elif sys.argv[i].lower() == u'contactsonly':
-      contacts_only = u'true'
+      contacts_only = True
       i += 1
     elif sys.argv[i].lower() == u'domainonly':
-      domain_only = u'true'
+      domain_only = True
       i += 1
     elif sys.argv[i].lower() == u'startdate':
       start_date = sys.argv[i+1]
