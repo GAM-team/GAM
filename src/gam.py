@@ -4890,7 +4890,7 @@ def doVacation(users):
   else:
     print u'ERROR: value for "gam <users> vacation" must be true or false, got %s' % sys.argv[4]
     sys.exit(2)
-  contacts_only = domain_only = u'false'
+  contacts_only = domain_only = False
   start_date = end_date = None
   i = 5
   while i < len(sys.argv):
@@ -4901,10 +4901,10 @@ def doVacation(users):
       message = sys.argv[i+1]
       i += 2
     elif sys.argv[i].lower() == u'contactsonly':
-      contacts_only = u'true'
+      contacts_only = True
       i += 1
     elif sys.argv[i].lower() == u'domainonly':
-      domain_only = u'true'
+      domain_only = True
       i += 1
     elif sys.argv[i].lower() == u'startdate':
       start_date = sys.argv[i+1]
