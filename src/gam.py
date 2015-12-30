@@ -576,7 +576,7 @@ def tryOAuth(gdataObject, scope, soft_errors=False):
     sys.exit(4)
   gdataObject.additional_headers = {u'Authorization': u'Bearer %s' % credentials.access_token}
   if not GC_Values[GC_DOMAIN]:
-    GC_Values[GC_DOMAIN] = GC_Values[GC_ADMIN][GC_Values[GC_ADMIN].find(u'@'):].lower()
+    GC_Values[GC_DOMAIN] = GC_Values[GC_ADMIN][GC_Values[GC_ADMIN].find(u'@')+1:].lower()
   if not GC_Values[GC_CUSTOMER_ID]:
     GC_Values[GC_CUSTOMER_ID] = MY_CUSTOMER
   gdataObject.domain = GC_Values[GC_DOMAIN]
