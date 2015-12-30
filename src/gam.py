@@ -125,6 +125,8 @@ GM_Globals = {
 #
 # When retrieving lists of Google Drive activities from API, how many should be retrieved in each chunk
 GC_ACTIVITY_MAX_RESULTS = u'activity_max_results'
+# GAM admin user
+GC_ADMIN = u'admin'
 # Automatically generate gam batch command if number of users specified in gam users xxx command exceeds this number
 # Default: 0, don't automatically generate gam batch commands
 GC_AUTO_BATCH_MIN = u'auto_batch_min'
@@ -171,6 +173,7 @@ GC_USER_MAX_RESULTS = u'user_max_results'
 
 GC_Defaults = {
   GC_ACTIVITY_MAX_RESULTS: 100,
+  GC_ADMIN = u'',
   GC_AUTO_BATCH_MIN: 0,
   GC_CACHE_DIR: u'',
   GC_CHARSET: u'utf-8',
@@ -210,6 +213,7 @@ GC_VAR_LIMITS_KEY = u'lmit'
 
 GC_VAR_INFO = {
   GC_ACTIVITY_MAX_RESULTS: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_LIMITS_KEY: (1, 500)},
+  GC_ADMIN: {GC_VAR_TYPE_KEY: GC_TYPE_STRING},
   GC_AUTO_BATCH_MIN: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_LIMITS_KEY: (0, None)},
   GC_CACHE_DIR: {GC_VAR_TYPE_KEY: GC_TYPE_DIRECTORY},
   GC_CHARSET: {GC_VAR_TYPE_KEY: GC_TYPE_STRING},
@@ -280,7 +284,7 @@ def win32_unicode_argv():
   if argc.value > 0:
     # Remove Python executable and commands if present
     start = argc.value - len(sys.argv)
-    return [argv[i] for i in xrange(start, argc.value)]
+    return [argv[i] for i in range(start, argc.value)]
 
 from HTMLParser import HTMLParser
 from re import sub
@@ -454,6 +458,7 @@ def SetGlobalVariables():
   if GC_Defaults[GC_OAUTH2SERVICE_JSON].find(u'.') == -1:
     GC_Defaults[GC_OAUTH2SERVICE_JSON] += u'.json'
   _getOldEnvVar(GC_DOMAIN, u'GA_DOMAIN')
+  _getOldEnvVar(GC_ADMIN, u'GAM_ADMIN')
   _getOldEnvVar(GC_CUSTOMER_ID, u'CUSTOMER_ID')
   _getOldEnvVar(GC_CHARSET, u'GAM_CHARSET')
   _getOldEnvVar(GC_NUM_THREADS, u'GAM_THREADS')
@@ -548,7 +553,7 @@ def doGAMVersion():
 def tryOAuth(gdataObject, scope):
   credentials = oauth2client.client.SignedJwtAssertionCredentials(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_EMAIL],
                                                                   GM_Globals[GM_OAUTH2SERVICE_KEY],
-                                                                  scope=scope, user_agent=GAM_INFO, sub=u'me@u.jaylee.us') # TODO lookup admin user from file
+                                                                  scope=scope, user_agent=GAM_INFO, sub=GC_Values[GC_ADMIN]) # TODO lookup admin user from file
   http = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL],
     cache=GC_Values[GC_CACHE_DIR])
   try:
@@ -785,7 +790,7 @@ def getServiceFromDiscoveryDocument(api, version, http):
 
 def buildGAPIObject(api, act_as=None, soft_errors=False):
   if not act_as:
-    act_as = u'me@u.jaylee.us' # TODO lookup admin user from file
+    act_as = GC_Values[GC_ADMIN] # TODO lookup admin user from file
   if not GM_Globals[GM_OAUTH2SERVICE_KEY]:
     json_string = readFile(GC_Values[GC_OAUTH2SERVICE_JSON], continueOnError=True, displayError=True)
     if not json_string:
