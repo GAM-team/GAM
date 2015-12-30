@@ -890,25 +890,6 @@ def buildGAPIServiceObject(api, act_as, soft_errors=False):
       return False
     sys.exit(4)
 
-def buildDiscoveryObject(api):
-  import uritemplate
-  version = getAPIVer(api)
-  if api in [u'directory', u'reports']:
-    api = u'admin'
-  params = {'api': api, 'apiVersion': version}
-  http = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL], cache=GC_Values[GC_CACHE_DIR])
-  requested_url = uritemplate.expand(googleapiclient.discovery.DISCOVERY_URI, params)
-  resp, content = http.request(requested_url)
-  if resp.status == 404:
-    raise googleapiclient.errors.UnknownApiNameOrVersion("name: %s  version: %s" % (api, version))
-  if resp.status >= 400:
-    raise googleapiclient.errors.HttpError(resp, content, uri=requested_url)
-  try:
-    return json.loads(content)
-  except ValueError:
-    sys.stderr.write(u'{0}Failed to parse as JSON: {1}\n'.format(ERROR_PREFIX, content))
-    raise googleapiclient.errors.InvalidJsonError()
-
 def commonAppsObjInit(appsObj):
   if not tryOAuth(appsObj):
     doRequestOAuth()
@@ -5399,6 +5380,7 @@ def doCreateGroup():
   got_name = False
   i = 4
   gs_body = dict()
+  gs = None
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'name':
       body[u'name'] = sys.argv[i+1]
@@ -5409,7 +5391,8 @@ def doCreateGroup():
       i += 2
     else:
       value = sys.argv[i+1]
-      gs_object = buildDiscoveryObject(u'groupssettings')
+      gs = buildGAPIObject(u'groupssettings')
+      gs_object = gs._rootDesc
       matches_gs_setting = False
       for (attrib, params) in gs_object[u'schemas'][u'Groups'][u'properties'].items():
         if attrib in [u'kind', u'etag', u'email', u'name', u'description']:
@@ -5441,14 +5424,12 @@ def doCreateGroup():
         print u'ERROR: %s is not a valid argument for "gam create group"' % sys.argv[i]
         sys.exit(2)
       gs_body[attrib] = value
-      use_gs_api = True
       i += 2
   if not got_name:
     body[u'name'] = body[u'email']
   print u"Creating group %s" % body[u'email']
   callGAPI(cd.groups(), u'insert', body=body, fields=u'email')
-  if use_gs_api:
-    gs = buildGAPIObject(u'groupssettings')
+  if gs:
     callGAPI(gs.groups(), u'patch', retry_reasons=[u'serviceLimit'], groupUniqueId=body[u'email'], body=gs_body)
 
 def doCreateAlias():
@@ -6004,7 +5985,7 @@ def doUpdateGroup():
   else:
     i = 4
     use_cd_api = False
-    use_gs_api = False
+    gs = None
     gs_body = dict()
     cd_body = dict()
     while i < len(sys.argv):
@@ -6021,7 +6002,8 @@ def doUpdateGroup():
         i += 2
       else:
         value = sys.argv[i+1]
-        gs_object = buildDiscoveryObject(u'groupssettings')
+        gs = buildGAPIObject(u'groupssettings')
+        gs_object = gs._rootDesc
         matches_gs_setting = False
         for (attrib, params) in gs_object[u'schemas'][u'Groups'][u'properties'].items():
           if attrib in [u'kind', u'etag', u'email']:
@@ -6067,8 +6049,7 @@ def doUpdateGroup():
       except KeyError:
         pass
       cd_result = callGAPI(cd.groups(), u'patch', groupKey=group, body=cd_body)
-    if use_gs_api:
-      gs = buildGAPIObject(u'groupssettings')
+    if gs:
       if use_cd_api:
         group = cd_result[u'email']
       callGAPI(gs.groups(), u'patch', retry_reasons=[u'serviceLimit'], groupUniqueId=group, body=gs_body)
