@@ -180,7 +180,7 @@ GC_USER_MAX_RESULTS = u'user_max_results'
 
 GC_Defaults = {
   GC_ACTIVITY_MAX_RESULTS: 100,
-  GC_ADMIN = u'',
+  GC_ADMIN: u'',
   GC_AUTO_BATCH_MIN: 0,
   GC_CACHE_DIR: u'',
   GC_CHARSET: u'utf-8',
@@ -770,8 +770,6 @@ API_VER_MAPPING = {
   u'groupssettings': u'v1',
   u'licensing': u'v1',
   u'oauth2': u'v2',
-  u'plus': u'v1',
-  u'plusDomains': u'v1',
   u'reports': u'reports_v1',
   u'siteVerification': u'v1',
   }
@@ -8719,7 +8717,26 @@ def OAuthInfo():
     print u'Google Apps Admin: Unknown'
 
 def doRequestOAuth():
-  pass
+  admin_email = raw_input(u'Please enter your admin email address: ')
+  apis = API_VER_MAPPING.keys()
+  apis.remove(u'oauth2')
+  for api in apis:
+    version = getAPIVer(api)
+    if api in [u'directory', u'reports', u'datatransfer']:
+      api = u'admin'
+    http = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL],
+      cache=GC_Values[GC_CACHE_DIR])
+    try:
+      service = googleapiclient.discovery.build(api, version, http=http, cache_discovery=False)
+    except googleapiclient.errors.UnknownApiNameOrVersion:
+      service = getServiceFromDiscoveryDocument(api, version, http)
+    print u'%s: %s' % (service._rootDesc['title'], service._rootDesc['description'])
+    for scope in service._rootDesc[u'auth'][u'oauth2'][u'scopes'].items():
+      scope_value = scope[0]
+      scope_description = scope[1][u'description']
+      print u'  %s\n  %s' % (scope_value, scope_description)
+      print
+    print
 
 def batch_worker():
   while True:
