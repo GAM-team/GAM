@@ -765,8 +765,6 @@ API_VER_MAPPING = {
   u'groupssettings': u'v1',
   u'licensing': u'v1',
   u'oauth2': u'v2',
-  u'plus': u'v1',
-  u'plusDomains': u'v1',
   u'reports': u'reports_v1',
   u'siteVerification': u'v1',
   }
