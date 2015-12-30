@@ -67,11 +67,9 @@ ERROR = u'ERROR'
 ERROR_PREFIX = ERROR+u': '
 WARNING = u'WARNING'
 WARNING_PREFIX = WARNING+u': '
-FN_CLIENT_SECRETS_JSON = u'client_secrets.json'
 FN_EXTRA_ARGS_TXT = u'extra-args.txt'
 FN_LAST_UPDATE_CHECK_TXT = u'lastupdatecheck.txt'
 FN_OAUTH2SERVICE_JSON = u'oauth2service.json'
-FN_OAUTH2_TXT = u'oauth2.txt'
 MY_CUSTOMER = u'my_customer'
 UNKNOWN = u'Unknown'
 #
@@ -134,8 +132,6 @@ GC_AUTO_BATCH_MIN = u'auto_batch_min'
 GC_CACHE_DIR = u'cache_dir'
 # Character set of batch, csv, data files
 GC_CHARSET = u'charset'
-# Path to client_secrets.json
-GC_CLIENT_SECRETS_JSON = u'client_secrets_json'
 # GAM config directory containing client_secrets.json, oauth2.txt, oauth2service.json, extra_args.txt
 GC_CONFIG_DIR = u'config_dir'
 # custmerId from gam.cfg or retrieved from Google
@@ -150,9 +146,6 @@ GC_DOMAIN = u'domain'
 GC_DRIVE_DIR = u'drive_dir'
 # When retrieving lists of Drive files/folders from API, how many should be retrieved in each chunk
 GC_DRIVE_MAX_RESULTS = u'drive_max_results'
-# If no_browser is False, writeCSVfile won't open a browser when todrive is set
-# and doRequestOAuth prints a link and waits for the verification code when oauth2.txt is being created
-GC_NO_BROWSER = u'no_browser'
 # Disable GAM API caching
 GC_NO_CACHE = u'no_cache'
 # Disable GAM update check
@@ -161,8 +154,6 @@ GC_NO_UPDATE_CHECK = u'no_update_check'
 GC_NO_VERIFY_SSL = u'no_verify_ssl'
 # Number of threads for gam batch
 GC_NUM_THREADS = u'num_threads'
-# Path to oauth2.txt
-GC_OAUTH2_TXT = u'oauth2_txt'
 # Path to oauth2service.json
 GC_OAUTH2SERVICE_JSON = u'oauth2service_json'
 # Default section to use for processing
@@ -183,7 +174,6 @@ GC_Defaults = {
   GC_AUTO_BATCH_MIN: 0,
   GC_CACHE_DIR: u'',
   GC_CHARSET: u'utf-8',
-  GC_CLIENT_SECRETS_JSON: FN_CLIENT_SECRETS_JSON,
   GC_CONFIG_DIR: u'',
   GC_CUSTOMER_ID: u'',
   GC_DEBUG_LEVEL: 0,
@@ -191,12 +181,10 @@ GC_Defaults = {
   GC_DOMAIN: u'',
   GC_DRIVE_DIR: u'',
   GC_DRIVE_MAX_RESULTS: 1000,
-  GC_NO_BROWSER: FALSE,
   GC_NO_CACHE: FALSE,
   GC_NO_UPDATE_CHECK: FALSE,
   GC_NO_VERIFY_SSL: FALSE,
   GC_NUM_THREADS: 5,
-  GC_OAUTH2_TXT: FN_OAUTH2_TXT,
   GC_OAUTH2SERVICE_JSON: FN_OAUTH2SERVICE_JSON,
   GC_SECTION: u'',
   GC_SHOW_COUNTS_MIN: 1,
@@ -225,7 +213,6 @@ GC_VAR_INFO = {
   GC_AUTO_BATCH_MIN: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_LIMITS_KEY: (0, None)},
   GC_CACHE_DIR: {GC_VAR_TYPE_KEY: GC_TYPE_DIRECTORY},
   GC_CHARSET: {GC_VAR_TYPE_KEY: GC_TYPE_STRING},
-  GC_CLIENT_SECRETS_JSON: {GC_VAR_TYPE_KEY: GC_TYPE_FILE},
   GC_CONFIG_DIR: {GC_VAR_TYPE_KEY: GC_TYPE_DIRECTORY},
   GC_CUSTOMER_ID: {GC_VAR_TYPE_KEY: GC_TYPE_STRING},
   GC_DEBUG_LEVEL: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_LIMITS_KEY: (0, None)},
@@ -233,12 +220,10 @@ GC_VAR_INFO = {
   GC_DOMAIN: {GC_VAR_TYPE_KEY: GC_TYPE_STRING},
   GC_DRIVE_DIR: {GC_VAR_TYPE_KEY: GC_TYPE_DIRECTORY},
   GC_DRIVE_MAX_RESULTS: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_LIMITS_KEY: (1, 1000)},
-  GC_NO_BROWSER: {GC_VAR_TYPE_KEY: GC_TYPE_BOOLEAN},
   GC_NO_CACHE: {GC_VAR_TYPE_KEY: GC_TYPE_BOOLEAN},
   GC_NO_UPDATE_CHECK: {GC_VAR_TYPE_KEY: GC_TYPE_BOOLEAN},
   GC_NO_VERIFY_SSL: {GC_VAR_TYPE_KEY: GC_TYPE_BOOLEAN},
   GC_NUM_THREADS: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_LIMITS_KEY: (1, None)},
-  GC_OAUTH2_TXT: {GC_VAR_TYPE_KEY: GC_TYPE_FILE},
   GC_OAUTH2SERVICE_JSON: {GC_VAR_TYPE_KEY: GC_TYPE_FILE},
   GC_SECTION: {GC_VAR_TYPE_KEY: GC_TYPE_STRING},
   GC_SHOW_COUNTS_MIN: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_LIMITS_KEY: (0, None)},
@@ -465,11 +450,9 @@ def SetGlobalVariables():
   _getOldEnvVar(GC_SITE_DIR, u'GAMSITECONFIGDIR')
   _getOldEnvVar(GC_CACHE_DIR, u'GAMCACHEDIR')
   _getOldEnvVar(GC_DRIVE_DIR, u'GAMDRIVEDIR')
-  _getOldEnvVar(GC_OAUTH2_TXT, u'OAUTHFILE')
   _getOldEnvVar(GC_OAUTH2SERVICE_JSON, u'OAUTHSERVICEFILE')
   if GC_Defaults[GC_OAUTH2SERVICE_JSON].find(u'.') == -1:
     GC_Defaults[GC_OAUTH2SERVICE_JSON] += u'.json'
-  _getOldEnvVar(GC_CLIENT_SECRETS_JSON, u'CLIENTSECRETS')
   _getOldEnvVar(GC_DOMAIN, u'GA_DOMAIN')
   _getOldEnvVar(GC_CUSTOMER_ID, u'CUSTOMER_ID')
   _getOldEnvVar(GC_CHARSET, u'GAM_CHARSET')
@@ -481,7 +464,6 @@ def SetGlobalVariables():
   _getOldEnvVar(GC_USER_MAX_RESULTS, u'GAM_USER_MAX_RESULTS')
   _getOldSignalFile(GC_DEBUG_LEVEL, u'debug.gam', trueValue=4, falseValue=0)
   _getOldSignalFile(GC_NO_VERIFY_SSL, u'noverifyssl.txt')
-  _getOldSignalFile(GC_NO_BROWSER, u'nobrowser.txt')
   _getOldSignalFile(GC_NO_CACHE, u'nocache.txt')
   _getOldSignalFile(GC_NO_UPDATE_CHECK, u'noupdatecheck.txt')
 # Assign directories first
