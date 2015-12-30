@@ -8713,24 +8713,7 @@ def OAuthInfo():
   except KeyError:
     print u'Google Apps Admin: Unknown'
 
-def doRequestOAuth():
-  admin_email = raw_input(u'Please enter your admin email address: ')
-  apis = API_VER_MAPPING.keys()
-  apis.remove(u'oauth2')
-  all_apis = {}
-  for api in apis:
-    version = getAPIVer(api)
-    if api in [u'directory', u'reports', u'datatransfer']:
-      api = u'admin'
-    http = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL],
-      cache=GC_Values[GC_CACHE_DIR])
-    try:
-      service = googleapiclient.discovery.build(api, version, http=http, cache_discovery=False)
-    except googleapiclient.errors.UnknownApiNameOrVersion:
-      service = getServiceFromDiscoveryDocument(api, version, http)
-    all_apis[u'%s-%s' % (api, version)] = service._rootDesc
-  i = 0
-  # Default Scope Selections
+def select_default_scopes(all_apis):
   for api_name, api in all_apis.items():
     all_apis[api_name][u'use_scopes'] = []
     scopes = api[u'auth'][u'oauth2'][u'scopes'].keys()
@@ -8752,9 +8735,70 @@ def doRequestOAuth():
         all_readonly = False
     if all_readonly:
       all_apis[api_name][u'use_scopes'] += scopes
-  for api in all_apis.values():
-    print u'[*]  %s) %s (%s scopes)' % (i, api[u'title'], len(api[u'use_scopes']))
+  return all_apis
+
+def doRequestOAuth():
+  admin_email = raw_input(u'Please enter your admin email address: ')
+  apis = API_VER_MAPPING.keys()
+  apis.remove(u'oauth2')
+  all_apis = {}
+  for api in apis:
+    version = getAPIVer(api)
+    if api in [u'directory', u'reports', u'datatransfer']:
+      api = u'admin'
+    http = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL],
+      cache=GC_Values[GC_CACHE_DIR])
+    try:
+      service = googleapiclient.discovery.build(api, version, http=http, cache_discovery=False)
+    except googleapiclient.errors.UnknownApiNameOrVersion:
+      service = getServiceFromDiscoveryDocument(api, version, http)
+    all_apis[u'%s-%s' % (api, version)] = service._rootDesc
+  i = 0
+  for api_name in all_apis.keys():
+    all_apis[api_name][u'index'] = i
     i += 1
+  all_apis = select_default_scopes(all_apis)
+  os.system([u'clear', u'cls'][os.name == u'nt'])
+  while True:
+    print u'Select the APIs to use with GAM.'
+    print
+    for api in all_apis.values():
+      num_scopes_selected = len(api[u'use_scopes'])
+      num_scopes_total = len(api[u'auth'][u'oauth2'][u'scopes'])
+      if num_scopes_selected > 0:
+        select_value = u'*'
+      else:
+        select_value = u' '
+      print u'[%s]  %s) %s (%s/%s scopes)' % (select_value, api[u'index'], api[u'title'], num_scopes_selected, num_scopes_total)
+    print
+    print u'     %s) Select Defaults' % (i+1)
+    print u'     %s) Unselect all APIs' % (i+2)
+    print u'     %s) Continue' % (i+3)
+    print
+    selection = int(raw_input(u'Your selection: '))
+    if int(selection) == i+1:
+      all_apis = select_default_scopes(all_apis)
+    elif selection == i+2:
+      for api in all_apis.keys():
+        all_apis[api][u'use_scopes'] = []
+    for api in all_apis.keys():
+      if all_apis[api][u'index'] == selection:
+        if len(all_apis[api][u'auth'][u'oauth2'][u'scopes']) == 1:
+          if len(all_apis[api][u'use_scopes']) == 1:
+            all_apis[api][u'use_scopes'] = []
+          else:
+            all_apis[api][u'use_scopes'] = all_apis[api][u'auth'][u'oauth2'][u'scopes']
+        else:
+          print
+          x = 0
+          for scope in all_apis[api][u'auth'][u'oauth2'][u'scopes'].keys():
+            if scope in all_apis[api][u'use_scopes']:
+              select_value = u'*'
+            else:
+              select_value = u' '
+            print u'[%s]  %s) %s\n          %s\n' % (select_value, x, all_apis[api][u'auth'][u'oauth2'][u'scopes'][scope][u'description'], scope)
+            x += 1
+          print
 
 def batch_worker():
   while True:
