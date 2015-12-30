@@ -185,7 +185,7 @@ GC_Defaults = {
   GC_CACHE_DIR: u'',
   GC_CHARSET: u'utf-8',
   GC_CONFIG_DIR: u'',
-  GC_CUSTOMER_ID: u'',
+  GC_CUSTOMER_ID: u'my_customer',
   GC_DEBUG_LEVEL: 0,
   GC_DEVICE_MAX_RESULTS: 500,
   GC_DOMAIN: u'',
@@ -580,7 +580,7 @@ def tryOAuth(gdataObject, scope):
     sys.exit(4)
   gdataObject.additional_headers = {u'Authorization': u'Bearer %s' % credentials.access_token}
   if not GC_Values[GC_DOMAIN]:
-    GC_Values[GC_DOMAIN] = credentials.id_token.get(u'hd', UNKNOWN).lower()
+    GC_Values[GC_DOMAIN] = GC_Values[GC_ADMIN][GC_Values[GC_ADMIN].find(u'@'):].lower()
   if not GC_Values[GC_CUSTOMER_ID]:
     GC_Values[GC_CUSTOMER_ID] = MY_CUSTOMER
   gdataObject.domain = GC_Values[GC_DOMAIN]
