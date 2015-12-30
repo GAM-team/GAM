@@ -153,6 +153,8 @@ GC_DOMAIN = u'domain'
 GC_DRIVE_DIR = u'drive_dir'
 # When retrieving lists of Drive files/folders from API, how many should be retrieved in each chunk
 GC_DRIVE_MAX_RESULTS = u'drive_max_results'
+# If no_browser is False, output_csv won't open a browser when todrive is set
+GC_NO_BROWSER = u'no_browser'
 # Disable GAM API caching
 GC_NO_CACHE = u'no_cache'
 # Disable GAM update check
@@ -189,6 +191,7 @@ GC_Defaults = {
   GC_DOMAIN: u'',
   GC_DRIVE_DIR: u'',
   GC_DRIVE_MAX_RESULTS: 1000,
+  GC_NO_BROWSER: FALSE,
   GC_NO_CACHE: FALSE,
   GC_NO_UPDATE_CHECK: FALSE,
   GC_NO_VERIFY_SSL: FALSE,
@@ -229,6 +232,7 @@ GC_VAR_INFO = {
   GC_DOMAIN: {GC_VAR_TYPE_KEY: GC_TYPE_STRING},
   GC_DRIVE_DIR: {GC_VAR_TYPE_KEY: GC_TYPE_DIRECTORY},
   GC_DRIVE_MAX_RESULTS: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_LIMITS_KEY: (1, 1000)},
+  GC_NO_BROWSER: {GC_VAR_TYPE_KEY: GC_TYPE_BOOLEAN},
   GC_NO_CACHE: {GC_VAR_TYPE_KEY: GC_TYPE_BOOLEAN},
   GC_NO_UPDATE_CHECK: {GC_VAR_TYPE_KEY: GC_TYPE_BOOLEAN},
   GC_NO_VERIFY_SSL: {GC_VAR_TYPE_KEY: GC_TYPE_BOOLEAN},
@@ -474,6 +478,7 @@ def SetGlobalVariables():
   _getOldEnvVar(GC_USER_MAX_RESULTS, u'GAM_USER_MAX_RESULTS')
   _getOldSignalFile(GC_DEBUG_LEVEL, u'debug.gam', trueValue=4, falseValue=0)
   _getOldSignalFile(GC_NO_VERIFY_SSL, u'noverifyssl.txt')
+  _getOldSignalFile(GC_NO_BROWSER, u'nobrowser.txt')
   _getOldSignalFile(GC_NO_CACHE, u'nocache.txt')
   _getOldSignalFile(GC_NO_UPDATE_CHECK, u'noupdatecheck.txt')
 # Assign directories first
