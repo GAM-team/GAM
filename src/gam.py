@@ -8728,10 +8728,32 @@ def doRequestOAuth():
       service = googleapiclient.discovery.build(api, version, http=http, cache_discovery=False)
     except googleapiclient.errors.UnknownApiNameOrVersion:
       service = getServiceFromDiscoveryDocument(api, version, http)
-    all_apis[api] = service._rootDesc
+    all_apis[u'%s-%s' % (api, version)] = service._rootDesc
   i = 0
+  # Default Scope Selections
+  for api_name, api in all_apis.items():
+    all_apis[api_name][u'use_scopes'] = []
+    scopes = api[u'auth'][u'oauth2'][u'scopes'].keys()
+    if len(scopes) == 1:
+      all_apis[api_name][u'use_scopes'] += scopes
+      continue
+    all_readonly = True
+    for scope in api[u'auth'][u'oauth2'][u'scopes'].keys():
+      if scope.endswith(u'.readonly'):
+        continue
+      elif scope.endswith(u'.action'):
+        all_readonly = False
+        continue
+      elif scope.endswith(u'verify_only'):
+        all_readonly = False
+        continue
+      else:
+        all_apis[api_name][u'use_scopes'].append(scope)
+        all_readonly = False
+    if all_readonly:
+      all_apis[api_name][u'use_scopes'] += scopes
   for api in all_apis.values():
-    print u'[*]  %s) %s' % (i, api[u'title'])
+    print u'[*]  %s) %s (%s scopes)' % (i, api[u'title'], len(api[u'use_scopes']))
     i += 1
 
 def batch_worker():
