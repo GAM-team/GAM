@@ -560,7 +560,7 @@ def doGAMVersion():
                                                                                                                          platform.platform(), platform.machine(),
                                                                                                                          GM_Globals[GM_GAM_PATH])
 
-def tryOAuth(gdataObject, scope):
+def tryOAuth(gdataObject, scope, soft_errors=False):
   scope = [scope, u'email']
   credentials = oauth2client.client.SignedJwtAssertionCredentials(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_EMAIL],
                                                                   GM_Globals[GM_OAUTH2SERVICE_KEY],
@@ -5330,7 +5330,6 @@ def doCreateUser():
 
 def doCreateGroup():
   cd = buildGAPIObject(u'directory')
-  use_gs_api = False
   body = dict()
   body[u'email'] = sys.argv[3]
   if body[u'email'].find(u'@') == -1:
@@ -5993,7 +5992,6 @@ def doUpdateGroup():
           print u'ERROR: %s is not a valid argument for "gam update group"' % sys.argv[i]
           sys.exit(2)
         gs_body[attrib] = value
-        use_gs_api = True
         i += 2
     if group[:4].lower() == u'uid:': # group settings API won't take uid so we make sure cd API is used so that we can grab real email.
       use_cd_api = True
@@ -6251,12 +6249,7 @@ def doGetUserInfo(user_email=None):
       user_email = sys.argv[3]
       i = 4
     else:
-      storage = oauth2client.file.Storage(GC_Values[GC_OAUTH2_TXT])
-      credentials = storage.get()
-      if credentials is None or credentials.invalid:
-        doRequestOAuth()
-        credentials = storage.get()
-      user_email = credentials.id_token[u'email']
+      user_email = GC_Values[GC_ADMIN]
   if user_email[:4].lower() == u'uid:':
     user_email = user_email[4:]
   elif user_email.find(u'@') == -1:
