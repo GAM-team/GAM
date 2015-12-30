@@ -72,6 +72,11 @@ FN_LAST_UPDATE_CHECK_TXT = u'lastupdatecheck.txt'
 FN_OAUTH2SERVICE_JSON = u'oauth2service.json'
 MY_CUSTOMER = u'my_customer'
 UNKNOWN = u'Unknown'
+
+GDATA_EMAIL_SETTINGS_SCOPE = u'https://apps-apis.google.com/a/feeds/emailsettings/2.0/'
+GDATA_ADMIN_SETTINGS_SCOPE = u'https://apps-apis.google.com/a/feeds/domain/'
+GDATA_EMAIL_AUDIT_SCOPE = u'https://apps-apis.google.com/a/feeds/compliance/audit/'
+
 #
 # Global variables
 #
@@ -551,6 +556,7 @@ def doGAMVersion():
                                                                                                                          GM_Globals[GM_GAM_PATH])
 
 def tryOAuth(gdataObject, scope):
+  scope = [scope, u'email']
   credentials = oauth2client.client.SignedJwtAssertionCredentials(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_EMAIL],
                                                                   GM_Globals[GM_OAUTH2SERVICE_KEY],
                                                                   scope=scope, user_agent=GAM_INFO, sub=GC_Values[GC_ADMIN]) # TODO lookup admin user from file
@@ -849,16 +855,18 @@ def commonAppsObjInit(appsObj, scope):
 
 def getAdminSettingsObject():
   import gdata.apps.adminsettings.service
-  return commonAppsObjInit(gdata.apps.adminsettings.service.AdminSettingsService(), scope)
+  return commonAppsObjInit(gdata.apps.adminsettings.service.AdminSettingsService(),
+    GDATA_ADMIN_SETTINGS_SCOPE)
 
 def getAuditObject():
   import gdata.apps.audit.service
-  return commonAppsObjInit(gdata.apps.audit.service.AuditService())
+  return commonAppsObjInit(gdata.apps.audit.service.AuditService(),
+    GDATA_EMAIL_AUDIT_SCOPE)
 
 def getEmailSettingsObject():
   import gdata.apps.emailsettings.service
-  scope = [u'https://apps-apis.google.com/a/feeds/emailsettings/2.0/', u'email']
-  return commonAppsObjInit(gdata.apps.emailsettings.service.EmailSettingsService(), scope)
+  return commonAppsObjInit(gdata.apps.emailsettings.service.EmailSettingsService(),
+    GDATA_ADMIN_SETTINGS_SCOPE)
 
 def geturl(url, dst):
   import urllib2
