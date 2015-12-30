@@ -178,7 +178,7 @@ GC_USER_MAX_RESULTS = u'user_max_results'
 
 GC_Defaults = {
   GC_ACTIVITY_MAX_RESULTS: 100,
-  GC_ADMIN = u'',
+  GC_ADMIN: u'',
   GC_AUTO_BATCH_MIN: 0,
   GC_CACHE_DIR: u'',
   GC_CHARSET: u'utf-8',
