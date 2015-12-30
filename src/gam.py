@@ -563,14 +563,23 @@ def doGAMVersion():
                                                                                                                          platform.platform(), platform.machine(),
                                                                                                                          GM_Globals[GM_GAM_PATH])
 
-def tryOAuth(gdataObject):
-  storage = oauth2client.file.Storage(GC_Values[GC_OAUTH2_TXT])
-  credentials = storage.get()
-  if credentials is None or credentials.invalid:
-    doRequestOAuth()
-    credentials = storage.get()
-  if credentials.access_token_expired:
-    credentials.refresh(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL]))
+def tryOAuth(gdataObject, scope):
+  credentials = oauth2client.client.SignedJwtAssertionCredentials(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_EMAIL],
+                                                                  GM_Globals[GM_OAUTH2SERVICE_KEY],
+                                                                  scope=scope, user_agent=GAM_INFO, sub=u'me@u.jaylee.us')
+  http = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL],
+    cache=GC_Values[GC_CACHE_DIR])
+  try:
+    credentials.refresh(http)
+  except oauth2client.client.AccessTokenRefreshError, e:
+    if e.message in [u'access_denied',
+                     u'unauthorized_client: Unauthorized client or scope in request.',
+                     u'access_denied: Requested client not authorized.']:
+      systemErrorExit(5, MESSAGE_CLIENT_API_ACCESS_DENIED.format(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID], u','.join(scope)))
+    sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, e))
+    if soft_errors:
+      return False
+    sys.exit(4)
   gdataObject.additional_headers = {u'Authorization': u'Bearer %s' % credentials.access_token}
   if not GC_Values[GC_DOMAIN]:
     GC_Values[GC_DOMAIN] = credentials.id_token.get(u'hd', UNKNOWN).lower()
@@ -772,20 +781,10 @@ API_VER_MAPPING = {
 def getAPIVer(api):
   return API_VER_MAPPING.get(api, u'v1')
 
-API_SCOPE_MAPPING = {
-  u'appsactivity': [u'https://www.googleapis.com/auth/activity',
-                    u'https://www.googleapis.com/auth/drive'],
-  u'calendar': [u'https://www.googleapis.com/auth/calendar',],
-  u'drive': [u'https://www.googleapis.com/auth/drive',],
-  u'gmail': [u'https://mail.google.com/',],
-  u'plus': [u'https://www.googleapis.com/auth/plus.me',],
-  u'plusDomains': [u'https://www.googleapis.com/auth/plus.me',
-                   u'https://www.googleapis.com/auth/plus.circles.read',
-                   u'https://www.googleapis.com/auth/plus.circles.write'],
-}
-
-def getAPIScope(api):
-  return API_SCOPE_MAPPING.get(api, [])
+def getAPIScope(service):
+  api_scopes = service._rootDesc[u'auth'][u'oauth2'][u'scopes']
+  granted_scopes = api_scopes # TODO fix to lookup from file
+  return [val for val in api_scopes if val in granted_scopes] + [u'email']
 
 def getServiceFromDiscoveryDocument(api, version, http):
   disc_filename = u'%s-%s.json' % (api, version)
@@ -802,49 +801,9 @@ def getServiceFromDiscoveryDocument(api, version, http):
     systemErrorExit(4, MESSAGE_NO_DISCOVERY_INFORMATION.format(disc_file))
   return googleapiclient.discovery.build_from_document(discovery, base=u'https://www.googleapis.com', http=http)
 
-def buildGAPIObject(api):
-  storage = oauth2client.file.Storage(GC_Values[GC_OAUTH2_TXT])
-  credentials = storage.get()
-  if not credentials or credentials.invalid:
-    doRequestOAuth()
-    credentials = storage.get()
-  credentials.user_agent = GAM_INFO
-  http = credentials.authorize(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL], cache=GC_Values[GC_CACHE_DIR]))
-  version = getAPIVer(api)
-  if api in [u'directory', u'reports', u'datatransfer']:
-    api = u'admin'
-  try:
-    service = googleapiclient.discovery.build(api, version, http=http, cache_discovery=False)
-  except googleapiclient.errors.UnknownApiNameOrVersion:
-    service = getServiceFromDiscoveryDocument(api, version, http)
-  except httplib2.ServerNotFoundError as e:
-    systemErrorExit(4, e)
-  except httplib2.CertificateValidationUnsupported:
-    noPythonSSLExit()
-  if GC_Values[GC_DOMAIN]:
-    if not GC_Values[GC_CUSTOMER_ID]:
-      resp, result = service._http.request(u'https://www.googleapis.com/admin/directory/v1/users?domain={0}&maxResults=1&fields=users(customerId)'.format(GC_Values[GC_DOMAIN]))
-      try:
-        resultObj = json.loads(result)
-      except ValueError:
-        systemErrorExit(8, u'Unexpected response: {0}'.format(result))
-      if resp[u'status'] in [u'403', u'404']:
-        try:
-          message = resultObj[u'error'][u'errors'][0][u'message']
-        except KeyError:
-          message = resultObj[u'error'][u'message']
-        systemErrorExit(8, u'{0} - {1}'.format(message, GC_Values[GC_DOMAIN]))
-      try:
-        GC_Values[GC_CUSTOMER_ID] = resultObj[u'users'][0][u'customerId']
-      except KeyError:
-        GC_Values[GC_CUSTOMER_ID] = MY_CUSTOMER
-  else:
-    GC_Values[GC_DOMAIN] = credentials.id_token.get(u'hd', UNKNOWN).lower()
-    if not GC_Values[GC_CUSTOMER_ID]:
-      GC_Values[GC_CUSTOMER_ID] = MY_CUSTOMER
-  return service
-
-def buildGAPIServiceObject(api, act_as, soft_errors=False):
+def buildGAPIObject(api, act_as=None, soft_errors=False):
+  if not act_as:
+    act_as = u'me@u.jaylee.us'
   if not GM_Globals[GM_OAUTH2SERVICE_KEY]:
     json_string = readFile(GC_Values[GC_OAUTH2SERVICE_JSON], continueOnError=True, displayError=True)
     if not json_string:
@@ -858,28 +817,27 @@ def buildGAPIServiceObject(api, act_as, soft_errors=False):
       GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID] = json_data[u'client_id']
       GM_Globals[GM_OAUTH2SERVICE_KEY] = json_data[u'private_key']
     except KeyError:
-      try:
-        # old format with config in the .json file and key in the .p12 file...
-        GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_EMAIL] = json_data[u'web'][u'client_email']
-        GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID] = json_data[u'web'][u'client_id']
-        GM_Globals[GM_OAUTH2SERVICE_KEY] = readFile(GC_Values[GC_OAUTH2SERVICE_JSON].replace(u'.json', u'.p12'))
-      except KeyError:
-        printLine(MESSAGE_WIKI_INSTRUCTIONS_OAUTH2SERVICE_JSON)
-        printLine(GAM_WIKI_CREATE_CLIENT_SECRETS)
-        systemErrorExit(17, MESSAGE_OAUTH2SERVICE_JSON_INVALID.format(GC_Values[GC_OAUTH2SERVICE_JSON]))
-  scope = getAPIScope(api)
+      printLine(MESSAGE_WIKI_INSTRUCTIONS_OAUTH2SERVICE_JSON)
+      printLine(GAM_WIKI_CREATE_CLIENT_SECRETS)
+      systemErrorExit(17, MESSAGE_OAUTH2SERVICE_JSON_INVALID.format(GC_Values[GC_OAUTH2SERVICE_JSON]))
+  version = getAPIVer(api)
+  if api in [u'directory', u'reports', u'datatransfer']:
+    api = u'admin'
+  http = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL],
+    cache=GC_Values[GC_CACHE_DIR])
+  try:
+    service = googleapiclient.discovery.build(api, version, http=http, cache_discovery=False)
+  except googleapiclient.errors.UnknownApiNameOrVersion:
+    service = getServiceFromDiscoveryDocument(api, version, http)
+  except httplib2.ServerNotFoundError as e:
+    systemErrorExit(4, e)
+  scope = getAPIScope(service)
   credentials = oauth2client.client.SignedJwtAssertionCredentials(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_EMAIL],
                                                                   GM_Globals[GM_OAUTH2SERVICE_KEY],
                                                                   scope=scope, user_agent=GAM_INFO, sub=act_as)
-  http = credentials.authorize(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL],
-                                             cache=GC_Values[GC_CACHE_DIR]))
-  version = getAPIVer(api)
   try:
-    return googleapiclient.discovery.build(api, version, http=http, cache_discovery=False)
-  except googleapiclient.errors.UnknownApiNameOrVersion:
-    return getServiceFromDiscoveryDocument(api, version, http)
-  except httplib2.ServerNotFoundError as e:
-    systemErrorExit(4, e)
+    service._http = credentials.authorize(http)
+    service._http.request.credentials.refresh(http)
   except oauth2client.client.AccessTokenRefreshError, e:
     if e.message in [u'access_denied',
                      u'unauthorized_client: Unauthorized client or scope in request.',
@@ -889,11 +847,12 @@ def buildGAPIServiceObject(api, act_as, soft_errors=False):
     if soft_errors:
       return False
     sys.exit(4)
+  return service
 
-def commonAppsObjInit(appsObj):
-  if not tryOAuth(appsObj):
+def commonAppsObjInit(appsObj, scope):
+  if not tryOAuth(appsObj, scope):
     doRequestOAuth()
-    tryOAuth(appsObj)
+    tryOAuth(appsObj, scope)
   #Identify GAM to Google's Servers
   appsObj.source = GAM_INFO
   #Show debugging output if debug.gam exists
@@ -903,7 +862,7 @@ def commonAppsObjInit(appsObj):
 
 def getAdminSettingsObject():
   import gdata.apps.adminsettings.service
-  return commonAppsObjInit(gdata.apps.adminsettings.service.AdminSettingsService())
+  return commonAppsObjInit(gdata.apps.adminsettings.service.AdminSettingsService(), scope)
 
 def getAuditObject():
   import gdata.apps.audit.service
@@ -911,7 +870,8 @@ def getAuditObject():
 
 def getEmailSettingsObject():
   import gdata.apps.emailsettings.service
-  return commonAppsObjInit(gdata.apps.emailsettings.service.EmailSettingsService())
+  scope = [u'https://apps-apis.google.com/a/feeds/emailsettings/2.0/', u'email']
+  return commonAppsObjInit(gdata.apps.emailsettings.service.EmailSettingsService(), scope)
 
 def geturl(url, dst):
   import urllib2
@@ -2198,7 +2158,7 @@ def doPrintPrinters():
   output_csv(printer_attributes, titles, u'Printers', todrive)
 
 def changeCalendarAttendees(users):
-  cal = buildGAPIServiceObject(u'calendar', users[0])
+  cal = buildGAPIObject(u'calendar', users[0])
   do_it = True
   i = 5
   allevents = False
@@ -2230,7 +2190,7 @@ def changeCalendarAttendees(users):
     sys.stdout.write(u'Checking user %s\n' % user)
     if user.find(u'@') == -1:
       user = u'%s@%s' % (user, GC_Values[GC_DOMAIN])
-    cal = buildGAPIServiceObject(u'calendar', user)
+    cal = buildGAPIObject(u'calendar', user)
     page_token = None
     while True:
       events_page = callGAPI(cal.events(), u'list', calendarId=user, pageToken=page_token, timeMin=start_date, timeMax=end_date, showDeleted=False, showHiddenInvitations=False)
@@ -2280,18 +2240,18 @@ def changeCalendarAttendees(users):
         break
 
 def deleteCalendar(users):
-  cal = buildGAPIServiceObject(u'calendar', users[0])
+  cal = buildGAPIObject(u'calendar', users[0])
   calendarId = sys.argv[5]
   if calendarId.find(u'@') == -1:
     calendarId = u'%s@%s' % (calendarId, GC_Values[GC_DOMAIN])
   for user in users:
     if user.find(u'@') == -1:
       user = u'%s@%s' % (user, GC_Values[GC_DOMAIN])
-    cal = buildGAPIServiceObject(u'calendar', user)
+    cal = buildGAPIObject(u'calendar', user)
     callGAPI(cal.calendarList(), u'delete', calendarId=calendarId)
 
 def addCalendar(users):
-  cal = buildGAPIServiceObject(u'calendar', users[0])
+  cal = buildGAPIObject(u'calendar', users[0])
   body = dict()
   body[u'defaultReminders'] = list()
   body[u'id'] = sys.argv[5]
@@ -2355,7 +2315,7 @@ def addCalendar(users):
     if user.find(u'@') == -1:
       user = u'%s@%s' % (user, GC_Values[GC_DOMAIN])
     print u"Subscribing %s to %s calendar (%s of %s)" % (user, body['id'], i, count)
-    cal = buildGAPIServiceObject(u'calendar', user)
+    cal = buildGAPIObject(u'calendar', user)
     callGAPI(cal.calendarList(), u'insert', body=body, colorRgbFormat=colorRgbFormat)
     i += 1
 
@@ -2420,7 +2380,7 @@ def updateCalendar(users):
   count = len(users)
   for user in users:
     print u"Updating %s's subscription to calendar %s (%s of %s)" % (user, calendarId, i, count)
-    cal = buildGAPIServiceObject(u'calendar', user)
+    cal = buildGAPIObject(u'calendar', user)
     callGAPI(cal.calendarList(), u'update', calendarId=calendarId, body=body, colorRgbFormat=colorRgbFormat)
 
 def doPrinterShowACL():
@@ -2793,7 +2753,7 @@ def doCalendarShowACL():
 
 def doCalendarAddACL(calendarId=None, act_as=None, role=None, scope=None, entity=None):
   if act_as != None:
-    cal = buildGAPIServiceObject(u'calendar', act_as)
+    cal = buildGAPIObject(u'calendar', act_as)
   else:
     cal = buildGAPIObject(u'calendar')
   body = dict()
@@ -2862,14 +2822,14 @@ def doCalendarDelACL():
 
 def doCalendarWipeData():
   calendarId = sys.argv[2]
-  cal = buildGAPIServiceObject(u'calendar', calendarId)
+  cal = buildGAPIObject(u'calendar', calendarId)
   if calendarId.find(u'@') == -1:
     calendarId = u'%s@%s' % (calendarId, GC_Values[GC_DOMAIN])
   callGAPI(cal.calendars(), u'clear', calendarId=calendarId)
 
 def doCalendarAddEvent():
   calendarId = sys.argv[2]
-  cal = buildGAPIServiceObject(u'calendar', calendarId)
+  cal = buildGAPIObject(u'calendar', calendarId)
   sendNotifications = timeZone = None
   i = 4
   body = {}
@@ -3097,7 +3057,7 @@ def deletePhoto(users):
 
 def showCalendars(users):
   for user in users:
-    cal = buildGAPIServiceObject(u'calendar', user)
+    cal = buildGAPIObject(u'calendar', user)
     feed = callGAPI(cal.calendarList(), u'list')
     for usercal in feed[u'items']:
       print u'  Name: %s' % usercal['id']
@@ -3130,7 +3090,7 @@ def showCalendars(users):
 
 def showCalSettings(users):
   for user in users:
-    cal = buildGAPIServiceObject(u'calendar', user)
+    cal = buildGAPIObject(u'calendar', user)
     feed = callGAPI(cal.settings(), 'list')
     for setting in feed[u'items']:
       print u'%s: %s' % (setting[u'id'], setting[u'value'])
@@ -3152,7 +3112,7 @@ def showDriveSettings(users):
   for user in users:
     sys.stderr.write(u'Getting Drive settings for %s (%s of %s)\n' % (user, count, len(users)))
     count += 1
-    drive = buildGAPIServiceObject(u'drive', user)
+    drive = buildGAPIObject(u'drive', user)
     feed = callGAPI(drive.about(), u'get', soft_errors=True)
     if feed == None:
       continue
@@ -3200,7 +3160,7 @@ def doDriveActivity(users):
       sys.exit(2)
   activity_attributes = [{},]
   for user in users:
-    activity = buildGAPIServiceObject(u'appsactivity', user)
+    activity = buildGAPIObject(u'appsactivity', user)
     page_message = u'Retrieved %%%%total_items%%%% activities for %s' % user
     feed = callGAPIpages(activity.activities(), u'list', u'activities',
                          page_message=page_message, source=u'drive.google.com', userId=u'me',
@@ -3216,7 +3176,7 @@ def doDriveActivity(users):
 def showDriveFileACL(users):
   fileId = sys.argv[5]
   for user in users:
-    drive = buildGAPIServiceObject(u'drive', user)
+    drive = buildGAPIObject(u'drive', user)
     feed = callGAPI(drive.permissions(), u'list', fileId=fileId)
     for permission in feed[u'items']:
       try:
@@ -3233,7 +3193,7 @@ def delDriveFileACL(users):
   fileId = sys.argv[5]
   permissionId = unicode(sys.argv[6])
   for user in users:
-    drive = buildGAPIServiceObject(u'drive', user)
+    drive = buildGAPIObject(u'drive', user)
     if permissionId[:3].lower() == u'id:':
       permissionId = permissionId[3:]
     elif permissionId.lower() in [u'anyone']:
@@ -3281,7 +3241,7 @@ def addDriveFileACL(users):
       print u'ERROR: %s is not a valid argument for "gam <users> add drivefileacl"' % sys.argv[i]
       sys.exit(2)
   for user in users:
-    drive = buildGAPIServiceObject(u'drive', user)
+    drive = buildGAPIObject(u'drive', user)
     result = callGAPI(drive.permissions(), u'insert', fileId=fileId, sendNotificationEmails=sendNotificationEmails, emailMessage=emailMessage, body=body)
     print result
 
@@ -3316,7 +3276,7 @@ def updateDriveFileACL(users):
       print u'ERROR: %s is not a valid argument for "gam <users> update drivefileacl"' % sys.argv[i]
       sys.exit(2)
   for user in users:
-    drive = buildGAPIServiceObject(u'drive', user)
+    drive = buildGAPIObject(u'drive', user)
     if permissionId[:3].lower() == u'id:':
       permissionId = permissionId[3:]
     else:
@@ -3409,7 +3369,7 @@ def showDriveFiles(users):
   if fields != u'*':
     fields += ')'
   for user in users:
-    drive = buildGAPIServiceObject(u'drive', user)
+    drive = buildGAPIObject(u'drive', user)
     if user.find(u'@') == -1:
       print u'ERROR: got %s, expected a full email address' % user
       sys.exit(2)
@@ -3475,7 +3435,7 @@ def deleteDriveFile(users):
       print u'ERROR: %s is not a valid argument for "gam <users> delete drivefile"' % sys.argv[i]
       sys.exit(2)
   for user in users:
-    drive = buildGAPIServiceObject(u'drive', user)
+    drive = buildGAPIObject(u'drive', user)
     if fileIds[:6].lower() == u'query:':
       file_ids = doDriveSearch(drive, query=fileIds[6:])
     else:
@@ -3505,7 +3465,7 @@ def printDriveFolderContents(feed, folderId, indent):
 
 def showDriveFileTree(users):
   for user in users:
-    drive = buildGAPIServiceObject(u'drive', user)
+    drive = buildGAPIObject(u'drive', user)
     if user.find(u'@') == -1:
       print u'ERROR: got %s, expected a full email address' % user
       sys.exit(2)
@@ -3519,7 +3479,7 @@ def showDriveFileTree(users):
 def deleteEmptyDriveFolders(users):
   query = u'"me" in owners and mimeType = "application/vnd.google-apps.folder"'
   for user in users:
-    drive = buildGAPIServiceObject(u'drive', user)
+    drive = buildGAPIObject(u'drive', user)
     if user.find(u'@') == -1:
       print u'ERROR: got %s, expected a full email address' % user
       sys.exit(2)
@@ -3671,7 +3631,7 @@ def doUpdateDriveFile(users):
     print u'ERROR: you cannot specify both an id and a query.'
     sys.exit(2)
   for user in users:
-    drive = buildGAPIServiceObject(u'drive', user)
+    drive = buildGAPIObject(u'drive', user)
     if parent_query:
       more_parents = doDriveSearch(drive, query=parent_query)
       if u'parents' not in body:
@@ -3787,7 +3747,7 @@ def createDriveFile(users):
       print u'ERROR: %s is not a valid argument for "gam <users> create drivefile"' % sys.argv[i]
       sys.exit(2)
   for user in users:
-    drive = buildGAPIServiceObject(u'drive', user)
+    drive = buildGAPIObject(u'drive', user)
     if parent_query:
       more_parents = doDriveSearch(drive, query=parent_query)
       if u'parents' not in body:
@@ -3851,7 +3811,7 @@ def downloadDriveFile(users):
     print u'ERROR: you cannot specify both the id and query parameters at the same time.'
     sys.exit(2)
   for user in users:
-    drive = buildGAPIServiceObject(u'drive', user)
+    drive = buildGAPIObject(u'drive', user)
     if query:
       fileIds = doDriveSearch(drive, query=query)
     else:
@@ -3920,7 +3880,7 @@ def downloadDriveFile(users):
 def showDriveFileInfo(users):
   for user in users:
     fileId = sys.argv[5]
-    drive = buildGAPIServiceObject(u'drive', user)
+    drive = buildGAPIObject(u'drive', user)
     feed = callGAPI(drive.files(), u'get', fileId=fileId)
     for setting in feed:
       if setting == u'kind':
@@ -3959,7 +3919,7 @@ def transferSecCals(users):
       print u'ERROR: %s is not a valid argument for "gam <users> transfer seccals"' % sys.argv[i]
       sys.exit(2)
   for user in users:
-    source_cal = buildGAPIServiceObject(u'calendar', user)
+    source_cal = buildGAPIObject(u'calendar', user)
     source_calendars = callGAPIpages(source_cal.calendarList(), u'list', u'items', minAccessRole=u'owner', showHidden=True, fields=u'items(id),nextPageToken')
     for source_cal in source_calendars:
       if source_cal[u'id'].find(u'@group.calendar.google.com') != -1:
@@ -3978,12 +3938,12 @@ def transferDriveFiles(users):
     else:
       print u'ERROR: %s is not a valid argument for "gam <users> transfer drive"' % sys.argv[i]
       sys.exit(2)
-  target_drive = buildGAPIServiceObject(u'drive', target_user)
+  target_drive = buildGAPIObject(u'drive', target_user)
   target_about = callGAPI(target_drive.about(), u'get', fields=u'quotaBytesTotal,quotaBytesUsed,rootFolderId')
   target_drive_free = int(target_about[u'quotaBytesTotal']) - int(target_about[u'quotaBytesUsed'])
   for user in users:
     counter = 0
-    source_drive = buildGAPIServiceObject(u'drive', user)
+    source_drive = buildGAPIObject(u'drive', user)
     source_about = callGAPI(source_drive.about(), u'get', fields=u'quotaBytesTotal,quotaBytesUsed,rootFolderId, permissionId')
     source_drive_size = int(source_about[u'quotaBytesUsed'])
     if target_drive_free < source_drive_size:
@@ -4428,7 +4388,7 @@ def doLabel(users, i):
   count = len(users)
   i = 1
   for user in users:
-    gmail = buildGAPIServiceObject(u'gmail', user)
+    gmail = buildGAPIObject(u'gmail', user)
     print u"Creating label %s for %s (%s of %s)" % (label, user, i, count)
     i += 1
     callGAPI(gmail.users().labels(), u'create', soft_errors=True, userId=user, body=body)
@@ -4456,7 +4416,7 @@ def doDeleteMessages(trashOrDelete, users):
     sys.exit(2)
   for user in users:
     print u'Searching messages for %s' % user
-    gmail = buildGAPIServiceObject(u'gmail', user)
+    gmail = buildGAPIObject(u'gmail', user)
     page_message = u'Got %%%%total_items%%%% messages for user %s' % user
     listResult = callGAPIpages(gmail.users().messages(), u'list', u'messages', page_message=page_message,
                                userId=u'me', q=query, includeSpamTrash=True, soft_errors=True)
@@ -4477,7 +4437,7 @@ def doDeleteMessages(trashOrDelete, users):
 def doDeleteLabel(users):
   label = sys.argv[5]
   for user in users:
-    gmail = buildGAPIServiceObject(u'gmail', user)
+    gmail = buildGAPIObject(u'gmail', user)
     print u'Getting all labels for %s...' % user
     labels = callGAPI(gmail.users().labels(), u'list', userId=user, fields=u'labels(name,id,type)')
     del_labels = []
@@ -4532,7 +4492,7 @@ def showLabels(users):
       print u'ERROR: %s is not a valid argument for "gam <users> show labels"' % sys.argv[i]
       sys.exit(2)
   for user in users:
-    gmail = buildGAPIServiceObject(u'gmail', user)
+    gmail = buildGAPIObject(u'gmail', user)
     labels = callGAPI(gmail.users().labels(), u'list', userId=user, soft_errors=True)
     if labels:
       for label in labels[u'labels']:
@@ -4558,7 +4518,7 @@ def showGmailProfile(users):
   profiles = [{}]
   for user in users:
     print 'Getting Gmail profile for %s' % user
-    gmail = buildGAPIServiceObject(u'gmail', user, soft_errors=True)
+    gmail = buildGAPIObject(u'gmail', user, soft_errors=True)
     if not gmail:
       continue
     results = callGAPI(gmail.users(), u'getProfile', userId=u'me', soft_errors=True)
@@ -4598,7 +4558,7 @@ def updateLabels(users):
       print u'ERROR: %s is not a valid argument for "gam <users> update labels"' % sys.argv[i]
       sys.exit(2)
   for user in users:
-    gmail = buildGAPIServiceObject(u'gmail', user)
+    gmail = buildGAPIObject(u'gmail', user)
     labels = callGAPI(gmail.users().labels(), u'list', userId=user, fields=u'labels(id,name)')
     label_id = None
     for label in labels[u'labels']:
@@ -4629,7 +4589,7 @@ def renameLabels(users):
       sys.exit(2)
   pattern = re.compile(search, re.IGNORECASE)
   for user in users:
-    gmail = buildGAPIServiceObject(u'gmail', user)
+    gmail = buildGAPIObject(u'gmail', user)
     labels = callGAPI(gmail.users().labels(), u'list', userId=user)
     for label in labels[u'labels']:
       if label[u'type'] == u'system':
@@ -8758,198 +8718,8 @@ def OAuthInfo():
   except KeyError:
     print u'Google Apps Admin: Unknown'
 
-def doDeleteOAuth():
-  storage = oauth2client.file.Storage(GC_Values[GC_OAUTH2_TXT])
-  credentials = storage.get()
-  try:
-    credentials.revoke_uri = oauth2client.GOOGLE_REVOKE_URI
-  except AttributeError:
-    systemErrorExit(1, u'Authorization doesn\'t exist')
-  http = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL])
-  sys.stderr.write(u'This OAuth token will self-destruct in 3...')
-  time.sleep(1)
-  sys.stderr.write(u'2...')
-  time.sleep(1)
-  sys.stderr.write(u'1...')
-  time.sleep(1)
-  sys.stderr.write(u'boom!\n')
-  try:
-    credentials.revoke(http)
-  except oauth2client.client.TokenRevokeError, e:
-    sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, e.message))
-    os.remove(GC_Values[GC_OAUTH2_TXT])
-
-class cmd_flags(object):
-  def __init__(self, noLocalWebserver):
-    self.short_url = True
-    self.noauth_local_webserver = noLocalWebserver
-    self.logging_level = u'ERROR'
-    self.auth_host_name = u'localhost'
-    self.auth_host_port = [8080, 9090]
-
-possible_scopes = [u'https://www.googleapis.com/auth/admin.directory.group',            # Groups Directory Scope
-                   u'https://www.googleapis.com/auth/admin.directory.orgunit',          # Organization Directory Scope
-                   u'https://www.googleapis.com/auth/admin.directory.user',             # Users Directory Scope
-                   u'https://www.googleapis.com/auth/admin.directory.device.chromeos',  # Chrome OS Devices Directory Scope
-                   u'https://www.googleapis.com/auth/admin.directory.device.mobile',    # Mobile Device Directory Scope
-                   u'https://apps-apis.google.com/a/feeds/emailsettings/2.0/',          # Email Settings API
-                   u'https://www.googleapis.com/auth/admin.directory.resource.calendar',# Resource Calendar API
-                   u'https://apps-apis.google.com/a/feeds/compliance/audit/',           # Email Audit API
-                   u'https://apps-apis.google.com/a/feeds/domain/',                     # Admin Settings API
-                   u'https://www.googleapis.com/auth/apps.groups.settings',             # Group Settings API
-                   u'https://www.googleapis.com/auth/calendar',                         # Calendar Data API
-                   u'https://www.googleapis.com/auth/admin.reports.audit.readonly',     # Audit Reports
-                   u'https://www.googleapis.com/auth/admin.reports.usage.readonly',     # Usage Reports
-                   u'https://www.googleapis.com/auth/drive.file',                       # Drive API - Admin user access to files created or opened by the app
-                   u'https://www.googleapis.com/auth/apps.licensing',                   # License Manager API
-                   u'https://www.googleapis.com/auth/admin.directory.user.security',    # User Security Directory API
-                   u'https://www.googleapis.com/auth/admin.directory.notifications',    # Notifications Directory API
-                   u'https://www.googleapis.com/auth/siteverification',                 # Site Verification API
-                   u'https://mail.google.com/',                                         # IMAP/SMTP authentication for admin notifications
-                   u'https://www.googleapis.com/auth/admin.directory.userschema',       # Customer User Schema
-                   u'https://www.googleapis.com/auth/classroom.rosters https://www.googleapis.com/auth/classroom.courses https://www.googleapis.com/auth/classroom.profile.emails https://www.googleapis.com/auth/classroom.profile.photos',           # Classroom API
-                   u'https://www.googleapis.com/auth/cloudprint',                       # CloudPrint API
-                   u'https://www.googleapis.com/auth/admin.datatransfer',		# Data Transfer API
-                   u'https://www.googleapis.com/auth/admin.directory.customer',         # Customer API
-                   u'https://www.googleapis.com/auth/admin.directory.domain',           # Domain API
-                   u'https://www.googleapis.com/auth/admin.directory.rolemanagement',   # Roles API
-                  ]
-
-def doRequestOAuth(incremental_auth=False):
-  MISSING_CLIENT_SECRETS_MESSAGE = u"""
-WARNING: Please configure OAuth 2.0
-
-To make GAM run you will need to populate the client_secrets.json file
-found at:
-
-   %s
-
-with information from the APIs Console <https://cloud.google.com/console>.
-
-See:
-
-https://github.com/jay0lee/GAM/wiki/CreatingClientSecretsFile
-
-for instructions.
-
-""" % GC_Values[GC_CLIENT_SECRETS_JSON]
-  num_scopes = len(possible_scopes)
-  menu = u'''Select the authorized scopes for this token. Include a 'r' to grant read-only
-access or an 'a' to grant action-only access.
-
-[%%s]  %s)  Group Directory API (supports read-only)
-[%%s]  %s)  Organizational Unit Directory API (supports read-only)
-[%%s]  %s)  User Directory API (supports read-only)
-[%%s]  %s)  Chrome OS Device Directory API (supports read-only)
-[%%s]  %s)  Mobile Device Directory API (supports read-only and action)
-[%%s]  %s)  User Email Settings API
-[%%s]  %s)  Resource Calendar API (supports read-only)
-[%%s]  %s)  Audit Monitors, Activity and Mailbox Exports API
-[%%s]  %s)  Admin Settings API
-[%%s]  %s)  Groups Settings API
-[%%s]  %s)  Calendar Data API (supports read-only)
-[%%s]  %s)  Audit Reports API
-[%%s]  %s)  Usage Reports API
-[%%s]  %s)  Drive API (create report documents for admin user only)
-[%%s]  %s)  License Manager API
-[%%s]  %s)  User Security Directory API
-[%%s]  %s)  Notifications Directory API
-[%%s]  %s)  Site Verification API
-[%%s]  %s)  IMAP/SMTP Access (send notifications to admin)
-[%%s]  %s)  User Schemas (supports read-only)
-[%%s]  %s)  Classroom API
-[%%s]  %s)  Cloud Print API
-[%%s]  %s)  Data Transfer API (supports read-only)
-[%%s]  %s)  Customer Directory API (supports read-only)
-[%%s]  %s)  Domains Directory API (supports read-only)
-[%%s]  %s)  Roles API (supports read-only)
-
-      %%s)  Select all scopes
-      %%s)  Unselect all scopes
-      %%s)  Continue
-''' % tuple(range(0, num_scopes))
-  selected_scopes = [u'*'] * num_scopes
-  selected_scopes[16] = u' '
-  select_all_scopes = unicode(str(num_scopes))
-  unselect_all_scopes = unicode(str(num_scopes+1))
-  authorize_scopes = unicode(str(num_scopes+2))
-  scope_choices = (select_all_scopes, unselect_all_scopes, authorize_scopes)
-
-  os.system([u'clear', u'cls'][os.name == u'nt'])
-  while True:
-    menu_fill = tuple(selected_scopes) + scope_choices
-    selection = raw_input(menu % menu_fill)
-    try:
-      if selection.lower().find(u'r') != -1:
-        selection = int(selection.lower().replace(u'r', u''))
-        if selection not in [0, 1, 2, 3, 4, 6, 10, 19, 22, 23, 24, 25]:
-          os.system([u'clear', u'cls'][os.name == u'nt'])
-          print u'THAT SCOPE DOES NOT SUPPORT READ-ONLY MODE!\n'
-          continue
-        selected_scopes[selection] = u'R'
-      elif selection.lower().find(u'a') != -1:
-        selection = int(selection.lower().replace(u'a', u''))
-        if selection not in [4,]:
-          os.system([u'clear', u'cls'][os.name == u'nt'])
-          print u'THAT SCOPE DOES NOT SUPPORT ACTION-ONLY MODE!\n'
-          continue
-        selected_scopes[selection] = u'A'
-      elif int(selection) > -1 and int(selection) < num_scopes:
-        if selected_scopes[int(selection)] == u' ':
-          selected_scopes[int(selection)] = u'*'
-        else:
-          selected_scopes[int(selection)] = u' '
-      elif selection == select_all_scopes:
-        for i in xrange(0, num_scopes):
-          selected_scopes[i] = u'*'
-      elif selection == unselect_all_scopes:
-        for i in xrange(0, num_scopes):
-          selected_scopes[i] = u' '
-      elif selection == authorize_scopes:
-        at_least_one = False
-        for i in range(0, len(selected_scopes)):
-          if selected_scopes[i] in [u'*', u'R', u'A']:
-            at_least_one = True
-        if at_least_one:
-          break
-        else:
-          os.system([u'clear', u'cls'][os.name == u'nt'])
-          print u"YOU MUST SELECT AT LEAST ONE SCOPE!\n"
-          continue
-      else:
-        os.system([u'clear', u'cls'][os.name == u'nt'])
-        print u'NOT A VALID SELECTION!'
-        continue
-      os.system([u'clear', u'cls'][os.name == u'nt'])
-    except ValueError:
-      os.system([u'clear', u'cls'][os.name == u'nt'])
-      print u'Not a valid selection.'
-      continue
-
-  if incremental_auth:
-    scopes = []
-  else:
-    scopes = [u'email',] # Email Display Scope, always included
-  for i in range(0, len(selected_scopes)):
-    if selected_scopes[i] == u'*':
-      scopes.append(possible_scopes[i])
-    elif selected_scopes[i] == u'R':
-      scopes.append(u'%s.readonly' % possible_scopes[i])
-    elif selected_scopes[i] == u'A':
-      scopes.append(u'%s.action' % possible_scopes[i])
-  try:
-    FLOW = oauth2client.client.flow_from_clientsecrets(GC_Values[GC_CLIENT_SECRETS_JSON], scope=scopes)
-  except oauth2client.client.clientsecrets.InvalidClientSecretsError:
-    systemErrorExit(14, MISSING_CLIENT_SECRETS_MESSAGE)
-  storage = oauth2client.file.Storage(GC_Values[GC_OAUTH2_TXT])
-  credentials = storage.get()
-  flags = cmd_flags(noLocalWebserver=GC_Values[GC_NO_BROWSER])
-  if credentials is None or credentials.invalid or incremental_auth:
-    http = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL])
-    try:
-      credentials = oauth2client.tools.run_flow(flow=FLOW, storage=storage, flags=flags, http=http)
-    except httplib2.CertificateValidationUnsupported:
-      noPythonSSLExit()
+def doRequestOAuth():
+  pass
 
 def batch_worker():
   while True:
