@@ -365,6 +365,10 @@ def systemErrorExit(sysRC, message):
 def noPythonSSLExit():
   systemErrorExit(8, MESSAGE_NO_PYTHON_SSL)
 
+# Invalid CSV ~Header or ~~Header~~
+def csvFieldErrorExit(fieldName, fieldNames):
+  systemErrorExit(3, MESSAGE_HEADER_NOT_FOUND_IN_CSV_HEADERS.format(fieldName, u','.join(fieldNames)))
+
 def printLine(message):
   sys.stdout.write(message+u'\n')
 #
@@ -3145,11 +3149,10 @@ def showCalendars(users):
 
 def showCalSettings(users):
   for user in users:
-    for user in users:
-      cal = buildGAPIServiceObject(u'calendar', user)
-      feed = callGAPI(cal.settings(), 'list')
-      for setting in feed[u'items']:
-        print u'%s: %s' % (setting[u'id'], setting[u'value'])
+    cal = buildGAPIServiceObject(u'calendar', user)
+    feed = callGAPI(cal.settings(), 'list')
+    for setting in feed[u'items']:
+      print u'%s: %s' % (setting[u'id'], setting[u'value'])
 
 def showDriveSettings(users):
   todrive = False
@@ -4413,39 +4416,36 @@ def doSnippets(users):
     i += 1
     callGData(emailsettings, u'UpdateGeneral', soft_errors=True, username=user, snippets=SetSnippets)
 
-def doLabel(users):
-  label = sys.argv[4]
-  count = len(users)
-  i = 1
-  n = 5
-  if sys.argv[3].lower() == u'add':
-    n = 6
-    label = sys.argv[5]
+def doLabel(users, i):
+  label = sys.argv[i]
+  i += 1
   body = {u'name': label}
-  while n < len(sys.argv):
-    if sys.argv[n].lower().replace(u'_', u'') == u'labellistvisibility':
-      if sys.argv[n+1].lower().replace(u'_', u'') == u'hide':
+  while i < len(sys.argv):
+    if sys.argv[i].lower().replace(u'_', u'') == u'labellistvisibility':
+      if sys.argv[i+1].lower().replace(u'_', u'') == u'hide':
         body[u'labelListVisibility'] = u'labelHide'
-      elif sys.argv[n+1].lower().replace(u'_', u'') == u'show':
+      elif sys.argv[i+1].lower().replace(u'_', u'') == u'show':
         body[u'labelListVisibility'] = u'labelShow'
-      elif sys.argv[n+1].lower().replace(u'_', u'') == u'showifunread':
+      elif sys.argv[i+1].lower().replace(u'_', u'') == u'showifunread':
         body[u'labelListVisibility'] = u'labelShowIfUnread'
       else:
-        print u'ERROR: label_list_visibility must be one of hide, show or show_if_unread, got %s' % sys.argv[n+1]
+        print u'ERROR: label_list_visibility must be one of hide, show or show_if_unread, got %s' % sys.argv[i+1]
         sys.exit(2)
-      n += 2
-    elif sys.argv[n].lower().replace(u'_', u'') == u'messagelistvisibility':
-      if sys.argv[n+1].lower().replace(u'_', u'') == u'hide':
+      i += 2
+    elif sys.argv[i].lower().replace(u'_', u'') == u'messagelistvisibility':
+      if sys.argv[i+1].lower().replace(u'_', u'') == u'hide':
         body[u'messageListVisibility'] = u'hide'
-      elif sys.argv[n+1].lower().replace(u'_', u'') == u'show':
+      elif sys.argv[i+1].lower().replace(u'_', u'') == u'show':
         body[u'messageListVisibility'] = u'show'
       else:
-        print u'ERROR: message_list_visibility must be one of hide or show, got %s' % sys.argv[n+1]
+        print u'ERROR: message_list_visibility must be one of hide or show, got %s' % sys.argv[i+1]
         sys.exit(2)
-      n += 2
+      i += 2
     else:
-      print u'ERROR: %s is not a valid argument for this command.' % sys.argv[n]
+      print u'ERROR: %s is not a valid argument for this command.' % sys.argv[i]
       sys.exit(2)
+  count = len(users)
+  i = 1
   for user in users:
     gmail = buildGAPIServiceObject(u'gmail', user)
     print u"Creating label %s for %s (%s of %s)" % (label, user, i, count)
@@ -5517,15 +5517,11 @@ def doCreateResourceCalendar():
   callGAPI(cd.resources().calendars(), u'insert',
            customer=GC_Values[GC_CUSTOMER_ID], body=body)
 
-def doUpdateUser(users):
+def doUpdateUser(users, i):
   cd = buildGAPIObject(u'directory')
   body = dict()
   gotPassword = isMD5 = isSHA1 = isCrypt = False
   is_admin = nohash = None
-  if sys.argv[1].lower() == u'update':
-    i = 4
-  else:
-    i = 5
   do_update_user = False
   do_admin_user = False
   while i < len(sys.argv):
@@ -9005,6 +9001,64 @@ def run_batch(items):
       continue
     GM_Globals[GM_BATCH_QUEUE].put(python_cmd+item)
   GM_Globals[GM_BATCH_QUEUE].join()
+#
+# Process command line arguments, find substitutions
+# An argument containing instances of ~~xxx~~ has xxx replaced by the value of field xxx from the CSV file
+# An argument containing exactly ~xxx is replaced by the value of field xxx from the CSV file
+# Otherwise, the argument is preserved as is
+#
+# SubFields is a dictionary; the key is the argument number, the value is a list of tuples that mark
+# the substition (fieldname, start, end).
+# Example: update user '~User' address type work unstructured '~~Street~~, ~~City~~, ~~State~~ ~~ZIP~~' primary
+# {2: [('User', 0, 5)], 7: [('Street', 0, 10), ('City', 12, 20), ('State', 22, 31), ('ZIP', 32, 39)]}
+#
+def getSubFields(i, fieldNames):
+  subFields = {}
+  PATTERN = re.compile(r'~~(.+?)~~')
+  GAM_argv = []
+  GAM_argvI = 0
+  while i < len(sys.argv):
+    myarg = sys.argv[i]
+    if PATTERN.search(myarg):
+      pos = 0
+      while True:
+        match = PATTERN.search(myarg, pos)
+        if not match:
+          break
+        fieldName = match.group(1)
+        if fieldName in fieldNames:
+          subFields.setdefault(GAM_argvI, [])
+          subFields[GAM_argvI].append((fieldName, match.start(), match.end()))
+        else:
+          csvFieldErrorExit(fieldName, fieldNames)
+        pos = match.end()
+      GAM_argv.append(myarg)
+    elif myarg[0] == u'~':
+      fieldName = myarg[1:]
+      if fieldName in fieldNames:
+        subFields[GAM_argvI] = [(fieldName, 0, len(myarg))]
+        GAM_argv.append(myarg)
+      else:
+        csvFieldErrorExit(fieldName, fieldNames)
+    else:
+      GAM_argv.append(myarg)
+    GAM_argvI += 1
+    i += 1
+  return(GAM_argv, subFields)
+#
+def processSubFields(GAM_argv, row, subFields):
+  argv = GAM_argv[:]
+  for GAM_argvI, fields in subFields.iteritems():
+    oargv = argv[GAM_argvI][:]
+    argv[GAM_argvI] = u''
+    pos = 0
+    for field in fields:
+      argv[GAM_argvI] += oargv[pos:field[1]]
+      if row[field[0]]:
+        argv[GAM_argvI] += row[field[0]]
+      pos = field[2]
+    argv[GAM_argvI] += oargv[pos:]
+  return argv
 
 # Main
 reload(sys)
@@ -9044,24 +9098,10 @@ try:
     if sys.argv[3].lower() != 'gam':
       print 'ERROR: "gam csv <filename>" should be followed by a full GAM command...'
       sys.exit(3)
-    argv_template = sys.argv[4:]
-    substring_replacements = re.findall(r'~~(.*?)~~', u' '.join(argv_template))
+    GAM_argv, subFields = getSubFields(4, input_file.fieldnames)
     items = list()
     for row in input_file:
-      argv = list()
-      for arg in argv_template:
-        for substring_replacement in substring_replacements:
-          try:
-            arg = arg.replace(u'~~%s~~' % substring_replacement, row[substring_replacement])
-          except KeyError:
-            systemErrorExit(3, u'%s is not in %s' % (substring_replacement, row))
-        if arg[0] != '~':
-          argv.append(arg)
-        elif arg[1:] in row:
-          argv.append(row[arg[1:]])
-        else:
-          systemErrorExit(2, MESSAGE_HEADER_NOT_FOUND_IN_CSV_HEADERS.format(arg[1:], ','.join(row.keys())))
-      items.append(argv)
+      items.append(processSubFields(GAM_argv, row, subFields))
     closeFile(f)
     run_batch(items)
     sys.exit(0)
@@ -9099,7 +9139,7 @@ try:
     sys.exit(0)
   elif sys.argv[1].lower() == u'update':
     if sys.argv[2].lower() == u'user':
-      doUpdateUser([sys.argv[3],])
+      doUpdateUser([sys.argv[3],], 4)
     elif sys.argv[2].lower() == u'group':
       doUpdateGroup()
     elif sys.argv[2].lower() in [u'nickname', u'alias']:
@@ -9493,7 +9533,7 @@ try:
     elif addWhat in [u'drivefileacl', u'drivefileacls']:
       addDriveFileACL(users)
     elif addWhat in [u'label', u'labels']:
-      doLabel(users)
+      doLabel(users, 5)
     else:
       print u'ERROR: %s is not a valid argument for "gam <users> add"' % sys.argv[4]
       sys.exit(2)
@@ -9507,7 +9547,7 @@ try:
     elif sys.argv[4].lower() in [u'license', u'licence']:
       doLicense(users, u'patch')
     elif sys.argv[4].lower() == u'user':
-      doUpdateUser(users)
+      doUpdateUser(users, 5)
     elif sys.argv[4].lower() in [u'backupcode', u'backupcodes', u'verificationcodes']:
       doGenBackupCodes(users)
     elif sys.argv[4].lower() in [u'drivefile']:
@@ -9549,7 +9589,7 @@ try:
   elif command == u'snippets':
     doSnippets(users)
   elif command == u'label':
-    doLabel(users)
+    doLabel(users, 4)
   elif command == u'filter':
     doFilter(users)
   elif command == u'forward':
