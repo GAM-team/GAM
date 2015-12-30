@@ -869,7 +869,7 @@ def getAuditObject():
 def getEmailSettingsObject():
   import gdata.apps.emailsettings.service
   return commonAppsObjInit(gdata.apps.emailsettings.service.EmailSettingsService(),
-    GDATA_ADMIN_SETTINGS_SCOPE)
+    GDATA_EMAIL_SETTINGS_SCOPE)
 
 def geturl(url, dst):
   import urllib2
@@ -9110,8 +9110,6 @@ try:
       doRequestOAuth()
     elif sys.argv[2].lower() == u'info':
       OAuthInfo()
-    elif sys.argv[2].lower() in [u'delete', u'revoke']:
-      doDeleteOAuth()
     else:
       print u'ERROR: %s is not a valid argument for "gam oauth"' % sys.argv[2]
       sys.exit(2)
