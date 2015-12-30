@@ -566,7 +566,7 @@ def doGAMVersion():
 def tryOAuth(gdataObject, scope):
   credentials = oauth2client.client.SignedJwtAssertionCredentials(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_EMAIL],
                                                                   GM_Globals[GM_OAUTH2SERVICE_KEY],
-                                                                  scope=scope, user_agent=GAM_INFO, sub=u'me@u.jaylee.us')
+                                                                  scope=scope, user_agent=GAM_INFO, sub=u'me@u.jaylee.us') # TODO lookup admin user from file
   http = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL],
     cache=GC_Values[GC_CACHE_DIR])
   try:
@@ -803,7 +803,7 @@ def getServiceFromDiscoveryDocument(api, version, http):
 
 def buildGAPIObject(api, act_as=None, soft_errors=False):
   if not act_as:
-    act_as = u'me@u.jaylee.us'
+    act_as = u'me@u.jaylee.us' # TODO lookup admin user from file
   if not GM_Globals[GM_OAUTH2SERVICE_KEY]:
     json_string = readFile(GC_Values[GC_OAUTH2SERVICE_JSON], continueOnError=True, displayError=True)
     if not json_string:
