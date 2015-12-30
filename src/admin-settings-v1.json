@@ -5,7 +5,7 @@
  "name": "admin-settings",
  "version": "v1",
  "revision": "20130823",
- "title": "Admin Settings API (read-only calls)",
+ "title": "Admin Settings API",
  "description": "Lets you access Google Apps Admin Settings",
  "ownerDomain": "google.com",
  "ownerName": "Google",
