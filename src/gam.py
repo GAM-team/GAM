@@ -7089,10 +7089,10 @@ def doGetInstanceInfo():
     geturl(url, target_file)
     sys.exit(0)
   print u'Google Apps Domain: %s' % (GC_Values[GC_DOMAIN])
-  cd = buildGAPIObject(u'directory')
   if GC_Values[GC_CUSTOMER_ID] != MY_CUSTOMER:
     customerId = GC_Values[GC_CUSTOMER_ID]
   else:
+    cd = buildGAPIObject(u'directory')
     result = callGAPI(cd.users(), u'list',
                       fields=u'users(customerId)', customer=GC_Values[GC_CUSTOMER_ID], maxResults=1)
     try:
