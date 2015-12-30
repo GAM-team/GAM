@@ -73,10 +73,6 @@ FN_OAUTH2SERVICE_JSON = u'oauth2service.json'
 MY_CUSTOMER = u'my_customer'
 UNKNOWN = u'Unknown'
 
-GDATA_EMAIL_SETTINGS_SCOPE = u'https://apps-apis.google.com/a/feeds/emailsettings/2.0/'
-GDATA_ADMIN_SETTINGS_SCOPE = u'https://apps-apis.google.com/a/feeds/domain/'
-GDATA_EMAIL_AUDIT_SCOPE = u'https://apps-apis.google.com/a/feeds/compliance/audit/'
-
 #
 # Global variables
 #
@@ -561,7 +557,7 @@ def doGAMVersion():
                                                                                                                          GM_Globals[GM_GAM_PATH])
 
 def tryOAuth(gdataObject, scope, soft_errors=False):
-  scope = [scope, u'email']
+  scope.append(u'email')
   credentials = oauth2client.client.SignedJwtAssertionCredentials(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_EMAIL],
                                                                   GM_Globals[GM_OAUTH2SERVICE_KEY],
                                                                   scope=scope, user_agent=GAM_INFO, sub=GC_Values[GC_ADMIN]) # TODO lookup admin user from file
@@ -772,6 +768,8 @@ API_VER_MAPPING = {
   u'oauth2': u'v2',
   u'reports': u'reports_v1',
   u'siteVerification': u'v1',
+  u'email-settings': u'v1',
+  u'email-audit': u'v1'
   }
 
 def getAPIVer(api):
@@ -782,7 +780,7 @@ def getAPIScope(service):
   granted_scopes = api_scopes # TODO fix to lookup from file
   return [val for val in api_scopes if val in granted_scopes] + [u'email']
 
-def getServiceFromDiscoveryDocument(api, version, http):
+def getServiceFromDiscoveryDocument(api, version, http=None):
   disc_filename = u'%s-%s.json' % (api, version)
   disc_file = os.path.join(GC_Values[GC_SITE_DIR], disc_filename)
   if hasattr(sys, '_MEIPASS'):
@@ -858,18 +856,24 @@ def commonAppsObjInit(appsObj, scope):
 
 def getAdminSettingsObject():
   import gdata.apps.adminsettings.service
+  service = getServiceFromDiscoveryDocument(u'admin-settings', u'v1')
+  scope = service._rootDesc[u'auth'][u'oauth2']['scopes'].keys()
   return commonAppsObjInit(gdata.apps.adminsettings.service.AdminSettingsService(),
-    GDATA_ADMIN_SETTINGS_SCOPE)
+    scope)
 
 def getAuditObject():
   import gdata.apps.audit.service
+  service = getServiceFromDiscoveryDocument(u'email-audit', u'v1')
+  scope = service._rootDesc[u'auth'][u'oauth2']['scopes'].keys()
   return commonAppsObjInit(gdata.apps.audit.service.AuditService(),
-    GDATA_EMAIL_AUDIT_SCOPE)
+    scope)
 
 def getEmailSettingsObject():
   import gdata.apps.emailsettings.service
+  service = getServiceFromDiscoveryDocument(u'email-settings', u'v1')
+  scope = service._rootDesc[u'auth'][u'oauth2']['scopes'].keys()
   return commonAppsObjInit(gdata.apps.emailsettings.service.EmailSettingsService(),
-    GDATA_EMAIL_SETTINGS_SCOPE)
+    scope)
 
 def geturl(url, dst):
   import urllib2
@@ -8713,6 +8717,7 @@ def doRequestOAuth():
   admin_email = raw_input(u'Please enter your admin email address: ')
   apis = API_VER_MAPPING.keys()
   apis.remove(u'oauth2')
+  all_apis = {}
   for api in apis:
     version = getAPIVer(api)
     if api in [u'directory', u'reports', u'datatransfer']:
@@ -8723,13 +8728,11 @@ def doRequestOAuth():
       service = googleapiclient.discovery.build(api, version, http=http, cache_discovery=False)
     except googleapiclient.errors.UnknownApiNameOrVersion:
       service = getServiceFromDiscoveryDocument(api, version, http)
-    print u'%s: %s' % (service._rootDesc['title'], service._rootDesc['description'])
-    for scope in service._rootDesc[u'auth'][u'oauth2'][u'scopes'].items():
-      scope_value = scope[0]
-      scope_description = scope[1][u'description']
-      print u'  %s\n  %s' % (scope_value, scope_description)
-      print
-    print
+    all_apis[api] = service._rootDesc
+  i = 0
+  for api in all_apis.values():
+    print u'[*]  %s) %s' % (i, api[u'title'])
+    i += 1
 
 def batch_worker():
   while True:
