@@ -22,7 +22,7 @@
   "oauth2": {
    "scopes": {
     "https://apps-apis.google.com/a/feeds/emailsettings/2.0/": {
-     "description": "Manage email audits"
+     "description": "Manage email settings"
     }
    }
   }

@@ -104,6 +104,8 @@ GM_MAP_ROLE_ID_TO_NAME = u'ri2n'
 GM_MAP_ROLE_NAME_TO_ID = u'rn2i'
 # Dictionary mapping User ID to Name
 GM_MAP_USER_ID_TO_NAME = u'ui2n'
+# Current API scope
+GM_API_SCOPE = u'scop'
 #
 GM_Globals = {
   GM_SYSEXITRC: 0,
@@ -120,6 +122,7 @@ GM_Globals = {
   GM_MAP_ROLE_ID_TO_NAME: None,
   GM_MAP_ROLE_NAME_TO_ID: None,
   GM_MAP_USER_ID_TO_NAME: None,
+  GM_API_SCOPE: None,
   }
 #
 # Global variables defined by environment variables/signal files
@@ -557,12 +560,12 @@ def doGAMVersion():
                                                                                                                          GM_Globals[GM_GAM_PATH])
 
 def tryOAuth(gdataObject, scope, soft_errors=False):
-  scope.append(u'email')
+#  scope.append(u'email') #TODO: What is this for?
   credentials = oauth2client.client.SignedJwtAssertionCredentials(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_EMAIL],
                                                                   GM_Globals[GM_OAUTH2SERVICE_KEY],
-                                                                  scope=scope, user_agent=GAM_INFO, sub=GC_Values[GC_ADMIN]) # TODO lookup admin user from file
+                                                                  scope=scope, user_agent=GAM_INFO, sub=GC_Values[GC_ADMIN])
   http = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL],
-    cache=GC_Values[GC_CACHE_DIR])
+                       cache=GC_Values[GC_CACHE_DIR])
   try:
     credentials.refresh(http)
   except oauth2client.client.AccessTokenRefreshError, e:
@@ -576,7 +579,7 @@ def tryOAuth(gdataObject, scope, soft_errors=False):
     sys.exit(4)
   gdataObject.additional_headers = {u'Authorization': u'Bearer %s' % credentials.access_token}
   if not GC_Values[GC_DOMAIN]:
-    GC_Values[GC_DOMAIN] = GC_Values[GC_ADMIN][GC_Values[GC_ADMIN].find(u'@'):].lower()
+    GC_Values[GC_DOMAIN] = GC_Values[GC_ADMIN][GC_Values[GC_ADMIN].find(u'@')+1:].lower()
   if not GC_Values[GC_CUSTOMER_ID]:
     GC_Values[GC_CUSTOMER_ID] = MY_CUSTOMER
   gdataObject.domain = GC_Values[GC_DOMAIN]
@@ -586,7 +589,7 @@ def checkGDataError(e, service):
   # First check for errors that need special handling
   if e[0].get(u'reason', u'') in [u'Token invalid - Invalid token: Stateless token expired', u'Token invalid - Invalid token: Token not found']:
     keep_domain = service.domain
-    tryOAuth(service)
+    tryOAuth(service, GM_Globals[GM_API_SCOPE])
     service.domain = keep_domain
     return False
   if e[0][u'body'].startswith(u'Required field must not be blank:') or e[0][u'body'].startswith(u'These characters are not allowed:'):
@@ -762,17 +765,43 @@ API_VER_MAPPING = {
   u'datatransfer': u'datatransfer_v1',
   u'directory': u'directory_v1',
   u'drive': u'v2',
+  u'email-audit': u'v1',
+  u'email-settings': u'v1',
   u'gmail': u'v1',
   u'groupssettings': u'v1',
   u'licensing': u'v1',
   u'reports': u'reports_v1',
   u'siteVerification': u'v1',
-  u'email-settings': u'v1',
-  u'email-audit': u'v1'
   }
 
 def getAPIVer(api):
   return API_VER_MAPPING.get(api, u'v1')
+
+SERVICE_API_SCOPE_MAPPING = {
+  u'admin-settings': [u'https://apps-apis.google.com/a/feeds/domain/',],
+  u'appsactivity': [u'https://www.googleapis.com/auth/activity', u'https://www.googleapis.com/auth/drive'],
+  u'calendar': [u'https://www.googleapis.com/auth/calendar',],
+  u'classroom': [u'https://www.googleapis.com/auth/classroom.courses', u'https://www.googleapis.com/auth/classroom.profile.emails', u'https://www.googleapis.com/auth/classroom.profile.photos',],
+  u'cloudprint': [u'https://www.googleapis.com/auth/cloudprint',],
+  u'datatransfer': [u'https://www.googleapis.com/auth/admin.datatransfer',],
+  u'drive': [u'https://www.googleapis.com/auth/drive',],
+  u'directory': [u'https://www.googleapis.com/auth/admin.datatransfer', u'https://www.googleapis.com/auth/admin.directory.customer', u'https://www.googleapis.com/auth/admin.directory.device.chromeos',
+                 u'https://www.googleapis.com/auth/admin.directory.device.mobile', u'https://www.googleapis.com/auth/admin.directory.device.mobile.action',
+                 u'https://www.googleapis.com/auth/admin.directory.domain', u'https://www.googleapis.com/auth/admin.directory.group', u'https://www.googleapis.com/auth/admin.directory.group.member',
+                 u'https://www.googleapis.com/auth/admin.directory.notifications', u'https://www.googleapis.com/auth/admin.directory.orgunit', u'https://www.googleapis.com/auth/admin.directory.resource.calendar',
+                 u'https://www.googleapis.com/auth/admin.directory.rolemanagement', u'https://www.googleapis.com/auth/admin.directory.user', u'https://www.googleapis.com/auth/admin.directory.user.alias',
+                 u'https://www.googleapis.com/auth/admin.directory.user.security', u'https://www.googleapis.com/auth/admin.directory.userschema',],
+  u'email-audit': [u'https://apps-apis.google.com/a/feeds/compliance/audit/',],
+  u'email-settings': [u'https://apps-apis.google.com/a/feeds/emailsettings/2.0/',],
+  u'gmail': [u'https://mail.google.com/',],
+  u'groupsettings': [u'https://www.googleapis.com/auth/apps.groups.settings',],
+  u'licensing': [u'https://www.googleapis.com/auth/apps.licensing',],
+  u'reports': [u'https://www.googleapis.com/auth/admin.reports.audit.readonly', u'https://www.googleapis.com/auth/admin.reports.usage.readonly',],
+  u'siteVerification': ['https://www.googleapis.com/auth/siteverification',],
+  }
+
+def getServiceAPIScope(api):
+  return SERVICE_API_SCOPE_MAPPING.get(api, [])
 
 def getAPIScope(service):
   api_scopes = service._rootDesc[u'auth'][u'oauth2'][u'scopes']
@@ -794,9 +823,7 @@ def getServiceFromDiscoveryDocument(api, version, http=None):
     systemErrorExit(4, MESSAGE_NO_DISCOVERY_INFORMATION.format(disc_file))
   return googleapiclient.discovery.build_from_document(discovery, base=u'https://www.googleapis.com', http=http)
 
-def buildGAPIObject(api, act_as=None, soft_errors=False):
-  if not act_as:
-    act_as = GC_Values[GC_ADMIN] # TODO lookup admin user from file
+def getOAuth2ServiceDetails():
   if not GM_Globals[GM_OAUTH2SERVICE_KEY]:
     json_string = readFile(GC_Values[GC_OAUTH2SERVICE_JSON], continueOnError=True, displayError=True)
     if not json_string:
@@ -813,39 +840,41 @@ def buildGAPIObject(api, act_as=None, soft_errors=False):
       printLine(MESSAGE_WIKI_INSTRUCTIONS_OAUTH2SERVICE_JSON)
       printLine(GAM_WIKI_CREATE_CLIENT_SECRETS)
       systemErrorExit(17, MESSAGE_OAUTH2SERVICE_JSON_INVALID.format(GC_Values[GC_OAUTH2SERVICE_JSON]))
+
+def buildGAPIObject(api, act_as=None, soft_errors=False):
+  sub = act_as if act_as else GC_Values[GC_ADMIN]
+  getOAuth2ServiceDetails()
+  GM_Globals[GM_API_SCOPE] = getServiceAPIScope(api)
+  credentials = oauth2client.client.SignedJwtAssertionCredentials(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_EMAIL],
+                                                                  GM_Globals[GM_OAUTH2SERVICE_KEY],
+                                                                  scope=GM_Globals[GM_API_SCOPE], user_agent=GAM_INFO, sub=sub)
+  http = credentials.authorize(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL],
+                                             cache=GC_Values[GC_CACHE_DIR]))
   version = getAPIVer(api)
   if api in [u'directory', u'reports', u'datatransfer']:
     api = u'admin'
-  http = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL],
-    cache=GC_Values[GC_CACHE_DIR])
   try:
-    service = googleapiclient.discovery.build(api, version, http=http, cache_discovery=False)
+    return googleapiclient.discovery.build(api, version, http=http, cache_discovery=False)
   except googleapiclient.errors.UnknownApiNameOrVersion:
-    service = getServiceFromDiscoveryDocument(api, version, http)
+    return getServiceFromDiscoveryDocument(api, version, http)
   except httplib2.ServerNotFoundError as e:
     systemErrorExit(4, e)
-  scope = getAPIScope(service)
-  credentials = oauth2client.client.SignedJwtAssertionCredentials(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_EMAIL],
-                                                                  GM_Globals[GM_OAUTH2SERVICE_KEY],
-                                                                  scope=scope, user_agent=GAM_INFO, sub=act_as)
-  try:
-    service._http = credentials.authorize(http)
-    service._http.request.credentials.refresh(http)
   except oauth2client.client.AccessTokenRefreshError, e:
     if e.message in [u'access_denied',
                      u'unauthorized_client: Unauthorized client or scope in request.',
                      u'access_denied: Requested client not authorized.']:
-      systemErrorExit(5, MESSAGE_CLIENT_API_ACCESS_DENIED.format(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID], u','.join(scope)))
+      systemErrorExit(5, MESSAGE_CLIENT_API_ACCESS_DENIED.format(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID], u','.join(GM_Globals[GM_API_SCOPE])))
     sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, e))
     if soft_errors:
       return False
     sys.exit(4)
-  return service
 
 def commonAppsObjInit(appsObj, scope):
-  if not tryOAuth(appsObj, scope):
+  getOAuth2ServiceDetails()
+  GM_Globals[GM_API_SCOPE] = scope
+  if not tryOAuth(appsObj, GM_Globals[GM_API_SCOPE]):
     doRequestOAuth()
-    tryOAuth(appsObj, scope)
+    tryOAuth(appsObj, GM_Globals[GM_API_SCOPE])
   #Identify GAM to Google's Servers
   appsObj.source = GAM_INFO
   #Show debugging output if debug.gam exists
@@ -855,24 +884,18 @@ def commonAppsObjInit(appsObj, scope):
 
 def getAdminSettingsObject():
   import gdata.apps.adminsettings.service
-  service = getServiceFromDiscoveryDocument(u'admin-settings', u'v1')
-  scope = service._rootDesc[u'auth'][u'oauth2']['scopes'].keys()
   return commonAppsObjInit(gdata.apps.adminsettings.service.AdminSettingsService(),
-    scope)
+                           getServiceAPIScope(u'admin-settings'))
 
 def getAuditObject():
   import gdata.apps.audit.service
-  service = getServiceFromDiscoveryDocument(u'email-audit', u'v1')
-  scope = service._rootDesc[u'auth'][u'oauth2']['scopes'].keys()
   return commonAppsObjInit(gdata.apps.audit.service.AuditService(),
-    scope)
+                           getServiceAPIScope(u'email-audit'))
 
 def getEmailSettingsObject():
   import gdata.apps.emailsettings.service
-  service = getServiceFromDiscoveryDocument(u'email-settings', u'v1')
-  scope = service._rootDesc[u'auth'][u'oauth2']['scopes'].keys()
   return commonAppsObjInit(gdata.apps.emailsettings.service.EmailSettingsService(),
-    scope)
+                           getServiceAPIScope(u'email-settings'))
 
 def geturl(url, dst):
   import urllib2
@@ -7088,10 +7111,10 @@ def doGetInstanceInfo():
     geturl(url, target_file)
     sys.exit(0)
   print u'Google Apps Domain: %s' % (GC_Values[GC_DOMAIN])
-  cd = buildGAPIObject(u'directory')
   if GC_Values[GC_CUSTOMER_ID] != MY_CUSTOMER:
     customerId = GC_Values[GC_CUSTOMER_ID]
   else:
+    cd = buildGAPIObject(u'directory')
     result = callGAPI(cd.users(), u'list',
                       fields=u'users(customerId)', customer=GC_Values[GC_CUSTOMER_ID], maxResults=1)
     try:
@@ -8722,13 +8745,14 @@ def select_default_scopes(all_apis):
 def doRequestOAuth():
   admin_email = raw_input(u'Please enter your admin email address: ')
   apis = API_VER_MAPPING.keys()
+  apis.remove(u'oauth2')
   all_apis = {}
   for api in apis:
     version = getAPIVer(api)
     if api in [u'directory', u'reports', u'datatransfer']:
       api = u'admin'
     http = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL],
-      cache=GC_Values[GC_CACHE_DIR])
+                         cache=GC_Values[GC_CACHE_DIR])
     try:
       service = googleapiclient.discovery.build(api, version, http=http, cache_discovery=False)
     except googleapiclient.errors.UnknownApiNameOrVersion:
