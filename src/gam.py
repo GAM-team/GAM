@@ -8686,8 +8686,16 @@ def OAuthInfo():
   # TODO eventually would be good if this did something to test admin-selected scopes
   pass
 
+UBER_SCOPES = {
+  u'gmail-v1': [u'https://mail.google.com/'],
+  u'drive-v2': [u'https://www.googleapis.com/auth/drive']
+  }
+
 def select_default_scopes(all_apis):
   for api_name, api in all_apis.items():
+    if api_name in UBER_SCOPES.keys():
+      all_apis[api_name][u'use_scopes'] = UBER_SCOPES[api_name]
+      continue
     all_apis[api_name][u'use_scopes'] = []
     scopes = api[u'auth'][u'oauth2'][u'scopes'].keys()
     if len(scopes) == 1:
