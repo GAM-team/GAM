@@ -796,7 +796,6 @@ SERVICE_API_SCOPE_MAPPING = {
   u'gmail': [u'https://mail.google.com/',],
   u'groupsettings': [u'https://www.googleapis.com/auth/apps.groups.settings',],
   u'licensing': [u'https://www.googleapis.com/auth/apps.licensing',],
-  u'oauth2': [u'https://www.googleapis.com/auth/plus.login', u'https://www.googleapis.com/auth/plus.me',],
   u'reports': [u'https://www.googleapis.com/auth/admin.reports.audit.readonly', u'https://www.googleapis.com/auth/admin.reports.usage.readonly',],
   u'siteVerification': ['https://www.googleapis.com/auth/siteverification',],
   }
