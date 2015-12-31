@@ -765,7 +765,6 @@ API_VER_MAPPING = {
   u'gmail': u'v1',
   u'groupssettings': u'v1',
   u'licensing': u'v1',
-  u'oauth2': u'v2',
   u'reports': u'reports_v1',
   u'siteVerification': u'v1',
   u'email-settings': u'v1',
@@ -8684,34 +8683,8 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
   return full_users
 
 def OAuthInfo():
-  if len(sys.argv) > 3:
-    access_token = sys.argv[3]
-  else:
-    storage = oauth2client.file.Storage(GC_Values[GC_OAUTH2_TXT])
-    credentials = storage.get()
-    if credentials is None or credentials.invalid:
-      doRequestOAuth()
-      credentials = storage.get()
-    credentials.user_agent = GAM_INFO
-    http = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL])
-    if credentials.access_token_expired:
-      credentials.refresh(http)
-    access_token = credentials.access_token
-    print u"\nOAuth File: %s" % GC_Values[GC_OAUTH2_TXT]
-  oa2 = buildGAPIObject(u'oauth2')
-  token_info = callGAPI(oa2, u'tokeninfo', access_token=access_token)
-  print u"Client ID: %s" % token_info[u'issued_to']
-  try:
-    print u"Secret: %s" % credentials.client_secret
-  except UnboundLocalError:
-    pass
-  print u'Scopes:'
-  for scope in token_info[u'scope'].split(u' '):
-    print u'  %s' % scope
-  try:
-    print u'Google Apps Admin: %s' % token_info[u'email']
-  except KeyError:
-    print u'Google Apps Admin: Unknown'
+  # TODO eventually would be good if this did something to test admin-selected scopes
+  pass
 
 def select_default_scopes(all_apis):
   for api_name, api in all_apis.items():
@@ -8740,7 +8713,6 @@ def select_default_scopes(all_apis):
 def doRequestOAuth():
   admin_email = raw_input(u'Please enter your admin email address: ')
   apis = API_VER_MAPPING.keys()
-  apis.remove(u'oauth2')
   all_apis = {}
   for api in apis:
     version = getAPIVer(api)
