@@ -797,6 +797,7 @@ SERVICE_API_SCOPE_MAPPING = {
   u'gmail': [u'https://mail.google.com/',],
   u'groupsettings': [u'https://www.googleapis.com/auth/apps.groups.settings',],
   u'licensing': [u'https://www.googleapis.com/auth/apps.licensing',],
+  u'oauth2': [u'https://www.googleapis.com/auth/plus.login', u'https://www.googleapis.com/auth/plus.me',],
   u'reports': [u'https://www.googleapis.com/auth/admin.reports.audit.readonly', u'https://www.googleapis.com/auth/admin.reports.usage.readonly',],
   u'siteVerification': ['https://www.googleapis.com/auth/siteverification',],
   }
@@ -8707,20 +8708,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
   return full_users
 
 def OAuthInfo():
-  if len(sys.argv) > 3:
-    access_token = sys.argv[3]
-  else:
-    storage = oauth2client.file.Storage(GC_Values[GC_OAUTH2_TXT])
-    credentials = storage.get()
-    if credentials is None or credentials.invalid:
-      doRequestOAuth()
-      credentials = storage.get()
-    credentials.user_agent = GAM_INFO
-    http = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL])
-    if credentials.access_token_expired:
-      credentials.refresh(http)
-    access_token = credentials.access_token
-    print u"\nOAuth File: %s" % GC_Values[GC_OAUTH2_TXT]
+  access_token = sys.argv[3]
   oa2 = buildGAPIObject(u'oauth2')
   token_info = callGAPI(oa2, u'tokeninfo', access_token=access_token)
   print u"Client ID: %s" % token_info[u'issued_to']
