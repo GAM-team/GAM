@@ -8688,7 +8688,8 @@ def OAuthInfo():
 
 UBER_SCOPES = {
   u'gmail-v1': [u'https://mail.google.com/'],
-  u'drive-v2': [u'https://www.googleapis.com/auth/drive']
+  u'drive-v2': [u'https://www.googleapis.com/auth/drive'],
+  u'appsactivity-v1': [u'https://www.googleapis.com/auth/activity']
   }
 
 def select_default_scopes(all_apis):
