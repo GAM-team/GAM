@@ -770,7 +770,6 @@ API_VER_MAPPING = {
   u'gmail': u'v1',
   u'groupssettings': u'v1',
   u'licensing': u'v1',
-  u'oauth2': u'v2',
   u'reports': u'reports_v1',
   u'siteVerification': u'v1',
   }
@@ -8708,6 +8707,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
   return full_users
 
 def OAuthInfo():
+<<<<<<< HEAD
   access_token = sys.argv[3]
   oa2 = buildGAPIObject(u'oauth2')
   token_info = callGAPI(oa2, u'tokeninfo', access_token=access_token)
@@ -8723,9 +8723,22 @@ def OAuthInfo():
     print u'Google Apps Admin: %s' % token_info[u'email']
   except KeyError:
     print u'Google Apps Admin: Unknown'
+=======
+  # TODO eventually would be good if this did something to test admin-selected scopes
+  pass
+
+UBER_SCOPES = {
+  u'gmail-v1': [u'https://mail.google.com/'],
+  u'drive-v2': [u'https://www.googleapis.com/auth/drive'],
+  u'appsactivity-v1': [u'https://www.googleapis.com/auth/activity']
+  }
+>>>>>>> jay0lee/master
 
 def select_default_scopes(all_apis):
   for api_name, api in all_apis.items():
+    if api_name in UBER_SCOPES.keys():
+      all_apis[api_name][u'use_scopes'] = UBER_SCOPES[api_name]
+      continue
     all_apis[api_name][u'use_scopes'] = []
     scopes = api[u'auth'][u'oauth2'][u'scopes'].keys()
     if len(scopes) == 1:
@@ -8751,7 +8764,6 @@ def select_default_scopes(all_apis):
 def doRequestOAuth():
   admin_email = raw_input(u'Please enter your admin email address: ')
   apis = API_VER_MAPPING.keys()
-  apis.remove(u'oauth2')
   all_apis = {}
   for api in apis:
     version = getAPIVer(api)
