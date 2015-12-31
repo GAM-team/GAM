@@ -8707,23 +8707,6 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
   return full_users
 
 def OAuthInfo():
-<<<<<<< HEAD
-  access_token = sys.argv[3]
-  oa2 = buildGAPIObject(u'oauth2')
-  token_info = callGAPI(oa2, u'tokeninfo', access_token=access_token)
-  print u"Client ID: %s" % token_info[u'issued_to']
-  try:
-    print u"Secret: %s" % credentials.client_secret
-  except UnboundLocalError:
-    pass
-  print u'Scopes:'
-  for scope in token_info[u'scope'].split(u' '):
-    print u'  %s' % scope
-  try:
-    print u'Google Apps Admin: %s' % token_info[u'email']
-  except KeyError:
-    print u'Google Apps Admin: Unknown'
-=======
   # TODO eventually would be good if this did something to test admin-selected scopes
   pass
 
@@ -8732,7 +8715,6 @@ UBER_SCOPES = {
   u'drive-v2': [u'https://www.googleapis.com/auth/drive'],
   u'appsactivity-v1': [u'https://www.googleapis.com/auth/activity']
   }
->>>>>>> jay0lee/master
 
 def select_default_scopes(all_apis):
   for api_name, api in all_apis.items():
@@ -8764,6 +8746,7 @@ def select_default_scopes(all_apis):
 def doRequestOAuth():
   admin_email = raw_input(u'Please enter your admin email address: ')
   apis = API_VER_MAPPING.keys()
+  apis.remove(u'oauth2')
   all_apis = {}
   for api in apis:
     version = getAPIVer(api)
