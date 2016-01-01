@@ -68,6 +68,7 @@ ERROR_PREFIX = ERROR+u': '
 WARNING = u'WARNING'
 WARNING_PREFIX = WARNING+u': '
 FN_EXTRA_ARGS_TXT = u'extra-args.txt'
+FN_GAMSCOPES_JSON = u'gamscopes.json'
 FN_LAST_UPDATE_CHECK_TXT = u'lastupdatecheck.txt'
 FN_OAUTH2SERVICE_JSON = u'oauth2service.json'
 MY_CUSTOMER = u'my_customer'
@@ -90,6 +91,8 @@ GM_SYS_ENCODING = u'syen'
 GM_BATCH_QUEUE = u'batq'
 # Extra arguments to pass to GAPI functions
 GM_EXTRA_ARGS_DICT = u'exad'
+# Scopes retrieved from gamscopes.json
+GM_GAMSCOPES = u'scop'
 # Values retrieved from oauth2service.json
 GM_OAUTH2SERVICE_KEY = u'oauk'
 GM_OAUTH2SERVICE_ACCOUNT_EMAIL = u'oaae'
@@ -105,7 +108,7 @@ GM_MAP_ROLE_NAME_TO_ID = u'rn2i'
 # Dictionary mapping User ID to Name
 GM_MAP_USER_ID_TO_NAME = u'ui2n'
 # Current API scope
-GM_API_SCOPE = u'scop'
+GM_API_SCOPE = u'csco'
 #
 GM_Globals = {
   GM_SYSEXITRC: 0,
@@ -114,6 +117,7 @@ GM_Globals = {
   GM_SYS_ENCODING: sys.getfilesystemencoding() if os.name == u'nt' else u'utf-8',
   GM_BATCH_QUEUE: None,
   GM_EXTRA_ARGS_DICT:  {u'prettyPrint': False},
+  GM_GAMSCOPES: {},
   GM_OAUTH2SERVICE_KEY: None,
   GM_OAUTH2SERVICE_ACCOUNT_EMAIL:  None,
   GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID: None,
@@ -152,6 +156,8 @@ GC_DOMAIN = u'domain'
 GC_DRIVE_DIR = u'drive_dir'
 # When retrieving lists of Drive files/folders from API, how many should be retrieved in each chunk
 GC_DRIVE_MAX_RESULTS = u'drive_max_results'
+# Path to gamscopes.json
+GC_GAMSCOPES_JSON = u'gamscopes_json'
 # If no_browser is False, output_csv won't open a browser when todrive is set
 GC_NO_BROWSER = u'no_browser'
 # Disable GAM API caching
@@ -190,6 +196,7 @@ GC_Defaults = {
   GC_DOMAIN: u'',
   GC_DRIVE_DIR: u'',
   GC_DRIVE_MAX_RESULTS: 1000,
+  GC_GAMSCOPES_JSON: FN_GAMSCOPES_JSON,
   GC_NO_BROWSER: FALSE,
   GC_NO_CACHE: FALSE,
   GC_NO_UPDATE_CHECK: FALSE,
@@ -231,6 +238,7 @@ GC_VAR_INFO = {
   GC_DOMAIN: {GC_VAR_TYPE_KEY: GC_TYPE_STRING},
   GC_DRIVE_DIR: {GC_VAR_TYPE_KEY: GC_TYPE_DIRECTORY},
   GC_DRIVE_MAX_RESULTS: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_LIMITS_KEY: (1, 1000)},
+  GC_GAMSCOPES_JSON: {GC_VAR_TYPE_KEY: GC_TYPE_FILE},
   GC_NO_BROWSER: {GC_VAR_TYPE_KEY: GC_TYPE_BOOLEAN},
   GC_NO_CACHE: {GC_VAR_TYPE_KEY: GC_TYPE_BOOLEAN},
   GC_NO_UPDATE_CHECK: {GC_VAR_TYPE_KEY: GC_TYPE_BOOLEAN},
@@ -465,6 +473,7 @@ def SetGlobalVariables():
   _getOldEnvVar(GC_OAUTH2SERVICE_JSON, u'OAUTHSERVICEFILE')
   if GC_Defaults[GC_OAUTH2SERVICE_JSON].find(u'.') == -1:
     GC_Defaults[GC_OAUTH2SERVICE_JSON] += u'.json'
+  _getOldEnvVar(GC_GAMSCOPES_JSON, u'GAMSCOPESFILE')
   _getOldEnvVar(GC_DOMAIN, u'GA_DOMAIN')
   _getOldEnvVar(GC_ADMIN, u'GAM_ADMIN')
   _getOldEnvVar(GC_CUSTOMER_ID, u'CUSTOMER_ID')
@@ -507,6 +516,13 @@ def SetGlobalVariables():
     GM_Globals[GM_EXTRA_ARGS_DICT].update(dict(ea_config.items(u'extra-args')))
   if GC_Values[GC_NO_CACHE]:
     GC_Values[GC_CACHE_DIR] = None
+  while True:
+    json_string = readFile(GC_Values[GC_GAMSCOPES_JSON], continueOnError=True, displayError=True)
+    if not json_string:
+      doRequestOAuth()
+      continue
+    GM_Globals[GM_GAMSCOPES] = json.loads(json_string)
+    break
   return True
 
 def doGAMCheckForUpdates(forceCheck=False):
@@ -777,36 +793,10 @@ API_VER_MAPPING = {
 def getAPIVer(api):
   return API_VER_MAPPING.get(api, u'v1')
 
-SERVICE_API_SCOPE_MAPPING = {
-  u'admin-settings': [u'https://apps-apis.google.com/a/feeds/domain/',],
-  u'appsactivity': [u'https://www.googleapis.com/auth/activity', u'https://www.googleapis.com/auth/drive'],
-  u'calendar': [u'https://www.googleapis.com/auth/calendar',],
-  u'classroom': [u'https://www.googleapis.com/auth/classroom.courses', u'https://www.googleapis.com/auth/classroom.profile.emails', u'https://www.googleapis.com/auth/classroom.profile.photos',],
-  u'cloudprint': [u'https://www.googleapis.com/auth/cloudprint',],
-  u'datatransfer': [u'https://www.googleapis.com/auth/admin.datatransfer',],
-  u'drive': [u'https://www.googleapis.com/auth/drive',],
-  u'directory': [u'https://www.googleapis.com/auth/admin.datatransfer', u'https://www.googleapis.com/auth/admin.directory.customer', u'https://www.googleapis.com/auth/admin.directory.device.chromeos',
-                 u'https://www.googleapis.com/auth/admin.directory.device.mobile', u'https://www.googleapis.com/auth/admin.directory.device.mobile.action',
-                 u'https://www.googleapis.com/auth/admin.directory.domain', u'https://www.googleapis.com/auth/admin.directory.group', u'https://www.googleapis.com/auth/admin.directory.group.member',
-                 u'https://www.googleapis.com/auth/admin.directory.notifications', u'https://www.googleapis.com/auth/admin.directory.orgunit', u'https://www.googleapis.com/auth/admin.directory.resource.calendar',
-                 u'https://www.googleapis.com/auth/admin.directory.rolemanagement', u'https://www.googleapis.com/auth/admin.directory.user', u'https://www.googleapis.com/auth/admin.directory.user.alias',
-                 u'https://www.googleapis.com/auth/admin.directory.user.security', u'https://www.googleapis.com/auth/admin.directory.userschema',],
-  u'email-audit': [u'https://apps-apis.google.com/a/feeds/compliance/audit/',],
-  u'email-settings': [u'https://apps-apis.google.com/a/feeds/emailsettings/2.0/',],
-  u'gmail': [u'https://mail.google.com/',],
-  u'groupsettings': [u'https://www.googleapis.com/auth/apps.groups.settings',],
-  u'licensing': [u'https://www.googleapis.com/auth/apps.licensing',],
-  u'reports': [u'https://www.googleapis.com/auth/admin.reports.audit.readonly', u'https://www.googleapis.com/auth/admin.reports.usage.readonly',],
-  u'siteVerification': ['https://www.googleapis.com/auth/siteverification',],
-  }
-
-def getServiceAPIScope(api):
-  return SERVICE_API_SCOPE_MAPPING.get(api, [])
-
-def getAPIScope(service):
-  api_scopes = service._rootDesc[u'auth'][u'oauth2'][u'scopes']
-  granted_scopes = api_scopes # TODO fix to lookup from file
-  return [val for val in api_scopes if val in granted_scopes] + [u'email']
+def getServiceAPIScope(api, version=None):
+  if not version:
+    version = getAPIVer(api)
+  return GM_Globals[GM_GAMSCOPES].get(u'{0}-{1}'.format(api, version), [])
 
 def getServiceFromDiscoveryDocument(api, version, http=None):
   disc_filename = u'%s-%s.json' % (api, version)
@@ -843,15 +833,15 @@ def getOAuth2ServiceDetails():
 def buildGAPIObject(api, act_as=None, soft_errors=False):
   sub = act_as if act_as else GC_Values[GC_ADMIN]
   getOAuth2ServiceDetails()
-  GM_Globals[GM_API_SCOPE] = getServiceAPIScope(api)
+  version = getAPIVer(api)
+  if api in [u'directory', u'reports', u'datatransfer']:
+    api = u'admin'
+  GM_Globals[GM_API_SCOPE] = getServiceAPIScope(api, version)
   credentials = oauth2client.client.SignedJwtAssertionCredentials(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_EMAIL],
                                                                   GM_Globals[GM_OAUTH2SERVICE_KEY],
                                                                   scope=GM_Globals[GM_API_SCOPE], user_agent=GAM_INFO, sub=sub)
   http = credentials.authorize(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL],
                                              cache=GC_Values[GC_CACHE_DIR]))
-  version = getAPIVer(api)
-  if api in [u'directory', u'reports', u'datatransfer']:
-    api = u'admin'
   try:
     return googleapiclient.discovery.build(api, version, http=http, cache_discovery=False)
   except googleapiclient.errors.UnknownApiNameOrVersion:
@@ -8785,12 +8775,15 @@ def doRequestOAuth():
         all_apis[api][u'use_scopes'] = []
     elif selection == i+3:
       selected_scopes = [u'email']
+      json_scopes = {}
       for api in all_apis.keys():
         selected_scopes += all_apis[api][u'use_scopes']
+        json_scopes[api] = all_apis[api][u'use_scopes']
       selected_scopes = list(set(selected_scopes)) # unique only
       if len(selected_scopes) < 2:
         print u'YOU MUST SELECT AT LEAST ONE SCOPE'
         continue
+      writeFile(GC_Values[GC_GAMSCOPES_JSON], json.dumps(json_scopes))
       break
     elif selection >= 0 and selection < len(all_apis.keys()):
       api = all_apis.keys()[selection]
