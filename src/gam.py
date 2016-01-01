@@ -4812,12 +4812,12 @@ def getSignature(users):
       user = user[:user.find(u'@')]
     else:
       emailsettings.domain = GC_Values[GC_DOMAIN]
-    signature = callGData(emailsettings, u'GetSignature', soft_errors=True, username=user)
-    try:
-      sys.stderr.write(u"User %s signature:\n  " % (user+u'@'+emailsettings.domain))
-      print convertUTF8(u" %s" % signature[u'signature'])
-    except TypeError:
-      pass
+    result = callGData(emailsettings, u'GetSignature', soft_errors=True, username=user)
+    signature = result.get(u'signature', u'None') if result else u'None'
+    if not signature:
+      signature = u'None'
+    sys.stdout.write(u"User %s signature:\n  " % (user+u'@'+emailsettings.domain))
+    print convertUTF8(u" %s" % signature)
 
 def doWebClips(users):
   if sys.argv[4].lower() in true_values:
