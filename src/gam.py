@@ -8742,9 +8742,7 @@ def select_default_scopes(apis):
   return apis
 
 def doRequestOAuth():
-  admin_email = raw_input(u'Please enter your admin email address: ')
   apis = API_VER_MAPPING.keys()
-  apis.remove(u'oauth2')
   all_apis = {}
   for api in apis:
     version = getAPIVer(api)
@@ -8845,7 +8843,7 @@ def doRequestOAuth():
             break
           os.system([u'clear', u'cls'][os.name == u'nt'])
       os.system([u'clear', u'cls'][os.name == u'nt'])
-  print u'Please authorize your client id for the %s scopes:' % (len(selected_scopes))
+  print u'Please authorize your service account client id for the %s scopes:' % (len(selected_scopes))
   print
   print u','.join(selected_scopes)
 
