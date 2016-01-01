@@ -560,7 +560,7 @@ def doGAMVersion():
                                                                                                                          GM_Globals[GM_GAM_PATH])
 
 def tryOAuth(gdataObject, scope, soft_errors=False):
-#  scope.append(u'email') #TODO: What is this for?
+  scope.append(u'email')
   credentials = oauth2client.client.SignedJwtAssertionCredentials(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_EMAIL],
                                                                   GM_Globals[GM_OAUTH2SERVICE_KEY],
                                                                   scope=scope, user_agent=GAM_INFO, sub=GC_Values[GC_ADMIN])
