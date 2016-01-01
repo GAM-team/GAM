@@ -8699,8 +8699,11 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
   return full_users
 
 def OAuthInfo():
-  # TODO eventually would be good if this did something to test admin-selected scopes
-  pass
+  print u'API Scopes'
+  for api in sorted(GM_Globals[GM_GAMSCOPES].keys()):
+    print u'  API: {0}'.format(api)
+    for scope in GM_Globals[GM_GAMSCOPES][api]:
+      print u'    {0}'.format(scope)    
 
 UBER_SCOPES = {
   u'gmail-v1': [u'https://mail.google.com/'],
