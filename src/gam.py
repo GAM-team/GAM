@@ -121,7 +121,7 @@ GM_Globals = {
   GM_EXTRA_ARGS_DICT:  {u'prettyPrint': False},
   GM_GAMSCOPES_BY_API: {},
   GM_GAMSCOPES_LIST: [],
-  GM_CURRENT_API_SCOPES: None,
+  GM_CURRENT_API_SCOPES: [],
   GM_GAMSCOPES_CREATED: False,
   GM_OAUTH2SERVICE_KEY: None,
   GM_OAUTH2SERVICE_ACCOUNT_EMAIL:  None,
@@ -269,6 +269,7 @@ MESSAGE_NO_PYTHON_SSL = u'You don\'t have the Python SSL module installed so we 
 MESSAGE_NO_SCOPES_FOR_API = u'There are no scopes authorized for API {0}-{1}; please run gam oauth create'
 MESSAGE_NO_TRANSFER_LACK_OF_DISK_SPACE = u'Cowardly refusing to perform migration due to lack of target drive space. Source size: {0}mb Target Free: {1}mb'
 MESSAGE_OAUTH2SERVICE_JSON_INVALID = u'The file {0} is missing required keys (client_email, client_id or private_key).'
+MESSAGE_PLEASE_AUTHORIZE_SERVIE_ACCOUNT = u'Please authorize your service account client id for the {} scopes:'
 MESSAGE_REQUEST_COMPLETED_NO_FILES = u'Request completed but no results/files were returned, try requesting again'
 MESSAGE_REQUEST_NOT_COMPLETE = u'Request needs to be completed before downloading, current status is: {0}'
 MESSAGE_RESULTS_TOO_LARGE_FOR_GOOGLE_SPREADSHEET = u'Results are too large for Google Spreadsheets. Uploading as a regular CSV file.'
@@ -527,7 +528,7 @@ def SetGlobalVariables():
   if not json_string:
     doRequestOAuth()
   elif not validateSetGAMScopes(json.loads(json_string)):
-    systemErrorExit(17, MESSAGE_GAMSCOPES_JSON_INVALID.format(GC_Values[GC_GAMSCOPES_JSON]))
+    systemErrorExit(19, MESSAGE_GAMSCOPES_JSON_INVALID.format(GC_Values[GC_GAMSCOPES_JSON]))
   return True
 
 def doGAMCheckForUpdates(forceCheck=False):
@@ -583,7 +584,7 @@ def doGAMVersion():
 def tryOAuth(gdataObject, soft_errors=False):
   credentials = oauth2client.client.SignedJwtAssertionCredentials(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_EMAIL],
                                                                   GM_Globals[GM_OAUTH2SERVICE_KEY],
-                                                                  scope=GM_Globals[GM_GAMSCOPES_LIST], user_agent=GAM_INFO, sub=GC_Values[GC_ADMIN])
+                                                                  scope=GM_Globals[GM_CURRENT_API_SCOPES], user_agent=GAM_INFO, sub=GC_Values[GC_ADMIN])
   http = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL],
                        cache=GC_Values[GC_CACHE_DIR])
   try:
@@ -846,7 +847,7 @@ def buildGAPIObject(api, act_as=None, soft_errors=False):
   setCurrentAPIScopes(api, version)
   credentials = oauth2client.client.SignedJwtAssertionCredentials(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_EMAIL],
                                                                   GM_Globals[GM_OAUTH2SERVICE_KEY],
-                                                                  scope=GM_Globals[GM_GAMSCOPES_LIST], user_agent=GAM_INFO, sub=sub)
+                                                                  scope=GM_Globals[GM_CURRENT_API_SCOPES], user_agent=GAM_INFO, sub=sub)
   http = credentials.authorize(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL],
                                              cache=GC_Values[GC_CACHE_DIR]))
   try:
@@ -8788,7 +8789,7 @@ def doRequestOAuth():
   if GM_Globals[GM_GAMSCOPES_BY_API]:
     for api in GM_Globals[GM_GAMSCOPES_BY_API]:
       all_apis[api][u'use_scopes'] = GM_Globals[GM_GAMSCOPES_BY_API][api][u'use_scopes']
-  os.system([u'clear', u'cls'][os.name == u'nt'])
+  os.system([u'clear', u'cls'][GM_Globals[GM_WINDOWS]])
   while True:
     print u'Select the APIs to use with GAM.'
     print
@@ -8833,7 +8834,7 @@ def doRequestOAuth():
         else:
           all_apis[api][u'use_scopes'] = all_apis[api][u'auth'][u'oauth2'][u'scopes']
       else:
-        os.system([u'clear', u'cls'][os.name == u'nt'])
+        os.system([u'clear', u'cls'][GM_Globals[GM_WINDOWS]])
         while True:
           print
           x = 0
@@ -8874,9 +8875,9 @@ def doRequestOAuth():
             all_apis[api][u'use_scopes'] = []
           elif selection == x+3:
             break
-          os.system([u'clear', u'cls'][os.name == u'nt'])
-      os.system([u'clear', u'cls'][os.name == u'nt'])
-  print u'Please authorize your service account client id for the %s scopes:' % (len(GM_Globals[GM_GAMSCOPES_LIST]))
+          os.system([u'clear', u'cls'][GM_Globals[GM_WINDOWS]])
+      os.system([u'clear', u'cls'][GM_Globals[GM_WINDOWS]])
+  print MESSAGE_PLEASE_AUTHORIZE_SERVIE_ACCOUNT.format(len(GM_Globals[GM_GAMSCOPES_LIST]))
   print
   print u','.join(GM_Globals[GM_GAMSCOPES_LIST])
 
