@@ -266,6 +266,7 @@ MESSAGE_REQUEST_COMPLETED_NO_FILES = u'Request completed but no results/files we
 MESSAGE_REQUEST_NOT_COMPLETE = u'Request needs to be completed before downloading, current status is: {0}'
 MESSAGE_RESULTS_TOO_LARGE_FOR_GOOGLE_SPREADSHEET = u'Results are too large for Google Spreadsheets. Uploading as a regular CSV file.'
 MESSAGE_WIKI_INSTRUCTIONS_OAUTH2SERVICE_JSON = u'Please follow the instructions at this site to setup a Service Account.'
+MESSAGE_GAMSCOPES_JSON_INVALID = u'The file {0} is missing the required key (scopes) or has an invalid format.'
 MESSAGE_OAUTH2SERVICE_JSON_INVALID = u'The file {0} is missing required keys (client_email, client_id or private_key).'
 
 def convertUTF8(data):
@@ -521,7 +522,10 @@ def SetGlobalVariables():
     if not json_string:
       doRequestOAuth()
       continue
-    GM_Globals[GM_GAMSCOPES] = json.loads(json_string)
+    json_data = json.loads(json_string)
+    if not isinstance(json_data, dict) or (u'scopes' not in json_data) or (not isinstance(json_data[u'scopes'], dict)):
+      systemErrorExit(17, MESSAGE_GAMSCOPES_JSON_INVALID.format(GC_Values[GC_GAMSCOPES_JSON]))
+    GM_Globals[GM_GAMSCOPES] = json_data[u'scopes']
     break
   return True
 
@@ -8775,10 +8779,10 @@ def doRequestOAuth():
         all_apis[api][u'use_scopes'] = []
     elif selection == i+3:
       selected_scopes = [u'email']
-      json_scopes = {}
+      json_scopes = {u'scopes': {}}
       for api in all_apis.keys():
         selected_scopes += all_apis[api][u'use_scopes']
-        json_scopes[api] = all_apis[api][u'use_scopes']
+        json_scopes[u'scopes'][api] = all_apis[api][u'use_scopes']
       selected_scopes = list(set(selected_scopes)) # unique only
       if len(selected_scopes) < 2:
         print u'YOU MUST SELECT AT LEAST ONE SCOPE'
