@@ -8712,6 +8712,17 @@ def OAuthInfo():
     for scope in GM_Globals[GM_GAMSCOPES][api]:
       print u'    {0}'.format(scope)
 
+def doDeleteOAuth():
+  sys.stdout.write(u'Scopes file: {0}, will be Deleted in 3...'.format(GC_Values[GC_GAMSCOPES_JSON]))
+  time.sleep(1)
+  sys.stdout.write(u'2...')
+  time.sleep(1)
+  sys.stdout.write(u'1...')
+  time.sleep(1)
+  sys.stdout.write(u'boom!\n')
+  os.remove(GC_Values[GC_GAMSCOPES_JSON])
+  sys.stdout.write(u'Scopes file: {0}, Deleted\n'.format(GC_Values[GC_GAMSCOPES_JSON]))
+
 UBER_SCOPES = {
   u'gmail-v1': [u'https://mail.google.com/'],
   u'drive-v2': [u'https://www.googleapis.com/auth/drive'],
@@ -8798,6 +8809,7 @@ def doRequestOAuth():
         print u'YOU MUST SELECT AT LEAST ONE SCOPE'
         continue
       writeFile(GC_Values[GC_GAMSCOPES_JSON], json.dumps(json_scopes))
+      print u'Scopes file: {0}, Created'.format(GC_Values[GC_GAMSCOPES_JSON])
       GM_Globals[GM_GAMSCOPES_CREATED] = True
       break
     elif selection >= 0 and selection < len(all_apis.keys()):
@@ -9228,6 +9240,8 @@ try:
         doRequestOAuth()
     elif sys.argv[2].lower() == u'info':
       OAuthInfo()
+    elif sys.argv[2].lower() in [u'delete', u'revoke']:
+      doDeleteOAuth()
     else:
       print u'ERROR: %s is not a valid argument for "gam oauth"' % sys.argv[2]
       sys.exit(2)
