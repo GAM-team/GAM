@@ -73,7 +73,6 @@ FN_LAST_UPDATE_CHECK_TXT = u'lastupdatecheck.txt'
 FN_OAUTH2SERVICE_JSON = u'oauth2service.json'
 MY_CUSTOMER = u'my_customer'
 UNKNOWN = u'Unknown'
-
 #
 # Global variables
 #
@@ -93,6 +92,8 @@ GM_BATCH_QUEUE = u'batq'
 GM_EXTRA_ARGS_DICT = u'exad'
 # Scopes retrieved from gamscopes.json
 GM_GAMSCOPES = u'scop'
+# gamscopes.json created
+GM_GAMSCOPES_CREATED = u'gscr'
 # Values retrieved from oauth2service.json
 GM_OAUTH2SERVICE_KEY = u'oauk'
 GM_OAUTH2SERVICE_ACCOUNT_EMAIL = u'oaae'
@@ -118,6 +119,7 @@ GM_Globals = {
   GM_BATCH_QUEUE: None,
   GM_EXTRA_ARGS_DICT:  {u'prettyPrint': False},
   GM_GAMSCOPES: {},
+  GM_GAMSCOPES_CREATED: False,
   GM_OAUTH2SERVICE_KEY: None,
   GM_OAUTH2SERVICE_ACCOUNT_EMAIL:  None,
   GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID: None,
@@ -517,6 +519,7 @@ def SetGlobalVariables():
     GM_Globals[GM_EXTRA_ARGS_DICT].update(dict(ea_config.items(u'extra-args')))
   if GC_Values[GC_NO_CACHE]:
     GC_Values[GC_CACHE_DIR] = None
+  GM_Globals[GM_GAMSCOPES_CREATED] = False  
   while True:
     json_string = readFile(GC_Values[GC_GAMSCOPES_JSON], continueOnError=True, displayError=True)
     if not json_string:
@@ -8791,6 +8794,7 @@ def doRequestOAuth():
         print u'YOU MUST SELECT AT LEAST ONE SCOPE'
         continue
       writeFile(GC_Values[GC_GAMSCOPES_JSON], json.dumps(json_scopes))
+      GM_Globals[GM_GAMSCOPES_CREATED] = True
       break
     elif selection >= 0 and selection < len(all_apis.keys()):
       api = all_apis.keys()[selection]
@@ -9216,7 +9220,8 @@ try:
     sys.exit(0)
   elif sys.argv[1].lower() in [u'oauth', u'oauth2']:
     if sys.argv[2].lower() in [u'request', u'create']:
-      doRequestOAuth()
+      if not GM_Globals[GM_GAMSCOPES_CREATED]:
+        doRequestOAuth()
     elif sys.argv[2].lower() == u'info':
       OAuthInfo()
     else:
