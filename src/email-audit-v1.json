@@ -6,7 +6,7 @@
  "version": "v1",
  "revision": "20130823",
  "title": "Email Audit API",
- "description": "Lets you peform Google Apps Email Audits",
+ "description": "Lets you peform Google Apps email audits",
  "ownerDomain": "google.com",
  "ownerName": "Google",
  "icons": {

@@ -832,7 +832,6 @@ def getOAuth2ServiceDetails():
       systemErrorExit(6, None)
     json_data = json.loads(json_string)
     try:
-      # new format with config and key in the .json file...
       GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_EMAIL] = json_data[u'client_email']
       GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID] = json_data[u'client_id']
       GM_Globals[GM_OAUTH2SERVICE_KEY] = json_data[u'private_key']
@@ -8715,15 +8714,15 @@ UBER_SCOPES = {
   u'appsactivity-v1': [u'https://www.googleapis.com/auth/activity']
   }
 
-def select_default_scopes(all_apis):
-  for api_name, api in all_apis.items():
+def select_default_scopes(apis):
+  for api_name, api in apis.items():
     if api_name in UBER_SCOPES.keys():
-      all_apis[api_name][u'use_scopes'] = UBER_SCOPES[api_name]
+      apis[api_name][u'use_scopes'] = UBER_SCOPES[api_name]
       continue
-    all_apis[api_name][u'use_scopes'] = []
+    apis[api_name][u'use_scopes'] = []
     scopes = api[u'auth'][u'oauth2'][u'scopes'].keys()
     if len(scopes) == 1:
-      all_apis[api_name][u'use_scopes'] += scopes
+      apis[api_name][u'use_scopes'] += scopes
       continue
     all_readonly = True
     for scope in api[u'auth'][u'oauth2'][u'scopes'].keys():
@@ -8736,11 +8735,11 @@ def select_default_scopes(all_apis):
         all_readonly = False
         continue
       else:
-        all_apis[api_name][u'use_scopes'].append(scope)
+        apis[api_name][u'use_scopes'].append(scope)
         all_readonly = False
     if all_readonly:
-      all_apis[api_name][u'use_scopes'] += scopes
-  return all_apis
+      apis[api_name][u'use_scopes'] += scopes
+  return apis
 
 def doRequestOAuth():
   admin_email = raw_input(u'Please enter your admin email address: ')
@@ -8776,24 +8775,35 @@ def doRequestOAuth():
         select_value = u' '
       print u'[%s]  %s) %s (%s/%s scopes)' % (select_value, api[u'index'], api[u'title'], num_scopes_selected, num_scopes_total)
     print
-    print u'     %s) Select Defaults' % (i+1)
+    print u'     %s) Select defaults for all APIs (allow all GAM commands)' % (i+1)
     print u'     %s) Unselect all APIs' % (i+2)
     print u'     %s) Continue' % (i+3)
     print
     selection = int(raw_input(u'Your selection: '))
-    if int(selection) == i+1:
+    if int(selection) == i+1: # defaults
       all_apis = select_default_scopes(all_apis)
-    elif selection == i+2:
+    elif selection == i+2: # unselect all
       for api in all_apis.keys():
         all_apis[api][u'use_scopes'] = []
-    for api in all_apis.keys():
-      if all_apis[api][u'index'] == selection:
-        if len(all_apis[api][u'auth'][u'oauth2'][u'scopes']) == 1:
-          if len(all_apis[api][u'use_scopes']) == 1:
-            all_apis[api][u'use_scopes'] = []
-          else:
-            all_apis[api][u'use_scopes'] = all_apis[api][u'auth'][u'oauth2'][u'scopes']
+    elif selection == i+3:
+      selected_scopes = [u'email']
+      for api in all_apis.keys():
+        selected_scopes += all_apis[api][u'use_scopes']
+      selected_scopes = list(set(selected_scopes)) # unique only
+      if len(selected_scopes) < 2:
+        print u'YOU MUST SELECT AT LEAST ONE SCOPE'
+        continue
+      break
+    elif selection >= 0 and selection < len(all_apis.keys()):
+      api = all_apis.keys()[selection]
+      if len(all_apis[api][u'auth'][u'oauth2'][u'scopes']) == 1:
+        if len(all_apis[api][u'use_scopes']) == 1:
+          all_apis[api][u'use_scopes'] = []
         else:
+          all_apis[api][u'use_scopes'] = all_apis[api][u'auth'][u'oauth2'][u'scopes']
+      else:
+        os.system([u'clear', u'cls'][os.name == u'nt'])
+        while True:
           print
           x = 0
           for scope in all_apis[api][u'auth'][u'oauth2'][u'scopes'].keys():
@@ -8803,7 +8813,41 @@ def doRequestOAuth():
               select_value = u' '
             print u'[%s]  %s) %s\n          %s\n' % (select_value, x, all_apis[api][u'auth'][u'oauth2'][u'scopes'][scope][u'description'], scope)
             x += 1
+          print u'     %s) Select defaults for this API (allow all GAM commands)' % (x)
+          print u'     %s) Select read-only scopes' % (x+1)
+          print u'     %s) Unselect all scopes' % (x+2)
+          print u'     %s) Back to all APIs' % (x+3)
           print
+          selection = raw_input(u'Your selection: ')
+          try:
+            selection = int(selection)
+          except:
+            print u'ERROR: please enter numbers only'
+            continue
+          num_scopes = len(all_apis[api][u'auth'][u'oauth2'][u'scopes'].keys())
+          if selection >= 0 and selection < num_scopes:
+            if all_apis[api][u'auth'][u'oauth2'][u'scopes'].keys()[selection] in all_apis[api][u'use_scopes']:
+              all_apis[api][u'use_scopes'].remove(all_apis[api][u'auth'][u'oauth2'][u'scopes'].keys()[selection])
+            else:
+              all_apis[api][u'use_scopes'].append(all_apis[api][u'auth'][u'oauth2'][u'scopes'].keys()[selection])
+          elif selection == x:
+            just_this_api = {api: all_apis[api]}
+            just_this_api = select_default_scopes(just_this_api)
+            all_apis[api][u'use_scopes'] = just_this_api[api][u'use_scopes']
+          elif selection == x+1:
+            all_apis[api][u'use_scopes'] = []
+            for scope in all_apis[api][u'auth'][u'oauth2'][u'scopes'].keys():
+              if scope.endswith(u'.readonly'):
+                all_apis[api][u'use_scopes'].append(scope)
+          elif selection == x+2:
+            all_apis[api][u'use_scopes'] = []
+          elif selection == x+3:
+            break
+          os.system([u'clear', u'cls'][os.name == u'nt'])
+      os.system([u'clear', u'cls'][os.name == u'nt'])
+  print u'Please authorize your client id for the %s scopes:' % (len(selected_scopes))
+  print
+  print u','.join(selected_scopes)
 
 def batch_worker():
   while True:
