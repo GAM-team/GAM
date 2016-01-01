@@ -255,21 +255,22 @@ GC_VAR_INFO = {
   GC_USER_MAX_RESULTS: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_LIMITS_KEY: (1, 500)},
   }
 
-MESSAGE_CLIENT_API_ACCESS_DENIED = u'Access Denied. Please make sure the Client Name:\n\n{0}\n\nis authorized for the API Scope(s):\n\n{1}\n\nThis can be configured in your Control Panel under:\n\nSecurity -->\nAdvanced Settings -->\nManage API client access'
 MESSAGE_BATCH_CSV_DASH_DEBUG_INCOMPATIBLE = u'"gam {0} - ..." is not compatible with debugging. Disable debugging by deleting debug.gam and try again.'
+MESSAGE_CLIENT_API_ACCESS_DENIED = u'Access Denied. Please make sure the Client Name:\n\n{0}\n\nis authorized for the API Scope(s):\n\n{1}\n\nThis can be configured in your Control Panel under:\n\nSecurity -->\nAdvanced Settings -->\nManage API client access'
+MESSAGE_GAMSCOPES_JSON_INVALID = u'The file {0} is missing the required key (scopes) or has an invalid format.'
 MESSAGE_GAM_EXITING_FOR_UPDATE = u'GAM is now exiting so that you can overwrite this old version with the latest release'
 MESSAGE_GAM_OUT_OF_MEMORY = u'GAM has run out of memory. If this is a large Google Apps instance, you should use a 64-bit version of GAM on Windows or a 64-bit version of Python on other systems.'
 MESSAGE_HEADER_NOT_FOUND_IN_CSV_HEADERS = u'Header "{0}" not found in CSV headers of "{1}".'
 MESSAGE_HIT_CONTROL_C_TO_UPDATE = u'\n\nHit CTRL+C to visit the GAM website and download the latest release or wait 15 seconds continue with this boring old version. GAM won\'t bother you with this announcement for 1 week or you can create a file named noupdatecheck.txt in the same location as gam.py or gam.exe and GAM won\'t ever check for updates.'
 MESSAGE_NO_DISCOVERY_INFORMATION = u'No online discovery doc and {0} does not exist locally'
 MESSAGE_NO_PYTHON_SSL = u'You don\'t have the Python SSL module installed so we can\'t verify SSL Certificates. You can fix this by installing the Python SSL module or you can live on the edge and turn SSL validation off by creating a file named noverifyssl.txt in the same location as gam.exe / gam.py'
+MESSAGE_NO_SCOPES_FOR_API = u'There are no scopes authorized for API {0}-{1}; please run gam oauth create'
 MESSAGE_NO_TRANSFER_LACK_OF_DISK_SPACE = u'Cowardly refusing to perform migration due to lack of target drive space. Source size: {0}mb Target Free: {1}mb'
+MESSAGE_OAUTH2SERVICE_JSON_INVALID = u'The file {0} is missing required keys (client_email, client_id or private_key).'
 MESSAGE_REQUEST_COMPLETED_NO_FILES = u'Request completed but no results/files were returned, try requesting again'
 MESSAGE_REQUEST_NOT_COMPLETE = u'Request needs to be completed before downloading, current status is: {0}'
 MESSAGE_RESULTS_TOO_LARGE_FOR_GOOGLE_SPREADSHEET = u'Results are too large for Google Spreadsheets. Uploading as a regular CSV file.'
 MESSAGE_WIKI_INSTRUCTIONS_OAUTH2SERVICE_JSON = u'Please follow the instructions at this site to setup a Service Account.'
-MESSAGE_GAMSCOPES_JSON_INVALID = u'The file {0} is missing the required key (scopes) or has an invalid format.'
-MESSAGE_OAUTH2SERVICE_JSON_INVALID = u'The file {0} is missing required keys (client_email, client_id or private_key).'
 
 def convertUTF8(data):
   import collections
@@ -519,7 +520,7 @@ def SetGlobalVariables():
     GM_Globals[GM_EXTRA_ARGS_DICT].update(dict(ea_config.items(u'extra-args')))
   if GC_Values[GC_NO_CACHE]:
     GC_Values[GC_CACHE_DIR] = None
-  GM_Globals[GM_GAMSCOPES_CREATED] = False  
+  GM_Globals[GM_GAMSCOPES_CREATED] = False
   while True:
     json_string = readFile(GC_Values[GC_GAMSCOPES_JSON], continueOnError=True, displayError=True)
     if not json_string:
@@ -803,7 +804,10 @@ def getAPIVer(api):
 def getServiceAPIScope(api, version=None):
   if not version:
     version = getAPIVer(api)
-  return GM_Globals[GM_GAMSCOPES].get(u'{0}-{1}'.format(api, version), [])
+  scopes = GM_Globals[GM_GAMSCOPES].get(u'{0}-{1}'.format(api, version), [])
+  if scopes:
+    return scopes
+  systemErrorExit(15, MESSAGE_NO_SCOPES_FOR_API.format(api, version))
 
 def getServiceFromDiscoveryDocument(api, version, http=None):
   disc_filename = u'%s-%s.json' % (api, version)
@@ -8706,7 +8710,7 @@ def OAuthInfo():
   for api in sorted(GM_Globals[GM_GAMSCOPES].keys()):
     print u'  API: {0}'.format(api)
     for scope in GM_Globals[GM_GAMSCOPES][api]:
-      print u'    {0}'.format(scope)    
+      print u'    {0}'.format(scope)
 
 UBER_SCOPES = {
   u'gmail-v1': [u'https://mail.google.com/'],
