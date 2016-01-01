@@ -527,9 +527,9 @@ def SetGlobalVariables():
       doRequestOAuth()
       continue
     json_data = json.loads(json_string)
-    if not isinstance(json_data, dict) or (u'scopes' not in json_data) or (not isinstance(json_data[u'scopes'], dict)):
+    if not isinstance(json_data, dict):
       systemErrorExit(17, MESSAGE_GAMSCOPES_JSON_INVALID.format(GC_Values[GC_GAMSCOPES_JSON]))
-    GM_Globals[GM_GAMSCOPES] = json_data[u'scopes']
+    GM_Globals[GM_GAMSCOPES] = json_data
     break
   return True
 
@@ -804,7 +804,8 @@ def getAPIVer(api):
 def getServiceAPIScope(api, version=None):
   if not version:
     version = getAPIVer(api)
-  scopes = GM_Globals[GM_GAMSCOPES].get(u'{0}-{1}'.format(api, version), [])
+  apiData = GM_Globals[GM_GAMSCOPES].get(u'{0}-{1}'.format(api, version), {})
+  scopes = apiData.get(u'use_scopes', [])
   if scopes:
     return scopes
   systemErrorExit(15, MESSAGE_NO_SCOPES_FOR_API.format(api, version))
@@ -8709,17 +8710,21 @@ def OAuthInfo():
   print u'API Scopes'
   for api in sorted(GM_Globals[GM_GAMSCOPES].keys()):
     print u'  API: {0}'.format(api)
-    for scope in GM_Globals[GM_GAMSCOPES][api]:
+    for scope in GM_Globals[GM_GAMSCOPES][api][u'use_scopes']:
       print u'    {0}'.format(scope)
 
 def doDeleteOAuth():
   sys.stdout.write(u'Scopes file: {0}, will be Deleted in 3...'.format(GC_Values[GC_GAMSCOPES_JSON]))
+  sys.stdout.flush()
   time.sleep(1)
   sys.stdout.write(u'2...')
+  sys.stdout.flush()
   time.sleep(1)
   sys.stdout.write(u'1...')
+  sys.stdout.flush()
   time.sleep(1)
   sys.stdout.write(u'boom!\n')
+  sys.stdout.flush()
   os.remove(GC_Values[GC_GAMSCOPES_JSON])
   sys.stdout.write(u'Scopes file: {0}, Deleted\n'.format(GC_Values[GC_GAMSCOPES_JSON]))
 
@@ -8775,6 +8780,9 @@ def doRequestOAuth():
     all_apis[api_name][u'index'] = i
     i += 1
   all_apis = select_default_scopes(all_apis)
+  if GM_Globals[GM_GAMSCOPES]:
+    for api in GM_Globals[GM_GAMSCOPES]:
+      all_apis[api][u'use_scopes'] = GM_Globals[GM_GAMSCOPES][api][u'use_scopes']
   os.system([u'clear', u'cls'][os.name == u'nt'])
   while True:
     print u'Select the APIs to use with GAM.'
@@ -8800,10 +8808,10 @@ def doRequestOAuth():
         all_apis[api][u'use_scopes'] = []
     elif selection == i+3:
       selected_scopes = [u'email']
-      json_scopes = {u'scopes': {}}
+      json_scopes = {}
       for api in all_apis.keys():
         selected_scopes += all_apis[api][u'use_scopes']
-        json_scopes[u'scopes'][api] = all_apis[api][u'use_scopes']
+        json_scopes[api] = {u'use_scopes': all_apis[api][u'use_scopes']}
       selected_scopes = list(set(selected_scopes)) # unique only
       if len(selected_scopes) < 2:
         print u'YOU MUST SELECT AT LEAST ONE SCOPE'
