@@ -242,7 +242,7 @@ GC_VAR_INFO = {
 MESSAGE_BATCH_CSV_DASH_DEBUG_INCOMPATIBLE = u'"gam {0} - ..." is not compatible with debugging. Disable debugging by deleting debug.gam and try again.'
 MESSAGE_CLIENT_API_ACCESS_CONFIG = u'API access is configured in your Control Panel under: Security-Show more-Advanced settings-Manage API client access'
 MESSAGE_CLIENT_API_ACCESS_DENIED = u'API access denied. Please make sure the service account ID: {0} is authorized for the API Scope(s): {1}'
-MESSAGE_GAMSCOPES_JSON_INVALID = u'The file {0} is missing the required key (scopes) or has an invalid format.'
+MESSAGE_GAMSCOPES_JSON_INVALID = u'The file {0} has an invalid format.'
 MESSAGE_GAM_EXITING_FOR_UPDATE = u'GAM is now exiting so that you can overwrite this old version with the latest release'
 MESSAGE_GAM_OUT_OF_MEMORY = u'GAM has run out of memory. If this is a large Google Apps instance, you should use a 64-bit version of GAM on Windows or a 64-bit version of Python on other systems.'
 MESSAGE_HEADER_NOT_FOUND_IN_CSV_HEADERS = u'Header "{0}" not found in CSV headers of "{1}".'
@@ -8852,8 +8852,8 @@ def doRequestOAuth():
     print
     print u'     %2d) Select defaults for all APIs (allow all GAM commands)' % (i)
     print u'     %2d) Unselect all APIs' % (i+1)
-    print u'     %2d) Continue' % (i+2)
-    print u'     %2d) Cancel' % (i+3)
+    print u'     %2d) Cancel' % (i+2)
+    print u'     %2d) Continue' % (i+3)
     print
     selection = getSelection(i+3)
     if selection == i: # defaults
@@ -8861,7 +8861,7 @@ def doRequestOAuth():
     elif selection == i+1: # unselect all
       for api in all_apis.keys():
         all_apis[api][u'use_scopes'] = []
-    elif selection == i+2: # continue
+    elif selection == i+3: # continue
       GM_Globals[GM_GAMSCOPES_BY_API] = {}
       GM_Globals[GM_GAMSCOPES_LIST] = []
       for api in all_apis.keys():
@@ -8874,7 +8874,7 @@ def doRequestOAuth():
       writeFile(GC_Values[GC_GAMSCOPES_JSON], json.dumps(GM_Globals[GM_GAMSCOPES_BY_API]))
       print u'Scopes file: {0}, Created'.format(GC_Values[GC_GAMSCOPES_JSON])
       break
-    elif selection == i+3: # cancel
+    elif selection == i+2: # cancel
       return
     else: # select
       api = all_apis.keys()[selection]
@@ -8882,7 +8882,7 @@ def doRequestOAuth():
         if len(all_apis[api][u'use_scopes']) == 1:
           all_apis[api][u'use_scopes'] = []
         else:
-          all_apis[api][u'use_scopes'] = all_apis[api][u'auth'][u'oauth2'][u'scopes']
+          all_apis[api][u'use_scopes'] = all_apis[api][u'auth'][u'oauth2'][u'scopes'].keys()
       else:
         while True:
           os.system([u'clear', u'cls'][GM_Globals[GM_WINDOWS]])
@@ -8898,8 +8898,8 @@ def doRequestOAuth():
           print u'     %2d) Select defaults for this API (allow all GAM commands)' % (x)
           print u'     %2d) Select read-only scopes' % (x+1)
           print u'     %2d) Unselect all scopes' % (x+2)
-          print u'     %2d) Back to all APIs' % (x+3)
-          print u'     %2d) Cancel' % (x+4)
+          print u'     %2d) Cancel' % (x+3)
+          print u'     %2d) Back to all APIs' % (x+4)
           print
           selection = getSelection(x+4)
           if selection < x: # select
@@ -8918,7 +8918,7 @@ def doRequestOAuth():
                 all_apis[api][u'use_scopes'].append(scope)
           elif selection == x+2: # unselect all
             all_apis[api][u'use_scopes'] = []
-          elif selection == x+3: # back
+          elif selection == x+4: # back
             break
           else: # cancel
             return
