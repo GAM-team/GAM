@@ -239,7 +239,6 @@ GC_VAR_INFO = {
   GC_USER_MAX_RESULTS: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_ENVVAR_KEY: u'GAM_USER_MAX_RESULTS', GC_VAR_LIMITS_KEY: (1, 500)},
   }
 
-
 MESSAGE_BATCH_CSV_DASH_DEBUG_INCOMPATIBLE = u'"gam {0} - ..." is not compatible with debugging. Disable debugging by deleting debug.gam and try again.'
 MESSAGE_CLIENT_API_ACCESS_DENIED = u'Access Denied. Please make sure the Client Name:\n\n{0}\n\nis authorized for the API Scope(s):\n\n{1}\n\nThis can be configured in your Control Panel under:\n\nSecurity -->\nAdvanced Settings -->\nManage API client access'
 MESSAGE_GAMSCOPES_JSON_INVALID = u'The file {0} is missing the required key (scopes) or has an invalid format.'
@@ -518,13 +517,13 @@ def SetGlobalVariables():
   GM_Globals[GM_OAUTH2SERVICE_KEY] = None
   GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_EMAIL] = None
   GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID] = None
-  if GC_Values[GC_NO_CACHE]:
-    GC_Values[GC_CACHE_DIR] = None
   json_string = readFile(GC_Values[GC_GAMSCOPES_JSON], continueOnError=True, displayError=False)
   if json_string and not validateSetGAMScopes(json.loads(json_string)):
     systemErrorExit(19, MESSAGE_GAMSCOPES_JSON_INVALID.format(GC_Values[GC_GAMSCOPES_JSON]))
   _chkCfgDirectories()
   _chkCfgFiles()
+  if GC_Values[GC_NO_CACHE]:
+    GC_Values[GC_CACHE_DIR] = None
   return True
 
 def doGAMCheckForUpdates(forceCheck=False):
