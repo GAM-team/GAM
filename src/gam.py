@@ -95,8 +95,6 @@ GM_GAMSCOPES_BY_API = u'scop'
 GM_GAMSCOPES_LIST = u'scof'
 # Current API scope
 GM_CURRENT_API_SCOPES = u'scoc'
-# gamscopes.json created
-GM_GAMSCOPES_CREATED = u'gscr'
 # Values retrieved from oauth2service.json
 GM_OAUTH2SERVICE_KEY = u'oauk'
 GM_OAUTH2SERVICE_ACCOUNT_EMAIL = u'oaae'
@@ -122,7 +120,6 @@ GM_Globals = {
   GM_GAMSCOPES_BY_API: {},
   GM_GAMSCOPES_LIST: [],
   GM_CURRENT_API_SCOPES: [],
-  GM_GAMSCOPES_CREATED: False,
   GM_OAUTH2SERVICE_KEY: None,
   GM_OAUTH2SERVICE_ACCOUNT_EMAIL:  None,
   GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID: None,
@@ -174,16 +171,8 @@ GC_NO_VERIFY_SSL = u'no_verify_ssl'
 GC_NUM_THREADS = u'num_threads'
 # Path to oauth2service.json
 GC_OAUTH2SERVICE_JSON = u'oauth2service_json'
-# Default section to use for processing
-GC_SECTION = u'section'
-# Add (n/m) to end of messages if number of items to be processed exceeds this number
-GC_SHOW_COUNTS_MIN = u'show_counts_min'
-# Enable/disable "Getting ... " messages
-GC_SHOW_GETTINGS = u'show_gettings'
 # GAM config directory containing admin-settings-v1.json, cloudprint-v2.json
 GC_SITE_DIR = u'site_dir'
-# When adding Users to Groups/Org Units, how many should be processed in each batch
-GC_USER_BATCH_SIZE = u'user_batch_size'
 # When retrieving lists of Users from API, how many should be retrieved in each chunk
 GC_USER_MAX_RESULTS = u'user_max_results'
 
@@ -207,11 +196,7 @@ GC_Defaults = {
   GC_NO_VERIFY_SSL: FALSE,
   GC_NUM_THREADS: 5,
   GC_OAUTH2SERVICE_JSON: FN_OAUTH2SERVICE_JSON,
-  GC_SECTION: u'',
-  GC_SHOW_COUNTS_MIN: 1,
-  GC_SHOW_GETTINGS: TRUE,
   GC_SITE_DIR: u'',
-  GC_USER_BATCH_SIZE: 50,
   GC_USER_MAX_RESULTS: 500,
   }
 
@@ -227,35 +212,33 @@ GC_TYPE_LANGUAGE = u'lang'
 GC_TYPE_STRING = u'stri'
 
 GC_VAR_TYPE_KEY = u'type'
+GC_VAR_ENVVAR_KEY = u'enva'
 GC_VAR_LIMITS_KEY = u'lmit'
 
 GC_VAR_INFO = {
-  GC_ACTIVITY_MAX_RESULTS: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_LIMITS_KEY: (1, 500)},
-  GC_ADMIN: {GC_VAR_TYPE_KEY: GC_TYPE_STRING},
-  GC_AUTO_BATCH_MIN: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_LIMITS_KEY: (0, None)},
-  GC_CACHE_DIR: {GC_VAR_TYPE_KEY: GC_TYPE_DIRECTORY},
-  GC_CHARSET: {GC_VAR_TYPE_KEY: GC_TYPE_STRING},
-  GC_CONFIG_DIR: {GC_VAR_TYPE_KEY: GC_TYPE_DIRECTORY},
-  GC_CUSTOMER_ID: {GC_VAR_TYPE_KEY: GC_TYPE_STRING},
-  GC_DEBUG_LEVEL: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_LIMITS_KEY: (0, None)},
-  GC_DEVICE_MAX_RESULTS: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_LIMITS_KEY: (1, 1000)},
-  GC_DOMAIN: {GC_VAR_TYPE_KEY: GC_TYPE_STRING},
-  GC_DRIVE_DIR: {GC_VAR_TYPE_KEY: GC_TYPE_DIRECTORY},
-  GC_DRIVE_MAX_RESULTS: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_LIMITS_KEY: (1, 1000)},
-  GC_GAMSCOPES_JSON: {GC_VAR_TYPE_KEY: GC_TYPE_FILE},
-  GC_NO_BROWSER: {GC_VAR_TYPE_KEY: GC_TYPE_BOOLEAN},
-  GC_NO_CACHE: {GC_VAR_TYPE_KEY: GC_TYPE_BOOLEAN},
-  GC_NO_UPDATE_CHECK: {GC_VAR_TYPE_KEY: GC_TYPE_BOOLEAN},
-  GC_NO_VERIFY_SSL: {GC_VAR_TYPE_KEY: GC_TYPE_BOOLEAN},
-  GC_NUM_THREADS: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_LIMITS_KEY: (1, None)},
-  GC_OAUTH2SERVICE_JSON: {GC_VAR_TYPE_KEY: GC_TYPE_FILE},
-  GC_SECTION: {GC_VAR_TYPE_KEY: GC_TYPE_STRING},
-  GC_SHOW_COUNTS_MIN: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_LIMITS_KEY: (0, None)},
-  GC_SHOW_GETTINGS: {GC_VAR_TYPE_KEY: GC_TYPE_BOOLEAN},
-  GC_SITE_DIR: {GC_VAR_TYPE_KEY: GC_TYPE_DIRECTORY},
-  GC_USER_BATCH_SIZE: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_LIMITS_KEY: (1, 1000)},
-  GC_USER_MAX_RESULTS: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_LIMITS_KEY: (1, 500)},
+  GC_ACTIVITY_MAX_RESULTS: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_ENVVAR_KEY: u'GAM_ACTIVITY_MAX_RESULTS', GC_VAR_LIMITS_KEY: (1, 500)},
+  GC_ADMIN: {GC_VAR_TYPE_KEY: GC_TYPE_STRING, GC_VAR_ENVVAR_KEY: u'GAM_ADMIN'},
+  GC_AUTO_BATCH_MIN: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_ENVVAR_KEY: u'GAM_AUTOBATCH', GC_VAR_LIMITS_KEY: (0, None)},
+  GC_CACHE_DIR: {GC_VAR_TYPE_KEY: GC_TYPE_DIRECTORY, GC_VAR_ENVVAR_KEY: u'GAMCACHEDIR'},
+  GC_CHARSET: {GC_VAR_TYPE_KEY: GC_TYPE_STRING, GC_VAR_ENVVAR_KEY: u'GAM_CHARSET'},
+  GC_CONFIG_DIR: {GC_VAR_TYPE_KEY: GC_TYPE_DIRECTORY, GC_VAR_ENVVAR_KEY: u'GAMUSERCONFIGDIR'},
+  GC_CUSTOMER_ID: {GC_VAR_TYPE_KEY: GC_TYPE_STRING, GC_VAR_ENVVAR_KEY: u'CUSTOMER_ID'},
+  GC_DEBUG_LEVEL: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_ENVVAR_KEY: u'debug.gam', GC_VAR_LIMITS_KEY: (0, None)},
+  GC_DEVICE_MAX_RESULTS: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_ENVVAR_KEY: u'GAM_DEVICE_MAX_RESULTS', GC_VAR_LIMITS_KEY: (1, 1000)},
+  GC_DOMAIN: {GC_VAR_TYPE_KEY: GC_TYPE_STRING, GC_VAR_ENVVAR_KEY: u'GA_DOMAIN'},
+  GC_DRIVE_DIR: {GC_VAR_TYPE_KEY: GC_TYPE_DIRECTORY, GC_VAR_ENVVAR_KEY: u'GAMDRIVEDIR'},
+  GC_DRIVE_MAX_RESULTS: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_ENVVAR_KEY: u'GAM_DRIVE_MAX_RESULTS', GC_VAR_LIMITS_KEY: (1, 1000)},
+  GC_GAMSCOPES_JSON: {GC_VAR_TYPE_KEY: GC_TYPE_FILE, GC_VAR_ENVVAR_KEY: u'GAMSCOPESFILE'},
+  GC_NO_BROWSER: {GC_VAR_TYPE_KEY: GC_TYPE_BOOLEAN, GC_VAR_ENVVAR_KEY: u'nobrowser.txt'},
+  GC_NO_CACHE: {GC_VAR_TYPE_KEY: GC_TYPE_BOOLEAN, GC_VAR_ENVVAR_KEY: u'nocache.txt'},
+  GC_NO_UPDATE_CHECK: {GC_VAR_TYPE_KEY: GC_TYPE_BOOLEAN, GC_VAR_ENVVAR_KEY: u'noupdatecheck.txt'},
+  GC_NO_VERIFY_SSL: {GC_VAR_TYPE_KEY: GC_TYPE_BOOLEAN, GC_VAR_ENVVAR_KEY: u'noverifyssl.txt'},
+  GC_NUM_THREADS: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_ENVVAR_KEY: u'GAM_THREADS', GC_VAR_LIMITS_KEY: (1, None)},
+  GC_OAUTH2SERVICE_JSON: {GC_VAR_TYPE_KEY: GC_TYPE_FILE, GC_VAR_ENVVAR_KEY: u'OAUTHSERVICEFILE'},
+  GC_SITE_DIR: {GC_VAR_TYPE_KEY: GC_TYPE_DIRECTORY, GC_VAR_ENVVAR_KEY: u'GAMSITECONFIGDIR'},
+  GC_USER_MAX_RESULTS: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_ENVVAR_KEY: u'GAM_USER_MAX_RESULTS', GC_VAR_LIMITS_KEY: (1, 500)},
   }
+
 
 MESSAGE_BATCH_CSV_DASH_DEBUG_INCOMPATIBLE = u'"gam {0} - ..." is not compatible with debugging. Disable debugging by deleting debug.gam and try again.'
 MESSAGE_CLIENT_API_ACCESS_DENIED = u'Access Denied. Please make sure the Client Name:\n\n{0}\n\nis authorized for the API Scope(s):\n\n{1}\n\nThis can be configured in your Control Panel under:\n\nSecurity -->\nAdvanced Settings -->\nManage API client access'
@@ -441,8 +424,8 @@ def writeFile(filename, data, mode=u'wb', continueOnError=False, displayError=Tr
 #
 def SetGlobalVariables():
 
-  def _getOldEnvVar(itemName, envVar):
-    value = os.environ.get(envVar, GC_Defaults[itemName])
+  def _getOldEnvVar(itemName):
+    value = os.environ.get(GC_VAR_INFO[itemName][GC_VAR_ENVVAR_KEY], GC_Defaults[itemName])
     if GC_VAR_INFO[itemName][GC_VAR_TYPE_KEY] == GC_TYPE_INTEGER:
       try:
         number = int(value)
@@ -456,8 +439,8 @@ def SetGlobalVariables():
       value = number
     GC_Defaults[itemName] = value
 
-  def _getOldSignalFile(itemName, fileName, trueValue=True, falseValue=False):
-    GC_Defaults[itemName] = trueValue if os.path.isfile(os.path.join(GC_Defaults[GC_CONFIG_DIR], fileName)) else falseValue
+  def _getOldSignalFile(itemName, trueValue=True, falseValue=False):
+    GC_Defaults[itemName] = trueValue if os.path.isfile(os.path.join(GC_Defaults[GC_CONFIG_DIR], GC_VAR_INFO[itemName][GC_VAR_ENVVAR_KEY])) else falseValue
 
   def _getCfgDirectory(itemName):
     return GC_Defaults[itemName]
@@ -468,34 +451,48 @@ def SetGlobalVariables():
       value = os.path.expanduser(os.path.join(GC_Values[GC_CONFIG_DIR], value))
     return value
 
+  def _chkCfgDirectories():
+    for itemName in GC_VAR_INFO:
+      if GC_VAR_INFO[itemName][GC_VAR_TYPE_KEY] == GC_TYPE_DIRECTORY:
+        dirPath = GC_Values[itemName]
+        if not os.path.isdir(dirPath):
+          sys.stderr.write(u'{0}{1}={2}, Invalid Path\n'.format(WARNING_PREFIX, GC_VAR_INFO[itemName][GC_VAR_ENVVAR_KEY], dirPath))
+
+  def _chkCfgFiles():
+    for itemName in GC_VAR_INFO:
+      if GC_VAR_INFO[itemName][GC_VAR_TYPE_KEY] == GC_TYPE_FILE:
+        fileName = GC_Values[itemName]
+        if not os.path.isfile(fileName):
+          sys.stderr.write(u'{0}{1}={2}, Not Found\n'.format(WARNING_PREFIX, GC_VAR_INFO[itemName][GC_VAR_ENVVAR_KEY], fileName))
+
   GC_Defaults[GC_CONFIG_DIR] = GM_Globals[GM_GAM_PATH]
   GC_Defaults[GC_CACHE_DIR] = os.path.join(GM_Globals[GM_GAM_PATH], u'gamcache')
   GC_Defaults[GC_DRIVE_DIR] = GM_Globals[GM_GAM_PATH]
   GC_Defaults[GC_SITE_DIR] = GM_Globals[GM_GAM_PATH]
 
-  _getOldEnvVar(GC_CONFIG_DIR, u'GAMUSERCONFIGDIR')
-  _getOldEnvVar(GC_SITE_DIR, u'GAMSITECONFIGDIR')
-  _getOldEnvVar(GC_CACHE_DIR, u'GAMCACHEDIR')
-  _getOldEnvVar(GC_DRIVE_DIR, u'GAMDRIVEDIR')
-  _getOldEnvVar(GC_OAUTH2SERVICE_JSON, u'OAUTHSERVICEFILE')
+  _getOldEnvVar(GC_CONFIG_DIR)
+  _getOldEnvVar(GC_SITE_DIR)
+  _getOldEnvVar(GC_CACHE_DIR)
+  _getOldEnvVar(GC_DRIVE_DIR)
+  _getOldEnvVar(GC_OAUTH2SERVICE_JSON)
   if GC_Defaults[GC_OAUTH2SERVICE_JSON].find(u'.') == -1:
     GC_Defaults[GC_OAUTH2SERVICE_JSON] += u'.json'
-  _getOldEnvVar(GC_GAMSCOPES_JSON, u'GAMSCOPESFILE')
-  _getOldEnvVar(GC_DOMAIN, u'GA_DOMAIN')
-  _getOldEnvVar(GC_ADMIN, u'GAM_ADMIN')
-  _getOldEnvVar(GC_CUSTOMER_ID, u'CUSTOMER_ID')
-  _getOldEnvVar(GC_CHARSET, u'GAM_CHARSET')
-  _getOldEnvVar(GC_NUM_THREADS, u'GAM_THREADS')
-  _getOldEnvVar(GC_AUTO_BATCH_MIN, u'GAM_AUTOBATCH')
-  _getOldEnvVar(GC_ACTIVITY_MAX_RESULTS, u'GAM_ACTIVITY_MAX_RESULTS')
-  _getOldEnvVar(GC_DEVICE_MAX_RESULTS, u'GAM_DEVICE_MAX_RESULTS')
-  _getOldEnvVar(GC_DRIVE_MAX_RESULTS, u'GAM_DRIVE_MAX_RESULTS')
-  _getOldEnvVar(GC_USER_MAX_RESULTS, u'GAM_USER_MAX_RESULTS')
-  _getOldSignalFile(GC_DEBUG_LEVEL, u'debug.gam', trueValue=4, falseValue=0)
-  _getOldSignalFile(GC_NO_VERIFY_SSL, u'noverifyssl.txt')
-  _getOldSignalFile(GC_NO_BROWSER, u'nobrowser.txt')
-  _getOldSignalFile(GC_NO_CACHE, u'nocache.txt')
-  _getOldSignalFile(GC_NO_UPDATE_CHECK, u'noupdatecheck.txt')
+  _getOldEnvVar(GC_GAMSCOPES_JSON)
+  _getOldEnvVar(GC_DOMAIN)
+  _getOldEnvVar(GC_ADMIN)
+  _getOldEnvVar(GC_CUSTOMER_ID)
+  _getOldEnvVar(GC_CHARSET)
+  _getOldEnvVar(GC_NUM_THREADS)
+  _getOldEnvVar(GC_AUTO_BATCH_MIN)
+  _getOldEnvVar(GC_ACTIVITY_MAX_RESULTS)
+  _getOldEnvVar(GC_DEVICE_MAX_RESULTS)
+  _getOldEnvVar(GC_DRIVE_MAX_RESULTS)
+  _getOldEnvVar(GC_USER_MAX_RESULTS)
+  _getOldSignalFile(GC_DEBUG_LEVEL, trueValue=4, falseValue=0)
+  _getOldSignalFile(GC_NO_VERIFY_SSL)
+  _getOldSignalFile(GC_NO_BROWSER)
+  _getOldSignalFile(GC_NO_CACHE)
+  _getOldSignalFile(GC_NO_UPDATE_CHECK)
 # Assign directories first
   for itemName in GC_VAR_INFO:
     if GC_VAR_INFO[itemName][GC_VAR_TYPE_KEY] == GC_TYPE_DIRECTORY:
@@ -510,9 +507,6 @@ def SetGlobalVariables():
   if not GC_Values[GC_NO_UPDATE_CHECK]:
     doGAMCheckForUpdates()
 # Globals derived from config file values
-  GM_Globals[GM_OAUTH2SERVICE_KEY] = None
-  GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_EMAIL] = None
-  GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID] = None
   GM_Globals[GM_EXTRA_ARGS_DICT] = {u'prettyPrint': GC_Values[GC_DEBUG_LEVEL] > 0}
   httplib2.debuglevel = GC_Values[GC_DEBUG_LEVEL]
   if os.path.isfile(os.path.join(GC_Values[GC_CONFIG_DIR], FN_EXTRA_ARGS_TXT)):
@@ -521,14 +515,16 @@ def SetGlobalVariables():
     ea_config.optionxform = str
     ea_config.read(os.path.join(GC_Values[GC_CONFIG_DIR], FN_EXTRA_ARGS_TXT))
     GM_Globals[GM_EXTRA_ARGS_DICT].update(dict(ea_config.items(u'extra-args')))
+  GM_Globals[GM_OAUTH2SERVICE_KEY] = None
+  GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_EMAIL] = None
+  GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID] = None
   if GC_Values[GC_NO_CACHE]:
     GC_Values[GC_CACHE_DIR] = None
-  GM_Globals[GM_GAMSCOPES_CREATED] = False
-  json_string = readFile(GC_Values[GC_GAMSCOPES_JSON], continueOnError=True, displayError=True)
-  if not json_string:
-    doRequestOAuth()
-  elif not validateSetGAMScopes(json.loads(json_string)):
+  json_string = readFile(GC_Values[GC_GAMSCOPES_JSON], continueOnError=True, displayError=False)
+  if json_string and not validateSetGAMScopes(json.loads(json_string)):
     systemErrorExit(19, MESSAGE_GAMSCOPES_JSON_INVALID.format(GC_Values[GC_GAMSCOPES_JSON]))
+  _chkCfgDirectories()
+  _chkCfgFiles()
   return True
 
 def doGAMCheckForUpdates(forceCheck=False):
@@ -8731,8 +8727,11 @@ def doDeleteOAuth():
   time.sleep(1)
   sys.stdout.write(u'boom!\n')
   sys.stdout.flush()
-  os.remove(GC_Values[GC_GAMSCOPES_JSON])
-  sys.stdout.write(u'Scopes file: {0}, Deleted\n'.format(GC_Values[GC_GAMSCOPES_JSON]))
+  try:
+    os.remove(GC_Values[GC_GAMSCOPES_JSON])
+    sys.stdout.write(u'Scopes file: {0}, Deleted\n'.format(GC_Values[GC_GAMSCOPES_JSON]))
+  except OSError as e:
+    sys.stderr.write(u'{0}{1}\n'.format(WARNING_PREFIX, e))
 
 UBER_SCOPES = {
   u'gmail-v1': [u'https://mail.google.com/'],
@@ -8824,7 +8823,6 @@ def doRequestOAuth():
         continue
       writeFile(GC_Values[GC_GAMSCOPES_JSON], json.dumps(GM_Globals[GM_GAMSCOPES_BY_API]))
       print u'Scopes file: {0}, Created'.format(GC_Values[GC_GAMSCOPES_JSON])
-      GM_Globals[GM_GAMSCOPES_CREATED] = True
       break
     elif selection >= 0 and selection < len(all_apis.keys()):
       api = all_apis.keys()[selection]
@@ -9250,8 +9248,7 @@ try:
     sys.exit(0)
   elif sys.argv[1].lower() in [u'oauth', u'oauth2']:
     if sys.argv[2].lower() in [u'request', u'create']:
-      if not GM_Globals[GM_GAMSCOPES_CREATED]:
-        doRequestOAuth()
+      doRequestOAuth()
     elif sys.argv[2].lower() == u'info':
       OAuthInfo()
     elif sys.argv[2].lower() in [u'delete', u'revoke']:
