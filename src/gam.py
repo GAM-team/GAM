@@ -506,6 +506,10 @@ def SetGlobalVariables():
   GM_Globals[GM_LAST_UPDATE_CHECK_TXT] = os.path.join(GC_Values[GC_CONFIG_DIR], FN_LAST_UPDATE_CHECK_TXT)
   if not GC_Values[GC_NO_UPDATE_CHECK]:
     doGAMCheckForUpdates()
+  if (not GC_Values[GC_DOMAIN]) and GC_Values[GC_ADMIN]:
+    loc = GC_Values[GC_ADMIN].find(u'@')
+    if loc > 0:
+      GC_Values[GC_DOMAIN] = GC_Values[GC_ADMIN][loc+1:]
 # Globals derived from config file values
   GM_Globals[GM_EXTRA_ARGS_DICT] = {u'prettyPrint': GC_Values[GC_DEBUG_LEVEL] > 0}
   httplib2.debuglevel = GC_Values[GC_DEBUG_LEVEL]
