@@ -8799,6 +8799,14 @@ def select_default_scopes(apis):
       apis[api_name][u'use_scopes'] += scopes
   return apis
 
+def getSelection():
+  while True:
+    selection = raw_input(u'Your selection: ')
+    if selection:
+      if selection.isdigit():
+        return int(selection)
+      print u'ERROR: please enter numbers only'
+
 def doRequestOAuth():
   apis = API_VER_MAPPING.keys()
   all_apis = {}
@@ -8821,8 +8829,8 @@ def doRequestOAuth():
   if GM_Globals[GM_GAMSCOPES_BY_API]:
     for api in GM_Globals[GM_GAMSCOPES_BY_API]:
       all_apis[api][u'use_scopes'] = GM_Globals[GM_GAMSCOPES_BY_API][api][u'use_scopes']
-  os.system([u'clear', u'cls'][GM_Globals[GM_WINDOWS]])
   while True:
+    os.system([u'clear', u'cls'][GM_Globals[GM_WINDOWS]])
     print u'Select the APIs to use with GAM.'
     print
     for api in all_apis.values():
@@ -8838,8 +8846,8 @@ def doRequestOAuth():
     print u'     %s) Unselect all APIs' % (i+2)
     print u'     %s) Continue' % (i+3)
     print
-    selection = int(raw_input(u'Your selection: '))
-    if int(selection) == i+1: # defaults
+    selection = getSelection()
+    if selection == i+1: # defaults
       all_apis = select_default_scopes(all_apis)
     elif selection == i+2: # unselect all
       for api in all_apis.keys():
@@ -8865,8 +8873,8 @@ def doRequestOAuth():
         else:
           all_apis[api][u'use_scopes'] = all_apis[api][u'auth'][u'oauth2'][u'scopes']
       else:
-        os.system([u'clear', u'cls'][GM_Globals[GM_WINDOWS]])
         while True:
+          os.system([u'clear', u'cls'][GM_Globals[GM_WINDOWS]])
           print
           x = 0
           for scope in all_apis[api][u'auth'][u'oauth2'][u'scopes'].keys():
@@ -8881,12 +8889,7 @@ def doRequestOAuth():
           print u'     %s) Unselect all scopes' % (x+2)
           print u'     %s) Back to all APIs' % (x+3)
           print
-          selection = raw_input(u'Your selection: ')
-          try:
-            selection = int(selection)
-          except:
-            print u'ERROR: please enter numbers only'
-            continue
+          selection = getSelection()
           num_scopes = len(all_apis[api][u'auth'][u'oauth2'][u'scopes'].keys())
           if selection >= 0 and selection < num_scopes:
             if all_apis[api][u'auth'][u'oauth2'][u'scopes'].keys()[selection] in all_apis[api][u'use_scopes']:
@@ -8906,8 +8909,6 @@ def doRequestOAuth():
             all_apis[api][u'use_scopes'] = []
           elif selection == x+3:
             break
-          os.system([u'clear', u'cls'][GM_Globals[GM_WINDOWS]])
-      os.system([u'clear', u'cls'][GM_Globals[GM_WINDOWS]])
   print MESSAGE_PLEASE_AUTHORIZE_SERVIE_ACCOUNT.format(len(GM_Globals[GM_GAMSCOPES_LIST]))
   print
   print u','.join(GM_Globals[GM_GAMSCOPES_LIST])
@@ -9282,7 +9283,7 @@ try:
   elif sys.argv[1].lower() in [u'oauth', u'oauth2']:
     if sys.argv[2].lower() in [u'request', u'create']:
       doRequestOAuth()
-    elif sys.argv[2].lower() == u'info':
+    elif sys.argv[2].lower() in [u'info', u'verify']:
       OAuthInfo()
     elif sys.argv[2].lower() in [u'delete', u'revoke']:
       doDeleteOAuth()
