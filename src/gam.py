@@ -8803,13 +8803,17 @@ def select_default_scopes(apis):
       apis[api_name][u'use_scopes'] += scopes
   return apis
 
-def getSelection():
+def getSelection(limit):
   while True:
     selection = raw_input(u'Your selection: ')
     if selection:
       if selection.isdigit():
-        return int(selection)
-      print u'ERROR: please enter numbers only'
+        selection = int(selection)
+        if (selection >= 0) and (selection <= limit):
+          return selection
+        print u'ERROR: enter number in range 0-{0}'.format(limit)
+      else:
+        print u'ERROR: please enter numbers only'
 
 def doRequestOAuth():
   apis = API_VER_MAPPING.keys()
@@ -8844,19 +8848,20 @@ def doRequestOAuth():
         select_value = u'*'
       else:
         select_value = u' '
-      print u'[%s]  %s) %s (%s/%s scopes)' % (select_value, api[u'index'], api[u'title'], num_scopes_selected, num_scopes_total)
+      print u'[%s]  %2d) %s (%d/%d scopes)' % (select_value, api[u'index'], api[u'title'], num_scopes_selected, num_scopes_total)
     print
-    print u'     %s) Select defaults for all APIs (allow all GAM commands)' % (i+1)
-    print u'     %s) Unselect all APIs' % (i+2)
-    print u'     %s) Continue' % (i+3)
+    print u'     %2d) Select defaults for all APIs (allow all GAM commands)' % (i)
+    print u'     %2d) Unselect all APIs' % (i+1)
+    print u'     %2d) Continue' % (i+2)
+    print u'     %2d) Cancel' % (i+3)
     print
-    selection = getSelection()
-    if selection == i+1: # defaults
+    selection = getSelection(i+3)
+    if selection == i: # defaults
       all_apis = select_default_scopes(all_apis)
-    elif selection == i+2: # unselect all
+    elif selection == i+1: # unselect all
       for api in all_apis.keys():
         all_apis[api][u'use_scopes'] = []
-    elif selection == i+3:
+    elif selection == i+2: # continue
       GM_Globals[GM_GAMSCOPES_BY_API] = {}
       GM_Globals[GM_GAMSCOPES_LIST] = []
       for api in all_apis.keys():
@@ -8869,7 +8874,9 @@ def doRequestOAuth():
       writeFile(GC_Values[GC_GAMSCOPES_JSON], json.dumps(GM_Globals[GM_GAMSCOPES_BY_API]))
       print u'Scopes file: {0}, Created'.format(GC_Values[GC_GAMSCOPES_JSON])
       break
-    elif selection >= 0 and selection < len(all_apis.keys()):
+    elif selection == i+3: # cancel
+      return
+    else: # select
       api = all_apis.keys()[selection]
       if len(all_apis[api][u'auth'][u'oauth2'][u'scopes']) == 1:
         if len(all_apis[api][u'use_scopes']) == 1:
@@ -8886,33 +8893,35 @@ def doRequestOAuth():
               select_value = u'*'
             else:
               select_value = u' '
-            print u'[%s]  %s) %s\n          %s\n' % (select_value, x, all_apis[api][u'auth'][u'oauth2'][u'scopes'][scope][u'description'], scope)
+            print u'[%s]  %2d) %s\n          %s\n' % (select_value, x, all_apis[api][u'auth'][u'oauth2'][u'scopes'][scope][u'description'], scope)
             x += 1
-          print u'     %s) Select defaults for this API (allow all GAM commands)' % (x)
-          print u'     %s) Select read-only scopes' % (x+1)
-          print u'     %s) Unselect all scopes' % (x+2)
-          print u'     %s) Back to all APIs' % (x+3)
+          print u'     %2d) Select defaults for this API (allow all GAM commands)' % (x)
+          print u'     %2d) Select read-only scopes' % (x+1)
+          print u'     %2d) Unselect all scopes' % (x+2)
+          print u'     %2d) Back to all APIs' % (x+3)
+          print u'     %2d) Cancel' % (x+4)
           print
-          selection = getSelection()
-          num_scopes = len(all_apis[api][u'auth'][u'oauth2'][u'scopes'].keys())
-          if selection >= 0 and selection < num_scopes:
+          selection = getSelection(x+4)
+          if selection < x: # select
             if all_apis[api][u'auth'][u'oauth2'][u'scopes'].keys()[selection] in all_apis[api][u'use_scopes']:
               all_apis[api][u'use_scopes'].remove(all_apis[api][u'auth'][u'oauth2'][u'scopes'].keys()[selection])
             else:
               all_apis[api][u'use_scopes'].append(all_apis[api][u'auth'][u'oauth2'][u'scopes'].keys()[selection])
-          elif selection == x:
+          elif selection == x: # defaults
             just_this_api = {api: all_apis[api]}
             just_this_api = select_default_scopes(just_this_api)
             all_apis[api][u'use_scopes'] = just_this_api[api][u'use_scopes']
-          elif selection == x+1:
+          elif selection == x+1: # read-only
             all_apis[api][u'use_scopes'] = []
             for scope in all_apis[api][u'auth'][u'oauth2'][u'scopes'].keys():
               if scope.endswith(u'.readonly'):
                 all_apis[api][u'use_scopes'].append(scope)
-          elif selection == x+2:
+          elif selection == x+2: # unselect all
             all_apis[api][u'use_scopes'] = []
-          elif selection == x+3:
+          elif selection == x+3: # back
             break
+          else: # cancel
+            return
   print MESSAGE_PLEASE_AUTHORIZE_SERVIE_ACCOUNT.format(len(GM_Globals[GM_GAMSCOPES_LIST]))
   print
   print u','.join(GM_Globals[GM_GAMSCOPES_LIST])
