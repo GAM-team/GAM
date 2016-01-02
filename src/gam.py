@@ -240,7 +240,8 @@ GC_VAR_INFO = {
   }
 
 MESSAGE_BATCH_CSV_DASH_DEBUG_INCOMPATIBLE = u'"gam {0} - ..." is not compatible with debugging. Disable debugging by deleting debug.gam and try again.'
-MESSAGE_CLIENT_API_ACCESS_DENIED = u'Access Denied. Please make sure the Client Name:\n\n{0}\n\nis authorized for the API Scope(s):\n\n{1}\n\nThis can be configured in your Control Panel under:\n\nSecurity -->\nAdvanced Settings -->\nManage API client access'
+MESSAGE_CLIENT_API_ACCESS_CONFIG = u'API access is configured in your Control Panel under: Security-Show more-Advanced settings-Manage API client access'
+MESSAGE_CLIENT_API_ACCESS_DENIED = u'API access denied. Please make sure the service account ID: {0} is authorized for the API Scope(s): {1}'
 MESSAGE_GAMSCOPES_JSON_INVALID = u'The file {0} is missing the required key (scopes) or has an invalid format.'
 MESSAGE_GAM_EXITING_FOR_UPDATE = u'GAM is now exiting so that you can overwrite this old version with the latest release'
 MESSAGE_GAM_OUT_OF_MEMORY = u'GAM has run out of memory. If this is a large Google Apps instance, you should use a 64-bit version of GAM on Windows or a 64-bit version of Python on other systems.'
@@ -588,7 +589,8 @@ def tryOAuth(gdataObject, soft_errors=False):
     if e.message in [u'access_denied',
                      u'unauthorized_client: Unauthorized client or scope in request.',
                      u'access_denied: Requested client not authorized.']:
-      systemErrorExit(5, MESSAGE_CLIENT_API_ACCESS_DENIED.format(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID], u','.join(GM_Globals[GM_CURRENT_API_SCOPES])))
+      sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, MESSAGE_CLIENT_API_ACCESS_DENIED.format(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID], u','.join(GM_Globals[GM_CURRENT_API_SCOPES]))))
+      systemErrorExit(5, MESSAGE_CLIENT_API_ACCESS_CONFIG)
     sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, e))
     if soft_errors:
       return False
@@ -855,7 +857,8 @@ def buildGAPIObject(api, act_as=None, soft_errors=False):
     if e.message in [u'access_denied',
                      u'unauthorized_client: Unauthorized client or scope in request.',
                      u'access_denied: Requested client not authorized.']:
-      systemErrorExit(5, MESSAGE_CLIENT_API_ACCESS_DENIED.format(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID], u','.join(GM_Globals[GM_CURRENT_API_SCOPES])))
+      sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, MESSAGE_CLIENT_API_ACCESS_DENIED.format(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID], u','.join(GM_Globals[GM_CURRENT_API_SCOPES]))))
+      systemErrorExit(5, MESSAGE_CLIENT_API_ACCESS_CONFIG)
     sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, e))
     if soft_errors:
       return False
@@ -8708,11 +8711,42 @@ def validateSetGAMScopes(json_data):
   return len(GM_Globals[GM_GAMSCOPES_LIST]) > 0
 
 def OAuthInfo():
+  configRequired = False
+  getOAuth2ServiceDetails()
   print u'API Scopes'
-  for api in sorted(GM_Globals[GM_GAMSCOPES_BY_API].keys()):
+  for api in sorted(API_VER_MAPPING.keys()):
     print u'  API: {0}'.format(api)
-    for scope in GM_Globals[GM_GAMSCOPES_BY_API][api][u'use_scopes']:
-      print u'    {0}'.format(scope)
+    version = getAPIVer(api)
+    if api in [u'directory', u'reports', u'datatransfer']:
+      api = u'admin'
+    apiData = GM_Globals[GM_GAMSCOPES_BY_API].get(u'{0}-{1}'.format(api, version), {})
+    scopes = apiData.get(u'use_scopes', [])
+    if scopes:
+      for scope in scopes:
+        print u'    {0}'.format(scope)
+      credentials = oauth2client.client.SignedJwtAssertionCredentials(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_EMAIL],
+                                                                      GM_Globals[GM_OAUTH2SERVICE_KEY],
+                                                                      scope=scopes, user_agent=GAM_INFO, sub=GC_Values[GC_ADMIN])
+      http = credentials.authorize(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL],
+                                                 cache=GC_Values[GC_CACHE_DIR]))
+      try:
+        googleapiclient.discovery.build(api, version, http=http, cache_discovery=False)
+      except googleapiclient.errors.UnknownApiNameOrVersion:
+        getServiceFromDiscoveryDocument(api, version, http)
+      except httplib2.ServerNotFoundError as e:
+        systemErrorExit(4, e)
+      except oauth2client.client.AccessTokenRefreshError, e:
+        if e.message in [u'access_denied',
+                         u'unauthorized_client: Unauthorized client or scope in request.',
+                         u'access_denied: Requested client not authorized.']:
+          print u'    {0}{1}'.format(WARNING_PREFIX, MESSAGE_CLIENT_API_ACCESS_DENIED.format(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID], u'listed above'))
+          configRequired = True
+        else:
+          print u'    {0}{1}'.format(ERROR_PREFIX, e)
+    else:
+      print u'    Not Requested'
+  if configRequired:
+    print MESSAGE_CLIENT_API_ACCESS_CONFIG
 
 def doDeleteOAuth():
   sys.stdout.write(u'Scopes file: {0}, will be Deleted in 3...'.format(GC_Values[GC_GAMSCOPES_JSON]))
