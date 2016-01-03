@@ -91,7 +91,6 @@ GM_BATCH_QUEUE = u'batq'
 # Extra arguments to pass to GAPI functions
 GM_EXTRA_ARGS_DICT = u'exad'
 # Scopes retrieved from gamscopes.json
-GM_GAMSCOPES_BY_API = u'scop'
 GM_GAMSCOPES_LIST = u'scof'
 # Current API scope
 GM_CURRENT_API_SCOPES = u'scoc'
@@ -117,7 +116,6 @@ GM_Globals = {
   GM_SYS_ENCODING: sys.getfilesystemencoding() if os.name == u'nt' else u'utf-8',
   GM_BATCH_QUEUE: None,
   GM_EXTRA_ARGS_DICT:  {u'prettyPrint': False},
-  GM_GAMSCOPES_BY_API: {},
   GM_GAMSCOPES_LIST: [],
   GM_CURRENT_API_SCOPES: [],
   GM_OAUTH2SERVICE_KEY: None,
@@ -799,13 +797,13 @@ API_VER_MAPPING = {
 def getAPIVer(api):
   return API_VER_MAPPING.get(api, u'v1')
 
-def setCurrentAPIScopes(api, version=None):
-  if not version:
-    version = getAPIVer(api)
-  apiData = GM_Globals[GM_GAMSCOPES_BY_API].get(u'{0}-{1}'.format(api, version), {})
-  GM_Globals[GM_CURRENT_API_SCOPES] = apiData.get(u'use_scopes', [])
-  if not GM_Globals[GM_CURRENT_API_SCOPES]:
+def setCurrentAPIScopes(service):
+  selected_scopes = GM_Globals[GM_GAMSCOPES_LIST]
+  all_api_scopes = service._rootDesc[u'auth'][u'oauth2'][u'scopes'].keys()
+  selected_api_scopes = list(set(all_api_scopes).intersection(selected_scopes))
+  if len(selected_api_scopes) < 1:
     systemErrorExit(15, MESSAGE_NO_SCOPES_FOR_API.format(api, version))
+  return selected_api_scopes + [u'email']
 
 def getServiceFromDiscoveryDocument(api, version, http=None):
   disc_filename = u'%s-%s.json' % (api, version)
@@ -845,18 +843,21 @@ def buildGAPIObject(api, act_as=None, soft_errors=False):
   version = getAPIVer(api)
   if api in [u'directory', u'reports', u'datatransfer']:
     api = u'admin'
-  setCurrentAPIScopes(api, version)
-  credentials = oauth2client.client.SignedJwtAssertionCredentials(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_EMAIL],
-                                                                  GM_Globals[GM_OAUTH2SERVICE_KEY],
-                                                                  scope=GM_Globals[GM_CURRENT_API_SCOPES], user_agent=GAM_INFO, sub=sub)
-  http = credentials.authorize(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL],
-                                             cache=GC_Values[GC_CACHE_DIR]))
+  http = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL],
+                                             cache=GC_Values[GC_CACHE_DIR])
   try:
-    return googleapiclient.discovery.build(api, version, http=http, cache_discovery=False)
+    service = googleapiclient.discovery.build(api, version, http=http, cache_discovery=False)
   except googleapiclient.errors.UnknownApiNameOrVersion:
-    return getServiceFromDiscoveryDocument(api, version, http)
+    service = getServiceFromDiscoveryDocument(api, version, http)
   except httplib2.ServerNotFoundError as e:
     systemErrorExit(4, e)
+  scopes = setCurrentAPIScopes(service)
+  
+  credentials = oauth2client.client.SignedJwtAssertionCredentials(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_EMAIL],
+                                                                  GM_Globals[GM_OAUTH2SERVICE_KEY],
+                                                                  scope=scopes, user_agent=GAM_INFO, sub=sub)
+  try:
+    service._http = credentials.authorize(http)
   except oauth2client.client.AccessTokenRefreshError, e:
     if e.message in [u'access_denied',
                      u'unauthorized_client: Unauthorized client or scope in request.',
@@ -867,6 +868,7 @@ def buildGAPIObject(api, act_as=None, soft_errors=False):
     if soft_errors:
       return False
     sys.exit(4)
+  return service
 
 def commonAppsObjInit(appsObj, api):
   getOAuth2ServiceDetails()
@@ -8702,16 +8704,10 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
   return full_users
 
 def validateSetGAMScopes(json_data):
-  GM_Globals[GM_GAMSCOPES_BY_API] = {}
   GM_Globals[GM_GAMSCOPES_LIST] = []
-  if not isinstance(json_data, dict):
+  if not isinstance(json_data, list):
     return False
-  for api, value in json_data.items():
-    if (not isinstance(value, dict)) or (u'use_scopes' not in value) or (not isinstance(value[u'use_scopes'], list)):
-      return False
-    GM_Globals[GM_GAMSCOPES_BY_API][api] = {u'use_scopes': value[u'use_scopes']}
-    GM_Globals[GM_GAMSCOPES_LIST] += value[u'use_scopes']
-  GM_Globals[GM_GAMSCOPES_LIST] = list(set(GM_Globals[GM_GAMSCOPES_LIST])) # unique only
+  GM_Globals[GM_GAMSCOPES_LIST] = json_data
   return len(GM_Globals[GM_GAMSCOPES_LIST]) > 0
 
 def OAuthInfo():
@@ -8834,9 +8830,11 @@ def doRequestOAuth():
     all_apis[api_name][u'index'] = i
     i += 1
   all_apis = select_default_scopes(all_apis)
-  if GM_Globals[GM_GAMSCOPES_BY_API]:
-    for api in GM_Globals[GM_GAMSCOPES_BY_API]:
-      all_apis[api][u'use_scopes'] = GM_Globals[GM_GAMSCOPES_BY_API][api][u'use_scopes']
+  if GM_Globals[GM_GAMSCOPES_LIST]:
+    for api in all_apis.keys():
+      for scope in GM_Globals[GM_GAMSCOPES_LIST]:
+        if scope in all_apis[api][u'auth'][u'oauth2'][u'scopes']:
+          all_apis[u'use_scopes'].append(scope)
   while True:
     os.system([u'clear', u'cls'][GM_Globals[GM_WINDOWS]])
     print u'Select the APIs to use with GAM.'
@@ -8862,16 +8860,14 @@ def doRequestOAuth():
       for api in all_apis.keys():
         all_apis[api][u'use_scopes'] = []
     elif selection == i+3: # continue
-      GM_Globals[GM_GAMSCOPES_BY_API] = {}
       GM_Globals[GM_GAMSCOPES_LIST] = []
       for api in all_apis.keys():
-        GM_Globals[GM_GAMSCOPES_BY_API][api] = {u'use_scopes': all_apis[api][u'use_scopes']}
         GM_Globals[GM_GAMSCOPES_LIST] += all_apis[api][u'use_scopes']
       GM_Globals[GM_GAMSCOPES_LIST] = list(set(GM_Globals[GM_GAMSCOPES_LIST])) # unique only
       if len(GM_Globals[GM_GAMSCOPES_LIST]) == 0:
         print u'YOU MUST SELECT AT LEAST ONE SCOPE'
         continue
-      writeFile(GC_Values[GC_GAMSCOPES_JSON], json.dumps(GM_Globals[GM_GAMSCOPES_BY_API]))
+      writeFile(GC_Values[GC_GAMSCOPES_JSON], json.dumps(GM_Globals[GM_GAMSCOPES_LIST]))
       print u'Scopes file: {0}, Created'.format(GC_Values[GC_GAMSCOPES_JSON])
       break
     elif selection == i+2: # cancel
