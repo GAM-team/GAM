@@ -8823,6 +8823,7 @@ def getSelection(limit):
 def doRequestOAuth():
   apis = API_VER_MAPPING.keys()
   all_apis = {}
+  api_titles = {}
   for api in apis:
     version = getAPIVer(api)
     if api in [u'directory', u'reports', u'datatransfer']:
@@ -8833,11 +8834,13 @@ def doRequestOAuth():
       service = googleapiclient.discovery.build(api, version, http=http, cache_discovery=False)
     except googleapiclient.errors.UnknownApiNameOrVersion:
       service = getServiceFromDiscoveryDocument(api, version, http)
-    all_apis[u'%s-%s' % (api, version)] = service._rootDesc
-  i = 0
-  for api_name in all_apis.keys():
-    all_apis[api_name][u'index'] = i
-    i += 1
+    api_name = u'%s-%s' % (api, version)
+    all_apis[api_name] = service._rootDesc
+    api_titles[api_name] = api_name
+  api_index = []
+  for title, api_name in sorted(api_titles.items()):
+    api_index.append(api_name)
+  i = len(api_index)
   if GM_Globals[GM_GAMSCOPES_LIST]:
     selected_scopes = set(GM_Globals[GM_GAMSCOPES_LIST])
   else:
@@ -8846,7 +8849,8 @@ def doRequestOAuth():
     #os.system([u'clear', u'cls'][GM_Globals[GM_WINDOWS]])
     print u'Select the APIs to use with GAM.'
     print
-    for api in all_apis.values():
+    for n in range(i):
+      api = all_apis[api_index[n]]
       api_scopes = api[u'auth'][u'oauth2'][u'scopes']
       num_scopes_selected = len(set(api_scopes).intersection(selected_scopes))
       num_scopes_total = len(api_scopes)
@@ -8854,7 +8858,7 @@ def doRequestOAuth():
         select_value = u'*'
       else:
         select_value = u' '
-      print u'[%s]  %2d) %s (%d/%d scopes)' % (select_value, api[u'index'], api[u'title'], num_scopes_selected, num_scopes_total)
+      print u'[%s]  %2d) %s (%d/%d scopes)' % (select_value, n, api[u'title'], num_scopes_selected, num_scopes_total)
     print
     print u'     %2d) Select defaults for all APIs (allow all GAM commands)' % (i)
     print u'     %2d) Unselect all APIs' % (i+1)
@@ -8877,7 +8881,7 @@ def doRequestOAuth():
     elif selection == i+2: # cancel
       return
     else: # select
-      api = all_apis.keys()[selection]
+      api = api_index[selection]
       api_scopes = all_apis[api][u'auth'][u'oauth2'][u'scopes'].keys()
       if len(api_scopes) == 1:
         one_scope = api_scopes[0]
@@ -8895,8 +8899,9 @@ def doRequestOAuth():
               select_value = u'*'
             else:
               select_value = u' '
-            print u'[%s]  %2d) %s\n          %s\n' % (select_value, x, all_apis[api][u'auth'][u'oauth2'][u'scopes'][scope][u'description'], scope)
+            print u'[%s]  %2d) %s\n             %s' % (select_value, x, all_apis[api][u'auth'][u'oauth2'][u'scopes'][scope][u'description'], scope)
             x += 1
+          print
           print u'     %2d) Select defaults for this API (allow all GAM commands)' % (x)
           print u'     %2d) Select read-only scopes' % (x+1)
           print u'     %2d) Unselect all scopes' % (x+2)
