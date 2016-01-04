@@ -863,7 +863,7 @@ def buildGAPIObject(api, act_as=None, soft_errors=False):
     service = getServiceFromDiscoveryDocument(api, version, http)
   except httplib2.ServerNotFoundError as e:
     systemErrorExit(4, e)
-  setCurrentServiceScopes(service, api, version)
+  scopes = setCurrentAPIScopes(service)
   credentials = oauth2client.client.SignedJwtAssertionCredentials(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_EMAIL],
                                                                   GM_Globals[GM_OAUTH2SERVICE_KEY],
                                                                   scope=GM_Globals[GM_CURRENT_API_SCOPES], user_agent=GAM_INFO, sub=sub)
@@ -8736,22 +8736,25 @@ def OAuthInfo():
     version = getAPIVer(api)
     if api in [u'directory', u'reports', u'datatransfer']:
       api = u'admin'
-    apiData = GM_Globals[GM_GAMSCOPES_BY_API].get(u'{0}-{1}'.format(api, version), {})
-    scopes = apiData.get(u'use_scopes', [])
+    http = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL],
+                                                 cache=GC_Values[GC_CACHE_DIR])
+    try:
+      service = googleapiclient.discovery.build(api, version, http=http, cache_discovery=False)
+    except googleapiclient.errors.UnknownApiNameOrVersion:
+      service = getServiceFromDiscoveryDocument(api, version, http)
+    except httplib2.ServerNotFoundError as e:
+      systemErrorExit(4, e) 
+    scopes = setCurrentAPIScopes(service)
     if scopes:
       for scope in scopes:
+        if scope == u'email':
+           continue
         print u'    {0}'.format(scope)
       credentials = oauth2client.client.SignedJwtAssertionCredentials(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_EMAIL],
                                                                       GM_Globals[GM_OAUTH2SERVICE_KEY],
                                                                       scope=scopes, user_agent=GAM_INFO, sub=GC_Values[GC_ADMIN])
-      http = credentials.authorize(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL],
-                                                 cache=GC_Values[GC_CACHE_DIR]))
       try:
-        googleapiclient.discovery.build(api, version, http=http, cache_discovery=False)
-      except googleapiclient.errors.UnknownApiNameOrVersion:
-        getServiceFromDiscoveryDocument(api, version, http)
-      except httplib2.ServerNotFoundError as e:
-        systemErrorExit(4, e)
+        service._http = credentials.authorize(service._http)
       except oauth2client.client.AccessTokenRefreshError, e:
         if e.message in [u'access_denied',
                          u'unauthorized_client: Unauthorized client or scope in request.',
@@ -8792,31 +8795,22 @@ UBER_SCOPES = {
   }
 
 def select_default_scopes(apis):
+  scopes = []
   for api_name, api in apis.items():
     if api_name in UBER_SCOPES.keys():
-      apis[api_name][u'use_scopes'] = UBER_SCOPES[api_name]
-      continue
-    apis[api_name][u'use_scopes'] = []
-    scopes = api[u'auth'][u'oauth2'][u'scopes'].keys()
-    if len(scopes) == 1:
-      apis[api_name][u'use_scopes'] += scopes
-      continue
-    all_readonly = True
-    for scope in api[u'auth'][u'oauth2'][u'scopes'].keys():
-      if scope.endswith(u'.readonly'):
-        continue
-      elif scope.endswith(u'.action'):
-        all_readonly = False
-        continue
-      elif scope.endswith(u'verify_only'):
-        all_readonly = False
-        continue
-      else:
-        apis[api_name][u'use_scopes'].append(scope)
-        all_readonly = False
-    if all_readonly:
-      apis[api_name][u'use_scopes'] += scopes
-  return apis
+      scopes += UBER_SCOPES[api_name]
+    else:
+      scopes += api[u'auth'][u'oauth2'][u'scopes'].keys()
+  selected_scopes = scopes
+  # reduce # of scopes by checking if a scope is a substring of another
+  # which should mean it covers same API operations. Add a . at end
+  # to prevent things like directory.users removing directory.userschema
+  for check_me in scopes:
+    check_me += u'.'
+    for against_me in scopes:
+      if check_me in against_me and check_me != against_me:
+        selected_scopes.remove(against_me)
+  return selected_scopes
 
 def getSelection(limit):
   while True:
@@ -8848,17 +8842,18 @@ def doRequestOAuth():
   for api_name in all_apis.keys():
     all_apis[api_name][u'index'] = i
     i += 1
-  all_apis = select_default_scopes(all_apis)
-  if GM_Globals[GM_GAMSCOPES_BY_API]:
-    for api in GM_Globals[GM_GAMSCOPES_BY_API]:
-      all_apis[api][u'use_scopes'] = GM_Globals[GM_GAMSCOPES_BY_API][api][u'use_scopes']
+  if GM_Globals[GM_GAMSCOPES_LIST]:
+    selected_scopes = GM_Globals[GM_GAMSCOPES_LIST]
+  else:
+    selected_scopes = select_default_scopes(all_apis)
   while True:
-    os.system([u'clear', u'cls'][GM_Globals[GM_WINDOWS]])
+    #os.system([u'clear', u'cls'][GM_Globals[GM_WINDOWS]])
     print u'Select the APIs to use with GAM.'
     print
     for api in all_apis.values():
-      num_scopes_selected = len(api[u'use_scopes'])
-      num_scopes_total = len(api[u'auth'][u'oauth2'][u'scopes'])
+      api_scopes = api[u'auth'][u'oauth2'][u'scopes']
+      num_scopes_selected = len(set(api_scopes).intersection(selected_scopes))
+      num_scopes_total = len(api_scopes)
       if num_scopes_selected > 0:
         select_value = u'*'
       else:
@@ -8872,17 +8867,13 @@ def doRequestOAuth():
     print
     selection = getSelection(i+3)
     if selection == i: # defaults
-      all_apis = select_default_scopes(all_apis)
+      selected_scopes = select_default_scopes(all_apis)
     elif selection == i+1: # unselect all
       for api in all_apis.keys():
-        all_apis[api][u'use_scopes'] = []
+        selected_scopes = []
     elif selection == i+3: # continue
-      GM_Globals[GM_GAMSCOPES_BY_API] = {}
-      GM_Globals[GM_GAMSCOPES_LIST] = []
-      for api in all_apis.keys():
-        GM_Globals[GM_GAMSCOPES_BY_API][api] = {u'use_scopes': all_apis[api][u'use_scopes']}
-        GM_Globals[GM_GAMSCOPES_LIST] += all_apis[api][u'use_scopes']
-      GM_Globals[GM_GAMSCOPES_LIST] = list(set(GM_Globals[GM_GAMSCOPES_LIST])) # unique only
+      selected_scopes = list(set(selected_scopes))
+      GM_Globals[GM_GAMSCOPES_LIST] = selected_scopes # unique only
       if len(GM_Globals[GM_GAMSCOPES_LIST]) == 0:
         print u'YOU MUST SELECT AT LEAST ONE SCOPE'
         continue
@@ -8894,17 +8885,18 @@ def doRequestOAuth():
     else: # select
       api = all_apis.keys()[selection]
       if len(all_apis[api][u'auth'][u'oauth2'][u'scopes']) == 1:
-        if len(all_apis[api][u'use_scopes']) == 1:
-          all_apis[api][u'use_scopes'] = []
+        one_scope = all_apis[api][u'auth'][u'oauth2'][u'scopes'][0]
+        if one_scope in selected_scopes:
+          selected_scopes.remove(one_scope)
         else:
-          all_apis[api][u'use_scopes'] = all_apis[api][u'auth'][u'oauth2'][u'scopes'].keys()
+          selected_scopes.append(one_scope)
       else:
         while True:
-          os.system([u'clear', u'cls'][GM_Globals[GM_WINDOWS]])
+          #os.system([u'clear', u'cls'][GM_Globals[GM_WINDOWS]])
           print
           x = 0
           for scope in all_apis[api][u'auth'][u'oauth2'][u'scopes'].keys():
-            if scope in all_apis[api][u'use_scopes']:
+            if scope in selected_scopes:
               select_value = u'*'
             else:
               select_value = u' '
@@ -8918,10 +8910,10 @@ def doRequestOAuth():
           print
           selection = getSelection(x+4)
           if selection < x: # select
-            if all_apis[api][u'auth'][u'oauth2'][u'scopes'].keys()[selection] in all_apis[api][u'use_scopes']:
-              all_apis[api][u'use_scopes'].remove(all_apis[api][u'auth'][u'oauth2'][u'scopes'].keys()[selection])
+            if all_apis[api][u'auth'][u'oauth2'][u'scopes'].keys()[selection] in selected_scopes:
+              selected_scopes.remove(all_apis[api][u'auth'][u'oauth2'][u'scopes'].keys()[selection])
             else:
-              all_apis[api][u'use_scopes'].append(all_apis[api][u'auth'][u'oauth2'][u'scopes'].keys()[selection])
+              selected_scopes.append(all_apis[api][u'auth'][u'oauth2'][u'scopes'].keys()[selection])
           elif selection == x: # defaults
             just_this_api = {api: all_apis[api]}
             just_this_api = select_default_scopes(just_this_api)
