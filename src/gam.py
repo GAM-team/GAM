@@ -8792,7 +8792,7 @@ def select_default_scopes(apis):
     else:
       scopes += api[u'auth'][u'oauth2'][u'scopes'].keys()
   scopes.sort()
-  selected_scopes = []
+  selected_scopes = set()
   # reduce # of scopes by checking if a scope is a substring of another
   # which should mean it covers same API operations. Add a . at end
   # to prevent things like directory.users removing directory.userschema
@@ -8800,7 +8800,7 @@ def select_default_scopes(apis):
   count = len(scopes)
   while i < count:
     scope = scopes[i]
-    selected_scopes.append(scope)
+    selected_scopes.add(scope)
     i += 1
     scope += u'.'
     while (i < count) and scopes[i].startswith(scope):
@@ -8838,7 +8838,7 @@ def doRequestOAuth():
     all_apis[api_name][u'index'] = i
     i += 1
   if GM_Globals[GM_GAMSCOPES_LIST]:
-    selected_scopes = GM_Globals[GM_GAMSCOPES_LIST]
+    selected_scopes = set(GM_Globals[GM_GAMSCOPES_LIST])
   else:
     selected_scopes = select_default_scopes(all_apis)
   while True:
@@ -8864,13 +8864,12 @@ def doRequestOAuth():
     if selection == i: # defaults
       selected_scopes = select_default_scopes(all_apis)
     elif selection == i+1: # unselect all
-      selected_scopes = []
+      selected_scopes.clear()
     elif selection == i+3: # continue
-      selected_scopes = list(set(selected_scopes))
-      GM_Globals[GM_GAMSCOPES_LIST] = selected_scopes # unique only
-      if len(GM_Globals[GM_GAMSCOPES_LIST]) == 0:
+      if not selected_scopes:
         print u'YOU MUST SELECT AT LEAST ONE SCOPE'
         continue
+      GM_Globals[GM_GAMSCOPES_LIST] = list(selected_scopes)
       writeFile(GC_Values[GC_GAMSCOPES_JSON], json.dumps(GM_Globals[GM_GAMSCOPES_LIST]))
       print u'Scopes file: {0}, Created'.format(GC_Values[GC_GAMSCOPES_JSON])
       break
@@ -8878,18 +8877,19 @@ def doRequestOAuth():
       return
     else: # select
       api = all_apis.keys()[selection]
-      if len(all_apis[api][u'auth'][u'oauth2'][u'scopes']) == 1:
-        one_scope = all_apis[api][u'auth'][u'oauth2'][u'scopes'].keys()[0]
+      api_scopes = all_apis[api][u'auth'][u'oauth2'][u'scopes'].keys()
+      if len(api_scopes) == 1:
+        one_scope = api_scopes[0]
         if one_scope in selected_scopes:
           selected_scopes.remove(one_scope)
         else:
-          selected_scopes.append(one_scope)
+          selected_scopes.add(one_scope)
       else:
         while True:
           #os.system([u'clear', u'cls'][GM_Globals[GM_WINDOWS]])
           print
           x = 0
-          for scope in all_apis[api][u'auth'][u'oauth2'][u'scopes'].keys():
+          for scope in api_scopes:
             if scope in selected_scopes:
               select_value = u'*'
             else:
@@ -8904,21 +8904,20 @@ def doRequestOAuth():
           print
           selection = getSelection(x+4)
           if selection < x: # select
-            if all_apis[api][u'auth'][u'oauth2'][u'scopes'].keys()[selection] in selected_scopes:
-              selected_scopes.remove(all_apis[api][u'auth'][u'oauth2'][u'scopes'].keys()[selection])
+            if api_scopes[selection] in selected_scopes:
+              selected_scopes.remove(api_scopes[selection])
             else:
-              selected_scopes.append(all_apis[api][u'auth'][u'oauth2'][u'scopes'].keys()[selection])
+              selected_scopes.add(api_scopes[selection])
           elif selection == x: # defaults
-            just_this_api = {api: all_apis[api]}
-            just_this_api = select_default_scopes(just_this_api)
-            all_apis[api][u'use_scopes'] = just_this_api[api][u'use_scopes']
+            selected_scopes = selected_scopes.difference(api_scopes)
+            selected_scopes = selected_scopes.union(select_default_scopes({api: all_apis[api]}))
           elif selection == x+1: # read-only
-            all_apis[api][u'use_scopes'] = []
-            for scope in all_apis[api][u'auth'][u'oauth2'][u'scopes'].keys():
+            selected_scopes = selected_scopes.difference(api_scopes)
+            for scope in api_scopes:
               if scope.endswith(u'.readonly'):
-                all_apis[api][u'use_scopes'].append(scope)
+                selected_scopes.add(scope)
           elif selection == x+2: # unselect all
-            all_apis[api][u'use_scopes'] = []
+            selected_scopes = selected_scopes.difference(api_scopes)
           elif selection == x+4: # back
             break
           else: # cancel
