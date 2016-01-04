@@ -8883,7 +8883,7 @@ def doRequestOAuth():
       return
     else: # select
       api = api_index[selection]
-      api_scopes = all_apis[api][u'auth'][u'oauth2'][u'scopes'].keys()
+      api_scopes = sorted(all_apis[api][u'auth'][u'oauth2'][u'scopes'].keys())
       if len(api_scopes) == 1:
         if len(all_apis[api][u'use_scopes']) == 1:
           all_apis[api][u'use_scopes'] = []
@@ -8899,7 +8899,7 @@ def doRequestOAuth():
               select_value = u'*'
             else:
               select_value = u' '
-            print u'[%s]  %2d) %s\n             %s' % (select_value, x, all_apis[api][u'auth'][u'oauth2'][u'scopes'][scope][u'description'], scope)
+            print u'[%s]  %2d) %s\n              %s' % (select_value, x, all_apis[api][u'auth'][u'oauth2'][u'scopes'][scope][u'description'], scope)
             x += 1
           print
           print u'     %2d) Select defaults for this API (allow all GAM commands)' % (x)
