@@ -249,7 +249,7 @@ MESSAGE_HEADER_NOT_FOUND_IN_CSV_HEADERS = u'Header "{0}" not found in CSV header
 MESSAGE_HIT_CONTROL_C_TO_UPDATE = u'\n\nHit CTRL+C to visit the GAM website and download the latest release or wait 15 seconds continue with this boring old version. GAM won\'t bother you with this announcement for 1 week or you can create a file named noupdatecheck.txt in the same location as gam.py or gam.exe and GAM won\'t ever check for updates.'
 MESSAGE_NO_DISCOVERY_INFORMATION = u'No online discovery doc and {0} does not exist locally'
 MESSAGE_NO_PYTHON_SSL = u'You don\'t have the Python SSL module installed so we can\'t verify SSL Certificates. You can fix this by installing the Python SSL module or you can live on the edge and turn SSL validation off by creating a file named noverifyssl.txt in the same location as gam.exe / gam.py'
-MESSAGE_NO_SCOPES_FOR_API = u'There are no scopes authorized for API {0}-{1}; please run gam oauth create'
+MESSAGE_NO_SCOPES_FOR_API = u'There are no scopes authorized for {0}; please run gam oauth create'
 MESSAGE_NO_TRANSFER_LACK_OF_DISK_SPACE = u'Cowardly refusing to perform migration due to lack of target drive space. Source size: {0}mb Target Free: {1}mb'
 MESSAGE_OAUTH2SERVICE_JSON_INVALID = u'The file {0} is missing required keys (client_email, client_id or private_key).'
 MESSAGE_PLEASE_AUTHORIZE_SERVICE_ACCOUNT = u'Please authorize your Service account Client ID for the {} scopes:'
@@ -799,7 +799,7 @@ API_VER_MAPPING = {
 def getAPIVer(api):
   return API_VER_MAPPING.get(api, u'v1')
 
-def setCurrentAPIScopes(service, api, version):
+def setCurrentAPIScopes(service):
   if GM_Globals[GM_GAMSCOPES_LIST]:
     return list(set(service._rootDesc[u'auth'][u'oauth2'][u'scopes'].keys()).intersection(GM_Globals[GM_GAMSCOPES_LIST]))
   else:
@@ -851,9 +851,10 @@ def buildGAPIObject(api, act_as=None, soft_errors=False):
     service = getServiceFromDiscoveryDocument(api, version, http)
   except httplib2.ServerNotFoundError as e:
     systemErrorExit(4, e)
-  scopes = setCurrentAPIScopes(service, api, version) + [u'email']
-  if len(scopes) == 1:
-    systemErrorExit(15, MESSAGE_NO_SCOPES_FOR_API.format(api, version))
+  scopes = setCurrentAPIScopes(service)
+  if not scopes:
+    systemErrorExit(15, MESSAGE_NO_SCOPES_FOR_API.format(service._rootDesc[u'title']))
+  scopes += [u'email',]
   credentials = oauth2client.client.SignedJwtAssertionCredentials(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_EMAIL],
                                                                   GM_Globals[GM_OAUTH2SERVICE_KEY],
                                                                   scope=scopes, user_agent=GAM_INFO, sub=sub)
@@ -871,17 +872,17 @@ def buildGAPIObject(api, act_as=None, soft_errors=False):
     systemErrorExit(4, e)
   return service
 
-GDATA_API_SCOPES = {
-  u'admin-settings': u'https://apps-apis.google.com/a/feeds/domain/',
-  u'email-audit': u'https://apps-apis.google.com/a/feeds/compliance/audit/',
-  u'email-settings': u'https://apps-apis.google.com/a/feeds/emailsettings/2.0/'
+GDATA_API_INFO = {
+  u'admin-settings': {u'scopes': u'https://apps-apis.google.com/a/feeds/domain/', u'title': u'Admin Settings API'},
+  u'email-audit': {u'scopes': u'https://apps-apis.google.com/a/feeds/compliance/audit/', u'title': u'Email Audit API'},
+  u'email-settings': {u'scopes': u'https://apps-apis.google.com/a/feeds/emailsettings/2.0/', u'title': u'Email Settings API'},
   }
 
 def commonAppsObjInit(appsObj, api):
   getOAuth2ServiceDetails()
-  GM_Globals[GM_CURRENT_API_SCOPES] = GDATA_API_SCOPES[api]
+  GM_Globals[GM_CURRENT_API_SCOPES] = GDATA_API_INFO[api][u'scopes']
   if GM_Globals[GM_GAMSCOPES_LIST] and (GM_Globals[GM_CURRENT_API_SCOPES] not in GM_Globals[GM_GAMSCOPES_LIST]):
-    systemErrorExit(15, MESSAGE_NO_SCOPES_FOR_API.format(api, getAPIVer(api)))
+    systemErrorExit(15, MESSAGE_NO_SCOPES_FOR_API.format(GDATA_API_INFO[api][u'title']))
   if not tryOAuth(appsObj):
     doRequestOAuth()
     tryOAuth(appsObj)
@@ -8736,7 +8737,7 @@ def OAuthInfo():
       service = getServiceFromDiscoveryDocument(api, version, http)
     except httplib2.ServerNotFoundError as e:
       systemErrorExit(4, e)
-    scopes = setCurrentAPIScopes(service, api, version)
+    scopes = setCurrentAPIScopes(service)
     if scopes:
       for scope in scopes:
         print u'    {0}'.format(scope)
