@@ -252,7 +252,7 @@ MESSAGE_NO_PYTHON_SSL = u'You don\'t have the Python SSL module installed so we 
 MESSAGE_NO_SCOPES_FOR_API = u'There are no scopes authorized for API {0}-{1}; please run gam oauth create'
 MESSAGE_NO_TRANSFER_LACK_OF_DISK_SPACE = u'Cowardly refusing to perform migration due to lack of target drive space. Source size: {0}mb Target Free: {1}mb'
 MESSAGE_OAUTH2SERVICE_JSON_INVALID = u'The file {0} is missing required keys (client_email, client_id or private_key).'
-MESSAGE_PLEASE_AUTHORIZE_SERVIE_ACCOUNT = u'Please authorize your Service account Client ID for the {} scopes:'
+MESSAGE_PLEASE_AUTHORIZE_SERVICE_ACCOUNT = u'Please authorize your Service account Client ID for the {} scopes:'
 MESSAGE_REQUEST_COMPLETED_NO_FILES = u'Request completed but no results/files were returned, try requesting again'
 MESSAGE_REQUEST_NOT_COMPLETE = u'Request needs to be completed before downloading, current status is: {0}'
 MESSAGE_RESULTS_TOO_LARGE_FOR_GOOGLE_SPREADSHEET = u'Results are too large for Google Spreadsheets. Uploading as a regular CSV file.'
@@ -8927,7 +8927,7 @@ def doRequestOAuth():
             break
           else: # cancel
             return
-  print MESSAGE_PLEASE_AUTHORIZE_SERVIE_ACCOUNT.format(len(GM_Globals[GM_GAMSCOPES_LIST]))
+  print MESSAGE_PLEASE_AUTHORIZE_SERVICE_ACCOUNT.format(len(GM_Globals[GM_GAMSCOPES_LIST]))
   print
   print u','.join(GM_Globals[GM_GAMSCOPES_LIST])
 
