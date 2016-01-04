@@ -801,12 +801,9 @@ def getAPIVer(api):
 
 def setCurrentAPIScopes(service, api, version):
   if GM_Globals[GM_GAMSCOPES_LIST]:
-    selected_api_scopes = list(set(service._rootDesc[u'auth'][u'oauth2'][u'scopes'].keys()).intersection(GM_Globals[GM_GAMSCOPES_LIST]))
+    return list(set(service._rootDesc[u'auth'][u'oauth2'][u'scopes'].keys()).intersection(GM_Globals[GM_GAMSCOPES_LIST]))
   else:
-    selected_api_scopes = service._rootDesc[u'auth'][u'oauth2'][u'scopes'].keys()
-  if len(selected_api_scopes) < 1:
-    systemErrorExit(15, MESSAGE_NO_SCOPES_FOR_API.format(api, version))
-  return selected_api_scopes + [u'email']
+    return service._rootDesc[u'auth'][u'oauth2'][u'scopes'].keys()
 
 def getServiceFromDiscoveryDocument(api, version, http=None):
   disc_filename = u'%s-%s.json' % (api, version)
@@ -854,7 +851,9 @@ def buildGAPIObject(api, act_as=None, soft_errors=False):
     service = getServiceFromDiscoveryDocument(api, version, http)
   except httplib2.ServerNotFoundError as e:
     systemErrorExit(4, e)
-  scopes = setCurrentAPIScopes(service, api, version)
+  scopes = setCurrentAPIScopes(service, api, version) + [u'email']
+  if len(scopes) == 1:
+    systemErrorExit(15, MESSAGE_NO_SCOPES_FOR_API.format(api, version))
   credentials = oauth2client.client.SignedJwtAssertionCredentials(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_EMAIL],
                                                                   GM_Globals[GM_OAUTH2SERVICE_KEY],
                                                                   scope=scopes, user_agent=GAM_INFO, sub=sub)
@@ -8738,8 +8737,6 @@ def OAuthInfo():
     except httplib2.ServerNotFoundError as e:
       systemErrorExit(4, e)
     scopes = setCurrentAPIScopes(service, api, version)
-    if u'email' in scopes:
-      scopes.remove(u'email')
     if scopes:
       for scope in scopes:
         print u'    {0}'.format(scope)
