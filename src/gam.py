@@ -91,7 +91,6 @@ GM_BATCH_QUEUE = u'batq'
 # Extra arguments to pass to GAPI functions
 GM_EXTRA_ARGS_DICT = u'exad'
 # Scopes retrieved from gamscopes.json
-GM_GAMSCOPES_BY_API = u'scop'
 GM_GAMSCOPES_LIST = u'scof'
 # Current API scope
 GM_CURRENT_API_SCOPES = u'scoc'
@@ -117,7 +116,6 @@ GM_Globals = {
   GM_SYS_ENCODING: sys.getfilesystemencoding() if os.name == u'nt' else u'utf-8',
   GM_BATCH_QUEUE: None,
   GM_EXTRA_ARGS_DICT:  {u'prettyPrint': False},
-  GM_GAMSCOPES_BY_API: {},
   GM_GAMSCOPES_LIST: [],
   GM_CURRENT_API_SCOPES: [],
   GM_OAUTH2SERVICE_KEY: None,
@@ -801,21 +799,14 @@ API_VER_MAPPING = {
 def getAPIVer(api):
   return API_VER_MAPPING.get(api, u'v1')
 
-def setCurrentServiceScopes(service, api, version):
+def setCurrentAPIScopes(service, api, version):
   if GM_Globals[GM_GAMSCOPES_LIST]:
-    GM_Globals[GM_CURRENT_API_SCOPES] = list(set(service._rootDesc[u'auth'][u'oauth2'][u'scopes'].keys()).intersection(GM_Globals[GM_GAMSCOPES_LIST]))+[u'email',]
+    selected_api_scopes = list(set(service._rootDesc[u'auth'][u'oauth2'][u'scopes'].keys()).intersection(GM_Globals[GM_GAMSCOPES_LIST]))
   else:
-    GM_Globals[GM_CURRENT_API_SCOPES] = service._rootDesc[u'auth'][u'oauth2'][u'scopes'].keys()+['email',]
-  if len(GM_Globals[GM_CURRENT_API_SCOPES]) < 2:
+    selected_api_scopes = service._rootDesc[u'auth'][u'oauth2'][u'scopes'].keys()
+  if len(selected_api_scopes) < 1:
     systemErrorExit(15, MESSAGE_NO_SCOPES_FOR_API.format(api, version))
-
-def setCurrentAPIScopes(api, version=None):
-  if not version:
-    version = getAPIVer(api)
-  apiData = GM_Globals[GM_GAMSCOPES_BY_API].get(u'{0}-{1}'.format(api, version), {})
-  GM_Globals[GM_CURRENT_API_SCOPES] = apiData.get(u'use_scopes', [])
-  if not GM_Globals[GM_CURRENT_API_SCOPES]:
-    systemErrorExit(15, MESSAGE_NO_SCOPES_FOR_API.format(api, version))
+  return selected_api_scopes + [u'email']
 
 def getServiceFromDiscoveryDocument(api, version, http=None):
   disc_filename = u'%s-%s.json' % (api, version)
@@ -863,17 +854,17 @@ def buildGAPIObject(api, act_as=None, soft_errors=False):
     service = getServiceFromDiscoveryDocument(api, version, http)
   except httplib2.ServerNotFoundError as e:
     systemErrorExit(4, e)
-  scopes = setCurrentAPIScopes(service)
+  scopes = setCurrentAPIScopes(service, api, version)
   credentials = oauth2client.client.SignedJwtAssertionCredentials(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_EMAIL],
                                                                   GM_Globals[GM_OAUTH2SERVICE_KEY],
-                                                                  scope=GM_Globals[GM_CURRENT_API_SCOPES], user_agent=GAM_INFO, sub=sub)
+                                                                  scope=scopes, user_agent=GAM_INFO, sub=sub)
   try:
     service._http = credentials.authorize(http)
   except oauth2client.client.AccessTokenRefreshError, e:
     if e.message in [u'access_denied',
                      u'unauthorized_client: Unauthorized client or scope in request.',
                      u'access_denied: Requested client not authorized.']:
-      sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, MESSAGE_CLIENT_API_ACCESS_DENIED.format(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID], u','.join(GM_Globals[GM_CURRENT_API_SCOPES]))))
+      sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, MESSAGE_CLIENT_API_ACCESS_DENIED.format(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID], u','.join(scopes))))
       systemErrorExit(5, MESSAGE_CLIENT_API_ACCESS_CONFIG)
     if soft_errors:
       sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, e))
@@ -881,9 +872,17 @@ def buildGAPIObject(api, act_as=None, soft_errors=False):
     systemErrorExit(4, e)
   return service
 
+GDATA_API_SCOPES = {
+  u'admin-settings': u'https://apps-apis.google.com/a/feeds/domain/',
+  u'email-audit': u'https://apps-apis.google.com/a/feeds/compliance/audit/',
+  u'email-settings': u'https://apps-apis.google.com/a/feeds/emailsettings/2.0/'
+  }
+
 def commonAppsObjInit(appsObj, api):
   getOAuth2ServiceDetails()
-  setCurrentAPIScopes(api)
+  GM_Globals[GM_CURRENT_API_SCOPES] = GDATA_API_SCOPES[api]
+  if GM_Globals[GM_GAMSCOPES_LIST] and (GM_Globals[GM_CURRENT_API_SCOPES] not in GM_Globals[GM_GAMSCOPES_LIST]):
+    systemErrorExit(15, MESSAGE_NO_SCOPES_FOR_API.format(api, getAPIVer(api)))
   if not tryOAuth(appsObj):
     doRequestOAuth()
     tryOAuth(appsObj)
@@ -8715,16 +8714,10 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
   return full_users
 
 def validateSetGAMScopes(json_data):
-  GM_Globals[GM_GAMSCOPES_BY_API] = {}
   GM_Globals[GM_GAMSCOPES_LIST] = []
-  if not isinstance(json_data, dict):
+  if not isinstance(json_data, list):
     return False
-  for api, value in json_data.items():
-    if (not isinstance(value, dict)) or (u'use_scopes' not in value) or (not isinstance(value[u'use_scopes'], list)):
-      return False
-    GM_Globals[GM_GAMSCOPES_BY_API][api] = {u'use_scopes': value[u'use_scopes']}
-    GM_Globals[GM_GAMSCOPES_LIST] += value[u'use_scopes']
-  GM_Globals[GM_GAMSCOPES_LIST] = list(set(GM_Globals[GM_GAMSCOPES_LIST])) # unique only
+  GM_Globals[GM_GAMSCOPES_LIST] = list(set(json_data)) # unique only
   return len(GM_Globals[GM_GAMSCOPES_LIST]) > 0
 
 def OAuthInfo():
@@ -8737,24 +8730,24 @@ def OAuthInfo():
     if api in [u'directory', u'reports', u'datatransfer']:
       api = u'admin'
     http = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL],
-                                                 cache=GC_Values[GC_CACHE_DIR])
+                         cache=GC_Values[GC_CACHE_DIR])
     try:
       service = googleapiclient.discovery.build(api, version, http=http, cache_discovery=False)
     except googleapiclient.errors.UnknownApiNameOrVersion:
       service = getServiceFromDiscoveryDocument(api, version, http)
     except httplib2.ServerNotFoundError as e:
-      systemErrorExit(4, e) 
-    scopes = setCurrentAPIScopes(service)
+      systemErrorExit(4, e)
+    scopes = setCurrentAPIScopes(service, api, version)
+    if u'email' in scopes:
+      scopes.remove(u'email')
     if scopes:
       for scope in scopes:
-        if scope == u'email':
-           continue
         print u'    {0}'.format(scope)
       credentials = oauth2client.client.SignedJwtAssertionCredentials(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_EMAIL],
                                                                       GM_Globals[GM_OAUTH2SERVICE_KEY],
                                                                       scope=scopes, user_agent=GAM_INFO, sub=GC_Values[GC_ADMIN])
       try:
-        service._http = credentials.authorize(service._http)
+        service._http = credentials.refresh(http)
       except oauth2client.client.AccessTokenRefreshError, e:
         if e.message in [u'access_denied',
                          u'unauthorized_client: Unauthorized client or scope in request.',
@@ -8763,7 +8756,7 @@ def OAuthInfo():
           configRequired = True
         else:
           print u'    {0}{1}'.format(ERROR_PREFIX, e)
-        continue  
+        continue
       print u'    {0}'.format(MESSAGE_CLIENT_API_ACCESS_AUTHORIZED)
     else:
       print u'    {0}'.format(MESSAGE_CLIENT_API_ACCESS_NOT_REQUESTED)
@@ -8801,15 +8794,20 @@ def select_default_scopes(apis):
       scopes += UBER_SCOPES[api_name]
     else:
       scopes += api[u'auth'][u'oauth2'][u'scopes'].keys()
-  selected_scopes = scopes
+  scopes.sort()
+  selected_scopes = []
   # reduce # of scopes by checking if a scope is a substring of another
   # which should mean it covers same API operations. Add a . at end
   # to prevent things like directory.users removing directory.userschema
-  for check_me in scopes:
-    check_me += u'.'
-    for against_me in scopes:
-      if check_me in against_me and check_me != against_me:
-        selected_scopes.remove(against_me)
+  i = 0
+  count = len(scopes)
+  while i < count:
+    scope = scopes[i]
+    selected_scopes.append(scope)
+    i += 1
+    scope += u'.'
+    while (i < count) and scopes[i].startswith(scope):
+      i += 1
   return selected_scopes
 
 def getSelection(limit):
@@ -8877,7 +8875,7 @@ def doRequestOAuth():
       if len(GM_Globals[GM_GAMSCOPES_LIST]) == 0:
         print u'YOU MUST SELECT AT LEAST ONE SCOPE'
         continue
-      writeFile(GC_Values[GC_GAMSCOPES_JSON], json.dumps(GM_Globals[GM_GAMSCOPES_BY_API]))
+      writeFile(GC_Values[GC_GAMSCOPES_JSON], json.dumps(GM_Globals[GM_GAMSCOPES_LIST]))
       print u'Scopes file: {0}, Created'.format(GC_Values[GC_GAMSCOPES_JSON])
       break
     elif selection == i+2: # cancel
@@ -8885,7 +8883,7 @@ def doRequestOAuth():
     else: # select
       api = all_apis.keys()[selection]
       if len(all_apis[api][u'auth'][u'oauth2'][u'scopes']) == 1:
-        one_scope = all_apis[api][u'auth'][u'oauth2'][u'scopes'][0]
+        one_scope = all_apis[api][u'auth'][u'oauth2'][u'scopes'].keys()[0]
         if one_scope in selected_scopes:
           selected_scopes.remove(one_scope)
         else:
