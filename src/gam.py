@@ -91,6 +91,7 @@ GM_BATCH_QUEUE = u'batq'
 # Extra arguments to pass to GAPI functions
 GM_EXTRA_ARGS_DICT = u'exad'
 # Scopes retrieved from gamscopes.json
+GM_GAMSCOPES_BY_API = u'scop'
 GM_GAMSCOPES_LIST = u'scof'
 # Current API scope
 GM_CURRENT_API_SCOPES = u'scoc'
@@ -116,6 +117,7 @@ GM_Globals = {
   GM_SYS_ENCODING: sys.getfilesystemencoding() if os.name == u'nt' else u'utf-8',
   GM_BATCH_QUEUE: None,
   GM_EXTRA_ARGS_DICT:  {u'prettyPrint': False},
+  GM_GAMSCOPES_BY_API: {},
   GM_GAMSCOPES_LIST: [],
   GM_CURRENT_API_SCOPES: [],
   GM_OAUTH2SERVICE_KEY: None,
@@ -238,8 +240,10 @@ GC_VAR_INFO = {
   }
 
 MESSAGE_BATCH_CSV_DASH_DEBUG_INCOMPATIBLE = u'"gam {0} - ..." is not compatible with debugging. Disable debugging by deleting debug.gam and try again.'
+MESSAGE_CLIENT_API_ACCESS_AUTHORIZED = u'API access authorized'
 MESSAGE_CLIENT_API_ACCESS_CONFIG = u'API access is configured in your Control Panel under: Security-Show more-Advanced settings-Manage API client access'
-MESSAGE_CLIENT_API_ACCESS_DENIED = u'API access denied. Please make sure the service account ID: {0} is authorized for the API Scope(s): {1}'
+MESSAGE_CLIENT_API_ACCESS_DENIED = u'API access denied. Please make sure the Service account Client ID: {0} is authorized for the API Scope(s): {1}'
+MESSAGE_CLIENT_API_ACCESS_NOT_REQUESTED = u'API access not requested'
 MESSAGE_GAMSCOPES_JSON_INVALID = u'The file {0} has an invalid format.'
 MESSAGE_GAM_EXITING_FOR_UPDATE = u'GAM is now exiting so that you can overwrite this old version with the latest release'
 MESSAGE_GAM_OUT_OF_MEMORY = u'GAM has run out of memory. If this is a large Google Apps instance, you should use a 64-bit version of GAM on Windows or a 64-bit version of Python on other systems.'
@@ -250,11 +254,11 @@ MESSAGE_NO_PYTHON_SSL = u'You don\'t have the Python SSL module installed so we 
 MESSAGE_NO_SCOPES_FOR_API = u'There are no scopes authorized for API {0}-{1}; please run gam oauth create'
 MESSAGE_NO_TRANSFER_LACK_OF_DISK_SPACE = u'Cowardly refusing to perform migration due to lack of target drive space. Source size: {0}mb Target Free: {1}mb'
 MESSAGE_OAUTH2SERVICE_JSON_INVALID = u'The file {0} is missing required keys (client_email, client_id or private_key).'
-MESSAGE_PLEASE_AUTHORIZE_SERVIE_ACCOUNT = u'Please authorize your service account client id for the {} scopes:'
+MESSAGE_PLEASE_AUTHORIZE_SERVIE_ACCOUNT = u'Please authorize your Service account Client ID for the {} scopes:'
 MESSAGE_REQUEST_COMPLETED_NO_FILES = u'Request completed but no results/files were returned, try requesting again'
 MESSAGE_REQUEST_NOT_COMPLETE = u'Request needs to be completed before downloading, current status is: {0}'
 MESSAGE_RESULTS_TOO_LARGE_FOR_GOOGLE_SPREADSHEET = u'Results are too large for Google Spreadsheets. Uploading as a regular CSV file.'
-MESSAGE_WIKI_INSTRUCTIONS_OAUTH2SERVICE_JSON = u'Please follow the instructions at this site to setup a Service Account.'
+MESSAGE_WIKI_INSTRUCTIONS_OAUTH2SERVICE_JSON = u'Please follow the instructions at this site to setup a Service account.'
 
 def convertUTF8(data):
   import collections
@@ -797,13 +801,21 @@ API_VER_MAPPING = {
 def getAPIVer(api):
   return API_VER_MAPPING.get(api, u'v1')
 
-def setCurrentAPIScopes(service):
-  selected_scopes = GM_Globals[GM_GAMSCOPES_LIST]
-  all_api_scopes = service._rootDesc[u'auth'][u'oauth2'][u'scopes'].keys()
-  selected_api_scopes = list(set(all_api_scopes).intersection(selected_scopes))
-  if len(selected_api_scopes) < 1:
+def setCurrentServiceScopes(service, api, version):
+  if GM_Globals[GM_GAMSCOPES_LIST]:
+    GM_Globals[GM_CURRENT_API_SCOPES] = list(set(service._rootDesc[u'auth'][u'oauth2'][u'scopes'].keys()).intersection(GM_Globals[GM_GAMSCOPES_LIST]))+[u'email',]
+  else:
+    GM_Globals[GM_CURRENT_API_SCOPES] = service._rootDesc[u'auth'][u'oauth2'][u'scopes'].keys()+['email',]
+  if len(GM_Globals[GM_CURRENT_API_SCOPES]) < 2:
     systemErrorExit(15, MESSAGE_NO_SCOPES_FOR_API.format(api, version))
-  return selected_api_scopes + [u'email']
+
+def setCurrentAPIScopes(api, version=None):
+  if not version:
+    version = getAPIVer(api)
+  apiData = GM_Globals[GM_GAMSCOPES_BY_API].get(u'{0}-{1}'.format(api, version), {})
+  GM_Globals[GM_CURRENT_API_SCOPES] = apiData.get(u'use_scopes', [])
+  if not GM_Globals[GM_CURRENT_API_SCOPES]:
+    systemErrorExit(15, MESSAGE_NO_SCOPES_FOR_API.format(api, version))
 
 def getServiceFromDiscoveryDocument(api, version, http=None):
   disc_filename = u'%s-%s.json' % (api, version)
@@ -844,7 +856,7 @@ def buildGAPIObject(api, act_as=None, soft_errors=False):
   if api in [u'directory', u'reports', u'datatransfer']:
     api = u'admin'
   http = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL],
-                                             cache=GC_Values[GC_CACHE_DIR])
+                       cache=GC_Values[GC_CACHE_DIR])
   try:
     service = googleapiclient.discovery.build(api, version, http=http, cache_discovery=False)
   except googleapiclient.errors.UnknownApiNameOrVersion:
@@ -854,7 +866,7 @@ def buildGAPIObject(api, act_as=None, soft_errors=False):
   scopes = setCurrentAPIScopes(service)
   credentials = oauth2client.client.SignedJwtAssertionCredentials(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_EMAIL],
                                                                   GM_Globals[GM_OAUTH2SERVICE_KEY],
-                                                                  scope=scopes, user_agent=GAM_INFO, sub=sub)
+                                                                  scope=GM_Globals[GM_CURRENT_API_SCOPES], user_agent=GAM_INFO, sub=sub)
   try:
     service._http = credentials.authorize(http)
   except oauth2client.client.AccessTokenRefreshError, e:
@@ -863,10 +875,10 @@ def buildGAPIObject(api, act_as=None, soft_errors=False):
                      u'access_denied: Requested client not authorized.']:
       sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, MESSAGE_CLIENT_API_ACCESS_DENIED.format(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID], u','.join(GM_Globals[GM_CURRENT_API_SCOPES]))))
       systemErrorExit(5, MESSAGE_CLIENT_API_ACCESS_CONFIG)
-    sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, e))
     if soft_errors:
+      sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, e))
       return False
-    sys.exit(4)
+    systemErrorExit(4, e)
   return service
 
 def commonAppsObjInit(appsObj, api):
@@ -8703,16 +8715,22 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
   return full_users
 
 def validateSetGAMScopes(json_data):
+  GM_Globals[GM_GAMSCOPES_BY_API] = {}
   GM_Globals[GM_GAMSCOPES_LIST] = []
-  if not isinstance(json_data, list):
+  if not isinstance(json_data, dict):
     return False
-  GM_Globals[GM_GAMSCOPES_LIST] = json_data
+  for api, value in json_data.items():
+    if (not isinstance(value, dict)) or (u'use_scopes' not in value) or (not isinstance(value[u'use_scopes'], list)):
+      return False
+    GM_Globals[GM_GAMSCOPES_BY_API][api] = {u'use_scopes': value[u'use_scopes']}
+    GM_Globals[GM_GAMSCOPES_LIST] += value[u'use_scopes']
+  GM_Globals[GM_GAMSCOPES_LIST] = list(set(GM_Globals[GM_GAMSCOPES_LIST])) # unique only
   return len(GM_Globals[GM_GAMSCOPES_LIST]) > 0
 
 def OAuthInfo():
   configRequired = False
   getOAuth2ServiceDetails()
-  print u'API Scopes'
+  print u'API Access'
   for api in sorted(API_VER_MAPPING.keys()):
     print u'  API: {0}'.format(api)
     version = getAPIVer(api)
@@ -8745,8 +8763,10 @@ def OAuthInfo():
           configRequired = True
         else:
           print u'    {0}{1}'.format(ERROR_PREFIX, e)
+        continue  
+      print u'    {0}'.format(MESSAGE_CLIENT_API_ACCESS_AUTHORIZED)
     else:
-      print u'    Not Requested'
+      print u'    {0}'.format(MESSAGE_CLIENT_API_ACCESS_NOT_REQUESTED)
   if configRequired:
     print MESSAGE_CLIENT_API_ACCESS_CONFIG
 
@@ -8857,7 +8877,7 @@ def doRequestOAuth():
       if len(GM_Globals[GM_GAMSCOPES_LIST]) == 0:
         print u'YOU MUST SELECT AT LEAST ONE SCOPE'
         continue
-      writeFile(GC_Values[GC_GAMSCOPES_JSON], json.dumps(GM_Globals[GM_GAMSCOPES_LIST]))
+      writeFile(GC_Values[GC_GAMSCOPES_JSON], json.dumps(GM_Globals[GM_GAMSCOPES_BY_API]))
       print u'Scopes file: {0}, Created'.format(GC_Values[GC_GAMSCOPES_JSON])
       break
     elif selection == i+2: # cancel
