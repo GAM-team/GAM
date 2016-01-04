@@ -8864,8 +8864,7 @@ def doRequestOAuth():
     if selection == i: # defaults
       selected_scopes = select_default_scopes(all_apis)
     elif selection == i+1: # unselect all
-      for api in all_apis.keys():
-        selected_scopes = []
+      selected_scopes = []
     elif selection == i+3: # continue
       selected_scopes = list(set(selected_scopes))
       GM_Globals[GM_GAMSCOPES_LIST] = selected_scopes # unique only
