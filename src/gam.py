@@ -849,7 +849,6 @@ def buildGAPIObject(api, act_as=None, soft_errors=False):
   scopes = GM_Globals[GM_GAMSCOPES_BY_API].get(u'{0}-{1}'.format(api, version), [])
   if not scopes:
     systemErrorExit(15, MESSAGE_NO_SCOPES_FOR_API.format(service._rootDesc[u'title']))
-  scopes += [u'email',]
   credentials = oauth2client.client.SignedJwtAssertionCredentials(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_EMAIL],
                                                                   GM_Globals[GM_OAUTH2SERVICE_KEY],
                                                                   scope=scopes, user_agent=GAM_INFO, sub=sub)
