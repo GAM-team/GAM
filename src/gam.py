@@ -8715,7 +8715,7 @@ def validateSetGAMScopes(json_data):
   for api, value in json_data.items():
     if not isinstance(value, list):
       return False
-    GM_Globals[GM_GAMSCOPES_BY_API][api] = set(value)
+    GM_Globals[GM_GAMSCOPES_BY_API][api] = list(set(value))
   return len(GM_Globals[GM_GAMSCOPES_BY_API]) > 0
 
 def OAuthInfo():
