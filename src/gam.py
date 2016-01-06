@@ -8871,6 +8871,7 @@ def doRequestOAuth():
       for api in all_apis.keys():
         GM_Globals[GM_GAMSCOPES_BY_API][api] = all_apis[api][u'use_scopes']
         selected_scopes += all_apis[api][u'use_scopes']
+      selected_scopes = set(selected_scopes)
       if not selected_scopes:
         print u'YOU MUST SELECT AT LEAST ONE SCOPE'
         continue
