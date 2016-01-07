@@ -238,10 +238,8 @@ GC_VAR_INFO = {
   }
 
 MESSAGE_BATCH_CSV_DASH_DEBUG_INCOMPATIBLE = u'"gam {0} - ..." is not compatible with debugging. Disable debugging by deleting debug.gam and try again.'
-MESSAGE_CLIENT_API_ACCESS_AUTHORIZED = u'API access authorized'
 MESSAGE_CLIENT_API_ACCESS_CONFIG = u'API access is configured in your Control Panel under: Security-Show more-Advanced settings-Manage API client access'
 MESSAGE_CLIENT_API_ACCESS_DENIED = u'API access denied. Please make sure the Service account Client ID: {0} is authorized for the API Scope(s): {1}'
-MESSAGE_CLIENT_API_ACCESS_NOT_REQUESTED = u'API access not requested'
 MESSAGE_GAMSCOPES_JSON_INVALID = u'The file {0} has an invalid format.'
 MESSAGE_GAM_EXITING_FOR_UPDATE = u'GAM is now exiting so that you can overwrite this old version with the latest release'
 MESSAGE_GAM_OUT_OF_MEMORY = u'GAM has run out of memory. If this is a large Google Apps instance, you should use a 64-bit version of GAM on Windows or a 64-bit version of Python on other systems.'
@@ -442,6 +440,20 @@ def SetGlobalVariables():
   def _getOldSignalFile(itemName, trueValue=True, falseValue=False):
     GC_Defaults[itemName] = trueValue if os.path.isfile(os.path.join(GC_Defaults[GC_CONFIG_DIR], GC_VAR_INFO[itemName][GC_VAR_ENVVAR_KEY])) else falseValue
 
+  def _getAdminDomainFromOldOauth2Txt():
+    if (not GC_Defaults[GC_ADMIN]) or (not GC_Defaults[GC_DOMAIN]):
+      srcFile = os.path.expanduser(os.environ.get(u'OAUTHFILE', u'oauth2.txt'))
+      if not os.path.isabs(srcFile):
+        srcFile = os.path.expanduser(os.path.join(GC_Defaults[GC_CONFIG_DIR], srcFile))
+      if os.path.isfile(srcFile):
+        json_string = readFile(srcFile, continueOnError=True, displayError=False)
+        if json_string:
+          json_data = json.loads(json_string)
+          if not GC_Defaults[GC_ADMIN]:
+            GC_Defaults[GC_ADMIN] = json_data.get(u'id_token', {}).get(u'email', u'')
+          if not GC_Defaults[GC_DOMAIN]:
+            GC_Defaults[GC_DOMAIN] = json_data.get(u'id_token', {}).get(u'hd', u'')
+
   def _getCfgDirectory(itemName):
     return GC_Defaults[itemName]
 
@@ -493,6 +505,7 @@ def SetGlobalVariables():
   _getOldSignalFile(GC_NO_BROWSER)
   _getOldSignalFile(GC_NO_CACHE)
   _getOldSignalFile(GC_NO_UPDATE_CHECK)
+  _getAdminDomainFromOldOauth2Txt()
 # Assign directories first
   for itemName in GC_VAR_INFO:
     if GC_VAR_INFO[itemName][GC_VAR_TYPE_KEY] == GC_TYPE_DIRECTORY:
@@ -833,7 +846,7 @@ def getOAuth2ServiceDetails():
       systemErrorExit(17, MESSAGE_OAUTH2SERVICE_JSON_INVALID.format(GC_Values[GC_OAUTH2SERVICE_JSON]))
 
 def buildGAPIObject(api, act_as=None, soft_errors=False):
-  sub = act_as if act_as else GC_Values[GC_ADMIN]
+  svcsub = act_as if act_as else GC_Values[GC_ADMIN]
   getOAuth2ServiceDetails()
   version = getAPIVer(api)
   if api in [u'directory', u'reports', u'datatransfer']:
@@ -851,7 +864,7 @@ def buildGAPIObject(api, act_as=None, soft_errors=False):
     systemErrorExit(15, MESSAGE_NO_SCOPES_FOR_API.format(service._rootDesc[u'title']))
   credentials = oauth2client.client.SignedJwtAssertionCredentials(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_EMAIL],
                                                                   GM_Globals[GM_OAUTH2SERVICE_KEY],
-                                                                  scope=scopes, user_agent=GAM_INFO, sub=sub)
+                                                                  scope=scopes, user_agent=GAM_INFO, sub=svcsub)
   try:
     service._http = credentials.authorize(http)
   except oauth2client.client.AccessTokenRefreshError, e:
