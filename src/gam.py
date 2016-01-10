@@ -181,7 +181,7 @@ GC_Defaults = {
   GC_CACHE_DIR: u'',
   GC_CHARSET: u'utf-8',
   GC_CONFIG_DIR: u'',
-  GC_CUSTOMER_ID: u'my_customer',
+  GC_CUSTOMER_ID: MY_CUSTOMER,
   GC_DEBUG_LEVEL: 0,
   GC_DEVICE_MAX_RESULTS: 500,
   GC_DOMAIN: u'',
@@ -238,8 +238,8 @@ GC_VAR_INFO = {
   }
 
 MESSAGE_BATCH_CSV_DASH_DEBUG_INCOMPATIBLE = u'"gam {0} - ..." is not compatible with debugging. Disable debugging by deleting debug.gam and try again.'
-MESSAGE_CLIENT_API_ACCESS_CONFIG = u'API access is configured in your Control Panel under: Security-Show more-Advanced settings-Manage API client access'
-MESSAGE_CLIENT_API_ACCESS_DENIED = u'API access denied. Please make sure the Service account Client ID: {0} is authorized for the API Scope(s): {1}'
+MESSAGE_API_ACCESS_CONFIG = u'API access is configured in your Control Panel under: Security-Show more-Advanced settings-Manage API client access'
+MESSAGE_API_ACCESS_DENIED = u'API access denied.\n\nPlease make sure the Service account Client ID: {0} is authorized for the API Scope(s): {1}\n\nPlease make sure the Admin email address: {2} is valid'
 MESSAGE_GAMSCOPES_JSON_INVALID = u'The file {0} has an invalid format.'
 MESSAGE_GAM_EXITING_FOR_UPDATE = u'GAM is now exiting so that you can overwrite this old version with the latest release'
 MESSAGE_GAM_OUT_OF_MEMORY = u'GAM has run out of memory. If this is a large Google Apps instance, you should use a 64-bit version of GAM on Windows or a 64-bit version of Python on other systems.'
@@ -255,6 +255,8 @@ MESSAGE_REQUEST_COMPLETED_NO_FILES = u'Request completed but no results/files we
 MESSAGE_REQUEST_NOT_COMPLETE = u'Request needs to be completed before downloading, current status is: {0}'
 MESSAGE_RESULTS_TOO_LARGE_FOR_GOOGLE_SPREADSHEET = u'Results are too large for Google Spreadsheets. Uploading as a regular CSV file.'
 MESSAGE_WIKI_INSTRUCTIONS_OAUTH2SERVICE_JSON = u'Please follow the instructions at this site to setup a Service account.'
+
+OAUTH_TOKEN_ERRORS = [u'access_denied', u'unauthorized_client: Unauthorized client or scope in request.', u'access_denied: Requested client not authorized.', u'invalid_grant: Not a valid email.', u'invalid_request: Invalid impersonation prn email address.']
 
 def convertUTF8(data):
   import collections
@@ -355,6 +357,9 @@ def systemErrorExit(sysRC, message):
     sys.stderr.write(u'\n{0}{1}\n'.format(ERROR_PREFIX, message))
   sys.exit(sysRC)
 
+def badGAMScopesExit():
+  systemErrorExit(19, MESSAGE_GAMSCOPES_JSON_INVALID.format(GC_Values[GC_GAMSCOPES_JSON]))
+
 def noPythonSSLExit():
   systemErrorExit(8, MESSAGE_NO_PYTHON_SSL)
 
@@ -416,7 +421,15 @@ def writeFile(filename, data, mode=u'wb', continueOnError=False, displayError=Tr
         sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, e))
       return False
     systemErrorExit(6, e)
+
+# Get global domain from global admin email address
 #
+def getDomainFromAdmin():
+  if GC_Values[GC_ADMIN]:
+    loc = GC_Values[GC_ADMIN].find(u'@')
+    if loc > 0:
+      GC_Values[GC_DOMAIN] = GC_Values[GC_ADMIN][loc+1:]
+
 # Set global variables
 # Check for GAM updates based on status of noupdatecheck.txt
 #
@@ -440,19 +453,25 @@ def SetGlobalVariables():
   def _getOldSignalFile(itemName, trueValue=True, falseValue=False):
     GC_Defaults[itemName] = trueValue if os.path.isfile(os.path.join(GC_Defaults[GC_CONFIG_DIR], GC_VAR_INFO[itemName][GC_VAR_ENVVAR_KEY])) else falseValue
 
-  def _getAdminDomainFromOldOauth2Txt():
-    if (not GC_Defaults[GC_ADMIN]) or (not GC_Defaults[GC_DOMAIN]):
-      srcFile = os.path.expanduser(os.environ.get(u'OAUTHFILE', u'oauth2.txt'))
-      if not os.path.isabs(srcFile):
-        srcFile = os.path.expanduser(os.path.join(GC_Defaults[GC_CONFIG_DIR], srcFile))
-      if os.path.isfile(srcFile):
-        json_string = readFile(srcFile, continueOnError=True, displayError=False)
-        if json_string:
-          json_data = json.loads(json_string)
-          if not GC_Defaults[GC_ADMIN]:
-            GC_Defaults[GC_ADMIN] = json_data.get(u'id_token', {}).get(u'email', u'')
-          if not GC_Defaults[GC_DOMAIN]:
-            GC_Defaults[GC_DOMAIN] = json_data.get(u'id_token', {}).get(u'hd', u'')
+  def _getScopesAdminDomainFromGamScopesJson():
+    GM_Globals[GM_GAMSCOPES_BY_API] = {}
+    json_string = readFile(GC_Values[GC_GAMSCOPES_JSON], continueOnError=True, displayError=False)
+    if json_string == None:
+      return
+    json_data = json.loads(json_string)
+    if not isinstance(json_data, dict):
+      badGAMScopesExit()
+    scopes = json_data.get(u'scopes', None)
+    if (not scopes) or (not isinstance(scopes, dict)):
+      badGAMScopesExit()
+    for api, value in scopes.items():
+      if not isinstance(value, list):
+        badGAMScopesExit()
+      GM_Globals[GM_GAMSCOPES_BY_API][api] = list(set(value))
+    if not GC_Values[GC_ADMIN]:
+      GC_Values[GC_ADMIN] = json_data.get(u'admin', GC_Defaults[GC_ADMIN])
+    if not GC_Values[GC_DOMAIN]:
+      GC_Values[GC_DOMAIN] = json_data.get(u'domain', GC_Defaults[GC_DOMAIN])
 
   def _getCfgDirectory(itemName):
     return GC_Defaults[itemName]
@@ -505,7 +524,6 @@ def SetGlobalVariables():
   _getOldSignalFile(GC_NO_BROWSER)
   _getOldSignalFile(GC_NO_CACHE)
   _getOldSignalFile(GC_NO_UPDATE_CHECK)
-  _getAdminDomainFromOldOauth2Txt()
 # Assign directories first
   for itemName in GC_VAR_INFO:
     if GC_VAR_INFO[itemName][GC_VAR_TYPE_KEY] == GC_TYPE_DIRECTORY:
@@ -519,10 +537,6 @@ def SetGlobalVariables():
   GM_Globals[GM_LAST_UPDATE_CHECK_TXT] = os.path.join(GC_Values[GC_CONFIG_DIR], FN_LAST_UPDATE_CHECK_TXT)
   if not GC_Values[GC_NO_UPDATE_CHECK]:
     doGAMCheckForUpdates()
-  if (not GC_Values[GC_DOMAIN]) and GC_Values[GC_ADMIN]:
-    loc = GC_Values[GC_ADMIN].find(u'@')
-    if loc > 0:
-      GC_Values[GC_DOMAIN] = GC_Values[GC_ADMIN][loc+1:]
 # Globals derived from config file values
   GM_Globals[GM_EXTRA_ARGS_DICT] = {u'prettyPrint': GC_Values[GC_DEBUG_LEVEL] > 0}
   httplib2.debuglevel = GC_Values[GC_DEBUG_LEVEL]
@@ -535,10 +549,9 @@ def SetGlobalVariables():
   GM_Globals[GM_OAUTH2SERVICE_KEY] = None
   GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_EMAIL] = None
   GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID] = None
-  GM_Globals[GM_GAMSCOPES_BY_API] = {}
-  json_string = readFile(GC_Values[GC_GAMSCOPES_JSON], continueOnError=True, displayError=False)
-  if json_string and not validateSetGAMScopes(json.loads(json_string)):
-    systemErrorExit(19, MESSAGE_GAMSCOPES_JSON_INVALID.format(GC_Values[GC_GAMSCOPES_JSON]))
+  _getScopesAdminDomainFromGamScopesJson()
+  if not GC_Values[GC_DOMAIN]:
+    getDomainFromAdmin()
   _chkCfgDirectories()
   _chkCfgFiles()
   if GC_Values[GC_NO_CACHE]:
@@ -595,6 +608,16 @@ def doGAMVersion():
                                                                                                                          platform.platform(), platform.machine(),
                                                                                                                          GM_Globals[GM_GAM_PATH])
 
+
+def handleOAuthTokenError(e, soft_errors):
+  if e.message in OAUTH_TOKEN_ERRORS:
+    if soft_errors:
+      return None
+    sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, MESSAGE_API_ACCESS_DENIED.format(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID],
+                                                                                       u','.join(GM_Globals[GM_CURRENT_API_SCOPES]), GC_Values[GC_ADMIN])))
+    systemErrorExit(12, MESSAGE_API_ACCESS_CONFIG)
+  systemErrorExit(18, u'Authentication Token Error - {0}'.format(e))
+
 def tryOAuth(gdataObject, soft_errors=False):
   credentials = oauth2client.client.SignedJwtAssertionCredentials(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_EMAIL],
                                                                   GM_Globals[GM_OAUTH2SERVICE_KEY],
@@ -603,21 +626,11 @@ def tryOAuth(gdataObject, soft_errors=False):
                        cache=GC_Values[GC_CACHE_DIR])
   try:
     credentials.refresh(http)
+  except httplib2.ServerNotFoundError as e:
+    systemErrorExit(4, e)
   except oauth2client.client.AccessTokenRefreshError, e:
-    if e.message in [u'access_denied',
-                     u'unauthorized_client: Unauthorized client or scope in request.',
-                     u'access_denied: Requested client not authorized.']:
-      sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, MESSAGE_CLIENT_API_ACCESS_DENIED.format(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID], u','.join(GM_Globals[GM_CURRENT_API_SCOPES]))))
-      systemErrorExit(5, MESSAGE_CLIENT_API_ACCESS_CONFIG)
-    sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, e))
-    if soft_errors:
-      return False
-    sys.exit(4)
+    return handleOAuthTokenError(e, soft_errors)
   gdataObject.additional_headers = {u'Authorization': u'Bearer %s' % credentials.access_token}
-  if not GC_Values[GC_DOMAIN]:
-    GC_Values[GC_DOMAIN] = GC_Values[GC_ADMIN][GC_Values[GC_ADMIN].find(u'@')+1:].lower()
-  if not GC_Values[GC_CUSTOMER_ID]:
-    GC_Values[GC_CUSTOMER_ID] = MY_CUSTOMER
   gdataObject.domain = GC_Values[GC_DOMAIN]
   return True
 
@@ -699,6 +712,8 @@ def callGData(service, function, soft_errors=False, throw_errors=[], **kwargs):
           sys.stderr.write(u' - Giving up.\n')
         return None
       sys.exit(int(e.error_code))
+    except oauth2client.client.AccessTokenRefreshError as e:
+      return handleOAuthTokenError(e, soft_errors)
 
 def callGAPI(service, function, silent_errors=False, soft_errors=False, throw_reasons=[], retry_reasons=[], **kwargs):
   method = getattr(service, function)
@@ -747,8 +762,7 @@ def callGAPI(service, function, silent_errors=False, soft_errors=False, throw_re
         return None
       sys.exit(int(http_status))
     except oauth2client.client.AccessTokenRefreshError, e:
-      sys.stderr.write(u'{0}Authentication Token Error: {1}\n'.format(ERROR_PREFIX, e))
-      sys.exit(403)
+      return handleOAuthTokenError(e, False)
     except httplib2.CertificateValidationUnsupported:
       noPythonSSLExit()
     except TypeError, e:
@@ -810,23 +824,11 @@ API_VER_MAPPING = {
   u'siteVerification': u'v1',
   }
 
-def getAPIVer(api):
-  return API_VER_MAPPING.get(api, u'v1')
-
-def getServiceFromDiscoveryDocument(api, version, http=None):
-  disc_filename = u'%s-%s.json' % (api, version)
-  disc_file = os.path.join(GC_Values[GC_SITE_DIR], disc_filename)
-  if hasattr(sys, '_MEIPASS'):
-    pyinstaller_disc_file = os.path.join(sys._MEIPASS, disc_filename)
-  else:
-    pyinstaller_disc_file = None
-  if os.path.isfile(disc_file):
-    discovery = readFile(disc_file)
-  elif pyinstaller_disc_file:
-    discovery = readFile(pyinstaller_disc_file)
-  else:
-    systemErrorExit(4, MESSAGE_NO_DISCOVERY_INFORMATION.format(disc_file))
-  return googleapiclient.discovery.build_from_document(discovery, base=u'https://www.googleapis.com', http=http)
+def getAPIVersion(api):
+  version = API_VER_MAPPING.get(api, u'v1')
+  if api in [u'directory', u'reports', u'datatransfer']:
+    api = u'admin'
+  return (api, version, u'{0}-{1}'.format(api, version))
 
 def getOAuth2ServiceDetails():
   if not GM_Globals[GM_OAUTH2SERVICE_KEY]:
@@ -845,38 +847,46 @@ def getOAuth2ServiceDetails():
       printLine(GAM_WIKI_CREATE_CLIENT_SECRETS)
       systemErrorExit(17, MESSAGE_OAUTH2SERVICE_JSON_INVALID.format(GC_Values[GC_OAUTH2SERVICE_JSON]))
 
-def buildGAPIObject(api, act_as=None, soft_errors=False):
-  svcsub = act_as if act_as else GC_Values[GC_ADMIN]
+def getAPIversionHttpService(api):
   getOAuth2ServiceDetails()
-  version = getAPIVer(api)
-  if api in [u'directory', u'reports', u'datatransfer']:
-    api = u'admin'
+  api, version, api_version = getAPIVersion(api)
   http = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL],
                        cache=GC_Values[GC_CACHE_DIR])
   try:
     service = googleapiclient.discovery.build(api, version, http=http, cache_discovery=False)
-  except googleapiclient.errors.UnknownApiNameOrVersion:
-    service = getServiceFromDiscoveryDocument(api, version, http)
+    return (api_version, http, service)
   except httplib2.ServerNotFoundError as e:
     systemErrorExit(4, e)
-  scopes = GM_Globals[GM_GAMSCOPES_BY_API].get(u'{0}-{1}'.format(api, version), [])
-  if not scopes:
+  except googleapiclient.errors.UnknownApiNameOrVersion:
+    pass
+  disc_filename = u'%s.json' % (api_version)
+  disc_file = os.path.join(GC_Values[GC_SITE_DIR], disc_filename)
+  if hasattr(sys, '_MEIPASS'):
+    pyinstaller_disc_file = os.path.join(sys._MEIPASS, disc_filename)
+  else:
+    pyinstaller_disc_file = None
+  if os.path.isfile(disc_file):
+    discovery = readFile(disc_file)
+  elif pyinstaller_disc_file:
+    discovery = readFile(pyinstaller_disc_file)
+  else:
+    systemErrorExit(11, MESSAGE_NO_DISCOVERY_INFORMATION.format(disc_file))
+  service = googleapiclient.discovery.build_from_document(discovery, http=http)
+  return (api_version, http, service)
+
+def buildGAPIObject(api, act_as=None, soft_errors=False):
+  svcsub = act_as if act_as else GC_Values[GC_ADMIN]
+  api_version, http, service = getAPIversionHttpService(api)
+  GM_Globals[GM_CURRENT_API_SCOPES] = GM_Globals[GM_GAMSCOPES_BY_API].get(api_version, [])
+  if not GM_Globals[GM_CURRENT_API_SCOPES]:
     systemErrorExit(15, MESSAGE_NO_SCOPES_FOR_API.format(service._rootDesc[u'title']))
   credentials = oauth2client.client.SignedJwtAssertionCredentials(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_EMAIL],
                                                                   GM_Globals[GM_OAUTH2SERVICE_KEY],
-                                                                  scope=scopes, user_agent=GAM_INFO, sub=svcsub)
+                                                                  scope=GM_Globals[GM_CURRENT_API_SCOPES], user_agent=GAM_INFO, sub=svcsub)
   try:
     service._http = credentials.authorize(http)
   except oauth2client.client.AccessTokenRefreshError, e:
-    if e.message in [u'access_denied',
-                     u'unauthorized_client: Unauthorized client or scope in request.',
-                     u'access_denied: Requested client not authorized.']:
-      sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, MESSAGE_CLIENT_API_ACCESS_DENIED.format(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID], u','.join(scopes))))
-      systemErrorExit(5, MESSAGE_CLIENT_API_ACCESS_CONFIG)
-    if soft_errors:
-      sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, e))
-      return False
-    systemErrorExit(4, e)
+    return handleOAuthTokenError(e, soft_errors)
   return service
 
 GDATA_API_INFO = {
@@ -887,12 +897,11 @@ GDATA_API_INFO = {
 
 def commonAppsObjInit(appsObj, api):
   getOAuth2ServiceDetails()
-  GM_Globals[GM_CURRENT_API_SCOPES] = GM_Globals[GM_GAMSCOPES_BY_API].get(u'{0}-{1}'.format(api, getAPIVer(api)), [])
+  api, _, api_version = getAPIVersion(api)
+  GM_Globals[GM_CURRENT_API_SCOPES] = GM_Globals[GM_GAMSCOPES_BY_API].get(api_version, [])
   if not GM_Globals[GM_CURRENT_API_SCOPES]:
     systemErrorExit(15, MESSAGE_NO_SCOPES_FOR_API.format(GDATA_API_INFO[api]))
-  if not tryOAuth(appsObj):
-    doRequestOAuth()
-    tryOAuth(appsObj)
+  tryOAuth(appsObj)
   #Identify GAM to Google's Servers
   appsObj.source = GAM_INFO
   #Show debugging output if debug.gam exists
@@ -8720,35 +8729,14 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
     full_users = new_full_users
   return full_users
 
-def validateSetGAMScopes(json_data):
-  GM_Globals[GM_GAMSCOPES_BY_API] = {}
-  if not isinstance(json_data, dict):
-    return False
-  for api, value in json_data.items():
-    if not isinstance(value, list):
-      return False
-    GM_Globals[GM_GAMSCOPES_BY_API][api] = list(set(value))
-  return len(GM_Globals[GM_GAMSCOPES_BY_API]) > 0
-
 def OAuthInfo():
   configRequired = False
-  getOAuth2ServiceDetails()
-  print u'API Access'
+  print u'API Access, Admin: {0}'.format(GC_Values[GC_ADMIN])
   for api in sorted(API_VER_MAPPING.keys()):
     print u'  API: {0}'.format(api)
-    version = getAPIVer(api)
-    if api in [u'directory', u'reports', u'datatransfer']:
-      api = u'admin'
-    http = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL],
-                         cache=GC_Values[GC_CACHE_DIR])
-    try:
-      service = googleapiclient.discovery.build(api, version, http=http, cache_discovery=False)
-    except googleapiclient.errors.UnknownApiNameOrVersion:
-      service = getServiceFromDiscoveryDocument(api, version, http)
-    except httplib2.ServerNotFoundError as e:
-      systemErrorExit(4, e)
+    api_version, http, service = getAPIversionHttpService(api)
     api_scopes = service._rootDesc[u'auth'][u'oauth2'][u'scopes']
-    requested_scopes = GM_Globals[GM_GAMSCOPES_BY_API].get(u'{0}-{1}'.format(api, version), [])
+    requested_scopes = GM_Globals[GM_GAMSCOPES_BY_API].get(api_version, [])
     if requested_scopes:
       for scope in requested_scopes:
         credentials = oauth2client.client.SignedJwtAssertionCredentials(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_EMAIL],
@@ -8759,17 +8747,15 @@ def OAuthInfo():
           status = u'Authorized'
         except oauth2client.client.AccessTokenRefreshError, e:
           configRequired = True
-          if e.message in [u'access_denied',
-                           u'unauthorized_client: Unauthorized client or scope in request.',
-                           u'access_denied: Requested client not authorized.']:
+          if e.message in OAUTH_TOKEN_ERRORS:
             status = u'DENIED'
           else:
-            status = u'{0}{1}'.format(ERROR_PREFIX, e)
+            status = u'{0}Authentication Token Error - {1}'.format(ERROR_PREFIX, e)
         print u'       {0}\n            {1}\n            Access: {2}'.format(api_scopes[scope][u'description'], scope, status)
     else:
       print u'       Access: Not requested'
   if configRequired:
-    print MESSAGE_CLIENT_API_ACCESS_CONFIG
+    print MESSAGE_API_ACCESS_CONFIG
 
 def doDeleteOAuth():
   sys.stdout.write(u'Scopes file: {0}, will be Deleted in 3...'.format(GC_Values[GC_GAMSCOPES_JSON]))
@@ -8789,69 +8775,87 @@ def doDeleteOAuth():
   except OSError as e:
     sys.stderr.write(u'{0}{1}\n'.format(WARNING_PREFIX, e))
 
-UBER_SCOPES = {
-  u'gmail-v1': [u'https://mail.google.com/'],
-  }
+EMAIL_PATTERN = re.compile(r'^(.+)@(.+\..+)$')
+EMAIL_FORMAT_REQUIRED = u'<Name>@<Name>.<TLD>'
 
-def select_default_scopes(apis):
-  for api_name, api in apis.items():
-    if api_name in UBER_SCOPES:
-      api[u'use_scopes'] = UBER_SCOPES[api_name]
-    else:
-      scopes = api[u'auth'][u'oauth2'][u'scopes'].keys()
-      scopes.sort()
-      api[u'use_scopes'] = []
-      # reduce # of scopes by checking if a scope is a substring of another
-      # which should mean it covers same API operations. Add a . at end
-      # to prevent things like directory.users removing directory.userschema
-      i = 0
-      count = len(scopes)
-      while i < count:
-        scope = scopes[i]
-        api[u'use_scopes'].append(scope)
-        i += 1
-        scope += u'.'
-        while (i < count) and scopes[i].startswith(scope):
-          i += 1
-
-def getSelection(limit):
-  while True:
-    selection = raw_input(u'Your selection: ')
-    if selection:
-      if selection.isdigit():
-        selection = int(selection)
-        if (selection >= 0) and (selection <= limit):
-          return selection
-        print u'ERROR: enter number in range 0-{0}'.format(limit)
-      else:
-        print u'ERROR: please enter numbers only'
+UBER_SCOPES = {u'gmail-v1': [u'https://mail.google.com/'],}
 
 def doRequestOAuth():
+
+  def _getAdminDomain():
+    srcFile = os.path.expanduser(os.environ.get(u'OAUTHFILE', u'oauth2.txt'))
+    if not os.path.isabs(srcFile):
+      srcFile = os.path.expanduser(os.path.join(GC_Values[GC_CONFIG_DIR], srcFile))
+    if os.path.isfile(srcFile):
+      json_string = readFile(srcFile, continueOnError=True, displayError=False)
+      if json_string:
+        json_data = json.loads(json_string)
+        GC_Values[GC_ADMIN] = json_data.get(u'id_token', {}).get(u'email', GC_Defaults[GC_ADMIN])
+        if not GC_Values[GC_DOMAIN]:
+          GC_Values[GC_DOMAIN] = json_data.get(u'id_token', {}).get(u'hd', GC_Defaults[GC_DOMAIN])
+    if GC_Values[GC_ADMIN]:
+      return
+    print u''
+    while True:
+      value = raw_input(u'Enter Admin email address: ').strip().lower()
+      ema = EMAIL_PATTERN.match(value)
+      if ema:
+        GC_Values[GC_ADMIN] = value
+        if not GC_Values[GC_DOMAIN]:
+          GC_Values[GC_DOMAIN] = ema.group(2)
+        return
+      print u'{0}Enter full email address: {1}'.format(ERROR_PREFIX, EMAIL_FORMAT_REQUIRED)
+
+  def _select_default_scopes(apis):
+    for api_name, api in apis.items():
+      if api_name in UBER_SCOPES:
+        api[u'use_scopes'] = UBER_SCOPES[api_name]
+      else:
+        scopes = sorted(api[u'auth'][u'oauth2'][u'scopes'].keys())
+        api[u'use_scopes'] = []
+        # reduce # of scopes by checking if a scope is a substring of another
+        # which should mean it covers same API operations. Add a . at end
+        # to prevent things like directory.users removing directory.userschema
+        i = 0
+        count = len(scopes)
+        while i < count:
+          scope = scopes[i]
+          api[u'use_scopes'].append(scope)
+          i += 1
+          scope += u'.'
+          while (i < count) and scopes[i].startswith(scope):
+            i += 1
+
+  def _getSelection(limit):
+    while True:
+      selection = raw_input(u'Your selection: ')
+      if selection:
+        if selection.isdigit():
+          selection = int(selection)
+          if (selection >= 0) and (selection <= limit):
+            return selection
+          print u'ERROR: enter number in range 0-{0}'.format(limit)
+        else:
+          print u'ERROR: please enter numbers only'
+
   apis = API_VER_MAPPING.keys()
   all_apis = {}
   api_titles = {}
   for api in apis:
-    version = getAPIVer(api)
-    if api in [u'directory', u'reports', u'datatransfer']:
-      api = u'admin'
-    http = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL],
-                         cache=GC_Values[GC_CACHE_DIR])
-    try:
-      service = googleapiclient.discovery.build(api, version, http=http, cache_discovery=False)
-    except googleapiclient.errors.UnknownApiNameOrVersion:
-      service = getServiceFromDiscoveryDocument(api, version, http)
-    api_name = u'%s-%s' % (api, version)
-    all_apis[api_name] = service._rootDesc
-    api_titles[api_name] = api_name
+    api_version, _, service = getAPIversionHttpService(api)
+    all_apis[api_version] = service._rootDesc
+    api_titles[api_version] = api_version
   api_index = []
-  for _, api_name in sorted(api_titles.items()):
-    api_index.append(api_name)
+  for _, api_version in sorted(api_titles.items()):
+    api_index.append(api_version)
   i = len(api_index)
   if GM_Globals[GM_GAMSCOPES_BY_API]:
     for api in all_apis:
       all_apis[api][u'use_scopes'] = GM_Globals[GM_GAMSCOPES_BY_API][api]
   else:
-    select_default_scopes(all_apis)
+    _select_default_scopes(all_apis)
+  if not GC_Values[GC_ADMIN]:
+    _getAdminDomain()
   while True:
     #os.system([u'clear', u'cls'][GM_Globals[GM_WINDOWS]])
     print u'Select the APIs to use with GAM.'
@@ -8872,9 +8876,9 @@ def doRequestOAuth():
     print u'     %2d) Cancel' % (i+2)
     print u'     %2d) Continue' % (i+3)
     print
-    selection = getSelection(i+3)
+    selection = _getSelection(i+3)
     if selection == i: # defaults
-      select_default_scopes(all_apis)
+      _select_default_scopes(all_apis)
     elif selection == i+1: # unselect all
       for api in all_apis.keys():
         all_apis[api][u'use_scopes'] = []
@@ -8888,7 +8892,9 @@ def doRequestOAuth():
       if not selected_scopes:
         print u'YOU MUST SELECT AT LEAST ONE SCOPE'
         continue
-      writeFile(GC_Values[GC_GAMSCOPES_JSON], json.dumps(GM_Globals[GM_GAMSCOPES_BY_API]))
+      writeFile(GC_Values[GC_GAMSCOPES_JSON], json.dumps({u'scopes': GM_Globals[GM_GAMSCOPES_BY_API],
+                                                          u'admin': GC_Values[GC_ADMIN],
+                                                          u'domain': GC_Values[GC_DOMAIN]}))
       print u'Scopes file: {0}, Created'.format(GC_Values[GC_GAMSCOPES_JSON])
       print MESSAGE_PLEASE_AUTHORIZE_SERVICE_ACCOUNT.format(len(selected_scopes), u','.join(selected_scopes))
       return
@@ -8921,7 +8927,7 @@ def doRequestOAuth():
           print u'     %2d) Cancel' % (x+3)
           print u'     %2d) Back to all APIs' % (x+4)
           print
-          selection = getSelection(x+4)
+          selection = _getSelection(x+4)
           if selection < x: # select
             if api_scopes[selection] in all_apis[api][u'use_scopes']:
               all_apis[api][u'use_scopes'].remove(api_scopes[selection])
@@ -8929,7 +8935,7 @@ def doRequestOAuth():
               all_apis[api][u'use_scopes'].append(api_scopes[selection])
           elif selection == x: # defaults
             just_this_api = {api: all_apis[api]}
-            select_default_scopes(just_this_api)
+            _select_default_scopes(just_this_api)
             all_apis[api][u'use_scopes'] = just_this_api[api][u'use_scopes']
           elif selection == x+1: # read-only
             all_apis[api][u'use_scopes'] = []
