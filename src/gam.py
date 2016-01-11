@@ -8824,6 +8824,8 @@ def doRequestOAuth():
           i += 1
           scope += u'.'
           while (i < count) and scopes[i].startswith(scope):
+            if scopes[i].endswith(u'.security'):
+              api[u'use_scopes'].append(scopes[i])
             i += 1
 
   def _getSelection(limit):
