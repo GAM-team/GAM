@@ -240,11 +240,11 @@ GC_VAR_INFO = {
 MESSAGE_BATCH_CSV_DASH_DEBUG_INCOMPATIBLE = u'"gam {0} - ..." is not compatible with debugging. Disable debugging by deleting debug.gam and try again.'
 MESSAGE_API_ACCESS_CONFIG = u'API access is configured in your Control Panel under: Security-Show more-Advanced settings-Manage API client access'
 MESSAGE_API_ACCESS_DENIED = u'API access denied.\n\nPlease make sure the Service account Client ID: {0} is authorized for the API Scope(s): {1}\n\nPlease make sure the Admin email address: {2} is valid'
-MESSAGE_GAMSCOPES_JSON_INVALID = u'The file {0} has an invalid format.'
 MESSAGE_GAM_EXITING_FOR_UPDATE = u'GAM is now exiting so that you can overwrite this old version with the latest release'
 MESSAGE_GAM_OUT_OF_MEMORY = u'GAM has run out of memory. If this is a large Google Apps instance, you should use a 64-bit version of GAM on Windows or a 64-bit version of Python on other systems.'
 MESSAGE_HEADER_NOT_FOUND_IN_CSV_HEADERS = u'Header "{0}" not found in CSV headers of "{1}".'
 MESSAGE_HIT_CONTROL_C_TO_UPDATE = u'\n\nHit CTRL+C to visit the GAM website and download the latest release or wait 15 seconds continue with this boring old version. GAM won\'t bother you with this announcement for 1 week or you can create a file named noupdatecheck.txt in the same location as gam.py or gam.exe and GAM won\'t ever check for updates.'
+MESSAGE_INVALID_JSON = u'The file {0} has an invalid format.'
 MESSAGE_NO_DISCOVERY_INFORMATION = u'No online discovery doc and {0} does not exist locally'
 MESSAGE_NO_PYTHON_SSL = u'You don\'t have the Python SSL module installed so we can\'t verify SSL Certificates. You can fix this by installing the Python SSL module or you can live on the edge and turn SSL validation off by creating a file named noverifyssl.txt in the same location as gam.exe / gam.py'
 MESSAGE_NO_SCOPES_FOR_API = u'There are no scopes authorized for {0}; please run gam oauth create'
@@ -357,8 +357,8 @@ def systemErrorExit(sysRC, message):
     sys.stderr.write(u'\n{0}{1}\n'.format(ERROR_PREFIX, message))
   sys.exit(sysRC)
 
-def badGAMScopesExit():
-  systemErrorExit(19, MESSAGE_GAMSCOPES_JSON_INVALID.format(GC_Values[GC_GAMSCOPES_JSON]))
+def invalidJSONExit(fileName):
+  systemErrorExit(17, MESSAGE_INVALID_JSON.format(fileName))
 
 def noPythonSSLExit():
   systemErrorExit(8, MESSAGE_NO_PYTHON_SSL)
@@ -458,15 +458,16 @@ def SetGlobalVariables():
     json_string = readFile(GC_Values[GC_GAMSCOPES_JSON], continueOnError=True, displayError=False)
     if json_string == None:
       return
-    json_data = json.loads(json_string)
-    if not isinstance(json_data, dict):
-      badGAMScopesExit()
+    try:
+      json_data = json.loads(json_string)
+    except ValueError:
+      invalidJSONExit(GC_Values[GC_GAMSCOPES_JSON])
     scopes = json_data.get(u'scopes', None)
     if (not scopes) or (not isinstance(scopes, dict)):
-      badGAMScopesExit()
+      invalidJSONExit(GC_Values[GC_GAMSCOPES_JSON])
     for api, value in scopes.items():
       if not isinstance(value, list):
-        badGAMScopesExit()
+        invalidJSONExit(GC_Values[GC_GAMSCOPES_JSON])
       GM_Globals[GM_GAMSCOPES_BY_API][api] = list(set(value))
     if not GC_Values[GC_ADMIN]:
       GC_Values[GC_ADMIN] = json_data.get(u'admin', GC_Defaults[GC_ADMIN])
@@ -837,15 +838,15 @@ def getOAuth2ServiceDetails():
       printLine(MESSAGE_WIKI_INSTRUCTIONS_OAUTH2SERVICE_JSON)
       printLine(GAM_WIKI_CREATE_CLIENT_SECRETS)
       systemErrorExit(6, None)
-    json_data = json.loads(json_string)
     try:
+      json_data = json.loads(json_string)
       GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_EMAIL] = json_data[u'client_email']
       GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID] = json_data[u'client_id']
       GM_Globals[GM_OAUTH2SERVICE_KEY] = json_data[u'private_key']
-    except KeyError:
+    except (ValueError, KeyError):
       printLine(MESSAGE_WIKI_INSTRUCTIONS_OAUTH2SERVICE_JSON)
       printLine(GAM_WIKI_CREATE_CLIENT_SECRETS)
-      systemErrorExit(17, MESSAGE_OAUTH2SERVICE_JSON_INVALID.format(GC_Values[GC_OAUTH2SERVICE_JSON]))
+      invalidJSONExit(GC_Values[GC_OAUTH2SERVICE_JSON])
 
 def getAPIversionHttpService(api):
   getOAuth2ServiceDetails()
@@ -871,8 +872,11 @@ def getAPIversionHttpService(api):
     discovery = readFile(pyinstaller_disc_file)
   else:
     systemErrorExit(11, MESSAGE_NO_DISCOVERY_INFORMATION.format(disc_file))
-  service = googleapiclient.discovery.build_from_document(discovery, http=http)
-  return (api_version, http, service)
+  try:
+    service = googleapiclient.discovery.build_from_document(discovery, http=http)
+    return (api_version, http, service)
+  except (ValueError, KeyError):
+    invalidJSONExit(disc_file)
 
 def buildGAPIObject(api, act_as=None, soft_errors=False):
   svcsub = act_as if act_as else GC_Values[GC_ADMIN]
@@ -8789,10 +8793,13 @@ def doRequestOAuth():
     if os.path.isfile(srcFile):
       json_string = readFile(srcFile, continueOnError=True, displayError=False)
       if json_string:
-        json_data = json.loads(json_string)
-        GC_Values[GC_ADMIN] = json_data.get(u'id_token', {}).get(u'email', GC_Defaults[GC_ADMIN])
-        if not GC_Values[GC_DOMAIN]:
-          GC_Values[GC_DOMAIN] = json_data.get(u'id_token', {}).get(u'hd', GC_Defaults[GC_DOMAIN])
+        try:
+          json_data = json.loads(json_string)
+          GC_Values[GC_ADMIN] = json_data.get(u'id_token', {}).get(u'email', GC_Defaults[GC_ADMIN])
+          if not GC_Values[GC_DOMAIN]:
+            GC_Values[GC_DOMAIN] = json_data.get(u'id_token', {}).get(u'hd', GC_Defaults[GC_DOMAIN])
+        except ValueError:
+          pass
     if GC_Values[GC_ADMIN]:
       return
     print u''
