@@ -1665,7 +1665,6 @@ def doPrintAdmins():
         continue
       if key not in admins_attrib[0]:
         admins_attrib[0][key] = key
-      admin_attrib[key] = value
       if key == u'assignedTo':
         assignedToUser = user_from_userid(value)
         if u'assignedToUser' not in admins_attrib[0]:
@@ -1677,10 +1676,12 @@ def doPrintAdmins():
           admins_attrib[0][u'role'] = u'role'
         admin_attrib[u'role'] = role
       elif key == u'orgUnitId':
+        value = u'id:%s' % value
         orgUnit = orgunit_from_orgunitid(value)
         if u'orgUnit' not in admins_attrib[0]:
           admins_attrib[0][u'orgUnit'] = u'orgUnit'
         admin_attrib[u'orgUnit'] = orgUnit
+      admin_attrib[key] = value
     admins_attrib.append(admin_attrib)
   output_csv(admins_attrib, admins_attrib[0], u'Admins', todrive)
 
@@ -1696,7 +1697,7 @@ def buildOrgUnitIdToNameMap():
 def orgunit_from_orgunitid(orgunitid):
   if not GM_Globals[GM_MAP_ORGUNIT_ID_TO_NAME]:
     buildOrgUnitIdToNameMap()
-  return GM_Globals[GM_MAP_ORGUNIT_ID_TO_NAME][u'id:%s' % orgunitid]
+  return GM_Globals[GM_MAP_ORGUNIT_ID_TO_NAME][orgunitid]
 
 def buildRoleIdToNameToIdMap():
   cd = buildGAPIObject(u'directory')
