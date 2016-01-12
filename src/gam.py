@@ -638,7 +638,7 @@ def getGDataOAuthToken(gdataObject):
     systemErrorExit(4, e)
   except oauth2client.client.AccessTokenRefreshError, e:
     return handleOAuthTokenError(e, False)
-  gdataObject.additional_headers = {u'Authorization': u'Bearer %s' % credentials.access_token}
+  gdataObject.additional_headers[u'Authorization'] = u'Bearer {0}'.format(credentials.access_token)
   return True
 
 def checkGDataError(e, service):
