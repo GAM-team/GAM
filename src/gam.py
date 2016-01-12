@@ -92,8 +92,10 @@ GM_BATCH_QUEUE = u'batq'
 GM_EXTRA_ARGS_DICT = u'exad'
 # Scopes retrieved from gamscopes.json
 GM_GAMSCOPES_BY_API = u'scop'
+# Current API user
+GM_CURRENT_API_USER = u'capu'
 # Current API scope
-GM_CURRENT_API_SCOPES = u'scoc'
+GM_CURRENT_API_SCOPES = u'caps'
 # Values retrieved from oauth2service.json
 GM_OAUTH2SERVICE_KEY = u'oauk'
 GM_OAUTH2SERVICE_ACCOUNT_EMAIL = u'oaae'
@@ -117,6 +119,7 @@ GM_Globals = {
   GM_BATCH_QUEUE: None,
   GM_EXTRA_ARGS_DICT:  {u'prettyPrint': False},
   GM_GAMSCOPES_BY_API: {},
+  GM_CURRENT_API_USER: None,
   GM_CURRENT_API_SCOPES: [],
   GM_OAUTH2SERVICE_KEY: None,
   GM_OAUTH2SERVICE_ACCOUNT_EMAIL:  None,
@@ -254,6 +257,7 @@ MESSAGE_PLEASE_AUTHORIZE_SERVICE_ACCOUNT = u'Please authorize your Service accou
 MESSAGE_REQUEST_COMPLETED_NO_FILES = u'Request completed but no results/files were returned, try requesting again'
 MESSAGE_REQUEST_NOT_COMPLETE = u'Request needs to be completed before downloading, current status is: {0}'
 MESSAGE_RESULTS_TOO_LARGE_FOR_GOOGLE_SPREADSHEET = u'Results are too large for Google Spreadsheets. Uploading as a regular CSV file.'
+MESSAGE_SERVICE_NOT_APPLICABLE = 'Service not applicable for this address: {0}'
 MESSAGE_WIKI_INSTRUCTIONS_OAUTH2SERVICE_JSON = u'Please follow the instructions at this site to setup a Service account.'
 
 OAUTH_TOKEN_ERRORS = [u'access_denied', u'unauthorized_client: Unauthorized client or scope in request.', u'access_denied: Requested client not authorized.', u'invalid_grant: Not a valid email.', u'invalid_request: Invalid impersonation prn email address.']
@@ -609,17 +613,20 @@ def doGAMVersion():
                                                                                                                          platform.platform(), platform.machine(),
                                                                                                                          GM_Globals[GM_GAM_PATH])
 
-
 def handleOAuthTokenError(e, soft_errors):
   if e.message in OAUTH_TOKEN_ERRORS:
-    if soft_errors:
-      return None
-    sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, MESSAGE_API_ACCESS_DENIED.format(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID],
-                                                                                       u','.join(GM_Globals[GM_CURRENT_API_SCOPES]), GC_Values[GC_ADMIN])))
-    systemErrorExit(12, MESSAGE_API_ACCESS_CONFIG)
+    if not GM_Globals[GM_CURRENT_API_USER]:
+      sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, MESSAGE_API_ACCESS_DENIED.format(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID],
+                                                                                         u','.join(GM_Globals[GM_CURRENT_API_SCOPES]), GC_Values[GC_ADMIN])))
+      systemErrorExit(12, MESSAGE_API_ACCESS_CONFIG)
+    else:
+      systemErrorExit(19, MESSAGE_SERVICE_NOT_APPLICABLE.format(GM_Globals[GM_CURRENT_API_USER]))
+  if soft_errors:
+    sys.stderr.write(u'{0}Authentication Token Error - {1}\n'.format(ERROR_PREFIX, e))
+    return None
   systemErrorExit(18, u'Authentication Token Error - {0}'.format(e))
 
-def tryOAuth(gdataObject, soft_errors=False):
+def getGDataOAuthToken(gdataObject):
   credentials = oauth2client.client.SignedJwtAssertionCredentials(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_EMAIL],
                                                                   GM_Globals[GM_OAUTH2SERVICE_KEY],
                                                                   scope=GM_Globals[GM_CURRENT_API_SCOPES], user_agent=GAM_INFO, sub=GC_Values[GC_ADMIN])
@@ -630,17 +637,14 @@ def tryOAuth(gdataObject, soft_errors=False):
   except httplib2.ServerNotFoundError as e:
     systemErrorExit(4, e)
   except oauth2client.client.AccessTokenRefreshError, e:
-    return handleOAuthTokenError(e, soft_errors)
+    return handleOAuthTokenError(e, False)
   gdataObject.additional_headers = {u'Authorization': u'Bearer %s' % credentials.access_token}
-  gdataObject.domain = GC_Values[GC_DOMAIN]
   return True
 
 def checkGDataError(e, service):
   # First check for errors that need special handling
   if e[0].get(u'reason', u'') in [u'Token invalid - Invalid token: Stateless token expired', u'Token invalid - Invalid token: Token not found']:
-    keep_domain = service.domain
-    tryOAuth(service)
-    service.domain = keep_domain
+    getGDataOAuthToken(service)
     return False
   if e[0][u'body'].startswith(u'Required field must not be blank:') or e[0][u'body'].startswith(u'These characters are not allowed:'):
     return e[0]['body']
@@ -763,7 +767,7 @@ def callGAPI(service, function, silent_errors=False, soft_errors=False, throw_re
         return None
       sys.exit(int(http_status))
     except oauth2client.client.AccessTokenRefreshError, e:
-      return handleOAuthTokenError(e, False)
+      return handleOAuthTokenError(e, soft_errors)
     except httplib2.CertificateValidationUnsupported:
       noPythonSSLExit()
     except TypeError, e:
@@ -881,6 +885,7 @@ def getAPIversionHttpService(api):
 def buildGAPIObject(api, act_as=None, soft_errors=False):
   svcsub = act_as if act_as else GC_Values[GC_ADMIN]
   api_version, http, service = getAPIversionHttpService(api)
+  GM_Globals[GM_CURRENT_API_USER] = act_as
   GM_Globals[GM_CURRENT_API_SCOPES] = GM_Globals[GM_GAMSCOPES_BY_API].get(api_version, [])
   if not GM_Globals[GM_CURRENT_API_SCOPES]:
     systemErrorExit(15, MESSAGE_NO_SCOPES_FOR_API.format(service._rootDesc[u'title']))
@@ -889,6 +894,8 @@ def buildGAPIObject(api, act_as=None, soft_errors=False):
                                                                   scope=GM_Globals[GM_CURRENT_API_SCOPES], user_agent=GAM_INFO, sub=svcsub)
   try:
     service._http = credentials.authorize(http)
+  except httplib2.ServerNotFoundError as e:
+    systemErrorExit(4, e)
   except oauth2client.client.AccessTokenRefreshError, e:
     return handleOAuthTokenError(e, soft_errors)
   return service
@@ -899,31 +906,33 @@ GDATA_API_INFO = {
   u'email-settings': u'Email Settings API',
   }
 
-def commonAppsObjInit(appsObj, api):
+def initGDataObject(gdataObj, api):
   getOAuth2ServiceDetails()
   api, _, api_version = getAPIVersion(api)
+  GM_Globals[GM_CURRENT_API_USER] = None
   GM_Globals[GM_CURRENT_API_SCOPES] = GM_Globals[GM_GAMSCOPES_BY_API].get(api_version, [])
   if not GM_Globals[GM_CURRENT_API_SCOPES]:
     systemErrorExit(15, MESSAGE_NO_SCOPES_FOR_API.format(GDATA_API_INFO[api]))
-  tryOAuth(appsObj)
+  getGDataOAuthToken(gdataObj)
+  gdataObj.domain = GC_Values[GC_DOMAIN]
   #Identify GAM to Google's Servers
-  appsObj.source = GAM_INFO
+  gdataObj.source = GAM_INFO
   #Show debugging output if debug.gam exists
   if GC_Values[GC_DEBUG_LEVEL] > 0:
-    appsObj.debug = True
-  return appsObj
+    gdataObj.debug = True
+  return gdataObj
 
 def getAdminSettingsObject():
   import gdata.apps.adminsettings.service
-  return commonAppsObjInit(gdata.apps.adminsettings.service.AdminSettingsService(), u'admin-settings')
+  return initGDataObject(gdata.apps.adminsettings.service.AdminSettingsService(), u'admin-settings')
 
 def getAuditObject():
   import gdata.apps.audit.service
-  return commonAppsObjInit(gdata.apps.audit.service.AuditService(), u'email-audit')
+  return initGDataObject(gdata.apps.audit.service.AuditService(), u'email-audit')
 
 def getEmailSettingsObject():
   import gdata.apps.emailsettings.service
-  return commonAppsObjInit(gdata.apps.emailsettings.service.EmailSettingsService(), u'email-settings')
+  return initGDataObject(gdata.apps.emailsettings.service.EmailSettingsService(), u'email-settings')
 
 def geturl(url, dst):
   import urllib2
