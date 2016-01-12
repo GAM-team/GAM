@@ -1688,7 +1688,7 @@ def buildOrgUnitIdToNameMap():
   cd = buildGAPIObject(u'directory')
   result = callGAPI(cd.orgunits(), u'list',
                     customerId=GC_Values[GC_CUSTOMER_ID],
-                    fields=u'organizationUnits(orgUnitPath,orgUnitId)')
+                    fields=u'organizationUnits(orgUnitPath,orgUnitId)', type=u'all')
   GM_Globals[GM_MAP_ORGUNIT_ID_TO_NAME] = {}
   for orgUnit in result[u'organizationUnits']:
     GM_Globals[GM_MAP_ORGUNIT_ID_TO_NAME][orgUnit[u'orgUnitId']] = orgUnit[u'orgUnitPath']
