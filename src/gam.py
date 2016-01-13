@@ -6812,7 +6812,7 @@ def doGetNotifications():
     else:
       print u'Read Status: READ'
     print u''
-    print dehtml(notification[u'body'])
+    print convertUTF8(dehtml(notification[u'body']))
     print u''
     print u'--------------'
     print u''
