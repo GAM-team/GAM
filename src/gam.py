@@ -8755,7 +8755,7 @@ def OAuthInfo():
     _, http, service = getAPIversionHttpService(api)
     api_scopes = service._rootDesc[u'auth'][u'oauth2'][u'scopes']
     requested_scopes = list(set(api_scopes.keys()).intersection(GM_Globals[GM_GAMSCOPES_LIST]))
-    print u'  %2d) %s (%d/%d scopes)' % (i, service._rootDesc[u'title'], len(requested_scopes), len(api_scopes))
+    print u'  %2d) %s (%d/%d scopes)' % (i, service._rootDesc[u'title'].replace(u'Google ', u''), len(requested_scopes), len(api_scopes))
     if requested_scopes:
       for scope in requested_scopes:
         credentials = oauth2client.client.SignedJwtAssertionCredentials(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_EMAIL],
@@ -8862,13 +8862,13 @@ def doRequestOAuth():
         else:
           print u'ERROR: please enter numbers only'
 
-  apis = API_VER_MAPPING.keys()
   all_apis = {}
   api_titles = {}
-  for api in apis:
+  for api in API_VER_MAPPING.keys():
     api_version, _, service = getAPIversionHttpService(api)
     all_apis[api_version] = service._rootDesc
-    api_titles[api_version] = api_version
+    all_apis[api_version][u'title'] = all_apis[api_version][u'title'].replace(u'Google ', u'')
+    api_titles[all_apis[api_version][u'title']] = api_version
   api_index = []
   for _, api_version in sorted(api_titles.items()):
     api_index.append(api_version)
