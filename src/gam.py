@@ -92,6 +92,8 @@ GM_BATCH_QUEUE = u'batq'
 GM_EXTRA_ARGS_DICT = u'exad'
 # Scopes retrieved from gamscopes.json
 GM_GAMSCOPES_LIST = u'scop'
+# GAM admin user
+GM_ADMIN = u'admin'
 # Current API user
 GM_CURRENT_API_USER = u'capu'
 # Current API scope
@@ -119,6 +121,7 @@ GM_Globals = {
   GM_BATCH_QUEUE: None,
   GM_EXTRA_ARGS_DICT:  {u'prettyPrint': False},
   GM_GAMSCOPES_LIST: [],
+  GM_ADMIN: None,
   GM_CURRENT_API_USER: None,
   GM_CURRENT_API_SCOPES: [],
   GM_OAUTH2SERVICE_KEY: None,
@@ -135,8 +138,6 @@ GM_Globals = {
 #
 # When retrieving lists of Google Drive activities from API, how many should be retrieved in each chunk
 GC_ACTIVITY_MAX_RESULTS = u'activity_max_results'
-# GAM admin user
-GC_ADMIN = u'admin'
 # Automatically generate gam batch command if number of users specified in gam users xxx command exceeds this number
 # Default: 0, don't automatically generate gam batch commands
 GC_AUTO_BATCH_MIN = u'auto_batch_min'
@@ -179,7 +180,6 @@ GC_USER_MAX_RESULTS = u'user_max_results'
 
 GC_Defaults = {
   GC_ACTIVITY_MAX_RESULTS: 100,
-  GC_ADMIN: u'',
   GC_AUTO_BATCH_MIN: 0,
   GC_CACHE_DIR: u'',
   GC_CHARSET: u'utf-8',
@@ -218,7 +218,6 @@ GC_VAR_LIMITS_KEY = u'lmit'
 
 GC_VAR_INFO = {
   GC_ACTIVITY_MAX_RESULTS: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_ENVVAR_KEY: u'GAM_ACTIVITY_MAX_RESULTS', GC_VAR_LIMITS_KEY: (1, 500)},
-  GC_ADMIN: {GC_VAR_TYPE_KEY: GC_TYPE_STRING, GC_VAR_ENVVAR_KEY: u'GAM_ADMIN'},
   GC_AUTO_BATCH_MIN: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_ENVVAR_KEY: u'GAM_AUTOBATCH', GC_VAR_LIMITS_KEY: (0, None)},
   GC_CACHE_DIR: {GC_VAR_TYPE_KEY: GC_TYPE_DIRECTORY, GC_VAR_ENVVAR_KEY: u'GAMCACHEDIR'},
   GC_CHARSET: {GC_VAR_TYPE_KEY: GC_TYPE_STRING, GC_VAR_ENVVAR_KEY: u'GAM_CHARSET'},
@@ -429,10 +428,10 @@ def writeFile(filename, data, mode=u'wb', continueOnError=False, displayError=Tr
 # Get global domain from global admin email address
 #
 def getDomainFromAdmin():
-  if GC_Values[GC_ADMIN]:
-    loc = GC_Values[GC_ADMIN].find(u'@')
+  if GM_Globals[GM_ADMIN]:
+    loc = GM_Globals[GM_ADMIN].find(u'@')
     if loc > 0:
-      GC_Values[GC_DOMAIN] = GC_Values[GC_ADMIN][loc+1:]
+      GC_Values[GC_DOMAIN] = GM_Globals[GM_ADMIN][loc+1:]
 
 # Set global variables
 # Check for GAM updates based on status of noupdatecheck.txt
@@ -470,8 +469,8 @@ def SetGlobalVariables():
     if not isinstance(scopes, list):
       invalidJSONExit(GC_Values[GC_GAMSCOPES_JSON])
     GM_Globals[GM_GAMSCOPES_LIST] = list(set(scopes))
-    if not GC_Values[GC_ADMIN]:
-      GC_Values[GC_ADMIN] = json_data.get(u'admin', GC_Defaults[GC_ADMIN])
+    if not GM_Globals[GM_ADMIN]:
+      GM_Globals[GM_ADMIN] = json_data.get(u'admin', None)
     if not GC_Values[GC_DOMAIN]:
       GC_Values[GC_DOMAIN] = json_data.get(u'domain', GC_Defaults[GC_DOMAIN])
 
@@ -512,7 +511,6 @@ def SetGlobalVariables():
     GC_Defaults[GC_OAUTH2SERVICE_JSON] += u'.json'
   _getOldEnvVar(GC_GAMSCOPES_JSON)
   _getOldEnvVar(GC_DOMAIN)
-  _getOldEnvVar(GC_ADMIN)
   _getOldEnvVar(GC_CUSTOMER_ID)
   _getOldEnvVar(GC_CHARSET)
   _getOldEnvVar(GC_NUM_THREADS)
@@ -614,7 +612,7 @@ def handleOAuthTokenError(e, soft_errors):
   if e.message in OAUTH_TOKEN_ERRORS:
     if not GM_Globals[GM_CURRENT_API_USER]:
       sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, MESSAGE_API_ACCESS_DENIED.format(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID],
-                                                                                         u','.join(GM_Globals[GM_CURRENT_API_SCOPES]), GC_Values[GC_ADMIN])))
+                                                                                         u','.join(GM_Globals[GM_CURRENT_API_SCOPES]), GM_Globals[GM_ADMIN])))
       systemErrorExit(12, MESSAGE_API_ACCESS_CONFIG)
     else:
       systemErrorExit(19, MESSAGE_SERVICE_NOT_APPLICABLE.format(GM_Globals[GM_CURRENT_API_USER]))
@@ -626,7 +624,7 @@ def handleOAuthTokenError(e, soft_errors):
 def getGDataOAuthToken(gdataObject):
   credentials = oauth2client.client.SignedJwtAssertionCredentials(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_EMAIL],
                                                                   GM_Globals[GM_OAUTH2SERVICE_KEY],
-                                                                  scope=GM_Globals[GM_CURRENT_API_SCOPES], user_agent=GAM_INFO, sub=GC_Values[GC_ADMIN])
+                                                                  scope=GM_Globals[GM_CURRENT_API_SCOPES], user_agent=GAM_INFO, sub=GM_Globals[GM_ADMIN])
   http = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL],
                        cache=GC_Values[GC_CACHE_DIR])
   try:
@@ -888,7 +886,7 @@ def getAPIversionHttpService(api):
     invalidJSONExit(disc_file)
 
 def buildGAPIObject(api, act_as=None, soft_errors=False):
-  svcsub = act_as if act_as else GC_Values[GC_ADMIN]
+  svcsub = act_as if act_as else GM_Globals[GM_ADMIN]
   _, http, service = getAPIversionHttpService(api)
   GM_Globals[GM_CURRENT_API_USER] = act_as
   GM_Globals[GM_CURRENT_API_SCOPES] = list(set(service._rootDesc[u'auth'][u'oauth2'][u'scopes'].keys()).intersection(GM_Globals[GM_GAMSCOPES_LIST]))
@@ -6316,7 +6314,7 @@ def doGetUserInfo(user_email=None):
       user_email = sys.argv[3]
       i = 4
     else:
-      user_email = GC_Values[GC_ADMIN]
+      user_email = GM_Globals[GM_ADMIN]
   if user_email[:4].lower() == u'uid:':
     user_email = user_email[4:]
   elif user_email.find(u'@') == -1:
@@ -8748,7 +8746,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
 
 def OAuthInfo():
   configRequired = False
-  print u'API Access, Admin: {0}'.format(GC_Values[GC_ADMIN])
+  print u'API Access, Admin: {0}'.format(GM_Globals[GM_ADMIN])
   i = 0
   for api in sorted(API_VER_MAPPING.keys()):
     i += 1
@@ -8760,7 +8758,7 @@ def OAuthInfo():
       for scope in requested_scopes:
         credentials = oauth2client.client.SignedJwtAssertionCredentials(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_EMAIL],
                                                                         GM_Globals[GM_OAUTH2SERVICE_KEY],
-                                                                        scope=scope, user_agent=GAM_INFO, sub=GC_Values[GC_ADMIN])
+                                                                        scope=scope, user_agent=GAM_INFO, sub=GM_Globals[GM_ADMIN])
         try:
           service._http = credentials.refresh(http)
           status = u'Authorized'
@@ -8810,19 +8808,19 @@ def doRequestOAuth():
       if json_string:
         try:
           json_data = json.loads(json_string)
-          GC_Values[GC_ADMIN] = json_data.get(u'id_token', {}).get(u'email', GC_Defaults[GC_ADMIN])
+          GM_Globals[GM_ADMIN] = json_data.get(u'id_token', {}).get(u'email', None)
           if not GC_Values[GC_DOMAIN]:
             GC_Values[GC_DOMAIN] = json_data.get(u'id_token', {}).get(u'hd', GC_Defaults[GC_DOMAIN])
         except ValueError:
           pass
-    if GC_Values[GC_ADMIN]:
+    if GM_Globals[GM_ADMIN]:
       return
     print u''
     while True:
       value = raw_input(u'Enter Admin email address: ').strip().lower()
       ema = EMAIL_PATTERN.match(value)
       if ema:
-        GC_Values[GC_ADMIN] = value
+        GM_Globals[GM_ADMIN] = value
         if not GC_Values[GC_DOMAIN]:
           GC_Values[GC_DOMAIN] = ema.group(2)
         return
@@ -8878,7 +8876,7 @@ def doRequestOAuth():
       all_apis[api][u'use_scopes'] = list(set(all_apis[api][u'auth'][u'oauth2'][u'scopes'].keys()).intersection(GM_Globals[GM_GAMSCOPES_LIST]))
   else:
     _select_default_scopes(all_apis)
-  if not GC_Values[GC_ADMIN]:
+  if not GM_Globals[GM_ADMIN]:
     _getAdminDomain()
   while True:
     #os.system([u'clear', u'cls'][GM_Globals[GM_WINDOWS]])
@@ -8915,7 +8913,7 @@ def doRequestOAuth():
         print u'YOU MUST SELECT AT LEAST ONE SCOPE'
         continue
       writeFile(GC_Values[GC_GAMSCOPES_JSON], json.dumps({u'scopes': GM_Globals[GM_GAMSCOPES_LIST],
-                                                          u'admin': GC_Values[GC_ADMIN],
+                                                          u'admin': GM_Globals[GM_ADMIN],
                                                           u'domain': GC_Values[GC_DOMAIN]}))
       print u'Scopes file: {0}, Created'.format(GC_Values[GC_GAMSCOPES_JSON])
       print MESSAGE_PLEASE_AUTHORIZE_SERVICE_ACCOUNT.format(len(GM_Globals[GM_GAMSCOPES_LIST]), u','.join(GM_Globals[GM_GAMSCOPES_LIST]))
