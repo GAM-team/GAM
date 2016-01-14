@@ -910,7 +910,7 @@ def initGDataObject(gdataObj, api):
   GM_Globals[GM_CURRENT_API_USER] = None
   try:
     GM_Globals[GM_CURRENT_API_SCOPES] = list(set(discovery[u'auth'][u'oauth2'][u'scopes'].keys()).intersection(GM_Globals[GM_GAMSCOPES_LIST]))
-  except (ValueError, KeyError):
+  except KeyError:
     invalidJSONExit(disc_file)
   if not GM_Globals[GM_CURRENT_API_SCOPES]:
     systemErrorExit(15, MESSAGE_NO_SCOPES_FOR_API.format(discovery.get(u'title', api_version)))
