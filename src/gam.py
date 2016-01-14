@@ -7710,7 +7710,7 @@ def doPrintGroups():
       sys.stderr.write(u' Getting %s for %s (%s of %s)\n' % (roles, group_vals[u'email'], count, total_groups))
       page_message = u'Got %%num_items%% members: %%first_item%% - %%last_item%%\n'
       all_group_members = callGAPIpages(cd.members(), u'list', u'members', page_message=page_message,
-                                        message_attribute=u'email', groupKey=group_vals[u'email'], roles=roles, fields=u'nextPageToken,members(email,role)')
+                                        message_attribute=u'email', groupKey=group_vals[u'email'], roles=roles, fields=u'nextPageToken,members(email,id,role)')
       if members:
         all_true_members = list()
       if managers:
@@ -7718,10 +7718,9 @@ def doPrintGroups():
       if owners:
         all_owners = list()
       for member in all_group_members:
-        try:
-          member_email = member[u'email']
-        except KeyError:
-          sys.stderr.write(u' Not sure to do with: %s' % member)
+        member_email = member.get(u'email', member.get(u'id', None))
+        if not member_email:
+          sys.stderr.write(u' Not sure what to do with: %s' % member)
           continue
         try:
           if members and member[u'role'] == u'MEMBER':
