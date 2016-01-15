@@ -159,6 +159,8 @@ GC_DOMAIN = u'domain'
 GC_DRIVE_DIR = u'drive_dir'
 # When retrieving lists of Drive files/folders from API, how many should be retrieved in each chunk
 GC_DRIVE_MAX_RESULTS = u'drive_max_results'
+# Path to extra_args.txt
+GC_EXTRA_ARGS = u'extra_args'
 # Path to gamscopes.json
 GC_GAMSCOPES_JSON = u'gamscopes_json'
 # If no_browser is False, output_csv won't open a browser when todrive is set
@@ -190,6 +192,7 @@ GC_Defaults = {
   GC_DOMAIN: u'',
   GC_DRIVE_DIR: u'',
   GC_DRIVE_MAX_RESULTS: 1000,
+  GC_EXTRA_ARGS: u'',
   GC_GAMSCOPES_JSON: FN_GAMSCOPES_JSON,
   GC_NO_BROWSER: FALSE,
   GC_NO_CACHE: FALSE,
@@ -215,6 +218,7 @@ GC_TYPE_STRING = u'stri'
 GC_VAR_TYPE_KEY = u'type'
 GC_VAR_ENVVAR_KEY = u'enva'
 GC_VAR_LIMITS_KEY = u'lmit'
+GC_VAR_SFFT_KEY = u'sfft'
 
 GC_VAR_INFO = {
   GC_ACTIVITY_MAX_RESULTS: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_ENVVAR_KEY: u'GAM_ACTIVITY_MAX_RESULTS', GC_VAR_LIMITS_KEY: (1, 500)},
@@ -223,16 +227,17 @@ GC_VAR_INFO = {
   GC_CHARSET: {GC_VAR_TYPE_KEY: GC_TYPE_STRING, GC_VAR_ENVVAR_KEY: u'GAM_CHARSET'},
   GC_CONFIG_DIR: {GC_VAR_TYPE_KEY: GC_TYPE_DIRECTORY, GC_VAR_ENVVAR_KEY: u'GAMUSERCONFIGDIR'},
   GC_CUSTOMER_ID: {GC_VAR_TYPE_KEY: GC_TYPE_STRING, GC_VAR_ENVVAR_KEY: u'CUSTOMER_ID'},
-  GC_DEBUG_LEVEL: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_ENVVAR_KEY: u'debug.gam', GC_VAR_LIMITS_KEY: (0, None)},
+  GC_DEBUG_LEVEL: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_ENVVAR_KEY: u'debug.gam', GC_VAR_LIMITS_KEY: (0, None), GC_VAR_SFFT_KEY: (0, 4)},
   GC_DEVICE_MAX_RESULTS: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_ENVVAR_KEY: u'GAM_DEVICE_MAX_RESULTS', GC_VAR_LIMITS_KEY: (1, 1000)},
   GC_DOMAIN: {GC_VAR_TYPE_KEY: GC_TYPE_STRING, GC_VAR_ENVVAR_KEY: u'GA_DOMAIN'},
   GC_DRIVE_DIR: {GC_VAR_TYPE_KEY: GC_TYPE_DIRECTORY, GC_VAR_ENVVAR_KEY: u'GAMDRIVEDIR'},
   GC_DRIVE_MAX_RESULTS: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_ENVVAR_KEY: u'GAM_DRIVE_MAX_RESULTS', GC_VAR_LIMITS_KEY: (1, 1000)},
+  GC_EXTRA_ARGS: {GC_VAR_TYPE_KEY: GC_TYPE_FILE, GC_VAR_ENVVAR_KEY: FN_EXTRA_ARGS_TXT, GC_VAR_SFFT_KEY: (u'', FN_EXTRA_ARGS_TXT)},
   GC_GAMSCOPES_JSON: {GC_VAR_TYPE_KEY: GC_TYPE_FILE, GC_VAR_ENVVAR_KEY: u'GAMSCOPESFILE'},
-  GC_NO_BROWSER: {GC_VAR_TYPE_KEY: GC_TYPE_BOOLEAN, GC_VAR_ENVVAR_KEY: u'nobrowser.txt'},
-  GC_NO_CACHE: {GC_VAR_TYPE_KEY: GC_TYPE_BOOLEAN, GC_VAR_ENVVAR_KEY: u'nocache.txt'},
-  GC_NO_UPDATE_CHECK: {GC_VAR_TYPE_KEY: GC_TYPE_BOOLEAN, GC_VAR_ENVVAR_KEY: u'noupdatecheck.txt'},
-  GC_NO_VERIFY_SSL: {GC_VAR_TYPE_KEY: GC_TYPE_BOOLEAN, GC_VAR_ENVVAR_KEY: u'noverifyssl.txt'},
+  GC_NO_BROWSER: {GC_VAR_TYPE_KEY: GC_TYPE_BOOLEAN, GC_VAR_ENVVAR_KEY: u'nobrowser.txt', GC_VAR_SFFT_KEY: (False, True)},
+  GC_NO_CACHE: {GC_VAR_TYPE_KEY: GC_TYPE_BOOLEAN, GC_VAR_ENVVAR_KEY: u'nocache.txt', GC_VAR_SFFT_KEY: (False, True)},
+  GC_NO_UPDATE_CHECK: {GC_VAR_TYPE_KEY: GC_TYPE_BOOLEAN, GC_VAR_ENVVAR_KEY: u'noupdatecheck.txt', GC_VAR_SFFT_KEY: (False, True)},
+  GC_NO_VERIFY_SSL: {GC_VAR_TYPE_KEY: GC_TYPE_BOOLEAN, GC_VAR_ENVVAR_KEY: u'noverifyssl.txt', GC_VAR_SFFT_KEY: (False, True)},
   GC_NUM_THREADS: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_ENVVAR_KEY: u'GAM_THREADS', GC_VAR_LIMITS_KEY: (1, None)},
   GC_OAUTH2SERVICE_JSON: {GC_VAR_TYPE_KEY: GC_TYPE_FILE, GC_VAR_ENVVAR_KEY: u'OAUTHSERVICEFILE'},
   GC_SITE_DIR: {GC_VAR_TYPE_KEY: GC_TYPE_DIRECTORY, GC_VAR_ENVVAR_KEY: u'GAMSITECONFIGDIR'},
@@ -438,23 +443,23 @@ def getDomainFromAdmin():
 #
 def SetGlobalVariables():
 
-  def _getOldEnvVar(itemName):
-    value = os.environ.get(GC_VAR_INFO[itemName][GC_VAR_ENVVAR_KEY], GC_Defaults[itemName])
-    if GC_VAR_INFO[itemName][GC_VAR_TYPE_KEY] == GC_TYPE_INTEGER:
-      try:
-        number = int(value)
-        minVal, maxVal = GC_VAR_INFO[itemName][GC_VAR_LIMITS_KEY]
-        if number < minVal:
-          number = minVal
-        elif maxVal and (number > maxVal):
-          number = maxVal
-      except ValueError:
-        number = GC_Defaults[itemName]
-      value = number
-    GC_Defaults[itemName] = value
-
-  def _getOldSignalFile(itemName, trueValue=True, falseValue=False):
-    GC_Defaults[itemName] = trueValue if os.path.isfile(os.path.join(GC_Defaults[GC_CONFIG_DIR], GC_VAR_INFO[itemName][GC_VAR_ENVVAR_KEY])) else falseValue
+  def _getDefault(itemName, itemEntry):
+    if GC_VAR_SFFT_KEY in itemEntry:
+      GC_Defaults[itemName] = itemEntry[GC_VAR_SFFT_KEY][os.path.isfile(os.path.join(GC_Defaults[GC_CONFIG_DIR], itemEntry[GC_VAR_ENVVAR_KEY]))]
+    else:
+      value = os.environ.get(itemEntry[GC_VAR_ENVVAR_KEY], GC_Defaults[itemName])
+      if itemEntry[GC_VAR_TYPE_KEY] == GC_TYPE_INTEGER:
+        try:
+          number = int(value)
+          minVal, maxVal = itemEntry[GC_VAR_LIMITS_KEY]
+          if number < minVal:
+            number = minVal
+          elif maxVal and (number > maxVal):
+            number = maxVal
+        except ValueError:
+          number = GC_Defaults[itemName]
+        value = str(number)
+      GC_Defaults[itemName] = value
 
   def _getScopesAdminDomainFromGamScopesJson():
     GM_Globals[GM_GAMSCOPES_LIST] = []
@@ -501,29 +506,14 @@ def SetGlobalVariables():
   GC_Defaults[GC_CACHE_DIR] = os.path.join(GM_Globals[GM_GAM_PATH], u'gamcache')
   GC_Defaults[GC_DRIVE_DIR] = GM_Globals[GM_GAM_PATH]
   GC_Defaults[GC_SITE_DIR] = GM_Globals[GM_GAM_PATH]
-
-  _getOldEnvVar(GC_CONFIG_DIR)
-  _getOldEnvVar(GC_SITE_DIR)
-  _getOldEnvVar(GC_CACHE_DIR)
-  _getOldEnvVar(GC_DRIVE_DIR)
-  _getOldEnvVar(GC_OAUTH2SERVICE_JSON)
+  for itemName, itemEntry in GC_VAR_INFO.items():
+    if itemEntry[GC_VAR_TYPE_KEY] == GC_TYPE_DIRECTORY:
+      _getDefault(itemName, itemEntry)
+  for itemName, itemEntry in GC_VAR_INFO.items():
+    if itemEntry[GC_VAR_TYPE_KEY] != GC_TYPE_DIRECTORY:
+      _getDefault(itemName, itemEntry)
   if GC_Defaults[GC_OAUTH2SERVICE_JSON].find(u'.') == -1:
     GC_Defaults[GC_OAUTH2SERVICE_JSON] += u'.json'
-  _getOldEnvVar(GC_GAMSCOPES_JSON)
-  _getOldEnvVar(GC_DOMAIN)
-  _getOldEnvVar(GC_CUSTOMER_ID)
-  _getOldEnvVar(GC_CHARSET)
-  _getOldEnvVar(GC_NUM_THREADS)
-  _getOldEnvVar(GC_AUTO_BATCH_MIN)
-  _getOldEnvVar(GC_ACTIVITY_MAX_RESULTS)
-  _getOldEnvVar(GC_DEVICE_MAX_RESULTS)
-  _getOldEnvVar(GC_DRIVE_MAX_RESULTS)
-  _getOldEnvVar(GC_USER_MAX_RESULTS)
-  _getOldSignalFile(GC_DEBUG_LEVEL, trueValue=4, falseValue=0)
-  _getOldSignalFile(GC_NO_VERIFY_SSL)
-  _getOldSignalFile(GC_NO_BROWSER)
-  _getOldSignalFile(GC_NO_CACHE)
-  _getOldSignalFile(GC_NO_UPDATE_CHECK)
 # Assign directories first
   for itemName in GC_VAR_INFO:
     if GC_VAR_INFO[itemName][GC_VAR_TYPE_KEY] == GC_TYPE_DIRECTORY:
@@ -538,13 +528,13 @@ def SetGlobalVariables():
   if not GC_Values[GC_NO_UPDATE_CHECK]:
     doGAMCheckForUpdates()
 # Globals derived from config file values
-  GM_Globals[GM_EXTRA_ARGS_DICT] = {u'prettyPrint': GC_Values[GC_DEBUG_LEVEL] > 0}
   httplib2.debuglevel = GC_Values[GC_DEBUG_LEVEL]
-  if os.path.isfile(os.path.join(GC_Values[GC_CONFIG_DIR], FN_EXTRA_ARGS_TXT)):
+  GM_Globals[GM_EXTRA_ARGS_DICT] = {u'prettyPrint': GC_Values[GC_DEBUG_LEVEL] > 0}
+  if GC_Values[GC_EXTRA_ARGS]:
     import ConfigParser
     ea_config = ConfigParser.ConfigParser()
     ea_config.optionxform = str
-    ea_config.read(os.path.join(GC_Values[GC_CONFIG_DIR], FN_EXTRA_ARGS_TXT))
+    ea_config.read(GC_Values[GC_EXTRA_ARGS])
     GM_Globals[GM_EXTRA_ARGS_DICT].update(dict(ea_config.items(u'extra-args')))
   GM_Globals[GM_OAUTH2SERVICE_KEY] = None
   GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_EMAIL] = None
@@ -5950,9 +5940,15 @@ def doUpdateGroup():
         users_email = getUsersToModify(entity_type=sys.argv[i], entity=sys.argv[i+1])
       else:
         users_email = [sys.argv[i],]
+      body = {u'role': role}
       for user_email in users_email:
-        if user_email != u'*' and user_email.find(u'@') == -1:
-          user_email = u'%s@%s' % (user_email, GC_Values[GC_DOMAIN])
+        if user_email[:4].lower() == u'uid:':
+          user_email = user_email[4:]
+          body[u'id'] = user_email
+        else:
+          if user_email.find(u'@') == -1:
+            user_email = u'%s@%s' % (user_email, GC_Values[GC_DOMAIN])
+          body[u'email'] = user_email
         sys.stderr.write(u' %sing %s %s...' % (sys.argv[4].lower(), role.lower(), user_email))
         try:
           if sys.argv[4].lower() == u'add':
@@ -5960,14 +5956,17 @@ def doUpdateGroup():
             body[u'email'] = user_email
             result = callGAPI(cd.members(), u'insert', soft_errors=True, groupKey=group, body=body)
           elif sys.argv[4].lower() == u'update':
-            result = callGAPI(cd.members(), u'update', soft_errors=True, groupKey=group, memberKey=user_email, body={u'email': user_email, u'role': role})
-          try:
-            if str(result[u'email']).lower() != user_email.lower():
-              print u'added %s (primary address) to group' % result[u'email']
+            result = callGAPI(cd.members(), u'update', soft_errors=True, groupKey=group, memberKey=user_email, body=body)
+          if result:
+            addr = result.get(u'email', None)
+            if addr:
+              addr = addr.lower()
+              if addr != user_email.lower():
+                print u'added %s (primary address) to group' % addr
+              else:
+                print u'added %s to group' % addr
             else:
-              print u'added %s to group' % result[u'email']
-          except TypeError:
-            pass
+              print u'added %s to group' % result[u'id']
         except googleapiclient.errors.HttpError:
           pass
     elif sys.argv[4].lower() == u'sync':
@@ -6000,7 +5999,9 @@ def doUpdateGroup():
       else:
         user_emails = [sys.argv[i],]
       for user_email in user_emails:
-        if user_email != u'*' and user_email.find(u'@') == -1:
+        if user_email[:4].lower() == u'uid:':
+          user_email = user_email[4:]
+        elif user_email.find(u'@') == -1:
           user_email = u'%s@%s' % (user_email, GC_Values[GC_DOMAIN])
         sys.stderr.write(u' removing %s\n' % user_email)
         result = callGAPI(cd.members(), u'delete', soft_errors=True, groupKey=group, memberKey=user_email)
