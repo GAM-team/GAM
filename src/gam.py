@@ -4884,9 +4884,9 @@ def doWebClips(users):
 def doVacation(users):
   subject = message = u''
   if sys.argv[4].lower() in true_values:
-    enable = u'true'
+    enable = True
   elif sys.argv[4].lower() in false_values:
-    enable = u'false'
+    enable = False
   else:
     print u'ERROR: value for "gam <users> vacation" must be true or false, got %s' % sys.argv[4]
     sys.exit(2)
