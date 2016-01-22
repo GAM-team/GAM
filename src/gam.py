@@ -484,6 +484,8 @@ def SetGlobalVariables():
 
   def _getCfgFile(itemName):
     value = os.path.expanduser(GC_Defaults[itemName])
+    if (not value) and (itemName == GC_EXTRA_ARGS):
+      return value
     if not os.path.isabs(value):
       value = os.path.expanduser(os.path.join(GC_Values[GC_CONFIG_DIR], value))
     return value
@@ -499,6 +501,8 @@ def SetGlobalVariables():
     for itemName in GC_VAR_INFO:
       if GC_VAR_INFO[itemName][GC_VAR_TYPE_KEY] == GC_TYPE_FILE:
         fileName = GC_Values[itemName]
+        if (not fileName) and (itemName == GC_EXTRA_ARGS):
+          continue
         if not os.path.isfile(fileName):
           sys.stderr.write(u'{0}{1}={2}, Not Found\n'.format(WARNING_PREFIX, GC_VAR_INFO[itemName][GC_VAR_ENVVAR_KEY], fileName))
 
