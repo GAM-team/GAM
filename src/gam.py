@@ -8814,38 +8814,28 @@ def doDeleteOAuth():
     sys.stderr.write(u'{0}{1}\n'.format(WARNING_PREFIX, e))
 
 EMAIL_PATTERN = re.compile(r'^(.+)@(.+\..+)$')
-EMAIL_FORMAT_REQUIRED = u'<Name>@<Name>.<TLD>'
+EMAIL_FORMAT_REQUIRED = u'<Name>@<Domain>'
 
 UBER_SCOPES = {u'gmail-v1': [u'https://mail.google.com/'],}
 
 def doRequestOAuth():
 
+  def _setAdminDomain(value):
+    ema = EMAIL_PATTERN.match(value)
+    if ema:
+      GM_Globals[GM_ADMIN] = value
+      if not GC_Values[GC_DOMAIN]:
+        GC_Values[GC_DOMAIN] = ema.group(2)
+      return True
+    print u'{0}Admin email address must be: {1}'.format(ERROR_PREFIX, EMAIL_FORMAT_REQUIRED)
+    return False
+
   def _getAdminDomain():
-    srcFile = os.path.expanduser(os.environ.get(u'OAUTHFILE', u'oauth2.txt'))
-    if not os.path.isabs(srcFile):
-      srcFile = os.path.expanduser(os.path.join(GC_Values[GC_CONFIG_DIR], srcFile))
-    if os.path.isfile(srcFile):
-      json_string = readFile(srcFile, continueOnError=True, displayError=False)
-      if json_string:
-        try:
-          json_data = json.loads(json_string)
-          GM_Globals[GM_ADMIN] = json_data.get(u'id_token', {}).get(u'email', None)
-          if not GC_Values[GC_DOMAIN]:
-            GC_Values[GC_DOMAIN] = json_data.get(u'id_token', {}).get(u'hd', GC_Defaults[GC_DOMAIN])
-        except ValueError:
-          pass
-    if GM_Globals[GM_ADMIN]:
-      return
     print u''
     while True:
       value = raw_input(u'Enter Admin email address: ').strip().lower()
-      ema = EMAIL_PATTERN.match(value)
-      if ema:
-        GM_Globals[GM_ADMIN] = value
-        if not GC_Values[GC_DOMAIN]:
-          GC_Values[GC_DOMAIN] = ema.group(2)
+      if _setAdminDomain(value):
         return
-      print u'{0}Enter full email address: {1}'.format(ERROR_PREFIX, EMAIL_FORMAT_REQUIRED)
 
   def _select_default_scopes(apis):
     for api_name, api in apis.items():
@@ -8881,6 +8871,12 @@ def doRequestOAuth():
         else:
           print u'ERROR: please enter numbers only'
 
+  if len(sys.argv) > 3:
+    GM_Globals[GM_ADMIN] = u''
+    if not _setAdminDomain(sys.argv[3].lower()):
+      _getAdminDomain()
+  elif not GM_Globals[GM_ADMIN]:
+    _getAdminDomain()
   all_apis = {}
   api_titles = {}
   for api in API_VER_MAPPING.keys():
