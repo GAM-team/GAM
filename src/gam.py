@@ -1079,7 +1079,13 @@ def showReport():
     for app in auth_apps: # put apps at bottom
       cust_attributes.append(app)
     output_csv(csv_list=cust_attributes, titles=titles, list_type=u'Customer Report - %s' % try_date, todrive=to_drive)
-  elif report in [u'doc', u'docs', u'calendar', u'calendars', u'login', u'logins', u'admin', u'drive', u'token', u'tokens']:
+  elif report in [u'doc', u'docs', u'drive',
+                  u'calendar', u'calendars',
+                  u'login', u'logins',
+                  u'admin',
+                  u'token', u'tokens',
+                  u'group', u'groups',
+                  u'mobile']:
     if report in [u'doc', u'docs']:
       report = u'drive'
     elif report in [u'calendars']:
@@ -1088,6 +1094,8 @@ def showReport():
       report = u'login'
     elif report == u'tokens':
       report = u'token'
+    elif report == u'group':
+      report = u'groups'
     page_message = u'Got %%num_items%% items\n'
     activities = callGAPIpages(rep.activities(), u'list', u'items', page_message=page_message, applicationName=report,
                                userKey=userKey, customerId=customerId, actorIpAddress=actorIpAddress,
