@@ -1619,6 +1619,15 @@ def doPrintAdminRoles():
   roles = callGAPIpages(cd.roles(), u'list', u'items',
                         customer=GC_Values[GC_CUSTOMER_ID])
   roles_attrib = [{}]
+  todrive = False
+  i = 3
+  while i < len(sys.argv):
+    if sys.argv[i].lower() == u'todrive':
+      todrive = True
+      i += 1
+    else:
+      print u'ERROR: %s is not a valid argument for "gam print adminroles".' % sys.argv[i]
+      sys.exit(2)
   for role in roles:
     role_attrib = {}
     for key, value in role.items():
@@ -1630,7 +1639,7 @@ def doPrintAdminRoles():
         roles_attrib[0][key] = key
       role_attrib[key] = value
     roles_attrib.append(role_attrib)
-  output_csv(roles_attrib, roles_attrib[0], u'Admin Roles', False)
+  output_csv(roles_attrib, roles_attrib[0], u'Admin Roles', todrive)
 
 def doPrintAdmins():
   cd = buildGAPIObject(u'directory')
