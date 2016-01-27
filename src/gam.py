@@ -1079,7 +1079,13 @@ def showReport():
     for app in auth_apps: # put apps at bottom
       cust_attributes.append(app)
     output_csv(csv_list=cust_attributes, titles=titles, list_type=u'Customer Report - %s' % try_date, todrive=to_drive)
-  elif report in [u'doc', u'docs', u'calendar', u'calendars', u'login', u'logins', u'admin', u'drive', u'token', u'tokens']:
+  elif report in [u'doc', u'docs', u'drive',
+                  u'calendar', u'calendars',
+                  u'login', u'logins',
+                  u'admin',
+                  u'token', u'tokens',
+                  u'group', u'groups',
+                  u'mobile']:
     if report in [u'doc', u'docs']:
       report = u'drive'
     elif report in [u'calendars']:
@@ -1088,6 +1094,8 @@ def showReport():
       report = u'login'
     elif report == u'tokens':
       report = u'token'
+    elif report == u'group':
+      report = u'groups'
     page_message = u'Got %%num_items%% items\n'
     activities = callGAPIpages(rep.activities(), u'list', u'items', page_message=page_message, applicationName=report,
                                userKey=userKey, customerId=customerId, actorIpAddress=actorIpAddress,
@@ -1611,6 +1619,15 @@ def doPrintAdminRoles():
   roles = callGAPIpages(cd.roles(), u'list', u'items',
                         customer=GC_Values[GC_CUSTOMER_ID])
   roles_attrib = [{}]
+  todrive = False
+  i = 3
+  while i < len(sys.argv):
+    if sys.argv[i].lower() == u'todrive':
+      todrive = True
+      i += 1
+    else:
+      print u'ERROR: %s is not a valid argument for "gam print adminroles".' % sys.argv[i]
+      sys.exit(2)
   for role in roles:
     role_attrib = {}
     for key, value in role.items():
@@ -1622,7 +1639,7 @@ def doPrintAdminRoles():
         roles_attrib[0][key] = key
       role_attrib[key] = value
     roles_attrib.append(role_attrib)
-  output_csv(roles_attrib, roles_attrib[0], u'Admin Roles', False)
+  output_csv(roles_attrib, roles_attrib[0], u'Admin Roles', todrive)
 
 def doPrintAdmins():
   cd = buildGAPIObject(u'directory')
