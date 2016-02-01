@@ -9433,7 +9433,7 @@ try:
   if command == u'print':
     for user in users:
       print user
-      sys.exit(0)
+    sys.exit(0)
   try:
     if (GC_Values[GC_AUTO_BATCH_MIN] > 0) and (len(users) > GC_Values[GC_AUTO_BATCH_MIN]):
       items = []
