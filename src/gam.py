@@ -28,7 +28,7 @@ __author__ = u'Jay Lee <jay0lee@gmail.com>'
 __version__ = u'3.62'
 __license__ = u'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
-import sys, os, time, datetime, random, socket, csv, platform, re, calendar, base64, string, StringIO, subprocess
+import sys, os, time, datetime, random, socket, csv, platform, re, calendar, base64, string, StringIO, subprocess, collections
 
 import json
 import httplib2
@@ -90,10 +90,10 @@ GM_SYS_ENCODING = u'syen'
 GM_BATCH_QUEUE = u'batq'
 # Extra arguments to pass to GAPI functions
 GM_EXTRA_ARGS_DICT = u'exad'
-# Scopes retrieved from gamscopes.json
-GM_GAMSCOPES_LIST = u'scop'
 # GAM admin user
 GM_ADMIN = u'admin'
+# Scopes retrieved from gamscopes.json
+GM_GAMSCOPES_LIST = u'scop'
 # Current API user
 GM_CURRENT_API_USER = u'capu'
 # Current API scope
@@ -117,11 +117,11 @@ GM_Globals = {
   GM_SYSEXITRC: 0,
   GM_GAM_PATH: os.path.dirname(os.path.realpath(__file__)),
   GM_WINDOWS: os.name == u'nt',
-  GM_SYS_ENCODING: sys.getfilesystemencoding() if os.name == u'nt' else u'utf-8',
+  GM_SYS_ENCODING: u'utf-8' if os.name != u'nt' else sys.getfilesystemencoding(),
   GM_BATCH_QUEUE: None,
   GM_EXTRA_ARGS_DICT:  {u'prettyPrint': False},
-  GM_GAMSCOPES_LIST: [],
   GM_ADMIN: None,
+  GM_GAMSCOPES_LIST: [],
   GM_CURRENT_API_USER: None,
   GM_CURRENT_API_SCOPES: [],
   GM_OAUTH2SERVICE_KEY: None,
@@ -175,7 +175,7 @@ GC_NO_VERIFY_SSL = u'no_verify_ssl'
 GC_NUM_THREADS = u'num_threads'
 # Path to oauth2service.json
 GC_OAUTH2SERVICE_JSON = u'oauth2service_json'
-# GAM config directory containing admin-settings-v1.json, cloudprint-v2.json
+# GAM site directory containing admin-settings-v1.json, cloudprint-v2.json, email-audit-v1.json, email-settings-v1.json'
 GC_SITE_DIR = u'site_dir'
 # When retrieving lists of Users from API, how many should be retrieved in each chunk
 GC_USER_MAX_RESULTS = u'user_max_results'
@@ -184,7 +184,7 @@ GC_Defaults = {
   GC_ACTIVITY_MAX_RESULTS: 100,
   GC_AUTO_BATCH_MIN: 0,
   GC_CACHE_DIR: u'',
-  GC_CHARSET: u'utf-8',
+  GC_CHARSET: u'utf-8' if os.name != u'nt' else u'cp1252',
   GC_CONFIG_DIR: u'',
   GC_CUSTOMER_ID: MY_CUSTOMER,
   GC_DEBUG_LEVEL: 0,
@@ -244,9 +244,9 @@ GC_VAR_INFO = {
   GC_USER_MAX_RESULTS: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_ENVVAR_KEY: u'GAM_USER_MAX_RESULTS', GC_VAR_LIMITS_KEY: (1, 500)},
   }
 
-MESSAGE_BATCH_CSV_DASH_DEBUG_INCOMPATIBLE = u'"gam {0} - ..." is not compatible with debugging. Disable debugging by deleting debug.gam and try again.'
 MESSAGE_API_ACCESS_CONFIG = u'API access is configured in your Control Panel under: Security-Show more-Advanced settings-Manage API client access'
 MESSAGE_API_ACCESS_DENIED = u'API access denied.\n\nPlease make sure the Service account Client ID: {0} is authorized for the API Scope(s): {1}\n\nPlease make sure the Admin email address: {2} is valid'
+MESSAGE_BATCH_CSV_DASH_DEBUG_INCOMPATIBLE = u'"gam {0} - ..." is not compatible with debugging. Disable debugging by deleting debug.gam and try again.'
 MESSAGE_GAM_EXITING_FOR_UPDATE = u'GAM is now exiting so that you can overwrite this old version with the latest release'
 MESSAGE_GAM_OUT_OF_MEMORY = u'GAM has run out of memory. If this is a large Google Apps instance, you should use a 64-bit version of GAM on Windows or a 64-bit version of Python on other systems.'
 MESSAGE_HEADER_NOT_FOUND_IN_CSV_HEADERS = u'Header "{0}" not found in CSV headers of "{1}".'
@@ -267,7 +267,6 @@ MESSAGE_WIKI_INSTRUCTIONS_OAUTH2SERVICE_JSON = u'Please follow the instructions 
 OAUTH_TOKEN_ERRORS = [u'access_denied', u'unauthorized_client: Unauthorized client or scope in request.', u'access_denied: Requested client not authorized.', u'invalid_grant: Not a valid email.', u'invalid_request: Invalid impersonation prn email address.']
 
 def convertUTF8(data):
-  import collections
   if isinstance(data, str):
     return data
   if isinstance(data, unicode):
@@ -360,6 +359,9 @@ gam.exe update group announcements add member jsmith
 #
 # Error handling
 #
+def printLine(message):
+  sys.stdout.write(message+u'\n')
+
 def systemErrorExit(sysRC, message):
   if message:
     sys.stderr.write(u'\n{0}{1}\n'.format(ERROR_PREFIX, message))
@@ -374,9 +376,6 @@ def noPythonSSLExit():
 # Invalid CSV ~Header or ~~Header~~
 def csvFieldErrorExit(fieldName, fieldNames):
   systemErrorExit(3, MESSAGE_HEADER_NOT_FOUND_IN_CSV_HEADERS.format(fieldName, u','.join(fieldNames)))
-
-def printLine(message):
-  sys.stdout.write(message+u'\n')
 #
 # Open a file
 #
