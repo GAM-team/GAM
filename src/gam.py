@@ -5954,7 +5954,7 @@ def doUpdateGroup():
       for user_email in users_email:
         if user_email != u'*' and user_email.find(u'@') == -1:
           user_email = u'%s@%s' % (user_email, GC_Values[GC_DOMAIN])
-        sys.stderr.write(u' %sing %s %s...' % (sys.argv[4].lower(), role.lower(), user_email))
+        sys.stderr.write(u' %sing %s %s...\n' % (sys.argv[4].lower(), role.lower(), user_email))
         try:
           if sys.argv[4].lower() == u'add':
             body = {u'role': role}
@@ -5962,13 +5962,6 @@ def doUpdateGroup():
             result = callGAPI(service=cd.members(), function=u'insert', soft_errors=True, groupKey=group, body=body)
           elif sys.argv[4].lower() == u'update':
             result = callGAPI(service=cd.members(), function=u'update', soft_errors=True, groupKey=group, memberKey=user_email, body={u'email': user_email, u'role': role})
-          try:
-            if str(result[u'email']).lower() != user_email.lower():
-              print u'added %s (primary address) to group' % result[u'email']
-            else:
-              print u'added %s to group' % result[u'email']
-          except TypeError:
-            pass
         except googleapiclient.errors.HttpError:
           pass
     elif sys.argv[4].lower() == u'sync':
@@ -5983,15 +5976,13 @@ def doUpdateGroup():
       current_emails = [x.lower() for x in current_emails]
       to_add = list(set(users_email) - set(current_emails))
       to_remove = list(set(current_emails) - set(users_email))
+      sys.stderr.write(u'Need to add %s %s and remove %s.\n' % (len(to_add), role, len(to_remove)))
+      items = []
       for user_email in to_add:
-        sys.stderr.write(u' adding %s %s\n' % (role, user_email))
-        try:
-          result = callGAPI(service=cd.members(), function=u'insert', soft_errors=True, throw_reasons=[u'duplicate'], groupKey=group, body={u'email': user_email, u'role': role})
-        except googleapiclient.errors.HttpError:
-          result = callGAPI(service=cd.members(), function=u'update', soft_errors=True, groupKey=group, memberKey=user_email, body={u'email': user_email, u'role': role})
+        items.append([u'update', u'group', group, u'add', role, user_email])
       for user_email in to_remove:
-        sys.stderr.write(u' removing %s\n' % user_email)
-        result = callGAPI(service=cd.members(), function=u'delete', soft_errors=True, groupKey=group, memberKey=user_email)
+        items.append([u'update', u'group', group, u'remove', user_email])
+      run_batch(items)
     elif sys.argv[4].lower() == u'remove':
       i = 5
       if sys.argv[i].lower() in [u'member', u'manager', u'owner']:
@@ -8591,7 +8582,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
       group = u'%s@%s' % (group, GC_Values[GC_DOMAIN])
     page_message = None
     if not silent:
-      sys.stderr.write(u"Getting %s of %s (may take some time for large groups)..." % (member_type_message, group))
+      sys.stderr.write(u"Getting %s of %s (may take some time for large groups)...\n" % (member_type_message, group))
       page_message = u'Got %%%%total_items%%%% %s...' % member_type_message
     members = callGAPIpages(service=cd.members(), function=u'list', items=u'members', page_message=page_message,
                             groupKey=group, roles=member_type, fields=u'nextPageToken,members(email,id)')
