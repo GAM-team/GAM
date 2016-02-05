@@ -61,7 +61,7 @@ true_values = [u'on', u'yes', u'enabled', u'true', u'1']
 false_values = [u'off', u'no', u'disabled', u'false', u'0']
 usergroup_types = [u'user', u'users', u'group', u'ou', u'org',
                    u'ou_and_children', u'ou_and_child', u'query',
-                   u'license', u'licenses', u'licence', u'licences', u'file', u'all',
+                   u'license', u'licenses', u'licence', u'licences', u'file', u'csv', u'all',
                    u'cros']
 ERROR = u'ERROR'
 ERROR_PREFIX = ERROR+u': '
@@ -8661,12 +8661,18 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
   elif entity_type == u'file':
     users = []
     filename = entity
-    usernames = csv.reader(open(filename, u'rb'))
-    for row in usernames:
-      try:
-        users.append(row.pop())
-      except IndexError:
-        pass
+    users = readFile(filename, u'rb').splitlines()
+  elif entity_type == u'csv':
+    (filename, column) = entity.split(u':')
+    file_contents = readFile(filename)
+    f = StringIO.StringIO(file_contents)
+    input_file = csv.DictReader(f)
+    users = []
+    for row in input_file:
+      if column not in row:
+        print u'ERROR: %s does not seem to be a header in CSV file %s' % (column, filename)
+        sys.exit(3)
+      users.append(row[column])
   elif entity_type in [u'courseparticipants', u'teachers', u'students']:
     croom = buildGAPIObject(u'classroom')
     users = []
