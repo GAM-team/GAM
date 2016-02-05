@@ -25,7 +25,7 @@ For more information, see http://git.io/gam
 """
 
 __author__ = u'Jay Lee <jay0lee@gmail.com>'
-__version__ = u'3.62'
+__version__ = u'3.63'
 __license__ = u'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 import sys, os, time, datetime, random, socket, csv, platform, re, calendar, base64, string, StringIO, subprocess
@@ -7589,6 +7589,7 @@ def doPrintGroups():
   group_attributes = [{u'Email': u'Email'}]
   titles = [u'Email']
   fields = u'nextPageToken,groups(email)'
+  maxResults = None
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'domain':
       usedomain = sys.argv[i+1].lower()
@@ -7597,6 +7598,9 @@ def doPrintGroups():
     elif sys.argv[i].lower() == u'todrive':
       todrive = True
       i += 1
+    elif sys.argv[i].lower() == u'maxresults':
+      maxResults = int(sys.argv[i+1])
+      i += 2
     elif sys.argv[i].lower() == u'delimiter':
       listDelimiter = sys.argv[i+1]
       i += 2
@@ -7659,7 +7663,7 @@ def doPrintGroups():
       sys.exit(2)
   sys.stderr.write(u"Retrieving All Groups for Google Apps account (may take some time on a large account)...\n")
   page_message = u'Got %%num_items%% groups: %%first_item%% - %%last_item%%\n'
-  all_groups = callGAPIpages(service=cd.groups(), function=u'list', items=u'groups', page_message=page_message,
+  all_groups = callGAPIpages(service=cd.groups(), function=u'list', items=u'groups', page_message=page_message, maxResults=maxResults,
                              message_attribute=u'email', customer=customer, domain=usedomain, userKey=usemember, fields=fields)
   total_groups = len(all_groups)
   count = 0
