@@ -28,7 +28,7 @@ __author__ = u'Jay Lee <jay0lee@gmail.com>'
 __version__ = u'3.62'
 __license__ = u'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
-import sys, os, time, datetime, random, socket, csv, platform, re, calendar, base64, string, StringIO, subprocess, collections
+import sys, os, time, datetime, random, socket, csv, platform, re, calendar, base64, string, codecs, StringIO, subprocess, ConfigParser, collections
 
 import json
 import httplib2
@@ -57,6 +57,7 @@ GAM_APPSPOT_LATEST_VERSION_ANNOUNCEMENT = GAM_APPSPOT+u'/latest-version-announce
 
 TRUE = u'true'
 FALSE = u'false'
+TRUE_FALSE = [TRUE, FALSE]
 true_values = [u'on', u'yes', u'enabled', u'true', u'1']
 false_values = [u'off', u'no', u'disabled', u'false', u'0']
 usergroup_types = [u'user', u'users', u'group', u'ou', u'org',
@@ -67,11 +68,13 @@ ERROR = u'ERROR'
 ERROR_PREFIX = ERROR+u': '
 WARNING = u'WARNING'
 WARNING_PREFIX = WARNING+u': '
+FN_GAM_CFG = u'gam.cfg'
 FN_EXTRA_ARGS_TXT = u'extra-args.txt'
 FN_GAMSCOPES_JSON = u'gamscopes.json'
 FN_LAST_UPDATE_CHECK_TXT = u'lastupdatecheck.txt'
 FN_OAUTH2SERVICE_JSON = u'oauth2service.json'
 MY_CUSTOMER = u'my_customer'
+SITE_FILES = [u'admin-settings-v1.json', u'cloudprint-v2.json', u'email-audit-v1.json', u'email-settings-v1.json',]
 UNKNOWN = u'Unknown'
 #
 # Global variables
@@ -102,6 +105,16 @@ GM_CURRENT_API_SCOPES = u'caps'
 GM_OAUTH2SERVICE_KEY = u'oauk'
 GM_OAUTH2SERVICE_ACCOUNT_EMAIL = u'oaae'
 GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID = u'oaci'
+# gam.cfg parser
+GM_PARSER = u'pars'
+# gam.cfg file
+GM_GAM_CFG_PATH = u'gcpa'
+GM_GAM_CFG_FILE = u'gcfi'
+# Where will CSV files be written, encoding, mode
+GM_CSVFILE = u'csfi'
+GM_CSVFILE_ENCODING = u'csen'
+GM_CSVFILE_MODE = u'csmo'
+GM_CSVFILE_WRITE_HEADER = u'cswh'
 # File containing time of last GAM update check
 GM_LAST_UPDATE_CHECK_TXT = u'lupc'
 # Dictionary mapping OrgUnit ID to Name
@@ -117,7 +130,7 @@ GM_Globals = {
   GM_SYSEXITRC: 0,
   GM_GAM_PATH: os.path.dirname(os.path.realpath(__file__)),
   GM_WINDOWS: os.name == u'nt',
-  GM_SYS_ENCODING: u'utf-8' if os.name != u'nt' else sys.getfilesystemencoding(),
+  GM_SYS_ENCODING: u'utf-8' if os.name != u'nt' else u'mbcs',
   GM_BATCH_QUEUE: None,
   GM_EXTRA_ARGS_DICT:  {u'prettyPrint': False},
   GM_ADMIN: None,
@@ -127,6 +140,13 @@ GM_Globals = {
   GM_OAUTH2SERVICE_KEY: None,
   GM_OAUTH2SERVICE_ACCOUNT_EMAIL:  None,
   GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID: None,
+  GM_PARSER: None,
+  GM_GAM_CFG_PATH: u'',
+  GM_GAM_CFG_FILE: u'',
+  GM_CSVFILE: None,
+  GM_CSVFILE_ENCODING: u'utf-8' if os.name != u'nt' else u'mbcs',
+  GM_CSVFILE_MODE: u'w',
+  GM_CSVFILE_WRITE_HEADER: True,
   GM_LAST_UPDATE_CHECK_TXT: u'',
   GM_MAP_ORGUNIT_ID_TO_NAME: None,
   GM_MAP_ROLE_ID_TO_NAME: None,
@@ -136,16 +156,19 @@ GM_Globals = {
 #
 # Global variables defined by environment variables/signal files
 #
+# The following GC_XXX constants are the names of the items in gam.cfg
 # When retrieving lists of Google Drive activities from API, how many should be retrieved in each chunk
 GC_ACTIVITY_MAX_RESULTS = u'activity_max_results'
 # Automatically generate gam batch command if number of users specified in gam users xxx command exceeds this number
 # Default: 0, don't automatically generate gam batch commands
 GC_AUTO_BATCH_MIN = u'auto_batch_min'
+# When processing items in batches, how many should be processed in each batch
+GC_BATCH_SIZE = u'batch_size'
 # GAM cache directory. If no_cache is specified, this variable will be set to None
 GC_CACHE_DIR = u'cache_dir'
 # Character set of batch, csv, data files
 GC_CHARSET = u'charset'
-# GAM config directory containing client_secrets.json, oauth2.txt, oauth2service.json, extra_args.txt
+# GAM config directory containing gamscopes.json, oauth2service.json, extra_args.txt
 GC_CONFIG_DIR = u'config_dir'
 # custmerId from gam.cfg or retrieved from Google
 GC_CUSTOMER_ID = u'customer_id'
@@ -153,7 +176,7 @@ GC_CUSTOMER_ID = u'customer_id'
 GC_DEBUG_LEVEL = u'debug_level'
 # When retrieving lists of ChromeOS/Mobile devices from API, how many should be retrieved in each chunk
 GC_DEVICE_MAX_RESULTS = u'device_max_results'
-# Domain obtained from gam.cfg or oauth2.txt
+# Domain obtained from gam.cfg
 GC_DOMAIN = u'domain'
 # Google Drive download directory
 GC_DRIVE_DIR = u'drive_dir'
@@ -175,6 +198,12 @@ GC_NO_VERIFY_SSL = u'no_verify_ssl'
 GC_NUM_THREADS = u'num_threads'
 # Path to oauth2service.json
 GC_OAUTH2SERVICE_JSON = u'oauth2service_json'
+# Default section to use for processing
+GC_SECTION = u'section'
+# Add (n/m) to end of messages if number of items to be processed exceeds this number
+GC_SHOW_COUNTS_MIN = u'show_counts_min'
+# Enable/disable "Getting ... " messages
+GC_SHOW_GETTINGS = u'show_gettings'
 # GAM site directory containing admin-settings-v1.json, cloudprint-v2.json, email-audit-v1.json, email-settings-v1.json'
 GC_SITE_DIR = u'site_dir'
 # When retrieving lists of Users from API, how many should be retrieved in each chunk
@@ -183,8 +212,9 @@ GC_USER_MAX_RESULTS = u'user_max_results'
 GC_Defaults = {
   GC_ACTIVITY_MAX_RESULTS: 100,
   GC_AUTO_BATCH_MIN: 0,
+  GC_BATCH_SIZE: 50,
   GC_CACHE_DIR: u'',
-  GC_CHARSET: u'utf-8' if os.name != u'nt' else u'cp1252',
+  GC_CHARSET: u'utf-8' if os.name != u'nt' else u'mbcs',
   GC_CONFIG_DIR: u'',
   GC_CUSTOMER_ID: MY_CUSTOMER,
   GC_DEBUG_LEVEL: 0,
@@ -200,6 +230,9 @@ GC_Defaults = {
   GC_NO_VERIFY_SSL: FALSE,
   GC_NUM_THREADS: 5,
   GC_OAUTH2SERVICE_JSON: FN_OAUTH2SERVICE_JSON,
+  GC_SECTION: u'',
+  GC_SHOW_COUNTS_MIN: 1,
+  GC_SHOW_GETTINGS: TRUE,
   GC_SITE_DIR: u'',
   GC_USER_MAX_RESULTS: 500,
   }
@@ -223,37 +256,83 @@ GC_VAR_SFFT_KEY = u'sfft'
 GC_VAR_INFO = {
   GC_ACTIVITY_MAX_RESULTS: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_ENVVAR_KEY: u'GAM_ACTIVITY_MAX_RESULTS', GC_VAR_LIMITS_KEY: (1, 500)},
   GC_AUTO_BATCH_MIN: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_ENVVAR_KEY: u'GAM_AUTOBATCH', GC_VAR_LIMITS_KEY: (0, None)},
+  GC_BATCH_SIZE: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_ENVVAR_KEY: u'GAM_BATCH_SIZE', GC_VAR_LIMITS_KEY: (1, 1000)},
   GC_CACHE_DIR: {GC_VAR_TYPE_KEY: GC_TYPE_DIRECTORY, GC_VAR_ENVVAR_KEY: u'GAMCACHEDIR'},
   GC_CHARSET: {GC_VAR_TYPE_KEY: GC_TYPE_STRING, GC_VAR_ENVVAR_KEY: u'GAM_CHARSET'},
   GC_CONFIG_DIR: {GC_VAR_TYPE_KEY: GC_TYPE_DIRECTORY, GC_VAR_ENVVAR_KEY: u'GAMUSERCONFIGDIR'},
   GC_CUSTOMER_ID: {GC_VAR_TYPE_KEY: GC_TYPE_STRING, GC_VAR_ENVVAR_KEY: u'CUSTOMER_ID'},
-  GC_DEBUG_LEVEL: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_ENVVAR_KEY: u'debug.gam', GC_VAR_LIMITS_KEY: (0, None), GC_VAR_SFFT_KEY: (0, 4)},
+  GC_DEBUG_LEVEL: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_ENVVAR_KEY: u'debug.gam', GC_VAR_LIMITS_KEY: (0, None), GC_VAR_SFFT_KEY: (u'0', u'4')},
   GC_DEVICE_MAX_RESULTS: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_ENVVAR_KEY: u'GAM_DEVICE_MAX_RESULTS', GC_VAR_LIMITS_KEY: (1, 1000)},
   GC_DOMAIN: {GC_VAR_TYPE_KEY: GC_TYPE_STRING, GC_VAR_ENVVAR_KEY: u'GA_DOMAIN'},
   GC_DRIVE_DIR: {GC_VAR_TYPE_KEY: GC_TYPE_DIRECTORY, GC_VAR_ENVVAR_KEY: u'GAMDRIVEDIR'},
   GC_DRIVE_MAX_RESULTS: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_ENVVAR_KEY: u'GAM_DRIVE_MAX_RESULTS', GC_VAR_LIMITS_KEY: (1, 1000)},
   GC_EXTRA_ARGS: {GC_VAR_TYPE_KEY: GC_TYPE_FILE, GC_VAR_ENVVAR_KEY: FN_EXTRA_ARGS_TXT, GC_VAR_SFFT_KEY: (u'', FN_EXTRA_ARGS_TXT)},
   GC_GAMSCOPES_JSON: {GC_VAR_TYPE_KEY: GC_TYPE_FILE, GC_VAR_ENVVAR_KEY: u'GAMSCOPESFILE'},
-  GC_NO_BROWSER: {GC_VAR_TYPE_KEY: GC_TYPE_BOOLEAN, GC_VAR_ENVVAR_KEY: u'nobrowser.txt', GC_VAR_SFFT_KEY: (False, True)},
-  GC_NO_CACHE: {GC_VAR_TYPE_KEY: GC_TYPE_BOOLEAN, GC_VAR_ENVVAR_KEY: u'nocache.txt', GC_VAR_SFFT_KEY: (False, True)},
-  GC_NO_UPDATE_CHECK: {GC_VAR_TYPE_KEY: GC_TYPE_BOOLEAN, GC_VAR_ENVVAR_KEY: u'noupdatecheck.txt', GC_VAR_SFFT_KEY: (False, True)},
-  GC_NO_VERIFY_SSL: {GC_VAR_TYPE_KEY: GC_TYPE_BOOLEAN, GC_VAR_ENVVAR_KEY: u'noverifyssl.txt', GC_VAR_SFFT_KEY: (False, True)},
+  GC_NO_BROWSER: {GC_VAR_TYPE_KEY: GC_TYPE_BOOLEAN, GC_VAR_ENVVAR_KEY: u'nobrowser.txt', GC_VAR_SFFT_KEY: (FALSE, TRUE)},
+  GC_NO_CACHE: {GC_VAR_TYPE_KEY: GC_TYPE_BOOLEAN, GC_VAR_ENVVAR_KEY: u'nocache.txt', GC_VAR_SFFT_KEY: (FALSE, TRUE)},
+  GC_NO_UPDATE_CHECK: {GC_VAR_TYPE_KEY: GC_TYPE_BOOLEAN, GC_VAR_ENVVAR_KEY: u'noupdatecheck.txt', GC_VAR_SFFT_KEY: (FALSE, TRUE)},
+  GC_NO_VERIFY_SSL: {GC_VAR_TYPE_KEY: GC_TYPE_BOOLEAN, GC_VAR_ENVVAR_KEY: u'noverifyssl.txt', GC_VAR_SFFT_KEY: (FALSE, TRUE)},
   GC_NUM_THREADS: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_ENVVAR_KEY: u'GAM_THREADS', GC_VAR_LIMITS_KEY: (1, None)},
   GC_OAUTH2SERVICE_JSON: {GC_VAR_TYPE_KEY: GC_TYPE_FILE, GC_VAR_ENVVAR_KEY: u'OAUTHSERVICEFILE'},
+  GC_SECTION: {GC_VAR_TYPE_KEY: GC_TYPE_STRING, GC_VAR_ENVVAR_KEY: u'GAM_SECTION'},
+  GC_SHOW_COUNTS_MIN: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_ENVVAR_KEY: u'GAM_SHOW_COUNTS_MIN', GC_VAR_LIMITS_KEY: (0, None)},
+  GC_SHOW_GETTINGS: {GC_VAR_TYPE_KEY: GC_TYPE_BOOLEAN, GC_VAR_ENVVAR_KEY: u'GAM_SHOW_GETTINGS'},
   GC_SITE_DIR: {GC_VAR_TYPE_KEY: GC_TYPE_DIRECTORY, GC_VAR_ENVVAR_KEY: u'GAMSITECONFIGDIR'},
   GC_USER_MAX_RESULTS: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_ENVVAR_KEY: u'GAM_USER_MAX_RESULTS', GC_VAR_LIMITS_KEY: (1, 500)},
   }
 
+GC_VAR_ALIASES = {
+  u'activitymaxresults':  u'activity_max_results',
+  u'autobatchmin':  u'auto_batch_min', u'gamautobatch':  u'auto_batch_min',
+  u'batchsize':  u'batch_size',
+  u'cachedir':  u'cache_dir', u'gamcachedir':  u'cache_dir',
+  u'charset':  u'charset',
+  u'configdir':  u'config_dir', u'gamuserconfigdir':  u'config_dir',
+  u'customerid':  u'customer_id',
+  u'debuglevel':  u'debug_level',
+  u'devicemaxresults':  u'device_max_results',
+  u'domain':  u'domain', u'gadomain':  u'domain',
+  u'drivedir':  u'drive_dir', u'gamdrivedir':  u'drive_dir',
+  u'drivemaxresults':  u'drive_max_results',
+  u'extraargs': u'extra_args',
+  u'gamscopesjson':  u'gamscopes_json', u'gamscopesfile':  u'gamscopes_json',
+  u'nobrowser':  u'no_browser',
+  u'nocache':  u'no_cache',
+  u'noupdatecheck':  u'no_update_check',
+  u'noverifyssl':  u'no_verify_ssl',
+  u'numthreads':  u'num_threads', u'gamthreads':  u'num_threads',
+  u'oauth2servicejson':  u'oauth2service_json', u'oauthservicefile':  u'oauthservice_json',
+  u'section':  u'section',
+  u'showcountsmin':  u'show_counts_min',
+  u'showgettings':  u'show_gettings',
+  u'sitedir':  u'site_dir', u'gamsiteconfigdir':  u'site_dir',
+  u'usermaxresults':  u'user_max_results',
+  }
+
+# Object BNF names
+OB_GAM_ARGUMENT_LIST = u'GAM argument list'
+OB_CHAR_SET = u'CharacterSet'
+OB_FIELD_NAME = u'FieldName'
+OB_FILE_NAME = u'FileName'
+OB_FILE_PATH = u'FilePath'
+OB_RE_PATTERN = u'PythonRegularExpression'
+OB_SECTION_NAME = u'SectionName'
+OB_STRING = u'String'
+
+# These values can be translated into other languages
+PHRASE_EXPECTED = u'Expected'
+PHRASE_NON_EMPTY = u'Non-empty'
+
 MESSAGE_API_ACCESS_CONFIG = u'API access is configured in your Control Panel under: Security-Show more-Advanced settings-Manage API client access'
 MESSAGE_API_ACCESS_DENIED = u'API access denied.\n\nPlease make sure the Service account Client ID: {0} is authorized for the API Scope(s): {1}\n\nPlease make sure the Admin email address: {2} is valid'
-MESSAGE_BATCH_CSV_DASH_DEBUG_INCOMPATIBLE = u'"gam {0} - ..." is not compatible with debugging. Disable debugging by deleting debug.gam and try again.'
+MESSAGE_BATCH_CSV_DASH_DEBUG_INCOMPATIBLE = u'"gam {0} - ..." is not compatible with debugging. Disable debugging with the command: "gam config set debug_level 0 save"'
 MESSAGE_GAM_EXITING_FOR_UPDATE = u'GAM is now exiting so that you can overwrite this old version with the latest release'
 MESSAGE_GAM_OUT_OF_MEMORY = u'GAM has run out of memory. If this is a large Google Apps instance, you should use a 64-bit version of GAM on Windows or a 64-bit version of Python on other systems.'
 MESSAGE_HEADER_NOT_FOUND_IN_CSV_HEADERS = u'Header "{0}" not found in CSV headers of "{1}".'
-MESSAGE_HIT_CONTROL_C_TO_UPDATE = u'\n\nHit CTRL+C to visit the GAM website and download the latest release or wait 15 seconds continue with this boring old version. GAM won\'t bother you with this announcement for 1 week or you can create a file named noupdatecheck.txt in the same location as gam.py or gam.exe and GAM won\'t ever check for updates.'
+MESSAGE_HIT_CONTROL_C_TO_UPDATE = u'\n\nHit CTRL+C to visit the GAM website and download the latest release or wait 15 seconds continue with this boring old version. GAM won\'t bother you with this announcement for 1 week or you can turn off update checks with the command: "gam config set no_update_check true save"'
 MESSAGE_INVALID_JSON = u'The file {0} has an invalid format.'
 MESSAGE_NO_DISCOVERY_INFORMATION = u'No online discovery doc and {0} does not exist locally'
-MESSAGE_NO_PYTHON_SSL = u'You don\'t have the Python SSL module installed so we can\'t verify SSL Certificates. You can fix this by installing the Python SSL module or you can live on the edge and turn SSL validation off by creating a file named noverifyssl.txt in the same location as gam.exe / gam.py'
+MESSAGE_NO_PYTHON_SSL = u'You don\'t have the Python SSL module installed so we can\'t verify SSL Certificates. You can fix this by installing the Python SSL module or you can live on the edge and turn SSL validation off with the command: "gam config set no_verify_ssl true save"'
 MESSAGE_NO_SCOPES_FOR_API = u'There are no scopes authorized for the {0}; please run gam oauth create'
 MESSAGE_NO_TRANSFER_LACK_OF_DISK_SPACE = u'Cowardly refusing to perform migration due to lack of target drive space. Source size: {0}mb Target Free: {1}mb'
 MESSAGE_OAUTH2SERVICE_JSON_INVALID = u'The file {0} is missing required keys (client_email, client_id or private_key).'
@@ -263,6 +342,25 @@ MESSAGE_REQUEST_NOT_COMPLETE = u'Request needs to be completed before downloadin
 MESSAGE_RESULTS_TOO_LARGE_FOR_GOOGLE_SPREADSHEET = u'Results are too large for Google Spreadsheets. Uploading as a regular CSV file.'
 MESSAGE_SERVICE_NOT_APPLICABLE = u'Service not applicable for this address: {0}'
 MESSAGE_WIKI_INSTRUCTIONS_OAUTH2SERVICE_JSON = u'Please follow the instructions at this site to setup a Service account.'
+
+# Error message types; keys into ARGUMENT_ERROR_NAMES; arbitrary values but must be unique
+ARGUMENTS_MUTUALLY_EXCLUSIVE = u'muex'
+ARGUMENT_BLANK = u'blnk'
+ARGUMENT_EMPTY = u'empt'
+ARGUMENT_EXTRANEOUS = u'extr'
+ARGUMENT_INVALID = u'inva'
+ARGUMENT_MISSING = u'miss'
+#
+# ARGUMENT_ERROR_NAMES[0] is plural,ARGUMENT_ERROR_NAMES[1] is singular
+# These values can be translated into other languages
+ARGUMENT_ERROR_NAMES = {
+  ARGUMENTS_MUTUALLY_EXCLUSIVE: [u'Mutually exclusive arguments', u'Mutually exclusive arguments'],
+  ARGUMENT_BLANK: [u'Blank arguments', u'Blank argument'],
+  ARGUMENT_EMPTY: [u'Empty arguments', u'Empty argument'],
+  ARGUMENT_EXTRANEOUS: [u'Extra arguments', u'Extra argument'],
+  ARGUMENT_INVALID: [u'Invalid arguments', u'Invalid argument'],
+  ARGUMENT_MISSING: [u'Missing arguments', u'Missing argument'],
+  }
 
 OAUTH_TOKEN_ERRORS = [u'access_denied', u'unauthorized_client: Unauthorized client or scope in request.', u'access_denied: Requested client not authorized.', u'invalid_grant: Not a valid email.', u'invalid_request: Invalid impersonation prn email address.']
 
@@ -362,6 +460,17 @@ gam.exe update group announcements add member jsmith
 def printLine(message):
   sys.stdout.write(message+u'\n')
 
+# Concatenate list members, any item containing spaces is enclosed in ''
+def makeQuotedList(items):
+  qstr = u''
+  for item in items:
+    if item and (item.find(u' ') == -1) and (item.find(u',') == -1):
+      qstr += item
+    else:
+      qstr += u"'"+item+u"'"
+    qstr += u' '
+  return qstr[:-1] if len(qstr) > 0 else u''
+
 def systemErrorExit(sysRC, message):
   if message:
     sys.stderr.write(u'\n{0}{1}\n'.format(ERROR_PREFIX, message))
@@ -373,9 +482,157 @@ def invalidJSONExit(fileName):
 def noPythonSSLExit():
   systemErrorExit(8, MESSAGE_NO_PYTHON_SSL)
 
+def usageErrorExit(i, message, extraneous=False):
+  if extraneous:
+    sys.stderr.write(convertUTF8(u'Command: {0} >>>{1}<<<\n'.format(makeQuotedList(sys.argv[:i]),
+                                                                    makeQuotedList(sys.argv[i:]))))
+  elif i < len(sys.argv):
+    sys.stderr.write(convertUTF8(u'Command: {0} >>>{1}<<< {2}\n'.format(makeQuotedList(sys.argv[:i]),
+                                                                        makeQuotedList([sys.argv[i]]),
+                                                                        makeQuotedList(sys.argv[i+1:]))))
+  else:
+    sys.stderr.write(convertUTF8(u'Command: {0} >>><<<\n'.format(makeQuotedList(sys.argv))))
+  sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, message))
+  sys.stderr.write(u'Help: Documentation is at {0}\n'.format(GAM_WIKI))
+  sys.exit(2)
+
 # Invalid CSV ~Header or ~~Header~~
-def csvFieldErrorExit(fieldName, fieldNames):
-  systemErrorExit(3, MESSAGE_HEADER_NOT_FOUND_IN_CSV_HEADERS.format(fieldName, u','.join(fieldNames)))
+def csvFieldErrorExit(i, fieldName, fieldNames):
+  usageErrorExit(i, MESSAGE_HEADER_NOT_FOUND_IN_CSV_HEADERS.format(fieldName, u','.join(fieldNames)))
+
+def expectedArgumentExit(i, problem, argument):
+  usageErrorExit(i, u'{0}: {1} <{2}>'.format(problem, PHRASE_EXPECTED, argument))
+
+def emptyArgumentExit(i, argument):
+  expectedArgumentExit(i, ARGUMENT_ERROR_NAMES[ARGUMENT_EMPTY][1], u'{0} {1}'.format(PHRASE_NON_EMPTY, argument))
+
+def invalidArgumentExit(i, argument):
+  expectedArgumentExit(i, ARGUMENT_ERROR_NAMES[ARGUMENT_INVALID][1], argument)
+
+def missingArgumentExit(argument):
+  expectedArgumentExit(len(sys.argv), ARGUMENT_ERROR_NAMES[ARGUMENT_MISSING][1], argument)
+
+def formatChoiceList(choices):
+  if isinstance(choices, dict):
+    choiceList = choices.keys()
+  else:
+    choiceList = choices
+  if len(choiceList) <= 5:
+    return '|'.join(choiceList)
+  else:
+    return '|'.join(sorted(choiceList))
+
+def invalidChoiceExit(i, choices):
+  expectedArgumentExit(i, ARGUMENT_ERROR_NAMES[ARGUMENT_INVALID][1], formatChoiceList(choices))
+
+def missingChoiceExit(i, choices):
+  expectedArgumentExit(i, ARGUMENT_ERROR_NAMES[ARGUMENT_MISSING][1], formatChoiceList(choices))
+
+def checkArgumentPresent(i, choices, required=False):
+  if i < len(sys.argv):
+    choice = sys.argv[i].strip().lower()
+    if choice:
+      if choice in choices:
+        return True
+    if not required:
+      return False
+    invalidChoiceExit(i, choices)
+  elif not required:
+    return False
+  missingChoiceExit(choices)
+
+def getBoolean(i):
+  if i < len(sys.argv):
+    value = sys.argv[i].strip().lower()
+    if value in true_values:
+      return True
+    if value in false_values:
+      return  False
+    invalidChoiceExit(i, TRUE_FALSE)
+  missingChoiceExit(TRUE_FALSE)
+
+DEFAULT_CHOICE = u'defaultChoice'
+CHOICE_ALIASES = u'choiceAliases'
+MAP_CHOICE = u'mapChoice'
+
+def getChoice(i, choices, **opts):
+  if i < len(sys.argv):
+    choice = sys.argv[i].strip().lower()
+    if choice:
+      if CHOICE_ALIASES in opts and choice in opts[CHOICE_ALIASES]:
+        choice = opts[CHOICE_ALIASES][choice]
+      if choice not in choices:
+        choice = choice.replace(u'_', u'')
+        if CHOICE_ALIASES in opts and choice in opts[CHOICE_ALIASES]:
+          choice = opts[CHOICE_ALIASES][choice]
+      if choice in choices:
+        return choice if (MAP_CHOICE not in opts or not opts[MAP_CHOICE]) else choices[choice]
+    if DEFAULT_CHOICE in opts:
+      return opts[DEFAULT_CHOICE]
+    invalidChoiceExit(i, choices)
+  elif DEFAULT_CHOICE in opts:
+    return opts[DEFAULT_CHOICE]
+  missingChoiceExit(choices)
+
+def integerLimits(minVal, maxVal):
+  if (minVal != None) and (maxVal != None):
+    return u'integer {0}<=x<={1}'.format(minVal, maxVal)
+  if minVal != None:
+    return u'integer x>={0}'.format(minVal)
+  if maxVal != None:
+    return u'integer x<={0}'.format(maxVal)
+  return u'integer x'
+
+def getInteger(i, minVal=None, maxVal=None):
+  if i < len(sys.argv):
+    try:
+      number = int(sys.argv[i].strip())
+      if (not minVal or (number >= minVal)) and (not maxVal or (number <= maxVal)):
+        return number
+    except ValueError:
+      pass
+    invalidArgumentExit(i, integerLimits(minVal, maxVal))
+  missingArgumentExit(integerLimits(minVal, maxVal))
+
+def getREPattern(i):
+  if i < len(sys.argv):
+    patstr = sys.argv[i]
+    if patstr:
+      try:
+        pattern = re.compile(patstr)
+        return pattern
+      except re.error as e:
+        usageErrorExit(i, u'{0} {1}: {2}'.format(OB_RE_PATTERN, u'error', e))
+  missingArgumentExit(OB_RE_PATTERN)
+
+def getString(i, item, emptyOK=False, optional=False):
+  if i < len(sys.argv):
+    argstr = sys.argv[i]
+    if argstr:
+      return argstr
+    if emptyOK or optional:
+      return u''
+    emptyArgumentExit(i, item)
+  elif  optional:
+    return u''
+  missingArgumentExit(item)
+
+def getCharSet(i):
+  if not checkArgumentPresent(i, [u'charset',]):
+    return (i, GC_Values[GC_CHARSET])
+  return (i+2, getString(i+1, OB_CHAR_SET))
+
+def getMatchField(i, fieldNames):
+  if not checkArgumentPresent(i, [u'matchfield',]):
+    return (i, None, None)
+  i += 1
+  matchField = getString(i, OB_FIELD_NAME).strip(u'~')
+  if (not matchField) or (matchField not in fieldNames):
+    csvFieldErrorExit(i, matchField, fieldNames)
+  i += 1
+  matchPattern = getREPattern(i)
+  i += 1
+  return (i, matchField, matchPattern)
 #
 # Open a file
 #
@@ -428,6 +685,99 @@ def writeFile(filename, data, mode=u'wb', continueOnError=False, displayError=Tr
         sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, e))
       return False
     systemErrorExit(6, e)
+#
+class UTF8Recoder(object):
+  """
+  Iterator that reads an encoded stream and reencodes the input to UTF-8
+  """
+  def __init__(self, f, encoding):
+    self.reader = codecs.getreader(encoding)(f)
+
+  def __iter__(self):
+    return self
+
+  def next(self):
+    return self.reader.next().encode(u'utf-8')
+
+class UnicodeDictReader(object):
+  """
+  A CSV reader which will iterate over lines in the CSV file "f",
+  which is encoded in the given encoding.
+  """
+
+  def __init__(self, f, dialect=csv.excel, encoding=u'utf-8', **kwds):
+    self.encoding = encoding
+    if self.encoding != u'utf-8':
+      f = UTF8Recoder(f, encoding)
+    self.reader = csv.reader(f, dialect=dialect, **kwds)
+    try:
+      self.fieldnames = self.reader.next()
+    except:
+      self.fieldnames = []
+
+  def next(self):
+    row = self.reader.next()
+    if self.encoding != u'utf-8':
+      row = [unicode(s, u'utf-8') for s in row]
+    return dict((self.fieldnames[x], row[x]) for x in range(len(self.fieldnames)))
+
+  def __iter__(self):
+    return self
+#
+class UnicodeReader(object):
+  """
+  A file reader which will iterate over lines in the file "f",
+  which is encoded in the given encoding.
+  """
+
+  def __init__(self, f, dialect=csv.excel, encoding=u'utf-8', **kwds):
+    self.encoding = encoding
+    if self.encoding != u'utf-8':
+      f = UTF8Recoder(f, encoding)
+    self.reader = csv.reader(f, dialect=dialect, **kwds)
+
+  def next(self):
+    row = self.reader.next()
+    if self.encoding != u'utf-8':
+      row = [unicode(s, u'utf-8') for s in row]
+    return row
+
+  def __iter__(self):
+    return self
+#
+class UnicodeWriter(object):
+  """
+  A CSV writer which will write rows to CSV file "f",
+  which is encoded in the given encoding.
+  """
+
+  def __init__(self, f, dialect=csv.excel, **kwds):
+    import cStringIO
+    # Redirect output to a queue
+    self.queue = cStringIO.StringIO()
+    self.writer = csv.writer(self.queue, dialect=dialect, **kwds)
+    self.stream = f
+    self.encoder = codecs.getincrementalencoder(GM_Globals[GM_CSVFILE_ENCODING])()
+
+  def writerow(self, row):
+    self.writer.writerow([unicode(s).encode(u'utf-8') for s in row])
+    if GM_Globals[GM_CSVFILE_ENCODING] != u'utf-8':
+      # Fetch UTF-8 output from the queue, reencode it into the target encoding and write to the target stream
+      self.stream.write(self.encoder.encode(self.queue.getvalue().decode(u'utf-8')))
+    else:
+      # Fetch UTF-8 output from the queue and write to the target stream
+      self.stream.write(self.queue.getvalue())
+    # empty queue
+    self.queue.truncate(0)
+
+  def writerows(self, rows):
+    for row in rows:
+      self.writerow(row)
+#
+class UnicodeDictWriter(csv.DictWriter, object):
+  def __init__(self, f, fieldnames, dialect=u'nixstdout', *args, **kwds):
+    super(UnicodeDictWriter, self).__init__(f, fieldnames, dialect=u'nixstdout', *args, **kwds)
+    self.writer = UnicodeWriter(f, dialect, **kwds)
 
 # Get global domain from global admin email address
 #
@@ -437,8 +787,9 @@ def getDomainFromAdmin():
     if loc > 0:
       GC_Values[GC_DOMAIN] = GM_Globals[GM_ADMIN][loc+1:]
 
-# Set global variables
-# Check for GAM updates based on status of noupdatecheck.txt
+# Set global variables from config file
+# Check for GAM updates based on status of no_update_check in config file
+# Return True if there are additional commands on the command line
 #
 def SetGlobalVariables():
 
@@ -478,78 +829,444 @@ def SetGlobalVariables():
     if not GC_Values[GC_DOMAIN]:
       GC_Values[GC_DOMAIN] = json_data.get(u'domain', GC_Defaults[GC_DOMAIN])
 
-  def _getCfgDirectory(itemName):
-    return GC_Defaults[itemName]
+  def _selectSection(i):
+    value = getString(i, OB_SECTION_NAME, emptyOK=True)
+    if (not value) or (value.upper() == ConfigParser.DEFAULTSECT):
+      return ConfigParser.DEFAULTSECT
+    if GM_Globals[GM_PARSER].has_section(value):
+      return value
+    usageErrorExit(i, u'Section: {0}, Not Found'.format(value))
 
-  def _getCfgFile(itemName):
-    value = os.path.expanduser(GC_Defaults[itemName])
+  def _checkMakeDir(itemName):
+    if not os.path.isdir(GC_Defaults[itemName]):
+      try:
+        os.makedirs(GC_Defaults[itemName])
+        print u'Create: {0}'.format(GC_Defaults[itemName])
+      except OSError as e:
+        if not os.path.isdir(GC_Defaults[itemName]):
+          systemErrorExit(6, e)
+
+  def _copyCfgFile(srcFile, targetDir):
+    if (not srcFile) or os.path.isabs(srcFile):
+      return
+    dstFile = os.path.join(GC_Defaults[targetDir], srcFile)
+    if os.path.isfile(dstFile):
+      return
+    srcFile = os.path.join(GM_Globals[GM_GAM_PATH], srcFile)
+    if not os.path.isfile(srcFile):
+      return
+    data = readFile(srcFile, mode=u'rU', continueOnError=True, displayError=False)
+    if (data != None) and writeFile(dstFile, data, continueOnError=True):
+      print u'Copy: {0}, To: {1}'.format(srcFile, dstFile)
+
+  def _getCfgBoolean(sectionName, itemName):
+    value = GM_Globals[GM_PARSER].get(sectionName, itemName, raw=True)
+    if value in true_values:
+      return True
+    if value in false_values:
+      return False
+    sys.stderr.write(u'{0}Config File: {1}, Section: {2}, Item: {3}, Value: {4}, expected {5}\n'.format(ERROR_PREFIX, GM_Globals[GM_GAM_CFG_FILE], sectionName, itemName, value, u','.join(TRUE_FALSE)))
+    status[u'errors'] = True
+    return False
+
+  def _getCfgInteger(sectionName, itemName):
+    value = GM_Globals[GM_PARSER].get(sectionName, itemName, raw=True)
+    minVal, maxVal = GC_VAR_INFO[itemName][GC_VAR_LIMITS_KEY]
+    try:
+      number = int(value)
+      if (number >= minVal) and (not maxVal or (number <= maxVal)):
+        return number
+    except ValueError:
+      pass
+    sys.stderr.write(u'{0}Config File: {1}, Section: {2}, Item: {3}, Value: {4}, expected {5}\n'.format(ERROR_PREFIX, GM_Globals[GM_GAM_CFG_FILE], sectionName, itemName, value, integerLimits(minVal, maxVal)))
+    status[u'errors'] = True
+    return 0
+
+  def _getCfgSection(sectionName, itemName):
+    value = GM_Globals[GM_PARSER].get(sectionName, itemName, raw=True)
+    if (not value) or (value.upper() == ConfigParser.DEFAULTSECT):
+      return ConfigParser.DEFAULTSECT
+    if GM_Globals[GM_PARSER].has_section(value):
+      return value
+    sys.stderr.write(u'{0}Config File: {1}, Section: {2}, Item: {3}, Value: {4}, Not Found\n'.format(ERROR_PREFIX, GM_Globals[GM_GAM_CFG_FILE], sectionName, itemName, value))
+    status[u'errors'] = True
+    return ConfigParser.DEFAULTSECT
+
+  def _getCfgString(sectionName, itemName):
+    return GM_Globals[GM_PARSER].get(sectionName, itemName, raw=True)
+
+  def _getCfgDirectory(sectionName, itemName):
+    dirPath = os.path.expanduser(GM_Globals[GM_PARSER].get(sectionName, itemName, raw=True))
+    if (not dirPath) or (not os.path.isabs(dirPath)):
+      if (sectionName != ConfigParser.DEFAULTSECT) and (GM_Globals[GM_PARSER].has_option(sectionName, itemName)):
+        dirPath = os.path.join(os.path.expanduser(GM_Globals[GM_PARSER].get(ConfigParser.DEFAULTSECT, itemName, raw=True)), dirPath)
+      if not os.path.isabs(dirPath):
+        dirPath = os.path.join(GM_Globals[GM_GAM_CFG_PATH], dirPath)
+    return dirPath
+
+  def _getCfgFile(sectionName, itemName):
+    value = os.path.expanduser(GM_Globals[GM_PARSER].get(sectionName, itemName, raw=True))
     if (not value) and (itemName == GC_EXTRA_ARGS):
       return value
     if not os.path.isabs(value):
-      value = os.path.expanduser(os.path.join(GC_Values[GC_CONFIG_DIR], value))
+      value = os.path.expanduser(os.path.join(_getCfgDirectory(sectionName, GC_CONFIG_DIR), value))
     return value
 
-  def _chkCfgDirectories():
+  def _readGamCfgFile(config, fileName, action=None):
+    try:
+      with open(fileName, u'rb') as f:
+        config.readfp(f)
+      if action:
+        print u'Config File: {0}, {1}'.format(fileName, action)
+    except (ConfigParser.MissingSectionHeaderError, ConfigParser.ParsingError) as e:
+      systemErrorExit(13, u'Config File: {0}, Invalid: {1}'.format(fileName, e.message))
+    except IOError as e:
+      systemErrorExit(6, e)
+
+  def _writeGamCfgFile(config, fileName, action=None):
+    try:
+      with open(fileName, u'wb') as f:
+        config.write(f)
+      if action:
+        print u'Config File: {0}, {1}'.format(fileName, action)
+    except IOError as e:
+      sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, e))
+
+  def _verifyValues(sectionName):
+    print u'Section: {0}'.format(sectionName)
+    for itemName in sorted(GC_VAR_INFO):
+      cfgValue = GM_Globals[GM_PARSER].get(sectionName, itemName, raw=True)
+      if GC_VAR_INFO[itemName][GC_VAR_TYPE_KEY] == GC_TYPE_FILE:
+        expdValue = _getCfgFile(sectionName, itemName)
+        if cfgValue != expdValue:
+          cfgValue = u'{0} ; {1}'.format(cfgValue, expdValue)
+      elif GC_VAR_INFO[itemName][GC_VAR_TYPE_KEY] == GC_TYPE_DIRECTORY:
+        expdValue = _getCfgDirectory(sectionName, itemName)
+        if cfgValue != expdValue:
+          cfgValue = u'{0} ; {1}'.format(cfgValue, expdValue)
+      elif (itemName == GC_SECTION) and (sectionName != ConfigParser.DEFAULTSECT):
+        continue
+      print u'  {0} = {1}'.format(itemName, cfgValue)
+
+  def _chkCfgDirectories(sectionName):
     for itemName in GC_VAR_INFO:
       if GC_VAR_INFO[itemName][GC_VAR_TYPE_KEY] == GC_TYPE_DIRECTORY:
         dirPath = GC_Values[itemName]
         if not os.path.isdir(dirPath):
-          sys.stderr.write(u'{0}{1}={2}, Invalid Path\n'.format(WARNING_PREFIX, GC_VAR_INFO[itemName][GC_VAR_ENVVAR_KEY], dirPath))
+          sys.stderr.write(u'{0}Config File: {1}, Section: {2}, Item: {3}, Value: {4}, Invalid Path\n'.format(ERROR_PREFIX, GM_Globals[GM_GAM_CFG_FILE], sectionName, itemName, dirPath))
 
-  def _chkCfgFiles():
+  def _chkCfgFiles(sectionName):
     for itemName in GC_VAR_INFO:
       if GC_VAR_INFO[itemName][GC_VAR_TYPE_KEY] == GC_TYPE_FILE:
         fileName = GC_Values[itemName]
         if (not fileName) and (itemName == GC_EXTRA_ARGS):
           continue
         if not os.path.isfile(fileName):
-          sys.stderr.write(u'{0}{1}={2}, Not Found\n'.format(WARNING_PREFIX, GC_VAR_INFO[itemName][GC_VAR_ENVVAR_KEY], fileName))
+          sys.stderr.write(u'{0}Config File: {1}, Section: {2}, Item: {3}, Value: {4}, Not Found\n'.format(WARNING_PREFIX, GM_Globals[GM_GAM_CFG_FILE], sectionName, itemName, fileName))
 
-  GC_Defaults[GC_CONFIG_DIR] = GM_Globals[GM_GAM_PATH]
-  GC_Defaults[GC_CACHE_DIR] = os.path.join(GM_Globals[GM_GAM_PATH], u'gamcache')
-  GC_Defaults[GC_DRIVE_DIR] = GM_Globals[GM_GAM_PATH]
-  GC_Defaults[GC_SITE_DIR] = GM_Globals[GM_GAM_PATH]
-  for itemName, itemEntry in GC_VAR_INFO.items():
-    if itemEntry[GC_VAR_TYPE_KEY] == GC_TYPE_DIRECTORY:
-      _getDefault(itemName, itemEntry)
-  for itemName, itemEntry in GC_VAR_INFO.items():
-    if itemEntry[GC_VAR_TYPE_KEY] != GC_TYPE_DIRECTORY:
-      _getDefault(itemName, itemEntry)
-  if GC_Defaults[GC_OAUTH2SERVICE_JSON].find(u'.') == -1:
-    GC_Defaults[GC_OAUTH2SERVICE_JSON] += u'.json'
+  def _setCSVFile(filename, mode, encoding):
+    if filename != u'-':
+      filename = os.path.expanduser(filename)
+      if not os.path.isabs(filename):
+        filename = os.path.join(GC_Values[GC_DRIVE_DIR], filename)
+    GM_Globals[GM_CSVFILE] = filename
+    GM_Globals[GM_CSVFILE_MODE] = mode
+    GM_Globals[GM_CSVFILE_ENCODING] = encoding
+    GM_Globals[GM_CSVFILE_WRITE_HEADER] = True
+
+  def _setSTDFile(filename, mode):
+    filename = os.path.expanduser(filename)
+    if not os.path.isabs(filename):
+      filename = os.path.join(GC_Values[GC_DRIVE_DIR], filename)
+    return openFile(filename, mode=mode)
+
+  if not GM_Globals[GM_PARSER]:
+    homePath = os.path.expanduser(u'~')
+    GM_Globals[GM_GAM_CFG_PATH] = os.environ.get(u'GAMCFGDIR', None)
+    if GM_Globals[GM_GAM_CFG_PATH]:
+      GM_Globals[GM_GAM_CFG_PATH] = os.path.expanduser(GM_Globals[GM_GAM_CFG_PATH])
+    else:
+      GM_Globals[GM_GAM_CFG_PATH] = os.path.join(homePath, u'.gam')
+    GC_Defaults[GC_CONFIG_DIR] = GM_Globals[GM_GAM_CFG_PATH]
+    GC_Defaults[GC_CACHE_DIR] = os.path.join(GM_Globals[GM_GAM_CFG_PATH], u'gamcache')
+    GC_Defaults[GC_DRIVE_DIR] = os.path.join(homePath, u'Downloads')
+    GC_Defaults[GC_SITE_DIR] = GM_Globals[GM_GAM_PATH]
+    GM_Globals[GM_GAM_CFG_FILE] = os.path.join(GM_Globals[GM_GAM_CFG_PATH], FN_GAM_CFG)
+    if not os.path.isfile(GM_Globals[GM_GAM_CFG_FILE]):
+      for itemName, itemEntry in GC_VAR_INFO.items():
+        if itemEntry[GC_VAR_TYPE_KEY] == GC_TYPE_DIRECTORY:
+          _getDefault(itemName, itemEntry)
+      for itemName, itemEntry in GC_VAR_INFO.items():
+        if itemEntry[GC_VAR_TYPE_KEY] != GC_TYPE_DIRECTORY:
+          _getDefault(itemName, itemEntry)
+      if GC_Defaults[GC_OAUTH2SERVICE_JSON].find(u'.') == -1:
+        GC_Defaults[GC_OAUTH2SERVICE_JSON] += u'.json'
+      GM_Globals[GM_PARSER] = ConfigParser.SafeConfigParser(defaults=collections.OrderedDict(sorted(GC_Defaults.items(), key=lambda t: t[0])))
+      _checkMakeDir(GC_CONFIG_DIR)
+      _checkMakeDir(GC_SITE_DIR)
+      _checkMakeDir(GC_CACHE_DIR)
+      for itemName in GC_VAR_INFO:
+        if GC_VAR_INFO[itemName][GC_VAR_TYPE_KEY] == GC_TYPE_FILE:
+          srcFile = os.path.expanduser(GM_Globals[GM_PARSER].get(ConfigParser.DEFAULTSECT, itemName, raw=True))
+          _copyCfgFile(srcFile, GC_CONFIG_DIR)
+      for srcFile in SITE_FILES:
+        _copyCfgFile(srcFile, GC_SITE_DIR)
+      _writeGamCfgFile(GM_Globals[GM_PARSER], GM_Globals[GM_GAM_CFG_FILE], action=u'Initialized')
+    else:
+      GM_Globals[GM_PARSER] = ConfigParser.SafeConfigParser(defaults=collections.OrderedDict(sorted(GC_Defaults.items(), key=lambda t: t[0])))
+      _readGamCfgFile(GM_Globals[GM_PARSER], GM_Globals[GM_GAM_CFG_FILE])
+    GM_Globals[GM_LAST_UPDATE_CHECK_TXT] = os.path.join(_getCfgDirectory(ConfigParser.DEFAULTSECT, GC_CONFIG_DIR), FN_LAST_UPDATE_CHECK_TXT)
+    if not GM_Globals[GM_PARSER].get(ConfigParser.DEFAULTSECT, GC_NO_UPDATE_CHECK, raw=True):
+      doGAMCheckForUpdates()
+  status = {u'errors': False}
+  sectionName = _getCfgSection(ConfigParser.DEFAULTSECT, GC_SECTION)
+  i = 1
+# select <SectionName> [save] [verify]
+  if checkArgumentPresent(i, [u'select',]):
+    i += 1
+    sectionName = _selectSection(i)
+    i += 1
+    while i < len(sys.argv):
+      if checkArgumentPresent(i, [u'save',]):
+        i += 1
+        GM_Globals[GM_PARSER].set(ConfigParser.DEFAULTSECT, GC_SECTION, sectionName)
+        _writeGamCfgFile(GM_Globals[GM_PARSER], GM_Globals[GM_GAM_CFG_FILE], action=u'Saved')
+      elif checkArgumentPresent(i, [u'verify',]):
+        i += 1
+        _verifyValues(sectionName)
+      else:
+        break
+# config ((create <SectionName> [overwrite])|(delete <SectionName>)|(select <SectionName>)|
+#         (make <Directory>)|(copy <FromFile> <ToFile)|
+#         (reset <VariableName>)|(set <VariableName> <Value>)|
+#         save|(backup <FileName>)|(restore <FileName>)|
+#         verify|print
+#        )* [config]
+  elif checkArgumentPresent(i, [u'config',]):
+    i += 1
+    while i < len(sys.argv):
+      myarg = getChoice(i, [u'create', u'delete', u'select',
+                            u'make', u'copy',
+                            u'reset', u'set',
+                            u'save', u'backup', u'restore',
+                            u'verify', u'print',
+                            u'config'])
+      i += 1
+# create <SectionName> [overwrite]
+      if myarg == u'create':
+        value = getString(i, OB_SECTION_NAME)
+        i += 1
+        if value.upper() == ConfigParser.DEFAULTSECT:
+          usageErrorExit(i-1, u'Section: {0}, Invalid'.format(value))
+        overwrite = checkArgumentPresent(i, [u'overwrite',])
+        if overwrite:
+          i += 1
+        if GM_Globals[GM_PARSER].has_section(value):
+          if not overwrite:
+            usageErrorExit(i-1, u'Section: {0}, Duplicate'.format(value))
+        else:
+          GM_Globals[GM_PARSER].add_section(value)
+        sectionName = value
+# delete <SectionName>
+      elif myarg == u'delete':
+        value = getString(i, OB_SECTION_NAME)
+        i += 1
+        if value.upper() == ConfigParser.DEFAULTSECT:
+          usageErrorExit(i-1, u'Section: {0}, Invalid'.format(value))
+        if not GM_Globals[GM_PARSER].has_section(value):
+          usageErrorExit(i-1, u'Section: {0}, Not Found'.format(value))
+        GM_Globals[GM_PARSER].remove_section(value)
+        sectionName = ConfigParser.DEFAULTSECT
+        if GM_Globals[GM_PARSER].get(ConfigParser.DEFAULTSECT, GC_SECTION, raw=True) == value:
+          GM_Globals[GM_PARSER].set(ConfigParser.DEFAULTSECT, GC_SECTION, u'')
+# select <SectionName>
+      elif myarg == u'select':
+        sectionName = _selectSection(i)
+        i += 1
+# make <Directory>
+      elif myarg == u'make':
+        dstPath = os.path.expanduser(getString(i, OB_FILE_PATH))
+        i += 1
+        if not os.path.isabs(dstPath):
+          dstPath = os.path.join(_getCfgDirectory(ConfigParser.DEFAULTSECT, GC_CONFIG_DIR), dstPath)
+        if not os.path.isdir(dstPath):
+          try:
+            os.makedirs(dstPath)
+          except OSError as e:
+            if not os.path.isdir(dstPath):
+              systemErrorExit(6, e)
+# copy <FromFile> <ToFile>
+      elif myarg == u'copy':
+        srcFile = os.path.expanduser(getString(i, OB_FILE_NAME))
+        i += 1
+        if not os.path.isabs(srcFile):
+          srcFile = os.path.join(GM_Globals[GM_GAM_PATH], srcFile)
+        dstFile = os.path.expanduser(getString(i, OB_FILE_NAME))
+        i += 1
+        if not os.path.isabs(dstFile):
+          dstFile = os.path.join(_getCfgDirectory(sectionName, GC_CONFIG_DIR), dstFile)
+        data = readFile(srcFile, mode=u'rU')
+        writeFile(dstFile, data)
+# reset <VariableName>
+      elif myarg == u'reset':
+        itemName = getChoice(i, GC_Defaults, choiceAliases=GC_VAR_ALIASES)
+        i += 1
+        if GC_VAR_INFO[itemName][GC_VAR_TYPE_KEY] == GC_TYPE_BOOLEAN:
+          GM_Globals[GM_PARSER].set(ConfigParser.DEFAULTSECT, itemName, unicode(GC_Defaults[itemName]))
+        elif itemName != GC_SECTION:
+          if sectionName != ConfigParser.DEFAULTSECT:
+            GM_Globals[GM_PARSER].remove_option(sectionName, itemName)
+          else:
+            GM_Globals[GM_PARSER].set(ConfigParser.DEFAULTSECT, itemName, unicode(GC_Defaults[itemName]))
+        else:
+          GM_Globals[GM_PARSER].set(ConfigParser.DEFAULTSECT, itemName, ConfigParser.DEFAULTSECT)
+# set <VariableName> <Value>
+      elif myarg == u'set':
+        itemName = getChoice(i, GC_Defaults, choiceAliases=GC_VAR_ALIASES)
+        i += 1
+        if itemName == GC_SECTION:
+          value = _selectSection(i)
+          i += 1
+          GM_Globals[GM_PARSER].set(ConfigParser.DEFAULTSECT, itemName, value)
+          continue
+        elif GC_VAR_INFO[itemName][GC_VAR_TYPE_KEY] == GC_TYPE_BOOLEAN:
+          value = TRUE if getBoolean(i) else FALSE
+          i += 1
+          GM_Globals[GM_PARSER].set(ConfigParser.DEFAULTSECT, itemName, value)
+          continue
+        elif GC_VAR_INFO[itemName][GC_VAR_TYPE_KEY] == GC_TYPE_INTEGER:
+          minVal, maxVal = GC_VAR_INFO[itemName][GC_VAR_LIMITS_KEY]
+          value = str(getInteger(i, minVal=minVal, maxVal=maxVal))
+          i += 1
+        elif GC_VAR_INFO[itemName][GC_VAR_TYPE_KEY] == GC_TYPE_DIRECTORY:
+          value = getString(i, OB_FILE_PATH)
+          i += 1
+          fullPath = os.path.expanduser(value)
+          if (sectionName != ConfigParser.DEFAULTSECT) and (not os.path.isabs(fullPath)):
+            fullPath = os.path.join(GM_Globals[GM_PARSER].get(ConfigParser.DEFAULTSECT, itemName, raw=True), fullPath)
+          if not os.path.isdir(fullPath):
+            usageErrorExit(i-1, u'Invalid Path')
+        elif GC_VAR_INFO[itemName][GC_VAR_TYPE_KEY] == GC_TYPE_FILE:
+          value = getString(i, OB_FILE_NAME, emptyOK=True)
+          i += 1
+        else:
+          value = getString(i, OB_STRING)
+          i += 1
+        GM_Globals[GM_PARSER].set(sectionName, itemName, value)
+# save
+      elif myarg == u'save':
+        _writeGamCfgFile(GM_Globals[GM_PARSER], GM_Globals[GM_GAM_CFG_FILE], action=u'Saved')
+# backup <FileName>
+      elif myarg == u'backup':
+        fileName = os.path.expanduser(getString(i, OB_FILE_NAME))
+        i += 1
+        if not os.path.isabs(fileName):
+          fileName = os.path.join(GM_Globals[GM_GAM_CFG_PATH], fileName)
+        _writeGamCfgFile(GM_Globals[GM_PARSER], fileName, action=u'Backed up')
+# restore <FileName>
+      elif myarg == u'restore':
+        fileName = os.path.expanduser(getString(i, OB_FILE_NAME))
+        i += 1
+        if not os.path.isabs(fileName):
+          fileName = os.path.join(GM_Globals[GM_GAM_CFG_PATH], fileName)
+        _readGamCfgFile(GM_Globals[GM_PARSER], fileName, action=u'Restored')
+# verify
+      elif myarg == u'verify':
+        _verifyValues(sectionName)
+# print
+      elif myarg == u'print':
+        value = readFile(GM_Globals[GM_GAM_CFG_FILE], mode=u'rU')
+        for line in value:
+          sys.stdout.write(line)
+# config
+      else:
+        break
+  prevExtraArgsTxt = GC_Values.get(GC_EXTRA_ARGS, None)
+  prevGAMScopesJson = GC_Values.get(GC_GAMSCOPES_JSON, None)
+  prevOauth2serviceJson = GC_Values.get(GC_OAUTH2SERVICE_JSON, None)
 # Assign directories first
   for itemName in GC_VAR_INFO:
     if GC_VAR_INFO[itemName][GC_VAR_TYPE_KEY] == GC_TYPE_DIRECTORY:
-      GC_Values[itemName] = _getCfgDirectory(itemName)
+      GC_Values[itemName] = _getCfgDirectory(sectionName, itemName)
+# Everything else
   for itemName in GC_VAR_INFO:
     varType = GC_VAR_INFO[itemName][GC_VAR_TYPE_KEY]
-    if varType == GC_TYPE_FILE:
-      GC_Values[itemName] = _getCfgFile(itemName)
-    else:
-      GC_Values[itemName] = GC_Defaults[itemName]
-  GM_Globals[GM_LAST_UPDATE_CHECK_TXT] = os.path.join(GC_Values[GC_CONFIG_DIR], FN_LAST_UPDATE_CHECK_TXT)
-  if not GC_Values[GC_NO_UPDATE_CHECK]:
-    doGAMCheckForUpdates()
-# Globals derived from config file values
+    if varType == GC_TYPE_BOOLEAN:
+      GC_Values[itemName] = _getCfgBoolean(sectionName, itemName)
+    elif varType == GC_TYPE_INTEGER:
+      GC_Values[itemName] = _getCfgInteger(sectionName, itemName)
+    elif varType == GC_TYPE_STRING:
+      GC_Values[itemName] = _getCfgString(sectionName, itemName)
+    elif varType == GC_TYPE_FILE:
+      GC_Values[itemName] = _getCfgFile(sectionName, itemName)
+  if status[u'errors']:
+    sys.exit(13)
+# Reset global variables if required
   httplib2.debuglevel = GC_Values[GC_DEBUG_LEVEL]
-  GM_Globals[GM_EXTRA_ARGS_DICT] = {u'prettyPrint': GC_Values[GC_DEBUG_LEVEL] > 0}
-  if GC_Values[GC_EXTRA_ARGS]:
-    import ConfigParser
-    ea_config = ConfigParser.ConfigParser()
-    ea_config.optionxform = str
-    ea_config.read(GC_Values[GC_EXTRA_ARGS])
-    GM_Globals[GM_EXTRA_ARGS_DICT].update(dict(ea_config.items(u'extra-args')))
-  GM_Globals[GM_OAUTH2SERVICE_KEY] = None
-  GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_EMAIL] = None
-  GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID] = None
-  _getScopesAdminDomainFromGamScopesJson()
+  if prevExtraArgsTxt != GC_Values[GC_EXTRA_ARGS]:
+    GM_Globals[GM_EXTRA_ARGS_DICT] = {u'prettyPrint': GC_Values[GC_DEBUG_LEVEL] > 0}
+    if GC_Values[GC_EXTRA_ARGS]:
+      ea_config = ConfigParser.ConfigParser()
+      ea_config.optionxform = str
+      ea_config.read(GC_Values[GC_EXTRA_ARGS])
+      GM_Globals[GM_EXTRA_ARGS_DICT].update(dict(ea_config.items(u'extra-args')))
+  if prevOauth2serviceJson != GC_Values[GC_OAUTH2SERVICE_JSON]:
+    GM_Globals[GM_OAUTH2SERVICE_KEY] = None
+    GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_EMAIL] = None
+    GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID] = None
+  if (prevGAMScopesJson != GC_Values[GC_GAMSCOPES_JSON]) or (not GM_Globals[GM_GAMSCOPES_LIST]):
+    _getScopesAdminDomainFromGamScopesJson()
   if not GC_Values[GC_DOMAIN]:
     getDomainFromAdmin()
-  _chkCfgDirectories()
-  _chkCfgFiles()
-  if GC_Values[GC_NO_CACHE]:
-    GC_Values[GC_CACHE_DIR] = None
-  return True
+# redirect
+  while checkArgumentPresent(i, [u'redirect',]):
+    i += 1
+    myarg = getChoice(i, [u'csv', u'stdout', u'stderr'])
+    i += 1
+    filename = re.sub(r'--Section--', sectionName, getString(i, OB_FILE_NAME))
+    i += 1
+# redirect csv <FileName> [charset <CharSet>]
+    if myarg == u'csv':
+      i, encoding = getCharSet(i)
+      _setCSVFile(filename, u'wb', encoding)
+# redirect stdout <FileName> [append]
+    elif myarg == u'stdout':
+      if checkArgumentPresent(i, [u'append',]):
+        mode = u'a'
+        i += 1
+      else:
+        mode = u'w'
+      sys.stdout = _setSTDFile(filename, mode)
+      if GM_Globals[GM_CSVFILE] == u'-':
+        GM_Globals[GM_CSVFILE] = None
+# redirect stderr <FileName> [append]
+    else:
+      if checkArgumentPresent(i, [u'append',]):
+        mode = u'a'
+        i += 1
+      else:
+        mode = u'w'
+      sys.stderr = _setSTDFile(filename, mode)
+  if not GM_Globals[GM_CSVFILE]:
+    _setCSVFile(u'-', u'a', GC_Values[GC_CHARSET])
+# If no select/options commands were executed or some were and there are more arguments on the command line,
+# warn if the json files are missing and return True
+  if (i == 1) or (i < len(sys.argv)):
+    if i > 1:
+# Move remaining args down to 1
+      j = 1
+      while i < len(sys.argv):
+        sys.argv[j] = sys.argv[i]
+        j += 1
+        i += 1
+      del sys.argv[j:]
+    _chkCfgDirectories(sectionName)
+    _chkCfgFiles(sectionName)
+    if GC_Values[GC_NO_CACHE]:
+      GC_Values[GC_CACHE_DIR] = None
+    return True
+# We're done, nothing else to do
+  return False
 
 def doGAMCheckForUpdates(forceCheck=False):
   import urllib2
@@ -1799,7 +2516,7 @@ def convertUserIDtoEmail(uid):
   try:
     return callGAPI(cd.users(), u'get', throw_reasons=[u'notFound'], userKey=uid, fields=u'primaryEmail')[u'primaryEmail']
   except googleapiclient.errors.HttpError:
-    print u'ERROR: no such user %s' % id
+    print u'ERROR: no such user %s' % uid
     sys.exit(3)
 
 def doCreateDataTranfer():
@@ -7372,8 +8089,13 @@ def output_csv(csv_list, titles, list_type, todrive):
     string_file = StringIO.StringIO()
     writer = csv.DictWriter(string_file, fieldnames=titles, dialect=u'nixstdout', quoting=csv.QUOTE_MINIMAL)
   else:
-    writer = csv.DictWriter(sys.stdout, fieldnames=titles, dialect=u'nixstdout', quoting=csv.QUOTE_MINIMAL)
-  writer.writerows(csv_list)
+    string_file = openFile(GM_Globals[GM_CSVFILE], GM_Globals[GM_CSVFILE_MODE])
+    writer = UnicodeDictWriter(string_file, fieldnames=titles, dialect=u'nixstdout', quoting=csv.QUOTE_MINIMAL)
+  try:
+    writer.writeheader()
+    writer.writerows(csv_list)
+  except IOError as e:
+    systemErrorExit(6, e)
   if todrive:
     columns = len(csv_list[0])
     rows = len(csv_list)
@@ -7395,6 +8117,8 @@ def output_csv(csv_list, titles, list_type, todrive):
     else:
       import webbrowser
       webbrowser.open(file_url)
+  if GM_Globals[GM_CSVFILE] != u'-':
+    closeFile(string_file)
 
 def flatten_json(structure, key=u'', path=u'', flattened=None):
   if flattened == None:
@@ -9045,7 +9769,7 @@ def getSubFields(i, fieldNames):
           subFields.setdefault(GAM_argvI, [])
           subFields[GAM_argvI].append((fieldName, match.start(), match.end()))
         else:
-          csvFieldErrorExit(fieldName, fieldNames)
+          csvFieldErrorExit(i, fieldName, fieldNames)
         pos = match.end()
       GAM_argv.append(myarg)
     elif myarg[0] == u'~':
@@ -9054,9 +9778,9 @@ def getSubFields(i, fieldNames):
         subFields[GAM_argvI] = [(fieldName, 0, len(myarg))]
         GAM_argv.append(myarg)
       else:
-        csvFieldErrorExit(fieldName, fieldNames)
+        csvFieldErrorExit(i, fieldName, fieldNames)
     else:
-      GAM_argv.append(myarg)
+      GAM_argv.append(myarg.encode(GM_Globals[GM_SYS_ENCODING]))
     GAM_argvI += 1
     i += 1
   return(GAM_argv, subFields)
@@ -9073,6 +9797,7 @@ def processSubFields(GAM_argv, row, subFields):
         argv[GAM_argvI] += row[field[0]]
       pos = field[2]
     argv[GAM_argvI] += oargv[pos:]
+    argv[GAM_argvI] = argv[GAM_argvI].encode(GM_Globals[GM_SYS_ENCODING])
   return argv
 
 # Main
@@ -9081,42 +9806,54 @@ sys.setdefaultencoding(u'UTF-8')
 try:
   if GM_Globals[GM_WINDOWS]:
     sys.argv = win32_unicode_argv() # cleanup sys.argv on Windows
-  SetGlobalVariables()
+  if not SetGlobalVariables():
+    sys.exit(0)
   if sys.argv[1].lower() == u'batch':
     import shlex
-    filename = sys.argv[2]
+    i = 2
+    filename = getString(i, OB_FILE_NAME)
     if (filename == u'-') and (GC_Values[GC_DEBUG_LEVEL] > 0):
-      systemErrorExit(2, MESSAGE_BATCH_CSV_DASH_DEBUG_INCOMPATIBLE.format(u'batch'))
+      usageErrorExit(i, MESSAGE_BATCH_CSV_DASH_DEBUG_INCOMPATIBLE.format(u'batch'))
+    i += 1
+    i, encoding = getCharSet(i)
     f = openFile(filename)
-    items = list()
-    for line in f:
+    batchFile = UTF8Recoder(f, encoding)
+    items = []
+    for line in batchFile:
       argv = shlex.split(line)
       if not argv:
         continue
-      if (argv[0] in [u'#', u' ', u''] or len(argv) < 2) and argv != [u'commit-batch']:
+      cmd = argv[0].strip().lower()
+      if (not cmd) or cmd.startswith(u'#') or ((len(argv) == 1) and (cmd != u'commit-batch')):
         continue
-      elif argv[0] not in [u'gam', u'commit-batch']:
-        print u'ERROR: "%s" is not a valid gam command' % line
-        continue
-      if argv[0] == u'gam':
-        argv = argv[1:]
-      items.append(argv)
+      if cmd == u'gam':
+        items.append([arg.encode(GM_Globals[GM_SYS_ENCODING]) for arg in argv[1:]])
+      elif cmd == u'commit-batch':
+        items.append([cmd])
+      else:
+        print u'ERROR: "%s" is not a valid gam command' % line.strip()
     closeFile(f)
     run_batch(items)
     sys.exit(0)
   elif sys.argv[1].lower() == u'csv':
-    filename = sys.argv[2]
+    i = 2
+    filename = getString(i, OB_FILE_NAME)
     if (filename == u'-') and (GC_Values[GC_DEBUG_LEVEL] > 0):
-      systemErrorExit(2, MESSAGE_BATCH_CSV_DASH_DEBUG_INCOMPATIBLE.format(u'csv'))
+      usageErrorExit(i, MESSAGE_BATCH_CSV_DASH_DEBUG_INCOMPATIBLE.format(u'csv'))
+    i += 1
+    i, encoding = getCharSet(i)
     f = openFile(filename)
-    input_file = csv.DictReader(f)
-    if sys.argv[3].lower() != u'gam':
-      print u'ERROR: "gam csv <filename>" should be followed by a full GAM command...'
-      sys.exit(3)
-    GAM_argv, subFields = getSubFields(4, input_file.fieldnames)
-    items = list()
-    for row in input_file:
-      items.append(processSubFields(GAM_argv, row, subFields))
+    csvFile = UnicodeDictReader(f, encoding=encoding)
+    i, matchField, matchPattern = getMatchField(i, csvFile.fieldnames)
+    checkArgumentPresent(i, [u'gam',], required=True)
+    i += 1
+    if i == len(sys.argv):
+      missingArgumentExit(OB_GAM_ARGUMENT_LIST)
+    GAM_argv, subFields = getSubFields(i, csvFile.fieldnames)
+    items = []
+    for row in csvFile:
+      if (not matchField) or ((matchField in row) and (matchPattern.search(row[matchField]))):
+        items.append(processSubFields(GAM_argv, row, subFields))
     closeFile(f)
     run_batch(items)
     sys.exit(0)
