@@ -539,7 +539,7 @@ def checkArgumentPresent(i, choices, required=False):
     invalidChoiceExit(i, choices)
   elif not required:
     return False
-  missingChoiceExit(choices)
+  missingChoiceExit(i, choices)
 
 def getBoolean(i):
   if i < len(sys.argv):
@@ -549,7 +549,7 @@ def getBoolean(i):
     if value in false_values:
       return  False
     invalidChoiceExit(i, TRUE_FALSE)
-  missingChoiceExit(TRUE_FALSE)
+  missingChoiceExit(i, TRUE_FALSE)
 
 DEFAULT_CHOICE = u'defaultChoice'
 CHOICE_ALIASES = u'choiceAliases'
@@ -572,7 +572,7 @@ def getChoice(i, choices, **opts):
     invalidChoiceExit(i, choices)
   elif DEFAULT_CHOICE in opts:
     return opts[DEFAULT_CHOICE]
-  missingChoiceExit(choices)
+  missingChoiceExit(i, choices)
 
 def integerLimits(minVal, maxVal):
   if (minVal != None) and (maxVal != None):
@@ -619,7 +619,7 @@ def getString(i, item, emptyOK=False, optional=False):
 
 def getCharSet(i):
   if not checkArgumentPresent(i, [u'charset',]):
-    return (i, GC_Values[GC_CHARSET])
+    return (i, GC_Values.get(GC_CHARSET, GM_Globals[GM_SYS_ENCODING]))
   return (i+2, getString(i+1, OB_CHAR_SET))
 
 def getMatchField(i, fieldNames):
