@@ -6683,11 +6683,10 @@ def doUpdateGroup():
         sys.stderr.write(u' %sing %s %s...\n' % (sys.argv[4].lower(), role.lower(), user_email))
         try:
           if sys.argv[4].lower() == u'add':
-            body = {u'role': role}
             body[u'email'] = user_email
-            result = callGAPI(cd.members(), u'insert', soft_errors=True, groupKey=group, body=body)
+            callGAPI(cd.members(), u'insert', soft_errors=True, groupKey=group, body=body)
           elif sys.argv[4].lower() == u'update':
-            result = callGAPI(service=cd.members(), function=u'update', soft_errors=True, groupKey=group, memberKey=user_email, body={u'email': user_email, u'role': role})
+            callGAPI(cd.members(), u'update', soft_errors=True, groupKey=group, memberKey=user_email, body=body)
         except googleapiclient.errors.HttpError:
           pass
     elif sys.argv[4].lower() == u'sync':
@@ -6723,7 +6722,7 @@ def doUpdateGroup():
         elif user_email.find(u'@') == -1:
           user_email = u'%s@%s' % (user_email, GC_Values[GC_DOMAIN])
         sys.stderr.write(u' removing %s\n' % user_email)
-        result = callGAPI(cd.members(), u'delete', soft_errors=True, groupKey=group, memberKey=user_email)
+        callGAPI(cd.members(), u'delete', soft_errors=True, groupKey=group, memberKey=user_email)
   else:
     i = 4
     use_cd_api = False
@@ -8392,7 +8391,7 @@ def doPrintGroups():
       sys.exit(2)
   sys.stderr.write(u"Retrieving All Groups for Google Apps account (may take some time on a large account)...\n")
   page_message = u'Got %%num_items%% groups: %%first_item%% - %%last_item%%\n'
-  all_groups = callGAPIpages(service=cd.groups(), function=u'list', items=u'groups', page_message=page_message, maxResults=maxResults,
+  all_groups = callGAPIpages(cd.groups(), u'list', u'groups', page_message=page_message, maxResults=maxResults,
                              message_attribute=u'email', customer=customer, domain=usedomain, userKey=usemember, fields=fields)
   total_groups = len(all_groups)
   count = 0
@@ -9394,17 +9393,22 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
     users = []
     filename = entity
     users = readFile(filename, u'rb').splitlines()
-  elif entity_type == u'csv':
-    (filename, column) = entity.split(u':')
-    file_contents = readFile(filename)
-    f = StringIO.StringIO(file_contents)
+  elif entity_type == u'csvfile':
+    try:
+      (filename, column) = entity.split(u':')
+    except ValueError:
+      filename = column = None
+    if (not filename) or (not column):
+      invalidArgumentExit(2, u'FileName:FieldName')
+    f = openFile(filename)
     input_file = csv.DictReader(f)
+    if column not in input_file.fieldnames:
+      csvFieldErrorExit(2, column, input_file.fieldnames)
     users = []
     for row in input_file:
-      if column not in row:
-        print u'ERROR: %s does not seem to be a header in CSV file %s' % (column, filename)
-        sys.exit(3)
-      users.append(row[column])
+      if column in row:
+        users.append(row[column])
+    closeFile(f)
   elif entity_type in [u'courseparticipants', u'teachers', u'students']:
     croom = buildGAPIObject(u'classroom')
     users = []
