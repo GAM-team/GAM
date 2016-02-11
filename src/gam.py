@@ -62,7 +62,7 @@ true_values = [u'on', u'yes', u'enabled', u'true', u'1']
 false_values = [u'off', u'no', u'disabled', u'false', u'0']
 usergroup_types = [u'user', u'users', u'group', u'ou', u'org',
                    u'ou_and_children', u'ou_and_child', u'query',
-                   u'license', u'licenses', u'licence', u'licences', u'file', u'all',
+                   u'license', u'licenses', u'licence', u'licences', u'file', u'csv', u'all',
                    u'cros']
 ERROR = u'ERROR'
 ERROR_PREFIX = ERROR+u': '
@@ -6685,7 +6685,7 @@ def doUpdateGroup():
           if user_email.find(u'@') == -1:
             user_email = u'%s@%s' % (user_email, GC_Values[GC_DOMAIN])
           body[u'email'] = user_email
-        sys.stderr.write(u' %sing %s %s...' % (sys.argv[4].lower(), role.lower(), user_email))
+        sys.stderr.write(u' %sing %s %s...\n' % (sys.argv[4].lower(), role.lower(), user_email))
         try:
           if sys.argv[4].lower() == u'add':
             body = {u'role': role}
@@ -6693,16 +6693,6 @@ def doUpdateGroup():
             result = callGAPI(cd.members(), u'insert', soft_errors=True, groupKey=group, body=body)
           elif sys.argv[4].lower() == u'update':
             result = callGAPI(cd.members(), u'update', soft_errors=True, groupKey=group, memberKey=user_email, body=body)
-          if result:
-            addr = result.get(u'email', None)
-            if addr:
-              addr = addr.lower()
-              if addr != user_email.lower():
-                print u'added %s (primary address) to group' % addr
-              else:
-                print u'added %s to group' % addr
-            else:
-              print u'added %s to group' % result[u'id']
         except googleapiclient.errors.HttpError:
           pass
     elif sys.argv[4].lower() == u'sync':
@@ -6717,15 +6707,13 @@ def doUpdateGroup():
       current_emails = [x.lower() for x in current_emails]
       to_add = list(set(users_email) - set(current_emails))
       to_remove = list(set(current_emails) - set(users_email))
+      sys.stderr.write(u'Need to add %s %s and remove %s.\n' % (len(to_add), role, len(to_remove)))
+      items = []
       for user_email in to_add:
-        sys.stderr.write(u' adding %s %s\n' % (role, user_email))
-        try:
-          result = callGAPI(cd.members(), u'insert', soft_errors=True, throw_reasons=[u'duplicate'], groupKey=group, body={u'email': user_email, u'role': role})
-        except googleapiclient.errors.HttpError:
-          result = callGAPI(cd.members(), u'update', soft_errors=True, groupKey=group, memberKey=user_email, body={u'email': user_email, u'role': role})
+        items.append([u'update', u'group', group, u'add', role, user_email])
       for user_email in to_remove:
-        sys.stderr.write(u' removing %s\n' % user_email)
-        result = callGAPI(cd.members(), u'delete', soft_errors=True, groupKey=group, memberKey=user_email)
+        items.append([u'update', u'group', group, u'remove', user_email])
+      run_batch(items)
     elif sys.argv[4].lower() == u'remove':
       i = 5
       if sys.argv[i].lower() in [u'member', u'manager', u'owner']:
@@ -8335,6 +8323,7 @@ def doPrintGroups():
   group_attributes = [{u'Email': u'Email'}]
   titles = [u'Email']
   fields = u'nextPageToken,groups(email)'
+  maxResults = None
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'domain':
       usedomain = sys.argv[i+1].lower()
@@ -8343,6 +8332,9 @@ def doPrintGroups():
     elif sys.argv[i].lower() == u'todrive':
       todrive = True
       i += 1
+    elif sys.argv[i].lower() == u'maxresults':
+      maxResults = int(sys.argv[i+1])
+      i += 2
     elif sys.argv[i].lower() == u'delimiter':
       listDelimiter = sys.argv[i+1]
       i += 2
@@ -8405,7 +8397,7 @@ def doPrintGroups():
       sys.exit(2)
   sys.stderr.write(u"Retrieving All Groups for Google Apps account (may take some time on a large account)...\n")
   page_message = u'Got %%num_items%% groups: %%first_item%% - %%last_item%%\n'
-  all_groups = callGAPIpages(cd.groups(), u'list', u'groups', page_message=page_message,
+  all_groups = callGAPIpages(cd.groups(), u'list', u'groups', page_message=page_message, maxResults=maxResults,
                              message_attribute=u'email', customer=customer, domain=usedomain, userKey=usemember, fields=fields)
   total_groups = len(all_groups)
   count = 0
@@ -9327,7 +9319,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
       group = u'%s@%s' % (group, GC_Values[GC_DOMAIN])
     page_message = None
     if not silent:
-      sys.stderr.write(u"Getting %s of %s (may take some time for large groups)..." % (member_type_message, group))
+      sys.stderr.write(u"Getting %s of %s (may take some time for large groups)...\n" % (member_type_message, group))
       page_message = u'Got %%%%total_items%%%% %s...' % member_type_message
     members = callGAPIpages(cd.members(), u'list', u'members', page_message=page_message,
                             groupKey=group, roles=member_type, fields=u'nextPageToken,members(email,id)')
@@ -9406,12 +9398,17 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
   elif entity_type == u'file':
     users = []
     filename = entity
-    usernames = csv.reader(open(filename, u'rb'))
-    for row in usernames:
-      try:
-        users.append(row.pop())
-      except IndexError:
-        pass
+    users = readFile(filename, u'rb').splitlines()
+  elif entity_type == u'csv':
+    (filename, column) = entity.split(u':')
+    file_contents = readFile(filename)
+    f = StringIO.StringIO(file_contents)
+    input_file = csv.DictReader(f)
+    users = []
+    for row in input_file:
+      if column not in row:
+        print u'ERROR: %s does not seem to be a header in CSV file %s' % (column, filename)
+        sys.exit(3)
   elif entity_type in [u'courseparticipants', u'teachers', u'students']:
     croom = buildGAPIObject(u'classroom')
     users = []

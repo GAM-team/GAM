@@ -1,6 +1,6 @@
 # -*- mode: python -*-
 a = Analysis(['gam.py'],
-             pathex=['C:\\GAM-N'],
+             pathex=['C:\\Users\\jlee\\Documents\\GitHub\\GAM'],
              hiddenimports=[],
              hookspath=None,
              runtime_hooks=None)
