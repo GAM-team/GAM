@@ -1,11 +1,11 @@
 # -*- mode: python -*-
 a = Analysis(['gam.py'],
-             pathex=['C:\\Users\\jlee\\Documents\\GitHub\\GAM'],
+             pathex=['C:\\GAM-N'],
              hiddenimports=[],
              hookspath=None,
              runtime_hooks=None)
 for d in a.datas:
-    if 'pyconfig' in d[0]: 
+    if 'pyconfig' in d[0]:
         a.datas.remove(d)
         break
 a.datas += [('httplib2/cacerts.txt', 'httplib2\cacerts.txt', 'DATA')]
