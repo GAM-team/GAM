@@ -907,9 +907,7 @@ def SetGlobalVariables():
 
   def _getCfgFile(sectionName, itemName):
     value = os.path.expanduser(GM_Globals[GM_PARSER].get(sectionName, itemName, raw=True))
-    if (not value) and (itemName == GC_EXTRA_ARGS):
-      return value
-    if not os.path.isabs(value):
+    if value and not os.path.isabs(value):
       value = os.path.expanduser(os.path.join(_getCfgDirectory(sectionName, GC_CONFIG_DIR), value))
     return value
 
