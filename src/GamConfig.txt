@@ -280,15 +280,15 @@ The redirect argument must follow select/config if they appear but does not requ
 multiple times as required:
 
     redirect csv <FileName> [append] [charset <CharSet>]
-	If the pattern --Section-- appears in <FileName>, it will be replaced with the name of the current section.
+	If the pattern {{Section}} appears in <FileName>, it will be replaced with the name of the current section.
 	If <FileName> is relative, it is appended to drive_dir in the current section if defined or drive_dir in DEFAULT
 	If the GAM command writes a CSV file, it will be written to <FileName> rather than stdout
     redirect stdout <FileName> [append]
-	If the pattern --Section-- appears in <FileName>, it will be replaced with the name of the current section.
+	If the pattern {{Section}} appears in <FileName>, it will be replaced with the name of the current section.
 	If <FileName> is relative, it is appended to drive_dir in the current section if defined or drive_dir in DEFAULT
 	GAM output to stdout will be written to <FileName>
     redirect stderr <FileName> [append]
-	If the pattern --Section-- appears in <FileName>, it will be replaced with the name of the current section.
+	If the pattern {{Section}} appears in <FileName>, it will be replaced with the name of the current section.
 	If <FileName> is relative, it is appended to drive_dir in the current section if defined or drive_dir in DEFAULT
 	GAM output to stderr will be written to <FileName>
 

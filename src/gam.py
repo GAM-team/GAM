@@ -362,7 +362,8 @@ ARGUMENT_ERROR_NAMES = {
   ARGUMENT_MISSING: [u'Missing arguments', u'Missing argument'],
   }
 
-OAUTH_TOKEN_ERRORS = [u'access_denied', u'unauthorized_client: Unauthorized client or scope in request.', u'access_denied: Requested client not authorized.', u'invalid_grant: Not a valid email.', u'invalid_request: Invalid impersonation prn email address.']
+OAUTH_TOKEN_ERRORS = [u'access_denied', u'unauthorized_client: Unauthorized client or scope in request.', u'access_denied: Requested client not authorized.',
+                      u'invalid_grant: Not a valid email.', u'invalid_request: Invalid impersonation prn email address.']
 
 def convertUTF8(data):
   if isinstance(data, str):
@@ -1223,7 +1224,7 @@ def SetGlobalVariables():
     i += 1
     myarg = getChoice(i, [u'csv', u'stdout', u'stderr'])
     i += 1
-    filename = re.sub(r'--Section--', sectionName, getString(i, OB_FILE_NAME))
+    filename = re.sub(r'{{Section}}', sectionName, getString(i, OB_FILE_NAME))
     i += 1
 # redirect csv <FileName> [charset <CharSet>]
     if myarg == u'csv':
