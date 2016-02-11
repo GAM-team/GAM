@@ -25,7 +25,7 @@ For more information, see http://git.io/gam
 """
 
 __author__ = u'Jay Lee <jay0lee@gmail.com>'
-__version__ = u'3.70'
+__version__ = u'3.63'
 __license__ = u'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 import sys, os, time, datetime, random, socket, csv, platform, re, calendar, base64, string, codecs, StringIO, subprocess, ConfigParser, collections
@@ -6678,13 +6678,8 @@ def doUpdateGroup():
         users_email = [sys.argv[i],]
       body = {u'role': role}
       for user_email in users_email:
-        if user_email[:4].lower() == u'uid:':
-          user_email = user_email[4:]
-          body[u'id'] = user_email
-        else:
-          if user_email.find(u'@') == -1:
-            user_email = u'%s@%s' % (user_email, GC_Values[GC_DOMAIN])
-          body[u'email'] = user_email
+        if user_email != u'*' and user_email.find(u'@') == -1:
+          user_email = u'%s@%s' % (user_email, GC_Values[GC_DOMAIN])
         sys.stderr.write(u' %sing %s %s...\n' % (sys.argv[4].lower(), role.lower(), user_email))
         try:
           if sys.argv[4].lower() == u'add':
@@ -6692,7 +6687,7 @@ def doUpdateGroup():
             body[u'email'] = user_email
             result = callGAPI(cd.members(), u'insert', soft_errors=True, groupKey=group, body=body)
           elif sys.argv[4].lower() == u'update':
-            result = callGAPI(cd.members(), u'update', soft_errors=True, groupKey=group, memberKey=user_email, body=body)
+            result = callGAPI(service=cd.members(), function=u'update', soft_errors=True, groupKey=group, memberKey=user_email, body={u'email': user_email, u'role': role})
         except googleapiclient.errors.HttpError:
           pass
     elif sys.argv[4].lower() == u'sync':
@@ -8397,7 +8392,7 @@ def doPrintGroups():
       sys.exit(2)
   sys.stderr.write(u"Retrieving All Groups for Google Apps account (may take some time on a large account)...\n")
   page_message = u'Got %%num_items%% groups: %%first_item%% - %%last_item%%\n'
-  all_groups = callGAPIpages(cd.groups(), u'list', u'groups', page_message=page_message, maxResults=maxResults,
+  all_groups = callGAPIpages(service=cd.groups(), function=u'list', items=u'groups', page_message=page_message, maxResults=maxResults,
                              message_attribute=u'email', customer=customer, domain=usedomain, userKey=usemember, fields=fields)
   total_groups = len(all_groups)
   count = 0
@@ -9409,6 +9404,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
       if column not in row:
         print u'ERROR: %s does not seem to be a header in CSV file %s' % (column, filename)
         sys.exit(3)
+      users.append(row[column])
   elif entity_type in [u'courseparticipants', u'teachers', u'students']:
     croom = buildGAPIObject(u'classroom')
     users = []
