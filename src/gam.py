@@ -1607,14 +1607,14 @@ def doCreateAdmin():
 def doPrintAdminRoles():
   cd = buildGAPIObject(u'directory')
   roles = callGAPIpages(service=cd.roles(), function=u'list', items=u'items',
-    customer=GC_Values[GC_CUSTOMER_ID])
+                        customer=GC_Values[GC_CUSTOMER_ID])
   roles_attrib = [{}]
   for role in roles:
     role_attrib = {}
     for key, value in role.items():
       if key in [u'kind', u'etag', u'etags']:
         continue
-      if not isinstance( value, (str, unicode, bool)):
+      if not isinstance(value, (str, unicode, bool)):
         continue
       if key not in roles_attrib[0]:
         roles_attrib[0][key] = key
@@ -6900,14 +6900,14 @@ def doGetBackupCodes(users):
       codes = callGAPI(service=cd.verificationCodes(), function=u'list', throw_reasons=[u'invalidArgument', u'invalid'], userKey=user)
     except googleapiclient.errors.HttpError:
       codes = None
-    printBackupCodes(user, codes)  
+    printBackupCodes(user, codes)
 
 def doGenBackupCodes(users):
   cd = buildGAPIObject(u'directory')
   for user in users:
     callGAPI(service=cd.verificationCodes(), function=u'generate', userKey=user)
     codes = callGAPI(service=cd.verificationCodes(), function=u'list', userKey=user)
-    printBackupCodes(user, codes)  
+    printBackupCodes(user, codes)
 
 def doDelBackupCodes(users):
   cd = buildGAPIObject(u'directory')
@@ -8666,17 +8666,22 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
     users = []
     filename = entity
     users = readFile(filename, u'rb').splitlines()
-  elif entity_type == u'csv':
-    (filename, column) = entity.split(u':')
-    file_contents = readFile(filename)
-    f = StringIO.StringIO(file_contents)
+  elif entity_type == u'csvfile':
+    try:
+      (filename, column) = entity.split(u':')
+    except ValueError:
+      filename = column = None
+    if (not filename) or (not column):
+      systemErrorExit(2, u'Expected gam csvfile FileName:FieldName')
+    f = openFile(filename)
     input_file = csv.DictReader(f)
+    if column not in input_file.fieldnames:
+      systemErrorExit(2, MESSAGE_HEADER_NOT_FOUND_IN_CSV_HEADERS.format(column, ','.join(input_file.fieldnames)))
     users = []
     for row in input_file:
-      if column not in row:
-        print u'ERROR: %s does not seem to be a header in CSV file %s' % (column, filename)
-        sys.exit(3)
-      users.append(row[column])
+      if column in row:
+        users.append(row[column])
+    closeFile(f)
   elif entity_type in [u'courseparticipants', u'teachers', u'students']:
     croom = buildGAPIObject(u'classroom')
     users = []
@@ -9376,7 +9381,7 @@ try:
   if command == u'print':
     for user in users:
       print user
-      sys.exit(0)
+    sys.exit(0)
   try:
     if (GC_Values[GC_AUTO_BATCH_MIN] > 0) and (len(users) > GC_Values[GC_AUTO_BATCH_MIN]):
       items = []
