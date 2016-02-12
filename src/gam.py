@@ -9391,8 +9391,12 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
         pass
   elif entity_type == u'file':
     users = []
-    filename = entity
-    users = readFile(filename, u'rb').splitlines()
+    f = openFile(entity)
+    for row in f:
+      user = row.strip()
+      if user:
+        users.append(user)
+    closeFile(f)
   elif entity_type == u'csvfile':
     try:
       (filename, column) = entity.split(u':')
@@ -9406,8 +9410,9 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
       csvFieldErrorExit(2, column, input_file.fieldnames)
     users = []
     for row in input_file:
-      if column in row:
-        users.append(row[column])
+      user = row[column].strip()
+      if user:
+        users.append(user)
     closeFile(f)
   elif entity_type in [u'courseparticipants', u'teachers', u'students']:
     croom = buildGAPIObject(u'classroom')
