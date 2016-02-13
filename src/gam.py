@@ -459,7 +459,7 @@ gam.exe update group announcements add member jsmith
 # Error handling
 #
 def printLine(message):
-  sys.stdout.write(message+u'\n')
+  sys.stdout.write(convertUTF8(message+u'\n'))
 
 # Concatenate list members, any item containing spaces is enclosed in ''
 def makeQuotedList(items):
@@ -708,40 +708,17 @@ class UnicodeDictReader(object):
 
   def __init__(self, f, dialect=csv.excel, encoding=u'utf-8', **kwds):
     self.encoding = encoding
-    if self.encoding != u'utf-8':
-      f = UTF8Recoder(f, encoding)
-    self.reader = csv.reader(f, dialect=dialect, **kwds)
+    self.reader = csv.reader(UTF8Recoder(f, encoding) if self.encoding != u'utf-8' else f, dialect=dialect, **kwds)
     try:
       self.fieldnames = self.reader.next()
     except:
       self.fieldnames = []
+    self.numfields = len(self.fieldnames)
 
   def next(self):
     row = self.reader.next()
-    if self.encoding != u'utf-8':
-      row = [unicode(s, u'utf-8') for s in row]
-    return dict((self.fieldnames[x], row[x]) for x in range(len(self.fieldnames)))
-
-  def __iter__(self):
-    return self
-#
-class UnicodeReader(object):
-  """
-  A file reader which will iterate over lines in the file "f",
-  which is encoded in the given encoding.
-  """
-
-  def __init__(self, f, dialect=csv.excel, encoding=u'utf-8', **kwds):
-    self.encoding = encoding
-    if self.encoding != u'utf-8':
-      f = UTF8Recoder(f, encoding)
-    self.reader = csv.reader(f, dialect=dialect, **kwds)
-
-  def next(self):
-    row = self.reader.next()
-    if self.encoding != u'utf-8':
-      row = [unicode(s, u'utf-8') for s in row]
-    return row
+    row = [unicode(s, u'utf-8') for s in row]
+    return dict((self.fieldnames[x], row[x]) for x in range(self.numfields))
 
   def __iter__(self):
     return self
@@ -9818,7 +9795,7 @@ try:
     i += 1
     i, encoding = getCharSet(i)
     f = openFile(filename)
-    batchFile = UTF8Recoder(f, encoding)
+    batchFile = UTF8Recoder(f, encoding) if encoding != u'utf-8' else f
     items = []
     for line in batchFile:
       argv = shlex.split(line)
