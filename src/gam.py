@@ -713,12 +713,10 @@ class UnicodeDictReader(object):
       self.fieldnames = self.reader.next()
     except:
       self.fieldnames = []
-    self.numfields = len(self.fieldnames)
 
   def next(self):
     row = self.reader.next()
-    row = [unicode(s, u'utf-8') for s in row]
-    return dict((self.fieldnames[x], row[x]) for x in range(self.numfields))
+    return dict((self.fieldnames[x], unicode(row[x], u'utf-8')) for x in range(len(row)))
 
   def __iter__(self):
     return self
