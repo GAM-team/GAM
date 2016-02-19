@@ -248,37 +248,37 @@ GC_TYPE_INTEGER = u'inte'
 GC_TYPE_LANGUAGE = u'lang'
 GC_TYPE_STRING = u'stri'
 
-GC_VAR_TYPE_KEY = u'type'
-GC_VAR_ENVVAR_KEY = u'enva'
-GC_VAR_LIMITS_KEY = u'lmit'
-GC_VAR_SFFT_KEY = u'sfft'
+GC_VAR_TYPE = u'type'
+GC_VAR_ENVVAR = u'enva'
+GC_VAR_LIMITS = u'lmit'
+GC_VAR_SFFT = u'sfft'
 
 GC_VAR_INFO = {
-  GC_ACTIVITY_MAX_RESULTS: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_ENVVAR_KEY: u'GAM_ACTIVITY_MAX_RESULTS', GC_VAR_LIMITS_KEY: (1, 500)},
-  GC_AUTO_BATCH_MIN: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_ENVVAR_KEY: u'GAM_AUTOBATCH', GC_VAR_LIMITS_KEY: (0, None)},
-  GC_BATCH_SIZE: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_ENVVAR_KEY: u'GAM_BATCH_SIZE', GC_VAR_LIMITS_KEY: (1, 1000)},
-  GC_CACHE_DIR: {GC_VAR_TYPE_KEY: GC_TYPE_DIRECTORY, GC_VAR_ENVVAR_KEY: u'GAMCACHEDIR'},
-  GC_CHARSET: {GC_VAR_TYPE_KEY: GC_TYPE_STRING, GC_VAR_ENVVAR_KEY: u'GAM_CHARSET'},
-  GC_CONFIG_DIR: {GC_VAR_TYPE_KEY: GC_TYPE_DIRECTORY, GC_VAR_ENVVAR_KEY: u'GAMUSERCONFIGDIR'},
-  GC_CUSTOMER_ID: {GC_VAR_TYPE_KEY: GC_TYPE_STRING, GC_VAR_ENVVAR_KEY: u'CUSTOMER_ID'},
-  GC_DEBUG_LEVEL: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_ENVVAR_KEY: u'debug.gam', GC_VAR_LIMITS_KEY: (0, None), GC_VAR_SFFT_KEY: (u'0', u'4')},
-  GC_DEVICE_MAX_RESULTS: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_ENVVAR_KEY: u'GAM_DEVICE_MAX_RESULTS', GC_VAR_LIMITS_KEY: (1, 1000)},
-  GC_DOMAIN: {GC_VAR_TYPE_KEY: GC_TYPE_STRING, GC_VAR_ENVVAR_KEY: u'GA_DOMAIN'},
-  GC_DRIVE_DIR: {GC_VAR_TYPE_KEY: GC_TYPE_DIRECTORY, GC_VAR_ENVVAR_KEY: u'GAMDRIVEDIR'},
-  GC_DRIVE_MAX_RESULTS: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_ENVVAR_KEY: u'GAM_DRIVE_MAX_RESULTS', GC_VAR_LIMITS_KEY: (1, 1000)},
-  GC_EXTRA_ARGS: {GC_VAR_TYPE_KEY: GC_TYPE_FILE, GC_VAR_ENVVAR_KEY: FN_EXTRA_ARGS_TXT, GC_VAR_SFFT_KEY: (u'', FN_EXTRA_ARGS_TXT)},
-  GC_GAMSCOPES_JSON: {GC_VAR_TYPE_KEY: GC_TYPE_FILE, GC_VAR_ENVVAR_KEY: u'GAMSCOPESFILE'},
-  GC_NO_BROWSER: {GC_VAR_TYPE_KEY: GC_TYPE_BOOLEAN, GC_VAR_ENVVAR_KEY: u'nobrowser.txt', GC_VAR_SFFT_KEY: (FALSE, TRUE)},
-  GC_NO_CACHE: {GC_VAR_TYPE_KEY: GC_TYPE_BOOLEAN, GC_VAR_ENVVAR_KEY: u'nocache.txt', GC_VAR_SFFT_KEY: (FALSE, TRUE)},
-  GC_NO_UPDATE_CHECK: {GC_VAR_TYPE_KEY: GC_TYPE_BOOLEAN, GC_VAR_ENVVAR_KEY: u'noupdatecheck.txt', GC_VAR_SFFT_KEY: (FALSE, TRUE)},
-  GC_NO_VERIFY_SSL: {GC_VAR_TYPE_KEY: GC_TYPE_BOOLEAN, GC_VAR_ENVVAR_KEY: u'noverifyssl.txt', GC_VAR_SFFT_KEY: (FALSE, TRUE)},
-  GC_NUM_THREADS: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_ENVVAR_KEY: u'GAM_THREADS', GC_VAR_LIMITS_KEY: (1, None)},
-  GC_OAUTH2SERVICE_JSON: {GC_VAR_TYPE_KEY: GC_TYPE_FILE, GC_VAR_ENVVAR_KEY: u'OAUTHSERVICEFILE'},
-  GC_SECTION: {GC_VAR_TYPE_KEY: GC_TYPE_STRING, GC_VAR_ENVVAR_KEY: u'GAM_SECTION'},
-  GC_SHOW_COUNTS_MIN: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_ENVVAR_KEY: u'GAM_SHOW_COUNTS_MIN', GC_VAR_LIMITS_KEY: (0, None)},
-  GC_SHOW_GETTINGS: {GC_VAR_TYPE_KEY: GC_TYPE_BOOLEAN, GC_VAR_ENVVAR_KEY: u'GAM_SHOW_GETTINGS'},
-  GC_SITE_DIR: {GC_VAR_TYPE_KEY: GC_TYPE_DIRECTORY, GC_VAR_ENVVAR_KEY: u'GAMSITECONFIGDIR'},
-  GC_USER_MAX_RESULTS: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_ENVVAR_KEY: u'GAM_USER_MAX_RESULTS', GC_VAR_LIMITS_KEY: (1, 500)},
+  GC_ACTIVITY_MAX_RESULTS: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_ENVVAR: u'GAM_ACTIVITY_MAX_RESULTS', GC_VAR_LIMITS: (1, 500)},
+  GC_AUTO_BATCH_MIN: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_ENVVAR: u'GAM_AUTOBATCH', GC_VAR_LIMITS: (0, None)},
+  GC_BATCH_SIZE: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_ENVVAR: u'GAM_BATCH_SIZE', GC_VAR_LIMITS: (1, 1000)},
+  GC_CACHE_DIR: {GC_VAR_TYPE: GC_TYPE_DIRECTORY, GC_VAR_ENVVAR: u'GAMCACHEDIR'},
+  GC_CHARSET: {GC_VAR_TYPE: GC_TYPE_STRING, GC_VAR_ENVVAR: u'GAM_CHARSET'},
+  GC_CONFIG_DIR: {GC_VAR_TYPE: GC_TYPE_DIRECTORY, GC_VAR_ENVVAR: u'GAMUSERCONFIGDIR'},
+  GC_CUSTOMER_ID: {GC_VAR_TYPE: GC_TYPE_STRING, GC_VAR_ENVVAR: u'CUSTOMER_ID'},
+  GC_DEBUG_LEVEL: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_ENVVAR: u'debug.gam', GC_VAR_LIMITS: (0, None), GC_VAR_SFFT: (u'0', u'4')},
+  GC_DEVICE_MAX_RESULTS: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_ENVVAR: u'GAM_DEVICE_MAX_RESULTS', GC_VAR_LIMITS: (1, 1000)},
+  GC_DOMAIN: {GC_VAR_TYPE: GC_TYPE_STRING, GC_VAR_ENVVAR: u'GA_DOMAIN'},
+  GC_DRIVE_DIR: {GC_VAR_TYPE: GC_TYPE_DIRECTORY, GC_VAR_ENVVAR: u'GAMDRIVEDIR'},
+  GC_DRIVE_MAX_RESULTS: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_ENVVAR: u'GAM_DRIVE_MAX_RESULTS', GC_VAR_LIMITS: (1, 1000)},
+  GC_EXTRA_ARGS: {GC_VAR_TYPE: GC_TYPE_FILE, GC_VAR_ENVVAR: FN_EXTRA_ARGS_TXT, GC_VAR_SFFT: (u'', FN_EXTRA_ARGS_TXT)},
+  GC_GAMSCOPES_JSON: {GC_VAR_TYPE: GC_TYPE_FILE, GC_VAR_ENVVAR: u'GAMSCOPESFILE'},
+  GC_NO_BROWSER: {GC_VAR_TYPE: GC_TYPE_BOOLEAN, GC_VAR_ENVVAR: u'nobrowser.txt', GC_VAR_SFFT: (FALSE, TRUE)},
+  GC_NO_CACHE: {GC_VAR_TYPE: GC_TYPE_BOOLEAN, GC_VAR_ENVVAR: u'nocache.txt', GC_VAR_SFFT: (FALSE, TRUE)},
+  GC_NO_UPDATE_CHECK: {GC_VAR_TYPE: GC_TYPE_BOOLEAN, GC_VAR_ENVVAR: u'noupdatecheck.txt', GC_VAR_SFFT: (FALSE, TRUE)},
+  GC_NO_VERIFY_SSL: {GC_VAR_TYPE: GC_TYPE_BOOLEAN, GC_VAR_ENVVAR: u'noverifyssl.txt', GC_VAR_SFFT: (FALSE, TRUE)},
+  GC_NUM_THREADS: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_ENVVAR: u'GAM_THREADS', GC_VAR_LIMITS: (1, None)},
+  GC_OAUTH2SERVICE_JSON: {GC_VAR_TYPE: GC_TYPE_FILE, GC_VAR_ENVVAR: u'OAUTHSERVICEFILE'},
+  GC_SECTION: {GC_VAR_TYPE: GC_TYPE_STRING, GC_VAR_ENVVAR: u'GAM_SECTION'},
+  GC_SHOW_COUNTS_MIN: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_ENVVAR: u'GAM_SHOW_COUNTS_MIN', GC_VAR_LIMITS: (0, None)},
+  GC_SHOW_GETTINGS: {GC_VAR_TYPE: GC_TYPE_BOOLEAN, GC_VAR_ENVVAR: u'GAM_SHOW_GETTINGS'},
+  GC_SITE_DIR: {GC_VAR_TYPE: GC_TYPE_DIRECTORY, GC_VAR_ENVVAR: u'GAMSITECONFIGDIR'},
+  GC_USER_MAX_RESULTS: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_ENVVAR: u'GAM_USER_MAX_RESULTS', GC_VAR_LIMITS: (1, 500)},
   }
 
 GC_VAR_ALIASES = {
@@ -770,14 +770,14 @@ def getDomainFromAdmin():
 def SetGlobalVariables():
 
   def _getDefault(itemName, itemEntry):
-    if GC_VAR_SFFT_KEY in itemEntry:
-      GC_Defaults[itemName] = itemEntry[GC_VAR_SFFT_KEY][os.path.isfile(os.path.join(GC_Defaults[GC_CONFIG_DIR], itemEntry[GC_VAR_ENVVAR_KEY]))]
+    if GC_VAR_SFFT in itemEntry:
+      GC_Defaults[itemName] = itemEntry[GC_VAR_SFFT][os.path.isfile(os.path.join(GC_Defaults[GC_CONFIG_DIR], itemEntry[GC_VAR_ENVVAR]))]
     else:
-      value = os.environ.get(itemEntry[GC_VAR_ENVVAR_KEY], GC_Defaults[itemName])
-      if itemEntry[GC_VAR_TYPE_KEY] == GC_TYPE_INTEGER:
+      value = os.environ.get(itemEntry[GC_VAR_ENVVAR], GC_Defaults[itemName])
+      if itemEntry[GC_VAR_TYPE] == GC_TYPE_INTEGER:
         try:
           number = int(value)
-          minVal, maxVal = itemEntry[GC_VAR_LIMITS_KEY]
+          minVal, maxVal = itemEntry[GC_VAR_LIMITS]
           if number < minVal:
             number = minVal
           elif maxVal and (number > maxVal):
@@ -847,7 +847,7 @@ def SetGlobalVariables():
 
   def _getCfgInteger(sectionName, itemName):
     value = GM_Globals[GM_PARSER].get(sectionName, itemName, raw=True)
-    minVal, maxVal = GC_VAR_INFO[itemName][GC_VAR_LIMITS_KEY]
+    minVal, maxVal = GC_VAR_INFO[itemName][GC_VAR_LIMITS]
     try:
       number = int(value)
       if (number >= minVal) and (not maxVal or (number <= maxVal)):
@@ -910,11 +910,11 @@ def SetGlobalVariables():
     print u'Section: {0}'.format(sectionName)
     for itemName in sorted(GC_VAR_INFO):
       cfgValue = GM_Globals[GM_PARSER].get(sectionName, itemName, raw=True)
-      if GC_VAR_INFO[itemName][GC_VAR_TYPE_KEY] == GC_TYPE_FILE:
+      if GC_VAR_INFO[itemName][GC_VAR_TYPE] == GC_TYPE_FILE:
         expdValue = _getCfgFile(sectionName, itemName)
         if cfgValue != expdValue:
           cfgValue = u'{0} ; {1}'.format(cfgValue, expdValue)
-      elif GC_VAR_INFO[itemName][GC_VAR_TYPE_KEY] == GC_TYPE_DIRECTORY:
+      elif GC_VAR_INFO[itemName][GC_VAR_TYPE] == GC_TYPE_DIRECTORY:
         expdValue = _getCfgDirectory(sectionName, itemName)
         if cfgValue != expdValue:
           cfgValue = u'{0} ; {1}'.format(cfgValue, expdValue)
@@ -924,14 +924,14 @@ def SetGlobalVariables():
 
   def _chkCfgDirectories(sectionName):
     for itemName in GC_VAR_INFO:
-      if GC_VAR_INFO[itemName][GC_VAR_TYPE_KEY] == GC_TYPE_DIRECTORY:
+      if GC_VAR_INFO[itemName][GC_VAR_TYPE] == GC_TYPE_DIRECTORY:
         dirPath = GC_Values[itemName]
         if not os.path.isdir(dirPath):
           sys.stderr.write(u'{0}Config File: {1}, Section: {2}, Item: {3}, Value: {4}, Invalid Path\n'.format(ERROR_PREFIX, GM_Globals[GM_GAM_CFG_FILE], sectionName, itemName, dirPath))
 
   def _chkCfgFiles(sectionName):
     for itemName in GC_VAR_INFO:
-      if GC_VAR_INFO[itemName][GC_VAR_TYPE_KEY] == GC_TYPE_FILE:
+      if GC_VAR_INFO[itemName][GC_VAR_TYPE] == GC_TYPE_FILE:
         fileName = GC_Values[itemName]
         if (not fileName) and (itemName == GC_EXTRA_ARGS):
           continue
@@ -968,10 +968,10 @@ def SetGlobalVariables():
     GM_Globals[GM_GAM_CFG_FILE] = os.path.join(GM_Globals[GM_GAM_CFG_PATH], FN_GAM_CFG)
     if not os.path.isfile(GM_Globals[GM_GAM_CFG_FILE]):
       for itemName, itemEntry in GC_VAR_INFO.items():
-        if itemEntry[GC_VAR_TYPE_KEY] == GC_TYPE_DIRECTORY:
+        if itemEntry[GC_VAR_TYPE] == GC_TYPE_DIRECTORY:
           _getDefault(itemName, itemEntry)
       for itemName, itemEntry in GC_VAR_INFO.items():
-        if itemEntry[GC_VAR_TYPE_KEY] != GC_TYPE_DIRECTORY:
+        if itemEntry[GC_VAR_TYPE] != GC_TYPE_DIRECTORY:
           _getDefault(itemName, itemEntry)
       if GC_Defaults[GC_OAUTH2SERVICE_JSON].find(u'.') == -1:
         GC_Defaults[GC_OAUTH2SERVICE_JSON] += u'.json'
@@ -980,7 +980,7 @@ def SetGlobalVariables():
       _checkMakeDir(GC_SITE_DIR)
       _checkMakeDir(GC_CACHE_DIR)
       for itemName in GC_VAR_INFO:
-        if GC_VAR_INFO[itemName][GC_VAR_TYPE_KEY] == GC_TYPE_FILE:
+        if GC_VAR_INFO[itemName][GC_VAR_TYPE] == GC_TYPE_FILE:
           srcFile = os.path.expanduser(GM_Globals[GM_PARSER].get(ConfigParser.DEFAULTSECT, itemName, raw=True))
           _copyCfgFile(srcFile, GC_CONFIG_DIR)
       for srcFile in SITE_FILES:
@@ -1085,7 +1085,7 @@ def SetGlobalVariables():
       elif myarg == u'reset':
         itemName = getChoice(i, GC_Defaults, choiceAliases=GC_VAR_ALIASES)
         i += 1
-        if GC_VAR_INFO[itemName][GC_VAR_TYPE_KEY] == GC_TYPE_BOOLEAN:
+        if GC_VAR_INFO[itemName][GC_VAR_TYPE] == GC_TYPE_BOOLEAN:
           GM_Globals[GM_PARSER].set(ConfigParser.DEFAULTSECT, itemName, unicode(GC_Defaults[itemName]))
         elif itemName != GC_SECTION:
           if sectionName != ConfigParser.DEFAULTSECT:
@@ -1103,16 +1103,16 @@ def SetGlobalVariables():
           i += 1
           GM_Globals[GM_PARSER].set(ConfigParser.DEFAULTSECT, itemName, value)
           continue
-        elif GC_VAR_INFO[itemName][GC_VAR_TYPE_KEY] == GC_TYPE_BOOLEAN:
+        elif GC_VAR_INFO[itemName][GC_VAR_TYPE] == GC_TYPE_BOOLEAN:
           value = TRUE if getBoolean(i) else FALSE
           i += 1
           GM_Globals[GM_PARSER].set(ConfigParser.DEFAULTSECT, itemName, value)
           continue
-        elif GC_VAR_INFO[itemName][GC_VAR_TYPE_KEY] == GC_TYPE_INTEGER:
-          minVal, maxVal = GC_VAR_INFO[itemName][GC_VAR_LIMITS_KEY]
+        elif GC_VAR_INFO[itemName][GC_VAR_TYPE] == GC_TYPE_INTEGER:
+          minVal, maxVal = GC_VAR_INFO[itemName][GC_VAR_LIMITS]
           value = str(getInteger(i, minVal=minVal, maxVal=maxVal))
           i += 1
-        elif GC_VAR_INFO[itemName][GC_VAR_TYPE_KEY] == GC_TYPE_DIRECTORY:
+        elif GC_VAR_INFO[itemName][GC_VAR_TYPE] == GC_TYPE_DIRECTORY:
           value = getString(i, OB_FILE_PATH)
           i += 1
           fullPath = os.path.expanduser(value)
@@ -1120,7 +1120,7 @@ def SetGlobalVariables():
             fullPath = os.path.join(GM_Globals[GM_PARSER].get(ConfigParser.DEFAULTSECT, itemName, raw=True), fullPath)
           if not os.path.isdir(fullPath):
             usageErrorExit(i-1, u'Invalid Path')
-        elif GC_VAR_INFO[itemName][GC_VAR_TYPE_KEY] == GC_TYPE_FILE:
+        elif GC_VAR_INFO[itemName][GC_VAR_TYPE] == GC_TYPE_FILE:
           value = getString(i, OB_FILE_NAME, emptyOK=True)
           i += 1
         else:
@@ -1160,11 +1160,11 @@ def SetGlobalVariables():
   prevOauth2serviceJson = GC_Values.get(GC_OAUTH2SERVICE_JSON, None)
 # Assign directories first
   for itemName in GC_VAR_INFO:
-    if GC_VAR_INFO[itemName][GC_VAR_TYPE_KEY] == GC_TYPE_DIRECTORY:
+    if GC_VAR_INFO[itemName][GC_VAR_TYPE] == GC_TYPE_DIRECTORY:
       GC_Values[itemName] = _getCfgDirectory(sectionName, itemName)
 # Everything else
   for itemName in GC_VAR_INFO:
-    varType = GC_VAR_INFO[itemName][GC_VAR_TYPE_KEY]
+    varType = GC_VAR_INFO[itemName][GC_VAR_TYPE]
     if varType == GC_TYPE_BOOLEAN:
       GC_Values[itemName] = _getCfgBoolean(sectionName, itemName)
     elif varType == GC_TYPE_INTEGER:
