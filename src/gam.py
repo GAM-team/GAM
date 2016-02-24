@@ -363,7 +363,8 @@ ARGUMENT_ERROR_NAMES = {
   }
 
 OAUTH_TOKEN_ERRORS = [u'access_denied', u'unauthorized_client: Unauthorized client or scope in request.', u'access_denied: Requested client not authorized.',
-                      u'invalid_grant: Not a valid email.', u'invalid_request: Invalid impersonation prn email address.']
+                      u'invalid_grant: Not a valid email.', u'invalid_grant: Invalid email or User ID',
+                      u'invalid_request: Invalid impersonation prn email address.']
 
 def convertUTF8(data):
   if isinstance(data, str):
