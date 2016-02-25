@@ -9373,7 +9373,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
       if user:
         users.append(user)
     closeFile(f)
-  elif entity_type == u'csvfile':
+  elif entity_type in [u'csv', u'csvfile']:
     try:
       (filename, column) = entity.split(u':')
     except ValueError:
