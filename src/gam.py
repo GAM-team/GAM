@@ -128,7 +128,7 @@ GM_MAP_USER_ID_TO_NAME = u'ui2n'
 #
 GM_Globals = {
   GM_SYSEXITRC: 0,
-  GM_GAM_PATH: os.path.dirname(os.path.realpath(__file__)) if os.name != u'nt' else os.path.dirname(sys.executable),
+  GM_GAM_PATH: os.path.dirname(os.path.realpath(__file__)) if not getattr(sys, u'frozen', False) else os.path.dirname(sys.executable),
   GM_WINDOWS: os.name == u'nt',
   GM_SYS_ENCODING: u'utf-8' if os.name != u'nt' else u'mbcs',
   GM_BATCH_QUEUE: None,
