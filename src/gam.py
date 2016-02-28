@@ -9381,7 +9381,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
     if (not filename) or (not column):
       invalidArgumentExit(2, u'FileName:FieldName')
     f = openFile(filename)
-    input_file = csv.DictReader(f)
+    input_file = csv.DictReader(f, restval=u'')
     if column not in input_file.fieldnames:
       csvFieldErrorExit(2, column, input_file.fieldnames)
     users = []
