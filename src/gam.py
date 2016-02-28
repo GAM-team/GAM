@@ -8678,7 +8678,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
     if (not filename) or (not column):
       systemErrorExit(2, u'Expected {0} FileName:FieldName'.format(entity_type))
     f = openFile(filename)
-    input_file = csv.DictReader(f)
+    input_file = csv.DictReader(f, restval=u'')
     if column not in input_file.fieldnames:
       systemErrorExit(2, MESSAGE_HEADER_NOT_FOUND_IN_CSV_HEADERS.format(column, ','.join(input_file.fieldnames)))
     users = []
