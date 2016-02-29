@@ -281,33 +281,23 @@ GC_VAR_INFO = {
   GC_USER_MAX_RESULTS: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_ENVVAR: u'GAM_USER_MAX_RESULTS', GC_VAR_LIMITS: (1, 500)},
   }
 
-GC_VAR_ALIASES = {
-  u'activitymaxresults':  u'activity_max_results',
-  u'autobatchmin':  u'auto_batch_min', u'gamautobatch':  u'auto_batch_min',
-  u'batchsize':  u'batch_size',
-  u'cachedir':  u'cache_dir', u'gamcachedir':  u'cache_dir',
-  u'charset':  u'charset',
-  u'configdir':  u'config_dir', u'gamuserconfigdir':  u'config_dir',
-  u'customerid':  u'customer_id',
-  u'debuglevel':  u'debug_level',
-  u'devicemaxresults':  u'device_max_results',
-  u'domain':  u'domain', u'gadomain':  u'domain',
-  u'drivedir':  u'drive_dir', u'gamdrivedir':  u'drive_dir',
-  u'drivemaxresults':  u'drive_max_results',
-  u'extraargs': u'extra_args',
-  u'gamscopesjson':  u'gamscopes_json', u'gamscopesfile':  u'gamscopes_json',
-  u'nobrowser':  u'no_browser',
-  u'nocache':  u'no_cache',
-  u'noupdatecheck':  u'no_update_check',
-  u'noverifyssl':  u'no_verify_ssl',
-  u'numthreads':  u'num_threads', u'gamthreads':  u'num_threads',
-  u'oauth2servicejson':  u'oauth2service_json', u'oauthservicefile':  u'oauthservice_json',
-  u'section':  u'section',
-  u'showcountsmin':  u'show_counts_min',
-  u'showgettings':  u'show_gettings',
-  u'sitedir':  u'site_dir', u'gamsiteconfigdir':  u'site_dir',
-  u'usermaxresults':  u'user_max_results',
-  }
+GC_SETTABLE_VARS = [
+  GC_ACTIVITY_MAX_RESULTS,
+  GC_AUTO_BATCH_MIN,
+  GC_BATCH_SIZE,
+  GC_CHARSET,
+  GC_DEBUG_LEVEL,
+  GC_DEVICE_MAX_RESULTS,
+  GC_DRIVE_MAX_RESULTS,
+  GC_NO_BROWSER,
+  GC_NO_CACHE,
+  GC_NO_UPDATE_CHECK,
+  GC_NO_VERIFY_SSL,
+  GC_NUM_THREADS,
+  GC_SHOW_COUNTS_MIN,
+  GC_SHOW_GETTINGS,
+  GC_USER_MAX_RESULTS,
+  ]
 
 # Object BNF names
 OB_GAM_ARGUMENT_LIST = u'GAM argument list'
@@ -325,14 +315,14 @@ PHRASE_NON_EMPTY = u'Non-empty'
 
 MESSAGE_API_ACCESS_CONFIG = u'API access is configured in your Control Panel under: Security-Show more-Advanced settings-Manage API client access'
 MESSAGE_API_ACCESS_DENIED = u'API access denied.\n\nPlease make sure the Service account Client ID: {0} is authorized for the API Scope(s): {1}\n\nPlease make sure the Admin email address: {2} is valid'
-MESSAGE_BATCH_CSV_DASH_DEBUG_INCOMPATIBLE = u'"gam {0} - ..." is not compatible with debugging. Disable debugging with the command: "gam config set debug_level 0 save"'
+MESSAGE_BATCH_CSV_DASH_DEBUG_INCOMPATIBLE = u'"gam {0} - ..." is not compatible with debugging. Disable debugging by setting debug_level = 0 in gam.cfg'
 MESSAGE_GAM_EXITING_FOR_UPDATE = u'GAM is now exiting so that you can overwrite this old version with the latest release'
 MESSAGE_GAM_OUT_OF_MEMORY = u'GAM has run out of memory. If this is a large Google Apps instance, you should use a 64-bit version of GAM on Windows or a 64-bit version of Python on other systems.'
 MESSAGE_HEADER_NOT_FOUND_IN_CSV_HEADERS = u'Header "{0}" not found in CSV headers of "{1}".'
-MESSAGE_HIT_CONTROL_C_TO_UPDATE = u'\n\nHit CTRL+C to visit the GAM website and download the latest release or wait 15 seconds continue with this boring old version. GAM won\'t bother you with this announcement for 1 week or you can turn off update checks with the command: "gam config set no_update_check true save"'
+MESSAGE_HIT_CONTROL_C_TO_UPDATE = u'\n\nHit CTRL+C to visit the GAM website and download the latest release or wait 15 seconds continue with this boring old version. GAM won\'t bother you with this announcement for 1 week or you can turn off update checks by setting no_update_check = true in gam.cfg'
 MESSAGE_INVALID_JSON = u'The file {0} has an invalid format.'
 MESSAGE_NO_DISCOVERY_INFORMATION = u'No online discovery doc and {0} does not exist locally'
-MESSAGE_NO_PYTHON_SSL = u'You don\'t have the Python SSL module installed so we can\'t verify SSL Certificates. You can fix this by installing the Python SSL module or you can live on the edge and turn SSL validation off with the command: "gam config set no_verify_ssl true save"'
+MESSAGE_NO_PYTHON_SSL = u'You don\'t have the Python SSL module installed so we can\'t verify SSL Certificates. You can fix this by installing the Python SSL module or you can live on the edge and turn SSL validation off by setting no_verify_ssl = true in gam.cfg'
 MESSAGE_NO_SCOPES_FOR_API = u'There are no scopes authorized for the {0}; please run gam oauth create'
 MESSAGE_NO_TRANSFER_LACK_OF_DISK_SPACE = u'Cowardly refusing to perform migration due to lack of target drive space. Source size: {0}mb Target Free: {1}mb'
 MESSAGE_OAUTH2SERVICE_JSON_INVALID = u'The file {0} is missing required keys (client_email, client_id or private_key).'
@@ -1011,6 +1001,33 @@ def SetGlobalVariables():
         _verifyValues(sectionName)
       else:
         break
+# config [<VariableName> <Value>]* [save] [verify]
+  if checkArgumentPresent(i, [u'config',]):
+    i += 1
+    while i < len(sys.argv):
+      if checkArgumentPresent(i, [u'save',]):
+        i += 1
+        _writeGamCfgFile(GM_Globals[GM_PARSER], GM_Globals[GM_GAM_CFG_FILE], action=u'Saved')
+      elif checkArgumentPresent(i, [u'verify',]):
+        i += 1
+        _verifyValues(sectionName)
+      else:
+        itemName = getChoice(i, GC_SETTABLE_VARS, defaultChoice=None)
+        if not itemName:
+          itemName = getChoice(i, GC_Defaults, defaultChoice=None)
+          if itemName:
+            invalidChoiceExit(i, GC_SETTABLE_VARS)
+          break
+        i += 1
+        if GC_VAR_INFO[itemName][GC_VAR_TYPE] == GC_TYPE_BOOLEAN:
+          value = TRUE if getBoolean(i) else FALSE
+        elif GC_VAR_INFO[itemName][GC_VAR_TYPE] == GC_TYPE_INTEGER:
+          minVal, maxVal = GC_VAR_INFO[itemName][GC_VAR_LIMITS]
+          value = str(getInteger(i, minVal=minVal, maxVal=maxVal))
+        else:
+          value = getString(i, OB_STRING)
+        i += 1
+        GM_Globals[GM_PARSER].set(sectionName, itemName, value)
   prevExtraArgsTxt = GC_Values.get(GC_EXTRA_ARGS, None)
   prevGAMScopesJson = GC_Values.get(GC_GAMSCOPES_JSON, None)
   prevOauth2serviceJson = GC_Values.get(GC_OAUTH2SERVICE_JSON, None)
@@ -1048,35 +1065,35 @@ def SetGlobalVariables():
     _getScopesAdminDomainFromGamScopesJson()
   if not GC_Values[GC_DOMAIN]:
     getDomainFromAdmin()
-# redirect
-  while checkArgumentPresent(i, [u'redirect',]):
+# redirect [csv <FileName> [charset <CharSet>]] [stdout <FileName> [append]] [stderr <FileName> [append]]
+  if checkArgumentPresent(i, [u'redirect',]):
     i += 1
-    myarg = getChoice(i, [u'csv', u'stdout', u'stderr'])
-    i += 1
-    filename = re.sub(r'{{Section}}', sectionName, getString(i, OB_FILE_NAME))
-    i += 1
-# redirect csv <FileName> [charset <CharSet>]
-    if myarg == u'csv':
-      i, encoding = getCharSet(i)
-      _setCSVFile(filename, u'wb', encoding)
-# redirect stdout <FileName> [append]
-    elif myarg == u'stdout':
-      if checkArgumentPresent(i, [u'append',]):
-        mode = u'a'
-        i += 1
+    while i < len(sys.argv):
+      myarg = getChoice(i, [u'csv', u'stdout', u'stderr'], defaultChoice=None)
+      if not myarg:
+        break
+      i += 1
+      filename = re.sub(r'{{Section}}', sectionName, getString(i, OB_FILE_NAME))
+      i += 1
+      if myarg == u'csv':
+        i, encoding = getCharSet(i)
+        _setCSVFile(filename, u'wb', encoding)
+      elif myarg == u'stdout':
+        if checkArgumentPresent(i, [u'append',]):
+          mode = u'a'
+          i += 1
+        else:
+          mode = u'w'
+        sys.stdout = _setSTDFile(filename, mode)
+        if GM_Globals[GM_CSVFILE] == u'-':
+          GM_Globals[GM_CSVFILE] = None
       else:
-        mode = u'w'
-      sys.stdout = _setSTDFile(filename, mode)
-      if GM_Globals[GM_CSVFILE] == u'-':
-        GM_Globals[GM_CSVFILE] = None
-# redirect stderr <FileName> [append]
-    else:
-      if checkArgumentPresent(i, [u'append',]):
-        mode = u'a'
-        i += 1
-      else:
-        mode = u'w'
-      sys.stderr = _setSTDFile(filename, mode)
+        if checkArgumentPresent(i, [u'append',]):
+          mode = u'a'
+          i += 1
+        else:
+          mode = u'w'
+        sys.stderr = _setSTDFile(filename, mode)
   if not GM_Globals[GM_CSVFILE]:
     _setCSVFile(u'-', u'a', GC_Values[GC_CHARSET])
 # If no select/options commands were executed or some were and there are more arguments on the command line,
@@ -7904,7 +7921,6 @@ def output_csv(csv_list, titles, list_type, todrive):
     string_file = openFile(GM_Globals[GM_CSVFILE], GM_Globals[GM_CSVFILE_MODE])
     writer = UnicodeDictWriter(string_file, fieldnames=titles, dialect=u'nixstdout', quoting=csv.QUOTE_MINIMAL)
   try:
-    writer.writeheader()
     writer.writerows(csv_list)
   except IOError as e:
     systemErrorExit(6, e)
