@@ -1,0 +1,63 @@
+GAM requires authorization to perform tasks on your domain; the tasks break down into two categories.
+Tasks that manipulate objects in the domain: add a user, update a group, delete a class, share a printer.
+Tasks that manipulate objects that belong to users: calendars, drive files, email.
+
+Old authorization model: oauth2service.json, client_secrets.json, oauth2.txt
+
+An OAuth Client manipulates objects in the domain; the OAuth Client acts on its own behalf to perform the tasks.
+A Service Account manipulates objects that belong to users; the Service Account acts on behalf of the user to perform the tasks.
+
+There are three broad steps to set up GAM access.
+
+1) In the Google Developers console, you specify a set of APIs that GAM will be able to use and you define an OAuth Client
+and a Service Account. This produces two files: client_secrets.json for the OAuth Client and oauth2service.json for
+the Service Account. Each of these files contain an ID that is used in the next step.
+
+2) As a domain administrator, logged into your domain Admin Console, you grant the OAuth Client ID access to one set of scopes
+and the Service Account ID access to a different set of scopes. Scopes identify an API and some or all of its functions.
+
+3) While logged into your domain Admin Console, on your computer you run the command: gam oauth create
+You select a list of scopes, GAM uses a browser to get final authorization from Google for the logged on admin user
+for these scopes and GAM writes the authorization into the file oauth2.txt that contains the email address of
+the logged on admin user and a key. You can generate multiple oauth2.txt files (with different names)
+authorizing different admins access to a different set of scopes.
+You can verify the results of this step with the command: gam oauth info
+
+This link describes the process described above: https://github.com/jay0lee/GAM/wiki/CreatingClientSecretsFile
+
+As the number of functions GAM performs has increased, a Google limit was reached. The third step above that
+produces oauth2.txt has a limit of 30 scopes which is less than the full list of scopes that GAM can use.
+You have to unselect one or two scopes to get under the limit. Currently, this is mostly annoying, but as GAMs power
+increases, it will become a bigger problem.
+
+New authorization model: oauth2service.json, gamscopes.json
+
+A Service Account manipulates objects in the domain; the Service Account acts on its own behalf to perform the tasks.
+A Service Account manipulates objects that belong to users; the Service Account acts on behalf of the user to perform the tasks.
+
+There are three broad steps to set up GAM access.
+
+1) In the Google Developers console, you specify a set of APIs that GAM will be able to use and you define a Service Account;
+there is no OAuth Client used. This produces one file: oauth2service.json for the Service Account. This file contains an ID
+that is used in the next step.
+
+2) As a domain administrator, logged into your domain Admin Console, you grant the Service Account ID access to the full set of scopes.
+
+3) On your computer you run the command: gam oauth create <EmailAddress>
+You select a list of scopes for this admin email address and GAM writes the email address and requested scopes into the file gamscopes.json.
+You can generate multiple gamscopes.json files (with different names) authorizing different admins access to a specific set of scopes.
+You can verify the results of this step with the command: gam oauth info
+
+There is no limit in step 3 as to the number of scopes.
+
+This link, with modifications, describes the process described above: https://github.com/jay0lee/GAM/wiki/CreatingClientSecretsFile
+
+Step 5.i is not required.
+Step 6.ii is not required.
+In step 6.iii, authorize all of the scopes: API scopes - OAuth2 and API scopes - Service Account.
+In step 7.ii, run the command: gam oauth create
+Steps 7.iv through 7.vii 
+
+You can run versions of GAM that use the old and new models while you transition from old to new. Install the new version in 
+a separate directory and copy oauth2service.json from the old GAM directory to the new GAM directory and then run
+this command in the new directory: gam oauth create <EmailAddress>
