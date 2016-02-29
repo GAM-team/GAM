@@ -182,8 +182,8 @@ This will create a gam.cfg for the user using the environment variables specific
 may want to edit each users gam.cfg and set "no_update_check = true" so that GAM update checks are performed only by you.
 You might set the permissions on each users gam.cfg to be read-only so that they can't make unauthorized changes.
 
-There are new arguments to GAM that should simplify how you use GAM with multiple clients.
-The select argument is optional and must be the first argument before any other GAM arguments.
+There are three new arguments to GAM that should simplify how you use GAM with multiple clients.
+The arguments are optional, must appear in this order and must be the first arguments before any other GAM arguments.
 
 The select argument specifies the section of gam.cfg to use for processing the rest of the GAM command;
 it's how you quickly switch from from one client to another.
@@ -198,18 +198,32 @@ select <Section> [save] [verify]
 	Print the variable values for the current section
 	Values are determined in this order: Current section, DEFAULT section, Program default
 
-The redirect argument must follow select if it appears but does not require that it be present. It can appear
-multiple times as required:
+The config argument is used to set selected variables in gam.cfg via the command line.
 
-    redirect csv <FileName> [append] [charset <CharSet>]
+config [<VariableName> <Value>]* [save] [verify]
+    <VariableName> <Value>
+        Set <VariableName> = <Value> in the current section
+	The following <VariableNames> are allowed:
+	  activity_max_results, auto_batch_min, batch_size, charset, debug_level, device_max_results, drive_max_results,
+	  no_browser, no_cache, no_update_check, no_verify_ssl, num_threads, show_counts_min, show_gettings, user_max_results
+    save
+	Write configuration data to gam.cfg
+    verify
+	Print the variable values for the current section
+	Values are determined in this order: Current section, DEFAULT section, Program default
+
+The redirect argument is used to redirect output for CSV files, stdout and stderr.
+
+redirect [csv <FileName> [charset <CharSet>]] [stdout <FileName> [append]] [stderr <FileName> [append]]
+    csv <FileName> [charset <CharSet>]
 	If the pattern {{Section}} appears in <FileName>, it will be replaced with the name of the current section.
 	If <FileName> is relative, it is appended to drive_dir in the current section if defined or drive_dir in DEFAULT
 	If the GAM command writes a CSV file, it will be written to <FileName> rather than stdout
-    redirect stdout <FileName> [append]
+    stdout <FileName> [append]
 	If the pattern {{Section}} appears in <FileName>, it will be replaced with the name of the current section.
 	If <FileName> is relative, it is appended to drive_dir in the current section if defined or drive_dir in DEFAULT
 	GAM output to stdout will be written to <FileName>
-    redirect stderr <FileName> [append]
+    stderr <FileName> [append]
 	If the pattern {{Section}} appears in <FileName>, it will be replaced with the name of the current section.
 	If <FileName> is relative, it is appended to drive_dir in the current section if defined or drive_dir in DEFAULT
 	GAM output to stderr will be written to <FileName>
