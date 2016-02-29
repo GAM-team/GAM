@@ -239,18 +239,18 @@ If an item contains spaces, it should be surrounded by " or '.
 	(relation clear|(spouse|child|mother|father|parent|brother|sister|friend|relative|domestic_partner|manager|assistant|referred_by|partner|<String> <String>))|
 	(<SchemaName>.<FieldName> [multivalued|multivalue|value] <String>)
 
-<Redirect> :==
-	redirect csv <FileName> [charset <Charset>]|
-	redirect stdout <FileName> [append]|
-	rerirect stderr <FileName> [append]
-
 # Select a section from gam.cfg and process a GAM command using values from that section
-gam select <Section> [save] [verify] <Redirect>* ...
-
+<Select> ::=
+	select <Section> [save] [verify]
+# Set variables in gam.cfg
+<Config> ::=
+	config [<VariableName> <Value]* [save] [verify]
 # Specify file redirection. If the pattern {{Section}} appears in <FileName>, it will be replaced with the name of the current section.
-gam <Redirect>* ...
-# ... indicates that additional GAM arguments may appear
-# <Redirect> must follow select but can appear without it.
+<Redirect> ::=
+	redirect [csv <FileName> [charset <Charset>]] [stdout <FileName> [append]] [stderr <FileName> [append]]
+
+# GAM meta arguments, these must come before all other arguments and in this order,  ... indicates that additional GAM arguments may appear
+gam [<Select>] [<Config>] [<Redirect>] ...
 
 gam version
 gam help
