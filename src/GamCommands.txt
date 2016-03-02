@@ -239,6 +239,14 @@ If an item contains spaces, it should be surrounded by " or '.
 	(relation clear|(spouse|child|mother|father|parent|brother|sister|friend|relative|domestic_partner|manager|assistant|referred_by|partner|<String> <String>))|
 	(<SchemaName>.<FieldName> [multivalued|multivalue|value] <String>)
 
+<UserFieldNames> ::=
+	[custom all|<SchemaNameList>]|
+	[id]|[firstname|givenname|lastname|familyName|fullname|name]|[org|ou]|[address|addresses]|[aliases|nicknames]|[email|emails|otheremail]|
+	[externalid|external_id|externalids|external_ids]|[im|ims]|[organization|organizations]|[phone|phones]|[photo|photourl]|
+	[relation|relations]|[website|websites]|[note|notes]|
+	[creationtime]|[lastlogintime]|[deletiontime]|
+	[admin]|[agreed2terms]|[changepassword]|[gal]|[ismailboxsetup]|[suspended]|
+
 # Select a section from gam.cfg and process a GAM command using values from that section
 <Select> ::=
 	select <Section> [save] [verify]
@@ -397,14 +405,7 @@ gam info user [<UserItem>] [noaliases] [nogroups] [nolicenses] [noschemas] [sche
 gam print users [todrive] ([domain <DomainName>] [query <Query>] [deleted_only|only_deleted])
 	 [groups] [license|licenses] [emailpart|emailparts|username]
 	[orderby familyname|lastname|givenname|firstname|email] [ascending|descending] [userview]
-	[allfields |
-	 ([custom all|<SchemaNameList>]
-	  [id] [firstname|givenname|lastname|familyName|fullname|name] [org|ou] [address|addresses] [aliases|nicknames] [email|emails|otheremail] [externalid|external_id|externalids|external_ids]
-	  [im|ims] [organization|organizations] [phone|phones] [photo|photourl] [relation|relations] [website|websites] [note|notes]
-	  [creationtime] [lastlogintime] [deletiontime]
-	  [admin] [agreed2terms] [changepassword] [gal] [ismailboxsetup] [suspended]
-	 )
-       ]
+	[allfields | <UserFieldNames>*]
 
 gam create verify|verification <DomainName>
 gam update verify|verification <DomainName> cname|txt|text|site|file
