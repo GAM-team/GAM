@@ -4060,6 +4060,8 @@ def doDriveSearch(drive, query=None):
     ids.append(f_file[u'id'])
   return ids
 
+DELETE_DRIVEFILE_FUNCTION_TO_ACTION_MAP = {u'delete': u'purging', u'trash': u'trashing', u'untrash': u'untrashing',}
+
 def deleteDriveFile(users):
   fileIds = sys.argv[5]
   function = u'trash'
@@ -4068,9 +4070,13 @@ def deleteDriveFile(users):
     if sys.argv[i].lower() == u'purge':
       function = u'delete'
       i += 1
+    elif sys.argv[i].lower() == u'untrash':
+      function = u'untrash'
+      i += 1
     else:
       print u'ERROR: %s is not a valid argument for "gam <users> delete drivefile"' % sys.argv[i]
       sys.exit(2)
+  action = DELETE_DRIVEFILE_FUNCTION_TO_ACTION_MAP[function]
   for user in users:
     drive = buildGAPIObject(u'drive', user)
     if fileIds[:6].lower() == u'query:':
@@ -4082,14 +4088,11 @@ def deleteDriveFile(users):
           fileIds = fileIds[:fileIds.find(u'/')]
       file_ids = [fileIds,]
     if not file_ids:
-      print u'No files to delete for %s' % user
+      print u'No files to %s for %s' % (function, user)
     i = 0
     for fileId in file_ids:
       i += 1
-      if function == u'trash':
-        print u'trashing %s for %s (%s of %s)' % (fileId, user, i, len(file_ids))
-      else:
-        print u'purging %s for %s (%s of %s)' % (fileId, user, i, len(file_ids))
+      print u'%s %s for %s (%s of %s)' % (action, fileId, user, i, len(file_ids))
       callGAPI(drive.files(), function, fileId=fileId)
 
 def printDriveFolderContents(feed, folderId, indent):

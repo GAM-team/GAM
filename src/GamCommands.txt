@@ -483,8 +483,7 @@ gam <UserTypeEntity> show filetree
 gam <UserTypeEntity> add drivefile [drivefilename <DriveFileName>] [<DriveFileAddAttributes>]
 gam <UserTypeEntity> update drivefile <DriveFileEntity> [copy] [newfilename <DriveFileName>] [<DriveFileUpdateAttributes>]
 gam <UserTypeEntity> get drivefile <DriveFileEntity> [format <FileFormatList>] [targetfolder <FilePath>]
-gam <UserTypeEntity> delete|del drivefile <DriveFileItem>|<DriveFileEntity> [purge|trash]
-gam <UserTypeEntity> undelete drivefile <DriveFileItem>|<DriveFileEntity>
+gam <UserTypeEntity> delete|del drivefile <DriveFileItem>|<DriveFileEntity> [purge|untrash]
 gam <UserTypeEntity> transfer drive <UserItem> [keepuser]
 gam <UserTypeEntity> delete|del emptydrivefolders
 
