@@ -369,7 +369,7 @@ gam update group <GroupItem> remove [owner|manager|member] <UserTypeEntity>
 gam update group <GroupItem> sync [owner|manager|member] <UserTypeEntity>
 gam update group <GroupItem> update [owner|manager|member] <UserTypeEntity>
 gam delete group <GroupItem>
-gam info group <GroupItem> [nousers]
+gam info group <GroupItem> [nousers] [noaliases] [groups]
 
 
 gam print groups [todrive] ([domain <DomainName>] [member <UserItem>])

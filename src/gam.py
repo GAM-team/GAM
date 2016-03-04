@@ -7065,7 +7065,8 @@ def doGetUserInfo(user_email=None):
 def doGetGroupInfo(group_name=None):
   cd = buildGAPIObject(u'directory')
   gs = buildGAPIObject(u'groupssettings')
-  get_users = True
+  getAliases = getUsers = True
+  getGroups = False
   if group_name == None:
     group_name = sys.argv[3]
     i = 4
@@ -7073,7 +7074,13 @@ def doGetGroupInfo(group_name=None):
     i = 3
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'nousers':
-      get_users = False
+      getUsers = False
+      i += 1
+    elif sys.argv[i].lower() == u'noaliases':
+      getAliases = False
+      i += 1
+    elif sys.argv[i].lower() == u'groups':
+      getGroups = True
       i += 1
     else:
       print u'ERROR: %s is not a valid argument for "gam info group"' % sys.argv[i]
@@ -7091,9 +7098,9 @@ def doGetGroupInfo(group_name=None):
   print u''
   print u'Group Settings:'
   for key, value in basic_info.items():
-    if key in [u'kind', u'etag']:
+    if (key in [u'kind', u'etag']) or ((key == u'aliases') and (not getAliases)):
       continue
-    elif type(value) == type(list()):
+    if type(value) == type(list()):
       print u' %s:' % key
       for val in value:
         print u'  %s' % val
@@ -7111,7 +7118,14 @@ def doGetGroupInfo(group_name=None):
       print u' %s: %s' % (key, value)
   except UnboundLocalError:
     pass
-  if get_users:
+  if getGroups:
+    groups = callGAPIpages(cd.groups(), u'list', u'groups',
+                           userKey=basic_info[u'email'], fields=u'nextPageToken,groups(name,email)')
+    if groups and len(groups) > 0:
+      print u'Groups: ({0})'.format(len(groups))
+      for groupm in groups:
+        print u'  %s: %s' % (groupm[u'name'], groupm[u'email'])
+  if getUsers:
     members = callGAPIpages(cd.members(), u'list', u'members', groupKey=group_name)
     print u'Members:'
     for member in members:
