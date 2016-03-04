@@ -241,7 +241,7 @@ If an item contains spaces, it should be surrounded by " or '.
 
 <UserFieldNames> ::=
 	[custom all|<SchemaNameList>]|
-	[id]|[firstname|givenname|lastname|familyName|fullname|name]|[org|ou]|[address|addresses]|[aliases|nicknames]|[email|emails|otheremail]|
+	[id]|[firstname|givenname|lastname|familyName|fullname]|[org|ou]|[address|addresses]|[aliases|nicknames]|[email|emails|otheremail]|
 	[externalid|external_id|externalids|external_ids]|[im|ims]|[organization|organizations]|[phone|phones]|[photo|photourl]|
 	[relation|relations]|[website|websites]|[note|notes]|
 	[creationtime]|[lastlogintime]|[deletiontime]|
