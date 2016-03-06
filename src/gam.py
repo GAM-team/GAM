@@ -6552,7 +6552,7 @@ def doGetGroupInfo(group_name=None):
   if getGroups:
     groups = callGAPIpages(cd.groups(), u'list', u'groups',
                            userKey=basic_info[u'email'], fields=u'nextPageToken,groups(name,email)')
-    if groups and len(groups) > 0:
+    if groups:
       print u'Groups: ({0})'.format(len(groups))
       for groupm in groups:
         print u'  %s: %s' % (groupm[u'name'], groupm[u'email'])
@@ -7461,7 +7461,7 @@ def doPrintUsers():
     elif sys.argv[i].lower() == u'query':
       query = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower() in [u'firstname', u'givenname', u'lastname', u'familyName', u'fullname']:
+    elif sys.argv[i].lower() in [u'firstname', u'givenname', u'lastname', u'familyName', u'fullname', u'name']:
       user_fields.append(u'name')
       i += 1
     elif sys.argv[i].lower() == u'ou':
