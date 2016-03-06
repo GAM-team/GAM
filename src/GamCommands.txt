@@ -183,32 +183,66 @@ If an item contains spaces, it should be surrounded by " or '.
 	(colorindex|colorid <EventColorIndex>)
 
 <GroupAttributes> ::=
-	(allowExternalMembers <Boolean>)|
-	(allowGoogleCommunication <Boolean>)|
-	(allowWebPosting <Boolean>)|
-	(archiveOnly <Boolean>)|
-	(customReplyTo <EmailAddress>)|
-	(defaultMessageDenyNotificationText <String>)|
+	(allowexternalmembers <Boolean>)|
+	(allowgooglecommunication <Boolean>)|
+	(allowwebposting <Boolean>)|
+	(archiveonly <Boolean>)|
+	(customreplyto <EmailAddress>)|
+	(defaultmessagedenynotificationtext <String>)|
 	(description <String>)|
 	(gal|includeInGlobalAddressList <Boolean>)|
-	(isArchived <Boolean>)|
-	(maxMessageBytes <ByteCount>)|
-	(membersCanPostAsTheGroup <Boolean>)|
-	(messageDisplayFont DEFAULT_FONT|FIXED_WIDTH_FONT)|
-	(messageModerationLevel MODERATE_ALL_MESSAGES|MODERATE_NON_MEMBERS|MODERATE_NEW_MEMBERS|MODERATE_NONE)|
+	(isarchived <Boolean>)|
+	(maxmessagebytes <ByteCount>)|
+	(memberscanpostasthegroup <Boolean>)|
+	(messagedisplayfont DEFAULT_FONT|FIXED_WIDTH_FONT)|
+	(messagemoderationlevel MODERATE_ALL_MESSAGES|MODERATE_NON_MEMBERS|MODERATE_NEW_MEMBERS|MODERATE_NONE)|
 	(name <String>)|
-	(primaryLanguage <Language>)|
-	(replyTo REPLY_TO_CUSTOM|REPLY_TO_SENDER|REPLY_TO_LIST|REPLY_TO_OWNER|REPLY_TO_IGNORE|REPLY_TO_MANAGERS)|
-	(sendMessageDenyNotification <Boolean>)|
-	(showInGroupDirectory <Boolean>)|
-	(spamModerationLevel ALLOW|MODERATE|SILENTLY_MODERATE|REJECT)|
-	(whoCanContactOwner ANYONE_CAN_CONTACT|ALL_IN_DOMAIN_CAN_CONTACT|ALL_MEMBERS_CAN_CONTACT|ALL_MANAGERS_CAN_CONTACT)|
-	(whoCanInvite ALL_MEMBERS_CAN_INVITE|ALL_MANAGERS_CAN_INVITE)|
-	(whoCanJoin ANYONE_CAN_JOIN|ALL_IN_DOMAIN_CAN_JOIN|INVITED_CAN_JOIN|CAN_REQUEST_TO_JOIN)|
-	(whoCanLeaveGroup ALL_MANAGERS_CAN_LEAVE|ALL_MEMBERS_CAN_LEAVE)|
-	(whoCanPostMessage NONE_CAN_POST|ALL_MANAGERS_CAN_POST|ALL_MEMBERS_CAN_POST|ALL_IN_DOMAIN_CAN_POST|ANYONE_CAN_POST)|
-	(whoCanViewGroup ANYONE_CAN_VIEW|ALL_IN_DOMAIN_CAN_VIEW|ALL_MEMBERS_CAN_VIEW|ALL_MANAGERS_CAN_VIEW)|
-	(whoCanViewMembership ALL_IN_DOMAIN_CAN_VIEW|ALL_MEMBERS_CAN_VIEW|ALL_MANAGERS_CAN_VIEW)
+	(primarylanguage <Language>)|
+	(replyto REPLY_TO_CUSTOM|REPLY_TO_SENDER|REPLY_TO_LIST|REPLY_TO_OWNER|REPLY_TO_IGNORE|REPLY_TO_MANAGERS)|
+	(sendmessagedenynotification <Boolean>)|
+	(showingroupdirectory <Boolean>)|
+	(spammoderationlevel ALLOW|MODERATE|SILENTLY_MODERATE|REJECT)|
+	(whocancontactowner ANYONE_CAN_CONTACT|ALL_IN_DOMAIN_CAN_CONTACT|ALL_MEMBERS_CAN_CONTACT|ALL_MANAGERS_CAN_CONTACT)|
+	(whocaninvite ALL_MEMBERS_CAN_INVITE|ALL_MANAGERS_CAN_INVITE)|
+	(whocanjoin ANYONE_CAN_JOIN|ALL_IN_DOMAIN_CAN_JOIN|INVITED_CAN_JOIN|CAN_REQUEST_TO_JOIN)|
+	(whocanleavegroup ALL_MANAGERS_CAN_LEAVE|ALL_MEMBERS_CAN_LEAVE)|
+	(whocanpostmessage NONE_CAN_POST|ALL_MANAGERS_CAN_POST|ALL_MEMBERS_CAN_POST|ALL_IN_DOMAIN_CAN_POST|ANYONE_CAN_POST)|
+	(whocanviewgroup ANYONE_CAN_VIEW|ALL_IN_DOMAIN_CAN_VIEW|ALL_MEMBERS_CAN_VIEW|ALL_MANAGERS_CAN_VIEW)|
+	(whocanviewmembership ALL_IN_DOMAIN_CAN_VIEW|ALL_MEMBERS_CAN_VIEW|ALL_MANAGERS_CAN_VIEW)
+
+<GroupFieldNames> ::=
+	admincreated|
+	aliases
+	description|
+	email|
+	id|
+	name
+
+<GroupSettingsFieldNames> ::=
+	allowexternalmembers|
+	allowgooglecommunication|
+	allowwebposting|
+	archiveonly|
+	customreplyto|
+	defaultmessagedenynotificationtext|
+	gal|includeinglobaladdresslist|
+	isarchived|
+	maxmessagebytes|
+	memberscanpostasthegroup|
+	messagedisplayfont|
+	messagemoderationlevel|
+	primarylanguage|
+	replyto|
+	sendmessagedenynotification|
+	showingroupdirectory|
+	spammoderationlevel|
+	whocancontactowner|
+	whocaninvite|
+	whocanjoin|
+	whocanleavegroup|
+	whocanpostmessage|
+	whocanviewgroup|
+	whocanviewmembership
 
 <MobileAttributes> ::=
 	(model <String>)|(os <String>)|(useragent <String>)|
@@ -224,28 +258,57 @@ If an item contains spaces, it should be surrounded by " or '.
 	field <FieldName> (type bool|date|double|email|int64|phone|string) [multivalued|multivalue] [indexed] [restricted] [range <Number> <Number>] endfield
 
 <UserAttributes> ::=
-	(firstname <String>)|(lastname <String>)|(username|email <EmailAddress>)|(customerid <String>)|(password random|<String>)|(org|ou <OrgUnitPath>)
-	(admin <Boolean>)|(suspended <Boolean>)|(gal <Boolean>)|(ipwhitelisted <Boolean>)|(changepassword <Boolean>)|(agreedtoterms <Boolean>)|
-	(sha|sha1|sha-1|md5|crypt|nohash)|
-	(address clear|(type work|home|other|(custom <String>) [unstructured|formatted <String>] [pobox <String>] [extendedaddress <String>]
-	  [streetaddress <String>] [locality <String>] [region <String>] [postalcode <String>] [country <String>] [countrycode <String>] notprimary|primary))
-	(otheremail clear|(work|home|other|<String> <String>))|
-	(externalid clear|(account|customer|network|organization|<String> <String>))|
-	(im clear|(type work|home|other|(custom <String>) protocol aim|gtalk|icq|jabber|msn|net_meeting|qq|skype|yahoo|(custom_protocol <String>) [primary] <String>))|
-	(organization clear|([type domain_only|school|unknown|work] [customtype <String>] [name <String>] [title <String>] [department <String>] [symbol <String>]
-	  [costcenter <String>]  [location <String>] [description <String>] [domain <String>] notprimary|primary))|
-	(phone clear|([type work|home|other|work_fax|home_fax|other_fax|main|company_main|assistant|mobile|work_mobile|pager|work_pager|car|radio|callback|isdn|telex|tty_tdd|grand_central|(custom <String>)
-	  [value <String>] notprimary|primary))|
-	(relation clear|(spouse|child|mother|father|parent|brother|sister|friend|relative|domestic_partner|manager|assistant|referred_by|partner|<String> <String>))|
+	(address|addresses clear|(type work|home|other|(custom <String>) [unstructured|formatted <String>] [pobox <String>] [extendedaddress <String>] [streetaddress <String>]
+		[locality <String>] [region <String>] [postalcode <String>] [country <String>] [countrycode <String>] notprimary|primary))|
+	(admin <Boolean>)|
+	(agreed2terms|agreedtoterms <Boolean>)|
+	(changepassword|changepasswordatnextlogin <Boolean>)|
+	(crypt|sha|sha1|sha-1|md5|nohash)|
+	(customerid <String>)|
+	(email|primaryemail|username <EmailAddress>)|
+	(emails|otheremail|otheremails clear|(work|home|other|<String> <String>))|
+	(externalid|externalids clear|(account|customer|network|organization|<String> <String>))|
+	(firstname|givenname <String>)|
+	(gal|includeinglobaladdresslist <Boolean>)|
+	(im|ims clear|(type work|home|other|(custom <String>) protocol aim|gtalk|icq|jabber|msn|net_meeting|qq|skype|yahoo|(custom_protocol <String>) [primary] <String>))|
+	(ipwhitelisted <Boolean>)|
+	(lastname|familyname <String>)|
+	(organization|organizations clear|([type domain_only|school|unknown|work] [customtype <String>] [name <String>] [title <String>] [department <String>] [symbol <String>]
+		[costcenter <String>]  [location <String>] [description <String>] [domain <String>] notprimary|primary))|
+	(org|ou|orgunitpath <OrgUnitPath>)
+	(password random|<String>)|
+	(phone|phones clear|([type work|home|other|work_fax|home_fax|other_fax|main|company_main|assistant|mobile|work_mobile|pager|work_pager|car|radio|callback|isdn|telex|tty_tdd|grand_central|(custom <String>)
+		[value <String>] notprimary|primary))|
+	(relation|relations clear|(spouse|child|mother|father|parent|brother|sister|friend|relative|domestic_partner|manager|assistant|referred_by|partner|<String> <String>))|
+	(suspended <Boolean>)|
 	(<SchemaName>.<FieldName> [multivalued|multivalue|value] <String>)
 
 <UserFieldNames> ::=
-	[custom all|<SchemaNameList>]|
-	[id]|[firstname|givenname|lastname|familyName|fullname]|[org|ou]|[address|addresses]|[aliases|nicknames]|[email|emails|otheremail]|
-	[externalid|external_id|externalids|external_ids]|[im|ims]|[organization|organizations]|[phone|phones]|[photo|photourl]|
-	[relation|relations]|[website|websites]|[note|notes]|
-	[creationtime]|[lastlogintime]|[deletiontime]|
-	[admin]|[agreed2terms]|[changepassword]|[gal]|[ismailboxsetup]|[suspended]|
+	address|addresses|
+	admin|isadmin|isdelegatedadmin|
+	agreed2terms|agreedtoterms|
+	aliases|nicknames|noneditablealiases|
+	changepassword|changepasswordatnextlogin|
+	creationtime|
+	deletiontime|
+	email|emails|
+	externalid|externalids|
+	familyname|firstname|fullname|givenname|lastname|name|
+	gal|includeinglobaladdresslist|
+	id|
+	im|ims|
+	ipwhitelisted|
+	ismailboxsetup|
+	lastlogintime|
+	note|notes|
+	organization|organizations|
+	org|ou|orgunitpath|
+	phone|phones|
+	photo|photourl|thumbnailphotourl|
+	relation|relations|
+	suspended|
+	website|websites|
+	custom all|<SchemaNameList>
 
 # Select a section from gam.cfg and process a GAM command using values from that section
 <Select> ::=
@@ -373,8 +436,8 @@ gam info group <GroupItem> [nousers] [noaliases] [groups]
 
 
 gam print groups [todrive] ([domain <DomainName>] [member <UserItem>])
-	[delimiter <String>]
-	[name] [admincreated] [description] [id] [aliases] [members] [owners] [managers] [settings]
+	[maxresults <Number>] [delimiter <String>]
+	[members] [owners] [managers] <GroupFieldNames>* [settings]
 
 gam print group-members|groups-members [todrive] [group <GroupItem>]
 gam print licenses [todrive] [products|product <ProductIDList>] [skus|sku <SKUIDList>]
