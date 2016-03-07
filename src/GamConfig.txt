@@ -1,15 +1,19 @@
 GAM versions 3.70 and above use a configuration file, gam.cfg, to store the values of the various environment variables
-and signal files used by GAM 3.63.
+and signal files used by earlier versions of GAM. Configuration files gamscopes.json, oauth2service.json and extra_args.txt
+are moved to a version independent location. This should simplify upgrading GAM versions in the future.
+Additionally, if you support multiple clients/domains or have multiple users running GAM,
+gam.cfg lets you easily manage your configuration.
 
 In the following discussion, these names will be used to refer to directories:
-    GamPath: Location of gam.py or gam.exe
+    OldGamPath: Location of previous version of gam.py or gam.exe
+    GamPath: Location of new version of gam.py or gam.exe
     GamCfgDir: Location of gam.cfg
     GamConfigDir: Location of gamscopes.json, oauth2service.json, extra_args.txt
-    GamCacheDir: API cache files
+    GamCacheDir: Google API cache files
     GamDriveDir: Files downloaded with gam user <User> get drivefile <DriveFileID> when targetfolder <FilePath> is not specified
     GamSiteDir: Location of admin-settings-v1.json, cloudprint-v2.json, email-audit-v1.json, email-settings-v1.json
 
-In GAM 3.63 and below, the following locations are used:
+In versions of GAM before 3.70, the following locations are used:
     GamCfgDir:
 	Not used
     GamSiteDir:
@@ -34,21 +38,23 @@ These are the default values that GAM uses.
     GamSiteDir:
 	GamPath
 
-If you are an existing GAM user and want to use the existing locations or if you simply don't like the
-suggested locations or you already have some other scheme in use, set GAMCFGDIR to the desired path for gam.cfg,
-In gam.cfg, you specify the desired values for the other locations.
+If you are an existing GAM user and don't like the suggested locations or you already have some other scheme in use,
+set GAMCFGDIR to the desired path for gam.cfg. In gam.cfg, specify the desired values for the other locations.
 
 How will gam.cfg be used? At its simplest, it is created once and you can ignore it.
 Every once in a while, you edit gam.cfg to set some desired values and then you ignore it.
 gam.cfg must be a plain text file, you can edit it with your favorite text editor (emacs, vi, TextWrangler,
 TextEdit, Notepad, Wordpad) as long as you wind up with a plain text file.
 
-These variables are used by GAM to alter its behavior. If GAM does not find a value for an environment variable,
-the default value is used. If a signal file is located, the associated variable is set True, otherwise False.
-(For debug.gam, debug_level is set to 4 if the file is located, otherwise 0.)
+If you are upgrading from a previous version of GAM, set the environment variable OLDGAMPATH to OldGamPath. This is a one-time setting
+to allow GAM to find your old signal files and to copy gamscopes.json, oauth2service.json, extra_args.txt
+from OldGamPath to GamConfigDir. To generate the initial gam.cfg, execute the command: gam select default verify.
+Once gam.cfg is created, no signal files are read and the only environment variable used is GAMCFGDIR.
+GAMFIGDIR does not have to be set unless you want a value other than ~/.gam for the location of gam.cfg.
 
-The first time you run GAM 3.70 or above, the values of all of the following environment variables and signal files
-are recorded in gam.cfg; from then on, only gam.cfg is read.
+These are the gam.cfg variables; if GAM does not find a value for an environment variable, the default value is used.
+If a signal file is located, the associated variable is set True, otherwise False.
+(For debug.gam, debug_level is set to 4 if the file is located, otherwise 0.)
 
 activity_max_results
 	When retrieving lists of Google Drive activities from API, how many should be retrieved in each chunk
@@ -138,16 +144,12 @@ show_gettings
 	Enable/disable "Getting ... " messages
 	Default: True
 	Environment variable: GAM_SHOW_GETTINGS
-site_dir
-	Directory for admin-settings-v1.json, cloudprint-v2.json, email-audit-v1.json, email-settings-v1.json
-	Default: GamPath
-	Environment variable: GAMSITEDIR
 user_max_results
 	When retrieving lists of Users from API, how many should be retrieved in each chunk
 	Default: 500
 	Environment variable: GAM_USER_MAX_RESULTS
 
-To generate the initial gam.cfg, execute the command: gam select default verify.
+This is sample output from the command: gam select default verify.
 Config File: /Users/admin/.gam/gam.cfg, Initialized
 Section: DEFAULT
   activity_max_results = 100
@@ -173,7 +175,6 @@ Section: DEFAULT
   section = 
   show_counts_min = 1
   show_gettings = true
-  site_dir = /Users/admin/GAM
   user_max_results = 500
 
 If you (the administrator) run GAM and have multiple other users that also run GAM, you will make a gam.cfg for each user.
@@ -182,17 +183,18 @@ This will create a gam.cfg for the user using the environment variables specific
 may want to edit each users gam.cfg and set "no_update_check = true" so that GAM update checks are performed only by you.
 You might set the permissions on each users gam.cfg to be read-only so that they can't make unauthorized changes.
 
-There are three new arguments to GAM that should simplify how you use GAM with multiple clients.
-The arguments are optional, must appear in this order and must be the first arguments before any other GAM arguments.
-
+There are three new arguments to GAM that should simplify how you use GAM with multiple clients/domains.
+Each client/domain will have a section in gam.cfg that sets the values specific to it.
 The select argument specifies the section of gam.cfg to use for processing the rest of the GAM command;
 it's how you quickly switch from from one client to another.
 
+The arguments are optional, must appear in this order and must be the first arguments before any other GAM arguments.
+
 select <Section> [save] [verify]
-	Use <Section> for the current GAM command.
+	Use <Section> from gam.cfg for the current GAM command.
 	<Section> is case-sensitive except for DEFAULT which is case-insensitive.
     save
-	Set section = <Section> in the DEFAULT section
+	Set section = <Section> in the DEFAULT section of gam.cfg
 	Write configuration data to gam.cfg
     verify
 	Print the variable values for the current section
@@ -228,13 +230,14 @@ redirect [csv <FileName> [charset <CharSet>]] [stdout <FileName> [append]] [stde
 	If <FileName> is relative, it is appended to drive_dir in the current section if defined or drive_dir in DEFAULT
 	GAM output to stderr will be written to <FileName>
 
-
+Here is a sample multiple domain/client example.
 You have five clients: main, foo, goo, shared1 and shared2; 90% of your work is with client main.
+
 Clients main, foo and goo have distinct oauth2service.json files.
 Clients shared1 and shared2 have a shared oauth2service.json file.
 All clients have distinct gamscopes.json files.
 The files for foo, goo, shared1 and shared2 have prefixes to indicate the client; the main files do not have prefixes.
-All files are in GamPath. You have been using the environment variables GAMSCOPESFILE and OAUTHSERVICEFILE
+All files are in OldGamPath. You have been using the environment variables GAMSCOPESFILE and OAUTHSERVICEFILE
 to specify the client on which to operate. You have:
     gamscopes.json, oauth2service.json
     foo_gamscopes.json, foo_oauth2service.json
@@ -242,13 +245,9 @@ to specify the client on which to operate. You have:
     shared_oauth2service.json
     shared1_gamscopes.json, shared2_gamscopes.json
 
-If gam.cfg is not found in GamCfgDir, GAM will create one; the GamCfgDir directory will be created if necessary.
-What will go into the newly created gam.cfg? GAM will read the environment variables and signal files;
-their values if found, or the program default values, will be used to create an initial gam.cfg.
-GAM will copy the following files from GamPath to GamConfigDir if the two directories are not the same.
-        gamscopes.json, oauth2service.json, extra_args.txt
-You must copy the prefixed versions of these files to GamConfigDir by hand.
-
+gamscopes.json, oauth2service.json, extra_args.txt were copied to their new location
+when you initially executed the command: gam select default verify
+Copy the prefixed files to GamConfigDir by hand as necessary.
 Edit gam.cfg to set up additional clients; it should look like this when complete.
 
 [DEFAULT]
@@ -275,7 +274,6 @@ oauth2service_json = oauth2service.json
 section = 
 show_counts_min = 1
 show_gettings = true
-site_dir = /Users/admin/GAM
 user_max_results = 500
 
 [foo]

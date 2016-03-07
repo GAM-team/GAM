@@ -74,7 +74,6 @@ FN_GAMSCOPES_JSON = u'gamscopes.json'
 FN_LAST_UPDATE_CHECK_TXT = u'lastupdatecheck.txt'
 FN_OAUTH2SERVICE_JSON = u'oauth2service.json'
 MY_CUSTOMER = u'my_customer'
-SITE_FILES = [u'admin-settings-v1.json', u'cloudprint-v2.json', u'email-audit-v1.json', u'email-settings-v1.json',]
 UNKNOWN = u'Unknown'
 #
 # Global variables
@@ -204,8 +203,6 @@ GC_SECTION = u'section'
 GC_SHOW_COUNTS_MIN = u'show_counts_min'
 # Enable/disable "Getting ... " messages
 GC_SHOW_GETTINGS = u'show_gettings'
-# GAM site directory containing admin-settings-v1.json, cloudprint-v2.json, email-audit-v1.json, email-settings-v1.json'
-GC_SITE_DIR = u'site_dir'
 # When retrieving lists of Users from API, how many should be retrieved in each chunk
 GC_USER_MAX_RESULTS = u'user_max_results'
 
@@ -233,7 +230,6 @@ GC_Defaults = {
   GC_SECTION: u'',
   GC_SHOW_COUNTS_MIN: 1,
   GC_SHOW_GETTINGS: TRUE,
-  GC_SITE_DIR: u'',
   GC_USER_MAX_RESULTS: 500,
   }
 
@@ -277,7 +273,6 @@ GC_VAR_INFO = {
   GC_SECTION: {GC_VAR_TYPE: GC_TYPE_STRING, GC_VAR_ENVVAR: u'GAM_SECTION'},
   GC_SHOW_COUNTS_MIN: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_ENVVAR: u'GAM_SHOW_COUNTS_MIN', GC_VAR_LIMITS: (0, None)},
   GC_SHOW_GETTINGS: {GC_VAR_TYPE: GC_TYPE_BOOLEAN, GC_VAR_ENVVAR: u'GAM_SHOW_GETTINGS'},
-  GC_SITE_DIR: {GC_VAR_TYPE: GC_TYPE_DIRECTORY, GC_VAR_ENVVAR: u'GAMSITECONFIGDIR'},
   GC_USER_MAX_RESULTS: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_ENVVAR: u'GAM_USER_MAX_RESULTS', GC_VAR_LIMITS: (1, 500)},
   }
 
@@ -760,9 +755,9 @@ def getDomainFromAdmin():
 #
 def SetGlobalVariables():
 
-  def _getDefault(itemName, itemEntry):
+  def _getDefault(itemName, itemEntry, oldGamPath):
     if GC_VAR_SFFT in itemEntry:
-      GC_Defaults[itemName] = itemEntry[GC_VAR_SFFT][os.path.isfile(os.path.join(GC_Defaults[GC_CONFIG_DIR], itemEntry[GC_VAR_ENVVAR]))]
+      GC_Defaults[itemName] = itemEntry[GC_VAR_SFFT][os.path.isfile(os.path.join(oldGamPath, itemEntry[GC_VAR_ENVVAR]))]
     else:
       value = os.environ.get(itemEntry[GC_VAR_ENVVAR], GC_Defaults[itemName])
       if itemEntry[GC_VAR_TYPE] == GC_TYPE_INTEGER:
@@ -813,13 +808,13 @@ def SetGlobalVariables():
         if not os.path.isdir(GC_Defaults[itemName]):
           systemErrorExit(6, e)
 
-  def _copyCfgFile(srcFile, targetDir):
+  def _copyCfgFile(srcFile, targetDir, oldGamPath):
     if (not srcFile) or os.path.isabs(srcFile):
       return
     dstFile = os.path.join(GC_Defaults[targetDir], srcFile)
     if os.path.isfile(dstFile):
       return
-    srcFile = os.path.join(GM_Globals[GM_GAM_PATH], srcFile)
+    srcFile = os.path.join(oldGamPath, srcFile)
     if not os.path.isfile(srcFile):
       return
     data = readFile(srcFile, mode=u'rU', continueOnError=True, displayError=False)
@@ -955,27 +950,24 @@ def SetGlobalVariables():
     GC_Defaults[GC_CONFIG_DIR] = GM_Globals[GM_GAM_CFG_PATH]
     GC_Defaults[GC_CACHE_DIR] = os.path.join(GM_Globals[GM_GAM_CFG_PATH], u'gamcache')
     GC_Defaults[GC_DRIVE_DIR] = os.path.join(homePath, u'Downloads')
-    GC_Defaults[GC_SITE_DIR] = GM_Globals[GM_GAM_PATH]
     GM_Globals[GM_GAM_CFG_FILE] = os.path.join(GM_Globals[GM_GAM_CFG_PATH], FN_GAM_CFG)
     if not os.path.isfile(GM_Globals[GM_GAM_CFG_FILE]):
       for itemName, itemEntry in GC_VAR_INFO.items():
         if itemEntry[GC_VAR_TYPE] == GC_TYPE_DIRECTORY:
-          _getDefault(itemName, itemEntry)
+          _getDefault(itemName, itemEntry, None)
+      oldGamPath = os.environ.get(u'OLDGAMPATH', GC_Defaults[GC_CONFIG_DIR])
       for itemName, itemEntry in GC_VAR_INFO.items():
         if itemEntry[GC_VAR_TYPE] != GC_TYPE_DIRECTORY:
-          _getDefault(itemName, itemEntry)
+          _getDefault(itemName, itemEntry, oldGamPath)
       if GC_Defaults[GC_OAUTH2SERVICE_JSON].find(u'.') == -1:
         GC_Defaults[GC_OAUTH2SERVICE_JSON] += u'.json'
       GM_Globals[GM_PARSER] = ConfigParser.SafeConfigParser(defaults=collections.OrderedDict(sorted(GC_Defaults.items(), key=lambda t: t[0])))
       _checkMakeDir(GC_CONFIG_DIR)
-      _checkMakeDir(GC_SITE_DIR)
       _checkMakeDir(GC_CACHE_DIR)
       for itemName in GC_VAR_INFO:
         if GC_VAR_INFO[itemName][GC_VAR_TYPE] == GC_TYPE_FILE:
           srcFile = os.path.expanduser(GM_Globals[GM_PARSER].get(ConfigParser.DEFAULTSECT, itemName, raw=True))
-          _copyCfgFile(srcFile, GC_CONFIG_DIR)
-      for srcFile in SITE_FILES:
-        _copyCfgFile(srcFile, GC_SITE_DIR)
+          _copyCfgFile(srcFile, GC_CONFIG_DIR, oldGamPath)
       _writeGamCfgFile(GM_Globals[GM_PARSER], GM_Globals[GM_GAM_CFG_FILE], action=u'Initialized')
     else:
       GM_Globals[GM_PARSER] = ConfigParser.SafeConfigParser(defaults=collections.OrderedDict(sorted(GC_Defaults.items(), key=lambda t: t[0])))
@@ -1406,7 +1398,7 @@ def getOAuth2ServiceDetails():
 
 def readDiscoveryFile(api_version):
   disc_filename = u'%s.json' % (api_version)
-  disc_file = os.path.join(GC_Values[GC_SITE_DIR], disc_filename)
+  disc_file = os.path.join(GM_Globals[GM_GAM_PATH], disc_filename)
   if hasattr(sys, u'_MEIPASS'):
     pyinstaller_disc_file = os.path.join(sys._MEIPASS, disc_filename)
   else:
