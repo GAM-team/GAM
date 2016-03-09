@@ -593,6 +593,7 @@ gam <UserTypeEntity> show labels|label [onlyuser] [showcounts]
 gam <UserTypeEntity> delete message|messages query <Query> [doit] [max_to_delete <Number>]
 gam <UserTypeEntity> trash message|messages query <Query> [doit] [max_to_trash <Number>]
 gam <UserTypeEntity> spam message|messages query <Query> [doit] [max_to_move <Number>]
+gam <UserTypeEntity> untrash message|messages query <Query> [doit] [max_to_untrash <Number>]
 #
 # Update user Gmail settings
 #

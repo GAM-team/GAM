@@ -25,7 +25,7 @@ For more information, see http://git.io/gam
 """
 
 __author__ = u'Jay Lee <jay0lee@gmail.com>'
-__version__ = u'3.702'
+__version__ = u'3.704'
 __license__ = u'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 import sys, os, time, datetime, random, socket, csv, platform, re, calendar, base64, string, codecs, StringIO, subprocess, ConfigParser, collections
@@ -5025,10 +5025,12 @@ def doLabel(users, i):
     i += 1
     callGAPI(gmail.users().labels(), u'create', soft_errors=True, userId=user, body=body)
 
-def doDeleteMessages(trashOrDelete, users):
+PROCESS_MESSAGE_FUNCTION_TO_ACTION_MAP = {u'delete': u'deleted', u'trash': u'trashed', u'untrash': u'untrashed',}
+
+def doProcessMessages(users, function):
   query = None
   doIt = False
-  maxToDelete = 1
+  maxToProcess = 1
   i = 5
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'query':
@@ -5037,15 +5039,16 @@ def doDeleteMessages(trashOrDelete, users):
     elif sys.argv[i].lower() == u'doit':
       doIt = True
       i += 1
-    elif sys.argv[i].lower().replace(u'_', u'') == u'maxtodelete':
-      maxToDelete = int(sys.argv[i+1])
+    elif sys.argv[i].lower().replace(u'_', u'') in [u'maxtodelete', u'maxtotrash', u'maxtomove', u'maxtountrash']:
+      maxToProcess = int(sys.argv[i+1])
       i += 2
     else:
-      print u'ERROR: %s is not a valid argument for "gam <users> delete messages"' % sys.argv[i]
+      print u'ERROR: %s is not a valid argument for "gam <users> %s messages"' % (sys.argv[i], function)
       sys.exit(2)
   if not query:
     print u'ERROR: No query specified. You must specify some query!'
     sys.exit(2)
+  action = PROCESS_MESSAGE_FUNCTION_TO_ACTION_MAP[function]
   for user in users:
     print u'Searching messages for %s' % user
     gmail = buildGAPIObject(u'gmail', user)
@@ -5054,16 +5057,16 @@ def doDeleteMessages(trashOrDelete, users):
                                userId=u'me', q=query, includeSpamTrash=True, soft_errors=True)
     del_count = len(listResult)
     if not doIt:
-      print u'would try to delete %s messages for user %s (max %s)\n' % (del_count, user, maxToDelete)
+      print u'would try to %s %s messages for user %s (max %s)\n' % (function, del_count, user, maxToProcess)
       continue
-    elif del_count > maxToDelete:
-      print u'WARNING: refusing to delete ANY messages for %s since max_to_delete is %s and messages to be deleted is %s\n' % (user, maxToDelete, del_count)
+    elif del_count > maxToProcess:
+      print u'WARNING: refusing to %s ANY messages for %s since max messages to process is %s and messages to be %s is %s\n' % (function, user, maxToProcess, action, del_count)
       continue
     i = 0
     for del_me in listResult:
       i += 1
-      print u' %s message %s for user %s (%s/%s)' % (trashOrDelete, del_me[u'id'], user, i, del_count)
-      callGAPI(gmail.users().messages(), trashOrDelete,
+      print u' %s message %s for user %s (%s/%s)' % (function, del_me[u'id'], user, i, del_count)
+      callGAPI(gmail.users().messages(), function,
                id=del_me[u'id'], userId=u'me')
 
 def doDeleteLabel(users):
@@ -10094,9 +10097,15 @@ try:
       sys.exit(2)
   elif command == u'trash':
     if sys.argv[4].lower() in [u'message', u'messages']:
-      doDeleteMessages(trashOrDelete=u'trash', users=users)
+      doProcessMessages(users, u'trash')
     else:
       print u'ERROR: %s is not a valid argument for "gam <users> trash"' % sys.argv[4]
+      sys.exit(2)
+  elif command == u'untrash':
+    if sys.argv[4].lower() in [u'message', u'messages']:
+      doProcessMessages(users, u'untrash')
+    else:
+      print u'ERROR: %s is not a valid argument for "gam <users> untrash"' % sys.argv[4]
       sys.exit(2)
   elif command == u'delete' or command == u'del':
     delWhat = sys.argv[4].lower()
@@ -10107,7 +10116,7 @@ try:
     elif delWhat == u'label':
       doDeleteLabel(users)
     elif delWhat in [u'message', u'messages']:
-      doDeleteMessages(trashOrDelete=u'delete', users=users)
+      doProcessMessages(users, u'delete')
     elif delWhat == u'photo':
       deletePhoto(users)
     elif delWhat in [u'license', u'licence']:
