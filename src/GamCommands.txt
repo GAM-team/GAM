@@ -414,7 +414,7 @@ gam calendar <CalendarItem> wipe
 
 gam update cros <CrOSDeviceEntity> <CrOSAttributes>
 gam info cros <CrOSDeviceEntity>
-gam print cros [todrive] [query <Query>] [basic|full] [nolists|recentusers|timeranges]
+gam print cros [todrive] [query <Query>] [basic|full] [nolists|recentusers|timeranges] [listlimit <Number>]
 	[orderby lastsync|location|notes|serialnumber|status|supportenddate|user] [ascending|descending]
 gam <CrOSTypeEntity> update <CrOSAttributes>
 gam <CrOSTypeEntity> print

@@ -25,7 +25,7 @@ For more information, see http://git.io/gam
 """
 
 __author__ = u'Jay Lee <jay0lee@gmail.com>'
-__version__ = u'3.704'
+__version__ = u'3.705'
 __license__ = u'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 import sys, os, time, datetime, random, socket, csv, platform, re, calendar, base64, string, codecs, StringIO, subprocess, ConfigParser, collections
@@ -7960,21 +7960,23 @@ def output_csv(csv_list, titles, list_type, todrive):
   if GM_Globals[GM_CSVFILE] != u'-':
     closeFile(string_file)
 
-def flatten_json(structure, key=u'', path=u'', flattened=None):
+def flatten_json(structure, key=u'', path=u'', flattened=None, listLimit=None):
   if flattened == None:
     flattened = {}
-  if type(structure) not in(dict, list):
+  if not isinstance(structure, (dict, list)):
     flattened[((path + u'.') if path else u'') + key] = structure
   elif isinstance(structure, list):
     for i, item in enumerate(structure):
-      flatten_json(item, u'%d' % i, u'.'.join(filter(None, [path, key])), flattened)
+      if listLimit and (i >= listLimit):
+        break
+      flatten_json(item, u'%d' % i, u'.'.join(filter(None, [path, key])), flattened=flattened, listLimit=listLimit)
   else:
     for new_key, value in structure.items():
       if new_key in [u'kind', u'etag']:
         continue
       if value == u'1970-01-01T00:00:00.000Z':
         value = u'Never'
-      flatten_json(value, new_key, u'.'.join(filter(None, [path, key])), flattened)
+      flatten_json(value, new_key, u'.'.join(filter(None, [path, key])), flattened=flattened, listLimit=listLimit)
   return flattened
 
 def doPrintUsers():
@@ -8579,7 +8581,7 @@ def doPrintCrosDevices():
   todrive = False
   query = projection = orderBy = sortOrder = None
   noLists = False
-  selectAttrib = None
+  listLimit = selectAttrib = None
   i = 3
   while i < len(sys.argv):
     my_arg = sys.argv[i].lower().replace(u'_', u'')
@@ -8601,6 +8603,9 @@ def doPrintCrosDevices():
       selectAttrib = u'activeTimeRanges'
       noLists = False
       i += 1
+    elif my_arg == u'listlimit':
+      listLimit = getInteger(i+1, minVal=1)
+      i += 2
     elif my_arg == u'orderby':
       orderBy = sys.argv[i+1].lower().replace(u'_', u'')
       allowed_values = [u'location', u'user', u'lastsync', u'notes', u'serialnumber', u'status', u'supportenddate']
@@ -8637,7 +8642,7 @@ def doPrintCrosDevices():
   if all_cros:
     if (not noLists) and (not selectAttrib):
       for cros in all_cros:
-        cros_attributes.append(flatten_json(cros))
+        cros_attributes.append(flatten_json(cros, listLimit=listLimit))
         for item in cros_attributes[-1]:
           if item not in cros_attributes[0]:
             cros_attributes[0][item] = item
@@ -8663,7 +8668,9 @@ def doPrintCrosDevices():
                 cros_attributes[0][xattrib] = xattrib
                 titles.append(xattrib)
               attribMap[attrib] = xattrib
-          for item in cros[selectAttrib]:
+          for i, item in enumerate(cros[selectAttrib]):
+            if listLimit and(i >= listLimit):
+              break
             new_row = row.copy()
             for attrib in item:
               if isinstance(item[attrib], (bool, int)):
