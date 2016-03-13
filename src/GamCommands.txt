@@ -101,44 +101,90 @@ If an item contains spaces, it should be surrounded by " or '.
 <URL> ::= <String>
 <UserItem> ::= <EmailAddress>|<UniqueID>|<String>
 
-# Named Lists, comma separated items, surrounded by ' or "
-<CalendarACLList> ::== '<CalendarACLScope>(,<CalendarACLScope>)*'
-<CalendarList> ::= '<CalendarItem>(,<CalendarItem>)*'
-<ContactIDList> ::= '<ContactID>(,<ContactID>)*'
-<CourseAliasList> ::= '<CourseAlias>(,<CourseAlias>)*'
-<CourseIDList> ::= '<CourseID>(,<CourseID>)*'
-<CrOSList> ::= '<DeviceID>(,<DeviceID>)*'
-<DriveFileList> ::= '<DriveFileItem>(,<DriveFileItem>)*'
-<EmailAddressList> ::= '<EmailAddress>(,<EmailAddress>)*'
-<EventIDList> ::= '<EventID>(,<EventID>)*'
-<FileFormatList> ::= '<FileFormat>(,<FileFormat)*'
-<GroupList> ::= '<GroupItem>(,<GroupItem>)*'
-<MobileList> ::= '<MobileId>(,<MobileId>)*'
-<OrgUnitList> ::== '<OrgUnitPath>(,<OrgUnitPath>)*'
-<PrinterIDList> ::= '<PrinterID>(,<PrinterID>)*'
-<ProductIDList> ::= '(<ProductID>|SKUID>)(,<ProductID>|SKUID>)*'
-<PrintJobIDList> ::= '<PrintJobID>(,<PrintJobID>)*'
-<ResourceIDList> ::= '<ResourceID>(,<ResourceID>)*'
-<SKUIDList> ='<SKUID>(,<SKUID>)*'
-<SchemaNameList> ::= '<SchemaName>(,<SchemaName>)*'
-<UserList> ::= '<UserItem>(,<UserItem>)*'
+<CrOSFieldNames> ::=
+	activetimeranges|timeranges|
+	annotatedassetid|assedid|asset|
+	annotatedlocation|location|
+	annotateduser|user|
+	bootmode|
+	deviceid|
+	ethernetmacaddress|
+	firmwareversion|
+	lastenrollmenttime|
+	lastsync|
+	macaddress|
+	meid|
+	model|
+	notes|
+	ordernumber|
+	orgunitpath|org|ou|
+	osversion|
+	platformversion|
+	recentusers|
+	serialnumber|
+	status|
+	supportenddate|
+	willautorenew
 
-# Specify a collection of ChromeOS devices by directly specifying them
-<CrOSTypeEntity> ::=
-		(all cros)|
-		(cros <CrOSList>)|
-# Specify a collection of Users by directly specifying them or by specifiying items that will yield a list of users
-<UserTypeEntity> ::=
-		(all users)|
-		(user <UserItem>)|
-		(users <UserList>)|
-		(group <GroupItem)|
-		(ou|org <OrgUnitPath)|
-		(ou_and_children|ou_and_child <OrgUnitPath>)|
-		(courseparticipants <CourseID>)|
-		(students <CourseID>)|
-		(teachers <CourseID>)|
-		(file <FileName>)|
+<GroupFieldNames> ::=
+	admincreated|
+	aliases
+	description|
+	email|
+	id|
+	name
+
+<GroupSettingsFieldNames> ::=
+	allowexternalmembers|
+	allowgooglecommunication|
+	allowwebposting|
+	archiveonly|
+	customreplyto|
+	defaultmessagedenynotificationtext|
+	includeinglobaladdresslist|gal|
+	isarchived|
+	maxmessagebytes|
+	memberscanpostasthegroup|
+	messagedisplayfont|
+	messagemoderationlevel|
+	primarylanguage|
+	replyto|
+	sendmessagedenynotification|
+	showingroupdirectory|
+	spammoderationlevel|
+	whocancontactowner|
+	whocaninvite|
+	whocanjoin|
+	whocanleavegroup|
+	whocanpostmessage|
+	whocanviewgroup|
+	whocanviewmembership
+
+<UserFieldNames> ::=
+	addresses|address|
+	agreedtoterms|agreed2terms|
+	changepasswordatnextlogin|changepassword|
+	creationtime|
+	deletiontime|
+	email|emails|
+	externalids|externalid|
+	familyname|firstname|fullname|givenname|lastname|name|
+	id|
+	ims|im|
+	includeinglobaladdresslist|gal|
+	ipwhitelisted|
+	isdelegatedadmin|admin|isadmin|
+	ismailboxsetup|
+	lastlogintime|
+	noneditablealiases|aliases|nicknames|
+	notes|note|
+	organizations|organization|
+	orgunitpath|org|ou|
+	phones|phone|
+	primaryemail|username|GAMEXT>
+	relations|relation|
+	suspended|
+	thumbnailphotourl|photo|photourl|)|
 		(csvfile <FileName>:<FieldName>)|
 		(license|licenses <SKUIDList>)|
 		(query <Query>)|
@@ -157,8 +203,12 @@ If an item contains spaces, it should be surrounded by " or '.
 	(state|status active|archived|provisioned|declined)
 
 <CrOSAttributes> ::=
+	(asset|assetid|tag <String>)|
+	(location <String>)|
+	(notes <String>)|
+	(org|ou <OrgUnitPath>)|
 	(status active|deprovisioned|inactive|returnapproved|returnrequested|shipped|unknown)|
-	(asset|assetid|tag <String>)|(user <Name>)|(location <String>)|(notes <String>)|(org|ou <OrgUnitPath>)
+	(user <Name>)
 
 <DriveFileAddAttributes> ::=
 	(localfile <FileName>)|
@@ -210,40 +260,6 @@ If an item contains spaces, it should be surrounded by " or '.
 	(whocanviewgroup ANYONE_CAN_VIEW|ALL_IN_DOMAIN_CAN_VIEW|ALL_MEMBERS_CAN_VIEW|ALL_MANAGERS_CAN_VIEW)|
 	(whocanviewmembership ALL_IN_DOMAIN_CAN_VIEW|ALL_MEMBERS_CAN_VIEW|ALL_MANAGERS_CAN_VIEW)
 
-<GroupFieldNames> ::=
-	admincreated|
-	aliases
-	description|
-	email|
-	id|
-	name
-
-<GroupSettingsFieldNames> ::=
-	allowexternalmembers|
-	allowgooglecommunication|
-	allowwebposting|
-	archiveonly|
-	customreplyto|
-	defaultmessagedenynotificationtext|
-	gal|includeinglobaladdresslist|
-	isarchived|
-	maxmessagebytes|
-	memberscanpostasthegroup|
-	messagedisplayfont|
-	messagemoderationlevel|
-	primarylanguage|
-	replyto|
-	sendmessagedenynotification|
-	showingroupdirectory|
-	spammoderationlevel|
-	whocancontactowner|
-	whocaninvite|
-	whocanjoin|
-	whocanleavegroup|
-	whocanpostmessage|
-	whocanviewgroup|
-	whocanviewmembership
-
 <MobileAttributes> ::=
 	(model <String>)|(os <String>)|(useragent <String>)|
 	(action admin_remote_wipe|wipe|admin_account_wipe|accountwipe|wipeaccount|approve|block|cancel_remote_wipe_then_activate|cancel_remote_wipe_then_block)
@@ -283,33 +299,6 @@ If an item contains spaces, it should be surrounded by " or '.
 	(suspended <Boolean>)|
 	(<SchemaName>.<FieldName> [multivalued|multivalue|value] <String>)
 
-<UserFieldNames> ::=
-	address|addresses|
-	admin|isadmin|isdelegatedadmin|
-	agreed2terms|agreedtoterms|
-	aliases|nicknames|noneditablealiases|
-	changepassword|changepasswordatnextlogin|
-	creationtime|
-	deletiontime|
-	email|emails|
-	externalid|externalids|
-	familyname|firstname|fullname|givenname|lastname|name|
-	gal|includeinglobaladdresslist|
-	id|
-	im|ims|
-	ipwhitelisted|
-	ismailboxsetup|
-	lastlogintime|
-	note|notes|
-	organization|organizations|
-	org|ou|orgunitpath|
-	phone|phones|
-	photo|photourl|thumbnailphotourl|
-	relation|relations|
-	suspended|
-	website|websites|
-	custom all|<SchemaNameList>
-
 # Select a section from gam.cfg and process a GAM command using values from that section
 <Select> ::=
 	select <Section> [save] [verify]
@@ -328,7 +317,6 @@ gam help
 
 gam batch <FileName>|- [charset <Charset>]
 gam csv <FileName>|- [charset <Charset>] [matchfield <FieldName> <PythonRegularExpression>] gam <GAM argument list>
-
 
 gam oauth|oauth2 create|request [<EmailAddress>]
 gam oauth|oauth2 delete|revoke
@@ -411,7 +399,6 @@ gam calendar <CalendarItem> showacl
 gam calendar <CalendarItem> addevent <EventAttributes>
 gam calendar <CalendarItem> wipe
 
-
 gam update cros <CrOSDeviceEntity> <CrOSAttributes>
 gam info cros <CrOSDeviceEntity>
 gam print cros [todrive] [query <Query>] [basic|full] [nolists|recentusers|timeranges] [listlimit <Number>]
@@ -437,8 +424,7 @@ gam info group <GroupItem> [nousers] [noaliases] [groups]
 
 gam print groups [todrive] ([domain <DomainName>] [member <UserItem>])
 	[maxresults <Number>] [delimiter <String>]
-	[members] [owners] [managers] <GroupFieldNames>* [settings]
-
+	[members] [owners] [managers] <GroupFieldNames>* [settings] 
 gam print group-members|groups-members [todrive] [group <GroupItem>]
 gam print licenses [todrive] [products|product <ProductIDList>] [skus|sku <SKUIDList>]
 
@@ -541,7 +527,6 @@ gam <UserTypeEntity> show filelist [todrive] [query <Query>]
 	  [shared] [writerscanshare])*
 	]
 gam <UserTypeEntity> show filetree
-
 
 gam <UserTypeEntity> add drivefile [drivefilename <DriveFileName>] [<DriveFileAddAttributes>]
 gam <UserTypeEntity> update drivefile <DriveFileEntity> [copy] [newfilename <DriveFileName>] [<DriveFileUpdateAttributes>]
