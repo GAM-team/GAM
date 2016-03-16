@@ -4103,6 +4103,8 @@ def getProductAndSKU(sku):
     sku = u'Google-Apps-For-Postini'
   elif sku.lower() in [u'gau', u'unlimited', u'd4w', u'dfw']:
     sku = u'Google-Apps-Unlimited'
+  elif sku.lower() in [u'lite']:
+    sku = u'Google-Apps-Lite'
   elif sku.lower() == u'coordinate':
     sku = u'Google-Coordinate'
   elif sku.lower() == u'vault':
@@ -6558,11 +6560,8 @@ def doGetUserInfo(user_email=None):
   if getLicenses:
     print u'Licenses:'
     lic = buildGAPIObject(api='licensing')
-    for sku in [u'Google-Apps', u'Google-Apps-For-Business', u'Google-Apps-Unlimited', u'Google-Apps-For-Postini',
-                u'Google-Coordinate', u'Google-Drive-storage-20GB', u'Google-Drive-storage-50GB', u'Google-Drive-storage-200GB',
-                u'Google-Drive-storage-400GB', u'Google-Drive-storage-1TB', u'Google-Drive-storage-2TB',
-                u'Google-Drive-storage-4TB', u'Google-Drive-storage-8TB', u'Google-Drive-storage-16TB', u'Google-Vault',
-                u'Google-Vault-Former-Employee']:
+    for sku in [u'Google-Apps-For-Business', u'Google-Apps-Unlimited', u'Google-Apps-For-Postini',
+                u'Google-Apps-Lite', u'Google-Vault', u'Google-Vault-Former-Employee']:
       productId, skuId = getProductAndSKU(sku)
       try:
         result = callGAPI(service=lic.licenseAssignments(), function=u'get', throw_reasons=['notFound'], userId=user_email, productId=productId, skuId=skuId)
@@ -8190,7 +8189,7 @@ def doPrintCrosDevices():
 
 def doPrintLicenses(return_list=False, skus=None):
   lic = buildGAPIObject(u'licensing')
-  products = [u'Google-Apps', u'Google-Drive-storage', u'Google-Coordinate', u'Google-Vault']
+  products = [u'Google-Apps', u'Google-Vault']
   licenses = []
   lic_attributes = [{}]
   todrive = False
