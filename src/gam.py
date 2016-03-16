@@ -25,7 +25,7 @@ For more information, see http://git.io/gam
 """
 
 __author__ = u'Jay Lee <jay0lee@gmail.com>'
-__version__ = u'3.63'
+__version__ = u'3.64'
 __license__ = u'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 import sys, os, time, datetime, random, socket, csv, platform, re, calendar, base64, string, StringIO, subprocess
@@ -108,7 +108,7 @@ GM_MAP_USER_ID_TO_NAME = u'ui2n'
 #
 GM_Globals = {
   GM_SYSEXITRC: 0,
-  GM_GAM_PATH: os.path.dirname(os.path.realpath(__file__)),
+  GM_GAM_PATH: os.path.dirname(os.path.realpath(__file__)) if not getattr(sys, u'frozen', False) else os.path.dirname(sys.executable),
   GM_WINDOWS: os.name == u'nt',
   GM_SYS_ENCODING: sys.getfilesystemencoding() if os.name == u'nt' else u'utf-8',
   GM_BATCH_QUEUE: None,
@@ -217,35 +217,35 @@ GC_TYPE_INTEGER = u'inte'
 GC_TYPE_LANGUAGE = u'lang'
 GC_TYPE_STRING = u'stri'
 
-GC_VAR_TYPE_KEY = u'type'
-GC_VAR_LIMITS_KEY = u'lmit'
+GC_VAR_TYPE = u'type'
+GC_VAR_LIMITS = u'lmit'
 
 GC_VAR_INFO = {
-  GC_ACTIVITY_MAX_RESULTS: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_LIMITS_KEY: (1, 500)},
-  GC_AUTO_BATCH_MIN: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_LIMITS_KEY: (0, None)},
-  GC_CACHE_DIR: {GC_VAR_TYPE_KEY: GC_TYPE_DIRECTORY},
-  GC_CHARSET: {GC_VAR_TYPE_KEY: GC_TYPE_STRING},
-  GC_CLIENT_SECRETS_JSON: {GC_VAR_TYPE_KEY: GC_TYPE_FILE},
-  GC_CONFIG_DIR: {GC_VAR_TYPE_KEY: GC_TYPE_DIRECTORY},
-  GC_CUSTOMER_ID: {GC_VAR_TYPE_KEY: GC_TYPE_STRING},
-  GC_DEBUG_LEVEL: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_LIMITS_KEY: (0, None)},
-  GC_DEVICE_MAX_RESULTS: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_LIMITS_KEY: (1, 1000)},
-  GC_DOMAIN: {GC_VAR_TYPE_KEY: GC_TYPE_STRING},
-  GC_DRIVE_DIR: {GC_VAR_TYPE_KEY: GC_TYPE_DIRECTORY},
-  GC_DRIVE_MAX_RESULTS: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_LIMITS_KEY: (1, 1000)},
-  GC_NO_BROWSER: {GC_VAR_TYPE_KEY: GC_TYPE_BOOLEAN},
-  GC_NO_CACHE: {GC_VAR_TYPE_KEY: GC_TYPE_BOOLEAN},
-  GC_NO_UPDATE_CHECK: {GC_VAR_TYPE_KEY: GC_TYPE_BOOLEAN},
-  GC_NO_VERIFY_SSL: {GC_VAR_TYPE_KEY: GC_TYPE_BOOLEAN},
-  GC_NUM_THREADS: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_LIMITS_KEY: (1, None)},
-  GC_OAUTH2_TXT: {GC_VAR_TYPE_KEY: GC_TYPE_FILE},
-  GC_OAUTH2SERVICE_JSON: {GC_VAR_TYPE_KEY: GC_TYPE_FILE},
-  GC_SECTION: {GC_VAR_TYPE_KEY: GC_TYPE_STRING},
-  GC_SHOW_COUNTS_MIN: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_LIMITS_KEY: (0, None)},
-  GC_SHOW_GETTINGS: {GC_VAR_TYPE_KEY: GC_TYPE_BOOLEAN},
-  GC_SITE_DIR: {GC_VAR_TYPE_KEY: GC_TYPE_DIRECTORY},
-  GC_USER_BATCH_SIZE: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_LIMITS_KEY: (1, 1000)},
-  GC_USER_MAX_RESULTS: {GC_VAR_TYPE_KEY: GC_TYPE_INTEGER, GC_VAR_LIMITS_KEY: (1, 500)},
+  GC_ACTIVITY_MAX_RESULTS: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (1, 500)},
+  GC_AUTO_BATCH_MIN: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (0, None)},
+  GC_CACHE_DIR: {GC_VAR_TYPE: GC_TYPE_DIRECTORY},
+  GC_CHARSET: {GC_VAR_TYPE: GC_TYPE_STRING},
+  GC_CLIENT_SECRETS_JSON: {GC_VAR_TYPE: GC_TYPE_FILE},
+  GC_CONFIG_DIR: {GC_VAR_TYPE: GC_TYPE_DIRECTORY},
+  GC_CUSTOMER_ID: {GC_VAR_TYPE: GC_TYPE_STRING},
+  GC_DEBUG_LEVEL: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (0, None)},
+  GC_DEVICE_MAX_RESULTS: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (1, 1000)},
+  GC_DOMAIN: {GC_VAR_TYPE: GC_TYPE_STRING},
+  GC_DRIVE_DIR: {GC_VAR_TYPE: GC_TYPE_DIRECTORY},
+  GC_DRIVE_MAX_RESULTS: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (1, 1000)},
+  GC_NO_BROWSER: {GC_VAR_TYPE: GC_TYPE_BOOLEAN},
+  GC_NO_CACHE: {GC_VAR_TYPE: GC_TYPE_BOOLEAN},
+  GC_NO_UPDATE_CHECK: {GC_VAR_TYPE: GC_TYPE_BOOLEAN},
+  GC_NO_VERIFY_SSL: {GC_VAR_TYPE: GC_TYPE_BOOLEAN},
+  GC_NUM_THREADS: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (1, None)},
+  GC_OAUTH2_TXT: {GC_VAR_TYPE: GC_TYPE_FILE},
+  GC_OAUTH2SERVICE_JSON: {GC_VAR_TYPE: GC_TYPE_FILE},
+  GC_SECTION: {GC_VAR_TYPE: GC_TYPE_STRING},
+  GC_SHOW_COUNTS_MIN: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (0, None)},
+  GC_SHOW_GETTINGS: {GC_VAR_TYPE: GC_TYPE_BOOLEAN},
+  GC_SITE_DIR: {GC_VAR_TYPE: GC_TYPE_DIRECTORY},
+  GC_USER_BATCH_SIZE: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (1, 1000)},
+  GC_USER_MAX_RESULTS: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (1, 500)},
   }
 
 MESSAGE_CLIENT_API_ACCESS_DENIED = u'Access Denied. Please make sure the Client Name:\n\n{0}\n\nis authorized for the API Scope(s):\n\n{1}\n\nThis can be configured in your Control Panel under:\n\nSecurity -->\nAdvanced Settings -->\nManage API client access'
@@ -426,10 +426,10 @@ def SetGlobalVariables():
 
   def _getOldEnvVar(itemName, envVar):
     value = os.environ.get(envVar, GC_Defaults[itemName])
-    if GC_VAR_INFO[itemName][GC_VAR_TYPE_KEY] == GC_TYPE_INTEGER:
+    if GC_VAR_INFO[itemName][GC_VAR_TYPE] == GC_TYPE_INTEGER:
       try:
         number = int(value)
-        minVal, maxVal = GC_VAR_INFO[itemName][GC_VAR_LIMITS_KEY]
+        minVal, maxVal = GC_VAR_INFO[itemName][GC_VAR_LIMITS]
         if number < minVal:
           number = minVal
         elif maxVal and (number > maxVal):
@@ -481,10 +481,10 @@ def SetGlobalVariables():
   _getOldSignalFile(GC_NO_UPDATE_CHECK, u'noupdatecheck.txt')
 # Assign directories first
   for itemName in GC_VAR_INFO:
-    if GC_VAR_INFO[itemName][GC_VAR_TYPE_KEY] == GC_TYPE_DIRECTORY:
+    if GC_VAR_INFO[itemName][GC_VAR_TYPE] == GC_TYPE_DIRECTORY:
       GC_Values[itemName] = _getCfgDirectory(itemName)
   for itemName in GC_VAR_INFO:
-    varType = GC_VAR_INFO[itemName][GC_VAR_TYPE_KEY]
+    varType = GC_VAR_INFO[itemName][GC_VAR_TYPE]
     if varType == GC_TYPE_FILE:
       GC_Values[itemName] = _getCfgFile(itemName)
     else:
@@ -1607,14 +1607,14 @@ def doCreateAdmin():
 def doPrintAdminRoles():
   cd = buildGAPIObject(u'directory')
   roles = callGAPIpages(service=cd.roles(), function=u'list', items=u'items',
-    customer=GC_Values[GC_CUSTOMER_ID])
+                        customer=GC_Values[GC_CUSTOMER_ID])
   roles_attrib = [{}]
   for role in roles:
     role_attrib = {}
     for key, value in role.items():
       if key in [u'kind', u'etag', u'etags']:
         continue
-      if not isinstance( value, (str, unicode, bool)):
+      if not isinstance(value, (str, unicode, bool)):
         continue
       if key not in roles_attrib[0]:
         roles_attrib[0][key] = key
@@ -3478,6 +3478,8 @@ def doDriveSearch(drive, query=None):
     ids.append(f_file[u'id'])
   return ids
 
+DELETE_DRIVEFILE_FUNCTION_TO_ACTION_MAP = {u'delete': u'purging', u'trash': u'trashing', u'untrash': u'untrashing',}
+
 def deleteDriveFile(users):
   fileIds = sys.argv[5]
   function = u'trash'
@@ -3486,9 +3488,13 @@ def deleteDriveFile(users):
     if sys.argv[i].lower() == u'purge':
       function = u'delete'
       i += 1
+    elif sys.argv[i].lower() == u'untrash':
+      function = u'untrash'
+      i += 1
     else:
       print u'ERROR: %s is not a valid argument for "gam <users> delete drivefile"' % sys.argv[i]
       sys.exit(2)
+  action = DELETE_DRIVEFILE_FUNCTION_TO_ACTION_MAP[function]
   for user in users:
     drive = buildGAPIServiceObject(u'drive', user)
     if fileIds[:6].lower() == u'query:':
@@ -3500,14 +3506,11 @@ def deleteDriveFile(users):
           fileIds = fileIds[:fileIds.find(u'/')]
       file_ids = [fileIds,]
     if not file_ids:
-      print u'No files to delete for %s' % user
+      print u'No files to %s for %s' % (function, user)
     i = 0
     for fileId in file_ids:
       i += 1
-      if function == u'trash':
-        print u'trashing %s for %s (%s of %s)' % (fileId, user, i, len(file_ids))
-      else:
-        print u'purging %s for %s (%s of %s)' % (fileId, user, i, len(file_ids))
+      print u'%s %s for %s (%s of %s)' % (action, fileId, user, i, len(file_ids))
       callGAPI(service=drive.files(), function=function, fileId=fileId)
 
 def printDriveFolderContents(feed, folderId, indent):
@@ -4451,10 +4454,12 @@ def doLabel(users):
     i += 1
     callGAPI(service=gmail.users().labels(), function=u'create', soft_errors=True, userId=user, body=body)
 
-def doDeleteMessages(trashOrDelete, users):
+PROCESS_MESSAGE_FUNCTION_TO_ACTION_MAP = {u'delete': u'deleted', u'trash': u'trashed', u'untrash': u'untrashed',}
+
+def doProcessMessages(users, function):
   query = None
   doIt = False
-  maxToDelete = 1
+  maxToProcess = 1
   i = 5
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'query':
@@ -4463,15 +4468,16 @@ def doDeleteMessages(trashOrDelete, users):
     elif sys.argv[i].lower() == u'doit':
       doIt = True
       i += 1
-    elif sys.argv[i].lower().replace(u'_', u'') == u'maxtodelete':
-      maxToDelete = int(sys.argv[i+1])
+    elif sys.argv[i].lower().replace(u'_', u'') in [u'maxtodelete', u'maxtotrash', u'maxtomove', u'maxtountrash']:
+      maxToProcess = int(sys.argv[i+1])
       i += 2
     else:
-      print u'ERROR: %s is not a valid argument for "gam <users> delete messages"' % sys.argv[i]
+      print u'ERROR: %s is not a valid argument for "gam <users> %s messages"' % (sys.argv[i], function)
       sys.exit(2)
   if not query:
     print u'ERROR: No query specified. You must specify some query!'
     sys.exit(2)
+  action = PROCESS_MESSAGE_FUNCTION_TO_ACTION_MAP[function]
   for user in users:
     print u'Searching messages for %s' % user
     gmail = buildGAPIServiceObject(u'gmail', user)
@@ -4481,16 +4487,16 @@ def doDeleteMessages(trashOrDelete, users):
                                userId=u'me', q=query, includeSpamTrash=True, soft_errors=True)
     del_count = len(listResult)
     if not doIt:
-      print u'would try to delete %s messages for user %s (max %s)\n' % (del_count, user, maxToDelete)
+      print u'would try to %s %s messages for user %s (max %s)\n' % (function, del_count, user, maxToProcess)
       continue
-    elif del_count > maxToDelete:
-      print u'WARNING: refusing to delete ANY messages for %s since max_to_delete is %s and messages to be deleted is %s\n' % (user, maxToDelete, del_count)
+    elif del_count > maxToProcess:
+      print u'WARNING: refusing to %s ANY messages for %s since max messages to process is %s and messages to be %s is %s\n' % (function, user, maxToProcess, action, del_count)
       continue
     i = 0
     for del_me in listResult:
       i += 1
-      print u' %s message %s for user %s (%s/%s)' % (trashOrDelete, del_me[u'id'], user, i, del_count)
-      callGAPI(service=gmail.users().messages(), function=trashOrDelete,
+      print u' %s message %s for user %s (%s/%s)' % (function, del_me[u'id'], user, i, del_count)
+      callGAPI(service=gmail.users().messages(), function=function,
                id=del_me[u'id'], userId=u'me')
 
 def doDeleteLabel(users):
@@ -4884,13 +4890,13 @@ def doWebClips(users):
 def doVacation(users):
   subject = message = u''
   if sys.argv[4].lower() in true_values:
-    enable = u'true'
+    enable = True
   elif sys.argv[4].lower() in false_values:
-    enable = u'false'
+    enable = False
   else:
     print u'ERROR: value for "gam <users> vacation" must be true or false, got %s' % sys.argv[4]
     sys.exit(2)
-  contacts_only = domain_only = u'false'
+  contacts_only = domain_only = False
   start_date = end_date = None
   i = 5
   while i < len(sys.argv):
@@ -4901,10 +4907,10 @@ def doVacation(users):
       message = sys.argv[i+1]
       i += 2
     elif sys.argv[i].lower() == u'contactsonly':
-      contacts_only = u'true'
+      contacts_only = True
       i += 1
     elif sys.argv[i].lower() == u'domainonly':
-      domain_only = u'true'
+      domain_only = True
       i += 1
     elif sys.argv[i].lower() == u'startdate':
       start_date = sys.argv[i+1]
@@ -5959,9 +5965,9 @@ def doUpdateGroup():
           if sys.argv[4].lower() == u'add':
             body = {u'role': role}
             body[u'email'] = user_email
-            result = callGAPI(service=cd.members(), function=u'insert', soft_errors=True, groupKey=group, body=body)
+            callGAPI(service=cd.members(), function=u'insert', soft_errors=True, groupKey=group, body=body)
           elif sys.argv[4].lower() == u'update':
-            result = callGAPI(service=cd.members(), function=u'update', soft_errors=True, groupKey=group, memberKey=user_email, body={u'email': user_email, u'role': role})
+            callGAPI(service=cd.members(), function=u'update', soft_errors=True, groupKey=group, memberKey=user_email, body={u'email': user_email, u'role': role})
         except googleapiclient.errors.HttpError:
           pass
     elif sys.argv[4].lower() == u'sync':
@@ -5995,7 +6001,7 @@ def doUpdateGroup():
         if user_email != u'*' and user_email.find(u'@') == -1:
           user_email = u'%s@%s' % (user_email, GC_Values[GC_DOMAIN])
         sys.stderr.write(u' removing %s\n' % user_email)
-        result = callGAPI(service=cd.members(), function=u'delete', soft_errors=True, groupKey=group, memberKey=user_email)
+        callGAPI(service=cd.members(), function=u'delete', soft_errors=True, groupKey=group, memberKey=user_email)
   else:
     i = 4
     use_cd_api = False
@@ -6493,7 +6499,8 @@ def doGetUserInfo(user_email=None):
 def doGetGroupInfo(group_name=None):
   cd = buildGAPIObject(u'directory')
   gs = buildGAPIObject(u'groupssettings')
-  get_users = True
+  getAliases = getUsers = True
+  getGroups = False
   if group_name == None:
     group_name = sys.argv[3]
     i = 4
@@ -6501,7 +6508,13 @@ def doGetGroupInfo(group_name=None):
     i = 3
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'nousers':
-      get_users = False
+      getUsers = False
+      i += 1
+    elif sys.argv[i].lower() == u'noaliases':
+      getAliases = False
+      i += 1
+    elif sys.argv[i].lower() == u'groups':
+      getGroups = True
       i += 1
     else:
       print u'ERROR: %s is not a valid argument for "gam info group"' % sys.argv[i]
@@ -6519,9 +6532,9 @@ def doGetGroupInfo(group_name=None):
   print u''
   print u'Group Settings:'
   for key, value in basic_info.items():
-    if key in [u'kind', u'etag']:
+    if (key in [u'kind', u'etag']) or ((key == u'aliases') and (not getAliases)):
       continue
-    elif type(value) == type(list()):
+    if type(value) == type(list()):
       print u' %s:' % key
       for val in value:
         print u'  %s' % val
@@ -6539,7 +6552,14 @@ def doGetGroupInfo(group_name=None):
       print u' %s: %s' % (key, value)
   except UnboundLocalError:
     pass
-  if get_users:
+  if getGroups:
+    groups = callGAPIpages(cd.groups(), u'list', u'groups',
+                           userKey=basic_info[u'email'], fields=u'nextPageToken,groups(name,email)')
+    if groups:
+      print u'Groups: ({0})'.format(len(groups))
+      for groupm in groups:
+        print u'  %s: %s' % (groupm[u'name'], groupm[u'email'])
+  if getUsers:
     members = callGAPIpages(service=cd.members(), function=u'list', items=u'members', groupKey=group_name)
     print u'Members:'
     for member in members:
@@ -6900,14 +6920,14 @@ def doGetBackupCodes(users):
       codes = callGAPI(service=cd.verificationCodes(), function=u'list', throw_reasons=[u'invalidArgument', u'invalid'], userKey=user)
     except googleapiclient.errors.HttpError:
       codes = None
-    printBackupCodes(user, codes)  
+    printBackupCodes(user, codes)
 
 def doGenBackupCodes(users):
   cd = buildGAPIObject(u'directory')
   for user in users:
     callGAPI(service=cd.verificationCodes(), function=u'generate', userKey=user)
     codes = callGAPI(service=cd.verificationCodes(), function=u'list', userKey=user)
-    printBackupCodes(user, codes)  
+    printBackupCodes(user, codes)
 
 def doDelBackupCodes(users):
   cd = buildGAPIObject(u'directory')
@@ -7373,21 +7393,23 @@ def output_csv(csv_list, titles, list_type, todrive):
       import webbrowser
       webbrowser.open(file_url)
 
-def flatten_json(structure, key="", path="", flattened=None):
+def flatten_json(structure, key="", path="", flattened=None, listLimit=None):
   if flattened == None:
     flattened = {}
-  if type(structure) not in(dict, list):
+  if not isinstance(structure, (dict, list)):
     flattened[((path + ".") if path else "") + key] = structure
   elif isinstance(structure, list):
     for i, item in enumerate(structure):
-      flatten_json(item, "%d" % i, ".".join(filter(None, [path, key])), flattened)
+      if listLimit and (i >= listLimit):
+        break
+      flatten_json(item, "%d" % i, ".".join(filter(None, [path, key])), flattened=flattened, listLimit=listLimit)
   else:
     for new_key, value in structure.items():
       if new_key in [u'kind', u'etag']:
         continue
       if value == u'1970-01-01T00:00:00.000Z':
         value = u'Never'
-      flatten_json(value, new_key, ".".join(filter(None, [path, key])), flattened)
+      flatten_json(value, new_key, ".".join(filter(None, [path, key])), flattened=flattened, listLimit=listLimit)
   return flattened
 
 def doPrintUsers():
@@ -7444,7 +7466,7 @@ def doPrintUsers():
     elif sys.argv[i].lower() == u'query':
       query = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower() in [u'firstname', u'givenname', u'lastname', u'familyName', u'fullname']:
+    elif sys.argv[i].lower() in [u'firstname', u'givenname', u'lastname', u'familyName', u'fullname', u'name']:
       user_fields.append(u'name')
       i += 1
     elif sys.argv[i].lower() == u'ou':
@@ -7993,7 +8015,7 @@ def doPrintCrosDevices():
   todrive = False
   query = projection = orderBy = sortOrder = None
   noLists = False
-  selectAttrib = None
+  listLimit = selectAttrib = None
   i = 3
   while i < len(sys.argv):
     my_arg = sys.argv[i].lower().replace(u'_', u'')
@@ -8015,6 +8037,9 @@ def doPrintCrosDevices():
       selectAttrib = u'activeTimeRanges'
       noLists = False
       i += 1
+    elif my_arg == u'listlimit':
+      listLimit = int(sys.argv[i+1])
+      i += 2
     elif my_arg == u'orderby':
       orderBy = sys.argv[i+1].lower().replace(u'_', u'')
       allowed_values = [u'location', u'user', u'lastsync', u'notes', u'serialnumber', u'status', u'supportenddate']
@@ -8051,7 +8076,7 @@ def doPrintCrosDevices():
   if all_cros:
     if (not noLists) and (not selectAttrib):
       for cros in all_cros:
-        cros_attributes.append(flatten_json(cros))
+        cros_attributes.append(flatten_json(cros, listLimit=listLimit))
         for item in cros_attributes[-1]:
           if item not in cros_attributes[0]:
             cros_attributes[0][item] = item
@@ -8077,7 +8102,9 @@ def doPrintCrosDevices():
                 cros_attributes[0][xattrib] = xattrib
                 titles.append(xattrib)
               attribMap[attrib] = xattrib
-          for item in cros[selectAttrib]:
+          for i, item in enumerate(cros[selectAttrib]):
+            if listLimit and(i >= listLimit):
+              break
             new_row = row.copy()
             for attrib in item:
               if isinstance(item[attrib], (bool, int)):
@@ -8664,19 +8691,29 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
         pass
   elif entity_type == u'file':
     users = []
-    filename = entity
-    users = readFile(filename, u'rb').splitlines()
-  elif entity_type == u'csv':
-    (filename, column) = entity.split(u':')
-    file_contents = readFile(filename)
-    f = StringIO.StringIO(file_contents)
-    input_file = csv.DictReader(f)
+    f = openFile(entity)
+    for row in f:
+      user = row.strip()
+      if user:
+        users.append(user)
+    closeFile(f)
+  elif entity_type in [u'csv', u'csvfile']:
+    try:
+      (filename, column) = entity.split(u':')
+    except ValueError:
+      filename = column = None
+    if (not filename) or (not column):
+      systemErrorExit(2, u'Expected {0} FileName:FieldName'.format(entity_type))
+    f = openFile(filename)
+    input_file = csv.DictReader(f, restval=u'')
+    if column not in input_file.fieldnames:
+      systemErrorExit(2, MESSAGE_HEADER_NOT_FOUND_IN_CSV_HEADERS.format(column, ','.join(input_file.fieldnames)))
     users = []
     for row in input_file:
-      if column not in row:
-        print u'ERROR: %s does not seem to be a header in CSV file %s' % (column, filename)
-        sys.exit(3)
-      users.append(row[column])
+      user = row[column].strip()
+      if user:
+        users.append(user)
+    closeFile(f)
   elif entity_type in [u'courseparticipants', u'teachers', u'students']:
     croom = buildGAPIObject(u'classroom')
     users = []
@@ -9376,7 +9413,7 @@ try:
   if command == u'print':
     for user in users:
       print user
-      sys.exit(0)
+    sys.exit(0)
   try:
     if (GC_Values[GC_AUTO_BATCH_MIN] > 0) and (len(users) > GC_Values[GC_AUTO_BATCH_MIN]):
       items = []
@@ -9444,9 +9481,15 @@ try:
       sys.exit(2)
   elif command == u'trash':
     if sys.argv[4].lower() in [u'message', u'messages']:
-      doDeleteMessages(trashOrDelete=u'trash', users=users)
+      doProcessMessages(users, u'trash')
     else:
       print u'ERROR: %s is not a valid argument for "gam <users> trash"' % sys.argv[4]
+      sys.exit(2)
+  elif command == u'untrash':
+    if sys.argv[4].lower() in [u'message', u'messages']:
+      doProcessMessages(users, u'untrash')
+    else:
+      print u'ERROR: %s is not a valid argument for "gam <users> untrash"' % sys.argv[4]
       sys.exit(2)
   elif command == u'delete' or command == u'del':
     delWhat = sys.argv[4].lower()
@@ -9457,7 +9500,7 @@ try:
     elif delWhat == u'label':
       doDeleteLabel(users)
     elif delWhat in [u'message', u'messages']:
-      doDeleteMessages(trashOrDelete=u'delete', users=users)
+      doProcessMessages(users, u'delete')
     elif delWhat == u'photo':
       deletePhoto(users)
     elif delWhat in [u'license', u'licence']:
