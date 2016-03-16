@@ -4552,7 +4552,7 @@ def doProcessMessages(users, function):
                                function=u'list', items=u'messages', page_message=page_message,
                                userId=u'me', q=query, includeSpamTrash=True, soft_errors=True)
     result_count = len(listResult)
-    if not doIt:
+    if not doIt or result_count == 0:
       print u'would try to %s %s messages for user %s (max %s)\n' % (function, result_count, user, maxToProcess)
       continue
     elif result_count > maxToProcess:
@@ -4565,6 +4565,21 @@ def doProcessMessages(users, function):
       for my_key in body.keys():
         kwargs[u'body'][my_key] = labelsToLabelIds(gmail, body[my_key])
     i = 0
+    if function == u'delete':
+      id_batches = [[]]
+      for del_me in listResult:
+        id_batches[i].append(del_me[u'id'])
+        if len(id_batches[i]) == 1000:
+          i += 1
+          id_batches.append([])
+      deleted_messages = 0
+      for id_batch in id_batches:
+        print u'deleting %s messages' % len(id_batch)
+        callGAPI(service=gmail.users().messages(), function=u'batchDelete',
+          body={u'ids': id_batch}, userId=u'me')
+        deleted_messages += len(id_batch)
+        print u'deleted %s of %s messages' % (deleted_messages, result_count)
+      continue
     for a_message in listResult:
       i += 1
       print u' %s message %s for user %s (%s/%s)' % (function, a_message[u'id'], user, i, result_count)
