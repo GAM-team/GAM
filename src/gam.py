@@ -4454,12 +4454,58 @@ def doLabel(users):
     i += 1
     callGAPI(service=gmail.users().labels(), function=u'create', soft_errors=True, userId=user, body=body)
 
-PROCESS_MESSAGE_FUNCTION_TO_ACTION_MAP = {u'delete': u'deleted', u'trash': u'trashed', u'untrash': u'untrashed',}
+PROCESS_MESSAGE_FUNCTION_TO_ACTION_MAP = {u'delete': u'deleted',
+  u'trash': u'trashed', u'untrash': u'untrashed', u'modify': u'modified'}
+
+def labelsToLabelIds(gmail, labels):
+  allLabels = {u'INBOX': u'INBOX', u'SPAM': u'SPAM', u'TRASH': u'TRASH',
+    u'UNREAD': u'UNREAD', u'STARRED': u'STARRED', u'IMPORTANT': u'IMPORTANT',
+    u'SENT': u'SENT', u'DRAFT': u'DRAFT',
+    u'CATEGORY_PERSONAL': u'CATEGORY_PERSONAL',
+    u'CATEGORY_SOCIAL': u'CATEGORY_SOCIAL',
+    u'CATEGORY_PROMOTIONS': u'CATEGORY_PROMOTIONS',
+    u'CATEGORY_UPDATES': u'CATEGORY_UPDATES',
+    u'CATEGORY_FORUMS': u'CATEGORY_FORUMS'}
+  labelIds = list()
+  for label in labels:
+    if label not in allLabels:
+      # first refresh labels in user mailbox
+      label_results = callGAPI(gmail.users().labels(), 'list',
+        userId='me', fields='labels(name,id,type)')
+      for a_label in label_results['labels']:
+        if a_label['type'] == 'system':
+          allLabels[a_label['id']] = a_label['id']
+        else:
+          allLabels[a_label['name']] = a_label['id']
+    if label not in allLabels:
+      # if still not there, create it
+      label_results = callGAPI(service=gmail.users().labels(), function='create',
+        body={'labelListVisibility': 'labelShow',
+        'messageListVisibility': 'show', 'name': label},
+        userId='me', fields='id')
+      allLabels[label] = label_results['id']
+    try:
+      labelIds.append(allLabels[label])
+    except KeyError:
+      pass
+    if label.find('/') != -1:
+      # make sure to create parent labels for proper nesting
+      parent_label = label[:label.rfind('/')]
+      while True:
+        if not parent_label in allLabels:
+          label_result = callGAPI(service=gmail.users().labels(),
+            function='create', userId='me', body={'name': parent_label})
+          allLabels[parent_label] = label_result['id']
+        if parent_label.find('/') == -1:
+          break
+        parent_label = parent_label[:parent_label.rfind('/')]
+  return labelIds
 
 def doProcessMessages(users, function):
   query = None
   doIt = False
   maxToProcess = 1
+  body = None
   i = 5
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'query':
@@ -4468,8 +4514,28 @@ def doProcessMessages(users, function):
     elif sys.argv[i].lower() == u'doit':
       doIt = True
       i += 1
-    elif sys.argv[i].lower().replace(u'_', u'') in [u'maxtodelete', u'maxtotrash', u'maxtomove', u'maxtountrash']:
+    elif sys.argv[i].lower().replace(u'_', u'') in [u'maxtodelete', u'maxtotrash', u'maxtomodify', u'maxtountrash']:
       maxToProcess = int(sys.argv[i+1])
+      i += 2
+    elif sys.argv[i].lower().replace(u'_', u'') in [u'addlabel']:
+      if function != u'modify':
+        print u'ERROR: labels can only be added on modify, not %s' % function
+        sys.exit(3)
+      if not body:
+        body = {u'addLabelIds': []}
+      if u'addLabelIds' not in body:
+        body[u'addLabelIds'] = []
+      body[u'addLabelIds'].append(sys.argv[i+1])
+      i += 2
+    elif sys.argv[i].lower().replace(u'_', u'') in [u'removelabel']:
+      if function != u'modify':
+        print u'ERROR: labels can only be removed on modify, not %s' % function
+        sys.exit(3)
+      if not body:
+        body = {u'removeLabelIds': []}
+      if u'removeLabelIds' not in body:
+        body[u'removeLabelIds'] = []
+      body[u'removeLabelIds'].append(sys.argv[i+1])
       i += 2
     else:
       print u'ERROR: %s is not a valid argument for "gam <users> %s messages"' % (sys.argv[i], function)
@@ -4485,19 +4551,25 @@ def doProcessMessages(users, function):
     listResult = callGAPIpages(service=gmail.users().messages(),
                                function=u'list', items=u'messages', page_message=page_message,
                                userId=u'me', q=query, includeSpamTrash=True, soft_errors=True)
-    del_count = len(listResult)
+    result_count = len(listResult)
     if not doIt:
-      print u'would try to %s %s messages for user %s (max %s)\n' % (function, del_count, user, maxToProcess)
+      print u'would try to %s %s messages for user %s (max %s)\n' % (function, result_count, user, maxToProcess)
       continue
-    elif del_count > maxToProcess:
-      print u'WARNING: refusing to %s ANY messages for %s since max messages to process is %s and messages to be %s is %s\n' % (function, user, maxToProcess, action, del_count)
+    elif result_count > maxToProcess:
+      print u'WARNING: refusing to %s ANY messages for %s since max messages to process is %s and messages to be %s is %s\n' % (function, user, maxToProcess, action, result_count)
       continue
+    if not body:
+      kwargs = {}
+    else:
+      kwargs = {u'body': {}}
+      for my_key in body.keys():
+        kwargs[u'body'][my_key] = labelsToLabelIds(gmail, body[my_key])
     i = 0
-    for del_me in listResult:
+    for a_message in listResult:
       i += 1
-      print u' %s message %s for user %s (%s/%s)' % (function, del_me[u'id'], user, i, del_count)
+      print u' %s message %s for user %s (%s/%s)' % (function, a_message[u'id'], user, i, result_count)
       callGAPI(service=gmail.users().messages(), function=function,
-               id=del_me[u'id'], userId=u'me')
+               id=a_message[u'id'], userId=u'me', **kwargs)
 
 def doDeleteLabel(users):
   label = sys.argv[5]
@@ -9478,6 +9550,12 @@ try:
       doDriveActivity(users)
     else:
       print u'ERROR: %s is not a valid argument for "gam <users> show"' % sys.argv[4]
+      sys.exit(2)
+  elif command == u'modify':
+    if sys.argv[4].lower() in [u'message', u'messages']:
+      doProcessMessages(users, u'modify')
+    else:
+      print u'ERROR: %s is not a valid argument for "gam <users> modify"' % sys.argv[4]
       sys.exit(2)
   elif command == u'trash':
     if sys.argv[4].lower() in [u'message', u'messages']:
