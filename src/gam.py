@@ -37,6 +37,7 @@ import googleapiclient.discovery
 import googleapiclient.errors
 import googleapiclient.http
 import oauth2client.client
+import oauth2client.service_account
 import oauth2client.file
 import oauth2client.tools
 import mimetypes
@@ -847,25 +848,11 @@ def buildGAPIServiceObject(api, act_as, soft_errors=False):
       printLine(GAM_WIKI_CREATE_CLIENT_SECRETS)
       systemErrorExit(6, None)
     json_data = json.loads(json_string)
-    try:
-      # new format with config and key in the .json file...
-      GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_EMAIL] = json_data[u'client_email']
-      GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID] = json_data[u'client_id']
-      GM_Globals[GM_OAUTH2SERVICE_KEY] = json_data[u'private_key']
-    except KeyError:
-      try:
-        # old format with config in the .json file and key in the .p12 file...
-        GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_EMAIL] = json_data[u'web'][u'client_email']
-        GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID] = json_data[u'web'][u'client_id']
-        GM_Globals[GM_OAUTH2SERVICE_KEY] = readFile(GC_Values[GC_OAUTH2SERVICE_JSON].replace(u'.json', u'.p12'))
-      except KeyError:
-        printLine(MESSAGE_WIKI_INSTRUCTIONS_OAUTH2SERVICE_JSON)
-        printLine(GAM_WIKI_CREATE_CLIENT_SECRETS)
-        systemErrorExit(17, MESSAGE_OAUTH2SERVICE_JSON_INVALID.format(GC_Values[GC_OAUTH2SERVICE_JSON]))
-  scope = getAPIScope(api)
-  credentials = oauth2client.client.SignedJwtAssertionCredentials(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_EMAIL],
-                                                                  GM_Globals[GM_OAUTH2SERVICE_KEY],
-                                                                  scope=scope, user_agent=GAM_INFO, sub=act_as)
+  scopes = getAPIScope(api)
+  credentials = oauth2client.service_account.ServiceAccountCredentials.from_json_keyfile_dict(
+     json_data, scopes)
+  credentials = credentials.create_delegated(act_as)
+  credentials.user_agent = GAM_INFO
   http = credentials.authorize(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL],
                                              cache=GC_Values[GC_CACHE_DIR]))
   version = getAPIVer(api)

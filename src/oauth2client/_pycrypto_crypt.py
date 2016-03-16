@@ -17,7 +17,6 @@ from Crypto.PublicKey import RSA
 from Crypto.Hash import SHA256
 from Crypto.Signature import PKCS1_v1_5
 from Crypto.Util.asn1 import DerSequence
-import six
 
 from oauth2client._helpers import _parse_pem_key
 from oauth2client._helpers import _to_bytes
@@ -116,14 +115,12 @@ class PyCryptoSigner(object):
         Raises:
             NotImplementedError if the key isn't in PEM format.
         """
-        parsed_pem_key = _parse_pem_key(key)
+        parsed_pem_key = _parse_pem_key(_to_bytes(key))
         if parsed_pem_key:
             pkey = RSA.importKey(parsed_pem_key)
         else:
             raise NotImplementedError(
-                'PKCS12 format is not supported by the PyCrypto library. '
-                'Try converting to a "PEM" '
-                '(openssl pkcs12 -in xxxxx.p12 -nodes -nocerts > '
-                'privatekey.pem) '
-                'or using PyOpenSSL if native code is an option.')
+                'No key in PEM format was detected. This implementation '
+                'can only use the PyCrypto library for keys in PEM '
+                'format.')
         return PyCryptoSigner(pkey)

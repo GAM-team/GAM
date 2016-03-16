@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-#
 # Copyright 2014 Google Inc. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,15 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
 
 """Common utility library."""
 
 import functools
 import inspect
 import logging
-import sys
-import types
 
 import six
 from six.moves import urllib
@@ -186,21 +181,6 @@ def string_to_scopes(scopes):
         return scopes.split(' ')
     else:
         return scopes
-
-
-def dict_to_tuple_key(dictionary):
-    """Converts a dictionary to a tuple that can be used as an immutable key.
-
-    The resulting key is always sorted so that logically equivalent
-    dictionaries always produce an identical tuple for a key.
-
-    Args:
-        dictionary: the dictionary to use as the key.
-
-    Returns:
-        A tuple representing the dictionary in it's naturally sorted ordering.
-    """
-    return tuple(sorted(dictionary.items()))
 
 
 def _add_query_parameter(url, name, value):
