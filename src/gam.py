@@ -25,10 +25,10 @@ For more information, see http://git.io/gam
 """
 
 __author__ = u'Jay Lee <jay0lee@gmail.com>'
-__version__ = u'3.65'
+__version__ = u'3.66'
 __license__ = u'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
-import sys, os, time, datetime, random, socket, csv, platform, re, calendar, base64, string, StringIO, subprocess
+import sys, os, time, datetime, random, socket, csv, platform, re, calendar, base64, string, codecs, StringIO, subprocess
 
 import json
 import httplib2
@@ -392,11 +392,15 @@ def closeFile(f):
 #
 # Read a file
 #
-def readFile(filename, mode=u'rb', continueOnError=False, displayError=True):
+def readFile(filename, mode=u'rb', continueOnError=False, displayError=True, encoding=None):
   try:
     if filename != u'-':
-      with open(filename, mode) as f:
-        return f.read()
+      if not encoding:
+        with open(filename, mode) as f:
+          return f.read()
+      else:
+        with codecs.open(filename, mode, encoding) as f:
+          return f.read()
     else:
       return unicode(sys.stdin.read())
   except IOError as e:
@@ -849,8 +853,7 @@ def buildGAPIServiceObject(api, act_as, soft_errors=False):
       systemErrorExit(6, None)
     json_data = json.loads(json_string)
   scopes = getAPIScope(api)
-  credentials = oauth2client.service_account.ServiceAccountCredentials.from_json_keyfile_dict(
-     json_data, scopes)
+  credentials = oauth2client.service_account.ServiceAccountCredentials.from_json_keyfile_dict(json_data, scopes)
   credentials = credentials.create_delegated(act_as)
   credentials.user_agent = GAM_INFO
   http = credentials.authorize(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL],
@@ -866,7 +869,7 @@ def buildGAPIServiceObject(api, act_as, soft_errors=False):
     if e.message in [u'access_denied',
                      u'unauthorized_client: Unauthorized client or scope in request.',
                      u'access_denied: Requested client not authorized.']:
-      systemErrorExit(5, MESSAGE_CLIENT_API_ACCESS_DENIED.format(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID], u','.join(scope)))
+      systemErrorExit(5, MESSAGE_CLIENT_API_ACCESS_DENIED.format(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID], u','.join(scopes)))
     sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, e))
     if soft_errors:
       return False
@@ -4494,36 +4497,25 @@ def doProcessMessages(users, function):
   query = None
   doIt = False
   maxToProcess = 1
-  body = None
+  body = {}
   i = 5
   while i < len(sys.argv):
-    if sys.argv[i].lower() == u'query':
+    myarg = sys.argv[i].lower().replace(u'_', u'')
+    if myarg == u'query':
       query = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower() == u'doit':
+    elif myarg == u'doit':
       doIt = True
       i += 1
-    elif sys.argv[i].lower().replace(u'_', u'') in [u'maxtodelete', u'maxtotrash', u'maxtomodify', u'maxtountrash']:
+    elif myarg in [u'maxtodelete', u'maxtotrash', u'maxtomodify', u'maxtountrash']:
       maxToProcess = int(sys.argv[i+1])
       i += 2
-    elif sys.argv[i].lower().replace(u'_', u'') in [u'addlabel']:
-      if function != u'modify':
-        print u'ERROR: labels can only be added on modify, not %s' % function
-        sys.exit(3)
-      if not body:
-        body = {u'addLabelIds': []}
-      if u'addLabelIds' not in body:
-        body[u'addLabelIds'] = []
+    elif (function == u'modify') and (myarg == u'addlabel'):
+      body.setdefault(u'addLabelIds', [])
       body[u'addLabelIds'].append(sys.argv[i+1])
       i += 2
-    elif sys.argv[i].lower().replace(u'_', u'') in [u'removelabel']:
-      if function != u'modify':
-        print u'ERROR: labels can only be removed on modify, not %s' % function
-        sys.exit(3)
-      if not body:
-        body = {u'removeLabelIds': []}
-      if u'removeLabelIds' not in body:
-        body[u'removeLabelIds'] = []
+    elif (function == u'modify') and (myarg == u'removelabel'):
+      body.setdefault(u'removeLabelIds', [])
       body[u'removeLabelIds'].append(sys.argv[i+1])
       i += 2
     else:
@@ -4547,12 +4539,6 @@ def doProcessMessages(users, function):
     elif result_count > maxToProcess:
       print u'WARNING: refusing to %s ANY messages for %s since max messages to process is %s and messages to be %s is %s\n' % (function, user, maxToProcess, action, result_count)
       continue
-    if not body:
-      kwargs = {}
-    else:
-      kwargs = {u'body': {}}
-      for my_key in body.keys():
-        kwargs[u'body'][my_key] = labelsToLabelIds(gmail, body[my_key])
     i = 0
     if function == u'delete':
       id_batches = [[]]
@@ -4569,6 +4555,12 @@ def doProcessMessages(users, function):
         deleted_messages += len(id_batch)
         print u'deleted %s of %s messages' % (deleted_messages, result_count)
       continue
+    if not body:
+      kwargs = {}
+    else:
+      kwargs = {u'body': {}}
+      for my_key in body.keys():
+        kwargs[u'body'][my_key] = labelsToLabelIds(gmail, body[my_key])
     for a_message in listResult:
       i += 1
       print u' %s message %s for user %s (%s/%s)' % (function, a_message[u'id'], user, i, result_count)
@@ -4906,7 +4898,7 @@ def getForward(users):
 def doSignature(users):
   import cgi
   if sys.argv[4].lower() == u'file':
-    signature = cgi.escape(readFile(sys.argv[5]).replace(u'\\n', u'&#xA;').replace(u'"', u"'"))
+    signature = cgi.escape(readFile(sys.argv[5], encoding=GM_Globals[GM_SYS_ENCODING]).replace(u'\\n', u'&#xA;').replace(u'"', u"'"))
   else:
     signature = cgi.escape(sys.argv[4]).replace(u'\\n', u'&#xA;').replace(u'"', u"'")
   xmlsig = u'''<?xml version="1.0" encoding="utf-8"?>
@@ -4995,7 +4987,7 @@ def doVacation(users):
       end_date = sys.argv[i+1]
       i += 2
     elif sys.argv[i].lower() == u'file':
-      message = readFile(sys.argv[i+1])
+      message = readFile(sys.argv[i+1], encoding=GM_Globals[GM_SYS_ENCODING])
       i += 2
     else:
       print u'ERROR: %s is not a valid argument for "gam <users> vacation"' % sys.argv[i]
