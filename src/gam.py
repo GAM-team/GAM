@@ -25,7 +25,7 @@ For more information, see http://git.io/gam
 """
 
 __author__ = u'Jay Lee <jay0lee@gmail.com>'
-__version__ = u'3.705'
+__version__ = u'3.707'
 __license__ = u'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 import sys, os, time, datetime, random, socket, csv, platform, re, calendar, base64, string, codecs, StringIO, subprocess, ConfigParser, collections
@@ -37,6 +37,7 @@ import googleapiclient.discovery
 import googleapiclient.errors
 import googleapiclient.http
 import oauth2client.client
+import oauth2client.service_account
 import oauth2client.file
 import oauth2client.tools
 import mimetypes
@@ -101,8 +102,7 @@ GM_CURRENT_API_USER = u'capu'
 # Current API scope
 GM_CURRENT_API_SCOPES = u'caps'
 # Values retrieved from oauth2service.json
-GM_OAUTH2SERVICE_KEY = u'oauk'
-GM_OAUTH2SERVICE_ACCOUNT_EMAIL = u'oaae'
+GM_OAUTH2SERVICE_JSON_DATA = u'oajd'
 GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID = u'oaci'
 # gam.cfg parser
 GM_PARSER = u'pars'
@@ -136,8 +136,7 @@ GM_Globals = {
   GM_GAMSCOPES_LIST: [],
   GM_CURRENT_API_USER: None,
   GM_CURRENT_API_SCOPES: [],
-  GM_OAUTH2SERVICE_KEY: None,
-  GM_OAUTH2SERVICE_ACCOUNT_EMAIL:  None,
+  GM_OAUTH2SERVICE_JSON_DATA: None,
   GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID: None,
   GM_PARSER: None,
   GM_GAM_CFG_PATH: u'',
@@ -645,11 +644,15 @@ def closeFile(f):
 #
 # Read a file
 #
-def readFile(filename, mode=u'rb', continueOnError=False, displayError=True):
+def readFile(filename, mode=u'rb', continueOnError=False, displayError=True, encoding=None):
   try:
     if filename != u'-':
-      with open(filename, mode) as f:
-        return f.read()
+      if not encoding:
+        with open(filename, mode) as f:
+          return f.read()
+      else:
+        with codecs.open(filename, mode, encoding) as f:
+          return f.read()
     else:
       return unicode(sys.stdin.read())
   except IOError as e:
@@ -1050,8 +1053,7 @@ def SetGlobalVariables():
       ea_config.read(GC_Values[GC_EXTRA_ARGS])
       GM_Globals[GM_EXTRA_ARGS_DICT].update(dict(ea_config.items(u'extra-args')))
   if prevOauth2serviceJson != GC_Values[GC_OAUTH2SERVICE_JSON]:
-    GM_Globals[GM_OAUTH2SERVICE_KEY] = None
-    GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_EMAIL] = None
+    GM_Globals[GM_OAUTH2SERVICE_JSON_DATA] = None
     GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID] = None
   if (prevGAMScopesJson != GC_Values[GC_GAMSCOPES_JSON]) or (not GM_Globals[GM_GAMSCOPES_LIST]):
     _getScopesAdminDomainFromGamScopesJson()
@@ -1170,10 +1172,28 @@ def handleOAuthTokenError(e, soft_errors):
     return None
   systemErrorExit(18, u'Authentication Token Error - {0}'.format(e))
 
+def getSvcAcctCredentials(scopes, act_as):
+  try:
+    if not GM_Globals[GM_OAUTH2SERVICE_JSON_DATA]:
+      json_string = readFile(GC_Values[GC_OAUTH2SERVICE_JSON], continueOnError=True, displayError=True)
+      if not json_string:
+        printLine(MESSAGE_WIKI_INSTRUCTIONS_OAUTH2SERVICE_JSON)
+        printLine(GAM_WIKI_CREATE_CLIENT_SECRETS)
+        systemErrorExit(6, None)
+      GM_Globals[GM_OAUTH2SERVICE_JSON_DATA] = json.loads(json_string)
+    credentials = oauth2client.service_account.ServiceAccountCredentials.from_json_keyfile_dict(GM_Globals[GM_OAUTH2SERVICE_JSON_DATA], scopes)
+    credentials = credentials.create_delegated(act_as)
+    credentials.user_agent = GAM_INFO
+    serialization_data = credentials.serialization_data
+    GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID] = serialization_data[u'client_id']
+    return credentials
+  except (ValueError, KeyError):
+    printLine(MESSAGE_WIKI_INSTRUCTIONS_OAUTH2SERVICE_JSON)
+    printLine(GAM_WIKI_CREATE_CLIENT_SECRETS)
+    invalidJSONExit(GC_Values[GC_OAUTH2SERVICE_JSON])
+
 def getGDataOAuthToken(gdataObject):
-  credentials = oauth2client.client.SignedJwtAssertionCredentials(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_EMAIL],
-                                                                  GM_Globals[GM_OAUTH2SERVICE_KEY],
-                                                                  scope=GM_Globals[GM_CURRENT_API_SCOPES], user_agent=GAM_INFO, sub=GM_Globals[GM_ADMIN])
+  credentials = getSvcAcctCredentials(GM_Globals[GM_CURRENT_API_SCOPES], GM_Globals[GM_ADMIN])
   http = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL],
                        cache=GC_Values[GC_CACHE_DIR])
   try:
@@ -1379,23 +1399,6 @@ def getAPIVersion(api):
     api = u'admin'
   return (api, version, u'{0}-{1}'.format(api, version))
 
-def getOAuth2ServiceDetails():
-  if not GM_Globals[GM_OAUTH2SERVICE_KEY]:
-    json_string = readFile(GC_Values[GC_OAUTH2SERVICE_JSON], continueOnError=True, displayError=True)
-    if not json_string:
-      printLine(MESSAGE_WIKI_INSTRUCTIONS_OAUTH2SERVICE_JSON)
-      printLine(GAM_WIKI_CREATE_CLIENT_SECRETS)
-      systemErrorExit(6, None)
-    try:
-      json_data = json.loads(json_string)
-      GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_EMAIL] = json_data[u'client_email']
-      GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID] = json_data[u'client_id']
-      GM_Globals[GM_OAUTH2SERVICE_KEY] = json_data[u'private_key']
-    except (ValueError, KeyError):
-      printLine(MESSAGE_WIKI_INSTRUCTIONS_OAUTH2SERVICE_JSON)
-      printLine(GAM_WIKI_CREATE_CLIENT_SECRETS)
-      invalidJSONExit(GC_Values[GC_OAUTH2SERVICE_JSON])
-
 def readDiscoveryFile(api_version):
   disc_filename = u'%s.json' % (api_version)
   disc_file = os.path.join(GM_Globals[GM_GAM_PATH], disc_filename)
@@ -1416,7 +1419,6 @@ def readDiscoveryFile(api_version):
     invalidJSONExit(disc_file)
 
 def getAPIversionHttpService(api):
-  getOAuth2ServiceDetails()
   api, version, api_version = getAPIVersion(api)
   http = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL],
                        cache=GC_Values[GC_CACHE_DIR])
@@ -1441,9 +1443,7 @@ def buildGAPIObject(api, act_as=None, soft_errors=False):
   GM_Globals[GM_CURRENT_API_SCOPES] = list(set(service._rootDesc[u'auth'][u'oauth2'][u'scopes'].keys()).intersection(GM_Globals[GM_GAMSCOPES_LIST]))
   if not GM_Globals[GM_CURRENT_API_SCOPES]:
     systemErrorExit(15, MESSAGE_NO_SCOPES_FOR_API.format(service._rootDesc[u'title']))
-  credentials = oauth2client.client.SignedJwtAssertionCredentials(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_EMAIL],
-                                                                  GM_Globals[GM_OAUTH2SERVICE_KEY],
-                                                                  scope=GM_Globals[GM_CURRENT_API_SCOPES], user_agent=GAM_INFO, sub=svcsub)
+  credentials = getSvcAcctCredentials(GM_Globals[GM_CURRENT_API_SCOPES], svcsub)
   try:
     service._http = credentials.authorize(http)
   except httplib2.ServerNotFoundError as e:
@@ -1453,7 +1453,6 @@ def buildGAPIObject(api, act_as=None, soft_errors=False):
   return service
 
 def initGDataObject(gdataObj, api):
-  getOAuth2ServiceDetails()
   _, _, api_version = getAPIVersion(api)
   disc_file, discovery = readDiscoveryFile(api_version)
   GM_Globals[GM_CURRENT_API_USER] = None
@@ -5025,22 +5024,76 @@ def doLabel(users, i):
     i += 1
     callGAPI(gmail.users().labels(), u'create', soft_errors=True, userId=user, body=body)
 
-PROCESS_MESSAGE_FUNCTION_TO_ACTION_MAP = {u'delete': u'deleted', u'trash': u'trashed', u'untrash': u'untrashed',}
+PROCESS_MESSAGE_FUNCTION_TO_ACTION_MAP = {u'delete': u'deleted', u'modify': u'modified', u'trash': u'trashed', u'untrash': u'untrashed',}
+
+def labelsToLabelIds(gmail, labels):
+  allLabels = {u'INBOX': u'INBOX', u'SPAM': u'SPAM', u'TRASH': u'TRASH',
+    u'UNREAD': u'UNREAD', u'STARRED': u'STARRED', u'IMPORTANT': u'IMPORTANT',
+    u'SENT': u'SENT', u'DRAFT': u'DRAFT',
+    u'CATEGORY_PERSONAL': u'CATEGORY_PERSONAL',
+    u'CATEGORY_SOCIAL': u'CATEGORY_SOCIAL',
+    u'CATEGORY_PROMOTIONS': u'CATEGORY_PROMOTIONS',
+    u'CATEGORY_UPDATES': u'CATEGORY_UPDATES',
+    u'CATEGORY_FORUMS': u'CATEGORY_FORUMS'}
+  labelIds = list()
+  for label in labels:
+    if label not in allLabels:
+      # first refresh labels in user mailbox
+      label_results = callGAPI(gmail.users().labels(), u'list',
+        userId=u'me', fields=u'labels(name,id,type)')
+      for a_label in label_results[u'labels']:
+        if a_label[u'type'] == u'system':
+          allLabels[a_label[u'id']] = a_label[u'id']
+        else:
+          allLabels[a_label[u'name']] = a_label[u'id']
+    if label not in allLabels:
+      # if still not there, create it
+      label_results = callGAPI(service=gmail.users().labels(), function=u'create',
+        body={u'labelListVisibility': u'labelShow',
+        u'messageListVisibility': u'show', u'name': label},
+        userId=u'me', fields=u'id')
+      allLabels[label] = label_results[u'id']
+    try:
+      labelIds.append(allLabels[label])
+    except KeyError:
+      pass
+    if label.find(u'/') != -1:
+      # make sure to create parent labels for proper nesting
+      parent_label = label[:label.rfind(u'/')]
+      while True:
+        if not parent_label in allLabels:
+          label_result = callGAPI(service=gmail.users().labels(),
+            function=u'create', userId=u'me', body={u'name': parent_label})
+          allLabels[parent_label] = label_result[u'id']
+        if parent_label.find(u'/') == -1:
+          break
+        parent_label = parent_label[:parent_label.rfind(u'/')]
+  return labelIds
 
 def doProcessMessages(users, function):
   query = None
   doIt = False
   maxToProcess = 1
+  body = {}
   i = 5
   while i < len(sys.argv):
-    if sys.argv[i].lower() == u'query':
+    myarg = sys.argv[i].lower().replace(u'_', u'')
+    if myarg == u'query':
       query = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower() == u'doit':
+    elif myarg == u'doit':
       doIt = True
       i += 1
-    elif sys.argv[i].lower().replace(u'_', u'') in [u'maxtodelete', u'maxtotrash', u'maxtomove', u'maxtountrash']:
+    elif myarg in [u'maxtodelete', u'maxtotrash', u'maxtomodify', u'maxtountrash']:
       maxToProcess = int(sys.argv[i+1])
+      i += 2
+    elif (function == u'modify') and (myarg == u'addlabel'):
+      body.setdefault(u'addLabelIds', [])
+      body[u'addLabelIds'].append(sys.argv[i+1])
+      i += 2
+    elif (function == u'modify') and (myarg == u'removelabel'):
+      body.setdefault(u'removeLabelIds', [])
+      body[u'removeLabelIds'].append(sys.argv[i+1])
       i += 2
     else:
       print u'ERROR: %s is not a valid argument for "gam <users> %s messages"' % (sys.argv[i], function)
@@ -5055,19 +5108,19 @@ def doProcessMessages(users, function):
     page_message = u'Got %%%%total_items%%%% messages for user %s' % user
     listResult = callGAPIpages(gmail.users().messages(), u'list', u'messages', page_message=page_message,
                                userId=u'me', q=query, includeSpamTrash=True, soft_errors=True)
-    del_count = len(listResult)
+    result_count = len(listResult)
     if not doIt:
-      print u'would try to %s %s messages for user %s (max %s)\n' % (function, del_count, user, maxToProcess)
+      print u'would try to %s %s messages for user %s (max %s)\n' % (function, result_count, user, maxToProcess)
       continue
-    elif del_count > maxToProcess:
-      print u'WARNING: refusing to %s ANY messages for %s since max messages to process is %s and messages to be %s is %s\n' % (function, user, maxToProcess, action, del_count)
+    elif result_count > maxToProcess:
+      print u'WARNING: refusing to %s ANY messages for %s since max messages to process is %s and messages to be %s is %s\n' % (function, user, maxToProcess, action, result_count)
       continue
     i = 0
-    for del_me in listResult:
+    for a_message in listResult:
       i += 1
-      print u' %s message %s for user %s (%s/%s)' % (function, del_me[u'id'], user, i, del_count)
+      print u' %s message %s for user %s (%s/%s)' % (function, a_message[u'id'], user, i, result_count)
       callGAPI(gmail.users().messages(), function,
-               id=del_me[u'id'], userId=u'me')
+               id=a_message[u'id'], userId=u'me')
 
 def doDeleteLabel(users):
   label = sys.argv[5]
@@ -5400,7 +5453,7 @@ def getForward(users):
 def doSignature(users):
   import cgi
   if sys.argv[4].lower() == u'file':
-    signature = cgi.escape(readFile(sys.argv[5]).replace(u'\\n', u'&#xA;').replace(u'"', u"'"))
+    signature = cgi.escape(readFile(sys.argv[5], encoding=GM_Globals[GM_SYS_ENCODING]).replace(u'\\n', u'&#xA;').replace(u'"', u"'"))
   else:
     signature = cgi.escape(sys.argv[4]).replace(u'\\n', u'&#xA;').replace(u'"', u"'")
   xmlsig = u'''<?xml version="1.0" encoding="utf-8"?>
@@ -5489,7 +5542,7 @@ def doVacation(users):
       end_date = sys.argv[i+1]
       i += 2
     elif sys.argv[i].lower() == u'file':
-      message = readFile(sys.argv[i+1])
+      message = readFile(sys.argv[i+1], encoding=GM_Globals[GM_SYS_ENCODING])
       i += 2
     else:
       print u'ERROR: %s is not a valid argument for "gam <users> vacation"' % sys.argv[i]
@@ -9367,9 +9420,7 @@ def OAuthInfo():
     print u'  %2d) %s (%d/%d scopes)' % (i, service._rootDesc[u'title'].replace(u'Google ', u''), len(requested_scopes), len(api_scopes))
     if requested_scopes:
       for scope in requested_scopes:
-        credentials = oauth2client.client.SignedJwtAssertionCredentials(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_EMAIL],
-                                                                        GM_Globals[GM_OAUTH2SERVICE_KEY],
-                                                                        scope=scope, user_agent=GAM_INFO, sub=GM_Globals[GM_ADMIN])
+        credentials = getSvcAcctCredentials(scope, GM_Globals[GM_ADMIN])
         try:
           service._http = credentials.refresh(http)
           status = u'Authorized'
@@ -9592,7 +9643,7 @@ def run_batch(items):
   num_worker_threads = min(total_items, GC_Values[GC_NUM_THREADS])
   GM_Globals[GM_BATCH_QUEUE] = Queue.Queue(maxsize=num_worker_threads) # GM_Globals[GM_BATCH_QUEUE].put() gets blocked when trying to create more items than there are workers
   print u'starting %s worker threads...' % num_worker_threads
-  for i in range(num_worker_threads):
+  for _ in range(num_worker_threads):
     t = threading.Thread(target=batch_worker)
     t.daemon = True
     t.start()
