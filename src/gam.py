@@ -4471,7 +4471,7 @@ def labelsToLabelIds(gmail, labels):
     if label not in allLabels:
       # first refresh labels in user mailbox
       label_results = callGAPI(gmail.users().labels(), 'list',
-        userId='me', fields='labels(name,id,type)')
+                               userId='me', fields='labels(name,id,type)')
       for a_label in label_results['labels']:
         if a_label['type'] == 'system':
           allLabels[a_label['id']] = a_label['id']
@@ -4479,9 +4479,9 @@ def labelsToLabelIds(gmail, labels):
           allLabels[a_label['name']] = a_label['id']
     if label not in allLabels:
       # if still not there, create it
-      label_results = callGAPI(service=gmail.users().labels(), function='create',
-        body={'labelListVisibility': 'labelShow',
-        'messageListVisibility': 'show', 'name': label},
+      label_results = callGAPI(gmail.users().labels(), 'create',
+                               body={'labelListVisibility': 'labelShow',
+                                     'messageListVisibility': 'show', 'name': label},
         userId='me', fields='id')
       allLabels[label] = label_results['id']
     try:
@@ -4493,8 +4493,8 @@ def labelsToLabelIds(gmail, labels):
       parent_label = label[:label.rfind('/')]
       while True:
         if not parent_label in allLabels:
-          label_result = callGAPI(service=gmail.users().labels(),
-            function='create', userId='me', body={'name': parent_label})
+          label_result = callGAPI(service=gmail.users().labels(), 'create',
+                                  userId='me', body={'name': parent_label})
           allLabels[parent_label] = label_result['id']
         if parent_label.find('/') == -1:
           break
