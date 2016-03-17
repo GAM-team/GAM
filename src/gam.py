@@ -93,8 +93,7 @@ GM_BATCH_QUEUE = u'batq'
 # Extra arguments to pass to GAPI functions
 GM_EXTRA_ARGS_DICT = u'exad'
 # Values retrieved from oauth2service.json
-GM_OAUTH2SERVICE_KEY = u'oauk'
-GM_OAUTH2SERVICE_ACCOUNT_EMAIL = u'oaae'
+GM_OAUTH2SERVICE_JSON_DATA = u'oajd'
 GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID = u'oaci'
 # File containing time of last GAM update check
 GM_LAST_UPDATE_CHECK_TXT = u'lupc'
@@ -114,8 +113,7 @@ GM_Globals = {
   GM_SYS_ENCODING: sys.getfilesystemencoding() if os.name == u'nt' else u'utf-8',
   GM_BATCH_QUEUE: None,
   GM_EXTRA_ARGS_DICT:  {u'prettyPrint': False},
-  GM_OAUTH2SERVICE_KEY: None,
-  GM_OAUTH2SERVICE_ACCOUNT_EMAIL:  None,
+  GM_OAUTH2SERVICE_JSON_DATA: None,
   GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID: None,
   GM_LAST_UPDATE_CHECK_TXT: u'',
   GM_MAP_ORGUNIT_ID_TO_NAME: None,
@@ -254,6 +252,7 @@ MESSAGE_GAM_EXITING_FOR_UPDATE = u'GAM is now exiting so that you can overwrite 
 MESSAGE_GAM_OUT_OF_MEMORY = u'GAM has run out of memory. If this is a large Google Apps instance, you should use a 64-bit version of GAM on Windows or a 64-bit version of Python on other systems.'
 MESSAGE_HEADER_NOT_FOUND_IN_CSV_HEADERS = u'Header "{0}" not found in CSV headers of "{1}".'
 MESSAGE_HIT_CONTROL_C_TO_UPDATE = u'\n\nHit CTRL+C to visit the GAM website and download the latest release or wait 15 seconds continue with this boring old version. GAM won\'t bother you with this announcement for 1 week or you can create a file named noupdatecheck.txt in the same location as gam.py or gam.exe and GAM won\'t ever check for updates.'
+MESSAGE_INVALID_JSON = u'The file {0} has an invalid format.'
 MESSAGE_NO_DISCOVERY_INFORMATION = u'No online discovery doc and {0} does not exist locally'
 MESSAGE_NO_PYTHON_SSL = u'You don\'t have the Python SSL module installed so we can\'t verify SSL Certificates. You can fix this by installing the Python SSL module or you can live on the edge and turn SSL validation off by creating a file named noverifyssl.txt in the same location as gam.exe / gam.py'
 MESSAGE_NO_TRANSFER_LACK_OF_DISK_SPACE = u'Cowardly refusing to perform migration due to lack of target drive space. Source size: {0}mb Target Free: {1}mb'
@@ -361,6 +360,9 @@ def systemErrorExit(sysRC, message):
   if message:
     sys.stderr.write(u'\n{0}{1}\n'.format(ERROR_PREFIX, message))
   sys.exit(sysRC)
+
+def invalidJSONExit(fileName):
+  systemErrorExit(17, MESSAGE_INVALID_JSON.format(fileName))
 
 def noPythonSSLExit():
   systemErrorExit(8, MESSAGE_NO_PYTHON_SSL)
@@ -498,8 +500,7 @@ def SetGlobalVariables():
   if not GC_Values[GC_NO_UPDATE_CHECK]:
     doGAMCheckForUpdates()
 # Globals derived from config file values
-  GM_Globals[GM_OAUTH2SERVICE_KEY] = None
-  GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_EMAIL] = None
+  GM_Globals[GM_OAUTH2SERVICE_JSON_DATA] = None
   GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID] = None
   GM_Globals[GM_EXTRA_ARGS_DICT] = {u'prettyPrint': GC_Values[GC_DEBUG_LEVEL] > 0}
   httplib2.debuglevel = GC_Values[GC_DEBUG_LEVEL]
@@ -845,17 +846,24 @@ def buildGAPIObject(api):
   return service
 
 def buildGAPIServiceObject(api, act_as, soft_errors=False):
-  if not GM_Globals[GM_OAUTH2SERVICE_KEY]:
-    json_string = readFile(GC_Values[GC_OAUTH2SERVICE_JSON], continueOnError=True, displayError=True)
-    if not json_string:
-      printLine(MESSAGE_WIKI_INSTRUCTIONS_OAUTH2SERVICE_JSON)
-      printLine(GAM_WIKI_CREATE_CLIENT_SECRETS)
-      systemErrorExit(6, None)
-    json_data = json.loads(json_string)
-  scopes = getAPIScope(api)
-  credentials = oauth2client.service_account.ServiceAccountCredentials.from_json_keyfile_dict(json_data, scopes)
-  credentials = credentials.create_delegated(act_as)
-  credentials.user_agent = GAM_INFO
+  try:
+    if not GM_Globals[GM_OAUTH2SERVICE_JSON_DATA]:
+      json_string = readFile(GC_Values[GC_OAUTH2SERVICE_JSON], continueOnError=True, displayError=True)
+      if not json_string:
+        printLine(MESSAGE_WIKI_INSTRUCTIONS_OAUTH2SERVICE_JSON)
+        printLine(GAM_WIKI_CREATE_CLIENT_SECRETS)
+        systemErrorExit(6, None)
+      GM_Globals[GM_OAUTH2SERVICE_JSON_DATA] = json.loads(json_string)
+    scopes = getAPIScope(api)
+    credentials = oauth2client.service_account.ServiceAccountCredentials.from_json_keyfile_dict(GM_Globals[GM_OAUTH2SERVICE_JSON_DATA], scopes)
+    credentials = credentials.create_delegated(act_as)
+    credentials.user_agent = GAM_INFO
+    serialization_data = credentials.serialization_data
+    GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID] = serialization_data[u'client_id']
+  except (ValueError, KeyError):
+    printLine(MESSAGE_WIKI_INSTRUCTIONS_OAUTH2SERVICE_JSON)
+    printLine(GAM_WIKI_CREATE_CLIENT_SECRETS)
+    invalidJSONExit(GC_Values[GC_OAUTH2SERVICE_JSON])
   http = credentials.authorize(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL],
                                              cache=GC_Values[GC_CACHE_DIR]))
   version = getAPIVer(api)
