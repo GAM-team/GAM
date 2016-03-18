@@ -5027,20 +5027,22 @@ def doLabel(users, i):
 PROCESS_MESSAGE_FUNCTION_TO_ACTION_MAP = {u'delete': u'deleted', u'modify': u'modified', u'trash': u'trashed', u'untrash': u'untrashed',}
 
 def labelsToLabelIds(gmail, labels):
-  allLabels = {u'INBOX': u'INBOX', u'SPAM': u'SPAM', u'TRASH': u'TRASH',
+  allLabels = {
+    u'INBOX': u'INBOX', u'SPAM': u'SPAM', u'TRASH': u'TRASH',
     u'UNREAD': u'UNREAD', u'STARRED': u'STARRED', u'IMPORTANT': u'IMPORTANT',
     u'SENT': u'SENT', u'DRAFT': u'DRAFT',
     u'CATEGORY_PERSONAL': u'CATEGORY_PERSONAL',
     u'CATEGORY_SOCIAL': u'CATEGORY_SOCIAL',
     u'CATEGORY_PROMOTIONS': u'CATEGORY_PROMOTIONS',
     u'CATEGORY_UPDATES': u'CATEGORY_UPDATES',
-    u'CATEGORY_FORUMS': u'CATEGORY_FORUMS'}
+    u'CATEGORY_FORUMS': u'CATEGORY_FORUMS',
+    }
   labelIds = list()
   for label in labels:
     if label not in allLabels:
       # first refresh labels in user mailbox
       label_results = callGAPI(gmail.users().labels(), u'list',
-                               userId=u'me', fields=u'labels(name,id,type)')
+                               userId=u'me', fields=u'labels(id,name,type)')
       for a_label in label_results[u'labels']:
         if a_label[u'type'] == u'system':
           allLabels[a_label[u'id']] = a_label[u'id']
@@ -5124,10 +5126,11 @@ def doProcessMessages(users, function):
 
 def doDeleteLabel(users):
   label = sys.argv[5]
+  label_name_lower = label.lower()
   for user in users:
     gmail = buildGAPIObject(u'gmail', user)
     print u'Getting all labels for %s...' % user
-    labels = callGAPI(gmail.users().labels(), u'list', userId=user, fields=u'labels(name,id,type)')
+    labels = callGAPI(gmail.users().labels(), u'list', userId=user, fields=u'labels(id,name,type)')
     del_labels = []
     if label == u'--ALL_LABELS--':
       for del_label in labels[u'labels']:
@@ -5143,13 +5146,11 @@ def doDeleteLabel(users):
         elif p.match(del_label[u'name']):
           del_labels.append(del_label)
     else:
-      got_label = False
       for del_label in labels[u'labels']:
-        if label.lower() == del_label[u'name'].lower():
+        if label_name_lower == del_label[u'name'].lower():
           del_labels.append(del_label)
-          got_label = True
           break
-      if not got_label:
+      else:
         print u' Error: no such label for %s' % user
         continue
     del_me_count = len(del_labels)
@@ -5219,6 +5220,7 @@ def showGmailProfile(users):
 
 def updateLabels(users):
   label_name = sys.argv[5]
+  label_name_lower = label_name.lower()
   body = {}
   i = 6
   while i < len(sys.argv):
@@ -5248,14 +5250,13 @@ def updateLabels(users):
   for user in users:
     gmail = buildGAPIObject(u'gmail', user)
     labels = callGAPI(gmail.users().labels(), u'list', userId=user, fields=u'labels(id,name)')
-    label_id = None
     for label in labels[u'labels']:
-      if label[u'name'].lower() == label_name.lower():
-        label_id = label[u'id']
+      if label[u'name'].lower() == label_name_lower:
+        callGAPI(gmail.users().labels(), u'patch', soft_errors=True,
+                 userId=user, id=label[u'id'], body=body)
         break
-    if not label_id:
+    else:
       print u'Error: user does not have a label named %s' % label_name
-    callGAPI(gmail.users().labels(), u'patch', soft_errors=True, userId=user, id=label_id, body=body)
 
 def renameLabels(users):
   search = u'^Inbox/(.*)$'
