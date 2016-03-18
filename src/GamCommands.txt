@@ -572,7 +572,7 @@ gam <UserTypeEntity> deprovision|deprov
 gam <UserTypeEntity> [add] label|labels <Name> [messagelistvisibility hide|show] [labellistvisibility hide|show|showifunread]
 gam <UserTypeEntity> update labelsettings <LabelName> [name <Name>] [messagelistvisibility hide|show] [labellistvisibility hide|show|showifunread]
 gam <UserTypeEntity> update label|labels [search <PythonRegularExpression>] [replace <LabelReplacement>] [merge]
-gam <UserTypeEntity> delete|del label|labels <LabelName>|regex:<LabelREPattern>
+gam <UserTypeEntity> delete|del label|labels <LabelName>|regex:<LabelREPattern>|--ALL_LABELS--
 gam <UserTypeEntity> show labels|label [onlyuser] [showcounts]
 
 gam <UserTypeEntity> delete message|messages query <Query> [doit] [max_to_delete <Number>]
