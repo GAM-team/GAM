@@ -14,7 +14,7 @@
 """OpenSSL Crypto-related routines for oauth2client."""
 
 import base64
-import six
+
 from OpenSSL import crypto
 
 from oauth2client._helpers import _parse_pem_key
@@ -68,6 +68,7 @@ class OpenSSLVerifier(object):
         Raises:
             OpenSSL.crypto.Error: if the key_pem can't be parsed.
         """
+        key_pem = _to_bytes(key_pem)
         if is_x509_cert:
             pubkey = crypto.load_certificate(crypto.FILETYPE_PEM, key_pem)
         else:
@@ -112,6 +113,7 @@ class OpenSSLSigner(object):
         Raises:
             OpenSSL.crypto.Error if the key can't be parsed.
         """
+        key = _to_bytes(key)
         parsed_pem_key = _parse_pem_key(key)
         if parsed_pem_key:
             pkey = crypto.load_privatekey(crypto.FILETYPE_PEM, parsed_pem_key)
@@ -121,19 +123,17 @@ class OpenSSLSigner(object):
         return OpenSSLSigner(pkey)
 
 
-def pkcs12_key_as_pem(private_key_text, private_key_password):
-    """Convert the contents of a PKCS12 key to PEM using OpenSSL.
+def pkcs12_key_as_pem(private_key_bytes, private_key_password):
+    """Convert the contents of a PKCS#12 key to PEM using pyOpenSSL.
 
     Args:
-        private_key_text: String. Private key.
-        private_key_password: String. Password for PKCS12.
+        private_key_bytes: Bytes. PKCS#12 key in DER format.
+        private_key_password: String. Password for PKCS#12 key.
 
     Returns:
-        String. PEM contents of ``private_key_text``.
+        String. PEM contents of ``private_key_bytes``.
     """
-    decoded_body = base64.b64decode(private_key_text)
     private_key_password = _to_bytes(private_key_password)
-
-    pkcs12 = crypto.load_pkcs12(decoded_body, private_key_password)
+    pkcs12 = crypto.load_pkcs12(private_key_bytes, private_key_password)
     return crypto.dump_privatekey(crypto.FILETYPE_PEM,
                                   pkcs12.get_privatekey())

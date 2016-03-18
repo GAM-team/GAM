@@ -14,12 +14,17 @@
 
 """OAuth 2.0 utitilies for Google Developer Shell environment."""
 
+import datetime
 import json
 import os
 import socket
 
 from oauth2client._helpers import _to_bytes
 from oauth2client import client
+
+# Expose utcnow() at module level to allow for
+# easier testing (by replacing with a stub).
+_UTCNOW = datetime.datetime.utcnow
 
 DEVSHELL_ENV = 'DEVSHELL_CLIENT_PORT'
 
@@ -52,6 +57,7 @@ class CredentialInfoResponse(object):
     * Index 0 - user email
     * Index 1 - default project ID. None if the project context is not known.
     * Index 2 - OAuth2 access token. None if there is no valid auth context.
+    * Index 3 - Seconds until the access token expires. None if not present.
     """
 
     def __init__(self, json_string):
@@ -63,6 +69,7 @@ class CredentialInfoResponse(object):
         self.user_email = pbl[0] if pbl_len > 0 else None
         self.project_id = pbl[1] if pbl_len > 1 else None
         self.access_token = pbl[2] if pbl_len > 2 else None
+        self.expires_in = pbl[3] if pbl_len > 3 else None
 
 
 def _SendRecv():
@@ -117,6 +124,12 @@ class DevshellCredentials(client.GoogleCredentials):
     def _refresh(self, http_request):
         self.devshell_response = _SendRecv()
         self.access_token = self.devshell_response.access_token
+        expires_in = self.devshell_response.expires_in
+        if expires_in is not None:
+            delta = datetime.timedelta(seconds=expires_in)
+            self.token_expiry = _UTCNOW() + delta
+        else:
+            self.token_expiry = None
 
     @property
     def user_email(self):

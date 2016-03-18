@@ -1,4 +1,3 @@
-#
 # Copyright 2014 the Melange authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,7 +17,6 @@
 import base64
 import binascii
 import hmac
-import six
 import time
 
 from oauth2client._helpers import _to_bytes

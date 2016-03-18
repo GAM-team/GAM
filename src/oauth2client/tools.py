@@ -26,6 +26,7 @@ import socket
 import sys
 
 from six.moves import BaseHTTPServer
+from six.moves import http_client
 from six.moves import urllib
 from six.moves import input
 
@@ -95,7 +96,7 @@ class ClientRedirectHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         if the flow has completed. Note that we can't detect
         if an error occurred.
         """
-        self.send_response(200)
+        self.send_response(http_client.OK)
         self.send_header("Content-type", "text/html")
         self.end_headers()
         query = self.path.split('?', 1)[-1]
@@ -112,7 +113,7 @@ class ClientRedirectHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
 
 @util.positional(3)
-def run_flow(flow, storage, flags, http=None):
+def run_flow(flow, storage, flags=None, http=None):
     """Core code for a command-line application.
 
     The ``run()`` function is called from your application and runs
@@ -153,15 +154,18 @@ def run_flow(flow, storage, flags, http=None):
     Args:
         flow: Flow, an OAuth 2.0 Flow to step through.
         storage: Storage, a ``Storage`` to store the credential in.
-        flags: ``argparse.Namespace``, The command-line flags. This is the
-               object returned from calling ``parse_args()`` on
-               ``argparse.ArgumentParser`` as described above.
+        flags: ``argparse.Namespace``, (Optional) The command-line flags. This
+               is the object returned from calling ``parse_args()`` on
+               ``argparse.ArgumentParser`` as described above. Defaults
+               to ``argparser.parse_args()``.
         http: An instance of ``httplib2.Http.request`` or something that
               acts like it.
 
     Returns:
         Credentials, the obtained credential.
     """
+    if flags is None:
+        flags = argparser.parse_args()
     logging.getLogger().setLevel(getattr(logging, flags.logging_level))
     if not flags.noauth_local_webserver:
         success = False
@@ -211,8 +215,11 @@ def run_flow(flow, storage, flags, http=None):
         print()
         print('    ' + authorize_url)
         print()
-        print('If your browser is on a different machine then exit and re-run this command')
-        print('after executing the command: "gam config no_browser true save"')
+        print('If your browser is on a different machine then '
+              'exit and re-run this')
+        print('application with the command-line parameter ')
+        print()
+        print('  --noauth_local_webserver')
         print()
     else:
         print('Go to the following link in your browser:')

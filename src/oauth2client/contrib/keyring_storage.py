@@ -59,24 +59,9 @@ class Storage(BaseStorage):
                           credentials are stored.
             user_name: string, The name of the user to store credentials for.
         """
+        super(Storage, self).__init__(lock=threading.Lock())
         self._service_name = service_name
         self._user_name = user_name
-        self._lock = threading.Lock()
-
-    def acquire_lock(self):
-        """Acquires any lock necessary to access this Storage.
-
-        This lock is not reentrant.
-        """
-        self._lock.acquire()
-
-    def release_lock(self):
-        """Release the Storage lock.
-
-        Trying to release a lock that isn't held will result in a
-        RuntimeError.
-        """
-        self._lock.release()
 
     def locked_get(self):
         """Retrieve Credential from file.

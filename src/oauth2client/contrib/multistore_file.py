@@ -53,7 +53,7 @@ import threading
 from oauth2client.client import Credentials
 from oauth2client.client import Storage as BaseStorage
 from oauth2client import util
-from oauth2client.locked_file import LockedFile
+from oauth2client.contrib.locked_file import LockedFile
 
 
 __author__ = 'jbeda@google.com (Joe Beda)'
@@ -71,6 +71,21 @@ class Error(Exception):
 
 class NewerCredentialStoreError(Error):
     """The credential store is a newer version than supported."""
+
+
+def _dict_to_tuple_key(dictionary):
+    """Converts a dictionary to a tuple that can be used as an immutable key.
+
+    The resulting key is always sorted so that logically equivalent
+    dictionaries always produce an identical tuple for a key.
+
+    Args:
+        dictionary: the dictionary to use as the key.
+
+    Returns:
+        A tuple representing the dictionary in it's naturally sorted ordering.
+    """
+    return tuple(sorted(dictionary.items()))
 
 
 @util.positional(4)
@@ -139,7 +154,7 @@ def get_credential_storage_custom_key(filename, key_dict,
         credential.
     """
     multistore = _get_multistore(filename, warn_on_readonly=warn_on_readonly)
-    key = util.dict_to_tuple_key(key_dict)
+    key = _dict_to_tuple_key(key_dict)
     return multistore._get_storage(key)
 
 
@@ -290,6 +305,11 @@ class _MultiStore(object):
             elif e.errno == errno.ENOLCK:
                 logger.warn('File system is out of resources for writing the '
                             'credentials file (is your disk full?).')
+            elif e.errno == errno.EDEADLK:
+                logger.warn('Lock contention on multistore file, opening '
+                            'in read-only mode.')
+            elif e.errno == errno.EACCES:
+                logger.warn('Cannot access credentials file.')
             else:
                 raise
         if not self._file.is_locked():
@@ -399,7 +419,7 @@ class _MultiStore(object):
             OAuth2Credential object.
         """
         raw_key = cred_entry['key']
-        key = util.dict_to_tuple_key(raw_key)
+        key = _dict_to_tuple_key(raw_key)
         credential = None
         credential = Credentials.new_from_json(
             json.dumps(cred_entry['credential']))

@@ -32,26 +32,25 @@ from google.appengine.api import memcache
 from google.appengine.api import users
 from google.appengine.ext import db
 from google.appengine.ext.webapp.util import login_required
-from google.appengine.ext.webapp.util import run_wsgi_app
+
 from oauth2client import GOOGLE_AUTH_URI
 from oauth2client import GOOGLE_REVOKE_URI
 from oauth2client import GOOGLE_TOKEN_URI
 from oauth2client import clientsecrets
 from oauth2client import util
-from oauth2client import xsrfutil
 from oauth2client.client import AccessTokenRefreshError
 from oauth2client.client import AssertionCredentials
 from oauth2client.client import Credentials
 from oauth2client.client import Flow
 from oauth2client.client import OAuth2WebServerFlow
 from oauth2client.client import Storage
+from oauth2client.contrib import xsrfutil
 
-# TODO(dhermes): Resolve import issue.
 # This is a temporary fix for a Google internal issue.
 try:
-    from google.appengine.ext import ndb
-except ImportError:
-    ndb = None
+    from oauth2client.contrib import _appengine_ndb
+except ImportError:  # pragma: NO COVER
+    _appengine_ndb = None
 
 
 __author__ = 'jcgregorio@google.com (Joe Gregorio)'
@@ -61,6 +60,21 @@ logger = logging.getLogger(__name__)
 OAUTH2CLIENT_NAMESPACE = 'oauth2client#ns'
 
 XSRF_MEMCACHE_ID = 'xsrf_secret_key'
+
+if _appengine_ndb is None:
+    CredentialsNDBModel = None
+    CredentialsNDBProperty = None
+    FlowNDBProperty = None
+    _NDB_KEY = None
+    _NDB_MODEL = None
+    SiteXsrfSecretKeyNDB = None
+else:
+    CredentialsNDBModel = _appengine_ndb.CredentialsNDBModel
+    CredentialsNDBProperty = _appengine_ndb.CredentialsNDBProperty
+    FlowNDBProperty = _appengine_ndb.FlowNDBProperty
+    _NDB_KEY = _appengine_ndb.NDB_KEY
+    _NDB_MODEL = _appengine_ndb.NDB_MODEL
+    SiteXsrfSecretKeyNDB = _appengine_ndb.SiteXsrfSecretKeyNDB
 
 
 def _safe_html(s):
@@ -90,24 +104,6 @@ class SiteXsrfSecretKey(db.Model):
     site.
     """
     secret = db.StringProperty()
-
-if ndb is not None:
-    class SiteXsrfSecretKeyNDB(ndb.Model):
-        """NDB Model for storage for the sites XSRF secret key.
-
-        Since this model uses the same kind as SiteXsrfSecretKey, it can be
-        used interchangeably. This simply provides an NDB model for interacting
-        with the same data the DB model interacts with.
-
-        There should only be one instance stored of this model, the one used
-        for the site.
-        """
-        secret = ndb.StringProperty()
-
-        @classmethod
-        def _get_kind(cls):
-            """Return the kind name for this class."""
-            return 'SiteXsrfSecretKey'
 
 
 def _generate_new_xsrf_secret_key():
@@ -166,6 +162,7 @@ class AppAssertionCredentials(AssertionCredentials):
         self.scope = util.scopes_to_string(scope)
         self._kwargs = kwargs
         self.service_account_id = kwargs.get('service_account_id', None)
+        self._service_account_email = None
 
         # Assertion type is no longer used, but still in the
         # parent class signature.
@@ -210,6 +207,34 @@ class AppAssertionCredentials(AssertionCredentials):
     def create_scoped(self, scopes):
         return AppAssertionCredentials(scopes, **self._kwargs)
 
+    def sign_blob(self, blob):
+        """Cryptographically sign a blob (of bytes).
+
+        Implements abstract method
+        :meth:`oauth2client.client.AssertionCredentials.sign_blob`.
+
+        Args:
+            blob: bytes, Message to be signed.
+
+        Returns:
+            tuple, A pair of the private key ID used to sign the blob and
+            the signed contents.
+        """
+        return app_identity.sign_blob(blob)
+
+    @property
+    def service_account_email(self):
+        """Get the email for the current service account.
+
+        Returns:
+            string, The email associated with the Google App Engine
+            service account.
+        """
+        if self._service_account_email is None:
+            self._service_account_email = (
+                app_identity.get_service_account_name())
+        return self._service_account_email
+
 
 class FlowProperty(db.Property):
     """App Engine datastore Property for Flow.
@@ -242,35 +267,6 @@ class FlowProperty(db.Property):
 
     def empty(self, value):
         return not value
-
-
-if ndb is not None:
-    class FlowNDBProperty(ndb.PickleProperty):
-        """App Engine NDB datastore Property for Flow.
-
-        Serves the same purpose as the DB FlowProperty, but for NDB models.
-        Since PickleProperty inherits from BlobProperty, the underlying
-        representation of the data in the datastore will be the same as in the
-        DB case.
-
-        Utility property that allows easy storage and retrieval of an
-        oauth2client.Flow
-        """
-
-        def _validate(self, value):
-            """Validates a value as a proper Flow object.
-
-            Args:
-                value: A value to be set on the property.
-
-            Raises:
-                TypeError if the value is not an instance of Flow.
-            """
-            logger.info('validate: Got type %s', type(value))
-            if value is not None and not isinstance(value, Flow):
-                raise TypeError('Property %s must be convertible to a flow '
-                                'instance; received: %s.' % (self._name,
-                                                             value))
 
 
 class CredentialsProperty(db.Property):
@@ -317,73 +313,6 @@ class CredentialsProperty(db.Property):
         return value
 
 
-if ndb is not None:
-    # TODO(dhermes): Turn this into a JsonProperty and overhaul the Credentials
-    #                and subclass mechanics to use new_from_dict, to_dict,
-    #                from_dict, etc.
-    class CredentialsNDBProperty(ndb.BlobProperty):
-        """App Engine NDB datastore Property for Credentials.
-
-        Serves the same purpose as the DB CredentialsProperty, but for NDB
-        models. Since CredentialsProperty stores data as a blob and this
-        inherits from BlobProperty, the data in the datastore will be the same
-        as in the DB case.
-
-        Utility property that allows easy storage and retrieval of Credentials
-        and subclasses.
-        """
-
-        def _validate(self, value):
-            """Validates a value as a proper credentials object.
-
-            Args:
-                value: A value to be set on the property.
-
-            Raises:
-                TypeError if the value is not an instance of Credentials.
-            """
-            logger.info('validate: Got type %s', type(value))
-            if value is not None and not isinstance(value, Credentials):
-                raise TypeError('Property %s must be convertible to a '
-                                'credentials instance; received: %s.' %
-                                (self._name, value))
-
-        def _to_base_type(self, value):
-            """Converts our validated value to a JSON serialized string.
-
-            Args:
-                value: A value to be set in the datastore.
-
-            Returns:
-                A JSON serialized version of the credential, else '' if value
-                is None.
-            """
-            if value is None:
-                return ''
-            else:
-                return value.to_json()
-
-        def _from_base_type(self, value):
-            """Converts our stored JSON string back to the desired type.
-
-            Args:
-                value: A value from the datastore to be converted to the
-                       desired type.
-
-            Returns:
-                A deserialized Credentials (or subclass) object, else None if
-                the value can't be parsed.
-            """
-            if not value:
-                return None
-            try:
-                # Uses the from_json method of the implied class of value
-                credentials = Credentials.new_from_json(value)
-            except ValueError:
-                credentials = None
-            return credentials
-
-
 class StorageByKeyName(Storage):
     """Store and retrieve a credential to and from the App Engine datastore.
 
@@ -408,6 +337,8 @@ class StorageByKeyName(Storage):
             user: users.User object, optional. Can be used to grab user ID as a
                   key_name if no key name is specified.
         """
+        super(StorageByKeyName, self).__init__()
+
         if key_name is None:
             if user is None:
                 raise ValueError('StorageByKeyName called with no '
@@ -429,7 +360,7 @@ class StorageByKeyName(Storage):
         # need worry about new-style classes since ndb and db models are
         # new-style
         if isinstance(self._model, type):
-            if ndb is not None and issubclass(self._model, ndb.Model):
+            if _NDB_MODEL is not None and issubclass(self._model, _NDB_MODEL):
                 return True
             elif issubclass(self._model, db.Model):
                 return False
@@ -458,7 +389,7 @@ class StorageByKeyName(Storage):
         not the given key is in the datastore.
         """
         if self._is_ndb():
-            ndb.Key(self._model, self._key_name).delete()
+            _NDB_KEY(self._model, self._key_name).delete()
         else:
             entity_key = db.Key.from_path(self._model.kind(), self._key_name)
             db.delete(entity_key)
@@ -515,26 +446,6 @@ class CredentialsModel(db.Model):
     Storage of the model is keyed by the user.user_id().
     """
     credentials = CredentialsProperty()
-
-
-if ndb is not None:
-    class CredentialsNDBModel(ndb.Model):
-        """NDB Model for storage of OAuth 2.0 Credentials
-
-        Since this model uses the same kind as CredentialsModel and has a
-        property which can serialize and deserialize Credentials correctly, it
-        can be used interchangeably with a CredentialsModel to access, insert
-        and delete the same entities. This simply provides an NDB model for
-        interacting with the same data the DB model interacts with.
-
-        Storage of the model is keyed by the user.user_id().
-        """
-        credentials = CredentialsNDBProperty()
-
-        @classmethod
-        def _get_kind(cls):
-            """Return the kind name for this class."""
-            return 'CredentialsModel'
 
 
 def _build_state_value(request_handler, user):
