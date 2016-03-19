@@ -402,7 +402,10 @@ def readFile(filename, mode=u'rb', continueOnError=False, displayError=True, enc
           return f.read()
       else:
         with codecs.open(filename, mode, encoding) as f:
-          return f.read()
+          content = f.read()
+          if not content.startswith(codecs.BOM_UTF8):
+            return content
+          return content.replace(codecs.BOM_UTF8, u'', 1)
     else:
       return unicode(sys.stdin.read())
   except IOError as e:
