@@ -370,6 +370,12 @@ def noPythonSSLExit():
 def printLine(message):
   sys.stdout.write(message+u'\n')
 #
+def getCharSet(i):
+  if (i == len(sys.argv)) or (sys.argv[i].lower() != u'charset'):
+    return (i, GC_Values.get(GC_CHARSET, GM_Globals[GM_SYS_ENCODING]))
+  return (i+2, sys.argv[i+1])
+
+#
 # Open a file
 #
 def openFile(filename, mode=u'rb'):
@@ -4457,8 +4463,7 @@ def doLabel(users):
     i += 1
     callGAPI(service=gmail.users().labels(), function=u'create', soft_errors=True, userId=user, body=body)
 
-PROCESS_MESSAGE_FUNCTION_TO_ACTION_MAP = {u'delete': u'deleted',
-  u'trash': u'trashed', u'untrash': u'untrashed', u'modify': u'modified'}
+PROCESS_MESSAGE_FUNCTION_TO_ACTION_MAP = {u'delete': u'deleted', u'trash': u'trashed', u'untrash': u'untrashed', u'modify': u'modified'}
 
 def labelsToLabelIds(gmail, labels):
   allLabels = {
@@ -4487,7 +4492,7 @@ def labelsToLabelIds(gmail, labels):
       label_results = callGAPI(gmail.users().labels(), 'create',
                                body={'labelListVisibility': 'labelShow',
                                      'messageListVisibility': 'show', 'name': label},
-        userId='me', fields='id')
+                               userId='me', fields='id')
       allLabels[label] = label_results['id']
     try:
       labelIds.append(allLabels[label])
@@ -4564,7 +4569,7 @@ def doProcessMessages(users, function):
       for id_batch in id_batches:
         print u'deleting %s messages' % len(id_batch)
         callGAPI(service=gmail.users().messages(), function=u'batchDelete',
-          body={u'ids': id_batch}, userId=u'me')
+                 body={u'ids': id_batch}, userId=u'me')
         deleted_messages += len(id_batch)
         print u'deleted %s of %s messages' % (deleted_messages, result_count)
       continue
@@ -4909,10 +4914,14 @@ def getForward(users):
 
 def doSignature(users):
   import cgi
-  if sys.argv[4].lower() == u'file':
-    signature = cgi.escape(readFile(sys.argv[5], encoding=GM_Globals[GM_SYS_ENCODING]).replace(u'\\n', u'&#xA;').replace(u'"', u"'"))
+  i = 4
+  if sys.argv[i].lower() == u'file':
+    filename = sys.argv[i+1]
+    i += 2
+    i, encoding = getCharSet(i)
+    signature = readFile(filename, encoding=encoding).replace(u'\\n', u'&#xA;').replace(u'\n', u'<br/>')
   else:
-    signature = cgi.escape(sys.argv[4]).replace(u'\\n', u'&#xA;').replace(u'"', u"'")
+    signature = cgi.escape(sys.argv[i]).replace(u'\\n', u'&#xA;').replace(u'"', u"'")
   xmlsig = u'''<?xml version="1.0" encoding="utf-8"?>
 <atom:entry xmlns:atom="http://www.w3.org/2005/Atom" xmlns:apps="http://schemas.google.com/apps/2006">
     <apps:property name="signature" value="%s" />
@@ -4999,8 +5008,10 @@ def doVacation(users):
       end_date = sys.argv[i+1]
       i += 2
     elif sys.argv[i].lower() == u'file':
-      message = readFile(sys.argv[i+1], encoding=GM_Globals[GM_SYS_ENCODING])
+      filename = sys.argv[i+1]
       i += 2
+      i, encoding = getCharSet(i)
+      message = readFile(filename, encoding=encoding)
     else:
       print u'ERROR: %s is not a valid argument for "gam <users> vacation"' % sys.argv[i]
       sys.exit(2)
