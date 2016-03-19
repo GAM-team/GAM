@@ -25,7 +25,7 @@ For more information, see http://git.io/gam
 """
 
 __author__ = u'Jay Lee <jay0lee@gmail.com>'
-__version__ = u'3.707'
+__version__ = u'3.708'
 __license__ = u'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 import sys, os, time, datetime, random, socket, csv, platform, re, calendar, base64, string, codecs, StringIO, subprocess, ConfigParser, collections
@@ -652,7 +652,10 @@ def readFile(filename, mode=u'rb', continueOnError=False, displayError=True, enc
           return f.read()
       else:
         with codecs.open(filename, mode, encoding) as f:
-          return f.read()
+          content = f.read()
+          if not content.startswith(codecs.BOM_UTF8):
+            return content
+          return content.replace(codecs.BOM_UTF8, u'', 1)
     else:
       return unicode(sys.stdin.read())
   except IOError as e:
@@ -5053,7 +5056,7 @@ def labelsToLabelIds(gmail, labels):
       label_results = callGAPI(gmail.users().labels(), u'create',
                                body={u'labelListVisibility': u'labelShow',
                                      u'messageListVisibility': u'show', u'name': label},
-        userId=u'me', fields=u'id')
+                               userId=u'me', fields=u'id')
       allLabels[label] = label_results[u'id']
     try:
       labelIds.append(allLabels[label])
@@ -5453,10 +5456,14 @@ def getForward(users):
 
 def doSignature(users):
   import cgi
-  if sys.argv[4].lower() == u'file':
-    signature = cgi.escape(readFile(sys.argv[5], encoding=GM_Globals[GM_SYS_ENCODING]).replace(u'\\n', u'&#xA;').replace(u'"', u"'"))
+  i = 4
+  if sys.argv[i].lower() == u'file':
+    filename = sys.argv[i+1]
+    i += 2
+    i, encoding = getCharSet(i)
+    signature = readFile(filename, encoding=encoding).replace(u'\\n', u'&#xA;').replace(u'\n', u'<br/>')
   else:
-    signature = cgi.escape(sys.argv[4]).replace(u'\\n', u'&#xA;').replace(u'"', u"'")
+    signature = cgi.escape(sys.argv[i]).replace(u'\\n', u'&#xA;').replace(u'"', u"'")
   xmlsig = u'''<?xml version="1.0" encoding="utf-8"?>
 <atom:entry xmlns:atom="http://www.w3.org/2005/Atom" xmlns:apps="http://schemas.google.com/apps/2006">
     <apps:property name="signature" value="%s" />
@@ -5543,8 +5550,10 @@ def doVacation(users):
       end_date = sys.argv[i+1]
       i += 2
     elif sys.argv[i].lower() == u'file':
-      message = readFile(sys.argv[i+1], encoding=GM_Globals[GM_SYS_ENCODING])
+      filename = sys.argv[i+1]
       i += 2
+      i, encoding = getCharSet(i)
+      message = readFile(filename, encoding=encoding)
     else:
       print u'ERROR: %s is not a valid argument for "gam <users> vacation"' % sys.argv[i]
       sys.exit(2)

@@ -6,7 +6,7 @@
  "version": "v1",
  "revision": "20130823",
  "title": "Admin Settings API",
- "description": "Lets you access Google Apps admin settings",
+ "description": "Lets you access Google Apps Admin Settings",
  "ownerDomain": "google.com",
  "ownerName": "Google",
  "icons": {

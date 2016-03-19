@@ -21,7 +21,7 @@ If an item contains spaces, it should be surrounded by " or '.
 <SKUID> ::= apps|gafb|gafw|gams|gau|unlimited|d4w|dfw|coordinate|vault|vfe|
 	    drive-20gb|drive20gb|20gb|drive-50gb|drive50gb|50gb|drive-200gb|drive200gb|200gb|drive-400gb|drive400gb|400gb|
 	    drive-1tb|drive1tb|1tb|drive-2tb|drive2tb|2tb|drive-4tb|drive4tb|4tb|drive-8tb|drive8tb|8tb|drive-16tb|drive16tb|16tb
-<Charset> ::= ascii|mbcs|utf-8|utf-16|<String>
+<Charset> ::= ascii|mbcs|utf-8|utf-8-sig|utf-16|<String>
 <FileFormat> ::= pdf|openoffice|ms|microsoft|micro$oft
 <Language> ::= ar|bn|bg|ca|zh-CN|zh-TW|hr|cs|da|nl|en|en-GB|et|fi|fr|de|el|gu|iw|is|in|it|ja|kn|ko|lv|lt|ms|ml|mr|no|or|fa|pl|pt-BR|pt-PT|ro|ru|sr|sk|sl|es|sv|tl|ta|te|th|tr|uk|ur|vi
 
@@ -187,7 +187,7 @@ If an item contains spaces, it should be surrounded by " or '.
 	thumbnailphotourl|photo|photourl|)|
 		(csvfile <FileName>:<FieldName>)|
 		(license|licenses <SKUIDList>)|
-		(query <Query>)|
+		(query <Query>)
 # Specify a collection of items by directly specifying them; the item type is determined by context.
 <DriveFileEntity> ::= (id <DriveFileItem>)|(ids <DriveFileList)|(drivefilename <DriveFileName>)|drivefilename:<DriveFileName>|(query <Query>)|query:<Query>
 
@@ -612,13 +612,13 @@ gam <UserTypeEntity> show sendas
 
 gam <UserTypeEntity> shortcuts <Boolean>
 
-gam <UserTypeEntity> signature|sig <String>|(file <FileName>)
+gam <UserTypeEntity> signature|sig <String>|(file <FileName> [charset <Charset>])
 gam <UserTypeEntity> show signature|sig
 gam <UserTypeEntity> snippets <Boolean>
 
 gam <UserTypeEntity> utf|utf8|utf-8|unicode <Boolean>
 
-gam <UserTypeEntity> vacation <Boolean> [subject <String>] [message <String>]|[file <FileName>] [contactsonly] [domainonly] [startdate <Date>] [enddate <Date>]
+gam <UserTypeEntity> vacation <Boolean> [subject <String>] [message <String>]|[file <FileName> [charset <Charset>]] [contactsonly] [domainonly] [startdate <Date>] [enddate <Date>]
 gam <UserTypeEntity> show vacation
 
 gam <UserTypeEntity> webclips <Boolean>
