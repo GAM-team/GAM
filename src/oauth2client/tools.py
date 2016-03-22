@@ -215,11 +215,8 @@ def run_flow(flow, storage, flags=None, http=None):
         print()
         print('    ' + authorize_url)
         print()
-        print('If your browser is on a different machine then '
-              'exit and re-run this')
-        print('application with the command-line parameter ')
-        print()
-        print('  --noauth_local_webserver')
+        print('If your browser is on a different machine then exit and re-run this command')
+        print('after executing the command: "gam config no_browser true save"')
         print()
     else:
         print('Go to the following link in your browser:')
