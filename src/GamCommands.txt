@@ -544,8 +544,7 @@ gam <UserTypeEntity> show drivefileacl <DriveFileID> [showtitles]
 
 gam <UserTypeEntity> delete|del alias|aliases
 
-gam <UserTypeEntity> add group|groups [owner|manager|member] [<GroupEntity>]
-gam <UserTypeEntity> delete|del group|groups [<GroupEntity>]
+gam <UserTypeEntity> delete|del group|groups
 
 gam <UserTypeEntity> add license <SKUID>
 gam <UserTypeEntity> update license <SKUID> [from] <SKUID>
