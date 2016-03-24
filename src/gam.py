@@ -25,7 +25,7 @@ For more information, see http://git.io/gam
 """
 
 __author__ = u'Jay Lee <jay0lee@gmail.com>'
-__version__ = u'3.709'
+__version__ = u'3.72'
 __license__ = u'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 import sys, os, time, datetime, random, socket, csv, platform, re, calendar, base64, string, codecs, StringIO, subprocess, ConfigParser, collections
@@ -457,9 +457,15 @@ def makeQuotedList(items):
     qstr += u' '
   return qstr[:-1] if len(qstr) > 0 else u''
 
+def stderrErrorMsg(message):
+  sys.stderr.write(convertUTF8(u'\n{0}{1}\n'.format(ERROR_PREFIX, message)))
+
+def stderrWarningMsg(message):
+  sys.stderr.write(convertUTF8(u'\n{0}{1}\n'.format(WARNING_PREFIX, message)))
+
 def systemErrorExit(sysRC, message):
   if message:
-    sys.stderr.write(u'\n{0}{1}\n'.format(ERROR_PREFIX, message))
+    stderrErrorMsg(message)
   sys.exit(sysRC)
 
 def invalidJSONExit(fileName):
@@ -478,7 +484,7 @@ def usageErrorExit(i, message, extraneous=False):
                                                                         makeQuotedList(sys.argv[i+1:]))))
   else:
     sys.stderr.write(convertUTF8(u'Command: {0} >>><<<\n'.format(makeQuotedList(sys.argv))))
-  sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, message))
+  stderrErrorMsg(message)
   sys.stderr.write(u'Help: Documentation is at {0}\n'.format(GAM_WIKI))
   sys.exit(2)
 
@@ -639,7 +645,7 @@ def closeFile(f):
     f.close()
     return True
   except IOError as e:
-    sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, e))
+    stderrErrorMsg(e)
     return False
 #
 # Read a file
@@ -661,7 +667,7 @@ def readFile(filename, mode=u'rb', continueOnError=False, displayError=True, enc
   except IOError as e:
     if continueOnError:
       if displayError:
-        sys.stderr.write(u'{0}{1}\n'.format(WARNING_PREFIX, e))
+        stderrWarningMsg(e)
       return None
     systemErrorExit(6, e)
 #
@@ -675,7 +681,7 @@ def writeFile(filename, data, mode=u'wb', continueOnError=False, displayError=Tr
   except IOError as e:
     if continueOnError:
       if displayError:
-        sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, e))
+        stderrErrorMsg(e)
       return False
     systemErrorExit(6, e)
 #
@@ -833,7 +839,7 @@ def SetGlobalVariables():
       return True
     if value in false_values:
       return False
-    sys.stderr.write(u'{0}Config File: {1}, Section: {2}, Item: {3}, Value: {4}, expected {5}\n'.format(ERROR_PREFIX, GM_Globals[GM_GAM_CFG_FILE], sectionName, itemName, value, u','.join(TRUE_FALSE)))
+    stderrErrorMsg(u'Config File: {0}, Section: {1}, Item: {2}, Value: {3}, expected {4}'.format(GM_Globals[GM_GAM_CFG_FILE], sectionName, itemName, value, u','.join(TRUE_FALSE)))
     status[u'errors'] = True
     return False
 
@@ -846,7 +852,7 @@ def SetGlobalVariables():
         return number
     except ValueError:
       pass
-    sys.stderr.write(u'{0}Config File: {1}, Section: {2}, Item: {3}, Value: {4}, expected {5}\n'.format(ERROR_PREFIX, GM_Globals[GM_GAM_CFG_FILE], sectionName, itemName, value, integerLimits(minVal, maxVal)))
+    stderrErrorMsg(u'Config File: {0}, Section: {1}, Item: {2}, Value: {3}, expected {4}'.format(GM_Globals[GM_GAM_CFG_FILE], sectionName, itemName, value, integerLimits(minVal, maxVal)))
     status[u'errors'] = True
     return 0
 
@@ -856,7 +862,7 @@ def SetGlobalVariables():
       return ConfigParser.DEFAULTSECT
     if GM_Globals[GM_PARSER].has_section(value):
       return value
-    sys.stderr.write(u'{0}Config File: {1}, Section: {2}, Item: {3}, Value: {4}, Not Found\n'.format(ERROR_PREFIX, GM_Globals[GM_GAM_CFG_FILE], sectionName, itemName, value))
+    stderrErrorMsg(u'Config File: {0}, Section: {1}, Item: {2}, Value: {3}, Not Found'.format(GM_Globals[GM_GAM_CFG_FILE], sectionName, itemName, value))
     status[u'errors'] = True
     return ConfigParser.DEFAULTSECT
 
@@ -896,7 +902,7 @@ def SetGlobalVariables():
       if action:
         print u'Config File: {0}, {1}'.format(fileName, action)
     except IOError as e:
-      sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, e))
+      stderrErrorMsg(e)
 
   def _verifyValues(sectionName):
     print u'Section: {0}'.format(sectionName)
@@ -919,7 +925,7 @@ def SetGlobalVariables():
       if GC_VAR_INFO[itemName][GC_VAR_TYPE] == GC_TYPE_DIRECTORY:
         dirPath = GC_Values[itemName]
         if not os.path.isdir(dirPath):
-          sys.stderr.write(u'{0}Config File: {1}, Section: {2}, Item: {3}, Value: {4}, Invalid Path\n'.format(ERROR_PREFIX, GM_Globals[GM_GAM_CFG_FILE], sectionName, itemName, dirPath))
+          stderrErrorMsg(u'Config File: {0}, Section: {1}, Item: {2}, Value: {3}, Invalid Path'.format(GM_Globals[GM_GAM_CFG_FILE], sectionName, itemName, dirPath))
 
   def _chkCfgFiles(sectionName):
     for itemName in GC_VAR_INFO:
@@ -928,7 +934,7 @@ def SetGlobalVariables():
         if (not fileName) and (itemName == GC_EXTRA_ARGS):
           continue
         if not os.path.isfile(fileName):
-          sys.stderr.write(u'{0}Config File: {1}, Section: {2}, Item: {3}, Value: {4}, Not Found\n'.format(WARNING_PREFIX, GM_Globals[GM_GAM_CFG_FILE], sectionName, itemName, fileName))
+          stderrWarningMsg(u'Config File: {0}, Section: {1}, Item: {2}, Value: {3}, Not Found'.format(GM_Globals[GM_GAM_CFG_FILE], sectionName, itemName, fileName))
 
   def _setCSVFile(filename, mode, encoding):
     if filename != u'-':
@@ -1165,13 +1171,14 @@ def doGAMVersion():
 def handleOAuthTokenError(e, soft_errors):
   if e.message in OAUTH_TOKEN_ERRORS:
     if not GM_Globals[GM_CURRENT_API_USER]:
-      sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, MESSAGE_API_ACCESS_DENIED.format(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID],
-                                                                                         u','.join(GM_Globals[GM_CURRENT_API_SCOPES]), GM_Globals[GM_ADMIN])))
+      stderrErrorMsg(MESSAGE_API_ACCESS_DENIED.format(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID],
+                                                      u','.join(GM_Globals[GM_CURRENT_API_SCOPES]),
+                                                      GM_Globals[GM_ADMIN]))
       systemErrorExit(12, MESSAGE_API_ACCESS_CONFIG)
     else:
       systemErrorExit(19, MESSAGE_SERVICE_NOT_APPLICABLE.format(GM_Globals[GM_CURRENT_API_USER]))
   if soft_errors:
-    sys.stderr.write(u'{0}Authentication Token Error - {1}\n'.format(ERROR_PREFIX, e))
+    stderrErrorMsg(u'Authentication Token Error - {0}'.format(e))
     return None
   systemErrorExit(18, u'Authentication Token Error - {0}'.format(e))
 
@@ -1278,7 +1285,7 @@ def callGData(service, function, soft_errors=False, throw_errors=[], **kwargs):
         if n > 3:
           sys.stderr.write(u'attempt %s/%s\n' % (n+1, retries))
         continue
-      sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, terminating_error))
+      stderrErrorMsg(terminating_error)
       if soft_errors:
         if n != 1:
           sys.stderr.write(u' - Giving up.\n')
@@ -1305,7 +1312,7 @@ def callGAPI(service, function, silent_errors=False, soft_errors=False, throw_re
           time.sleep(1)
           continue
         if not silent_errors:
-          sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, e.content))
+          stderrErrorMsg(e.content)
         if soft_errors:
           return None
         sys.exit(5)
@@ -1327,7 +1334,7 @@ def callGAPI(service, function, silent_errors=False, soft_errors=False, throw_re
         if n > 3:
           sys.stderr.write(u'attempt %s/%s\n' % (n+1, retries))
         continue
-      sys.stderr.write(u'{0}{1}: {2} - {3}\n'.format(ERROR_PREFIX, http_status, message, reason))
+      stderrErrorMsg(u'{0}: {1} - {2}'.format(http_status, message, reason))
       if soft_errors:
         if n != 1:
           sys.stderr.write(u' - Giving up.\n')
@@ -1752,22 +1759,22 @@ def doDelegates(users):
         delegate_user_details = callGAPI(cd.users(), u'get', userKey=delegate_email)
         delegator_user_details = callGAPI(cd.users(), u'get', userKey=delegator_email)
         if delegate_user_details[u'suspended'] == True:
-          sys.stderr.write(u'ERROR: User %s is suspended. You must unsuspend for delegation.\n' % delegate_email)
+          stderrErrorMsg(u'User {0} is suspended. You must unsuspend for delegation.'.format(delegate_email))
           if delete_alias:
             doDeleteAlias(alias_email=use_delegate_address)
           sys.exit(5)
         if delegator_user_details[u'suspended'] == True:
-          sys.stderr.write(u'ERROR: User %s is suspended. You must unsuspend for delegation.\n' % delegator_email)
+          stderrErrorMsg(u'User {0} is suspended. You must unsuspend for delegation.'.format(delegator_email))
           if delete_alias:
             doDeleteAlias(alias_email=use_delegate_address)
           sys.exit(5)
         if delegate_user_details[u'changePasswordAtNextLogin'] == True:
-          sys.stderr.write(u'ERROR: User %s is required to change password at next login. You must change password or clear changepassword flag for delegation.\n' % delegate_email)
+          stderrErrorMsg(u'User {0} is required to change password at next login. You must change password or clear changepassword flag for delegation.'.format(delegate_email))
           if delete_alias:
             doDeleteAlias(alias_email=use_delegate_address)
           sys.exit(5)
         if delegator_user_details[u'changePasswordAtNextLogin'] == True:
-          sys.stderr.write(u'ERROR: User %s is required to change password at next login. You must change password or clear changepassword flag for delegation.\n' % delegator_email)
+          stderrErrorMsg(u'User {0} is required to change password at next login. You must change password or clear changepassword flag for delegation.'.format(delegator_email))
           if delete_alias:
             doDeleteAlias(alias_email=use_delegate_address)
           sys.exit(5)
@@ -9462,7 +9469,7 @@ def doDeleteOAuth():
     os.remove(GC_Values[GC_GAMSCOPES_JSON])
     sys.stdout.write(u'Scopes file: {0}, Deleted\n'.format(GC_Values[GC_GAMSCOPES_JSON]))
   except OSError as e:
-    sys.stderr.write(u'{0}{1}\n'.format(WARNING_PREFIX, e))
+    stderrWarningMsg(e)
 
 EMAIL_PATTERN = re.compile(r'^(.+)@(.+\..+)$')
 EMAIL_FORMAT_REQUIRED = u'<Name>@<Domain>'
@@ -10297,8 +10304,8 @@ except IndexError:
 except KeyboardInterrupt:
   sys.exit(50)
 except socket.error, e:
-  sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, e))
+  stderrErrorMsg(e)
   sys.exit(3)
 except MemoryError:
-  sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, MESSAGE_GAM_OUT_OF_MEMORY))
+  stderrErrorMsg(MESSAGE_GAM_OUT_OF_MEMORY)
   sys.exit(99)
