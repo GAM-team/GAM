@@ -356,9 +356,15 @@ gam.exe update group announcements add member jsmith
 #
 # Error handling
 #
+def stderrErrorMsg(message):
+  sys.stderr.write(convertUTF8(u'\n{0}{1}\n'.format(ERROR_PREFIX, message)))
+
+def stderrWarningMsg(message):
+  sys.stderr.write(convertUTF8(u'\n{0}{1}\n'.format(WARNING_PREFIX, message)))
+
 def systemErrorExit(sysRC, message):
   if message:
-    sys.stderr.write(u'\n{0}{1}\n'.format(ERROR_PREFIX, message))
+    stderrErrorMsg(message)
   sys.exit(sysRC)
 
 def invalidJSONExit(fileName):
@@ -395,7 +401,7 @@ def closeFile(f):
     f.close()
     return True
   except IOError as e:
-    sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, e))
+    stderrErrorMsg(e)
     return False
 #
 # Read a file
@@ -417,7 +423,7 @@ def readFile(filename, mode=u'rb', continueOnError=False, displayError=True, enc
   except IOError as e:
     if continueOnError:
       if displayError:
-        sys.stderr.write(u'{0}{1}\n'.format(WARNING_PREFIX, e))
+        stderrWarningMsg(e)
       return None
     systemErrorExit(6, e)
 #
@@ -431,7 +437,7 @@ def writeFile(filename, data, mode=u'wb', continueOnError=False, displayError=Tr
   except IOError as e:
     if continueOnError:
       if displayError:
-        sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, e))
+        stderrErrorMsg(e)
       return False
     systemErrorExit(6, e)
 #
@@ -661,7 +667,7 @@ def callGData(service, function, soft_errors=False, throw_errors=[], **kwargs):
         if n > 3:
           sys.stderr.write(u'attempt %s/%s\n' % (n+1, retries))
         continue
-      sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, terminating_error))
+      stderrErrorMsg(terminating_error)
       if soft_errors:
         if n != 1:
           sys.stderr.write(u' - Giving up.\n')
@@ -686,7 +692,7 @@ def callGAPI(service, function, silent_errors=False, soft_errors=False, throw_re
           time.sleep(1)
           continue
         if not silent_errors:
-          sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, e.content))
+          stderrErrorMsg(e.content)
         if soft_errors:
           return None
         sys.exit(5)
@@ -708,14 +714,14 @@ def callGAPI(service, function, silent_errors=False, soft_errors=False, throw_re
         if n > 3:
           sys.stderr.write(u'attempt %s/%s\n' % (n+1, retries))
         continue
-      sys.stderr.write(u'{0}{1}: {2} - {3}\n'.format(ERROR_PREFIX, http_status, message, reason))
+      stderrErrorMsg(u'{0}: {1} - {2}'.format(http_status, message, reason))
       if soft_errors:
         if n != 1:
           sys.stderr.write(u' - Giving up.\n')
         return None
       sys.exit(int(http_status))
     except oauth2client.client.AccessTokenRefreshError, e:
-      sys.stderr.write(u'{0}Authentication Token Error: {1}\n'.format(ERROR_PREFIX, e))
+      stderrErrorMsg(u'Authentication Token Error: {0}'.format(e))
       sys.exit(403)
     except httplib2.CertificateValidationUnsupported:
       noPythonSSLExit()
@@ -887,7 +893,7 @@ def buildGAPIServiceObject(api, act_as, soft_errors=False):
                      u'unauthorized_client: Unauthorized client or scope in request.',
                      u'access_denied: Requested client not authorized.']:
       systemErrorExit(5, MESSAGE_CLIENT_API_ACCESS_DENIED.format(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID], u','.join(scopes)))
-    sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, e))
+    stderrErrorMsg(e)
     if soft_errors:
       return False
     sys.exit(4)
@@ -908,7 +914,7 @@ def buildDiscoveryObject(api):
   try:
     return json.loads(content)
   except ValueError:
-    sys.stderr.write(u'{0}Failed to parse as JSON: {1}\n'.format(ERROR_PREFIX, content))
+    stderrErrorMsg(u'Failed to parse as JSON: {0}'.format(content))
     raise googleapiclient.errors.InvalidJsonError()
 
 def commonAppsObjInit(appsObj):
@@ -1192,22 +1198,22 @@ def doDelegates(users):
         delegate_user_details = callGAPI(service=cd.users(), function=u'get', userKey=delegate_email)
         delegator_user_details = callGAPI(service=cd.users(), function=u'get', userKey=delegator_email)
         if delegate_user_details[u'suspended'] == True:
-          sys.stderr.write(u'ERROR: User %s is suspended. You must unsuspend for delegation.\n' % delegate_email)
+          stderrErrorMsg(u'User {0} is suspended. You must unsuspend for delegation.'.format(delegate_email))
           if delete_alias:
             doDeleteAlias(alias_email=use_delegate_address)
           sys.exit(5)
         if delegator_user_details[u'suspended'] == True:
-          sys.stderr.write(u'ERROR: User %s is suspended. You must unsuspend for delegation.\n' % delegator_email)
+          stderrErrorMsg(u'User {0} is suspended. You must unsuspend for delegation.'.format(delegator_email))
           if delete_alias:
             doDeleteAlias(alias_email=use_delegate_address)
           sys.exit(5)
         if delegate_user_details[u'changePasswordAtNextLogin'] == True:
-          sys.stderr.write(u'ERROR: User %s is required to change password at next login. You must change password or clear changepassword flag for delegation.\n' % delegate_email)
+          stderrErrorMsg(u'User {0} is required to change password at next login. You must change password or clear changepassword flag for delegation.'.format(delegate_email))
           if delete_alias:
             doDeleteAlias(alias_email=use_delegate_address)
           sys.exit(5)
         if delegator_user_details[u'changePasswordAtNextLogin'] == True:
-          sys.stderr.write(u'ERROR: User %s is required to change password at next login. You must change password or clear changepassword flag for delegation.\n' % delegator_email)
+          stderrErrorMsg(u'User {0} is required to change password at next login. You must change password or clear changepassword flag for delegation.'.format(delegator_email))
           if delete_alias:
             doDeleteAlias(alias_email=use_delegate_address)
           sys.exit(5)
@@ -8925,7 +8931,7 @@ def doDeleteOAuth():
   try:
     credentials.revoke(http)
   except oauth2client.client.TokenRevokeError, e:
-    sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, e.message))
+    stderrErrorMsg(e.message)
     os.remove(GC_Values[GC_OAUTH2_TXT])
 
 class cmd_flags(object):
@@ -9707,8 +9713,8 @@ except IndexError:
 except KeyboardInterrupt:
   sys.exit(50)
 except socket.error, e:
-  sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, e))
+  stderrErrorMsg(e)
   sys.exit(3)
 except MemoryError:
-  sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, MESSAGE_GAM_OUT_OF_MEMORY))
+  stderrErrorMsg(MESSAGE_GAM_OUT_OF_MEMORY)
   sys.exit(99)
