@@ -3398,6 +3398,8 @@ def doCalendarAddACL(calendarId=None, act_as=None, role=None, scope=None, entity
   body[u'scope'] = dict()
   if calendarId == None:
     calendarId = sys.argv[2]
+  if calendarId.find(u'@') == -1:
+    calendarId = u'%s@%s' % (calendarId, GC_Values[GC_DOMAIN])
   if role != None:
     body[u'role'] = role
   else:
