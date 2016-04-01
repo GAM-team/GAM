@@ -195,8 +195,8 @@ If an item contains spaces, it should be surrounded by " or '.
 # Item attributes
 <CalendarAttributes> ::=
 	(selected <Boolean>)|(hidden <Boolean>)|(summary <String>)|(colorindex|colorid <CalendarColorIndex>)|(backgroundcolor <ColorHex>)|(foregroundcolor <ColorHex>)|
-	(reminder email|sms|pop <Number>)|
-	(notification email|sms eventcreation|eventchange|eventcancellation|eventresponse|agenda)
+	(reminder clear|(email|sms|pop <Number>))|
+	(notification clear|(email|sms eventcreation|eventchange|eventcancellation|eventresponse|agenda))
 
 <CalendarSettings> ::==
 	(summary <String>)|(description <String>)|(location <String>)|(timezone <String>)

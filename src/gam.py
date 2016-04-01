@@ -292,6 +292,8 @@ GC_SETTABLE_VARS = [
   GC_SHOW_GETTINGS,
   GC_USER_MAX_RESULTS,
   ]
+#
+CLEAR_NONE_ARGUMENT = [u'clear', u'none',]
 
 # Object BNF names
 OB_GAM_ARGUMENT_LIST = u'GAM argument list'
@@ -2898,18 +2900,11 @@ CALENDAR_NOTIFICATION_TYPES_MAP = {
   u'agenda': u'agenda',
   }
 
-def addCalendar(users):
-  cal = buildGAPIObject(u'calendar', users[0])
-  body = dict()
-  body[u'id'] = sys.argv[5]
-  if body[u'id'].find(u'@') == -1:
-    body[u'id'] = u'%s@%s' % (body[u'id'], GC_Values[GC_DOMAIN])
-  body[u'selected'] = True
-  body[u'hidden'] = False
+def getCalendarAttributes(i, body, function):
   colorRgbFormat = False
-  i = 6
   while i < len(sys.argv):
-    if sys.argv[i].lower() == u'selected':
+    myarg = sys.argv[i].lower().replace(u'_', u'')
+    if myarg == u'selected':
       if sys.argv[i+1].lower() in true_values:
         body[u'selected'] = True
       elif sys.argv[i+1].lower() in false_values:
@@ -2918,7 +2913,7 @@ def addCalendar(users):
         print u'ERROR: Value for selected must be true or false, not %s' % sys.argv[i+1]
         sys.exit(2)
       i += 2
-    elif sys.argv[i].lower() == u'hidden':
+    elif myarg == u'hidden':
       if sys.argv[i+1].lower() in true_values:
         body[u'hidden'] = True
       elif sys.argv[i+1].lower() in false_values:
@@ -2927,54 +2922,68 @@ def addCalendar(users):
         print u'ERROR: Value for hidden must be true or false, not %s' % sys.argv[i+1]
         sys.exit(2)
       i += 2
-    elif sys.argv[i].lower() == u'reminder':
-      method = sys.argv[i+1].lower()
-      try:
-        minutes = int(sys.argv[i+2])
-      except ValueError:
-        print u'ERROR: Reminder time must be specified in minutes, got %s' % sys.argv[i+2]
-        sys.exit(2)
-      if method not in CALENDAR_REMINDER_METHODS:
-        print u'ERROR: Method must be %s. Got %s' % (u','.join(CALENDAR_REMINDER_METHODS), method)
-        sys.exit(2)
-      body.setdefault(u'defaultReminders', [])
-      body[u'defaultReminders'].append({u'method': method, u'minutes': minutes})
-      i = i + 3
-    elif sys.argv[i].lower() == u'notification':
-      method = sys.argv[i+1].lower()
-      if method not in CALENDAR_NOTIFICATION_METHODS:
-        print u'ERROR: Method must be %s. Got %s' % (u','.join(CALENDAR_NOTIFICATION_METHODS), method)
-        sys.exit(2)
-      eventType = sys.argv[i+2].lower()
-      if eventType not in CALENDAR_NOTIFICATION_TYPES_MAP:
-        print u'ERROR: Event must be %s. Got %s' % (u','.join(CALENDAR_NOTIFICATION_TYPES_MAP), eventType)
-        sys.exit(2)
-      body.setdefault(u'notificationSettings', {u'notifications': []})
-      body[u'notificationSettings'][u'notifications'].append({u'method': method, u'type': CALENDAR_NOTIFICATION_TYPES_MAP[eventType]})
-      i = i + 3
-    elif sys.argv[i].lower() == u'summary':
+    elif myarg == u'summary':
       body[u'summaryOverride'] = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower() == u'colorindex':
+    elif myarg == u'colorindex':
       body[u'colorId'] = str(sys.argv[i+1])
       i += 2
-    elif sys.argv[i].lower() == u'backgroundcolor':
+    elif myarg == u'backgroundcolor':
       body[u'backgroundColor'] = sys.argv[i+1]
       colorRgbFormat = True
       i += 2
-    elif sys.argv[i].lower() == u'foregroundcolor':
+    elif myarg == u'foregroundcolor':
       body[u'foregroundColor'] = sys.argv[i+1]
       colorRgbFormat = True
       i += 2
+    elif myarg == u'reminder':
+      body.setdefault(u'defaultReminders', [])
+      method = sys.argv[i+1].lower()
+      if method not in CLEAR_NONE_ARGUMENT:
+        if method not in CALENDAR_REMINDER_METHODS:
+          print u'ERROR: Method must be %s. Got %s' % (u','.join(CALENDAR_REMINDER_METHODS+CLEAR_NONE_ARGUMENT), method)
+          sys.exit(2)
+        try:
+          minutes = int(sys.argv[i+2])
+        except ValueError:
+          print u'ERROR: Reminder time must be specified in minutes, got %s' % sys.argv[i+2]
+          sys.exit(2)
+        body[u'defaultReminders'].append({u'method': method, u'minutes': minutes})
+        i += 3
+      else:
+        i += 2
+    elif myarg == u'notification':
+      body.setdefault(u'notificationSettings', {u'notifications': []})
+      method = sys.argv[i+1].lower()
+      if method not in CLEAR_NONE_ARGUMENT:
+        if method not in CALENDAR_NOTIFICATION_METHODS:
+          print u'ERROR: Method must be %s. Got %s' % (u','.join(CALENDAR_NOTIFICATION_METHODS+CLEAR_NONE_ARGUMENT), method)
+          sys.exit(2)
+        eventType = sys.argv[i+2].lower()
+        if eventType not in CALENDAR_NOTIFICATION_TYPES_MAP:
+          print u'ERROR: Event must be %s. Got %s' % (u','.join(CALENDAR_NOTIFICATION_TYPES_MAP), eventType)
+          sys.exit(2)
+        body[u'notificationSettings'][u'notifications'].append({u'method': method, u'type': CALENDAR_NOTIFICATION_TYPES_MAP[eventType]})
+        i += 3
+      else:
+        i += 2
     else:
-      print u'ERROR: %s is not a valid argument for "gam add calendar"' % sys.argv[i]
+      print u'ERROR: %s is not a valid argument for "gam %s calendar"' % (sys.argv[i], function)
       sys.exit(2)
+  return colorRgbFormat
+
+def addCalendar(users):
+  calendarId = sys.argv[5]
+  if calendarId.find(u'@') == -1:
+    calendarId = u'%s@%s' % (calendarId, GC_Values[GC_DOMAIN])
+  body = {u'id': calendarId, u'selected': True, u'hidden': False}
+  colorRgbFormat = getCalendarAttributes(6, body, u'add')
   i = 1
   count = len(users)
   for user in users:
     if user.find(u'@') == -1:
       user = u'%s@%s' % (user, GC_Values[GC_DOMAIN])
-    print u"Subscribing %s to %s calendar (%s of %s)" % (user, body[u'id'], i, count)
+    print u"Subscribing %s to %s calendar (%s of %s)" % (user, calendarId, i, count)
     cal = buildGAPIObject(u'calendar', user)
     callGAPI(cal.calendarList(), u'insert', body=body, colorRgbFormat=colorRgbFormat)
     i += 1
@@ -2983,74 +2992,13 @@ def updateCalendar(users):
   calendarId = sys.argv[5]
   if calendarId.find(u'@') == -1:
     calendarId = u'%s@%s' % (calendarId, GC_Values[GC_DOMAIN])
-  i = 6
-  body = dict()
-  body[u'id'] = calendarId
-  colorRgbFormat = False
-  while i < len(sys.argv):
-    if sys.argv[i].lower() == u'selected':
-      if sys.argv[i+1].lower() in true_values:
-        body[u'selected'] = True
-      elif sys.argv[i+1].lower() in false_values:
-        body[u'selected'] = False
-      else:
-        print u'ERROR: Value for selected must be true or false, not %s' % sys.argv[i+1]
-        sys.exit(2)
-      i += 2
-    elif sys.argv[i].lower() == u'hidden':
-      if sys.argv[i+1].lower() in true_values:
-        body[u'hidden'] = True
-      elif sys.argv[i+1].lower() in false_values:
-        body[u'hidden'] = False
-      else:
-        print u'ERROR: Value for hidden must be true or false, not %s' % sys.argv[i+1]
-        sys.exit(2)
-      i += 2
-    elif sys.argv[i].lower() == u'summary':
-      body[u'summaryOverride'] = sys.argv[i+1]
-      i += 2
-    elif sys.argv[i].lower() == u'colorindex':
-      body[u'colorId'] = str(sys.argv[i+1])
-      i += 2
-    elif sys.argv[i].lower() == u'backgroundcolor':
-      body[u'backgroundColor'] = sys.argv[i+1]
-      colorRgbFormat = True
-      i += 2
-    elif sys.argv[i].lower() == u'foregroundcolor':
-      body[u'foregroundColor'] = sys.argv[i+1]
-      colorRgbFormat = True
-      i += 2
-    elif sys.argv[i].lower() == u'reminder':
-      method = sys.argv[i+1].lower()
-      try:
-        minutes = int(sys.argv[i+2])
-      except ValueError:
-        print u'ERROR: Reminder time must be specified in minutes, got %s' % sys.argv[i+2]
-        sys.exit(2)
-      if method not in CALENDAR_REMINDER_METHODS:
-        print u'ERROR: Method must be %s. Got %s' % (u','.join(CALENDAR_REMINDER_METHODS), method)
-        sys.exit(2)
-      body.setdefault(u'defaultReminders', [])
-      body[u'defaultReminders'].append({u'method': method, u'minutes': minutes})
-      i = i + 3
-    elif sys.argv[i].lower() == u'notification':
-      method = sys.argv[i+1].lower()
-      if method not in CALENDAR_NOTIFICATION_METHODS:
-        print u'ERROR: Method must be %s. Got %s' % (u','.join(CALENDAR_NOTIFICATION_METHODS), method)
-        sys.exit(2)
-      eventType = sys.argv[i+2].lower()
-      if eventType not in CALENDAR_NOTIFICATION_TYPES_MAP:
-        print u'ERROR: Event must be %s. Got %s' % (u','.join(CALENDAR_NOTIFICATION_TYPES_MAP), eventType)
-        sys.exit(2)
-      body.setdefault(u'notificationSettings', {u'notifications': []})
-      body[u'notificationSettings'][u'notifications'].append({u'method': method, u'type': CALENDAR_NOTIFICATION_TYPES_MAP[eventType]})
-      i = i + 3
-    else:
-      print u'ERROR: %s is not a valid argument for "gam update calendar"' % sys.argv[i]
-      sys.exit(2)
+  body = {}
+  colorRgbFormat = getCalendarAttributes(6, body, u'update')
   i = 1
   count = len(users)
   for user in users:
+    if user.find(u'@') == -1:
+      user = u'%s@%s' % (user, GC_Values[GC_DOMAIN])
     print u"Updating %s's subscription to calendar %s (%s of %s)" % (user, calendarId, i, count)
     cal = buildGAPIObject(u'calendar', user)
     callGAPI(cal.calendarList(), u'update', calendarId=calendarId, body=body, colorRgbFormat=colorRgbFormat)
