@@ -2888,10 +2888,19 @@ def deleteCalendar(users):
     cal = buildGAPIObject(u'calendar', user)
     callGAPI(cal.calendarList(), u'delete', calendarId=calendarId)
 
+CALENDAR_REMINDER_METHODS = [u'email', u'sms', u'popup',]
+CALENDAR_NOTIFICATION_METHODS = [u'email', u'sms',]
+CALENDAR_NOTIFICATION_TYPES_MAP = {
+  u'eventcreation': u'eventCreation',
+  u'eventchange': u'eventChange',
+  u'eventcancellation': u'eventCancellation',
+  u'eventresponse': u'eventResponse',
+  u'agenda': u'agenda',
+  }
+
 def addCalendar(users):
   cal = buildGAPIObject(u'calendar', users[0])
   body = dict()
-  body[u'defaultReminders'] = list()
   body[u'id'] = sys.argv[5]
   if body[u'id'].find(u'@') == -1:
     body[u'id'] = u'%s@%s' % (body[u'id'], GC_Values[GC_DOMAIN])
@@ -2925,10 +2934,23 @@ def addCalendar(users):
       except ValueError:
         print u'ERROR: Reminder time must be specified in minutes, got %s' % sys.argv[i+2]
         sys.exit(2)
-      if method != u'email' and method != u'sms' and method != u'popup':
-        print u'ERROR: Method must be email, sms or popup. Got %s' % method
+      if method not in CALENDAR_REMINDER_METHODS:
+        print u'ERROR: Method must be %s. Got %s' % (u','.join(CALENDAR_REMINDER_METHODS), method)
         sys.exit(2)
+      body.setdefault(u'defaultReminders', [])
       body[u'defaultReminders'].append({u'method': method, u'minutes': minutes})
+      i = i + 3
+    elif sys.argv[i].lower() == u'notification':
+      method = sys.argv[i+1].lower()
+      if method not in CALENDAR_NOTIFICATION_METHODS:
+        print u'ERROR: Method must be %s. Got %s' % (u','.join(CALENDAR_NOTIFICATION_METHODS), method)
+        sys.exit(2)
+      eventType = sys.argv[i+2].lower()
+      if eventType not in CALENDAR_NOTIFICATION_TYPES_MAP:
+        print u'ERROR: Event must be %s. Got %s' % (u','.join(CALENDAR_NOTIFICATION_TYPES_MAP), eventType)
+        sys.exit(2)
+      body.setdefault(u'notificationSettings', {u'notifications': []})
+      body[u'notificationSettings'][u'notifications'].append({u'method': method, u'type': CALENDAR_NOTIFICATION_TYPES_MAP[eventType]})
       i = i + 3
     elif sys.argv[i].lower() == u'summary':
       body[u'summaryOverride'] = sys.argv[i+1]
@@ -2959,6 +2981,8 @@ def addCalendar(users):
 
 def updateCalendar(users):
   calendarId = sys.argv[5]
+  if calendarId.find(u'@') == -1:
+    calendarId = u'%s@%s' % (calendarId, GC_Values[GC_DOMAIN])
   i = 6
   body = dict()
   body[u'id'] = calendarId
@@ -3003,13 +3027,23 @@ def updateCalendar(users):
       except ValueError:
         print u'ERROR: Reminder time must be specified in minutes, got %s' % sys.argv[i+2]
         sys.exit(2)
-      if method != u'email' and method != u'sms' and method != u'popup':
-        print u'ERROR: Method must be email, sms or popup. Got %s' % method
+      if method not in CALENDAR_REMINDER_METHODS:
+        print u'ERROR: Method must be %s. Got %s' % (u','.join(CALENDAR_REMINDER_METHODS), method)
         sys.exit(2)
-      try:
-        body[u'defaultReminders'].append({u'method': method, u'minutes': minutes})
-      except KeyError:
-        body[u'defaultReminders'] = [{u'method': method, u'minutes': minutes}]
+      body.setdefault(u'defaultReminders', [])
+      body[u'defaultReminders'].append({u'method': method, u'minutes': minutes})
+      i = i + 3
+    elif sys.argv[i].lower() == u'notification':
+      method = sys.argv[i+1].lower()
+      if method not in CALENDAR_NOTIFICATION_METHODS:
+        print u'ERROR: Method must be %s. Got %s' % (u','.join(CALENDAR_NOTIFICATION_METHODS), method)
+        sys.exit(2)
+      eventType = sys.argv[i+2].lower()
+      if eventType not in CALENDAR_NOTIFICATION_TYPES_MAP:
+        print u'ERROR: Event must be %s. Got %s' % (u','.join(CALENDAR_NOTIFICATION_TYPES_MAP), eventType)
+        sys.exit(2)
+      body.setdefault(u'notificationSettings', {u'notifications': []})
+      body[u'notificationSettings'][u'notifications'].append({u'method': method, u'type': CALENDAR_NOTIFICATION_TYPES_MAP[eventType]})
       i = i + 3
     else:
       print u'ERROR: %s is not a valid argument for "gam update calendar"' % sys.argv[i]

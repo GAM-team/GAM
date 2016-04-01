@@ -152,6 +152,7 @@ If an item contains spaces, it should be surrounded by " or '.
 	sendmessagedenynotification|
 	showingroupdirectory|
 	spammoderationlevel|
+	whocanadd|
 	whocancontactowner|
 	whocaninvite|
 	whocanjoin|
@@ -194,7 +195,9 @@ If an item contains spaces, it should be surrounded by " or '.
 # Item attributes
 <CalendarAttributes> ::=
 	(selected <Boolean>)|(hidden <Boolean>)|(summary <String>)|(colorindex|colorid <CalendarColorIndex>)|(backgroundcolor <ColorHex>)|(foregroundcolor <ColorHex>)|
-	(reminder email|sms|pop <Number>)
+	(reminder email|sms|pop <Number>)|
+	(notification email|sms eventcreation|eventchange|eventcancellation|eventresponse|agenda)
+
 <CalendarSettings> ::==
 	(summary <String>)|(description <String>)|(location <String>)|(timezone <String>)
 
@@ -252,10 +255,11 @@ If an item contains spaces, it should be surrounded by " or '.
 	(sendmessagedenynotification <Boolean>)|
 	(showingroupdirectory <Boolean>)|
 	(spammoderationlevel ALLOW|MODERATE|SILENTLY_MODERATE|REJECT)|
+	(whocanadd ALL_MEMBERS_CAN_ADD|ALL_MANAGERS_CAN_ADD|NONE_CAN_ADD)|
 	(whocancontactowner ANYONE_CAN_CONTACT|ALL_IN_DOMAIN_CAN_CONTACT|ALL_MEMBERS_CAN_CONTACT|ALL_MANAGERS_CAN_CONTACT)|
-	(whocaninvite ALL_MEMBERS_CAN_INVITE|ALL_MANAGERS_CAN_INVITE)|
+	(whocaninvite ALL_MEMBERS_CAN_INVITE|ALL_MANAGERS_CAN_INVITE|NONE_CAN_INVITE)|
 	(whocanjoin ANYONE_CAN_JOIN|ALL_IN_DOMAIN_CAN_JOIN|INVITED_CAN_JOIN|CAN_REQUEST_TO_JOIN)|
-	(whocanleavegroup ALL_MANAGERS_CAN_LEAVE|ALL_MEMBERS_CAN_LEAVE)|
+	(whocanleavegroup ALL_MANAGERS_CAN_LEAVE|ALL_MEMBERS_CAN_LEAVE|NONE_CAN_LEAVE)|
 	(whocanpostmessage NONE_CAN_POST|ALL_MANAGERS_CAN_POST|ALL_MEMBERS_CAN_POST|ALL_IN_DOMAIN_CAN_POST|ANYONE_CAN_POST)|
 	(whocanviewgroup ANYONE_CAN_VIEW|ALL_IN_DOMAIN_CAN_VIEW|ALL_MEMBERS_CAN_VIEW|ALL_MANAGERS_CAN_VIEW)|
 	(whocanviewmembership ALL_IN_DOMAIN_CAN_VIEW|ALL_MEMBERS_CAN_VIEW|ALL_MANAGERS_CAN_VIEW)
