@@ -25,7 +25,7 @@ For more information, see http://git.io/gam
 """
 
 __author__ = u'Jay Lee <jay0lee@gmail.com>'
-__version__ = u'3.72'
+__version__ = u'3.723'
 __license__ = u'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 import sys, os, time, datetime, random, socket, csv, platform, re, calendar, base64, string, codecs, StringIO, subprocess, ConfigParser, collections
@@ -3734,30 +3734,19 @@ def showCalendars(users):
     for usercal in feed[u'items']:
       print u'  Name: %s' % usercal[u'id']
       print convertUTF8(u'  Summary: %s' % usercal[u'summary'])
-      try:
-        print convertUTF8(u'    Description: %s' % usercal[u'description'])
-      except KeyError:
-        print u'    Description: '
+      print convertUTF8(u'    Description: %s' % usercal.get(u'description', u''))
       print u'    Access Level: %s' % usercal[u'accessRole']
       print u'    Timezone: %s' % usercal[u'timeZone']
-      try:
-        print convertUTF8(u'    Location: %s' % usercal[u'location'])
-      except KeyError:
-        pass
-      try:
-        print u'    Hidden: %s' % usercal[u'hidden']
-      except KeyError:
-        print u'    Hidden: False'
-      try:
-        print u'    Selected: %s' % usercal[u'selected']
-      except KeyError:
-        print u'    Selected: False'
+      print convertUTF8(u'    Location: %s' % usercal.get(u'location', u''))
+      print u'    Hidden: %s' % usercal.get(u'hidden', u'False')
+      print u'    Selected: %s' % usercal.get(u'selected', u'False')
       print u'    Default Reminders:'
-      try:
-        for reminder in usercal[u'defaultReminders']:
-          print u'      Type: %s  Minutes: %s' % (reminder[u'method'], reminder[u'minutes'])
-      except KeyError:
-        pass
+      for reminder in usercal.get(u'defaultReminders', []):
+        print u'      Type: %s  Minutes: %s' % (reminder['method'], reminder['minutes'])
+      print u'    Notifications:'
+      if u'notificationSettings' in usercal:
+        for notification in usercal[u'notificationSettings'].get(u'notifications', []):
+          print u'      Method: %s  Type: %s' % (notification[u'method'], notification[u'type'])
       print u''
 
 def showCalSettings(users):
