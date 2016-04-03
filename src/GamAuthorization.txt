@@ -56,8 +56,9 @@ Step 5.i is not required.
 Step 6.ii is not required.
 In step 6.iii, authorize all of the scopes: API scopes - OAuth2 and API scopes - Service Account.
 In step 7.ii, run the command: gam oauth create
-Steps 7.iv through 7.vii 
+Steps 7.iv through 7.vii are not required.
 
 You can run versions of GAM that use the old and new models while you transition from old to new. Install the new version in 
 a separate directory and copy oauth2service.json from the old GAM directory to the new GAM directory and then run
 this command in the new directory: gam oauth create <EmailAddress>
+
