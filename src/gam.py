@@ -713,13 +713,17 @@ class UnicodeDictReader(object):
       self.fieldnames = self.reader.next()
     except:
       self.fieldnames = []
-
-  def next(self):
-    row = self.reader.next()
-    return dict((self.fieldnames[x], unicode(row[x], u'utf-8')) for x in range(len(row)))
+    self.numfields = len(self.fieldnames)
 
   def __iter__(self):
     return self
+
+  def next(self):
+    row = self.reader.next()
+    l = len(row)
+    if l < self.numfields:
+      row += ['']*(self.numfields-l) # Must be '', not u''
+    return dict((self.fieldnames[x], unicode(row[x], u'utf-8')) for x in range(self.numfields))
 #
 class UnicodeWriter(object):
   """
@@ -9664,7 +9668,9 @@ def getSubFields(i, fieldNames):
   GAM_argvI = 0
   while i < len(sys.argv):
     myarg = sys.argv[i]
-    if PATTERN.search(myarg):
+    if not myarg:
+      GAM_argv.append(myarg)
+    elif PATTERN.search(myarg):
       pos = 0
       while True:
         match = PATTERN.search(myarg, pos)

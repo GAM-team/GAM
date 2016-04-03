@@ -328,11 +328,11 @@ gam oauth|oauth2 info|verify
 
 gam whatis <EmailItem>
 gam report users|user [todrive]
-	[date <Date>] [user all|<UserItem>] [filter|filters <String>] [fields|parameters <String>]
+	[date <Date>] [(user all|<UserItem>)] [filter|filters <String>] [fields|parameters <String>]
 gam report customers|customer|domain [todrive]
 	[date <Date>] [fields|parameters <String>]
 gam report admin|calendar|calendars|drive|docs|doc|groups|group|logins|login|mobile|tokens|token [todrive]
-	[start <Time>] [end <Time>] [user all|<UserItem>] [event <String>] [filter|filters <String>] [ip <String>]
+	[start <Time>] [end <Time>] [(user all|<UserItem>)] [event <String>] [filter|filters <String>] [ip <String>]
 
 gam create domain <DomainName>
 gam update domain <DomainName> [primary]
