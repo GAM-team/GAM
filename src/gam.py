@@ -7094,16 +7094,37 @@ def doDeprovUser(users):
 
 def doUpdateInstance():
   adminObj = getAdminSettingsObject()
+  cd = buildGAPIObject(u'directory')
+  body = {}
+  if GC_Values[GC_CUSTOMER_ID] != MY_CUSTOMER:
+    customerKey = GC_Values[GC_CUSTOMER_ID]
+  else:
+    customerKey = MY_CUSTOMER
   command = sys.argv[3].lower()
   if command == u'language':
-    language = sys.argv[4]
-    callGData(service=adminObj, function=u'UpdateDefaultLanguage', defaultLanguage=language)
+    body[u'language'] = sys.argv[4]
   elif command == u'name':
-    name = sys.argv[4]
-    callGData(service=adminObj, function=u'UpdateOrganizationName', organizationName=name)
+    body[u'postalAddress'] = {u'organizationName': sys.argv[4]}
   elif command == u'admin_secondary_email':
-    admin_secondary_email = sys.argv[4]
-    callGData(service=adminObj, function=u'UpdateAdminSecondaryEmail', adminSecondaryEmail=admin_secondary_email)
+    body[u'alternateEmail'] = sys.argv[4]
+  elif command == u'phone':
+    body[u'phoneNumber'] = sys.argv[4]
+  elif command == u'contact_name':
+    body[u'postalAddress'] = {u'contactName': sys.argv[4]}
+  elif command == u'locality':
+    body[u'postalAddress'] = {u'locality': sys.argv[4]}
+  elif command == u'region':
+    body[u'postalAddress'] = {u'region': sys.argv[4]}
+  elif command == u'country':
+    body[u'postalAddress'] = {u'countryCode': sys.argv[4]}
+  elif command == u'postal_code':
+    body[u'postalAddress'] = {u'postalCode': sys.argv[4]}
+  elif command == u'address1':
+    body[u'postalAddress'] = {u'addressLine1': sys.argv[4]}
+  elif command == u'address2':
+    body[u'postalAddress'] = {u'addressLine2': sys.argv[4]}
+  elif command == u'address3':
+    body[u'postalAddress'] = {u'addressLine3': sys.argv[4]}
   elif command == u'logo':
     logoFile = sys.argv[4]
     logoImage = readFile(logoFile)
@@ -7156,6 +7177,8 @@ def doUpdateInstance():
   else:
     print u'ERROR: %s is not a valid argument for "gam update instance"' % command
     sys.exit(2)
+  if body != {}:
+    callGAPI(cd.customers(), u'update', customerKey=customerKey, body=body)
 
 def doGetInstanceInfo():
   adm = buildGAPIObject(u'admin-settings')
@@ -7168,14 +7191,15 @@ def doGetInstanceInfo():
   if GC_Values[GC_CUSTOMER_ID] != MY_CUSTOMER:
     customerKey = GC_Values[GC_CUSTOMER_ID]
   else:
-    customerKey = u'my_customer'
+    customerKey = MY_CUSTOMER
   customer_info = callGAPI(cd.customers(), u'get', customerKey=customerKey)
   customerId = customer_info[u'id']
   primaryDomain = customer_info[u'customerDomain']
   print u'Customer ID: %s' % customerId
   print u'Primary Domain: %s' % primaryDomain
+  print u'Customer Creation Time: %s' % customer_info[u'customerCreationTime']
   verified = callGAPI(cd.domains(), u'get', fields=u'verified', customer=customerId, domainName=primaryDomain)[u'verified']
-  print u'Domain Verified: %s' % verified
+  print u'Primary Domain Verified: %s' % verified
   print u'Default Language: %s' % customer_info[u'language']
   if u'postalAddress' in customer_info:
     print u'Address:'
@@ -7192,7 +7216,6 @@ def doGetInstanceInfo():
   print u'Domain Edition: %s' % domain_edition[u'entry'][u'apps$property'][0][u'value']
   customer_pin = callGAPI(service=adm.customerPIN(), function=u'get', domainName=GC_Values[GC_DOMAIN])
   print u'Customer PIN: %s' % customer_pin[u'entry'][u'apps$property'][0][u'value']
-  print u'Customer Creation Time: %s' % customer_info[u'customerCreationTime']
   ssosettings = callGAPI(service=adm.ssoGeneral(), function=u'get', domainName=GC_Values[GC_DOMAIN])
   for entry in ssosettings[u'entry'][u'apps$property']:
     if entry[u'name'] == u'enableSSO':
