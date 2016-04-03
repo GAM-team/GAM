@@ -3575,7 +3575,7 @@ def deleteEmptyDriveFolders(users):
           print convertUTF8(u' not deleting folder %s because it contains at least 1 item (%s)' % (folder[u'title'], children[u'items'][0][u'id']))
 
 def doUpdateDriveFile(users):
-  convert = ocr = ocrLanguage = parent_query = local_filepath = media_body = fileIds = drivefilename = None
+  convert = ocr = ocrLanguage = parent_query = local_filepath = media_body = fileIds = query = drivefilename = None
   operation = u'update'
   i = 5
   body = {}
@@ -3594,6 +3594,9 @@ def doUpdateDriveFile(users):
       i += 1
     elif sys.argv[i].lower() == u'id':
       fileIds = [sys.argv[i+1],]
+      i += 2
+    elif sys.argv[i].lower() == u'query':
+      query = sys.argv[i+1]
       i += 2
     elif sys.argv[i].lower() == u'drivefilename':
       drivefilename = sys.argv[i+1]
@@ -3698,11 +3701,11 @@ def doUpdateDriveFile(users):
     else:
       print u'ERROR: %s is not a valid argument for "gam <users> update drivefile"' % sys.argv[i]
       sys.exit(2)
-  if not fileIds and not drivefilename:
-    print u'ERROR: you need to specify either id or query in order to determine the file(s) to update'
+  if not fileIds and not drivefilename and not query:
+    print u'ERROR: you need to specify either id, query or drivefilename in order to determine the file(s) to update'
     sys.exit(2)
-  elif fileIds and drivefilename:
-    print u'ERROR: you cannot specify both an id and a query.'
+  elif (fileIds and drivefilename) or (fileIds and query) or (drivefilename and query):
+    print u'ERROR: you cannot specify multiple file identifiers. Choose one of id, drivefilename, query.'
     sys.exit(2)
   for user in users:
     drive = buildGAPIObject(u'drive', user)
@@ -3712,7 +3715,9 @@ def doUpdateDriveFile(users):
         body[u'parents'] = list()
       for a_parent in more_parents:
         body[u'parents'].append({u'id': a_parent})
-    if drivefilename:
+    if query:
+      fileIds = doDriveSearch(drive, query=query)
+    elif drivefilename:
       fileIds = doDriveSearch(drive, query=u'"me" in owners and title = "%s"' % drivefilename)
     if local_filepath:
       media_body = googleapiclient.http.MediaFileUpload(local_filepath, mimetype=mimetype, resumable=True)
