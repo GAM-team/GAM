@@ -343,9 +343,10 @@ gam create domainalias <DomainAlias> <DomainName>
 gam info domainalias <DomainAlias>
 
 gam info customer
-gam update customer [primary <DomainName>] [alternateemail <EmailAddress>] [language <LanguageCode] [phone|phonenumber <String>]
-	[organizationname <String>] [contactname <String>] [countrycode <String>]
-	[addressline1 <String>]  [addressline2 <String>]  [addressline3 <String>] [postalcode <String>]
+gam update customer [adminsecondaryemail|alternateemail <EmailAddress>] [language <LanguageCode] [phone|phonenumber <String>]
+	[contact|contactname <String>] [name|organizationname <String>]
+	[address1|addressline1 <String>] [address2|addressline2 <String>] [address3|addressline3 <String>]
+	[locality <String>] [region <String>] [postalcode <String>] [country|countrycode <String>]
 
 gam create datatransfer|transfer <OldOwnerID> <DataTransferService> <NewOwnerID>
 gam info datatransfer|transfer <TransferID>
@@ -353,17 +354,9 @@ gam print datatransfers|transfers [todrive] [olduser|oldowner <UserItem>] [newus
 
 gam print transferapps
 
-gam update instance language <Language>
-gam update instance name <Name>
 gam update instance logo <FileName>
-gam update instance mx_verify
 gam update instance sso_settings [enabled <Boolean>] [sign_on_uri <URI>] [sign_out_uri <URI>] [password_uri <URI>] [whitelist <CIDRnetmask>] [use_domain_specific_issuer <Boolean>]
 gam update instance sso_key <FileName>
-gam update instance user_migrations <Boolean>
-gam update instance outbound_gateway <HostName> mode smtp|smtp_tls
-gam update instance admin_secondary_email <EmailAddress>
-gam update instance email_route [destination <HostName>] [rewrite_to <Boolean>] [enabled <Boolean>] [bounce_notifications <Boolean>]
-	[account_handling all_accounts|provisioned_accounts|unknown_accounts]
 gam info instance [logo <FileName>]
 
 gam create org|ou <Name> [description <String>] [parent <OrgUnitPath>] [inherit|noinherit]
