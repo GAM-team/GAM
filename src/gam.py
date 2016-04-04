@@ -7120,10 +7120,9 @@ def doUpdateInstance():
     elif command == u'phone':
       body[u'phoneNumber'] = sys.argv[i]
     elif command == u'name':
-      body.setdefault(u'postalAddress', {})
-      body[u'organizationName'] = sys.argv[i]
+      body[u'postalAddress'] = {u'organizationName': sys.argv[i]}
     elif command == u'address':
-      body.setdefault(u'postalAddress', {})
+      body[u'postalAddress'] = {}
       while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace(u'_', u'')
         if myarg in ADDRESS_FIELDS_ARGUMENT_MAP:
