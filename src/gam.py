@@ -7092,46 +7092,56 @@ def doDeprovUser(users):
       print u'No Tokens'
     print u'Done deprovisioning %s' % user
 
+CUSTOMER_ARGUMENT_CHOICES = [u'adminsecondaryemail', u'language', u'name', u'phone', u'address']
+
+POSTAL_FIELDS_ARGUMENT_MAP = {
+  u'contact': u'contactName', u'contactname': u'contactName',
+  u'address1': u'addressLine1', u'addressline1': u'addressLine1',
+  u'address2': u'addressLine2', u'addressline2': u'addressLine2',
+  u'address3': u'addressLine3', u'addressline3': u'addressLine3',
+  u'locality': u'locality',
+  u'name': u'organizationName', u'organizationname': u'organizationName',
+  u'region': u'region',
+  u'postalcode': u'postalCode',
+  u'country': u'countryCode', u'countrycode': u'countryCode',
+  }
+
 def doUpdateInstance():
   adminObj = getAdminSettingsObject()
   cd = buildGAPIObject(u'directory')
-  body = {}
-  if GC_Values[GC_CUSTOMER_ID] != MY_CUSTOMER:
-    customerKey = GC_Values[GC_CUSTOMER_ID]
-  else:
-    customerKey = MY_CUSTOMER
-  command = sys.argv[3].lower()
-  if command == u'language':
-    body[u'language'] = sys.argv[4]
-  elif command == u'name':
-    body[u'postalAddress'] = {u'organizationName': sys.argv[4]}
-  elif command == u'admin_secondary_email':
-    body[u'alternateEmail'] = sys.argv[4]
-  elif command == u'phone':
-    body[u'phoneNumber'] = sys.argv[4]
-  elif command == u'contact_name':
-    body[u'postalAddress'] = {u'contactName': sys.argv[4]}
-  elif command == u'locality':
-    body[u'postalAddress'] = {u'locality': sys.argv[4]}
-  elif command == u'region':
-    body[u'postalAddress'] = {u'region': sys.argv[4]}
-  elif command == u'country':
-    body[u'postalAddress'] = {u'countryCode': sys.argv[4]}
-  elif command == u'postal_code':
-    body[u'postalAddress'] = {u'postalCode': sys.argv[4]}
-  elif command == u'address1':
-    body[u'postalAddress'] = {u'addressLine1': sys.argv[4]}
-  elif command == u'address2':
-    body[u'postalAddress'] = {u'addressLine2': sys.argv[4]}
-  elif command == u'address3':
-    body[u'postalAddress'] = {u'addressLine3': sys.argv[4]}
+  command = sys.argv[3].lower().replace(u'_', u'')
+  i = 4
+  if command in CUSTOMER_ARGUMENT_CHOICES:
+    body = {}
+    if command == u'adminsecondaryemail':
+      body[u'alternateEmail'] = sys.argv[i]
+    elif command == u'language':
+      body[u'language'] = sys.argv[i]
+    elif command == u'phone':
+      body[u'phoneNumber'] = sys.argv[i]
+    elif command == u'name':
+      body.setdefault(u'postalAddress', {})
+      body[u'organizationName'] = sys.argv[i]
+    elif command == u'address':
+      body.setdefault(u'postalAddress', {})
+      while i < len(sys.argv):
+        myarg = sys.argv[i].lower().replace(u'_', u'')
+        if myarg in POSTAL_FIELDS_ARGUMENT_MAP:
+          value = sys.argv[i+1]
+          if not value:
+            value = None
+          body[u'postalAddress'][POSTAL_FIELDS_ARGUMENT_MAP[myarg]] = value
+          i += 2
+        else:
+          print u'ERROR: unknown option for "gam update instance address ...": %s' % sys.argv[i]
+          sys.exit(2)
+    callGAPI(cd.customers(), u'update', customerKey=GC_Values[GC_CUSTOMER_ID], body=body)
   elif command == u'logo':
-    logoFile = sys.argv[4]
+    logoFile = sys.argv[i]
     logoImage = readFile(logoFile)
     callGData(service=adminObj, function=u'UpdateDomainLogo', logoImage=logoImage)
-  elif command == u'sso_settings':
+  elif command == u'ssosettings':
     enableSSO = samlSignonUri = samlLogoutUri = changePasswordUri = ssoWhitelist = useDomainSpecificIssuer = None
-    i = 4
     while i < len(sys.argv):
       if sys.argv[i].lower() == u'enabled':
         if sys.argv[i+1].lower() == u'true':
@@ -7164,21 +7174,21 @@ def doUpdateInstance():
           sys.exit(2)
         i += 2
       else:
-        print u'ERROR: unknown option for "gam update domain sso_settings...": %s' % sys.argv[i]
+        print u'ERROR: unknown option for "gam update instance sso_settings...": %s' % sys.argv[i]
         sys.exit(2)
     callGData(service=adminObj, function=u'UpdateSSOSettings', enableSSO=enableSSO,
               samlSignonUri=samlSignonUri, samlLogoutUri=samlLogoutUri,
               changePasswordUri=changePasswordUri, ssoWhitelist=ssoWhitelist,
               useDomainSpecificIssuer=useDomainSpecificIssuer)
-  elif command == u'sso_key':
-    keyFile = sys.argv[4]
+  elif command == u'ssokey':
+    keyFile = sys.argv[i]
     keyData = readFile(keyFile)
     callGData(service=adminObj, function=u'UpdateSSOKey', signingKey=keyData)
   else:
     print u'ERROR: %s is not a valid argument for "gam update instance"' % command
     sys.exit(2)
-  if body != {}:
-    callGAPI(cd.customers(), u'update', customerKey=customerKey, body=body)
+
+POSTAL_ADDRESS_FIELDS = [u'contactName', u'organizationName', u'addressLine1', u'addressLine2', u'addressLine3', u'locality', u'region', u'postalCode', u'countryCode']
 
 def doGetInstanceInfo():
   adm = buildGAPIObject(u'admin-settings')
@@ -7188,11 +7198,7 @@ def doGetInstanceInfo():
     geturl(url, target_file)
     sys.exit(0)
   cd = buildGAPIObject(u'directory')
-  if GC_Values[GC_CUSTOMER_ID] != MY_CUSTOMER:
-    customerKey = GC_Values[GC_CUSTOMER_ID]
-  else:
-    customerKey = MY_CUSTOMER
-  customer_info = callGAPI(cd.customers(), u'get', customerKey=customerKey)
+  customer_info = callGAPI(cd.customers(), u'get', customerKey=GC_Values[GC_CUSTOMER_ID])
   customerId = customer_info[u'id']
   primaryDomain = customer_info[u'customerDomain']
   print u'Customer ID: %s' % customerId
@@ -7203,8 +7209,9 @@ def doGetInstanceInfo():
   print u'Default Language: %s' % customer_info[u'language']
   if u'postalAddress' in customer_info:
     print u'Address:'
-    for (key, value) in customer_info[u'postalAddress'].items():
-      print u' %s: %s' % (key, value)
+    for field in POSTAL_ADDRESS_FIELDS:
+      if field in customer_info[u'postalAddress']:
+        print u' %s: %s' % (field, customer_info[u'postalAddress'][field])
   if u'phoneNumber' in customer_info:
     print u'Phone: %s' % customer_info[u'phoneNumber']
   print u'Admin Secondary Email: %s' % customer_info[u'alternateEmail']
