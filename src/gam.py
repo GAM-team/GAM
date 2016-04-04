@@ -25,7 +25,7 @@ For more information, see http://git.io/gam
 """
 
 __author__ = u'Jay Lee <jay0lee@gmail.com>'
-__version__ = u'3.723'
+__version__ = u'3.74'
 __license__ = u'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 import sys, os, time, datetime, random, socket, csv, platform, re, calendar, base64, string, codecs, StringIO, subprocess, ConfigParser, collections
@@ -2032,49 +2032,68 @@ def doGetDomainAliasInfo():
     result[u'creationTime'] = unicode(datetime.datetime.fromtimestamp(int(result[u'creationTime'])/1000))
   print_json(None, result)
 
+ADDRESS_FIELDS_PRINT_ORDER = [u'contactName', u'organizationName', u'addressLine1', u'addressLine2', u'addressLine3', u'locality', u'region', u'postalCode', u'countryCode']
+
 def doGetCustomerInfo():
   cd = buildGAPIObject(u'directory')
-  customer_info = callGAPI(cd.customers(), u'get', customerKey=GC_Values[GC_CUSTOMER_ID])
-  print_json(None, customer_info)
+  customer_info = callGAPI(service=cd.customers(), function=u'get', customerKey=GC_Values[GC_CUSTOMER_ID])
+  print u'Customer ID: %s' % customer_info[u'id']
+  print u'Primary Domain: %s' % customer_info[u'customerDomain']
+  result = callGAPI(cd.domains(), u'get',
+                    customer=customer_info[u'id'], domainName=customer_info[u'customerDomain'], fields=u'verified')
+  print u'Primary Domain Verified: %s' % result[u'verified']
+  print u'Customer Creation Time: %s' % customer_info[u'customerCreationTime']
+  print u'Default Language: %s' % customer_info[u'language']
+  if u'postalAddress' in customer_info:
+    print u'Address:'
+    for field in ADDRESS_FIELDS_PRINT_ORDER:
+      if field in customer_info[u'postalAddress']:
+        print u' %s: %s' % (field, customer_info[u'postalAddress'][field])
+  if u'phoneNumber' in customer_info:
+    print u'Phone: %s' % customer_info[u'phoneNumber']
+  print u'Admin Secondary Email: %s' % customer_info[u'alternateEmail']
+
+ADDRESS_FIELDS_ARGUMENT_MAP = {
+  u'contact': u'contactName', u'contactname': u'contactName',
+  u'name': u'organizationName', u'organizationname': u'organizationName',
+  u'address1': u'addressLine1', u'addressline1': u'addressLine1',
+  u'address2': u'addressLine2', u'addressline2': u'addressLine2',
+  u'address3': u'addressLine3', u'addressline3': u'addressLine3',
+  u'locality': u'locality',
+  u'region': u'region',
+  u'postalcode': u'postalCode',
+  u'country': u'countryCode', u'countrycode': u'countryCode',
+  }
 
 def doUpdateCustomer():
   cd = buildGAPIObject(u'directory')
+  language = None
   body = {}
   i = 3
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace(u'_', u'')
-    if myarg == u'alternateemail':
-      body[u'alternateEmail'] = sys.argv[i+1]
+    if myarg in ADDRESS_FIELDS_ARGUMENT_MAP:
+      body.setdefault(u'postalAddress', {})
+      body[u'postalAddress'][ADDRESS_FIELDS_ARGUMENT_MAP[myarg]] = sys.argv[i+1]
       i += 2
-    elif myarg in [u'contactname', u'organizationname', u'locality', u'region', u'countrycode', u'addressline1', u'addressline2', u'addressline3', u'postalcode']:
-      if u'postalAddress' not in body:
-        body[u'postalAddress'] = {}
-      if myarg == u'contactname':
-        myarg = u'contactName'
-      elif myarg == u'organizationname':
-        myarg = u'organizationName'
-      elif myarg == u'countrycode':
-        myarg = u'countryCode'
-      elif myarg == u'addressline1':
-        myarg = u'addressLine1'
-      elif myarg == u'addressline2':
-        myarg = u'addressLine2'
-      elif myarg == u'addressline3':
-        myarg = u'addressLine3'
-      elif myarg == u'postalcode':
-        myarg = u'postalCode'
-      body[u'postalAddress'][myarg] = sys.argv[i+1]
+    elif myarg in [u'adminsecondaryemail', u'alternateemail']:
+      body[u'alternateEmail'] = sys.argv[i+1]
       i += 2
     elif myarg in [u'phone', u'phonenumber']:
       body[u'phoneNumber'] = sys.argv[i+1]
       i += 2
     elif myarg == u'language':
-      body[u'language'] = sys.argv[i+1]
+#      body[u'language'] = sys.argv[i+1]
+      language = sys.argv[i+1]
       i += 2
     else:
       print u'ERROR: %s is not a valid argument for "gam update customer"' % myarg
       sys.exit(2)
-  callGAPI(cd.customers(), u'update', customerKey=GC_Values[GC_CUSTOMER_ID], body=body)
+  if body:
+    callGAPI(service=cd.customers(), function=u'update', customerKey=GC_Values[GC_CUSTOMER_ID], body=body)
+  if language:
+    adminObj = getAdminSettingsObject()
+    callGData(service=adminObj, function=u'UpdateDefaultLanguage', defaultLanguage=language)
   print u'Updated customer'
 
 def doDelDomain():
@@ -7639,26 +7658,13 @@ def doDeprovUser(users):
 def doUpdateInstance():
   adminObj = getAdminSettingsObject()
   command = sys.argv[3].lower()
-  if command == u'language':
-    language = sys.argv[4]
-    callGData(adminObj, u'UpdateDefaultLanguage', defaultLanguage=language)
-  elif command == u'name':
-    name = sys.argv[4]
-    callGData(adminObj, u'UpdateOrganizationName', organizationName=name)
-  elif command == u'admin_secondary_email':
-    admin_secondary_email = sys.argv[4]
-    callGData(adminObj, u'UpdateAdminSecondaryEmail', adminSecondaryEmail=admin_secondary_email)
-  elif command == u'logo':
-    logoFile = sys.argv[4]
+  i = 4
+  if command == u'logo':
+    logoFile = sys.argv[i]
     logoImage = readFile(logoFile)
     callGData(adminObj, u'UpdateDomainLogo', logoImage=logoImage)
-  elif command == u'mx_verify':
-    result = callGData(adminObj, u'UpdateMXVerificationStatus')
-    print u'Verification Method: %s' % result[u'verificationMethod']
-    print u'Verified: %s' % result[u'verified']
   elif command == u'sso_settings':
     enableSSO = samlSignonUri = samlLogoutUri = changePasswordUri = ssoWhitelist = useDomainSpecificIssuer = None
-    i = 4
     while i < len(sys.argv):
       if sys.argv[i].lower() == u'enabled':
         if sys.argv[i+1].lower() == u'true':
@@ -7691,82 +7697,16 @@ def doUpdateInstance():
           sys.exit(2)
         i += 2
       else:
-        print u'ERROR: unknown option for "gam update domain sso_settings...": %s' % sys.argv[i]
+        print u'ERROR: unknown option for "gam update instance sso_settings...": %s' % sys.argv[i]
         sys.exit(2)
     callGData(adminObj, u'UpdateSSOSettings', enableSSO=enableSSO,
               samlSignonUri=samlSignonUri, samlLogoutUri=samlLogoutUri,
               changePasswordUri=changePasswordUri, ssoWhitelist=ssoWhitelist,
               useDomainSpecificIssuer=useDomainSpecificIssuer)
   elif command == u'sso_key':
-    keyFile = sys.argv[4]
+    keyFile = sys.argv[i]
     keyData = readFile(keyFile)
     callGData(adminObj, u'UpdateSSOKey', signingKey=keyData)
-  elif command == u'user_migrations':
-    value = sys.argv[4].lower()
-    if value not in [u'true', u'false']:
-      print u'ERROR: value for user_migrations must be true or false, got %s' % sys.argv[4]
-      sys.exit(2)
-    result = callGData(adminObj, u'UpdateUserMigrationStatus', enableUserMigration=value)
-  elif command == u'outbound_gateway':
-    gateway = sys.argv[4]
-    mode = sys.argv[6].upper()
-    try:
-      result = callGData(adminObj, u'UpdateOutboundGatewaySettings', smartHost=gateway, smtpMode=mode)
-    except TypeError:
-      pass
-  elif command == u'email_route':
-    i = 4
-    while i < len(sys.argv):
-      if sys.argv[i].lower() == u'destination':
-        destination = sys.argv[i+1]
-        i += 2
-      elif sys.argv[i].lower() == u'rewrite_to':
-        rewrite_to = sys.argv[i+1].lower()
-        if rewrite_to == u'true':
-          rewrite_to = True
-        elif rewrite_to == u'false':
-          rewrite_to = False
-        else:
-          print u'ERROR: value for rewrite_to must be true or false, got %s' % sys.argv[i+1]
-          sys.exit(2)
-        i += 2
-      elif sys.argv[i].lower() == u'enabled':
-        enabled = sys.argv[i+1].lower()
-        if enabled == u'true':
-          enabled = True
-        elif enabled == u'false':
-          enabled = False
-        else:
-          print u'ERROR: value for enabled must be true or false, got %s' % sys.argv[i+1]
-          sys.exit(2)
-        i += 2
-      elif sys.argv[i].lower() == u'bounce_notifications':
-        bounce_notifications = sys.argv[i+1].lower()
-        if bounce_notifications == u'true':
-          bounce_notifications = True
-        elif bounce_notifications == u'false':
-          bounce_notifications = False
-        else:
-          print u'ERROR: value for bounce_notifications must be true or false, got %s' % sys.argv[i+1]
-          sys.exit(2)
-        i += 2
-      elif sys.argv[i].lower() == u'account_handling':
-        account_handling = sys.argv[i+1].lower()
-        if account_handling == u'all_accounts':
-          account_handling = u'allAccounts'
-        elif account_handling == u'provisioned_accounts':
-          account_handling = u'provisionedAccounts'
-        elif account_handling == u'unknown_accounts':
-          account_handling = u'unknownAccounts'
-        else:
-          print u'ERROR: value for account_handling must be all_accounts, provisioned_accounts or unknown_accounts. Got %s' % sys.argv[i+1]
-          sys.exit(2)
-        i += 2
-      else:
-        print u'ERROR: %s is not a valid argument for "gam update instance email_route"' % sys.argv[i]
-        sys.exit(2)
-    callGData(adminObj, u'AddEmailRoute', routeDestination=destination, routeRewriteTo=rewrite_to, routeEnabled=enabled,
-              bounceNotifications=bounce_notifications, accountHandling=account_handling)
   else:
     print u'ERROR: %s is not a valid argument for "gam update instance"' % command
     sys.exit(2)
@@ -7778,48 +7718,15 @@ def doGetInstanceInfo():
     url = u'http://www.google.com/a/cpanel/%s/images/logo.gif' % (GC_Values[GC_DOMAIN])
     geturl(url, target_file)
     sys.exit(0)
-  print u'Google Apps Domain: %s' % (GC_Values[GC_DOMAIN])
-  if GC_Values[GC_CUSTOMER_ID] != MY_CUSTOMER:
-    customerId = GC_Values[GC_CUSTOMER_ID]
-  else:
-    cd = buildGAPIObject(u'directory')
-    result = callGAPI(cd.users(), u'list',
-                      fields=u'users(customerId)', customer=GC_Values[GC_CUSTOMER_ID], maxResults=1)
-    try:
-      customerId = result[u'users'][0][u'customerId']
-    except KeyError:
-      customerId = UNKNOWN
-  print u'Customer ID: %s' % customerId
-  default_language = callGAPI(adm.defaultLanguage(), u'get', domainName=GC_Values[GC_DOMAIN])
-  print u'Default Language: %s' % default_language[u'entry'][u'apps$property'][0][u'value']
-  org_name = callGAPI(adm.organizationName(), u'get', domainName=GC_Values[GC_DOMAIN])
-  print convertUTF8(u'Organization Name: %s' % org_name[u'entry'][u'apps$property'][0][u'value'])
-  admin_email = callGAPI(adm.adminSecondaryEmail(), u'get', domainName=GC_Values[GC_DOMAIN])
-  print u'Admin Secondary Email: %s' % admin_email[u'entry'][u'apps$property'][0][u'value']
+  doGetCustomerInfo()
   max_users = callGAPI(adm.maximumNumberOfUsers(), u'get', domainName=GC_Values[GC_DOMAIN])
   print u'Maximum Users: %s' % max_users[u'entry'][u'apps$property'][0][u'value']
   current_users = callGAPI(adm.currentNumberOfUsers(), u'get', domainName=GC_Values[GC_DOMAIN])
   print u'Current Users: %s' % current_users[u'entry'][u'apps$property'][0][u'value']
-  is_dom_verified = callGAPI(adm.isVerified(), u'get', domainName=GC_Values[GC_DOMAIN])
-  print u'Domain is Verified: %s' % is_dom_verified[u'entry'][u'apps$property'][0][u'value']
   domain_edition = callGAPI(adm.edition(), u'get', domainName=GC_Values[GC_DOMAIN])
   print u'Domain Edition: %s' % domain_edition[u'entry'][u'apps$property'][0][u'value']
   customer_pin = callGAPI(adm.customerPIN(), u'get', domainName=GC_Values[GC_DOMAIN])
   print u'Customer PIN: %s' % customer_pin[u'entry'][u'apps$property'][0][u'value']
-  creation_time = callGAPI(adm.creationTime(), u'get', domainName=GC_Values[GC_DOMAIN])
-  my_date = creation_time[u'entry'][u'apps$property'][0][u'value']
-  my_date = my_date[:15]
-  my_offset = creation_time[u'entry'][u'apps$property'][0][u'value'][19:]
-  nice_time = datetime.datetime.strptime(my_date, u"%Y%m%dT%H%M%S")
-  print u'Domain Creation Time: %s %s' % (nice_time, my_offset)
-  country_code = callGAPI(adm.countryCode(), u'get', domainName=GC_Values[GC_DOMAIN])
-  print u'Domain Country Code: %s' % country_code[u'entry'][u'apps$property'][0][u'value']
-  mxverificationstatus = callGAPI(adm.mxVerification(), u'get', domainName=GC_Values[GC_DOMAIN])
-  for entry in mxverificationstatus[u'entry'][u'apps$property']:
-    if entry[u'name'] == u'verified':
-      print u'MX Verification Verified: %s' % entry[u'value']
-    elif entry[u'name'] == u'verificationMethod':
-      print u'MX Verification Method: %s' % entry[u'value']
   ssosettings = callGAPI(adm.ssoGeneral(), u'get', domainName=GC_Values[GC_DOMAIN])
   for entry in ssosettings[u'entry'][u'apps$property']:
     if entry[u'name'] == u'enableSSO':
@@ -7851,19 +7758,6 @@ def doGetInstanceInfo():
         print u'Full SSO Key: %s' % entry[u'value']
   except TypeError:
     pass
-  migration_status = callGAPI(adm.userEmailMigrationEnabled(), u'get', domainName=GC_Values[GC_DOMAIN])
-  print u'User Migration Enabled: %s' %  migration_status[u'entry'][u'apps$property'][0][u'value']
-  outbound_gateway_settings = {u'smartHost': u'', u'smtpMode': u''} # Initialize blank in case we get an 1801 Error
-  outbound_gateway_settings = callGAPI(adm.outboundGateway(), u'get', domainName=GC_Values[GC_DOMAIN])
-  try:
-    for entry in outbound_gateway_settings[u'entry'][u'apps$property']:
-      if entry[u'name'] == u'smartHost':
-        print u'Outbound Gateway Smart Host: %s' % entry[u'value']
-      elif entry[u'name'] == u'smtpMode':
-        print u'Outbound Gateway SMTP Mode: %s' % entry[u'value']
-  except KeyError:
-    print u'Outbound Gateway Smart Host: None'
-    print u'Outbound Gateway SMTP Mode: None'
 
 def doDeleteUser():
   cd = buildGAPIObject(u'directory')
