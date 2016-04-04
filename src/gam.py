@@ -1467,10 +1467,38 @@ def doGetDomainAliasInfo():
     result[u'creationTime'] = unicode(datetime.datetime.fromtimestamp(int(result[u'creationTime'])/1000))
   print_json(None, result)
 
+ADDRESS_FIELDS_PRINT_ORDER = [u'contactName', u'organizationName', u'addressLine1', u'addressLine2', u'addressLine3', u'locality', u'region', u'postalCode', u'countryCode']
+
 def doGetCustomerInfo():
   cd = buildGAPIObject(u'directory')
   customer_info = callGAPI(service=cd.customers(), function=u'get', customerKey=GC_Values[GC_CUSTOMER_ID])
-  print_json(None, customer_info)
+  print u'Customer ID: %s' % customer_info[u'id']
+  print u'Primary Domain: %s' % customer_info[u'customerDomain']
+  result = callGAPI(cd.domains(), u'get',
+                    customer=customer_info[u'id'], domainName=customer_info[u'customerDomain'], fields=u'verified')
+  print u'Primary Domain Verified: %s' % result[u'verified']
+  print u'Customer Creation Time: %s' % customer_info[u'customerCreationTime']
+  print u'Default Language: %s' % customer_info[u'language']
+  if u'postalAddress' in customer_info:
+    print u'Address:'
+    for field in ADDRESS_FIELDS_PRINT_ORDER:
+      if field in customer_info[u'postalAddress']:
+        print u' %s: %s' % (field, customer_info[u'postalAddress'][field])
+  if u'phoneNumber' in customer_info:
+    print u'Phone: %s' % customer_info[u'phoneNumber']
+  print u'Admin Secondary Email: %s' % customer_info[u'alternateEmail']
+
+ADDRESS_FIELDS_ARGUMENT_MAP = {
+  u'contact': u'contactName', u'contactname': u'contactName',
+  u'name': u'organizationName', u'organizationname': u'organizationName',
+  u'address1': u'addressLine1', u'addressline1': u'addressLine1',
+  u'address2': u'addressLine2', u'addressline2': u'addressLine2',
+  u'address3': u'addressLine3', u'addressline3': u'addressLine3',
+  u'locality': u'locality',
+  u'region': u'region',
+  u'postalcode': u'postalCode',
+  u'country': u'countryCode', u'countrycode': u'countryCode',
+  }
 
 def doUpdateCustomer():
   cd = buildGAPIObject(u'directory')
@@ -1478,27 +1506,12 @@ def doUpdateCustomer():
   i = 3
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace(u'_', u'')
-    if myarg == u'alternateemail':
-      body[u'alternateEmail'] = sys.argv[i+1]
+    if myarg in ADDRESS_FIELDS_ARGUMENT_MAP:
+      body.setdefault(u'postalAddress', {})
+      body[u'postalAddress'][ADDRESS_FIELDS_ARGUMENT_MAP[myarg]] = sys.argv[i+1]
       i += 2
-    elif myarg in [u'contactname', u'organizationname', u'locality', u'region', u'countrycode', u'addressline1', u'addressline2', u'addressline3', u'postalcode']:
-      if u'postalAddress' not in body:
-        body[u'postalAddress'] = {}
-      if myarg == u'contactname':
-        myarg = u'contactName'
-      elif myarg == u'organizationname':
-        myarg = u'organizationName'
-      elif myarg == u'countrycode':
-        myarg = u'countryCode'
-      elif myarg == u'addressline1':
-        myarg = u'addressLine1'
-      elif myarg == u'addressline2':
-        myarg = u'addressLine2'
-      elif myarg == u'addressline3':
-        myarg = u'addressLine3'
-      elif myarg == u'postalcode':
-        myarg = u'postalCode'
-      body[u'postalAddress'][myarg] = sys.argv[i+1]
+    elif myarg in [u'adminsecondaryemail', u'alternateemail']:
+      body[u'alternateEmail'] = sys.argv[i+1]
       i += 2
     elif myarg in [u'phone', u'phonenumber']:
       body[u'phoneNumber'] = sys.argv[i+1]
@@ -7092,54 +7105,24 @@ def doDeprovUser(users):
       print u'No Tokens'
     print u'Done deprovisioning %s' % user
 
-CUSTOMER_ARGUMENT_CHOICES = [u'adminsecondaryemail', u'language', u'name', u'phone', u'address']
-
-ADDRESS_FIELDS_ARGUMENT_MAP = {
-  u'contact': u'contactName', u'contactname': u'contactName',
-  u'name': u'organizationName', u'organizationname': u'organizationName',
-  u'address1': u'addressLine1', u'addressline1': u'addressLine1',
-  u'address2': u'addressLine2', u'addressline2': u'addressLine2',
-  u'address3': u'addressLine3', u'addressline3': u'addressLine3',
-  u'locality': u'locality',
-  u'region': u'region',
-  u'postalcode': u'postalCode',
-  u'country': u'countryCode', u'countrycode': u'countryCode',
-  }
-
 def doUpdateInstance():
   adminObj = getAdminSettingsObject()
-  cd = buildGAPIObject(u'directory')
-  command = sys.argv[3].lower().replace(u'_', u'')
+  command = sys.argv[3].lower()
   i = 4
-  if command in CUSTOMER_ARGUMENT_CHOICES:
-    body = {}
-    if command == u'adminsecondaryemail':
-      body[u'alternateEmail'] = sys.argv[i]
-    elif command == u'language':
-      body[u'language'] = sys.argv[i]
-    elif command == u'phone':
-      body[u'phoneNumber'] = sys.argv[i]
-    elif command == u'name':
-      body[u'postalAddress'] = {u'organizationName': sys.argv[i]}
-    elif command == u'address':
-      body[u'postalAddress'] = {}
-      while i < len(sys.argv):
-        myarg = sys.argv[i].lower().replace(u'_', u'')
-        if myarg in ADDRESS_FIELDS_ARGUMENT_MAP:
-          value = sys.argv[i+1]
-          if not value:
-            value = None
-          body[u'postalAddress'][ADDRESS_FIELDS_ARGUMENT_MAP[myarg]] = value
-          i += 2
-        else:
-          print u'ERROR: unknown option for "gam update instance address ...": %s' % sys.argv[i]
-          sys.exit(2)
-    callGAPI(cd.customers(), u'update', customerKey=GC_Values[GC_CUSTOMER_ID], body=body)
+  if command == u'language':
+    language = sys.argv[i]
+    callGData(service=adminObj, function=u'UpdateDefaultLanguage', defaultLanguage=language)
+  elif command == u'name':
+    name = sys.argv[i]
+    callGData(service=adminObj, function=u'UpdateOrganizationName', organizationName=name)
+  elif command == u'admin_secondary_email':
+    admin_secondary_email = sys.argv[i]
+    callGData(service=adminObj, function=u'UpdateAdminSecondaryEmail', adminSecondaryEmail=admin_secondary_email)
   elif command == u'logo':
     logoFile = sys.argv[i]
     logoImage = readFile(logoFile)
     callGData(service=adminObj, function=u'UpdateDomainLogo', logoImage=logoImage)
-  elif command == u'ssosettings':
+  elif command == u'sso_settings':
     enableSSO = samlSignonUri = samlLogoutUri = changePasswordUri = ssoWhitelist = useDomainSpecificIssuer = None
     while i < len(sys.argv):
       if sys.argv[i].lower() == u'enabled':
@@ -7179,15 +7162,13 @@ def doUpdateInstance():
               samlSignonUri=samlSignonUri, samlLogoutUri=samlLogoutUri,
               changePasswordUri=changePasswordUri, ssoWhitelist=ssoWhitelist,
               useDomainSpecificIssuer=useDomainSpecificIssuer)
-  elif command == u'ssokey':
+  elif command == u'sso_key':
     keyFile = sys.argv[i]
     keyData = readFile(keyFile)
     callGData(service=adminObj, function=u'UpdateSSOKey', signingKey=keyData)
   else:
     print u'ERROR: %s is not a valid argument for "gam update instance"' % command
     sys.exit(2)
-
-ADDRESS_FIELDS = [u'contactName', u'organizationName', u'addressLine1', u'addressLine2', u'addressLine3', u'locality', u'region', u'postalCode', u'countryCode']
 
 def doGetInstanceInfo():
   adm = buildGAPIObject(u'admin-settings')
@@ -7196,24 +7177,7 @@ def doGetInstanceInfo():
     url = 'http://www.google.com/a/cpanel/%s/images/logo.gif' % (GC_Values[GC_DOMAIN])
     geturl(url, target_file)
     sys.exit(0)
-  cd = buildGAPIObject(u'directory')
-  customer_info = callGAPI(cd.customers(), u'get', customerKey=GC_Values[GC_CUSTOMER_ID])
-  customerId = customer_info[u'id']
-  primaryDomain = customer_info[u'customerDomain']
-  print u'Customer ID: %s' % customerId
-  print u'Primary Domain: %s' % primaryDomain
-  print u'Customer Creation Time: %s' % customer_info[u'customerCreationTime']
-  verified = callGAPI(cd.domains(), u'get', fields=u'verified', customer=customerId, domainName=primaryDomain)[u'verified']
-  print u'Primary Domain Verified: %s' % verified
-  print u'Default Language: %s' % customer_info[u'language']
-  if u'postalAddress' in customer_info:
-    print u'Address:'
-    for field in ADDRESS_FIELDS:
-      if field in customer_info[u'postalAddress']:
-        print u' %s: %s' % (field, customer_info[u'postalAddress'][field])
-  if u'phoneNumber' in customer_info:
-    print u'Phone: %s' % customer_info[u'phoneNumber']
-  print u'Admin Secondary Email: %s' % customer_info[u'alternateEmail']
+  doGetCustomerInfo()
   max_users = callGAPI(service=adm.maximumNumberOfUsers(), function=u'get', domainName=GC_Values[GC_DOMAIN])
   print u'Maximum Users: %s' % max_users[u'entry'][u'apps$property'][0][u'value']
   current_users = callGAPI(service=adm.currentNumberOfUsers(), function=u'get', domainName=GC_Values[GC_DOMAIN])
