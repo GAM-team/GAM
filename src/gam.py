@@ -7094,13 +7094,13 @@ def doDeprovUser(users):
 
 CUSTOMER_ARGUMENT_CHOICES = [u'adminsecondaryemail', u'language', u'name', u'phone', u'address']
 
-POSTAL_FIELDS_ARGUMENT_MAP = {
+ADDRESS_FIELDS_ARGUMENT_MAP = {
   u'contact': u'contactName', u'contactname': u'contactName',
+  u'name': u'organizationName', u'organizationname': u'organizationName',
   u'address1': u'addressLine1', u'addressline1': u'addressLine1',
   u'address2': u'addressLine2', u'addressline2': u'addressLine2',
   u'address3': u'addressLine3', u'addressline3': u'addressLine3',
   u'locality': u'locality',
-  u'name': u'organizationName', u'organizationname': u'organizationName',
   u'region': u'region',
   u'postalcode': u'postalCode',
   u'country': u'countryCode', u'countrycode': u'countryCode',
@@ -7126,11 +7126,11 @@ def doUpdateInstance():
       body.setdefault(u'postalAddress', {})
       while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace(u'_', u'')
-        if myarg in POSTAL_FIELDS_ARGUMENT_MAP:
+        if myarg in ADDRESS_FIELDS_ARGUMENT_MAP:
           value = sys.argv[i+1]
           if not value:
             value = None
-          body[u'postalAddress'][POSTAL_FIELDS_ARGUMENT_MAP[myarg]] = value
+          body[u'postalAddress'][ADDRESS_FIELDS_ARGUMENT_MAP[myarg]] = value
           i += 2
         else:
           print u'ERROR: unknown option for "gam update instance address ...": %s' % sys.argv[i]
@@ -7188,7 +7188,7 @@ def doUpdateInstance():
     print u'ERROR: %s is not a valid argument for "gam update instance"' % command
     sys.exit(2)
 
-POSTAL_ADDRESS_FIELDS = [u'contactName', u'organizationName', u'addressLine1', u'addressLine2', u'addressLine3', u'locality', u'region', u'postalCode', u'countryCode']
+ADDRESS_FIELDS = [u'contactName', u'organizationName', u'addressLine1', u'addressLine2', u'addressLine3', u'locality', u'region', u'postalCode', u'countryCode']
 
 def doGetInstanceInfo():
   adm = buildGAPIObject(u'admin-settings')
@@ -7209,7 +7209,7 @@ def doGetInstanceInfo():
   print u'Default Language: %s' % customer_info[u'language']
   if u'postalAddress' in customer_info:
     print u'Address:'
-    for field in POSTAL_ADDRESS_FIELDS:
+    for field in ADDRESS_FIELDS:
       if field in customer_info[u'postalAddress']:
         print u' %s: %s' % (field, customer_info[u'postalAddress'][field])
   if u'phoneNumber' in customer_info:
