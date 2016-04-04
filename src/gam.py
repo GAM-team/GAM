@@ -7112,12 +7112,6 @@ def doUpdateInstance():
   if command == u'language':
     language = sys.argv[i]
     callGData(service=adminObj, function=u'UpdateDefaultLanguage', defaultLanguage=language)
-  elif command == u'name':
-    name = sys.argv[i]
-    callGData(service=adminObj, function=u'UpdateOrganizationName', organizationName=name)
-  elif command == u'admin_secondary_email':
-    admin_secondary_email = sys.argv[i]
-    callGData(service=adminObj, function=u'UpdateAdminSecondaryEmail', adminSecondaryEmail=admin_secondary_email)
   elif command == u'logo':
     logoFile = sys.argv[i]
     logoImage = readFile(logoFile)
