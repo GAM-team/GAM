@@ -25,7 +25,7 @@ For more information, see http://git.io/gam
 """
 
 __author__ = u'Jay Lee <jay0lee@gmail.com>'
-__version__ = u'3.74'
+__version__ = u'3.741'
 __license__ = u'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 import sys, os, time, datetime, random, socket, csv, platform, re, calendar, base64, string, codecs, StringIO, subprocess, ConfigParser, collections
@@ -412,7 +412,7 @@ class _DeHTMLParser(HTMLParser):
       self.__text.append(u'\n\n')
 
   def text(self):
-    return ''.join(self.__text).strip()
+    return u''.join(self.__text).strip()
 
 
 def dehtml(text):
@@ -512,9 +512,9 @@ def formatChoiceList(choices):
   else:
     choiceList = choices
   if len(choiceList) <= 5:
-    return '|'.join(choiceList)
+    return u'|'.join(choiceList)
   else:
-    return '|'.join(sorted(choiceList))
+    return u'|'.join(sorted(choiceList))
 
 def invalidChoiceExit(i, choices):
   expectedArgumentExit(i, ARGUMENT_ERROR_NAMES[ARGUMENT_INVALID][1], formatChoiceList(choices))
@@ -1649,13 +1649,7 @@ def showReport():
     for app in auth_apps: # put apps at bottom
       cust_attributes.append(app)
     output_csv(csv_list=cust_attributes, titles=titles, list_type=u'Customer Report - %s' % try_date, todrive=to_drive)
-  elif report in [u'doc', u'docs', u'drive',
-                  u'calendar', u'calendars',
-                  u'login', u'logins',
-                  u'admin',
-                  u'token', u'tokens',
-                  u'group', u'groups',
-                  u'mobile']:
+  elif report in [u'doc', u'docs', u'drive', u'calendar', u'calendars', u'login', u'logins', u'admin', u'token', u'tokens', u'group', u'groups', u'mobile']:
     if report in [u'doc', u'docs']:
       report = u'drive'
     elif report in [u'calendars']:
@@ -2036,7 +2030,7 @@ ADDRESS_FIELDS_PRINT_ORDER = [u'contactName', u'organizationName', u'addressLine
 
 def doGetCustomerInfo():
   cd = buildGAPIObject(u'directory')
-  customer_info = callGAPI(service=cd.customers(), function=u'get', customerKey=GC_Values[GC_CUSTOMER_ID])
+  customer_info = callGAPI(cd.customers(), u'get', customerKey=GC_Values[GC_CUSTOMER_ID])
   print u'Customer ID: %s' % customer_info[u'id']
   print u'Primary Domain: %s' % customer_info[u'customerDomain']
   result = callGAPI(cd.domains(), u'get',
@@ -2090,10 +2084,10 @@ def doUpdateCustomer():
       print u'ERROR: %s is not a valid argument for "gam update customer"' % myarg
       sys.exit(2)
   if body:
-    callGAPI(service=cd.customers(), function=u'update', customerKey=GC_Values[GC_CUSTOMER_ID], body=body)
+    callGAPI(cd.customers(), u'update', customerKey=GC_Values[GC_CUSTOMER_ID], body=body)
   if language:
     adminObj = getAdminSettingsObject()
-    callGData(service=adminObj, function=u'UpdateDefaultLanguage', defaultLanguage=language)
+    callGData(adminObj, u'UpdateDefaultLanguage', defaultLanguage=language)
   print u'Updated customer'
 
 def doDelDomain():
@@ -2339,7 +2333,7 @@ def user_from_userid(userid):
 
 SERVICE_NAME_TO_ID_MAP = {
   u'Drive': u'55656082996',
-  u'Google+': '553547912911',
+  u'Google+': u'553547912911',
   }
 
 def appID2app(dt, appID):
@@ -3078,18 +3072,18 @@ def doPrinterDelACL():
 
 def encode_multipart(fields, files, boundary=None):
   def escape_quote(s):
-    return s.replace(u'"', u'\\"')
+    return s.replace('"', '\\"')
 
   def getFormDataLine(name, value, boundary):
-    return '--{0}'.format(boundary), u'Content-Disposition: form-data; name="{0}"'.format(escape_quote(name)), u'', str(value)
+    return '--{0}'.format(boundary), 'Content-Disposition: form-data; name="{0}"'.format(escape_quote(name)), '', str(value)
 
   if boundary is None:
-    boundary = u''.join(random.choice(string.digits + string.ascii_letters) for i in range(30))
+    boundary = ''.join(random.choice(string.digits + string.ascii_letters) for i in range(30))
   lines = []
   for name, value in fields.items():
     if name == u'tags':
       for tag in value:
-        lines.extend(getFormDataLine(u'tag', tag, boundary))
+        lines.extend(getFormDataLine('tag', tag, boundary))
     else:
       lines.extend(getFormDataLine(name, value, boundary))
   for name, value in files.items():
@@ -3097,8 +3091,7 @@ def encode_multipart(fields, files, boundary=None):
     mimetype = value[u'mimetype']
     lines.extend((
       '--{0}'.format(boundary),
-      'Content-Disposition: form-data; name="{0}"; filename="{1}"'.format(
-        escape_quote(name), escape_quote(filename)),
+      'Content-Disposition: form-data; name="{0}"; filename="{1}"'.format(escape_quote(name), escape_quote(filename)),
       'Content-Type: {0}'.format(mimetype),
       '',
       value[u'content'],
@@ -3107,7 +3100,7 @@ def encode_multipart(fields, files, boundary=None):
     '--{0}--'.format(boundary),
     '',
   ))
-  body = u'\r\n'.join(lines)
+  body = '\r\n'.join(lines)
   headers = {
     'Content-Type': 'multipart/form-data; boundary={0}'.format(boundary),
     'Content-Length': str(len(body)),
@@ -3181,9 +3174,7 @@ def doPrintJobFetch():
     sys.exit(0)
   checkCloudPrintResult(result)
   valid_chars = u'-_.() abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
-  ssd = u'''{
-  "state": {"type": "DONE"}
-}'''
+  ssd = u'{"state": {"type": "DONE"}}'
   for job in result[u'jobs']:
     createTime = int(job[u'createTime'])/1000
     if older_or_newer:
@@ -3196,7 +3187,7 @@ def doPrintJobFetch():
     fileName = job[u'title']
     fileName = u''.join(c if c in valid_chars else u'_' for c in fileName)
     fileName = u'%s-%s' % (fileName, jobid)
-    _, content = cp._http.request(uri=fileUrl, method=u'GET')
+    _, content = cp._http.request(uri=fileUrl, method='GET')
     if writeFile(fileName, content, continueOnError=True):
 #      ticket = callGAPI(cp.jobs(), u'getticket', jobid=jobid, use_cjt=True)
       result = callGAPI(cp.jobs(), u'update', jobid=jobid, semantic_state_diff=ssd)
@@ -3290,11 +3281,10 @@ def doPrinterRegister():
                                   },
                  u'tags': [u'GAM', GAM_URL],
                 }
-  form_files = {}
-  body, headers = encode_multipart(form_fields, form_files)
+  body, headers = encode_multipart(form_fields, {})
   #Get the printer first to make sure our OAuth access token is fresh
   callGAPI(cp.printers(), u'list')
-  _, result = cp._http.request(uri=u'https://www.google.com/cloudprint/register', method=u'POST', body=body, headers=headers)
+  _, result = cp._http.request(uri='https://www.google.com/cloudprint/register', method='POST', body=body, headers=headers)
   result = json.loads(result)
   checkCloudPrintResult(result)
   print u'Created printer %s' % result[u'printers'][0][u'id']
@@ -3303,9 +3293,7 @@ def doPrintJobResubmit():
   cp = buildGAPIObject(u'cloudprint')
   jobid = sys.argv[2]
   printerid = sys.argv[4]
-  ssd = u'''{
-  "state": {"type": "HELD"}
-}'''
+  ssd = u'{"state": {"type": "HELD"}}'
   result = callGAPI(cp.jobs(), u'update', jobid=jobid, semantic_state_diff=ssd)
   checkCloudPrintResult(result)
   ticket = callGAPI(cp.jobs(), u'getticket', jobid=jobid, use_cjt=True)
@@ -3348,7 +3336,7 @@ def doPrintJobSubmit():
   body, headers = encode_multipart(form_fields, form_files)
   #Get the printer first to make sure our OAuth access token is fresh
   callGAPI(cp.printers(), u'get', printerid=printer)
-  _, result = cp._http.request(uri=u'https://www.google.com/cloudprint/submit', method=u'POST', body=body, headers=headers)
+  _, result = cp._http.request(uri='https://www.google.com/cloudprint/submit', method='POST', body=body, headers=headers)
   checkCloudPrintResult(result)
   if type(result) is str:
     result = json.loads(result)
@@ -3997,7 +3985,7 @@ def showDriveFiles(users):
       print u'ERROR: %s is not a valid argument for "gam <users> show filelist"' % my_arg
       sys.exit(2)
   if len(labels) > 0:
-    fields += u',labels(%s)' % ','.join(labels)
+    fields += u',labels(%s)' % u','.join(labels)
   if fields != u'*':
     fields += u')'
   for user in users:
@@ -4175,7 +4163,7 @@ def doUpdateDriveFile(users):
       ocrLanguage = sys.argv[i+1]
       i += 2
     elif sys.argv[i].lower() in [u'restrict', u'restricted']:
-      if 'labels' not in body:
+      if u'labels' not in body:
         body[u'labels'] = dict()
       if sys.argv[i+1].lower() in true_values:
         body[u'labels'][u'restricted'] = True
@@ -4429,7 +4417,7 @@ def downloadDriveFile(users):
     else:
       print u'ERROR: %s is not a valid argument for "gam <users> get drivefile"' % sys.argv[i]
       sys.exit(2)
-  export_extensions = {u'application/pdf': '.pdf',
+  export_extensions = {u'application/pdf': u'.pdf',
                        u'application/vnd.openxmlformats-officedocument.wordprocessingml.document': u'.docx',
                        u'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': u'.xlsx',
                        u'application/vnd.openxmlformats-officedocument.presentationml.presentation': u'.pptx',
@@ -4869,7 +4857,7 @@ def showSendAs(users):
         else:
           default = u'no'
         if sendas[u'replyTo']:
-          replyto = u' Reply To:<'+sendas[u'replyTo']+'>'
+          replyto = u' Reply To:<'+sendas[u'replyTo']+u'>'
         else:
           replyto = u''
         if sendas[u'verified'] == u'true':
@@ -5139,7 +5127,7 @@ def doProcessMessages(users, function):
       deleted_messages = 0
       for id_batch in id_batches:
         print u'deleting %s messages' % len(id_batch)
-        callGAPI(service=gmail.users().messages(), function=u'batchDelete',
+        callGAPI(gmail.users().messages(), u'batchDelete',
                  body={u'ids': id_batch}, userId=u'me')
         deleted_messages += len(id_batch)
         print u'deleted %s of %s messages' % (deleted_messages, result_count)
@@ -5421,7 +5409,7 @@ def doFilter(users):
       user = user[:user.find(u'@')]
     else:
       emailsettings.domain = GC_Values[GC_DOMAIN] #make sure it's back at default domain
-    print u"Creating filter for %s (%s of %s)" % (user+'@'+emailsettings.domain, i, count)
+    print u"Creating filter for %s (%s of %s)" % (user+u'@'+emailsettings.domain, i, count)
     i += 1
     callGData(emailsettings, u'CreateFilter', soft_errors=True,
               username=user, from_=from_, to=to, subject=subject, has_the_word=has_the_word, does_not_have_the_word=does_not_have_the_word,
@@ -5465,7 +5453,7 @@ def doForward(users):
       user = user[:user.find(u'@')]
     else:
       emailsettings.domain = GC_Values[GC_DOMAIN] #make sure it's back at default domain
-    print u"Turning forward %s for %s, emails will be %s (%s of %s)" % (sys.argv[4], user+'@'+emailsettings.domain, action, i, count)
+    print u"Turning forward %s for %s, emails will be %s (%s of %s)" % (sys.argv[4], user+u'@'+emailsettings.domain, action, i, count)
     i += 1
     callGData(emailsettings, u'UpdateForwarding', soft_errors=True, username=user, enable=enable, action=action, forward_to=forward_to)
 
@@ -5596,7 +5584,7 @@ def doVacation(users):
       user = user[:user.find(u'@')]
     else:
       emailsettings.domain = GC_Values[GC_DOMAIN] #make sure it's back at default domain
-    print u"Setting Vacation for %s (%s of %s)" % (user+'@'+emailsettings.domain, i, count)
+    print u"Setting Vacation for %s (%s of %s)" % (user+u'@'+emailsettings.domain, i, count)
     i += 1
     callGData(emailsettings, u'UpdateVacation',
               soft_errors=True,
@@ -6891,7 +6879,7 @@ def doUpdateOrg():
       for cros in users:
         sys.stderr.write(u' moving %s to %s (%s/%s)\n' % (cros, orgUnitPath, current_cros, cros_count))
         callGAPI(cd.chromeosdevices(), u'patch', soft_errors=True,
-                 customerId=GC_Values[GC_CUSTOMER_ID], deviceId=cros, body={u'orgUnitPath': '//%s' % orgUnitPath})
+                 customerId=GC_Values[GC_CUSTOMER_ID], deviceId=cros, body={u'orgUnitPath': u'//%s' % orgUnitPath})
         current_cros += 1
     else:
       user_count = len(users)
@@ -8114,7 +8102,7 @@ def doPrintUsers():
       groups = callGAPIpages(cd.groups(), u'list', u'groups', userKey=user_email)
       grouplist = u''
       for groupname in groups:
-        grouplist += groupname[u'email']+' '
+        grouplist += groupname[u'email']+u' '
       if grouplist[-1:] == u' ':
         grouplist = grouplist[:-1]
       user.update(Groups=grouplist)
@@ -8246,11 +8234,11 @@ def doPrintGroups():
         pass
     if aliases:
       try:
-        group.update({u'Aliases': ' '.join(group_vals[u'aliases'])})
+        group.update({u'Aliases': u' '.join(group_vals[u'aliases'])})
       except KeyError:
         pass
       try:
-        group.update({u'NonEditableAliases': ' '.join(group_vals[u'nonEditableAliases'])})
+        group.update({u'NonEditableAliases': u' '.join(group_vals[u'nonEditableAliases'])})
       except KeyError:
         pass
     if members or owners or managers:
@@ -8926,8 +8914,8 @@ def doDownloadActivityRequest():
     systemErrorExit(4, MESSAGE_REQUEST_COMPLETED_NO_FILES)
   for i in range(0, int(results[u'numberOfFiles'])):
     url = results[u'fileUrl'+str(i)]
-    filename = u'activity-'+user+'-'+request_id+'-'+unicode(i)+u'.txt.gpg'
-    print u'Downloading '+filename+u' ('+unicode(i+1)+u' of '+results[u'numberOfFiles']+')'
+    filename = u'activity-'+user+u'-'+request_id+u'-'+unicode(i)+u'.txt.gpg'
+    print u'Downloading '+filename+u' ('+unicode(i+1)+u' of '+results[u'numberOfFiles']+u')'
     geturl(url, filename)
 
 def doRequestExport():
@@ -9108,12 +9096,12 @@ def doDownloadExportRequest():
     systemErrorExit(4, MESSAGE_REQUEST_COMPLETED_NO_FILES)
   for i in range(0, int(results[u'numberOfFiles'])):
     url = results[u'fileUrl'+str(i)]
-    filename = u'export-'+user+'-'+request_id+'-'+str(i)+u'.mbox.gpg'
+    filename = u'export-'+user+u'-'+request_id+u'-'+str(i)+u'.mbox.gpg'
     #don't download existing files. This does not check validity of existing local
     #file so partial/corrupt downloads will need to be deleted manually.
     if os.path.isfile(filename):
       continue
-    print u'Downloading '+filename+u' ('+unicode(i+1)+u' of '+results[u'numberOfFiles']+')'
+    print u'Downloading '+filename+u' ('+unicode(i+1)+u' of '+results[u'numberOfFiles']+u')'
     geturl(url, filename)
 
 def doUploadAuditKey():
