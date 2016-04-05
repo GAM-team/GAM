@@ -2444,8 +2444,8 @@ def doPrintDataTransfers():
       print u'ERROR: %s is not a valid argument for "gam print transfers"' % sys.argv[i]
       sys.exit(2)
   transfers_attributes = [{}]
-  transfers = callGAPIpages(dt.transfers(), u'list', u'items',
-                            u'dataTransfers', customerId=GC_Values[GC_CUSTOMER_ID], status=status,
+  transfers = callGAPIpages(dt.transfers(), u'list', u'dataTransfers',
+                            customerId=GC_Values[GC_CUSTOMER_ID], status=status,
                             newOwnerUserId=newOwnerUserId, oldOwnerUserId=oldOwnerUserId)
   for transfer in transfers:
     for i in range(0, len(transfer[u'applicationDataTransfers'])):
@@ -2903,7 +2903,7 @@ def changeCalendarAttendees(users):
         break
 
 def deleteCalendar(users):
-  cal = buildGAPIObject(u'calendar', users[0])
+  buildGAPIObject(u'calendar')
   calendarId = sys.argv[5]
   if calendarId.find(u'@') == -1:
     calendarId = u'%s@%s' % (calendarId, GC_Values[GC_DOMAIN])
@@ -3713,7 +3713,7 @@ def showCalendars(users):
       print u'    Selected: %s' % usercal.get(u'selected', u'False')
       print u'    Default Reminders:'
       for reminder in usercal.get(u'defaultReminders', []):
-        print u'      Type: %s  Minutes: %s' % (reminder['method'], reminder['minutes'])
+        print u'      Type: %s  Minutes: %s' % (reminder[u'method'], reminder[u'minutes'])
       print u'    Notifications:'
       if u'notificationSettings' in usercal:
         for notification in usercal[u'notificationSettings'].get(u'notifications', []):
@@ -4698,6 +4698,8 @@ def getProductAndSKU(sku):
     sku = u'Google-Apps-For-Postini'
   elif sku.lower() in [u'gau', u'unlimited', u'd4w', u'dfw']:
     sku = u'Google-Apps-Unlimited'
+  elif sku.lower() in [u'lite']:
+    sku = u'Google-Apps-Lite'
   elif sku.lower() == u'coordinate':
     sku = u'Google-Coordinate'
   elif sku.lower() == u'vault':
@@ -5120,18 +5122,39 @@ def doProcessMessages(users, function):
     listResult = callGAPIpages(gmail.users().messages(), u'list', u'messages', page_message=page_message,
                                userId=u'me', q=query, includeSpamTrash=True, soft_errors=True)
     result_count = len(listResult)
-    if not doIt:
+    if not doIt or result_count == 0:
       print u'would try to %s %s messages for user %s (max %s)\n' % (function, result_count, user, maxToProcess)
       continue
     elif result_count > maxToProcess:
       print u'WARNING: refusing to %s ANY messages for %s since max messages to process is %s and messages to be %s is %s\n' % (function, user, maxToProcess, action, result_count)
       continue
     i = 0
+    if function == u'delete':
+      id_batches = [[]]
+      for del_me in listResult:
+        id_batches[i].append(del_me[u'id'])
+        if len(id_batches[i]) == 1000:
+          i += 1
+          id_batches.append([])
+      deleted_messages = 0
+      for id_batch in id_batches:
+        print u'deleting %s messages' % len(id_batch)
+        callGAPI(service=gmail.users().messages(), function=u'batchDelete',
+                 body={u'ids': id_batch}, userId=u'me')
+        deleted_messages += len(id_batch)
+        print u'deleted %s of %s messages' % (deleted_messages, result_count)
+      continue
+    if not body:
+      kwargs = {}
+    else:
+      kwargs = {u'body': {}}
+      for my_key in body.keys():
+        kwargs[u'body'][my_key] = labelsToLabelIds(gmail, body[my_key])
     for a_message in listResult:
       i += 1
       print u' %s message %s for user %s (%s/%s)' % (function, a_message[u'id'], user, i, result_count)
       callGAPI(gmail.users().messages(), function,
-               id=a_message[u'id'], userId=u'me')
+               id=a_message[u'id'], userId=u'me', **kwargs)
 
 def doDeleteLabel(users):
   label = sys.argv[5]
@@ -7114,11 +7137,8 @@ def doGetUserInfo(user_email=None):
   if getLicenses:
     print u'Licenses:'
     lic = buildGAPIObject(u'licensing')
-    for sku in [u'Google-Apps', u'Google-Apps-For-Business', u'Google-Apps-Unlimited', u'Google-Apps-For-Postini',
-                u'Google-Coordinate', u'Google-Drive-storage-20GB', u'Google-Drive-storage-50GB', u'Google-Drive-storage-200GB',
-                u'Google-Drive-storage-400GB', u'Google-Drive-storage-1TB', u'Google-Drive-storage-2TB',
-                u'Google-Drive-storage-4TB', u'Google-Drive-storage-8TB', u'Google-Drive-storage-16TB', u'Google-Vault',
-                u'Google-Vault-Former-Employee']:
+    for sku in [u'Google-Apps-For-Business', u'Google-Apps-Unlimited', u'Google-Apps-For-Postini',
+                u'Google-Apps-Lite', u'Google-Vault', u'Google-Vault-Former-Employee']:
       productId, skuId = getProductAndSKU(sku)
       try:
         result = callGAPI(lic.licenseAssignments(), u'get', throw_reasons=[u'notFound'], userId=user_email, productId=productId, skuId=skuId)
@@ -8480,7 +8500,7 @@ def doPrintMobileDevices():
       orderBy = sys.argv[i+1].lower()
       allowed_values = [u'deviceid', u'email', u'lastsync', u'model', u'name', u'os', u'status', u'type']
       if orderBy.lower() not in allowed_values:
-        print u'ERROR: orderBy must be one of %s. Got %s' % (u', u'.join(allowed_values), orderBy)
+        print u'ERROR: orderBy must be one of %s. Got %s' % (u', '.join(allowed_values), orderBy)
         sys.exit(2)
       elif orderBy == u'lastsync':
         orderBy = u'lastSync'
@@ -8554,7 +8574,7 @@ def doPrintCrosDevices():
       orderBy = sys.argv[i+1].lower().replace(u'_', u'')
       allowed_values = [u'location', u'user', u'lastsync', u'notes', u'serialnumber', u'status', u'supportenddate']
       if orderBy not in allowed_values:
-        print u'ERROR: orderBy must be one of %s. Got %s' % (u', u'.join(allowed_values), orderBy)
+        print u'ERROR: orderBy must be one of %s. Got %s' % (u', '.join(allowed_values), orderBy)
         sys.exit(2)
       elif orderBy == u'location':
         orderBy = u'annotatedLocation'
@@ -8626,7 +8646,7 @@ def doPrintCrosDevices():
 
 def doPrintLicenses(return_list=False, skus=None):
   lic = buildGAPIObject(u'licensing')
-  products = [u'Google-Apps', u'Google-Drive-storage', u'Google-Coordinate', u'Google-Vault']
+  products = [u'Google-Apps', u'Google-Vault']
   licenses = []
   lic_attributes = [{}]
   todrive = False
@@ -10045,6 +10065,12 @@ try:
       doDriveActivity(users)
     else:
       print u'ERROR: %s is not a valid argument for "gam <users> show"' % sys.argv[4]
+      sys.exit(2)
+  elif command == u'modify':
+    if sys.argv[4].lower() in [u'message', u'messages']:
+      doProcessMessages(users, u'modify')
+    else:
+      print u'ERROR: %s is not a valid argument for "gam <users> modify"' % sys.argv[4]
       sys.exit(2)
   elif command == u'trash':
     if sys.argv[4].lower() in [u'message', u'messages']:
