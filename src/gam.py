@@ -29,6 +29,7 @@ __version__ = u'3.741'
 __license__ = u'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 import sys, os, time, datetime, random, socket, csv, platform, re, calendar, base64, string, codecs, StringIO, subprocess, ConfigParser, collections
+from traceback import print_exc
 
 import json
 import httplib2
@@ -386,9 +387,9 @@ def win32_unicode_argv():
     return [argv[i] for i in range(start, argc.value)]
 
 from HTMLParser import HTMLParser
-from re import sub
-from sys import stderr
-from traceback import print_exc
+from htmlentitydefs import name2codepoint
+
+TOO_MANY_NLS = re.compile(r'\n{2}\n{,}')
 
 class _DeHTMLParser(HTMLParser):
   def __init__(self):
@@ -396,24 +397,33 @@ class _DeHTMLParser(HTMLParser):
     self.__text = []
 
   def handle_data(self, data):
-    text = data.strip()
-    if len(text) > 0:
-      text = sub(u'[ \t\r\n]+', u' ', text)
-      self.__text.append(text + u' ')
+    self.__text.append(data)
+
+  def handle_entityref(self, name):
+    self.__text.append(unichr(name2codepoint[name]))
 
   def handle_starttag(self, tag, attrs):
-    if tag == u'p':
-      self.__text.append(u'\n\n')
-    elif tag == u'br':
-      self.__text.append(u'\n')
+    if tag == 'p':
+      self.__text.append('\n\n')
+    elif tag == 'br':
+      self.__text.append('\n')
+    elif tag == 'a':
+      for attr in attrs:
+        if attr[0] == 'href':
+          self.__text.append('({0}) '.format(attr[1]))
+          break
+    elif tag == 'div':
+      if not attrs:
+        self.__text.append('\n')
+    elif tag in ['http:', 'https']:
+      self.__text.append('({0}//{1}) '.format(tag, attrs[0][0]))
 
   def handle_startendtag(self, tag, attrs):
-    if tag == u'br':
-      self.__text.append(u'\n\n')
+    if tag == 'br':
+      self.__text.append('\n\n')
 
   def text(self):
-    return u''.join(self.__text).strip()
-
+    return TOO_MANY_NLS.sub('\n\n', ''.join(self.__text).strip())
 
 def dehtml(text):
   try:
@@ -422,7 +432,7 @@ def dehtml(text):
     parser.close()
     return parser.text()
   except:
-    print_exc(file=stderr)
+    print_exc(file=sys.stderr)
     return text
 
 def showUsage():
