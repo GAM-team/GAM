@@ -7876,11 +7876,15 @@ def doPrintAliases():
 
 def doPrintGroupMembers():
   cd = buildGAPIObject(u'directory')
-  todrive = all_groups = False
+  todrive = membernames = False
+  all_groups = []
   i = 3
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'todrive':
       todrive = True
+      i += 1
+    elif sys.argv[i].lower() == u'membernames':
+      membernames = True
       i += 1
     elif sys.argv[i].lower() == u'group':
       all_groups = [{u'email': sys.argv[i+1].lower()}]
@@ -7889,6 +7893,8 @@ def doPrintGroupMembers():
       print 'ERROR: %s is not a valid argument for "gam print group-members"' % sys.argv[i]
       sys.exit(2)
   member_attributes = [{u'group': u'group'},]
+  if membernames:
+    member_attributes[0][u'memberName'] = u'memberName'
   if not all_groups:
     all_groups = callGAPIpages(service=cd.groups(), function=u'list', items=u'groups', message_attribute=u'email',
                                customer=GC_Values[GC_CUSTOMER_ID], fields=u'nextPageToken,groups(email)')
@@ -7908,6 +7914,26 @@ def doPrintGroupMembers():
         except KeyError:
           member_attributes[0][title] = title
         member_attr[title] = member[title]
+      if membernames:
+        if member[u'type'] == u'USER':
+          try:
+            mbinfo = callGAPI(cd.users(), u'get',
+                              throw_reasons=[u'notFound', u'forbidden'],
+                              userKey=member[u'id'], fields=u'name')
+            memberName = mbinfo[u'name'][u'fullName']
+          except googleapiclient.errors.HttpError:
+            memberName = u'Unknown'
+        elif member[u'type'] == u'GROUP':
+          try:
+            mbinfo = callGAPI(cd.groups(), u'get',
+                              throw_reasons=[u'notFound', u'forbidden'],
+                              groupKey=member[u'id'], fields=u'name')
+            memberName = mbinfo[u'name']
+          except googleapiclient.errors.HttpError:
+            memberName = u'Unknown'
+        else:
+          memberName = u'Unknown'
+        member_attr[u'memberName'] = memberName
       member_attributes.append(member_attr)
     i += 1
   titles = member_attributes[0].keys()
