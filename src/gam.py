@@ -5566,7 +5566,7 @@ def doCreateAlias():
     callGAPI(service=cd.groups().aliases(), function=u'insert', groupKey=targetKey, body=body)
   elif target_type == u'target':
     try:
-      callGAPI(service=cd.users().aliases(), function=u'insert', throw_reasons=[u'invalid'], userKey=targetKey, body=body)
+      callGAPI(service=cd.users().aliases(), function=u'insert', throw_reasons=[u'invalid', u'badRequest'], userKey=targetKey, body=body)
     except googleapiclient.errors.HttpError:
       callGAPI(service=cd.groups().aliases(), function=u'insert', groupKey=targetKey, body=body)
 
