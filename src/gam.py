@@ -25,11 +25,10 @@ For more information, see http://git.io/gam
 """
 
 __author__ = u'Jay Lee <jay0lee@gmail.com>'
-__version__ = u'3.741'
+__version__ = u'3.742'
 __license__ = u'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 import sys, os, time, datetime, random, socket, csv, platform, re, calendar, base64, string, codecs, StringIO, subprocess, ConfigParser, collections
-from traceback import print_exc
 
 import json
 import httplib2
@@ -366,30 +365,8 @@ def convertUTF8(data):
     return type(data)(map(convertUTF8, data))
   return data
 
-def win32_unicode_argv():
-  from ctypes import POINTER, byref, cdll, c_int, windll
-  from ctypes.wintypes import LPCWSTR, LPWSTR
-
-  GetCommandLineW = cdll.kernel32.GetCommandLineW
-  GetCommandLineW.argtypes = []
-  GetCommandLineW.restype = LPCWSTR
-
-  CommandLineToArgvW = windll.shell32.CommandLineToArgvW
-  CommandLineToArgvW.argtypes = [LPCWSTR, POINTER(c_int)]
-  CommandLineToArgvW.restype = POINTER(LPWSTR)
-
-  cmd = GetCommandLineW()
-  argc = c_int(0)
-  argv = CommandLineToArgvW(cmd, byref(argc))
-  if argc.value > 0:
-    # Remove Python executable and commands if present
-    start = argc.value - len(sys.argv)
-    return [argv[i] for i in range(start, argc.value)]
-
 from HTMLParser import HTMLParser
 from htmlentitydefs import name2codepoint
-
-TOO_MANY_NLS = re.compile(r'\n{2}\n{,}')
 
 class _DeHTMLParser(HTMLParser):
   def __init__(self):
@@ -398,6 +375,9 @@ class _DeHTMLParser(HTMLParser):
 
   def handle_data(self, data):
     self.__text.append(data)
+
+  def handle_charref(self, name):
+    self.__text.append(unichr(int(name[1:], 16)) if name.startswith('x') else unichr(int(name)))
 
   def handle_entityref(self, name):
     self.__text.append(unichr(name2codepoint[name]))
@@ -416,14 +396,14 @@ class _DeHTMLParser(HTMLParser):
       if not attrs:
         self.__text.append('\n')
     elif tag in ['http:', 'https']:
-      self.__text.append('({0}//{1}) '.format(tag, attrs[0][0]))
+      self.__text.append(' ({0}//{1}) '.format(tag, attrs[0][0]))
 
   def handle_startendtag(self, tag, attrs):
     if tag == 'br':
       self.__text.append('\n\n')
 
   def text(self):
-    return TOO_MANY_NLS.sub('\n\n', ''.join(self.__text).strip())
+    return re.sub(r'\n{2}\n+', '\n\n', re.sub(r'\n +', '\n', ''.join(self.__text))).strip()
 
 def dehtml(text):
   try:
@@ -432,6 +412,7 @@ def dehtml(text):
     parser.close()
     return parser.text()
   except:
+    from traceback import print_exc
     print_exc(file=sys.stderr)
     return text
 
@@ -7474,10 +7455,7 @@ def doGetNotifications():
     print u'Subject: %s' % notification[u'subject']
     print u'Date: %s' % notification[u'sendTime']
     print u'ID: %s' % notification[u'notificationId']
-    if notification[u'isUnread']:
-      print u'Read Status: UNREAD'
-    else:
-      print u'Read Status: READ'
+    print u'Read Status: %s' % ([u'READ', u'UNREAD'][notification[u'isUnread']])
     print u''
     print convertUTF8(dehtml(notification[u'body']))
     print u''
@@ -9629,12 +9607,31 @@ def processSubFields(GAM_argv, row, subFields):
     argv[GAM_argvI] = argv[GAM_argvI].encode(GM_Globals[GM_SYS_ENCODING])
   return argv
 
+def win32_unicode_argv():
+  from ctypes import POINTER, byref, cdll, c_int, windll
+  from ctypes.wintypes import LPCWSTR, LPWSTR
+
+  GetCommandLineW = cdll.kernel32.GetCommandLineW
+  GetCommandLineW.argtypes = []
+  GetCommandLineW.restype = LPCWSTR
+
+  CommandLineToArgvW = windll.shell32.CommandLineToArgvW
+  CommandLineToArgvW.argtypes = [LPCWSTR, POINTER(c_int)]
+  CommandLineToArgvW.restype = POINTER(LPWSTR)
+
+  cmd = GetCommandLineW()
+  argc = c_int(0)
+  argv = CommandLineToArgvW(cmd, byref(argc))
+  if argc.value > 0:
+    # Remove Python executable and commands if present
+    sys.argv = argv[argc.value-len(sys.argv):argc.value]
+
 # Main
 reload(sys)
 sys.setdefaultencoding(u'UTF-8')
 try:
   if GM_Globals[GM_WINDOWS]:
-    sys.argv = win32_unicode_argv() # cleanup sys.argv on Windows
+    win32_unicode_argv() # cleanup sys.argv on Windows
   if not SetGlobalVariables():
     sys.exit(0)
   if sys.argv[1].lower() == u'batch':
