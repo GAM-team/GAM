@@ -7874,45 +7874,74 @@ def doPrintAliases():
       continue
   output_csv(alias_attributes, titles, u'Aliases', todrive)
 
+MEMBERS_FIELD_NAMES = [u'group', u'id', u'email', u'role', u'type', u'name',]
+
 def doPrintGroupMembers():
   cd = buildGAPIObject(u'directory')
-  todrive = membernames = False
+  todrive = groupname = membernames = False
+  fieldsList = []
+  titles = []
   all_groups = []
   i = 3
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'todrive':
       todrive = True
       i += 1
+    elif sys.argv[i].lower() == u'fields':
+      fieldNameList = sys.argv[i+1].lower()
+      for field in fieldNameList.lower().replace(u',', u' ').split():
+        if field in MEMBERS_FIELD_NAMES:
+          fieldsList.append(field)
+          titles.append(field)
+        else:
+          print u'ERROR: field name should be %s. Got %s' % (u','.join(MEMBERS_FIELD_NAMES), field)
+          sys.exit(2)
+      i += 2
     elif sys.argv[i].lower() == u'membernames':
       membernames = True
       i += 1
     elif sys.argv[i].lower() == u'group':
-      all_groups = [{u'email': sys.argv[i+1].lower()}]
+      group_email = sys.argv[i+1].lower()
+      if group_email.find(u'@') == -1:
+        group_email = u'%s@%s' % (group_email, GC_Values[GC_DOMAIN])
+      all_groups = [{u'email': group_email}]
       i += 2
     else:
-      print 'ERROR: %s is not a valid argument for "gam print group-members"' % sys.argv[i]
+      print u'ERROR: %s is not a valid argument for "gam print group-members"' % sys.argv[i]
       sys.exit(2)
-  member_attributes = [{u'group': u'group'},]
-  if membernames:
-    member_attributes[0][u'memberName'] = u'memberName'
+  member_attributes = [{}]
+  if not fieldsList:
+    for field in [u'id', u'role', u'group', u'email', u'type']:
+      fieldsList.append(field)
+      titles.append(field)
+      member_attributes[0][field] = field
+    if membernames:
+      titles.append(u'name')
+      member_attributes[0][u'name'] = u'name'
+  else:
+    for field in fieldsList:
+      member_attributes[0][field] = field
+    if u'name'in fieldsList:
+      membernames = True
+      fieldsList.remove(u'name')
+  if u'group' in fieldsList:
+    groupname = True
+    fieldsList.remove(u'group')
   if not all_groups:
     all_groups = callGAPIpages(service=cd.groups(), function=u'list', items=u'groups', message_attribute=u'email',
                                customer=GC_Values[GC_CUSTOMER_ID], fields=u'nextPageToken,groups(email)')
-  total_groups = len(all_groups)
-  i = 1
+  i = 0
+  count = len(all_groups)
   for group in all_groups:
+    i += 1
     group_email = group[u'email']
-    sys.stderr.write(u'Getting members for %s (%s/%s)\n' % (group_email, i, total_groups))
+    sys.stderr.write(u'Getting members for %s (%s/%s)\n' % (group_email, i, count))
     group_members = callGAPIpages(service=cd.members(), function=u'list', items=u'members', message_attribute=u'email', groupKey=group_email)
     for member in group_members:
-      member_attr = {u'group': group_email}
-      for title in member:
-        if title in [u'kind', u'etag']:
-          continue
-        try:
-          member_attributes[0][title]
-        except KeyError:
-          member_attributes[0][title] = title
+      member_attr = {}
+      if groupname:
+        member_attr[u'group'] = group_email
+      for title in fieldsList:
         member_attr[title] = member[title]
       if membernames:
         if member[u'type'] == u'USER':
@@ -7933,10 +7962,8 @@ def doPrintGroupMembers():
             memberName = u'Unknown'
         else:
           memberName = u'Unknown'
-        member_attr[u'memberName'] = memberName
+        member_attr[u'name'] = memberName
       member_attributes.append(member_attr)
-    i += 1
-  titles = member_attributes[0].keys()
   output_csv(member_attributes, titles, u'Group Members', todrive)
 
 def doPrintMobileDevices():
