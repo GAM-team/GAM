@@ -68,6 +68,7 @@ ERROR = u'ERROR'
 ERROR_PREFIX = ERROR+u': '
 WARNING = u'WARNING'
 WARNING_PREFIX = WARNING+u': '
+DEFAULT_CHARSET = [u'mbcs', u'utf-8'][os.name != u'nt']
 FN_CLIENT_SECRETS_JSON = u'client_secrets.json'
 FN_EXTRA_ARGS_TXT = u'extra-args.txt'
 FN_LAST_UPDATE_CHECK_TXT = u'lastupdatecheck.txt'
@@ -110,7 +111,7 @@ GM_Globals = {
   GM_SYSEXITRC: 0,
   GM_GAM_PATH: os.path.dirname(os.path.realpath(__file__)) if not getattr(sys, u'frozen', False) else os.path.dirname(sys.executable),
   GM_WINDOWS: os.name == u'nt',
-  GM_SYS_ENCODING: sys.getfilesystemencoding() if os.name == u'nt' else u'utf-8',
+  GM_SYS_ENCODING: DEFAULT_CHARSET,
   GM_BATCH_QUEUE: None,
   GM_EXTRA_ARGS_DICT:  {u'prettyPrint': False},
   GM_OAUTH2SERVICE_JSON_DATA: None,
@@ -181,7 +182,7 @@ GC_Defaults = {
   GC_ACTIVITY_MAX_RESULTS: 100,
   GC_AUTO_BATCH_MIN: 0,
   GC_CACHE_DIR: u'',
-  GC_CHARSET: u'utf-8',
+  GC_CHARSET: DEFAULT_CHARSET,
   GC_CLIENT_SECRETS_JSON: FN_CLIENT_SECRETS_JSON,
   GC_CONFIG_DIR: u'',
   GC_CUSTOMER_ID: u'',
