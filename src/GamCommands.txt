@@ -128,7 +128,7 @@ If an item contains spaces, it should be surrounded by " or '.
 
 <GroupFieldNames> ::=
 	admincreated|
-	aliases
+	aliases|
 	description|
 	email|
 	id|
@@ -160,6 +160,14 @@ If an item contains spaces, it should be surrounded by " or '.
 	whocanpostmessage|
 	whocanviewgroup|
 	whocanviewmembership
+
+<MemberFieldNames> ::=
+	email|
+	group|
+	id|
+	name|
+	role|
+	type
 
 <UserFieldNames> ::=
 	addresses|address|
@@ -422,7 +430,7 @@ gam info group <GroupItem> [nousers] [noaliases] [groups]
 gam print groups [todrive] ([domain <DomainName>] [member <UserItem>])
 	[maxresults <Number>] [delimiter <String>]
 	[members] [owners] [managers] <GroupFieldNames>* [settings] 
-gam print group-members|groups-members [todrive] [membernames] [group <GroupItem>]
+gam print group-members|groups-members [todrive] [membernames] [fields <MemberFieldNameList>] [group <GroupItem>]
 gam print licenses [todrive] [products|product <ProductIDList>] [skus|sku <SKUIDList>]
 
 gam update notification|notifications [(id all)|(id <NotificationID>)*] unread|read
