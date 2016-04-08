@@ -69,6 +69,7 @@ ERROR = u'ERROR'
 ERROR_PREFIX = ERROR+u': '
 WARNING = u'WARNING'
 WARNING_PREFIX = WARNING+u': '
+DEFAULT_CHARSET = [u'mbcs', u'utf-8'][os.name != u'nt']
 FN_GAM_CFG = u'gam.cfg'
 FN_EXTRA_ARGS_TXT = u'extra-args.txt'
 FN_GAMSCOPES_JSON = u'gamscopes.json'
@@ -129,7 +130,7 @@ GM_Globals = {
   GM_SYSEXITRC: 0,
   GM_GAM_PATH: os.path.dirname(os.path.realpath(__file__)) if not getattr(sys, u'frozen', False) else os.path.dirname(sys.executable),
   GM_WINDOWS: os.name == u'nt',
-  GM_SYS_ENCODING: u'utf-8' if os.name != u'nt' else u'mbcs',
+  GM_SYS_ENCODING: DEFAULT_CHARSET,
   GM_BATCH_QUEUE: None,
   GM_EXTRA_ARGS_DICT:  {u'prettyPrint': False},
   GM_ADMIN: None,
@@ -142,7 +143,7 @@ GM_Globals = {
   GM_GAM_CFG_PATH: u'',
   GM_GAM_CFG_FILE: u'',
   GM_CSVFILE: None,
-  GM_CSVFILE_ENCODING: u'utf-8' if os.name != u'nt' else u'mbcs',
+  GM_CSVFILE_ENCODING: DEFAULT_CHARSET,
   GM_CSVFILE_MODE: u'w',
   GM_CSVFILE_WRITE_HEADER: True,
   GM_LAST_UPDATE_CHECK_TXT: u'',
@@ -210,7 +211,7 @@ GC_Defaults = {
   GC_AUTO_BATCH_MIN: 0,
   GC_BATCH_SIZE: 50,
   GC_CACHE_DIR: u'',
-  GC_CHARSET: u'utf-8' if os.name != u'nt' else u'mbcs',
+  GC_CHARSET: DEFAULT_CHARSET,
   GC_CONFIG_DIR: u'',
   GC_CUSTOMER_ID: MY_CUSTOMER,
   GC_DEBUG_LEVEL: 0,
