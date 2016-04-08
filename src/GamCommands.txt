@@ -186,14 +186,59 @@ If an item contains spaces, it should be surrounded by " or '.
 	ismailboxsetup|
 	lastlogintime|
 	noneditablealiases|aliases|nicknames|
-	notes|note|
 	organizations|organization|
 	orgunitpath|org|ou|
 	phones|phone|
-	primaryemail|username|GAMEXT>
+	primaryemail|username|
 	relations|relation|
 	suspended|
-	thumbnailphotourl|photo|photourl|)|
+	thumbnailphotourl|photo|photourl|
+	custom all|<SchemaNameList>
+
+# Named Lists, comma separated items, surrounded by ' or "
+<CalendarACLList> ::== '<CalendarACLScope>(,<CalendarACLScope>)*'
+<CalendarList> ::= '<CalendarItem>(,<CalendarItem>)*'
+<ContactIDList> ::= '<ContactID>(,<ContactID>)*'
+<CourseAliasList> ::= '<CourseAlias>(,<CourseAlias>)*'
+<CourseIDList> ::= '<CourseID>(,<CourseID>)*'
+<CrOSFieldNameList> ::= '<CrOSFieldName(,<CrOSFieldName>)*'
+<CrOSList> ::= '<DeviceID>(,<DeviceID>)*'
+<DriveFileList> ::= '<DriveFileItem>(,<DriveFileItem>)*'
+<EmailAddressList> ::= '<EmailAddress>(,<EmailAddress>)*'
+<EventIDList> ::= '<EventID>(,<EventID>)*'
+<FileFormatList> ::= '<FileFormat>(,<FileFormat)*'
+<GroupFieldNameList> ::= '<GroupFieldName(,<GroupFieldName>)*'
+<GroupSettingsFieldNameList> ::= '<GroupSettingsFieldName(,<GroupSettingsFieldName>)*'
+<GroupList> ::= '<GroupItem>(,<GroupItem>)*'
+<LabelNameList> ::= '<LabelName>(,<LabelName)*'
+<MembersFieldNameList> ::= '<MembersFieldName(,<MembersFieldName>)*'
+<MobileList> ::= '<MobileId>(,<MobileId>)*'
+<OrgUnitList> ::== '<OrgUnitPath>(,<OrgUnitPath>)*'
+<PrinterIDList> ::= '<PrinterID>(,<PrinterID>)*'
+<ProductIDList> ::= '(<ProductID>|SKUID>)(,<ProductID>|SKUID>)*'
+<PrintJobIDList> ::= '<PrintJobID>(,<PrintJobID>)*'
+<ResourceIDList> ::= '<ResourceID>(,<ResourceID>)*'
+<SKUIDList> ='<SKUID>(,<SKUID>)*'
+<SchemaNameList> ::= '<SchemaName>(,<SchemaName>)*'
+<UserFieldNameList> ::= '<UserFieldName(,<UserFieldName>)*'
+<UserList> ::= '<UserItem>(,<UserItem>)*'
+
+# Specify a collection of ChromeOS devices by directly specifying them
+<CrOSTypeEntity> ::=
+		(all cros)|
+		(cros <CrOSList>)|
+# Specify a collection of Users by directly specifying them or by specifiying items that will yield a list of users
+<UserTypeEntity> ::=
+		(all users)|
+		(user <UserItem>)|
+		(users <UserList>)|
+		(group <GroupItem)|
+		(ou|org <OrgUnitPath)|
+		(ou_and_children|ou_and_child <OrgUnitPath>)|
+		(courseparticipants <CourseID>)|
+		(students <CourseID>)|
+		(teachers <CourseID>)|
+		(file <FileName>)|
 		(csvfile <FileName>:<FieldName>)|
 		(license|licenses <SKUIDList>)|
 		(query <Query>)
