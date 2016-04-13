@@ -1558,10 +1558,7 @@ def doPrintDomains():
       sys.exit(2)
   for domain in domains[u'domains']:
     domain_attributes = {}
-    if domain[u'isPrimary'] == True:
-      domain[u'type'] = u'primary'
-    else:
-      domain[u'type'] = u'secondary'
+    domain[u'type'] = [u'secondary', u'primary'][domain[u'isPrimary']]
     for attr in domain:
       if attr in [u'kind', u'domainAliases', u'etag', u'etags', u'isPrimary']:
         continue
