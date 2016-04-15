@@ -6957,30 +6957,33 @@ def doGetUserInfo(user_email=None):
   projection = u'full'
   customFieldMask = viewType = None
   while i < len(sys.argv):
-    if sys.argv[i].lower() == u'noaliases':
+    myarg = sys.argv[i].lower()
+    if myarg == u'noaliases':
       getAliases = False
       i += 1
-    elif sys.argv[i].lower() == u'nogroups':
+    elif myarg == u'nogroups':
       getGroups = False
       i += 1
-    elif sys.argv[i].lower() in [u'nolicenses', u'nolicences']:
+    elif myarg in [u'nolicenses', u'nolicences']:
       getLicenses = False
       i += 1
-    elif sys.argv[i].lower() == u'noschemas':
+    elif myarg == u'noschemas':
       getSchemas = False
       projection = u'basic'
       i += 1
-    elif sys.argv[i].lower() == u'schemas':
+    elif myarg == u'schemas':
       getSchemas = True
       projection = u'custom'
       customFieldMask = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower() == u'userview':
+    elif myarg == u'userview':
       viewType = u'domain_public'
       getGroups = getLicenses = False
       i += 1
+    elif myarg in [u'nousers', u'groups']:
+      i += 1
     else:
-      print u'ERROR: %s is not a valid argument for "gam info user"' % sys.argv[i]
+      print u'ERROR: %s is not a valid argument for "gam info user"' % myarg
       sys.exit(2)
   user = callGAPI(cd.users(), u'get', userKey=user_email, projection=projection, customFieldMask=customFieldMask, viewType=viewType)
   print u'User: %s' % user[u'primaryEmail']
@@ -7134,17 +7137,22 @@ def doGetGroupInfo(group_name=None):
   else:
     i = 3
   while i < len(sys.argv):
-    if sys.argv[i].lower() == u'nousers':
+    myarg = sys.argv[i].lower()
+    if myarg == u'nousers':
       getUsers = False
       i += 1
-    elif sys.argv[i].lower() == u'noaliases':
+    elif myarg == u'noaliases':
       getAliases = False
       i += 1
-    elif sys.argv[i].lower() == u'groups':
+    elif myarg == u'groups':
       getGroups = True
       i += 1
+    elif myarg in [u'nogroups', u'nolicenses', u'nolicences', u'noschemas', u'schemas', u'userview']:
+      i += 1
+      if myarg == u'schemas':
+        i += 1
     else:
-      print u'ERROR: %s is not a valid argument for "gam info group"' % sys.argv[i]
+      print u'ERROR: %s is not a valid argument for "gam info group"' % myarg
       sys.exit(2)
   if group_name[:4].lower() == u'uid:':
     group_name = group_name[4:]
