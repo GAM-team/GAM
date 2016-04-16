@@ -3819,7 +3819,7 @@ def createDriveFile(users):
 
 def downloadDriveFile(users):
   i = 5
-  query = fileIds = None
+  query = fileIds = revision = None
   gdownload_format = u'openoffice'
   target_folder = GC_Values[GC_DRIVE_DIR]
   safe_filename_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
@@ -3829,6 +3829,9 @@ def downloadDriveFile(users):
       i += 2
     elif sys.argv[i].lower() == 'query':
       query = sys.argv[i+1]
+      i += 2
+    elif sys.argv[i].lower() == 'revision':
+      revision = sys.argv[i+1]
       i += 2
     elif sys.argv[i].lower() == u'format':
       gdownload_format = sys.argv[i+1].lower()
@@ -3929,6 +3932,8 @@ def downloadDriveFile(users):
             break
         filename = new_filename
       print convertUTF8(my_line % filename)
+      if revision:
+        download_url = download_url + "&revision=" + revision
       _, content = drive._http.request(download_url)
       writeFile(filename, content, continueOnError=True)
 
