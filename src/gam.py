@@ -3938,34 +3938,64 @@ def downloadDriveFile(users):
       writeFile(filename, content, continueOnError=True)
 
 def showDriveFileInfo(users):
-  for user in users:
-    fileId = sys.argv[5]
-    drive = buildGAPIServiceObject(u'drive', user)
-    feed = callGAPI(service=drive.files(), function=u'get', fileId=fileId)
-    for setting in feed:
-      if setting == u'kind':
-        continue
-      setting_type = str(type(feed[setting]))
-      if setting_type == u"<type 'list'>":
-        print u'%s:' % setting
-        for settin in feed[setting]:
-          if settin == u'kind':
-            continue
-          settin_type = str(type(settin))
-          if settin_type == u"<type 'dict'>":
-            for setti in settin:
-              if setti == u'kind':
-                continue
-              print convertUTF8(u' %s: %s' % (setti, settin[setti]))
-            print u''
-      elif setting_type == u"<type 'dict'>":
-        print u'%s:' % setting
-        for settin in feed[setting]:
-          if settin == u'kind':
-            continue
-          print convertUTF8(u' %s: %s' % (settin, feed[setting][settin]))
-      else:
-        print convertUTF8(u'%s: %s' % (setting, feed[setting]))
+   for user in users:
+     fileId = sys.argv[5]
+     drive = buildGAPIServiceObject(u'drive', user)
+     feed = callGAPI(service=drive.files(), function=u'get', fileId=fileId)
+     for setting in feed:
+       if setting == u'kind':
+         continue
+       setting_type = str(type(feed[setting]))
+       if setting_type == u"<type 'list'>":
+         print u'%s:' % setting
+         for settin in feed[setting]:
+           if settin == u'kind':
+             continue
+           settin_type = str(type(settin))
+           if settin_type == u"<type 'dict'>":
+             for setti in settin:
+               if setti == u'kind':
+                 continue
+               print convertUTF8(u' %s: %s' % (setti, settin[setti]))
+             print u''
+       elif setting_type == u"<type 'dict'>":
+         print u'%s:' % setting
+         for settin in feed[setting]:
+           if settin == u'kind':
+             continue
+           print convertUTF8(u' %s: %s' % (settin, feed[setting][settin]))
+       else:
+         print convertUTF8(u'%s: %s' % (setting, feed[setting]))
+
+def showDriveFileRevisions(users):
+   for user in users:
+     fileId = sys.argv[5]
+     drive = buildGAPIServiceObject(u'drive', user)
+     feed = callGAPI(service=drive.revisions(), function=u'list', fileId=fileId)
+     for setting in feed:
+       if setting == u'kind':
+         continue
+       setting_type = str(type(feed[setting]))
+       if setting_type == u"<type 'list'>":
+         print u'%s:' % setting
+         for settin in feed[setting]:
+           if settin == u'kind':
+             continue
+           settin_type = str(type(settin))
+           if settin_type == u"<type 'dict'>":
+             for setti in settin:
+               if setti == u'kind':
+                 continue
+               print convertUTF8(u' %s: %s' % (setti, settin[setti]))
+             print u''
+       elif setting_type == u"<type 'dict'>":
+         print u'%s:' % setting
+         for settin in feed[setting]:
+           if settin == u'kind':
+             continue
+           print convertUTF8(u' %s: %s' % (settin, feed[setting][settin]))
+       else:
+         print convertUTF8(u'%s: %s' % (setting, feed[setting]))
 
 def transferSecCals(users):
   target_user = sys.argv[5]
@@ -9420,6 +9450,8 @@ try:
       showDriveFileTree(users)
     elif readWhat == u'fileinfo':
       showDriveFileInfo(users)
+    elif readWhat == u'filerevisions':
+      showDriveFileRevisions(users)
     elif readWhat == u'sendas':
       showSendAs(users)
     elif readWhat == u'gmailprofile':
