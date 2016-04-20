@@ -6418,6 +6418,8 @@ def doGetUserInfo(user_email=None):
   getSchemas = getAliases = getGroups = getLicenses = True
   projection = u'full'
   customFieldMask = viewType = None
+  skus = [u'Google-Apps-For-Business', u'Google-Apps-Unlimited', u'Google-Apps-For-Postini',
+          u'Google-Apps-Lite', u'Google-Vault', u'Google-Vault-Former-Employee']
   while i < len(sys.argv):
     myarg = sys.argv[i].lower()
     if myarg == u'noaliases':
@@ -6429,6 +6431,9 @@ def doGetUserInfo(user_email=None):
     elif myarg in [u'nolicenses', u'nolicences']:
       getLicenses = False
       i += 1
+    elif myarg in [u'sku', u'skus']:
+      skus = sys.argv[i+1].replace(u',', u' ').split()
+      i += 2
     elif myarg == u'noschemas':
       getSchemas = False
       projection = u'basic'
@@ -6578,12 +6583,11 @@ def doGetUserInfo(user_email=None):
         print u'   %s <%s>' % (group[u'name'], group[u'email'])
   if getLicenses:
     print u'Licenses:'
-    lic = buildGAPIObject(api='licensing')
-    for sku in [u'Google-Apps-For-Business', u'Google-Apps-Unlimited', u'Google-Apps-For-Postini',
-                u'Google-Apps-Lite', u'Google-Vault', u'Google-Vault-Former-Employee']:
+    lic = buildGAPIObject(u'licensing')
+    for sku in skus:
       productId, skuId = getProductAndSKU(sku)
       try:
-        result = callGAPI(service=lic.licenseAssignments(), function=u'get', throw_reasons=['notFound'], userId=user_email, productId=productId, skuId=skuId)
+        result = callGAPI(service=lic.licenseAssignments(), function=u'get', throw_reasons=[u'notFound', u'invalid', u'forbidden'], userId=user_email, productId=productId, skuId=skuId)
       except googleapiclient.errors.HttpError:
         continue
       print u' %s' % result[u'skuId']
@@ -8151,10 +8155,10 @@ def doPrintLicenses(return_list=False, skus=None):
       todrive = True
       i += 1
     elif sys.argv[i].lower() in [u'products', u'product']:
-      products = sys.argv[i+1].split(',')
+      products = sys.argv[i+1].replace(u',', u' ').split()
       i += 2
     elif sys.argv[i].lower() in [u'sku', u'skus']:
-      skus = sys.argv[i+1].split(',')
+      skus = sys.argv[i+1].replace(u',', u' ').split()
       i += 2
     else:
       print u'ERROR: %s is not a valid argument for "gam print licenses"' % sys.argv[i]
@@ -8167,7 +8171,7 @@ def doPrintLicenses(return_list=False, skus=None):
         licenses += callGAPIpages(service=lic.licenseAssignments(), function=u'listForProductAndSku', throw_reasons=[u'invalid', u'forbidden'], page_message=page_message,
                                   customerId=GC_Values[GC_DOMAIN], productId=product, skuId=sku, fields=u'items(productId,skuId,userId),nextPageToken')
       except googleapiclient.errors.HttpError:
-        licenses += []
+        pass
   else:
     for productId in products:
       page_message = u'Got %%%%total_items%%%% Licenses for %s...\n' % productId
@@ -8175,7 +8179,7 @@ def doPrintLicenses(return_list=False, skus=None):
         licenses += callGAPIpages(service=lic.licenseAssignments(), function=u'listForProduct', throw_reasons=[u'invalid', u'forbidden'], page_message=page_message,
                                   customerId=GC_Values[GC_DOMAIN], productId=productId, fields=u'items(productId,skuId,userId),nextPageToken')
       except googleapiclient.errors.HttpError:
-        licenses = +[]
+        pass
   for u_license in licenses:
     a_license = dict()
     for title in u_license:
