@@ -1787,7 +1787,7 @@ SERVICE_NAME_CHOICES_MAP = {
 def app2appID(dt, app):
   serviceName = app.lower()
   if serviceName in SERVICE_NAME_CHOICES_MAP:
-    return (SERVICE_NAME_CHOICES_MAP[serviceName], SERVICE_NAME_TO_ID_MAP[SERVICE_NAME_CHOICES_MAP[serviceName]])
+    return SERVICE_NAME_TO_ID_MAP[SERVICE_NAME_CHOICES_MAP[serviceName]]
   online_services = callGAPIpages(service=dt.applications(), function=u'list', items=u'applications', customerId=GC_Values[GC_CUSTOMER_ID])
   for online_service in online_services:
     if serviceName == online_service[u'name'].lower():
