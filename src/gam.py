@@ -7127,7 +7127,7 @@ def doGetUserInfo(user_email=None):
       try:
         result = callGAPI(lic.licenseAssignments(), u'get', throw_reasons=[u'notFound', u'invalid', u'forbidden'], userId=user_email, productId=productId, skuId=skuId)
       except googleapiclient.errors.HttpError:
-        pass
+        continue
       print u' %s' % result[u'skuId']
 
 def doGetGroupInfo(group_name=None):
