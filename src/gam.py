@@ -3238,7 +3238,7 @@ def showDriveFileACL(users):
     feed = callGAPI(service=drive.permissions(), function=u'list', fileId=fileId)
     for permission in feed[u'items']:
       try:
-        print permission[u'name']
+        print convertUTF8(permission[u'name'])
       except KeyError:
         pass
       for key in permission:
