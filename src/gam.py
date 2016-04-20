@@ -8695,10 +8695,10 @@ def doPrintLicenses(return_list=False, skus=None):
       todrive = True
       i += 1
     elif sys.argv[i].lower() in [u'products', u'product']:
-      products = sys.argv[i+1].split(u',')
+      products = sys.argv[i+1].replace(u',', u' ').split()
       i += 2
     elif sys.argv[i].lower() in [u'sku', u'skus']:
-      skus = sys.argv[i+1].split(u',')
+      skus = sys.argv[i+1].replace(u',', u' ').split()
       i += 2
     else:
       print u'ERROR: %s is not a valid argument for "gam print licenses"' % sys.argv[i]
