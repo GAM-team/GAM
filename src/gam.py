@@ -3531,7 +3531,7 @@ def claimDriveFolder(users):
   target_folder = sys.argv[5]
   i = 6
   while i < len(sys.argv):
-    if sys.argv[i].lower() == u'skipfiles' or sys.argv[i].lower() == u'skipfolders' or sys.argv[i].lower() == u'skipusers':
+    if sys.argv[i].lower() == u'skipfiles' or sys.argv[i].lower() == u'skipfolders' or sys.argv[i].lower() == u'skipusers' or sys.argv[i].lower() == u'subdomains':
       if sys.argv[i].lower() == u'skipfiles':
         f = openFile(sys.argv[i+1])
         for line in f:
