@@ -2122,7 +2122,8 @@ def doPrintPrintJobs():
   query = None
   age = None
   older_or_newer = None
-  offset = limit = None
+  offset = 0
+  jobLimit = 25
   i = 3
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace(u'_', u'')
@@ -2178,33 +2179,43 @@ def doPrintPrintJobs():
       offset = max(0, int(sys.argv[i+1]))
       i += 2
     elif myarg == u'limit':
-      limit = max(1, int(sys.argv[i+1]))
+      jobLimit = max(0, int(sys.argv[i+1]))
       i += 2
     else:
       print u'ERROR: %s is not a valid argument for "gam print printjobs"' % sys.argv[i]
       sys.exit(2)
   if sortorder and descending:
     sortorder = PRINTJOB_DESCENDINGORDER_MAP[sortorder]
-  jobs = callGAPI(service=cp.jobs(), function=u'list',
-                  printerid=printerid, q=query, status=status, sortorder=sortorder,
-                  owner=owner, offset=offset, limit=limit)
-  checkCloudPrintResult(jobs)
-  for job in jobs[u'jobs']:
-    createTime = int(job[u'createTime'])/1000
-    if older_or_newer:
-      if older_or_newer == u'older' and createTime > age:
-        continue
-      elif older_or_newer == u'newer' and createTime < age:
-        continue
-    updateTime = int(job[u'updateTime'])/1000
-    job[u'createTime'] = datetime.datetime.fromtimestamp(createTime).strftime(u'%Y-%m-%d %H:%M:%S')
-    job[u'updateTime'] = datetime.datetime.fromtimestamp(updateTime).strftime(u'%Y-%m-%d %H:%M:%S')
-    job[u'tags'] = u' '.join(job[u'tags'])
-    job_attributes.append(flatten_json(job))
-    for item in job_attributes[-1]:
-      if item not in titles:
-        titles.append(item)
-        job_attributes[0][item] = item
+  jobCount = 0
+  while True:
+    limit = 25 if jobLimit == 0 else jobLimit-jobCount
+    if limit == 0:
+      break
+    result = callGAPI(cp.jobs(), u'list',
+                      printerid=printerid, q=query, status=status, sortorder=sortorder,
+                      owner=owner, offset=offset, limit=limit)
+    checkCloudPrintResult(result)
+    newJobs = result[u'range'][u'jobsCount']
+    if newJobs == 0:
+      break
+    jobCount += newJobs
+    offset += newJobs
+    for job in result[u'jobs']:
+      createTime = int(job[u'createTime'])/1000
+      if older_or_newer:
+        if older_or_newer == u'older' and createTime > age:
+          continue
+        elif older_or_newer == u'newer' and createTime < age:
+          continue
+      updateTime = int(job[u'updateTime'])/1000
+      job[u'createTime'] = datetime.datetime.fromtimestamp(createTime).strftime(u'%Y-%m-%d %H:%M:%S')
+      job[u'updateTime'] = datetime.datetime.fromtimestamp(updateTime).strftime(u'%Y-%m-%d %H:%M:%S')
+      job[u'tags'] = u' '.join(job[u'tags'])
+      job_attributes.append(flatten_json(job))
+      for item in job_attributes[-1]:
+        if item not in titles:
+          titles.append(item)
+          job_attributes[0][item] = item
   output_csv(job_attributes, titles, u'Print Jobs', todrive)
 
 def doPrintPrinters():
@@ -2236,7 +2247,7 @@ def doPrintPrinters():
     else:
       print u'ERROR: %s is not a valid argument for "gam print printers"' % sys.argv[i]
       sys.exit(2)
-  printers = callGAPI(service=cp.printers(), function=u'list', q=query, type=printer_type, connection_status=connection_status, extra_fields=extra_fields)
+  printers = callGAPI(cp.printers(), u'list', q=query, type=printer_type, connection_status=connection_status, extra_fields=extra_fields)
   checkCloudPrintResult(printers)
   for printer in printers[u'printers']:
     createTime = int(printer[u'createTime'])/1000
@@ -2561,7 +2572,8 @@ def doPrintJobFetch():
   query = None
   age = None
   older_or_newer = None
-  offset = limit = None
+  offset = 0
+  jobLimit = 25
   i = 4
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace(u'_', u'')
@@ -2611,42 +2623,50 @@ def doPrintJobFetch():
       offset = max(0, int(sys.argv[i+1]))
       i += 2
     elif myarg == u'limit':
-      limit = max(1, int(sys.argv[i+1]))
+      jobLimit = max(0, int(sys.argv[i+1]))
       i += 2
     else:
       print u'ERROR: %s is not a valid argument for "gam printjobs fetch"' % sys.argv[i]
       sys.exit(2)
   if sortorder and descending:
     sortorder = PRINTJOB_DESCENDINGORDER_MAP[sortorder]
-  result = callGAPI(service=cp.jobs(), function=u'list',
-                    printerid=printerid, q=query, status=status, sortorder=sortorder,
-                    owner=owner, offset=offset, limit=limit)
-  if u'errorCode' in result and result[u'errorCode'] == 413:
-    print u'No print jobs.'
-    sys.exit(0)
-  checkCloudPrintResult(result)
   valid_chars = u'-_.() abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
-  ssd = '''{
-  "state": {"type": "DONE"}
-}'''
-  for job in result[u'jobs']:
-    createTime = int(job[u'createTime'])/1000
-    if older_or_newer:
-      if older_or_newer == u'older' and createTime > age:
-        continue
-      elif older_or_newer == u'newer' and createTime < age:
-        continue
-    fileUrl = job[u'fileUrl']
-    jobid = job[u'id']
-    fileName = job[u'title']
-    fileName = u''.join(c if c in valid_chars else u'_' for c in fileName)
-    fileName = u'%s-%s' % (fileName, jobid)
-    _, content = cp._http.request(uri=fileUrl, method='GET')
-    if writeFile(fileName, content, continueOnError=True):
-#      ticket = callGAPI(service=cp.jobs(), function=u'getticket', jobid=jobid, use_cjt=True)
-      result = callGAPI(service=cp.jobs(), function=u'update', jobid=jobid, semantic_state_diff=ssd)
-      checkCloudPrintResult(result)
-      print u'Printed job %s to %s' % (jobid, fileName)
+  ssd = u'{"state": {"type": "DONE"}}'
+  jobCount = 0
+  while True:
+    limit = 25 if jobLimit == 0 else jobLimit-jobCount
+    if limit == 0:
+      break
+    result = callGAPI(cp.jobs(), u'list',
+                      printerid=printerid, q=query, status=status, sortorder=sortorder,
+                      owner=owner, offset=offset, limit=limit)
+    if u'errorCode' in result and result[u'errorCode'] == 413:
+      print u'No print jobs.'
+      sys.exit(0)
+    checkCloudPrintResult(result)
+    newJobs = result[u'range'][u'jobsCount']
+    if newJobs == 0:
+      break
+    jobCount += newJobs
+    offset += newJobs
+    for job in result[u'jobs']:
+      createTime = int(job[u'createTime'])/1000
+      if older_or_newer:
+        if older_or_newer == u'older' and createTime > age:
+          continue
+        elif older_or_newer == u'newer' and createTime < age:
+          continue
+      fileUrl = job[u'fileUrl']
+      jobid = job[u'id']
+      fileName = job[u'title']
+      fileName = u''.join(c if c in valid_chars else u'_' for c in fileName)
+      fileName = u'%s-%s' % (fileName, jobid)
+      _, content = cp._http.request(uri=fileUrl, method='GET')
+      if writeFile(fileName, content, continueOnError=True):
+  #      ticket = callGAPI(cp.jobs(), u'getticket', jobid=jobid, use_cjt=True)
+        result = callGAPI(cp.jobs(), u'update', jobid=jobid, semantic_state_diff=ssd)
+        checkCloudPrintResult(result)
+        print u'Printed job %s to %s' % (jobid, fileName)
 
 def doDelPrinter():
   cp = buildGAPIObject(u'cloudprint')
