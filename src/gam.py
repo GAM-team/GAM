@@ -2120,15 +2120,17 @@ def doPrintPrintJobs():
   sortorder = None
   descending = False
   query = None
-  i = 3
   age = None
   older_or_newer = None
+  offset = limit = None
+  i = 3
   while i < len(sys.argv):
-    if sys.argv[i].lower() == u'todrive':
+    myarg = sys.argv[i].lower().replace(u'_', u'')
+    if myarg == u'todrive':
       todrive = True
       i += 1
-    elif sys.argv[i].lower().replace(u'_', u'') in [u'olderthan', u'newerthan']:
-      if sys.argv[i].lower().replace(u'_', u'') == u'olderthan':
+    elif myarg in [u'olderthan', u'newerthan']:
+      if myarg == u'olderthan':
         older_or_newer = u'older'
       else:
         older_or_newer = u'newer'
@@ -2147,37 +2149,45 @@ def doPrintPrintJobs():
         print u'ERROR: expected m (minutes), h (hours) or d (days), got %s' % age_unit
         sys.exit(2)
       i += 2
-    elif sys.argv[i].lower() == u'query':
+    elif myarg == u'query':
       query = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower() == u'status':
+    elif myarg == u'status':
       status = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower() == u'ascending':
+    elif myarg == u'ascending':
       descending = False
       i += 1
-    elif sys.argv[i].lower() == u'descending':
+    elif myarg == u'descending':
       descending = True
       i += 1
-    elif sys.argv[i].lower() == u'orderby':
+    elif myarg == u'orderby':
       sortorder = sys.argv[i+1].lower().replace(u'_', u'')
       if sortorder not in PRINTJOB_ASCENDINGORDER_MAP:
-        print u'ERROR: orderby must be one of %s. Got %s' % (','.join(PRINTJOB_ASCENDINGORDER_MAP), sortorder)
+        print u'ERROR: orderby must be one of %s. Got %s' % (u','.join(PRINTJOB_ASCENDINGORDER_MAP), sortorder)
         sys.exit(2)
       sortorder = PRINTJOB_ASCENDINGORDER_MAP[sortorder]
       i += 2
-    elif sys.argv[i].lower() in [u'printer', u'printerid']:
+    elif myarg in [u'printer', u'printerid']:
       printerid = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower() in [u'owner', u'user']:
+    elif myarg in [u'owner', u'user']:
       owner = sys.argv[i+1]
+      i += 2
+    elif myarg == u'offset':
+      offset = max(0, int(sys.argv[i+1]))
+      i += 2
+    elif myarg == u'limit':
+      limit = max(1, int(sys.argv[i+1]))
       i += 2
     else:
       print u'ERROR: %s is not a valid argument for "gam print printjobs"' % sys.argv[i]
       sys.exit(2)
   if sortorder and descending:
     sortorder = PRINTJOB_DESCENDINGORDER_MAP[sortorder]
-  jobs = callGAPI(service=cp.jobs(), function=u'list', q=query, status=status, sortorder=sortorder, printerid=printerid, owner=owner)
+  jobs = callGAPI(service=cp.jobs(), function=u'list',
+                  printerid=printerid, q=query, status=status, sortorder=sortorder,
+                  owner=owner, offset=offset, limit=limit)
   checkCloudPrintResult(jobs)
   for job in jobs[u'jobs']:
     createTime = int(job[u'createTime'])/1000
@@ -2551,10 +2561,12 @@ def doPrintJobFetch():
   query = None
   age = None
   older_or_newer = None
+  offset = limit = None
   i = 4
   while i < len(sys.argv):
-    if sys.argv[i].lower().replace(u'_', u'') in [u'olderthan', u'newerthan']:
-      if sys.argv[i].lower().replace(u'_', u'') == u'olderthan':
+    myarg = sys.argv[i].lower().replace(u'_', u'')
+    if myarg in [u'olderthan', u'newerthan']:
+      if myarg == u'olderthan':
         older_or_newer = u'older'
       else:
         older_or_newer = u'newer'
@@ -2573,34 +2585,42 @@ def doPrintJobFetch():
         print u'ERROR: expected m (minutes), h (hours) or d (days), got %s' % age_unit
         sys.exit(2)
       i += 2
-    elif sys.argv[i].lower() == u'query':
+    elif myarg == u'query':
       query = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower() == u'status':
+    elif myarg == u'status':
       status = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower() == u'ascending':
+    elif myarg == u'ascending':
       descending = False
       i += 1
-    elif sys.argv[i].lower() == u'descending':
+    elif myarg == u'descending':
       descending = True
       i += 1
-    elif sys.argv[i].lower() == u'orderby':
+    elif myarg == u'orderby':
       sortorder = sys.argv[i+1].lower().replace(u'_', u'')
       if sortorder not in PRINTJOB_ASCENDINGORDER_MAP:
-        print 'ERROR: orderby must be one of %s. Got %s' % (','.join(PRINTJOB_ASCENDINGORDER_MAP), sortorder)
+        print u'ERROR: orderby must be one of %s. Got %s' % (u','.join(PRINTJOB_ASCENDINGORDER_MAP), sortorder)
         sys.exit(2)
       sortorder = PRINTJOB_ASCENDINGORDER_MAP[sortorder]
       i += 2
-    elif sys.argv[i].lower() in [u'owner', u'user']:
+    elif myarg in [u'owner', u'user']:
       owner = sys.argv[i+1]
+      i += 2
+    elif myarg == u'offset':
+      offset = max(0, int(sys.argv[i+1]))
+      i += 2
+    elif myarg == u'limit':
+      limit = max(1, int(sys.argv[i+1]))
       i += 2
     else:
       print u'ERROR: %s is not a valid argument for "gam printjobs fetch"' % sys.argv[i]
       sys.exit(2)
   if sortorder and descending:
     sortorder = PRINTJOB_DESCENDINGORDER_MAP[sortorder]
-  result = callGAPI(service=cp.jobs(), function=u'list', q=query, status=status, sortorder=sortorder, printerid=printerid, owner=owner)
+  result = callGAPI(service=cp.jobs(), function=u'list',
+                    printerid=printerid, q=query, status=status, sortorder=sortorder,
+                    owner=owner, offset=offset, limit=limit)
   if u'errorCode' in result and result[u'errorCode'] == 413:
     print u'No print jobs.'
     sys.exit(0)
