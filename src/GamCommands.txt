@@ -540,12 +540,14 @@ gam printjob <PrinterID>|any fetch
 	[status done|error|held|in_progress|queued|submitted]
 	[orderby create_time|status|title] [ascending|descending]
 	[owner|user <EmailAddress>]
+	[offset <Number>] [limit <Number>]
 gam printjob <PrinterID> submit <FileName>|<URL> [name|title <String>] (tag <String>)*
 gam print printjobs [todrive] [printer|printerid <PrinterID>]
 	[olderthan|newerthan <PrintJobAge>] [query <Query>]
 	[status done|error|held|in_progress|queued|submitted]
 	[orderby create_time|status|title] [ascending|descending]
 	[owner|user <EmailAddress>]
+	[offset <Number>] [limit <Number>]
 
 gam <UserTypeEntity> delete|del asp|asps|applicationspecificpasswords <AspID>
 gam <UserTypeEntity> show asps|asp|applicationspecificpasswords
