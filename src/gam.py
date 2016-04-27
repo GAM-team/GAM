@@ -2669,6 +2669,9 @@ PRINTJOB_DESCENDINGORDER_MAP = {
   u'TITLE': u'TITLE_DESC',
   }
 
+PRINTJOBS_DEFAULT_JOB_LIMIT = 25
+PRINTJOBS_DEFAULT_MAX_RESULTS = 100
+
 def doPrintPrintJobs():
   cp = buildGAPIObject(u'cloudprint')
   job_attributes = [{}]
@@ -2683,7 +2686,8 @@ def doPrintPrintJobs():
   age = None
   older_or_newer = None
   offset = 0
-  jobLimit = 25
+  jobLimit = PRINTJOBS_DEFAULT_JOB_LIMIT
+  maxResults = PRINTJOBS_DEFAULT_MAX_RESULTS
   i = 3
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace(u'_', u'')
@@ -2741,6 +2745,9 @@ def doPrintPrintJobs():
     elif myarg == u'limit':
       jobLimit = getInteger(i+1, minVal=0)
       i += 2
+    elif myarg == u'maxresults':
+      maxResults = getInteger(i+1, minVal=1, maxVal=1000)
+      i += 2
     else:
       print u'ERROR: %s is not a valid argument for "gam print printjobs"' % sys.argv[i]
       sys.exit(2)
@@ -2748,9 +2755,12 @@ def doPrintPrintJobs():
     sortorder = PRINTJOB_DESCENDINGORDER_MAP[sortorder]
   jobCount = 0
   while True:
-    limit = 25 if jobLimit == 0 else jobLimit-jobCount
-    if limit == 0:
-      break
+    if jobLimit == 0:
+      limit = maxResults
+    else:
+      limit = min(maxResults, jobLimit-jobCount)
+      if limit == 0:
+        break
     result = callGAPI(cp.jobs(), u'list',
                       printerid=printerid, q=query, status=status, sortorder=sortorder,
                       owner=owner, offset=offset, limit=limit)
@@ -3130,7 +3140,8 @@ def doPrintJobFetch():
   age = None
   older_or_newer = None
   offset = 0
-  jobLimit = 25
+  jobLimit = PRINTJOBS_DEFAULT_JOB_LIMIT
+  maxResults = PRINTJOBS_DEFAULT_MAX_RESULTS
   i = 4
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace(u'_', u'')
@@ -3182,6 +3193,9 @@ def doPrintJobFetch():
     elif myarg == u'limit':
       jobLimit = getInteger(i+1, minVal=0)
       i += 2
+    elif myarg == u'maxresults':
+      maxResults = getInteger(i+1, minVal=1, maxVal=1000)
+      i += 2
     else:
       print u'ERROR: %s is not a valid argument for "gam printjobs fetch"' % sys.argv[i]
       sys.exit(2)
@@ -3191,9 +3205,12 @@ def doPrintJobFetch():
   ssd = u'{"state": {"type": "DONE"}}'
   jobCount = 0
   while True:
-    limit = 25 if jobLimit == 0 else jobLimit-jobCount
-    if limit == 0:
-      break
+    if jobLimit == 0:
+      limit = maxResults
+    else:
+      limit = min(maxResults, jobLimit-jobCount)
+      if limit == 0:
+        break
     result = callGAPI(cp.jobs(), u'list',
                       printerid=printerid, q=query, status=status, sortorder=sortorder,
                       owner=owner, offset=offset, limit=limit)
