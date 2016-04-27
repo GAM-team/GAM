@@ -2125,9 +2125,7 @@ def doPrintPrintJobs():
   query = None
   age = None
   older_or_newer = None
-  offset = 0
   jobLimit = PRINTJOBS_DEFAULT_JOB_LIMIT
-  maxResults = PRINTJOBS_DEFAULT_MAX_RESULTS
   i = 3
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace(u'_', u'')
@@ -2179,26 +2177,20 @@ def doPrintPrintJobs():
     elif myarg in [u'owner', u'user']:
       owner = sys.argv[i+1]
       i += 2
-    elif myarg == u'offset':
-      offset = max(0, int(sys.argv[i+1]))
-      i += 2
     elif myarg == u'limit':
       jobLimit = max(0, int(sys.argv[i+1]))
-      i += 2
-    elif myarg == u'maxresults':
-      maxResults = min(1000, max(1, int(sys.argv[i+1])))
       i += 2
     else:
       print u'ERROR: %s is not a valid argument for "gam print printjobs"' % sys.argv[i]
       sys.exit(2)
   if sortorder and descending:
     sortorder = PRINTJOB_DESCENDINGORDER_MAP[sortorder]
-  jobCount = 0
+  jobCount = offset = 0
   while True:
     if jobLimit == 0:
-      limit = maxResults
+      limit = PRINTJOBS_DEFAULT_MAX_RESULTS
     else:
-      limit = min(maxResults, jobLimit-jobCount)
+      limit = min(PRINTJOBS_DEFAULT_MAX_RESULTS, jobLimit-jobCount)
       if limit == 0:
         break
     result = callGAPI(cp.jobs(), u'list',
@@ -2582,9 +2574,7 @@ def doPrintJobFetch():
   query = None
   age = None
   older_or_newer = None
-  offset = 0
   jobLimit = PRINTJOBS_DEFAULT_JOB_LIMIT
-  maxResults = PRINTJOBS_DEFAULT_MAX_RESULTS
   i = 4
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace(u'_', u'')
@@ -2630,14 +2620,8 @@ def doPrintJobFetch():
     elif myarg in [u'owner', u'user']:
       owner = sys.argv[i+1]
       i += 2
-    elif myarg == u'offset':
-      offset = max(0, int(sys.argv[i+1]))
-      i += 2
     elif myarg == u'limit':
       jobLimit = max(0, int(sys.argv[i+1]))
-      i += 2
-    elif myarg == u'maxresults':
-      maxResults = min(1000, max(1, int(sys.argv[i+1])))
       i += 2
     else:
       print u'ERROR: %s is not a valid argument for "gam printjobs fetch"' % sys.argv[i]
@@ -2646,12 +2630,12 @@ def doPrintJobFetch():
     sortorder = PRINTJOB_DESCENDINGORDER_MAP[sortorder]
   valid_chars = u'-_.() abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
   ssd = u'{"state": {"type": "DONE"}}'
-  jobCount = 0
+  jobCount = offset = 0
   while True:
     if jobLimit == 0:
-      limit = maxResults
+      limit = PRINTJOBS_DEFAULT_MAX_RESULTS
     else:
-      limit = min(maxResults, jobLimit-jobCount)
+      limit = min(PRINTJOBS_DEFAULT_MAX_RESULTS, jobLimit-jobCount)
       if limit == 0:
         break
     result = callGAPI(cp.jobs(), u'list',
