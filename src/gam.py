@@ -25,7 +25,7 @@ For more information, see http://git.io/gam
 """
 
 __author__ = u'Jay Lee <jay0lee@gmail.com>'
-__version__ = u'3.749'
+__version__ = u'3.760'
 __license__ = u'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 import sys, os, time, datetime, random, socket, csv, platform, re, calendar, base64, string, codecs, StringIO, subprocess, ConfigParser, collections
@@ -2745,6 +2745,10 @@ def doPrintPrintJobs():
       sys.exit(2)
   if sortorder and descending:
     sortorder = PRINTJOB_DESCENDINGORDER_MAP[sortorder]
+  if printerid:
+    result = callGAPI(cp.printers(), u'get',
+                      printerid=printerid)
+    checkCloudPrintResult(result)
   jobCount = offset = 0
   while True:
     if jobLimit == 0:
@@ -3185,6 +3189,10 @@ def doPrintJobFetch():
       sys.exit(2)
   if sortorder and descending:
     sortorder = PRINTJOB_DESCENDINGORDER_MAP[sortorder]
+  if printerid:
+    result = callGAPI(cp.printers(), u'get',
+                      printerid=printerid)
+    checkCloudPrintResult(result)
   valid_chars = u'-_.() abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
   ssd = u'{"state": {"type": "DONE"}}'
   jobCount = offset = 0
@@ -3198,9 +3206,6 @@ def doPrintJobFetch():
     result = callGAPI(cp.jobs(), u'list',
                       printerid=printerid, q=query, status=status, sortorder=sortorder,
                       owner=owner, offset=offset, limit=limit)
-    if u'errorCode' in result and result[u'errorCode'] == 413:
-      print u'No print jobs.'
-      sys.exit(0)
     checkCloudPrintResult(result)
     newJobs = result[u'range'][u'jobsCount']
     if newJobs == 0:
@@ -3216,15 +3221,15 @@ def doPrintJobFetch():
           continue
       fileUrl = job[u'fileUrl']
       jobid = job[u'id']
-      fileName = job[u'title']
-      fileName = u''.join(c if c in valid_chars else u'_' for c in fileName)
-      fileName = u'%s-%s' % (fileName, jobid)
+      fileName = u'{0}-{1}'.format(u''.join(c if c in valid_chars else u'_' for c in job[u'title']), jobid)
       _, content = cp._http.request(uri=fileUrl, method='GET')
       if writeFile(fileName, content, continueOnError=True):
 #        ticket = callGAPI(cp.jobs(), u'getticket', jobid=jobid, use_cjt=True)
         result = callGAPI(cp.jobs(), u'update', jobid=jobid, semantic_state_diff=ssd)
         checkCloudPrintResult(result)
         print u'Printed job %s to %s' % (jobid, fileName)
+  if jobCount == 0:
+    print u'No print jobs.'
 
 def doDelPrinter():
   cp = buildGAPIObject(u'cloudprint')
