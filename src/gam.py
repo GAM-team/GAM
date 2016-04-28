@@ -3531,27 +3531,32 @@ def claimDriveFolder(users):
   target_folder = sys.argv[5]
   i = 6
   while i < len(sys.argv):
-    if sys.argv[i].lower() == u'skipfiles' or sys.argv[i].lower() == u'skipfolders' or sys.argv[i].lower() == u'skipusers' or sys.argv[i].lower() == u'subdomains':
-      if sys.argv[i].lower() == u'skipfiles':
-        f = openFile(sys.argv[i+1])
-        for line in f:
-          skipfiles.append(line.rstrip())
-      elif sys.argv[i].lower() == u'skipfolders':
-        f = openFile(sys.argv[i+1])
-        for line in f:
-          skipfolders.append(line.rstrip())
-      elif sys.argv[i].lower() == u'skipusers':
-        f = openFile(sys.argv[i+1])
-        for line in f:
-          skipusers.append(line.rstrip())
-      elif sys.argv[i].lower() == u'subdomains':
-        f = openFile(sys.argv[i+1])
-        for line in f:
-          subdomains.append(line.rstrip())
+    if sys.argv[i].lower() == u'skipfiles':
+      f = openFile(sys.argv[i+1])
+      for line in f:
+        skipfiles.append(line.rstrip())
       i += 2
-    elif sys.argv[i].lower() == u'includetrashed': 
+    elif sys.argv[i].lower() == u'skipfolders':
+      f = openFile(sys.argv[i+1])
+      for line in f:
+        skipfolders.append(line.rstrip())
+      i += 2
+    elif sys.argv[i].lower() == u'skipusers':
+      f = openFile(sys.argv[i+1])
+      for line in f:
+        skipusers.append(line.rstrip())
+      i += 2
+    elif sys.argv[i].lower() == u'subdomains':
+      f = openFile(sys.argv[i+1])
+      for line in f:
+        subdomains.append(line.rstrip())
+      i += 2
+    elif sys.argv[i].lower() == u'includetrashed':
       trashed = True
       i += 1
+    else:
+      print u'ERROR: %s is not a valid argument for "gam <users> claim folder"' % sys.argv[i]
+      sys.exit(2)
   for user in users:
     drive = buildGAPIServiceObject(u'drive', user)
     if user.find(u'@') == -1:
@@ -3611,7 +3616,7 @@ def claimDriveFolderContents(target_user, i, files, feed, target_folder, permiss
           tr_files.append(f_id)
         if f_owner != source_user:
           claimDriveFiles(source_user, tr_files, permissionId, target_user, subdomains)
-          # reset source_user and files for new transfer 
+          # reset source_user and files for new transfer
           source_user = f_owner
           del tr_files[:]
           tr_files.append(f_id)
@@ -3654,11 +3659,16 @@ def transferDriveFolder(users):
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'newowner':
       target_user = sys.argv[i+1]
-      target_user += u'@' + GC_Values[GC_DOMAIN]
+      if target_user.find(u'@') == -1:
+        print u'ERROR: got %s, expected a full email address' % target_user
+        sys.exit(2)
       i += 2
-    elif sys.argv[i].lower() == u'includetrashed': 
+    elif sys.argv[i].lower() == u'includetrashed':
       trashed = True
       i += 1
+    else:
+      print u'ERROR: %s is not a valid argument for "gam <users> transfer folder"' % sys.argv[i]
+      sys.exit(2)
   for source_user in users:
     if source_user.find(u'@') == -1:
       print u'ERROR: got %s, expected a full email address' % source_user
