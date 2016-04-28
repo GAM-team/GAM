@@ -19,7 +19,7 @@ Author
 GAM is maintained by <a href="mailto:jay0lee@gmail.com">Jay Lee</a>.
 
 [GAM release]: https://git.io/gamreleases
-[GitHub Releases]: https://github.com/jay0lee/GAM/releases
+[GitHub Releases]: https://github.com/lerklompen/GAM/releases
 [GitHub]: https://github.com/jay0lee/GAM/tree/master
 [GitHub Wiki]: https://github.com/jay0lee/GAM/wiki/
 [Google Groups]: http://groups.google.com/group/google-apps-manager
