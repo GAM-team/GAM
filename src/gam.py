@@ -25,7 +25,7 @@ For more information, see http://git.io/gam
 """
 
 __author__ = u'Jay Lee <jay0lee@gmail.com>'
-__version__ = u'3.760'
+__version__ = u'3.761'
 __license__ = u'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 import sys, os, time, datetime, random, socket, csv, platform, re, calendar, base64, string, codecs, StringIO, subprocess, ConfigParser, collections
@@ -4429,24 +4429,28 @@ def createDriveFile(users):
 
 def downloadDriveFile(users):
   i = 5
-  query = fileIds = None
+  query = fileIds = revision = None
   gdownload_format = u'openoffice'
   target_folder = GC_Values[GC_DRIVE_DIR]
   safe_filename_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
   while i < len(sys.argv):
-    if sys.argv[i].lower() == u'id':
+    myarg = sys.argv[i].lower().replace('_', '')
+    if myarg == u'id':
       fileIds = [sys.argv[i+1],]
       i += 2
-    elif sys.argv[i].lower() == u'query':
+    elif myarg == u'query':
       query = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower() == u'format':
+    elif myarg == u'revision':
+      revision = sys.argv[i+1]
+      i += 2
+    elif myarg == u'format':
       gdownload_format = sys.argv[i+1].lower()
       if gdownload_format not in [u'openoffice', u'ms', u'microsoft', u'micro$oft', u'pdf']:
         print u'ERROR: format must be one of openoffice, microsoft or pdf. Got %s' % gdownload_format
         sys.exit(2)
       i += 2
-    elif sys.argv[i].lower().replace(u'_', u'') == u'targetfolder':
+    elif myarg == u'targetfolder':
       target_folder = sys.argv[i+1]
       if not os.path.isdir(target_folder):
         os.makedirs(target_folder)
@@ -4539,38 +4543,50 @@ def downloadDriveFile(users):
             break
         filename = new_filename
       print convertUTF8(my_line % filename)
+      if revision:
+        download_url = u'{0}&revision={1}'.format(download_url, revision)
       _, content = drive._http.request(download_url)
       writeFile(filename, content, continueOnError=True)
+
+def printDriveFileData(feed):
+  for setting in feed:
+    if setting in [u'kind', u'etag']:
+      continue
+    setting_type = str(type(feed[setting]))
+    if setting_type == u"<type 'list'>":
+      print u'%s:' % setting
+      for settin in feed[setting]:
+        if settin in [u'kind', u'etag']:
+          continue
+        settin_type = str(type(settin))
+        if settin_type == u"<type 'dict'>":
+          for setti in settin:
+            if setti in [u'kind', u'etag']:
+              continue
+            print convertUTF8(u' %s: %s' % (setti, settin[setti]))
+          print u''
+    elif setting_type == u"<type 'dict'>":
+      print u'%s:' % setting
+      for settin in feed[setting]:
+        if settin in [u'kind', u'etag']:
+          continue
+        print convertUTF8(u' %s: %s' % (settin, feed[setting][settin]))
+    else:
+      print convertUTF8(u'%s: %s' % (setting, feed[setting]))
 
 def showDriveFileInfo(users):
   for user in users:
     fileId = sys.argv[5]
     drive = buildGAPIObject(u'drive', user)
     feed = callGAPI(drive.files(), u'get', fileId=fileId)
-    for setting in feed:
-      if setting == u'kind':
-        continue
-      setting_type = str(type(feed[setting]))
-      if setting_type == u"<type 'list'>":
-        print u'%s:' % setting
-        for settin in feed[setting]:
-          if settin == u'kind':
-            continue
-          settin_type = str(type(settin))
-          if settin_type == u"<type 'dict'>":
-            for setti in settin:
-              if setti == u'kind':
-                continue
-              print convertUTF8(u' %s: %s' % (setti, settin[setti]))
-            print u''
-      elif setting_type == u"<type 'dict'>":
-        print u'%s:' % setting
-        for settin in feed[setting]:
-          if settin == u'kind':
-            continue
-          print convertUTF8(u' %s: %s' % (settin, feed[setting][settin]))
-      else:
-        print convertUTF8(u'%s: %s' % (setting, feed[setting]))
+    printDriveFileData(feed)
+
+def showDriveFileRevisions(users):
+  for user in users:
+    fileId = sys.argv[5]
+    drive = buildGAPIObject(u'drive', user)
+    feed = callGAPI(drive.revisions(), u'list', fileId=fileId)
+    printDriveFileData(feed)
 
 def transferSecCals(users):
   target_user = sys.argv[5]
@@ -10145,6 +10161,8 @@ try:
       showDriveFileTree(users)
     elif readWhat == u'fileinfo':
       showDriveFileInfo(users)
+    elif readWhat == u'filerevisions':
+      showDriveFileRevisions(users)
     elif readWhat == u'sendas':
       showSendAs(users)
     elif readWhat == u'gmailprofile':
