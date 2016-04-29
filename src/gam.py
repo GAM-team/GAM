@@ -3830,20 +3830,23 @@ def doDriveActivity(users):
           activity_attributes[0][an_item] = an_item
   output_csv(activity_attributes, activity_attributes[0], u'Drive Activity', todrive)
 
+def printPermission(permission):
+  if u'name' in permission:
+    print convertUTF8(permission[u'name'])
+  elif (u'id' in permission) and (permission[u'id'] == u'anyone'):
+    print u'Anyone'
+  for key in permission:
+    if key in [u'name', u'kind', u'etag', u'selfLink',]:
+      continue
+    print u' %s: %s' % (key, permission[key])
+
 def showDriveFileACL(users):
   fileId = sys.argv[5]
   for user in users:
     drive = buildGAPIObject(u'drive', user)
     feed = callGAPI(drive.permissions(), u'list', fileId=fileId)
     for permission in feed[u'items']:
-      try:
-        print convertUTF8(permission[u'name'])
-      except KeyError:
-        pass
-      for key in permission:
-        if key in [u'name', u'kind', u'etag', u'selfLink',]:
-          continue
-        print u' %s: %s' % (key, permission[key])
+      printPermission(permission)
       print u''
 
 def delDriveFileACL(users):
@@ -3900,7 +3903,7 @@ def addDriveFileACL(users):
   for user in users:
     drive = buildGAPIObject(u'drive', user)
     result = callGAPI(drive.permissions(), u'insert', fileId=fileId, sendNotificationEmails=sendNotificationEmails, emailMessage=emailMessage, body=body)
-    print result
+    printPermission(result)
 
 def updateDriveFileACL(users):
   fileId = sys.argv[5]
@@ -3940,7 +3943,7 @@ def updateDriveFileACL(users):
       permissionId = callGAPI(drive.permissions(), u'getIdForEmail', email=permissionId, fields=u'id')[u'id']
     print u'updating permissions for %s to file %s' % (permissionId, fileId)
     result = callGAPI(drive.permissions(), u'patch', fileId=fileId, permissionId=permissionId, transferOwnership=transferOwnership, body=body)
-    print result
+    printPermission(result)
 
 def showDriveFiles(users):
   files_attr = [{u'Owner': u'Owner',}]
