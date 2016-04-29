@@ -3995,45 +3995,19 @@ def downloadDriveFile(users):
       _, content = drive._http.request(download_url)
       writeFile(filename, content, continueOnError=True)
 
-def printDriveFileData(feed):
-  for setting in feed:
-    if setting in [u'kind', u'etag']:
-      continue
-    setting_type = str(type(feed[setting]))
-    if setting_type == u"<type 'list'>":
-      print u'%s:' % setting
-      for settin in feed[setting]:
-        if settin in [u'kind', u'etag']:
-          continue
-        settin_type = str(type(settin))
-        if settin_type == u"<type 'dict'>":
-          for setti in settin:
-            if setti in [u'kind', u'etag']:
-              continue
-            print convertUTF8(u' %s: %s' % (setti, settin[setti]))
-          print u''
-    elif setting_type == u"<type 'dict'>":
-      print u'%s:' % setting
-      for settin in feed[setting]:
-        if settin in [u'kind', u'etag']:
-          continue
-        print convertUTF8(u' %s: %s' % (settin, feed[setting][settin]))
-    else:
-      print convertUTF8(u'%s: %s' % (setting, feed[setting]))
-
 def showDriveFileInfo(users):
   for user in users:
     fileId = sys.argv[5]
     drive = buildGAPIServiceObject(u'drive', user)
     feed = callGAPI(service=drive.files(), function=u'get', fileId=fileId)
-    printDriveFileData(feed)
+    print_json(None, feed)
 
 def showDriveFileRevisions(users):
   for user in users:
     fileId = sys.argv[5]
     drive = buildGAPIServiceObject(u'drive', user)
     feed = callGAPI(service=drive.revisions(), function=u'list', fileId=fileId)
-    printDriveFileData(feed)
+    print_json(None, feed)
 
 def transferSecCals(users):
   target_user = sys.argv[5]
@@ -6782,21 +6756,24 @@ def print_json(object_name, object_value, spacing=u''):
     return
   if object_name != None:
     sys.stdout.write(u'%s%s: ' % (spacing, object_name))
-  if type(object_value) is list:
-    if len(object_value) == 1 and type(object_value[0]) in (str, unicode, int):
-      sys.stdout.write(u'%s\n' % object_value[0])
+  if isinstance(object_value, list):
+    if len(object_value) == 1 and isinstance(object_value[0], (str, unicode, int, bool)):
+      sys.stdout.write(convertUTF8(u'%s\n' % object_value[0]))
       return
-    sys.stdout.write(u'\n')
+    if object_name != None:
+      sys.stdout.write(u'\n')
     for a_value in object_value:
-      if type(a_value) in (str, unicode):
-        print u' %s%s' % (spacing, a_value)
+      if isinstance(a_value, (str, unicode, int, bool)):
+        sys.stdout.write(convertUTF8(u' %s%s\n' % (spacing, a_value)))
       else:
-        print_json(object_name=None, object_value=a_value, spacing=u' %s' % spacing)
-  elif type(object_value) is dict:
+        print_json(None, a_value, u' %s' % spacing)
+  elif isinstance(object_value, dict):
+    if object_name != None:
+      sys.stdout.write(u'\n')
     for another_object in object_value:
-      print_json(object_name=another_object, object_value=object_value[another_object], spacing=spacing)
+      print_json(another_object, object_value[another_object], u' %s' % spacing)
   else:
-    sys.stdout.write(u'%s\n' % (object_value))
+    sys.stdout.write(convertUTF8(u'%s\n' % (object_value)))
 
 def doUpdateNotification():
   cd = buildGAPIObject(u'directory')
