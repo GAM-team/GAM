@@ -242,7 +242,7 @@ If an item contains spaces, it should be surrounded by " or '.
 		(teachers <CourseID>)|
 		(file <FileName>)|
 		(csvfile <FileName>:<FieldName>)|
-		(license|licenses <SKUIDList>)|
+		(license|licenses|licence|licences <SKUIDList>)|
 		(query <Query>)
 
 
@@ -477,7 +477,7 @@ gam print groups [todrive] ([domain <DomainName>] [member <UserItem>])
 	[maxresults <Number>] [delimiter <String>]
 	[members] [owners] [managers] <GroupFieldNames>* [settings] 
 gam print group-members|groups-members [todrive] [membernames] [fields <MembersFieldNameList>] [group <GroupItem>]
-gam print licenses [todrive] [products|product <ProductIDList>] [skus|sku <SKUIDList>]
+gam print license|licenses|licence|licences [todrive] [products|product <ProductIDList>] [skus|sku <SKUIDList>]
 
 gam update notification|notifications [(id all)|(id <NotificationID>)*] unread|read
 gam delete notification|notifications [(id all)|(id <NotificationID>)*]
@@ -501,9 +501,9 @@ gam create user <EmailAddress> <UserAttrubutes>
 gam update user <UserItem> <UserAttributes>
 gam delete user <UserItem>
 gam undelete user <UserItem> [org|ou <OrgUnitPath>]
-gam info user [<UserItem>] [noaliases] [nogroups] [nolicenses] [noschemas] [schemas <SchemaNameList>] [userview] [skus|sku <SKUIDList>]
+gam info user [<UserItem>] [noaliases] [nogroups] [nolicenses|nolicences] [noschemas] [schemas <SchemaNameList>] [userview] [skus|sku <SKUIDList>]
 gam print users [todrive] ([domain <DomainName>] [query <Query>] [deleted_only|only_deleted])
-	 [groups] [license|licenses] [emailpart|emailparts|username]
+	 [groups] [license|licenses|licence|licences] [emailpart|emailparts|username]
 	[orderby familyname|lastname|givenname|firstname|email] [ascending|descending] [userview]
 	[allfields | <UserFieldNames>*]
 
