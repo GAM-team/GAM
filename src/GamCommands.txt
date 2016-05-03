@@ -383,6 +383,7 @@ gam oauth|oauth2 delete|revoke
 gam oauth|oauth2 info|verify
 
 gam whatis <EmailItem>
+
 gam report users|user [todrive]
 	[date <Date>] [(user all|<UserItem>)] [filter|filters <String>] [fields|parameters <String>]
 gam report customers|customer|domain [todrive]
@@ -480,11 +481,12 @@ gam update group <GroupItem> update [owner|manager|member] <UserTypeEntity>
 gam delete group <GroupItem>
 gam info group <GroupItem> [nousers] [noaliases] [groups]
 
-
 gam print groups [todrive] ([domain <DomainName>] [member <UserItem>])
 	[maxresults <Number>] [delimiter <String>]
 	[members] [owners] [managers] <GroupFieldNames>* [settings] 
+
 gam print group-members|groups-members [todrive] [membernames] [fields <MembersFieldNameList>] [group <GroupItem>]
+
 gam print license|licenses|licence|licences [todrive] [products|product <ProductIDList>] [skus|sku <SKUIDList>]
 
 gam update notification|notifications [(id all)|(id <NotificationID>)*] unread|read
@@ -524,6 +526,7 @@ gam update course <CourseID> <CourseAttributes>
 gam delete course <CourseID>
 gam info course <CourseID>
 gam print courses [todrive] [teacher] [student] [alias|aliases]
+
 gam course <CourseID> add alias <CourseAlias>
 gam course <CourseID> delete alias <CourseAlias>
 gam course <CourseID> add teachers|students <UserItem>
@@ -543,6 +546,7 @@ gam printer <PrinterID> showacl
 gam printjob <PrintJobID> cancel
 gam printjob <PrintJobID> delete
 gam printjob <PrintJobID> resubmit <PrinterID>
+
 gam printjob <PrinterID>|any fetch
 	[olderthan|newerthan <PrintJobAge>] [query <Query>]
 	[status done|error|held|in_progress|queued|submitted]
