@@ -4437,7 +4437,7 @@ def downloadDriveFile(users):
   target_folder = GC_Values[GC_DRIVE_DIR]
   safe_filename_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
   while i < len(sys.argv):
-    myarg = sys.argv[i].lower().replace('_', '')
+    myarg = sys.argv[i].lower().replace(u'_', u'')
     if myarg == u'id':
       fileIds = [sys.argv[i+1],]
       i += 2
@@ -5538,7 +5538,7 @@ def getSignature(users):
     else:
       emailsettings.domain = GC_Values[GC_DOMAIN]
     result = callGData(emailsettings, u'GetSignature', soft_errors=True, username=user)
-    signature = result.get(u'signature', u'None') if result else u'None'
+    signature = result.get(u'signature') if result else None
     if not signature:
       signature = u'None'
     sys.stdout.write(u"User %s signature:\n  " % (user+u'@'+emailsettings.domain))
@@ -6095,8 +6095,9 @@ def doCreateGroup():
       i += 2
     else:
       value = sys.argv[i+1]
-      gs = buildGAPIObject(u'groupssettings')
-      gs_object = gs._rootDesc
+      if not gs:
+        gs = buildGAPIObject(u'groupssettings')
+        gs_object = gs._rootDesc
       matches_gs_setting = False
       for (attrib, params) in gs_object[u'schemas'][u'Groups'][u'properties'].items():
         if attrib in [u'kind', u'etag', u'email', u'name', u'description']:
@@ -6699,8 +6700,9 @@ def doUpdateGroup():
         i += 2
       else:
         value = sys.argv[i+1]
-        gs = buildGAPIObject(u'groupssettings')
-        gs_object = gs._rootDesc
+        if not gs:
+          gs = buildGAPIObject(u'groupssettings')
+          gs_object = gs._rootDesc
         matches_gs_setting = False
         for (attrib, params) in gs_object[u'schemas'][u'Groups'][u'properties'].items():
           if attrib in [u'kind', u'etag', u'email']:
