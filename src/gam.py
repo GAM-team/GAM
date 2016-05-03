@@ -3527,6 +3527,7 @@ def claimDriveFolder(users):
   skipusers = []
   subdomains = []
   trashed = False
+  writerscanshare = True
   # assign variables, and checking skipfiles and skipfolders
   target_folder = sys.argv[5]
   i = 6
@@ -3553,6 +3554,9 @@ def claimDriveFolder(users):
       i += 2
     elif sys.argv[i].lower() == u'includetrashed':
       trashed = True
+      i += 1
+    elif sys.argv[i].lower() == u'limitsharing': 
+      writerscanshare = False
       i += 1
     else:
       print u'ERROR: %s is not a valid argument for "gam <users> claim folder"' % sys.argv[i]
@@ -3585,10 +3589,12 @@ def claimDriveFolder(users):
       print u' excluding user(s): "%s' % skipusers
     if subdomains:
       print u' including subdomain(s): "%s' % subdomains
+    if not writerscanshare:
+      print u' limiting sharing - previous owners can nolonger share files'
     print u' checking %s files in users drive' % len(feed)
-    claimDriveFolderContents(user, i, files, feed, target_folder, permissionId, skipfiles, skipfolders, skipusers, subdomains, trashed)
+    claimDriveFolderContents(user, i, files, feed, target_folder, permissionId, skipfiles, skipfolders, skipusers, subdomains, trashed, writerscanshare)
 
-def claimDriveFolderContents(target_user, i, files, feed, target_folder, permissionId, skipfiles, skipfolders, skipusers, subdomains, trashed):
+def claimDriveFolderContents(target_user, i, files, feed, target_folder, permissionId, skipfiles, skipfolders, skipusers, subdomains, trashed, writerscanshare):
   for f_file in feed:
     i += 1
     for parent in f_file[u'parents']:
@@ -3601,7 +3607,7 @@ def claimDriveFolderContents(target_user, i, files, feed, target_folder, permiss
         # not checking trashed folders (n.b. trashed folders could contain files that aren't trashed)
         if f_file[u'mimeType'] == u'application/vnd.google-apps.folder'and f_file[u'id'] not in skipfolders:
           if not trashed and not f_file[u'labels'][u'trashed'] or trashed:
-            claimDriveFolderContents(target_user, i, files, feed, f_file[u'id'], permissionId, skipfiles, skipfolders, skipusers, subdomains, trashed)
+            claimDriveFolderContents(target_user, i, files, feed, f_file[u'id'], permissionId, skipfiles, skipfolders, skipusers, subdomains, trashed, writerscanshare)
   if i == len(feed):
     if files:
       # sorting files per owner
@@ -3615,34 +3621,40 @@ def claimDriveFolderContents(target_user, i, files, feed, target_folder, permiss
         if f_owner == source_user:
           tr_files.append(f_id)
         if f_owner != source_user:
-          claimDriveFiles(source_user, tr_files, permissionId, target_user, subdomains)
+          claimDriveFiles(source_user, tr_files, permissionId, target_user, subdomains, writerscanshare)
           # reset source_user and files for new transfer
           source_user = f_owner
           del tr_files[:]
           tr_files.append(f_id)
         if j == len(files):
-          claimDriveFiles(source_user, tr_files, permissionId, target_user, subdomains)
+          claimDriveFiles(source_user, tr_files, permissionId, target_user, subdomains, writerscanshare)
         j += 1
     print u'--- READY ---\n'
 
-def claimDriveFiles(source_user, files, permissionId, target_user, subdomains):
+def claimDriveFiles(source_user, files, permissionId, target_user, subdomains, writerscanshare):
   userdomain = source_user.split("@")
   transferOwnership = True
   sendNotificationEmails = False
   emailMessage = None
   body = {u'role': u'owner'}
   bodyAdd = {u'role': u'writer', u'type': u'user', u'value': target_user}
+  if not writerscanshare:
+   share_body = {u'writersCanShare': False}
   if userdomain[1] == GC_Values[GC_DOMAIN] or userdomain[1] in subdomains:
     source_drive = buildGAPIServiceObject(u'drive', source_user)
     for file_id in files:
       print '  transferring %s from user %s to new owner %s' % (file_id, source_user, target_user)
       try:
+        if not writerscanshare:
+          result = callGAPI(service=source_drive.files(), function=u'patch', fileId=file_id, body=share_body)
         result = callGAPI(service=source_drive.permissions(), function=u'patch', fileId=file_id, permissionId=permissionId, transferOwnership=transferOwnership, body=body)
       except:
         # if claimer not in ACL (file might be visible for all with link)
         print '   adding %s to drivefileACL for file %s' % (target_user, file_id)
         result = callGAPI(service=source_drive.permissions(), function=u'insert', fileId=file_id, sendNotificationEmails=sendNotificationEmails, body=bodyAdd)
         print '   now transferring %s from user %s to new owner %s' % (file_id, source_user, target_user)
+        if not writerscanshare:
+          result = callGAPI(service=source_drive.files(), function=u'patch', fileId=file_id, body=share_body)
         result = callGAPI(service=source_drive.permissions(), function=u'patch', fileId=file_id, permissionId=permissionId, transferOwnership=transferOwnership, body=body)
     print u' transferred %s files from %s to %s' % (len(files), source_user, target_user)
   else:
