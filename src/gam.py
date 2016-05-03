@@ -3555,7 +3555,7 @@ def claimDriveFolder(users):
     elif sys.argv[i].lower() == u'includetrashed':
       trashed = True
       i += 1
-    elif sys.argv[i].lower() == u'limitsharing': 
+    elif sys.argv[i].lower() == u'writerscantshare': 
       writerscanshare = False
       i += 1
     else:
