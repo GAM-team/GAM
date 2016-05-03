@@ -6640,7 +6640,7 @@ def doUpdateGroup():
         sys.stderr.write(u' %sing %s %s...\n' % (sys.argv[4].lower(), role.lower(), user_email))
         try:
           if sys.argv[4].lower() == u'add':
-            body[u'email'] = user_email
+            body = {u'role': role, u'email': user_email}
             callGAPI(cd.members(), u'insert', soft_errors=True, groupKey=group, body=body)
           elif sys.argv[4].lower() == u'update':
             callGAPI(cd.members(), u'update', soft_errors=True, groupKey=group, memberKey=user_email, body=body)
