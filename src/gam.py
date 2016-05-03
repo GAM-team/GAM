@@ -3520,6 +3520,218 @@ def showDriveFileTree(users):
                          fields=u'items(id,title,parents(id),mimeType),nextPageToken', maxResults=GC_Values[GC_DRIVE_MAX_RESULTS])
     printDriveFolderContents(feed, root_folder, 0)
 
+def claimDriveFolder(users):
+  files = []
+  skipfiles = []
+  skipfolders = []
+  skipusers = []
+  subdomains = []
+  trashed = False
+  writerscanshare = True
+  # assign variables, and checking skipfiles and skipfolders
+  target_folder = sys.argv[5]
+  i = 6
+  while i < len(sys.argv):
+    if sys.argv[i].lower() == u'skipfiles':
+      f = openFile(sys.argv[i+1])
+      for line in f:
+        skipfiles.append(line.rstrip())
+      i += 2
+    elif sys.argv[i].lower() == u'skipfolders':
+      f = openFile(sys.argv[i+1])
+      for line in f:
+        skipfolders.append(line.rstrip())
+      i += 2
+    elif sys.argv[i].lower() == u'skipusers':
+      f = openFile(sys.argv[i+1])
+      for line in f:
+        skipusers.append(line.rstrip())
+      i += 2
+    elif sys.argv[i].lower() == u'subdomains':
+      f = openFile(sys.argv[i+1])
+      for line in f:
+        subdomains.append(line.rstrip())
+      i += 2
+    elif sys.argv[i].lower() == u'includetrashed':
+      trashed = True
+      i += 1
+    elif sys.argv[i].lower() == u'writerscantshare': 
+      writerscanshare = False
+      i += 1
+    else:
+      print u'ERROR: %s is not a valid argument for "gam <users> claim folder"' % sys.argv[i]
+      sys.exit(2)
+  for user in users:
+    drive = buildGAPIServiceObject(u'drive', user)
+    if user.find(u'@') == -1:
+      print u'ERROR: got %s, expected a full email address' % user
+      sys.exit(2)
+    sys.stderr.write(u'Getting all files for %s...\n' % user)
+    page_message = u' got %%%%total_items%%%% files for %s...\n' % user
+    feed = callGAPIpages(service=drive.files(), function=u'list', page_message=page_message,
+                         fields=u'items(id,parents(id),mimeType,owners(emailAddress),labels(trashed)),nextPageToken', maxResults=GC_Values[GC_DRIVE_MAX_RESULTS])
+    permissionId = callGAPI(service=drive.permissions(), function=u'getIdForEmail', email=user, fields=u'id')[u'id']
+    # check if user is owner of target_folder
+    for f_file in feed:
+      if f_file[u'id'] == target_folder:
+        owner = f_file[u'owners'][0][u'emailAddress']
+        if owner.lower() != user:
+          files.append((owner, f_file[u'id']))
+    i = 0
+    timestamp = time.time()
+    timestamp = datetime.datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
+    print u'%s: %s claiming folder %s' % (timestamp, user, target_folder)
+    if skipfiles:
+      print u' skipping file(s): "%s"' % skipfiles
+    if skipfolders:
+      print u' excluding folders(s): "%s' % skipfolders
+    if skipusers:
+      print u' excluding user(s): "%s' % skipusers
+    if subdomains:
+      print u' including subdomain(s): "%s' % subdomains
+    if not writerscanshare:
+      print u' limiting sharing - previous owners can nolonger share files'
+    print u' checking %s files in users drive' % len(feed)
+    claimDriveFolderContents(user, i, files, feed, target_folder, permissionId, skipfiles, skipfolders, skipusers, subdomains, trashed, writerscanshare)
+
+def claimDriveFolderContents(target_user, i, files, feed, target_folder, permissionId, skipfiles, skipfolders, skipusers, subdomains, trashed, writerscanshare):
+  for f_file in feed:
+    i += 1
+    for parent in f_file[u'parents']:
+      if target_folder == parent[u'id']:
+        owner = f_file[u'owners'][0][u'emailAddress']
+        # excluding trashed files (not sure if this is needed though, since all checking is done from the "claiming" user)
+        if owner.lower() != target_user and f_file[u'id'] not in skipfiles and owner not in skipusers:
+          if not trashed and not f_file[u'labels'][u'trashed'] or trashed:
+            files.append((owner, f_file[u'id']))
+        # not checking trashed folders (n.b. trashed folders could contain files that aren't trashed)
+        if f_file[u'mimeType'] == u'application/vnd.google-apps.folder'and f_file[u'id'] not in skipfolders:
+          if not trashed and not f_file[u'labels'][u'trashed'] or trashed:
+            claimDriveFolderContents(target_user, i, files, feed, f_file[u'id'], permissionId, skipfiles, skipfolders, skipusers, subdomains, trashed, writerscanshare)
+  if i == len(feed):
+    if files:
+      # sorting files per owner
+      files.sort()
+      source_user = ''
+      tr_files = []
+      j = 1
+      for f_owner, f_id in files:
+        if source_user == '':
+          source_user = f_owner
+        if f_owner == source_user:
+          tr_files.append(f_id)
+        if f_owner != source_user:
+          claimDriveFiles(source_user, tr_files, permissionId, target_user, subdomains, writerscanshare)
+          # reset source_user and files for new transfer
+          source_user = f_owner
+          del tr_files[:]
+          tr_files.append(f_id)
+        if j == len(files):
+          claimDriveFiles(source_user, tr_files, permissionId, target_user, subdomains, writerscanshare)
+        j += 1
+    print u'--- READY ---\n'
+
+def claimDriveFiles(source_user, files, permissionId, target_user, subdomains, writerscanshare):
+  userdomain = source_user.split("@")
+  transferOwnership = True
+  sendNotificationEmails = False
+  emailMessage = None
+  body = {u'role': u'owner'}
+  bodyAdd = {u'role': u'writer', u'type': u'user', u'value': target_user}
+  if not writerscanshare:
+   share_body = {u'writersCanShare': False}
+  if userdomain[1] == GC_Values[GC_DOMAIN] or userdomain[1] in subdomains:
+    source_drive = buildGAPIServiceObject(u'drive', source_user)
+    for file_id in files:
+      print '  transferring %s from user %s to new owner %s' % (file_id, source_user, target_user)
+      try:
+        if not writerscanshare:
+          result = callGAPI(service=source_drive.files(), function=u'patch', fileId=file_id, body=share_body)
+        result = callGAPI(service=source_drive.permissions(), function=u'patch', fileId=file_id, permissionId=permissionId, transferOwnership=transferOwnership, body=body)
+      except:
+        # if claimer not in ACL (file might be visible for all with link)
+        print '   adding %s to drivefileACL for file %s' % (target_user, file_id)
+        result = callGAPI(service=source_drive.permissions(), function=u'insert', fileId=file_id, sendNotificationEmails=sendNotificationEmails, body=bodyAdd)
+        print '   now transferring %s from user %s to new owner %s' % (file_id, source_user, target_user)
+        if not writerscanshare:
+          result = callGAPI(service=source_drive.files(), function=u'patch', fileId=file_id, body=share_body)
+        result = callGAPI(service=source_drive.permissions(), function=u'patch', fileId=file_id, permissionId=permissionId, transferOwnership=transferOwnership, body=body)
+    print u' transferred %s files from %s to %s' % (len(files), source_user, target_user)
+  else:
+    print u'    could not transfer files for user %s - user is on other domain:' % source_user
+    for file in files:
+      print u'     %s' % file
+
+def transferDriveFolder(users):
+  target_user = ''
+  trashed = False
+  # assign variables, and checking skipfiles and skipfolders
+  target_folder = sys.argv[5]
+  i = 6
+  while i < len(sys.argv):
+    if sys.argv[i].lower() == u'newowner':
+      target_user = sys.argv[i+1]
+      if target_user.find(u'@') == -1:
+        print u'ERROR: got %s, expected a full email address' % target_user
+        sys.exit(2)
+      i += 2
+    elif sys.argv[i].lower() == u'includetrashed':
+      trashed = True
+      i += 1
+    else:
+      print u'ERROR: %s is not a valid argument for "gam <users> transfer folder"' % sys.argv[i]
+      sys.exit(2)
+  for source_user in users:
+    if source_user.find(u'@') == -1:
+      print u'ERROR: got %s, expected a full email address' % source_user
+      sys.exit(2)
+    drive = buildGAPIServiceObject(u'drive', target_user)
+    permissionId = callGAPI(service=drive.permissions(), function=u'getIdForEmail', email=target_user, fields=u'id')[u'id']
+    del drive
+    drive = buildGAPIServiceObject(u'drive', source_user)
+    sys.stderr.write(u'Getting all files for %s...\n' % source_user)
+    page_message = u' got %%%%total_items%%%% files for %s...\n' % source_user
+    feed = callGAPIpages(service=drive.files(), function=u'list', page_message=page_message,
+                         fields=u'items(id,parents(id),mimeType,owners(emailAddress),labels(trashed)),nextPageToken', maxResults=GC_Values[GC_DRIVE_MAX_RESULTS])
+    body = {u'role': u'owner'}
+    bodyAdd = {u'role': u'writer', u'type': u'user', u'value': target_user}
+    #check ownership on target_folder
+    for f_file in feed:
+      if f_file[u'id'] == target_folder:
+        owner = f_file[u'owners'][0][u'emailAddress']
+        if owner.lower() == source_user:
+          file_id = f_file[u'id']
+          try:
+            result = callGAPI(service=drive.permissions(), function=u'patch', fileId=file_id, permissionId=permissionId, transferOwnership=True, body=body)
+            print '  transferring %s from user %s to new owner %s' % (file_id, source_user, target_user)
+          except:
+            print '   adding %s to drivefileACL for file %s' % (target_user, file_id)
+            result = callGAPI(service=drive.permissions(), function=u'insert', fileId=file_id, sendNotificationEmails=False, emailMessage=None, body=bodyAdd)
+            print '   now transferring %s from user %s to new owner %s' % (file_id, source_user, target_user)
+            result = callGAPI(service=drive.permissions(), function=u'patch', fileId=file_id, permissionId=permissionId, transferOwnership=True, body=body)
+    transferDriveFolderContents(drive, source_user, target_user, permissionId, body, bodyAdd, feed, target_folder, trashed)
+
+def transferDriveFolderContents(drive, source_user, target_user, permissionId, body, bodyAdd, feed, folder_id, trashed):
+  for f_file in feed:
+    for parent in f_file[u'parents']:
+      if folder_id == parent[u'id']:
+        owner = f_file[u'owners'][0][u'emailAddress']
+        if owner.lower() == source_user:
+          file_id = f_file[u'id']
+          if not trashed and not f_file[u'labels'][u'trashed'] or trashed:
+            try:
+              result = callGAPI(service=drive.permissions(), function=u'patch', fileId=file_id, permissionId=permissionId, transferOwnership=True, body=body)
+              print '  transferring %s from user %s to new owner %s' % (file_id, source_user, target_user)
+            except:
+              # this might happen if target user isn't explicitly in ACL (i.e. shared with anyone)
+              print '   adding %s to drivefileACL for file %s' % (target_user, file_id)
+              result = callGAPI(service=drive.permissions(), function=u'insert', fileId=file_id, sendNotificationEmails=False, emailMessage=None, body=bodyAdd)
+              print '   now transferring %s from user %s to new owner %s' % (file_id, source_user, target_user)
+              result = callGAPI(service=drive.permissions(), function=u'patch', fileId=file_id, permissionId=permissionId, transferOwnership=True, body=body)
+        if f_file[u'mimeType'] == u'application/vnd.google-apps.folder':
+          if not trashed and not f_file[u'labels'][u'trashed'] or trashed:
+            transferDriveFolderContents(drive, source_user, target_user, permissionId, body, bodyAdd, feed, f_file[u'id'], trashed)
+
 def deleteEmptyDriveFolders(users):
   query = u'"me" in owners and mimeType = "application/vnd.google-apps.folder"'
   for user in users:
@@ -9423,9 +9635,15 @@ try:
       transferDriveFiles(users)
     elif transferWhat == u'seccals':
       transferSecCals(users)
+    elif transferWhat == u'folder':
+      transferDriveFolder(users)
     else:
       print u'ERROR: %s is not a valid argument for "gam <users> transfer"' % sys.argv[4]
       sys.exit(2)
+  elif command == u'claim':
+    readWhat = sys.argv[4].lower()
+    if readWhat == u'folder':
+      claimDriveFolder(users)
   elif command == u'show':
     readWhat = sys.argv[4].lower()
     if readWhat in [u'labels', u'label']:
