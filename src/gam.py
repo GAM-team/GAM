@@ -726,14 +726,14 @@ def callGAPI(service, function, silent_errors=False, soft_errors=False, throw_re
     except TypeError, e:
       systemErrorExit(4, e)
 
-def callGAPIpages(service, function, items=u'items', nextPageToken=u'nextPageToken', page_message=None, message_attribute=None, **kwargs):
+def callGAPIpages(service, function, items, page_message=None, message_attribute=None, **kwargs):
   pageToken = None
   all_pages = list()
   total_items = 0
   while True:
-    this_page = callGAPI(service=service, function=function, pageToken=pageToken, **kwargs)
+    this_page = callGAPI(service, function, pageToken=pageToken, **kwargs)
     if this_page:
-      pageToken = this_page.get(nextPageToken)
+      pageToken = this_page.get(u'nextPageToken')
       if items in this_page:
         page_items = len(this_page[items])
         total_items += page_items
@@ -1011,7 +1011,7 @@ def showReport():
     while True:
       try:
         page_message = u'Got %%num_items%% users\n'
-        usage = callGAPIpages(service=rep.userUsageReport(), function=u'get', items=u'usageReports', page_message=page_message, throw_reasons=[u'invalid'],
+        usage = callGAPIpages(rep.userUsageReport(), u'get', u'usageReports', page_message=page_message, throw_reasons=[u'invalid'],
                               date=str(try_date), userKey=userKey, customerId=customerId, filters=filters, parameters=parameters)
         break
       except googleapiclient.errors.HttpError, e:
@@ -1049,7 +1049,7 @@ def showReport():
   elif report in [u'customer', u'customers', u'domain']:
     while True:
       try:
-        usage = callGAPIpages(service=rep.customerUsageReports(), function=u'get', items=u'usageReports', throw_reasons=[u'invalid'],
+        usage = callGAPIpages(rep.customerUsageReports(), u'get', u'usageReports', throw_reasons=[u'invalid'],
                               customerId=customerId, date=str(try_date), parameters=parameters)
         break
       except googleapiclient.errors.HttpError, e:
@@ -1088,7 +1088,7 @@ def showReport():
     for app in auth_apps: # put apps at bottom
       cust_attributes.append(app)
     output_csv(csv_list=cust_attributes, titles=titles, list_type=u'Customer Report - %s' % try_date, todrive=to_drive)
-  elif report in [u'doc', u'docs', u'calendar', u'calendars', u'login', u'logins', u'admin', u'drive', u'token', u'tokens', u'group', u'groups', u'mobile']:
+  elif report in [u'doc', u'docs', u'drive', u'calendar', u'calendars', u'login', u'logins', u'admin', u'token', u'tokens', u'group', u'groups', u'mobile']:
     if report in [u'doc', u'docs']:
       report = u'drive'
     elif report in [u'calendars']:
@@ -1100,7 +1100,7 @@ def showReport():
     elif report == u'group':
       report = u'groups'
     page_message = u'Got %%num_items%% items\n'
-    activities = callGAPIpages(service=rep.activities(), function=u'list', page_message=page_message, applicationName=report,
+    activities = callGAPIpages(rep.activities(), u'list', u'items', page_message=page_message, applicationName=report,
                                userKey=userKey, customerId=customerId, actorIpAddress=actorIpAddress,
                                startTime=startTime, endTime=endTime, eventName=eventName, filters=filters)
     if len(activities) > 0:
@@ -1160,7 +1160,7 @@ def doDelegates(users):
     else:
       # Need to use an alias in delegator domain, first check to see if delegate already has one...
       cd = buildGAPIObject(u'directory')
-      aliases = callGAPI(service=cd.users().aliases(), function=u'list', userKey=delegate_email)
+      aliases = callGAPI(cd.users().aliases(), u'list', userKey=delegate_email)
       found_alias_in_delegator_domain = False
       try:
         for alias in aliases[u'aliases']:
@@ -1176,16 +1176,16 @@ def doDelegates(users):
         delete_alias = True
         use_delegate_address = u'%s@%s' % (u''.join(random.sample(u'abcdefghijklmnopqrstuvwxyz0123456789', 25)), delegator_domain)
         print u'  Giving %s temporary alias %s for delegation' % (delegate_email, use_delegate_address)
-        callGAPI(service=cd.users().aliases(), function=u'insert', userKey=delegate_email, body={u'alias': use_delegate_address})
+        callGAPI(cd.users().aliases(), u'insert', userKey=delegate_email, body={u'alias': use_delegate_address})
         time.sleep(5)
     retries = 10
     for n in range(1, retries+1):
       try:
-        callGData(service=emailsettings, function=u'CreateDelegate', throw_errors=[600, 1000, 1001], delegate=use_delegate_address, delegator=delegator)
+        callGData(emailsettings, u'CreateDelegate', throw_errors=[600, 1000, 1001], delegate=use_delegate_address, delegator=delegator)
         break
       except gdata.apps.service.AppsForYourDomainException, e:
         # 1st check to see if delegation already exists (causes 1000 error on create when using alias)
-        get_delegates = callGData(service=emailsettings, function=u'GetDelegates', delegator=delegator)
+        get_delegates = callGData(emailsettings, u'GetDelegates', delegator=delegator)
         for get_delegate in get_delegates:
           if get_delegate[u'address'].lower() == delegate_email: # Delegation is already in place
             print u'That delegation is already in place...'
@@ -1195,8 +1195,8 @@ def doDelegates(users):
             sys.exit(0) # Emulate functionality of duplicate delegation between users in same domain, returning clean
         # Now check if either user account is suspended or requires password change
         cd = buildGAPIObject(u'directory')
-        delegate_user_details = callGAPI(service=cd.users(), function=u'get', userKey=delegate_email)
-        delegator_user_details = callGAPI(service=cd.users(), function=u'get', userKey=delegator_email)
+        delegate_user_details = callGAPI(cd.users(), u'get', userKey=delegate_email)
+        delegator_user_details = callGAPI(cd.users(), u'get', userKey=delegator_email)
         if delegate_user_details[u'suspended'] == True:
           stderrErrorMsg(u'User {0} is suspended. You must unsuspend for delegation.'.format(delegate_email))
           if delete_alias:
@@ -1256,7 +1256,7 @@ def getDelegates(users):
     else:
       emailsettings.domain = GC_Values[GC_DOMAIN]
     sys.stderr.write(u"Getting delegates for %s...\n" % (user + u'@' + emailsettings.domain))
-    delegates = callGData(service=emailsettings, function=u'GetDelegates', soft_errors=True, delegator=user)
+    delegates = callGData(emailsettings, u'GetDelegates', soft_errors=True, delegator=user)
     try:
       for delegate in delegates:
         if csv_format:
@@ -1285,7 +1285,7 @@ def deleteDelegate(users):
       emailsettings.domain = GC_Values[GC_DOMAIN] #make sure it's back at default domain
     print u"Deleting %s delegate access to %s (%s of %s)" % (delegate, user+u'@'+emailsettings.domain, i, count)
     i += 1
-    callGData(service=emailsettings, function=u'DeleteDelegate', delegate=delegate, delegator=user)
+    callGData(emailsettings, u'DeleteDelegate', delegate=delegate, delegator=user)
 
 def doAddCourseParticipant():
   croom = buildGAPIObject(u'classroom')
@@ -1308,7 +1308,7 @@ def doAddCourseParticipant():
     print u'ERROR: %s is not a valid argument to "gam course ID add"' % participant_type
     sys.exit(2)
   body = {body_attribute: new_id}
-  callGAPI(service=service, function=u'create', courseId=courseId, body=body)
+  callGAPI(service, u'create', courseId=courseId, body=body)
   if courseId[:2] == u'd:':
     courseId = courseId[2:]
   if new_id[:2] == u'd:':
@@ -1361,7 +1361,7 @@ def doDelCourseParticipant():
   else:
     print u'ERROR: %s is not a valid argument to "gam course ID delete"' % participant_type
     sys.exit(2)
-  callGAPI(service=service, function=u'delete', courseId=courseId, **kwargs)
+  callGAPI(service, u'delete', courseId=courseId, **kwargs)
   if courseId[:2] == u'd:':
     courseId = courseId[2:]
   if remove_id[:2] == u'd:':
@@ -1373,7 +1373,7 @@ def doDelCourse():
   courseId = sys.argv[3]
   if not courseId.isdigit():
     courseId = u'd:%s' % courseId
-  callGAPI(service=croom.courses(), function=u'delete', id=courseId)
+  callGAPI(croom.courses(), u'delete', id=courseId)
   print u'Deleted Course %s' % courseId
 
 def doUpdateCourse():
@@ -1410,14 +1410,14 @@ def doUpdateCourse():
       sys.exit(2)
   updateMask = u','.join(body.keys())
   body[u'id'] = courseId
-  result = callGAPI(service=croom.courses(), function=u'patch', id=courseId, body=body, updateMask=updateMask)
+  result = callGAPI(croom.courses(), u'patch', id=courseId, body=body, updateMask=updateMask)
   print u'Updated Course %s' % result[u'id']
 
 def doCreateDomain():
   cd = buildGAPIObject(u'directory')
   domain_name = sys.argv[3]
   body = {u'domainName': domain_name}
-  callGAPI(service=cd.domains(), function=u'insert', customer=GC_Values[GC_CUSTOMER_ID], body=body)
+  callGAPI(cd.domains(), u'insert', customer=GC_Values[GC_CUSTOMER_ID], body=body)
   print u'Added domain %s' % domain_name
 
 def doCreateDomainAlias():
@@ -1425,7 +1425,7 @@ def doCreateDomainAlias():
   body = {}
   body[u'domainAliasName'] = sys.argv[3]
   body[u'parentDomainName'] = sys.argv[4]
-  callGAPI(service=cd.domainAliases(), function=u'insert', customer=GC_Values[GC_CUSTOMER_ID], body=body)
+  callGAPI(cd.domainAliases(), u'insert', customer=GC_Values[GC_CUSTOMER_ID], body=body)
 
 def doUpdateDomain():
   cd = buildGAPIObject(u'directory')
@@ -1439,7 +1439,7 @@ def doUpdateDomain():
     else:
       print u'ERROR: %s is not a valid argument for "gam update domain"' % sys.argv[i]
       sys.exit(2)
-  callGAPI(service=cd.customers(), function=u'update', customerKey=GC_Values[GC_CUSTOMER_ID], body=body)
+  callGAPI(cd.customers(), u'update', customerKey=GC_Values[GC_CUSTOMER_ID], body=body)
   print u'%s is now the primary domain.' % domain_name
 
 def doGetDomainInfo():
@@ -1448,7 +1448,7 @@ def doGetDomainInfo():
     return
   cd = buildGAPIObject(u'directory')
   domainName = sys.argv[3]
-  result = callGAPI(service=cd.domains(), function=u'get', customer=GC_Values[GC_CUSTOMER_ID], domainName=domainName)
+  result = callGAPI(cd.domains(), u'get', customer=GC_Values[GC_CUSTOMER_ID], domainName=domainName)
   if u'creationTime' in result:
     result[u'creationTime'] = unicode(datetime.datetime.fromtimestamp(int(result[u'creationTime'])/1000))
   if u'domainAliases' in result:
@@ -1460,7 +1460,7 @@ def doGetDomainInfo():
 def doGetDomainAliasInfo():
   cd = buildGAPIObject(u'directory')
   alias = sys.argv[3]
-  result = callGAPI(service=cd.domainAliases(), function=u'get', customer=GC_Values[GC_CUSTOMER_ID], domainAliasName=alias)
+  result = callGAPI(cd.domainAliases(), u'get', customer=GC_Values[GC_CUSTOMER_ID], domainAliasName=alias)
   if u'creationTime' in result:
     result[u'creationTime'] = unicode(datetime.datetime.fromtimestamp(int(result[u'creationTime'])/1000))
   print_json(None, result)
@@ -1469,7 +1469,7 @@ ADDRESS_FIELDS_PRINT_ORDER = [u'contactName', u'organizationName', u'addressLine
 
 def doGetCustomerInfo():
   cd = buildGAPIObject(u'directory')
-  customer_info = callGAPI(service=cd.customers(), function=u'get', customerKey=GC_Values[GC_CUSTOMER_ID])
+  customer_info = callGAPI(cd.customers(), u'get', customerKey=GC_Values[GC_CUSTOMER_ID])
   print u'Customer ID: %s' % customer_info[u'id']
   print u'Primary Domain: %s' % customer_info[u'customerDomain']
   result = callGAPI(cd.domains(), u'get',
@@ -1523,28 +1523,28 @@ def doUpdateCustomer():
       print u'ERROR: %s is not a valid argument for "gam update customer"' % myarg
       sys.exit(2)
   if body:
-    callGAPI(service=cd.customers(), function=u'update', customerKey=GC_Values[GC_CUSTOMER_ID], body=body)
+    callGAPI(cd.customers(), u'update', customerKey=GC_Values[GC_CUSTOMER_ID], body=body)
   if language:
     adminObj = getAdminSettingsObject()
-    callGData(service=adminObj, function=u'UpdateDefaultLanguage', defaultLanguage=language)
+    callGData(adminObj, u'UpdateDefaultLanguage', defaultLanguage=language)
   print u'Updated customer'
 
 def doDelDomain():
   cd = buildGAPIObject(u'directory')
   domainName = sys.argv[3]
-  callGAPI(service=cd.domains(), function=u'delete', customer=GC_Values[GC_CUSTOMER_ID], domainName=domainName)
+  callGAPI(cd.domains(), u'delete', customer=GC_Values[GC_CUSTOMER_ID], domainName=domainName)
 
 def doDelDomainAlias():
   cd = buildGAPIObject(u'directory')
   domainAliasName = sys.argv[3]
-  callGAPI(service=cd.domainAliases(), function=u'delete', customer=GC_Values[GC_CUSTOMER_ID], domainAliasName=domainAliasName)
+  callGAPI(cd.domainAliases(), u'delete', customer=GC_Values[GC_CUSTOMER_ID], domainAliasName=domainAliasName)
 
 def doPrintDomains():
   cd = buildGAPIObject(u'directory')
   titles = []
   domains_attributes = [{}]
   todrive = False
-  domains = callGAPI(service=cd.domains(), function=u'list', customer=GC_Values[GC_CUSTOMER_ID])
+  domains = callGAPI(cd.domains(), u'list', customer=GC_Values[GC_CUSTOMER_ID])
   i = 3
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'todrive':
@@ -1588,7 +1588,7 @@ def doDelAdmin():
   cd = buildGAPIObject(u'directory')
   roleAssignmentId = sys.argv[3]
   print u'Deleting Admin Role Assignment %s' % roleAssignmentId
-  callGAPI(service=cd.roleAssignments(), function=u'delete',
+  callGAPI(cd.roleAssignments(), u'delete',
            customer=GC_Values[GC_CUSTOMER_ID], roleAssignmentId=roleAssignmentId)
 
 def doCreateAdmin():
@@ -1599,7 +1599,7 @@ def doCreateAdmin():
     body[u'assignedTo'] = user[4:]
   else:
     print user[:3]
-    body[u'assignedTo'] = callGAPI(service=cd.users(), function=u'get',
+    body[u'assignedTo'] = callGAPI(cd.users(), u'get',
                                    userKey=user, projection=u'basic', fields=u'id')[u'id']
   role = sys.argv[4]
   if role[:4].lower() == u'uid:':
@@ -1622,7 +1622,7 @@ def doCreateAdmin():
     else:
       if orgUnit[0] == u'/':
         orgUnit = orgUnit[1:]
-      body[u'orgUnitId'] = callGAPI(service=cd.orgunits(), function=u'get',
+      body[u'orgUnitId'] = callGAPI(cd.orgunits(), u'get',
                                     customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=orgUnit,
                                     fields=u'orgUnitId')[u'orgUnitId'][3:]
   if body[u'scopeType'] == u'CUSTOMER':
@@ -1630,7 +1630,7 @@ def doCreateAdmin():
   else:
     scope = orgUnit
   print u'Giving %s admin role %s for %s' % (user, role, scope)
-  callGAPI(service=cd.roleAssignments(), function=u'insert',
+  callGAPI(cd.roleAssignments(), u'insert',
            customer=GC_Values[GC_CUSTOMER_ID], body=body)
 
 def doPrintAdminRoles():
@@ -1644,7 +1644,7 @@ def doPrintAdminRoles():
     else:
       print u'ERROR: %s is not a valid argument for "gam print adminroles".' % sys.argv[i]
       sys.exit(2)
-  roles = callGAPIpages(service=cd.roles(), function=u'list', items=u'items',
+  roles = callGAPIpages(cd.roles(), u'list', u'items',
                         customer=GC_Values[GC_CUSTOMER_ID])
   roles_attrib = [{}]
   for role in roles:
@@ -1686,7 +1686,7 @@ def doPrintAdmins():
     else:
       print u'ERROR: %s is not a valid argument for "gam print admins".' % sys.argv[i]
       sys.exit(2)
-  admins = callGAPIpages(service=cd.roleAssignments(), function=u'list',
+  admins = callGAPIpages(cd.roleAssignments(), u'list', u'items',
                          customer=GC_Values[GC_CUSTOMER_ID], userKey=userKey, roleId=roleId, maxResults=200)
   admins_attrib = [{}]
   for admin in admins:
@@ -1718,7 +1718,7 @@ def doPrintAdmins():
 
 def buildOrgUnitIdToNameMap():
   cd = buildGAPIObject(u'directory')
-  result = callGAPI(service=cd.orgunits(), function=u'list',
+  result = callGAPI(cd.orgunits(), u'list',
                     customerId=GC_Values[GC_CUSTOMER_ID],
                     fields=u'organizationUnits(orgUnitPath,orgUnitId)', type=u'all')
   GM_Globals[GM_MAP_ORGUNIT_ID_TO_NAME] = {}
@@ -1732,7 +1732,7 @@ def orgunit_from_orgunitid(orgunitid):
 
 def buildRoleIdToNameToIdMap():
   cd = buildGAPIObject(u'directory')
-  result = callGAPIpages(service=cd.roles(), function=u'list', items=u'items',
+  result = callGAPIpages(cd.roles(), u'list', u'items',
                          customer=GC_Values[GC_CUSTOMER_ID],
                          fields=u'nextPageToken,items(roleId,roleName)',
                          maxResults=100)
@@ -1754,7 +1754,7 @@ def roleid_from_role(role):
 
 def buildUserIdToNameMap():
   cd = buildGAPIObject(u'directory')
-  result = callGAPIpages(service=cd.users(), function=u'list', items=u'users',
+  result = callGAPIpages(cd.users(), u'list', u'users',
                          customer=GC_Values[GC_CUSTOMER_ID],
                          fields=u'nextPageToken,users(id,primaryEmail)',
                          maxResults=GC_Values[GC_USER_MAX_RESULTS])
@@ -1776,7 +1776,7 @@ def appID2app(dt, appID):
   for serviceName, serviceID in SERVICE_NAME_TO_ID_MAP.items():
     if appID == serviceID:
       return serviceName
-  online_services = callGAPIpages(service=dt.applications(), function=u'list', items=u'applications', customerId=GC_Values[GC_CUSTOMER_ID])
+  online_services = callGAPIpages(dt.applications(), u'list', u'applications', customerId=GC_Values[GC_CUSTOMER_ID])
   for online_service in online_services:
     if appID == online_service[u'id']:
       return online_service[u'name']
@@ -1795,7 +1795,7 @@ def app2appID(dt, app):
   serviceName = app.lower()
   if serviceName in SERVICE_NAME_CHOICES_MAP:
     return SERVICE_NAME_TO_ID_MAP[SERVICE_NAME_CHOICES_MAP[serviceName]]
-  online_services = callGAPIpages(service=dt.applications(), function=u'list', items=u'applications', customerId=GC_Values[GC_CUSTOMER_ID])
+  online_services = callGAPIpages(dt.applications(), u'list', u'applications', customerId=GC_Values[GC_CUSTOMER_ID])
   for online_service in online_services:
     if serviceName == online_service[u'name'].lower():
       return online_service[u'id']
@@ -1809,7 +1809,7 @@ def convertToUserID(user):
   if user.find(u'@') == -1:
     user = u'%s@%s' % (user, GC_Values[GC_DOMAIN])
   try:
-    return callGAPI(service=cd.users(), function=u'get', throw_reasons=[u'notFound'], userKey=user, fields=u'id')[u'id']
+    return callGAPI(cd.users(), u'get', throw_reasons=[u'notFound'], userKey=user, fields=u'id')[u'id']
   except googleapiclient.errors.HttpError:
     print u'ERROR: no such user %s' % user
     sys.exit(3)
@@ -1817,7 +1817,7 @@ def convertToUserID(user):
 def convertUserIDtoEmail(uid):
   cd = buildGAPIObject(u'directory')
   try:
-    return callGAPI(service=cd.users(), function=u'get', throw_reasons=[u'notFound'], userKey=uid, fields=u'primaryEmail')[u'primaryEmail']
+    return callGAPI(cd.users(), u'get', throw_reasons=[u'notFound'], userKey=uid, fields=u'primaryEmail')[u'primaryEmail']
   except googleapiclient.errors.HttpError:
     print u'ERROR: no such user %s' % uid
     sys.exit(3)
@@ -1840,12 +1840,12 @@ def doCreateDataTranfer():
     if u'applicationDataTransferParams' not in body[u'applicationDataTransfers'][0]:
       body[u'applicationDataTransfers'][0][u'applicationTransferParams'] = []
     body[u'applicationDataTransfers'][0][u'applicationTransferParams'].append({u'key': key, u'value': parameters[key]})
-  result = callGAPI(service=dt.transfers(), function=u'insert', body=body, fields=u'id')[u'id']
+  result = callGAPI(dt.transfers(), u'insert', body=body, fields=u'id')[u'id']
   print u'Submitted request id %s to transfer %s from %s to %s' % (result, service, old_owner, new_owner)
 
 def doPrintTransferApps():
   dt = buildGAPIObject(u'datatransfer')
-  apps = callGAPIpages(service=dt.applications(), function=u'list', items=u'applications', customerId=GC_Values[GC_CUSTOMER_ID])
+  apps = callGAPIpages(dt.applications(), u'list', u'applications', customerId=GC_Values[GC_CUSTOMER_ID])
   for app in apps:
     print_json(None, app)
     print
@@ -1874,8 +1874,8 @@ def doPrintDataTransfers():
       print u'ERROR: %s is not a valid argument for "gam print transfers"' % sys.argv[i]
       sys.exit(2)
   transfers_attributes = [{}]
-  transfers = callGAPIpages(service=dt.transfers(), function=u'list',
-                            items=u'dataTransfers', customerId=GC_Values[GC_CUSTOMER_ID], status=status,
+  transfers = callGAPIpages(dt.transfers(), u'list', u'dataTransfers',
+                            customerId=GC_Values[GC_CUSTOMER_ID], status=status,
                             newOwnerUserId=newOwnerUserId, oldOwnerUserId=oldOwnerUserId)
   for transfer in transfers:
     for i in range(0, len(transfer[u'applicationDataTransfers'])):
@@ -1899,7 +1899,7 @@ def doPrintDataTransfers():
 def doGetDataTransferInfo():
   dt = buildGAPIObject(u'datatransfer')
   dtId = sys.argv[3]
-  transfer = callGAPI(service=dt.transfers(), function=u'get', dataTransferId=dtId)
+  transfer = callGAPI(dt.transfers(), u'get', dataTransferId=dtId)
   print u'Old Owner: %s' % convertUserIDtoEmail(transfer[u'oldOwnerUserId'])
   print u'New Owner: %s' % convertUserIDtoEmail(transfer[u'newOwnerUserId'])
   print u'Request Time: %s' % transfer[u'requestTime']
@@ -1953,7 +1953,7 @@ def doCreateCourse():
     body[u'ownerId'] = u'me'
   if not u'name' in body:
     body[u'name'] = u'Unknown Course'
-  result = callGAPI(service=croom.courses(), function=u'create', body=body)
+  result = callGAPI(croom.courses(), u'create', body=body)
   print u'Created course %s' % result[u'id']
 
 def doGetCourseInfo():
@@ -1961,12 +1961,12 @@ def doGetCourseInfo():
   courseId = sys.argv[3]
   if not courseId.isdigit():
     courseId = u'd:%s' % courseId
-  info = callGAPI(service=croom.courses(), function=u'get', id=courseId)
+  info = callGAPI(croom.courses(), u'get', id=courseId)
   print_json(None, info)
-  teachers = callGAPIpages(service=croom.courses().teachers(), function=u'list', items=u'teachers', courseId=courseId)
-  students = callGAPIpages(service=croom.courses().students(), function=u'list', items=u'students', courseId=courseId)
+  teachers = callGAPIpages(croom.courses().teachers(), u'list', u'teachers', courseId=courseId)
+  students = callGAPIpages(croom.courses().students(), u'list', u'students', courseId=courseId)
   try:
-    aliases = callGAPIpages(service=croom.courses().aliases(), function=u'list', items=u'aliases', throw_reasons=[u'notImplemented'], courseId=courseId)
+    aliases = callGAPIpages(croom.courses().aliases(), u'list', u'aliases', throw_reasons=[u'notImplemented'], courseId=courseId)
   except googleapiclient.errors.HttpError:
     aliases = []
   if aliases:
@@ -2014,7 +2014,7 @@ def doPrintCourses():
       sys.exit(2)
   sys.stderr.write(u'Retrieving courses for organization (may take some time for large accounts)...\n')
   page_message = u'Got %%num_items%% courses...\n'
-  all_courses = callGAPIpages(service=croom.courses(), function=u'list', items=u'courses', page_message=page_message, teacherId=teacherId, studentId=studentId)
+  all_courses = callGAPIpages(croom.courses(), u'list', u'courses', page_message=page_message, teacherId=teacherId, studentId=studentId)
   for course in all_courses:
     croom_attributes.append(flatten_json(course))
     for item in croom_attributes[-1]:
@@ -2028,7 +2028,7 @@ def doPrintCourses():
     i = 1
     for course in croom_attributes[1:]:
       sys.stderr.write(u'Getting aliases for course %s (%s/%s)\n' % (course[u'id'], i, num_courses))
-      course_aliases = callGAPIpages(service=croom.courses().aliases(), function=u'list', items=u'aliases', courseId=course[u'id'])
+      course_aliases = callGAPIpages(croom.courses().aliases(), u'list', u'aliases', courseId=course[u'id'])
       my_aliases = []
       for alias in course_aliases:
         my_aliases.append(alias[u'alias'][2:])
@@ -2067,21 +2067,21 @@ def doPrintCourseParticipants():
     sys.stderr.write(u'Retrieving courses for organization (may take some time for large accounts)...\n')
   if len(courses) == 0:
     page_message = u'Got %%num_items%% courses...\n'
-    all_courses = callGAPIpages(service=croom.courses(), function=u'list', items=u'courses', page_message=page_message, teacherId=teacherId, studentId=studentId)
+    all_courses = callGAPIpages(croom.courses(), u'list', u'courses', page_message=page_message, teacherId=teacherId, studentId=studentId)
     for course in all_courses:
       courses.append(course[u'id'])
   else:
     all_courses = []
     for course in courses:
-      all_courses.append(callGAPI(service=croom.courses(), function=u'get', id=course))
+      all_courses.append(callGAPI(croom.courses(), u'get', id=course))
   y = 1
   num_courses = len(all_courses)
   for course in all_courses:
     course_id = course[u'id']
     teacher_message = u' got %%%%num_items%%%% teachers for course %s (%s/%s)' % (course_id, y, num_courses)
     student_message = u' got %%%%num_items%%%% students for course %s (%s/%s)' % (course_id, y, num_courses)
-    teachers = callGAPIpages(service=croom.courses().teachers(), function=u'list', items=u'teachers', page_message=teacher_message, courseId=course_id)
-    students = callGAPIpages(service=croom.courses().students(), function=u'list', items=u'students', page_message=student_message, courseId=course_id)
+    teachers = callGAPIpages(croom.courses().teachers(), u'list', u'teachers', page_message=teacher_message, courseId=course_id)
+    students = callGAPIpages(croom.courses().students(), u'list', u'students', page_message=student_message, courseId=course_id)
     for teacher in teachers:
       participant = flatten_json(teacher)
       participant[u'courseId'] = course_id
@@ -2313,7 +2313,7 @@ def changeCalendarAttendees(users):
     cal = buildGAPIServiceObject(u'calendar', user)
     page_token = None
     while True:
-      events_page = callGAPI(service=cal.events(), function=u'list', calendarId=user, pageToken=page_token, timeMin=start_date, timeMax=end_date, showDeleted=False, showHiddenInvitations=False)
+      events_page = callGAPI(cal.events(), u'list', calendarId=user, pageToken=page_token, timeMin=start_date, timeMax=end_date, showDeleted=False, showHiddenInvitations=False)
       print u'Got %s items' % len(events_page.get(u'items', []))
       for event in events_page.get(u'items', []):
         if event[u'status'] == u'cancelled':
@@ -2349,7 +2349,7 @@ def changeCalendarAttendees(users):
           body[u'attendees'] = event[u'attendees']
           print u'UPDATING %s' % event_summary
           if do_it:
-            callGAPI(service=cal.events(), function=u'patch', calendarId=user, eventId=event[u'id'], sendNotifications=False, body=body)
+            callGAPI(cal.events(), u'patch', calendarId=user, eventId=event[u'id'], sendNotifications=False, body=body)
           else:
             print u' not pulling the trigger.'
         #else:
@@ -2368,7 +2368,7 @@ def deleteCalendar(users):
     if user.find(u'@') == -1:
       user = u'%s@%s' % (user, GC_Values[GC_DOMAIN])
     cal = buildGAPIServiceObject(u'calendar', user)
-    callGAPI(service=cal.calendarList(), function=u'delete', calendarId=calendarId)
+    callGAPI(cal.calendarList(), u'delete', calendarId=calendarId)
 
 CALENDAR_REMINDER_METHODS = [u'email', u'sms', u'popup',]
 CALENDAR_NOTIFICATION_METHODS = [u'email', u'sms',]
@@ -2466,7 +2466,7 @@ def addCalendar(users):
       user = u'%s@%s' % (user, GC_Values[GC_DOMAIN])
     print u"Subscribing %s to %s calendar (%s of %s)" % (user, calendarId, i, count)
     cal = buildGAPIServiceObject(u'calendar', user)
-    callGAPI(service=cal.calendarList(), function=u'insert', body=body, colorRgbFormat=colorRgbFormat)
+    callGAPI(cal.calendarList(), u'insert', body=body, colorRgbFormat=colorRgbFormat)
     i += 1
 
 def updateCalendar(users):
@@ -2483,12 +2483,12 @@ def updateCalendar(users):
       user = u'%s@%s' % (user, GC_Values[GC_DOMAIN])
     print u"Updating %s's subscription to calendar %s (%s of %s)" % (user, calendarId, i, count)
     cal = buildGAPIServiceObject(u'calendar', user)
-    callGAPI(service=cal.calendarList(), function=u'update', calendarId=calendarId, body=body, colorRgbFormat=colorRgbFormat)
+    callGAPI(cal.calendarList(), u'update', calendarId=calendarId, body=body, colorRgbFormat=colorRgbFormat)
 
 def doPrinterShowACL():
   cp = buildGAPIObject(u'cloudprint')
   show_printer = sys.argv[2]
-  printer_info = callGAPI(service=cp.printers(), function=u'get', printerid=show_printer)
+  printer_info = callGAPI(cp.printers(), u'get', printerid=show_printer)
   checkCloudPrintResult(printer_info)
   for acl in printer_info[u'printers'][0][u'access']:
     if u'key' in acl:
@@ -2510,7 +2510,7 @@ def doPrinterAddACL():
     skip_notification = None
   elif scope.find(u'@') == -1:
     scope = u'/hd/domain/%s' % scope
-  result = callGAPI(service=cp.printers(), function=u'share', printerid=printer, role=role, scope=scope, public=public, skip_notification=skip_notification)
+  result = callGAPI(cp.printers(), u'share', printerid=printer, role=role, scope=scope, public=public, skip_notification=skip_notification)
   checkCloudPrintResult(result)
   who = scope
   if who == None:
@@ -2528,7 +2528,7 @@ def doPrinterDelACL():
     scope = None
   elif scope.find(u'@') == -1:
     scope = u'/hd/domain/%s' % scope
-  result = callGAPI(service=cp.printers(), function=u'unshare', printerid=printer, scope=scope, public=public)
+  result = callGAPI(cp.printers(), u'unshare', printerid=printer, scope=scope, public=public)
   checkCloudPrintResult(result)
   who = scope
   if who == None:
@@ -2683,7 +2683,7 @@ def doPrintJobFetch():
 def doDelPrinter():
   cp = buildGAPIObject(u'cloudprint')
   printerid = sys.argv[3]
-  result = callGAPI(service=cp.printers(), function=u'delete', printerid=printerid)
+  result = callGAPI(cp.printers(), u'delete', printerid=printerid)
   checkCloudPrintResult(result)
 
 def doGetPrinterInfo():
@@ -2698,7 +2698,7 @@ def doGetPrinterInfo():
     else:
       print u'ERROR: %s is not a valid argument for "gam info printer"' % sys.argv[i]
       sys.exit(2)
-  result = callGAPI(service=cp.printers(), function=u'get', printerid=printerid)
+  result = callGAPI(cp.printers(), u'get', printerid=printerid)
   checkCloudPrintResult(result)
   printer_info = result[u'printers'][0]
   createTime = int(printer_info[u'createTime'])/1000
@@ -2734,7 +2734,7 @@ def doUpdatePrinter():
     if not arg_in_item:
       print u'ERROR: %s is not a valid argument for "gam update printer"' % sys.argv[i]
       sys.exit(2)
-  result = callGAPI(service=cp.printers(), function=u'update', printerid=printerid, **kwargs)
+  result = callGAPI(cp.printers(), u'update', printerid=printerid, **kwargs)
   checkCloudPrintResult(result)
   print u'Updated printer %s' % printerid
 
@@ -2769,7 +2769,7 @@ def doPrinterRegister():
                 }
   body, headers = encode_multipart(form_fields, {})
   #Get the printer first to make sure our OAuth access token is fresh
-  callGAPI(service=cp.printers(), function=u'list')
+  callGAPI(cp.printers(), u'list')
   _, result = cp._http.request(uri='https://www.google.com/cloudprint/register', method='POST', body=body, headers=headers)
   result = json.loads(result)
   checkCloudPrintResult(result)
@@ -2780,10 +2780,10 @@ def doPrintJobResubmit():
   jobid = sys.argv[2]
   printerid = sys.argv[4]
   ssd = u'{"state": {"type": "HELD"}}'
-  result = callGAPI(service=cp.jobs(), function=u'update', jobid=jobid, semantic_state_diff=ssd)
+  result = callGAPI(cp.jobs(), u'update', jobid=jobid, semantic_state_diff=ssd)
   checkCloudPrintResult(result)
-  ticket = callGAPI(service=cp.jobs(), function=u'getticket', jobid=jobid, use_cjt=True)
-  result = callGAPI(service=cp.jobs(), function=u'resubmit', printerid=printerid, jobid=jobid, ticket=ticket)
+  ticket = callGAPI(cp.jobs(), u'getticket', jobid=jobid, use_cjt=True)
+  result = callGAPI(cp.jobs(), u'resubmit', printerid=printerid, jobid=jobid, ticket=ticket)
   checkCloudPrintResult(result)
   print u'Success resubmitting %s as job %s to printer %s' % (jobid, result[u'job'][u'id'], printerid)
 
@@ -2818,10 +2818,10 @@ def doPrintJobSubmit():
       mimetype = u'application/octet-stream'
     filecontent = readFile(filepath)
     form_files[u'content'] = {u'filename': content, u'content': filecontent, u'mimetype': mimetype}
-  #result = callGAPI(service=cp.printers(), function=u'submit', body=body)
+  #result = callGAPI(cp.printers(), u'submit', body=body)
   body, headers = encode_multipart(form_fields, form_files)
   #Get the printer first to make sure our OAuth access token is fresh
-  callGAPI(service=cp.printers(), function=u'get', printerid=printer)
+  callGAPI(cp.printers(), u'get', printerid=printer)
   _, result = cp._http.request(uri='https://www.google.com/cloudprint/submit', method='POST', body=body, headers=headers)
   checkCloudPrintResult(result)
   if type(result) is str:
@@ -2831,7 +2831,7 @@ def doPrintJobSubmit():
 def doDeletePrintJob():
   cp = buildGAPIObject(u'cloudprint')
   job = sys.argv[2]
-  result = callGAPI(service=cp.jobs(), function=u'delete', jobid=job)
+  result = callGAPI(cp.jobs(), u'delete', jobid=job)
   checkCloudPrintResult(result)
   print u'Print Job %s deleted' % job
 
@@ -2839,7 +2839,7 @@ def doCancelPrintJob():
   cp = buildGAPIObject(u'cloudprint')
   job = sys.argv[2]
   ssd = u'{"state": {"type": "ABORTED", "user_action_cause": {"action_code": "CANCELLED"}}}'
-  result = callGAPI(service=cp.jobs(), function=u'update', jobid=job, semantic_state_diff=ssd)
+  result = callGAPI(cp.jobs(), u'update', jobid=job, semantic_state_diff=ssd)
   checkCloudPrintResult(result)
   print u'Print Job %s cancelled' % job
 
@@ -2859,7 +2859,7 @@ def doCalendarShowACL():
   show_cal = sys.argv[2]
   if show_cal.find(u'@') == -1:
     show_cal = u'%s@%s' % (show_cal, GC_Values[GC_DOMAIN])
-  acls = callGAPI(service=cal.acl(), function=u'list', calendarId=show_cal)
+  acls = callGAPI(cal.acl(), u'list', calendarId=show_cal)
   try:
     for rule in acls[u'items']:
       print u'  Scope %s - %s' % (rule[u'scope'][u'type'], rule[u'scope'][u'value'])
@@ -2914,7 +2914,7 @@ def doCalendarAddACL(calendarId=None, act_as=None, role=None, scope=None, entity
       body[u'scope'][u'value'] = sys.argv[6].lower()
     except IndexError:
       body[u'scope'][u'value'] = GC_Values[GC_DOMAIN]
-  callGAPI(service=cal.acl(), function=u'insert', calendarId=calendarId, body=body)
+  callGAPI(cal.acl(), u'insert', calendarId=calendarId, body=body)
 
 def doCalendarUpdateACL():
   calendarId = sys.argv[2]
@@ -2942,7 +2942,7 @@ def doCalendarWipeData():
   cal = buildGAPIServiceObject(u'calendar', calendarId)
   if calendarId.find(u'@') == -1:
     calendarId = u'%s@%s' % (calendarId, GC_Values[GC_DOMAIN])
-  callGAPI(service=cal.calendars(), function=u'clear', calendarId=calendarId)
+  callGAPI(cal.calendars(), u'clear', calendarId=calendarId)
 
 def doCalendarAddEvent():
   calendarId = sys.argv[2]
@@ -3053,7 +3053,7 @@ def doCalendarAddEvent():
       print u'ERROR: %s is not a valid argument for "gam calendar"' % sys.argv[i]
       sys.exit(2)
   if not timeZone and u'recurrence' in body:
-    timeZone = callGAPI(service=cal.calendars(), function=u'get', calendarId=calendarId, fields=u'timeZone')[u'timeZone']
+    timeZone = callGAPI(cal.calendars(), u'get', calendarId=calendarId, fields=u'timeZone')[u'timeZone']
   if u'recurrence' in body:
     for a_time in [u'start', u'end']:
       try:
@@ -3061,7 +3061,7 @@ def doCalendarAddEvent():
       except KeyError:
         pass
 
-  callGAPI(service=cal.events(), function=u'insert', calendarId=calendarId, sendNotifications=sendNotifications, body=body)
+  callGAPI(cal.events(), u'insert', calendarId=calendarId, sendNotifications=sendNotifications, body=body)
 
 
 def doProfile(users):
@@ -3081,7 +3081,7 @@ def doProfile(users):
     elif user.find(u'@') == -1:
       user = u'%s@%s' % (user, GC_Values[GC_DOMAIN])
     print u'Setting Profile Sharing to %s for %s (%s of %s)' % (body[u'includeInGlobalAddressList'], user, i, count)
-    callGAPI(service=cd.users(), function=u'patch', soft_errors=True, userKey=user, body=body)
+    callGAPI(cd.users(), u'patch', soft_errors=True, userKey=user, body=body)
     i += 1
 
 def showProfile(users):
@@ -3093,7 +3093,7 @@ def showProfile(users):
       user = user[4:]
     elif user.find(u'@') == -1:
       user = u'%s@%s' % (user, GC_Values[GC_DOMAIN])
-    result = callGAPI(service=cd.users(), function=u'get', userKey=user, fields=u'includeInGlobalAddressList')
+    result = callGAPI(cd.users(), u'get', userKey=user, fields=u'includeInGlobalAddressList')
     try:
       print u'User: %s  Profile Shared: %s (%s/%s)' % (user, result[u'includeInGlobalAddressList'], i, count)
     except IndexError:
@@ -3131,7 +3131,7 @@ def doPhoto(users):
         continue
     image_data = base64.urlsafe_b64encode(image_data)
     body = {u'photoData': image_data}
-    callGAPI(service=cd.users().photos(), function=u'update', soft_errors=True, userKey=user, body=body)
+    callGAPI(cd.users().photos(), u'update', soft_errors=True, userKey=user, body=body)
 
 def getPhoto(users):
   cd = buildGAPIObject(u'directory')
@@ -3146,7 +3146,7 @@ def getPhoto(users):
     print u"Saving photo to %s (%s/%s)" % (filename, i, count)
     i += 1
     try:
-      photo = callGAPI(service=cd.users().photos(), function=u'get', throw_reasons=[u'notFound'], userKey=user)
+      photo = callGAPI(cd.users().photos(), u'get', throw_reasons=[u'notFound'], userKey=user)
     except googleapiclient.errors.HttpError:
       print u' no photo for %s' % user
       continue
@@ -3169,13 +3169,13 @@ def deletePhoto(users):
     elif user.find(u'@') == -1:
       user = u'%s@%s' % (user, GC_Values[GC_DOMAIN])
     print u"Deleting photo for %s (%s of %s)" % (user, i, count)
-    callGAPI(service=cd.users().photos(), function='delete', userKey=user)
+    callGAPI(cd.users().photos(), u'delete', userKey=user)
     i += 1
 
 def showCalendars(users):
   for user in users:
     cal = buildGAPIServiceObject(u'calendar', user)
-    feed = callGAPI(service=cal.calendarList(), function=u'list')
+    feed = callGAPI(cal.calendarList(), u'list')
     for usercal in feed[u'items']:
       print u'  Name: %s' % usercal[u'id']
       print convertUTF8(u'  Summary: %s' % usercal[u'summary'])
@@ -3197,7 +3197,7 @@ def showCalendars(users):
 def showCalSettings(users):
   for user in users:
     cal = buildGAPIServiceObject(u'calendar', user)
-    feed = callGAPI(service=cal.settings(), function='list')
+    feed = callGAPI(cal.settings(), u'list')
     for setting in feed[u'items']:
       print u'%s: %s' % (setting[u'id'], setting[u'value'])
 
@@ -3219,7 +3219,7 @@ def showDriveSettings(users):
     sys.stderr.write(u'Getting Drive settings for %s (%s of %s)\n' % (user, count, len(users)))
     count += 1
     drive = buildGAPIServiceObject(u'drive', user)
-    feed = callGAPI(service=drive.about(), function=u'get', soft_errors=True)
+    feed = callGAPI(drive.about(), u'get', soft_errors=True)
     if feed == None:
       continue
     row = {u'email': user}
@@ -3268,7 +3268,7 @@ def doDriveActivity(users):
   for user in users:
     activity = buildGAPIServiceObject(u'appsactivity', user)
     page_message = u'Retrieved %%%%total_items%%%% activities for %s' % user
-    feed = callGAPIpages(service=activity.activities(), function=u'list', items=u'activities',
+    feed = callGAPIpages(activity.activities(), u'list', u'activities',
                          page_message=page_message, source=u'drive.google.com', userId=u'me',
                          drive_ancestorId=drive_ancestorId, groupingStrategy=u'none',
                          drive_fileId=drive_fileId, pageSize=GC_Values[GC_ACTIVITY_MAX_RESULTS])
@@ -3293,7 +3293,7 @@ def showDriveFileACL(users):
   fileId = sys.argv[5]
   for user in users:
     drive = buildGAPIServiceObject(u'drive', user)
-    feed = callGAPI(service=drive.permissions(), function=u'list', fileId=fileId)
+    feed = callGAPI(drive.permissions(), u'list', fileId=fileId)
     for permission in feed[u'items']:
       printPermission(permission)
       print u''
@@ -3308,9 +3308,9 @@ def delDriveFileACL(users):
     elif permissionId.lower() in [u'anyone']:
       pass
     else:
-      permissionId = callGAPI(service=drive.permissions(), function=u'getIdForEmail', email=permissionId, fields=u'id')[u'id']
+      permissionId = callGAPI(drive.permissions(), u'getIdForEmail', email=permissionId, fields=u'id')[u'id']
     print u'Removing permission for %s from %s' % (permissionId, fileId)
-    callGAPI(service=drive.permissions(), function=u'delete', fileId=fileId, permissionId=permissionId)
+    callGAPI(drive.permissions(), u'delete', fileId=fileId, permissionId=permissionId)
 
 def addDriveFileACL(users):
   fileId = sys.argv[5]
@@ -3351,7 +3351,7 @@ def addDriveFileACL(users):
       sys.exit(2)
   for user in users:
     drive = buildGAPIServiceObject(u'drive', user)
-    result = callGAPI(service=drive.permissions(), function=u'insert', fileId=fileId, sendNotificationEmails=sendNotificationEmails, emailMessage=emailMessage, body=body)
+    result = callGAPI(drive.permissions(), u'insert', fileId=fileId, sendNotificationEmails=sendNotificationEmails, emailMessage=emailMessage, body=body)
     printPermission(result)
 
 def updateDriveFileACL(users):
@@ -3389,9 +3389,9 @@ def updateDriveFileACL(users):
     if permissionId[:3].lower() == u'id:':
       permissionId = permissionId[3:]
     else:
-      permissionId = callGAPI(service=drive.permissions(), function=u'getIdForEmail', email=permissionId, fields=u'id')[u'id']
+      permissionId = callGAPI(drive.permissions(), u'getIdForEmail', email=permissionId, fields=u'id')[u'id']
     print u'updating permissions for %s to file %s' % (permissionId, fileId)
-    result = callGAPI(service=drive.permissions(), function=u'patch', fileId=fileId, permissionId=permissionId, transferOwnership=transferOwnership, body=body)
+    result = callGAPI(drive.permissions(), u'patch', fileId=fileId, permissionId=permissionId, transferOwnership=transferOwnership, body=body)
     printPermission(result)
 
 def showDriveFiles(users):
@@ -3484,7 +3484,7 @@ def showDriveFiles(users):
       sys.exit(2)
     sys.stderr.write(u'Getting files for %s...\n' % user)
     page_message = u' got %%%%total_items%%%% files for %s...\n' % user
-    feed = callGAPIpages(service=drive.files(), function=u'list',
+    feed = callGAPIpages(drive.files(), u'list', u'items',
                          page_message=page_message, soft_errors=True,
                          q=query, fields=fields, maxResults=GC_Values[GC_DRIVE_MAX_RESULTS])
     for f_file in feed:
@@ -3524,7 +3524,7 @@ def showDriveFiles(users):
 def doDriveSearch(drive, query=None):
   print u'Searching for files with query: "%s"...' % query
   page_message = u' got %%total_items%% files...\n'
-  files = callGAPIpages(service=drive.files(), function=u'list',
+  files = callGAPIpages(drive.files(), u'list', u'items',
                         page_message=page_message,
                         q=query, fields=u'nextPageToken,items(id)', maxResults=GC_Values[GC_DRIVE_MAX_RESULTS])
   ids = list()
@@ -3565,7 +3565,7 @@ def deleteDriveFile(users):
     for fileId in file_ids:
       i += 1
       print u'%s %s for %s (%s of %s)' % (action, fileId, user, i, len(file_ids))
-      callGAPI(service=drive.files(), function=function, fileId=fileId)
+      callGAPI(drive.files(), function, fileId=fileId)
 
 def printDriveFolderContents(feed, folderId, indent):
   for f_file in feed:
@@ -3581,10 +3581,10 @@ def showDriveFileTree(users):
     if user.find(u'@') == -1:
       print u'ERROR: got %s, expected a full email address' % user
       sys.exit(2)
-    root_folder = callGAPI(service=drive.about(), function=u'get', fields=u'rootFolderId')[u'rootFolderId']
+    root_folder = callGAPI(drive.about(), u'get', fields=u'rootFolderId')[u'rootFolderId']
     sys.stderr.write(u'Getting all files for %s...\n' % user)
     page_message = u' got %%%%total_items%%%% files for %s...\n' % user
-    feed = callGAPIpages(service=drive.files(), function=u'list', page_message=page_message,
+    feed = callGAPIpages(drive.files(), u'list', u'items', page_message=page_message,
                          fields=u'items(id,title,parents(id),mimeType),nextPageToken', maxResults=GC_Values[GC_DRIVE_MAX_RESULTS])
     printDriveFolderContents(feed, root_folder, 0)
 
@@ -3599,15 +3599,15 @@ def deleteEmptyDriveFolders(users):
     while deleted_empty:
       sys.stderr.write(u'Getting folders for %s...\n' % user)
       page_message = u' got %%%%total_items%%%% folders for %s...\n' % user
-      feed = callGAPIpages(service=drive.files(), function=u'list', page_message=page_message,
+      feed = callGAPIpages(drive.files(), u'list', u'items', page_message=page_message,
                            q=query, fields=u'items(title,id),nextPageToken', maxResults=GC_Values[GC_DRIVE_MAX_RESULTS])
       deleted_empty = False
       for folder in feed:
-        children = callGAPI(service=drive.children(), function=u'list',
+        children = callGAPI(drive.children(), u'list',
                             folderId=folder[u'id'], fields=u'items(id)', maxResults=1)
         if not u'items' in children or len(children[u'items']) == 0:
           print convertUTF8(u' deleting empty folder %s...' % folder[u'title'])
-          callGAPI(service=drive.files(), function=u'delete', fileId=folder[u'id'])
+          callGAPI(drive.files(), u'delete', fileId=folder[u'id'])
           deleted_empty = True
         else:
           print convertUTF8(u' not deleting folder %s because it contains at least 1 item (%s)' % (folder[u'title'], children[u'items'][0][u'id']))
@@ -3762,15 +3762,15 @@ def doUpdateDriveFile(users):
     for fileId in fileIds:
       if operation == u'update':
         if media_body:
-          result = callGAPI(service=drive.files(), function=u'update', fileId=fileId, convert=convert, ocr=ocr, ocrLanguage=ocrLanguage, media_body=media_body, body=body, fields='id')
+          result = callGAPI(drive.files(), u'update', fileId=fileId, convert=convert, ocr=ocr, ocrLanguage=ocrLanguage, media_body=media_body, body=body, fields=u'id')
         else:
-          result = callGAPI(service=drive.files(), function=u'patch', fileId=fileId, convert=convert, ocr=ocr, ocrLanguage=ocrLanguage, body=body, fields='id,labels')
+          result = callGAPI(drive.files(), u'patch', fileId=fileId, convert=convert, ocr=ocr, ocrLanguage=ocrLanguage, body=body, fields=u'id,labels')
         try:
           print u'Successfully updated %s drive file with content from %s' % (result[u'id'], local_filename)
         except UnboundLocalError:
           print u'Successfully updated drive file/folder ID %s' % (result[u'id'])
       else:
-        result = callGAPI(service=drive.files(), function=u'copy', fileId=fileId, convert=convert, ocr=ocr, ocrLanguage=ocrLanguage, body=body, fields=u'id,labels')
+        result = callGAPI(drive.files(), u'copy', fileId=fileId, convert=convert, ocr=ocr, ocrLanguage=ocrLanguage, body=body, fields=u'id,labels')
         print u'Successfully copied %s to %s' % (fileId, result[u'id'])
 
 def createDriveFile(users):
@@ -3873,7 +3873,7 @@ def createDriveFile(users):
         body[u'parents'].append({u'id': a_parent})
     if local_filepath:
       media_body = googleapiclient.http.MediaFileUpload(local_filepath, mimetype=mimetype, resumable=True)
-    result = callGAPI(service=drive.files(), function=u'insert', convert=convert, ocr=ocr, ocrLanguage=ocrLanguage, media_body=media_body, body=body, fields='id')
+    result = callGAPI(drive.files(), u'insert', convert=convert, ocr=ocr, ocrLanguage=ocrLanguage, media_body=media_body, body=body, fields=u'id')
     try:
       print u'Successfully uploaded %s to Drive file ID %s' % (local_filename, result[u'id'])
     except UnboundLocalError:
@@ -3945,7 +3945,7 @@ def downloadDriveFile(users):
     i = 0
     for fileId in fileIds:
       extension = None
-      result = callGAPI(service=drive.files(), function=u'get', fileId=fileId, fields=u'fileSize,title,mimeType,downloadUrl,exportLinks')
+      result = callGAPI(drive.files(), u'get', fileId=fileId, fields=u'fileSize,title,mimeType,downloadUrl,exportLinks')
       if result[u'mimeType'] == u'application/vnd.google-apps.folder':
         print convertUTF8(u'Skipping download of folder %s' % result[u'title'])
         continue
@@ -4004,14 +4004,14 @@ def showDriveFileInfo(users):
   for user in users:
     fileId = sys.argv[5]
     drive = buildGAPIServiceObject(u'drive', user)
-    feed = callGAPI(service=drive.files(), function=u'get', fileId=fileId)
+    feed = callGAPI(drive.files(), u'get', fileId=fileId)
     print_json(None, feed)
 
 def showDriveFileRevisions(users):
   for user in users:
     fileId = sys.argv[5]
     drive = buildGAPIServiceObject(u'drive', user)
-    feed = callGAPI(service=drive.revisions(), function=u'list', fileId=fileId)
+    feed = callGAPI(drive.revisions(), u'list', fileId=fileId)
     print_json(None, feed)
 
 def transferSecCals(users):
@@ -4027,7 +4027,7 @@ def transferSecCals(users):
       sys.exit(2)
   for user in users:
     source_cal = buildGAPIServiceObject(u'calendar', user)
-    source_calendars = callGAPIpages(service=source_cal.calendarList(), function=u'list', minAccessRole=u'owner', showHidden=True, fields=u'items(id),nextPageToken')
+    source_calendars = callGAPIpages(source_cal.calendarList(), u'list', u'items', minAccessRole=u'owner', showHidden=True, fields=u'items(id),nextPageToken')
     for source_cal in source_calendars:
       if source_cal[u'id'].find(u'@group.calendar.google.com') != -1:
         doCalendarAddACL(calendarId=source_cal[u'id'], act_as=user, role=u'owner', scope=u'user', entity=target_user)
@@ -4046,12 +4046,12 @@ def transferDriveFiles(users):
       print u'ERROR: %s is not a valid argument for "gam <users> transfer drive"' % sys.argv[i]
       sys.exit(2)
   target_drive = buildGAPIServiceObject(u'drive', target_user)
-  target_about = callGAPI(service=target_drive.about(), function=u'get', fields=u'quotaBytesTotal,quotaBytesUsed,rootFolderId')
+  target_about = callGAPI(target_drive.about(), u'get', fields=u'quotaBytesTotal,quotaBytesUsed,rootFolderId')
   target_drive_free = int(target_about[u'quotaBytesTotal']) - int(target_about[u'quotaBytesUsed'])
   for user in users:
     counter = 0
     source_drive = buildGAPIServiceObject(u'drive', user)
-    source_about = callGAPI(service=source_drive.about(), function=u'get', fields=u'quotaBytesTotal,quotaBytesUsed,rootFolderId, permissionId')
+    source_about = callGAPI(source_drive.about(), u'get', fields=u'quotaBytesTotal,quotaBytesUsed,rootFolderId, permissionId')
     source_drive_size = int(source_about[u'quotaBytesUsed'])
     if target_drive_free < source_drive_size:
       systemErrorExit(4, MESSAGE_NO_TRANSFER_LACK_OF_DISK_SPACE.format(source_drive_size / 1024 / 1024, target_drive_free / 1024 / 1024))
@@ -4061,7 +4061,7 @@ def transferDriveFiles(users):
     source_permissionid = source_about[u'permissionId']
     print u"Getting file list for source user: %s..." % user
     page_message = u'  got %%total_items%% files\n'
-    source_drive_files = callGAPIpages(service=source_drive.files(), function=u'list', page_message=page_message,
+    source_drive_files = callGAPIpages(source_drive.files(), u'list', u'items', page_message=page_message,
                                        q=u"'me' in owners and trashed = false", fields=u'items(id,parents,mimeType),nextPageToken')
     all_source_file_ids = []
     for source_drive_file in source_drive_files:
@@ -4069,7 +4069,7 @@ def transferDriveFiles(users):
     total_count = len(source_drive_files)
     print u"Getting folder list for target user: %s..." % target_user
     page_message = u'  got %%total_items%% folders\n'
-    target_folders = callGAPIpages(service=target_drive.files(), function=u'list', page_message=page_message,
+    target_folders = callGAPIpages(target_drive.files(), u'list', u'items', page_message=page_message,
                                    q=u"'me' in owners and mimeType = 'application/vnd.google-apps.folder'", fields=u'items(id,title),nextPageToken')
     got_top_folder = False
     all_target_folder_ids = []
@@ -4079,7 +4079,7 @@ def transferDriveFiles(users):
         target_top_folder = target_folder[u'id']
         got_top_folder = True
     if not got_top_folder:
-      create_folder = callGAPI(service=target_drive.files(), function=u'insert', body={u'title': u'%s old files' % user, u'mimeType': u'application/vnd.google-apps.folder'}, fields=u'id')
+      create_folder = callGAPI(target_drive.files(), u'insert', body={u'title': u'%s old files' % user, u'mimeType': u'application/vnd.google-apps.folder'}, fields=u'id')
       target_top_folder = create_folder[u'id']
     transferred_files = []
     while True: # we loop thru, skipping files until all of their parents are done
@@ -4104,7 +4104,7 @@ def transferDriveFiles(users):
         counter += 1
         print u'Changing owner for file %s (%s/%s)' % (drive_file[u'id'], counter, total_count)
         body = {u'role': u'owner', u'type': u'user', u'value': target_user}
-        callGAPI(service=source_drive.permissions(), function=u'insert', soft_errors=True, fileId=file_id, sendNotificationEmails=False, body=body)
+        callGAPI(source_drive.permissions(), u'insert', soft_errors=True, fileId=file_id, sendNotificationEmails=False, body=body)
         target_parents = []
         for parent in source_parents:
           try:
@@ -4114,9 +4114,9 @@ def transferDriveFiles(users):
               target_parents.append({u'id': parent[u'id']})
           except TypeError:
             pass
-        callGAPI(service=target_drive.files(), function=u'patch', soft_errors=True, retry_reasons=[u'notFound'], fileId=file_id, body={u'parents': target_parents})
+        callGAPI(target_drive.files(), u'patch', soft_errors=True, retry_reasons=[u'notFound'], fileId=file_id, body={u'parents': target_parents})
         if remove_source_user:
-          callGAPI(service=target_drive.permissions(), function=u'delete', soft_errors=True, fileId=file_id, permissionId=source_permissionid)
+          callGAPI(target_drive.permissions(), u'delete', soft_errors=True, fileId=file_id, permissionId=source_permissionid)
       if not skipped_files:
         break
 
@@ -4139,7 +4139,7 @@ def doImap(users):
       emailsettings.domain = GC_Values[GC_DOMAIN] #make sure it's back at default domain
     print u"Setting IMAP Access to %s for %s (%s of %s)" % (str(enable), user+u'@'+emailsettings.domain, i, count)
     i += 1
-    callGData(service=emailsettings, function=u'UpdateImap', soft_errors=True, username=user, enable=enable)
+    callGData(emailsettings, u'UpdateImap', soft_errors=True, username=user, enable=enable)
 
 def getImap(users):
   emailsettings = getEmailSettingsObject()
@@ -4151,7 +4151,7 @@ def getImap(users):
       user = user[:user.find(u'@')]
     else:
       emailsettings.domain = GC_Values[GC_DOMAIN]
-    imapsettings = callGData(service=emailsettings, function=u'GetImap', soft_errors=True, username=user)
+    imapsettings = callGData(emailsettings, u'GetImap', soft_errors=True, username=user)
     try:
       print u'User %s  IMAP Enabled:%s (%s of %s)' % (user+u'@'+emailsettings.domain, imapsettings[u'enable'], i, count)
     except TypeError:
@@ -4208,9 +4208,9 @@ def doLicense(users, operation):
     if user.find(u'@') == -1:
       user = u'%s@%s' % (user, GC_Values[GC_DOMAIN])
     if operation == u'delete':
-      callGAPI(service=lic.licenseAssignments(), function=operation, soft_errors=True, productId=productId, skuId=skuId, userId=user)
+      callGAPI(lic.licenseAssignments(), operation, soft_errors=True, productId=productId, skuId=skuId, userId=user)
     elif operation == u'insert':
-      callGAPI(service=lic.licenseAssignments(), function=operation, soft_errors=True, productId=productId, skuId=skuId, body={u'userId': user})
+      callGAPI(lic.licenseAssignments(), operation, soft_errors=True, productId=productId, skuId=skuId, body={u'userId': user})
     elif operation == u'patch':
       try:
         old_sku = sys.argv[6]
@@ -4220,7 +4220,7 @@ def doLicense(users, operation):
         print u'ERROR: You need to specify the user\'s old SKU as the last argument'
         sys.exit(2)
       _, old_sku = getProductAndSKU(old_sku)
-      callGAPI(service=lic.licenseAssignments(), function=operation, soft_errors=True, productId=productId, skuId=old_sku, userId=user, body={u'skuId': skuId})
+      callGAPI(lic.licenseAssignments(), operation, soft_errors=True, productId=productId, skuId=old_sku, userId=user, body={u'skuId': skuId})
 
 def doPop(users):
   if sys.argv[4].lower() in true_values:
@@ -4273,7 +4273,7 @@ def doPop(users):
       emailsettings.domain = GC_Values[GC_DOMAIN] #make sure it's back at default domain
     print u"Setting POP Access to %s for %s (%s of %s)" % (str(enable), user+u'@'+emailsettings.domain, i, count)
     i += 1
-    callGData(service=emailsettings, function=u'UpdatePop', soft_errors=True, username=user, enable=enable, enable_for=enable_for, action=action)
+    callGData(emailsettings, u'UpdatePop', soft_errors=True, username=user, enable=enable, enable_for=enable_for, action=action)
 
 def getPop(users):
   emailsettings = getEmailSettingsObject()
@@ -4283,7 +4283,7 @@ def getPop(users):
       user = user[:user.find(u'@')]
     else:
       emailsettings.domain = GC_Values[GC_DOMAIN]
-    popsettings = callGData(service=emailsettings, function=u'GetPop', soft_errors=True, username=user)
+    popsettings = callGData(emailsettings, u'GetPop', soft_errors=True, username=user)
     try:
       print u'User %s  POP Enabled:%s  Action:%s' % (user+u'@'+emailsettings.domain, popsettings[u'enable'], popsettings[u'action'])
     except TypeError:
@@ -4317,7 +4317,7 @@ def doSendAs(users):
       emailsettings.domain = GC_Values[GC_DOMAIN] #make sure it's back at default domain
     print u"Allowing %s to send as %s (%s of %s)" % (user+u'@'+emailsettings.domain, sendas, i, count)
     i += 1
-    callGData(service=emailsettings, function=u'CreateSendAsAlias', soft_errors=True, username=user, name=sendasName, address=sendas, make_default=make_default, reply_to=reply_to)
+    callGData(emailsettings, u'CreateSendAsAlias', soft_errors=True, username=user, name=sendasName, address=sendas, make_default=make_default, reply_to=reply_to)
 
 def showSendAs(users):
   emailsettings = getEmailSettingsObject()
@@ -4328,7 +4328,7 @@ def showSendAs(users):
     else:
       emailsettings.domain = GC_Values[GC_DOMAIN]
     print u'%s has the following send as aliases:' %  (user+u'@'+emailsettings.domain)
-    sendases = callGData(service=emailsettings, function=u'GetSendAsAlias', soft_errors=True, username=user)
+    sendases = callGData(emailsettings, u'GetSendAsAlias', soft_errors=True, username=user)
     try:
       for sendas in sendases:
         if sendas[u'isDefault'] == u'true':
@@ -4361,7 +4361,7 @@ def doLanguage(users):
       emailsettings.domain = GC_Values[GC_DOMAIN] #make sure it's back at default domain
     print u"Setting the language for %s to %s (%s of %s)" % (user+u'@'+emailsettings.domain, language, i, count)
     i += 1
-    callGData(service=emailsettings, function=u'UpdateLanguage', soft_errors=True, username=user, language=language)
+    callGData(emailsettings, u'UpdateLanguage', soft_errors=True, username=user, language=language)
 
 def doUTF(users):
   if sys.argv[4].lower() in true_values:
@@ -4382,7 +4382,7 @@ def doUTF(users):
       emailsettings.domain = GC_Values[GC_DOMAIN] #make sure it's back at default domain
     print u"Setting UTF-8 to %s for %s (%s of %s)" % (str(SetUTF), user+u'@'+emailsettings.domain, i, count)
     i += 1
-    callGData(service=emailsettings, function=u'UpdateGeneral', soft_errors=True, username=user, unicode=SetUTF)
+    callGData(emailsettings, u'UpdateGeneral', soft_errors=True, username=user, unicode=SetUTF)
 
 def doPageSize(users):
   if sys.argv[4] == u'25' or sys.argv[4] == u'50' or sys.argv[4] == u'100':
@@ -4401,7 +4401,7 @@ def doPageSize(users):
       emailsettings.domain = GC_Values[GC_DOMAIN] #make sure it's back at default domain
     print u"Setting Page Size to %s for %s (%s of %s)" % (PageSize, user+u'@'+emailsettings.domain, i, count)
     i += 1
-    callGData(service=emailsettings, function=u'UpdateGeneral', soft_errors=True, username=user, page_size=PageSize)
+    callGData(emailsettings, u'UpdateGeneral', soft_errors=True, username=user, page_size=PageSize)
 
 def doShortCuts(users):
   if sys.argv[4].lower() in true_values:
@@ -4422,7 +4422,7 @@ def doShortCuts(users):
       emailsettings.domain = GC_Values[GC_DOMAIN] #make sure it's back at default domain
     print u"Setting Keyboard Short Cuts to %s for %s (%s of %s)" % (str(SetShortCuts), user+u'@'+emailsettings.domain, i, count)
     i += 1
-    callGData(service=emailsettings, function=u'UpdateGeneral', soft_errors=True, username=user, shortcuts=SetShortCuts)
+    callGData(emailsettings, u'UpdateGeneral', soft_errors=True, username=user, shortcuts=SetShortCuts)
 
 def doArrows(users):
   if sys.argv[4].lower() in true_values:
@@ -4443,7 +4443,7 @@ def doArrows(users):
       emailsettings.domain = GC_Values[GC_DOMAIN] #make sure it's back at default domain
     print u"Setting Personal Indicator Arrows to %s for %s (%s of %s)" % (str(SetArrows), user+u'@'+emailsettings.domain, i, count)
     i += 1
-    callGData(service=emailsettings, function=u'UpdateGeneral', soft_errors=True, username=user, arrows=SetArrows)
+    callGData(emailsettings, u'UpdateGeneral', soft_errors=True, username=user, arrows=SetArrows)
 
 def doSnippets(users):
   if sys.argv[4].lower() in true_values:
@@ -4464,7 +4464,7 @@ def doSnippets(users):
       emailsettings.domain = GC_Values[GC_DOMAIN] #make sure it's back at default domain
     print u"Setting Preview Snippets to %s for %s (%s of %s)" % (str(SetSnippets), user+u'@'+emailsettings.domain, i, count)
     i += 1
-    callGData(service=emailsettings, function=u'UpdateGeneral', soft_errors=True, username=user, snippets=SetSnippets)
+    callGData(emailsettings, u'UpdateGeneral', soft_errors=True, username=user, snippets=SetSnippets)
 
 def doLabel(users, i):
   label = sys.argv[i]
@@ -4500,7 +4500,7 @@ def doLabel(users, i):
     gmail = buildGAPIServiceObject(u'gmail', user)
     print u"Creating label %s for %s (%s of %s)" % (label, user, i, count)
     i += 1
-    callGAPI(service=gmail.users().labels(), function=u'create', soft_errors=True, userId=user, body=body)
+    callGAPI(gmail.users().labels(), u'create', soft_errors=True, userId=user, body=body)
 
 PROCESS_MESSAGE_FUNCTION_TO_ACTION_MAP = {u'delete': u'deleted', u'trash': u'trashed', u'untrash': u'untrashed', u'modify': u'modified'}
 
@@ -4586,8 +4586,7 @@ def doProcessMessages(users, function):
     print u'Searching messages for %s' % user
     gmail = buildGAPIServiceObject(u'gmail', user)
     page_message = u'Got %%%%total_items%%%% messages for user %s' % user
-    listResult = callGAPIpages(service=gmail.users().messages(),
-                               function=u'list', items=u'messages', page_message=page_message,
+    listResult = callGAPIpages(gmail.users().messages(), u'list', u'messages', page_message=page_message,
                                userId=u'me', q=query, includeSpamTrash=True, soft_errors=True)
     result_count = len(listResult)
     if not doIt or result_count == 0:
@@ -4607,7 +4606,7 @@ def doProcessMessages(users, function):
       deleted_messages = 0
       for id_batch in id_batches:
         print u'deleting %s messages' % len(id_batch)
-        callGAPI(service=gmail.users().messages(), function=u'batchDelete',
+        callGAPI(gmail.users().messages(), u'batchDelete',
                  body={u'ids': id_batch}, userId=u'me')
         deleted_messages += len(id_batch)
         print u'deleted %s of %s messages' % (deleted_messages, result_count)
@@ -4621,7 +4620,7 @@ def doProcessMessages(users, function):
     for a_message in listResult:
       i += 1
       print u' %s message %s for user %s (%s/%s)' % (function, a_message[u'id'], user, i, result_count)
-      callGAPI(service=gmail.users().messages(), function=function,
+      callGAPI(gmail.users().messages(), function,
                id=a_message[u'id'], userId=u'me', **kwargs)
 
 def doDeleteLabel(users):
@@ -4630,7 +4629,7 @@ def doDeleteLabel(users):
   for user in users:
     gmail = buildGAPIServiceObject(u'gmail', user)
     print u'Getting all labels for %s...' % user
-    labels = callGAPI(service=gmail.users().labels(), function=u'list', userId=user, fields=u'labels(name,id,type)')
+    labels = callGAPI(gmail.users().labels(), u'list', userId=user, fields=u'labels(id,name,type)')
     del_labels = []
     if label == u'--ALL_LABELS--':
       for del_label in labels[u'labels']:
@@ -4682,7 +4681,7 @@ def showLabels(users):
       sys.exit(2)
   for user in users:
     gmail = buildGAPIServiceObject(u'gmail', user)
-    labels = callGAPI(service=gmail.users().labels(), function=u'list', userId=user, soft_errors=True)
+    labels = callGAPI(gmail.users().labels(), u'list', userId=user, soft_errors=True)
     if labels:
       for label in labels[u'labels']:
         if label[u'type'] == u'system' and not show_system:
@@ -4710,7 +4709,7 @@ def showGmailProfile(users):
     gmail = buildGAPIServiceObject(u'gmail', user, soft_errors=True)
     if not gmail:
       continue
-    results = callGAPI(service=gmail.users(), function=u'getProfile', userId=u'me', soft_errors=True)
+    results = callGAPI(gmail.users(), u'getProfile', userId=u'me', soft_errors=True)
     if results:
       for item in results:
         if item not in profiles[0]:
@@ -4749,10 +4748,10 @@ def updateLabels(users):
       sys.exit(2)
   for user in users:
     gmail = buildGAPIServiceObject(u'gmail', user)
-    labels = callGAPI(service=gmail.users().labels(), function=u'list', userId=user, fields=u'labels(id,name)')
+    labels = callGAPI(gmail.users().labels(), u'list', userId=user, fields=u'labels(id,name)')
     for label in labels[u'labels']:
       if label[u'name'].lower() == label_name_lower:
-        callGAPI(service=gmail.users().labels(), function=u'patch', soft_errors=True,
+        callGAPI(gmail.users().labels(), u'patch', soft_errors=True,
                  userId=user, id=label[u'id'], body=body)
         break
     else:
@@ -4779,7 +4778,7 @@ def renameLabels(users):
   pattern = re.compile(search, re.IGNORECASE)
   for user in users:
     gmail = buildGAPIServiceObject(u'gmail', user)
-    labels = callGAPI(service=gmail.users().labels(), function=u'list', userId=user)
+    labels = callGAPI(gmail.users().labels(), u'list', userId=user)
     for label in labels[u'labels']:
       if label[u'type'] == u'system':
         continue
@@ -4788,12 +4787,12 @@ def renameLabels(users):
         new_label_name = replace % match_result.groups()
         print u' Renaming "%s" to "%s"' % (label[u'name'], new_label_name)
         try:
-          callGAPI(service=gmail.users().labels(), function=u'patch', soft_errors=True, throw_reasons=[u'aborted'], id=label[u'id'], userId=user, body={u'name': new_label_name})
+          callGAPI(gmail.users().labels(), u'patch', soft_errors=True, throw_reasons=[u'aborted'], id=label[u'id'], userId=user, body={u'name': new_label_name})
         except googleapiclient.errors.HttpError:
           if merge:
             print u'  Merging %s label to existing %s label' % (label[u'name'], new_label_name)
             q = u'label:"%s"' % label[u'name']
-            messages_to_relabel = callGAPIpages(service=gmail.users().messages(), function=u'list', items=u'messages', userId=user, q=q)
+            messages_to_relabel = callGAPIpages(gmail.users().messages(), u'list', u'messages', userId=user, q=q)
             if len(messages_to_relabel) > 0:
               for new_label in labels[u'labels']:
                 if new_label[u'name'].lower() == new_label_name.lower():
@@ -4803,12 +4802,12 @@ def renameLabels(users):
               i = 1
               for message_to_relabel in messages_to_relabel:
                 print u'    relabeling message %s (%s/%s)' % (message_to_relabel[u'id'], i, len(messages_to_relabel))
-                callGAPI(service=gmail.users().messages(), function=u'modify', userId=user, id=message_to_relabel[u'id'], body=body)
+                callGAPI(gmail.users().messages(), u'modify', userId=user, id=message_to_relabel[u'id'], body=body)
                 i += 1
             else:
               print u'   no messages with %s label' % label[u'name']
             print u'   Deleting label %s' % label[u'name']
-            callGAPI(service=gmail.users().labels(), function=u'delete', id=label[u'id'], userId=user)
+            callGAPI(gmail.users().labels(), u'delete', id=label[u'id'], userId=user)
           else:
             print u'  Error: looks like %s already exists, not renaming. Use the "merge" argument to merge the labels' % new_label_name
 
@@ -4891,7 +4890,7 @@ def doFilter(users):
       emailsettings.domain = GC_Values[GC_DOMAIN] #make sure it's back at default domain
     print u"Creating filter for %s (%s of %s)" % (user+u'@'+emailsettings.domain, i, count)
     i += 1
-    callGData(service=emailsettings, function=u'CreateFilter', soft_errors=True,
+    callGData(emailsettings, u'CreateFilter', soft_errors=True,
               username=user, from_=from_, to=to, subject=subject, has_the_word=has_the_word, does_not_have_the_word=does_not_have_the_word,
               has_attachment=has_attachment, label=label, should_mark_as_read=should_mark_as_read, should_archive=should_archive,
               should_star=should_star, forward_to=forward_to, should_trash=should_trash, should_not_spam=should_not_spam)
@@ -4935,7 +4934,7 @@ def doForward(users):
       emailsettings.domain = GC_Values[GC_DOMAIN] #make sure it's back at default domain
     print u"Turning forward %s for %s, emails will be %s (%s of %s)" % (sys.argv[4], user+u'@'+emailsettings.domain, action, i, count)
     i += 1
-    callGData(service=emailsettings, function=u'UpdateForwarding', soft_errors=True, username=user, enable=enable, action=action, forward_to=forward_to)
+    callGData(emailsettings, u'UpdateForwarding', soft_errors=True, username=user, enable=enable, action=action, forward_to=forward_to)
 
 def getForward(users):
   emailsettings = getEmailSettingsObject()
@@ -4945,7 +4944,7 @@ def getForward(users):
       user = user[:user.find(u'@')]
     else:
       emailsettings.domain = GC_Values[GC_DOMAIN]
-    forward = callGData(service=emailsettings, function=u'GetForward', soft_errors=True, username=user)
+    forward = callGData(emailsettings, u'GetForward', soft_errors=True, username=user)
     try:
       print u"User %s:  Forward To:%s  Enabled:%s  Action:%s" % (user+u'@'+emailsettings.domain, forward[u'forwardTo'], forward[u'enable'], forward[u'action'])
     except TypeError:
@@ -4977,7 +4976,7 @@ def doSignature(users):
     print u"Setting Signature for %s (%s of %s)" % (user+u'@'+emailsettings.domain, i, count)
     uri = u'https://apps-apis.google.com/a/feeds/emailsettings/2.0/%s/%s/signature' % (emailsettings.domain, user)
     i += 1
-    callGData(service=emailsettings, function=u'Put', soft_errors=True, data=xmlsig, uri=uri)
+    callGData(emailsettings, u'Put', soft_errors=True, data=xmlsig, uri=uri)
 
 def getSignature(users):
   emailsettings = getEmailSettingsObject()
@@ -4987,7 +4986,7 @@ def getSignature(users):
       user = user[:user.find(u'@')]
     else:
       emailsettings.domain = GC_Values[GC_DOMAIN]
-    result = callGData(service=emailsettings, function=u'GetSignature', soft_errors=True, username=user)
+    result = callGData(emailsettings, u'GetSignature', soft_errors=True, username=user)
     signature = result.get(u'signature') if result else None
     if not signature:
       signature = u'None'
@@ -5013,7 +5012,7 @@ def doWebClips(users):
       emailsettings.domain = GC_Values[GC_DOMAIN] #make sure it's back at default domain
     print u"Turning Web Clips %s for %s (%s of %s)" % (sys.argv[4], user+u'@'+emailsettings.domain, i, count)
     i += 1
-    callGData(service=emailsettings, function=u'UpdateWebClipSettings', soft_errors=True, username=user, enable=enable)
+    callGData(emailsettings, u'UpdateWebClipSettings', soft_errors=True, username=user, enable=enable)
 
 def doVacation(users):
   subject = message = u''
@@ -5066,7 +5065,7 @@ def doVacation(users):
       emailsettings.domain = GC_Values[GC_DOMAIN] #make sure it's back at default domain
     print u"Setting Vacation for %s (%s of %s)" % (user+u'@'+emailsettings.domain, i, count)
     i += 1
-    callGData(service=emailsettings, function=u'UpdateVacation',
+    callGData(emailsettings, u'UpdateVacation',
               soft_errors=True,
               username=user, enable=enable, subject=subject, message=message,
               contacts_only=contacts_only, domain_only=domain_only, start_date=start_date, end_date=end_date)
@@ -5079,7 +5078,7 @@ def getVacation(users):
       user = user[:user.find(u'@')]
     else:
       emailsettings.domain = GC_Values[GC_DOMAIN]
-    vacationsettings = callGData(service=emailsettings, function=u'GetVacation', soft_errors=True, username=user)
+    vacationsettings = callGData(emailsettings, u'GetVacation', soft_errors=True, username=user)
     try:
       print convertUTF8(u'''User %s
  Enabled: %s
@@ -5097,7 +5096,7 @@ def getVacation(users):
 def doDelSchema():
   cd = buildGAPIObject(u'directory')
   schemaKey = sys.argv[3]
-  callGAPI(service=cd.schemas(), function=u'delete', customerId=GC_Values[GC_CUSTOMER_ID], schemaKey=schemaKey)
+  callGAPI(cd.schemas(), u'delete', customerId=GC_Values[GC_CUSTOMER_ID], schemaKey=schemaKey)
   print u'Deleted schema %s' % schemaKey
 
 def doCreateOrUpdateUserSchema():
@@ -5139,15 +5138,15 @@ def doCreateOrUpdateUserSchema():
       print u'ERROR: %s is not a valid argument for "gam create schema"' % sys.argv[i]
       sys.exit(2)
   if sys.argv[1].lower() == u'create':
-    result = callGAPI(service=cd.schemas(), function=u'insert', customerId=GC_Values[GC_CUSTOMER_ID], body=body)
+    result = callGAPI(cd.schemas(), u'insert', customerId=GC_Values[GC_CUSTOMER_ID], body=body)
     print u'Created user schema %s' % result[u'schemaName']
   elif sys.argv[1].lower() == u'update':
-    result = callGAPI(service=cd.schemas(), function=u'update', customerId=GC_Values[GC_CUSTOMER_ID], body=body, schemaKey=schemaName)
+    result = callGAPI(cd.schemas(), u'update', customerId=GC_Values[GC_CUSTOMER_ID], body=body, schemaKey=schemaName)
     print u'Updated user schema %s' % result[u'schemaName']
 
 def doPrintUserSchemas():
   cd = buildGAPIObject(u'directory')
-  schemas = callGAPI(service=cd.schemas(), function=u'list', customerId=GC_Values[GC_CUSTOMER_ID])
+  schemas = callGAPI(cd.schemas(), u'list', customerId=GC_Values[GC_CUSTOMER_ID])
   if not schemas or u'schemas' not in schemas:
     return
   for schema in schemas[u'schemas']:
@@ -5167,7 +5166,7 @@ def doPrintUserSchemas():
 def doGetUserSchema():
   cd = buildGAPIObject(u'directory')
   schemaKey = sys.argv[3]
-  schema = callGAPI(service=cd.schemas(), function=u'get', customerId=GC_Values[GC_CUSTOMER_ID], schemaKey=schemaKey)
+  schema = callGAPI(cd.schemas(), u'get', customerId=GC_Values[GC_CUSTOMER_ID], schemaKey=schemaKey)
   print u'Schema: %s' % schema[u'schemaName']
   for a_key in schema:
     if a_key not in [u'schemaName', u'fields', u'etag', u'kind']:
@@ -5520,10 +5519,10 @@ def doCreateUser():
     body[u'password'] = gen_sha512_hash(body[u'password'])
     body[u'hashFunction'] = u'crypt'
   print u"Creating account for %s" % body[u'primaryEmail']
-  callGAPI(service=cd.users(), function='insert', body=body, fields=u'primaryEmail')
+  callGAPI(cd.users(), u'insert', body=body, fields=u'primaryEmail')
   if do_admin:
     print u' Changing admin status for %s to %s' % (body[u'primaryEmail'], admin_body[u'status'])
-    callGAPI(service=cd.users(), function=u'makeAdmin', userKey=body[u'primaryEmail'], body=admin_body)
+    callGAPI(cd.users(), u'makeAdmin', userKey=body[u'primaryEmail'], body=admin_body)
 
 def doCreateGroup():
   cd = buildGAPIObject(u'directory')
@@ -5583,9 +5582,9 @@ def doCreateGroup():
   if not got_name:
     body[u'name'] = body[u'email']
   print u"Creating group %s" % body[u'email']
-  callGAPI(service=cd.groups(), function=u'insert', body=body, fields=u'email')
+  callGAPI(cd.groups(), u'insert', body=body, fields=u'email')
   if gs:
-    callGAPI(service=gs.groups(), function=u'patch', retry_reasons=[u'serviceLimit'], groupUniqueId=body[u'email'], body=gs_body)
+    callGAPI(gs.groups(), u'patch', retry_reasons=[u'serviceLimit'], groupUniqueId=body[u'email'], body=gs_body)
 
 def doCreateAlias():
   cd = buildGAPIObject(u'directory')
@@ -5602,14 +5601,14 @@ def doCreateAlias():
     targetKey = u'%s@%s' % (targetKey, GC_Values[GC_DOMAIN])
   print u'Creating alias %s for %s %s' % (body[u'alias'], target_type, targetKey)
   if target_type == u'user':
-    callGAPI(service=cd.users().aliases(), function=u'insert', userKey=targetKey, body=body)
+    callGAPI(cd.users().aliases(), u'insert', userKey=targetKey, body=body)
   elif target_type == u'group':
-    callGAPI(service=cd.groups().aliases(), function=u'insert', groupKey=targetKey, body=body)
+    callGAPI(cd.groups().aliases(), u'insert', groupKey=targetKey, body=body)
   elif target_type == u'target':
     try:
-      callGAPI(service=cd.users().aliases(), function=u'insert', throw_reasons=[u'invalid', u'badRequest'], userKey=targetKey, body=body)
+      callGAPI(cd.users().aliases(), u'insert', throw_reasons=[u'invalid', u'badRequest'], userKey=targetKey, body=body)
     except googleapiclient.errors.HttpError:
-      callGAPI(service=cd.groups().aliases(), function=u'insert', groupKey=targetKey, body=body)
+      callGAPI(cd.groups().aliases(), u'insert', groupKey=targetKey, body=body)
 
 def doCreateOrg():
   cd = buildGAPIObject(u'directory')
@@ -5632,7 +5631,7 @@ def doCreateOrg():
     else:
       print u'ERROR: %s is not a valid argument for "gam create org"' % sys.argv[i]
       sys.exit(2)
-  callGAPI(service=cd.orgunits(), function=u'insert', customerId=GC_Values[GC_CUSTOMER_ID], body=body)
+  callGAPI(cd.orgunits(), u'insert', customerId=GC_Values[GC_CUSTOMER_ID], body=body)
 
 def doCreateResourceCalendar():
   cd = buildGAPIObject(u'directory')
@@ -5650,7 +5649,7 @@ def doCreateResourceCalendar():
       print u'ERROR: %s is not a valid argument for "gam create resource"' % sys.argv[i]
       sys.exit(2)
   print u'Creating resource %s...' % body[u'resourceId']
-  callGAPI(service=cd.resources().calendars(), function=u'insert',
+  callGAPI(cd.resources().calendars(), u'insert',
            customer=GC_Values[GC_CUSTOMER_ID], body=body)
 
 def doUpdateUser(users, i):
@@ -6025,7 +6024,7 @@ def doUpdateUser(users, i):
     elif user.find(u'@') == -1:
       user = u'%s@%s' % (user, GC_Values[GC_DOMAIN])
     if u'primaryEmail' in body and body[u'primaryEmail'][:4].lower() == u'vfe@':
-      user_primary = callGAPI(service=cd.users(), function=u'get', userKey=user, fields=u'primaryEmail,id')
+      user_primary = callGAPI(cd.users(), u'get', userKey=user, fields=u'primaryEmail,id')
       user = user_primary[u'id']
       user_primary = user_primary[u'primaryEmail']
       user_name = user_primary[:user_primary.find(u'@')]
@@ -6034,34 +6033,34 @@ def doUpdateUser(users, i):
       body[u'emails'] = [{u'type': u'custom', u'customType': u'former_employee', u'primary': False, u'address': user_primary}]
     sys.stdout.write(u'updating user %s...\n' % user)
     if do_update_user:
-      callGAPI(service=cd.users(), function=u'patch', userKey=user, body=body)
+      callGAPI(cd.users(), u'patch', userKey=user, body=body)
     if do_admin_user:
-      callGAPI(service=cd.users(), function=u'makeAdmin', userKey=user, body={u'status': is_admin})
+      callGAPI(cd.users(), u'makeAdmin', userKey=user, body={u'status': is_admin})
 
 def doRemoveUsersAliases(users):
   cd = buildGAPIObject(u'directory')
   for user in users:
-    user_aliases = callGAPI(service=cd.users(), function=u'get', userKey=user, fields=u'aliases,id,primaryEmail')
+    user_aliases = callGAPI(cd.users(), u'get', userKey=user, fields=u'aliases,id,primaryEmail')
     user_id = user_aliases[u'id']
     user_primary = user_aliases[u'primaryEmail']
     if u'aliases' in user_aliases:
       print u'%s has %s aliases' % (user_primary, len(user_aliases[u'aliases']))
       for an_alias in user_aliases[u'aliases']:
         print u' removing alias %s for %s...' % (an_alias, user_primary)
-        callGAPI(service=cd.users().aliases(), function=u'delete', userKey=user_id, alias=an_alias)
+        callGAPI(cd.users().aliases(), u'delete', userKey=user_id, alias=an_alias)
     else:
       print u'%s has no aliases' % user_primary
 
 def doRemoveUsersGroups(users):
   cd = buildGAPIObject(u'directory')
   for user in users:
-    user_groups = callGAPIpages(service=cd.groups(), items=u'groups', function=u'list', userKey=user, fields=u'groups(id,email)')
+    user_groups = callGAPIpages(cd.groups(), u'list', u'groups', userKey=user, fields=u'groups(id,email)')
     num_groups = len(user_groups)
     print u'%s is in %s groups' % (user, num_groups)
     i = 1
     for user_group in user_groups:
       print u' removing %s from %s (%s/%s)' % (user, user_group[u'email'], i, num_groups)
-      callGAPI(service=cd.members(), function=u'delete', soft_errors=True, groupKey=user_group[u'id'], memberKey=user)
+      callGAPI(cd.members(), u'delete', soft_errors=True, groupKey=user_group[u'id'], memberKey=user)
       i += 1
     print u''
 
@@ -6091,9 +6090,9 @@ def doUpdateGroup():
         try:
           if sys.argv[4].lower() == u'add':
             body = {u'role': role, u'email': user_email}
-            callGAPI(service=cd.members(), function=u'insert', soft_errors=True, groupKey=group, body=body)
+            callGAPI(cd.members(), u'insert', soft_errors=True, groupKey=group, body=body)
           elif sys.argv[4].lower() == u'update':
-            callGAPI(service=cd.members(), function=u'update', soft_errors=True, groupKey=group, memberKey=user_email, body=body)
+            callGAPI(cd.members(), u'update', soft_errors=True, groupKey=group, memberKey=user_email, body=body)
         except googleapiclient.errors.HttpError:
           pass
     elif sys.argv[4].lower() == u'sync':
@@ -6124,10 +6123,12 @@ def doUpdateGroup():
       else:
         user_emails = [sys.argv[i],]
       for user_email in user_emails:
-        if user_email != u'*' and user_email.find(u'@') == -1:
+        if user_email[:4].lower() == u'uid:':
+          user_email = user_email[4:]
+        elif user_email != u'*' and user_email.find(u'@') == -1:
           user_email = u'%s@%s' % (user_email, GC_Values[GC_DOMAIN])
         sys.stderr.write(u' removing %s\n' % user_email)
-        callGAPI(service=cd.members(), function=u'delete', soft_errors=True, groupKey=group, memberKey=user_email)
+        callGAPI(cd.members(), u'delete', soft_errors=True, groupKey=group, memberKey=user_email)
   else:
     i = 4
     use_cd_api = False
@@ -6194,11 +6195,11 @@ def doUpdateGroup():
           cd_body[u'email'] = u'%s@%s' % (cd_body[u'email'], GC_Values[GC_DOMAIN])
       except KeyError:
         pass
-      cd_result = callGAPI(service=cd.groups(), function=u'patch', groupKey=group, body=cd_body)
+      cd_result = callGAPI(cd.groups(), u'patch', groupKey=group, body=cd_body)
     if gs:
       if use_cd_api:
         group = cd_result[u'email']
-      callGAPI(service=gs.groups(), function=u'patch', retry_reasons=[u'serviceLimit'], groupUniqueId=group, body=gs_body)
+      callGAPI(gs.groups(), u'patch', retry_reasons=[u'serviceLimit'], groupUniqueId=group, body=gs_body)
     print u'updated group %s' % group
 
 def doUpdateAlias():
@@ -6214,18 +6215,18 @@ def doUpdateAlias():
   if target_email.find(u'@') == -1:
     target_email = u'%s@%s' % (target_email, GC_Values[GC_DOMAIN])
   try:
-    callGAPI(service=cd.users().aliases(), function=u'delete', throw_reasons=[u'invalid'], userKey=alias, alias=alias)
+    callGAPI(cd.users().aliases(), u'delete', throw_reasons=[u'invalid'], userKey=alias, alias=alias)
   except googleapiclient.errors.HttpError:
-    callGAPI(service=cd.groups().aliases(), function=u'delete', groupKey=alias, alias=alias)
+    callGAPI(cd.groups().aliases(), u'delete', groupKey=alias, alias=alias)
   if target_type == u'user':
-    callGAPI(service=cd.users().aliases(), function=u'insert', userKey=target_email, body={u'alias': alias})
+    callGAPI(cd.users().aliases(), u'insert', userKey=target_email, body={u'alias': alias})
   elif target_type == u'group':
-    callGAPI(service=cd.groups().aliases(), function=u'insert', groupKey=target_email, body={u'alias': alias})
+    callGAPI(cd.groups().aliases(), u'insert', groupKey=target_email, body={u'alias': alias})
   elif target_type == u'target':
     try:
-      callGAPI(service=cd.users().aliases(), function=u'insert', throw_reasons=[u'invalid'], userKey=target_email, body={u'alias': alias})
+      callGAPI(cd.users().aliases(), u'insert', throw_reasons=[u'invalid'], userKey=target_email, body={u'alias': alias})
     except googleapiclient.errors.HttpError:
-      callGAPI(service=cd.groups().aliases(), function=u'insert', groupKey=target_email, body={u'alias': alias})
+      callGAPI(cd.groups().aliases(), u'insert', groupKey=target_email, body={u'alias': alias})
   print u'updated alias %s' % alias
 
 def doUpdateResourceCalendar():
@@ -6248,7 +6249,7 @@ def doUpdateResourceCalendar():
       sys.exit(2)
   # Use patch since it seems to work better.
   # update requires name to be set.
-  callGAPI(service=cd.resources().calendars(), function=u'patch',
+  callGAPI(cd.resources().calendars(), u'patch',
            customer=GC_Values[GC_CUSTOMER_ID], calendarResourceId=resId, body=body,
            fields=u'')
   print u'updated resource %s' % resId
@@ -6258,7 +6259,7 @@ def doUpdateCros():
   deviceId = sys.argv[3]
   if deviceId[:6].lower() == u'query:':
     query = deviceId[6:]
-    devices_result = callGAPIpages(service=cd.chromeosdevices(), function=u'list', items=u'chromeosdevices',
+    devices_result = callGAPIpages(cd.chromeosdevices(), u'list', u'chromeosdevices',
                                    query=query, customerId=GC_Values[GC_CUSTOMER_ID], fields=u'chromeosdevices/deviceId,nextPageToken')
     devices = list()
     for a_device in devices_result:
@@ -6299,7 +6300,7 @@ def doUpdateCros():
   i = 1
   for this_device in devices:
     print u' updating %s (%s of %s)' % (this_device, i, device_count)
-    callGAPI(service=cd.chromeosdevices(), function=u'patch', deviceId=this_device, body=body, customerId=GC_Values[GC_CUSTOMER_ID])
+    callGAPI(cd.chromeosdevices(), u'patch', deviceId=this_device, body=body, customerId=GC_Values[GC_CUSTOMER_ID])
     i += 1
 
 def doUpdateMobile():
@@ -6336,14 +6337,14 @@ def doUpdateMobile():
       print u'ERROR: %s is not a valid argument for "gam update mobile"' % sys.argv[i]
       sys.exit(2)
   if doPatch:
-    callGAPI(service=cd.mobiledevices(), function=u'patch', resourceId=resourceId, body=patch_body, customerId=GC_Values[GC_CUSTOMER_ID])
+    callGAPI(cd.mobiledevices(), u'patch', resourceId=resourceId, body=patch_body, customerId=GC_Values[GC_CUSTOMER_ID])
   if doAction:
-    callGAPI(service=cd.mobiledevices(), function=u'action', resourceId=resourceId, body=action_body, customerId=GC_Values[GC_CUSTOMER_ID])
+    callGAPI(cd.mobiledevices(), u'action', resourceId=resourceId, body=action_body, customerId=GC_Values[GC_CUSTOMER_ID])
 
 def doDeleteMobile():
   cd = buildGAPIObject(u'directory')
   resourceId = sys.argv[3]
-  callGAPI(service=cd.mobiledevices(), function='delete', resourceId=resourceId, customerId=GC_Values[GC_CUSTOMER_ID])
+  callGAPI(cd.mobiledevices(), u'delete', resourceId=resourceId, customerId=GC_Values[GC_CUSTOMER_ID])
 
 def doUpdateOrg():
   cd = buildGAPIObject(u'directory')
@@ -6358,7 +6359,7 @@ def doUpdateOrg():
       current_cros = 1
       for cros in users:
         sys.stderr.write(u' moving %s to %s (%s/%s)\n' % (cros, orgUnitPath, current_cros, cros_count))
-        callGAPI(service=cd.chromeosdevices(), function=u'patch', soft_errors=True,
+        callGAPI(cd.chromeosdevices(), u'patch', soft_errors=True,
                  customerId=GC_Values[GC_CUSTOMER_ID], deviceId=cros, body={u'orgUnitPath': u'//%s' % orgUnitPath})
         current_cros += 1
     else:
@@ -6369,7 +6370,7 @@ def doUpdateOrg():
       for user in users:
         sys.stderr.write(u' moving %s to %s (%s/%s)\n' % (user, orgUnitPath, current_user, user_count))
         try:
-          callGAPI(service=cd.users(), function=u'patch', throw_reasons=[u'conditionNotMet'], userKey=user, body={u'orgUnitPath': orgUnitPath})
+          callGAPI(cd.users(), u'patch', throw_reasons=[u'conditionNotMet'], userKey=user, body={u'orgUnitPath': orgUnitPath})
         except googleapiclient.errors.HttpError:
           pass
         current_user += 1
@@ -6399,7 +6400,7 @@ def doUpdateOrg():
         sys.exit(2)
     if orgUnitPath[0] == u'/': # we don't want a / at the beginning for OU updates
       orgUnitPath = orgUnitPath[1:]
-    callGAPI(service=cd.orgunits(), function=u'update', customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=orgUnitPath, body=body)
+    callGAPI(cd.orgunits(), u'update', customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=orgUnitPath, body=body)
 
 def doWhatIs():
   cd = buildGAPIObject(u'directory')
@@ -6407,7 +6408,7 @@ def doWhatIs():
   if email.find(u'@') == -1:
     email = u'%s@%s' % (email, GC_Values[GC_DOMAIN])
   try:
-    user_or_alias = callGAPI(service=cd.users(), function=u'get', throw_reasons=[u'notFound', u'badRequest', u'invalid'], userKey=email, fields=u'primaryEmail')
+    user_or_alias = callGAPI(cd.users(), u'get', throw_reasons=[u'notFound', u'badRequest', u'invalid'], userKey=email, fields=u'primaryEmail')
     if user_or_alias[u'primaryEmail'].lower() == email.lower():
       sys.stderr.write(u'%s is a user\n\n' % email)
       doGetUserInfo(user_email=email)
@@ -6420,7 +6421,7 @@ def doWhatIs():
     sys.stderr.write(u'%s is not a user...\n' % email)
     sys.stderr.write(u'%s is not a user alias...\n' % email)
   try:
-    group = callGAPI(service=cd.groups(), function=u'get', throw_reasons=[u'notFound', u'badRequest'], groupKey=email, fields=u'email')
+    group = callGAPI(cd.groups(), u'get', throw_reasons=[u'notFound', u'badRequest'], groupKey=email, fields=u'email')
   except googleapiclient.errors.HttpError:
     sys.stderr.write(u'%s is not a group either!\n\nDoesn\'t seem to exist!\n\n' % email)
     sys.exit(1)
@@ -6486,7 +6487,7 @@ def doGetUserInfo(user_email=None):
     else:
       print u'ERROR: %s is not a valid argument for "gam info user"' % myarg
       sys.exit(2)
-  user = callGAPI(service=cd.users(), function=u'get', userKey=user_email, projection=projection, customFieldMask=customFieldMask, viewType=viewType)
+  user = callGAPI(cd.users(), u'get', userKey=user_email, projection=projection, customFieldMask=customFieldMask, viewType=viewType)
   print u'User: %s' % user[u'primaryEmail']
   if u'name' in user and u'givenName' in user[u'name']:
     print convertUTF8(u'First Name: %s' % user[u'name'][u'givenName'])
@@ -6610,7 +6611,7 @@ def doGetUserInfo(user_email=None):
       for alias in user[u'nonEditableAliases']:
         print u'  %s' % alias
   if getGroups:
-    groups = callGAPIpages(service=cd.groups(), function=u'list', items=u'groups', userKey=user_email, fields=u'groups(name,email),nextPageToken')
+    groups = callGAPIpages(cd.groups(), u'list', u'groups', userKey=user_email, fields=u'groups(name,email),nextPageToken')
     if len(groups) > 0:
       print u'Groups: (%s)' % len(groups)
       for group in groups:
@@ -6621,7 +6622,7 @@ def doGetUserInfo(user_email=None):
     for sku in skus:
       productId, skuId = getProductAndSKU(sku)
       try:
-        result = callGAPI(service=lic.licenseAssignments(), function=u'get', throw_reasons=[u'notFound', u'invalid', u'forbidden'], userId=user_email, productId=productId, skuId=skuId)
+        result = callGAPI(lic.licenseAssignments(), u'get', throw_reasons=[u'notFound', u'invalid', u'forbidden'], userId=user_email, productId=productId, skuId=skuId)
       except googleapiclient.errors.HttpError:
         continue
       print u' %s' % result[u'skuId']
@@ -6658,9 +6659,9 @@ def doGetGroupInfo(group_name=None):
     group_name = group_name[4:]
   elif group_name.find(u'@') == -1:
     group_name = group_name+u'@'+GC_Values[GC_DOMAIN]
-  basic_info = callGAPI(service=cd.groups(), function=u'get', groupKey=group_name)
+  basic_info = callGAPI(cd.groups(), u'get', groupKey=group_name)
   try:
-    settings = callGAPI(service=gs.groups(), function=u'get', retry_reasons=[u'serviceLimit'], throw_reasons=u'authError',
+    settings = callGAPI(gs.groups(), u'get', retry_reasons=[u'serviceLimit'], throw_reasons=u'authError',
                         groupUniqueId=basic_info[u'email']) # Use email address retrieved from cd since GS API doesn't support uid
   except googleapiclient.errors.HttpError:
     pass
@@ -6695,7 +6696,7 @@ def doGetGroupInfo(group_name=None):
       for groupm in groups:
         print u'  %s: %s' % (groupm[u'name'], groupm[u'email'])
   if getUsers:
-    members = callGAPIpages(service=cd.members(), function=u'list', items=u'members', groupKey=group_name)
+    members = callGAPIpages(cd.members(), u'list', u'members', groupKey=group_name)
     print u'Members:'
     for member in members:
       try:
@@ -6714,9 +6715,9 @@ def doGetAliasInfo(alias_email=None):
   if alias_email.find(u'@') == -1:
     alias_email = u'%s@%s' % (alias_email, GC_Values[GC_DOMAIN])
   try:
-    result = callGAPI(service=cd.users(), function=u'get', throw_reasons=[u'invalid', u'badRequest'], userKey=alias_email)
+    result = callGAPI(cd.users(), u'get', throw_reasons=[u'invalid', u'badRequest'], userKey=alias_email)
   except googleapiclient.errors.HttpError:
-    result = callGAPI(service=cd.groups(), function=u'get', groupKey=alias_email)
+    result = callGAPI(cd.groups(), u'get', groupKey=alias_email)
   print u' Alias Email: %s' % alias_email
   try:
     if result[u'primaryEmail'].lower() == alias_email.lower():
@@ -6730,7 +6731,7 @@ def doGetAliasInfo(alias_email=None):
 def doGetResourceCalendarInfo():
   cd = buildGAPIObject(u'directory')
   resId = sys.argv[3]
-  resource = callGAPI(service=cd.resources().calendars(), function=u'get',
+  resource = callGAPI(cd.resources().calendars(), u'get',
                       customer=GC_Values[GC_CUSTOMER_ID], calendarResourceId=resId)
   for key, value in resource.items():
     if key in [u'kind', u'etag', u'etags']:
@@ -6740,13 +6741,13 @@ def doGetResourceCalendarInfo():
 def doGetCrosInfo():
   cd = buildGAPIObject(u'directory')
   deviceId = sys.argv[3]
-  info = callGAPI(service=cd.chromeosdevices(), function=u'get', customerId=GC_Values[GC_CUSTOMER_ID], deviceId=deviceId)
+  info = callGAPI(cd.chromeosdevices(), u'get', customerId=GC_Values[GC_CUSTOMER_ID], deviceId=deviceId)
   print_json(None, info)
 
 def doGetMobileInfo():
   cd = buildGAPIObject(u'directory')
   deviceId = sys.argv[3]
-  info = callGAPI(service=cd.mobiledevices(), function=u'get', customerId=GC_Values[GC_CUSTOMER_ID], resourceId=deviceId)
+  info = callGAPI(cd.mobiledevices(), u'get', customerId=GC_Values[GC_CUSTOMER_ID], resourceId=deviceId)
   print_json(None, info)
 
 def print_json(object_name, object_value, spacing=u''):
@@ -6801,13 +6802,13 @@ def doUpdateNotification():
     print u'ERROR: notifications need to be marked as read or unread.'
     sys.exit(2)
   if get_all:
-    notifications = callGAPIpages(service=cd.notifications(), function=u'list', customer=GC_Values[GC_CUSTOMER_ID], fields=u'items(notificationId,isUnread),nextPageToken')
+    notifications = callGAPIpages(cd.notifications(), u'list', u'items', customer=GC_Values[GC_CUSTOMER_ID], fields=u'items(notificationId,isUnread),nextPageToken')
     for noti in notifications:
       if noti[u'isUnread'] != isUnread:
         ids.append(noti[u'notificationId'])
   print u'Marking %s notification(s) as %s...' % (len(ids), mark_as)
   for notificationId in ids:
-    result = callGAPI(service=cd.notifications(), function=u'patch', customer=GC_Values[GC_CUSTOMER_ID], notificationId=notificationId, body={u'isUnread': isUnread}, fields=u'notificationId,isUnread')
+    result = callGAPI(cd.notifications(), u'patch', customer=GC_Values[GC_CUSTOMER_ID], notificationId=notificationId, body={u'isUnread': isUnread}, fields=u'notificationId,isUnread')
     if result[u'isUnread']:
       read_result = u'unread'
     else:
@@ -6830,22 +6831,22 @@ def doDeleteNotification():
       print u'ERROR: %s is not a valid argument for "gam delete notification", expected id' % sys.argv[i]
       sys.exit(2)
   if get_all:
-    notifications = callGAPIpages(service=cd.notifications(), function=u'list', customer=GC_Values[GC_CUSTOMER_ID], fields=u'items(notificationId),nextPageToken')
+    notifications = callGAPIpages(cd.notifications(), u'list', u'items', customer=GC_Values[GC_CUSTOMER_ID], fields=u'items(notificationId),nextPageToken')
     for noti in notifications:
       ids.append(noti[u'notificationId'])
   print u'Deleting %s notification(s)...' % len(ids)
   for notificationId in ids:
-    callGAPI(service=cd.notifications(), function=u'delete', customer=GC_Values[GC_CUSTOMER_ID], notificationId=notificationId)
+    callGAPI(cd.notifications(), u'delete', customer=GC_Values[GC_CUSTOMER_ID], notificationId=notificationId)
     print u'deleted %s' % id
 
 def doSiteVerifyShow():
   verif = buildGAPIObject(u'siteVerification')
   a_domain = sys.argv[3]
-  txt_record = callGAPI(service=verif.webResource(), function=u'getToken', body={u'site':{u'type':u'INET_DOMAIN', u'identifier':a_domain}, u'verificationMethod':u'DNS_TXT'})
+  txt_record = callGAPI(verif.webResource(), u'getToken', body={u'site':{u'type':u'INET_DOMAIN', u'identifier':a_domain}, u'verificationMethod':u'DNS_TXT'})
   print u'TXT Record Name:   %s' % a_domain
   print u'TXT Record Value:  %s' % txt_record[u'token']
   print
-  cname_record = callGAPI(service=verif.webResource(), function=u'getToken', body={u'site':{u'type':u'INET_DOMAIN', u'identifier':a_domain}, u'verificationMethod':u'DNS_CNAME'})
+  cname_record = callGAPI(verif.webResource(), u'getToken', body={u'site':{u'type':u'INET_DOMAIN', u'identifier':a_domain}, u'verificationMethod':u'DNS_CNAME'})
   cname_token = cname_record[u'token']
   cname_list = cname_token.split(u' ')
   cname_subdomain = cname_list[0]
@@ -6853,20 +6854,20 @@ def doSiteVerifyShow():
   print u'CNAME Record Name:   %s.%s' % (cname_subdomain, a_domain)
   print u'CNAME Record Value:  %s' % cname_value
   print u''
-  webserver_file_record = callGAPI(service=verif.webResource(), function=u'getToken', body={u'site':{u'type':u'SITE', u'identifier':u'http://%s/' % a_domain}, u'verificationMethod':u'FILE'})
+  webserver_file_record = callGAPI(verif.webResource(), u'getToken', body={u'site':{u'type':u'SITE', u'identifier':u'http://%s/' % a_domain}, u'verificationMethod':u'FILE'})
   webserver_file_token = webserver_file_record[u'token']
   print u'Saving web server verification file to: %s' % webserver_file_token
   writeFile(webserver_file_token, u'google-site-verification: {0}'.format(webserver_file_token), continueOnError=True)
   print u'Verification File URL: http://%s/%s' % (a_domain, webserver_file_token)
   print
-  webserver_meta_record = callGAPI(service=verif.webResource(), function=u'getToken', body={u'site':{u'type':u'SITE', u'identifier':u'http://%s/' % a_domain}, u'verificationMethod':u'META'})
+  webserver_meta_record = callGAPI(verif.webResource(), u'getToken', body={u'site':{u'type':u'SITE', u'identifier':u'http://%s/' % a_domain}, u'verificationMethod':u'META'})
   print u'Meta URL:               http://%s/' % a_domain
   print u'Meta HTML Header Data:  %s' % webserver_meta_record[u'token']
   print
 
 def doGetSiteVerifications():
   verif = buildGAPIObject(u'siteVerification')
-  sites = callGAPI(service=verif.webResource(), function=u'list')
+  sites = callGAPI(verif.webResource(), u'list')
   try:
     for site in sites[u'items']:
       print u'Site: %s' % site[u'site'][u'identifier']
@@ -6894,12 +6895,12 @@ def doSiteVerifyAttempt():
     identifier = u'http://%s/' % a_domain
   body = {u'site':{u'type':verify_type, u'identifier':identifier}, u'verificationMethod':verificationMethod}
   try:
-    verify_result = callGAPI(service=verif.webResource(), function=u'insert', throw_reasons=[u'badRequest'], verificationMethod=verificationMethod, body=body)
+    verify_result = callGAPI(verif.webResource(), u'insert', throw_reasons=[u'badRequest'], verificationMethod=verificationMethod, body=body)
   except googleapiclient.errors.HttpError, e:
     error = json.loads(e.content)
     message = error[u'error'][u'errors'][0][u'message']
     print u'ERROR: %s' % message
-    verify_data = callGAPI(service=verif.webResource(), function=u'getToken', body=body)
+    verify_data = callGAPI(verif.webResource(), u'getToken', body=body)
     print u'Method:  %s' % verify_data[u'method']
     print u'Token:      %s' % verify_data[u'token']
     if verify_data[u'method'] == u'DNS_CNAME':
@@ -6956,7 +6957,7 @@ def doGetNotifications():
       print u'ERROR: %s is not a valid argument for "gam info notification", expected unreadonly' % sys.argv[i]
       sys.exit(2)
     i += 1
-  notifications = callGAPIpages(service=cd.notifications(), function=u'list', customer=GC_Values[GC_CUSTOMER_ID])
+  notifications = callGAPIpages(cd.notifications(), u'list', u'items', customer=GC_Values[GC_CUSTOMER_ID])
   for notification in notifications:
     if unread_only and not notification[u'isUnread']:
       continue
@@ -6988,19 +6989,19 @@ def doGetOrgInfo():
       print u'ERROR: %s is not a valid argument for "gam info org"' % sys.argv[i]
       sys.exit(2)
   if name == u'/':
-    orgs = callGAPI(service=cd.orgunits(), function=u'list',
+    orgs = callGAPI(cd.orgunits(), u'list',
                     customerId=GC_Values[GC_CUSTOMER_ID], type=u'children',
                     fields=u'organizationUnits/parentOrgUnitId')
     name = orgs[u'organizationUnits'][0][u'parentOrgUnitId']
   if len(name) > 1 and name[0] == u'/':
     name = name[1:]
-  result = callGAPI(service=cd.orgunits(), function=u'get', customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=name)
+  result = callGAPI(cd.orgunits(), u'get', customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=name)
   print_json(None, result)
   if get_users:
     name = result[u'orgUnitPath']
     print u'Users: '
     page_message = u'Got %%total_items%% users: %%first_item%% - %%last_item%%\n'
-    users = callGAPIpages(service=cd.users(), function=u'list', items=u'users', page_message=page_message,
+    users = callGAPIpages(cd.users(), u'list', u'users', page_message=page_message,
                           message_attribute=u'primaryEmail', customer=GC_Values[GC_CUSTOMER_ID], query=u"orgUnitPath='%s'" % name,
                           fields=u'users(primaryEmail,orgUnitPath),nextPageToken', maxResults=GC_Values[GC_USER_MAX_RESULTS])
     for user in users:
@@ -7014,7 +7015,7 @@ def doGetOrgInfo():
 def doGetASPs(users):
   cd = buildGAPIObject(u'directory')
   for user in users:
-    asps = callGAPI(service=cd.asps(), function=u'list', userKey=user)
+    asps = callGAPI(cd.asps(), u'list', userKey=user)
     print u'Application-Specific Passwords for %s' % user
     try:
       for asp in asps[u'items']:
@@ -7034,7 +7035,7 @@ def doDelASP(users):
   cd = buildGAPIObject(u'directory')
   codeId = sys.argv[5]
   for user in users:
-    callGAPI(service=cd.asps(), function=u'delete', userKey=user, codeId=codeId)
+    callGAPI(cd.asps(), u'delete', userKey=user, codeId=codeId)
     print u'deleted ASP %s for %s' % (codeId, user)
 
 def printBackupCodes(user, codes):
@@ -7052,7 +7053,7 @@ def doGetBackupCodes(users):
   cd = buildGAPIObject(u'directory')
   for user in users:
     try:
-      codes = callGAPI(service=cd.verificationCodes(), function=u'list', throw_reasons=[u'invalidArgument', u'invalid'], userKey=user)
+      codes = callGAPI(cd.verificationCodes(), u'list', throw_reasons=[u'invalidArgument', u'invalid'], userKey=user)
     except googleapiclient.errors.HttpError:
       codes = None
     printBackupCodes(user, codes)
@@ -7060,15 +7061,15 @@ def doGetBackupCodes(users):
 def doGenBackupCodes(users):
   cd = buildGAPIObject(u'directory')
   for user in users:
-    callGAPI(service=cd.verificationCodes(), function=u'generate', userKey=user)
-    codes = callGAPI(service=cd.verificationCodes(), function=u'list', userKey=user)
+    callGAPI(cd.verificationCodes(), u'generate', userKey=user)
+    codes = callGAPI(cd.verificationCodes(), u'list', userKey=user)
     printBackupCodes(user, codes)
 
 def doDelBackupCodes(users):
   cd = buildGAPIObject(u'directory')
   for user in users:
     try:
-      callGAPI(service=cd.verificationCodes(), function=u'invalidate', soft_errors=True, throw_reasons=[u'invalid',], userKey=user)
+      callGAPI(cd.verificationCodes(), u'invalidate', soft_errors=True, throw_reasons=[u'invalid',], userKey=user)
     except googleapiclient.errors.HttpError:
       print u'No 2SV backup codes for %s' % user
       continue
@@ -7094,13 +7095,13 @@ def doGetTokens(users):
     clientId = commonClientIds(clientId)
     for user in users:
       try:
-        token = callGAPI(service=cd.tokens(), function=u'get', throw_reasons=[u'notFound',], userKey=user, clientId=clientId, fields=u'clientId')
+        token = callGAPI(cd.tokens(), u'get', throw_reasons=[u'notFound',], userKey=user, clientId=clientId, fields=u'clientId')
       except googleapiclient.errors.HttpError:
         continue
       print u'%s has allowed this token' % user
     return
   for user in users:
-    tokens = callGAPI(service=cd.tokens(), function=u'list', userKey=user)
+    tokens = callGAPI(cd.tokens(), u'list', userKey=user)
     print u'Tokens for %s:' % user
     try:
       for token in tokens[u'items']:
@@ -7127,34 +7128,34 @@ def doDelTokens(users):
   clientId = sys.argv[6]
   clientId = commonClientIds(clientId)
   for user in users:
-    callGAPI(service=cd.tokens(), function=u'delete', userKey=user, clientId=clientId)
+    callGAPI(cd.tokens(), u'delete', userKey=user, clientId=clientId)
     print u'Deleted token for %s' % user
 
 def doDeprovUser(users):
   cd = buildGAPIObject(u'directory')
   for user in users:
     print u'Getting Application Specific Passwords for %s' % user
-    asps = callGAPI(service=cd.asps(), function=u'list', userKey=user, fields=u'items/codeId')
+    asps = callGAPI(cd.asps(), u'list', userKey=user, fields=u'items/codeId')
     i = 1
     try:
       for asp in asps[u'items']:
         print u' deleting ASP %s of %s' % (i, len(asps[u'items']))
-        callGAPI(service=cd.asps(), function=u'delete', userKey=user, codeId=asp[u'codeId'])
+        callGAPI(cd.asps(), u'delete', userKey=user, codeId=asp[u'codeId'])
         i += 1
     except KeyError:
       print u'No ASPs'
     print u'Invalidating 2SV Backup Codes for %s' % user
     try:
-      callGAPI(service=cd.verificationCodes(), function=u'invalidate', soft_errors=True, throw_reasons=[u'invalid'], userKey=user)
+      callGAPI(cd.verificationCodes(), u'invalidate', soft_errors=True, throw_reasons=[u'invalid'], userKey=user)
     except googleapiclient.errors.HttpError:
       print u'No 2SV Backup Codes'
     print u'Getting tokens for %s...' % user
-    tokens = callGAPI(service=cd.tokens(), function=u'list', userKey=user, fields=u'items/clientId')
+    tokens = callGAPI(cd.tokens(), u'list', userKey=user, fields=u'items/clientId')
     i = 1
     try:
       for token in tokens[u'items']:
         print u' deleting token %s of %s' % (i, len(tokens[u'items']))
-        callGAPI(service=cd.tokens(), function=u'delete', userKey=user, clientId=token[u'clientId'])
+        callGAPI(cd.tokens(), u'delete', userKey=user, clientId=token[u'clientId'])
         i += 1
     except KeyError:
       print u'No Tokens'
@@ -7167,7 +7168,7 @@ def doUpdateInstance():
   if command == u'logo':
     logoFile = sys.argv[i]
     logoImage = readFile(logoFile)
-    callGData(service=adminObj, function=u'UpdateDomainLogo', logoImage=logoImage)
+    callGData(adminObj, u'UpdateDomainLogo', logoImage=logoImage)
   elif command == u'sso_settings':
     enableSSO = samlSignonUri = samlLogoutUri = changePasswordUri = ssoWhitelist = useDomainSpecificIssuer = None
     while i < len(sys.argv):
@@ -7204,14 +7205,14 @@ def doUpdateInstance():
       else:
         print u'ERROR: unknown option for "gam update instance sso_settings...": %s' % sys.argv[i]
         sys.exit(2)
-    callGData(service=adminObj, function=u'UpdateSSOSettings', enableSSO=enableSSO,
+    callGData(adminObj, u'UpdateSSOSettings', enableSSO=enableSSO,
               samlSignonUri=samlSignonUri, samlLogoutUri=samlLogoutUri,
               changePasswordUri=changePasswordUri, ssoWhitelist=ssoWhitelist,
               useDomainSpecificIssuer=useDomainSpecificIssuer)
   elif command == u'sso_key':
     keyFile = sys.argv[i]
     keyData = readFile(keyFile)
-    callGData(service=adminObj, function=u'UpdateSSOKey', signingKey=keyData)
+    callGData(adminObj, u'UpdateSSOKey', signingKey=keyData)
   else:
     print u'ERROR: %s is not a valid argument for "gam update instance"' % command
     sys.exit(2)
@@ -7224,15 +7225,15 @@ def doGetInstanceInfo():
     geturl(url, target_file)
     sys.exit(0)
   doGetCustomerInfo()
-  max_users = callGAPI(service=adm.maximumNumberOfUsers(), function=u'get', domainName=GC_Values[GC_DOMAIN])
+  max_users = callGAPI(adm.maximumNumberOfUsers(), u'get', domainName=GC_Values[GC_DOMAIN])
   print u'Maximum Users: %s' % max_users[u'entry'][u'apps$property'][0][u'value']
-  current_users = callGAPI(service=adm.currentNumberOfUsers(), function=u'get', domainName=GC_Values[GC_DOMAIN])
+  current_users = callGAPI(adm.currentNumberOfUsers(), u'get', domainName=GC_Values[GC_DOMAIN])
   print u'Current Users: %s' % current_users[u'entry'][u'apps$property'][0][u'value']
-  domain_edition = callGAPI(service=adm.edition(), function=u'get', domainName=GC_Values[GC_DOMAIN])
+  domain_edition = callGAPI(adm.edition(), u'get', domainName=GC_Values[GC_DOMAIN])
   print u'Domain Edition: %s' % domain_edition[u'entry'][u'apps$property'][0][u'value']
-  customer_pin = callGAPI(service=adm.customerPIN(), function=u'get', domainName=GC_Values[GC_DOMAIN])
+  customer_pin = callGAPI(adm.customerPIN(), u'get', domainName=GC_Values[GC_DOMAIN])
   print u'Customer PIN: %s' % customer_pin[u'entry'][u'apps$property'][0][u'value']
-  ssosettings = callGAPI(service=adm.ssoGeneral(), function=u'get', domainName=GC_Values[GC_DOMAIN])
+  ssosettings = callGAPI(adm.ssoGeneral(), u'get', domainName=GC_Values[GC_DOMAIN])
   for entry in ssosettings[u'entry'][u'apps$property']:
     if entry[u'name'] == u'enableSSO':
       print u'SSO Enabled: %s' % entry[u'value']
@@ -7246,7 +7247,7 @@ def doGetInstanceInfo():
       print u'SSO Whitelist IPs: %s' % entry[u'value']
     elif entry[u'name'] == u'useDomainSpecificIssuer':
       print u'SSO Use Domain Specific Issuer: %s' % entry[u'value']
-  ssokey = callGAPI(service=adm.ssoSigningKey(), function=u'get', silent_errors=True, soft_errors=True, domainName=GC_Values[GC_DOMAIN])
+  ssokey = callGAPI(adm.ssoSigningKey(), u'get', silent_errors=True, soft_errors=True, domainName=GC_Values[GC_DOMAIN])
   try:
     for entry in ssokey[u'entry'][u'apps$property']:
       if entry[u'name'] == u'algorithm':
@@ -7272,7 +7273,7 @@ def doDeleteUser():
   elif user_email.find(u'@') == -1:
     user_email = u'%s@%s' % (user_email, GC_Values[GC_DOMAIN])
   print u"Deleting account for %s" % (user_email)
-  callGAPI(service=cd.users(), function=u'delete', userKey=user_email)
+  callGAPI(cd.users(), u'delete', userKey=user_email)
 
 def doUndeleteUser():
   cd = buildGAPIObject(u'directory')
@@ -7293,7 +7294,7 @@ def doUndeleteUser():
     user = u'%s@%s' % (user, GC_Values[GC_DOMAIN])
   if not user_uid:
     print u'Looking up UID for %s...' % user
-    deleted_users = callGAPIpages(service=cd.users(), function=u'list', items=u'users',
+    deleted_users = callGAPIpages(cd.users(), u'list', u'users',
                                   customer=GC_Values[GC_CUSTOMER_ID], showDeleted=True, maxResults=GC_Values[GC_USER_MAX_RESULTS])
     matching_users = list()
     for deleted_user in deleted_users:
@@ -7319,7 +7320,7 @@ def doUndeleteUser():
     else:
       user_uid = matching_users[0][u'id']
   print u"Undeleting account for %s" % user
-  callGAPI(service=cd.users(), function=u'undelete', userKey=user_uid, body={u'orgUnitPath': orgUnit})
+  callGAPI(cd.users(), u'undelete', userKey=user_uid, body={u'orgUnitPath': orgUnit})
 
 def doDeleteGroup():
   cd = buildGAPIObject(u'directory')
@@ -7329,7 +7330,7 @@ def doDeleteGroup():
   elif group.find(u'@') == -1:
     group = u'%s@%s' % (group, GC_Values[GC_DOMAIN])
   print u"Deleting group %s" % group
-  callGAPI(service=cd.groups(), function=u'delete', groupKey=group)
+  callGAPI(cd.groups(), u'delete', groupKey=group)
 
 def doDeleteAlias(alias_email=None):
   cd = buildGAPIObject(u'directory')
@@ -7347,7 +7348,7 @@ def doDeleteAlias(alias_email=None):
   print u"Deleting alias %s" % alias_email
   if is_user or (not is_user and not is_group):
     try:
-      callGAPI(service=cd.users().aliases(), function=u'delete', throw_reasons=[u'invalid', u'badRequest', u'notFound'], userKey=alias_email, alias=alias_email)
+      callGAPI(cd.users().aliases(), u'delete', throw_reasons=[u'invalid', u'badRequest', u'notFound'], userKey=alias_email, alias=alias_email)
       return
     except googleapiclient.errors.HttpError, e:
       error = json.loads(e.content)
@@ -7356,13 +7357,13 @@ def doDeleteAlias(alias_email=None):
         print u'Error: The alias %s does not exist' % alias_email
         sys.exit(4)
   if not is_user or (not is_user and not is_group):
-    callGAPI(service=cd.groups().aliases(), function=u'delete', groupKey=alias_email, alias=alias_email)
+    callGAPI(cd.groups().aliases(), u'delete', groupKey=alias_email, alias=alias_email)
 
 def doDeleteResourceCalendar():
   resId = sys.argv[3]
   cd = buildGAPIObject(u'directory')
   print u"Deleting resource calendar %s" % resId
-  callGAPI(service=cd.resources().calendars(), function=u'delete',
+  callGAPI(cd.resources().calendars(), u'delete',
            customer=GC_Values[GC_CUSTOMER_ID], calendarResourceId=resId)
 
 def doDeleteOrg():
@@ -7371,7 +7372,7 @@ def doDeleteOrg():
   if name[0] == u'/':
     name = name[1:]
   print u"Deleting organization %s" % name
-  callGAPI(service=cd.orgunits(), function=u'delete', customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=name)
+  callGAPI(cd.orgunits(), u'delete', customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=name)
 
 def output_csv(csv_list, titles, list_type, todrive):
   csv.register_dialect(u'nixstdout', lineterminator=u'\n')
@@ -7393,7 +7394,7 @@ def output_csv(csv_list, titles, list_type, todrive):
       print u'{0}{1}'.format(WARNING_PREFIX, MESSAGE_RESULTS_TOO_LARGE_FOR_GOOGLE_SPREADSHEET)
       convert = False
     drive = buildGAPIObject(u'drive')
-    result = callGAPI(service=drive.files(), function=u'insert', convert=convert,
+    result = callGAPI(drive.files(), u'insert', convert=convert,
                       body={u'description': u' '.join(sys.argv), u'title': u'%s - %s' % (GC_Values[GC_DOMAIN], list_type), u'mimeType': u'text/csv'},
                       media_body=googleapiclient.http.MediaInMemoryUpload(string_file.getvalue(), mimetype=u'text/csv'))
     file_url = result[u'alternateLink']
@@ -7559,7 +7560,7 @@ def doPrintUsers():
     fields = u'nextPageToken,users(%s)' % u','.join(user_fields)
   sys.stderr.write(u"Getting all users in Google Apps account (may take some time on a large account)...\n")
   page_message = u'Got %%total_items%% users: %%first_item%% - %%last_item%%\n'
-  all_users = callGAPIpages(service=cd.users(), function=u'list', items=u'users', page_message=page_message,
+  all_users = callGAPIpages(cd.users(), u'list', u'users', page_message=page_message,
                             message_attribute=u'primaryEmail', customer=customer, domain=domain, fields=fields,
                             showDeleted=deleted_only, orderBy=orderBy, sortOrder=sortOrder, viewType=viewType,
                             query=query, projection=projection, customFieldMask=customFieldMask, maxResults=GC_Values[GC_USER_MAX_RESULTS])
@@ -7593,7 +7594,7 @@ def doPrintUsers():
     for user in attributes[1:]:
       user_email = user[u'primaryEmail']
       sys.stderr.write(u"Getting Group Membership for %s (%s/%s)\r\n" % (user_email, user_count, total_users))
-      groups = callGAPIpages(service=cd.groups(), function=u'list', items=u'groups', userKey=user_email)
+      groups = callGAPIpages(cd.groups(), u'list', u'groups', userKey=user_email)
       grouplist = u''
       for groupname in groups:
         grouplist += groupname[u'email']+u' '
@@ -7698,7 +7699,7 @@ def doPrintGroups():
       sys.exit(2)
   sys.stderr.write(u"Retrieving All Groups for Google Apps account (may take some time on a large account)...\n")
   page_message = u'Got %%num_items%% groups: %%first_item%% - %%last_item%%\n'
-  all_groups = callGAPIpages(service=cd.groups(), function=u'list', items=u'groups', page_message=page_message, maxResults=maxResults,
+  all_groups = callGAPIpages(cd.groups(), u'list', u'groups', page_message=page_message, maxResults=maxResults,
                              message_attribute=u'email', customer=customer, domain=usedomain, userKey=usemember, fields=fields)
   total_groups = len(all_groups)
   count = 0
@@ -7746,8 +7747,8 @@ def doPrintGroups():
       roles = u','.join(roles)
       sys.stderr.write(u' Getting %s for %s (%s of %s)\n' % (roles, group_vals[u'email'], count, total_groups))
       page_message = u'Got %%num_items%% members: %%first_item%% - %%last_item%%\n'
-      all_group_members = callGAPIpages(service=cd.members(), function=u'list', items=u'members', page_message=page_message,
-                                        message_attribute=u'email', groupKey=group_vals[u'email'], roles=roles, fields=u'nextPageToken,members(email,role)')
+      all_group_members = callGAPIpages(cd.members(), u'list', u'members', page_message=page_message,
+                                        message_attribute=u'email', groupKey=group_vals[u'email'], roles=roles, fields=u'nextPageToken,members(email,id,role)')
       if members:
         all_true_members = list()
       if managers:
@@ -7777,7 +7778,7 @@ def doPrintGroups():
     if settings:
       sys.stderr.write(u" Retrieving Settings for group %s (%s of %s)...\r\n" % (group_vals[u'email'], count, total_groups))
       gs = buildGAPIObject(u'groupssettings')
-      settings = callGAPI(service=gs.groups(), function=u'get', retry_reasons=[u'serviceLimit'], groupUniqueId=group_vals[u'email'])
+      settings = callGAPI(gs.groups(), u'get', retry_reasons=[u'serviceLimit'], groupUniqueId=group_vals[u'email'])
       for key in settings:
         if key in [u'email', u'name', u'description', u'kind', u'etag']:
           continue
@@ -7844,7 +7845,7 @@ def doPrintOrgs():
     org_attributes[0][u'Path'] = u'Path'
     titles.append(u'Path')
   sys.stderr.write(u"Retrieving All Organizational Units for your account (may take some time on large domain)...")
-  orgs = callGAPI(service=cd.orgunits(), function=u'list', customerId=GC_Values[GC_CUSTOMER_ID], fields=fields, type=listType, orgUnitPath=orgUnitPath)
+  orgs = callGAPI(cd.orgunits(), u'list', customerId=GC_Values[GC_CUSTOMER_ID], fields=fields, type=listType, orgUnitPath=orgUnitPath)
   sys.stderr.write(u"done\n")
   if not u'organizationUnits' in orgs:
     print u'0 org units in this Google Apps instance...'
@@ -7903,7 +7904,7 @@ def doPrintAliases():
   titles = [u'Alias', u'Target', u'TargetType']
   sys.stderr.write(u"Retrieving All User Aliases for %s organization (may take some time on large domain)...\n" % GC_Values[GC_DOMAIN])
   page_message = u'Got %%num_items%% users %%first_item%% - %%last_item%%\n'
-  all_users = callGAPIpages(service=cd.users(), function=u'list', items=u'users', page_message=page_message,
+  all_users = callGAPIpages(cd.users(), u'list', u'users', page_message=page_message,
                             message_attribute=u'primaryEmail', customer=GC_Values[GC_CUSTOMER_ID],
                             fields=u'users(primaryEmail,aliases),nextPageToken', maxResults=GC_Values[GC_USER_MAX_RESULTS])
   for user in all_users:
@@ -7914,7 +7915,7 @@ def doPrintAliases():
       continue
   sys.stderr.write(u"Retrieving All User Aliases for %s organization (may take some time on large domain)...\n" % GC_Values[GC_DOMAIN])
   page_message = u'Got %%num_items%% groups %%first_item%% - %%last_item%%\n'
-  all_groups = callGAPIpages(service=cd.groups(), function=u'list', items=u'groups', page_message=page_message,
+  all_groups = callGAPIpages(cd.groups(), u'list', u'groups', page_message=page_message,
                              message_attribute=u'email', customer=GC_Values[GC_CUSTOMER_ID],
                              fields=u'groups(email,aliases),nextPageToken')
   for group in all_groups:
@@ -7979,7 +7980,7 @@ def doPrintGroupMembers():
     groupname = True
     fieldsList.remove(u'group')
   if not all_groups:
-    all_groups = callGAPIpages(service=cd.groups(), function=u'list', items=u'groups', message_attribute=u'email',
+    all_groups = callGAPIpages(cd.groups(), u'list', u'groups', message_attribute=u'email',
                                customer=GC_Values[GC_CUSTOMER_ID], fields=u'nextPageToken,groups(email)')
   i = 0
   count = len(all_groups)
@@ -7987,7 +7988,7 @@ def doPrintGroupMembers():
     i += 1
     group_email = group[u'email']
     sys.stderr.write(u'Getting members for %s (%s/%s)\n' % (group_email, i, count))
-    group_members = callGAPIpages(service=cd.members(), function=u'list', items=u'members', message_attribute=u'email', groupKey=group_email)
+    group_members = callGAPIpages(cd.members(), u'list', u'members', message_attribute=u'email', groupKey=group_email)
     for member in group_members:
       member_attr = {}
       if groupname:
@@ -8050,7 +8051,7 @@ def doPrintMobileDevices():
       sys.exit(2)
   sys.stderr.write(u'Retrieving All Mobile Devices for organization (may take some time for large accounts)...\n')
   page_message = u'Got %%num_items%% mobile devices...\n'
-  all_mobile = callGAPIpages(service=cd.mobiledevices(), function=u'list', items=u'mobiledevices', page_message=page_message,
+  all_mobile = callGAPIpages(cd.mobiledevices(), u'list', u'mobiledevices', page_message=page_message,
                              customerId=GC_Values[GC_CUSTOMER_ID], query=query,
                              orderBy=orderBy, sortOrder=sortOrder, maxResults=GC_Values[GC_DEVICE_MAX_RESULTS])
   for mobile in all_mobile:
@@ -8135,7 +8136,7 @@ def doPrintCrosDevices():
     projection = u'FULL'
   sys.stderr.write(u'Retrieving All Chrome OS Devices for organization (may take some time for large accounts)...\n')
   page_message = u'Got %%num_items%% Chrome devices...\n'
-  all_cros = callGAPIpages(service=cd.chromeosdevices(), function=u'list', items=u'chromeosdevices', page_message=page_message,
+  all_cros = callGAPIpages(cd.chromeosdevices(), u'list', u'chromeosdevices', page_message=page_message,
                            query=query, customerId=GC_Values[GC_CUSTOMER_ID], projection=projection,
                            orderBy=orderBy, sortOrder=sortOrder, maxResults=GC_Values[GC_DEVICE_MAX_RESULTS])
   if all_cros:
@@ -8204,7 +8205,7 @@ def doPrintLicenses(return_list=False, skus=None):
       product, sku = getProductAndSKU(sku)
       page_message = u'Got %%%%total_items%%%% Licenses for %s...\n' % sku
       try:
-        licenses += callGAPIpages(service=lic.licenseAssignments(), function=u'listForProductAndSku', throw_reasons=[u'invalid', u'forbidden'], page_message=page_message,
+        licenses += callGAPIpages(lic.licenseAssignments(), u'listForProductAndSku', u'items', throw_reasons=[u'invalid', u'forbidden'], page_message=page_message,
                                   customerId=GC_Values[GC_DOMAIN], productId=product, skuId=sku, fields=u'items(productId,skuId,userId),nextPageToken')
       except googleapiclient.errors.HttpError:
         pass
@@ -8212,7 +8213,7 @@ def doPrintLicenses(return_list=False, skus=None):
     for productId in products:
       page_message = u'Got %%%%total_items%%%% Licenses for %s...\n' % productId
       try:
-        licenses += callGAPIpages(service=lic.licenseAssignments(), function=u'listForProduct', throw_reasons=[u'invalid', u'forbidden'], page_message=page_message,
+        licenses += callGAPIpages(lic.licenseAssignments(), u'listForProduct', u'items', throw_reasons=[u'invalid', u'forbidden'], page_message=page_message,
                                   customerId=GC_Values[GC_DOMAIN], productId=productId, fields=u'items(productId,skuId,userId),nextPageToken')
       except googleapiclient.errors.HttpError:
         pass
@@ -8253,7 +8254,7 @@ def doPrintTokens():
     token_attributes[0][title] = title
   for user in all_users:
     sys.stderr.write(u' getting tokens for %s\n' % user)
-    user_tokens = callGAPI(service=cd.tokens(), function='list', userKey=user)
+    user_tokens = callGAPI(cd.tokens(), u'list', userKey=user)
     try:
       for user_token in user_tokens[u'items']:
         this_token = dict()
@@ -8300,7 +8301,7 @@ def doPrintResourceCalendars():
     fields = u'nextPageToken,items(%s)' % u','.join(fields)
   sys.stderr.write(u"Retrieving All Resource Calendars for your account (may take some time on a large domain)\n")
   page_message = u'Got %%total_items%% resources: %%first_item%% - %%last_item%%\n'
-  resources = callGAPIpages(service=cd.resources().calendars(), function=u'list', items=u'items',
+  resources = callGAPIpages(cd.resources().calendars(), u'list', u'items',
                             page_message=page_message, message_attribute=u'resourceId',
                             customer=GC_Values[GC_CUSTOMER_ID], fields=fields, maxResults=500)
   resources_attrib = [{u'resourceId':u'resourceId',
@@ -8358,7 +8359,7 @@ def doCreateMonitor():
   if source_user.find(u'@') > 0:
     audit.domain = source_user[source_user.find(u'@')+1:]
     source_user = source_user[:source_user.find(u'@')]
-  callGData(service=audit, function=u'createEmailMonitor', source_user=source_user, destination_user=destination_user, end_date=end_date, begin_date=begin_date,
+  callGData(audit, u'createEmailMonitor', source_user=source_user, destination_user=destination_user, end_date=end_date, begin_date=begin_date,
             incoming_headers_only=incoming_headers_only, outgoing_headers_only=outgoing_headers_only,
             drafts=drafts, drafts_headers_only=drafts_headers_only, chats=chats, chats_headers_only=chats_headers_only)
 
@@ -8368,7 +8369,7 @@ def doShowMonitors():
   if user.find(u'@') > 0:
     audit.domain = user[user.find(u'@')+1:]
     user = user[:user.find(u'@')]
-  results = callGData(service=audit, function=u'getEmailMonitors', user=user)
+  results = callGData(audit, u'getEmailMonitors', user=user)
   print sys.argv[4].lower()+u' has the following monitors:'
   print u''
   for monitor in results:
@@ -8391,7 +8392,7 @@ def doDeleteMonitor():
   if source_user.find(u'@') > 0:
     audit.domain = source_user[source_user.find(u'@')+1:]
     source_user = source_user[:source_user.find(u'@')]
-  callGData(service=audit, function=u'deleteEmailMonitor', source_user=source_user, destination_user=destination_user)
+  callGData(audit, u'deleteEmailMonitor', source_user=source_user, destination_user=destination_user)
 
 def doRequestActivity():
   user = sys.argv[4].lower()
@@ -8399,7 +8400,7 @@ def doRequestActivity():
   if user.find(u'@') > 0:
     audit.domain = user[user.find(u'@')+1:]
     user = user[:user.find(u'@')]
-  results = callGData(service=audit, function=u'createAccountInformationRequest', user=user)
+  results = callGData(audit, u'createAccountInformationRequest', user=user)
   print u'Request successfully submitted:'
   print u' Request ID: '+results[u'requestId']
   print u' User: '+results[u'userEmailAddress']
@@ -8415,7 +8416,7 @@ def doStatusActivityRequests():
       audit.domain = user[user.find(u'@')+1:]
       user = user[:user.find(u'@')]
     request_id = sys.argv[5].lower()
-    results = callGData(service=audit, function=u'getAccountInformationRequestStatus', user=user, request_id=request_id)
+    results = callGData(audit, u'getAccountInformationRequestStatus', user=user, request_id=request_id)
     print u''
     print u'  Request ID: '+results[u'requestId']
     print u'  User: '+results[u'userEmailAddress']
@@ -8430,7 +8431,7 @@ def doStatusActivityRequests():
       pass
     print u''
   except IndexError:
-    results = callGData(service=audit, function=u'getAllAccountInformationRequestsStatus')
+    results = callGData(audit, u'getAllAccountInformationRequestsStatus')
     print u'Current Activity Requests:'
     print u''
     for request in results:
@@ -8454,7 +8455,7 @@ def doDownloadActivityRequest():
   if user.find(u'@') > 0:
     audit.domain = user[user.find(u'@')+1:]
     user = user[:user.find(u'@')]
-  results = callGData(service=audit, function=u'getAccountInformationRequestStatus', user=user, request_id=request_id)
+  results = callGData(audit, u'getAccountInformationRequestStatus', user=user, request_id=request_id)
   if results[u'status'] != u'COMPLETED':
     systemErrorExit(4, MESSAGE_REQUEST_NOT_COMPLETE.format(results[u'status']))
   if int(results.get(u'numberOfFiles', u'0')) < 1:
@@ -8493,7 +8494,7 @@ def doRequestExport():
   if user.find(u'@') > 0:
     audit.domain = user[user.find(u'@')+1:]
     user = user[:user.find(u'@')]
-  results = callGData(service=audit, function=u'createMailboxExportRequest', user=user, begin_date=begin_date, end_date=end_date, include_deleted=include_deleted,
+  results = callGData(audit, u'createMailboxExportRequest', user=user, begin_date=begin_date, end_date=end_date, include_deleted=include_deleted,
                       search_query=search_query, headers_only=headers_only)
   print u'Export request successfully submitted:'
   print u' Request ID: '+results[u'requestId']
@@ -8519,7 +8520,7 @@ def doDeleteExport():
     audit.domain = user[user.find(u'@')+1:]
     user = user[:user.find(u'@')]
   request_id = sys.argv[5].lower()
-  callGData(service=audit, function=u'deleteMailboxExportRequest', user=user, request_id=request_id)
+  callGData(audit, u'deleteMailboxExportRequest', user=user, request_id=request_id)
 
 def doDeleteActivityRequest():
   audit = getAuditObject()
@@ -8528,7 +8529,7 @@ def doDeleteActivityRequest():
     audit.domain = user[user.find(u'@')+1:]
     user = user[:user.find(u'@')]
   request_id = sys.argv[5].lower()
-  callGData(service=audit, function=u'deleteAccountInformationRequest', user=user, request_id=request_id)
+  callGData(audit, u'deleteAccountInformationRequest', user=user, request_id=request_id)
 
 def doStatusExportRequests():
   audit = getAuditObject()
@@ -8538,7 +8539,7 @@ def doStatusExportRequests():
       audit.domain = user[user.find(u'@')+1:]
       user = user[:user.find(u'@')]
     request_id = sys.argv[5].lower()
-    results = callGData(service=audit, function=u'getMailboxExportRequestStatus', user=user, request_id=request_id)
+    results = callGData(audit, u'getMailboxExportRequestStatus', user=user, request_id=request_id)
     print u''
     print u'  Request ID: '+results[u'requestId']
     print u'  User: '+results[u'userEmailAddress']
@@ -8558,7 +8559,7 @@ def doStatusExportRequests():
     except KeyError:
       pass
   except IndexError:
-    results = callGData(service=audit, function=u'getAllMailboxExportRequestsStatus')
+    results = callGData(audit, u'getAllMailboxExportRequestsStatus')
     print u'Current Export Requests:'
     print u''
     for request in results:
@@ -8587,7 +8588,7 @@ def doWatchExportRequest():
     user = user[:user.find(u'@')]
   request_id = sys.argv[5].lower()
   while True:
-    results = callGData(service=audit, function=u'getMailboxExportRequestStatus', user=user, request_id=request_id)
+    results = callGData(audit, u'getMailboxExportRequestStatus', user=user, request_id=request_id)
     if results[u'status'] != u'PENDING':
       print u'status is %s. Sending email.' % results[u'status']
       msg_txt = u"\n"
@@ -8627,7 +8628,7 @@ def send_email(msg_subj, msg_txt, msg_rcpt=None):
   msg[u'To'] = msg_rcpt
   msg_string = msg.as_string()
   msg_raw = base64.urlsafe_b64encode(msg_string)
-  callGAPI(service=gmail.users().messages(), function=u'send', userId=sender_email, body={u'raw': msg_raw})
+  callGAPI(gmail.users().messages(), u'send', userId=sender_email, body={u'raw': msg_raw})
 
 def doDownloadExportRequest():
   user = sys.argv[4].lower()
@@ -8636,7 +8637,7 @@ def doDownloadExportRequest():
   if user.find(u'@') > 0:
     audit.domain = user[user.find(u'@')+1:]
     user = user[:user.find(u'@')]
-  results = callGData(service=audit, function=u'getMailboxExportRequestStatus', user=user, request_id=request_id)
+  results = callGData(audit, u'getMailboxExportRequestStatus', user=user, request_id=request_id)
   if results[u'status'] != u'COMPLETED':
     systemErrorExit(4, MESSAGE_REQUEST_NOT_COMPLETE.format(results[u'status']))
   if int(results.get(u'numberOfFiles', u'0')) < 1:
@@ -8654,7 +8655,7 @@ def doDownloadExportRequest():
 def doUploadAuditKey():
   auditkey = sys.stdin.read()
   audit = getAuditObject()
-  callGData(service=audit, function=u'updatePGPKey', pgpkey=auditkey)
+  callGData(audit, u'updatePGPKey', pgpkey=auditkey)
 
 def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=False, member_type=None):
   got_uids = False
@@ -8680,7 +8681,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
     if not silent:
       sys.stderr.write(u"Getting %s of %s (may take some time for large groups)...\n" % (member_type_message, group))
       page_message = u'Got %%%%total_items%%%% %s...' % member_type_message
-    members = callGAPIpages(service=cd.members(), function=u'list', items=u'members', page_message=page_message,
+    members = callGAPIpages(cd.members(), u'list', u'members', page_message=page_message,
                             groupKey=group, roles=member_type, fields=u'nextPageToken,members(email,id)')
     users = []
     for member in members:
@@ -8698,7 +8699,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
     if not silent:
       sys.stderr.write(u"Getting all users in the Google Apps organization (may take some time on a large domain)...\n")
       page_message = u'Got %%total_items%% users...'
-    members = callGAPIpages(service=cd.users(), function=u'list', items=u'users', page_message=page_message,
+    members = callGAPIpages(cd.users(), u'list', u'users', page_message=page_message,
                             customer=GC_Values[GC_CUSTOMER_ID], fields=u'nextPageToken,users(primaryEmail,id,orgUnitPath)',
                             query=u"orgUnitPath='%s'" % ou, maxResults=GC_Values[GC_USER_MAX_RESULTS])
     for member in members:
@@ -8720,7 +8721,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
     if not silent:
       sys.stderr.write(u"Getting all users in the Google Apps organization (may take some time on a large domain)...\n")
       page_message = u'Got %%total_items%% users..'
-    members = callGAPIpages(service=cd.users(), function=u'list', items=u'users', page_message=page_message,
+    members = callGAPIpages(cd.users(), u'list', u'users', page_message=page_message,
                             customer=GC_Values[GC_CUSTOMER_ID], fields=u'nextPageToken,users(primaryEmail,id)',
                             query=u"orgUnitPath='%s'" % ou, maxResults=GC_Values[GC_USER_MAX_RESULTS])
     for member in members:
@@ -8736,7 +8737,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
     if not silent:
       sys.stderr.write(u"Getting all users that match query %s (may take some time on a large domain)...\n" % entity)
     page_message = u'Got %%total_items%% users...'
-    members = callGAPIpages(service=cd.users(), function=u'list', items=u'users', page_message=page_message,
+    members = callGAPIpages(cd.users(), u'list', u'users', page_message=page_message,
                             customer=GC_Values[GC_CUSTOMER_ID], fields=u'nextPageToken,users(primaryEmail,id)',
                             query=entity, maxResults=GC_Values[GC_USER_MAX_RESULTS])
     for member in members:
@@ -8786,14 +8787,14 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
       entity = u'd:%s' % entity
     if entity_type in [u'courseparticipants', u'teachers']:
       page_message = u'Got %%total_items%% teachers...'
-      teachers = callGAPIpages(service=croom.courses().teachers(), function=u'list', items=u'teachers', page_message=page_message, courseId=entity)
+      teachers = callGAPIpages(croom.courses().teachers(), u'list', u'teachers', page_message=page_message, courseId=entity)
       for teacher in teachers:
         email = teacher[u'profile'].get(u'emailAddress', None)
         if email:
           users.append(email)
     if entity_type in [u'courseparticipants', u'students']:
       page_message = u'Got %%total_items%% students...'
-      students = callGAPIpages(service=croom.courses().students(), function=u'list', page_message=page_message, items=u'students', courseId=entity)
+      students = callGAPIpages(croom.courses().students(), u'list', u'students', page_message=page_message, courseId=entity)
       for student in students:
         email = student[u'profile'].get(u'emailAddress', None)
         if email:
@@ -8805,7 +8806,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
       if not silent:
         sys.stderr.write(u"Getting all users in Google Apps account (may take some time on a large account)...\n")
       page_message = u'Got %%total_items%% users...'
-      all_users = callGAPIpages(service=cd.users(), function=u'list', items=u'users', page_message=page_message,
+      all_users = callGAPIpages(cd.users(), u'list', u'users', page_message=page_message,
                                 customer=GC_Values[GC_CUSTOMER_ID],
                                 fields=u'nextPageToken,users(primaryEmail,suspended,id)', maxResults=GC_Values[GC_USER_MAX_RESULTS])
       for member in all_users:
@@ -8819,7 +8820,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
     elif entity.lower() == u'cros':
       if not silent:
         sys.stderr.write(u"Getting all CrOS devices in Google Apps account (may take some time on a large account)...\n")
-      all_cros = callGAPIpages(service=cd.chromeosdevices(), function=u'list', items=u'chromeosdevices',
+      all_cros = callGAPIpages(cd.chromeosdevices(), u'list', u'chromeosdevices',
                                customerId=GC_Values[GC_CUSTOMER_ID], fields=u'nextPageToken,chromeosdevices(deviceId)',
                                maxResults=GC_Values[GC_DEVICE_MAX_RESULTS])
       for member in all_cros:
@@ -8849,7 +8850,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, return_uids=Fa
   if return_uids and not got_uids:
     new_full_users = list()
     for user in full_users:
-      user_result = callGAPI(service=cd.users(), function=u'get', userKey=user, fields=u'id')
+      user_result = callGAPI(cd.users(), u'get', userKey=user, fields=u'id')
       new_full_users.append(user_result[u'id'])
     full_users = new_full_users
   return full_users
@@ -8870,7 +8871,7 @@ def OAuthInfo():
     access_token = credentials.access_token
     print u"\nOAuth File: %s" % GC_Values[GC_OAUTH2_TXT]
   oa2 = buildGAPIObject(u'oauth2')
-  token_info = callGAPI(service=oa2, function=u'tokeninfo', access_token=access_token)
+  token_info = callGAPI(oa2, u'tokeninfo', access_token=access_token)
   print u"Client ID: %s" % token_info[u'issued_to']
   try:
     print u"Secret: %s" % credentials.client_secret
@@ -9108,7 +9109,6 @@ def run_batch(items):
       continue
     GM_Globals[GM_BATCH_QUEUE].put(python_cmd+item)
   GM_Globals[GM_BATCH_QUEUE].join()
-
 #
 # Process command line arguments, find substitutions
 # An argument containing instances of ~~xxx~~ has xxx replaced by the value of field xxx from the CSV file
