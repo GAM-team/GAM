@@ -4533,14 +4533,14 @@ def downloadDriveFile(users):
       file_title = result[u'title']
       safe_file_title = u''.join(c for c in file_title if c in safe_filename_chars)
       filename = os.path.join(target_folder, safe_file_title)
-      if extension and filename.lower()[:len(extension)] != extension:
+      if extension and filename.lower()[-len(extension):] != extension:
         filename = u'%s%s' % (filename, extension)
       y = 0
       if os.path.isfile(filename):
         while True:
           y += 1
           new_filename = os.path.join(target_folder, u'(%s)-%s' % (y, safe_file_title))
-          if extension and new_filename.lower()[:len(extension)] != extension:
+          if extension and new_filename.lower()[-len(extension):] != extension:
             new_filename = u'%s%s' % (new_filename, extension)
           if not os.path.isfile(new_filename):
             break
