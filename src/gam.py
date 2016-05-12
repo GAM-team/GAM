@@ -130,6 +130,8 @@ GC_ACTIVITY_MAX_RESULTS = u'activity_max_results'
 # Automatically generate gam batch command if number of users specified in gam users xxx command exceeds this number
 # Default: 0, don't automatically generate gam batch commands
 GC_AUTO_BATCH_MIN = u'auto_batch_min'
+# When processing items in batches, how many should be processed in each batch
+GC_BATCH_SIZE = u'batch_size'
 # GAM cache directory. If no_cache is specified, this variable will be set to None
 GC_CACHE_DIR = u'cache_dir'
 # Character set of batch, csv, data files
@@ -173,14 +175,13 @@ GC_SHOW_COUNTS_MIN = u'show_counts_min'
 GC_SHOW_GETTINGS = u'show_gettings'
 # GAM config directory containing admin-settings-v1.json, cloudprint-v2.json
 GC_SITE_DIR = u'site_dir'
-# When adding Users to Groups/Org Units, how many should be processed in each batch
-GC_USER_BATCH_SIZE = u'user_batch_size'
 # When retrieving lists of Users from API, how many should be retrieved in each chunk
 GC_USER_MAX_RESULTS = u'user_max_results'
 
 GC_Defaults = {
   GC_ACTIVITY_MAX_RESULTS: 100,
   GC_AUTO_BATCH_MIN: 0,
+  GC_BATCH_SIZE: 50,
   GC_CACHE_DIR: u'',
   GC_CHARSET: DEFAULT_CHARSET,
   GC_CLIENT_SECRETS_JSON: FN_CLIENT_SECRETS_JSON,
@@ -202,7 +203,6 @@ GC_Defaults = {
   GC_SHOW_COUNTS_MIN: 1,
   GC_SHOW_GETTINGS: TRUE,
   GC_SITE_DIR: u'',
-  GC_USER_BATCH_SIZE: 50,
   GC_USER_MAX_RESULTS: 500,
   }
 
@@ -223,6 +223,7 @@ GC_VAR_LIMITS = u'lmit'
 GC_VAR_INFO = {
   GC_ACTIVITY_MAX_RESULTS: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (1, 500)},
   GC_AUTO_BATCH_MIN: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (0, None)},
+  GC_BATCH_SIZE: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (1, 1000)},
   GC_CACHE_DIR: {GC_VAR_TYPE: GC_TYPE_DIRECTORY},
   GC_CHARSET: {GC_VAR_TYPE: GC_TYPE_STRING},
   GC_CLIENT_SECRETS_JSON: {GC_VAR_TYPE: GC_TYPE_FILE},
@@ -244,7 +245,6 @@ GC_VAR_INFO = {
   GC_SHOW_COUNTS_MIN: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (0, None)},
   GC_SHOW_GETTINGS: {GC_VAR_TYPE: GC_TYPE_BOOLEAN},
   GC_SITE_DIR: {GC_VAR_TYPE: GC_TYPE_DIRECTORY},
-  GC_USER_BATCH_SIZE: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (1, 1000)},
   GC_USER_MAX_RESULTS: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (1, 500)},
   }
 #
