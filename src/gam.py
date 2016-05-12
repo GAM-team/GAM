@@ -9109,6 +9109,68 @@ def run_batch(items):
     GM_Globals[GM_BATCH_QUEUE].put(python_cmd+item)
   GM_Globals[GM_BATCH_QUEUE].join()
 
+#
+# Process command line arguments, find substitutions
+# An argument containing instances of ~~xxx~~ has xxx replaced by the value of field xxx from the CSV file
+# An argument containing exactly ~xxx is replaced by the value of field xxx from the CSV file
+# Otherwise, the argument is preserved as is
+#
+# SubFields is a dictionary; the key is the argument number, the value is a list of tuples that mark
+# the substition (fieldname, start, end).
+# Example: update user '~User' address type work unstructured '~~Street~~, ~~City~~, ~~State~~ ~~ZIP~~' primary
+# {2: [('User', 0, 5)], 7: [('Street', 0, 10), ('City', 12, 20), ('State', 22, 31), ('ZIP', 32, 39)]}
+#
+def getSubFields(i, fieldNames):
+  subFields = {}
+  PATTERN = re.compile(r'~~(.+?)~~')
+  GAM_argv = []
+  GAM_argvI = 0
+  while i < len(sys.argv):
+    myarg = sys.argv[i]
+    if not myarg:
+      GAM_argv.append(myarg)
+    elif PATTERN.search(myarg):
+      pos = 0
+      while True:
+        match = PATTERN.search(myarg, pos)
+        if not match:
+          break
+        fieldName = match.group(1)
+        if fieldName in fieldNames:
+          subFields.setdefault(GAM_argvI, [])
+          subFields[GAM_argvI].append((fieldName, match.start(), match.end()))
+        else:
+          csvFieldErrorExit(fieldName, fieldNames)
+        pos = match.end()
+      GAM_argv.append(myarg)
+    elif myarg[0] == u'~':
+      fieldName = myarg[1:]
+      if fieldName in fieldNames:
+        subFields[GAM_argvI] = [(fieldName, 0, len(myarg))]
+        GAM_argv.append(myarg)
+      else:
+        csvFieldErrorExit(fieldName, fieldNames)
+    else:
+      GAM_argv.append(myarg.encode(GM_Globals[GM_SYS_ENCODING]))
+    GAM_argvI += 1
+    i += 1
+  return(GAM_argv, subFields)
+#
+def processSubFields(GAM_argv, row, subFields):
+  argv = GAM_argv[:]
+  for GAM_argvI, fields in subFields.iteritems():
+    oargv = argv[GAM_argvI][:]
+    argv[GAM_argvI] = u''
+    pos = 0
+    for field in fields:
+      argv[GAM_argvI] += oargv[pos:field[1]]
+      if row[field[0]]:
+        argv[GAM_argvI] += row[field[0]]
+      pos = field[2]
+    argv[GAM_argvI] += oargv[pos:]
+    argv[GAM_argvI] = argv[GAM_argvI].encode(GM_Globals[GM_SYS_ENCODING])
+  return argv
+
 def win32_unicode_argv():
   from ctypes import POINTER, byref, cdll, c_int, windll
   from ctypes.wintypes import LPCWSTR, LPWSTR
@@ -9143,14 +9205,15 @@ try:
       argv = shlex.split(line)
       if not argv:
         continue
-      if (argv[0] in [u'#', u' ', u''] or len(argv) < 2) and argv != [u'commit-batch']:
+      cmd = argv[0].strip().lower()
+      if (not cmd) or cmd.startswith(u'#') or ((len(argv) == 1) and (cmd != u'commit-batch')):
         continue
-      elif argv[0] not in [u'gam', u'commit-batch']:
-        print u'ERROR: "%s" is not a valid gam command' % line
-        continue
-      if argv[0] == u'gam':
-        argv = argv[1:]
-      items.append(argv)
+      if cmd == u'gam':
+        items.append([arg.encode(GM_Globals[GM_SYS_ENCODING]) for arg in argv[1:]])
+      elif cmd == u'commit-batch':
+        items.append([cmd])
+      else:
+        print u'ERROR: "%s" is not a valid gam command' % line.strip()
     closeFile(f)
     run_batch(items)
     sys.exit(0)
@@ -9158,30 +9221,19 @@ try:
     if httplib2.debuglevel > 0:
       print u'Sorry, CSV commands are not compatible with debug. Delete debug.gam and try again.'
       sys.exit(1)
-    csv_filename = sys.argv[2]
-    f = openFile(csv_filename)
-    input_file = csv.DictReader(f)
-    if sys.argv[3].lower() != u'gam':
+    i = 2
+    filename = sys.argv[i]
+    i += 1
+    f = openFile(filename)
+    csvFile = csv.DictReader(f)
+    if (i == len(sys.argv)) or (sys.argv[i].lower() != u'gam') or (i+1 == len(sys.argv)):
       print u'ERROR: "gam csv <filename>" should be followed by a full GAM command...'
       sys.exit(3)
-    argv_template = sys.argv[4:]
-    substring_replacements = re.findall(r'~~(.*?)~~', u' '.join(argv_template))
-    items = list()
-    for row in input_file:
-      argv = list()
-      for arg in argv_template:
-        for substring_replacement in substring_replacements:
-          try:
-            arg = arg.replace(u'~~%s~~' % substring_replacement, row[substring_replacement])
-          except KeyError:
-            systemErrorExit(3, u'%s is not in %s' % (substring_replacement, row))
-        if arg[0] != u'~':
-          argv.append(arg)
-        elif arg[1:] in row:
-          argv.append(row[arg[1:]])
-        else:
-          csvFieldErrorExit(arg[1:], row.keys())
-      items.append(argv)
+    i += 1
+    GAM_argv, subFields = getSubFields(i, csvFile.fieldnames)
+    items = []
+    for row in csvFile:
+      items.append(processSubFields(GAM_argv, row, subFields))
     closeFile(f)
     run_batch(items)
     sys.exit(0)
