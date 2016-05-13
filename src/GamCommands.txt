@@ -646,6 +646,7 @@ gam <UserTypeEntity> untrash message|messages query <Query> [doit] [max_to_untra
 # Update user Gmail settings
 #
 gam <UserTypeEntity> show gmailprofile [todrive]
+gam <UserTypeEntity> show gplusprofile [todrive]
 gam <UserTypeEntity> arrows <Boolean>
 
 gam <UserTypeEntity> delegate|delegates to <UserEntity>
