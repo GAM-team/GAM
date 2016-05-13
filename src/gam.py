@@ -1105,7 +1105,7 @@ def showReport():
                                startTime=startTime, endTime=endTime, eventName=eventName, filters=filters)
     if len(activities) > 0:
       attrs = []
-      titles = []
+      titles = [u'name']
       for activity in activities:
         events = activity[u'events']
         del activity[u'events']
@@ -1117,13 +1117,7 @@ def showReport():
             if item not in titles:
               titles.append(item)
           attrs.append(row)
-      header = {}
-      titles.remove(u'name')
-      titles = sorted(titles)
-      titles.insert(0, u'name')
-      for title in titles:
-        header[title] = title
-      attrs.insert(0, header)
+      addSortedTitlesToCSV(attrs, u'name', titles)
       cap_report = u'%s%s' % (report[0].upper(), report[1:])
       output_csv(attrs, titles, u'%s Activity Report' % cap_report, to_drive)
 
@@ -4716,13 +4710,7 @@ def showGmailProfile(users):
         if item not in titles:
           titles.append(item)
       profiles.append(results)
-  titles.remove(u'emailAddress')
-  titles = sorted(titles)
-  titles = [u'emailAddress'] + titles
-  header = {}
-  for title in titles:
-    header[title] = title
-  profiles.insert(0, header)
+  addSortedTitlesToCSV(profiles, u'emailAddress', titles)
   output_csv(profiles, titles, list_type=u'Gmail Profiles', todrive=todrive)
 
 def showGplusProfile(users):
@@ -4749,13 +4737,7 @@ def showGplusProfile(users):
       for item in results:
         if item not in titles:
           titles.append(item)
-  titles.remove(u'id')
-  titles = sorted(titles)
-  titles = [u'id'] + titles
-  header = {}
-  for title in titles:
-    header[title] = title
-  profiles.insert(0, header)
+  addSortedTitlesToCSV(profiles, u'id', titles)
   output_csv(profiles, titles, list_type=u'Gplus Profiles', todrive=todrive)
 
 def updateLabels(users):
@@ -7415,6 +7397,16 @@ def doDeleteOrg():
   print u"Deleting organization %s" % name
   callGAPI(cd.orgunits(), u'delete', customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=name)
 
+def addSortedTitlesToCSV(csv_list, firstTitle, titles):
+  if firstTitle in titles:
+    titles.remove(firstTitle)
+  titles.sort()
+  titles.insert(0, firstTitle)
+  header = {}
+  for title in titles:
+    header[title] = title
+  csv_list.insert(0, header)
+
 def output_csv(csv_list, titles, list_type, todrive):
   csv.register_dialect(u'nixstdout', lineterminator=u'\n')
   if todrive:
@@ -7620,13 +7612,7 @@ def doPrintUsers():
     for item in attributes[-1]:
       if item not in titles:
         titles.append(item)
-  titles.remove(u'primaryEmail')
-  titles = sorted(titles)
-  titles = [u'primaryEmail'] + titles
-  header = {}
-  for title in titles:
-    header[title] = title
-  attributes.insert(0, header)
+  addSortedTitlesToCSV(attributes, u'primaryEmail', titles)
   if getGroupFeed:
     total_users = len(attributes) - 1
     user_count = 1
