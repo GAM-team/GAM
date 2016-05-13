@@ -3881,7 +3881,7 @@ def createDriveFile(users):
 
 def downloadDriveFile(users):
   i = 5
-  query = fileIds = revision = None
+  query = fileIds = revisionId = None
   gdownload_format = u'openoffice'
   target_folder = GC_Values[GC_DRIVE_DIR]
   safe_filename_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
@@ -3894,7 +3894,7 @@ def downloadDriveFile(users):
       query = sys.argv[i+1]
       i += 2
     elif myarg == u'revision':
-      revision = sys.argv[i+1]
+      revisionId = sys.argv[i+1]
       i += 2
     elif myarg == u'format':
       gdownload_format = sys.argv[i+1].lower()
@@ -3995,8 +3995,8 @@ def downloadDriveFile(users):
             break
         filename = new_filename
       print convertUTF8(my_line % filename)
-      if revision:
-        download_url = u'{0}&revision={1}'.format(download_url, revision)
+      if revisionId:
+        download_url = u'{0}&revision={1}'.format(download_url, revisionId)
       _, content = drive._http.request(download_url)
       writeFile(filename, content, continueOnError=True)
 
@@ -4046,12 +4046,12 @@ def transferDriveFiles(users):
       print u'ERROR: %s is not a valid argument for "gam <users> transfer drive"' % sys.argv[i]
       sys.exit(2)
   target_drive = buildGAPIServiceObject(u'drive', target_user)
-  target_about = callGAPI(target_drive.about(), u'get', fields=u'quotaBytesTotal,quotaBytesUsed,rootFolderId')
+  target_about = callGAPI(target_drive.about(), u'get', fields=u'quotaBytesTotal,quotaBytesUsed')
   target_drive_free = int(target_about[u'quotaBytesTotal']) - int(target_about[u'quotaBytesUsed'])
   for user in users:
     counter = 0
     source_drive = buildGAPIServiceObject(u'drive', user)
-    source_about = callGAPI(source_drive.about(), u'get', fields=u'quotaBytesTotal,quotaBytesUsed,rootFolderId, permissionId')
+    source_about = callGAPI(source_drive.about(), u'get', fields=u'quotaBytesTotal,quotaBytesUsed,rootFolderId,permissionId')
     source_drive_size = int(source_about[u'quotaBytesUsed'])
     if target_drive_free < source_drive_size:
       systemErrorExit(4, MESSAGE_NO_TRANSFER_LACK_OF_DISK_SPACE.format(source_drive_size / 1024 / 1024, target_drive_free / 1024 / 1024))
@@ -4701,21 +4701,62 @@ def showGmailProfile(users):
       todrive = True
       i += 1
     else:
-      print u'ERROR: %s is not a valid argument for gam <users> show gmailprofiles' % sys.argv[i]
+      print u'ERROR: %s is not a valid argument for gam <users> show gmailprofile' % sys.argv[i]
       sys.exit(2)
-  profiles = [{}]
+  profiles = []
+  titles = [u'emailAddress']
   for user in users:
-    print u'Getting Gmail profile for %s' % user
+    sys.stderr.write(u'Getting Gmail profile for %s\n' % user)
     gmail = buildGAPIServiceObject(u'gmail', user, soft_errors=True)
     if not gmail:
       continue
     results = callGAPI(gmail.users(), u'getProfile', userId=u'me', soft_errors=True)
     if results:
       for item in results:
-        if item not in profiles[0]:
-          profiles[0][item] = item
+        if item not in titles:
+          titles.append(item)
       profiles.append(results)
-  output_csv(csv_list=profiles, titles=profiles[0], list_type=u'Gmail Profiles', todrive=todrive)
+  titles.remove(u'emailAddress')
+  titles = sorted(titles)
+  titles = [u'emailAddress'] + titles
+  header = {}
+  for title in titles:
+    header[title] = title
+  profiles.insert(0, header)
+  output_csv(profiles, titles, list_type=u'Gmail Profiles', todrive=todrive)
+
+def showGplusProfile(users):
+  todrive = False
+  i = 6
+  while i < len(sys.argv):
+    if sys.argv[i].lower() == u'todrive':
+      todrive = True
+      i += 1
+    else:
+      print u'ERROR: %s is not a valid argument for gam <users> show gplusprofile' % sys.argv[i]
+      sys.exit(2)
+  profiles = []
+  titles = [u'id']
+  for user in users:
+    sys.stderr.write(u'Getting Gplus profile for %s\n' % user)
+    gplus = buildGAPIServiceObject(u'plus', user, soft_errors=True)
+    if not gplus:
+      continue
+    results = callGAPI(gplus.people(), u'get', userId=u'me', soft_errors=True)
+    if results:
+      results = flatten_json(results)
+      profiles.append(results)
+      for item in results:
+        if item not in titles:
+          titles.append(item)
+  titles.remove(u'id')
+  titles = sorted(titles)
+  titles = [u'id'] + titles
+  header = {}
+  for title in titles:
+    header[title] = title
+  profiles.insert(0, header)
+  output_csv(profiles, titles, list_type=u'Gplus Profiles', todrive=todrive)
 
 def updateLabels(users):
   label_name = sys.argv[5]
@@ -9594,6 +9635,8 @@ try:
       showSendAs(users)
     elif readWhat == u'gmailprofile':
       showGmailProfile(users)
+    elif readWhat == u'gplusprofile':
+      showGplusProfile(users)
     elif readWhat in [u'sig', u'signature']:
       getSignature(users)
     elif readWhat == u'forward':
