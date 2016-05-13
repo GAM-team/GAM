@@ -11,6 +11,7 @@ GAM 3.66
   -Add domain to unqualified group <Name> in gam print group-members
   -Add fields <MembersFieldNameList> argument to gam print group-members to allow field selection
    MembersFieldNameList is a comma separated list of field names: email | group | id | name | role | type
+  -Add command to show Google+ profile.
 
 GAM 3.65
   -fix vacation issues (Ross)
