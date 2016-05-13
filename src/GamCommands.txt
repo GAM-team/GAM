@@ -453,7 +453,7 @@ gam audit monitor list <EmailAddress>
 
 gam calendar <CalendarItem> add <CalendarACLRole> ([user] <EmailAddress>)|(group <EmailAddress>)|(domain [<DomainName>])|default
 gam calendar <CalendarItem> update <CalendarACLRole> ([user] <EmailAddress>)|(group <EmailAddress>)|(domain [<DomainName>])|default
-gam calendar <CalendarItem> del|delete <CalendarACLRole> ([user] <EmailAddress>)|(group <EmailAddress>)|(domain [<DomainName>])|default
+gam calendar <CalendarItem> del|delete <CalendarACLRole> <EmailAddress>|(domain [<DomainName>])|default
 gam calendar <CalendarItem> showacl
 
 gam calendar <CalendarItem> addevent <EventAttributes>
@@ -647,6 +647,7 @@ gam <UserTypeEntity> untrash message|messages query <Query> [doit] [max_to_untra
 #
 gam <UserTypeEntity> show gmailprofile [todrive]
 gam <UserTypeEntity> show gplusprofile [todrive]
+
 gam <UserTypeEntity> arrows <Boolean>
 
 gam <UserTypeEntity> delegate|delegates to <UserEntity>
