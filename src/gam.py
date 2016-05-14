@@ -3484,34 +3484,44 @@ def showDriveFiles(users):
     for f_file in feed:
       a_file = {u'Owner': user}
       for attrib in f_file:
-        if attrib in [u'kind', u'etags', u'etag', u'owners', u'parents', u'permissions']:
+        if attrib in [u'kind', u'etag', u'owners', u'parents', u'permissions']:
           continue
-        attrib_type = type(f_file[attrib])
-        if attrib not in titles and not attrib_type is dict:
-          titles.append(attrib)
-          files_attr[0][attrib] = attrib
-        if attrib_type is list:
-          a_file[attrib] = u' '.join(f_file[attrib])
-        elif attrib_type is unicode or attrib_type is bool:
-          a_file[attrib] = f_file[attrib]
-        elif attrib_type is dict:
-          if attrib == u'labels':
-            for dict_attrib in f_file[attrib]:
-              if dict_attrib not in titles:
-                titles.append(dict_attrib)
-                files_attr[0][dict_attrib] = dict_attrib
-              a_file[dict_attrib] = f_file[attrib][dict_attrib]
+        if not isinstance(f_file[attrib], dict):
+          if attrib not in titles:
+            titles.append(attrib)
+            files_attr[0][attrib] = attrib
+          if isinstance(f_file[attrib], list):
+            if isinstance(f_file[attrib][0], (unicode, bool)):
+              a_file[attrib] = u' '.join(f_file[attrib])
+            else:
+              for j, l_attrib in enumerate(f_file[attrib]):
+                for list_attrib in l_attrib:
+                  if list_attrib in [u'kind', u'etag']:
+                    continue
+                  x_attrib = u'{0}.{1}.{2}'.format(attrib, j, list_attrib)
+                  if x_attrib not in titles:
+                    titles.append(x_attrib)
+                    files_attr[0][x_attrib] = x_attrib
+                  a_file[x_attrib] = l_attrib[list_attrib]
+          elif isinstance(f_file[attrib], (unicode, bool)):
+            a_file[attrib] = f_file[attrib]
           else:
-            for dict_attrib in f_file[attrib]:
-              if dict_attrib in [u'kind', u'etags', u'etag']:
-                continue
-              x_attrib = u'{0}.{1}'.format(attrib, dict_attrib)
-              if x_attrib not in titles:
-                titles.append(x_attrib)
-                files_attr[0][x_attrib] = x_attrib
-              a_file[x_attrib] = f_file[attrib][dict_attrib]
+            sys.stderr.write(u'File ID: {0}, Attribute: {1}, Unknown type: {2}\n'.format(f_file[u'id'], attrib, type(f_file[attrib])))
+        elif attrib == u'labels':
+          for dict_attrib in f_file[attrib]:
+            if dict_attrib not in titles:
+              titles.append(dict_attrib)
+              files_attr[0][dict_attrib] = dict_attrib
+            a_file[dict_attrib] = f_file[attrib][dict_attrib]
         else:
-          print attrib_type
+          for dict_attrib in f_file[attrib]:
+            if dict_attrib in [u'kind', u'etag']:
+              continue
+            x_attrib = u'{0}.{1}'.format(attrib, dict_attrib)
+            if x_attrib not in titles:
+              titles.append(x_attrib)
+              files_attr[0][x_attrib] = x_attrib
+            a_file[x_attrib] = f_file[attrib][dict_attrib]
       files_attr.append(a_file)
   output_csv(files_attr, titles, u'%s %s Drive Files' % (sys.argv[1], sys.argv[2]), todrive)
 
