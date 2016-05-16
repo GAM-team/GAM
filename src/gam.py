@@ -2478,6 +2478,7 @@ def updateCalendar(users):
     print u"Updating %s's subscription to calendar %s (%s of %s)" % (user, calendarId, i, count)
     cal = buildGAPIServiceObject(u'calendar', user)
     callGAPI(cal.calendarList(), u'update', calendarId=calendarId, body=body, colorRgbFormat=colorRgbFormat)
+    i += 1
 
 def doPrinterShowACL():
   cp = buildGAPIObject(u'cloudprint')
