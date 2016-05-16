@@ -3724,7 +3724,7 @@ def showCalendars(users):
     feed = callGAPI(cal.calendarList(), u'list')
     for usercal in feed[u'items']:
       print u'  Name: %s' % usercal[u'id']
-      print convertUTF8(u'  Summary: %s' % usercal[u'summary'])
+      print convertUTF8(u'  Summary: %s' % usercal.get(u'summaryOverride', usercal[u'summary']))
       print convertUTF8(u'    Description: %s' % usercal.get(u'description', u''))
       print u'    Access Level: %s' % usercal[u'accessRole']
       print u'    Timezone: %s' % usercal[u'timeZone']
