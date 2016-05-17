@@ -800,6 +800,8 @@ def SetGlobalVariables():
       GM_Globals[GM_ADMIN] = json_data.get(u'admin', None)
     if not GC_Values[GC_DOMAIN]:
       GC_Values[GC_DOMAIN] = json_data.get(u'domain', GC_Defaults[GC_DOMAIN])
+    if not GC_Values[GC_CUSTOMER_ID]:
+      GC_Values[GC_CUSTOMER_ID] = MY_CUSTOMER
 
   def _selectSection(i):
     value = getString(i, OB_SECTION_NAME, emptyOK=True)
