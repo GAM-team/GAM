@@ -485,7 +485,7 @@ gam print groups [todrive] ([domain <DomainName>] [member <UserItem>])
 	[maxresults <Number>] [delimiter <String>]
 	[members] [owners] [managers] <GroupFieldNames>* [settings] 
 
-gam print group-members|groups-members [todrive] [membernames] [fields <MembersFieldNameList>] [group <GroupItem>]
+gam print group-members|groups-members [todrive] ([domain <DomainName>] [member <UserItem>])|[group <GroupItem>] [membernames] [fields <MembersFieldNameList>]
 
 gam print license|licenses|licence|licences [todrive] [products|product <ProductIDList>] [skus|sku <SKUIDList>]
 
@@ -600,11 +600,11 @@ gam <UserTypeEntity> transfer drive <UserItem> [keepuser]
 gam <UserTypeEntity> delete|del emptydrivefolders
 
 gam <UserTypeEntity> add drivefileacl <DriveFileID> anyone|(user <UserItem>)|(group <GroupItem>)|(domain <DomainName>)
-	[withlink] [role reader|commenter|writer|owner|editor] [sendmail] [emailmessage <String>] [showtitles]
+	[withlink] [role reader|commenter|writer|owner|editor] [sendmail] [emailmessage <String>]
 gam <UserTypeEntity> update drivefileacl <DriveFileID> id:<String>|<EmailAddress>
-	[withlink] [role reader|commenter|writer|owner|editor] [transferownership <Boolean>] [showtitles]
-gam <UserTypeEntity> delete|del drivefileacl <DriveFileID> id:<String>|<EmailAddress> [showtitles]
-gam <UserTypeEntity> show drivefileacl <DriveFileID> [showtitles]
+	[withlink] [role reader|commenter|writer|owner|editor] [transferownership <Boolean>]
+gam <UserTypeEntity> delete|del drivefileacl <DriveFileID> id:<String>|<EmailAddress>
+gam <UserTypeEntity> show drivefileacl <DriveFileID>
 
 gam <UserTypeEntity> delete|del alias|aliases
 
@@ -636,7 +636,7 @@ gam <UserTypeEntity> [add] label|labels <Name> [messagelistvisibility hide|show]
 gam <UserTypeEntity> update labelsettings <LabelName> [name <Name>] [messagelistvisibility hide|show] [labellistvisibility hide|show|showifunread]
 gam <UserTypeEntity> update label|labels [search <PythonRegularExpression>] [replace <LabelReplacement>] [merge]
 gam <UserTypeEntity> delete|del label|labels <LabelName>|regex:<LabelREPattern>|--ALL_LABELS--
-gam <UserTypeEntity> show labels|label [onlyuser] [showcounts]
+gam <UserTypeEntity> show labels|label [onlyuser]
 
 gam <UserTypeEntity> delete message|messages query <Query> [doit] [max_to_delete <Number>]
 gam <UserTypeEntity> modify message|messages query <Query> (addlabel <LabelName>)* (removelabel <LabelName>)* [doit] [max_to_modify <Number>]

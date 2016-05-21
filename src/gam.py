@@ -8520,14 +8520,24 @@ MEMBERS_FIELD_NAMES = [u'group', u'id', u'email', u'role', u'type', u'name',]
 def doPrintGroupMembers():
   cd = buildGAPIObject(u'directory')
   todrive = groupname = membernames = False
+  customer = GC_Values[GC_CUSTOMER_ID]
+  usedomain = usemember = None
   fieldsList = []
   titles = []
   all_groups = []
   i = 3
   while i < len(sys.argv):
-    if sys.argv[i].lower() == u'todrive':
+    if sys.argv[i].lower() == u'domain':
+      usedomain = sys.argv[i+1].lower()
+      customer = None
+      i += 2
+    elif sys.argv[i].lower() == u'todrive':
       todrive = True
       i += 1
+    elif sys.argv[i].lower() == u'member':
+      usemember = sys.argv[i+1].lower()
+      customer = None
+      i += 2
     elif sys.argv[i].lower() == u'fields':
       fieldNameList = sys.argv[i+1].lower()
       for field in fieldNameList.lower().replace(u',', u' ').split():
@@ -8570,7 +8580,7 @@ def doPrintGroupMembers():
     fieldsList.remove(u'group')
   if not all_groups:
     all_groups = callGAPIpages(cd.groups(), u'list', u'groups', message_attribute=u'email',
-                               customer=GC_Values[GC_CUSTOMER_ID], fields=u'nextPageToken,groups(email)')
+                               customer=customer, domain=usedomain, userKey=usemember, fields=u'nextPageToken,groups(email)')
   i = 0
   count = len(all_groups)
   for group in all_groups:
