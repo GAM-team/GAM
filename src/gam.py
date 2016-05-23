@@ -964,18 +964,27 @@ def geturl(url, dst):
   closeFile(f)
 
 def showReport():
+
+  def _adjustDate(errMsg):
+    match_date = re.match(u'Data for dates later than (.*) is not yet available. Please check back later', errMsg)
+    if not match_date:
+      match_date = re.match(u'Start date can not be later than (.*)', errMsg)
+    if not match_date:
+      systemErrorExit(4, errMsg)
+    return str(match_date.group(1))
+
   rep = buildGAPIObject(u'reports')
   report = sys.argv[2].lower()
   customerId = GC_Values[GC_CUSTOMER_ID]
   if customerId == MY_CUSTOMER:
     customerId = None
-  date = filters = parameters = actorIpAddress = startTime = endTime = eventName = None
+  try_date = filters = parameters = actorIpAddress = startTime = endTime = eventName = None
   to_drive = False
   userKey = u'all'
   i = 3
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'date':
-      date = sys.argv[i+1]
+      try_date = sys.argv[i+1]
       i += 2
     elif sys.argv[i].lower() == u'start':
       startTime = sys.argv[i+1]
@@ -1004,15 +1013,14 @@ def showReport():
     else:
       print u'ERROR: %s is not a valid argument to "gam report"' % sys.argv[i]
       sys.exit(2)
-  try_date = date
   if try_date == None:
-    try_date = datetime.date.today()
+    try_date = str(datetime.date.today())
   if report in [u'users', u'user']:
     while True:
       try:
         page_message = u'Got %%num_items%% users\n'
         usage = callGAPIpages(rep.userUsageReport(), u'get', u'usageReports', page_message=page_message, throw_reasons=[u'invalid'],
-                              date=str(try_date), userKey=userKey, customerId=customerId, filters=filters, parameters=parameters)
+                              date=try_date, userKey=userKey, customerId=customerId, filters=filters, parameters=parameters)
         break
       except googleapiclient.errors.HttpError, e:
         error = json.loads(e.content)
@@ -1020,16 +1028,11 @@ def showReport():
         message = error[u'error'][u'errors'][0][u'message']
       except KeyError:
         raise
-      match_date = re.match(u'Data for dates later than (.*) is not yet available. Please check back later', message)
-      if not match_date:
-        print u'Error: %s' % message
-        sys.exit(4)
-      else:
-        try_date = match_date.group(1)
+      try_date = _adjustDate(message)
     user_attributes = []
     titles = [u'email', u'date']
     for user_report in usage:
-      row = {u'email': user_report[u'entity'][u'userEmail'], u'date': str(try_date)}
+      row = {u'email': user_report[u'entity'][u'userEmail'], u'date': try_date}
       try:
         for report_item in user_report[u'parameters']:
           items = report_item.values()
@@ -1050,7 +1053,7 @@ def showReport():
     while True:
       try:
         usage = callGAPIpages(rep.customerUsageReports(), u'get', u'usageReports', throw_reasons=[u'invalid'],
-                              customerId=customerId, date=str(try_date), parameters=parameters)
+                              customerId=customerId, date=try_date, parameters=parameters)
         break
       except googleapiclient.errors.HttpError, e:
         error = json.loads(e.content)
@@ -1058,12 +1061,7 @@ def showReport():
         message = error[u'error'][u'errors'][0][u'message']
       except KeyError:
         raise
-      match_date = re.match(u'Data for dates later than (.*) is not yet available. Please check back later', message)
-      if not match_date:
-        print u'Error: %s' % message
-        sys.exit(4)
-      else:
-        try_date = match_date.group(1)
+      try_date = _adjustDate(message)
     cust_attributes = [{u'name': u'name', u'value': u'value', u'client_id': u'client_id'}]
     titles = [u'name', u'value', u'client_id']
     auth_apps = list()
