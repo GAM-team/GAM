@@ -6215,6 +6215,9 @@ def doCreateOrg():
     elif sys.argv[i].lower() == u'noinherit':
       body[u'blockInheritance'] = True
       i += 1
+    elif sys.argv[i].lower() == u'inherit':
+      body[u'blockInheritance'] = False
+      i += 1
     else:
       print u'ERROR: %s is not a valid argument for "gam create org"' % sys.argv[i]
       sys.exit(2)
