@@ -636,7 +636,7 @@ gam <UserTypeEntity> [add] label|labels <Name> [messagelistvisibility hide|show]
 gam <UserTypeEntity> update labelsettings <LabelName> [name <Name>] [messagelistvisibility hide|show] [labellistvisibility hide|show|showifunread]
 gam <UserTypeEntity> update label|labels [search <PythonRegularExpression>] [replace <LabelReplacement>] [merge]
 gam <UserTypeEntity> delete|del label|labels <LabelName>|regex:<LabelREPattern>|--ALL_LABELS--
-gam <UserTypeEntity> show labels|label [onlyuser]
+gam <UserTypeEntity> show labels|label [onlyuser] [showcounts]
 
 gam <UserTypeEntity> delete message|messages query <Query> [doit] [max_to_delete <Number>]
 gam <UserTypeEntity> modify message|messages query <Query> (addlabel <LabelName>)* (removelabel <LabelName>)* [doit] [max_to_modify <Number>]

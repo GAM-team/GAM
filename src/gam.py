@@ -5227,10 +5227,14 @@ def gmail_del_result(request_id, response, exception):
 
 def showLabels(users):
   i = 5
-  show_system = True
+  onlyUser = showCounts = False
   while i < len(sys.argv):
-    if sys.argv[i].lower().replace(u'_', u'') == u'onlyuser':
-      show_system = False
+    myarg = sys.argv[i].lower().replace(u'_', u'')
+    if myarg == u'onlyuser':
+      onlyUser = True
+      i += 1
+    elif myarg == u'showcounts':
+      showCounts = True
       i += 1
     else:
       print u'ERROR: %s is not a valid argument for "gam <users> show labels"' % sys.argv[i]
@@ -5240,13 +5244,19 @@ def showLabels(users):
     labels = callGAPI(gmail.users().labels(), u'list', userId=user, soft_errors=True)
     if labels:
       for label in labels[u'labels']:
-        if label[u'type'] == u'system' and not show_system:
+        if onlyUser and (label[u'type'] == u'system'):
           continue
         print convertUTF8(label[u'name'])
         for a_key in label:
           if a_key == u'name':
             continue
           print u' %s: %s' % (a_key, label[a_key])
+        if showCounts:
+          counts = callGAPI(gmail.users().labels(), u'get',
+                            userId=user, id=label[u'id'],
+                            fields=u'messagesTotal,messagesUnread,threadsTotal,threadsUnread')
+          for a_key in counts:
+            print u' %s: %s' % (a_key, counts[a_key])
         print u''
 
 def showGmailProfile(users):
