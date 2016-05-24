@@ -1,17 +1,18 @@
 GAM 3.66
   -Print address fields in logical order for gam info domain/instance
   -Fix problem with gam create alias <Alias> target <Group>
-  -Add skus <SKUIDList> to gam info user to allow any licenses to be processed
-  -add limit <Number> to allow selecting number of print jobs to process in gam print printjobs, gam printjob fetch.
+  -Add skus <SKUIDList> argument to gam info user to allow any licenses to be processed
+  -Add limit <Number> argument to gam print printjobs, gam printjob fetchto allow selecting number of print jobs to process
    limit 0 means all print jobs.
-  -Added revision <Number> to gam get drivefile to allow downloading of specific drive file revision (Seth Stein @wfu-linux)
-  -Added command gam <Users> show filerevisions <DriveFileID> to show drive file revisions (Seth Stein wfu-linux)
+  -Add revision <Number> argument to gam get drivefile to allow downloading of specific drive file revision (Seth Stein @wfu-linux)
+  -Add command gam <Users> show filerevisions <DriveFileID> to show drive file revisions (Seth Stein wfu-linux)
   -Allow info user/group arguments to be used in gam whatis and be processed/ignored as appropriate
   -Add membernames argument to gam print group-members to add member full name to output
   -Add domain to unqualified group <Name> in gam print group-members
   -Add fields <MembersFieldNameList> argument to gam print group-members to allow field selection
    MembersFieldNameList is a comma separated list of field names: email | group | id | name | role | type
-  -Add command to show Google+ profile.
+  -Add command gam <Users> show gplusprofile [todrive] to show Google+ profile
+  -Add domain <DomainName> and member <EmailAddress> arguments to gam print group-members to allow selecting subsets of groups
 
 GAM 3.65
   -fix vacation issues (Ross)
