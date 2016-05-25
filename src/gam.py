@@ -9425,7 +9425,7 @@ try:
       doDelPrinter()
     elif sys.argv[2].lower() in [u'domain',]:
       doDelDomain()
-    elif sys.argv[2].lower() in [u'domainalias',]:
+    elif sys.argv[2].lower() in [u'domainalias', u'aliasdomain']:
       doDelDomainAlias()
     elif sys.argv[2].lower() in [u'admin',]:
       doDelAdmin()
