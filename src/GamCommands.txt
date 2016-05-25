@@ -402,8 +402,9 @@ gam delete domain <DomainName>
 gam info domain [<DomainName>]
 gam print domains [todrive]
 
-gam create domainalias <DomainAlias> <DomainName>
-gam info domainalias <DomainAlias>
+gam create domainalias|aliasdomain <DomainAlias> <DomainName>
+gam delete domainalias|aliasdomain <DomainAlias>
+gam info domainalias|aliasdomain <DomainAlias>
 
 gam info customer
 gam update customer [adminsecondaryemail|alternateemail <EmailAddress>] [language <LanguageCode] [phone|phonenumber <String>]
