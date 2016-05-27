@@ -51,7 +51,7 @@ GAM_INFO = u'GAM {0} - {1} / {2} / Python {3}.{4}.{5} {6} / {7} {8} /'.format(__
                                                                               platform.platform(), platform.machine())
 GAM_RELEASES = u'https://github.com/jay0lee/GAM/releases'
 GAM_WIKI = u'https://github.com/jay0lee/GAM/wiki'
-GAM_WIKI_CREATE_CLIENT_SECRETS = GAM_WIKI+u'/CreatingClientSecretsFile#creating-your-own-oauth2servicejson'
+GAM_WIKI_CREATE_CLIENT_SECRETS = GAM_WIKI+u'/CreatingClientSecretsFile'
 GAM_APPSPOT = u'https://gam-update.appspot.com'
 GAM_APPSPOT_LATEST_VERSION = GAM_APPSPOT+u'/latest-version.txt?v='+__version__
 GAM_APPSPOT_LATEST_VERSION_ANNOUNCEMENT = GAM_APPSPOT+u'/latest-version-announcement.txt?v='+__version__
