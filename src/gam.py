@@ -849,14 +849,6 @@ class UnicodeDictWriter(csv.DictWriter, object):
     super(UnicodeDictWriter, self).__init__(f, fieldnames, dialect=u'nixstdout', *args, **kwds)
     self.writer = UnicodeWriter(f, dialect, **kwds)
 
-# Get global domain from global admin email address
-#
-def getDomainFromAdmin():
-  if GM_Globals[GM_ADMIN]:
-    loc = GM_Globals[GM_ADMIN].find(u'@')
-    if loc > 0:
-      GC_Values[GC_DOMAIN] = GM_Globals[GM_ADMIN][loc+1:]
-
 # Set global variables from config file
 # Check for GAM updates based on status of no_update_check in config file
 # Return True if there are additional commands on the command line
@@ -880,6 +872,12 @@ def SetGlobalVariables():
           number = GC_Defaults[itemName]
         value = str(number)
       GC_Defaults[itemName] = value
+
+  def _getDomainFromAdmin():
+    if GM_Globals[GM_ADMIN]:
+      loc = GM_Globals[GM_ADMIN].find(u'@')
+      if loc > 0:
+        GC_Values[GC_DOMAIN] = GM_Globals[GM_ADMIN][loc+1:]
 
   def _getScopesAdminDomainFromGamScopesJson():
     GM_Globals[GM_GAMSCOPES_LIST] = []
@@ -1165,7 +1163,7 @@ def SetGlobalVariables():
   if (prevGAMScopesJson != GC_Values[GC_GAMSCOPES_JSON]) or (not GM_Globals[GM_GAMSCOPES_LIST]):
     _getScopesAdminDomainFromGamScopesJson()
   if not GC_Values[GC_DOMAIN]:
-    getDomainFromAdmin()
+    _getDomainFromAdmin()
 # redirect [csv <FileName> [charset <CharSet>]] [stdout <FileName> [append]] [stderr <FileName> [append]]
   if checkArgumentPresent(i, [u'redirect',]):
     i += 1
