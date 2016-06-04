@@ -3,6 +3,7 @@ a = Analysis(['gam.py'],
              pathex=['C:\\Users\\jlee\\Documents\\GitHub\\GAM'],
              hiddenimports=[],
              hookspath=None,
+             excludes=['_tkinter'],
              runtime_hooks=None)
 for d in a.datas:
     if 'pyconfig' in d[0]:
