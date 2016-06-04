@@ -22,6 +22,7 @@ You can verify the results of this step with the command: gam oauth info
 
 This link, with modifications, describes the process described above: https://github.com/jay0lee/GAM/wiki/CreatingClientSecretsFile
 
+Modify the process as follows:
 
 Step 5.i is not required.
 Step 6.ii is not required.

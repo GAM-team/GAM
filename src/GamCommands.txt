@@ -380,7 +380,7 @@ gam csv <FileName>|- [charset <Charset>] [matchfield <FieldName> <PythonRegularE
 
 gam oauth|oauth2 create|request [<EmailAddress>]
 gam oauth|oauth2 delete|revoke
-gam oauth|oauth2 info|verify
+gam oauth|oauth2 info|verify [<AccessToken>]
 
 gam whatis <EmailItem>
 
