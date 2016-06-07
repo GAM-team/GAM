@@ -684,7 +684,8 @@ gam <UserTypeEntity> snippets <Boolean>
 
 gam <UserTypeEntity> utf|utf8|utf-8|unicode <Boolean>
 
-gam <UserTypeEntity> vacation <Boolean> [subject <String>] [message <String>]|[file <FileName> [charset <Charset>]] [contactsonly] [domainonly] [startdate <Date>] [enddate <Date>]
+gam <UserTypeEntity> vacation <FalseValues>
+gam <UserTypeEntity> vacation <TrueValues> subject <String> (message <String>)|(file <FileName> [charset <CharSet>]) [contactsonly] [domainonly] [startdate <Date>] [enddate <Date>]
 gam <UserTypeEntity> show vacation
 
 gam <UserTypeEntity> webclips <Boolean>
