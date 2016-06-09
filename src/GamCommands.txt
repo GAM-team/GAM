@@ -130,6 +130,28 @@ If an item contains spaces, it should be surrounded by " or '.
 	supportenddate|
 	willautorenew
 
+<DriveFieldNames> ::=
+	createddate|
+	description|
+	fileextension|
+	filesize|
+	id|
+	lastmodifyinguser|
+	lastmodifyingusername|
+	lastviewedbymedate|lastviewedbyuser|
+	md5|md5checksum|md5sum|
+	mime|mimetype|
+	modifiedbymedate|modifiedbyuser|
+	modifieddate|
+	originalfilename|
+	quotabytesused|quotaused|
+	restricted|
+	shareable|
+	starred|
+	trashed
+	viewed|
+	writerscanshare
+
 <GroupFieldNames> ::=
 	admincreated|
 	aliases|
@@ -272,15 +294,13 @@ If an item contains spaces, it should be surrounded by " or '.
 <DriveFileAddAttributes> ::=
 	(localfile <FileName>)|
 	(convert)|(ocr)|(ocrlanguage <Language>)|(restricted|restrict)|(starred|star)|(trashed|trash)|(viewed|view)|
-	(lastviewedbyme <Time>)|(modifieddate <Time>)|(description <String>)|(mimetype gdoc|gdocument|gdrawing|gfolder|gdirectory|gform|gfusion|gpresentation|gscript|gsite|gsheet|gspreadsheet)|
-	(parentid <DriveFolderID>)|(parentname <FolderName>)|(writerscantshare)
-
+	(lastviewedbyme <Time>)|(modifieddate|modifiedtime <Time>)|(description <String>)|(mimetype gdoc|gdocument|gdrawing|gfolder|gdirectory|gform|gfusion|gpresentation|gscript|gsite|gsheet|gspreadsheet)|
+	(parentid <DriveFolderID>)|(parentname <FolderName>)|writerscantshare
 <DriveFileUpdateAttributes> ::=
 	(localfile <FileName>)|
 	(convert)|(ocr)|(ocrlanguage <Language>)|(restricted|restrict <Boolean>)|(starred|star <Boolean>)|(trashed|trash <Boolean>)|(viewed|view <Boolean>)|
 	(lastviewedbyme <Time>)|(modifieddate <Time>)|(description <String>)|(mimetype gdoc|gdocument|gdrawing|gfolder|gdirectory|gform|gfusion|gpresentation|gscript|gsite|gsheet|gspreadsheet)|
-	(parentid <DriveFolderID>)|(parentname <FolderName>)|(writerscantshare)
-
+	(parentid <DriveFolderID>)|(parentname <FolderName>)|writerscantshare
 <EventAttributes> ::=
 	(anyonecanaddself)|(guestscantinviteothers)|(guestscantseeothers)|(notifyattendees)|(available)|(visibility default|public|prvate)|(tentative)|
 	(attendee <EmailAddress>)|(optionalattendee <EmailAddress>)|
@@ -583,14 +603,7 @@ gam <UserTypeEntity> show drivesettings [todrive]
 
 gam <UserTypeEntity> show fileinfo <DriveFileID>|query:<Query>|drivefilename:<DriveFileName>
 gam <UserTypeEntity> show filerevisions <DriveFileID>|query:<Query>|drivefilename:<DriveFileName>
-gam <UserTypeEntity> show filelist [todrive] [query <Query>]
-	[restricted|restrict] [starred|star] [trashed|trash] [viewed|view]
-	[allfields|
-	 ([createddate] [description] [fileextension] [filesize] [id]
-	  [lastmodifyinguser|lastmodifyingusername] [lastviewedbyuser|lastviewedbymedate] [md5|md5sum|md5checksum] [mimetype|mime]
-	  [modifiedbyuser|modifiedbymedate] [modifieddate] [originalfilename] [quotaused|quotabytesused]
-	  [shared] [writerscanshare])*
-	]
+gam <UserTypeEntity> show filelist [todrive] [query <Query>] [allfields|<DriveFieldNames>*]
 gam <UserTypeEntity> show filetree
 
 gam <UserTypeEntity> add drivefile [drivefilename <DriveFileName>] [<DriveFileAddAttributes>]
