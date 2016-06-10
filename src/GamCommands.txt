@@ -52,7 +52,6 @@ If an item contains spaces, it should be surrounded by " or '.
 <CalendarColorIndex> ::== <Number in range 1-24>
 <CalendarItem> ::= <EmailAddress>|<String>
 <ClientID> ::= <String>
-<ContactID> ::= <String>
 <CourseAlias> ::= <String>
 <CourseID> ::= <Number>|d:<CourseAlias>
 <CourseParticipantType> ::= teacher|teachers|student|students
@@ -105,7 +104,8 @@ If an item contains spaces, it should be surrounded by " or '.
 <URL> ::= <String>
 <UserItem> ::= <EmailAddress>|<UniqueID>|<String>
 
-<CrOSFieldNames> ::=
+
+<CrOSFieldName> ::=
 	activetimeranges|timeranges|
 	annotatedassetid|assedid|asset|
 	annotatedlocation|location|
@@ -130,7 +130,10 @@ If an item contains spaces, it should be surrounded by " or '.
 	supportenddate|
 	willautorenew
 
-<DriveFieldNames> ::=
+<CrOSOrderByFieldName> ::=
+	lastsync|location|notes|serialnumber|status|supportenddate|user
+
+<DriveFieldName> ::=
 	createddate|
 	description|
 	fileextension|
@@ -152,7 +155,8 @@ If an item contains spaces, it should be surrounded by " or '.
 	viewed|
 	writerscanshare
 
-<GroupFieldNames> ::=
+
+<GroupFieldName> ::=
 	admincreated|
 	aliases|
 	description|
@@ -160,7 +164,7 @@ If an item contains spaces, it should be surrounded by " or '.
 	id|
 	name
 
-<GroupSettingsFieldNames> ::=
+<GroupSettingsFieldName> ::=
 	allowexternalmembers|
 	allowgooglecommunication|
 	allowwebposting|
@@ -187,7 +191,7 @@ If an item contains spaces, it should be surrounded by " or '.
 	whocanviewgroup|
 	whocanviewmembership
 
-<MembersFieldNames> ::=
+<MembersFieldName> ::=
 	email|
 	group|
 	id|
@@ -195,7 +199,13 @@ If an item contains spaces, it should be surrounded by " or '.
 	role|
 	type
 
-<UserFieldNames> ::=
+<MobileOrderByFieldName> ::=
+	deviceid|email|lastsync|model|name|os|status|type
+
+<PrintJobOrderByFieldName> ::=
+	create_time|status|title
+
+<UserFieldName> ::=
 	addresses|address|
 	agreedtoterms|agreed2terms|
 	changepasswordatnextlogin|changepassword|
@@ -221,10 +231,13 @@ If an item contains spaces, it should be surrounded by " or '.
 	thumbnailphotourl|photo|photourl|
 	custom all|<SchemaNameList>
 
+<UserOrderByFieldName> ::=
+	familyname|lastname|givenname|firstname|email
+
 # Named Lists, comma separated items, surrounded by ' or "
 <CalendarACLList> ::== '<CalendarACLScope>(,<CalendarACLScope>)*'
 <CalendarList> ::= '<CalendarItem>(,<CalendarItem>)*'
-<ContactIDList> ::= '<ContactID>(,<ContactID>)*'
+
 <CourseAliasList> ::= '<CourseAlias>(,<CourseAlias>)*'
 <CourseIDList> ::= '<CourseID>(,<CourseID>)*'
 <CrOSFieldNameList> ::= '<CrOSFieldName(,<CrOSFieldName>)*'
@@ -483,7 +496,7 @@ gam calendar <CalendarItem> wipe
 gam update cros <CrOSItem> <CrOSAttributes>
 gam info cros <CrOSItem>
 gam print cros [todrive] [query <Query>] [basic|full] [nolists|recentusers|timeranges] [listlimit <Number>]
-	[orderby lastsync|location|notes|serialnumber|status|supportenddate|user] [ascending|descending]
+	[orderby <CrOSOrderByFieldName> [ascending|descending]]
 gam <CrOSTypeEntity> update <CrOSAttributes>
 gam <CrOSTypeEntity> print
 
@@ -491,7 +504,7 @@ gam update mobile <MobileItem> <MobileAttributes>
 gam delete mobile <MobileItem>
 gam info mobile <MobileItem>
 gam print mobile [todrive] [query <Query>]
-	[orderby deviceid|email|lastsync|model|name|os|status|type] [ascending|descending]
+	[orderby <MobileOrderByFieldName> [ascending|descending]]
 
 gam create group <EmailAddress> <GroupAttributes>
 gam update group <GroupItem> [admincreated <Boolean>] [email <EmailAddress>] <GroupAttributes>
@@ -504,7 +517,7 @@ gam info group <GroupItem> [nousers] [noaliases] [groups]
 
 gam print groups [todrive] ([domain <DomainName>] [member <UserItem>])
 	[maxresults <Number>] [delimiter <String>]
-	[members] [owners] [managers] <GroupFieldNames>* [settings] 
+	[members] [owners] [managers] <GroupFieldName>* [settings] 
 
 gam print group-members|groups-members [todrive] ([domain <DomainName>] [member <UserItem>])|[group <GroupItem>] [membernames] [fields <MembersFieldNameList>]
 
@@ -535,8 +548,8 @@ gam undelete user <UserItem> [org|ou <OrgUnitPath>]
 gam info user [<UserItem>] [noaliases] [nogroups] [nolicenses|nolicences] [noschemas] [schemas <SchemaNameList>] [userview] [skus|sku <SKUIDList>]
 gam print users [todrive] ([domain <DomainName>] [query <Query>] [deleted_only|only_deleted])
 	 [groups] [license|licenses|licence|licences] [emailpart|emailparts|username]
-	[orderby familyname|lastname|givenname|firstname|email] [ascending|descending] [userview]
-	[allfields | <UserFieldNames>*]
+	[orderby <UserOrderByFieldName> [ascending|descending]] [userview]
+	[allfields | <UserFieldName>*]
 
 gam create verify|verification <DomainName>
 gam update verify|verification <DomainName> cname|txt|text|site|file
@@ -571,14 +584,14 @@ gam printjob <PrintJobID> resubmit <PrinterID>
 gam printjob <PrinterID>|any fetch
 	[olderthan|newerthan <PrintJobAge>] [query <Query>]
 	[status done|error|held|in_progress|queued|submitted]
-	[orderby create_time|status|title] [ascending|descending]
+	[orderby <PrintJobOrderByFieldName> [ascending|descending]]
 	[owner|user <EmailAddress>]
 	[limit <Number>]
 gam printjob <PrinterID> submit <FileName>|<URL> [name|title <String>] (tag <String>)*
 gam print printjobs [todrive] [printer|printerid <PrinterID>]
 	[olderthan|newerthan <PrintJobAge>] [query <Query>]
 	[status done|error|held|in_progress|queued|submitted]
-	[orderby create_time|status|title] [ascending|descending]
+	[orderby <PrintJobOrderByFieldName> [ascending|descending]]
 	[owner|user <EmailAddress>]
 	[limit <Number>]
 
@@ -601,9 +614,9 @@ gam <UserTypeEntity> transfer seccals <UserItem> [keepuser]
 gam <UserTypeEntity> show driveactivity [todrive] [fileid <DriveFileID>] [folderid <DriveFolderID>]
 gam <UserTypeEntity> show drivesettings [todrive]
 
-gam <UserTypeEntity> show fileinfo <DriveFileID>|query:<Query>|drivefilename:<DriveFileName>
-gam <UserTypeEntity> show filerevisions <DriveFileID>|query:<Query>|drivefilename:<DriveFileName>
-gam <UserTypeEntity> show filelist [todrive] [query <Query>] [allfields|<DriveFieldNames>*]
+gam <UserTypeEntity> show fileinfo <DriveFileID>
+gam <UserTypeEntity> show filerevisions <DriveFileID>
+gam <UserTypeEntity> show filelist [todrive] [query <Query>] [allfields|<DriveFieldName>*]
 gam <UserTypeEntity> show filetree
 
 gam <UserTypeEntity> add drivefile [drivefilename <DriveFileName>] [<DriveFileAddAttributes>]
