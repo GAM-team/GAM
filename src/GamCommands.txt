@@ -134,25 +134,53 @@ If an item contains spaces, it should be surrounded by " or '.
 	lastsync|location|notes|serialnumber|status|supportenddate|user
 
 <DriveFieldName> ::=
-	createddate|
+	appdatacontents|
+	cancomment|
+	canreadrevisions|
+	copyable|
+	createddate|createdtime|
 	description|
+	editable|
+	explicitlytrashed|
 	fileextension|
 	filesize|
+	foldercolorrgb|
+	fullfileextension|
+	headrevisionid|
+	iconlink|
 	id|
 	lastmodifyinguser|
 	lastmodifyingusername|
-	lastviewedbymedate|lastviewedbyuser|
+	lastviewedbyme|lastviewedbymedate|lastviewedbymetime|lastviewedbyuser|
 	md5|md5checksum|md5sum|
 	mime|mimetype|
-	modifiedbymedate|modifiedbyuser|
-	modifieddate|
+	modifiedbyme|modifiedbymedate|modifiedbymetime|modifiedbyuser|
+	modifieddate|modifiedtime|
+	name|
 	originalfilename|
+	ownedbyme|
+	ownernames|
+	owners|
+	parents|
+	permissions|
 	quotabytesused|quotaused|
 	restricted|
 	shareable|
+	shared|
+	sharedwithmedate|sharedwithmetime|
+	sharinguser|
+	size|
+	spaces|
 	starred|
+	thumbnaillink|
+	title|
 	trashed
+	userpermission|
+	version|
 	viewed|
+	viewerscancopycontent|
+	webcontentlink|
+	webviewlink|
 	writerscanshare
 
 
@@ -614,7 +642,7 @@ gam <UserTypeEntity> transfer seccals <UserItem> [keepuser]
 gam <UserTypeEntity> show driveactivity [todrive] [fileid <DriveFileID>] [folderid <DriveFolderID>]
 gam <UserTypeEntity> show drivesettings [todrive]
 
-gam <UserTypeEntity> show fileinfo <DriveFileID>
+gam <UserTypeEntity> show fileinfo <DriveFileID> [allfields|<DriveFieldName>*]
 gam <UserTypeEntity> show filerevisions <DriveFileID>
 gam <UserTypeEntity> show filelist [todrive] [query <Query>] [allfields|<DriveFieldName>*]
 gam <UserTypeEntity> show filetree

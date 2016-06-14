@@ -13,6 +13,8 @@ GAM 3.66
    MembersFieldNameList is a comma separated list of field names: email | group | id | name | role | type
   -Add command gam <Users> show gplusprofile [todrive] to show Google+ profile
   -Add domain <DomainName> and member <EmailAddress> arguments to gam print group-members to allow selecting subsets of groups
+  -Add showcounts argument to gam <Users> show labels to allow seeing message counts for each label
+  -Add arguments to gam <Users> show fileinfo <DriveFileId> <DriveFieldName>* to allow field selection
 
 GAM 3.65
   -fix vacation issues (Ross)
