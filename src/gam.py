@@ -3489,8 +3489,7 @@ def showDriveFiles(users):
       print u'ERROR: %s is not a valid argument for "gam <users> show filelist"' % my_arg
       sys.exit(2)
   if fieldsList or labelsList:
-    fields = u'nextPageToken'
-    fields += u',items('
+    fields = u'nextPageToken,items('
     if fieldsList:
       fields += u','.join(set(fieldsList))
       if labelsList:
