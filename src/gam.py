@@ -25,7 +25,7 @@ For more information, see http://git.io/gam
 """
 
 __author__ = u'Jay Lee <jay0lee@gmail.com>'
-__version__ = u'3.780'
+__version__ = u'3.781'
 __license__ = u'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 import sys, os, time, datetime, random, socket, csv, platform, re, calendar, base64, string, codecs, StringIO, subprocess, ConfigParser, collections
@@ -4126,14 +4126,87 @@ def updateDriveFileACL(users):
     result = callGAPI(drive.permissions(), u'patch', fileId=fileId, permissionId=permissionId, transferOwnership=transferOwnership, body=body)
     printPermission(result)
 
+DRIVEFILE_FIELDS_CHOICES_MAP = {
+  u'appdatacontents': u'appDataContents',
+  u'cancomment': u'canComment',
+  u'canreadrevisions': u'canReadRevisions',
+  u'copyable': u'copyable',
+  u'createddate': u'createdDate',
+  u'createdtime': u'createdDate',
+  u'description': u'description',
+  u'editable': u'editable',
+  u'explicitlytrashed': u'explicitlyTrashed',
+  u'fileextension': u'fileExtension',
+  u'filesize': u'fileSize',
+  u'foldercolorrgb': u'folderColorRgb',
+  u'fullfileextension': u'fullFileExtension',
+  u'headrevisionid': u'headRevisionId',
+  u'iconlink': u'iconLink',
+  u'id': u'id',
+  u'lastmodifyinguser': u'lastModifyingUser',
+  u'lastmodifyingusername': u'lastModifyingUserName',
+  u'lastviewedbyme': u'lastViewedByMeDate',
+  u'lastviewedbymedate': u'lastViewedByMeDate',
+  u'lastviewedbymetime': u'lastViewedByMeDate',
+  u'lastviewedbyuser': u'lastViewedByMeDate',
+  u'md5': u'md5Checksum',
+  u'md5checksum': u'md5Checksum',
+  u'md5sum': u'md5Checksum',
+  u'mime': u'mimeType',
+  u'mimetype': u'mimeType',
+  u'modifiedbyme': u'modifiedByMeDate',
+  u'modifiedbymedate': u'modifiedByMeDate',
+  u'modifiedbymetime': u'modifiedByMeDate',
+  u'modifiedbyuser': u'modifiedByMeDate',
+  u'modifieddate': u'modifiedDate',
+  u'modifiedtime': u'modifiedDate',
+  u'name': u'title',
+  u'originalfilename': u'originalFilename',
+  u'ownedbyme': u'ownedByMe',
+  u'ownernames': u'ownerNames',
+  u'owners': u'owners',
+  u'parents': u'parents',
+  u'permissions': u'permissions',
+  u'quotabytesused': u'quotaBytesUsed',
+  u'quotaused': u'quotaBytesUsed',
+  u'shareable': u'shareable',
+  u'shared': u'shared',
+  u'sharedwithmedate': u'sharedWithMeDate',
+  u'sharedwithmetime': u'sharedWithMeDate',
+  u'sharinguser': u'sharingUser',
+  u'spaces': u'spaces',
+  u'thumbnaillink': u'thumbnailLink',
+  u'title': u'title',
+  u'userpermission': u'userPermission',
+  u'version': u'version',
+  u'viewedbyme': u'labels(viewed)',
+  u'viewedbymedate': u'lastViewedByMeDate',
+  u'viewedbymetime': u'lastViewedByMeDate',
+  u'viewerscancopycontent': u'labels(restricted)',
+  u'webcontentlink': u'webContentLink',
+  u'webviewlink': u'webViewLink',
+  u'writerscanshare': u'writersCanShare',
+  }
+
+DRIVEFILE_LABEL_CHOICES_MAP = {
+  u'restricted': u'restricted',
+  u'restrict': u'restricted',
+  u'starred': u'starred',
+  u'star': u'starred',
+  u'trashed': u'trashed',
+  u'trash': u'trashed',
+  u'viewed': u'viewed',
+  u'view': u'viewed',
+}
+
 def showDriveFiles(users):
   files_attr = [{u'Owner': u'Owner',}]
   titles = [u'Owner',]
-  fields = u'nextPageToken,items(title,alternateLink'
+  fieldsList = [u'title', u'alternateLink']
+  labelsList = []
   todrive = False
   query = u'"me" in owners'
   i = 5
-  labels = list()
   while i < len(sys.argv):
     my_arg = sys.argv[i].lower().replace(u'_', u'')
     if my_arg == u'todrive':
@@ -4143,72 +4216,29 @@ def showDriveFiles(users):
       query += u' and %s' % sys.argv[i+1]
       i += 2
     elif my_arg == u'allfields':
-      fields = u'*'
+      fieldsList = []
       i += 1
-    elif my_arg == u'createddate':
-      fields += u',createdDate'
+    elif my_arg in DRIVEFILE_FIELDS_CHOICES_MAP:
+      fieldsList.append(DRIVEFILE_FIELDS_CHOICES_MAP[my_arg])
       i += 1
-    elif my_arg == u'description':
-      fields += u',description'
-      i += 1
-    elif my_arg == u'fileextension':
-      fields += u',fileExtension'
-      i += 1
-    elif my_arg == u'filesize':
-      fields += u',fileSize'
-      i += 1
-    elif my_arg == u'id':
-      fields += u',id'
-      i += 1
-    elif my_arg in [u'restricted', u'restrict']:
-      labels.append(u'restricted')
-      i += 1
-    elif my_arg in [u'starred', u'star']:
-      labels.append(u'starred')
-      i += 1
-    elif my_arg in [u'trashed', u'trash']:
-      labels.append(u'trashed')
-      i += 1
-    elif my_arg in [u'viewed', u'view']:
-      labels.append(u'viewed')
-      i += 1
-    elif my_arg in [u'lastmodifyinguser', u'lastmodifyingusername']:
-      fields += u',lastModifyingUserName'
-      i += 1
-    elif my_arg in [u'lastviewedbyuser', u'lastviewedbymedate']:
-      fields += u',lastViewedByMeDate'
-      i += 1
-    elif my_arg in [u'md5', u'md5sum', u'md5checksum']:
-      fields += u',md5Checksum'
-      i += 1
-    elif my_arg in [u'mimetype', u'mime']:
-      fields += u',mimeType'
-      i += 1
-    elif my_arg in [u'modifiedbyuser', u'modifiedbymedate']:
-      fields += u',modifiedByMeDate'
-      i += 1
-    elif my_arg in [u'modifieddate']:
-      fields += u',modifiedDate'
-      i += 1
-    elif my_arg in [u'originalfilename']:
-      fields += u',originalFilename'
-      i += 1
-    elif my_arg in [u'quotaused', u'quotabytesused']:
-      fields += u',quotaBytesUsed'
-      i += 1
-    elif my_arg in [u'shared']:
-      fields += u',shared'
-      i += 1
-    elif my_arg in [u'writerscanshare']:
-      fields += u',writersCanShare'
+    elif my_arg in DRIVEFILE_LABEL_CHOICES_MAP:
+      labelsList.append(DRIVEFILE_LABEL_CHOICES_MAP[my_arg])
       i += 1
     else:
       print u'ERROR: %s is not a valid argument for "gam <users> show filelist"' % my_arg
       sys.exit(2)
-  if len(labels) > 0:
-    fields += u',labels(%s)' % u','.join(labels)
-  if fields != u'*':
+  if fieldsList or labelsList:
+    fields = u'nextPageToken'
+    fields += u',items('
+    if fieldsList:
+      fields += u','.join(set(fieldsList))
+      if labelsList:
+        fields += u','
+    if labelsList:
+      fields += u'labels({0})'.format(u','.join(set(labelsList)))
     fields += u')'
+  else:
+    fields = u'*'
   for user in users:
     user, drive = buildDriveGAPIObject(user, 0, 0)
     if not drive:
@@ -4221,26 +4251,29 @@ def showDriveFiles(users):
     for f_file in feed:
       a_file = {u'Owner': user}
       for attrib in f_file:
-        if attrib in [u'kind', u'etag', u'owners', u'parents', u'permissions']:
+        if attrib in [u'kind', u'etag']:
           continue
         if not isinstance(f_file[attrib], dict):
-          if attrib not in titles:
-            titles.append(attrib)
-            files_attr[0][attrib] = attrib
           if isinstance(f_file[attrib], list):
-            if isinstance(f_file[attrib][0], (unicode, bool)):
+            if isinstance(f_file[attrib][0], (str, unicode, int, bool)):
+              if attrib not in titles:
+                titles.append(attrib)
+                files_attr[0][attrib] = attrib
               a_file[attrib] = u' '.join(f_file[attrib])
             else:
               for j, l_attrib in enumerate(f_file[attrib]):
                 for list_attrib in l_attrib:
-                  if list_attrib in [u'kind', u'etag']:
+                  if list_attrib in [u'kind', u'etag', u'selfLink']:
                     continue
                   x_attrib = u'{0}.{1}.{2}'.format(attrib, j, list_attrib)
                   if x_attrib not in titles:
                     titles.append(x_attrib)
                     files_attr[0][x_attrib] = x_attrib
                   a_file[x_attrib] = l_attrib[list_attrib]
-          elif isinstance(f_file[attrib], (unicode, bool)):
+          elif isinstance(f_file[attrib], (str, unicode, int, bool)):
+            if attrib not in titles:
+              titles.append(attrib)
+              files_attr[0][attrib] = attrib
             a_file[attrib] = f_file[attrib]
           else:
             sys.stderr.write(u'File ID: {0}, Attribute: {1}, Unknown type: {2}\n'.format(f_file[u'id'], attrib, type(f_file[attrib])))
@@ -4317,6 +4350,7 @@ def printDriveFolderContents(feed, folderId, indent):
         print u' ' * indent, convertUTF8(f_file[u'title'])
         if f_file[u'mimeType'] == u'application/vnd.google-apps.folder':
           printDriveFolderContents(feed, f_file[u'id'], indent+1)
+        break
 
 def showDriveFileTree(users):
   for user in users:
@@ -4748,12 +4782,36 @@ def downloadDriveFile(users):
       writeFile(filename, content, continueOnError=True)
 
 def showDriveFileInfo(users):
+  fieldsList = []
+  labelsList = []
   fileId = sys.argv[5]
+  i = 6
+  while i < len(sys.argv):
+    my_arg = sys.argv[i].lower().replace(u'_', u'')
+    if my_arg == u'allfields':
+      fieldsList = []
+      i += 1
+    elif my_arg in DRIVEFILE_FIELDS_CHOICES_MAP:
+      fieldsList.append(DRIVEFILE_FIELDS_CHOICES_MAP[my_arg])
+      i += 1
+    elif my_arg in DRIVEFILE_LABEL_CHOICES_MAP:
+      labelsList.append(DRIVEFILE_LABEL_CHOICES_MAP[my_arg])
+      i += 1
+    else:
+      print u'ERROR: %s is not a valid argument for "gam <users> show fileinfo"' % my_arg
+      sys.exit(2)
+  if fieldsList or labelsList:
+    fieldsList.append(u'title')
+    fields = u','.join(set(fieldsList))
+    if labelsList:
+      fields += u',labels({0})'.format(u','.join(set(labelsList)))
+  else:
+    fields = u'*'
   for user in users:
     user, drive = buildDriveGAPIObject(user, 0, 0)
     if not drive:
       continue
-    feed = callGAPI(drive.files(), u'get', fileId=fileId)
+    feed = callGAPI(drive.files(), u'get', fileId=fileId, fields=fields)
     print_json(None, feed)
 
 def showDriveFileRevisions(users):
