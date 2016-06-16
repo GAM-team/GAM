@@ -765,7 +765,7 @@ def callGAPIpages(service, function, items, page_message=None, message_attribute
       return all_pages
 
 API_VER_MAPPING = {
-  u'admin-settings': u'v1',
+  u'admin-settings': u'v2',
   u'appsactivity': u'v1',
   u'calendar': u'v3',
   u'classroom': u'v1',
@@ -3275,8 +3275,13 @@ def doDriveActivity(users):
 def printPermission(permission):
   if u'name' in permission:
     print convertUTF8(permission[u'name'])
-  elif (u'id' in permission) and (permission[u'id'] == u'anyone'):
-    print u'Anyone'
+  elif u'id' in permission:
+    if permission[u'id'] == u'anyone':
+      print u'Anyone'
+    elif permission[u'id'] == u'anyoneWithLink':
+      print u'Anyone with Link'
+    else:
+      print permission[u'id']
   for key in permission:
     if key in [u'name', u'kind', u'etag', u'selfLink',]:
       continue
@@ -3291,17 +3296,26 @@ def showDriveFileACL(users):
       printPermission(permission)
       print u''
 
+def getPermissionId(argstr):
+  permissionId = argstr.strip().lower()
+  if permissionId[:3] == u'id:':
+    return (False, argstr.strip()[3:])
+  if permissionId == u'anyone':
+    return (False, permissionId)
+  if permissionId == u'anyonewithlink':
+    return (False, u'anyoneWithLink')
+  if permissionId.find(u'@') == -1:
+    permissionId = u'%s@%s' % (permissionId, GC_Values[GC_DOMAIN])
+  return (True, permissionId)
+
 def delDriveFileACL(users):
   fileId = sys.argv[5]
-  permissionId = unicode(sys.argv[6])
+  isEmail, permissionId = getPermissionId(sys.argv[6])
   for user in users:
     drive = buildGAPIServiceObject(u'drive', user)
-    if permissionId[:3].lower() == u'id:':
-      permissionId = permissionId[3:]
-    elif permissionId.lower() in [u'anyone']:
-      pass
-    else:
+    if isEmail:
       permissionId = callGAPI(drive.permissions(), u'getIdForEmail', email=permissionId, fields=u'id')[u'id']
+      isEmail = False
     print u'Removing permission for %s from %s' % (permissionId, fileId)
     callGAPI(drive.permissions(), u'delete', fileId=fileId, permissionId=permissionId)
 
@@ -3349,7 +3363,7 @@ def addDriveFileACL(users):
 
 def updateDriveFileACL(users):
   fileId = sys.argv[5]
-  permissionId = unicode(sys.argv[6])
+  isEmail, permissionId = getPermissionId(sys.argv[6])
   transferOwnership = None
   body = {}
   i = 7
@@ -3379,10 +3393,9 @@ def updateDriveFileACL(users):
       sys.exit(2)
   for user in users:
     drive = buildGAPIServiceObject(u'drive', user)
-    if permissionId[:3].lower() == u'id:':
-      permissionId = permissionId[3:]
-    else:
+    if isEmail:
       permissionId = callGAPI(drive.permissions(), u'getIdForEmail', email=permissionId, fields=u'id')[u'id']
+      isEmail = False
     print u'updating permissions for %s to file %s' % (permissionId, fileId)
     result = callGAPI(drive.permissions(), u'patch', fileId=fileId, permissionId=permissionId, transferOwnership=transferOwnership, body=body)
     printPermission(result)
