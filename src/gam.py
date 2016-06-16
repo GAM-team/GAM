@@ -1521,7 +1521,7 @@ def callGAPIpages(service, function, items,
       return all_pages
 
 API_VER_MAPPING = {
-  GAPI_ADMIN_SETTINGS_API: u'v1',
+  GAPI_ADMIN_SETTINGS_API: u'v2',
   GAPI_APPSACTIVITY_API: u'v1',
   GAPI_CALENDAR_API: u'v3',
   GAPI_CLASSROOM_API: u'v1',
@@ -1530,7 +1530,7 @@ API_VER_MAPPING = {
   GAPI_DIRECTORY_API: u'directory_v1',
   GAPI_DRIVE_API: u'v2',
   GDATA_EMAIL_AUDIT_API: u'v1',
-  GDATA_EMAIL_SETTINGS_API: u'v1',
+  GDATA_EMAIL_SETTINGS_API: u'v2',
   GAPI_GMAIL_API: u'v1',
   GAPI_GPLUS_API: u'v1',
   GAPI_GROUPSSETTINGS_API: u'v1',

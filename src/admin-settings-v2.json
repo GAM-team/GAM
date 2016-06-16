@@ -1,10 +1,10 @@
 {
  "kind": "discovery#restDescription",
  "discoveryVersion": "v1",
- "id": "admin-settings:v1",
+ "id": "admin-settings:v2",
  "name": "admin-settings",
- "version": "v1",
- "revision": "20130823",
+ "version": "v2",
+ "revision": "20160616",
  "title": "Admin Settings API",
  "description": "Lets you access Google Apps Admin Settings",
  "ownerDomain": "google.com",

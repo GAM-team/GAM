@@ -1,12 +1,12 @@
 {
  "kind": "discovery#restDescription",
  "discoveryVersion": "v1",
- "id": "email-settings:v1",
+ "id": "email-settings:v2",
  "name": "email-settings",
- "version": "v1",
- "revision": "20130823",
+ "version": "v2",
+ "revision": "20160616",
  "title": "Email Settings API",
- "description": "Lets you manage Google Apps email settings",
+ "description": "Lets you manage Google Apps Email Settings",
  "ownerDomain": "google.com",
  "ownerName": "Google",
  "icons": {
