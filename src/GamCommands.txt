@@ -85,6 +85,7 @@ If an item contains spaces, it should be surrounded by " or '.
 <NotificationID> ::= <String>
 <OrgUnitID> ::= <String>
 <OrgUnitPath> ::= /|(/<String)+
+<PermissionID> ::= id:<String>|<EmailAddress>|anyone|anyonewithlink
 <PrinterID> ::= <String>
 <PrintJobID> ::= <String>
 <PropertyKey> ::= <String>
@@ -458,7 +459,7 @@ gam print admins [todrive] [user <UserItem>] [role <RoleItem>]
 gam print adminroles|roles [todrive]
 
 gam create domain <DomainName>
-gam update domain <DomainName> [primary]
+gam update domain <DomainName> primary
 gam delete domain <DomainName>
 gam info domain [<DomainName>]
 gam print domains [todrive]
@@ -655,10 +656,10 @@ gam <UserTypeEntity> transfer drive <UserItem> [keepuser]
 gam <UserTypeEntity> delete|del emptydrivefolders
 
 gam <UserTypeEntity> add drivefileacl <DriveFileID> anyone|(user <UserItem>)|(group <GroupItem>)|(domain <DomainName>)
-	[withlink] [role reader|commenter|writer|owner|editor] [sendmail] [emailmessage <String>]
-gam <UserTypeEntity> update drivefileacl <DriveFileID> id:<String>|<EmailAddress>
-	[withlink] [role reader|commenter|writer|owner|editor] [transferownership <Boolean>]
-gam <UserTypeEntity> delete|del drivefileacl <DriveFileID> id:<String>|<EmailAddress>
+	(role reader|commenter|writer|owner|editor) [withlink] [sendmail] [emailmessage <String>]
+gam <UserTypeEntity> update drivefileacl <DriveFileID> <PermissionID>
+	(role reader|commenter|writer|owner|editor) [withlink] [transferownership <Boolean>]
+gam <UserTypeEntity> delete|del drivefileacl <DriveFileID> <PermissionID>
 gam <UserTypeEntity> show drivefileacl <DriveFileID>
 
 gam <UserTypeEntity> delete|del alias|aliases
