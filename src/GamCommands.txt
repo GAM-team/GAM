@@ -85,6 +85,7 @@ If an item contains spaces, it should be surrounded by " or '.
 <NotificationID> ::= <String>
 <OrgUnitID> ::= <String>
 <OrgUnitPath> ::= /|(/<String)+
+<PermissionID> ::= id:<String>|<EmailAddress>|anyone|anyonewithlink
 <PrinterID> ::= <String>
 <PrintJobID> ::= <String>
 <PropertyKey> ::= <String>
@@ -656,9 +657,9 @@ gam <UserTypeEntity> delete|del emptydrivefolders
 
 gam <UserTypeEntity> add drivefileacl <DriveFileID> anyone|(user <UserItem>)|(group <GroupItem>)|(domain <DomainName>)
 	(role reader|commenter|writer|owner|editor) [withlink] [sendmail] [emailmessage <String>]
-gam <UserTypeEntity> update drivefileacl <DriveFileID> id:<String>|<EmailAddress>
+gam <UserTypeEntity> update drivefileacl <DriveFileID> <PermissionID>
 	(role reader|commenter|writer|owner|editor) [withlink] [transferownership <Boolean>]
-gam <UserTypeEntity> delete|del drivefileacl <DriveFileID> id:<String>|<EmailAddress>
+gam <UserTypeEntity> delete|del drivefileacl <DriveFileID> <PermissionID>
 gam <UserTypeEntity> show drivefileacl <DriveFileID>
 
 gam <UserTypeEntity> delete|del alias|aliases
