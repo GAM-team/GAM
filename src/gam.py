@@ -1811,8 +1811,7 @@ def convertUserIDtoEmail(uid):
   try:
     return callGAPI(cd.users(), u'get', throw_reasons=[u'notFound'], userKey=uid, fields=u'primaryEmail')[u'primaryEmail']
   except googleapiclient.errors.HttpError:
-    print u'ERROR: no such user %s' % uid
-    sys.exit(3)
+    return u'uid:{0}'.format(uid)
 
 def doCreateDataTranfer():
   dt = buildGAPIObject(u'datatransfer')
