@@ -40,7 +40,7 @@ If an item contains spaces, it should be surrounded by " or '.
 <Second> ::= <Digit><Digit>
 <MilliSeconds> ::= <Digit><Digit><Digit>
 <Date> ::= <Year>-<Month>-<Day>
-<DateTime> ::= <Year>-<Month>-<Day> <Hour>:<Minute>
+<DateTime> ::= <Year>-<Month>-<Day>(<Space>|T)<Hour>:<Minute>
 <Time> ::= <Year>-<Month>-<Day>(<Space>|T)<Hour>:<Minute>[:<Second>[.<MilliSeconds>[Z]]]
 <PrintJobAge> ::= <Number>(m|h|d)
 <UniqueID> ::= uid:<String>
