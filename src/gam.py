@@ -4080,8 +4080,8 @@ def showDriveFileInfo(users):
     print_json(None, feed)
 
 def showDriveFileRevisions(users):
+  fileId = sys.argv[5]
   for user in users:
-    fileId = sys.argv[5]
     drive = buildGAPIServiceObject(u'drive', user)
     feed = callGAPI(drive.revisions(), u'list', fileId=fileId)
     print_json(None, feed)
