@@ -40,15 +40,15 @@ If an item contains spaces, it should be surrounded by " or '.
 <Second> ::= <Digit><Digit>
 <MilliSeconds> ::= <Digit><Digit><Digit>
 <Date> ::= <Year>-<Month>-<Day>
-<DateTime> ::= <Year>-<Month>-<Day><Space><Hour>:<Minute>
+<DateTime> ::= <Year>-<Month>-<Day> <Hour>:<Minute>
 <Time> ::= <Year>-<Month>-<Day>(<Space>|T)<Hour>:<Minute>[:<Second>[.<MilliSeconds>[Z]]]
 <PrintJobAge> ::= <Number>(m|h|d)
 <UniqueID> ::= uid:<String>
 
 # Named items
 <AccessToken> ::= <String>
-<CalendarACLScope> ::= [user:]<EmailAddress>|group:<EmailAddress>|domain[:<DomainName>]|default
-<CalendarACLRole> ::= freebusyreader|reader|writer|owner|freebusy|read|editor
+<ACLScope> ::= [user:]<EmailAddress>|group:<EmailAddress>|domain[:<DomainName>]|default
+<CalendarACLRole> ::= editor|freebusy|freebusyreader|owner|reader|writer
 <CalendarColorIndex> ::== <Number in range 1-24>
 <CalendarItem> ::= <EmailAddress>|<String>
 <ClientID> ::= <String>
@@ -57,7 +57,8 @@ If an item contains spaces, it should be surrounded by " or '.
 <CourseParticipantType> ::= teacher|teachers|student|students
 <CrOSID> ::= <String>
 <CrOSItem> ::= <CrOSID>|(query:<Query>)|(query <Query>)
-<DoainAlias> ::= <String>
+<DomainAlias> ::= <String>
+<DriveFileACLRole> :: =commenter|editor|owner|reader|writer
 <EventColorIndex> ::== <Number in range 1-11>
 <FieldName> ::= <String>
 <DestEmailAddress> ::= <EmailAddress>
@@ -264,9 +265,8 @@ If an item contains spaces, it should be surrounded by " or '.
 	familyname|lastname|givenname|firstname|email
 
 # Named Lists, comma separated items, surrounded by ' or "
-<CalendarACLList> ::== '<CalendarACLScope>(,<CalendarACLScope>)*'
+<ACLList> ::== '<ACLScope>(,<ACLScope>)*'
 <CalendarList> ::= '<CalendarItem>(,<CalendarItem>)*'
-
 <CourseAliasList> ::= '<CourseAlias>(,<CourseAlias>)*'
 <CourseIDList> ::= '<CourseID>(,<CourseID>)*'
 <CrOSFieldNameList> ::= '<CrOSFieldName(,<CrOSFieldName>)*'
@@ -421,18 +421,6 @@ If an item contains spaces, it should be surrounded by " or '.
 	(suspended <Boolean>)|
 	(<SchemaName>.<FieldName> [multivalued|multivalue|value] <String>)
 
-# Select a section from gam.cfg and process a GAM command using values from that section
-<Select> ::=
-	select <Section> [save] [verify]
-# Set variables in gam.cfg
-<Config> ::=
-	config [<VariableName> <Value]* [save] [verify]
-# Specify file redirection. If the pattern {{Section}} appears in <FileName>, it will be replaced with the name of the current section.
-<Redirect> ::=
-	redirect [csv <FileName> [charset <Charset>]] [stdout <FileName> [append]] [stderr <FileName> [append]]
-
-# GAM meta arguments, these must come before all other arguments and in this order,  ... indicates that additional GAM arguments may appear
-gam [<Select>] [<Config>] [<Redirect>] ...
 
 gam version
 gam help
@@ -504,7 +492,7 @@ gam audit activity delete <EmailAddress> <RequestID>
 gam audit activity download <EmailAddress> <RequestID>
 gam audit activity status [<EmailAddress> <RequestID>]
 
-gam audit export request <EmailAddress> [begin <Time>] [end <Time>] [search <Query>] [headersonly] [includedeleted]
+gam audit export request <EmailAddress> [begin <DateTime>] [end <DateTime>] [search <Query>] [headersonly] [includedeleted]
 gam audit export delete <EmailAddress> <RequestID>
 gam audit export download <EmailAddress> <RequestID>
 gam audit export status [<EmailAddress> <RequestID>]
@@ -519,24 +507,24 @@ gam calendar <CalendarItem> update <CalendarACLRole> ([user] <EmailAddress>)|(gr
 gam calendar <CalendarItem> del|delete <CalendarACLRole> <EmailAddress>|(domain [<DomainName>])|default
 gam calendar <CalendarItem> showacl
 
-gam calendar <CalendarItem> addevent <EventAttributes>
+gam calendar <CalendarItem> addevent <EventAttributes>+
 gam calendar <CalendarItem> wipe
 
-gam update cros <CrOSItem> <CrOSAttributes>
+gam update cros <CrOSItem> <CrOSAttributes>+
 gam info cros <CrOSItem>
 gam print cros [todrive] [query <Query>] [basic|full] [nolists|recentusers|timeranges] [listlimit <Number>]
 	[orderby <CrOSOrderByFieldName> [ascending|descending]]
-gam <CrOSTypeEntity> update <CrOSAttributes>
+gam <CrOSTypeEntity> update <CrOSAttributes>+
 gam <CrOSTypeEntity> print
 
-gam update mobile <MobileItem> <MobileAttributes>
+gam update mobile <MobileItem> <MobileAttributes>+
 gam delete mobile <MobileItem>
 gam info mobile <MobileItem>
 gam print mobile [todrive] [query <Query>]
 	[orderby <MobileOrderByFieldName> [ascending|descending]]
 
-gam create group <EmailAddress> <GroupAttributes>
-gam update group <GroupItem> [admincreated <Boolean>] [email <EmailAddress>] <GroupAttributes>
+gam create group <EmailAddress> <GroupAttributes>*
+gam update group <GroupItem> [admincreated <Boolean>] [email <EmailAddress>] <GroupAttributes>*
 gam update group <GroupItem> add [owner|manager|member] <UserTypeEntity>
 gam update group <GroupItem> remove [owner|manager|member] <UserTypeEntity>
 gam update group <GroupItem> sync [owner|manager|member] <UserTypeEntity>
@@ -570,8 +558,8 @@ gam print schema|schemas
 
 gam print tokens|token [todrive] [<UserTypeEntity>]
 
-gam create user <EmailAddress> <UserAttrubutes>
-gam update user <UserItem> <UserAttributes>
+gam create user <EmailAddress> <UserAttrubutes>*
+gam update user <UserItem> <UserAttributes>+
 gam delete user <UserItem>
 gam undelete user <UserItem> [org|ou <OrgUnitPath>]
 gam info user [<UserItem>] [noaliases] [nogroups] [nolicenses|nolicences] [noschemas] [schemas <SchemaNameList>] [userview] [skus|sku <SKUIDList>]
@@ -584,8 +572,8 @@ gam create verify|verification <DomainName>
 gam update verify|verification <DomainName> cname|txt|text|site|file
 gam info verify|verification
 
-gam create course id|alias <CourseAlias> [teacher <UserItem>] <CourseAttributes>
-gam update course <CourseID> <CourseAttributes>
+gam create course id|alias <CourseAlias> [teacher <UserItem>] <CourseAttributes>*
+gam update course <CourseID> <CourseAttributes>+
 gam delete course <CourseID>
 gam info course <CourseID>
 gam print courses [todrive] [teacher] [student] [alias|aliases]
@@ -598,7 +586,7 @@ gam course <CourseID> sync teachers|students <UserTypeEntity>
 gam print course-participants [todrive](course <CourseID>)* [teacher] [student] [show all|students|teachers]
 
 gam printer register
-gam update printer <PrinterID> <PrinterAttributes>
+gam update printer <PrinterID> <PrinterAttributes>+
 gam delete printer <PrinterID>
 gam info printer <PrinterID> [everything]
 gam print printers [todrive] [query <Query>] [type <String>] [status <String>] [extrafields <String>]
@@ -631,8 +619,8 @@ gam <UserTypeEntity> update backupcodes|backupcode|verificationcodes
 gam <UserTypeEntity> delete|del backupcodes|backupcode|verificationcodes
 gam <UserTypeEntity> show backupcodes|backupcode|verificationcodes
 
-gam <UserTypeEntity> add calendar <CalendarItem> <CalendarAttributes>
-gam <UserTypeEntity> update calendar <CalendarItem> <CalendarAttributes>
+gam <UserTypeEntity> add calendar <CalendarItem> <CalendarAttributes>*
+gam <UserTypeEntity> update calendar <CalendarItem> <CalendarAttributes>+
 gam <UserTypeEntity> delete|del calendar <CalendarItem>
 gam <UserTypeEntity> show calendars
 
@@ -648,17 +636,17 @@ gam <UserTypeEntity> show filerevisions <DriveFileID>
 gam <UserTypeEntity> show filelist [todrive] [query <Query>] [allfields|<DriveFieldName>*]
 gam <UserTypeEntity> show filetree
 
-gam <UserTypeEntity> add drivefile [drivefilename <DriveFileName>] [<DriveFileAddAttributes>]
-gam <UserTypeEntity> update drivefile (id <DriveFileID)|(drivefilename <DriveFileName>)|(query <Query) [copy] [newfilename <DriveFileName>] [<DriveFileUpdateAttributes>]
+gam <UserTypeEntity> add drivefile [drivefilename <DriveFileName>] <DriveFileAddAttributes>*
+gam <UserTypeEntity> update drivefile (id <DriveFileID)|(drivefilename <DriveFileName>)|(query <Query) [copy] [newfilename <DriveFileName>] <DriveFileUpdateAttributes>*
 gam <UserTypeEntity> get drivefile (id <DriveFileID>)|(query <Query>) [format <FileFormatList>] [targetfolder <FilePath>] [revision <Number>]
 gam <UserTypeEntity> delete|del drivefile <DriveFileID>|<DriveFileURL>|(query:<Query>) [purge|untrash]
 gam <UserTypeEntity> transfer drive <UserItem> [keepuser]
 gam <UserTypeEntity> delete|del emptydrivefolders
 
 gam <UserTypeEntity> add drivefileacl <DriveFileID> anyone|(user <UserItem>)|(group <GroupItem>)|(domain <DomainName>)
-	(role reader|commenter|writer|owner|editor) [withlink] [sendmail] [emailmessage <String>]
+	(role <DriveFileACLRole>) [withlink] [sendmail] [emailmessage <String>]
 gam <UserTypeEntity> update drivefileacl <DriveFileID> <PermissionID>
-	(role reader|commenter|writer|owner|editor) [withlink] [transferownership <Boolean>]
+	(role <DriveFileACLRole>) [withlink] [transferownership <Boolean>]
 gam <UserTypeEntity> delete|del drivefileacl <DriveFileID> <PermissionID>
 gam <UserTypeEntity> show drivefileacl <DriveFileID>
 
