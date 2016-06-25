@@ -9233,10 +9233,10 @@ def doCreateMonitor():
   i = 6
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'end':
-      end_date = sys.argv[i+1]
+      end_date = sys.argv[i+1].strip().replace(u'T', u' ')
       i += 2
     elif sys.argv[i].lower() == u'begin':
-      begin_date = sys.argv[i+1]
+      begin_date = sys.argv[i+1].strip().replace(u'T', u' ')
       i += 2
     elif sys.argv[i].lower() == u'incoming_headers':
       incoming_headers_only = True
@@ -9377,10 +9377,10 @@ def doRequestExport():
   i = 5
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'begin':
-      begin_date = sys.argv[i+1]
+      begin_date = sys.argv[i+1].strip().replace(u'T', u' ')
       i += 2
     elif sys.argv[i].lower() == u'end':
-      end_date = sys.argv[i+1]
+      end_date = sys.argv[i+1].strip().replace(u'T', u' ')
       i += 2
     elif sys.argv[i].lower() == u'search':
       search_query = sys.argv[i+1]
