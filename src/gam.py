@@ -25,7 +25,7 @@ For more information, see http://git.io/gam
 """
 
 __author__ = u'Jay Lee <jay0lee@gmail.com>'
-__version__ = u'3.782'
+__version__ = u'3.783'
 __license__ = u'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 import sys, os, time, datetime, random, socket, csv, platform, re, calendar, base64, string, codecs, StringIO, subprocess, ConfigParser, collections
@@ -6959,12 +6959,13 @@ def doRemoveUsersGroups(users):
 def doUpdateGroup():
   cd = buildGAPIObject(GAPI_DIRECTORY_API)
   group = sys.argv[3]
-  if sys.argv[4].lower() in [u'add', u'update', u'sync', u'remove']:
+  myarg = sys.argv[4].lower()
+  if myarg in [u'add', u'update', u'sync', u'remove', u'clear']:
     if group[0:3].lower() == u'uid:':
       group = group[4:]
     elif group.find(u'@') == -1:
       group = u'%s@%s' % (group, GC_Values[GC_DOMAIN])
-    if sys.argv[4].lower() in [u'add', u'update']:
+    if myarg in [u'add', u'update']:
       role = sys.argv[5].upper()
       i = 6
       if role not in [u'OWNER', u'MANAGER', u'MEMBER']:
@@ -6978,16 +6979,16 @@ def doUpdateGroup():
       for user_email in users_email:
         if user_email != u'*' and user_email.find(u'@') == -1:
           user_email = u'%s@%s' % (user_email, GC_Values[GC_DOMAIN])
-        sys.stderr.write(u' %sing %s %s...\n' % (sys.argv[4].lower(), role.lower(), user_email))
+        sys.stderr.write(u' %sing %s %s...\n' % (myarg, role.lower(), user_email))
         try:
-          if sys.argv[4].lower() == u'add':
+          if myarg == u'add':
             body = {u'role': role, u'email': user_email}
             callGAPI(cd.members(), u'insert', soft_errors=True, groupKey=group, body=body)
-          elif sys.argv[4].lower() == u'update':
+          else:
             callGAPI(cd.members(), u'update', soft_errors=True, groupKey=group, memberKey=user_email, body=body)
         except googleapiclient.errors.HttpError:
           pass
-    elif sys.argv[4].lower() == u'sync':
+    elif myarg == u'sync':
       role = sys.argv[5].upper()
       i = 6
       if role not in [u'OWNER', u'MANAGER', u'MEMBER']:
@@ -7006,7 +7007,7 @@ def doUpdateGroup():
       for user_email in to_remove:
         items.append([u'update', u'group', group, u'remove', user_email])
       run_batch(items)
-    elif sys.argv[4].lower() == u'remove':
+    elif myarg == u'remove':
       i = 5
       if sys.argv[i].lower() in [u'member', u'manager', u'owner']:
         i += 1
@@ -7019,6 +7020,25 @@ def doUpdateGroup():
           user_email = user_email[4:]
         elif user_email.find(u'@') == -1:
           user_email = u'%s@%s' % (user_email, GC_Values[GC_DOMAIN])
+        sys.stderr.write(u' removing %s\n' % user_email)
+        callGAPI(cd.members(), u'delete', soft_errors=True, groupKey=group, memberKey=user_email)
+    else: # clear
+      roles = []
+      i = 5
+      while i < len(sys.argv):
+        role = sys.argv[i].upper()
+        if role in [u'OWNER', u'MANAGER', u'MEMBER']:
+          roles.append(role)
+          i += 1
+        else:
+          print u'ERROR: %s is not a valid argument for "gam update group clear"' % sys.argv[i]
+          sys.exit(2)
+      if roles:
+        roles = u','.join(sorted(set(roles)))
+      else:
+        roles = u'MEMBER'
+      user_emails = getUsersToModify(entity_type=u'group', entity=group, member_type=roles)
+      for user_email in user_emails:
         sys.stderr.write(u' removing %s\n' % user_email)
         callGAPI(cd.members(), u'delete', soft_errors=True, groupKey=group, memberKey=user_email)
   else:
