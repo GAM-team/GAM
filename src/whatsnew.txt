@@ -1,21 +1,73 @@
 GAM 3.66
-  -Print address fields in logical order for gam info domain/instance
-  -Fix problem with gam create alias <Alias> target <Group>
-  -Add skus <SKUIDList> argument to gam info user to allow any licenses to be processed
-  -Add limit <Number> argument to gam print printjobs, gam printjob fetchto allow selecting number of print jobs to process
-   limit 0 means all print jobs.
-  -Add revision <Number> argument to gam get drivefile to allow downloading of specific drive file revision (Seth Stein @wfu-linux)
-  -Add command gam <Users> show filerevisions <DriveFileID> to show drive file revisions (Seth Stein wfu-linux)
-  -Allow info user/group arguments to be used in gam whatis and be processed/ignored as appropriate
-  -Add membernames argument to gam print group-members to add member full name to output
-  -Add domain to unqualified group <Name> in gam print group-members
-  -Add fields <MembersFieldNameList> argument to gam print group-members to allow field selection
-   MembersFieldNameList is a comma separated list of field names: email | group | id | name | role | type
-  -Add command gam <Users> show gplusprofile [todrive] to show Google+ profile
-  -Add domain <DomainName> and member <EmailAddress> arguments to gam print group-members to allow selecting subsets of groups
-  -Add showcounts argument to gam <Users> show labels to allow seeing message counts for each label
-  -Add arguments to gam <Users> show fileinfo <DriveFileId> <DriveFieldName>* to allow field selection
-  -Add option to gam update group to allow clearing members: gam update group <GroupItem> clear [owner] [manager] [member]
+See GamCommands.txt for a complete syntax description.
+
+Added arguments to gam info group to suppress aliases listing and include groups of which this group is a member.
+`gam info group <Group> ... [noaliases] [groups]`
+
+Added argument to gam print cros to limit number of activeTimeRanges and recentUsers entries
+`gam print cros ... [listlimit <Number>]`
+
+Added argument to gam signature/vacation to allow specification of file character set so that extended characters can be read.
+`gam <Users> signature file <FileName> [charset <CharSet>]`
+`gam <Users> vacation ... <FileName> [charset <CharSet>] ...`
+
+Added argument to gam add/update calendar to allow specification of event notifications
+`gam <Users> add/update calendar <Calendar> notification email|sms eventcreation|eventchange|eventcancellation|eventresponce|agenda`
+
+Added option to reminder and notification arguments of update calendar to allowing clearing of reminders/notifications.
+`gam <Users> update calendar <Calendar> [reminder clear] [notification clear]`
+
+Added arguments to `gam print group-members` to allow selecting subsets of groups.
+Added argument to `gam print group-members` to add member full name to output,
+Added argument to `gam print group-members` to allow output field selection.
+`gam print group-members [todrive] ([domain <DomainName>] [member <UserItem>])|[group <GroupItem>] [membernames] [fields <MembersFieldNameList>]`
+`MembersFieldNameList` is a comma separated list of field names: `email | group | id | name | role | type`
+
+Added argument to `gam info user` to specify SKUs for which license information is desired.
+`gam info user [<UserItem>] ... [skus <SKUIDList>]`
+
+Added argument to `gam print printjobs` and `gam printjob <PrinterID> fetch` to allow specifying the maximum number of print jobs to retrieve.
+`gam printjob <PrinterID> fetch		... [limit <Number>]`
+`gam print printjobs  ... [limit <Number>]`
+`limit <Number>` specifies the maximum number of print jobs to retrieve; defaults to 25, set limit to 0 to retrieve all print jobs.
+
+Credit to Seth Stein for the following enhancements.
+Added argument to `gam <Users> get drivefile` to allow downloading a specific revision of a drive file.
+`gam <Users> get drivefile (id <DriveFileID>)|(query <Query>) [format <FileFormatList>] [targetfolder <FilePath>] [revision <Number>]`
+Added command to show drive file revisions.
+`gam <Users> show filerevisions <DriveFileID>`
+
+Added argument to `gam print adminroles` to allow uploading to Google Drive.
+`gam print adminroles [todrive]`
+
+Added `group, groups, mobile` arguments to `gam report`.
+`gam report admin|calendar|calendars|drive|docs|doc|groups|group|logins|login|mobile|tokens|token ...`
+
+Added command to show user Google+ profile.
+`gam <Users> show gplusprofile [todrive]`
+To enable this command, visit: https://github.com/jay0lee/GAM/wiki/CreatingClientSecretsFile
+In step 3.v, enable the Google+ API
+In step 6.iii.d, add `https://www.googleapis.com/auth/plus.me` to the API scopes - Service Account list, then remove and re-add the authorization.
+
+Added argument to `gam <Users> show labels` to allow seeing message counts for each label.
+`gam <Users> show labels|label [onlyuser] [showcounts]`
+
+Added argument to `gam <Users> show fileinfo` to allow field selection.
+`gam <Users> show fileinfo <DriveFileID> [allfields|<DriveFieldName>*]`
+
+Added argument to `gam update group` to allow removing members by role.
+`gam update group <Group> clear [members] [managers] [owners]`
+If no option follows clear, all members will removed.
+
+Changed `gam print admins` to include 'id:' in OrgUnitID column as with other `gam print` commands.
+
+Fixed GAM to handle both future date error messages in `gam report`
+
+Fixed `gam <Users> show delegates` to handle Unicode characters in delagator name.
+
+Fixed `gam <Users> get drivefile` to properly handle file extension.
+
+Fixed `gam create alias <Name> target <Group>`.
 
 GAM 3.65
   -fix vacation issues (Ross)
