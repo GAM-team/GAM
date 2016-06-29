@@ -330,6 +330,9 @@ def dehtml(text):
     print_exc(file=sys.stderr)
     return text
 
+def indentMultiLineText(message, n=0):
+  return message.replace(u'\n', u'\n{0}'.format(u' '*n)).rstrip()
+
 def showUsage():
   doGAMVersion()
   print u'''
@@ -5140,11 +5143,10 @@ def getSignature(users):
     signature = result.get(u'signature') if result else None
     if not signature:
       signature = u'None'
+    sys.stdout.write(u"User %s signature:\n  " % (user+u'@'+emailsettings.domain))
     if formatSig:
-      sys.stdout.write(u"User %s signature:\n" % (user+u'@'+emailsettings.domain))
-      print dehtml(signature)
+      print convertUTF8(indentMultiLineText(dehtml(signature), n=2))
     else:
-      sys.stdout.write(u"User %s signature:\n  " % (user+u'@'+emailsettings.domain))
       print convertUTF8(u" %s" % signature)
 
 def doWebClips(users):
@@ -9388,7 +9390,8 @@ def win32_unicode_argv():
 
 # Main
 reload(sys)
-sys.setdefaultencoding(u'UTF-8')
+if hasattr(sys, u'setdefaultencoding'):
+  sys.setdefaultencoding(u'UTF-8')
 try:
   if GM_Globals[GM_WINDOWS]:
     win32_unicode_argv() # cleanup sys.argv on Windows
