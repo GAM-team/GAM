@@ -64,7 +64,7 @@ Added argument to `gam <Users> signature` and `gam <Users> vacation` to allow pa
 `gam <UserTypeEntity> vacation <TrueValues> subject <String> (message <String>)|(file <FileName> [charset <CharSet>]) (replace <REPattern> <String>)*
 	[contactsonly] [domainonly] [startdate <Date>] [enddate <Date>]`
 This is especially useful with CSV files.
-`gam csv Users.csv gam user '~User' signature file SignatureTemplate.txt replace '#User#' '~User' replace '#Title#' '~Title'`
+`gam csv Users.csv gam user "~User" signature file SignatureTemplate.txt replace "#User#" "~User" replace "#Title#" "~Title"`
 
 Changed `gam print admins` to include 'id:' in OrgUnitID column as with other `gam print` commands.
 
