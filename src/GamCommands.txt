@@ -737,7 +737,8 @@ gam <UserTypeEntity> show sendas
 gam <UserTypeEntity> shortcuts <Boolean>
 
 gam <UserTypeEntity> signature|sig <String>|(file <FileName> [charset <Charset>]) (replace <REPattern> <String>)*
-gam <UserTypeEntity> show signature|sig
+gam <UserTypeEntity> show signature|sig [format]
+
 gam <UserTypeEntity> snippets <Boolean>
 
 gam <UserTypeEntity> utf|utf8|utf-8|unicode <Boolean>

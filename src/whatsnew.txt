@@ -9,9 +9,16 @@ Added arguments to gam info group to suppress aliases listing and include groups
 Added argument to gam print cros to limit number of activeTimeRanges and recentUsers entries
 `gam print cros ... [listlimit <Number>]`
 
-Added argument to gam signature/vacation to allow specification of file character set so that extended characters can be read.
-`gam <Users> signature file <FileName> [charset <CharSet>]`
-`gam <Users> vacation ... <FileName> [charset <CharSet>] ...`
+Added argument to `gam <Users> signature` and `gam <Users> vacation` to allow specification of file character set so that extended characters can be read.
+Added argument to `gam <Users> signature` and `gam <Users> vacation` to allow pattern substitution in the signature and vacation message.
+`gam <Users> signature <String>|(file <FileName> [charset <Charset>]) (replace <REPattern> <String>)*`
+`gam <Users> vacation <TrueValues> subject <String> (message <String>)|(file <FileName> [charset <CharSet>]) (replace <REPattern> <String>)*
+	[contactsonly] [domainonly] [startdate <Date>] [enddate <Date>]`
+This is especially useful with CSV files.
+`gam csv Users.csv gam user "~User" signature file SignatureTemplate.txt replace "#User#" "~User" replace "#Title#" "~Title"`
+
+Added argument to `gam <Users> show signature` to format the signature.
+`gam <Users> show signature [format]`
 
 Added argument to gam add/update calendar to allow specification of event notifications
 `gam <Users> add/update calendar <Calendar> notification email|sms eventcreation|eventchange|eventcancellation|eventresponce|agenda`
@@ -60,13 +67,6 @@ Added argument to `gam <Users> show fileinfo` to allow field selection.
 Added argument to `gam update group` to allow removing members by role.
 `gam update group <Group> clear [members] [managers] [owners]`
 If no option follows clear, all members will removed.
-
-Added argument to `gam <Users> signature` and `gam <Users> vacation` to allow pattern substitution in the signature and vacation message.
-`gam <Users> signature <String>|(file <FileName> [charset <Charset>]) (replace <REPattern> <String>)*`
-`gam <UserTypeEntity> vacation <TrueValues> subject <String> (message <String>)|(file <FileName> [charset <CharSet>]) (replace <REPattern> <String>)*
-	[contactsonly] [domainonly] [startdate <Date>] [enddate <Date>]`
-This is especially useful with CSV files.
-`gam csv Users.csv gam user "~User" signature file SignatureTemplate.txt replace "#User#" "~User" replace "#Title#" "~Title"`
 
 Changed `gam print admins` to include 'id:' in OrgUnitID column as with other `gam print` commands.
 

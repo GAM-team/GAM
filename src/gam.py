@@ -5873,6 +5873,15 @@ def doSignature(users):
 
 def getSignature(users):
   emailsettings = getEmailSettingsObject()
+  formatSig = False
+  i = 5
+  while i < len(sys.argv):
+    if sys.argv[i].lower() == u'format':
+      formatSig = True
+      i += 1
+    else:
+      print u'ERROR: %s is not a valid argument for "gam <users> show signature"' % sys.argv[i]
+      sys.exit(2)
   for user in users:
     if user.find(u'@') > 0:
       emailsettings.domain = user[user.find(u'@')+1:]
@@ -5883,8 +5892,12 @@ def getSignature(users):
     signature = result.get(u'signature') if result else None
     if not signature:
       signature = u'None'
-    sys.stdout.write(u"User %s signature:\n  " % (user+u'@'+emailsettings.domain))
-    print convertUTF8(u" %s" % signature)
+    if formatSig:
+      sys.stdout.write(u"User %s signature:\n" % (user+u'@'+emailsettings.domain))
+      print dehtml(signature)
+    else:
+      sys.stdout.write(u"User %s signature:\n  " % (user+u'@'+emailsettings.domain))
+      print convertUTF8(u" %s" % signature)
 
 def doWebClips(users):
   if sys.argv[4].lower() in true_values:
