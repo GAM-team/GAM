@@ -302,7 +302,7 @@ OB_CHAR_SET = u'CharacterSet'
 OB_FIELD_NAME = u'FieldName'
 OB_FILE_NAME = u'FileName'
 OB_FILE_PATH = u'FilePath'
-OB_RE_PATTERN = u'PythonRegularExpression'
+OB_RE_PATTERN = u'REPattern'
 OB_SECTION_NAME = u'SectionName'
 OB_STRING = u'String'
 
@@ -647,6 +647,11 @@ def getInteger(i, minVal=None, maxVal=None):
     invalidArgumentExit(i, integerLimits(minVal, maxVal))
   missingArgumentExit(integerLimits(minVal, maxVal))
 
+def getCharSet(i):
+  if not checkArgumentPresent(i, [u'charset',]):
+    return (i, GC_Values.get(GC_CHARSET, GM_Globals[GM_SYS_ENCODING]))
+  return (i+2, getString(i+1, OB_CHAR_SET))
+
 def getREPattern(i):
   if i < len(sys.argv):
     patstr = sys.argv[i]
@@ -669,11 +674,6 @@ def getString(i, item, emptyOK=False, optional=False):
   elif  optional:
     return u''
   missingArgumentExit(item)
-
-def getCharSet(i):
-  if not checkArgumentPresent(i, [u'charset',]):
-    return (i, GC_Values.get(GC_CHARSET, GM_Globals[GM_SYS_ENCODING]))
-  return (i+2, getString(i+1, OB_CHAR_SET))
 #
 # Normalize user/group email address/uid
 # uid:12345abc -> 12345abc
@@ -5840,19 +5840,24 @@ def getForward(users):
       pass
 
 def doSignature(users):
-  import cgi
   i = 4
   if sys.argv[i].lower() == u'file':
     filename = sys.argv[i+1]
     i += 2
     i, encoding = getCharSet(i)
-    signature = readFile(filename, encoding=encoding).replace(u'\\n', u'&#xA;').replace(u'\n', u'<br/>')
+    signature = readFile(filename, encoding=encoding).replace(u'\\n', u'<br/>').replace(u'\n', u'<br/>')
   else:
-    signature = cgi.escape(sys.argv[i]).replace(u'\\n', u'&#xA;').replace(u'"', u"'")
-  xmlsig = u'''<?xml version="1.0" encoding="utf-8"?>
-<atom:entry xmlns:atom="http://www.w3.org/2005/Atom" xmlns:apps="http://schemas.google.com/apps/2006">
-    <apps:property name="signature" value="%s" />
-</atom:entry>''' % signature
+    signature = getString(i, OB_STRING, emptyOK=True).replace(u'\\n', u'<br/>').replace(u'\n', u'<br/>')
+    i += 1
+  while i < len(sys.argv):
+    if sys.argv[i].lower() == u'replace':
+      matchPattern = getREPattern(i+1)
+      matchReplacement = getString(i+2, OB_STRING, emptyOK=True)
+      signature = matchPattern.sub(matchReplacement, signature)
+      i += 3
+    else:
+      print u'ERROR: %s is not a valid argument for "gam <users> signature"' % sys.argv[i]
+      sys.exit(2)
   emailsettings = getEmailSettingsObject()
   i = 0
   count = len(users)
@@ -5864,8 +5869,7 @@ def doSignature(users):
     else:
       emailsettings.domain = GC_Values[GC_DOMAIN] #make sure it's back at default domain
     print u"Setting Signature for %s (%s of %s)" % (user+u'@'+emailsettings.domain, i, count)
-    uri = u'https://apps-apis.google.com/a/feeds/emailsettings/2.0/%s/%s/signature' % (emailsettings.domain, user)
-    callGData(emailsettings, u'Put', soft_errors=True, data=xmlsig, uri=uri)
+    callGData(emailsettings, u'UpdateSignature', soft_errors=True, username=user, signature=signature)
 
 def getSignature(users):
   emailsettings = getEmailSettingsObject()
@@ -5939,6 +5943,11 @@ def doVacation(users):
       i += 2
       i, encoding = getCharSet(i)
       message = readFile(filename, encoding=encoding)
+    elif sys.argv[i].lower() == u'replace':
+      matchPattern = getREPattern(i+1)
+      matchReplacement = getString(i+2, OB_STRING, emptyOK=True)
+      message = matchPattern.sub(matchReplacement, message)
+      i += 3
     else:
       print u'ERROR: %s is not a valid argument for "gam <users> vacation"' % sys.argv[i]
       sys.exit(2)

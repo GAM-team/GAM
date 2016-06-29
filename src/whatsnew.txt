@@ -61,6 +61,13 @@ Added argument to `gam update group` to allow removing members by role.
 `gam update group <Group> clear [members] [managers] [owners]`
 If no option follows clear, all members will removed.
 
+Added argument to `gam <Users> signature` and `gam <Users> vacation` to allow pattern substitution in the signature and vacation message.
+`gam <Users> signature <String>|(file <FileName> [charset <Charset>]) (replace <REPattern> <String>)*`
+`gam <UserTypeEntity> vacation <TrueValues> subject <String> (message <String>)|(file <FileName> [charset <CharSet>]) (replace <REPattern> <String>)*
+	[contactsonly] [domainonly] [startdate <Date>] [enddate <Date>]`
+This is especially useful with CSV files.
+`gam csv Users.csv gam signature file SignatureTemplate.txt replace '#User#' '~User' replace '#Title#' '~Title'`
+
 Changed `gam print admins` to include 'id:' in OrgUnitID column as with other `gam print` commands.
 
 Fixed GAM to handle both future date error messages in `gam report`
