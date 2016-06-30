@@ -1,3 +1,107 @@
+GAM 3.784
+See GamAuthorization.txt for a description of the the old authorization model.
+See GamCommands.txt for a complete syntax description.
+See GamConfig.txt for a description of the gam.cfg configuration file.
+
+Added arguments to gam info group to suppress aliases listing and include groups of which this group is a member.
+`gam info group <Group> ... [noaliases] [groups]`
+
+Added argument to gam print cros to limit number of activeTimeRanges and recentUsers entries
+`gam print cros ... [listlimit <Number>]`
+
+Added argument to `gam <Users> signature` and `gam <Users> vacation` to allow specification of file character set so that extended characters can be read.
+Credit to Steve Main for suggesting the following enhancement.
+wAdded argument to `gam <Users> signature` and `gam <Users> vacation` to allow pattern substitution in the signature and vacation message.
+`gam <Users> signature <String>|(file <FileName> [charset <Charset>]) (replace <Tag> <String>)*`
+`gam <Users> vacation <TrueValues> subject <String> (message <String>)|(file <FileName> [charset <CharSet>]) (replace <Tag> <String>)*
+	[contactsonly] [domainonly] [startdate <Date>] [enddate <Date>]`
+Every instance of `{<Tag>}` in the signature/message will be replaced by `<String>`. Instances of the form `{RT}...{Text}...{/RT}` will be eliminated
+if there was no `<Tag>` specified that matches `Text` or if a `<Tag>` matching `Text` was specified but the matching `<String>` is empty.
+This is especially useful with CSV files.
+`gam csv Users.csv gam user "~User" signature file SignatureTemplate.txt replace "#User#" "~User" replace "#Title#" "~Title"`
+
+Added argument to `gam <Users> show signature` to format the signature.
+`gam <Users> show signature [format]`
+
+Added argument to gam add/update calendar to allow specification of event notifications
+`gam <Users> add/update calendar <Calendar> notification email|sms eventcreation|eventchange|eventcancellation|eventresponce|agenda`
+
+Added option to reminder and notification arguments of update calendar to allowing clearing of reminders/notifications.
+`gam <Users> update calendar <Calendar> [reminder clear] [notification clear]`
+
+Added arguments to `gam print group-members` to allow selecting subsets of groups.
+Added argument to `gam print group-members` to add member full name to output,
+Added argument to `gam print group-members` to allow output field selection.
+`gam print group-members [todrive] ([domain <DomainName>] [member <UserItem>])|[group <GroupItem>] [membernames] [fields <MembersFieldNameList>]`
+`MembersFieldNameList` is a comma separated list of field names: `email | group | id | name | role | type`
+
+Added argument to `gam info user` to specify SKUs for which license information is desired.
+`gam info user [<UserItem>] ... [skus <SKUIDList>]`
+
+Added argument to `gam print printjobs` and `gam printjob <PrinterID> fetch` to allow specifying the maximum number of print jobs to retrieve.
+`gam printjob <PrinterID> fetch		... [limit <Number>]`
+`gam print printjobs  ... [limit <Number>]`
+`limit <Number>` specifies the maximum number of print jobs to retrieve; defaults to 25, set limit to 0 to retrieve all print jobs.
+
+Credit to Seth Stein for the following enhancements.
+Added argument to `gam <Users> get drivefile` to allow downloading a specific revision of a drive file.
+`gam <Users> get drivefile (id <DriveFileID>)|(query <Query>) [format <FileFormatList>] [targetfolder <FilePath>] [revision <Number>]`
+Added command to show drive file revisions.
+`gam <Users> show filerevisions <DriveFileID>`
+
+Added argument to `gam print adminroles` to allow uploading to Google Drive.
+`gam print adminroles [todrive]`
+
+Added `group, groups, mobile` arguments to `gam report`.
+`gam report admin|calendar|calendars|drive|docs|doc|groups|group|logins|login|mobile|tokens|token ...`
+
+Added command to show user Google+ profile.
+`gam <Users> show gplusprofile [todrive]`
+To enable this command, visit: https://github.com/jay0lee/GAM/wiki/CreatingClientSecretsFile
+In step 3.v, enable the Google+ API
+In step 6.iii.d, add `https://www.googleapis.com/auth/plus.me` to the API scopes - Service Account list, then remove and re-add the authorization.
+
+Added argument to `gam <Users> show labels` to allow seeing message counts for each label.
+`gam <Users> show labels|label [onlyuser] [showcounts]`
+
+Added argument to `gam <Users> show fileinfo` to allow field selection.
+`gam <Users> show fileinfo <DriveFileID> [allfields|<DriveFieldName>*]`
+
+Added argument to `gam update group` to allow removing members by role.
+`gam update group <Group> clear [members] [managers] [owners]`
+If no option follows clear, all members will removed.
+
+Changed `gam print admins` to include 'id:' in OrgUnitID column as with other `gam print` commands.
+
+Fixed GAM to handle both future date error messages in `gam report`
+
+Fixed `gam <Users> show delegates` to handle Unicode characters in delagator name.
+
+Fixed `gam <Users> get drivefile` to properly handle file extension.
+
+Fixed `gam create alias <Name> target <Group>`.
+
+GAM 3.65
+  -fix vacation issues (Ross)
+  -fix Windows path issues (Ross)
+  -Add message undelete (Ross) and modify (Jay) commands
+  -Improve message delete performance
+  -Upgrade to new versions of oauth2client and googleapiclient
+
+GAM 3.63
+  -"gam update group ... sync users" now does batch add/remove of users for faster sync
+  -"gam file" can now use - to read list of users from stdin
+  -"gam csv file:column" can read CSV file of users and specify column to be used.
+
+GAM 3.62
+  -New Admin Roles API allows you to create, delete and print delegated and super admins
+  -New Resource Calendar API replaces old GData API and allows you to create, update, get info, delete and print all resource calendars.
+  -Major cleanups and design updates from Ross Scroggs @taers232c mean GAM is more reliable and stable for your needs. Huge thanks Ross!
+  -Guard additional fields with convertUTF8
+  -Correct gam create resource to replace resType with type
+  -Add type as an argument to gam print resources to make resource type visible
+  -Handle students/teachers with missing emails in gam course sync
+
 GAM 3.61
   -Various fixes by Ross Scroggs for Domain API and Data Transfer commands
   -Remove duplicate DoCreateDomain which broke "gam create domain"

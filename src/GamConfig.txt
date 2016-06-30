@@ -1,0 +1,389 @@
+GAM versions 3.70 and above use a configuration file, gam.cfg, to store the values of the various environment variables
+and signal files used by earlier versions of GAM. Configuration files gamscopes.json, oauth2service.json and extra_args.txt
+are moved to a version independent location. This should simplify upgrading GAM versions in the future.
+Additionally, if you support multiple clients/domains or have multiple users running GAM,
+gam.cfg lets you easily manage your configuration.
+
+In the following discussion, these names will be used to refer to directories:
+    OldGamPath: Location of previous version of gam.py or gam.exe
+    GamPath: Location of new version of gam.py or gam.exe
+    GamCfgDir: Location of gam.cfg
+    GamConfigDir: Location of gamscopes.json, oauth2service.json, extra_args.txt
+    GamCacheDir: Google API cache files
+    GamDriveDir: Files downloaded with gam user <User> get drivefile <DriveFileID> when targetfolder <FilePath> is not specified
+    GamSiteDir: Location of admin-settings-v1.json, cloudprint-v2.json, email-audit-v1.json, email-settings-v1.json
+
+In versions of GAM before 3.70, the following locations are used:
+    GamCfgDir:
+	Not used
+    GamSiteDir:
+	GamPath
+    GamConfigDir:
+	GamPath
+    GamCacheDir:
+	GamPath/gamcache
+    GamDriveDir:
+	GamPath
+
+In GAM 3.70 and above, a new scheme for locating files is implemented.
+These are the default values that GAM uses.
+    GamCfgDir:
+        ~/.gam
+    GamConfigDir:
+        ~/.gam
+    GamCacheDir:
+        ~/.gam/gamcache
+    GamDriveDir:
+        ~/Downloads
+    GamSiteDir:
+	GamPath
+
+If you are an existing GAM user and don't like the suggested locations or you already have some other scheme in use,
+set GAMCFGDIR to the desired path for gam.cfg. In gam.cfg, specify the desired values for the other locations.
+
+How will gam.cfg be used? At its simplest, it is created once and you can ignore it.
+Every once in a while, you edit gam.cfg to set some desired values and then you ignore it.
+gam.cfg must be a plain text file, you can edit it with your favorite text editor (emacs, vi, TextWrangler,
+TextEdit, Notepad, Wordpad) as long as you wind up with a plain text file.
+
+If you are upgrading from a previous version of GAM, set the environment variable OLDGAMPATH to OldGamPath. This is a one-time setting
+to allow GAM to find your old signal files and to copy gamscopes.json, oauth2service.json, extra_args.txt
+from OldGamPath to GamConfigDir. To generate the initial gam.cfg, execute the command: gam select default verify.
+Once gam.cfg is created, no signal files are read and the only environment variable used is GAMCFGDIR.
+GAMFIGDIR does not have to be set unless you want a value other than ~/.gam for the location of gam.cfg.
+
+These are the gam.cfg variables; if GAM does not find a value for an environment variable, the default value is used.
+If a signal file is located, the associated variable is set True, otherwise False.
+(For debug.gam, debug_level is set to 4 if the file is located, otherwise 0.)
+
+activity_max_results
+	When retrieving lists of Google Drive activities from API, how many should be retrieved in each chunk
+	Default: 100
+	Environment variable: GAM_ACTIVITY_MAX_RESULTS
+auto_batch_min
+	Automatically generate gam batch command if number of users specified in gam users xxx command exceeds this number
+	Default: 0, don't automatically generate gam batch commands
+	Environment variable: GAM_AUTOBATCH
+batch_size
+	When processing items in batches, how many should be processed in each batch
+	Default: 50
+	Environment variable: GAM_BATCH_SIZE
+cache_dir
+	GAM cache directory.
+	Default: ~/.gam/gamcache
+	Environment variable: GAMCACHEDIR
+charset
+	Character set of gam batch, gam csv, gam loop files.
+	Default: utf-8 for Linux/Mac OSX, mbcs for Windows
+	Environment variable: GAM_CHARSET
+config_dir
+	GAM config directory containing gamscopes.json, oauth2service.json, extra_args.txt
+	Default: ~/.gam
+	Environment variable: GAMUSERCONFIGDIR
+customer_id
+	Google Custmer ID
+	Default: Blank
+	Environment variable: CUSTOMER_ID
+debug_level
+	If debug_level > 0, turn on API debugging output.
+	Default: 0
+	Signal file: GamConfigDir/debug.gam
+device_max_results
+	When retrieving lists of ChromeOS/Mobile devices from API, how many should be retrieved in each chunk
+	Default: 100
+	Environment variable: GAM_DEVICE_MAX_RESULTS
+domain
+	Google Domain
+	Default: Blank
+	Environment variable: GA_DOMAIN
+drive_dir
+	Directory for get drivefile and CSV files
+	Default: ~/Downloads
+	Environment variable: GAMDRIVEDIR
+drive_max_results
+	When retrieving lists of Drive files/folders from API, how many should be retrieved in each chunk
+	Default: 1000
+	Environment variable: GAM_DRIVE_MAX_RESULTS
+extra_args
+	Path to extra_args.txt
+	Default: Blank
+	Data file: extra_args.txt
+gamscopes_json
+	Path to gamscopes.json
+	Default: GamConfigDir/gamscoopes.json
+	Environment variable: GAMSCOPESFILE
+no_browser
+	If no_browser is True, GAM won't open a browser if todrive is set when creating CSV files
+	Signal file: GamConfigDir/nobrowser.txt
+no_cache
+	Disable GAM API caching
+	Signal file: GamConfigDir/nocache.txt
+no_update_check
+	Disable GAM update check
+	Signal file: GamConfigDir/noupdatecheck.txt
+no_verify_ssl
+	Disable SSL certificate validation
+	Signal file: GamConfigDir/noverifyssl.txt
+num_threads
+	Number of threads for gam batch
+	Default: 5
+	Environment variable: GAM_THREADS
+oauth2service_json
+	Path to oauth2service.json
+	Default: GamConfigDir/oauth2service.json
+	Environment variable: OAUTHSERVICEFILE
+section
+	Default section of gam.cfg.
+	Default: DEFAULT
+	Environment variable: GAM_SECTION
+show_counts_min
+	Add (n/m) to end of messages if number of items to be processed exceeds this number
+	Default: 1
+	Environment variable: GAM_SHOW_COUNTS_MIN
+show_gettings
+	Enable/disable "Getting ... " messages
+	Default: True
+	Environment variable: GAM_SHOW_GETTINGS
+user_max_results
+	When retrieving lists of Users from API, how many should be retrieved in each chunk
+	Default: 500
+	Environment variable: GAM_USER_MAX_RESULTS
+
+This is sample output from the command: gam select default verify.
+Config File: /Users/admin/.gam/gam.cfg, Initialized
+Section: DEFAULT
+  activity_max_results = 100
+  auto_batch_min = 0
+  batch_size = 50
+  cache_dir = /Users/admin/.gam/gamcache
+  charset = utf-8
+  config_dir = /Users/admin/.gam
+  customer_id = 
+  debug_level = 0
+  device_max_results = 500
+  domain = 
+  drive_dir = /Users/admin/Downloads
+  drive_max_results = 1000
+  extra_args = 
+  gamscopes_json = gamscopes.json ; /Users/admin/.gam/gamscopes.json
+  no_browser = false
+  no_cache = false
+  no_update_check = false
+  no_verify_ssl = false
+  num_threads = 5
+  oauth2service_json = oauth2service.json ; /Users/admin/.gam/oauth2service.json
+  section = 
+  show_counts_min = 1
+  show_gettings = true
+  user_max_results = 500
+
+If you (the administrator) run GAM and have multiple other users that also run GAM, you will make a gam.cfg for each user.
+To generate the initial gam.cfg for a user, log on as that user and execute the command: gam select default verify.
+This will create a gam.cfg for the user using the environment variables specific to the user. For efficiency, you
+may want to edit each users gam.cfg and set "no_update_check = true" so that GAM update checks are performed only by you.
+You might set the permissions on each users gam.cfg to be read-only so that they can't make unauthorized changes.
+
+There are three new arguments to GAM that should simplify how you use GAM with multiple clients/domains.
+Each client/domain will have a section in gam.cfg that sets the values specific to it.
+The select argument specifies the section of gam.cfg to use for processing the rest of the GAM command;
+it's how you quickly switch from from one client to another.
+
+The arguments are optional, must appear in this order and must be the first arguments before any other GAM arguments.
+
+select <Section> [save] [verify]
+	Use <Section> from gam.cfg for the current GAM command.
+	<Section> is case-sensitive except for DEFAULT which is case-insensitive.
+    save
+	Set section = <Section> in the DEFAULT section of gam.cfg
+	Write configuration data to gam.cfg
+    verify
+	Print the variable values for the current section
+	Values are determined in this order: Current section, DEFAULT section, Program default
+
+The config argument is used to set selected variables in gam.cfg via the command line.
+
+config [<VariableName> <Value>]* [save] [verify]
+    <VariableName> <Value>
+        Set <VariableName> = <Value> in the current section
+	The following <VariableNames> are allowed:
+	  activity_max_results, auto_batch_min, batch_size, charset, debug_level, device_max_results, drive_max_results,
+	  no_browser, no_cache, no_update_check, no_verify_ssl, num_threads, show_counts_min, show_gettings, user_max_results
+    save
+	Write configuration data to gam.cfg
+    verify
+	Print the variable values for the current section
+	Values are determined in this order: Current section, DEFAULT section, Program default
+
+The redirect argument is used to redirect output for CSV files, stdout and stderr.
+
+redirect [csv <FileName> [charset <CharSet>]] [stdout <FileName> [append]] [stderr <FileName> [append]]
+    csv <FileName> [charset <CharSet>]
+	If the pattern {{Section}} appears in <FileName>, it will be replaced with the name of the current section.
+	If <FileName> is relative, it is appended to drive_dir in the current section if defined or drive_dir in DEFAULT
+	If the GAM command writes a CSV file, it will be written to <FileName> rather than stdout
+    stdout <FileName> [append]
+	If the pattern {{Section}} appears in <FileName>, it will be replaced with the name of the current section.
+	If <FileName> is relative, it is appended to drive_dir in the current section if defined or drive_dir in DEFAULT
+	GAM output to stdout will be written to <FileName>
+    stderr <FileName> [append]
+	If the pattern {{Section}} appears in <FileName>, it will be replaced with the name of the current section.
+	If <FileName> is relative, it is appended to drive_dir in the current section if defined or drive_dir in DEFAULT
+	GAM output to stderr will be written to <FileName>
+
+Here is a sample multiple domain/client example.
+You have five clients: main, foo, goo, shared1 and shared2; 90% of your work is with client main.
+
+Clients main, foo and goo have distinct oauth2service.json files.
+Clients shared1 and shared2 have a shared oauth2service.json file.
+All clients have distinct gamscopes.json files.
+The files for foo, goo, shared1 and shared2 have prefixes to indicate the client; the main files do not have prefixes.
+All files are in OldGamPath. You have been using the environment variables GAMSCOPESFILE and OAUTHSERVICEFILE
+to specify the client on which to operate. You have:
+    gamscopes.json, oauth2service.json
+    foo_gamscopes.json, foo_oauth2service.json
+    goo_gamscopes.json, goo_oauth2service.json
+    shared_oauth2service.json
+    shared1_gamscopes.json, shared2_gamscopes.json
+
+gamscopes.json, oauth2service.json, extra_args.txt were copied to their new location
+when you initially executed the command: gam select default verify
+Copy the prefixed files to GamConfigDir by hand as necessary.
+Edit gam.cfg to set up additional clients; it should look like this when complete.
+
+[DEFAULT]
+activity_max_results = 100
+auto_batch_min = 0
+batch_size = 50
+cache_dir = /Users/admin/.gam/gamcache
+charset = utf-8
+config_dir = /Users/admin/.gam
+customer_id = 0000000000
+debug_level = 0
+device_max_results = 500
+domain = main.com
+drive_dir = /Users/admin/Downloads
+drive_max_results = 1000
+extra_args = 
+gamscopes_json = gamscopes.json
+no_browser = false
+no_cache = false
+no_update_check = false
+no_verify_ssl = false
+num_threads = 5
+oauth2service_json = oauth2service.json
+section = 
+show_counts_min = 1
+show_gettings = true
+user_max_results = 500
+
+[foo]
+domain = foo.com
+customer_id = 1111111111
+oauth2service_json = foo_oauth2service.json
+gamscopes_json = foo_gamscopes.json
+
+[goo]
+domain = goo.com
+customer_id = 2222222222
+oauth2service_json = goo_oauth2service.json
+gamscopes_json = goo_gamscopes.json
+
+[shared1]
+domain = shared1.org
+customer_id = 3333333333
+oauth2service_json = shared_oauth2service.json
+gamscopes_json = shared1_gamscopes.json
+
+[shared2]
+domain = shared2.org
+customer_id = 4444444444
+oauth2service_json = shared_oauth2service.json
+gamscopes_json = shared2_gamscopes.json
+
+To get information about your main client, don't select a section.
+	gam info domain
+Google Apps Domain: main.com
+Customer ID: 0000000000
+...
+To get information about another client, select a section.
+	gam select foo info domain
+Google Apps Domain: foo.com
+Customer ID: 1111111111
+...
+	gam select shared2 info domain
+Google Apps Domain: shared2.org
+Customer ID: 4444444444
+...
+
+Suppose you want to work with foo for a while, then switch to goo but don't want to keep typing gam select.
+	gam select foo save
+GAM sets section = foo in the DEFAULT section, updates gam.cfg, selects foo for this and subsequent gam commands so you don't have to use select <Section> argument.
+	gam info user admin
+User: admin@foo.com
+...
+
+When it's time to switch to goo, select and save the section.
+	gam select goo save
+GAM sets section = goo in the DEFAULT section, updates gam.cfg, selects goo for this and subsequent gam commands so you don't have to use select <Section> argument.
+	gam info user admin
+User: admin@goo.com
+...
+
+If you have to switch back to foo for a single command, select foo, but don't save it, further commands without a select will be goo.
+	gam select foo info user admin
+User: admin@foo.com
+...
+	gam info user admin
+User: admin@goo.com
+...
+
+If you have to switch back to main for a single command, select default, but don't save it, further commands without a select will be goo.
+	gam select default info user admin
+User: admin@main.com
+...
+	gam info user admin
+User: admin@goo.com
+...
+
+To use the DEFAULT section as the selected section, i.e., no automatic selection of a section, select default and save
+	gam select default save
+GAM sets section = DEFAULT in the DEFAULT section, updates gam.cfg, selects DEFAULT for this and subsequent gam commands so you don't have to use select <Section> argument.
+	gam info user admin
+User: admin@main.com
+...
+
+The gam csv command and the select argument can be combined to perform powerful operations in a single command line.
+
+Suppose you have the following CSV file, InfoAdmins.csv, 
+Section,AdminUser
+default,admin
+foo,fooadmin
+goo,gooadmin
+shared1,admin1
+shared2,admin2
+
+For each of the domains, you want to get user information about the domain administrator.
+	gam csv InfoAdmins.csv gam select ~Section info user '~AdminUser' nolicenses
+
+For each of the domains, you also want to list the Google Drive files for the domain administrator.
+	gam csv InfoAdmins.csv gam select ~Section user '~AdminUser' show filelist id
+
+Suppose you have two CSV files, NewFooUsers.csv and NewGooUsers.csv, with the columns: Email,FirstName,LastName,Password.
+You will use these files to create new users in the foo.com and goo.com domains.
+
+To process the files sequentially, there are two forms:
+	gam select foo save csv NewFooUsers.csv gam create user ~Email firstname ~FirstName lastname ~LastName password ~Password
+	gam select goo save csv NewGooUsers.csv gam create user ~Email firstname ~FirstName lastname ~LastName password ~Password
+You could also do:
+	gam csv NewFooUsers.csv gam select foo create user ~Email firstname ~FirstName lastname ~LastName password ~Password
+	gam csv NewGooUsers.csv gam select goo create user ~Email firstname ~FirstName lastname ~LastName password ~Password
+In the first form, the select/save before csv sets the default section which then applies to each gam instance.
+In the second form, the select is performed for each gam instance.
+
+To process the files in parallel in separate shells, you have to use the second form.
+In shell number 1, do:
+	gam csv NewFooUsers.csv gam select foo create user ~Email firstname ~FirstName lastname ~LastName password ~Password
+In shell number 2, do:
+	gam csv NewGooUsers.csv gam select goo create user ~Email firstname ~FirstName lastname ~LastName password ~Password
+
+
