@@ -5077,7 +5077,7 @@ def getForward(users):
     except TypeError:
       pass
 
-RT_PATTERN = re.compile(r'(?s){RT}.*?{(.*?)}.*?{/RT}')
+RT_PATTERN = re.compile(r'(?s){RT}.*?{(.+?)}.*?{/RT}')
 RT_OPEN_PATTERN = re.compile(r'{RT}')
 RT_CLOSE_PATTERN = re.compile(r'{/RT}')
 RT_STRIP_PATTERN = re.compile(r'(?s){RT}.*?{/RT}')
