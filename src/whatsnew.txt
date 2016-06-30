@@ -8,10 +8,13 @@ Added argument to gam print cros to limit number of activeTimeRanges and recentU
 `gam print cros ... [listlimit <Number>]`
 
 Added argument to `gam <Users> signature` and `gam <Users> vacation` to allow specification of file character set so that extended characters can be read.
+Credit to Steve Main suggesting the following enhancement.
 Added argument to `gam <Users> signature` and `gam <Users> vacation` to allow pattern substitution in the signature and vacation message.
-`gam <Users> signature <String>|(file <FileName> [charset <Charset>]) (replace <REPattern> <String>)*`
-`gam <Users> vacation <TrueValues> subject <String> (message <String>)|(file <FileName> [charset <CharSet>]) (replace <REPattern> <String>)*
+`gam <Users> signature <String>|(file <FileName> [charset <Charset>]) (replace <Tag> <String>)*`
+`gam <Users> vacation <TrueValues> subject <String> (message <String>)|(file <FileName> [charset <CharSet>]) (replace <Tag> <String>)*
 	[contactsonly] [domainonly] [startdate <Date>] [enddate <Date>]`
+Every instance of `{<Tag>}` in the signature/message will be replaced by `<String>`. Instances of the form `{RT}...{Text}...{/RT}` will be eliminated
+if there was no `<Tag>` specified that matches `Text` or if a `<Tag>` matching `Text` was specified but the matching `<String>` is empty.
 This is especially useful with CSV files.
 `gam csv Users.csv gam user "~User" signature file SignatureTemplate.txt replace "#User#" "~User" replace "#Title#" "~Title"`
 
