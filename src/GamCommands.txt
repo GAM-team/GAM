@@ -44,6 +44,7 @@ If an item contains spaces, it should be surrounded by " or '.
 <Time> ::= <Year>-<Month>-<Day>(<Space>|T)<Hour>:<Minute>[:<Second>[.<MilliSeconds>[Z]]]
 <PrintJobAge> ::= <Number>(m|h|d)
 <REPattern> ::= <Python Regular Expression, see: https://docs.python.org/2/library/re.html>
+<Tag> ::= <String>
 <UniqueID> ::= uid:<String>
 
 # Named items
@@ -736,7 +737,7 @@ gam <UserTypeEntity> show sendas
 
 gam <UserTypeEntity> shortcuts <Boolean>
 
-gam <UserTypeEntity> signature|sig <String>|(file <FileName> [charset <Charset>]) (replace <REPattern> <String>)*
+gam <UserTypeEntity> signature|sig <String>|(file <FileName> [charset <Charset>]) (replace <Tag> <String>)*
 gam <UserTypeEntity> show signature|sig [format]
 
 gam <UserTypeEntity> snippets <Boolean>
@@ -744,7 +745,7 @@ gam <UserTypeEntity> snippets <Boolean>
 gam <UserTypeEntity> utf|utf8|utf-8|unicode <Boolean>
 
 gam <UserTypeEntity> vacation <FalseValues>
-gam <UserTypeEntity> vacation <TrueValues> subject <String> (message <String>)|(file <FileName> [charset <CharSet>]) (replace <REPattern> <String>)*
+gam <UserTypeEntity> vacation <TrueValues> subject <String> (message <String>)|(file <FileName> [charset <CharSet>]) (replace <Tag> <String>)*
 	[contactsonly] [domainonly] [startdate <Date>] [enddate <Date>]
 gam <UserTypeEntity> show vacation
 
