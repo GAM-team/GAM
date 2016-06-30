@@ -10,7 +10,7 @@ Added argument to gam print cros to limit number of activeTimeRanges and recentU
 `gam print cros ... [listlimit <Number>]`
 
 Added argument to `gam <Users> signature` and `gam <Users> vacation` to allow specification of file character set so that extended characters can be read.
-Credit to Steve Main suggesting the following enhancement.
+Credit to Steve Main for suggesting the following enhancement.
 wAdded argument to `gam <Users> signature` and `gam <Users> vacation` to allow pattern substitution in the signature and vacation message.
 `gam <Users> signature <String>|(file <FileName> [charset <Charset>]) (replace <Tag> <String>)*`
 `gam <Users> vacation <TrueValues> subject <String> (message <String>)|(file <FileName> [charset <CharSet>]) (replace <Tag> <String>)*
