@@ -25,7 +25,7 @@ For more information, see http://git.io/gam
 """
 
 __author__ = u'Jay Lee <jay0lee@gmail.com>'
-__version__ = u'3.783'
+__version__ = u'3.784'
 __license__ = u'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 import sys, os, time, datetime, random, socket, csv, platform, re, calendar, base64, string, codecs, StringIO, subprocess, ConfigParser, collections
@@ -5842,7 +5842,31 @@ def getForward(users):
     except TypeError:
       pass
 
+RT_PATTERN = re.compile(r'(?s){RT}.*?{(.*?)}.*?{/RT}')
+RT_OPEN_PATTERN = re.compile(r'{RT}')
+RT_CLOSE_PATTERN = re.compile(r'{/RT}')
+RT_STRIP_PATTERN = re.compile(r'(?s){RT}.*?{/RT}')
+RT_TAG_REPLACE_PATTERN = re.compile(r'{(.*?)}')
+
+def processTags(tagReplacements, message):
+  while True:
+    match = RT_PATTERN.search(message)
+    if not match:
+      break
+    if tagReplacements.get(match.group(1)):
+      message = RT_OPEN_PATTERN.sub(u'', message, count=1)
+      message = RT_CLOSE_PATTERN.sub(u'', message, count=1)
+    else:
+      message = RT_STRIP_PATTERN.sub(u'', message, count=1)
+  while True:
+    match = RT_TAG_REPLACE_PATTERN.search(message)
+    if not match:
+      break
+    message = re.sub(match.group(0), tagReplacements.get(match.group(1), u''), message)
+  return message
+
 def doSignature(users):
+  tagReplacements = {}
   i = 4
   if sys.argv[i].lower() == u'file':
     filename = sys.argv[i+1]
@@ -5854,13 +5878,15 @@ def doSignature(users):
     i += 1
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'replace':
-      matchPattern = getREPattern(i+1)
+      matchTag = getString(i+1, u'Tag')
       matchReplacement = getString(i+2, OB_STRING, emptyOK=True)
-      signature = matchPattern.sub(matchReplacement, signature)
+      tagReplacements[matchTag] = matchReplacement
       i += 3
     else:
       print u'ERROR: %s is not a valid argument for "gam <users> signature"' % sys.argv[i]
       sys.exit(2)
+  if tagReplacements:
+    signature = processTags(tagReplacements, signature)
   emailsettings = getEmailSettingsObject()
   i = 0
   count = len(users)
@@ -5924,6 +5950,7 @@ def doWebClips(users):
 
 def doVacation(users):
   subject = message = u''
+  tagReplacements = {}
   if sys.argv[4].lower() in true_values:
     enable = True
   elif sys.argv[4].lower() in false_values:
@@ -5959,9 +5986,9 @@ def doVacation(users):
       i, encoding = getCharSet(i)
       message = readFile(filename, encoding=encoding)
     elif sys.argv[i].lower() == u'replace':
-      matchPattern = getREPattern(i+1)
+      matchTag = getString(i+1, u'Tag')
       matchReplacement = getString(i+2, OB_STRING, emptyOK=True)
-      message = matchPattern.sub(matchReplacement, message)
+      tagReplacements[matchTag] = matchReplacement
       i += 3
     else:
       print u'ERROR: %s is not a valid argument for "gam <users> vacation"' % sys.argv[i]
@@ -5970,6 +5997,8 @@ def doVacation(users):
   count = len(users)
   emailsettings = getEmailSettingsObject()
   message = message.replace(u'\\n', u'\n')
+  if tagReplacements:
+    message = processTags(tagReplacements, message)
   for user in users:
     i += 1
     if user.find(u'@') > 0:
