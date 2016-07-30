@@ -711,7 +711,7 @@ gam <UserTypeEntity> delete|del license <SKUID>
 
 gam <UserTypeEntity> update photo <FileNamePattern>
 gam <UserTypeEntity> delete|del photo
-gam <UserTypeEntity> get photo [drivedir|(targetfolder <FilePath>)]
+gam <UserTypeEntity> get photo [drivedir|(targetfolder <FilePath>)] [noshow]
 
 gam <UserTypeEntity> profile share|shared|unshare|unshared
 gam <UserTypeEntity> show profile

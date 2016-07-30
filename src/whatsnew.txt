@@ -2,170 +2,173 @@ GAM 3.66
 See GamCommands.txt for a complete syntax description.
 
 Added arguments to gam info group to suppress aliases listing and include groups of which this group is a member.
-`gam info group <Group> ... [noaliases] [groups]`
+gam info group <Group> ... [noaliases] [groups]
 
 Added argument to gam print cros to limit number of activeTimeRanges and recentUsers entries
-`gam print cros ... [listlimit <Number>]`
+gam print cros ... [listlimit <Number>]
 
-Added argument to `gam <UserTypeEntity> signature` and `gam <UserTypeEntity> vacation` to allow specification of file character set so that extended characters can be read.
+Added argument to gam <UserTypeEntity> signature and gam <UserTypeEntity> vacation to allow specification of file character set so that extended characters can be read.
 Credit to Steve Main for suggesting the following enhancement.
-Added argument to `gam <UserTypeEntity> signature` and `gam <UserTypeEntity> vacation` to allow pattern substitution in the signature and vacation message.
-`gam <UserTypeEntity> signature <String>|(file <FileName> [charset <Charset>]) (replace <Tag> <String>)*`
-`gam <UserTypeEntity> vacation <TrueValues> subject <String> (message <String>)|(file <FileName> [charset <CharSet>]) (replace <Tag> <String>)*
-	[contactsonly] [domainonly] [startdate <Date>] [enddate <Date>]`
-Every instance of `{<Tag>}` in the signature/message will be replaced by `<String>`. Instances of the form `{RT}...{Text}...{/RT}` will be eliminated
-if there was no `<Tag>` specified that matches `Text` or if a `<Tag>` matching `Text` was specified but the matching `<String>` is empty.
+Added argument to gam <UserTypeEntity> signature and gam <UserTypeEntity> vacation to allow pattern substitution in the signature and vacation message.
+gam <UserTypeEntity> signature <String>|(file <FileName> [charset <Charset>]) (replace <Tag> <String>)*
+gam <UserTypeEntity> vacation <TrueValues> subject <String> (message <String>)|(file <FileName> [charset <CharSet>]) (replace <Tag> <String>)*
+	[contactsonly] [domainonly] [startdate <Date>] [enddate <Date>]
+Every instance of {<Tag>} in the signature/message will be replaced by <String>. Instances of the form {RT}...{Text}...{/RT} will be eliminated
+if there was no <Tag> specified that matches Text or if a <Tag> matching Text was specified but the matching <String> is empty.
 This is especially useful with CSV files.
-`gam csv Users.csv gam user "~User" signature file SignatureTemplate.txt replace "#User#" "~User" replace "#Title#" "~Title"`
+gam csv Users.csv gam user "~User" signature file SignatureTemplate.txt replace "#User#" "~User" replace "#Title#" "~Title"
 
-Added argument to `gam <UserTypeEntity> show signature` to format the signature.
-`gam <UserTypeEntity> show signature [format]`
+Added argument to gam <UserTypeEntity> show signature to format the signature.
+gam <UserTypeEntity> show signature [format]
 
 Added argument to gam add/update calendar to allow specification of event notifications
-`gam <UserTypeEntity> add/update calendar <Calendar> notification email|sms eventcreation|eventchange|eventcancellation|eventresponce|agenda`
+gam <UserTypeEntity> add/update calendar <Calendar> notification email|sms eventcreation|eventchange|eventcancellation|eventresponce|agenda
 
 Added option to reminder and notification arguments of update calendar to allowing clearing of reminders/notifications.
-`gam <UserTypeEntity> update calendar <Calendar> [reminder clear] [notification clear]`
+gam <UserTypeEntity> update calendar <Calendar> [reminder clear] [notification clear]
 
-Added arguments to `gam print group-members` to allow selecting subsets of groups.
-Added argument to `gam print group-members` to add member full name to output,
-Added argument to `gam print group-members` to allow output field selection.
-`gam print group-members [todrive] ([domain <DomainName>] [member <UserItem>])|[group <GroupItem>] [membernames] [fields <MembersFieldNameList>]`
-`MembersFieldNameList` is a comma separated list of field names: `email | group | id | name | role | type`
+Added arguments to gam print group-members to allow selecting subsets of groups.
+Added argument to gam print group-members to add member full name to output,
+Added argument to gam print group-members to allow output field selection.
+gam print group-members [todrive] ([domain <DomainName>] [member <UserItem>])|[group <GroupItem>] [membernames] [fields <MembersFieldNameList>]
+MembersFieldNameList is a comma separated list of field names: email | group | id | name | role | type
 
-Added argument to `gam info user` to specify SKUs for which license information is desired.
-`gam info user [<UserItem>] ... [skus <SKUIDList>]`
+Added argument to gam info user to specify SKUs for which license information is desired.
+gam info user [<UserItem>] ... [skus <SKUIDList>]
 
-Added argument to `gam print printjobs` and `gam printjob <PrinterID> fetch` to allow specifying the maximum number of print jobs to retrieve.
-`gam printjob <PrinterID> fetch		... [limit <Number>]`
-`gam print printjobs  ... [limit <Number>]`
-`limit <Number>` specifies the maximum number of print jobs to retrieve; defaults to 25, set limit to 0 to retrieve all print jobs.
+Added argument to gam print printjobs and gam printjob <PrinterID> fetch to allow specifying the maximum number of print jobs to retrieve.
+gam printjob <PrinterID> fetch		... [limit <Number>]
+gam print printjobs  ... [limit <Number>]
+limit <Number> specifies the maximum number of print jobs to retrieve; defaults to 25, set limit to 0 to retrieve all print jobs.
 
 Credit to Seth Stein for the following enhancements.
-Added argument to `gam <UserTypeEntity> get drivefile` to allow downloading a specific revision of a drive file.
-`gam <UserTypeEntity> get drivefile (id <DriveFileID>)|(query <Query>) [format <FileFormatList>] [targetfolder <FilePath>] [revision <Number>]`
+Added argument to gam <UserTypeEntity> get drivefile to allow downloading a specific revision of a drive file.
+gam <UserTypeEntity> get drivefile (id <DriveFileID>)|(query <Query>) [format <FileFormatList>] [targetfolder <FilePath>] [revision <Number>]
 Added command to show drive file revisions.
-`gam <UserTypeEntity> show filerevisions <DriveFileID>`
+gam <UserTypeEntity> show filerevisions <DriveFileID>
 
-Added argument to `gam print adminroles` to allow uploading to Google Drive.
-`gam print adminroles [todrive]`
+Added argument to gam print adminroles to allow uploading to Google Drive.
+gam print adminroles [todrive]
 
-Added `group, groups, mobile` arguments to `gam report`.
-`gam report admin|calendar|calendars|drive|docs|doc|groups|group|logins|login|mobile|tokens|token ...`
+Added group, groups, mobile arguments to gam report.
+gam report admin|calendar|calendars|drive|docs|doc|groups|group|logins|login|mobile|tokens|token ...
 
 Added command to show user Google+ profile.
-`gam <UserTypeEntity> show gplusprofile [todrive]`
+gam <UserTypeEntity> show gplusprofile [todrive]
 To enable this command, visit: https://github.com/jay0lee/GAM/wiki/CreatingClientSecretsFile
 In step 3.v, enable the Google+ API
-In step 6.iii.d, add `https://www.googleapis.com/auth/plus.me` to the API scopes - Service Account list, then remove and re-add the authorization.
+In step 6.iii.d, add https://www.googleapis.com/auth/plus.me to the API scopes - Service Account list, then remove and re-add the authorization.
 
-Added argument to `gam <UserTypeEntity> show labels` to allow seeing message counts for each label.
-`gam <UserTypeEntity> show labels|label [onlyuser] [showcounts]`
+Added argument to gam <UserTypeEntity> show labels to allow seeing message counts for each label.
+gam <UserTypeEntity> show labels|label [onlyuser] [showcounts]
 
-Added argument to `gam <UserTypeEntity> show fileinfo` to allow field selection.
-`gam <UserTypeEntity> show fileinfo <DriveFileID> [allfields|<DriveFieldName>*]`
+Added argument to gam <UserTypeEntity> show fileinfo to allow field selection.
+gam <UserTypeEntity> show fileinfo <DriveFileID> [allfields|<DriveFieldName>*]
 
-Added argument to `gam update group` to allow removing members by role.
-`gam update group <Group> clear [members] [managers] [owners]`
+Added argument to gam update group to allow removing members by role.
+gam update group <Group> clear [members] [managers] [owners]
 If no option follows clear, all members will removed.
 
-Changed `gam print admins` to include 'id:' in OrgUnitID column as with other `gam print` commands.
+Changed gam print admins to include 'id:' in OrgUnitID column as with other gam print commands.
 
-Fixed GAM to handle both future date error messages in `gam report`
+Fixed GAM to handle both future date error messages in gam report
 
-Fixed `gam <UserTypeEntity> show delegates` to handle Unicode characters in delagator name.
+Fixed gam <UserTypeEntity> show delegates to handle Unicode characters in delagator name.
 
-Fixed `gam <UserTypeEntity> get drivefile` to properly handle file extension.
+Fixed gam <UserTypeEntity> get drivefile to properly handle file extension.
 
-Fixed `gam create alias <Name> target <Group>`.
+Fixed gam create alias <Name> target <Group>.
 
 2016/07/29
 
 Added command to empty drive drive trash.
-`gam <UserTypeEntity> empty drivetrash`
+gam <UserTypeEntity> empty drivetrash
 
 Added alternative command to add delegates and command to print delegates.
-`gam <UserTypeEntity> add delegate|delegates <UserEntity>`
-`gam <UserTypeEntity> print delegates [todrive]`
+gam <UserTypeEntity> add delegate|delegates <UserEntity>
+gam <UserTypeEntity> print delegates [todrive]
 
 Improved Gmail filter processing.
-`gam <UserTypeEntity> [add] filter [from <EmailAddress>] [to <EmailAddress>] [subject <String>] [haswords|query <List>] [nowords|negatedquery <List>] [musthaveattachment|hasattachment] [excludechats] [size larger|smaller <ByteCount>]
-	[label <LabelID>] [important|notimportant] [star] [trash] [markread] [archive] [neverspam] [forward <EmailAddress>]`
-`gam <UserTypeEntity> delete filters <FilterIDEntity>`
-`gam <UserTypeEntity> show filters`
-`gam <UserTypeEntity> info filters <FilterIDEntity>`
-`gam <UserTypeEntity> print filters [todrive]`
+gam <UserTypeEntity> [add] filter [from <EmailAddress>] [to <EmailAddress>] [subject <String>] [haswords|query <List>] [nowords|negatedquery <List>] [musthaveattachment|hasattachment] [excludechats] [size larger|smaller <ByteCount>]
+	[label <LabelID>] [important|notimportant] [star] [trash] [markread] [archive] [neverspam] [forward <EmailAddress>]
+gam <UserTypeEntity> delete filters <FilterIDEntity>
+gam <UserTypeEntity> show filters
+gam <UserTypeEntity> info filters <FilterIDEntity>
+gam <UserTypeEntity> print filters [todrive]
 
 Added commands to process Gmail forwarding addresses.
-`gam <UserTypeEntity> add forwardingaddress|forwardingaddresses <EmailAddressEntity>`
-`gam <UserTypeEntity> delete forwardingaddress|forwardingaddresses <EmailAddressEntity>`
-`gam <UserTypeEntity> show forwardingaddress|forwardingaddresses`
-`gam <UserTypeEntity> info forwardingaddress|forwardingaddresses <EmailAddressEntity>`
-`gam <UserTypeEntity> print forwardingaddress|forwardingaddresses [todrive]`
+gam <UserTypeEntity> add forwardingaddress|forwardingaddresses <EmailAddressEntity>
+gam <UserTypeEntity> delete forwardingaddress|forwardingaddresses <EmailAddressEntity>
+gam <UserTypeEntity> show forwardingaddress|forwardingaddresses
+gam <UserTypeEntity> info forwardingaddress|forwardingaddresses <EmailAddressEntity>
+gam <UserTypeEntity> print forwardingaddress|forwardingaddresses [todrive]
 
 Improved Gmail forward processing.
-`gam <UserTypeEntity> forward <FalseValues>`
-`gam <UserTypeEntity> forward <TrueValues> keep|leaveininbox|archive|delete|trash|markread <EmailAddress>`
-`gam <UserTypeEntity> show forward`
-`gam <UserTypeEntity> print forward [todrive]`
+gam <UserTypeEntity> forward <FalseValues>
+gam <UserTypeEntity> forward <TrueValues> keep|leaveininbox|archive|delete|trash|markread <EmailAddress>
+gam <UserTypeEntity> show forward
+gam <UserTypeEntity> print forward [todrive]
 
 Improved Gmail sendas processing.
-`gam <UserTypeEntity> [add] sendas <EmailAddress> <Name> [replyto <EmailAddress>] [default] [treatasalias <Boolean>] [signature|sig <String>|(file <FileName> [charset <CharSet>]) (replace <REPattern> <String>)*]`
-`gam <UserTypeEntity> update sendas <EmailAddress> [name <Name>] [replyto <EmailAddress>] [default] [treatasalias <Boolean>] [signature|sig <String>|(file <FileName> [charset <CharSet>]) (replace <REPattern> <String>)*]`
-`gam <UserTypeEntity> delete sendas <EmailAddressEntity>`
-`gam <UserTypeEntity> show sendas [format]`
-`gam <UserTypeEntity> info sendas <EmailAddressEntity> [format]`
-`gam <UserTypeEntity> print sendas [todrive]`
+gam <UserTypeEntity> [add] sendas <EmailAddress> <Name> [replyto <EmailAddress>] [default] [treatasalias <Boolean>] [signature|sig <String>|(file <FileName> [charset <CharSet>]) (replace <REPattern> <String>)*]
+gam <UserTypeEntity> update sendas <EmailAddress> [name <Name>] [replyto <EmailAddress>] [default] [treatasalias <Boolean>] [signature|sig <String>|(file <FileName> [charset <CharSet>]) (replace <REPattern> <String>)*]
+gam <UserTypeEntity> delete sendas <EmailAddressEntity>
+gam <UserTypeEntity> show sendas [format]
+gam <UserTypeEntity> info sendas <EmailAddressEntity> [format]
+gam <UserTypeEntity> print sendas [todrive]
 
 Improved Gmail signature processing.
-`gam <UserTypeEntity> signature|sig <String>|(file <FileName> [charset <Charset>]) (replace <Tag> <String>)* [name <String>] [replyto <EmailAddress>] `
-`gam <UserTypeEntity> show signature|sig [format]`
+gam <UserTypeEntity> signature|sig <String>|(file <FileName> [charset <Charset>]) (replace <Tag> <String>)* [name <String>] [replyto <EmailAddress>] 
+gam <UserTypeEntity> show signature|sig [format]
 
 Use Gmail API for POP/IMAP/Vacation processing.
-`gam <UserTypeEntity> imap|imap4 <Boolean> [noautoexpunge] [expungebehavior archive|deleteforever|trash] [maxfoldersize 0|1000|2000|5000|10000]`
-`gam <UserTypeEntity> pop|pop3 <Boolean> [for allmail|newmail|mailfromnowon|fromnowown] [action keep|leaveininbox|archive|delete|trash|markread]`
-`gam <UserTypeEntity> vacation <FalseValues>`
-`gam <UserTypeEntity> vacation <TrueValues> subject <String> (message <String>)|(file <FileName> [charset <CharSet>]) (replace <Tag> <String>)* [html]
-	[contactsonly] [domainonly] [startdate <Date>] [enddate <Date>]`
-`gam <UserTypeEntity> show vacation [format]`
+gam <UserTypeEntity> imap|imap4 <Boolean> [noautoexpunge] [expungebehavior archive|deleteforever|trash] [maxfoldersize 0|1000|2000|5000|10000]
+gam <UserTypeEntity> pop|pop3 <Boolean> [for allmail|newmail|mailfromnowon|fromnowown] [action keep|leaveininbox|archive|delete|trash|markread]
+gam <UserTypeEntity> vacation <FalseValues>
+gam <UserTypeEntity> vacation <TrueValues> subject <String> (message <String>)|(file <FileName> [charset <CharSet>]) (replace <Tag> <String>)* [html]
+	[contactsonly] [domainonly] [startdate <Date>] [enddate <Date>]
+gam <UserTypeEntity> show vacation [format]
 
 Added command toGet information about a specific calendar.
-`gam <UserTypeEntity> info calendar <EmailAddress>`
+gam <UserTypeEntity> info calendar <EmailAddress>
 
 Added command to print calendars to CSV file, dropped all arguments from gam show calendars.
-`gam <UserTypeEntity> print calendars [todrive]`
-`gam <UserTypeEntity> show calendars`
+gam <UserTypeEntity> print calendars [todrive]
+gam <UserTypeEntity> show calendars
 
 Added command to print Gmail Profiles to CSV file, dropped all arguments from gam show gmailprofile.
-`gam <UserTypeEntity> print gmailprofile [todrive]`
-`gam <UserTypeEntity> show gmailprofile`
+gam <UserTypeEntity> print gmailprofile [todrive]
+gam <UserTypeEntity> show gmailprofile
 
 Added command to print Gplus Profiles to CSV file, dropped all arguments from gam show gplusprofile.
-`gam <UserTypeEntity> print gplusprofile [todrive]`
-`gam <UserTypeEntity> show gplusprofile`
+gam <UserTypeEntity> print gplusprofile [todrive]
+gam <UserTypeEntity> show gplusprofile
 
 Added command to print user schemas to CSV file, renamed command to display formatted user schemas to gam show schemas.
-`gam print schemas [todrive]`
-`gam show schemas`
+gam print schemas [todrive]
+gam show schemas
 
 Added command to print user access tokens to CSV file.
-`gam <UserTypeEntity> print tokens|token|3lo|oauth [todrive]`
+gam <UserTypeEntity> print tokens|token|3lo|oauth [todrive]
 
 Added arguments to gam info cros to allow specification of desired output fields.
-`gam info cros <CrosDeviceEntity> [nolists] [listlimit <Number>]
-	[basic|full|allfields] <CrOSFieldName>* [fields <CrOSFieldNameList>]`
+gam info cros <CrosDeviceEntity> [nolists] [listlimit <Number>]
+	[basic|full|allfields] <CrOSFieldName>* [fields <CrOSFieldNameList>]
 
 Added drivedir and targetfolder <FilePath> arguments to gam printjob fetch and gam get photo to
 allow specification of the destination folder for the file retrieved from Google. The default
 location for these commands is the current working directory, drivedir specifies the value of the environment variable GAMDRIVEDIR and
 targetfolder <FilePath> specifies a user-choosen path.
-`gam printjob <PrinterID>|any fetch
+gam printjob <PrinterID>|any fetch
 	[olderthan|newerthan <PrintJobAge>] [query <QueryPrintJob>]
 	[status <PrintJobStatus>]
 	[orderby <PrintJobOrderByFieldName> [ascending|descending]]
 	[owner|user <EmailAddress>]
-	[limit <Number>] [drivedir|(targetfolder <FilePath>)]`
-`gam <UserTypeEntity> get photo [drivedir|(targetfolder <FilePath>)]`
+	[limit <Number>] [drivedir|(targetfolder <FilePath>)]
+gam <UserTypeEntity> get photo [drivedir|(targetfolder <FilePath>)]
+
+Added noshow argument to gam get photo to suppress displaying of photo data
+gam <UserTypeEntity> get photo [drivedir|(targetfolder <FilePath>)] [noshow]
 
 Commands that produce CSV file output have been changed to make the leftmost column(s) be the key fields.
 If you have scripts that process the CSV files as flat files, expecting the columns to be in a particular

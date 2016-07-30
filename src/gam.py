@@ -847,14 +847,7 @@ def waitOnFailure(n, retries, errMsg):
   if n > 3:
     sys.stderr.write(u'attempt {0}/{1}\n'.format(n+1, retries))
 
-class GData_exception(Exception):
-  def __init__(self, value):
-    super(GData_exception, self).__init__(value)
-    self.value = value
-  def __str__(self):
-    return repr(self.value)
-
-class GData_serviceNotApplicable(GData_exception): pass
+class GData_serviceNotApplicable(Exception): pass
 
 def callGData(service, function,
               soft_errors=False, throw_errors=[],
@@ -934,14 +927,7 @@ def checkGAPIError(e, soft_errors=False, silent_errors=False, retryOnHttpError=F
     reason = http_status
   return (http_status, reason, message)
 
-class GAPI_exception(Exception):
-  def __init__(self, value):
-    super(GAPI_exception, self).__init__(value)
-    self.value = value
-  def __str__(self):
-    return repr(self.value)
-
-class GAPI_serviceNotAvailable(GAPI_exception): pass
+class GAPI_serviceNotAvailable(Exception): pass
 
 def callGAPI(service, function,
              silent_errors=False, soft_errors=False, throw_reasons=[], retry_reasons=[],
