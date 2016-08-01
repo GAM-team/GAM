@@ -170,6 +170,10 @@ gam <UserTypeEntity> get photo [drivedir|(targetfolder <FilePath>)]
 Added noshow argument to gam get photo to suppress displaying of photo data
 gam <UserTypeEntity> get photo [drivedir|(targetfolder <FilePath>)] [noshow]
 
+Changed gam print cros to match gam print users. Previously, gam print cros produced a full listing of CrOS devices
+and gam print users produced a listing of primaryEmail addresses. Now, gam print cros produces a listing of deviceIds.
+To get the previous behavior, say gam print cros full. See GamCommands.txt for a summary of CrOS and User printing.
+
 Commands that produce CSV file output have been changed to make the leftmost column(s) be the key fields.
 If you have scripts that process the CSV files as flat files, expecting the columns to be in a particular
 order, they will have to be updated. If your scripts process the CSV files by column header, no changes should be required.
@@ -181,6 +185,19 @@ Added drivefilename argument to allow downloading file by name.
 <FileFormat> ::= csv|html|txt|tsv|jpeg|jpg|png|svg|pdf|rtf|pptx|xlsx|docx|odt|ods|openoffice|ms|microsoft|micro$oft
 <FileFormatList> ::= '<FileFormat>(,<FileFormat)*'
 gam <UserTypeEntity> get drivefile (id <DriveFileID>)|(drivefilename <DriveFileName>)|(query <QueryDriveFile>) [format <FileFormatList>] [targetfolder <FilePath>] [revision <Number>]
+
+2016/08/01
+
+Added delimiter <String> argument to gam print courses to allow choice of delimiter to separate aliases.
+gam print courses [todrive] [teacher] [student] [alias|aliases] [delimiter <String>]
+
+Added notsuspended argument to gam update group add/sync to prevent adding suspended users to a group
+when specifying all users, org <OrgUnitPath> or query <QueryUser> for <UserTypeEntity>.
+gam update group <GroupItem> add [owner|manager|member] [notsuspended] <UserTypeEntity>
+gam update group <GroupItem> sync [owner|manager|member] [notsuspended] <UserTypeEntity>
+
+Added basic|full argument to gam print mobile to allow specification of output detail desired.
+gam print mobile [todrive] [query <QueryMobile>] [basic|full] [orderby <MobileOrderByFieldName> [ascending|descending]]
 
 GAM 3.65
   -fix vacation issues (Ross)
