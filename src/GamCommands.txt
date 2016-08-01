@@ -695,7 +695,7 @@ gam <UserTypeEntity> show filetree
 
 gam <UserTypeEntity> add drivefile [drivefilename <DriveFileName>] <DriveFileAddAttributes>*
 gam <UserTypeEntity> update drivefile (id <DriveFileID)|(drivefilename <DriveFileName>)|(query <QueryDriveFile) [copy] [newfilename <DriveFileName>] <DriveFileUpdateAttributes>*
-gam <UserTypeEntity> get drivefile (id <DriveFileID>)|(query <QueryDriveFile>) [format <FileFormatList>] [targetfolder <FilePath>] [revision <Number>]
+gam <UserTypeEntity> get drivefile (id <DriveFileID>)|(drivefilename <DriveFileName>)|(query <QueryDriveFile>) [format <FileFormatList>] [targetfolder <FilePath>] [revision <Number>]
 gam <UserTypeEntity> delete|del drivefile <DriveFileID>|<DriveFileURL>|(query:<QueryDriveFile>) [purge|untrash]
 gam <UserTypeEntity> transfer drive <UserItem> [keepuser]
 gam <UserTypeEntity> delete|del emptydrivefolders

@@ -4267,7 +4267,8 @@ DOCUMENT_FORMATS_MAP = {
 
 def downloadDriveFile(users):
   i = 5
-  query = fileIds = revisionId = None
+  fileIdSelection = {u'fileIds': None, u'query': None}
+  revisionId = None
   exportFormatName = u'openoffice'
   exportFormats = DOCUMENT_FORMATS_MAP[exportFormatName]
   targetFolder = GC_Values[GC_DRIVE_DIR]
@@ -4275,10 +4276,13 @@ def downloadDriveFile(users):
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace(u'_', u'')
     if myarg == u'id':
-      fileIds = [sys.argv[i+1],]
+      fileIdSelection[u'fileIds'] = [sys.argv[i+1],]
       i += 2
     elif myarg == u'query':
-      query = sys.argv[i+1]
+      fileIdSelection[u'query'] = sys.argv[i+1]
+      i += 2
+    elif myarg == u'drivefilename':
+      fileIdSelection[u'query'] = u"'me' in owners and title = '{0}'".format(sys.argv[i+1])
       i += 2
     elif myarg == u'revision':
       revisionId = sys.argv[i+1]
@@ -4301,27 +4305,30 @@ def downloadDriveFile(users):
     else:
       print u'ERROR: %s is not a valid argument for "gam <users> get drivefile"' % sys.argv[i]
       sys.exit(2)
-  if not query and not fileIds:
-    print u'ERROR: need to specify a file ID with id parameter or a search query with the query parameter.'
+  if not fileIdSelection[u'query'] and not fileIdSelection[u'fileIds']:
+    print u'ERROR: you need to specify either id, query or drivefilename in order to determine the file(s) to download'
     sys.exit(2)
-  if query and fileIds:
-    print u'ERROR: you cannot specify both the id and query parameters at the same time.'
+  if fileIdSelection[u'query'] and fileIdSelection[u'fileIds']:
+    print u'ERROR: you cannot specify multiple file identifiers. Choose one of id, drivefilename, query.'
     sys.exit(2)
   for user in users:
     user, drive = buildDriveGAPIObject(user)
     if not drive:
       continue
-    if query:
+    if fileIdSelection[u'query']:
+      fileIdSelection[u'fileIds'] = doDriveSearch(drive, query=fileIdSelection[u'query'])
       fileIds = doDriveSearch(drive, query=query)
     else:
-      if fileIds[0][:8].lower() == u'https://' or fileIds[0][:7].lower() == u'http://':
-        fileIds[0] = fileIds[0][fileIds[0].find(u'/d/')+3:]
-        if fileIds[0].find(u'/') != -1:
-          fileIds[0] = fileIds[0][:fileIds[0].find(u'/')]
-    if not fileIds:
+      fileId = fileIdSelection[u'fileIds'][0]
+      if fileId[:8].lower() == u'https://' or fileId[:7].lower() == u'http://':
+        fileId = fileId[fileId.find(u'/d/')+3:]
+        if fileId.find(u'/') != -1:
+          fileId = fileId[:fileId.find(u'/')]
+        fileIdSelection[u'fileIds'][0] = fileId
+    if not fileIdSelection[u'fileIds']:
       print u'No files to download for %s' % user
     i = 0
-    for fileId in fileIds:
+    for fileId in fileIdSelection[u'fileIds']:
       extension = None
       result = callGAPI(drive.files(), u'get', fileId=fileId, fields=u'fileSize,title,mimeType,downloadUrl,exportLinks')
       if result[u'mimeType'] == MIMETYPE_GA_FOLDER:
