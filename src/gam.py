@@ -4317,7 +4317,6 @@ def downloadDriveFile(users):
       continue
     if fileIdSelection[u'query']:
       fileIdSelection[u'fileIds'] = doDriveSearch(drive, query=fileIdSelection[u'query'])
-      fileIds = doDriveSearch(drive, query=query)
     else:
       fileId = fileIdSelection[u'fileIds'][0]
       if fileId[:8].lower() == u'https://' or fileId[:7].lower() == u'http://':
