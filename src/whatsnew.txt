@@ -174,6 +174,13 @@ Commands that produce CSV file output have been changed to make the leftmost col
 If you have scripts that process the CSV files as flat files, expecting the columns to be in a particular
 order, they will have to be updated. If your scripts process the CSV files by column header, no changes should be required.
 
+2016/07/31
+
+Changed gam get drivefile to take a list of file formats rather than a single format. The first format in the list that is available will be used.
+<FileFormat> ::= csv|html|txt|tsv|jpeg|jpg|png|svg|pdf|rtf|pptx|xlsx|docx|odt|ods|openoffice|ms|microsoft|micro$oft
+<FileFormatList> ::= '<FileFormat>(,<FileFormat)*'
+gam <UserTypeEntity> get drivefile (id <DriveFileID>)|(query <QueryDriveFile>) [format <FileFormatList>] [targetfolder <FilePath>] [revision <Number>]
+
 GAM 3.65
   -fix vacation issues (Ross)
   -fix Windows path issues (Ross)

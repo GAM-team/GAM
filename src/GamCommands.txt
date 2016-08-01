@@ -22,7 +22,7 @@ If an item contains spaces, it should be surrounded by " or '.
 	    drive-20gb|drive20gb|20gb|drive-50gb|drive50gb|50gb|drive-200gb|drive200gb|200gb|drive-400gb|drive400gb|400gb|
 	    drive-1tb|drive1tb|1tb|drive-2tb|drive2tb|2tb|drive-4tb|drive4tb|4tb|drive-8tb|drive8tb|8tb|drive-16tb|drive16tb|16tb
 <Charset> ::= ascii|mbcs|utf-8|utf-8-sig|utf-16|<String>
-<FileFormat> ::= pdf|openoffice|ms|microsoft|micro$oft
+<FileFormat> ::= csv|html|txt|tsv|jpeg|jpg|png|svg|pdf|rtf|pptx|xlsx|docx|odt|ods|openoffice|ms|microsoft|micro$oft
 <Language> ::= ar|bn|bg|ca|zh-CN|zh-TW|hr|cs|da|nl|en|en-GB|et|fi|fr|de|el|gu|iw|is|in|it|ja|kn|ko|lv|lt|ms|ml|mr|no|or|fa|pl|pt-BR|pt-PT|ro|ru|sr|sk|sl|es|sv|tl|ta|te|th|tr|uk|ur|vi
 
 # Basic items built from primatives
@@ -281,7 +281,13 @@ If an item contains spaces, it should be surrounded by " or '.
 <UserOrderByFieldName> ::=
 	familyname|lastname|givenname|firstname|email
 
-# Named Lists, comma separated items, surrounded by ' or "
+# Named Lists
+# Lists can be in the following formats
+# Items, separated by commas, without spaces or commas in the items themselves: item(,item)*
+# Items, separated by spaces, without spaces or commas in the items themselves: "item( item)*"
+# Items, separated by commas, with spaces or commas in the items themselves: "'it em'(,'it em')*"
+# Items, separated by spaces, with spaces or commas in the items themselves: "'it em'( 'it em')*"
+
 <ACLList> ::== '<ACLScope>(,<ACLScope>)*'
 <CalendarList> ::= '<CalendarItem>(,<CalendarItem>)*'
 <CourseAliasList> ::= '<CourseAlias>(,<CourseAlias>)*'
@@ -693,6 +699,8 @@ gam <UserTypeEntity> get drivefile (id <DriveFileID>)|(query <QueryDriveFile>) [
 gam <UserTypeEntity> delete|del drivefile <DriveFileID>|<DriveFileURL>|(query:<QueryDriveFile>) [purge|untrash]
 gam <UserTypeEntity> transfer drive <UserItem> [keepuser]
 gam <UserTypeEntity> delete|del emptydrivefolders
+gam <UserTypeEntity> empty drivetrash
+
 
 gam <UserTypeEntity> add drivefileacl <DriveFileID> anyone|(user <UserItem>)|(group <GroupItem>)|(domain <DomainName>)
 	(role <DriveFileACLRole>) [withlink] [sendmail] [emailmessage <String>]

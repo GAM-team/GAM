@@ -16,7 +16,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 u"""GAM is a command line tool which allows Administrators to control their Google Apps domain and accounts.
 
 With GAM you can programatically create users, turn on/off services for users like POP and Forwarding and much more.
@@ -28,7 +27,7 @@ __author__ = u'Jay Lee <jay0lee@gmail.com>'
 __version__ = u'3.66'
 __license__ = u'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
-import sys, os, time, datetime, random, socket, csv, platform, re, calendar, base64, string, codecs, StringIO, subprocess
+import sys, os, time, datetime, random, socket, csv, platform, re, base64, string, codecs, StringIO, subprocess, collections, mimetypes
 
 import json
 import httplib2
@@ -40,8 +39,6 @@ import oauth2client.client
 import oauth2client.service_account
 import oauth2client.file
 import oauth2client.tools
-import mimetypes
-import ntpath
 
 GAM_URL = u'http://git.io/gam'
 GAM_INFO = u'GAM {0} - {1} / {2} / Python {3}.{4}.{5} {6} / {7} {8} /'.format(__version__, GAM_URL,
@@ -256,6 +253,18 @@ GC_VAR_INFO = {
   GC_USER_MAX_RESULTS: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (1, 500)},
   }
 # Google API constants
+APPLICATION_VND_GOOGLE_APPS = u'application/vnd.google-apps.'
+MIMETYPE_GA_DOCUMENT = APPLICATION_VND_GOOGLE_APPS+u'document'
+MIMETYPE_GA_DRAWING = APPLICATION_VND_GOOGLE_APPS+u'drawing'
+MIMETYPE_GA_FOLDER = APPLICATION_VND_GOOGLE_APPS+u'folder'
+MIMETYPE_GA_FORM = APPLICATION_VND_GOOGLE_APPS+u'form'
+MIMETYPE_GA_FUSIONTABLE = APPLICATION_VND_GOOGLE_APPS+u'fusiontable'
+MIMETYPE_GA_MAP = APPLICATION_VND_GOOGLE_APPS+u'map'
+MIMETYPE_GA_PRESENTATION = APPLICATION_VND_GOOGLE_APPS+u'presentation'
+MIMETYPE_GA_SCRIPT = APPLICATION_VND_GOOGLE_APPS+u'script'
+MIMETYPE_GA_SITES = APPLICATION_VND_GOOGLE_APPS+u'sites'
+MIMETYPE_GA_SPREADSHEET = APPLICATION_VND_GOOGLE_APPS+u'spreadsheet'
+
 NEVER_TIME = u'1970-01-01T00:00:00.000Z'
 NEVER_START_DATE = u'1970-01-01'
 NEVER_END_DATE = u'1969-12-31'
@@ -323,7 +332,6 @@ GAPI_GMAIL_THROW_REASONS = [GAPI_SERVICE_NOT_AVAILABLE]
 GAPI_GPLUS_THROW_REASONS = [GAPI_SERVICE_NOT_AVAILABLE]
 
 def convertUTF8(data):
-  import collections
   if isinstance(data, str):
     return data
   if isinstance(data, unicode):
@@ -497,7 +505,7 @@ def getYYYYMMDD(i, emptyOK=False, returnTimeStamp=False):
           return argstr
         return timeStamp
       except ValueError:
-        print u'ERROR: expected a <{0}>, got {1}'.format(YYYYMMDD_FORMAT_REQUIRED, argstr)
+        print u'ERROR: expected a <{0}>; got {1}'.format(YYYYMMDD_FORMAT_REQUIRED, argstr)
         sys.exit(2)
     elif emptyOK:
       return u''
@@ -564,14 +572,12 @@ def readFile(filename, mode=u'rb', continueOnError=False, displayError=True, enc
       if not encoding:
         with open(os.path.expanduser(filename), mode) as f:
           return f.read()
-      else:
-        with codecs.open(os.path.expanduser(filename), mode, encoding) as f:
-          content = f.read()
-          if not content.startswith(codecs.BOM_UTF8):
-            return content
-          return content.replace(codecs.BOM_UTF8, u'', 1)
-    else:
-      return unicode(sys.stdin.read())
+      with codecs.open(os.path.expanduser(filename), mode, encoding) as f:
+        content = f.read()
+        if not content.startswith(codecs.BOM_UTF8):
+          return content
+        return content.replace(codecs.BOM_UTF8, u'', 1)
+    return unicode(sys.stdin.read())
   except IOError as e:
     if continueOnError:
       if displayError:
@@ -682,7 +688,7 @@ def SetGlobalVariables():
   return True
 
 def doGAMCheckForUpdates(forceCheck=False):
-  import urllib2
+  import urllib2, calendar
   try:
     current_version = float(__version__)
   except ValueError:
@@ -1673,7 +1679,7 @@ def doUpdateCourse():
     elif sys.argv[i].lower() in [u'state', u'status']:
       body[u'courseState'] = sys.argv[i+1].upper()
       if body[u'courseState'] not in [u'ACTIVE', u'ARCHIVED', u'PROVISIONED', u'DECLINED']:
-        print u'ERROR: course state can be active or archived. Got %s' % body[u'courseState']
+        print u'ERROR: course state must be active or archived; got %s' % body[u'courseState']
         sys.exit(2)
       i += 2
     else:
@@ -1907,7 +1913,7 @@ def doCreateAdmin():
     sys.exit(4)
   body[u'scopeType'] = sys.argv[5].upper()
   if body[u'scopeType'] not in [u'CUSTOMER', u'ORG_UNIT']:
-    print u'ERROR: scope type must be customer or org_unit, got %s' % body[u'scopeType']
+    print u'ERROR: scope type must be customer or org_unit; got %s' % body[u'scopeType']
     sys.exit(3)
   if body[u'scopeType'] == u'ORG_UNIT':
     orgUnit = sys.argv[6]
@@ -2224,7 +2230,7 @@ def doCreateCourse():
     elif sys.argv[i].lower() in [u'state', u'status']:
       body[u'courseState'] = sys.argv[i+1].upper()
       if body[u'courseState'] not in [u'ACTIVE', u'ARCHIVED', u'PROVISIONED', u'DECLINED']:
-        print u'ERROR: course state can be active or archived. Got %s' % body[u'courseState']
+        print u'ERROR: course state must be active or archived; got %s' % body[u'courseState']
         sys.exit(2)
       i += 2
     else:
@@ -2420,7 +2426,7 @@ def doPrintPrintJobs():
         older_or_newer = u'newer'
       age_number = sys.argv[i+1][:-1]
       if not age_number.isdigit():
-        print u'ERROR: expected a number, got %s' % age_number
+        print u'ERROR: expected a number; got %s' % age_number
         sys.exit(2)
       age_unit = sys.argv[i+1][-1].lower()
       if age_unit == u'm':
@@ -2430,7 +2436,7 @@ def doPrintPrintJobs():
       elif age_unit == u'd':
         age = int(time.time()) - (int(age_number) * 60 * 60 * 24)
       else:
-        print u'ERROR: expected m (minutes), h (hours) or d (days), got %s' % age_unit
+        print u'ERROR: expected m (minutes), h (hours) or d (days); got %s' % age_unit
         sys.exit(2)
       i += 2
     elif myarg == u'query':
@@ -2448,7 +2454,7 @@ def doPrintPrintJobs():
     elif myarg == u'orderby':
       sortorder = sys.argv[i+1].lower().replace(u'_', u'')
       if sortorder not in PRINTJOB_ASCENDINGORDER_MAP:
-        print u'ERROR: orderby must be one of %s. Got %s' % (u','.join(PRINTJOB_ASCENDINGORDER_MAP), sortorder)
+        print u'ERROR: orderby must be one of %s; got %s' % (u', '.join(PRINTJOB_ASCENDINGORDER_MAP), sortorder)
         sys.exit(2)
       sortorder = PRINTJOB_ASCENDINGORDER_MAP[sortorder]
       i += 2
@@ -2655,7 +2661,7 @@ def getCalendarAttributes(i, body, function):
       elif sys.argv[i+1].lower() in false_values:
         body[u'selected'] = False
       else:
-        print u'ERROR: Value for selected must be true or false, not %s' % sys.argv[i+1]
+        print u'ERROR: Value for selected must be true or false; got %s' % sys.argv[i+1]
         sys.exit(2)
       i += 2
     elif myarg == u'hidden':
@@ -2664,7 +2670,7 @@ def getCalendarAttributes(i, body, function):
       elif sys.argv[i+1].lower() in false_values:
         body[u'hidden'] = False
       else:
-        print u'ERROR: Value for hidden must be true or false, not %s' % sys.argv[i+1]
+        print u'ERROR: Value for hidden must be true or false; got %s' % sys.argv[i+1]
         sys.exit(2)
       i += 2
     elif myarg == u'summary':
@@ -2686,12 +2692,12 @@ def getCalendarAttributes(i, body, function):
       method = sys.argv[i+1].lower()
       if method not in CLEAR_NONE_ARGUMENT:
         if method not in CALENDAR_REMINDER_METHODS:
-          print u'ERROR: Method must be %s. Got %s' % (u','.join(CALENDAR_REMINDER_METHODS+CLEAR_NONE_ARGUMENT), method)
+          print u'ERROR: Method must be one of %s; got %s' % (u', '.join(CALENDAR_REMINDER_METHODS+CLEAR_NONE_ARGUMENT), method)
           sys.exit(2)
         try:
           minutes = int(sys.argv[i+2])
         except ValueError:
-          print u'ERROR: Reminder time must be specified in minutes, got %s' % sys.argv[i+2]
+          print u'ERROR: Reminder time must be specified in minutes; got %s' % sys.argv[i+2]
           sys.exit(2)
         body[u'defaultReminders'].append({u'method': method, u'minutes': minutes})
         i += 3
@@ -2702,11 +2708,11 @@ def getCalendarAttributes(i, body, function):
       method = sys.argv[i+1].lower()
       if method not in CLEAR_NONE_ARGUMENT:
         if method not in CALENDAR_NOTIFICATION_METHODS:
-          print u'ERROR: Method must be %s. Got %s' % (u','.join(CALENDAR_NOTIFICATION_METHODS+CLEAR_NONE_ARGUMENT), method)
+          print u'ERROR: Method must be one of %s; got %s' % (u', '.join(CALENDAR_NOTIFICATION_METHODS+CLEAR_NONE_ARGUMENT), method)
           sys.exit(2)
         eventType = sys.argv[i+2].lower()
         if eventType not in CALENDAR_NOTIFICATION_TYPES_MAP:
-          print u'ERROR: Event must be %s. Got %s' % (u','.join(CALENDAR_NOTIFICATION_TYPES_MAP), eventType)
+          print u'ERROR: Event must be one of %s; got %s' % (u', '.join(CALENDAR_NOTIFICATION_TYPES_MAP), eventType)
           sys.exit(2)
         body[u'notificationSettings'][u'notifications'].append({u'method': method, u'type': CALENDAR_NOTIFICATION_TYPES_MAP[eventType]})
         i += 3
@@ -2862,7 +2868,7 @@ def doPrintJobFetch():
         older_or_newer = u'newer'
       age_number = sys.argv[i+1][:-1]
       if not age_number.isdigit():
-        print u'ERROR: expected a number, got %s' % age_number
+        print u'ERROR: expected a number; got %s' % age_number
         sys.exit(2)
       age_unit = sys.argv[i+1][-1].lower()
       if age_unit == u'm':
@@ -2872,7 +2878,7 @@ def doPrintJobFetch():
       elif age_unit == u'd':
         age = int(time.time()) - (int(age_number) * 60 * 60 * 24)
       else:
-        print u'ERROR: expected m (minutes), h (hours) or d (days), got %s' % age_unit
+        print u'ERROR: expected m (minutes), h (hours) or d (days); got %s' % age_unit
         sys.exit(2)
       i += 2
     elif myarg == u'query':
@@ -2890,7 +2896,7 @@ def doPrintJobFetch():
     elif myarg == u'orderby':
       sortorder = sys.argv[i+1].lower().replace(u'_', u'')
       if sortorder not in PRINTJOB_ASCENDINGORDER_MAP:
-        print u'ERROR: orderby must be one of %s. Got %s' % (u','.join(PRINTJOB_ASCENDINGORDER_MAP), sortorder)
+        print u'ERROR: orderby must be one of %s; got %s' % (u', '.join(PRINTJOB_ASCENDINGORDER_MAP), sortorder)
         sys.exit(2)
       sortorder = PRINTJOB_ASCENDINGORDER_MAP[sortorder]
       i += 2
@@ -3087,7 +3093,7 @@ def doPrintJobSubmit():
     form_fields[u'contentType'] = u'url'
   else:
     filepath = content
-    content = ntpath.basename(content)
+    content = os.path.basename(content)
     mimetype = mimetypes.guess_type(filepath)[0]
     if mimetype == None:
       mimetype = u'application/octet-stream'
@@ -3158,7 +3164,7 @@ def doCalendarAddACL(calendarId=None, act_as=None, role=None, scope=None, entity
   else:
     body[u'role'] = sys.argv[4].lower()
   if body[u'role'] not in [u'freebusy', u'read', u'reader', u'editor', u'owner', u'none']:
-    print u'ERROR: Role must be freebusy, read, editor, owner or none. Not %s' % body[u'role']
+    print u'ERROR: Role must be one of freebusy, read, editor, owner, none; got %s' % body[u'role']
     sys.exit(2)
   if body[u'role'] == u'freebusy':
     body[u'role'] = u'freeBusyReader'
@@ -3282,7 +3288,7 @@ def doCalendarAddEvent():
       if sys.argv[i+1].lower() in [u'default', u'public', u'private']:
         body[u'visibility'] = sys.argv[i+1].lower()
       else:
-        print u'ERROR: visibility must be one of default, public or private, got %s' % sys.argv[i+1]
+        print u'ERROR: visibility must be one of default, public, private; got %s' % sys.argv[i+1]
         sys.exit(2)
       i += 2
     elif sys.argv[i].lower() == u'tentative':
@@ -3343,7 +3349,7 @@ def doProfile(users):
   elif sys.argv[4].lower() == u'unshare' or sys.argv[4].lower() == u'unshared':
     body = {u'includeInGlobalAddressList': False}
   else:
-    print u'ERROR: value for "gam <users> profile" must be true or false, got %s' % sys.argv[4]
+    print u'ERROR: value for "gam <users> profile" must be true or false; got %s' % sys.argv[4]
     sys.exit(2)
   i = 0
   count = len(users)
@@ -3685,7 +3691,7 @@ def addDriveFileACL(users):
   sendNotificationEmails = False
   emailMessage = None
   if body[u'type'] not in [u'user', u'group', u'domain', u'anyone']:
-    print u'ERROR: permission type must be user, group domain or anyone. Got %s' % body[u'type']
+    print u'ERROR: permission type must be user, group domain or anyone; got %s' % body[u'type']
   if body[u'type'] == u'anyone':
     i = 7
   else:
@@ -3698,7 +3704,7 @@ def addDriveFileACL(users):
     elif sys.argv[i].lower() == u'role':
       body[u'role'] = sys.argv[i+1]
       if body[u'role'] not in [u'reader', u'commenter', u'writer', u'owner', u'editor']:
-        print u'ERROR: role must be reader, commenter, writer or owner, got %s' % body[u'role']
+        print u'ERROR: role must be reader, commenter, writer or owner; got %s' % body[u'role']
         sys.exit(2)
       if body[u'role'] == u'commenter':
         body[u'role'] = u'reader'
@@ -3736,7 +3742,7 @@ def updateDriveFileACL(users):
     elif sys.argv[i].lower() == u'role':
       body[u'role'] = sys.argv[i+1]
       if body[u'role'] not in [u'reader', u'commenter', u'writer', u'owner']:
-        print u'ERROR: role must be reader, commenter, writer or owner, got %s' % body[u'role']
+        print u'ERROR: role must be reader, commenter, writer or owner; got %s' % body[u'role']
         sys.exit(2)
       if body[u'role'] == u'commenter':
         body[u'role'] = u'reader'
@@ -3748,7 +3754,7 @@ def updateDriveFileACL(users):
       elif sys.argv[i+1].lower() in false_values:
         transferOwnership = False
       else:
-        print u'ERROR: transferownership should be true or false, got %s' % sys.argv[i+1].lower()
+        print u'ERROR: transferownership must be true or false; got %s' % sys.argv[i+1].lower()
       i += 2
     else:
       print u'ERROR: %s is not a valid argument for "gam <users> update drivefileacl"' % sys.argv[i]
@@ -4034,284 +4040,236 @@ def doEmptyDriveTrash(users):
     user, drive = buildDriveGAPIObject(user)
     if not drive:
       continue
-    sys.stderr.write(u'Emptying Drive trash for %s...\n' % user)
+    print u'Emptying Drive trash for %s' % user
     callGAPI(drive.files(), u'emptyTrash')
 
-def doUpdateDriveFile(users):
-  convert = ocr = ocrLanguage = parent_query = local_filepath = media_body = fileIds = query = drivefilename = None
-  operation = u'update'
-  i = 5
-  body = {}
-  while i < len(sys.argv):
-    if sys.argv[i].lower().replace(u'_', u'') == u'localfile':
-      local_filepath = sys.argv[i+1]
-      local_filename = ntpath.basename(local_filepath)
-      mimetype = mimetypes.guess_type(local_filepath)[0]
-      if mimetype == None:
-        mimetype = u'application/octet-stream'
-      body[u'title'] = local_filename
-      body[u'mimeType'] = mimetype
+DRIVEFILE_LABEL_CHOICES_MAP = {
+  u'restricted': u'restricted',
+  u'restrict': u'restricted',
+  u'starred': u'starred',
+  u'star': u'starred',
+  u'trashed': u'trashed',
+  u'trash': u'trashed',
+  u'viewed': u'viewed',
+  u'view': u'viewed',
+  }
+
+MIMETYPE_CHOICES_MAP = {
+  u'gdoc': MIMETYPE_GA_DOCUMENT,
+  u'gdocument': MIMETYPE_GA_DOCUMENT,
+  u'gdrawing': MIMETYPE_GA_DRAWING,
+  u'gfolder': MIMETYPE_GA_FOLDER,
+  u'gdirectory': MIMETYPE_GA_FOLDER,
+  u'gform': MIMETYPE_GA_FORM,
+  u'gfusion': MIMETYPE_GA_FUSIONTABLE,
+  u'gpresentation': MIMETYPE_GA_PRESENTATION,
+  u'gscript': MIMETYPE_GA_SCRIPT,
+  u'gsite': MIMETYPE_GA_SITES,
+  u'gsheet': MIMETYPE_GA_SPREADSHEET,
+  u'gspreadsheet': MIMETYPE_GA_SPREADSHEET,
+  }
+
+DFA_CONVERT = u'convert'
+DFA_LOCALFILEPATH = u'localFilepath'
+DFA_LOCALFILENAME = u'localFilename'
+DFA_LOCALMIMETYPE = u'localMimeType'
+DFA_OCR = u'ocr'
+DFA_OCRLANGUAGE = u'ocrLanguage'
+DFA_PARENTQUERY = u'parentQuery'
+
+def initializeDriveFileAttributes():
+  return ({}, {DFA_LOCALFILEPATH: None, DFA_LOCALFILENAME: None, DFA_LOCALMIMETYPE: None, DFA_CONVERT: None, DFA_OCR: None, DFA_OCRLANGUAGE: None, DFA_PARENTQUERY: None})
+
+def getDriveFileAttribute(i, body, parameters, myarg, update=False):
+  if myarg == u'localfile':
+    parameters[DFA_LOCALFILEPATH] = sys.argv[i+1]
+    parameters[DFA_LOCALFILENAME] = os.path.basename(parameters[DFA_LOCALFILEPATH])
+    body.setdefault(u'title', parameters[DFA_LOCALFILENAME])
+    body[u'mimeType'] = mimetypes.guess_type(parameters[DFA_LOCALFILEPATH])[0]
+    if body[u'mimeType'] == None:
+      body[u'mimeType'] = u'application/octet-stream'
+    parameters[DFA_LOCALMIMETYPE] = body[u'mimeType']
+    i += 2
+  elif myarg == u'convert':
+    parameters[DFA_CONVERT] = True
+    i += 1
+  elif myarg == u'ocr':
+    parameters[DFA_OCR] = True
+    i += 1
+  elif myarg == u'ocrlanguage':
+    parameters[DFA_OCRLANGUAGE] = sys.argv[i+1]
+    i += 2
+  elif myarg in DRIVEFILE_LABEL_CHOICES_MAP:
+    body.setdefault(u'labels', {})
+    if update:
+      value = sys.argv[i+1].lower()
+      if value not in true_values and value not in false_values:
+        print u'ERROR: value for %s must be true or false; got %s' % (myarg, sys.argv[i+1])
+        sys.exit(2)
+      body[u'labels'][DRIVEFILE_LABEL_CHOICES_MAP[myarg]] = value
       i += 2
-    elif sys.argv[i].lower() == u'copy':
+    else:
+      body[u'labels'][DRIVEFILE_LABEL_CHOICES_MAP[myarg]] = True
+      i += 1
+  elif myarg in [u'lastviewedbyme', u'lastviewedbyuser', u'lastviewedbymedate', u'lastviewedbymetime']:
+    body[u'lastViewedByMeDate'] = sys.argv[i+1]
+    i += 2
+  elif myarg in [u'modifieddate', u'modifiedtime']:
+    body[u'modifiedDate'] = sys.argv[i+1]
+    i += 2
+  elif myarg == u'description':
+    body[u'description'] = sys.argv[i+1]
+    i += 2
+  elif myarg == u'mimetype':
+    mimeType = sys.argv[i+1]
+    if mimeType in MIMETYPE_CHOICES_MAP:
+      body[u'mimeType'] = MIMETYPE_CHOICES_MAP[mimeType]
+    else:
+      print u'ERROR: mimetype must be one of %s; got %s"' % (u', '.join(MIMETYPE_CHOICES_MAP), mimeType)
+      sys.exit(2)
+    i += 2
+  elif myarg == u'parentid':
+    body.setdefault(u'parents', [])
+    body[u'parents'].append({u'id': sys.argv[i+1]})
+    i += 2
+  elif myarg == u'parentname':
+    parameters[DFA_PARENTQUERY] = u'mimeType = "%s" and "me" in owners and title = "%s"' % (MIMETYPE_GA_FOLDER, sys.argv[i+1])
+    i += 2
+  elif myarg == u'writerscantshare':
+    body[u'writersCanShare'] = False
+    i += 1
+  else:
+    print u'ERROR: %s is not a valid argument for "gam <users> %s drivefile"' % (myarg, [u'add', u'update'][update])
+    sys.exit(2)
+  return i
+
+def doUpdateDriveFile(users):
+  fileIdSelection = {u'fileIds': None, u'query': None}
+  media_body = None
+  operation = u'update'
+  body, parameters = initializeDriveFileAttributes()
+  i = 5
+  while i < len(sys.argv):
+    myarg = sys.argv[i].lower().replace(u'_', u'')
+    if myarg == u'copy':
       operation = u'copy'
       i += 1
-    elif sys.argv[i].lower() == u'id':
-      fileIds = [sys.argv[i+1],]
-      i += 2
-    elif sys.argv[i].lower() == u'query':
-      query = sys.argv[i+1]
-      i += 2
-    elif sys.argv[i].lower() == u'drivefilename':
-      drivefilename = sys.argv[i+1]
-      i += 2
-    elif sys.argv[i].lower().replace(u'_', u'') == u'newfilename':
+    elif myarg == u'newfilename':
       body[u'title'] = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower() in [u'convert']:
-      convert = True
-      i += 1
-    elif sys.argv[i].lower() in [u'ocr',]:
-      ocr = True
-      i += 1
-    elif sys.argv[i].lower() in [u'ocrlanguage',]:
-      ocrLanguage = sys.argv[i+1]
+    elif myarg == u'id':
+      fileIdSelection[u'fileIds'] = [sys.argv[i+1],]
       i += 2
-    elif sys.argv[i].lower() in [u'restrict', u'restricted']:
-      if u'labels' not in body:
-        body[u'labels'] = {}
-      if sys.argv[i+1].lower() in true_values:
-        body[u'labels'][u'restricted'] = True
-      elif sys.argv[i+1].lower() in false_values:
-        body[u'labels'][u'restricted'] = False
-      else:
-        print u'ERROR: value for restricted must be true or false, got %s' % sys.argv[i+1]
-        sys.exit(2)
+    elif myarg == u'query':
+      fileIdSelection[u'query'] = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower() in [u'star', u'starred']:
-      if u'labels' not in body:
-        body[u'labels'] = {}
-      if sys.argv[i+1].lower() in true_values:
-        body[u'labels'][u'starred'] = True
-      elif sys.argv[i+1].lower() in false_values:
-        body[u'labels'][u'starred'] = False
-      else:
-        print u'ERROR: value for starred must be true or false, got %s' % sys.argv[i+1]
-        sys.exit(2)
+    elif myarg == u'drivefilename':
+      fileIdSelection[u'query'] = u"'me' in owners and title = '{0}'".format(sys.argv[i+1])
       i += 2
-    elif sys.argv[i].lower() in [u'trash', u'trashed']:
-      if u'labels' not in body:
-        body[u'labels'] = {}
-      if sys.argv[i+1].lower() in true_values:
-        body[u'labels'][u'trashed'] = True
-      elif sys.argv[i+1].lower() in false_values:
-        body[u'labels'][u'trashed'] = False
-      else:
-        print u'ERROR: value for trashed must be true or false, got %s' % sys.argv[i+1]
-        sys.exit(2)
-      i += 2
-    elif sys.argv[i].lower() in [u'view', u'viewed']:
-      if u'labels' not in body:
-        body[u'labels'] = {}
-      if sys.argv[i+1].lower() in true_values:
-        body[u'labels'][u'viewed'] = True
-      elif sys.argv[i+1].lower() in false_values:
-        body[u'labels'][u'viewed'] = False
-      else:
-        print u'ERROR: value for viewed must be true or false, got %s' % sys.argv[i+1]
-        sys.exit(2)
-      i += 2
-    elif sys.argv[i].lower() == u'lastviewedbyme':
-      body[u'lastViewedByMe'] = sys.argv[i+1]
-      i += 2
-    elif sys.argv[i].lower() == u'modifieddate':
-      body[u'modifiedDate'] = sys.argv[i+1]
-      i += 2
-    elif sys.argv[i].lower() in [u'description',]:
-      body[u'description'] = sys.argv[i+1]
-      i += 2
-    elif sys.argv[i].lower() in [u'mimetype',]:
-      body[u'mimeType'] = sys.argv[i+1]
-      if body[u'mimeType'].lower() in [u'gdoc', u'gdocument']:
-        body[u'mimeType'] = u'application/vnd.google-apps.document'
-      elif body[u'mimeType'].lower() == u'gdrawing':
-        body[u'mimeType'] = u'application/vnd.google-apps.drawing'
-      elif body[u'mimeType'].lower() in [u'gfolder', u'gdirectory']:
-        body[u'mimeType'] = u'application/vnd.google-apps.folder'
-      elif body[u'mimeType'].lower() == u'gform':
-        body[u'mimeType'] = u'application/vnd.google-apps.form'
-      elif body[u'mimeType'].lower() == u'gfusion':
-        body[u'mimeType'] = u'application/vnd.google-apps.fusiontable'
-      elif body[u'mimeType'].lower() == u'gpresentation':
-        body[u'mimeType'] = u'application/vnd.google-apps.presentation'
-      elif body[u'mimeType'].lower() == u'gscript':
-        body[u'mimeType'] = u'application/vnd.google-apps.script'
-      elif body[u'mimeType'].lower() == u'gsite':
-        body[u'mimeType'] = u'application/vnd.google-apps.sites'
-      elif body[u'mimeType'].lower() in [u'gsheet', u'gspreadsheet']:
-        body[u'mimeType'] = u'application/vnd.google-apps.spreadsheet'
-      i += 2
-    elif sys.argv[i].lower() in [u'parentid']:
-      if u'parents' not in body:
-        body[u'parents'] = list()
-      body[u'parents'].append({u'id': sys.argv[i+1]})
-      i += 2
-    elif sys.argv[i].lower().replace(u'_', u'') in [u'parentname']:
-      parent_query = u'mimeType = "application/vnd.google-apps.folder" and "me" in owners and title = "%s"' % sys.argv[i+1]
-      i += 2
-    elif sys.argv[i].lower() in [u'writerscantshare']:
-      body[u'writersCanShare'] = False
-      i += 1
     else:
-      print u'ERROR: %s is not a valid argument for "gam <users> update drivefile"' % sys.argv[i]
-      sys.exit(2)
-  if not fileIds and not drivefilename and not query:
+      i = getDriveFileAttribute(i, body, parameters, myarg, True)
+  if not fileIdSelection[u'query'] and not fileIdSelection[u'fileIds']:
     print u'ERROR: you need to specify either id, query or drivefilename in order to determine the file(s) to update'
     sys.exit(2)
-  elif (fileIds and drivefilename) or (fileIds and query) or (drivefilename and query):
+  if fileIdSelection[u'query'] and fileIdSelection[u'fileIds']:
     print u'ERROR: you cannot specify multiple file identifiers. Choose one of id, drivefilename, query.'
     sys.exit(2)
   for user in users:
     user, drive = buildDriveGAPIObject(user)
     if not drive:
       continue
-    if parent_query:
-      more_parents = doDriveSearch(drive, query=parent_query)
-      if u'parents' not in body:
-        body[u'parents'] = list()
+    if parameters[DFA_PARENTQUERY]:
+      more_parents = doDriveSearch(drive, query=parameters[DFA_PARENTQUERY])
+      body.setdefault(u'parents', [])
       for a_parent in more_parents:
         body[u'parents'].append({u'id': a_parent})
-    if query:
-      fileIds = doDriveSearch(drive, query=query)
-    elif drivefilename:
-      fileIds = doDriveSearch(drive, query=u'"me" in owners and title = "%s"' % drivefilename)
-    if local_filepath:
-      media_body = googleapiclient.http.MediaFileUpload(local_filepath, mimetype=mimetype, resumable=True)
-    for fileId in fileIds:
-      if operation == u'update':
+    if fileIdSelection[u'query']:
+      fileIdSelection[u'fileIds'] = doDriveSearch(drive, query=fileIdSelection[u'query'])
+    if not fileIdSelection[u'fileIds']:
+      print u'No files to %s for %s' % (operation, user)
+      continue
+    if operation == u'update':
+      if parameters[DFA_LOCALFILEPATH]:
+        media_body = googleapiclient.http.MediaFileUpload(parameters[DFA_LOCALFILEPATH], mimetype=parameters[DFA_LOCALMIMETYPE], resumable=True)
+      for fileId in fileIdSelection[u'fileIds']:
         if media_body:
-          result = callGAPI(drive.files(), u'update', fileId=fileId, convert=convert, ocr=ocr, ocrLanguage=ocrLanguage, media_body=media_body, body=body, fields=u'id')
+          result = callGAPI(drive.files(), u'update',
+                            fileId=fileId, convert=parameters[DFA_CONVERT], ocr=parameters[DFA_OCR], ocrLanguage=parameters[DFA_OCRLANGUAGE], media_body=media_body, body=body, fields=u'id')
+          print u'Successfully updated %s drive file with content from %s' % (result[u'id'], parameters[DFA_LOCALFILENAME])
         else:
-          result = callGAPI(drive.files(), u'patch', fileId=fileId, convert=convert, ocr=ocr, ocrLanguage=ocrLanguage, body=body, fields=u'id,labels')
-        try:
-          print u'Successfully updated %s drive file with content from %s' % (result[u'id'], local_filename)
-        except UnboundLocalError:
+          result = callGAPI(drive.files(), u'patch',
+                            fileId=fileId, convert=parameters[DFA_CONVERT], ocr=parameters[DFA_OCR], ocrLanguage=parameters[DFA_OCRLANGUAGE], body=body, fields=u'id')
           print u'Successfully updated drive file/folder ID %s' % (result[u'id'])
-      else:
-        result = callGAPI(drive.files(), u'copy', fileId=fileId, convert=convert, ocr=ocr, ocrLanguage=ocrLanguage, body=body, fields=u'id,labels')
+    else:
+      for fileId in fileIdSelection[u'fileIds']:
+        result = callGAPI(drive.files(), u'copy',
+                          fileId=fileId, convert=parameters[DFA_CONVERT], ocr=parameters[DFA_OCR], ocrLanguage=parameters[DFA_OCRLANGUAGE], body=body, fields=u'id')
         print u'Successfully copied %s to %s' % (fileId, result[u'id'])
 
 def createDriveFile(users):
-  convert = ocr = ocrLanguage = parent_query = local_filepath = media_body = None
+  media_body = None
+  body, parameters = initializeDriveFileAttributes()
   i = 5
-  body = {}
   while i < len(sys.argv):
-    if sys.argv[i].lower().replace(u'_', u'') == u'localfile':
-      local_filepath = sys.argv[i+1]
-      local_filename = ntpath.basename(local_filepath)
-      mimetype = mimetypes.guess_type(local_filepath)[0]
-      if mimetype == None:
-        mimetype = u'application/octet-stream'
-      body[u'title'] = local_filename
-      body[u'mimeType'] = mimetype
-      i += 2
-    elif sys.argv[i].lower().replace(u'_', u'') == u'drivefilename':
+    myarg = sys.argv[i].lower().replace(u'_', u'')
+    if myarg == u'drivefilename':
       body[u'title'] = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower() in [u'convert']:
-      convert = True
-      i += 1
-    elif sys.argv[i].lower() in [u'ocr',]:
-      ocr = True
-      i += 1
-    elif sys.argv[i].lower() in [u'ocrlanguage',]:
-      ocrLanguage = sys.argv[i+1]
-      i += 2
-    elif sys.argv[i].lower() in [u'restrict', u'restricted']:
-      if u'labels' not in body:
-        body[u'labels'] = {}
-      body[u'labels'][u'restricted'] = True
-      i += 1
-    elif sys.argv[i].lower() in [u'star', u'starred']:
-      if u'labels' not in body:
-        body[u'labels'] = {}
-      body[u'labels'][u'starred'] = True
-      i += 1
-    elif sys.argv[i].lower() in [u'trash', u'trashed']:
-      if u'labels' not in body:
-        body[u'labels'] = {}
-      body[u'labels'][u'trashed'] = True
-      i += 1
-    elif sys.argv[i].lower() in [u'view', u'viewed']:
-      if u'labels' not in body:
-        body[u'labels'] = {}
-      body[u'labels'][u'viewed'] = True
-      i += 1
-    elif sys.argv[i].lower() == u'lastviewedbyme':
-      body[u'lastViewedByMe'] = sys.argv[i+1]
-      i += 2
-    elif sys.argv[i].lower() == u'modifieddate':
-      body[u'modifiedDate'] = sys.argv[i+1]
-      i += 2
-    elif sys.argv[i].lower() in [u'description',]:
-      body[u'description'] = sys.argv[i+1]
-      i += 2
-    elif sys.argv[i].lower() in [u'mimetype',]:
-      body[u'mimeType'] = sys.argv[i+1]
-      if body[u'mimeType'].lower() in [u'gdoc', u'gdocument']:
-        body[u'mimeType'] = u'application/vnd.google-apps.document'
-      elif body[u'mimeType'].lower() == u'gdrawing':
-        body[u'mimeType'] = u'application/vnd.google-apps.drawing'
-      elif body[u'mimeType'].lower() in [u'gfolder', u'gdirectory']:
-        body[u'mimeType'] = u'application/vnd.google-apps.folder'
-      elif body[u'mimeType'].lower() == u'gform':
-        body[u'mimeType'] = u'application/vnd.google-apps.form'
-      elif body[u'mimeType'].lower() == u'gfusion':
-        body[u'mimeType'] = u'application/vnd.google-apps.fusiontable'
-      elif body[u'mimeType'].lower() == u'gpresentation':
-        body[u'mimeType'] = u'application/vnd.google-apps.presentation'
-      elif body[u'mimeType'].lower() == u'gscript':
-        body[u'mimeType'] = u'application/vnd.google-apps.script'
-      elif body[u'mimeType'].lower() == u'gsite':
-        body[u'mimeType'] = u'application/vnd.google-apps.sites'
-      elif body[u'mimeType'].lower() in [u'gsheet', u'gspreadsheet']:
-        body[u'mimeType'] = u'application/vnd.google-apps.spreadsheet'
-      i += 2
-    elif sys.argv[i].lower() in [u'parentid']:
-      if u'parents' not in body:
-        body[u'parents'] = list()
-      body[u'parents'].append({u'id': sys.argv[i+1]})
-      i += 2
-    elif sys.argv[i].lower().replace(u'_', u'') in [u'parentname']:
-      parent_query = u'mimeType = "application/vnd.google-apps.folder" and "me" in owners and title = "%s"' % sys.argv[i+1]
-      i += 2
-    elif sys.argv[i].lower() in [u'writerscantshare']:
-      body[u'writersCanShare'] = False
-      i += 1
     else:
-      print u'ERROR: %s is not a valid argument for "gam <users> create drivefile"' % sys.argv[i]
-      sys.exit(2)
+      i = getDriveFileAttribute(i, body, parameters, myarg, False)
   for user in users:
     user, drive = buildDriveGAPIObject(user)
     if not drive:
       continue
-    if parent_query:
-      more_parents = doDriveSearch(drive, query=parent_query)
-      if u'parents' not in body:
-        body[u'parents'] = list()
+    if parameters[DFA_PARENTQUERY]:
+      more_parents = doDriveSearch(drive, query=parameters[DFA_PARENTQUERY])
+      body.setdefault(u'parents', [])
       for a_parent in more_parents:
         body[u'parents'].append({u'id': a_parent})
-    if local_filepath:
-      media_body = googleapiclient.http.MediaFileUpload(local_filepath, mimetype=mimetype, resumable=True)
-    result = callGAPI(drive.files(), u'insert', convert=convert, ocr=ocr, ocrLanguage=ocrLanguage, media_body=media_body, body=body, fields=u'id')
-    try:
-      print u'Successfully uploaded %s to Drive file ID %s' % (local_filename, result[u'id'])
-    except UnboundLocalError:
+    if parameters[DFA_LOCALFILEPATH]:
+      media_body = googleapiclient.http.MediaFileUpload(parameters[DFA_LOCALFILEPATH], mimetype=parameters[DFA_LOCALMIMETYPE], resumable=True)
+    result = callGAPI(drive.files(), u'insert',
+                      convert=parameters[DFA_CONVERT], ocr=parameters[DFA_OCR], ocrLanguage=parameters[DFA_OCRLANGUAGE], media_body=media_body, body=body, fields=u'id')
+    if parameters[DFA_LOCALFILENAME]:
+      print u'Successfully uploaded %s to Drive file ID %s' % (parameters[DFA_LOCALFILENAME], result[u'id'])
+    else:
       print u'Successfully created drive file/folder ID %s' % (result[u'id'])
+
+DOCUMENT_FORMATS_MAP = {
+  u'csv': [{u'mime': u'text/csv', u'ext': u'.csv'}],
+  u'html': [{u'mime': u'text/html', u'ext': u'.html'}],
+  u'txt': [{u'mime': u'text/plain', u'ext': u'.txt'}],
+  u'tsv': [{u'mime': u'text/tsv', u'ext': u'.tsv'}],
+  u'jpeg': [{u'mime': u'image/jpeg', u'ext': u'.jpeg'}],
+  u'jpg': [{u'mime': u'image/jpeg', u'ext': u'.jpg'}],
+  u'png': [{u'mime': u'image/png', u'ext': u'.png'}],
+  u'svg': [{u'mime': u'image/svg+xml', u'ext': u'.svg'}],
+  u'pdf': [{u'mime': u'application/pdf', u'ext': u'.pdf'}],
+  u'rtf': [{u'mime': u'application/rtf', u'ext': u'.rtf'}],
+  u'zip': [{u'mime': u'application/zip', u'ext': u'.zip'}],
+  u'pptx': [{u'mime': u'application/vnd.openxmlformats-officedocument.presentationml.presentation', u'ext': u'.pptx'}],
+  u'xlsx': [{u'mime': u'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', u'ext': u'.xlsx'}],
+  u'docx': [{u'mime': u'application/vnd.openxmlformats-officedocument.wordprocessingml.document', u'ext': u'.docx'}],
+  u'ms': [{u'mime': u'application/vnd.openxmlformats-officedocument.presentationml.presentation', u'ext': u'.pptx'},
+          {u'mime': u'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', u'ext': u'.xlsx'},
+          {u'mime': u'application/vnd.openxmlformats-officedocument.wordprocessingml.document', u'ext': u'.docx'}],
+  u'microsoft': [{u'mime': u'application/vnd.openxmlformats-officedocument.presentationml.presentation', u'ext': u'.pptx'},
+                 {u'mime': u'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', u'ext': u'.xlsx'},
+                 {u'mime': u'application/vnd.openxmlformats-officedocument.wordprocessingml.document', u'ext': u'.docx'}],
+  u'micro$oft': [{u'mime': u'application/vnd.openxmlformats-officedocument.presentationml.presentation', u'ext': u'.pptx'},
+                 {u'mime': u'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', u'ext': u'.xlsx'},
+                 {u'mime': u'application/vnd.openxmlformats-officedocument.wordprocessingml.document', u'ext': u'.docx'}],
+  u'odt': [{u'mime': u'application/vnd.oasis.opendocument.text', u'ext': u'.odt'}],
+  u'ods': [{u'mime': u'application/x-vnd.oasis.opendocument.spreadsheet', u'ext': u'.ods'}],
+  u'openoffice': [{u'mime': u'application/vnd.oasis.opendocument.text', u'ext': u'.odt'},
+                  {u'mime': u'application/x-vnd.oasis.opendocument.spreadsheet', u'ext': u'.ods'}],
+  }
 
 def downloadDriveFile(users):
   i = 5
   query = fileIds = revisionId = None
-  gdownload_format = u'openoffice'
+  exportFormatName = u'openoffice'
+  exportFormats = DOCUMENT_FORMATS_MAP[exportFormatName]
   targetFolder = GC_Values[GC_DRIVE_DIR]
   safe_filename_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
   while i < len(sys.argv):
@@ -4326,10 +4284,14 @@ def downloadDriveFile(users):
       revisionId = sys.argv[i+1]
       i += 2
     elif myarg == u'format':
-      gdownload_format = sys.argv[i+1].lower()
-      if gdownload_format not in [u'openoffice', u'ms', u'microsoft', u'micro$oft', u'pdf']:
-        print u'ERROR: format must be one of openoffice, microsoft or pdf. Got %s' % gdownload_format
-        sys.exit(2)
+      exportFormatChoices = sys.argv[i+1].replace(u',', u' ').lower().split()
+      exportFormats = []
+      for exportFormat in exportFormatChoices:
+        if exportFormat in DOCUMENT_FORMATS_MAP:
+          exportFormats.extend(DOCUMENT_FORMATS_MAP[exportFormat])
+        else:
+          print u'ERROR: format must be one of {0}; got {1}'.format(u', '.join(DOCUMENT_FORMATS_MAP), exportFormat)
+          sys.exit(2)
       i += 2
     elif myarg == u'targetfolder':
       targetFolder = os.path.expanduser(sys.argv[i+1])
@@ -4339,25 +4301,10 @@ def downloadDriveFile(users):
     else:
       print u'ERROR: %s is not a valid argument for "gam <users> get drivefile"' % sys.argv[i]
       sys.exit(2)
-  export_extensions = {u'application/pdf': u'.pdf',
-                       u'application/vnd.openxmlformats-officedocument.wordprocessingml.document': u'.docx',
-                       u'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': u'.xlsx',
-                       u'application/vnd.openxmlformats-officedocument.presentationml.presentation': u'.pptx',
-                       u'application/vnd.oasis.opendocument.text': u'.odt',
-                       u'application/x-vnd.oasis.opendocument.spreadsheet': u'.ods'}
-  if gdownload_format == u'openoffice':
-    export_formats = [u'application/vnd.oasis.opendocument.text',
-                      u'application/x-vnd.oasis.opendocument.spreadsheet']
-  elif gdownload_format in [u'ms', u'microsoft', u'micro$oft']:
-    export_formats = [u'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                      u'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                      u'application/vnd.openxmlformats-officedocument.presentationml.presentation']
-  elif gdownload_format == u'pdf':
-    export_formats = [u'application/pdf',]
   if not query and not fileIds:
     print u'ERROR: need to specify a file ID with id parameter or a search query with the query parameter.'
     sys.exit(2)
-  elif query and fileIds:
+  if query and fileIds:
     print u'ERROR: you cannot specify both the id and query parameters at the same time.'
     sys.exit(2)
   for user in users:
@@ -4377,7 +4324,7 @@ def downloadDriveFile(users):
     for fileId in fileIds:
       extension = None
       result = callGAPI(drive.files(), u'get', fileId=fileId, fields=u'fileSize,title,mimeType,downloadUrl,exportLinks')
-      if result[u'mimeType'] == u'application/vnd.google-apps.folder':
+      if result[u'mimeType'] == MIMETYPE_GA_FOLDER:
         print convertUTF8(u'Skipping download of folder %s' % result[u'title'])
         continue
       try:
@@ -4396,16 +4343,13 @@ def downloadDriveFile(users):
       if u'downloadUrl' in result:
         download_url = result[u'downloadUrl']
       elif u'exportLinks' in result:
-        for avail_export_format in result[u'exportLinks']:
-          if avail_export_format in export_formats:
-            download_url = result[u'exportLinks'][avail_export_format]
-            try:
-              extension = export_extensions[avail_export_format]
-            except KeyError:
-              pass
+        for exportFormat in exportFormats:
+          if exportFormat[u'mime'] in result[u'exportLinks']:
+            download_url = result[u'exportLinks'][exportFormat[u'mime']]
+            extension = exportFormat[u'ext']
             break
         else:
-          print convertUTF8(u'Skipping download of file {0}, Format {1} not available'.format(result[u'title'], u','.join(export_formats)))
+          print convertUTF8(u'Skipping download of file {0}, Format {1} not available'.format(result[u'title'], u','.join(exportFormatChoices)))
           continue
       else:
         print convertUTF8(u'Skipping download of file {0}, Format not downloadable')
@@ -4413,18 +4357,14 @@ def downloadDriveFile(users):
       file_title = result[u'title']
       safe_file_title = u''.join(c for c in file_title if c in safe_filename_chars)
       filename = os.path.join(targetFolder, safe_file_title)
-      if extension and filename.lower()[-len(extension):] != extension:
-        filename = u'%s%s' % (filename, extension)
       y = 0
-      if os.path.isfile(filename):
-        while True:
-          y += 1
-          new_filename = os.path.join(targetFolder, u'(%s)-%s' % (y, safe_file_title))
-          if extension and new_filename.lower()[-len(extension):] != extension:
-            new_filename = u'%s%s' % (new_filename, extension)
-          if not os.path.isfile(new_filename):
-            break
-        filename = new_filename
+      while True:
+        if extension and filename.lower()[-len(extension):] != extension:
+          filename += extension
+        if not os.path.isfile(filename):
+          break
+        y += 1
+        filename = os.path.join(targetFolder, u'({0})-{1}'.format(y, safe_file_title))
       print convertUTF8(my_line % filename)
       if revisionId:
         download_url = u'{0}&revision={1}'.format(download_url, revisionId)
@@ -4603,7 +4543,7 @@ def doImap(users):
   elif sys.argv[4].lower() in false_values:
     enable = False
   else:
-    print u'ERROR: value for "gam <users> imap" must be true or false, got %s' % sys.argv[4]
+    print u'ERROR: value for "gam <users> imap" must be true or false; got %s' % sys.argv[4]
     sys.exit(2)
   body = {u'enabled': enable, u'autoExpunge': True, u'expungeBehavior': u'archive', u'maxFolderSize': 0}
   i = 5
@@ -4618,7 +4558,7 @@ def doImap(users):
         body[u'expungeBehavior'] = EMAILSETTINGS_IMAP_EXPUNGE_BEHAVIOR_CHOICES_MAP[opt]
         i += 2
       else:
-        print u'ERROR: value for "gam <users> imap expungebehavior" must be %s, got %s' % (u'|'.join(EMAILSETTINGS_IMAP_EXPUNGE_BEHAVIOR_CHOICES_MAP), opt)
+        print u'ERROR: value for "gam <users> imap expungebehavior" must be one of %s; got %s' % (u', '.join(EMAILSETTINGS_IMAP_EXPUNGE_BEHAVIOR_CHOICES_MAP), opt)
         sys.exit(2)
     elif myarg == u'maxfoldersize':
       opt = sys.argv[i+1].lower()
@@ -4626,7 +4566,7 @@ def doImap(users):
         body[u'maxFolderSize'] = int(opt)
         i += 2
       else:
-        print u'ERROR: value for "gam <users> imap maxfoldersize" must be %s, got %s' % (u'|'.join(EMAILSETTINGS_IMAP_MAX_FOLDER_SIZE_CHOICES), opt)
+        print u'ERROR: value for "gam <users> imap maxfoldersize" must be one of %s; got %s' % (u'|'.join(EMAILSETTINGS_IMAP_MAX_FOLDER_SIZE_CHOICES), opt)
         sys.exit(2)
     else:
       print u'ERROR: %s is not a valid argument for "gam <users> imap"' % myarg
@@ -4747,7 +4687,7 @@ def doPop(users):
   elif sys.argv[4].lower() in false_values:
     enable = False
   else:
-    print u'ERROR: value for "gam <users> pop" must be true or false, got %s' % sys.argv[4]
+    print u'ERROR: value for "gam <users> pop" must be true or false; got %s' % sys.argv[4]
     sys.exit(2)
   body = {u'accessWindow': [u'disabled', u'allMail'][enable], u'disposition': u'leaveInInbox'}
   i = 5
@@ -4759,7 +4699,7 @@ def doPop(users):
         body[u'accessWindow'] = EMAILSETTINGS_POP_ENABLE_FOR_CHOICES_MAP[opt]
         i += 2
       else:
-        print u'ERROR: value for "gam <users> pop for" must be %s, got %s' % (u'|'.join(EMAILSETTINGS_POP_ENABLE_FOR_CHOICES_MAP), opt)
+        print u'ERROR: value for "gam <users> pop for" must be one of %s; got %s' % (u', '.join(EMAILSETTINGS_POP_ENABLE_FOR_CHOICES_MAP), opt)
         sys.exit(2)
     elif myarg == u'action':
       opt = sys.argv[i+1].lower()
@@ -4767,7 +4707,7 @@ def doPop(users):
         body[u'disposition'] = EMAILSETTINGS_FORWARD_POP_ACTION_CHOICES_MAP[opt]
         i += 2
       else:
-        print u'ERROR: value for "gam <users> pop action" must be %s, got %s' % (u'|'.join(EMAILSETTINGS_FORWARD_POP_ACTION_CHOICES_MAP), opt)
+        print u'ERROR: value for "gam <users> pop action" must be one of %s; got %s' % (u', '.join(EMAILSETTINGS_FORWARD_POP_ACTION_CHOICES_MAP), opt)
         sys.exit(2)
     elif myarg == u'confirm':
       i += 1
@@ -4880,7 +4820,7 @@ def addUpdateSendAs(users, i, addCmd):
       elif sys.argv[i+1].lower() == u'false':
         body[u'treatAsAlias'] = False
       else:
-        print u'ERROR: value for treatasalias must be true or false, got %s' % sys.argv[i+1]
+        print u'ERROR: value for treatasalias must be true or false; got %s' % sys.argv[i+1]
         sys.exit(2)
       i += 2
     elif myarg == u'default':
@@ -5031,7 +4971,7 @@ def doUTF(users):
   elif sys.argv[4].lower() in false_values:
     SetUTF = False
   else:
-    print u'ERROR: value for "gam <users> utf" must be true or false, got %s' % sys.argv[4]
+    print u'ERROR: value for "gam <users> utf" must be true or false; got %s' % sys.argv[4]
     sys.exit(2)
   emailsettings = getEmailSettingsObject()
   i = 0
@@ -5071,7 +5011,7 @@ def doShortCuts(users):
   elif sys.argv[4].lower() in false_values:
     SetShortCuts = False
   else:
-    print u'ERROR: value for "gam <users> shortcuts" must be true or false, got %s' % sys.argv[4]
+    print u'ERROR: value for "gam <users> shortcuts" must be true or false; got %s' % sys.argv[4]
     sys.exit(2)
   emailsettings = getEmailSettingsObject()
   i = 0
@@ -5092,7 +5032,7 @@ def doArrows(users):
   elif sys.argv[4].lower() in false_values:
     SetArrows = False
   else:
-    print u'ERROR: value for "gam <users> arrows" must be true or false, got %s' % sys.argv[4]
+    print u'ERROR: value for "gam <users> arrows" must be true or false; got %s' % sys.argv[4]
     sys.exit(2)
   emailsettings = getEmailSettingsObject()
   i = 0
@@ -5113,7 +5053,7 @@ def doSnippets(users):
   elif sys.argv[4].lower() in false_values:
     SetSnippets = False
   else:
-    print u'ERROR: value for "gam <users> snippets" must be true or false, got %s' % sys.argv[4]
+    print u'ERROR: value for "gam <users> snippets" must be true or false; got %s' % sys.argv[4]
     sys.exit(2)
   emailsettings = getEmailSettingsObject()
   i = 0
@@ -5141,7 +5081,7 @@ def doLabel(users, i):
       elif sys.argv[i+1].lower().replace(u'_', u'') == u'showifunread':
         body[u'labelListVisibility'] = u'labelShowIfUnread'
       else:
-        print u'ERROR: label_list_visibility must be one of hide, show or show_if_unread, got %s' % sys.argv[i+1]
+        print u'ERROR: label_list_visibility must be one of hide, show, show_if_unread; got %s' % sys.argv[i+1]
         sys.exit(2)
       i += 2
     elif sys.argv[i].lower().replace(u'_', u'') == u'messagelistvisibility':
@@ -5150,7 +5090,7 @@ def doLabel(users, i):
       elif sys.argv[i+1].lower().replace(u'_', u'') == u'show':
         body[u'messageListVisibility'] = u'show'
       else:
-        print u'ERROR: message_list_visibility must be one of hide or show, got %s' % sys.argv[i+1]
+        print u'ERROR: message_list_visibility must be one of hide or show; got %s' % sys.argv[i+1]
         sys.exit(2)
       i += 2
     else:
@@ -5454,7 +5394,7 @@ def updateLabels(users):
     elif sys.argv[i].lower().replace(u'_', u'') == u'messagelistvisibility':
       body[u'messageListVisibility'] = sys.argv[i+1].lower()
       if body[u'messageListVisibility'] not in [u'hide', u'show']:
-        print u'ERROR: message_list_visibility should be show or hide, got %s' % sys.argv[i+1]
+        print u'ERROR: message_list_visibility must be show or hide; got %s' % sys.argv[i+1]
         sys.exit(2)
       i += 2
     elif sys.argv[i].lower().replace(u' ', u'') == u'labellistvisibility':
@@ -5465,7 +5405,7 @@ def updateLabels(users):
       elif sys.argv[i+1].lower().replace(u'_', u'') == u'hide':
         body[u'labelListVisibility'] = u'labelHide'
       else:
-        print u'ERROR: label_list_visibility should be hide, show or show_if_unread, got %s' % sys.argv[i+1]
+        print u'ERROR: label_list_visibility must be hide, show, show_if_unread; got %s' % sys.argv[i+1]
         sys.exit(2)
       i += 2
     else:
@@ -5664,7 +5604,7 @@ def addFilter(users, i):
       elif myarg == u'size':
         body[u'criteria'][u'sizeComparison'] = sys.argv[i+1].lower()
         if body[u'criteria'][u'sizeComparison'] not in [u'larger', u'smaller']:
-          print u'ERROR: size must be followed by larger|smaller, got %s' % sys.argv[i+1].lower()
+          print u'ERROR: size must be followed by larger or smaller; got %s' % sys.argv[i+1].lower()
           sys.exit(2)
         body[u'criteria'][myarg] = sys.argv[i+2]
         i += 3
@@ -5840,7 +5780,7 @@ def doForward(users):
   elif sys.argv[4].lower() in false_values:
     enable = False
   else:
-    print u'ERROR: value for "gam <users> forward" must be true or false, got %s' % sys.argv[4]
+    print u'ERROR: value for "gam <users> forward" must be true or false; got %s' % sys.argv[4]
     sys.exit(2)
   body = {u'enabled': enable}
   i = 5
@@ -6145,7 +6085,7 @@ def doWebClips(users):
   elif sys.argv[4].lower() in false_values:
     enable = False
   else:
-    print u'ERROR: value for "gam <users> webclips" must be true or false, got %s' % sys.argv[4]
+    print u'ERROR: value for "gam <users> webclips" must be true or false; got %s' % sys.argv[4]
     sys.exit(2)
   emailsettings = getEmailSettingsObject()
   i = 0
@@ -6166,7 +6106,7 @@ def doVacation(users):
   elif sys.argv[4].lower() in false_values:
     enable = False
   else:
-    print u'ERROR: value for "gam <users> vacation" must be true or false, got %s' % sys.argv[4]
+    print u'ERROR: value for "gam <users> vacation" must be true or false; got %s' % sys.argv[4]
     sys.exit(2)
   body = {u'enableAutoReply': enable}
   if enable:
@@ -6299,7 +6239,7 @@ def doCreateOrUpdateUserSchema(function):
         if sys.argv[i].lower() in [u'type']:
           a_field[u'fieldType'] = sys.argv[i+1].upper()
           if a_field[u'fieldType'] not in [u'BOOL', u'DOUBLE', u'EMAIL', u'INT64', u'PHONE', u'STRING']:
-            print u'ERROR: type must be bool, double, email, int64, phone or string. Got %s' % a_field[u'fieldType']
+            print u'ERROR: type must be one of bool, double, email, int64, phone, string; got %s' % a_field[u'fieldType']
             sys.exit(2)
           i += 2
         elif sys.argv[i].lower() in [u'multivalued']:
@@ -6431,7 +6371,7 @@ def getUserAttributes(i, updateCmd=False):
       elif sys.argv[i+1].lower() in false_values:
         admin_body[u'status'] = False
       else:
-        print u'ERROR: admin should be on or off, not %s' % sys.argv[i+1]
+        print u'ERROR: admin must be on or off; got %s' % sys.argv[i+1]
         sys.exit(2)
       i += 2
     elif myarg == u'suspended':
@@ -6440,7 +6380,7 @@ def getUserAttributes(i, updateCmd=False):
       elif sys.argv[i+1].lower() in false_values:
         body[u'suspended'] = False
       else:
-        print u'ERROR: suspended should be on or off, not %s' % sys.argv[i+1]
+        print u'ERROR: suspended must be on or off; got %s' % sys.argv[i+1]
         sys.exit(2)
       i += 2
     elif myarg == u'gal':
@@ -6449,7 +6389,7 @@ def getUserAttributes(i, updateCmd=False):
       elif sys.argv[i+1].lower() in false_values:
         body[u'includeInGlobalAddressList'] = False
       else:
-        print u'ERROR: gal should be on or off, not %s' % sys.argv[i+1]
+        print u'ERROR: gal must be on or off; got %s' % sys.argv[i+1]
         sys.exit(2)
       i += 2
     elif myarg in [u'sha', u'sha1', u'sha-1']:
@@ -6473,7 +6413,7 @@ def getUserAttributes(i, updateCmd=False):
       elif sys.argv[i+1].lower() in false_values:
         body[u'changePasswordAtNextLogin'] = False
       else:
-        print u'ERROR: changepassword should be on or off, not %s' % sys.argv[i+1]
+        print u'ERROR: changepassword must be on or off; got %s' % sys.argv[i+1]
         sys.exit(2)
       i += 2
     elif myarg == u'ipwhitelisted':
@@ -6482,7 +6422,7 @@ def getUserAttributes(i, updateCmd=False):
       elif sys.argv[i+1].lower() in false_values:
         body[u'ipWhitelisted'] = False
       else:
-        print u'ERROR: ipwhitelisted should be on or off, not %s' % sys.argv[i+1]
+        print u'ERROR: ipwhitelisted must be on or off; got %s' % sys.argv[i+1]
         sys.exit(2)
       i += 2
     elif myarg == u'agreedtoterms':
@@ -6491,7 +6431,7 @@ def getUserAttributes(i, updateCmd=False):
       elif sys.argv[i+1].lower() in false_values:
         body[u'agreedToTerms'] = False
       else:
-        print u'ERROR: agreedtoterms should be on or off, not %s' % sys.argv[i+1]
+        print u'ERROR: agreedtoterms must be on or off; got %s' % sys.argv[i+1]
         sys.exit(2)
       i += 2
     elif myarg in [u'org', u'ou']:
@@ -6511,7 +6451,7 @@ def getUserAttributes(i, updateCmd=False):
       i += 1
       address[u'type'] = sys.argv[i].lower()
       if address[u'type'] not in [u'custom', u'home', u'other', u'work']:
-        print u'ERROR: wrong type should be custom, home, other or work. Got %s' % address[u'type']
+        print u'ERROR: wrong type must be one of custom, home, other, work; got %s' % address[u'type']
         sys.exit(2)
       if address[u'type'] == u'custom':
         i += 1
@@ -6585,7 +6525,7 @@ def getUserAttributes(i, updateCmd=False):
       i += 1
       im[u'type'] = sys.argv[i].lower()
       if im[u'type'] not in [u'custom', u'home', u'other', u'work']:
-        print u'ERROR: type should be custom, home, other or work. Got %s' % im[u'type']
+        print u'ERROR: type must be one of custom, home, other, work; got %s' % im[u'type']
         sys.exit(2)
       if im[u'type'] == u'custom':
         i += 1
@@ -6597,7 +6537,7 @@ def getUserAttributes(i, updateCmd=False):
       i += 1
       im[u'protocol'] = sys.argv[i].lower()
       if im[u'protocol'] not in [u'custom_protocol', u'aim', u'gtalk', u'icq', u'jabber', u'msn', u'net_meeting', u'qq', u'skype', u'yahoo']:
-        print u'ERROR: protocol should be custom_protocol, aim, gtalk, icq, jabber, msn, net_meeting, qq, skype or yahoo. Got %s' % im[u'protocol']
+        print u'ERROR: protocol must be one of custom_protocol, aim, gtalk, icq, jabber, msn, net_meeting, qq, skype, yahoo; got %s' % im[u'protocol']
         sys.exit(2)
       if im[u'protocol'] == u'custom_protocol':
         i += 1
@@ -6635,7 +6575,7 @@ def getUserAttributes(i, updateCmd=False):
         elif myopt == u'type':
           organization[u'type'] = sys.argv[i+1].lower()
           if organization[u'type'] not in [u'domain_only', u'school', u'unknown', u'work']:
-            print u'ERROR: organization type must be domain_only, school, unknown or work. Got %s' % organization[u'type']
+            print u'ERROR: organization type must be one of domain_only, school, unknown, work; got %s' % organization[u'type']
             sys.exit(2)
           i += 2
         elif myopt == u'department':
@@ -6678,7 +6618,7 @@ def getUserAttributes(i, updateCmd=False):
         elif myopt == u'type':
           phone[u'type'] = sys.argv[i+1].lower()
           if phone[u'type'] not in [u'assistant', u'callback', u'car', u'company_main', u'custom', u'grand_central', u'home', u'home_fax', u'isdn', u'main', u'mobile', u'other', u'other_fax', u'pager', u'radio', u'telex', u'tty_tdd', u'work', u'work_fax', u'work_mobile', u'work_pager']:
-            print u'ERROR: phone type must be assistant, callback, car, company_main, custom, grand_central, home, home_fax, isdn, main, mobile, other, other_fax, pager, radio, telex, tty_tdd, work, work_fax, work_mobile, work_pager. Got %s' % phone[u'type']
+            print u'ERROR: phone type must be one of assistant, callback, car, company_main, custom, grand_central, home, home_fax, isdn, main, mobile, other, other_fax, pager, radio, telex, tty_tdd, work, work_fax, work_mobile, work_pager; got %s' % phone[u'type']
             sys.exit(2)
           i += 2
           if phone[u'type'] == u'custom':
@@ -6833,7 +6773,7 @@ def doCreateGroup():
               else:
                 value = int(value)
             except ValueError:
-              print u'ERROR: %s must be a number ending with M (megabytes), K (kilobytes) or nothing (bytes). Got %s' % value
+              print u'ERROR: %s must be a number ending with M (megabytes), K (kilobytes) or nothing (bytes); got %s' % value
               sys.exit(2)
           elif params[u'type'] == u'string':
             if params[u'description'].find(value.upper()) != -1: # ugly hack because API wants some values uppercased.
@@ -6862,7 +6802,7 @@ def doCreateAlias():
     body[u'alias'] = u'%s@%s' % (body[u'alias'], GC_Values[GC_DOMAIN])
   target_type = sys.argv[4].lower()
   if target_type not in [u'user', u'group', u'target']:
-    print u'ERROR: type of target should be user or group. Got %s' % target_type
+    print u'ERROR: type of target must be user or group; got %s' % target_type
     sys.exit(2)
   targetKey = sys.argv[5]
   if targetKey.find(u'@') == -1:
@@ -7073,7 +7013,7 @@ def doUpdateGroup():
         use_cd_api = True
         cd_body[u'adminCreated'] = sys.argv[i+1].lower()
         if cd_body[u'adminCreated'] not in [u'true', u'false']:
-          print u'ERROR: Value for admincreated must be true or false. Got %s' % cd_body[u'adminCreated']
+          print u'ERROR: Value for admincreated must be true or false; got %s' % cd_body[u'adminCreated']
           sys.exit(2)
         i += 2
       else:
@@ -7098,7 +7038,7 @@ def doUpdateGroup():
                 else:
                   value = int(value)
               except ValueError:
-                print u'ERROR: %s must be a number ending with M (megabytes), K (kilobytes) or nothing (bytes). Got %s' % value
+                print u'ERROR: %s must be a number ending with M (megabytes), K (kilobytes) or nothing (bytes); got %s' % value
                 sys.exit(2)
             elif params[u'type'] == u'string':
               if params[u'description'].find(value.upper()) != -1: # ugly hack because API wants some values uppercased.
@@ -7136,7 +7076,7 @@ def doUpdateAlias():
   alias = sys.argv[3]
   target_type = sys.argv[4].lower()
   if target_type not in [u'user', u'group', u'target']:
-    print u'ERROR: target type should be "user", "group" or "target", got %s' % target_type
+    print u'ERROR: target type must be one of user, group, target; got %s' % target_type
     sys.exit(2)
   target_email = sys.argv[5]
   if alias.find(u'@') == -1:
@@ -7210,7 +7150,7 @@ def doUpdateCros():
     elif sys.argv[i].lower() == u'status':
       body[u'status'] = sys.argv[i + 1].upper()
       #if body[u'status'] not in [u'ACTIVE', u'DEPROVISIONED']:
-      #  print u'ERROR: status must be active or deprovisioned, got %s' % body[u'status']
+      #  print u'ERROR: status must be active or deprovisioned; got %s' % body[u'status']
       #  sys.exit(2)
       i += 2
     elif sys.argv[i].lower() in [u'tag', u'asset', u'assetid']:
@@ -7247,7 +7187,7 @@ def doUpdateMobile():
       elif action_body[u'action'].replace(u'_', u'') in [u'accountwipe', u'wipeaccount']:
         action_body[u'action'] = u'admin_account_wipe'
       if action_body[u'action'] not in [u'admin_remote_wipe', u'admin_account_wipe', u'approve', u'block', u'cancel_remote_wipe_then_activate', u'cancel_remote_wipe_then_block']:
-        print u'ERROR: action must be wipe, wipeaccount, approve, block, cancel_remote_wipe_then_activate or cancel_remote_wipe_then_block. Got %s' % action_body[u'action']
+        print u'ERROR: action must be one of wipe, wipeaccount, approve, block, cancel_remote_wipe_then_activate, cancel_remote_wipe_then_block; got %s' % action_body[u'action']
         sys.exit(2)
       doAction = True
       i += 2
@@ -8290,7 +8230,7 @@ def doUpdateInstance():
         elif sys.argv[i+1].lower() == u'false':
           enableSSO = False
         else:
-          print u'ERROR: value for enabled must be true or false, got %s' % sys.argv[i+1]
+          print u'ERROR: value for enabled must be true or false; got %s' % sys.argv[i+1]
           sys.exit(2)
         i += 2
       elif sys.argv[i].lower() == u'sign_on_uri':
@@ -8311,7 +8251,7 @@ def doUpdateInstance():
         elif sys.argv[i+1].lower() == u'false':
           useDomainSpecificIssuer = False
         else:
-          print u'ERROR: value for use_domain_specific_issuer must be true or false, got %s' % sys.argv[i+1]
+          print u'ERROR: value for use_domain_specific_issuer must be true or false; got %s' % sys.argv[i+1]
           sys.exit(2)
         i += 2
       else:
@@ -8696,7 +8636,7 @@ def doPrintUsers():
     elif myarg == u'orderby':
       orderBy = sys.argv[i+1]
       if orderBy.lower() not in [u'email', u'familyname', u'givenname', u'firstname', u'lastname']:
-        print u'ERROR: orderby should be email, familyName or givenName. Got %s' % orderBy
+        print u'ERROR: orderby must be one of email, familyName, givenName; got %s' % orderBy
         sys.exit(2)
       elif orderBy.lower() in [u'familyname', u'lastname']:
         orderBy = u'familyName'
@@ -9119,7 +9059,7 @@ def doPrintGroupMembers():
           fieldsList.append(field)
           titles.append(field)
         else:
-          print u'ERROR: field name should be %s. Got %s' % (u','.join(MEMBERS_FIELD_NAMES), field)
+          print u'ERROR: field name must be one of %s; got %s' % (u', '.join(MEMBERS_FIELD_NAMES), field)
           sys.exit(2)
       i += 2
     elif sys.argv[i].lower() == u'membernames':
@@ -9205,7 +9145,7 @@ def doPrintMobileDevices():
       orderBy = sys.argv[i+1].lower()
       allowed_values = [u'deviceid', u'email', u'lastsync', u'model', u'name', u'os', u'status', u'type']
       if orderBy.lower() not in allowed_values:
-        print u'ERROR: orderBy must be one of %s. Got %s' % (u', '.join(allowed_values), orderBy)
+        print u'ERROR: orderBy must be one of %s; got %s' % (u', '.join(allowed_values), orderBy)
         sys.exit(2)
       elif orderBy == u'lastsync':
         orderBy = u'lastSync'
@@ -9285,7 +9225,7 @@ def doPrintCrosDevices():
       orderBy = sys.argv[i+1].lower().replace(u'_', u'')
       allowed_values = [u'location', u'user', u'lastsync', u'notes', u'serialnumber', u'status', u'supportenddate']
       if orderBy not in allowed_values:
-        print u'ERROR: orderBy must be one of %s. Got %s' % (u', '.join(allowed_values), orderBy)
+        print u'ERROR: orderBy must be one of %s; got %s' % (u', '.join(allowed_values), orderBy)
         sys.exit(2)
       elif orderBy == u'location':
         orderBy = u'annotatedLocation'
@@ -10383,7 +10323,7 @@ def ProcessGAMCommand(args):
       f = openFile(filename)
       csvFile = csv.DictReader(f)
       if (i == len(sys.argv)) or (sys.argv[i].lower() != u'gam') or (i+1 == len(sys.argv)):
-        print u'ERROR: "gam csv <filename>" should be followed by a full GAM command...'
+        print u'ERROR: "gam csv <filename>" must be followed by a full GAM command...'
         sys.exit(3)
       i += 1
       GAM_argv, subFields = getSubFields(i, csvFile.fieldnames)
