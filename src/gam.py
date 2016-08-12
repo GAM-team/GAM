@@ -10239,7 +10239,7 @@ def run_batch(items):
     python_cmd.append(os.path.realpath(sys.argv[0]))
   num_worker_threads = min(total_items, GC_Values[GC_NUM_THREADS])
   GM_Globals[GM_BATCH_QUEUE] = Queue.Queue(maxsize=num_worker_threads) # GM_Globals[GM_BATCH_QUEUE].put() gets blocked when trying to create more items than there are workers
-  print u'starting %s worker threads...' % num_worker_threads
+  sys.stderr.write(u'starting %s worker threads...\n' % num_worker_threads)
   for _ in range(num_worker_threads):
     t = threading.Thread(target=batch_worker)
     t.daemon = True
@@ -10247,7 +10247,7 @@ def run_batch(items):
   for item in items:
     current_item += 1
     if not current_item % 100:
-      print u'starting job %s / %s' % (current_item, total_items)
+      sys.stderr.write(u'starting job %s / %s\n' % (current_item, total_items))
     if item[0] == u'commit-batch':
       sys.stderr.write(u'commit-batch - waiting for running processes to finish before proceeding...')
       GM_Globals[GM_BATCH_QUEUE].join()
