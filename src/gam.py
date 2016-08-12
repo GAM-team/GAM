@@ -1011,6 +1011,16 @@ def callGAPIpages(service, function, items,
         sys.stderr.flush()
       return all_pages
 
+def callGAPIitems(service, function, items,
+                  throw_reasons=[], retry_reasons=[],
+                  **kwargs):
+  results = callGAPI(service, function,
+                     throw_reasons=throw_reasons, retry_reasons=retry_reasons,
+                     **kwargs)
+  if results:
+    return results.get(items, [])
+  return []
+
 API_VER_MAPPING = {
   u'admin-settings': u'v2',
   u'appsactivity': u'v1',
@@ -3140,19 +3150,22 @@ def checkCloudPrintResult(result):
     print u'ERROR %s: %s' % (result[u'errorCode'], result[u'message'])
     sys.exit(result[u'errorCode'])
 
+def formatACLRule(rule):
+  if rule[u'scope'][u'type'] != u'default':
+    return u'(Scope: {0}:{1}, Role: {2})'.format(rule[u'scope'][u'type'], rule[u'scope'][u'value'], rule[u'role'])
+  return u'(Scope: {0}, Role: {1})'.format(rule[u'scope'][u'type'], rule[u'role'])
+
 def doCalendarShowACL():
   cal = buildGAPIObject(u'calendar')
   show_cal = sys.argv[2]
   if show_cal.find(u'@') == -1:
     show_cal = u'%s@%s' % (show_cal, GC_Values[GC_DOMAIN])
-  acls = callGAPI(cal.acl(), u'list', calendarId=show_cal)
-  try:
-    for rule in acls[u'items']:
-      print u'  Scope %s - %s' % (rule[u'scope'][u'type'], rule[u'scope'][u'value'])
-      print u'  Role: %s' % (rule[u'role'])
-      print u''
-  except IndexError:
-    pass
+  acls = callGAPIitems(cal.acl(), u'list', u'items', calendarId=show_cal)
+  i = 0
+  count = len(acls)
+  for rule in acls:
+    i += 1
+    print u'Calendar: {0}, ACL: {1}{2}'.format(show_cal, formatACLRule(rule), currentCount(i, count))
 
 def doCalendarAddACL(calendarId=None, act_as=None, role=None, scope=None, entity=None):
   if act_as != None:
