@@ -234,9 +234,9 @@ If an item contains spaces, it should be surrounded by " or '.
 	whocanviewmembership
 
 <GuardianState> ::=
-	COMPLETE|
-	PENDING|
-	GUARDIAN_INVIATATION_STATE_UNSPECIFIED
+	complete|
+	pending|
+	unspecified
 
 <MembersFieldName> ::=
 	email|

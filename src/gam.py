@@ -544,7 +544,7 @@ def normalizeEmailAddressOrUID(emailAddressOrUID, noUid=False):
 #
 # Open a file
 #
-def openFile(filename, mode=u'rb'):
+def openFile(filename, mode=u'rU'):
   try:
     if filename != u'-':
       return open(os.path.expanduser(filename), mode)
@@ -584,6 +584,9 @@ def readFile(filename, mode=u'rb', continueOnError=False, displayError=True, enc
         stderrWarningMsg(e)
       return None
     systemErrorExit(6, e)
+  except LookupError as e:
+    print u'ERROR: %s' % e
+    sys.exit(2)
 #
 # Write a file
 #
@@ -598,6 +601,49 @@ def writeFile(filename, data, mode=u'wb', continueOnError=False, displayError=Tr
         stderrErrorMsg(e)
       return False
     systemErrorExit(6, e)
+#
+class UTF8Recoder(object):
+  """
+  Iterator that reads an encoded stream and reencodes the input to UTF-8
+  """
+  def __init__(self, f, encoding):
+    self.reader = codecs.getreader(encoding)(f)
+
+  def __iter__(self):
+    return self
+
+  def next(self):
+    return self.reader.next().encode(u'utf-8')
+
+class UnicodeDictReader(object):
+  """
+  A CSV reader which will iterate over lines in the CSV file "f",
+  which is encoded in the given encoding.
+  """
+
+  def __init__(self, f, dialect=csv.excel, encoding=u'utf-8', **kwds):
+    self.encoding = encoding
+    try:
+      self.reader = csv.reader(UTF8Recoder(f, encoding) if self.encoding != u'utf-8' else f, dialect=dialect, **kwds)
+      self.fieldnames = self.reader.next()
+      if len(self.fieldnames) > 0 and self.fieldnames[0].startswith(codecs.BOM_UTF8):
+        self.fieldnames[0] = self.fieldnames[0].replace(codecs.BOM_UTF8, '', 1)
+    except (csv.Error, StopIteration):
+      self.fieldnames = []
+    except LookupError as e:
+      print u'ERROR: %s' % e
+      sys.exit(2)
+    self.numfields = len(self.fieldnames)
+
+  def __iter__(self):
+    return self
+
+  def next(self):
+    row = self.reader.next()
+    l = len(row)
+    if l < self.numfields:
+      row += ['']*(self.numfields-l) # Must be '', not u''
+    return dict((self.fieldnames[x], unicode(row[x], u'utf-8')) for x in range(self.numfields))
 #
 # Set global variables
 # Check for GAM updates based on status of noupdatecheck.txt
@@ -2211,6 +2257,12 @@ def doGetDataTransferInfo():
       print u' None'
     print
 
+GUARDIAN_STATE_MAP = {
+  u'pending': u'PENDING',
+  u'complete': u'COMPLETE',
+  u'unspecified': u'GUARDIAN_INVITATION_STATE_UNSPECIFIED',
+  }
+
 def doPrintGuardians():
   croom = buildGAPIObject(u'classroom')
   invitedEmailAddress = None
@@ -2244,11 +2296,19 @@ def doPrintGuardians():
         states = [u'COMPLETE', u'PENDING', u'GUARDIAN_INVITATION_STATE_UNSPECIFIED']
       i += 1
     elif sys.argv[i].lower() == u'states':
-      states = sys.argv[i+1].split(u',')
+      states = sys.argv[i+1].lower().replace(u'_', u'').split(u',')
+      for j, state in enumerate(states):
+        if state not in GUARDIAN_STATE_MAP:
+          print u'ERROR: state must be one of %s; got %s' % (u', '.join(GUARDIAN_STATE_MAP), state)
+          sys.exit(2)
+        states[j] = GUARDIAN_STATE_MAP[state]
       i += 2
     elif sys.argv[i].lower() in usergroup_types:
       studentIds = getUsersToModify(entity_type=sys.argv[i], entity=sys.argv[i+1])
       i += 2
+    else:
+      print u'ERROR: %s is not a valid argument for "gam print guardians"' % sys.argv[i]
+      sys.exit(2)
   n = 1
   for studentId in studentIds:
     kwargs = {u'invitedEmailAddress': invitedEmailAddress, u'studentId': studentId}
@@ -2301,7 +2361,7 @@ def doDeleteGuardian():
         print u'%s is not a guardian of %s and invitation %s status is %s, not PENDING. Doing nothing.' % (guardianId, studentId, result[u'invitationId'], result[u'state'])
         continue
       invitationId = result[u'invitationId']
-      body = { u'state': u'COMPLETE' }
+      body = {u'state': u'COMPLETE'}
       callGAPI(croom.userProfiles().guardianInvitations(), u'patch', studentId=studentId, invitationId=invitationId, updateMask=u'state', body=body)
       print u'Cancelling %s invitation for %s as guardian of %s' % (result[u'state'], result[u'invitedEmailAddress'], studentId)
 
@@ -2683,9 +2743,11 @@ def changeCalendarAttendees(users):
       print u'ERROR: %s is not a valid argument for "gam <users> update calattendees"' % sys.argv[i]
       sys.exit(2)
   attendee_map = {}
-  csvfile = csv.reader(open(csv_file, u'rb'))
-  for row in csvfile:
+  f = openFile(csv_file)
+  csvFile = csv.reader(f)
+  for row in csvFile:
     attendee_map[row[0].lower()] = row[1].lower()
+  closeFile(f)
   for user in users:
     sys.stdout.write(u'Checking user %s\n' % user)
     user, cal = buildCalendarGAPIObject(user)
@@ -3513,11 +3575,8 @@ def doPhoto(users):
         print e
         continue
     else:
-      try:
-        with open(filename, u'rb') as f:
-          image_data = f.read()
-      except IOError as e:
-        print u' couldn\'t open %s: %s' % (filename, e.strerror)
+      image_data = readFile(filename, continueOnError=True, displayError=True)
+      if image_data == None:
         continue
     image_data = base64.urlsafe_b64encode(image_data)
     body = {u'photoData': image_data}
@@ -6132,8 +6191,7 @@ def doSignature(users):
   i = 4
   if sys.argv[i].lower() == u'file':
     filename = sys.argv[i+1]
-    i += 2
-    i, encoding = getCharSet(i)
+    i, encoding = getCharSet(i+2)
     signature = readFile(filename, encoding=encoding).replace(u'\\n', u'<br/>').replace(u'\n', u'<br/>')
   else:
     signature = getString(i, u'String', emptyOK=True).replace(u'\\n', u'<br/>').replace(u'\n', u'<br/>')
@@ -6242,8 +6300,7 @@ def doVacation(users):
         i += 2
       elif myarg == u'file':
         filename = sys.argv[i+1]
-        i += 2
-        i, encoding = getCharSet(i)
+        i, encoding = getCharSet(i+2)
         message = readFile(filename, encoding=encoding)
       elif myarg == u'replace':
         matchTag = getString(i+1, u'Tag')
@@ -10303,7 +10360,7 @@ access or an 'a' to grant action-only access.
     scopes = [u'email',] # Email Display Scope, always included
   for i in range(0, len(selected_scopes)):
     if selected_scopes[i] == u'*':
-      if type(possible_scopes[i]) is unicode:
+      if not isinstance(possible_scopes[i], list):
         scopes.append(possible_scopes[i])
       else:
         scopes += possible_scopes[i]
@@ -10456,9 +10513,9 @@ def ProcessGAMCommand(args):
         sys.exit(1)
       i = 2
       filename = sys.argv[i]
-      i += 1
+      i, encoding = getCharSet(i+1)
       f = openFile(filename)
-      csvFile = csv.DictReader(f)
+      csvFile = UnicodeDictReader(f, encoding=encoding)
       if (i == len(sys.argv)) or (sys.argv[i].lower() != u'gam') or (i+1 == len(sys.argv)):
         print u'ERROR: "gam csv <filename>" must be followed by a full GAM command...'
         sys.exit(3)
