@@ -1,3 +1,7 @@
+GAM 3.7
+- Classroom Guardians API. Invite, list and delete guardians for a student.
+- Includes number of improvements from Ross in 3.66 (see below)
+
 GAM 3.66
 See GamCommands.txt for a complete syntax description.
 
