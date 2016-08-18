@@ -24,7 +24,7 @@ For more information, see http://git.io/gam
 """
 
 __author__ = u'Jay Lee <jay0lee@gmail.com>'
-__version__ = u'3.66'
+__version__ = u'3.7'
 __license__ = u'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 import sys, os, time, datetime, random, socket, csv, platform, re, base64, string, codecs, StringIO, subprocess, collections, mimetypes
@@ -1365,7 +1365,7 @@ def showReport():
     for app in auth_apps: # put apps at bottom
       csvRows.append(app)
     writeCSVfile(csvRows, titles, u'Customer Report - %s' % try_date, todrive=to_drive)
-  elif report in [u'doc', u'docs', u'drive', u'calendar', u'calendars', u'login', u'logins', u'admin', u'token', u'tokens', u'group', u'groups', u'mobile']:
+  else:
     if report in [u'doc', u'docs']:
       report = u'drive'
     elif report in [u'calendars']:
@@ -2210,6 +2210,100 @@ def doGetDataTransferInfo():
     else:
       print u' None'
     print
+
+def doPrintGuardians():
+  croom = buildGAPIObject(u'classroom')
+  invitedEmailAddress = None
+  studentIds = [u'-',]
+  states = None
+  service = croom.userProfiles().guardians()
+  items = u'guardians'
+  guardians = []
+  show_csv = True
+  csvRows = []
+  todrive = False
+  titles = []
+  i = 3
+  while i < len(sys.argv):
+    if sys.argv[i].lower() == u'invitedguardian':
+      invitedEmailAddress = sys.argv[i+1]
+      i += 2
+    elif sys.argv[i].lower() == u'nocsv':
+      show_csv = False
+      i += 1
+    elif sys.argv[i].lower() == u'todrive':
+      todrive = True
+      i += 1
+    elif sys.argv[i].lower() == u'student':
+      studentIds = [sys.argv[i+1],]
+      i += 2
+    elif sys.argv[i].lower() == u'invitations':
+      service = croom.userProfiles().guardianInvitations()
+      items = u'guardianInvitations'
+      if states == None:
+        states = [u'COMPLETE', u'PENDING', u'GUARDIAN_INVITATION_STATE_UNSPECIFIED']
+      i += 1
+    elif sys.argv[i].lower() == u'states':
+      states = sys.argv[i+1].split(u',')
+      i += 2
+    elif sys.argv[i].lower() in usergroup_types:
+      studentIds = getUsersToModify(entity_type=sys.argv[i], entity=sys.argv[i+1])
+      i += 2
+  n = 1
+  for studentId in studentIds:
+    kwargs = {u'invitedEmailAddress': invitedEmailAddress, u'studentId': studentId}
+    if items == u'guardianInvitations':
+      kwargs[u'states'] = states
+    if studentId != u'-':
+      sys.stderr.write('\r')
+      sys.stderr.flush()
+      sys.stderr.write(u'Getting guardians for %s (%s/%s)%s' % (studentId, n, len(studentIds), u' ' * 40))
+    student_guardians = callGAPIpages(service, u'list', items=items, soft_errors=True, **kwargs)
+    # add student email to results since API does not return it
+    i = 0
+    while i < len(student_guardians):
+      student_guardians[i][u'studentEmail'] = studentId
+      i += 1
+    guardians = guardians + student_guardians
+    n += 1
+  sys.stderr.write(u'\n')
+  if show_csv:
+    for guardian in guardians:
+      addRowTitlesToCSVfile(flatten_json(guardian), csvRows, titles)
+    writeCSVfile(csvRows, titles, u'Guardians', todrive)
+  else:
+    for guardian in guardians:
+      print_json(None, guardian)
+
+def doInviteGuardian():
+  croom = buildGAPIObject(u'classroom')
+  body = {u'invitedEmailAddress': sys.argv[3]}
+  studentId = sys.argv[4]
+  result = callGAPI(croom.userProfiles().guardianInvitations(), u'create', studentId=studentId, body=body)
+  print u'Invited email %s as guardian of %s. Invite ID %s' % (result[u'invitedEmailAddress'], studentId, result[u'invitationId'])
+
+def doDeleteGuardian():
+  croom = buildGAPIObject(u'classroom')
+  guardianId = sys.argv[3]
+  studentId = sys.argv[4]
+  try:
+    callGAPI(croom.userProfiles().guardians(), u'delete', throw_reasons=[u'notFound'], studentId=studentId, guardianId=guardianId)
+    print u'Deleted %s as a guardian of %s' % (guardianId, studentId)
+  except googleapiclient.errors.HttpError:
+    # See if there's a pending invitation
+    states = [u'COMPLETE', u'PENDING', u'GUARDIAN_INVITATION_STATE_UNSPECIFIED']
+    results = callGAPIpages(croom.userProfiles().guardianInvitations(), u'list', items=u'guardianInvitations', studentId=studentId, invitedEmailAddress=guardianId, states=states)
+    if len(results) < 1:
+      print u'%s is not a guardian of %s and no invitation exists.' % (guardianId, studentId)
+      sys.exit(0)
+    for result in results:
+      if result[u'state'] != u'PENDING':
+        print u'%s is not a guardian of %s and invitation %s status is %s, not PENDING. Doing nothing.' % (guardianId, studentId, result[u'invitationId'], result[u'state'])
+        continue
+      invitationId = result[u'invitationId']
+      body = { u'state': u'COMPLETE' }
+      callGAPI(croom.userProfiles().guardianInvitations(), u'patch', studentId=studentId, invitationId=invitationId, updateMask=u'state', body=body)
+      print u'Cancelling %s invitation for %s as guardian of %s' % (result[u'state'], result[u'invitedEmailAddress'], studentId)
 
 def doCreateCourse():
   croom = buildGAPIObject(u'classroom')
@@ -7836,6 +7930,7 @@ def print_json(object_name, object_value, spacing=u''):
       else:
         print_json(None, a_value, u' %s' % spacing)
   elif isinstance(object_value, dict):
+    print
     if object_name != None:
       sys.stdout.write(u'\n')
     for another_object in object_value:
@@ -10080,7 +10175,7 @@ possible_scopes = [u'https://www.googleapis.com/auth/admin.directory.group',    
                    u'https://www.googleapis.com/auth/siteverification',                 # Site Verification API
                    u'https://mail.google.com/',                                         # IMAP/SMTP authentication for admin notifications
                    u'https://www.googleapis.com/auth/admin.directory.userschema',       # Customer User Schema
-                   u'https://www.googleapis.com/auth/classroom.rosters https://www.googleapis.com/auth/classroom.courses https://www.googleapis.com/auth/classroom.profile.emails https://www.googleapis.com/auth/classroom.profile.photos',           # Classroom API
+                   [u'https://www.googleapis.com/auth/classroom.rosters', u'https://www.googleapis.com/auth/classroom.courses', u'https://www.googleapis.com/auth/classroom.profile.emails', u'https://www.googleapis.com/auth/classroom.profile.photos', u'https://www.googleapis.com/auth/classroom.guardianlinks.students'],           # Classroom API
                    u'https://www.googleapis.com/auth/cloudprint',                       # CloudPrint API
                    u'https://www.googleapis.com/auth/admin.datatransfer',		# Data Transfer API
                    u'https://www.googleapis.com/auth/admin.directory.customer',         # Customer API
@@ -10130,7 +10225,7 @@ access or an 'a' to grant action-only access.
 [%%s]  %s)  Site Verification API
 [%%s]  %s)  IMAP/SMTP Access (send notifications to admin)
 [%%s]  %s)  User Schemas (supports read-only)
-[%%s]  %s)  Classroom API
+[%%s]  %s)  Classroom API (counts as 5 scopes)
 [%%s]  %s)  Cloud Print API
 [%%s]  %s)  Data Transfer API (supports read-only)
 [%%s]  %s)  Customer Directory API (supports read-only)
@@ -10142,6 +10237,9 @@ access or an 'a' to grant action-only access.
       %%s)  Continue
 ''' % tuple(range(0, num_scopes))
   selected_scopes = [u'*'] * num_scopes
+  # default to off for old email audit API (soon to be removed from GAM)
+  selected_scopes[7] = u' '
+  # default to off for notifications API (not super useful)
   selected_scopes[16] = u' '
   select_all_scopes = unicode(str(num_scopes))
   unselect_all_scopes = unicode(str(num_scopes+1))
@@ -10205,11 +10303,18 @@ access or an 'a' to grant action-only access.
     scopes = [u'email',] # Email Display Scope, always included
   for i in range(0, len(selected_scopes)):
     if selected_scopes[i] == u'*':
-      scopes.append(possible_scopes[i])
+      if type(possible_scopes[i]) is unicode:
+        scopes.append(possible_scopes[i])
+      else:
+        scopes += possible_scopes[i]
     elif selected_scopes[i] == u'R':
       scopes.append(u'%s.readonly' % possible_scopes[i])
     elif selected_scopes[i] == u'A':
       scopes.append(u'%s.action' % possible_scopes[i])
+  if len(scopes) > 29:
+    os.system([u'clear', u'cls'][os.name == u'nt'])
+    print u'ERROR: To many scopes selected, please unselect some.'
+    sys.exit(3)
   try:
     FLOW = oauth2client.client.flow_from_clientsecrets(GC_Values[GC_CLIENT_SECRETS_JSON], scope=scopes)
   except oauth2client.client.clientsecrets.InvalidClientSecretsError:
@@ -10394,6 +10499,8 @@ def ProcessGAMCommand(args):
         doCreateDomainAlias()
       elif argument == u'admin':
         doCreateAdmin()
+      elif argument in [u'guardianinvite', u'inviteguardian', u'guardian']:
+        doInviteGuardian()
       else:
         print u'ERROR: %s is not a valid argument for "gam create"' % argument
         sys.exit(2)
@@ -10502,6 +10609,8 @@ def ProcessGAMCommand(args):
         doDelDomainAlias()
       elif argument == u'admin':
         doDelAdmin()
+      elif argument in [u'guardian', u'guardians']:
+        doDeleteGuardian()
       else:
         print u'ERROR: %s is not a valid argument for "gam delete"' % argument
         sys.exit(2)
@@ -10605,6 +10714,8 @@ def ProcessGAMCommand(args):
         doPrintAdmins()
       elif argument in [u'roles', u'adminroles']:
         doPrintAdminRoles()
+      elif argument in [u'guardian', u'guardians']:
+        doPrintGuardians()
       else:
         print u'ERROR: %s is not a valid argument for "gam print"' % argument
         sys.exit(2)
