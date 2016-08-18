@@ -1,0 +1,34 @@
+{
+ "kind": "discovery#restDescription",
+ "discoveryVersion": "v1",
+ "id": "email-audit:v1",
+ "name": "email-audit",
+ "version": "v1",
+ "revision": "20130823",
+ "title": "Email Audit API",
+ "description": "Lets you perform Google Apps email audits",
+ "ownerDomain": "google.com",
+ "ownerName": "Google",
+ "icons": {
+  "x16": "http://www.google.com/images/icons/product/search-16.gif",
+  "x32": "http://www.google.com/images/icons/product/search-32.gif"
+ },
+ "documentationLink": "https://developers.google.com/admin-sdk/email-audit",
+ "protocol": "rest",
+ "baseUrl": "https://apps-apis.google.com/",
+ "rootUrl": "https://apps-apis.google.com/",
+ "servicePath": "/a/feeds/compliance/audit/",
+ "auth": {
+  "oauth2": {
+   "scopes": {
+    "https://apps-apis.google.com/a/feeds/compliance/audit/": {
+     "description": "Manage email audits"
+    }
+   }
+  }
+ },
+ "schemas": {
+ },
+ "resources": {
+ }
+}
