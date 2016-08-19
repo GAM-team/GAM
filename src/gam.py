@@ -6449,24 +6449,28 @@ def appendItemToBodyList(body, itemName, itemValue):
   body[itemName].append(itemValue)
 
 def getUserAttributes(i, updateCmd=False):
-  if not updateCmd:
+  if updateCmd:
+    body = {}
+    need_password = False
+  else:
     body = {u'name': {u'givenName': u'Unknown', u'familyName': u'Unknown'}}
     body[u'primaryEmail'] = sys.argv[i]
     if body[u'primaryEmail'].find(u'@') == -1:
       body[u'primaryEmail'] = u'%s@%s' % (body[u'primaryEmail'], GC_Values[GC_DOMAIN])
     i += 1
     need_password = True
-  else:
-    body = {}
-    need_password = False
   need_to_hash_password = True
   admin_body = {}
   while i < len(sys.argv):
     myarg = sys.argv[i].lower()
     if myarg == u'firstname':
+      if u'name' not in body:
+        body[u'name'] = {}
       body[u'name'][u'givenName'] = sys.argv[i+1]
       i += 2
     elif myarg == u'lastname':
+      if u'name' not in body:
+        body[u'name'] = {}
       body[u'name'][u'familyName'] = sys.argv[i+1]
       i += 2
     elif myarg in [u'username', u'email', u'primaryemail'] and updateCmd:
