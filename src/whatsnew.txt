@@ -2,13 +2,16 @@ GAM 3.7
 - Classroom Guardians API. Invite, list and delete guardians for a student.
 - Includes number of improvements from Ross in 3.66 (see below)
 
-To use this version, you must update the list of authorized scopes for your Gam Service Account.
+To use this version, you must update the list of authorized scopes for your Gam OAuth2 Client and Service Account.
 Go here: https://github.com/jay0lee/GAM/wiki/CreatingClientSecretsFile
-Log on to the admin console as in steps 6.ii.c, d, e. Skip down to step 6.iii.
+Log on to the admin console as in steps 6.ii.c, d, e.
+In the list of Authorized API clients, locate your Gam OAuth2 Client, copy the Client ID and then remove the entry.
+Paste the Client ID into the Client name box as in step 6.ii.f, then do steps 6.ii.g and 6.ii.h.
+You'll notice that the API Scopes - OAuth2 list has additional entries, these are what is required in Gam 3.7.
+Skip down to step 6.iii.
 In the list of Authorized API clients, locate your Gam Service Account, copy the Client ID and then remove the entry.
 Paste the Client ID into the Client name box as in step 6.iii.c, then do steps 6.iii.d and 6.iii.e.
-You'll notice that the API Scopes - Service Account list has additional entries, these are what is required to allow this new version
-to run correctly.
+You'll notice that the API Scopes - Service Account list has additional entries, these are what is required in Gam 3.7.
 
 GAM 3.66
 See GamCommands.txt for a complete syntax description.
