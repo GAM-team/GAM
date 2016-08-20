@@ -2296,7 +2296,7 @@ def doPrintGuardians():
         states = [u'COMPLETE', u'PENDING', u'GUARDIAN_INVITATION_STATE_UNSPECIFIED']
       i += 1
     elif sys.argv[i].lower() == u'states':
-      states = sys.argv[i+1].lower().split(u',')
+      states = sys.argv[i+1].upper().split(u',')
       i += 2
     elif sys.argv[i].lower() in usergroup_types:
       studentIds = getUsersToModify(entity_type=sys.argv[i], entity=sys.argv[i+1])

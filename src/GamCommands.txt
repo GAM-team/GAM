@@ -235,8 +235,7 @@ If an item contains spaces, it should be surrounded by " or '.
 
 <GuardianState> ::=
 	complete|
-	pending|
-	unspecified
+	pending
 
 <MembersFieldName> ::=
 	email|
