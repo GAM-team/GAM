@@ -2296,12 +2296,7 @@ def doPrintGuardians():
         states = [u'COMPLETE', u'PENDING', u'GUARDIAN_INVITATION_STATE_UNSPECIFIED']
       i += 1
     elif sys.argv[i].lower() == u'states':
-      states = sys.argv[i+1].lower().replace(u'_', u'').split(u',')
-      for j, state in enumerate(states):
-        if state not in GUARDIAN_STATE_MAP:
-          print u'ERROR: state must be one of %s; got %s' % (u', '.join(GUARDIAN_STATE_MAP), state)
-          sys.exit(2)
-        states[j] = GUARDIAN_STATE_MAP[state]
+      states = sys.argv[i+1].lower().split(u',')
       i += 2
     elif sys.argv[i].lower() in usergroup_types:
       studentIds = getUsersToModify(entity_type=sys.argv[i], entity=sys.argv[i+1])
