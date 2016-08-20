@@ -26,8 +26,7 @@ from pyasn1_modules.rfc5208 import PrivateKeyInfo
 import rsa
 import six
 
-from oauth2client._helpers import _from_bytes
-from oauth2client._helpers import _to_bytes
+from oauth2client import _helpers
 
 
 _PKCS12_ERROR = r"""\
@@ -86,7 +85,7 @@ class RsaVerifier(object):
             True if message was signed by the private key associated with the
             public key that this object was constructed with.
         """
-        message = _to_bytes(message, encoding='utf-8')
+        message = _helpers._to_bytes(message, encoding='utf-8')
         try:
             return rsa.pkcs1.verify(message, signature, self._pubkey)
         except (ValueError, rsa.pkcs1.VerificationError):
@@ -111,7 +110,7 @@ class RsaVerifier(object):
                         "-----BEGIN CERTIFICATE-----" error, otherwise fails
                         to find "-----BEGIN RSA PUBLIC KEY-----".
         """
-        key_pem = _to_bytes(key_pem)
+        key_pem = _helpers._to_bytes(key_pem)
         if is_x509_cert:
             der = rsa.pem.load_pem(key_pem, 'CERTIFICATE')
             asn1_cert, remaining = decoder.decode(der, asn1Spec=Certificate())
@@ -145,7 +144,7 @@ class RsaSigner(object):
         Returns:
             string, The signature of the message for the given key.
         """
-        message = _to_bytes(message, encoding='utf-8')
+        message = _helpers._to_bytes(message, encoding='utf-8')
         return rsa.pkcs1.sign(message, self._key, 'SHA-256')
 
     @classmethod
@@ -164,7 +163,7 @@ class RsaSigner(object):
             ValueError if the key cannot be parsed as PKCS#1 or PKCS#8 in
             PEM format.
         """
-        key = _from_bytes(key)  # pem expects str in Py3
+        key = _helpers._from_bytes(key)  # pem expects str in Py3
         marker_id, key_bytes = pem.readPemBlocksFromFile(
             six.StringIO(key), _PKCS1_MARKER, _PKCS8_MARKER)
 

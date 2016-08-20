@@ -19,7 +19,7 @@ import binascii
 import hmac
 import time
 
-from oauth2client._helpers import _to_bytes
+from oauth2client import _helpers
 from oauth2client import util
 
 __authors__ = [
@@ -49,12 +49,12 @@ def generate_token(key, user_id, action_id='', when=None):
     Returns:
         A string XSRF protection token.
     """
-    digester = hmac.new(_to_bytes(key, encoding='utf-8'))
-    digester.update(_to_bytes(str(user_id), encoding='utf-8'))
+    digester = hmac.new(_helpers._to_bytes(key, encoding='utf-8'))
+    digester.update(_helpers._to_bytes(str(user_id), encoding='utf-8'))
     digester.update(DELIMITER)
-    digester.update(_to_bytes(action_id, encoding='utf-8'))
+    digester.update(_helpers._to_bytes(action_id, encoding='utf-8'))
     digester.update(DELIMITER)
-    when = _to_bytes(str(when or int(time.time())), encoding='utf-8')
+    when = _helpers._to_bytes(str(when or int(time.time())), encoding='utf-8')
     digester.update(when)
     digest = digester.digest()
 

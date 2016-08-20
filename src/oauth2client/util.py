@@ -124,16 +124,16 @@ def positional(max_positional_args):
                 plural_s = ''
                 if max_positional_args != 1:
                     plural_s = 's'
-                message = ('%s() takes at most %d positional '
-                           'argument%s (%d given)' % (
-                               wrapped.__name__, max_positional_args,
-                               plural_s, len(args)))
+                message = ('{function}() takes at most {args_max} positional '
+                           'argument{plural} ({args_given} given)'.format(
+                               function=wrapped.__name__,
+                               args_max=max_positional_args,
+                               args_given=len(args),
+                               plural=plural_s))
                 if positional_parameters_enforcement == POSITIONAL_EXCEPTION:
                     raise TypeError(message)
                 elif positional_parameters_enforcement == POSITIONAL_WARNING:
                     logger.warning(message)
-                else:  # IGNORE
-                    pass
             return wrapped(*args, **kwargs)
         return positional_wrapper
 

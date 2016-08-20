@@ -12,16 +12,70 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from oauth2client.contrib.dictionary_storage import DictionaryStorage
+"""Contains a storage module that stores credentials using the Django ORM."""
 
-_CREDENTIALS_KEY = 'google_oauth2_credentials'
+from oauth2client import client
 
 
-def get_storage(request):
-    # TODO(issue 319): Make this pluggable with different storage providers
-    # https://github.com/google/oauth2client/issues/319
-    """ Gets a Credentials storage object for the Django OAuth2 Helper object
-    :param request: Reference to the current request object
-    :return: A OAuth2Client Storage implementation based on sessions
+class DjangoORMStorage(client.Storage):
+    """Store and retrieve a single credential to and from the Django datastore.
+
+    This Storage helper presumes the Credentials
+    have been stored as a CredentialsField
+    on a db model class.
     """
-    return DictionaryStorage(request.session, key=_CREDENTIALS_KEY)
+
+    def __init__(self, model_class, key_name, key_value, property_name):
+        """Constructor for Storage.
+
+        Args:
+            model: string, fully qualified name of db.Model model class.
+            key_name: string, key name for the entity that has the credentials
+            key_value: string, key value for the entity that has the
+               credentials.
+            property_name: string, name of the property that is an
+                           CredentialsProperty.
+        """
+        super(DjangoORMStorage, self).__init__()
+        self.model_class = model_class
+        self.key_name = key_name
+        self.key_value = key_value
+        self.property_name = property_name
+
+    def locked_get(self):
+        """Retrieve stored credential from the Django ORM.
+
+        Returns:
+            oauth2client.Credentials retrieved from the Django ORM, associated
+             with the ``model``, ``key_value``->``key_name`` pair used to query
+             for the model, and ``property_name`` identifying the
+             ``CredentialsProperty`` field, all of which are defined in the
+             constructor for this Storage object.
+
+        """
+        query = {self.key_name: self.key_value}
+        entities = self.model_class.objects.filter(**query)
+        if len(entities) > 0:
+            credential = getattr(entities[0], self.property_name)
+            if getattr(credential, 'set_store', None) is not None:
+                credential.set_store(self)
+            return credential
+        else:
+            return None
+
+    def locked_put(self, credentials):
+        """Write a Credentials to the Django datastore.
+
+        Args:
+            credentials: Credentials, the credentials to store.
+        """
+        entity, _ = self.model_class.objects.get_or_create(
+            **{self.key_name: self.key_value})
+
+        setattr(entity, self.property_name, credentials)
+        entity.save()
+
+    def locked_delete(self):
+        """Delete Credentials from the datastore."""
+        query = {self.key_name: self.key_value}
+        self.model_class.objects.filter(**query).delete()

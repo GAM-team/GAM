@@ -40,6 +40,31 @@ import oauth2client.service_account
 import oauth2client.file
 import oauth2client.tools
 
+# Override some oauth2client.tools strings saving us a few GAM-specific mods to oauth2client
+oauth2client.tools._FAILED_START_MESSAGE = """
+Failed to start a local webserver listening on either port 8080
+or port 8090. Please check your firewall settings and locally
+running programs that may be blocking or using those ports.
+
+Falling back to nobrowser.txt  and continuing with
+authorization.
+"""
+
+oauth2client.tools._BROWSER_OPENED_MESSAGE = """
+Your browser has been opened to visit:
+
+    {address}
+
+If your browser is on a different machine then press CTRL+C and
+create a file called nobrowser.txt in the same folder as GAM.
+"""
+
+oauth2client.tools._GO_TO_LINK_MESSAGE = """
+Go to the following link in your browser:
+
+    {address}
+"""
+
 GAM_URL = u'http://git.io/gam'
 GAM_INFO = u'GAM {0} - {1} / {2} / Python {3}.{4}.{5} {6} / {7} {8} /'.format(__version__, GAM_URL,
                                                                               __author__,
@@ -10221,7 +10246,7 @@ found at:
 
    %s
 
-with information from the APIs Console <https://cloud.google.com/console>.
+with information from the APIs Console <https://console.cloud.google.com>.
 
 See:
 

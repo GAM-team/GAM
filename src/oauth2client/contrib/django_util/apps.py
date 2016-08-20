@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Application Config For Django OAuth2 Helper
+"""Application Config For Django OAuth2 Helper.
 
 Django 1.7+ provides an
 [applications](https://docs.djangoproject.com/en/1.8/ref/applications/)

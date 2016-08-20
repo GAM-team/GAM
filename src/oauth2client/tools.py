@@ -27,8 +27,8 @@ import sys
 
 from six.moves import BaseHTTPServer
 from six.moves import http_client
-from six.moves import urllib
 from six.moves import input
+from six.moves import urllib
 
 from oauth2client import client
 from oauth2client import util
@@ -42,17 +42,43 @@ _CLIENT_SECRETS_MESSAGE = """WARNING: Please configure OAuth 2.0
 To make this sample run you will need to populate the client_secrets.json file
 found at:
 
-   %s
+   {file_path}
 
 with information from the APIs Console <https://code.google.com/apis/console>.
 
+"""
+
+_FAILED_START_MESSAGE = """
+Failed to start a local webserver listening on either port 8080
+or port 8090. Please check your firewall settings and locally
+running programs that may be blocking or using those ports.
+
+Falling back to --noauth_local_webserver and continuing with
+authorization.
+"""
+
+_BROWSER_OPENED_MESSAGE = """
+Your browser has been opened to visit:
+
+    {address}
+
+If your browser is on a different machine then exit and re-run this
+application with the command-line parameter
+
+  --noauth_local_webserver
+"""
+
+_GO_TO_LINK_MESSAGE = """
+Go to the following link in your browser:
+
+    {address}
 """
 
 
 def _CreateArgumentParser():
     try:
         import argparse
-    except ImportError:
+    except ImportError:  # pragma: NO COVER
         return None
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument('--auth_host_name', default='localhost',
@@ -182,17 +208,11 @@ def run_flow(flow, storage, flags=None, http=None):
                 break
         flags.noauth_local_webserver = not success
         if not success:
-            print('Failed to start a local webserver listening '
-                  'on either port 8080')
-            print('or port 8090. Please check your firewall settings and locally')
-            print('running programs that may be blocking or using those ports.')
-            print()
-            print('Falling back to --noauth_local_webserver and continuing with')
-            print('authorization.')
-            print()
+            print(_FAILED_START_MESSAGE)
 
     if not flags.noauth_local_webserver:
-        oauth_callback = 'http://%s:%s/' % (flags.auth_host_name, port_number)
+        oauth_callback = 'http://{host}:{port}/'.format(
+            host=flags.auth_host_name, port=port_number)
     else:
         oauth_callback = client.OOB_CALLBACK_URN
     flow.redirect_uri = oauth_callback
@@ -211,18 +231,9 @@ def run_flow(flow, storage, flags=None, http=None):
     if not flags.noauth_local_webserver:
         import webbrowser
         webbrowser.open(authorize_url, new=1, autoraise=True)
-        print('Your browser has been opened to visit:')
-        print()
-        print('    ' + authorize_url)
-        print()
-        print('If your browser is on a different machine then exit and re-run this')
-        print('after creating a file called nobrowser.txt in the same path as GAM.')
-        print()
+        print(_BROWSER_OPENED_MESSAGE.format(address=authorize_url))
     else:
-        print('Go to the following link in your browser:')
-        print()
-        print('    ' + authorize_url)
-        print()
+        print(_GO_TO_LINK_MESSAGE.format(address=authorize_url))
 
     code = None
     if not flags.noauth_local_webserver:
@@ -241,7 +252,7 @@ def run_flow(flow, storage, flags=None, http=None):
     try:
         credential = flow.step2_exchange(code, http=http)
     except client.FlowExchangeError as e:
-        sys.exit('Authentication has failed: %s' % e)
+        sys.exit('Authentication has failed: {0}'.format(e))
 
     storage.put(credential)
     credential.set_store(storage)
@@ -252,4 +263,4 @@ def run_flow(flow, storage, flags=None, http=None):
 
 def message_if_missing(filename):
     """Helpful message to display if the CLIENT_SECRETS file is missing."""
-    return _CLIENT_SECRETS_MESSAGE % filename
+    return _CLIENT_SECRETS_MESSAGE.format(file_path=filename)

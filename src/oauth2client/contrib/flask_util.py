@@ -35,7 +35,7 @@ apiui/credential>`__.
 
     app.config['SECRET_KEY'] = 'your-secret-key'
 
-    app.config['GOOGLE_OAUTH2_CLIENT_SECRETS_JSON'] = 'client_secrets.json'
+    app.config['GOOGLE_OAUTH2_CLIENT_SECRETS_FILE'] = 'client_secrets.json'
 
     # or, specify the client id and secret separately
     app.config['GOOGLE_OAUTH2_CLIENT_ID'] = 'your-client-id'
@@ -162,14 +162,11 @@ available outside of a request context, you will need to implement your own
 :class:`oauth2client.Storage`.
 """
 
+from functools import wraps
 import hashlib
 import json
 import os
 import pickle
-from functools import wraps
-
-import six.moves.http_client as httplib
-import httplib2
 
 try:
     from flask import Blueprint
@@ -182,10 +179,12 @@ try:
 except ImportError:  # pragma: NO COVER
     raise ImportError('The flask utilities require flask 0.9 or newer.')
 
-from oauth2client.client import FlowExchangeError
-from oauth2client.client import OAuth2WebServerFlow
-from oauth2client.contrib.dictionary_storage import DictionaryStorage
+import httplib2
+import six.moves.http_client as httplib
+
+from oauth2client import client
 from oauth2client import clientsecrets
+from oauth2client.contrib import dictionary_storage
 
 
 __author__ = 'jonwayne@google.com (Jon Wayne Parrott)'
@@ -199,7 +198,7 @@ _CSRF_KEY = 'google_oauth2_csrf_token'
 def _get_flow_for_token(csrf_token):
     """Retrieves the flow instance associated with a given CSRF token from
     the Flask session."""
-    flow_pickle = session.get(
+    flow_pickle = session.pop(
         _FLOW_KEY.format(csrf_token), None)
 
     if flow_pickle is None:
@@ -213,14 +212,14 @@ class UserOAuth2(object):
 
     Configuration values:
 
-        * ``GOOGLE_OAUTH2_CLIENT_SECRETS_JSON`` path to a client secrets json
+        * ``GOOGLE_OAUTH2_CLIENT_SECRETS_FILE`` path to a client secrets json
           file, obtained from the credentials screen in the Google Developers
           console.
         * ``GOOGLE_OAUTH2_CLIENT_ID`` the oauth2 credentials' client ID. This
-          is only needed if ``GOOGLE_OAUTH2_CLIENT_SECRETS_JSON`` is not
+          is only needed if ``GOOGLE_OAUTH2_CLIENT_SECRETS_FILE`` is not
           specified.
         * ``GOOGLE_OAUTH2_CLIENT_SECRET`` the oauth2 credentials' client
-          secret. This is only needed if ``GOOGLE_OAUTH2_CLIENT_SECRETS_JSON``
+          secret. This is only needed if ``GOOGLE_OAUTH2_CLIENT_SECRETS_FILE``
           is not specified.
 
     If app is specified, all arguments will be passed along to init_app.
@@ -243,7 +242,7 @@ class UserOAuth2(object):
             app: A Flask application.
             scopes: Optional list of scopes to authorize.
             client_secrets_file: Path to a file containing client secrets. You
-                can also specify the GOOGLE_OAUTH2_CLIENT_SECRETS_JSON config
+                can also specify the GOOGLE_OAUTH2_CLIENT_SECRETS_FILE config
                 value.
             client_id: If not specifying a client secrets file, specify the
                 OAuth2 client id. You can also specify the
@@ -263,7 +262,8 @@ class UserOAuth2(object):
         self.flow_kwargs = kwargs
 
         if storage is None:
-            storage = DictionaryStorage(session, key=_CREDENTIALS_KEY)
+            storage = dictionary_storage.DictionaryStorage(
+                session, key=_CREDENTIALS_KEY)
         self.storage = storage
 
         if scopes is None:
@@ -307,8 +307,8 @@ class UserOAuth2(object):
         except KeyError:
             raise ValueError(
                 'OAuth2 configuration could not be found. Either specify the '
-                'client_secrets_file or client_id and client_secret or set the'
-                'app configuration variables '
+                'client_secrets_file or client_id and client_secret or set '
+                'the app configuration variables '
                 'GOOGLE_OAUTH2_CLIENT_SECRETS_FILE or '
                 'GOOGLE_OAUTH2_CLIENT_ID and GOOGLE_OAUTH2_CLIENT_SECRET.')
 
@@ -341,7 +341,7 @@ class UserOAuth2(object):
         extra_scopes = kw.pop('scopes', [])
         scopes = set(self.scopes).union(set(extra_scopes))
 
-        flow = OAuth2WebServerFlow(
+        flow = client.OAuth2WebServerFlow(
             client_id=self.client_id,
             client_secret=self.client_secret,
             scope=scopes,
@@ -418,7 +418,7 @@ class UserOAuth2(object):
         # Exchange the auth code for credentials.
         try:
             credentials = flow.step2_exchange(code)
-        except FlowExchangeError as exchange_error:
+        except client.FlowExchangeError as exchange_error:
             current_app.logger.exception(exchange_error)
             content = 'An error occurred: {0}'.format(exchange_error)
             return content, httplib.BAD_REQUEST
@@ -443,7 +443,14 @@ class UserOAuth2(object):
 
     def has_credentials(self):
         """Returns True if there are valid credentials for the current user."""
-        return self.credentials and not self.credentials.invalid
+        if not self.credentials:
+            return False
+        # Is the access token expired? If so, do we have an refresh token?
+        elif (self.credentials.access_token_expired and
+                not self.credentials.refresh_token):
+            return False
+        else:
+            return True
 
     @property
     def email(self):

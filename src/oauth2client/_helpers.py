@@ -15,6 +15,7 @@
 
 import base64
 import json
+
 import six
 
 
@@ -67,7 +68,7 @@ def _to_bytes(value, encoding='ascii'):
     if isinstance(result, six.binary_type):
         return result
     else:
-        raise ValueError('%r could not be converted to bytes' % (value,))
+        raise ValueError('{0!r} could not be converted to bytes'.format(value))
 
 
 def _from_bytes(value):
@@ -88,7 +89,8 @@ def _from_bytes(value):
     if isinstance(result, six.text_type):
         return result
     else:
-        raise ValueError('%r could not be converted to unicode' % (value,))
+        raise ValueError(
+            '{0!r} could not be converted to unicode'.format(value))
 
 
 def _urlsafe_b64encode(raw_bytes):

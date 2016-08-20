@@ -13,14 +13,12 @@
 # limitations under the License.
 """pyCrypto Crypto-related routines for oauth2client."""
 
-from Crypto.PublicKey import RSA
 from Crypto.Hash import SHA256
+from Crypto.PublicKey import RSA
 from Crypto.Signature import PKCS1_v1_5
 from Crypto.Util.asn1 import DerSequence
 
-from oauth2client._helpers import _parse_pem_key
-from oauth2client._helpers import _to_bytes
-from oauth2client._helpers import _urlsafe_b64decode
+from oauth2client import _helpers
 
 
 class PyCryptoVerifier(object):
@@ -47,7 +45,7 @@ class PyCryptoVerifier(object):
             True if message was signed by the private key associated with the
             public key that this object was constructed with.
         """
-        message = _to_bytes(message, encoding='utf-8')
+        message = _helpers._to_bytes(message, encoding='utf-8')
         return PKCS1_v1_5.new(self._pubkey).verify(
             SHA256.new(message), signature)
 
@@ -64,9 +62,9 @@ class PyCryptoVerifier(object):
             Verifier instance.
         """
         if is_x509_cert:
-            key_pem = _to_bytes(key_pem)
+            key_pem = _helpers._to_bytes(key_pem)
             pemLines = key_pem.replace(b' ', b'').split()
-            certDer = _urlsafe_b64decode(b''.join(pemLines[1:-1]))
+            certDer = _helpers._urlsafe_b64decode(b''.join(pemLines[1:-1]))
             certSeq = DerSequence()
             certSeq.decode(certDer)
             tbsSeq = DerSequence()
@@ -97,7 +95,7 @@ class PyCryptoSigner(object):
         Returns:
             string, The signature of the message for the given key.
         """
-        message = _to_bytes(message, encoding='utf-8')
+        message = _helpers._to_bytes(message, encoding='utf-8')
         return PKCS1_v1_5.new(self._key).sign(SHA256.new(message))
 
     @staticmethod
@@ -115,7 +113,7 @@ class PyCryptoSigner(object):
         Raises:
             NotImplementedError if the key isn't in PEM format.
         """
-        parsed_pem_key = _parse_pem_key(_to_bytes(key))
+        parsed_pem_key = _helpers._parse_pem_key(_helpers._to_bytes(key))
         if parsed_pem_key:
             pkey = RSA.importKey(parsed_pem_key)
         else:

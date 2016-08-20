@@ -76,9 +76,9 @@ class FlowNDBProperty(ndb.PickleProperty):
         """
         _LOGGER.info('validate: Got type %s', type(value))
         if value is not None and not isinstance(value, client.Flow):
-            raise TypeError('Property %s must be convertible to a flow '
-                            'instance; received: %s.' % (self._name,
-                                                         value))
+            raise TypeError(
+                'Property {0} must be convertible to a flow '
+                'instance; received: {1}.'.format(self._name, value))
 
 
 class CredentialsNDBProperty(ndb.BlobProperty):
@@ -104,9 +104,9 @@ class CredentialsNDBProperty(ndb.BlobProperty):
         """
         _LOGGER.info('validate: Got type %s', type(value))
         if value is not None and not isinstance(value, client.Credentials):
-            raise TypeError('Property %s must be convertible to a '
-                            'credentials instance; received: %s.' %
-                            (self._name, value))
+            raise TypeError(
+                'Property {0} must be convertible to a credentials '
+                'instance; received: {1}.'.format(self._name, value))
 
     def _to_base_type(self, value):
         """Converts our validated value to a JSON serialized string.

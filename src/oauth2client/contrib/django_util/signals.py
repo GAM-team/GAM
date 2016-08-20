@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-""" Signals for Google OAuth2 Helper
+"""Signals for Google OAuth2 Helper.
 
 This module contains signals for Google OAuth2 Helper. Currently it only
 contains one, which fires when an OAuth2 authorization flow has completed.
