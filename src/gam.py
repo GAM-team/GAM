@@ -2257,12 +2257,6 @@ def doGetDataTransferInfo():
       print u' None'
     print
 
-GUARDIAN_STATE_MAP = {
-  u'pending': u'PENDING',
-  u'complete': u'COMPLETE',
-  u'unspecified': u'GUARDIAN_INVITATION_STATE_UNSPECIFIED',
-  }
-
 def doPrintGuardians():
   croom = buildGAPIObject(u'classroom')
   invitedEmailAddress = None
