@@ -6401,13 +6401,27 @@ def doDelSchema():
   callGAPI(cd.schemas(), u'delete', customerId=GC_Values[GC_CUSTOMER_ID], schemaKey=schemaKey)
   print u'Deleted schema %s' % schemaKey
 
-def doCreateOrUpdateUserSchema(function):
+def doCreateOrUpdateUserSchema(updateCmd):
   cd = buildGAPIObject(u'directory')
-  schemaName = sys.argv[3]
-  body = {u'schemaName': schemaName, u'fields': []}
+  schemaKey = sys.argv[3]
+  if updateCmd:
+    try:
+      body = callGAPI(cd.schemas(), u'get', throw_reasons=[u'notFound'], customerId=GC_Values[GC_CUSTOMER_ID], schemaKey=schemaKey)
+    except googleapiclient.errors.HttpError:
+      print u'ERROR: Schema %s does not exist.' % schemaKey
+      sys.exit(3)
+    cmd = u'update'  
+  else:
+    body = {u'schemaName': schemaKey, u'fields': []}
+    cmd = u'create'
   i = 4
   while i < len(sys.argv):
     if sys.argv[i] in [u'field']:
+      if updateCmd: # clear field if it exists on update
+        for n, field in enumerate(body[u'fields']):
+          if field[u'fieldName'].lower() == sys.argv[i+1].lower():
+            del body[u'fields'][n]
+            break
       a_field = {u'fieldName': sys.argv[i+1]}
       i += 2
       while True:
@@ -6434,17 +6448,26 @@ def doCreateOrUpdateUserSchema(function):
           i += 1
           break
         else:
-          print u'ERROR: %s is not a valid argument for "gam create schema"' % sys.argv[i]
+          print u'ERROR: %s is not a valid argument for "gam %s schema"' % (sys.argv[i], cmd)
           sys.exit(2)
+    elif updateCmd and sys.argv[i] in [u'deletefield']:
+      for n, field in enumerate(body[u'fields']):
+        if field[u'fieldName'].lower() == sys.argv[i+1].lower():
+          del body[u'fields'][n]
+          break
+      else:
+        print u'ERROR: field %s not found in schema %s' % (sys.argv[i+1], schemaKey)
+        sys.exit(3)
+      i += 2
     else:
-      print u'ERROR: %s is not a valid argument for "gam create schema"' % sys.argv[i]
+      print u'ERROR: %s is not a valid argument for "gam %s schema"' % (sys.argv[i], cmd)
       sys.exit(2)
-  if function == u'insert':
-    result = callGAPI(cd.schemas(), function, customerId=GC_Values[GC_CUSTOMER_ID], body=body)
-    print u'Created user schema %s' % result[u'schemaName']
-  else:
-    result = callGAPI(cd.schemas(), function, customerId=GC_Values[GC_CUSTOMER_ID], body=body, schemaKey=schemaName)
+  if updateCmd:
+    result = callGAPI(cd.schemas(), u'update', customerId=GC_Values[GC_CUSTOMER_ID], body=body, schemaKey=schemaKey)
     print u'Updated user schema %s' % result[u'schemaName']
+  else:
+    result = callGAPI(cd.schemas(), u'insert', customerId=GC_Values[GC_CUSTOMER_ID], body=body)
+    print u'Created user schema %s' % result[u'schemaName']
 
 def _showSchema(schema):
   print u'Schema: %s' % schema[u'schemaName']
@@ -6506,24 +6529,26 @@ def appendItemToBodyList(body, itemName, itemValue):
   body[itemName].append(itemValue)
 
 def getUserAttributes(i, updateCmd=False):
-  if not updateCmd:
+  if updateCmd:
+    body = {}
+    need_password = False
+  else:
     body = {u'name': {u'givenName': u'Unknown', u'familyName': u'Unknown'}}
     body[u'primaryEmail'] = sys.argv[i]
     if body[u'primaryEmail'].find(u'@') == -1:
       body[u'primaryEmail'] = u'%s@%s' % (body[u'primaryEmail'], GC_Values[GC_DOMAIN])
     i += 1
     need_password = True
-  else:
-    body = {}
-    need_password = False
   need_to_hash_password = True
   admin_body = {}
   while i < len(sys.argv):
     myarg = sys.argv[i].lower()
     if myarg == u'firstname':
+      body.setdefault(u'name', {})
       body[u'name'][u'givenName'] = sys.argv[i+1]
       i += 2
     elif myarg == u'lastname':
+      body.setdefault(u'name', {})
       body[u'name'][u'familyName'] = sys.argv[i+1]
       i += 2
     elif myarg in [u'username', u'email', u'primaryemail'] and updateCmd:
@@ -10212,166 +10237,171 @@ class cmd_flags(object):
     self.auth_host_name = u'localhost'
     self.auth_host_port = [8080, 9090]
 
-possible_scopes = [u'https://www.googleapis.com/auth/admin.directory.group',            # Groups Directory Scope
-                   u'https://www.googleapis.com/auth/admin.directory.orgunit',          # Organization Directory Scope
-                   u'https://www.googleapis.com/auth/admin.directory.user',             # Users Directory Scope
-                   u'https://www.googleapis.com/auth/admin.directory.device.chromeos',  # Chrome OS Devices Directory Scope
-                   u'https://www.googleapis.com/auth/admin.directory.device.mobile',    # Mobile Device Directory Scope
-                   u'https://apps-apis.google.com/a/feeds/emailsettings/2.0/',          # Email Settings API
-                   u'https://www.googleapis.com/auth/admin.directory.resource.calendar',# Resource Calendar API
-                   u'https://apps-apis.google.com/a/feeds/compliance/audit/',           # Email Audit API
-                   u'https://apps-apis.google.com/a/feeds/domain/',                     # Admin Settings API
-                   u'https://www.googleapis.com/auth/apps.groups.settings',             # Group Settings API
-                   u'https://www.googleapis.com/auth/calendar',                         # Calendar Data API
-                   u'https://www.googleapis.com/auth/admin.reports.audit.readonly',     # Audit Reports
-                   u'https://www.googleapis.com/auth/admin.reports.usage.readonly',     # Usage Reports
-                   u'https://www.googleapis.com/auth/drive.file',                       # Drive API - Admin user access to files created or opened by the app
-                   u'https://www.googleapis.com/auth/apps.licensing',                   # License Manager API
-                   u'https://www.googleapis.com/auth/admin.directory.user.security',    # User Security Directory API
-                   u'https://www.googleapis.com/auth/admin.directory.notifications',    # Notifications Directory API
-                   u'https://www.googleapis.com/auth/siteverification',                 # Site Verification API
-                   u'https://mail.google.com/',                                         # IMAP/SMTP authentication for admin notifications
-                   u'https://www.googleapis.com/auth/admin.directory.userschema',       # Customer User Schema
-                   [u'https://www.googleapis.com/auth/classroom.rosters', u'https://www.googleapis.com/auth/classroom.courses', u'https://www.googleapis.com/auth/classroom.profile.emails', u'https://www.googleapis.com/auth/classroom.profile.photos', u'https://www.googleapis.com/auth/classroom.guardianlinks.students'],           # Classroom API
-                   u'https://www.googleapis.com/auth/cloudprint',                       # CloudPrint API
-                   u'https://www.googleapis.com/auth/admin.datatransfer',		# Data Transfer API
-                   u'https://www.googleapis.com/auth/admin.directory.customer',         # Customer API
-                   u'https://www.googleapis.com/auth/admin.directory.domain',           # Domain API
-                   u'https://www.googleapis.com/auth/admin.directory.rolemanagement',   # Roles API
-                  ]
+OAUTH2_SCOPES = [
+  u'https://www.googleapis.com/auth/admin.directory.group',            #  0:Groups Directory Scope (RO)
+  u'https://www.googleapis.com/auth/admin.directory.orgunit',          #  1:Organization Directory Scope (RO)
+  u'https://www.googleapis.com/auth/admin.directory.user',             #  2:Users Directory Scope (RO)
+  u'https://www.googleapis.com/auth/admin.directory.device.chromeos',  #  3:Chrome OS Devices Directory Scope (RO)
+  u'https://www.googleapis.com/auth/admin.directory.device.mobile',    #  4:Mobile Device Directory Scope (RO,AO)
+  u'https://apps-apis.google.com/a/feeds/emailsettings/2.0/',          #  5:Email Settings API
+  u'https://www.googleapis.com/auth/admin.directory.resource.calendar',#  6:Resource Calendar API (RO)
+  u'https://apps-apis.google.com/a/feeds/compliance/audit/',           #  7:Email Audit API
+  u'https://apps-apis.google.com/a/feeds/domain/',                     #  8:Admin Settings API
+  u'https://www.googleapis.com/auth/apps.groups.settings',             #  9:Group Settings API
+  u'https://www.googleapis.com/auth/calendar',                         # 10:Calendar Data API (RO)
+  u'https://www.googleapis.com/auth/admin.reports.audit.readonly',     # 11:Audit Reports
+  u'https://www.googleapis.com/auth/admin.reports.usage.readonly',     # 12:Usage Reports
+  u'https://www.googleapis.com/auth/drive.file',                       # 13:Drive API - Admin user access to files created or opened by the app (RO)
+  u'https://www.googleapis.com/auth/apps.licensing',                   # 14:License Manager API
+  u'https://www.googleapis.com/auth/admin.directory.user.security',    # 15:User Security Directory API
+  u'https://www.googleapis.com/auth/admin.directory.notifications',    # 16:Notifications Directory API
+  u'https://www.googleapis.com/auth/siteverification',                 # 17:Site Verification API
+  u'https://mail.google.com/',                                         # 18:IMAP/SMTP authentication for admin notifications
+  u'https://www.googleapis.com/auth/admin.directory.userschema',       # 19:Customer User Schema (RO)
+  [u'https://www.googleapis.com/auth/classroom.rosters',	       # 20:Classroom API
+   u'https://www.googleapis.com/auth/classroom.courses',
+   u'https://www.googleapis.com/auth/classroom.profile.emails',
+   u'https://www.googleapis.com/auth/classroom.profile.photos',
+   u'https://www.googleapis.com/auth/classroom.guardianlinks.students'],
+  u'https://www.googleapis.com/auth/cloudprint',                       # 21:CloudPrint API
+  u'https://www.googleapis.com/auth/admin.datatransfer',	       # 22:Data Transfer API (RO)
+  u'https://www.googleapis.com/auth/admin.directory.customer',         # 23:Customer API (RO)
+  u'https://www.googleapis.com/auth/admin.directory.domain',           # 24:Domain API (RO)
+  u'https://www.googleapis.com/auth/admin.directory.rolemanagement',   # 25:Roles API (RO)
+  ]
 
-def doRequestOAuth(incremental_auth=False):
-  MISSING_CLIENT_SECRETS_MESSAGE = u"""
-WARNING: Please configure OAuth 2.0
+OAUTH2_RO_SCOPES = [0, 1, 2, 3, 4, 6, 10, 19, 22, 23, 24, 25]
+OAUTH2_AO_SCOPES = [4]
 
-To make GAM run you will need to populate the client_secrets.json file
-found at:
+OAUTH2_MENU = u'''
+Select the authorized scopes by entering a number.
+Append an 'r' to grant read-only access or an 'a' to grant action-only access.
 
-   %s
+[%s]   0)  Group Directory API (supports read-only)
+[%s]   1)  Organizational Unit Directory API (supports read-only)
+[%s]   2)  User Directory API (supports read-only)
+[%s]   3)  Chrome OS Device Directory API (supports read-only)
+[%s]   4)  Mobile Device Directory API (supports read-only and action)
+[%s]   5)  User Email Settings API
+[%s]   6)  Resource Calendar API (supports read-only)
+[%s]   7)  Audit Monitors, Activity and Mailbox Exports API
+[%s]   8)  Admin Settings API
+[%s]   9)  Groups Settings API
+[%s]  10)  Calendar Data API (supports read-only)
+[%s]  11)  Audit Reports API
+[%s]  12)  Usage Reports API
+[%s]  13)  Drive API (create report documents for admin user only)
+[%s]  14)  License Manager API
+[%s]  15)  User Security Directory API
+[%s]  16)  Notifications Directory API
+[%s]  17)  Site Verification API
+[%s]  18)  IMAP/SMTP Access (send notifications to admin)
+[%s]  19)  User Schemas (supports read-only)
+[%s]  20)  Classroom API (counts as 5 scopes)
+[%s]  21)  Cloud Print API
+[%s]  22)  Data Transfer API (supports read-only)
+[%s]  23)  Customer Directory API (supports read-only)
+[%s]  24)  Domains Directory API (supports read-only)
+[%s]  25)  Roles API (supports read-only)
 
-with information from the APIs Console <https://cloud.google.com/console>.
+      s)  Select all scopes
+      u)  Unselect all scopes
+      e)  Exit
+      c)  Continue
+'''
+OAUTH2_CMDS = [u's', u'u', u'e', u'c']
+MAXIMUM_SCOPES = 28
 
-See:
+def doRequestOAuth():
+  def _checkMakeScopesList(scopes):
+    del scopes[:]
+    for i in range(num_scopes):
+      if selected_scopes[i] == u'*':
+        if not isinstance(OAUTH2_SCOPES[i], list):
+          scopes.append(OAUTH2_SCOPES[i])
+        else:
+          scopes += OAUTH2_SCOPES[i]
+      elif selected_scopes[i] == u'R':
+        scopes.append(u'%s.readonly' % OAUTH2_SCOPES[i])
+      elif selected_scopes[i] == u'A':
+        scopes.append(u'%s.action' % OAUTH2_SCOPES[i])
+    if len(scopes) > MAXIMUM_SCOPES:
+      return (False, u'ERROR: {0} scopes selected, maximum is {1}, please unselect some.\n'.format(len(scopes), MAXIMUM_SCOPES))
+    if len(scopes) == 0:
+      return (False, u'ERROR: No scopes selected, please select at least one.\n')
+    scopes.insert(0, u'email') # Email Display Scope, always included
+    return (True, u'')
 
-https://github.com/jay0lee/GAM/wiki/CreatingClientSecretsFile
+  MISSING_CLIENT_SECRETS_MESSAGE = u"""Please configure OAuth 2.0
 
-for instructions.
+To make GAM run you will need to populate the {0} file found at:
+{1}
+with information from the APIs Console <https://console.developers.google.com>.
 
-""" % GC_Values[GC_CLIENT_SECRETS_JSON]
-  num_scopes = len(possible_scopes)
-  menu = u'''Select the authorized scopes for this token. Include a 'r' to grant read-only
-access or an 'a' to grant action-only access.
+See this site for instructions:
+{2}
 
-[%%s]  %s)  Group Directory API (supports read-only)
-[%%s]  %s)  Organizational Unit Directory API (supports read-only)
-[%%s]  %s)  User Directory API (supports read-only)
-[%%s]  %s)  Chrome OS Device Directory API (supports read-only)
-[%%s]  %s)  Mobile Device Directory API (supports read-only and action)
-[%%s]  %s)  User Email Settings API
-[%%s]  %s)  Resource Calendar API (supports read-only)
-[%%s]  %s)  Audit Monitors, Activity and Mailbox Exports API
-[%%s]  %s)  Admin Settings API
-[%%s]  %s)  Groups Settings API
-[%%s]  %s)  Calendar Data API (supports read-only)
-[%%s]  %s)  Audit Reports API
-[%%s]  %s)  Usage Reports API
-[%%s]  %s)  Drive API (create report documents for admin user only)
-[%%s]  %s)  License Manager API
-[%%s]  %s)  User Security Directory API
-[%%s]  %s)  Notifications Directory API
-[%%s]  %s)  Site Verification API
-[%%s]  %s)  IMAP/SMTP Access (send notifications to admin)
-[%%s]  %s)  User Schemas (supports read-only)
-[%%s]  %s)  Classroom API (counts as 5 scopes)
-[%%s]  %s)  Cloud Print API
-[%%s]  %s)  Data Transfer API (supports read-only)
-[%%s]  %s)  Customer Directory API (supports read-only)
-[%%s]  %s)  Domains Directory API (supports read-only)
-[%%s]  %s)  Roles API (supports read-only)
+""".format(FN_CLIENT_SECRETS_JSON, GC_Values[GC_CLIENT_SECRETS_JSON], GAM_WIKI_CREATE_CLIENT_SECRETS)
 
-      %%s)  Select all scopes
-      %%s)  Unselect all scopes
-      %%s)  Continue
-''' % tuple(range(0, num_scopes))
+  num_scopes = len(OAUTH2_SCOPES)
   selected_scopes = [u'*'] * num_scopes
   # default to off for old email audit API (soon to be removed from GAM)
   selected_scopes[7] = u' '
   # default to off for notifications API (not super useful)
   selected_scopes[16] = u' '
-  select_all_scopes = unicode(str(num_scopes))
-  unselect_all_scopes = unicode(str(num_scopes+1))
-  authorize_scopes = unicode(str(num_scopes+2))
-  scope_choices = (select_all_scopes, unselect_all_scopes, authorize_scopes)
-
-  os.system([u'clear', u'cls'][os.name == u'nt'])
+  scopes = []
+  prompt = u'Please enter 0-{0}[a|r] or {1}: '.format(num_scopes-1, u'|'.join(OAUTH2_CMDS))
+  message = u''
   while True:
-    menu_fill = tuple(selected_scopes) + scope_choices
-    selection = raw_input(menu % menu_fill)
-    try:
-      if selection.lower().find(u'r') != -1:
-        selection = int(selection.lower().replace(u'r', u''))
-        if selection not in [0, 1, 2, 3, 4, 6, 10, 19, 22, 23, 24, 25]:
-          os.system([u'clear', u'cls'][os.name == u'nt'])
-          print u'THAT SCOPE DOES NOT SUPPORT READ-ONLY MODE!\n'
-          continue
-        selected_scopes[selection] = u'R'
-      elif selection.lower().find(u'a') != -1:
-        selection = int(selection.lower().replace(u'a', u''))
-        if selection not in [4,]:
-          os.system([u'clear', u'cls'][os.name == u'nt'])
-          print u'THAT SCOPE DOES NOT SUPPORT ACTION-ONLY MODE!\n'
-          continue
-        selected_scopes[selection] = u'A'
-      elif int(selection) > -1 and int(selection) < num_scopes:
-        if selected_scopes[int(selection)] == u' ':
-          selected_scopes[int(selection)] = u'*'
+    os.system([u'clear', u'cls'][GM_Globals[GM_WINDOWS]])
+    if message:
+      sys.stdout.write(message)
+      message = u''
+    sys.stdout.write(OAUTH2_MENU % tuple(selected_scopes))
+    while True:
+      choice = raw_input(prompt)
+      if choice:
+        selection = choice.lower()
+        if selection.find(u'r') >= 0:
+          mode = u'R'
+          selection = selection.replace(u'r', u'')
+        elif selection.find(u'a') >= 0:
+          mode = u'A'
+          selection = selection.replace(u'a', u'')
         else:
-          selected_scopes[int(selection)] = u' '
-      elif selection == select_all_scopes:
-        for i in xrange(0, num_scopes):
-          selected_scopes[i] = u'*'
-      elif selection == unselect_all_scopes:
-        for i in xrange(0, num_scopes):
-          selected_scopes[i] = u' '
-      elif selection == authorize_scopes:
-        at_least_one = False
-        for i in range(0, len(selected_scopes)):
-          if selected_scopes[i] in [u'*', u'R', u'A']:
-            at_least_one = True
-        if at_least_one:
+          mode = u' '
+        if selection and selection.isdigit():
+          selection = int(selection)
+        if isinstance(selection, int) and selection < num_scopes:
+          if mode == u'R':
+            if selection not in OAUTH2_RO_SCOPES:
+              sys.stdout.write(u'{0}Scope {1} does not support read-only mode!\n'.format(ERROR_PREFIX, selection))
+              continue
+          elif mode == u'A':
+            if selection not in OAUTH2_AO_SCOPES:
+              sys.stdout.write(u'{0}Scope {1} does not support action-only mode!\n'.format(ERROR_PREFIX, selection))
+              continue
+          elif selected_scopes[selection] != u'*':
+            mode = u'*'
+          else:
+            mode = u' '
+          selected_scopes[selection] = mode
           break
-        else:
-          os.system([u'clear', u'cls'][os.name == u'nt'])
-          print u"YOU MUST SELECT AT LEAST ONE SCOPE!\n"
-          continue
-      else:
-        os.system([u'clear', u'cls'][os.name == u'nt'])
-        print u'NOT A VALID SELECTION!'
-        continue
-      os.system([u'clear', u'cls'][os.name == u'nt'])
-    except ValueError:
-      os.system([u'clear', u'cls'][os.name == u'nt'])
-      print u'Not a valid selection.'
-      continue
-
-  if incremental_auth:
-    scopes = []
-  else:
-    scopes = [u'email',] # Email Display Scope, always included
-  for i in range(0, len(selected_scopes)):
-    if selected_scopes[i] == u'*':
-      if not isinstance(possible_scopes[i], list):
-        scopes.append(possible_scopes[i])
-      else:
-        scopes += possible_scopes[i]
-    elif selected_scopes[i] == u'R':
-      scopes.append(u'%s.readonly' % possible_scopes[i])
-    elif selected_scopes[i] == u'A':
-      scopes.append(u'%s.action' % possible_scopes[i])
-  if len(scopes) > 29:
-    os.system([u'clear', u'cls'][os.name == u'nt'])
-    print u'ERROR: To many scopes selected, please unselect some.'
-    sys.exit(3)
+        elif isinstance(selection, str) and selection in OAUTH2_CMDS:
+          if selection == u's':
+            for i in range(num_scopes):
+              selected_scopes[i] = u'*'
+          elif selection == u'u':
+            for i in range(num_scopes):
+              selected_scopes[i] = u' '
+          elif selection == u'e':
+            return
+          break
+        sys.stdout.write(u'{0}Invalid input "{1}"\n'.format(ERROR_PREFIX, choice))
+    if selection == u'c':
+      status, message = _checkMakeScopesList(scopes)
+      if status:
+        break
   try:
     FLOW = oauth2client.client.flow_from_clientsecrets(GC_Values[GC_CLIENT_SECRETS_JSON], scope=scopes)
   except oauth2client.client.clientsecrets.InvalidClientSecretsError:
@@ -10379,7 +10409,7 @@ access or an 'a' to grant action-only access.
   storage = oauth2client.file.Storage(GC_Values[GC_OAUTH2_TXT])
   credentials = storage.get()
   flags = cmd_flags(noLocalWebserver=GC_Values[GC_NO_BROWSER])
-  if credentials is None or credentials.invalid or incremental_auth:
+  if credentials is None or credentials.invalid:
     http = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL])
     try:
       credentials = oauth2client.tools.run_flow(flow=FLOW, storage=storage, flags=flags, http=http)
@@ -10545,7 +10575,7 @@ def ProcessGAMCommand(args):
       elif argument in [u'verify', u'verification']:
         doSiteVerifyShow()
       elif argument == u'schema':
-        doCreateOrUpdateUserSchema(u'insert')
+        doCreateOrUpdateUserSchema(False)
       elif argument in [u'course', u'class']:
         doCreateCourse()
       elif argument in [u'transfer', u'datatransfer']:
@@ -10585,7 +10615,7 @@ def ProcessGAMCommand(args):
       elif argument in [u'verify', u'verification']:
         doSiteVerifyAttempt()
       elif argument in [u'schema', u'schemas']:
-        doCreateOrUpdateUserSchema(u'update')
+        doCreateOrUpdateUserSchema(True)
       elif argument in [u'course', u'class']:
         doUpdateCourse()
       elif argument in [u'printer', u'print']:
