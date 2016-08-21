@@ -3586,7 +3586,6 @@ def doPhoto(users):
         print e
         continue
     else:
-      try:
       image_data = readFile(filename, continueOnError=True, displayError=True)
       if image_data == None:
         continue
