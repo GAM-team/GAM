@@ -569,7 +569,7 @@ def normalizeEmailAddressOrUID(emailAddressOrUID, noUid=False):
 #
 # Open a file
 #
-def openFile(filename, mode=u'rb'):
+def openFile(filename, mode=u'rU'):
   try:
     if filename != u'-':
       return open(os.path.expanduser(filename), mode)
@@ -609,6 +609,9 @@ def readFile(filename, mode=u'rb', continueOnError=False, displayError=True, enc
         stderrWarningMsg(e)
       return None
     systemErrorExit(6, e)
+  except LookupError as e:
+    print u'ERROR: %s' % e
+    sys.exit(2)
 #
 # Write a file
 #
@@ -623,6 +626,49 @@ def writeFile(filename, data, mode=u'wb', continueOnError=False, displayError=Tr
         stderrErrorMsg(e)
       return False
     systemErrorExit(6, e)
+#
+class UTF8Recoder(object):
+  """
+  Iterator that reads an encoded stream and reencodes the input to UTF-8
+  """
+  def __init__(self, f, encoding):
+    self.reader = codecs.getreader(encoding)(f)
+
+  def __iter__(self):
+    return self
+
+  def next(self):
+    return self.reader.next().encode(u'utf-8')
+
+class UnicodeDictReader(object):
+  """
+  A CSV reader which will iterate over lines in the CSV file "f",
+  which is encoded in the given encoding.
+  """
+
+  def __init__(self, f, dialect=csv.excel, encoding=u'utf-8', **kwds):
+    self.encoding = encoding
+    try:
+      self.reader = csv.reader(UTF8Recoder(f, encoding) if self.encoding != u'utf-8' else f, dialect=dialect, **kwds)
+      self.fieldnames = self.reader.next()
+      if len(self.fieldnames) > 0 and self.fieldnames[0].startswith(codecs.BOM_UTF8):
+        self.fieldnames[0] = self.fieldnames[0].replace(codecs.BOM_UTF8, '', 1)
+    except (csv.Error, StopIteration):
+      self.fieldnames = []
+    except LookupError as e:
+      print u'ERROR: %s' % e
+      sys.exit(2)
+    self.numfields = len(self.fieldnames)
+
+  def __iter__(self):
+    return self
+
+  def next(self):
+    row = self.reader.next()
+    l = len(row)
+    if l < self.numfields:
+      row += ['']*(self.numfields-l) # Must be '', not u''
+    return dict((self.fieldnames[x], unicode(row[x], u'utf-8')) for x in range(self.numfields))
 #
 # Set global variables
 # Check for GAM updates based on status of noupdatecheck.txt
@@ -2708,9 +2754,11 @@ def changeCalendarAttendees(users):
       print u'ERROR: %s is not a valid argument for "gam <users> update calattendees"' % sys.argv[i]
       sys.exit(2)
   attendee_map = {}
-  csvfile = csv.reader(open(csv_file, u'rb'))
-  for row in csvfile:
+  f = openFile(csv_file)
+  csvFile = csv.reader(f)
+  for row in csvFile:
     attendee_map[row[0].lower()] = row[1].lower()
+  closeFile(f)
   for user in users:
     sys.stdout.write(u'Checking user %s\n' % user)
     user, cal = buildCalendarGAPIObject(user)
@@ -3538,11 +3586,8 @@ def doPhoto(users):
         print e
         continue
     else:
-      try:
-        with open(filename, u'rb') as f:
-          image_data = f.read()
-      except IOError as e:
-        print u' couldn\'t open %s: %s' % (filename, e.strerror)
+      image_data = readFile(filename, continueOnError=True, displayError=True)
+      if image_data == None:
         continue
     image_data = base64.urlsafe_b64encode(image_data)
     body = {u'photoData': image_data}
@@ -6157,8 +6202,7 @@ def doSignature(users):
   i = 4
   if sys.argv[i].lower() == u'file':
     filename = sys.argv[i+1]
-    i += 2
-    i, encoding = getCharSet(i)
+    i, encoding = getCharSet(i+2)
     signature = readFile(filename, encoding=encoding).replace(u'\\n', u'<br/>').replace(u'\n', u'<br/>')
   else:
     signature = getString(i, u'String', emptyOK=True).replace(u'\\n', u'<br/>').replace(u'\n', u'<br/>')
@@ -6267,8 +6311,7 @@ def doVacation(users):
         i += 2
       elif myarg == u'file':
         filename = sys.argv[i+1]
-        i += 2
-        i, encoding = getCharSet(i)
+        i, encoding = getCharSet(i+2)
         message = readFile(filename, encoding=encoding)
       elif myarg == u'replace':
         matchTag = getString(i+1, u'Tag')
@@ -10510,9 +10553,9 @@ def ProcessGAMCommand(args):
         sys.exit(1)
       i = 2
       filename = sys.argv[i]
-      i += 1
+      i, encoding = getCharSet(i+1)
       f = openFile(filename)
-      csvFile = csv.DictReader(f)
+      csvFile = UnicodeDictReader(f, encoding=encoding)
       if (i == len(sys.argv)) or (sys.argv[i].lower() != u'gam') or (i+1 == len(sys.argv)):
         print u'ERROR: "gam csv <filename>" must be followed by a full GAM command...'
         sys.exit(3)
