@@ -6415,24 +6415,26 @@ def doDelSchema():
   callGAPI(cd.schemas(), u'delete', customerId=GC_Values[GC_CUSTOMER_ID], schemaKey=schemaKey)
   print u'Deleted schema %s' % schemaKey
 
-def doCreateOrUpdateUserSchema(function):
+def doCreateOrUpdateUserSchema(updateCmd):
   cd = buildGAPIObject(u'directory')
   schemaKey = sys.argv[3]
-  if function == u'update':
+  if updateCmd:
+    cmd = u'update'
     try:
       body = callGAPI(cd.schemas(), u'get', throw_reasons=[u'notFound'], customerId=GC_Values[GC_CUSTOMER_ID], schemaKey=schemaKey)
     except googleapiclient.errors.HttpError:
       print u'ERROR: Schema %s does not exist.' % schemaKey
       sys.exit(3)
-  else: # function == insert 
+  else: # create
+    cmd = u'create'
     body = {u'schemaName': schemaKey, u'fields': []}
   i = 4
   while i < len(sys.argv):
     if sys.argv[i] in [u'field']:
-      if function != u'insert': # clear field if it exists on update
+      if updateCmd: # clear field if it exists on update
         for n, field in enumerate(body[u'fields']):
           if field[u'fieldName'].lower() == sys.argv[i+1].lower():
-            del(body[u'fields'][n])
+            del body[u'fields'][n]
             break
       a_field = {u'fieldName': sys.argv[i+1]}
       i += 2
@@ -6460,30 +6462,26 @@ def doCreateOrUpdateUserSchema(function):
           i += 1
           break
         else:
-          print u'ERROR: %s is not a valid argument for "gam create schema"' % sys.argv[i]
+          print u'ERROR: %s is not a valid argument for "gam %s schema"' % (sys.argv[i], cmd)
           sys.exit(2)
-    elif sys.argv[i] in [u'deletefield']:
-      field_found = False
+    elif updateCmd and sys.argv[i] in [u'deletefield']:
       for n, field in enumerate(body[u'fields']):
         if field[u'fieldName'].lower() == sys.argv[i+1].lower():
-          del(body[u'fields'][n])
-          field_found = True
+          del body[u'fields'][n]
           break
-        else:
-          print "%s != %s" % (field[u'fieldName'].lower(), sys.argv[i+1].lower())
-      if not field_found:
+      else:
         print u'ERROR: field %s not found in schema %s' % (sys.argv[i+1], schemaKey)
         sys.exit(3)
       i += 2
     else:
-      print u'ERROR: %s is not a valid argument for "gam create schema"' % sys.argv[i]
+      print u'ERROR: %s is not a valid argument for "gam %s schema"' % (sys.argv[i], cmd)
       sys.exit(2)
-  if function == u'insert':
-    result = callGAPI(cd.schemas(), u'insert', customerId=GC_Values[GC_CUSTOMER_ID], body=body)
-    print u'Created user schema %s' % result[u'schemaName']
-  else: # function == update 
+  if updateCmd:
     result = callGAPI(cd.schemas(), u'update', customerId=GC_Values[GC_CUSTOMER_ID], body=body, schemaKey=schemaKey)
     print u'Updated user schema %s' % result[u'schemaName']
+  else:
+    result = callGAPI(cd.schemas(), u'insert', customerId=GC_Values[GC_CUSTOMER_ID], body=body)
+    print u'Created user schema %s' % result[u'schemaName']
 
 def _showSchema(schema):
   print u'Schema: %s' % schema[u'schemaName']
@@ -10588,7 +10586,7 @@ def ProcessGAMCommand(args):
       elif argument in [u'verify', u'verification']:
         doSiteVerifyShow()
       elif argument == u'schema':
-        doCreateOrUpdateUserSchema(u'insert')
+        doCreateOrUpdateUserSchema(False)
       elif argument in [u'course', u'class']:
         doCreateCourse()
       elif argument in [u'transfer', u'datatransfer']:
@@ -10628,7 +10626,7 @@ def ProcessGAMCommand(args):
       elif argument in [u'verify', u'verification']:
         doSiteVerifyAttempt()
       elif argument in [u'schema', u'schemas']:
-        doCreateOrUpdateUserSchema(u'update')
+        doCreateOrUpdateUserSchema(True)
       elif argument in [u'course', u'class']:
         doUpdateCourse()
       elif argument in [u'printer', u'print']:
