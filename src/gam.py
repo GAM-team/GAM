@@ -2315,11 +2315,14 @@ def doPrintGuardians():
         states = [u'COMPLETE', u'PENDING', u'GUARDIAN_INVITATION_STATE_UNSPECIFIED']
       i += 1
     elif sys.argv[i].lower() == u'states':
-      states = sys.argv[i+1].split(u',')
+      states = sys.argv[i+1].upper().replace(u',', u' ').split()
       i += 2
     elif sys.argv[i].lower() in usergroup_types:
       studentIds = getUsersToModify(entity_type=sys.argv[i], entity=sys.argv[i+1])
       i += 2
+    else:
+      print u'ERROR: %s is not a valid argument for "gam print guardians"' % sys.argv[i]
+      sys.exit(2)
   n = 1
   for studentId in studentIds:
     kwargs = {u'invitedEmailAddress': invitedEmailAddress, u'studentId': studentId}
@@ -2372,7 +2375,7 @@ def doDeleteGuardian():
         print u'%s is not a guardian of %s and invitation %s status is %s, not PENDING. Doing nothing.' % (guardianId, studentId, result[u'invitationId'], result[u'state'])
         continue
       invitationId = result[u'invitationId']
-      body = { u'state': u'COMPLETE' }
+      body = {u'state': u'COMPLETE'}
       callGAPI(croom.userProfiles().guardianInvitations(), u'patch', studentId=studentId, invitationId=invitationId, updateMask=u'state', body=body)
       print u'Cancelling %s invitation for %s as guardian of %s' % (result[u'state'], result[u'invitedEmailAddress'], studentId)
 
