@@ -76,7 +76,6 @@ If an item contains spaces, it should be surrounded by " or '.
 <FileNamePattern> ::= <String>
 <FilterID> ::= <Sttring>
 <FolderName> ::= <String>
-<GuardianID> ::= <String>
 <GroupItem> ::= <EmailAddress>|<UniqueID>|<String>
 <HostName> ::= <String>
 <Key> ::= <String>
@@ -198,6 +197,7 @@ If an item contains spaces, it should be surrounded by " or '.
 	webviewlink|
 	writerscanshare
 
+
 <GroupFieldName> ::=
 	admincreated|
 	aliases|
@@ -232,10 +232,6 @@ If an item contains spaces, it should be surrounded by " or '.
 	whocanpostmessage|
 	whocanviewgroup|
 	whocanviewmembership
-
-<GuardianState> ::=
-	complete|
-	pending
 
 <MembersFieldName> ::=
 	email|
@@ -303,7 +299,6 @@ If an item contains spaces, it should be surrounded by " or '.
 <EventIDList> ::= '<EventID>(,<EventID>)*'
 <FileFormatList> ::= '<FileFormat>(,<FileFormat)*'
 <FilterIDList> ::= '<FilterID>(,<FilterID>)*'
-<GuardianStateList> ::= '<GuardianState>(,<GuardianState>)*'
 <GroupFieldNameList> ::= '<GroupFieldName(,<GroupFieldName>)*'
 <GroupSettingsFieldNameList> ::= '<GroupSettingsFieldName(,<GroupSettingsFieldName>)*'
 <GroupList> ::= '<GroupItem>(,<GroupItem>)*'
@@ -604,7 +599,7 @@ gam info resource <ResourceID>
 gam print resources [todrive] [allfields] [id] [name] [description] [email] [type]
 
 gam create schema|schemas <SchemaName> <SchemaFieldDefinition>+
-gam update schema <SchemaName> <SchemaFieldDefinition>* (deletefield <FieldName>)*
+gam update schema <SchemaName> <SchemaFieldDefinition>+
 gam delete schema <SchemaName>
 gam info schema <SchemaName>
 gam show schema|schemas
@@ -644,10 +639,6 @@ gam course <CourseID> add teachers|students <UserItem>
 gam course <CourseID> delete|remove teachers|students <UserItem>
 gam course <CourseID> sync teachers|students <UserTypeEntity>
 gam print course-participants [todrive](course <CourseID>)* [teacher] [student] [show all|students|teachers]
-
-gam create guardian|guardianinvite|inviteguardian <EmailAddress> <UserItem>
-gam delete guardian|guardians <GuardianID <UserItem>
-gam print guardian|guardians [nocsv] [todrive] [invitedguardian <GuardianID>] [student <UserItem>] [invitations] [states <GuardianStateList>] [<UserTypeEntity>]
 
 gam printer register
 gam update printer <PrinterID> <PrinterAttributes>+
