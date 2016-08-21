@@ -6558,13 +6558,11 @@ def getUserAttributes(i, updateCmd=False):
   while i < len(sys.argv):
     myarg = sys.argv[i].lower()
     if myarg == u'firstname':
-      if u'name' not in body:
-        body[u'name'] = {}
+      body.setdefault(u'name', {})
       body[u'name'][u'givenName'] = sys.argv[i+1]
       i += 2
     elif myarg == u'lastname':
-      if u'name' not in body:
-        body[u'name'] = {}
+      body.setdefault(u'name', {})
       body[u'name'][u'familyName'] = sys.argv[i+1]
       i += 2
     elif myarg in [u'username', u'email', u'primaryemail'] and updateCmd:
