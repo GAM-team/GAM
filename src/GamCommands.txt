@@ -647,7 +647,8 @@ gam print course-participants [todrive](course <CourseID>)* [teacher] [student] 
 
 gam create guardian|guardianinvite|inviteguardian <EmailAddress> <UserItem>
 gam delete guardian|guardians <GuardianID <UserItem>
-gam print guardian|guardians [nocsv] [todrive] [invitedguardian <GuardianID>] [student <UserItem>] [invitations] [states <GuardianStateList>] [<UserTypeEntity>]
+gam show guardian|guardians [invitedguardian <GuardianID>] [student <UserItem>] [invitations] [states <GuardianStateList>] [<UserTypeEntity>]
+gam print guardian|guardians [todrive] [invitedguardian <GuardianID>] [student <UserItem>] [invitations] [states <GuardianStateList>] [<UserTypeEntity>]
 
 gam printer register
 gam update printer <PrinterID> <PrinterAttributes>+
