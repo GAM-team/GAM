@@ -1,3 +1,10 @@
+GAM 3.71
+- Fix update first / last name.
+- upgrade GAM versions of oauth2client, googleapiclient, RSA and six
+- Improved UTF-8 support for CSV commands (Ross)
+- Authorization flow improvements by Ross
+- Other minor cleanups and fixes
+
 GAM 3.7
 - Classroom Guardians API. Invite, list and delete guardians for a student.
 - Includes number of improvements from Ross in 3.66 (see below)
