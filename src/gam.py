@@ -2096,7 +2096,7 @@ def buildOrgUnitIdToNameMap():
 def orgunit_from_orgunitid(orgunitid):
   if not GM_Globals[GM_MAP_ORGUNIT_ID_TO_NAME]:
     buildOrgUnitIdToNameMap()
-  return GM_Globals[GM_MAP_ORGUNIT_ID_TO_NAME][orgunitid]
+  return GM_Globals[GM_MAP_ORGUNIT_ID_TO_NAME].get(orgunitid, orgunitid)
 
 def buildRoleIdToNameToIdMap():
   cd = buildGAPIObject(u'directory')
@@ -2113,7 +2113,7 @@ def buildRoleIdToNameToIdMap():
 def role_from_roleid(roleid):
   if not GM_Globals[GM_MAP_ROLE_ID_TO_NAME]:
     buildRoleIdToNameToIdMap()
-  return GM_Globals[GM_MAP_ROLE_ID_TO_NAME][roleid]
+  return GM_Globals[GM_MAP_ROLE_ID_TO_NAME].get(roleid, roleid)
 
 def roleid_from_role(role):
   if not GM_Globals[GM_MAP_ROLE_NAME_TO_ID]:
