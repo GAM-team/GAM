@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-#
 # Copyright 2014 Google Inc. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,15 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
 
 """Common utility library."""
 
 import functools
 import inspect
 import logging
-import sys
-import types
 
 import six
 from six.moves import urllib
@@ -129,16 +124,16 @@ def positional(max_positional_args):
                 plural_s = ''
                 if max_positional_args != 1:
                     plural_s = 's'
-                message = ('%s() takes at most %d positional '
-                           'argument%s (%d given)' % (
-                               wrapped.__name__, max_positional_args,
-                               plural_s, len(args)))
+                message = ('{function}() takes at most {args_max} positional '
+                           'argument{plural} ({args_given} given)'.format(
+                               function=wrapped.__name__,
+                               args_max=max_positional_args,
+                               args_given=len(args),
+                               plural=plural_s))
                 if positional_parameters_enforcement == POSITIONAL_EXCEPTION:
                     raise TypeError(message)
                 elif positional_parameters_enforcement == POSITIONAL_WARNING:
                     logger.warning(message)
-                else:  # IGNORE
-                    pass
             return wrapped(*args, **kwargs)
         return positional_wrapper
 
@@ -186,21 +181,6 @@ def string_to_scopes(scopes):
         return scopes.split(' ')
     else:
         return scopes
-
-
-def dict_to_tuple_key(dictionary):
-    """Converts a dictionary to a tuple that can be used as an immutable key.
-
-    The resulting key is always sorted so that logically equivalent
-    dictionaries always produce an identical tuple for a key.
-
-    Args:
-        dictionary: the dictionary to use as the key.
-
-    Returns:
-        A tuple representing the dictionary in it's naturally sorted ordering.
-    """
-    return tuple(sorted(dictionary.items()))
 
 
 def _add_query_parameter(url, name, value):

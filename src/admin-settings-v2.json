@@ -1,0 +1,642 @@
+{
+ "kind": "discovery#restDescription",
+ "discoveryVersion": "v1",
+ "id": "admin-settings:v2",
+ "name": "admin-settings",
+ "version": "v2",
+ "revision": "20160616",
+ "title": "Admin Settings API",
+ "description": "Lets you access Google Apps Admin Settings",
+ "ownerDomain": "google.com",
+ "ownerName": "Google",
+ "icons": {
+  "x16": "http://www.google.com/images/icons/product/search-16.gif",
+  "x32": "http://www.google.com/images/icons/product/search-32.gif"
+ },
+ "documentationLink": "https://developers.google.com/admin-sdk/admin-settings",
+ "protocol": "rest",
+ "baseUrl": "https://apps-apis.google.com/",
+ "basePath": "/a/feeds/domain/2.0/",
+ "rootUrl": "https://apps-apis.google.com/",
+ "servicePath": "/a/feeds/domain/2.0/",
+ "parameters": {
+  "v": {
+   "type": "string",
+   "description": "GData Version",
+   "default": "2.0",
+   "enum": [
+    "2.0"
+   ],
+   "enumDescriptions": [
+    "GData 2.0"
+   ],
+   "location": "query"
+  },
+  "alt": {
+   "type": "string",
+   "description": "Data format for the response.",
+   "default": "json",
+   "enum": [
+    "json"
+   ],
+   "enumDescriptions": [
+    "Responses with Content-Type of application/json"
+   ],
+   "location": "query"
+  },
+  "quotaUser": {
+   "type": "string",
+   "description": "Available to use for quota purposes for server-side applications. Can be any arbitrary string assigned to a user, but should not exceed 40 characters. Overrides userIp if both are provided.",
+   "location": "query"
+  },
+  "prettyPrint": {
+   "type": "boolean",
+   "description": "Returns response with indentations and line breaks.",
+   "default": "true",
+   "location": "query"
+  }
+ },
+ "auth": {
+  "oauth2": {
+   "scopes": {
+    "https://apps-apis.google.com/a/feeds/domain/": {
+     "description": "Manage domain settings"
+    }
+   }
+  }
+ },
+ "schemas": {
+  "DefaultLanguage": {
+   "id": "DefaultLanguage",
+   "type": "object",
+   "properties": {
+    "apps$property": {
+     "type": "object",
+     "properties": {
+      "name": {
+       "type": "string",
+       "description": "property name"
+      },
+      "value": {
+        "type": "string",
+        "description": "default language value"
+      }
+     }
+    }
+   }
+  },
+  "OrganizationName": {
+   "id": "OrganizationName",
+   "type": "object",
+   "properties": {
+    "apps$property": {
+     "type": "object",
+     "properties": {
+      "name": {
+       "type": "string",
+       "description": "property name"
+      },
+      "value": {
+        "type": "string",
+        "description": "organization name value"
+      }
+     }
+    }
+   }
+  },
+  "MaximumNumberOfUsers": {
+   "id": "MaximumNumberOfUsers",
+   "type": "object",
+   "properties": {
+    "apps$property": {
+     "type": "object",
+     "properties": {
+      "name": {
+       "type": "string",
+       "description": "property name"
+      },
+      "value": {
+        "type": "string",
+        "description": "maximum number of users value"
+      }
+     }
+    }
+   }
+  },
+  "CurrentNumberOfUsers": {
+   "id": "CurrentNumbersOfUsers",
+   "type": "object",
+   "properties": {
+    "apps$property": {
+     "type": "object",
+     "properties": {
+      "name": {
+       "type": "string",
+       "description": "property name"
+      },
+      "value": {
+        "type": "string",
+        "description": "current number of users value"
+      }
+     }
+    }
+   }
+  },
+  "IsVerified": {
+   "id": "IsVerified",
+   "type": "object",
+   "properties": {
+    "apps$property": {
+     "type": "object",
+     "properties": {
+      "name": {
+       "type": "string",
+       "description": "property name"
+      },
+      "value": {
+        "type": "boolean",
+        "description": "current verification status value"
+      }
+     }
+    }
+   }
+  },
+  "Edition": {
+   "id": "Edition",
+   "type": "object",
+   "properties": {
+    "apps$property": {
+     "type": "object",
+     "properties": {
+      "name": {
+       "type": "string",
+       "description": "property name"
+      },
+      "value": {
+        "type": "string",
+        "description": "domain edition value"
+      }
+     }
+    }
+   }
+  },
+  "CustomerPIN": {
+   "id": "CustomerPIN",
+   "type": "object",
+   "properties": {
+    "apps$property": {
+     "type": "object",
+     "properties": {
+      "name": {
+       "type": "string",
+       "description": "property name"
+      },
+      "value": {
+        "type": "string",
+        "description": "customer pin value"
+      }
+     }
+    }
+   }
+  },
+  "CreationTime": {
+   "id": "CreationTime",
+   "type": "object",
+   "properties": {
+    "apps$property": {
+     "type": "object",
+     "properties": {
+      "name": {
+       "type": "string",
+       "description": "property name"
+      },
+      "value": {
+        "type": "string",
+        "description": "domain creation time value"
+      }
+     }
+    }
+   }
+  },
+  "CountryCode": {
+   "id": "CountryCode",
+   "type": "object",
+   "properties": {
+    "apps$property": {
+     "type": "object",
+     "properties": {
+      "name": {
+       "type": "string",
+       "description": "property name"
+      },
+      "value": {
+        "type": "string",
+        "description": "domain country code value"
+      }
+     }
+    }
+   }
+  },
+  "AdminSecondaryEmail": {
+   "id": "AdminSecondaryEmail",
+   "type": "object",
+   "properties": {
+    "apps$property": {
+     "type": "object",
+     "properties": {
+      "name": {
+       "type": "string",
+       "description": "property name"
+      },
+      "value": {
+        "type": "string",
+        "description": "admin secondary email value"
+      }
+     }
+    }
+   }
+  },
+  "MXVerification": {
+   "id": "MXVerification",
+   "type": "object",
+   "properties": {
+    "apps$property": {
+     "type": "object",
+     "properties": {
+      "name": {
+       "type": "string",
+       "description": "property name"
+      },
+      "value": {
+        "type": "string",
+        "description": "domain mx verification value"
+      }
+     }
+    }
+   }
+  },
+  "SSOGeneral": {
+   "id": "SSOGeneral",
+   "type": "object",
+   "properties": {
+    "apps$property": {
+     "type": "object",
+     "properties": {
+      "name": {
+       "type": "string",
+       "description": "property name"
+      },
+      "value": {
+        "type": "string",
+        "description": "domain sso general value"
+      }
+     }
+    }
+   }
+  },
+  "SSOSigningKey": {
+   "id": "SSOSigningKey",
+   "type": "object",
+   "properties": {
+    "apps$property": {
+     "type": "object",
+     "properties": {
+      "name": {
+       "type": "string",
+       "description": "property name"
+      },
+      "value": {
+        "type": "string",
+        "description": "domain sso signing key value"
+      }
+     }
+    }
+   }
+  },
+  "UserEmailMigrationEnabled": {
+   "id": "UserEmailMigrationEnabled",
+   "type": "object",
+   "properties": {
+    "apps$property": {
+     "type": "object",
+     "properties": {
+      "name": {
+       "type": "string",
+       "description": "property name"
+      },
+      "value": {
+        "type": "string",
+        "description": "user email migration enabled value"
+      }
+     }
+    }
+   }
+  },
+  "OutboundGateway": {
+   "id": "OutboundGateway",
+   "type": "object",
+   "properties": {
+    "apps$property": {
+     "type": "object",
+     "properties": {
+      "name": {
+       "type": "string",
+       "description": "property name"
+      },
+      "value": {
+        "type": "string",
+        "description": "domain outbound gateway value"
+      }
+     }
+    }
+   }
+  }
+ },
+ "resources": {
+  "defaultLanguage": {
+   "methods": {
+    "get": {
+     "id": "admin-settings.defaultLanguage.get",
+     "path": "{domainName}/general/defaultLanguage",
+     "httpMethod": "GET",
+     "parameters": {
+      "domainName": {
+       "type": "string",
+       "required": "true",
+       "location": "path"
+      }
+     },
+     "response": {
+      "$ref": "DefaultLanguage"
+     }
+    }
+   }
+  },
+  "organizationName": {
+   "methods": {
+    "get": {
+     "id": "admin-settings.organizationName.get",
+     "path": "{domainName}/general/organizationName",
+     "httpMethod": "GET",
+     "parameters": {
+      "domainName": {
+       "type": "string",
+       "required": "true",
+       "location": "path"
+      }
+     },
+     "response": {
+      "$ref": "OrganizationName"
+     }
+    }
+   }
+  },
+  "maximumNumberOfUsers": {
+   "methods": {
+    "get": {
+     "id": "admin-settings.maximumNumberOfUsers.get",
+     "path": "{domainName}/general/maximumNumberOfUsers",
+     "httpMethod": "GET",
+     "parameters": {
+      "domainName": {
+       "type": "string",
+       "required": "true",
+       "location": "path"
+      }
+     },
+     "response": {
+      "$ref": "MaximumNumberOfUsers"
+     }
+    }
+   }
+  },
+  "currentNumberOfUsers": {
+   "methods": {
+    "get": {
+     "id": "admin-settings.currentNumberOfUsers.get",
+     "path": "{domainName}/general/currentNumberOfUsers",
+     "httpMethod": "GET",
+     "parameters": {
+      "domainName": {
+       "type": "string",
+       "required": "true",
+       "location": "path"
+      }
+     },
+     "response": {
+      "$ref": "CurrentNumberOfUsers"
+     }
+    }
+   }
+  },
+  "isVerified": {
+   "methods": {
+    "get": {
+     "id": "admin-settings.isVerified.get",
+     "path": "{domainName}/accountInformation/isVerified",
+     "httpMethod": "GET",
+     "parameters": {
+      "domainName": {
+       "type": "string",
+       "required": "true",
+       "location": "path"
+      }
+     },
+     "response": {
+      "$ref": "IsVerified"
+     }
+    }
+   }
+  },
+  "edition": {
+   "methods": {
+    "get": {
+     "id": "admin-settings.edition.get",
+     "path": "{domainName}/accountInformation/edition",
+     "httpMethod": "GET",
+     "parameters": {
+      "domainName": {
+       "type": "string",
+       "required": "true",
+       "location": "path"
+      }
+     },
+     "response": {
+      "$ref": "Edition"
+     }
+    }
+   }
+  },
+  "customerPIN": {
+   "methods": {
+    "get": {
+     "id": "admin-settings.customerPIN.get",
+     "path": "{domainName}/accountInformation/customerPIN",
+     "httpMethod": "GET",
+     "parameters": {
+      "domainName": {
+       "type": "string",
+       "required": "true",
+       "location": "path"
+      }
+     },
+     "response": {
+      "$ref": "CustomerPIN"
+     }
+    }
+   }
+  },
+  "creationTime": {
+   "methods": {
+    "get": {
+     "id": "admin-settings.creationTime.get",
+     "path": "{domainName}/accountInformation/creationTime",
+     "httpMethod": "GET",
+     "parameters": {
+      "domainName": {
+       "type": "string",
+       "required": "true",
+       "location": "path"
+      }
+     },
+     "response": {
+      "$ref": "CreationTime"
+     }
+    }
+   }
+  },
+  "countryCode": {
+   "methods": {
+    "get": {
+     "id": "admin-settings.countryCode.get",
+     "path": "{domainName}/accountInformation/countryCode",
+     "httpMethod": "GET",
+     "parameters": {
+      "domainName": {
+       "type": "string",
+       "required": "true",
+       "location": "path"
+      }
+     },
+     "response": {
+      "$ref": "CountryCode"
+     }
+    }
+   }
+  },
+  "adminSecondaryEmail": {
+   "methods": {
+    "get": {
+     "id": "admin-settings.adminSecondaryEmail.get",
+     "path": "{domainName}/accountInformation/adminSecondaryEmail",
+     "httpMethod": "GET",
+     "parameters": {
+      "domainName": {
+       "type": "string",
+       "required": "true",
+       "location": "path"
+      }
+     },
+     "response": {
+      "$ref": "AdminSecondaryEmail"
+     }
+    }
+   }
+  },
+  "mxVerification": {
+   "methods": {
+    "get": {
+     "id": "admin-settings.mxVerification.get",
+     "path": "{domainName}/verification/mx",
+     "httpMethod": "GET",
+     "parameters": {
+      "domainName": {
+       "type": "string",
+       "required": "true",
+       "location": "path"
+      }
+     },
+     "response": {
+      "$ref": "MXVerification"
+     }
+    }
+   }
+  },
+  "ssoGeneral": {
+   "methods": {
+    "get": {
+     "id": "admin-settings.ssoGeneral.get",
+     "path": "{domainName}/sso/general",
+     "httpMethod": "GET",
+     "parameters": {
+      "domainName": {
+       "type": "string",
+       "required": "true",
+       "location": "path"
+      }
+     },
+     "response": {
+      "$ref": "SSOGeneral"
+     }
+    }
+   }
+  },
+  "ssoSigningKey": {
+   "methods": {
+    "get": {
+     "id": "admin-settings.ssoSigningKey.get",
+     "path": "{domainName}/sso/signingkey",
+     "httpMethod": "GET",
+     "parameters": {
+      "domainName": {
+       "type": "string",
+       "required": "true",
+       "location": "path"
+      }
+     },
+     "response": {
+      "$ref": "SSOSigningKey"
+     }
+    }
+   }
+  },
+  "userEmailMigrationEnabled": {
+   "methods": {
+    "get": {
+     "id": "admin-settings.userEmailMigrationEnabled.get",
+     "path": "{domainName}/email/migration",
+     "httpMethod": "GET",
+     "parameters": {
+      "domainName": {
+       "type": "string",
+       "required": "true",
+       "location": "path"
+      }
+     },
+     "response": {
+      "$ref": "UserEmailMigrationEnabled"
+     }
+    }
+   }
+  },
+  "outboundGateway": {
+   "methods": {
+    "get": {
+     "id": "admin-settings.outboundGateway.get",
+     "path": "{domainName}/email/gateway",
+     "httpMethod": "GET",
+     "parameters": {
+      "domainName": {
+       "type": "string",
+       "required": "true",
+       "location": "path"
+      }
+     },
+     "response": {
+      "$ref": "OutboundGateway"
+     }
+    }
+   }
+  }
+ }
+}

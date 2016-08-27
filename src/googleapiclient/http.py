@@ -20,6 +20,7 @@ actuall HTTP request.
 """
 from __future__ import absolute_import
 import six
+from six.moves import http_client
 from six.moves import range
 
 __author__ = 'jcgregorio@google.com (Joe Gregorio)'
@@ -36,9 +37,18 @@ import logging
 import mimetypes
 import os
 import random
+import socket
 import sys
 import time
 import uuid
+
+# TODO(issue 221): Remove this conditional import jibbajabba.
+try:
+  import ssl
+except ImportError:
+  _ssl_SSLError = object()
+else:
+  _ssl_SSLError = ssl.SSLError
 
 from email.generator import Generator
 from email.mime.multipart import MIMEMultipart
@@ -56,9 +66,112 @@ from googleapiclient.model import JsonModel
 from oauth2client import util
 
 
+LOGGER = logging.getLogger(__name__)
+
 DEFAULT_CHUNK_SIZE = 512*1024
 
 MAX_URI_LENGTH = 2048
+
+_TOO_MANY_REQUESTS = 429
+
+
+def _should_retry_response(resp_status, content):
+  """Determines whether a response should be retried.
+
+  Args:
+    resp_status: The response status received.
+    content: The response content body. 
+
+  Returns:
+    True if the response should be retried, otherwise False.
+  """
+  # Retry on 5xx errors.
+  if resp_status >= 500:
+    return True
+
+  # Retry on 429 errors.
+  if resp_status == _TOO_MANY_REQUESTS:
+    return True
+
+  # For 403 errors, we have to check for the `reason` in the response to
+  # determine if we should retry.
+  if resp_status == six.moves.http_client.FORBIDDEN:
+    # If there's no details about the 403 type, don't retry.
+    if not content:
+      return False
+
+    # Content is in JSON format.
+    try:
+      data = json.loads(content.decode('utf-8'))
+      reason = data['error']['errors'][0]['reason']
+    except (UnicodeDecodeError, ValueError, KeyError):
+      LOGGER.warning('Invalid JSON content from response: %s', content)
+      return False
+
+    LOGGER.warning('Encountered 403 Forbidden with reason "%s"', reason)
+
+    # Only retry on rate limit related failures.
+    if reason in ('userRateLimitExceeded', 'rateLimitExceeded', ):
+      return True
+
+  # Everything else is a success or non-retriable so break.
+  return False
+
+
+def _retry_request(http, num_retries, req_type, sleep, rand, uri, method, *args,
+                   **kwargs):
+  """Retries an HTTP request multiple times while handling errors.
+
+  If after all retries the request still fails, last error is either returned as
+  return value (for HTTP 5xx errors) or thrown (for ssl.SSLError).
+
+  Args:
+    http: Http object to be used to execute request.
+    num_retries: Maximum number of retries.
+    req_type: Type of the request (used for logging retries).
+    sleep, rand: Functions to sleep for random time between retries.
+    uri: URI to be requested.
+    method: HTTP method to be used.
+    args, kwargs: Additional arguments passed to http.request.
+
+  Returns:
+    resp, content - Response from the http request (may be HTTP 5xx).
+  """
+  resp = None
+  content = None
+  for retry_num in range(num_retries + 1):
+    if retry_num > 0:
+      # Sleep before retrying.
+      sleep_time = rand() * 2 ** retry_num
+      LOGGER.warning(
+          'Sleeping %.2f seconds before retry %d of %d for %s: %s %s, after %s',
+          sleep_time, retry_num, num_retries, req_type, method, uri,
+          resp.status if resp else exception)
+      sleep(sleep_time)
+
+    try:
+      exception = None
+      resp, content = http.request(uri, method, *args, **kwargs)
+    # Retry on SSL errors and socket timeout errors.
+    except _ssl_SSLError as ssl_error:
+      exception = ssl_error
+    except socket.error as socket_error:
+      # errno's contents differ by platform, so we have to match by name.
+      if socket.errno.errorcode.get(socket_error.errno) not in (
+          'WSAETIMEDOUT', 'ETIMEDOUT', 'EPIPE', 'ECONNABORTED', ):
+        raise
+      exception = socket_error
+
+    if exception:
+      if retry_num == num_retries:
+        raise exception
+      else:
+        continue
+
+    if not _should_retry_response(resp.status, content):
+      break
+
+  return resp, content
 
 
 class MediaUploadProgress(object):
@@ -425,7 +538,11 @@ class MediaFileUpload(MediaIoBaseUpload):
     self._filename = filename
     fd = open(self._filename, 'rb')
     if mimetype is None:
-      (mimetype, encoding) = mimetypes.guess_type(filename)
+      # No mimetype provided, make a guess.
+      mimetype, _ = mimetypes.guess_type(filename)
+      if mimetype is None:
+        # Guess failed, use octet-stream.
+        mimetype = 'application/octet-stream'
     super(MediaFileUpload, self).__init__(fd, mimetype, chunksize=chunksize,
                                           resumable=resumable)
 
@@ -542,16 +659,9 @@ class MediaIoBaseDownload(object):
         }
     http = self._request.http
 
-    for retry_num in range(num_retries + 1):
-      if retry_num > 0:
-        self._sleep(self._rand() * 2**retry_num)
-        logging.warning(
-            'Retry #%d for media download: GET %s, following status: %d'
-            % (retry_num, self._uri, resp.status))
-
-      resp, content = http.request(self._uri, headers=headers)
-      if resp.status < 500:
-        break
+    resp, content = _retry_request(
+        http, num_retries, 'media download', self._sleep, self._rand, self._uri,
+        'GET', headers=headers)
 
     if resp.status in [200, 206]:
       if 'content-location' in resp and resp['content-location'] != self._uri:
@@ -650,7 +760,7 @@ class HttpRequest(object):
 
     # Pull the multipart boundary out of the content-type header.
     major, minor, params = mimeparse.parse_mime_type(
-        headers.get('content-type', 'application/json'))
+        self.headers.get('content-type', 'application/json'))
 
     # The size of the non-media part of the request.
     self.body_size = len(self.body or '')
@@ -712,16 +822,9 @@ class HttpRequest(object):
       self.headers['content-length'] = str(len(self.body))
 
     # Handle retries for server-side errors.
-    for retry_num in range(num_retries + 1):
-      if retry_num > 0:
-        self._sleep(self._rand() * 2**retry_num)
-        logging.warning('Retry #%d for request: %s %s, following status: %d'
-                        % (retry_num, self.method, self.uri, resp.status))
-
-      resp, content = http.request(str(self.uri), method=str(self.method),
-                                   body=self.body, headers=self.headers)
-      if resp.status < 500:
-        break
+    resp, content = _retry_request(
+          http, num_retries, 'request', self._sleep, self._rand, str(self.uri),
+          method=str(self.method), body=self.body, headers=self.headers)
 
     for callback in self.response_callbacks:
       callback(resp)
@@ -795,18 +898,9 @@ class HttpRequest(object):
         start_headers['X-Upload-Content-Length'] = size
       start_headers['content-length'] = str(self.body_size)
 
-      for retry_num in range(num_retries + 1):
-        if retry_num > 0:
-          self._sleep(self._rand() * 2**retry_num)
-          logging.warning(
-              'Retry #%d for resumable URI request: %s %s, following status: %d'
-              % (retry_num, self.method, self.uri, resp.status))
-
-        resp, content = http.request(self.uri, method=self.method,
-                                     body=self.body,
-                                     headers=start_headers)
-        if resp.status < 500:
-          break
+      resp, content = _retry_request(
+          http, num_retries, 'resumable URI request', self._sleep, self._rand,
+          self.uri, method=self.method, body=self.body, headers=start_headers)
 
       if resp.status == 200 and 'location' in resp:
         self.resumable_uri = resp['location']
@@ -827,10 +921,7 @@ class HttpRequest(object):
         # The upload was complete.
         return (status, body)
 
-    # The httplib.request method can take streams for the body parameter, but
-    # only in Python 2.6 or later. If a stream is available under those
-    # conditions then use it as the body argument.
-    if self.resumable.has_stream() and sys.version_info[1] >= 6:
+    if self.resumable.has_stream():
       data = self.resumable.stream()
       if self.resumable.chunksize() == -1:
         data.seek(self.resumable_progress)
@@ -863,7 +954,7 @@ class HttpRequest(object):
     for retry_num in range(num_retries + 1):
       if retry_num > 0:
         self._sleep(self._rand() * 2**retry_num)
-        logging.warning(
+        LOGGER.warning(
             'Retry #%d for media upload: %s %s, following status: %d'
             % (retry_num, self.method, self.uri, resp.status))
 
@@ -1613,7 +1704,7 @@ def tunnel_patch(http):
       headers = {}
     if method == 'PATCH':
       if 'oauth_token' in headers.get('authorization', ''):
-        logging.warning(
+        LOGGER.warning(
             'OAuth 1.0 request made with Credentials after tunnel_patch.')
       headers['x-http-method-override'] = "PATCH"
       method = 'POST'

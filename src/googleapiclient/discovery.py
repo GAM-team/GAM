@@ -28,14 +28,17 @@ __all__ = [
     'key2param',
     ]
 
-from six import StringIO
+from six import BytesIO
 from six.moves import http_client
 from six.moves.urllib.parse import urlencode, urlparse, urljoin, \
   urlunparse, parse_qsl
 
 # Standard library imports
 import copy
-from email.generator import Generator
+try:
+  from email.generator import BytesGenerator
+except ImportError:
+  from email.generator import Generator as BytesGenerator
 from email.mime.multipart import MIMEMultipart
 from email.mime.nonmultipart import MIMENonMultipart
 import json
@@ -79,6 +82,9 @@ URITEMPLATE = re.compile('{[^}]*}')
 VARNAME = re.compile('[a-zA-Z0-9_-]+')
 DISCOVERY_URI = ('https://www.googleapis.com/discovery/v1/apis/'
                  '{api}/{apiVersion}/rest')
+V1_DISCOVERY_URI = DISCOVERY_URI
+V2_DISCOVERY_URI = ('https://{api}.googleapis.com/$discovery/rest?'
+                    'version={apiVersion}')
 DEFAULT_METHOD_DOC = 'A description of how to use this function'
 HTTP_PAYLOAD_METHODS = frozenset(['PUT', 'POST', 'PATCH'])
 _MEDIA_SIZE_BIT_SHIFTS = {'KB': 10, 'MB': 20, 'GB': 30, 'TB': 40}
@@ -102,6 +108,10 @@ STACK_QUERY_PARAMETER_DEFAULT_VALUE = {'type': 'string', 'location': 'query'}
 # Library-specific reserved words beyond Python keywords.
 RESERVED_WORDS = frozenset(['body'])
 
+# patch _write_lines to avoid munging '\r' into '\n'
+# ( https://bugs.python.org/issue18886 https://bugs.python.org/issue19003 )
+class _BytesGenerator(BytesGenerator):
+  _write_lines = BytesGenerator.write
 
 def fix_method_name(name):
   """Fix method names to avoid reserved word conflicts.
@@ -189,21 +199,23 @@ def build(serviceName,
   if http is None:
     http = httplib2.Http()
 
-  requested_url = uritemplate.expand(discoveryServiceUrl, params)
+  for discovery_url in (discoveryServiceUrl, V2_DISCOVERY_URI,):
+    requested_url = uritemplate.expand(discovery_url, params)
 
-  try:
-    content = _retrieve_discovery_doc(requested_url, http, cache_discovery,
-                                      cache)
-  except HttpError as e:
-    if e.resp.status == http_client.NOT_FOUND:
-      raise UnknownApiNameOrVersion("name: %s  version: %s" % (serviceName,
-                                                               version))
-    else:
-      raise e
+    try:
+      content = _retrieve_discovery_doc(requested_url, http, cache_discovery,
+                                        cache)
+      return build_from_document(content, base=discovery_url, http=http,
+          developerKey=developerKey, model=model, requestBuilder=requestBuilder,
+          credentials=credentials)
+    except HttpError as e:
+      if e.resp.status == http_client.NOT_FOUND:
+        continue
+      else:
+        raise e
 
-  return build_from_document(content, base=discoveryServiceUrl, http=http,
-      developerKey=developerKey, model=model, requestBuilder=requestBuilder,
-      credentials=credentials)
+  raise UnknownApiNameOrVersion(
+        "name: %s  version: %s" % (serviceName, version))
 
 
 def _retrieve_discovery_doc(url, http, cache_discovery, cache=None):
@@ -797,8 +809,8 @@ def createMethod(methodName, methodDesc, rootDesc, schema):
           msgRoot.attach(msg)
           # encode the body: note that we can't use `as_string`, because
           # it plays games with `From ` lines.
-          fp = StringIO()
-          g = Generator(fp, mangle_from_=False)
+          fp = BytesIO()
+          g = _BytesGenerator(fp, mangle_from_=False)
           g.flatten(msgRoot, unixfrom=False)
           body = fp.getvalue()
 
