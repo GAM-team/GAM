@@ -2155,6 +2155,7 @@ SERVICE_NAME_CHOICES_MAP = {
   u'googleplus': u'Google+',
   u'gplus': u'Google+',
   u'g+': u'Google+',
+  u'drive': u'Drive',
   u'googledrive': u'Drive',
   u'gdrive': u'Drive',
   }

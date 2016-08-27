@@ -495,7 +495,7 @@ gam update customer [adminsecondaryemail|alternateemail <EmailAddress>] [languag
 	[address1|addressline1 <String>] [address2|addressline2 <String>] [address3|addressline3 <String>]
 	[locality <String>] [region <String>] [postalcode <String>] [country|countrycode <String>]
 
-gam create datatransfer|transfer <OldOwnerID> <DataTransferService> <NewOwnerID>
+gam create datatransfer|transfer <OldOwnerID> <DataTransferService> <NewOwnerID> (<ParameterKey> <ParameterValue>)*
 gam info datatransfer|transfer <TransferID>
 gam print datatransfers|transfers [todrive] [olduser|oldowner <UserItem>] [newuser|newowner <UserItem>] [status <String>]
 
