@@ -2282,72 +2282,71 @@ def doGetDataTransferInfo():
       print u' None'
     print
 
-def doPrintGuardians():
+def doPrintShowGuardians(csvFormat):
   croom = buildGAPIObject(u'classroom')
   invitedEmailAddress = None
   studentIds = [u'-',]
   states = None
   service = croom.userProfiles().guardians()
   items = u'guardians'
-  guardians = []
-  show_csv = True
-  csvRows = []
-  todrive = False
-  titles = []
+  itemName = 'Guardians'
+  if csvFormat:
+    csvRows = []
+    todrive = False
+    titles = [u'studentEmail', u'studentId', u'invitedEmailAddress', u'guardianId']
   i = 3
   while i < len(sys.argv):
-    if sys.argv[i].lower() == u'invitedguardian':
-      invitedEmailAddress = sys.argv[i+1]
-      i += 2
-    elif sys.argv[i].lower() == u'nocsv':
-      show_csv = False
-      i += 1
-    elif sys.argv[i].lower() == u'todrive':
+    myarg = sys.argv[i].lower()
+    if csvFormat and myarg == u'todrive':
       todrive = True
       i += 1
-    elif sys.argv[i].lower() == u'student':
+    elif myarg == u'invitedguardian':
+      invitedEmailAddress = sys.argv[i+1]
+      i += 2
+    elif myarg == u'student':
       studentIds = [sys.argv[i+1],]
       i += 2
-    elif sys.argv[i].lower() == u'invitations':
+    elif myarg == u'invitations':
       service = croom.userProfiles().guardianInvitations()
       items = u'guardianInvitations'
+      itemName = 'Guardian Invitations'
+      titles = [u'studentEmail', u'studentId', u'invitedEmailAddress', u'invitationId']
       if states == None:
         states = [u'COMPLETE', u'PENDING', u'GUARDIAN_INVITATION_STATE_UNSPECIFIED']
       i += 1
-    elif sys.argv[i].lower() == u'states':
+    elif myarg == u'states':
       states = sys.argv[i+1].upper().replace(u',', u' ').split()
       i += 2
-    elif sys.argv[i].lower() in usergroup_types:
-      studentIds = getUsersToModify(entity_type=sys.argv[i], entity=sys.argv[i+1])
+    elif myarg in usergroup_types:
+      studentIds = getUsersToModify(entity_type=myarg, entity=sys.argv[i+1])
       i += 2
     else:
-      print u'ERROR: %s is not a valid argument for "gam print guardians"' % sys.argv[i]
+      print u'ERROR: %s is not a valid argument for "gam %s guardians"' % (sys.argv[i], [u'show', u'print'][csvFormat])
       sys.exit(2)
-  n = 1
+  i = 0
+  count = len(studentIds)
   for studentId in studentIds:
+    i += 1
     kwargs = {u'invitedEmailAddress': invitedEmailAddress, u'studentId': studentId}
     if items == u'guardianInvitations':
       kwargs[u'states'] = states
     if studentId != u'-':
-      sys.stderr.write('\r')
-      sys.stderr.flush()
-      sys.stderr.write(u'Getting guardians for %s (%s/%s)%s' % (studentId, n, len(studentIds), u' ' * 40))
-    student_guardians = callGAPIpages(service, u'list', items=items, soft_errors=True, **kwargs)
-    # add student email to results since API does not return it
-    i = 0
-    while i < len(student_guardians):
-      student_guardians[i][u'studentEmail'] = studentId
-      i += 1
-    guardians = guardians + student_guardians
-    n += 1
-  sys.stderr.write(u'\n')
-  if show_csv:
-    for guardian in guardians:
-      addRowTitlesToCSVfile(flatten_json(guardian), csvRows, titles)
-    writeCSVfile(csvRows, titles, u'Guardians', todrive)
-  else:
-    for guardian in guardians:
-      print_json(None, guardian)
+      if csvFormat:
+        sys.stderr.write('\r')
+        sys.stderr.flush()
+        sys.stderr.write(u'Getting %s for %s%s%s' % (itemName, studentId, currentCount(i, count), u' ' * 40))
+    guardians = callGAPIpages(service, u'list', items=items, soft_errors=True, **kwargs)
+    if not csvFormat:
+      print u'Student: {0}, {1}:{2}'.format(studentId, itemName, currentCount(i, count))
+      for guardian in guardians:
+        print_json(None, guardian, spacing=u'  ')
+    else:
+      for guardian in guardians:
+        guardian[u'studentEmail'] = studentId
+        addRowTitlesToCSVfile(flatten_json(guardian), csvRows, titles)
+  if csvFormat:
+    sys.stderr.write(u'\n')
+    writeCSVfile(csvRows, titles, itemName, todrive)
 
 def doInviteGuardian():
   croom = buildGAPIObject(u'classroom')
@@ -10817,7 +10816,7 @@ def ProcessGAMCommand(args):
       elif argument in [u'roles', u'adminroles']:
         doPrintAdminRoles()
       elif argument in [u'guardian', u'guardians']:
-        doPrintGuardians()
+        doPrintShowGuardians(True)
       else:
         print u'ERROR: %s is not a valid argument for "gam print"' % argument
         sys.exit(2)
@@ -10826,6 +10825,8 @@ def ProcessGAMCommand(args):
       argument = sys.argv[2].lower()
       if argument in [u'schema', u'schemas']:
         doPrintShowUserSchemas(False)
+      elif argument in [u'guardian', u'guardians']:
+        doPrintShowGuardians(False)
       else:
         print u'ERROR: %s is not a valid argument for "gam show"' % argument
         sys.exit(2)
