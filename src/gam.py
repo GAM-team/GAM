@@ -10534,9 +10534,13 @@ def ProcessGAMCommand(args):
     command = sys.argv[1].lower()
     if command == u'batch':
       import shlex
-      f = openFile(sys.argv[2])
+      i = 2
+      filename = sys.argv[i]
+      i, encoding = getCharSet(i+1)
+      f = openFile(filename)
+      batchFile = UTF8Recoder(f, encoding) if encoding != u'utf-8' else f
       items = []
-      for line in f:
+      for line in batchFile:
         argv = shlex.split(line)
         if not argv:
           continue
