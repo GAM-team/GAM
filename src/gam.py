@@ -4991,6 +4991,9 @@ def getSendAsAttributes(i, myarg, body, tagReplacements, command):
   elif myarg == u'replyto':
     body[u'replyToAddress'] = sys.argv[i+1]
     i += 2
+  elif myarg == u'default':
+    body[u'isDefault'] = True
+    i += 1
   elif myarg == u'treatasalias':
     if sys.argv[i+1].lower() == u'true':
       body[u'treatAsAlias'] = True
@@ -5028,9 +5031,6 @@ def addUpdateSendAs(users, i, addCmd):
         filename = sys.argv[i]
         i, encoding = getCharSet(i+1)
         signature = readFile(filename, encoding=encoding)
-    elif myarg == u'default':
-      body[u'isDefault'] = True
-      i += 1
     else:
       i = getSendAsAttributes(i, myarg, body, tagReplacements, command)
   if signature != None:
