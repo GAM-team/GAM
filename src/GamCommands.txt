@@ -16,7 +16,7 @@ If an item contains spaces, it should be surrounded by " or '.
 <String> ::= a string of characters, surrounded by " or ' if it contains spaces
 <TrueValues> ::= true|on|yes|enabled|1
 <FalseValues>= false|off|no|disabled|0
-<DataTransferService> ::= googleplus|google+|gplus|g+|googledrive|gdrive
+<DataTransferService> ::= googleplus|google+|gplus|g+|googledrive|gdrive|drive
 <ProductID> ::= Google-Apps|Google-Coordinate|Google-Drive-storage|Google-Vault
 <SKUID> ::= apps|gafb|gafw|gams|gau|unlimited|d4w|dfw|coordinate|vault|vfe|
 	    drive-20gb|drive20gb|20gb|drive-50gb|drive50gb|50gb|drive-200gb|drive200gb|200gb|drive-400gb|drive400gb|400gb|
@@ -27,7 +27,7 @@ If an item contains spaces, it should be surrounded by " or '.
 
 # Basic items built from primatives
 <Boolean> ::= <TrueValues>|<FalseValues>
-<ByteCount> ::= <Number>[M|K|B]
+<ByteCount> ::= <Number>[m|k|b]
 <CIDRnetmask> ::= <Number>.<Number>.<Number>.<Number>/<Number>
 <ColorHex> ::= #<Hex><Hex><Hex><Hex><Hex><Hex>
 <DomainName> ::= <String>(.<String>)+
@@ -58,11 +58,9 @@ If an item contains spaces, it should be surrounded by " or '.
 <CourseParticipantType> ::= teacher|teachers|student|students
 <CrOSID> ::= <String>
 <CrOSItem> ::= <CrOSID>|(query:<QueryCrOS>)|(query <QueryCrOS>)
+<DestEmailAddress> ::= <EmailAddress>
 <DomainAlias> ::= <String>
 <DriveFileACLRole> :: =commenter|editor|owner|reader|writer
-<EventColorIndex> ::== <Number in range 1-11>
-<FieldName> ::= <String>
-<DestEmailAddress> ::= <EmailAddress>
 <DriveFileID> ::= <String>
 <DriveFileURL> :: = https://docs.google.com/a/<DomainName>/document/d/<DriveFileID>/<String>
 <DriveFileItem> ::= <DriveFileID>|<DriveFileURL>
@@ -70,6 +68,7 @@ If an item contains spaces, it should be surrounded by " or '.
 <DriveFolderID> ::= <String>
 <DriveFolderName> ::= <String>
 <EmailItem> ::= <EmailAddress>|<UniqueID>|<String>
+<EventColorIndex> ::== <Number in range 1-11>
 <EventID> ::= <String>
 <FieldName> ::= <String>
 <FileName> ::= <String>
@@ -90,9 +89,11 @@ If an item contains spaces, it should be surrounded by " or '.
 <NotificationID> ::= <String>
 <OrgUnitID> ::= <String>
 <OrgUnitPath> ::= /|(/<String)+
+<ParameterKey> ::= <String>
+<ParameterValue> ::= <String>
 <PermissionID> ::= id:<String>|<EmailAddress>|anyone|anyonewithlink
 <PrinterID> ::= <String>
-<PrintJobAge> ::= <Number>(m|h|d)
+<PrintJobAge> ::= <Number>[m|h|d]
 <PrintJobID> ::= <String>
 <PrintJobStatus> ::= done|error|held|in_progress|queued|submitted
 <PropertyKey> ::= <String>
@@ -201,24 +202,22 @@ If an item contains spaces, it should be surrounded by " or '.
 <GroupFieldName> ::=
 	admincreated|
 	aliases|
-	description|
-	email|
-	id|
-	name
-
-<GroupSettingsFieldName> ::=
 	allowexternalmembers|
 	allowgooglecommunication|
 	allowwebposting|
 	archiveonly|
 	customreplyto|
 	defaultmessagedenynotificationtext|
+	description|
+	email|
+	id|
 	includeinglobaladdresslist|gal|
 	isarchived|
 	maxmessagebytes|
 	memberscanpostasthegroup|
 	messagedisplayfont|
 	messagemoderationlevel|
+	name
 	primarylanguage|
 	replyto|
 	sendmessagedenynotification|
@@ -304,7 +303,6 @@ If an item contains spaces, it should be surrounded by " or '.
 <FileFormatList> ::= '<FileFormat>(,<FileFormat)*'
 <FilterIDList> ::= '<FilterID>(,<FilterID>)*'
 <GroupFieldNameList> ::= '<GroupFieldName(,<GroupFieldName>)*'
-<GroupSettingsFieldNameList> ::= '<GroupSettingsFieldName(,<GroupSettingsFieldName>)*'
 <GroupList> ::= '<GroupItem>(,<GroupItem>)*'
 <GuardianStateList> ::= '<GuardianState>(,<GuardianState>)*'
 <LabelNameList> ::= '<LabelName>(,<LabelName)*'
@@ -387,10 +385,12 @@ If an item contains spaces, it should be surrounded by " or '.
 	(allowgooglecommunication <Boolean>)|
 	(allowwebposting <Boolean>)|
 	(archiveonly <Boolean>)|
+	(customfootertext <String>)|
 	(customreplyto <EmailAddress>)|
 	(defaultmessagedenynotificationtext <String>)|
 	(description <String>)|
 	(gal|includeInGlobalAddressList <Boolean>)|
+	(includecustomfooter <Boolean>)|
 	(isarchived <Boolean>)|
 	(maxmessagebytes <ByteCount>)|
 	(memberscanpostasthegroup <Boolean>)|
@@ -457,7 +457,7 @@ gam version
 gam help
 
 gam batch <FileName>|- [charset <Charset>]
-gam csv <FileName>|- [charset <Charset>] [matchfield <FieldName> <RegularExpression>] gam <GAM argument list>
+gam csv <FileName>|- [charset <Charset>] gam <GAM argument list>
 
 gam oauth|oauth2 create|request
 gam oauth|oauth2 delete|revoke
@@ -585,7 +585,7 @@ gam update group <GroupItem> clear [owner] [manager] [member]
 
 gam print groups [todrive] ([domain <DomainName>] [member <UserItem>])
 	[maxresults <Number>] [delimiter <String>]
-	[members] [owners] [managers] [settings] <GroupFieldName>* [fields <GroupFieldNameList>|<GroupSettingsFieldNameList>]
+	[members] [owners] [managers] [settings] <GroupFieldName>* [fields <GroupFieldNameList>]
 
 
 gam print group-members|groups-members [todrive] ([domain <DomainName>] [member <UserItem>])|[group <GroupItem>]
@@ -646,7 +646,7 @@ gam course <CourseID> sync teachers|students <UserTypeEntity>
 gam print course-participants [todrive] (course|class <CourseID>)*|([teacher <UserItem>] [student <UserItem>]) [show all|students|teachers]
 
 gam create guardian|guardianinvite|inviteguardian <EmailAddress> <UserItem>
-gam delete guardian|guardians <GuardianID <UserItem>
+gam delete guardian|guardians <GuardianID>|<EmailAddress> <UserItem>
 gam show guardian|guardians [invitedguardian <GuardianID>] [student <UserItem>] [invitations] [states <GuardianStateList>] [<UserTypeEntity>]
 gam print guardian|guardians [todrive] [invitedguardian <GuardianID>] [student <UserItem>] [invitations] [states <GuardianStateList>] [<UserTypeEntity>]
 
@@ -698,6 +698,7 @@ gam <UserTypeEntity> transfer seccals <UserItem> [keepuser]
 gam <UserTypeEntity> print|show driveactivity [todrive] [fileid <DriveFileID>] [folderid <DriveFolderID>]
 gam <UserTypeEntity> print|show drivesettings [todrive]
 gam <UserTypeEntity> print|show filelist [todrive] [query <QueryDriveFile>] [allfields|<DriveFieldName>*]
+
 gam <UserTypeEntity> show fileinfo <DriveFileID> [allfields|<DriveFieldName>*]
 gam <UserTypeEntity> show filerevisions <DriveFileID>
 gam <UserTypeEntity> show filetree
@@ -709,7 +710,6 @@ gam <UserTypeEntity> delete|del drivefile <DriveFileID>|<DriveFileURL>|(query:<Q
 gam <UserTypeEntity> transfer drive <UserItem> [keepuser]
 gam <UserTypeEntity> delete|del emptydrivefolders
 gam <UserTypeEntity> empty drivetrash
-
 
 gam <UserTypeEntity> add drivefileacl <DriveFileID> anyone|(user <UserItem>)|(group <GroupItem>)|(domain <DomainName>)
 	(role <DriveFileACLRole>) [withlink] [sendmail] [emailmessage <String>]
@@ -795,8 +795,8 @@ gam <UserTypeEntity> language <Language>
 
 gam <UserTypeEntity> pagesize 25|50|100
 
-gam <UserTypeEntity> [add] sendas <EmailAddress> <Name> [replyto <EmailAddress>] [default] [treatasalias <Boolean>] [signature|sig <String>|(file <FileName> [charset <CharSet>]) (replace <RegularExpression> <String>)*]
-gam <UserTypeEntity> update sendas <EmailAddress> [name <Name>] [replyto <EmailAddress>] [default] [treatasalias <Boolean>] [signature|sig <String>|(file <FileName> [charset <CharSet>]) (replace <RegularExpression> <String>)*]
+gam <UserTypeEntity> [add] sendas <EmailAddress> <Name> [signature|sig <String>|(file <FileName> [charset <CharSet>]) (replace <RegularExpression> <String>)*] [replyto <EmailAddress>] [default] [treatasalias <Boolean>]
+gam <UserTypeEntity> update sendas <EmailAddress> [name <Name>] [signature|sig <String>|(file <FileName> [charset <CharSet>]) (replace <RegularExpression> <String>)*] [replyto <EmailAddress>] [default] [treatasalias <Boolean>]
 gam <UserTypeEntity> delete sendas <EmailAddress>
 gam <UserTypeEntity> show sendas [format]
 gam <UserTypeEntity> info sendas <EmailAddress> [format]
@@ -804,7 +804,7 @@ gam <UserTypeEntity> print sendas [todrive]
 
 gam <UserTypeEntity> shortcuts <Boolean>
 
-gam <UserTypeEntity> signature|sig <String>|(file <FileName> [charset <Charset>]) (replace <Tag> <String>)* [name <String>] [replyto <EmailAddress>] 
+gam <UserTypeEntity> signature|sig <String>|(file <FileName> [charset <Charset>]) (replace <Tag> <String>)* [name <String>] [replyto <EmailAddress>] [treatasalias <Boolean>]
 gam <UserTypeEntity> show signature|sig [format]
 
 gam <UserTypeEntity> snippets <Boolean>
