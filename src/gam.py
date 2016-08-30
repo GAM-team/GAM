@@ -8727,7 +8727,7 @@ def writeCSVfile(csvRows, titles, list_type, todrive):
   else:
     writer = csv.DictWriter(sys.stdout, fieldnames=titles, dialect=u'nixstdout', quoting=csv.QUOTE_MINIMAL)
   try:
-    writer.writeheader()
+    writer.writerow(dict((item, item) for item in writer.fieldnames))
     writer.writerows(csvRows)
   except IOError as e:
     systemErrorExit(6, e)
