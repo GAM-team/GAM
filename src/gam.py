@@ -5142,6 +5142,7 @@ def infoSendAs(users):
     user, gmail = buildGmailGAPIObject(user)
     if not gmail:
       continue
+    print u'User: {0}, Show SendAs Address:{1}'.format(user, currentCount(i, count))
     result = callGAPI(gmail.users().settings().sendAs(), u'get',
                       soft_errors=True,
                       userId=u'me', sendAsEmail=emailAddress)
