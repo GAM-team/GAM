@@ -4979,15 +4979,43 @@ def _processTags(tagReplacements, message):
     message = re.sub(match.group(0), tagReplacements.get(match.group(1), u''), message)
   return message
 
+def getSendAsAttributes(i, myarg, body, tagReplacements, command):
+  if myarg == u'replace':
+    matchTag = getString(i+1, u'Tag')
+    matchReplacement = getString(i+2, u'String', emptyOK=True)
+    tagReplacements[matchTag] = matchReplacement
+    i += 3
+  elif myarg == u'name':
+    body[u'displayName'] = sys.argv[i+1]
+    i += 2
+  elif myarg == u'replyto':
+    body[u'replyToAddress'] = sys.argv[i+1]
+    i += 2
+  elif myarg == u'treatasalias':
+    if sys.argv[i+1].lower() == u'true':
+      body[u'treatAsAlias'] = True
+    elif sys.argv[i+1].lower() == u'false':
+      body[u'treatAsAlias'] = False
+    else:
+      print u'ERROR: value for treatasalias must be true or false; got %s' % sys.argv[i+1]
+      sys.exit(2)
+    i += 2
+  else:
+    print u'ERROR: %s is not a valid argument for "gam <users> %s"' % (sys.argv[i], command)
+    sys.exit(2)
+  return i
+
 def addUpdateSendAs(users, i, addCmd):
   emailAddress = sys.argv[i]
   if emailAddress.find(u'@') < 0:
     emailAddress = emailAddress+u'@'+GC_Values[GC_DOMAIN]
   i += 1
   if addCmd:
+    command = [u'sendas', u'add sendas'][i == 6]
     body = {u'sendAsEmail': emailAddress, u'displayName': sys.argv[i]}
     i += 1
   else:
+    command = u'update sendas'
     body = {}
   signature = None
   tagReplacements = {}
@@ -5000,32 +5028,11 @@ def addUpdateSendAs(users, i, addCmd):
         filename = sys.argv[i]
         i, encoding = getCharSet(i+1)
         signature = readFile(filename, encoding=encoding)
-    elif myarg == u'replace':
-      matchTag = getString(i+1, u'Tag')
-      matchReplacement = getString(i+2, u'String', emptyOK=True)
-      tagReplacements[matchTag] = matchReplacement
-      i += 3
-    elif myarg == u'treatasalias':
-      if sys.argv[i+1].lower() == u'true':
-        body[u'treatAsAlias'] = True
-      elif sys.argv[i+1].lower() == u'false':
-        body[u'treatAsAlias'] = False
-      else:
-        print u'ERROR: value for treatasalias must be true or false; got %s' % sys.argv[i+1]
-        sys.exit(2)
-      i += 2
     elif myarg == u'default':
       body[u'isDefault'] = True
       i += 1
-    elif sys.argv[i].lower() == u'replyto':
-      body[u'replyToAddress'] = sys.argv[i+1]
-      i += 2
-    elif myarg == u'name':
-      body[u'displayName'] = sys.argv[i+1]
-      i += 2
     else:
-      print u'ERROR: %s is not a valid argument for "gam <users> sendas"' % sys.argv[i]
-      sys.exit(2)
+      i = getSendAsAttributes(i, myarg, body, tagReplacements, command)
   if signature != None:
     if not signature:
       body[u'signature'] = None
@@ -6213,20 +6220,7 @@ def doSignature(users):
   body = {u'sendAsEmail': None}
   while i < len(sys.argv):
     myarg = sys.argv[i].lower()
-    if myarg == u'replace':
-      matchTag = getString(i+1, u'Tag')
-      matchReplacement = getString(i+2, u'String', emptyOK=True)
-      tagReplacements[matchTag] = matchReplacement
-      i += 3
-    elif myarg == u'name':
-      body[u'displayName'] = sys.argv[i+1]
-      i += 2
-    elif myarg == u'replyto':
-      body[u'replyToAddress'] = sys.argv[i+1]
-      i += 2
-    else:
-      print u'ERROR: %s is not a valid argument for "gam <users> signature"' % sys.argv[i]
-      sys.exit(2)
+    i = getSendAsAttributes(i, myarg, body, tagReplacements, u'signature')
   if tagReplacements:
     body[u'signature'] = _processTags(tagReplacements, signature)
   else:
