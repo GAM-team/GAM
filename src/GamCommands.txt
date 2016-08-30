@@ -643,7 +643,7 @@ gam course <CourseID> delete alias <CourseAlias>
 gam course <CourseID> add teachers|students <UserItem>
 gam course <CourseID> delete|remove teachers|students <UserItem>
 gam course <CourseID> sync teachers|students <UserTypeEntity>
-gam print course-participants [todrive](course <CourseID>)* [teacher] [student] [show all|students|teachers]
+gam print course-participants [todrive] (course|class <CourseID>)*|([teacher <UserItem>] [student <UserItem>]) [show all|students|teachers]
 
 gam create guardian|guardianinvite|inviteguardian <EmailAddress> <UserItem>
 gam delete guardian|guardians <GuardianID <UserItem>

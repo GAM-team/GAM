@@ -2529,8 +2529,8 @@ def doPrintCourseParticipants():
     else:
       print u'ERROR: %s is not a valid argument for "gam print course-participants"' % sys.argv[i]
       sys.exit(2)
-    sys.stderr.write(u'Retrieving courses for organization (may take some time for large accounts)...\n')
   if len(courses) == 0:
+    sys.stderr.write(u'Retrieving courses for organization (may take some time for large accounts)...\n')
     page_message = u'Got %%num_items%% courses...\n'
     all_courses = callGAPIpages(croom.courses(), u'list', u'courses', page_message=page_message, teacherId=teacherId, studentId=studentId)
     for course in all_courses:
