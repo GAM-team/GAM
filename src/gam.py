@@ -503,12 +503,12 @@ def getCharSet(i):
     return (i, GC_Values.get(GC_CHARSET, GM_Globals[GM_SYS_ENCODING]))
   return (i+2, sys.argv[i+1])
 
-def cleanCourseId(courseId):
+def removeCourseIdScope(courseId):
   if courseId.startswith(u'd:'):
     return courseId[2:]
   return courseId
 
-def normalizeCourseId(courseId):
+def addCourseIdScope(courseId):
   if not courseId.isdigit() and courseId[:2] != u'd:':
     return u'd:{0}'.format(courseId)
   return courseId
@@ -517,7 +517,7 @@ def getCourseId(i):
   if i < len(sys.argv):
     courseId = sys.argv[i]
     if courseId:
-      return normalizeCourseId(courseId)
+      return addCourseIdScope(courseId)
   print u'ERROR: expected a <CourseId>'
   sys.exit(2)
 
@@ -1676,21 +1676,21 @@ def deleteDelegate(users):
 def doAddCourseParticipant():
   croom = buildGAPIObject(u'classroom')
   courseId = getCourseId(2)
-  cleanedCourseId = cleanCourseId(courseId)
+  noScopeCourseId = removeCourseIdScope(courseId)
   participant_type = sys.argv[4].lower()
   new_id = sys.argv[5]
   if participant_type in [u'alias']:
-    body = {u'alias': normalizeCourseId(new_id)}
+    body = {u'alias': addCourseIdScope(new_id)}
     callGAPI(croom.courses().aliases(), u'create', courseId=courseId, body=body)
-    print u'Added %s as an %s of course %s' % (cleanCourseId(new_id), participant_type, cleanedCourseId)
+    print u'Added %s as an %s of course %s' % (removeCourseIdScope(new_id), participant_type, noScopeCourseId)
   elif participant_type in [u'teacher', u'teachers']:
     body = {u'userId': new_id}
     callGAPI(croom.courses().teachers(), u'create', courseId=courseId, body=body)
-    print u'Added %s as a %s of course %s' % (new_id, participant_type, cleanedCourseId)
+    print u'Added %s as a %s of course %s' % (new_id, participant_type, noScopeCourseId)
   elif participant_type in [u'students', u'student']:
     body = {u'userId': new_id}
     callGAPI(croom.courses().students(), u'create', courseId=courseId, body=body)
-    print u'Added %s as a %s of course %s' % (new_id, participant_type, cleanedCourseId)
+    print u'Added %s as a %s of course %s' % (new_id, participant_type, noScopeCourseId)
   else:
     print u'ERROR: %s is not a valid argument to "gam course ID add"' % participant_type
     sys.exit(2)
@@ -1720,19 +1720,19 @@ def doSyncCourseParticipants():
 def doDelCourseParticipant():
   croom = buildGAPIObject(u'classroom')
   courseId = getCourseId(2)
-  cleanedCourseId = cleanCourseId(courseId)
+  noScopeCourseId = removeCourseIdScope(courseId)
   participant_type = sys.argv[4].lower()
   remove_id = sys.argv[5]
   if participant_type in [u'alias']:
-    remove_id = normalizeCourseId(remove_id)
+    remove_id = addCourseIdScope(remove_id)
     callGAPI(croom.courses().aliases(), u'delete', courseId=courseId, alias=remove_id)
-    print u'Removed %s as an %s of course %s' % (cleanCourseId(remove_id), participant_type, cleanedCourseId)
+    print u'Removed %s as an %s of course %s' % (removeCourseIdScope(remove_id), participant_type, noScopeCourseId)
   elif participant_type in [u'teacher', u'teachers']:
     callGAPI(croom.courses().teachers(), u'delete', courseId=courseId, userId=remove_id)
-    print u'Removed %s as a %s of course %s' % (remove_id, participant_type, cleanedCourseId)
+    print u'Removed %s as a %s of course %s' % (remove_id, participant_type, noScopeCourseId)
   elif participant_type in [u'student', u'students']:
     callGAPI(croom.courses().students(), u'delete', courseId=courseId, userId=remove_id)
-    print u'Removed %s as a %s of course %s' % (remove_id, participant_type, cleanedCourseId)
+    print u'Removed %s as a %s of course %s' % (remove_id, participant_type, noScopeCourseId)
   else:
     print u'ERROR: %s is not a valid argument to "gam course ID delete"' % participant_type
     sys.exit(2)
