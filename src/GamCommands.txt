@@ -804,7 +804,7 @@ gam <UserTypeEntity> print sendas [todrive]
 
 gam <UserTypeEntity> shortcuts <Boolean>
 
-gam <UserTypeEntity> signature|sig <String>|(file <FileName> [charset <Charset>]) (replace <Tag> <String>)* [name <String>] [replyto <EmailAddress>] [treatasalias <Boolean>]
+gam <UserTypeEntity> signature|sig <String>|(file <FileName> [charset <Charset>]) (replace <Tag> <String>)* [name <String>] [replyto <EmailAddress>] [default] [treatasalias <Boolean>]
 gam <UserTypeEntity> show signature|sig [format]
 
 gam <UserTypeEntity> snippets <Boolean>
