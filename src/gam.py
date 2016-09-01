@@ -9315,11 +9315,11 @@ def doPrintGroupMembers():
     group_email = group[u'email']
     sys.stderr.write(u'Getting members for %s (%s/%s)\n' % (group_email, i, count))
     group_members = callGAPIpages(cd.members(), u'list', u'members',
-        message_attribute=u'email', groupKey=group_email, fields=fields)
+                                  message_attribute=u'email', groupKey=group_email, fields=fields)
     for member in group_members:
       for unwanted_item in [u'kind', u'etag']:
         if unwanted_item in member:
-          del(member[unwanted_item])
+          del member[unwanted_item]
       for title in member:
         if title not in titles:
           titles.append(title)
