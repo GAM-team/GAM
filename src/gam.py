@@ -9304,8 +9304,8 @@ def doPrintGroupMembers():
       print u'ERROR: %s is not a valid argument for "gam print group-members"' % sys.argv[i]
       sys.exit(2)
   if not groups_to_get:
-    grous_to_get = callGAPIpages(cd.groups(), u'list', u'groups', message_attribute=u'email',
-                               customer=customer, domain=usedomain, userKey=usemember, fields=u'nextPageToken,groups(email)')
+    groups_to_get = callGAPIpages(cd.groups(), u'list', u'groups', message_attribute=u'email',
+                                 customer=customer, domain=usedomain, userKey=usemember, fields=u'nextPageToken,groups(email)')
   i = 0
   count = len(groups_to_get)
   for group in groups_to_get:
@@ -9313,11 +9313,11 @@ def doPrintGroupMembers():
     group_email = group[u'email']
     sys.stderr.write(u'Getting members for %s (%s/%s)\n' % (group_email, i, count))
     group_members = callGAPIpages(cd.members(), u'list', u'members',
-        message_attribute=u'email', groupKey=group_email, fields=fields)
+                                  message_attribute=u'email', groupKey=group_email, fields=fields)
     for member in group_members:
       for unwanted_item in [u'kind', u'etag']:
         if unwanted_item in member:
-          del(member[unwanted_item])
+          del member[unwanted_item]
       for title in member:
         if title not in titles:
           titles.append(title)
