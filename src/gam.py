@@ -9264,17 +9264,17 @@ def doPrintAliases():
       continue
   writeCSVfile(csvRows, titles, u'Aliases', todrive)
 
-MEMBERS_FIELD_NAMES = [u'group', u'id', u'email', u'role', u'type', u'name',]
-
 def doPrintGroupMembers():
   cd = buildGAPIObject(u'directory')
-  todrive = groupname = membernames = False
+  todrive = False
+  membernames = False
   customer = GC_Values[GC_CUSTOMER_ID]
-  usedomain = usemember = None
-  fieldsList = []
-  titles = []
+  usedomain = None
+  usemember = None
+  fields = None
+  titles = [u'group']
   csvRows = []
-  all_groups = []
+  groups_to_get = []
   i = 3
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'domain':
@@ -9289,57 +9289,42 @@ def doPrintGroupMembers():
       customer = None
       i += 2
     elif sys.argv[i].lower() == u'fields':
-      fieldNameList = sys.argv[i+1].lower()
-      for field in fieldNameList.lower().replace(u',', u' ').split():
-        if field in MEMBERS_FIELD_NAMES:
-          fieldsList.append(field)
-          titles.append(field)
-        else:
-          print u'ERROR: field name must be one of %s; got %s' % (u', '.join(MEMBERS_FIELD_NAMES), field)
-          sys.exit(2)
+      memberFieldsList = sys.argv[i+1].replace(u',', u' ').lower().split()
+      fields = u'nextPageToken,members(%s)' % (','.join(memberFieldsList))
       i += 2
     elif sys.argv[i].lower() == u'membernames':
       membernames = True
+      titles.append(u'name')
       i += 1
     elif sys.argv[i].lower() == u'group':
       group_email = sys.argv[i+1].lower()
       if group_email.find(u'@') == -1:
         group_email = u'%s@%s' % (group_email, GC_Values[GC_DOMAIN])
-      all_groups = [{u'email': group_email}]
+      groups_to_get = [{u'email': group_email}]
       i += 2
     else:
       print u'ERROR: %s is not a valid argument for "gam print group-members"' % sys.argv[i]
       sys.exit(2)
-  if not fieldsList:
-    for field in [u'id', u'role', u'group', u'email', u'type']:
-      fieldsList.append(field)
-      titles.append(field)
-    if membernames:
-      titles.append(u'name')
-  else:
-    if u'name'in fieldsList:
-      membernames = True
-      fieldsList.remove(u'name')
-  if u'group' in fieldsList:
-    groupname = True
-    fieldsList.remove(u'group')
-  if not all_groups:
-    all_groups = callGAPIpages(cd.groups(), u'list', u'groups', message_attribute=u'email',
+  if not groups_to_get:
+    grous_to_get = callGAPIpages(cd.groups(), u'list', u'groups', message_attribute=u'email',
                                customer=customer, domain=usedomain, userKey=usemember, fields=u'nextPageToken,groups(email)')
   i = 0
-  count = len(all_groups)
-  for group in all_groups:
+  count = len(groups_to_get)
+  for group in groups_to_get:
     i += 1
     group_email = group[u'email']
     sys.stderr.write(u'Getting members for %s (%s/%s)\n' % (group_email, i, count))
-    group_members = callGAPIpages(cd.members(), u'list', u'members', message_attribute=u'email', groupKey=group_email)
+    group_members = callGAPIpages(cd.members(), u'list', u'members',
+        message_attribute=u'email', groupKey=group_email, fields=fields)
     for member in group_members:
-      member_attr = {}
-      if groupname:
-        member_attr[u'group'] = group_email
-      for title in fieldsList:
-        member_attr[title] = member[title]
-      if membernames:
+      for unwanted_item in [u'kind', u'etag']:
+        if unwanted_item in member:
+          del(member[unwanted_item])
+      for title in member:
+        if title not in titles:
+          titles.append(title)
+      member[u'group'] = group_email
+      if membernames and u'type' in member and u'id' in member:
         if member[u'type'] == u'USER':
           try:
             mbinfo = callGAPI(cd.users(), u'get',
@@ -9358,8 +9343,8 @@ def doPrintGroupMembers():
             memberName = u'Unknown'
         else:
           memberName = u'Unknown'
-        member_attr[u'name'] = memberName
-      csvRows.append(member_attr)
+        member[u'name'] = memberName
+      csvRows.append(member)
   writeCSVfile(csvRows, titles, u'Group Members', todrive)
 
 def doPrintMobileDevices():
