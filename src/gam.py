@@ -9306,8 +9306,8 @@ def doPrintGroupMembers():
       print u'ERROR: %s is not a valid argument for "gam print group-members"' % sys.argv[i]
       sys.exit(2)
   if not groups_to_get:
-    grous_to_get = callGAPIpages(cd.groups(), u'list', u'groups', message_attribute=u'email',
-                               customer=customer, domain=usedomain, userKey=usemember, fields=u'nextPageToken,groups(email)')
+    groups_to_get = callGAPIpages(cd.groups(), u'list', u'groups', message_attribute=u'email',
+                                  customer=customer, domain=usedomain, userKey=usemember, fields=u'nextPageToken,groups(email)')
   i = 0
   count = len(groups_to_get)
   for group in groups_to_get:
