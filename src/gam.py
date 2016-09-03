@@ -10113,8 +10113,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
   elif entity_type in [u'courseparticipants', u'teachers', u'students']:
     croom = buildGAPIObject(u'classroom')
     users = []
-    if not entity.isdigit() and entity[:2] != u'd:':
-      entity = u'd:%s' % entity
+    entity = addCourseIdScope(entity)
     if entity_type in [u'courseparticipants', u'teachers']:
       page_message = u'Got %%total_items%% teachers...'
       teachers = callGAPIpages(croom.courses().teachers(), u'list', u'teachers', page_message=page_message, courseId=entity)
