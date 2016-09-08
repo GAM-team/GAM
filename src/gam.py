@@ -9340,7 +9340,7 @@ def doPrintGroupMembers():
         if member[u'type'] == u'USER':
           try:
             mbinfo = callGAPI(cd.users(), u'get',
-                              throw_reasons=[u'notFound', u'forbidden'],
+                              throw_reasons=[u'userNotFound', u'notFound', u'forbidden'],
                               userKey=member[u'id'], fields=u'name')
             memberName = mbinfo[u'name'][u'fullName']
           except googleapiclient.errors.HttpError:
