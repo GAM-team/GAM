@@ -5720,50 +5720,62 @@ FILTER_REMOVE_LABEL_TO_ARGUMENT_MAP = {
 
 def _printFilter(user, userFilter, labels):
   row = {u'User': user, u'id': userFilter[u'id']}
-  for item in userFilter[u'criteria']:
-    if item in [u'hasAttachment', u'excludeChats']:
-      row[item] = item
-    elif item == u'size':
-      row[item] = u'size {0} {1}'.format(userFilter[u'criteria'][u'sizeComparison'], userFilter[u'criteria'][item])
-    elif item == u'sizeComparison':
-      pass
-    else:
-      row[item] = u'{0} {1}'.format(item, userFilter[u'criteria'][item])
-  for labelId in userFilter[u'action'].get(u'addLabelIds', []):
-    if labelId in FILTER_ADD_LABEL_TO_ARGUMENT_MAP:
-      row[FILTER_ADD_LABEL_TO_ARGUMENT_MAP[labelId]] = FILTER_ADD_LABEL_TO_ARGUMENT_MAP[labelId]
-    else:
-      row[u'label'] = u'label {0}'.format(_getLabelName(labels, labelId))
-  for labelId in userFilter[u'action'].get(u'removeLabelIds', []):
-    if labelId in FILTER_REMOVE_LABEL_TO_ARGUMENT_MAP:
-      row[FILTER_REMOVE_LABEL_TO_ARGUMENT_MAP[labelId]] = FILTER_REMOVE_LABEL_TO_ARGUMENT_MAP[labelId]
-  if userFilter[u'action'].get(u'forward'):
-    row[u'forward'] = u'forward {0}'.format(userFilter[u'action'][u'forward'])
+  if u'criteria' in userFilter:
+    for item in userFilter[u'criteria']:
+      if item in [u'hasAttachment', u'excludeChats']:
+        row[item] = item
+      elif item == u'size':
+        row[item] = u'size {0} {1}'.format(userFilter[u'criteria'][u'sizeComparison'], userFilter[u'criteria'][item])
+      elif item == u'sizeComparison':
+        pass
+      else:
+        row[item] = u'{0} {1}'.format(item, userFilter[u'criteria'][item])
+  else:
+    row[u'error'] = u'NoCriteria'
+  if u'action' in userFilter:
+    for labelId in userFilter[u'action'].get(u'addLabelIds', []):
+      if labelId in FILTER_ADD_LABEL_TO_ARGUMENT_MAP:
+        row[FILTER_ADD_LABEL_TO_ARGUMENT_MAP[labelId]] = FILTER_ADD_LABEL_TO_ARGUMENT_MAP[labelId]
+      else:
+        row[u'label'] = u'label {0}'.format(_getLabelName(labels, labelId))
+    for labelId in userFilter[u'action'].get(u'removeLabelIds', []):
+      if labelId in FILTER_REMOVE_LABEL_TO_ARGUMENT_MAP:
+        row[FILTER_REMOVE_LABEL_TO_ARGUMENT_MAP[labelId]] = FILTER_REMOVE_LABEL_TO_ARGUMENT_MAP[labelId]
+    if userFilter[u'action'].get(u'forward'):
+      row[u'forward'] = u'forward {0}'.format(userFilter[u'action'][u'forward'])
+  else:
+    row[u'error'] = u'NoActions'
   return row
 
 def _showFilter(userFilter, j, jcount, labels):
   print u'  Filter: {0}{1}'.format(userFilter[u'id'], currentCount(j, jcount))
   print u'    Criteria:'
-  for item in userFilter[u'criteria']:
-    if item in [u'hasAttachment', u'excludeChats']:
-      print u'      {0}'.format(item)
-    elif item == u'size':
-      print u'      {0} {1} {2}'.format(item, userFilter[u'criteria'][u'sizeComparison'], userFilter[u'criteria'][item])
-    elif item == u'sizeComparison':
-      pass
-    else:
-      print convertUTF8(u'      {0} "{1}"'.format(item, userFilter[u'criteria'][item]))
+  if u'criteria' in userFilter:
+    for item in userFilter[u'criteria']:
+      if item in [u'hasAttachment', u'excludeChats']:
+        print u'      {0}'.format(item)
+      elif item == u'size':
+        print u'      {0} {1} {2}'.format(item, userFilter[u'criteria'][u'sizeComparison'], userFilter[u'criteria'][item])
+      elif item == u'sizeComparison':
+        pass
+      else:
+        print convertUTF8(u'      {0} "{1}"'.format(item, userFilter[u'criteria'][item]))
+  else:
+    print u'      {0}: No Filter criteria'.format(ERROR)
   print u'    Actions:'
-  for labelId in userFilter[u'action'].get(u'addLabelIds', []):
-    if labelId in FILTER_ADD_LABEL_TO_ARGUMENT_MAP:
-      print u'      {0}'.format(FILTER_ADD_LABEL_TO_ARGUMENT_MAP[labelId])
-    else:
-      print convertUTF8(u'      label "{0}"'.format(_getLabelName(labels, labelId)))
-  for labelId in userFilter[u'action'].get(u'removeLabelIds', []):
-    if labelId in FILTER_REMOVE_LABEL_TO_ARGUMENT_MAP:
-      print u'      {0}'.format(FILTER_REMOVE_LABEL_TO_ARGUMENT_MAP[labelId])
-  if userFilter[u'action'].get(u'forward'):
-    print u'    Forwarding Address: {0}'.format(userFilter[u'action'][u'forward'])
+  if u'action' in userFilter:
+    for labelId in userFilter[u'action'].get(u'addLabelIds', []):
+      if labelId in FILTER_ADD_LABEL_TO_ARGUMENT_MAP:
+        print u'      {0}'.format(FILTER_ADD_LABEL_TO_ARGUMENT_MAP[labelId])
+      else:
+        print convertUTF8(u'      label "{0}"'.format(_getLabelName(labels, labelId)))
+    for labelId in userFilter[u'action'].get(u'removeLabelIds', []):
+      if labelId in FILTER_REMOVE_LABEL_TO_ARGUMENT_MAP:
+        print u'      {0}'.format(FILTER_REMOVE_LABEL_TO_ARGUMENT_MAP[labelId])
+    if userFilter[u'action'].get(u'forward'):
+      print u'    Forwarding Address: {0}'.format(userFilter[u'action'][u'forward'])
+  else:
+    print u'      {0}: No Filter actions'.format(ERROR)
 #
 FILTER_CRITERIA_CHOICES_MAP = {
   u'excludechats': u'excludeChats',
