@@ -5032,7 +5032,9 @@ def addUpdateSendAs(users, i, addCmd):
       if signature == u'file':
         filename = sys.argv[i]
         i, encoding = getCharSet(i+1)
-        signature = readFile(filename, encoding=encoding)
+        signature = readFile(filename, encoding=encoding).replace(u'\\n', u'<br/>')
+      else:
+        signature = signature.replace(u'\\n', u'<br/>')
     else:
       i = getSendAsAttributes(i, myarg, body, tagReplacements, command)
   if signature != None:
@@ -6228,9 +6230,9 @@ def doSignature(users):
   if sys.argv[i].lower() == u'file':
     filename = sys.argv[i+1]
     i, encoding = getCharSet(i+2)
-    signature = readFile(filename, encoding=encoding).replace(u'\\n', u'<br/>').replace(u'\n', u'<br/>')
+    signature = readFile(filename, encoding=encoding).replace(u'\\n', u'<br/>')
   else:
-    signature = getString(i, u'String', emptyOK=True).replace(u'\\n', u'<br/>').replace(u'\n', u'<br/>')
+    signature = getString(i, u'String', emptyOK=True).replace(u'\\n', u'<br/>')
     i += 1
   body = {u'sendAsEmail': None}
   while i < len(sys.argv):
@@ -6350,7 +6352,7 @@ def doVacation(users):
         sys.exit(2)
     if message:
       if responseBodyType == u'responseBodyHtml':
-        message = message.replace(u'\\n', u'<br/>').replace(u'\n', u'<br/>')
+        message = message.replace(u'\\n', u'<br/>')
       else:
         message = message.replace(u'\\n', u'\n')
       if tagReplacements:
