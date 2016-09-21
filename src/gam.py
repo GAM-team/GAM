@@ -1865,7 +1865,6 @@ ADDRESS_FIELDS_ARGUMENT_MAP = {
 
 def doUpdateCustomer():
   cd = buildGAPIObject(u'directory')
-  language = None
   body = {}
   i = 3
   while i < len(sys.argv):
@@ -1881,17 +1880,13 @@ def doUpdateCustomer():
       body[u'phoneNumber'] = sys.argv[i+1]
       i += 2
     elif myarg == u'language':
-#      body[u'language'] = sys.argv[i+1]
-      language = sys.argv[i+1]
+      body[u'language'] = sys.argv[i+1]
       i += 2
     else:
       print u'ERROR: %s is not a valid argument for "gam update customer"' % myarg
       sys.exit(2)
   if body:
     callGAPI(cd.customers(), u'update', customerKey=GC_Values[GC_CUSTOMER_ID], body=body)
-  if language:
-    adminObj = getAdminSettingsObject()
-    callGData(adminObj, u'UpdateDefaultLanguage', defaultLanguage=language)
   print u'Updated customer'
 
 def doDelDomain():
