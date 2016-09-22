@@ -6513,7 +6513,7 @@ def doPrintShowUserSchemas(csvFormat):
       todrive = True
       i += 1
     else:
-      print u'ERROR: %s is not a valid argument for "gam <users> %s schemas"' % (myarg, [u'show', u'print'][csvFormat])
+      print u'ERROR: %s is not a valid argument for "gam %s schemas"' % (myarg, [u'show', u'print'][csvFormat])
       sys.exit(2)
   schemas = callGAPI(cd.schemas(), u'list', customerId=GC_Values[GC_CUSTOMER_ID])
   if not schemas or u'schemas' not in schemas:
