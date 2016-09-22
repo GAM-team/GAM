@@ -295,18 +295,18 @@ If an item contains spaces, it should be surrounded by " or '.
 <CalendarList> ::= '<CalendarItem>(,<CalendarItem>)*'
 <CourseAliasList> ::= '<CourseAlias>(,<CourseAlias>)*'
 <CourseIDList> ::= '<CourseID>(,<CourseID>)*'
-<CrOSFieldNameList> ::= '<CrOSFieldName(,<CrOSFieldName>)*'
+<CrOSFieldNameList> ::= '<CrOSFieldName>(,<CrOSFieldName>)*'
 <CrOSList> ::= '<CrOSID>(,<CrOSID>)*'
 <DriveFileList> ::= '<DriveFileItem>(,<DriveFileItem>)*'
 <EmailAddressList> ::= '<EmailAddress>(,<EmailAddress>)*'
 <EventIDList> ::= '<EventID>(,<EventID>)*'
 <FileFormatList> ::= '<FileFormat>(,<FileFormat)*'
 <FilterIDList> ::= '<FilterID>(,<FilterID>)*'
-<GroupFieldNameList> ::= '<GroupFieldName(,<GroupFieldName>)*'
+<GroupFieldNameList> ::= '<GroupFieldName>(,<GroupFieldName>)*'
 <GroupList> ::= '<GroupItem>(,<GroupItem>)*'
 <GuardianStateList> ::= '<GuardianState>(,<GuardianState>)*'
 <LabelNameList> ::= '<LabelName>(,<LabelName)*'
-<MembersFieldNameList> ::= '<MembersFieldName(,<MembersFieldName>)*'
+<MembersFieldNameList> ::= '<MembersFieldName>(,<MembersFieldName>)*'
 <MobileList> ::= '<MobileId>(,<MobileId>)*'
 <OrgUnitList> ::== '<OrgUnitPath>(,<OrgUnitPath>)*'
 <PrinterIDList> ::= '<PrinterID>(,<PrinterID>)*'
@@ -315,7 +315,7 @@ If an item contains spaces, it should be surrounded by " or '.
 <ResourceIDList> ::= '<ResourceID>(,<ResourceID>)*'
 <SKUIDList> ='<SKUID>(,<SKUID>)*'
 <SchemaNameList> ::= '<SchemaName>(,<SchemaName>)*'
-<UserFieldNameList> ::= '<UserFieldName(,<UserFieldName>)*'
+<UserFieldNameList> ::= '<UserFieldName>(,<UserFieldName>)*'
 <UserList> ::= '<UserItem>(,<UserItem>)*'
 
 # Specify a collection of ChromeOS devices by directly specifying them
@@ -450,8 +450,7 @@ If an item contains spaces, it should be surrounded by " or '.
 	(relation|relations clear|(spouse|child|mother|father|parent|brother|sister|friend|relative|domestic_partner|manager|assistant|referred_by|partner|<String> <String>))|
 	(suspended <Boolean>)|
 	(website|websites clear|(home_page|blog|profile|work|home|other|ftp|reservations|app_install_page|<String> <URL> [notprimary|primary]))|
-	(<SchemaName>.<FieldName> [multivalued|multivalue|value] <String>)
-
+	(<SchemaName>.<FieldName> [multivalued|multivalue|value [type work|home|other|(custom <String>)]] <String>)
 
 gam version
 gam help

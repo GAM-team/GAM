@@ -6918,26 +6918,33 @@ def getUserAttributes(i, updateCmd=False):
       body[u'notes'] = note
       i += 1
     else:
-      if u'customSchemas' not in body:
-        body[u'customSchemas'] = {}
       try:
         (schemaName, fieldName) = sys.argv[i].split(u'.')
       except ValueError:
         print u'ERROR: %s is not a valid create/update user argument or custom schema name.' % sys.argv[i]
         sys.exit(2)
-      field_value = sys.argv[i+1]
-      is_multivalue = False
-      if field_value.lower() in [u'multivalue', u'multivalued', u'value']:
-        is_multivalue = True
-        i += 1
-        field_value = sys.argv[i+1]
+      body.setdefault(u'customSchemas', {})
       body[u'customSchemas'].setdefault(schemaName, {})
-      if is_multivalue:
+      i += 1
+      if sys.argv[i].lower() in [u'multivalue', u'multivalued', u'value']:
+        i += 1
         body[u'customSchemas'][schemaName].setdefault(fieldName, [])
-        body[u'customSchemas'][schemaName][fieldName].append({u'value': field_value})
+        schemaValue = {}
+        if sys.argv[i].lower() == u'type':
+          i += 1
+          schemaValue[u'type'] = sys.argv[i].lower()
+          if schemaValue[u'type'] not in [u'custom', u'home', u'other', u'work']:
+            print u'ERROR: wrong type must be one of custom, home, other, work; got %s' % schemaValue[u'type']
+            sys.exit(2)
+          i += 1
+          if schemaValue[u'type'] == u'custom':
+            schemaValue[u'customType'] = sys.argv[i]
+            i += 1
+        schemaValue[u'value'] = sys.argv[i]
+        body[u'customSchemas'][schemaName][fieldName].append(schemaValue)
       else:
-        body[u'customSchemas'][schemaName][fieldName] = field_value
-      i += 2
+        body[u'customSchemas'][schemaName][fieldName] = sys.argv[i]
+      i += 1
   if need_password:
     body[u'password'] = u''.join(random.sample(u'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789~`!@#$%^&*()-=_+:;"\'{}[]\\|', 25))
   if u'password' in body and need_to_hash_password:
@@ -7733,7 +7740,10 @@ def doGetUserInfo(user_email=None):
           if isinstance(user[u'customSchemas'][schema][field], list):
             print u'  %s:' % field
             for an_item in user[u'customSchemas'][schema][field]:
-              print convertUTF8(u'   %s' % an_item[u'value'])
+              print convertUTF8(u'   type: %s' % (an_item[u'type']))
+              if an_item[u'type'] == u'custom':
+                print convertUTF8(u'    customType: %s' % (an_item[u'customType']))
+              print convertUTF8(u'    value: %s' % (an_item[u'value']))
           else:
             print convertUTF8(u'  %s: %s' % (field, user[u'customSchemas'][schema][field]))
         print
