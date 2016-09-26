@@ -5987,8 +5987,6 @@ EMAILSETTINGS_OLD_NEW_OLD_FORWARD_ACTION_MAP = {
   }
 
 def doForward(users):
-  newAPI = False
-  action = forward_to = None
   if sys.argv[4].lower() in true_values:
     enable = True
   elif sys.argv[4].lower() in false_values:
@@ -5997,58 +5995,41 @@ def doForward(users):
     print u'ERROR: value for "gam <users> forward" must be true or false; got %s' % sys.argv[4]
     sys.exit(2)
   body = {u'enabled': enable}
-  i = 5
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower()
-    if myarg in EMAILSETTINGS_FORWARD_POP_ACTION_CHOICES_MAP:
-      body[u'disposition'] = EMAILSETTINGS_FORWARD_POP_ACTION_CHOICES_MAP[myarg]
-      i += 1
-    elif myarg == u'confirm':
-      i += 1
-    elif myarg == u'newapi':
-      newAPI = True
-      i += 1
-    elif myarg.find(u'@') != -1:
-      body[u'emailAddress'] = sys.argv[i]
-      i += 1
-    else:
-      print u'ERROR: %s is not a valid argument for "gam <users> forward"' % myarg
+  if enable:
+    i = 5
+    while i < len(sys.argv):
+      myarg = sys.argv[i].lower()
+      if myarg in EMAILSETTINGS_FORWARD_POP_ACTION_CHOICES_MAP:
+        body[u'disposition'] = EMAILSETTINGS_FORWARD_POP_ACTION_CHOICES_MAP[myarg]
+        i += 1
+      elif myarg == u'confirm':
+        i += 1
+      elif myarg.find(u'@') != -1:
+        body[u'emailAddress'] = sys.argv[i]
+        i += 1
+      else:
+        print u'ERROR: %s is not a valid argument for "gam <users> forward"' % myarg
+        sys.exit(2)
+    if not body.get(u'disposition'):
+      print u'ERROR: you must specify an action for "gam <users> forward'
       sys.exit(2)
-  if enable and (not body.get(u'disposition') or not body.get(u'emailAddress')):
-    print u'ERROR: you must specify an action and a forwarding address for "gam <users> forward'
-    sys.exit(2)
-  if not newAPI:
-    emailsettings = getEmailSettingsObject()
-    if enable:
-      action = EMAILSETTINGS_OLD_NEW_OLD_FORWARD_ACTION_MAP[body[u'disposition']]
-      forward_to = body[u'emailAddress']
+    if not body.get(u'emailAddress'):
+      print u'ERROR: you must specify a forwarding address for "gam <users> forward'
+      sys.exit(2)
   i = 0
   count = len(users)
   for user in users:
     i += 1
-    if newAPI:
-      user, gmail = buildGmailGAPIObject(user)
-      if not gmail:
-        continue
-      if enable:
-        print u"User: %s, Forward Enabled: %s, Forwarding Address: %s, Action: %s (%s/%s)" % (user, enable, body[u'emailAddress'], body[u'disposition'], i, count)
-      else:
-        print u"User: %s, Forward Enabled: %s (%s/%s)" % (user, enable, i, count)
-      callGAPI(gmail.users().settings(), u'updateAutoForwarding',
-               soft_errors=True,
-               userId=u'me', body=body)
+    user, gmail = buildGmailGAPIObject(user)
+    if not gmail:
+      continue
+    if enable:
+      print u"User: %s, Forward Enabled: %s, Forwarding Address: %s, Action: %s (%s/%s)" % (user, enable, body[u'emailAddress'], body[u'disposition'], i, count)
     else:
-      if user.find(u'@') > 0:
-        emailsettings.domain = user[user.find(u'@')+1:]
-        username = user[:user.find(u'@')]
-      else:
-        emailsettings.domain = GC_Values[GC_DOMAIN] #make sure it's back at default domain
-        username = user
-      if enable:
-        print u"User: %s, Forward Enabled: %s, Forwarding Address: %s, Action: %s (%s/%s)" % (user, enable, body[u'emailAddress'], body[u'disposition'], i, count)
-      else:
-        print u"User: %s, Forward Enabled: %s (%s/%s)" % (user, enable, i, count)
-      callGData(emailsettings, u'UpdateForwarding', soft_errors=True, username=username, enable=enable, action=action, forward_to=forward_to)
+      print u"User: %s, Forward Enabled: %s (%s/%s)" % (user, enable, i, count)
+    callGAPI(gmail.users().settings(), u'updateAutoForwarding',
+             soft_errors=True,
+             userId=u'me', body=body)
 
 def printShowForward(users, csvFormat):
   def _showForward(user, i, count, result):
@@ -6082,52 +6063,30 @@ def printShowForward(users, csvFormat):
     todrive = False
     csvRows = []
     titles = [u'User', u'forwardEnabled', u'forwardTo', u'disposition']
-  newAPI = False
   i = 5
   while i < len(sys.argv):
     myarg = sys.argv[i].lower()
     if csvFormat and myarg == u'todrive':
       todrive = True
       i += 1
-    elif myarg == u'newapi':
-      newAPI = True
-      i += 1
     else:
       print u'ERROR: %s is not a valid argument for "gam <users> %s forward"' % (myarg, [u'show', u'print'][csvFormat])
       sys.exit(2)
-  if not newAPI:
-    emailsettings = getEmailSettingsObject()
   i = 0
   count = len(users)
   for user in users:
     i += 1
-    if newAPI:
-      user, gmail = buildGmailGAPIObject(user)
-      if not gmail:
-        continue
-      result = callGAPI(gmail.users().settings(), u'getAutoForwarding',
-                        soft_errors=True,
-                        userId=u'me')
-      if result:
-        if not csvFormat:
-          _showForward(user, i, count, result)
-        else:
-          _printForward(user, result)
-    else:
-      if user.find(u'@') > 0:
-        emailsettings.domain = user[user.find(u'@')+1:]
-        username = user[:user.find(u'@')]
+    user, gmail = buildGmailGAPIObject(user)
+    if not gmail:
+      continue
+    result = callGAPI(gmail.users().settings(), u'getAutoForwarding',
+                      soft_errors=True,
+                      userId=u'me')
+    if result:
+      if not csvFormat:
+        _showForward(user, i, count, result)
       else:
-        emailsettings.domain = GC_Values[GC_DOMAIN]
-        username = user
-      result = callGData(emailsettings, u'GetForward',
-                         soft_errors=True,
-                         username=username)
-      if result:
-        if not csvFormat:
-          _showForward(user, i, count, result)
-        else:
-          _printForward(user, result)
+        _printForward(user, result)
   if csvFormat:
     writeCSVfile(csvRows, titles, u'Forward', todrive)
 
