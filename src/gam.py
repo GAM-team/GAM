@@ -5043,6 +5043,9 @@ def addUpdateSendAs(users, i, addCmd):
       body[u'signature'] = _processTags(tagReplacements, signature)
     else:
       body[u'signature'] = signature
+  kwargs = {u'body': body}
+  if not addCmd:
+    kwargs[u'sendAsEmail'] = emailAddress
   i = 0
   count = len(users)
   for user in users:
@@ -5051,9 +5054,6 @@ def addUpdateSendAs(users, i, addCmd):
     if not gmail:
       continue
     print u"Allowing %s to send as %s (%s/%s)" % (user, emailAddress, i, count)
-    kwargs = {u'body': body}
-    if not addCmd:
-      kwargs[u'sendAsEmail'] = emailAddress
     callGAPI(gmail.users().settings().sendAs(), [u'patch', u'create'][addCmd],
              soft_errors=True,
              userId=u'me', **kwargs)
@@ -6208,9 +6208,17 @@ def doSignature(users):
     if not gmail:
       continue
     print u'Setting Signature for {0} ({1}/{2})'.format(user, i, count)
-    callGAPI(gmail.users().settings().sendAs(), u'patch',
-             soft_errors=True,
-             userId=u'me', body=body, sendAsEmail=user)
+    result = callGAPI(gmail.users().settings().sendAs(), u'list',
+                      soft_errors=True,
+                      userId=u'me')
+    if result:
+      for sendas in result[u'sendAs']:
+        if sendas.get(u'isPrimary', False):
+          emailAddress = sendas[u'sendAsEmail']
+          callGAPI(gmail.users().settings().sendAs(), u'patch',
+                   soft_errors=True,
+                   userId=u'me', body=body, sendAsEmail=emailAddress)
+          break
 
 def getSignature(users):
   formatSig = False
