@@ -4047,6 +4047,9 @@ def printDriveFileList(users):
     elif myarg == u'query':
       query += u' and %s' % sys.argv[i+1]
       i += 2
+    elif myarg == u'fullquery':
+      query = sys.argv[i+1]
+      i += 2
     elif myarg == u'allfields':
       fieldsList = []
       allfields = True

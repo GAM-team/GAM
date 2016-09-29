@@ -696,7 +696,7 @@ gam <UserTypeEntity> transfer seccals <UserItem> [keepuser]
 
 gam <UserTypeEntity> print|show driveactivity [todrive] [fileid <DriveFileID>] [folderid <DriveFolderID>]
 gam <UserTypeEntity> print|show drivesettings [todrive]
-gam <UserTypeEntity> print|show filelist [todrive] [query <QueryDriveFile>] [allfields|<DriveFieldName>*]
+gam <UserTypeEntity> print|show filelist [todrive] [query <QueryDriveFile>] [fullquery <QueryDriveFile>] [allfields|<DriveFieldName>*]
 
 gam <UserTypeEntity> show fileinfo <DriveFileID> [allfields|<DriveFieldName>*]
 gam <UserTypeEntity> show filerevisions <DriveFileID>
