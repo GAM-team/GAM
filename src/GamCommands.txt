@@ -238,7 +238,6 @@ If an item contains spaces, it should be surrounded by " or '.
 
 <MembersFieldName> ::=
 	email|
-	group|
 	id|
 	name|
 	role|
