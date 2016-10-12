@@ -11242,6 +11242,8 @@ def win32_unicode_argv():
 # Run from command line
 if __name__ == "__main__":
   reload(sys)
+  if sys.version_info[:2] != (2, 7):
+    sys.exit(5)
   if hasattr(sys, u'setdefaultencoding'):
     sys.setdefaultencoding(u'UTF-8')
   if GM_Globals[GM_WINDOWS]:
