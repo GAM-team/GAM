@@ -6222,7 +6222,7 @@ def doSignature(users):
   else:
     signature = getString(i, u'String', emptyOK=True).replace(u'\\n', u'<br/>').replace(u'\n', u'<br/>')
     i += 1
-  body = {u'sendAsEmail': None}
+  body = {}
   while i < len(sys.argv):
     myarg = sys.argv[i].lower()
     i = getSendAsAttributes(i, myarg, body, tagReplacements, u'signature')
