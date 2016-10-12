@@ -8889,7 +8889,7 @@ def doPrintUsers():
     elif myarg == u'todrive':
       todrive = True
       i += 1
-    elif myarg in [u'deleted_only', u'only_deleted']:
+    elif myarg in [u'deletedonly', u'onlydeleted']:
       deleted_only = True
       i += 1
     elif myarg == u'orderby':
