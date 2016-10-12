@@ -7368,6 +7368,9 @@ def doUpdateCros():
     devices = [deviceId,]
   i = 4
   body = {}
+  update_device = True
+  action_device = False
+  ack_wipe = False
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'user':
       body[u'annotatedUser'] = sys.argv[i + 1]
@@ -7378,12 +7381,30 @@ def doUpdateCros():
     elif sys.argv[i].lower() == u'notes':
       body[u'notes'] = sys.argv[i + 1]
       i += 2
-    elif sys.argv[i].lower() == u'status':
-      body[u'status'] = sys.argv[i + 1].upper()
-      #if body[u'status'] not in [u'ACTIVE', u'DEPROVISIONED']:
-      #  print u'ERROR: status must be active or deprovisioned; got %s' % body[u'status']
-      #  sys.exit(2)
+    elif sys.argv[i].lower() == u'action':
+      update_device = False
+      action_device = True
+      action = sys.argv[i+1].replace(u'_', u'').replace(u'-', u'').lower()
+      deprovisionReason = None
+      if action in [u'deprovisionsamemodelreplace', u'deprovisionsamemodelreplacement']:
+        action = u'deprovision'
+        deprovisionReason = u'same_model_replacement'
+      elif action in [u'deprovisiondifferentmodelreplace', u'deprovisiondifferentmodelreplacement']:
+        action = u'deprovision'
+        deprovisionReason = u'differentmodelreplacement'
+      elif action in [u'deprovisionretiringdevice']:
+        action = u'deprovision'
+        deprovisionReason = u'retiring_device'
+      elif action not in [u'disable', u'reenable']:
+        print u'ERROR: expected action of deprovision_same_model_replace, deprovision_different_model_replace, deprovision_retiring_device, disable or reenable, got %s'
+        sys.exit(3)
+      body = {u'action': action}
+      if deprovisionReason:
+        body[u'deprovisionReason'] = deprovisionReason
       i += 2
+    elif sys.argv[i].replace(u'_', u'').lower() in [u'acknowledgedevicetouchrequirement']:
+      ack_wipe = True
+      i += 1
     elif sys.argv[i].lower() in [u'tag', u'asset', u'assetid']:
       body[u'annotatedAssetId'] = sys.argv[i + 1]
       #annotatedAssetId - Handle Asset Tag Field 2015-04-13
@@ -7396,12 +7417,19 @@ def doUpdateCros():
     else:
       print u'ERROR: %s is not a valid argument for "gam update cros"' % sys.argv[i]
       sys.exit(2)
-  i = 0
+  i = 1
   device_count = len(devices)
   for this_device in devices:
+    if update_device:
+      print u' updating %s (%s of %s)' % (this_device, i, device_count)
+      callGAPI(service=cd.chromeosdevices(), function=u'patch', deviceId=this_device, body=body, customerId=GC_Values[GC_CUSTOMER_ID])
+    elif action_device:
+      if body[u'action'] == u'deprovision' and not ack_wipe:
+        print u'WARNING: Refusing to deprovision %s because acknowledge_device_touch_requirement not specified. Deprovisioning a device means the device will have to be physically wiped and re-enrolled to be managed by your domain again. This requires physical access to the device and is very time consuming to perform for each device. Please add "acknowledge_device_touch_requirement" to the GAM command if you understand this and wish to proceed with the deprovision. Please also be aware that deprovisioning can have an effect on your device license count. See https://support.google.com/chrome/a/answer/3523633 for full details.' % (this_device)
+        sys.exit(3)
+      print u' performing action %s for %s (%s of %s)' % (action, this_device, i, device_count)
+      callGAPI(cd.chromeosdevices(), function=u'action', customerId=GC_Values[GC_CUSTOMER_ID], resourceId=this_device, body=body)
     i += 1
-    print u' updating %s (%s/%s)' % (this_device, i, device_count)
-    callGAPI(cd.chromeosdevices(), u'patch', deviceId=this_device, body=body, customerId=GC_Values[GC_CUSTOMER_ID])
 
 def doUpdateMobile():
   cd = buildGAPIObject(u'directory')
