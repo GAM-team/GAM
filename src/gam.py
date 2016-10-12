@@ -7396,7 +7396,7 @@ def doUpdateCros():
         action = u'deprovision'
         deprovisionReason = u'retiring_device'
       elif action not in [u'disable', u'reenable']:
-        print u'ERROR: expected action of deprovision_same_model_replace, deprovision_different_model_replace, deprovision_retiring_device, disable or reenable, got %s'
+        print u'ERROR: expected action of deprovision_same_model_replace, deprovision_different_model_replace, deprovision_retiring_device, disable or reenable, got %s' % action
         sys.exit(3)
       body = {u'action': action}
       if deprovisionReason:
@@ -7407,7 +7407,6 @@ def doUpdateCros():
       i += 1
     elif sys.argv[i].lower() in [u'tag', u'asset', u'assetid']:
       body[u'annotatedAssetId'] = sys.argv[i + 1]
-      #annotatedAssetId - Handle Asset Tag Field 2015-04-13
       i += 2
     elif sys.argv[i].lower() in [u'ou', u'org']:
       body[u'orgUnitPath'] = sys.argv[i + 1]
