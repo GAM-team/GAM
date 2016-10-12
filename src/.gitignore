@@ -67,3 +67,6 @@ gamcache/
 gam/
 gam-64/
 *.zip
+*.msi
+*.wixobj
+*.wixpdb
