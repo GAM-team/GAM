@@ -11243,6 +11243,7 @@ def win32_unicode_argv():
 if __name__ == "__main__":
   reload(sys)
   if sys.version_info[:2] != (2, 7):
+    print u'ERROR: GAM requires Python 2.7. You are running %s.%s.%s. Please upgrade your Python version or use one of the binary GAM downloads.' % sys.version_info[:3]
     sys.exit(5)
   if hasattr(sys, u'setdefaultencoding'):
     sys.setdefaultencoding(u'UTF-8')
