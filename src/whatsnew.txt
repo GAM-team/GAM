@@ -1,3 +1,9 @@
+GAM 3.72
+- Chrome OS device actions, disable, re-enable and deprovision devices.
+- (beta) MSI Windows build
+- (beta) binary Linux and MacOS builds
+- Numerous fixes and updates by Ross
+
 GAM 3.71
 - Fix update first / last name.
 - upgrade GAM versions of oauth2client, googleapiclient, RSA and six
