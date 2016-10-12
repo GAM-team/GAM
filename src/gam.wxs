@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi" >
+  <Product
+      Id="*"
+      Name="GAM"
+      Language="1033"
+      Version="$(env.GAMVERSION)"
+      Manufacturer="Jay Lee - jay0lee@gmail.com"
+      UpgradeCode="15C5FD61-B04C-4E04-A26D-CD8424C19D9F">
+    <Package
+        InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+
+    <MajorUpgrade
+        DowngradeErrorMessage=
+            "A newer version of [ProductName] is already installed."
+        Schedule="afterInstallExecute" />
+    <MediaTemplate EmbedCab="yes" />
+
+    <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />
+    <WixVariable Id="WixUILicenseRtf" Value="LICENSE.rtf" />
+    <UIRef Id="WixUI_InstallDir" />
+
+    <Feature
+        Id="gam"
+        Title="GAM"
+        Level="1">
+      <ComponentGroupRef Id="ProductComponents" />
+    </Feature>
+  </Product>
+
+  <Fragment>
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ROOTDRIVE">
+          <Directory Id="INSTALLFOLDER" Name="GAM" />
+        </Directory>
+    </Directory>
+  </Fragment>
+
+  <Fragment>
+    <!-- Group of components that are our main application items -->
+    <ComponentGroup
+        Id="ProductComponents"
+        Directory="INSTALLFOLDER"
+        Source="gam-64">
+      <Component Id="gam_exe" Guid="886abc07-73c5-4acc-9f71-58daf62aabc1">
+        <File Name="gam.exe" KeyPath="yes" />
+      </Component>
+      <Component Id="license" Guid="7a15de2e-fb91-4d0a-b8bf-c8b19c68f569">
+        <File Name="LICENSE" KeyPath="yes" />
+      </Component>
+      <Component Id="whatsnew_txt" Guid="6aa9863c-90d9-412f-9b73-fda82549a950">
+        <File Name="whatsnew.txt" KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+
+  <Fragment>
+    <InstallUISequence>
+      <ExecuteAction />
+      <Show Dialog="WelcomeDlg" Before="ProgressDlg" />
+      <!-- <Show Dialog="ProgressDlg" After="" /> -->
+    </InstallUISequence>
+  </Fragment>
+</Wix>
