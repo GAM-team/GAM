@@ -2361,7 +2361,7 @@ def doDeleteGuardian():
   guardianId = sys.argv[3]
   studentId = sys.argv[4]
   try:
-    callGAPI(croom.userProfiles().guardians(), u'delete', throw_reasons=[u'notFound'], studentId=studentId, guardianId=guardianId)
+    callGAPI(croom.userProfiles().guardians(), u'delete', throw_reasons=[u'forbidden', u'notFound'], studentId=studentId, guardianId=guardianId)
     print u'Deleted %s as a guardian of %s' % (guardianId, studentId)
   except googleapiclient.errors.HttpError:
     # See if there's a pending invitation
