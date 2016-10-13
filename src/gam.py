@@ -9463,7 +9463,7 @@ OAUTH2_SCOPES = [
   {u'name': u'Usage Reports API',
     u'subscopes': [],
     u'scopes': u'https://www.googleapis.com/auth/admin.reports.usage.readonly'},
-  {u'name': u'Drive API (create report docs for admin user only)',
+  {u'name': u'Drive API - create report docs only',
     u'subscopes': [],
     u'scopes': u'https://www.googleapis.com/auth/drive.file'},
   {u'name': u'License Manager API',
@@ -9514,7 +9514,7 @@ Append an 'r' to grant read-only access or an 'a' to grant action-only access.
 for scope in OAUTH2_SCOPES:
   OAUTH2_MENU += u'[%%%%s] %%2d)  %s' % (scope[u'name'])
   if scope[u'subscopes']:
-    OAUTH2_MENU += u'(supports %s)' % (u' and '.join(scope[u'subscopes']))
+    OAUTH2_MENU += u' (supports %s)' % (u' and '.join(scope[u'subscopes']))
   OAUTH2_MENU += '\n'
 OAUTH2_MENU += '''
 
