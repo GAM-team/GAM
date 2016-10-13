@@ -203,7 +203,7 @@ GC_SECTION = u'section'
 GC_SHOW_COUNTS_MIN = u'show_counts_min'
 # Enable/disable "Getting ... " messages
 GC_SHOW_GETTINGS = u'show_gettings'
-# GAM config directory containing admin-settings-v1.json, cloudprint-v2.json
+# GAM config directory containing json discovery files
 GC_SITE_DIR = u'site_dir'
 # When retrieving lists of Users from API, how many should be retrieved in each chunk
 GC_USER_MAX_RESULTS = u'user_max_results'
@@ -322,18 +322,6 @@ MESSAGE_RESULTS_TOO_LARGE_FOR_GOOGLE_SPREADSHEET = u'Results are too large for G
 MESSAGE_SERVICE_NOT_APPLICABLE = u'Service not applicable for this address: {0}'
 MESSAGE_WIKI_INSTRUCTIONS_OAUTH2SERVICE_JSON = u'Please follow the instructions at this site to setup a Service Account.'
 MESSAGE_OAUTH2SERVICE_JSON_INVALID = u'The file {0} is missing required keys (client_email, client_id or private_key).'
-# callGData throw errors
-GDATA_BAD_REQUEST = 601
-GDATA_DOES_NOT_EXIST = 1301
-GDATA_ENTITY_EXISTS = 1300
-GDATA_INVALID_DOMAIN = 602
-GDATA_INVALID_SSO_SIGNING_KEY = 1408
-GDATA_INVALID_VALUE = 1801
-GDATA_NAME_NOT_VALID = 1303
-GDATA_NOT_FOUND = 600
-GDATA_SERVICE_NOT_APPLICABLE = 1410
-#
-GDATA_EMAILSETTINGS_THROW_LIST = [GDATA_INVALID_DOMAIN, GDATA_DOES_NOT_EXIST, GDATA_SERVICE_NOT_APPLICABLE, GDATA_BAD_REQUEST, GDATA_NAME_NOT_VALID]
 # oauth errors
 OAUTH2_TOKEN_ERRORS = [u'access_denied', u'unauthorized_client: Unauthorized client or scope in request.', u'access_denied: Requested client not authorized.',
                        u'invalid_grant: Not a valid email.', u'invalid_grant: Invalid email or User ID', u'invalid_grant: Bad Request',
@@ -844,82 +832,6 @@ def getSvcAcctCredentials(scopes, act_as):
     printLine(GAM_WIKI_CREATE_CLIENT_SECRETS)
     invalidJSONExit(GC_Values[GC_OAUTH2SERVICE_JSON])
 
-def getGDataOAuthToken(gdataObject):
-  storage = oauth2client.file.Storage(GC_Values[GC_OAUTH2_TXT])
-  credentials = storage.get()
-  if not credentials or credentials.invalid:
-    doRequestOAuth()
-    credentials = storage.get()
-  try:
-    if credentials.access_token_expired:
-      credentials.refresh(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL]))
-  except oauth2client.client.AccessTokenRefreshError as e:
-    return handleOAuthTokenError(e, False)
-  gdataObject.additional_headers[u'Authorization'] = u'Bearer {0}'.format(credentials.access_token)
-  if not GC_Values[GC_DOMAIN]:
-    GC_Values[GC_DOMAIN] = credentials.id_token.get(u'hd', u'UNKNOWN').lower()
-  if not GC_Values[GC_CUSTOMER_ID]:
-    GC_Values[GC_CUSTOMER_ID] = MY_CUSTOMER
-  gdataObject.domain = GC_Values[GC_DOMAIN]
-  return True
-
-def checkGDataError(e, service):
-  # First check for errors that need special handling
-  if e[0].get(u'reason', u'') in [u'Token invalid - Invalid token: Stateless token expired', u'Token invalid - Invalid token: Token not found']:
-    keep_domain = service.domain
-    getGDataOAuthToken(service)
-    service.domain = keep_domain
-    return False
-  if e[0][u'body'].startswith(u'Required field must not be blank:') or e[0][u'body'].startswith(u'These characters are not allowed:'):
-    return u'{0} - {1}'.format(GDATA_BAD_REQUEST, e[0][u'body'])
-  if e.error_code == 600 and e[0][u'body'] == u'Quota exceeded for the current request' or e[0][u'reason'] == u'Bad Gateway':
-    return False
-  if e.error_code == 600 and e[0][u'reason'] == u'Token invalid - Invalid token: Token disabled, revoked, or expired.':
-    return u'403 - Token disabled, revoked, or expired. Please delete and re-create oauth.txt'
-  if e.error_code == 600 and e[0][u'reason'] == u'Invalid domain.':
-    return u'{0} - {1}'.format(GDATA_INVALID_DOMAIN, e[0][u'reason'])
-  if e.error_code == 600 and e[0][u'reason'].startswith(u'You are not authorized to perform operations on the domain'):
-    return u'{0} - {1}'.format(GDATA_INVALID_DOMAIN, e[0][u'reason'])
-  if e.error_code == 600 and e[0][u'reason'] == u'Bad Request':
-    return u'{0} - {1}'.format(GDATA_BAD_REQUEST, e[0][u'reason'])
-  # We got a "normal" error, define the mapping below
-  error_code_map = {
-    1000: False,
-    1001: False,
-    1002: u'Unauthorized and forbidden',
-    1100: u'User deleted recently',
-    1200: u'Domain user limit exceeded',
-    1201: u'Domain alias limit exceeded',
-    1202: u'Domain suspended',
-    1203: u'Domain feature unavailable',
-    1300: u'Entity %s exists' % getattr(e, u'invalidInput', u'<unknown>'),
-    1301: u'Entity %s Does Not Exist' % getattr(e, u'invalidInput', u'<unknown>'),
-    1302: u'Entity Name Is Reserved',
-    1303: u'Entity %s name not valid' % getattr(e, u'invalidInput', u'<unknown>'),
-    1306: u'%s has members. Cannot delete.' % getattr(e, u'invalidInput', u'<unknown>'),
-    1400: u'Invalid Given Name',
-    1401: u'Invalid Family Name',
-    1402: u'Invalid Password',
-    1403: u'Invalid Username',
-    1404: u'Invalid Hash Function Name',
-    1405: u'Invalid Hash Digest Length',
-    1406: u'Invalid Email Address',
-    1407: u'Invalid Query Parameter Value',
-    1408: u'Invalid SSO Signing Key',
-    1409: u'Invalid Encryption Public Key',
-    1410: u'Feature Unavailable For User',
-    1500: u'Too Many Recipients On Email List',
-    1501: u'Too Many Aliases For User',
-    1502: u'Too Many Delegates For User',
-    1601: u'Duplicate Destinations',
-    1602: u'Too Many Destinations',
-    1603: u'Invalid Route Address',
-    1700: u'Group Cannot Contain Cycle',
-    1800: u'Group Cannot Contain Cycle',
-    1801: u'Invalid value %s' % getattr(e, u'invalidInput', u'<unknown>'),
-  }
-  return u'{0} - {1}'.format(e.error_code, error_code_map.get(e.error_code, u'Unknown Error: {0}'.format(str(e))))
-
 def waitOnFailure(n, retries, errMsg):
   wait_on_fail = min(2 ** n, 60) + float(random.randint(1, 1000)) / 1000
   if n > 3:
@@ -927,39 +839,6 @@ def waitOnFailure(n, retries, errMsg):
   time.sleep(wait_on_fail)
   if n > 3:
     sys.stderr.write(u'attempt {0}/{1}\n'.format(n+1, retries))
-
-class GData_serviceNotApplicable(Exception): pass
-
-def callGData(service, function,
-              soft_errors=False, throw_errors=[],
-              **kwargs):
-  import gdata.apps.service
-  method = getattr(service, function)
-  retries = 10
-  for n in range(1, retries+1):
-    try:
-      return method(**kwargs)
-    except gdata.apps.service.AppsForYourDomainException as e:
-      terminating_error = checkGDataError(e, service)
-      if terminating_error:
-        throw_error_code = int(terminating_error.split(u' - ')[0])
-      else:
-        throw_error_code = e.error_code
-      if throw_error_code in throw_errors:
-        raise
-      if (n != retries) and not terminating_error:
-        waitOnFailure(n, retries, str(e.error_code))
-        continue
-      if soft_errors:
-        stderrErrorMsg(u'{0}{1}'.format(terminating_error, u': Giving up.\n' if n > 1 else u''))
-        return None
-      systemErrorExit(4, terminating_error)
-    except oauth2client.client.AccessTokenRefreshError as e:
-      handleOAuthTokenError(e, soft_errors or GDATA_SERVICE_NOT_APPLICABLE in throw_errors)
-      if GDATA_SERVICE_NOT_APPLICABLE in throw_errors:
-        raise GData_serviceNotApplicable(e.message)
-      entityUnknownWarning(u'User', GM_Globals[GM_CURRENT_API_USER], 0, 0)
-      return None
 
 def checkGAPIError(e, soft_errors=False, silent_errors=False, retryOnHttpError=False, service=None):
   try:
@@ -1097,7 +976,6 @@ def callGAPIitems(service, function, items,
   return []
 
 API_VER_MAPPING = {
-  u'admin-settings': u'v2',
   u'appsactivity': u'v1',
   u'calendar': u'v3',
   u'classroom': u'v1',
@@ -1267,34 +1145,6 @@ def buildGmailGAPIObject(user):
 def buildGplusGAPIObject(user):
   userEmail = convertUserUIDtoEmailAddress(user)
   return (userEmail, buildGAPIServiceObject(u'plus', userEmail))
-
-def initGDataObject(gdataObj, api):
-  _, _, api_version = getAPIVersion(api)
-  disc_file, discovery = readDiscoveryFile(api_version)
-  GM_Globals[GM_CURRENT_API_USER] = None
-  try:
-    GM_Globals[GM_CURRENT_API_SCOPES] = discovery[u'auth'][u'oauth2'][u'scopes'].keys()
-  except KeyError:
-    invalidJSONExit(disc_file)
-  if not getGDataOAuthToken(gdataObj):
-    doRequestOAuth()
-    getGDataOAuthToken(gdataObj)
-  gdataObj.source = GAM_INFO
-  if GC_Values[GC_DEBUG_LEVEL] > 0:
-    gdataObj.debug = True
-  return gdataObj
-
-def getAdminSettingsObject():
-  import gdata.apps.adminsettings.service
-  return initGDataObject(gdata.apps.adminsettings.service.AdminSettingsService(), u'admin-settings')
-
-def getAuditObject():
-  import gdata.apps.audit.service
-  return initGDataObject(gdata.apps.audit.service.AuditService(), u'email-audit')
-
-def getEmailSettingsObject():
-  import gdata.apps.emailsettings.service
-  return initGDataObject(gdata.apps.emailsettings.service.EmailSettingsService(), u'email-settings')
 
 def geturl(url, dst):
   import urllib2
@@ -1473,8 +1323,6 @@ def showReport():
       writeCSVfile(csvRows, titles, u'%s Activity Report' % report.capitalize(), to_drive)
 
 def addDelegates(users, i):
-  import gdata.apps.service
-  emailsettings = getEmailSettingsObject()
   if i == 4:
     if sys.argv[i].lower() != u'to':
       print u'ERROR: %s is not a valid argument for "gam <users> delegate", expected to' % sys.argv[i]
@@ -1489,6 +1337,7 @@ def addDelegates(users, i):
     delegate_email = delegate
   i = 0
   count = len(users)
+  emailsettings = buildGAPIObject(u'email-settings')
   for delegator in users:
     i += 1
     if delegator.find(u'@') > 0:
@@ -1498,94 +1347,31 @@ def addDelegates(users, i):
     else:
       delegator_domain = GC_Values[GC_DOMAIN].lower()
       delegator_email = u'%s@%s' % (delegator, delegator_domain)
-    emailsettings.domain = delegator_domain
+    uri = u'https://apps-apis.google.com/a/feeds/emailsettings/2.0/%s/%s/delegation' % (delegator_domain, delegator)
+    body = u'''<?xml version="1.0" encoding="utf-8"?>
+<atom:entry xmlns:atom="http://www.w3.org/2005/Atom" xmlns:apps="http://schemas.google.com/apps/2006">
+<apps:property name="address" value="%s" />
+</atom:entry>''' % delegate_email
+    headers = {u'GData-Version': u'2.0', u'Content-Type': u'application/atom+xml; charset=UTF-8'}
     print u"Giving %s delegate access to %s (%s/%s)" % (delegate_email, delegator_email, i, count)
-    delete_alias = False
-    if delegate_domain == delegator_domain:
-      use_delegate_address = delegate_email
-    else:
-      # Need to use an alias in delegator domain, first check to see if delegate already has one...
-      cd = buildGAPIObject(u'directory')
-      aliases = callGAPI(cd.users().aliases(), u'list', userKey=delegate_email)
-      found_alias_in_delegator_domain = False
-      try:
-        for alias in aliases[u'aliases']:
-          alias_domain = alias[u'alias'][alias[u'alias'].find(u'@')+1:].lower()
-          if alias_domain == delegator_domain:
-            use_delegate_address = alias[u'alias']
-            print u'  Using existing alias %s for delegation' % use_delegate_address
-            found_alias_in_delegator_domain = True
-            break
-      except KeyError:
-        pass
-      if not found_alias_in_delegator_domain:
-        delete_alias = True
-        use_delegate_address = u'%s@%s' % (u''.join(random.sample(u'abcdefghijklmnopqrstuvwxyz0123456789', 25)), delegator_domain)
-        print u'  Giving %s temporary alias %s for delegation' % (delegate_email, use_delegate_address)
-        callGAPI(cd.users().aliases(), u'insert', userKey=delegate_email, body={u'alias': use_delegate_address})
-        time.sleep(5)
     retries = 10
     for n in range(1, retries+1):
-      try:
-        callGData(emailsettings, u'CreateDelegate', throw_errors=[600, 1000, 1001], delegate=use_delegate_address, delegator=delegator)
+      status, result = emailsettings._http.request(uri=uri, method=u'POST', body=body, headers=headers)
+      httpStatus = int(status[u'status'])
+      if httpStatus == 201: # Success
+        time.sleep(10) # on success, sleep 10 seconds before exiting or moving on to next user to prevent ghost delegates
         break
-      except gdata.apps.service.AppsForYourDomainException as e:
-        # 1st check to see if delegation already exists (causes 1000 error on create when using alias)
-        get_delegates = callGData(emailsettings, u'GetDelegates', delegator=delegator)
-        for get_delegate in get_delegates:
-          if get_delegate[u'address'].lower() == delegate_email: # Delegation is already in place
-            print u'That delegation is already in place...'
-            if delete_alias:
-              print u'  Deleting temporary alias...'
-              doDeleteAlias(alias_email=use_delegate_address)
-            sys.exit(0) # Emulate functionality of duplicate delegation between users in same domain, returning clean
-        # Now check if either user account is suspended or requires password change
-        cd = buildGAPIObject(u'directory')
-        delegate_user_details = callGAPI(cd.users(), u'get', userKey=delegate_email)
-        delegator_user_details = callGAPI(cd.users(), u'get', userKey=delegator_email)
-        if delegate_user_details[u'suspended'] == True:
-          stderrErrorMsg(u'User {0} is suspended. You must unsuspend for delegation.'.format(delegate_email))
-          if delete_alias:
-            doDeleteAlias(alias_email=use_delegate_address)
-          sys.exit(5)
-        if delegator_user_details[u'suspended'] == True:
-          stderrErrorMsg(u'User {0} is suspended. You must unsuspend for delegation.'.format(delegator_email))
-          if delete_alias:
-            doDeleteAlias(alias_email=use_delegate_address)
-          sys.exit(5)
-        if delegate_user_details[u'changePasswordAtNextLogin'] == True:
-          stderrErrorMsg(u'User {0} is required to change password at next login. You must change password or clear changepassword flag for delegation.'.format(delegate_email))
-          if delete_alias:
-            doDeleteAlias(alias_email=use_delegate_address)
-          sys.exit(5)
-        if delegator_user_details[u'changePasswordAtNextLogin'] == True:
-          stderrErrorMsg(u'User {0} is required to change password at next login. You must change password or clear changepassword flag for delegation.'.format(delegator_email))
-          if delete_alias:
-            doDeleteAlias(alias_email=use_delegate_address)
-          sys.exit(5)
-
-        # Guess it was just a normal backoff error then?
-        if n == retries:
-          sys.stderr.write(u' - giving up.')
-          sys.exit(e.error_code)
-        wait_on_fail = (2 ** n) if (2 ** n) < 60 else 60
-        randomness = float(random.randint(1, 1000)) / 1000
-        wait_on_fail = wait_on_fail + randomness
-        if n > 3:
-          sys.stderr.write(u'Temp error. Backing off %s seconds...' % (int(wait_on_fail)))
-        time.sleep(wait_on_fail)
-        if n > 3:
-          sys.stderr.write(u'attempt %s/%s\n' % (n+1, retries))
-    time.sleep(10) # on success, sleep 10 seconds before exiting or moving on to next user to prevent ghost delegates
-    if delete_alias:
-      doDeleteAlias(alias_email=use_delegate_address)
+      elif httpStatus > 499:
+        waitOnFailure(n, retries, str(httpStatus))
+      else:
+        print u'ERROR: Could not create delegation - %s - %s' % (httpStatus, result)
+        sys.exit(3)
 
 def gen_sha512_hash(password):
   from passlib.handlers.sha2_crypt import sha512_crypt
   return sha512_crypt.encrypt(password, rounds=5000)
 
 def printShowDelegates(users, csvFormat):
-  emailsettings = getEmailSettingsObject()
   if csvFormat:
     todrive = False
     csvRows = []
@@ -1604,50 +1390,63 @@ def printShowDelegates(users, csvFormat):
     else:
       print u'ERROR: %s is not a valid argument for "gam <users> show delegates"' % sys.argv[i]
       sys.exit(2)
+  emailsettings = buildGAPIObject(u'email-settings')
   for user in users:
     if user.find(u'@') == -1:
       userName = user
       user = u'%s@%s' % (user, GC_Values[GC_DOMAIN])
-      emailsettings.domain = GC_Values[GC_DOMAIN]
+      domainName = GC_Values[GC_DOMAIN]
     else:
       userName = user[:user.find(u'@')]
-      emailsettings.domain = user[user.find(u'@')+1:]
+      domainName = user[user.find(u'@')+1:]
     sys.stderr.write(u"Getting delegates for %s...\n" % (user))
-    delegates = callGData(emailsettings, u'GetDelegates', soft_errors=True, delegator=userName)
-    if delegates:
-      if not csvFormat:
-        for delegate in delegates:
-          if csvStyle:
-            print u'%s,%s,%s' % (user, delegate[u'address'], delegate[u'status'])
-          else:
-            print convertUTF8(u"Delegator: %s\n Delegate: %s\n Status: %s\n Delegate Email: %s\n Delegate ID: %s\n" % (user, delegate[u'delegate'], delegate[u'status'], delegate[u'address'], delegate[u'delegationId']))
-      else:
-        for delegate in delegates:
-          row = {u'User': user, u'delegateName': delegate[u'delegate'], u'delegateAddress': delegate[u'address'], u'delegationStatus': delegate[u'status']}
+    delegates = callGAPI(emailsettings.delegates(), u'get', soft_errors=True, v=u'2.0', domainName=domainName, delegator=userName)
+    if delegates and u'feed' in delegates and u'entry' in delegates[u'feed']:
+      for delegate in delegates[u'feed']['entry']:
+        status = u''
+        delegateAddress = u''
+        delegateName = u''
+        delegationId = u''
+        for item in delegate[u'apps$property']:
+          if item[u'name'] == u'status':
+            status = item[u'value']
+          elif item[u'name'] == u'address':
+            delegateAddress = item[u'value']
+          elif item[u'name'] == u'delegate':
+            delegateName = item[u'value']
+          elif item[u'name'] == u'delegationId':
+            delegationId = item[u'value']
+        if csvFormat:
+          row = {u'User': user, u'delegateName': delegateName, u'delegateAddress': delegateAddress, u'delegationStatus': status}
           csvRows.append(row)
+        else:
+          if csvStyle:
+            print u'%s,%s,%s' % (user, delegateAddress, status)
+          else:
+            print convertUTF8(u"Delegator: %s\n Delegate: %s\n Status: %s\n Delegate Email: %s\n Delegate ID: %s\n" % (user, delegateName, status, delegateAddress, delegationId))
   if csvFormat:
     writeCSVfile(csvRows, titles, u'Delegates', todrive)
 
 def deleteDelegate(users):
-  emailsettings = getEmailSettingsObject()
+  emailsettings = buildGAPIObject(u'email-settings')
   delegate = sys.argv[5]
   if not delegate.find(u'@') > 0:
     if users[0].find(u'@') > 0:
       delegatedomain = users[0][users[0].find(u'@')+1:]
     else:
       delegatedomain = GC_Values[GC_DOMAIN]
-    delegate = delegate+u'@'+delegatedomain
+    delegate = u'%s@%s' % (delegate, delegatedomain)
   i = 0
   count = len(users)
   for user in users:
     i += 1
     if user.find(u'@') > 0:
-      emailsettings.domain = user[user.find(u'@')+1:]
+      domainName = user[user.find(u'@')+1:]
       user = user[:user.find(u'@')]
     else:
-      emailsettings.domain = GC_Values[GC_DOMAIN] #make sure it's back at default domain
-    print u"Deleting %s delegate access to %s (%s/%s)" % (delegate, user+u'@'+emailsettings.domain, i, count)
-    callGData(emailsettings, u'DeleteDelegate', delegate=delegate, delegator=user)
+      domainName = GC_Values[GC_DOMAIN] #make sure it's back at default domain
+    print u"Deleting %s delegate access to %s (%s/%s)" % (delegate, user+u'@'+domainName, i, count)
+    callGAPI(emailsettings.delegates(), u'delete', v=u'2.0', delegate=delegate, delegator=user, domainName=domainName)
 
 def doAddCourseParticipant():
   croom = buildGAPIObject(u'classroom')
@@ -1806,7 +1605,7 @@ def doUpdateDomain():
 
 def doGetDomainInfo():
   if (len(sys.argv) < 4) or (sys.argv[3] == u'logo'):
-    doGetInstanceInfo()
+    doGetCustomerInfo()
     return
   cd = buildGAPIObject(u'directory')
   domainName = sys.argv[3]
@@ -1862,7 +1661,6 @@ ADDRESS_FIELDS_ARGUMENT_MAP = {
 
 def doUpdateCustomer():
   cd = buildGAPIObject(u'directory')
-  language = None
   body = {}
   i = 3
   while i < len(sys.argv):
@@ -1878,17 +1676,12 @@ def doUpdateCustomer():
       body[u'phoneNumber'] = sys.argv[i+1]
       i += 2
     elif myarg == u'language':
-#      body[u'language'] = sys.argv[i+1]
-      language = sys.argv[i+1]
+      body[u'language'] = sys.argv[i+1]
       i += 2
     else:
       print u'ERROR: %s is not a valid argument for "gam update customer"' % myarg
       sys.exit(2)
-  if body:
-    callGAPI(cd.customers(), u'update', customerKey=GC_Values[GC_CUSTOMER_ID], body=body)
-  if language:
-    adminObj = getAdminSettingsObject()
-    callGData(adminObj, u'UpdateDefaultLanguage', defaultLanguage=language)
+  callGAPI(cd.customers(), u'update', customerKey=GC_Values[GC_CUSTOMER_ID], body=body)
   print u'Updated customer'
 
 def doDelDomain():
@@ -5153,124 +4946,6 @@ def infoSendAs(users):
     if result:
       _showSendAs(result, i, count, formatSig)
 
-def doLanguage(users):
-  language = sys.argv[4]
-  emailsettings = getEmailSettingsObject()
-  i = 0
-  count = len(users)
-  for user in users:
-    i += 1
-    if user.find(u'@') > 0:
-      emailsettings.domain = user[user.find(u'@')+1:]
-      user = user[:user.find(u'@')]
-    else:
-      emailsettings.domain = GC_Values[GC_DOMAIN] #make sure it's back at default domain
-    print u"Setting the language for %s to %s (%s/%s)" % (user+u'@'+emailsettings.domain, language, i, count)
-    callGData(emailsettings, u'UpdateLanguage', soft_errors=True, username=user, language=language)
-
-def doUTF(users):
-  if sys.argv[4].lower() in true_values:
-    SetUTF = True
-  elif sys.argv[4].lower() in false_values:
-    SetUTF = False
-  else:
-    print u'ERROR: value for "gam <users> utf" must be true or false; got %s' % sys.argv[4]
-    sys.exit(2)
-  emailsettings = getEmailSettingsObject()
-  i = 0
-  count = len(users)
-  for user in users:
-    i += 1
-    if user.find(u'@') > 0:
-      emailsettings.domain = user[user.find(u'@')+1:]
-      user = user[:user.find(u'@')]
-    else:
-      emailsettings.domain = GC_Values[GC_DOMAIN] #make sure it's back at default domain
-    print u"Setting UTF-8 to %s for %s (%s/%s)" % (str(SetUTF), user+u'@'+emailsettings.domain, i, count)
-    callGData(emailsettings, u'UpdateGeneral', soft_errors=True, username=user, unicode=SetUTF)
-
-def doPageSize(users):
-  if sys.argv[4] == u'25' or sys.argv[4] == u'50' or sys.argv[4] == u'100':
-    PageSize = sys.argv[4]
-  else:
-    print u'ERROR: %s is not a valid argument for "gam <users> pagesize"' % sys.argv[4]
-    sys.exit(2)
-  emailsettings = getEmailSettingsObject()
-  i = 0
-  count = len(users)
-  for user in users:
-    i += 1
-    if user.find(u'@') > 0:
-      emailsettings.domain = user[user.find(u'@')+1:]
-      user = user[:user.find(u'@')]
-    else:
-      emailsettings.domain = GC_Values[GC_DOMAIN] #make sure it's back at default domain
-    print u"Setting Page Size to %s for %s (%s/%s)" % (PageSize, user+u'@'+emailsettings.domain, i, count)
-    callGData(emailsettings, u'UpdateGeneral', soft_errors=True, username=user, page_size=PageSize)
-
-def doShortCuts(users):
-  if sys.argv[4].lower() in true_values:
-    SetShortCuts = True
-  elif sys.argv[4].lower() in false_values:
-    SetShortCuts = False
-  else:
-    print u'ERROR: value for "gam <users> shortcuts" must be true or false; got %s' % sys.argv[4]
-    sys.exit(2)
-  emailsettings = getEmailSettingsObject()
-  i = 0
-  count = len(users)
-  for user in users:
-    i += 1
-    if user.find(u'@') > 0:
-      emailsettings.domain = user[user.find(u'@')+1:]
-      user = user[:user.find(u'@')]
-    else:
-      emailsettings.domain = GC_Values[GC_DOMAIN] #make sure it's back at default domain
-    print u"Setting Keyboard Short Cuts to %s for %s (%s/%s)" % (str(SetShortCuts), user+u'@'+emailsettings.domain, i, count)
-    callGData(emailsettings, u'UpdateGeneral', soft_errors=True, username=user, shortcuts=SetShortCuts)
-
-def doArrows(users):
-  if sys.argv[4].lower() in true_values:
-    SetArrows = True
-  elif sys.argv[4].lower() in false_values:
-    SetArrows = False
-  else:
-    print u'ERROR: value for "gam <users> arrows" must be true or false; got %s' % sys.argv[4]
-    sys.exit(2)
-  emailsettings = getEmailSettingsObject()
-  i = 0
-  count = len(users)
-  for user in users:
-    i += 1
-    if user.find(u'@') > 0:
-      emailsettings.domain = user[user.find(u'@')+1:]
-      user = user[:user.find(u'@')]
-    else:
-      emailsettings.domain = GC_Values[GC_DOMAIN] #make sure it's back at default domain
-    print u"Setting Personal Indicator Arrows to %s for %s (%s/%s)" % (str(SetArrows), user+u'@'+emailsettings.domain, i, count)
-    callGData(emailsettings, u'UpdateGeneral', soft_errors=True, username=user, arrows=SetArrows)
-
-def doSnippets(users):
-  if sys.argv[4].lower() in true_values:
-    SetSnippets = True
-  elif sys.argv[4].lower() in false_values:
-    SetSnippets = False
-  else:
-    print u'ERROR: value for "gam <users> snippets" must be true or false; got %s' % sys.argv[4]
-    sys.exit(2)
-  emailsettings = getEmailSettingsObject()
-  i = 0
-  count = len(users)
-  for user in users:
-    i += 1
-    if user.find(u'@') > 0:
-      emailsettings.domain = user[user.find(u'@')+1:]
-      user = user[:user.find(u'@')]
-    else:
-      emailsettings.domain = GC_Values[GC_DOMAIN] #make sure it's back at default domain
-    print u"Setting Preview Snippets to %s for %s (%s/%s)" % (str(SetSnippets), user+u'@'+emailsettings.domain, i, count)
-    callGData(emailsettings, u'UpdateGeneral', soft_errors=True, username=user, snippets=SetSnippets)
-
 def doLabel(users, i):
   label = sys.argv[i]
   i += 1
@@ -5976,7 +5651,6 @@ EMAILSETTINGS_OLD_NEW_OLD_FORWARD_ACTION_MAP = {
   }
 
 def doForward(users):
-  newAPI = False
   action = forward_to = None
   if sys.argv[4].lower() in true_values:
     enable = True
@@ -5994,9 +5668,6 @@ def doForward(users):
       i += 1
     elif myarg == u'confirm':
       i += 1
-    elif myarg == u'newapi':
-      newAPI = True
-      i += 1
     elif myarg.find(u'@') != -1:
       body[u'emailAddress'] = sys.argv[i]
       i += 1
@@ -6006,38 +5677,20 @@ def doForward(users):
   if enable and (not body.get(u'disposition') or not body.get(u'emailAddress')):
     print u'ERROR: you must specify an action and a forwarding address for "gam <users> forward'
     sys.exit(2)
-  if not newAPI:
-    emailsettings = getEmailSettingsObject()
-    if enable:
-      action = EMAILSETTINGS_OLD_NEW_OLD_FORWARD_ACTION_MAP[body[u'disposition']]
-      forward_to = body[u'emailAddress']
   i = 0
   count = len(users)
   for user in users:
     i += 1
-    if newAPI:
-      user, gmail = buildGmailGAPIObject(user)
-      if not gmail:
-        continue
-      if enable:
-        print u"User: %s, Forward Enabled: %s, Forwarding Address: %s, Action: %s (%s/%s)" % (user, enable, body[u'emailAddress'], body[u'disposition'], i, count)
-      else:
-        print u"User: %s, Forward Enabled: %s (%s/%s)" % (user, enable, i, count)
-      callGAPI(gmail.users().settings(), u'updateAutoForwarding',
-               soft_errors=True,
-               userId=u'me', body=body)
+    user, gmail = buildGmailGAPIObject(user)
+    if not gmail:
+      continue
+    if enable:
+      print u"User: %s, Forward Enabled: %s, Forwarding Address: %s, Action: %s (%s/%s)" % (user, enable, body[u'emailAddress'], body[u'disposition'], i, count)
     else:
-      if user.find(u'@') > 0:
-        emailsettings.domain = user[user.find(u'@')+1:]
-        username = user[:user.find(u'@')]
-      else:
-        emailsettings.domain = GC_Values[GC_DOMAIN] #make sure it's back at default domain
-        username = user
-      if enable:
-        print u"User: %s, Forward Enabled: %s, Forwarding Address: %s, Action: %s (%s/%s)" % (user, enable, body[u'emailAddress'], body[u'disposition'], i, count)
-      else:
-        print u"User: %s, Forward Enabled: %s (%s/%s)" % (user, enable, i, count)
-      callGData(emailsettings, u'UpdateForwarding', soft_errors=True, username=username, enable=enable, action=action, forward_to=forward_to)
+      print u"User: %s, Forward Enabled: %s (%s/%s)" % (user, enable, i, count)
+    callGAPI(gmail.users().settings(), u'updateAutoForwarding',
+             soft_errors=True,
+             userId=u'me', body=body)
 
 def printShowForward(users, csvFormat):
   def _showForward(user, i, count, result):
@@ -6071,52 +5724,30 @@ def printShowForward(users, csvFormat):
     todrive = False
     csvRows = []
     titles = [u'User', u'forwardEnabled', u'forwardTo', u'disposition']
-  newAPI = False
   i = 5
   while i < len(sys.argv):
     myarg = sys.argv[i].lower()
     if csvFormat and myarg == u'todrive':
       todrive = True
       i += 1
-    elif myarg == u'newapi':
-      newAPI = True
-      i += 1
     else:
       print u'ERROR: %s is not a valid argument for "gam <users> %s forward"' % (myarg, [u'show', u'print'][csvFormat])
       sys.exit(2)
-  if not newAPI:
-    emailsettings = getEmailSettingsObject()
   i = 0
   count = len(users)
   for user in users:
     i += 1
-    if newAPI:
-      user, gmail = buildGmailGAPIObject(user)
-      if not gmail:
-        continue
-      result = callGAPI(gmail.users().settings(), u'getAutoForwarding',
-                        soft_errors=True,
-                        userId=u'me')
-      if result:
-        if not csvFormat:
-          _showForward(user, i, count, result)
-        else:
-          _printForward(user, result)
-    else:
-      if user.find(u'@') > 0:
-        emailsettings.domain = user[user.find(u'@')+1:]
-        username = user[:user.find(u'@')]
+    user, gmail = buildGmailGAPIObject(user)
+    if not gmail:
+      continue
+    result = callGAPI(gmail.users().settings(), u'getAutoForwarding',
+                      soft_errors=True,
+                      userId=u'me')
+    if result:
+      if not csvFormat:
+        _showForward(user, i, count, result)
       else:
-        emailsettings.domain = GC_Values[GC_DOMAIN]
-        username = user
-      result = callGData(emailsettings, u'GetForward',
-                         soft_errors=True,
-                         username=username)
-      if result:
-        if not csvFormat:
-          _showForward(user, i, count, result)
-        else:
-          _printForward(user, result)
+        _printForward(user, result)
   if csvFormat:
     writeCSVfile(csvRows, titles, u'Forward', todrive)
 
@@ -6267,27 +5898,6 @@ def getSignature(users):
         if sendas.get(u'isPrimary', False):
           _showSendAs(sendas, i, count, formatSig)
           break
-
-def doWebClips(users):
-  if sys.argv[4].lower() in true_values:
-    enable = True
-  elif sys.argv[4].lower() in false_values:
-    enable = False
-  else:
-    print u'ERROR: value for "gam <users> webclips" must be true or false; got %s' % sys.argv[4]
-    sys.exit(2)
-  emailsettings = getEmailSettingsObject()
-  i = 0
-  count = len(users)
-  for user in users:
-    i += 1
-    if user.find(u'@') > 0:
-      emailsettings.domain = user[user.find(u'@')+1:]
-      user = user[:user.find(u'@')]
-    else:
-      emailsettings.domain = GC_Values[GC_DOMAIN] #make sure it's back at default domain
-    print u"Turning Web Clips %s for %s (%s/%s)" % (sys.argv[4], user+u'@'+emailsettings.domain, i, count)
-    callGData(emailsettings, u'UpdateWebClipSettings', soft_errors=True, username=user, enable=enable)
 
 def doVacation(users):
   if sys.argv[4].lower() in true_values:
@@ -8476,110 +8086,6 @@ def doDeprovUser(users):
       print u'No Tokens'
     print u'Done deprovisioning %s' % user
 
-def doUpdateInstance():
-  adminObj = getAdminSettingsObject()
-  command = sys.argv[3].lower()
-  i = 4
-  if command == u'logo':
-    logoFile = sys.argv[i]
-    logoImage = readFile(logoFile)
-    callGData(adminObj, u'UpdateDomainLogo', logoImage=logoImage)
-  elif command == u'sso_settings':
-    enableSSO = samlSignonUri = samlLogoutUri = changePasswordUri = ssoWhitelist = useDomainSpecificIssuer = None
-    while i < len(sys.argv):
-      if sys.argv[i].lower() == u'enabled':
-        if sys.argv[i+1].lower() == u'true':
-          enableSSO = True
-        elif sys.argv[i+1].lower() == u'false':
-          enableSSO = False
-        else:
-          print u'ERROR: value for enabled must be true or false; got %s' % sys.argv[i+1]
-          sys.exit(2)
-        i += 2
-      elif sys.argv[i].lower() == u'sign_on_uri':
-        samlSignonUri = sys.argv[i+1]
-        i += 2
-      elif sys.argv[i].lower() == u'sign_out_uri':
-        samlLogoutUri = sys.argv[i+1]
-        i += 2
-      elif sys.argv[i].lower() == u'password_uri':
-        changePasswordUri = sys.argv[i+1]
-        i += 2
-      elif sys.argv[i].lower() == u'whitelist':
-        ssoWhitelist = sys.argv[i+1]
-        i += 2
-      elif sys.argv[i].lower() == u'use_domain_specific_issuer':
-        if sys.argv[i+1].lower() == u'true':
-          useDomainSpecificIssuer = True
-        elif sys.argv[i+1].lower() == u'false':
-          useDomainSpecificIssuer = False
-        else:
-          print u'ERROR: value for use_domain_specific_issuer must be true or false; got %s' % sys.argv[i+1]
-          sys.exit(2)
-        i += 2
-      else:
-        print u'ERROR: unknown option for "gam update instance sso_settings...": %s' % sys.argv[i]
-        sys.exit(2)
-    callGData(adminObj, u'UpdateSSOSettings', enableSSO=enableSSO,
-              samlSignonUri=samlSignonUri, samlLogoutUri=samlLogoutUri,
-              changePasswordUri=changePasswordUri, ssoWhitelist=ssoWhitelist,
-              useDomainSpecificIssuer=useDomainSpecificIssuer)
-  elif command == u'sso_key':
-    keyFile = sys.argv[i]
-    keyData = readFile(keyFile)
-    callGData(adminObj, u'UpdateSSOKey', signingKey=keyData)
-  else:
-    print u'ERROR: %s is not a valid argument for "gam update instance"' % command
-    sys.exit(2)
-
-def doGetInstanceInfo():
-  adm = buildGAPIObject(u'admin-settings')
-  if len(sys.argv) > 4 and sys.argv[3].lower() == u'logo':
-    target_file = sys.argv[4]
-    url = u'http://www.google.com/a/cpanel/%s/images/logo.gif' % (GC_Values[GC_DOMAIN])
-    geturl(url, target_file)
-    sys.exit(0)
-  doGetCustomerInfo()
-  max_users = callGAPI(adm.maximumNumberOfUsers(), u'get', domainName=GC_Values[GC_DOMAIN])
-  print u'Maximum Users: %s' % max_users[u'entry'][u'apps$property'][0][u'value']
-  current_users = callGAPI(adm.currentNumberOfUsers(), u'get', domainName=GC_Values[GC_DOMAIN])
-  print u'Current Users: %s' % current_users[u'entry'][u'apps$property'][0][u'value']
-  domain_edition = callGAPI(adm.edition(), u'get', domainName=GC_Values[GC_DOMAIN])
-  print u'Domain Edition: %s' % domain_edition[u'entry'][u'apps$property'][0][u'value']
-  customer_pin = callGAPI(adm.customerPIN(), u'get', domainName=GC_Values[GC_DOMAIN])
-  print u'Customer PIN: %s' % customer_pin[u'entry'][u'apps$property'][0][u'value']
-  ssosettings = callGAPI(adm.ssoGeneral(), u'get', domainName=GC_Values[GC_DOMAIN])
-  for entry in ssosettings[u'entry'][u'apps$property']:
-    if entry[u'name'] == u'enableSSO':
-      print u'SSO Enabled: %s' % entry[u'value']
-    elif entry[u'name'] == u'samlSignonUri':
-      print u'SSO Signon Page: %s' % entry[u'value']
-    elif entry[u'name'] == u'samlLogoutUri':
-      print u'SSO Logout Page: %s' % entry[u'value']
-    elif entry[u'name'] == u'changePasswordUri':
-      print u'SSO Password Page: %s' % entry[u'value']
-    elif entry[u'name'] == u'ssoWhitelist':
-      print u'SSO Whitelist IPs: %s' % entry[u'value']
-    elif entry[u'name'] == u'useDomainSpecificIssuer':
-      print u'SSO Use Domain Specific Issuer: %s' % entry[u'value']
-  ssokey = callGAPI(adm.ssoSigningKey(), u'get', silent_errors=True, soft_errors=True, domainName=GC_Values[GC_DOMAIN])
-  try:
-    for entry in ssokey[u'entry'][u'apps$property']:
-      if entry[u'name'] == u'algorithm':
-        print u'SSO Key Algorithm: %s' % entry[u'value']
-      elif entry[u'name'] == u'format':
-        print u'SSO Key Format: %s' % entry[u'value']
-      elif entry[u'name'] == u'modulus':
-        print u'SSO Key Modulus: %s' % entry[u'value']
-      elif entry[u'name'] == u'exponent':
-        print u'SSO Key Exponent: %s' % entry[u'value']
-      elif entry[u'name'] == u'yValue':
-        print u'SSO Key yValue: %s' % entry[u'value']
-      elif entry[u'name'] == u'signingKey':
-        print u'Full SSO Key: %s' % entry[u'value']
-  except TypeError:
-    pass
-
 def doDeleteUser():
   cd = buildGAPIObject(u'directory')
   user_email = sys.argv[3]
@@ -8772,8 +8278,6 @@ def writeCSVfile(csvRows, titles, list_type, todrive):
     file_url = result[u'alternateLink']
     if GC_Values[GC_NO_BROWSER]:
       msg_txt = u'Drive file uploaded to:\n %s' % file_url
-      msg_subj = u'%s - %s' % (GC_Values[GC_DOMAIN], list_type)
-      send_email(msg_subj, msg_txt)
       print msg_txt
     else:
       import webbrowser
@@ -9686,345 +9190,6 @@ def doPrintResourceCalendars():
     csvRows.append(resUnit)
   writeCSVfile(csvRows, titles, u'Resources', todrive)
 
-def doCreateMonitor():
-  source_user = sys.argv[4].lower()
-  destination_user = sys.argv[5].lower()
-  #end_date defaults to 30 days in the future...
-  end_date = (datetime.datetime.now() + datetime.timedelta(days=30)).strftime(u"%Y-%m-%d %H:%M")
-  begin_date = None
-  incoming_headers_only = outgoing_headers_only = drafts_headers_only = chats_headers_only = False
-  drafts = chats = True
-  i = 6
-  while i < len(sys.argv):
-    if sys.argv[i].lower() == u'end':
-      end_date = sys.argv[i+1].strip().replace(u'T', u' ')
-      i += 2
-    elif sys.argv[i].lower() == u'begin':
-      begin_date = sys.argv[i+1].strip().replace(u'T', u' ')
-      i += 2
-    elif sys.argv[i].lower() == u'incoming_headers':
-      incoming_headers_only = True
-      i += 1
-    elif sys.argv[i].lower() == u'outgoing_headers':
-      outgoing_headers_only = True
-      i += 1
-    elif sys.argv[i].lower() == u'nochats':
-      chats = False
-      i += 1
-    elif sys.argv[i].lower() == u'nodrafts':
-      drafts = False
-      i += 1
-    elif sys.argv[i].lower() == u'chat_headers':
-      chats_headers_only = True
-      i += 1
-    elif sys.argv[i].lower() == u'draft_headers':
-      drafts_headers_only = True
-      i += 1
-    else:
-      print u'ERROR: %s is not a valid argument for "gam create monitor"' % sys.argv[i]
-      sys.exit(2)
-  audit = getAuditObject()
-  if source_user.find(u'@') > 0:
-    audit.domain = source_user[source_user.find(u'@')+1:]
-    source_user = source_user[:source_user.find(u'@')]
-  callGData(audit, u'createEmailMonitor', source_user=source_user, destination_user=destination_user, end_date=end_date, begin_date=begin_date,
-            incoming_headers_only=incoming_headers_only, outgoing_headers_only=outgoing_headers_only,
-            drafts=drafts, drafts_headers_only=drafts_headers_only, chats=chats, chats_headers_only=chats_headers_only)
-
-def doShowMonitors():
-  user = sys.argv[4].lower()
-  audit = getAuditObject()
-  if user.find(u'@') > 0:
-    audit.domain = user[user.find(u'@')+1:]
-    user = user[:user.find(u'@')]
-  results = callGData(audit, u'getEmailMonitors', user=user)
-  print sys.argv[4].lower()+u' has the following monitors:'
-  print u''
-  for monitor in results:
-    print u' Destination: '+monitor[u'destUserName']
-    try:
-      print u'  Begin: '+monitor[u'beginDate']
-    except KeyError:
-      print u'  Begin: immediately'
-    print u'  End: '+monitor[u'endDate']
-    print u'  Monitor Incoming: '+monitor[u'outgoingEmailMonitorLevel']
-    print u'  Monitor Outgoing: '+monitor[u'incomingEmailMonitorLevel']
-    print u'  Monitor Chats: '+monitor[u'chatMonitorLevel']
-    print u'  Monitor Drafts: '+monitor[u'draftMonitorLevel']
-    print u''
-
-def doDeleteMonitor():
-  source_user = sys.argv[4].lower()
-  destination_user = sys.argv[5].lower()
-  audit = getAuditObject()
-  if source_user.find(u'@') > 0:
-    audit.domain = source_user[source_user.find(u'@')+1:]
-    source_user = source_user[:source_user.find(u'@')]
-  callGData(audit, u'deleteEmailMonitor', source_user=source_user, destination_user=destination_user)
-
-def doRequestActivity():
-  user = sys.argv[4].lower()
-  audit = getAuditObject()
-  if user.find(u'@') > 0:
-    audit.domain = user[user.find(u'@')+1:]
-    user = user[:user.find(u'@')]
-  results = callGData(audit, u'createAccountInformationRequest', user=user)
-  print u'Request successfully submitted:'
-  print u' Request ID: '+results[u'requestId']
-  print u' User: '+results[u'userEmailAddress']
-  print u' Status: '+results[u'status']
-  print u' Request Date: '+results[u'requestDate']
-  print u' Requested By: '+results[u'adminEmailAddress']
-
-def doStatusActivityRequests():
-  audit = getAuditObject()
-  try:
-    user = sys.argv[4].lower()
-    if user.find(u'@') > 0:
-      audit.domain = user[user.find(u'@')+1:]
-      user = user[:user.find(u'@')]
-    request_id = sys.argv[5].lower()
-    results = callGData(audit, u'getAccountInformationRequestStatus', user=user, request_id=request_id)
-    print u''
-    print u'  Request ID: '+results[u'requestId']
-    print u'  User: '+results[u'userEmailAddress']
-    print u'  Status: '+results[u'status']
-    print u'  Request Date: '+results[u'requestDate']
-    print u'  Requested By: '+results[u'adminEmailAddress']
-    try:
-      print u'  Number Of Files: '+results[u'numberOfFiles']
-      for i in range(int(results[u'numberOfFiles'])):
-        print u'  Url%s: %s' % (i, results[u'fileUrl%s' % i])
-    except KeyError:
-      pass
-    print u''
-  except IndexError:
-    results = callGData(audit, u'getAllAccountInformationRequestsStatus')
-    print u'Current Activity Requests:'
-    print u''
-    for request in results:
-      print u' Request ID: '+request[u'requestId']
-      print u'  User: '+request[u'userEmailAddress']
-      print u'  Status: '+request[u'status']
-      print u'  Request Date: '+request[u'requestDate']
-      print u'  Requested By: '+request[u'adminEmailAddress']
-      try:
-        print u'  Number Of Files: '+request[u'numberOfFiles']
-        for i in range(int(request[u'numberOfFiles'])):
-          print u'  Url%s: %s' % (i, request[u'fileUrl%s' % i])
-      except KeyError:
-        pass
-      print u''
-
-def doDownloadActivityRequest():
-  user = sys.argv[4].lower()
-  request_id = sys.argv[5].lower()
-  audit = getAuditObject()
-  if user.find(u'@') > 0:
-    audit.domain = user[user.find(u'@')+1:]
-    user = user[:user.find(u'@')]
-  results = callGData(audit, u'getAccountInformationRequestStatus', user=user, request_id=request_id)
-  if results[u'status'] != u'COMPLETED':
-    systemErrorExit(4, MESSAGE_REQUEST_NOT_COMPLETE.format(results[u'status']))
-  if int(results.get(u'numberOfFiles', u'0')) < 1:
-    systemErrorExit(4, MESSAGE_REQUEST_COMPLETED_NO_FILES)
-  for i in range(0, int(results[u'numberOfFiles'])):
-    url = results[u'fileUrl'+str(i)]
-    filename = u'activity-'+user+u'-'+request_id+u'-'+unicode(i)+u'.txt.gpg'
-    print u'Downloading '+filename+u' ('+unicode(i+1)+u' of '+results[u'numberOfFiles']+u')'
-    geturl(url, filename)
-
-def doRequestExport():
-  begin_date = end_date = search_query = None
-  headers_only = include_deleted = False
-  user = sys.argv[4].lower()
-  i = 5
-  while i < len(sys.argv):
-    if sys.argv[i].lower() == u'begin':
-      begin_date = sys.argv[i+1].strip().replace(u'T', u' ')
-      i += 2
-    elif sys.argv[i].lower() == u'end':
-      end_date = sys.argv[i+1].strip().replace(u'T', u' ')
-      i += 2
-    elif sys.argv[i].lower() == u'search':
-      search_query = sys.argv[i+1]
-      i += 2
-    elif sys.argv[i].lower() == u'headersonly':
-      headers_only = True
-      i += 1
-    elif sys.argv[i].lower() == u'includedeleted':
-      include_deleted = True
-      i += 1
-    else:
-      print u'ERROR: %s is not a valid argument for "gam export request"' % sys.argv[i]
-      sys.exit(2)
-  audit = getAuditObject()
-  if user.find(u'@') > 0:
-    audit.domain = user[user.find(u'@')+1:]
-    user = user[:user.find(u'@')]
-  results = callGData(audit, u'createMailboxExportRequest', user=user, begin_date=begin_date, end_date=end_date, include_deleted=include_deleted,
-                      search_query=search_query, headers_only=headers_only)
-  print u'Export request successfully submitted:'
-  print u' Request ID: '+results[u'requestId']
-  print u' User: '+results[u'userEmailAddress']
-  print u' Status: '+results[u'status']
-  print u' Request Date: '+results[u'requestDate']
-  print u' Requested By: '+results[u'adminEmailAddress']
-  print u' Include Deleted: '+results[u'includeDeleted']
-  print u' Requested Parts: '+results[u'packageContent']
-  try:
-    print u' Begin: '+results[u'beginDate']
-  except KeyError:
-    print u' Begin: account creation date'
-  try:
-    print u' End: '+results[u'endDate']
-  except KeyError:
-    print u' End: export request date'
-
-def doDeleteExport():
-  audit = getAuditObject()
-  user = sys.argv[4].lower()
-  if user.find(u'@') > 0:
-    audit.domain = user[user.find(u'@')+1:]
-    user = user[:user.find(u'@')]
-  request_id = sys.argv[5].lower()
-  callGData(audit, u'deleteMailboxExportRequest', user=user, request_id=request_id)
-
-def doDeleteActivityRequest():
-  audit = getAuditObject()
-  user = sys.argv[4].lower()
-  if user.find(u'@') > 0:
-    audit.domain = user[user.find(u'@')+1:]
-    user = user[:user.find(u'@')]
-  request_id = sys.argv[5].lower()
-  callGData(audit, u'deleteAccountInformationRequest', user=user, request_id=request_id)
-
-def doStatusExportRequests():
-  audit = getAuditObject()
-  try:
-    user = sys.argv[4].lower()
-    if user.find(u'@') > 0:
-      audit.domain = user[user.find(u'@')+1:]
-      user = user[:user.find(u'@')]
-    request_id = sys.argv[5].lower()
-    results = callGData(audit, u'getMailboxExportRequestStatus', user=user, request_id=request_id)
-    print u''
-    print u'  Request ID: '+results[u'requestId']
-    print u'  User: '+results[u'userEmailAddress']
-    print u'  Status: '+results[u'status']
-    print u'  Request Date: '+results[u'requestDate']
-    print u'  Requested By: '+results[u'adminEmailAddress']
-    print u'  Requested Parts: '+results[u'packageContent']
-    try:
-      print u'  Request Filter: '+results[u'searchQuery']
-    except KeyError:
-      print u'  Request Filter: None'
-    print u'  Include Deleted: '+results[u'includeDeleted']
-    try:
-      print u'  Number Of Files: '+results[u'numberOfFiles']
-      for i in range(int(results[u'numberOfFiles'])):
-        print u'  Url%s: %s' % (i, results[u'fileUrl%s' % i])
-    except KeyError:
-      pass
-  except IndexError:
-    results = callGData(audit, u'getAllMailboxExportRequestsStatus')
-    print u'Current Export Requests:'
-    print u''
-    for request in results:
-      print u' Request ID: '+request[u'requestId']
-      print u'  User: '+request[u'userEmailAddress']
-      print u'  Status: '+request[u'status']
-      print u'  Request Date: '+request[u'requestDate']
-      print u'  Requested By: '+request[u'adminEmailAddress']
-      print u'  Requested Parts: '+request[u'packageContent']
-      try:
-        print u'  Request Filter: '+request[u'searchQuery']
-      except KeyError:
-        print u'  Request Filter: None'
-      print u'  Include Deleted: '+request[u'includeDeleted']
-      try:
-        print u'  Number Of Files: '+request[u'numberOfFiles']
-      except KeyError:
-        pass
-      print u''
-
-def doWatchExportRequest():
-  audit = getAuditObject()
-  user = sys.argv[4].lower()
-  if user.find(u'@') > 0:
-    audit.domain = user[user.find(u'@')+1:]
-    user = user[:user.find(u'@')]
-  request_id = sys.argv[5].lower()
-  while True:
-    results = callGData(audit, u'getMailboxExportRequestStatus', user=user, request_id=request_id)
-    if results[u'status'] != u'PENDING':
-      print u'status is %s. Sending email.' % results[u'status']
-      msg_txt = u"\n"
-      msg_txt += u"  Request ID: %s\n" % results[u'requestId']
-      msg_txt += u"  User: %s\n" % results[u'userEmailAddress']
-      msg_txt += u"  Status: %s\n" % results[u'status']
-      msg_txt += u"  Request Date: %s\n" % results[u'requestDate']
-      msg_txt += u"  Requested By: %s\n" % results[u'adminEmailAddress']
-      msg_txt += u"  Requested Parts: %s\n" % results[u'packageContent']
-      try:
-        msg_txt += u"  Request Filter: %s\n" % results[u'searchQuery']
-      except KeyError:
-        msg_txt += u"  Request Filter: None\n"
-      msg_txt += u"  Include Deleted: %s\n" % results[u'includeDeleted']
-      try:
-        msg_txt += u"  Number Of Files: %s\n" % results[u'numberOfFiles']
-        for i in range(int(results[u'numberOfFiles'])):
-          msg_txt += u"  Url%s: %s\n" % (i, results[u'fileUrl%s' % i])
-      except KeyError:
-        pass
-      msg_subj = u'Export #%s for %s status is %s' % (results[u'requestId'], results[u'userEmailAddress'], results[u'status'])
-      send_email(msg_subj, msg_txt)
-      break
-    else:
-      print u'status still PENDING, will check again in 5 minutes...'
-      time.sleep(300)
-
-def send_email(msg_subj, msg_txt, msg_rcpt=None):
-  from email.mime.text import MIMEText
-  gmail = buildGAPIObject(u'gmail')
-  sender_email = gmail._http.request.credentials.id_token[u'email']
-  if not msg_rcpt:
-    msg_rcpt = sender_email
-  msg = MIMEText(msg_txt)
-  msg[u'Subject'] = msg_subj
-  msg[u'From'] = sender_email
-  msg[u'To'] = msg_rcpt
-  msg_string = msg.as_string()
-  msg_raw = base64.urlsafe_b64encode(msg_string)
-  callGAPI(gmail.users().messages(), u'send', userId=sender_email, body={u'raw': msg_raw})
-
-def doDownloadExportRequest():
-  user = sys.argv[4].lower()
-  request_id = sys.argv[5].lower()
-  audit = getAuditObject()
-  if user.find(u'@') > 0:
-    audit.domain = user[user.find(u'@')+1:]
-    user = user[:user.find(u'@')]
-  results = callGData(audit, u'getMailboxExportRequestStatus', user=user, request_id=request_id)
-  if results[u'status'] != u'COMPLETED':
-    systemErrorExit(4, MESSAGE_REQUEST_NOT_COMPLETE.format(results[u'status']))
-  if int(results.get(u'numberOfFiles', u'0')) < 1:
-    systemErrorExit(4, MESSAGE_REQUEST_COMPLETED_NO_FILES)
-  for i in range(0, int(results[u'numberOfFiles'])):
-    url = results[u'fileUrl'+str(i)]
-    filename = u'export-'+user+u'-'+request_id+u'-'+str(i)+u'.mbox.gpg'
-    #don't download existing files. This does not check validity of existing local
-    #file so partial/corrupt downloads will need to be deleted manually.
-    if os.path.isfile(filename):
-      continue
-    print u'Downloading '+filename+u' ('+unicode(i+1)+u' of '+results[u'numberOfFiles']+u')'
-    geturl(url, filename)
-
-def doUploadAuditKey():
-  auditkey = sys.stdin.read()
-  audit = getAuditObject()
-  callGData(audit, u'updatePGPKey', pgpkey=auditkey)
-
 def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=None, checkNotSuspended=False):
   got_uids = False
   if entity_type == None:
@@ -10265,71 +9430,93 @@ class cmd_flags(object):
     self.auth_host_port = [8080, 9090]
 
 OAUTH2_SCOPES = [
-  u'https://www.googleapis.com/auth/admin.directory.group',            #  0:Groups Directory Scope (RO)
-  u'https://www.googleapis.com/auth/admin.directory.orgunit',          #  1:Organization Directory Scope (RO)
-  u'https://www.googleapis.com/auth/admin.directory.user',             #  2:Users Directory Scope (RO)
-  u'https://www.googleapis.com/auth/admin.directory.device.chromeos',  #  3:Chrome OS Devices Directory Scope (RO)
-  u'https://www.googleapis.com/auth/admin.directory.device.mobile',    #  4:Mobile Device Directory Scope (RO,AO)
-  u'https://apps-apis.google.com/a/feeds/emailsettings/2.0/',          #  5:Email Settings API
-  u'https://www.googleapis.com/auth/admin.directory.resource.calendar',#  6:Resource Calendar API (RO)
-  u'https://apps-apis.google.com/a/feeds/compliance/audit/',           #  7:Email Audit API
-  u'https://apps-apis.google.com/a/feeds/domain/',                     #  8:Admin Settings API
-  u'https://www.googleapis.com/auth/apps.groups.settings',             #  9:Group Settings API
-  u'https://www.googleapis.com/auth/calendar',                         # 10:Calendar Data API (RO)
-  u'https://www.googleapis.com/auth/admin.reports.audit.readonly',     # 11:Audit Reports
-  u'https://www.googleapis.com/auth/admin.reports.usage.readonly',     # 12:Usage Reports
-  u'https://www.googleapis.com/auth/drive.file',                       # 13:Drive API - Admin user access to files created or opened by the app (RO)
-  u'https://www.googleapis.com/auth/apps.licensing',                   # 14:License Manager API
-  u'https://www.googleapis.com/auth/admin.directory.user.security',    # 15:User Security Directory API
-  u'https://www.googleapis.com/auth/admin.directory.notifications',    # 16:Notifications Directory API
-  u'https://www.googleapis.com/auth/siteverification',                 # 17:Site Verification API
-  u'https://mail.google.com/',                                         # 18:IMAP/SMTP authentication for admin notifications
-  u'https://www.googleapis.com/auth/admin.directory.userschema',       # 19:Customer User Schema (RO)
-  [u'https://www.googleapis.com/auth/classroom.rosters',               # 20:Classroom API
-   u'https://www.googleapis.com/auth/classroom.courses',
-   u'https://www.googleapis.com/auth/classroom.profile.emails',
-   u'https://www.googleapis.com/auth/classroom.profile.photos',
-   u'https://www.googleapis.com/auth/classroom.guardianlinks.students'],
-  u'https://www.googleapis.com/auth/cloudprint',                       # 21:CloudPrint API
-  u'https://www.googleapis.com/auth/admin.datatransfer',               # 22:Data Transfer API (RO)
-  u'https://www.googleapis.com/auth/admin.directory.customer',         # 23:Customer API (RO)
-  u'https://www.googleapis.com/auth/admin.directory.domain',           # 24:Domain API (RO)
-  u'https://www.googleapis.com/auth/admin.directory.rolemanagement',   # 25:Roles API (RO)
+  {u'name': u'Group Directory API',
+    u'subscopes': [u'readonly'],
+    u'scopes': u'https://www.googleapis.com/auth/admin.directory.group'},
+  {u'name': u'Organizational Unit Directory API',
+    u'subscopes': [u'readonly'],
+    u'scopes': u'https://www.googleapis.com/auth/admin.directory.orgunit'},
+  {u'name': u'Users Directory API',
+    u'subscopes': [u'readonly'],
+    u'scopes': u'https://www.googleapis.com/auth/admin.directory.user'},
+  {u'name': u'Chrome OS Devices Directory API',
+    u'subscopes': [u'readonly'],
+    u'scopes': u'https://www.googleapis.com/auth/admin.directory.device.chromeos'},
+  {u'name': u'Mobile Devices Directory API',
+    u'subscopes': [u'readonly', u'action'],
+    u'scopes': u'https://www.googleapis.com/auth/admin.directory.device.mobile'},
+  {u'name': u'Legacy Email Settings API - Delegation',
+    u'subscopes': [],
+    u'scopes': u'https://apps-apis.google.com/a/feeds/emailsettings/2.0/'},
+  {u'name': u'Resource Calendar API',
+    u'subscopes': [u'readonly'],
+    u'scopes': u'https://www.googleapis.com/auth/admin.directory.resource.calendar'},
+  {u'name': u'Group Settings API',
+    u'subscopes': [],
+    u'scopes': u'https://www.googleapis.com/auth/apps.groups.settings'},
+  {u'name': u'Calendar Data API',
+    u'subscopes': [u'readonly'],
+    u'scopes': u'https://www.googleapis.com/auth/calendar'},
+  {u'name': u'Audit Reports API',
+    u'subscopes': [],
+    u'scopes': u'https://www.googleapis.com/auth/admin.reports.audit.readonly'},
+  {u'name': u'Usage Reports API',
+    u'subscopes': [],
+    u'scopes': u'https://www.googleapis.com/auth/admin.reports.usage.readonly'},
+  {u'name': u'Drive API (create report docs for admin user only)',
+    u'subscopes': [],
+    u'scopes': u'https://www.googleapis.com/auth/drive.file'},
+  {u'name': u'License Manager API',
+    u'subscopes': [],
+    u'scopes': u'https://www.googleapis.com/auth/apps.licensing'},
+  {u'name': u'User Security Directory API',
+    u'subscopes': [],
+    u'scopes': u'https://www.googleapis.com/auth/admin.directory.user.security'},
+  {u'name': u'Notifications Directory API',
+    u'subscopes': [],
+    u'scopes': u'https://www.googleapis.com/auth/admin.directory.notifications'},
+  {u'name': u'Site Verification API',
+    u'subscopes': [],
+    u'scopes': u'https://www.googleapis.com/auth/siteverification'},
+  {u'name': u'User Schema Directory API',
+    u'subscopes': [u'readonly'],
+    u'scopes': u'https://www.googleapis.com/auth/admin.directory.userschema'},
+  {u'name': u'Classroom API - counts as 5 scopes',
+    u'subscopes': [],
+    u'scopes': [u'https://www.googleapis.com/auth/classroom.rosters',               # 17:Classroom API
+            u'https://www.googleapis.com/auth/classroom.courses',
+            u'https://www.googleapis.com/auth/classroom.profile.emails',
+            u'https://www.googleapis.com/auth/classroom.profile.photos',
+            u'https://www.googleapis.com/auth/classroom.guardianlinks.students']},
+  {u'name': u'Cloud Print API',
+    u'subscopes': [],
+    u'scopes': u'https://www.googleapis.com/auth/cloudprint'},
+  {u'name': u'Data Transfer API',
+    u'subscopes': [u'readonly'],
+    u'scopes': u'https://www.googleapis.com/auth/admin.datatransfer'},
+  {u'name': u'Customer API',
+    u'subscopes': [u'readonly'],
+    u'scopes': u'https://www.googleapis.com/auth/admin.directory.customer'},
+  {u'name': u'Domains Directory API',
+    u'subscopes': [u'readonly'],
+    u'scopes': u'https://www.googleapis.com/auth/admin.directory.domain'},
+  {u'name': u'Roles Directory API',
+    u'subscopes': [u'readonly'],
+    u'scopes': u'https://www.googleapis.com/auth/admin.directory.rolemanagement'},
   ]
 
-OAUTH2_RO_SCOPES = [0, 1, 2, 3, 4, 6, 10, 19, 22, 23, 24, 25]
-OAUTH2_AO_SCOPES = [4]
 
 OAUTH2_MENU = u'''
 Select the authorized scopes by entering a number.
 Append an 'r' to grant read-only access or an 'a' to grant action-only access.
 
-[%%s]  %2d)  Group Directory API (supports read-only)
-[%%s]  %2d)  Organizational Unit Directory API (supports read-only)
-[%%s]  %2d)  User Directory API (supports read-only)
-[%%s]  %2d)  Chrome OS Device Directory API (supports read-only)
-[%%s]  %2d)  Mobile Device Directory API (supports read-only and action)
-[%%s]  %2d)  User Email Settings API
-[%%s]  %2d)  Resource Calendar API (supports read-only)
-[%%s]  %2d)  Audit Monitors, Activity and Mailbox Exports API
-[%%s]  %2d)  Admin Settings API
-[%%s]  %2d)  Groups Settings API
-[%%s]  %2d)  Calendar Data API (supports read-only)
-[%%s]  %2d)  Audit Reports API
-[%%s]  %2d)  Usage Reports API
-[%%s]  %2d)  Drive API (create report documents for admin user only)
-[%%s]  %2d)  License Manager API
-[%%s]  %2d)  User Security Directory API
-[%%s]  %2d)  Notifications Directory API
-[%%s]  %2d)  Site Verification API
-[%%s]  %2d)  IMAP/SMTP Access (send notifications to admin)
-[%%s]  %2d)  User Schemas (supports read-only)
-[%%s]  %2d)  Classroom API (counts as 5 scopes)
-[%%s]  %2d)  Cloud Print API
-[%%s]  %2d)  Data Transfer API (supports read-only)
-[%%s]  %2d)  Customer Directory API (supports read-only)
-[%%s]  %2d)  Domains Directory API (supports read-only)
-[%%s]  %2d)  Roles API (supports read-only)
+'''
+for scope in OAUTH2_SCOPES:
+  OAUTH2_MENU += u'[%%%%s] %%2d)  %s' % (scope[u'name'])
+  if scope[u'subscopes']:
+    OAUTH2_MENU += u'(supports %s)' % (u' and '.join(scope[u'subscopes']))
+  OAUTH2_MENU += '\n'
+OAUTH2_MENU += '''
 
       s)  Select all scopes
       u)  Unselect all scopes
@@ -10344,14 +9531,14 @@ def doRequestOAuth():
     del scopes[:]
     for i in range(num_scopes):
       if selected_scopes[i] == u'*':
-        if not isinstance(OAUTH2_SCOPES[i], list):
-          scopes.append(OAUTH2_SCOPES[i])
+        if not isinstance(OAUTH2_SCOPES[i][u'scopes'], list):
+          scopes.append(OAUTH2_SCOPES[i][u'scopes'])
         else:
-          scopes += OAUTH2_SCOPES[i]
+          scopes += OAUTH2_SCOPES[i][u'scopes']
       elif selected_scopes[i] == u'R':
-        scopes.append(u'%s.readonly' % OAUTH2_SCOPES[i])
+        scopes.append(u'%s.readonly' % OAUTH2_SCOPES[i][u'scopes'])
       elif selected_scopes[i] == u'A':
-        scopes.append(u'%s.action' % OAUTH2_SCOPES[i])
+        scopes.append(u'%s.action' % OAUTH2_SCOPES[i][u'scopes'])
     if len(scopes) > MAXIMUM_SCOPES:
       return (False, u'ERROR: {0} scopes selected, maximum is {1}, please unselect some.\n'.format(len(scopes), MAXIMUM_SCOPES))
     if len(scopes) == 0:
@@ -10371,12 +9558,15 @@ See this site for instructions:
 """.format(FN_CLIENT_SECRETS_JSON, GC_Values[GC_CLIENT_SECRETS_JSON], GAM_WIKI_CREATE_CLIENT_SECRETS)
 
   num_scopes = len(OAUTH2_SCOPES)
+  print OAUTH2_MENU
+  print tuple(range(num_scopes))
   menu = OAUTH2_MENU % tuple(range(num_scopes))
-  selected_scopes = [u'*'] * num_scopes
-  # default to off for old email audit API (soon to be removed from GAM)
-  selected_scopes[7] = u' '
-  # default to off for notifications API (not super useful)
-  selected_scopes[16] = u' '
+  selected_scopes = []
+  for scope in OAUTH2_SCOPES:
+    if u'offByDefault' in scope:
+      selected_scopes.append(u' ')
+    else:
+      selected_scopes.append(u'*')
   scopes = []
   prompt = u'Please enter 0-{0}[a|r] or {1}: '.format(num_scopes-1, u'|'.join(OAUTH2_CMDS))
   message = u''
@@ -10402,11 +9592,11 @@ See this site for instructions:
           selection = int(selection)
         if isinstance(selection, int) and selection < num_scopes:
           if mode == u'R':
-            if selection not in OAUTH2_RO_SCOPES:
+            if u'readonly' not in OAUTH2_SCOPES[selection][u'subscopes']:
               sys.stdout.write(u'{0}Scope {1} does not support read-only mode!\n'.format(ERROR_PREFIX, selection))
               continue
           elif mode == u'A':
-            if selection not in OAUTH2_AO_SCOPES:
+            if u'action' not in OAUTH2_SCOPES[selection][u'subscopes']:
               sys.stdout.write(u'{0}Scope {1} does not support action-only mode!\n'.format(ERROR_PREFIX, selection))
               continue
           elif selected_scopes[selection] != u'*':
@@ -10636,8 +9826,6 @@ def ProcessGAMCommand(args):
         doUpdateOrg()
       elif argument == u'resource':
         doUpdateResourceCalendar()
-      elif argument == u'instance':
-        doUpdateInstance()
       elif argument == u'cros':
         doUpdateCros()
       elif argument == u'mobile':
@@ -10669,7 +9857,7 @@ def ProcessGAMCommand(args):
       elif argument in [u'nickname', u'alias']:
         doGetAliasInfo()
       elif argument == u'instance':
-        doGetInstanceInfo()
+        doGetCustomerInfo()
       elif argument in [u'org', u'ou']:
         doGetOrgInfo()
       elif argument == u'resource':
@@ -10740,53 +9928,6 @@ def ProcessGAMCommand(args):
         doUndeleteUser()
       else:
         print u'ERROR: %s is not a valid argument for "gam undelete"' % argument
-        sys.exit(2)
-      sys.exit(0)
-    elif command == u'audit':
-      argument = sys.argv[2].lower()
-      if argument == u'monitor':
-        auditWhat = sys.argv[3].lower()
-        if auditWhat == u'create':
-          doCreateMonitor()
-        elif auditWhat == u'list':
-          doShowMonitors()
-        elif auditWhat == u'delete':
-          doDeleteMonitor()
-        else:
-          print u'ERROR: %s is not a valid argument for "gam audit monitor"' % auditWhat
-          sys.exit(2)
-      elif argument == u'activity':
-        auditWhat = sys.argv[3].lower()
-        if auditWhat == u'request':
-          doRequestActivity()
-        elif auditWhat == u'status':
-          doStatusActivityRequests()
-        elif auditWhat == u'download':
-          doDownloadActivityRequest()
-        elif auditWhat == u'delete':
-          doDeleteActivityRequest()
-        else:
-          print u'ERROR: %s is not a valid argument for "gam audit activity"' % auditWhat
-          sys.exit(2)
-      elif argument == u'export':
-        auditWhat = sys.argv[3].lower()
-        if auditWhat == u'status':
-          doStatusExportRequests()
-        elif auditWhat == u'watch':
-          doWatchExportRequest()
-        elif auditWhat == u'download':
-          doDownloadExportRequest()
-        elif auditWhat == u'request':
-          doRequestExport()
-        elif auditWhat == u'delete':
-          doDeleteExport()
-        else:
-          print u'ERROR: %s is not a valid argument for "gam audit export"' % auditWhat
-          sys.exit(2)
-      elif argument == u'uploadkey':
-        doUploadAuditKey()
-      else:
-        print u'ERROR: %s is not a valid argument for "gam audit"' % argument
         sys.exit(2)
       sys.exit(0)
     elif command == u'print':
@@ -11180,18 +10321,6 @@ def ProcessGAMCommand(args):
       doPop(users)
     elif command == u'sendas':
       addUpdateSendAs(users, 4, True)
-    elif command == u'language':
-      doLanguage(users)
-    elif command in [u'utf', u'utf8', u'utf-8', u'unicode']:
-      doUTF(users)
-    elif command == u'pagesize':
-      doPageSize(users)
-    elif command == u'shortcuts':
-      doShortCuts(users)
-    elif command == u'arrows':
-      doArrows(users)
-    elif command == u'snippets':
-      doSnippets(users)
     elif command == u'label':
       doLabel(users, 4)
     elif command == u'filter':
@@ -11202,8 +10331,6 @@ def ProcessGAMCommand(args):
       doSignature(users)
     elif command == u'vacation':
       doVacation(users)
-    elif command == u'webclips':
-      doWebClips(users)
     elif command in [u'delegate', u'delegates']:
       addDelegates(users, 4)
     else:

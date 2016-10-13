@@ -4,7 +4,7 @@
  "id": "email-settings:v2",
  "name": "email-settings",
  "version": "v2",
- "revision": "20160616",
+ "revision": "20161013",
  "title": "Email Settings API",
  "description": "Lets you manage Google Apps Email Settings",
  "ownerDomain": "google.com",
@@ -18,6 +18,43 @@
  "baseUrl": "https://apps-apis.google.com/",
  "rootUrl": "https://apps-apis.google.com/",
  "servicePath": "/a/feeds/emailsettings/2.0/",
+ "parameters": {
+  "v": {
+   "type": "string",
+   "description": "GData Version",
+   "default": "2.0",
+   "enum": [
+    "2.0"
+   ],
+   "enumDescriptions": [
+    "GData 2.0"
+   ],
+   "location": "query"
+  },
+  "alt": {
+   "type": "string",
+   "description": "Data format for the response.",
+   "default": "json",
+   "enum": [
+    "json"
+   ],
+   "enumDescriptions": [
+    "Responses with Content-Type of application/json"
+   ],
+   "location": "query"
+  },
+  "quotaUser": {
+   "type": "string",
+   "description": "Available to use for quota purposes for server-side applications. Can be any arbitrary string assigned to a user, but should not exceed 40 characters. Overrides userIp if both are provided.",
+   "location": "query"
+  },
+  "prettyPrint": {
+   "type": "boolean",
+   "description": "Returns response with indentations and line breaks.",
+   "default": "true",
+   "location": "query"
+  }
+ },
  "auth": {
   "oauth2": {
    "scopes": {
@@ -28,7 +65,87 @@
   }
  },
  "schemas": {
+  "Delegate": {
+   "id": "Delegate",
+   "type": "object",
+   "description": "a delegate.",
+   "properties": {
+    "apps$property": {
+     "type": "object",
+     "properties": {
+      "name": {
+       "type": "string",
+       "description": "property name"
+      },
+      "value": {
+        "type": "string",
+        "description": "organization name value"
+      }
+     }
+    }
+   }
+  },
+  "Delegates": {
+   "id": "feed",
+   "type": "object",
+   "description": "List of delegates.",
+   "properties": {
+    "entry": {
+     "type": "object",
+     "description": "list of delegates",
+     "items": {
+      "$ref": "Delegate"
+     }
+    }
+   }
+  }
  },
  "resources": {
+  "delegates": {
+   "methods": {
+    "get": {
+     "id": "email-settings.delegates.get",
+     "path": "{domainName}/{delegator}/delegation",
+     "httpMethod": "GET",
+     "parameters": {
+      "domainName": {
+       "type": "string",
+       "required": "true",
+       "location": "path"
+      },
+      "delegator": {
+       "type": "string",
+       "required": "true",
+       "location": "path"
+      }
+     },
+     "response": {
+      "$ref": "Delegates"
+     }
+    },
+    "delete": {
+     "id": "email-settings.delegates.delete",
+     "path": "{domainName}/{delegator}/delegation/{delegate}",
+     "httpMethod": "DELETE",
+     "parameters": {
+      "domainName": {
+       "type": "string",
+       "required": "true",
+       "location": "path"
+      },
+      "delegator": {
+       "type": "string",
+       "required": "true",
+       "location": "path"
+      },
+      "delegate": {
+       "type": "string",
+       "required": "true",
+       "location": "path"
+      }
+     }
+    }
+   }
+  }   
  }
 }
