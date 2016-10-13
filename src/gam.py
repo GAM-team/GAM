@@ -7395,7 +7395,7 @@ def doUpdateCros():
         deprovisionReason = u'same_model_replacement'
       elif action in [u'deprovisiondifferentmodelreplace', u'deprovisiondifferentmodelreplacement']:
         action = u'deprovision'
-        deprovisionReason = u'differentmodelreplacement'
+        deprovisionReason = u'different_model_replacement'
       elif action in [u'deprovisionretiringdevice']:
         action = u'deprovision'
         deprovisionReason = u'retiring_device'
