@@ -1733,7 +1733,7 @@ def doDelCourseParticipant():
 def doDelCourse():
   croom = buildGAPIObject(u'classroom')
   courseId = sys.argv[3]
-  if not courseId.isdigit() and courseid[:2] != u'd:':
+  if not courseId.isdigit() and courseId[:2] != u'd:':
     courseId = u'd:%s' % courseId
   callGAPI(croom.courses(), u'delete', id=courseId)
   print u'Deleted Course %s' % courseId
@@ -1741,7 +1741,7 @@ def doDelCourse():
 def doUpdateCourse():
   croom = buildGAPIObject(u'classroom')
   courseId = sys.argv[3]
-  if not courseId.isdigit() and courseid[:2] != u'd:':
+  if not courseId.isdigit() and courseId[:2] != u'd:':
     courseId = u'd:%s' % courseId
   body = {}
   i = 4
