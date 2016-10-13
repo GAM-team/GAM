@@ -69,8 +69,15 @@ from googleapiclient.model import MediaModel
 from googleapiclient.model import RawModel
 from googleapiclient.schema import Schemas
 from oauth2client.client import GoogleCredentials
-from oauth2client.util import _add_query_parameter
-from oauth2client.util import positional
+
+# Oauth2client < 3 has the positional helper in 'util', >= 3 has it
+# in '_helpers'.
+try:
+  from oauth2client.util import _add_query_parameter
+  from oauth2client.util import positional
+except ImportError:
+  from oauth2client._helpers import _add_query_parameter
+  from oauth2client._helpers import positional
 
 
 # The client library requires a version of httplib2 that supports RETRIES.
@@ -315,6 +322,15 @@ def build_from_document(
 
   if isinstance(service, six.string_types):
     service = json.loads(service)
+
+  if  'rootUrl' not in service and (isinstance(http, (HttpMock,
+                                                      HttpMockSequence))):
+      logger.error("You are using HttpMock or HttpMockSequence without" +
+                   "having the service discovery doc in cache. Try calling " +
+                   "build() without mocking once first to populate the " +
+                   "cache.")
+      raise InvalidJsonError()
+
   base = urljoin(service['rootUrl'], service['servicePath'])
   schema = Schemas(service)
 
