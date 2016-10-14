@@ -1146,31 +1146,6 @@ def buildGplusGAPIObject(user):
   userEmail = convertUserUIDtoEmailAddress(user)
   return (userEmail, buildGAPIServiceObject(u'plus', userEmail))
 
-def geturl(url, dst):
-  import urllib2
-  u = urllib2.urlopen(url)
-  f = openFile(dst, u'wb')
-  meta = u.info()
-  try:
-    file_size = int(meta.getheaders(u'Content-Length')[0])
-  except IndexError:
-    file_size = -1
-  file_size_dl = 0
-  block_sz = 8192
-  while True:
-    filebuff = u.read(block_sz)
-    if not filebuff:
-      break
-    file_size_dl += len(filebuff)
-    f.write(filebuff)
-    if file_size != -1:
-      status = r"%10d  [%3.2f%%]" % (file_size_dl, file_size_dl * 100. / file_size)
-    else:
-      status = r"%10d [unknown size]" % (file_size_dl)
-    status = status + chr(8)*(len(status)+1)
-    print status,
-  closeFile(f)
-
 def showReport():
 
   def _adjustDate(errMsg):
