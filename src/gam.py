@@ -887,11 +887,16 @@ def checkGAPIError(e, soft_errors=False, silent_errors=False, retryOnHttpError=F
     reason = http_status
   return (http_status, reason, message)
 
-class GAPI_serviceNotAvailable(Exception): pass
+class GAPI_serviceNotAvailable(Exception):
+  pass
 
 def callGAPI(service, function,
-             silent_errors=False, soft_errors=False, throw_reasons=[], retry_reasons=[],
+             silent_errors=False, soft_errors=False, throw_reasons=None, retry_reasons=None,
              **kwargs):
+  if throw_reasons == None:
+    throw_reasons = []
+  if retry_reasons == None:
+    retry_reasons = []
   method = getattr(service, function)
   retries = 10
   parameters = dict(kwargs.items() + GM_Globals[GM_EXTRA_ARGS_DICT].items())
@@ -926,8 +931,10 @@ def callGAPI(service, function,
 
 def callGAPIpages(service, function, items,
                   page_message=None, message_attribute=None,
-                  throw_reasons=[],
+                  throw_reasons=None,
                   **kwargs):
+  if throw_reasons == None:
+    throw_reasons = []
   pageToken = None
   all_pages = list()
   total_items = 0
@@ -966,8 +973,12 @@ def callGAPIpages(service, function, items,
       return all_pages
 
 def callGAPIitems(service, function, items,
-                  throw_reasons=[], retry_reasons=[],
+                  throw_reasons=None, retry_reasons=None,
                   **kwargs):
+  if throw_reasons == None:
+    throw_reasons = []
+  if retry_reasons == None:
+    retry_reasons = []
   results = callGAPI(service, function,
                      throw_reasons=throw_reasons, retry_reasons=retry_reasons,
                      **kwargs)
@@ -5127,7 +5138,7 @@ def doDeleteLabel(users):
       dbatch.execute()
 
 def gmail_del_result(request_id, response, exception):
-  if exception is not None:
+  if exception:
     print exception
 
 def showLabels(users):
@@ -5626,7 +5637,6 @@ EMAILSETTINGS_OLD_NEW_OLD_FORWARD_ACTION_MAP = {
   }
 
 def doForward(users):
-  action = forward_to = None
   if sys.argv[4].lower() in true_values:
     enable = True
   elif sys.argv[4].lower() in false_values:
@@ -9486,10 +9496,10 @@ Select the authorized scopes by entering a number.
 Append an 'r' to grant read-only access or an 'a' to grant action-only access.
 
 '''
-for scope in OAUTH2_SCOPES:
-  OAUTH2_MENU += u'[%%%%s] %%2d)  %s' % (scope[u'name'])
-  if scope[u'subscopes']:
-    OAUTH2_MENU += u' (supports %s)' % (u' and '.join(scope[u'subscopes']))
+for a_scope in OAUTH2_SCOPES:
+  OAUTH2_MENU += u'[%%%%s] %%2d)  %s' % (a_scope[u'name'])
+  if a_scope[u'subscopes']:
+    OAUTH2_MENU += u' (supports %s)' % (u' and '.join(a_scope[u'subscopes']))
   OAUTH2_MENU += '\n'
 OAUTH2_MENU += '''
 
@@ -10343,7 +10353,8 @@ def win32_unicode_argv():
   argv = CommandLineToArgvW(cmd, byref(argc))
   if argc.value > 0:
     # Remove Python executable and commands if present
-    sys.argv = argv[argc.value-len(sys.argv):argc.value]
+    argc_value = int(argc.value)
+    sys.argv = argv[argc_value-len(sys.argv):argc_value]
 
 # Run from command line
 if __name__ == "__main__":
