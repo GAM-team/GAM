@@ -9565,7 +9565,11 @@ See this site for instructions:
   print OAUTH2_MENU
   print tuple(range(num_scopes))
   menu = OAUTH2_MENU % tuple(range(num_scopes))
-  selected_scopes = [[u'*', u' '][scope.get(u'offByDefault', False)] for scope in OAUTH2_SCOPES]
+  for scope in OAUTH2_SCOPES:
+    if u'offByDefault' in scope:
+      selected_scopes.append(u' ')
+    else:
+      selected_scopes.append(u'*')
   scopes = []
   prompt = u'Please enter 0-{0}[a|r] or {1}: '.format(num_scopes-1, u'|'.join(OAUTH2_CMDS))
   message = u''
