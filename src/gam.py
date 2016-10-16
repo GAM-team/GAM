@@ -9565,8 +9565,9 @@ See this site for instructions:
   print OAUTH2_MENU
   print tuple(range(num_scopes))
   menu = OAUTH2_MENU % tuple(range(num_scopes))
+  selected_scopes = []
   for scope in OAUTH2_SCOPES:
-    if u'offByDefault' in scope:
+    if scope.get(u'offByDefault', False):
       selected_scopes.append(u' ')
     else:
       selected_scopes.append(u'*')
