@@ -7751,16 +7751,16 @@ def doSiteVerifyShow():
 
 def doGetSiteVerifications():
   verif = buildGAPIObject(u'siteVerification')
-  sites = callGAPI(verif.webResource(), u'list')
-  try:
-    for site in sites[u'items']:
+  sites = callGAPIitems(verif.webResource(), u'list', u'items')
+  if len(sites) > 0:
+    for site in sites:
       print u'Site: %s' % site[u'site'][u'identifier']
       print u'Type: %s' % site[u'site'][u'type']
       print u'Owners:'
       for owner in site[u'owners']:
         print u' %s' % owner
       print
-  except KeyError:
+  else:
     print u'No Sites Verified.'
 
 def doSiteVerifyAttempt():
@@ -7899,10 +7899,10 @@ def doGetOrgInfo():
 def doGetASPs(users):
   cd = buildGAPIObject(u'directory')
   for user in users:
-    asps = callGAPI(cd.asps(), u'list', userKey=user)
-    print u'Application-Specific Passwords for %s' % user
-    try:
-      for asp in asps[u'items']:
+    asps = callGAPIitems(cd.asps(), u'list', u'items', userKey=user)
+    if len(asps) > 0:
+      print u'Application-Specific Passwords for %s' % user
+      for asp in asps:
         if asp[u'creationTime'] == u'0':
           created_date = u'Unknown'
         else:
@@ -7912,7 +7912,7 @@ def doGetASPs(users):
         else:
           used_date = datetime.datetime.fromtimestamp(int(asp[u'lastTimeUsed'])/1000).strftime(u'%Y-%m-%d %H:%M:%S')
         print u' ID: %s\n  Name: %s\n  Created: %s\n  Last Used: %s\n' % (asp[u'codeId'], asp[u'name'], created_date, used_date)
-    except KeyError:
+    else:
       print u' no ASPs for %s\n' % user
 
 def doDelASP(users):
@@ -7923,12 +7923,12 @@ def doDelASP(users):
     print u'deleted ASP %s for %s' % (codeId, user)
 
 def printBackupCodes(user, codes):
-  jcount = len(codes[u'items']) if (codes and (u'items' in codes)) else 0
+  jcount = len(codes)
   print u'Backup verification codes for {0}'.format(user)
   print u''
   if jcount > 0:
     j = 0
-    for code in codes[u'items']:
+    for code in codes:
       j += 1
       print u'{0}. {1}'.format(j, code[u'verificationCode'])
     print u''
@@ -7937,16 +7937,16 @@ def doGetBackupCodes(users):
   cd = buildGAPIObject(u'directory')
   for user in users:
     try:
-      codes = callGAPI(cd.verificationCodes(), u'list', throw_reasons=[u'invalidArgument', u'invalid'], userKey=user)
+      codes = callGAPIitems(cd.verificationCodes(), u'list', u'items', throw_reasons=[u'invalidArgument', u'invalid'], userKey=user)
     except googleapiclient.errors.HttpError:
-      codes = None
+      codes = []
     printBackupCodes(user, codes)
 
 def doGenBackupCodes(users):
   cd = buildGAPIObject(u'directory')
   for user in users:
     callGAPI(cd.verificationCodes(), u'generate', userKey=user)
-    codes = callGAPI(cd.verificationCodes(), u'list', userKey=user)
+    codes = callGAPIitems(cd.verificationCodes(), u'list', u'items', userKey=user)
     printBackupCodes(user, codes)
 
 def doDelBackupCodes(users):
@@ -8014,25 +8014,24 @@ def printShowTokens(i, entityType, users, csvFormat):
       if csvFormat:
         sys.stderr.write(u'Getting Access Tokens for %s\n' % (user))
       if clientId:
-        token = callGAPI(cd.tokens(), u'get',
-                         throw_reasons=[GAPI_NOT_FOUND, GAPI_USER_NOT_FOUND],
-                         userKey=user, clientId=clientId, fields=fields)
-        results = {u'items': [token]}
+        results = [callGAPI(cd.tokens(), u'get',
+                            throw_reasons=[GAPI_NOT_FOUND, GAPI_USER_NOT_FOUND],
+                            userKey=user, clientId=clientId, fields=fields)]
       else:
-        results = callGAPI(cd.tokens(), u'list',
-                           throw_reasons=[GAPI_USER_NOT_FOUND],
-                           userKey=user, fields=u'items({0})'.format(fields))
-      jcount = len(results[u'items']) if (results and (u'items' in results)) else 0
+        results = callGAPIitems(cd.tokens(), u'list', u'items',
+                                throw_reasons=[GAPI_USER_NOT_FOUND],
+                                userKey=user, fields=u'items({0})'.format(fields))
+      jcount = len(results)
       if not csvFormat:
         print u'User: {0}, Access Tokens ({1}/{2})'.format(user, i, count)
         if jcount == 0:
           continue
-        for token in results[u'items']:
+        for token in results:
           _showToken(token)
       else:
         if jcount == 0:
           continue
-        for token in results[u'items']:
+        for token in results:
           row = {u'user': user, u'scopes': u' '.join(token.get(u'scopes', []))}
           for item in [u'displayText', u'anonymous', u'nativeApp', u'userKey']:
             row[item] = token.get(item, u'')
@@ -8046,15 +8045,15 @@ def doDeprovUser(users):
   cd = buildGAPIObject(u'directory')
   for user in users:
     print u'Getting Application Specific Passwords for %s' % user
-    asps = callGAPI(cd.asps(), u'list', userKey=user, fields=u'items/codeId')
-    j = 0
-    jcount = len(asps[u'items'])
-    try:
-      for asp in asps[u'items']:
+    asps = callGAPIitems(cd.asps(), u'list', u'items', userKey=user, fields=u'items/codeId')
+    jcount = len(asps)
+    if jcount > 0:
+      j = 0
+      for asp in asps:
         j += 1
         print u' deleting ASP %s of %s' % (j, jcount)
         callGAPI(cd.asps(), u'delete', userKey=user, codeId=asp[u'codeId'])
-    except KeyError:
+    else:
       print u'No ASPs'
     print u'Invalidating 2SV Backup Codes for %s' % user
     try:
@@ -8062,15 +8061,15 @@ def doDeprovUser(users):
     except googleapiclient.errors.HttpError:
       print u'No 2SV Backup Codes'
     print u'Getting tokens for %s...' % user
-    tokens = callGAPI(cd.tokens(), u'list', userKey=user, fields=u'items/clientId')
-    j = 0
-    jcount = len(tokens[u'items'])
-    try:
-      for token in tokens[u'items']:
+    tokens = callGAPIitems(cd.tokens(), u'list', u'items', userKey=user, fields=u'items/clientId')
+    jcount = len(tokens)
+    if jcount > 0:
+      j = 0
+      for token in tokens:
         j += 1
         print u' deleting token %s of %s' % (j, jcount)
         callGAPI(cd.tokens(), u'delete', userKey=user, clientId=token[u'clientId'])
-    except KeyError:
+    else:
       print u'No Tokens'
     print u'Done deprovisioning %s' % user
 
