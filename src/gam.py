@@ -8180,6 +8180,20 @@ def doDeleteOrg():
   print u"Deleting organization %s" % name
   callGAPI(cd.orgunits(), u'delete', customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=name)
 
+# Send an email
+def send_email(msg_subj, msg_txt, msg_rcpt=None):
+  from email.mime.text import MIMEText
+  gmail = buildGAPIObject(u'gmail')
+  sender_email = gmail._http.request.credentials.id_token[u'email']
+  if not msg_rcpt:
+    msg_rcpt = sender_email
+  msg = MIMEText(msg_txt)
+  msg[u'Subject'] = msg_subj
+  msg[u'From'] = sender_email
+  msg[u'To'] = msg_rcpt
+  callGAPI(gmail.users().messages(), u'send',
+           userId=sender_email, body={u'raw': base64.urlsafe_b64encode(msg.as_string())})
+
 # Write a CSV file
 def addTitleToCSVfile(title, titles):
   titles.append(title)
@@ -8263,6 +8277,8 @@ def writeCSVfile(csvRows, titles, list_type, todrive):
     file_url = result[u'alternateLink']
     if GC_Values[GC_NO_BROWSER]:
       msg_txt = u'Drive file uploaded to:\n %s' % file_url
+      msg_subj = u'%s - %s' % (GC_Values[GC_DOMAIN], list_type)
+      send_email(msg_subj, msg_txt)
       print msg_txt
     else:
       import webbrowser
@@ -9416,80 +9432,83 @@ class cmd_flags(object):
 
 OAUTH2_SCOPES = [
   {u'name': u'Group Directory API',
-    u'subscopes': [u'readonly'],
-    u'scopes': u'https://www.googleapis.com/auth/admin.directory.group'},
+   u'subscopes': [u'readonly'],
+   u'scopes': u'https://www.googleapis.com/auth/admin.directory.group'},
   {u'name': u'Organizational Unit Directory API',
-    u'subscopes': [u'readonly'],
-    u'scopes': u'https://www.googleapis.com/auth/admin.directory.orgunit'},
+   u'subscopes': [u'readonly'],
+   u'scopes': u'https://www.googleapis.com/auth/admin.directory.orgunit'},
   {u'name': u'Users Directory API',
-    u'subscopes': [u'readonly'],
-    u'scopes': u'https://www.googleapis.com/auth/admin.directory.user'},
+   u'subscopes': [u'readonly'],
+   u'scopes': u'https://www.googleapis.com/auth/admin.directory.user'},
   {u'name': u'Chrome OS Devices Directory API',
-    u'subscopes': [u'readonly'],
-    u'scopes': u'https://www.googleapis.com/auth/admin.directory.device.chromeos'},
+   u'subscopes': [u'readonly'],
+   u'scopes': u'https://www.googleapis.com/auth/admin.directory.device.chromeos'},
   {u'name': u'Mobile Devices Directory API',
-    u'subscopes': [u'readonly', u'action'],
-    u'scopes': u'https://www.googleapis.com/auth/admin.directory.device.mobile'},
+   u'subscopes': [u'readonly', u'action'],
+   u'scopes': u'https://www.googleapis.com/auth/admin.directory.device.mobile'},
   {u'name': u'Legacy Email Settings API - Delegation',
-    u'subscopes': [],
-    u'scopes': u'https://apps-apis.google.com/a/feeds/emailsettings/2.0/'},
+   u'subscopes': [],
+   u'scopes': u'https://apps-apis.google.com/a/feeds/emailsettings/2.0/'},
   {u'name': u'Resource Calendar API',
-    u'subscopes': [u'readonly'],
-    u'scopes': u'https://www.googleapis.com/auth/admin.directory.resource.calendar'},
+   u'subscopes': [u'readonly'],
+   u'scopes': u'https://www.googleapis.com/auth/admin.directory.resource.calendar'},
   {u'name': u'Group Settings API',
-    u'subscopes': [],
-    u'scopes': u'https://www.googleapis.com/auth/apps.groups.settings'},
+   u'subscopes': [],
+   u'scopes': u'https://www.googleapis.com/auth/apps.groups.settings'},
   {u'name': u'Calendar Data API',
-    u'subscopes': [u'readonly'],
-    u'scopes': u'https://www.googleapis.com/auth/calendar'},
+   u'subscopes': [u'readonly'],
+   u'scopes': u'https://www.googleapis.com/auth/calendar'},
   {u'name': u'Audit Reports API',
-    u'subscopes': [],
-    u'scopes': u'https://www.googleapis.com/auth/admin.reports.audit.readonly'},
+   u'subscopes': [],
+   u'scopes': u'https://www.googleapis.com/auth/admin.reports.audit.readonly'},
   {u'name': u'Usage Reports API',
-    u'subscopes': [],
-    u'scopes': u'https://www.googleapis.com/auth/admin.reports.usage.readonly'},
+   u'subscopes': [],
+   u'scopes': u'https://www.googleapis.com/auth/admin.reports.usage.readonly'},
   {u'name': u'Drive API - create report docs only',
-    u'subscopes': [],
-    u'scopes': u'https://www.googleapis.com/auth/drive.file'},
+   u'subscopes': [],
+   u'scopes': u'https://www.googleapis.com/auth/drive.file'},
   {u'name': u'License Manager API',
-    u'subscopes': [],
-    u'scopes': u'https://www.googleapis.com/auth/apps.licensing'},
+   u'subscopes': [],
+   u'scopes': u'https://www.googleapis.com/auth/apps.licensing'},
   {u'name': u'User Security Directory API',
-    u'subscopes': [],
-    u'scopes': u'https://www.googleapis.com/auth/admin.directory.user.security'},
+   u'subscopes': [],
+   u'scopes': u'https://www.googleapis.com/auth/admin.directory.user.security'},
   {u'name': u'Notifications Directory API',
-    u'subscopes': [],
-    u'scopes': u'https://www.googleapis.com/auth/admin.directory.notifications'},
+   u'subscopes': [],
+   u'scopes': u'https://www.googleapis.com/auth/admin.directory.notifications'},
   {u'name': u'Site Verification API',
-    u'subscopes': [],
-    u'scopes': u'https://www.googleapis.com/auth/siteverification'},
+   u'offByDefault': True,
+   u'subscopes': [],
+   u'scopes': u'https://www.googleapis.com/auth/siteverification'},
+  {u'name': u'Gmail API - send report docs todrive notifications only',
+   u'subscopes': [],
+   u'scopes': u'https://www.googleapis.com/auth/gmail.send'},
   {u'name': u'User Schema Directory API',
-    u'subscopes': [u'readonly'],
-    u'scopes': u'https://www.googleapis.com/auth/admin.directory.userschema'},
+   u'subscopes': [u'readonly'],
+   u'scopes': u'https://www.googleapis.com/auth/admin.directory.userschema'},
   {u'name': u'Classroom API - counts as 5 scopes',
-    u'subscopes': [],
-    u'scopes': [u'https://www.googleapis.com/auth/classroom.rosters',               # 17:Classroom API
-            u'https://www.googleapis.com/auth/classroom.courses',
-            u'https://www.googleapis.com/auth/classroom.profile.emails',
-            u'https://www.googleapis.com/auth/classroom.profile.photos',
-            u'https://www.googleapis.com/auth/classroom.guardianlinks.students']},
+   u'subscopes': [],
+   u'scopes': [u'https://www.googleapis.com/auth/classroom.rosters',
+               u'https://www.googleapis.com/auth/classroom.courses',
+               u'https://www.googleapis.com/auth/classroom.profile.emails',
+               u'https://www.googleapis.com/auth/classroom.profile.photos',
+               u'https://www.googleapis.com/auth/classroom.guardianlinks.students']},
   {u'name': u'Cloud Print API',
-    u'subscopes': [],
-    u'scopes': u'https://www.googleapis.com/auth/cloudprint'},
+   u'subscopes': [],
+   u'scopes': u'https://www.googleapis.com/auth/cloudprint'},
   {u'name': u'Data Transfer API',
-    u'subscopes': [u'readonly'],
-    u'scopes': u'https://www.googleapis.com/auth/admin.datatransfer'},
+   u'subscopes': [u'readonly'],
+   u'scopes': u'https://www.googleapis.com/auth/admin.datatransfer'},
   {u'name': u'Customer API',
-    u'subscopes': [u'readonly'],
-    u'scopes': u'https://www.googleapis.com/auth/admin.directory.customer'},
+   u'subscopes': [u'readonly'],
+   u'scopes': u'https://www.googleapis.com/auth/admin.directory.customer'},
   {u'name': u'Domains Directory API',
-    u'subscopes': [u'readonly'],
-    u'scopes': u'https://www.googleapis.com/auth/admin.directory.domain'},
+   u'subscopes': [u'readonly'],
+   u'scopes': u'https://www.googleapis.com/auth/admin.directory.domain'},
   {u'name': u'Roles Directory API',
-    u'subscopes': [u'readonly'],
-    u'scopes': u'https://www.googleapis.com/auth/admin.directory.rolemanagement'},
+   u'subscopes': [u'readonly'],
+   u'scopes': u'https://www.googleapis.com/auth/admin.directory.rolemanagement'},
   ]
-
 
 OAUTH2_MENU = u'''
 Select the authorized scopes by entering a number.
@@ -9548,7 +9567,7 @@ See this site for instructions:
   menu = OAUTH2_MENU % tuple(range(num_scopes))
   selected_scopes = []
   for scope in OAUTH2_SCOPES:
-    if u'offByDefault' in scope:
+    if scope.get(u'offByDefault', False):
       selected_scopes.append(u' ')
     else:
       selected_scopes.append(u'*')
