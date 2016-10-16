@@ -5857,9 +5857,17 @@ def doSignature(users):
     if not gmail:
       continue
     print u'Setting Signature for {0} ({1}/{2})'.format(user, i, count)
-    callGAPI(gmail.users().settings().sendAs(), u'patch',
-             soft_errors=True,
-             userId=u'me', body=body, sendAsEmail=user)
+    result = callGAPI(gmail.users().settings().sendAs(), u'list',
+                      soft_errors=True,
+                      userId=u'me')
+    if result:
+      for sendas in result[u'sendAs']:
+        if sendas.get(u'isPrimary', False):
+          emailAddress = sendas[u'sendAsEmail']
+          callGAPI(gmail.users().settings().sendAs(), u'patch',
+                   soft_errors=True,
+                   userId=u'me', body=body, sendAsEmail=emailAddress)
+          break
 
 def getSignature(users):
   formatSig = False
