@@ -9524,10 +9524,10 @@ for a_scope in OAUTH2_SCOPES:
   OAUTH2_MENU += '\n'
 OAUTH2_MENU += '''
 
-      s)  Select all scopes
-      u)  Unselect all scopes
-      e)  Exit without changes
-      c)  Continue to authorization
+     s)  Select all scopes
+     u)  Unselect all scopes
+     e)  Exit without changes
+     c)  Continue to authorization
 '''
 OAUTH2_CMDS = [u's', u'u', u'e', u'c']
 MAXIMUM_SCOPES = 28
@@ -9564,8 +9564,6 @@ See this site for instructions:
 """.format(FN_CLIENT_SECRETS_JSON, GC_Values[GC_CLIENT_SECRETS_JSON], GAM_WIKI_CREATE_CLIENT_SECRETS)
 
   num_scopes = len(OAUTH2_SCOPES)
-  print OAUTH2_MENU
-  print tuple(range(num_scopes))
   menu = OAUTH2_MENU % tuple(range(num_scopes))
   selected_scopes = []
   for scope in OAUTH2_SCOPES:
