@@ -1918,10 +1918,7 @@ def user_from_userid(userid):
     buildUserIdToNameMap()
   return GM_Globals[GM_MAP_USER_ID_TO_NAME].get(userid, u'')
 
-SERVICE_NAME_TO_ID_MAP = {
-  u'Drive': u'55656082996',
-  u'Google+': u'553547912911',
-  }
+SERVICE_NAME_TO_ID_MAP = {u'Drive and Docs': u'55656082996', u'Google+': u'553547912911',}
 
 def appID2app(dt, appID):
   for serviceName, serviceID in SERVICE_NAME_TO_ID_MAP.items():
@@ -1931,26 +1928,23 @@ def appID2app(dt, appID):
   for online_service in online_services:
     if appID == online_service[u'id']:
       return online_service[u'name']
-  print u'ERROR: %s is not a valid app ID for data transfer.' % appID
-  sys.exit(2)
+  return u'applicationId: {0}'.format(appID)
 
 SERVICE_NAME_CHOICES_MAP = {
-  u'googleplus': u'Google+',
-  u'gplus': u'Google+',
-  u'g+': u'Google+',
-  u'drive': u'Drive',
-  u'googledrive': u'Drive',
-  u'gdrive': u'Drive',
+  u'drive': u'Drive and Docs',
+  u'drive and docs': u'Drive and Docs',
+  u'googledrive': u'Drive and Docs',
+  u'gdrive': u'Drive and Docs',
   }
 
 def app2appID(dt, app):
   serviceName = app.lower()
   if serviceName in SERVICE_NAME_CHOICES_MAP:
-    return SERVICE_NAME_TO_ID_MAP[SERVICE_NAME_CHOICES_MAP[serviceName]]
+    return (SERVICE_NAME_CHOICES_MAP[serviceName], SERVICE_NAME_TO_ID_MAP[SERVICE_NAME_CHOICES_MAP[serviceName]])
   online_services = callGAPIpages(dt.applications(), u'list', u'applications', customerId=GC_Values[GC_CUSTOMER_ID])
   for online_service in online_services:
     if serviceName == online_service[u'name'].lower():
-      return online_service[u'id']
+      return (online_service[u'name'], online_service[u'id'])
   print u'ERROR: %s is not a valid service for data transfer.' % app
   sys.exit(2)
 
@@ -1978,7 +1972,7 @@ def doCreateDataTranfer():
   body = {}
   old_owner = sys.argv[3]
   body[u'oldOwnerUserId'] = convertToUserID(old_owner)
-  service = sys.argv[4]
+  serviceName, serviceID = app2appID(dt, sys.argv[4])
   new_owner = sys.argv[5]
   body[u'newOwnerUserId'] = convertToUserID(new_owner)
   parameters = {}
@@ -1986,13 +1980,13 @@ def doCreateDataTranfer():
   while i < len(sys.argv):
     parameters[sys.argv[i].upper()] = sys.argv[i+1].upper().split(u',')
     i += 2
-  body[u'applicationDataTransfers'] = [{u'applicationId': app2appID(dt, service)}]
+  body[u'applicationDataTransfers'] = [{u'applicationId': serviceID}]
   for key in parameters:
     if u'applicationDataTransferParams' not in body[u'applicationDataTransfers'][0]:
       body[u'applicationDataTransfers'][0][u'applicationTransferParams'] = []
     body[u'applicationDataTransfers'][0][u'applicationTransferParams'].append({u'key': key, u'value': parameters[key]})
   result = callGAPI(dt.transfers(), u'insert', body=body, fields=u'id')[u'id']
-  print u'Submitted request id %s to transfer %s from %s to %s' % (result, service, old_owner, new_owner)
+  print u'Submitted request id %s to transfer %s from %s to %s' % (result, serviceName, old_owner, new_owner)
 
 def doPrintTransferApps():
   dt = buildGAPIObject(u'datatransfer')
