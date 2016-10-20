@@ -5878,14 +5878,11 @@ def getSignature(users):
     user, gmail = buildGmailGAPIObject(user)
     if not gmail:
       continue
-    result = callGAPI(gmail.users().settings().sendAs(), u'list',
+    result = callGAPI(gmail.users().settings().sendAs(), u'get',
                       soft_errors=True,
-                      userId=u'me')
+                      userId=u'me', sendAsEmail=user)
     if result:
-      for sendas in result[u'sendAs']:
-        if sendas.get(u'isPrimary', False):
-          _showSendAs(sendas, i, count, formatSig)
-          break
+      _showSendAs(result, i, count, formatSig)
 
 def doVacation(users):
   if sys.argv[4].lower() in true_values:
