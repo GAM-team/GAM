@@ -752,25 +752,18 @@ def SetGlobalVariables():
 
 def doGAMCheckForUpdates(forceCheck=False):
   import urllib2, calendar
-  try:
-    current_version = float(__version__)
-  except ValueError:
-    return
+  current_version = __version__
   now_time = calendar.timegm(time.gmtime())
   if not forceCheck:
-    last_check_time = readFile(GM_Globals[GM_LAST_UPDATE_CHECK_TXT], continueOnError=True, displayError=forceCheck)
-    if last_check_time == None:
-      last_check_time = 0
+    last_check_time_str = readFile(GM_Globals[GM_LAST_UPDATE_CHECK_TXT], continueOnError=True, displayError=forceCheck)
+    last_check_time = int(last_check_time_str) if last_check_time_str and last_check_time_str.isdigit() else 0
     if last_check_time > now_time-604800:
       return
   try:
     c = urllib2.urlopen(GAM_APPSPOT_LATEST_VERSION)
-    try:
-      latest_version = float(c.read())
-    except ValueError:
-      return
+    latest_version = c.read().strip()
     if forceCheck or (latest_version > current_version):
-      print u'Version: Check, Current: {0:.2f}, Latest: {1:.2f}'.format(current_version, latest_version)
+      print u'Version: Check, Current: {0}, Latest: {1}'.format(current_version, latest_version)
     if latest_version <= current_version:
       writeFile(GM_Globals[GM_LAST_UPDATE_CHECK_TXT], str(now_time), continueOnError=True, displayError=forceCheck)
       return
@@ -790,7 +783,7 @@ def doGAMCheckForUpdates(forceCheck=False):
   except (urllib2.HTTPError, urllib2.URLError):
     return
 
-def doGAMVersion():
+def doGAMVersion(checkForCheck=True):
   import struct
   print u'GAM {0} - {1}\n{2}\nPython {3}.{4}.{5} {6}-bit {7}\ngoogle-api-python-client {8}\n{9} {10}\nPath: {11}'.format(__version__, GAM_URL,
                                                                                                                          __author__,
@@ -799,6 +792,16 @@ def doGAMVersion():
                                                                                                                          googleapiclient.__version__,
                                                                                                                          platform.platform(), platform.machine(),
                                                                                                                          GM_Globals[GM_GAM_PATH])
+  if checkForCheck:
+    i = 2
+    while i < len(sys.argv):
+      myarg = sys.argv[i].lower().replace(u'_', u'')
+      if myarg == u'check':
+        doGAMCheckForUpdates(forceCheck=True)
+        i += 1
+      else:
+        print u'ERROR: %s is not a valid argument for "gam version"' % sys.argv[i]
+        sys.exit(2)
 
 def handleOAuthTokenError(e, soft_errors):
   if e.message in OAUTH2_TOKEN_ERRORS:
