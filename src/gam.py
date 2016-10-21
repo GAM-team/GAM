@@ -416,7 +416,7 @@ def indentMultiLineText(message, n=0):
   return message.replace(u'\n', u'\n{0}'.format(u' '*n)).rstrip()
 
 def showUsage():
-  doGAMVersion()
+  doGAMVersion(checkForCheck=False)
   print u'''
 Usage: gam [OPTIONS]...
 
