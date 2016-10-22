@@ -71,12 +71,10 @@ GAM_INFO = u'GAM {0} - {1} / {2} / Python {3}.{4}.{5} {6} / {7} {8} /'.format(__
                                                                               sys.version_info[0], sys.version_info[1], sys.version_info[2],
                                                                               sys.version_info[3],
                                                                               platform.platform(), platform.machine())
-GAM_RELEASES = u'https://github.com/jay0lee/GAM/releases'
 GAM_WIKI = u'https://github.com/jay0lee/GAM/wiki'
 GAM_WIKI_CREATE_CLIENT_SECRETS = GAM_WIKI+u'/CreatingClientSecretsFile'
-GAM_APPSPOT = u'https://gam-update.appspot.com'
-GAM_APPSPOT_LATEST_VERSION = GAM_APPSPOT+u'/latest-version.txt?v='+__version__
-GAM_APPSPOT_LATEST_VERSION_ANNOUNCEMENT = GAM_APPSPOT+u'/latest-version-announcement.txt?v='+__version__
+GAM_ALL_RELEASES = u'https://api.github.com/repos/jay0lee/GAM/releases'
+GAM_LATEST_RELEASE = GAM_ALL_RELEASES+u'/latest'
 
 TRUE = u'true'
 FALSE = u'false'
@@ -754,28 +752,39 @@ def doGAMCheckForUpdates(forceCheck=False):
   import urllib2, calendar
   current_version = __version__
   now_time = calendar.timegm(time.gmtime())
-  if not forceCheck:
+  if forceCheck:
+    check_url = GAM_ALL_RELEASES # includes pre-releases
+  else:
     last_check_time_str = readFile(GM_Globals[GM_LAST_UPDATE_CHECK_TXT], continueOnError=True, displayError=forceCheck)
     last_check_time = int(last_check_time_str) if last_check_time_str and last_check_time_str.isdigit() else 0
     if last_check_time > now_time-604800:
       return
+    check_url = GAM_LATEST_RELEASE # latest full release
   try:
-    c = urllib2.urlopen(GAM_APPSPOT_LATEST_VERSION)
-    latest_version = c.read().strip()
+    c = urllib2.urlopen(check_url)
+    try:
+      release_data = json.loads(c.read())
+    except ValueError:
+      return
+    if type(release_data) is list:
+      release_data = release_data[0] # only care about latest release 
+    latest_version = release_data[u'tag_name']
+    if latest_version[0].lower() == u'v':
+      latest_version = latest_version[1:]
     if forceCheck or (latest_version > current_version):
-      print u'Version: Check, Current: {0}, Latest: {1}'.format(current_version, latest_version)
+      print u'Version Check:\n Current: {0}\n Latest: {1}'.format(current_version, latest_version)
     if latest_version <= current_version:
       writeFile(GM_Globals[GM_LAST_UPDATE_CHECK_TXT], str(now_time), continueOnError=True, displayError=forceCheck)
       return
-    a = urllib2.urlopen(GAM_APPSPOT_LATEST_VERSION_ANNOUNCEMENT)
-    announcement = a.read()
+    announcement = release_data.get(u'body', u'No details about this release')
+    sys.stderr.write(u'\nGAM %s release notes:\n\n' % latest_version)
     sys.stderr.write(announcement)
     try:
       printLine(MESSAGE_HIT_CONTROL_C_TO_UPDATE)
       time.sleep(15)
     except KeyboardInterrupt:
       import webbrowser
-      webbrowser.open(GAM_RELEASES)
+      webbrowser.open(release_data[u'html_url'])
       printLine(MESSAGE_GAM_EXITING_FOR_UPDATE)
       sys.exit(0)
     writeFile(GM_Globals[GM_LAST_UPDATE_CHECK_TXT], str(now_time), continueOnError=True, displayError=forceCheck)
