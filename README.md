@@ -1,6 +1,6 @@
 GAM
 ============================
-GAM is a command line tool for Google Apps Administrators to manage domain and user settings quickly and easily.
+GAM is a command line tool for Google G Suite Administrators to manage domain and user settings quickly and easily.
 
 Downloads
 ---------
