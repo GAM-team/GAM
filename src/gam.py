@@ -760,8 +760,10 @@ def doGAMCheckForUpdates(forceCheck=False):
     if last_check_time > now_time-604800:
       return
     check_url = GAM_LATEST_RELEASE # latest full release
+  headers = {u'Accept': u'application/vnd.github.v3.text+json'}
+  request = urllib2.Request(url=check_url, headers=headers)
   try:
-    c = urllib2.urlopen(check_url)
+    c = urllib2.urlopen(request)
     try:
       release_data = json.loads(c.read())
     except ValueError:
@@ -776,7 +778,7 @@ def doGAMCheckForUpdates(forceCheck=False):
     if latest_version <= current_version:
       writeFile(GM_Globals[GM_LAST_UPDATE_CHECK_TXT], str(now_time), continueOnError=True, displayError=forceCheck)
       return
-    announcement = release_data.get(u'body', u'No details about this release')
+    announcement = release_data.get(u'body_text', u'No details about this release')
     sys.stderr.write(u'\nGAM %s release notes:\n\n' % latest_version)
     sys.stderr.write(announcement)
     try:
