@@ -3832,11 +3832,32 @@ DRIVEFILE_LABEL_CHOICES_MAP = {
   u'view': u'viewed',
 }
 
+DRIVEFILE_ORDERBY_CHOICES_MAP = {
+  u'createddate': u'createdDate',
+  u'folder': u'folder',
+  u'lastviewedbyme': u'lastViewedByMeDate',
+  u'lastviewedbymedate': u'lastViewedByMeDate',
+  u'lastviewedbyuser': u'lastViewedByMeDate',
+  u'modifiedbyme': u'modifiedByMeDate',
+  u'modifiedbymedate': u'modifiedByMeDate',
+  u'modifiedbyuser': u'modifiedByMeDate',
+  u'modifieddate': u'modifiedDate',
+  u'name': u'title',
+  u'quotabytesused': u'quotaBytesUsed',
+  u'quotaused': u'quotaBytesUsed',
+  u'recency': u'recency',
+  u'sharedwithmedate': u'sharedWithMeDate',
+  u'starred': u'starred',
+  u'title': u'title',
+  u'viewedbymedate': u'lastViewedByMeDate',
+  }
+
 def printDriveFileList(users):
   allfields = todrive = False
   fieldsList = []
   fieldsTitles = {}
   labelsList = []
+  orderByList = []
   titles = [u'Owner',]
   csvRows = []
   query = u'"me" in owners'
@@ -3846,6 +3867,24 @@ def printDriveFileList(users):
     if myarg == u'todrive':
       todrive = True
       i += 1
+    elif myarg == u'orderby':
+      fieldName = sys.argv[i+1].lower()
+      i += 2
+      if fieldName in DRIVEFILE_ORDERBY_CHOICES_MAP:
+        fieldName = DRIVEFILE_ORDERBY_CHOICES_MAP[fieldName]
+        orderBy = u''
+        if i < len(sys.argv):
+          orderBy = sys.argv[i].lower()
+          if orderBy in SORTORDER_CHOICES_MAP:
+            orderBy = SORTORDER_CHOICES_MAP[orderBy]
+            i += 1
+        if orderBy != u'DESCENDING':
+          orderByList.append(fieldName)
+        else:
+          orderByList.append(u'{0} desc'.format(fieldName))
+      else:
+        print u'ERROR: orderby must be one of {0}; got {1}'.format(u', '.join(sorted(DRIVEFILE_ORDERBY_CHOICES_MAP.keys())), fieldName)
+        sys.exit(2)
     elif myarg == u'query':
       query += u' and %s' % sys.argv[i+1]
       i += 2
@@ -3880,6 +3919,10 @@ def printDriveFileList(users):
     fields = u'nextPageToken,items({0})'.format(u','.join(set(fieldsList)))
   else:
     fields = u'*'
+  if orderByList:
+    orderBy = u','.join(orderByList)
+  else:
+    orderBy = None
   for user in users:
     user, drive = buildDriveGAPIObject(user)
     if not drive:
@@ -3888,7 +3931,7 @@ def printDriveFileList(users):
     page_message = u' got %%%%total_items%%%% files for %s...\n' % user
     feed = callGAPIpages(drive.files(), u'list', u'items',
                          page_message=page_message, soft_errors=True,
-                         q=query, fields=fields, maxResults=GC_Values[GC_DRIVE_MAX_RESULTS])
+                         q=query, orderBy=orderBy, fields=fields, maxResults=GC_Values[GC_DRIVE_MAX_RESULTS])
     for f_file in feed:
       a_file = {u'Owner': user}
       for attrib in f_file:
@@ -3992,6 +4035,35 @@ def printDriveFolderContents(feed, folderId, indent):
         break
 
 def showDriveFileTree(users):
+  orderByList = []
+  i = 5
+  while i < len(sys.argv):
+    myarg = sys.argv[i].lower().replace(u'_', u'')
+    if myarg == u'orderby':
+      fieldName = sys.argv[i+1].lower()
+      i += 2
+      if fieldName in DRIVEFILE_ORDERBY_CHOICES_MAP:
+        fieldName = DRIVEFILE_ORDERBY_CHOICES_MAP[fieldName]
+        orderBy = u''
+        if i < len(sys.argv):
+          orderBy = sys.argv[i].lower()
+          if orderBy in SORTORDER_CHOICES_MAP:
+            orderBy = SORTORDER_CHOICES_MAP[orderBy]
+            i += 1
+        if orderBy != u'DESCENDING':
+          orderByList.append(fieldName)
+        else:
+          orderByList.append(u'{0} desc'.format(fieldName))
+      else:
+        print u'ERROR: orderby must be one of {0}; got {1}'.format(u', '.join(sorted(DRIVEFILE_ORDERBY_CHOICES_MAP.keys())), fieldName)
+        sys.exit(2)
+    else:
+      print u'ERROR: %s is not a valid argument for "gam <users> show filetree"' % myarg
+      sys.exit(2)
+  if orderByList:
+    orderBy = u','.join(orderByList)
+  else:
+    orderBy = None
   for user in users:
     user, drive = buildDriveGAPIObject(user)
     if not drive:
@@ -4000,7 +4072,7 @@ def showDriveFileTree(users):
     sys.stderr.write(u'Getting all files for %s...\n' % user)
     page_message = u' got %%%%total_items%%%% files for %s...\n' % user
     feed = callGAPIpages(drive.files(), u'list', u'items', page_message=page_message,
-                         fields=u'items(id,title,parents(id),mimeType),nextPageToken', maxResults=GC_Values[GC_DRIVE_MAX_RESULTS])
+                         orderBy=orderBy, fields=u'items(id,title,parents(id),mimeType),nextPageToken', maxResults=GC_Values[GC_DRIVE_MAX_RESULTS])
     printDriveFolderContents(feed, root_folder, 0)
 
 def deleteEmptyDriveFolders(users):
