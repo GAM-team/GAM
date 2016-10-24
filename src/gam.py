@@ -2117,7 +2117,7 @@ def doPrintShowGuardians(csvFormat):
       todrive = True
       i += 1
     elif myarg == u'invitedguardian':
-      invitedEmailAddress = sys.argv[i+1]
+      invitedEmailAddress = normalizeEmailAddressOrUID(sys.argv[i+1])
       i += 2
     elif myarg == u'student':
       studentIds = [normalizeStudentGuardianEmailAddressOrUID(sys.argv[i+1])]
