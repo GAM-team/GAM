@@ -6295,7 +6295,21 @@ def appendItemToBodyList(body, itemName, itemValue):
   body.setdefault(itemName, [])
   body[itemName].append(itemValue)
 
-def getUserAttributes(i, updateCmd=False):
+def getUserAttributes(i, cd, updateCmd=False):
+  def _splitSchemaNameDotFieldName(sn_fn, fnRequired=True):
+    if sn_fn.find(u'.') != -1:
+      schemaName, fieldName = sn_fn.split(u'.', 1)
+      schemaName = schemaName.strip()
+      fieldName = fieldName.strip()
+      if schemaName and fieldName:
+        return (schemaName, fieldName)
+    elif not fnRequired:
+      schemaName = sn_fn.strip()
+      if schemaName:
+        return (schemaName, None)
+    print u'ERROR: %s is not a valid custom schema.field name.' % sn_fn
+    sys.exit(2)
+
   if updateCmd:
     body = {}
     need_password = False
@@ -6664,27 +6678,53 @@ def getUserAttributes(i, updateCmd=False):
         note[u'value'] = sys.argv[i].replace(u'\\n', u'\n')
       body[u'notes'] = note
       i += 1
-    else:
-      if u'customSchemas' not in body:
-        body[u'customSchemas'] = {}
-      try:
-        (schemaName, fieldName) = sys.argv[i].split(u'.')
-      except ValueError:
-        print u'ERROR: %s is not a valid create/update user argument or custom schema name.' % sys.argv[i]
+    elif myarg == u'clearschema':
+      if not updateCmd:
+        print u'ERROR: %s is not a valid create user argument.' % sys.argv[i]
         sys.exit(2)
-      field_value = sys.argv[i+1]
-      is_multivalue = False
-      if field_value.lower() in [u'multivalue', u'multivalued', u'value']:
-        is_multivalue = True
-        i += 1
-        field_value = sys.argv[i+1]
-      body[u'customSchemas'].setdefault(schemaName, {})
-      if is_multivalue:
-        body[u'customSchemas'][schemaName].setdefault(fieldName, [])
-        body[u'customSchemas'][schemaName][fieldName].append({u'value': field_value})
+      schemaName, fieldName = _splitSchemaNameDotFieldName(sys.argv[i+1], False)
+      up = u'customSchemas'
+      body.setdefault(up, {})
+      body[up].setdefault(schemaName, {})
+      if fieldName is None:
+        schema = callGAPI(cd.schemas(), u'get',
+                          soft_errors=True,
+                          customerId=GC_Values[GC_CUSTOMER_ID], schemaKey=schemaName, fields=u'fields(fieldName)')
+        if not schema:
+          sys.exit(2)
+        for field in schema[u'fields']:
+          body[up][schemaName][field[u'fieldName']] = None
       else:
-        body[u'customSchemas'][schemaName][fieldName] = field_value
+        body[up][schemaName][fieldName] = None
       i += 2
+    elif myarg.find(u'.') >= 0:
+      schemaName, fieldName = _splitSchemaNameDotFieldName(sys.argv[i])
+      up = u'customSchemas'
+      body.setdefault(up, {})
+      body[up].setdefault(schemaName, {})
+      i += 1
+      if sys.argv[i].lower() in [u'multivalue', u'multivalued', u'value']:
+        i += 1
+        body[up][schemaName].setdefault(fieldName, [])
+        schemaValue = {}
+        if sys.argv[i].lower() == u'type':
+          i += 1
+          schemaValue[u'type'] = sys.argv[i].lower()
+          if schemaValue[u'type'] not in [u'custom', u'home', u'other', u'work']:
+            print u'ERROR: wrong type must be one of custom, home, other, work; got %s' % schemaValue[u'type']
+            sys.exit(2)
+          i += 1
+          if schemaValue[u'type'] == u'custom':
+            schemaValue[u'customType'] = sys.argv[i]
+            i += 1
+        schemaValue[u'value'] = sys.argv[i]
+        body[up][schemaName][fieldName].append(schemaValue)
+      else:
+        body[up][schemaName][fieldName] = sys.argv[i]
+      i += 1
+    else:
+      print u'ERROR: %s is not a valid argument for "gam %s user"' % (sys.argv[i], [u'create', u'update'][updateCmd])
+      sys.exit(2)
   if need_password:
     body[u'password'] = u''.join(random.sample(u'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789~`!@#$%^&*()-=_+:;"\'{}[]\\|', 25))
   if u'password' in body and need_to_hash_password:
@@ -6694,7 +6734,7 @@ def getUserAttributes(i, updateCmd=False):
 
 def doCreateUser():
   cd = buildGAPIObject(u'directory')
-  body, admin_body = getUserAttributes(3, updateCmd=False)
+  body, admin_body = getUserAttributes(3, cd, updateCmd=False)
   print u"Creating account for %s" % body[u'primaryEmail']
   callGAPI(cd.users(), u'insert', body=body, fields=u'primaryEmail')
   if admin_body:
@@ -6831,7 +6871,7 @@ def doCreateResourceCalendar():
 
 def doUpdateUser(users, i):
   cd = buildGAPIObject(u'directory')
-  body, admin_body = getUserAttributes(i, updateCmd=True)
+  body, admin_body = getUserAttributes(i, cd, updateCmd=True)
   for user in users:
     if user[:4].lower() == u'uid:':
       user = user[4:]
@@ -7507,7 +7547,10 @@ def doGetUserInfo(user_email=None):
           if isinstance(user[u'customSchemas'][schema][field], list):
             print u'  %s:' % field
             for an_item in user[u'customSchemas'][schema][field]:
-              print convertUTF8(u'   %s' % an_item[u'value'])
+              print convertUTF8(u'   type: %s' % (an_item[u'type']))
+              if an_item[u'type'] == u'custom':
+                print convertUTF8(u'    customType: %s' % (an_item[u'customType']))
+              print convertUTF8(u'    value: %s' % (an_item[u'value']))
           else:
             print convertUTF8(u'  %s: %s' % (field, user[u'customSchemas'][schema][field]))
         print
