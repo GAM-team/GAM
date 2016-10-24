@@ -547,14 +547,13 @@ def getEmailAddressDomain(emailAddress):
   if atLoc == -1:
     return GC_Values[GC_DOMAIN].lower()
   return emailAddress[atLoc+1:].lower()
-#
+
 # Normalize user/group email address/uid
 # uid:12345abc -> 12345abc
 # foo -> foo@domain
 # foo@ -> foo@domain
 # foo@bar.com -> foo@bar.com
 # @domain -> domain
-#
 def normalizeEmailAddressOrUID(emailAddressOrUID, noUid=False):
   if (not noUid) and (emailAddressOrUID.find(u':') != -1):
     if emailAddressOrUID[:4].lower() == u'uid:':
@@ -570,6 +569,15 @@ def normalizeEmailAddressOrUID(emailAddressOrUID, noUid=False):
     else:
       emailAddressOrUID = u'{0}{1}'.format(emailAddressOrUID, GC_Values[GC_DOMAIN])
   return emailAddressOrUID.lower()
+
+# Normalize student/guardian email address/uid
+# 12345678 -> 12345678
+# - -> -
+# Otherwise, same results as normalizeEmailAddressOrUID
+def normalizeStudentGuardianEmailAddressOrUID(emailAddressOrUID):
+  if emailAddressOrUID.isdigit() or emailAddressOrUID == u'-':
+    return emailAddressOrUID
+  return normalizeEmailAddressOrUID(emailAddressOrUID)
 #
 # Open a file
 #
@@ -2109,10 +2117,10 @@ def doPrintShowGuardians(csvFormat):
       todrive = True
       i += 1
     elif myarg == u'invitedguardian':
-      invitedEmailAddress = sys.argv[i+1]
+      invitedEmailAddress = normalizeEmailAddressOrUID(sys.argv[i+1])
       i += 2
     elif myarg == u'student':
-      studentIds = [sys.argv[i+1],]
+      studentIds = [normalizeStudentGuardianEmailAddressOrUID(sys.argv[i+1])]
       i += 2
     elif myarg == u'invitations':
       service = croom.userProfiles().guardianInvitations()
@@ -2135,6 +2143,7 @@ def doPrintShowGuardians(csvFormat):
   count = len(studentIds)
   for studentId in studentIds:
     i += 1
+    studentId = normalizeStudentGuardianEmailAddressOrUID(studentId)
     kwargs = {u'invitedEmailAddress': invitedEmailAddress, u'studentId': studentId}
     if items == u'guardianInvitations':
       kwargs[u'states'] = states
@@ -2158,33 +2167,79 @@ def doPrintShowGuardians(csvFormat):
 
 def doInviteGuardian():
   croom = buildGAPIObject(u'classroom')
-  body = {u'invitedEmailAddress': sys.argv[3]}
-  studentId = sys.argv[4]
+  body = {u'invitedEmailAddress': normalizeEmailAddressOrUID(sys.argv[3])}
+  studentId = normalizeStudentGuardianEmailAddressOrUID(sys.argv[4])
   result = callGAPI(croom.userProfiles().guardianInvitations(), u'create', studentId=studentId, body=body)
   print u'Invited email %s as guardian of %s. Invite ID %s' % (result[u'invitedEmailAddress'], studentId, result[u'invitationId'])
 
+def _cancelGuardianInvitation(croom, studentId, invitationId):
+  try:
+    result = callGAPI(croom.userProfiles().guardianInvitations(), u'patch',
+                      throw_reasons=[u'forbidden', u'notFound', u'failedPrecondition'],
+                      studentId=studentId, invitationId=invitationId, updateMask=u'state', body={u'state': u'COMPLETE'})
+    print u'Cancelled PENDING guardian invitation for %s as guardian of %s' % (result[u'invitedEmailAddress'], studentId)
+    return 0
+  except googleapiclient.errors.HttpError as e:
+    error = json.loads(e.content)
+    reason = error[u'error'][u'errors'][0][u'reason']
+    if reason == u'forbidden':
+      entityUnknownWarning(u'Student', studentId, 0, 0)
+      sys.exit(3)
+    if reason == u'notFound':
+      stderrErrorMsg(u'Guardian invitation %s for %s does not exist' % (invitationId, studentId))
+    elif reason == u'failedPrecondition':
+      stderrErrorMsg(u'Guardian invitation %s for %s status is not PENDING' % (invitationId, studentId))
+  return 3
+
+def doCancelGuardianInvitation():
+  croom = buildGAPIObject(u'classroom')
+  invitationId = sys.argv[3]
+  studentId = normalizeStudentGuardianEmailAddressOrUID(sys.argv[4])
+  status = _cancelGuardianInvitation(croom, studentId, invitationId)
+  sys.exit(status)
+
 def doDeleteGuardian():
   croom = buildGAPIObject(u'classroom')
-  guardianId = sys.argv[3]
-  studentId = sys.argv[4]
+  invitationsOnly = False
+  guardianId = normalizeStudentGuardianEmailAddressOrUID(sys.argv[3])
+  studentId = normalizeStudentGuardianEmailAddressOrUID(sys.argv[4])
+  i = 5
+  while i < len(sys.argv):
+    myarg = sys.argv[i].lower()
+    if myarg in [u'invitation', u'invitations']:
+      invitationsOnly = True
+      i += 1
+    else:
+      print u'ERROR: %s is not a valid argument for "gam delete guardian"' % (sys.argv[i])
+      sys.exit(2)
+  if not invitationsOnly:
+    try:
+      callGAPI(croom.userProfiles().guardians(), u'delete',
+               throw_reasons=[u'forbidden', u'notFound'],
+               studentId=studentId, guardianId=guardianId)
+      print u'Deleted %s as a guardian of %s' % (guardianId, studentId)
+      return
+    except googleapiclient.errors.HttpError as e:
+      error = json.loads(e.content)
+      reason = error[u'error'][u'errors'][0][u'reason']
+      if reason == u'forbidden':
+        entityUnknownWarning(u'Student', studentId, 0, 0)
+        sys.exit(3)
+  # See if there's a pending invitation
   try:
-    callGAPI(croom.userProfiles().guardians(), u'delete', throw_reasons=[u'forbidden', u'notFound'], studentId=studentId, guardianId=guardianId)
-    print u'Deleted %s as a guardian of %s' % (guardianId, studentId)
+    results = callGAPIpages(croom.userProfiles().guardianInvitations(), u'list', items=u'guardianInvitations',
+                            throw_reasons=[u'forbidden'],
+                            studentId=studentId, invitedEmailAddress=guardianId, states=[u'PENDING',])
+    if len(results) > 0:
+      for result in results:
+        status = _cancelGuardianInvitation(croom, studentId, result[u'invitationId'])
+      sys.exit(status)
+    else:
+      stderrErrorMsg(u'%s is not a guardian of %s and no invitation exists.' % (guardianId, studentId))
+      sys.exit(3)
   except googleapiclient.errors.HttpError:
-    # See if there's a pending invitation
-    states = [u'COMPLETE', u'PENDING', u'GUARDIAN_INVITATION_STATE_UNSPECIFIED']
-    results = callGAPIpages(croom.userProfiles().guardianInvitations(), u'list', items=u'guardianInvitations', studentId=studentId, invitedEmailAddress=guardianId, states=states)
-    if len(results) < 1:
-      print u'%s is not a guardian of %s and no invitation exists.' % (guardianId, studentId)
-      sys.exit(0)
-    for result in results:
-      if result[u'state'] != u'PENDING':
-        print u'%s is not a guardian of %s and invitation %s status is %s, not PENDING. Doing nothing.' % (guardianId, studentId, result[u'invitationId'], result[u'state'])
-        continue
-      invitationId = result[u'invitationId']
-      body = {u'state': u'COMPLETE'}
-      callGAPI(croom.userProfiles().guardianInvitations(), u'patch', studentId=studentId, invitationId=invitationId, updateMask=u'state', body=body)
-      print u'Cancelling %s invitation for %s as guardian of %s' % (result[u'state'], result[u'invitedEmailAddress'], studentId)
+    entityUnknownWarning(u'Student', studentId, 0, 0)
+    sys.exit(3)
 
 def doCreateCourse():
   croom = buildGAPIObject(u'classroom')
@@ -9992,6 +10047,14 @@ def ProcessGAMCommand(args):
         doGetDomainAliasInfo()
       else:
         print u'ERROR: %s is not a valid argument for "gam info"' % argument
+        sys.exit(2)
+      sys.exit(0)
+    elif command == u'cancel':
+      argument = sys.argv[2].lower()
+      if argument in [u'guardianinvitation', u'guardianinvitations']:
+        doCancelGuardianInvitation()
+      else:
+        print u'ERROR: %s is not a valid argument for "gam cancel"' % argument
         sys.exit(2)
       sys.exit(0)
     elif command == u'delete':
