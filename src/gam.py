@@ -3813,6 +3813,15 @@ def updateDriveFileACL(users):
     result = callGAPI(drive.permissions(), u'patch', fileId=fileId, permissionId=permissionId, transferOwnership=transferOwnership, body=body)
     printPermission(result)
 
+def _stripMeInOwners(query):
+  if not query:
+    return query
+  if query == u"'me' in owners":
+    return None
+  if query.startswith(u"'me' in owners and "):
+    return query[len(u"'me' in owners and "):]
+  return query
+
 DRIVEFILE_FIELDS_CHOICES_MAP = {
   u'alternatelink': u'alternateLink',
   u'appdatacontents': u'appDataContents',
@@ -3908,14 +3917,14 @@ DRIVEFILE_ORDERBY_CHOICES_MAP = {
   }
 
 def printDriveFileList(users):
-  allfields = todrive = False
+  allfields = anyowner = todrive = False
   fieldsList = []
   fieldsTitles = {}
   labelsList = []
   orderByList = []
   titles = [u'Owner',]
   csvRows = []
-  query = u'"me" in owners'
+  query = u"'me' in owners"
   i = 5
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace(u'_', u'')
@@ -3946,6 +3955,9 @@ def printDriveFileList(users):
     elif myarg == u'fullquery':
       query = sys.argv[i+1]
       i += 2
+    elif myarg == u'anyowner':
+      anyowner = True
+      i += 1
     elif myarg == u'allfields':
       fieldsList = []
       allfields = True
@@ -3978,6 +3990,8 @@ def printDriveFileList(users):
     orderBy = u','.join(orderByList)
   else:
     orderBy = None
+  if anyowner:
+    query = _stripMeInOwners(query)
   for user in users:
     user, drive = buildDriveGAPIObject(user)
     if not drive:
@@ -4090,11 +4104,16 @@ def printDriveFolderContents(feed, folderId, indent):
         break
 
 def showDriveFileTree(users):
+  anyowner = False
   orderByList = []
+  query = u"'me' in owners"
   i = 5
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace(u'_', u'')
-    if myarg == u'orderby':
+    if myarg == u'anyowner':
+      anyowner = True
+      i += 1
+    elif myarg == u'orderby':
       fieldName = sys.argv[i+1].lower()
       i += 2
       if fieldName in DRIVEFILE_ORDERBY_CHOICES_MAP:
@@ -4119,6 +4138,8 @@ def showDriveFileTree(users):
     orderBy = u','.join(orderByList)
   else:
     orderBy = None
+  if anyowner:
+    query = _stripMeInOwners(query)
   for user in users:
     user, drive = buildDriveGAPIObject(user)
     if not drive:
@@ -4127,7 +4148,7 @@ def showDriveFileTree(users):
     sys.stderr.write(u'Getting all files for %s...\n' % user)
     page_message = u' got %%%%total_items%%%% files for %s...\n' % user
     feed = callGAPIpages(drive.files(), u'list', u'items', page_message=page_message,
-                         orderBy=orderBy, fields=u'items(id,title,parents(id),mimeType),nextPageToken', maxResults=GC_Values[GC_DRIVE_MAX_RESULTS])
+                         q=query, orderBy=orderBy, fields=u'items(id,title,parents(id),mimeType),nextPageToken', maxResults=GC_Values[GC_DRIVE_MAX_RESULTS])
     printDriveFolderContents(feed, root_folder, 0)
 
 def deleteEmptyDriveFolders(users):
