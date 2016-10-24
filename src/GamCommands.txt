@@ -16,7 +16,7 @@ If an item contains spaces, it should be surrounded by " or '.
 <String> ::= a string of characters, surrounded by " or ' if it contains spaces
 <TrueValues> ::= true|on|yes|enabled|1
 <FalseValues>= false|off|no|disabled|0
-<DataTransferService> ::= googleplus|google+|gplus|g+|googledrive|gdrive|drive
+<DataTransferService> ::= googledrive|gdrive|drive|"drive and docs"
 <ProductID> ::= Google-Apps|Google-Coordinate|Google-Drive-storage|Google-Vault
 <SKUID> ::= apps|gafb|gafw|gams|gau|unlimited|d4w|dfw|coordinate|vault|vfe|
 	    drive-20gb|drive20gb|20gb|drive-50gb|drive50gb|50gb|drive-200gb|drive200gb|200gb|drive-400gb|drive400gb|400gb|
@@ -76,7 +76,8 @@ If an item contains spaces, it should be surrounded by " or '.
 <FilterID> ::= <Sttring>
 <FolderName> ::= <String>
 <GroupItem> ::= <EmailAddress>|<UniqueID>|<String>
-<GuardianID> ::= <String>
+<GuardianItem> ::= <EmailAddress>|<UniqueID>|<String>
+<GuardianInvitationID> ::= <String>
 <HostName> ::= <String>
 <Key> ::= <String>
 <LabelID> ::= <String>
@@ -112,8 +113,7 @@ If an item contains spaces, it should be surrounded by " or '.
 <RoleAssignmentID> ::= <String>
 <SchemaName> ::= <String>
 <Section> ::= <String>
-<StudentID> ::= <String>
-<TeacherID> ::= <String>
+<StudentItem> ::= <EmailAddress>|<UniqueID>|<String>
 <Timezone> ::= <String>
 <Title> ::= <String>
 <URI> ::= <String>
@@ -199,6 +199,20 @@ If an item contains spaces, it should be surrounded by " or '.
 	webviewlink|
 	writerscanshare
 
+<DriveOrderByFieldName> ::=
+	createddate|
+	folder|
+	lastviewedbyme|lastviewedbymedate|lastviewedbyuser|
+	modifiedbyme|modifiedbymedate|modifiedbyuser|
+	modifieddate|
+	name|
+	quotabytesused|quotaused|
+	recency|
+	sharedwithmedate|
+	starred|
+	title|
+	viewedbymedate
+
 <GroupFieldName> ::=
 	admincreated|
 	aliases|
@@ -238,7 +252,6 @@ If an item contains spaces, it should be surrounded by " or '.
 
 <MembersFieldName> ::=
 	email|
-	group|
 	id|
 	name|
 	role|
@@ -279,7 +292,6 @@ If an item contains spaces, it should be surrounded by " or '.
 	suspended|
 	thumbnailphotourl|photo|photourl|
 	websites|website|
-	custom all|<SchemaNameList>
 
 <UserOrderByFieldName> ::=
 	familyname|lastname|givenname|firstname|email
@@ -295,18 +307,18 @@ If an item contains spaces, it should be surrounded by " or '.
 <CalendarList> ::= '<CalendarItem>(,<CalendarItem>)*'
 <CourseAliasList> ::= '<CourseAlias>(,<CourseAlias>)*'
 <CourseIDList> ::= '<CourseID>(,<CourseID>)*'
-<CrOSFieldNameList> ::= '<CrOSFieldName(,<CrOSFieldName>)*'
+<CrOSFieldNameList> ::= '<CrOSFieldName>(,<CrOSFieldName>)*'
 <CrOSList> ::= '<CrOSID>(,<CrOSID>)*'
 <DriveFileList> ::= '<DriveFileItem>(,<DriveFileItem>)*'
 <EmailAddressList> ::= '<EmailAddress>(,<EmailAddress>)*'
 <EventIDList> ::= '<EventID>(,<EventID>)*'
 <FileFormatList> ::= '<FileFormat>(,<FileFormat)*'
 <FilterIDList> ::= '<FilterID>(,<FilterID>)*'
-<GroupFieldNameList> ::= '<GroupFieldName(,<GroupFieldName>)*'
+<GroupFieldNameList> ::= '<GroupFieldName>(,<GroupFieldName>)*'
 <GroupList> ::= '<GroupItem>(,<GroupItem>)*'
 <GuardianStateList> ::= '<GuardianState>(,<GuardianState>)*'
 <LabelNameList> ::= '<LabelName>(,<LabelName)*'
-<MembersFieldNameList> ::= '<MembersFieldName(,<MembersFieldName>)*'
+<MembersFieldNameList> ::= '<MembersFieldName>(,<MembersFieldName>)*'
 <MobileList> ::= '<MobileId>(,<MobileId>)*'
 <OrgUnitList> ::== '<OrgUnitPath>(,<OrgUnitPath>)*'
 <PrinterIDList> ::= '<PrinterID>(,<PrinterID>)*'
@@ -315,7 +327,7 @@ If an item contains spaces, it should be surrounded by " or '.
 <ResourceIDList> ::= '<ResourceID>(,<ResourceID>)*'
 <SKUIDList> ='<SKUID>(,<SKUID>)*'
 <SchemaNameList> ::= '<SchemaName>(,<SchemaName>)*'
-<UserFieldNameList> ::= '<UserFieldName(,<UserFieldName>)*'
+<UserFieldNameList> ::= '<UserFieldName>(,<UserFieldName>)*'
 <UserList> ::= '<UserItem>(,<UserItem>)*'
 
 # Specify a collection of ChromeOS devices by directly specifying them
@@ -357,7 +369,6 @@ If an item contains spaces, it should be surrounded by " or '.
 	(location <String>)|
 	(notes <String>)|
 	(org|ou <OrgUnitPath>)|
-	(status active|deprovisioned|inactive|returnapproved|returnrequested|shipped|unknown)|
 	(user <Name>)
 
 <DriveFileAddAttributes> ::=
@@ -450,14 +461,20 @@ If an item contains spaces, it should be surrounded by " or '.
 	(relation|relations clear|(spouse|child|mother|father|parent|brother|sister|friend|relative|domestic_partner|manager|assistant|referred_by|partner|<String> <String>))|
 	(suspended <Boolean>)|
 	(website|websites clear|(home_page|blog|profile|work|home|other|ftp|reservations|app_install_page|<String> <URL> [notprimary|primary]))|
-	(<SchemaName>.<FieldName> [multivalued|multivalue|value] <String>)
+	(<SchemaName>.<FieldName> [multivalued|multivalue|value [type work|home|other|(custom <String>)]] <String>)
 
-
-gam version
+gam version [check]
 gam help
 
 gam batch <FileName>|- [charset <Charset>]
 gam csv <FileName>|- [charset <Charset>] gam <GAM argument list>
+
+# You can make substitutions in <GAMArgumentList> with values from the CSV file.
+# An argument containing exactly ~xxx is replaced by the value of field xxx from the CSV file
+# An argument containing instances of ~~xxx~~ has xxx replaced by the value of field xxx from the CSV file
+
+# Example: gam csv Users.csv gam update user '~primaryEmail' address type work unstructured '~~Street~~, ~~City~~, ~~State~~ ~~ZIP~~'
+# Each user (~primaryEmail, e.g. foo@bar.com) would have their work address updated
 
 gam oauth|oauth2 create|request
 gam oauth|oauth2 delete|revoke
@@ -501,11 +518,6 @@ gam print datatransfers|transfers [todrive] [olduser|oldowner <UserItem>] [newus
 
 gam print transferapps
 
-gam update instance logo <FileName>
-gam update instance sso_settings [enabled <Boolean>] [sign_on_uri <URI>] [sign_out_uri <URI>] [password_uri <URI>] [whitelist <CIDRnetmask>] [use_domain_specific_issuer <Boolean>]
-gam update instance sso_key <FileName>
-gam info instance [logo <FileName>]
-
 gam create org|ou <Name> [description <String>] [parent <OrgUnitPath>] [inherit|noinherit]
 gam update org|ou <OrgUnitPath> [name <Name>] [description <String>] [parent <OrgUnitPath>] [inherit|noinherit]
 gam update org|ou <OrgUnitPath> add|move <CrOSTypeEntity>|<UserTypeEntity>
@@ -519,22 +531,6 @@ gam delete alias|nickname [user|group|target] <UniqueID>|<EmailAddress>
 gam info alias|nickname <EmailAddress>
 gam print aliases|nicknames [todrive]
 
-gam audit uploadkey <ValueReadFromStdin>
-gam audit activity request <EmailAddress>
-gam audit activity delete <EmailAddress> <RequestID>
-gam audit activity download <EmailAddress> <RequestID>
-gam audit activity status [<EmailAddress> <RequestID>]
-
-gam audit export request <EmailAddress> [begin <DateTime>] [end <DateTime>] [search <QueryGmail>] [headersonly] [includedeleted]
-gam audit export delete <EmailAddress> <RequestID>
-gam audit export download <EmailAddress> <RequestID>
-gam audit export status [<EmailAddress> <RequestID>]
-gam audit export watch <EmailAddress> <RequestID>
-
-gam audit monitor create <EmailAddress> <DestEmailAddress> [begin <DateTime>] [end <DateTime>] [incoming_headers] [outgoing_headers] [nochats] [nodrafts] [chat_headers] [draft_headers]
-gam audit monitor delete <EmailAddress> <DestEmailAddress>
-gam audit monitor list <EmailAddress>
-
 gam calendar <CalendarItem> add <CalendarACLRole> ([user] <EmailAddress>)|(group <EmailAddress>)|(domain [<DomainName>])|default
 gam calendar <CalendarItem> update <CalendarACLRole> ([user] <EmailAddress>)|(group <EmailAddress>)|(domain [<DomainName>])|default
 gam calendar <CalendarItem> del|delete <CalendarACLRole> <EmailAddress>|(domain [<DomainName>])|default
@@ -543,7 +539,7 @@ gam calendar <CalendarItem> showacl
 gam calendar <CalendarItem> addevent <EventAttributes>+
 gam calendar <CalendarItem> wipe
 
-gam update cros <CrOSItem> <CrOSAttributes>+
+gam update cros <CrOSItem> (<CrOSAttributes>+)|(action deprovision_same_model_replace|deprovision_different_model_replace|deprovision_retiring_device|disable|reenable [acknowledge_device_touch_requirement])
 gam info cros <CrOSItem> [nolists] [listlimit <Number>]
 	[basic|full|allfields] <CrOSFieldName>* [fields <CrOSFieldNameList>]
 
@@ -575,23 +571,22 @@ gam print mobile [todrive] [query <QueryMobile>] [basic|full] [orderby <MobileOr
 
 gam create group <EmailAddress> <GroupAttributes>*
 gam update group <GroupItem> [admincreated <Boolean>] [email <EmailAddress>] <GroupAttributes>*
-gam update group <GroupItem> add [owner|manager|member] [notsuspended] <UserTypeEntity>
-gam update group <GroupItem> delete|remove [owner|manager|member] <UserTypeEntity>
-gam update group <GroupItem> sync [owner|manager|member] [notsuspended] <UserTypeEntity>
-gam update group <GroupItem> update [owner|manager|member] <UserTypeEntity>
+gam update group <GroupItem> add [member|manager|owner] [notsuspended] <UserTypeEntity>
+gam update group <GroupItem> delete|remove [member|manager|owner] <UserTypeEntity>
+gam update group <GroupItem> sync [member|manager|owner] [notsuspended] <UserTypeEntity>
+gam update group <GroupItem> update [member|manager|owner] <UserTypeEntity>
 gam delete group <GroupItem>
 gam info group <GroupItem> [nousers] [noaliases] [groups]
-gam update group <GroupItem> clear [owner] [manager] [member]
+gam update group <GroupItem> clear [member] [manager] [owner]
 
 gam print groups [todrive] ([domain <DomainName>] [member <UserItem>])
 	[maxresults <Number>] [delimiter <String>]
-	[members] [owners] [managers] [settings] <GroupFieldName>* [fields <GroupFieldNameList>]
-
+	[members] [managers] [owners] [settings] <GroupFieldName>* [fields <GroupFieldNameList>]
 
 gam print group-members|groups-members [todrive] ([domain <DomainName>] [member <UserItem>])|[group <GroupItem>]
 	[membernames] [fields <MembersFieldNameList>]
 
-gam print license|licenses|licence|licences [todrive] [products|product <ProductIDList>] [skus|sku <SKUIDList>]
+gam print license|licenses|licence|licences [todrive] [(products|product <ProductIDList>)|(skus|sku <SKUIDList>)]
 
 gam update notification|notifications [(id all)|(id <NotificationID>)*] unread|read
 gam delete notification|notifications [(id all)|(id <NotificationID>)*]
@@ -611,21 +606,21 @@ gam show schema|schemas
 gam print schema|schemas
 
 gam create user <EmailAddress> <UserAttrubutes>*
-gam update user <UserItem> <UserAttributes>+
+gam update user <UserItem> <UserAttributes>* [clearschema <SchemaName>] [clearschema <SchemaName>.<FieldName>]
 gam delete user <UserItem>
 gam undelete user <UserItem> [org|ou <OrgUnitPath>]
-gam info user [<UserItem>] [noaliases] [nogroups] [nolicenses|nolicences] [noschemas] [schemas <SchemaNameList>] [userview] [skus|sku <SKUIDList>]
+gam info user [<UserItem>] [noaliases] [nogroups] [nolicenses|nolicences] [noschemas] [schemas|custom <SchemaNameList>] [userview] [skus|sku <SKUIDList>]
 
 gam print users [todrive] ([domain <DomainName>] [query <QueryUser>] [deleted_only|only_deleted])
 	[groups] [license|licenses|licence|licences] [emailpart|emailparts|username]
 	[orderby <UserOrderByFieldName> [ascending|descending]] [userview]
-	[basic|full|allfields | <UserFieldName>* | fields <UserFieldNameList>]
+	[basic|full|allfields | <UserFieldName>* | fields <UserFieldNameList>] [schemas|custom all|<SchemaNameList>]
 gam <UserTypeEntity> print
 
 Summary of printing:
 gam print users
 Prints a header row and primaryEmail for all users.
-gam <UserTypeEntity> print users
+gam <UserTypeEntity> print
 Prints no header row and primaryEmail for specified users.
 
 gam create verify|verification <DomainName>
@@ -645,10 +640,11 @@ gam course <CourseID> delete|remove teachers|students <UserItem>
 gam course <CourseID> sync teachers|students <UserTypeEntity>
 gam print course-participants [todrive] (course|class <CourseID>)*|([teacher <UserItem>] [student <UserItem>]) [show all|students|teachers]
 
-gam create guardian|guardianinvite|inviteguardian <EmailAddress> <UserItem>
-gam delete guardian|guardians <GuardianID>|<EmailAddress> <UserItem>
-gam show guardian|guardians [invitedguardian <GuardianID>] [student <UserItem>] [invitations] [states <GuardianStateList>] [<UserTypeEntity>]
-gam print guardian|guardians [todrive] [invitedguardian <GuardianID>] [student <UserItem>] [invitations] [states <GuardianStateList>] [<UserTypeEntity>]
+gam create guardian|guardianinvite|inviteguardian <EmailAddress> <StudentItem>
+gam delete guardian|guardians <GuardianItem> <StudentItem> [invitation]
+gam show guardian|guardians [invitedguardian <EmailAddress>] [student <StudentItem>] [invitations] [states <GuardianStateList>] [<UserTypeEntity>]
+gam print guardian|guardians [todrive] [invitedguardian <EmailAddress>] [student <StudentItem>] [invitations [states <GuardianStateList>]] [<UserTypeEntity>]
+gam cancel guardianinvitation|guardianinvitations <GuardianInvitationID> <StudentItem>
 
 gam printer register
 gam update printer <PrinterID> <PrinterAttributes>+
@@ -697,11 +693,12 @@ gam <UserTypeEntity> transfer seccals <UserItem> [keepuser]
 
 gam <UserTypeEntity> print|show driveactivity [todrive] [fileid <DriveFileID>] [folderid <DriveFolderID>]
 gam <UserTypeEntity> print|show drivesettings [todrive]
-gam <UserTypeEntity> print|show filelist [todrive] [query <QueryDriveFile>] [allfields|<DriveFieldName>*]
+gam <UserTypeEntity> print|show filelist [todrive] [anyowner] [query <QueryDriveFile>] [fullquery <QueryDriveFile>]
+	[allfields|<DriveFieldName>*] (orderby <DriveOrderByFieldName> [ascending|descending])*
 
 gam <UserTypeEntity> show fileinfo <DriveFileID> [allfields|<DriveFieldName>*]
 gam <UserTypeEntity> show filerevisions <DriveFileID>
-gam <UserTypeEntity> show filetree
+gam <UserTypeEntity> show filetree [anyowner] (orderby <DriveOrderByFieldName> [ascending|descending])*
 
 gam <UserTypeEntity> add drivefile [drivefilename <DriveFileName>] <DriveFileAddAttributes>*
 gam <UserTypeEntity> update drivefile (id <DriveFileID)|(drivefilename <DriveFileName>)|(query <QueryDriveFile) [copy] [newfilename <DriveFileName>] <DriveFileUpdateAttributes>*
@@ -759,7 +756,6 @@ gam <UserTypeEntity> untrash messages query <QueryGmail> [doit] [max_to_untrash|
 #
 gam <UserTypeEntity> show gmailprofile [todrive]
 gam <UserTypeEntity> show gplusprofile [todrive]
-gam <UserTypeEntity> arrows <Boolean>
 
 gam <UserTypeEntity> add delegate|delegates <EmailAddress>
 gam <UserTypeEntity> delegate|delegates to <EmailAddress>
@@ -791,29 +787,17 @@ gam <UserTypeEntity> show imap|imap4
 gam <UserTypeEntity> pop|pop3 <Boolean> [for allmail|newmail|mailfromnowon|fromnowown] [action keep|leaveininbox|archive|delete|trash|markread]
 gam <UserTypeEntity> show pop|pop3
 
-gam <UserTypeEntity> language <Language>
-
-gam <UserTypeEntity> pagesize 25|50|100
-
-gam <UserTypeEntity> [add] sendas <EmailAddress> <Name> [signature|sig <String>|(file <FileName> [charset <CharSet>]) (replace <RegularExpression> <String>)*] [replyto <EmailAddress>] [default] [treatasalias <Boolean>]
-gam <UserTypeEntity> update sendas <EmailAddress> [name <Name>] [signature|sig <String>|(file <FileName> [charset <CharSet>]) (replace <RegularExpression> <String>)*] [replyto <EmailAddress>] [default] [treatasalias <Boolean>]
+gam <UserTypeEntity> [add] sendas <EmailAddress> <Name> [signature|sig <String>|(file <FileName> [charset <CharSet>]) (replace <Tag> <String>)*] [replyto <EmailAddress>] [default] [treatasalias <Boolean>]
+gam <UserTypeEntity> update sendas <EmailAddress> [name <Name>] [signature|sig <String>|(file <FileName> [charset <CharSet>]) (replace <Tag> <String>)*] [replyto <EmailAddress>] [default] [treatasalias <Boolean>]
 gam <UserTypeEntity> delete sendas <EmailAddress>
 gam <UserTypeEntity> show sendas [format]
 gam <UserTypeEntity> info sendas <EmailAddress> [format]
 gam <UserTypeEntity> print sendas [todrive]
 
-gam <UserTypeEntity> shortcuts <Boolean>
-
 gam <UserTypeEntity> signature|sig <String>|(file <FileName> [charset <Charset>]) (replace <Tag> <String>)* [name <String>] [replyto <EmailAddress>] [default] [treatasalias <Boolean>]
 gam <UserTypeEntity> show signature|sig [format]
-
-gam <UserTypeEntity> snippets <Boolean>
-
-gam <UserTypeEntity> utf|utf8|utf-8|unicode <Boolean>
 
 gam <UserTypeEntity> vacation <FalseValues>
 gam <UserTypeEntity> vacation <TrueValues> subject <String> (message <String>)|(file <FileName> [charset <CharSet>]) (replace <Tag> <String>)* [html]
 	[contactsonly] [domainonly] [startdate <Date>] [enddate <Date>]
 gam <UserTypeEntity> show vacation [format]
-
-gam <UserTypeEntity> webclips <Boolean>
