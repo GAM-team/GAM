@@ -19,7 +19,7 @@
 u"""GAM is a command line tool which allows Administrators to control their Google Apps domain and accounts.
 
 With GAM you can programatically create users, turn on/off services for users like POP and Forwarding and much more.
-For more information, see https://github.com/jay0lee/GAM
+For more information, see http://git.io/gam
 """
 
 __author__ = u'Jay Lee <jay0lee@gmail.com>'
@@ -81,12 +81,13 @@ Go to the following link in your browser:
     {address}
 """
 
-GAM_URL = u'https://github.com/jay0lee/GAM'
+GAM_URL = u'http://git.io/gam'
 GAM_INFO = u'GAM {0} - {1} / {2} / Python {3}.{4}.{5} {6} / {7} {8} /'.format(__version__, GAM_URL,
                                                                               __author__,
                                                                               sys.version_info[0], sys.version_info[1], sys.version_info[2],
                                                                               sys.version_info[3],
                                                                               platform.platform(), platform.machine())
+GAM_RELEASES = u'https://github.com/jay0lee/GAM/releases'
 GAM_WIKI = u'https://github.com/jay0lee/GAM/wiki'
 GAM_WIKI_CREATE_CLIENT_SECRETS = GAM_WIKI+u'/CreatingClientSecretsFile'
 GAM_ALL_RELEASES = u'https://api.github.com/repos/jay0lee/GAM/releases'
@@ -325,7 +326,7 @@ MESSAGE_API_ACCESS_DENIED = u'API access Denied.\n\nPlease make sure the Client 
 MESSAGE_GAM_EXITING_FOR_UPDATE = u'GAM is now exiting so that you can overwrite this old version with the latest release'
 MESSAGE_GAM_OUT_OF_MEMORY = u'GAM has run out of memory. If this is a large Google Apps instance, you should use a 64-bit version of GAM on Windows or a 64-bit version of Python on other systems.'
 MESSAGE_HEADER_NOT_FOUND_IN_CSV_HEADERS = u'Header "{0}" not found in CSV headers of "{1}".'
-MESSAGE_HIT_CONTROL_C_TO_UPDATE = u'\n\nHit CTRL+C to visit the GAM website and download the latest release or wait 15 seconds continue with this boring old version.\nGAM won\'t bother you with this announcement for 1 week or you can create a file named noupdatecheck.txt in the same location as gam.py or gam.exe and GAM won\'t ever check for updates.'
+MESSAGE_HIT_CONTROL_C_TO_UPDATE = u'\n\nHit CTRL+C to visit the GAM website and download the latest release or wait 15 seconds continue with this boring old version. GAM won\'t bother you with this announcement for 1 week or you can create a file named noupdatecheck.txt in the same location as gam.py or gam.exe and GAM won\'t ever check for updates.'
 MESSAGE_INVALID_JSON = u'The file {0} has an invalid format.'
 MESSAGE_NO_DISCOVERY_INFORMATION = u'No online discovery doc and {0} does not exist locally'
 MESSAGE_NO_PYTHON_SSL = u'You don\'t have the Python SSL module installed so we can\'t verify SSL Certificates. You can fix this by installing the Python SSL module or you can live on the edge and turn SSL validation off by creating a file named noverifyssl.txt in the same location as gam.exe / gam.py'
@@ -787,7 +788,7 @@ def doGAMCheckForUpdates(forceCheck=False):
     if latest_version[0].lower() == u'v':
       latest_version = latest_version[1:]
     if forceCheck or (latest_version > current_version):
-      print u'Version Check:\n Current: {0}\n  Latest: {1}'.format(current_version, latest_version)
+      print u'Version Check:\n Current: {0}\n Latest: {1}'.format(current_version, latest_version)
     if latest_version <= current_version:
       writeFile(GM_Globals[GM_LAST_UPDATE_CHECK_TXT], str(now_time), continueOnError=True, displayError=forceCheck)
       return
@@ -3014,7 +3015,7 @@ def doPrinterRegister():
                  u'gcp_version': u'2.0',
                  u'setup_url': GAM_URL,
                  u'support_url': u'https://groups.google.com/forum/#!forum/google-apps-manager',
-                 u'update_url': GAM_LATEST_RELEASE,
+                 u'update_url': GAM_RELEASES,
                  u'firmware': __version__,
                  u'semantic_state': {"version": "1.0", "printer": {"state": "IDLE",}},
                  u'use_cdd': True,
