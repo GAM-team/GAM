@@ -7198,7 +7198,7 @@ def doUpdateCros():
       body[u'annotatedLocation'] = sys.argv[i + 1]
       i += 2
     elif sys.argv[i].lower() == u'notes':
-      body[u'notes'] = sys.argv[i + 1]
+      body[u'notes'] = sys.argv[i + 1].replace(u'\\n', u'\n')
       i += 2
     elif sys.argv[i].lower() == u'action':
       update_device = False
@@ -7827,6 +7827,8 @@ def doGetCrosInfo():
   cros = callGAPI(cd.chromeosdevices(), u'get', customerId=GC_Values[GC_CUSTOMER_ID],
                   deviceId=deviceId, projection=projection, fields=fields)
   print u'CrOS Device: {0}'.format(deviceId)
+  if u'notes' in cros:
+    cros[u'notes'] = cros[u'notes'].replace(u'\n', u'\\n')
   for up in CROS_SCALAR_PROPERTY_PRINT_ORDER:
     if up in cros:
       print u'  {0}: {1}'.format(up, cros[up])
@@ -9273,6 +9275,8 @@ def doPrintCrosDevices():
   if all_cros:
     if (not noLists) and (not selectActiveTimeRanges) and (not selectRecentUsers):
       for cros in all_cros:
+        if u'notes' in cros:
+          cros[u'notes'] = cros[u'notes'].replace(u'\n', u'\\n')
         addRowTitlesToCSVfile(flatten_json(cros, listLimit=listLimit), csvRows, titles)
     else:
       if not noLists:
@@ -9283,6 +9287,8 @@ def doPrintCrosDevices():
           for attrib in [u'recentUsers.email', u'recentUsers.type']:
             titles.append(attrib)
       for cros in all_cros:
+        if u'notes' in cros:
+          cros[u'notes'] = cros[u'notes'].replace(u'\n', u'\\n')
         row = {}
         for attrib in cros:
           if attrib in [u'kind', u'etag', u'recentUsers', u'activeTimeRanges']:
