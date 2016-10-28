@@ -1,3 +1,9 @@
+GAM 3.8
+- Old GData APIs removed from GAM. Admin Settings and Email Audit commands are no longer included, keep a copy of GAM 3.72 around if you use them. All Email Settings commands now use new Gmail API.
+- Updated httplib2, google-api-client, uritemplate libraries
+- New update check code utilizes GitHub API to check for latest releases.
+- Many fixes and improvements by Ross
+
 GAM 3.72
 - Chrome OS device actions, disable, re-enable and deprovision devices.
 - (beta) MSI Windows build
