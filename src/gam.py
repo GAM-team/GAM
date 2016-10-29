@@ -6753,6 +6753,119 @@ def getUserAttributes(i, cd, updateCmd=False):
     body[u'hashFunction'] = u'crypt'
   return (body, admin_body)
 
+def doCreateProject():
+  while True:
+    hint = raw_input(u'What is your G Suite admin email address? ')
+    if hint.find(u'@') == -1:
+      print u'Error: that is not a valid email address'
+    else:
+      break
+  from oauth2client.contrib.dictionary_storage import DictionaryStorage
+  project_id = u'gam-project'
+  for i in range(3):
+    project_id += u'-%s' % ''.join(random.choice(string.digits + string.ascii_lowercase) for i in range(3))
+  project_name = u'project:%s' % project_id
+  scope=u'https://www.googleapis.com/auth/cloud-platform'
+  client_id=u'297408095146-fug707qsjv4ikron0hugpevbrjhkmsk7.apps.googleusercontent.com'
+  client_secret=u'qM3dP8f_4qedwzWQE1VR4zzU'
+  flow = oauth2client.client.OAuth2WebServerFlow(client_id=client_id,
+    client_secret=client_secret, scope=scope, redirect_uri=oauth2client.client.OOB_CALLBACK_URN,
+    user_agent=GAM_INFO, access_type=u'online', response_type=u'code', hint=hint)
+  flags = cmd_flags(noLocalWebserver=GC_Values[GC_NO_BROWSER])
+  storage_dict = {}
+  storage = DictionaryStorage(storage_dict, u'credentials')
+  flags = cmd_flags(noLocalWebserver=GC_Values[GC_NO_BROWSER])
+  http = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL])
+  try:
+    credentials = oauth2client.tools.run_flow(flow=flow, storage=storage, flags=flags, http=http)
+  except httplib2.CertificateValidationUnsupported:
+    noPythonSSLExit()
+  credentials.user_agent = GAM_INFO
+  http = credentials.authorize(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL],
+                                             cache=GC_Values[GC_CACHE_DIR]))
+  crm = googleapiclient.discovery.build(u'cloudresourcemanager', u'v1', http=http, cache_discovery=False)
+  body = {u'projectId': project_id, u'name': u'GAM Project'}
+  print u'Creating project "%s"...' % body[u'name']
+  create_operation = callGAPI(crm.projects(), u'create', body=body)
+  operation_name = create_operation[u'name']
+  time.sleep(5) # Google recommends always waiting at least 5 seconds
+  for i in range(1, 5):
+    print u'Checking project status...'
+    status = callGAPI(crm.operations(), u'get', name=operation_name)
+    if u'done' in status and status[u'done']:
+      break
+    sleep_time = i ** 2
+    print u'Project still being created. Sleeping %s seconds' % sleep_time
+    time.sleep(sleep_time)
+  if not u'done' in status or not status[u'done']:
+    print u'Failed to create project'
+    sys.exit(1)
+  elif u'error' in status:
+    print status[u'error']
+    sys.exit(2)
+  serveman = googleapiclient.discovery.build(u'servicemanagement', u'v1', http=http, cache_discovery=False)
+  apis = [u'admin-json.googleapis.com', u'appsactivity-json.googleapis.com', u'calendar-json.googleapis.com',
+    u'classroom.googleapis.com', u'drive', u'gmail-json.googleapis.com', u'groupssettings-json.googleapis.com',
+    u'licensing-json.googleapis.com', u'plus-json.googleapis.com', u'contacts-json.googleapis.com']
+  for api in apis:
+    print u' enabling API %s...' % api
+    enable_operation = callGAPI(serveman.services(), u'enable', serviceName=api, body={u'consumerId': project_name})
+  iam = googleapiclient.discovery.build(u'iam', u'v1', http=http, cache_discovery=False)
+  print u'Creating Service Account'
+  service_account = callGAPI(iam.projects().serviceAccounts(), u'create', name=u'projects/%s' % project_id,
+    body={u'accountId': project_id, u'serviceAccount': {u'displayName': u'GAM Project'}})
+  body = {u'privateKeyType': u'TYPE_GOOGLE_CREDENTIALS_FILE', u'keyAlgorithm': u'KEY_ALG_RSA_4096'}
+  key = callGAPI(iam.projects().serviceAccounts().keys(), u'create', name=service_account[u'name'], body=body)
+  oauth2service_data = base64.b64decode(key[u'privateKeyData'])
+  if os.path.isfile(FN_OAUTH2SERVICE_JSON):
+    service_file = u'%s-%s' % (FN_OAUTH2SERVICE_JSON, project_id)
+  else:
+    service_file = FN_OAUTH2SERVICE_JSON
+  writeFile(service_file, oauth2service_data, continueOnError=False)
+  console_credentials_url = u'https://console.developers.google.com/apis/credentials?project=%s' % project_id
+  print u'''Please go to:
+
+%s
+
+1. Click the blue "Create credentials" button. Choose "OAuth client ID".
+2. Click the blue "Configure consent screen" button. Enter "GAM" for "Product name to show to users" and Save.
+3. Choose "Other" and click the blue "Create" button.
+4. Copy your "client ID" value.
+
+''' % console_credentials_url
+  client_id = raw_input(u'Enter your Client ID: ')
+  print u'\nNow go back to your browser and copy your client secret.'
+  client_secret = raw_input(u'Enter your Client Secret: ')
+  cs_data = u'''{
+    "installed": {
+        "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+        "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+        "client_id": "%s",
+        "client_secret": "%s",
+        "project_id": "%s",
+        "redirect_uris": [
+            "urn:ietf:wg:oauth:2.0:oob",
+            "http://localhost"
+        ],
+        "token_uri": "https://accounts.google.com/o/oauth2/token"
+    }
+}''' % (client_id, client_secret, project_id)
+  if os.path.isfile(FN_CLIENT_SECRETS_JSON):
+    cs_file = u'%s-%s' % (FN_CLIENT_SECRETS_JSON, project_id)
+  else:
+    cs_file = FN_CLIENT_SECRETS_JSON
+  writeFile(cs_file, cs_data, continueOnError=False) 
+  console_serviceaccount_url = u'https://console.developers.google.com/iam-admin/serviceaccounts/project?project=%s' % project_id
+  print u'''Almost there! Now please go to:
+
+%s
+
+1. Click the 3 dots to the far left of the "GAM Project" service account.
+2. Choose Edit.
+3. Check the "Enable G Suite Domain-wide Delegation" box and Save.
+
+That's it! Your GAM Project is created and ready to use.'''
+
 def doCreateUser():
   cd = buildGAPIObject(u'directory')
   body, admin_body = getUserAttributes(3, cd, updateCmd=False)
@@ -10043,6 +10156,8 @@ def ProcessGAMCommand(args):
         doCreateAdmin()
       elif argument in [u'guardianinvite', u'inviteguardian', u'guardian']:
         doInviteGuardian()
+      elif argument in [u'project', u'apiproject']:
+        doCreateProject()
       else:
         print u'ERROR: %s is not a valid argument for "gam create"' % argument
         sys.exit(2)
