@@ -6863,7 +6863,7 @@ def doCreateProject():
 2. Choose Edit.
 3. Check the "Enable G Suite Domain-wide Delegation" box and Save.
 
-That's it! Your GAM Project is created and ready to use.'''
+That's it! Your GAM Project is created and ready to use.''' % console_serviceaccount_url
 
 def doCreateUser():
   cd = buildGAPIObject(u'directory')
