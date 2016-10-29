@@ -11,7 +11,6 @@ for d in a.datas:
         break
 a.datas += [('httplib2/cacerts.txt', 'httplib2\cacerts.txt', 'DATA')]
 a.datas += [('cloudprint-v2.json', 'cloudprint-v2.json', 'DATA')]
-a.datas += [('email-audit-v1.json', 'email-audit-v1.json', 'DATA')]
 a.datas += [('email-settings-v2.json', 'email-settings-v2.json', 'DATA')]
 pyz = PYZ(a.pure)
 exe = EXE(pyz,
