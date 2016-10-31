@@ -59,6 +59,7 @@ echo -e '\e[0m'
 
 case $gamos in
   [lL]inux)
+    gamos="linux"
     case $gamarch in
       x86_64) gamfile="linux-x86_64.tar.xz";;
       i?86) gamfile="linux-i686.tar.xz";;
@@ -67,6 +68,7 @@ case $gamos in
     esac
     ;;
   [Mm]ac[Oo][sS]|[Dd]arwin)
+    gamos="macos"
     gamfile="macos.tar.xz"
     ;;
   *)
