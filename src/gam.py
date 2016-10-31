@@ -6753,12 +6753,15 @@ def getUserAttributes(i, cd, updateCmd=False):
   return (body, admin_body)
 
 def doCreateProject():
-  while True:
-    hint = raw_input(u'What is your G Suite admin email address? ')
-    if hint.find(u'@') == -1:
-      print u'Error: that is not a valid email address'
-    else:
-      break
+  try:
+    hint = sys.argv[3]
+  except KeyError:
+    while True:
+      hint = raw_input(u'What is your G Suite admin email address? ')
+      if hint.find(u'@') == -1:
+        print u'Error: that is not a valid email address'
+      else:
+        break
   from oauth2client.contrib.dictionary_storage import DictionaryStorage
   project_id = u'gam-project'
   for i in range(3):
@@ -6784,24 +6787,44 @@ def doCreateProject():
                                              cache=GC_Values[GC_CACHE_DIR]))
   crm = googleapiclient.discovery.build(u'cloudresourcemanager', u'v1', http=http, cache_discovery=False)
   body = {u'projectId': project_id, u'name': u'GAM Project'}
-  print u'Creating project "%s"...' % body[u'name']
-  create_operation = callGAPI(crm.projects(), u'create', body=body)
-  operation_name = create_operation[u'name']
-  time.sleep(5) # Google recommends always waiting at least 5 seconds
-  for i in range(1, 5):
-    print u'Checking project status...'
-    status = callGAPI(crm.operations(), u'get', name=operation_name)
-    if u'done' in status and status[u'done']:
-      break
-    sleep_time = i ** 2
-    print u'Project still being created. Sleeping %s seconds' % sleep_time
-    time.sleep(sleep_time)
-  if not u'done' in status or not status[u'done']:
-    print u'Failed to create project'
-    sys.exit(1)
-  elif u'error' in status:
-    print status[u'error']
-    sys.exit(2)
+  while True:
+    create_again = False
+    print u'Creating project "%s"...' % body[u'name']
+    create_operation = callGAPI(crm.projects(), u'create', body=body)
+    operation_name = create_operation[u'name']
+    time.sleep(5) # Google recommends always waiting at least 5 seconds
+    for i in range(1, 5):
+      print u'Checking project status...'
+      status = callGAPI(crm.operations(), u'get', name=operation_name)
+      print status
+      if u'error' in status:
+        if u'message' in status[u'error'] and status[u'error'][u'message'].find(u'Callers must accept ToS') != -1:
+          print u'''Please go to:
+
+https://console.developers.google.com
+
+and accept the Terms of Service (ToS). As soon as you've accepted the ToS popup, you can return here and press enter.'''
+          raw_input()
+          create_again = True
+          break
+        else:
+          print status
+          sys.exit(1)
+      if u'done' in status and status[u'done']:
+        break
+      sleep_time = i ** 2
+      print u'Project still being created. Sleeping %s seconds' % sleep_time
+      time.sleep(sleep_time)
+    if create_again:
+      continue
+    if not u'done' in status or not status[u'done']:
+      print u'Failed to create project: %s' % status
+      sys.exit(1)
+    elif u'error' in status:
+      print status[u'error']
+      sys.exit(2)
+    break
+
   serveman = googleapiclient.discovery.build(u'servicemanagement', u'v1', http=http, cache_discovery=False)
   apis = [u'admin-json.googleapis.com', u'appsactivity-json.googleapis.com', u'calendar-json.googleapis.com',
     u'classroom.googleapis.com', u'drive', u'gmail-json.googleapis.com', u'groupssettings-json.googleapis.com',
