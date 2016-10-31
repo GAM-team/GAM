@@ -14,7 +14,7 @@ OPTIONS:
 EOF
 }
 
-target_dir="~/bin/"
+target_dir="$HOME/bin/"
 gamarch=$(uname -m)
 gamos=$(uname -s)
 gamversion="latest"
