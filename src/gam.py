@@ -6755,7 +6755,7 @@ def getUserAttributes(i, cd, updateCmd=False):
 def doCreateProject():
   try:
     hint = sys.argv[3]
-  except KeyError:
+  except IndexError:
     while True:
       hint = raw_input(u'What is your G Suite admin email address? ')
       if hint.find(u'@') == -1:
