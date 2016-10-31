@@ -1,5 +1,35 @@
 #!/usr/bin/env bash
 
+usage()
+{
+cat << EOF
+GAM installation script.
+
+OPTIONS:
+   -h      show help.
+   -d      Directory where gam folder will be installed. Default is \$HOME/bin/
+   -a      Architecture to install (i386, x86_64, arm). Default is to detect your arch with "uname -m".
+   -o      OS we are running (linux, macos). Default is to detect your OS with "uname -s".
+   -v      Version to install (latest, prerelease, draft, 3.8, etc). Default is latest.
+EOF
+}
+
+target_dir="~/bin/"
+gamarch=$(uname -m)
+gamos=$(uname -s)
+gamversion="latest"
+while getopts "hd:a:o:v:" OPTION
+do
+     case $OPTION in
+         h) usage; exit;;
+         d) target_dir=$OPTARG;;
+         a) gamarch=$OPTARG;;
+         o) gamos=$OPTARG;;
+         v) gamversion=$OPTARG;;
+         ?) usage; exit;;
+     esac
+done
+
 update_profile() {
 	[ -f "$1" ] || return 1
 
@@ -9,35 +39,50 @@ update_profile() {
 	fi
 }
 
-case "$(uname -s)" in
-  Linux)
-    gamos="linux"
-    case "$(uname -m)" in
+echo_red()
+{
+echo -e "\E[1;31m$1"
+echo -e '\e[0m'
+}
+
+echo_green()
+{
+echo -e "\E[1;32m$1"
+echo -e '\e[0m'
+}
+
+echo_yellow()
+{
+echo -e "\E[1;33m$1"
+echo -e '\e[0m'
+}
+
+case $gamos in
+  [lL]inux)
+    case $gamarch in
       x86_64) gamfile="linux-x86_64.tar.xz";;
-      i386) gamfile="linux-i686.tar.xz";;
-      i686) gamfile="linux-i686.tar.xz";;
+      i?86) gamfile="linux-i686.tar.xz";;
       arm*) gamfile="linux-armv7l.tar.xz";;
-      *) echo "Sorry, this installer currently only supports i386, x86_64 and arm Linux. Exiting."; return;;
+      *) echo "Sorry, this installer currently only supports i386, x86_64 and arm Linux. Looks like you're running on $gamarch. Exiting."; exit;;
     esac
     ;;
-  Darwin)
-    gamos="macos"
+  [Mm]ac[Oo][sS]|[Dd]arwin)
     gamfile="macos.tar.xz"
     ;;
   *)
-    echo "Sorry, this installer currently only supports Linux and MacOS. Exiting."
-    return
+    echo "Sorry, this installer currently only supports Linux and MacOS. Looks like you're runnning on $gamos. Exiting."
+    exit
     ;;
 esac
 
-if [ "$1" == "prerelease" ]; then
+if [ "$gamversion" == "latest" -o "$gamversion" == "prerelease" -o "$gamversion" == "draft" ]; then
   release_url="https://api.github.com/repos/jay0lee/GAM/releases"
 else
-  release_url="https://api.github.com/repos/jay0lee/GAM/releases/latest"
+  release_url="https://api.github.com/repos/jay0lee/GAM/releases/tags/v$gamversion"
 fi
 
-echo "Checking GitHub for latest GAM release..."
-latest_release_json=$(curl -s $release_url 2>&1 /dev/null)
+echo "Checking GitHub URL $release_url for $gamversion GAM release..."
+release_json=$(curl -s $release_url 2>&1 /dev/null)
 
 echo "Getting file and download URL..."
 # Python is sadly the nearest to universal way to safely handle JSON with Bash
@@ -46,29 +91,38 @@ echo "Getting file and download URL..."
 # but that gets really ugly
 pycode="import json
 import sys
-l = json.load(sys.stdin)
-if type(l) is list:
-  l = l[0]
-for i in l['assets']:
-  if i[sys.argv[1]].endswith('$gamfile'):
-    print i[sys.argv[1]]
+
+attrib = sys.argv[1]
+gamversion = sys.argv[2]
+
+release = json.load(sys.stdin)
+if type(release) is list:
+  for a_release in release:
+    if a_release['prerelease'] and gamversion != 'prerelease':
+      continue
+    elif a_release['draft'] and gamversion != 'draft':
+      continue
+    release = a_release
+    break
+for asset in release['assets']:
+  if asset[sys.argv[1]].endswith('$gamfile'):
+    print asset[sys.argv[1]]
     break"
-browser_download_url=$(echo "$latest_release_json" | python -c "$pycode" browser_download_url)
-name=$(echo "$latest_release_json" | python -c "$pycode" name)
+browser_download_url=$(echo "$release_json" | python -c "$pycode" browser_download_url $gamversion)
+name=$(echo "$release_json" | python -c "$pycode" name $gamversion)
 # Temp dir for archive
 temp_archive_dir=$(mktemp -d)
 
 echo "Downloading file $name from $browser_download_url to $temp_archive_dir"
-
 # Save archive to temp w/o losing our path
 (cd $temp_archive_dir && curl -O -L $browser_download_url)
 
-mkdir -p ~/bin
+mkdir -p $target_dir
 
-tar xf $temp_archive_dir/$name -C ~/bin
+tar xf $temp_archive_dir/$name -C $target_dir
 
 # Update profile to add gam command
-alias_line="alias gam=~/bin/gam/gam"
+alias_line="alias gam=$target_dir/gam/gam"
 if [ "$gamos" == "linux" ]; then
   update_profile "$HOME/.bashrc" || update_profile "$HOME/.bash_profile"
 elif [ "$gamos" == "macos" ]; then
@@ -80,7 +134,7 @@ while true; do
   read -p "Can you run a full browser on this machine? (usually Y for MacOS, N for Linux if you SSH  into this machine) " yn
   case $yn in
     [Yy]*) break;;
-    [Nn]*) touch ~/bin/gam/nobrowser.txt; break;;
+    [Nn]*) touch $target_dir/gam/nobrowser.txt; break;;
     * ) echo "Please answer yes or no.";;
   esac
 done
@@ -90,13 +144,13 @@ echo -e "\n"
 while true; do
   read -p "GAM is now installed. Are you ready to set up a Google API project for GAM? (yes or no) " yn
   case $yn in
-    [Yy]*) ~/bin/gam/gam create project; break;;
+    [Yy]*) $target_dir/gam/gam create project; break;;
     [Nn]*) echo -e "\nYou can create an API project later by running:\n\ngam create project"; break;;
     * ) echo "Please answer yes or no.";;
   esac
 done
 
-~/bin/gam/gam version
+$target_dir/gam/gam version
 
 # Clean up after ourselves even if we are killed with CTRL-C
 trap "rm -rf $temp_archive_dir" EXIT
