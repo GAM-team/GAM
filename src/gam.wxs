@@ -44,6 +44,7 @@
         Source="gam-64">
       <Component Id="gam_exe" Guid="886abc07-73c5-4acc-9f71-58daf62aabc1">
         <File Name="gam.exe" KeyPath="yes" />
+        <Environment Id="PATH" Name="PATH" Value="[INSTALLFOLDER]" Permanent="yes" Part="last" Action="set" System="yes" />
       </Component>
       <Component Id="license" Guid="7a15de2e-fb91-4d0a-b8bf-c8b19c68f569">
         <File Name="LICENSE" KeyPath="yes" />
