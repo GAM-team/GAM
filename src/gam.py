@@ -6754,11 +6754,11 @@ def getUserAttributes(i, cd, updateCmd=False):
 
 def doCreateProject():
   try:
-    hint = sys.argv[3]
+    login_hint = sys.argv[3]
   except IndexError:
     while True:
-      hint = raw_input(u'What is your G Suite admin email address? ')
-      if hint.find(u'@') == -1:
+      login_hint = raw_input(u'What is your G Suite admin email address? ')
+      if login_hint.find(u'@') == -1:
         print u'Error: that is not a valid email address'
       else:
         break
@@ -6772,7 +6772,7 @@ def doCreateProject():
   client_secret=u'qM3dP8f_4qedwzWQE1VR4zzU'
   flow = oauth2client.client.OAuth2WebServerFlow(client_id=client_id,
     client_secret=client_secret, scope=scope, redirect_uri=oauth2client.client.OOB_CALLBACK_URN,
-    user_agent=GAM_INFO, access_type=u'online', response_type=u'code', hint=hint)
+    user_agent=GAM_INFO, access_type=u'online', response_type=u'code', login_hint=login_hint)
   flags = cmd_flags(noLocalWebserver=GC_Values[GC_NO_BROWSER])
   storage_dict = {}
   storage = DictionaryStorage(storage_dict, u'credentials')
