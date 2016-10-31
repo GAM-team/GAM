@@ -147,11 +147,12 @@ while true; do
   read -p "GAM is now installed. Are you ready to set up a Google API project for GAM? (yes or no) " yn
   case $yn in
     [Yy]*) $target_dir/gam/gam create project; break;;
-    [Nn]*) echo -e "\nYou can create an API project later by running:\n\ngam create project"; break;;
+    [Nn]*) echo -e "\nYou can create an API project later by running:\n\ngam create project\n\n"; break;;
     * ) echo "Please answer yes or no.";;
   esac
 done
 
+echo -e "Here's information about your new GAM installation:\n\n"
 $target_dir/gam/gam version
 
 # Clean up after ourselves even if we are killed with CTRL-C
