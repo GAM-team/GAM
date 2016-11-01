@@ -41,20 +41,20 @@ update_profile() {
 
 echo_red()
 {
-echo -e "\E[1;31m$1"
-echo -e '\e[0m'
+echo -e "\x1B[1;31m$1"
+echo -e '\x1B[0m'
 }
 
 echo_green()
 {
-echo -e "\E[1;32m$1"
-echo -e '\e[0m'
+echo -e "\x1B[1;32m$1"
+echo -e '\x1B[0m'
 }
 
 echo_yellow()
 {
-echo -e "\E[1;33m$1"
-echo -e '\e[0m'
+echo -e "\x1B[1;33m$1"
+echo -e '\x1B[0m'
 }
 
 case $gamos in
