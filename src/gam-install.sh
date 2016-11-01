@@ -64,22 +64,22 @@ case $gamos in
       x86_64) gamfile="linux-x86_64.tar.xz";;
       i?86) gamfile="linux-i686.tar.xz";;
       arm*) gamfile="linux-armv7l.tar.xz";;
-      *) echo "Sorry, this installer currently only supports i386, x86_64 and arm Linux. Looks like you're running on $gamarch. Exiting."; exit;;
+      *) echo_red("ERROR: this installer currently only supports i386, x86_64 and arm Linux. Looks like you're running on $gamarch. Exiting."); exit;;
     esac
     ;;
   [Mm]ac[Oo][sS]|[Dd]arwin)
     osver=$(sw_vers -productVersion | awk -F'.' '{print $2}')
     if (( $osver < 10 )); then
-      echo "Sorry, GAM currently requires MacOS 10.10 or newer. You are running MacOS 10.$osver. Please upgrade."
+      echo_red("ERROR: GAM currently requires MacOS 10.10 or newer. You are running MacOS 10.$osver. Please upgrade.")
       exit
     else
-      echo "Good, you're running MacOS 10.$osver..."
+      echo_green("Good, you're running MacOS 10.$osver...")
     fi
     gamos="macos"
     gamfile="macos.tar.xz"
     ;;
   *)
-    echo "Sorry, this installer currently only supports Linux and MacOS. Looks like you're runnning on $gamos. Exiting."
+    echo_red("Sorry, this installer currently only supports Linux and MacOS. Looks like you're runnning on $gamos. Exiting.")
     exit
     ;;
 esac
@@ -90,10 +90,10 @@ else
   release_url="https://api.github.com/repos/jay0lee/GAM/releases/tags/v$gamversion"
 fi
 
-echo "Checking GitHub URL $release_url for $gamversion GAM release..."
+echo_yellow("Checking GitHub URL $release_url for $gamversion GAM release...")
 release_json=$(curl -s $release_url 2>&1 /dev/null)
 
-echo "Getting file and download URL..."
+echo_yellow("Getting file and download URL...")
 # Python is sadly the nearest to universal way to safely handle JSON with Bash
 # At least this code should be compatible with just about any Python version ever
 # unlike GAM itself. If some users don't have Python we can try grep / sed / etc
@@ -122,7 +122,7 @@ name=$(echo "$release_json" | python -c "$pycode" name $gamversion)
 # Temp dir for archive
 temp_archive_dir=$(mktemp -d)
 
-echo "Downloading file $name from $browser_download_url to $temp_archive_dir"
+echo_yellow("Downloading file $name from $browser_download_url to $temp_archive_dir")
 # Save archive to temp w/o losing our path
 (cd $temp_archive_dir && curl -O -L $browser_download_url)
 
@@ -131,10 +131,10 @@ mkdir -p $target_dir
 tar xf $temp_archive_dir/$name -C $target_dir
 rc=$?
 if (( $rc != 0 )); then
-  echo "ERROR: extracting the GAM archive with tar failed with error $rc. Exiting."
+  echo_red("ERROR: extracting the GAM archive with tar failed with error $rc. Exiting.")
   exit
 else
-  echo "Finished extracting GAM archive."
+  echo_green("Finished extracting GAM archive.")
 fi
 
 # Update profile to add gam command
@@ -151,7 +151,7 @@ while true; do
   case $yn in
     [Yy]*) break;;
     [Nn]*) touch $target_dir/gam/nobrowser.txt; break;;
-    * ) echo "Please answer yes or no.";;
+    * ) echo_red("Please answer yes or no.");;
   esac
 done
 
@@ -161,13 +161,18 @@ while true; do
   read -p "GAM is now installed. Are you ready to set up a Google API project for GAM? (yes or no) " yn
   case $yn in
     [Yy]*) $target_dir/gam/gam create project; break;;
-    [Nn]*) echo -e "\nYou can create an API project later by running:\n\ngam create project\n\n"; break;;
-    * ) echo "Please answer yes or no.";;
+    [Nn]*) echo -e "\nYou can create an API project later by running:\n\ngam create project\n"; break;;
+    * ) echo_red("Please answer yes or no.");;
   esac
 done
 
-echo -e "Here's information about your new GAM installation:\n\n"
+echo_red("Here's information about your new GAM installation:\n")
 $target_dir/gam/gam version
+rc=$?
+if (( $rc != 0 )); then
+  echo_red("ERROR: Failed running GAM for the first time with $rc. Please report this error to GAM mailing list. Exiting.")
+  exit
+fi
 
 # Clean up after ourselves even if we are killed with CTRL-C
 trap "rm -rf $temp_archive_dir" EXIT
