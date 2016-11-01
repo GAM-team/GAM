@@ -68,6 +68,13 @@ case $gamos in
     esac
     ;;
   [Mm]ac[Oo][sS]|[Dd]arwin)
+    osver=$(sw_vers -productVersion | awk -F'.' '{print $2}')
+    if (( $osver < 10 )); then
+      echo "Sorry, GAM currently requires MacOS 10.10 or newer. You are running MacOS 10.$osver. Please upgrade."
+      exit
+    else
+      echo "Good, you're running MacOS 10.$osver..."
+    fi
     gamos="macos"
     gamfile="macos.tar.xz"
     ;;
