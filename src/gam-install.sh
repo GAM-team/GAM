@@ -129,6 +129,13 @@ echo "Downloading file $name from $browser_download_url to $temp_archive_dir"
 mkdir -p $target_dir
 
 tar xf $temp_archive_dir/$name -C $target_dir
+rc=$?
+if (( $rc != 0 )); then
+  echo "ERROR: extracting the GAM archive with tar failed with error $rc. Exiting."
+  exit
+else
+  echo "Finished extracting GAM archive."
+fi
 
 # Update profile to add gam command
 alias_line="alias gam=$target_dir/gam/gam"
