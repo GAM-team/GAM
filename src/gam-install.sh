@@ -149,7 +149,7 @@ fi
 
 echo -e "\n"
 while true; do
-  read -p "Can you run a full browser on this machine? (usually Y for MacOS, N for Linux if you SSH  into this machine) " yn
+  read -p "Can you run a full browser on this machine? (usually Y for MacOS, N for Linux if you SSH into this machine) " yn
   case $yn in
     [Yy]*) break;;
     [Nn]*) touch $target_dir/gam/nobrowser.txt; break;;
