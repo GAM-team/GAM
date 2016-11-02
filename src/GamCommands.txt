@@ -463,7 +463,7 @@ If an item contains spaces, it should be surrounded by " or '.
 	(website|websites clear|(home_page|blog|profile|work|home|other|ftp|reservations|app_install_page|<String> <URL> [notprimary|primary]))|
 	(<SchemaName>.<FieldName> [multivalued|multivalue|value [type work|home|other|(custom <String>)]] <String>)
 
-gam version [check]
+gam version [check] [simple]
 gam help
 
 gam batch <FileName>|- [charset <Charset>]
