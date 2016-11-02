@@ -960,7 +960,8 @@ def callGAPI(service, function,
       handleOAuthTokenError(e, soft_errors or GAPI_SERVICE_NOT_AVAILABLE in throw_reasons)
       if GAPI_SERVICE_NOT_AVAILABLE in throw_reasons:
         raise GAPI_serviceNotAvailable(e.message)
-      entityUnknownWarning(u'User', GM_Globals[GM_CURRENT_API_USER], 0, 0)
+      print u'ERROR: user %s: %s' % (GM_Globals[GM_CURRENT_API_USER], e)
+      #entityUnknownWarning(u'User', GM_Globals[GM_CURRENT_API_USER], 0, 0)
       return None
     except httplib2.CertificateValidationUnsupported:
       noPythonSSLExit()
@@ -1169,7 +1170,6 @@ def buildGAPIServiceObject(api, act_as, use_scopes=None):
   credentials = getSvcAcctCredentials(use_scopes, act_as)
   try:
     service._http = credentials.authorize(http)
-    service._http.request.credentials.refresh(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL])) 
   except httplib2.ServerNotFoundError as e:
     systemErrorExit(4, e)
   except oauth2client.client.AccessTokenRefreshError as e:
@@ -1205,7 +1205,7 @@ def doCheckServiceAccount(users):
         try:
           service = buildGAPIServiceObject(api, act_as=user, use_scopes=scope)
           service._http.request.credentials.refresh(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL]))
-          result = u'pass'
+          result = u'PASS'
         except oauth2client.client.HttpAccessTokenRefreshError:
           result = u'FAIL'
         print u'Scope: {0:60} {1}'.format(scope, result)
