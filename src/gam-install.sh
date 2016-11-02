@@ -10,6 +10,7 @@ OPTIONS:
    -d      Directory where gam folder will be installed. Default is \$HOME/bin/
    -a      Architecture to install (i386, x86_64, arm). Default is to detect your arch with "uname -m".
    -o      OS we are running (linux, macos). Default is to detect your OS with "uname -s".
+   -p      Profile update (true, false). Should script add gam command to environment. Default is true.
    -v      Version to install (latest, prerelease, draft, 3.8, etc). Default is latest.
 EOF
 }
@@ -17,14 +18,16 @@ EOF
 target_dir="$HOME/bin"
 gamarch=$(uname -m)
 gamos=$(uname -s)
+update_profile=true
 gamversion="latest"
-while getopts "hd:a:o:v:" OPTION
+while getopts "hd:a:o:p:v:" OPTION
 do
      case $OPTION in
          h) usage; exit;;
          d) target_dir=$OPTARG;;
          a) gamarch=$OPTARG;;
          o) gamos=$OPTARG;;
+         p) update_profile=$OPTARG;;
          v) gamversion=$OPTARG;;
          ?) usage; exit;;
      esac
@@ -35,7 +38,10 @@ update_profile() {
 
 	grep -F "$alias_line" "$1" > /dev/null 2>&1
 	if [ $? -ne 0 ]; then
+                echo_yellow "Adding gam alias to profile file $1."
 		echo -e "\n$alias_line" >> "$1"
+        else
+          echo_yellow "gam alias already exists in profile file $1. Skipping add."
 	fi
 }
 
@@ -140,14 +146,17 @@ else
 fi
 
 # Update profile to add gam command
-alias_line="alias gam=$target_dir/gam/gam"
-if [ "$gamos" == "linux" ]; then
-  update_profile "$HOME/.bashrc" || update_profile "$HOME/.bash_profile"
-elif [ "$gamos" == "macos" ]; then
-  update_profile "$HOME/.profile" || update_profile "$HOME/.bash_profile"
+if [ "$update_profile" = true ]; then
+  alias_line="alias gam=$target_dir/gam/gam"
+  if [ "$gamos" == "linux" ]; then
+    update_profile "$HOME/.bashrc" || update_profile "$HOME/.bash_profile"
+  elif [ "$gamos" == "macos" ]; then
+    update_profile "$HOME/.profile" || update_profile "$HOME/.bash_profile"
+  fi
+else
+  echo_yellow "skipping profile update."
 fi
 
-echo -e "\n"
 while true; do
   read -p "Can you run a full browser on this machine? (usually Y for MacOS, N for Linux if you SSH into this machine) " yn
   case $yn in
