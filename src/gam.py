@@ -1199,16 +1199,25 @@ def buildGplusGAPIObject(user):
 
 def doCheckServiceAccount(users):
   for user in users:
+    failed_scopes = False
+    all_scopes = []
     for api, scopes in API_SCOPE_MAPPING.items():
       #print u'Checking %s access for %s' % (user, api)
       for scope in scopes:
+        all_scopes.append(scope)
         try:
           service = buildGAPIServiceObject(api, act_as=user, use_scopes=scope)
           service._http.request.credentials.refresh(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL]))
           result = u'PASS'
         except oauth2client.client.HttpAccessTokenRefreshError:
           result = u'FAIL'
+          failed_scopes = True
         print u'Scope: {0:60} {1}'.format(scope, result)
+    if failed_scopes:
+      print u'\nSome scopes failed. Please make sure your service account is authorized for:\n\n%s' % ','.join(all_scopes)
+    else:
+      print u'\nAll scopes passed!'
+    return not failed_scopes
 
 def showReport():
 
