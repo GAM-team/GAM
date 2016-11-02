@@ -11,6 +11,7 @@ OPTIONS:
    -a      Architecture to install (i386, x86_64, arm). Default is to detect your arch with "uname -m".
    -o      OS we are running (linux, macos). Default is to detect your OS with "uname -s".
    -p      Profile update (true, false). Should script add gam command to environment. Default is true.
+   -u      Admin user email address to use with GAM. Default is to prompt.
    -v      Version to install (latest, prerelease, draft, 3.8, etc). Default is latest.
 EOF
 }
@@ -20,7 +21,8 @@ gamarch=$(uname -m)
 gamos=$(uname -s)
 update_profile=true
 gamversion="latest"
-while getopts "hd:a:o:p:v:" OPTION
+adminuser=""
+while getopts "hd:a:o:p:u:v:" OPTION
 do
      case $OPTION in
          h) usage; exit;;
@@ -28,6 +30,7 @@ do
          a) gamarch=$OPTARG;;
          o) gamos=$OPTARG;;
          p) update_profile=$OPTARG;;
+         u) adminuser=$OPTARG;;
          v) gamversion=$OPTARG;;
          ?) usage; exit;;
      esac
@@ -180,7 +183,10 @@ while true; do
   read -p "GAM is now installed. Are you ready to set up a Google API project for GAM? (yes or no) " yn
   case $yn in
     [Yy]*)
-      $target_dir/gam/gam create project
+      if [ "$adminuser" == "" ]; then
+        read -p "Please enter your G Suite admin email address: " adminuser
+      fi
+      $target_dir/gam/gam create project $adminuser
       rc=$?
       if (( $rc == 0 )); then
         echo_green "Project creation complete."
@@ -205,7 +211,7 @@ while $project_created; do
   read -p "Are you ready to authorize GAM to perform G Suite management operations as your admin account? (yes or no) " yn
   case $yn in
     [Yy]*)
-      $target_dir/gam/gam oauth create
+      $target_dir/gam/gam oauth create $adminuser
       rc=$?
       if (( $rc == 0 )); then
         echo_green "Admin authorization complete."
@@ -231,7 +237,7 @@ while $project_created; do
   case $yn in
     [Yy]*)
       echo_yellow "Great! Checking service account scopes.This will fail the first time. Follow the steps to authorize and retry. It can take a few minutes for scopes to PASS after they've been authorized in the admin console."
-      $target_dir/gam/gam check serviceaccount
+      $target_dir/gam/gam user $adminuser check serviceaccount
       rc=$?
       if (( $rc == 0 )); then
         echo_green "Service account authorization complete."

@@ -6807,7 +6807,7 @@ def doCreateProject():
     login_hint = sys.argv[3]
   except IndexError:
     while True:
-      login_hint = raw_input(u'What is your G Suite admin email address? ')
+      login_hint = raw_input(u'\nWhat is your G Suite admin email address? ')
       if login_hint.find(u'@') == -1:
         print u'Error: that is not a valid email address'
       else:
@@ -9942,7 +9942,7 @@ OAUTH2_MENU += '''
 OAUTH2_CMDS = [u's', u'u', u'e', u'c']
 MAXIMUM_SCOPES = 28
 
-def doRequestOAuth():
+def doRequestOAuth(login_hint=None):
   def _checkMakeScopesList(scopes):
     del scopes[:]
     for i in range(num_scopes):
@@ -9962,10 +9962,13 @@ def doRequestOAuth():
     scopes.insert(0, u'email') # Email Display Scope, always included
     return (True, u'')
 
+  cs_file = os.path.join(GM_Globals[GM_GAM_PATH], FN_CLIENT_SECRETS_JSON)
   MISSING_CLIENT_SECRETS_MESSAGE = u"""Please configure OAuth 2.0
 
 To make GAM run you will need to populate the {0} file found at:
+
 {1}
+
 with information from the APIs Console <https://console.developers.google.com>.
 
 See this site for instructions:
@@ -9973,6 +9976,26 @@ See this site for instructions:
 
 """.format(FN_CLIENT_SECRETS_JSON, GC_Values[GC_CLIENT_SECRETS_JSON], GAM_WIKI_CREATE_CLIENT_SECRETS)
 
+  cs_data = readFile(cs_file, mode=u'rb', continueOnError=True, displayError=True, encoding=None)
+  if not cs_data:
+    systemErrorExit(14, MISSING_CLIENT_SECRETS_MESSAGE)
+  try:
+    cs_json = json.loads(cs_data)
+    client_id = cs_json[u'installed'][u'client_id']
+    client_secret = cs_json[u'installed'][u'client_secret']
+  except (ValueError, IndexError, KeyError):
+    print u'ERROR: the format of your client secrets file:\n\n%s\n\n is incorrect. Please recreate the file.'
+    sys.exit(3)
+
+  try:
+    login_hint = sys.argv[3]
+  except IndexError:
+    while True:
+      login_hint = raw_input(u'\nWhat is your G Suite admin email address? ')
+      if login_hint.find(u'@') == -1:
+        print u'Error: that is not a valid email address'
+      else:
+        break
   num_scopes = len(OAUTH2_SCOPES)
   menu = OAUTH2_MENU % tuple(range(num_scopes))
   selected_scopes = []
@@ -10034,19 +10057,20 @@ See this site for instructions:
       status, message = _checkMakeScopesList(scopes)
       if status:
         break
-  try:
-    FLOW = oauth2client.client.flow_from_clientsecrets(GC_Values[GC_CLIENT_SECRETS_JSON], scope=scopes)
-  except oauth2client.client.clientsecrets.InvalidClientSecretsError:
-    systemErrorExit(14, MISSING_CLIENT_SECRETS_MESSAGE)
+  flow = oauth2client.client.OAuth2WebServerFlow(client_id=client_id,
+    client_secret=client_secret, scope=scopes, redirect_uri=oauth2client.client.OOB_CALLBACK_URN,
+    user_agent=GAM_INFO, access_type=u'offline', response_type=u'code', login_hint=login_hint)
   storage = oauth2client.file.Storage(GC_Values[GC_OAUTH2_TXT])
   credentials = storage.get()
   flags = cmd_flags(noLocalWebserver=GC_Values[GC_NO_BROWSER])
   if credentials is None or credentials.invalid:
     http = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL])
     try:
-      credentials = oauth2client.tools.run_flow(flow=FLOW, storage=storage, flags=flags, http=http)
+      credentials = oauth2client.tools.run_flow(flow=flow, storage=storage, flags=flags, http=http)
     except httplib2.CertificateValidationUnsupported:
       noPythonSSLExit()
+  else:
+    print u'It looks like you\'ve already authorized GAM. Refusing to overwrite existing file:\n\n%s' % GC_Values[GC_OAUTH2_TXT]
 
 def batch_worker():
   while True:
