@@ -154,6 +154,7 @@ if [ "$update_profile" = true ]; then
   elif [ "$gamos" == "macos" ]; then
     update_profile "$HOME/.profile" || update_profile "$HOME/.bash_profile"
   fi
+  $alias_line
 else
   echo_yellow "skipping profile update."
 fi
@@ -178,7 +179,7 @@ while true; do
   esac
 done
 
-echo_green "Here's information about your new GAM installation:\n"
+echo_green "Here's information about your new GAM installation:"
 $target_dir/gam/gam version
 rc=$?
 if (( $rc != 0 )); then
