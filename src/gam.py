@@ -835,14 +835,14 @@ def doGAMVersion(checkForArgs=True):
         print u'ERROR: %s is not a valid argument for "gam version"' % sys.argv[i]
         sys.exit(2)
   if simple:
-    print __version__
-  else:
-    import struct
-    version_data = u'GAM {0} - {1}\n{2}\nPython {3}.{4}.{5} {6}-bit {7}\ngoogle-api-python-client {8}\n{9} {10}\nPath: {11}'
-    print version_data.format(__version__, GAM_URL, __author__, sys.version_info[0],
-                              sys.version_info[1], sys.version_info[2], struct.calcsize(u'P')*8,
-                              sys.version_info[3], googleapiclient.__version__, platform.platform(),
-                              platform.machine(), GM_Globals[GM_GAM_PATH])
+    sys.stdout.write(__version__)
+    return
+  import struct
+  version_data = u'GAM {0} - {1}\n{2}\nPython {3}.{4}.{5} {6}-bit {7}\ngoogle-api-python-client {8}\n{9} {10}\nPath: {11}'
+  print version_data.format(__version__, GAM_URL, __author__, sys.version_info[0],
+                            sys.version_info[1], sys.version_info[2], struct.calcsize(u'P')*8,
+                            sys.version_info[3], googleapiclient.__version__, platform.platform(),
+                            platform.machine(), GM_Globals[GM_GAM_PATH])
   if force_check:
     doGAMCheckForUpdates(forceCheck=True)
 
