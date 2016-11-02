@@ -148,13 +148,12 @@ fi
 
 # Update profile to add gam command
 if [ "$update_profile" = true ]; then
-  alias_line="alias gam=$target_dir/gam/gam"
+  alias_line="alias gam=\"$target_dir/gam/gam\""
   if [ "$gamos" == "linux" ]; then
     update_profile "$HOME/.bashrc" || update_profile "$HOME/.bash_profile"
   elif [ "$gamos" == "macos" ]; then
     update_profile "$HOME/.profile" || update_profile "$HOME/.bash_profile"
   fi
-  $alias_line
 else
   echo_yellow "skipping profile update."
 fi
@@ -258,6 +257,11 @@ rc=$?
 if (( $rc != 0 )); then
   echo_red "ERROR: Failed running GAM for the first time with $rc. Please report this error to GAM mailing list. Exiting."
   exit
+fi
+
+echo_green "GAM installation and setup complete!"
+if [ "$update_profile" = true ]; then
+  echo_green "Please restart your terminal shell or to get started right away run:\n\n$alias_line"
 fi
 
 # Clean up after ourselves even if we are killed with CTRL-C
