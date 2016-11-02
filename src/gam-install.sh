@@ -162,20 +162,93 @@ fi
 while true; do
   read -p "Can you run a full browser on this machine? (usually Y for MacOS, N for Linux if you SSH into this machine) " yn
   case $yn in
-    [Yy]*) break;;
-    [Nn]*) touch $target_dir/gam/nobrowser.txt; break;;
-    * ) echo_red "Please answer yes or no.";;
+    [Yy]*)
+      break
+      ;;
+    [Nn]*)
+      touch $target_dir/gam/nobrowser.txt > /dev/null 2>&1
+      break
+      ;;
+    *)
+      echo_red "Please answer yes or no."
+      ;;
   esac
 done
+echo
 
-echo -e "\n"
-
+project_created=false
 while true; do
   read -p "GAM is now installed. Are you ready to set up a Google API project for GAM? (yes or no) " yn
   case $yn in
-    [Yy]*) $target_dir/gam/gam create project; break;;
-    [Nn]*) echo -e "\nYou can create an API project later by running:\n\ngam create project\n"; break;;
-    * ) echo_red "Please answer yes or no.";;
+    [Yy]*)
+      $target_dir/gam/gam create project
+      rc=$?
+      if (( $rc == 0 )); then
+        echo_green "Project creation complete."
+        project_created=true
+        break
+      else
+        echo_red "Projection creation failed. Trying again. Say N to skip projection creation."
+      fi
+      ;;
+    [Nn]*)
+      echo -e "\nYou can create an API project later by running:\n\ngam create project\n"
+      break
+      ;;
+    *)
+      echo_red "Please answer yes or no."
+      ;;
+  esac
+done
+
+admin_authorized=false
+while $project_created; do
+  read -p "Are you ready to authorize GAM to perform G Suite management operations as your admin account? (yes or no) " yn
+  case $yn in
+    [Yy]*)
+      $target_dir/gam/gam oauth create
+      rc=$?
+      if (( $rc == 0 )); then
+        echo_green "Admin authorization complete."
+        admin_authorized=true
+        break
+      else
+        echo_red "Admin authorization failed. Trying again. Say N to skip admin authorization."
+      fi
+      ;;
+     [Nn]*)
+       echo -e "\nYou can authorize an admin later by running:\n\ngam oauth create\n"
+       break
+       ;;
+     *)
+       echo_red "Please answer yes or no."
+       ;;
+  esac
+done
+
+service_account_authorized=false
+while $project_created; do
+  read -p "Are you ready to authorize GAM to manage G Suite user data and settings? (yes or no) " yn
+  case $yn in
+    [Yy]*)
+      echo_yellow "Great! Checking service account scopes.This will fail the first time. Follow the steps to authorize and retry. It can take a few minutes for scopes to PASS after they've been authorized in the admin console."
+      $target_dir/gam check serviceaccount
+      rc=$?
+      if (( $rc == 0 )); then
+        echo_green "Service account authorization complete."
+        service_account_authorized=true
+        break
+      else
+        echo_red "Service account authorization failed. Confirm you entered the scopes correctly in the admin console. It can take a few minutes for scopes to PASS after they are entered in the admin console so if you're sure you entered them correctly, go grab a coffee and then hit Y to try again. Say N to skip admin authorization."
+      fi
+      ;;
+     [Nn]*)
+       echo -e "\nYou can authorize a service account later by running:\n\ngam check serviceaccount\n"
+       break
+       ;;
+     *)
+       echo_red "Please answer yes or no."
+       ;;
   esac
 done
 
