@@ -231,7 +231,7 @@ while $project_created; do
   case $yn in
     [Yy]*)
       echo_yellow "Great! Checking service account scopes.This will fail the first time. Follow the steps to authorize and retry. It can take a few minutes for scopes to PASS after they've been authorized in the admin console."
-      $target_dir/gam check serviceaccount
+      $target_dir/gam/gam check serviceaccount
       rc=$?
       if (( $rc == 0 )); then
         echo_green "Service account authorization complete."
