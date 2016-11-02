@@ -1160,17 +1160,20 @@ def getSvcAcctAPIversionHttpService(api):
   except (ValueError, KeyError):
     invalidJSONExit(disc_file)
 
-def buildGAPIServiceObject(api, act_as):
+def buildGAPIServiceObject(api, act_as, use_scopes=None):
   _, http, service = getSvcAcctAPIversionHttpService(api)
   GM_Globals[GM_CURRENT_API_USER] = act_as
   GM_Globals[GM_CURRENT_API_SCOPES] = API_SCOPE_MAPPING[api]
-  credentials = getSvcAcctCredentials(GM_Globals[GM_CURRENT_API_SCOPES], act_as)
+  if not use_scopes:
+    use_scopes = GM_Globals[GM_CURRENT_API_SCOPES]
+  credentials = getSvcAcctCredentials(use_scopes, act_as)
   try:
     service._http = credentials.authorize(http)
+    service._http.request.credentials.refresh(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL])) 
   except httplib2.ServerNotFoundError as e:
     systemErrorExit(4, e)
   except oauth2client.client.AccessTokenRefreshError as e:
-    entityServiceNotApplicableWarning([u'Calendar', u'User'][api != u'calendar'], act_as, 0, 0)
+    print u'ERROR user %s: %s' % (act_as, e)
     return handleOAuthTokenError(e, True)
   return service
 
@@ -1193,6 +1196,19 @@ def buildGmailGAPIObject(user):
 def buildGplusGAPIObject(user):
   userEmail = convertUserUIDtoEmailAddress(user)
   return (userEmail, buildGAPIServiceObject(u'plus', userEmail))
+
+def doCheckServiceAccount(users):
+  for user in users:
+    for api, scopes in API_SCOPE_MAPPING.items():
+      #print u'Checking %s access for %s' % (user, api)
+      for scope in scopes:
+        try:
+          service = buildGAPIServiceObject(api, act_as=user, use_scopes=scope)
+          service._http.request.credentials.refresh(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL]))
+          result = u'pass'
+        except oauth2client.client.HttpAccessTokenRefreshError:
+          result = u'FAIL'
+        print u'Scope: {0:60} {1}'.format(scope, result)
 
 def showReport():
 
@@ -10691,6 +10707,10 @@ def ProcessGAMCommand(args):
       else:
         print u'ERROR: %s is not a valid argument for "gam <users> info"' % infoWhat
         sys.exit(2)
+    elif command == u'check':
+      checkWhat = sys.argv[4].replace(u'_', '').lower()
+      if checkWhat == u'serviceaccount':
+        doCheckServiceAccount(users)
     elif command == u'profile':
       doProfile(users)
     elif command == u'imap':
