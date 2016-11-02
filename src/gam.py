@@ -6890,7 +6890,8 @@ and accept the Terms of Service (ToS). As soon as you've accepted the ToS popup,
 %s
 
 1. Click the blue "Create credentials" button. Choose "OAuth client ID".
-2. Click the blue "Configure consent screen" button. Enter "GAM" for "Product name to show to users" and Save.
+2. Click the blue "Configure consent screen" button. Enter "GAM" for "Product name to show to users".
+3. Leave other fields blank. Click "Save" button.
 3. Choose "Other" and click the blue "Create" button.
 4. Copy your "client ID" value.
 
@@ -6916,16 +6917,14 @@ and accept the Terms of Service (ToS). As soon as you've accepted the ToS popup,
   if os.path.isfile(client_secrets_file):
     client_secrets_file = u'%s-%s' % (client_secrets_file, project_id)
   writeFile(client_secrets_file, cs_data, continueOnError=False) 
-  console_serviceaccount_url = u'https://console.developers.google.com/iam-admin/serviceaccounts/project?project=%s' % project_id
-  print u'''Almost there! Now please go to:
+  print u'''Almost there! Now please switch back to your browser and:
 
-%s
-
-1. Click the 3 dots to the far left of the "GAM Project" service account.
-2. Choose Edit.
-3. Check the "Enable G Suite Domain-wide Delegation" box and Save.
-
-''' % console_serviceaccount_url
+1. Click OK to close "OAuth client" popup if it's still open.
+2. Click "Manage service accounts" on the right of the screen.
+3. Click the 3 dots to the right of your service account.
+4. Choose Edit.
+5. Check the "Enable G Suite Domain-wide Delegation" box and click Save.
+'''
   raw_input(u'Press Enter when done...')
   print u'That\'s it! Your GAM Project is created and ready to use.'
 
