@@ -819,7 +819,22 @@ def doGAMCheckForUpdates(forceCheck=False):
     return
 
 def doGAMVersion(checkForCheck=True):
-  if sys.argv[2].lower() == u'simple':
+  force_check = False
+  simple = False
+  i = 2
+  while i < len(sys.argv):
+    myarg = sys.argv[i].lower().replace(u'_', u'')
+    force_check = True
+    if myarg == u'check':
+      force_check = True
+      i += 1
+    elif myarg == u'simple':
+      simple = True
+      i += 1
+    else:
+      print u'ERROR: %s is not a valid argument for "gam version"' % sys.argv[i]
+      sys.exit(2)
+  if simple:
     sys.stdout.write(__version__)
     sys.exit(0)
   import struct
@@ -828,16 +843,8 @@ def doGAMVersion(checkForCheck=True):
    sys.version_info[1], sys.version_info[2], struct.calcsize(u'P')*8,
    sys.version_info[3], googleapiclient.__version__, platform.platform(),
    platform.machine(), GM_Globals[GM_GAM_PATH])
-  if checkForCheck:
-    i = 2
-    while i < len(sys.argv):
-      myarg = sys.argv[i].lower().replace(u'_', u'')
-      if myarg == u'check':
-        doGAMCheckForUpdates(forceCheck=True)
-        i += 1
-      else:
-        print u'ERROR: %s is not a valid argument for "gam version"' % sys.argv[i]
-        sys.exit(2)
+  if checkForCheck or force_check:
+    doGAMCheckForUpdates(forceCheck=True)
 
 def handleOAuthTokenError(e, soft_errors):
   if e.message in OAUTH2_TOKEN_ERRORS:
