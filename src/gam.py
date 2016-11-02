@@ -819,14 +819,15 @@ def doGAMCheckForUpdates(forceCheck=False):
     return
 
 def doGAMVersion(checkForCheck=True):
+  if sys.argv[2].lower() == u'simple':
+    sys.stdout.write(__version__)
+    sys.exit(0)
   import struct
-  print u'GAM {0} - {1}\n{2}\nPython {3}.{4}.{5} {6}-bit {7}\ngoogle-api-python-client {8}\n{9} {10}\nPath: {11}'.format(__version__, GAM_URL,
-                                                                                                                         __author__,
-                                                                                                                         sys.version_info[0], sys.version_info[1], sys.version_info[2],
-                                                                                                                         struct.calcsize(u'P')*8, sys.version_info[3],
-                                                                                                                         googleapiclient.__version__,
-                                                                                                                         platform.platform(), platform.machine(),
-                                                                                                                         GM_Globals[GM_GAM_PATH])
+  version_data = u'GAM {0} - {1}\n{2}\nPython {3}.{4}.{5} {6}-bit {7}\ngoogle-api-python-client {8}\n{9} {10}\nPath: {11}'
+  print version_data.format(__version__, GAM_URL, __author__, sys.version_info[0],
+   sys.version_info[1], sys.version_info[2], struct.calcsize(u'P')*8,
+   sys.version_info[3], googleapiclient.__version__, platform.platform(),
+   platform.machine(), GM_Globals[GM_GAM_PATH])
   if checkForCheck:
     i = 2
     while i < len(sys.argv):
@@ -6879,11 +6880,10 @@ and accept the Terms of Service (ToS). As soon as you've accepted the ToS popup,
   body = {u'privateKeyType': u'TYPE_GOOGLE_CREDENTIALS_FILE', u'keyAlgorithm': u'KEY_ALG_RSA_4096'}
   key = callGAPI(iam.projects().serviceAccounts().keys(), u'create', name=service_account[u'name'], body=body)
   oauth2service_data = base64.b64decode(key[u'privateKeyData'])
-  if os.path.isfile(FN_OAUTH2SERVICE_JSON):
-    service_file = u'%s-%s' % (FN_OAUTH2SERVICE_JSON, project_id)
-  else:
-    service_file = FN_OAUTH2SERVICE_JSON
-  writeFile(service_file, oauth2service_data, continueOnError=False)
+  service_account_file = os.path.join(GM_Globals[GM_GAM_PATH], FN_OAUTH2SERVICE_JSON)
+  if os.path.isfile(service_account_file):
+    service_account_file = u'%s-%s' % (service_account_file, project_id)
+  writeFile(service_account_file, oauth2service_data, continueOnError=False)
   console_credentials_url = u'https://console.developers.google.com/apis/credentials?project=%s' % project_id
   print u'''Please go to:
 
@@ -6912,11 +6912,10 @@ and accept the Terms of Service (ToS). As soon as you've accepted the ToS popup,
         "token_uri": "https://accounts.google.com/o/oauth2/token"
     }
 }''' % (client_id, client_secret, project_id)
-  if os.path.isfile(FN_CLIENT_SECRETS_JSON):
-    cs_file = u'%s-%s' % (FN_CLIENT_SECRETS_JSON, project_id)
-  else:
-    cs_file = FN_CLIENT_SECRETS_JSON
-  writeFile(cs_file, cs_data, continueOnError=False) 
+  client_secrets_file = os.path.join(GM_Globals[GM_GAM_PATH], FN_CLIENT_SECRETS_JSON)
+  if os.path.isfile(client_secrets_file):
+    client_secrets_file = u'%s-%s' % (client_secrets_file, project_id)
+  writeFile(client_secrets_file, cs_data, continueOnError=False) 
   console_serviceaccount_url = u'https://console.developers.google.com/iam-admin/serviceaccounts/project?project=%s' % project_id
   print u'''Almost there! Now please go to:
 
@@ -6926,7 +6925,9 @@ and accept the Terms of Service (ToS). As soon as you've accepted the ToS popup,
 2. Choose Edit.
 3. Check the "Enable G Suite Domain-wide Delegation" box and Save.
 
-That's it! Your GAM Project is created and ready to use.''' % console_serviceaccount_url
+''' % console_serviceaccount_url
+  raw_input(u'Press Enter when done...')
+  print u'That\'s it! Your GAM Project is created and ready to use.'
 
 def doCreateUser():
   cd = buildGAPIObject(u'directory')
