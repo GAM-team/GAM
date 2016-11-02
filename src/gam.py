@@ -1199,25 +1199,42 @@ def buildGplusGAPIObject(user):
 
 def doCheckServiceAccount(users):
   for user in users:
-    failed_scopes = False
+    all_scopes_pass = True
     all_scopes = []
+    print u'User: %s' % (user)
     for api, scopes in API_SCOPE_MAPPING.items():
-      #print u'Checking %s access for %s' % (user, api)
       for scope in scopes:
+        if scope in all_scopes:
+          continue # don't check same scope twice
         all_scopes.append(scope)
-        try:
-          service = buildGAPIServiceObject(api, act_as=user, use_scopes=scope)
-          service._http.request.credentials.refresh(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL]))
-          result = u'PASS'
-        except oauth2client.client.HttpAccessTokenRefreshError:
-          result = u'FAIL'
-          failed_scopes = True
-        print u'Scope: {0:60} {1}'.format(scope, result)
-    if failed_scopes:
-      print u'\nSome scopes failed. Please make sure your service account is authorized for:\n\n%s' % ','.join(all_scopes)
+    all_scopes = sorted(all_scopes)
+    for scope in all_scopes:
+      try:
+        service = buildGAPIServiceObject(api, act_as=user, use_scopes=scope)
+        service._http.request.credentials.refresh(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL]))
+        result = u'PASS'
+      except oauth2client.client.HttpAccessTokenRefreshError:
+        result = u'FAIL'
+        all_scopes_pass = False
+      print u' Scope: {0:60} {1}'.format(scope, result)
+    service_account = service._http.request.credentials.serialization_data[u'client_id']
+    if all_scopes_pass:
+      print u'\nAll scopes passed!\nService account %s is fully authorized.' % service_account
     else:
-      print u'\nAll scopes passed!'
-    return not failed_scopes
+      user_domain = user[user.find(u'@')+1:]
+      print u'''
+ERROR: Some scopes failed! Please go to:
+
+https://admin.google.com/%s/AdminHome?#OGX:ManageOauthClients
+
+and grant Client name:
+
+%s
+
+Access to scopes:
+
+%s\n''' % (user_domain, service_account, ','.join(all_scopes))
+    sys.exit(int(not all_scopes_pass))
 
 def showReport():
 
@@ -6821,7 +6838,6 @@ def doCreateProject():
     for i in range(1, 5):
       print u'Checking project status...'
       status = callGAPI(crm.operations(), u'get', name=operation_name)
-      print status
       if u'error' in status:
         if u'message' in status[u'error'] and status[u'error'][u'message'].find(u'Callers must accept ToS') != -1:
           print u'''Please go to:
@@ -6833,7 +6849,6 @@ and accept the Terms of Service (ToS). As soon as you've accepted the ToS popup,
           create_again = True
           break
         else:
-          print status
           sys.exit(1)
       if u'done' in status and status[u'done']:
         break
