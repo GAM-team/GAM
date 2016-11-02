@@ -130,12 +130,13 @@ name=$(echo "$release_json" | python -c "$pycode" name $gamversion)
 # Temp dir for archive
 temp_archive_dir=$(mktemp -d)
 
-echo_yellow "Downloading file $name from $browser_download_url to $temp_archive_dir"
+echo_yellow "Downloading file $name from $browser_download_url to $temp_archive_dir."
 # Save archive to temp w/o losing our path
 (cd $temp_archive_dir && curl -O -L $browser_download_url)
 
 mkdir -p $target_dir
 
+echo_yellow "Extracting archive to $target_dir"
 tar xf $temp_archive_dir/$name -C $target_dir
 rc=$?
 if (( $rc != 0 )); then
