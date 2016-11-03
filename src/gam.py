@@ -9962,7 +9962,6 @@ def doRequestOAuth(login_hint=None):
     scopes.insert(0, u'email') # Email Display Scope, always included
     return (True, u'')
 
-  cs_file = os.path.join(GM_Globals[GM_GAM_PATH], FN_CLIENT_SECRETS_JSON)
   MISSING_CLIENT_SECRETS_MESSAGE = u"""Please configure OAuth 2.0
 
 To make GAM run you will need to populate the {0} file found at:
@@ -9976,7 +9975,7 @@ See this site for instructions:
 
 """.format(FN_CLIENT_SECRETS_JSON, GC_Values[GC_CLIENT_SECRETS_JSON], GAM_WIKI_CREATE_CLIENT_SECRETS)
 
-  cs_data = readFile(cs_file, mode=u'rb', continueOnError=True, displayError=True, encoding=None)
+  cs_data = readFile(GC_Values[GC_CLIENT_SECRETS_JSON], mode=u'rb', continueOnError=True, displayError=True, encoding=None)
   if not cs_data:
     systemErrorExit(14, MISSING_CLIENT_SECRETS_MESSAGE)
   try:
