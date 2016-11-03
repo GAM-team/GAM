@@ -9986,9 +9986,7 @@ See this site for instructions:
     print u'ERROR: the format of your client secrets file:\n\n%s\n\n is incorrect. Please recreate the file.'
     sys.exit(3)
 
-  try:
-    login_hint = sys.argv[3]
-  except IndexError:
+  if not login_hint:
     while True:
       login_hint = raw_input(u'\nWhat is your G Suite admin email address? ')
       if login_hint.find(u'@') == -1:
@@ -10441,7 +10439,7 @@ def ProcessGAMCommand(args):
     elif command in [u'oauth', u'oauth2']:
       argument = sys.argv[2].lower()
       if argument in [u'request', u'create']:
-        doRequestOAuth()
+        doRequestOAuth(login_hint=sys.argv[3])
       elif argument in [u'info', u'verify']:
         OAuthInfo()
       elif argument in [u'delete', u'revoke']:
