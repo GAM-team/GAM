@@ -68,7 +68,7 @@
     </InstallUISequence>
     <CustomAction Id="setup_gam" ExeCommand="[INSTALLFOLDER]gam-setup.bat" Directory="INSTALLFOLDER" Execute="commit" Impersonate="yes" Return="asyncWait"/>
     <InstallExecuteSequence>
-     <Custom Action="setup_gam" After="InstallFiles" >NOT Installed</Custom>
+     <Custom Action="setup_gam" After="InstallFiles" >NOT Installed AND NOT UPGRADINGPRODUCTCODE AND NOT WIX_UPGRADE_DETECTED</Custom>
     </InstallExecuteSequence>
   </Fragment>
 </Wix>
