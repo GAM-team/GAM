@@ -10439,7 +10439,11 @@ def ProcessGAMCommand(args):
     elif command in [u'oauth', u'oauth2']:
       argument = sys.argv[2].lower()
       if argument in [u'request', u'create']:
-        doRequestOAuth(login_hint=sys.argv[3])
+        try:
+          login_hint = sys.argv[3]
+        except IndexError:
+          login_hint = None
+        doRequestOAuth(login_hint)
       elif argument in [u'info', u'verify']:
         OAuthInfo()
       elif argument in [u'delete', u'revoke']:
