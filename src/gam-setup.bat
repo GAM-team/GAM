@@ -68,5 +68,6 @@
 @goto saauth
 :sadone
 
-echo GAM installation and setup complete!
+@echo GAM installation and setup complete!
 :alldone
+@pause
