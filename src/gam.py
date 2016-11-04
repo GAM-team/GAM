@@ -3337,7 +3337,7 @@ def doCalendarDeleteEvent():
       query = sys.argv[i+1]
       result = callGAPIpages(cal.events(), u'list', items=u'items', calendarId=calendarId, q=query)
       for event in result:
-        if u'id' in event:
+        if u'id' in event and event[u'id'] not in events:
           events.append(event[u'id'])
       i += 2
     elif sys.argv[i].lower() == u'doit':
