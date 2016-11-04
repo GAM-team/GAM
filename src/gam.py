@@ -3323,7 +3323,7 @@ def doCalendarDeleteEvent():
   if not cal:
     return
   events = []
-  sendNotifications = None
+  sendNotifications = False
   doit = False
   i = 4
   while (i < len(sys.argv)):
@@ -3349,7 +3349,7 @@ def doCalendarDeleteEvent():
   if doit:
     for eventId in events:
       print u' deleting eventId %s' % eventId
-      callGAPI(cal.events(), u'delete', calendarId=calendarId, eventId=eventId)
+      callGAPI(cal.events(), u'delete', calendarId=calendarId, eventId=eventId, sendNotifications=sendNotifications)
   else:
     for eventId in events:
       print u' would delete eventId %s. Add doit to command to actually delete event' % eventId
