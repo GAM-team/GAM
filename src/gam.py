@@ -1241,7 +1241,7 @@ and grant Client name:
 
 Access to scopes:
 
-%s\n''' % (user_domain, service_account, ','.join(all_scopes))
+%s\n''' % (user_domain, service_account, ',\n'.join(all_scopes))
     sys.exit(int(not all_scopes_pass))
 
 def showReport():
@@ -9962,7 +9962,6 @@ def doRequestOAuth(login_hint=None):
     scopes.insert(0, u'email') # Email Display Scope, always included
     return (True, u'')
 
-  cs_file = os.path.join(GM_Globals[GM_GAM_PATH], FN_CLIENT_SECRETS_JSON)
   MISSING_CLIENT_SECRETS_MESSAGE = u"""Please configure OAuth 2.0
 
 To make GAM run you will need to populate the {0} file found at:
@@ -9976,7 +9975,7 @@ See this site for instructions:
 
 """.format(FN_CLIENT_SECRETS_JSON, GC_Values[GC_CLIENT_SECRETS_JSON], GAM_WIKI_CREATE_CLIENT_SECRETS)
 
-  cs_data = readFile(cs_file, mode=u'rb', continueOnError=True, displayError=True, encoding=None)
+  cs_data = readFile(GC_Values[GC_CLIENT_SECRETS_JSON], mode=u'rb', continueOnError=True, displayError=True, encoding=None)
   if not cs_data:
     systemErrorExit(14, MISSING_CLIENT_SECRETS_MESSAGE)
   try:
@@ -9987,9 +9986,7 @@ See this site for instructions:
     print u'ERROR: the format of your client secrets file:\n\n%s\n\n is incorrect. Please recreate the file.'
     sys.exit(3)
 
-  try:
-    login_hint = sys.argv[3]
-  except IndexError:
+  if not login_hint:
     while True:
       login_hint = raw_input(u'\nWhat is your G Suite admin email address? ')
       if login_hint.find(u'@') == -1:
@@ -10442,7 +10439,11 @@ def ProcessGAMCommand(args):
     elif command in [u'oauth', u'oauth2']:
       argument = sys.argv[2].lower()
       if argument in [u'request', u'create']:
-        doRequestOAuth()
+        try:
+          login_hint = sys.argv[3]
+        except IndexError:
+          login_hint = None
+        doRequestOAuth(login_hint)
       elif argument in [u'info', u'verify']:
         OAuthInfo()
       elif argument in [u'delete', u'revoke']:

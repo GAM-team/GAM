@@ -273,7 +273,7 @@ class Credentials(object):
                 to_serialize[key] = val.decode('utf-8')
             if isinstance(val, set):
                 to_serialize[key] = list(val)
-        return json.dumps(to_serialize)
+        return json.dumps(to_serialize, indent=4, sort_keys=True)
 
     def to_json(self):
         """Creating a JSON representation of an instance of Credentials.

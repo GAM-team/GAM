@@ -52,6 +52,12 @@
       <Component Id="whatsnew_txt" Guid="6aa9863c-90d9-412f-9b73-fda82549a950">
         <File Name="whatsnew.txt" KeyPath="yes" />
       </Component>
+      <Component Id="gam_setup_bat" Guid="ef01f93a-4b50-488a-9c04-ec5e13e66218">
+        <File Name="gam-setup.bat" KeyPath="yes" />
+      </Component>
+      <Component Id="gamcommands_txt" Guid="58ff9c45-a7c9-4e22-8845-a9a92610c1f3">
+        <File Name="gamcommands.txt" KeyPath="yes" />
+      </Component>
     </ComponentGroup>
   </Fragment>
 
@@ -59,7 +65,10 @@
     <InstallUISequence>
       <ExecuteAction />
       <Show Dialog="WelcomeDlg" Before="ProgressDlg" />
-      <!-- <Show Dialog="ProgressDlg" After="" /> -->
     </InstallUISequence>
+    <CustomAction Id="setup_gam" ExeCommand="[INSTALLFOLDER]gam-setup.bat" Directory="INSTALLFOLDER" Execute="commit" Impersonate="yes" Return="asyncWait"/>
+    <InstallExecuteSequence>
+     <Custom Action="setup_gam" After="InstallFiles" >NOT Installed AND NOT UPGRADINGPRODUCTCODE AND NOT WIX_UPGRADE_DETECTED</Custom>
+    </InstallExecuteSequence>
   </Fragment>
 </Wix>
