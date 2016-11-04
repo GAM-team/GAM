@@ -99,6 +99,7 @@ If an item contains spaces, it should be surrounded by " or '.
 <PrintJobStatus> ::= done|error|held|in_progress|queued|submitted
 <PropertyKey> ::= <String>
 <PropertyValue> ::= <String>
+<QueryCalendar> ::= <String>
 <QueryContact> ::= <String> See: https://developers.google.com/google-apps/contacts/v3/reference#contacts-query-parameters-reference
 <QueryCrOS> ::= <String> See: https://support.google.com/chrome/a/answer/1698333?hl=en
 <QueryDriveFile> :: = <String> See: https://developers.google.com/drive/v2/web/search-parameters 
@@ -537,6 +538,7 @@ gam calendar <CalendarItem> del|delete <CalendarACLRole> <EmailAddress>|(domain 
 gam calendar <CalendarItem> showacl
 
 gam calendar <CalendarItem> addevent <EventAttributes>+
+gam calendar <CalendarItem> deleteevent [notifyattendees] [id|eventid <EventID>] [query|eventquery <QueryCalendar>] [doit]
 gam calendar <CalendarItem> wipe
 
 gam update cros <CrOSItem> (<CrOSAttributes>+)|(action deprovision_same_model_replace|deprovision_different_model_replace|deprovision_retiring_device|disable|reenable [acknowledge_device_touch_requirement])

@@ -3344,8 +3344,8 @@ def doCalendarDeleteEvent():
       doit = True
       i += 1
     else:
-      print u'ERROR: %s is not a valid argument for gam calendar <email> delete event'
-      sys.exit(3)
+      print u'ERROR: %s is not a valid argument for "gam calendar <email> deleteevent"' % sys.argv[i]
+      sys.exit(2)
   if doit:
     for eventId in events:
       print u' deleting eventId %s' % eventId
@@ -3461,7 +3461,7 @@ def doCalendarAddEvent():
       body[u'colorId'] = str(sys.argv[i+1])
       i += 2
     else:
-      print u'ERROR: %s is not a valid argument for "gam calendar"' % sys.argv[i]
+      print u'ERROR: %s is not a valid argument for "gam calendar <email> addevent"' % sys.argv[i]
       sys.exit(2)
   if not timeZone and u'recurrence' in body:
     timeZone = callGAPI(cal.calendars(), u'get', calendarId=calendarId, fields=u'timeZone')[u'timeZone']
