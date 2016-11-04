@@ -1214,17 +1214,17 @@ def doCheckServiceAccount(users):
       for scope in scopes:
         if scope in all_scopes:
           continue # don't check same scope twice
-        all_scopes.append(scope)
+        all_scopes.append((api, scope))
     all_scopes = sorted(all_scopes)
     for scope in all_scopes:
       try:
-        service = buildGAPIServiceObject(api, act_as=user, use_scopes=scope)
+        service = buildGAPIServiceObject(scope[0], act_as=user, use_scopes=scope[1])
         service._http.request.credentials.refresh(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL]))
         result = u'PASS'
       except oauth2client.client.HttpAccessTokenRefreshError:
         result = u'FAIL'
         all_scopes_pass = False
-      print u' Scope: {0:60} {1}'.format(scope, result)
+      print u' Scope: {0:60} {1}'.format(scope[1], result)
     service_account = service._http.request.credentials.serialization_data[u'client_id']
     if all_scopes_pass:
       print u'\nAll scopes passed!\nService account %s is fully authorized.' % service_account
@@ -1241,7 +1241,7 @@ and grant Client name:
 
 Access to scopes:
 
-%s\n''' % (user_domain, service_account, ',\n'.join(all_scopes))
+%s\n''' % (user_domain, service_account, ',\n'.join([scope[1] for scope in all_scopes]))
     sys.exit(int(not all_scopes_pass))
 
 def showReport():
@@ -6853,12 +6853,12 @@ def doCreateProject():
   for i in range(3):
     project_id += u'-%s' % ''.join(random.choice(string.digits + string.ascii_lowercase) for i in range(3))
   project_name = u'project:%s' % project_id
-  scope=u'https://www.googleapis.com/auth/cloud-platform'
-  client_id=u'297408095146-fug707qsjv4ikron0hugpevbrjhkmsk7.apps.googleusercontent.com'
-  client_secret=u'qM3dP8f_4qedwzWQE1VR4zzU'
+  scope = u'https://www.googleapis.com/auth/cloud-platform'
+  client_id = u'297408095146-fug707qsjv4ikron0hugpevbrjhkmsk7.apps.googleusercontent.com'
+  client_secret = u'qM3dP8f_4qedwzWQE1VR4zzU'
   flow = oauth2client.client.OAuth2WebServerFlow(client_id=client_id,
-    client_secret=client_secret, scope=scope, redirect_uri=oauth2client.client.OOB_CALLBACK_URN,
-    user_agent=GAM_INFO, access_type=u'online', response_type=u'code', login_hint=login_hint)
+                                                 client_secret=client_secret, scope=scope, redirect_uri=oauth2client.client.OOB_CALLBACK_URN,
+                                                 user_agent=GAM_INFO, access_type=u'online', response_type=u'code', login_hint=login_hint)
   flags = cmd_flags(noLocalWebserver=GC_Values[GC_NO_BROWSER])
   storage_dict = {}
   storage = DictionaryStorage(storage_dict, u'credentials')
@@ -6911,15 +6911,15 @@ and accept the Terms of Service (ToS). As soon as you've accepted the ToS popup,
 
   serveman = googleapiclient.discovery.build(u'servicemanagement', u'v1', http=http, cache_discovery=False)
   apis = [u'admin-json.googleapis.com', u'appsactivity-json.googleapis.com', u'calendar-json.googleapis.com',
-    u'classroom.googleapis.com', u'drive', u'gmail-json.googleapis.com', u'groupssettings-json.googleapis.com',
-    u'licensing-json.googleapis.com', u'plus-json.googleapis.com', u'contacts-json.googleapis.com']
+          u'classroom.googleapis.com', u'drive', u'gmail-json.googleapis.com', u'groupssettings-json.googleapis.com',
+          u'licensing-json.googleapis.com', u'plus-json.googleapis.com', u'contacts-json.googleapis.com']
   for api in apis:
     print u' enabling API %s...' % api
     enable_operation = callGAPI(serveman.services(), u'enable', serviceName=api, body={u'consumerId': project_name})
   iam = googleapiclient.discovery.build(u'iam', u'v1', http=http, cache_discovery=False)
   print u'Creating Service Account'
   service_account = callGAPI(iam.projects().serviceAccounts(), u'create', name=u'projects/%s' % project_id,
-    body={u'accountId': project_id, u'serviceAccount': {u'displayName': u'GAM Project'}})
+                             body={u'accountId': project_id, u'serviceAccount': {u'displayName': u'GAM Project'}})
   body = {u'privateKeyType': u'TYPE_GOOGLE_CREDENTIALS_FILE', u'keyAlgorithm': u'KEY_ALG_RSA_4096'}
   key = callGAPI(iam.projects().serviceAccounts().keys(), u'create', name=service_account[u'name'], body=body)
   oauth2service_data = base64.b64decode(key[u'privateKeyData'])
@@ -6959,7 +6959,7 @@ and accept the Terms of Service (ToS). As soon as you've accepted the ToS popup,
   client_secrets_file = os.path.join(GM_Globals[GM_GAM_PATH], FN_CLIENT_SECRETS_JSON)
   if os.path.isfile(client_secrets_file):
     client_secrets_file = u'%s-%s' % (client_secrets_file, project_id)
-  writeFile(client_secrets_file, cs_data, continueOnError=False) 
+  writeFile(client_secrets_file, cs_data, continueOnError=False)
   print u'''Almost there! Now please switch back to your browser and:
 
 1. Click OK to close "OAuth client" popup if it's still open.
@@ -10091,8 +10091,8 @@ See this site for instructions:
       if status:
         break
   flow = oauth2client.client.OAuth2WebServerFlow(client_id=client_id,
-    client_secret=client_secret, scope=scopes, redirect_uri=oauth2client.client.OOB_CALLBACK_URN,
-    user_agent=GAM_INFO, access_type=u'offline', response_type=u'code', login_hint=login_hint)
+                                                 client_secret=client_secret, scope=scopes, redirect_uri=oauth2client.client.OOB_CALLBACK_URN,
+                                                 user_agent=GAM_INFO, access_type=u'offline', response_type=u'code', login_hint=login_hint)
   storage = oauth2client.file.Storage(GC_Values[GC_OAUTH2_TXT])
   credentials = storage.get()
   flags = cmd_flags(noLocalWebserver=GC_Values[GC_NO_BROWSER])
@@ -10805,6 +10805,9 @@ def ProcessGAMCommand(args):
       checkWhat = sys.argv[4].replace(u'_', '').lower()
       if checkWhat == u'serviceaccount':
         doCheckServiceAccount(users)
+      else:
+        print u'ERROR: %s is not a valid argument for "gam <users> check"' % checkWhat
+        sys.exit(2)
     elif command == u'profile':
       doProfile(users)
     elif command == u'imap':
