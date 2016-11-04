@@ -1,3 +1,8 @@
+GAM 4.02
+ - "gam create project" command simplifies creation of client_secrets.json and oauth2service.json project files.
+ - Automated wizard simplifies GAM setup on Linux and MacOS (coming soon to Windows MSI).
+ - "gam calendar <email> deleteevent" deletes events by ID or query
+
 GAM 3.8
 - Old GData APIs removed from GAM. Admin Settings and Email Audit commands are no longer included, keep a copy of GAM 3.72 around if you use them. All Email Settings commands now use new Gmail API.
 - Updated httplib2, google-api-client, uritemplate libraries
