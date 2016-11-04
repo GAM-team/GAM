@@ -7956,6 +7956,15 @@ CROS_SCALAR_PROPERTY_PRINT_ORDER = [
 def doGetCrosInfo():
   cd = buildGAPIObject(u'directory')
   deviceId = sys.argv[3]
+  if deviceId[:6].lower() == u'query:':
+    query = deviceId[6:]
+    devices_result = callGAPIpages(cd.chromeosdevices(), u'list', u'chromeosdevices',
+                                   query=query, customerId=GC_Values[GC_CUSTOMER_ID], fields=u'chromeosdevices/deviceId,nextPageToken')
+    devices = list()
+    for a_device in devices_result:
+      devices.append(a_device[u'deviceId'])
+  else:
+    devices = [deviceId,]
   projection = None
   fieldsList = []
   noLists = False
@@ -8006,30 +8015,34 @@ def doGetCrosInfo():
     fields = u','.join(set(fieldsList)).replace(u'.', u'/')
   else:
     fields = None
-  cros = callGAPI(cd.chromeosdevices(), u'get', customerId=GC_Values[GC_CUSTOMER_ID],
-                  deviceId=deviceId, projection=projection, fields=fields)
-  print u'CrOS Device: {0}'.format(deviceId)
-  if u'notes' in cros:
-    cros[u'notes'] = cros[u'notes'].replace(u'\n', u'\\n')
-  for up in CROS_SCALAR_PROPERTY_PRINT_ORDER:
-    if up in cros:
-      print u'  {0}: {1}'.format(up, cros[up])
-  if not noLists:
-    activeTimeRanges = cros.get(u'activeTimeRanges', [])
-    lenATR = len(activeTimeRanges)
-    if lenATR:
-      print u'  activeTimeRanges'
-      for i in xrange(min(listLimit, lenATR) if listLimit else lenATR):
-        print u'    date: {0}'.format(activeTimeRanges[i][u'date'])
-        print u'      activeTime: {0}'.format(str(activeTimeRanges[i][u'activeTime']))
-        print u'      duration: {0}'.format(formatMilliSeconds(activeTimeRanges[i][u'activeTime']))
-    recentUsers = cros.get(u'recentUsers', [])
-    lenRU = len(recentUsers)
-    if lenRU:
-      print u'  recentUsers'
-      for i in xrange(min(listLimit, lenRU) if listLimit else lenRU):
-        print u'    type: {0}'.format(recentUsers[i][u'type'])
-        print u'      email: {0}'.format(recentUsers[i].get(u'email', u''))
+  i = 1
+  device_count = len(devices)
+  for deviceId in devices:
+    cros = callGAPI(cd.chromeosdevices(), u'get', customerId=GC_Values[GC_CUSTOMER_ID],
+                    deviceId=deviceId, projection=projection, fields=fields)
+    print u'CrOS Device: {0} ({1} of {2})'.format(deviceId, i, device_count)
+    if u'notes' in cros:
+      cros[u'notes'] = cros[u'notes'].replace(u'\n', u'\\n')
+    for up in CROS_SCALAR_PROPERTY_PRINT_ORDER:
+      if up in cros:
+        print u'  {0}: {1}'.format(up, cros[up])
+    if not noLists:
+      activeTimeRanges = cros.get(u'activeTimeRanges', [])
+      lenATR = len(activeTimeRanges)
+      if lenATR:
+        print u'  activeTimeRanges'
+        for i in xrange(min(listLimit, lenATR) if listLimit else lenATR):
+          print u'    date: {0}'.format(activeTimeRanges[i][u'date'])
+          print u'      activeTime: {0}'.format(str(activeTimeRanges[i][u'activeTime']))
+          print u'      duration: {0}'.format(formatMilliSeconds(activeTimeRanges[i][u'activeTime']))
+      recentUsers = cros.get(u'recentUsers', [])
+      lenRU = len(recentUsers)
+      if lenRU:
+        print u'  recentUsers'
+        for i in xrange(min(listLimit, lenRU) if listLimit else lenRU):
+          print u'    type: {0}'.format(recentUsers[i][u'type'])
+          print u'      email: {0}'.format(recentUsers[i].get(u'email', u''))
+    i += 1
 
 def doGetMobileInfo():
   cd = buildGAPIObject(u'directory')
