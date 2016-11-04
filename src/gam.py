@@ -3318,6 +3318,42 @@ def doCalendarWipeData():
     return
   callGAPI(cal.calendars(), u'clear', calendarId=calendarId)
 
+def doCalendarDeleteEvent():
+  calendarId, cal = buildCalendarGAPIObject(sys.argv[2])
+  if not cal:
+    return
+  events = []
+  sendNotifications = None
+  doit = False
+  i = 4
+  while (i < len(sys.argv)):
+    if sys.argv[i].lower() == u'notifyattendees':
+      sendNotifications = True
+      i += 1
+    elif sys.argv[i].lower() in [u'id', u'eventid']:
+      events.append(sys.argv[i+1])
+      i += 2
+    elif sys.argv[i].lower() in [u'query', u'eventquery']:
+      query = sys.argv[i+1]
+      result = callGAPIpages(cal.events(), u'list', items=u'items', calendarId=calendarId, q=query)
+      for event in result:
+        if u'id' in event:
+          events.append(event[u'id'])
+      i += 2
+    elif sys.argv[i].lower() == u'doit':
+      doit = True
+      i += 1
+    else:
+      print u'ERROR: %s is not a valid argument for gam calendar <email> delete event'
+      sys.exit(3)
+  if doit:
+    for eventId in events:
+      print u' deleting eventId %s' % eventId
+      callGAPI(cal.events(), u'delete', calendarId=calendarId, eventId=eventId)
+  else:
+    for eventId in events:
+      print u' would delete eventId %s. Add doit to command to actually delete event' % eventId
+
 def doCalendarAddEvent():
   calendarId, cal = buildCalendarGAPIObject(sys.argv[2])
   if not cal:
@@ -10479,6 +10515,8 @@ def ProcessGAMCommand(args):
         doCalendarWipeData()
       elif argument == u'addevent':
         doCalendarAddEvent()
+      elif argument == u'deleteevent':
+        doCalendarDeleteEvent()
       else:
         print u'ERROR: %s is not a valid argument for "gam calendar"' % argument
         sys.exit(2)
