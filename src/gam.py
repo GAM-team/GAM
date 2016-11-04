@@ -1241,7 +1241,7 @@ and grant Client name:
 
 Access to scopes:
 
-%s\n''' % (user_domain, service_account, ',\n'.join(scope[1] for scope in all_scopes))
+%s\n''' % (user_domain, service_account, ',\n'.join([scope[1] for scope in all_scopes]))
     sys.exit(int(not all_scopes_pass))
 
 def showReport():
