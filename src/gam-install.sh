@@ -12,6 +12,7 @@ OPTIONS:
    -o      OS we are running (linux, macos). Default is to detect your OS with "uname -s".
    -p      Profile update (true, false). Should script add gam command to environment. Default is true.
    -u      Admin user email address to use with GAM. Default is to prompt.
+   -r      Regular user email address. Used to test service account access to user data. Default is to prompt.
    -v      Version to install (latest, prerelease, draft, 3.8, etc). Default is latest.
 EOF
 }
@@ -22,7 +23,8 @@ gamos=$(uname -s)
 update_profile=true
 gamversion="latest"
 adminuser=""
-while getopts "hd:a:o:p:u:v:" OPTION
+regularuser=""
+while getopts "hd:a:o:p:u:r:v:" OPTION
 do
      case $OPTION in
          h) usage; exit;;
@@ -31,6 +33,7 @@ do
          o) gamos=$OPTARG;;
          p) update_profile=$OPTARG;;
          u) adminuser=$OPTARG;;
+         r) regularuser=$OPTARG;;
          v) gamversion=$OPTARG;;
          ?) usage; exit;;
      esac
@@ -236,6 +239,9 @@ while $project_created; do
   read -p "Are you ready to authorize GAM to manage G Suite user data and settings? (yes or no) " yn
   case $yn in
     [Yy]*)
+      if [ "$regularuser" == "" ]; then
+        read -p "Please enter the email address of a regular G Suite user: " regularuser
+      fi
       echo_yellow "Great! Checking service account scopes.This will fail the first time. Follow the steps to authorize and retry. It can take a few minutes for scopes to PASS after they've been authorized in the admin console."
       $target_dir/gam/gam user $adminuser check serviceaccount
       rc=$?
