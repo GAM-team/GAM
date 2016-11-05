@@ -1208,23 +1208,20 @@ def buildGplusGAPIObject(user):
 def doCheckServiceAccount(users):
   for user in users:
     all_scopes_pass = True
-    all_scopes = []
+    all_scopes = {}
     print u'User: %s' % (user)
     for api, scopes in API_SCOPE_MAPPING.items():
       for scope in scopes:
-        if scope in all_scopes:
-          continue # don't check same scope twice
-        all_scopes.append((api, scope))
-    all_scopes = sorted(all_scopes)
-    for scope in all_scopes:
+        all_scopes[scope] = api
+    for scope, api in sorted(all_scopes.items()):
       try:
-        service = buildGAPIServiceObject(scope[0], act_as=user, use_scopes=scope[1])
+        service = buildGAPIServiceObject(api, act_as=user, use_scopes=scope)
         service._http.request.credentials.refresh(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL]))
         result = u'PASS'
       except oauth2client.client.HttpAccessTokenRefreshError:
         result = u'FAIL'
         all_scopes_pass = False
-      print u' Scope: {0:60} {1}'.format(scope[1], result)
+      print u' Scope: {0:60} {1}'.format(scope, result)
     service_account = service._http.request.credentials.serialization_data[u'client_id']
     if all_scopes_pass:
       print u'\nAll scopes passed!\nService account %s is fully authorized.' % service_account
@@ -1241,7 +1238,7 @@ and grant Client name:
 
 Access to scopes:
 
-%s\n''' % (user_domain, service_account, ',\n'.join([scope[1] for scope in all_scopes]))
+%s\n''' % (user_domain, service_account, ',\n'.join(sorted(all_scopes.keys())))
     sys.exit(int(not all_scopes_pass))
 
 def showReport():
