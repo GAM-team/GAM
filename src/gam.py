@@ -1208,23 +1208,20 @@ def buildGplusGAPIObject(user):
 def doCheckServiceAccount(users):
   for user in users:
     all_scopes_pass = True
-    all_scopes = []
+    all_scopes = {}
     print u'User: %s' % (user)
     for api, scopes in API_SCOPE_MAPPING.items():
       for scope in scopes:
-        if scope in all_scopes:
-          continue # don't check same scope twice
-        all_scopes.append((api, scope))
-    all_scopes = sorted(all_scopes)
-    for scope in all_scopes:
+        all_scopes[scope] = api
+    for scope, api in sorted(all_scopes.items()):
       try:
-        service = buildGAPIServiceObject(scope[0], act_as=user, use_scopes=scope[1])
+        service = buildGAPIServiceObject(api, act_as=user, use_scopes=scope)
         service._http.request.credentials.refresh(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL]))
         result = u'PASS'
       except oauth2client.client.HttpAccessTokenRefreshError:
         result = u'FAIL'
         all_scopes_pass = False
-      print u' Scope: {0:60} {1}'.format(scope[1], result)
+      print u' Scope: {0:60} {1}'.format(scope, result)
     service_account = service._http.request.credentials.serialization_data[u'client_id']
     if all_scopes_pass:
       print u'\nAll scopes passed!\nService account %s is fully authorized.' % service_account
@@ -1241,7 +1238,7 @@ and grant Client name:
 
 Access to scopes:
 
-%s\n''' % (user_domain, service_account, ',\n'.join([scope[1] for scope in all_scopes]))
+%s\n''' % (user_domain, service_account, ',\n'.join(sorted(all_scopes.keys())))
     sys.exit(int(not all_scopes_pass))
 
 def showReport():
@@ -3323,10 +3320,10 @@ def doCalendarDeleteEvent():
   if not cal:
     return
   events = []
-  sendNotifications = None
+  sendNotifications = False
   doit = False
   i = 4
-  while (i < len(sys.argv)):
+  while i < len(sys.argv):
     if sys.argv[i].lower() == u'notifyattendees':
       sendNotifications = True
       i += 1
@@ -3337,19 +3334,19 @@ def doCalendarDeleteEvent():
       query = sys.argv[i+1]
       result = callGAPIpages(cal.events(), u'list', items=u'items', calendarId=calendarId, q=query)
       for event in result:
-        if u'id' in event:
+        if u'id' in event and event[u'id'] not in events:
           events.append(event[u'id'])
       i += 2
     elif sys.argv[i].lower() == u'doit':
       doit = True
       i += 1
     else:
-      print u'ERROR: %s is not a valid argument for gam calendar <email> delete event'
-      sys.exit(3)
+      print u'ERROR: %s is not a valid argument for "gam calendar <email> deleteevent"' % sys.argv[i]
+      sys.exit(2)
   if doit:
     for eventId in events:
       print u' deleting eventId %s' % eventId
-      callGAPI(cal.events(), u'delete', calendarId=calendarId, eventId=eventId)
+      callGAPI(cal.events(), u'delete', calendarId=calendarId, eventId=eventId, sendNotifications=sendNotifications)
   else:
     for eventId in events:
       print u' would delete eventId %s. Add doit to command to actually delete event' % eventId
@@ -3461,7 +3458,7 @@ def doCalendarAddEvent():
       body[u'colorId'] = str(sys.argv[i+1])
       i += 2
     else:
-      print u'ERROR: %s is not a valid argument for "gam calendar"' % sys.argv[i]
+      print u'ERROR: %s is not a valid argument for "gam calendar <email> addevent"' % sys.argv[i]
       sys.exit(2)
   if not timeZone and u'recurrence' in body:
     timeZone = callGAPI(cal.calendars(), u'get', calendarId=calendarId, fields=u'timeZone')[u'timeZone']
@@ -7992,6 +7989,15 @@ CROS_SCALAR_PROPERTY_PRINT_ORDER = [
 def doGetCrosInfo():
   cd = buildGAPIObject(u'directory')
   deviceId = sys.argv[3]
+  if deviceId[:6].lower() == u'query:':
+    query = deviceId[6:]
+    devices_result = callGAPIpages(cd.chromeosdevices(), u'list', u'chromeosdevices',
+                                   query=query, customerId=GC_Values[GC_CUSTOMER_ID], fields=u'chromeosdevices/deviceId,nextPageToken')
+    devices = list()
+    for a_device in devices_result:
+      devices.append(a_device[u'deviceId'])
+  else:
+    devices = [deviceId,]
   projection = None
   fieldsList = []
   noLists = False
@@ -8042,30 +8048,34 @@ def doGetCrosInfo():
     fields = u','.join(set(fieldsList)).replace(u'.', u'/')
   else:
     fields = None
-  cros = callGAPI(cd.chromeosdevices(), u'get', customerId=GC_Values[GC_CUSTOMER_ID],
-                  deviceId=deviceId, projection=projection, fields=fields)
-  print u'CrOS Device: {0}'.format(deviceId)
-  if u'notes' in cros:
-    cros[u'notes'] = cros[u'notes'].replace(u'\n', u'\\n')
-  for up in CROS_SCALAR_PROPERTY_PRINT_ORDER:
-    if up in cros:
-      print u'  {0}: {1}'.format(up, cros[up])
-  if not noLists:
-    activeTimeRanges = cros.get(u'activeTimeRanges', [])
-    lenATR = len(activeTimeRanges)
-    if lenATR:
-      print u'  activeTimeRanges'
-      for i in xrange(min(listLimit, lenATR) if listLimit else lenATR):
-        print u'    date: {0}'.format(activeTimeRanges[i][u'date'])
-        print u'      activeTime: {0}'.format(str(activeTimeRanges[i][u'activeTime']))
-        print u'      duration: {0}'.format(formatMilliSeconds(activeTimeRanges[i][u'activeTime']))
-    recentUsers = cros.get(u'recentUsers', [])
-    lenRU = len(recentUsers)
-    if lenRU:
-      print u'  recentUsers'
-      for i in xrange(min(listLimit, lenRU) if listLimit else lenRU):
-        print u'    type: {0}'.format(recentUsers[i][u'type'])
-        print u'      email: {0}'.format(recentUsers[i].get(u'email', u''))
+  i = 1
+  device_count = len(devices)
+  for deviceId in devices:
+    cros = callGAPI(cd.chromeosdevices(), u'get', customerId=GC_Values[GC_CUSTOMER_ID],
+                    deviceId=deviceId, projection=projection, fields=fields)
+    print u'CrOS Device: {0} ({1} of {2})'.format(deviceId, i, device_count)
+    if u'notes' in cros:
+      cros[u'notes'] = cros[u'notes'].replace(u'\n', u'\\n')
+    for up in CROS_SCALAR_PROPERTY_PRINT_ORDER:
+      if up in cros:
+        print u'  {0}: {1}'.format(up, cros[up])
+    if not noLists:
+      activeTimeRanges = cros.get(u'activeTimeRanges', [])
+      lenATR = len(activeTimeRanges)
+      if lenATR:
+        print u'  activeTimeRanges'
+        for i in xrange(min(listLimit, lenATR) if listLimit else lenATR):
+          print u'    date: {0}'.format(activeTimeRanges[i][u'date'])
+          print u'      activeTime: {0}'.format(str(activeTimeRanges[i][u'activeTime']))
+          print u'      duration: {0}'.format(formatMilliSeconds(activeTimeRanges[i][u'activeTime']))
+      recentUsers = cros.get(u'recentUsers', [])
+      lenRU = len(recentUsers)
+      if lenRU:
+        print u'  recentUsers'
+        for i in xrange(min(listLimit, lenRU) if listLimit else lenRU):
+          print u'    type: {0}'.format(recentUsers[i][u'type'])
+          print u'      email: {0}'.format(recentUsers[i].get(u'email', u''))
+    i += 1
 
 def doGetMobileInfo():
   cd = buildGAPIObject(u'directory')
