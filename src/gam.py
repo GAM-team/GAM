@@ -3320,7 +3320,7 @@ def doCalendarDeleteEvent():
   if not cal:
     return
   events = []
-  sendNotifications = False
+  sendNotifications = None
   doit = False
   i = 4
   while i < len(sys.argv):
