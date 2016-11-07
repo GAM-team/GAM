@@ -6544,7 +6544,7 @@ def getUserAttributes(i, cd, updateCmd=False):
       if sys.argv[i].lower() == u'unstructured':
         i += 1
         address[u'sourceIsStructured'] = False
-        address[u'formatted'] = sys.argv[i]
+        address[u'formatted'] = sys.argv[i].replace(u'\\n', u'\n')
         i += 1
       while True:
         myopt = sys.argv[i].lower()
@@ -7711,7 +7711,10 @@ def doGetUserInfo(user_email=None):
     print u'Addresses:'
     for address in user[u'addresses']:
       for key in address:
-        print convertUTF8(u' %s: %s' % (key, address[key]))
+        if key != u'formatted':
+          print convertUTF8(u' %s: %s' % (key, address[key]))
+        else:
+          print convertUTF8(u' %s: %s' % (key, address[key].replace(u'\n', u'\\n')))
       print u''
   if u'organizations' in user:
     print u'Organizations:'
