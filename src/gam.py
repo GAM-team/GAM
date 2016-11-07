@@ -6544,7 +6544,7 @@ def getUserAttributes(i, cd, updateCmd=False):
       if sys.argv[i].lower() == u'unstructured':
         i += 1
         address[u'sourceIsStructured'] = False
-        address[u'formatted'] = sys.argv[i]
+        address[u'formatted'] = sys.argv[i].replace(u'\\n', u'\n')
         i += 1
       while True:
         myopt = sys.argv[i].lower()
@@ -6977,7 +6977,7 @@ and accept the Terms of Service (ToS). As soon as you've accepted the ToS popup,
   body = {u'privateKeyType': u'TYPE_GOOGLE_CREDENTIALS_FILE', u'keyAlgorithm': u'KEY_ALG_RSA_4096'}
   key = callGAPI(iam.projects().serviceAccounts().keys(), u'create', name=service_account[u'name'], body=body)
   oauth2service_data = base64.b64decode(key[u'privateKeyData'])
-  service_account_file = os.path.join(GM_Globals[GM_GAM_PATH], FN_OAUTH2SERVICE_JSON)
+  service_account_file = GC_Values[GC_OAUTH2SERVICE_JSON]
   if os.path.isfile(service_account_file):
     service_account_file = u'%s-%s' % (service_account_file, project_id)
   writeFile(service_account_file, oauth2service_data, continueOnError=False)
@@ -7010,7 +7010,7 @@ and accept the Terms of Service (ToS). As soon as you've accepted the ToS popup,
         "token_uri": "https://accounts.google.com/o/oauth2/token"
     }
 }''' % (client_id, client_secret, project_id)
-  client_secrets_file = os.path.join(GM_Globals[GM_GAM_PATH], FN_CLIENT_SECRETS_JSON)
+  client_secrets_file = GC_Values[GC_CLIENT_SECRETS_JSON]
   if os.path.isfile(client_secrets_file):
     client_secrets_file = u'%s-%s' % (client_secrets_file, project_id)
   writeFile(client_secrets_file, cs_data, continueOnError=False)
@@ -7768,7 +7768,10 @@ def doGetUserInfo(user_email=None):
     print u'Addresses:'
     for address in user[u'addresses']:
       for key in address:
-        print convertUTF8(u' %s: %s' % (key, address[key]))
+        if key != u'formatted':
+          print convertUTF8(u' %s: %s' % (key, address[key]))
+        else:
+          print convertUTF8(u' %s: %s' % (key, address[key].replace(u'\n', u'\\n')))
       print u''
   if u'organizations' in user:
     print u'Organizations:'
