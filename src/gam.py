@@ -1169,13 +1169,11 @@ def getSvcAcctAPIversionHttpService(api):
   except (ValueError, KeyError):
     invalidJSONExit(disc_file)
 
-def buildGAPIServiceObject(api, act_as, use_scopes=None):
+def buildGAPIServiceObject(api, act_as):
   _, http, service = getSvcAcctAPIversionHttpService(api)
   GM_Globals[GM_CURRENT_API_USER] = act_as
   GM_Globals[GM_CURRENT_API_SCOPES] = API_SCOPE_MAPPING[api]
-  if not use_scopes:
-    use_scopes = GM_Globals[GM_CURRENT_API_SCOPES]
-  credentials = getSvcAcctCredentials(use_scopes, act_as)
+  credentials = getSvcAcctCredentials(GM_Globals[GM_CURRENT_API_SCOPES], act_as)
   try:
     service._http = credentials.authorize(http)
   except httplib2.ServerNotFoundError as e:
@@ -1215,14 +1213,16 @@ def doCheckServiceAccount(users):
         all_scopes[scope] = api
     for scope, api in sorted(all_scopes.items()):
       try:
-        service = buildGAPIServiceObject(api, act_as=user, use_scopes=scope)
-        service._http.request.credentials.refresh(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL]))
+        credentials = getSvcAcctCredentials(scope, user)
+        credentials.refresh(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL]))
         result = u'PASS'
+      except httplib2.ServerNotFoundError as e:
+        systemErrorExit(4, e)
       except oauth2client.client.HttpAccessTokenRefreshError:
         result = u'FAIL'
         all_scopes_pass = False
       print u' Scope: {0:60} {1}'.format(scope, result)
-    service_account = service._http.request.credentials.serialization_data[u'client_id']
+    service_account = credentials.serialization_data[u'client_id']
     if all_scopes_pass:
       print u'\nAll scopes passed!\nService account %s is fully authorized.' % service_account
     else:
