@@ -1172,10 +1172,8 @@ def getSvcAcctAPIversionHttpService(api):
 def buildGAPIServiceObject(api, act_as, use_scopes=None):
   _, http, service = getSvcAcctAPIversionHttpService(api)
   GM_Globals[GM_CURRENT_API_USER] = act_as
-  GM_Globals[GM_CURRENT_API_SCOPES] = API_SCOPE_MAPPING[api]
-  if not use_scopes:
-    use_scopes = GM_Globals[GM_CURRENT_API_SCOPES]
-  credentials = getSvcAcctCredentials(use_scopes, act_as)
+  GM_Globals[GM_CURRENT_API_SCOPES] = use_scopes or API_SCOPE_MAPPING[api]
+  credentials = getSvcAcctCredentials(GM_Globals[GM_CURRENT_API_SCOPES], act_as)
   try:
     service._http = credentials.authorize(http)
   except httplib2.ServerNotFoundError as e:
@@ -1206,23 +1204,27 @@ def buildGplusGAPIObject(user):
   return (userEmail, buildGAPIServiceObject(u'plus', userEmail))
 
 def doCheckServiceAccount(users):
+  all_scopes = []
+  for _, scopes in API_SCOPE_MAPPING.items():
+    for scope in scopes:
+      if scope not in all_scopes:
+        all_scopes.append(scope)
+  all_scopes.sort()
   for user in users:
     all_scopes_pass = True
-    all_scopes = {}
     print u'User: %s' % (user)
-    for api, scopes in API_SCOPE_MAPPING.items():
-      for scope in scopes:
-        all_scopes[scope] = api
-    for scope, api in sorted(all_scopes.items()):
+    for scope in all_scopes:
       try:
-        service = buildGAPIServiceObject(api, act_as=user, use_scopes=scope)
-        service._http.request.credentials.refresh(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL]))
+        credentials = getSvcAcctCredentials(scope, user)
+        credentials.refresh(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL]))
         result = u'PASS'
+      except httplib2.ServerNotFoundError as e:
+        systemErrorExit(4, e)
       except oauth2client.client.HttpAccessTokenRefreshError:
         result = u'FAIL'
         all_scopes_pass = False
       print u' Scope: {0:60} {1}'.format(scope, result)
-    service_account = service._http.request.credentials.serialization_data[u'client_id']
+    service_account = credentials.serialization_data[u'client_id']
     if all_scopes_pass:
       print u'\nAll scopes passed!\nService account %s is fully authorized.' % service_account
     else:
@@ -1238,7 +1240,7 @@ and grant Client name:
 
 Access to scopes:
 
-%s\n''' % (user_domain, service_account, ',\n'.join(sorted(all_scopes.keys())))
+%s\n''' % (user_domain, service_account, ',\n'.join(all_scopes))
     sys.exit(int(not all_scopes_pass))
 
 def showReport():
