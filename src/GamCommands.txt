@@ -477,7 +477,8 @@ gam csv <FileName>|- [charset <Charset>] gam <GAM argument list>
 # Example: gam csv Users.csv gam update user '~primaryEmail' address type work unstructured '~~Street~~, ~~City~~, ~~State~~ ~~ZIP~~'
 # Each user (~primaryEmail, e.g. foo@bar.com) would have their work address updated
 
-gam oauth|oauth2 create|request
+gam oauth|oauth2 create|request [<EmailAddress>]
+
 gam oauth|oauth2 delete|revoke
 gam oauth|oauth2 info|verify [<AccessToken>]
 
@@ -505,7 +506,6 @@ gam create domainalias|aliasdomain <DomainAlias> <DomainName>
 gam delete domainalias|aliasdomain <DomainAlias>
 gam info domainalias|aliasdomain <DomainAlias>
 gam print domainaliases|aliasdomains [todrive]
-
 
 gam info customer
 gam update customer [adminsecondaryemail|alternateemail <EmailAddress>] [language <LanguageCode] [phone|phonenumber <String>]

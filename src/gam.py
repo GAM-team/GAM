@@ -10094,7 +10094,7 @@ See this site for instructions:
     print u'ERROR: the format of your client secrets file:\n\n%s\n\n is incorrect. Please recreate the file.'
     sys.exit(3)
 
-  if not login_hint:
+  if not login_hint or login_hint.find(u'@') == -1:
     while True:
       login_hint = raw_input(u'\nWhat is your G Suite admin email address? ')
       if login_hint.find(u'@') == -1:
