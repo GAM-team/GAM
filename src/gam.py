@@ -1206,12 +1206,13 @@ def buildGplusGAPIObject(user):
 def doCheckServiceAccount(users):
   for user in users:
     all_scopes_pass = True
-    all_scopes = {}
+    all_scopes = []
     print u'User: %s' % (user)
-    for api, scopes in API_SCOPE_MAPPING.items():
+    for _, scopes in API_SCOPE_MAPPING.items():
       for scope in scopes:
-        all_scopes[scope] = api
-    for scope, api in sorted(all_scopes.items()):
+        if scope not in all_scopes:
+          all_scopes.append(scope)
+    for scope in sorted(all_scopes):
       try:
         credentials = getSvcAcctCredentials(scope, user)
         credentials.refresh(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL]))
@@ -1238,7 +1239,7 @@ and grant Client name:
 
 Access to scopes:
 
-%s\n''' % (user_domain, service_account, ',\n'.join(sorted(all_scopes.keys())))
+%s\n''' % (user_domain, service_account, ',\n'.join(sorted(all_scopes)))
     sys.exit(int(not all_scopes_pass))
 
 def showReport():
