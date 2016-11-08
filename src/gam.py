@@ -1169,10 +1169,10 @@ def getSvcAcctAPIversionHttpService(api):
   except (ValueError, KeyError):
     invalidJSONExit(disc_file)
 
-def buildGAPIServiceObject(api, act_as):
+def buildGAPIServiceObject(api, act_as, use_scopes=None):
   _, http, service = getSvcAcctAPIversionHttpService(api)
   GM_Globals[GM_CURRENT_API_USER] = act_as
-  GM_Globals[GM_CURRENT_API_SCOPES] = API_SCOPE_MAPPING[api]
+  GM_Globals[GM_CURRENT_API_SCOPES] = use_scopes or API_SCOPE_MAPPING[api]
   credentials = getSvcAcctCredentials(GM_Globals[GM_CURRENT_API_SCOPES], act_as)
   try:
     service._http = credentials.authorize(http)
