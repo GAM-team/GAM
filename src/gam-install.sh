@@ -134,8 +134,8 @@ for asset in release['assets']:
 browser_download_url=$(echo "$release_json" | python -c "$pycode" browser_download_url $gamversion)
 name=$(echo "$release_json" | python -c "$pycode" name $gamversion)
 # Temp dir for archive
-temp_archive_dir=$(mktemp -d)
-
+#temp_archive_dir=$(mktemp -d)
+temp_archive_dir=$(mktemp -d 2>/dev/null || mktemp -d -t 'mytmpdir')
 echo_yellow "Downloading file $name from $browser_download_url to $temp_archive_dir."
 # Save archive to temp w/o losing our path
 (cd $temp_archive_dir && curl -O -L $browser_download_url)
