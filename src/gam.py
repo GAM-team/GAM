@@ -6883,17 +6883,22 @@ def doDelProjects():
       except googleapiclient.errors.HttpError:
         pass
 
-def doCreateProject():
-  try:
-    login_hint = sys.argv[3]
-  except IndexError:
-    while True:
-      login_hint = raw_input(u'\nWhat is your G Suite admin email address? ')
-      if login_hint.find(u'@') == -1:
-        print u'Error: that is not a valid email address'
-      else:
-        break
+VALIDEMAIL_PATTERN = re.compile(r'^[^@]+@[^@]+\.[^@]+$')
+
+def getValidateLoginHint(login_hint):
+  if login_hint:
+    login_hint = login_hint.strip()
+    if VALIDEMAIL_PATTERN.match(login_hint):
+      return login_hint
+  while True:
+    login_hint = raw_input(u'\nWhat is your G Suite admin email address? ').strip()
+    if VALIDEMAIL_PATTERN.match(login_hint):
+      return login_hint
+    print u'Error: that is not a valid email address'
+
+def doCreateProject(login_hint=None):
   from oauth2client.contrib.dictionary_storage import DictionaryStorage
+  login_hint = getValidateLoginHint(login_hint)
   project_id = u'gam-project'
   for i in range(3):
     project_id += u'-%s' % ''.join(random.choice(string.digits + string.ascii_lowercase) for i in range(3))
@@ -6964,7 +6969,7 @@ and accept the Terms of Service (ToS). As soon as you've accepted the ToS popup,
       print u' enabling API %s...' % api
       try:
         enable_operation = callGAPI(serveman.services(), u'enable', throw_reasons=[u'failedPrecondition'],
-               serviceName=api, body={u'consumerId': project_name})
+                                    serviceName=api, body={u'consumerId': project_name})
         break
       except googleapiclient.errors.HttpError, e:
         print u'\nThere was an error enabling %s. Please resolve error as described below:' % api
@@ -10094,13 +10099,7 @@ See this site for instructions:
     print u'ERROR: the format of your client secrets file:\n\n%s\n\n is incorrect. Please recreate the file.'
     sys.exit(3)
 
-  if not login_hint or login_hint.find(u'@') == -1:
-    while True:
-      login_hint = raw_input(u'\nWhat is your G Suite admin email address? ')
-      if login_hint.find(u'@') == -1:
-        print u'Error: that is not a valid email address'
-      else:
-        break
+  login_hint = getValidateLoginHint(login_hint)
   num_scopes = len(OAUTH2_SCOPES)
   menu = OAUTH2_MENU % tuple(range(num_scopes))
   selected_scopes = []
@@ -10355,7 +10354,11 @@ def ProcessGAMCommand(args):
       elif argument in [u'guardianinvite', u'inviteguardian', u'guardian']:
         doInviteGuardian()
       elif argument in [u'project', u'apiproject']:
-        doCreateProject()
+        try:
+          login_hint = sys.argv[3]
+        except IndexError:
+          login_hint = None
+        doCreateProject(login_hint)
       else:
         print u'ERROR: %s is not a valid argument for "gam create"' % argument
         sys.exit(2)
