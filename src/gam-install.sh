@@ -129,10 +129,24 @@ if type(release) is list:
     break
 for asset in release['assets']:
   if asset[sys.argv[1]].endswith('$gamfile'):
-    print asset[sys.argv[1]]
+    print(asset[sys.argv[1]])
     break"
-browser_download_url=$(echo "$release_json" | python -c "$pycode" browser_download_url $gamversion)
-name=$(echo "$release_json" | python -c "$pycode" name $gamversion)
+
+pycmd="python"
+$pycmd -V >/dev/null 2>&1
+rc=$?
+if (( $rc != 0 )); then
+  pycmd="python3"
+fi
+$pycmd -V >/dev/null 2>&1
+rc=$?
+if (( $rc != 0 )); then
+  echo_red "ERROR: No version of python installed."
+  exit
+fi
+
+browser_download_url=$(echo "$release_json" | $pycmd -c "$pycode" browser_download_url $gamversion)
+name=$(echo "$release_json" | $pycmd -c "$pycode" name $gamversion)
 # Temp dir for archive
 #temp_archive_dir=$(mktemp -d)
 temp_archive_dir=$(mktemp -d 2>/dev/null || mktemp -d -t 'mytmpdir')
