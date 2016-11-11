@@ -1,3 +1,6 @@
+GAM 4.03
+ - Minor fixes by Jay and Ross. Mostly to new install process.
+
 GAM 4.02
  - "gam create project" command simplifies creation of client_secrets.json and oauth2service.json project files.
  - Automated wizard simplifies GAM setup on Linux and MacOS (coming soon to Windows MSI).
