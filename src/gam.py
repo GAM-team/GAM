@@ -5061,6 +5061,7 @@ def addUpdateSendAs(users, i, addCmd):
     body = {}
   signature = None
   tagReplacements = {}
+  html = False
   while i < len(sys.argv):
     myarg = sys.argv[i].lower()
     if myarg in [u'signature', u'sig']:
@@ -5069,16 +5070,21 @@ def addUpdateSendAs(users, i, addCmd):
       if signature == u'file':
         filename = sys.argv[i]
         i, encoding = getCharSet(i+1)
-        signature = readFile(filename, encoding=encoding)
+        signature = readFile(filename, encoding=encoding).replace(u'\\n', u'<br/>')
+      else:
+        signature = signature.replace(u'\\n', u'<br/>')
+    elif myarg == u'html':
+      html = True
+      i += 1
     else:
       i = getSendAsAttributes(i, myarg, body, tagReplacements, command)
   if signature is not None:
-    if not signature:
-      body[u'signature'] = None
-    elif tagReplacements:
-      body[u'signature'] = _processTags(tagReplacements, signature)
-    else:
-      body[u'signature'] = signature
+    if signature:
+      if tagReplacements:
+        signature = _processTags(tagReplacements, signature)
+      if not html:
+        signature = signature.replace(u'\n', u'<br/>')
+    body[u'signature'] = signature
   kwargs = {u'body': body}
   if not addCmd:
     kwargs[u'sendAsEmail'] = emailAddress
@@ -6107,13 +6113,20 @@ def doSignature(users):
     signature = getString(i, u'String', emptyOK=True).replace(u'\\n', u'<br/>')
     i += 1
   body = {}
+  html = False
   while i < len(sys.argv):
     myarg = sys.argv[i].lower()
-    i = getSendAsAttributes(i, myarg, body, tagReplacements, u'signature')
-  if tagReplacements:
-    body[u'signature'] = _processTags(tagReplacements, signature)
-  else:
-    body[u'signature'] = signature
+    if myarg == u'html':
+      html = True
+      i += 1
+    else:
+      i = getSendAsAttributes(i, myarg, body, tagReplacements, u'signature')
+  if signature:
+    if tagReplacements:
+      signature = _processTags(tagReplacements, signature)
+    if not html:
+      signature = signature.replace(u'\n', u'<br/>')
+  body[u'signature'] = signature
   i = 0
   count = len(users)
   for user in users:
