@@ -611,9 +611,10 @@ def readFile(filename, mode=u'rb', continueOnError=False, displayError=True, enc
           return f.read()
       with codecs.open(os.path.expanduser(filename), mode, encoding) as f:
         content = f.read()
+# codecs does not strip UTF-8 BOM (ef:bb:bf) so we must
         if not content.startswith(codecs.BOM_UTF8):
           return content
-        return content.replace(codecs.BOM_UTF8, u'', 1)
+        return content[3:]
     return unicode(sys.stdin.read())
   except IOError as e:
     if continueOnError:
@@ -621,7 +622,7 @@ def readFile(filename, mode=u'rb', continueOnError=False, displayError=True, enc
         stderrWarningMsg(e)
       return None
     systemErrorExit(6, e)
-  except LookupError as e:
+  except (LookupError, UnicodeDecodeError, UnicodeError) as e:
     print u'ERROR: %s' % e
     sys.exit(2)
 #
