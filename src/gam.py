@@ -5018,6 +5018,15 @@ def _processTags(tagReplacements, message):
     message = re.sub(match.group(0), tagReplacements.get(match.group(1), u''), message)
   return message
 
+def _processSignature(tagReplacements, signature, html):
+  if signature:
+    signature = signature.replace(u'\r', u'').replace(u'\\n', u'<br/>')
+    if tagReplacements:
+      signature = _processTags(tagReplacements, signature)
+    if not html:
+      signature = signature.replace(u'\n', u'<br/>')
+  return signature
+
 def getSendAsAttributes(i, myarg, body, tagReplacements, command):
   if myarg == u'replace':
     matchTag = getString(i+1, u'Tag')
@@ -5067,24 +5076,17 @@ def addUpdateSendAs(users, i, addCmd):
     if myarg in [u'signature', u'sig']:
       signature = sys.argv[i+1]
       i += 2
-      if signature == u'file':
+      if signature.lower() == u'file':
         filename = sys.argv[i]
         i, encoding = getCharSet(i+1)
-        signature = readFile(filename, encoding=encoding).replace(u'\\n', u'<br/>')
-      else:
-        signature = signature.replace(u'\\n', u'<br/>')
+        signature = readFile(filename, encoding=encoding)
     elif myarg == u'html':
       html = True
       i += 1
     else:
       i = getSendAsAttributes(i, myarg, body, tagReplacements, command)
   if signature is not None:
-    if signature:
-      if tagReplacements:
-        signature = _processTags(tagReplacements, signature)
-      if not html:
-        signature = signature.replace(u'\n', u'<br/>')
-    body[u'signature'] = signature
+    body[u'signature'] = _processSignature(tagReplacements, signature, html)
   kwargs = {u'body': body}
   if not addCmd:
     kwargs[u'sendAsEmail'] = emailAddress
@@ -6108,9 +6110,9 @@ def doSignature(users):
   if sys.argv[i].lower() == u'file':
     filename = sys.argv[i+1]
     i, encoding = getCharSet(i+2)
-    signature = readFile(filename, encoding=encoding).replace(u'\\n', u'<br/>')
+    signature = readFile(filename, encoding=encoding)
   else:
-    signature = getString(i, u'String', emptyOK=True).replace(u'\\n', u'<br/>')
+    signature = getString(i, u'String', emptyOK=True)
     i += 1
   body = {}
   html = False
@@ -6121,12 +6123,7 @@ def doSignature(users):
       i += 1
     else:
       i = getSendAsAttributes(i, myarg, body, tagReplacements, u'signature')
-  if signature:
-    if tagReplacements:
-      signature = _processTags(tagReplacements, signature)
-    if not html:
-      signature = signature.replace(u'\n', u'<br/>')
-  body[u'signature'] = signature
+  body[u'signature'] = _processSignature(tagReplacements, signature, html)
   i = 0
   count = len(users)
   for user in users:
@@ -6213,9 +6210,9 @@ def doVacation(users):
         sys.exit(2)
     if message:
       if responseBodyType == u'responseBodyHtml':
-        message = message.replace(u'\\n', u'<br/>')
+        message = message.replace(u'\r', u'').replace(u'\\n', u'<br/>')
       else:
-        message = message.replace(u'\\n', u'\n')
+        message = message.replace(u'\r', u'').replace(u'\\n', u'\n')
       if tagReplacements:
         message = _processTags(tagReplacements, message)
       body[responseBodyType] = message
