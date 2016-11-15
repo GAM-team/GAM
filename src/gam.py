@@ -9125,6 +9125,8 @@ def doPrintGroups():
     gsfields = u','.join(set(gsfieldsList))
   elif getSettings:
     gsfields = None
+  if getSettings:
+    gs = buildGAPIObject(u'groupssettings')
   roles = u','.join(sorted(set(roles)))
   sys.stderr.write(u"Retrieving All Groups for Google Apps account (may take some time on a large account)...\n")
   page_message = u'Got %%num_items%% groups: %%first_item%% - %%last_item%%\n'
@@ -9185,7 +9187,6 @@ def doPrintGroups():
         group[u'Owners'] = memberDelimiter.join(allOwners)
     if getSettings:
       sys.stderr.write(u" Retrieving Settings for group %s (%s/%s)...\r\n" % (groupEmail, i, count))
-      gs = buildGAPIObject(u'groupssettings')
       settings = callGAPI(gs.groups(), u'get',
                           retry_reasons=[u'serviceLimit'],
                           groupUniqueId=groupEmail, fields=gsfields)
