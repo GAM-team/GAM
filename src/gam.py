@@ -1078,7 +1078,7 @@ def getOauth2TxtStorageCredentials():
   storage = oauth2client.file.Storage(GC_Values[GC_OAUTH2_TXT])
   try:
     return (storage, storage.get())
-  except KeyError:
+  except (KeyError, ValueError):
     return (storage, None)
 
 def getClientAPIversionHttpService(api):
