@@ -7019,6 +7019,9 @@ def doCreateUser():
     print u' Changing admin status for %s to %s' % (body[u'primaryEmail'], admin_body[u'status'])
     callGAPI(cd.users(), u'makeAdmin', userKey=body[u'primaryEmail'], body=admin_body)
 
+def GroupIsAbuseOrPostmaster(emailAddr):
+  return emailAddr.startswith(u'abuse@') or emailAddr.startswith(u'postmaster@')
+
 def doCreateGroup():
   cd = buildGAPIObject(u'directory')
   body = {u'email': sys.argv[3]}
@@ -7077,7 +7080,7 @@ def doCreateGroup():
     body[u'name'] = body[u'email']
   print u"Creating group %s" % body[u'email']
   callGAPI(cd.groups(), u'insert', body=body, fields=u'email')
-  if gs:
+  if gs and not GroupIsAbuseOrPostmaster(body[u'email']):
     callGAPI(gs.groups(), u'patch', retry_reasons=[u'serviceLimit'], groupUniqueId=body[u'email'], body=gs_body)
 
 def doCreateAlias():
@@ -7375,7 +7378,8 @@ def doUpdateGroup():
     if gs:
       if use_cd_api:
         group = cd_result[u'email']
-      callGAPI(gs.groups(), u'patch', retry_reasons=[u'serviceLimit'], groupUniqueId=group, body=gs_body)
+      if not GroupIsAbuseOrPostmaster(group):
+        callGAPI(gs.groups(), u'patch', retry_reasons=[u'serviceLimit'], groupUniqueId=group, body=gs_body)
     print u'updated group %s' % group
 
 def doUpdateAlias():
@@ -7860,9 +7864,6 @@ def doGetUserInfo(user_email=None):
       except googleapiclient.errors.HttpError:
         continue
       print u' %s' % result[u'skuId']
-
-def GroupIsAbuseOrPostmaster(emailAddr):
-  return emailAddr.startswith(u'abuse@') or emailAddr.startswith(u'postmaster@')
 
 def doGetGroupInfo(group_name=None):
   cd = buildGAPIObject(u'directory')
