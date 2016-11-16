@@ -9919,7 +9919,7 @@ def OAuthInfo():
     print u'Google Apps Admin: Unknown'
 
 def doDeleteOAuth():
-  storage, credentials = getOauth2TxtStorageCredentials()
+  _, credentials = getOauth2TxtStorageCredentials()
   if credentials is None or credentials.invalid:
     os.remove(GC_Values[GC_OAUTH2_TXT])
     return
