@@ -89,7 +89,6 @@ GAM_INFO = u'GAM {0} - {1} / {2} / Python {3}.{4}.{5} {6} / {7} {8} /'.format(__
                                                                               platform.platform(), platform.machine())
 GAM_RELEASES = u'https://github.com/jay0lee/GAM/releases'
 GAM_WIKI = u'https://github.com/jay0lee/GAM/wiki'
-GAM_WIKI_CREATE_CLIENT_SECRETS = GAM_WIKI+u'/CreatingClientSecretsFile'
 GAM_ALL_RELEASES = u'https://api.github.com/repos/jay0lee/GAM/releases'
 GAM_LATEST_RELEASE = GAM_ALL_RELEASES+u'/latest'
 
@@ -334,9 +333,9 @@ MESSAGE_NO_TRANSFER_LACK_OF_DISK_SPACE = u'Cowardly refusing to perform migratio
 MESSAGE_REQUEST_COMPLETED_NO_FILES = u'Request completed but no results/files were returned, try requesting again'
 MESSAGE_REQUEST_NOT_COMPLETE = u'Request needs to be completed before downloading, current status is: {0}'
 MESSAGE_RESULTS_TOO_LARGE_FOR_GOOGLE_SPREADSHEET = u'Results are too large for Google Spreadsheets. Uploading as a regular CSV file.'
-MESSAGE_SERVICE_NOT_APPLICABLE = u'Service not applicable for this address: {0}'
-MESSAGE_WIKI_INSTRUCTIONS_OAUTH2SERVICE_JSON = u'Please follow the instructions at this site to setup a Service Account.'
-MESSAGE_OAUTH2SERVICE_JSON_INVALID = u'The file {0} is missing required keys (client_email, client_id or private_key).'
+MESSAGE_SERVICE_NOT_APPLICABLE = u'Service not applicable for this address: {0}. Please make sure service is enabled for user and run\n\ngam user <user> check serviceaccount\n\nfor further instructions'
+MESSAGE_INSTRUCTIONS_OAUTH2SERVICE_JSON = u'Please run\n\ngam create project\ngam user <user> check serviceaccount\n\nto create and configure a service account.'
+MESSAGE_OAUTH2SERVICE_JSON_INVALID = u'The file {0} is missing required keys (client_email, client_id or private_key). Please remove it and recreate with the commands:\n\ngam create project\ngam user <user> check serviceaccount'
 # oauth errors
 OAUTH2_TOKEN_ERRORS = [u'access_denied', u'unauthorized_client: Unauthorized client or scope in request.', u'access_denied: Requested client not authorized.',
                        u'invalid_grant: Not a valid email.', u'invalid_grant: Invalid email or User ID', u'invalid_grant: Bad Request',
@@ -864,8 +863,7 @@ def getSvcAcctCredentials(scopes, act_as):
     if not GM_Globals[GM_OAUTH2SERVICE_JSON_DATA]:
       json_string = readFile(GC_Values[GC_OAUTH2SERVICE_JSON], continueOnError=True, displayError=True)
       if not json_string:
-        printLine(MESSAGE_WIKI_INSTRUCTIONS_OAUTH2SERVICE_JSON)
-        printLine(GAM_WIKI_CREATE_CLIENT_SECRETS)
+        printLine(MESSAGE_INSTRUCTIONS_OAUTH2SERVICE_JSON)
         systemErrorExit(6, None)
       GM_Globals[GM_OAUTH2SERVICE_JSON_DATA] = json.loads(json_string)
     credentials = oauth2client.service_account.ServiceAccountCredentials.from_json_keyfile_dict(GM_Globals[GM_OAUTH2SERVICE_JSON_DATA], scopes)
@@ -875,8 +873,7 @@ def getSvcAcctCredentials(scopes, act_as):
     GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID] = serialization_data[u'client_id']
     return credentials
   except (ValueError, KeyError):
-    printLine(MESSAGE_WIKI_INSTRUCTIONS_OAUTH2SERVICE_JSON)
-    printLine(GAM_WIKI_CREATE_CLIENT_SECRETS)
+    printLine(MESSAGE_INSTRUCTIONS_OAUTH2SERVICE_JSON)
     invalidJSONExit(GC_Values[GC_OAUTH2SERVICE_JSON])
 
 def waitOnFailure(n, retries, errMsg):
@@ -7022,6 +7019,9 @@ def doCreateUser():
     print u' Changing admin status for %s to %s' % (body[u'primaryEmail'], admin_body[u'status'])
     callGAPI(cd.users(), u'makeAdmin', userKey=body[u'primaryEmail'], body=admin_body)
 
+def GroupIsAbuseOrPostmaster(emailAddr):
+  return emailAddr.startswith(u'abuse@') or emailAddr.startswith(u'postmaster@')
+
 def doCreateGroup():
   cd = buildGAPIObject(u'directory')
   body = {u'email': sys.argv[3]}
@@ -7080,7 +7080,7 @@ def doCreateGroup():
     body[u'name'] = body[u'email']
   print u"Creating group %s" % body[u'email']
   callGAPI(cd.groups(), u'insert', body=body, fields=u'email')
-  if gs:
+  if gs and not GroupIsAbuseOrPostmaster(body[u'email']):
     callGAPI(gs.groups(), u'patch', retry_reasons=[u'serviceLimit'], groupUniqueId=body[u'email'], body=gs_body)
 
 def doCreateAlias():
@@ -7378,7 +7378,8 @@ def doUpdateGroup():
     if gs:
       if use_cd_api:
         group = cd_result[u'email']
-      callGAPI(gs.groups(), u'patch', retry_reasons=[u'serviceLimit'], groupUniqueId=group, body=gs_body)
+      if not GroupIsAbuseOrPostmaster(group):
+        callGAPI(gs.groups(), u'patch', retry_reasons=[u'serviceLimit'], groupUniqueId=group, body=gs_body)
     print u'updated group %s' % group
 
 def doUpdateAlias():
@@ -7897,11 +7898,12 @@ def doGetGroupInfo(group_name=None):
   elif group_name.find(u'@') == -1:
     group_name = group_name+u'@'+GC_Values[GC_DOMAIN]
   basic_info = callGAPI(cd.groups(), u'get', groupKey=group_name)
-  try:
-    settings = callGAPI(gs.groups(), u'get', retry_reasons=[u'serviceLimit'], throw_reasons=u'authError',
-                        groupUniqueId=basic_info[u'email']) # Use email address retrieved from cd since GS API doesn't support uid
-  except googleapiclient.errors.HttpError:
-    pass
+  if not GroupIsAbuseOrPostmaster(basic_info[u'email']):
+    try:
+      settings = callGAPI(gs.groups(), u'get', retry_reasons=[u'serviceLimit'], throw_reasons=u'authError',
+                          groupUniqueId=basic_info[u'email']) # Use email address retrieved from cd since GS API doesn't support uid
+    except googleapiclient.errors.HttpError:
+      pass
   print u''
   print u'Group Settings:'
   for key, value in basic_info.items():
@@ -9185,7 +9187,7 @@ def doPrintGroups():
         group[u'Managers'] = memberDelimiter.join(allManagers)
       if owners:
         group[u'Owners'] = memberDelimiter.join(allOwners)
-    if getSettings:
+    if getSettings and not GroupIsAbuseOrPostmaster(groupEmail):
       sys.stderr.write(u" Retrieving Settings for group %s (%s/%s)...\r\n" % (groupEmail, i, count))
       settings = callGAPI(gs.groups(), u'get',
                           retry_reasons=[u'serviceLimit'],
@@ -10057,18 +10059,10 @@ def doRequestOAuth(login_hint=None):
     scopes.insert(0, u'email') # Email Display Scope, always included
     return (True, u'')
 
-  MISSING_CLIENT_SECRETS_MESSAGE = u"""Please configure OAuth 2.0
+  MISSING_CLIENT_SECRETS_MESSAGE = u'''To use GAM you need to create an API project. Please run:
 
-To make GAM run you will need to populate the {0} file found at:
-
-{1}
-
-with information from the APIs Console <https://console.developers.google.com>.
-
-See this site for instructions:
-{2}
-
-""".format(FN_CLIENT_SECRETS_JSON, GC_Values[GC_CLIENT_SECRETS_JSON], GAM_WIKI_CREATE_CLIENT_SECRETS)
+gam create project
+'''
 
   cs_data = readFile(GC_Values[GC_CLIENT_SECRETS_JSON], mode=u'rb', continueOnError=True, displayError=True, encoding=None)
   if not cs_data:
