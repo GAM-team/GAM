@@ -1074,9 +1074,15 @@ def readDiscoveryFile(api_version):
   except ValueError:
     invalidJSONExit(disc_file)
 
-def getClientAPIversionHttpService(api):
+def getOauth2TxtStorageCredentials():
   storage = oauth2client.file.Storage(GC_Values[GC_OAUTH2_TXT])
-  credentials = storage.get()
+  try:
+    return (storage, storage.get())
+  except KeyError:
+    return (storage, None)
+
+def getClientAPIversionHttpService(api):
+  storage, credentials = getOauth2TxtStorageCredentials()
   if not credentials or credentials.invalid:
     doRequestOAuth()
     credentials = storage.get()
@@ -7648,8 +7654,7 @@ def doGetUserInfo(user_email=None):
       user_email = sys.argv[3]
       i = 4
     else:
-      storage = oauth2client.file.Storage(GC_Values[GC_OAUTH2_TXT])
-      credentials = storage.get()
+      storage, credentials = getOauth2TxtStorageCredentials()
       if credentials is None or credentials.invalid:
         doRequestOAuth()
         credentials = storage.get()
@@ -9888,8 +9893,7 @@ def OAuthInfo():
   if len(sys.argv) > 3:
     access_token = sys.argv[3]
   else:
-    storage = oauth2client.file.Storage(GC_Values[GC_OAUTH2_TXT])
-    credentials = storage.get()
+    storage, credentials = getOauth2TxtStorageCredentials()
     if credentials is None or credentials.invalid:
       doRequestOAuth()
       credentials = storage.get()
@@ -9915,13 +9919,14 @@ def OAuthInfo():
     print u'Google Apps Admin: Unknown'
 
 def doDeleteOAuth():
-  storage = oauth2client.file.Storage(GC_Values[GC_OAUTH2_TXT])
-  credentials = storage.get()
+  storage, credentials = getOauth2TxtStorageCredentials()
+  if credentials is None or credentials.invalid:
+    os.remove(GC_Values[GC_OAUTH2_TXT])
+    return
   try:
     credentials.revoke_uri = oauth2client.GOOGLE_REVOKE_URI
   except AttributeError:
     systemErrorExit(1, u'Authorization doesn\'t exist')
-  http = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL])
   sys.stderr.write(u'This OAuth token will self-destruct in 3...')
   time.sleep(1)
   sys.stderr.write(u'2...')
@@ -9930,7 +9935,7 @@ def doDeleteOAuth():
   time.sleep(1)
   sys.stderr.write(u'boom!\n')
   try:
-    credentials.revoke(http)
+    credentials.revoke(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL]))
   except oauth2client.client.TokenRevokeError as e:
     stderrErrorMsg(e.message)
     os.remove(GC_Values[GC_OAUTH2_TXT])
@@ -10144,11 +10149,10 @@ gam create project
   flow = oauth2client.client.OAuth2WebServerFlow(client_id=client_id,
                                                  client_secret=client_secret, scope=scopes, redirect_uri=oauth2client.client.OOB_CALLBACK_URN,
                                                  user_agent=GAM_INFO, access_type=u'offline', response_type=u'code', login_hint=login_hint)
-  storage = oauth2client.file.Storage(GC_Values[GC_OAUTH2_TXT])
-  credentials = storage.get()
-  flags = cmd_flags(noLocalWebserver=GC_Values[GC_NO_BROWSER])
+  storage, credentials = getOauth2TxtStorageCredentials()
   if credentials is None or credentials.invalid:
     http = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL])
+    flags = cmd_flags(noLocalWebserver=GC_Values[GC_NO_BROWSER])
     try:
       credentials = oauth2client.tools.run_flow(flow=flow, storage=storage, flags=flags, http=http)
     except httplib2.CertificateValidationUnsupported:
