@@ -7019,6 +7019,9 @@ def doCreateUser():
     print u' Changing admin status for %s to %s' % (body[u'primaryEmail'], admin_body[u'status'])
     callGAPI(cd.users(), u'makeAdmin', userKey=body[u'primaryEmail'], body=admin_body)
 
+def GroupIsAbuseOrPostmaster(emailAddr):
+  return emailAddr.startswith(u'abuse@') or emailAddr.startswith(u'postmaster@')
+
 def doCreateGroup():
   cd = buildGAPIObject(u'directory')
   body = {u'email': sys.argv[3]}
@@ -7077,7 +7080,7 @@ def doCreateGroup():
     body[u'name'] = body[u'email']
   print u"Creating group %s" % body[u'email']
   callGAPI(cd.groups(), u'insert', body=body, fields=u'email')
-  if gs:
+  if gs and not GroupIsAbuseOrPostmaster(body[u'email']):
     callGAPI(gs.groups(), u'patch', retry_reasons=[u'serviceLimit'], groupUniqueId=body[u'email'], body=gs_body)
 
 def doCreateAlias():
@@ -7375,7 +7378,8 @@ def doUpdateGroup():
     if gs:
       if use_cd_api:
         group = cd_result[u'email']
-      callGAPI(gs.groups(), u'patch', retry_reasons=[u'serviceLimit'], groupUniqueId=group, body=gs_body)
+      if not GroupIsAbuseOrPostmaster(group):
+        callGAPI(gs.groups(), u'patch', retry_reasons=[u'serviceLimit'], groupUniqueId=group, body=gs_body)
     print u'updated group %s' % group
 
 def doUpdateAlias():
@@ -7894,11 +7898,12 @@ def doGetGroupInfo(group_name=None):
   elif group_name.find(u'@') == -1:
     group_name = group_name+u'@'+GC_Values[GC_DOMAIN]
   basic_info = callGAPI(cd.groups(), u'get', groupKey=group_name)
-  try:
-    settings = callGAPI(gs.groups(), u'get', retry_reasons=[u'serviceLimit'], throw_reasons=u'authError',
-                        groupUniqueId=basic_info[u'email']) # Use email address retrieved from cd since GS API doesn't support uid
-  except googleapiclient.errors.HttpError:
-    pass
+  if not GroupIsAbuseOrPostmaster(basic_info[u'email']):
+    try:
+      settings = callGAPI(gs.groups(), u'get', retry_reasons=[u'serviceLimit'], throw_reasons=u'authError',
+                          groupUniqueId=basic_info[u'email']) # Use email address retrieved from cd since GS API doesn't support uid
+    except googleapiclient.errors.HttpError:
+      pass
   print u''
   print u'Group Settings:'
   for key, value in basic_info.items():
@@ -9182,7 +9187,7 @@ def doPrintGroups():
         group[u'Managers'] = memberDelimiter.join(allManagers)
       if owners:
         group[u'Owners'] = memberDelimiter.join(allOwners)
-    if getSettings:
+    if getSettings and not GroupIsAbuseOrPostmaster(groupEmail):
       sys.stderr.write(u" Retrieving Settings for group %s (%s/%s)...\r\n" % (groupEmail, i, count))
       settings = callGAPI(gs.groups(), u'get',
                           retry_reasons=[u'serviceLimit'],
