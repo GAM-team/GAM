@@ -1074,9 +1074,15 @@ def readDiscoveryFile(api_version):
   except ValueError:
     invalidJSONExit(disc_file)
 
-def getClientAPIversionHttpService(api):
+def getOauth2TxtStorageCredentials():
   storage = oauth2client.file.Storage(GC_Values[GC_OAUTH2_TXT])
-  credentials = storage.get()
+  try:
+    return (storage, storage.get())
+  except (KeyError, ValueError):
+    return (storage, None)
+
+def getClientAPIversionHttpService(api):
+  storage, credentials = getOauth2TxtStorageCredentials()
   if not credentials or credentials.invalid:
     doRequestOAuth()
     credentials = storage.get()
@@ -5621,7 +5627,7 @@ def _getLabelId(labels, labelName):
   for label in labels[u'labels']:
     if label[u'id'] == labelName or label[u'name'] == labelName:
       return label[u'id']
-  return labelName
+  return None
 
 def _getLabelName(labels, labelId):
   for label in labels[u'labels']:
@@ -5804,7 +5810,15 @@ def addFilter(users, i):
     if addLabelName:
       if not addLabelIds:
         body[u'action'][u'addLabelIds'] = []
-      body[u'action'][u'addLabelIds'].append(_getLabelId(labels, addLabelName))
+      addLabelId = _getLabelId(labels, addLabelName)
+      if not addLabelId:
+        result = callGAPI(gmail.users().labels(), u'create',
+                          soft_errors=True,
+                          userId=u'me', body={u'name': addLabelName}, fields=u'id')
+        if not result:
+          continue
+        addLabelId = result[u'id']
+      body[u'action'][u'addLabelIds'].append(addLabelId)
     print u"Adding filter for %s (%s/%s)" % (user, i, count)
     result = callGAPI(gmail.users().settings().filters(), u'create',
                       soft_errors=True,
@@ -7648,8 +7662,7 @@ def doGetUserInfo(user_email=None):
       user_email = sys.argv[3]
       i = 4
     else:
-      storage = oauth2client.file.Storage(GC_Values[GC_OAUTH2_TXT])
-      credentials = storage.get()
+      storage, credentials = getOauth2TxtStorageCredentials()
       if credentials is None or credentials.invalid:
         doRequestOAuth()
         credentials = storage.get()
@@ -9189,18 +9202,22 @@ def doPrintGroups():
         group[u'Owners'] = memberDelimiter.join(allOwners)
     if getSettings and not GroupIsAbuseOrPostmaster(groupEmail):
       sys.stderr.write(u" Retrieving Settings for group %s (%s/%s)...\r\n" % (groupEmail, i, count))
-      settings = callGAPI(gs.groups(), u'get',
-                          retry_reasons=[u'serviceLimit'],
-                          groupUniqueId=groupEmail, fields=gsfields)
-      for key in settings:
-        if key in [u'email', u'name', u'description', u'kind', u'etag']:
-          continue
-        setting_value = settings[key]
-        if setting_value is None:
-          setting_value = u''
-        if key not in titles:
-          addTitleToCSVfile(key, titles)
-        group[key] = setting_value
+      try:
+        settings = callGAPI(gs.groups(), u'get',
+                            retry_reasons=[u'serviceLimit'],
+                            throw_reasons=[u'invalid'],
+                            groupUniqueId=groupEmail, fields=gsfields)
+        for key in settings:
+          if key in [u'email', u'name', u'description', u'kind', u'etag']:
+            continue
+          setting_value = settings[key]
+          if setting_value is None:
+            setting_value = u''
+          if key not in titles:
+            addTitleToCSVfile(key, titles)
+          group[key] = setting_value
+      except googleapiclient.errors.HttpError:
+        sys.stderr.write(u" Settings unavailable for group %s (%s/%s)...\r\n" % (groupEmail, i, count))
     csvRows.append(group)
   writeCSVfile(csvRows, titles, u'Groups', todrive)
 
@@ -9884,8 +9901,7 @@ def OAuthInfo():
   if len(sys.argv) > 3:
     access_token = sys.argv[3]
   else:
-    storage = oauth2client.file.Storage(GC_Values[GC_OAUTH2_TXT])
-    credentials = storage.get()
+    storage, credentials = getOauth2TxtStorageCredentials()
     if credentials is None or credentials.invalid:
       doRequestOAuth()
       credentials = storage.get()
@@ -9911,13 +9927,14 @@ def OAuthInfo():
     print u'Google Apps Admin: Unknown'
 
 def doDeleteOAuth():
-  storage = oauth2client.file.Storage(GC_Values[GC_OAUTH2_TXT])
-  credentials = storage.get()
+  _, credentials = getOauth2TxtStorageCredentials()
+  if credentials is None or credentials.invalid:
+    os.remove(GC_Values[GC_OAUTH2_TXT])
+    return
   try:
     credentials.revoke_uri = oauth2client.GOOGLE_REVOKE_URI
   except AttributeError:
     systemErrorExit(1, u'Authorization doesn\'t exist')
-  http = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL])
   sys.stderr.write(u'This OAuth token will self-destruct in 3...')
   time.sleep(1)
   sys.stderr.write(u'2...')
@@ -9926,7 +9943,7 @@ def doDeleteOAuth():
   time.sleep(1)
   sys.stderr.write(u'boom!\n')
   try:
-    credentials.revoke(http)
+    credentials.revoke(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL]))
   except oauth2client.client.TokenRevokeError as e:
     stderrErrorMsg(e.message)
     os.remove(GC_Values[GC_OAUTH2_TXT])
@@ -10140,11 +10157,10 @@ gam create project
   flow = oauth2client.client.OAuth2WebServerFlow(client_id=client_id,
                                                  client_secret=client_secret, scope=scopes, redirect_uri=oauth2client.client.OOB_CALLBACK_URN,
                                                  user_agent=GAM_INFO, access_type=u'offline', response_type=u'code', login_hint=login_hint)
-  storage = oauth2client.file.Storage(GC_Values[GC_OAUTH2_TXT])
-  credentials = storage.get()
-  flags = cmd_flags(noLocalWebserver=GC_Values[GC_NO_BROWSER])
+  storage, credentials = getOauth2TxtStorageCredentials()
   if credentials is None or credentials.invalid:
     http = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL])
+    flags = cmd_flags(noLocalWebserver=GC_Values[GC_NO_BROWSER])
     try:
       credentials = oauth2client.tools.run_flow(flow=flow, storage=storage, flags=flags, http=http)
     except httplib2.CertificateValidationUnsupported:
