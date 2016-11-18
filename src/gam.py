@@ -44,7 +44,6 @@ import random
 import re
 import socket
 import StringIO
-import subprocess
 
 import googleapiclient
 import googleapiclient.discovery
@@ -240,7 +239,7 @@ GC_Defaults = {
   GC_NO_CACHE: FALSE,
   GC_NO_UPDATE_CHECK: FALSE,
   GC_NO_VERIFY_SSL: FALSE,
-  GC_NUM_THREADS: 5,
+  GC_NUM_THREADS: 25,
   GC_OAUTH2_TXT: FN_OAUTH2_TXT,
   GC_OAUTH2SERVICE_JSON: FN_OAUTH2SERVICE_JSON,
   GC_SECTION: u'',
@@ -10163,7 +10162,7 @@ gam create project
 def batch_worker():
   while True:
     item = GM_Globals[GM_BATCH_QUEUE].get()
-    subprocess.call(item, stderr=subprocess.STDOUT)
+    ProcessGAMCommand(item) 
     GM_Globals[GM_BATCH_QUEUE].task_done()
 
 def run_batch(items):
@@ -10171,9 +10170,7 @@ def run_batch(items):
   import threading
   total_items = len(items)
   current_item = 0
-  python_cmd = [sys.executable.lower(),]
-  if not getattr(sys, u'frozen', False): # we're not frozen
-    python_cmd.append(os.path.realpath(sys.argv[0]))
+  gam_cmd = [u'gam']
   num_worker_threads = min(total_items, GC_Values[GC_NUM_THREADS])
   GM_Globals[GM_BATCH_QUEUE] = Queue.Queue(maxsize=num_worker_threads) # GM_Globals[GM_BATCH_QUEUE].put() gets blocked when trying to create more items than there are workers
   sys.stderr.write(u'starting %s worker threads...\n' % num_worker_threads)
@@ -10190,7 +10187,7 @@ def run_batch(items):
       GM_Globals[GM_BATCH_QUEUE].join()
       sys.stderr.write(u'done with commit-batch\n')
       continue
-    GM_Globals[GM_BATCH_QUEUE].put(python_cmd+item)
+    GM_Globals[GM_BATCH_QUEUE].put(gam_cmd+item)
   GM_Globals[GM_BATCH_QUEUE].join()
 #
 # Process command line arguments, find substitutions
@@ -10253,6 +10250,16 @@ def processSubFields(GAM_argv, row, subFields):
     argv[GAM_argvI] += oargv[pos:]
     argv[GAM_argvI] = argv[GAM_argvI].encode(GM_Globals[GM_SYS_ENCODING])
   return argv
+
+def runCmdForUsers(cmd, users, default_to_batch=False, **kwargs):
+  if default_to_batch and len(users) > 1:
+    items = []
+    for user in users:
+      items.append([u'user', user] + sys.argv[3:])
+    run_batch(items)
+    sys.exit(0)
+  else:
+    cmd(users, **kwargs)
 
 # Process GAM command
 def ProcessGAMCommand(args):
@@ -10755,7 +10762,8 @@ def ProcessGAMCommand(args):
       elif delWhat == u'label':
         doDeleteLabel(users)
       elif delWhat in [u'message', u'messages']:
-        doProcessMessages(users, u'delete')
+        #doProcessMessages(users, u'delete')
+        runCmdForUsers(doProcessMessages, users, default_to_batch=True, function=u'delete')
       elif delWhat == u'photo':
         deletePhoto(users)
       elif delWhat in [u'license', u'licence']:
@@ -10876,7 +10884,8 @@ def ProcessGAMCommand(args):
     elif command == u'profile':
       doProfile(users)
     elif command == u'imap':
-      doImap(users)
+      #doImap(users)
+      runCmdForUsers(doImap, users, default_to_batch=True)
     elif command in [u'pop', u'pop3']:
       doPop(users)
     elif command == u'sendas':
