@@ -9198,11 +9198,11 @@ def doPrintGroups():
         group[u'Owners'] = memberDelimiter.join(allOwners)
     if getSettings and not GroupIsAbuseOrPostmaster(groupEmail):
       sys.stderr.write(u" Retrieving Settings for group %s (%s/%s)...\r\n" % (groupEmail, i, count))
-      try:
-        settings = callGAPI(gs.groups(), u'get',
-                            retry_reasons=[u'serviceLimit'],
-                            throw_reasons=[u'invalid'],
-                            groupUniqueId=groupEmail, fields=gsfields)
+      settings = callGAPI(gs.groups(), u'get',
+                          soft_errors=True,
+                          retry_reasons=[u'serviceLimit', u'invalid'],
+                          groupUniqueId=groupEmail, fields=gsfields)
+      if settings:
         for key in settings:
           if key in [u'email', u'name', u'description', u'kind', u'etag']:
             continue
@@ -9212,7 +9212,7 @@ def doPrintGroups():
           if key not in titles:
             addTitleToCSVfile(key, titles)
           group[key] = setting_value
-      except googleapiclient.errors.HttpError:
+      else:
         sys.stderr.write(u" Settings unavailable for group %s (%s/%s)...\r\n" % (groupEmail, i, count))
     csvRows.append(group)
   writeCSVfile(csvRows, titles, u'Groups', todrive)
