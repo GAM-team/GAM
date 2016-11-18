@@ -5623,7 +5623,7 @@ def _getLabelId(labels, labelName):
   for label in labels[u'labels']:
     if label[u'id'] == labelName or label[u'name'] == labelName:
       return label[u'id']
-  return labelName
+  return None
 
 def _getLabelName(labels, labelId):
   for label in labels[u'labels']:
@@ -5806,7 +5806,15 @@ def addFilter(users, i):
     if addLabelName:
       if not addLabelIds:
         body[u'action'][u'addLabelIds'] = []
-      body[u'action'][u'addLabelIds'].append(_getLabelId(labels, addLabelName))
+      addLabelId = _getLabelId(labels, addLabelName)
+      if not addLabelId:
+        result = callGAPI(gmail.users().labels(), u'create',
+                          soft_errors=True,
+                          userId=u'me', body={u'name': addLabelName}, fields=u'id')
+        if not result:
+          continue
+        addLabelId = result[u'id']
+      body[u'action'][u'addLabelIds'].append(addLabelId)
     print u"Adding filter for %s (%s/%s)" % (user, i, count)
     result = callGAPI(gmail.users().settings().filters(), u'create',
                       soft_errors=True,
