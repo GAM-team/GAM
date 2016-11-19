@@ -1567,9 +1567,9 @@ def doSyncCourseParticipants():
   to_remove = list(set(current_course_users) - set(diff_against_users))
   gam_commands = []
   for add_email in to_add:
-    gam_commands.append([u'course', courseId, u'add', participant_type, add_email])
+    gam_commands.append([u'gam', u'course', courseId, u'add', participant_type, add_email])
   for remove_email in to_remove:
-    gam_commands.append([u'course', courseId, u'remove', participant_type, remove_email])
+    gam_commands.append([u'gam', u'course', courseId, u'remove', participant_type, remove_email])
   run_batch(gam_commands)
 
 def doDelCourseParticipant():
@@ -7273,9 +7273,9 @@ def doUpdateGroup():
       sys.stderr.write(u'Need to add %s %s and remove %s.\n' % (len(to_add), role, len(to_remove)))
       items = []
       for user_email in to_add:
-        items.append([u'update', u'group', group, u'add', role, user_email])
+        items.append([u'gam', u'update', u'group', group, u'add', role, user_email])
       for user_email in to_remove:
-        items.append([u'update', u'group', group, u'remove', user_email])
+        items.append([u'gam', u'update', u'group', group, u'remove', user_email])
       run_batch(items)
     elif myarg in [u'delete', u'remove']:
       i = 5
@@ -10262,7 +10262,7 @@ def runCmdForUsers(cmd, users, default_to_batch=False, **kwargs):
   if default_to_batch and len(users) > 1:
     items = []
     for user in users:
-      items.append([u'user', user] + sys.argv[3:])
+      items.append([u'gam', u'user', user] + sys.argv[3:])
     run_batch(items)
     sys.exit(0)
   else:
@@ -10641,15 +10641,8 @@ def ProcessGAMCommand(args):
       for user in users:
         print user
       sys.exit(0)
-    try:
-      if (GC_Values[GC_AUTO_BATCH_MIN] > 0) and (len(users) > GC_Values[GC_AUTO_BATCH_MIN]):
-        items = []
-        for user in users:
-          items.append([u'user', user] + sys.argv[3:])
-        run_batch(items)
-        sys.exit(0)
-    except TypeError:
-      pass
+    if (GC_Values[GC_AUTO_BATCH_MIN] > 0) and (len(users) > GC_Values[GC_AUTO_BATCH_MIN]):
+      runCmdForUsers(None, users, True)
     if command == u'transfer':
       transferWhat = sys.argv[4].lower()
       if transferWhat == u'drive':
