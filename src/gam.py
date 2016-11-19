@@ -10178,10 +10178,7 @@ gam create project
 
 def run_batch(items):
   from multiprocessing import Pool
-  total_items = len(items)
-  current_item = 0
-  gam_cmd = [u'gam']
-  num_worker_threads = min(total_items, GC_Values[GC_NUM_THREADS])
+  num_worker_threads = min(len(items), GC_Values[GC_NUM_THREADS])
   pool = Pool(processes=num_worker_threads)
   sys.stderr.write(u'Using %s processes...\n' % num_worker_threads)
   for item in items:
@@ -10258,8 +10255,8 @@ def processSubFields(GAM_argv, row, subFields):
     argv[GAM_argvI] = argv[GAM_argvI].encode(GM_Globals[GM_SYS_ENCODING])
   return argv
 
-def runCmdForUsers(cmd, users, default_to_batch=False, **kwargs):
-  if default_to_batch and len(users) > 1:
+def runCmdForUsers(cmd, users, **kwargs):
+  if (GC_Values[GC_AUTO_BATCH_MIN] > 0) and (len(users) > GC_Values[GC_AUTO_BATCH_MIN]):
     items = []
     for user in users:
       items.append([u'gam', u'user', user] + sys.argv[3:])
@@ -10641,8 +10638,8 @@ def ProcessGAMCommand(args):
       for user in users:
         print user
       sys.exit(0)
-    if (GC_Values[GC_AUTO_BATCH_MIN] > 0) and (len(users) > GC_Values[GC_AUTO_BATCH_MIN]):
-      runCmdForUsers(None, users, True)
+#    if (GC_Values[GC_AUTO_BATCH_MIN] > 0) and (len(users) > GC_Values[GC_AUTO_BATCH_MIN]):
+#      runCmdForUsers(None, users, True)
     if command == u'transfer':
       transferWhat = sys.argv[4].lower()
       if transferWhat == u'drive':
@@ -10763,7 +10760,7 @@ def ProcessGAMCommand(args):
         doDeleteLabel(users)
       elif delWhat in [u'message', u'messages']:
         #doProcessMessages(users, u'delete')
-        runCmdForUsers(doProcessMessages, users, default_to_batch=True, function=u'delete')
+        runCmdForUsers(doProcessMessages, users, function=u'delete')
       elif delWhat == u'photo':
         deletePhoto(users)
       elif delWhat in [u'license', u'licence']:
@@ -10885,7 +10882,7 @@ def ProcessGAMCommand(args):
       doProfile(users)
     elif command == u'imap':
       #doImap(users)
-      runCmdForUsers(doImap, users, default_to_batch=True)
+      runCmdForUsers(doImap, users)
     elif command in [u'pop', u'pop3']:
       doPop(users)
     elif command == u'sendas':
