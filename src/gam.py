@@ -10178,10 +10178,7 @@ gam create project
 
 def run_batch(items):
   from multiprocessing import Pool
-  total_items = len(items)
-  current_item = 0
-  gam_cmd = [u'gam']
-  num_worker_threads = min(total_items, GC_Values[GC_NUM_THREADS])
+  num_worker_threads = min(len(items), GC_Values[GC_NUM_THREADS])
   pool = Pool(processes=num_worker_threads)
   sys.stderr.write(u'Using %s processes...\n' % num_worker_threads)
   for item in items:
@@ -10920,34 +10917,69 @@ def ProcessGAMCommand(args):
     GM_Globals[GM_SYSEXITRC] = e.code
   return GM_Globals[GM_SYSEXITRC]
 
-def win32_unicode_argv():
-  from ctypes import POINTER, byref, cdll, c_int, windll
-  from ctypes.wintypes import LPCWSTR, LPWSTR
+#
+# From: https://github.com/pyinstaller/pyinstaller/wiki/Recipe-Multiprocessing
+#
+if sys.platform.startswith('win'):
+  from multiprocessing import freeze_support
+  try:
+    import multiprocessing.popen_spawn_win32 as forking
+  except ImportError:
+    import multiprocessing.forking as forking
 
-  GetCommandLineW = cdll.kernel32.GetCommandLineW
-  GetCommandLineW.argtypes = []
-  GetCommandLineW.restype = LPCWSTR
+  # First define a modified version of Popen.
+  class _Popen(forking.Popen):
+    def __init__(self, *args, **kw):
+      if hasattr(sys, 'frozen'):
+        # We have to set original _MEIPASS2 value from sys._MEIPASS
+        # to get --onefile mode working.
+        os.putenv('_MEIPASS2', sys._MEIPASS)
+      try:
+        super(_Popen, self).__init__(*args, **kw)
+      finally:
+        if hasattr(sys, 'frozen'):
+          # On some platforms (e.g. AIX) 'os.unsetenv()' is not
+          # available. In those cases we cannot delete the variable
+          # but only set it to the empty string. The bootloader
+          # can handle this case.
+          if hasattr(os, 'unsetenv'):
+            os.unsetenv('_MEIPASS2')
+          else:
+            os.putenv('_MEIPASS2', '')
 
-  CommandLineToArgvW = windll.shell32.CommandLineToArgvW
-  CommandLineToArgvW.argtypes = [LPCWSTR, POINTER(c_int)]
-  CommandLineToArgvW.restype = POINTER(LPWSTR)
+  # Second override 'Popen' class with our modified version.
+  forking.Popen = _Popen
 
-  cmd = GetCommandLineW()
-  argc = c_int(0)
-  argv = CommandLineToArgvW(cmd, byref(argc))
-  if argc.value > 0:
-    # Remove Python executable and commands if present
-    argc_value = int(argc.value)
-    sys.argv = argv[argc_value-len(sys.argv):argc_value]
+  def win32_unicode_argv():
+    from ctypes import POINTER, byref, cdll, c_int, windll
+    from ctypes.wintypes import LPCWSTR, LPWSTR
+
+    GetCommandLineW = cdll.kernel32.GetCommandLineW
+    GetCommandLineW.argtypes = []
+    GetCommandLineW.restype = LPCWSTR
+
+    CommandLineToArgvW = windll.shell32.CommandLineToArgvW
+    CommandLineToArgvW.argtypes = [LPCWSTR, POINTER(c_int)]
+    CommandLineToArgvW.restype = POINTER(LPWSTR)
+
+    cmd = GetCommandLineW()
+    argc = c_int(0)
+    argv = CommandLineToArgvW(cmd, byref(argc))
+    if argc.value > 0:
+      # Remove Python executable and commands if present
+      argc_value = int(argc.value)
+      sys.argv = argv[argc_value-len(sys.argv):argc_value]
 
 # Run from command line
 if __name__ == "__main__":
+  if sys.platform.startswith('win'):
+    freeze_support()
   reload(sys)
   if sys.version_info[:2] != (2, 7):
     print u'ERROR: GAM requires Python 2.7. You are running %s.%s.%s. Please upgrade your Python version or use one of the binary GAM downloads.' % sys.version_info[:3]
     sys.exit(5)
   if hasattr(sys, u'setdefaultencoding'):
     sys.setdefaultencoding(u'UTF-8')
-  if GM_Globals[GM_WINDOWS]:
+  if sys.platform.startswith('win'):
     win32_unicode_argv() # cleanup sys.argv on Windows
   sys.exit(ProcessGAMCommand(sys.argv))
