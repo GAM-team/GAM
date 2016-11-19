@@ -4141,6 +4141,23 @@ def doDriveSearch(drive, query=None):
     ids.append(f_file[u'id'])
   return ids
 
+def getFileIdFromAlternateLink(altLink):
+  loc = altLink.find(u'/d/')
+  if loc > 0:
+    fileId = altLink[loc+3:]
+    loc = fileId.find(u'/')
+    if loc != -1:
+      return fileId[:loc]
+  else:
+    loc = altLink.find(u'/folderview?id=')
+    if loc > 0:
+      fileId = altLink[loc+15:]
+      loc = fileId.find(u'&')
+      if loc != -1:
+        return fileId[:loc]
+  print u'ERROR: %s is not a valid Drive File alternateLink' % altLink
+  sys.exit(2)
+
 DELETE_DRIVEFILE_FUNCTION_TO_ACTION_MAP = {u'delete': u'purging', u'trash': u'trashing', u'untrash': u'untrashing',}
 
 def deleteDriveFile(users):
@@ -4166,9 +4183,7 @@ def deleteDriveFile(users):
       file_ids = doDriveSearch(drive, query=fileIds[6:])
     else:
       if fileIds[:8].lower() == u'https://' or fileIds[:7].lower() == u'http://':
-        fileIds = fileIds[fileIds.find(u'/d/')+3:]
-        if fileIds.find(u'/') != -1:
-          fileIds = fileIds[:fileIds.find(u'/')]
+        fileIds = getFileIdFromAlternateLink(fileIds)
       file_ids = [fileIds,]
     if not file_ids:
       print u'No files to %s for %s' % (function, user)
@@ -4543,10 +4558,7 @@ def downloadDriveFile(users):
     else:
       fileId = fileIdSelection[u'fileIds'][0]
       if fileId[:8].lower() == u'https://' or fileId[:7].lower() == u'http://':
-        fileId = fileId[fileId.find(u'/d/')+3:]
-        if fileId.find(u'/') != -1:
-          fileId = fileId[:fileId.find(u'/')]
-        fileIdSelection[u'fileIds'][0] = fileId
+        fileIdSelection[u'fileIds'][0] = getFileIdFromAlternateLink(fileId)
     if not fileIdSelection[u'fileIds']:
       print u'No files to download for %s' % user
     i = 0
