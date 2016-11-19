@@ -39,7 +39,6 @@ from htmlentitydefs import name2codepoint
 from HTMLParser import HTMLParser
 import json
 import mimetypes
-from multiprocessing import freeze_support
 import platform
 import random
 import re
@@ -10179,10 +10178,7 @@ gam create project
 
 def run_batch(items):
   from multiprocessing import Pool
-  total_items = len(items)
-  current_item = 0
-  gam_cmd = [u'gam']
-  num_worker_threads = min(total_items, GC_Values[GC_NUM_THREADS])
+  num_worker_threads = min(len(items), GC_Values[GC_NUM_THREADS])
   pool = Pool(processes=num_worker_threads)
   sys.stderr.write(u'Using %s processes...\n' % num_worker_threads)
   for item in items:
@@ -10925,6 +10921,7 @@ def ProcessGAMCommand(args):
 # From: https://github.com/pyinstaller/pyinstaller/wiki/Recipe-Multiprocessing
 #
 if sys.platform.startswith('win'):
+  from multiprocessing import freeze_support
   try:
     import multiprocessing.popen_spawn_win32 as forking
   except ImportError:
@@ -10953,35 +10950,36 @@ if sys.platform.startswith('win'):
   # Second override 'Popen' class with our modified version.
   forking.Popen = _Popen
 
-def win32_unicode_argv():
-  from ctypes import POINTER, byref, cdll, c_int, windll
-  from ctypes.wintypes import LPCWSTR, LPWSTR
+  def win32_unicode_argv():
+    from ctypes import POINTER, byref, cdll, c_int, windll
+    from ctypes.wintypes import LPCWSTR, LPWSTR
 
-  GetCommandLineW = cdll.kernel32.GetCommandLineW
-  GetCommandLineW.argtypes = []
-  GetCommandLineW.restype = LPCWSTR
+    GetCommandLineW = cdll.kernel32.GetCommandLineW
+    GetCommandLineW.argtypes = []
+    GetCommandLineW.restype = LPCWSTR
 
-  CommandLineToArgvW = windll.shell32.CommandLineToArgvW
-  CommandLineToArgvW.argtypes = [LPCWSTR, POINTER(c_int)]
-  CommandLineToArgvW.restype = POINTER(LPWSTR)
+    CommandLineToArgvW = windll.shell32.CommandLineToArgvW
+    CommandLineToArgvW.argtypes = [LPCWSTR, POINTER(c_int)]
+    CommandLineToArgvW.restype = POINTER(LPWSTR)
 
-  cmd = GetCommandLineW()
-  argc = c_int(0)
-  argv = CommandLineToArgvW(cmd, byref(argc))
-  if argc.value > 0:
-    # Remove Python executable and commands if present
-    argc_value = int(argc.value)
-    sys.argv = argv[argc_value-len(sys.argv):argc_value]
+    cmd = GetCommandLineW()
+    argc = c_int(0)
+    argv = CommandLineToArgvW(cmd, byref(argc))
+    if argc.value > 0:
+      # Remove Python executable and commands if present
+      argc_value = int(argc.value)
+      sys.argv = argv[argc_value-len(sys.argv):argc_value]
 
 # Run from command line
 if __name__ == "__main__":
-  freeze_support()
+  if sys.platform.startswith('win'):
+    freeze_support()
   reload(sys)
   if sys.version_info[:2] != (2, 7):
     print u'ERROR: GAM requires Python 2.7. You are running %s.%s.%s. Please upgrade your Python version or use one of the binary GAM downloads.' % sys.version_info[:3]
     sys.exit(5)
   if hasattr(sys, u'setdefaultencoding'):
     sys.setdefaultencoding(u'UTF-8')
-  if GM_Globals[GM_WINDOWS]:
+  if sys.platform.startswith('win'):
     win32_unicode_argv() # cleanup sys.argv on Windows
   sys.exit(ProcessGAMCommand(sys.argv))
