@@ -1,28 +1,22 @@
-GAM
-============================
+# GAM
 GAM is a command line tool for Google G Suite Administrators to manage domain and user settings quickly and easily.
 
-Quick Start
----------
-Linux / MacOS:
+# Quick Start
+## Linux / MacOS
 Open a terminal and run:
-'''
+```
 bash <(curl -s -S -L https://git.io/install-gam)
-'''
-
-Windows:
+```
+## Windows
 Download the MSI Installer from the [GitHub Releases] page.
 
-Documentation
-------------------
+# Documentation
 The GAM documentation is hosted in the [GitHub Wiki]
 
-Mailing List / Discussion group
--------------------------------
+# Mailing List / Discussion group
 The GAM mailing list / discussion group is hosted on [Google Groups].  You can join the list and interact via email, or just post from the web itself.
 
-Author
-------
+# Author
 GAM is maintained by <a href="mailto:jay0lee@gmail.com">Jay Lee</a>.
 
 [GAM release]: https://git.io/gamreleases
