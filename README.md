@@ -5,8 +5,9 @@ Open a terminal and run:
 ```
 bash <(curl -s -S -L https://git.io/install-gam)
 ```
+this will download GAM, install it and start setup.
 ## Windows
-Download the MSI Installer from the [GitHub Releases] page.
+Download the MSI Installer from the [GitHub Releases] page. Install the MSI and you'll be prompted to setup GAM.
 # Documentation
 The GAM documentation is hosted in the [GitHub Wiki]
 # Mailing List / Discussion group
