@@ -16,7 +16,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-u"""GAM is a command line tool which allows Administrators to control their Google Apps domain and accounts.
+u"""GAM is a command line tool which allows Administrators to control their G Suite domain and accounts.
 
 With GAM you can programatically create users, turn on/off services for users like POP and Forwarding and much more.
 For more information, see http://git.io/gam
@@ -319,7 +319,7 @@ CLEAR_NONE_ARGUMENT = [u'clear', u'none',]
 MESSAGE_API_ACCESS_CONFIG = u'API access is configured in your Control Panel under: Security-Show more-Advanced settings-Manage API client access'
 MESSAGE_API_ACCESS_DENIED = u'API access Denied.\n\nPlease make sure the Client ID: {0} is authorized for the API Scope(s): {1}'
 MESSAGE_GAM_EXITING_FOR_UPDATE = u'GAM is now exiting so that you can overwrite this old version with the latest release'
-MESSAGE_GAM_OUT_OF_MEMORY = u'GAM has run out of memory. If this is a large Google Apps instance, you should use a 64-bit version of GAM on Windows or a 64-bit version of Python on other systems.'
+MESSAGE_GAM_OUT_OF_MEMORY = u'GAM has run out of memory. If this is a large G Suite instance, you should use a 64-bit version of GAM on Windows or a 64-bit version of Python on other systems.'
 MESSAGE_HEADER_NOT_FOUND_IN_CSV_HEADERS = u'Header "{0}" not found in CSV headers of "{1}".'
 MESSAGE_HIT_CONTROL_C_TO_UPDATE = u'\n\nHit CTRL+C to visit the GAM website and download the latest release or wait 15 seconds continue with this boring old version. GAM won\'t bother you with this announcement for 1 week or you can create a file named noupdatecheck.txt in the same location as gam.py or gam.exe and GAM won\'t ever check for updates.'
 MESSAGE_INVALID_JSON = u'The file {0} has an invalid format.'
@@ -427,7 +427,7 @@ def showUsage():
   print u'''
 Usage: gam [OPTIONS]...
 
-GAM. Retrieve or set Google Apps domain,
+GAM. Retrieve or set G Suite domain,
 user, group and alias settings. Exhaustive list of commands
 can be found at: https://github.com/jay0lee/GAM/wiki
 
@@ -4843,11 +4843,11 @@ def getImap(users):
         print u'User: {0}, IMAP Enabled: {1} ({2}/{3})'.format(user, enabled, i, count)
 
 def getProductAndSKU(sku):
-  if sku.lower() in [u'apps', u'gafb', u'gafw']:
+  if sku.lower() in [u'apps', u'gafb', u'gafw', u'gsbasic']:
     sku = u'Google-Apps-For-Business'
   elif sku.lower() in [u'gams',]:
     sku = u'Google-Apps-For-Postini'
-  elif sku.lower() in [u'gau', u'unlimited', u'd4w', u'dfw']:
+  elif sku.lower() in [u'gau', u'unlimited', u'd4w', u'dfw', u'gsbusiness']:
     sku = u'Google-Apps-Unlimited'
   elif sku.lower() in [u'lite']:
     sku = u'Google-Apps-Lite'
@@ -8349,7 +8349,7 @@ def doSiteVerifyAttempt():
   except KeyError:
     pass
   print
-  print u'You can now add %s or it\'s subdomains as secondary or domain aliases of the %s Google Apps Account.' % (a_domain, GC_Values[GC_DOMAIN])
+  print u'You can now add %s or it\'s subdomains as secondary or domain aliases of the %s G Suite Account.' % (a_domain, GC_Values[GC_DOMAIN])
 
 def doGetNotifications():
   cd = buildGAPIObject(u'directory')
@@ -8981,7 +8981,7 @@ def doPrintUsers():
     fields = u'nextPageToken,users(%s)' % u','.join(set(fieldsList)).replace(u'.', u'/')
   else:
     fields = None
-  sys.stderr.write(u"Getting all users in Google Apps account (may take some time on a large account)...\n")
+  sys.stderr.write(u"Getting all users in G Suite account (may take some time on a large account)...\n")
   page_message = u'Got %%total_items%% users: %%first_item%% - %%last_item%%\n'
   all_users = callGAPIpages(cd.users(), u'list', u'users', page_message=page_message,
                             message_attribute=u'primaryEmail', customer=customer, domain=domain, fields=fields,
@@ -9151,7 +9151,7 @@ def doPrintGroups():
   if getSettings:
     gs = buildGAPIObject(u'groupssettings')
   roles = u','.join(sorted(set(roles)))
-  sys.stderr.write(u"Retrieving All Groups for Google Apps account (may take some time on a large account)...\n")
+  sys.stderr.write(u"Retrieving All Groups for G Suite account (may take some time on a large account)...\n")
   page_message = u'Got %%num_items%% groups: %%first_item%% - %%last_item%%\n'
   entityList = callGAPIpages(cd.groups(), u'list', u'groups',
                              page_message=page_message, message_attribute=u'email',
@@ -9282,7 +9282,7 @@ def doPrintOrgs():
                   customerId=GC_Values[GC_CUSTOMER_ID], type=listType, orgUnitPath=orgUnitPath, fields=u'organizationUnits({0})'.format(u','.join(set(fieldsList))))
   sys.stderr.write(u"done\n")
   if not u'organizationUnits' in orgs:
-    print u'0 org units in this Google Apps instance...'
+    print u'0 org units in this G Suite instance...'
     return
   for orgEntity in orgs[u'organizationUnits']:
     orgUnit = {}
@@ -9762,7 +9762,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
     users = []
     page_message = None
     if not silent:
-      sys.stderr.write(u"Getting all users in the Google Apps organization (may take some time on a large domain)...\n")
+      sys.stderr.write(u"Getting all users in the G Suite organization (may take some time on a large domain)...\n")
       page_message = u'Got %%total_items%% users...'
     members = callGAPIpages(cd.users(), u'list', u'users', page_message=page_message,
                             customer=GC_Values[GC_CUSTOMER_ID], fields=u'nextPageToken,users(primaryEmail,suspended,orgUnitPath)',
@@ -9782,7 +9782,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
     users = []
     page_message = None
     if not silent:
-      sys.stderr.write(u"Getting all users in the Google Apps organization (may take some time on a large domain)...\n")
+      sys.stderr.write(u"Getting all users in the G Suite organization (may take some time on a large domain)...\n")
       page_message = u'Got %%total_items%% users..'
     members = callGAPIpages(cd.users(), u'list', u'users', page_message=page_message,
                             customer=GC_Values[GC_CUSTOMER_ID], fields=u'nextPageToken,users(primaryEmail,suspended)',
@@ -9863,7 +9863,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
     users = []
     if entity.lower() == u'users':
       if not silent:
-        sys.stderr.write(u"Getting all users in Google Apps account (may take some time on a large account)...\n")
+        sys.stderr.write(u"Getting all users in G Suite account (may take some time on a large account)...\n")
       page_message = u'Got %%total_items%% users...'
       all_users = callGAPIpages(cd.users(), u'list', u'users', page_message=page_message,
                                 customer=GC_Values[GC_CUSTOMER_ID],
@@ -9875,7 +9875,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
         sys.stderr.write(u"done getting %s users.\r\n" % len(users))
     elif entity.lower() == u'cros':
       if not silent:
-        sys.stderr.write(u"Getting all CrOS devices in Google Apps account (may take some time on a large account)...\n")
+        sys.stderr.write(u"Getting all CrOS devices in G Suite account (may take some time on a large account)...\n")
       all_cros = callGAPIpages(cd.chromeosdevices(), u'list', u'chromeosdevices',
                                customerId=GC_Values[GC_CUSTOMER_ID], fields=u'nextPageToken,chromeosdevices(deviceId)',
                                maxResults=GC_Values[GC_DEVICE_MAX_RESULTS])
@@ -9930,9 +9930,9 @@ def OAuthInfo():
   for scope in token_info[u'scope'].split(u' '):
     print u'  %s' % scope
   try:
-    print u'Google Apps Admin: %s' % token_info[u'email']
+    print u'G Suite Admin: %s' % token_info[u'email']
   except KeyError:
-    print u'Google Apps Admin: Unknown'
+    print u'G Suite  Admin: Unknown'
 
 def doDeleteOAuth():
   _, credentials = getOauth2TxtStorageCredentials()
