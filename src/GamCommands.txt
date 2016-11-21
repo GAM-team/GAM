@@ -8,7 +8,7 @@ If an item contains spaces, it should be surrounded by " or '.
 + item may appear one or more times
 | separates alternative items
 
-# Primatives
+Primatives
 <Digit> ::= 0|1|2|3|4|5|6|7|8|9
 <Number> ::= <Digit>+
 <Hex> ::= <Digit>|a|b|c|d|e|f|A|B|C|D|E|F
@@ -25,7 +25,7 @@ If an item contains spaces, it should be surrounded by " or '.
 <FileFormat> ::= csv|html|txt|tsv|jpeg|jpg|png|svg|pdf|rtf|pptx|xlsx|docx|odt|ods|openoffice|ms|microsoft|micro$oft
 <Language> ::= ar|bn|bg|ca|zh-CN|zh-TW|hr|cs|da|nl|en|en-GB|et|fi|fr|de|el|gu|iw|is|in|it|ja|kn|ko|lv|lt|ms|ml|mr|no|or|fa|pl|pt-BR|pt-PT|ro|ru|sr|sk|sl|es|sv|tl|ta|te|th|tr|uk|ur|vi
 
-# Basic items built from primatives
+Basic items built from primatives
 <Boolean> ::= <TrueValues>|<FalseValues>
 <ByteCount> ::= <Number>[m|k|b]
 <CIDRnetmask> ::= <Number>.<Number>.<Number>.<Number>/<Number>
@@ -46,7 +46,7 @@ If an item contains spaces, it should be surrounded by " or '.
 <Tag> ::= <String>
 <UniqueID> ::= uid:<String>
 
-# Named items
+Named items
 <AccessToken> ::= <String>
 <ACLScope> ::= [user:]<EmailAddress>|group:<EmailAddress>|domain[:<DomainName>]|default
 <CalendarACLRole> ::= editor|freebusy|freebusyreader|owner|reader|writer
@@ -297,12 +297,12 @@ If an item contains spaces, it should be surrounded by " or '.
 <UserOrderByFieldName> ::=
 	familyname|lastname|givenname|firstname|email
 
-# Named Lists
-# Lists can be in the following formats
-# Items, separated by commas, without spaces or commas in the items themselves: item(,item)*
-# Items, separated by spaces, without spaces or commas in the items themselves: "item( item)*"
-# Items, separated by commas, with spaces or commas in the items themselves: "'it em'(,'it em')*"
-# Items, separated by spaces, with spaces or commas in the items themselves: "'it em'( 'it em')*"
+Named Lists
+Lists can be in the following formats
+Items, separated by commas, without spaces or commas in the items themselves: item(,item)*
+Items, separated by spaces, without spaces or commas in the items themselves: "item( item)*"
+Items, separated by commas, with spaces or commas in the items themselves: "'it em'(,'it em')*"
+Items, separated by spaces, with spaces or commas in the items themselves: "'it em'( 'it em')*"
 
 <ACLList> ::== '<ACLScope>(,<ACLScope>)*'
 <CalendarList> ::= '<CalendarItem>(,<CalendarItem>)*'
@@ -331,11 +331,11 @@ If an item contains spaces, it should be surrounded by " or '.
 <UserFieldNameList> ::= '<UserFieldName>(,<UserFieldName>)*'
 <UserList> ::= '<UserItem>(,<UserItem>)*'
 
-# Specify a collection of ChromeOS devices by directly specifying them
+Specify a collection of ChromeOS devices by directly specifying them
 <CrOSTypeEntity> ::=
 		(all cros)|
 		(cros <CrOSList>)|
-# Specify a collection of Users by directly specifying them or by specifiying items that will yield a list of users
+Specify a collection of Users by directly specifying them or by specifiying items that will yield a list of users
 <UserTypeEntity> ::=
 		(all users)|
 		(user <UserItem>)|
@@ -352,7 +352,7 @@ If an item contains spaces, it should be surrounded by " or '.
 		(query <QueryUser>)
 
 
-# Item attributes
+Item attributes
 <CalendarAttributes> ::=
 	(selected <Boolean>)|(hidden <Boolean>)|(summary <String>)|(colorindex|colorid <CalendarColorIndex>)|(backgroundcolor <ColorHex>)|(foregroundcolor <ColorHex>)|
 	(reminder clear|(email|sms|pop <Number>))|
@@ -464,18 +464,128 @@ If an item contains spaces, it should be surrounded by " or '.
 	(website|websites clear|(home_page|blog|profile|work|home|other|ftp|reservations|app_install_page|<String> <URL> [notprimary|primary]))|
 	(<SchemaName>.<FieldName> [multivalued|multivalue|value [type work|home|other|(custom <String>)]] <String>)
 
+GAM uses many environment variables and signal files to control its operation.
+
+In the following discussion, these names will be used to refer to directories:
+    GamPath: Location of gam.py or gam.exe
+    GamConfigDir: Location of client_secrets.json, oauth2.txt, oauth2service.json, extra_args.txt
+    GamCacheDir: Google API cache files
+    GamDriveDir: Files downloaded with gam user <User> get drivefile <DriveFileID> when targetfolder <FilePath> is not specified
+
+These are the Gam variables; if GAM does not find a value for an environment variable, the default value is used.
+If a signal file is located, the associated variable is set True, otherwise False.
+(For debug.gam, debug_level is set to 4 if the file is located, otherwise 0.)
+
+activity_max_results
+	When retrieving lists of Google Drive activities from API, how many should be retrieved in each chunk
+	Default: 100
+	Environment variable: GAM_ACTIVITY_MAX_RESULTS
+auto_batch_min
+	Automatically generate gam batch commands for commands gam <UserTypeEntity> ...
+	If this variable is = 0, no gam batch commands will be automatically generated
+	If this variable is > 0, gam batch commands will be automatically generated if the number of users in <UserTypeEntity> exceeds auto_batch_min
+	If this variable is < 0, gam batch commands will be automatically generated for selected commands if the number of users in <UserTypeEntity> exceeds -auto_batch_min
+	gam batch commands are never generated for gam <UserTypeEntity> info|print|show ...
+	Default: -1, generate gam batch commands for selected commands
+	Environment variable: GAM_AUTOBATCH
+cache_dir
+	GAM cache directory.
+	Default: GamPath/gamcache
+	Environment variable: GAMCACHEDIR
+charset
+	Character set of gam batch, gam csv files.
+	Default: utf-8 for Linux/Mac OSX, mbcs for Windows
+	Environment variable: GAM_CHARSET
+client_secrets_json
+	Path to client_secrets.json
+	Default: GamConfigDir/client_secrets.json
+	Environment variable: CLIENTSECRETS
+config_dir
+	GAM config directory containing client_secrets.json, oauth2.txt, oauth2service.json, extra_args.txt
+	Default: GamPath
+	Environment variable: GAMUSERCONFIGDIR
+customer_id
+	Google Custmer ID
+	Default: Blank
+	Environment variable: CUSTOMER_ID
+debug_level
+	If debug_level > 0, turn on API debugging output.
+	Default: 0
+	Signal file: GamConfigDir/debug.gam
+device_max_results
+	When retrieving lists of ChromeOS/Mobile devices from API, how many should be retrieved in each chunk
+	Default: 100
+	Environment variable: GAM_DEVICE_MAX_RESULTS
+domain
+	Google Domain
+	Default: Blank
+	Environment variable: GA_DOMAIN
+drive_dir
+	Directory for get drivefile and CSV files
+	Default: GamPath
+	Environment variable: GAMDRIVEDIR
+drive_max_results
+	When retrieving lists of Drive files/folders from API, how many should be retrieved in each chunk
+	Default: 1000
+	Environment variable: GAM_DRIVE_MAX_RESULTS
+extra_args
+	Path to extra_args.txt
+	Default: Blank
+	Data file: extra_args.txt
+member_max_results
+	When retrieving lists of Google Group members from API, how many should be retrieved in each chunk
+	Default: 200
+	Environment variable: GAM_MEMBER_MAX_RESULTS
+no_browser
+	If no_browser is True, GAM won't open a browser if todrive is set when creating CSV files
+	and GAM prints a link and waits for the verification code when oauth2.txt is being created
+	Signal file: GamConfigDir/nobrowser.txt
+no_cache
+	Disable GAM API caching
+	Signal file: GamConfigDir/nocache.txt
+no_update_check
+	Disable GAM update check
+	Signal file: GamConfigDir/noupdatecheck.txt
+no_verify_ssl
+	Disable SSL certificate validation
+	Signal file: GamConfigDir/noverifyssl.txt
+num_threads
+	Number of threads for gam batch
+	Default: 5
+	Environment variable: GAM_THREADS
+oauth2_txt
+	Path to oauth2.txt
+	Default: GamConfigDir/oauth2.txt
+	Environment variable: OAUTHFILE
+oauth2service_json
+	Path to oauth2service.json
+	Default: GamConfigDir/oauth2service.json
+	Environment variable: OAUTHSERVICEFILE
+user_max_results
+	When retrieving lists of Users from API, how many should be retrieved in each chunk
+	Default: 500
+	Environment variable: GAM_USER_MAX_RESULTS
+
+Gam variables can be set on the command line; these settings must come immediately after gam, before any other arguments.
+<Config> ::=
+	config (<VariableName> <Value>)* [verify]
+gam [<Config>] ...
+The verify argument causes Gam to print all variable values.
+
+[<Config>] will not be shown in the following command descriptions but can be used with any Gam command.
+
 gam version [check] [simple]
 gam help
 
 gam batch <FileName>|- [charset <Charset>]
 gam csv <FileName>|- [charset <Charset>] gam <GAM argument list>
 
-# You can make substitutions in <GAMArgumentList> with values from the CSV file.
-# An argument containing exactly ~xxx is replaced by the value of field xxx from the CSV file
-# An argument containing instances of ~~xxx~~ has xxx replaced by the value of field xxx from the CSV file
+You can make substitutions in <GAMArgumentList> with values from the CSV file.
+An argument containing exactly ~xxx is replaced by the value of field xxx from the CSV file
+An argument containing instances of ~~xxx~~ has xxx replaced by the value of field xxx from the CSV file
 
-# Example: gam csv Users.csv gam update user '~primaryEmail' address type work unstructured '~~Street~~, ~~City~~, ~~State~~ ~~ZIP~~'
-# Each user (~primaryEmail, e.g. foo@bar.com) would have their work address updated
+Example: gam csv Users.csv gam update user '~primaryEmail' address type work unstructured '~~Street~~, ~~City~~, ~~State~~ ~~ZIP~~'
+Each user (~primaryEmail, e.g. foo@bar.com) would have their work address updated
 
 gam create project [<EmailAddress>]
 
@@ -743,9 +853,7 @@ gam print tokens|token [todrive] [clientid <ClientID>] [<UserTypeEntity>]
 gam <UserTypeEntity> update user <UserAttrubutes>
 
 gam <UserTypeEntity> deprovision|deprov
-#
-# Update user Gmail mailbox
-#
+
 gam <UserTypeEntity> [add] label|labels <Name> [messagelistvisibility hide|show] [labellistvisibility hide|show|showifunread]
 gam <UserTypeEntity> update labelsettings <LabelName> [name <Name>] [messagelistvisibility hide|show] [labellistvisibility hide|show|showifunread]
 gam <UserTypeEntity> update label|labels [search <RegularExpression>] [replace <LabelReplacement>] [merge]
@@ -756,9 +864,7 @@ gam <UserTypeEntity> delete messages query <QueryGmail> [doit] [max_to_delete|ma
 gam <UserTypeEntity> modify messages query <QueryGmail> [doit] [max_to_modify|max_to_process <Number>] (addlabel <LabelName>)* (removelabel <LabelName>)*
 gam <UserTypeEntity> trash messages query <QueryGmail> [doit] [max_to_trash|max_to_process <Number>]
 gam <UserTypeEntity> untrash messages query <QueryGmail> [doit] [max_to_untrash|max_to_process <Number>]
-#
-# Update user Gmail settings
-#
+
 gam <UserTypeEntity> show gmailprofile [todrive]
 gam <UserTypeEntity> show gplusprofile [todrive]
 
