@@ -170,8 +170,6 @@ GC_ACTIVITY_MAX_RESULTS = u'activity_max_results'
 # Automatically generate gam batch command if number of users specified in gam users xxx command exceeds this number
 # Default: 0, don't automatically generate gam batch commands
 GC_AUTO_BATCH_MIN = u'auto_batch_min'
-# When processing items in batches, how many should be processed in each batch
-GC_BATCH_SIZE = u'batch_size'
 # GAM cache directory. If no_cache is specified, this variable will be set to None
 GC_CACHE_DIR = u'cache_dir'
 # Character set of batch, csv, data files
@@ -192,6 +190,10 @@ GC_DOMAIN = u'domain'
 GC_DRIVE_DIR = u'drive_dir'
 # When retrieving lists of Drive files/folders from API, how many should be retrieved in each chunk
 GC_DRIVE_MAX_RESULTS = u'drive_max_results'
+# Path to extra_args.txt
+GC_EXTRA_ARGS = u'extra_args'
+# When retrieving lists of Google Group members from API, how many should be retrieved in each chunk
+GC_MEMBER_MAX_RESULTS = u'member_max_results'
 # If no_browser is False, writeCSVfile won't open a browser when todrive is set
 # and doRequestOAuth prints a link and waits for the verification code when oauth2.txt is being created
 GC_NO_BROWSER = u'no_browser'
@@ -207,21 +209,12 @@ GC_NUM_THREADS = u'num_threads'
 GC_OAUTH2_TXT = u'oauth2_txt'
 # Path to oauth2service.json
 GC_OAUTH2SERVICE_JSON = u'oauth2service_json'
-# Default section to use for processing
-GC_SECTION = u'section'
-# Add (n/m) to end of messages if number of items to be processed exceeds this number
-GC_SHOW_COUNTS_MIN = u'show_counts_min'
-# Enable/disable "Getting ... " messages
-GC_SHOW_GETTINGS = u'show_gettings'
-# GAM config directory containing json discovery files
-GC_SITE_DIR = u'site_dir'
 # When retrieving lists of Users from API, how many should be retrieved in each chunk
 GC_USER_MAX_RESULTS = u'user_max_results'
 
 GC_Defaults = {
   GC_ACTIVITY_MAX_RESULTS: 100,
-  GC_AUTO_BATCH_MIN: 0,
-  GC_BATCH_SIZE: 50,
+  GC_AUTO_BATCH_MIN: -1,
   GC_CACHE_DIR: u'',
   GC_CHARSET: DEFAULT_CHARSET,
   GC_CLIENT_SECRETS_JSON: FN_CLIENT_SECRETS_JSON,
@@ -232,17 +225,15 @@ GC_Defaults = {
   GC_DOMAIN: u'',
   GC_DRIVE_DIR: u'',
   GC_DRIVE_MAX_RESULTS: 1000,
-  GC_NO_BROWSER: FALSE,
-  GC_NO_CACHE: FALSE,
-  GC_NO_UPDATE_CHECK: FALSE,
-  GC_NO_VERIFY_SSL: FALSE,
+  GC_EXTRA_ARGS: u'',
+  GC_MEMBER_MAX_RESULTS: 200,
+  GC_NO_BROWSER: False,
+  GC_NO_CACHE: False,
+  GC_NO_UPDATE_CHECK: False,
+  GC_NO_VERIFY_SSL: False,
   GC_NUM_THREADS: 25,
   GC_OAUTH2_TXT: FN_OAUTH2_TXT,
   GC_OAUTH2SERVICE_JSON: FN_OAUTH2SERVICE_JSON,
-  GC_SECTION: u'',
-  GC_SHOW_COUNTS_MIN: 0,
-  GC_SHOW_GETTINGS: TRUE,
-  GC_SITE_DIR: u'',
   GC_USER_MAX_RESULTS: 500,
   }
 
@@ -258,35 +249,36 @@ GC_TYPE_LANGUAGE = u'lang'
 GC_TYPE_STRING = u'stri'
 
 GC_VAR_TYPE = u'type'
+GC_VAR_ENVVAR = u'enva'
 GC_VAR_LIMITS = u'lmit'
+GC_VAR_SFFT = u'sfft'
+GC_VAR_SIGFILE = u'sigf'
 
 GC_VAR_INFO = {
-  GC_ACTIVITY_MAX_RESULTS: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (1, 500)},
-  GC_AUTO_BATCH_MIN: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (0, None)},
-  GC_BATCH_SIZE: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (1, 1000)},
-  GC_CACHE_DIR: {GC_VAR_TYPE: GC_TYPE_DIRECTORY},
-  GC_CHARSET: {GC_VAR_TYPE: GC_TYPE_STRING},
-  GC_CLIENT_SECRETS_JSON: {GC_VAR_TYPE: GC_TYPE_FILE},
-  GC_CONFIG_DIR: {GC_VAR_TYPE: GC_TYPE_DIRECTORY},
-  GC_CUSTOMER_ID: {GC_VAR_TYPE: GC_TYPE_STRING},
-  GC_DEBUG_LEVEL: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (0, None)},
-  GC_DEVICE_MAX_RESULTS: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (1, 1000)},
-  GC_DOMAIN: {GC_VAR_TYPE: GC_TYPE_STRING},
-  GC_DRIVE_DIR: {GC_VAR_TYPE: GC_TYPE_DIRECTORY},
-  GC_DRIVE_MAX_RESULTS: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (1, 1000)},
-  GC_NO_BROWSER: {GC_VAR_TYPE: GC_TYPE_BOOLEAN},
-  GC_NO_CACHE: {GC_VAR_TYPE: GC_TYPE_BOOLEAN},
-  GC_NO_UPDATE_CHECK: {GC_VAR_TYPE: GC_TYPE_BOOLEAN},
-  GC_NO_VERIFY_SSL: {GC_VAR_TYPE: GC_TYPE_BOOLEAN},
-  GC_NUM_THREADS: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (1, None)},
-  GC_OAUTH2_TXT: {GC_VAR_TYPE: GC_TYPE_FILE},
-  GC_OAUTH2SERVICE_JSON: {GC_VAR_TYPE: GC_TYPE_FILE},
-  GC_SECTION: {GC_VAR_TYPE: GC_TYPE_STRING},
-  GC_SHOW_COUNTS_MIN: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (0, None)},
-  GC_SHOW_GETTINGS: {GC_VAR_TYPE: GC_TYPE_BOOLEAN},
-  GC_SITE_DIR: {GC_VAR_TYPE: GC_TYPE_DIRECTORY},
-  GC_USER_MAX_RESULTS: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (1, 500)},
+  GC_ACTIVITY_MAX_RESULTS: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_ENVVAR: u'GAM_ACTIVITY_MAX_RESULTS', GC_VAR_LIMITS: (1, 500)},
+  GC_AUTO_BATCH_MIN: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_ENVVAR: u'GAM_AUTOBATCH', GC_VAR_LIMITS: (None, None)},
+  GC_CACHE_DIR: {GC_VAR_TYPE: GC_TYPE_DIRECTORY, GC_VAR_ENVVAR: u'GAMCACHEDIR'},
+  GC_CHARSET: {GC_VAR_TYPE: GC_TYPE_STRING, GC_VAR_ENVVAR: u'GAM_CHARSET'},
+  GC_CLIENT_SECRETS_JSON: {GC_VAR_TYPE: GC_TYPE_FILE, GC_VAR_ENVVAR: u'CLIENTSECRETS'},
+  GC_CONFIG_DIR: {GC_VAR_TYPE: GC_TYPE_DIRECTORY, GC_VAR_ENVVAR: u'GAMUSERCONFIGDIR'},
+  GC_CUSTOMER_ID: {GC_VAR_TYPE: GC_TYPE_STRING, GC_VAR_ENVVAR: u'CUSTOMER_ID'},
+  GC_DEBUG_LEVEL: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_SIGFILE: u'debug.gam', GC_VAR_LIMITS: (0, None), GC_VAR_SFFT: (0, 4)},
+  GC_DEVICE_MAX_RESULTS: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_ENVVAR: u'GAM_DEVICE_MAX_RESULTS', GC_VAR_LIMITS: (1, 1000)},
+  GC_DOMAIN: {GC_VAR_TYPE: GC_TYPE_STRING, GC_VAR_ENVVAR: u'GA_DOMAIN'},
+  GC_DRIVE_DIR: {GC_VAR_TYPE: GC_TYPE_DIRECTORY, GC_VAR_ENVVAR: u'GAMDRIVEDIR'},
+  GC_DRIVE_MAX_RESULTS: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_ENVVAR: u'GAM_DRIVE_MAX_RESULTS', GC_VAR_LIMITS: (1, 1000)},
+  GC_EXTRA_ARGS: {GC_VAR_TYPE: GC_TYPE_FILE, GC_VAR_SIGFILE: FN_EXTRA_ARGS_TXT, GC_VAR_SFFT: (u'', FN_EXTRA_ARGS_TXT)},
+  GC_MEMBER_MAX_RESULTS: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_ENVVAR: u'GAM_MEMBER_MAX_RESULTS', GC_VAR_LIMITS: (1, 10000)},
+  GC_NO_BROWSER: {GC_VAR_TYPE: GC_TYPE_BOOLEAN, GC_VAR_SIGFILE: u'nobrowser.txt', GC_VAR_SFFT: (False, True)},
+  GC_NO_CACHE: {GC_VAR_TYPE: GC_TYPE_BOOLEAN, GC_VAR_SIGFILE: u'nocache.txt', GC_VAR_SFFT: (False, True)},
+  GC_NO_UPDATE_CHECK: {GC_VAR_TYPE: GC_TYPE_BOOLEAN, GC_VAR_SIGFILE: u'noupdatecheck.txt', GC_VAR_SFFT: (False, True)},
+  GC_NO_VERIFY_SSL: {GC_VAR_TYPE: GC_TYPE_BOOLEAN, GC_VAR_SIGFILE: u'noverifyssl.txt', GC_VAR_SFFT: (False, True)},
+  GC_NUM_THREADS: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_ENVVAR: u'GAM_THREADS', GC_VAR_LIMITS: (1, None)},
+  GC_OAUTH2_TXT: {GC_VAR_TYPE: GC_TYPE_FILE, GC_VAR_ENVVAR: u'OAUTHFILE'},
+  GC_OAUTH2SERVICE_JSON: {GC_VAR_TYPE: GC_TYPE_FILE, GC_VAR_ENVVAR: u'OAUTHSERVICEFILE'},
+  GC_USER_MAX_RESULTS: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_ENVVAR: u'GAM_USER_MAX_RESULTS', GC_VAR_LIMITS: (1, 500)},
   }
+
 # Google API constants
 APPLICATION_VND_GOOGLE_APPS = u'application/vnd.google-apps.'
 MIMETYPE_GA_DOCUMENT = APPLICATION_VND_GOOGLE_APPS+u'document'
@@ -472,10 +464,10 @@ def noPythonSSLExit():
   systemErrorExit(8, MESSAGE_NO_PYTHON_SSL)
 
 def currentCount(i, count):
-  return u' ({0}/{1})'.format(i, count) if (count > GC_Values[GC_SHOW_COUNTS_MIN]) else u''
+  return u' ({0}/{1})'.format(i, count)
 
 def currentCountNL(i, count):
-  return u' ({0}/{1})\n'.format(i, count) if (count > GC_Values[GC_SHOW_COUNTS_MIN]) else u'\n'
+  return u' ({0}/{1})\n'.format(i, count)
 
 def entityServiceNotApplicableWarning(entityType, entityName, i, count):
   sys.stderr.write(u'{0}: {1}, Service not applicable/Does not exist{2}'.format(entityType, entityName, currentCountNL(i, count)))
@@ -501,6 +493,15 @@ def getCharSet(i):
   if (i == len(sys.argv)) or (sys.argv[i].lower() != u'charset'):
     return (i, GC_Values.get(GC_CHARSET, GM_Globals[GM_SYS_ENCODING]))
   return (i+2, sys.argv[i+1])
+
+def integerLimits(minVal, maxVal):
+  if (minVal is not None) and (maxVal is not None):
+    return u'integer {0}<=x<={1}'.format(minVal, maxVal)
+  if minVal is not None:
+    return u'integer x>={0}'.format(minVal)
+  if maxVal is not None:
+    return u'integer x<={0}'.format(maxVal)
+  return u'integer x'
 
 def getString(i, item, emptyOK=False, optional=False):
   if i < len(sys.argv):
@@ -683,70 +684,105 @@ class UnicodeDictReader(object):
 #
 def SetGlobalVariables():
 
-  def _getOldEnvVar(itemName, envVar):
-    value = os.environ.get(envVar, GC_Defaults[itemName])
-    if GC_VAR_INFO[itemName][GC_VAR_TYPE] == GC_TYPE_INTEGER:
-      try:
-        number = int(value)
-        minVal, maxVal = GC_VAR_INFO[itemName][GC_VAR_LIMITS]
-        if number < minVal:
-          number = minVal
-        elif maxVal and (number > maxVal):
-          number = maxVal
-      except ValueError:
-        number = GC_Defaults[itemName]
-      value = number
-    GC_Defaults[itemName] = value
-
-  def _getOldSignalFile(itemName, fileName, trueValue=True, falseValue=False):
-    GC_Defaults[itemName] = trueValue if os.path.isfile(os.path.join(GC_Defaults[GC_CONFIG_DIR], fileName)) else falseValue
+  def _getDefault(itemName, itemEntry):
+    if GC_VAR_SIGFILE in itemEntry:
+      GC_Defaults[itemName] = itemEntry[GC_VAR_SFFT][os.path.isfile(os.path.join(GC_Defaults[GC_CONFIG_DIR], itemEntry[GC_VAR_SIGFILE]))]
+    else:
+      value = os.environ.get(itemEntry[GC_VAR_ENVVAR], GC_Defaults[itemName])
+      if itemEntry[GC_VAR_TYPE] == GC_TYPE_INTEGER:
+        try:
+          number = int(value)
+          minVal, maxVal = itemEntry[GC_VAR_LIMITS]
+          if (minVal is not None) and (number < minVal):
+            number = minVal
+          elif (maxVal is not None) and (number > maxVal):
+            number = maxVal
+        except ValueError:
+          number = GC_Defaults[itemName]
+        value = number
+      GC_Defaults[itemName] = value
 
   def _getCfgDirectory(itemName):
-    return GC_Defaults[itemName]
+    dirPath = os.path.expanduser(GC_Defaults[itemName])
+    if (not dirPath) or (not os.path.isabs(dirPath)):
+      dirPath = os.path.join(GM_Globals[GM_GAM_PATH], dirPath)
+    return dirPath
 
-  def _getCfgFile(itemName):
+  def _getCfgFile(itemName, GC_Table):
     value = os.path.expanduser(GC_Defaults[itemName])
     if not os.path.isabs(value):
-      value = os.path.expanduser(os.path.join(GC_Values[GC_CONFIG_DIR], value))
+      value = os.path.expanduser(os.path.join(GC_Table[GC_CONFIG_DIR], value))
     return value
 
+  def _verifyValues():
+    print u'Gam: Variables'
+    for itemName in sorted(GC_VAR_INFO):
+      cfgValue = GC_Defaults[itemName]
+      if GC_VAR_INFO[itemName][GC_VAR_TYPE] == GC_TYPE_FILE:
+        expdValue = _getCfgFile(itemName, GC_Defaults)
+        if cfgValue != expdValue:
+          cfgValue = u'{0} ; {1}'.format(cfgValue, expdValue)
+      elif GC_VAR_INFO[itemName][GC_VAR_TYPE] == GC_TYPE_DIRECTORY:
+        expdValue = _getCfgDirectory(itemName)
+        if cfgValue != expdValue:
+          cfgValue = u'{0} ; {1}'.format(cfgValue, expdValue)
+      print u'  {0} = {1}'.format(itemName, cfgValue)
+
+# Read environment variables/signal files
   GC_Defaults[GC_CONFIG_DIR] = GM_Globals[GM_GAM_PATH]
   GC_Defaults[GC_CACHE_DIR] = os.path.join(GM_Globals[GM_GAM_PATH], u'gamcache')
   GC_Defaults[GC_DRIVE_DIR] = GM_Globals[GM_GAM_PATH]
-  GC_Defaults[GC_SITE_DIR] = GM_Globals[GM_GAM_PATH]
-
-  _getOldEnvVar(GC_CONFIG_DIR, u'GAMUSERCONFIGDIR')
-  _getOldEnvVar(GC_SITE_DIR, u'GAMSITECONFIGDIR')
-  _getOldEnvVar(GC_CACHE_DIR, u'GAMCACHEDIR')
-  _getOldEnvVar(GC_DRIVE_DIR, u'GAMDRIVEDIR')
-  _getOldEnvVar(GC_OAUTH2_TXT, u'OAUTHFILE')
-  _getOldEnvVar(GC_OAUTH2SERVICE_JSON, u'OAUTHSERVICEFILE')
-  if GC_Defaults[GC_OAUTH2SERVICE_JSON].find(u'.') == -1:
-    GC_Defaults[GC_OAUTH2SERVICE_JSON] += u'.json'
-  _getOldEnvVar(GC_CLIENT_SECRETS_JSON, u'CLIENTSECRETS')
-  _getOldEnvVar(GC_DOMAIN, u'GA_DOMAIN')
-  _getOldEnvVar(GC_CUSTOMER_ID, u'CUSTOMER_ID')
-  _getOldEnvVar(GC_CHARSET, u'GAM_CHARSET')
-  _getOldEnvVar(GC_NUM_THREADS, u'GAM_THREADS')
-  _getOldEnvVar(GC_AUTO_BATCH_MIN, u'GAM_AUTOBATCH')
-  _getOldEnvVar(GC_ACTIVITY_MAX_RESULTS, u'GAM_ACTIVITY_MAX_RESULTS')
-  _getOldEnvVar(GC_DEVICE_MAX_RESULTS, u'GAM_DEVICE_MAX_RESULTS')
-  _getOldEnvVar(GC_DRIVE_MAX_RESULTS, u'GAM_DRIVE_MAX_RESULTS')
-  _getOldEnvVar(GC_USER_MAX_RESULTS, u'GAM_USER_MAX_RESULTS')
-  _getOldSignalFile(GC_DEBUG_LEVEL, u'debug.gam', trueValue=4, falseValue=0)
-  _getOldSignalFile(GC_NO_VERIFY_SSL, u'noverifyssl.txt')
-  _getOldSignalFile(GC_NO_BROWSER, u'nobrowser.txt')
-  _getOldSignalFile(GC_NO_CACHE, u'nocache.txt')
-  _getOldSignalFile(GC_NO_UPDATE_CHECK, u'noupdatecheck.txt')
-# Assign directories first
+  for itemName, itemEntry in GC_VAR_INFO.items():
+    if itemEntry[GC_VAR_TYPE] == GC_TYPE_DIRECTORY:
+      _getDefault(itemName, itemEntry)
+  for itemName, itemEntry in GC_VAR_INFO.items():
+    if itemEntry[GC_VAR_TYPE] != GC_TYPE_DIRECTORY:
+      _getDefault(itemName, itemEntry)
+# config [<VariableName> <Value>]* [verify]
+  i = 1
+  if (i < len(sys.argv)) and (sys.argv[i].lower() == u'config'):
+    i += 1
+    while i < len(sys.argv):
+      itemName = sys.argv[i].lower()
+      if itemName == u'verify':
+        i += 1
+        _verifyValues()
+      elif itemName in GC_VAR_INFO:
+        i += 1
+        if GC_VAR_INFO[itemName][GC_VAR_TYPE] == GC_TYPE_BOOLEAN:
+          value = sys.argv[i].lower()
+          if value in true_values:
+            value = True
+          elif value in false_values:
+            value = False
+          else:
+            print u'ERROR: Value for {0} must be true or false; got {1}'.format(itemName, sys.argv[i])
+            sys.exit(2)
+        elif GC_VAR_INFO[itemName][GC_VAR_TYPE] == GC_TYPE_INTEGER:
+          minVal, maxVal = GC_VAR_INFO[itemName][GC_VAR_LIMITS]
+          try:
+            value = int(sys.argv[i])
+            badValue = ((minVal is not None) and (value < minVal)) or ((maxVal is not None) and (value > maxVal))
+          except ValueError:
+            badValue = True
+          if badValue:
+            print u'ERROR: Value for {0} must be {1}; got {2}'.format(itemName, integerLimits(minVal, maxVal), sys.argv[i])
+            sys.exit(2)
+        else:
+          value = sys.argv[i]
+        i += 1
+        GC_Defaults[itemName] = value
+      else:
+        break
+# Assign global variables, directories first as other variables depend on them
   for itemName in GC_VAR_INFO:
     if GC_VAR_INFO[itemName][GC_VAR_TYPE] == GC_TYPE_DIRECTORY:
       GC_Values[itemName] = _getCfgDirectory(itemName)
   for itemName in GC_VAR_INFO:
     varType = GC_VAR_INFO[itemName][GC_VAR_TYPE]
     if varType == GC_TYPE_FILE:
-      GC_Values[itemName] = _getCfgFile(itemName)
-    else:
+      GC_Values[itemName] = _getCfgFile(itemName, GC_Values)
+    elif varType != GC_TYPE_DIRECTORY:
       GC_Values[itemName] = GC_Defaults[itemName]
   GM_Globals[GM_LAST_UPDATE_CHECK_TXT] = os.path.join(GC_Values[GC_CONFIG_DIR], FN_LAST_UPDATE_CHECK_TXT)
   if not GC_Values[GC_NO_UPDATE_CHECK]:
@@ -756,15 +792,27 @@ def SetGlobalVariables():
   GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID] = None
   GM_Globals[GM_EXTRA_ARGS_DICT] = {u'prettyPrint': GC_Values[GC_DEBUG_LEVEL] > 0}
   httplib2.debuglevel = GC_Values[GC_DEBUG_LEVEL]
-  if os.path.isfile(os.path.join(GC_Values[GC_CONFIG_DIR], FN_EXTRA_ARGS_TXT)):
+  if os.path.isfile(GC_Values[GC_EXTRA_ARGS]):
     import ConfigParser
     ea_config = ConfigParser.ConfigParser()
     ea_config.optionxform = str
-    ea_config.read(os.path.join(GC_Values[GC_CONFIG_DIR], FN_EXTRA_ARGS_TXT))
+    ea_config.read(GC_Values[GC_EXTRA_ARGS])
     GM_Globals[GM_EXTRA_ARGS_DICT].update(dict(ea_config.items(u'extra-args')))
   if GC_Values[GC_NO_CACHE]:
     GC_Values[GC_CACHE_DIR] = None
-  return True
+# If no config commands were executed or some were and there are more arguments on the command line, return True
+  if (i == 1) or (i < len(sys.argv)):
+    if i > 1:
+# Move remaining args down to 1
+      j = 1
+      while i < len(sys.argv):
+        sys.argv[j] = sys.argv[i]
+        j += 1
+        i += 1
+      del sys.argv[j:]
+    return True
+# We're done, nothing else to do
+  return False
 
 def doGAMCheckForUpdates(forceCheck=False):
   import urllib2
@@ -7956,7 +8004,8 @@ def doGetGroupInfo(group_name=None):
       for groupm in groups:
         print u'  %s: %s' % (groupm[u'name'], groupm[u'email'])
   if getUsers:
-    members = callGAPIpages(cd.members(), u'list', u'members', groupKey=group_name)
+    members = callGAPIpages(cd.members(), u'list', u'members',
+                            groupKey=group_name, fields=u'nextPageToken,members(email,id,role,type)', maxResults=GC_Values[GC_MEMBER_MAX_RESULTS])
     print u'Members:'
     for member in members:
       try:
@@ -9175,7 +9224,7 @@ def doPrintGroups():
       page_message = u'Got %%num_items%% members: %%first_item%% - %%last_item%%\n'
       groupMembers = callGAPIpages(cd.members(), u'list', u'members',
                                    page_message=page_message, message_attribute=u'email',
-                                   groupKey=groupEmail, roles=roles, fields=u'nextPageToken,members(email,id,role)')
+                                   groupKey=groupEmail, roles=roles, fields=u'nextPageToken,members(email,id,role)', maxResults=GC_Values[GC_MEMBER_MAX_RESULTS])
       if members:
         allMembers = list()
       if managers:
@@ -9379,7 +9428,7 @@ def doPrintGroupMembers():
     group_email = group[u'email']
     sys.stderr.write(u'Getting members for %s (%s/%s)\n' % (group_email, i, count))
     group_members = callGAPIpages(cd.members(), u'list', u'members',
-                                  message_attribute=u'email', groupKey=group_email, fields=fields)
+                                  groupKey=group_email, fields=fields, maxResults=GC_Values[GC_MEMBER_MAX_RESULTS])
     for member in group_members:
       for unwanted_item in [u'kind', u'etag']:
         if unwanted_item in member:
@@ -9749,8 +9798,9 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
     if not silent:
       sys.stderr.write(u"Getting %s of %s (may take some time for large groups)...\n" % (member_type_message, group))
       page_message = u'Got %%%%total_items%%%% %s...' % member_type_message
-    members = callGAPIpages(cd.members(), u'list', u'members', page_message=page_message,
-                            groupKey=group, roles=member_type, fields=u'nextPageToken,members(email)')
+    members = callGAPIpages(cd.members(), u'list', u'members',
+                            page_message=page_message,
+                            groupKey=group, roles=member_type, fields=u'nextPageToken,members(email)', maxResults=GC_Values[GC_MEMBER_MAX_RESULTS])
     users = []
     for member in members:
       users.append(member[u'email'])
@@ -9932,7 +9982,7 @@ def OAuthInfo():
   try:
     print u'G Suite Admin: %s' % token_info[u'email']
   except KeyError:
-    print u'G Suite  Admin: Unknown'
+    print u'G Suite Admin: Unknown'
 
 def doDeleteOAuth():
   _, credentials = getOauth2TxtStorageCredentials()
@@ -10193,6 +10243,11 @@ def run_batch(items):
   pool.close()
   pool.join()
 
+def runCmdForUsers(cmd, users, **kwargs):
+  if (GC_Values[GC_AUTO_BATCH_MIN] < 0) and (len(users) > -GC_Values[GC_AUTO_BATCH_MIN]):
+    run_batch([[u'gam', u'user', user]+sys.argv[3:] for user in users])
+  else:
+    cmd(users, **kwargs)
 #
 # Process command line arguments, find substitutions
 # An argument containing instances of ~~xxx~~ has xxx replaced by the value of field xxx from the CSV file
@@ -10255,23 +10310,14 @@ def processSubFields(GAM_argv, row, subFields):
     argv[GAM_argvI] = argv[GAM_argvI].encode(GM_Globals[GM_SYS_ENCODING])
   return argv
 
-def runCmdForUsers(cmd, users, default_to_batch=False, **kwargs):
-  if default_to_batch and len(users) > 1:
-    items = []
-    for user in users:
-      items.append([u'gam', u'user', user] + sys.argv[3:])
-    run_batch(items)
-    sys.exit(0)
-  else:
-    cmd(users, **kwargs)
-
 # Process GAM command
 def ProcessGAMCommand(args):
   if args != sys.argv:
     sys.argv = args[:]
   GM_Globals[GM_SYSEXITRC] = 0
   try:
-    SetGlobalVariables()
+    if not SetGlobalVariables():
+      sys.exit(GM_Globals[GM_SYSEXITRC])
     command = sys.argv[1].lower()
     if command == u'batch':
       import shlex
@@ -10638,18 +10684,7 @@ def ProcessGAMCommand(args):
       for user in users:
         print user
       sys.exit(0)
-    if (GC_Values[GC_AUTO_BATCH_MIN] > 0) and (len(users) > GC_Values[GC_AUTO_BATCH_MIN]):
-      runCmdForUsers(None, users, True)
-    if command == u'transfer':
-      transferWhat = sys.argv[4].lower()
-      if transferWhat == u'drive':
-        transferDriveFiles(users)
-      elif transferWhat == u'seccals':
-        transferSecCals(users)
-      else:
-        print u'ERROR: %s is not a valid argument for "gam <users> transfer"' % transferWhat
-        sys.exit(2)
-    elif command == u'show':
+    if command == u'show':
       showWhat = sys.argv[4].lower()
       if showWhat in [u'labels', u'label']:
         showLabels(users)
@@ -10704,6 +10739,7 @@ def ProcessGAMCommand(args):
       else:
         print u'ERROR: %s is not a valid argument for "gam <users> show"' % showWhat
         sys.exit(2)
+      sys.exit(0)
     elif command == u'print':
       printWhat = sys.argv[4].lower()
       if printWhat == u'calendars':
@@ -10728,6 +10764,33 @@ def ProcessGAMCommand(args):
         printShowTokens(5, u'users', users, True)
       else:
         print u'ERROR: %s is not a valid argument for "gam <users> print"' % printWhat
+        sys.exit(2)
+      sys.exit(0)
+    elif command == u'info':
+      infoWhat = sys.argv[4].lower()
+      if infoWhat == u'calendar':
+        infoCalendar(users)
+      elif infoWhat in [u'filter', u'filters']:
+        infoFilters(users)
+      elif infoWhat in [u'forwardingaddress', u'forwardingaddresses']:
+        infoForwardingAddresses(users)
+      elif infoWhat == u'sendas':
+        infoSendAs(users)
+      else:
+        print u'ERROR: %s is not a valid argument for "gam <users> info"' % infoWhat
+        sys.exit(2)
+      sys.exit(0)
+    if (GC_Values[GC_AUTO_BATCH_MIN] > 0) and (len(users) > GC_Values[GC_AUTO_BATCH_MIN]):
+      run_batch([[u'gam', u'user', user]+sys.argv[3:] for user in users])
+      sys.exit(0)
+    if command == u'transfer':
+      transferWhat = sys.argv[4].lower()
+      if transferWhat == u'drive':
+        transferDriveFiles(users)
+      elif transferWhat == u'seccals':
+        transferSecCals(users)
+      else:
+        print u'ERROR: %s is not a valid argument for "gam <users> transfer"' % transferWhat
         sys.exit(2)
     elif command == u'modify':
       modifyWhat = sys.argv[4].lower()
@@ -10760,7 +10823,7 @@ def ProcessGAMCommand(args):
         doDeleteLabel(users)
       elif delWhat in [u'message', u'messages']:
         #doProcessMessages(users, u'delete')
-        runCmdForUsers(doProcessMessages, users, default_to_batch=True, function=u'delete')
+        runCmdForUsers(doProcessMessages, users, function=u'delete')
       elif delWhat == u'photo':
         deletePhoto(users)
       elif delWhat in [u'license', u'licence']:
@@ -10858,19 +10921,6 @@ def ProcessGAMCommand(args):
       else:
         print u'ERROR: %s is not a valid argument for "gam <users> empty"' % emptyWhat
         sys.exit(2)
-    elif command == u'info':
-      infoWhat = sys.argv[4].lower()
-      if infoWhat == u'calendar':
-        infoCalendar(users)
-      elif infoWhat in [u'filter', u'filters']:
-        infoFilters(users)
-      elif infoWhat in [u'forwardingaddress', u'forwardingaddresses']:
-        infoForwardingAddresses(users)
-      elif infoWhat == u'sendas':
-        infoSendAs(users)
-      else:
-        print u'ERROR: %s is not a valid argument for "gam <users> info"' % infoWhat
-        sys.exit(2)
     elif command == u'check':
       checkWhat = sys.argv[4].replace(u'_', '').lower()
       if checkWhat == u'serviceaccount':
@@ -10882,7 +10932,7 @@ def ProcessGAMCommand(args):
       doProfile(users)
     elif command == u'imap':
       #doImap(users)
-      runCmdForUsers(doImap, users, default_to_batch=True)
+      runCmdForUsers(doImap, users)
     elif command in [u'pop', u'pop3']:
       doPop(users)
     elif command == u'sendas':
@@ -10917,7 +10967,6 @@ def ProcessGAMCommand(args):
     GM_Globals[GM_SYSEXITRC] = e.code
   return GM_Globals[GM_SYSEXITRC]
 
-#
 # From: https://github.com/pyinstaller/pyinstaller/wiki/Recipe-Multiprocessing
 #
 if sys.platform.startswith('win'):
