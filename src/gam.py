@@ -4893,6 +4893,8 @@ def getImap(users):
 def getProductAndSKU(sku):
   if sku.lower() in [u'apps', u'gafb', u'gafw', u'gsbasic']:
     sku = u'Google-Apps-For-Business'
+  elif sku.lower() in [u'gafg',]:
+    sku = u'Google-Apps-For-Government'
   elif sku.lower() in [u'gams',]:
     sku = u'Google-Apps-For-Postini'
   elif sku.lower() in [u'gau', u'unlimited', u'd4w', u'dfw', u'gsbusiness']:
@@ -7730,7 +7732,7 @@ def doGetUserInfo(user_email=None):
   getSchemas = getAliases = getGroups = getLicenses = True
   projection = u'full'
   customFieldMask = viewType = None
-  skus = [u'Google-Apps-For-Business', u'Google-Apps-Unlimited', u'Google-Apps-For-Postini',
+  skus = [u'Google-Apps-For-Business', u'Google-Apps-Unlimited', u'Google-Apps-For-Government', u'Google-Apps-For-Postini',
           u'Google-Apps-Lite', u'Google-Vault', u'Google-Vault-Former-Employee']
   while i < len(sys.argv):
     myarg = sys.argv[i].lower()
@@ -10228,6 +10230,8 @@ gam create project
 
 def run_batch(items):
   from multiprocessing import Pool
+  if not items:
+    return
   num_worker_threads = min(len(items), GC_Values[GC_NUM_THREADS])
   pool = Pool(processes=num_worker_threads)
   sys.stderr.write(u'Using %s processes...\n' % num_worker_threads)
