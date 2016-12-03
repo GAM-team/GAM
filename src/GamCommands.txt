@@ -18,7 +18,7 @@ Primatives
 <FalseValues>= false|off|no|disabled|0
 <DataTransferService> ::= googledrive|gdrive|drive|"drive and docs"
 <ProductID> ::= Google-Apps|Google-Coordinate|Google-Drive-storage|Google-Vault
-<SKUID> ::= apps|gafb|gafw|gsbasic|gams|gau|unlimited|d4w|dfw|gsbusiness|coordinate|vault|vfe|
+<SKUID> ::= apps|gafb|gafw|gsbasic|gafg|gams|gau|unlimited|d4w|dfw|gsbusiness|coordinate|vault|vfe|
 	    drive-20gb|drive20gb|20gb|drive-50gb|drive50gb|50gb|drive-200gb|drive200gb|200gb|drive-400gb|drive400gb|400gb|
 	    drive-1tb|drive1tb|1tb|drive-2tb|drive2tb|2tb|drive-4tb|drive4tb|4tb|drive-8tb|drive8tb|8tb|drive-16tb|drive16tb|16tb
 <Charset> ::= ascii|mbcs|utf-8|utf-8-sig|utf-16|<String>
