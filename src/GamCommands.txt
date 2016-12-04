@@ -8,7 +8,7 @@ If an item contains spaces, it should be surrounded by " or '.
 + item may appear one or more times
 | separates alternative items
 
-Primatives
+Primitives
 <Digit> ::= 0|1|2|3|4|5|6|7|8|9
 <Number> ::= <Digit>+
 <Hex> ::= <Digit>|a|b|c|d|e|f|A|B|C|D|E|F
@@ -25,7 +25,7 @@ Primatives
 <FileFormat> ::= csv|html|txt|tsv|jpeg|jpg|png|svg|pdf|rtf|pptx|xlsx|docx|odt|ods|openoffice|ms|microsoft|micro$oft
 <Language> ::= ar|bn|bg|ca|zh-CN|zh-TW|hr|cs|da|nl|en|en-GB|et|fi|fr|de|el|gu|iw|is|in|it|ja|kn|ko|lv|lt|ms|ml|mr|no|or|fa|pl|pt-BR|pt-PT|ro|ru|sr|sk|sl|es|sv|tl|ta|te|th|tr|uk|ur|vi
 
-Basic items built from primatives
+Basic items built from primitives
 <Boolean> ::= <TrueValues>|<FalseValues>
 <ByteCount> ::= <Number>[m|k|b]
 <CIDRnetmask> ::= <Number>.<Number>.<Number>.<Number>/<Number>
