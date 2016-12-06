@@ -746,7 +746,7 @@ gam create course id|alias <CourseAlias> [teacher <UserItem>] <CourseAttributes>
 gam update course <CourseID> <CourseAttributes>+
 gam delete course <CourseID>
 gam info course <CourseID>
-gam print courses [todrive] [teacher] [student] [alias|aliases] [delimiter <String>]
+gam print courses [todrive] [teacher <UserItem>] [student <UserItem>] [alias|aliases] [delimiter <String>]
 
 gam course <CourseID> add alias <CourseAlias>
 gam course <CourseID> delete alias <CourseAlias>
