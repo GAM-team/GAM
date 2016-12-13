@@ -7240,7 +7240,7 @@ def doUpdateUser(users, i):
       body[u'emails'] = [{u'type': u'custom', u'customType': u'former_employee', u'primary': False, u'address': user_primary}]
     sys.stdout.write(u'updating user %s...\n' % user)
     if body:
-      callGAPI(cd.users(), u'patch', userKey=user, body=body)
+      callGAPI(cd.users(), u'update', userKey=user, body=body)
     if admin_body:
       callGAPI(cd.users(), u'makeAdmin', userKey=user, body=admin_body)
 
