@@ -2089,7 +2089,7 @@ def convertToUserID(user):
   if user.find(u'@') == -1:
     user = u'%s@%s' % (user, GC_Values[GC_DOMAIN])
   try:
-    return callGAPI(cd.users(), u'get', throw_reasons=[u'notFound'], userKey=user, fields=u'id')[u'id']
+    return callGAPI(cd.users(), u'get', throw_reasons=[u'userNotFound', u'badRequest', u'forbidden'], userKey=user, fields=u'id')[u'id']
   except googleapiclient.errors.HttpError:
     print u'ERROR: no such user %s' % user
     sys.exit(3)
@@ -2097,7 +2097,7 @@ def convertToUserID(user):
 def convertUserIDtoEmail(uid):
   cd = buildGAPIObject(u'directory')
   try:
-    return callGAPI(cd.users(), u'get', throw_reasons=[u'notFound'], userKey=uid, fields=u'primaryEmail')[u'primaryEmail']
+    return callGAPI(cd.users(), u'get', throw_reasons=[u'userNotFound', u'badRequest', u'forbidden'], userKey=uid, fields=u'primaryEmail')[u'primaryEmail']
   except googleapiclient.errors.HttpError:
     return u'uid:{0}'.format(uid)
 
