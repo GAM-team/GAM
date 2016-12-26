@@ -207,14 +207,10 @@ GC_NUM_THREADS = u'num_threads'
 GC_OAUTH2_TXT = u'oauth2_txt'
 # Path to oauth2service.json
 GC_OAUTH2SERVICE_JSON = u'oauth2service_json'
-# Default section to use for processing
-GC_SECTION = u'section'
 # Add (n/m) to end of messages if number of items to be processed exceeds this number
 GC_SHOW_COUNTS_MIN = u'show_counts_min'
 # Enable/disable "Getting ... " messages
 GC_SHOW_GETTINGS = u'show_gettings'
-# GAM config directory containing json discovery files
-GC_SITE_DIR = u'site_dir'
 # When retrieving lists of Users from API, how many should be retrieved in each chunk
 GC_USER_MAX_RESULTS = u'user_max_results'
 
@@ -232,17 +228,15 @@ GC_Defaults = {
   GC_DOMAIN: u'',
   GC_DRIVE_DIR: u'',
   GC_DRIVE_MAX_RESULTS: 1000,
-  GC_NO_BROWSER: FALSE,
-  GC_NO_CACHE: FALSE,
-  GC_NO_UPDATE_CHECK: FALSE,
-  GC_NO_VERIFY_SSL: FALSE,
+  GC_NO_BROWSER: False,
+  GC_NO_CACHE: False,
+  GC_NO_UPDATE_CHECK: False,
+  GC_NO_VERIFY_SSL: False,
   GC_NUM_THREADS: 25,
   GC_OAUTH2_TXT: FN_OAUTH2_TXT,
   GC_OAUTH2SERVICE_JSON: FN_OAUTH2SERVICE_JSON,
-  GC_SECTION: u'',
   GC_SHOW_COUNTS_MIN: 0,
-  GC_SHOW_GETTINGS: TRUE,
-  GC_SITE_DIR: u'',
+  GC_SHOW_GETTINGS: True,
   GC_USER_MAX_RESULTS: 500,
   }
 
@@ -258,34 +252,35 @@ GC_TYPE_LANGUAGE = u'lang'
 GC_TYPE_STRING = u'stri'
 
 GC_VAR_TYPE = u'type'
+GC_VAR_ENVVAR = u'enva'
 GC_VAR_LIMITS = u'lmit'
+GC_VAR_SFFT = u'sfft'
+GC_VAR_SIGFILE = u'sigf'
 
 GC_VAR_INFO = {
-  GC_ACTIVITY_MAX_RESULTS: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (1, 500)},
-  GC_AUTO_BATCH_MIN: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (0, None)},
-  GC_BATCH_SIZE: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (1, 1000)},
-  GC_CACHE_DIR: {GC_VAR_TYPE: GC_TYPE_DIRECTORY},
-  GC_CHARSET: {GC_VAR_TYPE: GC_TYPE_STRING},
-  GC_CLIENT_SECRETS_JSON: {GC_VAR_TYPE: GC_TYPE_FILE},
-  GC_CONFIG_DIR: {GC_VAR_TYPE: GC_TYPE_DIRECTORY},
-  GC_CUSTOMER_ID: {GC_VAR_TYPE: GC_TYPE_STRING},
-  GC_DEBUG_LEVEL: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (0, None)},
-  GC_DEVICE_MAX_RESULTS: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (1, 1000)},
-  GC_DOMAIN: {GC_VAR_TYPE: GC_TYPE_STRING},
-  GC_DRIVE_DIR: {GC_VAR_TYPE: GC_TYPE_DIRECTORY},
-  GC_DRIVE_MAX_RESULTS: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (1, 1000)},
-  GC_NO_BROWSER: {GC_VAR_TYPE: GC_TYPE_BOOLEAN},
-  GC_NO_CACHE: {GC_VAR_TYPE: GC_TYPE_BOOLEAN},
-  GC_NO_UPDATE_CHECK: {GC_VAR_TYPE: GC_TYPE_BOOLEAN},
-  GC_NO_VERIFY_SSL: {GC_VAR_TYPE: GC_TYPE_BOOLEAN},
-  GC_NUM_THREADS: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (1, None)},
-  GC_OAUTH2_TXT: {GC_VAR_TYPE: GC_TYPE_FILE},
-  GC_OAUTH2SERVICE_JSON: {GC_VAR_TYPE: GC_TYPE_FILE},
-  GC_SECTION: {GC_VAR_TYPE: GC_TYPE_STRING},
-  GC_SHOW_COUNTS_MIN: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (0, None)},
-  GC_SHOW_GETTINGS: {GC_VAR_TYPE: GC_TYPE_BOOLEAN},
-  GC_SITE_DIR: {GC_VAR_TYPE: GC_TYPE_DIRECTORY},
-  GC_USER_MAX_RESULTS: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (1, 500)},
+  GC_ACTIVITY_MAX_RESULTS: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_ENVVAR: u'GAM_ACTIVITY_MAX_RESULTS', GC_VAR_LIMITS: (1, 500)},
+  GC_AUTO_BATCH_MIN: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_ENVVAR: u'GAM_AUTOBATCH', GC_VAR_LIMITS: (0, None)},
+  GC_BATCH_SIZE: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_ENVVAR: u'GAM_BATCH_SIZE', GC_VAR_LIMITS: (1, 1000)},
+  GC_CACHE_DIR: {GC_VAR_TYPE: GC_TYPE_DIRECTORY, GC_VAR_ENVVAR: u'GAMCACHEDIR'},
+  GC_CHARSET: {GC_VAR_TYPE: GC_TYPE_STRING, GC_VAR_ENVVAR: u'GAM_CHARSET'},
+  GC_CLIENT_SECRETS_JSON: {GC_VAR_TYPE: GC_TYPE_FILE, GC_VAR_ENVVAR: u'CLIENTSECRETS'},
+  GC_CONFIG_DIR: {GC_VAR_TYPE: GC_TYPE_DIRECTORY, GC_VAR_ENVVAR: u'GAMUSERCONFIGDIR'},
+  GC_CUSTOMER_ID: {GC_VAR_TYPE: GC_TYPE_STRING, GC_VAR_ENVVAR: u'CUSTOMER_ID'},
+  GC_DEBUG_LEVEL: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_SIGFILE: u'debug.gam', GC_VAR_LIMITS: (0, None), GC_VAR_SFFT: (0, 4)},
+  GC_DEVICE_MAX_RESULTS: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_ENVVAR: u'GAM_DEVICE_MAX_RESULTS', GC_VAR_LIMITS: (1, 1000)},
+  GC_DOMAIN: {GC_VAR_TYPE: GC_TYPE_STRING, GC_VAR_ENVVAR: u'GA_DOMAIN'},
+  GC_DRIVE_DIR: {GC_VAR_TYPE: GC_TYPE_DIRECTORY, GC_VAR_ENVVAR: u'GAMDRIVEDIR'},
+  GC_DRIVE_MAX_RESULTS: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_ENVVAR: u'GAM_DRIVE_MAX_RESULTS', GC_VAR_LIMITS: (1, 1000)},
+  GC_NO_BROWSER: {GC_VAR_TYPE: GC_TYPE_BOOLEAN, GC_VAR_SIGFILE: u'nobrowser.txt', GC_VAR_SFFT: (False, True)},
+  GC_NO_CACHE: {GC_VAR_TYPE: GC_TYPE_BOOLEAN, GC_VAR_SIGFILE: u'nocache.txt', GC_VAR_SFFT: (False, True)},
+  GC_NO_UPDATE_CHECK: {GC_VAR_TYPE: GC_TYPE_BOOLEAN, GC_VAR_SIGFILE: u'noupdatecheck.txt', GC_VAR_SFFT: (False, True)},
+  GC_NO_VERIFY_SSL: {GC_VAR_TYPE: GC_TYPE_BOOLEAN, GC_VAR_SIGFILE: u'noverifyssl.txt', GC_VAR_SFFT: (False, True)},
+  GC_NUM_THREADS: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_ENVVAR: u'GAM_THREADS', GC_VAR_LIMITS: (1, None)},
+  GC_OAUTH2_TXT: {GC_VAR_TYPE: GC_TYPE_FILE, GC_VAR_ENVVAR: u'OAUTHFILE'},
+  GC_OAUTH2SERVICE_JSON: {GC_VAR_TYPE: GC_TYPE_FILE, GC_VAR_ENVVAR: u'OAUTHSERVICEFILE'},
+  GC_SHOW_COUNTS_MIN: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_ENVVAR: u'GAM_SHOW_COUNTS_MIN', GC_VAR_LIMITS: (0, None)},
+  GC_SHOW_GETTINGS: {GC_VAR_TYPE: GC_TYPE_BOOLEAN, GC_VAR_ENVVAR: u'GAM_SHOW_GETTINGS'},
+  GC_USER_MAX_RESULTS: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_ENVVAR: u'GAM_USER_MAX_RESULTS', GC_VAR_LIMITS: (1, 500)},
   }
 # Google API constants
 APPLICATION_VND_GOOGLE_APPS = u'application/vnd.google-apps.'
@@ -683,23 +678,23 @@ class UnicodeDictReader(object):
 #
 def SetGlobalVariables():
 
-  def _getOldEnvVar(itemName, envVar):
-    value = os.environ.get(envVar, GC_Defaults[itemName])
-    if GC_VAR_INFO[itemName][GC_VAR_TYPE] == GC_TYPE_INTEGER:
-      try:
-        number = int(value)
-        minVal, maxVal = GC_VAR_INFO[itemName][GC_VAR_LIMITS]
-        if number < minVal:
-          number = minVal
-        elif maxVal and (number > maxVal):
-          number = maxVal
-      except ValueError:
-        number = GC_Defaults[itemName]
-      value = number
-    GC_Defaults[itemName] = value
-
-  def _getOldSignalFile(itemName, fileName, trueValue=True, falseValue=False):
-    GC_Defaults[itemName] = trueValue if os.path.isfile(os.path.join(GC_Defaults[GC_CONFIG_DIR], fileName)) else falseValue
+  def _getDefault(itemName, itemEntry):
+    if GC_VAR_SIGFILE in itemEntry:
+      GC_Defaults[itemName] = itemEntry[GC_VAR_SFFT][os.path.isfile(os.path.join(GC_Defaults[GC_CONFIG_DIR], itemEntry[GC_VAR_SIGFILE]))]
+    else:
+      value = os.environ.get(itemEntry[GC_VAR_ENVVAR], GC_Defaults[itemName])
+      if itemEntry[GC_VAR_TYPE] == GC_TYPE_INTEGER:
+        try:
+          number = int(value)
+          minVal, maxVal = itemEntry[GC_VAR_LIMITS]
+          if number < minVal:
+            number = minVal
+          elif maxVal and (number > maxVal):
+            number = maxVal
+        except ValueError:
+          number = GC_Defaults[itemName]
+        value = number
+      GC_Defaults[itemName] = value
 
   def _getCfgDirectory(itemName):
     return GC_Defaults[itemName]
@@ -710,35 +705,19 @@ def SetGlobalVariables():
       value = os.path.expanduser(os.path.join(GC_Values[GC_CONFIG_DIR], value))
     return value
 
+# Read environment variables/signal files
   GC_Defaults[GC_CONFIG_DIR] = GM_Globals[GM_GAM_PATH]
   GC_Defaults[GC_CACHE_DIR] = os.path.join(GM_Globals[GM_GAM_PATH], u'gamcache')
   GC_Defaults[GC_DRIVE_DIR] = GM_Globals[GM_GAM_PATH]
-  GC_Defaults[GC_SITE_DIR] = GM_Globals[GM_GAM_PATH]
-
-  _getOldEnvVar(GC_CONFIG_DIR, u'GAMUSERCONFIGDIR')
-  _getOldEnvVar(GC_SITE_DIR, u'GAMSITECONFIGDIR')
-  _getOldEnvVar(GC_CACHE_DIR, u'GAMCACHEDIR')
-  _getOldEnvVar(GC_DRIVE_DIR, u'GAMDRIVEDIR')
-  _getOldEnvVar(GC_OAUTH2_TXT, u'OAUTHFILE')
-  _getOldEnvVar(GC_OAUTH2SERVICE_JSON, u'OAUTHSERVICEFILE')
+  for itemName, itemEntry in GC_VAR_INFO.items():
+    if itemEntry[GC_VAR_TYPE] == GC_TYPE_DIRECTORY:
+      _getDefault(itemName, itemEntry)
+  for itemName, itemEntry in GC_VAR_INFO.items():
+    if itemEntry[GC_VAR_TYPE] != GC_TYPE_DIRECTORY:
+      _getDefault(itemName, itemEntry)
   if GC_Defaults[GC_OAUTH2SERVICE_JSON].find(u'.') == -1:
     GC_Defaults[GC_OAUTH2SERVICE_JSON] += u'.json'
-  _getOldEnvVar(GC_CLIENT_SECRETS_JSON, u'CLIENTSECRETS')
-  _getOldEnvVar(GC_DOMAIN, u'GA_DOMAIN')
-  _getOldEnvVar(GC_CUSTOMER_ID, u'CUSTOMER_ID')
-  _getOldEnvVar(GC_CHARSET, u'GAM_CHARSET')
-  _getOldEnvVar(GC_NUM_THREADS, u'GAM_THREADS')
-  _getOldEnvVar(GC_AUTO_BATCH_MIN, u'GAM_AUTOBATCH')
-  _getOldEnvVar(GC_ACTIVITY_MAX_RESULTS, u'GAM_ACTIVITY_MAX_RESULTS')
-  _getOldEnvVar(GC_DEVICE_MAX_RESULTS, u'GAM_DEVICE_MAX_RESULTS')
-  _getOldEnvVar(GC_DRIVE_MAX_RESULTS, u'GAM_DRIVE_MAX_RESULTS')
-  _getOldEnvVar(GC_USER_MAX_RESULTS, u'GAM_USER_MAX_RESULTS')
-  _getOldSignalFile(GC_DEBUG_LEVEL, u'debug.gam', trueValue=4, falseValue=0)
-  _getOldSignalFile(GC_NO_VERIFY_SSL, u'noverifyssl.txt')
-  _getOldSignalFile(GC_NO_BROWSER, u'nobrowser.txt')
-  _getOldSignalFile(GC_NO_CACHE, u'nocache.txt')
-  _getOldSignalFile(GC_NO_UPDATE_CHECK, u'noupdatecheck.txt')
-# Assign directories first
+# Assign global variables, directories first as other variables depend on them
   for itemName in GC_VAR_INFO:
     if GC_VAR_INFO[itemName][GC_VAR_TYPE] == GC_TYPE_DIRECTORY:
       GC_Values[itemName] = _getCfgDirectory(itemName)
