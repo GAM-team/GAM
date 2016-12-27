@@ -972,7 +972,7 @@ def callGAPI(service, function,
 
 def callGAPIpages(service, function, items,
                   page_message=None, message_attribute=None,
-                  throw_reasons=None,
+                  soft_errors=False, throw_reasons=None, retry_reasons=None,
                   **kwargs):
   if throw_reasons is None:
     throw_reasons = []
@@ -980,7 +980,7 @@ def callGAPIpages(service, function, items,
   all_pages = list()
   total_items = 0
   while True:
-    this_page = callGAPI(service, function, throw_reasons=throw_reasons, pageToken=pageToken, **kwargs)
+    this_page = callGAPI(service, function, soft_errors=soft_errors, throw_reasons=throw_reasons, retry_reasons=retry_reasons, pageToken=pageToken, **kwargs)
     if this_page:
       pageToken = this_page.get(u'nextPageToken')
       if items in this_page:
@@ -2730,7 +2730,7 @@ def deleteCalendar(users):
     user, cal = buildCalendarGAPIObject(user)
     if not cal:
       continue
-    callGAPI(cal.calendarList(), u'delete', calendarId=calendarId)
+    callGAPI(cal.calendarList(), u'delete', soft_errors=True, calendarId=calendarId)
 
 CALENDAR_REMINDER_METHODS = [u'email', u'sms', u'popup',]
 CALENDAR_NOTIFICATION_METHODS = [u'email', u'sms',]
@@ -2829,7 +2829,7 @@ def addCalendar(users):
     if not cal:
       continue
     print u"Subscribing %s to %s calendar (%s/%s)" % (user, calendarId, i, count)
-    callGAPI(cal.calendarList(), u'insert', body=body, colorRgbFormat=colorRgbFormat)
+    callGAPI(cal.calendarList(), u'insert', soft_errors=True, body=body, colorRgbFormat=colorRgbFormat)
 
 def updateCalendar(users):
   buildGAPIObject(u'calendar')
@@ -2846,7 +2846,7 @@ def updateCalendar(users):
     if not cal:
       continue
     print u"Updating %s's subscription to calendar %s (%s/%s)" % (user, calendarId, i, count)
-    callGAPI(cal.calendarList(), u'update', calendarId=calendarId, body=body, colorRgbFormat=colorRgbFormat)
+    callGAPI(cal.calendarList(), u'update', soft_errors=True, calendarId=calendarId, body=body, colorRgbFormat=colorRgbFormat)
 
 def doPrinterShowACL():
   cp = buildGAPIObject(u'cloudprint')
@@ -3655,7 +3655,7 @@ def printShowCalendars(users, csvFormat):
     user, cal = buildCalendarGAPIObject(user)
     if not cal:
       continue
-    result = callGAPIpages(cal.calendarList(), u'list', u'items')
+    result = callGAPIpages(cal.calendarList(), u'list', u'items', soft_errors=True)
     jcount = len(result)
     if not csvFormat:
       print u'User: {0}, Calendars: ({1}/{2})'.format(user, i, count)
@@ -3676,13 +3676,21 @@ def printShowCalendars(users, csvFormat):
     writeCSVfile(csvRows, titles, u'Calendars', todrive)
 
 def showCalSettings(users):
+  i = 0
+  count = len(users)
   for user in users:
+    i += 1
     user, cal = buildCalendarGAPIObject(user)
     if not cal:
       continue
-    feed = callGAPI(cal.settings(), u'list')
-    for setting in feed[u'items']:
-      print u'%s: %s' % (setting[u'id'], setting[u'value'])
+    feed = callGAPIpages(cal.settings(), u'list', u'items', soft_errors=True)
+    if feed:
+      print u'User: {0}, Calendar Settings: ({1}/{2})'.format(user, i, count)
+      settings = {}
+      for setting in feed:
+        settings[setting[u'id']] = setting[u'value']
+      for attr, value in sorted(settings.items()):
+        print u'  {0}: {1}'.format(attr, value)
 
 def printDriveSettings(users):
   todrive = False
@@ -4673,7 +4681,8 @@ def transferSecCals(users):
     user, source_cal = buildCalendarGAPIObject(user)
     if not source_cal:
       continue
-    source_calendars = callGAPIpages(source_cal.calendarList(), u'list', u'items', minAccessRole=u'owner', showHidden=True, fields=u'items(id),nextPageToken')
+    source_calendars = callGAPIpages(source_cal.calendarList(), u'list', u'items', soft_errors=True,
+                                     minAccessRole=u'owner', showHidden=True, fields=u'items(id),nextPageToken')
     for source_cal in source_calendars:
       if source_cal[u'id'].find(u'@group.calendar.google.com') != -1:
         doCalendarAddACL(calendarId=source_cal[u'id'], act_as=user, role=u'owner', scope=u'user', entity=target_user)
