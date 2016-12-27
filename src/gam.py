@@ -7684,8 +7684,12 @@ def doGetUserInfo(user_email=None):
   getSchemas = getAliases = getGroups = getLicenses = True
   projection = u'full'
   customFieldMask = viewType = None
-  skus = [u'Google-Apps-For-Business', u'Google-Apps-Unlimited', u'Google-Apps-For-Government', u'Google-Apps-For-Postini',
-          u'Google-Apps-Lite', u'Google-Vault', u'Google-Vault-Former-Employee']
+  skus = [u'Google-Apps-For-Business', u'Google-Apps-For-Government', u'Google-Apps-For-Postini',
+          u'Google-Apps-Lite', u'Google-Apps-Unlimited', u'Google-Drive-storage-20GB',
+          u'Google-Drive-storage-50GB', u'Google-Drive-storage-200GB', u'Google-Drive-storage-400GB',
+          u'Google-Drive-storage-1TB', u'Google-Drive-storage-2TB', u'Google-Drive-storage-4TB',
+          u'Google-Drive-storage-8TB', u'Google-Drive-storage-16TB', u'Google-Vault',
+          u'Google-Vault-Former-Employee',]
   while i < len(sys.argv):
     myarg = sys.argv[i].lower()
     if myarg == u'noaliases':
@@ -7880,13 +7884,20 @@ def doGetUserInfo(user_email=None):
   if getLicenses:
     print u'Licenses:'
     lic = buildGAPIObject(u'licensing')
+    lbatch = googleapiclient.http.BatchHttpRequest()
+    global user_licenses
+    user_licenses = []
     for sku in skus:
       productId, skuId = getProductAndSKU(sku)
-      try:
-        result = callGAPI(lic.licenseAssignments(), u'get', throw_reasons=[u'notFound', u'invalid', u'forbidden'], userId=user_email, productId=productId, skuId=skuId)
-      except googleapiclient.errors.HttpError:
-        continue
-      print u' %s' % result[u'skuId']
+      lbatch.add(lic.licenseAssignments().get(userId=user_email, productId=productId, skuId=skuId), callback=user_lic_result)
+    lbatch.execute()
+    for user_license in user_licenses:
+      print '  %s' % user_license
+
+def user_lic_result(request_id, response, exception):
+  if response and u'skuId' in response:
+    global user_licenses
+    user_licenses.append(response[u'skuId'])
 
 def doGetGroupInfo(group_name=None):
   cd = buildGAPIObject(u'directory')
