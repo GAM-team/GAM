@@ -8,7 +8,7 @@ If an item contains spaces, it should be surrounded by " or '.
 + item may appear one or more times
 | separates alternative items
 
-# Primatives
+Primitives
 <Digit> ::= 0|1|2|3|4|5|6|7|8|9
 <Number> ::= <Digit>+
 <Hex> ::= <Digit>|a|b|c|d|e|f|A|B|C|D|E|F
@@ -18,14 +18,14 @@ If an item contains spaces, it should be surrounded by " or '.
 <FalseValues>= false|off|no|disabled|0
 <DataTransferService> ::= googledrive|gdrive|drive|"drive and docs"
 <ProductID> ::= Google-Apps|Google-Coordinate|Google-Drive-storage|Google-Vault
-<SKUID> ::= apps|gafb|gafw|gams|gau|unlimited|d4w|dfw|coordinate|vault|vfe|
+<SKUID> ::= apps|gafb|gafw|gsbasic|gafg|gams|gau|unlimited|d4w|dfw|gsbusiness|coordinate|vault|vfe|
 	    drive-20gb|drive20gb|20gb|drive-50gb|drive50gb|50gb|drive-200gb|drive200gb|200gb|drive-400gb|drive400gb|400gb|
 	    drive-1tb|drive1tb|1tb|drive-2tb|drive2tb|2tb|drive-4tb|drive4tb|4tb|drive-8tb|drive8tb|8tb|drive-16tb|drive16tb|16tb
 <Charset> ::= ascii|mbcs|utf-8|utf-8-sig|utf-16|<String>
 <FileFormat> ::= csv|html|txt|tsv|jpeg|jpg|png|svg|pdf|rtf|pptx|xlsx|docx|odt|ods|openoffice|ms|microsoft|micro$oft
 <Language> ::= ar|bn|bg|ca|zh-CN|zh-TW|hr|cs|da|nl|en|en-GB|et|fi|fr|de|el|gu|iw|is|in|it|ja|kn|ko|lv|lt|ms|ml|mr|no|or|fa|pl|pt-BR|pt-PT|ro|ru|sr|sk|sl|es|sv|tl|ta|te|th|tr|uk|ur|vi
 
-# Basic items built from primatives
+Basic items built from primitives
 <Boolean> ::= <TrueValues>|<FalseValues>
 <ByteCount> ::= <Number>[m|k|b]
 <CIDRnetmask> ::= <Number>.<Number>.<Number>.<Number>/<Number>
@@ -46,7 +46,7 @@ If an item contains spaces, it should be surrounded by " or '.
 <Tag> ::= <String>
 <UniqueID> ::= uid:<String>
 
-# Named items
+Named items
 <AccessToken> ::= <String>
 <ACLScope> ::= [user:]<EmailAddress>|group:<EmailAddress>|domain[:<DomainName>]|default
 <CalendarACLRole> ::= editor|freebusy|freebusyreader|owner|reader|writer
@@ -297,12 +297,12 @@ If an item contains spaces, it should be surrounded by " or '.
 <UserOrderByFieldName> ::=
 	familyname|lastname|givenname|firstname|email
 
-# Named Lists
-# Lists can be in the following formats
-# Items, separated by commas, without spaces or commas in the items themselves: item(,item)*
-# Items, separated by spaces, without spaces or commas in the items themselves: "item( item)*"
-# Items, separated by commas, with spaces or commas in the items themselves: "'it em'(,'it em')*"
-# Items, separated by spaces, with spaces or commas in the items themselves: "'it em'( 'it em')*"
+Named Lists
+Lists can be in the following formats
+Items, separated by commas, without spaces or commas in the items themselves: item(,item)*
+Items, separated by spaces, without spaces or commas in the items themselves: "item( item)*"
+Items, separated by commas, with spaces or commas in the items themselves: "'it em'(,'it em')*"
+Items, separated by spaces, with spaces or commas in the items themselves: "'it em'( 'it em')*"
 
 <ACLList> ::== '<ACLScope>(,<ACLScope>)*'
 <CalendarList> ::= '<CalendarItem>(,<CalendarItem>)*'
@@ -331,11 +331,11 @@ If an item contains spaces, it should be surrounded by " or '.
 <UserFieldNameList> ::= '<UserFieldName>(,<UserFieldName>)*'
 <UserList> ::= '<UserItem>(,<UserItem>)*'
 
-# Specify a collection of ChromeOS devices by directly specifying them
+Specify a collection of ChromeOS devices by directly specifying them
 <CrOSTypeEntity> ::=
 		(all cros)|
 		(cros <CrOSList>)|
-# Specify a collection of Users by directly specifying them or by specifiying items that will yield a list of users
+Specify a collection of Users by directly specifying them or by specifiying items that will yield a list of users
 <UserTypeEntity> ::=
 		(all users)|
 		(user <UserItem>)|
@@ -352,7 +352,7 @@ If an item contains spaces, it should be surrounded by " or '.
 		(query <QueryUser>)
 
 
-# Item attributes
+Item attributes
 <CalendarAttributes> ::=
 	(selected <Boolean>)|(hidden <Boolean>)|(summary <String>)|(colorindex|colorid <CalendarColorIndex>)|(backgroundcolor <ColorHex>)|(foregroundcolor <ColorHex>)|
 	(reminder clear|(email|sms|pop <Number>))|
@@ -470,12 +470,12 @@ gam help
 gam batch <FileName>|- [charset <Charset>]
 gam csv <FileName>|- [charset <Charset>] gam <GAM argument list>
 
-# You can make substitutions in <GAMArgumentList> with values from the CSV file.
-# An argument containing exactly ~xxx is replaced by the value of field xxx from the CSV file
-# An argument containing instances of ~~xxx~~ has xxx replaced by the value of field xxx from the CSV file
+You can make substitutions in <GAMArgumentList> with values from the CSV file.
+An argument containing exactly ~xxx is replaced by the value of field xxx from the CSV file
+An argument containing instances of ~~xxx~~ has xxx replaced by the value of field xxx from the CSV file
 
-# Example: gam csv Users.csv gam update user '~primaryEmail' address type work unstructured '~~Street~~, ~~City~~, ~~State~~ ~~ZIP~~'
-# Each user (~primaryEmail, e.g. foo@bar.com) would have their work address updated
+Example: gam csv Users.csv gam update user '~primaryEmail' address type work unstructured '~~Street~~, ~~City~~, ~~State~~ ~~ZIP~~'
+Each user (~primaryEmail, e.g. foo@bar.com) would have their work address updated
 
 gam create project [<EmailAddress>]
 
@@ -636,7 +636,7 @@ gam create course id|alias <CourseAlias> [teacher <UserItem>] <CourseAttributes>
 gam update course <CourseID> <CourseAttributes>+
 gam delete course <CourseID>
 gam info course <CourseID>
-gam print courses [todrive] [teacher] [student] [alias|aliases] [delimiter <String>]
+gam print courses [todrive] [teacher <UserItem>] [student <UserItem>] [alias|aliases] [delimiter <String>]
 
 gam course <CourseID> add alias <CourseAlias>
 gam course <CourseID> delete alias <CourseAlias>
@@ -743,9 +743,7 @@ gam print tokens|token [todrive] [clientid <ClientID>] [<UserTypeEntity>]
 gam <UserTypeEntity> update user <UserAttrubutes>
 
 gam <UserTypeEntity> deprovision|deprov
-#
-# Update user Gmail mailbox
-#
+
 gam <UserTypeEntity> [add] label|labels <Name> [messagelistvisibility hide|show] [labellistvisibility hide|show|showifunread]
 gam <UserTypeEntity> update labelsettings <LabelName> [name <Name>] [messagelistvisibility hide|show] [labellistvisibility hide|show|showifunread]
 gam <UserTypeEntity> update label|labels [search <RegularExpression>] [replace <LabelReplacement>] [merge]
@@ -756,9 +754,7 @@ gam <UserTypeEntity> delete messages query <QueryGmail> [doit] [max_to_delete|ma
 gam <UserTypeEntity> modify messages query <QueryGmail> [doit] [max_to_modify|max_to_process <Number>] (addlabel <LabelName>)* (removelabel <LabelName>)*
 gam <UserTypeEntity> trash messages query <QueryGmail> [doit] [max_to_trash|max_to_process <Number>]
 gam <UserTypeEntity> untrash messages query <QueryGmail> [doit] [max_to_untrash|max_to_process <Number>]
-#
-# Update user Gmail settings
-#
+
 gam <UserTypeEntity> show gmailprofile [todrive]
 gam <UserTypeEntity> show gplusprofile [todrive]
 
