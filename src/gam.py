@@ -9043,6 +9043,7 @@ GROUP_ARGUMENT_TO_PROPERTY_TITLE_MAP = {
   u'admincreated': [u'adminCreated', u'Admin_Created'],
   u'aliases': [u'aliases', u'Aliases', u'nonEditableAliases', u'NonEditableAliases'],
   u'description': [u'description', u'Description'],
+  u'directmemberscount': [u'directMembersCount', u'DirectMembersCount'],
   u'email': [u'email', u'Email'],
   u'id': [u'id', u'ID'],
   u'name': [u'name', u'Name'],
