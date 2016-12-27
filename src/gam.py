@@ -7674,6 +7674,11 @@ def doWhatIs():
     doGetAliasInfo(alias_email=email)
 
 def doGetUserInfo(user_email=None):
+
+  def user_lic_result(request_id, response, exception):
+    if response and u'skuId' in response:
+      user_licenses.append(response[u'skuId'])
+
   cd = buildGAPIObject(u'directory')
   i = 3
   if user_email is None:
@@ -7893,20 +7898,14 @@ def doGetUserInfo(user_email=None):
   if getLicenses:
     print u'Licenses:'
     lic = buildGAPIObject(u'licensing')
-    lbatch = googleapiclient.http.BatchHttpRequest()
-    global user_licenses
+    lbatch = googleapiclient.http.BatchHttpRequest(callback=user_lic_result)
     user_licenses = []
     for sku in skus:
       productId, skuId = getProductAndSKU(sku)
-      lbatch.add(lic.licenseAssignments().get(userId=user_email, productId=productId, skuId=skuId), callback=user_lic_result)
+      lbatch.add(lic.licenseAssignments().get(userId=user_email, productId=productId, skuId=skuId))
     lbatch.execute()
     for user_license in user_licenses:
       print '  %s' % user_license
-
-def user_lic_result(request_id, response, exception):
-  if response and u'skuId' in response:
-    global user_licenses
-    user_licenses.append(response[u'skuId'])
 
 def doGetGroupInfo(group_name=None):
   cd = buildGAPIObject(u'directory')
