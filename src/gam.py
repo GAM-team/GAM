@@ -9955,7 +9955,7 @@ def OAuthInfo():
   try:
     print u'G Suite Admin: %s' % token_info[u'email']
   except KeyError:
-    print u'G Suite  Admin: Unknown'
+    print u'G Suite Admin: Unknown'
 
 def doDeleteOAuth():
   _, credentials = getOauth2TxtStorageCredentials()
