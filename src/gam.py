@@ -7903,7 +7903,7 @@ def doGetUserInfo(user_email=None):
     user_licenses = []
     for sku in skus:
       productId, skuId = getProductAndSKU(sku)
-      lbatch.add(lic.licenseAssignments().get(userId=user_email, productId=productId, skuId=skuId))
+      lbatch.add(lic.licenseAssignments().get(userId=user_email, productId=productId, skuId=skuId, fields=u'skuId'))
     lbatch.execute()
     for user_license in user_licenses:
       print '  %s' % user_license
