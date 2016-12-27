@@ -585,8 +585,8 @@ gam info group <GroupItem> [nousers] [noaliases] [groups]
 gam update group <GroupItem> clear [member] [manager] [owner]
 
 gam print groups [todrive] ([domain <DomainName>] [member <UserItem>])
-	[maxresults <Number>] [delimiter <String>]
-	[members] [managers] [owners] [settings] <GroupFieldName>* [fields <GroupFieldNameList>]
+	[maxresults <Number>] [allfields|([settings] <GroupFieldName>* [fields <GroupFieldNameList>])] [delimiter <String>]
+	[members|memberscount] [managers|managerscount] [owners|ownerscount]
 
 gam print group-members|groups-members [todrive] ([domain <DomainName>] [member <UserItem>])|[group <GroupItem>]
 	[membernames] [fields <MembersFieldNameList>]
