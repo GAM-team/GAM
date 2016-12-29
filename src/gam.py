@@ -23,6 +23,7 @@ For more information, see http://git.io/gam
 """
 
 from var import *
+import utils
 
 import sys
 import os
@@ -34,7 +35,6 @@ import collections
 import csv
 import datetime
 from htmlentitydefs import name2codepoint
-from HTMLParser import HTMLParser
 import json
 import mimetypes
 import platform
@@ -78,74 +78,6 @@ Go to the following link in your browser:
     {address}
 """
 
-def convertUTF8(data):
-  if isinstance(data, str):
-    return data
-  if isinstance(data, unicode):
-    if GM_Globals[GM_WINDOWS]:
-      return data
-    return data.encode(GM_Globals[GM_SYS_ENCODING])
-  if isinstance(data, collections.Mapping):
-    return dict(map(convertUTF8, data.iteritems()))
-  if isinstance(data, collections.Iterable):
-    return type(data)(map(convertUTF8, data))
-  return data
-
-class _DeHTMLParser(HTMLParser):
-  def __init__(self):
-    HTMLParser.__init__(self)
-    self.__text = []
-
-  def handle_data(self, data):
-    self.__text.append(data)
-
-  def handle_charref(self, name):
-    self.__text.append(unichr(int(name[1:], 16)) if name.startswith('x') else unichr(int(name)))
-
-  def handle_entityref(self, name):
-    cp = name2codepoint.get(name)
-    if cp:
-      self.__text.append(unichr(cp))
-    else:
-      self.__text.append(u'&'+name)
-
-  def handle_starttag(self, tag, attrs):
-    if tag == 'p':
-      self.__text.append('\n\n')
-    elif tag == 'br':
-      self.__text.append('\n')
-    elif tag == 'a':
-      for attr in attrs:
-        if attr[0] == 'href':
-          self.__text.append('({0}) '.format(attr[1]))
-          break
-    elif tag == 'div':
-      if not attrs:
-        self.__text.append('\n')
-    elif tag in ['http:', 'https']:
-      self.__text.append(' ({0}//{1}) '.format(tag, attrs[0][0]))
-
-  def handle_startendtag(self, tag, attrs):
-    if tag == 'br':
-      self.__text.append('\n\n')
-
-  def text(self):
-    return re.sub(r'\n{2}\n+', '\n\n', re.sub(r'\n +', '\n', ''.join(self.__text))).strip()
-
-def dehtml(text):
-  try:
-    parser = _DeHTMLParser()
-    parser.feed(text.encode(u'utf-8'))
-    parser.close()
-    return parser.text()
-  except:
-    from traceback import print_exc
-    print_exc(file=sys.stderr)
-    return text
-
-def indentMultiLineText(message, n=0):
-  return message.replace(u'\n', u'\n{0}'.format(u' '*n)).rstrip()
-
 def showUsage():
   doGAMVersion(checkForArgs=False)
   print u'''
@@ -163,26 +95,14 @@ gam.exe update group announcements add member jsmith
 ...
 
 '''
-def formatMaxMessageBytes(maxMessageBytes):
-  if maxMessageBytes < ONE_KILO_BYTES:
-    return maxMessageBytes
-  if maxMessageBytes < ONE_MEGA_BYTES:
-    return u'{0}K'.format(maxMessageBytes / ONE_KILO_BYTES)
-  return u'{0}M'.format(maxMessageBytes / ONE_MEGA_BYTES)
-
-def formatMilliSeconds(millis):
-  seconds, millis = divmod(millis, 1000)
-  minutes, seconds = divmod(seconds, 60)
-  hours, minutes = divmod(minutes, 60)
-  return u'%02d:%02d:%02d' % (hours, minutes, seconds)
 #
 # Error handling
 #
 def stderrErrorMsg(message):
-  sys.stderr.write(convertUTF8(u'\n{0}{1}\n'.format(ERROR_PREFIX, message)))
+  sys.stderr.write(utils.convertUTF8(u'\n{0}{1}\n'.format(ERROR_PREFIX, message)))
 
 def stderrWarningMsg(message):
-  sys.stderr.write(convertUTF8(u'\n{0}{1}\n'.format(WARNING_PREFIX, message)))
+  sys.stderr.write(utils.convertUTF8(u'\n{0}{1}\n'.format(WARNING_PREFIX, message)))
 
 def systemErrorExit(sysRC, message):
   if message:
@@ -1190,7 +1110,7 @@ def printShowDelegates(users, csvFormat):
           if csvStyle:
             print u'%s,%s,%s' % (user, delegateAddress, status)
           else:
-            print convertUTF8(u"Delegator: %s\n Delegate: %s\n Status: %s\n Delegate Email: %s\n Delegate ID: %s\n" % (user, delegateName, status, delegateAddress, delegationId))
+            print utils.convertUTF8(u"Delegator: %s\n Delegate: %s\n Status: %s\n Delegate Email: %s\n Delegate ID: %s\n" % (user, delegateName, status, delegateAddress, delegationId))
   if csvFormat:
     writeCSVfile(csvRows, titles, u'Delegates', todrive)
 
@@ -2022,15 +1942,15 @@ def doGetCourseInfo():
   print u' Teachers:'
   for teacher in teachers:
     try:
-      print convertUTF8(u'  %s - %s' % (teacher[u'profile'][u'name'][u'fullName'], teacher[u'profile'][u'emailAddress']))
+      print utils.convertUTF8(u'  %s - %s' % (teacher[u'profile'][u'name'][u'fullName'], teacher[u'profile'][u'emailAddress']))
     except KeyError:
-      print convertUTF8(u'  %s' % teacher[u'profile'][u'name'][u'fullName'])
+      print utils.convertUTF8(u'  %s' % teacher[u'profile'][u'name'][u'fullName'])
   print u' Students:'
   for student in students:
     try:
-      print convertUTF8(u'  %s - %s' % (student[u'profile'][u'name'][u'fullName'], student[u'profile'][u'emailAddress']))
+      print utils.convertUTF8(u'  %s - %s' % (student[u'profile'][u'name'][u'fullName'], student[u'profile'][u'emailAddress']))
     except KeyError:
-      print convertUTF8(u'  %s' % student[u'profile'][u'name'][u'fullName'])
+      print utils.convertUTF8(u'  %s' % student[u'profile'][u'name'][u'fullName'])
 
 def doPrintCourses():
   croom = buildGAPIObject(u'classroom')
@@ -2342,7 +2262,7 @@ def changeCalendarAttendees(users):
           #print u' skipping cancelled event'
           continue
         try:
-          event_summary = convertUTF8(event[u'summary'])
+          event_summary = utils.convertUTF8(event[u'summary'])
         except (KeyError, UnicodeEncodeError, UnicodeDecodeError):
           event_summary = event[u'id']
         try:
@@ -3249,11 +3169,11 @@ def deletePhoto(users):
 
 def _showCalendar(userCalendar, j, jcount):
   print u'  Calendar: {0} ({1}/{2})'.format(userCalendar[u'id'], j, jcount)
-  print convertUTF8(u'    Summary: {0}'.format(userCalendar.get(u'summaryOverride', userCalendar[u'summary'])))
-  print convertUTF8(u'    Description: {0}'.format(userCalendar.get(u'description', u'')))
+  print utils.convertUTF8(u'    Summary: {0}'.format(userCalendar.get(u'summaryOverride', userCalendar[u'summary'])))
+  print utils.convertUTF8(u'    Description: {0}'.format(userCalendar.get(u'description', u'')))
   print u'    Access Level: {0}'.format(userCalendar[u'accessRole'])
   print u'    Timezone: {0}'.format(userCalendar[u'timeZone'])
-  print convertUTF8(u'    Location: {0}'.format(userCalendar.get(u'location', u'')))
+  print utils.convertUTF8(u'    Location: {0}'.format(userCalendar.get(u'location', u'')))
   print u'    Hidden: {0}'.format(userCalendar.get(u'hidden', u'False'))
   print u'    Selected: {0}'.format(userCalendar.get(u'selected', u'False'))
   print u'    Color ID: {0}, Background Color: {1}, Foreground Color: {2}'.format(userCalendar[u'colorId'], userCalendar[u'backgroundColor'], userCalendar[u'foregroundColor'])
@@ -3421,7 +3341,7 @@ def printDriveActivity(users):
 
 def printPermission(permission):
   if u'name' in permission:
-    print convertUTF8(permission[u'name'])
+    print utils.convertUTF8(permission[u'name'])
   elif u'id' in permission:
     if permission[u'id'] == u'anyone':
       print u'Anyone'
@@ -3759,7 +3679,7 @@ def printDriveFolderContents(feed, folderId, indent):
   for f_file in feed:
     for parent in f_file[u'parents']:
       if folderId == parent[u'id']:
-        print u' ' * indent, convertUTF8(f_file[u'title'])
+        print u' ' * indent, utils.convertUTF8(f_file[u'title'])
         if f_file[u'mimeType'] == u'application/vnd.google-apps.folder':
           printDriveFolderContents(feed, f_file[u'id'], indent+1)
         break
@@ -3829,11 +3749,11 @@ def deleteEmptyDriveFolders(users):
         children = callGAPI(drive.children(), u'list',
                             folderId=folder[u'id'], fields=u'items(id)', maxResults=1)
         if not u'items' in children or len(children[u'items']) == 0:
-          print convertUTF8(u' deleting empty folder %s...' % folder[u'title'])
+          print utils.convertUTF8(u' deleting empty folder %s...' % folder[u'title'])
           callGAPI(drive.files(), u'delete', fileId=folder[u'id'])
           deleted_empty = True
         else:
-          print convertUTF8(u' not deleting folder %s because it contains at least 1 item (%s)' % (folder[u'title'], children[u'items'][0][u'id']))
+          print utils.convertUTF8(u' not deleting folder %s because it contains at least 1 item (%s)' % (folder[u'title'], children[u'items'][0][u'id']))
 
 def doEmptyDriveTrash(users):
   for user in users:
@@ -4064,7 +3984,7 @@ def downloadDriveFile(users):
       extension = None
       result = callGAPI(drive.files(), u'get', fileId=fileId, fields=u'fileSize,title,mimeType,downloadUrl,exportLinks')
       if result[u'mimeType'] == MIMETYPE_GA_FOLDER:
-        print convertUTF8(u'Skipping download of folder %s' % result[u'title'])
+        print utils.convertUTF8(u'Skipping download of folder %s' % result[u'title'])
         continue
       try:
         result[u'fileSize'] = int(result[u'fileSize'])
@@ -4088,10 +4008,10 @@ def downloadDriveFile(users):
             extension = exportFormat[u'ext']
             break
         else:
-          print convertUTF8(u'Skipping download of file {0}, Format {1} not available'.format(result[u'title'], u','.join(exportFormatChoices)))
+          print utils.convertUTF8(u'Skipping download of file {0}, Format {1} not available'.format(result[u'title'], u','.join(exportFormatChoices)))
           continue
       else:
-        print convertUTF8(u'Skipping download of file {0}, Format not downloadable')
+        print utils.convertUTF8(u'Skipping download of file {0}, Format not downloadable')
         continue
       file_title = result[u'title']
       safe_file_title = u''.join(c for c in file_title if c in safe_filename_chars)
@@ -4104,7 +4024,7 @@ def downloadDriveFile(users):
           break
         y += 1
         filename = os.path.join(targetFolder, u'({0})-{1}'.format(y, safe_file_title))
-      print convertUTF8(my_line % filename)
+      print utils.convertUTF8(my_line % filename)
       if revisionId:
         download_url = u'{0}&revision={1}'.format(download_url, revisionId)
       _, content = drive._http.request(download_url)
@@ -4434,9 +4354,9 @@ def getPop(users):
 
 def _showSendAs(result, j, jcount, formatSig):
   if result[u'displayName']:
-    print convertUTF8(u'SendAs Address: {0} <{1}>{2}'.format(result[u'displayName'], result[u'sendAsEmail'], currentCount(j, jcount)))
+    print utils.convertUTF8(u'SendAs Address: {0} <{1}>{2}'.format(result[u'displayName'], result[u'sendAsEmail'], currentCount(j, jcount)))
   else:
-    print convertUTF8(u'SendAs Address: <{0}>{1}'.format(result[u'sendAsEmail'], currentCount(j, jcount)))
+    print utils.convertUTF8(u'SendAs Address: <{0}>{1}'.format(result[u'sendAsEmail'], currentCount(j, jcount)))
   if result.get(u'replyToAddress'):
     print u'  ReplyTo: {0}'.format(result[u'replyToAddress'])
   print u'  IsPrimary: {0}'.format(result.get(u'isPrimary', False))
@@ -4449,9 +4369,9 @@ def _showSendAs(result, j, jcount, formatSig):
   if not signature:
     signature = u'None'
   if formatSig:
-    print convertUTF8(indentMultiLineText(dehtml(signature), n=4))
+    print utils.convertUTF8(utils.indentMultiLineText(utils.dehtml(signature), n=4))
   else:
-    print convertUTF8(indentMultiLineText(signature, n=4))
+    print utils.convertUTF8(utils.indentMultiLineText(signature, n=4))
 
 def _processTags(tagReplacements, message):
   while True:
@@ -4880,7 +4800,7 @@ def showLabels(users):
       for label in labels[u'labels']:
         if onlyUser and (label[u'type'] == u'system'):
           continue
-        print convertUTF8(label[u'name'])
+        print utils.convertUTF8(label[u'name'])
         for a_key in label:
           if a_key == u'name':
             continue
@@ -5125,7 +5045,7 @@ def _showFilter(userFilter, j, jcount, labels):
       elif item == u'sizeComparison':
         pass
       else:
-        print convertUTF8(u'      {0} "{1}"'.format(item, userFilter[u'criteria'][item]))
+        print utils.convertUTF8(u'      {0} "{1}"'.format(item, userFilter[u'criteria'][item]))
   else:
     print u'      ERROR: No Filter criteria'
   print u'    Actions:'
@@ -5134,7 +5054,7 @@ def _showFilter(userFilter, j, jcount, labels):
       if labelId in FILTER_ADD_LABEL_TO_ARGUMENT_MAP:
         print u'      {0}'.format(FILTER_ADD_LABEL_TO_ARGUMENT_MAP[labelId])
       else:
-        print convertUTF8(u'      label "{0}"'.format(_getLabelName(labels, labelId)))
+        print utils.convertUTF8(u'      label "{0}"'.format(_getLabelName(labels, labelId)))
     for labelId in userFilter[u'action'].get(u'removeLabelIds', []):
       if labelId in FILTER_REMOVE_LABEL_TO_ARGUMENT_MAP:
         print u'      {0}'.format(FILTER_REMOVE_LABEL_TO_ARGUMENT_MAP[labelId])
@@ -5688,15 +5608,15 @@ def getVacation(users):
           print u'  End Date: {0}'.format(datetime.datetime.fromtimestamp(int(result[u'endTime'])/1000).strftime('%Y-%m-%d'))
         else:
           print u'  End Date: Not specified'
-        print convertUTF8(u'  Subject: {0}'.format(result.get(u'responseSubject', u'None')))
+        print utils.convertUTF8(u'  Subject: {0}'.format(result.get(u'responseSubject', u'None')))
         sys.stdout.write(u'  Message:\n   ')
         if result.get(u'responseBodyPlainText'):
-          print convertUTF8(indentMultiLineText(result[u'responseBodyPlainText'], n=4))
+          print utils.convertUTF8(utils.indentMultiLineText(result[u'responseBodyPlainText'], n=4))
         elif result.get(u'responseBodyHtml'):
           if formatReply:
-            print convertUTF8(indentMultiLineText(dehtml(result[u'responseBodyHtml']), n=4))
+            print utils.convertUTF8(utils.indentMultiLineText(utils.dehtml(result[u'responseBodyHtml']), n=4))
           else:
-            print convertUTF8(indentMultiLineText(result[u'responseBodyHtml'], n=4))
+            print utils.convertUTF8(utils.indentMultiLineText(result[u'responseBodyHtml'], n=4))
         else:
           print u'None'
 
@@ -7127,9 +7047,9 @@ def doGetUserInfo(user_email=None):
   user = callGAPI(cd.users(), u'get', userKey=user_email, projection=projection, customFieldMask=customFieldMask, viewType=viewType)
   print u'User: %s' % user[u'primaryEmail']
   if u'name' in user and u'givenName' in user[u'name']:
-    print convertUTF8(u'First Name: %s' % user[u'name'][u'givenName'])
+    print utils.convertUTF8(u'First Name: %s' % user[u'name'][u'givenName'])
   if u'name' in user and u'familyName' in user[u'name']:
-    print convertUTF8(u'Last Name: %s' % user[u'name'][u'familyName'])
+    print utils.convertUTF8(u'Last Name: %s' % user[u'name'][u'familyName'])
   if u'isAdmin' in user:
     print u'Is a Super Admin: %s' % user[u'isAdmin']
   if u'isDelegatedAdmin' in user:
@@ -7170,26 +7090,26 @@ def doGetUserInfo(user_email=None):
       contentType = notes.get(u'contentType', u'text_plain')
       print u' %s: %s' % (u'contentType', contentType)
       if contentType == u'text_html':
-        print convertUTF8(indentMultiLineText(u' value: {0}'.format(dehtml(notes[u'value'])), n=2))
+        print utils.convertUTF8(utils.indentMultiLineText(u' value: {0}'.format(utils.dehtml(notes[u'value'])), n=2))
       else:
-        print convertUTF8(indentMultiLineText(u' value: {0}'.format(notes[u'value']), n=2))
+        print utils.convertUTF8(utils.indentMultiLineText(u' value: {0}'.format(notes[u'value']), n=2))
     else:
-      print convertUTF8(indentMultiLineText(u' value: {0}'.format(notes), n=2))
+      print utils.convertUTF8(utils.indentMultiLineText(u' value: {0}'.format(notes), n=2))
     print u''
   if u'ims' in user:
     print u'IMs:'
     for im in user[u'ims']:
       for key in im:
-        print convertUTF8(u' %s: %s' % (key, im[key]))
+        print utils.convertUTF8(u' %s: %s' % (key, im[key]))
       print u''
   if u'addresses' in user:
     print u'Addresses:'
     for address in user[u'addresses']:
       for key in address:
         if key != u'formatted':
-          print convertUTF8(u' %s: %s' % (key, address[key]))
+          print utils.convertUTF8(u' %s: %s' % (key, address[key]))
         else:
-          print convertUTF8(u' %s: %s' % (key, address[key].replace(u'\n', u'\\n')))
+          print utils.convertUTF8(u' %s: %s' % (key, address[key].replace(u'\n', u'\\n')))
       print u''
   if u'organizations' in user:
     print u'Organizations:'
@@ -7197,13 +7117,13 @@ def doGetUserInfo(user_email=None):
       for key in org:
         if key == u'customType' and not org[key]:
           continue
-        print convertUTF8(u' %s: %s' % (key, org[key]))
+        print utils.convertUTF8(u' %s: %s' % (key, org[key]))
       print u''
   if u'phones' in user:
     print u'Phones:'
     for phone in user[u'phones']:
       for key in phone:
-        print convertUTF8(u' %s: %s' % (key, phone[key]))
+        print utils.convertUTF8(u' %s: %s' % (key, phone[key]))
       print u''
   if u'emails' in user:
     if len(user[u'emails']) > 1:
@@ -7215,9 +7135,9 @@ def doGetUserInfo(user_email=None):
           if key == u'type' and an_email[key] == u'custom':
             continue
           if key == u'customType':
-            print convertUTF8(u' type: %s' % an_email[key])
+            print utils.convertUTF8(u' type: %s' % an_email[key])
           else:
-            print convertUTF8(u' %s: %s' % (key, an_email[key]))
+            print utils.convertUTF8(u' %s: %s' % (key, an_email[key]))
       print u''
   if u'relations' in user:
     print u'Relations:'
@@ -7226,9 +7146,9 @@ def doGetUserInfo(user_email=None):
         if key == u'type' and relation[key] == u'custom':
           continue
         elif key == u'customType':
-          print convertUTF8(u' %s: %s' % (u'type', relation[key]))
+          print utils.convertUTF8(u' %s: %s' % (u'type', relation[key]))
         else:
-          print convertUTF8(u' %s: %s' % (key, relation[key]))
+          print utils.convertUTF8(u' %s: %s' % (key, relation[key]))
       print u''
   if u'externalIds' in user:
     print u'External IDs:'
@@ -7237,9 +7157,9 @@ def doGetUserInfo(user_email=None):
         if key == u'type' and externalId[key] == u'custom':
           continue
         elif key == u'customType':
-          print convertUTF8(u' %s: %s' % (u'type', externalId[key]))
+          print utils.convertUTF8(u' %s: %s' % (u'type', externalId[key]))
         else:
-          print convertUTF8(u' %s: %s' % (key, externalId[key]))
+          print utils.convertUTF8(u' %s: %s' % (key, externalId[key]))
       print u''
   if u'websites' in user:
     print u'Websites:'
@@ -7248,9 +7168,9 @@ def doGetUserInfo(user_email=None):
         if key == u'type' and website[key] == u'custom':
           continue
         elif key == u'customType':
-          print convertUTF8(u' %s: %s' % (u'type', website[key]))
+          print utils.convertUTF8(u' %s: %s' % (u'type', website[key]))
         else:
-          print convertUTF8(u' %s: %s' % (key, website[key]))
+          print utils.convertUTF8(u' %s: %s' % (key, website[key]))
       print u''
   if getSchemas:
     if u'customSchemas' in user:
@@ -7261,12 +7181,12 @@ def doGetUserInfo(user_email=None):
           if isinstance(user[u'customSchemas'][schema][field], list):
             print u'  %s:' % field
             for an_item in user[u'customSchemas'][schema][field]:
-              print convertUTF8(u'   type: %s' % (an_item[u'type']))
+              print utils.convertUTF8(u'   type: %s' % (an_item[u'type']))
               if an_item[u'type'] == u'custom':
-                print convertUTF8(u'    customType: %s' % (an_item[u'customType']))
-              print convertUTF8(u'    value: %s' % (an_item[u'value']))
+                print utils.convertUTF8(u'    customType: %s' % (an_item[u'customType']))
+              print utils.convertUTF8(u'    value: %s' % (an_item[u'value']))
           else:
-            print convertUTF8(u'  %s: %s' % (field, user[u'customSchemas'][schema][field]))
+            print utils.convertUTF8(u'  %s: %s' % (field, user[u'customSchemas'][schema][field]))
         print
   if getAliases:
     if u'aliases' in user:
@@ -7344,7 +7264,7 @@ def doGetGroupInfo(group_name=None):
       for val in value:
         print u'  %s' % val
     else:
-      print convertUTF8(u' %s: %s' % (key, value))
+      print utils.convertUTF8(u' %s: %s' % (key, value))
   try:
     for key, value in settings.items():
       if key in [u'kind', u'etag', u'description', u'email', u'name']:
@@ -7488,7 +7408,7 @@ def doGetCrosInfo():
         for i in xrange(min(listLimit, lenATR) if listLimit else lenATR):
           print u'    date: {0}'.format(activeTimeRanges[i][u'date'])
           print u'      activeTime: {0}'.format(str(activeTimeRanges[i][u'activeTime']))
-          print u'      duration: {0}'.format(formatMilliSeconds(activeTimeRanges[i][u'activeTime']))
+          print u'      duration: {0}'.format(utils.formatMilliSeconds(activeTimeRanges[i][u'activeTime']))
       recentUsers = cros.get(u'recentUsers', [])
       lenRU = len(recentUsers)
       if lenRU:
@@ -7511,13 +7431,13 @@ def print_json(object_name, object_value, spacing=u''):
     sys.stdout.write(u'%s%s: ' % (spacing, object_name))
   if isinstance(object_value, list):
     if len(object_value) == 1 and isinstance(object_value[0], (str, unicode, int, bool)):
-      sys.stdout.write(convertUTF8(u'%s\n' % object_value[0]))
+      sys.stdout.write(utils.convertUTF8(u'%s\n' % object_value[0]))
       return
     if object_name is not None:
       sys.stdout.write(u'\n')
     for a_value in object_value:
       if isinstance(a_value, (str, unicode, int, bool)):
-        sys.stdout.write(convertUTF8(u' %s%s\n' % (spacing, a_value)))
+        sys.stdout.write(utils.convertUTF8(u' %s%s\n' % (spacing, a_value)))
       else:
         print_json(None, a_value, u' %s' % spacing)
   elif isinstance(object_value, dict):
@@ -7527,7 +7447,7 @@ def print_json(object_name, object_value, spacing=u''):
     for another_object in object_value:
       print_json(another_object, object_value[another_object], u' %s' % spacing)
   else:
-    sys.stdout.write(convertUTF8(u'%s\n' % (object_value)))
+    sys.stdout.write(utils.convertUTF8(u'%s\n' % (object_value)))
 
 def doUpdateNotification():
   cd = buildGAPIObject(u'directory')
@@ -7722,7 +7642,7 @@ def doGetNotifications():
     print u'ID: %s' % notification[u'notificationId']
     print u'Read Status: %s' % ([u'READ', u'UNREAD'][notification[u'isUnread']])
     print u''
-    print convertUTF8(dehtml(notification[u'body']))
+    print utils.convertUTF8(utils.dehtml(notification[u'body']))
     print u''
     print u'--------------'
     print u''
@@ -7848,7 +7768,7 @@ def printShowTokens(i, entityType, users, csvFormat):
     print u'  Client ID: %s' % token[u'clientId']
     for item in token:
       if item not in [u'clientId', u'scopes']:
-        print convertUTF8(u'    %s: %s' % (item, token.get(item, u'')))
+        print utils.convertUTF8(u'    %s: %s' % (item, token.get(item, u'')))
     item = u'scopes'
     print u'    %s:' % item
     for it in token.get(item, []):
