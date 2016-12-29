@@ -751,24 +751,6 @@ def callGAPIitems(service, function, items,
     return results.get(items, [])
   return []
 
-API_VER_MAPPING = {
-  u'appsactivity': u'v1',
-  u'calendar': u'v3',
-  u'classroom': u'v1',
-  u'cloudprint': u'v2',
-  u'datatransfer': u'datatransfer_v1',
-  u'directory': u'directory_v1',
-  u'drive': u'v2',
-  u'email-settings': u'v2',
-  u'gmail': u'v1',
-  u'groupssettings': u'v1',
-  u'licensing': u'v1',
-  u'oauth2': u'v2',
-  u'plus': u'v1',
-  u'reports': u'reports_v1',
-  u'siteVerification': u'v1',
-  }
-
 def getAPIVersion(api):
   version = API_VER_MAPPING.get(api, u'v1')
   if api in [u'directory', u'reports', u'datatransfer']:
@@ -865,17 +847,6 @@ def convertUserUIDtoEmailAddress(emailAddressOrUID):
   except:
     pass
   return normalizedEmailAddressOrUID
-
-API_SCOPE_MAPPING = {
-  u'appsactivity': [u'https://www.googleapis.com/auth/activity',
-                    u'https://www.googleapis.com/auth/drive'],
-  u'calendar': [u'https://www.googleapis.com/auth/calendar',],
-  u'drive': [u'https://www.googleapis.com/auth/drive',],
-  u'gmail': [u'https://mail.google.com/',
-             u'https://www.googleapis.com/auth/gmail.settings.basic',
-             u'https://www.googleapis.com/auth/gmail.settings.sharing',],
-  u'plus': [u'https://www.googleapis.com/auth/plus.me',],
-}
 
 def getSvcAcctAPIversionHttpService(api):
   api, version, api_version = getAPIVersion(api)
@@ -1422,8 +1393,6 @@ def doGetDomainAliasInfo():
     result[u'creationTime'] = unicode(datetime.datetime.fromtimestamp(int(result[u'creationTime'])/1000))
   print_json(None, result)
 
-ADDRESS_FIELDS_PRINT_ORDER = [u'contactName', u'organizationName', u'addressLine1', u'addressLine2', u'addressLine3', u'locality', u'region', u'postalCode', u'countryCode']
-
 def doGetCustomerInfo():
   cd = buildGAPIObject(u'directory')
   customer_info = callGAPI(cd.customers(), u'get', customerKey=GC_Values[GC_CUSTOMER_ID])
@@ -1442,18 +1411,6 @@ def doGetCustomerInfo():
   if u'phoneNumber' in customer_info:
     print u'Phone: %s' % customer_info[u'phoneNumber']
   print u'Admin Secondary Email: %s' % customer_info[u'alternateEmail']
-
-ADDRESS_FIELDS_ARGUMENT_MAP = {
-  u'contact': u'contactName', u'contactname': u'contactName',
-  u'name': u'organizationName', u'organizationname': u'organizationName',
-  u'address1': u'addressLine1', u'addressline1': u'addressLine1',
-  u'address2': u'addressLine2', u'addressline2': u'addressLine2',
-  u'address3': u'addressLine3', u'addressline3': u'addressLine3',
-  u'locality': u'locality',
-  u'region': u'region',
-  u'postalcode': u'postalCode',
-  u'country': u'countryCode', u'countrycode': u'countryCode',
-  }
 
 def doUpdateCustomer():
   cd = buildGAPIObject(u'directory')
@@ -1739,13 +1696,6 @@ def appID2app(dt, appID):
     if appID == online_service[u'id']:
       return online_service[u'name']
   return u'applicationId: {0}'.format(appID)
-
-SERVICE_NAME_CHOICES_MAP = {
-  u'drive': u'Drive and Docs',
-  u'drive and docs': u'Drive and Docs',
-  u'googledrive': u'Drive and Docs',
-  u'gdrive': u'Drive and Docs',
-  }
 
 def app2appID(dt, app):
   serviceName = app.lower()
@@ -2198,20 +2148,6 @@ def doPrintCourseParticipants():
     y += 1
   writeCSVfile(csvRows, titles, u'Course Participants', todrive)
 
-PRINTJOB_ASCENDINGORDER_MAP = {
-  u'createtime': u'CREATE_TIME',
-  u'status': u'STATUS',
-  u'title': u'TITLE',
-  }
-PRINTJOB_DESCENDINGORDER_MAP = {
-  u'CREATE_TIME': u'CREATE_TIME_DESC',
-  u'STATUS':  u'STATUS_DESC',
-  u'TITLE': u'TITLE_DESC',
-  }
-
-PRINTJOBS_DEFAULT_JOB_LIMIT = 25
-PRINTJOBS_DEFAULT_MAX_RESULTS = 100
-
 def doPrintPrintJobs():
   cp = buildGAPIObject(u'cloudprint')
   todrive = False
@@ -2455,16 +2391,6 @@ def deleteCalendar(users):
     if not cal:
       continue
     callGAPI(cal.calendarList(), u'delete', soft_errors=True, calendarId=calendarId)
-
-CALENDAR_REMINDER_METHODS = [u'email', u'sms', u'popup',]
-CALENDAR_NOTIFICATION_METHODS = [u'email', u'sms',]
-CALENDAR_NOTIFICATION_TYPES_MAP = {
-  u'eventcreation': u'eventCreation',
-  u'eventchange': u'eventChange',
-  u'eventcancellation': u'eventCancellation',
-  u'eventresponse': u'eventResponse',
-  u'agenda': u'agenda',
-  }
 
 def getCalendarAttributes(i, body, function):
   colorRgbFormat = False
@@ -3638,100 +3564,6 @@ def _stripMeInOwners(query):
     return query[len(u"'me' in owners and "):]
   return query
 
-DRIVEFILE_FIELDS_CHOICES_MAP = {
-  u'alternatelink': u'alternateLink',
-  u'appdatacontents': u'appDataContents',
-  u'cancomment': u'canComment',
-  u'canreadrevisions': u'canReadRevisions',
-  u'copyable': u'copyable',
-  u'createddate': u'createdDate',
-  u'createdtime': u'createdDate',
-  u'description': u'description',
-  u'editable': u'editable',
-  u'explicitlytrashed': u'explicitlyTrashed',
-  u'fileextension': u'fileExtension',
-  u'filesize': u'fileSize',
-  u'foldercolorrgb': u'folderColorRgb',
-  u'fullfileextension': u'fullFileExtension',
-  u'headrevisionid': u'headRevisionId',
-  u'iconlink': u'iconLink',
-  u'id': u'id',
-  u'lastmodifyinguser': u'lastModifyingUser',
-  u'lastmodifyingusername': u'lastModifyingUserName',
-  u'lastviewedbyme': u'lastViewedByMeDate',
-  u'lastviewedbymedate': u'lastViewedByMeDate',
-  u'lastviewedbymetime': u'lastViewedByMeDate',
-  u'lastviewedbyuser': u'lastViewedByMeDate',
-  u'md5': u'md5Checksum',
-  u'md5checksum': u'md5Checksum',
-  u'md5sum': u'md5Checksum',
-  u'mime': u'mimeType',
-  u'mimetype': u'mimeType',
-  u'modifiedbyme': u'modifiedByMeDate',
-  u'modifiedbymedate': u'modifiedByMeDate',
-  u'modifiedbymetime': u'modifiedByMeDate',
-  u'modifiedbyuser': u'modifiedByMeDate',
-  u'modifieddate': u'modifiedDate',
-  u'modifiedtime': u'modifiedDate',
-  u'name': u'title',
-  u'originalfilename': u'originalFilename',
-  u'ownedbyme': u'ownedByMe',
-  u'ownernames': u'ownerNames',
-  u'owners': u'owners',
-  u'parents': u'parents',
-  u'permissions': u'permissions',
-  u'quotabytesused': u'quotaBytesUsed',
-  u'quotaused': u'quotaBytesUsed',
-  u'shareable': u'shareable',
-  u'shared': u'shared',
-  u'sharedwithmedate': u'sharedWithMeDate',
-  u'sharedwithmetime': u'sharedWithMeDate',
-  u'sharinguser': u'sharingUser',
-  u'spaces': u'spaces',
-  u'thumbnaillink': u'thumbnailLink',
-  u'title': u'title',
-  u'userpermission': u'userPermission',
-  u'version': u'version',
-  u'viewedbyme': u'labels(viewed)',
-  u'viewedbymedate': u'lastViewedByMeDate',
-  u'viewedbymetime': u'lastViewedByMeDate',
-  u'viewerscancopycontent': u'labels(restricted)',
-  u'webcontentlink': u'webContentLink',
-  u'webviewlink': u'webViewLink',
-  u'writerscanshare': u'writersCanShare',
-  }
-
-DRIVEFILE_LABEL_CHOICES_MAP = {
-  u'restricted': u'restricted',
-  u'restrict': u'restricted',
-  u'starred': u'starred',
-  u'star': u'starred',
-  u'trashed': u'trashed',
-  u'trash': u'trashed',
-  u'viewed': u'viewed',
-  u'view': u'viewed',
-}
-
-DRIVEFILE_ORDERBY_CHOICES_MAP = {
-  u'createddate': u'createdDate',
-  u'folder': u'folder',
-  u'lastviewedbyme': u'lastViewedByMeDate',
-  u'lastviewedbymedate': u'lastViewedByMeDate',
-  u'lastviewedbyuser': u'lastViewedByMeDate',
-  u'modifiedbyme': u'modifiedByMeDate',
-  u'modifiedbymedate': u'modifiedByMeDate',
-  u'modifiedbyuser': u'modifiedByMeDate',
-  u'modifieddate': u'modifiedDate',
-  u'name': u'title',
-  u'quotabytesused': u'quotaBytesUsed',
-  u'quotaused': u'quotaBytesUsed',
-  u'recency': u'recency',
-  u'sharedwithmedate': u'sharedWithMeDate',
-  u'starred': u'starred',
-  u'title': u'title',
-  u'viewedbymedate': u'lastViewedByMeDate',
-  }
-
 def printDriveFileList(users):
   allfields = anyowner = todrive = False
   fieldsList = []
@@ -3890,8 +3722,6 @@ def getFileIdFromAlternateLink(altLink):
   print u'ERROR: %s is not a valid Drive File alternateLink' % altLink
   sys.exit(2)
 
-DELETE_DRIVEFILE_FUNCTION_TO_ACTION_MAP = {u'delete': u'purging', u'trash': u'trashing', u'untrash': u'untrashing',}
-
 def deleteDriveFile(users):
   fileIds = sys.argv[5]
   function = u'trash'
@@ -4012,40 +3842,6 @@ def doEmptyDriveTrash(users):
       continue
     print u'Emptying Drive trash for %s' % user
     callGAPI(drive.files(), u'emptyTrash')
-
-DRIVEFILE_LABEL_CHOICES_MAP = {
-  u'restricted': u'restricted',
-  u'restrict': u'restricted',
-  u'starred': u'starred',
-  u'star': u'starred',
-  u'trashed': u'trashed',
-  u'trash': u'trashed',
-  u'viewed': u'viewed',
-  u'view': u'viewed',
-  }
-
-MIMETYPE_CHOICES_MAP = {
-  u'gdoc': MIMETYPE_GA_DOCUMENT,
-  u'gdocument': MIMETYPE_GA_DOCUMENT,
-  u'gdrawing': MIMETYPE_GA_DRAWING,
-  u'gfolder': MIMETYPE_GA_FOLDER,
-  u'gdirectory': MIMETYPE_GA_FOLDER,
-  u'gform': MIMETYPE_GA_FORM,
-  u'gfusion': MIMETYPE_GA_FUSIONTABLE,
-  u'gpresentation': MIMETYPE_GA_PRESENTATION,
-  u'gscript': MIMETYPE_GA_SCRIPT,
-  u'gsite': MIMETYPE_GA_SITES,
-  u'gsheet': MIMETYPE_GA_SPREADSHEET,
-  u'gspreadsheet': MIMETYPE_GA_SPREADSHEET,
-  }
-
-DFA_CONVERT = u'convert'
-DFA_LOCALFILEPATH = u'localFilepath'
-DFA_LOCALFILENAME = u'localFilename'
-DFA_LOCALMIMETYPE = u'localMimeType'
-DFA_OCR = u'ocr'
-DFA_OCRLANGUAGE = u'ocrLanguage'
-DFA_PARENTQUERY = u'parentQuery'
 
 def initializeDriveFileAttributes():
   return ({}, {DFA_LOCALFILEPATH: None, DFA_LOCALFILENAME: None, DFA_LOCALMIMETYPE: None, DFA_CONVERT: None, DFA_OCR: None, DFA_OCRLANGUAGE: None, DFA_PARENTQUERY: None})
@@ -4204,36 +4000,6 @@ def createDriveFile(users):
       print u'Successfully uploaded %s to Drive file ID %s' % (parameters[DFA_LOCALFILENAME], result[u'id'])
     else:
       print u'Successfully created drive file/folder ID %s' % (result[u'id'])
-
-DOCUMENT_FORMATS_MAP = {
-  u'csv': [{u'mime': u'text/csv', u'ext': u'.csv'}],
-  u'html': [{u'mime': u'text/html', u'ext': u'.html'}],
-  u'txt': [{u'mime': u'text/plain', u'ext': u'.txt'}],
-  u'tsv': [{u'mime': u'text/tsv', u'ext': u'.tsv'}],
-  u'jpeg': [{u'mime': u'image/jpeg', u'ext': u'.jpeg'}],
-  u'jpg': [{u'mime': u'image/jpeg', u'ext': u'.jpg'}],
-  u'png': [{u'mime': u'image/png', u'ext': u'.png'}],
-  u'svg': [{u'mime': u'image/svg+xml', u'ext': u'.svg'}],
-  u'pdf': [{u'mime': u'application/pdf', u'ext': u'.pdf'}],
-  u'rtf': [{u'mime': u'application/rtf', u'ext': u'.rtf'}],
-  u'zip': [{u'mime': u'application/zip', u'ext': u'.zip'}],
-  u'pptx': [{u'mime': u'application/vnd.openxmlformats-officedocument.presentationml.presentation', u'ext': u'.pptx'}],
-  u'xlsx': [{u'mime': u'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', u'ext': u'.xlsx'}],
-  u'docx': [{u'mime': u'application/vnd.openxmlformats-officedocument.wordprocessingml.document', u'ext': u'.docx'}],
-  u'ms': [{u'mime': u'application/vnd.openxmlformats-officedocument.presentationml.presentation', u'ext': u'.pptx'},
-          {u'mime': u'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', u'ext': u'.xlsx'},
-          {u'mime': u'application/vnd.openxmlformats-officedocument.wordprocessingml.document', u'ext': u'.docx'}],
-  u'microsoft': [{u'mime': u'application/vnd.openxmlformats-officedocument.presentationml.presentation', u'ext': u'.pptx'},
-                 {u'mime': u'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', u'ext': u'.xlsx'},
-                 {u'mime': u'application/vnd.openxmlformats-officedocument.wordprocessingml.document', u'ext': u'.docx'}],
-  u'micro$oft': [{u'mime': u'application/vnd.openxmlformats-officedocument.presentationml.presentation', u'ext': u'.pptx'},
-                 {u'mime': u'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', u'ext': u'.xlsx'},
-                 {u'mime': u'application/vnd.openxmlformats-officedocument.wordprocessingml.document', u'ext': u'.docx'}],
-  u'odt': [{u'mime': u'application/vnd.oasis.opendocument.text', u'ext': u'.odt'}],
-  u'ods': [{u'mime': u'application/x-vnd.oasis.opendocument.spreadsheet', u'ext': u'.ods'}],
-  u'openoffice': [{u'mime': u'application/vnd.oasis.opendocument.text', u'ext': u'.odt'},
-                  {u'mime': u'application/x-vnd.oasis.opendocument.spreadsheet', u'ext': u'.ods'}],
-  }
 
 def downloadDriveFile(users):
   i = 5
@@ -4503,14 +4269,6 @@ def transferDriveFiles(users):
       if not skipped_files:
         break
 
-EMAILSETTINGS_IMAP_EXPUNGE_BEHAVIOR_CHOICES_MAP = {
-  u'archive': u'archive',
-  u'deleteforever': u'deleteForever',
-  u'trash': u'trash',
-  }
-
-EMAILSETTINGS_IMAP_MAX_FOLDER_SIZE_CHOICES = [u'0', u'1000', u'2000', u'5000', u'10000']
-
 def doImap(users):
   if sys.argv[4].lower() in true_values:
     enable = True
@@ -4611,22 +4369,6 @@ def doLicense(users, operation):
       _, old_sku = getProductAndSKU(old_sku)
       callGAPI(lic.licenseAssignments(), operation, soft_errors=True, productId=productId, skuId=old_sku, userId=user, body={u'skuId': skuId})
 
-EMAILSETTINGS_POP_ENABLE_FOR_CHOICES_MAP = {
-  u'allmail': u'allMail',
-  u'fromnowon': u'fromNowOn',
-  u'mailfromnowon': u'fromNowOn',
-  u'newmail': u'fromNowOn',
-  }
-
-EMAILSETTINGS_FORWARD_POP_ACTION_CHOICES_MAP = {
-  u'archive': u'archive',
-  u'delete': u'trash',
-  u'keep': u'leaveInInbox',
-  u'leaveininbox': u'leaveInInbox',
-  u'markread': u'markRead',
-  u'trash': u'trash',
-  }
-
 def doPop(users):
   if sys.argv[4].lower() in true_values:
     enable = True
@@ -4710,12 +4452,6 @@ def _showSendAs(result, j, jcount, formatSig):
     print convertUTF8(indentMultiLineText(dehtml(signature), n=4))
   else:
     print convertUTF8(indentMultiLineText(signature, n=4))
-
-RT_PATTERN = re.compile(r'(?s){RT}.*?{(.+?)}.*?{/RT}')
-RT_OPEN_PATTERN = re.compile(r'{RT}')
-RT_CLOSE_PATTERN = re.compile(r'{/RT}')
-RT_STRIP_PATTERN = re.compile(r'(?s){RT}.*?{/RT}')
-RT_TAG_REPLACE_PATTERN = re.compile(r'{(.*?)}')
 
 def _processTags(tagReplacements, message):
   while True:
@@ -5348,19 +5084,6 @@ def _getLabelName(labels, labelId):
       return label[u'name']
   return labelId
 
-FILTER_ADD_LABEL_TO_ARGUMENT_MAP = {
-  u'IMPORTANT': u'important',
-  u'STARRED': u'star',
-  u'TRASH': u'trash',
-  }
-
-FILTER_REMOVE_LABEL_TO_ARGUMENT_MAP = {
-  u'IMPORTANT': u'notimportant',
-  u'UNREAD': u'markread',
-  u'INBOX': u'archive',
-  u'SPAM': u'neverspam',
-  }
-
 def _printFilter(user, userFilter, labels):
   row = {u'User': user, u'id': userFilter[u'id']}
   if u'criteria' in userFilter:
@@ -5420,20 +5143,6 @@ def _showFilter(userFilter, j, jcount, labels):
   else:
     print u'      ERROR: No Filter actions'
 #
-FILTER_CRITERIA_CHOICES_MAP = {
-  u'excludechats': u'excludeChats',
-  u'from': u'from',
-  u'hasattachment': u'hasAttachment',
-  u'haswords': u'query',
-  u'musthaveattachment': u'hasAttachment',
-  u'negatedquery': u'negatedQuery',
-  u'nowords': u'negatedQuery',
-  u'query': u'query',
-  u'size': u'size',
-  u'subject': u'subject',
-  u'to': u'to',
-  }
-FILTER_ACTION_CHOICES = [u'archive', u'forward', u'important', u'label', u'markread', u'neverspam', u'notimportant', u'star', u'trash',]
 
 def addFilter(users, i):
   body = {}
@@ -5624,17 +5333,6 @@ def infoFilters(users):
     if result:
       print u'User: {0}, Filter: ({1}/{2})'.format(user, i, count)
       _showFilter(result, 1, 1, labels)
-
-EMAILSETTINGS_OLD_NEW_OLD_FORWARD_ACTION_MAP = {
-  u'ARCHIVE': u'archive',
-  u'DELETE': u'trash',
-  u'KEEP': u'leaveInInBox',
-  u'MARK_READ': u'markRead',
-  u'archive': u'ARCHIVE',
-  u'trash': u'DELETE',
-  u'leaveInInbox': u'KEEP',
-  u'markRead': u'MARK_READ',
-  }
 
 def doForward(users):
   if sys.argv[4].lower() in true_values:
@@ -7708,65 +7406,6 @@ def doGetResourceCalendarInfo():
     if key in [u'kind', u'etag', u'etags']:
       continue
     print u'%s: %s' % (key, value)
-
-CROS_ARGUMENT_TO_PROPERTY_MAP = {
-  u'activetimeranges': [u'activeTimeRanges.activeTime', u'activeTimeRanges.date'],
-  u'annotatedassetid': [u'annotatedAssetId',],
-  u'annotatedlocation': [u'annotatedLocation',],
-  u'annotateduser': [u'annotatedUser',],
-  u'asset': [u'annotatedAssetId',],
-  u'assetid': [u'annotatedAssetId',],
-  u'bootmode': [u'bootMode',],
-  u'deviceid': [u'deviceId',],
-  u'ethernetmacaddress': [u'ethernetMacAddress',],
-  u'firmwareversion': [u'firmwareVersion',],
-  u'lastenrollmenttime': [u'lastEnrollmentTime',],
-  u'lastsync': [u'lastSync',],
-  u'location': [u'annotatedLocation',],
-  u'macaddress': [u'macAddress',],
-  u'meid': [u'meid',],
-  u'model': [u'model',],
-  u'notes': [u'notes',],
-  u'ordernumber': [u'orderNumber',],
-  u'org': [u'orgUnitPath',],
-  u'orgunitpath': [u'orgUnitPath',],
-  u'osversion': [u'osVersion',],
-  u'ou': [u'orgUnitPath',],
-  u'platformversion': [u'platformVersion',],
-  u'recentusers': [u'recentUsers.email', u'recentUsers.type'],
-  u'serialnumber': [u'serialNumber',],
-  u'status': [u'status',],
-  u'supportenddate': [u'supportEndDate',],
-  u'tag': [u'annotatedAssetId',],
-  u'timeranges': [u'activeTimeRanges.activeTime', u'activeTimeRanges.date'],
-  u'user': [u'annotatedUser',],
-  u'willautorenew': [u'willAutoRenew',],
-  }
-
-CROS_BASIC_FIELDS_LIST = [u'deviceId', u'annotatedAssetId', u'annotatedLocation', u'annotatedUser', u'lastSync', u'notes', u'serialNumber', u'status']
-
-CROS_SCALAR_PROPERTY_PRINT_ORDER = [
-  u'orgUnitPath',
-  u'annotatedAssetId',
-  u'annotatedLocation',
-  u'annotatedUser',
-  u'lastSync',
-  u'notes',
-  u'serialNumber',
-  u'status',
-  u'model',
-  u'firmwareVersion',
-  u'platformVersion',
-  u'osVersion',
-  u'bootMode',
-  u'meid',
-  u'ethernetMacAddress',
-  u'macAddress',
-  u'lastEnrollmentTime',
-  u'orderNumber',
-  u'supportEndDate',
-  u'willAutoRenew',
-  ]
 
 def doGetCrosInfo():
   cd = buildGAPIObject(u'directory')
