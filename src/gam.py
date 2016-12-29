@@ -4576,43 +4576,13 @@ def getImap(users):
         print u'User: {0}, IMAP Enabled: {1} ({2}/{3})'.format(user, enabled, i, count)
 
 def getProductAndSKU(sku):
-  if sku.lower() in [u'apps', u'gafb', u'gafw', u'gsbasic']:
-    sku = u'Google-Apps-For-Business'
-  elif sku.lower() in [u'gafg',]:
-    sku = u'Google-Apps-For-Government'
-  elif sku.lower() in [u'gams',]:
-    sku = u'Google-Apps-For-Postini'
-  elif sku.lower() in [u'gau', u'unlimited', u'd4w', u'dfw', u'gsbusiness']:
-    sku = u'Google-Apps-Unlimited'
-  elif sku.lower() in [u'lite']:
-    sku = u'Google-Apps-Lite'
-  elif sku.lower() == u'coordinate':
-    sku = u'Google-Coordinate'
-  elif sku.lower() == u'vault':
-    sku = u'Google-Vault'
-  elif sku.lower() in [u'vfe',]:
-    sku = u'Google-Vault-Former-Employee'
-  elif sku.lower() in [u'drive-20gb', u'drive20gb', u'20gb']:
-    sku = u'Google-Drive-storage-20GB'
-  elif sku.lower() in [u'drive-50gb', u'drive50gb', u'50gb']:
-    sku = u'Google-Drive-storage-50GB'
-  elif sku.lower() in [u'drive-200gb', u'drive200gb', u'200gb']:
-    sku = u'Google-Drive-storage-200GB'
-  elif sku.lower() in [u'drive-400gb', u'drive400gb', u'400gb']:
-    sku = u'Google-Drive-storage-400GB'
-  elif sku.lower() in [u'drive-1tb', u'drive1tb', u'1tb']:
-    sku = u'Google-Drive-storage-1TB'
-  elif sku.lower() in [u'drive-2tb', u'drive2tb', u'2tb']:
-    sku = u'Google-Drive-storage-2TB'
-  elif sku.lower() in [u'drive-4tb', u'drive4tb', u'4tb']:
-    sku = u'Google-Drive-storage-4TB'
-  elif sku.lower() in [u'drive-4tb', u'drive8tb', u'8tb']:
-    sku = u'Google-Drive-storage-8TB'
-  elif sku.lower() in [u'drive-16tb', u'drive16tb', u'16tb']:
-    sku = u'Google-Drive-storage-16TB'
-  if sku[:20] == u'Google-Drive-storage':
-    product = u'Google-Drive-storage'
-  else:
+  product = None
+  for a_sku, sku_values in SKUS.items():
+    if sku.lower() in sku_values[u'aliases']:
+      sku = a_sku
+      product = sku_values[u'product']
+      break
+  if not product:
     try:
       product = re.search(u'^([A-Z,a-z]*-[A-Z,a-z]*)', sku).group(1)
     except AttributeError:
@@ -7423,12 +7393,7 @@ def doGetUserInfo(user_email=None):
   getSchemas = getAliases = getGroups = getLicenses = True
   projection = u'full'
   customFieldMask = viewType = None
-  skus = [u'Google-Apps-For-Business', u'Google-Apps-For-Government', u'Google-Apps-For-Postini',
-          u'Google-Apps-Lite', u'Google-Apps-Unlimited', u'Google-Drive-storage-20GB',
-          u'Google-Drive-storage-50GB', u'Google-Drive-storage-200GB', u'Google-Drive-storage-400GB',
-          u'Google-Drive-storage-1TB', u'Google-Drive-storage-2TB', u'Google-Drive-storage-4TB',
-          u'Google-Drive-storage-8TB', u'Google-Drive-storage-16TB', u'Google-Vault',
-          u'Google-Vault-Former-Employee',]
+  skus = SKUS.keys()
   while i < len(sys.argv):
     myarg = sys.argv[i].lower()
     if myarg == u'noaliases':
@@ -9413,7 +9378,10 @@ def doPrintCrosDevices():
 
 def doPrintLicenses(return_list=False, skus=None):
   lic = buildGAPIObject(u'licensing')
-  products = [u'Google-Apps', u'Google-Vault']
+  products = []
+  for sku in SKUS.values():
+   if sku[u'product'] not in products:
+     products.append(sku[u'product'])
   licenses = []
   titles = [u'userId', u'productId', u'skuId']
   csvRows = []

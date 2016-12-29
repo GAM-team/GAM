@@ -38,6 +38,41 @@ FN_LAST_UPDATE_CHECK_TXT = u'lastupdatecheck.txt'
 FN_OAUTH2SERVICE_JSON = u'oauth2service.json'
 FN_OAUTH2_TXT = u'oauth2.txt'
 MY_CUSTOMER = u'my_customer'
+SKUS = {
+  u'Google-Apps-For-Business': {
+   u'product': u'Google-Apps', u'aliases': [u'gafb', u'gafw', u'basic', u'gsuite-basic']},
+  u'Google-Apps-For-Postini': {
+   u'product': u'Google-Apps', u'aliases': [u'gams', u'postini', u'gsuite-gams']},
+  u'Google-Apps-Lite': {
+   u'product': u'Google-Apps', u'aliases': [u'gal', u'lite', u'gsuite-lite']},
+  u'Google-Apps-Unlimited': {
+   u'product': u'Google-Apps', u'aliases': [u'gau', u'unlimited', u'gsuite-business']},
+  u'Google-Drive-storage-20GB': {
+   u'product': u'Google-Drive-storage', u'aliases': [u'drive-20gb', u'drive20gb', u'20gb']},
+  u'Google-Drive-storage-50GB': {
+   u'product': u'Google-Drive-storage', u'aliases': [u'drive-50gb', u'drive50gb', u'50gb']},
+  u'Google-Drive-storage-200GB': {
+   u'product': u'Google-Drive-storage', u'aliases': [u'drive-200gb', u'drive200gb', u'200gb']},
+  u'Google-Drive-storage-400GB': {
+   u'product': u'Google-Drive-storage', u'aliases': [u'drive-400gb', u'drive400gb', u'400gb']},
+  u'Google-Drive-storage-1TB': {
+   u'product': u'Google-Drive-storage', u'aliases': [u'drive-1tb', u'drive1tb', u'1tb']},
+  u'Google-Drive-storage-2TB': {
+   u'product': u'Google-Drive-storage', u'aliases': [u'drive-2tb', u'drive2tb', u'2tb']},
+  u'Google-Drive-storage-4TB': {
+   u'product': u'Google-Drive-storage', u'aliases': [u'drive-4tb', u'drive4tb', u'4tb']},
+  u'Google-Drive-storage-8TB': {
+   u'product': u'Google-Drive-storage', u'aliases': [u'drive-8tb', u'drive8tb', u'8tb']},
+  u'Google-Drive-storage-16TB': {
+   u'product': u'Google-Drive-storage', u'aliases': [u'drive-16tb', u'drive16tb', u'16tb']},
+  u'Google-Vault': {
+   u'product': u'Google-Vault', u'aliases': [u'vault']},
+  u'Google-Vault-Former-Employee': {
+   u'product': u'Google-Vault', u'aliases': [u'vfe']},
+  u'Google-Coordinate': {
+   u'product': u'Google-Coordinate', u'aliases': [u'coordinate']}
+  }
+
 #
 # Global variables
 #
