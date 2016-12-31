@@ -42,6 +42,8 @@ MY_CUSTOMER = u'my_customer'
 SKUS = {
   u'Google-Apps-For-Business': {
    u'product': u'Google-Apps', u'aliases': [u'gafb', u'gafw', u'basic', u'gsuite-basic']},
+  u'Google-Apps-For-Government': {
+   u'product': u'Google-Apps', u'aliases': [u'gafg', u'gsuite-government']},
   u'Google-Apps-For-Postini': {
    u'product': u'Google-Apps', u'aliases': [u'gams', u'postini', u'gsuite-gams']},
   u'Google-Apps-Lite': {

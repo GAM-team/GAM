@@ -4255,8 +4255,9 @@ def getImap(users):
 
 def getProductAndSKU(sku):
   product = None
+  l_sku = sku.lower()
   for a_sku, sku_values in SKUS.items():
-    if sku.lower() in sku_values[u'aliases']:
+    if l_sku == a_sku.lower() or l_sku in sku_values[u'aliases']:
       sku = a_sku
       product = sku_values[u'product']
       break
