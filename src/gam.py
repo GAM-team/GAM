@@ -7012,7 +7012,7 @@ def doGetUserInfo(user_email=None):
   getSchemas = getAliases = getGroups = getLicenses = True
   projection = u'full'
   customFieldMask = viewType = None
-  skus = SKUS.keys()
+  skus = sorted(SKUS.keys())
   while i < len(sys.argv):
     myarg = sys.argv[i].lower()
     if myarg == u'noaliases':
@@ -8942,6 +8942,7 @@ def doPrintLicenses(return_list=False, skus=None):
   for sku in SKUS.values():
    if sku[u'product'] not in products:
      products.append(sku[u'product'])
+  products.sort()
   licenses = []
   titles = [u'userId', u'productId', u'skuId']
   csvRows = []
