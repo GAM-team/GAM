@@ -31,10 +31,8 @@ import string
 import time
 import base64
 import codecs
-import collections
 import csv
 import datetime
-from htmlentitydefs import name2codepoint
 import json
 import mimetypes
 import platform
