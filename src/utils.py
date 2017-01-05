@@ -1,3 +1,6 @@
+from var import GM_Globals, GM_WINDOWS, GM_SYS_ENCODING
+import collections
+from htmlentitydefs import name2codepoint
 from HTMLParser import HTMLParser
 
 def convertUTF8(data):

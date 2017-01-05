@@ -31,10 +31,8 @@ import string
 import time
 import base64
 import codecs
-import collections
 import csv
 import datetime
-from htmlentitydefs import name2codepoint
 import json
 import mimetypes
 import platform
@@ -8942,8 +8940,8 @@ def doPrintLicenses(return_list=False, skus=None):
   lic = buildGAPIObject(u'licensing')
   products = []
   for sku in SKUS.values():
-   if sku[u'product'] not in products:
-     products.append(sku[u'product'])
+    if sku[u'product'] not in products:
+      products.append(sku[u'product'])
   products.sort()
   licenses = []
   titles = [u'userId', u'productId', u'skuId']
