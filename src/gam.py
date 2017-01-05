@@ -4183,6 +4183,8 @@ def transferDriveFiles(users):
               target_parents.append({u'id': parent[u'id']})
           except TypeError:
             pass
+        if not target_parents:
+          target_parents.append({u'id': target_top_folder})
         callGAPI(target_drive.files(), u'patch', soft_errors=True, retry_reasons=[u'notFound'], fileId=file_id, body={u'parents': target_parents})
         if remove_source_user:
           callGAPI(target_drive.permissions(), u'delete', soft_errors=True, fileId=file_id, permissionId=source_permissionid)
