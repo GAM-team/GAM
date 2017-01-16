@@ -6285,10 +6285,10 @@ and accept the Terms of Service (ToS). As soon as you've accepted the ToS popup,
     break
 
   serveman = googleapiclient.discovery.build(u'servicemanagement', u'v1', http=http, cache_discovery=False)
-  apis = [u'admin-json.googleapis.com', u'appsactivity-json.googleapis.com', u'calendar-json.googleapis.com',
-          u'classroom.googleapis.com', u'drive', u'gmail-json.googleapis.com', u'groupssettings-json.googleapis.com',
-          u'licensing-json.googleapis.com', u'plus-json.googleapis.com', u'contacts-json.googleapis.com',
-          u'siteverification-json.googleapis.com']
+  apis = [u'admin.googleapis.com', u'appsactivity.googleapis.com', u'calendar-json.googleapis.com',
+          u'classroom.googleapis.com', u'drive', u'gmail.googleapis.com', u'groupssettings.googleapis.com',
+          u'licensing.googleapis.com', u'plus.googleapis.com', u'contacts.googleapis.com',
+          u'siteverification.googleapis.com']
   for api in apis:
     while True:
       print u' enabling API %s...' % api
