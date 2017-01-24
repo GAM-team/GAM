@@ -6249,7 +6249,6 @@ def doCreateProject(login_hint=None):
   while True:
     create_again = False
     print u'Creating project "%s"...' % body[u'name']
-    break
     create_operation = callGAPI(crm.projects(), u'create', body=body)
     operation_name = create_operation[u'name']
     time.sleep(5) # Google recommends always waiting at least 5 seconds
