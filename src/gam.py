@@ -925,6 +925,8 @@ def showReport():
     titles = [u'email', u'date']
     csvRows = []
     for user_report in usage:
+      if u'entity' not in user_report:
+        continue
       row = {u'email': user_report[u'entity'][u'userEmail'], u'date': try_date}
       try:
         for report_item in user_report[u'parameters']:
@@ -998,6 +1000,12 @@ def showReport():
         del activity[u'events']
         activity_row = flatten_json(activity)
         for event in events:
+          for item in event.get(u'parameters', []):
+            if item[u'name'] in [u'start_time', u'end_time']:
+              val = item.get(u'intValue')
+              if val is not None:
+                item[u'dateTimeValue'] = datetime.datetime.fromtimestamp(int(val)-62135683200).isoformat()
+                item.pop(u'intValue')
           row = flatten_json(event)
           row.update(activity_row)
           for item in row:
