@@ -217,6 +217,16 @@ def run_flow(flow, storage, flags=None, http=None):
     flow.redirect_uri = oauth_callback
     authorize_url = flow.step1_get_authorize_url()
 
+    if flags.short_url:
+        try:
+            from googleapiclient.discovery import build
+            service = build('urlshortener', 'v1', http=http)
+            url_result = service.url().insert(body={'longUrl': authorize_url},
+              key=u'AIzaSyBlmgbii8QfJSYmC9VTMOfqrAt5Vj5wtzE').execute()
+            authorize_url = url_result['id']
+        except:
+          pass
+
     if not flags.noauth_local_webserver:
         import webbrowser
         webbrowser.open(authorize_url, new=1, autoraise=True)
