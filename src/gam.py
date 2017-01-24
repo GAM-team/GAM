@@ -9241,13 +9241,11 @@ def OAuthInfo():
     print u"Secret: %s" % credentials.client_secret
   except UnboundLocalError:
     pass
-  print u'Scopes:'
-  for scope in token_info[u'scope'].split(u' '):
+  scopes = token_info[u'scope'].split(u' ')
+  print u'Scopes (%s):' % len(scopes)
+  for scope in scopes:
     print u'  %s' % scope
-  try:
-    print u'G Suite Admin: %s' % token_info[u'email']
-  except KeyError:
-    print u'G Suite Admin: Unknown'
+  print u'G Suite Admin: %s' % credentials.id_token.get(u'email', u'Unknown')
 
 def doDeleteOAuth():
   _, credentials = getOauth2TxtStorageCredentials()
@@ -9326,7 +9324,6 @@ OAUTH2_SCOPES = [
    u'subscopes': [],
    u'scopes': u'https://www.googleapis.com/auth/admin.directory.notifications'},
   {u'name': u'Site Verification API',
-   u'offByDefault': True,
    u'subscopes': [],
    u'scopes': u'https://www.googleapis.com/auth/siteverification'},
   {u'name': u'Gmail API - send report docs todrive notifications only',
@@ -9396,7 +9393,7 @@ def doRequestOAuth(login_hint=None):
       return (False, u'ERROR: {0} scopes selected, maximum is {1}, please unselect some.\n'.format(len(scopes), MAXIMUM_SCOPES))
     if len(scopes) == 0:
       return (False, u'ERROR: No scopes selected, please select at least one.\n')
-    scopes.insert(0, u'email') # Email Display Scope, always included
+    scopes.insert(0, u'profile') # Email Display Scope, always included
     return (True, u'')
 
   MISSING_CLIENT_SECRETS_MESSAGE = u'''To use GAM you need to create an API project. Please run:
