@@ -2956,7 +2956,7 @@ def doCalendarAddEvent():
       body[u'anyoneCanAddSelf'] = True
       i += 1
     elif sys.argv[i].lower() == u'description':
-      body[u'description'] = sys.argv[i+1]
+      body[u'description'] = sys.argv[i+1].replace(u'\\n', u'\n')
       i += 2
     elif sys.argv[i].lower() == u'start':
       if sys.argv[i+1].lower() == u'allday':
