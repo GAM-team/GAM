@@ -40,6 +40,7 @@ import random
 import re
 import socket
 import StringIO
+import urllib2
 
 import googleapiclient
 import googleapiclient.discovery
@@ -409,7 +410,6 @@ def SetGlobalVariables():
   return True
 
 def doGAMCheckForUpdates(forceCheck=False):
-  import urllib2
   import calendar
 
   current_version = gam_version
@@ -3091,7 +3091,6 @@ def doPhoto(users):
     filename = filename.replace(u'#username#', user[:user.find(u'@')])
     print u"Updating photo for %s with %s (%s/%s)" % (user, filename, i, count)
     if re.match(u'^(ht|f)tps?://.*$', filename):
-      import urllib2
       try:
         f = urllib2.urlopen(filename)
         image_data = str(f.read())
@@ -6250,6 +6249,7 @@ def doCreateProject(login_hint=None):
   while True:
     create_again = False
     print u'Creating project "%s"...' % body[u'name']
+    break
     create_operation = callGAPI(crm.projects(), u'create', body=body)
     operation_name = create_operation[u'name']
     time.sleep(5) # Google recommends always waiting at least 5 seconds
@@ -6283,12 +6283,10 @@ and accept the Terms of Service (ToS). As soon as you've accepted the ToS popup,
       print status[u'error']
       sys.exit(2)
     break
-
+  apis_url = u'https://raw.githubusercontent.com/jay0lee/GAM/master/src/project-apis.txt'
+  request = urllib2.Request(url=apis_url)
+  apis = urllib2.urlopen(request).read().splitlines()
   serveman = googleapiclient.discovery.build(u'servicemanagement', u'v1', http=http, cache_discovery=False)
-  apis = [u'admin.googleapis.com', u'appsactivity.googleapis.com', u'calendar-json.googleapis.com',
-          u'classroom.googleapis.com', u'drive', u'gmail.googleapis.com', u'groupssettings.googleapis.com',
-          u'licensing.googleapis.com', u'plus.googleapis.com', u'contacts.googleapis.com',
-          u'siteverification.googleapis.com']
   for api in apis:
     while True:
       print u' enabling API %s...' % api
