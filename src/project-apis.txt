@@ -1,0 +1,11 @@
+admin.googleapis.com
+appsactivity.googleapis.com
+calendar-json.googleapis.com
+classroom.googleapis.com
+contacts.googleapis.com
+drive
+gmail.googleapis.com
+groupssettings.googleapis.com
+licensing.googleapis.com
+plus.googleapis.com
+siteverification.googleapis.com
