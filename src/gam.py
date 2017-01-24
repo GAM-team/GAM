@@ -6259,7 +6259,7 @@ def doCreateProject(login_hint=None):
         if u'message' in status[u'error'] and status[u'error'][u'message'].find(u'Callers must accept ToS') != -1:
           print u'''Please go to:
 
-https://console.developers.google.com
+https://console.cloud.google.com/start
 
 and accept the Terms of Service (ToS). As soon as you've accepted the ToS popup, you can return here and press enter.'''
           raw_input()
