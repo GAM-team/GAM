@@ -1,3 +1,10 @@
+GAM 4.1
+ - Fix "gam create project"
+ - project create cleanups by Ross
+ - Various fixes by Ross
+ - Improved batch command performance. Some commands will see 2-3x speedups.
+ - Faster "gam info user" commands via batch license retrieval
+
 GAM 4.03
  - Minor fixes by Jay and Ross. Mostly to new install process.
 
