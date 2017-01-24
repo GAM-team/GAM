@@ -22,13 +22,13 @@ in the configured storage."""
 import hashlib
 import json
 import os
-import pickle
 
 from django import http
 from django import shortcuts
 from django.conf import settings
 from django.core import urlresolvers
 from django.shortcuts import redirect
+import jsonpickle
 from six.moves.urllib import parse
 
 from oauth2client import client
@@ -71,7 +71,7 @@ def _make_flow(request, scopes, return_url=None):
             urlresolvers.reverse("google_oauth:callback")))
 
     flow_key = _FLOW_KEY.format(csrf_token)
-    request.session[flow_key] = pickle.dumps(flow)
+    request.session[flow_key] = jsonpickle.encode(flow)
     return flow
 
 
@@ -89,7 +89,7 @@ def _get_flow_for_token(csrf_token, request):
         CSRF token.
     """
     flow_pickle = request.session.get(_FLOW_KEY.format(csrf_token), None)
-    return None if flow_pickle is None else pickle.loads(flow_pickle)
+    return None if flow_pickle is None else jsonpickle.decode(flow_pickle)
 
 
 def oauth2_callback(request):
@@ -170,7 +170,10 @@ def oauth2_authorize(request):
          A redirect to Google OAuth2 Authorization.
     """
     return_url = request.GET.get('return_url', None)
+    if not return_url:
+        return_url = request.META.get('HTTP_REFERER', '/')
 
+    scopes = request.GET.getlist('scopes', django_util.oauth2_settings.scopes)
     # Model storage (but not session storage) requires a logged in user
     if django_util.oauth2_settings.storage_model:
         if not request.user.is_authenticated():
@@ -178,13 +181,11 @@ def oauth2_authorize(request):
                 settings.LOGIN_URL, parse.quote(request.get_full_path())))
         # This checks for the case where we ended up here because of a logged
         # out user but we had credentials for it in the first place
-        elif get_storage(request).get() is not None:
-            return redirect(return_url)
+        else:
+            user_oauth = django_util.UserOAuth2(request, scopes, return_url)
+            if user_oauth.has_credentials():
+                return redirect(return_url)
 
-    scopes = request.GET.getlist('scopes', django_util.oauth2_settings.scopes)
-
-    if not return_url:
-        return_url = request.META.get('HTTP_REFERER', '/')
     flow = _make_flow(request=request, scopes=scopes, return_url=return_url)
     auth_url = flow.step1_get_authorize_url()
     return shortcuts.redirect(auth_url)

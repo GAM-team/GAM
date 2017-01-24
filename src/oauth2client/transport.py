@@ -18,7 +18,7 @@ import httplib2
 import six
 from six.moves import http_client
 
-from oauth2client._helpers import _to_bytes
+from oauth2client import _helpers
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -58,13 +58,19 @@ def get_cached_http():
     return _CACHED_HTTP
 
 
-def get_http_object():
+def get_http_object(*args, **kwargs):
     """Return a new HTTP object.
+
+    Args:
+        *args: tuple, The positional arguments to be passed when
+               contructing a new HTTP object.
+        **kwargs: dict, The keyword arguments to be passed when
+                  contructing a new HTTP object.
 
     Returns:
         httplib2.Http, an HTTP object.
     """
-    return httplib2.Http()
+    return httplib2.Http(*args, **kwargs)
 
 
 def _initialize_headers(headers):
@@ -121,7 +127,7 @@ def clean_headers(headers):
                 k = str(k)
             if not isinstance(v, six.binary_type):
                 v = str(v)
-            clean[_to_bytes(k)] = _to_bytes(v)
+            clean[_helpers._to_bytes(k)] = _helpers._to_bytes(v)
     except UnicodeEncodeError:
         from oauth2client.client import NonAsciiHeaderError
         raise NonAsciiHeaderError(k, ': ', v)
@@ -164,9 +170,9 @@ def wrap_http_for_auth(credentials, http):
                _STREAM_PROPERTIES):
             body_stream_position = body.tell()
 
-        resp, content = orig_request_method(uri, method, body,
-                                            clean_headers(headers),
-                                            redirections, connection_type)
+        resp, content = request(orig_request_method, uri, method, body,
+                                clean_headers(headers),
+                                redirections, connection_type)
 
         # A stored token may expire between the time it is retrieved and
         # the time the request is made, so we may need to try twice.
@@ -182,9 +188,9 @@ def wrap_http_for_auth(credentials, http):
             if body_stream_position is not None:
                 body.seek(body_stream_position)
 
-            resp, content = orig_request_method(uri, method, body,
-                                                clean_headers(headers),
-                                                redirections, connection_type)
+            resp, content = request(orig_request_method, uri, method, body,
+                                    clean_headers(headers),
+                                    redirections, connection_type)
 
         return resp, content
 
@@ -192,7 +198,7 @@ def wrap_http_for_auth(credentials, http):
     http.request = new_request
 
     # Set credentials as a property of the request method.
-    setattr(http.request, 'credentials', credentials)
+    http.request.credentials = credentials
 
 
 def wrap_http_for_jwt_access(credentials, http):
@@ -222,9 +228,9 @@ def wrap_http_for_jwt_access(credentials, http):
             if (credentials.access_token is None or
                     credentials.access_token_expired):
                 credentials.refresh(None)
-            return authenticated_request_method(uri, method, body,
-                                                headers, redirections,
-                                                connection_type)
+            return request(authenticated_request_method, uri,
+                           method, body, headers, redirections,
+                           connection_type)
         else:
             # If we don't have an 'aud' (audience) claim,
             # create a 1-time token with the uri root as the audience
@@ -234,12 +240,46 @@ def wrap_http_for_jwt_access(credentials, http):
             token, unused_expiry = credentials._create_token({'aud': uri_root})
 
             headers['Authorization'] = 'Bearer ' + token
-            return orig_request_method(uri, method, body,
-                                       clean_headers(headers),
-                                       redirections, connection_type)
+            return request(orig_request_method, uri, method, body,
+                           clean_headers(headers),
+                           redirections, connection_type)
 
     # Replace the request method with our own closure.
     http.request = new_request
+
+    # Set credentials as a property of the request method.
+    http.request.credentials = credentials
+
+
+def request(http, uri, method='GET', body=None, headers=None,
+            redirections=httplib2.DEFAULT_MAX_REDIRECTS,
+            connection_type=None):
+    """Make an HTTP request with an HTTP object and arguments.
+
+    Args:
+        http: httplib2.Http, an http object to be used to make requests.
+        uri: string, The URI to be requested.
+        method: string, The HTTP method to use for the request. Defaults
+                to 'GET'.
+        body: string, The payload / body in HTTP request. By default
+              there is no payload.
+        headers: dict, Key-value pairs of request headers. By default
+                 there are no headers.
+        redirections: int, The number of allowed 203 redirects for
+                      the request. Defaults to 5.
+        connection_type: httplib.HTTPConnection, a subclass to be used for
+                         establishing connection. If not set, the type
+                         will be determined from the ``uri``.
+
+    Returns:
+        tuple, a pair of a httplib2.Response with the status code and other
+        headers and the bytes of the content returned.
+    """
+    # NOTE: Allowing http or http.request is temporary (See Issue 601).
+    http_callable = getattr(http, 'request', http)
+    return http_callable(uri, method=method, body=body, headers=headers,
+                         redirections=redirections,
+                         connection_type=connection_type)
 
 
 _CACHED_HTTP = httplib2.Http(MemoryCache())

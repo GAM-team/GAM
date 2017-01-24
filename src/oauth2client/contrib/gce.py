@@ -20,13 +20,11 @@ Utilities for making it easier to use OAuth 2.0 on Google Compute Engine.
 import logging
 import warnings
 
-import httplib2
+from six.moves import http_client
 
 from oauth2client import client
 from oauth2client.contrib import _metadata
 
-
-__author__ = 'jcgregorio@google.com (Joe Gregorio)'
 
 logger = logging.getLogger(__name__)
 
@@ -98,44 +96,40 @@ class AppAssertionCredentials(client.AssertionCredentials):
         Returns:
             A set of strings containing the canonical list of scopes.
         """
-        self._retrieve_info(http.request)
+        self._retrieve_info(http)
         return self.scopes
 
-    def _retrieve_info(self, http_request):
-        """Validates invalid service accounts by retrieving service account info.
+    def _retrieve_info(self, http):
+        """Retrieves service account info for invalid credentials.
 
         Args:
-            http_request: callable, a callable that matches the method
-                          signature of httplib2.Http.request, used to make the
-                          request to the metadata server
+            http: an object to be used to make HTTP requests.
         """
         if self.invalid:
             info = _metadata.get_service_account_info(
-                http_request,
+                http,
                 service_account=self.service_account_email or 'default')
             self.invalid = False
             self.service_account_email = info['email']
             self.scopes = info['scopes']
 
-    def _refresh(self, http_request):
-        """Refreshes the access_token.
+    def _refresh(self, http):
+        """Refreshes the access token.
 
         Skip all the storage hoops and just refresh using the API.
 
         Args:
-            http_request: callable, a callable that matches the method
-                          signature of httplib2.Http.request, used to make
-                          the refresh request.
+            http: an object to be used to make HTTP requests.
 
         Raises:
             HttpAccessTokenRefreshError: When the refresh fails.
         """
         try:
-            self._retrieve_info(http_request)
+            self._retrieve_info(http)
             self.access_token, self.token_expiry = _metadata.get_token(
-                http_request, service_account=self.service_account_email)
-        except httplib2.HttpLib2Error as e:
-            raise client.HttpAccessTokenRefreshError(str(e))
+                http, service_account=self.service_account_email)
+        except http_client.HTTPException as err:
+            raise client.HttpAccessTokenRefreshError(str(err))
 
     @property
     def serialization_data(self):

@@ -25,7 +25,6 @@ from oauth2client import _helpers
 from oauth2client import client
 from oauth2client import crypt
 from oauth2client import transport
-from oauth2client import util
 
 
 _PASSWORD_DEFAULT = 'notasecret'
@@ -110,7 +109,7 @@ class ServiceAccountCredentials(client.AssertionCredentials):
 
         self._service_account_email = service_account_email
         self._signer = signer
-        self._scopes = util.scopes_to_string(scopes)
+        self._scopes = _helpers.scopes_to_string(scopes)
         self._private_key_id = private_key_id
         self.client_id = client_id
         self._user_agent = user_agent
@@ -650,9 +649,22 @@ class _JWTAccessCredentials(ServiceAccountCredentials):
         return result
 
     def refresh(self, http):
+        """Refreshes the access_token.
+
+        The HTTP object is unused since no request needs to be made to
+        get a new token, it can just be generated locally.
+
+        Args:
+            http: unused HTTP object
+        """
         self._refresh(None)
 
-    def _refresh(self, http_request):
+    def _refresh(self, http):
+        """Refreshes the access_token.
+
+        Args:
+            http: unused HTTP object
+        """
         self.access_token, self.token_expiry = self._create_token()
 
     def _create_token(self, additional_claims=None):

@@ -34,12 +34,10 @@ from six.moves import urllib
 
 import oauth2client
 from oauth2client import _helpers
+from oauth2client import _pkce
 from oauth2client import clientsecrets
 from oauth2client import transport
-from oauth2client import util
 
-
-__author__ = 'jcgregorio@google.com (Joe Gregorio)'
 
 HAS_OPENSSL = False
 HAS_CRYPTO = False
@@ -100,20 +98,20 @@ AccessTokenInfo = collections.namedtuple(
 DEFAULT_ENV_NAME = 'UNKNOWN'
 
 # If set to True _get_environment avoid GCE check (_detect_gce_environment)
-NO_GCE_CHECK = os.environ.setdefault('NO_GCE_CHECK', 'False')
+NO_GCE_CHECK = os.getenv('NO_GCE_CHECK', 'False')
 
 # Timeout in seconds to wait for the GCE metadata server when detecting the
 # GCE environment.
 try:
-    GCE_METADATA_TIMEOUT = int(
-        os.environ.setdefault('GCE_METADATA_TIMEOUT', '3'))
+    GCE_METADATA_TIMEOUT = int(os.getenv('GCE_METADATA_TIMEOUT', 3))
 except ValueError:  # pragma: NO COVER
     GCE_METADATA_TIMEOUT = 3
 
 _SERVER_SOFTWARE = 'SERVER_SOFTWARE'
-_GCE_METADATA_HOST = '169.254.169.254'
-_METADATA_FLAVOR_HEADER = 'Metadata-Flavor'
+_GCE_METADATA_URI = 'http://169.254.169.254'
+_METADATA_FLAVOR_HEADER = 'metadata-flavor'  # lowercase header
 _DESIRED_METADATA_FLAVOR = 'Google'
+_GCE_HEADERS = {_METADATA_FLAVOR_HEADER: _DESIRED_METADATA_FLAVOR}
 
 # Expose utcnow() at module level to allow for
 # easier testing (by replacing with a stub).
@@ -273,7 +271,7 @@ class Credentials(object):
                 to_serialize[key] = val.decode('utf-8')
             if isinstance(val, set):
                 to_serialize[key] = list(val)
-        return json.dumps(to_serialize, indent=4, sort_keys=True)
+        return json.dumps(to_serialize)
 
     def to_json(self):
         """Creating a JSON representation of an instance of Credentials.
@@ -440,23 +438,6 @@ class Storage(object):
             self.release_lock()
 
 
-def _update_query_params(uri, params):
-    """Updates a URI with new query parameters.
-
-    Args:
-        uri: string, A valid URI, with potential existing query parameters.
-        params: dict, A dictionary of query parameters.
-
-    Returns:
-        The same URI but with the new query parameters added.
-    """
-    parts = urllib.parse.urlparse(uri)
-    query_params = dict(urllib.parse.parse_qsl(parts.query))
-    query_params.update(params)
-    new_parts = parts._replace(query=urllib.parse.urlencode(query_params))
-    return urllib.parse.urlunparse(new_parts)
-
-
 class OAuth2Credentials(Credentials):
     """Credentials object for OAuth 2.0.
 
@@ -466,7 +447,7 @@ class OAuth2Credentials(Credentials):
     OAuth2Credentials objects may be safely pickled and unpickled.
     """
 
-    @util.positional(8)
+    @_helpers.positional(8)
     def __init__(self, access_token, client_id, client_secret, refresh_token,
                  token_expiry, token_uri, user_agent, revoke_uri=None,
                  id_token=None, token_response=None, scopes=None,
@@ -513,7 +494,7 @@ class OAuth2Credentials(Credentials):
         self.revoke_uri = revoke_uri
         self.id_token = id_token
         self.token_response = token_response
-        self.scopes = set(util.string_to_scopes(scopes or []))
+        self.scopes = set(_helpers.string_to_scopes(scopes or []))
         self.token_info_uri = token_info_uri
 
         # True if the credentials have been revoked or expired and can't be
@@ -557,7 +538,7 @@ class OAuth2Credentials(Credentials):
             http: httplib2.Http, an http object to be used to make the refresh
                   request.
         """
-        self._refresh(http.request)
+        self._refresh(http)
 
     def revoke(self, http):
         """Revokes a refresh_token and makes the credentials void.
@@ -566,7 +547,7 @@ class OAuth2Credentials(Credentials):
             http: httplib2.Http, an http object to be used to make the revoke
                   request.
         """
-        self._revoke(http.request)
+        self._revoke(http)
 
     def apply(self, headers):
         """Add the authorization to the headers.
@@ -592,7 +573,7 @@ class OAuth2Credentials(Credentials):
             not have scopes. In both cases, you can use refresh_scopes() to
             obtain the canonical set of scopes.
         """
-        scopes = util.string_to_scopes(scopes)
+        scopes = _helpers.string_to_scopes(scopes)
         return set(scopes).issubset(self.scopes)
 
     def retrieve_scopes(self, http):
@@ -607,7 +588,7 @@ class OAuth2Credentials(Credentials):
         Returns:
             A set of strings containing the canonical list of scopes.
         """
-        self._retrieve_scopes(http.request)
+        self._retrieve_scopes(http)
         return self.scopes
 
     @classmethod
@@ -746,7 +727,7 @@ class OAuth2Credentials(Credentials):
 
         return headers
 
-    def _refresh(self, http_request):
+    def _refresh(self, http):
         """Refreshes the access_token.
 
         This method first checks by reading the Storage object if available.
@@ -754,15 +735,13 @@ class OAuth2Credentials(Credentials):
         refresh is completed.
 
         Args:
-            http_request: callable, a callable that matches the method
-                          signature of httplib2.Http.request, used to make the
-                          refresh request.
+            http: an object to be used to make HTTP requests.
 
         Raises:
             HttpAccessTokenRefreshError: When the refresh fails.
         """
         if not self.store:
-            self._do_refresh_request(http_request)
+            self._do_refresh_request(http)
         else:
             self.store.acquire_lock()
             try:
@@ -774,17 +753,15 @@ class OAuth2Credentials(Credentials):
                     logger.info('Updated access_token read from Storage')
                     self._updateFromCredential(new_cred)
                 else:
-                    self._do_refresh_request(http_request)
+                    self._do_refresh_request(http)
             finally:
                 self.store.release_lock()
 
-    def _do_refresh_request(self, http_request):
+    def _do_refresh_request(self, http):
         """Refresh the access_token using the refresh_token.
 
         Args:
-            http_request: callable, a callable that matches the method
-                          signature of httplib2.Http.request, used to make the
-                          refresh request.
+            http: an object to be used to make HTTP requests.
 
         Raises:
             HttpAccessTokenRefreshError: When the refresh fails.
@@ -793,8 +770,9 @@ class OAuth2Credentials(Credentials):
         headers = self._generate_refresh_request_headers()
 
         logger.info('Refreshing access_token')
-        resp, content = http_request(
-            self.token_uri, method='POST', body=body, headers=headers)
+        resp, content = transport.request(
+            http, self.token_uri, method='POST',
+            body=body, headers=headers)
         content = _helpers._from_bytes(content)
         if resp.status == http_client.OK:
             d = json.loads(content)
@@ -819,7 +797,7 @@ class OAuth2Credentials(Credentials):
             # An {'error':...} response body means the token is expired or
             # revoked, so we flag the credentials as such.
             logger.info('Failed to retrieve access token: %s', content)
-            error_msg = 'Invalid response {0}.'.format(resp['status'])
+            error_msg = 'Invalid response {0}.'.format(resp.status)
             try:
                 d = json.loads(content)
                 if 'error' in d:
@@ -833,23 +811,19 @@ class OAuth2Credentials(Credentials):
                 pass
             raise HttpAccessTokenRefreshError(error_msg, status=resp.status)
 
-    def _revoke(self, http_request):
+    def _revoke(self, http):
         """Revokes this credential and deletes the stored copy (if it exists).
 
         Args:
-            http_request: callable, a callable that matches the method
-                          signature of httplib2.Http.request, used to make the
-                          revoke request.
+            http: an object to be used to make HTTP requests.
         """
-        self._do_revoke(http_request, self.refresh_token or self.access_token)
+        self._do_revoke(http, self.refresh_token or self.access_token)
 
-    def _do_revoke(self, http_request, token):
+    def _do_revoke(self, http, token):
         """Revokes this credential and deletes the stored copy (if it exists).
 
         Args:
-            http_request: callable, a callable that matches the method
-                          signature of httplib2.Http.request, used to make the
-                          refresh request.
+            http: an object to be used to make HTTP requests.
             token: A string used as the token to be revoked. Can be either an
                    access_token or refresh_token.
 
@@ -859,8 +833,13 @@ class OAuth2Credentials(Credentials):
         """
         logger.info('Revoking token')
         query_params = {'token': token}
-        token_revoke_uri = _update_query_params(self.revoke_uri, query_params)
-        resp, content = http_request(token_revoke_uri)
+        token_revoke_uri = _helpers.update_query_params(
+            self.revoke_uri, query_params)
+        resp, content = transport.request(http, token_revoke_uri)
+        if resp.status == http_client.METHOD_NOT_ALLOWED:
+            body = urllib.parse.urlencode(query_params)
+            resp, content = transport.request(http, token_revoke_uri,
+                                              method='POST', body=body)
         if resp.status == http_client.OK:
             self.invalid = True
         else:
@@ -876,23 +855,19 @@ class OAuth2Credentials(Credentials):
         if self.store:
             self.store.delete()
 
-    def _retrieve_scopes(self, http_request):
+    def _retrieve_scopes(self, http):
         """Retrieves the list of authorized scopes from the OAuth2 provider.
 
         Args:
-            http_request: callable, a callable that matches the method
-                          signature of httplib2.Http.request, used to make the
-                          revoke request.
+            http: an object to be used to make HTTP requests.
         """
-        self._do_retrieve_scopes(http_request, self.access_token)
+        self._do_retrieve_scopes(http, self.access_token)
 
-    def _do_retrieve_scopes(self, http_request, token):
+    def _do_retrieve_scopes(self, http, token):
         """Retrieves the list of authorized scopes from the OAuth2 provider.
 
         Args:
-            http_request: callable, a callable that matches the method
-                          signature of httplib2.Http.request, used to make the
-                          refresh request.
+            http: an object to be used to make HTTP requests.
             token: A string used as the token to identify the credentials to
                    the provider.
 
@@ -902,13 +877,13 @@ class OAuth2Credentials(Credentials):
         """
         logger.info('Refreshing scopes')
         query_params = {'access_token': token, 'fields': 'scope'}
-        token_info_uri = _update_query_params(self.token_info_uri,
-                                              query_params)
-        resp, content = http_request(token_info_uri)
+        token_info_uri = _helpers.update_query_params(
+            self.token_info_uri, query_params)
+        resp, content = transport.request(http, token_info_uri)
         content = _helpers._from_bytes(content)
         if resp.status == http_client.OK:
             d = json.loads(content)
-            self.scopes = set(util.string_to_scopes(d.get('scope', '')))
+            self.scopes = set(_helpers.string_to_scopes(d.get('scope', '')))
         else:
             error_msg = 'Invalid response {0}.'.format(resp.status)
             try:
@@ -977,19 +952,25 @@ class AccessTokenCredentials(OAuth2Credentials):
             data['user_agent'])
         return retval
 
-    def _refresh(self, http_request):
+    def _refresh(self, http):
+        """Refreshes the access token.
+
+        Args:
+            http: unused HTTP object.
+
+        Raises:
+            AccessTokenCredentialsError: always
+        """
         raise AccessTokenCredentialsError(
             'The access_token is expired or invalid and can\'t be refreshed.')
 
-    def _revoke(self, http_request):
+    def _revoke(self, http):
         """Revokes the access_token and deletes the store if available.
 
         Args:
-            http_request: callable, a callable that matches the method
-                          signature of httplib2.Http.request, used to make the
-                          revoke request.
+            http: an object to be used to make HTTP requests.
         """
-        self._do_revoke(http_request, self.access_token)
+        self._do_revoke(http, self.access_token)
 
 
 def _detect_gce_environment():
@@ -1005,21 +986,16 @@ def _detect_gce_environment():
     #       could lead to false negatives in the event that we are on GCE, but
     #       the metadata resolution was particularly slow. The latter case is
     #       "unlikely".
-    connection = six.moves.http_client.HTTPConnection(
-        _GCE_METADATA_HOST, timeout=GCE_METADATA_TIMEOUT)
-
+    http = transport.get_http_object(timeout=GCE_METADATA_TIMEOUT)
     try:
-        headers = {_METADATA_FLAVOR_HEADER: _DESIRED_METADATA_FLAVOR}
-        connection.request('GET', '/', headers=headers)
-        response = connection.getresponse()
-        if response.status == http_client.OK:
-            return (response.getheader(_METADATA_FLAVOR_HEADER) ==
-                    _DESIRED_METADATA_FLAVOR)
+        response, _ = transport.request(
+            http, _GCE_METADATA_URI, headers=_GCE_HEADERS)
+        return (
+            response.status == http_client.OK and
+            response.get(_METADATA_FLAVOR_HEADER) == _DESIRED_METADATA_FLAVOR)
     except socket.error:  # socket.timeout or socket.error(64, 'Host is down')
         logger.info('Timeout attempting to reach GCE metadata service.')
         return False
-    finally:
-        connection.close()
 
 
 def _in_gae_environment():
@@ -1469,7 +1445,7 @@ class AssertionCredentials(GoogleCredentials):
     AssertionCredentials objects may be safely pickled and unpickled.
     """
 
-    @util.positional(2)
+    @_helpers.positional(2)
     def __init__(self, assertion_type, user_agent=None,
                  token_uri=oauth2client.GOOGLE_TOKEN_URI,
                  revoke_uri=oauth2client.GOOGLE_REVOKE_URI,
@@ -1511,15 +1487,13 @@ class AssertionCredentials(GoogleCredentials):
         """Generate assertion string to be used in the access token request."""
         raise NotImplementedError
 
-    def _revoke(self, http_request):
+    def _revoke(self, http):
         """Revokes the access_token and deletes the store if available.
 
         Args:
-            http_request: callable, a callable that matches the method
-                          signature of httplib2.Http.request, used to make the
-                          revoke request.
+            http: an object to be used to make HTTP requests.
         """
-        self._do_revoke(http_request, self.access_token)
+        self._do_revoke(http, self.access_token)
 
     def sign_blob(self, blob):
         """Cryptographically sign a blob (of bytes).
@@ -1545,7 +1519,7 @@ def _require_crypto_or_die():
         raise CryptoUnavailableError('No crypto library available')
 
 
-@util.positional(2)
+@_helpers.positional(2)
 def verify_id_token(id_token, audience, http=None,
                     cert_uri=ID_TOKEN_VERIFICATION_CERTS):
     """Verifies a signed JWT id_token.
@@ -1572,7 +1546,7 @@ def verify_id_token(id_token, audience, http=None,
     if http is None:
         http = transport.get_cached_http()
 
-    resp, content = http.request(cert_uri)
+    resp, content = transport.request(http, cert_uri)
     if resp.status == http_client.OK:
         certs = json.loads(_helpers._from_bytes(content))
         return crypt.verify_signed_jwt_with_certs(id_token, certs, audience)
@@ -1624,7 +1598,7 @@ def _parse_exchange_token_response(content):
     except Exception:
         # different JSON libs raise different exceptions,
         # so we just do a catch-all here
-        resp = dict(urllib.parse.parse_qsl(content))
+        resp = _helpers.parse_unique_urlencoded(content)
 
     # some providers respond with 'expires', others with 'expires_in'
     if resp and 'expires' in resp:
@@ -1633,7 +1607,7 @@ def _parse_exchange_token_response(content):
     return resp
 
 
-@util.positional(4)
+@_helpers.positional(4)
 def credentials_from_code(client_id, client_secret, scope, code,
                           redirect_uri='postmessage', http=None,
                           user_agent=None,
@@ -1641,7 +1615,9 @@ def credentials_from_code(client_id, client_secret, scope, code,
                           auth_uri=oauth2client.GOOGLE_AUTH_URI,
                           revoke_uri=oauth2client.GOOGLE_REVOKE_URI,
                           device_uri=oauth2client.GOOGLE_DEVICE_URI,
-                          token_info_uri=oauth2client.GOOGLE_TOKEN_INFO_URI):
+                          token_info_uri=oauth2client.GOOGLE_TOKEN_INFO_URI,
+                          pkce=False,
+                          code_verifier=None):
     """Exchanges an authorization code for an OAuth2Credentials object.
 
     Args:
@@ -1665,6 +1641,15 @@ def credentials_from_code(client_id, client_secret, scope, code,
         device_uri: string, URI for device authorization endpoint. For
                     convenience defaults to Google's endpoints but any OAuth
                     2.0 provider can be used.
+        pkce: boolean, default: False, Generate and include a "Proof Key
+              for Code Exchange" (PKCE) with your authorization and token
+              requests. This adds security for installed applications that
+              cannot protect a client_secret. See RFC 7636 for details.
+        code_verifier: bytestring or None, default: None, parameter passed
+                       as part of the code exchange when pkce=True. If
+                       None, a code_verifier will automatically be
+                       generated as part of step1_get_authorize_url(). See
+                       RFC 7636 for details.
 
     Returns:
         An OAuth2Credentials object.
@@ -1675,16 +1660,20 @@ def credentials_from_code(client_id, client_secret, scope, code,
     """
     flow = OAuth2WebServerFlow(client_id, client_secret, scope,
                                redirect_uri=redirect_uri,
-                               user_agent=user_agent, auth_uri=auth_uri,
-                               token_uri=token_uri, revoke_uri=revoke_uri,
+                               user_agent=user_agent,
+                               auth_uri=auth_uri,
+                               token_uri=token_uri,
+                               revoke_uri=revoke_uri,
                                device_uri=device_uri,
-                               token_info_uri=token_info_uri)
+                               token_info_uri=token_info_uri,
+                               pkce=pkce,
+                               code_verifier=code_verifier)
 
     credentials = flow.step2_exchange(code, http=http)
     return credentials
 
 
-@util.positional(3)
+@_helpers.positional(3)
 def credentials_from_clientsecrets_and_code(filename, scope, code,
                                             message=None,
                                             redirect_uri='postmessage',
@@ -1713,6 +1702,15 @@ def credentials_from_clientsecrets_and_code(filename, scope, code,
         cache: An optional cache service client that implements get() and set()
                methods. See clientsecrets.loadfile() for details.
         device_uri: string, OAuth 2.0 device authorization endpoint
+        pkce: boolean, default: False, Generate and include a "Proof Key
+              for Code Exchange" (PKCE) with your authorization and token
+              requests. This adds security for installed applications that
+              cannot protect a client_secret. See RFC 7636 for details.
+        code_verifier: bytestring or None, default: None, parameter passed
+                       as part of the code exchange when pkce=True. If
+                       None, a code_verifier will automatically be
+                       generated as part of step1_get_authorize_url(). See
+                       RFC 7636 for details.
 
     Returns:
         An OAuth2Credentials object.
@@ -1803,7 +1801,7 @@ class OAuth2WebServerFlow(Flow):
     OAuth2WebServerFlow objects may be safely pickled and unpickled.
     """
 
-    @util.positional(4)
+    @_helpers.positional(4)
     def __init__(self, client_id,
                  client_secret=None,
                  scope=None,
@@ -1816,6 +1814,8 @@ class OAuth2WebServerFlow(Flow):
                  device_uri=oauth2client.GOOGLE_DEVICE_URI,
                  token_info_uri=oauth2client.GOOGLE_TOKEN_INFO_URI,
                  authorization_header=None,
+                 pkce=False,
+                 code_verifier=None,
                  **kwargs):
         """Constructor for OAuth2WebServerFlow.
 
@@ -1853,6 +1853,15 @@ class OAuth2WebServerFlow(Flow):
                                   require a client to authenticate using a
                                   header value instead of passing client_secret
                                   in the POST body.
+            pkce: boolean, default: False, Generate and include a "Proof Key
+                  for Code Exchange" (PKCE) with your authorization and token
+                  requests. This adds security for installed applications that
+                  cannot protect a client_secret. See RFC 7636 for details.
+            code_verifier: bytestring or None, default: None, parameter passed
+                           as part of the code exchange when pkce=True. If
+                           None, a code_verifier will automatically be
+                           generated as part of step1_get_authorize_url(). See
+                           RFC 7636 for details.
             **kwargs: dict, The keyword arguments are all optional and required
                       parameters for the OAuth calls.
         """
@@ -1862,7 +1871,7 @@ class OAuth2WebServerFlow(Flow):
             raise TypeError("The value of scope must not be None")
         self.client_id = client_id
         self.client_secret = client_secret
-        self.scope = util.scopes_to_string(scope)
+        self.scope = _helpers.scopes_to_string(scope)
         self.redirect_uri = redirect_uri
         self.login_hint = login_hint
         self.user_agent = user_agent
@@ -1872,9 +1881,11 @@ class OAuth2WebServerFlow(Flow):
         self.device_uri = device_uri
         self.token_info_uri = token_info_uri
         self.authorization_header = authorization_header
+        self._pkce = pkce
+        self.code_verifier = code_verifier
         self.params = _oauth2_web_server_flow_params(kwargs)
 
-    @util.positional(1)
+    @_helpers.positional(1)
     def step1_get_authorize_url(self, redirect_uri=None, state=None):
         """Returns a URI to redirect to the provider.
 
@@ -1912,10 +1923,17 @@ class OAuth2WebServerFlow(Flow):
             query_params['state'] = state
         if self.login_hint is not None:
             query_params['login_hint'] = self.login_hint
-        query_params.update(self.params)
-        return _update_query_params(self.auth_uri, query_params)
+        if self._pkce:
+            if not self.code_verifier:
+                self.code_verifier = _pkce.code_verifier()
+            challenge = _pkce.code_challenge(self.code_verifier)
+            query_params['code_challenge'] = challenge
+            query_params['code_challenge_method'] = 'S256'
 
-    @util.positional(1)
+        query_params.update(self.params)
+        return _helpers.update_query_params(self.auth_uri, query_params)
+
+    @_helpers.positional(1)
     def step1_get_device_and_user_codes(self, http=None):
         """Returns a user code and the verification URL where to enter it
 
@@ -1940,8 +1958,8 @@ class OAuth2WebServerFlow(Flow):
         if http is None:
             http = transport.get_http_object()
 
-        resp, content = http.request(self.device_uri, method='POST', body=body,
-                                     headers=headers)
+        resp, content = transport.request(
+            http, self.device_uri, method='POST', body=body, headers=headers)
         content = _helpers._from_bytes(content)
         if resp.status == http_client.OK:
             try:
@@ -1963,7 +1981,7 @@ class OAuth2WebServerFlow(Flow):
                 pass
             raise OAuth2DeviceCodeError(error_msg)
 
-    @util.positional(2)
+    @_helpers.positional(2)
     def step2_exchange(self, code=None, http=None, device_flow_info=None):
         """Exchanges a code for OAuth2Credentials.
 
@@ -2006,6 +2024,8 @@ class OAuth2WebServerFlow(Flow):
         }
         if self.client_secret is not None:
             post_data['client_secret'] = self.client_secret
+        if self._pkce:
+            post_data['code_verifier'] = self.code_verifier
         if device_flow_info is not None:
             post_data['grant_type'] = 'http://oauth.net/grant_type/device/1.0'
         else:
@@ -2023,8 +2043,8 @@ class OAuth2WebServerFlow(Flow):
         if http is None:
             http = transport.get_http_object()
 
-        resp, content = http.request(self.token_uri, method='POST', body=body,
-                                     headers=headers)
+        resp, content = transport.request(
+            http, self.token_uri, method='POST', body=body, headers=headers)
         d = _parse_exchange_token_response(content)
         if resp.status == http_client.OK and 'access_token' in d:
             access_token = d['access_token']
@@ -2060,10 +2080,10 @@ class OAuth2WebServerFlow(Flow):
             raise FlowExchangeError(error_msg)
 
 
-@util.positional(2)
+@_helpers.positional(2)
 def flow_from_clientsecrets(filename, scope, redirect_uri=None,
                             message=None, cache=None, login_hint=None,
-                            device_uri=None):
+                            device_uri=None, pkce=None, code_verifier=None):
     """Create a Flow from a clientsecrets file.
 
     Will create the right kind of Flow based on the contents of the
@@ -2112,10 +2132,11 @@ def flow_from_clientsecrets(filename, scope, redirect_uri=None,
                 'login_hint': login_hint,
             }
             revoke_uri = client_info.get('revoke_uri')
-            if revoke_uri is not None:
-                constructor_kwargs['revoke_uri'] = revoke_uri
-            if device_uri is not None:
-                constructor_kwargs['device_uri'] = device_uri
+            optional = ('revoke_uri', 'device_uri', 'pkce', 'code_verifier')
+            for param in optional:
+                if locals()[param] is not None:
+                    constructor_kwargs[param] = locals()[param]
+
             return OAuth2WebServerFlow(
                 client_info['client_id'], client_info['client_secret'],
                 scope, **constructor_kwargs)

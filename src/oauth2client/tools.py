@@ -30,11 +30,10 @@ from six.moves import http_client
 from six.moves import input
 from six.moves import urllib
 
+from oauth2client import _helpers
 from oauth2client import client
-from oauth2client import util
 
 
-__author__ = 'jcgregorio@google.com (Joe Gregorio)'
 __all__ = ['argparser', 'run_flow', 'message_if_missing']
 
 _CLIENT_SECRETS_MESSAGE = """WARNING: Please configure OAuth 2.0
@@ -123,22 +122,22 @@ class ClientRedirectHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         if an error occurred.
         """
         self.send_response(http_client.OK)
-        self.send_header("Content-type", "text/html")
+        self.send_header('Content-type', 'text/html')
         self.end_headers()
-        query = self.path.split('?', 1)[-1]
-        query = dict(urllib.parse.parse_qsl(query))
+        parts = urllib.parse.urlparse(self.path)
+        query = _helpers.parse_unique_urlencoded(parts.query)
         self.server.query_params = query
         self.wfile.write(
-            b"<html><head><title>Authentication Status</title></head>")
+            b'<html><head><title>Authentication Status</title></head>')
         self.wfile.write(
-            b"<body><p>The authentication flow has completed.</p>")
-        self.wfile.write(b"</body></html>")
+            b'<body><p>The authentication flow has completed.</p>')
+        self.wfile.write(b'</body></html>')
 
     def log_message(self, format, *args):
         """Do not log messages to stdout while running as cmd. line program."""
 
 
-@util.positional(3)
+@_helpers.positional(3)
 def run_flow(flow, storage, flags=None, http=None):
     """Core code for a command-line application.
 
@@ -217,16 +216,6 @@ def run_flow(flow, storage, flags=None, http=None):
         oauth_callback = client.OOB_CALLBACK_URN
     flow.redirect_uri = oauth_callback
     authorize_url = flow.step1_get_authorize_url()
-
-    if flags.short_url:
-        try:
-            from googleapiclient.discovery import build
-            service = build('urlshortener', 'v1', http=http)
-            url_result = service.url().insert(body={'longUrl': authorize_url},
-              key=u'AIzaSyBlmgbii8QfJSYmC9VTMOfqrAt5Vj5wtzE').execute()
-            authorize_url = url_result['id']
-        except:
-          pass
 
     if not flags.noauth_local_webserver:
         import webbrowser
