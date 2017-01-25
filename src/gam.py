@@ -9416,6 +9416,9 @@ gam create project
   try:
     cs_json = json.loads(cs_data)
     client_id = cs_json[u'installed'][u'client_id']
+    # chop off .apps.googleusercontent.com suffix as it's not needed
+    # and we need to keep things short for the Auth URL.
+    client_id = re.sub(u'\.apps\.googleusercontent\.com$', u'', client_id)
     client_secret = cs_json[u'installed'][u'client_secret']
   except (ValueError, IndexError, KeyError):
     print u'ERROR: the format of your client secrets file:\n\n%s\n\n is incorrect. Please recreate the file.'
