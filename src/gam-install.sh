@@ -10,6 +10,7 @@ OPTIONS:
    -d      Directory where gam folder will be installed. Default is \$HOME/bin/
    -a      Architecture to install (i386, x86_64, arm). Default is to detect your arch with "uname -m".
    -o      OS we are running (linux, macos). Default is to detect your OS with "uname -s".
+   -l      Just upgrade GAM to latest version. Skips project creation and auth.
    -p      Profile update (true, false). Should script add gam command to environment. Default is true.
    -u      Admin user email address to use with GAM. Default is to prompt.
    -r      Regular user email address. Used to test service account access to user data. Default is to prompt.
@@ -21,16 +22,18 @@ target_dir="$HOME/bin"
 gamarch=$(uname -m)
 gamos=$(uname -s)
 update_profile=true
+upgrade_only=false
 gamversion="latest"
 adminuser=""
 regularuser=""
-while getopts "hd:a:o:p:u:r:v:" OPTION
+while getopts "hd:a:o:l:p:u:r:v:" OPTION
 do
      case $OPTION in
          h) usage; exit;;
          d) target_dir=$OPTARG;;
          a) gamarch=$OPTARG;;
          o) gamos=$OPTARG;;
+         l) upgrade_only=true;;
          p) update_profile=$OPTARG;;
          u) adminuser=$OPTARG;;
          r) regularuser=$OPTARG;;
@@ -164,6 +167,19 @@ if (( $rc != 0 )); then
   exit
 else
   echo_green "Finished extracting GAM archive."
+fi
+
+if [ "$upgrade_only" = true ]; then
+  echo_green "Here's information about your GAM upgrade:"
+  $target_dir/gam/gam version
+  rc=$?
+  if (( $rc != 0 )); then
+    echo_red "ERROR: Failed running GAM for the first time with $rc. Please report this error to GAM mailing list. Exiting."
+    exit
+  fi
+
+  echo_green "GAM upgrade complete!"
+  exit
 fi
 
 # Update profile to add gam command
