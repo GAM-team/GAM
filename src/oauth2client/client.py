@@ -1771,7 +1771,7 @@ class DeviceFlowInfo(collections.namedtuple('DeviceFlowInfo', (
 def _oauth2_web_server_flow_params(kwargs):
     """Configures redirect URI parameters for OAuth2WebServerFlow."""
     params = {
-        'access_type': 'offline',
+#        'access_type': 'offline',
         'response_type': 'code',
     }
 

@@ -9485,7 +9485,7 @@ gam create project
         break
   flow = oauth2client.client.OAuth2WebServerFlow(client_id=client_id,
                                                  client_secret=client_secret, scope=scopes, redirect_uri=oauth2client.client.OOB_CALLBACK_URN,
-                                                 user_agent=GAM_INFO, access_type=u'offline', response_type=u'code', login_hint=login_hint)
+                                                 user_agent=GAM_INFO, response_type=u'code', login_hint=login_hint)
   storage, credentials = getOauth2TxtStorageCredentials()
   if credentials is None or credentials.invalid:
     http = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL])
