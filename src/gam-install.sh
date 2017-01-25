@@ -26,7 +26,7 @@ upgrade_only=false
 gamversion="latest"
 adminuser=""
 regularuser=""
-while getopts "hd:a:o:l:p:u:r:v:" OPTION
+while getopts "hd:a:o:lp:u:r:v:" OPTION
 do
      case $OPTION in
          h) usage; exit;;
