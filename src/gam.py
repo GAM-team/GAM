@@ -40,7 +40,6 @@ import random
 import re
 import socket
 import StringIO
-import urllib2
 
 import googleapiclient
 import googleapiclient.discovery
@@ -423,11 +422,11 @@ def doGAMCheckForUpdates(forceCheck=False):
       return
     check_url = GAM_LATEST_RELEASE # latest full release
   headers = {u'Accept': u'application/vnd.github.v3.text+json'}
-  request = urllib2.Request(url=check_url, headers=headers)
+  http = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL]) 
   try:
-    c = urllib2.urlopen(request)
+    (_, c) = http.request(check_url, u'GET', headers=headers)
     try:
-      release_data = json.loads(c.read())
+      release_data = json.loads(c)
     except ValueError:
       return
     if isinstance(release_data, list):
@@ -453,7 +452,7 @@ def doGAMCheckForUpdates(forceCheck=False):
       sys.exit(0)
     writeFile(GM_Globals[GM_LAST_UPDATE_CHECK_TXT], str(now_time), continueOnError=True, displayError=forceCheck)
     return
-  except (urllib2.HTTPError, urllib2.URLError):
+  except (httplib2.HttpLib2Error, httplib2.ServerNotFoundError, httplib2.CertificateValidationUnsupported):
     return
 
 def doGAMVersion(checkForArgs=True):
@@ -3099,10 +3098,11 @@ def doPhoto(users):
     filename = filename.replace(u'#username#', user[:user.find(u'@')])
     print u"Updating photo for %s with %s (%s/%s)" % (user, filename, i, count)
     if re.match(u'^(ht|f)tps?://.*$', filename):
+      http = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL]) 
       try:
-        f = urllib2.urlopen(filename)
-        image_data = str(f.read())
-      except urllib2.HTTPError as e:
+        (_, f) = http.request(filename, u'GET')
+        image_data = str(f)
+      except (httplib2.HttpLib2Error, httplib2.ServerNotFoundError, httplib2.CertificateValidationUnsupported) as e:
         print e
         continue
     else:
@@ -6291,8 +6291,8 @@ and accept the Terms of Service (ToS). As soon as you've accepted the ToS popup,
       sys.exit(2)
     break
   apis_url = u'https://raw.githubusercontent.com/jay0lee/GAM/master/src/project-apis.txt'
-  request = urllib2.Request(url=apis_url)
-  apis = urllib2.urlopen(request).read().splitlines()
+  http = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL])
+  _, apis = http.request(apis_url, u'GET').splitlines()
   serveman = googleapiclient.discovery.build(u'servicemanagement', u'v1', http=http, cache_discovery=False)
   for api in apis:
     while True:
