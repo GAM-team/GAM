@@ -422,9 +422,9 @@ def doGAMCheckForUpdates(forceCheck=False):
       return
     check_url = GAM_LATEST_RELEASE # latest full release
   headers = {u'Accept': u'application/vnd.github.v3.text+json'}
-  http = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL]) 
+  simplehttp = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL]) 
   try:
-    (_, c) = http.request(check_url, u'GET', headers=headers)
+    (_, c) = simplehttp.request(check_url, u'GET', headers=headers)
     try:
       release_data = json.loads(c)
     except ValueError:
@@ -3098,9 +3098,9 @@ def doPhoto(users):
     filename = filename.replace(u'#username#', user[:user.find(u'@')])
     print u"Updating photo for %s with %s (%s/%s)" % (user, filename, i, count)
     if re.match(u'^(ht|f)tps?://.*$', filename):
-      http = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL]) 
+      simplehttp = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL]) 
       try:
-        (_, f) = http.request(filename, u'GET')
+        (_, f) = simplehttp.request(filename, u'GET')
         image_data = str(f)
       except (httplib2.HttpLib2Error, httplib2.ServerNotFoundError, httplib2.CertificateValidationUnsupported) as e:
         print e
@@ -6291,8 +6291,8 @@ and accept the Terms of Service (ToS). As soon as you've accepted the ToS popup,
       sys.exit(2)
     break
   apis_url = u'https://raw.githubusercontent.com/jay0lee/GAM/master/src/project-apis.txt'
-  http = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL])
-  _, c = http.request(apis_url, u'GET')
+  simplehttp = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL])
+  _, c = simplehttp.request(apis_url, u'GET')
   apis = c.splitlines()
   serveman = googleapiclient.discovery.build(u'servicemanagement', u'v1', http=http, cache_discovery=False)
   for api in apis:
