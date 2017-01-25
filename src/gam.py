@@ -8476,6 +8476,7 @@ def doPrintGroups():
       page_message = u'Got %%num_items%% members: %%first_item%% - %%last_item%%\n'
       groupMembers = callGAPIpages(cd.members(), u'list', u'members',
                                    page_message=page_message, message_attribute=u'email',
+                                   soft_errors=True,
                                    groupKey=groupEmail, roles=roles, fields=u'nextPageToken,members(email,id,role)')
       if members:
         membersList = []
@@ -8701,6 +8702,7 @@ def doPrintGroupMembers():
     group_email = group[u'email']
     sys.stderr.write(u'Getting members for %s (%s/%s)\n' % (group_email, i, count))
     group_members = callGAPIpages(cd.members(), u'list', u'members',
+                                  soft_errors=True,
                                   message_attribute=u'email', groupKey=group_email, fields=fields)
     for member in group_members:
       for unwanted_item in [u'kind', u'etag']:
@@ -9420,7 +9422,7 @@ gam create project
     client_id = cs_json[u'installed'][u'client_id']
     # chop off .apps.googleusercontent.com suffix as it's not needed
     # and we need to keep things short for the Auth URL.
-    client_id = re.sub(u'\.apps\.googleusercontent\.com$', u'', client_id)
+    client_id = re.sub(r'\.apps\.googleusercontent\.com$', u'', client_id)
     client_secret = cs_json[u'installed'][u'client_secret']
   except (ValueError, IndexError, KeyError):
     print u'ERROR: the format of your client secrets file:\n\n%s\n\n is incorrect. Please recreate the file.'
