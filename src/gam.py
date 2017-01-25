@@ -6292,7 +6292,8 @@ and accept the Terms of Service (ToS). As soon as you've accepted the ToS popup,
     break
   apis_url = u'https://raw.githubusercontent.com/jay0lee/GAM/master/src/project-apis.txt'
   http = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL])
-  _, apis = http.request(apis_url, u'GET').splitlines()
+  _, c = http.request(apis_url, u'GET')
+  apis = c.splitlines()
   serveman = googleapiclient.discovery.build(u'servicemanagement', u'v1', http=http, cache_discovery=False)
   for api in apis:
     while True:
