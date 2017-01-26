@@ -1247,7 +1247,7 @@ def doUpdateCourse():
       body[u'descriptionHeading'] = sys.argv[i+1]
       i += 2
     elif sys.argv[i].lower() == u'description':
-      body[u'description'] = sys.argv[i+1]
+      body[u'description'] = sys.argv[i+1].replace(u'\\n', u'\n')
       i += 2
     elif sys.argv[i].lower() == u'room':
       body[u'room'] = sys.argv[i+1]
@@ -1906,7 +1906,7 @@ def doCreateCourse():
       body[u'descriptionHeading'] = sys.argv[i+1]
       i += 2
     elif sys.argv[i].lower() == u'description':
-      body[u'description'] = sys.argv[i+1]
+      body[u'description'] = sys.argv[i+1].replace(u'\\n', u'\n')
       i += 2
     elif sys.argv[i].lower() == u'room':
       body[u'room'] = sys.argv[i+1]
@@ -6391,7 +6391,7 @@ def doCreateGroup():
       got_name = True
       i += 2
     elif sys.argv[i].lower() == u'description':
-      body[u'description'] = sys.argv[i+1]
+      body[u'description'] = sys.argv[i+1].replace(u'\\n', u'\n')
       i += 2
     else:
       value = sys.argv[i+1]
@@ -6469,7 +6469,7 @@ def doCreateOrg():
   body[u'parentOrgUnitPath'] = u'/'
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'description':
-      body[u'description'] = sys.argv[i+1]
+      body[u'description'] = sys.argv[i+1].replace(u'\\n', u'\n')
       i += 2
     elif sys.argv[i].lower() == u'parent':
       body[u'parentOrgUnitPath'] = sys.argv[i+1]
@@ -6492,7 +6492,7 @@ def doCreateResourceCalendar():
   i = 5
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'description':
-      body[u'resourceDescription'] = sys.argv[i+1]
+      body[u'resourceDescription'] = sys.argv[i+1].replace(u'\\n', u'\n')
       i += 2
     elif sys.argv[i].lower() == u'type':
       body[u'resourceType'] = sys.argv[i+1]
@@ -6705,7 +6705,9 @@ def doUpdateGroup():
                 print u'ERROR: %s must be a number ending with M (megabytes), K (kilobytes) or nothing (bytes); got %s' % value
                 sys.exit(2)
             elif params[u'type'] == u'string':
-              if params[u'description'].find(value.upper()) != -1: # ugly hack because API wants some values uppercased.
+              if attrib == u'description':
+                value = value.replace(u'\\n', u'\n')
+              elif params[u'description'].find(value.upper()) != -1: # ugly hack because API wants some values uppercased.
                 value = value.upper()
               elif value.lower() in true_values:
                 value = u'true'
@@ -6773,7 +6775,7 @@ def doUpdateResourceCalendar():
       body[u'resourceName'] = sys.argv[i+1]
       i += 2
     elif sys.argv[i].lower() == u'description':
-      body[u'resourceDescription'] = sys.argv[i+1]
+      body[u'resourceDescription'] = sys.argv[i+1].replace(u'\\n', u'\n')
       i += 2
     elif sys.argv[i].lower() == u'type':
       body[u'resourceType'] = sys.argv[i+1]
@@ -6944,7 +6946,7 @@ def doUpdateOrg():
         body[u'name'] = sys.argv[i+1]
         i += 2
       elif sys.argv[i].lower() == u'description':
-        body[u'description'] = sys.argv[i+1]
+        body[u'description'] = sys.argv[i+1].replace(u'\\n', u'\n')
         i += 2
       elif sys.argv[i].lower() == u'parent':
         body[u'parentOrgUnitPath'] = sys.argv[i+1]
