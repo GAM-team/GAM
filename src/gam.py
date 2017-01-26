@@ -6292,9 +6292,8 @@ and accept the Terms of Service (ToS). As soon as you've accepted the ToS popup,
       print status[u'error']
       sys.exit(2)
     break
-  apis_url = u'https://raw.githubusercontent.com/jay0lee/GAM/master/src/project-apis.txt'
   simplehttp = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL])
-  _, c = simplehttp.request(apis_url, u'GET')
+  _, c = simplehttp.request(GAM_PROJECT_APIS, u'GET')
   apis = c.splitlines()
   serveman = googleapiclient.discovery.build(u'servicemanagement', u'v1', http=http, cache_discovery=False)
   for api in apis:
