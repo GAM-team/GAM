@@ -422,7 +422,7 @@ def doGAMCheckForUpdates(forceCheck=False):
       return
     check_url = GAM_LATEST_RELEASE # latest full release
   headers = {u'Accept': u'application/vnd.github.v3.text+json'}
-  simplehttp = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL]) 
+  simplehttp = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL])
   try:
     (_, c) = simplehttp.request(check_url, u'GET', headers=headers)
     try:
@@ -3098,7 +3098,7 @@ def doPhoto(users):
     filename = filename.replace(u'#username#', user[:user.find(u'@')])
     print u"Updating photo for %s with %s (%s/%s)" % (user, filename, i, count)
     if re.match(u'^(ht|f)tps?://.*$', filename):
-      simplehttp = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL]) 
+      simplehttp = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL])
       try:
         (_, f) = simplehttp.request(filename, u'GET')
         image_data = str(f)
@@ -7294,16 +7294,10 @@ def doGetGroupInfo(group_name=None):
       for groupm in groups:
         print u'  %s: %s' % (groupm[u'name'], groupm[u'email'])
   if getUsers:
-    members = callGAPIpages(cd.members(), u'list', u'members', groupKey=group_name)
+    members = callGAPIpages(cd.members(), u'list', u'members', groupKey=group_name, fields=u'nextPageToken,members(email,id,role,type)')
     print u'Members:'
     for member in members:
-      try:
-        print u' %s: %s (%s)' % (member[u'role'].lower(), member[u'email'], member[u'type'].lower())
-      except KeyError:
-        try:
-          print u' member: %s (%s)' % (member[u'email'], member[u'type'].lower())
-        except KeyError:
-          print u' member: %s (%s)' % (member[u'id'], member[u'type'].lower())
+      print u' %s: %s (%s)' % (member.get(u'role', ROLE_MEMBER).lower(), member.get(u'email', member[u'id']), member[u'type'].lower())
     print u'Total %s users in group' % len(members)
 
 def doGetAliasInfo(alias_email=None):
@@ -8729,6 +8723,14 @@ def doPrintGroupMembers():
             memberName = mbinfo[u'name']
           except googleapiclient.errors.HttpError:
             memberName = u'Unknown'
+        elif member[u'type'] == u'CUSTOMER':
+          try:
+            mbinfo = callGAPI(cd.customers(), u'get',
+                              throw_reasons=[u'badRequest', u'resourceNotFound', u'forbidden'],
+                              customerKey=member[u'id'], fields=u'customerDomain')
+            memberName = mbinfo[u'customerDomain']
+          except googleapiclient.errors.HttpError:
+            memberName = u'Unknown'
         else:
           memberName = u'Unknown'
         member[u'name'] = memberName
@@ -9078,10 +9080,10 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
       sys.stderr.write(u"Getting %s of %s (may take some time for large groups)...\n" % (member_type_message, group))
       page_message = u'Got %%%%total_items%%%% %s...' % member_type_message
     members = callGAPIpages(cd.members(), u'list', u'members', page_message=page_message,
-                            groupKey=group, roles=member_type, fields=u'nextPageToken,members(email)')
+                            groupKey=group, roles=member_type, fields=u'nextPageToken,members(email,id,type)')
     users = []
     for member in members:
-      users.append(member[u'email'])
+      users.append(member.get(u'email', member[u'id']))
   elif entity_type in [u'ou', u'org']:
     got_uids = True
     ou = entity
