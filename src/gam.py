@@ -6575,7 +6575,7 @@ def doUpdateGroup():
         checkNotSuspended = True
         i += 1
       if sys.argv[i].lower() in usergroup_types:
-        users_email = getUsersToModify(entity_type=sys.argv[i], entity=sys.argv[i+1], checkNotSuspended=checkNotSuspended)
+        users_email = getUsersToModify(entity_type=sys.argv[i], entity=sys.argv[i+1], checkNotSuspended=checkNotSuspended, groupUserMembersOnly=False)
       else:
         users_email = [sys.argv[i],]
       for user_email in users_email:
@@ -6596,9 +6596,9 @@ def doUpdateGroup():
       if sys.argv[i] == u'notsuspended':
         checkNotSuspended = True
         i += 1
-      users_email = getUsersToModify(entity_type=sys.argv[i], entity=sys.argv[i+1], checkNotSuspended=checkNotSuspended)
+      users_email = getUsersToModify(entity_type=sys.argv[i], entity=sys.argv[i+1], checkNotSuspended=checkNotSuspended, groupUserMembersOnly=False)
       users_email = [x.lower() for x in users_email]
-      current_emails = getUsersToModify(entity_type=u'group', entity=group, member_type=role)
+      current_emails = getUsersToModify(entity_type=u'group', entity=group, member_type=role, groupUserMembersOnly=False)
       current_emails = [x.lower() for x in current_emails]
       to_add = list(set(users_email) - set(current_emails))
       to_remove = list(set(current_emails) - set(users_email))
@@ -6614,7 +6614,7 @@ def doUpdateGroup():
       if sys.argv[i].lower() in [u'member', u'manager', u'owner']:
         i += 1
       if sys.argv[i].lower() in usergroup_types:
-        user_emails = getUsersToModify(entity_type=sys.argv[i], entity=sys.argv[i+1])
+        user_emails = getUsersToModify(entity_type=sys.argv[i], entity=sys.argv[i+1], groupUserMembersOnly=False)
       else:
         user_emails = [sys.argv[i],]
       for user_email in user_emails:
@@ -6631,7 +6631,7 @@ def doUpdateGroup():
         role = sys.argv[i].upper()
         i += 1
       if sys.argv[i].lower() in usergroup_types:
-        users_email = getUsersToModify(entity_type=sys.argv[i], entity=sys.argv[i+1])
+        users_email = getUsersToModify(entity_type=sys.argv[i], entity=sys.argv[i+1], groupUserMembersOnly=False)
       else:
         users_email = [sys.argv[i],]
       body = {u'role': role}
@@ -6658,7 +6658,7 @@ def doUpdateGroup():
         roles = u','.join(sorted(set(roles)))
       else:
         roles = ROLE_MEMBER
-      user_emails = getUsersToModify(entity_type=u'group', entity=group, member_type=roles)
+      user_emails = getUsersToModify(entity_type=u'group', entity=group, member_type=roles, groupUserMembersOnly=False)
       for user_email in user_emails:
         sys.stderr.write(u' removing %s\n' % user_email)
         callGAPI(cd.members(), u'delete', soft_errors=True, groupKey=group, memberKey=user_email)
@@ -9056,7 +9056,7 @@ def doPrintResourceCalendars():
     csvRows.append(resUnit)
   writeCSVfile(csvRows, titles, u'Resources', todrive)
 
-def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=None, checkNotSuspended=False):
+def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=None, checkNotSuspended=False, groupUserMembersOnly=True):
   got_uids = False
   if entity_type is None:
     entity_type = sys.argv[1].lower()
@@ -9084,7 +9084,8 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
                             groupKey=group, roles=member_type, fields=u'nextPageToken,members(email,id,type)')
     users = []
     for member in members:
-      users.append(member.get(u'email', member[u'id']))
+      if (not groupUserMembersOnly) or (member[u'type'] == u'USER'):
+        users.append(member.get(u'email', member[u'id']))
   elif entity_type in [u'ou', u'org']:
     got_uids = True
     ou = entity
