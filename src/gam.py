@@ -10085,10 +10085,10 @@ def ProcessGAMCommand(args):
         sys.exit(2)
     elif command == u'untrash':
       untrashWhat = sys.argv[4].lower()
-      if untrashWhat in [u'message', u'messages', u'messages']:
-        doProcessMessagesOrThreads(users, u'untrash')
+      if untrashWhat in [u'message', u'messages']:
+        doProcessMessagesOrThreads(users, u'untrash', u'messages')
       elif untrashWhat in [u'thread', u'threads']:
-        doProcessMessagesOrThreads(u'users', u'untrash', u'threads')
+        doProcessMessagesOrThreads(users, u'untrash', u'threads')
       else:
         print u'ERROR: %s is not a valid argument for "gam <users> untrash"' % untrashWhat
         sys.exit(2)
