@@ -422,7 +422,7 @@ def doGAMCheckForUpdates(forceCheck=False):
       return
     check_url = GAM_LATEST_RELEASE # latest full release
   headers = {u'Accept': u'application/vnd.github.v3.text+json'}
-  simplehttp = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL]) 
+  simplehttp = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL])
   try:
     (_, c) = simplehttp.request(check_url, u'GET', headers=headers)
     try:
@@ -1247,7 +1247,7 @@ def doUpdateCourse():
       body[u'descriptionHeading'] = sys.argv[i+1]
       i += 2
     elif sys.argv[i].lower() == u'description':
-      body[u'description'] = sys.argv[i+1]
+      body[u'description'] = sys.argv[i+1].replace(u'\\n', u'\n')
       i += 2
     elif sys.argv[i].lower() == u'room':
       body[u'room'] = sys.argv[i+1]
@@ -1906,7 +1906,7 @@ def doCreateCourse():
       body[u'descriptionHeading'] = sys.argv[i+1]
       i += 2
     elif sys.argv[i].lower() == u'description':
-      body[u'description'] = sys.argv[i+1]
+      body[u'description'] = sys.argv[i+1].replace(u'\\n', u'\n')
       i += 2
     elif sys.argv[i].lower() == u'room':
       body[u'room'] = sys.argv[i+1]
@@ -3098,7 +3098,7 @@ def doPhoto(users):
     filename = filename.replace(u'#username#', user[:user.find(u'@')])
     print u"Updating photo for %s with %s (%s/%s)" % (user, filename, i, count)
     if re.match(u'^(ht|f)tps?://.*$', filename):
-      simplehttp = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL]) 
+      simplehttp = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL])
       try:
         (_, f) = simplehttp.request(filename, u'GET')
         image_data = str(f)
@@ -6292,9 +6292,8 @@ and accept the Terms of Service (ToS). As soon as you've accepted the ToS popup,
       print status[u'error']
       sys.exit(2)
     break
-  apis_url = u'https://raw.githubusercontent.com/jay0lee/GAM/master/src/project-apis.txt'
   simplehttp = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL])
-  _, c = simplehttp.request(apis_url, u'GET')
+  _, c = simplehttp.request(GAM_PROJECT_APIS, u'GET')
   apis = c.splitlines()
   serveman = googleapiclient.discovery.build(u'servicemanagement', u'v1', http=http, cache_discovery=False)
   for api in apis:
@@ -6392,7 +6391,7 @@ def doCreateGroup():
       got_name = True
       i += 2
     elif sys.argv[i].lower() == u'description':
-      body[u'description'] = sys.argv[i+1]
+      body[u'description'] = sys.argv[i+1].replace(u'\\n', u'\n')
       i += 2
     else:
       value = sys.argv[i+1]
@@ -6470,7 +6469,7 @@ def doCreateOrg():
   body[u'parentOrgUnitPath'] = u'/'
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'description':
-      body[u'description'] = sys.argv[i+1]
+      body[u'description'] = sys.argv[i+1].replace(u'\\n', u'\n')
       i += 2
     elif sys.argv[i].lower() == u'parent':
       body[u'parentOrgUnitPath'] = sys.argv[i+1]
@@ -6493,7 +6492,7 @@ def doCreateResourceCalendar():
   i = 5
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'description':
-      body[u'resourceDescription'] = sys.argv[i+1]
+      body[u'resourceDescription'] = sys.argv[i+1].replace(u'\\n', u'\n')
       i += 2
     elif sys.argv[i].lower() == u'type':
       body[u'resourceType'] = sys.argv[i+1]
@@ -6576,7 +6575,7 @@ def doUpdateGroup():
         checkNotSuspended = True
         i += 1
       if sys.argv[i].lower() in usergroup_types:
-        users_email = getUsersToModify(entity_type=sys.argv[i], entity=sys.argv[i+1], checkNotSuspended=checkNotSuspended)
+        users_email = getUsersToModify(entity_type=sys.argv[i], entity=sys.argv[i+1], checkNotSuspended=checkNotSuspended, groupUserMembersOnly=False)
       else:
         users_email = [sys.argv[i],]
       for user_email in users_email:
@@ -6597,9 +6596,9 @@ def doUpdateGroup():
       if sys.argv[i] == u'notsuspended':
         checkNotSuspended = True
         i += 1
-      users_email = getUsersToModify(entity_type=sys.argv[i], entity=sys.argv[i+1], checkNotSuspended=checkNotSuspended)
+      users_email = getUsersToModify(entity_type=sys.argv[i], entity=sys.argv[i+1], checkNotSuspended=checkNotSuspended, groupUserMembersOnly=False)
       users_email = [x.lower() for x in users_email]
-      current_emails = getUsersToModify(entity_type=u'group', entity=group, member_type=role)
+      current_emails = getUsersToModify(entity_type=u'group', entity=group, member_type=role, groupUserMembersOnly=False)
       current_emails = [x.lower() for x in current_emails]
       to_add = list(set(users_email) - set(current_emails))
       to_remove = list(set(current_emails) - set(users_email))
@@ -6615,7 +6614,7 @@ def doUpdateGroup():
       if sys.argv[i].lower() in [u'member', u'manager', u'owner']:
         i += 1
       if sys.argv[i].lower() in usergroup_types:
-        user_emails = getUsersToModify(entity_type=sys.argv[i], entity=sys.argv[i+1])
+        user_emails = getUsersToModify(entity_type=sys.argv[i], entity=sys.argv[i+1], groupUserMembersOnly=False)
       else:
         user_emails = [sys.argv[i],]
       for user_email in user_emails:
@@ -6632,7 +6631,7 @@ def doUpdateGroup():
         role = sys.argv[i].upper()
         i += 1
       if sys.argv[i].lower() in usergroup_types:
-        users_email = getUsersToModify(entity_type=sys.argv[i], entity=sys.argv[i+1])
+        users_email = getUsersToModify(entity_type=sys.argv[i], entity=sys.argv[i+1], groupUserMembersOnly=False)
       else:
         users_email = [sys.argv[i],]
       body = {u'role': role}
@@ -6659,7 +6658,7 @@ def doUpdateGroup():
         roles = u','.join(sorted(set(roles)))
       else:
         roles = ROLE_MEMBER
-      user_emails = getUsersToModify(entity_type=u'group', entity=group, member_type=roles)
+      user_emails = getUsersToModify(entity_type=u'group', entity=group, member_type=roles, groupUserMembersOnly=False)
       for user_email in user_emails:
         sys.stderr.write(u' removing %s\n' % user_email)
         callGAPI(cd.members(), u'delete', soft_errors=True, groupKey=group, memberKey=user_email)
@@ -6706,7 +6705,9 @@ def doUpdateGroup():
                 print u'ERROR: %s must be a number ending with M (megabytes), K (kilobytes) or nothing (bytes); got %s' % value
                 sys.exit(2)
             elif params[u'type'] == u'string':
-              if params[u'description'].find(value.upper()) != -1: # ugly hack because API wants some values uppercased.
+              if attrib == u'description':
+                value = value.replace(u'\\n', u'\n')
+              elif params[u'description'].find(value.upper()) != -1: # ugly hack because API wants some values uppercased.
                 value = value.upper()
               elif value.lower() in true_values:
                 value = u'true'
@@ -6774,7 +6775,7 @@ def doUpdateResourceCalendar():
       body[u'resourceName'] = sys.argv[i+1]
       i += 2
     elif sys.argv[i].lower() == u'description':
-      body[u'resourceDescription'] = sys.argv[i+1]
+      body[u'resourceDescription'] = sys.argv[i+1].replace(u'\\n', u'\n')
       i += 2
     elif sys.argv[i].lower() == u'type':
       body[u'resourceType'] = sys.argv[i+1]
@@ -6945,7 +6946,7 @@ def doUpdateOrg():
         body[u'name'] = sys.argv[i+1]
         i += 2
       elif sys.argv[i].lower() == u'description':
-        body[u'description'] = sys.argv[i+1]
+        body[u'description'] = sys.argv[i+1].replace(u'\\n', u'\n')
         i += 2
       elif sys.argv[i].lower() == u'parent':
         body[u'parentOrgUnitPath'] = sys.argv[i+1]
@@ -7294,16 +7295,10 @@ def doGetGroupInfo(group_name=None):
       for groupm in groups:
         print u'  %s: %s' % (groupm[u'name'], groupm[u'email'])
   if getUsers:
-    members = callGAPIpages(cd.members(), u'list', u'members', groupKey=group_name)
+    members = callGAPIpages(cd.members(), u'list', u'members', groupKey=group_name, fields=u'nextPageToken,members(email,id,role,type)')
     print u'Members:'
     for member in members:
-      try:
-        print u' %s: %s (%s)' % (member[u'role'].lower(), member[u'email'], member[u'type'].lower())
-      except KeyError:
-        try:
-          print u' member: %s (%s)' % (member[u'email'], member[u'type'].lower())
-        except KeyError:
-          print u' member: %s (%s)' % (member[u'id'], member[u'type'].lower())
+      print u' %s: %s (%s)' % (member.get(u'role', ROLE_MEMBER).lower(), member.get(u'email', member[u'id']), member[u'type'].lower())
     print u'Total %s users in group' % len(members)
 
 def doGetAliasInfo(alias_email=None):
@@ -8729,6 +8724,14 @@ def doPrintGroupMembers():
             memberName = mbinfo[u'name']
           except googleapiclient.errors.HttpError:
             memberName = u'Unknown'
+        elif member[u'type'] == u'CUSTOMER':
+          try:
+            mbinfo = callGAPI(cd.customers(), u'get',
+                              throw_reasons=[u'badRequest', u'resourceNotFound', u'forbidden'],
+                              customerKey=member[u'id'], fields=u'customerDomain')
+            memberName = mbinfo[u'customerDomain']
+          except googleapiclient.errors.HttpError:
+            memberName = u'Unknown'
         else:
           memberName = u'Unknown'
         member[u'name'] = memberName
@@ -9053,7 +9056,7 @@ def doPrintResourceCalendars():
     csvRows.append(resUnit)
   writeCSVfile(csvRows, titles, u'Resources', todrive)
 
-def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=None, checkNotSuspended=False):
+def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=None, checkNotSuspended=False, groupUserMembersOnly=True):
   got_uids = False
   if entity_type is None:
     entity_type = sys.argv[1].lower()
@@ -9078,10 +9081,11 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
       sys.stderr.write(u"Getting %s of %s (may take some time for large groups)...\n" % (member_type_message, group))
       page_message = u'Got %%%%total_items%%%% %s...' % member_type_message
     members = callGAPIpages(cd.members(), u'list', u'members', page_message=page_message,
-                            groupKey=group, roles=member_type, fields=u'nextPageToken,members(email)')
+                            groupKey=group, roles=member_type, fields=u'nextPageToken,members(email,id,type)')
     users = []
     for member in members:
-      users.append(member[u'email'])
+      if (not groupUserMembersOnly) or (member[u'type'] == u'USER'):
+        users.append(member.get(u'email', member[u'id']))
   elif entity_type in [u'ou', u'org']:
     got_uids = True
     ou = entity
