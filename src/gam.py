@@ -4702,42 +4702,43 @@ def doProcessMessagesOrThreads(users, function, unit=u'messages'):
     unitmethod = getattr(gmail.users(), unit)
     page_message = u'Got %%%%total_items%%%% %s for user %s' % (unit, user)
     listResult = callGAPIpages(unitmethod(), u'list', unit, page_message=page_message,
-                               userId=u'me', q=query, includeSpamTrash=True, soft_errors=True)
-    result_count = len(listResult)
+                               userId=u'me', q=query, includeSpamTrash=True, soft_errors=True, fields=u'nextPageToken,{0}(id)'.format(unit))
+    messageIds = [message[u'id'] for message in listResult]
+    result_count = len(messageIds)
     if not doIt or result_count == 0:
       print u'would try to %s %s messages for user %s (max %s)\n' % (function, result_count, user, maxToProcess)
       continue
     elif result_count > maxToProcess:
       print u'WARNING: refusing to %s ANY messages for %s since max messages to process is %s and messages to be %s is %s\n' % (function, user, maxToProcess, action, result_count)
       continue
-    kwargs = {u'body': {}}
-    for my_key in body:
-      kwargs[u'body'][my_key] = labelsToLabelIds(gmail, body[my_key])
-    if not kwargs[u'body']:
-      del(kwargs[u'body'])
-    i = 0
     if unit == u'messages' and function in [u'delete', u'modify']:
-      batchFunction = u'batch%s' % function.title()
-      id_batches = [[]]
-      for a_unit in listResult:
-        id_batches[i].append(a_unit[u'id'])
-        if len(id_batches[i]) == 1000:
-          i += 1
-          id_batches.append([])
-      processed_messages = 0
-      for id_batch in id_batches:
-        kwargs[u'body'][u'ids'] = id_batch
-        print u'%s %s messages' % (function, len(id_batch))
+      batchFunction = [u'batchModify', u'batchDelete'][function == u'delete']
+      ptFunction = [u'modified', u'deleted'][function == u'delete']
+      processed_count = 0
+      batch_count = min(result_count-processed_count, 1000)
+      for my_key in body:
+        body[my_key] = labelsToLabelIds(gmail, body[my_key])
+      while batch_count > 0:
+        body[u'ids'] = messageIds[processed_count:processed_count+batch_count]
+        print u'%s %s messages' % (function, batch_count)
         callGAPI(unitmethod(), batchFunction,
-                 userId=u'me', **kwargs)
-        processed_messages += len(id_batch)
-        print u'%s %s of %s messages' % (function, processed_messages, result_count)
-      continue
-    for a_unit in listResult:
-      i += 1
-      print u' %s %s %s for user %s (%s/%s)' % (function, unit, a_unit[u'id'], user, i, result_count)
-      callGAPI(unitmethod(), function,
-               id=a_unit[u'id'], userId=u'me', **kwargs)
+                 userId=u'me', body=body)
+        processed_count += batch_count
+        print u'%s %s of %s messages' % (ptFunction, processed_count, result_count)
+        batch_count = min(result_count-processed_count, 1000)
+    else:
+      if body:
+        kwargs = {u'body': {}}
+        for my_key in body:
+          kwargs[u'body'][my_key] = labelsToLabelIds(gmail, body[my_key])
+      else:
+        kwargs = {}
+      i = 0
+      for messageId in messageIds:
+        i += 1
+        print u' %s %s %s for user %s (%s/%s)' % (function, unit, messageId, user, i, result_count)
+        callGAPI(unitmethod(), function,
+                 userId=u'me', id=messageId, **kwargs)
 
 def doDeleteLabel(users):
   label = sys.argv[5]
