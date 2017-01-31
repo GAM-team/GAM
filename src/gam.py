@@ -4714,7 +4714,7 @@ def doProcessMessagesOrThreads(users, function, unit=u'messages'):
     for my_key in body:
       kwargs[u'body'][my_key] = labelsToLabelIds(gmail, body[my_key])
     if not kwargs[u'body']:
-      del(kwargs[u'body'])
+      del kwargs[u'body']
     i = 0
     if unit == u'messages' and function in [u'delete', u'modify']:
       batchFunction = u'batch%s' % function.title()
@@ -4963,7 +4963,11 @@ def renameLabels(users):
         continue
       match_result = re.search(pattern, label[u'name'])
       if match_result is not None:
-        new_label_name = replace % match_result.groups()
+        try:
+          new_label_name = replace % match_result.groups()
+        except TypeError:
+          print u'ERROR: The number of subfields ({0}) in search "{1}" does not match the number of subfields ({2}) in replace "{3}"'.format(len(match_result.groups()), search, replace.count(u'%s'), replace)
+          sys.exit(2)
         print u' Renaming "%s" to "%s"' % (label[u'name'], new_label_name)
         try:
           callGAPI(gmail.users().labels(), u'patch', soft_errors=True, throw_reasons=[u'aborted'], id=label[u'id'], userId=user, body={u'name': new_label_name})
