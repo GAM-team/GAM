@@ -51,6 +51,8 @@ SKUS = {
    u'product': u'Google-Apps', u'aliases': [u'gal', u'lite', u'gsuite-lite']},
   u'Google-Apps-Unlimited': {
    u'product': u'Google-Apps', u'aliases': [u'gau', u'unlimited', u'gsuite-business']},
+  u'Google-Apps-Enterprise': {
+   u'product': u'Google-Apps', u'aliases': [u'gae', u'enterprise', u'gsuite-enterprise']},
   u'Google-Drive-storage-20GB': {
    u'product': u'Google-Drive-storage', u'aliases': [u'drive-20gb', u'drive20gb', u'20gb']},
   u'Google-Drive-storage-50GB': {
