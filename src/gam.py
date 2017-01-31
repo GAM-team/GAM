@@ -6581,7 +6581,7 @@ def doUpdateGroup():
       else:
         users_email = [sys.argv[i],]
       for user_email in users_email:
-        if user_email != u'*' and user_email.find(u'@') == -1:
+        if user_email != GC_Values[GC_CUSTOMER_ID] and user_email.find(u'@') == -1:
           user_email = u'%s@%s' % (user_email, GC_Values[GC_DOMAIN])
         sys.stderr.write(u' adding %s %s...\n' % (role.lower(), user_email))
         try:
@@ -6622,7 +6622,7 @@ def doUpdateGroup():
       for user_email in user_emails:
         if user_email[:4].lower() == u'uid:':
           user_email = user_email[4:]
-        elif user_email != u'*' and user_email.find(u'@') == -1:
+        elif user_email != GC_Values[GC_CUSTOMER_ID] and user_email.find(u'@') == -1:
           user_email = u'%s@%s' % (user_email, GC_Values[GC_DOMAIN])
         sys.stderr.write(u' removing %s\n' % user_email)
         callGAPI(cd.members(), u'delete', soft_errors=True, groupKey=group, memberKey=user_email)
@@ -6638,7 +6638,7 @@ def doUpdateGroup():
         users_email = [sys.argv[i],]
       body = {u'role': role}
       for user_email in users_email:
-        if user_email != u'*' and user_email.find(u'@') == -1:
+        if user_email != GC_Values[GC_CUSTOMER_ID] and user_email.find(u'@') == -1:
           user_email = u'%s@%s' % (user_email, GC_Values[GC_DOMAIN])
         sys.stderr.write(u' updating %s %s...\n' % (role.lower(), user_email))
         try:
@@ -6662,6 +6662,8 @@ def doUpdateGroup():
         roles = ROLE_MEMBER
       user_emails = getUsersToModify(entity_type=u'group', entity=group, member_type=roles, groupUserMembersOnly=False)
       for user_email in user_emails:
+        if user_email != GC_Values[GC_CUSTOMER_ID] and user_email.find(u'@') == -1:
+          user_email = u'%s@%s' % (user_email, GC_Values[GC_DOMAIN])
         sys.stderr.write(u' removing %s\n' % user_email)
         callGAPI(cd.members(), u'delete', soft_errors=True, groupKey=group, memberKey=user_email)
   else:
