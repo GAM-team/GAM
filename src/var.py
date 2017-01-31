@@ -76,7 +76,9 @@ SKUS = {
   u'Google-Vault-Former-Employee': {
    u'product': u'Google-Vault', u'aliases': [u'vfe']},
   u'Google-Coordinate': {
-   u'product': u'Google-Coordinate', u'aliases': [u'coordinate']}
+   u'product': u'Google-Coordinate', u'aliases': [u'coordinate']},
+  u'Google-Chrome-Device-Management': {
+   u'product': u'Google-Chrome-Device-Management', u'aliases': [u'chrome', u'cdm']}
   }
 
 API_VER_MAPPING = {
@@ -94,6 +96,7 @@ API_VER_MAPPING = {
   u'oauth2': u'v2',
   u'plus': u'v1',
   u'reports': u'reports_v1',
+  u'reseller': u'v1',
   u'siteVerification': u'v1',
   }
 
