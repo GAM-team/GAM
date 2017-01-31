@@ -4702,7 +4702,7 @@ def doProcessMessagesOrThreads(users, function, unit=u'messages'):
     unitmethod = getattr(gmail.users(), unit)
     page_message = u'Got %%%%total_items%%%% %s for user %s' % (unit, user)
     listResult = callGAPIpages(unitmethod(), u'list', unit, page_message=page_message,
-                               userId=u'me', q=query, includeSpamTrash=True, soft_errors=True)
+                               userId=u'me', q=query, includeSpamTrash=True, soft_errors=True, fields=u'nextPageToken,{0}(id)'.format(unit))
     result_count = len(listResult)
     if not doIt or result_count == 0:
       print u'would try to %s %s messages for user %s (max %s)\n' % (function, result_count, user, maxToProcess)
