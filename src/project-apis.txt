@@ -8,4 +8,5 @@ gmail.googleapis.com
 groupssettings.googleapis.com
 licensing.googleapis.com
 plus.googleapis.com
+reseller.googleapis.com
 siteverification.googleapis.com
