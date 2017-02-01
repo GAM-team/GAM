@@ -128,6 +128,25 @@ Named items
 <URL> ::= <String>
 <UserItem> ::= <EmailAddress>|<UniqueID>|<String>
 
+<CourseFieldName> ::=
+	alternatelink|
+	coursegroupemail|
+	coursematerialsets|
+	coursestate|
+	creationtime|
+	description|
+	descriptionheading|
+	enrollmentcode|
+	guardiansenabled|
+	id|
+	name|
+	ownerid|
+	room|
+	section|
+	teacherfolder|
+	teachergroupemail|
+	updatetime
+<CourseFieldNameList> ::= '<CourseFieldName>(,<CourseFieldName>)*'
 
 <CrOSFieldName> ::=
 	activetimeranges|timeranges|
@@ -644,6 +663,7 @@ gam update course <CourseID> <CourseAttributes>+
 gam delete course <CourseID>
 gam info course <CourseID>
 gam print courses [todrive] [teacher <UserItem>] [student <UserItem>] [alias|aliases] [delimiter <String>]
+	[show all|students|teachers] [fields <CourseFieldNameList>] [skipfields <CourseFieldNameList>]
 
 gam course <CourseID> add alias <CourseAlias>
 gam course <CourseID> delete alias <CourseAlias>
