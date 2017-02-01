@@ -1957,9 +1957,30 @@ def doGetCourseInfo():
     except KeyError:
       print utils.convertUTF8(u'  %s' % student[u'profile'][u'name'][u'fullName'])
 
+COURSE_ARGUMENT_TO_PROPERTY_MAP = {
+  u'alternatelink': u'alternateLink',
+  u'coursegroupemail': u'courseGroupEmail',
+  u'coursematerialsets': u'courseMaterialSets',
+  u'coursestate': u'courseState',
+  u'creationtime': u'creationTime',
+  u'description': u'description',
+  u'descriptionheading': u'descriptionHeading',
+  u'enrollmentcode': u'enrollmentCode',
+  u'guardiansenabled': u'guardiansEnabled',
+  u'id': u'id',
+  u'name': u'name',
+  u'ownerid': u'ownerId',
+  u'room': u'room',
+  u'section': u'section',
+  u'teacherfolder': u'teacherFolder',
+  u'teachergroupemail': u'teacherGroupEmail',
+  u'updatetime': u'updateTime',
+  }
+
 def doPrintCourses():
   croom = buildGAPIObject(u'classroom')
   todrive = False
+  fieldsList = []
   titles = [u'id',]
   csvRows = []
   teacherId = None
@@ -1984,12 +2005,24 @@ def doPrintCourses():
     elif myarg == u'delimiter':
       aliasesDelimiter = sys.argv[i+1]
       i += 2
+    elif myarg == u'fields':
+      if not fieldsList:
+        fieldsList = [u'id',]
+      fieldNameList = sys.argv[i+1]
+      for field in fieldNameList.lower().replace(u',', u' ').split():
+        if field in COURSE_ARGUMENT_TO_PROPERTY_MAP:
+          fieldsList.append(COURSE_ARGUMENT_TO_PROPERTY_MAP[field])
+        else:
+          print u'ERROR: %s is not a valid argument for "gam print courses fields"' % field
+          sys.exit(2)
+      i += 2
     else:
       print u'ERROR: %s is not a valid argument for "gam print courses"' % sys.argv[i]
       sys.exit(2)
+  fields = u'nextPageToken,courses({0})'.format(u','.join(set(fieldsList))) if fieldsList else None
   sys.stderr.write(u'Retrieving courses for organization (may take some time for large accounts)...\n')
   page_message = u'Got %%num_items%% courses...\n'
-  all_courses = callGAPIpages(croom.courses(), u'list', u'courses', page_message=page_message, teacherId=teacherId, studentId=studentId)
+  all_courses = callGAPIpages(croom.courses(), u'list', u'courses', page_message=page_message, teacherId=teacherId, studentId=studentId, fields=fields)
   for course in all_courses:
     addRowTitlesToCSVfile(flatten_json(course), csvRows, titles)
   if get_aliases:
