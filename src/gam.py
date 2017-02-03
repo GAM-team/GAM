@@ -4588,6 +4588,132 @@ def deleteSendAs(users):
              soft_errors=True,
              userId=u'me', sendAsEmail=emailAddress)
 
+def updateSmime(users):
+  smimeId = None
+  sendAsEmail = None
+  make_default = False
+  i = 5
+  while i < len(sys.argv):
+    myarg = sys.argv[i].lower()
+    if myarg == u'id':
+      smimeId = sys.argv[i+1]
+      i += 2
+    elif myarg in [u'sendas', u'sendasemail']:
+      sendAsEmail = sys.argv[i+1]
+      i += 2
+    elif myarg in [u'default']:
+      make_default = True
+      i += 1
+    else:
+      print u'ERROR: %s is not a valid argument to "gam <users> update smime"' % myarg
+      sys.exit(3)
+  if not make_default:
+    print u'Nothing to update for smime.'
+    sys.exit(0)
+  for user in users:
+    user, gmail = buildGmailGAPIObject(user)
+    if not gmail:
+      continue
+    if not sendAsEmail:
+      sendAsEmail = user
+    if not smimeId:
+      result = callGAPI(gmail.users().settings().sendAs().smimeInfo(), u'list', userId=u'me', sendAsEmail=sendAsEmail, fields=u'smimeInfo(id)')
+      smimes = result.get(u'smimeInfo', [])
+      if len(smimes) == 0:
+        print u'ERROR: %s has no S/MIME certificates for sendas address %s' % (user, sendAsEmail)
+        sys.exit(3)
+      elif len(smimes) > 1:
+        print u'ERROR: %s has more than one S/MIME certificate. Please specify a cert to update:'
+        for smime in smimes:
+          print u' %s' % smime[u'id']
+        sys.exit(3)
+      smimeId = smimes[0][u'id']
+    print u'Setting smime id %s as default for user %s and sendas %s' % (smimeId, user, sendAsEmail)
+    callGAPI(gmail.users().settings().sendAs().smimeInfo(), u'setDefault', userId=u'me', sendAsEmail=sendAsEmail, id=smimeId)
+
+def deleteSmime(users):
+  smimeId = None
+  sendAsEmail = None
+  i = 5
+  while i < len(sys.argv):
+    myarg = sys.argv[i].lower()
+    if myarg == u'id':
+      smimeId = sys.argv[i+1]
+      i += 2
+    elif myarg in [u'sendas', u'sendasemail']:
+      sendAsEmail = sys.argv[i+1]
+      i += 2
+    else:
+      print u'ERROR: %s is not a valid argument to "gam <users> delete smime"' % myarg
+      sys.exit(3)
+  for user in users:
+    user, gmail = buildGmailGAPIObject(user)
+    if not sendAsEmail:
+      sendAsEmail = user
+    if not smimeId:
+      result = callGAPI(gmail.users().settings().sendAs().smimeInfo(), u'list', userId=u'me', sendAsEmail=sendAsEmail, fields=u'smimeInfo(id)')
+      smimes = result.get(u'smimeInfo', [])
+      if len(smimes) == 0:
+        print u'ERROR: %s has no S/MIME certificates for sendas address %s' % (user, sendAsEmail)
+        sys.exit(3)
+      elif len(smimes) > 1:
+        print u'ERROR: %s has more than one S/MIME certificate. Please specify a cert to delete:'
+        for smime in smimes:
+          print u' %s' % smime[u'id']
+        sys.exit(3)
+      smimeId = smimes[0][u'id']
+    callGAPI(gmail.users().settings().sendAs().smimeInfo(), u'delete', userId=u'me', sendAsEmail=sendAsEmail, id=smimeId)
+
+def printShowSmime(users, csvFormat):
+  if csvFormat:
+    todrive = False
+    titles = [u'User']
+    csvRows = []
+  primaryonly = False
+  i = 5
+  while i < len(sys.argv):
+    myarg = sys.argv[i].lower()
+    if csvFormat and myarg == u'todrive':
+      todrive = True
+      i += 1
+    elif myarg == u'primaryonly':
+      primaryonly = True
+      i += 1
+    else:
+      print u'ERROR: %s is not a valid argumetn for "gam <users> %s smime"' % (myarg, [u'show', u'print'][csvFormat])
+      sys.exit(3)
+  i = 0
+  count = len(users)
+  for user in users:
+    i += 1
+    user, gmail = buildGmailGAPIObject(user)
+    if not gmail:
+      continue
+    if primaryonly:
+      sendAsEmails = [user]
+    else:
+      result = callGAPI(gmail.users().settings().sendAs(), u'list', userId=u'me', fields=u'sendAs(sendAsEmail)')
+      sendAsEmails = []
+      for sendAs in result[u'sendAs']:
+        sendAsEmails.append(sendAs[u'sendAsEmail'])
+    for sendAsEmail in sendAsEmails:
+      result = callGAPI(gmail.users().settings().sendAs().smimeInfo(), u'list', sendAsEmail=sendAsEmail, userId=u'me')
+      smimes = result.get(u'smimeInfo', [])
+      for i, _ in enumerate(smimes):
+        smimes[i][u'expiration'] = datetime.datetime.fromtimestamp(int(smimes[i][u'expiration'])/1000).strftime('%Y-%m-%d %H:%M:%S')
+      if csvFormat:
+        for smime in smimes:
+          row = {u'User': user}
+          for item in smime:
+            if item not in titles:
+              titles.append(item)
+            row[item] = smime[item]
+          csvRows.append(row)
+      else:
+        print_json(None, smimes)
+  if csvFormat:
+    writeCSVfile(csvRows, titles, u'S/MIME', todrive)
+
 def printShowSendAs(users, csvFormat):
   if csvFormat:
     todrive = False
@@ -4665,6 +4791,46 @@ def infoSendAs(users):
                       userId=u'me', sendAsEmail=emailAddress)
     if result:
       _showSendAs(result, i, count, formatSig)
+
+def addSmime(users):
+  sendAsEmail = None
+  smimefile = None
+  body = {u'isDefault': False}
+  i = 5
+  while i < len(sys.argv):
+    myarg = sys.argv[i].lower()
+    if myarg == u'file':
+      smimefile = sys.argv[i+1]
+      i += 2
+    elif myarg == u'password':
+      body[u'encryptedKeyPassword'] = sys.argv[i+1]
+      i += 2
+    elif myarg == u'default':
+      body[u'isDefault'] = True
+      i += 1
+    elif myarg in [u'sendas', u'sendasemail']:
+      sendAsEmail = sys.argv[i+1]
+      i += 2
+    else:
+      print u'ERROR: %s is not a valid argument for smime' % myarg
+      sys.exit(3)
+  if not smimefile:
+    print u'ERROR: you must specify a file to upload'
+    sys.exit(3)
+  smime_data = readFile(smimefile)
+  smime_data = base64.urlsafe_b64encode(smime_data)
+  body[u'pkcs12'] = smime_data
+  i = 0
+  count = len(users)
+  for user in users:
+    i += 1
+    user, gmail = buildGmailGAPIObject(user)
+    if not sendAsEmail:
+      sendAsEmail = user
+    if not gmail:
+      continue
+    result = callGAPI(gmail.users().settings().sendAs().smimeInfo(), u'insert', userId=u'me', sendAsEmail=sendAsEmail, body=body)
+    print u'Added S/MIME certificate for user %s sendas %s issued by %s' % (user, sendAsEmail, result[u'issuerCn'])
 
 def doLabel(users, i):
   label = sys.argv[i]
@@ -10318,6 +10484,8 @@ def ProcessGAMCommand(args):
         showDriveFileRevisions(users)
       elif showWhat == u'sendas':
         printShowSendAs(users, False)
+      elif showWhat == u'smime':
+        printShowSmime(users, False)
       elif showWhat == u'gmailprofile':
         showGmailProfile(users)
       elif showWhat == u'gplusprofile':
@@ -10369,6 +10537,8 @@ def ProcessGAMCommand(args):
         printShowForwardingAddresses(users, True)
       elif printWhat == u'sendas':
         printShowSendAs(users, True)
+      elif printWhat == u'smime':
+        printShowSmime(users, True)
       elif printWhat in [u'token', u'tokens', u'oauth', u'3lo']:
         printShowTokens(5, u'users', users, True)
       else:
@@ -10439,6 +10609,8 @@ def ProcessGAMCommand(args):
         deleteForwardingAddresses(users)
       elif delWhat == u'sendas':
         deleteSendAs(users)
+      elif delWhat == u'smime':
+        deleteSmime(users)
       else:
         print u'ERROR: %s is not a valid argument for "gam <users> delete"' % delWhat
         sys.exit(2)
@@ -10462,6 +10634,8 @@ def ProcessGAMCommand(args):
         addForwardingAddresses(users)
       elif addWhat == u'sendas':
         addUpdateSendAs(users, 5, True)
+      elif addWhat == u'smime':
+        addSmime(users)
       else:
         print u'ERROR: %s is not a valid argument for "gam <users> add"' % addWhat
         sys.exit(2)
@@ -10489,6 +10663,8 @@ def ProcessGAMCommand(args):
         updateLabels(users)
       elif updateWhat == u'sendas':
         addUpdateSendAs(users, 5, False)
+      elif updateWhat == u'smime':
+        updateSmime(users)
       else:
         print u'ERROR: %s is not a valid argument for "gam <users> update"' % updateWhat
         sys.exit(2)
