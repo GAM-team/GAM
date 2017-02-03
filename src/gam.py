@@ -7341,6 +7341,10 @@ def doGetUserInfo(user_email=None):
     print u'Is a Super Admin: %s' % user[u'isAdmin']
   if u'isDelegatedAdmin' in user:
     print u'Is Delegated Admin: %s' % user[u'isDelegatedAdmin']
+  if u'isEnrolledIn2Sv' in user:
+    print u'2-step enrolled: %s' % user[u'isEnrolledIn2Sv']
+  if u'isEnforcedIn2Sv' in user:
+    print u'2-step enforced: %s' % user[u'isEnforcedIn2Sv']
   if u'agreedToTerms' in user:
     print u'Has Agreed to Terms: %s' % user[u'agreedToTerms']
   if u'ipWhitelisted' in user:
