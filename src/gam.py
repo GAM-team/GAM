@@ -4626,9 +4626,11 @@ def updateSmime(users):
         for smime in smimes:
           print u' %s' % smime[u'id']
         sys.exit(3)
-      smimeId = smimes[0][u'id']
-    print u'Setting smime id %s as default for user %s and sendas %s' % (smimeId, user, sendAsEmailArg)
-    callGAPI(gmail.users().settings().sendAs().smimeInfo(), u'setDefault', userId=u'me', sendAsEmail=sendAsEmailArg, id=smimeId)
+      smimeIdArg = smimes[0][u'id']
+    else:
+      smimeIdArg = smimeId
+    print u'Setting smime id %s as default for user %s and sendas %s' % (smimeIdArg, user, sendAsEmailArg)
+    callGAPI(gmail.users().settings().sendAs().smimeInfo(), u'setDefault', userId=u'me', sendAsEmail=sendAsEmailArg, id=smimeIdArg)
 
 def deleteSmime(users):
   smimeId = None
@@ -4661,8 +4663,10 @@ def deleteSmime(users):
         for smime in smimes:
           print u' %s' % smime[u'id']
         sys.exit(3)
-      smimeId = smimes[0][u'id']
-    callGAPI(gmail.users().settings().sendAs().smimeInfo(), u'delete', userId=u'me', sendAsEmail=sendAsEmailArg, id=smimeId)
+      smimeIdArg = smimes[0][u'id']
+    else:
+      smimeIdArg = smimeId
+    callGAPI(gmail.users().settings().sendAs().smimeInfo(), u'delete', userId=u'me', sendAsEmail=sendAsEmailArg, id=smimeIdArg)
 
 def printShowSmime(users, csvFormat):
   if csvFormat:
