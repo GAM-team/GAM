@@ -9810,7 +9810,7 @@ def run_batch(items):
       pool = Pool(processes=num_worker_threads)
       sys.stderr.write(u'done with commit-batch\n')
       continue
-    pool.apply_async(ProcessGAMCommand, [item])
+    pool.apply_async(ProcessGAMCommandMulti, [item])
   pool.close()
   pool.join()
 
@@ -9885,6 +9885,16 @@ def runCmdForUsers(cmd, users, default_to_batch=False, **kwargs):
     sys.exit(0)
   else:
     cmd(users, **kwargs)
+
+def resetDefaultEncodingToUTF8():
+  if sys.getdefaultencoding().upper() != u'UTF-8':
+    reload(sys)
+    if hasattr(sys, u'setdefaultencoding'):
+      sys.setdefaultencoding(u'UTF-8')
+
+def ProcessGAMCommandMulti(args):
+  resetDefaultEncodingToUTF8()
+  ProcessGAMCommand(args)
 
 # Process GAM command
 def ProcessGAMCommand(args):
@@ -10614,14 +10624,12 @@ if sys.platform.startswith('win'):
 
 # Run from command line
 if __name__ == "__main__":
+  resetDefaultEncodingToUTF8()
   if sys.platform.startswith('win'):
     freeze_support()
-  reload(sys)
   if sys.version_info[:2] != (2, 7):
     print u'ERROR: GAM requires Python 2.7. You are running %s.%s.%s. Please upgrade your Python version or use one of the binary GAM downloads.' % sys.version_info[:3]
     sys.exit(5)
-  if hasattr(sys, u'setdefaultencoding'):
-    sys.setdefaultencoding(u'UTF-8')
   if sys.platform.startswith('win'):
     win32_unicode_argv() # cleanup sys.argv on Windows
   sys.exit(ProcessGAMCommand(sys.argv))
