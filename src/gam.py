@@ -4647,13 +4647,14 @@ def deleteSmime(users):
       sys.exit(3)
   for user in users:
     user, gmail = buildGmailGAPIObject(user)
-    if not sendAsEmail:
-      sendAsEmail = user
+    if not gmail:
+      continue
+    sendAsEmailArg = sendAsEmail if sendAsEmail else user
     if not smimeId:
-      result = callGAPI(gmail.users().settings().sendAs().smimeInfo(), u'list', userId=u'me', sendAsEmail=sendAsEmail, fields=u'smimeInfo(id)')
+      result = callGAPI(gmail.users().settings().sendAs().smimeInfo(), u'list', userId=u'me', sendAsEmail=sendAsEmailArg, fields=u'smimeInfo(id)')
       smimes = result.get(u'smimeInfo', [])
       if len(smimes) == 0:
-        print u'ERROR: %s has no S/MIME certificates for sendas address %s' % (user, sendAsEmail)
+        print u'ERROR: %s has no S/MIME certificates for sendas address %s' % (user, sendAsEmailArg)
         sys.exit(3)
       elif len(smimes) > 1:
         print u'ERROR: %s has more than one S/MIME certificate. Please specify a cert to delete:'
@@ -4661,7 +4662,7 @@ def deleteSmime(users):
           print u' %s' % smime[u'id']
         sys.exit(3)
       smimeId = smimes[0][u'id']
-    callGAPI(gmail.users().settings().sendAs().smimeInfo(), u'delete', userId=u'me', sendAsEmail=sendAsEmail, id=smimeId)
+    callGAPI(gmail.users().settings().sendAs().smimeInfo(), u'delete', userId=u'me', sendAsEmail=sendAsEmailArg, id=smimeId)
 
 def printShowSmime(users, csvFormat):
   if csvFormat:
