@@ -4703,12 +4703,7 @@ def printShowSmime(users, csvFormat):
         smimes[i][u'expiration'] = datetime.datetime.fromtimestamp(int(smimes[i][u'expiration'])/1000).strftime('%Y-%m-%d %H:%M:%S')
       if csvFormat:
         for smime in smimes:
-          row = {u'User': user}
-          for item in smime:
-            if item not in titles:
-              titles.append(item)
-            row[item] = smime[item]
-          csvRows.append(row)
+          addRowTitlesToCSVfile(flatten_json(smime, flattened={u'User': user}), csvRows, titles)
       else:
         print_json(None, smimes)
   if csvFormat:
