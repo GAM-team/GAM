@@ -4808,7 +4808,7 @@ def addSmime(users):
       body[u'isDefault'] = True
       i += 1
     elif myarg in [u'sendas', u'sendasemail']:
-      sendAsEmail = sys.argv[i+1]
+      sendAsEmailBase = sys.argv[i+1]
       i += 2
     else:
       print u'ERROR: %s is not a valid argument for "gam <users> add smime"' % myarg
