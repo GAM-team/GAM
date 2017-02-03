@@ -308,6 +308,8 @@ Named items
 	ipwhitelisted|
 	isdelegatedadmin|admin|isadmin|
 	ismailboxsetup|
+	is2svenforced|
+	is2svenrolled|
 	lastlogintime|
 	noneditablealiases|aliases|nicknames|
 	notes|note|
