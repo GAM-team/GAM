@@ -8410,6 +8410,8 @@ USER_ARGUMENT_TO_PROPERTY_MAP = {
   u'ipwhitelisted': [u'ipWhitelisted',],
   u'isadmin': [u'isAdmin', u'isDelegatedAdmin',],
   u'isdelegatedadmin': [u'isAdmin', u'isDelegatedAdmin',],
+  u'is2svenforced': [u'isEnforcedIn2Sv',],
+  u'is2svenrolled': [u'isEnrolledIn2Sv',],
   u'ismailboxsetup': [u'isMailboxSetup',],
   u'lastlogintime': [u'lastLoginTime',],
   u'lastname': [u'name.familyName',],
