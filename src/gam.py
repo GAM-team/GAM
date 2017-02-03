@@ -4589,17 +4589,17 @@ def deleteSendAs(users):
              userId=u'me', sendAsEmail=emailAddress)
 
 def updateSmime(users):
-  smimeId = None
-  sendAsEmail = None
+  smimeIdBase = None
+  sendAsEmailBase = None
   make_default = False
   i = 5
   while i < len(sys.argv):
     myarg = sys.argv[i].lower()
     if myarg == u'id':
-      smimeId = sys.argv[i+1]
+      smimeIdBase = sys.argv[i+1]
       i += 2
     elif myarg in [u'sendas', u'sendasemail']:
-      sendAsEmail = sys.argv[i+1]
+      sendAsEmailBase = sys.argv[i+1]
       i += 2
     elif myarg in [u'default']:
       make_default = True
@@ -4614,9 +4614,8 @@ def updateSmime(users):
     user, gmail = buildGmailGAPIObject(user)
     if not gmail:
       continue
-    if not sendAsEmail:
-      sendAsEmail = user
-    if not smimeId:
+    sendAsEmail = sendAsEmailBase if sendAsEmailBase else user
+    if not smimeIdBase:
       result = callGAPI(gmail.users().settings().sendAs().smimeInfo(), u'list', userId=u'me', sendAsEmail=sendAsEmail, fields=u'smimeInfo(id)')
       smimes = result.get(u'smimeInfo', [])
       if len(smimes) == 0:
@@ -4628,29 +4627,32 @@ def updateSmime(users):
           print u' %s' % smime[u'id']
         sys.exit(3)
       smimeId = smimes[0][u'id']
+    else:
+      smimeId = smimeIdBase
     print u'Setting smime id %s as default for user %s and sendas %s' % (smimeId, user, sendAsEmail)
     callGAPI(gmail.users().settings().sendAs().smimeInfo(), u'setDefault', userId=u'me', sendAsEmail=sendAsEmail, id=smimeId)
 
 def deleteSmime(users):
-  smimeId = None
-  sendAsEmail = None
+  smimeIdBase = None
+  sendAsEmailBase = None
   i = 5
   while i < len(sys.argv):
     myarg = sys.argv[i].lower()
     if myarg == u'id':
-      smimeId = sys.argv[i+1]
+      smimeIdBase = sys.argv[i+1]
       i += 2
     elif myarg in [u'sendas', u'sendasemail']:
-      sendAsEmail = sys.argv[i+1]
+      sendAsEmailBase = sys.argv[i+1]
       i += 2
     else:
       print u'ERROR: %s is not a valid argument to "gam <users> delete smime"' % myarg
       sys.exit(3)
   for user in users:
     user, gmail = buildGmailGAPIObject(user)
-    if not sendAsEmail:
-      sendAsEmail = user
-    if not smimeId:
+    if not gmail:
+      continue
+    sendAsEmail = sendAsEmailBase if sendAsEmailBase else user
+    if not smimeIdBase:
       result = callGAPI(gmail.users().settings().sendAs().smimeInfo(), u'list', userId=u'me', sendAsEmail=sendAsEmail, fields=u'smimeInfo(id)')
       smimes = result.get(u'smimeInfo', [])
       if len(smimes) == 0:
@@ -4662,6 +4664,8 @@ def deleteSmime(users):
           print u' %s' % smime[u'id']
         sys.exit(3)
       smimeId = smimes[0][u'id']
+    else:
+      smimeId = smimeIdBase
     callGAPI(gmail.users().settings().sendAs().smimeInfo(), u'delete', userId=u'me', sendAsEmail=sendAsEmail, id=smimeId)
 
 def printShowSmime(users, csvFormat):
@@ -4680,7 +4684,7 @@ def printShowSmime(users, csvFormat):
       primaryonly = True
       i += 1
     else:
-      print u'ERROR: %s is not a valid argumetn for "gam <users> %s smime"' % (myarg, [u'show', u'print'][csvFormat])
+      print u'ERROR: %s is not a valid argument for "gam <users> %s smime"' % (myarg, [u'show', u'print'][csvFormat])
       sys.exit(3)
   i = 0
   count = len(users)
@@ -4788,7 +4792,7 @@ def infoSendAs(users):
       _showSendAs(result, i, count, formatSig)
 
 def addSmime(users):
-  sendAsEmail = None
+  sendAsEmailBase = None
   smimefile = None
   body = {u'isDefault': False}
   i = 5
@@ -4804,10 +4808,10 @@ def addSmime(users):
       body[u'isDefault'] = True
       i += 1
     elif myarg in [u'sendas', u'sendasemail']:
-      sendAsEmail = sys.argv[i+1]
+      sendAsEmailBase = sys.argv[i+1]
       i += 2
     else:
-      print u'ERROR: %s is not a valid argument for smime' % myarg
+      print u'ERROR: %s is not a valid argument for "gam <users> add smime"' % myarg
       sys.exit(3)
   if not smimefile:
     print u'ERROR: you must specify a file to upload'
@@ -4820,10 +4824,9 @@ def addSmime(users):
   for user in users:
     i += 1
     user, gmail = buildGmailGAPIObject(user)
-    if not sendAsEmail:
-      sendAsEmail = user
     if not gmail:
       continue
+    sendAsEmail = sendAsEmailBase if sendAsEmailBase else user
     result = callGAPI(gmail.users().settings().sendAs().smimeInfo(), u'insert', userId=u'me', sendAsEmail=sendAsEmail, body=body)
     print u'Added S/MIME certificate for user %s sendas %s issued by %s' % (user, sendAsEmail, result[u'issuerCn'])
 
