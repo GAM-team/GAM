@@ -4679,7 +4679,7 @@ def printShowSmime(users, csvFormat):
       primaryonly = True
       i += 1
     else:
-      print u'ERROR: %s is not a valid argumetn for "gam <users> %s smime"' % (myarg, [u'show', u'print'][csvFormat])
+      print u'ERROR: %s is not a valid argument for "gam <users> %s smime"' % (myarg, [u'show', u'print'][csvFormat])
       sys.exit(3)
   i = 0
   count = len(users)
@@ -4806,7 +4806,7 @@ def addSmime(users):
       sendAsEmail = sys.argv[i+1]
       i += 2
     else:
-      print u'ERROR: %s is not a valid argument for smime' % myarg
+      print u'ERROR: %s is not a valid argument for "gam <users> add smime"' % myarg
       sys.exit(3)
   if not smimefile:
     print u'ERROR: you must specify a file to upload'
