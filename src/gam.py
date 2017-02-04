@@ -7276,41 +7276,41 @@ def doWhatIs():
     sys.stderr.write(u'%s is a group alias\n\n' % email)
     doGetAliasInfo(alias_email=email)
 
-def convertSKU2ProductId(res, sku, customer_id):
+def convertSKU2ProductId(res, sku, customerId):
   subscriptionId = None
-  results = callGAPI(res.subscriptions(), u'list', customerId=customer_id)
+  results = callGAPI(res.subscriptions(), u'list', customerId=customerId)
   for subscription in results[u'subscriptions']:
     if sku == subscription[u'skuId']:
       subscriptionId = subscription[u'subscriptionId']
       break
   if not subscriptionId:
-    print u'ERROR: could not find subscription for customer %s and SKU %s' % (customer_id, sku)
+    print u'ERROR: could not find subscription for customer %s and SKU %s' % (customerId, sku)
     sys.exit(3)
   return subscriptionId
 
 def doDeleteResoldSubscription():
   res = buildGAPIObject(u'reseller')
-  customer_id = sys.argv[3]
+  customerId = sys.argv[3]
   sku = sys.argv[4]
   deletionType = sys.argv[5]
-  subscriptionId = convertSKU2ProductId(res, sku, customer_id)
-  callGAPI(res.subscriptions(), u'delete', customerId=customer_id, subscriptionId=subscriptionId, deletionType=deletionType)
-  print u'Cancelled %s for %s' % (sku, customer_id)
+  subscriptionId = convertSKU2ProductId(res, sku, customerId)
+  callGAPI(res.subscriptions(), u'delete', customerId=customerId, subscriptionId=subscriptionId, deletionType=deletionType)
+  print u'Cancelled %s for %s' % (sku, customerId)
 
 def doCreateResoldSubscription():
   res = buildGAPIObject(u'reseller')
-  customer_id = sys.argv[3]
-  customerAuthToken, body = _getResoldSubscriptionAttr(sys.argv[4:], customer_id)
-  result = callGAPI(res.subscriptions(), u'insert', customerId=customer_id, customerAuthToken=customerAuthToken, body=body, fields=u'customerId')
+  customerId = sys.argv[3]
+  customerAuthToken, body = _getResoldSubscriptionAttr(sys.argv[4:], customerId)
+  result = callGAPI(res.subscriptions(), u'insert', customerId=customerId, customerAuthToken=customerAuthToken, body=body, fields=u'customerId')
   print u'Created subscription:'
   print_json(None, result)
 
 def doUpdateResoldSubscription():
   res = buildGAPIObject(u'reseller')
   function = None
-  customer_id = sys.argv[3]
+  customerId = sys.argv[3]
   sku = sys.argv[4]
-  subscriptionId = convertSKU2ProductId(res, sku, customer_id)
+  subscriptionId = convertSKU2ProductId(res, sku, customerId)
   kwargs = {}
   i = 5
   while i < len(sys.argv):
@@ -7333,36 +7333,62 @@ def doUpdateResoldSubscription():
       kwargs[u'body'] = {u'numberOfSeats': sys.argv[i+1]}
       if len(sys.argv) > i + 2 and sys.argv[i+2].isdigit():
         kwargs[u'body'][u'maximumNumberOfSeats'] = sys.argv[i+2]
-        i += 2
+        i += 3
       else:
-        i += 1
-    result = callGAPI(res.subscriptions(), function, customerId=customer_id, subscriptionId=subscriptionId, **kwargs)
-    print u'Updated %s SKU %s subscription:' % (customer_id, sku)
+        i += 2
+    elif myarg in [u'plan']:
+      function = u'changePlan'
+      kwargs[u'body'] = {u'planName': sys.argv[i+1].upper()}
+      i += 2
+      while i < len(sys.argv):
+        planarg = sys.argv[i].lower()
+        if planarg == u'seats':
+          kwargs[u'body'][u'seats'] = {u'numberOfSeats': sys.argv[i+1]}
+          if len(sys.argv) > i + 2 and sys.argv[i+2].isdigit():
+            kwargs[u'body'][u'seats'][u'maximumNumberOfSeats'] = sys.argv[i+2]
+            i += 3
+          else:
+            i += 2
+        elif planarg in [u'purchaseorderid', u'po']:
+          kwargs[u'body'][u'purchaseOrderId'] = sys.argv[i+1]
+          i += 2
+        elif planarg in [u'dealcode', u'deal']:
+          kwargs[u'body'][u'dealCode']
+          i += 2
+        else:
+          print u'ERROR: %s is not a valid argument to "gam update resoldcustomer plan"' % planarg
+          sys.exit(3)
+    else:
+      print u'ERROR: %s is not a valid argument to "gam <users> update resoldsubscription"' % myarg
+  result = callGAPI(res.subscriptions(), function, customerId=customerId, subscriptionId=subscriptionId, **kwargs)
+  print u'Updated %s SKU %s subscription:' % (customerId, sku)
+  if result:
     print_json(None, result)
 
 def doGetResoldSubscriptions():
   res = buildGAPIObject(u'reseller')
-  customer_id = sys.argv[3]
+  customerId = sys.argv[3]
   customerAuthToken = None
   i = 4
   while i < len(sys.argv):
-    if sys.argv[i].lower() in [u'customer_auth_token', u'transfer_token']:
+    myarg = sys.argv[i].lower().replace(u'_', u'')
+    if myarg in [u'customer_auth_token', u'transfer_token']:
       customerAuthToken = sys.argv[i+1]
       i += 2
     else:
-      print u'ERROR: %s is not a valid argument.'
+      print u'ERROR: %s is not a valid argument for "gam show resoldsubscriptions"' % myarg
       sys.exit(3)
-  result = callGAPI(res.subscriptions(), u'list', customerId=customer_id, customerAuthToken=customerAuthToken)
+  result = callGAPI(res.subscriptions(), u'list', customerId=customerId, customerAuthToken=customerAuthToken)
   print_json(None, result)
 
-def _getResoldSubscriptionAttr(arg, customer_id):
+def _getResoldSubscriptionAttr(arg, customerId):
   body = {u'plan': {},
           u'seats': {},
-          u'customerId': customer_id}
+          u'customerId': customerId}
   customerAuthToken = None
   i = 0
   while i < len(arg):
-    myarg = arg[i].lower()
+    myarg = arg[i].lower().replace(u'_', u'')
     if myarg in [u'deal', u'dealcode']:
       body[u'dealCode'] = arg[i+1]
     elif myarg in [u'plan', u'planname']:
@@ -7371,18 +7397,22 @@ def _getResoldSubscriptionAttr(arg, customer_id):
       body[u'purchaseOrderId'] = arg[i+1]
     elif myarg in [u'seats']:
       body[u'seats'][u'numberOfSeats'] = arg[i+1]
-      body[u'seats'][u'maximumNumberOfSeats'] = arg[i+1]
+      if len(arg) > i + 1 and arg[i+2].isdigit():
+        body[u'seats'][u'maximumNumberOfSeats'] = arg[i+2]
     elif myarg in [u'sku', u'skuid']:
       _, body[u'skuId'] = getProductAndSKU(arg[i+1])
-    elif myarg in [u'customer_auth_token', u'transfer_token']:
+    elif myarg in [u'customerauthtoken', u'transfertoken']:
       customerAuthToken = arg[i+1]
+    else:
+      print u'ERROR: %s is not a valid argument for "gam create resoldsubscription"' % myarg
+      sys.exit(3)
     i += 2
   return customerAuthToken, body
 
 def doGetResoldCustomer():
   res = buildGAPIObject(u'reseller')
-  customer_id = sys.argv[3]
-  result = callGAPI(res.customers(), u'get', customerId=customer_id)
+  customerId = sys.argv[3]
+  result = callGAPI(res.customers(), u'get', customerId=customerId)
   print_json(None, result)
 
 def _getResoldCustomerAttr(arg):
@@ -7390,7 +7420,7 @@ def _getResoldCustomerAttr(arg):
   customerAuthToken = None
   i = 0
   while i < len(arg):
-    myarg = arg[i].lower()
+    myarg = arg[i].lower().replace(u'_', u'')
     if myarg in [u'email', u'alternateemail']:
       body[u'alternateEmail'] = arg[i+1]
     elif myarg in [u'phone', u'phonenumber']:
@@ -7413,7 +7443,7 @@ def _getResoldCustomerAttr(arg):
       body[u'postalAddress'][u'postalCode'] = arg[i+1]
     elif myarg in [u'region', u'state']:
       body[u'postalAddress'][u'region'] = arg[i+1]
-    elif myarg in [u'customer_auth_token', u'transfer_token']:
+    elif myarg in [u'customerauthtoken', u'transfertoken']:
       customerAuthToken = arg[i+1]
     else:
       print u'ERROR: %s is not a valid argument for resoldcustomer' % myarg
@@ -7425,10 +7455,10 @@ def _getResoldCustomerAttr(arg):
 
 def doUpdateResoldCustomer():
   res = buildGAPIObject(u'reseller')
-  customer_id = sys.argv[3]
+  customerId = sys.argv[3]
   customerAuthToken, body = _getResoldCustomerAttr(sys.argv[4:])
-  callGAPI(res.customers(), u'patch', customerId=customer_id, body=body, customerAuthToken=customerAuthToken, fields=u'customerId')
-  print u'updated customer %s' % customer_id
+  callGAPI(res.customers(), u'patch', customerId=customerId, body=body, customerAuthToken=customerAuthToken, fields=u'customerId')
+  print u'updated customer %s' % customerId
 
 def doCreateResoldCustomer():
   res = buildGAPIObject(u'reseller')
