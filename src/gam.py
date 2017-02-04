@@ -4703,8 +4703,8 @@ def printShowSmime(users, csvFormat):
     for sendAsEmail in sendAsEmails:
       result = callGAPI(gmail.users().settings().sendAs().smimeInfo(), u'list', sendAsEmail=sendAsEmail, userId=u'me')
       smimes = result.get(u'smimeInfo', [])
-      for i, _ in enumerate(smimes):
-        smimes[i][u'expiration'] = datetime.datetime.fromtimestamp(int(smimes[i][u'expiration'])/1000).strftime('%Y-%m-%d %H:%M:%S')
+      for j, _ in enumerate(smimes):
+        smimes[j][u'expiration'] = datetime.datetime.fromtimestamp(int(smimes[j][u'expiration'])/1000).strftime('%Y-%m-%d %H:%M:%S')
       if csvFormat:
         for smime in smimes:
           addRowTitlesToCSVfile(flatten_json(smime, flattened={u'User': user}), csvRows, titles)
