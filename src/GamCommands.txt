@@ -308,6 +308,8 @@ Named items
 	ipwhitelisted|
 	isdelegatedadmin|admin|isadmin|
 	ismailboxsetup|
+	is2svenforced|
+	is2svenrolled|
 	lastlogintime|
 	noneditablealiases|aliases|nicknames|
 	notes|note|
@@ -512,6 +514,26 @@ gam oauth|oauth2 info|verify [<AccessToken>]
 gam <UserTypeEntity> check serviceaccount
 
 gam whatis <EmailItem>
+
+gam create resoldcustomer <CustomerDomain> (customer_auth_token <String>)
+	(email|alternate_email <EmailAddress>) (name|organization_name <String>) (contact|contact_name <String>) [phone|phone_number <String>]
+	[address|address1 <String>] [address2 <String>] [address3 <String>]
+	[locality|city <String>] [region|state <String>] [postal|postal_code <String>] [country|country_code <String>]
+gam update resoldcustomer <CustomerID> [customer_auth_token <String>]
+	[email|alternate_email <EmailAddress>] [name|organization_name <String>] [contact|contact_name <String>] [phone|phone_number <String>]
+	[address|address1 <String>] [address2 <String>] [address3 <String>]
+	[locality|city <String>] [region|state <String>] [postal|postal_code <String>] [country|country_code <String>]
+gam info resoldcustomer <CustomerID>
+
+gam create resoldsubscription <CustomerID>
+	 [customer_auth_token <String>] [deal <String>] [plan annual_monthly_pay|annual_yearly_pay|flexible|trial]
+	 [purchaseorderid <String>] [seats <NumberOfSeats> <MaximumNumberOfSeats>] [sku <SKUID>]
+gam update resoldsubscription <CustomerID> <SKUID>
+	activate|suspend|startpaidservice|
+	(renewal auto_renew_monthly_pay|auto_renew_yearly_pay|cancel|renew_current_users_monthly_pay|renew_current_users_yearly_pay|switch_to_pay_as_you_go)|
+	(seats <NumberOfSeats> [<MaximumNumberOfSeats>])
+gam delete resoldsubscription <CustomerID> <SKUID> cancel|downgrade|transfer_to_direct
+gam info resoldsubscriptions <CustomerID> [customer_auth_token <String>]
 
 gam report users|user [todrive]
 	[date <Date>] [(user all|<UserItem>)] [filter|filters <String>] [fields|parameters <String>]
@@ -821,6 +843,12 @@ gam <UserTypeEntity> delete sendas <EmailAddress>
 gam <UserTypeEntity> show sendas [format]
 gam <UserTypeEntity> info sendas <EmailAddress> [format]
 gam <UserTypeEntity> print sendas [todrive]
+
+gam <UserTypeEntity> add smime file <FileName> [password <Password>] [sendas|sendasemail <EmailAddress>] [default]
+gam <UserTypeEntity> update smime [id <SmimeID>] [sendas|sendasemail <EmailAddress>] [default]
+gam <UserTypeEntity> delete smime [id <SmimeID>] [sendas|sendasemail <EmailAddress>]
+gam <UserTypeEntity> show smime [primaryonly]
+gam <UserTypeEntity> print smime [todrive] [primaryonly]
 
 gam <UserTypeEntity> signature|sig <String>|(file <FileName> [charset <Charset>]) (replace <Tag> <String>)* [html] [name <String>] [replyto <EmailAddress>] [default] [treatasalias <Boolean>]
 gam <UserTypeEntity> show signature|sig [format]

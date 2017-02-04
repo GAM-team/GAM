@@ -4588,6 +4588,131 @@ def deleteSendAs(users):
              soft_errors=True,
              userId=u'me', sendAsEmail=emailAddress)
 
+def updateSmime(users):
+  smimeIdBase = None
+  sendAsEmailBase = None
+  make_default = False
+  i = 5
+  while i < len(sys.argv):
+    myarg = sys.argv[i].lower()
+    if myarg == u'id':
+      smimeIdBase = sys.argv[i+1]
+      i += 2
+    elif myarg in [u'sendas', u'sendasemail']:
+      sendAsEmailBase = sys.argv[i+1]
+      i += 2
+    elif myarg in [u'default']:
+      make_default = True
+      i += 1
+    else:
+      print u'ERROR: %s is not a valid argument to "gam <users> update smime"' % myarg
+      sys.exit(3)
+  if not make_default:
+    print u'Nothing to update for smime.'
+    sys.exit(0)
+  for user in users:
+    user, gmail = buildGmailGAPIObject(user)
+    if not gmail:
+      continue
+    sendAsEmail = sendAsEmailBase if sendAsEmailBase else user
+    if not smimeIdBase:
+      result = callGAPI(gmail.users().settings().sendAs().smimeInfo(), u'list', userId=u'me', sendAsEmail=sendAsEmail, fields=u'smimeInfo(id)')
+      smimes = result.get(u'smimeInfo', [])
+      if len(smimes) == 0:
+        print u'ERROR: %s has no S/MIME certificates for sendas address %s' % (user, sendAsEmail)
+        sys.exit(3)
+      elif len(smimes) > 1:
+        print u'ERROR: %s has more than one S/MIME certificate. Please specify a cert to update:'
+        for smime in smimes:
+          print u' %s' % smime[u'id']
+        sys.exit(3)
+      smimeId = smimes[0][u'id']
+    else:
+      smimeId = smimeIdBase
+    print u'Setting smime id %s as default for user %s and sendas %s' % (smimeId, user, sendAsEmail)
+    callGAPI(gmail.users().settings().sendAs().smimeInfo(), u'setDefault', userId=u'me', sendAsEmail=sendAsEmail, id=smimeId)
+
+def deleteSmime(users):
+  smimeIdBase = None
+  sendAsEmailBase = None
+  i = 5
+  while i < len(sys.argv):
+    myarg = sys.argv[i].lower()
+    if myarg == u'id':
+      smimeIdBase = sys.argv[i+1]
+      i += 2
+    elif myarg in [u'sendas', u'sendasemail']:
+      sendAsEmailBase = sys.argv[i+1]
+      i += 2
+    else:
+      print u'ERROR: %s is not a valid argument to "gam <users> delete smime"' % myarg
+      sys.exit(3)
+  for user in users:
+    user, gmail = buildGmailGAPIObject(user)
+    if not gmail:
+      continue
+    sendAsEmail = sendAsEmailBase if sendAsEmailBase else user
+    if not smimeIdBase:
+      result = callGAPI(gmail.users().settings().sendAs().smimeInfo(), u'list', userId=u'me', sendAsEmail=sendAsEmail, fields=u'smimeInfo(id)')
+      smimes = result.get(u'smimeInfo', [])
+      if len(smimes) == 0:
+        print u'ERROR: %s has no S/MIME certificates for sendas address %s' % (user, sendAsEmail)
+        sys.exit(3)
+      elif len(smimes) > 1:
+        print u'ERROR: %s has more than one S/MIME certificate. Please specify a cert to delete:'
+        for smime in smimes:
+          print u' %s' % smime[u'id']
+        sys.exit(3)
+      smimeId = smimes[0][u'id']
+    else:
+      smimeId = smimeIdBase
+    callGAPI(gmail.users().settings().sendAs().smimeInfo(), u'delete', userId=u'me', sendAsEmail=sendAsEmail, id=smimeId)
+
+def printShowSmime(users, csvFormat):
+  if csvFormat:
+    todrive = False
+    titles = [u'User']
+    csvRows = []
+  primaryonly = False
+  i = 5
+  while i < len(sys.argv):
+    myarg = sys.argv[i].lower()
+    if csvFormat and myarg == u'todrive':
+      todrive = True
+      i += 1
+    elif myarg == u'primaryonly':
+      primaryonly = True
+      i += 1
+    else:
+      print u'ERROR: %s is not a valid argument for "gam <users> %s smime"' % (myarg, [u'show', u'print'][csvFormat])
+      sys.exit(3)
+  i = 0
+  count = len(users)
+  for user in users:
+    i += 1
+    user, gmail = buildGmailGAPIObject(user)
+    if not gmail:
+      continue
+    if primaryonly:
+      sendAsEmails = [user]
+    else:
+      result = callGAPI(gmail.users().settings().sendAs(), u'list', userId=u'me', fields=u'sendAs(sendAsEmail)')
+      sendAsEmails = []
+      for sendAs in result[u'sendAs']:
+        sendAsEmails.append(sendAs[u'sendAsEmail'])
+    for sendAsEmail in sendAsEmails:
+      result = callGAPI(gmail.users().settings().sendAs().smimeInfo(), u'list', sendAsEmail=sendAsEmail, userId=u'me')
+      smimes = result.get(u'smimeInfo', [])
+      for j, _ in enumerate(smimes):
+        smimes[j][u'expiration'] = datetime.datetime.fromtimestamp(int(smimes[j][u'expiration'])/1000).strftime('%Y-%m-%d %H:%M:%S')
+      if csvFormat:
+        for smime in smimes:
+          addRowTitlesToCSVfile(flatten_json(smime, flattened={u'User': user}), csvRows, titles)
+      else:
+        print_json(None, smimes)
+  if csvFormat:
+    writeCSVfile(csvRows, titles, u'S/MIME', todrive)
+
 def printShowSendAs(users, csvFormat):
   if csvFormat:
     todrive = False
@@ -4665,6 +4790,45 @@ def infoSendAs(users):
                       userId=u'me', sendAsEmail=emailAddress)
     if result:
       _showSendAs(result, i, count, formatSig)
+
+def addSmime(users):
+  sendAsEmailBase = None
+  smimefile = None
+  body = {u'isDefault': False}
+  i = 5
+  while i < len(sys.argv):
+    myarg = sys.argv[i].lower()
+    if myarg == u'file':
+      smimefile = sys.argv[i+1]
+      i += 2
+    elif myarg == u'password':
+      body[u'encryptedKeyPassword'] = sys.argv[i+1]
+      i += 2
+    elif myarg == u'default':
+      body[u'isDefault'] = True
+      i += 1
+    elif myarg in [u'sendas', u'sendasemail']:
+      sendAsEmailBase = sys.argv[i+1]
+      i += 2
+    else:
+      print u'ERROR: %s is not a valid argument for "gam <users> add smime"' % myarg
+      sys.exit(3)
+  if not smimefile:
+    print u'ERROR: you must specify a file to upload'
+    sys.exit(3)
+  smime_data = readFile(smimefile)
+  smime_data = base64.urlsafe_b64encode(smime_data)
+  body[u'pkcs12'] = smime_data
+  i = 0
+  count = len(users)
+  for user in users:
+    i += 1
+    user, gmail = buildGmailGAPIObject(user)
+    if not gmail:
+      continue
+    sendAsEmail = sendAsEmailBase if sendAsEmailBase else user
+    result = callGAPI(gmail.users().settings().sendAs().smimeInfo(), u'insert', userId=u'me', sendAsEmail=sendAsEmail, body=body)
+    print u'Added S/MIME certificate for user %s sendas %s issued by %s' % (user, sendAsEmail, result[u'issuerCn'])
 
 def doLabel(users, i):
   label = sys.argv[i]
@@ -7112,45 +7276,45 @@ def doWhatIs():
     sys.stderr.write(u'%s is a group alias\n\n' % email)
     doGetAliasInfo(alias_email=email)
 
-def convertSKU2ProductId(res, sku, customer_id):
+def convertSKU2ProductId(res, sku, customerId):
   subscriptionId = None
-  results = callGAPI(res.subscriptions(), u'list', customerId=customer_id)
+  results = callGAPI(res.subscriptions(), u'list', customerId=customerId)
   for subscription in results[u'subscriptions']:
     if sku == subscription[u'skuId']:
       subscriptionId = subscription[u'subscriptionId']
       break
   if not subscriptionId:
-    print u'ERROR: could not find subscription for customer %s and SKU %s' % (customer_id, sku)
+    print u'ERROR: could not find subscription for customer %s and SKU %s' % (customerId, sku)
     sys.exit(3)
   return subscriptionId
 
 def doDeleteResoldSubscription():
   res = buildGAPIObject(u'reseller')
-  customer_id = sys.argv[3]
+  customerId = sys.argv[3]
   sku = sys.argv[4]
   deletionType = sys.argv[5]
-  subscriptionId = convertSKU2ProductId(res, sku, customer_id)
-  callGAPI(res.subscriptions(), u'delete', customerId=customer_id, subscriptionId=subscriptionId, deletionType=deletionType)
-  print u'Cancelled %s for %s' % (sku, customer_id)
+  subscriptionId = convertSKU2ProductId(res, sku, customerId)
+  callGAPI(res.subscriptions(), u'delete', customerId=customerId, subscriptionId=subscriptionId, deletionType=deletionType)
+  print u'Cancelled %s for %s' % (sku, customerId)
 
 def doCreateResoldSubscription():
   res = buildGAPIObject(u'reseller')
-  customer_id = sys.argv[3]
-  customerAuthToken, body = _getResoldSubscriptionAttr(sys.argv[4:], customer_id)
-  result = callGAPI(res.subscriptions(), u'insert', customerId=customer_id, customerAuthToken=customerAuthToken, body=body, fields=u'customerId')
+  customerId = sys.argv[3]
+  customerAuthToken, body = _getResoldSubscriptionAttr(sys.argv[4:], customerId)
+  result = callGAPI(res.subscriptions(), u'insert', customerId=customerId, customerAuthToken=customerAuthToken, body=body, fields=u'customerId')
   print u'Created subscription:'
   print_json(None, result)
 
 def doUpdateResoldSubscription():
   res = buildGAPIObject(u'reseller')
   function = None
-  customer_id = sys.argv[3]
+  customerId = sys.argv[3]
   sku = sys.argv[4]
-  subscriptionId = convertSKU2ProductId(res, sku, customer_id)
+  subscriptionId = convertSKU2ProductId(res, sku, customerId)
   kwargs = {}
   i = 5
   while i < len(sys.argv):
-    myarg = sys.argv[i].lower()
+    myarg = sys.argv[i].lower().replace(u'_', u'')
     if myarg == u'activate':
       function = u'activate'
       i += 1
@@ -7169,36 +7333,40 @@ def doUpdateResoldSubscription():
       kwargs[u'body'] = {u'numberOfSeats': sys.argv[i+1]}
       if len(sys.argv) > i + 2 and sys.argv[i+2].isdigit():
         kwargs[u'body'][u'maximumNumberOfSeats'] = sys.argv[i+2]
-        i += 2
+        i += 3
       else:
-        i += 1
-    result = callGAPI(res.subscriptions(), function, customerId=customer_id, subscriptionId=subscriptionId, **kwargs)
-    print u'Updated %s SKU %s subscription:' % (customer_id, sku)
+        i += 2
+    else:
+      print u'ERROR: %s is not a valid argument for "gam update resoldsubscription"' % myarg
+      sys.exit(3)
+    result = callGAPI(res.subscriptions(), function, customerId=customerId, subscriptionId=subscriptionId, **kwargs)
+    print u'Updated %s SKU %s subscription:' % (customerId, sku)
     print_json(None, result)
 
 def doGetResoldSubscriptions():
   res = buildGAPIObject(u'reseller')
-  customer_id = sys.argv[3]
+  customerId = sys.argv[3]
   customerAuthToken = None
   i = 4
   while i < len(sys.argv):
-    if sys.argv[i].lower() in [u'customer_auth_token', u'transfer_token']:
+    myarg = sys.argv[i].lower().replace(u'_', u'')
+    if myarg in [u'customerauthtoken', u'transfertoken']:
       customerAuthToken = sys.argv[i+1]
       i += 2
     else:
-      print u'ERROR: %s is not a valid argument.'
+      print u'ERROR: %s is not a valid argument for "gam show resoldsubscriptions"' % myarg
       sys.exit(3)
-  result = callGAPI(res.subscriptions(), u'list', customerId=customer_id, customerAuthToken=customerAuthToken)
+  result = callGAPI(res.subscriptions(), u'list', customerId=customerId, customerAuthToken=customerAuthToken)
   print_json(None, result)
 
-def _getResoldSubscriptionAttr(arg, customer_id):
+def _getResoldSubscriptionAttr(arg, customerId):
   body = {u'plan': {},
           u'seats': {},
-          u'customerId': customer_id}
+          u'customerId': customerId}
   customerAuthToken = None
   i = 0
   while i < len(arg):
-    myarg = arg[i].lower()
+    myarg = arg[i].lower().replace(u'_', u'')
     if myarg in [u'deal', u'dealcode']:
       body[u'dealCode'] = arg[i+1]
     elif myarg in [u'plan', u'planname']:
@@ -7207,26 +7375,30 @@ def _getResoldSubscriptionAttr(arg, customer_id):
       body[u'purchaseOrderId'] = arg[i+1]
     elif myarg in [u'seats']:
       body[u'seats'][u'numberOfSeats'] = arg[i+1]
-      body[u'seats'][u'maximumNumberOfSeats'] = arg[i+1]
+      body[u'seats'][u'maximumNumberOfSeats'] = arg[i+2]
+      i += 1
     elif myarg in [u'sku', u'skuid']:
       _, body[u'skuId'] = getProductAndSKU(arg[i+1])
-    elif myarg in [u'customer_auth_token', u'transfer_token']:
+    elif myarg in [u'customerauthtoken', u'transfertoken']:
       customerAuthToken = arg[i+1]
+    else:
+      print u'ERROR: %s is not a valid argument for "gam create resoldsubscription"' % myarg
+      sys.exit(3)
     i += 2
   return customerAuthToken, body
 
 def doGetResoldCustomer():
   res = buildGAPIObject(u'reseller')
-  customer_id = sys.argv[3]
-  result = callGAPI(res.customers(), u'get', customerId=customer_id)
+  customerId = sys.argv[3]
+  result = callGAPI(res.customers(), u'get', customerId=customerId)
   print_json(None, result)
 
-def _getResoldCustomerAttr(arg):
+def _getResoldCustomerAttr(arg, function):
   body = {u'postalAddress': {}}
   customerAuthToken = None
   i = 0
   while i < len(arg):
-    myarg = arg[i].lower()
+    myarg = arg[i].lower().replace(u'_', u'')
     if myarg in [u'email', u'alternateemail']:
       body[u'alternateEmail'] = arg[i+1]
     elif myarg in [u'phone', u'phonenumber']:
@@ -7249,10 +7421,10 @@ def _getResoldCustomerAttr(arg):
       body[u'postalAddress'][u'postalCode'] = arg[i+1]
     elif myarg in [u'region', u'state']:
       body[u'postalAddress'][u'region'] = arg[i+1]
-    elif myarg in [u'customer_auth_token', u'transfer_token']:
+    elif myarg in [u'customerauthtoken', u'transfertoken']:
       customerAuthToken = arg[i+1]
     else:
-      print u'ERROR: %s is not a valid argument for resoldcustomer' % myarg
+      print u'ERROR: %s is not a valid argument for "gam %s resoldcustomer"' % (myarg, function)
       sys.exit(3)
     i += 2
   if not body[u'postalAddress']:
@@ -7261,17 +7433,17 @@ def _getResoldCustomerAttr(arg):
 
 def doUpdateResoldCustomer():
   res = buildGAPIObject(u'reseller')
-  customer_id = sys.argv[3]
-  customerAuthToken, body = _getResoldCustomerAttr(sys.argv[4:])
-  callGAPI(res.customers(), u'patch', customerId=customer_id, body=body, customerAuthToken=customerAuthToken, fields=u'customerId')
-  print u'updated customer %s' % customer_id
+  customerId = sys.argv[3]
+  customerAuthToken, body = _getResoldCustomerAttr(sys.argv[4:], u'update')
+  callGAPI(res.customers(), u'patch', customerId=customerId, body=body, customerAuthToken=customerAuthToken, fields=u'')
+  print u'updated customer %s' % customerId
 
 def doCreateResoldCustomer():
   res = buildGAPIObject(u'reseller')
-  customerAuthToken, body = _getResoldCustomerAttr(sys.argv[4:])
+  customerAuthToken, body = _getResoldCustomerAttr(sys.argv[4:], u'create')
   body[u'customerDomain'] = sys.argv[3]
   result = callGAPI(res.customers(), u'insert', body=body, customerAuthToken=customerAuthToken, fields=u'customerId')
-  print u'Created customer %s with id %s' % (result[u'customerDomain'], result[u'customerId'])
+  print u'Created customer %s with id %s' % (body[u'customerDomain'], result[u'customerId'])
 
 def doGetUserInfo(user_email=None):
 
@@ -7341,6 +7513,10 @@ def doGetUserInfo(user_email=None):
     print u'Is a Super Admin: %s' % user[u'isAdmin']
   if u'isDelegatedAdmin' in user:
     print u'Is Delegated Admin: %s' % user[u'isDelegatedAdmin']
+  if u'isEnrolledIn2Sv' in user:
+    print u'2-step enrolled: %s' % user[u'isEnrolledIn2Sv']
+  if u'isEnforcedIn2Sv' in user:
+    print u'2-step enforced: %s' % user[u'isEnforcedIn2Sv']
   if u'agreedToTerms' in user:
     print u'Has Agreed to Terms: %s' % user[u'agreedToTerms']
   if u'ipWhitelisted' in user:
@@ -8406,6 +8582,8 @@ USER_ARGUMENT_TO_PROPERTY_MAP = {
   u'ipwhitelisted': [u'ipWhitelisted',],
   u'isadmin': [u'isAdmin', u'isDelegatedAdmin',],
   u'isdelegatedadmin': [u'isAdmin', u'isDelegatedAdmin',],
+  u'is2svenforced': [u'isEnforcedIn2Sv',],
+  u'is2svenrolled': [u'isEnrolledIn2Sv',],
   u'ismailboxsetup': [u'isMailboxSetup',],
   u'lastlogintime': [u'lastLoginTime',],
   u'lastname': [u'name.familyName',],
@@ -9804,7 +9982,7 @@ def run_batch(items):
       pool = Pool(processes=num_worker_threads)
       sys.stderr.write(u'done with commit-batch\n')
       continue
-    pool.apply_async(ProcessGAMCommand, [item])
+    pool.apply_async(ProcessGAMCommandMulti, [item])
   pool.close()
   pool.join()
 
@@ -9879,6 +10057,16 @@ def runCmdForUsers(cmd, users, default_to_batch=False, **kwargs):
     sys.exit(0)
   else:
     cmd(users, **kwargs)
+
+def resetDefaultEncodingToUTF8():
+  if sys.getdefaultencoding().upper() != u'UTF-8':
+    reload(sys)
+    if hasattr(sys, u'setdefaultencoding'):
+      sys.setdefaultencoding(u'UTF-8')
+
+def ProcessGAMCommandMulti(args):
+  resetDefaultEncodingToUTF8()
+  ProcessGAMCommand(args)
 
 # Process GAM command
 def ProcessGAMCommand(args):
@@ -9969,9 +10157,9 @@ def ProcessGAMCommand(args):
         except IndexError:
           login_hint = None
         doCreateProject(login_hint)
-      elif argument in [u'resoldcustomer']:
+      elif argument in [u'resoldcustomer', u'resellercustomer']:
         doCreateResoldCustomer()
-      elif argument in [u'resoldsubscription', u'subscription']:
+      elif argument in [u'resoldsubscription', u'resellersubscription']:
         doCreateResoldSubscription()
       else:
         print u'ERROR: %s is not a valid argument for "gam create"' % argument
@@ -10103,7 +10291,7 @@ def ProcessGAMCommand(args):
         except IndexError:
           login_hint = None
         doDelProjects(login_hint)
-      elif argument in [u'resoldsubscription']:
+      elif argument in [u'resoldsubscription', u'resellersubscription']:
         doDeleteResoldSubscription()
       else:
         print u'ERROR: %s is not a valid argument for "gam delete"' % argument
@@ -10302,6 +10490,8 @@ def ProcessGAMCommand(args):
         showDriveFileRevisions(users)
       elif showWhat == u'sendas':
         printShowSendAs(users, False)
+      elif showWhat == u'smime':
+        printShowSmime(users, False)
       elif showWhat == u'gmailprofile':
         showGmailProfile(users)
       elif showWhat == u'gplusprofile':
@@ -10353,6 +10543,8 @@ def ProcessGAMCommand(args):
         printShowForwardingAddresses(users, True)
       elif printWhat == u'sendas':
         printShowSendAs(users, True)
+      elif printWhat == u'smime':
+        printShowSmime(users, True)
       elif printWhat in [u'token', u'tokens', u'oauth', u'3lo']:
         printShowTokens(5, u'users', users, True)
       else:
@@ -10423,6 +10615,8 @@ def ProcessGAMCommand(args):
         deleteForwardingAddresses(users)
       elif delWhat == u'sendas':
         deleteSendAs(users)
+      elif delWhat == u'smime':
+        deleteSmime(users)
       else:
         print u'ERROR: %s is not a valid argument for "gam <users> delete"' % delWhat
         sys.exit(2)
@@ -10446,6 +10640,8 @@ def ProcessGAMCommand(args):
         addForwardingAddresses(users)
       elif addWhat == u'sendas':
         addUpdateSendAs(users, 5, True)
+      elif addWhat == u'smime':
+        addSmime(users)
       else:
         print u'ERROR: %s is not a valid argument for "gam <users> add"' % addWhat
         sys.exit(2)
@@ -10473,6 +10669,8 @@ def ProcessGAMCommand(args):
         updateLabels(users)
       elif updateWhat == u'sendas':
         addUpdateSendAs(users, 5, False)
+      elif updateWhat == u'smime':
+        updateSmime(users)
       else:
         print u'ERROR: %s is not a valid argument for "gam <users> update"' % updateWhat
         sys.exit(2)
@@ -10608,14 +10806,12 @@ if sys.platform.startswith('win'):
 
 # Run from command line
 if __name__ == "__main__":
+  resetDefaultEncodingToUTF8()
   if sys.platform.startswith('win'):
     freeze_support()
-  reload(sys)
   if sys.version_info[:2] != (2, 7):
     print u'ERROR: GAM requires Python 2.7. You are running %s.%s.%s. Please upgrade your Python version or use one of the binary GAM downloads.' % sys.version_info[:3]
     sys.exit(5)
-  if hasattr(sys, u'setdefaultencoding'):
-    sys.setdefaultencoding(u'UTF-8')
   if sys.platform.startswith('win'):
     win32_unicode_argv() # cleanup sys.argv on Windows
   sys.exit(ProcessGAMCommand(sys.argv))
