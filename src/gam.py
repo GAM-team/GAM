@@ -7360,6 +7360,7 @@ def doUpdateResoldSubscription():
           sys.exit(3)
     else:
       print u'ERROR: %s is not a valid argument to "gam update resoldsubscription"' % myarg
+      sys.exit(3)
   result = callGAPI(res.subscriptions(), function, customerId=customerId, subscriptionId=subscriptionId, **kwargs)
   print u'Updated %s SKU %s subscription:' % (customerId, sku)
   if result:
@@ -7372,7 +7373,7 @@ def doGetResoldSubscriptions():
   i = 4
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace(u'_', u'')
-    if myarg in [u'customer_auth_token', u'transfer_token']:
+    if myarg in [u'customerauthtoken', u'transfertoken']:
       customerAuthToken = sys.argv[i+1]
       i += 2
     else:
