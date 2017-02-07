@@ -7356,10 +7356,10 @@ def doUpdateResoldSubscription():
           kwargs[u'body'][u'dealCode'] = sys.argv[i+1]
           i += 2
         else:
-          print u'ERROR: %s is not a valid argument to "gam update resoldcustomer plan"' % planarg
+          print u'ERROR: %s is not a valid argument to "gam update resoldsubscription plan"' % planarg
           sys.exit(3)
     else:
-      print u'ERROR: %s is not a valid argument to "gam <users> update resoldsubscription"' % myarg
+      print u'ERROR: %s is not a valid argument to "gam update resoldsubscription"' % myarg
   result = callGAPI(res.subscriptions(), function, customerId=customerId, subscriptionId=subscriptionId, **kwargs)
   print u'Updated %s SKU %s subscription:' % (customerId, sku)
   if result:
@@ -7376,7 +7376,7 @@ def doGetResoldSubscriptions():
       customerAuthToken = sys.argv[i+1]
       i += 2
     else:
-      print u'ERROR: %s is not a valid argument for "gam show resoldsubscriptions"' % myarg
+      print u'ERROR: %s is not a valid argument for "gam info resoldsubscriptions"' % myarg
       sys.exit(3)
   result = callGAPI(res.subscriptions(), u'list', customerId=customerId, customerAuthToken=customerAuthToken)
   print_json(None, result)
@@ -7447,7 +7447,7 @@ def _getResoldCustomerAttr(arg):
     elif myarg in [u'customerauthtoken', u'transfertoken']:
       customerAuthToken = arg[i+1]
     else:
-      print u'ERROR: %s is not a valid argument for resoldcustomer' % myarg
+      print u'ERROR: %s is not a valid argument for "gam %s resoldcustomer"' % (myarg, sys.argv[1])
       sys.exit(3)
     i += 2
   if not body[u'postalAddress']:
