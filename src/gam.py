@@ -10180,9 +10180,9 @@ def ProcessGAMCommand(args):
         except IndexError:
           login_hint = None
         doCreateProject(login_hint)
-      elif argument in [u'resoldcustomer']:
+      elif argument in [u'resoldcustomer', u'resellercustomer']:
         doCreateResoldCustomer()
-      elif argument in [u'resoldsubscription', u'subscription']:
+      elif argument in [u'resoldsubscription', u'resellersubscription']:
         doCreateResoldSubscription()
       else:
         print u'ERROR: %s is not a valid argument for "gam create"' % argument
@@ -10314,7 +10314,7 @@ def ProcessGAMCommand(args):
         except IndexError:
           login_hint = None
         doDelProjects(login_hint)
-      elif argument in [u'resoldsubscription']:
+      elif argument in [u'resoldsubscription', u'resellersubscription']:
         doDeleteResoldSubscription()
       else:
         print u'ERROR: %s is not a valid argument for "gam delete"' % argument
