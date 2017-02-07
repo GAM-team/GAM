@@ -7398,7 +7398,7 @@ def _getResoldSubscriptionAttr(arg, customerId):
       body[u'purchaseOrderId'] = arg[i+1]
     elif myarg in [u'seats']:
       body[u'seats'][u'numberOfSeats'] = arg[i+1]
-      if len(arg) > i + 1 and arg[i+2].isdigit():
+      if len(arg) > i + 2 and arg[i+2].isdigit():
         body[u'seats'][u'maximumNumberOfSeats'] = arg[i+2]
         i += 1
     elif myarg in [u'sku', u'skuid']:
