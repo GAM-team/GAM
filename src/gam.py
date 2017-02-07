@@ -7353,7 +7353,7 @@ def doUpdateResoldSubscription():
           kwargs[u'body'][u'purchaseOrderId'] = sys.argv[i+1]
           i += 2
         elif planarg in [u'dealcode', u'deal']:
-          kwargs[u'body'][u'dealCode']
+          kwargs[u'body'][u'dealCode'] = sys.argv[i+1]
           i += 2
         else:
           print u'ERROR: %s is not a valid argument to "gam update resoldcustomer plan"' % planarg
