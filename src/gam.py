@@ -7399,6 +7399,7 @@ def _getResoldSubscriptionAttr(arg, customerId):
       body[u'seats'][u'numberOfSeats'] = arg[i+1]
       if len(arg) > i + 1 and arg[i+2].isdigit():
         body[u'seats'][u'maximumNumberOfSeats'] = arg[i+2]
+        i += 1
     elif myarg in [u'sku', u'skuid']:
       _, body[u'skuId'] = getProductAndSKU(arg[i+1])
     elif myarg in [u'customerauthtoken', u'transfertoken']:
@@ -7464,7 +7465,7 @@ def doCreateResoldCustomer():
   res = buildGAPIObject(u'reseller')
   customerAuthToken, body = _getResoldCustomerAttr(sys.argv[4:])
   body[u'customerDomain'] = sys.argv[3]
-  result = callGAPI(res.customers(), u'insert', body=body, customerAuthToken=customerAuthToken, fields=u'customerId')
+  result = callGAPI(res.customers(), u'insert', body=body, customerAuthToken=customerAuthToken, fields=u'customerId,customerDomain')
   print u'Created customer %s with id %s' % (result[u'customerDomain'], result[u'customerId'])
 
 def doGetUserInfo(user_email=None):
