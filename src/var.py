@@ -49,7 +49,7 @@ SKUS = {
    u'product': u'Google-Apps', u'aliases': [u'gams', u'postini', u'gsuite-gams']},
   u'Google-Apps-Lite': {
    u'product': u'Google-Apps', u'aliases': [u'gal', u'lite', u'gsuite-lite']},
-  u'Google-Apps-Unlimited': {
+  u'Google-Apps-Enterprise': {
    u'product': u'Google-Apps', u'aliases': [u'gau', u'unlimited', u'gsuite-business']},
   u'1010020020': {
    u'product': u'Google-Apps', u'aliases': [u'gae', u'enterprise', u'gsuite-enterprise']},
