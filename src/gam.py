@@ -7710,10 +7710,7 @@ def doGetUserInfo(user_email=None):
       print '  %s' % _skuIdToDisplayName(user_license)
 
 def _skuIdToDisplayName(skuId):
-  try:
-    return SKUS[skuId][u'displayName']
-  except KeyError:
-    return skuId
+  return SKUS[skuId][u'displayName'] if skuId in SKUS else skuId
 
 def doGetGroupInfo(group_name=None):
   cd = buildGAPIObject(u'directory')
