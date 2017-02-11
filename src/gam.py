@@ -4352,7 +4352,7 @@ def getImap(users):
 
 def getProductAndSKU(sku):
   product = None
-  l_sku = sku.lower()
+  l_sku = sku.lower().replace(u'-', u'').replace(u' ', u'')
   for a_sku, sku_values in SKUS.items():
     if l_sku == a_sku.lower() or l_sku in sku_values[u'aliases']:
       sku = a_sku
@@ -4369,22 +4369,29 @@ def doLicense(users, operation):
   lic = buildGAPIObject(u'licensing')
   sku = sys.argv[5]
   productId, skuId = getProductAndSKU(sku)
+  i = 6
+  if len(sys.argv) > 6 and sys.argv[i].lower() in [u'product', u'productid']:
+    productId = sys.argv[i+1]
+    i += 2
   for user in users:
     if user.find(u'@') == -1:
       user = u'%s@%s' % (user, GC_Values[GC_DOMAIN])
     if operation == u'delete':
+      print u'Removing license %s from user %s' % (_skuIdToDisplayName(skuId), user)
       callGAPI(lic.licenseAssignments(), operation, soft_errors=True, productId=productId, skuId=skuId, userId=user)
     elif operation == u'insert':
+      print u'Adding license %s to user %s' % (_skuIdToDisplayName(skuId), user)
       callGAPI(lic.licenseAssignments(), operation, soft_errors=True, productId=productId, skuId=skuId, body={u'userId': user})
     elif operation == u'patch':
       try:
-        old_sku = sys.argv[6]
+        old_sku = sys.argv[i]
         if old_sku.lower() == u'from':
-          old_sku = sys.argv[7]
+          old_sku = sys.argv[i+1]
       except KeyError:
         print u'ERROR: You need to specify the user\'s old SKU as the last argument'
         sys.exit(2)
       _, old_sku = getProductAndSKU(old_sku)
+      print u'Changing user %s from license %s to %s' % (user, _skuIdToDisplayName(old_sku), _skuIdToDisplayName(skuId))
       callGAPI(lic.licenseAssignments(), operation, soft_errors=True, productId=productId, skuId=old_sku, userId=user, body={u'skuId': skuId})
 
 def doPop(users):
@@ -7700,8 +7707,14 @@ def doGetUserInfo(user_email=None):
       lbatch.add(lic.licenseAssignments().get(userId=user_email, productId=productId, skuId=skuId, fields=u'skuId'))
     lbatch.execute()
     for user_license in user_licenses:
-      print '  %s' % user_license
+      print '  %s' % _skuIdToDisplayName(user_license)
 
+def _skuIdToDisplayName(skuId):
+  try:
+    return SKUS[skuId][u'displayName']
+  except KeyError:
+    return skuId
+ 
 def doGetGroupInfo(group_name=None):
   cd = buildGAPIObject(u'directory')
   gs = buildGAPIObject(u'groupssettings')
@@ -9471,6 +9484,8 @@ def doPrintLicenses(return_list=False, skus=None):
       except googleapiclient.errors.HttpError:
         pass
   for u_license in licenses:
+    if u'skuId' in u_license:
+      u_license[u'skuId'] = _skuIdToDisplayName(u_license[u'skuId'])
     a_license = {}
     for title in u_license:
       if title in [u'kind', u'etags', u'selfLink']:

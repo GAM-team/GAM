@@ -42,43 +42,43 @@ FN_OAUTH2_TXT = u'oauth2.txt'
 MY_CUSTOMER = u'my_customer'
 SKUS = {
   u'Google-Apps-For-Business': {
-   u'product': u'Google-Apps', u'aliases': [u'gafb', u'gafw', u'basic', u'gsuite-basic']},
+   u'product': u'Google-Apps', u'aliases': [u'gafb', u'gafw', u'basic', u'gsuitebasic'], u'displayName': u'G Suite Basic'},
   u'Google-Apps-For-Government': {
-   u'product': u'Google-Apps', u'aliases': [u'gafg', u'gsuite-government']},
+   u'product': u'Google-Apps', u'aliases': [u'gafg', u'gsuitegovernment', u'gsuitegov'], u'displayName': u'G Suite Government'},
   u'Google-Apps-For-Postini': {
-   u'product': u'Google-Apps', u'aliases': [u'gams', u'postini', u'gsuite-gams']},
+   u'product': u'Google-Apps', u'aliases': [u'gams', u'postini', u'gsuitegams', u'gsuitepostini', u'gsuitemessagesecurity'], u'displayName': u'G Suite Message Security'},
   u'Google-Apps-Lite': {
-   u'product': u'Google-Apps', u'aliases': [u'gal', u'lite', u'gsuite-lite']},
+   u'product': u'Google-Apps', u'aliases': [u'gal', u'lite', u'gsuitelite'], u'displayName': u'G Suite Lite'},
   u'Google-Apps-Unlimited': {
-   u'product': u'Google-Apps', u'aliases': [u'gau', u'unlimited', u'gsuite-business']},
+   u'product': u'Google-Apps', u'aliases': [u'gau', u'unlimited', u'gsuitebusiness'], u'displayName': u'G Suite Business'},
   u'1010020020': {
-   u'product': u'Google-Apps', u'aliases': [u'gae', u'enterprise', u'gsuite-enterprise']},
+   u'product': u'Google-Apps', u'aliases': [u'gae', u'enterprise', u'gsuiteenterprise'], u'displayName': u'G Suite Enterprise'},
   u'Google-Drive-storage-20GB': {
-   u'product': u'Google-Drive-storage', u'aliases': [u'drive-20gb', u'drive20gb', u'20gb']},
+   u'product': u'Google-Drive-storage', u'aliases': [u'drive20gb', u'20gb', u'googledrivestorage20gb'], u'displayName': u'Google Drive Storage 20GB'},
   u'Google-Drive-storage-50GB': {
-   u'product': u'Google-Drive-storage', u'aliases': [u'drive-50gb', u'drive50gb', u'50gb']},
+   u'product': u'Google-Drive-storage', u'aliases': [u'drive50gb', u'50gb', u'googledrivestorage50gb'], u'displayName': u'Google Drive Storage 50GB'},
   u'Google-Drive-storage-200GB': {
-   u'product': u'Google-Drive-storage', u'aliases': [u'drive-200gb', u'drive200gb', u'200gb']},
+   u'product': u'Google-Drive-storage', u'aliases': [u'drive200gb', u'200gb', u'googledrivestorage200gb'], u'displayName': u'Google Drive Storage 200GB'},
   u'Google-Drive-storage-400GB': {
-   u'product': u'Google-Drive-storage', u'aliases': [u'drive-400gb', u'drive400gb', u'400gb']},
+   u'product': u'Google-Drive-storage', u'aliases': [u'drive400gb', u'400gb', u'googledrivestorage400gb'], u'displayName': u'Google Drive Storage 400GB'},
   u'Google-Drive-storage-1TB': {
-   u'product': u'Google-Drive-storage', u'aliases': [u'drive-1tb', u'drive1tb', u'1tb']},
+   u'product': u'Google-Drive-storage', u'aliases': [u'drive1tb', u'1tb', u'googledrivestorage1tb'], u'displayName': u'Google Drive Storage 1TB'},
   u'Google-Drive-storage-2TB': {
-   u'product': u'Google-Drive-storage', u'aliases': [u'drive-2tb', u'drive2tb', u'2tb']},
+   u'product': u'Google-Drive-storage', u'aliases': [u'drive2tb', u'2tb', u'googledrivestorage2tb'], u'displayName': u'Google Drive Storage 2TB'},
   u'Google-Drive-storage-4TB': {
-   u'product': u'Google-Drive-storage', u'aliases': [u'drive-4tb', u'drive4tb', u'4tb']},
+   u'product': u'Google-Drive-storage', u'aliases': [u'drive4tb', u'4tb', u'googledrivestorage4tb'], u'displayName': u'Google Drive Storage 4TB'},
   u'Google-Drive-storage-8TB': {
-   u'product': u'Google-Drive-storage', u'aliases': [u'drive-8tb', u'drive8tb', u'8tb']},
+   u'product': u'Google-Drive-storage', u'aliases': [u'drive8tb', u'8tb', u'googledrivestorage8tb'], u'displayName': u'Google Drive Storage 8TB'},
   u'Google-Drive-storage-16TB': {
-   u'product': u'Google-Drive-storage', u'aliases': [u'drive-16tb', u'drive16tb', u'16tb']},
+   u'product': u'Google-Drive-storage', u'aliases': [u'drive16tb', u'16tb', u'googledrivestorage16tb'], u'displayName': u'Google Drive Storage 16TB'},
   u'Google-Vault': {
-   u'product': u'Google-Vault', u'aliases': [u'vault']},
+   u'product': u'Google-Vault', u'aliases': [u'vault', u'googlevault'], u'displayName': u'Google Vault'},
   u'Google-Vault-Former-Employee': {
-   u'product': u'Google-Vault', u'aliases': [u'vfe']},
+   u'product': u'Google-Vault', u'aliases': [u'vfe', u'googlevaultformeremployee'], u'displayName': u'Google Vault Former Employee'},
   u'Google-Coordinate': {
-   u'product': u'Google-Coordinate', u'aliases': [u'coordinate']},
+   u'product': u'Google-Coordinate', u'aliases': [u'coordinate', u'googlecoordinate'], u'displayName': u'Google Coordinate'},
   u'Google-Chrome-Device-Management': {
-   u'product': u'Google-Chrome-Device-Management', u'aliases': [u'chrome', u'cdm']}
+   u'product': u'Google-Chrome-Device-Management', u'aliases': [u'chrome', u'cdm', u'googlechromedevicemanagement'], u'displayName': u'Google Chrome Device Management'}
   }
 
 API_VER_MAPPING = {
