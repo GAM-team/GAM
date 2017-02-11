@@ -9,8 +9,10 @@ gam_license = u'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 GAM_URL = u'http://git.io/gam'
 GAM_INFO = u'GAM {0} - {1} / {2} / Python {3}.{4}.{5} {6} / {7} {8} /'.format(gam_version, GAM_URL,
-  gam_author, sys.version_info[0], sys.version_info[1], sys.version_info[2], sys.version_info[3],
-  platform.platform(), platform.machine())
+                                                                              gam_author,
+                                                                              sys.version_info[0], sys.version_info[1],
+                                                                              sys.version_info[2], sys.version_info[3],
+                                                                              platform.platform(), platform.machine())
 
 GAM_RELEASES = u'https://github.com/jay0lee/GAM/releases'
 GAM_WIKI = u'https://github.com/jay0lee/GAM/wiki'
@@ -42,43 +44,43 @@ FN_OAUTH2_TXT = u'oauth2.txt'
 MY_CUSTOMER = u'my_customer'
 SKUS = {
   u'Google-Apps-For-Business': {
-   u'product': u'Google-Apps', u'aliases': [u'gafb', u'gafw', u'basic', u'gsuitebasic'], u'displayName': u'G Suite Basic'},
+    u'product': u'Google-Apps', u'aliases': [u'gafb', u'gafw', u'basic', u'gsuitebasic'], u'displayName': u'G Suite Basic'},
   u'Google-Apps-For-Government': {
-   u'product': u'Google-Apps', u'aliases': [u'gafg', u'gsuitegovernment', u'gsuitegov'], u'displayName': u'G Suite Government'},
+    u'product': u'Google-Apps', u'aliases': [u'gafg', u'gsuitegovernment', u'gsuitegov'], u'displayName': u'G Suite Government'},
   u'Google-Apps-For-Postini': {
-   u'product': u'Google-Apps', u'aliases': [u'gams', u'postini', u'gsuitegams', u'gsuitepostini', u'gsuitemessagesecurity'], u'displayName': u'G Suite Message Security'},
+    u'product': u'Google-Apps', u'aliases': [u'gams', u'postini', u'gsuitegams', u'gsuitepostini', u'gsuitemessagesecurity'], u'displayName': u'G Suite Message Security'},
   u'Google-Apps-Lite': {
-   u'product': u'Google-Apps', u'aliases': [u'gal', u'lite', u'gsuitelite'], u'displayName': u'G Suite Lite'},
+    u'product': u'Google-Apps', u'aliases': [u'gal', u'lite', u'gsuitelite'], u'displayName': u'G Suite Lite'},
   u'Google-Apps-Unlimited': {
-   u'product': u'Google-Apps', u'aliases': [u'gau', u'unlimited', u'gsuitebusiness'], u'displayName': u'G Suite Business'},
+    u'product': u'Google-Apps', u'aliases': [u'gau', u'unlimited', u'gsuitebusiness'], u'displayName': u'G Suite Business'},
   u'1010020020': {
-   u'product': u'Google-Apps', u'aliases': [u'gae', u'enterprise', u'gsuiteenterprise'], u'displayName': u'G Suite Enterprise'},
+    u'product': u'Google-Apps', u'aliases': [u'gae', u'enterprise', u'gsuiteenterprise'], u'displayName': u'G Suite Enterprise'},
   u'Google-Drive-storage-20GB': {
-   u'product': u'Google-Drive-storage', u'aliases': [u'drive20gb', u'20gb', u'googledrivestorage20gb'], u'displayName': u'Google Drive Storage 20GB'},
+    u'product': u'Google-Drive-storage', u'aliases': [u'drive20gb', u'20gb', u'googledrivestorage20gb'], u'displayName': u'Google Drive Storage 20GB'},
   u'Google-Drive-storage-50GB': {
-   u'product': u'Google-Drive-storage', u'aliases': [u'drive50gb', u'50gb', u'googledrivestorage50gb'], u'displayName': u'Google Drive Storage 50GB'},
+    u'product': u'Google-Drive-storage', u'aliases': [u'drive50gb', u'50gb', u'googledrivestorage50gb'], u'displayName': u'Google Drive Storage 50GB'},
   u'Google-Drive-storage-200GB': {
-   u'product': u'Google-Drive-storage', u'aliases': [u'drive200gb', u'200gb', u'googledrivestorage200gb'], u'displayName': u'Google Drive Storage 200GB'},
+    u'product': u'Google-Drive-storage', u'aliases': [u'drive200gb', u'200gb', u'googledrivestorage200gb'], u'displayName': u'Google Drive Storage 200GB'},
   u'Google-Drive-storage-400GB': {
-   u'product': u'Google-Drive-storage', u'aliases': [u'drive400gb', u'400gb', u'googledrivestorage400gb'], u'displayName': u'Google Drive Storage 400GB'},
+    u'product': u'Google-Drive-storage', u'aliases': [u'drive400gb', u'400gb', u'googledrivestorage400gb'], u'displayName': u'Google Drive Storage 400GB'},
   u'Google-Drive-storage-1TB': {
-   u'product': u'Google-Drive-storage', u'aliases': [u'drive1tb', u'1tb', u'googledrivestorage1tb'], u'displayName': u'Google Drive Storage 1TB'},
+    u'product': u'Google-Drive-storage', u'aliases': [u'drive1tb', u'1tb', u'googledrivestorage1tb'], u'displayName': u'Google Drive Storage 1TB'},
   u'Google-Drive-storage-2TB': {
-   u'product': u'Google-Drive-storage', u'aliases': [u'drive2tb', u'2tb', u'googledrivestorage2tb'], u'displayName': u'Google Drive Storage 2TB'},
+    u'product': u'Google-Drive-storage', u'aliases': [u'drive2tb', u'2tb', u'googledrivestorage2tb'], u'displayName': u'Google Drive Storage 2TB'},
   u'Google-Drive-storage-4TB': {
-   u'product': u'Google-Drive-storage', u'aliases': [u'drive4tb', u'4tb', u'googledrivestorage4tb'], u'displayName': u'Google Drive Storage 4TB'},
+    u'product': u'Google-Drive-storage', u'aliases': [u'drive4tb', u'4tb', u'googledrivestorage4tb'], u'displayName': u'Google Drive Storage 4TB'},
   u'Google-Drive-storage-8TB': {
-   u'product': u'Google-Drive-storage', u'aliases': [u'drive8tb', u'8tb', u'googledrivestorage8tb'], u'displayName': u'Google Drive Storage 8TB'},
+    u'product': u'Google-Drive-storage', u'aliases': [u'drive8tb', u'8tb', u'googledrivestorage8tb'], u'displayName': u'Google Drive Storage 8TB'},
   u'Google-Drive-storage-16TB': {
-   u'product': u'Google-Drive-storage', u'aliases': [u'drive16tb', u'16tb', u'googledrivestorage16tb'], u'displayName': u'Google Drive Storage 16TB'},
+    u'product': u'Google-Drive-storage', u'aliases': [u'drive16tb', u'16tb', u'googledrivestorage16tb'], u'displayName': u'Google Drive Storage 16TB'},
   u'Google-Vault': {
-   u'product': u'Google-Vault', u'aliases': [u'vault', u'googlevault'], u'displayName': u'Google Vault'},
+    u'product': u'Google-Vault', u'aliases': [u'vault', u'googlevault'], u'displayName': u'Google Vault'},
   u'Google-Vault-Former-Employee': {
-   u'product': u'Google-Vault', u'aliases': [u'vfe', u'googlevaultformeremployee'], u'displayName': u'Google Vault Former Employee'},
+    u'product': u'Google-Vault', u'aliases': [u'vfe', u'googlevaultformeremployee'], u'displayName': u'Google Vault Former Employee'},
   u'Google-Coordinate': {
-   u'product': u'Google-Coordinate', u'aliases': [u'coordinate', u'googlecoordinate'], u'displayName': u'Google Coordinate'},
+    u'product': u'Google-Coordinate', u'aliases': [u'coordinate', u'googlecoordinate'], u'displayName': u'Google Coordinate'},
   u'Google-Chrome-Device-Management': {
-   u'product': u'Google-Chrome-Device-Management', u'aliases': [u'chrome', u'cdm', u'googlechromedevicemanagement'], u'displayName': u'Google Chrome Device Management'}
+    u'product': u'Google-Chrome-Device-Management', u'aliases': [u'chrome', u'cdm', u'googlechromedevicemanagement'], u'displayName': u'Google Chrome Device Management'}
   }
 
 API_VER_MAPPING = {
@@ -111,9 +113,11 @@ API_SCOPE_MAPPING = {
   u'plus': [u'https://www.googleapis.com/auth/plus.me',],
 }
 
-ADDRESS_FIELDS_PRINT_ORDER = [u'contactName', u'organizationName', 
-   u'addressLine1', u'addressLine2', u'addressLine3', u'locality',
-   u'region', u'postalCode', u'countryCode']
+ADDRESS_FIELDS_PRINT_ORDER = [
+  u'contactName', u'organizationName',
+  u'addressLine1', u'addressLine2', u'addressLine3',
+  u'locality', u'region', u'postalCode', u'countryCode',
+  ]
 
 ADDRESS_FIELDS_ARGUMENT_MAP = {
   u'contact': u'contactName', u'contactname': u'contactName',
@@ -252,8 +256,11 @@ DRIVEFILE_ORDERBY_CHOICES_MAP = {
   u'viewedbymedate': u'lastViewedByMeDate',
   }
 
-DELETE_DRIVEFILE_FUNCTION_TO_ACTION_MAP = {u'delete': u'purging',
-   u'trash': u'trashing', u'untrash': u'untrashing',}
+DELETE_DRIVEFILE_FUNCTION_TO_ACTION_MAP = {
+  u'delete': u'purging',
+  u'trash': u'trashing',
+  u'untrash': u'untrashing',
+  }
 
 DRIVEFILE_LABEL_CHOICES_MAP = {
   u'restricted': u'restricted',
@@ -398,8 +405,10 @@ FILTER_CRITERIA_CHOICES_MAP = {
   u'subject': u'subject',
   u'to': u'to',
   }
-FILTER_ACTION_CHOICES = [u'archive', u'forward', u'important', u'label',
-   u'markread', u'neverspam', u'notimportant', u'star', u'trash',]
+FILTER_ACTION_CHOICES = [
+  u'archive', u'forward', u'important', u'label',
+  u'markread', u'neverspam', u'notimportant', u'star', u'trash',
+  ]
 
 CROS_ARGUMENT_TO_PROPERTY_MAP = {
   u'activetimeranges': [u'activeTimeRanges.activeTime', u'activeTimeRanges.date'],
@@ -689,4 +698,3 @@ GAPI_USER_RATE_LIMIT_EXCEEDED = u'userRateLimitExceeded'
 GAPI_DEFAULT_RETRY_REASONS = [GAPI_QUOTA_EXCEEDED, GAPI_RATE_LIMIT_EXCEEDED, GAPI_USER_RATE_LIMIT_EXCEEDED, GAPI_BACKEND_ERROR, GAPI_INTERNAL_ERROR]
 GAPI_GMAIL_THROW_REASONS = [GAPI_SERVICE_NOT_AVAILABLE]
 GAPI_GPLUS_THROW_REASONS = [GAPI_SERVICE_NOT_AVAILABLE]
-

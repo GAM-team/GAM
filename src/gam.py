@@ -22,9 +22,6 @@ With GAM you can programatically create users, turn on/off services for users li
 For more information, see http://git.io/gam
 """
 
-from var import *
-import utils
-
 import sys
 import os
 import string
@@ -50,6 +47,9 @@ import oauth2client.client
 import oauth2client.service_account
 import oauth2client.file
 import oauth2client.tools
+
+import utils
+from var import *
 
 # Override some oauth2client.tools strings saving us a few GAM-specific mods to oauth2client
 oauth2client.tools._FAILED_START_MESSAGE = """
@@ -7714,7 +7714,7 @@ def _skuIdToDisplayName(skuId):
     return SKUS[skuId][u'displayName']
   except KeyError:
     return skuId
- 
+
 def doGetGroupInfo(group_name=None):
   cd = buildGAPIObject(u'directory')
   gs = buildGAPIObject(u'groupssettings')
