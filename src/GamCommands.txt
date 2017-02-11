@@ -17,17 +17,32 @@ Primitives
 <TrueValues> ::= true|on|yes|enabled|1
 <FalseValues>= false|off|no|disabled|0
 <DataTransferService> ::= googledrive|gdrive|drive|"drive and docs"
-<ProductID> ::= Google-Apps|Google-Drive-storage|Google-Vault|Google-Coordinate
-<SKUID> ::= gafb|gafw|basic|gsuite-basic|
-	    gafg|gsuite-government|
-	    gal|lite|gsuite-lite|
-	    gams|postini|gsuite-gams|
-	    gau|unlimited|gsuite-business|
-	    drive-20gb|drive20gb|20gb|drive-50gb|drive50gb|50gb|drive-200gb|drive200gb|200gb|drive-400gb|drive400gb|400gb|
-	    drive-1tb|drive1tb|1tb|drive-2tb|drive2tb|2tb|drive-4tb|drive4tb|4tb|drive-8tb|drive8tb|8tb|drive-16tb|drive16tb|16tb|
-	    vault|
-	    vfe|
-	    coordinate
+<ProductID> ::=
+	Google-Apps|
+	Google-Chrome-Device-Management|
+	Google-Coordinate|
+	Google-Drive-storage|
+	Google-Vault
+<SKUID> ::=
+	gafb|gafw|basic|gsuitebasic|Google-Apps-For-Business|
+	gafg|gsuitegovernment|gsuitegov|Google-Apps-For-Government|
+	gams|postini|gsuitegams|gsuitepostini|gsuitemessagesecurity|Google-Apps-For-Postini|
+	gal|lite|gsuitelite|Google-Apps-Lite|
+	gau|unlimited|gsuitebusiness|Google-Apps-Unlimited|
+	gae|enterprise|gsuiteenterprise|1010020020|
+	chrome|cdm|googlechromedevicemanagement|Google-Chrome-Device-Management|
+	coordinate|googlecoordinate|Google-Coordinate|
+	drive20gb|20gb|googledrivestorage20gb|Google-Drive-storage-20GB|
+	drive50gb|50gb|googledrivestorage50gb|Google-Drive-storage-50GB|
+	drive200gb|200gb|googledrivestorage200gb|Google-Drive-storage-200GB|
+	drive400gb|400gb|googledrivestorage400gb|Google-Drive-storage-400GB|
+	drive1tb|1tb|googledrivestorage1tb|Google-Drive-storage-1TB|
+	drive2tb|2tb|googledrivestorage2tb|Google-Drive-storage-2TB|
+	drive4tb|4tb|googledrivestorage4tb|Google-Drive-storage-4TB|
+	drive8tb|8tb|googledrivestorage8tb|Google-Drive-storage-8TB|
+	drive16tb|16tb|googledrivestorage16tb|Google-Drive-storage-16TB|
+	vault|googlevault|Google-Vault|
+	vfe|googlevaultformeremployee|Google-Vault-Former-Employee
 <Charset> ::= ascii|mbcs|utf-8|utf-8-sig|utf-16|<String>
 <FileFormat> ::= csv|html|txt|tsv|jpeg|jpg|png|svg|pdf|rtf|pptx|xlsx|docx|odt|ods|openoffice|ms|microsoft|micro$oft
 <Language> ::= ar|bn|bg|ca|zh-CN|zh-TW|hr|cs|da|nl|en|en-GB|et|fi|fr|de|el|gu|iw|is|in|it|ja|kn|ko|lv|lt|ms|ml|mr|no|or|fa|pl|pt-BR|pt-PT|ro|ru|sr|sk|sl|es|sv|tl|ta|te|th|tr|uk|ur|vi
@@ -775,9 +790,9 @@ gam <UserTypeEntity> delete|del alias|aliases
 
 gam <UserTypeEntity> delete|del group|groups
 
-gam <UserTypeEntity> add license <SKUID>
-gam <UserTypeEntity> update license <SKUID> [from] <SKUID>
-gam <UserTypeEntity> delete|del license <SKUID>
+gam <UserTypeEntity> add license <SKUID> [product|productid <ProductID>]
+gam <UserTypeEntity> update license <SKUID> [product|productid <ProductID>] [from] <SKUID>
+gam <UserTypeEntity> delete|del license <SKUID> [product|productid <ProductID>]
 
 gam <UserTypeEntity> update photo <FileNamePattern>
 gam <UserTypeEntity> delete|del photo
