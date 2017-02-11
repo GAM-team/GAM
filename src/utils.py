@@ -1,9 +1,9 @@
-from var import GM_Globals, GM_WINDOWS, GM_SYS_ENCODING
 import collections
 import re
 import sys
 from htmlentitydefs import name2codepoint
 from HTMLParser import HTMLParser
+from var import GM_Globals, GM_WINDOWS, GM_SYS_ENCODING
 
 def convertUTF8(data):
   if isinstance(data, str):
