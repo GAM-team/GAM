@@ -4351,18 +4351,14 @@ def getImap(users):
         print u'User: {0}, IMAP Enabled: {1} ({2}/{3})'.format(user, enabled, i, count)
 
 def getProductAndSKU(sku):
-  product = None
   l_sku = sku.lower().replace(u'-', u'').replace(u' ', u'')
   for a_sku, sku_values in SKUS.items():
-    if l_sku == a_sku.lower().replace(u'-', u'') or l_sku in sku_values[u'aliases']:
-      sku = a_sku
-      product = sku_values[u'product']
-      break
-  if not product:
-    try:
-      product = re.search(u'^([A-Z,a-z]*-[A-Z,a-z]*)', sku).group(1)
-    except AttributeError:
-      product = sku
+    if l_sku == a_sku.lower().replace(u'-', u'') or l_sku in sku_values[u'aliases'] or l_sku == sku_values[u'displayName'].lower().replace(u' ', u''):
+      return (sku_values[u'product'], a_sku)
+  try:
+    product = re.search(u'^([A-Z,a-z]*-[A-Z,a-z]*)', sku).group(1)
+  except AttributeError:
+    product = sku
   return (product, sku)
 
 def doLicense(users, operation):
@@ -8786,7 +8782,7 @@ def doPrintUsers():
         for u_license in licenses:
           if u_license[u'userId'].lower() == user[u'primaryEmail'].lower():
             user_licenses.append(u_license[u'skuId'])
-        user.update(Licenses=u' '.join(user_licenses))
+        user.update(Licenses=u','.join(user_licenses))
   writeCSVfile(csvRows, titles, u'Users', todrive)
 
 GROUP_ARGUMENT_TO_PROPERTY_TITLE_MAP = {
