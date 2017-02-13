@@ -6576,7 +6576,7 @@ and accept the Terms of Service (ToS). As soon as you've accepted the ToS popup,
   print u'Creating Service Account'
   service_account = callGAPI(iam.projects().serviceAccounts(), u'create', name=u'projects/%s' % project_id,
                              body={u'accountId': project_id, u'serviceAccount': {u'displayName': u'GAM Project'}})
-  body = {u'privateKeyType': u'TYPE_GOOGLE_CREDENTIALS_FILE', u'keyAlgorithm': u'KEY_ALG_RSA_4096'}
+  body = {u'privateKeyType': u'TYPE_GOOGLE_CREDENTIALS_FILE', u'keyAlgorithm': u'KEY_ALG_RSA_2048'}
   key = callGAPI(iam.projects().serviceAccounts().keys(), u'create', name=service_account[u'name'], body=body)
   oauth2service_data = base64.b64decode(key[u'privateKeyData'])
   service_account_file = GC_Values[GC_OAUTH2SERVICE_JSON]
