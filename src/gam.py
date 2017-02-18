@@ -4970,8 +4970,6 @@ def doProcessMessagesOrThreads(users, function, unit=u'messages'):
     kwargs = {u'body': {}}
     for my_key in body:
       kwargs[u'body'][my_key] = labelsToLabelIds(gmail, body[my_key])
-    if not kwargs[u'body']:
-      del kwargs[u'body']
     i = 0
     if unit == u'messages' and function in [u'delete', u'modify']:
       batchFunction = u'batch%s' % function.title()
@@ -4990,6 +4988,8 @@ def doProcessMessagesOrThreads(users, function, unit=u'messages'):
         processed_messages += len(id_batch)
         print u'%s %s of %s messages' % (function, processed_messages, result_count)
       continue
+    if not kwargs[u'body']:
+      del kwargs[u'body']
     for a_unit in listResult:
       i += 1
       print u' %s %s %s for user %s (%s/%s)' % (function, unit, a_unit[u'id'], user, i, result_count)
