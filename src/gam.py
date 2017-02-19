@@ -10016,6 +10016,7 @@ def run_batch(items):
       if item[0] == u'commit-batch':
         sys.stderr.write(u'commit-batch - waiting for running processes to finish before proceeding...')
         pool.close()
+        pool.join()
         pool = Pool(num_worker_threads, init_gam_worker)
         sys.stderr.write(u'done with commit-batch\n')
         continue
