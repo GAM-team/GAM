@@ -35,6 +35,7 @@ import mimetypes
 import platform
 import random
 import re
+import signal
 import socket
 import StringIO
 
@@ -9999,23 +10000,43 @@ gam create project
   else:
     print u'It looks like you\'ve already authorized GAM. Refusing to overwrite existing file:\n\n%s' % GC_Values[GC_OAUTH2_TXT]
 
+def init_gam_worker():
+  signal.signal(signal.SIGINT, signal.SIG_IGN)
+
 def run_batch(items):
   from multiprocessing import Pool
   if not items:
     return
   num_worker_threads = min(len(items), GC_Values[GC_NUM_THREADS])
-  pool = Pool(processes=num_worker_threads)
+  pool = Pool(num_worker_threads, init_gam_worker)
   sys.stderr.write(u'Using %s processes...\n' % num_worker_threads)
-  for item in items:
-    if item[0] == u'commit-batch':
-      sys.stderr.write(u'commit-batch - waiting for running processes to finish before proceeding...')
-      pool.close()
-      pool.join()
-      pool = Pool(processes=num_worker_threads)
-      sys.stderr.write(u'done with commit-batch\n')
-      continue
-    pool.apply_async(ProcessGAMCommandMulti, [item])
-  pool.close()
+  try:
+    results = []
+    for item in items:
+      if item[0] == u'commit-batch':
+        sys.stderr.write(u'commit-batch - waiting for running processes to finish before proceeding...')
+        pool.close()
+        pool = Pool(num_worker_threads, init_gam_worker)
+        sys.stderr.write(u'done with commit-batch\n')
+        continue
+      results.append(pool.apply_async(ProcessGAMCommandMulti, [item]))
+    pool.close()
+    num_total = len(results)
+    i = 1
+    while True:
+      num_done = 0
+      for r in results:
+        if r.ready():
+          num_done += 1
+      if num_done == num_total:
+        break
+      i += 1
+      if i == 20:
+        print u'Finished %s of %s processes.' % (num_done, num_total)
+        i = 1
+      time.sleep(1)
+  except KeyboardInterrupt:
+    pool.terminate()
   pool.join()
 
 #
