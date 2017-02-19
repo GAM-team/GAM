@@ -7511,7 +7511,7 @@ def doGetUserInfo(user_email=None):
       getLicenses = False
       i += 1
     elif myarg in [u'sku', u'skus']:
-      skus = sys.argv[i+1].replace(u',', u' ').split()
+      skus = sys.argv[i+1].split(u',')
       i += 2
     elif myarg == u'noschemas':
       getSchemas = False
@@ -8777,13 +8777,11 @@ def doPrintUsers():
   if getLicenseFeed:
     titles.append(u'Licenses')
     licenses = doPrintLicenses(return_list=True)
-    if len(licenses) > 1:
+    if licenses:
       for user in csvRows:
-        user_licenses = []
-        for u_license in licenses:
-          if u_license[u'userId'].lower() == user[u'primaryEmail'].lower():
-            user_licenses.append(u_license[u'skuId'])
-        user.update(Licenses=u','.join(user_licenses))
+        u_licenses = licenses.get(user[u'primaryEmail'].lower())
+        if u_licenses:
+          user[u'Licenses'] = u','.join([_skuIdToDisplayName(skuId) for skuId in u_licenses])
   writeCSVfile(csvRows, titles, u'Users', todrive)
 
 GROUP_ARGUMENT_TO_PROPERTY_TITLE_MAP = {
@@ -9443,23 +9441,24 @@ def doPrintLicenses(return_list=False, skus=None):
       products.append(sku[u'product'])
   products.sort()
   licenses = []
-  titles = [u'userId', u'productId', u'skuId']
-  csvRows = []
-  todrive = False
-  i = 3
-  while i < len(sys.argv) and not return_list:
-    if sys.argv[i].lower() == u'todrive':
-      todrive = True
-      i += 1
-    elif sys.argv[i].lower() in [u'products', u'product']:
-      products = sys.argv[i+1].replace(u',', u' ').split()
-      i += 2
-    elif sys.argv[i].lower() in [u'sku', u'skus']:
-      skus = sys.argv[i+1].replace(u',', u' ').split()
-      i += 2
-    else:
-      print u'ERROR: %s is not a valid argument for "gam print licenses"' % sys.argv[i]
-      sys.exit(2)
+  if not return_list:
+    titles = [u'userId', u'productId', u'skuId']
+    csvRows = []
+    todrive = False
+    i = 3
+    while i < len(sys.argv):
+      if sys.argv[i].lower() == u'todrive':
+        todrive = True
+        i += 1
+      elif sys.argv[i].lower() in [u'products', u'product']:
+        products = sys.argv[i+1].split(u',')
+        i += 2
+      elif sys.argv[i].lower() in [u'sku', u'skus']:
+        skus = sys.argv[i+1].split(u',')
+        i += 2
+      else:
+        print u'ERROR: %s is not a valid argument for "gam print licenses"' % sys.argv[i]
+        sys.exit(2)
   if skus:
     for sku in skus:
       product, sku = getProductAndSKU(sku)
@@ -9477,19 +9476,20 @@ def doPrintLicenses(return_list=False, skus=None):
                                   customerId=GC_Values[GC_DOMAIN], productId=productId, fields=u'items(productId,skuId,userId),nextPageToken')
       except googleapiclient.errors.HttpError:
         pass
-  for u_license in licenses:
-    if u'skuId' in u_license:
-      u_license[u'skuId'] = _skuIdToDisplayName(u_license[u'skuId'])
-    a_license = {}
-    for title in u_license:
-      if title in [u'kind', u'etags', u'selfLink']:
-        continue
-      if title not in titles:
-        titles.append(title)
-      a_license[title] = u_license[title]
-    csvRows.append(a_license)
   if return_list:
-    return csvRows
+    userSKUIds = {}
+    for u_license in licenses:
+      userId = u_license.get(u'userId', u'').lower()
+      skuId = u_license.get(u'skuId')
+      if userId and skuId:
+        userSKUIds.setdefault(userId, [])
+        userSKUIds[userId].append(skuId)
+    return userSKUIds
+  for u_license in licenses:
+    userId = u_license.get(u'userId', u'').lower()
+    skuId = u_license.get(u'skuId', u'')
+    csvRows.append({u'userId': userId, u'productId': u_license.get(u'productId', u''),
+                    u'skuId': _skuIdToDisplayName(skuId)})
   writeCSVfile(csvRows, titles, u'Licenses', todrive)
 
 RESCAL_DFLTFIELDS = [u'id', u'name', u'email',]
@@ -9627,13 +9627,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
     if not silent:
       sys.stderr.write(u"done.\r\n")
   elif entity_type in [u'license', u'licenses', u'licence', u'licences']:
-    users = []
-    licenses = doPrintLicenses(return_list=True, skus=entity.split(u','))
-    for row in licenses:
-      try:
-        users.append(row[u'userId'])
-      except KeyError:
-        pass
+    users = doPrintLicenses(return_list=True, skus=entity.split(u',')).keys()
   elif entity_type == u'file':
     users = []
     f = openFile(entity)
