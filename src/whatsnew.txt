@@ -1,3 +1,11 @@
+GAM 4.12
+ - Realtime 2SV user status in gam info user and gam print users. Thanks hajdbo!
+ - Reseller API support. Create and manage customers and subscriptions.
+ - Delete or modify Gmail threads. Improved message delete/modify performance.
+ - Support for the new G Suite Enterprise license
+ - Manage S/MIME certificates for G Suite Enterprise users
+ - Many fixes and improvements by Ross.
+
 GAM 4.11
  - Allow newlines in calendar event descriptions (Ross)
  - All HTTP requests should now honor SSL verify setting, debug, etc
