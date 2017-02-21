@@ -10014,11 +10014,11 @@ def run_batch(items):
     results = []
     for item in items:
       if item[0] == u'commit-batch':
-        sys.stderr.write(u'commit-batch - waiting for running processes to finish before proceeding...')
+        sys.stderr.write(u'commit-batch - waiting for running processes to finish before proceeding\n')
         pool.close()
         pool.join()
         pool = Pool(num_worker_threads, init_gam_worker)
-        sys.stderr.write(u'done with commit-batch\n')
+        sys.stderr.write(u'commit-batch - running processes finished, proceeding\n')
         continue
       results.append(pool.apply_async(ProcessGAMCommandMulti, [item]))
     pool.close()
@@ -10138,22 +10138,34 @@ def ProcessGAMCommand(args):
       f = openFile(filename)
       batchFile = UTF8Recoder(f, encoding) if encoding != u'utf-8' else f
       items = []
+      errors = 0
       for line in batchFile:
-        argv = shlex.split(line)
-        if not argv:
+        try:
+          argv = shlex.split(line)
+        except ValueError as e:
+          sys.stderr.write(utils.convertUTF8(u'Command: >>>{0}<<<\n'.format(line.strip())))
+          sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, e.message))
+          errors += 1
           continue
-        cmd = argv[0].strip().lower()
-        if (not cmd) or cmd.startswith(u'#') or ((len(argv) == 1) and (cmd != u'commit-batch')):
-          continue
-        if cmd == u'gam':
-          items.append([arg.encode(GM_Globals[GM_SYS_ENCODING]) for arg in argv])
-        elif cmd == u'commit-batch':
-          items.append([cmd])
-        else:
-          print u'ERROR: "%s" is not a valid gam command' % line.strip()
+        if len(argv) > 0:
+          cmd = argv[0].strip().lower()
+          if (not cmd) or cmd.startswith(u'#') or ((len(argv) == 1) and (cmd != u'commit-batch')):
+            continue
+          if cmd == u'gam':
+            items.append([arg.encode(GM_Globals[GM_SYS_ENCODING]) for arg in argv])
+          elif cmd == u'commit-batch':
+            items.append([cmd])
+          else:
+            sys.stderr.write(utils.convertUTF8(u'Command: >>>{0}<<<\n'.format(line.strip())))
+            sys.stderr.write(u'{0}Invalid: Expected <gam|commit-batch>\n'.format(ERROR_PREFIX))
+            errors += 1
       closeFile(f)
-      run_batch(items)
-      sys.exit(0)
+      if errors == 0:
+        run_batch(items)
+        sys.exit(0)
+      else:
+        sys.stderr.write(u'{0}batch file: {1}, not processed, {2} error{3}\n'.format(ERROR_PREFIX, filename, errors, [u'', u's'][errors != 1]))
+        sys.exit(2)
     elif command == u'csv':
       if httplib2.debuglevel > 0:
         print u'Sorry, CSV commands are not compatible with debug. Delete debug.gam and try again.'
