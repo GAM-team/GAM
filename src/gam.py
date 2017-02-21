@@ -4111,6 +4111,8 @@ def downloadDriveFile(users):
         continue
       file_title = result[u'title']
       safe_file_title = u''.join(c for c in file_title if c in safe_filename_chars)
+      if len(safe_file_title) < 1:
+        safe_file_title = fileId
       filename = os.path.join(targetFolder, safe_file_title)
       y = 0
       while True:
