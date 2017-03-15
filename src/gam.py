@@ -19,7 +19,7 @@
 u"""GAM is a command line tool which allows Administrators to control their G Suite domain and accounts.
 
 With GAM you can programatically create users, turn on/off services for users like POP and Forwarding and much more.
-For more information, see http://git.io/gam
+For more information, see https://git.io/gam
 """
 
 import sys

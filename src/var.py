@@ -7,7 +7,7 @@ gam_author = u'Jay Lee <jay0lee@gmail.com>'
 gam_version = u'4.12'
 gam_license = u'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
-GAM_URL = u'http://git.io/gam'
+GAM_URL = u'https://git.io/gam'
 GAM_INFO = u'GAM {0} - {1} / {2} / Python {3}.{4}.{5} {6} / {7} {8} /'.format(gam_version, GAM_URL,
                                                                               gam_author,
                                                                               sys.version_info[0], sys.version_info[1],
