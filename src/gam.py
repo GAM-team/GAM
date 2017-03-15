@@ -612,7 +612,7 @@ def callGAPI(service, function,
     except TypeError as e:
       systemErrorExit(4, e)
 
-def callGAPIpages(service, function, items,
+def callGAPIpages(service, function, items=u'items',
                   page_message=None, message_attribute=None,
                   soft_errors=False, throw_reasons=None, retry_reasons=None,
                   **kwargs):
@@ -809,6 +809,10 @@ def buildCalendarGAPIObject(calname):
 def buildDriveGAPIObject(user):
   userEmail = convertUserUIDtoEmailAddress(user)
   return (userEmail, buildGAPIServiceObject(u'drive', userEmail))
+
+def buildDrive3GAPIObject(user):
+  userEmail = convertUserUIDtoEmailAddress(user)
+  return (userEmail, buildGAPIServiceObject(u'drive3', userEmail))
 
 def buildGmailGAPIObject(user):
   userEmail = convertUserUIDtoEmailAddress(user)
@@ -3455,11 +3459,11 @@ def printPermission(permission):
 def showDriveFileACL(users):
   fileId = sys.argv[5]
   for user in users:
-    user, drive = buildDriveGAPIObject(user)
+    user, drive = buildDrive3GAPIObject(user)
     if not drive:
       continue
-    feed = callGAPI(drive.permissions(), u'list', fileId=fileId)
-    for permission in feed[u'items']:
+    feed = callGAPIpages(drive.permissions(), u'list', items=u'permissions', fileId=fileId, fields=u'*', supportsTeamDrives=True)
+    for permission in feed:
       printPermission(permission)
       print u''
 
@@ -4160,7 +4164,7 @@ def showDriveFileInfo(users):
     user, drive = buildDriveGAPIObject(user)
     if not drive:
       continue
-    feed = callGAPI(drive.files(), u'get', fileId=fileId, fields=fields)
+    feed = callGAPI(drive.files(), u'get', fileId=fileId, fields=fields, supportsTeamDrives=True)
     print_json(None, feed)
 
 def showDriveFileRevisions(users):
@@ -6631,6 +6635,15 @@ and accept the Terms of Service (ToS). As soon as you've accepted the ToS popup,
 '''
   raw_input(u'Press Enter when done...')
   print u'That\'s it! Your GAM Project is created and ready to use.'
+
+def doCreateTeamDrive(users):
+  import uuid
+  body = {u'name': sys.argv[5]}
+  for user in users:
+    drive = buildGAPIServiceObject(u'drive3', user)
+    requestId = unicode(uuid.uuid4())
+    result = callGAPI(drive.teamdrives(), u'create', requestId=requestId, body=body, fields=u'id')
+    print u'Created Team Drive %s with id %s' % (body[u'name'], result[u'id'])
 
 def doCreateUser():
   cd = buildGAPIObject(u'directory')
@@ -10718,6 +10731,8 @@ def ProcessGAMCommand(args):
         addUpdateSendAs(users, 5, True)
       elif addWhat == u'smime':
         addSmime(users)
+      elif addWhat == u'teamdrive':
+        doCreateTeamDrive(users)
       else:
         print u'ERROR: %s is not a valid argument for "gam <users> add"' % addWhat
         sys.exit(2)
