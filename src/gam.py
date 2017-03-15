@@ -673,6 +673,8 @@ def getAPIVersion(api):
   version = API_VER_MAPPING.get(api, u'v1')
   if api in [u'directory', u'reports', u'datatransfer']:
     api = u'admin'
+  elif api == u'drive3':
+    api = u'drive'
   return (api, version, u'{0}-{1}'.format(api, version))
 
 def readDiscoveryFile(api_version):

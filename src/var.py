@@ -91,6 +91,7 @@ API_VER_MAPPING = {
   u'datatransfer': u'datatransfer_v1',
   u'directory': u'directory_v1',
   u'drive': u'v2',
+  u'drive3': u'v3',
   u'email-settings': u'v2',
   u'gmail': u'v1',
   u'groupssettings': u'v1',
