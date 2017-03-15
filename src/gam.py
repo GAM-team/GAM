@@ -7513,7 +7513,7 @@ def doGetUserInfo(user_email=None):
       getLicenses = False
       i += 1
     elif myarg in [u'sku', u'skus']:
-      skus = sys.argv[i+1].replace(u',', u' ').split()
+      skus = sys.argv[i+1].split(u',')
       i += 2
     elif myarg == u'noschemas':
       getSchemas = False
@@ -8778,14 +8778,12 @@ def doPrintUsers():
       user_count += 1
   if getLicenseFeed:
     titles.append(u'Licenses')
-    licenses = doPrintLicenses(return_list=True)
-    if len(licenses) > 1:
+    licenses = doPrintLicenses(returnFields=u'userId,skuId')
+    if licenses:
       for user in csvRows:
-        user_licenses = []
-        for u_license in licenses:
-          if u_license[u'userId'].lower() == user[u'primaryEmail'].lower():
-            user_licenses.append(u_license[u'skuId'])
-        user.update(Licenses=u','.join(user_licenses))
+        u_licenses = licenses.get(user[u'primaryEmail'].lower())
+        if u_licenses:
+          user[u'Licenses'] = u','.join([_skuIdToDisplayName(skuId) for skuId in u_licenses])
   writeCSVfile(csvRows, titles, u'Users', todrive)
 
 GROUP_ARGUMENT_TO_PROPERTY_TITLE_MAP = {
@@ -9437,61 +9435,75 @@ def doPrintCrosDevices():
     sortCSVTitles([u'deviceId',], titles)
   writeCSVfile(csvRows, titles, u'CrOS', todrive)
 
-def doPrintLicenses(return_list=False, skus=None):
+def doPrintLicenses(returnFields=None, skus=None):
   lic = buildGAPIObject(u'licensing')
   products = []
-  for sku in SKUS.values():
-    if sku[u'product'] not in products:
-      products.append(sku[u'product'])
-  products.sort()
   licenses = []
-  titles = [u'userId', u'productId', u'skuId']
-  csvRows = []
-  todrive = False
-  i = 3
-  while i < len(sys.argv) and not return_list:
-    if sys.argv[i].lower() == u'todrive':
-      todrive = True
-      i += 1
-    elif sys.argv[i].lower() in [u'products', u'product']:
-      products = sys.argv[i+1].replace(u',', u' ').split()
-      i += 2
-    elif sys.argv[i].lower() in [u'sku', u'skus']:
-      skus = sys.argv[i+1].replace(u',', u' ').split()
-      i += 2
-    else:
-      print u'ERROR: %s is not a valid argument for "gam print licenses"' % sys.argv[i]
-      sys.exit(2)
+  if not returnFields:
+    titles = [u'userId', u'productId', u'skuId']
+    csvRows = []
+    todrive = False
+    i = 3
+    while i < len(sys.argv):
+      if sys.argv[i].lower() == u'todrive':
+        todrive = True
+        i += 1
+      elif sys.argv[i].lower() in [u'products', u'product']:
+        products = sys.argv[i+1].split(u',')
+        i += 2
+      elif sys.argv[i].lower() in [u'sku', u'skus']:
+        skus = sys.argv[i+1].split(u',')
+        i += 2
+      else:
+        print u'ERROR: %s is not a valid argument for "gam print licenses"' % sys.argv[i]
+        sys.exit(2)
+    fields = u'nextPageToken,items(productId,skuId,userId)'
+  else:
+    fields = u'nextPageToken,items({0})'.format(returnFields)
   if skus:
     for sku in skus:
       product, sku = getProductAndSKU(sku)
       page_message = u'Got %%%%total_items%%%% Licenses for %s...\n' % sku
       try:
         licenses += callGAPIpages(lic.licenseAssignments(), u'listForProductAndSku', u'items', throw_reasons=[u'invalid', u'forbidden'], page_message=page_message,
-                                  customerId=GC_Values[GC_DOMAIN], productId=product, skuId=sku, fields=u'items(productId,skuId,userId),nextPageToken')
+                                  customerId=GC_Values[GC_DOMAIN], productId=product, skuId=sku, fields=fields)
       except googleapiclient.errors.HttpError:
         pass
   else:
+    if not products:
+      for sku in SKUS.values():
+        if sku[u'product'] not in products:
+          products.append(sku[u'product'])
+      products.sort()
     for productId in products:
       page_message = u'Got %%%%total_items%%%% Licenses for %s...\n' % productId
       try:
         licenses += callGAPIpages(lic.licenseAssignments(), u'listForProduct', u'items', throw_reasons=[u'invalid', u'forbidden'], page_message=page_message,
-                                  customerId=GC_Values[GC_DOMAIN], productId=productId, fields=u'items(productId,skuId,userId),nextPageToken')
+                                  customerId=GC_Values[GC_DOMAIN], productId=productId, fields=fields)
       except googleapiclient.errors.HttpError:
         pass
+  if returnFields:
+    if returnFields == u'userId':
+      userIds = []
+      for u_license in licenses:
+        userId = u_license.get(u'userId', u'').lower()
+        if userId:
+          userIds.append(userId)
+      return userIds
+    else:
+      userSkuIds = {}
+      for u_license in licenses:
+        userId = u_license.get(u'userId', u'').lower()
+        skuId = u_license.get(u'skuId')
+        if userId and skuId:
+          userSkuIds.setdefault(userId, [])
+          userSkuIds[userId].append(skuId)
+      return userSkuIds
   for u_license in licenses:
-    if u'skuId' in u_license:
-      u_license[u'skuId'] = _skuIdToDisplayName(u_license[u'skuId'])
-    a_license = {}
-    for title in u_license:
-      if title in [u'kind', u'etags', u'selfLink']:
-        continue
-      if title not in titles:
-        titles.append(title)
-      a_license[title] = u_license[title]
-    csvRows.append(a_license)
-  if return_list:
-    return csvRows
+    userId = u_license.get(u'userId', u'').lower()
+    skuId = u_license.get(u'skuId', u'')
+    csvRows.append({u'userId': userId, u'productId': u_license.get(u'productId', u''),
+                    u'skuId': _skuIdToDisplayName(skuId)})
   writeCSVfile(csvRows, titles, u'Licenses', todrive)
 
 RESCAL_DFLTFIELDS = [u'id', u'name', u'email',]
@@ -9629,13 +9641,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
     if not silent:
       sys.stderr.write(u"done.\r\n")
   elif entity_type in [u'license', u'licenses', u'licence', u'licences']:
-    users = []
-    licenses = doPrintLicenses(return_list=True, skus=entity.split(u','))
-    for row in licenses:
-      try:
-        users.append(row[u'userId'])
-      except KeyError:
-        pass
+    users = doPrintLicenses(returnFields=u'userId', skus=entity.split(u','))
   elif entity_type == u'file':
     users = []
     f = openFile(entity)
