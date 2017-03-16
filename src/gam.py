@@ -3490,7 +3490,7 @@ def delDriveFileACL(users):
       permissionId = callGAPI(drive.permissions(), u'getIdForEmail', email=permissionId, fields=u'id')[u'id']
       isEmail = False
     print u'Removing permission for %s from %s' % (permissionId, fileId)
-    callGAPI(drive.permissions(), u'delete', fileId=fileId, permissionId=permissionId)
+    callGAPI(drive.permissions(), u'delete', fileId=fileId, permissionId=permissionId, supportsTeamDrives=True)
 
 def addDriveFileACL(users):
   fileId = sys.argv[5]
@@ -3510,8 +3510,8 @@ def addDriveFileACL(users):
       i += 1
     elif sys.argv[i].lower() == u'role':
       body[u'role'] = sys.argv[i+1]
-      if body[u'role'] not in [u'reader', u'commenter', u'writer', u'owner', u'editor']:
-        print u'ERROR: role must be reader, commenter, writer or owner; got %s' % body[u'role']
+      if body[u'role'] not in [u'reader', u'commenter', u'writer', u'owner', u'organizer', u'editor']:
+        print u'ERROR: role must be reader, commenter, writer, organizer, or owner; got %s' % body[u'role']
         sys.exit(2)
       if body[u'role'] == u'commenter':
         body[u'role'] = u'reader'
@@ -3533,7 +3533,7 @@ def addDriveFileACL(users):
     user, drive = buildDriveGAPIObject(user)
     if not drive:
       continue
-    result = callGAPI(drive.permissions(), u'insert', fileId=fileId, sendNotificationEmails=sendNotificationEmails, emailMessage=emailMessage, body=body)
+    result = callGAPI(drive.permissions(), u'insert', fileId=fileId, sendNotificationEmails=sendNotificationEmails, emailMessage=emailMessage, body=body, supportsTeamDrives=True)
     printPermission(result)
 
 def updateDriveFileACL(users):
@@ -3982,7 +3982,7 @@ def doUpdateDriveFile(users):
       for fileId in fileIdSelection[u'fileIds']:
         if media_body:
           result = callGAPI(drive.files(), u'update',
-                            fileId=fileId, convert=parameters[DFA_CONVERT], ocr=parameters[DFA_OCR], ocrLanguage=parameters[DFA_OCRLANGUAGE], media_body=media_body, body=body, fields=u'id')
+                            fileId=fileId, convert=parameters[DFA_CONVERT], ocr=parameters[DFA_OCR], ocrLanguage=parameters[DFA_OCRLANGUAGE], media_body=media_body, body=body, fields=u'id', supportsTeamDrives=True)
           print u'Successfully updated %s drive file with content from %s' % (result[u'id'], parameters[DFA_LOCALFILENAME])
         else:
           result = callGAPI(drive.files(), u'patch',
@@ -6644,6 +6644,39 @@ def doCreateTeamDrive(users):
     requestId = unicode(uuid.uuid4())
     result = callGAPI(drive.teamdrives(), u'create', requestId=requestId, body=body, fields=u'id')
     print u'Created Team Drive %s with id %s' % (body[u'name'], result[u'id'])
+
+def doUpdateTeamDrive(users):
+  teamDriveId = sys.argv[5]
+  body = {}
+  i = 6
+  while i < len(sys.argv):
+    if sys.argv[i].lower() == u'name':
+      body[u'name'] = sys.argv[i+1]
+      i += 2
+    else:
+      print u'ERROR: %s is not a valid argument for "gam <users> update drivefile"'
+      sys.exit(3)
+  if not body:
+    print u'ERROR: nothing to update. Need at least a name argument.'
+    print body
+    sys.exit(4)
+  for user in users:
+    drive = buildGAPIServiceObject(u'drive3', user)
+    result = callGAPI(drive.teamdrives(), u'update', body=body, teamDriveId=teamDriveId, fields=u'')
+    print u'Updated Team Drive %s' % (teamDriveId)
+
+def printShowTeamDrives(users):
+  for user in users:
+    user, drive = buildDrive3GAPIObject(user)
+    results = callGAPIpages(drive.teamdrives(), u'list', items=u'teamDrives', fields=u'*')
+    print_json(None, results)
+
+def doDeleteTeamDrive(users):
+  teamDriveId = sys.argv[5]
+  for user in users:
+    user, drive = buildDrive3GAPIObject(user)
+    callGAPI(drive.teamdrives(), u'delete', teamDriveId=teamDriveId)
+    print u'Deleted Team Drive %s' % (teamDriveId)
 
 def doCreateUser():
   cd = buildGAPIObject(u'directory')
@@ -10636,6 +10669,8 @@ def ProcessGAMCommand(args):
         printShowSmime(users, True)
       elif printWhat in [u'token', u'tokens', u'oauth', u'3lo']:
         printShowTokens(5, u'users', users, True)
+      elif printWhat in [u'teamdrive', u'teamdrives']:
+        printShowTeamDrives(users)
       else:
         print u'ERROR: %s is not a valid argument for "gam <users> print"' % printWhat
         sys.exit(2)
@@ -10706,6 +10741,8 @@ def ProcessGAMCommand(args):
         deleteSendAs(users)
       elif delWhat == u'smime':
         deleteSmime(users)
+      elif delWhat == u'teamdrive':
+        doDeleteTeamDrive(users)
       else:
         print u'ERROR: %s is not a valid argument for "gam <users> delete"' % delWhat
         sys.exit(2)
@@ -10762,6 +10799,8 @@ def ProcessGAMCommand(args):
         addUpdateSendAs(users, 5, False)
       elif updateWhat == u'smime':
         updateSmime(users)
+      elif updateWhat == u'teamdrive':
+        doUpdateTeamDrive(users)
       else:
         print u'ERROR: %s is not a valid argument for "gam <users> update"' % updateWhat
         sys.exit(2)
