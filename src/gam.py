@@ -30,6 +30,7 @@ import base64
 import codecs
 import csv
 import datetime
+import httplib
 import json
 import mimetypes
 import platform
@@ -380,6 +381,7 @@ def SetGlobalVariables():
   _getOldSignalFile(GC_NO_VERIFY_SSL, u'noverifyssl.txt')
   _getOldSignalFile(GC_NO_BROWSER, u'nobrowser.txt')
   _getOldSignalFile(GC_NO_CACHE, u'nocache.txt')
+  _getOldSignalFile(GC_CACHE_DISCOVERY_ONLY, u'allcache.txt', trueValue=False, falseValue=True)
   _getOldSignalFile(GC_NO_UPDATE_CHECK, u'noupdatecheck.txt')
 # Assign directories first
   for itemName in GC_VAR_INFO:
@@ -406,7 +408,11 @@ def SetGlobalVariables():
     ea_config.read(os.path.join(GC_Values[GC_CONFIG_DIR], FN_EXTRA_ARGS_TXT))
     GM_Globals[GM_EXTRA_ARGS_DICT].update(dict(ea_config.items(u'extra-args')))
   if GC_Values[GC_NO_CACHE]:
-    GC_Values[GC_CACHE_DIR] = None
+    GM_Globals[GM_CACHE_DIR] = None
+    GM_Globals[GM_CACHE_DISCOVERY_ONLY] = False
+  else:
+    GM_Globals[GM_CACHE_DIR] = GC_Values[GC_CACHE_DIR]
+    GM_Globals[GM_CACHE_DISCOVERY_ONLY] = GC_Values[GC_CACHE_DISCOVERY_ONLY]
   return True
 
 def doGAMCheckForUpdates(forceCheck=False):
@@ -485,7 +491,7 @@ def doGAMVersion(checkForArgs=True):
     doGAMCheckForUpdates(forceCheck=True)
 
 def handleOAuthTokenError(e, soft_errors):
-  if e.message in OAUTH2_TOKEN_ERRORS:
+  if e in OAUTH2_TOKEN_ERRORS or e.startswith(u'Invalid response'):
     if soft_errors:
       return None
     if not GM_Globals[GM_CURRENT_API_USER]:
@@ -517,10 +523,9 @@ def getSvcAcctCredentials(scopes, act_as):
 def waitOnFailure(n, retries, errMsg):
   wait_on_fail = min(2 ** n, 60) + float(random.randint(1, 1000)) / 1000
   if n > 3:
-    sys.stderr.write(u'Temp error {0}. Backing off {1} seconds...'.format(errMsg, int(wait_on_fail)))
+    sys.stderr.write(u'Temporary error: {0}, Backing off: {1} seconds, Retry: {2}/{3}\n'.format(errMsg, int(wait_on_fail), n, retries))
+    sys.stderr.flush()
   time.sleep(wait_on_fail)
-  if n > 3:
-    sys.stderr.write(u'attempt {0}/{1}\n'.format(n+1, retries))
 
 def checkGAPIError(e, soft_errors=False, silent_errors=False, retryOnHttpError=False, service=None):
   try:
@@ -597,20 +602,24 @@ def callGAPI(service, function,
         waitOnFailure(n, retries, reason)
         continue
       if soft_errors:
-        stderrErrorMsg(u'{0}: {1} - {2}{3}'.format(http_status, message, reason, u': Giving up.\n' if n > 1 else u''))
+        stderrErrorMsg(u'{0}: {1} - {2}{3}'.format(http_status, message, reason, [u'', u': Giving up.'][n > 1]))
         return None
       systemErrorExit(int(http_status), u'{0}: {1} - {2}'.format(http_status, message, reason))
     except oauth2client.client.AccessTokenRefreshError as e:
-      handleOAuthTokenError(e, soft_errors or GAPI_SERVICE_NOT_AVAILABLE in throw_reasons)
+      handleOAuthTokenError(str(e), soft_errors or GAPI_SERVICE_NOT_AVAILABLE in throw_reasons)
       if GAPI_SERVICE_NOT_AVAILABLE in throw_reasons:
-        raise GAPI_serviceNotAvailable(e.message)
-      print u'ERROR: user %s: %s' % (GM_Globals[GM_CURRENT_API_USER], e)
-      #entityUnknownWarning(u'User', GM_Globals[GM_CURRENT_API_USER], 0, 0)
+        raise GAPI_serviceNotAvailable(str(e))
+      stderrErrorMsg(u'User {0}: {1)'.format(GM_Globals[GM_CURRENT_API_USER], str(e)))
       return None
     except httplib2.CertificateValidationUnsupported:
       noPythonSSLExit()
+    except ValueError as e:
+      if service._http.cache is not None:
+        service._http.cache = None
+        continue
+      systemErrorExit(4, str(e))
     except TypeError as e:
-      systemErrorExit(4, e)
+      systemErrorExit(4, str(e))
 
 def callGAPIpages(service, function, items=u'items',
                   page_message=None, message_attribute=None,
@@ -703,32 +712,51 @@ def getOauth2TxtStorageCredentials():
   except (KeyError, ValueError):
     return (storage, None)
 
-def getClientAPIversionHttpService(api):
+def getService(api, http):
+  api, version, api_version = getAPIVersion(api)
+  retries = 3
+  for n in range(1, retries+1):
+    try:
+      service = googleapiclient.discovery.build(api, version, http=http, cache_discovery=False)
+      if GM_Globals[GM_CACHE_DISCOVERY_ONLY]:
+        http.cache = None
+      return service
+    except httplib2.ServerNotFoundError as e:
+      systemErrorExit(4, str(e))
+    except httplib2.CertificateValidationUnsupported:
+      noPythonSSLExit()
+    except (googleapiclient.errors.InvalidJsonError, KeyError, ValueError) as e:
+      http.cache = None
+      if n != retries:
+        waitOnFailure(n, retries, str(e))
+        continue
+      systemErrorExit(17, str(e))
+    except (httplib.ResponseNotReady, httplib2.SSLHandshakeError, socket.error) as e:
+      if n != retries:
+        waitOnFailure(n, retries, str(e))
+        continue
+      systemErrorExit(3, str(e))
+    except googleapiclient.errors.UnknownApiNameOrVersion:
+      break
+  disc_file, discovery = readDiscoveryFile(api_version)
+  try:
+    service = googleapiclient.discovery.build_from_document(discovery, http=http)
+    if GM_Globals[GM_CACHE_DISCOVERY_ONLY]:
+      http.cache = None
+    return service
+  except (KeyError, ValueError):
+    invalidJSONExit(disc_file)
+
+def buildGAPIObject(api):
+  GM_Globals[GM_CURRENT_API_USER] = None
   storage, credentials = getOauth2TxtStorageCredentials()
   if not credentials or credentials.invalid:
     doRequestOAuth()
     credentials = storage.get()
   credentials.user_agent = GAM_INFO
-  api, version, api_version = getAPIVersion(api)
   http = credentials.authorize(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL],
-                                             cache=GC_Values[GC_CACHE_DIR]))
-  try:
-    return (credentials, googleapiclient.discovery.build(api, version, http=http, cache_discovery=False))
-  except httplib2.ServerNotFoundError as e:
-    systemErrorExit(4, e)
-  except httplib2.CertificateValidationUnsupported:
-    noPythonSSLExit()
-  except googleapiclient.errors.UnknownApiNameOrVersion:
-    pass
-  disc_file, discovery = readDiscoveryFile(api_version)
-  try:
-    return (credentials, googleapiclient.discovery.build_from_document(discovery, http=http))
-  except (ValueError, KeyError):
-    invalidJSONExit(disc_file)
-
-def buildGAPIObject(api):
-  GM_Globals[GM_CURRENT_API_USER] = None
-  credentials, service = getClientAPIversionHttpService(api)
+                                             cache=GM_Globals[GM_CACHE_DIR]))
+  service = getService(api, http)
   if GC_Values[GC_DOMAIN]:
     if not GC_Values[GC_CUSTOMER_ID]:
       resp, result = service._http.request(u'https://www.googleapis.com/admin/directory/v1/users?domain={0}&maxResults=1&fields=users(customerId)'.format(GC_Values[GC_DOMAIN]))
@@ -768,24 +796,10 @@ def convertUserUIDtoEmailAddress(emailAddressOrUID):
     pass
   return normalizedEmailAddressOrUID
 
-def getSvcAcctAPIversionHttpService(api):
-  api, version, api_version = getAPIVersion(api)
-  http = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL],
-                       cache=GC_Values[GC_CACHE_DIR])
-  try:
-    return (api_version, http, googleapiclient.discovery.build(api, version, http=http, cache_discovery=False))
-  except httplib2.ServerNotFoundError as e:
-    systemErrorExit(4, e)
-  except googleapiclient.errors.UnknownApiNameOrVersion:
-    pass
-  disc_file, discovery = readDiscoveryFile(api_version)
-  try:
-    return (api_version, http, googleapiclient.discovery.build_from_document(discovery, http=http))
-  except (ValueError, KeyError):
-    invalidJSONExit(disc_file)
-
 def buildGAPIServiceObject(api, act_as, use_scopes=None):
-  _, http, service = getSvcAcctAPIversionHttpService(api)
+  http = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL],
+                       cache=GM_Globals[GM_CACHE_DIR])
+  service = getService(api, http)
   GM_Globals[GM_CURRENT_API_USER] = act_as
   GM_Globals[GM_CURRENT_API_SCOPES] = use_scopes or API_SCOPE_MAPPING[api]
   credentials = getSvcAcctCredentials(GM_Globals[GM_CURRENT_API_SCOPES], act_as)
@@ -794,8 +808,8 @@ def buildGAPIServiceObject(api, act_as, use_scopes=None):
   except httplib2.ServerNotFoundError as e:
     systemErrorExit(4, e)
   except oauth2client.client.AccessTokenRefreshError as e:
-    print u'ERROR user %s: %s' % (act_as, e)
-    return handleOAuthTokenError(e, True)
+    stderrErrorMsg(u'User {0}: {1)'.format(GM_Globals[GM_CURRENT_API_USER], str(e)))
+    return handleOAuthTokenError(str(e), True)
   return service
 
 def buildActivityGAPIObject(user):
@@ -6504,7 +6518,7 @@ def getCRMService(login_hint):
     noPythonSSLExit()
   credentials.user_agent = GAM_INFO
   http = credentials.authorize(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL],
-                                             cache=GC_Values[GC_CACHE_DIR]))
+                                             cache=None))
   return (googleapiclient.discovery.build(u'cloudresourcemanager', u'v1', http=http, cache_discovery=False), http)
 
 def doDelProjects(login_hint=None):
@@ -9794,7 +9808,7 @@ def doDeleteOAuth():
   try:
     credentials.revoke(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL]))
   except oauth2client.client.TokenRevokeError as e:
-    stderrErrorMsg(e.message)
+    stderrErrorMsg(str(e))
     os.remove(GC_Values[GC_OAUTH2_TXT])
 
 class cmd_flags(object):
@@ -10167,7 +10181,7 @@ def ProcessGAMCommand(args):
           argv = shlex.split(line)
         except ValueError as e:
           sys.stderr.write(utils.convertUTF8(u'Command: >>>{0}<<<\n'.format(line.strip())))
-          sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, e.message))
+          sys.stderr.write(u'{0}{1}\n'.format(ERROR_PREFIX, str(e)))
           errors += 1
           continue
         if len(argv) > 0:

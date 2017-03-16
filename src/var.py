@@ -503,6 +503,10 @@ GM_MAP_ROLE_ID_TO_NAME = u'ri2n'
 GM_MAP_ROLE_NAME_TO_ID = u'rn2i'
 # Dictionary mapping User ID to Name
 GM_MAP_USER_ID_TO_NAME = u'ui2n'
+# GAM cache directory. If no_cache is True, this variable will be set to None
+GM_CACHE_DIR = u'gacd'
+# Reset GAM cache directory after discovery
+GM_CACHE_DISCOVERY_ONLY = u'gcdo'
 #
 GM_Globals = {
   GM_SYSEXITRC: 0,
@@ -519,6 +523,8 @@ GM_Globals = {
   GM_MAP_ROLE_ID_TO_NAME: None,
   GM_MAP_ROLE_NAME_TO_ID: None,
   GM_MAP_USER_ID_TO_NAME: None,
+  GM_CACHE_DIR: None,
+  GM_CACHE_DISCOVERY_ONLY: True,
   }
 #
 # Global variables defined by environment variables/signal files
@@ -532,6 +538,8 @@ GC_AUTO_BATCH_MIN = u'auto_batch_min'
 GC_BATCH_SIZE = u'batch_size'
 # GAM cache directory. If no_cache is specified, this variable will be set to None
 GC_CACHE_DIR = u'cache_dir'
+# GAM cache discovery only. If no_cache is False, only API discovery calls will be cached
+GC_CACHE_DISCOVERY_ONLY = u'cache_discovery_only'
 # Character set of batch, csv, data files
 GC_CHARSET = u'charset'
 # Path to client_secrets.json
@@ -581,6 +589,7 @@ GC_Defaults = {
   GC_AUTO_BATCH_MIN: 0,
   GC_BATCH_SIZE: 50,
   GC_CACHE_DIR: u'',
+  GC_CACHE_DISCOVERY_ONLY: True,
   GC_CHARSET: DEFAULT_CHARSET,
   GC_CLIENT_SECRETS_JSON: FN_CLIENT_SECRETS_JSON,
   GC_CONFIG_DIR: u'',
@@ -590,16 +599,16 @@ GC_Defaults = {
   GC_DOMAIN: u'',
   GC_DRIVE_DIR: u'',
   GC_DRIVE_MAX_RESULTS: 1000,
-  GC_NO_BROWSER: FALSE,
-  GC_NO_CACHE: FALSE,
-  GC_NO_UPDATE_CHECK: FALSE,
-  GC_NO_VERIFY_SSL: FALSE,
+  GC_NO_BROWSER: False,
+  GC_NO_CACHE: False,
+  GC_NO_UPDATE_CHECK: False,
+  GC_NO_VERIFY_SSL: False,
   GC_NUM_THREADS: 25,
   GC_OAUTH2_TXT: FN_OAUTH2_TXT,
   GC_OAUTH2SERVICE_JSON: FN_OAUTH2SERVICE_JSON,
   GC_SECTION: u'',
   GC_SHOW_COUNTS_MIN: 0,
-  GC_SHOW_GETTINGS: TRUE,
+  GC_SHOW_GETTINGS: True,
   GC_SITE_DIR: u'',
   GC_USER_MAX_RESULTS: 500,
   }
@@ -623,6 +632,7 @@ GC_VAR_INFO = {
   GC_AUTO_BATCH_MIN: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (0, None)},
   GC_BATCH_SIZE: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (1, 1000)},
   GC_CACHE_DIR: {GC_VAR_TYPE: GC_TYPE_DIRECTORY},
+  GC_CACHE_DISCOVERY_ONLY: {GC_VAR_TYPE: GC_TYPE_BOOLEAN},
   GC_CHARSET: {GC_VAR_TYPE: GC_TYPE_STRING},
   GC_CLIENT_SECRETS_JSON: {GC_VAR_TYPE: GC_TYPE_FILE},
   GC_CONFIG_DIR: {GC_VAR_TYPE: GC_TYPE_DIRECTORY},
