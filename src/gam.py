@@ -380,8 +380,9 @@ def SetGlobalVariables():
   _getOldSignalFile(GC_DEBUG_LEVEL, u'debug.gam', filePresentValue=4, fileAbsentValue=0)
   _getOldSignalFile(GC_NO_VERIFY_SSL, u'noverifyssl.txt')
   _getOldSignalFile(GC_NO_BROWSER, u'nobrowser.txt')
-  _getOldSignalFile(GC_NO_CACHE, u'nocache.txt')
-  _getOldSignalFile(GC_CACHE_DISCOVERY_ONLY, u'allcache.txt', filePresentValue=False, fileAbsentValue=True)
+#  _getOldSignalFile(GC_NO_CACHE, u'nocache.txt')
+#  _getOldSignalFile(GC_CACHE_DISCOVERY_ONLY, u'allcache.txt', filePresentValue=False, fileAbsentValue=True)
+  _getOldSignalFile(GC_NO_CACHE, u'allcache.txt', filePresentValue=False, fileAbsentValue=True)
   _getOldSignalFile(GC_NO_UPDATE_CHECK, u'noupdatecheck.txt')
 # Assign directories first
   for itemName in GC_VAR_INFO:
@@ -412,7 +413,8 @@ def SetGlobalVariables():
     GM_Globals[GM_CACHE_DISCOVERY_ONLY] = False
   else:
     GM_Globals[GM_CACHE_DIR] = GC_Values[GC_CACHE_DIR]
-    GM_Globals[GM_CACHE_DISCOVERY_ONLY] = GC_Values[GC_CACHE_DISCOVERY_ONLY]
+#    GM_Globals[GM_CACHE_DISCOVERY_ONLY] = GC_Values[GC_CACHE_DISCOVERY_ONLY]
+    GM_Globals[GM_CACHE_DISCOVERY_ONLY] = False
   return True
 
 def doGAMCheckForUpdates(forceCheck=False):
