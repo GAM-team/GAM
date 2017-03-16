@@ -342,8 +342,8 @@ def SetGlobalVariables():
       value = number
     GC_Defaults[itemName] = value
 
-  def _getOldSignalFile(itemName, fileName, trueValue=True, falseValue=False):
-    GC_Defaults[itemName] = trueValue if os.path.isfile(os.path.join(GC_Defaults[GC_CONFIG_DIR], fileName)) else falseValue
+  def _getOldSignalFile(itemName, fileName, filePresentValue=True, fileAbsentValue=False):
+    GC_Defaults[itemName] = filePresentValue if os.path.isfile(os.path.join(GC_Defaults[GC_CONFIG_DIR], fileName)) else fileAbsentValue
 
   def _getCfgDirectory(itemName):
     return GC_Defaults[itemName]
@@ -377,11 +377,11 @@ def SetGlobalVariables():
   _getOldEnvVar(GC_DEVICE_MAX_RESULTS, u'GAM_DEVICE_MAX_RESULTS')
   _getOldEnvVar(GC_DRIVE_MAX_RESULTS, u'GAM_DRIVE_MAX_RESULTS')
   _getOldEnvVar(GC_USER_MAX_RESULTS, u'GAM_USER_MAX_RESULTS')
-  _getOldSignalFile(GC_DEBUG_LEVEL, u'debug.gam', trueValue=4, falseValue=0)
+  _getOldSignalFile(GC_DEBUG_LEVEL, u'debug.gam', filePresentValue=4, fileAbsentValue=0)
   _getOldSignalFile(GC_NO_VERIFY_SSL, u'noverifyssl.txt')
   _getOldSignalFile(GC_NO_BROWSER, u'nobrowser.txt')
   _getOldSignalFile(GC_NO_CACHE, u'nocache.txt')
-  _getOldSignalFile(GC_CACHE_DISCOVERY_ONLY, u'allcache.txt', trueValue=False, falseValue=True)
+  _getOldSignalFile(GC_CACHE_DISCOVERY_ONLY, u'allcache.txt', filePresentValue=False, fileAbsentValue=True)
   _getOldSignalFile(GC_NO_UPDATE_CHECK, u'noupdatecheck.txt')
 # Assign directories first
   for itemName in GC_VAR_INFO:
@@ -3468,7 +3468,7 @@ def printPermission(permission):
   for key in permission:
     if key in [u'name', u'kind', u'etag', u'selfLink',]:
       continue
-    print u' %s: %s' % (key, permission[key])
+    print utils.convertUTF8(u' %s: %s' % (key, permission[key]))
 
 def showDriveFileACL(users):
   fileId = sys.argv[5]
