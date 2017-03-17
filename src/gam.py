@@ -2920,10 +2920,14 @@ def formatACLRule(rule):
   return u'(Scope: {0}, Role: {1})'.format(rule[u'scope'][u'type'], rule[u'role'])
 
 def doCalendarShowACL():
-  cal = buildGAPIObject(u'calendar')
   show_cal = sys.argv[2]
-  if show_cal.find(u'@') == -1:
-    show_cal = u'%s@%s' % (show_cal, GC_Values[GC_DOMAIN])
+  show_cal, cal = buildCalendarGAPIObject(show_cal)
+  try:
+    # Force service account token request. If we fail fall back to
+    # using admin for delegation
+    cal._http.request.credentials.refresh(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL]))
+  except oauth2client.client.HttpAccessTokenRefreshError:
+    _, cal = buildCalendarGAPIObject(_getAdminUserFromOAuth())
   acls = callGAPIitems(cal.acl(), u'list', u'items', calendarId=show_cal)
   i = 0
   count = len(acls)
@@ -2932,10 +2936,15 @@ def doCalendarShowACL():
     print u'Calendar: {0}, ACL: {1}{2}'.format(show_cal, formatACLRule(rule), currentCount(i, count))
 
 def doCalendarAddACL(calendarId=None, act_as=None, role=None, scope=None, entity=None):
-  if act_as is not None:
-    act_as, cal = buildCalendarGAPIObject(act_as)
-  else:
-    cal = buildGAPIObject(u'calendar')
+  if not act_as:
+    act_as = calendarId
+  _, cal = buildCalendarGAPIObject(act_as)
+  try:
+    # Force service account token request. If we fail fall back to
+    # using admin for delegation
+    cal._http.request.credentials.refresh(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL]))
+  except oauth2client.client.HttpAccessTokenRefreshError:
+    _, cal = buildCalendarGAPIObject(_getAdminUserFromOAuth())
   body = {u'scope': {}}
   if calendarId is None:
     calendarId = sys.argv[2]
@@ -7539,6 +7548,13 @@ def doCreateResoldCustomer():
   result = callGAPI(res.customers(), u'insert', body=body, customerAuthToken=customerAuthToken, fields=u'customerId,customerDomain')
   print u'Created customer %s with id %s' % (result[u'customerDomain'], result[u'customerId'])
 
+def _getAdminUserFromOAuth():
+  storage, credentials = getOauth2TxtStorageCredentials()
+  if credentials is None or credentials.invalid:
+    doRequestOAuth()
+    credentials = storage.get()
+  return credentials.id_token.get(u'email', u'Unknown')
+
 def doGetUserInfo(user_email=None):
 
   def user_lic_result(request_id, response, exception):
@@ -7552,11 +7568,7 @@ def doGetUserInfo(user_email=None):
       user_email = sys.argv[3]
       i = 4
     else:
-      storage, credentials = getOauth2TxtStorageCredentials()
-      if credentials is None or credentials.invalid:
-        doRequestOAuth()
-        credentials = storage.get()
-      user_email = credentials.id_token[u'email']
+      user_email = _getAdminUserFromOAuth()
   if user_email[:4].lower() == u'uid:':
     user_email = user_email[4:]
   elif user_email.find(u'@') == -1:
