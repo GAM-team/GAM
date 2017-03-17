@@ -2420,7 +2420,6 @@ def changeCalendarAttendees(users):
         break
 
 def deleteCalendar(users):
-  buildGAPIObject(u'calendar')
   calendarId = sys.argv[5]
   if calendarId.find(u'@') == -1:
     calendarId = u'%s@%s' % (calendarId, GC_Values[GC_DOMAIN])
@@ -2503,7 +2502,6 @@ def getCalendarAttributes(i, body, function):
   return colorRgbFormat
 
 def addCalendar(users):
-  buildGAPIObject(u'calendar')
   calendarId = sys.argv[5]
   if calendarId.find(u'@') == -1:
     calendarId = u'%s@%s' % (calendarId, GC_Values[GC_DOMAIN])
@@ -2520,7 +2518,6 @@ def addCalendar(users):
     callGAPI(cal.calendarList(), u'insert', soft_errors=True, body=body, colorRgbFormat=colorRgbFormat)
 
 def updateCalendar(users):
-  buildGAPIObject(u'calendar')
   calendarId = sys.argv[5]
   if calendarId.find(u'@') == -1:
     calendarId = u'%s@%s' % (calendarId, GC_Values[GC_DOMAIN])
@@ -3313,7 +3310,6 @@ def _showCalendar(userCalendar, j, jcount):
       print u'      Method: {0}, Type: {1}'.format(notification[u'method'], notification[u'type'])
 
 def infoCalendar(users):
-  buildGAPIObject(u'calendar')
   calendarId = sys.argv[5].lower()
   if calendarId != u'primary' and calendarId.find(u'@') == -1:
     calendarId = u'%s@%s' % (calendarId, GC_Values[GC_DOMAIN])
@@ -9891,9 +9887,6 @@ OAUTH2_SCOPES = [
   {u'name': u'Group Settings API',
    u'subscopes': [],
    u'scopes': u'https://www.googleapis.com/auth/apps.groups.settings'},
-  {u'name': u'Calendar Data API',
-   u'subscopes': [u'readonly'],
-   u'scopes': u'https://www.googleapis.com/auth/calendar'},
   {u'name': u'Audit Reports API',
    u'subscopes': [],
    u'scopes': u'https://www.googleapis.com/auth/admin.reports.audit.readonly'},
