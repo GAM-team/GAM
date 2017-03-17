@@ -8540,16 +8540,16 @@ def doDeleteOrg():
 # Send an email
 def send_email(msg_subj, msg_txt, msg_rcpt=None):
   from email.mime.text import MIMEText
-  gmail = buildGAPIObject(u'gmail')
-  sender_email = gmail._http.request.credentials.id_token[u'email']
+  userId = _getAdminUserFromOAuth()
+  userId, gmail = buildGmailGAPIObject(userId) 
   if not msg_rcpt:
-    msg_rcpt = sender_email
+    msg_rcpt = userId
   msg = MIMEText(msg_txt)
   msg[u'Subject'] = msg_subj
-  msg[u'From'] = sender_email
+  msg[u'From'] = userId
   msg[u'To'] = msg_rcpt
   callGAPI(gmail.users().messages(), u'send',
-           userId=sender_email, body={u'raw': base64.urlsafe_b64encode(msg.as_string())})
+           userId=userId, body={u'raw': base64.urlsafe_b64encode(msg.as_string())})
 
 # Write a CSV file
 def addTitleToCSVfile(title, titles):
@@ -9908,9 +9908,6 @@ OAUTH2_SCOPES = [
   {u'name': u'Site Verification API',
    u'subscopes': [],
    u'scopes': u'https://www.googleapis.com/auth/siteverification'},
-  {u'name': u'Gmail API - send report docs todrive notifications only',
-   u'subscopes': [],
-   u'scopes': u'https://www.googleapis.com/auth/gmail.send'},
   {u'name': u'User Schema Directory API',
    u'subscopes': [u'readonly'],
    u'scopes': u'https://www.googleapis.com/auth/admin.directory.userschema'},
@@ -9960,7 +9957,7 @@ OAUTH2_MENU += '''
      c)  Continue to authorization
 '''
 OAUTH2_CMDS = [u's', u'u', u'e', u'c']
-MAXIMUM_SCOPES = 29 # max of 30 - 1 for profile scope always included
+MAXIMUM_SCOPES = 28 # max of 30 - 2 for email scope always included
 
 def doRequestOAuth(login_hint=None):
   def _checkMakeScopesList(scopes):
@@ -9979,7 +9976,7 @@ def doRequestOAuth(login_hint=None):
       return (False, u'ERROR: {0} scopes selected, maximum is {1}, please unselect some.\n'.format(len(scopes), MAXIMUM_SCOPES))
     if len(scopes) == 0:
       return (False, u'ERROR: No scopes selected, please select at least one.\n')
-    scopes.insert(0, u'profile') # Email Display Scope, always included
+    scopes.insert(0, u'email') # Email Display Scope, always included
     return (True, u'')
 
   MISSING_CLIENT_SECRETS_MESSAGE = u'''To use GAM you need to create an API project. Please run:
