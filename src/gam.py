@@ -8623,15 +8623,16 @@ def writeCSVfile(csvRows, titles, list_type, todrive):
     columns = len(csvRows[0])
     rows = len(csvRows)
     cell_count = rows * columns
-    convert = True
+    mimeType = u'application/vnd.google-apps.spreadsheet'
     if cell_count > 500000 or columns > 256:
       print u'{0}{1}'.format(WARNING_PREFIX, MESSAGE_RESULTS_TOO_LARGE_FOR_GOOGLE_SPREADSHEET)
-      convert = False
-    drive = buildGAPIObject(u'drive')
-    result = callGAPI(drive.files(), u'insert', convert=convert,
-                      body={u'description': u' '.join(sys.argv), u'title': u'%s - %s' % (GC_Values[GC_DOMAIN], list_type), u'mimeType': u'text/csv'},
+      mimeType = u'text/csv'
+    admin_user = _getAdminUserFromOAuth()
+    admin_user, drive = buildDrive3GAPIObject(admin_user)
+    result = callGAPI(drive.files(), u'create', fields=u'webViewLink',
+                      body={u'description': u' '.join(sys.argv), u'title': u'%s - %s' % (GC_Values[GC_DOMAIN], list_type), u'mimeType': mimeType},
                       media_body=googleapiclient.http.MediaInMemoryUpload(string_file.getvalue(), mimetype=u'text/csv'))
-    file_url = result[u'alternateLink']
+    file_url = result[u'webViewLink']
     if GC_Values[GC_NO_BROWSER]:
       msg_txt = u'Drive file uploaded to:\n %s' % file_url
       msg_subj = u'%s - %s' % (GC_Values[GC_DOMAIN], list_type)
@@ -9893,9 +9894,6 @@ OAUTH2_SCOPES = [
   {u'name': u'Usage Reports API',
    u'subscopes': [],
    u'scopes': u'https://www.googleapis.com/auth/admin.reports.usage.readonly'},
-  {u'name': u'Drive API - create report docs only',
-   u'subscopes': [],
-   u'scopes': u'https://www.googleapis.com/auth/drive.file'},
   {u'name': u'License Manager API',
    u'subscopes': [],
    u'scopes': u'https://www.googleapis.com/auth/apps.licensing'},
