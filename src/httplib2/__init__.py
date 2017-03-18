@@ -23,7 +23,7 @@ __contributors__ = ["Thomas Broyer (t.broyer@ltgt.net)",
                     "Louis Nyffenegger",
                     "Alex Yu"]
 __license__ = "MIT"
-__version__ = "0.9.2"
+__version__ = "0.10.3"
 
 import re
 import sys
@@ -65,42 +65,54 @@ except ImportError:
         socks = None
 
 # Build the appropriate socket wrapper for ssl
+ssl = None
+ssl_SSLError = None
+ssl_CertificateError = None
 try:
-    import ssl # python 2.6
-    ssl_SSLError = ssl.SSLError
-    def _ssl_wrap_socket(sock, key_file, cert_file, disable_validation,
-                         ca_certs, ssl_version, hostname):
-        if disable_validation:
-            cert_reqs = ssl.CERT_NONE
-        else:
-            cert_reqs = ssl.CERT_REQUIRED
-        if ssl_version is None:
-            ssl_version = ssl.PROTOCOL_SSLv23
+    import ssl  # python 2.6
+except ImportError:
+    pass
+if ssl is not None:
+    ssl_SSLError = getattr(ssl, 'SSLError', None)
+    ssl_CertificateError = getattr(ssl, 'CertificateError', None)
 
-        if hasattr(ssl, 'SSLContext'): # Python 2.7.9
-            context = ssl.SSLContext(ssl_version)
-            context.verify_mode = cert_reqs
-            context.check_hostname = (cert_reqs != ssl.CERT_NONE)
-            if cert_file:
-                context.load_cert_chain(cert_file, key_file)
-            if ca_certs:
-                context.load_verify_locations(ca_certs)
-            return context.wrap_socket(sock, server_hostname=hostname)
-        else:
-            return ssl.wrap_socket(sock, keyfile=key_file, certfile=cert_file,
-                                   cert_reqs=cert_reqs, ca_certs=ca_certs,
-                                   ssl_version=ssl_version)
-except (AttributeError, ImportError):
-    ssl_SSLError = None
-    def _ssl_wrap_socket(sock, key_file, cert_file, disable_validation,
-                         ca_certs, ssl_version, hostname):
-        if not disable_validation:
-            raise CertificateValidationUnsupported(
-                    "SSL certificate validation is not supported without "
-                    "the ssl module installed. To avoid this error, install "
-                    "the ssl module, or explicity disable validation.")
-        ssl_sock = socket.ssl(sock, key_file, cert_file)
-        return httplib.FakeSocket(sock, ssl_sock)
+
+def _ssl_wrap_socket(sock, key_file, cert_file, disable_validation,
+                     ca_certs, ssl_version, hostname):
+    if disable_validation:
+        cert_reqs = ssl.CERT_NONE
+    else:
+        cert_reqs = ssl.CERT_REQUIRED
+    if ssl_version is None:
+        ssl_version = ssl.PROTOCOL_SSLv23
+
+    if hasattr(ssl, 'SSLContext'):  # Python 2.7.9
+        context = ssl.SSLContext(ssl_version)
+        context.verify_mode = cert_reqs
+        context.check_hostname = (cert_reqs != ssl.CERT_NONE)
+        if cert_file:
+            context.load_cert_chain(cert_file, key_file)
+        if ca_certs:
+            context.load_verify_locations(ca_certs)
+        return context.wrap_socket(sock, server_hostname=hostname)
+    else:
+        return ssl.wrap_socket(sock, keyfile=key_file, certfile=cert_file,
+                               cert_reqs=cert_reqs, ca_certs=ca_certs,
+                               ssl_version=ssl_version)
+
+
+def _ssl_wrap_socket_unsupported(sock, key_file, cert_file, disable_validation,
+                                 ca_certs, ssl_version, hostname):
+    if not disable_validation:
+        raise CertificateValidationUnsupported(
+                "SSL certificate validation is not supported without "
+                "the ssl module installed. To avoid this error, install "
+                "the ssl module, or explicity disable validation.")
+    ssl_sock = socket.ssl(sock, key_file, cert_file)
+    return httplib.FakeSocket(sock, ssl_sock)
+
+if ssl is None:
+    _ssl_wrap_socket = _ssl_wrap_socket_unsupported
 
 
 if sys.version_info >= (2,3):
@@ -269,8 +281,8 @@ def safename(filename):
     filename = re_slash.sub(",", filename)
 
     # limit length of filename
-    if len(filename)>64:
-        filename=filename[:64]
+    if len(filename)>200:
+        filename=filename[:200]
     return ",".join((filename, filemd5))
 
 NORMALIZE_SPACE = re.compile(r'(?:\r\n)?[ \t]+')
@@ -1066,7 +1078,7 @@ class HTTPSConnectionWithTimeout(httplib.HTTPSConnection):
                         raise CertificateHostnameMismatch(
                             'Server presented certificate that does not match '
                             'host %s: %s' % (hostname, cert), hostname, cert)
-            except ssl_SSLError, e:
+            except (ssl_SSLError, ssl_CertificateError, CertificateHostnameMismatch), e:
                 if sock:
                     sock.close()
                 if self.sock:
@@ -1076,7 +1088,7 @@ class HTTPSConnectionWithTimeout(httplib.HTTPSConnection):
                 # to get at more detailed error information, in particular
                 # whether the error is due to certificate validation or
                 # something else (such as SSL protocol mismatch).
-                if e.errno == ssl.SSL_ERROR_SSL:
+                if getattr(e, 'errno', None) == ssl.SSL_ERROR_SSL:
                     raise SSLHandshakeError(e)
                 else:
                     raise
@@ -1155,18 +1167,11 @@ try:
               server_software.startswith('Development/')):
         raise NotRunningAppEngineEnvironment()
 
-    try:
-        from google.appengine.api import apiproxy_stub_map
-        if apiproxy_stub_map.apiproxy.GetStub('urlfetch') is None:
-            raise ImportError  # Bail out; we're not actually running on App Engine.
-        from google.appengine.api.urlfetch import fetch
-        from google.appengine.api.urlfetch import InvalidURLError
-    except (ImportError, AttributeError):
-        from google3.apphosting.api import apiproxy_stub_map
-        if apiproxy_stub_map.apiproxy.GetStub('urlfetch') is None:
-            raise ImportError  # Bail out; we're not actually running on App Engine.
-        from google3.apphosting.api.urlfetch import fetch
-        from google3.apphosting.api.urlfetch import InvalidURLError
+    from google.appengine.api import apiproxy_stub_map
+    if apiproxy_stub_map.apiproxy.GetStub('urlfetch') is None:
+        raise ImportError  # Bail out; we're not actually running on App Engine.
+    from google.appengine.api.urlfetch import fetch
+    from google.appengine.api.urlfetch import InvalidURLError
 
     # Update the connection classes to use the Googel App Engine specific ones.
     SCHEME_TO_CONNECTION = {
