@@ -878,16 +878,15 @@ Access to scopes:
 %s\n''' % (user_domain, service_account, ',\n'.join(all_scopes))
     sys.exit(int(not all_scopes_pass))
 
+def _adjustDate(errMsg):
+  match_date = re.match(u'Data for dates later than (.*) is not yet available. Please check back later', errMsg)
+  if not match_date:
+    match_date = re.match(u'Start date can not be later than (.*)', errMsg)
+  if not match_date:
+    systemErrorExit(4, errMsg)
+  return (unicode(match_date.group(1)))
+
 def showReport():
-
-  def _adjustDate(errMsg):
-    match_date = re.match(u'Data for dates later than (.*) is not yet available. Please check back later', errMsg)
-    if not match_date:
-      match_date = re.match(u'Start date can not be later than (.*)', errMsg)
-    if not match_date:
-      systemErrorExit(4, errMsg)
-    return str(match_date.group(1))
-
   rep = buildGAPIObject(u'reports')
   report = sys.argv[2].lower()
   customerId = GC_Values[GC_CUSTOMER_ID]
@@ -1359,6 +1358,37 @@ def doGetCustomerInfo():
   if u'phoneNumber' in customer_info:
     print u'Phone: %s' % customer_info[u'phoneNumber']
   print u'Admin Secondary Email: %s' % customer_info[u'alternateEmail']
+  parameters = u'accounts:num_users,accounts:apps_total_licenses,accounts:apps_used_licenses'
+  try_date = str(datetime.date.today())
+  customerId = GC_Values[GC_CUSTOMER_ID]
+  if customerId == MY_CUSTOMER:
+    customerId = None
+  rep = buildGAPIObject(u'reports')
+  while True:
+    try:
+      usage = callGAPIpages(rep.customerUsageReports(), u'get', u'usageReports', throw_reasons=[u'invalid'],
+                            customerId=customerId, date=try_date, parameters=parameters)
+      break
+    except googleapiclient.errors.HttpError as e:
+      error = json.loads(e.content)
+    try:
+      message = error[u'error'][u'errors'][0][u'message']
+    except KeyError:
+      raise
+    try_date = _adjustDate(message)
+  print u'User counts as of %s:' % try_date
+  for item in usage[0][u'parameters']:
+    if not u'intValue' in item or int(item[u'intValue']) == 0:
+      continue
+    api_name = name = item[u'name']
+    api_value = int(item[u'intValue'])
+    if api_name == u'accounts:num_users':
+      name = u'Total Users'
+    elif api_name == u'accounts:apps_total_licenses':
+      name = u'G Suite Basic Licenses'
+    elif api_name == u'accounts:apps_used_licenses':
+      name = u'G Suite Basic Users'
+    print u'  {}: {:,}'.format(name, api_value)
 
 def doUpdateCustomer():
   cd = buildGAPIObject(u'directory')
