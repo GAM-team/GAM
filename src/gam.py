@@ -8630,7 +8630,7 @@ def writeCSVfile(csvRows, titles, list_type, todrive):
     admin_user = _getAdminUserFromOAuth()
     admin_user, drive = buildDrive3GAPIObject(admin_user)
     result = callGAPI(drive.files(), u'create', fields=u'webViewLink',
-                      body={u'description': u' '.join(sys.argv), u'title': u'%s - %s' % (GC_Values[GC_DOMAIN], list_type), u'mimeType': mimeType},
+                      body={u'description': u' '.join(sys.argv), u'name': u'%s - %s' % (GC_Values[GC_DOMAIN], list_type), u'mimeType': mimeType},
                       media_body=googleapiclient.http.MediaInMemoryUpload(string_file.getvalue(), mimetype=u'text/csv'))
     file_url = result[u'webViewLink']
     if GC_Values[GC_NO_BROWSER]:
