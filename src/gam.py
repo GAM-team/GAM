@@ -3635,7 +3635,10 @@ def updateDriveFileACL(users):
     if not drive:
       continue
     print u'updating permissions for %s to file %s' % (permissionId, fileId)
-    result = callGAPI(drive.permissions(), u'update', fields=u'*', fileId=fileId, permissionId=permissionId, transferOwnership=transferOwnership, body=body)
+    result = callGAPI(drive.permissions(), u'update', fields=u'*',
+          fileId=fileId, permissionId=permissionId,
+          transferOwnership=transferOwnership, body=body,
+          supportsTeamDrives=True)
     printPermission(result)
 
 def _stripMeInOwners(query):
@@ -3836,7 +3839,7 @@ def deleteDriveFile(users):
     for fileId in file_ids:
       i += 1
       print u'%s %s for %s (%s/%s)' % (action, fileId, user, i, len(file_ids))
-      callGAPI(drive.files(), function, fileId=fileId)
+      callGAPI(drive.files(), function, fileId=fileId, supportsTeamDrives=True)
 
 def printDriveFolderContents(feed, folderId, indent):
   for f_file in feed:
@@ -3920,7 +3923,7 @@ def deleteEmptyDriveFolders(users):
 
 def doEmptyDriveTrash(users):
   for user in users:
-    user, drive = buildDriveGAPIObject(user)
+    user, drive = buildDrive3GAPIObject(user)
     if not drive:
       continue
     print u'Emptying Drive trash for %s' % user
@@ -4043,16 +4046,26 @@ def doUpdateDriveFile(users):
       for fileId in fileIdSelection[u'fileIds']:
         if media_body:
           result = callGAPI(drive.files(), u'update',
-                            fileId=fileId, convert=parameters[DFA_CONVERT], ocr=parameters[DFA_OCR], ocrLanguage=parameters[DFA_OCRLANGUAGE], media_body=media_body, body=body, fields=u'id', supportsTeamDrives=True)
+                            fileId=fileId, convert=parameters[DFA_CONVERT],
+                            ocr=parameters[DFA_OCR],
+                            ocrLanguage=parameters[DFA_OCRLANGUAGE],
+                            media_body=media_body, body=body, fields=u'id',
+                            supportsTeamDrives=True)
           print u'Successfully updated %s drive file with content from %s' % (result[u'id'], parameters[DFA_LOCALFILENAME])
         else:
           result = callGAPI(drive.files(), u'patch',
-                            fileId=fileId, convert=parameters[DFA_CONVERT], ocr=parameters[DFA_OCR], ocrLanguage=parameters[DFA_OCRLANGUAGE], body=body, fields=u'id')
+                            fileId=fileId, convert=parameters[DFA_CONVERT],
+                            ocr=parameters[DFA_OCR],
+                            ocrLanguage=parameters[DFA_OCRLANGUAGE], body=body,
+                            fields=u'id', supportsTeamDrives=True)
           print u'Successfully updated drive file/folder ID %s' % (result[u'id'])
     else:
       for fileId in fileIdSelection[u'fileIds']:
         result = callGAPI(drive.files(), u'copy',
-                          fileId=fileId, convert=parameters[DFA_CONVERT], ocr=parameters[DFA_OCR], ocrLanguage=parameters[DFA_OCRLANGUAGE], body=body, fields=u'id')
+                          fileId=fileId, convert=parameters[DFA_CONVERT],
+                          ocr=parameters[DFA_OCR],
+                          ocrLanguage=parameters[DFA_OCRLANGUAGE],
+                          body=body, fields=u'id', supportsTeamDrives=True)
         print u'Successfully copied %s to %s' % (fileId, result[u'id'])
 
 def createDriveFile(users):
@@ -4078,7 +4091,10 @@ def createDriveFile(users):
     if parameters[DFA_LOCALFILEPATH]:
       media_body = googleapiclient.http.MediaFileUpload(parameters[DFA_LOCALFILEPATH], mimetype=parameters[DFA_LOCALMIMETYPE], resumable=True)
     result = callGAPI(drive.files(), u'insert',
-                      convert=parameters[DFA_CONVERT], ocr=parameters[DFA_OCR], ocrLanguage=parameters[DFA_OCRLANGUAGE], media_body=media_body, body=body, fields=u'id')
+                      convert=parameters[DFA_CONVERT], ocr=parameters[DFA_OCR],
+                      ocrLanguage=parameters[DFA_OCRLANGUAGE],
+                      media_body=media_body, body=body, fields=u'id',
+                      supportsTeamDrives=True)
     if parameters[DFA_LOCALFILENAME]:
       print u'Successfully uploaded %s to Drive file ID %s' % (parameters[DFA_LOCALFILENAME], result[u'id'])
     else:
@@ -4145,7 +4161,9 @@ def downloadDriveFile(users):
     i = 0
     for fileId in fileIdSelection[u'fileIds']:
       extension = None
-      result = callGAPI(drive.files(), u'get', fileId=fileId, fields=u'fileSize,title,mimeType,downloadUrl,exportLinks')
+      result = callGAPI(drive.files(), u'get', fileId=fileId,
+                    fields=u'fileSize,title,mimeType,downloadUrl,exportLinks',
+                    supportsTeamDrives=True)
       if result[u'mimeType'] == MIMETYPE_GA_FOLDER:
         print utils.convertUTF8(u'Skipping download of folder %s' % result[u'title'])
         continue
@@ -8669,9 +8687,13 @@ def writeCSVfile(csvRows, titles, list_type, todrive):
       mimeType = u'text/csv'
     admin_user = _getAdminUserFromOAuth()
     admin_user, drive = buildDrive3GAPIObject(admin_user)
+    body = {u'description': u' '.join(sys.argv),
+            u'name': u'%s - %s' % (GC_Values[GC_DOMAIN], list_type),
+            u'mimeType': mimeType}
     result = callGAPI(drive.files(), u'create', fields=u'webViewLink',
-                      body={u'description': u' '.join(sys.argv), u'name': u'%s - %s' % (GC_Values[GC_DOMAIN], list_type), u'mimeType': mimeType},
-                      media_body=googleapiclient.http.MediaInMemoryUpload(string_file.getvalue(), mimetype=u'text/csv'))
+                      body=body,
+                      media_body=googleapiclient.http.MediaInMemoryUpload(string_file.getvalue(),
+                        mimetype=u'text/csv'))
     file_url = result[u'webViewLink']
     if GC_Values[GC_NO_BROWSER]:
       msg_txt = u'Drive file uploaded to:\n %s' % file_url
