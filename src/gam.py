@@ -3604,43 +3604,38 @@ def addDriveFileACL(users):
 
 def updateDriveFileACL(users):
   fileId = sys.argv[5]
-  isEmail, permissionId = getPermissionId(sys.argv[6])
+  permissionId = getPermissionId(sys.argv[6])
   transferOwnership = None
+  removeExpiration = None
   body = {}
   i = 7
   while i < len(sys.argv):
     if sys.argv[i].lower().replace(u'_', u'') == u'withlink':
-      body[u'withLink'] = True
+      body[u'allowFileDiscovery'] = False
+      i += 1
+    elif sys.argv[i].lower() == u'discoverable':
+      body[u'allowFileDiscovery'] = True
+      i += 1
+    elif sys.argv[i].lower().replace(u'_', u'') == u'removeexpiration':
+      removeExpiration = True
       i += 1
     elif sys.argv[i].lower() == u'role':
       body[u'role'] = sys.argv[i+1]
       if body[u'role'] not in [u'reader', u'commenter', u'writer', u'owner']:
         print u'ERROR: role must be reader, commenter, writer or owner; got %s' % body[u'role']
         sys.exit(2)
-      if body[u'role'] == u'commenter':
-        body[u'role'] = u'reader'
-        body[u'additionalRoles'] = [u'commenter']
-      i += 2
-    elif sys.argv[i].lower().replace(u'_', u'') == u'transferownership':
-      if sys.argv[i+1].lower() in true_values:
+      if body[u'role'] == u'owner':
         transferOwnership = True
-      elif sys.argv[i+1].lower() in false_values:
-        transferOwnership = False
-      else:
-        print u'ERROR: transferownership must be true or false; got %s' % sys.argv[i+1].lower()
       i += 2
     else:
       print u'ERROR: %s is not a valid argument for "gam <users> update drivefileacl"' % sys.argv[i]
       sys.exit(2)
   for user in users:
-    user, drive = buildDriveGAPIObject(user)
+    user, drive = buildDrive3GAPIObject(user)
     if not drive:
       continue
-    if isEmail:
-      permissionId = callGAPI(drive.permissions(), u'getIdForEmail', email=permissionId, fields=u'id')[u'id']
-      isEmail = False
     print u'updating permissions for %s to file %s' % (permissionId, fileId)
-    result = callGAPI(drive.permissions(), u'patch', fileId=fileId, permissionId=permissionId, transferOwnership=transferOwnership, body=body)
+    result = callGAPI(drive.permissions(), u'update', fields=u'*', fileId=fileId, permissionId=permissionId, transferOwnership=transferOwnership, body=body)
     printPermission(result)
 
 def _stripMeInOwners(query):
