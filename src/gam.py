@@ -3432,11 +3432,11 @@ def printDriveSettings(users):
   count = len(users)
   for user in users:
     i += 1
-    user, drive = buildDriveGAPIObject(user)
+    user, drive = buildDrive3GAPIObject(user)
     if not drive:
       continue
     sys.stderr.write(u'Getting Drive settings for %s (%s/%s)\n' % (user, i, count))
-    feed = callGAPI(drive.about(), u'get', soft_errors=True)
+    feed = callGAPI(drive.about(), u'get', fields=u'*', soft_errors=True)
     if feed is None:
       continue
     row = {u'email': user}
@@ -3521,70 +3521,85 @@ def showDriveFileACL(users):
 def getPermissionId(argstr):
   permissionId = argstr.strip().lower()
   if permissionId[:3] == u'id:':
-    return (False, argstr.strip()[3:])
+    return argstr.strip()[3:]
   if permissionId == u'anyone':
-    return (False, permissionId)
+    return u'anyone'
   if permissionId == u'anyonewithlink':
-    return (False, u'anyoneWithLink')
+    return u'anyoneWithLink'
   if permissionId.find(u'@') == -1:
     permissionId = u'%s@%s' % (permissionId, GC_Values[GC_DOMAIN])
-  return (True, permissionId)
+  admin_email = _getAdminUserFromOAuth()
+  # We have to use v2 here since v3 has no permissions.getIdForEmail equivalent
+  # https://code.google.com/a/google.com/p/apps-api-issues/issues/detail?id=4313
+  _, drive2 = buildDriveGAPIObject(admin_email)
+  return callGAPI(drive2.permissions(), u'getIdForEmail', email=permissionId, fields=u'id')[u'id']
 
 def delDriveFileACL(users):
   fileId = sys.argv[5]
-  isEmail, permissionId = getPermissionId(sys.argv[6])
+  permissionId = getPermissionId(sys.argv[6])
   for user in users:
-    user, drive = buildDriveGAPIObject(user)
+    user, drive = buildDrive3GAPIObject(user)
     if not drive:
       continue
-    if isEmail:
-      permissionId = callGAPI(drive.permissions(), u'getIdForEmail', email=permissionId, fields=u'id')[u'id']
-      isEmail = False
     print u'Removing permission for %s from %s' % (permissionId, fileId)
     callGAPI(drive.permissions(), u'delete', fileId=fileId, permissionId=permissionId, supportsTeamDrives=True)
 
 def addDriveFileACL(users):
   fileId = sys.argv[5]
   body = {u'type': sys.argv[6].lower()}
-  sendNotificationEmails = False
+  sendNotificationEmail = False
   emailMessage = None
-  if body[u'type'] not in [u'user', u'group', u'domain', u'anyone']:
-    print u'ERROR: permission type must be user, group domain or anyone; got %s' % body[u'type']
+  transferOwnership = None
   if body[u'type'] == u'anyone':
     i = 7
-  else:
-    body[u'value'] = sys.argv[7]
+  elif body[u'type'] in [u'user', u'group']:
+    body[u'emailAddress'] = sys.argv[7]
     i = 8
+  elif body[u'type'] == u'domain':
+    body[u'domain'] = sys.argv[7]
+    i = 8
+  else:
+    print u'ERROR: permission type must be user, group domain or anyone; got %s' % body[u'type']
+    sys.exit(5)
   while i < len(sys.argv):
     if sys.argv[i].lower().replace(u'_', u'') == u'withlink':
-      body[u'withLink'] = True
+      body[u'allowFileDiscovery'] = False
+      i += 1
+    elif sys.argv[i].lower() == u'discoverable':
+      body[u'allowFileDiscovery'] = True
       i += 1
     elif sys.argv[i].lower() == u'role':
       body[u'role'] = sys.argv[i+1]
       if body[u'role'] not in [u'reader', u'commenter', u'writer', u'owner', u'organizer', u'editor']:
         print u'ERROR: role must be reader, commenter, writer, organizer, or owner; got %s' % body[u'role']
         sys.exit(2)
-      if body[u'role'] == u'commenter':
-        body[u'role'] = u'reader'
-        body[u'additionalRoles'] = [u'commenter']
-      elif body[u'role'] == u'editor':
+      if body[u'role'] == u'editor':
         body[u'role'] = u'writer'
+      elif body[u'role'] == u'owner':
+        sendNotificationEmail = True
+        transferOwnership = True
       i += 2
     elif sys.argv[i].lower().replace(u'_', u'') == u'sendemail':
-      sendNotificationEmails = True
+      sendNotificationEmail = True
       i += 1
     elif sys.argv[i].lower().replace(u'_', u'') == u'emailmessage':
-      sendNotificationEmails = True
+      sendNotificationEmail = True
       emailMessage = sys.argv[i+1]
+      i += 2
+    elif sys.argv[i].lower() == u'expires':
+      body[u'expirationTime'] = sys.argv[i+1]
       i += 2
     else:
       print u'ERROR: %s is not a valid argument for "gam <users> add drivefileacl"' % sys.argv[i]
       sys.exit(2)
   for user in users:
-    user, drive = buildDriveGAPIObject(user)
+    user, drive = buildDrive3GAPIObject(user)
     if not drive:
       continue
-    result = callGAPI(drive.permissions(), u'insert', fileId=fileId, sendNotificationEmails=sendNotificationEmails, emailMessage=emailMessage, body=body, supportsTeamDrives=True)
+    result = callGAPI(drive.permissions(), u'create', fields=u'*',
+            fileId=fileId, sendNotificationEmail=sendNotificationEmail,
+            emailMessage=emailMessage, body=body, supportsTeamDrives=True,
+            transferOwnership=transferOwnership)
     printPermission(result)
 
 def updateDriveFileACL(users):
