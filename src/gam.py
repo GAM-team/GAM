@@ -6757,8 +6757,12 @@ def doUpdateTeamDrive(users):
     print body
     sys.exit(4)
   for user in users:
-    drive = buildGAPIServiceObject(u'drive3', user)
-    result = callGAPI(drive.teamdrives(), u'update', body=body, teamDriveId=teamDriveId, fields=u'')
+    user, drive = buildDrive3GAPIObject(user)
+    if not drive:
+      continue
+    result = callGAPI(drive.teamdrives(), u'update', body=body, teamDriveId=teamDriveId, fields=u'', soft_errors=True)
+    if not result:
+      continue
     print u'Updated Team Drive %s' % (teamDriveId)
 
 def printShowTeamDrives(users, csvFormat):
@@ -6777,7 +6781,7 @@ def printShowTeamDrives(users, csvFormat):
     user, drive = buildDrive3GAPIObject(user)
     if not drive:
       continue
-    results = callGAPIpages(drive.teamdrives(), u'list', items=u'teamDrives', fields=u'*')
+    results = callGAPIpages(drive.teamdrives(), u'list', items=u'teamDrives', fields=u'*', soft_errors=True)
     if not results:
       continue
     for td in results:
@@ -6800,8 +6804,10 @@ def doDeleteTeamDrive(users):
   teamDriveId = sys.argv[5]
   for user in users:
     user, drive = buildDrive3GAPIObject(user)
-    callGAPI(drive.teamdrives(), u'delete', teamDriveId=teamDriveId)
-    print u'Deleted Team Drive %s' % (teamDriveId)
+    if not drive:
+      continue
+    print u'Deleting Team Drive %s' % (teamDriveId)
+    callGAPI(drive.teamdrives(), u'delete', teamDriveId=teamDriveId, soft_errors=True)
 
 def doCreateUser():
   cd = buildGAPIObject(u'directory')
