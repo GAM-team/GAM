@@ -952,6 +952,8 @@ def showReport():
       try:
         for report_item in user_report[u'parameters']:
           items = report_item.values()
+          if len(items) < 2:
+            continue
           name = items[1]
           value = items[0]
           if not name in titles:
@@ -981,9 +983,9 @@ def showReport():
       if u'name' not in item:
         continue
       name = item[u'name']
-      try:
+      if u'intValue' in item:
         value = item[u'intValue']
-      except KeyError:
+      elif u'msgValue' in item:
         if name == u'accounts:authorized_apps':
           for subitem in item[u'msgValue']:
             app = {}
@@ -995,7 +997,20 @@ def showReport():
               elif an_item == u'client_id':
                 app[u'client_id'] = subitem[an_item]
             auth_apps.append(app)
-        continue
+        else:
+          values = []
+          for subitem in item[u'msgValue']:
+            if u'count' not in subitem:
+              continue
+            mycount = myvalue = None
+            for key, value in subitem.items():
+              if key == u'count':
+                mycount = value
+              else:
+                myvalue = value
+              if mycount and myvalue:
+                values.append(u'%s:%s' % (myvalue, mycount))
+          value = u' '.join(values)
       csvRows.append({u'name': name, u'value': value})
     for app in auth_apps: # put apps at bottom
       csvRows.append(app)
