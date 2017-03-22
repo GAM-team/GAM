@@ -6761,11 +6761,40 @@ def doUpdateTeamDrive(users):
     result = callGAPI(drive.teamdrives(), u'update', body=body, teamDriveId=teamDriveId, fields=u'')
     print u'Updated Team Drive %s' % (teamDriveId)
 
-def printShowTeamDrives(users):
+def printShowTeamDrives(users, csvFormat):
+  todrive = False
+  i = 5
+  while i < len(sys.argv):
+    if sys.argv[i].lower() == u'todrive':
+      todrive = True
+      i += 1
+    else:
+      print u'ERROR: %s is not a valid argument for "gam <users> print|show teamdrives"'
+      sys.exit(3)
+  tds = []
   for user in users:
+    sys.stderr.write(u'Getting Team Drives for %s\n' % user)
     user, drive = buildDrive3GAPIObject(user)
+    if not drive:
+      continue
     results = callGAPIpages(drive.teamdrives(), u'list', items=u'teamDrives', fields=u'*')
-    print_json(None, results)
+    if not results:
+      continue
+    for td in results:
+      if u'id' not in td:
+        continue
+      if u'name' not in td:
+        td[u'name'] == u'<Unknown Team Drive>'
+      this_td = {u'id': td[u'id'], u'name': td[u'name']}
+      if this_td in tds:
+        continue
+      tds.append({u'id': td[u'id'], u'name': td[u'name']})
+  if csvFormat:
+    titles = [u'name', u'id']
+    writeCSVfile(tds, titles, u'Team Drives', todrive)
+  else:
+    for td in tds:
+      print u'Name: %s  ID: %s' % (td[u'name'], td[u'id'])
 
 def doDeleteTeamDrive(users):
   teamDriveId = sys.argv[5]
@@ -10737,6 +10766,8 @@ def ProcessGAMCommand(args):
         printShowFilters(users, False)
       elif showWhat in [u'forwardingaddress', u'forwardingaddresses']:
         printShowForwardingAddresses(users, False)
+      elif showWhat in [u'teamdrive', u'teamdrives']:
+        printShowTeamDrives(users, False)
       else:
         print u'ERROR: %s is not a valid argument for "gam <users> show"' % showWhat
         sys.exit(2)
@@ -10765,7 +10796,7 @@ def ProcessGAMCommand(args):
       elif printWhat in [u'token', u'tokens', u'oauth', u'3lo']:
         printShowTokens(5, u'users', users, True)
       elif printWhat in [u'teamdrive', u'teamdrives']:
-        printShowTeamDrives(users)
+        printShowTeamDrives(users, True)
       else:
         print u'ERROR: %s is not a valid argument for "gam <users> print"' % printWhat
         sys.exit(2)
