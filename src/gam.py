@@ -978,6 +978,8 @@ def showReport():
     csvRows = []
     auth_apps = list()
     for item in usage[0][u'parameters']:
+      if u'name' not in item:
+        continue
       name = item[u'name']
       try:
         value = item[u'intValue']
