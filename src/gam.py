@@ -991,12 +991,13 @@ def showReport():
             app = {}
             for an_item in subitem:
               if an_item == u'client_name':
-                app[u'name'] = u'App: %s' % subitem[an_item]
+                app[u'name'] = u'App: %s' % subitem[an_item].replace(u'\n', u'\\n')
               elif an_item == u'num_users':
                 app[u'value'] = u'%s users' % subitem[an_item]
               elif an_item == u'client_id':
                 app[u'client_id'] = subitem[an_item]
             auth_apps.append(app)
+          continue
         else:
           values = []
           for subitem in item[u'msgValue']:
