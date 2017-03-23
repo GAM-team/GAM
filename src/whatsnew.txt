@@ -1,3 +1,13 @@
+GAM 4.2
+ - Create, Update, Delete and List Team Drives
+ - Start moving to Drive API v3
+ - Disable GAM cache by default to prevent errors (Ross)
+ - Use service accounts for all Calendar, Drive and Gmail operations to reduce scopes
+ - Fix "Unknown" errors due to a scope issue (may require "gam oauth revoke" and re-authentication)
+ - "gam info domain" shows basic user / license sums again
+ - "gam report customer" now shows more browser usage stats
+ - Fix project creation ToS error (Ross)
+
 GAM 4.12
  - Realtime 2SV user status in gam info user and gam print users. Thanks hajdbo!
  - Reseller API support. Create and manage customers and subscriptions.
