@@ -611,7 +611,7 @@ def callGAPI(service, function,
       handleOAuthTokenError(str(e), soft_errors or GAPI_SERVICE_NOT_AVAILABLE in throw_reasons)
       if GAPI_SERVICE_NOT_AVAILABLE in throw_reasons:
         raise GAPI_serviceNotAvailable(str(e))
-      stderrErrorMsg(u'User {0}: {1)'.format(GM_Globals[GM_CURRENT_API_USER], str(e)))
+      stderrErrorMsg(u'User {0}: {1}'.format(GM_Globals[GM_CURRENT_API_USER], str(e)))
       return None
     except httplib2.CertificateValidationUnsupported:
       noPythonSSLExit()
@@ -810,7 +810,7 @@ def buildGAPIServiceObject(api, act_as, use_scopes=None):
   except httplib2.ServerNotFoundError as e:
     systemErrorExit(4, e)
   except oauth2client.client.AccessTokenRefreshError as e:
-    stderrErrorMsg(u'User {0}: {1)'.format(GM_Globals[GM_CURRENT_API_USER], str(e)))
+    stderrErrorMsg(u'User {0}: {1}'.format(GM_Globals[GM_CURRENT_API_USER], str(e)))
     return handleOAuthTokenError(str(e), True)
   return service
 
@@ -884,7 +884,7 @@ def _adjustDate(errMsg):
     match_date = re.match(u'Start date can not be later than (.*)', errMsg)
   if not match_date:
     systemErrorExit(4, errMsg)
-  return (unicode(match_date.group(1)))
+  return unicode(match_date.group(1))
 
 def showReport():
   rep = buildGAPIObject(u'reports')
@@ -3615,9 +3615,9 @@ def addDriveFileACL(users):
     if not drive:
       continue
     result = callGAPI(drive.permissions(), u'create', fields=u'*',
-            fileId=fileId, sendNotificationEmail=sendNotificationEmail,
-            emailMessage=emailMessage, body=body, supportsTeamDrives=True,
-            transferOwnership=transferOwnership)
+                      fileId=fileId, sendNotificationEmail=sendNotificationEmail,
+                      emailMessage=emailMessage, body=body, supportsTeamDrives=True,
+                      transferOwnership=transferOwnership)
     printPermission(result)
 
 def updateDriveFileACL(users):
@@ -3654,9 +3654,9 @@ def updateDriveFileACL(users):
       continue
     print u'updating permissions for %s to file %s' % (permissionId, fileId)
     result = callGAPI(drive.permissions(), u'update', fields=u'*',
-          fileId=fileId, permissionId=permissionId,
-          transferOwnership=transferOwnership, body=body,
-          supportsTeamDrives=True)
+                      fileId=fileId, permissionId=permissionId,
+                      transferOwnership=transferOwnership, body=body,
+                      supportsTeamDrives=True)
     printPermission(result)
 
 def _stripMeInOwners(query):
@@ -4180,8 +4180,8 @@ def downloadDriveFile(users):
     for fileId in fileIdSelection[u'fileIds']:
       extension = None
       result = callGAPI(drive.files(), u'get', fileId=fileId,
-                    fields=u'fileSize,title,mimeType,downloadUrl,exportLinks',
-                    supportsTeamDrives=True)
+                        fields=u'fileSize,title,mimeType,downloadUrl,exportLinks',
+                        supportsTeamDrives=True)
       if result[u'mimeType'] == MIMETYPE_GA_FOLDER:
         print utils.convertUTF8(u'Skipping download of folder %s' % result[u'title'])
         continue
@@ -6791,7 +6791,7 @@ def printShowTeamDrives(users, csvFormat):
       if u'id' not in td:
         continue
       if u'name' not in td:
-        td[u'name'] == u'<Unknown Team Drive>'
+        td[u'name'] = u'<Unknown Team Drive>'
       this_td = {u'id': td[u'id'], u'name': td[u'name']}
       if this_td in tds:
         continue
@@ -8654,7 +8654,7 @@ def doDeleteOrg():
 def send_email(msg_subj, msg_txt, msg_rcpt=None):
   from email.mime.text import MIMEText
   userId = _getAdminUserFromOAuth()
-  userId, gmail = buildGmailGAPIObject(userId) 
+  userId, gmail = buildGmailGAPIObject(userId)
   if not msg_rcpt:
     msg_rcpt = userId
   msg = MIMEText(msg_txt)
@@ -8748,7 +8748,7 @@ def writeCSVfile(csvRows, titles, list_type, todrive):
     result = callGAPI(drive.files(), u'create', fields=u'webViewLink',
                       body=body,
                       media_body=googleapiclient.http.MediaInMemoryUpload(string_file.getvalue(),
-                        mimetype=u'text/csv'))
+                                                                          mimetype=u'text/csv'))
     file_url = result[u'webViewLink']
     if GC_Values[GC_NO_BROWSER]:
       msg_txt = u'Drive file uploaded to:\n %s' % file_url
