@@ -1,6 +1,8 @@
 This document describes the GAM command line syntax in  modified BNF, see https://en.wikipedia.org/wiki/Backus-Naur_Form
+Skip the History section and start reading at Introduction.
+
 Items on the command line are space separated, when an actual space character is required, it will be indicated by <Space>.
-If an item contains spaces, it should be surrounded by " or '.
+If an item contains spaces, it should be surrounded by ".
 
 [] optional item
 () group items
@@ -13,7 +15,7 @@ Primitives
 <Number> ::= <Digit>+
 <Hex> ::= <Digit>|a|b|c|d|e|f|A|B|C|D|E|F
 <Space> ::= an actual space character
-<String> ::= a string of characters, surrounded by " or ' if it contains spaces
+<String> ::= a string of characters, surrounded by " if it contains spaces
 <TrueValues> ::= true|on|yes|enabled|1
 <FalseValues>= false|off|no|disabled|0
 <DataTransferService> ::= googledrive|gdrive|drive|"drive and docs"
@@ -138,6 +140,7 @@ Named items
 <Section> ::= <String>
 <S/MIMEID> ::= <String>	
 <StudentItem> ::= <EmailAddress>|<UniqueID>|<String>
+<TeamDriveID> ::= <String>
 <Timezone> ::= <String>
 <Title> ::= <String>
 <URI> ::= <String>
@@ -162,7 +165,7 @@ Named items
 	teacherfolder|
 	teachergroupemail|
 	updatetime
-<CourseFieldNameList> ::= '<CourseFieldName>(,<CourseFieldName>)*'
+<CourseFieldNameList> ::= "<CourseFieldName>(,<CourseFieldName>)*"
 
 <CrOSFieldName> ::=
 	activetimeranges|timeranges|
@@ -266,6 +269,7 @@ Named items
 	customreplyto|
 	defaultmessagedenynotificationtext|
 	description|
+	directmemberscount|
 	email|
 	id|
 	includeinglobaladdresslist|gal|
@@ -345,35 +349,35 @@ Named Lists
 Lists can be in the following formats
 Items, separated by commas, without spaces or commas in the items themselves: item(,item)*
 Items, separated by spaces, without spaces or commas in the items themselves: "item( item)*"
-Items, separated by commas, with spaces or commas in the items themselves: "'it em'(,'it em')*"
-Items, separated by spaces, with spaces or commas in the items themselves: "'it em'( 'it em')*"
+Items, separated by commas, with spaces or commas in the items themselves: "'it em'(,'it,em')*"
+Items, separated by spaces, with spaces or commas in the items themselves: "'it em'( 'it,em')*"
 
-<ACLList> ::== '<ACLScope>(,<ACLScope>)*'
-<CalendarList> ::= '<CalendarItem>(,<CalendarItem>)*'
-<CourseAliasList> ::= '<CourseAlias>(,<CourseAlias>)*'
-<CourseIDList> ::= '<CourseID>(,<CourseID>)*'
-<CrOSFieldNameList> ::= '<CrOSFieldName>(,<CrOSFieldName>)*'
-<CrOSList> ::= '<CrOSID>(,<CrOSID>)*'
-<DriveFileList> ::= '<DriveFileItem>(,<DriveFileItem>)*'
-<EmailAddressList> ::= '<EmailAddress>(,<EmailAddress>)*'
-<EventIDList> ::= '<EventID>(,<EventID>)*'
-<FileFormatList> ::= '<FileFormat>(,<FileFormat)*'
-<FilterIDList> ::= '<FilterID>(,<FilterID>)*'
-<GroupFieldNameList> ::= '<GroupFieldName>(,<GroupFieldName>)*'
-<GroupList> ::= '<GroupItem>(,<GroupItem>)*'
-<GuardianStateList> ::= '<GuardianState>(,<GuardianState>)*'
-<LabelNameList> ::= '<LabelName>(,<LabelName)*'
-<MembersFieldNameList> ::= '<MembersFieldName>(,<MembersFieldName>)*'
-<MobileList> ::= '<MobileId>(,<MobileId>)*'
-<OrgUnitList> ::== '<OrgUnitPath>(,<OrgUnitPath>)*'
-<PrinterIDList> ::= '<PrinterID>(,<PrinterID>)*'
-<ProductIDList> ::= '(<ProductID>|SKUID>)(,<ProductID>|SKUID>)*'
-<PrintJobIDList> ::= '<PrintJobID>(,<PrintJobID>)*'
-<ResourceIDList> ::= '<ResourceID>(,<ResourceID>)*'
-<SKUIDList> ='<SKUID>(,<SKUID>)*'
-<SchemaNameList> ::= '<SchemaName>(,<SchemaName>)*'
-<UserFieldNameList> ::= '<UserFieldName>(,<UserFieldName>)*'
-<UserList> ::= '<UserItem>(,<UserItem>)*'
+<ACLList> ::== "<ACLScope>(,<ACLScope>)*"
+<CalendarList> ::= "<CalendarItem>(,<CalendarItem>)*"
+<CourseAliasList> ::= "<CourseAlias>(,<CourseAlias>)*"
+<CourseIDList> ::= "<CourseID>(,<CourseID>)*"
+<CrOSFieldNameList> ::= "<CrOSFieldName>(,<CrOSFieldName>)*"
+<CrOSList> ::= "<CrOSID>(,<CrOSID>)*"
+<DriveFileList> ::= "<DriveFileItem>(,<DriveFileItem>)*"
+<EmailAddressList> ::= "<EmailAddress>(,<EmailAddress>)*"
+<EventIDList> ::= "<EventID>(,<EventID>)*"
+<FileFormatList> ::= "<FileFormat>(,<FileFormat)*"
+<FilterIDList> ::= "<FilterID>(,<FilterID>)*"
+<GroupFieldNameList> ::= "<GroupFieldName>(,<GroupFieldName>)*"
+<GroupList> ::= "<GroupItem>(,<GroupItem>)*"
+<GuardianStateList> ::= "<GuardianState>(,<GuardianState>)*"
+<LabelNameList> ::= "<LabelName>(,<LabelName)*"
+<MembersFieldNameList> ::= "<MembersFieldName>(,<MembersFieldName>)*"
+<MobileList> ::= "<MobileId>(,<MobileId>)*"
+<OrgUnitList> ::== "<OrgUnitPath>(,<OrgUnitPath>)*"
+<PrinterIDList> ::= "<PrinterID>(,<PrinterID>)*"
+<ProductIDList> ::= "(<ProductID>|SKUID>)(,<ProductID>|SKUID>)*"
+<PrintJobIDList> ::= "<PrintJobID>(,<PrintJobID>)*"
+<ResourceIDList> ::= "<ResourceID>(,<ResourceID>)*"
+<SKUIDList> ="<SKUID>(,<SKUID>)*"
+<SchemaNameList> ::= "<SchemaName>(,<SchemaName>)*"
+<UserFieldNameList> ::= "<UserFieldName>(,<UserFieldName>)*"
+<UserList> ::= "<UserItem>(,<UserItem>)*"
 
 Specify a collection of ChromeOS devices by directly specifying them
 <CrOSTypeEntity> ::=
@@ -506,7 +510,7 @@ Item attributes
 	(relation|relations clear|(spouse|child|mother|father|parent|brother|sister|friend|relative|domestic_partner|manager|assistant|referred_by|partner|<String> <String>))|
 	(suspended <Boolean>)|
 	(website|websites clear|(home_page|blog|profile|work|home|other|ftp|reservations|app_install_page|<String> <URL> [notprimary|primary]))|
-	(<SchemaName>.<FieldName> [multivalued|multivalue|value [type work|home|other|(custom <String>)]] <String>)
+	(<SchemaName>.<FieldName> [multivalued|multivalue|value|multinonempty [type work|home|other|(custom <String>)]] <String>)
 
 gam version [check] [simple]
 gam help
@@ -518,7 +522,7 @@ You can make substitutions in <GAMArgumentList> with values from the CSV file.
 An argument containing exactly ~xxx is replaced by the value of field xxx from the CSV file
 An argument containing instances of ~~xxx~~ has xxx replaced by the value of field xxx from the CSV file
 
-Example: gam csv Users.csv gam update user '~primaryEmail' address type work unstructured '~~Street~~, ~~City~~, ~~State~~ ~~ZIP~~'
+Example: gam csv Users.csv gam update user "~primaryEmail" address type work unstructured "~~Street~~, ~~City~~, ~~State~~ ~~ZIP~~"
 Each user (~primaryEmail, e.g. foo@bar.com) would have their work address updated
 
 gam create project [<EmailAddress>]
@@ -541,9 +545,9 @@ gam update resoldcustomer <CustomerID> [customer_auth_token <String>]
 	[locality|city <String>] [region|state <String>] [postal|postal_code <String>] [country|country_code <String>]
 gam info resoldcustomer <CustomerID>
 
-gam create resoldsubscription <CustomerID>
-	 [customer_auth_token <String>] [plan annual_monthly_pay|annual_yearly_pay|flexible|trial]
-	 [deal <String>] [purchaseorderid <String>] [seats <NumberOfSeats> <MaximumNumberOfSeats>] [sku <SKUID>]
+gam create resoldsubscription <CustomerID> (sku <SKUID>)
+	 (plan annual_monthly_pay|annual_yearly_pay|flexible|trial) (seats <NumberOfSeats> <MaximumNumberOfSeats>)
+	 [customer_auth_token <String>] [deal <String>] [purchaseorderid <String>]
 gam update resoldsubscription <CustomerID> <SKUID>
 	activate|suspend|startpaidservice|
 	(renewal auto_renew_monthly_pay|auto_renew_yearly_pay|cancel|renew_current_users_monthly_pay|renew_current_users_yearly_pay|switch_to_pay_as_you_go)|
@@ -684,7 +688,7 @@ gam info user [<UserItem>] [noaliases] [nogroups] [nolicenses|nolicences] [nosch
 gam print users [todrive] ([domain <DomainName>] [query <QueryUser>] [deleted_only|only_deleted])
 	[groups] [license|licenses|licence|licences] [emailpart|emailparts|username]
 	[orderby <UserOrderByFieldName> [ascending|descending]] [userview]
-	[basic|full|allfields | <UserFieldName>* | fields <UserFieldNameList>] [schemas|custom all|<SchemaNameList>]
+	[allfields|basic|full | ((<UserFieldName>* | fields <UserFieldNameList>) [schemas|custom all|<SchemaNameList>])]
 gam <UserTypeEntity> print
 
 Summary of printing:
@@ -869,6 +873,12 @@ gam <UserTypeEntity> print smime [todrive] [primaryonly]
 
 gam <UserTypeEntity> signature|sig <String>|(file <FileName> [charset <Charset>]) (replace <Tag> <String>)* [html] [name <String>] [replyto <EmailAddress>] [default] [treatasalias <Boolean>]
 gam <UserTypeEntity> show signature|sig [format]
+
+gam <UserTypeEntity> add teamdrive <Name>
+gam <UserTypeEntity> update teamdrive <TeamDriveID> [name <Name>]
+gam <UserTypeEntity> delete teamdrive <TeamDriveID>
+gam <UserTypeEntity> show teamdrives
+gam <UserTypeEntity> print teamdrives [todrive]
 
 gam <UserTypeEntity> vacation <FalseValues>
 gam <UserTypeEntity> vacation <TrueValues> subject <String> (message <String>)|(file <FileName> [charset <CharSet>]) (replace <Tag> <String>)* [html]
