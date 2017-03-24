@@ -155,7 +155,7 @@ def getString(i, item, emptyOK=False, optional=False):
       return u''
     print u'ERROR: expected a Non-empty <{0}>'.format(item)
     sys.exit(2)
-  elif  optional:
+  elif optional:
     return u''
   print u'ERROR: expected a <{0}>'.format(item)
   sys.exit(2)
@@ -3652,7 +3652,7 @@ def updateDriveFileACL(users):
       continue
     print u'updating permissions for %s to file %s' % (permissionId, fileId)
     result = callGAPI(drive.permissions(), u'update', fields=u'*',
-                      fileId=fileId, permissionId=permissionId,
+                      fileId=fileId, permissionId=permissionId, removeExpiration=removeExpiration,
                       transferOwnership=transferOwnership, body=body,
                       supportsTeamDrives=True)
     printPermission(result)
