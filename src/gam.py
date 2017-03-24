@@ -3443,7 +3443,7 @@ def printDriveSettings(users):
     else:
       print u'ERROR: %s is not a valid argument for "gam <users> show drivesettings"' % sys.argv[i]
       sys.exit(2)
-  dont_show = [u'kind', u'selfLink', u'exportFormats', u'importFormats', u'maxUploadSizes', u'additionalRoleInfo', u'etag', u'features', u'user', u'isCurrentAppInstalled']
+  dont_show = [u'kind', u'exportFormats', u'importFormats', u'maxUploadSize', u'maxImportSizes', u'user', u'appInstalled']
   csvRows = []
   titles = [u'email',]
   i = 0
@@ -3461,13 +3461,11 @@ def printDriveSettings(users):
     for setting in feed:
       if setting in dont_show:
         continue
-      if setting == u'quotaBytesByService':
-        for subsetting in feed[setting]:
-          my_name = subsetting[u'serviceName']
-          my_bytes = int(subsetting[u'bytesUsed'])
-          row[my_name] = u'%smb' % (my_bytes / 1024 / 1024)
-          if my_name not in titles:
-            titles.append(my_name)
+      if setting == u'storageQuota':
+        for subsetting, value in feed[setting].iteritems():
+          row[subsetting] = u'%smb' % (int(value) / 1024 / 1024)
+          if subsetting not in titles:
+            titles.append(subsetting)
         continue
       row[setting] = feed[setting]
       if setting not in titles:
