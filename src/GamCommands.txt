@@ -84,8 +84,7 @@ Named items
 <CrOSItem> ::= <CrOSID>|(query:<QueryCrOS>)
 <DestEmailAddress> ::= <EmailAddress>
 <DomainAlias> ::= <String>
-<DriveFileAddACLRole> :: =commenter|editor|organizer|owner|reader|writer
-<DriveFileUpdateACLRole> :: =commenter|editor|owner|reader|writer
+<DriveFileACLRole> :: =commenter|editor|organizer|owner|reader|writer
 <DriveFileID> ::= <String>
 <DriveFileURL> :: = https://docs.google.com/a/<DomainName>/document/d/<DriveFileID>/<String>
 <DriveFileItem> ::= <DriveFileID>|<DriveFileURL>
@@ -785,9 +784,9 @@ gam <UserTypeEntity> delete|del emptydrivefolders
 gam <UserTypeEntity> empty drivetrash
 
 gam <UserTypeEntity> add drivefileacl <DriveFileID> anyone|(user <UserItem>)|(group <GroupItem>)|(domain <DomainName>)
-	(role <DriveFileAddACLRole>) [withlink|discoverable] [sendemail] [emailmessage <String>]
+	(role <DriveFileACLRole>) [withlink|discoverable] [sendemail] [emailmessage <String>]
 gam <UserTypeEntity> update drivefileacl <DriveFileID> <PermissionID>
-	(role <DriveFileUpdateACLRole>) [withlink|discoverable] [removeexpiration]
+	(role <DriveFileACLRole>) [withlink|discoverable] [removeexpiration]
 gam <UserTypeEntity> delete|del drivefileacl <DriveFileID> <PermissionID>
 gam <UserTypeEntity> show drivefileacl <DriveFileID>
 

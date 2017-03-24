@@ -3637,10 +3637,12 @@ def updateDriveFileACL(users):
       i += 1
     elif sys.argv[i].lower() == u'role':
       body[u'role'] = sys.argv[i+1]
-      if body[u'role'] not in [u'reader', u'commenter', u'writer', u'owner']:
-        print u'ERROR: role must be reader, commenter, writer or owner; got %s' % body[u'role']
+      if body[u'role'] not in [u'reader', u'commenter', u'writer', u'owner', u'organizer', u'editor']:
+        print u'ERROR: role must be reader, commenter, writer, organizer, or owner; got %s' % body[u'role']
         sys.exit(2)
-      if body[u'role'] == u'owner':
+      if body[u'role'] == u'editor':
+        body[u'role'] = u'writer'
+      elif body[u'role'] == u'owner':
         transferOwnership = True
       i += 2
     else:
