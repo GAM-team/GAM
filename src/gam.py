@@ -155,7 +155,7 @@ def getString(i, item, emptyOK=False, optional=False):
       return u''
     print u'ERROR: expected a Non-empty <{0}>'.format(item)
     sys.exit(2)
-  elif  optional:
+  elif optional:
     return u''
   print u'ERROR: expected a <{0}>'.format(item)
   sys.exit(2)
@@ -3443,7 +3443,7 @@ def printDriveSettings(users):
     else:
       print u'ERROR: %s is not a valid argument for "gam <users> show drivesettings"' % sys.argv[i]
       sys.exit(2)
-  dont_show = [u'kind', u'selfLink', u'exportFormats', u'importFormats', u'maxUploadSizes', u'additionalRoleInfo', u'etag', u'features', u'user', u'isCurrentAppInstalled']
+  dont_show = [u'kind', u'exportFormats', u'importFormats', u'maxUploadSize', u'maxImportSizes', u'user', u'appInstalled']
   csvRows = []
   titles = [u'email',]
   i = 0
@@ -3461,13 +3461,11 @@ def printDriveSettings(users):
     for setting in feed:
       if setting in dont_show:
         continue
-      if setting == u'quotaBytesByService':
-        for subsetting in feed[setting]:
-          my_name = subsetting[u'serviceName']
-          my_bytes = int(subsetting[u'bytesUsed'])
-          row[my_name] = u'%smb' % (my_bytes / 1024 / 1024)
-          if my_name not in titles:
-            titles.append(my_name)
+      if setting == u'storageQuota':
+        for subsetting, value in feed[setting].iteritems():
+          row[subsetting] = u'%smb' % (int(value) / 1024 / 1024)
+          if subsetting not in titles:
+            titles.append(subsetting)
         continue
       row[setting] = feed[setting]
       if setting not in titles:
@@ -3639,10 +3637,12 @@ def updateDriveFileACL(users):
       i += 1
     elif sys.argv[i].lower() == u'role':
       body[u'role'] = sys.argv[i+1]
-      if body[u'role'] not in [u'reader', u'commenter', u'writer', u'owner']:
-        print u'ERROR: role must be reader, commenter, writer or owner; got %s' % body[u'role']
+      if body[u'role'] not in [u'reader', u'commenter', u'writer', u'owner', u'organizer', u'editor']:
+        print u'ERROR: role must be reader, commenter, writer, organizer, or owner; got %s' % body[u'role']
         sys.exit(2)
-      if body[u'role'] == u'owner':
+      if body[u'role'] == u'editor':
+        body[u'role'] = u'writer'
+      elif body[u'role'] == u'owner':
         transferOwnership = True
       i += 2
     else:
@@ -3654,7 +3654,7 @@ def updateDriveFileACL(users):
       continue
     print u'updating permissions for %s to file %s' % (permissionId, fileId)
     result = callGAPI(drive.permissions(), u'update', fields=u'*',
-                      fileId=fileId, permissionId=permissionId,
+                      fileId=fileId, permissionId=permissionId, removeExpiration=removeExpiration,
                       transferOwnership=transferOwnership, body=body,
                       supportsTeamDrives=True)
     printPermission(result)
