@@ -9469,6 +9469,85 @@ def doPrintMobileDevices():
     csvRows.append(mobiledevice)
   writeCSVfile(csvRows, titles, u'Mobile', todrive)
 
+def doPrintCrosActivity():
+  cd = buildGAPIObject(u'directory')
+  todrive = False
+  titles = [u'deviceId', u'annotatedAssetId', u'serialNumber', u'orgUnitPath']
+  csvRows = []
+  device_fields = [u'annotatedAssetId', u'deviceId', u'orgUnitPath', u'serialNumber']
+  oldest_date = None
+  query = None
+  i = 3
+  while i < len(sys.argv):
+    myarg = sys.argv[i].lower().replace(u'_', u'')
+    if myarg == u'query':
+      query = sys.argv[i+1]
+      i += 2
+    elif myarg == u'todrive':
+      todrive = True
+      i += 1
+    elif myarg == u'times':
+      device_fields.append(u'activeTimeRanges')
+      i += 1
+    elif myarg == u'users':
+      device_fields.append(u'recentUsers')
+      i += 1
+    elif myarg == u'both':
+      device_fields.append(u'recentUsers')
+      device_fields.append(u'activeTimeRanges')
+      i += 1
+    elif myarg == u'oldestdate':
+      oldest_date = datetime.datetime.strptime(sys.argv[i+1], u'%Y-%m-%d')
+      i += 2
+    else:
+      print u'ERROR: %s is not a valid argument for "gam print crosactivity"' % sys.argv[i]
+      sys.exit(2)
+  if u'recentUsers' not in device_fields and u'activeTimeRanges' not in device_fields:
+    device_fields.append(u'recentUsers')
+    device_fields.append(u'activeTimeRanges')
+  if u'recentUsers' in device_fields:
+    titles.append(u'recent_users')
+  if u'activeTimeRanges' in device_fields:
+    titles.append(u'activity_date')
+    titles.append(u'active_minutes')
+  fields = u'chromeosdevices(%s),nextPageToken' % u','.join(device_fields)
+  sys.stderr.write(u'Retrieving All Chrome OS Devices for organization (may take some time for large accounts)...\n')
+  page_message = u'Got %%num_items%% Chrome devices...\n'
+  all_cros = callGAPIpages(cd.chromeosdevices(), u'list', u'chromeosdevices', page_message=page_message,
+                           query=query, customerId=GC_Values[GC_CUSTOMER_ID], projection=u'FULL',
+                           fields=fields, maxResults=GC_Values[GC_DEVICE_MAX_RESULTS])
+  if all_cros:
+    for cros in all_cros:
+      if u'activeTimeRanges' in cros:
+        for time_range in cros[u'activeTimeRanges']:
+          row_date = time_range[u'date']
+          if oldest_date:
+            row_time = datetime.datetime.strptime(row_date, u'%Y-%m-%d')
+            if row_time < oldest_date:
+              continue
+          row = {u'activity_date': row_date, u'active_minutes': time_range[u'activeTime']/1000/60}
+          for attrib in cros:
+            if attrib in [u'kind', u'etag', u'recentUsers', u'activeTimeRanges']:
+              continue
+            row[attrib] = cros[attrib]
+          csvRows.append(row)
+      if u'recentUsers' in cros:
+        recentusers = []
+        for recentuser in cros[u'recentUsers']:
+          if u'email' in recentuser:
+            recentusers.append(recentuser[u'email'])
+          elif recentuser[u'type'] == u'USER_TYPE_UNMANAGED':
+            recentusers.append(u'UnmanagedUser')
+          else:
+            recentusers.append(u'Unknown')
+        row = {u'recent_users': u','.join(recentusers)}
+        for attrib in cros:
+          if attrib in [u'kind', u'etag', u'recentUsers', u'activeTimeRanges']:
+            continue
+          row[attrib] = cros[attrib]
+        csvRows.append(row)
+  writeCSVfile(csvRows, titles, u'CrOS Activity', todrive)
+
 def doPrintCrosDevices():
   cd = buildGAPIObject(u'directory')
   todrive = False
@@ -10576,6 +10655,8 @@ def ProcessGAMCommand(args):
         doPrintResourceCalendars()
       elif argument == u'cros':
         doPrintCrosDevices()
+      elif argument == u'crosactivity':
+        doPrintCrosActivity()
       elif argument == u'mobile':
         doPrintMobileDevices()
       elif argument in [u'license', u'licenses', u'licence', u'licences']:
