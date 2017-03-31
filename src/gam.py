@@ -4902,19 +4902,20 @@ def infoSendAs(users):
 
 def addSmime(users):
   sendAsEmailBase = None
-  smimefile = None
-  body = {u'isDefault': False}
+  setDefault = False
+  body = {}
   i = 5
   while i < len(sys.argv):
     myarg = sys.argv[i].lower()
     if myarg == u'file':
       smimefile = sys.argv[i+1]
+      body[u'pkcs12'] = base64.urlsafe_b64encode(readFile(smimefile, mode =u'rb'))
       i += 2
     elif myarg == u'password':
       body[u'encryptedKeyPassword'] = sys.argv[i+1]
       i += 2
     elif myarg == u'default':
-      body[u'isDefault'] = True
+      setDefault = True
       i += 1
     elif myarg in [u'sendas', u'sendasemail']:
       sendAsEmailBase = sys.argv[i+1]
@@ -4922,12 +4923,9 @@ def addSmime(users):
     else:
       print u'ERROR: %s is not a valid argument for "gam <users> add smime"' % myarg
       sys.exit(3)
-  if not smimefile:
+  if u'pkcs12' not in body:
     print u'ERROR: you must specify a file to upload'
     sys.exit(3)
-  smime_data = readFile(smimefile)
-  smime_data = base64.urlsafe_b64encode(smime_data)
-  body[u'pkcs12'] = smime_data
   i = 0
   count = len(users)
   for user in users:
@@ -4937,6 +4935,8 @@ def addSmime(users):
       continue
     sendAsEmail = sendAsEmailBase if sendAsEmailBase else user
     result = callGAPI(gmail.users().settings().sendAs().smimeInfo(), u'insert', userId=u'me', sendAsEmail=sendAsEmail, body=body)
+    if setDefault:
+      callGAPI(gmail.users().settings().sendAs().smimeInfo(), u'setDefault', userId=u'me', sendAsEmail=sendAsEmail, id=result[u'id'])
     print u'Added S/MIME certificate for user %s sendas %s issued by %s' % (user, sendAsEmail, result[u'issuerCn'])
 
 def doLabel(users, i):
