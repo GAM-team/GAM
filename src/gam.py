@@ -8002,6 +8002,16 @@ def doGetResourceCalendarInfo():
       continue
     print u'%s: %s' % (key, value)
 
+def _filterTimeRanges(activeTimeRanges, startDate, endDate):
+  if startDate is None and endDate is None:
+    return activeTimeRanges
+  filteredTimeRanges = []
+  for timeRange in activeTimeRanges:
+    activityDate = datetime.datetime.strptime(timeRange[u'date'], YYYYMMDD_FORMAT)
+    if ((startDate is None) or (activityDate >= startDate)) and ((endDate is None) or (activityDate <= endDate)):
+      filteredTimeRanges.append(timeRange)
+  return filteredTimeRanges
+
 def doGetCrosInfo():
   cd = buildGAPIObject(u'directory')
   deviceId = sys.argv[3]
@@ -9475,16 +9485,6 @@ def doPrintMobileDevices():
         mobiledevice[attrib] = mobile[attrib]
     csvRows.append(mobiledevice)
   writeCSVfile(csvRows, titles, u'Mobile', todrive)
-
-def _filterTimeRanges(activeTimeRanges, startDate, endDate):
-  if startDate is None and endDate is None:
-    return activeTimeRanges
-  filteredTimeRanges = []
-  for timeRange in activeTimeRanges:
-    activityDate = datetime.datetime.strptime(timeRange[u'date'], YYYYMMDD_FORMAT)
-    if ((startDate is None) or (activityDate >= startDate)) and ((endDate is None) or (activityDate <= endDate)):
-      filteredTimeRanges.append(timeRange)
-  return filteredTimeRanges
 
 def doPrintCrosActivity():
   cd = buildGAPIObject(u'directory')
