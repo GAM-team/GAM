@@ -5,8 +5,8 @@ rmdir /q /s dist
 del /q /f gam-%1-windows.zip
 del /q /f gam-%1-windows-x64.zip
 del /q /f gam-%1-windows-x64.msi
-del /q /f gam.wixobj
-del /q /f gam.wixpdb
+del /q /f *.wixobj
+del /q /f *.wixpdb
 
 c:\python27-32\scripts\pyinstaller --clean -F --distpath=gam windows-gam.spec
 xcopy LICENSE gam\
@@ -26,3 +26,4 @@ xcopy GamCommands.txt gam-64\
 set GAMVERSION=%1
 "%ProgramFiles(x86)%\WiX Toolset v3.10\bin\candle.exe" -arch x64 gam.wxs
 "%ProgramFiles(x86)%\WiX Toolset v3.10\bin\light.exe" -ext "%ProgramFiles(x86)%\WiX Toolset v3.10\bin\WixUIExtension.dll" gam.wixobj -o gam-%1-windows-x64.msi
+del /q /f gam-%1-windows-x64.wixpdb
