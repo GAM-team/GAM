@@ -1,3 +1,9 @@
+GAM 4.21
+ - Drive v3 fixes/updates by Ross
+ - "gam print crosactivty" command outputs active users and times
+ - SMime and calendar ACL fixes by Ross
+ - standardized cros info/print functionality by Ross
+
 GAM 4.2
  - Create, Update, Delete and List Team Drives
  - Start moving to Drive API v3
