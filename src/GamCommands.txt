@@ -614,11 +614,11 @@ gam calendar <CalendarItem> deleteevent (id|eventid <EventID>)* (query|eventquer
 gam calendar <CalendarItem> wipe
 
 gam update cros <CrOSItem> (<CrOSAttributes>+)|(action deprovision_same_model_replace|deprovision_different_model_replace|deprovision_retiring_device|disable|reenable [acknowledge_device_touch_requirement])
-gam info cros <CrOSItem> [nolists] [listlimit <Number>] [start <Date>] [end <Date>]
+gam info cros <CrOSItem> [nolists] [listlimit <Number>]
 	[basic|full|allfields] <CrOSFieldName>* [fields <CrOSFieldNameList>]
 
 gam print cros [todrive] [query <QueryCrOS>]
-	[orderby <CrOSOrderByFieldName> [ascending|descending]] [nolists] [listlimit <Number>] [start <Date>] [end <Date>]
+	[orderby <CrOSOrderByFieldName> [ascending|descending]] [nolists] [listlimit <Number>]
 	[basic|full|allfields] <CrOSFieldName>* [fields <CrOSFieldNameList>]
 gam <CrOSTypeEntity> print
 
@@ -635,21 +635,8 @@ The full argument yields all column headers including two headers, recentUsers a
 that repeat with two subvalues each, yielding a large number of columns that make the output hard to process.
 The nolists argument suppresses these two headers; if you want these headers in a more manageable form use the following arguments.
 The listlimit <Number> argument limits the number of repetitions to <Number>. If <Number> equals zero, there is no limit.
-The start <Date> and end <Date> arguments filter the time ranges.
 If recentusers is specified as a field, each pair of values for recentUsers is put on a separate row with all of the other headers.
 If timeranges is specified as a field, each  pair of values for activeTimeRanges is put on a separate row with all of the other headers.
-
-gam print crosactivity [todrive] [query <QueryCrOS>]
-	[recentusers] [timeranges] [both] [listlimit <Number>] [start <Date>] [end <Date>] [delimiter <String>] 
-
-The basic column headers are: deviceId,annotatedAssetId,annotatedLocation,serialNumber,orgUnitPath.
-If recentusers is specified, all of the recent users email addresses, separated by the delimiter <String>,
-are put on a separate row, with header recentUsers.email, in addition to the basic headers.
-If timeranges is specified, each pair of time range values, activeTimeRanges.date and activeTimeRanges.duration,
-are put on a separate row with the basic headers.
-The default is to include both recentusers and timeranges.
-The listlimit <Number> argument limits the number of recent users and time ranges to <Number>. If <Number> equals zero, there is no limit.
-The start <Date> and end <Date> arguments filter the time ranges.
 
 gam update mobile <MobileItem> <MobileAttributes>+
 gam delete mobile <MobileItem>

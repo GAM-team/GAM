@@ -442,9 +442,7 @@ CROS_ARGUMENT_TO_PROPERTY_MAP = {
   u'supportenddate': [u'supportEndDate',],
   u'tag': [u'annotatedAssetId',],
   u'timeranges': [u'activeTimeRanges.activeTime', u'activeTimeRanges.date'],
-  u'times': [u'activeTimeRanges.activeTime', u'activeTimeRanges.date'],
   u'user': [u'annotatedUser',],
-  u'users': [u'recentUsers.email', u'recentUsers.type'],
   u'willautorenew': [u'willAutoRenew',],
   }
 
@@ -472,11 +470,6 @@ CROS_SCALAR_PROPERTY_PRINT_ORDER = [
   u'supportEndDate',
   u'willAutoRenew',
   ]
-
-CROS_RECENT_USERS_ARGUMENTS = [u'recentusers', u'users']
-CROS_ACTIVE_TIME_RANGES_ARGUMENTS = [u'timeranges', u'activetimeranges', u'times']
-CROS_START_ARGUMENTS = [u'start', u'startdate', u'oldestdate']
-CROS_END_ARGUMENTS = [u'end', u'enddate']
 
 #
 # Global variables

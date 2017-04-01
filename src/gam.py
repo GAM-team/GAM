@@ -4909,7 +4909,7 @@ def addSmime(users):
     myarg = sys.argv[i].lower()
     if myarg == u'file':
       smimefile = sys.argv[i+1]
-      body[u'pkcs12'] = base64.urlsafe_b64encode(readFile(smimefile, mode=u'rb'))
+      body[u'pkcs12'] = base64.urlsafe_b64encode(readFile(smimefile, mode =u'rb'))
       i += 2
     elif myarg == u'password':
       body[u'encryptedKeyPassword'] = sys.argv[i+1]
@@ -8002,16 +8002,6 @@ def doGetResourceCalendarInfo():
       continue
     print u'%s: %s' % (key, value)
 
-def _filterTimeRanges(activeTimeRanges, startDate, endDate):
-  if startDate is None and endDate is None:
-    return activeTimeRanges
-  filteredTimeRanges = []
-  for timeRange in activeTimeRanges:
-    activityDate = datetime.datetime.strptime(timeRange[u'date'], YYYYMMDD_FORMAT)
-    if ((startDate is None) or (activityDate >= startDate)) and ((endDate is None) or (activityDate <= endDate)):
-      filteredTimeRanges.append(timeRange)
-  return filteredTimeRanges
-
 def doGetCrosInfo():
   cd = buildGAPIObject(u'directory')
   deviceId = sys.argv[3]
@@ -8027,7 +8017,6 @@ def doGetCrosInfo():
   projection = None
   fieldsList = []
   noLists = False
-  startDate = endDate = None
   listLimit = 0
   i = 4
   while i < len(sys.argv):
@@ -8035,12 +8024,6 @@ def doGetCrosInfo():
     if myarg == u'nolists':
       noLists = True
       i += 1
-    elif myarg in CROS_START_ARGUMENTS:
-      startDate = datetime.datetime.strptime(sys.argv[i+1], u'%Y-%m-%d')
-      i += 2
-    elif myarg in CROS_END_ARGUMENTS:
-      endDate = datetime.datetime.strptime(sys.argv[i+1], u'%Y-%m-%d')
-      i += 2
     elif myarg == u'listlimit':
       listLimit = int(sys.argv[i+1])
       i += 2
@@ -8067,7 +8050,7 @@ def doGetCrosInfo():
       for field in fieldNameList.lower().replace(u',', u' ').split():
         if field in CROS_ARGUMENT_TO_PROPERTY_MAP:
           fieldsList.extend(CROS_ARGUMENT_TO_PROPERTY_MAP[field])
-          if field in CROS_ACTIVE_TIME_RANGES_ARGUMENTS+CROS_RECENT_USERS_ARGUMENTS:
+          if field in [u'recentusers', u'timeranges', u'activetimeranges']:
             projection = u'FULL'
             noLists = False
         else:
@@ -8081,10 +8064,9 @@ def doGetCrosInfo():
     fields = u','.join(set(fieldsList)).replace(u'.', u'/')
   else:
     fields = None
-  i = 0
+  i = 1
   device_count = len(devices)
   for deviceId in devices:
-    i += 1
     cros = callGAPI(cd.chromeosdevices(), u'get', customerId=GC_Values[GC_CUSTOMER_ID],
                     deviceId=deviceId, projection=projection, fields=fields)
     print u'CrOS Device: {0} ({1} of {2})'.format(deviceId, i, device_count)
@@ -8094,21 +8076,22 @@ def doGetCrosInfo():
       if up in cros:
         print u'  {0}: {1}'.format(up, cros[up])
     if not noLists:
-      activeTimeRanges = _filterTimeRanges(cros.get(u'activeTimeRanges', []), startDate, endDate)
+      activeTimeRanges = cros.get(u'activeTimeRanges', [])
       lenATR = len(activeTimeRanges)
       if lenATR:
         print u'  activeTimeRanges'
-        for activeTimeRange in activeTimeRanges[:min(lenATR, listLimit or lenATR)]:
-          print u'    date: {0}'.format(activeTimeRange[u'date'])
-          print u'      activeTime: {0}'.format(str(activeTimeRange[u'activeTime']))
-          print u'      duration: {0}'.format(utils.formatMilliSeconds(activeTimeRange[u'activeTime']))
+        for i in xrange(min(listLimit, lenATR) if listLimit else lenATR):
+          print u'    date: {0}'.format(activeTimeRanges[i][u'date'])
+          print u'      activeTime: {0}'.format(str(activeTimeRanges[i][u'activeTime']))
+          print u'      duration: {0}'.format(utils.formatMilliSeconds(activeTimeRanges[i][u'activeTime']))
       recentUsers = cros.get(u'recentUsers', [])
       lenRU = len(recentUsers)
       if lenRU:
         print u'  recentUsers'
-        for recentUser in recentUsers[:min(lenRU, listLimit or lenRU)]:
-          print u'    type: {0}'.format(recentUser[u'type'])
-          print u'      email: {0}'.format(recentUser.get(u'email', [u'Unknown', u'UnmanagedUser'][recentUser[u'type'] == u'USER_TYPE_UNMANAGED']))
+        for i in xrange(min(listLimit, lenRU) if listLimit else lenRU):
+          print u'    type: {0}'.format(recentUsers[i][u'type'])
+          print u'      email: {0}'.format(recentUsers[i].get(u'email', u''))
+    i += 1
 
 def doGetMobileInfo():
   cd = buildGAPIObject(u'directory')
@@ -9489,12 +9472,10 @@ def doPrintMobileDevices():
 def doPrintCrosActivity():
   cd = buildGAPIObject(u'directory')
   todrive = False
-  titles = [u'deviceId', u'annotatedAssetId', u'annotatedLocation', u'serialNumber', u'orgUnitPath']
+  titles = [u'deviceId', u'annotatedAssetId', u'serialNumber', u'orgUnitPath']
   csvRows = []
-  device_fields = [u'deviceId', u'annotatedAssetId', u'annotatedLocation', u'serialNumber', u'orgUnitPath']
-  startDate = endDate = None
-  listLimit = 0
-  delimiter = u','
+  device_fields = [u'annotatedAssetId', u'deviceId', u'orgUnitPath', u'serialNumber']
+  oldest_date = None
   query = None
   i = 3
   while i < len(sys.argv):
@@ -9505,67 +9486,66 @@ def doPrintCrosActivity():
     elif myarg == u'todrive':
       todrive = True
       i += 1
-    elif myarg in CROS_ACTIVE_TIME_RANGES_ARGUMENTS:
+    elif myarg == u'times':
       device_fields.append(u'activeTimeRanges')
       i += 1
-    elif myarg in CROS_RECENT_USERS_ARGUMENTS:
+    elif myarg == u'users':
       device_fields.append(u'recentUsers')
       i += 1
     elif myarg == u'both':
-      device_fields.extend([u'recentUsers', u'activeTimeRanges'])
+      device_fields.append(u'recentUsers')
+      device_fields.append(u'activeTimeRanges')
       i += 1
-    elif myarg in CROS_START_ARGUMENTS:
-      startDate = datetime.datetime.strptime(sys.argv[i+1], u'%Y-%m-%d')
-      i += 2
-    elif myarg in CROS_END_ARGUMENTS:
-      endDate = datetime.datetime.strptime(sys.argv[i+1], u'%Y-%m-%d')
-      i += 2
-    elif myarg == u'listlimit':
-      listLimit = int(sys.argv[i+1])
-      i += 2
-    elif myarg == u'delimiter':
-      delimiter = sys.argv[i+1]
+    elif myarg == u'oldestdate':
+      oldest_date = datetime.datetime.strptime(sys.argv[i+1], u'%Y-%m-%d')
       i += 2
     else:
       print u'ERROR: %s is not a valid argument for "gam print crosactivity"' % sys.argv[i]
       sys.exit(2)
   if u'recentUsers' not in device_fields and u'activeTimeRanges' not in device_fields:
-    device_fields.extend([u'recentUsers', u'activeTimeRanges'])
+    device_fields.append(u'recentUsers')
+    device_fields.append(u'activeTimeRanges')
   if u'recentUsers' in device_fields:
-    titles.append(u'recentUsers.email')
+    titles.append(u'recent_users')
   if u'activeTimeRanges' in device_fields:
-    titles.extend([u'activeTimeRanges.date', u'activeTimeRanges.duration'])
+    titles.append(u'activity_date')
+    titles.append(u'active_minutes')
   fields = u'chromeosdevices(%s),nextPageToken' % u','.join(device_fields)
   sys.stderr.write(u'Retrieving All Chrome OS Devices for organization (may take some time for large accounts)...\n')
   page_message = u'Got %%num_items%% Chrome devices...\n'
   all_cros = callGAPIpages(cd.chromeosdevices(), u'list', u'chromeosdevices', page_message=page_message,
                            query=query, customerId=GC_Values[GC_CUSTOMER_ID], projection=u'FULL',
                            fields=fields, maxResults=GC_Values[GC_DEVICE_MAX_RESULTS])
-  for cros in all_cros:
-    row = {}
-    for attrib in cros:
-      if attrib not in [u'recentUsers', u'activeTimeRanges']:
-        row[attrib] = cros[attrib]
-    if u'activeTimeRanges' in cros:
-      activeTimeRanges = _filterTimeRanges(cros[u'activeTimeRanges'], startDate, endDate)
-      lenATR = len(activeTimeRanges)
-      for activeTimeRange in activeTimeRanges[:min(lenATR, listLimit or lenATR)]:
-        new_row = row.copy()
-        new_row[u'activeTimeRanges.date'] = activeTimeRange[u'date']
-        new_row[u'activeTimeRanges.duration'] = utils.formatMilliSeconds(activeTimeRange[u'activeTime'])
-        csvRows.append(new_row)
-    if u'recentUsers' in cros:
-      recentUsers = []
-      for recentUser in cros[u'recentUsers']:
-        if u'email' in recentUser:
-          recentUsers.append(recentUser[u'email'])
-        elif recentUser[u'type'] == u'USER_TYPE_UNMANAGED':
-          recentUsers.append(u'UnmanagedUser')
-        else:
-          recentUsers.append(u'Unknown')
-      lenRU = len(recentUsers)
-      row[u'recentUsers.email'] = delimiter.join(recentUsers[:min(lenRU, listLimit or lenRU)])
-      csvRows.append(row)
+  if all_cros:
+    for cros in all_cros:
+      if u'activeTimeRanges' in cros:
+        for time_range in cros[u'activeTimeRanges']:
+          row_date = time_range[u'date']
+          if oldest_date:
+            row_time = datetime.datetime.strptime(row_date, u'%Y-%m-%d')
+            if row_time < oldest_date:
+              continue
+          row = {u'activity_date': row_date, u'active_minutes': time_range[u'activeTime']/1000/60}
+          for attrib in cros:
+            if attrib in [u'kind', u'etag', u'recentUsers', u'activeTimeRanges']:
+              continue
+            row[attrib] = cros[attrib]
+          csvRows.append(row)
+      if u'recentUsers' in cros:
+        recentusers = []
+        for recentuser in cros[u'recentUsers']:
+          if u'email' in recentuser:
+            recentusers.append(recentuser[u'email'])
+          elif recentuser[u'type'] == u'USER_TYPE_UNMANAGED':
+            recentusers.append(u'UnmanagedUser')
+          else:
+            recentusers.append(u'Unknown')
+        row = {u'recent_users': u','.join(recentusers)}
+        for attrib in cros:
+          if attrib in [u'kind', u'etag', u'recentUsers', u'activeTimeRanges']:
+            continue
+          row[attrib] = cros[attrib]
+        csvRows.append(row)
   writeCSVfile(csvRows, titles, u'CrOS Activity', todrive)
 
 def doPrintCrosDevices():
@@ -9579,9 +9559,8 @@ def doPrintCrosDevices():
   sortHeaders = False
   query = projection = orderBy = sortOrder = None
   noLists = False
-  selectActiveTimeRanges = selectRecentUsers = False
-  startDate = endDate = None
   listLimit = 0
+  selectActiveTimeRanges = selectRecentUsers = None
   i = 3
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace(u'_', u'')
@@ -9593,28 +9572,22 @@ def doPrintCrosDevices():
       i += 1
     elif myarg == u'nolists':
       noLists = True
-      selectActiveTimeRanges = selectRecentUsers = False
+      selectActiveTimeRanges = selectRecentUsers = None
       i += 1
-    elif myarg in CROS_ACTIVE_TIME_RANGES_ARGUMENTS:
+    elif myarg == u'recentusers':
       projection = u'FULL'
-      selectActiveTimeRanges = True
+      selectRecentUsers = u'recentUsers'
       noLists = False
       if fieldsList:
-        fieldsList.append(u'activeTimeRanges')
+        fieldsList.append(selectRecentUsers)
       i += 1
-    elif myarg in CROS_RECENT_USERS_ARGUMENTS:
+    elif myarg in [u'timeranges', u'activetimeranges']:
       projection = u'FULL'
-      selectRecentUsers = True
+      selectActiveTimeRanges = u'activeTimeRanges'
       noLists = False
       if fieldsList:
-        fieldsList.append(u'recentUsers')
+        fieldsList.append(selectActiveTimeRanges)
       i += 1
-    elif myarg in CROS_START_ARGUMENTS:
-      startDate = datetime.datetime.strptime(sys.argv[i+1], u'%Y-%m-%d')
-      i += 2
-    elif myarg in CROS_END_ARGUMENTS:
-      endDate = datetime.datetime.strptime(sys.argv[i+1], u'%Y-%m-%d')
-      i += 2
     elif myarg == u'listlimit':
       listLimit = int(sys.argv[i+1])
       i += 2
@@ -9663,13 +9636,13 @@ def doPrintCrosDevices():
       for field in fieldNameList.lower().replace(u',', u' ').split():
         if field in CROS_ARGUMENT_TO_PROPERTY_MAP:
           addFieldToCSVfile(field, CROS_ARGUMENT_TO_PROPERTY_MAP, fieldsList, fieldsTitles, titles)
-          if field in CROS_RECENT_USERS_ARGUMENTS:
+          if field == u'recentusers':
             projection = u'FULL'
-            selectRecentUsers = True
+            selectRecentUsers = u'recentUsers'
             noLists = False
-          elif field in CROS_ACTIVE_TIME_RANGES_ARGUMENTS:
+          elif field in [u'timeranges', u'activetimeranges']:
             projection = u'FULL'
-            selectActiveTimeRanges = True
+            selectActiveTimeRanges = u'activeTimeRanges'
             noLists = False
         else:
           print u'ERROR: %s is not a valid argument for "gam print cros fields"' % field
@@ -9687,43 +9660,46 @@ def doPrintCrosDevices():
   all_cros = callGAPIpages(cd.chromeosdevices(), u'list', u'chromeosdevices', page_message=page_message,
                            query=query, customerId=GC_Values[GC_CUSTOMER_ID], projection=projection,
                            orderBy=orderBy, sortOrder=sortOrder, fields=fields, maxResults=GC_Values[GC_DEVICE_MAX_RESULTS])
-  if (not noLists) and (not selectActiveTimeRanges) and (not selectRecentUsers):
-    for cros in all_cros:
-      if u'notes' in cros:
-        cros[u'notes'] = cros[u'notes'].replace(u'\n', u'\\n')
-      addRowTitlesToCSVfile(flatten_json(cros, listLimit=listLimit), csvRows, titles)
-  else:
-    if not noLists:
-      if selectActiveTimeRanges:
-        titles.extend([u'activeTimeRanges.date', u'activeTimeRanges.activeTime', u'activeTimeRanges.duration'])
-      if selectRecentUsers:
-        titles.extend([u'recentUsers.email', u'recentUsers.type'])
-    for cros in all_cros:
-      if u'notes' in cros:
-        cros[u'notes'] = cros[u'notes'].replace(u'\n', u'\\n')
-      row = {}
-      for attrib in cros:
-        if attrib not in [u'kind', u'etag', u'recentUsers', u'activeTimeRanges']:
+  if all_cros:
+    if (not noLists) and (not selectActiveTimeRanges) and (not selectRecentUsers):
+      for cros in all_cros:
+        if u'notes' in cros:
+          cros[u'notes'] = cros[u'notes'].replace(u'\n', u'\\n')
+        addRowTitlesToCSVfile(flatten_json(cros, listLimit=listLimit), csvRows, titles)
+    else:
+      if not noLists:
+        if selectActiveTimeRanges:
+          for attrib in [u'activeTimeRanges.activeTime', u'activeTimeRanges.date']:
+            titles.append(attrib)
+        if selectRecentUsers:
+          for attrib in [u'recentUsers.email', u'recentUsers.type']:
+            titles.append(attrib)
+      for cros in all_cros:
+        if u'notes' in cros:
+          cros[u'notes'] = cros[u'notes'].replace(u'\n', u'\\n')
+        row = {}
+        for attrib in cros:
+          if attrib in [u'kind', u'etag', u'recentUsers', u'activeTimeRanges']:
+            continue
           if attrib not in titles:
             titles.append(attrib)
           row[attrib] = cros[attrib]
-      activeTimeRanges = _filterTimeRanges(cros.get(u'activeTimeRanges', []), startDate, endDate) if selectActiveTimeRanges else []
-      recentUsers = cros.get(u'recentUsers', []) if selectRecentUsers else []
-      if noLists or (not activeTimeRanges and not recentUsers):
-        csvRows.append(row)
-      else:
-        lenATR = len(activeTimeRanges)
-        lenRU = len(recentUsers)
-        for i in xrange(min(listLimit, max(lenATR, lenRU)) if listLimit else max(lenATR, lenRU)):
-          new_row = row.copy()
-          if i < lenATR:
-            new_row[u'activeTimeRanges.date'] = activeTimeRanges[i][u'date']
-            new_row[u'activeTimeRanges.activeTime'] = str(activeTimeRanges[i][u'activeTime'])
-            new_row[u'activeTimeRanges.duration'] = utils.formatMilliSeconds(activeTimeRanges[i][u'activeTime'])
-          if i < lenRU:
-            new_row[u'recentUsers.email'] = recentUsers[i].get(u'email', [u'Unknown', u'UnmanagedUser'][recentUsers[i][u'type'] == u'USER_TYPE_UNMANAGED'])
-            new_row[u'recentUsers.type'] = recentUsers[i][u'type']
-          csvRows.append(new_row)
+        activeTimeRanges = cros.get(selectActiveTimeRanges, []) if selectActiveTimeRanges else []
+        recentUsers = cros.get(selectRecentUsers, []) if selectRecentUsers else []
+        if noLists or (not activeTimeRanges and not recentUsers):
+          csvRows.append(row)
+        else:
+          lenATR = len(activeTimeRanges)
+          lenRU = len(recentUsers)
+          for i in xrange(min(listLimit, max(lenATR, lenRU)) if listLimit else max(lenATR, lenRU)):
+            new_row = row.copy()
+            if i < lenATR:
+              new_row[u'activeTimeRanges.activeTime'] = str(activeTimeRanges[i][u'activeTime'])
+              new_row[u'activeTimeRanges.date'] = activeTimeRanges[i][u'date']
+            if i < lenRU:
+              new_row[u'recentUsers.email'] = recentUsers[i].get(u'email', u'')
+              new_row[u'recentUsers.type'] = recentUsers[i][u'type']
+            csvRows.append(new_row)
   if sortHeaders:
     sortCSVTitles([u'deviceId',], titles)
   writeCSVfile(csvRows, titles, u'CrOS', todrive)
