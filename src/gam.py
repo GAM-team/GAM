@@ -2150,6 +2150,13 @@ def doPrintCourses():
   if showAliases or showMembers:
     if showAliases:
       titles.append(u'Aliases')
+    if showMembers:
+      if countsOnly:
+        teachersFields = u'nextPageToken,teachers(profile(id))'
+        studentsFields = u'nextPageToken,students(profile(id))'
+      else:
+        teachersFields = u'nextPageToken,teachers(profile)'
+        studentsFields = u'nextPageToken,students(profile)'
     i = 0
     count = len(csvRows)
     for course in csvRows:
@@ -2166,13 +2173,13 @@ def doPrintCourses():
           teacher_message = u' got %%%%num_items%%%% teachers for course %s%s' % (courseId, currentCount(i, count))
           results = callGAPIpages(croom.courses().teachers(), u'list', u'teachers',
                                   page_message=teacher_message,
-                                  courseId=courseId, fields=u'nextPageToken,teachers(profile)')
+                                  courseId=courseId, fields=teachersFields)
           _saveParticipants(course, results, u'teachers')
         if showMembers != u'teachers':
           student_message = u' got %%%%num_items%%%% students for course %s%s' % (courseId, currentCount(i, count))
           results = callGAPIpages(croom.courses().students(), u'list', u'students',
                                   page_message=student_message,
-                                  courseId=courseId, fields=u'nextPageToken,students(profile)')
+                                  courseId=courseId, fields=studentsFields)
           _saveParticipants(course, results, u'students')
   sortCSVTitles([u'id', u'name'], titles)
   writeCSVfile(csvRows, titles, u'Courses', todrive)
