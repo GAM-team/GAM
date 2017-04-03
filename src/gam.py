@@ -2064,6 +2064,8 @@ def doPrintCourses():
     jcount = len(participants)
     course[role] = jcount
     addTitlesToCSVfile([role], titles)
+    if countsOnly:
+      return
     j = 0
     for member in participants:
       memberTitles = []
@@ -2096,6 +2098,7 @@ def doPrintCourses():
   teacherId = None
   studentId = None
   showAliases = False
+  countsOnly = False
   delimiter = u' '
   showMembers = u''
   i = 3
@@ -2112,6 +2115,9 @@ def doPrintCourses():
       i += 1
     elif myarg in [u'alias', u'aliases']:
       showAliases = True
+      i += 1
+    elif myarg == u'countsonly':
+      countsOnly = True
       i += 1
     elif myarg == u'delimiter':
       delimiter = sys.argv[i+1]
