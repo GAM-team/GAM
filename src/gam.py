@@ -2324,6 +2324,9 @@ def doPrintPrintJobs():
                       owner=owner, offset=offset, limit=limit)
     checkCloudPrintResult(result)
     newJobs = result[u'range'][u'jobsCount']
+    totalJobs = int(result[u'range'][u'jobsTotal'])
+    if GC_Values[GC_DEBUG_LEVEL] > 0:
+      sys.stderr.write(u'Debug: jobCount: {0}, jobLimit: {1}, jobsCount: {2}, jobsTotal: {3}\n'.format(jobCount, jobLimit, newJobs, totalJobs))
     if newJobs == 0:
       break
     jobCount += newJobs
@@ -2340,6 +2343,8 @@ def doPrintPrintJobs():
       job[u'updateTime'] = datetime.datetime.fromtimestamp(updateTime).strftime(u'%Y-%m-%d %H:%M:%S')
       job[u'tags'] = u' '.join(job[u'tags'])
       addRowTitlesToCSVfile(flatten_json(job), csvRows, titles)
+    if jobCount >= totalJobs:
+      break
   writeCSVfile(csvRows, titles, u'Print Jobs', todrive)
 
 def doPrintPrinters():
