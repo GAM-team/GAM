@@ -6637,6 +6637,34 @@ def doDelProjects(login_hint=None):
         pass
 
 def doCreateProject(login_hint=None):
+
+  def _checkClientAndSecret(simplehttp, client_id, secret):
+    url = u'https://www.googleapis.com/oauth2/v4/token'
+    post_data = {u'client_id': client_id, u'client_secret': client_secret,
+                 u'code': u'ThisIsAnInvalidCodeOnlyBeingUsedToTestIfClientAndSecretAreValid',
+                 u'redirect_uri': u'urn:ietf:wg:oauth:2.0:oob', u'grant_type': u'authorization_code'}
+    headers = {'Content-type': 'application/x-www-form-urlencoded'}
+    from urllib import urlencode
+    resp, content = simplehttp.request(url, u'POST', urlencode(post_data), headers=headers)
+    try:
+      content = json.loads(content)
+    except ValueError:
+      print u'Unknown error: %s' % content
+      return False
+    if not u'error' in content or not u'error_description' in content:
+      print u'Unknown error: %s' % content
+      return False
+    if content[u'error'] == u'invalid_grant':
+      return True
+    if content[u'error_description'] == u'The OAuth client was not found.':
+      print u'Ooops!!\n\n%s\n\nIs not a valid client ID. Please make sure you are following the directions exactly and that there are no extra spaces in your client ID.' % client_id
+      return False
+    if content[u'error_description'] == u'Unauthorized':
+      print u'Ooops!!\n\n%s\n\nIis not a valid client secret. Please make sure you are following the directions exactly and that there are no extra spaces in your client secret.' % client_secret
+      return False
+    print u'Unknown error: %s' % content
+    return False
+
   crm, http = getCRMService(login_hint)
   project_id = u'gam-project'
   for i in range(3):
@@ -6710,7 +6738,8 @@ and accept the Terms of Service (ToS). As soon as you've accepted the ToS popup,
     service_account_file = u'%s-%s' % (service_account_file, project_id)
   writeFile(service_account_file, oauth2service_data, continueOnError=False)
   console_credentials_url = u'https://console.developers.google.com/apis/credentials?project=%s' % project_id
-  print u'''Please go to:
+  while True:
+    print u'''Please go to:
 
 %s
 
@@ -6721,9 +6750,13 @@ and accept the Terms of Service (ToS). As soon as you've accepted the ToS popup,
 4. Copy your "client ID" value.
 
 ''' % console_credentials_url
-  client_id = raw_input(u'Enter your Client ID: ')
-  print u'\nNow go back to your browser and copy your client secret.'
-  client_secret = raw_input(u'Enter your Client Secret: ')
+    client_id = raw_input(u'Enter your Client ID: ')
+    print u'\nNow go back to your browser and copy your client secret.'
+    client_secret = raw_input(u'Enter your Client Secret: ')
+    client_valid = _checkClientAndSecret(simplehttp, client_id, client_secret)
+    if client_valid:
+      break
+    print
   cs_data = u'''{
     "installed": {
         "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
