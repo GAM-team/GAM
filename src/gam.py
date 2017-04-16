@@ -6687,7 +6687,7 @@ def doCreateProject(login_hint=None):
       print u'Ooops!!\n\n%s\n\nIs not a valid client ID. Please make sure you are following the directions exactly and that there are no extra spaces in your client ID.' % client_id
       return False
     if content[u'error_description'] == u'Unauthorized':
-      print u'Ooops!!\n\n%s\n\nIis not a valid client secret. Please make sure you are following the directions exactly and that there are no extra spaces in your client secret.' % client_secret
+      print u'Ooops!!\n\n%s\n\nIs not a valid client secret. Please make sure you are following the directions exactly and that there are no extra spaces in your client secret.' % client_secret
       return False
     print u'Unknown error: %s' % content
     return False
