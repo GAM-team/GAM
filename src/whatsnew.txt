@@ -1,3 +1,8 @@
+GAM 4.22
+ - Validate client id and secret from user input (reduces user errors on create project)
+ - Ross - optimize "gam print printjobs"
+ - Ross- countsonly option for gam print courses
+
 GAM 4.21
  - Drive v3 fixes/updates by Ross
  - "gam print crosactivty" command outputs active users and times
