@@ -6665,6 +6665,12 @@ def doCreateProject(login_hint=None):
     print u'Unknown error: %s' % content
     return False
 
+  service_account_file = GC_Values[GC_OAUTH2SERVICE_JSON]
+  client_secrets_file = GC_Values[GC_CLIENT_SECRETS_JSON]
+  for a_file in [service_account_file, client_secrets_file]:
+    if os.path.exists(a_file):
+      print u'ERROR: %s already exists. Please delete or rename it before attempting to create another project.' % a_file
+      sys.exit(5)
   crm, http = getCRMService(login_hint)
   project_id = u'gam-project'
   for i in range(3):
@@ -6733,9 +6739,6 @@ and accept the Terms of Service (ToS). As soon as you've accepted the ToS popup,
   body = {u'privateKeyType': u'TYPE_GOOGLE_CREDENTIALS_FILE', u'keyAlgorithm': u'KEY_ALG_RSA_2048'}
   key = callGAPI(iam.projects().serviceAccounts().keys(), u'create', name=service_account[u'name'], body=body)
   oauth2service_data = base64.b64decode(key[u'privateKeyData'])
-  service_account_file = GC_Values[GC_OAUTH2SERVICE_JSON]
-  if os.path.isfile(service_account_file):
-    service_account_file = u'%s-%s' % (service_account_file, project_id)
   writeFile(service_account_file, oauth2service_data, continueOnError=False)
   console_credentials_url = u'https://console.developers.google.com/apis/credentials?project=%s' % project_id
   while True:
@@ -6771,9 +6774,6 @@ and accept the Terms of Service (ToS). As soon as you've accepted the ToS popup,
         "token_uri": "https://accounts.google.com/o/oauth2/token"
     }
 }''' % (client_id, client_secret, project_id)
-  client_secrets_file = GC_Values[GC_CLIENT_SECRETS_JSON]
-  if os.path.isfile(client_secrets_file):
-    client_secrets_file = u'%s-%s' % (client_secrets_file, project_id)
   writeFile(client_secrets_file, cs_data, continueOnError=False)
   print u'''Almost there! Now please switch back to your browser and:
 
