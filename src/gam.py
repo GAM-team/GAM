@@ -2324,6 +2324,12 @@ def doPrintPrintJobs():
     result = callGAPI(cp.printers(), u'get',
                       printerid=printerid)
     checkCloudPrintResult(result)
+  if ((not sortorder) or (sortorder == u'CREATE_TIME_DESC')) and (older_or_newer == u'newer'):
+    timeExit = True
+  elif (sortorder == u'CREATE_TIME') and (older_or_newer == u'older'):
+    timeExit = True
+  else:
+    timeExit = False
   jobCount = offset = 0
   while True:
     if jobLimit == 0:
@@ -2348,8 +2354,14 @@ def doPrintPrintJobs():
       createTime = int(job[u'createTime'])/1000
       if older_or_newer:
         if older_or_newer == u'older' and createTime > age:
+          if timeExit:
+            jobCount = totalJobs
+            break
           continue
         elif older_or_newer == u'newer' and createTime < age:
+          if timeExit:
+            jobCount = totalJobs
+            break
           continue
       updateTime = int(job[u'updateTime'])/1000
       job[u'createTime'] = datetime.datetime.fromtimestamp(createTime).strftime(u'%Y-%m-%d %H:%M:%S')
@@ -2767,6 +2779,12 @@ def doPrintJobFetch():
     checkCloudPrintResult(result)
   valid_chars = u'-_.() abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
   ssd = u'{"state": {"type": "DONE"}}'
+  if ((not sortorder) or (sortorder == u'CREATE_TIME_DESC')) and (older_or_newer == u'newer'):
+    timeExit = True
+  elif (sortorder == u'CREATE_TIME') and (older_or_newer == u'older'):
+    timeExit = True
+  else:
+    timeExit = False
   jobCount = offset = 0
   while True:
     if jobLimit == 0:
@@ -2780,6 +2798,7 @@ def doPrintJobFetch():
                       owner=owner, offset=offset, limit=limit)
     checkCloudPrintResult(result)
     newJobs = result[u'range'][u'jobsCount']
+    totalJobs = int(result[u'range'][u'jobsTotal'])
     if newJobs == 0:
       break
     jobCount += newJobs
@@ -2788,8 +2807,14 @@ def doPrintJobFetch():
       createTime = int(job[u'createTime'])/1000
       if older_or_newer:
         if older_or_newer == u'older' and createTime > age:
+          if timeExit:
+            jobCount = totalJobs
+            break
           continue
         elif older_or_newer == u'newer' and createTime < age:
+          if timeExit:
+            jobCount = totalJobs
+            break
           continue
       fileUrl = job[u'fileUrl']
       jobid = job[u'id']
@@ -2800,6 +2825,8 @@ def doPrintJobFetch():
         result = callGAPI(cp.jobs(), u'update', jobid=jobid, semantic_state_diff=ssd)
         checkCloudPrintResult(result)
         print u'Printed job %s to %s' % (jobid, fileName)
+    if jobCount >= totalJobs:
+      break
   if jobCount == 0:
     print u'No print jobs.'
 
