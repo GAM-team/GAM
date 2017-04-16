@@ -493,7 +493,7 @@ def doGAMVersion(checkForArgs=True):
     doGAMCheckForUpdates(forceCheck=True)
 
 def handleOAuthTokenError(e, soft_errors):
-  if e in OAUTH2_TOKEN_ERRORS or e.startswith(u'Invalid response'):
+  if e.replace(u'.', u'') in OAUTH2_TOKEN_ERRORS or e.startswith(u'Invalid response'):
     if soft_errors:
       return None
     if not GM_Globals[GM_CURRENT_API_USER]:
