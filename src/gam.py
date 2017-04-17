@@ -6665,7 +6665,7 @@ def doDelProjects(login_hint=None):
 
 def doCreateProject(login_hint=None):
 
-  def _checkClientAndSecret(simplehttp, client_id, secret):
+  def _checkClientAndSecret(simplehttp, client_id, client_secret):
     url = u'https://www.googleapis.com/oauth2/v4/token'
     post_data = {u'client_id': client_id, u'client_secret': client_secret,
                  u'code': u'ThisIsAnInvalidCodeOnlyBeingUsedToTestIfClientAndSecretAreValid',
