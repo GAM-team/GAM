@@ -697,9 +697,17 @@ MESSAGE_SERVICE_NOT_APPLICABLE = u'Service not applicable for this address: {0}.
 MESSAGE_INSTRUCTIONS_OAUTH2SERVICE_JSON = u'Please run\n\ngam create project\ngam user <user> check serviceaccount\n\nto create and configure a service account.'
 MESSAGE_OAUTH2SERVICE_JSON_INVALID = u'The file {0} is missing required keys (client_email, client_id or private_key). Please remove it and recreate with the commands:\n\ngam create project\ngam user <user> check serviceaccount'
 # oauth errors
-OAUTH2_TOKEN_ERRORS = [u'access_denied', u'unauthorized_client: Unauthorized client or scope in request.', u'access_denied: Requested client not authorized.',
-                       u'invalid_grant: Not a valid email.', u'invalid_grant: Invalid email or User ID', u'invalid_grant: Bad Request',
-                       u'invalid_request: Invalid impersonation prn email address.', u'internal_failure: Backend Error']
+OAUTH2_TOKEN_ERRORS = [
+  u'access_denied',
+  u'access_denied: Requested client not authorized',
+  u'internal_failure: Backend Error',
+  u'invalid_grant: Bad Request',
+  u'invalid_grant: Invalid email or User ID',
+  u'invalid_grant: Not a valid email',
+  u'invalid_request: Invalid impersonation prn email address',
+  u'unauthorized_client: Client is unauthorized to retrieve access tokens using this method',
+  u'unauthorized_client: Unauthorized client or scope in request',
+  ]
 #
 # callGAPI throw reasons
 GAPI_BACKEND_ERROR = u'backendError'
