@@ -493,7 +493,7 @@ def doGAMVersion(checkForArgs=True):
     doGAMCheckForUpdates(forceCheck=True)
 
 def handleOAuthTokenError(e, soft_errors):
-  if e in OAUTH2_TOKEN_ERRORS or e.startswith(u'Invalid response'):
+  if e.replace(u'.', u'') in OAUTH2_TOKEN_ERRORS or e.startswith(u'Invalid response'):
     if soft_errors:
       return None
     if not GM_Globals[GM_CURRENT_API_USER]:
@@ -6687,7 +6687,7 @@ def doCreateProject(login_hint=None):
       print u'Ooops!!\n\n%s\n\nIs not a valid client ID. Please make sure you are following the directions exactly and that there are no extra spaces in your client ID.' % client_id
       return False
     if content[u'error_description'] == u'Unauthorized':
-      print u'Ooops!!\n\n%s\n\nIis not a valid client secret. Please make sure you are following the directions exactly and that there are no extra spaces in your client secret.' % client_secret
+      print u'Ooops!!\n\n%s\n\nIs not a valid client secret. Please make sure you are following the directions exactly and that there are no extra spaces in your client secret.' % client_secret
       return False
     print u'Unknown error: %s' % content
     return False
@@ -7048,7 +7048,7 @@ def doUpdateUser(users, i):
       body[u'emails'] = [{u'type': u'custom', u'customType': u'former_employee', u'primary': False, u'address': user_primary}]
     sys.stdout.write(u'updating user %s...\n' % user)
     if body:
-      callGAPI(cd.users(), u'patch', userKey=user, body=body)
+      callGAPI(cd.users(), u'update', userKey=user, body=body)
     if admin_body:
       callGAPI(cd.users(), u'makeAdmin', userKey=user, body=admin_body)
 
