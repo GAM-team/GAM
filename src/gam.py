@@ -6780,9 +6780,9 @@ and accept the Terms of Service (ToS). As soon as you've accepted the ToS popup,
 4. Copy your "client ID" value.
 
 ''' % console_credentials_url
-    client_id = raw_input(u'Enter your Client ID: ')
+    client_id = raw_input(u'Enter your Client ID: ').strip()
     print u'\nNow go back to your browser and copy your client secret.'
-    client_secret = raw_input(u'Enter your Client Secret: ')
+    client_secret = raw_input(u'Enter your Client Secret: ').strip()
     client_valid = _checkClientAndSecret(simplehttp, client_id, client_secret)
     if client_valid:
       break
