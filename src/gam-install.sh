@@ -30,14 +30,14 @@ while getopts "hd:a:o:lp:u:r:v:" OPTION
 do
      case $OPTION in
          h) usage; exit;;
-         d) target_dir=$OPTARG;;
-         a) gamarch=$OPTARG;;
-         o) gamos=$OPTARG;;
+         d) target_dir="$OPTARG";;
+         a) gamarch="$OPTARG";;
+         o) gamos="$OPTARG";;
          l) upgrade_only=true;;
-         p) update_profile=$OPTARG;;
-         u) adminuser=$OPTARG;;
-         r) regularuser=$OPTARG;;
-         v) gamversion=$OPTARG;;
+         p) update_profile="$OPTARG";;
+         u) adminuser="$OPTARG";;
+         r) regularuser="$OPTARG";;
+         v) gamversion="$OPTARG";;
          ?) usage; exit;;
      esac
 done
@@ -157,10 +157,10 @@ echo_yellow "Downloading file $name from $browser_download_url to $temp_archive_
 # Save archive to temp w/o losing our path
 (cd $temp_archive_dir && curl -O -L $browser_download_url)
 
-mkdir -p $target_dir
+mkdir -p "$target_dir"
 
 echo_yellow "Extracting archive to $target_dir"
-tar xf $temp_archive_dir/$name -C $target_dir
+tar xf $temp_archive_dir/$name -C "$target_dir"
 rc=$?
 if (( $rc != 0 )); then
   echo_red "ERROR: extracting the GAM archive with tar failed with error $rc. Exiting."
@@ -171,7 +171,7 @@ fi
 
 if [ "$upgrade_only" = true ]; then
   echo_green "Here's information about your GAM upgrade:"
-  $target_dir/gam/gam version
+  "$target_dir/gam/gam" version
   rc=$?
   if (( $rc != 0 )); then
     echo_red "ERROR: Failed running GAM for the first time with $rc. Please report this error to GAM mailing list. Exiting."
@@ -201,7 +201,7 @@ while true; do
       break
       ;;
     [Nn]*)
-      touch $target_dir/gam/nobrowser.txt > /dev/null 2>&1
+      touch "$target_dir/gam/nobrowser.txt" > /dev/null 2>&1
       break
       ;;
     *)
@@ -219,7 +219,7 @@ while true; do
       if [ "$adminuser" == "" ]; then
         read -p "Please enter your G Suite admin email address: " adminuser
       fi
-      $target_dir/gam/gam create project $adminuser
+      "$target_dir/gam/gam" create project $adminuser
       rc=$?
       if (( $rc == 0 )); then
         echo_green "Project creation complete."
@@ -244,7 +244,7 @@ while $project_created; do
   read -p "Are you ready to authorize GAM to perform G Suite management operations as your admin account? (yes or no) " yn
   case $yn in
     [Yy]*)
-      $target_dir/gam/gam oauth create $adminuser
+      "$target_dir/gam/gam" oauth create $adminuser
       rc=$?
       if (( $rc == 0 )); then
         echo_green "Admin authorization complete."
@@ -273,7 +273,7 @@ while $project_created; do
         read -p "Please enter the email address of a regular G Suite user: " regularuser
       fi
       echo_yellow "Great! Checking service account scopes.This will fail the first time. Follow the steps to authorize and retry. It can take a few minutes for scopes to PASS after they've been authorized in the admin console."
-      $target_dir/gam/gam user $adminuser check serviceaccount
+      "$target_dir/gam/gam" user $adminuser check serviceaccount
       rc=$?
       if (( $rc == 0 )); then
         echo_green "Service account authorization complete."
@@ -294,7 +294,7 @@ while $project_created; do
 done
 
 echo_green "Here's information about your new GAM installation:"
-$target_dir/gam/gam version
+"$target_dir/gam/gam" version
 rc=$?
 if (( $rc != 0 )); then
   echo_red "ERROR: Failed running GAM for the first time with $rc. Please report this error to GAM mailing list. Exiting."
