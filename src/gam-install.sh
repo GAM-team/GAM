@@ -201,7 +201,7 @@ while true; do
       break
       ;;
     [Nn]*)
-      touch $target_dir/gam/nobrowser.txt > /dev/null 2>&1
+      touch "$target_dir/gam/nobrowser.txt" > /dev/null 2>&1
       break
       ;;
     *)
