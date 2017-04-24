@@ -30,14 +30,14 @@ while getopts "hd:a:o:lp:u:r:v:" OPTION
 do
      case $OPTION in
          h) usage; exit;;
-         d) target_dir=$OPTARG;;
-         a) gamarch=$OPTARG;;
-         o) gamos=$OPTARG;;
+         d) target_dir="$OPTARG";;
+         a) gamarch="$OPTARG";;
+         o) gamos="$OPTARG";;
          l) upgrade_only=true;;
-         p) update_profile=$OPTARG;;
-         u) adminuser=$OPTARG;;
-         r) regularuser=$OPTARG;;
-         v) gamversion=$OPTARG;;
+         p) update_profile="$OPTARG";;
+         u) adminuser="$OPTARG";;
+         r) regularuser="$OPTARG";;
+         v) gamversion="$OPTARG";;
          ?) usage; exit;;
      esac
 done
@@ -160,7 +160,7 @@ echo_yellow "Downloading file $name from $browser_download_url to $temp_archive_
 mkdir -p $target_dir
 
 echo_yellow "Extracting archive to $target_dir"
-tar xf $temp_archive_dir/$name -C $target_dir
+tar xf $temp_archive_dir/$name -C "$target_dir"
 rc=$?
 if (( $rc != 0 )); then
   echo_red "ERROR: extracting the GAM archive with tar failed with error $rc. Exiting."
