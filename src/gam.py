@@ -819,6 +819,8 @@ def buildActivityGAPIObject(user):
   return (userEmail, buildGAPIServiceObject(u'appsactivity', userEmail))
 
 def buildCalendarGAPIObject(calname):
+  if not GC_Values[GC_DOMAIN]:
+    _getDomainFromOAuth()
   calendarId = convertUserUIDtoEmailAddress(calname)
   return (calendarId, buildGAPIServiceObject(u'calendar', calendarId))
 
@@ -3010,22 +3012,23 @@ def formatACLRule(rule):
   return u'(Scope: {0}, Role: {1})'.format(rule[u'scope'][u'type'], rule[u'role'])
 
 def doCalendarShowACL():
-  show_cal = sys.argv[2]
-  show_cal, cal = buildCalendarGAPIObject(show_cal)
+  calendarId, cal = buildCalendarGAPIObject(sys.argv[2])
   try:
     # Force service account token request. If we fail fall back to
     # using admin for delegation
     cal._http.request.credentials.refresh(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL]))
   except oauth2client.client.HttpAccessTokenRefreshError:
     _, cal = buildCalendarGAPIObject(_getAdminUserFromOAuth())
-  acls = callGAPIitems(cal.acl(), u'list', u'items', calendarId=show_cal)
+  acls = callGAPIitems(cal.acl(), u'list', u'items', calendarId=calendarId)
   i = 0
   count = len(acls)
   for rule in acls:
     i += 1
-    print u'Calendar: {0}, ACL: {1}{2}'.format(show_cal, formatACLRule(rule), currentCount(i, count))
+    print u'Calendar: {0}, ACL: {1}{2}'.format(calendarId, formatACLRule(rule), currentCount(i, count))
 
 def doCalendarAddACL(calendarId=None, act_as=None, role=None, scope=None, entity=None):
+  if not GC_Values[GC_DOMAIN]:
+    _getDomainFromOAuth()
   if calendarId is None:
     calendarId = sys.argv[2]
   if calendarId.find(u'@') == -1:
@@ -7741,6 +7744,13 @@ def _getAdminUserFromOAuth():
     doRequestOAuth()
     credentials = storage.get()
   return credentials.id_token.get(u'email', u'Unknown')
+
+def _getDomainFromOAuth():
+  storage, credentials = getOauth2TxtStorageCredentials()
+  if credentials is None or credentials.invalid:
+    doRequestOAuth()
+    credentials = storage.get()
+  GC_Values[GC_DOMAIN] = credentials.id_token.get(u'hd', u'UNKNOWN').lower()
 
 def doGetUserInfo(user_email=None):
 
