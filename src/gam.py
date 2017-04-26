@@ -819,6 +819,8 @@ def buildActivityGAPIObject(user):
   return (userEmail, buildGAPIServiceObject(u'appsactivity', userEmail))
 
 def buildCalendarGAPIObject(calname):
+  if not GC_Values[GC_DOMAIN]:
+    GC_Values[GC_DOMAIN] = _getValueFromOAuth(u'hd').lower()
   calendarId = convertUserUIDtoEmailAddress(calname)
   return (calendarId, buildGAPIServiceObject(u'calendar', calendarId))
 
@@ -3010,22 +3012,23 @@ def formatACLRule(rule):
   return u'(Scope: {0}, Role: {1})'.format(rule[u'scope'][u'type'], rule[u'role'])
 
 def doCalendarShowACL():
-  show_cal = sys.argv[2]
-  show_cal, cal = buildCalendarGAPIObject(show_cal)
+  calendarId, cal = buildCalendarGAPIObject(sys.argv[2])
   try:
     # Force service account token request. If we fail fall back to
     # using admin for delegation
     cal._http.request.credentials.refresh(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL]))
   except oauth2client.client.HttpAccessTokenRefreshError:
-    _, cal = buildCalendarGAPIObject(_getAdminUserFromOAuth())
-  acls = callGAPIitems(cal.acl(), u'list', u'items', calendarId=show_cal)
+    _, cal = buildCalendarGAPIObject(_getValueFromOAuth(u'email'))
+  acls = callGAPIitems(cal.acl(), u'list', u'items', calendarId=calendarId)
   i = 0
   count = len(acls)
   for rule in acls:
     i += 1
-    print u'Calendar: {0}, ACL: {1}{2}'.format(show_cal, formatACLRule(rule), currentCount(i, count))
+    print u'Calendar: {0}, ACL: {1}{2}'.format(calendarId, formatACLRule(rule), currentCount(i, count))
 
 def doCalendarAddACL(calendarId=None, act_as=None, role=None, scope=None, entity=None):
+  if not GC_Values[GC_DOMAIN]:
+    GC_Values[GC_DOMAIN] = _getValueFromOAuth(u'hd').lower()
   if calendarId is None:
     calendarId = sys.argv[2]
   if calendarId.find(u'@') == -1:
@@ -3038,7 +3041,7 @@ def doCalendarAddACL(calendarId=None, act_as=None, role=None, scope=None, entity
     # using admin for delegation
     cal._http.request.credentials.refresh(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL]))
   except oauth2client.client.HttpAccessTokenRefreshError:
-    _, cal = buildCalendarGAPIObject(_getAdminUserFromOAuth())
+    _, cal = buildCalendarGAPIObject(_getValueFromOAuth(u'email'))
   body = {u'scope': {}}
   if role is not None:
     body[u'role'] = role
@@ -3589,10 +3592,9 @@ def getPermissionId(argstr):
     return u'anyoneWithLink'
   if permissionId.find(u'@') == -1:
     permissionId = u'%s@%s' % (permissionId, GC_Values[GC_DOMAIN])
-  admin_email = _getAdminUserFromOAuth()
   # We have to use v2 here since v3 has no permissions.getIdForEmail equivalent
   # https://code.google.com/a/google.com/p/apps-api-issues/issues/detail?id=4313
-  _, drive2 = buildDriveGAPIObject(admin_email)
+  _, drive2 = buildDriveGAPIObject(_getValueFromOAuth(u'email'))
   return callGAPI(drive2.permissions(), u'getIdForEmail', email=permissionId, fields=u'id')[u'id']
 
 def delDriveFileACL(users):
@@ -7735,12 +7737,12 @@ def doCreateResoldCustomer():
   result = callGAPI(res.customers(), u'insert', body=body, customerAuthToken=customerAuthToken, fields=u'customerId,customerDomain')
   print u'Created customer %s with id %s' % (result[u'customerDomain'], result[u'customerId'])
 
-def _getAdminUserFromOAuth():
+def _getValueFromOAuth(field):
   storage, credentials = getOauth2TxtStorageCredentials()
   if credentials is None or credentials.invalid:
     doRequestOAuth()
     credentials = storage.get()
-  return credentials.id_token.get(u'email', u'Unknown')
+  return credentials.id_token.get(field, u'Unknown')
 
 def doGetUserInfo(user_email=None):
 
@@ -7755,7 +7757,7 @@ def doGetUserInfo(user_email=None):
       user_email = sys.argv[3]
       i = 4
     else:
-      user_email = _getAdminUserFromOAuth()
+      user_email = _getValueFromOAuth(u'email')
   if user_email[:4].lower() == u'uid:':
     user_email = user_email[4:]
   elif user_email.find(u'@') == -1:
@@ -8749,8 +8751,7 @@ def doDeleteOrg():
 # Send an email
 def send_email(msg_subj, msg_txt, msg_rcpt=None):
   from email.mime.text import MIMEText
-  userId = _getAdminUserFromOAuth()
-  userId, gmail = buildGmailGAPIObject(userId)
+  userId, gmail = buildGmailGAPIObject(_getValueFromOAuth(u'email'))
   if not msg_rcpt:
     msg_rcpt = userId
   msg = MIMEText(msg_txt)
@@ -8836,8 +8837,7 @@ def writeCSVfile(csvRows, titles, list_type, todrive):
     if cell_count > 500000 or columns > 256:
       print u'{0}{1}'.format(WARNING_PREFIX, MESSAGE_RESULTS_TOO_LARGE_FOR_GOOGLE_SPREADSHEET)
       mimeType = u'text/csv'
-    admin_user = _getAdminUserFromOAuth()
-    admin_user, drive = buildDrive3GAPIObject(admin_user)
+    _, drive = buildDrive3GAPIObject(_getValueFromOAuth(u'email'))
     body = {u'description': u' '.join(sys.argv),
             u'name': u'%s - %s' % (GC_Values[GC_DOMAIN], list_type),
             u'mimeType': mimeType}
