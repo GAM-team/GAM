@@ -500,7 +500,7 @@ Item attributes
 	(im|ims clear|(type work|home|other|(custom <String>) protocol aim|gtalk|icq|jabber|msn|net_meeting|qq|skype|yahoo|(custom_protocol <String>) <String> [notprimary|primary]))|
 	(ipwhitelisted <Boolean>)|
 	(lastname|familyname <String>)|
-	(note|notes clear|([text_plain|text_html] <String>|(file <FileName>)))|
+	(note|notes clear|([text_plain|text_html] <String>|(file <FileName> [charset <CharSet>])))|
 	(organization|organizations clear|([type domain_only|school|unknown|work] [customtype <String>] [name <String>] [title <String>] [department <String>] [symbol <String>]
 		[costcenter <String>]  [location <String>] [description <String>] [domain <String>] notprimary|primary))|
 	(org|ou|orgunitpath <OrgUnitPath>)
