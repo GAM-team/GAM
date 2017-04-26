@@ -6554,12 +6554,13 @@ def getUserAttributes(i, cd, updateCmd=False):
         note[u'contentType'] = sys.argv[i].lower()
         i += 1
       if sys.argv[i].lower() == u'file':
-        i += 1
-        note[u'value'] = readFile(sys.argv[i], encoding=GM_Globals[GM_SYS_ENCODING])
+        filename = sys.argv[i+1]
+        i, encoding = getCharSet(i+2)
+        note[u'value'] = readFile(filename, encoding=encoding)
       else:
         note[u'value'] = sys.argv[i].replace(u'\\n', u'\n')
+        i += 1
       body[u'notes'] = note
-      i += 1
     elif myarg == u'clearschema':
       if not updateCmd:
         print u'ERROR: %s is not a valid create user argument.' % sys.argv[i]
@@ -10455,7 +10456,7 @@ def getSubFields(i, fieldNames):
       else:
         csvFieldErrorExit(fieldName, fieldNames)
     else:
-      GAM_argv.append(myarg.encode(GM_Globals[GM_SYS_ENCODING]))
+      GAM_argv.append(myarg)
     GAM_argvI += 1
     i += 1
   return(GAM_argv, subFields)
@@ -10472,7 +10473,6 @@ def processSubFields(GAM_argv, row, subFields):
         argv[GAM_argvI] += row[field[0]]
       pos = field[2]
     argv[GAM_argvI] += oargv[pos:]
-    argv[GAM_argvI] = argv[GAM_argvI].encode(GM_Globals[GM_SYS_ENCODING])
   return argv
 
 def runCmdForUsers(cmd, users, default_to_batch=False, **kwargs):
@@ -10525,7 +10525,7 @@ def ProcessGAMCommand(args):
           if (not cmd) or cmd.startswith(u'#') or ((len(argv) == 1) and (cmd != u'commit-batch')):
             continue
           if cmd == u'gam':
-            items.append([arg.encode(GM_Globals[GM_SYS_ENCODING]) for arg in argv])
+            items.append(argv)
           elif cmd == u'commit-batch':
             items.append([cmd])
           else:
@@ -10546,7 +10546,7 @@ def ProcessGAMCommand(args):
       i = 2
       filename = sys.argv[i]
       i, encoding = getCharSet(i+1)
-      f = openFile(filename)
+      f = openFile(filename, mode=u'rb')
       csvFile = UnicodeDictReader(f, encoding=encoding)
       if (i == len(sys.argv)) or (sys.argv[i].lower() != u'gam') or (i+1 == len(sys.argv)):
         print u'ERROR: "gam csv <filename>" must be followed by a full GAM command...'
