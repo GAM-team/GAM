@@ -695,7 +695,7 @@ gam info schema <SchemaName>
 gam show schema|schemas
 gam print schema|schemas
 
-gam create user <EmailAddress> <UserAttrubutes>*
+gam create user <EmailAddress> <UserAttributes>*
 gam update user <UserItem> <UserAttributes>* [clearschema <SchemaName>] [clearschema <SchemaName>.<FieldName>]
 gam delete user <UserItem>
 gam undelete user <UserItem> [org|ou <OrgUnitPath>]
@@ -826,7 +826,7 @@ gam <UserTypeEntity> show tokens|token [clientid <ClientID>]
 gam <UserTypeEntity> print tokens|token [todrive] [clientid <ClientID>]
 gam print tokens|token [todrive] [clientid <ClientID>] [<UserTypeEntity>]
 
-gam <UserTypeEntity> update user <UserAttrubutes>
+gam <UserTypeEntity> update user <UserAttributes>
 
 gam <UserTypeEntity> deprovision|deprov
 
