@@ -8531,9 +8531,24 @@ def commonClientIds(clientId):
 
 def doDelTokens(users):
   cd = buildGAPIObject(u'directory')
-  clientId = sys.argv[6]
-  clientId = commonClientIds(clientId)
+  clientId = None
+  i = 5
+  while i < len(sys.argv):
+    if sys.argv[i].lower().replace(u'_', '') == u'clientid':
+      clientId = commonClientIds(sys.argv[i+1])
+      i += 2
+    else:
+      print u'ERROR: %s is not a valid argument to "gam <users> delete token"' % sys.argv[i]
+      sys.exit(3)
+  if not clientId:
+    print u'ERROR: you must specify a clientid for "gam <users> delete token"'
+    sys.exit(3)
   for user in users:
+    try:
+      result = callGAPI(cd.tokens(), u'get', userKey=user, clientId=clientId, throw_reasons=[u'notFound'])
+    except googleapiclient.errors.HttpError:
+      print u'User %s did not authorize %s' % (user, clientId)
+      continue
     callGAPI(cd.tokens(), u'delete', userKey=user, clientId=clientId)
     print u'Deleted token for %s' % user
 
