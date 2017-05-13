@@ -6632,7 +6632,6 @@ def getValidateLoginHint(login_hint):
 
 def getCRMService(login_hint):
   from oauth2client.contrib.dictionary_storage import DictionaryStorage
-  login_hint = getValidateLoginHint(login_hint)
   scope = u'https://www.googleapis.com/auth/cloud-platform'
   client_id = u'297408095146-fug707qsjv4ikron0hugpevbrjhkmsk7.apps.googleusercontent.com'
   client_secret = u'qM3dP8f_4qedwzWQE1VR4zzU'
@@ -6655,6 +6654,7 @@ def getCRMService(login_hint):
 def doDelProjects(login_hint=None):
   # Leave undocumented. Most users should never need.
   # Deletes all projects with ID gam-project-*
+  login_hint = getValidateLoginHint(login_hint)
   crm, _ = getCRMService(login_hint)
   projects = callGAPIpages(crm.projects(), u'list', items=u'projects')
   for project in projects:
@@ -6701,6 +6701,8 @@ def doCreateProject(login_hint=None):
     if os.path.exists(a_file):
       print u'ERROR: %s already exists. Please delete or rename it before attempting to create another project.' % a_file
       sys.exit(5)
+  login_hint = getValidateLoginHint(login_hint)
+  login_domain = login_hint[login_hint.find(u'@')+1:]
   crm, http = getCRMService(login_hint)
   project_id = u'gam-project'
   for i in range(3):
@@ -6717,6 +6719,41 @@ def doCreateProject(login_hint=None):
       print u'Checking project status...'
       status = callGAPI(crm.operations(), u'get', name=operation_name)
       if u'error' in status:
+        if (u'message' in status[u'error'] and
+            status[u'error'][u'message'] == u'No permission to create project in organization'):
+             print u'Hmm... Looks like you have no rights to your Google Cloud Organization.'
+             print u'Attempting to fix that...'
+             search_body = {u'filter': u'domain:%s' % login_domain}
+             getorg = callGAPI(crm.organizations(), u'search', body=search_body)
+             try:
+               organization = getorg[u'organizations'][0][u'name']
+               print u'Your organization name is %s' % organization
+             except (KeyError, IndexError):
+               print u'ERROR: you have no rights to create projects for your organization and you don\'t seem to be a super admin! Sorry, there\'s nothing more I can do.'
+               sys.exit(3)
+             org_policy = callGAPI(crm.organizations(), u'getIamPolicy', resource=organization, body={})
+             if u'bindings' not in org_policy:
+               org_policy[u'bindings'] = []
+               print u'Looks like no one has rights to your Google Cloud Organization. Attempting to give you create rights...'
+             else:
+               print u'The following rights seem to exist:'
+               for a_policy in org_policy[u'bindings']:
+                 if u'role' in a_policy:
+                   print u' Role: %s' % a_policy[u'role']
+                 if u'members' in a_policy:
+                   print u' Members:'
+                   for member in a_policy[u'members']:
+                     print u'  %s' % member
+                 print
+             my_role = u'roles/resourcemanager.projectCreator'
+             print u'Giving %s the role of %s...' % (login_hint, my_role)
+             my_rights = {u'role': my_role,
+                     u'members': [u'user:%s' % login_hint]}
+             org_policy[u'bindings'].append(my_rights)
+             result = callGAPI(crm.organizations(), u'setIamPolicy', resource=organization,
+                               body={u'policy': org_policy})
+             create_again = True
+             break
         try:
           if status[u'error'][u'details'][0][u'violations'][0][u'description'] == u'Callers must accept Terms of Service':
             print u'''Please go to:
