@@ -6721,39 +6721,38 @@ def doCreateProject(login_hint=None):
       if u'error' in status:
         if (u'message' in status[u'error'] and
             status[u'error'][u'message'] == u'No permission to create project in organization'):
-             print u'Hmm... Looks like you have no rights to your Google Cloud Organization.'
-             print u'Attempting to fix that...'
-             search_body = {u'filter': u'domain:%s' % login_domain}
-             getorg = callGAPI(crm.organizations(), u'search', body=search_body)
-             try:
-               organization = getorg[u'organizations'][0][u'name']
-               print u'Your organization name is %s' % organization
-             except (KeyError, IndexError):
-               print u'ERROR: you have no rights to create projects for your organization and you don\'t seem to be a super admin! Sorry, there\'s nothing more I can do.'
-               sys.exit(3)
-             org_policy = callGAPI(crm.organizations(), u'getIamPolicy', resource=organization, body={})
-             if u'bindings' not in org_policy:
-               org_policy[u'bindings'] = []
-               print u'Looks like no one has rights to your Google Cloud Organization. Attempting to give you create rights...'
-             else:
-               print u'The following rights seem to exist:'
-               for a_policy in org_policy[u'bindings']:
-                 if u'role' in a_policy:
-                   print u' Role: %s' % a_policy[u'role']
-                 if u'members' in a_policy:
-                   print u' Members:'
-                   for member in a_policy[u'members']:
-                     print u'  %s' % member
-                 print
-             my_role = u'roles/resourcemanager.projectCreator'
-             print u'Giving %s the role of %s...' % (login_hint, my_role)
-             my_rights = {u'role': my_role,
-                     u'members': [u'user:%s' % login_hint]}
-             org_policy[u'bindings'].append(my_rights)
-             result = callGAPI(crm.organizations(), u'setIamPolicy', resource=organization,
-                               body={u'policy': org_policy})
-             create_again = True
-             break
+          print u'Hmm... Looks like you have no rights to your Google Cloud Organization.'
+          print u'Attempting to fix that...'
+          search_body = {u'filter': u'domain:%s' % login_domain}
+          getorg = callGAPI(crm.organizations(), u'search', body=search_body)
+          try:
+            organization = getorg[u'organizations'][0][u'name']
+            print u'Your organization name is %s' % organization
+          except (KeyError, IndexError):
+            print u'ERROR: you have no rights to create projects for your organization and you don\'t seem to be a super admin! Sorry, there\'s nothing more I can do.'
+            sys.exit(3)
+          org_policy = callGAPI(crm.organizations(), u'getIamPolicy', resource=organization, body={})
+          if u'bindings' not in org_policy:
+            org_policy[u'bindings'] = []
+            print u'Looks like no one has rights to your Google Cloud Organization. Attempting to give you create rights...'
+          else:
+            print u'The following rights seem to exist:'
+            for a_policy in org_policy[u'bindings']:
+              if u'role' in a_policy:
+                print u' Role: %s' % a_policy[u'role']
+              if u'members' in a_policy:
+                print u' Members:'
+                for member in a_policy[u'members']:
+                  print u'  %s' % member
+              print
+          my_role = u'roles/resourcemanager.projectCreator'
+          print u'Giving %s the role of %s...' % (login_hint, my_role)
+          my_rights = {u'role': my_role, u'members': [u'user:%s' % login_hint]}
+          org_policy[u'bindings'].append(my_rights)
+          result = callGAPI(crm.organizations(), u'setIamPolicy', resource=organization,
+                            body={u'policy': org_policy})
+          create_again = True
+          break
         try:
           if status[u'error'][u'details'][0][u'violations'][0][u'description'] == u'Callers must accept Terms of Service':
             print u'''Please go to:
