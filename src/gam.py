@@ -6942,6 +6942,38 @@ def doCreateUser():
 def GroupIsAbuseOrPostmaster(emailAddr):
   return emailAddr.startswith(u'abuse@') or emailAddr.startswith(u'postmaster@')
 
+def getGroupAttrValue(myarg, value, gs_object, gs_body, function):
+  for (attrib, params) in gs_object[u'schemas'][u'Groups'][u'properties'].items():
+    if attrib in [u'kind', u'etag', u'email']:
+      continue
+    if myarg == attrib.lower():
+      if params[u'type'] == u'integer':
+        try:
+          if value[-1:].upper() == u'M':
+            value = int(value[:-1]) * 1024 * 1024
+          elif value[-1:].upper() == u'K':
+            value = int(value[:-1]) * 1024
+          elif value[-1].upper() == u'B':
+            value = int(value[:-1])
+          else:
+            value = int(value)
+        except ValueError:
+          print u'ERROR: %s must be a number ending with M (megabytes), K (kilobytes) or nothing (bytes); got %s' % value
+          sys.exit(2)
+      elif params[u'type'] == u'string':
+        if attrib == u'description':
+          value = value.replace(u'\\n', u'\n')
+        elif params[u'description'].find(value.upper()) != -1: # ugly hack because API wants some values uppercased.
+          value = value.upper()
+        elif value.lower() in true_values:
+          value = u'true'
+        elif value.lower() in false_values:
+          value = u'false'
+      gs_body[attrib] = value
+      return
+  print u'ERROR: %s is not a valid argument for "gam %s group"' % (myarg, function)
+  sys.exit(2)
+
 def doCreateGroup():
   cd = buildGAPIObject(u'directory')
   body = {u'email': sys.argv[3]}
@@ -6952,11 +6984,12 @@ def doCreateGroup():
   gs_body = {}
   gs = None
   while i < len(sys.argv):
-    if sys.argv[i].lower() == u'name':
+    myarg = sys.argv[i].lower().replace(u'_', u'')
+    if myarg == u'name':
       body[u'name'] = sys.argv[i+1]
       got_name = True
       i += 2
-    elif sys.argv[i].lower() == u'description':
+    elif myarg == u'description':
       description = sys.argv[i+1].replace(u'\\n', u'\n')
       if description.find(u'\n') != -1:
         gs_body[u'description'] = description
@@ -6967,48 +7000,22 @@ def doCreateGroup():
         body[u'description'] = description
       i += 2
     else:
-      value = sys.argv[i+1]
       if not gs:
         gs = buildGAPIObject(u'groupssettings')
         gs_object = gs._rootDesc
-      matches_gs_setting = False
-      for (attrib, params) in gs_object[u'schemas'][u'Groups'][u'properties'].items():
-        if attrib in [u'kind', u'etag', u'email', u'name', u'description']:
-          continue
-        if sys.argv[i].lower().replace(u'_', u'') == attrib.lower():
-          matches_gs_setting = True
-          if params[u'type'] == u'integer':
-            try:
-              if value[-1:].upper() == u'M':
-                value = int(value[:-1]) * 1024 * 1024
-              elif value[-1:].upper() == u'K':
-                value = int(value[:-1]) * 1024
-              elif value[-1].upper() == u'B':
-                value = int(value[:-1])
-              else:
-                value = int(value)
-            except ValueError:
-              print u'ERROR: %s must be a number ending with M (megabytes), K (kilobytes) or nothing (bytes); got %s' % value
-              sys.exit(2)
-          elif params[u'type'] == u'string':
-            if params[u'description'].find(value.upper()) != -1: # ugly hack because API wants some values uppercased.
-              value = value.upper()
-            elif value.lower() in true_values:
-              value = u'true'
-            elif value.lower() in false_values:
-              value = u'false'
-          break
-      if not matches_gs_setting:
-        print u'ERROR: %s is not a valid argument for "gam create group"' % sys.argv[i]
-        sys.exit(2)
-      gs_body[attrib] = value
+      getGroupAttrValue(myarg, sys.argv[i+1], gs_object, gs_body, u'create')
       i += 2
   if not got_name:
     body[u'name'] = body[u'email']
   print u"Creating group %s" % body[u'email']
   callGAPI(cd.groups(), u'insert', body=body, fields=u'email')
   if gs and not GroupIsAbuseOrPostmaster(body[u'email']):
-    callGAPI(gs.groups(), u'patch', retry_reasons=[u'serviceLimit'], groupUniqueId=body[u'email'], body=gs_body)
+    settings = callGAPI(gs.groups(), u'get',
+                        retry_reasons=[u'serviceLimit'],
+                        groupUniqueId=body[u'email'], fields=u'*')
+    if settings is not None:
+      settings.update(gs_body)
+      callGAPI(gs.groups(), u'update', retry_reasons=[u'serviceLimit'], groupUniqueId=body[u'email'], body=settings)
 
 def doCreateAlias():
   cd = buildGAPIObject(u'directory')
@@ -7262,11 +7269,12 @@ def doUpdateGroup():
     gs_body = {}
     cd_body = {}
     while i < len(sys.argv):
-      if sys.argv[i].lower() == u'email':
+      myarg = sys.argv[i].lower().replace(u'_', u'')
+      if myarg == u'email':
         use_cd_api = True
         cd_body[u'email'] = sys.argv[i+1]
         i += 2
-      elif sys.argv[i].lower() == u'admincreated':
+      elif myarg == u'admincreated':
         use_cd_api = True
         cd_body[u'adminCreated'] = sys.argv[i+1].lower()
         if cd_body[u'adminCreated'] not in [u'true', u'false']:
@@ -7274,43 +7282,10 @@ def doUpdateGroup():
           sys.exit(2)
         i += 2
       else:
-        value = sys.argv[i+1]
         if not gs:
           gs = buildGAPIObject(u'groupssettings')
           gs_object = gs._rootDesc
-        matches_gs_setting = False
-        for (attrib, params) in gs_object[u'schemas'][u'Groups'][u'properties'].items():
-          if attrib in [u'kind', u'etag', u'email']:
-            continue
-          if sys.argv[i].lower().replace(u'_', u'') == attrib.lower():
-            matches_gs_setting = True
-            if params[u'type'] == u'integer':
-              try:
-                if value[-1:].upper() == u'M':
-                  value = int(value[:-1]) * 1024 * 1024
-                elif value[-1:].upper() == u'K':
-                  value = int(value[:-1]) * 1024
-                elif value[-1].upper() == u'B':
-                  value = int(value[:-1])
-                else:
-                  value = int(value)
-              except ValueError:
-                print u'ERROR: %s must be a number ending with M (megabytes), K (kilobytes) or nothing (bytes); got %s' % value
-                sys.exit(2)
-            elif params[u'type'] == u'string':
-              if attrib == u'description':
-                value = value.replace(u'\\n', u'\n')
-              elif params[u'description'].find(value.upper()) != -1: # ugly hack because API wants some values uppercased.
-                value = value.upper()
-              elif value.lower() in true_values:
-                value = u'true'
-              elif value.lower() in false_values:
-                value = u'false'
-            break
-        if not matches_gs_setting:
-          print u'ERROR: %s is not a valid argument for "gam update group"' % sys.argv[i]
-          sys.exit(2)
-        gs_body[attrib] = value
+        getGroupAttrValue(myarg, sys.argv[i+1], gs_object, gs_body, u'update')
         i += 2
     if group[:4].lower() == u'uid:': # group settings API won't take uid so we make sure cd API is used so that we can grab real email.
       use_cd_api = True
@@ -7328,7 +7303,12 @@ def doUpdateGroup():
       if use_cd_api:
         group = cd_result[u'email']
       if not GroupIsAbuseOrPostmaster(group):
-        callGAPI(gs.groups(), u'patch', retry_reasons=[u'serviceLimit'], groupUniqueId=group, body=gs_body)
+        settings = callGAPI(gs.groups(), u'get',
+                            retry_reasons=[u'serviceLimit'],
+                            groupUniqueId=group, fields=u'*')
+        if settings is not None:
+          settings.update(gs_body)
+          callGAPI(gs.groups(), u'update', retry_reasons=[u'serviceLimit'], groupUniqueId=group, body=settings)
     print u'updated group %s' % group
 
 def doUpdateAlias():
