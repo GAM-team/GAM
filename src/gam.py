@@ -1378,7 +1378,16 @@ def doGetCustomerInfo():
   if u'phoneNumber' in customer_info:
     print u'Phone: %s' % customer_info[u'phoneNumber']
   print u'Admin Secondary Email: %s' % customer_info[u'alternateEmail']
-  parameters = u'accounts:num_users,accounts:apps_total_licenses,accounts:apps_used_licenses'
+  user_counts_map = {
+          u'accounts:num_users': u'Total Users',
+          u'accounts:gsuite_basic_total_licenses': u'G Suite Basic Licenses',
+          u'accounts:gsuite_basic_used_licenses': u'G Suite Basic Users',
+          u'accounts:gsuite_enterprise_total_licenses': u'G Suite Enterprise Licenses',
+          u'accounts:gsuite_enterprise_used_licenses': u'G Suite Enterprise Users',
+          u'accounts:gsuite_unlimited_total_licenses': u'G Suite Business Licenses',
+          u'accounts:gsuite_unlimited_used_licenses': u'G Suite Business Users'
+          }
+  parameters = u','.join(user_counts_map.keys())
   try_date = str(datetime.date.today())
   customerId = GC_Values[GC_CUSTOMER_ID]
   if customerId == MY_CUSTOMER:
@@ -1400,15 +1409,12 @@ def doGetCustomerInfo():
   for item in usage[0][u'parameters']:
     if not u'intValue' in item or int(item[u'intValue']) == 0:
       continue
-    api_name = name = item[u'name']
     api_value = int(item[u'intValue'])
-    if api_name == u'accounts:num_users':
-      name = u'Total Users'
-    elif api_name == u'accounts:apps_total_licenses':
-      name = u'G Suite Basic Licenses'
-    elif api_name == u'accounts:apps_used_licenses':
-      name = u'G Suite Basic Users'
-    print u'  {}: {:,}'.format(name, api_value)
+    try:
+      api_name = user_counts_map[item[u'name']]
+    except KeyError:
+      continue
+    print u'  {}: {:,}'.format(api_name, api_value)
 
 def doUpdateCustomer():
   cd = buildGAPIObject(u'directory')
