@@ -1422,11 +1422,10 @@ def doGetCustomerInfo():
     try_date = _adjustDate(message)
   print u'User counts as of %s:' % try_date
   for item in usage[0][u'parameters']:
-    if not u'intValue' in item or int(item[u'intValue']) == 0:
-      continue
     api_name = user_counts_map.get(item[u'name'])
-    if api_name:
-      print u'  {}: {:,}'.format(api_name, int(item[u'intValue']))
+    api_value = int(item.get(u'intValue', 0))
+    if api_name and api_value:
+      print u'  {}: {:,}'.format(api_name, api_value)
 
 def doUpdateCustomer():
   cd = buildGAPIObject(u'directory')
