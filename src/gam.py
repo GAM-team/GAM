@@ -1424,12 +1424,10 @@ def doGetCustomerInfo():
   for item in usage[0][u'parameters']:
     if not u'intValue' in item or int(item[u'intValue']) == 0:
       continue
-    api_value = int(item[u'intValue'])
-    try:
-      api_name = user_counts_map[item[u'name']]
-    except KeyError:
-      continue
-    print u'  {}: {:,}'.format(api_name, api_value)
+    api_name = user_counts_map.get(item[u'name'])
+    if api_name:
+      api_value = int(item[u'intValue'])
+      print u'  {}: {:,}'.format(api_name, api_value)
 
 def doUpdateCustomer():
   cd = buildGAPIObject(u'directory')
