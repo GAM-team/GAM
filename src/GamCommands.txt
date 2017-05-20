@@ -772,7 +772,7 @@ gam <UserTypeEntity> delete|del backupcodes|backupcode|verificationcodes
 gam <UserTypeEntity> show backupcodes|backupcode|verificationcodes
 
 gam <UserTypeEntity> add calendar <CalendarItem> <CalendarAttributes>*
-gam <UserTypeEntity> update calendar <CalendarItem> <CalendarAttributes>+
+gam <UserTypeEntity> update calendar <CalendarItem>|primary <CalendarAttributes>+
 gam <UserTypeEntity> delete|del calendar <CalendarItem>
 gam <UserTypeEntity> show calendars
 gam <UserTypeEntity> info calendar <CalendarItem>|primary
