@@ -818,11 +818,26 @@ def buildActivityGAPIObject(user):
   userEmail = convertUserUIDtoEmailAddress(user)
   return (userEmail, buildGAPIServiceObject(u'appsactivity', userEmail))
 
-def buildCalendarGAPIObject(calname):
+def normalizeCalendarId(calname, checkPrimary=False):
+  calname = calname.lower()
+  if checkPrimary and calname == u'primary':
+    return calname
   if not GC_Values[GC_DOMAIN]:
-    GC_Values[GC_DOMAIN] = _getValueFromOAuth(u'hd').lower()
-  calendarId = convertUserUIDtoEmailAddress(calname)
+    GC_Values[GC_DOMAIN] = _getValueFromOAuth(u'hd')
+  return convertUserUIDtoEmailAddress(calname)
+
+def buildCalendarGAPIObject(calname):
+  calendarId = normalizeCalendarId(calname)
   return (calendarId, buildGAPIServiceObject(u'calendar', calendarId))
+
+def buildCalendarDataGAPIObject(calname):
+  calendarId, cal = buildCalendarGAPIObject(calname)
+  try:
+    # Force service account token request. If we fail fall back to using admin for authentication
+    cal._http.request.credentials.refresh(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL]))
+  except oauth2client.client.HttpAccessTokenRefreshError:
+    _, cal = buildCalendarGAPIObject(_getValueFromOAuth(u'email'))
+  return (calendarId, cal)
 
 def buildDriveGAPIObject(user):
   userEmail = convertUserUIDtoEmailAddress(user)
@@ -1379,14 +1394,14 @@ def doGetCustomerInfo():
     print u'Phone: %s' % customer_info[u'phoneNumber']
   print u'Admin Secondary Email: %s' % customer_info[u'alternateEmail']
   user_counts_map = {
-          u'accounts:num_users': u'Total Users',
-          u'accounts:gsuite_basic_total_licenses': u'G Suite Basic Licenses',
-          u'accounts:gsuite_basic_used_licenses': u'G Suite Basic Users',
-          u'accounts:gsuite_enterprise_total_licenses': u'G Suite Enterprise Licenses',
-          u'accounts:gsuite_enterprise_used_licenses': u'G Suite Enterprise Users',
-          u'accounts:gsuite_unlimited_total_licenses': u'G Suite Business Licenses',
-          u'accounts:gsuite_unlimited_used_licenses': u'G Suite Business Users'
-          }
+    u'accounts:num_users': u'Total Users',
+    u'accounts:gsuite_basic_total_licenses': u'G Suite Basic Licenses',
+    u'accounts:gsuite_basic_used_licenses': u'G Suite Basic Users',
+    u'accounts:gsuite_enterprise_total_licenses': u'G Suite Enterprise Licenses',
+    u'accounts:gsuite_enterprise_used_licenses': u'G Suite Enterprise Users',
+    u'accounts:gsuite_unlimited_total_licenses': u'G Suite Business Licenses',
+    u'accounts:gsuite_unlimited_used_licenses': u'G Suite Business Users'
+    }
   parameters = u','.join(user_counts_map.keys())
   try_date = str(datetime.date.today())
   customerId = GC_Values[GC_CUSTOMER_ID]
@@ -1407,14 +1422,10 @@ def doGetCustomerInfo():
     try_date = _adjustDate(message)
   print u'User counts as of %s:' % try_date
   for item in usage[0][u'parameters']:
-    if not u'intValue' in item or int(item[u'intValue']) == 0:
-      continue
-    api_value = int(item[u'intValue'])
-    try:
-      api_name = user_counts_map[item[u'name']]
-    except KeyError:
-      continue
-    print u'  {}: {:,}'.format(api_name, api_value)
+    api_name = user_counts_map.get(item[u'name'])
+    api_value = int(item.get(u'intValue', 0))
+    if api_name and api_value:
+      print u'  {}: {:,}'.format(api_name, api_value)
 
 def doUpdateCustomer():
   cd = buildGAPIObject(u'directory')
@@ -2506,9 +2517,7 @@ def changeCalendarAttendees(users):
         break
 
 def deleteCalendar(users):
-  calendarId = sys.argv[5]
-  if calendarId.find(u'@') == -1:
-    calendarId = u'%s@%s' % (calendarId, GC_Values[GC_DOMAIN])
+  calendarId = normalizeCalendarId(sys.argv[5])
   for user in users:
     user, cal = buildCalendarGAPIObject(user)
     if not cal:
@@ -2588,9 +2597,7 @@ def getCalendarAttributes(i, body, function):
   return colorRgbFormat
 
 def addCalendar(users):
-  calendarId = sys.argv[5]
-  if calendarId.find(u'@') == -1:
-    calendarId = u'%s@%s' % (calendarId, GC_Values[GC_DOMAIN])
+  calendarId = normalizeCalendarId(sys.argv[5])
   body = {u'id': calendarId, u'selected': True, u'hidden': False}
   colorRgbFormat = getCalendarAttributes(6, body, u'add')
   i = 0
@@ -2604,9 +2611,7 @@ def addCalendar(users):
     callGAPI(cal.calendarList(), u'insert', soft_errors=True, body=body, colorRgbFormat=colorRgbFormat)
 
 def updateCalendar(users):
-  calendarId = sys.argv[5]
-  if calendarId.find(u'@') == -1:
-    calendarId = u'%s@%s' % (calendarId, GC_Values[GC_DOMAIN])
+  calendarId = normalizeCalendarId(sys.argv[5], checkPrimary=True)
   body = {}
   colorRgbFormat = getCalendarAttributes(6, body, u'update')
   i = 0
@@ -3018,13 +3023,9 @@ def formatACLRule(rule):
   return u'(Scope: {0}, Role: {1})'.format(rule[u'scope'][u'type'], rule[u'role'])
 
 def doCalendarShowACL():
-  calendarId, cal = buildCalendarGAPIObject(sys.argv[2])
-  try:
-    # Force service account token request. If we fail fall back to
-    # using admin for delegation
-    cal._http.request.credentials.refresh(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL]))
-  except oauth2client.client.HttpAccessTokenRefreshError:
-    _, cal = buildCalendarGAPIObject(_getValueFromOAuth(u'email'))
+  calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
+  if not cal:
+    return
   acls = callGAPIitems(cal.acl(), u'list', u'items', calendarId=calendarId)
   i = 0
   count = len(acls)
@@ -3033,18 +3034,14 @@ def doCalendarShowACL():
     print u'Calendar: {0}, ACL: {1}{2}'.format(calendarId, formatACLRule(rule), currentCount(i, count))
 
 def doCalendarAddACL(calendarId=None, act_as=None, role=None, scope=None, entity=None):
-  if not GC_Values[GC_DOMAIN]:
-    GC_Values[GC_DOMAIN] = _getValueFromOAuth(u'hd').lower()
   if calendarId is None:
     calendarId = sys.argv[2]
-  if calendarId.find(u'@') == -1:
-    calendarId = u'%s@%s' % (calendarId, GC_Values[GC_DOMAIN])
   if not act_as:
+    calendarId = normalizeCalendarId(calendarId)
     act_as = calendarId
   _, cal = buildCalendarGAPIObject(act_as)
   try:
-    # Force service account token request. If we fail fall back to
-    # using admin for delegation
+    # Force service account token request. If we fail fall back to using admin for authentication
     cal._http.request.credentials.refresh(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL]))
   except oauth2client.client.HttpAccessTokenRefreshError:
     _, cal = buildCalendarGAPIObject(_getValueFromOAuth(u'email'))
@@ -3053,8 +3050,8 @@ def doCalendarAddACL(calendarId=None, act_as=None, role=None, scope=None, entity
     body[u'role'] = role
   else:
     body[u'role'] = sys.argv[4].lower()
-  if body[u'role'] not in [u'freebusy', u'read', u'reader', u'editor', u'owner', u'none']:
-    print u'ERROR: Role must be one of freebusy, read, editor, owner, none; got %s' % body[u'role']
+  if body[u'role'] not in [u'freebusy', u'read', u'reader', u'editor', u'writer', u'owner', u'none']:
+    print u'ERROR: Role must be one of freebusy, reader, editor, writer, owner, none; got %s' % body[u'role']
     sys.exit(2)
   if body[u'role'] == u'freebusy':
     body[u'role'] = u'freeBusyReader'
@@ -3108,13 +3105,13 @@ def doCalendarDelACL():
   doCalendarAddACL(calendarId=calendarId, role=u'none', scope=scope, entity=entity)
 
 def doCalendarWipeData():
-  calendarId, cal = buildCalendarGAPIObject(sys.argv[2])
+  calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
   if not cal:
     return
   callGAPI(cal.calendars(), u'clear', calendarId=calendarId)
 
 def doCalendarDeleteEvent():
-  calendarId, cal = buildCalendarGAPIObject(sys.argv[2])
+  calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
   if not cal:
     return
   events = []
@@ -3150,7 +3147,7 @@ def doCalendarDeleteEvent():
       print u' would delete eventId %s. Add doit to command to actually delete event' % eventId
 
 def doCalendarAddEvent():
-  calendarId, cal = buildCalendarGAPIObject(sys.argv[2])
+  calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
   if not cal:
     return
   sendNotifications = timeZone = None
@@ -3412,9 +3409,7 @@ def _showCalendar(userCalendar, j, jcount):
       print u'      Method: {0}, Type: {1}'.format(notification[u'method'], notification[u'type'])
 
 def infoCalendar(users):
-  calendarId = sys.argv[5].lower()
-  if calendarId != u'primary' and calendarId.find(u'@') == -1:
-    calendarId = u'%s@%s' % (calendarId, GC_Values[GC_DOMAIN])
+  calendarId = normalizeCalendarId(sys.argv[5], checkPrimary=True)
   i = 0
   count = len(users)
   for user in users:
