@@ -1426,8 +1426,7 @@ def doGetCustomerInfo():
       continue
     api_name = user_counts_map.get(item[u'name'])
     if api_name:
-      api_value = int(item[u'intValue'])
-      print u'  {}: {:,}'.format(api_name, api_value)
+      print u'  {}: {:,}'.format(api_name, int(item[u'intValue']))
 
 def doUpdateCustomer():
   cd = buildGAPIObject(u'directory')
