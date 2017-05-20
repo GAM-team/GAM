@@ -6957,7 +6957,14 @@ def doCreateGroup():
       got_name = True
       i += 2
     elif sys.argv[i].lower() == u'description':
-      body[u'description'] = sys.argv[i+1].replace(u'\\n', u'\n')
+      description = sys.argv[i+1].replace(u'\\n', u'\n')
+      if description.find(u'\n') != -1:
+        gs_body[u'description'] = description
+        if not gs:
+          gs = buildGAPIObject(u'groupssettings')
+          gs_object = gs._rootDesc
+      else:
+        body[u'description'] = description
       i += 2
     else:
       value = sys.argv[i+1]
