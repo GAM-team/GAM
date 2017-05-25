@@ -13,7 +13,7 @@ The GAM documentation is hosted in the [GitHub Wiki]
 # Mailing List / Discussion group
 The GAM mailing list / discussion group is hosted on [Google Groups].  You can join the list and interact via email, or just post from the web itself.
 # Author
-GAM is maintained by <a href="mailto:jay0lee@gmail.com">Jay Lee</a>. Please direct "how do I?" questions to the mailing list.
+GAM is maintained by <a href="mailto:jay0lee@gmail.com">Jay Lee</a>. Please direct "how do I?" questions to [Google Groups].
 
 [GAM release]: https://git.io/gamreleases
 [GitHub Releases]: https://github.com/jay0lee/GAM/releases
