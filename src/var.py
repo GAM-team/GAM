@@ -43,6 +43,8 @@ FN_OAUTH2SERVICE_JSON = u'oauth2service.json'
 FN_OAUTH2_TXT = u'oauth2.txt'
 MY_CUSTOMER = u'my_customer'
 SKUS = {
+  u'Google-Apps': {
+    u'product': u'Google-Apps', u'aliases': [u'standard', u'free'], u'displayName': u'G Suite Free/Standard'},
   u'Google-Apps-For-Business': {
     u'product': u'Google-Apps', u'aliases': [u'gafb', u'gafw', u'basic', u'gsuitebasic'], u'displayName': u'G Suite Basic'},
   u'Google-Apps-For-Government': {
@@ -101,6 +103,7 @@ API_VER_MAPPING = {
   u'reports': u'reports_v1',
   u'reseller': u'v1',
   u'siteVerification': u'v1',
+  u'urlshortener': u'v1',
   }
 
 API_SCOPE_MAPPING = {
