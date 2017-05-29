@@ -26,6 +26,7 @@ Primitives
 	Google-Drive-storage|
 	Google-Vault
 <SKUID> ::=
+	free|standard|Google-Apps|
 	gafb|gafw|basic|gsuitebasic|Google-Apps-For-Business|
 	gafg|gsuitegovernment|gsuitegov|Google-Apps-For-Government|
 	gams|postini|gsuitegams|gsuitepostini|gsuitemessagesecurity|Google-Apps-For-Postini|
