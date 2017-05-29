@@ -960,6 +960,9 @@ def showReport():
       except KeyError:
         raise
       try_date = _adjustDate(message)
+    if not usage:
+      print u'No user report available.'
+      sys.exit(1)
     titles = [u'email', u'date']
     csvRows = []
     for user_report in usage:
@@ -993,6 +996,9 @@ def showReport():
       except KeyError:
         raise
       try_date = _adjustDate(message)
+    if not usage:
+      print u'No customer report available.'
+      sys.exit(1)
     titles = [u'name', u'value', u'client_id']
     csvRows = []
     auth_apps = list()
@@ -1420,6 +1426,9 @@ def doGetCustomerInfo():
     except KeyError:
       raise
     try_date = _adjustDate(message)
+  if not usage:
+    print u'No user count data available.'
+    return
   print u'User counts as of %s:' % try_date
   for item in usage[0][u'parameters']:
     api_name = user_counts_map.get(item[u'name'])
