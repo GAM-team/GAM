@@ -9624,11 +9624,15 @@ def doPrintCrosActivity():
   listLimit = 0
   delimiter = u','
   query = None
+  orgUnitPath = None
   i = 3
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace(u'_', u'')
     if myarg == u'query':
       query = sys.argv[i+1]
+      i += 2
+    if myarg == u'limittoou':
+      orgUnitPath = sys.argv[i+1]
       i += 2
     elif myarg == u'todrive':
       todrive = True
@@ -9668,7 +9672,7 @@ def doPrintCrosActivity():
   page_message = u'Got %%num_items%% Chrome devices...\n'
   all_cros = callGAPIpages(cd.chromeosdevices(), u'list', u'chromeosdevices', page_message=page_message,
                            query=query, customerId=GC_Values[GC_CUSTOMER_ID], projection=u'FULL',
-                           fields=fields, maxResults=GC_Values[GC_DEVICE_MAX_RESULTS])
+                           fields=fields, maxResults=GC_Values[GC_DEVICE_MAX_RESULTS], orgUnitPath=orgUnitPath)
   for cros in all_cros:
     row = {}
     for attrib in cros:
@@ -9706,7 +9710,7 @@ def doPrintCrosDevices():
   csvRows = []
   addFieldToCSVfile(u'deviceid', CROS_ARGUMENT_TO_PROPERTY_MAP, fieldsList, fieldsTitles, titles)
   sortHeaders = False
-  query = projection = orderBy = sortOrder = None
+  query = projection = orderBy = sortOrder = orgUnitPath = None
   noLists = False
   selectActiveTimeRanges = selectRecentUsers = False
   startDate = endDate = None
@@ -9716,6 +9720,9 @@ def doPrintCrosDevices():
     myarg = sys.argv[i].lower().replace(u'_', u'')
     if myarg == u'query':
       query = sys.argv[i+1]
+      i += 2
+    elif myarg == u'limittoou':
+      orgUnitPath = sys.argv[i+1]
       i += 2
     elif myarg == u'todrive':
       todrive = True
@@ -9814,7 +9821,7 @@ def doPrintCrosDevices():
   sys.stderr.write(u'Retrieving All Chrome OS Devices for organization (may take some time for large accounts)...\n')
   page_message = u'Got %%num_items%% Chrome devices...\n'
   all_cros = callGAPIpages(cd.chromeosdevices(), u'list', u'chromeosdevices', page_message=page_message,
-                           query=query, customerId=GC_Values[GC_CUSTOMER_ID], projection=projection,
+                           query=query, customerId=GC_Values[GC_CUSTOMER_ID], projection=projection, orgUnitPath=orgUnitPath,
                            orderBy=orderBy, sortOrder=sortOrder, fields=fields, maxResults=GC_Values[GC_DEVICE_MAX_RESULTS])
   if (not noLists) and (not selectActiveTimeRanges) and (not selectRecentUsers):
     for cros in all_cros:
