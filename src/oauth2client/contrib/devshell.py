@@ -37,6 +37,7 @@ class CommunicationError(Error):
 class NoDevshellServer(Error):
     """Error when no Developer Shell server can be contacted."""
 
+
 # The request for credential information to the Developer Shell client socket
 # is always an empty PBLite-formatted JSON object, so just define it as a
 # constant.

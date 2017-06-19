@@ -38,7 +38,7 @@ def code_verifier(n_bytes=64):
     Returns:
         Bytestring, representing urlsafe base64-encoded random data.
     """
-    verifier = base64.urlsafe_b64encode(os.urandom(n_bytes))
+    verifier = base64.urlsafe_b64encode(os.urandom(n_bytes)).rstrip(b'=')
     # https://tools.ietf.org/html/rfc7636#section-4.1
     # minimum length of 43 characters and a maximum length of 128 characters.
     if len(verifier) < 43:
@@ -60,6 +60,8 @@ def code_challenge(verifier):
             code_verifier().
 
     Returns:
-        Bytestring, representing a urlsafe base64-encoded sha256 hash digest.
+        Bytestring, representing a urlsafe base64-encoded sha256 hash digest,
+            without '=' padding.
     """
-    return base64.urlsafe_b64encode(hashlib.sha256(verifier).digest())
+    digest = hashlib.sha256(verifier).digest()
+    return base64.urlsafe_b64encode(digest).rstrip(b'=')

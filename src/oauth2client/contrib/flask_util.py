@@ -176,6 +176,7 @@ try:
     from flask import request
     from flask import session
     from flask import url_for
+    import markupsafe
 except ImportError:  # pragma: NO COVER
     raise ImportError('The flask utilities require flask 0.9 or newer.')
 
@@ -388,6 +389,7 @@ class UserOAuth2(object):
         if 'error' in request.args:
             reason = request.args.get(
                 'error_description', request.args.get('error', ''))
+            reason = markupsafe.escape(reason)
             return ('Authorization failed: {0}'.format(reason),
                     httplib.BAD_REQUEST)
 

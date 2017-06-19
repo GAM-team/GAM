@@ -251,8 +251,8 @@ def validate_file(filename):
         raise IOError(_SYM_LINK_MESSAGE.format(filename))
     elif os.path.isdir(filename):
         raise IOError(_IS_DIR_MESSAGE.format(filename))
-    #elif not os.path.isfile(filename):
-    #    warnings.warn(_MISSING_FILE_MESSAGE.format(filename))
+    elif not os.path.isfile(filename):
+        warnings.warn(_MISSING_FILE_MESSAGE.format(filename))
 
 
 def _parse_pem_key(raw_key_input):

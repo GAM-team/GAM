@@ -14,7 +14,7 @@
 
 """Client library for using OAuth2, especially with Google APIs."""
 
-__version__ = '4.0.0'
+__version__ = '4.1.0'
 
 GOOGLE_AUTH_URI = 'https://accounts.google.com/o/oauth2/v2/auth'
 GOOGLE_DEVICE_URI = 'https://accounts.google.com/o/oauth2/device/code'
