@@ -127,7 +127,7 @@ Named items
 <QueryCalendar> ::= <String>
 <QueryContact> ::= <String> See: https://developers.google.com/google-apps/contacts/v3/reference#contacts-query-parameters-reference
 <QueryCrOS> ::= <String> See: https://support.google.com/chrome/a/answer/1698333?hl=en
-<QueryDriveFile> :: = <String> See: https://developers.google.com/drive/v2/web/search-parameters 
+<QueryDriveFile> :: = <String> See: https://developers.google.com/drive/v2/web/search-parameters
 <QueryGmail> ::= <String> See: https://support.google.com/mail/answer/7190
 <QueryMobile> ::= <String> See: https://support.google.com/a/answer/1408863?hl=en#search
 <QueryPrinter> ::= <String> See: https://developers.google.com/cloud-print/docs/appInterfaces#search
@@ -480,7 +480,7 @@ Item attributes
 	(defaultdisplayname <String>)|(description <String>)|(displayname <String>)|(firmware <String>)|(gcpversion <String>)|
 	(istosaccepted <Boolean>)|(manufacturer <String>)|(model <String>)|(name <String>)|(ownerid <EmailAddress>)|(proxy <String>)|(public <Boolean>)|
 	(quotaenabled <Boolean>)|(status <Number>)|(type <String>)|(uuid <String>)|
-	(setupurl <URL>)|(supporturl <URL>)|(updateurl <URL>) 
+	(setupurl <URL>)|(supporturl <URL>)|(updateurl <URL>)
 
 <SchemaFieldDefinition> ::=
 	field <FieldName> (type bool|date|double|email|int64|phone|string) [multivalued|multivalue] [indexed] [restricted] [range <Number> <Number>] endfield
@@ -618,7 +618,7 @@ gam update cros <CrOSItem> (<CrOSAttributes>+)|(action deprovision_same_model_re
 gam info cros <CrOSItem> [nolists] [listlimit <Number>] [start <Date>] [end <Date>]
 	[basic|full|allfields] <CrOSFieldName>* [fields <CrOSFieldNameList>]
 
-gam print cros [todrive] [query <QueryCrOS>]
+gam print cros [todrive] [query <QueryCrOS>] [limittoou <OrgUnitItem>]
 	[orderby <CrOSOrderByFieldName> [ascending|descending]] [nolists] [listlimit <Number>] [start <Date>] [end <Date>]
 	[basic|full|allfields] <CrOSFieldName>* [fields <CrOSFieldNameList>]
 gam <CrOSTypeEntity> print
@@ -642,8 +642,8 @@ activeTimeRanges.duration and activeTimeRanges.minutes are output on a separate 
 The listlimit <Number> argument limits the number of repetitions to <Number>; if not specified or <Number> equals zero, there is no limit.
 The start <Date> and end <Date> arguments filter the time ranges.
 
-gam print crosactivity [todrive] [query <QueryCrOS>]
-	[recentusers] [timeranges] [both] [listlimit <Number>] [start <Date>] [end <Date>] [delimiter <String>] 
+gam print crosactivity [todrive] [query <QueryCrOS>] [limittoou <OrgUnitItem>]
+	[recentusers] [timeranges] [both] [listlimit <Number>] [start <Date>] [end <Date>] [delimiter <String>]
 
 The basic column headers are: deviceId,annotatedAssetId,annotatedLocation,serialNumber,orgUnitPath.
 If recentusers is specified, all of the recent users email addresses, separated by the delimiter <String>,
