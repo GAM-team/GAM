@@ -8454,6 +8454,11 @@ def doGetNotifications():
     print u'--------------'
     print u''
 
+def orgUnitPathQuery(path):
+  if path != u'/':
+    return u"orgUnitPath='{0}'".format(path.replace(u"'", u"\'"))
+  return None
+
 def doGetOrgInfo():
   cd = buildGAPIObject(u'directory')
   name = sys.argv[3]
@@ -8484,7 +8489,7 @@ def doGetOrgInfo():
     print u'Users: '
     page_message = u'Got %%total_items%% users: %%first_item%% - %%last_item%%\n'
     users = callGAPIpages(cd.users(), u'list', u'users', page_message=page_message,
-                          message_attribute=u'primaryEmail', customer=GC_Values[GC_CUSTOMER_ID], query=u"orgUnitPath='%s'" % name,
+                          message_attribute=u'primaryEmail', customer=GC_Values[GC_CUSTOMER_ID], query=orgUnitPathQuery(name),
                           fields=u'users(primaryEmail,orgUnitPath),nextPageToken', maxResults=GC_Values[GC_USER_MAX_RESULTS])
     for user in users:
       if show_children or (name.lower() == user[u'orgUnitPath'].lower()):
@@ -10050,7 +10055,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
       page_message = u'Got %%total_items%% users..'
     members = callGAPIpages(cd.users(), u'list', u'users', page_message=page_message,
                             customer=GC_Values[GC_CUSTOMER_ID], fields=u'nextPageToken,users(primaryEmail,suspended)',
-                            query=u"orgUnitPath='%s'" % ou, maxResults=GC_Values[GC_USER_MAX_RESULTS])
+                            query=orgUnitPathQuery(ou), maxResults=GC_Values[GC_USER_MAX_RESULTS])
     for member in members:
       if not checkNotSuspended or not member[u'suspended']:
         users.append(member[u'primaryEmail'])
