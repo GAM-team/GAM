@@ -9631,7 +9631,7 @@ def doPrintCrosActivity():
     if myarg == u'query':
       query = sys.argv[i+1]
       i += 2
-    if myarg == u'limittoou':
+    elif myarg == u'limittoou':
       orgUnitPath = sys.argv[i+1]
       i += 2
     elif myarg == u'todrive':
