@@ -6676,6 +6676,43 @@ def doDelProjects(login_hint=None):
       except googleapiclient.errors.HttpError:
         pass
 
+def doUpdateProject(login_hint=None):
+  login_hint = getValidateLoginHint(login_hint)
+  _, http = getCRMService(login_hint)
+  cs_data = readFile(GC_Values[GC_CLIENT_SECRETS_JSON], mode=u'rb', continueOnError=True, displayError=True, encoding=None)
+  if not cs_data:
+    systemErrorExit(14, MISSING_CLIENT_SECRETS_MESSAGE)
+  try:
+    cs_json = json.loads(cs_data)
+    project_id = 'project:%s' % cs_json[u'installed'][u'project_id']
+  except (ValueError, IndexError, KeyError):
+    print u'ERROR: the format of your client secrets file:\n\n%s\n\n is incorrect. Please recreate the file.'
+    sys.exit(3)
+  simplehttp = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL])
+  _, c = simplehttp.request(GAM_PROJECT_APIS, u'GET')
+  apis_needed = c.splitlines()
+  serveman = googleapiclient.discovery.build(u'servicemanagement', u'v1', http=http, cache_discovery=False)
+  enabled_services_results = callGAPIpages(serveman.services(), u'list', items=u'services', consumerId=project_id, fields=u'nextPageToken,services(serviceName)')
+  for enabled in enabled_services_results:
+    if u'serviceName' in enabled and enabled[u'serviceName'] in apis_needed:
+      print u' API %s already enabled...' % enabled[u'serviceName']
+      apis_needed.remove(enabled[u'serviceName'])
+    elif u'serviceName' in enabled:
+      print u' non-GAM API %s is enabled (which is fine)' % enabled[u'serviceName']
+  for api in apis_needed:
+    while True:
+      print u' enabling API %s...' % api
+      try:
+        callGAPI(serveman.services(), u'enable', throw_reasons=[u'failedPrecondition'],
+                     serviceName=api, body={u'consumerId': project_id})
+        break
+      except googleapiclient.errors.HttpError, e:
+        print u'\nThere was an error enabling %s. Please resolve error as described below:' % api
+        print
+        print u'\n%s\n' % e
+        print
+        raw_input(u'Press enter once resolved and we will try enabling the API again.')
+
 def doCreateProject(login_hint=None):
 
   def _checkClientAndSecret(simplehttp, client_id, client_secret):
@@ -10698,6 +10735,12 @@ def ProcessGAMCommand(args):
         doUpdateResoldCustomer()
       elif argument in [u'resoldsubscription', u'resellersubscription']:
         doUpdateResoldSubscription()
+      elif argument in [u'project', u'apiproject']:
+        try:
+          login_hint = sys.argv[3]
+        except IndexError:
+          login_hint = None
+        doUpdateProject(login_hint)
       else:
         print u'ERROR: %s is not a valid argument for "gam update"' % argument
         sys.exit(2)
