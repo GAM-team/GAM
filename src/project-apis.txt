@@ -3,7 +3,7 @@ appsactivity.googleapis.com
 calendar-json.googleapis.com
 classroom.googleapis.com
 contacts.googleapis.com
-drive
+drive.googleapis.com
 gmail.googleapis.com
 groupssettings.googleapis.com
 licensing.googleapis.com
