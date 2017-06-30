@@ -7064,11 +7064,15 @@ def doCreateGroup():
       i += 2
     elif myarg == u'description':
       description = sys.argv[i+1].replace(u'\\n', u'\n')
-      if description.find(u'\n') != -1:
-        gs_body[u'description'] = description
-        if not gs:
-          gs = buildGAPIObject(u'groupssettings')
-          gs_object = gs._rootDesc
+# The Directory API Groups insert method can not handle any of these characters ('\n<>=') in the description field
+# If any of these characters are present, use the Group Settings API to set the description
+      for c in u'\n<>=':
+        if description.find(c) != -1:
+          gs_body[u'description'] = description
+          if not gs:
+            gs = buildGAPIObject(u'groupssettings')
+            gs_object = gs._rootDesc
+          break
       else:
         body[u'description'] = description
       i += 2
