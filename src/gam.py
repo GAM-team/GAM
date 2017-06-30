@@ -9471,7 +9471,7 @@ def doPrintOrgs():
     else:
       print u'ERROR: %s is not a valid argument for "gam print orgs"' % sys.argv[i]
       sys.exit(2)
-  sys.stderr.write(u"Retrieving All Organizational Units for your account (may take some time on large domain)...")
+  sys.stderr.write(u"Retrieving All Organizational Units for your account (may take some time on large domain)...\n")
   if fields:
     get_fields = u','.join(fields)
     list_fields = u'organizationUnits(%s)' % get_fields
