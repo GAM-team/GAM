@@ -9671,7 +9671,6 @@ def doPrintMobileDevices():
       i += 1
     elif myarg == u'fields':
       fields = u'nextPageToken,mobiledevices(%s)' % sys.argv[i+1]
-      print fields
       i += 2
     elif myarg == u'orderby':
       orderBy = sys.argv[i+1].lower()
@@ -9718,7 +9717,6 @@ def doPrintMobileDevices():
           app_details.append(app.get(u'packageName', u'<missing>'))
           app_details.append(app.get(u'versionName', u'<missing>'))
           app_details.append(unicode(app.get(u'versionCode', u'<missing>')))
-          print app_details
           applications.append(u' - '.join(app_details))
         mobiledevice[u'applications'] = u'\n'.join(applications)
       else:
