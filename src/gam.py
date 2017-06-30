@@ -1485,7 +1485,7 @@ def doUpdateCustomer():
     else:
       print u'ERROR: %s is not a valid argument for "gam update customer"' % myarg
       sys.exit(2)
-  callGAPI(cd.customers(), u'patch', customerKey=GC_Values[GC_CUSTOMER_ID], body=body)
+  callGAPI(cd.customers(), u'update', customerKey=GC_Values[GC_CUSTOMER_ID], body=body)
   print u'Updated customer'
 
 def doDelDomain():
@@ -3319,7 +3319,7 @@ def doProfile(users):
     elif user.find(u'@') == -1:
       user = u'%s@%s' % (user, GC_Values[GC_DOMAIN])
     print u'Setting Profile Sharing to %s for %s (%s/%s)' % (body[u'includeInGlobalAddressList'], user, i, count)
-    callGAPI(cd.users(), u'patch', soft_errors=True, userKey=user, body=body)
+    callGAPI(cd.users(), u'update', soft_errors=True, userKey=user, body=body)
 
 def showProfile(users):
   cd = buildGAPIObject(u'directory')
@@ -7371,7 +7371,7 @@ def doUpdateGroup():
           cd_body[u'email'] = u'%s@%s' % (cd_body[u'email'], GC_Values[GC_DOMAIN])
       except KeyError:
         pass
-      cd_result = callGAPI(cd.groups(), u'patch', groupKey=group, body=cd_body)
+      cd_result = callGAPI(cd.groups(), u'update', groupKey=group, body=cd_body)
     if gs:
       if use_cd_api:
         group = cd_result[u'email']
@@ -7503,7 +7503,7 @@ def doUpdateCros():
   for this_device in devices:
     if update_device:
       print u' updating %s (%s of %s)' % (this_device, i, device_count)
-      callGAPI(service=cd.chromeosdevices(), function=u'patch', deviceId=this_device, body=body, customerId=GC_Values[GC_CUSTOMER_ID])
+      callGAPI(service=cd.chromeosdevices(), function=u'update', deviceId=this_device, body=body, customerId=GC_Values[GC_CUSTOMER_ID])
     elif action_device:
       if body[u'action'] == u'deprovision' and not ack_wipe:
         print u'WARNING: Refusing to deprovision %s because acknowledge_device_touch_requirement not specified. Deprovisioning a device means the device will have to be physically wiped and re-enrolled to be managed by your domain again. This requires physical access to the device and is very time consuming to perform for each device. Please add "acknowledge_device_touch_requirement" to the GAM command if you understand this and wish to proceed with the deprovision. Please also be aware that deprovisioning can have an effect on your device license count. See https://support.google.com/chrome/a/answer/3523633 for full details.' % (this_device)
@@ -7547,7 +7547,7 @@ def doUpdateMobile():
       print u'ERROR: %s is not a valid argument for "gam update mobile"' % sys.argv[i]
       sys.exit(2)
   if doPatch:
-    callGAPI(cd.mobiledevices(), u'patch', resourceId=resourceId, body=patch_body, customerId=GC_Values[GC_CUSTOMER_ID])
+    callGAPI(cd.mobiledevices(), u'update', resourceId=resourceId, body=patch_body, customerId=GC_Values[GC_CUSTOMER_ID])
   if doAction:
     callGAPI(cd.mobiledevices(), u'action', resourceId=resourceId, body=action_body, customerId=GC_Values[GC_CUSTOMER_ID])
 
@@ -7570,7 +7570,7 @@ def doUpdateOrg():
       for cros in users:
         current_cros += 1
         sys.stderr.write(u' moving %s to %s (%s/%s)\n' % (cros, orgUnitPath, current_cros, cros_count))
-        callGAPI(cd.chromeosdevices(), u'patch', soft_errors=True,
+        callGAPI(cd.chromeosdevices(), u'update', soft_errors=True,
                  customerId=GC_Values[GC_CUSTOMER_ID], deviceId=cros, body={u'orgUnitPath': u'//%s' % orgUnitPath})
     else:
       if orgUnitPath != u'/' and orgUnitPath[0] != u'/': # we do want a / at the beginning for user updates
@@ -7581,7 +7581,7 @@ def doUpdateOrg():
         current_user += 1
         sys.stderr.write(u' moving %s to %s (%s/%s)\n' % (user, orgUnitPath, current_user, user_count))
         try:
-          callGAPI(cd.users(), u'patch', throw_reasons=[u'conditionNotMet'], userKey=user, body={u'orgUnitPath': orgUnitPath})
+          callGAPI(cd.users(), u'update', throw_reasons=[u'conditionNotMet'], userKey=user, body={u'orgUnitPath': orgUnitPath})
         except googleapiclient.errors.HttpError:
           pass
   else:
@@ -8354,7 +8354,7 @@ def doUpdateNotification():
         ids.append(noti[u'notificationId'])
   print u'Marking %s notification(s) as %s...' % (len(ids), mark_as)
   for notificationId in ids:
-    result = callGAPI(cd.notifications(), u'patch', customer=GC_Values[GC_CUSTOMER_ID], notificationId=notificationId, body={u'isUnread': isUnread}, fields=u'notificationId,isUnread')
+    result = callGAPI(cd.notifications(), u'update', customer=GC_Values[GC_CUSTOMER_ID], notificationId=notificationId, body={u'isUnread': isUnread}, fields=u'notificationId,isUnread')
     if result[u'isUnread']:
       read_result = u'unread'
     else:
