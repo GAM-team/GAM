@@ -783,12 +783,13 @@ def buildGAPIObject(api):
   return service
 
 # Convert User UID to email address
-def convertUserUIDtoEmailAddress(emailAddressOrUID):
+def convertUserUIDtoEmailAddress(emailAddressOrUID, cd=None):
   normalizedEmailAddressOrUID = normalizeEmailAddressOrUID(emailAddressOrUID)
   if normalizedEmailAddressOrUID.find(u'@') > 0:
     return normalizedEmailAddressOrUID
   try:
-    cd = buildGAPIObject(u'directory')
+    if not cd:
+      cd = buildGAPIObject(u'directory')
     result = callGAPI(cd.users(), u'get',
                       throw_reasons=[GAPI_USER_NOT_FOUND],
                       userKey=normalizedEmailAddressOrUID, fields=u'primaryEmail')
@@ -796,6 +797,32 @@ def convertUserUIDtoEmailAddress(emailAddressOrUID):
       return result[u'primaryEmail'].lower()
   except:
     pass
+  return normalizedEmailAddressOrUID
+
+# Convert email address to UID
+def convertEmailAddressToUID(emailAddressOrUID, cd=None, email_type=u'user'):
+  normalizedEmailAddressOrUID = normalizeEmailAddressOrUID(emailAddressOrUID)
+  if normalizedEmailAddressOrUID.find(u'@') > 0:
+    if not cd:
+      cd = buildGAPIObject(u'directory')
+    if email_type != u'group':
+      try:
+        result = callGAPI(cd.users(), u'get',
+                      throw_reasons=[GAPI_USER_NOT_FOUND],
+                      userKey=normalizedEmailAddressOrUID, fields=u'id')
+        if u'id' in result:
+          return result[u'id']
+      except:
+        pass
+    try:
+      result = callGAPI(cd.groups(), u'get',
+                      throw_reasons=[GAPI_NOT_FOUND],
+                      groupKey=normalizedEmailAddressOrUID, fields=u'id')
+      if u'id' in result:
+        return result[u'id']
+    except:
+      pass
+    return None
   return normalizedEmailAddressOrUID
 
 def buildGAPIServiceObject(api, act_as, use_scopes=None):
@@ -8496,30 +8523,44 @@ def orgUnitPathQuery(path):
     return u"orgUnitPath='{0}'".format(path.replace(u"'", u"\'"))
   return None
 
-def doGetOrgInfo():
+def doGetOrgInfo(name=None, return_attrib=None):
   cd = buildGAPIObject(u'directory')
-  name = sys.argv[3]
-  get_users = True
-  show_children = False
-  i = 4
-  while i < len(sys.argv):
-    if sys.argv[i].lower() == u'nousers':
-      get_users = False
-      i += 1
-    elif sys.argv[i].lower() in [u'children', u'child']:
-      show_children = True
-      i += 1
-    else:
-      print u'ERROR: %s is not a valid argument for "gam info org"' % sys.argv[i]
-      sys.exit(2)
+  if not name:
+    name = sys.argv[3]
+    get_users = True
+    show_children = False
+    i = 4
+    while i < len(sys.argv):
+      if sys.argv[i].lower() == u'nousers':
+        get_users = False
+        i += 1
+      elif sys.argv[i].lower() in [u'children', u'child']:
+        show_children = True
+        i += 1
+      else:
+        print u'ERROR: %s is not a valid argument for "gam info org"' % sys.argv[i]
+        sys.exit(2)
   if name == u'/':
     orgs = callGAPI(cd.orgunits(), u'list',
                     customerId=GC_Values[GC_CUSTOMER_ID], type=u'children',
                     fields=u'organizationUnits/parentOrgUnitId')
-    name = orgs[u'organizationUnits'][0][u'parentOrgUnitId']
+    if u'organizationUnits' in orgs and orgs[u'organizationUnits']:
+      name = orgs[u'organizationUnits'][0][u'parentOrgUnitId']
+    else:
+      try:
+        # create a temp org so we can learn what the top level org ID is (sigh)
+        temp_org = callGAPI(cd.orgunits(), u'insert', customerId=GC_Values[GC_CUSTOMER_ID],
+                     body={u'name': u'temp-delete-me', u'parentOrgUnitPath': u'/'},
+                     fields=u'parentOrgUnitId,orgUnitId')
+        name = temp_org[u'parentOrgUnitId']
+        callGAPI(cd.orgunits(), u'delete', customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=temp_org[u'orgUnitId'])
+      except SyntaxError:
+        pass
   if len(name) > 1 and name[0] == u'/':
     name = name[1:]
   result = callGAPI(cd.orgunits(), u'get', customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=name)
+  if return_attrib:
+    return result[return_attrib]
   print_json(None, result)
   if get_users:
     name = result[u'orgUnitPath']
@@ -9410,27 +9451,18 @@ def doPrintGroups():
     sortCSVTitles([u'Email',], titles)
   writeCSVfile(csvRows, titles, u'Groups', todrive)
 
-ORG_ARGUMENT_TO_PROPERTY_TITLE_MAP = {
-  u'description': [u'description', u'Description'],
-  u'id': [u'orgUnitId', u'ID'],
-  u'inherit': [u'blockInheritance', u'InheritanceBlocked'],
-  u'orgunitpath': [u'orgUnitPath', u'Path'],
-  u'path': [u'orgUnitPath', u'Path'],
-  u'name': [u'name', u'Name'],
-  u'parent': [u'parentOrgUnitPath', u'Parent'],
-  u'parentid': [u'parentOrgUnitId', u'ParentID'],
-  }
-ORG_FIELD_PRINT_ORDER = [u'orgunitpath', u'id', u'name', u'description', u'parent', u'parentid', u'inherit']
-
 def doPrintOrgs():
+  print_order = [u'orgUnitPath', u'orgUnitId', u'name', u'description',
+          u'parentOrgUnitPath', u'parentOrgUnitId', u'blockInheritance']
   cd = buildGAPIObject(u'directory')
   listType = u'all'
   orgUnitPath = u"/"
   todrive = False
-  fieldsList = []
-  fieldsTitles = {}
+  fields = [u'orgUnitPath', u'name', u'orgUnitId', u'parentOrgUnitId']
   titles = []
   csvRows = []
+  parentOrgIds = []
+  retrievedOrgIds = []
   i = 3
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace(u'_', u'')
@@ -9444,32 +9476,61 @@ def doPrintOrgs():
       orgUnitPath = sys.argv[i+1]
       i += 2
     elif myarg == u'allfields':
-      fieldsList = []
-      fieldsTitles = {}
-      titles = []
-      for field in ORG_FIELD_PRINT_ORDER:
-        addFieldTitleToCSVfile(field, ORG_ARGUMENT_TO_PROPERTY_TITLE_MAP, fieldsList, fieldsTitles, titles)
+      fields = None
       i += 1
-    elif myarg in ORG_ARGUMENT_TO_PROPERTY_TITLE_MAP:
-      addFieldTitleToCSVfile(myarg, ORG_ARGUMENT_TO_PROPERTY_TITLE_MAP, fieldsList, fieldsTitles, titles)
-      i += 1
+    elif myarg == u'fields':
+      fields += sys.argv[i+1].split(u',')
+      i += 2
     else:
       print u'ERROR: %s is not a valid argument for "gam print orgs"' % sys.argv[i]
       sys.exit(2)
-  if not fieldsList:
-    addFieldTitleToCSVfile(u'orgunitpath', ORG_ARGUMENT_TO_PROPERTY_TITLE_MAP, fieldsList, fieldsTitles, titles)
   sys.stderr.write(u"Retrieving All Organizational Units for your account (may take some time on large domain)...")
+  if fields:
+    get_fields = u','.join(fields)
+    list_fields = u'organizationUnits(%s)' % get_fields
+  else:
+    list_fields = None
+    get_fields = None
   orgs = callGAPI(cd.orgunits(), u'list',
-                  customerId=GC_Values[GC_CUSTOMER_ID], type=listType, orgUnitPath=orgUnitPath, fields=u'organizationUnits({0})'.format(u','.join(set(fieldsList))))
-  sys.stderr.write(u"done\n")
+                  customerId=GC_Values[GC_CUSTOMER_ID], type=listType, orgUnitPath=orgUnitPath, fields=list_fields)
   if not u'organizationUnits' in orgs:
-    print u'0 org units in this G Suite instance...'
-    return
-  for orgEntity in orgs[u'organizationUnits']:
-    orgUnit = {}
-    for field in fieldsList:
-      orgUnit[fieldsTitles[field]] = orgEntity.get(field, u'')
-    csvRows.append(orgUnit)
+    try:
+      # create a temp org so we can learn what the top level org ID is (sigh)
+      temp_org = callGAPI(cd.orgunits(), u'insert', customerId=GC_Values[GC_CUSTOMER_ID],
+            body={u'name': u'temp-delete-me', u'parentOrgUnitPath': u'/'},
+            fields=u'parentOrgUnitId,orgUnitId')
+      callGAPI(cd.orgunits(), u'delete', customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=temp_org[u'orgUnitId'])
+      parentOrgIds.append(temp_org[u'parentOrgUnitId'])
+    except:
+      pass
+    orgunits = []
+  else:
+    orgunits = orgs[u'organizationUnits']
+  for row in orgunits:
+    retrievedOrgIds.append(row[u'orgUnitId'])
+    if row[u'parentOrgUnitId'] not in parentOrgIds:
+      parentOrgIds.append(row[u'parentOrgUnitId'])
+  missing_parents = set(parentOrgIds) - set(retrievedOrgIds)
+  for missing_parent in missing_parents:
+    try:
+      result = callGAPI(cd.orgunits(), u'get',
+        customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=missing_parent, fields=get_fields)
+      orgunits.append(result)
+    except:
+      pass
+  for row in orgunits:
+    orgEntity = {}
+    for key, value in row.items():
+      if key in [u'kind', u'etag', u'etags']:
+        continue
+      if key not in titles:
+        titles.append(key)
+      orgEntity[key] = value
+    csvRows.append(orgEntity)
+  for title in titles:
+    if title not in print_order:
+      print_order.append(title)
+  titles = sorted(titles, key=print_order.index)
   writeCSVfile(csvRows, titles, u'Orgs', todrive)
 
 def doPrintAliases():
@@ -9601,21 +9662,94 @@ def doPrintGroupMembers():
       csvRows.append(member)
   writeCSVfile(csvRows, titles, u'Group Members', todrive)
 
-def doPrintMobileDevices():
-  cd = buildGAPIObject(u'directory')
+def doPrintVaultMatters():
+  v = buildGAPIObject(u'vault')
   todrive = False
-  titles = [u'resourceId',]
   csvRows = []
-  query = projection = orderBy = sortOrder = None
   i = 3
+  view = u'FULL'
+  titles = []
   while i < len(sys.argv):
-    myarg = sys.argv[i].lower()
-    if myarg == u'query':
-      query = sys.argv[i+1]
+    myarg = sys.argv[i].lower().replace(u'_', u'')
+    if myarg == u'view':
+      view = sys.argv[i+1].upper()
       i += 2
     elif myarg == u'todrive':
       todrive = True
       i += 1
+    else:
+      print u'ERROR: %s is not a valid argument to "gam print matters"' % myarg
+      sys.exit(3)
+  sys.stderr.write(u'Retrieving all Vault Matters...\n')
+  page_message = u' got %%num_items%% matters...\n'
+  matters = callGAPIpages(v.matters(), u'list', items=u'matters', view=view)
+  for matter in matters:
+    csvRows.append(flatten_json(matter))
+    for column in csvRows[-1]:
+      if column not in titles:
+        titles.append(column)
+  writeCSVfile(csvRows, titles, u'Vault Matters', todrive)
+
+def doPrintVaultHolds():
+  v = buildGAPIObject(u'vault')
+  todrive = False
+  csvRows = []
+  i = 3
+  matters = []
+  matterIds = []
+  titles = []
+  while i <len(sys.argv):
+    myarg = sys.argv[i].lower().replace(u'_', u'')
+    if myarg == u'todrive':
+      todrive = True
+      i += 1
+    elif myarg == u'matters':
+      matters = sys.argv[i+1].split(u',')
+      i += 2
+    else:
+      print u'ERROR: %s is not a valid a valid argument to "gam print holds"' % myarg
+      sys.exit(3)
+  if not matters:
+    matters_results = callGAPIpages(v.matters(), u'list', items=u'matters', view=u'BASIC', fields=u'matters(matterId,state),nextPageToken')
+    for matter in matters_results:
+      if matter[u'state'] != u'OPEN':
+        print u'ignoring matter %s in state %s' % (matter[u'matterId'], matter[u'state'])
+        continue
+      matterIds.append(matter[u'matterId'])
+  for matter in matters:
+    matterIds.append(convertMatterNameToID(v, matter))
+  for matterId in matterIds:
+    sys.stderr.write(u'Retrieving holds for matter %s' % matterId)
+    holds = callGAPIpages(v.matters().holds(), u'list', items=u'holds', matterId=matterId)
+    for hold in holds:
+      csvRows.append(flatten_json(hold))
+      for column in csvRows[-1]:
+        if column not in titles:
+          titles.append(column)
+  writeCSVfile(csvRows, titles, u'Vault Holds', todrive)
+
+def doPrintMobileDevices():
+  cd = buildGAPIObject(u'directory')
+  todrive = False
+  titles = []
+  csvRows = []
+  fields = u'*'
+  include_apps = True
+  query = projection = orderBy = sortOrder = None
+  i = 3
+  while i < len(sys.argv):
+    myarg = sys.argv[i].lower().replace(u'_', u'')
+    if myarg == u'query':
+      query = sys.argv[i+1]
+      i += 2
+    elif myarg == u'noapps':
+      include_apps = False
+    elif myarg == u'todrive':
+      todrive = True
+      i += 1
+    elif myarg == u'fields':
+      fields = u'nextPageToken,mobileDevices(%s)' % sys.argv[i+1].split(u',')
+      i += 2
     elif myarg == u'orderby':
       orderBy = sys.argv[i+1].lower()
       allowed_values = [u'deviceid', u'email', u'lastsync', u'model', u'name', u'os', u'status', u'type']
@@ -9639,18 +9773,30 @@ def doPrintMobileDevices():
   sys.stderr.write(u'Retrieving All Mobile Devices for organization (may take some time for large accounts)...\n')
   page_message = u'Got %%num_items%% mobile devices...\n'
   all_mobile = callGAPIpages(cd.mobiledevices(), u'list', u'mobiledevices', page_message=page_message,
-                             customerId=GC_Values[GC_CUSTOMER_ID], query=query, projection=projection,
+                             customerId=GC_Values[GC_CUSTOMER_ID], query=query, projection=projection, fields=fields,
                              orderBy=orderBy, sortOrder=sortOrder, maxResults=GC_Values[GC_DEVICE_MAX_RESULTS])
   for mobile in all_mobile:
     mobiledevice = {}
     for attrib in mobile:
-      if attrib in [u'kind', u'etag', u'applications']:
+      if attrib in [u'kind', u'etag']:
         continue
       if attrib not in titles:
         titles.append(attrib)
       if attrib in [u'name', u'email']:
         if mobile[attrib]:
           mobiledevice[attrib] = mobile[attrib][0]
+      elif attrib == u'applications':
+        if not include_apps:
+          continue
+        applications = []
+        for app in mobile[u'applications']:
+          app_details = []
+          app_details.append(app.get(u'displayName', None))
+          app_details.append(app.get(u'packageName', None))
+          app_details.append(app.get(u'versionName', None))
+          app_details.append(app.get(u'versionCode', None))
+          applications.append(u' - '.join(app_details))
+        mobiledevice[u'applications'] = u'\n'.join(applications)
       else:
         mobiledevice[attrib] = mobile[attrib]
     csvRows.append(mobiledevice)
