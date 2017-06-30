@@ -9518,6 +9518,8 @@ def doPrintOrgs():
     if title not in print_order:
       print_order.append(title)
   titles = sorted(titles, key=print_order.index)
+  # sort results similar to how they list in admin console
+  csvRows.sort(key=lambda x: x[u'orgUnitPath'].lower(), reverse=False)
   writeCSVfile(csvRows, titles, u'Orgs', todrive)
 
 def doPrintAliases():
