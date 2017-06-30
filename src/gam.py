@@ -7520,40 +7520,23 @@ def doUpdateMobile():
   cd = buildGAPIObject(u'directory')
   resourceId = sys.argv[3]
   i = 4
-  action_body = {}
-  patch_body = {}
-  doPatch = doAction = False
+  body = {}
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'action':
-      action_body[u'action'] = sys.argv[i+1].lower()
-      if action_body[u'action'] == u'wipe':
-        action_body[u'action'] = u'admin_remote_wipe'
-      elif action_body[u'action'].replace(u'_', u'') in [u'accountwipe', u'wipeaccount']:
-        action_body[u'action'] = u'admin_account_wipe'
-      if action_body[u'action'] not in [u'admin_remote_wipe', u'admin_account_wipe', u'approve', u'block', u'cancel_remote_wipe_then_activate', u'cancel_remote_wipe_then_block']:
-        print u'ERROR: action must be one of wipe, wipeaccount, approve, block, cancel_remote_wipe_then_activate, cancel_remote_wipe_then_block; got %s' % action_body[u'action']
+      body[u'action'] = sys.argv[i+1].lower()
+      if body[u'action'] == u'wipe':
+        body[u'action'] = u'admin_remote_wipe'
+      elif body[u'action'].replace(u'_', u'') in [u'accountwipe', u'wipeaccount']:
+        body[u'action'] = u'admin_account_wipe'
+      if body[u'action'] not in [u'admin_remote_wipe', u'admin_account_wipe', u'approve', u'block', u'cancel_remote_wipe_then_activate', u'cancel_remote_wipe_then_block']:
+        print u'ERROR: action must be one of wipe, wipeaccount, approve, block, cancel_remote_wipe_then_activate, cancel_remote_wipe_then_block; got %s' % body[u'action']
         sys.exit(2)
-      doAction = True
       i += 2
-    elif sys.argv[i].lower() == u'model':
-      patch_body[u'model'] = sys.argv[i+1]
-      i += 2
-      doPatch = True
-    elif sys.argv[i].lower() == u'os':
-      patch_body[u'os'] = sys.argv[i+1]
-      i += 2
-      doPatch = True
-    elif sys.argv[i].lower() == u'useragent':
-      patch_body[u'userAgent'] = sys.argv[i+1]
-      i += 2
-      doPatch = True
     else:
       print u'ERROR: %s is not a valid argument for "gam update mobile"' % sys.argv[i]
       sys.exit(2)
-  if doPatch:
-    callGAPI(cd.mobiledevices(), u'update', resourceId=resourceId, body=patch_body, customerId=GC_Values[GC_CUSTOMER_ID])
-  if doAction:
-    callGAPI(cd.mobiledevices(), u'action', resourceId=resourceId, body=action_body, customerId=GC_Values[GC_CUSTOMER_ID])
+  if body:
+    callGAPI(cd.mobiledevices(), u'action', resourceId=resourceId, body=body, customerId=GC_Values[GC_CUSTOMER_ID])
 
 def doDeleteMobile():
   cd = buildGAPIObject(u'directory')

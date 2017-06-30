@@ -472,9 +472,8 @@ Item attributes
 	(whocanviewgroup ANYONE_CAN_VIEW|ALL_IN_DOMAIN_CAN_VIEW|ALL_MEMBERS_CAN_VIEW|ALL_MANAGERS_CAN_VIEW)|
 	(whocanviewmembership ALL_IN_DOMAIN_CAN_VIEW|ALL_MEMBERS_CAN_VIEW|ALL_MANAGERS_CAN_VIEW)
 
-<MobileAttributes> ::=
-	(model <String>)|(os <String>)|(useragent <String>)|
-	(action admin_remote_wipe|wipe|admin_account_wipe|accountwipe|wipeaccount|approve|block|cancel_remote_wipe_then_activate|cancel_remote_wipe_then_block)
+<MobileAction> ::=
+	admin_remote_wipe|wipe|admin_account_wipe|accountwipe|wipeaccount|approve|block|cancel_remote_wipe_then_activate|cancel_remote_wipe_then_block
 
 <PrinterAttributes> ::= (currentquota <Number>)|(dailyquota <Number>)|
 	(defaultdisplayname <String>)|(description <String>)|(displayname <String>)|(firmware <String>)|(gcpversion <String>)|
@@ -655,7 +654,7 @@ The listlimit <Number> argument limits the number of recent users and time range
 The start <Date> and end <Date> arguments filter the time ranges.
 Delimiter defaults to comma.
 
-gam update mobile <MobileItem> <MobileAttributes>+
+gam update mobile <MobileItem> action <MobileAction>
 gam delete mobile <MobileItem>
 gam info mobile <MobileItem>
 gam print mobile [todrive] [query <QueryMobile>] [basic|full] [orderby <MobileOrderByFieldName> [ascending|descending]]
