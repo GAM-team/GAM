@@ -9733,7 +9733,7 @@ def doPrintMobileDevices():
   todrive = False
   titles = []
   csvRows = []
-  fields = u'*'
+  fields = None
   include_apps = True
   query = projection = orderBy = sortOrder = None
   i = 3
@@ -9744,11 +9744,13 @@ def doPrintMobileDevices():
       i += 2
     elif myarg == u'noapps':
       include_apps = False
+      i += 1
     elif myarg == u'todrive':
       todrive = True
       i += 1
     elif myarg == u'fields':
-      fields = u'nextPageToken,mobileDevices(%s)' % sys.argv[i+1].split(u',')
+      fields = u'nextPageToken,mobiledevices(%s)' % sys.argv[i+1]
+      print fields
       i += 2
     elif myarg == u'orderby':
       orderBy = sys.argv[i+1].lower()
@@ -9791,10 +9793,11 @@ def doPrintMobileDevices():
         applications = []
         for app in mobile[u'applications']:
           app_details = []
-          app_details.append(app.get(u'displayName', None))
-          app_details.append(app.get(u'packageName', None))
-          app_details.append(app.get(u'versionName', None))
-          app_details.append(app.get(u'versionCode', None))
+          app_details.append(app.get(u'displayName', u'<missing>'))
+          app_details.append(app.get(u'packageName', u'<missing>'))
+          app_details.append(app.get(u'versionName', u'<missing>'))
+          app_details.append(unicode(app.get(u'versionCode', u'<missing>')))
+          print app_details
           applications.append(u' - '.join(app_details))
         mobiledevice[u'applications'] = u'\n'.join(applications)
       else:
