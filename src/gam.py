@@ -9660,20 +9660,28 @@ def doPrintMobileDevices():
   titles = []
   csvRows = []
   fields = None
-  include_apps = True
   query = projection = orderBy = sortOrder = None
+  delimiter = u' '
+  listLimit = 1
+  appsLimit = -1
   i = 3
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace(u'_', u'')
-    if myarg == u'query':
-      query = sys.argv[i+1]
-      i += 2
-    elif myarg == u'noapps':
-      include_apps = False
-      i += 1
-    elif myarg == u'todrive':
+    if myarg == u'todrive':
       todrive = True
       i += 1
+    elif myarg == u'query':
+      query = sys.argv[i+1]
+      i += 2
+    elif myarg == u'delimiter':
+      delimiter = sys.argv[i+1]
+      i += 2
+    elif myarg == u'listlimit':
+      listLimit = int(sys.argv[i+1])
+      i += 2
+    elif myarg == u'appslimit':
+      appsLimit = int(sys.argv[i+1])
+      i += 2
     elif myarg == u'fields':
       fields = u'nextPageToken,mobiledevices(%s)' % sys.argv[i+1]
       i += 2
@@ -9703,30 +9711,44 @@ def doPrintMobileDevices():
                              customerId=GC_Values[GC_CUSTOMER_ID], query=query, projection=projection, fields=fields,
                              orderBy=orderBy, sortOrder=sortOrder, maxResults=GC_Values[GC_DEVICE_MAX_RESULTS])
   for mobile in all_mobile:
-    mobiledevice = {}
+    row = {}
     for attrib in mobile:
       if attrib in [u'kind', u'etag']:
         continue
-      if attrib not in titles:
-        titles.append(attrib)
-      if attrib in [u'name', u'email']:
-        if mobile[attrib]:
-          mobiledevice[attrib] = mobile[attrib][0]
+      if attrib in [u'name', u'email', u'otherAccountsInfo']:
+        if attrib not in titles:
+          titles.append(attrib)
+        if listLimit:
+          row[attrib] = delimiter.join(mobile[attrib][0:listLimit])
+        else:
+          row[attrib] = delimiter.join(mobile[attrib])
       elif attrib == u'applications':
-        if not include_apps:
-          continue
-        applications = []
-        for app in mobile[u'applications']:
-          app_details = []
-          app_details.append(app.get(u'displayName', u'<missing>'))
-          app_details.append(app.get(u'packageName', u'<missing>'))
-          app_details.append(app.get(u'versionName', u'<missing>'))
-          app_details.append(unicode(app.get(u'versionCode', u'<missing>')))
-          applications.append(u' - '.join(app_details))
-        mobiledevice[u'applications'] = u'\n'.join(applications)
+        if appsLimit >= 0:
+          if attrib not in titles:
+            titles.append(attrib)
+          applications = []
+          j = 0
+          for app in mobile[attrib]:
+            j += 1
+            if appsLimit and (j > appsLimit):
+              break
+            appDetails = []
+            for field in [u'displayName', u'packageName', u'versionName']:
+              appDetails.append(app.get(field, u'<None>'))
+            appDetails.append(unicode(app.get(u'versionCode', u'<None>')))
+            permissions = app.get(u'permission', [])
+            if permissions:
+              appDetails.append(u'/'.join(permissions))
+            else:
+              appDetails.append(u'<None>')
+            applications.append(u'-'.join(appDetails))
+          row[attrib] = delimiter.join(applications)
       else:
-        mobiledevice[attrib] = mobile[attrib]
-    csvRows.append(mobiledevice)
+        if attrib not in titles:
+          titles.append(attrib)
+        row[attrib] = mobile[attrib]
+    csvRows.append(row)
+  sortCSVTitles([u'resourceId', u'deviceId', u'serialNumber', u'name', u'email', u'status'], titles)
   writeCSVfile(csvRows, titles, u'Mobile', todrive)
 
 def doPrintCrosActivity():

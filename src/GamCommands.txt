@@ -305,6 +305,48 @@ Named items
 	role|
 	type
 
+<MobileFieldName> ::=
+	adbstatus|
+	applications|
+	basebandversion|
+	bootloaderversion|
+	brand|
+	buildnumber|
+	defaultlanguage|
+	developeroptionsstatus|
+	devicecompromisedstatus|
+	deviceid|
+	devicepasswordstatus|
+	email|
+	encryptionstatus|
+	firstsync|
+	hardware|
+	hardwareid|
+	imei|
+	kernelversion|
+	lastsync|
+	managedaccountisonownerprofile|
+	manufacturer|
+	meid|
+	model|
+	name|
+	networkoperator|
+	os|
+	otheraccountsinfo|
+	privilege|
+	releaseversion|
+	resourceid|
+	securitypatchlevel|
+	serialnumber|
+	status|
+	supportsworkprofile|
+	type|
+	unknownsourcesstatus|
+	useragent|
+	wifimacaddress
+
+<MobileFieldNameList> ::= "<MobileFieldName>(,<MobileFieldName>)*"
+
 <MobileOrderByFieldName> ::=
 	deviceid|email|lastsync|model|name|os|status|type
 
@@ -659,6 +701,7 @@ gam update mobile <MobileItem> action <MobileAction>
 gam delete mobile <MobileItem>
 gam info mobile <MobileItem>
 gam print mobile [todrive] [query <QueryMobile>] [basic|full] [orderby <MobileOrderByFieldName> [ascending|descending]]
+	fields <MobileFieldNameList>] [delimiter <String>] [appslimit <Number>] [listlimit <Number>]
 
 gam create group <EmailAddress> <GroupAttributes>*
 gam update group <GroupItem> [admincreated <Boolean>] [email <EmailAddress>] <GroupAttributes>*
