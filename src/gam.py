@@ -808,16 +808,16 @@ def convertEmailAddressToUID(emailAddressOrUID, cd=None, email_type=u'user'):
     if email_type != u'group':
       try:
         result = callGAPI(cd.users(), u'get',
-                      throw_reasons=[GAPI_USER_NOT_FOUND],
-                      userKey=normalizedEmailAddressOrUID, fields=u'id')
+                          throw_reasons=[GAPI_USER_NOT_FOUND],
+                          userKey=normalizedEmailAddressOrUID, fields=u'id')
         if u'id' in result:
           return result[u'id']
       except:
         pass
     try:
       result = callGAPI(cd.groups(), u'get',
-                      throw_reasons=[GAPI_NOT_FOUND],
-                      groupKey=normalizedEmailAddressOrUID, fields=u'id')
+                        throw_reasons=[GAPI_NOT_FOUND],
+                        groupKey=normalizedEmailAddressOrUID, fields=u'id')
       if u'id' in result:
         return result[u'id']
     except:
@@ -6708,13 +6708,12 @@ def doUpdateProject(login_hint=None):
   _, http = getCRMService(login_hint)
   cs_data = readFile(GC_Values[GC_CLIENT_SECRETS_JSON], mode=u'rb', continueOnError=True, displayError=True, encoding=None)
   if not cs_data:
-    systemErrorExit(14, MISSING_CLIENT_SECRETS_MESSAGE)
+    systemErrorExit(14, u'Your client secrets file:\n\n%s\n\nis missing. Please recreate the file.' % GC_Values[GC_CLIENT_SECRETS_JSON])
   try:
     cs_json = json.loads(cs_data)
     project_id = 'project:%s' % cs_json[u'installed'][u'project_id']
   except (ValueError, IndexError, KeyError):
-    print u'ERROR: the format of your client secrets file:\n\n%s\n\n is incorrect. Please recreate the file.'
-    sys.exit(3)
+    systemErrorExit(3, u'The format of your client secrets file:\n\n%s\n\nis incorrect. Please recreate the file.' % GC_Values[GC_CLIENT_SECRETS_JSON])
   simplehttp = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL])
   _, c = simplehttp.request(GAM_PROJECT_APIS, u'GET')
   apis_needed = c.splitlines()
@@ -6731,7 +6730,7 @@ def doUpdateProject(login_hint=None):
       print u' enabling API %s...' % api
       try:
         callGAPI(serveman.services(), u'enable', throw_reasons=[u'failedPrecondition'],
-                     serviceName=api, body={u'consumerId': project_id})
+                 serviceName=api, body={u'consumerId': project_id})
         break
       except googleapiclient.errors.HttpError, e:
         print u'\nThere was an error enabling %s. Please resolve error as described below:' % api
@@ -6749,7 +6748,7 @@ def doCreateProject(login_hint=None):
                  u'redirect_uri': u'urn:ietf:wg:oauth:2.0:oob', u'grant_type': u'authorization_code'}
     headers = {'Content-type': 'application/x-www-form-urlencoded'}
     from urllib import urlencode
-    resp, content = simplehttp.request(url, u'POST', urlencode(post_data), headers=headers)
+    _, content = simplehttp.request(url, u'POST', urlencode(post_data), headers=headers)
     try:
       content = json.loads(content)
     except ValueError:
@@ -6823,8 +6822,8 @@ def doCreateProject(login_hint=None):
           print u'Giving %s the role of %s...' % (login_hint, my_role)
           my_rights = {u'role': my_role, u'members': [u'user:%s' % login_hint]}
           org_policy[u'bindings'].append(my_rights)
-          result = callGAPI(crm.organizations(), u'setIamPolicy', resource=organization,
-                            body={u'policy': org_policy})
+          callGAPI(crm.organizations(), u'setIamPolicy', resource=organization,
+                   body={u'policy': org_policy})
           create_again = True
           break
         try:
@@ -8537,8 +8536,8 @@ def doGetOrgInfo(name=None, return_attrib=None):
       try:
         # create a temp org so we can learn what the top level org ID is (sigh)
         temp_org = callGAPI(cd.orgunits(), u'insert', customerId=GC_Values[GC_CUSTOMER_ID],
-                     body={u'name': u'temp-delete-me', u'parentOrgUnitPath': u'/'},
-                     fields=u'parentOrgUnitId,orgUnitId')
+                            body={u'name': u'temp-delete-me', u'parentOrgUnitPath': u'/'},
+                            fields=u'parentOrgUnitId,orgUnitId')
         name = temp_org[u'parentOrgUnitId']
         callGAPI(cd.orgunits(), u'delete', customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=temp_org[u'orgUnitId'])
       except SyntaxError:
@@ -8648,7 +8647,7 @@ def doDelTokens(users):
     sys.exit(3)
   for user in users:
     try:
-      result = callGAPI(cd.tokens(), u'get', userKey=user, clientId=clientId, throw_reasons=[u'notFound'])
+      callGAPI(cd.tokens(), u'get', userKey=user, clientId=clientId, throw_reasons=[u'notFound'])
     except googleapiclient.errors.HttpError:
       print u'User %s did not authorize %s' % (user, clientId)
       continue
@@ -9440,7 +9439,7 @@ def doPrintGroups():
 
 def doPrintOrgs():
   print_order = [u'orgUnitPath', u'orgUnitId', u'name', u'description',
-          u'parentOrgUnitPath', u'parentOrgUnitId', u'blockInheritance']
+                 u'parentOrgUnitPath', u'parentOrgUnitId', u'blockInheritance']
   cd = buildGAPIObject(u'directory')
   listType = u'all'
   orgUnitPath = u"/"
@@ -9484,8 +9483,8 @@ def doPrintOrgs():
     try:
       # create a temp org so we can learn what the top level org ID is (sigh)
       temp_org = callGAPI(cd.orgunits(), u'insert', customerId=GC_Values[GC_CUSTOMER_ID],
-            body={u'name': u'temp-delete-me', u'parentOrgUnitPath': u'/'},
-            fields=u'parentOrgUnitId,orgUnitId')
+                          body={u'name': u'temp-delete-me', u'parentOrgUnitPath': u'/'},
+                          fields=u'parentOrgUnitId,orgUnitId')
       callGAPI(cd.orgunits(), u'delete', customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=temp_org[u'orgUnitId'])
       parentOrgIds.append(temp_org[u'parentOrgUnitId'])
     except:
@@ -9501,7 +9500,7 @@ def doPrintOrgs():
   for missing_parent in missing_parents:
     try:
       result = callGAPI(cd.orgunits(), u'get',
-        customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=missing_parent, fields=get_fields)
+                        customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=missing_parent, fields=get_fields)
       orgunits.append(result)
     except:
       pass
