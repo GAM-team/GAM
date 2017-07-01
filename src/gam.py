@@ -2044,8 +2044,9 @@ def doCreateCourse():
       i += 2
     elif sys.argv[i].lower() in [u'state', u'status']:
       body[u'courseState'] = sys.argv[i+1].upper()
-      if body[u'courseState'] not in [u'ACTIVE', u'ARCHIVED', u'PROVISIONED', u'DECLINED']:
-        print u'ERROR: course state must be provisioned or active; got %s' % body[u'courseState']
+      valid_states = croom._rootDesc[u'schemas'][u'Course'][u'properties'][u'courseState'][u'enum']
+      if body[u'courseState'] not in valid_states:
+        print u'ERROR: course state must be one of: %s. Got %s' % (u', '.join(valid_states), body[u'courseState'])
         sys.exit(2)
       i += 2
     else:
