@@ -8509,6 +8509,18 @@ def orgUnitPathQuery(path):
     return u"orgUnitPath='{0}'".format(path.replace(u"'", u"\'"))
   return None
 
+def getTopLevelOrgId(cd):
+  try:
+    # create a temp org so we can learn what the top level org ID is (sigh)
+    temp_org = callGAPI(cd.orgunits(), u'insert', customerId=GC_Values[GC_CUSTOMER_ID],
+                        body={u'name': u'temp-delete-me', u'parentOrgUnitPath': u'/'},
+                        fields=u'parentOrgUnitId,orgUnitId')
+    callGAPI(cd.orgunits(), u'delete', customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=temp_org[u'orgUnitId'])
+    return temp_org[u'parentOrgUnitId']
+  except:
+    pass
+  return None
+
 def doGetOrgInfo(name=None, return_attrib=None):
   cd = buildGAPIObject(u'directory')
   if not name:
@@ -8533,15 +8545,9 @@ def doGetOrgInfo(name=None, return_attrib=None):
     if u'organizationUnits' in orgs and orgs[u'organizationUnits']:
       name = orgs[u'organizationUnits'][0][u'parentOrgUnitId']
     else:
-      try:
-        # create a temp org so we can learn what the top level org ID is (sigh)
-        temp_org = callGAPI(cd.orgunits(), u'insert', customerId=GC_Values[GC_CUSTOMER_ID],
-                            body={u'name': u'temp-delete-me', u'parentOrgUnitPath': u'/'},
-                            fields=u'parentOrgUnitId,orgUnitId')
-        name = temp_org[u'parentOrgUnitId']
-        callGAPI(cd.orgunits(), u'delete', customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=temp_org[u'orgUnitId'])
-      except SyntaxError:
-        pass
+      topLevelOrgId = getTopLevelOrgId(cd)
+      if topLevelOrgId:
+        name = topLevelOrgId
   if len(name) > 1 and name[0] == u'/':
     name = name[1:]
   result = callGAPI(cd.orgunits(), u'get', customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=name)
@@ -9480,15 +9486,9 @@ def doPrintOrgs():
   orgs = callGAPI(cd.orgunits(), u'list',
                   customerId=GC_Values[GC_CUSTOMER_ID], type=listType, orgUnitPath=orgUnitPath, fields=list_fields)
   if not u'organizationUnits' in orgs:
-    try:
-      # create a temp org so we can learn what the top level org ID is (sigh)
-      temp_org = callGAPI(cd.orgunits(), u'insert', customerId=GC_Values[GC_CUSTOMER_ID],
-                          body={u'name': u'temp-delete-me', u'parentOrgUnitPath': u'/'},
-                          fields=u'parentOrgUnitId,orgUnitId')
-      callGAPI(cd.orgunits(), u'delete', customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=temp_org[u'orgUnitId'])
-      parentOrgIds.append(temp_org[u'parentOrgUnitId'])
-    except:
-      pass
+    topLevelOrgId = getTopLevelOrgId(cd)
+    if topLevelOrgId:
+      parentOrgIds.append(topLevelOrgId)
     orgunits = []
   else:
     orgunits = orgs[u'organizationUnits']
