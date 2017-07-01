@@ -1319,6 +1319,16 @@ def doDelCourse():
   callGAPI(croom.courses(), u'delete', id=courseId)
   print u'Deleted Course %s' % courseId
 
+def getCourseState(croom, state, body):
+  validStates = croom._rootDesc[u'schemas'][u'Course'][u'properties'][u'courseState'][u'enum'][:]
+  if u'COURSE_STATE_UNSPECIFIED' in validStates:
+    validStates.remove(u'COURSE_STATE_UNSPECIFIED')
+  body[u'courseState'] = state.upper()
+  if body[u'courseState'] in validStates:
+    return
+  print u'ERROR: course state must be one of: %s. Got %s' % (u', '.join(validStates).lower(), state)
+  sys.exit(2)
+
 def doUpdateCourse():
   croom = buildGAPIObject(u'classroom')
   courseId = sys.argv[3]
@@ -1327,27 +1337,24 @@ def doUpdateCourse():
   body = {}
   i = 4
   while i < len(sys.argv):
-    if sys.argv[i].lower() == u'name':
+    myarg = sys.argv[i].lower()
+    if myarg == u'name':
       body[u'name'] = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower() == u'section':
+    elif myarg == u'section':
       body[u'section'] = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower() == u'heading':
+    elif myarg == u'heading':
       body[u'descriptionHeading'] = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower() == u'description':
+    elif myarg == u'description':
       body[u'description'] = sys.argv[i+1].replace(u'\\n', u'\n')
       i += 2
-    elif sys.argv[i].lower() == u'room':
+    elif myarg == u'room':
       body[u'room'] = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower() in [u'state', u'status']:
-      body[u'courseState'] = sys.argv[i+1].upper()
-      valid_states = croom._rootDesc[u'schemas'][u'Course'][u'properties'][u'courseState'][u'enum']
-      if body[u'courseState'] not in valid_states:
-        print u'ERROR: course state must be one of: %s. Got %s' % (u', '.join(valid_states).lower(), body[u'courseState'])
-        sys.exit(2)
+    elif myarg in [u'state', u'status']:
+      getCourseState(croom, sys.argv[i+1], body)
       i += 2
     else:
       print u'ERROR: %s is not a valid argument to "gam update course"' % sys.argv[i]
@@ -2022,33 +2029,30 @@ def doCreateCourse():
           u'courseState': u'ACTIVE'}
   i = 3
   while i < len(sys.argv):
-    if sys.argv[i].lower() == u'name':
+    myarg = sys.argv[i].lower()
+    if myarg == u'name':
       body[u'name'] = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower() in [u'alias', u'id']:
+    elif myarg in [u'alias', u'id']:
       body[u'id'] = u'd:%s' % sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower() == u'section':
+    elif myarg == u'section':
       body[u'section'] = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower() == u'heading':
+    elif myarg == u'heading':
       body[u'descriptionHeading'] = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower() == u'description':
+    elif myarg == u'description':
       body[u'description'] = sys.argv[i+1].replace(u'\\n', u'\n')
       i += 2
-    elif sys.argv[i].lower() == u'room':
+    elif myarg == u'room':
       body[u'room'] = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower() == u'teacher':
+    elif myarg == u'teacher':
       body[u'ownerId'] = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower() in [u'state', u'status']:
-      body[u'courseState'] = sys.argv[i+1].upper()
-      valid_states = croom._rootDesc[u'schemas'][u'Course'][u'properties'][u'courseState'][u'enum']
-      if body[u'courseState'] not in valid_states:
-        print u'ERROR: course state must be one of: %s. Got %s' % (u', '.join(valid_states).lower(), body[u'courseState'])
-        sys.exit(2)
+    elif myarg in [u'state', u'status']:
+      getCourseState(croom, sys.argv[i+1], body)
       i += 2
     else:
       print u'ERROR: %s is not a valid argument for "gam create course".' % sys.argv[i]
