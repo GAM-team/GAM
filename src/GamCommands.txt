@@ -526,6 +526,7 @@ Example: gam csv Users.csv gam update user "~primaryEmail" address type work uns
 Each user (~primaryEmail, e.g. foo@bar.com) would have their work address updated
 
 gam create project [<EmailAddress>]
+gam update project [<EmailAddress>]
 
 gam oauth|oauth2 create|request [<EmailAddress>]
 gam oauth|oauth2 delete|revoke
