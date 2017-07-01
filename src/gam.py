@@ -2016,7 +2016,9 @@ def doDeleteGuardian():
 
 def doCreateCourse():
   croom = buildGAPIObject(u'classroom')
-  body = {u'ownerId': u'me', u'name': u'Unknown Course'}
+  body = {u'ownerId': u'me',
+          u'name': u'Unknown Course',
+          u'courseState': u'ACTIVE'}
   i = 3
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'name':
@@ -2043,7 +2045,7 @@ def doCreateCourse():
     elif sys.argv[i].lower() in [u'state', u'status']:
       body[u'courseState'] = sys.argv[i+1].upper()
       if body[u'courseState'] not in [u'ACTIVE', u'ARCHIVED', u'PROVISIONED', u'DECLINED']:
-        print u'ERROR: course state must be active or archived; got %s' % body[u'courseState']
+        print u'ERROR: course state must be provisioned or active; got %s' % body[u'courseState']
         sys.exit(2)
       i += 2
     else:
