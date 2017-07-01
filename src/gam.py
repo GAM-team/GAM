@@ -1345,7 +1345,7 @@ def doUpdateCourse():
     elif sys.argv[i].lower() in [u'state', u'status']:
       body[u'courseState'] = sys.argv[i+1].upper()
       if body[u'courseState'] not in [u'ACTIVE', u'ARCHIVED', u'PROVISIONED', u'DECLINED']:
-        print u'ERROR: course state must be active or archived; got %s' % body[u'courseState']
+        print u'ERROR: course state must be active, archived, provisioned or declined; got %s' % body[u'courseState']
         sys.exit(2)
       i += 2
     else:
@@ -2044,8 +2044,8 @@ def doCreateCourse():
       i += 2
     elif sys.argv[i].lower() in [u'state', u'status']:
       body[u'courseState'] = sys.argv[i+1].upper()
-      if body[u'courseState'] not in [u'ACTIVE', u'ARCHIVED', u'PROVISIONED', u'DECLINED']:
-        print u'ERROR: course state must be provisioned or active; got %s' % body[u'courseState']
+      if body[u'courseState'] not in [u'ACTIVE', u'PROVISIONED']:
+        print u'ERROR: course state must be active or provisioned; got %s' % body[u'courseState']
         sys.exit(2)
       i += 2
     else:
