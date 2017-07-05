@@ -2025,8 +2025,7 @@ def doDeleteGuardian():
 def doCreateCourse():
   croom = buildGAPIObject(u'classroom')
   body = {u'ownerId': u'me',
-          u'name': u'Unknown Course',
-          u'courseState': u'ACTIVE'}
+          u'name': u'Unknown Course'}
   i = 3
   while i < len(sys.argv):
     myarg = sys.argv[i].lower()
