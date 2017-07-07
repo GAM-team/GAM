@@ -9715,9 +9715,9 @@ def doPrintMobileDevices():
       if attrib in [u'name', u'email', u'otherAccountsInfo']:
         if attrib not in titles:
           titles.append(attrib)
-        if listLimit:
+        if listLimit > 0:
           row[attrib] = delimiter.join(mobile[attrib][0:listLimit])
-        else:
+        elif listLimit == 0:
           row[attrib] = delimiter.join(mobile[attrib])
       elif attrib == u'applications':
         if appsLimit >= 0:
