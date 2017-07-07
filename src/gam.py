@@ -6710,34 +6710,27 @@ def doDelProjects(login_hint=None):
       except googleapiclient.errors.HttpError:
         pass
 
-def doUpdateProject(login_hint=None):
-  login_hint = getValidateLoginHint(login_hint)
-  _, http = getCRMService(login_hint)
-  cs_data = readFile(GC_Values[GC_CLIENT_SECRETS_JSON], mode=u'rb', continueOnError=True, displayError=True, encoding=None)
-  if not cs_data:
-    systemErrorExit(14, u'Your client secrets file:\n\n%s\n\nis missing. Please recreate the file.' % GC_Values[GC_CLIENT_SECRETS_JSON])
-  try:
-    cs_json = json.loads(cs_data)
-    project_id = 'project:%s' % cs_json[u'installed'][u'project_id']
-  except (ValueError, IndexError, KeyError):
-    systemErrorExit(3, u'The format of your client secrets file:\n\n%s\n\nis incorrect. Please recreate the file.' % GC_Values[GC_CLIENT_SECRETS_JSON])
-  simplehttp = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL])
+def enableProjectAPIs(simplehttp, httpObj, project_name, checkEnabled):
   _, c = simplehttp.request(GAM_PROJECT_APIS, u'GET')
-  apis_needed = c.splitlines()
-  serveman = googleapiclient.discovery.build(u'servicemanagement', u'v1', http=http, cache_discovery=False)
-  enabled_services_results = callGAPIpages(serveman.services(), u'list', items=u'services', consumerId=project_id, fields=u'nextPageToken,services(serviceName)')
-  for enabled in enabled_services_results:
-    if u'serviceName' in enabled and enabled[u'serviceName'] in apis_needed:
-      print u' API %s already enabled...' % enabled[u'serviceName']
-      apis_needed.remove(enabled[u'serviceName'])
-    elif u'serviceName' in enabled:
-      print u' non-GAM API %s is enabled (which is fine)' % enabled[u'serviceName']
-  for api in apis_needed:
+  apis = c.splitlines()
+  serveman = googleapiclient.discovery.build(u'servicemanagement', u'v1', http=httpObj, cache_discovery=False)
+  if checkEnabled:
+    enabledServices = callGAPIpages(serveman.services(), u'list', items=u'services',
+                                    consumerId=project_name, fields=u'nextPageToken,services(serviceName)')
+    for enabled in enabledServices:
+      if u'serviceName' in enabled:
+        if enabled[u'serviceName'] in apis:
+          print u' API %s already enabled...' % enabled[u'serviceName']
+          apis.remove(enabled[u'serviceName'])
+        else:
+          print u' API %s (non-GAM) is enabled (which is fine)' % enabled[u'serviceName']
+  for api in apis:
     while True:
       print u' enabling API %s...' % api
       try:
-        callGAPI(serveman.services(), u'enable', throw_reasons=[u'failedPrecondition'],
-                 serviceName=api, body={u'consumerId': project_id})
+        callGAPI(serveman.services(), u'enable',
+                 throw_reasons=[u'failedPrecondition'],
+                 serviceName=api, body={u'consumerId': project_name})
         break
       except googleapiclient.errors.HttpError, e:
         print u'\nThere was an error enabling %s. Please resolve error as described below:' % api
@@ -6745,6 +6738,20 @@ def doUpdateProject(login_hint=None):
         print u'\n%s\n' % e
         print
         raw_input(u'Press enter once resolved and we will try enabling the API again.')
+
+def doUpdateProject(login_hint=None):
+  login_hint = getValidateLoginHint(login_hint)
+  _, httpObj = getCRMService(login_hint)
+  cs_data = readFile(GC_Values[GC_CLIENT_SECRETS_JSON], mode=u'rb', continueOnError=True, displayError=True, encoding=None)
+  if not cs_data:
+    systemErrorExit(14, u'Your client secrets file:\n\n%s\n\nis missing. Please recreate the file.' % GC_Values[GC_CLIENT_SECRETS_JSON])
+  try:
+    cs_json = json.loads(cs_data)
+    project_name = 'project:%s' % cs_json[u'installed'][u'project_id']
+  except (ValueError, IndexError, KeyError):
+    systemErrorExit(3, u'The format of your client secrets file:\n\n%s\n\nis incorrect. Please recreate the file.' % GC_Values[GC_CLIENT_SECRETS_JSON])
+  simplehttp = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL])
+  enableProjectAPIs(simplehttp, httpObj, project_name, True)
 
 def doCreateProject(login_hint=None):
 
@@ -6783,7 +6790,7 @@ def doCreateProject(login_hint=None):
       sys.exit(5)
   login_hint = getValidateLoginHint(login_hint)
   login_domain = login_hint[login_hint.find(u'@')+1:]
-  crm, http = getCRMService(login_hint)
+  crm, httpObj = getCRMService(login_hint)
   project_id = u'gam-project'
   for i in range(3):
     project_id += u'-%s' % ''.join(random.choice(string.digits + string.ascii_lowercase) for i in range(3))
@@ -6792,26 +6799,28 @@ def doCreateProject(login_hint=None):
   while True:
     create_again = False
     print u'Creating project "%s"...' % body[u'name']
-    create_operation = callGAPI(crm.projects(), u'create', body=body)
+    create_operation = callGAPI(crm.projects(), u'create',
+                                body=body)
     operation_name = create_operation[u'name']
     time.sleep(5) # Google recommends always waiting at least 5 seconds
     for i in range(1, 5):
       print u'Checking project status...'
-      status = callGAPI(crm.operations(), u'get', name=operation_name)
+      status = callGAPI(crm.operations(), u'get',
+                        name=operation_name)
       if u'error' in status:
-        if (u'message' in status[u'error'] and
-            status[u'error'][u'message'] == u'No permission to create project in organization'):
+        if status[u'error'].get(u'message', u'') == u'No permission to create project in organization':
           print u'Hmm... Looks like you have no rights to your Google Cloud Organization.'
           print u'Attempting to fix that...'
-          search_body = {u'filter': u'domain:%s' % login_domain}
-          getorg = callGAPI(crm.organizations(), u'search', body=search_body)
+          getorg = callGAPI(crm.organizations(), u'search',
+                            body={u'filter': u'domain:%s' % login_domain})
           try:
             organization = getorg[u'organizations'][0][u'name']
             print u'Your organization name is %s' % organization
           except (KeyError, IndexError):
             print u'ERROR: you have no rights to create projects for your organization and you don\'t seem to be a super admin! Sorry, there\'s nothing more I can do.'
             sys.exit(3)
-          org_policy = callGAPI(crm.organizations(), u'getIamPolicy', resource=organization, body={})
+          org_policy = callGAPI(crm.organizations(), u'getIamPolicy',
+                                resource=organization, body={})
           if u'bindings' not in org_policy:
             org_policy[u'bindings'] = []
             print u'Looks like no one has rights to your Google Cloud Organization. Attempting to give you create rights...'
@@ -6827,10 +6836,9 @@ def doCreateProject(login_hint=None):
               print
           my_role = u'roles/resourcemanager.projectCreator'
           print u'Giving %s the role of %s...' % (login_hint, my_role)
-          my_rights = {u'role': my_role, u'members': [u'user:%s' % login_hint]}
-          org_policy[u'bindings'].append(my_rights)
-          callGAPI(crm.organizations(), u'setIamPolicy', resource=organization,
-                   body={u'policy': org_policy})
+          org_policy[u'bindings'].append({u'role': my_role, u'members': [u'user:%s' % login_hint]})
+          callGAPI(crm.organizations(), u'setIamPolicy',
+                   resource=organization, body={u'policy': org_policy})
           create_again = True
           break
         try:
@@ -6847,14 +6855,14 @@ and accept the Terms of Service (ToS). As soon as you've accepted the ToS popup,
           pass
         print status
         sys.exit(1)
-      if u'done' in status and status[u'done']:
+      if status.get(u'done', False):
         break
       sleep_time = i ** 2
       print u'Project still being created. Sleeping %s seconds' % sleep_time
       time.sleep(sleep_time)
     if create_again:
       continue
-    if not u'done' in status or not status[u'done']:
+    if not status.get(u'done', False):
       print u'Failed to create project: %s' % status
       sys.exit(1)
     elif u'error' in status:
@@ -6862,28 +6870,14 @@ and accept the Terms of Service (ToS). As soon as you've accepted the ToS popup,
       sys.exit(2)
     break
   simplehttp = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL])
-  _, c = simplehttp.request(GAM_PROJECT_APIS, u'GET')
-  apis = c.splitlines()
-  serveman = googleapiclient.discovery.build(u'servicemanagement', u'v1', http=http, cache_discovery=False)
-  for api in apis:
-    while True:
-      print u' enabling API %s...' % api
-      try:
-        callGAPI(serveman.services(), u'enable', throw_reasons=[u'failedPrecondition'],
-                 serviceName=api, body={u'consumerId': project_name})
-        break
-      except googleapiclient.errors.HttpError, e:
-        print u'\nThere was an error enabling %s. Please resolve error as described below:' % api
-        print
-        print u'\n%s\n' % e
-        print
-        raw_input(u'Press enter once resolved and we will try enabling the API again.')
-  iam = googleapiclient.discovery.build(u'iam', u'v1', http=http, cache_discovery=False)
+  enableProjectAPIs(simplehttp, httpObj, project_name, False)
+  iam = googleapiclient.discovery.build(u'iam', u'v1', http=httpObj, cache_discovery=False)
   print u'Creating Service Account'
-  service_account = callGAPI(iam.projects().serviceAccounts(), u'create', name=u'projects/%s' % project_id,
+  service_account = callGAPI(iam.projects().serviceAccounts(), u'create',
+                             name=u'projects/%s' % project_id,
                              body={u'accountId': project_id, u'serviceAccount': {u'displayName': u'GAM Project'}})
-  body = {u'privateKeyType': u'TYPE_GOOGLE_CREDENTIALS_FILE', u'keyAlgorithm': u'KEY_ALG_RSA_2048'}
-  key = callGAPI(iam.projects().serviceAccounts().keys(), u'create', name=service_account[u'name'], body=body)
+  key = callGAPI(iam.projects().serviceAccounts().keys(), u'create',
+                 name=service_account[u'name'], body={u'privateKeyType': u'TYPE_GOOGLE_CREDENTIALS_FILE', u'keyAlgorithm': u'KEY_ALG_RSA_2048'})
   oauth2service_data = base64.b64decode(key[u'privateKeyData'])
   writeFile(service_account_file, oauth2service_data, continueOnError=False)
   console_credentials_url = u'https://console.developers.google.com/apis/credentials?project=%s' % project_id
