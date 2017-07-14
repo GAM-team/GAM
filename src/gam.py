@@ -121,6 +121,14 @@ def currentCount(i, count):
 def currentCountNL(i, count):
   return u' ({0}/{1})\n'.format(i, count) if (count > GC_Values[GC_SHOW_COUNTS_MIN]) else u'\n'
 
+def formatHTTPError(http_status, reason, message):
+  return u'{0}: {1} - {2}'.format(http_status, reason, message)
+
+def getHTTPError(responses, http_status, reason, message):
+  if reason in responses:
+    return responses[reason]
+  return formatHTTPError(http_status, reason, message)
+
 def entityServiceNotApplicableWarning(entityType, entityName, i, count):
   sys.stderr.write(u'{0}: {1}, Service not applicable/Does not exist{2}'.format(entityType, entityName, currentCountNL(i, count)))
 
@@ -193,7 +201,9 @@ def getEmailAddressDomain(emailAddress):
 # foo@ -> foo@domain
 # foo@bar.com -> foo@bar.com
 # @domain -> domain
-def normalizeEmailAddressOrUID(emailAddressOrUID, noUid=False):
+def normalizeEmailAddressOrUID(emailAddressOrUID, noUid=False, checkForCustomerId=False):
+  if checkForCustomerId and (emailAddressOrUID == GC_Values[GC_CUSTOMER_ID]):
+    return emailAddressOrUID
   if (not noUid) and (emailAddressOrUID.find(u':') != -1):
     if emailAddressOrUID[:4].lower() == u'uid:':
       return emailAddressOrUID[4:]
@@ -372,10 +382,12 @@ def SetGlobalVariables():
   _getOldEnvVar(GC_CUSTOMER_ID, u'CUSTOMER_ID')
   _getOldEnvVar(GC_CHARSET, u'GAM_CHARSET')
   _getOldEnvVar(GC_NUM_THREADS, u'GAM_THREADS')
-  _getOldEnvVar(GC_AUTO_BATCH_MIN, u'GAM_AUTOBATCH')
   _getOldEnvVar(GC_ACTIVITY_MAX_RESULTS, u'GAM_ACTIVITY_MAX_RESULTS')
+  _getOldEnvVar(GC_AUTO_BATCH_MIN, u'GAM_AUTOBATCH')
+  _getOldEnvVar(GC_BATCH_SIZE, u'GAM_BATCH_SIZE')
   _getOldEnvVar(GC_DEVICE_MAX_RESULTS, u'GAM_DEVICE_MAX_RESULTS')
   _getOldEnvVar(GC_DRIVE_MAX_RESULTS, u'GAM_DRIVE_MAX_RESULTS')
+  _getOldEnvVar(GC_MEMBER_MAX_RESULTS, u'GAM_MEMBER_MAX_RESULTS')
   _getOldEnvVar(GC_USER_MAX_RESULTS, u'GAM_USER_MAX_RESULTS')
   _getOldSignalFile(GC_DEBUG_LEVEL, u'debug.gam', filePresentValue=4, fileAbsentValue=0)
   _getOldSignalFile(GC_NO_VERIFY_SSL, u'noverifyssl.txt')
@@ -535,14 +547,23 @@ def checkGAPIError(e, soft_errors=False, silent_errors=False, retryOnHttpError=F
   except ValueError:
     if (e.resp[u'status'] == u'503') and (e.content == u'Quota exceeded for the current request'):
       return (e.resp[u'status'], GAPI_QUOTA_EXCEEDED, e.content)
-    if retryOnHttpError:
+    if (e.resp[u'status'] == u'403') and (e.content.startswith(u'Request rate higher than configured')):
+      return (e.resp[u'status'], GAPI_QUOTA_EXCEEDED, e.content)
+    if (e.resp[u'status'] == u'403') and (u'Invalid domain.' in e.content):
+      error = {u'error': {u'code': 403, u'errors': [{u'reason': GAPI_NOT_FOUND, u'message': u'Domain not found'}]}}
+    elif (e.resp[u'status'] == u'400') and (u'InvalidSsoSigningKey' in e.content):
+      error = {u'error': {u'code': 400, u'errors': [{u'reason': GAPI_INVALID, u'message': u'InvalidSsoSigningKey'}]}}
+    elif (e.resp[u'status'] == u'400') and (u'UnknownError' in e.content):
+      error = {u'error': {u'code': 400, u'errors': [{u'reason': GAPI_INVALID, u'message': u'UnknownError'}]}}
+    elif retryOnHttpError:
       service._http.request.credentials.refresh(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL]))
       return (-1, None, None)
-    if soft_errors:
+    elif soft_errors:
       if not silent_errors:
         stderrErrorMsg(e.content)
       return (0, None, None)
-    systemErrorExit(5, e.content)
+    else:
+      systemErrorExit(5, e.content)
   if u'error' in error:
     http_status = error[u'error'][u'code']
     try:
@@ -564,20 +585,88 @@ def checkGAPIError(e, soft_errors=False, silent_errors=False, retryOnHttpError=F
     if reason == u'notFound':
       if u'userKey' in message:
         reason = GAPI_USER_NOT_FOUND
+      elif u'groupKey' in message:
+        reason = GAPI_GROUP_NOT_FOUND
+      elif u'memberKey' in message:
+        reason = GAPI_MEMBER_NOT_FOUND
+      elif u'Domain not found' in message:
+        reason = GAPI_DOMAIN_NOT_FOUND
+      elif u'Resource Not Found' in message:
+        reason = GAPI_RESOURCE_NOT_FOUND
     elif reason == u'invalid':
       if u'userId' in message:
         reason = GAPI_USER_NOT_FOUND
+      elif u'memberKey' in message:
+        reason = GAPI_INVALID_MEMBER
     elif reason == u'failedPrecondition':
       if u'Bad Request' in message:
         reason = GAPI_BAD_REQUEST
       elif u'Mail service not enabled' in message:
         reason = GAPI_SERVICE_NOT_AVAILABLE
+    elif reason == u'required':
+      if u'memberKey' in message:
+        reason = GAPI_MEMBER_NOT_FOUND
+    elif reason == u'conditionNotMet':
+      if u'Cyclic memberships not allowed' in message:
+        reason = GAPI_CYCLIC_MEMBERSHIPS_NOT_ALLOWED
   except KeyError:
     reason = u'{0}'.format(http_status)
   return (http_status, reason, message)
 
+class GAPI_aborted(Exception):
+  pass
+class GAPI_authError(Exception):
+  pass
+class GAPI_badRequest(Exception):
+  pass
+class GAPI_conditionNotMet(Exception):
+  pass
+class GAPI_domainCannotUseApis(Exception):
+  pass
+class GAPI_domainNotFound(Exception):
+  pass
+class GAPI_failedPrecondition(Exception):
+  pass
+class GAPI_forbidden(Exception):
+  pass
+class GAPI_groupNotFound(Exception):
+  pass
+class GAPI_invalid(Exception):
+  pass
+class GAPI_invalidArgument(Exception):
+  pass
+class GAPI_memberNotFound(Exception):
+  pass
+class GAPI_notFound(Exception):
+  pass
+class GAPI_notImplemented(Exception):
+  pass
+class GAPI_resourceNotFound(Exception):
+  pass
 class GAPI_serviceNotAvailable(Exception):
   pass
+class GAPI_userNotFound(Exception):
+  pass
+
+GAPI_REASON_EXCEPTION_MAP = {
+  GAPI_ABORTED: GAPI_aborted,
+  GAPI_AUTH_ERROR: GAPI_authError,
+  GAPI_BAD_REQUEST: GAPI_badRequest,
+  GAPI_CONDITION_NOT_MET: GAPI_conditionNotMet,
+  GAPI_DOMAIN_CANNOT_USE_APIS: GAPI_domainCannotUseApis,
+  GAPI_DOMAIN_NOT_FOUND: GAPI_domainNotFound,
+  GAPI_FAILED_PRECONDITION: GAPI_failedPrecondition,
+  GAPI_FORBIDDEN: GAPI_forbidden,
+  GAPI_GROUP_NOT_FOUND: GAPI_groupNotFound,
+  GAPI_INVALID: GAPI_invalid,
+  GAPI_INVALID_ARGUMENT: GAPI_invalidArgument,
+  GAPI_MEMBER_NOT_FOUND: GAPI_memberNotFound,
+  GAPI_NOT_FOUND: GAPI_notFound,
+  GAPI_NOT_IMPLEMENTED: GAPI_notImplemented,
+  GAPI_RESOURCE_NOT_FOUND: GAPI_resourceNotFound,
+  GAPI_SERVICE_NOT_AVAILABLE: GAPI_serviceNotAvailable,
+  GAPI_USER_NOT_FOUND: GAPI_userNotFound,
+  }
 
 def callGAPI(service, function,
              silent_errors=False, soft_errors=False, throw_reasons=None, retry_reasons=None,
@@ -599,6 +688,8 @@ def callGAPI(service, function,
       if http_status == 0:
         return None
       if reason in throw_reasons:
+        if reason in GAPI_REASON_EXCEPTION_MAP:
+          raise GAPI_REASON_EXCEPTION_MAP[reason](message)
         raise e
       if (n != retries) and (reason in GAPI_DEFAULT_RETRY_REASONS+retry_reasons):
         waitOnFailure(n, retries, reason)
@@ -795,7 +886,7 @@ def convertUserUIDtoEmailAddress(emailAddressOrUID, cd=None):
                       userKey=normalizedEmailAddressOrUID, fields=u'primaryEmail')
     if u'primaryEmail' in result:
       return result[u'primaryEmail'].lower()
-  except:
+  except GAPI_userNotFound:
     pass
   return normalizedEmailAddressOrUID
 
@@ -812,7 +903,7 @@ def convertEmailAddressToUID(emailAddressOrUID, cd=None, email_type=u'user'):
                           userKey=normalizedEmailAddressOrUID, fields=u'id')
         if u'id' in result:
           return result[u'id']
-      except:
+      except GAPI_userNotFound:
         pass
     try:
       result = callGAPI(cd.groups(), u'get',
@@ -820,7 +911,7 @@ def convertEmailAddressToUID(emailAddressOrUID, cd=None, email_type=u'user'):
                         groupKey=normalizedEmailAddressOrUID, fields=u'id')
       if u'id' in result:
         return result[u'id']
-    except:
+    except GAPI_notFound:
       pass
     return None
   return normalizedEmailAddressOrUID
@@ -922,6 +1013,16 @@ Access to scopes:
 %s\n''' % (user_domain, service_account, ',\n'.join(all_scopes))
     sys.exit(int(not all_scopes_pass))
 
+# Batch processing request_id fields
+RI_ENTITY = 0
+RI_J = 1
+RI_JCOUNT = 2
+RI_ITEM = 3
+RI_ROLE = 4
+
+def batchRequestID(entityName, j, jcount, item, role=u''):
+  return u'{0}\n{1}\n{2}\n{3}\n{4}'.format(entityName, j, jcount, item, role)
+
 def _adjustDate(errMsg):
   match_date = re.match(u'Data for dates later than (.*) is not yet available. Please check back later', errMsg)
   if not match_date:
@@ -972,21 +1073,16 @@ def showReport():
       print u'ERROR: %s is not a valid argument to "gam report"' % sys.argv[i]
       sys.exit(2)
   if try_date is None:
-    try_date = str(datetime.date.today())
+    try_date = unicode(datetime.date.today())
   if report in [u'users', u'user']:
     while True:
       try:
         page_message = u'Got %%num_items%% users\n'
-        usage = callGAPIpages(rep.userUsageReport(), u'get', u'usageReports', page_message=page_message, throw_reasons=[u'invalid'],
+        usage = callGAPIpages(rep.userUsageReport(), u'get', u'usageReports', page_message=page_message, throw_reasons=[GAPI_INVALID],
                               date=try_date, userKey=userKey, customerId=customerId, filters=filters, parameters=parameters)
         break
-      except googleapiclient.errors.HttpError as e:
-        error = json.loads(e.content)
-      try:
-        message = error[u'error'][u'errors'][0][u'message']
-      except KeyError:
-        raise
-      try_date = _adjustDate(message)
+      except GAPI_invalid as e:
+        try_date = _adjustDate(str(e))
     if not usage:
       print u'No user report available.'
       sys.exit(1)
@@ -1013,16 +1109,11 @@ def showReport():
   elif report in [u'customer', u'customers', u'domain']:
     while True:
       try:
-        usage = callGAPIpages(rep.customerUsageReports(), u'get', u'usageReports', throw_reasons=[u'invalid'],
+        usage = callGAPIpages(rep.customerUsageReports(), u'get', u'usageReports', throw_reasons=[GAPI_INVALID],
                               customerId=customerId, date=try_date, parameters=parameters)
         break
-      except googleapiclient.errors.HttpError as e:
-        error = json.loads(e.content)
-      try:
-        message = error[u'error'][u'errors'][0][u'message']
-      except KeyError:
-        raise
-      try_date = _adjustDate(message)
+      except GAPI_invalid as e:
+        try_date = _adjustDate(str(e))
     if not usage:
       print u'No customer report available.'
       sys.exit(1)
@@ -1444,23 +1535,18 @@ def doGetCustomerInfo():
     u'accounts:gsuite_unlimited_used_licenses': u'G Suite Business Users'
     }
   parameters = u','.join(user_counts_map.keys())
-  try_date = str(datetime.date.today())
+  try_date = unicode(datetime.date.today())
   customerId = GC_Values[GC_CUSTOMER_ID]
   if customerId == MY_CUSTOMER:
     customerId = None
   rep = buildGAPIObject(u'reports')
   while True:
     try:
-      usage = callGAPIpages(rep.customerUsageReports(), u'get', u'usageReports', throw_reasons=[u'invalid'],
+      usage = callGAPIpages(rep.customerUsageReports(), u'get', u'usageReports', throw_reasons=[GAPI_INVALID],
                             customerId=customerId, date=try_date, parameters=parameters)
       break
-    except googleapiclient.errors.HttpError as e:
-      error = json.loads(e.content)
-    try:
-      message = error[u'error'][u'errors'][0][u'message']
-    except KeyError:
-      raise
-    try_date = _adjustDate(message)
+    except GAPI_invalid as e:
+      try_date = _adjustDate(str(e))
   if not usage:
     print u'No user count data available.'
     return
@@ -1774,16 +1860,16 @@ def convertToUserID(user):
   if user.find(u'@') == -1:
     user = u'%s@%s' % (user, GC_Values[GC_DOMAIN])
   try:
-    return callGAPI(cd.users(), u'get', throw_reasons=[u'userNotFound', u'badRequest', u'forbidden'], userKey=user, fields=u'id')[u'id']
-  except googleapiclient.errors.HttpError:
+    return callGAPI(cd.users(), u'get', throw_reasons=[GAPI_USER_NOT_FOUND, GAPI_BAD_REQUEST, GAPI_FORBIDDEN], userKey=user, fields=u'id')[u'id']
+  except (GAPI_userNotFound, GAPI_badRequest, GAPI_forbidden):
     print u'ERROR: no such user %s' % user
     sys.exit(3)
 
 def convertUserIDtoEmail(uid):
   cd = buildGAPIObject(u'directory')
   try:
-    return callGAPI(cd.users(), u'get', throw_reasons=[u'userNotFound', u'badRequest', u'forbidden'], userKey=uid, fields=u'primaryEmail')[u'primaryEmail']
-  except googleapiclient.errors.HttpError:
+    return callGAPI(cd.users(), u'get', throw_reasons=[GAPI_USER_NOT_FOUND, GAPI_BAD_REQUEST, GAPI_FORBIDDEN], userKey=uid, fields=u'primaryEmail')[u'primaryEmail']
+  except (GAPI_userNotFound, GAPI_badRequest, GAPI_forbidden):
     return u'uid:{0}'.format(uid)
 
 def doCreateDataTranfer():
@@ -1956,20 +2042,17 @@ def doInviteGuardian():
 def _cancelGuardianInvitation(croom, studentId, invitationId):
   try:
     result = callGAPI(croom.userProfiles().guardianInvitations(), u'patch',
-                      throw_reasons=[u'forbidden', u'notFound', u'failedPrecondition'],
+                      throw_reasons=[GAPI_FORBIDDEN, GAPI_NOT_FOUND, GAPI_FAILED_PRECONDITION],
                       studentId=studentId, invitationId=invitationId, updateMask=u'state', body={u'state': u'COMPLETE'})
     print u'Cancelled PENDING guardian invitation for %s as guardian of %s' % (result[u'invitedEmailAddress'], studentId)
     return 0
-  except googleapiclient.errors.HttpError as e:
-    error = json.loads(e.content)
-    reason = error[u'error'][u'errors'][0][u'reason']
-    if reason == u'forbidden':
-      entityUnknownWarning(u'Student', studentId, 0, 0)
-      sys.exit(3)
-    if reason == u'notFound':
-      stderrErrorMsg(u'Guardian invitation %s for %s does not exist' % (invitationId, studentId))
-    elif reason == u'failedPrecondition':
-      stderrErrorMsg(u'Guardian invitation %s for %s status is not PENDING' % (invitationId, studentId))
+  except GAPI_forbidden:
+    entityUnknownWarning(u'Student', studentId, 0, 0)
+    sys.exit(3)
+  except GAPI_notFound:
+    stderrErrorMsg(u'Guardian invitation %s for %s does not exist' % (invitationId, studentId))
+  except GAPI_failedPrecondition:
+    stderrErrorMsg(u'Guardian invitation %s for %s status is not PENDING' % (invitationId, studentId))
   return 3
 
 def doCancelGuardianInvitation():
@@ -1996,20 +2079,19 @@ def doDeleteGuardian():
   if not invitationsOnly:
     try:
       callGAPI(croom.userProfiles().guardians(), u'delete',
-               throw_reasons=[u'forbidden', u'notFound'],
+               throw_reasons=[GAPI_FORBIDDEN, GAPI_NOT_FOUND],
                studentId=studentId, guardianId=guardianId)
       print u'Deleted %s as a guardian of %s' % (guardianId, studentId)
       return
-    except googleapiclient.errors.HttpError as e:
-      error = json.loads(e.content)
-      reason = error[u'error'][u'errors'][0][u'reason']
-      if reason == u'forbidden':
-        entityUnknownWarning(u'Student', studentId, 0, 0)
-        sys.exit(3)
+    except GAPI_forbidden:
+      entityUnknownWarning(u'Student', studentId, 0, 0)
+      sys.exit(3)
+    except GAPI_notFound:
+      pass
   # See if there's a pending invitation
   try:
     results = callGAPIpages(croom.userProfiles().guardianInvitations(), u'list', items=u'guardianInvitations',
-                            throw_reasons=[u'forbidden'],
+                            throw_reasons=[GAPI_FORBIDDEN],
                             studentId=studentId, invitedEmailAddress=guardianId, states=[u'PENDING',])
     if len(results) > 0:
       for result in results:
@@ -2018,7 +2100,7 @@ def doDeleteGuardian():
     else:
       stderrErrorMsg(u'%s is not a guardian of %s and no invitation exists.' % (guardianId, studentId))
       sys.exit(3)
-  except googleapiclient.errors.HttpError:
+  except GAPI_forbidden:
     entityUnknownWarning(u'Student', studentId, 0, 0)
     sys.exit(3)
 
@@ -2069,8 +2151,8 @@ def doGetCourseInfo():
   teachers = callGAPIpages(croom.courses().teachers(), u'list', u'teachers', courseId=courseId)
   students = callGAPIpages(croom.courses().students(), u'list', u'students', courseId=courseId)
   try:
-    aliases = callGAPIpages(croom.courses().aliases(), u'list', u'aliases', throw_reasons=[u'notImplemented'], courseId=courseId)
-  except googleapiclient.errors.HttpError:
+    aliases = callGAPIpages(croom.courses().aliases(), u'list', u'aliases', throw_reasons=[GAPI_NOT_IMPLEMENTED], courseId=courseId)
+  except GAPI_notImplemented:
     aliases = []
   if aliases:
     print u'Aliases:'
@@ -3406,8 +3488,8 @@ def getPhoto(users):
     filename = os.path.join(targetFolder, u'{0}.jpg'.format(user))
     print u"Saving photo to %s (%s/%s)" % (filename, i, count)
     try:
-      photo = callGAPI(cd.users().photos(), u'get', throw_reasons=[u'notFound'], userKey=user)
-    except googleapiclient.errors.HttpError:
+      photo = callGAPI(cd.users().photos(), u'get', throw_reasons=[GAPI_NOT_FOUND], userKey=user)
+    except GAPI_notFound:
       print u' no photo for %s' % user
       continue
     try:
@@ -5224,6 +5306,7 @@ def doDeleteLabel(users):
       else:
         print u' Error: no such label for %s' % user
         continue
+    bcount = 0
     j = 0
     del_me_count = len(del_labels)
     dbatch = googleapiclient.http.BatchHttpRequest()
@@ -5231,10 +5314,12 @@ def doDeleteLabel(users):
       j += 1
       print u' deleting label %s (%s/%s)' % (del_me[u'name'], j, del_me_count)
       dbatch.add(gmail.users().labels().delete(userId=user, id=del_me[u'id']), callback=gmail_del_result)
-      if len(dbatch._order) == 10:
+      bcount += 1
+      if bcount == 10:
         dbatch.execute()
         dbatch = googleapiclient.http.BatchHttpRequest()
-    if len(dbatch._order) > 0:
+        bcount = 0
+    if bcount > 0:
       dbatch.execute()
 
 def gmail_del_result(request_id, response, exception):
@@ -5424,8 +5509,8 @@ def renameLabels(users):
           sys.exit(2)
         print u' Renaming "%s" to "%s"' % (label[u'name'], new_label_name)
         try:
-          callGAPI(gmail.users().labels(), u'patch', soft_errors=True, throw_reasons=[u'aborted'], id=label[u'id'], userId=user, body={u'name': new_label_name})
-        except googleapiclient.errors.HttpError:
+          callGAPI(gmail.users().labels(), u'patch', soft_errors=True, throw_reasons=[GAPI_ABORTED], id=label[u'id'], userId=user, body={u'name': new_label_name})
+        except GAPI_aborted:
           if merge:
             print u'  Merging %s label to existing %s label' % (label[u'name'], new_label_name)
             q = u'label:"%s"' % label[u'name']
@@ -6100,8 +6185,8 @@ def doCreateOrUpdateUserSchema(updateCmd):
   if updateCmd:
     cmd = u'update'
     try:
-      body = callGAPI(cd.schemas(), u'get', throw_reasons=[u'notFound'], customerId=GC_Values[GC_CUSTOMER_ID], schemaKey=schemaKey)
-    except googleapiclient.errors.HttpError:
+      body = callGAPI(cd.schemas(), u'get', throw_reasons=[GAPI_NOT_FOUND], customerId=GC_Values[GC_CUSTOMER_ID], schemaKey=schemaKey)
+    except GAPI_notFound:
       print u'ERROR: Schema %s does not exist.' % schemaKey
       sys.exit(3)
   else: # create
@@ -6706,8 +6791,8 @@ def doDelProjects(login_hint=None):
     if pid.startswith(u'gam-project-'):
       print u'Deleting %s...' % pid
       try:
-        callGAPI(crm.projects(), u'delete', projectId=pid, throw_reasons=[u'forbidden'])
-      except googleapiclient.errors.HttpError:
+        callGAPI(crm.projects(), u'delete', throw_reasons=[GAPI_FORBIDDEN], projectId=pid)
+      except GAPI_forbidden:
         pass
 
 def enableProjectAPIs(simplehttp, httpObj, project_name, checkEnabled):
@@ -6729,10 +6814,10 @@ def enableProjectAPIs(simplehttp, httpObj, project_name, checkEnabled):
       print u' enabling API %s...' % api
       try:
         callGAPI(serveman.services(), u'enable',
-                 throw_reasons=[u'failedPrecondition'],
+                 throw_reasons=[GAPI_FAILED_PRECONDITION],
                  serviceName=api, body={u'consumerId': project_name})
         break
-      except googleapiclient.errors.HttpError, e:
+      except GAPI_failedPrecondition as e:
         print u'\nThere was an error enabling %s. Please resolve error as described below:' % api
         print
         print u'\n%s\n' % e
@@ -7113,8 +7198,8 @@ def doCreateAlias():
     callGAPI(cd.groups().aliases(), u'insert', groupKey=targetKey, body=body)
   elif target_type == u'target':
     try:
-      callGAPI(cd.users().aliases(), u'insert', throw_reasons=[u'invalid', u'badRequest'], userKey=targetKey, body=body)
-    except googleapiclient.errors.HttpError:
+      callGAPI(cd.users().aliases(), u'insert', throw_reasons=[GAPI_INVALID, GAPI_BAD_REQUEST], userKey=targetKey, body=body)
+    except (GAPI_invalid, GAPI_badRequest):
       callGAPI(cd.groups().aliases(), u'insert', groupKey=targetKey, body=body)
 
 def doCreateOrg():
@@ -7210,119 +7295,187 @@ def deleteUserFromGroups(users):
       callGAPI(cd.members(), u'delete', soft_errors=True, groupKey=user_group[u'id'], memberKey=user)
     print u''
 
+def checkGroupExists(cd, group, i=0, count=0):
+  group = normalizeEmailAddressOrUID(group)
+  try:
+    return callGAPI(cd.groups(), u'get',
+                    throw_reasons=GAPI_GROUP_GET_THROW_REASONS, retry_reasons=GAPI_GROUP_GET_RETRY_REASONS,
+                    groupKey=group, fields=u'email')[u'email']
+  except (GAPI_groupNotFound, GAPI_domainNotFound, GAPI_domainCannotUseApis, GAPI_forbidden, GAPI_badRequest):
+    entityUnknownWarning(u'Group', group, i, count)
+    return None
+
 UPDATE_GROUP_SUBCMDS = [u'add', u'clear', u'delete', u'remove', u'sync', u'update']
 
 def doUpdateGroup():
+
+  def _getRoleAndUsers():
+    checkNotSuspended = False
+    role = ROLE_MEMBER
+    i = 5
+    if sys.argv[i].upper() in [ROLE_OWNER, ROLE_MANAGER, ROLE_MEMBER]:
+      role = sys.argv[i].upper()
+      i += 1
+    if sys.argv[i] == u'notsuspended':
+      checkNotSuspended = True
+      i += 1
+    if sys.argv[i].lower() in usergroup_types:
+      users_email = getUsersToModify(entity_type=sys.argv[i], entity=sys.argv[i+1], checkNotSuspended=checkNotSuspended, groupUserMembersOnly=False)
+    else:
+      users_email = [sys.argv[i],]
+    return (role, users_email)
+
+  _ADD_MEMBER_REASON_TO_MESSAGE_MAP = {GAPI_DUPLICATE: u'Duplicate', GAPI_MEMBER_NOT_FOUND: u'Does not exist',
+                                       GAPI_RESOURCE_NOT_FOUND: u'Does not exist', GAPI_INVALID_MEMBER: u'Invalid role',
+                                       GAPI_CYCLIC_MEMBERSHIPS_NOT_ALLOWED: u'Would make membership cycle'}
+  def _callbackAddGroupMembers(request_id, response, exception):
+    ri = request_id.splitlines()
+    if exception is None:
+      sys.stderr.write(u'  Group: {0}, {1}: {2}, {3}{4}'.format(ri[RI_ENTITY], ri[RI_ROLE], ri[RI_ITEM],
+                                                                actions[u'Performed'], currentCountNL(int(ri[RI_J]), int(ri[RI_JCOUNT]))))
+    else:
+      http_status, reason, message = checkGAPIError(exception)
+      if reason in GAPI_MEMBERS_THROW_REASONS:
+        entityUnknownWarning(u'Group', ri[RI_ENTITY], 0, 0)
+      else:
+        errMsg = getHTTPError(_ADD_MEMBER_REASON_TO_MESSAGE_MAP, http_status, reason, message)
+        sys.stderr.write(u'  Group: {0}, {1}: {2}, {3}: {4}{5}'.format(ri[RI_ENTITY], ri[RI_ROLE], ri[RI_ITEM],
+                                                                       actions[u'Failed'], errMsg, currentCountNL(int(ri[RI_J]), int(ri[RI_JCOUNT]))))
+
+  def _batchAddGroupMembers(cd, group, addMembers, role, actions):
+    jcount = len(addMembers)
+    if jcount == 0:
+      return
+    actions[u'Performed'] = u'Added'
+    actions[u'Failed'] = u'Add Failed'
+    svcargs = dict([(u'groupKey', group), (u'body', {u'role': role}), (u'fields', u'')]+GM_Globals[GM_EXTRA_ARGS_DICT].items())
+    dbatch = googleapiclient.http.BatchHttpRequest(callback=_callbackAddGroupMembers)
+    bcount = 0
+    j = 0
+    for member in addMembers:
+      j += 1
+      svcparms = svcargs.copy()
+      member = normalizeEmailAddressOrUID(member, checkForCustomerId=True)
+      if member.find(u'@') != -1:
+        svcparms[u'body'][u'email'] = member
+        svcparms[u'body'].pop(u'id', None)
+      else:
+        svcparms[u'body'][u'id'] = member
+        svcparms[u'body'].pop(u'email', None)
+      dbatch.add(cd.members().insert(**svcparms), request_id=batchRequestID(group, j, jcount, member, role))
+      bcount += 1
+      if bcount >= GC_Values[GC_BATCH_SIZE]:
+        dbatch.execute()
+        dbatch = googleapiclient.http.BatchHttpRequest(callback=_callbackAddGroupMembers)
+        bcount = 0
+    if bcount > 0:
+      dbatch.execute()
+
+  _REMOVE_UPDATE_MEMBER_REASON_TO_MESSAGE_MAP = {GAPI_MEMBER_NOT_FOUND: u'Not a member', GAPI_INVALID_MEMBER: u'Does not exist'}
+  def _callbackRemoveUpdateGroupMembers(request_id, response, exception):
+    ri = request_id.splitlines()
+    if exception is None:
+      sys.stderr.write(u'Group: {0}, {1}: {2}, {3}{4}'.format(ri[RI_ENTITY], ri[RI_ROLE], ri[RI_ITEM],
+                                                              actions[u'Performed'], currentCountNL(int(ri[RI_J]), int(ri[RI_JCOUNT]))))
+    else:
+      http_status, reason, message = checkGAPIError(exception)
+      if reason in GAPI_MEMBERS_THROW_REASONS:
+        entityUnknownWarning(u'Group', ri[RI_ENTITY], 0, 0)
+      else:
+        errMsg = getHTTPError(_REMOVE_UPDATE_MEMBER_REASON_TO_MESSAGE_MAP, http_status, reason, message)
+        sys.stderr.write(u'Group: {0}, {1}: {2}, {3}: {4}{5}'.format(ri[RI_ENTITY], ri[RI_ROLE], ri[RI_ITEM],
+                                                                     actions[u'Failed'], errMsg, currentCountNL(int(ri[RI_J]), int(ri[RI_JCOUNT]))))
+
+  def _batchRemoveUpdateGroupMembers(cd, function, group, removeUpdateMembers, role, actions):
+    jcount = len(removeUpdateMembers)
+    if jcount == 0:
+      return
+    if function == u'delete':
+      actions[u'Performed'] = u'Removed'
+      actions[u'Failed'] = u'Remove Failed'
+      svcargs = dict([(u'groupKey', group), (u'memberKey', None), (u'fields', u'')]+GM_Globals[GM_EXTRA_ARGS_DICT].items())
+    else:
+      actions[u'Performed'] = u'Updated'
+      actions[u'Failed'] = u'Update Failed'
+      svcargs = dict([(u'groupKey', group), (u'memberKey', None), (u'body', {u'role': role}), (u'fields', u'')]+GM_Globals[GM_EXTRA_ARGS_DICT].items())
+    method = getattr(cd.members(), function)
+    dbatch = googleapiclient.http.BatchHttpRequest(callback=_callbackRemoveUpdateGroupMembers)
+    bcount = 0
+    j = 0
+    for member in removeUpdateMembers:
+      j += 1
+      svcparms = svcargs.copy()
+      svcparms[u'memberKey'] = normalizeEmailAddressOrUID(member, checkForCustomerId=True)
+      dbatch.add(method(**svcparms), request_id=batchRequestID(group, j, jcount, svcparms[u'memberKey'], role))
+      bcount += 1
+      if bcount >= GC_Values[GC_BATCH_SIZE]:
+        dbatch.execute()
+        dbatch = googleapiclient.http.BatchHttpRequest(callback=_callbackRemoveUpdateGroupMembers)
+        bcount = 0
+    if bcount > 0:
+      dbatch.execute()
+
   cd = buildGAPIObject(u'directory')
   group = sys.argv[3]
   myarg = sys.argv[4].lower()
+  actions = {}
   if myarg in UPDATE_GROUP_SUBCMDS:
     if group[0:3].lower() == u'uid:':
       group = group[4:]
     elif group.find(u'@') == -1:
       group = u'%s@%s' % (group, GC_Values[GC_DOMAIN])
-    checkNotSuspended = False
     if myarg == u'add':
-      role = ROLE_MEMBER
-      i = 5
-      if sys.argv[i].upper() in [ROLE_OWNER, ROLE_MANAGER, ROLE_MEMBER]:
-        role = sys.argv[i].upper()
-        i += 1
-      if sys.argv[i] == u'notsuspended':
-        checkNotSuspended = True
-        i += 1
-      if sys.argv[i].lower() in usergroup_types:
-        users_email = getUsersToModify(entity_type=sys.argv[i], entity=sys.argv[i+1], checkNotSuspended=checkNotSuspended, groupUserMembersOnly=False)
-      else:
-        users_email = [sys.argv[i],]
-      for user_email in users_email:
-        if user_email == u'*' or user_email == GC_Values[GC_CUSTOMER_ID]:
-          user_email = GC_Values[GC_CUSTOMER_ID]
-          body = {u'role': role, u'id': GC_Values[GC_CUSTOMER_ID]}
-        else:
-          if user_email.find(u'@') == -1:
-            user_email = u'%s@%s' % (user_email, GC_Values[GC_DOMAIN])
-          body = {u'role': role, u'email': user_email}
-        sys.stderr.write(u' adding %s %s...\n' % (role.lower(), user_email))
-        try:
-          callGAPI(cd.members(), u'insert', soft_errors=True, groupKey=group, body=body)
-        except googleapiclient.errors.HttpError:
-          pass
+      role, users_email = _getRoleAndUsers()
+      group = checkGroupExists(cd, group)
+      if group:
+        sys.stderr.write(u'Group: {0}, Will add {1} {2}s.\n'.format(group, len(users_email), role))
+        _batchAddGroupMembers(cd, group, users_email, role, actions)
     elif myarg == u'sync':
-      role = ROLE_MEMBER
-      i = 5
-      if sys.argv[i].upper() in [ROLE_OWNER, ROLE_MANAGER, ROLE_MEMBER]:
-        role = sys.argv[i].upper()
-        i += 1
-      if sys.argv[i] == u'notsuspended':
-        checkNotSuspended = True
-        i += 1
-      users_email = []
-      for user_email in getUsersToModify(entity_type=sys.argv[i], entity=sys.argv[i+1], checkNotSuspended=checkNotSuspended, groupUserMembersOnly=False):
-        if user_email == u'*' or user_email == GC_Values[GC_CUSTOMER_ID]:
-          users_email.append(GC_Values[GC_CUSTOMER_ID])
-        else:
-          users_email.append(user_email.lower())
-      current_emails = []
-      for current_email in getUsersToModify(entity_type=u'group', entity=group, member_type=role, groupUserMembersOnly=False):
-        if current_email == GC_Values[GC_CUSTOMER_ID]:
-          current_emails.append(current_email)
-        else:
-          current_emails.append(current_email.lower())
-      to_add = list(set(users_email) - set(current_emails))
-      to_remove = list(set(current_emails) - set(users_email))
-      sys.stderr.write(u'Need to add %s %s and remove %s.\n' % (len(to_add), role, len(to_remove)))
-      items = []
-      for user_email in to_add:
-        items.append([u'gam', u'update', u'group', group, u'add', role, user_email])
-      for user_email in to_remove:
-        items.append([u'gam', u'update', u'group', group, u'remove', user_email])
-      run_batch(items)
+      role, users_email = _getRoleAndUsers()
+      for i in xrange(len(users_email)):
+        user_email = users_email[i]
+        if user_email == u'*':
+          users_email[i] = GC_Values[GC_CUSTOMER_ID]
+        elif user_email != GC_Values[GC_CUSTOMER_ID]:
+          users_email[i] = user_email.lower()
+      group = checkGroupExists(cd, group)
+      if group:
+        current_emails = []
+        for current_email in getUsersToModify(entity_type=u'group', entity=group, member_type=role, groupUserMembersOnly=False):
+          if current_email == GC_Values[GC_CUSTOMER_ID]:
+            current_emails.append(current_email)
+          else:
+            current_emails.append(current_email.lower())
+        to_add = list(set(users_email) - set(current_emails))
+        to_remove = list(set(current_emails) - set(users_email))
+        sys.stderr.write(u'Group: {0}, Will add {1} and remove {2} {3}s.\n'.format(group, len(to_add), len(to_remove), role))
+        _batchAddGroupMembers(cd, group, to_add, role, actions)
+        _batchRemoveUpdateGroupMembers(cd, u'delete', group, to_remove, role, actions)
     elif myarg in [u'delete', u'remove']:
-      i = 5
-      if sys.argv[i].lower() in [u'member', u'manager', u'owner']:
-        i += 1
-      if sys.argv[i].lower() in usergroup_types:
-        user_emails = getUsersToModify(entity_type=sys.argv[i], entity=sys.argv[i+1], groupUserMembersOnly=False)
-      else:
-        user_emails = [sys.argv[i],]
-      for user_email in user_emails:
-        if user_email == u'*':
-          user_email = GC_Values[GC_CUSTOMER_ID]
-        elif user_email[:4].lower() == u'uid:':
-          user_email = user_email[4:]
-        elif user_email != GC_Values[GC_CUSTOMER_ID] and user_email.find(u'@') == -1:
-          user_email = u'%s@%s' % (user_email, GC_Values[GC_DOMAIN])
-        sys.stderr.write(u' removing %s\n' % user_email)
-        callGAPI(cd.members(), u'delete', soft_errors=True, groupKey=group, memberKey=user_email)
+      role, users_email = _getRoleAndUsers()
+      group = checkGroupExists(cd, group)
+      if group:
+        sys.stderr.write(u'Group: {0}, Will remove {1} {2}s.\n'.format(group, len(users_email), role))
+        _batchRemoveUpdateGroupMembers(cd, u'delete', group, users_email, role, actions)
     elif myarg == u'update':
-      role = ROLE_MEMBER
-      i = 5
-      if sys.argv[i].upper() in [ROLE_OWNER, ROLE_MANAGER, ROLE_MEMBER]:
-        role = sys.argv[i].upper()
-        i += 1
-      if sys.argv[i].lower() in usergroup_types:
-        users_email = getUsersToModify(entity_type=sys.argv[i], entity=sys.argv[i+1], groupUserMembersOnly=False)
-      else:
-        users_email = [sys.argv[i],]
-      body = {u'role': role}
-      for user_email in users_email:
-        if user_email == u'*':
-          user_email = GC_Values[GC_CUSTOMER_ID]
-        elif user_email != GC_Values[GC_CUSTOMER_ID] and user_email.find(u'@') == -1:
-          user_email = u'%s@%s' % (user_email, GC_Values[GC_DOMAIN])
-        sys.stderr.write(u' updating %s %s...\n' % (role.lower(), user_email))
-        try:
-          callGAPI(cd.members(), u'update', soft_errors=True, groupKey=group, memberKey=user_email, body=body)
-        except googleapiclient.errors.HttpError:
-          pass
+      role, users_email = _getRoleAndUsers()
+      group = checkGroupExists(cd, group)
+      if group:
+        sys.stderr.write(u'Group: {0}, Will update {1} {2}s.\n'.format(group, len(users_email), role))
+        _batchRemoveUpdateGroupMembers(cd, u'update', group, users_email, role, actions)
     else: # clear
+      suspended = False
+      fields = [u'email', u'id']
       roles = []
       i = 5
       while i < len(sys.argv):
-        role = sys.argv[i].upper()
-        if role in [ROLE_OWNER, ROLE_MANAGER, ROLE_MEMBER]:
-          roles.append(role)
+        myarg = sys.argv[i].lower()
+        if myarg.upper() in [ROLE_OWNER, ROLE_MANAGER, ROLE_MEMBER]:
+          roles.append(myarg.upper())
+          i += 1
+        elif myarg == u'suspended':
+          suspended = True
+          fields.append(u'status')
           i += 1
         else:
           print u'ERROR: %s is not a valid argument for "gam update group clear"' % sys.argv[i]
@@ -7331,14 +7484,24 @@ def doUpdateGroup():
         roles = u','.join(sorted(set(roles)))
       else:
         roles = ROLE_MEMBER
-      user_emails = getUsersToModify(entity_type=u'group', entity=group, member_type=roles, groupUserMembersOnly=False)
-      for user_email in user_emails:
-        if user_email == u'*':
-          user_email = GC_Values[GC_CUSTOMER_ID]
-        elif user_email != GC_Values[GC_CUSTOMER_ID] and user_email.find(u'@') == -1:
-          user_email = u'%s@%s' % (user_email, GC_Values[GC_DOMAIN])
-        sys.stderr.write(u' removing %s\n' % user_email)
-        callGAPI(cd.members(), u'delete', soft_errors=True, groupKey=group, memberKey=user_email)
+      group = normalizeEmailAddressOrUID(group)
+      member_type_message = u'%ss' % roles.lower()
+      sys.stderr.write(u"Getting %s of %s (may take some time for large groups)...\n" % (member_type_message, group))
+      page_message = u'Got %%%%total_items%%%% %s...' % member_type_message
+      try:
+        result = callGAPIpages(cd.members(), u'list', u'members',
+                               page_message=page_message,
+                               throw_reasons=GAPI_MEMBERS_THROW_REASONS,
+                               groupKey=group, roles=roles, fields=u'nextPageToken,members({0})'.format(u','.join(fields)),
+                               maxResults=GC_Values[GC_MEMBER_MAX_RESULTS])
+        if not suspended:
+          users_email = [member.get(u'email', member[u'id']) for member in result]
+        else:
+          users_email = [member.get(u'email', member[u'id']) for member in result if member[u'status'] == u'SUSPENDED']
+        sys.stderr.write(u'Group: {0}, Will remove {1} {2}{3}s.\n'.format(group, len(users_email), [u'', u'suspended '][suspended], roles))
+        _batchRemoveUpdateGroupMembers(cd, u'delete', group, users_email, ROLE_MEMBER, actions)
+      except (GAPI_groupNotFound, GAPI_domainNotFound, GAPI_invalid, GAPI_forbidden):
+        entityUnknownWarning(u'Group', group, 0, 0)
   else:
     i = 4
     use_cd_api = False
@@ -7401,8 +7564,8 @@ def doUpdateAlias():
   if target_email.find(u'@') == -1:
     target_email = u'%s@%s' % (target_email, GC_Values[GC_DOMAIN])
   try:
-    callGAPI(cd.users().aliases(), u'delete', throw_reasons=[u'invalid'], userKey=alias, alias=alias)
-  except googleapiclient.errors.HttpError:
+    callGAPI(cd.users().aliases(), u'delete', throw_reasons=[GAPI_INVALID], userKey=alias, alias=alias)
+  except GAPI_invalid:
     callGAPI(cd.groups().aliases(), u'delete', groupKey=alias, alias=alias)
   if target_type == u'user':
     callGAPI(cd.users().aliases(), u'insert', userKey=target_email, body={u'alias': alias})
@@ -7410,8 +7573,8 @@ def doUpdateAlias():
     callGAPI(cd.groups().aliases(), u'insert', groupKey=target_email, body={u'alias': alias})
   elif target_type == u'target':
     try:
-      callGAPI(cd.users().aliases(), u'insert', throw_reasons=[u'invalid'], userKey=target_email, body={u'alias': alias})
-    except googleapiclient.errors.HttpError:
+      callGAPI(cd.users().aliases(), u'insert', throw_reasons=[GAPI_INVALID], userKey=target_email, body={u'alias': alias})
+    except GAPI_invalid:
       callGAPI(cd.groups().aliases(), u'insert', groupKey=target_email, body={u'alias': alias})
   print u'updated alias %s' % alias
 
@@ -7568,8 +7731,8 @@ def doUpdateOrg():
         current_user += 1
         sys.stderr.write(u' moving %s to %s (%s/%s)\n' % (user, orgUnitPath, current_user, user_count))
         try:
-          callGAPI(cd.users(), u'update', throw_reasons=[u'conditionNotMet'], userKey=user, body={u'orgUnitPath': orgUnitPath})
-        except googleapiclient.errors.HttpError:
+          callGAPI(cd.users(), u'update', throw_reasons=[GAPI_CONDITION_NOT_MET], userKey=user, body={u'orgUnitPath': orgUnitPath})
+        except GAPI_conditionNotMet:
           pass
   else:
     body = {}
@@ -7605,7 +7768,7 @@ def doWhatIs():
   if email.find(u'@') == -1:
     email = u'%s@%s' % (email, GC_Values[GC_DOMAIN])
   try:
-    user_or_alias = callGAPI(cd.users(), u'get', throw_reasons=[u'notFound', u'badRequest', u'invalid'], userKey=email, fields=u'primaryEmail')
+    user_or_alias = callGAPI(cd.users(), u'get', throw_reasons=[GAPI_NOT_FOUND, GAPI_BAD_REQUEST, GAPI_INVALID], userKey=email, fields=u'primaryEmail')
     if user_or_alias[u'primaryEmail'].lower() == email.lower():
       sys.stderr.write(u'%s is a user\n\n' % email)
       doGetUserInfo(user_email=email)
@@ -7614,12 +7777,12 @@ def doWhatIs():
       sys.stderr.write(u'%s is a user alias\n\n' % email)
       doGetAliasInfo(alias_email=email)
       return
-  except googleapiclient.errors.HttpError:
+  except (GAPI_notFound, GAPI_badRequest, GAPI_invalid):
     sys.stderr.write(u'%s is not a user...\n' % email)
     sys.stderr.write(u'%s is not a user alias...\n' % email)
   try:
-    group = callGAPI(cd.groups(), u'get', throw_reasons=[u'notFound', u'badRequest'], groupKey=email, fields=u'email')
-  except googleapiclient.errors.HttpError:
+    group = callGAPI(cd.groups(), u'get', throw_reasons=[GAPI_NOT_FOUND, GAPI_BAD_REQUEST], groupKey=email, fields=u'email')
+  except (GAPI_notFound, GAPI_badRequest):
     sys.stderr.write(u'%s is not a group either!\n\nDoesn\'t seem to exist!\n\n' % email)
     sys.exit(1)
   if group[u'email'].lower() == email.lower():
@@ -8096,9 +8259,9 @@ def doGetGroupInfo(group_name=None):
   basic_info = callGAPI(cd.groups(), u'get', groupKey=group_name)
   if not GroupIsAbuseOrPostmaster(basic_info[u'email']):
     try:
-      settings = callGAPI(gs.groups(), u'get', retry_reasons=[u'serviceLimit'], throw_reasons=u'authError',
+      settings = callGAPI(gs.groups(), u'get', throw_reasons=[GAPI_AUTH_ERROR], retry_reasons=[u'serviceLimit'],
                           groupUniqueId=basic_info[u'email']) # Use email address retrieved from cd since GS API doesn't support uid
-    except googleapiclient.errors.HttpError:
+    except GAPI_authError:
       pass
   print u''
   print u'Group Settings:'
@@ -8131,7 +8294,7 @@ def doGetGroupInfo(group_name=None):
       for groupm in groups:
         print u'  %s: %s' % (groupm[u'name'], groupm[u'email'])
   if getUsers:
-    members = callGAPIpages(cd.members(), u'list', u'members', groupKey=group_name, fields=u'nextPageToken,members(email,id,role,type)')
+    members = callGAPIpages(cd.members(), u'list', u'members', groupKey=group_name, fields=u'nextPageToken,members(email,id,role,type)', maxResults=GC_Values[GC_MEMBER_MAX_RESULTS])
     print u'Members:'
     for member in members:
       print u' %s: %s (%s)' % (member.get(u'role', ROLE_MEMBER).lower(), member.get(u'email', member[u'id']), member[u'type'].lower())
@@ -8144,8 +8307,8 @@ def doGetAliasInfo(alias_email=None):
   if alias_email.find(u'@') == -1:
     alias_email = u'%s@%s' % (alias_email, GC_Values[GC_DOMAIN])
   try:
-    result = callGAPI(cd.users(), u'get', throw_reasons=[u'invalid', u'badRequest'], userKey=alias_email)
-  except googleapiclient.errors.HttpError:
+    result = callGAPI(cd.users(), u'get', throw_reasons=[GAPI_INVALID, GAPI_BAD_REQUEST], userKey=alias_email)
+  except (GAPI_invalid, GAPI_badRequest):
     result = callGAPI(cd.groups(), u'get', groupKey=alias_email)
   print u' Alias Email: %s' % alias_email
   try:
@@ -8428,11 +8591,9 @@ def doSiteVerifyAttempt():
     identifier = u'http://%s/' % a_domain
   body = {u'site':{u'type':verify_type, u'identifier':identifier}, u'verificationMethod':verificationMethod}
   try:
-    verify_result = callGAPI(verif.webResource(), u'insert', throw_reasons=[u'badRequest'], verificationMethod=verificationMethod, body=body)
-  except googleapiclient.errors.HttpError as e:
-    error = json.loads(e.content)
-    message = error[u'error'][u'errors'][0][u'message']
-    print u'ERROR: %s' % message
+    verify_result = callGAPI(verif.webResource(), u'insert', throw_reasons=[GAPI_BAD_REQUEST], verificationMethod=verificationMethod, body=body)
+  except GAPI_badRequest as e:
+    print u'ERROR: %s' % str(e)
     verify_data = callGAPI(verif.webResource(), u'getToken', body=body)
     print u'Method:  %s' % verify_data[u'method']
     print u'Token:      %s' % verify_data[u'token']
@@ -8611,8 +8772,8 @@ def doGetBackupCodes(users):
   cd = buildGAPIObject(u'directory')
   for user in users:
     try:
-      codes = callGAPIitems(cd.verificationCodes(), u'list', u'items', throw_reasons=[u'invalidArgument', u'invalid'], userKey=user)
-    except googleapiclient.errors.HttpError:
+      codes = callGAPIitems(cd.verificationCodes(), u'list', u'items', throw_reasons=[GAPI_INVALID_ARGUMENT, GAPI_INVALID], userKey=user)
+    except (GAPI_invalidArgument, GAPI_invalid):
       codes = []
     printBackupCodes(user, codes)
 
@@ -8627,8 +8788,8 @@ def doDelBackupCodes(users):
   cd = buildGAPIObject(u'directory')
   for user in users:
     try:
-      callGAPI(cd.verificationCodes(), u'invalidate', soft_errors=True, throw_reasons=[u'invalid',], userKey=user)
-    except googleapiclient.errors.HttpError:
+      callGAPI(cd.verificationCodes(), u'invalidate', soft_errors=True, throw_reasons=[GAPI_INVALID], userKey=user)
+    except GAPI_invalid:
       print u'No 2SV backup codes for %s' % user
       continue
     print u'2SV backup codes for %s invalidated' % user
@@ -8654,8 +8815,8 @@ def doDelTokens(users):
     sys.exit(3)
   for user in users:
     try:
-      callGAPI(cd.tokens(), u'get', userKey=user, clientId=clientId, throw_reasons=[u'notFound'])
-    except googleapiclient.errors.HttpError:
+      callGAPI(cd.tokens(), u'get', throw_reasons=[GAPI_NOT_FOUND, GAPI_RESOURCE_NOT_FOUND], userKey=user, clientId=clientId)
+    except (GAPI_notFound, GAPI_resourceNotFound):
       print u'User %s did not authorize %s' % (user, clientId)
       continue
     callGAPI(cd.tokens(), u'delete', userKey=user, clientId=clientId)
@@ -8705,7 +8866,7 @@ def printShowTokens(i, entityType, users, csvFormat):
         sys.stderr.write(u'Getting Access Tokens for %s\n' % (user))
       if clientId:
         results = [callGAPI(cd.tokens(), u'get',
-                            throw_reasons=[GAPI_NOT_FOUND, GAPI_USER_NOT_FOUND],
+                            throw_reasons=[GAPI_NOT_FOUND, GAPI_USER_NOT_FOUND, GAPI_RESOURCE_NOT_FOUND],
                             userKey=user, clientId=clientId, fields=fields)]
       else:
         results = callGAPIitems(cd.tokens(), u'list', u'items',
@@ -8727,7 +8888,7 @@ def printShowTokens(i, entityType, users, csvFormat):
             if item not in [u'scopes']:
               row[item] = token.get(item, u'')
           csvRows.append(row)
-    except googleapiclient.errors.HttpError:
+    except (GAPI_notFound, GAPI_userNotFound, GAPI_resourceNotFound):
       pass
   if csvFormat:
     writeCSVfile(csvRows, titles, u'OAuth Tokens', todrive)
@@ -8748,8 +8909,8 @@ def doDeprovUser(users):
       print u'No ASPs'
     print u'Invalidating 2SV Backup Codes for %s' % user
     try:
-      callGAPI(cd.verificationCodes(), u'invalidate', soft_errors=True, throw_reasons=[u'invalid'], userKey=user)
-    except googleapiclient.errors.HttpError:
+      callGAPI(cd.verificationCodes(), u'invalidate', soft_errors=True, throw_reasons=[GAPI_INVALID], userKey=user)
+    except GAPI_invalid:
       print u'No 2SV Backup Codes'
     print u'Getting tokens for %s...' % user
     tokens = callGAPIitems(cd.tokens(), u'list', u'items', userKey=user, fields=u'items/clientId')
@@ -8847,14 +9008,13 @@ def doDeleteAlias(alias_email=None):
   print u"Deleting alias %s" % alias_email
   if is_user or (not is_user and not is_group):
     try:
-      callGAPI(cd.users().aliases(), u'delete', throw_reasons=[u'invalid', u'badRequest', u'notFound'], userKey=alias_email, alias=alias_email)
+      callGAPI(cd.users().aliases(), u'delete', throw_reasons=[GAPI_INVALID, GAPI_BAD_REQUEST, GAPI_NOT_FOUND], userKey=alias_email, alias=alias_email)
       return
-    except googleapiclient.errors.HttpError as e:
-      error = json.loads(e.content)
-      reason = error[u'error'][u'errors'][0][u'reason']
-      if reason == u'notFound':
-        print u'Error: The alias %s does not exist' % alias_email
-        sys.exit(4)
+    except (GAPI_invalid, GAPI_badRequest):
+      pass
+    except GAPI_notFound:
+      print u'Error: The alias %s does not exist' % alias_email
+      sys.exit(4)
   if not is_user or (not is_user and not is_group):
     callGAPI(cd.groups().aliases(), u'delete', groupKey=alias_email, alias=alias_email)
 
@@ -9369,7 +9529,8 @@ def doPrintGroups():
       groupMembers = callGAPIpages(cd.members(), u'list', u'members',
                                    page_message=page_message, message_attribute=u'email',
                                    soft_errors=True,
-                                   groupKey=groupEmail, roles=roles, fields=u'nextPageToken,members(email,id,role)')
+                                   groupKey=groupEmail, roles=roles, fields=u'nextPageToken,members(email,id,role)',
+                                   maxResults=GC_Values[GC_MEMBER_MAX_RESULTS])
       if members:
         membersList = []
         membersCount = 0
@@ -9611,7 +9772,8 @@ def doPrintGroupMembers():
     sys.stderr.write(u'Getting members for %s (%s/%s)\n' % (group_email, i, count))
     group_members = callGAPIpages(cd.members(), u'list', u'members',
                                   soft_errors=True,
-                                  message_attribute=u'email', groupKey=group_email, fields=fields)
+                                  message_attribute=u'email', groupKey=group_email, fields=fields,
+                                  maxResults=GC_Values[GC_MEMBER_MAX_RESULTS])
     for member in group_members:
       for unwanted_item in [u'kind', u'etag']:
         if unwanted_item in member:
@@ -9624,26 +9786,26 @@ def doPrintGroupMembers():
         if member[u'type'] == u'USER':
           try:
             mbinfo = callGAPI(cd.users(), u'get',
-                              throw_reasons=[u'userNotFound', u'notFound', u'forbidden'],
+                              throw_reasons=[GAPI_USER_NOT_FOUND, GAPI_NOT_FOUND, GAPI_FORBIDDEN],
                               userKey=member[u'id'], fields=u'name')
             memberName = mbinfo[u'name'][u'fullName']
-          except googleapiclient.errors.HttpError:
+          except (GAPI_userNotFound, GAPI_notFound, GAPI_forbidden):
             memberName = u'Unknown'
         elif member[u'type'] == u'GROUP':
           try:
             mbinfo = callGAPI(cd.groups(), u'get',
-                              throw_reasons=[u'notFound', u'forbidden'],
+                              throw_reasons=[GAPI_NOT_FOUND, GAPI_FORBIDDEN],
                               groupKey=member[u'id'], fields=u'name')
             memberName = mbinfo[u'name']
-          except googleapiclient.errors.HttpError:
+          except (GAPI_notFound, GAPI_forbidden):
             memberName = u'Unknown'
         elif member[u'type'] == u'CUSTOMER':
           try:
             mbinfo = callGAPI(cd.customers(), u'get',
-                              throw_reasons=[u'badRequest', u'resourceNotFound', u'forbidden'],
+                              throw_reasons=[GAPI_BAD_REQUEST, GAPI_RESOURCE_NOT_FOUND, GAPI_FORBIDDEN],
                               customerKey=member[u'id'], fields=u'customerDomain')
             memberName = mbinfo[u'customerDomain']
-          except googleapiclient.errors.HttpError:
+          except (GAPI_badRequest, GAPI_resourceNotFound, GAPI_forbidden):
             memberName = u'Unknown'
         else:
           memberName = u'Unknown'
@@ -10029,9 +10191,9 @@ def doPrintLicenses(returnFields=None, skus=None):
       product, sku = getProductAndSKU(sku)
       page_message = u'Got %%%%total_items%%%% Licenses for %s...\n' % sku
       try:
-        licenses += callGAPIpages(lic.licenseAssignments(), u'listForProductAndSku', u'items', throw_reasons=[u'invalid', u'forbidden'], page_message=page_message,
+        licenses += callGAPIpages(lic.licenseAssignments(), u'listForProductAndSku', u'items', throw_reasons=[GAPI_INVALID, GAPI_FORBIDDEN], page_message=page_message,
                                   customerId=GC_Values[GC_DOMAIN], productId=product, skuId=sku, fields=fields)
-      except googleapiclient.errors.HttpError:
+      except (GAPI_invalid, GAPI_forbidden):
         pass
   else:
     if not products:
@@ -10042,9 +10204,9 @@ def doPrintLicenses(returnFields=None, skus=None):
     for productId in products:
       page_message = u'Got %%%%total_items%%%% Licenses for %s...\n' % productId
       try:
-        licenses += callGAPIpages(lic.licenseAssignments(), u'listForProduct', u'items', throw_reasons=[u'invalid', u'forbidden'], page_message=page_message,
+        licenses += callGAPIpages(lic.licenseAssignments(), u'listForProduct', u'items', throw_reasons=[GAPI_INVALID, GAPI_FORBIDDEN], page_message=page_message,
                                   customerId=GC_Values[GC_DOMAIN], productId=productId, fields=fields)
-      except googleapiclient.errors.HttpError:
+      except (GAPI_invalid, GAPI_forbidden):
         pass
   if returnFields:
     if returnFields == u'userId':
@@ -10147,10 +10309,11 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
       sys.stderr.write(u"Getting %s of %s (may take some time for large groups)...\n" % (member_type_message, group))
       page_message = u'Got %%%%total_items%%%% %s...' % member_type_message
     members = callGAPIpages(cd.members(), u'list', u'members', page_message=page_message,
-                            groupKey=group, roles=member_type, fields=u'nextPageToken,members(email,id,type)')
+                            groupKey=group, roles=member_type, fields=u'nextPageToken,members(email,id,type,status)',
+                            maxResults=GC_Values[GC_MEMBER_MAX_RESULTS])
     users = []
     for member in members:
-      if (not groupUserMembersOnly) or (member[u'type'] == u'USER'):
+      if ((not groupUserMembersOnly) or (member[u'type'] == u'USER')) and not (checkNotSuspended and (member[u'status'] == u'SUSPENDED')):
         users.append(member.get(u'email', member[u'id']))
   elif entity_type in [u'ou', u'org']:
     got_uids = True
