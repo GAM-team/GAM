@@ -104,6 +104,7 @@ API_VER_MAPPING = {
   u'reseller': u'v1',
   u'siteVerification': u'v1',
   u'urlshortener': u'v1',
+  u'vault': u'v1',
   }
 
 API_SCOPE_MAPPING = {
@@ -413,6 +414,13 @@ FILTER_CRITERIA_CHOICES_MAP = {
 FILTER_ACTION_CHOICES = [
   u'archive', u'forward', u'important', u'label',
   u'markread', u'neverspam', u'notimportant', u'star', u'trash',
+  ]
+
+VAULT_MATTER_ACTIONS = [
+  u'reopen',
+  u'undelete',
+  u'close',
+  u'delete',
   ]
 
 CROS_ARGUMENT_TO_PROPERTY_MAP = {

@@ -7088,6 +7088,357 @@ def doDeleteTeamDrive(users):
     print u'Deleting Team Drive %s' % (teamDriveId)
     callGAPI(drive.teamdrives(), u'delete', teamDriveId=teamDriveId, soft_errors=True)
 
+def doCreateVaultMatter():
+  v = buildGAPIObject(u'vault')
+  body = {u'name': u'New Matter - %s' % datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+  collaborators = []
+  collaborators_map = []
+  i = 3
+  while i < len(sys.argv):
+    if sys.argv[i].lower() == u'name':
+      body[u'name'] = sys.argv[i+1]
+      i += 2
+    elif sys.argv[i].lower() == u'description':
+      body[u'description'] = sys.argv[i+1]
+      i += 2
+    elif sys.argv[i].lower() in [u'collaborator', u'collaborators']:
+      collaborators = sys.argv[i+1].split(u',')
+      cd = buildGAPIObject(u'directory')
+      for collaborator in collaborators:
+        collaborator_id = convertEmailAddressToUID(collaborator, cd)
+        if not collaborator_id:
+          print u'ERROR: failed to get a UID for %s. Please make sure this is a real user.' % collaborator
+          sys.exit(4)
+        collaborators_map.append({u'email': collaborator, u'id': collaborator_id})
+      i += 2
+    else:
+      print u'ERROR: %s is not a valid argument to "gam create matter"' % sys.argv[i]
+      sys.exit(3)
+  result = callGAPI(v.matters(), u'create', body=body, fields=u'matterId')
+  matterId = result[u'matterId']
+  print u'Created matter %s' % matterId
+  for collaborator in collaborators_map:
+    print u' adding collaborator %s' % collaborator[u'email']
+    perm_body = {u'matterPermission': {u'role': u'COLLABORATOR', u'accountId': collaborator[u'id']}}
+    perm_result = callGAPI(v.matters(), u'addPermissions', matterId=matterId, body=perm_body)
+
+def doCreateVaultHold():
+  v = buildGAPIObject(u'vault')
+  allowed_corpuses = v._rootDesc[u'schemas'][u'Hold'][u'properties'][u'corpus'][u'enum']
+  body = {u'query': {}}
+  i = 3
+  query = None
+  start_time = None
+  end_time = None
+  matterId = None
+  accounts = []
+  date_format = re.compile(r'^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+  zero_hour = u'T00:00:00.000Z'
+  while i < len(sys.argv):
+    myarg = sys.argv[i].lower().replace(u'_', u'')
+    if myarg == u'name':
+      body[u'name'] = sys.argv[i+1]
+      i += 2
+    elif myarg == u'query':
+      body[u'query'] = {}
+      query = sys.argv[i+1]
+      i += 2
+    elif myarg == u'corpus':
+      body[u'corpus'] = sys.argv[i+1].upper()
+      if body[u'corpus'] not in allowed_corpuses:
+        print u'ERROR: corpus must be one of %s. Got %s' % (u', '.join(allowed_corpuses), sys.argv[i+1])
+        sys.exit(3)
+      i += 2
+    elif myarg in [u'accounts', u'users', u'groups']:
+      accounts = sys.argv[i+1].split(u',')
+      i += 2
+    elif myarg in [u'orgunit', u'ou']:
+      body[u'orgUnit'] = {u'orgUnitId': doGetOrgInfo(name=sys.argv[i+1], return_attrib=u'orgUnitId')}
+      i += 2
+    elif myarg == u'starttime':
+      start_time = sys.argv[i+1]
+      if date_format.match(start_time):
+        start_time += zero_hour
+      i += 2
+    elif myarg == u'endtime':
+      end_time = sys.argv[i+1]
+      if date_format.match(end_time):
+        end_time += zero_hour
+      i += 2
+    elif myarg == u'matter':
+      matterId = convertMatterNameToID(v, sys.argv[i+1])
+      if not matterId:
+        print u'ERROR: could not find matter %s' % sys.argv[i+1]
+        sys.exit(4)
+      i += 2
+    else:
+      print u'ERROR: %s is not a valid argument to "gam create hold"' % sys.argv[i]
+      sys.exit(3)
+  if not matterId:
+    print u'ERROR: you must specify a matter for the new hold.'
+    sys.exit(3)
+  if not body[u'corpus']:
+    print u'ERROR: you must specify corpus for the hold. One of %s' % (u', '.join(allowed_corpuses))
+    sys.exit(3)
+  query_type = u'%sQuery' % body[u'corpus'].lower()
+  body[u'query'][query_type] = {}
+  if body[u'corpus'] == u'DRIVE' and query:
+    body[u'query'][query_type] = json.loads(query)
+  elif body[u'corpus'] in [u'GROUPS', u'MAIL']:
+    if query:
+      body[u'query'][query_type] = {u'terms': query}
+    if start_time:
+      body[u'query'][query_type][u'startTime'] = start_time
+    if end_time:
+      body[u'query'][query_type][u'endTime'] = end_time
+  if accounts:
+    body[u'accounts'] = []
+    cd = buildGAPIObject(u'directory')
+    if body[u'corpus'] == u'GROUPS':
+      account_type = u'group'
+    else:
+      account_type = u'user'
+    for account in accounts:
+      body[u'accounts'].append({u'accountId': convertEmailAddressToUID(account, cd, account_type)})
+  callGAPI(v.matters().holds(), u'create', matterId=matterId, body=body)
+
+def doDeleteVaultHold():
+  v = buildGAPIObject(u'vault')
+  hold = sys.argv[3]
+  matterId = None
+  i = 4
+  while i < len(sys.argv):
+    myarg = sys.argv[i].lower().replace(u'_', u'')
+    if myarg == u'matter':
+      matterId = convertMatterNameToID(v, sys.argv[i+1])
+      if not matterId:
+        print u'ERROR: could not find matter %s' % sys.argv[i+1]
+        sys.exit(4)
+      holdId = convertHoldNameToID(v, hold, matterId)
+      if not holdId:
+        print u'ERROR: could not find hold %s in matter %s' % (sys.argv[3], matterId)
+        sys.exit(4)
+      i += 2
+    else:
+      print u'ERROR: %s is not a valid argument to "gam delete hold"' % myarg
+      sys.exit(3)
+  if not matterId:
+    print u'ERROR: you must specify a matter for the hold.'
+    sys.exit(3)
+  print u'Deleting hold %s / %s' % (hold, holdId)
+  callGAPI(v.matters().holds(), u'delete', holdId=holdId, matterId=matterId)
+
+def doGetVaultHoldInfo():
+  v = buildGAPIObject(u'vault')
+  hold = sys.argv[3]
+  matterId = None
+  i = 4
+  while i < len(sys.argv):
+    myarg = sys.argv[i].lower().replace(u'_', u'')
+    if myarg == u'matter':
+      matterId = convertMatterNameToID(v, sys.argv[i+1])
+      if not matterId:
+        print u'ERROR: could not find matter %s' % sys.argv[i+1]
+        sys.exit(4)
+      holdId = convertHoldNameToID(v, hold, matterId)
+      if not holdId:
+        print u'ERROR: could not find hold %s in matter %s' % (hold, matterId)
+        sys.exit(4)
+      i += 2
+    else:
+      print u'ERROR: %s is not a valid argument for "gam info hold"' % myarg
+      sys.exit(3)
+  results = callGAPI(v.matters().holds(), u'get', matterId=matterId, holdId=holdId)
+  cd = buildGAPIObject(u'directory')
+  if u'accounts' in results:
+    for i in range(0, len(results[u'accounts'])):
+      uid = u'uid:%s' % results[u'accounts'][i][u'accountId']
+      user_email = convertUserUIDtoEmailAddress(uid, cd=None)
+      results[u'accounts'][i][u'email'] = user_email
+  if u'orgUnit' in results:
+    results[u'orgUnit'][u'orgUnitPath'] = doGetOrgInfo(results[u'orgUnit'][u'orgUnitId'], return_attrib=u'orgUnitPath')
+  print_json(None, results)
+
+def convertHoldNameToID(v, nameOrID, matterId):
+  nameOrID = nameOrID.lower()
+  if nameOrID[:4] == u'uid:':
+    return nameOrID[4:]
+  holds = callGAPIpages(v.matters().holds(), u'list', items=u'holds', matterId=matterId, fields=u'holds(holdId,name),nextPageToken')
+  for hold in holds:
+    if hold[u'name'].lower() == nameOrID:
+      return hold[u'holdId']
+  return None
+
+def convertMatterNameToID(v, nameOrID):
+  nameOrID = nameOrID.lower()
+  if nameOrID[:4] == u'uid:':
+    return nameOrID[4:]
+  matters = callGAPIpages(v.matters(), u'list', items=u'matters', view=u'BASIC', fields=u'matters(matterId,name),nextPageToken')
+  for matter in matters:
+    if matter[u'name'].lower() == nameOrID:
+      return matter[u'matterId']
+  return None
+
+def doUpdateVaultHold():
+  v = buildGAPIObject(u'vault')
+  hold = sys.argv[3]
+  matterId = None
+  body = {}
+  query = None
+  add_accounts = []
+  del_accounts = []
+  start_time = None
+  end_time = None
+  date_format = re.compile(r'^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+  zero_hour = u'T00:00:00.000Z'
+  i = 4
+  while i < len(sys.argv):
+    myarg = sys.argv[i].lower().replace(u'_', u'')
+    if myarg == u'matter':
+      matterId = convertMatterNameToID(v, sys.argv[i+1])
+      if not matterId:
+        print u'ERROR: could not find matter %s' % sys.argv[i+1]
+        sys.exit(4)
+      holdId = convertHoldNameToID(v, hold, matterId)
+      if not holdId:
+        print u'ERROR: could not find hold %s in matter %s' % (hold, matterId)
+        sys.exit(4)
+      i += 2
+    elif myarg == u'query':
+      query = sys.argv[i+1]
+      i += 2
+    elif myarg in [u'orgunit', u'ou']:
+      body[u'orgUnit'] = {u'orgUnitId': doGetOrgInfo(name=sys.argv[i+1], return_attrib=u'orgUnitId')}
+      i += 2
+    elif myarg == u'starttime':
+      start_time = sys.argv[i+1]
+      if date_format.match(start_time):
+        start_time += zero_hour
+      i += 2
+    elif myarg == u'endtime':
+      end_time = sys.argv[i+1]
+      if date_format.match(end_time):
+        end_time += zero_hour
+      i += 2
+    elif myarg in [u'addusers', u'addaccounts', u'addgroups']:
+      add_accounts = sys.argv[i+1].split(u',')
+      i += 2
+    elif myarg in [u'removeusers', u'removeaccounts', u'removegroups']:
+      del_accounts = sys.argv[i+1].split(u',')
+      i += 2
+    else:
+      print u'ERROR: %s is not a valid argument to "gam update hold"' % myarg
+      sys.exit(3)
+  if not matterId:
+    print u'ERROR: you must specify a matter for the hold.'
+    sys.exit(3)
+  if query or start_time or end_time or body[u'orgUnit']:
+    old_body = callGAPI(v.matters().holds(), u'get', matterId=matterId, holdId=holdId, fields=u'corpus,query,orgUnit')
+    body[u'query'] = old_body[u'query']
+    body[u'corpus'] = old_body[u'corpus']
+    if u'orgUnit' in old_body and not u'orgUnit' in body:
+      # bah, API requires this to be sent on update even when it's not changing
+      body[u'orgUnit'] = old_body[u'orgUnit']
+    query_type = '%sQuery' % body[u'corpus'].lower()
+    if body[u'corpus'] == u'DRIVE' and query:
+      body[u'query'][query_type] = json.loads(query)
+    elif body[u'corpus'] in [u'GROUPS', u'MAIL'] and query:
+      body[u'query'][query_type][u'terms'] = query
+    if start_time:
+      body[u'query'][query_type][u'startTime'] = start_time
+    if end_time:
+      body[u'query'][query_type][u'endTime'] = end_time
+  if body:
+    print u'Updating hold %s / %s' % (hold, holdId)
+    callGAPI(v.matters().holds(), u'update', matterId=matterId, holdId=holdId, body=body)
+  if add_accounts or del_accounts:
+    cd = buildGAPIObject(u'directory')
+    for account in add_accounts:
+      print u'adding %s to hold.' % account
+      add_body = {u'accountId': convertEmailAddressToUID(account, cd)}
+      callGAPI(v.matters().holds().accounts(), u'create', matterId=matterId, holdId=holdId, body=add_body)
+    for account in del_accounts:
+      print u'removing %s from hold.' % account
+      accountId = convertEmailAddressToUID(account, cd)
+      callGAPI(v.matters().holds().accounts(), u'delete', matterId=matterId, holdId=holdId, accountId=accountId)
+
+def doUpdateVaultMatter(action=None):
+  v = buildGAPIObject(u'vault')
+  matterId = convertMatterNameToID(v, sys.argv[3])
+  if not matterId:
+    print u'ERROR: failed to lookup matter named %s' % sys.argv[3]
+    sys.exit(4)
+  body = {}
+  action_kwargs = {u'body': {}}
+  add_collaborators = []
+  remove_collaborators = []
+  cd = None
+  i = 4
+  while i < len(sys.argv):
+    if sys.argv[i].lower() == u'action':
+      action = sys.argv[i+1].lower()
+      if action not in VAULT_MATTER_ACTIONS:
+        print u'ERROR: allowed actions are %s, got %s' % (u', '.join(VAULT_MATTER_ACTIONS), sys.argv[i])
+        sys.exit(3)
+      i += 2
+    elif sys.argv[i].lower() == u'name':
+      body[u'name'] = sys.argv[i+1]
+      i += 2
+    elif sys.argv[i].lower() == u'description':
+      body[u'description'] = sys.argv[i+1]
+      i += 2
+    elif sys.argv[i].lower().replace(u'_', '') in [u'addcollaborator', u'addcollaborators']:
+      for collaborator in sys.argv[i+1].split(u','):
+        if not cd:
+          cd = buildGAPIObject(u'directory')
+        collaborator_id = convertEmailAddressToUID(collaborator, cd)
+        if not collaborator_id:
+          print u'ERROR: failed to get a UID for %s. Please make sure this is a real user.' % collaborator
+          sys.exit(4)
+        add_collaborators.append({u'email': collaborator, u'id': collaborator_id})
+      i += 2
+    elif sys.argv[i].lower().replace(u'_', '') == [u'removecollaborator', u'removecollaborators']:
+      remove_collaborators = sys.argv[i+1].split(u',')
+      for collaborator in sys.argv[i+1].split(u','):
+        if not cd:
+          cd = buildGAPIObject(u'directory')
+        collaborator_id = convertEmailAddressToUID(collaborator, cd)
+        if not collaborator_id:
+          print u'ERROR: failed to get a UID for %s. Please make sure this is a real user.' % collaborator
+          sys.exit(4)
+        remove_collaborators.append(collaborator_id)
+    else:
+      print u'ERROR: %s is not a valid argument for "gam update matter"' % sys.argv[i]
+      sys.exit(3)
+  if action == u'delete':
+    action_kwargs = {}
+  if body:
+    print u'Updating matter %s...' % sys.argv[3]
+    result = callGAPI(v.matters(), u'update', body=body, matterId=matterId)
+  if action:
+    print u'Performing %s on matter %s' % (action, sys.argv[3])
+    action_result = callGAPI(v.matters(), action, matterId=matterId, **action_kwargs)
+  for collaborator in add_collaborators:
+    print u' adding collaborator %s' % collaborator[u'email']
+    perm_body = {u'matterPermission': {u'role': u'COLLABORATOR', u'accountId': collaborator[u'id']}}
+    perm_result = callGAPI(v.matters(), u'addPermissions', matterId=matterId, body=perm_body)
+  for collaborator in remove_collaborators:
+    print u' removing collaborator %s' % collaborator[u'email']
+    perm_body = {u'accountId': collaborator[u'id']}
+    perm_result = callGAPI(v.matters(), u'removePermissions', matterId=matterId, body=perm_body)
+
+def doGetVaultMatterInfo():
+  v = buildGAPIObject(u'vault')
+  matterId = convertMatterNameToID(v, sys.argv[3])
+  result = callGAPI(v.matters(), u'get', matterId=matterId, view=u'FULL')
+  if u'matterPermissions' in result:
+    cd = buildGAPIObject(u'directory')
+    for i in range(0, len(result[u'matterPermissions'])):
+      uid = u'uid:%s' % result[u'matterPermissions'][i][u'accountId']
+      user_email = convertUserUIDtoEmailAddress(uid, cd=None)
+      result[u'matterPermissions'][i][u'email'] = user_email
+  print_json(None, result)
+
 def doCreateUser():
   cd = buildGAPIObject(u'directory')
   body, admin_body = getUserAttributes(3, cd, updateCmd=False)
@@ -9813,6 +10164,72 @@ def doPrintGroupMembers():
       csvRows.append(member)
   writeCSVfile(csvRows, titles, u'Group Members', todrive)
 
+def doPrintVaultMatters():
+  v = buildGAPIObject(u'vault')
+  todrive = False
+  csvRows = []
+  i = 3
+  view = u'FULL'
+  titles = []
+  while i < len(sys.argv):
+    myarg = sys.argv[i].lower().replace(u'_', u'')
+    if myarg == u'view':
+      view = sys.argv[i+1].upper()
+      i += 2
+    elif myarg == u'todrive':
+      todrive = True
+      i += 1
+    else:
+      print u'ERROR: %s is not a valid argument to "gam print matters"' % myarg
+      sys.exit(3)
+  sys.stderr.write(u'Retrieving all Vault Matters...\n')
+  page_message = u' got %%num_items%% matters...\n'
+  matters = callGAPIpages(v.matters(), u'list', items=u'matters', view=view)
+  for matter in matters:
+    csvRows.append(flatten_json(matter))
+    for column in csvRows[-1]:
+      if column not in titles:
+        titles.append(column)
+  writeCSVfile(csvRows, titles, u'Vault Matters', todrive)
+
+def doPrintVaultHolds():
+  v = buildGAPIObject(u'vault')
+  todrive = False
+  csvRows = []
+  i = 3
+  matters = []
+  matterIds = []
+  titles = []
+  while i <len(sys.argv):
+    myarg = sys.argv[i].lower().replace(u'_', u'')
+    if myarg == u'todrive':
+      todrive = True
+      i += 1
+    elif myarg == u'matters':
+      matters = sys.argv[i+1].split(u',')
+      i += 2
+    else:
+      print u'ERROR: %s is not a valid a valid argument to "gam print holds"' % myarg
+      sys.exit(3)
+  if not matters:
+    matters_results = callGAPIpages(v.matters(), u'list', items=u'matters', view=u'BASIC', fields=u'matters(matterId,state),nextPageToken')
+    for matter in matters_results:
+      if matter[u'state'] != u'OPEN':
+        print u'ignoring matter %s in state %s' % (matter[u'matterId'], matter[u'state'])
+        continue
+      matterIds.append(matter[u'matterId'])
+  for matter in matters:
+    matterIds.append(convertMatterNameToID(v, matter))
+  for matterId in matterIds:
+    sys.stderr.write(u'Retrieving holds for matter %s' % matterId)
+    holds = callGAPIpages(v.matters().holds(), u'list', items=u'holds', matterId=matterId)
+    for hold in holds:
+      csvRows.append(flatten_json(hold))
+      for column in csvRows[-1]:
+        if column not in titles:
+          titles.append(column)
+  writeCSVfile(csvRows, titles, u'Vault Holds', todrive)
+
 def doPrintMobileDevices():
   cd = buildGAPIObject(u'directory')
   todrive = False
@@ -10483,7 +10900,7 @@ def OAuthInfo():
     pass
   scopes = token_info[u'scope'].split(u' ')
   print u'Scopes (%s):' % len(scopes)
-  for scope in scopes:
+  for scope in sorted(scopes):
     print u'  %s' % scope
   print u'G Suite Admin: %s' % credentials.id_token.get(u'email', u'Unknown')
 
@@ -10589,6 +11006,9 @@ OAUTH2_SCOPES = [
   {u'name': u'Site Verification API',
    u'subscopes': [],
    u'scopes': u'https://www.googleapis.com/auth/siteverification'},
+  {u'name': u'Vault Matters and Holds API',
+   u'subscopes': [u'readonly'],
+   u'scopes': u'https://www.googleapis.com/auth/ediscovery'},
   ]
 
 OAUTH2_MENU = u'''
@@ -10952,6 +11372,10 @@ def ProcessGAMCommand(args):
         doCreateResoldCustomer()
       elif argument in [u'resoldsubscription', u'resellersubscription']:
         doCreateResoldSubscription()
+      elif argument in [u'matter', u'vaultmatter']:
+        doCreateVaultMatter()
+      elif argument in [u'hold', u'vaulthold']:
+        doCreateVaultHold()
       else:
         print u'ERROR: %s is not a valid argument for "gam create"' % argument
         sys.exit(2)
@@ -10990,6 +11414,10 @@ def ProcessGAMCommand(args):
         doUpdateResoldCustomer()
       elif argument in [u'resoldsubscription', u'resellersubscription']:
         doUpdateResoldSubscription()
+      elif argument in [u'matter', u'vaultmatter']:
+        doUpdateVaultMatter()
+      elif argument in [u'hold', u'vaulthold']:
+        doUpdateVaultHold()
       elif argument in [u'project', u'apiproject']:
         try:
           login_hint = sys.argv[3]
@@ -11040,6 +11468,10 @@ def ProcessGAMCommand(args):
         doGetResoldCustomer()
       elif argument in [u'resoldsubscriptions', u'resellersubscriptions']:
         doGetResoldSubscriptions()
+      elif argument in [u'matter', u'vaultmatter']:
+        doGetVaultMatterInfo()
+      elif argument in [u'hold', u'vaulthold']:
+        doGetVaultHoldInfo()
       else:
         print u'ERROR: %s is not a valid argument for "gam info"' % argument
         sys.exit(2)
@@ -11090,6 +11522,10 @@ def ProcessGAMCommand(args):
         doDelProjects(login_hint)
       elif argument in [u'resoldsubscription', u'resellersubscription']:
         doDeleteResoldSubscription()
+      elif argument in [u'matter', u'vaultmatter']:
+        doUpdateVaultMatter(action=u'delete')
+      elif argument in [u'hold', u'vaulthold']:
+        doDeleteVaultHold()
       else:
         print u'ERROR: %s is not a valid argument for "gam delete"' % argument
         sys.exit(2)
@@ -11098,6 +11534,8 @@ def ProcessGAMCommand(args):
       argument = sys.argv[2].lower()
       if argument == u'user':
         doUndeleteUser()
+      elif argument in [u'matter', u'vaultmatter']:
+        doUpdateVaultMatter(action=u'undelete')
       else:
         print u'ERROR: %s is not a valid argument for "gam undelete"' % argument
         sys.exit(2)
@@ -11150,6 +11588,10 @@ def ProcessGAMCommand(args):
         doPrintAdminRoles()
       elif argument in [u'guardian', u'guardians']:
         doPrintShowGuardians(True)
+      elif argument in [u'matters', u'vaultmatters']:
+        doPrintVaultMatters()
+      elif argument in [u'holds', u'vaultholds']:
+        doPrintVaultHolds()
       else:
         print u'ERROR: %s is not a valid argument for "gam print"' % argument
         sys.exit(2)
