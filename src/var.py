@@ -568,6 +568,8 @@ GC_DOMAIN = u'domain'
 GC_DRIVE_DIR = u'drive_dir'
 # When retrieving lists of Drive files/folders from API, how many should be retrieved in each chunk
 GC_DRIVE_MAX_RESULTS = u'drive_max_results'
+# When retrieving lists of Google Group members from API, how many should be retrieved in each chunk
+GC_MEMBER_MAX_RESULTS = u'member_max_results'
 # If no_browser is False, writeCSVfile won't open a browser when todrive is set
 # and doRequestOAuth prints a link and waits for the verification code when oauth2.txt is being created
 GC_NO_BROWSER = u'no_browser'
@@ -609,6 +611,7 @@ GC_Defaults = {
   GC_DOMAIN: u'',
   GC_DRIVE_DIR: u'',
   GC_DRIVE_MAX_RESULTS: 1000,
+  GC_MEMBER_MAX_RESULTS: 200,
   GC_NO_BROWSER: False,
   GC_NO_CACHE: False,
   GC_NO_UPDATE_CHECK: False,
@@ -652,6 +655,7 @@ GC_VAR_INFO = {
   GC_DOMAIN: {GC_VAR_TYPE: GC_TYPE_STRING},
   GC_DRIVE_DIR: {GC_VAR_TYPE: GC_TYPE_DIRECTORY},
   GC_DRIVE_MAX_RESULTS: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (1, 1000)},
+  GC_MEMBER_MAX_RESULTS: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (1, 10000)},
   GC_NO_BROWSER: {GC_VAR_TYPE: GC_TYPE_BOOLEAN},
   GC_NO_CACHE: {GC_VAR_TYPE: GC_TYPE_BOOLEAN},
   GC_NO_UPDATE_CHECK: {GC_VAR_TYPE: GC_TYPE_BOOLEAN},
@@ -713,18 +717,37 @@ OAUTH2_TOKEN_ERRORS = [
   ]
 #
 # callGAPI throw reasons
+GAPI_ABORTED = u'aborted'
+GAPI_AUTH_ERROR = u'authError'
 GAPI_BACKEND_ERROR = u'backendError'
 GAPI_BAD_REQUEST = u'badRequest'
+GAPI_CONDITION_NOT_MET = u'conditionNotMet'
+GAPI_CYCLIC_MEMBERSHIPS_NOT_ALLOWED = u'cyclicMembershipsNotAllowed'
+GAPI_DOMAIN_CANNOT_USE_APIS = u'domainCannotUseApis'
+GAPI_DOMAIN_NOT_FOUND = u'domainNotFound'
+GAPI_DUPLICATE = u'duplicate'
+GAPI_FAILED_PRECONDITION = u'failedPrecondition'
 GAPI_FORBIDDEN = u'forbidden'
+GAPI_GROUP_NOT_FOUND = u'groupNotFound'
 GAPI_INTERNAL_ERROR = u'internalError'
 GAPI_INVALID = u'invalid'
+GAPI_INVALID_ARGUMENT = u'invalidArgument'
+GAPI_INVALID_MEMBER = u'invalidMember'
+GAPI_MEMBER_NOT_FOUND = u'memberNotFound'
 GAPI_NOT_FOUND = u'notFound'
+GAPI_NOT_IMPLEMENTED = u'notImplemented'
 GAPI_QUOTA_EXCEEDED = u'quotaExceeded'
 GAPI_RATE_LIMIT_EXCEEDED = u'rateLimitExceeded'
+GAPI_RESOURCE_NOT_FOUND = u'resourceNotFound'
 GAPI_SERVICE_NOT_AVAILABLE = u'serviceNotAvailable'
+GAPI_SYSTEM_ERROR = u'systemError'
 GAPI_USER_NOT_FOUND = u'userNotFound'
 GAPI_USER_RATE_LIMIT_EXCEEDED = u'userRateLimitExceeded'
 #
 GAPI_DEFAULT_RETRY_REASONS = [GAPI_QUOTA_EXCEEDED, GAPI_RATE_LIMIT_EXCEEDED, GAPI_USER_RATE_LIMIT_EXCEEDED, GAPI_BACKEND_ERROR, GAPI_INTERNAL_ERROR]
 GAPI_GMAIL_THROW_REASONS = [GAPI_SERVICE_NOT_AVAILABLE]
 GAPI_GPLUS_THROW_REASONS = [GAPI_SERVICE_NOT_AVAILABLE]
+GAPI_GROUP_GET_THROW_REASONS = [GAPI_GROUP_NOT_FOUND, GAPI_DOMAIN_NOT_FOUND, GAPI_DOMAIN_CANNOT_USE_APIS, GAPI_FORBIDDEN, GAPI_BAD_REQUEST]
+GAPI_GROUP_GET_RETRY_REASONS = [GAPI_INVALID, GAPI_SYSTEM_ERROR]
+GAPI_MEMBERS_THROW_REASONS = [GAPI_GROUP_NOT_FOUND, GAPI_DOMAIN_NOT_FOUND, GAPI_DOMAIN_CANNOT_USE_APIS, GAPI_INVALID, GAPI_FORBIDDEN]
+GAPI_MEMBERS_RETRY_REASONS = [GAPI_SYSTEM_ERROR]

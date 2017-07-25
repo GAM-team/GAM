@@ -705,13 +705,13 @@ gam print mobile [todrive] [query <QueryMobile>] [basic|full] [orderby <MobileOr
 
 gam create group <EmailAddress> <GroupAttributes>*
 gam update group <GroupItem> [admincreated <Boolean>] [email <EmailAddress>] <GroupAttributes>*
-gam update group <GroupItem> add [member|manager|owner] [notsuspended] <UserTypeEntity>
-gam update group <GroupItem> delete|remove [member|manager|owner] <UserTypeEntity>
-gam update group <GroupItem> sync [member|manager|owner] [notsuspended] <UserTypeEntity>
-gam update group <GroupItem> update [member|manager|owner] <UserTypeEntity>
+gam update group <GroupItem> add [owner|manager|member] [notsuspended] <UserTypeEntity>
+gam update group <GroupItem> delete|remove [owner|manager|member] <UserTypeEntity>
+gam update group <GroupItem> sync [owner|manager|member] [notsuspended] <UserTypeEntity>
+gam update group <GroupItem> update [owner|manager|member] <UserTypeEntity>
+gam update group <GroupItem> clear [member] [manager] [owner] [suspended]
 gam delete group <GroupItem>
 gam info group <GroupItem> [nousers] [noaliases] [groups]
-gam update group <GroupItem> clear [member] [manager] [owner]
 
 gam print groups [todrive] ([domain <DomainName>] [member <UserItem>])
 	[maxresults <Number>] [allfields|([settings] <GroupFieldName>* [fields <GroupFieldNameList>])] [delimiter <String>]
