@@ -6335,11 +6335,11 @@ def getUserAttributes(i, cd, updateCmd=False):
   admin_body = {}
   while i < len(sys.argv):
     myarg = sys.argv[i].lower()
-    if myarg == u'firstname':
+    if myarg in [u'firstname', u'givenname']:
       body.setdefault(u'name', {})
       body[u'name'][u'givenName'] = sys.argv[i+1]
       i += 2
-    elif myarg == u'lastname':
+    elif myarg in [u'lastname', u'familyname']:
       body.setdefault(u'name', {})
       body[u'name'][u'familyName'] = sys.argv[i+1]
       i += 2
@@ -6449,7 +6449,7 @@ def getUserAttributes(i, cd, updateCmd=False):
         i += 1
         address[u'customType'] = sys.argv[i]
       i += 1
-      if sys.argv[i].lower() == u'unstructured':
+      if sys.argv[i].lower() in [u'unstructured', u'formatted']:
         i += 1
         address[u'sourceIsStructured'] = False
         address[u'formatted'] = sys.argv[i].replace(u'\\n', u'\n')
