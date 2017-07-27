@@ -714,7 +714,7 @@ def callGAPI(service, function,
     except TypeError as e:
       systemErrorExit(4, str(e))
 
-def callGAPIpages(service, function, items=u'items',
+def callGAPIpages(service, function, items,
                   page_message=None, message_attribute=None,
                   soft_errors=False, throw_reasons=None, retry_reasons=None,
                   **kwargs):
@@ -2019,7 +2019,7 @@ def doPrintShowGuardians(csvFormat):
         sys.stderr.write('\r')
         sys.stderr.flush()
         sys.stderr.write(u'Getting %s for %s%s%s' % (itemName, studentId, currentCount(i, count), u' ' * 40))
-    guardians = callGAPIpages(service, u'list', items=items, soft_errors=True, **kwargs)
+    guardians = callGAPIpages(service, u'list', items, soft_errors=True, **kwargs)
     if not csvFormat:
       print u'Student: {0}, {1}:{2}'.format(studentId, itemName, currentCount(i, count))
       for guardian in guardians:
@@ -2090,7 +2090,7 @@ def doDeleteGuardian():
       pass
   # See if there's a pending invitation
   try:
-    results = callGAPIpages(croom.userProfiles().guardianInvitations(), u'list', items=u'guardianInvitations',
+    results = callGAPIpages(croom.userProfiles().guardianInvitations(), u'list', u'guardianInvitations',
                             throw_reasons=[GAPI_FORBIDDEN],
                             studentId=studentId, invitedEmailAddress=guardianId, states=[u'PENDING',])
     if len(results) > 0:
@@ -3252,7 +3252,7 @@ def doCalendarDeleteEvent():
       i += 2
     elif sys.argv[i].lower() in [u'query', u'eventquery']:
       query = sys.argv[i+1]
-      result = callGAPIpages(cal.events(), u'list', items=u'items', calendarId=calendarId, q=query)
+      result = callGAPIpages(cal.events(), u'list', u'items', calendarId=calendarId, q=query)
       for event in result:
         if u'id' in event and event[u'id'] not in events:
           events.append(event[u'id'])
@@ -3703,7 +3703,7 @@ def showDriveFileACL(users):
     user, drive = buildDrive3GAPIObject(user)
     if not drive:
       continue
-    feed = callGAPIpages(drive.permissions(), u'list', items=u'permissions', fileId=fileId, fields=u'*', supportsTeamDrives=True)
+    feed = callGAPIpages(drive.permissions(), u'list', u'permissions', fileId=fileId, fields=u'*', supportsTeamDrives=True)
     for permission in feed:
       printPermission(permission)
       print u''
@@ -6785,7 +6785,7 @@ def doDelProjects(login_hint=None):
   # Deletes all projects with ID gam-project-*
   login_hint = getValidateLoginHint(login_hint)
   crm, _ = getCRMService(login_hint)
-  projects = callGAPIpages(crm.projects(), u'list', items=u'projects')
+  projects = callGAPIpages(crm.projects(), u'list', u'projects')
   for project in projects:
     pid = project[u'projectId']
     if pid.startswith(u'gam-project-'):
@@ -6800,7 +6800,7 @@ def enableProjectAPIs(simplehttp, httpObj, project_name, checkEnabled):
   apis = c.splitlines()
   serveman = googleapiclient.discovery.build(u'servicemanagement', u'v1', http=httpObj, cache_discovery=False)
   if checkEnabled:
-    enabledServices = callGAPIpages(serveman.services(), u'list', items=u'services',
+    enabledServices = callGAPIpages(serveman.services(), u'list', u'services',
                                     consumerId=project_name, fields=u'nextPageToken,services(serviceName)')
     for enabled in enabledServices:
       if u'serviceName' in enabled:
@@ -7060,7 +7060,7 @@ def printShowTeamDrives(users, csvFormat):
     user, drive = buildDrive3GAPIObject(user)
     if not drive:
       continue
-    results = callGAPIpages(drive.teamdrives(), u'list', items=u'teamDrives', fields=u'*', soft_errors=True)
+    results = callGAPIpages(drive.teamdrives(), u'list', u'teamDrives', fields=u'*', soft_errors=True)
     if not results:
       continue
     for td in results:
@@ -7095,13 +7095,14 @@ def doCreateVaultMatter():
   collaborators_map = []
   i = 3
   while i < len(sys.argv):
-    if sys.argv[i].lower() == u'name':
+    myarg = sys.argv[i].lower().replace(u'_', u'')
+    if myarg == u'name':
       body[u'name'] = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower() == u'description':
+    elif myarg == u'description':
       body[u'description'] = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower() in [u'collaborator', u'collaborators']:
+    elif myarg in [u'collaborator', u'collaborators']:
       collaborators = sys.argv[i+1].split(u',')
       cd = buildGAPIObject(u'directory')
       for collaborator in collaborators:
@@ -7253,7 +7254,7 @@ def doGetVaultHoldInfo():
   if u'accounts' in results:
     for i in range(0, len(results[u'accounts'])):
       uid = u'uid:%s' % results[u'accounts'][i][u'accountId']
-      user_email = convertUserUIDtoEmailAddress(uid, cd=None)
+      user_email = convertUserUIDtoEmailAddress(uid, cd)
       results[u'accounts'][i][u'email'] = user_email
   if u'orgUnit' in results:
     results[u'orgUnit'][u'orgUnitPath'] = doGetOrgInfo(results[u'orgUnit'][u'orgUnitId'], return_attrib=u'orgUnitPath')
@@ -7263,7 +7264,7 @@ def convertHoldNameToID(v, nameOrID, matterId):
   nameOrID = nameOrID.lower()
   if nameOrID[:4] == u'uid:':
     return nameOrID[4:]
-  holds = callGAPIpages(v.matters().holds(), u'list', items=u'holds', matterId=matterId, fields=u'holds(holdId,name),nextPageToken')
+  holds = callGAPIpages(v.matters().holds(), u'list', u'holds', matterId=matterId, fields=u'holds(holdId,name),nextPageToken')
   for hold in holds:
     if hold[u'name'].lower() == nameOrID:
       return hold[u'holdId']
@@ -7273,7 +7274,7 @@ def convertMatterNameToID(v, nameOrID):
   nameOrID = nameOrID.lower()
   if nameOrID[:4] == u'uid:':
     return nameOrID[4:]
-  matters = callGAPIpages(v.matters(), u'list', items=u'matters', view=u'BASIC', fields=u'matters(matterId,name),nextPageToken')
+  matters = callGAPIpages(v.matters(), u'list', u'matters', view=u'BASIC', fields=u'matters(matterId,name),nextPageToken')
   for matter in matters:
     if matter[u'name'].lower() == nameOrID:
       return matter[u'matterId']
@@ -7336,7 +7337,7 @@ def doUpdateVaultHold():
     old_body = callGAPI(v.matters().holds(), u'get', matterId=matterId, holdId=holdId, fields=u'corpus,query,orgUnit')
     body[u'query'] = old_body[u'query']
     body[u'corpus'] = old_body[u'corpus']
-    if u'orgUnit' in old_body and not u'orgUnit' in body:
+    if u'orgUnit' in old_body and u'orgUnit' not in body:
       # bah, API requires this to be sent on update even when it's not changing
       body[u'orgUnit'] = old_body[u'orgUnit']
     query_type = '%sQuery' % body[u'corpus'].lower()
@@ -7375,19 +7376,20 @@ def doUpdateVaultMatter(action=None):
   cd = None
   i = 4
   while i < len(sys.argv):
-    if sys.argv[i].lower() == u'action':
+    myarg = sys.argv[i].lower().replace(u'_', u'')
+    if myarg == u'action':
       action = sys.argv[i+1].lower()
       if action not in VAULT_MATTER_ACTIONS:
         print u'ERROR: allowed actions are %s, got %s' % (u', '.join(VAULT_MATTER_ACTIONS), sys.argv[i])
         sys.exit(3)
       i += 2
-    elif sys.argv[i].lower() == u'name':
+    elif myarg == u'name':
       body[u'name'] = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower() == u'description':
+    elif myarg == u'description':
       body[u'description'] = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower().replace(u'_', '') in [u'addcollaborator', u'addcollaborators']:
+    elif myarg in [u'addcollaborator', u'addcollaborators']:
       for collaborator in sys.argv[i+1].split(u','):
         if not cd:
           cd = buildGAPIObject(u'directory')
@@ -7397,7 +7399,7 @@ def doUpdateVaultMatter(action=None):
           sys.exit(4)
         add_collaborators.append({u'email': collaborator, u'id': collaborator_id})
       i += 2
-    elif sys.argv[i].lower().replace(u'_', '') == [u'removecollaborator', u'removecollaborators']:
+    elif myarg in [u'removecollaborator', u'removecollaborators']:
       remove_collaborators = sys.argv[i+1].split(u',')
       for collaborator in sys.argv[i+1].split(u','):
         if not cd:
@@ -7435,7 +7437,7 @@ def doGetVaultMatterInfo():
     cd = buildGAPIObject(u'directory')
     for i in range(0, len(result[u'matterPermissions'])):
       uid = u'uid:%s' % result[u'matterPermissions'][i][u'accountId']
-      user_email = convertUserUIDtoEmailAddress(uid, cd=None)
+      user_email = convertUserUIDtoEmailAddress(uid, cd)
       result[u'matterPermissions'][i][u'email'] = user_email
   print_json(None, result)
 
@@ -10184,7 +10186,7 @@ def doPrintVaultMatters():
       sys.exit(3)
   sys.stderr.write(u'Retrieving all Vault Matters...\n')
   page_message = u' got %%num_items%% matters...\n'
-  matters = callGAPIpages(v.matters(), u'list', items=u'matters', view=view)
+  matters = callGAPIpages(v.matters(), u'list', u'matters', page_message=page_message, view=view)
   for matter in matters:
     csvRows.append(flatten_json(matter))
     for column in csvRows[-1]:
@@ -10200,7 +10202,7 @@ def doPrintVaultHolds():
   matters = []
   matterIds = []
   titles = []
-  while i <len(sys.argv):
+  while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace(u'_', u'')
     if myarg == u'todrive':
       todrive = True
@@ -10212,7 +10214,7 @@ def doPrintVaultHolds():
       print u'ERROR: %s is not a valid a valid argument to "gam print holds"' % myarg
       sys.exit(3)
   if not matters:
-    matters_results = callGAPIpages(v.matters(), u'list', items=u'matters', view=u'BASIC', fields=u'matters(matterId,state),nextPageToken')
+    matters_results = callGAPIpages(v.matters(), u'list', u'matters', view=u'BASIC', fields=u'matters(matterId,state),nextPageToken')
     for matter in matters_results:
       if matter[u'state'] != u'OPEN':
         print u'ignoring matter %s in state %s' % (matter[u'matterId'], matter[u'state'])
@@ -10222,7 +10224,7 @@ def doPrintVaultHolds():
     matterIds.append(convertMatterNameToID(v, matter))
   for matterId in matterIds:
     sys.stderr.write(u'Retrieving holds for matter %s' % matterId)
-    holds = callGAPIpages(v.matters().holds(), u'list', items=u'holds', matterId=matterId)
+    holds = callGAPIpages(v.matters().holds(), u'list', u'holds', matterId=matterId)
     for hold in holds:
       csvRows.append(flatten_json(hold))
       for column in csvRows[-1]:
