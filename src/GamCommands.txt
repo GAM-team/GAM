@@ -84,7 +84,7 @@ Named items
 <CourseParticipantType> ::= teacher|teachers|student|students
 <CrOSID> ::= <String>
 <CrOSItem> ::= <CrOSID>|(query:<QueryCrOS>)
-<DestEmailAddress> ::= <EmailAddress>
+<CustomerID> ::= <String>
 <DomainAlias> ::= <String>
 <DriveFileACLRole> :: =commenter|editor|organizer|owner|reader|writer
 <DriveFileID> ::= <String>
@@ -112,10 +112,12 @@ Named items
 <LabelReplacement> ::= <String>
 <Marker> ::= <String>
 <MatterItem> ::= <UniqueID>|<String>
+<MaximumNumberOfSeats> ::= <Number>
 <MobileID> ::= <String>
 <MobileItem> ::= <MobileID>|(query:<QueryMobile>)|(query <QueryMobile>)
 <Name> ::= <String>
 <NotificationID> ::= <String>
+<NumberOfSeats> ::= <Number>
 <OrgUnitID> ::= <String>
 <OrgUnitPath> ::= /|(/<String)+
 <ParameterKey> ::= <String>
@@ -549,12 +551,12 @@ Item attributes
 	(im|ims clear|(type work|home|other|(custom <String>) protocol aim|gtalk|icq|jabber|msn|net_meeting|qq|skype|yahoo|(custom_protocol <String>) <String> [notprimary|primary]))|
 	(ipwhitelisted <Boolean>)|
 	(lastname|familyname <String>)|
-	(note|notes clear|([text_plain|text_html] <String>|(file <FileName> [charset <CharSet>])))|
+	(note|notes clear|([text_plain|text_html] <String>|(file <FileName> [charset <Charset>])))|
 	(organization|organizations clear|([type domain_only|school|unknown|work] [customtype <String>] [name <String>] [title <String>] [department <String>] [symbol <String>]
 		[costcenter <String>]  [location <String>] [description <String>] [domain <String>] notprimary|primary))|
 	(org|ou|orgunitpath <OrgUnitPath>)
 	(password random|<String>)|
-	(phone|phones clear|([type work|home|other|work_fax|home_fax|other_fax|main|company_main|assistant|mobile|work_mobile|pager|work_pager|car|radio|callback|isdn|telex|tty_tdd|grand_central|(custom <String>)
+	(phone|phones clear|([type work|home|other|work_fax|home_fax|other_fax|main|company_main|assistant|mobile|work_mobile|pager|work_pager|car|radio|callback|isdn|telex|tty_tdd|grand_central|(custom <String>)]
 		[value <String>] notprimary|primary))|
 	(relation|relations clear|(spouse|child|mother|father|parent|brother|sister|friend|relative|domestic_partner|manager|assistant|referred_by|partner|<String> <String>))|
 	(suspended <Boolean>)|
@@ -585,14 +587,21 @@ gam <UserTypeEntity> check serviceaccount
 
 gam whatis <EmailItem>
 
-gam create resoldcustomer <CustomerDomain> (customer_auth_token <String>)
-	(email|alternate_email <EmailAddress>) (name|organization_name <String>) (contact|contact_name <String>) [phone|phone_number <String>]
-	[address|address1 <String>] [address2 <String>] [address3 <String>]
-	[locality|city <String>] [region|state <String>] [postal|postal_code <String>] [country|country_code <String>]
-gam update resoldcustomer <CustomerID> [customer_auth_token <String>]
-	[email|alternate_email <EmailAddress>] [name|organization_name <String>] [contact|contact_name <String>] [phone|phone_number <String>]
-	[address|address1 <String>] [address2 <String>] [address3 <String>]
-	[locality|city <String>] [region|state <String>] [postal|postal_code <String>] [country|country_code <String>]
+<ResoldCustomerAttributes> ::=
+	(email|alternateemail <EmailAddress>)|
+	(contact|contactname <String>)|
+	(phone|phonenumber <String>)|
+	(name|organizationname <String>)|
+	(address|address1|addressline1 <String>)|
+	(address2|addressline2 <String>)|
+	(address3|addressline3 <String>)|
+	(city|locality <String>)|
+	(state|region <String>)|
+	(zipcode|postal|postalcode <String>)|
+	(country|countrycode <String>)
+
+gam create resoldcustomer <CustomerDomain> (customer_auth_token <String>) <ResoldCustomerAttributes>+
+gam update resoldcustomer <CustomerID> [customer_auth_token <String>] <ResoldCustomerAttribues>+
 gam info resoldcustomer <CustomerID>
 
 gam create resoldsubscription <CustomerID> (sku <SKUID>)
@@ -629,11 +638,24 @@ gam delete domainalias|aliasdomain <DomainAlias>
 gam info domainalias|aliasdomain <DomainAlias>
 gam print domainaliases|aliasdomains [todrive]
 
+<CustomerAttributes> ::=
+	(primary <DomainName>)|
+	(adminsecondaryemail|alternateemail <EmailAddress>)|
+	(contact|contactname <String>)|
+	(language <LanguageCode>)|
+	(phone|phonenumber <String>)|
+	(name|organizationname <String>)|
+	(address|address1|addressline1 <String>)|
+	(address2|addressline2 <String>)|
+	(address3|addressline3 <String>)|
+	(city|locality <String>)|
+	(state|region <String>)|
+	(zipcode|postal|postalcode <String>)|
+	(country|countrycode <String>)
+
+gam update customer <CustomerAttributes>*
+
 gam info customer
-gam update customer [adminsecondaryemail|alternateemail <EmailAddress>] [language <LanguageCode] [phone|phonenumber <String>]
-	[contact|contactname <String>] [name|organizationname <String>]
-	[address1|addressline1 <String>] [address2|addressline2 <String>] [address3|addressline3 <String>]
-	[locality <String>] [region <String>] [postalcode <String>] [country|countrycode <String>]
 
 gam create datatransfer|transfer <OldOwnerID> <DataTransferService> <NewOwnerID> (<ParameterKey> <ParameterValue>)*
 gam info datatransfer|transfer <TransferID>
@@ -942,8 +964,8 @@ gam <UserTypeEntity> show imap|imap4
 gam <UserTypeEntity> pop|pop3 <Boolean> [for allmail|newmail|mailfromnowon|fromnowown] [action keep|leaveininbox|archive|delete|trash|markread]
 gam <UserTypeEntity> show pop|pop3
 
-gam <UserTypeEntity> [add] sendas <EmailAddress> <Name> [signature|sig <String>|(file <FileName> [charset <CharSet>]) (replace <Tag> <String>)*] [html] [replyto <EmailAddress>] [default] [treatasalias <Boolean>]
-gam <UserTypeEntity> update sendas <EmailAddress> [name <Name>] [signature|sig <String>|(file <FileName> [charset <CharSet>]) (replace <Tag> <String>)*] [html] [replyto <EmailAddress>] [default] [treatasalias <Boolean>]
+gam <UserTypeEntity> [add] sendas <EmailAddress> <Name> [signature|sig <String>|(file <FileName> [charset <Charset>]) (replace <Tag> <String>)*] [html] [replyto <EmailAddress>] [default] [treatasalias <Boolean>]
+gam <UserTypeEntity> update sendas <EmailAddress> [name <Name>] [signature|sig <String>|(file <FileName> [charset <Charset>]) (replace <Tag> <String>)*] [html] [replyto <EmailAddress>] [default] [treatasalias <Boolean>]
 gam <UserTypeEntity> delete sendas <EmailAddress>
 gam <UserTypeEntity> show sendas [format]
 gam <UserTypeEntity> info sendas <EmailAddress> [format]
@@ -965,6 +987,6 @@ gam <UserTypeEntity> show teamdrives
 gam <UserTypeEntity> print teamdrives [todrive]
 
 gam <UserTypeEntity> vacation <FalseValues>
-gam <UserTypeEntity> vacation <TrueValues> subject <String> (message <String>)|(file <FileName> [charset <CharSet>]) (replace <Tag> <String>)* [html]
+gam <UserTypeEntity> vacation <TrueValues> subject <String> (message <String>)|(file <FileName> [charset <Charset>]) (replace <Tag> <String>)* [html]
 	[contactsonly] [domainonly] [startdate <Date>] [enddate <Date>]
 gam <UserTypeEntity> show vacation [format]
