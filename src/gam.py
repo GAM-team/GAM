@@ -7250,11 +7250,11 @@ def doGetVaultHoldInfo():
       print u'ERROR: %s is not a valid argument for "gam info hold"' % myarg
       sys.exit(3)
   results = callGAPI(v.matters().holds(), u'get', matterId=matterId, holdId=holdId)
-  buildGAPIObject(u'directory')
+  cd = buildGAPIObject(u'directory')
   if u'accounts' in results:
     for i in range(0, len(results[u'accounts'])):
       uid = u'uid:%s' % results[u'accounts'][i][u'accountId']
-      user_email = convertUserUIDtoEmailAddress(uid, cd=None)
+      user_email = convertUserUIDtoEmailAddress(uid, cd)
       results[u'accounts'][i][u'email'] = user_email
   if u'orgUnit' in results:
     results[u'orgUnit'][u'orgUnitPath'] = doGetOrgInfo(results[u'orgUnit'][u'orgUnitId'], return_attrib=u'orgUnitPath')
@@ -7434,10 +7434,10 @@ def doGetVaultMatterInfo():
   matterId = convertMatterNameToID(v, sys.argv[3])
   result = callGAPI(v.matters(), u'get', matterId=matterId, view=u'FULL')
   if u'matterPermissions' in result:
-    buildGAPIObject(u'directory')
+    cd = buildGAPIObject(u'directory')
     for i in range(0, len(result[u'matterPermissions'])):
       uid = u'uid:%s' % result[u'matterPermissions'][i][u'accountId']
-      user_email = convertUserUIDtoEmailAddress(uid, cd=None)
+      user_email = convertUserUIDtoEmailAddress(uid, cd)
       result[u'matterPermissions'][i][u'email'] = user_email
   print_json(None, result)
 
