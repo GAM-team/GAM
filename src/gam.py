@@ -7363,10 +7363,12 @@ def doUpdateVaultHold():
     cd = buildGAPIObject(u'directory')
     for account in add_accounts:
       print u'adding %s to hold.' % account
-      callGAPI(v.matters().holds().accounts(), u'create', matterId=matterId, holdId=holdId, body={u'accountId': convertEmailAddressToUID(account, cd)})
+      add_body = {u'accountId': convertEmailAddressToUID(account, cd)}
+      callGAPI(v.matters().holds().accounts(), u'create', matterId=matterId, holdId=holdId, body=add_body)
     for account in del_accounts:
       print u'removing %s from hold.' % account
-      callGAPI(v.matters().holds().accounts(), u'delete', matterId=matterId, holdId=holdId, accountId=convertEmailAddressToUID(account, cd))
+      accountId = convertEmailAddressToUID(account, cd)
+      callGAPI(v.matters().holds().accounts(), u'delete', matterId=matterId, holdId=holdId, accountId=accountId)
 
 def doUpdateVaultMatter(action=None):
   v = buildGAPIObject(u'vault')
