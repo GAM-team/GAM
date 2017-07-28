@@ -403,7 +403,7 @@ Items, separated by spaces, with spaces or commas in the items themselves: "'it 
 
 <ACLList> ::== "<ACLScope>(,<ACLScope>)*"
 <CalendarList> ::= "<CalendarItem>(,<CalendarItem>)*"
-<CollaboratorList> ::= "<CollaboratorItem>(,<CollaboratorItem>)*"
+<CollaboratorItemList> ::= "<CollaboratorItem>(,<CollaboratorItem>)*"
 <CourseAliasList> ::= "<CourseAlias>(,<CourseAlias>)*"
 <CourseIDList> ::= "<CourseID>(,<CourseID>)*"
 <CrOSFieldNameList> ::= "<CrOSFieldName>(,<CrOSFieldName>)*"
@@ -840,19 +840,21 @@ gam print printjobs [todrive] [printer|printerid <PrinterID>]
 gam create vaulthold|hold corpus drive|groups|mail matter <MatterItem> [name <String>] [query <QueryVaultCorpus>]
 	[(accounts|groups|users <EmailItemList>) | (orgunit|ou <OrgUnit>)]
 	[starttime <Date>|<DateTime>] [endtime <Date>|<DateTime>] 
-gam delete vaulthold|hold <HoldItem> matter <MatterItem>
 gam update vaulthold|hold <HoldItem> matter <MatterItem> [query <QueryVaultCorpus>]
 	[([addaccounts|addgroups|addusers <EmailItemList>] [removeaccounts|removegroups|removeusers <EmailItemList>]) | (orgunit|ou <OrgUnit>)]
 	[starttime <Date>|<DateTime>] [endtime <Date>|<DateTime>] 
-gam info vaulthold|hold <HoldItem> [matter <MatterItem>]
+gam delete vaulthold|hold <HoldItem> matter <MatterItem>
+gam info vaulthold|hold <HoldItem> matter <MatterItem>
 gam print vaultholds|holds [todrive] [matters <MatterItemList>]
 
 gam create vaultmatter|matter [name <String>] [description <string>]
-	[collaborator|collaborators <CollaboratorList>]
+	[collaborator|collaborators <CollaboratorItemList>]
 gam update vaultmatter|matter <MatterItem> [action close|reopen|delete|undelete] [name <String>] [description <string>]
-	[addcollaborator|addcollaborators <CollaboratorList>] [removecollaborator|removecollaborators <CollaboratorList>]
+	[addcollaborator|addcollaborators <CollaboratorItemList>] [removecollaborator|removecollaborators <CollaboratorItemList>]
+gam delete vaultmatter|matter <MatterItem>
+gam undelete vaultmatter|matter <MatterItem>
 gam info vaultmatter|matter <MatterItem>
-gam print vaultmatters|matters [todrive] [view basic|full]
+gam print vaultmatters|matters [todrive] [basic|full]
 
 gam <UserTypeEntity> delete|del asp|asps|applicationspecificpasswords <AspID>
 gam <UserTypeEntity> show asps|asp|applicationspecificpasswords

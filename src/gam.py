@@ -7088,11 +7088,19 @@ def doDeleteTeamDrive(users):
     print u'Deleting Team Drive %s' % (teamDriveId)
     callGAPI(drive.teamdrives(), u'delete', teamDriveId=teamDriveId, soft_errors=True)
 
+def validateCollaborators(collaboratorList, collaborators, cd):
+  for collaborator in collaboratorList.split(u','):
+    collaborator_id = convertEmailAddressToUID(collaborator, cd)
+    if not collaborator_id:
+      print u'ERROR: failed to get a UID for %s. Please make sure this is a real user.' % collaborator
+      sys.exit(4)
+    collaborators.append({u'email': collaborator, u'id': collaborator_id})
+
 def doCreateVaultMatter():
   v = buildGAPIObject(u'vault')
   body = {u'name': u'New Matter - %s' % datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
   collaborators = []
-  collaborators_map = []
+  cd = None
   i = 3
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace(u'_', u'')
@@ -7103,14 +7111,9 @@ def doCreateVaultMatter():
       body[u'description'] = sys.argv[i+1]
       i += 2
     elif myarg in [u'collaborator', u'collaborators']:
-      collaborators = sys.argv[i+1].split(u',')
-      cd = buildGAPIObject(u'directory')
-      for collaborator in collaborators:
-        collaborator_id = convertEmailAddressToUID(collaborator, cd)
-        if not collaborator_id:
-          print u'ERROR: failed to get a UID for %s. Please make sure this is a real user.' % collaborator
-          sys.exit(4)
-        collaborators_map.append({u'email': collaborator, u'id': collaborator_id})
+      if not cd:
+        cd = buildGAPIObject(u'directory')
+      validateCollaborators(sys.argv[i+1], collaborators, cd)
       i += 2
     else:
       print u'ERROR: %s is not a valid argument to "gam create matter"' % sys.argv[i]
@@ -7118,10 +7121,9 @@ def doCreateVaultMatter():
   result = callGAPI(v.matters(), u'create', body=body, fields=u'matterId')
   matterId = result[u'matterId']
   print u'Created matter %s' % matterId
-  for collaborator in collaborators_map:
+  for collaborator in collaborators:
     print u' adding collaborator %s' % collaborator[u'email']
-    perm_body = {u'matterPermission': {u'role': u'COLLABORATOR', u'accountId': collaborator[u'id']}}
-    perm_result = callGAPI(v.matters(), u'addPermissions', matterId=matterId, body=perm_body)
+    callGAPI(v.matters(), u'addPermissions', matterId=matterId, body={u'matterPermission': {u'role': u'COLLABORATOR', u'accountId': collaborator[u'id']}})
 
 def doCreateVaultHold():
   v = buildGAPIObject(u'vault')
@@ -7249,13 +7251,14 @@ def doGetVaultHoldInfo():
     else:
       print u'ERROR: %s is not a valid argument for "gam info hold"' % myarg
       sys.exit(3)
+  if not matterId:
+    print u'ERROR: you must specify a matter for the hold.'
+    sys.exit(3)
   results = callGAPI(v.matters().holds(), u'get', matterId=matterId, holdId=holdId)
   cd = buildGAPIObject(u'directory')
   if u'accounts' in results:
     for i in range(0, len(results[u'accounts'])):
-      uid = u'uid:%s' % results[u'accounts'][i][u'accountId']
-      user_email = convertUserUIDtoEmailAddress(uid, cd)
-      results[u'accounts'][i][u'email'] = user_email
+      results[u'accounts'][i][u'email'] = convertUserUIDtoEmailAddress(u'uid:%s' % results[u'accounts'][i][u'accountId'], cd)
   if u'orgUnit' in results:
     results[u'orgUnit'][u'orgUnitPath'] = doGetOrgInfo(results[u'orgUnit'][u'orgUnitId'], return_attrib=u'orgUnitPath')
   print_json(None, results)
@@ -7390,25 +7393,15 @@ def doUpdateVaultMatter(action=None):
       body[u'description'] = sys.argv[i+1]
       i += 2
     elif myarg in [u'addcollaborator', u'addcollaborators']:
-      for collaborator in sys.argv[i+1].split(u','):
-        if not cd:
-          cd = buildGAPIObject(u'directory')
-        collaborator_id = convertEmailAddressToUID(collaborator, cd)
-        if not collaborator_id:
-          print u'ERROR: failed to get a UID for %s. Please make sure this is a real user.' % collaborator
-          sys.exit(4)
-        add_collaborators.append({u'email': collaborator, u'id': collaborator_id})
+      if not cd:
+        cd = buildGAPIObject(u'directory')
+      validateCollaborators(sys.argv[i+1], add_collaborators, cd)
       i += 2
     elif myarg in [u'removecollaborator', u'removecollaborators']:
-      remove_collaborators = sys.argv[i+1].split(u',')
-      for collaborator in sys.argv[i+1].split(u','):
-        if not cd:
-          cd = buildGAPIObject(u'directory')
-        collaborator_id = convertEmailAddressToUID(collaborator, cd)
-        if not collaborator_id:
-          print u'ERROR: failed to get a UID for %s. Please make sure this is a real user.' % collaborator
-          sys.exit(4)
-        remove_collaborators.append(collaborator_id)
+      if not cd:
+        cd = buildGAPIObject(u'directory')
+      validateCollaborators(sys.argv[i+1], remove_collaborators, cd)
+      i += 2
     else:
       print u'ERROR: %s is not a valid argument for "gam update matter"' % sys.argv[i]
       sys.exit(3)
@@ -7416,18 +7409,16 @@ def doUpdateVaultMatter(action=None):
     action_kwargs = {}
   if body:
     print u'Updating matter %s...' % sys.argv[3]
-    result = callGAPI(v.matters(), u'update', body=body, matterId=matterId)
+    callGAPI(v.matters(), u'update', body=body, matterId=matterId)
   if action:
     print u'Performing %s on matter %s' % (action, sys.argv[3])
-    action_result = callGAPI(v.matters(), action, matterId=matterId, **action_kwargs)
+    callGAPI(v.matters(), action, matterId=matterId, **action_kwargs)
   for collaborator in add_collaborators:
     print u' adding collaborator %s' % collaborator[u'email']
-    perm_body = {u'matterPermission': {u'role': u'COLLABORATOR', u'accountId': collaborator[u'id']}}
-    perm_result = callGAPI(v.matters(), u'addPermissions', matterId=matterId, body=perm_body)
+    callGAPI(v.matters(), u'addPermissions', matterId=matterId, body={u'matterPermission': {u'role': u'COLLABORATOR', u'accountId': collaborator[u'id']}})
   for collaborator in remove_collaborators:
     print u' removing collaborator %s' % collaborator[u'email']
-    perm_body = {u'accountId': collaborator[u'id']}
-    perm_result = callGAPI(v.matters(), u'removePermissions', matterId=matterId, body=perm_body)
+    callGAPI(v.matters(), u'removePermissions', matterId=matterId, body={u'accountId': collaborator[u'id']})
 
 def doGetVaultMatterInfo():
   v = buildGAPIObject(u'vault')
@@ -7436,9 +7427,7 @@ def doGetVaultMatterInfo():
   if u'matterPermissions' in result:
     cd = buildGAPIObject(u'directory')
     for i in range(0, len(result[u'matterPermissions'])):
-      uid = u'uid:%s' % result[u'matterPermissions'][i][u'accountId']
-      user_email = convertUserUIDtoEmailAddress(uid, cd)
-      result[u'matterPermissions'][i][u'email'] = user_email
+      result[u'matterPermissions'][i][u'email'] = convertUserUIDtoEmailAddress(u'uid:%s' % result[u'matterPermissions'][i][u'accountId'], cd)
   print_json(None, result)
 
 def doCreateUser():
@@ -10170,16 +10159,16 @@ def doPrintVaultMatters():
   v = buildGAPIObject(u'vault')
   todrive = False
   csvRows = []
-  i = 3
+  titles = [u'matterId', u'name', u'description', u'state']
   view = u'FULL'
-  titles = []
+  i = 3
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace(u'_', u'')
-    if myarg == u'view':
-      view = sys.argv[i+1].upper()
-      i += 2
-    elif myarg == u'todrive':
+    if myarg == u'todrive':
       todrive = True
+      i += 1
+    elif myarg in PROJECTION_CHOICES_MAP:
+      view = PROJECTION_CHOICES_MAP[myarg]
       i += 1
     else:
       print u'ERROR: %s is not a valid argument to "gam print matters"' % myarg
@@ -10188,20 +10177,18 @@ def doPrintVaultMatters():
   page_message = u' got %%num_items%% matters...\n'
   matters = callGAPIpages(v.matters(), u'list', u'matters', page_message=page_message, view=view)
   for matter in matters:
-    csvRows.append(flatten_json(matter))
-    for column in csvRows[-1]:
-      if column not in titles:
-        titles.append(column)
+    addRowTitlesToCSVfile(flatten_json(matter), csvRows, titles)
+  sortCSVTitles([u'matterId', u'name', u'description', u'state'], titles)
   writeCSVfile(csvRows, titles, u'Vault Matters', todrive)
 
 def doPrintVaultHolds():
   v = buildGAPIObject(u'vault')
   todrive = False
   csvRows = []
-  i = 3
+  titles = [u'matterId', u'holdId', u'name', u'updateTime']
   matters = []
   matterIds = []
-  titles = []
+  i = 3
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace(u'_', u'')
     if myarg == u'todrive':
@@ -10226,10 +10213,8 @@ def doPrintVaultHolds():
     sys.stderr.write(u'Retrieving holds for matter %s\n' % matterId)
     holds = callGAPIpages(v.matters().holds(), u'list', u'holds', matterId=matterId)
     for hold in holds:
-      csvRows.append(flatten_json(hold))
-      for column in csvRows[-1]:
-        if column not in titles:
-          titles.append(column)
+      addRowTitlesToCSVfile(flatten_json(hold, flattened={u'matterId': matterId}), csvRows, titles)
+  sortCSVTitles([u'matterId', u'holdId', u'name', u'updateTime'], titles)
   writeCSVfile(csvRows, titles, u'Vault Holds', todrive)
 
 def doPrintMobileDevices():
