@@ -7182,8 +7182,11 @@ def doCreateVaultHold():
   if not matterId:
     print u'ERROR: you must specify a matter for the new hold.'
     sys.exit(3)
-  if not body[u'corpus']:
-    print u'ERROR: you must specify corpus for the hold. One of %s' % (u', '.join(allowed_corpuses))
+  if not body.get(u'name'):
+    print u'ERROR: you must specify a name for the new hold.'
+    sys.exit(3)
+  if not body.get(u'corpus'):
+    print u'ERROR: you must specify corpus for the new hold. One of %s' % (u', '.join(allowed_corpuses))
     sys.exit(3)
   query_type = u'%sQuery' % body[u'corpus'].lower()
   body[u'query'][query_type] = {}
