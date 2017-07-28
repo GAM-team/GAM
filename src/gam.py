@@ -10159,7 +10159,8 @@ def doPrintVaultMatters():
   v = buildGAPIObject(u'vault')
   todrive = False
   csvRows = []
-  titles = [u'matterId', u'name', u'description', u'state']
+  initialTitles = [u'matterId', u'name', u'description', u'state']
+  titles = initialTitles[:]
   view = u'FULL'
   i = 3
   while i < len(sys.argv):
@@ -10178,14 +10179,15 @@ def doPrintVaultMatters():
   matters = callGAPIpages(v.matters(), u'list', u'matters', page_message=page_message, view=view)
   for matter in matters:
     addRowTitlesToCSVfile(flatten_json(matter), csvRows, titles)
-  sortCSVTitles([u'matterId', u'name', u'description', u'state'], titles)
+  sortCSVTitles(initialTitles, titles)
   writeCSVfile(csvRows, titles, u'Vault Matters', todrive)
 
 def doPrintVaultHolds():
   v = buildGAPIObject(u'vault')
   todrive = False
   csvRows = []
-  titles = [u'matterId', u'holdId', u'name', u'updateTime']
+  initialTitles = [u'matterId', u'holdId', u'name', u'updateTime']
+  titles = initialTitles[:]
   matters = []
   matterIds = []
   i = 3
@@ -10214,7 +10216,7 @@ def doPrintVaultHolds():
     holds = callGAPIpages(v.matters().holds(), u'list', u'holds', matterId=matterId)
     for hold in holds:
       addRowTitlesToCSVfile(flatten_json(hold, flattened={u'matterId': matterId}), csvRows, titles)
-  sortCSVTitles([u'matterId', u'holdId', u'name', u'updateTime'], titles)
+  sortCSVTitles(initialTitles, titles)
   writeCSVfile(csvRows, titles, u'Vault Holds', todrive)
 
 def doPrintMobileDevices():
