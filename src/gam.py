@@ -7088,13 +7088,15 @@ def doDeleteTeamDrive(users):
     print u'Deleting Team Drive %s' % (teamDriveId)
     callGAPI(drive.teamdrives(), u'delete', teamDriveId=teamDriveId, soft_errors=True)
 
-def validateCollaborators(collaboratorList, collaborators, cd):
+def validateCollaborators(collaboratorList, cd):
+  collaborators = []
   for collaborator in collaboratorList.split(u','):
     collaborator_id = convertEmailAddressToUID(collaborator, cd)
     if not collaborator_id:
       print u'ERROR: failed to get a UID for %s. Please make sure this is a real user.' % collaborator
       sys.exit(4)
     collaborators.append({u'email': collaborator, u'id': collaborator_id})
+  return collaborators
 
 def doCreateVaultMatter():
   v = buildGAPIObject(u'vault')
@@ -7113,7 +7115,7 @@ def doCreateVaultMatter():
     elif myarg in [u'collaborator', u'collaborators']:
       if not cd:
         cd = buildGAPIObject(u'directory')
-      validateCollaborators(sys.argv[i+1], collaborators, cd)
+      collaborators.extend(validateCollaborators(sys.argv[i+1], cd))
       i += 2
     else:
       print u'ERROR: %s is not a valid argument to "gam create matter"' % sys.argv[i]
@@ -7393,12 +7395,12 @@ def doUpdateVaultMatter(action=None):
     elif myarg in [u'addcollaborator', u'addcollaborators']:
       if not cd:
         cd = buildGAPIObject(u'directory')
-      validateCollaborators(sys.argv[i+1], add_collaborators, cd)
+      add_collaborators.extend(validateCollaborators(sys.argv[i+1], cd))
       i += 2
     elif myarg in [u'removecollaborator', u'removecollaborators']:
       if not cd:
         cd = buildGAPIObject(u'directory')
-      validateCollaborators(sys.argv[i+1], remove_collaborators, cd)
+      remove_collaborators.extend(validateCollaborators(sys.argv[i+1], cd))
       i += 2
     else:
       print u'ERROR: %s is not a valid argument for "gam update matter"' % sys.argv[i]
