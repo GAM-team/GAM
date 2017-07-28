@@ -10223,7 +10223,7 @@ def doPrintVaultHolds():
   for matter in matters:
     matterIds.append(convertMatterNameToID(v, matter))
   for matterId in matterIds:
-    sys.stderr.write(u'Retrieving holds for matter %s' % matterId)
+    sys.stderr.write(u'Retrieving holds for matter %s\n' % matterId)
     holds = callGAPIpages(v.matters().holds(), u'list', u'holds', matterId=matterId)
     for hold in holds:
       csvRows.append(flatten_json(hold))
