@@ -7229,7 +7229,7 @@ def doDeleteVaultHold():
     print u'ERROR: you must specify a matter for the hold.'
     sys.exit(3)
   print u'Deleting hold %s / %s' % (hold, holdId)
-  callGAPI(v.matters().holds(), u'delete', holdId=holdId, matterId=matterId)
+  callGAPI(v.matters().holds(), u'delete', matterId=matterId, holdId=holdId)
 
 def doGetVaultHoldInfo():
   v = buildGAPIObject(u'vault')
@@ -7359,12 +7359,10 @@ def doUpdateVaultHold():
     cd = buildGAPIObject(u'directory')
     for account in add_accounts:
       print u'adding %s to hold.' % account
-      add_body = {u'accountId': convertEmailAddressToUID(account, cd)}
-      callGAPI(v.matters().holds().accounts(), u'create', matterId=matterId, holdId=holdId, body=add_body)
+      callGAPI(v.matters().holds().accounts(), u'create', matterId=matterId, holdId=holdId, body={u'accountId': convertEmailAddressToUID(account, cd)})
     for account in del_accounts:
       print u'removing %s from hold.' % account
-      accountId = convertEmailAddressToUID(account, cd)
-      callGAPI(v.matters().holds().accounts(), u'delete', matterId=matterId, holdId=holdId, accountId=accountId)
+      callGAPI(v.matters().holds().accounts(), u'delete', matterId=matterId, holdId=holdId, accountId=convertEmailAddressToUID(account, cd))
 
 def doUpdateVaultMatter(action=None):
   v = buildGAPIObject(u'vault')
