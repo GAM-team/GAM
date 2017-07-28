@@ -7260,7 +7260,9 @@ def doGetVaultHoldInfo():
   cd = buildGAPIObject(u'directory')
   if u'accounts' in results:
     for i in range(0, len(results[u'accounts'])):
-      results[u'accounts'][i][u'email'] = convertUserUIDtoEmailAddress(u'uid:%s' % results[u'accounts'][i][u'accountId'], cd)
+      uid = u'uid:%s' % results[u'accounts'][i][u'accountId']
+      user_email = convertUserUIDtoEmailAddress(uid, cd)
+      results[u'accounts'][i][u'email'] = user_email
   if u'orgUnit' in results:
     results[u'orgUnit'][u'orgUnitPath'] = doGetOrgInfo(results[u'orgUnit'][u'orgUnitId'], return_attrib=u'orgUnitPath')
   print_json(None, results)
@@ -7427,7 +7429,9 @@ def doGetVaultMatterInfo():
   if u'matterPermissions' in result:
     cd = buildGAPIObject(u'directory')
     for i in range(0, len(result[u'matterPermissions'])):
-      result[u'matterPermissions'][i][u'email'] = convertUserUIDtoEmailAddress(u'uid:%s' % result[u'matterPermissions'][i][u'accountId'], cd)
+      uid = u'uid:%s' % result[u'matterPermissions'][i][u'accountId']
+      user_email = convertUserUIDtoEmailAddress(uid, cd)
+      result[u'matterPermissions'][i][u'email'] = user_email
   print_json(None, result)
 
 def doCreateUser():
