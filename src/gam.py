@@ -7343,7 +7343,7 @@ def doUpdateVaultHold():
   if not matterId:
     print u'ERROR: you must specify a matter for the hold.'
     sys.exit(3)
-  if query or start_time or end_time or body[u'orgUnit']:
+  if query or start_time or end_time or body.get(u'orgUnit'):
     old_body = callGAPI(v.matters().holds(), u'get', matterId=matterId, holdId=holdId, fields=u'corpus,query,orgUnit')
     body[u'query'] = old_body[u'query']
     body[u'corpus'] = old_body[u'corpus']
