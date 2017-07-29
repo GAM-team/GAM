@@ -11557,7 +11557,7 @@ def ProcessGAMCommand(args):
         print u'ERROR: %s is not a valid argument for "gam close"' % argument
         sys.exit(2)
       sys.exit(0)
-    elif command == u'repoen':
+    elif command == u'reopen':
       argument = sys.argv[2].lower()
       if argument in [u'matter', u'vaultmatter']:
         doActionVaultMatter(u'reopen')
