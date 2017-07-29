@@ -10200,7 +10200,7 @@ def doPrintVaultHolds():
   v = buildGAPIObject(u'vault')
   todrive = False
   csvRows = []
-  initialTitles = [u'matterId', u'holdId', u'name', u'updateTime']
+  initialTitles = [u'matterId', u'holdId', u'name', u'corpus', u'updateTime']
   titles = initialTitles[:]
   matters = []
   matterIds = []
