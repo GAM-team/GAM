@@ -10208,7 +10208,7 @@ def doPrintVaultHolds():
     if myarg == u'todrive':
       todrive = True
       i += 1
-    elif myarg == u'matters':
+    elif myarg in [u'matter', u'matters']:
       matters = sys.argv[i+1].split(u',')
       i += 2
     else:

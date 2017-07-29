@@ -845,7 +845,7 @@ gam update vaulthold|hold <HoldItem> matter <MatterItem> [query <QueryVaultCorpu
 	[starttime <Date>|<DateTime>] [endtime <Date>|<DateTime>] 
 gam delete vaulthold|hold <HoldItem> matter <MatterItem>
 gam info vaulthold|hold <HoldItem> matter <MatterItem>
-gam print vaultholds|holds [todrive] [matters <MatterItemList>]
+gam print vaultholds|holds [todrive] [matter|matters <MatterItemList>]
 
 gam create vaultmatter|matter [name <String>] [description <string>]
 	[collaborator|collaborators <CollaboratorItemList>]
