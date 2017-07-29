@@ -7428,7 +7428,7 @@ def doUpdateVaultMatter(action=None):
       # bah, API requires name/description to be sent on update even when it's not changing
       result = callGAPI(v.matters(), u'get', matterId=matterId, view=u'BASIC')
       body.setdefault(u'name', result[u'name'])
-      body.setdefault(u'description', result[u'description'])
+      body.setdefault(u'description', result.get(u'description'))
     callGAPI(v.matters(), u'update', body=body, matterId=matterId)
   if action:
     print u'Performing %s on matter %s' % (action, sys.argv[3])
