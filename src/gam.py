@@ -7381,27 +7381,20 @@ def doUpdateVaultHold():
       accountId = convertEmailAddressToUID(account, cd)
       callGAPI(v.matters().holds().accounts(), u'delete', matterId=matterId, holdId=holdId, accountId=accountId)
 
-def doUpdateVaultMatter(action=None):
+def doUpdateVaultMatter():
   v = buildGAPIObject(u'vault')
   matterId = convertMatterNameToID(v, sys.argv[3])
   if not matterId:
     print u'ERROR: failed to lookup matter named %s' % sys.argv[3]
     sys.exit(4)
   body = {}
-  action_kwargs = {u'body': {}}
   add_collaborators = []
   remove_collaborators = []
   cd = None
   i = 4
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace(u'_', u'')
-    if myarg == u'action':
-      action = sys.argv[i+1].lower()
-      if action not in VAULT_MATTER_ACTIONS:
-        print u'ERROR: allowed actions are %s, got %s' % (u', '.join(VAULT_MATTER_ACTIONS), sys.argv[i])
-        sys.exit(3)
-      i += 2
-    elif myarg == u'name':
+    if myarg == u'name':
       body[u'name'] = sys.argv[i+1]
       i += 2
     elif myarg == u'description':
@@ -7420,8 +7413,6 @@ def doUpdateVaultMatter(action=None):
     else:
       print u'ERROR: %s is not a valid argument for "gam update matter"' % sys.argv[i]
       sys.exit(3)
-  if action == u'delete':
-    action_kwargs = {}
   if body:
     print u'Updating matter %s...' % sys.argv[3]
     if u'name' not in body or u'description' not in body:
@@ -7430,15 +7421,22 @@ def doUpdateVaultMatter(action=None):
       body.setdefault(u'name', result[u'name'])
       body.setdefault(u'description', result.get(u'description'))
     callGAPI(v.matters(), u'update', body=body, matterId=matterId)
-  if action:
-    print u'Performing %s on matter %s' % (action, sys.argv[3])
-    callGAPI(v.matters(), action, matterId=matterId, **action_kwargs)
   for collaborator in add_collaborators:
     print u' adding collaborator %s' % collaborator[u'email']
     callGAPI(v.matters(), u'addPermissions', matterId=matterId, body={u'matterPermission': {u'role': u'COLLABORATOR', u'accountId': collaborator[u'id']}})
   for collaborator in remove_collaborators:
     print u' removing collaborator %s' % collaborator[u'email']
     callGAPI(v.matters(), u'removePermissions', matterId=matterId, body={u'accountId': collaborator[u'id']})
+
+def doActionVaultMatter(action):
+  v = buildGAPIObject(u'vault')
+  matterId = convertMatterNameToID(v, sys.argv[3])
+  if not matterId:
+    print u'ERROR: failed to lookup matter named %s' % sys.argv[3]
+    sys.exit(4)
+  action_kwargs = {} if action == u'delete' else {u'body': {}}
+  print u'Performing %s on matter %s' % (action, sys.argv[3])
+  callGAPI(v.matters(), action, matterId=matterId, **action_kwargs)
 
 def doGetVaultMatterInfo():
   v = buildGAPIObject(u'vault')
@@ -11534,7 +11532,7 @@ def ProcessGAMCommand(args):
       elif argument in [u'resoldsubscription', u'resellersubscription']:
         doDeleteResoldSubscription()
       elif argument in [u'matter', u'vaultmatter']:
-        doUpdateVaultMatter(action=u'delete')
+        doActionVaultMatter(u'delete')
       elif argument in [u'hold', u'vaulthold']:
         doDeleteVaultHold()
       else:
@@ -11546,9 +11544,25 @@ def ProcessGAMCommand(args):
       if argument == u'user':
         doUndeleteUser()
       elif argument in [u'matter', u'vaultmatter']:
-        doUpdateVaultMatter(action=u'undelete')
+        doActionVaultMatter(u'undelete')
       else:
         print u'ERROR: %s is not a valid argument for "gam undelete"' % argument
+        sys.exit(2)
+      sys.exit(0)
+    elif command == u'close':
+      argument = sys.argv[2].lower()
+      if argument in [u'matter', u'vaultmatter']:
+        doActionVaultMatter(u'close')
+      else:
+        print u'ERROR: %s is not a valid argument for "gam close"' % argument
+        sys.exit(2)
+      sys.exit(0)
+    elif command == u'repoen':
+      argument = sys.argv[2].lower()
+      if argument in [u'matter', u'vaultmatter']:
+        doActionVaultMatter(u'reopen')
+      else:
+        print u'ERROR: %s is not a valid argument for "gam reopen"' % argument
         sys.exit(2)
       sys.exit(0)
     elif command == u'print':

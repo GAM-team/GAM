@@ -849,8 +849,10 @@ gam print vaultholds|holds [todrive] [matter|matters <MatterItemList>]
 
 gam create vaultmatter|matter [name <String>] [description <string>]
 	[collaborator|collaborators <CollaboratorItemList>]
-gam update vaultmatter|matter <MatterItem> [action close|reopen|delete|undelete] [name <String>] [description <string>]
+gam update vaultmatter|matter <MatterItem> [name <String>] [description <string>]
 	[addcollaborator|addcollaborators <CollaboratorItemList>] [removecollaborator|removecollaborators <CollaboratorItemList>]
+gam close vaultmatter|matter <MatterItem>
+gam reopen vaultmatter|matter <MatterItem>
 gam delete vaultmatter|matter <MatterItem>
 gam undelete vaultmatter|matter <MatterItem>
 gam info vaultmatter|matter <MatterItem>
