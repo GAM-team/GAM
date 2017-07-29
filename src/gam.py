@@ -873,21 +873,31 @@ def buildGAPIObject(api):
       GC_Values[GC_CUSTOMER_ID] = MY_CUSTOMER
   return service
 
-# Convert User UID to email address
-def convertUserUIDtoEmailAddress(emailAddressOrUID, cd=None):
+# Convert UID to email address
+def convertUIDtoEmailAddress(emailAddressOrUID, cd=None, email_type=u'user'):
   normalizedEmailAddressOrUID = normalizeEmailAddressOrUID(emailAddressOrUID)
   if normalizedEmailAddressOrUID.find(u'@') > 0:
     return normalizedEmailAddressOrUID
-  try:
-    if not cd:
-      cd = buildGAPIObject(u'directory')
-    result = callGAPI(cd.users(), u'get',
-                      throw_reasons=[GAPI_USER_NOT_FOUND],
-                      userKey=normalizedEmailAddressOrUID, fields=u'primaryEmail')
-    if u'primaryEmail' in result:
-      return result[u'primaryEmail'].lower()
-  except GAPI_userNotFound:
-    pass
+  if not cd:
+    cd = buildGAPIObject(u'directory')
+  if email_type == u'user':
+    try:
+      result = callGAPI(cd.users(), u'get',
+                        throw_reasons=[GAPI_USER_NOT_FOUND],
+                        userKey=normalizedEmailAddressOrUID, fields=u'primaryEmail')
+      if u'primaryEmail' in result:
+        return result[u'primaryEmail'].lower()
+    except GAPI_userNotFound:
+      pass
+  else:
+    try:
+      result = callGAPI(cd.groups(), u'get',
+                        throw_reasons=[GAPI_GROUP_NOT_FOUND],
+                        groupKey=normalizedEmailAddressOrUID, fields=u'email')
+      if u'email' in result:
+        return result[u'email'].lower()
+    except GAPI_groupNotFound:
+      pass
   return normalizedEmailAddressOrUID
 
 # Convert email address to UID
@@ -933,7 +943,7 @@ def buildGAPIServiceObject(api, act_as, use_scopes=None):
   return service
 
 def buildActivityGAPIObject(user):
-  userEmail = convertUserUIDtoEmailAddress(user)
+  userEmail = convertUIDtoEmailAddress(user)
   return (userEmail, buildGAPIServiceObject(u'appsactivity', userEmail))
 
 def normalizeCalendarId(calname, checkPrimary=False):
@@ -942,7 +952,7 @@ def normalizeCalendarId(calname, checkPrimary=False):
     return calname
   if not GC_Values[GC_DOMAIN]:
     GC_Values[GC_DOMAIN] = _getValueFromOAuth(u'hd')
-  return convertUserUIDtoEmailAddress(calname)
+  return convertUIDtoEmailAddress(calname)
 
 def buildCalendarGAPIObject(calname):
   calendarId = normalizeCalendarId(calname)
@@ -958,19 +968,19 @@ def buildCalendarDataGAPIObject(calname):
   return (calendarId, cal)
 
 def buildDriveGAPIObject(user):
-  userEmail = convertUserUIDtoEmailAddress(user)
+  userEmail = convertUIDtoEmailAddress(user)
   return (userEmail, buildGAPIServiceObject(u'drive', userEmail))
 
 def buildDrive3GAPIObject(user):
-  userEmail = convertUserUIDtoEmailAddress(user)
+  userEmail = convertUIDtoEmailAddress(user)
   return (userEmail, buildGAPIServiceObject(u'drive3', userEmail))
 
 def buildGmailGAPIObject(user):
-  userEmail = convertUserUIDtoEmailAddress(user)
+  userEmail = convertUIDtoEmailAddress(user)
   return (userEmail, buildGAPIServiceObject(u'gmail', userEmail))
 
 def buildGplusGAPIObject(user):
-  userEmail = convertUserUIDtoEmailAddress(user)
+  userEmail = convertUIDtoEmailAddress(user)
   return (userEmail, buildGAPIServiceObject(u'plus', userEmail))
 
 def doCheckServiceAccount(users):
@@ -7202,10 +7212,7 @@ def doCreateVaultHold():
   if accounts:
     body[u'accounts'] = []
     cd = buildGAPIObject(u'directory')
-    if body[u'corpus'] == u'GROUPS':
-      account_type = u'group'
-    else:
-      account_type = u'user'
+    account_type = u'group' if body[u'corpus'] == u'GROUPS' else u'user'
     for account in accounts:
       body[u'accounts'].append({u'accountId': convertEmailAddressToUID(account, cd, account_type)})
   callGAPI(v.matters().holds(), u'create', matterId=matterId, body=body)
@@ -7262,10 +7269,11 @@ def doGetVaultHoldInfo():
   results = callGAPI(v.matters().holds(), u'get', matterId=matterId, holdId=holdId)
   cd = buildGAPIObject(u'directory')
   if u'accounts' in results:
+    account_type = u'group' if results[u'corpus'] == u'GROUPS' else u'user'
     for i in range(0, len(results[u'accounts'])):
       uid = u'uid:%s' % results[u'accounts'][i][u'accountId']
-      user_email = convertUserUIDtoEmailAddress(uid, cd)
-      results[u'accounts'][i][u'email'] = user_email
+      acct_email = convertUIDtoEmailAddress(uid, cd, account_type)
+      results[u'accounts'][i][u'email'] = acct_email
   if u'orgUnit' in results:
     results[u'orgUnit'][u'orgUnitPath'] = doGetOrgInfo(results[u'orgUnit'][u'orgUnitId'], return_attrib=u'orgUnitPath')
   print_json(None, results)
@@ -7440,7 +7448,7 @@ def doGetVaultMatterInfo():
     cd = buildGAPIObject(u'directory')
     for i in range(0, len(result[u'matterPermissions'])):
       uid = u'uid:%s' % result[u'matterPermissions'][i][u'accountId']
-      user_email = convertUserUIDtoEmailAddress(uid, cd)
+      user_email = convertUIDtoEmailAddress(uid, cd)
       result[u'matterPermissions'][i][u'email'] = user_email
   print_json(None, result)
 
