@@ -7155,7 +7155,6 @@ def doCreateVaultHold():
       body[u'name'] = sys.argv[i+1]
       i += 2
     elif myarg == u'query':
-      body[u'query'] = {}
       query = sys.argv[i+1]
       i += 2
     elif myarg == u'corpus':
@@ -7200,8 +7199,9 @@ def doCreateVaultHold():
     sys.exit(3)
   query_type = u'%sQuery' % body[u'corpus'].lower()
   body[u'query'][query_type] = {}
-  if body[u'corpus'] == u'DRIVE' and query:
-    body[u'query'][query_type] = json.loads(query)
+  if body[u'corpus'] == u'DRIVE':
+    if query:
+      body[u'query'][query_type] = json.loads(query)
   elif body[u'corpus'] in [u'GROUPS', u'MAIL']:
     if query:
       body[u'query'][query_type] = {u'terms': query}
@@ -7359,14 +7359,16 @@ def doUpdateVaultHold():
       # bah, API requires this to be sent on update even when it's not changing
       body[u'orgUnit'] = old_body[u'orgUnit']
     query_type = '%sQuery' % body[u'corpus'].lower()
-    if body[u'corpus'] == u'DRIVE' and query:
-      body[u'query'][query_type] = json.loads(query)
-    elif body[u'corpus'] in [u'GROUPS', u'MAIL'] and query:
-      body[u'query'][query_type][u'terms'] = query
-    if start_time:
-      body[u'query'][query_type][u'startTime'] = start_time
-    if end_time:
-      body[u'query'][query_type][u'endTime'] = end_time
+    if body[u'corpus'] == u'DRIVE':
+      if query:
+        body[u'query'][query_type] = json.loads(query)
+    elif body[u'corpus'] in [u'GROUPS', u'MAIL']:
+      if query:
+        body[u'query'][query_type][u'terms'] = query
+      if start_time:
+        body[u'query'][query_type][u'startTime'] = start_time
+      if end_time:
+        body[u'query'][query_type][u'endTime'] = end_time
   if body:
     print u'Updating hold %s / %s' % (hold, holdId)
     callGAPI(v.matters().holds(), u'update', matterId=matterId, holdId=holdId, body=body)
