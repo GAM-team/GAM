@@ -7201,7 +7201,11 @@ def doCreateVaultHold():
   body[u'query'][query_type] = {}
   if body[u'corpus'] == u'DRIVE':
     if query:
-      body[u'query'][query_type] = json.loads(query)
+      try:
+        body[u'query'][query_type] = json.loads(query)
+      except ValueError as e:
+        print u'Error: {0}, query: {1}'.format(str(e), query)
+        sys.exit(3)
   elif body[u'corpus'] in [u'GROUPS', u'MAIL']:
     if query:
       body[u'query'][query_type] = {u'terms': query}
@@ -7361,7 +7365,11 @@ def doUpdateVaultHold():
     query_type = '%sQuery' % body[u'corpus'].lower()
     if body[u'corpus'] == u'DRIVE':
       if query:
-        body[u'query'][query_type] = json.loads(query)
+        try:
+          body[u'query'][query_type] = json.loads(query)
+        except ValueError as e:
+          print u'Error: {0}, query: {1}'.format(str(e), query)
+          sys.exit(3)
     elif body[u'corpus'] in [u'GROUPS', u'MAIL']:
       if query:
         body[u'query'][query_type][u'terms'] = query
