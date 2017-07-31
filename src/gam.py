@@ -7199,13 +7199,12 @@ def doCreateVaultHold():
     sys.exit(3)
   query_type = u'%sQuery' % body[u'corpus'].lower()
   body[u'query'][query_type] = {}
-  if body[u'corpus'] == u'DRIVE':
-    if query:
-      try:
-        body[u'query'][query_type] = json.loads(query)
-      except ValueError as e:
-        print u'Error: {0}, query: {1}'.format(str(e), query)
-        sys.exit(3)
+  if body[u'corpus'] == u'DRIVE' and query:
+    try:
+      body[u'query'][query_type] = json.loads(query)
+    except ValueError as e:
+      print u'Error: {0}, query: {1}'.format(str(e), query)
+      sys.exit(3)
   elif body[u'corpus'] in [u'GROUPS', u'MAIL']:
     if query:
       body[u'query'][query_type] = {u'terms': query}
@@ -7363,13 +7362,12 @@ def doUpdateVaultHold():
       # bah, API requires this to be sent on update even when it's not changing
       body[u'orgUnit'] = old_body[u'orgUnit']
     query_type = '%sQuery' % body[u'corpus'].lower()
-    if body[u'corpus'] == u'DRIVE':
-      if query:
-        try:
-          body[u'query'][query_type] = json.loads(query)
-        except ValueError as e:
-          print u'Error: {0}, query: {1}'.format(str(e), query)
-          sys.exit(3)
+    if body[u'corpus'] == u'DRIVE' and query:
+      try:
+        body[u'query'][query_type] = json.loads(query)
+      except ValueError as e:
+        print u'Error: {0}, query: {1}'.format(str(e), query)
+        sys.exit(3)
     elif body[u'corpus'] in [u'GROUPS', u'MAIL']:
       if query:
         body[u'query'][query_type][u'terms'] = query
