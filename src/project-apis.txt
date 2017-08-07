@@ -2,7 +2,6 @@ admin.googleapis.com
 appsactivity.googleapis.com
 calendar-json.googleapis.com
 classroom.googleapis.com
-contacts.googleapis.com
 drive.googleapis.com
 gmail.googleapis.com
 groupssettings.googleapis.com
