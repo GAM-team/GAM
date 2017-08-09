@@ -11557,20 +11557,13 @@ def ProcessGAMCommand(args):
         print u'ERROR: %s is not a valid argument for "gam undelete"' % argument
         sys.exit(2)
       sys.exit(0)
-    elif command == u'close':
+    elif command in [u'close', u'reopen']:
+      # close and reopen will have to be split apart if either takes a new argument
       argument = sys.argv[2].lower()
       if argument in [u'matter', u'vaultmatter']:
-        doActionVaultMatter(u'close')
+        doActionVaultMatter(command)
       else:
-        print u'ERROR: %s is not a valid argument for "gam close"' % argument
-        sys.exit(2)
-      sys.exit(0)
-    elif command == u'reopen':
-      argument = sys.argv[2].lower()
-      if argument in [u'matter', u'vaultmatter']:
-        doActionVaultMatter(u'reopen')
-      else:
-        print u'ERROR: %s is not a valid argument for "gam reopen"' % argument
+        print u'ERROR: %s is not a valid argument for "gam %s"' % (argument, command)
         sys.exit(2)
       sys.exit(0)
     elif command == u'print':
