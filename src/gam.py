@@ -11063,6 +11063,10 @@ OAUTH2_SCOPES = [
   {u'name': u'License Manager API',
    u'subscopes': [],
    u'scopes': u'https://www.googleapis.com/auth/apps.licensing'},
+  {u'name': u'Pub / Sub API',
+   u'subscopes': [],
+   u'offByDefault': True,
+   u'scopes': u'https://www.googleapis.com/auth/pubsub'},
   {u'name': u'Reports API - Audit Reports',
    u'subscopes': [],
    u'scopes': u'https://www.googleapis.com/auth/admin.reports.audit.readonly'},
@@ -11079,10 +11083,6 @@ OAUTH2_SCOPES = [
   {u'name': u'Vault Matters and Holds API',
    u'subscopes': [u'readonly'],
    u'scopes': u'https://www.googleapis.com/auth/ediscovery'},
-  {u'name': u'Pub / Sub API',
-   u'subscopes': [],
-   u'offByDefault': True,
-   u'scopes': u'https://www.googleapis.com/auth/pubsub'},
   ]
 
 OAUTH2_MENU = u'''
