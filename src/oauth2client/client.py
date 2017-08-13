@@ -2092,7 +2092,8 @@ class OAuth2WebServerFlow(Flow):
 @_helpers.positional(2)
 def flow_from_clientsecrets(filename, scope, redirect_uri=None,
                             message=None, cache=None, login_hint=None,
-                            device_uri=None, pkce=None, code_verifier=None):
+                            device_uri=None, pkce=None, code_verifier=None,
+                            prompt=None):
     """Create a Flow from a clientsecrets file.
 
     Will create the right kind of Flow based on the contents of the
@@ -2141,7 +2142,13 @@ def flow_from_clientsecrets(filename, scope, redirect_uri=None,
                 'login_hint': login_hint,
             }
             revoke_uri = client_info.get('revoke_uri')
-            optional = ('revoke_uri', 'device_uri', 'pkce', 'code_verifier')
+            optional = (
+                'revoke_uri',
+                'device_uri',
+                'pkce',
+                'code_verifier',
+                'prompt'
+            )
             for param in optional:
                 if locals()[param] is not None:
                     constructor_kwargs[param] = locals()[param]
