@@ -11081,6 +11081,7 @@ OAUTH2_SCOPES = [
    u'scopes': u'https://www.googleapis.com/auth/ediscovery'},
   {u'name': u'Pub / Sub API',
    u'subscopes': [],
+   u'offByDefault': True,
    u'scopes': u'https://www.googleapis.com/auth/pubsub'},
   ]
 
