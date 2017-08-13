@@ -497,10 +497,10 @@ def doGAMVersion(checkForArgs=True):
     sys.stdout.write(gam_version)
     return
   import struct
-  version_data = u'GAM {0} - {1}\n{2}\nPython {3}.{4}.{5} {6}-bit {7}\ngoogle-api-python-client {8}\n{9} {10}\nPath: {11}'
+  version_data = u'GAM {0} - {1}\n{2}\nPython {3}.{4}.{5} {6}-bit {7}\ngoogle-api-python-client {8}\noauth2client {9}\n{10} {11}\nPath: {12}'
   print version_data.format(gam_version, GAM_URL, gam_author, sys.version_info[0],
                             sys.version_info[1], sys.version_info[2], struct.calcsize(u'P')*8,
-                            sys.version_info[3], googleapiclient.__version__, platform.platform(),
+                            sys.version_info[3], googleapiclient.__version__, oauth2client.__version__, platform.platform(),
                             platform.machine(), GM_Globals[GM_GAM_PATH])
   if force_check:
     doGAMCheckForUpdates(forceCheck=True)
