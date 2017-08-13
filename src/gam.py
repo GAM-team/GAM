@@ -39,6 +39,7 @@ import re
 import signal
 import socket
 import StringIO
+import uuid
 
 import googleapiclient
 import googleapiclient.discovery
@@ -1194,6 +1195,73 @@ def showReport():
           csvRows.append(row)
       sortCSVTitles([u'name',], titles)
       writeCSVfile(csvRows, titles, u'%s Activity Report' % report.capitalize(), to_drive)
+
+def watchGmail(users):
+  cs_data = readFile(GC_Values[GC_CLIENT_SECRETS_JSON], mode=u'rb', continueOnError=True, displayError=True, encoding=None)
+  cs_json = json.loads(cs_data)
+  project = cs_json[u'installed'][u'project_id']
+  topic = None
+  pubsub = buildGAPIObject(u'pubsub')
+  topics = callGAPIpages(pubsub.projects().topics(), u'list', items=u'topics', project=u'projects/%s' % project)
+  for atopic in topics:
+    if atopic[u'name'].startswith(u'projects/%s/topics/gam-pubsub-gmail-' % project):
+      topic = atopic[u'name']
+      break
+  if not topic:
+    topic = u'projects/%s/topics/gam-pubsub-gmail-%s' % (project, uuid.uuid4())
+    callGAPI(pubsub.projects().topics(), u'create', name=topic, body={})
+    body = {u'policy': {u'bindings': [{u'members': [u'serviceAccount:gmail-api-push@system.gserviceaccount.com'], u'role': u'roles/pubsub.editor'}]}}
+    callGAPI(pubsub.projects().topics(), u'setIamPolicy', resource=topic, body=body)
+  subscription = None
+  subscriptions = callGAPIpages(pubsub.projects().topics().subscriptions(), u'list', items=u'subscriptions', topic=topic)
+  for asubscription in subscriptions:
+    if asubscription.startswith(u'projects/%s/subscriptions/gam-pubsub-gmail-' % project):
+      subscription = asubscription
+      break
+  if not subscription:
+    subscription = u'projects/%s/subscriptions/gam-pubsub-gmail-%s' % (project, uuid.uuid4())
+    sub_body = {u'topic': topic}
+    sub_result = callGAPI(pubsub.projects().subscriptions(), u'create', name=subscription, body=sub_body)
+  gmails = {}
+  for user in users:
+    gmails[user] = {u'g': buildGmailGAPIObject(user)[1]}
+    watch_result = callGAPI(gmails[user][u'g'].users(), u'watch', userId=u'me', body={u'topicName': topic})
+    gmails[user]['seen_historyId'] = callGAPI(gmails[user][u'g'].users(), u'getProfile', userId=u'me', fields=u'historyId')[u'historyId']
+  print 'Watching for events...'
+  while True:
+    results = callGAPI(pubsub.projects().subscriptions(), u'pull', subscription=subscription, body={u'maxMessages': 100})
+    if u'receivedMessages' in results:
+      ackIds = []
+      update_history = []
+      for message in results[u'receivedMessages']:
+        if u'data' in message[u'message']:
+          decoded_message = json.loads(base64.b64decode(message[u'message'][u'data']))
+          if u'historyId' in decoded_message:
+            update_history.append(decoded_message[u'emailAddress'])
+      if u'ackId' in message:
+        ackIds.append(message[u'ackId'])
+      if ackIds:
+        callGAPI(pubsub.projects().subscriptions(), u'acknowledge', subscription=subscription, body={u'ackIds': ackIds})
+      if update_history:
+        for a_user in update_history:
+          results = callGAPI(gmails[a_user][u'g'].users().history(), u'list', userId=u'me', startHistoryId=gmails[a_user][u'seen_historyId'])
+          if u'history' in results:
+            for history in results[u'history']:
+              if history.keys() == [u'messages', u'id']:
+                continue
+              if u'labelsAdded' in history:
+                for labelling in history[u'labelsAdded']:
+                  print u'%s labels %s added to %s' % (a_user, u', '.join(labelling[u'labelIds']), labelling[u'message'][u'id'])
+              if u'labelsRemoved' in history:
+                for labelling in history[u'labelsRemoved']:
+                  print u'%s labels %s removed from %s' % (a_user, u', '.join(labelling[u'labelIds']), labelling[u'message'][u'id'])
+              if u'messagesDeleted' in history:
+                for deleting in history[u'messagesDeleted']:
+                  print u'%s permanently deleted message %s' % (a_user, deleting[u'message'][u'id'])
+              if u'messagesAdded' in history:
+                for adding in history[u'messagesAdded']:
+                  print u'%s created message %s with labels %s' % (a_user, adding[u'message'][u'id'], u', '.join(adding[u'message'][u'labelIds']))
+          gmails[a_user][u'seen_historyId'] = results[u'historyId']
 
 def addDelegates(users, i):
   if i == 4:
@@ -7012,7 +7080,6 @@ and accept the Terms of Service (ToS). As soon as you've accepted the ToS popup,
   print u'That\'s it! Your GAM Project is created and ready to use.'
 
 def doCreateTeamDrive(users):
-  import uuid
   body = {u'name': sys.argv[5]}
   for user in users:
     drive = buildGAPIServiceObject(u'drive3', user)
@@ -11012,6 +11079,9 @@ OAUTH2_SCOPES = [
   {u'name': u'Vault Matters and Holds API',
    u'subscopes': [u'readonly'],
    u'scopes': u'https://www.googleapis.com/auth/ediscovery'},
+  {u'name': u'Pub / Sub API',
+   u'subscopes': [],
+   u'scopes': u'https://www.googleapis.com/auth/pubsub'},
   ]
 
 OAUTH2_MENU = u'''
@@ -11987,6 +12057,8 @@ def ProcessGAMCommand(args):
       doVacation(users)
     elif command in [u'delegate', u'delegates']:
       addDelegates(users, 4)
+    elif command == u'watch':
+      watchGmail(users)
     else:
       print u'ERROR: %s is not a valid argument for "gam"' % command
       sys.exit(2)
