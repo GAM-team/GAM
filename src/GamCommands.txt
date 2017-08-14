@@ -78,7 +78,6 @@ Named items
 <CalendarColorIndex> ::== <Number in range 1-24>
 <CalendarItem> ::= <EmailAddress>|<String>
 <ClientID> ::= <String>
-<CollaboratorItem> ::= <EmailAddress>|<UniqueID>|<String>
 <CourseAlias> ::= <String>
 <CourseID> ::= <Number>|d:<CourseAlias>
 <CourseParticipantType> ::= teacher|teachers|student|students
@@ -403,7 +402,6 @@ Items, separated by spaces, with spaces or commas in the items themselves: "'it 
 
 <ACLList> ::== "<ACLScope>(,<ACLScope>)*"
 <CalendarList> ::= "<CalendarItem>(,<CalendarItem>)*"
-<CollaboratorItemList> ::= "<CollaboratorItem>(,<CollaboratorItem>)*"
 <CourseAliasList> ::= "<CourseAlias>(,<CourseAlias>)*"
 <CourseIDList> ::= "<CourseID>(,<CourseID>)*"
 <CrOSFieldNameList> ::= "<CrOSFieldName>(,<CrOSFieldName>)*"
@@ -845,12 +843,14 @@ gam update vaulthold|hold <HoldItem> matter <MatterItem> [query <QueryVaultCorpu
 	[starttime <Date>|<DateTime>] [endtime <Date>|<DateTime>] 
 gam delete vaulthold|hold <HoldItem> matter <MatterItem>
 gam info vaulthold|hold <HoldItem> matter <MatterItem>
-gam print vaultholds|holds [todrive] [matters <MatterItemList>]
+gam print vaultholds|holds [todrive] [matter|matters <MatterItemList>]
 
 gam create vaultmatter|matter [name <String>] [description <string>]
-	[collaborator|collaborators <CollaboratorItemList>]
-gam update vaultmatter|matter <MatterItem> [action close|reopen|delete|undelete] [name <String>] [description <string>]
-	[addcollaborator|addcollaborators <CollaboratorItemList>] [removecollaborator|removecollaborators <CollaboratorItemList>]
+	[collaborator|collaborators <EmailItemList>]
+gam update vaultmatter|matter <MatterItem> [name <String>] [description <string>]
+	[addcollaborator|addcollaborators <EmailItemList>] [removecollaborator|removecollaborators <EmailItemList>]
+gam close vaultmatter|matter <MatterItem>
+gam reopen vaultmatter|matter <MatterItem>
 gam delete vaultmatter|matter <MatterItem>
 gam undelete vaultmatter|matter <MatterItem>
 gam info vaultmatter|matter <MatterItem>

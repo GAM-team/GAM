@@ -417,13 +417,6 @@ FILTER_ACTION_CHOICES = [
   u'markread', u'neverspam', u'notimportant', u'star', u'trash',
   ]
 
-VAULT_MATTER_ACTIONS = [
-  u'reopen',
-  u'undelete',
-  u'close',
-  u'delete',
-  ]
-
 CROS_ARGUMENT_TO_PROPERTY_MAP = {
   u'activetimeranges': [u'activeTimeRanges.activeTime', u'activeTimeRanges.date'],
   u'annotatedassetid': [u'annotatedAssetId',],
