@@ -83,7 +83,7 @@ Named items
 <CourseID> ::= <Number>|d:<CourseAlias>
 <CourseParticipantType> ::= teacher|teachers|student|students
 <CrOSID> ::= <String>
-<CrOSItem> ::= <CrOSID>|(query:<QueryCrOS>)
+<CrOSItem> ::= <CrOSID>|(query:<QueryCrOS>)(query:orgunitpath:<OrgUnitPath>)
 <CustomerID> ::= <String>
 <DomainAlias> ::= <String>
 <DriveFileACLRole> :: =commenter|editor|organizer|owner|reader|writer
@@ -476,12 +476,12 @@ Item attributes
 	(localfile <FileName>)|
 	(convert)|(ocr)|(ocrlanguage <Language>)|(restricted|restrict)|(starred|star)|(trashed|trash)|(viewed|view)|
 	(lastviewedbyme <Time>)|(modifieddate|modifiedtime <Time>)|(description <String>)|(mimetype gdoc|gdocument|gdrawing|gfolder|gdirectory|gform|gfusion|gpresentation|gscript|gsite|gsheet|gspreadsheet)|
-	(parentid <DriveFolderID>)|(parentname <FolderName>)|writerscantshare
+	(parentid <DriveFolderID>)|(parentname <FolderName>)|(sharedparentname <FolderName>)|writerscantshare
 <DriveFileUpdateAttributes> ::=
 	(localfile <FileName>)|
 	(convert)|(ocr)|(ocrlanguage <Language>)|(restricted|restrict <Boolean>)|(starred|star <Boolean>)|(trashed|trash <Boolean>)|(viewed|view <Boolean>)|
 	(lastviewedbyme <Time>)|(modifieddate <Time>)|(description <String>)|(mimetype gdoc|gdocument|gdrawing|gfolder|gdirectory|gform|gfusion|gpresentation|gscript|gsite|gsheet|gspreadsheet)|
-	(parentid <DriveFolderID>)|(parentname <FolderName>)|writerscantshare
+	(parentid <DriveFolderID>)|(parentname <FolderName>)|(sharedparentname <FolderName>)|writerscantshare
 <EventAttributes> ::=
 	(anyonecanaddself)|(guestscantinviteothers)|(guestscantseeothers)|(notifyattendees)|(available)|(visibility default|public|prvate)|(tentative)|
 	(attendee <EmailAddress>)|(optionalattendee <EmailAddress>)|
@@ -849,8 +849,9 @@ gam print vaultholds|holds [todrive] [matters <MatterItemList>]
 
 gam create vaultmatter|matter [name <String>] [description <string>]
 	[collaborator|collaborators <CollaboratorItemList>]
-gam update vaultmatter|matter <MatterItem> [action close|reopen|delete|undelete] [name <String>] [description <string>]
+gam update vaultmatter|matter <MatterItem> [name <String>] [description <string>]
 	[addcollaborator|addcollaborators <CollaboratorItemList>] [removecollaborator|removecollaborators <CollaboratorItemList>]
+gam update vaultmatter|matter <MatterItem> action close|reopen|delete|undelete
 gam delete vaultmatter|matter <MatterItem>
 gam undelete vaultmatter|matter <MatterItem>
 gam info vaultmatter|matter <MatterItem>
