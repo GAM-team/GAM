@@ -917,6 +917,46 @@ def convertEmailAddressToUID(emailAddressOrUID, cd=None, email_type=u'user'):
     return None
   return normalizedEmailAddressOrUID
 
+def getTimeOrDeltaFromNow(time_string):
+  """Get an ISO 8601 date/time or a positive/negative delta applied to now.
+
+  Args:
+    time_string (string): The time or delta (e.g. '2017-09-01T12:34:56Z' or '-4h')
+
+  Returns:
+    string: iso8601 formatted datetime in UTC.
+
+  Exits:
+    2: Not a valid delta.
+
+  """
+  DELTA_PATTERN = re.compile(r'^([+-])(\d{1,4})([wdhm])$')
+  time_string = time_string.strip()
+  if not time_string or time_string[0] not in [u'+', u'-']:
+    return time_string
+  mg = re.match(DELTA_PATTERN, time_string.lower())
+  if mg is None:
+    print u'ERROR: %s is not a valid delta, expected (+|-)<Number>(m|h|d|w)' % time_string
+    sys.exit(2)
+
+  sign = mg.group(1)
+  delta = int(mg.group(2))
+  unit = mg.group(3)
+
+  if unit == u'w':
+    deltaTime = datetime.timedelta(weeks=delta)
+  elif unit == u'd':
+    deltaTime = datetime.timedelta(days=delta)
+  elif unit == u'h':
+    deltaTime = datetime.timedelta(hours=delta)
+  elif unit == u'm':
+    deltaTime = datetime.timedelta(minutes=delta)
+
+  if sign == u'-':
+    return (datetime.datetime.utcnow() - deltaTime).isoformat() + u'Z'
+  else:
+    return (datetime.datetime.utcnow() + deltaTime).isoformat() + u'Z'
+
 def buildGAPIServiceObject(api, act_as, use_scopes=None):
   http = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL],
                        cache=GM_Globals[GM_CACHE_DIR])
@@ -1047,10 +1087,10 @@ def showReport():
       try_date = sys.argv[i+1]
       i += 2
     elif sys.argv[i].lower() == u'start':
-      startTime = sys.argv[i+1]
+      startTime = getTimeOrDeltaFromNow(sys.argv[i+1])
       i += 2
     elif sys.argv[i].lower() == u'end':
-      endTime = sys.argv[i+1]
+      endTime = getTimeOrDeltaFromNow(sys.argv[i+1])
       i += 2
     elif sys.argv[i].lower() == u'event':
       eventName = sys.argv[i+1]
@@ -3373,14 +3413,14 @@ def doCalendarAddEvent():
         body[u'start'] = {u'date': sys.argv[i+2]}
         i += 3
       else:
-        body[u'start'] = {u'dateTime': sys.argv[i+1]}
+        body[u'start'] = {u'dateTime': getTimeOrDeltaFromNow(sys.argv[i+1])}
         i += 2
     elif sys.argv[i].lower() == u'end':
       if sys.argv[i+1].lower() == u'allday':
         body[u'end'] = {u'date': sys.argv[i+2]}
         i += 3
       else:
-        body[u'end'] = {u'dateTime': sys.argv[i+1]}
+        body[u'end'] = {u'dateTime': getTimeOrDeltaFromNow(sys.argv[i+1])}
         i += 2
     elif sys.argv[i].lower() == u'guestscantinviteothers':
       body[u'guestsCanInviteOthers'] = False
@@ -3844,7 +3884,7 @@ def addDriveFileACL(users):
       emailMessage = sys.argv[i+1]
       i += 2
     elif sys.argv[i].lower() == u'expires':
-      body[u'expirationTime'] = sys.argv[i+1]
+      body[u'expirationTime'] = getTimeOrDeltaFromNow(sys.argv[i+1])
       i += 2
     else:
       print u'ERROR: %s is not a valid argument for "gam <users> add drivefileacl"' % sys.argv[i]
@@ -4223,10 +4263,10 @@ def getDriveFileAttribute(i, body, parameters, myarg, update=False):
       body[u'labels'][DRIVEFILE_LABEL_CHOICES_MAP[myarg]] = True
       i += 1
   elif myarg in [u'lastviewedbyme', u'lastviewedbyuser', u'lastviewedbymedate', u'lastviewedbymetime']:
-    body[u'lastViewedByMeDate'] = sys.argv[i+1]
+    body[u'lastViewedByMeDate'] = getTimeOrDeltaFromNow(sys.argv[i+1])
     i += 2
   elif myarg in [u'modifieddate', u'modifiedtime']:
-    body[u'modifiedDate'] = sys.argv[i+1]
+    body[u'modifiedDate'] = getTimeOrDeltaFromNow(sys.argv[i+1])
     i += 2
   elif myarg == u'description':
     body[u'description'] = sys.argv[i+1]
