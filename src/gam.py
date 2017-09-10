@@ -9182,7 +9182,7 @@ def doDelASP(users):
 
 def printBackupCodes(user, codes):
   jcount = len(codes)
-  print u'Backup verification codes for {0}'.format(user)
+  print u'Backup verification codes for {0} ({1})'.format(user, jcount)
   print u''
   if jcount > 0:
     j = 0
