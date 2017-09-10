@@ -83,7 +83,7 @@ Named items
 <CourseID> ::= <Number>|d:<CourseAlias>
 <CourseParticipantType> ::= teacher|teachers|student|students
 <CrOSID> ::= <String>
-<CrOSItem> ::= <CrOSID>|(query:<QueryCrOS>)
+<CrOSItem> ::= <CrOSID>|(query:<QueryCrOS>)(query:orgunitpath:<OrgUnitPath>)
 <CustomerID> ::= <String>
 <DomainAlias> ::= <String>
 <DriveFileACLRole> :: =commenter|editor|organizer|owner|reader|writer
@@ -462,7 +462,11 @@ Item attributes
 	(summary <String>)|(description <String>)|(location <String>)|(timezone <String>)
 
 <CourseAttributes> ::=
-	(name <String>)|(section <string>)|(heading <String>)|(room <String>)|(description <String>)|
+	(description <String>)|
+	(heading <String>)|
+	(name <String>)|
+	(room <String>)|
+	(section <string>)|
 	(state|status active|archived|provisioned|declined)
 
 <CrOSAttributes> ::=
@@ -849,8 +853,11 @@ gam print vaultholds|holds [todrive] [matters <MatterItemList>]
 
 gam create vaultmatter|matter [name <String>] [description <string>]
 	[collaborator|collaborators <CollaboratorItemList>]
-gam update vaultmatter|matter <MatterItem> [action close|reopen|delete|undelete] [name <String>] [description <string>]
+gam update vaultmatter|matter <MatterItem> [name <String>] [description <string>]
 	[addcollaborator|addcollaborators <CollaboratorItemList>] [removecollaborator|removecollaborators <CollaboratorItemList>]
+gam update vaultmatter|matter <MatterItem> action close|reopen|delete|undelete
+gam close vaultmatter|matter <MatterItem>
+gam reopen vaultmatter|matter <MatterItem>
 gam delete vaultmatter|matter <MatterItem>
 gam undelete vaultmatter|matter <MatterItem>
 gam info vaultmatter|matter <MatterItem>
@@ -892,9 +899,9 @@ gam <UserTypeEntity> delete|del emptydrivefolders
 gam <UserTypeEntity> empty drivetrash
 
 gam <UserTypeEntity> add drivefileacl <DriveFileID> anyone|(user <UserItem>)|(group <GroupItem>)|(domain <DomainName>)
-	(role <DriveFileACLRole>) [withlink|discoverable] [sendemail] [emailmessage <String>]
+	(role <DriveFileACLRole>) [withlink|discoverable] [expires <Time>] [sendemail] [emailmessage <String>]
 gam <UserTypeEntity> update drivefileacl <DriveFileID> <PermissionID>
-	(role <DriveFileACLRole>) [withlink|discoverable] [removeexpiration]
+	(role <DriveFileACLRole>) [withlink|discoverable] [expires <Time>] [removeexpiration]
 gam <UserTypeEntity> delete|del drivefileacl <DriveFileID> <PermissionID>
 gam <UserTypeEntity> show drivefileacl <DriveFileID>
 
