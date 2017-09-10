@@ -1515,6 +1515,9 @@ def doUpdateCourse():
     elif myarg in [u'state', u'status']:
       getCourseState(croom, sys.argv[i+1], body)
       i += 2
+    elif myarg in ['owner']:
+      body['ownerId'] = sys.argv[i+1]
+      i += 2
     else:
       print u'ERROR: %s is not a valid argument to "gam update course"' % sys.argv[i]
       sys.exit(2)
@@ -2215,6 +2218,7 @@ def doGetCourseInfo():
   if not courseId.isdigit() and courseId[:2] != u'd:':
     courseId = u'd:%s' % courseId
   info = callGAPI(croom.courses(), u'get', id=courseId)
+  info['ownerEmail'] = convertUserUIDtoEmailAddress(u'uid:%s' % info['ownerId'])
   print_json(None, info)
   teachers = callGAPIpages(croom.courses().teachers(), u'list', u'teachers', courseId=courseId)
   students = callGAPIpages(croom.courses().students(), u'list', u'students', courseId=courseId)
