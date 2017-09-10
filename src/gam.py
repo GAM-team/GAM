@@ -874,21 +874,31 @@ def buildGAPIObject(api):
       GC_Values[GC_CUSTOMER_ID] = MY_CUSTOMER
   return service
 
-# Convert User UID to email address
-def convertUserUIDtoEmailAddress(emailAddressOrUID, cd=None):
+# Convert UID to email address
+def convertUIDtoEmailAddress(emailAddressOrUID, cd=None, email_type=u'user'):
   normalizedEmailAddressOrUID = normalizeEmailAddressOrUID(emailAddressOrUID)
   if normalizedEmailAddressOrUID.find(u'@') > 0:
     return normalizedEmailAddressOrUID
-  try:
-    if not cd:
-      cd = buildGAPIObject(u'directory')
-    result = callGAPI(cd.users(), u'get',
-                      throw_reasons=[GAPI_USER_NOT_FOUND],
-                      userKey=normalizedEmailAddressOrUID, fields=u'primaryEmail')
-    if u'primaryEmail' in result:
-      return result[u'primaryEmail'].lower()
-  except GAPI_userNotFound:
-    pass
+  if not cd:
+    cd = buildGAPIObject(u'directory')
+  if email_type == u'user':
+    try:
+      result = callGAPI(cd.users(), u'get',
+                        throw_reasons=[GAPI_USER_NOT_FOUND],
+                        userKey=normalizedEmailAddressOrUID, fields=u'primaryEmail')
+      if u'primaryEmail' in result:
+        return result[u'primaryEmail'].lower()
+    except GAPI_userNotFound:
+      pass
+  else:
+    try:
+      result = callGAPI(cd.groups(), u'get',
+                        throw_reasons=[GAPI_GROUP_NOT_FOUND],
+                        groupKey=normalizedEmailAddressOrUID, fields=u'email')
+      if u'email' in result:
+        return result[u'email'].lower()
+    except GAPI_groupNotFound:
+      pass
   return normalizedEmailAddressOrUID
 
 # Convert email address to UID
@@ -974,7 +984,7 @@ def buildGAPIServiceObject(api, act_as, use_scopes=None):
   return service
 
 def buildActivityGAPIObject(user):
-  userEmail = convertUserUIDtoEmailAddress(user)
+  userEmail = convertUIDtoEmailAddress(user)
   return (userEmail, buildGAPIServiceObject(u'appsactivity', userEmail))
 
 def normalizeCalendarId(calname, checkPrimary=False):
@@ -983,7 +993,7 @@ def normalizeCalendarId(calname, checkPrimary=False):
     return calname
   if not GC_Values[GC_DOMAIN]:
     GC_Values[GC_DOMAIN] = _getValueFromOAuth(u'hd')
-  return convertUserUIDtoEmailAddress(calname)
+  return convertUIDtoEmailAddress(calname)
 
 def buildCalendarGAPIObject(calname):
   calendarId = normalizeCalendarId(calname)
@@ -999,19 +1009,19 @@ def buildCalendarDataGAPIObject(calname):
   return (calendarId, cal)
 
 def buildDriveGAPIObject(user):
-  userEmail = convertUserUIDtoEmailAddress(user)
+  userEmail = convertUIDtoEmailAddress(user)
   return (userEmail, buildGAPIServiceObject(u'drive', userEmail))
 
 def buildDrive3GAPIObject(user):
-  userEmail = convertUserUIDtoEmailAddress(user)
+  userEmail = convertUIDtoEmailAddress(user)
   return (userEmail, buildGAPIServiceObject(u'drive3', userEmail))
 
 def buildGmailGAPIObject(user):
-  userEmail = convertUserUIDtoEmailAddress(user)
+  userEmail = convertUIDtoEmailAddress(user)
   return (userEmail, buildGAPIServiceObject(u'gmail', userEmail))
 
 def buildGplusGAPIObject(user):
-  userEmail = convertUserUIDtoEmailAddress(user)
+  userEmail = convertUIDtoEmailAddress(user)
   return (userEmail, buildGAPIServiceObject(u'plus', userEmail))
 
 def doCheckServiceAccount(users):
@@ -7256,7 +7266,6 @@ def doCreateVaultHold():
       body[u'name'] = sys.argv[i+1]
       i += 2
     elif myarg == u'query':
-      body[u'query'] = {}
       query = sys.argv[i+1]
       i += 2
     elif myarg == u'corpus':
@@ -7293,13 +7302,21 @@ def doCreateVaultHold():
   if not matterId:
     print u'ERROR: you must specify a matter for the new hold.'
     sys.exit(3)
-  if not body[u'corpus']:
-    print u'ERROR: you must specify corpus for the hold. One of %s' % (u', '.join(allowed_corpuses))
+  if not body.get(u'name'):
+    print u'ERROR: you must specify a name for the new hold.'
+    sys.exit(3)
+  if not body.get(u'corpus'):
+    print u'ERROR: you must specify corpus for the new hold. One of %s' % (u', '.join(allowed_corpuses))
     sys.exit(3)
   query_type = u'%sQuery' % body[u'corpus'].lower()
   body[u'query'][query_type] = {}
-  if body[u'corpus'] == u'DRIVE' and query:
-    body[u'query'][query_type] = json.loads(query)
+  if body[u'corpus'] == u'DRIVE':
+    if query:
+      try:
+        body[u'query'][query_type] = json.loads(query)
+      except ValueError as e:
+        print u'Error: {0}, query: {1}'.format(str(e), query)
+        sys.exit(3)
   elif body[u'corpus'] in [u'GROUPS', u'MAIL']:
     if query:
       body[u'query'][query_type] = {u'terms': query}
@@ -7310,10 +7327,7 @@ def doCreateVaultHold():
   if accounts:
     body[u'accounts'] = []
     cd = buildGAPIObject(u'directory')
-    if body[u'corpus'] == u'GROUPS':
-      account_type = u'group'
-    else:
-      account_type = u'user'
+    account_type = u'group' if body[u'corpus'] == u'GROUPS' else u'user'
     for account in accounts:
       body[u'accounts'].append({u'accountId': convertEmailAddressToUID(account, cd, account_type)})
   callGAPI(v.matters().holds(), u'create', matterId=matterId, body=body)
@@ -7370,10 +7384,11 @@ def doGetVaultHoldInfo():
   results = callGAPI(v.matters().holds(), u'get', matterId=matterId, holdId=holdId)
   cd = buildGAPIObject(u'directory')
   if u'accounts' in results:
+    account_type = u'group' if results[u'corpus'] == u'GROUPS' else u'user'
     for i in range(0, len(results[u'accounts'])):
       uid = u'uid:%s' % results[u'accounts'][i][u'accountId']
-      user_email = convertUserUIDtoEmailAddress(uid, cd)
-      results[u'accounts'][i][u'email'] = user_email
+      acct_email = convertUIDtoEmailAddress(uid, cd, account_type)
+      results[u'accounts'][i][u'email'] = acct_email
   if u'orgUnit' in results:
     results[u'orgUnit'][u'orgUnitPath'] = doGetOrgInfo(results[u'orgUnit'][u'orgUnitId'], return_attrib=u'orgUnitPath')
   print_json(None, results)
@@ -7451,7 +7466,7 @@ def doUpdateVaultHold():
   if not matterId:
     print u'ERROR: you must specify a matter for the hold.'
     sys.exit(3)
-  if query or start_time or end_time or body[u'orgUnit']:
+  if query or start_time or end_time or body.get(u'orgUnit'):
     old_body = callGAPI(v.matters().holds(), u'get', matterId=matterId, holdId=holdId, fields=u'corpus,query,orgUnit')
     body[u'query'] = old_body[u'query']
     body[u'corpus'] = old_body[u'corpus']
@@ -7459,14 +7474,20 @@ def doUpdateVaultHold():
       # bah, API requires this to be sent on update even when it's not changing
       body[u'orgUnit'] = old_body[u'orgUnit']
     query_type = '%sQuery' % body[u'corpus'].lower()
-    if body[u'corpus'] == u'DRIVE' and query:
-      body[u'query'][query_type] = json.loads(query)
-    elif body[u'corpus'] in [u'GROUPS', u'MAIL'] and query:
-      body[u'query'][query_type][u'terms'] = query
-    if start_time:
-      body[u'query'][query_type][u'startTime'] = start_time
-    if end_time:
-      body[u'query'][query_type][u'endTime'] = end_time
+    if body[u'corpus'] == u'DRIVE':
+      if query:
+        try:
+          body[u'query'][query_type] = json.loads(query)
+        except ValueError as e:
+          print u'Error: {0}, query: {1}'.format(str(e), query)
+          sys.exit(3)
+    elif body[u'corpus'] in [u'GROUPS', u'MAIL']:
+      if query:
+        body[u'query'][query_type][u'terms'] = query
+      if start_time:
+        body[u'query'][query_type][u'startTime'] = start_time
+      if end_time:
+        body[u'query'][query_type][u'endTime'] = end_time
   if body:
     print u'Updating hold %s / %s' % (hold, holdId)
     callGAPI(v.matters().holds(), u'update', matterId=matterId, holdId=holdId, body=body)
@@ -7481,14 +7502,24 @@ def doUpdateVaultHold():
       accountId = convertEmailAddressToUID(account, cd)
       callGAPI(v.matters().holds().accounts(), u'delete', matterId=matterId, holdId=holdId, accountId=accountId)
 
-def doUpdateVaultMatter(action=None):
+def doActionVaultMatter(action, matterId=None, v=None):
+  if v is None:
+    v = buildGAPIObject(u'vault')
+    matterId = convertMatterNameToID(v, sys.argv[3])
+    if not matterId:
+      print u'ERROR: failed to lookup matter named %s' % sys.argv[3]
+      sys.exit(4)
+  action_kwargs = {} if action == u'delete' else {u'body': {}}
+  print u'Performing %s on matter %s' % (action, matterId)
+  callGAPI(v.matters(), action, matterId=matterId, **action_kwargs)
+
+def doUpdateVaultMatter():
   v = buildGAPIObject(u'vault')
   matterId = convertMatterNameToID(v, sys.argv[3])
   if not matterId:
     print u'ERROR: failed to lookup matter named %s' % sys.argv[3]
     sys.exit(4)
   body = {}
-  action_kwargs = {u'body': {}}
   add_collaborators = []
   remove_collaborators = []
   cd = None
@@ -7498,9 +7529,10 @@ def doUpdateVaultMatter(action=None):
     if myarg == u'action':
       action = sys.argv[i+1].lower()
       if action not in VAULT_MATTER_ACTIONS:
-        print u'ERROR: allowed actions are %s, got %s' % (u', '.join(VAULT_MATTER_ACTIONS), sys.argv[i])
+        print u'ERROR: allowed actions are %s, got %s' % (u', '.join(VAULT_MATTER_ACTIONS), action)
         sys.exit(3)
-      i += 2
+      doActionVaultMatter(action, matterId, v)
+      return
     elif myarg == u'name':
       body[u'name'] = sys.argv[i+1]
       i += 2
@@ -7520,14 +7552,14 @@ def doUpdateVaultMatter(action=None):
     else:
       print u'ERROR: %s is not a valid argument for "gam update matter"' % sys.argv[i]
       sys.exit(3)
-  if action == u'delete':
-    action_kwargs = {}
   if body:
     print u'Updating matter %s...' % sys.argv[3]
+    if u'name' not in body or u'description' not in body:
+      # bah, API requires name/description to be sent on update even when it's not changing
+      result = callGAPI(v.matters(), u'get', matterId=matterId, view=u'BASIC')
+      body.setdefault(u'name', result[u'name'])
+      body.setdefault(u'description', result.get(u'description'))
     callGAPI(v.matters(), u'update', body=body, matterId=matterId)
-  if action:
-    print u'Performing %s on matter %s' % (action, sys.argv[3])
-    callGAPI(v.matters(), action, matterId=matterId, **action_kwargs)
   for collaborator in add_collaborators:
     print u' adding collaborator %s' % collaborator[u'email']
     callGAPI(v.matters(), u'addPermissions', matterId=matterId, body={u'matterPermission': {u'role': u'COLLABORATOR', u'accountId': collaborator[u'id']}})
@@ -7543,7 +7575,7 @@ def doGetVaultMatterInfo():
     cd = buildGAPIObject(u'directory')
     for i in range(0, len(result[u'matterPermissions'])):
       uid = u'uid:%s' % result[u'matterPermissions'][i][u'accountId']
-      user_email = convertUserUIDtoEmailAddress(uid, cd)
+      user_email = convertUIDtoEmailAddress(uid, cd)
       result[u'matterPermissions'][i][u'email'] = user_email
   print_json(None, result)
 
@@ -10311,7 +10343,7 @@ def doPrintVaultHolds():
   v = buildGAPIObject(u'vault')
   todrive = False
   csvRows = []
-  initialTitles = [u'matterId', u'holdId', u'name', u'updateTime']
+  initialTitles = [u'matterId', u'holdId', u'name', u'corpus', u'updateTime']
   titles = initialTitles[:]
   matters = []
   matterIds = []
@@ -10321,7 +10353,7 @@ def doPrintVaultHolds():
     if myarg == u'todrive':
       todrive = True
       i += 1
-    elif myarg == u'matters':
+    elif myarg in [u'matter', u'matters']:
       matters = sys.argv[i+1].split(u',')
       i += 2
     else:
@@ -11641,7 +11673,7 @@ def ProcessGAMCommand(args):
       elif argument in [u'resoldsubscription', u'resellersubscription']:
         doDeleteResoldSubscription()
       elif argument in [u'matter', u'vaultmatter']:
-        doUpdateVaultMatter(action=u'delete')
+        doActionVaultMatter(command)
       elif argument in [u'hold', u'vaulthold']:
         doDeleteVaultHold()
       else:
@@ -11653,9 +11685,18 @@ def ProcessGAMCommand(args):
       if argument == u'user':
         doUndeleteUser()
       elif argument in [u'matter', u'vaultmatter']:
-        doUpdateVaultMatter(action=u'undelete')
+        doActionVaultMatter(command)
       else:
         print u'ERROR: %s is not a valid argument for "gam undelete"' % argument
+        sys.exit(2)
+      sys.exit(0)
+    elif command in [u'close', u'reopen']:
+      # close and reopen will have to be split apart if either takes a new argument
+      argument = sys.argv[2].lower()
+      if argument in [u'matter', u'vaultmatter']:
+        doActionVaultMatter(command)
+      else:
+        print u'ERROR: %s is not a valid argument for "gam %s"' % (argument, command)
         sys.exit(2)
       sys.exit(0)
     elif command == u'print':
