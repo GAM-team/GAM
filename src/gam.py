@@ -1565,8 +1565,8 @@ def doUpdateCourse():
     elif myarg in [u'state', u'status']:
       getCourseState(croom, sys.argv[i+1], body)
       i += 2
-    elif myarg in ['owner']:
-      body['ownerId'] = sys.argv[i+1]
+    elif myarg in ['owner', 'ownerid', u'teacher']:
+      body['ownerId'] = normalizeEmailAddressOrUID(sys.argv[i+1])
       i += 2
     else:
       print u'ERROR: %s is not a valid argument to "gam update course"' % sys.argv[i]
@@ -2250,8 +2250,8 @@ def doCreateCourse():
     elif myarg == u'room':
       body[u'room'] = sys.argv[i+1]
       i += 2
-    elif myarg == u'teacher':
-      body[u'ownerId'] = sys.argv[i+1]
+    elif myarg in [u'teacher', u'owner']:
+      body[u'ownerId'] = normalizeEmailAddressOrUID(sys.argv[i+1])
       i += 2
     elif myarg in [u'state', u'status']:
       getCourseState(croom, sys.argv[i+1], body)
