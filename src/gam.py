@@ -3246,7 +3246,7 @@ def doCalendarShowACL():
   calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
   if not cal:
     return
-  acls = callGAPIitems(cal.acl(), u'list', u'items', calendarId=calendarId)
+  acls = callGAPIpages(cal.acl(), u'list', u'items', calendarId=calendarId, fields=u'nextPageToken,items(role,scope)')
   i = 0
   count = len(acls)
   for rule in acls:
