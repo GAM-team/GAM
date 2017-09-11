@@ -1528,15 +1528,31 @@ def doDelCourse():
   callGAPI(croom.courses(), u'delete', id=courseId)
   print u'Deleted Course %s' % courseId
 
-def getCourseState(croom, state, body):
-  validStates = croom._rootDesc[u'schemas'][u'Course'][u'properties'][u'courseState'][u'enum'][:]
-  if u'COURSE_STATE_UNSPECIFIED' in validStates:
-    validStates.remove(u'COURSE_STATE_UNSPECIFIED')
-  body[u'courseState'] = state.upper()
-  if body[u'courseState'] in validStates:
-    return
-  print u'ERROR: course state must be one of: %s. Got %s' % (u', '.join(validStates).lower(), state)
-  sys.exit(2)
+def getCourseAttribute(myarg, value, body, croom, function):
+  if myarg == u'name':
+    body[u'name'] = value
+  elif myarg == u'section':
+    body[u'section'] = value
+  elif myarg == u'heading':
+    body[u'descriptionHeading'] = value
+  elif myarg == u'description':
+    body[u'description'] = value.replace(u'\\n', u'\n')
+  elif myarg == u'room':
+    body[u'room'] = value
+  elif myarg in [u'owner', u'ownerid', u'teacher']:
+    body[u'ownerId'] = normalizeEmailAddressOrUID(value)
+  elif myarg in [u'state', u'status']:
+    validStates = croom._rootDesc[u'schemas'][u'Course'][u'properties'][u'courseState'][u'enum'][:]
+    if u'COURSE_STATE_UNSPECIFIED' in validStates:
+      validStates.remove(u'COURSE_STATE_UNSPECIFIED')
+    value = value.upper()
+    if value not in validStates:
+      print u'ERROR: course state must be one of: %s. Got %s' % (u', '.join(validStates).lower(), value.lower())
+      sys.exit(2)
+    body[u'courseState'] = value
+  else:
+    print u'ERROR: %s is not a valid argument to "gam %s course"' % (myarg, function)
+    sys.exit(2)
 
 def doUpdateCourse():
   croom = buildGAPIObject(u'classroom')
@@ -1547,30 +1563,8 @@ def doUpdateCourse():
   i = 4
   while i < len(sys.argv):
     myarg = sys.argv[i].lower()
-    if myarg == u'name':
-      body[u'name'] = sys.argv[i+1]
-      i += 2
-    elif myarg == u'section':
-      body[u'section'] = sys.argv[i+1]
-      i += 2
-    elif myarg == u'heading':
-      body[u'descriptionHeading'] = sys.argv[i+1]
-      i += 2
-    elif myarg == u'description':
-      body[u'description'] = sys.argv[i+1].replace(u'\\n', u'\n')
-      i += 2
-    elif myarg == u'room':
-      body[u'room'] = sys.argv[i+1]
-      i += 2
-    elif myarg in [u'state', u'status']:
-      getCourseState(croom, sys.argv[i+1], body)
-      i += 2
-    elif myarg in ['owner', 'ownerid', u'teacher']:
-      body['ownerId'] = normalizeEmailAddressOrUID(sys.argv[i+1])
-      i += 2
-    else:
-      print u'ERROR: %s is not a valid argument to "gam update course"' % sys.argv[i]
-      sys.exit(2)
+    getCourseAttribute(myarg, sys.argv[i+1], body, croom, u'update')
+    i += 2
   updateMask = u','.join(body.keys())
   body[u'id'] = courseId
   result = callGAPI(croom.courses(), u'patch', id=courseId, body=body, updateMask=updateMask)
@@ -2232,33 +2226,12 @@ def doCreateCourse():
   i = 3
   while i < len(sys.argv):
     myarg = sys.argv[i].lower()
-    if myarg == u'name':
-      body[u'name'] = sys.argv[i+1]
-      i += 2
-    elif myarg in [u'alias', u'id']:
+    if myarg in [u'alias', u'id']:
       body[u'id'] = u'd:%s' % sys.argv[i+1]
       i += 2
-    elif myarg == u'section':
-      body[u'section'] = sys.argv[i+1]
-      i += 2
-    elif myarg == u'heading':
-      body[u'descriptionHeading'] = sys.argv[i+1]
-      i += 2
-    elif myarg == u'description':
-      body[u'description'] = sys.argv[i+1].replace(u'\\n', u'\n')
-      i += 2
-    elif myarg == u'room':
-      body[u'room'] = sys.argv[i+1]
-      i += 2
-    elif myarg in [u'teacher', u'owner']:
-      body[u'ownerId'] = normalizeEmailAddressOrUID(sys.argv[i+1])
-      i += 2
-    elif myarg in [u'state', u'status']:
-      getCourseState(croom, sys.argv[i+1], body)
-      i += 2
     else:
-      print u'ERROR: %s is not a valid argument for "gam create course".' % sys.argv[i]
-      sys.exit(2)
+      getCourseAttribute(myarg, sys.argv[i+1], body, croom, u'create')
+      i += 2
   result = callGAPI(croom.courses(), u'create', body=body)
   print u'Created course %s' % result[u'id']
 

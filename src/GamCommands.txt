@@ -467,7 +467,8 @@ Item attributes
 	(name <String>)|
 	(room <String>)|
 	(section <string>)|
-	(state|status active|archived|provisioned|declined)
+	(state|status active|archived|provisioned|declined)|
+	(owner|ownerid|teacher <UserItem>)
 
 <CrOSAttributes> ::=
 	(asset|assetid|tag <String>)|
@@ -794,7 +795,7 @@ gam create verify|verification <DomainName>
 gam update verify|verification <DomainName> cname|txt|text|site|file
 gam info verify|verification
 
-gam create course id|alias <CourseAlias> [teacher <UserItem>] <CourseAttributes>*
+gam create course id|alias <CourseAlias> <CourseAttributes>*
 gam update course <CourseID> <CourseAttributes>+
 gam delete course <CourseID>
 gam info course <CourseID>
