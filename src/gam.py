@@ -8811,8 +8811,12 @@ def doGetCrosInfo():
   deviceId = sys.argv[3]
   if deviceId[:6].lower() == u'query:':
     query = deviceId[6:]
+    if query[:12].lower() == u'orgunitpath:':
+      kwargs = {u'orgUnitPath': query[12:]}
+    else:
+      kwargs = {u'query': query}
     devices_result = callGAPIpages(cd.chromeosdevices(), u'list', u'chromeosdevices',
-                                   query=query, customerId=GC_Values[GC_CUSTOMER_ID], fields=u'chromeosdevices/deviceId,nextPageToken')
+                                   customerId=GC_Values[GC_CUSTOMER_ID], fields=u'chromeosdevices/deviceId,nextPageToken', **kwargs)
     devices = list()
     for a_device in devices_result:
       devices.append(a_device[u'deviceId'])
