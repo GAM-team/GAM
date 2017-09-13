@@ -6785,6 +6785,39 @@ def getUserAttributes(i, cd, updateCmd=False):
         note[u'value'] = sys.argv[i].replace(u'\\n', u'\n')
         i += 1
       body[u'notes'] = note
+    elif myarg == u'location':
+      i += 1
+      location = {}
+      while True:
+        myopt = sys.argv[i].lower()
+        if myopt == u'type':
+          location[u'type'] = sys.argv[i+1].lower()
+          if location[u'type'] not in [u'default', u'desk']:
+            location[u'customType'] = location[u'type']
+            location[u'type'] = u'custom'
+          i += 2
+        elif myopt == u'area':
+          location[u'area'] = sys.argv[i+1]
+          i += 2
+        elif myopt in [u'building', u'buildingid']:
+          location[u'buildingId'] = sys.argv[i+1]
+          i += 2
+        elif myopt in [u'desk', u'deskcode']:
+          location[u'deskCode'] = sys.argv[i+1]
+          i += 2
+        elif myopt in [u'floor', u'floorname']:
+          location[u'floorName'] = sys.argv[i+1]
+          i += 2
+        elif myopt in [u'section', u'floorsection']:
+          location[u'floorSection'] = sys.argv[i+1]
+          i += 2
+        elif myopt in [u'endlocation']:
+          i += 1
+          break
+        else:
+          print u'ERROR: %s is not a valid argument for user location details. Make sure user location details end with an endlocation argument'
+          sys.exit(3)
+      appendItemToBodyList(body, u'locations', location)
     elif myarg == u'clearschema':
       if not updateCmd:
         print u'ERROR: %s is not a valid create user argument.' % sys.argv[i]
@@ -8591,6 +8624,14 @@ def doGetUserInfo(user_email=None):
           continue
         print utils.convertUTF8(u' %s: %s' % (key, org[key]))
       print u''
+  if u'locations' in user:
+    print u'Locations:'
+    for location in user[u'locations']:
+      for key in location:
+        if key == u'customType' and not location[key]:
+          continue
+        print utils.convertUTF8(u' %s: %s' % (key, location[key]))
+      print u''
   if u'phones' in user:
     print u'Phones:'
     for phone in user[u'phones']:
@@ -9661,6 +9702,8 @@ USER_ARGUMENT_TO_PROPERTY_MAP = {
   u'ismailboxsetup': [u'isMailboxSetup',],
   u'lastlogintime': [u'lastLoginTime',],
   u'lastname': [u'name.familyName',],
+  u'location': [u'locations',],
+  u'locations': [u'locations'],
   u'name': [u'name.givenName', u'name.familyName', u'name.fullName',],
   u'nicknames': [u'aliases', u'nonEditableAliases',],
   u'noneditablealiases': [u'aliases', u'nonEditableAliases',],
