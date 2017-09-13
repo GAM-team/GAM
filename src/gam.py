@@ -6821,6 +6821,27 @@ def getUserAttributes(i, cd, updateCmd=False):
           print u'ERROR: %s is not a valid argument for user location details. Make sure user location details end with an endlocation argument'
           sys.exit(3)
       appendItemToBodyList(body, u'locations', location)
+    elif myarg in [u'ssh', u'sshpublickeys', u'sshkeys']:
+      i += 1
+      if checkClearBodyList(i, body, u'sshPublicKeys'):
+        i += 1
+        continue
+      ssh = {}
+      while True:
+        myopt = sys.argv[i].lower()
+        if myopt == u'expires':
+          ssh[u'expirationTimeUsec'] = sys.argv[i+1]
+          i += 2
+        elif myopt == u'key':
+          ssh[u'key'] = sys.argv[i+1]
+          i += 2
+        elif myopt in [u'endssh']:
+          i += 1
+          break
+        else:
+          print u'ERROR: %s is not a valid argument for user ssh details. Make sure user ssh details end with an endssh argument'
+          sys.exit(3)
+      appendItemToBodyList(body, u'sshPublicKeys', ssh)
     elif myarg == u'clearschema':
       if not updateCmd:
         print u'ERROR: %s is not a valid create user argument.' % sys.argv[i]
@@ -8635,6 +8656,12 @@ def doGetUserInfo(user_email=None):
           continue
         print utils.convertUTF8(u' %s: %s' % (key, location[key]))
       print u''
+  if u'sshPublicKeys' in user:
+    print u'Public SSH Keys:'
+    for sshkey in user[u'sshPublicKeys']:
+      for key in sshkey:
+        print utils.convertUTF8(u' %s: %s' % (key, sshkey[key]))
+      print u''
   if u'phones' in user:
     print u'Phones:'
     for phone in user[u'phones']:
@@ -9726,6 +9753,9 @@ USER_ARGUMENT_TO_PROPERTY_MAP = {
   u'primaryemail': [u'primaryEmail',],
   u'relation': [u'relations',],
   u'relations': [u'relations',],
+  u'ssh': [u'sshPublicKeys',],
+  u'sshkeys': [u'sshPublicKeys',],
+  u'publicsshkeys': [u'sshPublicKeys',],
   u'suspended': [u'suspended', u'suspensionReason',],
   u'thumbnailphotourl': [u'thumbnailPhotoUrl',],
   u'username': [u'primaryEmail',],
