@@ -9351,7 +9351,11 @@ def doDelASP(users):
 
 def printBackupCodes(user, codes):
   jcount = len(codes)
-  print u'Backup verification codes for {0} ({1})'.format(user, jcount)
+  realcount = 0
+  for code in codes:
+    if u'verificationCode' in code and code[u'verificationCode']:
+      realcount += 1
+  print u'Backup verification codes for {0} ({1})'.format(user, realcount)
   print u''
   if jcount > 0:
     j = 0
