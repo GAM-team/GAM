@@ -10265,7 +10265,7 @@ def doPrintOrgs():
   for missing_parent in missing_parents:
     try:
       result = callGAPI(cd.orgunits(), u'get',
-                        customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=missing_parent, fields=get_fields)
+                        customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=missing_parent, fields=get_fields, throw_reasons=[u'required'])
       orgunits.append(result)
     except:
       pass
