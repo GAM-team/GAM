@@ -6787,6 +6787,9 @@ def getUserAttributes(i, cd, updateCmd=False):
       body[u'notes'] = note
     elif myarg == u'location':
       i += 1
+      if checkClearBodyList(i, body, u'locations'):
+        i += 1
+        continue
       location = {}
       while True:
         myopt = sys.argv[i].lower()
