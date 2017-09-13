@@ -6842,6 +6842,51 @@ def getUserAttributes(i, cd, updateCmd=False):
           print u'ERROR: %s is not a valid argument for user ssh details. Make sure user ssh details end with an endssh argument'
           sys.exit(3)
       appendItemToBodyList(body, u'sshPublicKeys', ssh)
+    elif myarg in [u'posix', u'posixaccount']:
+      i += 1
+      if checkClearBodyList(i, body, u'posixAccounts'):
+        i += 1
+        continue
+      posix = {}
+      while True:
+        myopt = sys.argv[i].lower()
+        if myopt == u'gecos':
+          posix[u'gecos'] = sys.argv[i+1]
+          i += 2
+        elif myopt == u'gid':
+          posix[u'gid'] = int(sys.argv[i+1])
+          i += 2
+        elif myopt == u'uid':
+          posix[u'uid'] = int(sys.argv[i+1])
+          i += 2
+        elif myopt in [u'home', u'homedirectory']:
+          posix[u'homeDirectory'] = sys.argv[i+1]
+          i += 2
+        elif myopt in [u'primary']:
+          if sys.argv[i+1].lower() in true_values:
+            posix[u'primary'] = True
+          elif sys.argv[i+1] in false_values:
+            posix[u'primary'] = False
+          else:
+            print u'ERROR: primary should be true or false, got %s' % sys.argv[i+1]
+            sys.exit(3)
+          i += 2
+        elif myopt in [u'shell']:
+          posix[u'shell'] = sys.argv[i+1]
+          i += 2
+        elif myopt in [u'system', u'systemid']:
+          posix[u'systemId'] = sys.argv[i+1]
+          i += 2
+        elif myopt in [u'username', u'name']:
+          posix[u'username'] = sys.argv[i+1]
+          i += 2
+        elif myopt in [u'endposix']:
+          i += 1
+          break
+        else:
+          print u'ERROR: %s is not a valid argument for user posix details. Make sure user posix details end with an endposix argument'
+          sys.exit(3)
+      appendItemToBodyList(body, u'posixAccounts', posix)
     elif myarg == u'clearschema':
       if not updateCmd:
         print u'ERROR: %s is not a valid create user argument.' % sys.argv[i]
@@ -8662,6 +8707,12 @@ def doGetUserInfo(user_email=None):
       for key in sshkey:
         print utils.convertUTF8(u' %s: %s' % (key, sshkey[key]))
       print u''
+  if u'posixAccounts' in user:
+    print u'Posix Accounts:'
+    for posix in user[u'posixAccounts']:
+      for key in posix:
+        print utils.convertUTF8(u' %s: %s' % (key, posix[key]))
+      print u''
   if u'phones' in user:
     print u'Phones:'
     for phone in user[u'phones']:
@@ -9750,6 +9801,8 @@ USER_ARGUMENT_TO_PROPERTY_MAP = {
   u'phones': [u'phones',],
   u'photo': [u'thumbnailPhotoUrl',],
   u'photourl': [u'thumbnailPhotoUrl',],
+  u'posix': [u'posixAccounts',],
+  u'posixaccounts': [u'posixAccounts',],
   u'primaryemail': [u'primaryEmail',],
   u'relation': [u'relations',],
   u'relations': [u'relations',],
