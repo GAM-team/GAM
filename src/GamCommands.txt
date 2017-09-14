@@ -380,13 +380,16 @@ Named items
 	is2svenforced|
 	is2svenrolled|
 	lastlogintime|
+	locations|location|
 	noneditablealiases|aliases|nicknames|
 	notes|note|
 	organizations|organization|
 	orgunitpath|org|ou|
 	phones|phone|
+	posixaccounts|posix|
 	primaryemail|username|
 	relations|relation|
+	ssh|sshkeys|sshpublickeys|
 	suspended|
 	thumbnailphotourl|photo|photourl|
 	websites|website|
@@ -556,6 +559,7 @@ Item attributes
 	(im|ims clear|(type work|home|other|(custom <String>) protocol aim|gtalk|icq|jabber|msn|net_meeting|qq|skype|yahoo|(custom_protocol <String>) <String> [notprimary|primary]))|
 	(ipwhitelisted <Boolean>)|
 	(lastname|familyname <String>)|
+	(location|locations clear|(type default|desk|<String> area <String> [building|buildingid <String>] [floor|floorname <String>] [section|floorsection <String>] [desk|deskcode <String>] endlocation))|
 	(note|notes clear|([text_plain|text_html] <String>|(file <FileName> [charset <Charset>])))|
 	(organization|organizations clear|([type domain_only|school|unknown|work] [customtype <String>] [name <String>] [title <String>] [department <String>] [symbol <String>]
 		[costcenter <String>]  [location <String>] [description <String>] [domain <String>] notprimary|primary))|
@@ -563,7 +567,9 @@ Item attributes
 	(password random|<String>)|
 	(phone|phones clear|([type work|home|other|work_fax|home_fax|other_fax|main|company_main|assistant|mobile|work_mobile|pager|work_pager|car|radio|callback|isdn|telex|tty_tdd|grand_central|(custom <String>)]
 		[value <String>] notprimary|primary))|
+	(posix|posixaccounts clear|(username <String> uid <Integer> gid <Integer> [system|systemid <String>] [home|homedirectory <String>] [shell <String>] [gecos <String>] [primary <Boolean>] endposix))|
 	(relation|relations clear|(spouse|child|mother|father|parent|brother|sister|friend|relative|domestic_partner|manager|assistant|referred_by|partner|<String> <String>))|
+	(ssh|sshkeys|sshpublickeys clear|(key <String> [expires <Integer>] endssh))|
 	(suspended <Boolean>)|
 	(website|websites clear|(home_page|blog|profile|work|home|other|ftp|reservations|app_install_page|<String> <URL> [notprimary|primary]))|
 	(<SchemaName>.<FieldName> [multivalued|multivalue|value|multinonempty [type work|home|other|(custom <String>)]] <String>)

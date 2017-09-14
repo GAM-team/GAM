@@ -6785,7 +6785,7 @@ def getUserAttributes(i, cd, updateCmd=False):
         note[u'value'] = sys.argv[i].replace(u'\\n', u'\n')
         i += 1
       body[u'notes'] = note
-    elif myarg == u'location':
+    elif myarg in [u'location', u'locations']:
       i += 1
       if checkClearBodyList(i, body, u'locations'):
         i += 1
@@ -6821,7 +6821,7 @@ def getUserAttributes(i, cd, updateCmd=False):
           print u'ERROR: %s is not a valid argument for user location details. Make sure user location details end with an endlocation argument'
           sys.exit(3)
       appendItemToBodyList(body, u'locations', location)
-    elif myarg in [u'ssh', u'sshpublickeys', u'sshkeys']:
+    elif myarg in [u'ssh', u'sshkeys', u'sshpublickeys']:
       i += 1
       if checkClearBodyList(i, body, u'sshPublicKeys'):
         i += 1
@@ -6842,7 +6842,7 @@ def getUserAttributes(i, cd, updateCmd=False):
           print u'ERROR: %s is not a valid argument for user ssh details. Make sure user ssh details end with an endssh argument'
           sys.exit(3)
       appendItemToBodyList(body, u'sshPublicKeys', ssh)
-    elif myarg in [u'posix', u'posixaccount']:
+    elif myarg in [u'posix', u'posixaccounts']:
       i += 1
       if checkClearBodyList(i, body, u'posixAccounts'):
         i += 1
@@ -8632,7 +8632,7 @@ def doGetUserInfo(user_email=None):
         print utils.convertUTF8(u' %s: %s' % (key, location[key]))
       print u''
   if u'sshPublicKeys' in user:
-    print u'Public SSH Keys:'
+    print u'SSH Public Keys:'
     for sshkey in user[u'sshPublicKeys']:
       for key in sshkey:
         print utils.convertUTF8(u' %s: %s' % (key, sshkey[key]))
@@ -9742,7 +9742,7 @@ USER_ARGUMENT_TO_PROPERTY_MAP = {
   u'relations': [u'relations',],
   u'ssh': [u'sshPublicKeys',],
   u'sshkeys': [u'sshPublicKeys',],
-  u'publicsshkeys': [u'sshPublicKeys',],
+  u'sshpublickeys': [u'sshPublicKeys',],
   u'suspended': [u'suspended', u'suspensionReason',],
   u'thumbnailphotourl': [u'thumbnailPhotoUrl',],
   u'username': [u'primaryEmail',],
