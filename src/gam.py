@@ -6537,12 +6537,9 @@ def getUserAttributes(i, cd, updateCmd=False):
         sys.exit(2)
       i += 1
       address[u'type'] = sys.argv[i].lower()
-      if address[u'type'] not in [u'custom', u'home', u'other', u'work']:
-        print u'ERROR: wrong type must be one of custom, home, other, work; got %s' % address[u'type']
-        sys.exit(2)
-      if address[u'type'] == u'custom':
-        i += 1
-        address[u'customType'] = sys.argv[i]
+      if address[u'type'] not in USER_ADDRESS_TYPES:
+        address[u'customType'] = address[u'type']
+        address[u'type'] = u'custom'
       i += 1
       if sys.argv[i].lower() in [u'unstructured', u'formatted']:
         i += 1
@@ -6590,12 +6587,9 @@ def getUserAttributes(i, cd, updateCmd=False):
         continue
       an_email = {}
       an_email[u'type'] = sys.argv[i].lower()
-      if an_email[u'type'] == u'custom':
-        i += 1
-        an_email[u'customType'] = sys.argv[i]
-      elif an_email[u'type'] not in [u'home', u'work', u'other']:
+      if an_email[u'type'] not in USER_EMAIL_TYPES:
+        an_email[u'customType'] = an_email[u'type']
         an_email[u'type'] = u'custom'
-        an_email[u'customType'] = sys.argv[i]
       i += 1
       an_email[u'address'] = sys.argv[i]
       i += 1
@@ -6611,12 +6605,9 @@ def getUserAttributes(i, cd, updateCmd=False):
         sys.exit(2)
       i += 1
       im[u'type'] = sys.argv[i].lower()
-      if im[u'type'] not in [u'custom', u'home', u'other', u'work']:
-        print u'ERROR: type must be one of custom, home, other, work; got %s' % im[u'type']
-        sys.exit(2)
-      if im[u'type'] == u'custom':
-        i += 1
-        im[u'customType'] = sys.argv[i]
+      if im[u'type'] not in USER_IM_TYPES:
+        im[u'customType'] = im[u'type']
+        im[u'type'] = u'custom'
       i += 1
       if sys.argv[i].lower() != u'protocol':
         print u'ERROR: wrong format for account details. Expected protocol got %s' % sys.argv[i]
@@ -6656,14 +6647,11 @@ def getUserAttributes(i, cd, updateCmd=False):
         elif myopt == u'title':
           organization[u'title'] = sys.argv[i+1]
           i += 2
-        elif myopt == u'customtype':
-          organization[u'customType'] = sys.argv[i+1]
-          i += 2
         elif myopt == u'type':
           organization[u'type'] = sys.argv[i+1].lower()
-          if organization[u'type'] not in [u'domain_only', u'school', u'unknown', u'work']:
-            print u'ERROR: organization type must be one of domain_only, school, unknown, work; got %s' % organization[u'type']
-            sys.exit(2)
+          if organization[u'type'] not in USER_ORGANIZATION_TYPES:
+            organization[u'customType'] = organization[u'type']
+            organization[u'type'] = u'custom'
           i += 2
         elif myopt == u'department':
           organization[u'department'] = sys.argv[i+1]
@@ -6704,13 +6692,10 @@ def getUserAttributes(i, cd, updateCmd=False):
           i += 2
         elif myopt == u'type':
           phone[u'type'] = sys.argv[i+1].lower()
-          if phone[u'type'] not in [u'assistant', u'callback', u'car', u'company_main', u'custom', u'grand_central', u'home', u'home_fax', u'isdn', u'main', u'mobile', u'other', u'other_fax', u'pager', u'radio', u'telex', u'tty_tdd', u'work', u'work_fax', u'work_mobile', u'work_pager']:
-            print u'ERROR: phone type must be one of assistant, callback, car, company_main, custom, grand_central, home, home_fax, isdn, main, mobile, other, other_fax, pager, radio, telex, tty_tdd, work, work_fax, work_mobile, work_pager; got %s' % phone[u'type']
-            sys.exit(2)
+          if phone[u'type'] not in USER_PHONE_TYPES:
+            phone[u'customType'] = phone[u'type']
+            phone[u'type'] = u'custom'
           i += 2
-          if phone[u'type'] == u'custom':
-            phone[u'customType'] = sys.argv[i]
-            i += 1
         elif myopt in [u'notprimary', u'primary']:
           phone[u'primary'] = myopt == u'primary'
           i += 1
@@ -6726,9 +6711,9 @@ def getUserAttributes(i, cd, updateCmd=False):
         continue
       relation = {}
       relation[u'type'] = sys.argv[i].lower()
-      if relation[u'type'] not in [u'mother', u'father', u'sister', u'brother', u'manager', u'assistant', u'partner']:
+      if relation[u'type'] not in USER_RELATION_TYPES:
+        relation[u'customType'] = relation[u'type']
         relation[u'type'] = u'custom'
-        relation[u'customType'] = sys.argv[i]
       i += 1
       relation[u'value'] = sys.argv[i]
       i += 1
@@ -6740,9 +6725,9 @@ def getUserAttributes(i, cd, updateCmd=False):
         continue
       externalid = {}
       externalid[u'type'] = sys.argv[i].lower()
-      if externalid[u'type'] not in [u'account', u'customer', u'network', u'organization']:
+      if externalid[u'type'] not in USER_EXTERNALID_TYPES:
+        externalid[u'customType'] = externalid[u'type']
         externalid[u'type'] = u'custom'
-        externalid[u'customType'] = sys.argv[i]
       i += 1
       externalid[u'value'] = sys.argv[i]
       i += 1
@@ -6754,12 +6739,9 @@ def getUserAttributes(i, cd, updateCmd=False):
         continue
       website = {}
       website[u'type'] = sys.argv[i].lower()
-      if website[u'type'] == u'custom':
-        i += 1
-        website[u'customType'] = sys.argv[i]
-      elif website[u'type'] not in [u'home', u'work', u'home_page', u'ftp', u'blog', u'profile', u'other', u'reservations', u'app_install_page']:
+      if website[u'type'] not in USER_WEBSITE_TYPES:
+        website[u'customType'] = website[u'type']
         website[u'type'] = u'custom'
-        website[u'customType'] = sys.argv[i]
       i += 1
       website[u'value'] = sys.argv[i]
       i += 1
@@ -6795,7 +6777,7 @@ def getUserAttributes(i, cd, updateCmd=False):
         myopt = sys.argv[i].lower()
         if myopt == u'type':
           location[u'type'] = sys.argv[i+1].lower()
-          if location[u'type'] not in [u'default', u'desk']:
+          if location[u'type'] not in USER_LOCATION_TYPES:
             location[u'customType'] = location[u'type']
             location[u'type'] = u'custom'
           i += 2
@@ -12182,9 +12164,9 @@ def ProcessGAMCommand(args):
     else:
       print u'ERROR: %s is not a valid argument for "gam"' % command
       sys.exit(2)
-  except IndexError:
-    showUsage()
-    sys.exit(2)
+  #except IndexError:
+  #  showUsage()
+  #  sys.exit(2)
   except KeyboardInterrupt:
     sys.exit(50)
   except socket.error as e:
