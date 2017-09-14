@@ -7888,97 +7888,12 @@ def doUpdateGroup():
   _ADD_MEMBER_REASON_TO_MESSAGE_MAP = {GAPI_DUPLICATE: u'Duplicate', GAPI_MEMBER_NOT_FOUND: u'Does not exist',
                                        GAPI_RESOURCE_NOT_FOUND: u'Does not exist', GAPI_INVALID_MEMBER: u'Invalid role',
                                        GAPI_CYCLIC_MEMBERSHIPS_NOT_ALLOWED: u'Would make membership cycle'}
-  def _callbackAddGroupMembers(request_id, response, exception):
-    ri = request_id.splitlines()
-    if exception is None:
-      sys.stderr.write(u'  Group: {0}, {1}: {2}, {3}{4}'.format(ri[RI_ENTITY], ri[RI_ROLE], ri[RI_ITEM],
-                                                                actions[u'Performed'], currentCountNL(int(ri[RI_J]), int(ri[RI_JCOUNT]))))
-    else:
-      http_status, reason, message = checkGAPIError(exception)
-      if reason in GAPI_MEMBERS_THROW_REASONS:
-        entityUnknownWarning(u'Group', ri[RI_ENTITY], 0, 0)
-      else:
-        errMsg = getHTTPError(_ADD_MEMBER_REASON_TO_MESSAGE_MAP, http_status, reason, message)
-        sys.stderr.write(u'  Group: {0}, {1}: {2}, {3}: {4}{5}'.format(ri[RI_ENTITY], ri[RI_ROLE], ri[RI_ITEM],
-                                                                       actions[u'Failed'], errMsg, currentCountNL(int(ri[RI_J]), int(ri[RI_JCOUNT]))))
-
-  def _batchAddGroupMembers(cd, group, addMembers, role, actions):
-    jcount = len(addMembers)
-    if jcount == 0:
-      return
-    actions[u'Performed'] = u'Added'
-    actions[u'Failed'] = u'Add Failed'
-    svcargs = dict([(u'groupKey', group), (u'body', {u'role': role}), (u'fields', u'')]+GM_Globals[GM_EXTRA_ARGS_DICT].items())
-    dbatch = googleapiclient.http.BatchHttpRequest(callback=_callbackAddGroupMembers)
-    bcount = 0
-    j = 0
-    for member in addMembers:
-      j += 1
-      svcparms = svcargs.copy()
-      member = normalizeEmailAddressOrUID(member, checkForCustomerId=True)
-      if member.find(u'@') != -1:
-        svcparms[u'body'][u'email'] = member
-        svcparms[u'body'].pop(u'id', None)
-      else:
-        svcparms[u'body'][u'id'] = member
-        svcparms[u'body'].pop(u'email', None)
-      dbatch.add(cd.members().insert(**svcparms), request_id=batchRequestID(group, j, jcount, member, role))
-      bcount += 1
-      if bcount >= GC_Values[GC_BATCH_SIZE]:
-        dbatch.execute()
-        dbatch = googleapiclient.http.BatchHttpRequest(callback=_callbackAddGroupMembers)
-        bcount = 0
-    if bcount > 0:
-      dbatch.execute()
-
-  _REMOVE_UPDATE_MEMBER_REASON_TO_MESSAGE_MAP = {GAPI_MEMBER_NOT_FOUND: u'Not a member', GAPI_INVALID_MEMBER: u'Does not exist'}
-  def _callbackRemoveUpdateGroupMembers(request_id, response, exception):
-    ri = request_id.splitlines()
-    if exception is None:
-      sys.stderr.write(u'Group: {0}, {1}: {2}, {3}{4}'.format(ri[RI_ENTITY], ri[RI_ROLE], ri[RI_ITEM],
-                                                              actions[u'Performed'], currentCountNL(int(ri[RI_J]), int(ri[RI_JCOUNT]))))
-    else:
-      http_status, reason, message = checkGAPIError(exception)
-      if reason in GAPI_MEMBERS_THROW_REASONS:
-        entityUnknownWarning(u'Group', ri[RI_ENTITY], 0, 0)
-      else:
-        errMsg = getHTTPError(_REMOVE_UPDATE_MEMBER_REASON_TO_MESSAGE_MAP, http_status, reason, message)
-        sys.stderr.write(u'Group: {0}, {1}: {2}, {3}: {4}{5}'.format(ri[RI_ENTITY], ri[RI_ROLE], ri[RI_ITEM],
-                                                                     actions[u'Failed'], errMsg, currentCountNL(int(ri[RI_J]), int(ri[RI_JCOUNT]))))
-
-  def _batchRemoveUpdateGroupMembers(cd, function, group, removeUpdateMembers, role, actions):
-    jcount = len(removeUpdateMembers)
-    if jcount == 0:
-      return
-    if function == u'delete':
-      actions[u'Performed'] = u'Removed'
-      actions[u'Failed'] = u'Remove Failed'
-      svcargs = dict([(u'groupKey', group), (u'memberKey', None), (u'fields', u'')]+GM_Globals[GM_EXTRA_ARGS_DICT].items())
-    else:
-      actions[u'Performed'] = u'Updated'
-      actions[u'Failed'] = u'Update Failed'
-      svcargs = dict([(u'groupKey', group), (u'memberKey', None), (u'body', {u'role': role}), (u'fields', u'')]+GM_Globals[GM_EXTRA_ARGS_DICT].items())
-    method = getattr(cd.members(), function)
-    dbatch = googleapiclient.http.BatchHttpRequest(callback=_callbackRemoveUpdateGroupMembers)
-    bcount = 0
-    j = 0
-    for member in removeUpdateMembers:
-      j += 1
-      svcparms = svcargs.copy()
-      svcparms[u'memberKey'] = normalizeEmailAddressOrUID(member, checkForCustomerId=True)
-      dbatch.add(method(**svcparms), request_id=batchRequestID(group, j, jcount, svcparms[u'memberKey'], role))
-      bcount += 1
-      if bcount >= GC_Values[GC_BATCH_SIZE]:
-        dbatch.execute()
-        dbatch = googleapiclient.http.BatchHttpRequest(callback=_callbackRemoveUpdateGroupMembers)
-        bcount = 0
-    if bcount > 0:
-      dbatch.execute()
 
   cd = buildGAPIObject(u'directory')
   group = sys.argv[3]
   myarg = sys.argv[4].lower()
   actions = {}
+  items = []
   if myarg in UPDATE_GROUP_SUBCMDS:
     if group[0:3].lower() == u'uid:':
       group = group[4:]
@@ -7986,10 +7901,16 @@ def doUpdateGroup():
       group = u'%s@%s' % (group, GC_Values[GC_DOMAIN])
     if myarg == u'add':
       role, users_email = _getRoleAndUsers()
-      group = checkGroupExists(cd, group)
-      if group:
+      if not checkGroupExists(cd, group):
+        return
+      if len(users_email) > 1:
         sys.stderr.write(u'Group: {0}, Will add {1} {2}s.\n'.format(group, len(users_email), role))
-        _batchAddGroupMembers(cd, group, users_email, role, actions)
+        for user_email in users_email:
+          items.append(['gam', 'update', 'group', group, 'add', role, user_email])
+      else:
+        body = {u'role': role, u'email': users_email[0]}
+        print u' Adding %s %s to %s' % (role, users_email[0], group)
+        callGAPI(cd.members(), u'insert', groupKey=group, body=body)
     elif myarg == u'sync':
       role, users_email = _getRoleAndUsers()
       for i in xrange(len(users_email)):
@@ -8009,14 +7930,21 @@ def doUpdateGroup():
         to_add = list(set(users_email) - set(current_emails))
         to_remove = list(set(current_emails) - set(users_email))
         sys.stderr.write(u'Group: {0}, Will add {1} and remove {2} {3}s.\n'.format(group, len(to_add), len(to_remove), role))
-        _batchAddGroupMembers(cd, group, to_add, role, actions)
-        _batchRemoveUpdateGroupMembers(cd, u'delete', group, to_remove, role, actions)
+        for user in to_add:
+          items.append([u'gam', u'update', u'group', group, u'add', role, user])
+        for user in to_remove:
+          items.append([u'gam', u'update', u'group', group, u'remove', user])
     elif myarg in [u'delete', u'remove']:
       role, users_email = _getRoleAndUsers()
-      group = checkGroupExists(cd, group)
-      if group:
-        sys.stderr.write(u'Group: {0}, Will remove {1} {2}s.\n'.format(group, len(users_email), role))
-        _batchRemoveUpdateGroupMembers(cd, u'delete', group, users_email, role, actions)
+      if len(users_email) > 1:
+        if not checkGroupExists(cd, group):
+          return
+        sys.stderr.write(u'Group: {0}, Will remove {1}s.\n'.format(group, len(users_email)))
+        for user_email in users_email:
+          items.append(['gam', 'update', 'group', group, 'remove', user_email])
+      else:
+        print u' Removing %s from %s' % (users_email[0], group)
+        callGAPI(cd.members(), u'delete', groupKey=group, memberKey=users_email[0])
     elif myarg == u'update':
       role, users_email = _getRoleAndUsers()
       group = checkGroupExists(cd, group)
@@ -8062,6 +7990,8 @@ def doUpdateGroup():
         _batchRemoveUpdateGroupMembers(cd, u'delete', group, users_email, ROLE_MEMBER, actions)
       except (GAPI_groupNotFound, GAPI_domainNotFound, GAPI_invalid, GAPI_forbidden):
         entityUnknownWarning(u'Group', group, 0, 0)
+    if items:
+      run_batch(items)
   else:
     i = 4
     use_cd_api = False
