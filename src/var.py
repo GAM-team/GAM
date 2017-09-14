@@ -26,7 +26,7 @@ true_values = [u'on', u'yes', u'enabled', u'true', u'1']
 false_values = [u'off', u'no', u'disabled', u'false', u'0']
 usergroup_types = [u'user', u'users', u'group', u'ou', u'org',
                    u'ou_and_children', u'ou_and_child', u'query',
-                   u'license', u'licenses', u'licence', u'licences', u'file', u'csv', u'all',
+                   u'license', u'licenses', u'licence', u'licences', u'file', u'csv', u'csvfile', u'all',
                    u'cros']
 ERROR = u'ERROR'
 ERROR_PREFIX = ERROR+u': '
@@ -577,6 +577,8 @@ GC_DOMAIN = u'domain'
 GC_DRIVE_DIR = u'drive_dir'
 # When retrieving lists of Drive files/folders from API, how many should be retrieved in each chunk
 GC_DRIVE_MAX_RESULTS = u'drive_max_results'
+# When processing items in batches, how many seconds should GAM wait between batches
+GC_INTER_BATCH_WAIT = u'inter_batch_wait'
 # When retrieving lists of Google Group members from API, how many should be retrieved in each chunk
 GC_MEMBER_MAX_RESULTS = u'member_max_results'
 # If no_browser is False, writeCSVfile won't open a browser when todrive is set
@@ -608,7 +610,7 @@ GC_USER_MAX_RESULTS = u'user_max_results'
 GC_Defaults = {
   GC_ACTIVITY_MAX_RESULTS: 100,
   GC_AUTO_BATCH_MIN: 0,
-  GC_BATCH_SIZE: 50,
+  GC_BATCH_SIZE: 20,
   GC_CACHE_DIR: u'',
   GC_CACHE_DISCOVERY_ONLY: True,
   GC_CHARSET: DEFAULT_CHARSET,
@@ -620,6 +622,7 @@ GC_Defaults = {
   GC_DOMAIN: u'',
   GC_DRIVE_DIR: u'',
   GC_DRIVE_MAX_RESULTS: 1000,
+  GC_INTER_BATCH_WAIT: 2,
   GC_MEMBER_MAX_RESULTS: 200,
   GC_NO_BROWSER: False,
   GC_NO_CACHE: False,
@@ -664,6 +667,7 @@ GC_VAR_INFO = {
   GC_DOMAIN: {GC_VAR_TYPE: GC_TYPE_STRING},
   GC_DRIVE_DIR: {GC_VAR_TYPE: GC_TYPE_DIRECTORY},
   GC_DRIVE_MAX_RESULTS: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (1, 1000)},
+  GC_INTER_BATCH_WAIT: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (0, 60)},
   GC_MEMBER_MAX_RESULTS: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (1, 10000)},
   GC_NO_BROWSER: {GC_VAR_TYPE: GC_TYPE_BOOLEAN},
   GC_NO_CACHE: {GC_VAR_TYPE: GC_TYPE_BOOLEAN},
