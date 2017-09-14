@@ -386,6 +386,7 @@ def SetGlobalVariables():
   _getOldEnvVar(GC_ACTIVITY_MAX_RESULTS, u'GAM_ACTIVITY_MAX_RESULTS')
   _getOldEnvVar(GC_AUTO_BATCH_MIN, u'GAM_AUTOBATCH')
   _getOldEnvVar(GC_BATCH_SIZE, u'GAM_BATCH_SIZE')
+  _getOldEnvVar(GC_INTER_BATCH_WAIT, u'GAM_INTER_BATCH_WAIT')
   _getOldEnvVar(GC_DEVICE_MAX_RESULTS, u'GAM_DEVICE_MAX_RESULTS')
   _getOldEnvVar(GC_DRIVE_MAX_RESULTS, u'GAM_DRIVE_MAX_RESULTS')
   _getOldEnvVar(GC_MEMBER_MAX_RESULTS, u'GAM_MEMBER_MAX_RESULTS')
@@ -1063,6 +1064,11 @@ Access to scopes:
 
 %s\n''' % (user_domain, service_account, ',\n'.join(all_scopes))
     sys.exit(int(not all_scopes_pass))
+
+def executeBatch(dbatch):
+  dbatch.execute()
+  if GC_Values[GC_INTER_BATCH_WAIT] > 0:
+    time.sleep(GC_Values[GC_INTER_BATCH_WAIT])
 
 # Batch processing request_id fields
 RI_ENTITY = 0
@@ -5410,12 +5416,12 @@ def doDeleteLabel(users):
       print u' deleting label %s (%s/%s)' % (del_me[u'name'], j, del_me_count)
       dbatch.add(gmail.users().labels().delete(userId=user, id=del_me[u'id']), callback=gmail_del_result)
       bcount += 1
-      if bcount == 10:
-        dbatch.execute()
+      if bcount >= GC_Values[GC_BATCH_SIZE]:
+        executeBatch(dbatch)
         dbatch = googleapiclient.http.BatchHttpRequest()
         bcount = 0
     if bcount > 0:
-      dbatch.execute()
+      executeBatch(dbatch)
 
 def gmail_del_result(request_id, response, exception):
   if exception:
@@ -7925,11 +7931,11 @@ def doUpdateGroup():
       dbatch.add(cd.members().insert(**svcparms), request_id=batchRequestID(group, j, jcount, member, role))
       bcount += 1
       if bcount >= GC_Values[GC_BATCH_SIZE]:
-        dbatch.execute()
+        executeBatch(dbatch)
         dbatch = googleapiclient.http.BatchHttpRequest(callback=_callbackAddGroupMembers)
         bcount = 0
     if bcount > 0:
-      dbatch.execute()
+      executeBatch(dbatch)
 
   _REMOVE_UPDATE_MEMBER_REASON_TO_MESSAGE_MAP = {GAPI_MEMBER_NOT_FOUND: u'Not a member', GAPI_INVALID_MEMBER: u'Does not exist'}
   def _callbackRemoveUpdateGroupMembers(request_id, response, exception):
@@ -7969,11 +7975,11 @@ def doUpdateGroup():
       dbatch.add(method(**svcparms), request_id=batchRequestID(group, j, jcount, svcparms[u'memberKey'], role))
       bcount += 1
       if bcount >= GC_Values[GC_BATCH_SIZE]:
-        dbatch.execute()
+        executeBatch(dbatch)
         dbatch = googleapiclient.http.BatchHttpRequest(callback=_callbackRemoveUpdateGroupMembers)
         bcount = 0
     if bcount > 0:
-      dbatch.execute()
+      executeBatch(dbatch)
 
   cd = buildGAPIObject(u'directory')
   group = sys.argv[3]
