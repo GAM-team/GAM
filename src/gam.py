@@ -722,6 +722,8 @@ def callGAPI(service, function,
       systemErrorExit(4, str(e))
     except TypeError as e:
       systemErrorExit(4, str(e))
+    except httplib2.ServerNotFoundError as e:
+      systemErrorExit(4, str(e))
 
 def callGAPIpages(service, function, items,
                   page_message=None, message_attribute=None,
