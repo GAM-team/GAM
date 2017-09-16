@@ -8150,7 +8150,7 @@ def doUpdateCros():
   count = len(devices)
   if action_body:
     if action_body[u'action'] == u'deprovision' and not ack_wipe:
-      print u'WARNING: Refusing to deprovision (%s) because acknowledge_device_touch_requirement not specified. Deprovisioning a device means the device will have to be physically wiped and re-enrolled to be managed by your domain again. This requires physical access to the device and is very time consuming to perform for each device. Please add "acknowledge_device_touch_requirement" to the GAM command if you understand this and wish to proceed with the deprovision. Please also be aware that deprovisioning can have an effect on your device license count. See https://support.google.com/chrome/a/answer/3523633 for full details.' % (u','.join(devices))
+      print u'WARNING: Refusing to deprovision %s devices because acknowledge_device_touch_requirement not specified. Deprovisioning a device means the device will have to be physically wiped and re-enrolled to be managed by your domain again. This requires physical access to the device and is very time consuming to perform for each device. Please add "acknowledge_device_touch_requirement" to the GAM command if you understand this and wish to proceed with the deprovision. Please also be aware that deprovisioning can have an effect on your device license count. See https://support.google.com/chrome/a/answer/3523633 for full details.' % (count)
       sys.exit(3)
     for deviceId in devices:
       i += 1
