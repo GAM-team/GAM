@@ -8230,13 +8230,10 @@ def doUpdateOrg():
     else:
       users = getUsersToModify(entity_type=u'user', entity=sys.argv[5])
     if (sys.argv[5].lower() == u'cros') or ((sys.argv[5].lower() == u'all') and (sys.argv[6].lower() == u'cros')):
-      current_cros = 0
-      cros_count = len(users)
-      for cros in users:
-        current_cros += 1
-        sys.stderr.write(u' moving %s to %s (%s/%s)\n' % (cros, orgUnitPath, current_cros, cros_count))
-        callGAPI(cd.chromeosdevices(), u'update', soft_errors=True,
-                 customerId=GC_Values[GC_CUSTOMER_ID], deviceId=cros, body={u'orgUnitPath': u'//%s' % orgUnitPath})
+      for l in range(0, len(users), 50):
+        move_body = {u'deviceIds': users[l:l+50]}
+        print u' moving %s devices to %s' % (len(move_body[u'deviceIds']), orgUnitPath)
+        callGAPI(cd.chromeosdevices(), u'moveDevicesToOu', customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=orgUnitPath, body=move_body)
     else:
       if orgUnitPath != u'/' and orgUnitPath[0] != u'/': # we do want a / at the beginning for user updates
         orgUnitPath = u'/%s' % orgUnitPath
