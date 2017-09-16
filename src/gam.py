@@ -433,6 +433,10 @@ def SetGlobalVariables():
 def doGAMCheckForUpdates(forceCheck=False):
   import calendar
 
+  def _gamLatestVersionNotAvailable():
+    if forceCheck:
+      systemErrorExit(4, u'GAM Latest Version information not available')
+
   current_version = gam_version
   now_time = calendar.timegm(time.gmtime())
   if forceCheck:
@@ -450,9 +454,13 @@ def doGAMCheckForUpdates(forceCheck=False):
     try:
       release_data = json.loads(c)
     except ValueError:
+      _gamLatestVersionNotAvailable()
       return
     if isinstance(release_data, list):
       release_data = release_data[0] # only care about latest release
+    if not isinstance(release_data, dict) or u'tag_name' not in release_data:
+      _gamLatestVersionNotAvailable()
+      return
     latest_version = release_data[u'tag_name']
     if latest_version[0].lower() == u'v':
       latest_version = latest_version[1:]
