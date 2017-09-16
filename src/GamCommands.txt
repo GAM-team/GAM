@@ -484,12 +484,12 @@ Item attributes
 	(localfile <FileName>)|
 	(convert)|(ocr)|(ocrlanguage <Language>)|(restricted|restrict)|(starred|star)|(trashed|trash)|(viewed|view)|
 	(lastviewedbyme <Time>)|(modifieddate|modifiedtime <Time>)|(description <String>)|(mimetype gdoc|gdocument|gdrawing|gfolder|gdirectory|gform|gfusion|gpresentation|gscript|gsite|gsheet|gspreadsheet)|
-	(parentid <DriveFolderID>)|(parentname <FolderName>)|writerscantshare
+	(parentid <DriveFolderID>)|(parentname <FolderName>)|(anyownerparentname <FolderName>)|writerscantshare
 <DriveFileUpdateAttributes> ::=
 	(localfile <FileName>)|
 	(convert)|(ocr)|(ocrlanguage <Language>)|(restricted|restrict <Boolean>)|(starred|star <Boolean>)|(trashed|trash <Boolean>)|(viewed|view <Boolean>)|
 	(lastviewedbyme <Time>)|(modifieddate <Time>)|(description <String>)|(mimetype gdoc|gdocument|gdrawing|gfolder|gdirectory|gform|gfusion|gpresentation|gscript|gsite|gsheet|gspreadsheet)|
-	(parentid <DriveFolderID>)|(parentname <FolderName>)|writerscantshare
+	(parentid <DriveFolderID>)|(parentname <FolderName>)|(anyownerparentname <FolderName>)|writerscantshare
 <EventAttributes> ::=
 	(anyonecanaddself)|(guestscantinviteothers)|(guestscantseeothers)|(notifyattendees)|(available)|(visibility default|public|prvate)|(tentative)|
 	(attendee <EmailAddress>)|(optionalattendee <EmailAddress>)|
