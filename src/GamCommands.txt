@@ -380,13 +380,16 @@ Named items
 	is2svenforced|
 	is2svenrolled|
 	lastlogintime|
+	locations|location|
 	noneditablealiases|aliases|nicknames|
 	notes|note|
 	organizations|organization|
 	orgunitpath|org|ou|
 	phones|phone|
+	posixaccounts|posix|
 	primaryemail|username|
 	relations|relation|
+	ssh|sshkeys|sshpublickeys|
 	suspended|
 	thumbnailphotourl|photo|photourl|
 	websites|website|
@@ -541,7 +544,7 @@ Item attributes
 	field <FieldName> (type bool|date|double|email|int64|phone|string) [multivalued|multivalue] [indexed] [restricted] [range <Number> <Number>] endfield
 
 <UserAttributes> ::=
-	(address|addresses clear|(type work|home|other|(custom <String>) [unstructured|formatted <String>] [pobox <String>] [extendedaddress <String>] [streetaddress <String>]
+	(address clear|(type work|home|other|(custom <String>) [unstructured|formatted <String>] [pobox <String>] [extendedaddress <String>] [streetaddress <String>]
 		[locality <String>] [region <String>] [postalcode <String>] [country <String>] [countrycode <String>] notprimary|primary))|
 	(admin <Boolean>)|
 	(agreed2terms|agreedtoterms <Boolean>)|
@@ -549,23 +552,26 @@ Item attributes
 	(crypt|sha|sha1|sha-1|md5|nohash)|
 	(customerid <String>)|
 	(email|primaryemail|username <EmailAddress>)|
-	(emails|otheremail|otheremails clear|(work|home|other|<String> <String>))|
-	(externalid|externalids clear|(account|customer|network|organization|<String> <String>))|
+	(otheremail clear|(work|home|other|<String> <String>))|
+	(externalid clear|(account|customer|network|organization|<String> <String>))|
 	(firstname|givenname <String>)|
 	(gal|includeinglobaladdresslist <Boolean>)|
-	(im|ims clear|(type work|home|other|(custom <String>) protocol aim|gtalk|icq|jabber|msn|net_meeting|qq|skype|yahoo|(custom_protocol <String>) <String> [notprimary|primary]))|
+	(im clear|(type work|home|other|(custom <String>) protocol aim|gtalk|icq|jabber|msn|net_meeting|qq|skype|yahoo|(custom_protocol <String>) <String> [notprimary|primary]))|
 	(ipwhitelisted <Boolean>)|
 	(lastname|familyname <String>)|
-	(note|notes clear|([text_plain|text_html] <String>|(file <FileName> [charset <Charset>])))|
-	(organization|organizations clear|([type domain_only|school|unknown|work] [customtype <String>] [name <String>] [title <String>] [department <String>] [symbol <String>]
+	(location clear|(type default|desk|<String> area <String> [building|buildingid <String>] [floor|floorname <String>] [section|floorsection <String>] [desk|deskcode <String>] endlocation))|
+	(note clear|([text_plain|text_html] <String>|(file <FileName> [charset <Charset>])))|
+	(organization clear|([type domain_only|school|unknown|work] [customtype <String>] [name <String>] [title <String>] [department <String>] [symbol <String>]
 		[costcenter <String>]  [location <String>] [description <String>] [domain <String>] notprimary|primary))|
 	(org|ou|orgunitpath <OrgUnitPath>)
 	(password random|<String>)|
-	(phone|phones clear|([type work|home|other|work_fax|home_fax|other_fax|main|company_main|assistant|mobile|work_mobile|pager|work_pager|car|radio|callback|isdn|telex|tty_tdd|grand_central|(custom <String>)]
+	(phone clear|([type work|home|other|work_fax|home_fax|other_fax|main|company_main|assistant|mobile|work_mobile|pager|work_pager|car|radio|callback|isdn|telex|tty_tdd|grand_central|(custom <String>)]
 		[value <String>] notprimary|primary))|
-	(relation|relations clear|(spouse|child|mother|father|parent|brother|sister|friend|relative|domestic_partner|manager|assistant|referred_by|partner|<String> <String>))|
+	(posix clear|(username <String> uid <Integer> gid <Integer> [system|systemid <String>] [home|homedirectory <String>] [shell <String>] [gecos <String>] [primary <Boolean>] endposix))|
+	(relation clear|(spouse|child|mother|father|parent|brother|sister|friend|relative|domestic_partner|manager|assistant|referred_by|partner|<String> <String>))|
+	(sshkeys clear|(key <String> [expires <Integer>] endssh))|
 	(suspended <Boolean>)|
-	(website|websites clear|(home_page|blog|profile|work|home|other|ftp|reservations|app_install_page|<String> <URL> [notprimary|primary]))|
+	(website clear|(home_page|blog|profile|work|home|other|ftp|reservations|app_install_page|<String> <URL> [notprimary|primary]))|
 	(<SchemaName>.<FieldName> [multivalued|multivalue|value|multinonempty [type work|home|other|(custom <String>)]] <String>)
 
 gam version [check] [simple]
