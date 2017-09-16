@@ -7870,14 +7870,9 @@ def doUpdateGroup():
       users_email = [sys.argv[i],]
     return (role, users_email)
 
-  _ADD_MEMBER_REASON_TO_MESSAGE_MAP = {GAPI_DUPLICATE: u'Duplicate', GAPI_MEMBER_NOT_FOUND: u'Does not exist',
-                                       GAPI_RESOURCE_NOT_FOUND: u'Does not exist', GAPI_INVALID_MEMBER: u'Invalid role',
-                                       GAPI_CYCLIC_MEMBERSHIPS_NOT_ALLOWED: u'Would make membership cycle'}
-
   cd = buildGAPIObject(u'directory')
   group = sys.argv[3]
   myarg = sys.argv[4].lower()
-  actions = {}
   items = []
   if myarg in UPDATE_GROUP_SUBCMDS:
     if group[0:3].lower() == u'uid:':
@@ -7921,10 +7916,10 @@ def doUpdateGroup():
           items.append([u'gam', u'update', u'group', group, u'remove', user])
     elif myarg in [u'delete', u'remove']:
       role, users_email = _getRoleAndUsers()
+      if not checkGroupExists(cd, group):
+        return
       if len(users_email) > 1:
-        if not checkGroupExists(cd, group):
-          return
-        sys.stderr.write(u'Group: {0}, Will remove {1}s.\n'.format(group, len(users_email)))
+        sys.stderr.write(u'Group: {0}, Will remove {1} {2}s.\n'.format(group, len(users_email), role))
         for user_email in users_email:
           items.append(['gam', 'update', 'group', group, 'remove', user_email])
       else:
@@ -7934,8 +7929,14 @@ def doUpdateGroup():
       role, users_email = _getRoleAndUsers()
       group = checkGroupExists(cd, group)
       if group:
-        sys.stderr.write(u'Group: {0}, Will update {1} {2}s.\n'.format(group, len(users_email), role))
-        _batchRemoveUpdateGroupMembers(cd, u'update', group, users_email, role, actions)
+        if len(users_email) > 1:
+          sys.stderr.write(u'Group: {0}, Will update {1} {2}s.\n'.format(group, len(users_email), role))
+          for user_email in users_email:
+            items.append(['gam', 'update', 'group', group, 'update', role, user_email])
+        else:
+          body = {u'role': role}
+          print u' Updating %s in %s to %s' % (users_email[0], group, role)
+          callGAPI(cd.members(), u'update', groupKey=group, memberKey=users_email[0], body=body)
     else: # clear
       suspended = False
       fields = [u'email', u'id']
@@ -7971,8 +7972,13 @@ def doUpdateGroup():
           users_email = [member.get(u'email', member[u'id']) for member in result]
         else:
           users_email = [member.get(u'email', member[u'id']) for member in result if member[u'status'] == u'SUSPENDED']
-        sys.stderr.write(u'Group: {0}, Will remove {1} {2}{3}s.\n'.format(group, len(users_email), [u'', u'suspended '][suspended], roles))
-        _batchRemoveUpdateGroupMembers(cd, u'delete', group, users_email, ROLE_MEMBER, actions)
+        if len(users_email) > 1:
+          sys.stderr.write(u'Group: {0}, Will remove {1} {2}{3}s.\n'.format(group, len(users_email), [u'', u'suspended '][suspended], roles))
+          for user_email in users_email:
+            items.append(['gam', 'update', 'group', group, 'remove', user_email])
+        else:
+          print u' Removing %s from %s' % (users_email[0], group)
+          callGAPI(cd.members(), u'delete', groupKey=group, memberKey=users_email[0])
       except (GAPI_groupNotFound, GAPI_domainNotFound, GAPI_invalid, GAPI_forbidden):
         entityUnknownWarning(u'Group', group, 0, 0)
     if items:
