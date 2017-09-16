@@ -4408,18 +4408,20 @@ def createDriveFile(users):
     result = callGAPI(drive.files(), u'insert',
                       convert=parameters[DFA_CONVERT], ocr=parameters[DFA_OCR],
                       ocrLanguage=parameters[DFA_OCRLANGUAGE],
-                      media_body=media_body, body=body, fields=u'id',
+                      media_body=media_body, body=body, fields=u'id,title,mimeType',
                       supportsTeamDrives=True)
+    titleInfo = u'{0}({1})'.format(result[u'title'], result[u'id'])
     if parameters[DFA_LOCALFILENAME]:
-      print u'Successfully uploaded %s to Drive file ID %s' % (parameters[DFA_LOCALFILENAME], result[u'id'])
+      print u'Successfully uploaded %s to Drive File %s' % (parameters[DFA_LOCALFILENAME], titleInfo)
     else:
-      print u'Successfully created drive file/folder ID %s' % (result[u'id'])
+      print u'Successfully created Drive %s %s' % ([u'Folder', u'File'][result[u'mimeType'] != MIMETYPE_GA_FOLDER], titleInfo)
 
 def downloadDriveFile(users):
   i = 5
   fileIdSelection = {u'fileIds': [], u'query': None}
   revisionId = None
   exportFormatName = u'openoffice'
+  exportFormatChoices = [exportFormatName]
   exportFormats = DOCUMENT_FORMATS_MAP[exportFormatName]
   targetFolder = GC_Values[GC_DRIVE_DIR]
   safe_filename_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
