@@ -8103,20 +8103,27 @@ def doUpdateCros():
   i = 4
   update_body = {}
   action_body = {}
-  move_bodys = []
+  orgUnitPath = None
   ack_wipe = False
   while i < len(sys.argv):
-    if sys.argv[i].lower() == u'user':
-      update_body[u'annotatedUser'] = sys.argv[i + 1]
+    myarg = sys.argv[i].lower().replace(u'_', u'')
+    if myarg == u'user':
+      update_body[u'annotatedUser'] = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower() == u'location':
-      update_body[u'annotatedLocation'] = sys.argv[i + 1]
+    elif myarg == u'location':
+      update_body[u'annotatedLocation'] = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower() == u'notes':
-      update_body[u'notes'] = sys.argv[i + 1].replace(u'\\n', u'\n')
+    elif myarg == u'notes':
+      update_body[u'notes'] = sys.argv[i+1].replace(u'\\n', u'\n')
       i += 2
-    elif sys.argv[i].lower() == u'action':
-      action = sys.argv[i+1].replace(u'_', u'').replace(u'-', u'').lower()
+    elif myarg in [u'tag', u'asset', u'assetid']:
+      update_body[u'annotatedAssetId'] = sys.argv[i+1]
+      i += 2
+    elif myarg in [u'ou', u'org']:
+      orgUnitPath = sys.argv[i+1]
+      i += 2
+    elif myarg == u'action':
+      action = sys.argv[i+1].lower().replace(u'_', u'').replace(u'-', u'')
       deprovisionReason = None
       if action in [u'deprovisionsamemodelreplace', u'deprovisionsamemodelreplacement']:
         action = u'deprovision'
@@ -8129,44 +8136,40 @@ def doUpdateCros():
         deprovisionReason = u'retiring_device'
       elif action not in [u'disable', u'reenable']:
         print u'ERROR: expected action of deprovision_same_model_replace, deprovision_different_model_replace, deprovision_retiring_device, disable or reenable, got %s' % action
-        sys.exit(3)
+        sys.exit(2)
       action_body = {u'action': action}
       if deprovisionReason:
         action_body[u'deprovisionReason'] = deprovisionReason
       i += 2
-    elif sys.argv[i].replace(u'_', u'').lower() in [u'acknowledgedevicetouchrequirement']:
+    elif myarg == u'acknowledgedevicetouchrequirement':
       ack_wipe = True
       i += 1
-    elif sys.argv[i].lower() in [u'tag', u'asset', u'assetid']:
-      update_body[u'annotatedAssetId'] = sys.argv[i + 1]
-      i += 2
-    elif sys.argv[i].lower() in [u'ou', u'org']:
-      orgUnitPath = sys.argv[i + 1]
-      #move_body[u'deviceIds'] = devices
-      # split moves into max 50 devices per batch
-      for l in range(0, len(devices), 50):
-        move_bodys.append({u'deviceIds': devices[l:l+50]})
-      i += 2
     else:
       print u'ERROR: %s is not a valid argument for "gam update cros"' % sys.argv[i]
       sys.exit(2)
-  i = 1
-  device_count = len(devices)
-  for this_device in devices:
+  i = 0
+  count = len(devices)
+  if action_body:
+    if action_body[u'action'] == u'deprovision' and not ack_wipe:
+      print u'WARNING: Refusing to deprovision %s devices because acknowledge_device_touch_requirement not specified. Deprovisioning a device means the device will have to be physically wiped and re-enrolled to be managed by your domain again. This requires physical access to the device and is very time consuming to perform for each device. Please add "acknowledge_device_touch_requirement" to the GAM command if you understand this and wish to proceed with the deprovision. Please also be aware that deprovisioning can have an effect on your device license count. See https://support.google.com/chrome/a/answer/3523633 for full details.' % (count)
+      sys.exit(3)
+    for deviceId in devices:
+      i += 1
+      print u' performing action %s for %s (%s of %s)' % (action, deviceId, i, count)
+      callGAPI(cd.chromeosdevices(), function=u'action', customerId=GC_Values[GC_CUSTOMER_ID], resourceId=deviceId, body=action_body)
+  else:
     if update_body:
-      print u' updating %s (%s of %s)' % (this_device, i, device_count)
-      callGAPI(service=cd.chromeosdevices(), function=u'update', deviceId=this_device, body=update_body, customerId=GC_Values[GC_CUSTOMER_ID])
-    elif action_body:
-      if action_body[u'action'] == u'deprovision' and not ack_wipe:
-        print u'WARNING: Refusing to deprovision %s because acknowledge_device_touch_requirement not specified. Deprovisioning a device means the device will have to be physically wiped and re-enrolled to be managed by your domain again. This requires physical access to the device and is very time consuming to perform for each device. Please add "acknowledge_device_touch_requirement" to the GAM command if you understand this and wish to proceed with the deprovision. Please also be aware that deprovisioning can have an effect on your device license count. See https://support.google.com/chrome/a/answer/3523633 for full details.' % (this_device)
-        sys.exit(3)
-      print u' performing action %s for %s (%s of %s)' % (action, this_device, i, device_count)
-      callGAPI(cd.chromeosdevices(), function=u'action', customerId=GC_Values[GC_CUSTOMER_ID], resourceId=this_device, body=action_body)
-    i += 1
-  for move_body in move_bodys:
-    print u' moving %s devices to %s' % (len(move_body[u'deviceIds']), orgUnitPath)
-    result = callGAPI(cd.chromeosdevices(), u'moveDevicesToOu', customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=orgUnitPath,
-                      body=move_body)
+      for deviceId in devices:
+        i += 1
+        print u' updating %s (%s of %s)' % (deviceId, i, count)
+        callGAPI(service=cd.chromeosdevices(), function=u'update', customerId=GC_Values[GC_CUSTOMER_ID], deviceId=deviceId, body=update_body)
+    if orgUnitPath:
+      #move_body[u'deviceIds'] = devices
+      # split moves into max 50 devices per batch
+      for l in range(0, len(devices), 50):
+        move_body = {u'deviceIds': devices[l:l+50]}
+        print u' moving %s devices to %s' % (len(move_body[u'deviceIds']), orgUnitPath)
+        callGAPI(cd.chromeosdevices(), u'moveDevicesToOu', customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=orgUnitPath, body=move_body)
 
 def doUpdateMobile():
   cd = buildGAPIObject(u'directory')
