@@ -2893,6 +2893,7 @@ def doPrinterAddACL():
   printer = sys.argv[2]
   role = sys.argv[4].upper()
   scope = sys.argv[5]
+  notify = True if len(sys.argv) > 6 and sys.argv[6].lower() == u'notify' else False
   public = None
   skip_notification = True
   if scope.lower() == u'public':
@@ -2902,6 +2903,8 @@ def doPrinterAddACL():
     skip_notification = None
   elif scope.find(u'@') == -1:
     scope = u'/hd/domain/%s' % scope
+  else:
+    skip_notification = not notify
   result = callGAPI(cp.printers(), u'share', printerid=printer, role=role, scope=scope, public=public, skip_notification=skip_notification)
   checkCloudPrintResult(result)
   who = scope
