@@ -4271,7 +4271,10 @@ def getDriveFileAttribute(i, body, parameters, myarg, update=False):
     body[u'parents'].append({u'id': sys.argv[i+1]})
     i += 2
   elif myarg == u'parentname':
-    parameters[DFA_PARENTQUERY] = u'mimeType = "%s" and "me" in owners and title = "%s"' % (MIMETYPE_GA_FOLDER, sys.argv[i+1])
+    parameters[DFA_PARENTQUERY] = u"'me' in owners and mimeType = '%s' and title = '%s'" % (MIMETYPE_GA_FOLDER, sys.argv[i+1])
+    i += 2
+  elif myarg in [u'anyownerparentname']:
+    parameters[DFA_PARENTQUERY] = u"mimeType = '%s' and title = '%s'" % (MIMETYPE_GA_FOLDER, sys.argv[i+1])
     i += 2
   elif myarg == u'writerscantshare':
     body[u'writersCanShare'] = False
