@@ -4264,10 +4264,13 @@ def getDriveFileAttribute(i, body, parameters, myarg, update=False):
     body.setdefault(u'labels', {})
     if update:
       value = sys.argv[i+1].lower()
-      if value not in true_values and value not in false_values:
+      if value in true_values:
+        body[u'labels'][DRIVEFILE_LABEL_CHOICES_MAP[myarg]] = True
+      elif value in false_values:
+        body[u'labels'][DRIVEFILE_LABEL_CHOICES_MAP[myarg]] = False
+      else:
         print u'ERROR: value for %s must be true or false; got %s' % (myarg, sys.argv[i+1])
         sys.exit(2)
-      body[u'labels'][DRIVEFILE_LABEL_CHOICES_MAP[myarg]] = value
       i += 2
     else:
       body[u'labels'][DRIVEFILE_LABEL_CHOICES_MAP[myarg]] = True
