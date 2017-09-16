@@ -760,3 +760,24 @@ GAPI_GROUP_GET_THROW_REASONS = [GAPI_GROUP_NOT_FOUND, GAPI_DOMAIN_NOT_FOUND, GAP
 GAPI_GROUP_GET_RETRY_REASONS = [GAPI_INVALID, GAPI_SYSTEM_ERROR]
 GAPI_MEMBERS_THROW_REASONS = [GAPI_GROUP_NOT_FOUND, GAPI_DOMAIN_NOT_FOUND, GAPI_DOMAIN_CANNOT_USE_APIS, GAPI_INVALID, GAPI_FORBIDDEN]
 GAPI_MEMBERS_RETRY_REASONS = [GAPI_SYSTEM_ERROR]
+
+USER_ADDRESS_TYPES = [u'home', u'work', u'other']
+USER_EMAIL_TYPES = [u'home', u'work', u'other']
+USER_EXTERNALID_TYPES = [u'account', u'customer', u'login_id', u'network',
+                         u'organization']
+USER_IMS_TYPES = [u'home', u'work', u'other']
+USER_LOCATIONS_TYPES = [u'default', u'desk']
+USER_ORGANIZATIONS_TYPES = [u'domain_only', u'school', u'unknown', u'work']
+USER_PHONE_TYPES = [u'assistant', u'callback', u'car', u'company_main',
+                    u'grand_central', u'home', u'home_fax', u'isdn', u'main',
+                    u'mobile', u'other', u'other_fax', u'pager', u'radio',
+                    u'telex', u'tty_tdd', u'work', u'work_fax', u'work_mobile',
+                    u'work_pager']
+USER_RELATION_TYPES = [u'admin_assistant', u'assistant', u'brother', u'child',
+                       u'domestic_partner', u'dotted_line_manager',
+                       u'exec_assistant', u'father', u'friend', u'manager',
+                       u'mother', u'parent', u'partner', u'referred_by',
+                       u'relative', u'sister', u'spouse']
+USER_WEBSITE_TYPES = [u'app_install_page', u'blog', u'ftp', u'home',
+                      u'home_page', u'other', u'profile', u'reservations',
+                      u'work']
