@@ -26,7 +26,7 @@ true_values = [u'on', u'yes', u'enabled', u'true', u'1']
 false_values = [u'off', u'no', u'disabled', u'false', u'0']
 usergroup_types = [u'user', u'users', u'group', u'ou', u'org',
                    u'ou_and_children', u'ou_and_child', u'query',
-                   u'license', u'licenses', u'licence', u'licences', u'file', u'csv', u'all',
+                   u'license', u'licenses', u'licence', u'licences', u'file', u'csv', u'csvfile', u'all',
                    u'cros']
 ERROR = u'ERROR'
 ERROR_PREFIX = ERROR+u': '
