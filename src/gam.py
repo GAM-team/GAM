@@ -4569,7 +4569,8 @@ def showDriveFileInfo(users):
     if not drive:
       continue
     feed = callGAPI(drive.files(), u'get', fileId=fileId, fields=fields, supportsTeamDrives=True)
-    print_json(None, feed)
+    if feed:
+      print_json(None, feed)
 
 def showDriveFileRevisions(users):
   fileId = sys.argv[5]
@@ -4578,7 +4579,8 @@ def showDriveFileRevisions(users):
     if not drive:
       continue
     feed = callGAPI(drive.revisions(), u'list', fileId=fileId)
-    print_json(None, feed)
+    if feed:
+      print_json(None, feed)
 
 def transferSecCals(users):
   target_user = sys.argv[5]
