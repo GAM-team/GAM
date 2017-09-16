@@ -8103,6 +8103,7 @@ def doUpdateCros():
   i = 4
   update_body = {}
   action_body = {}
+  orgUnitPath = None
   ack_wipe = False
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace(u'_', u'')
@@ -8119,7 +8120,7 @@ def doUpdateCros():
       update_body[u'annotatedAssetId'] = sys.argv[i+1]
       i += 2
     elif myarg in [u'ou', u'org']:
-      update_body[u'orgUnitPath'] = sys.argv[i+1]
+      orgUnitPath = sys.argv[i+1]
       i += 2
     elif myarg == u'action':
       action = sys.argv[i+1].lower().replace(u'_', u'').replace(u'-', u'')
@@ -8156,14 +8157,13 @@ def doUpdateCros():
       i += 1
       print u' performing action %s for %s (%s of %s)' % (action, deviceId, i, count)
       callGAPI(cd.chromeosdevices(), function=u'action', customerId=GC_Values[GC_CUSTOMER_ID], resourceId=deviceId, body=action_body)
-  elif update_body:
-    if len(update_body) != 1 or u'orgUnitPath' not in update_body:
+  else:
+    if update_body:
       for deviceId in devices:
         i += 1
         print u' updating %s (%s of %s)' % (deviceId, i, count)
         callGAPI(service=cd.chromeosdevices(), function=u'update', customerId=GC_Values[GC_CUSTOMER_ID], deviceId=deviceId, body=update_body)
-    else:
-      orgUnitPath = update_body[u'orgUnitPath']
+    if orgUnitPath:
       #move_body[u'deviceIds'] = devices
       # split moves into max 50 devices per batch
       for l in range(0, len(devices), 50):
