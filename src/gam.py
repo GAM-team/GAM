@@ -6433,21 +6433,27 @@ def doGetUserSchema():
   schema = callGAPI(cd.schemas(), u'get', customerId=GC_Values[GC_CUSTOMER_ID], schemaKey=schemaKey)
   _showSchema(schema)
 
-def checkClearBodyList(i, body, itemName):
-  if sys.argv[i].lower() == u'clear':
-    if itemName in body:
-      del body[itemName]
-    body.setdefault(itemName, None)
-    return True
-  return False
-
-def appendItemToBodyList(body, itemName, itemValue):
-  if (itemName in body) and (body[itemName] is None):
-    del body[itemName]
-  body.setdefault(itemName, [])
-  body[itemName].append(itemValue)
-
 def getUserAttributes(i, cd, updateCmd=False):
+  def checkClearBodyList(i, body, itemName):
+    if sys.argv[i].lower() == u'clear':
+      if itemName in body:
+        del body[itemName]
+      body.setdefault(itemName, None)
+      return True
+    return False
+
+  def appendItemToBodyList(body, itemName, itemValue):
+    if (itemName in body) and (body[itemName] is None):
+      del body[itemName]
+    body.setdefault(itemName, [])
+# If an item has a primary field and it's set True, set primary to False in all previous items where primary is set True
+# Otherwise, the API returns the error: "Invalid Input: Bad request for -" which doesn't explain that multiple items had primary True
+    if itemValue.get(u'primary', False):
+      for citem in body[itemName]:
+        if citem.get(u'primary', False):
+          citem[u'primary'] = False
+    body[itemName].append(itemValue)
+
   def _splitSchemaNameDotFieldName(sn_fn, fnRequired=True):
     if sn_fn.find(u'.') != -1:
       schemaName, fieldName = sn_fn.split(u'.', 1)
