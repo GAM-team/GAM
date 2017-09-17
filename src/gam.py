@@ -6446,12 +6446,12 @@ def getUserAttributes(i, cd, updateCmd=False):
     if (itemName in body) and (body[itemName] is None):
       del body[itemName]
     body.setdefault(itemName, [])
-# If an item has a primary field and it's set True, set primary to False in all previous items where primary is set True
-# Otherwise, the API returns the error: "Invalid Input: Bad request for -" which doesn't explain that multiple items had primary True
+# Throw an error if multiple items are marked primary
     if itemValue.get(u'primary', False):
       for citem in body[itemName]:
         if citem.get(u'primary', False):
-          citem[u'primary'] = False
+          print u'ERROR: Multiple {0} are marked primary, only one can be primary'.format(itemName)
+          sys.exit(2)
     body[itemName].append(itemValue)
 
   def _splitSchemaNameDotFieldName(sn_fn, fnRequired=True):
