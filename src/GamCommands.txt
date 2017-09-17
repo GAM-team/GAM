@@ -827,7 +827,7 @@ gam delete printer <PrinterID>
 gam info printer <PrinterID> [everything]
 gam print printers [todrive] [query <QueryPrinter>] [type <String>] [status <String>] [extrafields <String>]
 
-gam printer <PrinterID> add user|manager|owner <EmailAddress>|[domain:]<DomainName>|public
+gam printer <PrinterID> add user|manager|owner <EmailAddress>|[domain:]<DomainName>|public [notify]
 gam printer <PrinterID> delete <EmailAddress>|[domain:]<DomainName>|public
 gam printer <PrinterID> showacl
 gam printjob <PrintJobID> cancel
