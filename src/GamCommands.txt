@@ -685,7 +685,7 @@ gam create alias|nickname <EmailAddress> user|group|target <UniqueID>|<EmailAddr
 gam update alias|nickname <EmailAddress> user|group|target <UniqueID>|<EmailAddress>
 gam delete alias|nickname [user|group|target] <UniqueID>|<EmailAddress>
 gam info alias|nickname <EmailAddress>
-gam print aliases|nicknames [todrive]
+gam print aliases|nucknames [todrive] [shownoneditable] [nogroups] [nousers] [query <QueryUser>]
 
 gam calendar <CalendarItem> add <CalendarACLRole> ([user] <EmailAddress>)|(group <EmailAddress>)|(domain [<DomainName>])|default
 gam calendar <CalendarItem> update <CalendarACLRole> ([user] <EmailAddress>)|(group <EmailAddress>)|(domain [<DomainName>])|default
