@@ -129,12 +129,12 @@ ADDRESS_FIELDS_PRINT_ORDER = [
 ADDRESS_FIELDS_ARGUMENT_MAP = {
   u'contact': u'contactName', u'contactname': u'contactName',
   u'name': u'organizationName', u'organizationname': u'organizationName',
-  u'address1': u'addressLine1', u'addressline1': u'addressLine1',
+  u'address': u'addressLine1', u'address1': u'addressLine1', u'addressline1': u'addressLine1',
   u'address2': u'addressLine2', u'addressline2': u'addressLine2',
   u'address3': u'addressLine3', u'addressline3': u'addressLine3',
-  u'locality': u'locality',
-  u'region': u'region',
-  u'postalcode': u'postalCode',
+  u'city': u'locality', u'locality': u'locality',
+  u'state': u'region', u'region': u'region',
+  u'zipcode': u'postalCode', u'postal': u'postalCode', u'postalcode': u'postalCode',
   u'country': u'countryCode', u'countrycode': u'countryCode',
   }
 

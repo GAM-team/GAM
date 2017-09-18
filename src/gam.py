@@ -8330,26 +8330,23 @@ def doWhatIs():
     sys.stderr.write(u'%s is a group alias\n\n' % email)
     doGetAliasInfo(alias_email=email)
 
-def convertSKU2ProductId(res, sku, customerId):
-  subscriptionId = None
-  results = callGAPI(res.subscriptions(), u'list', customerId=customerId)
-  for subscription in results[u'subscriptions']:
-    if sku == subscription[u'skuId']:
-      subscriptionId = subscription[u'subscriptionId']
-      break
-  if not subscriptionId:
-    print u'ERROR: could not find subscription for customer %s and SKU %s' % (customerId, sku)
-    sys.exit(3)
-  return subscriptionId
+def getCustomerSubscription(res):
+  customerId = sys.argv[3]
+  skuId = sys.argv[4]
+  results = callGAPIpages(res.subscriptions(), u'list', u'subscriptions',
+                          customerId=customerId, fields=u'nextPageToken,subscriptions(skuId,subscriptionId)')
+  for subscription in results:
+    if skuId == subscription[u'skuId']:
+      return (customerId, skuId, subscription[u'subscriptionId'])
+  print u'ERROR: could not find subscription for customer %s and SKU %s' % (customerId, skuId)
+  sys.exit(3)
 
 def doDeleteResoldSubscription():
   res = buildGAPIObject(u'reseller')
-  customerId = sys.argv[3]
-  sku = sys.argv[4]
+  customerId, skuId, subscriptionId = getCustomerSubscription(res)
   deletionType = sys.argv[5]
-  subscriptionId = convertSKU2ProductId(res, sku, customerId)
-  callGAPI(res.subscriptions(), u'delete', customerId=customerId, subscriptionId=subscriptionId, deletionType=deletionType)
-  print u'Cancelled %s for %s' % (sku, customerId)
+  callGAPI(res.subscriptions(), u'delete', customerId=customerId, subscriptionId=subscriptionId, deletionType=deletionType, fields=u'')
+  print u'Cancelled %s for %s' % (skuId, customerId)
 
 def doCreateResoldSubscription():
   res = buildGAPIObject(u'reseller')
@@ -8362,9 +8359,7 @@ def doCreateResoldSubscription():
 def doUpdateResoldSubscription():
   res = buildGAPIObject(u'reseller')
   function = None
-  customerId = sys.argv[3]
-  sku = sys.argv[4]
-  subscriptionId = convertSKU2ProductId(res, sku, customerId)
+  customerId, skuId, subscriptionId = getCustomerSubscription(res)
   kwargs = {}
   i = 5
   while i < len(sys.argv):
@@ -8416,7 +8411,7 @@ def doUpdateResoldSubscription():
       print u'ERROR: %s is not a valid argument to "gam update resoldsubscription"' % myarg
       sys.exit(3)
   result = callGAPI(res.subscriptions(), function, customerId=customerId, subscriptionId=subscriptionId, **kwargs)
-  print u'Updated %s SKU %s subscription:' % (customerId, sku)
+  print u'Updated %s SKU %s subscription:' % (customerId, skuId)
   if result:
     print_json(None, result)
 
@@ -8472,41 +8467,24 @@ def doGetResoldCustomer():
   print_json(None, result)
 
 def _getResoldCustomerAttr(arg):
-  body = {u'postalAddress': {}}
+  body = {}
   customerAuthToken = None
   i = 0
   while i < len(arg):
     myarg = arg[i].lower().replace(u'_', u'')
-    if myarg in [u'email', u'alternateemail']:
+    if myarg in ADDRESS_FIELDS_ARGUMENT_MAP:
+      body.setdefault(u'postalAddress', {})
+      body[u'postalAddress'][ADDRESS_FIELDS_ARGUMENT_MAP[myarg]] = arg[i+1]
+    elif myarg in [u'email', u'alternateemail']:
       body[u'alternateEmail'] = arg[i+1]
     elif myarg in [u'phone', u'phonenumber']:
       body[u'phoneNumber'] = arg[i+1]
-    elif myarg in [u'address', u'address1']:
-      body[u'postalAddress'][u'addressLine1'] = arg[i+1]
-    elif myarg in [u'address2']:
-      body[u'postalAddress'][u'addressLine2'] = arg[i+1]
-    elif myarg in [u'address3']:
-      body[u'postalAddress'][u'addressLine3'] = arg[i+1]
-    elif myarg in [u'contact', u'contactname']:
-      body[u'postalAddress'][u'contactName'] = arg[i+1]
-    elif myarg in [u'country', u'countrycode']:
-      body[u'postalAddress'][u'countryCode'] = arg[i+1]
-    elif myarg in [u'locality', u'city']:
-      body[u'postalAddress'][u'locality'] = arg[i+1]
-    elif myarg in [u'name', u'organizationname']:
-      body[u'postalAddress'][u'organizationName'] = arg[i+1]
-    elif myarg in [u'postalcode', u'postal']:
-      body[u'postalAddress'][u'postalCode'] = arg[i+1]
-    elif myarg in [u'region', u'state']:
-      body[u'postalAddress'][u'region'] = arg[i+1]
     elif myarg in [u'customerauthtoken', u'transfertoken']:
       customerAuthToken = arg[i+1]
     else:
       print u'ERROR: %s is not a valid argument for "gam %s resoldcustomer"' % (myarg, sys.argv[1])
       sys.exit(3)
     i += 2
-  if not body[u'postalAddress']:
-    del body[u'postalAddress']
   return customerAuthToken, body
 
 def doUpdateResoldCustomer():
@@ -11711,7 +11689,7 @@ def ProcessGAMCommand(args):
         doGetDomainAliasInfo()
       elif argument in [u'resoldcustomer', u'resellercustomer']:
         doGetResoldCustomer()
-      elif argument in [u'resoldsubscriptions', u'resellersubscriptions']:
+      elif argument in [u'resoldsubscription', u'resoldsubscriptions', u'resellersubscription', u'resellersubscriptions']:
         doGetResoldSubscriptions()
       elif argument in [u'matter', u'vaultmatter']:
         doGetVaultMatterInfo()
