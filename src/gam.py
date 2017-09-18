@@ -11042,7 +11042,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
       filename = column = None
     if (not filename) or (not column):
       systemErrorExit(2, u'Expected {0} FileName:FieldName'.format(entity_type))
-    f = openFile(filename)
+    f = openFile(filename, mode='rbU')
     input_file = csv.DictReader(f, restval=u'')
     if column not in input_file.fieldnames:
       csvFieldErrorExit(column, input_file.fieldnames)
@@ -11563,7 +11563,7 @@ def ProcessGAMCommand(args):
       i = 2
       filename = sys.argv[i]
       i, encoding = getCharSet(i+1)
-      f = openFile(filename, mode=u'rb')
+      f = openFile(filename, mode=u'rbU')
       csvFile = UnicodeDictReader(f, encoding=encoding)
       if (i == len(sys.argv)) or (sys.argv[i].lower() != u'gam') or (i+1 == len(sys.argv)):
         print u'ERROR: "gam csv <filename>" must be followed by a full GAM command...'
