@@ -12243,9 +12243,9 @@ def ProcessGAMCommand(args):
     else:
       print u'ERROR: %s is not a valid argument for "gam"' % command
       sys.exit(2)
-  #except IndexError:
-  #  showUsage()
-  #  sys.exit(2)
+  except IndexError:
+    showUsage()
+    sys.exit(2)
   except KeyboardInterrupt:
     sys.exit(50)
   except socket.error as e:
