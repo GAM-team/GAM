@@ -8334,7 +8334,7 @@ def convertSKU2ProductId(res, sku, customerId):
   results = callGAPI(res.subscriptions(), u'list', customerId=customerId)
   for subscription in results[u'subscriptions']:
     if sku == subscription[u'skuId']:
-      return subscription[u'subscriptionId'] 
+      return subscription[u'subscriptionId']
   print u'ERROR: could not find subscription for customer %s and SKU %s' % (customerId, sku)
   sys.exit(3)
 
