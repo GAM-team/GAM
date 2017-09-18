@@ -10261,36 +10261,57 @@ def doPrintAliases():
   todrive = False
   titles = [u'Alias', u'Target', u'TargetType']
   csvRows = []
+  userFields = [u'primaryEmail', u'aliases']
+  groupFields = [u'email', u'aliases']
+  doGroups = doUsers = True
+  query = None
   i = 3
   while i < len(sys.argv):
-    if sys.argv[i].lower() == u'todrive':
+    myarg = sys.argv[i].lower().replace(u'_', u'')
+    if myarg == u'todrive':
       todrive = True
       i += 1
+    elif myarg == u'shownoneditable':
+      titles.insert(1, u'NonEditableAlias')
+      userFields.append(u'nonEditableAliases')
+      groupFields.append(u'nonEditableAliases')
+      i += 1
+    elif myarg == u'nogroups':
+      doGroups = False
+      i += 1
+    elif myarg == u'nousers':
+      doUsers = False
+      i += 1
+    elif myarg == u'query':
+      query = getString(i+1, u'Query')
+      doGroups = False
+      doUsers = True
+      i += 2
     else:
       print u'ERROR: %s is not a valid argument for "gam print aliases"' % sys.argv[i]
       sys.exit(2)
-  sys.stderr.write(u"Retrieving All User Aliases for %s organization (may take some time on large domain)...\n" % GC_Values[GC_DOMAIN])
-  page_message = u'Got %%num_items%% users %%first_item%% - %%last_item%%\n'
-  all_users = callGAPIpages(cd.users(), u'list', u'users', page_message=page_message,
-                            message_attribute=u'primaryEmail', customer=GC_Values[GC_CUSTOMER_ID],
-                            fields=u'users(primaryEmail,aliases),nextPageToken', maxResults=GC_Values[GC_USER_MAX_RESULTS])
-  for user in all_users:
-    try:
-      for alias in user[u'aliases']:
+  if doUsers:
+    sys.stderr.write(u"Retrieving All User Aliases for %s organization (may take some time on large domain)...\n" % GC_Values[GC_DOMAIN])
+    page_message = u'Got %%num_items%% users %%first_item%% - %%last_item%%\n'
+    all_users = callGAPIpages(cd.users(), u'list', u'users', page_message=page_message,
+                              message_attribute=u'primaryEmail', customer=GC_Values[GC_CUSTOMER_ID], query=query,
+                              fields=u'nextPageToken,users({0})'.format(u','.join(userFields)), maxResults=GC_Values[GC_USER_MAX_RESULTS])
+    for user in all_users:
+      for alias in user.get(u'aliases', []):
         csvRows.append({u'Alias': alias, u'Target': user[u'primaryEmail'], u'TargetType': u'User'})
-    except KeyError:
-      continue
-  sys.stderr.write(u"Retrieving All User Aliases for %s organization (may take some time on large domain)...\n" % GC_Values[GC_DOMAIN])
-  page_message = u'Got %%num_items%% groups %%first_item%% - %%last_item%%\n'
-  all_groups = callGAPIpages(cd.groups(), u'list', u'groups', page_message=page_message,
-                             message_attribute=u'email', customer=GC_Values[GC_CUSTOMER_ID],
-                             fields=u'groups(email,aliases),nextPageToken')
-  for group in all_groups:
-    try:
-      for alias in group[u'aliases']:
+      for alias in user.get(u'nonEditableAliases', []):
+        csvRows.append({u'NonEditableAlias': alias, u'Target': user[u'primaryEmail'], u'TargetType': u'User'})
+  if doGroups:
+    sys.stderr.write(u"Retrieving All Group Aliases for %s organization (may take some time on large domain)...\n" % GC_Values[GC_DOMAIN])
+    page_message = u'Got %%num_items%% groups %%first_item%% - %%last_item%%\n'
+    all_groups = callGAPIpages(cd.groups(), u'list', u'groups', page_message=page_message,
+                               message_attribute=u'email', customer=GC_Values[GC_CUSTOMER_ID],
+                               fields=u'nextPageToken,groups({0})'.format(u','.join(groupFields)))
+    for group in all_groups:
+      for alias in group.get(u'aliases', []):
         csvRows.append({u'Alias': alias, u'Target': group[u'email'], u'TargetType': u'Group'})
-    except KeyError:
-      continue
+      for alias in group.get(u'nonEditableAliases', []):
+        csvRows.append({u'NonEditableAlias': alias, u'Target': group[u'email'], u'TargetType': u'Group'})
   writeCSVfile(csvRows, titles, u'Aliases', todrive)
 
 def doPrintGroupMembers():
