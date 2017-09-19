@@ -7900,15 +7900,31 @@ def checkGroupExists(cd, group, i=0, count=0):
     return None
 
 UPDATE_GROUP_SUBCMDS = [u'add', u'clear', u'delete', u'remove', u'sync', u'update']
+GROUP_ROLES_MAP = {
+  u'owner': ROLE_OWNER, u'owners': ROLE_OWNER,
+  u'manager': ROLE_MANAGER, u'managers': ROLE_MANAGER,
+  u'member': ROLE_MEMBER, u'members': ROLE_MEMBER,
+  }
 
 def doUpdateGroup():
+
+# Convert foo@googlemail.com to foo@gmail.com; eliminate periods in name for foo.bar@gmail.com
+  def _cleanConsumerAddress(emailAddress, mapCleanToOriginal):
+    atLoc = emailAddress.find(u'@')
+    if atLoc > 0:
+      if emailAddress[atLoc+1:] in [u'gmail.com', u'googlemail.com']:
+        cleanEmailAddress = emailAddress[:atLoc].replace(u'.', u'')+u'@gmail.com'
+        if cleanEmailAddress != emailAddress:
+          mapCleanToOriginal[cleanEmailAddress] = emailAddress
+          return cleanEmailAddress
+    return emailAddress
 
   def _getRoleAndUsers():
     checkNotSuspended = False
     role = ROLE_MEMBER
     i = 5
-    if sys.argv[i].upper() in [ROLE_OWNER, ROLE_MANAGER, ROLE_MEMBER]:
-      role = sys.argv[i].upper()
+    if sys.argv[i].lower() in GROUP_ROLES_MAP:
+      role = GROUP_ROLES_MAP[sys.argv[i].lower()]
       i += 1
     if sys.argv[i] == u'notsuspended':
       checkNotSuspended = True
@@ -7941,23 +7957,26 @@ def doUpdateGroup():
         print u' Adding %s %s to %s' % (role, users_email[0], group)
         callGAPI(cd.members(), u'insert', groupKey=group, body=body)
     elif myarg == u'sync':
+      syncMembersSet = set()
+      syncMembersMap = {}
       role, users_email = _getRoleAndUsers()
-      for i in xrange(len(users_email)):
-        user_email = users_email[i]
-        if user_email == u'*':
-          users_email[i] = GC_Values[GC_CUSTOMER_ID]
-        elif user_email != GC_Values[GC_CUSTOMER_ID]:
-          users_email[i] = user_email.lower()
+      for user_email in users_email:
+        if user_email == u'*' or user_email == GC_Values[GC_CUSTOMER_ID]:
+          syncMembersSet.add(GC_Values[GC_CUSTOMER_ID])
+        else:
+          syncMembersSet.add(_cleanConsumerAddress(user_email.lower(), syncMembersMap))
       group = checkGroupExists(cd, group)
       if group:
-        current_emails = []
+        currentMembersSet = set()
+        currentMembersMap = {}
         for current_email in getUsersToModify(entity_type=u'group', entity=group, member_type=role, groupUserMembersOnly=False):
           if current_email == GC_Values[GC_CUSTOMER_ID]:
-            current_emails.append(current_email)
+            currentMembersSet.add(current_email)
           else:
-            current_emails.append(current_email.lower())
-        to_add = list(set(users_email) - set(current_emails))
-        to_remove = list(set(current_emails) - set(users_email))
+            currentMembersSet.add(_cleanConsumerAddress(current_email.lower(), currentMembersMap))
+# Compare incoming members and current memebers using the cleaned addresses; we actually add/remove with the original addresses
+        to_add = [syncMembersMap.get(emailAddress, emailAddress) for emailAddress in syncMembersSet-currentMembersSet]
+        to_remove = [currentMembersMap.get(emailAddress, emailAddress) for emailAddress in currentMembersSet-syncMembersSet]
         sys.stderr.write(u'Group: {0}, Will add {1} and remove {2} {3}s.\n'.format(group, len(to_add), len(to_remove), role))
         for user in to_add:
           items.append([u'gam', u'update', u'group', group, u'add', role, user])
