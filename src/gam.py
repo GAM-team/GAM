@@ -1704,8 +1704,12 @@ def doUpdateCustomer():
     else:
       print u'ERROR: %s is not a valid argument for "gam update customer"' % myarg
       sys.exit(2)
-  callGAPI(cd.customers(), u'update', customerKey=GC_Values[GC_CUSTOMER_ID], body=body)
-  print u'Updated customer'
+  if body:
+    callGAPI(cd.customers(), u'update', customerKey=GC_Values[GC_CUSTOMER_ID], body=body)
+    print u'Updated customer'
+  else:
+    print u'ERROR: no arguments specified for "gam update customer"'
+    sys.exit(2)
 
 def doDelDomain():
   cd = buildGAPIObject(u'directory')
@@ -3619,8 +3623,11 @@ def getPhoto(users):
     filename = os.path.join(targetFolder, u'{0}.jpg'.format(user))
     print u"Saving photo to %s (%s/%s)" % (filename, i, count)
     try:
-      photo = callGAPI(cd.users().photos(), u'get', throw_reasons=[GAPI_NOT_FOUND], userKey=user)
-    except GAPI_notFound:
+      photo = callGAPI(cd.users().photos(), u'get', throw_reasons=[GAPI_USER_NOT_FOUND, GAPI_RESOURCE_NOT_FOUND], userKey=user)
+    except GAPI_userNotFound:
+      print u' unknown user %s' % user
+      continue
+    except GAPI_resourceNotFound:
       print u' no photo for %s' % user
       continue
     try:
@@ -5258,24 +5265,23 @@ def doLabel(users, i):
   i += 1
   body = {u'name': label}
   while i < len(sys.argv):
-    if sys.argv[i].lower().replace(u'_', u'') == u'labellistvisibility':
-      if sys.argv[i+1].lower().replace(u'_', u'') == u'hide':
+    myarg = sys.argv[i].lower().replace(u'_', u'')
+    if myarg == u'labellistvisibility':
+      value = sys.argv[i+1].lower().replace(u'_', u'')
+      if value == u'hide':
         body[u'labelListVisibility'] = u'labelHide'
-      elif sys.argv[i+1].lower().replace(u'_', u'') == u'show':
+      elif value == u'show':
         body[u'labelListVisibility'] = u'labelShow'
-      elif sys.argv[i+1].lower().replace(u'_', u'') == u'showifunread':
+      elif value == u'showifunread':
         body[u'labelListVisibility'] = u'labelShowIfUnread'
       else:
         print u'ERROR: label_list_visibility must be one of hide, show, show_if_unread; got %s' % sys.argv[i+1]
         sys.exit(2)
       i += 2
-    elif sys.argv[i].lower().replace(u'_', u'') == u'messagelistvisibility':
-      if sys.argv[i+1].lower().replace(u'_', u'') == u'hide':
-        body[u'messageListVisibility'] = u'hide'
-      elif sys.argv[i+1].lower().replace(u'_', u'') == u'show':
-        body[u'messageListVisibility'] = u'show'
-      else:
-        print u'ERROR: message_list_visibility must be one of hide or show; got %s' % sys.argv[i+1]
+    elif myarg == u'messagelistvisibility':
+      body[u'messageListVisibility'] = sys.argv[i+1].lower().replace(u'_', u'')
+      if body[u'messageListVisibility'] not in [u'hide', u'show']:
+        print u'ERROR: message_list_visibility must be show or hide; got %s' % sys.argv[i+1]
         sys.exit(2)
       i += 2
     else:
@@ -5578,24 +5584,26 @@ def updateLabels(users):
   body = {}
   i = 6
   while i < len(sys.argv):
-    if sys.argv[i].lower() == u'name':
+    myarg = sys.argv[i].lower().replace(u'_', u'')
+    if myarg == u'name':
       body[u'name'] = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower().replace(u'_', u'') == u'messagelistvisibility':
-      body[u'messageListVisibility'] = sys.argv[i+1].lower()
-      if body[u'messageListVisibility'] not in [u'hide', u'show']:
-        print u'ERROR: message_list_visibility must be show or hide; got %s' % sys.argv[i+1]
-        sys.exit(2)
-      i += 2
-    elif sys.argv[i].lower().replace(u' ', u'') == u'labellistvisibility':
-      if sys.argv[i+1].lower().replace(u'_', u'') == u'showifunread':
-        body[u'labelListVisibility'] = u'labelShowIfUnread'
-      elif sys.argv[i+1].lower().replace(u'_', u'') == u'show':
-        body[u'labelListVisibility'] = u'labelShow'
-      elif sys.argv[i+1].lower().replace(u'_', u'') == u'hide':
+    elif myarg == u'labellistvisibility':
+      value = sys.argv[i+1].lower().replace(u'_', u'')
+      if value == u'hide':
         body[u'labelListVisibility'] = u'labelHide'
+      elif value == u'show':
+        body[u'labelListVisibility'] = u'labelShow'
+      elif value == u'showifunread':
+        body[u'labelListVisibility'] = u'labelShowIfUnread'
       else:
         print u'ERROR: label_list_visibility must be hide, show, show_if_unread; got %s' % sys.argv[i+1]
+        sys.exit(2)
+      i += 2
+    elif myarg == u'messagelistvisibility':
+      body[u'messageListVisibility'] = sys.argv[i+1].lower().replace(u'_', u'')
+      if body[u'messageListVisibility'] not in [u'hide', u'show']:
+        print u'ERROR: message_list_visibility must be show or hide; got %s' % sys.argv[i+1]
         sys.exit(2)
       i += 2
     else:
@@ -8807,10 +8815,13 @@ def doGetGroupInfo(group_name=None):
   elif group_name.find(u'@') == -1:
     group_name = group_name+u'@'+GC_Values[GC_DOMAIN]
   basic_info = callGAPI(cd.groups(), u'get', groupKey=group_name)
+  settings = {}
   if not GroupIsAbuseOrPostmaster(basic_info[u'email']):
     try:
       settings = callGAPI(gs.groups(), u'get', throw_reasons=[GAPI_AUTH_ERROR], retry_reasons=[u'serviceLimit'],
                           groupUniqueId=basic_info[u'email']) # Use email address retrieved from cd since GS API doesn't support uid
+      if settings is None:
+        settings = {}
     except GAPI_authError:
       pass
   print u''
@@ -8824,18 +8835,15 @@ def doGetGroupInfo(group_name=None):
         print u'  %s' % val
     else:
       print utils.convertUTF8(u' %s: %s' % (key, value))
-  try:
-    for key, value in settings.items():
-      if key in [u'kind', u'etag', u'description', u'email', u'name']:
-        continue
-      elif key == u'maxMessageBytes':
-        if value > 1024*1024:
-          value = u'%sM' % (value / 1024 / 1024)
-        elif value > 1024:
-          value = u'%sK' % (value / 1024)
-      print u' %s: %s' % (key, value)
-  except UnboundLocalError:
-    pass
+  for key, value in settings.items():
+    if key in [u'kind', u'etag', u'description', u'email', u'name']:
+      continue
+    elif key == u'maxMessageBytes':
+      if value > 1024*1024:
+        value = u'%sM' % (value / 1024 / 1024)
+      elif value > 1024:
+        value = u'%sK' % (value / 1024)
+    print u' %s: %s' % (key, value)
   if getGroups:
     groups = callGAPIpages(cd.groups(), u'list', u'groups',
                            userKey=basic_info[u'email'], fields=u'nextPageToken,groups(name,email)')
@@ -10358,8 +10366,7 @@ def doPrintGroupMembers():
     sys.stderr.write(u'Getting members for %s (%s/%s)\n' % (group_email, i, count))
     group_members = callGAPIpages(cd.members(), u'list', u'members',
                                   soft_errors=True,
-                                  message_attribute=u'email', groupKey=group_email, fields=fields,
-                                  maxResults=GC_Values[GC_MEMBER_MAX_RESULTS])
+                                  groupKey=group_email, fields=fields, maxResults=GC_Values[GC_MEMBER_MAX_RESULTS])
     for member in group_members:
       for unwanted_item in [u'kind', u'etag']:
         if unwanted_item in member:
