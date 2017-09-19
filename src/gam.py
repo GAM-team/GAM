@@ -6434,6 +6434,27 @@ def doGetUserSchema():
   _showSchema(schema)
 
 def getUserAttributes(i, cd, updateCmd=False):
+  def getEntryType(i, entry, entryTypes, setTypeCustom=True):
+# Allow a|b|c|<String>, a|b|c|custom <String>
+# For all fields except organizations, when setting a custom type you do:
+# entry[u'type'] = u'custom'
+# entry[u'customType'] = <String>
+# For organizations, you don't set entry[u'type'] = u'custom'
+# Preserve case of custom types
+    utype = sys.argv[i]
+    ltype = utype.lower()
+    if ltype == u'custom':
+      i += 1
+      utype = sys.argv[i]
+      ltype = utype.lower()
+    if ltype in entryTypes:
+      entry[u'type'] = ltype
+    else:
+      entry[u'customType'] = utype
+      if setTypeCustom:
+        entry[u'type'] = u'custom'
+    return i+1
+
   def checkClearBodyList(i, body, itemName):
     if sys.argv[i].lower() == u'clear':
       if itemName in body:
@@ -6442,7 +6463,7 @@ def getUserAttributes(i, cd, updateCmd=False):
       return True
     return False
 
-  def appendItemToBodyList(body, itemName, itemValue):
+  def appendItemToBodyList(body, itemName, itemValue, checkSystemId=False):
     if (itemName in body) and (body[itemName] is None):
       del body[itemName]
     body.setdefault(itemName, [])
@@ -6450,8 +6471,9 @@ def getUserAttributes(i, cd, updateCmd=False):
     if itemValue.get(u'primary', False):
       for citem in body[itemName]:
         if citem.get(u'primary', False):
-          print u'ERROR: Multiple {0} are marked primary, only one can be primary'.format(itemName)
-          sys.exit(2)
+          if not checkSystemId or itemValue.get(u'systemId') == citem.get(u'systemId'):
+            print u'ERROR: Multiple {0} are marked primary, only one can be primary'.format(itemName)
+            sys.exit(2)
     body[itemName].append(itemValue)
 
   def _splitSchemaNameDotFieldName(sn_fn, fnRequired=True):
@@ -6587,12 +6609,7 @@ def getUserAttributes(i, cd, updateCmd=False):
       if sys.argv[i].lower() != u'type':
         print u'ERROR: wrong format for account address details. Expected type got %s' % sys.argv[i]
         sys.exit(2)
-      i += 1
-      address[u'type'] = sys.argv[i].lower()
-      if address[u'type'] not in USER_ADDRESS_TYPES:
-        address[u'customType'] = address[u'type']
-        address[u'type'] = u'custom'
-      i += 1
+      i = getEntryType(i+1, address, USER_ADDRESS_TYPES)
       if sys.argv[i].lower() in [u'unstructured', u'formatted']:
         i += 1
         address[u'sourceIsStructured'] = False
@@ -6638,11 +6655,7 @@ def getUserAttributes(i, cd, updateCmd=False):
         i += 1
         continue
       an_email = {}
-      an_email[u'type'] = sys.argv[i].lower()
-      if an_email[u'type'] not in USER_EMAIL_TYPES:
-        an_email[u'customType'] = an_email[u'type']
-        an_email[u'type'] = u'custom'
-      i += 1
+      i = getEntryType(i, an_email, USER_EMAIL_TYPES)
       an_email[u'address'] = sys.argv[i]
       i += 1
       appendItemToBodyList(body, u'emails', an_email)
@@ -6655,12 +6668,7 @@ def getUserAttributes(i, cd, updateCmd=False):
       if sys.argv[i].lower() != u'type':
         print u'ERROR: wrong format for account im details. Expected type got %s' % sys.argv[i]
         sys.exit(2)
-      i += 1
-      im[u'type'] = sys.argv[i].lower()
-      if im[u'type'] not in USER_IM_TYPES:
-        im[u'customType'] = im[u'type']
-        im[u'type'] = u'custom'
-      i += 1
+      i = getEntryType(i+1, im, USER_IM_TYPES)
       if sys.argv[i].lower() != u'protocol':
         print u'ERROR: wrong format for account details. Expected protocol got %s' % sys.argv[i]
         sys.exit(2)
@@ -6699,12 +6707,11 @@ def getUserAttributes(i, cd, updateCmd=False):
         elif myopt == u'title':
           organization[u'title'] = sys.argv[i+1]
           i += 2
-        elif myopt == u'type':
-          organization[u'type'] = sys.argv[i+1].lower()
-          if organization[u'type'] not in USER_ORGANIZATION_TYPES:
-            organization[u'customType'] = organization[u'type']
-            organization[u'type'] = u'custom'
+        elif myopt == u'customtype':
+          organization[u'customType'] = sys.argv[i+1]
           i += 2
+        elif myopt == u'type':
+          i = getEntryType(i+1, organization, USER_ORGANIZATION_TYPES, setTypeCustom=False)
         elif myopt == u'department':
           organization[u'department'] = sys.argv[i+1]
           i += 2
@@ -6743,11 +6750,7 @@ def getUserAttributes(i, cd, updateCmd=False):
           phone[u'value'] = sys.argv[i+1]
           i += 2
         elif myopt == u'type':
-          phone[u'type'] = sys.argv[i+1].lower()
-          if phone[u'type'] not in USER_PHONE_TYPES:
-            phone[u'customType'] = phone[u'type']
-            phone[u'type'] = u'custom'
-          i += 2
+          i = getEntryType(i+1, phone, USER_PHONE_TYPES)
         elif myopt in [u'notprimary', u'primary']:
           phone[u'primary'] = myopt == u'primary'
           i += 1
@@ -6762,11 +6765,7 @@ def getUserAttributes(i, cd, updateCmd=False):
         i += 1
         continue
       relation = {}
-      relation[u'type'] = sys.argv[i].lower()
-      if relation[u'type'] not in USER_RELATION_TYPES:
-        relation[u'customType'] = relation[u'type']
-        relation[u'type'] = u'custom'
-      i += 1
+      i = getEntryType(i, relation, USER_RELATION_TYPES)
       relation[u'value'] = sys.argv[i]
       i += 1
       appendItemToBodyList(body, u'relations', relation)
@@ -6776,11 +6775,7 @@ def getUserAttributes(i, cd, updateCmd=False):
         i += 1
         continue
       externalid = {}
-      externalid[u'type'] = sys.argv[i].lower()
-      if externalid[u'type'] not in USER_EXTERNALID_TYPES:
-        externalid[u'customType'] = externalid[u'type']
-        externalid[u'type'] = u'custom'
-      i += 1
+      i = getEntryType(i, externalid, USER_EXTERNALID_TYPES)
       externalid[u'value'] = sys.argv[i]
       i += 1
       appendItemToBodyList(body, u'externalIds', externalid)
@@ -6790,11 +6785,7 @@ def getUserAttributes(i, cd, updateCmd=False):
         i += 1
         continue
       website = {}
-      website[u'type'] = sys.argv[i].lower()
-      if website[u'type'] not in USER_WEBSITE_TYPES:
-        website[u'customType'] = website[u'type']
-        website[u'type'] = u'custom'
-      i += 1
+      i = getEntryType(i, website, USER_WEBSITE_TYPES)
       website[u'value'] = sys.argv[i]
       i += 1
       myopt = sys.argv[i].lower()
@@ -6828,11 +6819,7 @@ def getUserAttributes(i, cd, updateCmd=False):
       while True:
         myopt = sys.argv[i].lower()
         if myopt == u'type':
-          location[u'type'] = sys.argv[i+1].lower()
-          if location[u'type'] not in USER_LOCATION_TYPES:
-            location[u'customType'] = location[u'type']
-            location[u'type'] = u'custom'
-          i += 2
+          i = getEntryType(i+1, location, USER_LOCATION_TYPES)
         elif myopt == u'area':
           location[u'area'] = sys.argv[i+1]
           i += 2
@@ -6920,7 +6907,7 @@ def getUserAttributes(i, cd, updateCmd=False):
         else:
           print u'ERROR: %s is not a valid argument for user posix details. Make sure user posix details end with an endposix argument'
           sys.exit(3)
-      appendItemToBodyList(body, u'posixAccounts', posix)
+      appendItemToBodyList(body, u'posixAccounts', posix, checkSystemId=True)
     elif myarg == u'clearschema':
       if not updateCmd:
         print u'ERROR: %s is not a valid create user argument.' % sys.argv[i]
