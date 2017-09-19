@@ -1706,7 +1706,10 @@ def doUpdateCustomer():
       sys.exit(2)
   if body:
     callGAPI(cd.customers(), u'update', customerKey=GC_Values[GC_CUSTOMER_ID], body=body)
-  print u'Updated customer'
+    print u'Updated customer'
+  else:
+    print u'ERROR: no arguments specified for "gam update customer"'
+    sys.exit(2)
 
 def doDelDomain():
   cd = buildGAPIObject(u'directory')
