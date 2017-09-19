@@ -6822,7 +6822,7 @@ def getUserAttributes(i, cd, updateCmd=False):
       if checkClearBodyList(i, body, u'locations'):
         i += 1
         continue
-      location = {}
+      location = {u'area': u'<Not set>'}
       while True:
         myopt = sys.argv[i].lower()
         if myopt == u'type':
