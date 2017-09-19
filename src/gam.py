@@ -7909,7 +7909,7 @@ GROUP_ROLES_MAP = {
 def doUpdateGroup():
 
 # Convert foo@googlemail.com to foo@gmail.com; eliminate periods in name for foo.bar@gmail.com
-  def _cleanAddress(emailAddress, mapCleanToOriginal):
+  def _cleanConsumerAddress(emailAddress, mapCleanToOriginal):
     atLoc = emailAddress.find(u'@')
     if atLoc > 0:
       if emailAddress[atLoc+1:] in [u'gmail.com', u'googlemail.com']:
@@ -7964,7 +7964,7 @@ def doUpdateGroup():
         if user_email == u'*' or user_email == GC_Values[GC_CUSTOMER_ID]:
           syncMembersSet.add(GC_Values[GC_CUSTOMER_ID])
         else:
-          syncMembersSet.add(_cleanAddress(user_email.lower(), syncMembersMap))
+          syncMembersSet.add(_cleanConsumerAddress(user_email.lower(), syncMembersMap))
       group = checkGroupExists(cd, group)
       if group:
         currentMembersSet = set()
@@ -7973,7 +7973,7 @@ def doUpdateGroup():
           if current_email == GC_Values[GC_CUSTOMER_ID]:
             currentMembersSet.add(current_email)
           else:
-            currentMembersSet.add(_cleanAddress(current_email.lower(), currentMembersMap))
+            currentMembersSet.add(_cleanConsumerAddress(current_email.lower(), currentMembersMap))
 # Compare incoming members and current memebers using the cleaned addresses; we actually add/remove with the original addresses
         to_add = [syncMembersMap.get(emailAddress, emailAddress) for emailAddress in syncMembersSet-currentMembersSet]
         to_remove = [currentMembersMap.get(emailAddress, emailAddress) for emailAddress in currentMembersSet-syncMembersSet]
