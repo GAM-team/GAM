@@ -6709,6 +6709,7 @@ def getUserAttributes(i, cd, updateCmd=False):
           i += 2
         elif myopt == u'customtype':
           organization[u'customType'] = sys.argv[i+1]
+          organization.pop(u'type', None)
           i += 2
         elif myopt == u'type':
           i = getEntryType(i+1, organization, USER_ORGANIZATION_TYPES, setTypeCustom=False)
