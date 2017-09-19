@@ -1704,12 +1704,11 @@ def doUpdateCustomer():
     else:
       print u'ERROR: %s is not a valid argument for "gam update customer"' % myarg
       sys.exit(2)
-  if body:
-    callGAPI(cd.customers(), u'update', customerKey=GC_Values[GC_CUSTOMER_ID], body=body)
-    print u'Updated customer'
-  else:
+  if not body:
     print u'ERROR: no arguments specified for "gam update customer"'
     sys.exit(2)
+  callGAPI(cd.customers(), u'update', customerKey=GC_Values[GC_CUSTOMER_ID], body=body)
+  print u'Updated customer'
 
 def doDelDomain():
   cd = buildGAPIObject(u'directory')
