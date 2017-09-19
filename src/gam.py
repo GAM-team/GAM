@@ -6435,12 +6435,15 @@ def doGetUserSchema():
 
 def getUserAttributes(i, cd, updateCmd=False):
   def getEntryType(i, entry, entryTypes, setTypeCustom=True):
-# Allow a|b|c|<String>, a|b|c|custom <String>
-# For all fields except organizations, when setting a custom type you do:
-# entry[u'type'] = u'custom'
-# entry[u'customType'] = <String>
-# For organizations, you don't set entry[u'type'] = u'custom'
-# Preserve case of custom types
+    """ Get attribute entry type
+    entryTypes is list of pre-defined types, a|b|c
+    Allow a|b|c|<String>, a|b|c|custom <String>
+    setTypeCustom=True, For all fields except organizations, when setting a custom type you do:
+    entry[u'type'] = u'custom'
+    entry[u'customType'] = <String>
+    setTypeCustom=False, For organizations, you don't set entry[u'type'] = u'custom'
+    Preserve case of custom types
+    """
     utype = sys.argv[i]
     ltype = utype.lower()
     if ltype == u'custom':
@@ -6449,10 +6452,13 @@ def getUserAttributes(i, cd, updateCmd=False):
       ltype = utype.lower()
     if ltype in entryTypes:
       entry[u'type'] = ltype
+      entry.pop(u'customType', None)
     else:
       entry[u'customType'] = utype
       if setTypeCustom:
         entry[u'type'] = u'custom'
+      else:
+        entry.pop(u'type', None)
     return i+1
 
   def checkClearBodyList(i, body, itemName):
