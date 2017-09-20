@@ -7,13 +7,12 @@ from binascii import hexlify, unhexlify
 from hashlib import sha1
 import re
 import logging; log = logging.getLogger(__name__)
-from warnings import warn
 # site
 # pkg
-from passlib.utils import to_unicode, to_native_str, xor_bytes
-from passlib.utils.compat import b, bytes, bascii_to_str, irange, u, \
+from passlib.utils import to_unicode, xor_bytes
+from passlib.utils.compat import irange, u, \
                                  uascii_to_str, unicode, str_to_uascii
-from passlib.utils.des import des_encrypt_block
+from passlib.crypto.des import des_encrypt_block
 import passlib.utils.handlers as uh
 # local
 __all__ = [
@@ -24,7 +23,7 @@ __all__ = [
 #=============================================================================
 # oracle10
 #=============================================================================
-def des_cbc_encrypt(key, value, iv=b('\x00') * 8, pad=b('\x00')):
+def des_cbc_encrypt(key, value, iv=b'\x00' * 8, pad=b'\x00'):
     """performs des-cbc encryption, returns only last block.
 
     this performs a specific DES-CBC encryption implementation
@@ -48,14 +47,14 @@ def des_cbc_encrypt(key, value, iv=b('\x00') * 8, pad=b('\x00')):
     return hash
 
 # magic string used as initial des key by oracle10
-ORACLE10_MAGIC = b("\x01\x23\x45\x67\x89\xAB\xCD\xEF")
+ORACLE10_MAGIC = b"\x01\x23\x45\x67\x89\xAB\xCD\xEF"
 
 class oracle10(uh.HasUserContext, uh.StaticHandler):
     """This class implements the password hash used by Oracle up to version 10g, and follows the :ref:`password-hash-api`.
 
     It does a single round of hashing, and relies on the username as the salt.
 
-    The :meth:`~passlib.ifc.PasswordHash.encrypt`, :meth:`~passlib.ifc.PasswordHash.genhash`, and :meth:`~passlib.ifc.PasswordHash.verify` methods all require the
+    The :meth:`~passlib.ifc.PasswordHash.hash`, :meth:`~passlib.ifc.PasswordHash.genhash`, and :meth:`~passlib.ifc.PasswordHash.verify` methods all require the
     following additional contextual keywords:
 
     :type user: str
@@ -107,7 +106,7 @@ class oracle11(uh.HasSalt, uh.GenericHandler):
 
     It supports a fixed-length salt.
 
-    The :meth:`~passlib.ifc.PasswordHash.encrypt` and :meth:`~passlib.ifc.PasswordHash.genconfig` methods accept the following optional keywords:
+    The :meth:`~passlib.ifc.PasswordHash.using` method accepts the following optional keywords:
 
     :type salt: str
     :param salt:
@@ -134,8 +133,6 @@ class oracle11(uh.HasSalt, uh.GenericHandler):
     checksum_size = 40
     checksum_chars = uh.UPPER_HEX_CHARS
 
-    _stub_checksum = u('0') * 40
-
     #--HasSalt--
     min_salt_size = max_salt_size = 20
     salt_chars = uh.UPPER_HEX_CHARS
@@ -156,7 +153,7 @@ class oracle11(uh.HasSalt, uh.GenericHandler):
         return cls(salt=salt, checksum=chk.upper())
 
     def to_string(self):
-        chk = (self.checksum or self._stub_checksum)
+        chk = self.checksum
         hash = u("S:%s%s") % (chk.upper(), self.salt.upper())
         return uascii_to_str(hash)
 

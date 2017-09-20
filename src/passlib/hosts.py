@@ -3,12 +3,11 @@
 # imports
 #=============================================================================
 # core
-import sys
 from warnings import warn
 # pkg
 from passlib.context import LazyCryptContext
 from passlib.exc import PasslibRuntimeWarning
-from passlib.registry import get_crypt_handler
+from passlib import registry
 from passlib.utils import has_crypt, unix_crypt_schemes
 # local
 __all__ = [
@@ -65,27 +64,19 @@ netbsd_context = LazyCryptContext(["bcrypt", "sha1_crypt", "md5_crypt",
 #=============================================================================
 # current host
 #=============================================================================
-if has_crypt:
+if registry.os_crypt_present:
     # NOTE: this is basically mimicing the output of os crypt(),
     # except that it uses passlib's (usually stronger) defaults settings,
-    # and can be introspected and used much more flexibly.
+    # and can be inspected and used much more flexibly.
 
     def _iter_os_crypt_schemes():
         """helper which iterates over supported os_crypt schemes"""
-        found = False
-        for name in unix_crypt_schemes:
-            handler = get_crypt_handler(name)
-            if handler.has_backend("os_crypt"):
-                found = True
-                yield name
-        if found:
+        out = registry.get_supported_os_crypt_schemes()
+        if out:
             # only offer disabled handler if there's another scheme in front,
             # as this can't actually hash any passwords
-            yield "unix_disabled"
-        else: # pragma: no cover -- sanity check
-            # no idea what OS this could happen on...
-            warn("crypt.crypt() function is present, but doesn't support any "
-                 "formats known to passlib!", PasslibRuntimeWarning)
+            out += ("unix_disabled",)
+        return out
 
     host_context = LazyCryptContext(_iter_os_crypt_schemes())
 

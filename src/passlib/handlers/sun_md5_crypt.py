@@ -17,8 +17,9 @@ import logging; log = logging.getLogger(__name__)
 from warnings import warn
 # site
 # pkg
-from passlib.utils import h64, to_unicode
-from passlib.utils.compat import b, bytes, byte_elem_value, irange, u, \
+from passlib.utils import to_unicode
+from passlib.utils.binary import h64
+from passlib.utils.compat import byte_elem_value, irange, u, \
                                  uascii_to_str, unicode, str_to_bascii
 import passlib.utils.handlers as uh
 # local
@@ -33,42 +34,42 @@ __all__ = [
 # exact bytes as in http://www.ibiblio.org/pub/docs/books/gutenberg/etext98/2ws2610.txt
 # from Project Gutenberg.
 
-MAGIC_HAMLET = b(
-    "To be, or not to be,--that is the question:--\n"
-    "Whether 'tis nobler in the mind to suffer\n"
-    "The slings and arrows of outrageous fortune\n"
-    "Or to take arms against a sea of troubles,\n"
-    "And by opposing end them?--To die,--to sleep,--\n"
-    "No more; and by a sleep to say we end\n"
-    "The heartache, and the thousand natural shocks\n"
-    "That flesh is heir to,--'tis a consummation\n"
-    "Devoutly to be wish'd. To die,--to sleep;--\n"
-    "To sleep! perchance to dream:--ay, there's the rub;\n"
-    "For in that sleep of death what dreams may come,\n"
-    "When we have shuffled off this mortal coil,\n"
-    "Must give us pause: there's the respect\n"
-    "That makes calamity of so long life;\n"
-    "For who would bear the whips and scorns of time,\n"
-    "The oppressor's wrong, the proud man's contumely,\n"
-    "The pangs of despis'd love, the law's delay,\n"
-    "The insolence of office, and the spurns\n"
-    "That patient merit of the unworthy takes,\n"
-    "When he himself might his quietus make\n"
-    "With a bare bodkin? who would these fardels bear,\n"
-    "To grunt and sweat under a weary life,\n"
-    "But that the dread of something after death,--\n"
-    "The undiscover'd country, from whose bourn\n"
-    "No traveller returns,--puzzles the will,\n"
-    "And makes us rather bear those ills we have\n"
-    "Than fly to others that we know not of?\n"
-    "Thus conscience does make cowards of us all;\n"
-    "And thus the native hue of resolution\n"
-    "Is sicklied o'er with the pale cast of thought;\n"
-    "And enterprises of great pith and moment,\n"
-    "With this regard, their currents turn awry,\n"
-    "And lose the name of action.--Soft you now!\n"
-    "The fair Ophelia!--Nymph, in thy orisons\n"
-    "Be all my sins remember'd.\n\x00" #<- apparently null at end of C string is included (test vector won't pass otherwise)
+MAGIC_HAMLET = (
+    b"To be, or not to be,--that is the question:--\n"
+    b"Whether 'tis nobler in the mind to suffer\n"
+    b"The slings and arrows of outrageous fortune\n"
+    b"Or to take arms against a sea of troubles,\n"
+    b"And by opposing end them?--To die,--to sleep,--\n"
+    b"No more; and by a sleep to say we end\n"
+    b"The heartache, and the thousand natural shocks\n"
+    b"That flesh is heir to,--'tis a consummation\n"
+    b"Devoutly to be wish'd. To die,--to sleep;--\n"
+    b"To sleep! perchance to dream:--ay, there's the rub;\n"
+    b"For in that sleep of death what dreams may come,\n"
+    b"When we have shuffled off this mortal coil,\n"
+    b"Must give us pause: there's the respect\n"
+    b"That makes calamity of so long life;\n"
+    b"For who would bear the whips and scorns of time,\n"
+    b"The oppressor's wrong, the proud man's contumely,\n"
+    b"The pangs of despis'd love, the law's delay,\n"
+    b"The insolence of office, and the spurns\n"
+    b"That patient merit of the unworthy takes,\n"
+    b"When he himself might his quietus make\n"
+    b"With a bare bodkin? who would these fardels bear,\n"
+    b"To grunt and sweat under a weary life,\n"
+    b"But that the dread of something after death,--\n"
+    b"The undiscover'd country, from whose bourn\n"
+    b"No traveller returns,--puzzles the will,\n"
+    b"And makes us rather bear those ills we have\n"
+    b"Than fly to others that we know not of?\n"
+    b"Thus conscience does make cowards of us all;\n"
+    b"And thus the native hue of resolution\n"
+    b"Is sicklied o'er with the pale cast of thought;\n"
+    b"And enterprises of great pith and moment,\n"
+    b"With this regard, their currents turn awry,\n"
+    b"And lose the name of action.--Soft you now!\n"
+    b"The fair Ophelia!--Nymph, in thy orisons\n"
+    b"Be all my sins remember'd.\n\x00" #<- apparently null at end of C string is included (test vector won't pass otherwise)
 )
 
 # NOTE: these sequences are pre-calculated iteration ranges used by X & Y loops w/in rounds function below
@@ -176,7 +177,7 @@ class sun_md5_crypt(uh.HasRounds, uh.HasSalt, uh.GenericHandler):
 
     It supports a variable-length salt, and a variable number of rounds.
 
-    The :meth:`~passlib.ifc.PasswordHash.encrypt` and :meth:`~passlib.ifc.PasswordHash.genconfig` methods accept the following optional keywords:
+    The :meth:`~passlib.ifc.PasswordHash.using` method accepts the following optional keywords:
 
     :type salt: str
     :param salt:
@@ -227,7 +228,6 @@ class sun_md5_crypt(uh.HasRounds, uh.HasSalt, uh.GenericHandler):
     # NOTE: not sure if original crypt has a salt size limit,
     # all instances that have been seen use 8 chars.
     default_salt_size = 8
-    min_salt_size = 0
     max_salt_size = None
     salt_chars = uh.HASH64_CHARS
 
@@ -327,17 +327,16 @@ class sun_md5_crypt(uh.HasRounds, uh.HasSalt, uh.GenericHandler):
             bare_salt=bare_salt,
         )
 
-    def to_string(self, withchk=True):
+    def to_string(self, _withchk=True):
         ss = u('') if self.bare_salt else u('$')
         rounds = self.rounds
         if rounds > 0:
             hash = u("$md5,rounds=%d$%s%s") % (rounds, self.salt, ss)
         else:
             hash = u("$md5$%s%s") % (self.salt, ss)
-        if withchk:
+        if _withchk:
             chk = self.checksum
-            if chk:
-                hash = u("%s$%s") % (hash, chk)
+            hash = u("%s$%s") % (hash, chk)
         return uascii_to_str(hash)
 
     #===================================================================
@@ -352,7 +351,7 @@ class sun_md5_crypt(uh.HasRounds, uh.HasSalt, uh.GenericHandler):
         # NOTE: no reference for how sun_md5_crypt handles unicode
         if isinstance(secret, unicode):
             secret = secret.encode("utf-8")
-        config = str_to_bascii(self.to_string(withchk=False))
+        config = str_to_bascii(self.to_string(_withchk=False))
         return raw_sun_md5_crypt(secret, self.rounds, config).decode("ascii")
 
     #===================================================================

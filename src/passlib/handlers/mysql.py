@@ -30,7 +30,7 @@ from warnings import warn
 # site
 # pkg
 from passlib.utils import to_native_str
-from passlib.utils.compat import b, bascii_to_str, bytes, unicode, u, \
+from passlib.utils.compat import bascii_to_str, unicode, u, \
                                  byte_elem_value, str_to_uascii
 import passlib.utils.handlers as uh
 # local
@@ -47,7 +47,7 @@ class mysql323(uh.StaticHandler):
 
     It has no salt and a single fixed round.
 
-    The :meth:`~passlib.ifc.PasswordHash.encrypt` and :meth:`~passlib.ifc.PasswordHash.genconfig` methods accept no optional keywords.
+    The :meth:`~passlib.ifc.PasswordHash.hash` and :meth:`~passlib.ifc.PasswordHash.genconfig` methods accept no optional keywords.
     """
     #===================================================================
     # class attrs
@@ -70,7 +70,7 @@ class mysql323(uh.StaticHandler):
 
         MASK_32 = 0xffffffff
         MASK_31 = 0x7fffffff
-        WHITE = b(' \t')
+        WHITE = b' \t'
 
         nr1 = 0x50305735
         nr2 = 0x12345671
@@ -96,7 +96,7 @@ class mysql41(uh.StaticHandler):
 
     It has no salt and a single fixed round.
 
-    The :meth:`~passlib.ifc.PasswordHash.encrypt` and :meth:`~passlib.ifc.PasswordHash.genconfig` methods accept no optional keywords.
+    The :meth:`~passlib.ifc.PasswordHash.hash` and :meth:`~passlib.ifc.PasswordHash.genconfig` methods accept no optional keywords.
     """
     #===================================================================
     # class attrs

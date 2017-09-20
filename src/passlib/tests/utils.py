@@ -4,26 +4,33 @@
 #=============================================================================
 from __future__ import with_statement
 # core
+from binascii import unhexlify
+import contextlib
+from functools import wraps, partial
+import hashlib
 import logging; log = logging.getLogger(__name__)
+import random
 import re
 import os
 import sys
 import tempfile
+import threading
 import time
-from passlib.exc import PasslibHashWarning
-from passlib.utils.compat import PY27, PY_MIN_32, PY3, JYTHON
+from passlib.exc import PasslibHashWarning, PasslibConfigWarning
+from passlib.utils.compat import PY3, JYTHON
 import warnings
 from warnings import warn
 # site
 # pkg
+from passlib import exc
 from passlib.exc import MissingBackendError
 import passlib.registry as registry
-from passlib.tests.backports import TestCase as _TestCase, catch_warnings, skip, skipIf, skipUnless
+from passlib.tests.backports import TestCase as _TestCase, skip, skipIf, skipUnless, SkipTest
 from passlib.utils import has_rounds_info, has_salt_info, rounds_cost_values, \
-                          classproperty, rng, getrandstr, is_ascii_safe, to_native_str, \
-                          repeat_string, tick
-from passlib.utils.compat import b, bytes, iteritems, irange, callable, \
-                                 base_string_types, exc_err, u, unicode, PY2
+                          rng as sys_rng, getrandstr, is_ascii_safe, to_native_str, \
+                          repeat_string, tick, batch
+from passlib.utils.compat import iteritems, irange, u, unicode, PY2
+from passlib.utils.decor import classproperty
 import passlib.utils.handlers as uh
 # local
 __all__ = [
@@ -102,13 +109,6 @@ def TEST_MODE(min=None, max=None):
 #=============================================================================
 # hash object inspection
 #=============================================================================
-def has_crypt_support(handler):
-    """check if host's crypt() supports this natively"""
-    if hasattr(handler, "orig_prefix"):
-        # ignore wrapper classes
-        return False
-    return 'os_crypt' in getattr(handler, "backends", ()) and handler.has_backend("os_crypt")
-
 def has_relaxed_setting(handler):
     """check if handler supports 'relaxed' kwd"""
     # FIXME: I've been lazy, should probably just add 'relaxed' kwd
@@ -121,14 +121,10 @@ def has_relaxed_setting(handler):
     return 'relaxed' in handler.setting_kwds or issubclass(handler,
                                                            uh.GenericHandler)
 
-def has_active_backend(handler):
-    """return active backend for handler, if any"""
-    if not hasattr(handler, "get_backend"):
-        return "builtin"
-    try:
-        return handler.get_backend()
-    except MissingBackendError:
-        return None
+def get_effective_rounds(handler, rounds=None):
+    """get effective rounds value from handler"""
+    handler = unwrap_handler(handler)
+    return handler(rounds=rounds, use_defaults=True).rounds
 
 def is_default_backend(handler, backend):
     """check if backend is the default for source"""
@@ -137,29 +133,86 @@ def is_default_backend(handler, backend):
     except MissingBackendError:
         return False
     try:
-        return handler.set_backend("default") == backend
+        handler.set_backend("default")
+        return handler.get_backend() == backend
     finally:
         handler.set_backend(orig)
 
-class temporary_backend(object):
+def iter_alt_backends(handler, current=None, fallback=False):
     """
-    temporarily set handler to specific backend
+    iterate over alternate backends available to handler.
+
+    .. warning::
+        not thread-safe due to has_backend() call
     """
+    if current is None:
+        current = handler.get_backend()
+    backends = handler.backends
+    idx = backends.index(current)+1 if fallback else 0
+    for backend in backends[idx:]:
+        if backend != current and handler.has_backend(backend):
+            yield backend
 
-    _orig = None
+def get_alt_backend(*args, **kwds):
+    for backend in iter_alt_backends(*args, **kwds):
+        return backend
+    return None
 
-    def __init__(self, handler, backend=None):
-        self.handler = handler
-        self.backend = backend
+def unwrap_handler(handler):
+    """return original handler, removing any wrapper objects"""
+    while hasattr(handler, "wrapped"):
+        handler = handler.wrapped
+    return handler
 
-    def __enter__(self):
-        orig = self._orig = self.handler.get_backend()
-        if self.backend:
-            self.handler.set_backend(self.backend)
-        return orig
+def handler_derived_from(handler, base):
+    """
+    test if <handler> was derived from <base> via <base.using()>.
+    """
+    # XXX: need way to do this more formally via ifc,
+    #      for now just hacking in the cases we encounter in testing.
+    if handler == base:
+        return True
+    elif isinstance(handler, uh.PrefixWrapper):
+        while handler:
+            if handler == base:
+                return True
+            # helper set by PrefixWrapper().using() just for this case...
+            handler = handler._derived_from
+        return False
+    elif isinstance(handler, type) and issubclass(handler, uh.MinimalHandler):
+        return issubclass(handler, base)
+    else:
+        raise NotImplementedError("don't know how to inspect handler: %r" % (handler,))
 
-    def __exit__(self, *exc_info):
-        self.handler.set_backend(self._orig)
+@contextlib.contextmanager
+def patch_calc_min_rounds(handler):
+    """
+    internal helper for do_config_encrypt() --
+    context manager which temporarily replaces handler's _calc_checksum()
+    with one that uses min_rounds; useful when trying to generate config
+    with high rounds value, but don't care if output is correct.
+    """
+    if isinstance(handler, type) and issubclass(handler, uh.HasRounds):
+        # XXX: also require GenericHandler for this branch?
+        wrapped = handler._calc_checksum
+        def wrapper(self, *args, **kwds):
+            rounds = self.rounds
+            try:
+                self.rounds = self.min_rounds
+                return wrapped(self, *args, **kwds)
+            finally:
+                self.rounds = rounds
+        handler._calc_checksum = wrapper
+        try:
+            yield
+        finally:
+            handler._calc_checksum = wrapped
+    elif isinstance(handler, uh.PrefixWrapper):
+        with patch_calc_min_rounds(handler.wrapped):
+            yield
+    else:
+        yield
+        return
 
 #=============================================================================
 # misc helpers
@@ -188,6 +241,14 @@ def tonn(source):
         except UnicodeDecodeError:
             return source.decode("latin-1")
 
+def hb(source):
+    """
+    helper for represent byte strings in hex.
+
+    usage: ``hb("deadbeef23")``
+    """
+    return unhexlify(re.sub(r"\s", "", source))
+
 def limit(value, lower, upper):
     if value < lower:
         return lower
@@ -195,34 +256,47 @@ def limit(value, lower, upper):
         return upper
     return value
 
-def randintgauss(lower, upper, mu, sigma):
-    """hack used by fuzz testing"""
-    return int(limit(rng.normalvariate(mu, sigma), lower, upper))
-
 def quicksleep(delay):
     """because time.sleep() doesn't even have 10ms accuracy on some OSes"""
     start = tick()
     while tick()-start < delay:
         pass
 
+def time_call(func, setup=None, maxtime=1, bestof=10):
+    """
+    timeit() wrapper which tries to get as accurate a measurement as possible w/in maxtime seconds.
+
+    :returns:
+        ``(avg_seconds_per_call, log10_number_of_repetitions)``
+    """
+    from timeit import Timer
+    from math import log
+    timer = Timer(func, setup=setup or '')
+    number = 1
+    end = tick() + maxtime
+    while True:
+        delta = min(timer.repeat(bestof, number))
+        if tick() >= end:
+            return delta/number, int(log(number, 10))
+        number *= 10
+
+def run_with_fixed_seeds(count=128, master_seed=0x243F6A8885A308D3):
+    """
+    decorator run test method w/ multiple fixed seeds.
+    """
+    def builder(func):
+        @wraps(func)
+        def wrapper(*args, **kwds):
+            rng = random.Random(master_seed)
+            for _ in irange(count):
+                kwds['seed'] = rng.getrandbits(32)
+                func(*args, **kwds)
+        return wrapper
+    return builder
+
 #=============================================================================
 # custom test harness
 #=============================================================================
-
-def patchAttr(test, obj, attr, value):
-    """monkeypatch object value, restoring original on cleanup"""
-    try:
-        orig = getattr(obj, attr)
-    except AttributeError:
-        def cleanup():
-            try:
-                delattr(obj, attr)
-            except AttributeError:
-                pass
-        test.addCleanup(cleanup)
-    else:
-        test.addCleanup(setattr, obj, attr, orig)
-    setattr(obj, attr, value)
 
 class TestCase(_TestCase):
     """passlib-specific test case class
@@ -264,9 +338,6 @@ class TestCase(_TestCase):
         return name.startswith("_") or \
                getattr(cls, "_%s__unittest_skip" % name, False)
 
-        # make this mirror nose's '__test__' attr
-        return not getattr(cls, "__test__", True)
-
     @classproperty
     def __test__(cls):
         # make nose just proxy __unittest_skip__
@@ -293,6 +364,12 @@ class TestCase(_TestCase):
             ctx.__enter__()
             self.addCleanup(ctx.__exit__)
 
+            # ignore warnings about PasswordHash features deprecated in 1.7
+            # TODO: should be cleaned in 2.0, when support will be dropped.
+            #       should be kept until then, so we test the legacy paths.
+            warnings.filterwarnings("ignore", r"the method .*\.(encrypt|genconfig|genhash)\(\) is deprecated")
+            warnings.filterwarnings("ignore", r"the 'vary_rounds' option is deprecated")
+
     #---------------------------------------------------------------
     # tweak message formatting so longMessage mode is only enabled
     # if msg ends with ":", and turn on longMessage by default.
@@ -306,7 +383,8 @@ class TestCase(_TestCase):
             return msg or std
 
     #---------------------------------------------------------------
-    # override assertRaises() to support '__msg__' keyword
+    # override assertRaises() to support '__msg__' keyword,
+    # and to return the caught exception for further examination
     #---------------------------------------------------------------
     def assertRaises(self, _exc_type, _callable=None, *args, **kwds):
         msg = kwds.pop("__msg__", None)
@@ -316,8 +394,8 @@ class TestCase(_TestCase):
                                                       *args, **kwds)
         try:
             result = _callable(*args, **kwds)
-        except _exc_type:
-            return
+        except _exc_type as err:
+            return err
         std = "function returned %r, expected it to raise %r" % (result,
                                                                  _exc_type)
         raise self.failureException(self._formatMessage(msg, std))
@@ -380,7 +458,7 @@ class TestCase(_TestCase):
                                 "WarningMessage instance")
             self.assertEqual(wmsg.lineno, lineno, msg)
 
-    class _AssertWarningList(catch_warnings):
+    class _AssertWarningList(warnings.catch_warnings):
         """context manager for assertWarningList()"""
         def __init__(self, case, **kwds):
             self.case = case
@@ -393,7 +471,7 @@ class TestCase(_TestCase):
 
         def __exit__(self, *exc_info):
             self.__super.__exit__(*exc_info)
-            if not exc_info:
+            if exc_info[0] is None:
                 self.case.assertWarningList(self.log, **self.kwds)
 
     def assertWarningList(self, wlist=None, desc=None, msg=None):
@@ -468,6 +546,81 @@ class TestCase(_TestCase):
             return self.skipTest("GAE doesn't offer read/write filesystem access")
 
     #===================================================================
+    # reproducible random helpers
+    #===================================================================
+
+    #: global thread lock for random state
+    #: XXX: could split into global & per-instance locks if need be
+    _random_global_lock = threading.Lock()
+
+    #: cache of global seed value, initialized on first call to getRandom()
+    _random_global_seed = None
+
+    #: per-instance cache of name -> RNG
+    _random_cache = None
+
+    def getRandom(self, name="default", seed=None):
+        """
+        Return a :class:`random.Random` object for current test method to use.
+        Within an instance, multiple calls with the same name will return
+        the same object.
+
+        When first created, each RNG will be seeded with value derived from
+        a global seed, the test class module & name, the current test method name,
+        and the **name** parameter.
+
+        The global seed taken from the $RANDOM_TEST_SEED env var,
+        the $PYTHONHASHSEED env var, or a randomly generated the
+        first time this method is called. In all cases, the value
+        is logged for reproducibility.
+
+        :param name:
+            name to uniquely identify separate RNGs w/in a test
+            (e.g. for threaded tests).
+
+        :param seed:
+            override global seed when initialzing rng.
+
+        :rtype: random.Random
+        """
+        # check cache
+        cache = self._random_cache
+        if cache and name in cache:
+            return cache[name]
+
+        with self._random_global_lock:
+
+            # check cache again, and initialize it
+            cache = self._random_cache
+            if cache and name in cache:
+                return cache[name]
+            elif not cache:
+                cache = self._random_cache = {}
+
+            # init global seed
+            global_seed = seed or TestCase._random_global_seed
+            if global_seed is None:
+                # NOTE: checking PYTHONHASHSEED, because if that's set,
+                #       the test runner wants something reproducible.
+                global_seed = TestCase._random_global_seed = \
+                    int(os.environ.get("RANDOM_TEST_SEED") or
+                        os.environ.get("PYTHONHASHSEED") or
+                        sys_rng.getrandbits(32))
+                # XXX: would it be better to print() this?
+                log.info("using RANDOM_TEST_SEED=%d", global_seed)
+
+            # create seed
+            cls = type(self)
+            source = "\n".join([str(global_seed), cls.__module__, cls.__name__,
+                                self._testMethodName, name])
+            digest = hashlib.sha256(source.encode("utf-8")).hexdigest()
+            seed = int(digest[:16], 16)
+
+            # create rng
+            value = cache[name] = random.Random(seed)
+            return value
+
+    #===================================================================
     # other
     #===================================================================
     _mktemp_queue = None
@@ -488,6 +641,26 @@ class TestCase(_TestCase):
             self.addCleanup(cleaner)
         queue.append(path)
         return path
+
+    def patchAttr(self, obj, attr, value, require_existing=True, wrap=False):
+        """monkeypatch object value, restoring original value on cleanup"""
+        try:
+            orig = getattr(obj, attr)
+        except AttributeError:
+            if require_existing:
+                raise
+            def cleanup():
+                try:
+                    delattr(obj, attr)
+                except AttributeError:
+                    pass
+            self.addCleanup(cleanup)
+        else:
+            self.addCleanup(setattr, obj, attr, orig)
+        if wrap:
+            value = partial(value, orig)
+            wraps(orig)(value)
+        setattr(obj, attr, value)
 
     #===================================================================
     # eoc
@@ -562,21 +735,17 @@ class HandlerCase(TestCase):
          "vt0RLE8uZ4oPwcelCjmw2kSYu.Ec6ycULevoBK25fs2xXgMNrCzIMVcgEJAstJeonj1"),
     ]
 
-    # passwords used to test basic encrypt behavior - generally
+    # passwords used to test basic hash behavior - generally
     # don't need to be overidden.
     stock_passwords = [
         u("test"),
         u("\u20AC\u00A5$"),
-        b('\xe2\x82\xac\xc2\xa5$')
+        b'\xe2\x82\xac\xc2\xa5$'
     ]
 
     #---------------------------------------------------------------
     # option flags
     #---------------------------------------------------------------
-
-    # maximum number of chars which hash will include in digest.
-    # ``None`` (the default) indicates the hash uses ALL of the password.
-    secret_size = None
 
     # whether hash is case insensitive
     # True, False, or special value "verify-only" (which indicates
@@ -586,8 +755,8 @@ class HandlerCase(TestCase):
     # flag if scheme accepts ALL hash strings (e.g. plaintext)
     accepts_all_hashes = False
 
-    # flag indicating "disabled account" handler (e.g. unix_disabled)
-    is_disabled_handler = False
+    # flag if scheme has "is_disabled" set, and contains 'salted' data
+    disabled_contains_salt = False
 
     # flag/hack to filter PasslibHashWarning issued by test_72_configs()
     filter_config_warnings = False
@@ -598,7 +767,7 @@ class HandlerCase(TestCase):
         # anything that supports crypt() interface should forbid null chars,
         # since crypt() uses null-terminated strings.
         if 'os_crypt' in getattr(cls.handler, "backends", ()):
-            return b("\x00")
+            return b"\x00"
         return None
 
     #===================================================================
@@ -615,22 +784,12 @@ class HandlerCase(TestCase):
         return name
 
     #===================================================================
-    # internal instance attrs
-    #===================================================================
-    # indicates safe_crypt() has been patched to use another backend of handler.
-    using_patched_crypt = False
-
-    #===================================================================
     # support methods
     #===================================================================
 
     #---------------------------------------------------------------
     # configuration helpers
     #---------------------------------------------------------------
-    @property
-    def supports_config_string(self):
-        return self.do_genconfig() is not None
-
     @classmethod
     def iter_known_hashes(cls):
         """iterate through known (secret, hash) pairs"""
@@ -644,7 +803,7 @@ class HandlerCase(TestCase):
     def get_sample_hash(self):
         """test random sample secret/hash pair"""
         known = list(self.iter_known_hashes())
-        return rng.choice(known)
+        return self.getRandom().choice(known)
 
     #---------------------------------------------------------------
     # test helpers
@@ -654,7 +813,7 @@ class HandlerCase(TestCase):
         result = self.do_verify(secret, hash)
         self.assertTrue(result is True or result is False,
                         "verify() returned non-boolean value: %r" % (result,))
-        if self.is_disabled_handler or negate:
+        if self.handler.is_disabled or negate:
             if not result:
                 return
             if not msg:
@@ -699,16 +858,29 @@ class HandlerCase(TestCase):
         """subclassable method allowing 'secret' to be encode context kwds"""
         return secret
 
-    def do_encrypt(self, secret, **kwds):
-        """call handler's encrypt method with specified options"""
-        secret = self.populate_context(secret, kwds)
-        self.populate_settings(kwds)
-        return self.handler.encrypt(secret, **kwds)
+    # TODO: rename to do_hash() to match new API
+    def do_encrypt(self, secret, use_encrypt=False, handler=None, context=None, **settings):
+        """call handler's hash() method with specified options"""
+        self.populate_settings(settings)
+        if context is None:
+            context = {}
+        secret = self.populate_context(secret, context)
+        if use_encrypt:
+            # use legacy 1.6 api
+            warnings = []
+            if settings:
+                context.update(**settings)
+                warnings.append("passing settings to.*is deprecated")
+            with self.assertWarningList(warnings):
+                return (handler or self.handler).encrypt(secret, **context)
+        else:
+            # use 1.7 api
+            return (handler or self.handler).using(**settings).hash(secret, **context)
 
-    def do_verify(self, secret, hash, **kwds):
+    def do_verify(self, secret, hash, handler=None, **kwds):
         """call handler's verify method"""
         secret = self.populate_context(secret, kwds)
-        return self.handler.verify(secret, hash, **kwds)
+        return (handler or self.handler).verify(secret, hash, **kwds)
 
     def do_identify(self, hash):
         """call handler's identify method"""
@@ -724,69 +896,60 @@ class HandlerCase(TestCase):
         secret = self.populate_context(secret, kwds)
         return self.handler.genhash(secret, config, **kwds)
 
+    def do_stub_encrypt(self, handler=None, context=None, **settings):
+        """
+        return sample hash for handler, w/o caring if digest is valid
+        (uses some monkeypatching to minimize digest calculation cost)
+        """
+        handler = (handler or self.handler).using(**settings)
+        if context is None:
+            context = {}
+        secret = self.populate_context("", context)
+        with patch_calc_min_rounds(handler):
+            return handler.hash(secret, **context)
+
     #---------------------------------------------------------------
     # automatically generate subclasses for testing specific backends,
     # and other backend helpers
     #---------------------------------------------------------------
+
+    BACKEND_NOT_AVAILABLE = "backend not available"
+
     @classmethod
-    def _enable_backend_case(cls, backend):
-        """helper for create_backend_cases(); returns reason to skip backend, or None"""
+    def _get_skip_backend_reason(cls, backend):
+        """
+        helper for create_backend_case() --
+        returns reason to skip backend, or None if backend should be tested
+        """
         handler = cls.handler
         if not is_default_backend(handler, backend) and not TEST_MODE("full"):
             return "only default backend is being tested"
         if handler.has_backend(backend):
             return None
-        if handler.name == "bcrypt" and backend == "builtin" and TEST_MODE("full"):
-            # this will be auto-enabled under TEST_MODE 'full'.
-            return None
-        from passlib.utils import has_crypt
-        if backend == "os_crypt" and has_crypt:
-            if TEST_MODE("full") and cls.find_crypt_replacement():
-                # in this case, HandlerCase will monkeypatch os_crypt
-                # to use another backend, just so we can test os_crypt fully.
-                return None
-            else:
-                return "hash not supported by os crypt()"
-        return "backend not available"
+        return cls.BACKEND_NOT_AVAILABLE
 
     @classmethod
-    def create_backend_cases(cls, backends, module=None):
+    def create_backend_case(cls, backend):
         handler = cls.handler
         name = handler.name
         assert hasattr(handler, "backends"), "handler must support uh.HasManyBackends protocol"
-        for backend in backends:
-            assert backend in handler.backends, "unknown backend: %r" % (backend,)
-            bases = (cls,)
-            if backend == "os_crypt":
-                bases += (OsCryptMixin,)
-            subcls = type(
-                "%s_%s_test" % (name, backend),
-                bases,
-                dict(
-                    descriptionPrefix = "%s (%s backend)" % (name, backend),
-                    backend = backend,
-                    __module__= module or cls.__module__,
-                )
+        assert backend in handler.backends, "unknown backend: %r" % (backend,)
+        bases = (cls,)
+        if backend == "os_crypt":
+            bases += (OsCryptMixin,)
+        subcls = type(
+            "%s_%s_test" % (name, backend),
+            bases,
+            dict(
+                descriptionPrefix="%s (%s backend)" % (name, backend),
+                backend=backend,
+                __module__=cls.__module__,
             )
-            skip_reason = cls._enable_backend_case(backend)
-            if skip_reason:
-                subcls = skip(skip_reason)(subcls)
-            yield subcls
-
-    @classmethod
-    def find_crypt_replacement(cls, fallback=False):
-        """find other backend which can be used to mock the os_crypt backend"""
-        handler = cls.handler
-        assert "os_crypt" in handler.backends, "expected os_crypt to be present"
-        if fallback:
-            # NOTE: using list() because tuples lack .index under py25 (issue 58)
-            idx = list(handler.backends).index("os_crypt") + 1
-        else:
-            idx = 0
-        for name in handler.backends[idx:]:
-            if name != "os_crypt" and handler.has_backend(name):
-                return name
-        return None
+        )
+        skip_reason = cls._get_skip_backend_reason(backend)
+        if skip_reason:
+            subcls = skip(skip_reason)(subcls)
+        return subcls
 
     #===================================================================
     # setup
@@ -802,6 +965,10 @@ class HandlerCase(TestCase):
                 raise RuntimeError("handler doesn't support multiple backends")
             self.addCleanup(handler.set_backend, handler.get_backend())
             handler.set_backend(backend)
+
+        # patch some RNG references so they're reproducible.
+        from passlib.utils import handlers
+        self.patchAttr(handlers, "rng", self.getRandom("salt generator"))
 
     #===================================================================
     # basic tests
@@ -845,15 +1012,11 @@ class HandlerCase(TestCase):
         and that identify() and genhash() handle the result correctly.
         """
         #
-        # genconfig() should return native string,
-        # or ``None`` if handler does not use a configuration string
-        # (mostly used by static hashes)
+        # genconfig() should return native string.
+        # NOTE: prior to 1.7 could return None, but that's no longer allowed.
         #
         config = self.do_genconfig()
-        if self.supports_config_string:
-            self.check_returned_native_str(config, "genconfig")
-        else:
-            self.assertIs(config, None)
+        self.check_returned_native_str(config, "genconfig")
 
         #
         # genhash() should always accept genconfig()'s output,
@@ -865,27 +1028,37 @@ class HandlerCase(TestCase):
         #
         # verify() should never accept config strings
         #
-        if self.supports_config_string:
-            self.assertRaises(ValueError, self.do_verify, 'stub', config,
-                __msg__="verify() failed to reject genconfig() output: %r" %
-                (config,))
-        else:
-            self.assertRaises(TypeError, self.do_verify, 'stub', config)
+
+        # NOTE: changed as of 1.7 -- previously, .verify() should have
+        #       rejected partial config strings returned by genconfig().
+        #       as of 1.7, that feature is deprecated, and genconfig()
+        #       always returns a hash (usually of the empty string)
+        #       so verify should always accept it's output
+        self.do_verify('', config)  # usually true, but not required by protocol
 
         #
         # identify() should positively identify config strings if not None.
         #
-        if self.supports_config_string:
-            self.assertTrue(self.do_identify(config),
-                "identify() failed to identify genconfig() output: %r" %
-                (config,))
-        else:
-            self.assertRaises(TypeError, self.do_identify, config)
 
-    def test_03_hash_workflow(self):
+        # NOTE: changed as of 1.7 -- genconfig() previously might return None,
+        #       now must always return valid hash
+        self.assertTrue(self.do_identify(config),
+            "identify() failed to identify genconfig() output: %r" %
+            (config,))
+
+    def test_02_using_workflow(self):
+        """test basic using() workflow"""
+        handler = self.handler
+        subcls = handler.using()
+        self.assertIsNot(subcls, handler)
+        self.assertEqual(subcls.name, handler.name)
+        # NOTE: other info attrs should match as well, just testing basic behavior.
+        # NOTE: mixin-specific args like using(min_rounds=xxx) tested later.
+
+    def test_03_hash_workflow(self, use_16_legacy=False):
         """test basic hash-string workflow.
 
-        this tests that encrypt()'s hashes are accepted
+        this tests that hash()'s hashes are accepted
         by verify() and identify(), and regenerated correctly by genhash().
         the test is run against a couple of different stock passwords.
         """
@@ -893,10 +1066,10 @@ class HandlerCase(TestCase):
         for secret in self.stock_passwords:
 
             #
-            # encrypt() should generate native str hash
+            # hash() should generate native str hash
             #
-            result = self.do_encrypt(secret)
-            self.check_returned_native_str(result, "encrypt")
+            result = self.do_encrypt(secret, use_encrypt=use_16_legacy)
+            self.check_returned_native_str(result, "hash")
 
             #
             # verify() should work only against secret
@@ -909,16 +1082,21 @@ class HandlerCase(TestCase):
             #
             other = self.do_genhash(secret, result)
             self.check_returned_native_str(other, "genhash")
-            self.assertEqual(other, result, "genhash() failed to reproduce "
-                             "hash: secret=%r hash=%r: result=%r" %
-                             (secret, result, other))
+            if self.handler.is_disabled and self.disabled_contains_salt:
+                self.assertNotEqual(other, result, "genhash() failed to salt result "
+                                    "hash: secret=%r hash=%r: result=%r" %
+                                    (secret, result, other))
+            else:
+                self.assertEqual(other, result, "genhash() failed to reproduce "
+                                 "hash: secret=%r hash=%r: result=%r" %
+                                 (secret, result, other))
 
             #
             # genhash() should NOT reproduce original hash for wrong password
             #
             other = self.do_genhash(wrong_secret, result)
             self.check_returned_native_str(other, "genhash")
-            if self.is_disabled_handler:
+            if self.handler.is_disabled and not self.disabled_contains_salt:
                 self.assertEqual(other, result, "genhash() failed to reproduce "
                                  "disabled-hash: secret=%r hash=%r other_secret=%r: result=%r" %
                                  (secret, result, wrong_secret, other))
@@ -932,15 +1110,19 @@ class HandlerCase(TestCase):
             #
             self.assertTrue(self.do_identify(result))
 
+    def test_03_legacy_hash_workflow(self):
+        """test hash-string workflow with legacy .encrypt() & .genhash() methods"""
+        self.test_03_hash_workflow(use_16_legacy=True)
+
     def test_04_hash_types(self):
         """test hashes can be unicode or bytes"""
         # this runs through workflow similar to 03, but wraps
         # everything using tonn() so we test unicode under py2,
         # and bytes under py3.
 
-        # encrypt using non-native secret
+        # hash using non-native secret
         result = self.do_encrypt(tonn('stub'))
-        self.check_returned_native_str(result, "encrypt")
+        self.check_returned_native_str(result, "hash")
 
         # verify using non-native hash
         self.check_verify('stub', tonn(result))
@@ -951,50 +1133,62 @@ class HandlerCase(TestCase):
         # genhash using non-native hash
         other = self.do_genhash('stub', tonn(result))
         self.check_returned_native_str(other, "genhash")
-        self.assertEqual(other, result)
+        if self.handler.is_disabled and self.disabled_contains_salt:
+            self.assertNotEqual(other, result)
+        else:
+            self.assertEqual(other, result)
 
         # genhash using non-native hash AND secret
         other = self.do_genhash(tonn('stub'), tonn(result))
         self.check_returned_native_str(other, "genhash")
-        self.assertEqual(other, result)
+        if self.handler.is_disabled and self.disabled_contains_salt:
+            self.assertNotEqual(other, result)
+        else:
+            self.assertEqual(other, result)
 
         # identify using non-native hash
         self.assertTrue(self.do_identify(tonn(result)))
 
     def test_05_backends(self):
         """test multi-backend support"""
+
+        # check that handler supports multiple backends
         handler = self.handler
         if not hasattr(handler, "set_backend"):
             raise self.skipTest("handler only has one backend")
-        with temporary_backend(handler):
-            for backend in handler.backends:
 
-                #
-                # validate backend name
-                #
-                self.assertIsInstance(backend, str)
-                self.assertNotIn(backend, RESERVED_BACKEND_NAMES,
-                                 "invalid backend name: %r" % (backend,))
+        # add cleanup func to restore old backend
+        self.addCleanup(handler.set_backend, handler.get_backend())
 
-                #
-                # ensure has_backend() returns bool value
-                #
-                ret = handler.has_backend(backend)
-                if ret is True:
-                    # verify backend can be loaded
-                    handler.set_backend(backend)
-                    self.assertEqual(handler.get_backend(), backend)
+        # run through each backend, make sure it works
+        for backend in handler.backends:
 
-                elif ret is False:
-                    # verify backend CAN'T be loaded
-                    self.assertRaises(MissingBackendError, handler.set_backend,
-                                      backend)
+            #
+            # validate backend name
+            #
+            self.assertIsInstance(backend, str)
+            self.assertNotIn(backend, RESERVED_BACKEND_NAMES,
+                             "invalid backend name: %r" % (backend,))
 
-                else:
-                    # didn't return boolean object. commonly fails due to
-                    # use of 'classmethod' decorator instead of 'classproperty'
-                    raise TypeError("has_backend(%r) returned invalid "
-                                    "value: %r" % (backend, ret))
+            #
+            # ensure has_backend() returns bool value
+            #
+            ret = handler.has_backend(backend)
+            if ret is True:
+                # verify backend can be loaded
+                handler.set_backend(backend)
+                self.assertEqual(handler.get_backend(), backend)
+
+            elif ret is False:
+                # verify backend CAN'T be loaded
+                self.assertRaises(MissingBackendError, handler.set_backend,
+                                  backend)
+
+            else:
+                # didn't return boolean object. commonly fails due to
+                # use of 'classmethod' decorator instead of 'classproperty'
+                raise TypeError("has_backend(%r) returned invalid "
+                                "value: %r" % (backend, ret))
 
     #===================================================================
     # salts
@@ -1032,20 +1226,19 @@ class HandlerCase(TestCase):
             raise AssertionError("default_salt_size must be <= max_salt_size")
 
         # check for 'salt_size' keyword
-        if 'salt_size' not in cls.setting_kwds and \
-                (not mx_set or cls.min_salt_size < cls.max_salt_size):
-            # NOTE: only bothering to issue warning if default_salt_size
-            # isn't maxed out
-            if (not mx_set or cls.default_salt_size < cls.max_salt_size):
-                warn("%s: hash handler supports range of salt sizes, "
-                     "but doesn't offer 'salt_size' setting" % (cls.name,))
+        # NOTE: skipping warning if default salt size is already maxed out
+        #       (might change that in future)
+        if 'salt_size' not in cls.setting_kwds and (not mx_set or cls.default_salt_size < cls.max_salt_size):
+            warn('%s: hash handler supports range of salt sizes, '
+                 'but doesn\'t offer \'salt_size\' setting' % (cls.name,))
 
         # check salt_chars & default_salt_chars
         if cls.salt_chars:
             if not cls.default_salt_chars:
                 raise AssertionError("default_salt_chars must not be empty")
-            if any(c not in cls.salt_chars for c in cls.default_salt_chars):
-                raise AssertionError("default_salt_chars must be subset of salt_chars: %r not in salt_chars" % (c,))
+            for c in cls.default_salt_chars:
+                if c not in cls.salt_chars:
+                    raise AssertionError("default_salt_chars must be subset of salt_chars: %r not in salt_chars" % (c,))
         else:
             if not cls.default_salt_chars:
                 raise AssertionError("default_salt_chars MUST be specified if salt_chars is empty")
@@ -1063,28 +1256,28 @@ class HandlerCase(TestCase):
                    log(len(handler.default_salt_chars), 2))
 
     def test_11_unique_salt(self):
-        """test encrypt() / genconfig() creates new salt each time"""
+        """test hash() / genconfig() creates new salt each time"""
         self.require_salt()
         # odds of picking 'n' identical salts at random is '(.5**salt_bits)**n'.
-        # we want to pick the smallest N needed s.t. odds are <1/1000, just
-        # to eliminate false-positives. which works out to n>7-salt_bits.
-        # n=1 is sufficient for most hashes, but a few border cases (e.g.
-        # cisco_type7) have < 7 bits of salt, requiring more.
-        samples = max(1,7-self.salt_bits)
+        # we want to pick the smallest N needed s.t. odds are <1/10**d, just
+        # to eliminate false-positives. which works out to n>3.33+d-salt_bits.
+        # for 1/1e12 odds, n=1 is sufficient for most hashes, but a few border cases (e.g.
+        # cisco_type7) have < 16 bits of salt, requiring more.
+        samples = max(1, 4 + 12 - self.salt_bits)
+
         def sampler(func):
             value1 = func()
-            for i in irange(samples):
+            for _ in irange(samples):
                 value2 = func()
                 if value1 != value2:
                     return
             raise self.failureException("failed to find different salt after "
                                         "%d samples" % (samples,))
-        if self.do_genconfig() is not None: # cisco_type7 has salt & no config
-            sampler(self.do_genconfig)
-        sampler(lambda : self.do_encrypt("stub"))
+        sampler(self.do_genconfig)
+        sampler(lambda: self.do_encrypt("stub"))
 
     def test_12_min_salt_size(self):
-        """test encrypt() / genconfig() honors min_salt_size"""
+        """test hash() / genconfig() honors min_salt_size"""
         self.require_salt_info()
 
         handler = self.handler
@@ -1110,56 +1303,56 @@ class HandlerCase(TestCase):
                           salt_size=min_size-1)
 
     def test_13_max_salt_size(self):
-        """test encrypt() / genconfig() honors max_salt_size"""
+        """test hash() / genconfig() honors max_salt_size"""
         self.require_salt_info()
 
         handler = self.handler
         max_size = handler.max_salt_size
         salt_char = handler.salt_chars[0:1]
 
-        if max_size is None:
+        # NOTE: skipping this for hashes like argon2 since max_salt_size takes WAY too much memory
+        if max_size is None or max_size > (1 << 20):
             #
             # if it's not set, salt should never be truncated; so test it
             # with an unreasonably large salt.
             #
             s1 = salt_char * 1024
-            c1 = self.do_genconfig(salt=s1)
-            c2 = self.do_genconfig(salt=s1 + salt_char)
+            c1 = self.do_stub_encrypt(salt=s1)
+            c2 = self.do_stub_encrypt(salt=s1 + salt_char)
             self.assertNotEqual(c1, c2)
 
-            self.do_encrypt('stub', salt_size=1024)
+            self.do_stub_encrypt(salt_size=1024)
 
         else:
             #
             # check max size is accepted
             #
             s1 = salt_char * max_size
-            c1 = self.do_genconfig(salt=s1)
+            c1 = self.do_stub_encrypt(salt=s1)
 
-            self.do_encrypt('stub', salt_size=max_size)
+            self.do_stub_encrypt(salt_size=max_size)
 
             #
             # check max size + 1 is rejected
             #
             s2 = s1 + salt_char
-            self.assertRaises(ValueError, self.do_genconfig, salt=s2)
+            self.assertRaises(ValueError, self.do_stub_encrypt, salt=s2)
 
-            self.assertRaises(ValueError, self.do_encrypt, 'stub',
-                              salt_size=max_size+1)
+            self.assertRaises(ValueError, self.do_stub_encrypt, salt_size=max_size + 1)
 
             #
             # should accept too-large salt in relaxed mode
             #
             if has_relaxed_setting(handler):
-                with catch_warnings(record=True): # issues passlibhandlerwarning
-                    c2 = self.do_genconfig(salt=s2, relaxed=True)
+                with warnings.catch_warnings(record=True): # issues passlibhandlerwarning
+                    c2 = self.do_stub_encrypt(salt=s2, relaxed=True)
                 self.assertEqual(c2, c1)
 
             #
             # if min_salt supports it, check smaller than mx is NOT truncated
             #
             if handler.min_salt_size < max_size:
-                c3 = self.do_genconfig(salt=s1[:-1])
+                c3 = self.do_stub_encrypt(salt=s1[:-1])
                 self.assertNotEqual(c3, c1)
 
     # whether salt should be passed through bcrypt repair function
@@ -1168,12 +1361,12 @@ class HandlerCase(TestCase):
     def prepare_salt(self, salt):
         """prepare generated salt"""
         if self.fuzz_salts_need_bcrypt_repair:
-            from passlib.utils import bcrypt64
+            from passlib.utils.binary import bcrypt64
             salt = bcrypt64.repair_unused(salt)
         return salt
 
     def test_14_salt_chars(self):
-        """test genconfig() honors salt_chars"""
+        """test hash() honors salt_chars"""
         self.require_salt_info()
 
         handler = self.handler
@@ -1183,13 +1376,11 @@ class HandlerCase(TestCase):
         raw = isinstance(cs, bytes)
 
         # make sure all listed chars are accepted
-        chunk = mx or 32
-        for i in irange(0,len(cs),chunk):
-            salt = cs[i:i+chunk]
+        for salt in batch(cs, mx or 32):
             if len(salt) < mn:
-                salt = (salt*(mn//len(salt)+1))[:chunk]
+                salt = repeat_string(salt, mn)
             salt = self.prepare_salt(salt)
-            self.do_genconfig(salt=salt)
+            self.do_stub_encrypt(salt=salt)
 
         # check some invalid salt chars, make sure they're rejected
         source = u('\x00\xff')
@@ -1198,7 +1389,7 @@ class HandlerCase(TestCase):
         chunk = max(mn, 1)
         for c in source:
             if c not in cs:
-                self.assertRaises(ValueError, self.do_genconfig, salt=c*chunk,
+                self.assertRaises(ValueError, self.do_stub_encrypt, salt=c*chunk,
                                   __msg__="invalid salt char %r:" % (c,))
 
     @property
@@ -1214,6 +1405,7 @@ class HandlerCase(TestCase):
         """test non-string salt values"""
         self.require_salt()
         salt_type = self.salt_type
+        salt_size = getattr(self.handler, "min_salt_size", 0) or 8
 
         # should always throw error for random class.
         class fake(object):
@@ -1222,12 +1414,59 @@ class HandlerCase(TestCase):
 
         # unicode should be accepted only if salt_type is unicode.
         if salt_type is not unicode:
-            self.assertRaises(TypeError, self.do_encrypt, 'stub', salt=u('x'))
+            self.assertRaises(TypeError, self.do_encrypt, 'stub', salt=u('x') * salt_size)
 
         # bytes should be accepted only if salt_type is bytes,
         # OR if salt type is unicode and running PY2 - to allow native strings.
         if not (salt_type is bytes or (PY2 and salt_type is unicode)):
-            self.assertRaises(TypeError, self.do_encrypt, 'stub', salt=b('x'))
+            self.assertRaises(TypeError, self.do_encrypt, 'stub', salt=b'x' * salt_size)
+
+    def test_using_salt_size(self):
+        """Handler.using() -- default_salt_size"""
+        self.require_salt_info()
+
+        handler = self.handler
+        mn = handler.min_salt_size
+        mx = handler.max_salt_size
+        df = handler.default_salt_size
+
+        # should prevent setting below handler limit
+        self.assertRaises(ValueError, handler.using, default_salt_size=-1)
+        with self.assertWarningList([PasslibHashWarning]):
+            temp = handler.using(default_salt_size=-1, relaxed=True)
+        self.assertEqual(temp.default_salt_size, mn)
+
+        # should prevent setting above handler limit
+        if mx:
+            self.assertRaises(ValueError, handler.using, default_salt_size=mx+1)
+            with self.assertWarningList([PasslibHashWarning]):
+                temp = handler.using(default_salt_size=mx+1, relaxed=True)
+            self.assertEqual(temp.default_salt_size, mx)
+
+        # try setting to explicit value
+        if mn != mx:
+            temp = handler.using(default_salt_size=mn+1)
+            self.assertEqual(temp.default_salt_size, mn+1)
+            self.assertEqual(handler.default_salt_size, df)
+
+            temp = handler.using(default_salt_size=mn+2)
+            self.assertEqual(temp.default_salt_size, mn+2)
+            self.assertEqual(handler.default_salt_size, df)
+
+        # accept strings
+        if mn == mx:
+            ref = mn
+        else:
+            ref = mn + 1
+        temp = handler.using(default_salt_size=str(ref))
+        self.assertEqual(temp.default_salt_size, ref)
+
+        # reject invalid strings
+        self.assertRaises(ValueError, handler.using, default_salt_size=str(ref) + "xxx")
+
+        # honor 'salt_size' alias
+        temp = handler.using(salt_size=ref)
+        self.assertEqual(temp.default_salt_size, ref)
 
     #===================================================================
     # rounds
@@ -1266,8 +1505,8 @@ class HandlerCase(TestCase):
         if cls.rounds_cost not in rounds_cost_values:
             raise AssertionError("unknown rounds cost constant: %r" % (cls.rounds_cost,))
 
-    def test_21_rounds_limits(self):
-        """test encrypt() / genconfig() honors rounds limits"""
+    def test_21_min_rounds(self):
+        """test hash() / genconfig() honors min_rounds"""
         self.require_rounds_info()
         handler = self.handler
         min_rounds = handler.min_rounds
@@ -1278,36 +1517,377 @@ class HandlerCase(TestCase):
 
         # check min-1 is rejected
         self.assertRaises(ValueError, self.do_genconfig, rounds=min_rounds-1)
-        self.assertRaises(ValueError, self.do_encrypt, 'stub',
-                          rounds=min_rounds-1)
+        self.assertRaises(ValueError, self.do_encrypt, 'stub', rounds=min_rounds-1)
 
         # TODO: check relaxed mode clips min-1
 
-        # handle max rounds
+    def test_21b_max_rounds(self):
+        """test hash() / genconfig() honors max_rounds"""
+        self.require_rounds_info()
+        handler = self.handler
         max_rounds = handler.max_rounds
-        if max_rounds is None:
-            # check large value is accepted
-            self.do_genconfig(rounds=(1<<31)-1)
-        else:
-            # check max is accepted
-            self.do_genconfig(rounds=max_rounds)
 
+        if max_rounds is not None:
             # check max+1 is rejected
-            self.assertRaises(ValueError, self.do_genconfig,
-                              rounds=max_rounds+1)
-            self.assertRaises(ValueError, self.do_encrypt, 'stub',
-                              rounds=max_rounds+1)
+            self.assertRaises(ValueError, self.do_genconfig, rounds=max_rounds+1)
+            self.assertRaises(ValueError, self.do_encrypt, 'stub', rounds=max_rounds+1)
+
+        # handle max rounds
+        if max_rounds is None:
+            self.do_stub_encrypt(rounds=(1 << 31) - 1)
+        else:
+            self.do_stub_encrypt(rounds=max_rounds)
 
             # TODO: check relaxed mode clips max+1
+
+    #--------------------------------------------------------------------------------------
+    # HasRounds.using() / .needs_update() -- desired rounds limits
+    #--------------------------------------------------------------------------------------
+    def _create_using_rounds_helper(self):
+        """
+        setup test helpers for testing handler.using()'s rounds parameters.
+        """
+        self.require_rounds_info()
+        handler = self.handler
+
+        if handler.name == "bsdi_crypt":
+            # hack to bypass bsdi-crypt's "odd rounds only" behavior, messes up this test
+            orig_handler = handler
+            handler = handler.using()
+            handler._generate_rounds = classmethod(lambda cls: super(orig_handler, cls)._generate_rounds())
+
+        # create some fake values to test with
+        orig_min_rounds = handler.min_rounds
+        orig_max_rounds = handler.max_rounds
+        orig_default_rounds = handler.default_rounds
+        medium = ((orig_max_rounds or 9999) + orig_min_rounds) // 2
+        if medium == orig_default_rounds:
+            medium += 1
+        small = (orig_min_rounds + medium) // 2
+        large = ((orig_max_rounds or 9999) + medium) // 2
+
+        if handler.name == "bsdi_crypt":
+            # hack to avoid even numbered rounds
+            small |= 1
+            medium |= 1
+            large |= 1
+            adj = 2
+        else:
+            adj = 1
+
+        # create a subclass with small/medium/large as new default desired values
+        with self.assertWarningList([]):
+            subcls = handler.using(
+                min_desired_rounds=small,
+                max_desired_rounds=large,
+                default_rounds=medium,
+            )
+
+        # return helpers
+        return handler, subcls, small, medium, large, adj
+
+    def test_has_rounds_using_harness(self):
+        """
+        HasRounds.using() -- sanity check test harness
+        """
+        # setup helpers
+        self.require_rounds_info()
+        handler = self.handler
+        orig_min_rounds = handler.min_rounds
+        orig_max_rounds = handler.max_rounds
+        orig_default_rounds = handler.default_rounds
+        handler, subcls, small, medium, large, adj = self._create_using_rounds_helper()
+
+        # shouldn't affect original handler at all
+        self.assertEqual(handler.min_rounds, orig_min_rounds)
+        self.assertEqual(handler.max_rounds, orig_max_rounds)
+        self.assertEqual(handler.min_desired_rounds, None)
+        self.assertEqual(handler.max_desired_rounds, None)
+        self.assertEqual(handler.default_rounds, orig_default_rounds)
+
+        # should affect subcls' desired value, but not hard min/max
+        self.assertEqual(subcls.min_rounds, orig_min_rounds)
+        self.assertEqual(subcls.max_rounds, orig_max_rounds)
+        self.assertEqual(subcls.default_rounds, medium)
+        self.assertEqual(subcls.min_desired_rounds, small)
+        self.assertEqual(subcls.max_desired_rounds, large)
+
+    def test_has_rounds_using_w_min_rounds(self):
+        """
+        HasRounds.using() -- min_rounds / min_desired_rounds
+        """
+        # setup helpers
+        handler, subcls, small, medium, large, adj = self._create_using_rounds_helper()
+        orig_min_rounds = handler.min_rounds
+        orig_max_rounds = handler.max_rounds
+        orig_default_rounds = handler.default_rounds
+
+        # .using() should clip values below valid minimum, w/ warning
+        if orig_min_rounds > 0:
+            self.assertRaises(ValueError, handler.using, min_desired_rounds=orig_min_rounds - adj)
+            with self.assertWarningList([PasslibHashWarning]):
+                temp = handler.using(min_desired_rounds=orig_min_rounds - adj, relaxed=True)
+            self.assertEqual(temp.min_desired_rounds, orig_min_rounds)
+
+        # .using() should clip values above valid maximum, w/ warning
+        if orig_max_rounds:
+            self.assertRaises(ValueError, handler.using, min_desired_rounds=orig_max_rounds + adj)
+            with self.assertWarningList([PasslibHashWarning]):
+                temp = handler.using(min_desired_rounds=orig_max_rounds + adj, relaxed=True)
+            self.assertEqual(temp.min_desired_rounds, orig_max_rounds)
+
+        # .using() should allow values below previous desired minimum, w/o warning
+        with self.assertWarningList([]):
+            temp = subcls.using(min_desired_rounds=small - adj)
+        self.assertEqual(temp.min_desired_rounds, small - adj)
+
+        # .using() should allow values w/in previous range
+        temp = subcls.using(min_desired_rounds=small + 2 * adj)
+        self.assertEqual(temp.min_desired_rounds, small + 2 * adj)
+
+        # .using() should allow values above previous desired maximum, w/o warning
+        with self.assertWarningList([]):
+            temp = subcls.using(min_desired_rounds=large + adj)
+        self.assertEqual(temp.min_desired_rounds, large + adj)
+
+        # hash() etc should allow explicit values below desired minimum
+        # NOTE: formerly issued a warning in passlib 1.6, now just a wrapper for .using()
+        self.assertEqual(get_effective_rounds(subcls, small + adj), small + adj)
+        self.assertEqual(get_effective_rounds(subcls, small), small)
+        with self.assertWarningList([]):
+            self.assertEqual(get_effective_rounds(subcls, small - adj), small - adj)
+
+        # 'min_rounds' should be treated as alias for 'min_desired_rounds'
+        temp = handler.using(min_rounds=small)
+        self.assertEqual(temp.min_desired_rounds, small)
+
+        # should be able to specify strings
+        temp = handler.using(min_rounds=str(small))
+        self.assertEqual(temp.min_desired_rounds, small)
+
+        # invalid strings should cause error
+        self.assertRaises(ValueError, handler.using, min_rounds=str(small) + "xxx")
+
+    def test_has_rounds_replace_w_max_rounds(self):
+        """
+        HasRounds.using() -- max_rounds / max_desired_rounds
+        """
+        # setup helpers
+        handler, subcls, small, medium, large, adj = self._create_using_rounds_helper()
+        orig_min_rounds = handler.min_rounds
+        orig_max_rounds = handler.max_rounds
+
+        # .using() should clip values below valid minimum w/ warning
+        if orig_min_rounds > 0:
+            self.assertRaises(ValueError, handler.using, max_desired_rounds=orig_min_rounds - adj)
+            with self.assertWarningList([PasslibHashWarning]):
+                temp = handler.using(max_desired_rounds=orig_min_rounds - adj, relaxed=True)
+            self.assertEqual(temp.max_desired_rounds, orig_min_rounds)
+
+        # .using() should clip values above valid maximum, w/ warning
+        if orig_max_rounds:
+            self.assertRaises(ValueError, handler.using, max_desired_rounds=orig_max_rounds + adj)
+            with self.assertWarningList([PasslibHashWarning]):
+                temp = handler.using(max_desired_rounds=orig_max_rounds + adj, relaxed=True)
+            self.assertEqual(temp.max_desired_rounds, orig_max_rounds)
+
+        # .using() should clip values below previous minimum, w/ warning
+        with self.assertWarningList([PasslibConfigWarning]):
+            temp = subcls.using(max_desired_rounds=small - adj)
+        self.assertEqual(temp.max_desired_rounds, small)
+
+        # .using() should reject explicit min > max
+        self.assertRaises(ValueError, subcls.using,
+                          min_desired_rounds=medium+adj,
+                          max_desired_rounds=medium-adj)
+
+        # .using() should allow values w/in previous range
+        temp = subcls.using(min_desired_rounds=large - 2 * adj)
+        self.assertEqual(temp.min_desired_rounds, large - 2 * adj)
+
+        # .using() should allow values above previous desired maximum, w/o warning
+        with self.assertWarningList([]):
+            temp = subcls.using(max_desired_rounds=large + adj)
+        self.assertEqual(temp.max_desired_rounds, large + adj)
+
+        # hash() etc should allow explicit values above desired minimum, w/o warning
+        # NOTE: formerly issued a warning in passlib 1.6, now just a wrapper for .using()
+        self.assertEqual(get_effective_rounds(subcls, large - adj), large - adj)
+        self.assertEqual(get_effective_rounds(subcls, large), large)
+        with self.assertWarningList([]):
+            self.assertEqual(get_effective_rounds(subcls, large + adj), large + adj)
+
+        # 'max_rounds' should be treated as alias for 'max_desired_rounds'
+        temp = handler.using(max_rounds=large)
+        self.assertEqual(temp.max_desired_rounds, large)
+
+        # should be able to specify strings
+        temp = handler.using(max_desired_rounds=str(large))
+        self.assertEqual(temp.max_desired_rounds, large)
+
+        # invalid strings should cause error
+        self.assertRaises(ValueError, handler.using, max_desired_rounds=str(large) + "xxx")
+
+    def test_has_rounds_using_w_default_rounds(self):
+        """
+        HasRounds.using() -- default_rounds
+        """
+        # setup helpers
+        handler, subcls, small, medium, large, adj = self._create_using_rounds_helper()
+        orig_max_rounds = handler.max_rounds
+
+        # XXX: are there any other cases that need testing?
+
+        # implicit default rounds -- increase to min_rounds
+        temp = subcls.using(min_rounds=medium+adj)
+        self.assertEqual(temp.default_rounds, medium+adj)
+
+        # implicit default rounds -- decrease to max_rounds
+        temp = subcls.using(max_rounds=medium-adj)
+        self.assertEqual(temp.default_rounds, medium-adj)
+
+        # explicit default rounds below desired minimum
+        # XXX: make this a warning if min is implicit?
+        self.assertRaises(ValueError, subcls.using, default_rounds=small-adj)
+
+        # explicit default rounds above desired maximum
+        # XXX: make this a warning if max is implicit?
+        if orig_max_rounds:
+            self.assertRaises(ValueError, subcls.using, default_rounds=large+adj)
+
+        # hash() etc should implicit default rounds, but get overridden
+        self.assertEqual(get_effective_rounds(subcls), medium)
+        self.assertEqual(get_effective_rounds(subcls, medium+adj), medium+adj)
+
+        # should be able to specify strings
+        temp = handler.using(default_rounds=str(medium))
+        self.assertEqual(temp.default_rounds, medium)
+
+        # invalid strings should cause error
+        self.assertRaises(ValueError, handler.using, default_rounds=str(medium) + "xxx")
+
+    def test_has_rounds_using_w_rounds(self):
+        """
+        HasRounds.using() -- rounds
+        """
+        # setup helpers
+        handler, subcls, small, medium, large, adj = self._create_using_rounds_helper()
+        orig_max_rounds = handler.max_rounds
+
+        # 'rounds' should be treated as fallback for min, max, and default
+        temp = subcls.using(rounds=medium+adj)
+        self.assertEqual(temp.min_desired_rounds, medium+adj)
+        self.assertEqual(temp.default_rounds, medium+adj)
+        self.assertEqual(temp.max_desired_rounds, medium+adj)
+
+        # 'rounds' should be treated as fallback for min, max, and default
+        temp = subcls.using(rounds=medium+1, min_rounds=small+adj,
+                            default_rounds=medium, max_rounds=large-adj)
+        self.assertEqual(temp.min_desired_rounds, small+adj)
+        self.assertEqual(temp.default_rounds, medium)
+        self.assertEqual(temp.max_desired_rounds, large-adj)
+
+    def test_has_rounds_using_w_vary_rounds_parsing(self):
+        """
+        HasRounds.using() -- vary_rounds parsing
+        """
+        # setup helpers
+        handler, subcls, small, medium, large, adj = self._create_using_rounds_helper()
+
+        def parse(value):
+            return subcls.using(vary_rounds=value).vary_rounds
+
+        # floats should be preserved
+        self.assertEqual(parse(0.1), 0.1)
+        self.assertEqual(parse('0.1'), 0.1)
+
+        # 'xx%' should be converted to float
+        self.assertEqual(parse('10%'), 0.1)
+
+        # ints should be preserved
+        self.assertEqual(parse(1000), 1000)
+        self.assertEqual(parse('1000'), 1000)
+
+        # float bounds should be enforced
+        self.assertRaises(ValueError, parse, -0.1)
+        self.assertRaises(ValueError, parse, 1.1)
+
+    def test_has_rounds_using_w_vary_rounds_generation(self):
+        """
+        HasRounds.using() -- vary_rounds generation
+        """
+        handler, subcls, small, medium, large, adj = self._create_using_rounds_helper()
+
+        def get_effective_range(cls):
+            seen = set(get_effective_rounds(cls) for _ in irange(1000))
+            return min(seen), max(seen)
+
+        def assert_rounds_range(vary_rounds, lower, upper):
+            temp = subcls.using(vary_rounds=vary_rounds)
+            seen_lower, seen_upper = get_effective_range(temp)
+            self.assertEqual(seen_lower, lower, "vary_rounds had wrong lower limit:")
+            self.assertEqual(seen_upper, upper, "vary_rounds had wrong upper limit:")
+
+        # test static
+        assert_rounds_range(0, medium, medium)
+        assert_rounds_range("0%", medium, medium)
+
+        # test absolute
+        assert_rounds_range(adj, medium - adj, medium + adj)
+        assert_rounds_range(50, max(small, medium - 50), min(large, medium + 50))
+
+        # test relative - should shift over at 50% mark
+        if handler.rounds_cost == "log2":
+            # log rounds "50%" variance should only increase/decrease by 1 cost value
+            assert_rounds_range("1%", medium, medium)
+            assert_rounds_range("49%", medium, medium)
+            assert_rounds_range("50%", medium - adj, medium)
+        else:
+            # for linear rounds, range is frequently so huge, won't ever see ends.
+            # so we just check it's within an expected range.
+            lower, upper = get_effective_range(subcls.using(vary_rounds="50%"))
+
+            self.assertGreaterEqual(lower, max(small, medium * 0.5))
+            self.assertLessEqual(lower, max(small, medium * 0.8))
+
+            self.assertGreaterEqual(upper, min(large, medium * 1.2))
+            self.assertLessEqual(upper, min(large, medium * 1.5))
+
+    def test_has_rounds_using_and_needs_update(self):
+        """
+        HasRounds.using() -- desired_rounds + needs_update()
+        """
+        handler, subcls, small, medium, large, adj = self._create_using_rounds_helper()
+
+        temp = subcls.using(min_desired_rounds=small+2, max_desired_rounds=large-2)
+
+        # generate some sample hashes
+        small_hash = self.do_stub_encrypt(subcls, rounds=small)
+        medium_hash = self.do_stub_encrypt(subcls, rounds=medium)
+        large_hash = self.do_stub_encrypt(subcls, rounds=large)
+
+        # everything should be w/in bounds for original handler
+        self.assertFalse(subcls.needs_update(small_hash))
+        self.assertFalse(subcls.needs_update(medium_hash))
+        self.assertFalse(subcls.needs_update(large_hash))
+
+        # small & large should require update for temp handler
+        self.assertTrue(temp.needs_update(small_hash))
+        self.assertFalse(temp.needs_update(medium_hash))
+        self.assertTrue(temp.needs_update(large_hash))
 
     #===================================================================
     # idents
     #===================================================================
+    def require_many_idents(self):
+        handler = self.handler
+        if not isinstance(handler, type) or not issubclass(handler, uh.HasManyIdents):
+            raise self.skipTest("handler doesn't derive from HasManyIdents")
+
     def test_30_HasManyIdents(self):
         """validate HasManyIdents configuration"""
         cls = self.handler
-        if not isinstance(cls, type) or not issubclass(cls, uh.HasManyIdents):
-            raise self.skipTest("handler doesn't derive from HasManyIdents")
+        self.require_many_idents()
 
         # check settings
         self.assertTrue('ident' in cls.setting_kwds)
@@ -1355,65 +1935,264 @@ class HandlerCase(TestCase):
 
     # TODO: check various supported idents
 
-    #===================================================================
-    # passwords
-    #===================================================================
-    def test_60_secret_size(self):
-        """test password size limits"""
-        sc = self.secret_size
-        base = "too many secrets" # 16 chars
-        alt = 'x' # char that's not in base string
-        if sc is not None:
-            # hash only counts the first <sc> characters; eg: bcrypt, des-crypt
+    def test_has_many_idents_using(self):
+        """HasManyIdents.using() -- 'default_ident' and 'ident' keywords"""
+        self.require_many_idents()
 
-            # create & hash string that's exactly sc+1 chars
-            secret = repeat_string(base, sc+1)
-            hash = self.do_encrypt(secret)
-
-            # check sc value isn't too large by verifying that sc-1'th char
-            # affects hash
-            secret2 = secret[:-2] + alt + secret[-1]
-            self.assertFalse(self.do_verify(secret2, hash),
-                            "secret_size value is too large")
-
-            # check sc value isn't too small by verifying adding sc'th char
-            # *doesn't* affect hash
-            secret3 = secret[:-1] + alt
-            self.assertTrue(self.do_verify(secret3, hash),
-                            "secret_size value is too small")
-
+        # pick alt ident to test with
+        handler = self.handler
+        orig_ident = handler.default_ident
+        for alt_ident in handler.ident_values:
+            if alt_ident != orig_ident:
+                break
         else:
-            # hash counts all characters; e.g. md5-crypt
+            raise AssertionError("expected to find alternate ident: default=%r values=%r" %
+                                 (orig_ident, handler.ident_values))
 
-            # NOTE: this doesn't do an exhaustive search to verify algorithm
-            # doesn't have some cutoff point, it just tries
-            # 1024-character string, and alters the last char.
-            # as long as algorithm doesn't clip secret at point <1024,
-            # the new secret shouldn't verify.
-            secret = base * 64
-            hash = self.do_encrypt(secret)
-            secret2 = secret[:-1] + alt
-            self.assertFalse(self.do_verify(secret2, hash),
-                             "full password not used in digest")
+        def effective_ident(cls):
+            cls = unwrap_handler(cls)
+            return cls(use_defaults=True).ident
 
+        # keep default if nothing else specified
+        subcls = handler.using()
+        self.assertEqual(subcls.default_ident, orig_ident)
+
+        # accepts alt ident
+        subcls = handler.using(default_ident=alt_ident)
+        self.assertEqual(subcls.default_ident, alt_ident)
+        self.assertEqual(handler.default_ident, orig_ident)
+
+        # check subcls actually *generates* default ident,
+        # and that we didn't affect orig handler
+        self.assertEqual(effective_ident(subcls), alt_ident)
+        self.assertEqual(effective_ident(handler), orig_ident)
+
+        # rejects bad ident
+        self.assertRaises(ValueError, handler.using, default_ident='xXx')
+
+        # honor 'ident' alias
+        subcls = handler.using(ident=alt_ident)
+        self.assertEqual(subcls.default_ident, alt_ident)
+        self.assertEqual(handler.default_ident, orig_ident)
+
+        # forbid both at same time
+        self.assertRaises(TypeError, handler.using, default_ident=alt_ident, ident=alt_ident)
+
+        # check ident aliases are being honored
+        if handler.ident_aliases:
+            for alias, ident in handler.ident_aliases.items():
+                subcls = handler.using(ident=alias)
+                self.assertEqual(subcls.default_ident, ident, msg="alias %r:" % alias)
+
+    #===================================================================
+    # password size limits
+    #===================================================================
+    def test_truncate_error_setting(self):
+        """
+        validate 'truncate_error' setting & related attributes
+        """
+        # If it doesn't have truncate_size set,
+        # it shouldn't support truncate_error
+        hasher = self.handler
+        if hasher.truncate_size is None:
+            self.assertNotIn("truncate_error", hasher.setting_kwds)
+            return
+
+        # if hasher defaults to silently truncating,
+        # it MUST NOT use .truncate_verify_reject,
+        # because resulting hashes wouldn't verify!
+        if not hasher.truncate_error:
+            self.assertFalse(hasher.truncate_verify_reject)
+
+        # if hasher doesn't have configurable policy,
+        # it must throw error by default
+        if "truncate_error" not in hasher.setting_kwds:
+            self.assertTrue(hasher.truncate_error)
+            return
+
+        # test value parsing
+        def parse_value(value):
+            return hasher.using(truncate_error=value).truncate_error
+        self.assertEqual(parse_value(None), hasher.truncate_error)
+        self.assertEqual(parse_value(True), True)
+        self.assertEqual(parse_value("true"), True)
+        self.assertEqual(parse_value(False), False)
+        self.assertEqual(parse_value("false"), False)
+        self.assertRaises(ValueError, parse_value, "xxx")
+
+    def test_secret_wo_truncate_size(self):
+        """
+        test no password size limits enforced (if truncate_size=None)
+        """
+        # skip if hasher has a maximum password size
+        hasher = self.handler
+        if hasher.truncate_size is not None:
+            self.assertGreaterEqual(hasher.truncate_size, 1)
+            raise self.skipTest("truncate_size is set")
+
+        # NOTE: this doesn't do an exhaustive search to verify algorithm
+        # doesn't have some cutoff point, it just tries
+        # 1024-character string, and alters the last char.
+        # as long as algorithm doesn't clip secret at point <1024,
+        # the new secret shouldn't verify.
+
+        # hash a 1024-byte secret
+        secret = "too many secrets" * 16
+        alt = "x"
+        hash = self.do_encrypt(secret)
+
+        # check that verify doesn't silently reject secret
+        # (i.e. hasher mistakenly honors .truncate_verify_reject)
+        verify_success = not hasher.is_disabled
+        self.assertEqual(self.do_verify(secret, hash), verify_success,
+                         msg="verify rejected correct secret")
+
+        # alter last byte, should get different hash, which won't verify
+        alt_secret = secret[:-1] + alt
+        self.assertFalse(self.do_verify(alt_secret, hash),
+                         "full password not used in digest")
+
+    def test_secret_w_truncate_size(self):
+        """
+        test password size limits raise truncate_error (if appropriate)
+        """
+        #--------------------------------------------------
+        # check if test is applicable
+        #--------------------------------------------------
+        handler = self.handler
+        truncate_size = handler.truncate_size
+        if not truncate_size:
+            raise self.skipTest("truncate_size not set")
+
+        #--------------------------------------------------
+        # setup vars
+        #--------------------------------------------------
+        # try to get versions w/ and w/o truncate_error set.
+        # set to None if policy isn't configruable
+        size_error_type = exc.PasswordSizeError
+        if "truncate_error" in handler.setting_kwds:
+            without_error = handler.using(truncate_error=False)
+            with_error = handler.using(truncate_error=True)
+            size_error_type = exc.PasswordTruncateError
+        elif handler.truncate_error:
+            without_error = None
+            with_error = handler
+        else:
+            # NOTE: this mode is currently an error in test_truncate_error_setting()
+            without_error = handler
+            with_error = None
+
+        # create some test secrets
+        base = "too many secrets"
+        alt = "x"  # char that's not in base, used to mutate test secrets
+        long_secret = repeat_string(base, truncate_size+1)
+        short_secret = long_secret[:-1]
+        alt_long_secret = long_secret[:-1] + alt
+        alt_short_secret = short_secret[:-1] + alt
+
+        # init flags
+        short_verify_success = not handler.is_disabled
+        long_verify_success = short_verify_success and \
+                              not handler.truncate_verify_reject
+
+        #--------------------------------------------------
+        # do tests on <truncate_size> length secret, and resulting hash.
+        # should pass regardless of truncate_error policy.
+        #--------------------------------------------------
+        assert without_error or with_error
+        for cand_hasher in [without_error, with_error]:
+
+            # create & hash string that's exactly <truncate_size> chars.
+            short_hash = self.do_encrypt(short_secret, handler=cand_hasher)
+
+            # check hash verifies, regardless of .truncate_verify_reject
+            self.assertEqual(self.do_verify(short_secret, short_hash,
+                                           handler=cand_hasher),
+                             short_verify_success)
+
+            # changing <truncate_size-1>'th char should invalidate hash
+            # if this fails, means (reported) truncate_size is too large.
+            self.assertFalse(self.do_verify(alt_short_secret, short_hash,
+                                            handler=with_error),
+                             "truncate_size value is too large")
+
+            # verify should truncate long secret before comparing
+            # (unless truncate_verify_reject is set)
+            self.assertEqual(self.do_verify(long_secret, short_hash,
+                                            handler=cand_hasher),
+                             long_verify_success)
+
+        #--------------------------------------------------
+        # do tests on <truncate_size+1> length secret,
+        # w/ truncate error disabled (should silently truncate)
+        #--------------------------------------------------
+        if without_error:
+
+            # create & hash string that's exactly truncate_size+1 chars
+            long_hash = self.do_encrypt(long_secret, handler=without_error)
+
+            # check verifies against secret (unless truncate_verify_reject=True)
+            self.assertEqual(self.do_verify(long_secret, long_hash,
+                                            handler=without_error),
+                             short_verify_success)
+
+            # check mutating last char doesn't change outcome.
+            # if this fails, means (reported) truncate_size is too small.
+            self.assertEqual(self.do_verify(alt_long_secret, long_hash,
+                                            handler=without_error),
+                             short_verify_success)
+
+            # check short_secret verifies against this hash
+            # if this fails, means (reported) truncate_size is too large.
+            self.assertTrue(self.do_verify(short_secret, long_hash,
+                                           handler=without_error))
+
+        #--------------------------------------------------
+        # do tests on <truncate_size+1> length secret,
+        # w/ truncate error
+        #--------------------------------------------------
+        if with_error:
+
+            # with errors enabled, should forbid truncation.
+            err = self.assertRaises(size_error_type, self.do_encrypt,
+                                    long_secret, handler=with_error)
+            self.assertEqual(err.max_size, truncate_size)
+
+    #===================================================================
+    # password contents
+    #===================================================================
     def test_61_secret_case_sensitive(self):
         """test password case sensitivity"""
         hash_insensitive = self.secret_case_insensitive is True
         verify_insensitive = self.secret_case_insensitive in [True,
                                                               "verify-only"]
 
+        # test hashing lower-case verifies against lower & upper
         lower = 'test'
         upper = 'TEST'
         h1 = self.do_encrypt(lower)
-        if verify_insensitive and not self.is_disabled_handler:
+        if verify_insensitive and not self.handler.is_disabled:
             self.assertTrue(self.do_verify(upper, h1),
                             "verify() should not be case sensitive")
         else:
             self.assertFalse(self.do_verify(upper, h1),
                              "verify() should be case sensitive")
 
+        # test hashing upper-case verifies against lower & upper
+        h2 = self.do_encrypt(upper)
+        if verify_insensitive and not self.handler.is_disabled:
+            self.assertTrue(self.do_verify(lower, h2),
+                            "verify() should not be case sensitive")
+        else:
+            self.assertFalse(self.do_verify(lower, h2),
+                             "verify() should be case sensitive")
+
+        # test genhash
+        # XXX: 2.0: what about 'verify-only' hashes once genhash() is removed?
+        #      won't have easy way to recreate w/ same config to see if hash differs.
+        #      (though only hash this applies to is mssql2000)
         h2 = self.do_genhash(upper, h1)
-        if hash_insensitive or self.is_disabled_handler:
+        if hash_insensitive or (self.handler.is_disabled and not self.disabled_contains_salt):
             self.assertEqual(h2, h1,
                              "genhash() should not be case sensitive")
         else:
@@ -1434,13 +2213,15 @@ class HandlerCase(TestCase):
         self.assertRaises(TypeError, self.do_genhash, 1, hash)
         self.assertRaises(TypeError, self.do_verify, 1, hash)
 
+    # xxx: move to password size limits section, above?
     def test_63_large_secret(self):
         """test MAX_PASSWORD_SIZE is enforced"""
         from passlib.exc import PasswordSizeError
         from passlib.utils import MAX_PASSWORD_SIZE
         secret = '.' * (1+MAX_PASSWORD_SIZE)
         hash = self.get_sample_hash()[1]
-        self.assertRaises(PasswordSizeError, self.do_genhash, secret, hash)
+        err = self.assertRaises(PasswordSizeError, self.do_genhash, secret, hash)
+        self.assertEqual(err.max_size, MAX_PASSWORD_SIZE)
         self.assertRaises(PasswordSizeError, self.do_encrypt, secret)
         self.assertRaises(PasswordSizeError, self.do_verify, secret, hash)
 
@@ -1505,6 +2286,8 @@ class HandlerCase(TestCase):
                 result = self.do_genhash(secret, hash)
                 self.assertIsInstance(result, str,
                     "genhash() failed to return native string: %r" % (result,))
+                if self.handler.is_disabled and self.disabled_contains_salt:
+                    continue
                 self.assertEqual(result, hash,  "genhash() failed to reproduce "
                     "known hash: secret=%r, hash=%r: result=%r" %
                     (secret, hash, result))
@@ -1536,6 +2319,8 @@ class HandlerCase(TestCase):
             result = self.do_genhash(secret, alt)
             self.assertIsInstance(result, str,
                 "genhash() failed to return native string: %r" % (result,))
+            if self.handler.is_disabled and self.disabled_contains_salt:
+                continue
             self.assertEqual(result, hash,  "genhash() failed to normalize "
                 "known alternate hash: secret=%r, alt=%r, hash=%r: "
                 "result=%r" % (secret, alt, hash, result))
@@ -1658,15 +2443,13 @@ class HandlerCase(TestCase):
     def test_76_hash_border(self):
         """test non-string hashes are rejected"""
         #
-        # test hash=None is rejected (except if config=None)
+        # test hash=None is handled correctly
         #
         self.assertRaises(TypeError, self.do_identify, None)
         self.assertRaises(TypeError, self.do_verify, 'stub', None)
-        if self.supports_config_string:
-            self.assertRaises(TypeError, self.do_genhash, 'stub', None)
-        else:
-            result = self.do_genhash('stub', None)
-            self.check_returned_native_str(result, "genhash")
+
+        # NOTE: changed in 1.7 -- previously 'None' would be accepted when config strings not supported.
+        self.assertRaises(TypeError, self.do_genhash, 'stub', None)
 
         #
         # test hash=int is rejected (picked as example of entirely wrong type)
@@ -1678,7 +2461,7 @@ class HandlerCase(TestCase):
         #
         # test hash='' is rejected for all but the plaintext hashes
         #
-        for hash in [u(''), b('')]:
+        for hash in [u(''), b'']:
             if self.accepts_all_hashes:
                 # then it accepts empty string as well.
                 self.assertTrue(self.do_identify(hash))
@@ -1703,8 +2486,8 @@ class HandlerCase(TestCase):
     #===================================================================
     # fuzz testing
     #===================================================================
-    def test_77_fuzz_input(self):
-        """test random passwords and options
+    def test_77_fuzz_input(self, threaded=False):
+        """fuzz testing -- random passwords and options
 
         This test attempts to perform some basic fuzz testing of the hash,
         based on whatever information can be found about it.
@@ -1719,31 +2502,52 @@ class HandlerCase(TestCase):
         * runs output of selected backend against other available backends
           (if any) to detect errors occurring between different backends.
         * runs output against other "external" verifiers such as OS crypt()
+
+        :param report_thread_state:
+            if true, writes state of loop to current_thread().passlib_fuzz_state.
+            used to help debug multi-threaded fuzz test issues (below)
         """
-        if self.is_disabled_handler:
+        if self.handler.is_disabled:
             raise self.skipTest("not applicable")
 
         # gather info
         from passlib.utils import tick
-        handler = self.handler
-        disabled = self.is_disabled_handler
         max_time = self.max_fuzz_time
         if max_time <= 0:
             raise self.skipTest("disabled by test mode")
-        verifiers = self.get_fuzz_verifiers()
+        verifiers = self.get_fuzz_verifiers(threaded=threaded)
         def vname(v):
             return (v.__doc__ or v.__name__).splitlines()[0]
 
+        # init rng -- using separate one for each thread
+        # so things are predictable for given RANDOM_TEST_SEED
+        # (relies on test_78_fuzz_threading() to give threads unique names)
+        if threaded:
+            thread_name = threading.current_thread().name
+        else:
+            thread_name = "fuzz test"
+        rng = self.getRandom(name=thread_name)
+        generator = self.FuzzHashGenerator(self, rng)
+
         # do as many tests as possible for max_time seconds
-        stop = tick() + max_time
+        log.debug("%s: %s: started; max_time=%r verifiers=%d (%s)",
+                  self.descriptionPrefix, thread_name, max_time, len(verifiers),
+                  ", ".join(vname(v) for v in verifiers))
+        start = tick()
+        stop = start + max_time
         count = 0
         while tick() <= stop:
             # generate random password & options
-            secret, other, kwds = self.get_fuzz_settings()
-            ctx = dict((k,kwds[k]) for k in handler.context_kwds if k in kwds)
+            opts = generator.generate()
+            secret = opts['secret']
+            other = opts['other']
+            settings = opts['settings']
+            ctx = opts['context']
+            if ctx:
+                settings['context'] = ctx
 
             # create new hash
-            hash = self.do_encrypt(secret, **kwds)
+            hash = self.do_encrypt(secret, **settings)
             ##log.debug("fuzz test: hash=%r secret=%r other=%r",
             ##          hash, secret, other)
 
@@ -1755,9 +2559,9 @@ class HandlerCase(TestCase):
                     continue
                 assert result is True or result is False
                 if not result:
-                    raise self.failureException("failed to verify against %s: "
+                    raise self.failureException("failed to verify against %r verifier: "
                                                 "secret=%r config=%r hash=%r" %
-                                                (name, secret, kwds, hash))
+                                                (name, secret, settings, hash))
                 # occasionally check that some other secrets WON'T verify
                 # against this hash.
                 if rng.random() < .1:
@@ -1765,22 +2569,75 @@ class HandlerCase(TestCase):
                     if result and result != "skip":
                         raise self.failureException("was able to verify wrong "
                             "password using %s: wrong_secret=%r real_secret=%r "
-                            "config=%r hash=%r" % (name, other, secret, kwds, hash))
-            count +=1
+                            "config=%r hash=%r" % (name, other, secret, settings, hash))
+            count += 1
 
-        log.debug("fuzz test: %r checked %d passwords against %d verifiers (%s)",
-                  self.descriptionPrefix,  count, len(verifiers),
-                  ", ".join(vname(v) for v in verifiers))
+        log.debug("%s: %s: done; elapsed=%r count=%r",
+                  self.descriptionPrefix, thread_name, tick() - start, count)
+
+    def test_78_fuzz_threading(self):
+        """multithreaded fuzz testing -- random password & options using multiple threads
+
+        run test_77 simultaneously in multiple threads
+        in an attempt to detect any concurrency issues
+        (e.g. the bug fixed by pybcrypt 0.3)
+        """
+        self.require_TEST_MODE("full")
+        import threading
+
+        # check if this test should run
+        if self.handler.is_disabled:
+            raise self.skipTest("not applicable")
+        thread_count = self.fuzz_thread_count
+        if thread_count < 1 or self.max_fuzz_time <= 0:
+            raise self.skipTest("disabled by test mode")
+
+        # buffer to hold errors thrown by threads
+        failed_lock = threading.Lock()
+        failed = [0]
+
+        # launch <thread count> threads, all of which run
+        # test_77_fuzz_input(), and see if any errors get thrown.
+        # if hash has concurrency issues, this should reveal it.
+        def wrapper():
+            try:
+                self.test_77_fuzz_input(threaded=True)
+            except SkipTest:
+                pass
+            except:
+                with failed_lock:
+                    failed[0] += 1
+                raise
+        def launch(n):
+            name = "Fuzz-Thread-%d" % (n,)
+            thread = threading.Thread(target=wrapper, name=name)
+            thread.setDaemon(True)
+            thread.start()
+            return thread
+        threads = [launch(n) for n in irange(thread_count)]
+
+        # wait until all threads exit
+        timeout = self.max_fuzz_time * thread_count * 4
+        stalled = 0
+        for thread in threads:
+            thread.join(timeout)
+            if not thread.is_alive():
+                continue
+            # XXX: not sure why this is happening, main one seems 1/4 times for sun_md5_crypt
+            log.error("%s timed out after %f seconds", thread.name, timeout)
+            stalled += 1
+
+        # if any thread threw an error, raise one ourselves.
+        if failed[0]:
+            raise self.fail("%d/%d threads failed concurrent fuzz testing "
+                      "(see error log for details)" % (failed[0], thread_count))
+        if stalled:
+            raise self.fail("%d/%d threads stalled during concurrent fuzz testing "
+                      "(see error log for details)" % (stalled, thread_count))
 
     #---------------------------------------------------------------
     # fuzz constants & helpers
     #---------------------------------------------------------------
-
-    # alphabet for randomly generated passwords
-    fuzz_password_alphabet = u('qwertyASDF1234<>.@*#! \u00E1\u0259\u0411\u2113')
-
-    # encoding when testing bytes
-    fuzz_password_encoding = "utf-8"
 
     @property
     def max_fuzz_time(self):
@@ -1795,14 +2652,27 @@ class HandlerCase(TestCase):
         else:
             return 5
 
-    def os_supports_ident(self, ident):
-        """whether native OS crypt() supports particular ident value"""
-        return True
+    @property
+    def fuzz_thread_count(self):
+        """number of threads for threaded fuzz testing"""
+        value = int(os.environ.get("PASSLIB_TEST_FUZZ_THREADS") or 0)
+        if value:
+            return value
+        elif TEST_MODE(max="quick"):
+            return 0
+        else:
+            return 10
 
     #---------------------------------------------------------------
     # fuzz verifiers
     #---------------------------------------------------------------
-    def get_fuzz_verifiers(self):
+
+    #: list of custom fuzz-test verifiers (in addition to hasher itself,
+    #: and backend-specific wrappers of hasher).  each element is
+    #: name of method that will return None / a verifier callable.
+    fuzz_verifiers = ("fuzz_verifier_default",)
+
+    def get_fuzz_verifiers(self, threaded=False):
         """return list of password verifiers (including external libs)
 
         used by fuzz testing.
@@ -1813,27 +2683,28 @@ class HandlerCase(TestCase):
         verifiers = []
 
         # call all methods starting with prefix in order to create
-        # any verifiers.
-        prefix = "fuzz_verifier_"
-        for name in dir(self):
-            if name.startswith(prefix):
-                func = getattr(self, name)()
-                if func is not None:
-                    verifiers.append(func)
+        for method_name in self.fuzz_verifiers:
+            func = getattr(self, method_name)()
+            if func is not None:
+                verifiers.append(func)
 
         # create verifiers for any other available backends
-        if hasattr(handler, "backends") and TEST_MODE("full"):
+        # NOTE: skipping this under threading test,
+        #       since backend switching isn't threadsafe (yet)
+        if hasattr(handler, "backends") and TEST_MODE("full") and not threaded:
             def maker(backend):
                 def func(secret, hash):
-                    with temporary_backend(handler, backend):
+                    orig_backend = handler.get_backend()
+                    try:
+                        handler.set_backend(backend)
                         return handler.verify(secret, hash)
+                    finally:
+                        handler.set_backend(orig_backend)
                 func.__name__ = "check_" + backend + "_backend"
                 func.__doc__ = backend + "-backend"
                 return func
-            cur = handler.get_backend()
-            for backend in handler.backends:
-                if backend != cur and handler.has_backend(backend):
-                    verifiers.append(maker(backend))
+            for backend in iter_alt_backends(handler):
+                verifiers.append(maker(backend))
 
         return verifiers
 
@@ -1847,100 +2718,255 @@ class HandlerCase(TestCase):
             check_default.__doc__ = "self"
         return check_default
 
-    def fuzz_verifier_crypt(self):
-        """test results against OS crypt()"""
-        handler = self.handler
-        if self.using_patched_crypt or not has_crypt_support(handler):
-            return None
-        from crypt import crypt
-        def check_crypt(secret, hash):
-            """stdlib-crypt"""
-            if not self.os_supports_ident(hash):
-                return "skip"
-            secret = to_native_str(secret, self.fuzz_password_encoding)
-            return crypt(secret, hash) == hash
-        return check_crypt
-
     #---------------------------------------------------------------
     # fuzz settings generation
     #---------------------------------------------------------------
-    def get_fuzz_settings(self):
-        """generate random password and options for fuzz testing"""
-        prefix = "fuzz_setting_"
-        kwds = {}
-        for name in dir(self):
-            if name.startswith(prefix):
-                value = getattr(self, name)()
-                if value is not None:
-                    kwds[name[len(prefix):]] = value
-        secret, other = self.get_fuzz_password_pair()
-        return secret, other, kwds
+    class FuzzHashGenerator(object):
+        """
+        helper which takes care of generating random
+        passwords & configuration options to test hash with.
+        separate from test class so we can create one per thread.
+        """
+        #==========================================================
+        # class attrs
+        #==========================================================
 
-    def fuzz_setting_rounds(self):
+        # alphabet for randomly generated passwords
+        password_alphabet = u('qwertyASDF1234<>.@*#! \u00E1\u0259\u0411\u2113')
+
+        # encoding when testing bytes
+        password_encoding = "utf-8"
+
+        # map of setting kwd -> method name.
+        # will ignore setting if method returns None.
+        # subclasses should make copy of dict.
+        settings_map = dict(rounds="random_rounds",
+                            salt_size="random_salt_size",
+                            ident="random_ident")
+
+        # map of context kwd -> method name.
+        context_map = {}
+
+        #==========================================================
+        # init / generation
+        #==========================================================
+
+        def __init__(self, test, rng):
+            self.test = test
+            self.handler = test.handler
+            self.rng = rng
+
+        def generate(self):
+            """
+            generate random password and options for fuzz testing.
+            :returns:
+                `(secret, other_secret, settings_kwds, context_kwds)`
+            """
+            def gendict(map):
+                out = {}
+                for key, meth in map.items():
+                    func = getattr(self, meth)
+                    value = getattr(self, meth)()
+                    if value is not None:
+                        out[key] = value
+                return out
+            secret, other = self.random_password_pair()
+            return dict(secret=secret,
+                        other=other,
+                        settings=gendict(self.settings_map),
+                        context=gendict(self.context_map),
+                        )
+
+        #==========================================================
+        # helpers
+        #==========================================================
+        def randintgauss(self, lower, upper, mu, sigma):
+            """generate random int w/ gauss distirbution"""
+            value = self.rng.normalvariate(mu, sigma)
+            return int(limit(value, lower, upper))
+
+        #==========================================================
+        # settings generation
+        #==========================================================
+
+        def random_rounds(self):
+            handler = self.handler
+            if not has_rounds_info(handler):
+                return None
+            default = handler.default_rounds or handler.min_rounds
+            lower = handler.min_rounds
+            if handler.rounds_cost == "log2":
+                upper = default
+            else:
+                upper = min(default*2, handler.max_rounds)
+            return self.randintgauss(lower, upper, default, default*.5)
+
+        def random_salt_size(self):
+            handler = self.handler
+            if not (has_salt_info(handler) and 'salt_size' in handler.setting_kwds):
+                return None
+            default = handler.default_salt_size
+            lower = handler.min_salt_size
+            upper = handler.max_salt_size or default*4
+            return self.randintgauss(lower, upper, default, default*.5)
+
+        def random_ident(self):
+            rng = self.rng
+            handler = self.handler
+            if 'ident' not in handler.setting_kwds or not hasattr(handler, "ident_values"):
+                return None
+            if rng.random() < .5:
+                return None
+            # resolve wrappers before reading values
+            handler = getattr(handler, "wrapped", handler)
+            return rng.choice(handler.ident_values)
+
+        #==========================================================
+        # fuzz password generation
+        #==========================================================
+        def random_password_pair(self):
+            """generate random password, and non-matching alternate password"""
+            secret = self.random_password()
+            while True:
+                other = self.random_password()
+                if self.accept_password_pair(secret, other):
+                    break
+            rng = self.rng
+            if rng.randint(0,1):
+                secret = secret.encode(self.password_encoding)
+            if rng.randint(0,1):
+                other = other.encode(self.password_encoding)
+            return secret, other
+
+        def random_password(self):
+            """generate random passwords for fuzz testing"""
+            # occasionally try an empty password
+            rng = self.rng
+            if rng.random() < .0001:
+                return u('')
+
+            # check if truncate size needs to be considered
+            handler = self.handler
+            truncate_size = handler.truncate_error and handler.truncate_size
+            max_size = truncate_size or 999999
+
+            # pick endpoint
+            if max_size < 50 or rng.random() < .5:
+                # chance of small password (~15 chars)
+                size = self.randintgauss(1, min(max_size, 50), 15, 15)
+            else:
+                # otherwise large password (~70 chars)
+                size = self.randintgauss(50, min(max_size, 99), 70, 20)
+
+            # generate random password
+            result = getrandstr(rng, self.password_alphabet, size)
+
+            # trim ones that encode past truncate point.
+            if truncate_size and isinstance(result, unicode):
+                while len(result.encode("utf-8")) > truncate_size:
+                    result = result[:-1]
+
+            return result
+
+        def accept_password_pair(self, secret, other):
+            """verify fuzz pair contains different passwords"""
+            return secret != other
+
+        #==========================================================
+        # eoc FuzzGenerator
+        #==========================================================
+
+    #===================================================================
+    # "disabled hasher" api
+    #===================================================================
+
+    def test_disable_and_enable(self):
+        """.disable() / .enable() methods"""
+        #
+        # setup
+        #
         handler = self.handler
-        if not has_rounds_info(handler):
-            return None
-        default = handler.default_rounds or handler.min_rounds
-        lower = handler.min_rounds
-        if handler.rounds_cost == "log2":
-            upper = default
+        if not handler.is_disabled:
+            self.assertFalse(hasattr(handler, "disable"))
+            self.assertFalse(hasattr(handler, "enable"))
+            self.assertFalse(self.disabled_contains_salt)
+            raise self.skipTest("not applicable")
+
+        #
+        # disable()
+        #
+
+        # w/o existing hash
+        disabled_default = handler.disable()
+        self.assertIsInstance(disabled_default, str,
+                              msg="disable() must return native string")
+        self.assertTrue(handler.identify(disabled_default),
+                        msg="identify() didn't recognize disable() result: %r" % (disabled_default))
+
+        # w/ existing hash
+        stub = self.getRandom().choice(self.known_other_hashes)[1]
+        disabled_stub = handler.disable(stub)
+        self.assertIsInstance(disabled_stub, str,
+                              msg="disable() must return native string")
+        self.assertTrue(handler.identify(disabled_stub),
+                        msg="identify() didn't recognize disable() result: %r" % (disabled_stub))
+
+        #
+        # enable()
+        #
+
+        # w/o original hash
+        self.assertRaisesRegex(ValueError, "cannot restore original hash",
+                               handler.enable, disabled_default)
+
+        # w/ original hash
+        try:
+            result = handler.enable(disabled_stub)
+            error = None
+        except ValueError as e:
+            result = None
+            error = e
+
+        if error is None:
+            # if supports recovery, should have returned stub (e.g. unix_disabled);
+            self.assertIsInstance(result, str,
+                                  msg="enable() must return native string")
+            self.assertEqual(result, stub)
         else:
-            upper = min(default*2, handler.max_rounds)
-        return randintgauss(lower, upper, default, default*.5)
+            # if doesn't, should have thrown appropriate error
+            self.assertIsInstance(error, ValueError)
+            self.assertRegex("cannot restore original hash", str(error))
 
-    def fuzz_setting_salt_size(self):
-        handler = self.handler
-        if not (has_salt_info(handler) and 'salt_size' in handler.setting_kwds):
-            return None
-        default = handler.default_salt_size
-        lower = handler.min_salt_size
-        upper = handler.max_salt_size or default*4
-        return randintgauss(lower, upper, default, default*.5)
+        #
+        # test repeating disable() & salting state
+        #
 
-    def fuzz_setting_ident(self):
-        handler = self.handler
-        if 'ident' not in handler.setting_kwds or not hasattr(handler, "ident_values"):
-            return None
-        if rng.random() < .5:
-            return None
-        # resolve wrappers before reading values
-        handler = getattr(handler, "wrapped", handler)
-        ident = rng.choice(handler.ident_values)
-        if self.backend == "os_crypt" and not self.using_patched_crypt and not self.os_supports_ident(ident):
-            return None
-        return ident
+        # repeating disabled
+        disabled_default2 = handler.disable()
+        if self.disabled_contains_salt:
+            # should return new salt for each call (e.g. django_disabled)
+            self.assertNotEqual(disabled_default2, disabled_default)
+        elif error is None:
+            # should return same result for each hash, but unique across hashes
+            self.assertEqual(disabled_default2, disabled_default)
 
-    #---------------------------------------------------------------
-    # fuzz password generation
-    #---------------------------------------------------------------
-    def get_fuzz_password(self):
-        """generate random passwords for fuzz testing"""
-        # occasionally try an empty password
-        if rng.random() < .0001:
-            return u('')
-        # otherwise alternate between large and small passwords.
-        if rng.random() < .5:
-            size = randintgauss(1, 50, 15, 15)
+        # repeating same hash ...
+        disabled_stub2 = handler.disable(stub)
+        if self.disabled_contains_salt:
+            # ... should return different string (if salted)
+            self.assertNotEqual(disabled_stub2, disabled_stub)
         else:
-            size = randintgauss(50, 99, 70, 20)
-        return getrandstr(rng, self.fuzz_password_alphabet, size)
+            # ... should return same string
+            self.assertEqual(disabled_stub2, disabled_stub)
 
-    def accept_fuzz_pair(self, secret, other):
-        """verify fuzz pair contains different passwords"""
-        return secret != other
-
-    def get_fuzz_password_pair(self):
-        """generate random password, and non-matching alternate password"""
-        secret = self.get_fuzz_password()
-        while True:
-            other = self.get_fuzz_password()
-            if self.accept_fuzz_pair(secret, other):
-                break
-        if rng.randint(0,1):
-            secret = secret.encode(self.fuzz_password_encoding)
-        if rng.randint(0,1):
-            other = other.encode(self.fuzz_password_encoding)
-        return secret, other
+        # using different hash ...
+        disabled_other = handler.disable(stub + 'xxx')
+        if self.disabled_contains_salt or error is None:
+            # ... should return different string (if salted or hash encoded)
+            self.assertNotEqual(disabled_other, disabled_stub)
+        else:
+            # ... should return same string
+            self.assertEqual(disabled_other, disabled_stub)
 
     #===================================================================
     # eoc
@@ -1962,11 +2988,18 @@ class OsCryptMixin(HandlerCase):
     * check that native crypt support is detected correctly for known platforms.
     """
     #===================================================================
-    # option flags
+    # class attrs
     #===================================================================
+
     # platforms that are known to support / not support this hash natively.
     # list of (platform_regex, True|False|None) entries.
     platform_crypt_support = []
+
+    #: flag indicating backend provides a fallback when safe_crypt() can't handle password
+    has_os_crypt_fallback = True
+
+    #: alternate handler to use when searching for backend to fake safe_crypt() support.
+    alt_safe_crypt_handler = None
 
     #===================================================================
     # instance attrs
@@ -1985,13 +3018,26 @@ class OsCryptMixin(HandlerCase):
     def setUp(self):
         assert self.backend == "os_crypt"
         if not self.handler.has_backend("os_crypt"):
-            self.handler.get_backend() # hack to prevent recursion issue
             self._patch_safe_crypt()
         super(OsCryptMixin, self).setUp()
 
-    # alternate handler to use for fake os_crypt,
-    # e.g. bcrypt_sha256 uses bcrypt
-    fallback_os_crypt_handler = None
+    @classmethod
+    def _get_safe_crypt_handler_backend(cls):
+        """
+        return (handler, backend) pair to use for faking crypt.crypt() support for hash.
+        backend will be None if none availabe.
+        """
+        # find handler that generates safe_crypt() compatible hash
+        handler = cls.alt_safe_crypt_handler
+        if not handler:
+            handler = unwrap_handler(cls.handler)
+
+        # hack to prevent recursion issue when .has_backend() is called
+        handler.get_backend()
+
+        # find backend which isn't os_crypt
+        alt_backend = get_alt_backend(handler, "os_crypt")
+        return handler, alt_backend
 
     def _patch_safe_crypt(self):
         """if crypt() doesn't support current hash alg, this patches
@@ -1999,58 +3045,81 @@ class OsCryptMixin(HandlerCase):
         backends, so that we can go ahead and test as much of code path
         as possible.
         """
-        handler = self.fallback_os_crypt_handler or self.handler
-        # resolve wrappers, since we want to return crypt compatible hash.
-        while hasattr(handler, "wrapped"):
-            handler = handler.wrapped
-        alt_backend = self.find_crypt_replacement()
+        # find handler & backend
+        handler, alt_backend = self._get_safe_crypt_handler_backend()
         if not alt_backend:
-            raise AssertionError("handler has no available backends!")
+            raise AssertionError("handler has no available alternate backends!")
 
-        # create subclass of handler, which we swap to an alternate backend.
-        # NOTE: not switching original class's backend, since classes like bcrypt
-        #       run some checks when backend is set, that can cause recursion error
-        #       when orig backend is restored.
-        alt_handler = type('%s_%s_wrapper' % (handler.name, alt_backend), (handler,), {})
-        alt_handler._backend = None  # ensure full backend load into subclass
+        # create subclass of handler, which we swap to an alternate backend
+        alt_handler = handler.using()
         alt_handler.set_backend(alt_backend)
 
-        import passlib.utils as mod
-
         def crypt_stub(secret, hash):
-            # with temporary_backend(alt_handler, alt_backend):
             hash = alt_handler.genhash(secret, hash)
             assert isinstance(hash, str)
             return hash
 
-        self.addCleanup(setattr, mod, "_crypt", mod._crypt)
-        mod._crypt = crypt_stub
+        import passlib.utils as mod
+        self.patchAttr(mod, "_crypt", crypt_stub)
         self.using_patched_crypt = True
+
+    @classmethod
+    def _get_skip_backend_reason(cls, backend):
+        """
+        make sure os_crypt backend is tested
+        when it's known os_crypt will be faked by _patch_safe_crypt()
+        """
+        assert backend == "os_crypt"
+        reason = super(OsCryptMixin, cls)._get_skip_backend_reason(backend)
+
+        from passlib.utils import has_crypt
+        if reason == cls.BACKEND_NOT_AVAILABLE and has_crypt:
+            if TEST_MODE("full") and cls._get_safe_crypt_handler_backend()[1]:
+                # in this case, _patch_safe_crypt() will monkeypatch os_crypt
+                # to use another backend, just so we can test os_crypt fully.
+                return None
+            else:
+                return "hash not supported by os crypt()"
+
+        return reason
 
     #===================================================================
     # custom tests
     #===================================================================
+
+    # TODO: turn into decorator, and use mock library.
     def _use_mock_crypt(self):
-        """patch safe_crypt() so it returns mock value"""
+        """
+        patch passlib.utils.safe_crypt() so it returns mock value for duration of test.
+        returns function whose .return_value controls what's returned.
+        this defaults to None.
+        """
         import passlib.utils as mod
-        if not self.using_patched_crypt:
-            self.addCleanup(setattr, mod, "_crypt", mod._crypt)
-        crypt_value = [None]
-        mod._crypt = lambda secret, config: crypt_value[0]
-        def setter(value):
-            crypt_value[0] = value
-        return setter
+
+        def mock_crypt(secret, config):
+            # let 'test' string through so _load_os_crypt_backend() will still work
+            if secret == "test":
+                return mock_crypt.__wrapped__(secret, config)
+            else:
+                return mock_crypt.return_value
+
+        mock_crypt.__wrapped__ = mod._crypt
+        mock_crypt.return_value = None
+
+        self.patchAttr(mod, "_crypt", mock_crypt)
+
+        return mock_crypt
 
     def test_80_faulty_crypt(self):
         """test with faulty crypt()"""
         hash = self.get_sample_hash()[1]
         exc_types = (AssertionError,)
-        setter = self._use_mock_crypt()
+        mock_crypt = self._use_mock_crypt()
 
         def test(value):
             # set safe_crypt() to return specified value, and
             # make sure assertion error is raised by handler.
-            setter(value)
+            mock_crypt.return_value = value
             self.assertRaises(exc_types, self.do_genhash, "stub", hash)
             self.assertRaises(exc_types, self.do_encrypt, "stub")
             self.assertRaises(exc_types, self.do_verify, "stub", hash)
@@ -2061,11 +3130,13 @@ class OsCryptMixin(HandlerCase):
 
     def test_81_crypt_fallback(self):
         """test per-call crypt() fallback"""
-        # set safe_crypt to return None
-        setter = self._use_mock_crypt()
-        setter(None)
-        if self.find_crypt_replacement(fallback=True):
-            # handler should have a fallback to use
+
+        # mock up safe_crypt to return None
+        mock_crypt = self._use_mock_crypt()
+        mock_crypt.return_value = None
+
+        if self.has_os_crypt_fallback:
+            # handler should have a fallback to use when os_crypt backend refuses to handle secret.
             h1 = self.do_encrypt("stub")
             h2 = self.do_genhash("stub", h1)
             self.assertEqual(h2, h1)
@@ -2104,6 +3175,38 @@ class OsCryptMixin(HandlerCase):
                       "for %r" % (platform, self.handler.name))
 
     #===================================================================
+    # fuzzy verified support -- add new verified that uses os crypt()
+    #===================================================================
+    def fuzz_verifier_crypt(self):
+        """test results against OS crypt()"""
+
+        # don't use this if we're faking safe_crypt (pointless test),
+        # or if handler is a wrapper (only original handler will be supported by os)
+        handler = self.handler
+        if self.using_patched_crypt or hasattr(handler, "wrapped"):
+            return None
+
+        # create a wrapper for fuzzy verified to use
+        from crypt import crypt
+        encoding = self.FuzzHashGenerator.password_encoding
+
+        def check_crypt(secret, hash):
+            """stdlib-crypt"""
+            if not self.crypt_supports_variant(hash):
+                return "skip"
+            secret = to_native_str(secret, encoding)
+            return crypt(secret, hash) == hash
+
+        return check_crypt
+
+    def crypt_supports_variant(self, hash):
+        """
+        fuzzy_verified_crypt() helper --
+        used to determine if os crypt() supports a particular hash variant.
+        """
+        return True
+
+    #===================================================================
     # eoc
     #===================================================================
 
@@ -2111,7 +3214,7 @@ class UserHandlerMixin(HandlerCase):
     """helper for handlers w/ 'user' context kwd; mixin for HandlerCase
 
     this overrides the HandlerCase test harness methods
-    so that a username is automatically inserted to encrypt/verify
+    so that a username is automatically inserted to hash/verify
     calls. as well, passing in a pair of strings as the password
     will be interpreted as (secret,user)
     """
@@ -2134,15 +3237,15 @@ class UserHandlerMixin(HandlerCase):
         """test user context keyword"""
         handler = self.handler
         password = 'stub'
-        hash = handler.encrypt(password, user=self.default_user)
+        hash = handler.hash(password, user=self.default_user)
 
         if self.requires_user:
-            self.assertRaises(TypeError, handler.encrypt, password)
+            self.assertRaises(TypeError, handler.hash, password)
             self.assertRaises(TypeError, handler.genhash, password, hash)
             self.assertRaises(TypeError, handler.verify, password, hash)
         else:
             # e.g. cisco_pix works with or without one.
-            handler.encrypt(password)
+            handler.hash(password)
             handler.genhash(password, hash)
             handler.verify(password, hash)
 
@@ -2150,7 +3253,7 @@ class UserHandlerMixin(HandlerCase):
         """test user case sensitivity"""
         lower = self.default_user.lower()
         upper = lower.upper()
-        hash = self.do_encrypt('stub', user=lower)
+        hash = self.do_encrypt('stub', context=dict(user=lower))
         if self.user_case_insensitive:
             self.assertTrue(self.do_verify('stub', hash, user=upper),
                             "user should not be case sensitive")
@@ -2160,7 +3263,7 @@ class UserHandlerMixin(HandlerCase):
 
     def test_82_user_salt(self):
         """test user used as salt"""
-        config = self.do_genconfig()
+        config = self.do_stub_encrypt()
         h1 = self.do_genhash('stub', config, user='admin')
         h2 = self.do_genhash('stub', config, user='admin')
         self.assertEqual(h2, h1)
@@ -2187,12 +3290,18 @@ class UserHandlerMixin(HandlerCase):
     #===================================================================
     # modify fuzz testing
     #===================================================================
-    fuzz_user_alphabet = u("asdQWE123")
+    class FuzzHashGenerator(HandlerCase.FuzzHashGenerator):
 
-    def fuzz_setting_user(self):
-        if not self.requires_user and rng.random() < .1:
-            return None
-        return getrandstr(rng, self.fuzz_user_alphabet, rng.randint(2,10))
+        context_map = HandlerCase.FuzzHashGenerator.context_map.copy()
+        context_map.update(user="random_user")
+
+        user_alphabet = u("asdQWE123")
+
+        def random_user(self):
+            rng = self.rng
+            if not self.test.requires_user and rng.random() < .1:
+                return None
+            return getrandstr(rng, self.user_alphabet, rng.randint(2,10))
 
     #===================================================================
     # eoc
@@ -2202,7 +3311,7 @@ class EncodingHandlerMixin(HandlerCase):
     """helper for handlers w/ 'encoding' context kwd; mixin for HandlerCase
 
     this overrides the HandlerCase test harness methods
-    so that an encoding can be inserted to encrypt/verify
+    so that an encoding can be inserted to hash/verify
     calls by passing in a pair of strings as the password
     will be interpreted as (secret,encoding)
     """
@@ -2215,11 +3324,13 @@ class EncodingHandlerMixin(HandlerCase):
     # so different encodings can be tested safely.
     stock_passwords = [
         u("test"),
-        b("test"),
+        b"test",
         u("\u00AC\u00BA"),
     ]
 
-    fuzz_password_alphabet = u('qwerty1234<>.@*#! \u00AC')
+    class FuzzHashGenerator(HandlerCase.FuzzHashGenerator):
+
+        password_alphabet = u('qwerty1234<>.@*#! \u00AC')
 
     def populate_context(self, secret, kwds):
         """insert encoding into kwds"""
@@ -2234,8 +3345,9 @@ class EncodingHandlerMixin(HandlerCase):
 #=============================================================================
 # warnings helpers
 #=============================================================================
-class reset_warnings(catch_warnings):
+class reset_warnings(warnings.catch_warnings):
     """catch_warnings() wrapper which clears warning registry & filters"""
+
     def __init__(self, reset_filter="always", reset_registry=".*", **kwds):
         super(reset_warnings, self).__init__(**kwds)
         self._reset_filter = reset_filter
@@ -2254,37 +3366,34 @@ class reset_warnings(catch_warnings):
         # that match the 'reset' pattern.
         pattern = self._reset_registry
         if pattern:
-            orig = self._orig_registry = {}
-            for name, mod in sys.modules.items():
-                if pattern.match(name):
-                    reg = getattr(mod, "__warningregistry__", None)
-                    if reg:
-                        orig[name] = reg.copy()
-                        reg.clear()
+            backup = self._orig_registry = {}
+            for name, mod in list(sys.modules.items()):
+                if mod is None or not pattern.match(name):
+                    continue
+                reg = getattr(mod, "__warningregistry__", None)
+                if reg:
+                    backup[name] = reg.copy()
+                    reg.clear()
         return ret
 
     def __exit__(self, *exc_info):
         # restore warning registry for all modules
         pattern = self._reset_registry
         if pattern:
-            # restore archived registry data
-            orig = self._orig_registry
-            for name, content in iteritems(orig):
-                mod = sys.modules.get(name)
-                if mod is None:
+            # restore registry backup, clearing all registry entries that we didn't archive
+            backup = self._orig_registry
+            for name, mod in list(sys.modules.items()):
+                if mod is None or not pattern.match(name):
                     continue
                 reg = getattr(mod, "__warningregistry__", None)
-                if reg is None:
-                    setattr(mod, "__warningregistry__", content)
-                else:
+                if reg:
                     reg.clear()
-                    reg.update(content)
-            # clear all registry entries that we didn't archive
-            for name, mod in sys.modules.items():
-                if pattern.match(name) and name not in orig:
-                    reg = getattr(mod, "__warningregistry__", None)
-                    if reg:
-                        reg.clear()
+                orig = backup.get(name)
+                if orig:
+                    if reg is None:
+                        setattr(mod, "__warningregistry__", orig)
+                    else:
+                        reg.update(orig)
         super(reset_warnings, self).__exit__(*exc_info)
 
 #=============================================================================

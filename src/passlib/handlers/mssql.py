@@ -43,7 +43,7 @@ from warnings import warn
 # site
 # pkg
 from passlib.utils import consteq
-from passlib.utils.compat import b, bytes, bascii_to_str, unicode, u
+from passlib.utils.compat import bascii_to_str, unicode, u
 import passlib.utils.handlers as uh
 # local
 __all__ = [
@@ -59,7 +59,7 @@ def _raw_mssql(secret, salt):
     assert isinstance(salt, bytes)
     return sha1(secret.encode("utf-16-le") + salt).digest()
 
-BIDENT = b("0x0100")
+BIDENT = b"0x0100"
 ##BIDENT2 = b("\x01\x00")
 UIDENT = u("0x0100")
 
@@ -104,7 +104,7 @@ class mssql2000(uh.HasRawSalt, uh.HasRawChecksum, uh.GenericHandler):
 
     It supports a fixed-length salt.
 
-    The :meth:`~passlib.ifc.PasswordHash.encrypt` and :meth:`~passlib.ifc.PasswordHash.genconfig` methods accept the following optional keywords:
+    The :meth:`~passlib.ifc.PasswordHash.using` method accepts the following optional keywords:
 
     :type salt: bytes
     :param salt:
@@ -127,7 +127,6 @@ class mssql2000(uh.HasRawSalt, uh.HasRawChecksum, uh.GenericHandler):
     setting_kwds = ("salt",)
     checksum_size = 40
     min_salt_size = max_salt_size = 4
-    _stub_checksum = b("\x00") * 40
 
     #===================================================================
     # formatting
@@ -150,7 +149,7 @@ class mssql2000(uh.HasRawSalt, uh.HasRawChecksum, uh.GenericHandler):
         return cls(salt=data[:4], checksum=data[4:])
 
     def to_string(self):
-        raw = self.salt + (self.checksum or self._stub_checksum)
+        raw = self.salt + self.checksum
         # raw bytes format - BIDENT2 + raw
         return "0x0100" + bascii_to_str(hexlify(raw).upper())
 
@@ -182,7 +181,7 @@ class mssql2005(uh.HasRawSalt, uh.HasRawChecksum, uh.GenericHandler):
 
     It supports a fixed-length salt.
 
-    The :meth:`~passlib.ifc.PasswordHash.encrypt` and :meth:`~passlib.ifc.PasswordHash.genconfig` methods accept the following optional keywords:
+    The :meth:`~passlib.ifc.PasswordHash.using` method accepts the following optional keywords:
 
     :type salt: bytes
     :param salt:
@@ -206,7 +205,6 @@ class mssql2005(uh.HasRawSalt, uh.HasRawChecksum, uh.GenericHandler):
 
     checksum_size = 20
     min_salt_size = max_salt_size = 4
-    _stub_checksum = b("\x00") * 20
 
     #===================================================================
     # formatting
@@ -228,7 +226,7 @@ class mssql2005(uh.HasRawSalt, uh.HasRawChecksum, uh.GenericHandler):
         return cls(salt=data[:4], checksum=data[4:])
 
     def to_string(self):
-        raw = self.salt + (self.checksum or self._stub_checksum)
+        raw = self.salt + self.checksum
         # raw bytes format - BIDENT2 + raw
         return "0x0100" + bascii_to_str(hexlify(raw)).upper()
 

@@ -5,26 +5,32 @@
 from __future__ import with_statement
 # core
 import inspect
-import re
-import hashlib
 import logging; log = logging.getLogger(__name__)
-import time
-import os
+import math
+import threading
 from warnings import warn
 # site
 # pkg
-import passlib.exc as exc
+import passlib.exc as exc, passlib.ifc as ifc
 from passlib.exc import MissingBackendError, PasslibConfigWarning, \
                         PasslibHashWarning
 from passlib.ifc import PasswordHash
 from passlib.registry import get_crypt_handler
-from passlib.utils import classproperty, consteq, getrandstr, getrandbytes,\
-                          BASE64_CHARS, HASH64_CHARS, rng, to_native_str, \
-                          is_crypt_handler, to_unicode, \
-                          MAX_PASSWORD_SIZE
-from passlib.utils.compat import b, join_byte_values, bytes, irange, u, \
+from passlib.utils import (
+    consteq, getrandstr, getrandbytes,
+    rng, to_native_str,
+    is_crypt_handler, to_unicode,
+    MAX_PASSWORD_SIZE, accepts_keyword, as_bool,
+    update_mixin_classes)
+from passlib.utils.binary import (
+    BASE64_CHARS, HASH64_CHARS, PADDED_BASE64_CHARS,
+    HEX_CHARS, UPPER_HEX_CHARS, LOWER_HEX_CHARS,
+    ALL_BYTE_VALUES,
+)
+from passlib.utils.compat import join_byte_values, irange, u, native_string_types, \
                                  uascii_to_str, join_unicode, unicode, str_to_uascii, \
-                                 join_unicode, base_string_types, PY2, int_types
+                                 join_unicode, unicode_or_bytes_types, PY2, int_types
+from passlib.utils.decor import classproperty, deprecated_method
 # local
 __all__ = [
     # helpers for implementing MCF handlers
@@ -46,22 +52,14 @@ __all__ = [
 
     # other helpers
     'PrefixWrapper',
+
+    # TODO: a bunch of other things are commonly assumed in this namespace
+    #       (e.g. HEX_CHARS etc); need to audit uses and update this list.
 ]
 
 #=============================================================================
 # constants
 #=============================================================================
-
-# common salt_chars & checksum_chars values
-# (BASE64_CHARS, HASH64_CHARS imported above)
-PADDED_BASE64_CHARS = BASE64_CHARS + u("=")
-HEX_CHARS = u("0123456789abcdefABCDEF")
-UPPER_HEX_CHARS = u("0123456789ABCDEF")
-LOWER_HEX_CHARS = u("0123456789abcdef")
-
-# special byte string containing all possible byte values
-# XXX: treated as singleton by some of the code for efficiency.
-ALL_BYTE_VALUES = join_byte_values(irange(256))
 
 # deprecated aliases - will be removed after passlib 1.8
 H64_CHARS = HASH64_CHARS
@@ -81,6 +79,37 @@ def _bitsize(count, chars):
     else:
         return 0
 
+def guess_app_stacklevel(start=1):
+    """
+    try to guess stacklevel for application warning.
+    looks for first frame not part of passlib.
+    """
+    frame = inspect.currentframe()
+    count = -start
+    try:
+        while frame:
+            name = frame.f_globals.get('__name__', "")
+            if name.startswith("passlib.tests.") or not name.startswith("passlib."):
+                return max(1, count)
+            count += 1
+            frame = frame.f_back
+        return start
+    finally:
+        del frame
+
+def warn_hash_settings_deprecation(handler, kwds):
+    warn("passing settings to %(handler)s.hash() is deprecated, and won't be supported in Passlib 2.0; "
+         "use '%(handler)s.using(**settings).hash(secret)' instead" % dict(handler=handler.name),
+         DeprecationWarning, stacklevel=guess_app_stacklevel(2))
+
+def extract_settings_kwds(handler, kwds):
+    """
+    helper to extract settings kwds from mix of context & settings kwds.
+    pops settings keys from kwds, returns them as a dict.
+    """
+    context_keys = set(handler.context_kwds)
+    return dict((key, kwds.pop(key)) for key in list(kwds) if key not in context_keys)
+
 #=============================================================================
 # parsing helpers
 #=============================================================================
@@ -89,10 +118,10 @@ _UZERO = u("0")
 
 def validate_secret(secret):
     """ensure secret has correct type & size"""
-    if not isinstance(secret, base_string_types):
+    if not isinstance(secret, unicode_or_bytes_types):
         raise exc.ExpectedStringError(secret, "secret")
     if len(secret) > MAX_PASSWORD_SIZE:
-        raise exc.PasswordSizeError()
+        raise exc.PasswordSizeError(MAX_PASSWORD_SIZE)
 
 def to_unicode_for_identify(hash):
     """convert hash to unicode for identify method"""
@@ -192,6 +221,48 @@ def parse_mc3(hash, prefix, sep=_UDOLLAR, rounds_base=10,
     # return result
     return rounds, salt, chk or None
 
+# def parse_mc3_long(hash, prefix, sep=_UDOLLAR, handler=None):
+#     """
+#     parse hash using 3-part modular crypt format,
+#     with complex settings string instead of simple rounds.
+#     otherwise works same as :func:`parse_mc3`
+#     """
+#     # detect prefix
+#     hash = to_unicode(hash, "ascii", "hash")
+#     assert isinstance(prefix, unicode)
+#     if not hash.startswith(prefix):
+#         raise exc.InvalidHashError(handler)
+#
+#     # parse 3-part hash or 2-part config string
+#     assert isinstance(sep, unicode)
+#     parts = hash[len(prefix):].split(sep)
+#     if len(parts) == 3:
+#         return parts
+#     elif len(parts) == 2:
+#         settings, salt = parts
+#         return settings, salt, None
+#     else:
+#         raise exc.MalformedHashError(handler)
+
+def parse_int(source, base=10, default=None, param="value", handler=None):
+    """
+    helper to parse an integer config field
+
+    :arg source: unicode source string
+    :param base: numeric base
+    :param default: optional default if source is empty
+    :param param: name of variable, for error msgs
+    :param handler: handler class, for error msgs
+    """
+    if source.startswith(_UZERO) and source != _UZERO:
+        raise exc.MalformedHashError(handler, "zero-padded %s field" % param)
+    elif source:
+        return int(source, base)
+    elif default is None:
+        raise exc.MalformedHashError(handler, "empty %s field" % param)
+    else:
+        return default
+
 #=============================================================================
 # formatting helpers
 #=============================================================================
@@ -245,9 +316,133 @@ def render_mc3(ident, rounds, salt, checksum, sep=u("$"), rounds_base=10):
     return uascii_to_str(join_unicode(parts))
 
 #=============================================================================
+# parameter helpers
+#=============================================================================
+
+def validate_default_value(handler, default, norm, param="value"):
+    """
+    assert helper that quickly validates default value.
+    designed to get out of the way and reduce overhead when asserts are stripped.
+    """
+    assert default is not None, "%s lacks default %s" % (handler.name, param)
+    assert norm(default) == default, "%s: invalid default %s: %r" % (handler.name, param, default)
+    return True
+
+def norm_integer(handler, value, min=1, max=None, # *
+                 param="value", relaxed=False):
+    """
+    helper to normalize and validate an integer value (e.g. rounds, salt_size)
+
+    :arg value: value provided to constructor
+    :arg default: default value if none provided. if set to ``None``, value is required.
+    :arg param: name of parameter (xxx: move to first arg?)
+    :param min: minimum value (defaults to 1)
+    :param max: maximum value (default ``None`` means no maximum)
+    :returns: validated value
+    """
+    # check type
+    if not isinstance(value, int_types):
+        raise exc.ExpectedTypeError(value, "integer", param)
+
+    # check minimum
+    if value < min:
+        msg = "%s: %s (%d) is too low, must be at least %d" % (handler.name, param, value, min)
+        if relaxed:
+            warn(msg, exc.PasslibHashWarning)
+            value = min
+        else:
+            raise ValueError(msg)
+
+    # check maximum
+    if max and value > max:
+        msg = "%s: %s (%d) is too large, cannot be more than %d" % (handler.name, param, value, max)
+        if relaxed:
+            warn(msg, exc.PasslibHashWarning)
+            value = max
+        else:
+            raise ValueError(msg)
+
+    return value
+
+#=============================================================================
+# MinimalHandler
+#=============================================================================
+class MinimalHandler(PasswordHash):
+    """
+    helper class for implementing hash handlers.
+    provides nothing besides a base implementation of the .using() subclass constructor.
+    """
+    #===================================================================
+    # class attr
+    #===================================================================
+
+    #: private flag used by using() constructor to detect if this is already a subclass.
+    _configured = False
+
+    #===================================================================
+    # configuration interface
+    #===================================================================
+
+    @classmethod
+    def using(cls, relaxed=False):
+        # NOTE: this provides the base implementation, which takes care of
+        #       creating the newly configured class. Mixins and subclasses
+        #       should wrap this, and modify the returned class to suit their options.
+        # NOTE: 'relaxed' keyword is ignored here, but parsed so that subclasses
+        #       can check for it as argument, and modify their parsing behavior accordingly.
+        name = cls.__name__
+        if not cls._configured:
+            # TODO: straighten out class naming, repr, and .name attr
+            name = "<customized %s hasher>" % name
+        return type(name, (cls,), dict(__module__=cls.__module__, _configured=True))
+
+    #===================================================================
+    # eoc
+    #===================================================================
+
+class TruncateMixin(MinimalHandler):
+    """
+    PasswordHash mixin which provides a method
+    that will check if secret would be truncated,
+    and can be configured to throw an error.
+
+    .. warning::
+
+        Hashers using this mixin will generally need to override
+        the default PasswordHash.truncate_error policy of "True",
+        and will similarly want to override .truncate_verify_reject as well.
+
+        TODO: This should be done explicitly, but for now this mixin sets
+        these flags implicitly.
+    """
+
+    truncate_error = False
+    truncate_verify_reject = False
+
+    @classmethod
+    def using(cls, truncate_error=None, **kwds):
+        subcls = super(TruncateMixin, cls).using(**kwds)
+        if truncate_error is not None:
+            truncate_error = as_bool(truncate_error, param="truncate_error")
+            if truncate_error is not None:
+                subcls.truncate_error = truncate_error
+        return subcls
+
+    @classmethod
+    def _check_truncate_policy(cls, secret):
+        """
+        make sure secret won't be truncated.
+        NOTE: this should only be called for .hash(), not for .verify(),
+        which should honor the .truncate_verify_reject policy.
+        """
+        assert cls.truncate_size is not None, "truncate_size must be set by subclass"
+        if cls.truncate_error and len(secret) > cls.truncate_size:
+            raise exc.PasswordTruncateError(cls)
+
+#=============================================================================
 # GenericHandler
 #=============================================================================
-class GenericHandler(PasswordHash):
+class GenericHandler(MinimalHandler):
     """helper class for implementing hash handlers.
 
     GenericHandler-derived classes will have (at least) the following
@@ -269,7 +464,7 @@ class GenericHandler(PasswordHash):
         cost parameters, etc.
 
         This is typically only set to ``True`` when the constructor
-        is called by :meth:`encrypt`, allowing user-provided values
+        is called by :meth:`hash`, allowing user-provided values
         to be handled in a more permissive manner.
 
     :param relaxed:
@@ -322,15 +517,9 @@ class GenericHandler(PasswordHash):
 
     .. attribute:: _stub_checksum
 
-        [optional]
-        If specified, hashes with this checksum will have their checksum
-        normalized to ``None``, treating it like a config string.
-        This is mainly used by hash formats which don't have a concept
-        of a config string, so a unlikely-to-occur checksum (e.g. all zeros)
-        is used by some implementations.
-
-        This should be a string of the same datatype as :attr:`checksum`,
-        or ``None``.
+        Placeholder checksum that will be used by genconfig()
+        in lieu of actually generating a hash for the empty string.
+        This should be a string of the same datatype as :attr:`checksum`.
 
     Instance Attributes
     ===================
@@ -357,7 +546,7 @@ class GenericHandler(PasswordHash):
     .. automethod:: genconfig
     .. automethod:: genhash
     .. automethod:: identify
-    .. automethod:: encrypt
+    .. automethod:: hash
     .. automethod:: verify
     """
 
@@ -383,10 +572,6 @@ class GenericHandler(PasswordHash):
     # if specified, _norm_checksum() will validate this
     checksum_chars = None
 
-    # if specified, hashes with this checksum will be treated
-    # as if no checksum was specified.
-    _stub_checksum = None
-
     # private flag used by HasRawChecksum
     _checksum_is_bytes = False
 
@@ -400,42 +585,37 @@ class GenericHandler(PasswordHash):
     #===================================================================
     # init
     #===================================================================
-    def __init__(self, checksum=None, use_defaults=False, relaxed=False,
-                 **kwds):
+    def __init__(self, checksum=None, use_defaults=False, **kwds):
         self.use_defaults = use_defaults
-        self.relaxed = relaxed
         super(GenericHandler, self).__init__(**kwds)
-        self.checksum = self._norm_checksum(checksum)
+        if checksum is not None:
+            # XXX: do we need to set .relaxed for checksum coercion?
+            self.checksum = self._norm_checksum(checksum)
 
-    def _norm_checksum(self, checksum):
+    # NOTE: would like to make this classmethod, but fshp checksum size
+    #       is dependant on .variant, so leaving this as instance method.
+    def _norm_checksum(self, checksum, relaxed=False):
         """validates checksum keyword against class requirements,
         returns normalized version of checksum.
         """
         # NOTE: by default this code assumes checksum should be unicode.
         # For classes where the checksum is raw bytes, the HasRawChecksum sets
         # the _checksum_is_bytes flag which alters various code paths below.
-        if checksum is None:
-            return None
 
         # normalize to bytes / unicode
         raw = self._checksum_is_bytes
         if raw:
-            # NOTE: no clear route to reasonbly convert unicode -> raw bytes,
-            # so relaxed does nothing here
+            # NOTE: no clear route to reasonably convert unicode -> raw bytes,
+            #       so 'relaxed' does nothing here
             if not isinstance(checksum, bytes):
                 raise exc.ExpectedTypeError(checksum, "bytes", "checksum")
 
         elif not isinstance(checksum, unicode):
-            if isinstance(checksum, bytes) and self.relaxed:
-                warn("checksum should be unicode, not bytes",
-                     PasslibHashWarning)
+            if isinstance(checksum, bytes) and relaxed:
+                warn("checksum should be unicode, not bytes", PasslibHashWarning)
                 checksum = checksum.decode("ascii")
             else:
                 raise exc.ExpectedTypeError(checksum, "unicode", "checksum")
-
-        # handle stub
-        if checksum == self._stub_checksum:
-            return None
 
         # check size
         cc = self.checksum_size
@@ -446,8 +626,7 @@ class GenericHandler(PasswordHash):
         if not raw:
             cs = self.checksum_chars
             if cs and any(c not in cs for c in checksum):
-                raise ValueError("invalid characters in %s checksum" %
-                                 (self.name,))
+                raise ValueError("invalid characters in %s checksum" % (self.name,))
 
         return checksum
 
@@ -483,7 +662,8 @@ class GenericHandler(PasswordHash):
 
     @classmethod
     def from_string(cls, hash, **context): # pragma: no cover
-        """return parsed instance from hash/configuration string
+        r"""
+        return parsed instance from hash/configuration string
 
         :param \*\*context:
             context keywords to pass to constructor (if applicable).
@@ -500,43 +680,41 @@ class GenericHandler(PasswordHash):
         """render instance to hash or configuration string
 
         :returns:
-            if :attr:`checksum` is set, should return full hash string.
-            if not, should either return abbreviated configuration string,
-            or fill in a stub checksum.
+            hash string with salt & digest included.
 
             should return native string type (ascii-bytes under python 2,
             unicode under python 3)
         """
-        # NOTE: documenting some non-standardized but common kwd flags
-        #       that passlib to_string() method may have:
-        #
-        #       withchk=True -- if false, omit checksum portion of hash
-        #
-        raise NotImplementedError("%s must implement from_string()" %
-                                  (self.__class__,))
-
-    ##def to_config_string(self):
-    ##    "helper for generating configuration string (ignoring hash)"
-    ##    orig = self.checksum
-    ##    try:
-    ##        self.checksum = None
-    ##        return self.to_string()
-    ##    finally:
-    ##            self.checksum = orig
+        raise NotImplementedError("%s must implement from_string()" % (self.__class__,))
 
     #===================================================================
-    #'crypt-style' interface (default implementation)
+    # checksum generation
     #===================================================================
-    @classmethod
-    def genconfig(cls, **settings):
-        return cls(use_defaults=True, **settings).to_string()
 
-    @classmethod
-    def genhash(cls, secret, config, **context):
-        validate_secret(secret)
-        self = cls.from_string(config, **context)
-        self.checksum = self._calc_checksum(secret)
-        return self.to_string()
+    # NOTE: this is only used by genconfig(), and will be removed in passlib 2.0
+    @property
+    def _stub_checksum(self):
+        """
+        placeholder used by default .genconfig() so it can avoid expense of calculating digest.
+        """
+        # used fixed string if available
+        if self.checksum_size:
+            if self._checksum_is_bytes:
+                return b'\x00' * self.checksum_size
+            if self.checksum_chars:
+                return self.checksum_chars[0] * self.checksum_size
+
+        # hack to minimize cost of calculating real checksum
+        if isinstance(self, HasRounds):
+            orig = self.rounds
+            self.rounds = self.min_rounds or 1
+            try:
+                return self._calc_checksum("")
+            finally:
+                self.rounds = orig
+
+        # final fallback, generate a real checksum
+        return self._calc_checksum("")
 
     def _calc_checksum(self, secret): # pragma: no cover
         """given secret; calcuate and return encoded checksum portion of hash
@@ -551,8 +729,20 @@ class GenericHandler(PasswordHash):
     #===================================================================
     #'application' interface (default implementation)
     #===================================================================
+
     @classmethod
-    def encrypt(cls, secret, **kwds):
+    def hash(cls, secret, **kwds):
+        if kwds:
+            # Deprecating passing any settings keywords via .hash() as of passlib 1.7; everything
+            # should use .using().hash() instead.  If any keywords are specified, presume they're
+            # context keywords by default (the common case), and extract out any settings kwds.
+            # Support for passing settings via .hash() will be removed in Passlib 2.0, along with
+            # this block of code.
+            settings = extract_settings_kwds(cls, kwds)
+            if settings:
+                warn_hash_settings_deprecation(cls, settings)
+                return cls.using(**settings).hash(secret, **kwds)
+        # NOTE: at this point, 'kwds' should just contain context_kwds subset
         validate_secret(secret)
         self = cls(use_defaults=True, **kwds)
         self.checksum = self._calc_checksum(secret)
@@ -571,6 +761,53 @@ class GenericHandler(PasswordHash):
         return consteq(self._calc_checksum(secret), chk)
 
     #===================================================================
+    # legacy crypt interface
+    #===================================================================
+
+    @deprecated_method(deprecated="1.7", removed="2.0")
+    @classmethod
+    def genconfig(cls, **kwds):
+        # NOTE: 'kwds' should generally always be settings, so after this completes, *should* be empty.
+        settings = extract_settings_kwds(cls, kwds)
+        if settings:
+            return cls.using(**settings).genconfig(**kwds)
+        # NOTE: this uses optional stub checksum to bypass potentially expensive digest generation,
+        #       when caller just wants the config string.
+        self = cls(use_defaults=True, **kwds)
+        self.checksum = self._stub_checksum
+        return self.to_string()
+
+    @deprecated_method(deprecated="1.7", removed="2.0")
+    @classmethod
+    def genhash(cls, secret, config, **context):
+        if config is None:
+            raise TypeError("config must be string")
+        validate_secret(secret)
+        self = cls.from_string(config, **context)
+        self.checksum = self._calc_checksum(secret)
+        return self.to_string()
+
+    #===================================================================
+    # migration interface (basde implementation)
+    #===================================================================
+
+    @classmethod
+    def needs_update(cls, hash, secret=None, **kwds):
+        # NOTE: subclasses should generally just wrap _calc_needs_update()
+        #       to check their particular keywords.
+        self = cls.from_string(hash)
+        assert isinstance(self, cls)
+        return self._calc_needs_update(secret=secret, **kwds)
+
+    def _calc_needs_update(self, secret=None):
+        """
+        internal helper for :meth:`needs_update`.
+        """
+        # NOTE: this just provides a stub, subclasses & mixins
+        #       should override this with their own tests.
+        return False
+
+    #===================================================================
     # experimental - the following methods are not finished or tested,
     # but way work correctly for some hashes
     #===================================================================
@@ -582,13 +819,14 @@ class GenericHandler(PasswordHash):
         return (key for key in cls.setting_kwds
                 if key not in cls._unparsed_settings)
 
+    # XXX: make this a global function?
     @staticmethod
     def _sanitize(value, char=u("*")):
         """default method to obscure sensitive fields"""
         if value is None:
             return None
         if isinstance(value, bytes):
-            from passlib.utils import ab64_encode
+            from passlib.utils.binary import ab64_encode
             value = ab64_encode(value).decode("ascii")
         elif not isinstance(value, unicode):
             value = unicode(value)
@@ -600,8 +838,8 @@ class GenericHandler(PasswordHash):
     def parsehash(cls, hash, checksum=True, sanitize=False):
         """[experimental method] parse hash into dictionary of settings.
 
-        this essentially acts as the inverse of :meth:`encrypt`: for most
-        cases, if ``hash = cls.encrypt(secret, **opts)``, then
+        this essentially acts as the inverse of :meth:`hash`: for most
+        cases, if ``hash = cls.hash(secret, **opts)``, then
         ``cls.parsehash(hash)`` will return a dict matching the original options
         (with the extra keyword *checksum*).
 
@@ -615,7 +853,7 @@ class GenericHandler(PasswordHash):
         """
         # FIXME: this may not work for hashes with non-standard settings.
         # XXX: how should this handle checksum/salt encoding?
-        # need to work that out for encrypt anyways.
+        # need to work that out for hash() anyways.
         self = cls.from_string(hash)
         # XXX: could split next few lines out as self._parsehash() for subclassing
         # XXX: could try to resolve ident/variant to publically suitable alias.
@@ -696,20 +934,7 @@ class StaticHandler(GenericHandler):
         return hash
 
     def to_string(self):
-        assert self.checksum is not None
         return uascii_to_str(self._hash_prefix + self.checksum)
-
-    @classmethod
-    def genconfig(cls):
-        # since it has no settings, there's no need for a config string.
-        return None
-
-    @classmethod
-    def genhash(cls, secret, config, **context):
-        # since it has no settings, just verify config, and call encrypt()
-        if config is not None and not cls.identify(config):
-            raise exc.InvalidHashError(cls)
-        return cls.encrypt(secret, **context)
 
     # per-subclass: stores dynamically created subclass used by _calc_checksum() stub
     __cc_compat_hack = None
@@ -734,7 +959,16 @@ class StaticHandler(GenericHandler):
             wrapper_cls = cls.__cc_compat_hack = type(cls.__name__ + "_wrapper",
                   (cls,), dict(_calc_checksum=inner, __module__=cls.__module__))
         context = dict((k,getattr(self,k)) for k in self.context_kwds)
-        hash = wrapper_cls.genhash(secret, None, **context)
+        # NOTE: passing 'config=None' here even though not currently allowed by ifc,
+        #       since it *is* allowed under the old 1.5 ifc we're checking for here.
+        try:
+            hash = wrapper_cls.genhash(secret, None, **context)
+        except TypeError as err:
+            if str(err) == "config must be string":
+                raise NotImplementedError("%s must implement _calc_checksum()" %
+                                          (cls,))
+            else:
+                raise
         warn("%r should be updated to implement StaticHandler._calc_checksum() "
              "instead of StaticHandler.genhash(), support for the latter "
              "style will be removed in Passlib 1.8" % cls,
@@ -766,13 +1000,14 @@ class HasUserContext(GenericHandler):
 
     # wrap funcs to accept 'user' as positional arg for ease of use.
     @classmethod
-    def encrypt(cls, secret, user=None, **context):
-        return super(HasUserContext, cls).encrypt(secret, user=user, **context)
+    def hash(cls, secret, user=None, **context):
+        return super(HasUserContext, cls).hash(secret, user=user, **context)
 
     @classmethod
     def verify(cls, secret, hash, user=None, **context):
         return super(HasUserContext, cls).verify(secret, hash, user=user, **context)
 
+    @deprecated_method(deprecated="1.7", removed="2.0")
     @classmethod
     def genhash(cls, secret, config, user=None, **context):
         return super(HasUserContext, cls).genhash(secret, config, user=user, **context)
@@ -821,6 +1056,10 @@ class HasManyIdents(GenericHandler):
     .. todo::
 
         document this class's usage
+
+    Class Methods
+    =============
+    .. todo:: document using() and needs_update() options
     """
 
     #===================================================================
@@ -842,31 +1081,68 @@ class HasManyIdents(GenericHandler):
     ident = None
 
     #===================================================================
+    # variant constructor
+    #===================================================================
+    @classmethod
+    def using(cls,  # keyword only...
+              default_ident=None, ident=None, **kwds):
+        """
+        This mixin adds support for the following :meth:`~passlib.ifc.PasswordHash.using` keywords:
+
+        :param default_ident:
+            default identifier that will be used by resulting customized hasher.
+
+        :param ident:
+            supported as alternate alias for **default_ident**.
+        """
+        # resolve aliases
+        if ident is not None:
+            if default_ident is not None:
+                raise TypeError("'default_ident' and 'ident' are mutually exclusive")
+            default_ident = ident
+
+        # create subclass
+        subcls = super(HasManyIdents, cls).using(**kwds)
+
+        # add custom default ident
+        # (NOTE: creates instance to run value through _norm_ident())
+        if default_ident is not None:
+            subcls.default_ident = cls(ident=default_ident, use_defaults=True).ident
+        return subcls
+
+    #===================================================================
     # init
     #===================================================================
     def __init__(self, ident=None, **kwds):
         super(HasManyIdents, self).__init__(**kwds)
-        self.ident = self._norm_ident(ident)
 
-    def _norm_ident(self, ident):
-        # fill in default identifier
-        if ident is None:
-            if not self.use_defaults:
-                raise TypeError("no ident specified")
+        # init ident
+        if ident is not None:
+            ident = self._norm_ident(ident)
+        elif self.use_defaults:
             ident = self.default_ident
-            assert ident is not None, "class must define default_ident"
+            assert validate_default_value(self, ident, self._norm_ident, param="default_ident")
+        else:
+            raise TypeError("no ident specified")
+        self.ident = ident
 
-        # handle unicode
+    @classmethod
+    def _norm_ident(cls, ident):
+        """
+        helper which normalizes & validates 'ident' value.
+        """
+        # handle bytes
+        assert ident is not None
         if isinstance(ident, bytes):
             ident = ident.decode('ascii')
 
         # check if identifier is valid
-        iv = self.ident_values
+        iv = cls.ident_values
         if ident in iv:
             return ident
 
         # resolve aliases, and recheck against ident_values
-        ia = self.ident_aliases
+        ia = cls.ident_aliases
         if ia:
             try:
                 value = ia[ident]
@@ -885,7 +1161,7 @@ class HasManyIdents(GenericHandler):
     @classmethod
     def identify(cls, hash):
         hash = to_unicode_for_identify(hash)
-        return any(hash.startswith(ident) for ident in cls.ident_values)
+        return hash.startswith(cls.ident_values)
 
     @classmethod
     def _parse_ident(cls, hash):
@@ -895,6 +1171,8 @@ class HasManyIdents(GenericHandler):
             if hash.startswith(ident):
                 return ident, hash[len(ident):]
         raise exc.InvalidHashError(cls)
+
+    # XXX: implement a needs_update() helper that marks everything but default_ident as deprecated?
 
     #===================================================================
     # eoc
@@ -927,7 +1205,7 @@ class HasSalt(GenericHandler):
 
         The minimum number of characters allowed in a salt string.
         An :exc:`ValueError` will be throw if the provided salt is too small.
-        Defaults to ``None``, for no minimum.
+        Defaults to ``0``.
 
     .. attribute:: max_salt_size
 
@@ -980,7 +1258,7 @@ class HasSalt(GenericHandler):
     # class attrs
     #===================================================================
 
-    min_salt_size = None
+    min_salt_size = 0
     max_salt_size = None
     salt_chars = None
 
@@ -998,29 +1276,126 @@ class HasSalt(GenericHandler):
     _salt_is_bytes = False
     _salt_unit = "chars"
 
+    # TODO: could support using(min/max_desired_salt_size) via using() and needs_update()
+
     #===================================================================
     # instance attrs
     #===================================================================
     salt = None
 
     #===================================================================
+    # variant constructor
+    #===================================================================
+    @classmethod
+    def using(cls, # keyword only...
+              default_salt_size=None,
+              salt_size=None, # aliases used by CryptContext
+              salt=None,
+              **kwds):
+
+        # check for aliases used by CryptContext
+        if salt_size is not None:
+            if default_salt_size is not None:
+                raise TypeError("'salt_size' and 'default_salt_size' aliases are mutually exclusive")
+            default_salt_size = salt_size
+
+        # generate new subclass
+        subcls = super(HasSalt, cls).using(**kwds)
+
+        # replace default_rounds
+        relaxed = kwds.get("relaxed")
+        if default_salt_size is not None:
+            if isinstance(default_salt_size, native_string_types):
+                default_salt_size = int(default_salt_size)
+            subcls.default_salt_size = subcls._clip_to_valid_salt_size(default_salt_size,
+                                                                       param="salt_size",
+                                                                       relaxed=relaxed)
+
+        # if salt specified, replace _generate_salt() with fixed output.
+        # NOTE: this is mainly useful for testing / debugging.
+        if salt is not None:
+            salt = subcls._norm_salt(salt, relaxed=relaxed)
+            subcls._generate_salt = staticmethod(lambda: salt)
+
+        return subcls
+
+    # XXX: would like to combine w/ _norm_salt() code below, but doesn't quite fit.
+    @classmethod
+    def _clip_to_valid_salt_size(cls, salt_size, param="salt_size", relaxed=True):
+        """
+        internal helper --
+        clip salt size value to handler's absolute limits (min_salt_size / max_salt_size)
+
+        :param relaxed:
+            if ``True`` (the default), issues PasslibHashWarning is rounds are outside allowed range.
+            if ``False``, raises a ValueError instead.
+
+        :param param:
+            optional name of parameter to insert into error/warning messages.
+
+        :returns:
+            clipped rounds value
+        """
+        mn = cls.min_salt_size
+        mx = cls.max_salt_size
+
+        # check if salt size is fixed
+        if mn == mx:
+            if salt_size != mn:
+                msg = "%s: %s (%d) must be exactly %d" % (cls.name, param, salt_size, mn)
+                if relaxed:
+                    warn(msg, PasslibHashWarning)
+                else:
+                    raise ValueError(msg)
+            return mn
+
+        # check min size
+        if salt_size < mn:
+            msg = "%s: %s (%r) below min_salt_size (%d)" % (cls.name, param, salt_size, mn)
+            if relaxed:
+                warn(msg, PasslibHashWarning)
+                salt_size = mn
+            else:
+                raise ValueError(msg)
+
+        # check max size
+        if mx and salt_size > mx:
+            msg = "%s: %s (%r) above max_salt_size (%d)" % (cls.name, param, salt_size, mx)
+            if relaxed:
+                warn(msg, PasslibHashWarning)
+                salt_size = mx
+            else:
+                raise ValueError(msg)
+
+        return salt_size
+
+    #===================================================================
     # init
     #===================================================================
-    def __init__(self, salt=None, salt_size=None, **kwds):
+    def __init__(self, salt=None, **kwds):
         super(HasSalt, self).__init__(**kwds)
-        self.salt = self._norm_salt(salt, salt_size=salt_size)
+        if salt is not None:
+            salt = self._parse_salt(salt)
+        elif self.use_defaults:
+            salt = self._generate_salt()
+            assert self._norm_salt(salt) == salt, "generated invalid salt: %r" % (salt,)
+        else:
+            raise TypeError("no salt specified")
+        self.salt = salt
 
-    def _norm_salt(self, salt, salt_size=None):
+    # NOTE: split out mainly so sha256_crypt can subclass this
+    def _parse_salt(self, salt):
+        return self._norm_salt(salt)
+
+    @classmethod
+    def _norm_salt(cls, salt, relaxed=False):
         """helper to normalize & validate user-provided salt string
 
-        If no salt provided, a random salt is generated
-        using :attr:`default_salt_size` and :attr:`default_salt_chars`.
-
-        :arg salt: salt string or ``None``
-        :param salt_size: optionally specified size of autogenerated salt
+        :arg salt:
+            salt string
 
         :raises TypeError:
-            If salt not provided and ``use_defaults=False``.
+            If salt not correct type.
 
         :raises ValueError:
 
@@ -1031,49 +1406,40 @@ class HasSalt(GenericHandler):
               and a warning is issued instead).
 
         :returns:
-            normalized or generated salt
+            normalized salt
         """
-        # generate new salt if none provided
-        if salt is None:
-            if not self.use_defaults:
-                raise TypeError("no salt specified")
-            if salt_size is None:
-                salt_size = self.default_salt_size
-            salt = self._generate_salt(salt_size)
-
         # check type
-        if self._salt_is_bytes:
+        if cls._salt_is_bytes:
             if not isinstance(salt, bytes):
                 raise exc.ExpectedTypeError(salt, "bytes", "salt")
         else:
             if not isinstance(salt, unicode):
                 # NOTE: allowing bytes under py2 so salt can be native str.
-                if isinstance(salt, bytes) and (PY2 or self.relaxed):
+                if isinstance(salt, bytes) and (PY2 or relaxed):
                     salt = salt.decode("ascii")
                 else:
                     raise exc.ExpectedTypeError(salt, "unicode", "salt")
 
             # check charset
-            sc = self.salt_chars
+            sc = cls.salt_chars
             if sc is not None and any(c not in sc for c in salt):
-                raise ValueError("invalid characters in %s salt" % self.name)
+                raise ValueError("invalid characters in %s salt" % cls.name)
 
         # check min size
-        mn = self.min_salt_size
+        mn = cls.min_salt_size
         if mn and len(salt) < mn:
-            msg = "salt too small (%s requires %s %d %s)" % (self.name,
-                        "exactly" if mn == self.max_salt_size else ">=", mn,
-                        self._salt_unit)
+            msg = "salt too small (%s requires %s %d %s)" % (cls.name,
+                        "exactly" if mn == cls.max_salt_size else ">=", mn, cls._salt_unit)
             raise ValueError(msg)
 
         # check max size
-        mx = self.max_salt_size
+        mx = cls.max_salt_size
         if mx and len(salt) > mx:
-            msg = "salt too large (%s requires %s %d %s)" % (self.name,
-                        "exactly" if mx == mn else "<=", mx, self._salt_unit)
-            if self.relaxed:
+            msg = "salt too large (%s requires %s %d %s)" % (cls.name,
+                        "exactly" if mx == mn else "<=", mx, cls._salt_unit)
+            if relaxed:
                 warn(msg, PasslibHashWarning)
-                salt = self._truncate_salt(salt, mx)
+                salt = cls._truncate_salt(salt, mx)
             else:
                 raise ValueError(msg)
 
@@ -1086,12 +1452,12 @@ class HasSalt(GenericHandler):
         # the truncation properly
         return salt[:mx]
 
-    def _generate_salt(self, salt_size):
-        """helper method for _norm_salt(); generates a new random salt string.
-
-        :arg salt_size: salt size to generate
+    @classmethod
+    def _generate_salt(cls):
         """
-        return getrandstr(rng, self.default_salt_chars, salt_size)
+        helper method for _init_salt(); generates a new random salt string.
+        """
+        return getrandstr(rng, cls.default_salt_chars, cls.default_salt_size)
 
     @classmethod
     def bitsize(cls, salt_size=None, **kwds):
@@ -1125,9 +1491,10 @@ class HasRawSalt(HasSalt):
     _salt_is_bytes = True
     _salt_unit = "bytes"
 
-    def _generate_salt(self, salt_size):
-        assert self.salt_chars in [None, ALL_BYTE_VALUES]
-        return getrandbytes(rng, salt_size)
+    @classmethod
+    def _generate_salt(cls):
+        assert cls.salt_chars in [None, ALL_BYTE_VALUES]
+        return getrandbytes(rng, cls.default_salt_size)
 
 #------------------------------------------------------------------------
 # rounds mixin
@@ -1171,6 +1538,10 @@ class HasRounds(GenericHandler):
         (the default) or ``"log2"``, depending on how the rounds value relates
         to the actual amount of time that will be required.
 
+    Class Methods
+    =============
+    .. todo:: document using() and needs_update() options
+
     Instance Attributes
     ===================
     .. attribute:: rounds
@@ -1185,10 +1556,28 @@ class HasRounds(GenericHandler):
     #===================================================================
     # class attrs
     #===================================================================
+
+    #-----------------
+    # algorithm options -- not application configurable
+    #-----------------
+    # XXX: rename to min_valid_rounds / max_valid_rounds,
+    #      to clarify role compared to min_desired_rounds / max_desired_rounds?
     min_rounds = 0
     max_rounds = None
-    default_rounds = None
     rounds_cost = "linear" # default to the common case
+
+    # hack to pass info to _CryptRecord (will be removed in passlib 2.0)
+    using_rounds_kwds = ("min_desired_rounds", "max_desired_rounds",
+                         "min_rounds", "max_rounds",
+                         "default_rounds", "vary_rounds")
+
+    #-----------------
+    # desired & default rounds -- configurable via .using() classmethod
+    #-----------------
+    min_desired_rounds = None
+    max_desired_rounds = None
+    default_rounds = None
+    vary_rounds = None
 
     #===================================================================
     # instance attrs
@@ -1196,17 +1585,207 @@ class HasRounds(GenericHandler):
     rounds = None
 
     #===================================================================
+    # variant constructor
+    #===================================================================
+    @classmethod
+    def using(cls, # keyword only...
+              min_desired_rounds=None, max_desired_rounds=None,
+              default_rounds=None, vary_rounds=None,
+              min_rounds=None, max_rounds=None, rounds=None,  # aliases used by CryptContext
+              **kwds):
+
+        # check for aliases used by CryptContext
+        if min_rounds is not None:
+            if min_desired_rounds is not None:
+                raise TypeError("'min_rounds' and 'min_desired_rounds' aliases are mutually exclusive")
+            min_desired_rounds = min_rounds
+
+        if max_rounds is not None:
+            if max_desired_rounds is not None:
+                raise TypeError("'max_rounds' and 'max_desired_rounds' aliases are mutually exclusive")
+            max_desired_rounds = max_rounds
+
+        # use 'rounds' as fallback for min, max, AND default
+        # XXX: would it be better to make 'default_rounds' and 'rounds'
+        #      aliases, and have a separate 'require_rounds' parameter for this behavior?
+        if rounds is not None:
+            if min_desired_rounds is None:
+                min_desired_rounds = rounds
+            if max_desired_rounds is None:
+                max_desired_rounds = rounds
+            if default_rounds is None:
+                default_rounds = rounds
+
+        # generate new subclass
+        subcls = super(HasRounds, cls).using(**kwds)
+
+        # replace min_desired_rounds
+        relaxed = kwds.get("relaxed")
+        if min_desired_rounds is None:
+            explicit_min_rounds = False
+            min_desired_rounds = cls.min_desired_rounds
+        else:
+            explicit_min_rounds = True
+            if isinstance(min_desired_rounds, native_string_types):
+                min_desired_rounds = int(min_desired_rounds)
+            subcls.min_desired_rounds = subcls._norm_rounds(min_desired_rounds,
+                                                            param="min_desired_rounds",
+                                                            relaxed=relaxed)
+
+        # replace max_desired_rounds
+        if max_desired_rounds is None:
+            max_desired_rounds = cls.max_desired_rounds
+        else:
+            if isinstance(max_desired_rounds, native_string_types):
+                max_desired_rounds = int(max_desired_rounds)
+            if min_desired_rounds and max_desired_rounds < min_desired_rounds:
+                msg = "%s: max_desired_rounds (%r) below min_desired_rounds (%r)" % \
+                      (subcls.name, max_desired_rounds, min_desired_rounds)
+                if explicit_min_rounds:
+                    raise ValueError(msg)
+                else:
+                    warn(msg, PasslibConfigWarning)
+                    max_desired_rounds = min_desired_rounds
+            subcls.max_desired_rounds = subcls._norm_rounds(max_desired_rounds,
+                                                            param="max_desired_rounds",
+                                                            relaxed=relaxed)
+
+        # replace default_rounds
+        if default_rounds is not None:
+            if isinstance(default_rounds, native_string_types):
+                default_rounds = int(default_rounds)
+            if min_desired_rounds and default_rounds < min_desired_rounds:
+                raise ValueError("%s: default_rounds (%r) below min_desired_rounds (%r)" %
+                                 (subcls.name, default_rounds, min_desired_rounds))
+            elif max_desired_rounds and default_rounds > max_desired_rounds:
+                raise ValueError("%s: default_rounds (%r) above max_desired_rounds (%r)" %
+                                 (subcls.name, default_rounds, max_desired_rounds))
+            subcls.default_rounds = subcls._norm_rounds(default_rounds,
+                                                        param="default_rounds",
+                                                        relaxed=relaxed)
+
+        # clip default rounds to new limits.
+        if subcls.default_rounds is not None:
+            subcls.default_rounds = subcls._clip_to_desired_rounds(subcls.default_rounds)
+
+        # replace / set vary_rounds
+        if vary_rounds is not None:
+            if isinstance(vary_rounds, native_string_types):
+                if vary_rounds.endswith("%"):
+                    vary_rounds = float(vary_rounds[:-1]) * 0.01
+                elif "." in vary_rounds:
+                    vary_rounds = float(vary_rounds)
+                else:
+                    vary_rounds = int(vary_rounds)
+            if vary_rounds < 0:
+                raise ValueError("%s: vary_rounds (%r) below 0" %
+                                 (subcls.name, vary_rounds))
+            elif isinstance(vary_rounds, float):
+                # TODO: deprecate / disallow vary_rounds=1.0
+                if vary_rounds > 1:
+                    raise ValueError("%s: vary_rounds (%r) above 1.0" %
+                                     (subcls.name, vary_rounds))
+            elif not isinstance(vary_rounds, int):
+                raise TypeError("vary_rounds must be int or float")
+            if vary_rounds:
+                warn("The 'vary_rounds' option is deprecated as of Passlib 1.7, "
+                     "and will be removed in Passlib 2.0", PasslibConfigWarning)
+            subcls.vary_rounds = vary_rounds
+            # XXX: could cache _calc_vary_rounds_range() here if needed,
+            #      but would need to handle user manually changing .default_rounds
+        return subcls
+
+    @classmethod
+    def _clip_to_desired_rounds(cls, rounds):
+        """
+        helper for :meth:`_generate_rounds` --
+        clips rounds value to desired min/max set by class (if any)
+        """
+        # NOTE: min/max_desired_rounds are None if unset.
+        # check minimum
+        mnd = cls.min_desired_rounds or 0
+        if rounds < mnd:
+            return mnd
+
+        # check maximum
+        mxd = cls.max_desired_rounds
+        if mxd and rounds > mxd:
+            return mxd
+
+        return rounds
+
+    @classmethod
+    def _calc_vary_rounds_range(cls, default_rounds):
+        """
+        helper for :meth:`_generate_rounds` --
+        returns range for vary rounds generation.
+
+        :returns:
+            (lower, upper) limits suitable for random.randint()
+        """
+        # XXX: could precalculate output of this in using() method, and save per-hash cost.
+        #      but then users patching cls.vary_rounds / cls.default_rounds would get wrong value.
+        assert default_rounds
+        vary_rounds = cls.vary_rounds
+
+        # if vary_rounds specified as % of default, convert it to actual rounds
+        def linear_to_native(value, upper):
+            return value
+        if isinstance(vary_rounds, float):
+            assert 0 <= vary_rounds <= 1 # TODO: deprecate vary_rounds==1
+            if cls.rounds_cost == "log2":
+                # special case -- have to convert default_rounds to linear scale,
+                # apply +/- vary_rounds to that, and convert back to log scale again.
+                # linear_to_native() takes care of the "convert back" step.
+                default_rounds = 1 << default_rounds
+                def linear_to_native(value, upper):
+                    if value <= 0: # log() undefined for <= 0
+                        return 0
+                    elif upper: # use smallest upper bound for start of range
+                        return int(math.log(value, 2))
+                    else: # use greatest lower bound for end of range
+                        return int(math.ceil(math.log(value, 2)))
+            # calculate integer vary rounds based on current default_rounds
+            vary_rounds = int(default_rounds * vary_rounds)
+
+        # calculate bounds based on default_rounds +/- vary_rounds
+        assert vary_rounds >= 0 and isinstance(vary_rounds, int_types)
+        lower = linear_to_native(default_rounds - vary_rounds, False)
+        upper = linear_to_native(default_rounds + vary_rounds, True)
+        return cls._clip_to_desired_rounds(lower), cls._clip_to_desired_rounds(upper)
+
+    #===================================================================
     # init
     #===================================================================
     def __init__(self, rounds=None, **kwds):
         super(HasRounds, self).__init__(**kwds)
-        self.rounds = self._norm_rounds(rounds)
+        if rounds is not None:
+            rounds = self._parse_rounds(rounds)
+        elif self.use_defaults:
+            rounds = self._generate_rounds()
+            assert self._norm_rounds(rounds) == rounds, "generated invalid rounds: %r" % (rounds,)
+        else:
+            raise TypeError("no rounds specified")
+        self.rounds = rounds
 
-    def _norm_rounds(self, rounds):
-        """helper routine for normalizing rounds
+    # NOTE: split out mainly so sha256_crypt & bsdi_crypt can subclass this
+    def _parse_rounds(self, rounds):
+        return self._norm_rounds(rounds)
 
-        :arg rounds: ``None``, or integer cost parameter.
+    @classmethod
+    def _norm_rounds(cls, rounds, relaxed=False, param="rounds"):
+        """
+        helper for normalizing rounds value.
 
+        :arg rounds:
+            an integer cost parameter.
+
+        :param relaxed:
+            if ``True`` (the default), issues PasslibHashWarning is rounds are outside allowed range.
+            if ``False``, raises a ValueError instead.
+
+        :param param:
+            optional name of parameter to insert into error/warning messages.
 
         :raises TypeError:
             * if ``use_defaults=False`` and no rounds is specified
@@ -1223,40 +1802,49 @@ class HasRounds(GenericHandler):
         :returns:
             normalized rounds value
         """
-        # fill in default
+        return norm_integer(cls, rounds, cls.min_rounds, cls.max_rounds,
+                            param=param, relaxed=relaxed)
+
+    @classmethod
+    def _generate_rounds(cls):
+        """
+        internal helper for :meth:`_norm_rounds` --
+        returns default rounds value, incorporating vary_rounds,
+        and any other limitations hash may place on rounds parameter.
+        """
+        # load default rounds
+        rounds = cls.default_rounds
         if rounds is None:
-            if not self.use_defaults:
-                raise TypeError("no rounds specified")
-            rounds = self.default_rounds
-            if rounds is None:
-                raise TypeError("%s rounds value must be specified explicitly"
-                                 % (self.name,))
+            raise TypeError("%s rounds value must be specified explicitly" % (cls.name,))
 
-        # check type
-        if not isinstance(rounds, int_types):
-            raise exc.ExpectedTypeError(rounds, "integer", "rounds")
-
-        # check bounds
-        mn = self.min_rounds
-        if rounds < mn:
-            msg = "rounds too low (%s requires >= %d rounds)"  % (self.name, mn)
-            if self.relaxed:
-                warn(msg, PasslibHashWarning)
-                rounds = mn
-            else:
-                raise ValueError(msg)
-
-        mx = self.max_rounds
-        if mx and rounds > mx:
-            msg = "rounds too high (%s requires <= %d rounds)"  % (self.name, mx)
-            if self.relaxed:
-                warn(msg, PasslibHashWarning)
-                rounds = mx
-            else:
-                raise ValueError(msg)
+        # randomly vary the rounds slightly basic on vary_rounds parameter.
+        # reads default_rounds internally.
+        if cls.vary_rounds:
+            lower, upper = cls._calc_vary_rounds_range(rounds)
+            assert lower <= rounds <= upper
+            if lower < upper:
+                rounds = rng.randint(lower, upper)
 
         return rounds
 
+    #===================================================================
+    # migration interface
+    #===================================================================
+    def _calc_needs_update(self, **kwds):
+        """
+        mark hash as needing update if rounds is outside desired bounds.
+        """
+        min_desired_rounds = self.min_desired_rounds
+        if min_desired_rounds and self.rounds < min_desired_rounds:
+            return True
+        max_desired_rounds = self.max_desired_rounds
+        if max_desired_rounds and self.rounds > max_desired_rounds:
+            return True
+        return super(HasRounds, self)._calc_needs_update(**kwds)
+
+    #===================================================================
+    # experimental methods
+    #===================================================================
     @classmethod
     def bitsize(cls, rounds=None, vary_rounds=.1, **kwds):
         """[experimental method] return info about bitsizes of hash"""
@@ -1284,17 +1872,442 @@ class HasRounds(GenericHandler):
     #===================================================================
 
 #------------------------------------------------------------------------
+# other common parameters
+#------------------------------------------------------------------------
+class ParallelismMixin(GenericHandler):
+    """
+    mixin which provides common behavior for 'parallelism' setting
+    """
+    #===================================================================
+    # class attrs
+    #===================================================================
+    
+    # NOTE: subclasses should add "parallelism" to their settings_kwds
+    
+    #===================================================================
+    # instance attrs
+    #===================================================================
+    
+    #: parallelism setting (class-level value used as default)
+    parallelism = 1
+    
+    #===================================================================
+    # variant constructor
+    #===================================================================
+
+    @classmethod
+    def using(cls, parallelism=None, **kwds):
+        subcls = super(ParallelismMixin, cls).using(**kwds)
+        if parallelism is not None:
+            if isinstance(parallelism, native_string_types):
+                parallelism = int(parallelism)
+            subcls.parallelism = subcls._norm_parallelism(parallelism, relaxed=kwds.get("relaxed"))
+        return subcls
+
+    #===================================================================
+    # init
+    #===================================================================
+    def __init__(self, parallelism=None, **kwds):
+        super(ParallelismMixin, self).__init__(**kwds)
+
+        # init parallelism
+        if parallelism is None:
+            assert validate_default_value(self, self.parallelism, self._norm_parallelism,
+                                          param="parallelism")
+        else:
+            self.parallelism = self._norm_parallelism(parallelism)
+
+    @classmethod
+    def _norm_parallelism(cls, parallelism, relaxed=False):
+        return norm_integer(cls, parallelism, min=1, param="parallelism", relaxed=relaxed)
+
+    #===================================================================
+    # hash migration
+    #===================================================================
+
+    def _calc_needs_update(self, **kwds):
+        """
+        mark hash as needing update if rounds is outside desired bounds.
+        """
+        # XXX: for now, marking all hashes which don't have matching parallelism setting
+        if self.parallelism != type(self).parallelism:
+            return True
+        return super(ParallelismMixin, self)._calc_needs_update(**kwds)
+
+    #===================================================================
+    # eoc
+    #===================================================================
+    
+#------------------------------------------------------------------------
 # backend mixin & helpers
 #------------------------------------------------------------------------
-##def _clear_backend(cls):
-##    "restore HasManyBackend subclass to unloaded state - used by unittests"
-##    assert issubclass(cls, HasManyBackends) and cls is not HasManyBackends
-##    if cls._backend:
-##        del cls._backend
-##        del cls._calc_checksum
 
-class HasManyBackends(GenericHandler):
-    """GenericHandler mixin which provides selecting from multiple backends.
+#: global lock that must be held when changing backends.
+#: not bothering to make this more granular, as backend switching
+#: isn't a speed-critical path.  lock is needed since there is some
+#: class-level state that may be modified during a "dry run"
+_backend_lock = threading.RLock()
+
+class BackendMixin(PasswordHash):
+    """
+    PasswordHash mixin which provides generic framework for supporting multiple backends
+    within the class.
+
+    Public API
+    ----------
+
+    .. attribute:: backends
+
+        This attribute should be a tuple containing the names of the backends
+        which are supported. Two common names are ``"os_crypt"`` (if backend
+        uses :mod:`crypt`), and ``"builtin"`` (if the backend is a pure-python
+        fallback).
+
+    .. automethod:: get_backend
+    .. automethod:: set_backend
+    .. automethod:: has_backend
+
+    .. warning::
+
+        :meth:`set_backend` is intended to be called during application startup --
+        it affects global state, and switching backends is not guaranteed threadsafe.
+
+    Private API (Subclass Hooks)
+    ----------------------------
+    Subclasses should set the :attr:`!backends` attribute to a tuple of the backends
+    they wish to support.  They should also define one method:
+
+    .. classmethod:: _load_backend_{name}(dryrun=False)
+
+        One copy of this method should be defined for each :samp:`name` within :attr:`!backends`.
+
+        It will be called in order to load the backend, and should take care of whatever
+        is needed to enable the backend.  This may include importing modules, running tests,
+        issuing warnings, etc.
+
+        :param name:
+            [Optional] name of backend.
+
+        :param dryrun:
+            [Optional] True/False if currently performing a "dry run".
+
+            if True, the method should perform all setup actions *except*
+            switching the class over to the new backend.
+
+        :raises passlib.exc.PasslibSecurityError:
+            if the backend is available, but cannot be loaded due to a security issue.
+
+        :returns:
+            False if backend not available, True if backend loaded.
+
+        .. warning::
+
+            Due to the way passlib's internals are arranged,
+            backends should generally store stateful data at the class level
+            (not the module level), and be prepared to be called on subclasses
+            which may be set to a different backend from their parent.
+
+            (Idempotent module-level data such as lazy imports are fine).
+
+    .. automethod:: _finalize_backend
+
+    .. versionadded:: 1.7
+    """
+    #===================================================================
+    # class attrs
+    #===================================================================
+
+    #: list of backend names, provided by subclass.
+    backends = None
+
+    #: private attr mixin uses to hold currently loaded backend (or ``None``)
+    __backend = None
+
+    #: optional class-specific text containing suggestion about what to do
+    #: when no backends are available.
+    _no_backend_suggestion = None
+
+    #: shared attr used by set_backend() to indicate what backend it's loaded;
+    #: meaningless while not in set_backend().
+    _pending_backend = None
+
+    #: shared attr used by set_backend() to indicate if it's in "dry run" mode;
+    #: meaningless while not in set_backend().
+    _pending_dry_run = False
+
+    #===================================================================
+    # public api
+    #===================================================================
+
+    @classmethod
+    def get_backend(cls):
+        """
+        Return name of currently active backend.
+        if no backend has been loaded, loads and returns name of default backend.
+
+        :raises passlib.exc.MissingBackendError:
+            if no backends are available.
+
+        :returns:
+            name of active backend
+        """
+        if not cls.__backend:
+            cls.set_backend()
+            assert cls.__backend, "set_backend() failed to load a default backend"
+        return cls.__backend
+
+    @classmethod
+    def has_backend(cls, name="any"):
+        """
+        Check if support is currently available for specified backend.
+
+        :arg name:
+            name of backend to check for.
+            can be any string accepted by :meth:`set_backend`.
+
+        :raises ValueError:
+            if backend name is unknown
+
+        :returns:
+            * ``True`` if backend is available.
+            * ``False`` if it's available / can't be loaded.
+            * ``None`` if it's present, but won't load due to a security issue.
+        """
+        try:
+            cls.set_backend(name, dryrun=True)
+            return True
+        except (exc.MissingBackendError, exc.PasslibSecurityError):
+            return False
+
+    @classmethod
+    def set_backend(cls, name="any", dryrun=False):
+        """
+        Load specified backend.
+
+        :arg name:
+            name of backend to load, can be any of the following:
+
+            * ``"any"`` -- use current backend if one is loaded,
+              otherwise load the first available backend.
+
+            * ``"default"`` -- use the first available backend.
+
+            * any string in :attr:`backends`, loads specified backend.
+
+        :param dryrun:
+            If True, this perform all setup actions *except* switching over to the new backend.
+            (this flag is used to implement :meth:`has_backend`).
+
+            .. versionadded:: 1.7
+
+        :raises ValueError:
+            If backend name is unknown.
+
+        :raises passlib.exc.MissingBackendError:
+            If specific backend is missing;
+            or in the case of ``"any"`` / ``"default"``, if *no* backends are available.
+
+        :raises passlib.exc.PasslibSecurityError:
+
+            If ``"any"`` or ``"default"`` was specified,
+            but the only backend available has a PasslibSecurityError.
+        """
+        # check if active backend is acceptable
+        if (name == "any" and cls.__backend) or (name and name == cls.__backend):
+            return cls.__backend
+
+        # if this isn't the final subclass, whose bases we can modify,
+        # find that class, and recursively call this method for the proper class.
+        owner = cls._get_backend_owner()
+        if owner is not cls:
+            return owner.set_backend(name, dryrun=dryrun)
+
+        # pick first available backend
+        if name == "any" or name == "default":
+            default_error = None
+            for name in cls.backends:
+                try:
+                    return cls.set_backend(name, dryrun=dryrun)
+                except exc.MissingBackendError:
+                    continue
+                except exc.PasslibSecurityError as err:
+                    # backend is available, but refuses to load due to security issue.
+                    if default_error is None:
+                        default_error = err
+                    continue
+            if default_error is None:
+                msg = "%s: no backends available" % cls.name
+                if cls._no_backend_suggestion:
+                    msg += cls._no_backend_suggestion
+                default_error = exc.MissingBackendError(msg)
+            raise default_error
+
+        # validate name
+        if name not in cls.backends:
+            raise exc.UnknownBackendError(cls, name)
+
+        # hand off to _set_backend()
+        with _backend_lock:
+            orig = cls._pending_backend, cls._pending_dry_run
+            try:
+                cls._pending_backend = name
+                cls._pending_dry_run = dryrun
+                cls._set_backend(name, dryrun)
+            finally:
+                cls._pending_backend, cls._pending_dry_run = orig
+            if not dryrun:
+                cls.__backend = name
+            return name
+
+    #===================================================================
+    # subclass hooks
+    #===================================================================
+
+    @classmethod
+    def _get_backend_owner(cls):
+        """
+        return class that set_backend() should actually be modifying.
+        for SubclassBackendMixin, this may not always be the class that was invoked.
+        """
+        return cls
+
+    @classmethod
+    def _set_backend(cls, name, dryrun):
+        """
+        Internal method invoked by :meth:`set_backend`.
+        handles actual loading of specified backend.
+
+        global _backend_lock will be held for duration of this method,
+        and _pending_dry_run & _pending_backend will also be set.
+
+        should return True / False.
+        """
+        loader = cls._get_backend_loader(name)
+        kwds = {}
+        if accepts_keyword(loader, "name"):
+            kwds['name'] = name
+        if accepts_keyword(loader, "dryrun"):
+            kwds['dryrun'] = dryrun
+        ok = loader(**kwds)
+        if ok is False:
+            raise exc.MissingBackendError("%s: backend not available: %s" %
+                                          (cls.name, name))
+        elif ok is not True:
+            raise AssertionError("backend loaders must return True or False"
+                                 ": %r" % (ok,))
+
+    @classmethod
+    def _get_backend_loader(cls, name):
+        """
+        Hook called to get the specified backend's loader.
+        Should return callable which optionally takes ``"name"`` and/or
+        ``"dryrun"`` keywords.
+
+        Callable should return True if backend initialized successfully.
+
+        If backend can't be loaded, callable should return False
+        OR raise MissingBackendError directly.
+        """
+        raise NotImplementedError("implement in subclass")
+
+    @classmethod
+    def _stub_requires_backend(cls):
+        """
+        helper for subclasses to create stub methods which auto-load backend.
+        """
+        if cls.__backend:
+            raise AssertionError("%s: _finalize_backend(%r) failed to replace lazy loader" %
+                                 (cls.name, cls.__backend))
+        cls.set_backend()
+        if not cls.__backend:
+            raise AssertionError("%s: set_backend() failed to load a default backend" %
+                                 (cls.name))
+
+    #===================================================================
+    # eoc
+    #===================================================================
+
+class SubclassBackendMixin(BackendMixin):
+    """
+    variant of BackendMixin which allows backends to be implemented
+    as separate mixin classes, and dynamically switches them out.
+
+    backend classes should implement a _load_backend() classmethod,
+    which will be invoked with an optional 'dryrun' keyword,
+    and should return True or False.
+
+    _load_backend() will be invoked with ``cls`` equal to the mixin,
+    *not* the overall class.
+
+    .. versionadded:: 1.7
+    """
+    #===================================================================
+    # class attrs
+    #===================================================================
+
+    # 'backends' required by BackendMixin
+
+    #: NON-INHERITED flag that this class's bases should be modified by SubclassBackendMixin.
+    #: should only be set to True in *one* subclass in hierarchy.
+    _backend_mixin_target = False
+
+    #: map of backend name -> mixin class
+    _backend_mixin_map = None
+
+    #===================================================================
+    # backend loading
+    #===================================================================
+
+    @classmethod
+    def _get_backend_owner(cls):
+        """
+        return base class that we're actually switching backends on
+        (needed in since backends frequently modify class attrs,
+        and .set_backend may be called from a subclass).
+        """
+        if not cls._backend_mixin_target:
+            raise AssertionError("_backend_mixin_target not set")
+        for base in cls.__mro__:
+            if base.__dict__.get("_backend_mixin_target"):
+                return base
+        raise AssertionError("expected to find class w/ '_backend_mixin_target' set")
+
+    @classmethod
+    def _set_backend(cls, name, dryrun):
+        # invoke backend loader (will throw error if fails)
+        super(SubclassBackendMixin, cls)._set_backend(name, dryrun)
+
+        # sanity check call args (should trust .set_backend, but will really
+        # foul things up if this isn't the owner)
+        assert cls is cls._get_backend_owner(), "_finalize_backend() not invoked on owner"
+
+        # pick mixin class
+        mixin_map = cls._backend_mixin_map
+        assert mixin_map, "_backend_mixin_map not specified"
+        mixin_cls = mixin_map[name]
+        assert issubclass(mixin_cls, SubclassBackendMixin), "invalid mixin class"
+
+        # modify <cls> to remove existing backend mixins, and insert the new one
+        update_mixin_classes(cls,
+            add=mixin_cls,
+            remove=mixin_map.values(),
+            append=True, before=SubclassBackendMixin,
+            dryrun=dryrun,
+        )
+
+    @classmethod
+    def _get_backend_loader(cls, name):
+        assert cls._backend_mixin_map, "_backend_mixin_map not specified"
+        return cls._backend_mixin_map[name]._load_backend_mixin
+
+    #===================================================================
+    # eoc
+    #===================================================================
+
+# XXX: rename to ChecksumBackendMixin?
+class HasManyBackends(BackendMixin, GenericHandler):
+    """
+    GenericHandler mixin which provides selecting from multiple backends.
 
     .. todo::
 
@@ -1305,24 +2318,22 @@ class HasManyBackends(GenericHandler):
     offers a way to specify alternate :meth:`_calc_checksum` methods,
     and will dynamically chose the best one at runtime.
 
-    Backend Methods
-    ---------------
+    .. versionchanged:: 1.7
 
-    .. automethod:: get_backend
-    .. automethod:: set_backend
-    .. automethod:: has_backend
+        This class now derives from :class:`BackendMixin`, which abstracts
+        out a more generic framework for supporting multiple backends.
+        The public api (:meth:`!get_backend`, :meth:`!has_backend`, :meth:`!set_backend`)
+        is roughly the same.
 
-    Subclass Hooks
-    --------------
-    The following attributes and methods should be filled in by the subclass
-    which is using :class:`HasManyBackends` as a mixin:
+    Private API (Subclass Hooks)
+    ----------------------------
+    As of version 1.7, classes should implement :meth:`!_load_backend_{name}`, per
+    :class:`BackendMixin`.  This hook should invoke :meth:`!_set_calc_checksum_backcend`
+    to install it's backend method.
 
-    .. attribute:: backends
+    .. deprecated:: 1.7
 
-        This attribute should be a tuple containing the names of the backends
-        which are supported. Two common names are ``"os_crypt"`` (if backend
-        uses :mod:`crypt`), and ``"builtin"`` (if the backend is a pure-python
-        fallback).
+        The following api is deprecated, and will be removed in Passlib 2.0:
 
     .. attribute:: _has_backend_{name}
 
@@ -1338,135 +2349,86 @@ class HasManyBackends(GenericHandler):
         been selected by :meth:`set_backend`. One of these should be provided
         by the subclass for each backend listed in :attr:`backends`.
     """
+    #===================================================================
+    # digest calculation
+    #===================================================================
 
-    # NOTE:
-    # subclass must provide:
-    # * attr 'backends' containing list of known backends (top priority backend first)
-    # * attr '_has_backend_xxx' for each backend 'xxx', indicating if backend is available on system
-    # * attr '_calc_checksum_xxx' for each backend 'xxx', containing calc_checksum implementation using that backend
-
-    backends = None # list of backend names, provided by subclass.
-
-    _backend = None # holds currently loaded backend (if any) or None
-
-    @classmethod
-    def get_backend(cls):
-        """return name of currently active backend.
-
-        if no backend has been loaded,
-        loads and returns name of default backend.
-
-        :raises passlib.exc.MissingBackendError: if no backends are available.
-
-        :returns: name of active backend
-        """
-        name = cls._backend
-        if not name:
-            cls.set_backend()
-            name = cls._backend
-            assert name, "set_backend() didn't load any backends"
-        return name
-
-    @classmethod
-    def has_backend(cls, name="any"):
-        """check if support is currently available for specified backend.
-
-        :arg name:
-            name of backend to check for.
-            defaults to ``"any"``,
-            but can be any string accepted by :meth:`set_backend`.
-
-        :raises ValueError: if backend name is unknown
-
-        :returns:
-            ``True`` if backend is currently supported, else ``False``.
-        """
-        if name in ("any", "default"):
-            if name == "any" and cls._backend:
-                return True
-            return any(getattr(cls, "_has_backend_" + name)
-                       for name in cls.backends)
-        elif name in cls.backends:
-            return getattr(cls, "_has_backend_" + name)
-        else:
-            raise ValueError("unknown backend: %r" % (name,))
-
-    @classmethod
-    def _no_backends_msg(cls):
-        return "no %s backends available" % (cls.name,)
-
-    @classmethod
-    def set_backend(cls, name="any"):
-        """load specified backend to be used for future _calc_checksum() calls
-
-        this method replaces :meth:`_calc_checksum` with a method
-        which uses the specified backend.
-
-        :arg name:
-            name of backend to load, defaults to ``"any"``.
-            this can be any of the following values:
-
-            * any string in :attr:`backends`,
-              indicating the specific backend to use.
-
-            * the special string ``"default"``, which means to use
-              the preferred backend on the given host
-              (this is generally the first backend in :attr:`backends`
-              which can be loaded).
-
-            * the special string ``"any"``, which means to use
-              the current backend if one has been loaded,
-              else acts like ``"default"``.
-
-        :raises passlib.exc.MissingBackendError:
-            * ... if a specific backend was requested,
-              but is not currently available.
-
-            * ... if ``"any"`` or ``"default"`` was specified,
-              and *no* backends are currently available.
-
-        :returns:
-
-            The return value of this function should be ignored.
-        """
-        if name == "any":
-            name = cls._backend
-            if name:
-                return name
-            name = "default"
-        if name == "default":
-            for name in cls.backends:
-                if cls.has_backend(name):
-                    break
-            else:
-                raise exc.MissingBackendError(cls._no_backends_msg())
-        elif not cls.has_backend(name):
-            raise exc.MissingBackendError("%s backend not available: %r" %
-                                          (cls.name, name))
-        cls._calc_checksum_backend = getattr(cls, "_calc_checksum_" + name)
-        cls._backend = name
-        return name
+    def _calc_checksum(self, secret):
+        "wrapper for backend, for common code"""
+        # NOTE: not overwriting _calc_checksum() directly, so that classes can provide
+        #       common behavior in that method,
+        #       and then invoke _calc_checksum_backend() to do the work.
+        return self._calc_checksum_backend(secret)
 
     def _calc_checksum_backend(self, secret):
         """
-        stub for _calc_checksum_backend(),
-        the default backend will be selected the first time stub is called.
+        stub for _calc_checksum_backend() --
+        should load backend if one hasn't been loaded;
+        if one has been loaded, this method should have been monkeypatched by _finalize_backend().
         """
-        # if we got here, no backend has been loaded; so load default backend
-        assert not self._backend, "set_backend() failed to replace lazy loader"
-        self.set_backend()
-        assert self._backend, "set_backend() failed to load a default backend"
-
-        # this should now invoke the backend-specific version, so call it again.
+        self._stub_requires_backend()
         return self._calc_checksum_backend(secret)
 
-    def _calc_checksum(self, secret):
-        """wrapper for backend, for common code"""
-        return self._calc_checksum_backend(secret)
+    #===================================================================
+    # BackendMixin hooks
+    #===================================================================
+    @classmethod
+    def _get_backend_loader(cls, name):
+        """
+        subclassed to support legacy 1.6 HasManyBackends api.
+        (will be removed in passlib 2.0)
+        """
+        # check for 1.7 loader
+        loader = getattr(cls, "_load_backend_" + name, None)
+        if loader is None:
+            # fallback to pre-1.7 _has_backend_xxx + _calc_checksum_xxx() api
+            def loader():
+                return cls.__load_legacy_backend(name)
+        else:
+            # make sure 1.6 api isn't defined at same time
+            assert not hasattr(cls, "_has_backend_" + name), (
+                "%s: can't specify both ._load_backend_%s() "
+                "and ._has_backend_%s" % (cls.name, name, name)
+                )
+        return loader
+
+    @classmethod
+    def __load_legacy_backend(cls, name):
+        value = getattr(cls, "_has_backend_" + name)
+        warn("%s: support for ._has_backend_%s is deprecated as of Passlib 1.7, "
+             "and will be removed in Passlib 1.9/2.0, please implement "
+             "._load_backend_%s() instead" % (cls.name, name, name),
+             DeprecationWarning,
+             )
+        if value:
+            func = getattr(cls, "_calc_checksum_" + name)
+            cls._set_calc_checksum_backend(func)
+            return True
+        else:
+            return False
+
+    @classmethod
+    def _set_calc_checksum_backend(cls, func):
+        """
+        helper used by subclasses to validate & set backend-specific
+        calc checksum helper.
+        """
+        backend = cls._pending_backend
+        assert backend, "should only be called during set_backend()"
+        if not callable(func):
+            raise RuntimeError("%s: backend %r returned invalid callable: %r" %
+                               (cls.name, backend, func))
+        if not cls._pending_dry_run:
+            cls._calc_checksum_backend = func
+
+    #===================================================================
+    # eoc
+    #===================================================================
 
 #=============================================================================
 # wrappers
 #=============================================================================
+# XXX: should this inherit from PasswordHash?
 class PrefixWrapper(object):
     """wraps another handler, adding a constant prefix.
 
@@ -1488,6 +2450,9 @@ class PrefixWrapper(object):
     :param lazy: if True and wrapped handler is specified by name, don't look it up until needed.
     """
 
+    #: list of attributes which should be cloned by .using()
+    _using_clone_attrs = ()
+
     def __init__(self, name, wrapped, prefix=u(''), orig_prefix=u(''), lazy=False,
                  doc=None, ident=None):
         self.name = name
@@ -1500,8 +2465,7 @@ class PrefixWrapper(object):
         if doc:
             self.__doc__ = doc
         if hasattr(wrapped, "name"):
-            self._check_handler(wrapped)
-            self._wrapped_handler = wrapped
+            self._set_wrapped(wrapped)
         else:
             self._wrapped_name = wrapped
             if not lazy:
@@ -1524,19 +2488,22 @@ class PrefixWrapper(object):
     _wrapped_name = None
     _wrapped_handler = None
 
-    def _check_handler(self, handler):
+    def _set_wrapped(self, handler):
+        # check this is a valid handler
         if 'ident' in handler.setting_kwds and self.orig_prefix:
             # TODO: look into way to fix the issues.
             warn("PrefixWrapper: 'orig_prefix' option may not work correctly "
                  "for handlers which have multiple identifiers: %r" %
                  (handler.name,), exc.PasslibRuntimeWarning)
 
+        # store reference
+        self._wrapped_handler = handler
+
     def _get_wrapped(self):
         handler = self._wrapped_handler
         if handler is None:
             handler = get_crypt_handler(self._wrapped_name)
-            self._check_handler(handler)
-            self._wrapped_handler = handler
+            self._set_wrapped(handler)
         return handler
 
     wrapped = property(_get_wrapped)
@@ -1571,7 +2538,7 @@ class PrefixWrapper(object):
                 wrapped = self.wrapped
                 idents = getattr(wrapped, "ident_values", None)
                 if idents:
-                    value = [ self._wrap_hash(ident) for ident in idents ]
+                    value = tuple(self._wrap_hash(ident) for ident in idents)
                 ##else:
                 ##    ident = self.ident
                 ##    if ident is not None:
@@ -1580,12 +2547,19 @@ class PrefixWrapper(object):
         return value
 
     # attrs that should be proxied
+    # XXX: change this to proxy everything that doesn't start with "_"?
     _proxy_attrs = (
                     "setting_kwds", "context_kwds",
                     "default_rounds", "min_rounds", "max_rounds", "rounds_cost",
+                    "min_desired_rounds", "max_desired_rounds", "vary_rounds",
                     "default_salt_size", "min_salt_size", "max_salt_size",
                     "salt_chars", "default_salt_chars",
                     "backends", "has_backend", "get_backend", "set_backend",
+                    "is_disabled", "truncate_size", "truncate_error",
+                    "truncate_verify_reject",
+
+                    # internal info attrs needed for test inspection
+                    "_salt_is_bytes",
                     )
 
     def __repr__(self):
@@ -1613,6 +2587,19 @@ class PrefixWrapper(object):
             return getattr(self.wrapped, attr)
         raise AttributeError("missing attribute: %r" % (attr,))
 
+    def __setattr__(self, attr, value):
+        # if proxy attr present on wrapped object,
+        # and we own it, modify *it* instead.
+        # TODO: needs UTs
+        # TODO: any other cases where wrapped is "owned"?
+        #       currently just if created via .using()
+        if attr in self._proxy_attrs and self._derived_from:
+            wrapped = self.wrapped
+            if hasattr(wrapped, attr):
+                setattr(wrapped, attr, value)
+                return
+        return object.__setattr__(self, attr, value)
+
     def _unwrap_hash(self, hash):
         """given hash belonging to wrapper, return orig version"""
         # NOTE: assumes hash has been validated as unicode already
@@ -1634,6 +2621,24 @@ class PrefixWrapper(object):
         wrapped = self.prefix + hash[len(orig_prefix):]
         return uascii_to_str(wrapped)
 
+    #: set by _using(), helper for test harness' handler_derived_from()
+    _derived_from = None
+
+    def using(self, **kwds):
+        # generate subclass of wrapped handler
+        subcls = self.wrapped.using(**kwds)
+        assert subcls is not self.wrapped
+        # then create identical wrapper which wraps the new subclass.
+        wrapper = PrefixWrapper(self.name, subcls, prefix=self.prefix, orig_prefix=self.orig_prefix)
+        wrapper._derived_from = self
+        for attr in self._using_clone_attrs:
+            setattr(wrapper, attr, getattr(self, attr))
+        return wrapper
+
+    def needs_update(self, hash, **kwds):
+        hash = self._unwrap_hash(hash)
+        return self.wrapped.needs_update(hash, **kwds)
+
     def identify(self, hash):
         hash = to_unicode_for_identify(hash)
         if not hash.startswith(self.prefix):
@@ -1641,21 +2646,27 @@ class PrefixWrapper(object):
         hash = self._unwrap_hash(hash)
         return self.wrapped.identify(hash)
 
+    @deprecated_method(deprecated="1.7", removed="2.0")
     def genconfig(self, **kwds):
         config = self.wrapped.genconfig(**kwds)
         if config is None:
-            return None
-        else:
-            return self._wrap_hash(config)
+            raise RuntimeError(".genconfig() must return a string, not None")
+        return self._wrap_hash(config)
 
+    @deprecated_method(deprecated="1.7", removed="2.0")
     def genhash(self, secret, config, **kwds):
+        # TODO: under 2.0, throw TypeError if config is None, rather than passing it through
         if config is not None:
             config = to_unicode(config, "ascii", "config/hash")
             config = self._unwrap_hash(config)
         return self._wrap_hash(self.wrapped.genhash(secret, config, **kwds))
 
+    @deprecated_method(deprecated="1.7", removed="2.0", replacement=".hash()")
     def encrypt(self, secret, **kwds):
-        return self._wrap_hash(self.wrapped.encrypt(secret, **kwds))
+        return self.hash(secret, **kwds)
+
+    def hash(self, secret, **kwds):
+        return self._wrap_hash(self.wrapped.hash(secret, **kwds))
 
     def verify(self, secret, hash, **kwds):
         hash = to_unicode(hash, "ascii", "hash")

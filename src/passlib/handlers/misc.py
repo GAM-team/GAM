@@ -9,8 +9,8 @@ import logging; log = logging.getLogger(__name__)
 from warnings import warn
 # site
 # pkg
-from passlib.utils import to_native_str, consteq
-from passlib.utils.compat import bytes, unicode, u, b, base_string_types
+from passlib.utils import to_native_str, str_consteq
+from passlib.utils.compat import unicode, u, unicode_or_bytes_types
 import passlib.utils.handlers as uh
 # local
 __all__ = [
@@ -22,15 +22,15 @@ __all__ = [
 #=============================================================================
 # handler
 #=============================================================================
-class unix_fallback(uh.StaticHandler):
+class unix_fallback(uh.ifc.DisabledHash, uh.StaticHandler):
     """This class provides the fallback behavior for unix shadow files, and follows the :ref:`password-hash-api`.
 
     This class does not implement a hash, but instead provides fallback
     behavior as found in /etc/shadow on most unix variants.
     If used, should be the last scheme in the context.
 
-    * this class will positive identify all hash strings.
-    * for security, newly encrypted passwords will hash to ``!``.
+    * this class will positively identify all hash strings.
+    * for security, passwords will always hash to ``!``.
     * it rejects all passwords if the hash is NOT an empty string (``!`` or ``*`` are frequently used).
     * by default it rejects all passwords if the hash is an empty string,
       but if ``enable_wildcard=True`` is passed to verify(),
@@ -45,7 +45,7 @@ class unix_fallback(uh.StaticHandler):
 
     @classmethod
     def identify(cls, hash):
-        if isinstance(hash, base_string_types):
+        if isinstance(hash, unicode_or_bytes_types):
             return True
         else:
             raise uh.exc.ExpectedStringError(hash, "hash")
@@ -58,17 +58,6 @@ class unix_fallback(uh.StaticHandler):
         super(unix_fallback, self).__init__(**kwds)
         self.enable_wildcard = enable_wildcard
 
-    @classmethod
-    def genhash(cls, secret, config):
-        # override default to preserve checksum
-        if config is None:
-            return cls.encrypt(secret)
-        else:
-            uh.validate_secret(secret)
-            self = cls.from_string(config)
-            self.checksum = self._calc_checksum(secret)
-            return self.to_string()
-
     def _calc_checksum(self, secret):
         if self.checksum:
             # NOTE: hash will generally be "!", but we want to preserve
@@ -80,7 +69,7 @@ class unix_fallback(uh.StaticHandler):
     @classmethod
     def verify(cls, secret, hash, enable_wildcard=False):
         uh.validate_secret(secret)
-        if not isinstance(hash, base_string_types):
+        if not isinstance(hash, unicode_or_bytes_types):
             raise uh.exc.ExpectedStringError(hash, "hash")
         elif hash:
             return False
@@ -88,16 +77,16 @@ class unix_fallback(uh.StaticHandler):
             return enable_wildcard
 
 _MARKER_CHARS = u("*!")
-_MARKER_BYTES = b("*!")
+_MARKER_BYTES = b"*!"
 
-class unix_disabled(uh.PasswordHash):
+class unix_disabled(uh.ifc.DisabledHash, uh.MinimalHandler):
     """This class provides disabled password behavior for unix shadow files,
     and follows the :ref:`password-hash-api`.
 
     This class does not implement a hash, but instead matches the "disabled account"
     strings found in ``/etc/shadow`` on most Unix variants. "encrypting" a password
     will simply return the disabled account marker. It will reject all passwords,
-    no matter the hash string. The :meth:`~passlib.ifc.PasswordHash.encrypt`
+    no matter the hash string. The :meth:`~passlib.ifc.PasswordHash.hash`
     method supports one optional keyword:
 
     :type marker: str
@@ -117,6 +106,9 @@ class unix_disabled(uh.PasswordHash):
     setting_kwds = ("marker",)
     context_kwds = ()
 
+    _disable_prefixes = tuple(str(_MARKER_CHARS))
+
+    # TODO: rename attr to 'marker'...
     if 'bsd' in sys.platform: # pragma: no cover -- runtime detection
         default_marker = u("*")
     else:
@@ -124,6 +116,15 @@ class unix_disabled(uh.PasswordHash):
         # (glibc also supports adding old hash after the marker
         # so it can be restored later).
         default_marker = u("!")
+
+    @classmethod
+    def using(cls, marker=None, **kwds):
+        subcls = super(unix_disabled, cls).using(**kwds)
+        if marker is not None:
+            if not cls.identify(marker):
+                raise ValueError("invalid marker: %r" % marker)
+            subcls.default_marker = marker
+        return subcls
 
     @classmethod
     def identify(cls, hash):
@@ -139,7 +140,8 @@ class unix_disabled(uh.PasswordHash):
         #       * linux uses "!"
         #       * bsd uses "*"
         #       * linux may use "!" + hash to disable but preserve original hash
-        #       * linux counts empty string as "any password"
+        #       * linux counts empty string as "any password";
+        #         this code recognizes it, but treats it the same as "!"
         if isinstance(hash, unicode):
             start = _MARKER_CHARS
         elif isinstance(hash, bytes):
@@ -149,10 +151,6 @@ class unix_disabled(uh.PasswordHash):
         return not hash or hash[0] in start
 
     @classmethod
-    def encrypt(cls, secret, marker=None):
-        return cls.genhash(secret, None, marker)
-
-    @classmethod
     def verify(cls, secret, hash):
         uh.validate_secret(secret)
         if not cls.identify(hash): # handles typecheck
@@ -160,31 +158,57 @@ class unix_disabled(uh.PasswordHash):
         return False
 
     @classmethod
-    def genconfig(cls):
-        return None
-
-    @classmethod
-    def genhash(cls, secret, config, marker=None):
+    def hash(cls, secret, **kwds):
+        if kwds:
+            uh.warn_hash_settings_deprecation(cls, kwds)
+            return cls.using(**kwds).hash(secret)
         uh.validate_secret(secret)
-        if config is not None and not cls.identify(config): # handles typecheck
-            raise uh.exc.InvalidHashError(cls)
-        if config:
-            # we want to preserve the existing str,
-            # since it might contain a disabled password hash ("!" + hash)
-            return to_native_str(config, param="config")
-        # if None or empty string, replace with marker
-        if marker:
-            if not cls.identify(marker):
-                raise ValueError("invalid marker: %r" % marker)
-        else:
-            marker = cls.default_marker
-            assert marker and cls.identify(marker)
+        marker = cls.default_marker
+        assert marker and cls.identify(marker)
         return to_native_str(marker, param="marker")
 
-class plaintext(uh.PasswordHash):
+    @uh.deprecated_method(deprecated="1.7", removed="2.0")
+    @classmethod
+    def genhash(cls, secret, config, marker=None):
+        if not cls.identify(config):
+            raise uh.exc.InvalidHashError(cls)
+        elif config:
+            # preserve the existing str,since it might contain a disabled password hash ("!" + hash)
+            uh.validate_secret(secret)
+            return to_native_str(config, param="config")
+        else:
+            if marker is not None:
+                cls = cls.using(marker=marker)
+            return cls.hash(secret)
+
+    @classmethod
+    def disable(cls, hash=None):
+        out = cls.hash("")
+        if hash is not None:
+            hash = to_native_str(hash, param="hash")
+            if cls.identify(hash):
+                # extract original hash, so that we normalize marker
+                hash = cls.enable(hash)
+            if hash:
+                out += hash
+        return out
+
+    @classmethod
+    def enable(cls, hash):
+        hash = to_native_str(hash, param="hash")
+        for prefix in cls._disable_prefixes:
+            if hash.startswith(prefix):
+                orig = hash[len(prefix):]
+                if orig:
+                    return orig
+                else:
+                    raise ValueError("cannot restore original hash")
+        raise uh.exc.InvalidHashError(cls)
+
+class plaintext(uh.MinimalHandler):
     """This class stores passwords in plaintext, and follows the :ref:`password-hash-api`.
 
-    The :meth:`~passlib.ifc.PasswordHash.encrypt`, :meth:`~passlib.ifc.PasswordHash.genhash`, and :meth:`~passlib.ifc.PasswordHash.verify` methods all require the
+    The :meth:`~passlib.ifc.PasswordHash.hash`, :meth:`~passlib.ifc.PasswordHash.genhash`, and :meth:`~passlib.ifc.PasswordHash.verify` methods all require the
     following additional contextual keyword:
 
     :type encoding: str
@@ -206,13 +230,13 @@ class plaintext(uh.PasswordHash):
 
     @classmethod
     def identify(cls, hash):
-        if isinstance(hash, base_string_types):
+        if isinstance(hash, unicode_or_bytes_types):
             return True
         else:
             raise uh.exc.ExpectedStringError(hash, "hash")
 
     @classmethod
-    def encrypt(cls, secret, encoding=None):
+    def hash(cls, secret, encoding=None):
         uh.validate_secret(secret)
         if not encoding:
             encoding = cls.default_encoding
@@ -225,17 +249,20 @@ class plaintext(uh.PasswordHash):
         hash = to_native_str(hash, encoding, "hash")
         if not cls.identify(hash):
             raise uh.exc.InvalidHashError(cls)
-        return consteq(cls.encrypt(secret, encoding), hash)
+        return str_consteq(cls.hash(secret, encoding), hash)
 
+    @uh.deprecated_method(deprecated="1.7", removed="2.0")
     @classmethod
     def genconfig(cls):
-        return None
+        return cls.hash("")
 
+    @uh.deprecated_method(deprecated="1.7", removed="2.0")
     @classmethod
-    def genhash(cls, secret, hash, encoding=None):
-        if hash is not None and not cls.identify(hash):
+    def genhash(cls, secret, config, encoding=None):
+        # NOTE: 'config' is ignored, as this hash has no salting / etc
+        if not cls.identify(config):
             raise uh.exc.InvalidHashError(cls)
-        return cls.encrypt(secret, encoding)
+        return cls.hash(secret, encoding=encoding)
 
 #=============================================================================
 # eof

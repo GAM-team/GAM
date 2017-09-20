@@ -10,12 +10,9 @@ it's being preserved here to ensure the old api doesn't break
 #=============================================================================
 from __future__ import with_statement
 # core
-import hashlib
 from logging import getLogger
 import os
-import time
 import warnings
-import sys
 # site
 try:
     from pkg_resources import resource_filename
@@ -24,15 +21,12 @@ except ImportError:
 # pkg
 from passlib import hash
 from passlib.context import CryptContext, CryptPolicy, LazyCryptContext
-from passlib.exc import PasslibConfigWarning
-from passlib.utils import tick, to_bytes, to_unicode
-from passlib.utils.compat import irange, u, bytes
+from passlib.utils import to_bytes, to_unicode
 import passlib.utils.handlers as uh
-from passlib.tests.utils import TestCase, catch_warnings, set_file
+from passlib.tests.utils import TestCase, set_file
 from passlib.registry import (register_crypt_handler_path,
                         _has_crypt_handler as has_crypt_handler,
                         _unload_handler_name as unload_handler_name,
-                        get_crypt_handler,
                         )
 # module
 log = getLogger(__name__)
@@ -218,6 +212,8 @@ admin__context__deprecated = des_crypt, bsdi_crypt
                                 r"The CryptPolicy class has been deprecated")
         warnings.filterwarnings("ignore",
                                 r"the method.*hash_needs_update.*is deprecated")
+        warnings.filterwarnings("ignore", "The 'all' scheme is deprecated.*")
+        warnings.filterwarnings("ignore", "bsdi_crypt rounds should be odd")
 
     def test_00_constructor(self):
         """test CryptPolicy() constructor"""
@@ -509,16 +505,8 @@ admin__context__deprecated = des_crypt, bsdi_crypt
         self.assertEqual(pa.get_min_verify_time('admin'), 0)
 
         pb = pa.replace(min_verify_time=.1)
-        self.assertEqual(pb.get_min_verify_time(), .1)
-        self.assertEqual(pb.get_min_verify_time('admin'), .1)
-
-        pc = pa.replace(admin__context__min_verify_time=.2)
-        self.assertEqual(pc.get_min_verify_time(), 0)
-        self.assertEqual(pc.get_min_verify_time('admin'), .2)
-
-        pd = pb.replace(admin__context__min_verify_time=.2)
-        self.assertEqual(pd.get_min_verify_time(), .1)
-        self.assertEqual(pd.get_min_verify_time('admin'), .2)
+        self.assertEqual(pb.get_min_verify_time(), 0)
+        self.assertEqual(pb.get_min_verify_time('admin'), 0)
 
     #===================================================================
     # serialization
@@ -622,7 +610,7 @@ class CryptContextTest(TestCase):
         # check constructor...
         cc = CryptContext()
         self.assertRaises(KeyError, cc.identify, 'hash', required=True)
-        self.assertRaises(KeyError, cc.encrypt, 'secret')
+        self.assertRaises(KeyError, cc.hash, 'secret')
         self.assertRaises(KeyError, cc.verify, 'secret', 'hash')
 
         # check updating policy after the fact...
@@ -631,7 +619,7 @@ class CryptContextTest(TestCase):
         cc.policy = p
 
         self.assertRaises(KeyError, cc.identify, 'hash', required=True)
-        self.assertRaises(KeyError, cc.encrypt, 'secret')
+        self.assertRaises(KeyError, cc.hash, 'secret')
         self.assertRaises(KeyError, cc.verify, 'secret', 'hash')
 
     #===================================================================
@@ -673,6 +661,8 @@ class CryptContextTest(TestCase):
     #===================================================================
     def test_30_nonstring_hash(self):
         """test non-string hash values cause error"""
+        warnings.filterwarnings("ignore", ".*needs_update.*'scheme' keyword is deprecated.*")
+
         #
         # test hash=None or some other non-string causes TypeError
         # and that explicit-scheme code path behaves the same.
@@ -680,6 +670,7 @@ class CryptContextTest(TestCase):
         cc = CryptContext(["des_crypt"])
         for hash, kwds in [
                 (None, {}),
+                # NOTE: 'scheme' kwd is deprecated...
                 (None, {"scheme": "des_crypt"}),
                 (1, {}),
                 ((), {}),

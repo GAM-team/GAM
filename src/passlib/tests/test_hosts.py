@@ -5,7 +5,6 @@
 from __future__ import with_statement
 # core
 import logging; log = logging.getLogger(__name__)
-import warnings
 # site
 # pkg
 from passlib import hosts, hash as hashmod

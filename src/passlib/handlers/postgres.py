@@ -4,13 +4,11 @@
 #=============================================================================
 # core
 from hashlib import md5
-import re
 import logging; log = logging.getLogger(__name__)
-from warnings import warn
 # site
 # pkg
 from passlib.utils import to_bytes
-from passlib.utils.compat import b, bytes, str_to_uascii, unicode, u
+from passlib.utils.compat import str_to_uascii, unicode, u
 import passlib.utils.handlers as uh
 # local
 __all__ = [
@@ -25,7 +23,7 @@ class postgres_md5(uh.HasUserContext, uh.StaticHandler):
 
     It does a single round of hashing, and relies on the username as the salt.
 
-    The :meth:`~passlib.ifc.PasswordHash.encrypt`, :meth:`~passlib.ifc.PasswordHash.genhash`, and :meth:`~passlib.ifc.PasswordHash.verify` methods all require the
+    The :meth:`~passlib.ifc.PasswordHash.hash`, :meth:`~passlib.ifc.PasswordHash.genhash`, and :meth:`~passlib.ifc.PasswordHash.verify` methods all require the
     following additional contextual keywords:
 
     :type user: str

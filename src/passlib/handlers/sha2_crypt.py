@@ -5,12 +5,12 @@
 # core
 import hashlib
 import logging; log = logging.getLogger(__name__)
-from warnings import warn
 # site
 # pkg
-from passlib.utils import classproperty, h64, safe_crypt, test_crypt, \
+from passlib.utils import safe_crypt, test_crypt, \
                           repeat_string, to_unicode
-from passlib.utils.compat import b, bytes, byte_elem_value, irange, u, \
+from passlib.utils.binary import h64
+from passlib.utils.compat import byte_elem_value, u, \
                                  uascii_to_str, unicode
 import passlib.utils.handlers as uh
 # local
@@ -23,7 +23,7 @@ __all__ = [
 # pure-python backend, used by both sha256_crypt & sha512_crypt
 # when crypt.crypt() backend is not available.
 #=============================================================================
-_BNULL = b('\x00')
+_BNULL = b'\x00'
 
 # pre-calculated offsets used to speed up C digest stage (see notes below).
 # sequence generated using the following:
@@ -60,7 +60,7 @@ def _raw_sha2_crypt(pwd, salt, rounds, use_512=False):
     for the SHA256-Crypt and SHA512-Crypt algorithms; it doesn't
     handle any of the parsing/validation of the hash strings themselves.
 
-    :arg pwd: password chars/bytes to encrypt
+    :arg pwd: password chars/bytes to hash
     :arg salt: salt chars to use
     :arg rounds: linear rounds cost
     :arg use_512: use sha512-crypt instead of sha256-crypt mode
@@ -71,6 +71,19 @@ def _raw_sha2_crypt(pwd, salt, rounds, use_512=False):
     #===================================================================
     # init & validate inputs
     #===================================================================
+
+    # NOTE: the setup portion of this algorithm scales ~linearly in time
+    #       with the size of the password, making it vulnerable to a DOS from
+    #       unreasonably large inputs. the following code has some optimizations
+    #       which would make things even worse, using O(pwd_len**2) memory
+    #       when calculating digest P. 
+    #
+    #       to mitigate these two issues: 1) this code switches to a 
+    #       O(pwd_len)-memory algorithm for passwords that are much larger 
+    #       than average, and 2) Passlib enforces a library-wide max limit on
+    #       the size of passwords it will allow, to prevent this algorithm and 
+    #       others from being DOSed in this way (see passlib.exc.PasswordSizeError
+    #       for details).
 
     # validate secret
     if isinstance(pwd, unicode):
@@ -99,11 +112,9 @@ def _raw_sha2_crypt(pwd, salt, rounds, use_512=False):
     # load sha256/512 specific constants
     if use_512:
         hash_const = hashlib.sha512
-        hash_len = 64
         transpose_map = _512_transpose_map
     else:
         hash_const = hashlib.sha256
-        hash_len = 32
         transpose_map = _256_transpose_map
 
     #===================================================================
@@ -134,11 +145,12 @@ def _raw_sha2_crypt(pwd, salt, rounds, use_512=False):
     # digest P from password - used instead of password itself
     #                          when calculating digest C.
     #===================================================================
-    if pwd_len < 64:
-        # method this is faster under python, but uses O(pwd_len**2) memory
-        # so we don't use it for larger passwords, to avoid a potential DOS.
+    if pwd_len < 96:
+        # this method is faster under python, but uses O(pwd_len**2) memory;
+        # so we don't use it for larger passwords to avoid a potential DOS.
         dp = repeat_string(hash_const(pwd * pwd_len).digest(), pwd_len)
     else:
+        # this method is slower under python, but uses a fixed amount of memory.
         tmp_ctx = hash_const(pwd)
         tmp_ctx_update = tmp_ctx.update
         i = pwd_len-1
@@ -250,7 +262,6 @@ class _SHA2_Common(uh.HasManyBackends, uh.HasRounds, uh.HasSalt,
     checksum_chars = uh.HASH64_CHARS
     # checksum_size - set by subclass
 
-    min_salt_size = 0
     max_salt_size = 16
     salt_chars = uh.HASH64_CHARS
 
@@ -268,10 +279,18 @@ class _SHA2_Common(uh.HasManyBackends, uh.HasRounds, uh.HasSalt,
 
     def __init__(self, implicit_rounds=None, **kwds):
         super(_SHA2_Common, self).__init__(**kwds)
-        # if user calls encrypt() w/ 5000 rounds, default to compact form.
+        # if user calls hash() w/ 5000 rounds, default to compact form.
         if implicit_rounds is None:
             implicit_rounds = (self.use_defaults and self.rounds == 5000)
         self.implicit_rounds = implicit_rounds
+
+    def _parse_salt(self, salt):
+        # required per SHA2-crypt spec -- truncate config salts rather than throwing error
+        return self._norm_salt(salt, relaxed=self.checksum is None)
+
+    def _parse_rounds(self, rounds):
+        # required per SHA2-crypt spec -- clip config rounds rather than throwing error
+        return self._norm_rounds(rounds, relaxed=self.checksum is None)
 
     @classmethod
     def from_string(cls, hash):
@@ -316,9 +335,6 @@ class _SHA2_Common(uh.HasManyBackends, uh.HasRounds, uh.HasSalt,
             salt=salt,
             checksum=chk or None,
             implicit_rounds=implicit_rounds,
-            relaxed=not chk, # NOTE: relaxing parsing for config strings
-                             # so that out-of-range rounds are clipped,
-                             # since SHA2-Crypt spec treats them this way.
             )
 
     def to_string(self):
@@ -335,13 +351,20 @@ class _SHA2_Common(uh.HasManyBackends, uh.HasRounds, uh.HasSalt,
     #===================================================================
     backends = ("os_crypt", "builtin")
 
-    _has_backend_builtin = True
+    #---------------------------------------------------------------
+    # os_crypt backend
+    #---------------------------------------------------------------
 
-    # _has_backend_os_crypt - provided by subclass
+    #: test hash for OS detection -- provided by subclass
+    _test_hash = None
 
-    def _calc_checksum_builtin(self, secret):
-        return _raw_sha2_crypt(secret, self.salt, self.rounds,
-                               self._cdb_use_512)
+    @classmethod
+    def _load_backend_os_crypt(cls):
+        if test_crypt(*cls._test_hash):
+            cls._set_calc_checksum_backend(cls._calc_checksum_os_crypt)
+            return True
+        else:
+            return False
 
     def _calc_checksum_os_crypt(self, secret):
         hash = safe_crypt(secret, self.to_string())
@@ -352,7 +375,21 @@ class _SHA2_Common(uh.HasManyBackends, uh.HasRounds, uh.HasSalt,
             assert hash.startswith(self.ident) and hash[-cs-1] == _UDOLLAR
             return hash[-cs:]
         else:
+            # py3's crypt.crypt() can't handle non-utf8 bytes.
+            # fallback to builtin alg, which is always available.
             return self._calc_checksum_builtin(secret)
+
+    #---------------------------------------------------------------
+    # builtin backend
+    #---------------------------------------------------------------
+    @classmethod
+    def _load_backend_builtin(cls):
+        cls._set_calc_checksum_backend(cls._calc_checksum_builtin)
+        return True
+
+    def _calc_checksum_builtin(self, secret):
+        return _raw_sha2_crypt(secret, self.salt, self.rounds,
+                               self._cdb_use_512)
 
     #===================================================================
     # eoc
@@ -363,7 +400,7 @@ class sha256_crypt(_SHA2_Common):
 
     It supports a variable-length salt, and a variable number of rounds.
 
-    The :meth:`~passlib.ifc.PasswordHash.encrypt` and :meth:`~passlib.ifc.PasswordHash.genconfig` methods accept the following optional keywords:
+    The :meth:`~passlib.ifc.PasswordHash.using` method accepts the following optional keywords:
 
     :type salt: str
     :param salt:
@@ -407,10 +444,8 @@ class sha256_crypt(_SHA2_Common):
     #===================================================================
     # backends
     #===================================================================
-    @classproperty
-    def _has_backend_os_crypt(cls):
-        return test_crypt("test", "$5$rounds=1000$test$QmQADEXMG8POI5W"
-                                         "Dsaeho0P36yK3Tcrgboabng6bkb/")
+    _test_hash = ("test", "$5$rounds=1000$test$QmQADEXMG8POI5W"
+                          "Dsaeho0P36yK3Tcrgboabng6bkb/")
 
     #===================================================================
     # eoc
@@ -424,7 +459,7 @@ class sha512_crypt(_SHA2_Common):
 
     It supports a variable-length salt, and a variable number of rounds.
 
-    The :meth:`~passlib.ifc.PasswordHash.encrypt` and :meth:`~passlib.ifc.PasswordHash.genconfig` methods accept the following optional keywords:
+    The :meth:`~passlib.ifc.PasswordHash.using` method accepts the following optional keywords:
 
     :type salt: str
     :param salt:
@@ -470,12 +505,10 @@ class sha512_crypt(_SHA2_Common):
     #===================================================================
     # backend
     #===================================================================
-    @classproperty
-    def _has_backend_os_crypt(cls):
-        return test_crypt("test", "$6$rounds=1000$test$2M/Lx6Mtobqj"
-                                          "Ljobw0Wmo4Q5OFx5nVLJvmgseatA6oMn"
-                                          "yWeBdRDx4DU.1H3eGmse6pgsOgDisWBG"
-                                          "I5c7TZauS0")
+    _test_hash = ("test", "$6$rounds=1000$test$2M/Lx6Mtobqj"
+                          "Ljobw0Wmo4Q5OFx5nVLJvmgseatA6oMn"
+                          "yWeBdRDx4DU.1H3eGmse6pgsOgDisWBG"
+                          "I5c7TZauS0")
 
     #===================================================================
     # eoc

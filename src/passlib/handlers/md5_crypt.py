@@ -4,13 +4,12 @@
 #=============================================================================
 # core
 from hashlib import md5
-import re
 import logging; log = logging.getLogger(__name__)
-from warnings import warn
 # site
 # pkg
-from passlib.utils import classproperty, h64, safe_crypt, test_crypt, repeat_string
-from passlib.utils.compat import b, bytes, irange, unicode, u
+from passlib.utils import safe_crypt, test_crypt, repeat_string
+from passlib.utils.binary import h64
+from passlib.utils.compat import unicode, u
 import passlib.utils.handlers as uh
 # local
 __all__ = [
@@ -21,9 +20,9 @@ __all__ = [
 #=============================================================================
 # pure-python backend
 #=============================================================================
-_BNULL = b("\x00")
-_MD5_MAGIC = b("$1$")
-_APR_MAGIC = b("$apr1$")
+_BNULL = b"\x00"
+_MD5_MAGIC = b"$1$"
+_APR_MAGIC = b"$apr1$"
 
 # pre-calculated offsets used to speed up C digest stage (see notes below).
 # sequence generated using the following:
@@ -49,7 +48,7 @@ def _raw_md5_crypt(pwd, salt, use_apr=False):
     for the MD5-Crypt algorithms; it doesn't handle any of the
     parsing/validation of the hash strings themselves.
 
-    :arg pwd: password chars/bytes to encrypt
+    :arg pwd: password chars/bytes to hash
     :arg salt: salt chars to use
     :arg use_apr: use apache variant
 
@@ -201,7 +200,6 @@ class _MD5_Common(uh.HasSalt, uh.GenericHandler):
     checksum_size = 22
     checksum_chars = uh.HASH64_CHARS
 
-    min_salt_size = 0
     max_salt_size = 8
     salt_chars = uh.HASH64_CHARS
 
@@ -228,7 +226,7 @@ class md5_crypt(uh.HasManyBackends, _MD5_Common):
 
     It supports a variable-length salt.
 
-    The :meth:`~passlib.ifc.PasswordHash.encrypt` and :meth:`~passlib.ifc.PasswordHash.genconfig` methods accept the following optional keywords:
+    The :meth:`~passlib.ifc.PasswordHash.using` method accepts the following optional keywords:
 
     :type salt: str
     :param salt:
@@ -267,14 +265,16 @@ class md5_crypt(uh.HasManyBackends, _MD5_Common):
 
     backends = ("os_crypt", "builtin")
 
-    _has_backend_builtin = True
-
-    @classproperty
-    def _has_backend_os_crypt(cls):
-        return test_crypt("test", '$1$test$pi/xDtU5WFVRqYS6BMU8X/')
-
-    def _calc_checksum_builtin(self, secret):
-        return _raw_md5_crypt(secret, self.salt)
+    #---------------------------------------------------------------
+    # os_crypt backend
+    #---------------------------------------------------------------
+    @classmethod
+    def _load_backend_os_crypt(cls):
+        if test_crypt("test", '$1$test$pi/xDtU5WFVRqYS6BMU8X/'):
+            cls._set_calc_checksum_backend(cls._calc_checksum_os_crypt)
+            return True
+        else:
+            return False
 
     def _calc_checksum_os_crypt(self, secret):
         config = self.ident + self.salt
@@ -283,7 +283,20 @@ class md5_crypt(uh.HasManyBackends, _MD5_Common):
             assert hash.startswith(config) and len(hash) == len(config) + 23
             return hash[-22:]
         else:
+            # py3's crypt.crypt() can't handle non-utf8 bytes.
+            # fallback to builtin alg, which is always available.
             return self._calc_checksum_builtin(secret)
+
+    #---------------------------------------------------------------
+    # builtin backend
+    #---------------------------------------------------------------
+    @classmethod
+    def _load_backend_builtin(cls):
+        cls._set_calc_checksum_backend(cls._calc_checksum_builtin)
+        return True
+
+    def _calc_checksum_builtin(self, secret):
+        return _raw_md5_crypt(secret, self.salt)
 
     #===================================================================
     # eoc
@@ -294,7 +307,7 @@ class apr_md5_crypt(_MD5_Common):
 
     It supports a variable-length salt.
 
-    The :meth:`~passlib.ifc.PasswordHash.encrypt` and :meth:`~passlib.ifc.PasswordHash.genconfig` methods accept the following optional keywords:
+    The :meth:`~passlib.ifc.PasswordHash.using` method accepts the following optional keywords:
 
     :type salt: str
     :param salt:

@@ -74,7 +74,6 @@ custom_app_context = LazyCryptContext(
 
     # set some useful global options
     default="sha256_crypt" if sys_bits < 64 else "sha512_crypt",
-    all__vary_rounds = 0.1,
 
     # set a good starting point for rounds selection
     sha512_crypt__min_rounds = 535000,
@@ -113,8 +112,14 @@ django16_context = LazyCryptContext(
     deprecated=_django10_schemes,
 )
 
+django110_context = LazyCryptContext(
+    schemes=["django_pbkdf2_sha256", "django_pbkdf2_sha1",
+             "django_argon2", "django_bcrypt", "django_bcrypt_sha256",
+             "django_disabled"],
+)
+
 # this will always point to latest version
-django_context = django16_context
+django_context = django110_context
 
 #=============================================================================
 # ldap

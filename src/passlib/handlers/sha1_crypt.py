@@ -6,16 +6,13 @@
 #=============================================================================
 
 # core
-from hmac import new as hmac
-from hashlib import sha1
-import re
 import logging; log = logging.getLogger(__name__)
-from warnings import warn
 # site
 # pkg
-from passlib.utils import classproperty, h64, safe_crypt, test_crypt
-from passlib.utils.compat import b, bytes, u, uascii_to_str, unicode
-from passlib.utils.pbkdf2 import get_prf
+from passlib.utils import safe_crypt, test_crypt
+from passlib.utils.binary import h64
+from passlib.utils.compat import u, unicode, irange
+from passlib.crypto.digest import compile_hmac
 import passlib.utils.handlers as uh
 # local
 __all__ = [
@@ -23,15 +20,14 @@ __all__ = [
 #=============================================================================
 # sha1-crypt
 #=============================================================================
-_hmac_sha1 = get_prf("hmac-sha1")[0]
-_BNULL = b('\x00')
+_BNULL = b'\x00'
 
 class sha1_crypt(uh.HasManyBackends, uh.HasRounds, uh.HasSalt, uh.GenericHandler):
     """This class implements the SHA1-Crypt password hash, and follows the :ref:`password-hash-api`.
 
     It supports a variable-length salt, and a variable number of rounds.
 
-    The :meth:`~passlib.ifc.PasswordHash.encrypt` and :meth:`~passlib.ifc.PasswordHash.genconfig` methods accept the following optional keywords:
+    The :meth:`~passlib.ifc.PasswordHash.using` method accepts the following optional keywords:
 
     :type salt: str
     :param salt:
@@ -72,7 +68,6 @@ class sha1_crypt(uh.HasManyBackends, uh.HasRounds, uh.HasSalt, uh.GenericHandler
 
     #--HasSalt--
     default_salt_size = 8
-    min_salt_size = 0
     max_salt_size = 64
     salt_chars = uh.HASH64_CHARS
 
@@ -85,7 +80,6 @@ class sha1_crypt(uh.HasManyBackends, uh.HasRounds, uh.HasSalt, uh.GenericHandler
     #===================================================================
     # formatting
     #===================================================================
-
     @classmethod
     def from_string(cls, hash):
         rounds, salt, chk = uh.parse_mc3(hash, cls.ident, handler=cls)
@@ -100,12 +94,36 @@ class sha1_crypt(uh.HasManyBackends, uh.HasRounds, uh.HasSalt, uh.GenericHandler
     #===================================================================
     backends = ("os_crypt", "builtin")
 
-    _has_backend_builtin = True
+    #---------------------------------------------------------------
+    # os_crypt backend
+    #---------------------------------------------------------------
+    @classmethod
+    def _load_backend_os_crypt(cls):
+        if test_crypt("test", '$sha1$1$Wq3GL2Vp$C8U25GvfHS8qGHim'
+                              'ExLaiSFlGkAe'):
+            cls._set_calc_checksum_backend(cls._calc_checksum_os_crypt)
+            return True
+        else:
+            return False
 
-    @classproperty
-    def _has_backend_os_crypt(cls):
-        return test_crypt("test", '$sha1$1$Wq3GL2Vp$C8U25GvfHS8qGHim'
-                                          'ExLaiSFlGkAe')
+    def _calc_checksum_os_crypt(self, secret):
+        config = self.to_string(config=True)
+        hash = safe_crypt(secret, config)
+        if hash:
+            assert hash.startswith(config) and len(hash) == len(config) + 29
+            return hash[-28:]
+        else:
+            # py3's crypt.crypt() can't handle non-utf8 bytes.
+            # fallback to builtin alg, which is always available.
+            return self._calc_checksum_builtin(secret)
+
+    #---------------------------------------------------------------
+    # builtin backend
+    #---------------------------------------------------------------
+    @classmethod
+    def _load_backend_builtin(cls):
+        cls._set_calc_checksum_backend(cls._calc_checksum_builtin)
+        return True
 
     def _calc_checksum_builtin(self, secret):
         if isinstance(secret, unicode):
@@ -116,10 +134,9 @@ class sha1_crypt(uh.HasManyBackends, uh.HasRounds, uh.HasSalt, uh.GenericHandler
         # NOTE: this seed value is NOT the same as the config string
         result = (u("%s$sha1$%s") % (self.salt, rounds)).encode("ascii")
         # NOTE: this algorithm is essentially PBKDF1, modified to use HMAC.
-        r = 0
-        while r < rounds:
-            result = _hmac_sha1(secret, result)
-            r += 1
+        keyed_hmac = compile_hmac("sha1", secret)
+        for _ in irange(rounds):
+            result = keyed_hmac(result)
         return h64.encode_transposed_bytes(result, self._chk_offsets).decode("ascii")
 
     _chk_offsets = [
@@ -131,15 +148,6 @@ class sha1_crypt(uh.HasManyBackends, uh.HasRounds, uh.HasSalt, uh.GenericHandler
         17,16,15,
         0,19,18,
     ]
-
-    def _calc_checksum_os_crypt(self, secret):
-        config = self.to_string(config=True)
-        hash = safe_crypt(secret, config)
-        if hash:
-            assert hash.startswith(config) and len(hash) == len(config) + 29
-            return hash[-28:]
-        else:
-            return self._calc_checksum_builtin(secret)
 
     #===================================================================
     # eoc

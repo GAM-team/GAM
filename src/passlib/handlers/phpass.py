@@ -10,13 +10,11 @@ phpass context - blowfish, bsdi_crypt, phpass
 #=============================================================================
 # core
 from hashlib import md5
-import re
 import logging; log = logging.getLogger(__name__)
-from warnings import warn
 # site
 # pkg
-from passlib.utils import h64
-from passlib.utils.compat import b, bytes, u, uascii_to_str, unicode
+from passlib.utils.binary import h64
+from passlib.utils.compat import u, uascii_to_str, unicode
 import passlib.utils.handlers as uh
 # local
 __all__ = [
@@ -31,7 +29,7 @@ class phpass(uh.HasManyIdents, uh.HasRounds, uh.HasSalt, uh.GenericHandler):
 
     It supports a fixed-length salt, and a variable number of rounds.
 
-    The :meth:`~passlib.ifc.PasswordHash.encrypt` and :meth:`~passlib.ifc.PasswordHash.genconfig` methods accept the following optional keywords:
+    The :meth:`~passlib.ifc.PasswordHash.using` method accepts the following optional keywords:
 
     :type salt: str
     :param salt:
@@ -82,7 +80,7 @@ class phpass(uh.HasManyIdents, uh.HasRounds, uh.HasSalt, uh.GenericHandler):
 
     #--HasManyIdents--
     default_ident = u("$P$")
-    ident_values = [u("$P$"), u("$H$")]
+    ident_values = (u("$P$"), u("$H$"))
     ident_aliases = {u("P"):u("$P$"), u("H"):u("$H$")}
 
     #===================================================================

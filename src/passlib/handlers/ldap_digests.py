@@ -8,13 +8,12 @@ from base64 import b64encode, b64decode
 from hashlib import md5, sha1
 import logging; log = logging.getLogger(__name__)
 import re
-from warnings import warn
 # site
 # pkg
 from passlib.handlers.misc import plaintext
-from passlib.utils import to_native_str, unix_crypt_schemes, \
-                          classproperty, to_unicode
-from passlib.utils.compat import b, bytes, uascii_to_str, unicode, u
+from passlib.utils import unix_crypt_schemes, to_unicode
+from passlib.utils.compat import uascii_to_str, unicode, u
+from passlib.utils.decor import classproperty
 import passlib.utils.handlers as uh
 # local
 __all__ = [
@@ -63,10 +62,8 @@ class _SaltedBase64DigestHelper(uh.HasRawSalt, uh.HasRawChecksum, uh.GenericHand
     checksum_chars = uh.PADDED_BASE64_CHARS
 
     ident = None # required - prefix identifier
-    checksum_size = None # required
     _hash_func = None # required - hash function
     _hash_regex = None # required - regexp to recognize hash
-    _stub_checksum = None # required - default checksum to plug in
     min_salt_size = max_salt_size = 4
 
     # NOTE: openldap implementation uses 4 byte salt,
@@ -91,7 +88,7 @@ class _SaltedBase64DigestHelper(uh.HasRawSalt, uh.HasRawChecksum, uh.GenericHand
         return cls(checksum=data[:cs], salt=data[cs:])
 
     def to_string(self):
-        data = (self.checksum or self._stub_checksum) + self.salt
+        data = self.checksum + self.salt
         hash = self.ident + b64encode(data).decode("ascii")
         return uascii_to_str(hash)
 
@@ -106,7 +103,7 @@ class _SaltedBase64DigestHelper(uh.HasRawSalt, uh.HasRawChecksum, uh.GenericHand
 class ldap_md5(_Base64DigestHelper):
     """This class stores passwords using LDAP's plain MD5 format, and follows the :ref:`password-hash-api`.
 
-    The :meth:`~passlib.ifc.PasswordHash.encrypt` and :meth:`~passlib.ifc.PasswordHash.genconfig` methods have no optional keywords.
+    The :meth:`~passlib.ifc.PasswordHash.hash` and :meth:`~passlib.ifc.PasswordHash.genconfig` methods have no optional keywords.
     """
     name = "ldap_md5"
     ident = u("{MD5}")
@@ -116,7 +113,7 @@ class ldap_md5(_Base64DigestHelper):
 class ldap_sha1(_Base64DigestHelper):
     """This class stores passwords using LDAP's plain SHA1 format, and follows the :ref:`password-hash-api`.
 
-    The :meth:`~passlib.ifc.PasswordHash.encrypt` and :meth:`~passlib.ifc.PasswordHash.genconfig` methods have no optional keywords.
+    The :meth:`~passlib.ifc.PasswordHash.hash` and :meth:`~passlib.ifc.PasswordHash.genconfig` methods have no optional keywords.
     """
     name = "ldap_sha1"
     ident = u("{SHA}")
@@ -128,7 +125,7 @@ class ldap_salted_md5(_SaltedBase64DigestHelper):
 
     It supports a 4-16 byte salt.
 
-    The :meth:`~passlib.ifc.PasswordHash.encrypt` and :meth:`~passlib.ifc.PasswordHash.genconfig` methods accept the following optional keyword:
+    The :meth:`~passlib.ifc.PasswordHash.using` method accepts the following optional keywords:
 
     :type salt: bytes
     :param salt:
@@ -161,14 +158,13 @@ class ldap_salted_md5(_SaltedBase64DigestHelper):
     checksum_size = 16
     _hash_func = md5
     _hash_regex = re.compile(u(r"^\{SMD5\}(?P<tmp>[+/a-zA-Z0-9]{27,}={0,2})$"))
-    _stub_checksum = b('\x00') * 16
 
 class ldap_salted_sha1(_SaltedBase64DigestHelper):
     """This class stores passwords using LDAP's salted SHA1 format, and follows the :ref:`password-hash-api`.
 
     It supports a 4-16 byte salt.
 
-    The :meth:`~passlib.ifc.PasswordHash.encrypt` and :meth:`~passlib.ifc.PasswordHash.genconfig` methods accept the following optional keyword:
+    The :meth:`~passlib.ifc.PasswordHash.using` method accepts the following optional keywords:
 
     :type salt: bytes
     :param salt:
@@ -201,7 +197,6 @@ class ldap_salted_sha1(_SaltedBase64DigestHelper):
     checksum_size = 20
     _hash_func = sha1
     _hash_regex = re.compile(u(r"^\{SSHA\}(?P<tmp>[+/a-zA-Z0-9]{32,}={0,2})$"))
-    _stub_checksum = b('\x00') * 20
 
 class ldap_plaintext(plaintext):
     """This class stores passwords in plaintext, and follows the :ref:`password-hash-api`.
@@ -210,7 +205,7 @@ class ldap_plaintext(plaintext):
     except that it will identify a hash only if it does NOT begin with the ``{XXX}`` identifier prefix
     used by RFC2307 passwords.
 
-    The :meth:`~passlib.ifc.PasswordHash.encrypt`, :meth:`~passlib.ifc.PasswordHash.genhash`, and :meth:`~passlib.ifc.PasswordHash.verify` methods all require the
+    The :meth:`~passlib.ifc.PasswordHash.hash`, :meth:`~passlib.ifc.PasswordHash.genhash`, and :meth:`~passlib.ifc.PasswordHash.verify` methods all require the
     following additional contextual keyword:
 
     :type encoding: str
@@ -228,6 +223,13 @@ class ldap_plaintext(plaintext):
 
     name = "ldap_plaintext"
     _2307_pat = re.compile(u(r"^\{\w+\}.*$"))
+
+    @uh.deprecated_method(deprecated="1.7", removed="2.0")
+    @classmethod
+    def genconfig(cls):
+        # Overridding plaintext.genconfig() since it returns "",
+        # but have to return non-empty value due to identify() below
+        return "!"
 
     @classmethod
     def identify(cls, hash):

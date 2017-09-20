@@ -3,7 +3,6 @@
 # imports
 #=============================================================================
 # core
-from binascii import hexlify
 import warnings
 # site
 # pkg

@@ -1,33 +1,31 @@
-"""passlib.tests.test_handlers_bcrypt - tests for passlib hash algorithms"""
+"""passlib.tests.test_handlers - tests for passlib hash algorithms"""
 #=============================================================================
 # imports
 #=============================================================================
 from __future__ import with_statement
 # core
-import hashlib
 import logging; log = logging.getLogger(__name__)
 import os
-import sys
 import warnings
 # site
 # pkg
 from passlib import hash
-from passlib.utils import repeat_string
-from passlib.utils.compat import irange, PY3, u, get_method_function
-from passlib.tests.utils import TestCase, HandlerCase, skipUnless, \
-        TEST_MODE, b, catch_warnings, UserHandlerMixin, randintgauss, EncodingHandlerMixin
-from passlib.tests.test_handlers import UPASS_WAV, UPASS_USD, UPASS_TABLE
+from passlib.handlers.bcrypt import IDENT_2, IDENT_2X
+from passlib.utils import repeat_string, to_bytes
+from passlib.utils.compat import irange
+from passlib.tests.utils import HandlerCase, TEST_MODE
+from passlib.tests.test_handlers import UPASS_TABLE
 # module
 
 #=============================================================================
 # bcrypt
 #=============================================================================
 class _bcrypt_test(HandlerCase):
-    "base for BCrypt test cases"
+    """base for BCrypt test cases"""
     handler = hash.bcrypt
-    secret_size = 72
     reduce_default_rounds = True
     fuzz_salts_need_bcrypt_repair = True
+    has_os_crypt_fallback = False
 
     known_correct_hashes = [
         #
@@ -53,21 +51,21 @@ class _bcrypt_test(HandlerCase):
         ('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
          '0123456789chars after 72 are ignored',
                 '$2a$05$abcdefghijklmnopqrstuu5s2v8.iXieOjg/.AySBTTZIIVFJeBui'),
-        (b('\xa3'),
+        (b'\xa3',
                 '$2a$05$/OK.fbVrR/bpIqNJ5ianF.Sa7shbm4.OzKpvFnX1pQLmQW96oUlCq'),
-        (b('\xff\xa3345'),
+        (b'\xff\xa3345',
             '$2a$05$/OK.fbVrR/bpIqNJ5ianF.nRht2l/HRhr6zmCp9vYUvvsqynflf9e'),
-        (b('\xa3ab'),
+        (b'\xa3ab',
                 '$2a$05$/OK.fbVrR/bpIqNJ5ianF.6IflQkJytoRVc1yuaNtHfiuq.FRlSIS'),
-        (b('\xaa')*72 + b('chars after 72 are ignored as usual'),
+        (b'\xaa'*72 + b'chars after 72 are ignored as usual',
                 '$2a$05$/OK.fbVrR/bpIqNJ5ianF.swQOIzjOiJ9GHEPuhEkvqrUyvWhEMx6'),
-        (b('\xaa\x55'*36),
+        (b'\xaa\x55'*36,
                 '$2a$05$/OK.fbVrR/bpIqNJ5ianF.R9xrDjiycxMbQE2bp.vgqlYpW5wx2yy'),
-        (b('\x55\xaa\xff'*24),
+        (b'\x55\xaa\xff'*24,
                 '$2a$05$/OK.fbVrR/bpIqNJ5ianF.9tQZzcJfm3uj2NvJ/n5xkhpqLrMpWCe'),
 
         # keeping one of their 2y tests, because we are supporting that.
-        (b('\xa3'),
+        (b'\xa3',
                 '$2y$05$/OK.fbVrR/bpIqNJ5ianF.Sa7shbm4.OzKpvFnX1pQLmQW96oUlCq'),
 
         #
@@ -173,7 +171,7 @@ class _bcrypt_test(HandlerCase):
                 self.addCleanup(os.environ.__setitem__, key, orig)
             else:
                 self.addCleanup(os.environ.__delitem__, key)
-            os.environ[key] = "enabled"
+            os.environ[key] = "true"
         super(_bcrypt_test, self).setUp()
         warnings.filterwarnings("ignore", ".*backend is vulnerable to the bsd wraparound bug.*")
 
@@ -186,18 +184,18 @@ class _bcrypt_test(HandlerCase):
     #===================================================================
     # fuzz testing
     #===================================================================
-    def os_supports_ident(self, hash):
+    def crypt_supports_variant(self, hash):
         """check if OS crypt is expected to support given ident"""
-        if hash is None:
-            return True
-        # most OSes won't support 2x/2y
-        # XXX: definitely not the BSDs, but what about the linux variants?
-        # XXX: replace this all with 'handler._lacks_2{x}_support' feature detection?
-        #      could even just do call to safe_crypt(ident + salt) and see what we get
-        from passlib.handlers.bcrypt import IDENT_2X, IDENT_2Y
-        if hash.startswith(IDENT_2X) or hash.startswith(IDENT_2Y):
-            return False
-        return True
+        from passlib.handlers.bcrypt import bcrypt, IDENT_2X, IDENT_2Y
+        from passlib.utils import safe_crypt
+        ident = bcrypt.from_string(hash)
+        return (safe_crypt("test", ident + "04$5BJqKfqMQvV7nS.yUguNcu") or "").startswith(ident)
+
+    fuzz_verifiers = HandlerCase.fuzz_verifiers + (
+        "fuzz_verifier_bcrypt",
+        "fuzz_verifier_pybcrypt",
+        "fuzz_verifier_bcryptor",
+    )
 
     def fuzz_verifier_bcrypt(self):
         # test against bcrypt, if available
@@ -211,9 +209,9 @@ class _bcrypt_test(HandlerCase):
             return
         def check_bcrypt(secret, hash):
             """bcrypt"""
-            secret = to_bytes(secret, self.fuzz_password_encoding)
+            secret = to_bytes(secret, self.FuzzHashGenerator.password_encoding)
             if hash.startswith(IDENT_2B):
-                # bcrypt <1.1 lacks 2b support
+                # bcrypt <1.1 lacks 2B support
                 hash = IDENT_2A + hash[4:]
             elif hash.startswith(IDENT_2):
                 # bcrypt doesn't support $2$ hashes; but we can fake it
@@ -222,6 +220,8 @@ class _bcrypt_test(HandlerCase):
                 hash = IDENT_2A + hash[3:]
                 if secret:
                     secret = repeat_string(secret, 72)
+            elif hash.startswith(IDENT_2Y) and bcrypt.__version__ == "3.0.0":
+                hash = IDENT_2B + hash[4:]
             hash = to_bytes(hash)
             try:
                 return bcrypt.hashpw(secret, hash) == hash
@@ -231,29 +231,39 @@ class _bcrypt_test(HandlerCase):
 
     def fuzz_verifier_pybcrypt(self):
         # test against py-bcrypt, if available
-        from passlib.handlers.bcrypt import IDENT_2, IDENT_2A, IDENT_2B, IDENT_2X, IDENT_2Y, _detect_pybcrypt
+        from passlib.handlers.bcrypt import (
+            IDENT_2, IDENT_2A, IDENT_2B, IDENT_2X, IDENT_2Y,
+            _PyBcryptBackend,
+        )
         from passlib.utils import to_native_str
-        try:
-            import bcrypt
-        except ImportError:
+
+        loaded = _PyBcryptBackend._load_backend_mixin("pybcrypt", False)
+        if not loaded:
             return
-        if not _detect_pybcrypt():
-            return
+
+        from passlib.handlers.bcrypt import _pybcrypt as bcrypt_mod
+
+        lock = _PyBcryptBackend._calc_lock # reuse threadlock workaround for pybcrypt 0.2
+
         def check_pybcrypt(secret, hash):
             """pybcrypt"""
-            secret = to_native_str(secret, self.fuzz_password_encoding)
+            secret = to_native_str(secret, self.FuzzHashGenerator.password_encoding)
             if len(secret) > 200:  # vulnerable to wraparound bug
                 secret = secret[:200]
             if hash.startswith((IDENT_2B, IDENT_2Y)):
                 hash = IDENT_2A + hash[4:]
             try:
-                return bcrypt.hashpw(secret, hash) == hash
+                if lock:
+                    with lock:
+                        return bcrypt_mod.hashpw(secret, hash) == hash
+                else:
+                    return bcrypt_mod.hashpw(secret, hash) == hash
             except ValueError:
                 raise ValueError("py-bcrypt rejected hash: %r" % (hash,))
         return check_pybcrypt
 
     def fuzz_verifier_bcryptor(self):
-        # test against bcryptor, if available
+        # test against bcryptor if available
         from passlib.handlers.bcrypt import IDENT_2, IDENT_2A, IDENT_2Y, IDENT_2B
         from passlib.utils import to_native_str
         try:
@@ -262,7 +272,7 @@ class _bcrypt_test(HandlerCase):
             return
         def check_bcryptor(secret, hash):
             """bcryptor"""
-            secret = to_native_str(secret, self.fuzz_password_encoding)
+            secret = to_native_str(secret, self.FuzzHashGenerator.password_encoding)
             if hash.startswith((IDENT_2B, IDENT_2Y)):
                 hash = IDENT_2A + hash[4:]
             elif hash.startswith(IDENT_2):
@@ -275,23 +285,30 @@ class _bcrypt_test(HandlerCase):
             return Engine(False).hash_key(secret, hash) == hash
         return check_bcryptor
 
-    def get_fuzz_settings(self):
-        secret, other, kwds = super(_bcrypt_test,self).get_fuzz_settings()
-        from passlib.handlers.bcrypt import IDENT_2, IDENT_2X
-        from passlib.utils import to_bytes
-        ident = kwds.get('ident')
-        if ident == IDENT_2X:
-            # 2x is just recognized, not supported. don't test with it.
-            del kwds['ident']
-        elif ident == IDENT_2 and other and repeat_string(to_bytes(other), len(to_bytes(secret))) == to_bytes(secret):
-            # avoid false failure due to flaw in 0-revision bcrypt:
-            # repeated strings like 'abc' and 'abcabc' hash identically.
-            other = self.get_fuzz_password()
-        return secret, other, kwds
+    class FuzzHashGenerator(HandlerCase.FuzzHashGenerator):
 
-    def fuzz_setting_rounds(self):
-        # decrease default rounds for fuzz testing to speed up volume.
-        return randintgauss(5, 8, 6, 1)
+        def generate(self):
+            opts = super(_bcrypt_test.FuzzHashGenerator, self).generate()
+
+            secret = opts['secret']
+            other = opts['other']
+            settings = opts['settings']
+            ident = settings.get('ident')
+
+            if ident == IDENT_2X:
+                # 2x is just recognized, not supported. don't test with it.
+                del settings['ident']
+
+            elif ident == IDENT_2 and other and repeat_string(to_bytes(other), len(to_bytes(secret))) == to_bytes(secret):
+                # avoid false failure due to flaw in 0-revision bcrypt:
+                # repeated strings like 'abc' and 'abcabc' hash identically.
+                opts['secret'], opts['other'] = self.random_password_pair()
+
+            return opts
+
+        def random_rounds(self):
+            # decrease default rounds for fuzz testing to speed up volume.
+            return self.randintgauss(5, 8, 6, 1)
 
     #===================================================================
     # custom tests
@@ -333,23 +350,24 @@ class _bcrypt_test(HandlerCase):
         corr_desc = ".*incorrectly set padding bits"
 
         #
-        # test encrypt() / genconfig() don't generate invalid salts anymore
+        # test hash() / genconfig() don't generate invalid salts anymore
         #
         def check_padding(hash):
-            assert hash.startswith("$2a$") and len(hash) >= 28
+            assert hash.startswith(("$2a$", "$2b$")) and len(hash) >= 28, \
+                "unexpectedly malformed hash: %r" % (hash,)
             self.assertTrue(hash[28] in '.Oeu',
                             "unused bits incorrectly set in hash: %r" % (hash,))
         for i in irange(6):
             check_padding(bcrypt.genconfig())
         for i in irange(3):
-            check_padding(bcrypt.encrypt("bob", rounds=bcrypt.min_rounds))
+            check_padding(bcrypt.using(rounds=bcrypt.min_rounds).hash("bob"))
 
         #
         # test genconfig() corrects invalid salts & issues warning.
         #
         with self.assertWarningList(["salt too large", corr_desc]):
             hash = bcrypt.genconfig(salt="."*21 + "A.", rounds=5, relaxed=True)
-        self.assertEqual(hash, "$2a$05$" + "." * 22)
+        self.assertEqual(hash, "$2b$05$" + "." * (22 + 31))
 
         #
         # test public methods against good & bad hashes
@@ -363,29 +381,43 @@ class _bcrypt_test(HandlerCase):
             with self.assertWarningList([]):
                 self.assertEqual(bcrypt.genhash(pwd, good), good)
 
-        #
-        # and that verify() works good & bad
-        #
-        with self.assertWarningList([corr_desc]):
-            self.assertTrue(bcrypt.verify(pwd, bad))
-        with self.assertWarningList([]):
-            self.assertTrue(bcrypt.verify(pwd, good))
+            # make sure verify() works correctly with good & bad hashes
+            with self.assertWarningList([corr_desc]):
+                self.assertTrue(bcrypt.verify(pwd, bad))
+            with self.assertWarningList([]):
+                self.assertTrue(bcrypt.verify(pwd, good))
 
-        #
-        # test normhash cleans things up correctly
-        #
-        for pwd, bad, good in samples:
+            # make sure normhash() corrects bad hashes, leaves good unchanged
             with self.assertWarningList([corr_desc]):
                 self.assertEqual(bcrypt.normhash(bad), good)
             with self.assertWarningList([]):
                 self.assertEqual(bcrypt.normhash(good), good)
+
+        # make sure normhash() leaves non-bcrypt hashes alone
         self.assertEqual(bcrypt.normhash("$md5$abc"), "$md5$abc")
 
-hash.bcrypt._no_backends_msg() # call this for coverage purposes
+    def test_needs_update_w_padding(self):
+        """needs_update corrects bcrypt padding"""
+        # NOTE: see padding test above for details about issue this detects
+        bcrypt = self.handler.using(rounds=4)
+
+        # PASS1 = "test"
+        BAD1 = "$2a$04$yjDgE74RJkeqC0/1NheSScrvKeu9IbKDpcQf/Ox3qsrRS/Kw42qIS"
+        GOOD1 = "$2a$04$yjDgE74RJkeqC0/1NheSSOrvKeu9IbKDpcQf/Ox3qsrRS/Kw42qIS"
+
+        self.assertTrue(bcrypt.needs_update(BAD1))
+        self.assertFalse(bcrypt.needs_update(GOOD1))
+
+    #===================================================================
+    # eoc
+    #===================================================================
 
 # create test cases for specific backends
-bcrypt_bcrypt_test, bcrypt_pybcrypt_test, bcrypt_bcryptor_test, bcrypt_os_crypt_test, bcrypt_builtin_test = \
-               _bcrypt_test.create_backend_cases(["bcrypt", "pybcrypt", "bcryptor", "os_crypt", "builtin"])
+bcrypt_bcrypt_test = _bcrypt_test.create_backend_case("bcrypt")
+bcrypt_pybcrypt_test = _bcrypt_test.create_backend_case("pybcrypt")
+bcrypt_bcryptor_test = _bcrypt_test.create_backend_case("bcryptor")
+bcrypt_os_crypt_test = _bcrypt_test.create_backend_case("os_crypt")
+bcrypt_builtin_test = _bcrypt_test.create_backend_case("builtin")
 
 #=============================================================================
 # bcrypt
@@ -396,7 +428,8 @@ class _bcrypt_sha256_test(HandlerCase):
     reduce_default_rounds = True
     forbidden_characters = None
     fuzz_salts_need_bcrypt_repair = True
-    fallback_os_crypt_handler = hash.bcrypt
+    alt_safe_crypt_handler = hash.bcrypt
+    has_os_crypt_fallback = True
 
     known_correct_hashes = [
         #
@@ -417,14 +450,20 @@ class _bcrypt_sha256_test(HandlerCase):
         (UPASS_TABLE.encode("utf-8"),
             '$bcrypt-sha256$2a,5$.US1fQ4TQS.ZTz/uJ5Kyn.$QNdPDOTKKT5/sovNz1iWg26quOU4Pje'),
 
+        # ensure 2b support
+        ("password",
+            '$bcrypt-sha256$2b,5$5Hg1DKFqPE8C2aflZ5vVoe$12BjNE0p7axMg55.Y/mHsYiVuFBDQyu'),
+        (UPASS_TABLE,
+            '$bcrypt-sha256$2b,5$.US1fQ4TQS.ZTz/uJ5Kyn.$QNdPDOTKKT5/sovNz1iWg26quOU4Pje'),
+
         # test >72 chars is hashed correctly -- under bcrypt these hash the same.
-        # NOTE: test_60_secret_size() handles this already, this is just for overkill :)
+        # NOTE: test_60_truncate_size() handles this already, this is just for overkill :)
         (repeat_string("abc123",72),
-            '$bcrypt-sha256$2a,5$X1g1nh3g0v4h6970O68cxe$r/hyEtqJ0teqPEmfTLoZ83ciAI1Q74.'),
+            '$bcrypt-sha256$2b,5$X1g1nh3g0v4h6970O68cxe$r/hyEtqJ0teqPEmfTLoZ83ciAI1Q74.'),
         (repeat_string("abc123",72)+"qwr",
-            '$bcrypt-sha256$2a,5$X1g1nh3g0v4h6970O68cxe$021KLEif6epjot5yoxk0m8I0929ohEa'),
+            '$bcrypt-sha256$2b,5$X1g1nh3g0v4h6970O68cxe$021KLEif6epjot5yoxk0m8I0929ohEa'),
         (repeat_string("abc123",72)+"xyz",
-            '$bcrypt-sha256$2a,5$X1g1nh3g0v4h6970O68cxe$7.1kgpHduMGEjvM3fX6e/QCvfn6OKja'),
+            '$bcrypt-sha256$2b,5$X1g1nh3g0v4h6970O68cxe$7.1kgpHduMGEjvM3fX6e/QCvfn6OKja'),
         ]
 
     known_correct_configs =[
@@ -487,13 +526,18 @@ class _bcrypt_sha256_test(HandlerCase):
     #===================================================================
     # fuzz testing -- cloned from bcrypt
     #===================================================================
-    def fuzz_setting_rounds(self):
-        # decrease default rounds for fuzz testing to speed up volume.
-        return randintgauss(5, 8, 6, 1)
+    class FuzzHashGenerator(HandlerCase.FuzzHashGenerator):
+
+        def random_rounds(self):
+            # decrease default rounds for fuzz testing to speed up volume.
+            return self.randintgauss(5, 8, 6, 1)
 
 # create test cases for specific backends
-bcrypt_sha256_bcrypt_test, bcrypt_sha256_pybcrypt_test, bcrypt_sha256_bcryptor_test, bcrypt_sha256_os_crypt_test, bcrypt_sha256_builtin_test = \
-               _bcrypt_sha256_test.create_backend_cases(["bcrypt", "pybcrypt", "bcryptor", "os_crypt", "builtin"])
+bcrypt_sha256_bcrypt_test = _bcrypt_sha256_test.create_backend_case("bcrypt")
+bcrypt_sha256_pybcrypt_test = _bcrypt_sha256_test.create_backend_case("pybcrypt")
+bcrypt_sha256_bcryptor_test = _bcrypt_sha256_test.create_backend_case("bcryptor")
+bcrypt_sha256_os_crypt_test = _bcrypt_sha256_test.create_backend_case("os_crypt")
+bcrypt_sha256_builtin_test = _bcrypt_sha256_test.create_backend_case("builtin")
 
 #=============================================================================
 # eof

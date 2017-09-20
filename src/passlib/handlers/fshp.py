@@ -8,14 +8,13 @@
 from base64 import b64encode, b64decode
 import re
 import logging; log = logging.getLogger(__name__)
-from warnings import warn
 # site
 # pkg
 from passlib.utils import to_unicode
 import passlib.utils.handlers as uh
-from passlib.utils.compat import b, bytes, bascii_to_str, iteritems, u,\
+from passlib.utils.compat import bascii_to_str, iteritems, u,\
                                  unicode
-from passlib.utils.pbkdf2 import pbkdf1
+from passlib.crypto.digest import pbkdf1
 # local
 __all__ = [
     'fshp',
@@ -28,7 +27,7 @@ class fshp(uh.HasRounds, uh.HasRawSalt, uh.HasRawChecksum, uh.GenericHandler):
 
     It supports a variable-length salt, and a variable number of rounds.
 
-    The :meth:`~passlib.ifc.PasswordHash.encrypt` and :meth:`~passlib.ifc.PasswordHash.genconfig` methods accept the following optional keywords:
+    The :meth:`~passlib.ifc.PasswordHash.using` method accepts the following optional keywords:
 
     :param salt:
         Optional raw salt string.
@@ -73,7 +72,6 @@ class fshp(uh.HasRounds, uh.HasRawSalt, uh.HasRawChecksum, uh.GenericHandler):
 
     #--HasRawSalt--
     default_salt_size = 16 # current passlib default, FSHP uses 8
-    min_salt_size = 0
     max_salt_size = None
 
     #--HasRounds--
@@ -99,6 +97,16 @@ class fshp(uh.HasRounds, uh.HasRawSalt, uh.HasRawChecksum, uh.GenericHandler):
         )
 
     #===================================================================
+    # configuration
+    #===================================================================
+    @classmethod
+    def using(cls, variant=None, **kwds):
+        subcls = super(fshp, cls).using(**kwds)
+        if variant is not None:
+            subcls.default_variant = cls._norm_variant(variant)
+        return subcls
+
+    #===================================================================
     # instance attrs
     #===================================================================
     variant = None
@@ -109,24 +117,28 @@ class fshp(uh.HasRounds, uh.HasRawSalt, uh.HasRawChecksum, uh.GenericHandler):
     def __init__(self, variant=None, **kwds):
         # NOTE: variant must be set first, since it controls checksum size, etc.
         self.use_defaults = kwds.get("use_defaults") # load this early
-        self.variant = self._norm_variant(variant)
+        if variant is not None:
+            variant = self._norm_variant(variant)
+        elif self.use_defaults:
+            variant = self.default_variant
+            assert self._norm_variant(variant) == variant, "invalid default variant: %r" % (variant,)
+        else:
+            raise TypeError("no variant specified")
+        self.variant = variant
         super(fshp, self).__init__(**kwds)
 
-    def _norm_variant(self, variant):
-        if variant is None:
-            if not self.use_defaults:
-                raise TypeError("no variant specified")
-            variant = self.default_variant
+    @classmethod
+    def _norm_variant(cls, variant):
         if isinstance(variant, bytes):
             variant = variant.decode("ascii")
         if isinstance(variant, unicode):
             try:
-                variant = self._variant_aliases[variant]
+                variant = cls._variant_aliases[variant]
             except KeyError:
                 raise ValueError("invalid fshp variant")
         if not isinstance(variant, int):
             raise TypeError("fshp variant must be int or known alias")
-        if variant not in self._variant_info:
+        if variant not in cls._variant_info:
             raise ValueError("invalid fshp variant")
         return variant
 
@@ -169,12 +181,8 @@ class fshp(uh.HasRounds, uh.HasRawSalt, uh.HasRawChecksum, uh.GenericHandler):
         chk = data[salt_size:]
         return cls(salt=salt, checksum=chk, rounds=rounds, variant=variant)
 
-    @property
-    def _stub_checksum(self):
-        return b('\x00') * self.checksum_size
-
     def to_string(self):
-        chk = self.checksum or self._stub_checksum
+        chk = self.checksum
         salt = self.salt
         data = bascii_to_str(b64encode(salt+chk))
         return "{FSHP%d|%d|%d}%s" % (self.variant, len(salt), self.rounds, data)
@@ -190,11 +198,11 @@ class fshp(uh.HasRounds, uh.HasRawSalt, uh.HasRawChecksum, uh.GenericHandler):
         #       this has only a minimal impact on security,
         #       but it is worth noting this deviation.
         return pbkdf1(
+            digest=self.checksum_alg,
             secret=self.salt,
             salt=secret,
             rounds=self.rounds,
             keylen=self.checksum_size,
-            hash=self.checksum_alg,
             )
 
     #===================================================================

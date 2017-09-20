@@ -2,6 +2,19 @@
 #=============================================================================
 # exceptions
 #=============================================================================
+class UnknownBackendError(ValueError):
+    """
+    Error raised if multi-backend handler doesn't recognize backend name.
+    Inherits from :exc:`ValueError`.
+
+    .. versionadded:: 1.7
+    """
+    def __init__(self, hasher, backend):
+        self.hasher = hasher
+        self.backend = backend
+        message = "%s: unknown backend: %r" % (hasher.name, backend)
+        ValueError.__init__(self, message)
+
 class MissingBackendError(RuntimeError):
     """Error raised if multi-backend handler has no available backends;
     or if specifically requested backend is not available.
@@ -15,8 +28,10 @@ class MissingBackendError(RuntimeError):
     """
 
 class PasswordSizeError(ValueError):
-    """Error raised if a password exceeds the maximum size allowed
-    by Passlib (4096 characters).
+    """
+    Error raised if a password exceeds the maximum size allowed
+    by Passlib (by default, 4096 characters); or if password exceeds
+    a hash-specific size limitation.
 
     Many password hash algorithms take proportionately larger amounts of time and/or
     memory depending on the size of the password provided. This could present
@@ -31,14 +46,44 @@ class PasswordSizeError(ValueError):
         ``PASSLIB_MAX_PASSWORD_SIZE`` environmental variable before
         Passlib is loaded. The value can be any large positive integer.
 
+    .. attribute:: max_size
+
+        indicates the maximum allowed size.
+
     .. versionadded:: 1.6
     """
-    def __init__(self):
-        ValueError.__init__(self, "password exceeds maximum allowed size")
+
+    max_size = None
+
+    def __init__(self, max_size, msg=None):
+        self.max_size = max_size
+        if msg is None:
+            msg = "password exceeds maximum allowed size"
+        ValueError.__init__(self, msg)
 
     # this also prevents a glibc crypt segfault issue, detailed here ...
     # http://www.openwall.com/lists/oss-security/2011/11/15/1
 
+class PasswordTruncateError(PasswordSizeError):
+    """
+    Error raised if password would be truncated by hash.
+    This derives from :exc:`PasswordSizeError` and :exc:`ValueError`.
+
+    Hashers such as :class:`~passlib.hash.bcrypt` can be configured to raises
+    this error by setting ``truncate_error=True``.
+
+    .. attribute:: max_size
+
+        indicates the maximum allowed size.
+
+    .. versionadded:: 1.7
+    """
+
+    def __init__(self, cls, msg=None):
+        if msg is None:
+            msg = ("Password too long (%s truncates to %d characters)" %
+                   (cls.name, cls.truncate_size))
+        PasswordSizeError.__init__(self, cls.truncate_size, msg)
 
 class PasslibSecurityError(RuntimeError):
     """
@@ -47,6 +92,77 @@ class PasslibSecurityError(RuntimeError):
 
     .. versionadded:: 1.6.3
     """
+
+
+class TokenError(ValueError):
+    """
+    Base error raised by v:mod:`passlib.totp` when
+    a token can't be parsed / isn't valid / etc.
+    Derives from :exc:`!ValueError`.
+
+    Usually one of the more specific subclasses below will be raised:
+
+    * :class:`MalformedTokenError` -- invalid chars, too few digits
+    * :class:`InvalidTokenError` -- no match found
+    * :class:`UsedTokenError` -- match found, but token already used
+
+    .. versionadded:: 1.7
+    """
+
+    #: default message to use if none provided -- subclasses may fill this in
+    _default_message = 'Token not acceptable'
+
+    def __init__(self, msg=None, *args, **kwds):
+        if msg is None:
+            msg = self._default_message
+        ValueError.__init__(self, msg, *args, **kwds)
+
+
+class MalformedTokenError(TokenError):
+    """
+    Error raised by :mod:`passlib.totp` when a token isn't formatted correctly
+    (contains invalid characters, wrong number of digits, etc)
+    """
+    _default_message = "Unrecognized token"
+
+
+class InvalidTokenError(TokenError):
+    """
+    Error raised by :mod:`passlib.totp` when a token is formatted correctly,
+    but doesn't match any tokens within valid range.
+    """
+    _default_message = "Token did not match"
+
+
+class UsedTokenError(TokenError):
+    """
+    Error raised by :mod:`passlib.totp` if a token is reused.
+    Derives from :exc:`TokenError`.
+
+    .. autoattribute:: expire_time
+
+    .. versionadded:: 1.7
+    """
+    _default_message = "Token has already been used, please wait for another."
+
+    #: optional value indicating when current counter period will end,
+    #: and a new token can be generated.
+    expire_time = None
+
+    def __init__(self, *args, **kwds):
+        self.expire_time = kwds.pop("expire_time", None)
+        TokenError.__init__(self, *args, **kwds)
+
+
+class UnknownHashError(ValueError):
+    """Error raised by :class:`~passlib.crypto.lookup_hash` if hash name is not recognized.
+    This exception derives from :exc:`!ValueError`.
+
+    .. versionadded:: 1.7
+    """
+    def __init__(self, name):
+        self.name = name
+        ValueError.__init__(self, "unknown hash algorithm: %r" % name)
 
 #=============================================================================
 # warnings
@@ -58,6 +174,8 @@ class PasslibWarning(UserWarning):
     .. versionadded:: 1.6
     """
 
+# XXX: there's only one reference to this class, and it will go away in 2.0;
+#      so can probably remove this along with this / roll this into PasslibHashWarning.
 class PasslibConfigWarning(PasslibWarning):
     """Warning issued when non-fatal issue is found related to the configuration
     of a :class:`~passlib.context.CryptContext` instance.
@@ -145,7 +263,7 @@ def ExpectedStringError(value, param):
     return ExpectedTypeError(value, "unicode or bytes", param)
 
 #------------------------------------------------------------------------
-# encrypt/verify parameter errors
+# hash/verify parameter errors
 #------------------------------------------------------------------------
 def MissingDigestError(handler=None):
     """raised when verify() method gets passed config string instead of hash"""

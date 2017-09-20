@@ -2,16 +2,21 @@
 #=============================================================================
 # imports
 #=============================================================================
-from passlib.utils.compat import PYPY, JYTHON
+from passlib.utils.compat import JYTHON
 # core
+from binascii import b2a_base64, a2b_base64, Error as _BinAsciiError
 from base64 import b64encode, b64decode
+import collections
 from codecs import lookup as _lookup_codec
 from functools import update_wrapper
+import itertools
+import inspect
 import logging; log = logging.getLogger(__name__)
 import math
 import os
 import sys
 import random
+import re
 if JYTHON: # pragma: no cover -- runtime detection
     # Jython 2.5.2 lacks stringprep module -
     # see http://bugs.jython.org/issue1758320
@@ -25,27 +30,37 @@ else:
 import time
 if stringprep:
     import unicodedata
+import types
 from warnings import warn
 # site
 # pkg
+from passlib.utils.binary import (
+    # [remove these aliases in 2.0]
+    BASE64_CHARS, AB64_CHARS, HASH64_CHARS, BCRYPT_CHARS,
+    Base64Engine, LazyBase64Engine, h64, h64big, bcrypt64,
+    ab64_encode, ab64_decode, b64s_encode, b64s_decode
+)
+from passlib.utils.decor import (
+    # [remove these aliases in 2.0]
+    deprecated_function,
+    deprecated_method,
+    memoized_property,
+    classproperty,
+    hybrid_method,
+)
 from passlib.exc import ExpectedStringError
-from passlib.utils.compat import add_doc, b, bytes, join_bytes, join_byte_values, \
-                                 join_byte_elems, exc_err, irange, imap, PY3, u, \
-                                 join_unicode, unicode, byte_elem_value, PY_MIN_32, next_method_attr
+from passlib.utils.compat import (add_doc, join_bytes, join_byte_values,
+                                  join_byte_elems, irange, imap, PY3, u,
+                                  join_unicode, unicode, byte_elem_value, nextgetter,
+                                  unicode_or_bytes_types,
+                                  get_method_function, suppress_cause)
 # local
 __all__ = [
     # constants
-    'PYPY',
     'JYTHON',
     'sys_bits',
     'unix_crypt_schemes',
     'rounds_cost_values',
-
-    # decorators
-    "classproperty",
-##    "deprecated_function",
-##    "relocated_function",
-##    "memoized_class_property",
 
     # unicode helpers
     'consteq',
@@ -61,11 +76,6 @@ __all__ = [
     'to_bytes',
     'to_unicode',
     'to_native_str',
-
-    # base64 helpers
-    "BASE64_CHARS", "HASH64_CHARS", "BCRYPT_CHARS", "AB64_CHARS",
-    "Base64Engine", "h64", "h64big",
-    "ab64_encode", "ab64_decode",
 
     # host OS
     'has_crypt',
@@ -94,6 +104,7 @@ __all__ = [
 sys_bits = int(math.log(sys.maxsize if PY3 else sys.maxint, 2) + 1.5)
 
 # list of hashes algs supported by crypt() on at least one OS.
+# XXX: move to .registry for passlib 2.0?
 unix_crypt_schemes = [
     "sha512_crypt", "sha256_crypt",
     "sha1_crypt", "bcrypt",
@@ -109,7 +120,7 @@ rounds_cost_values = [ "linear", "log2" ]
 from passlib.exc import MissingBackendError
 
 # internal helpers
-_BEMPTY = b('')
+_BEMPTY = b''
 _UEMPTY = u("")
 _USPACE = u(" ")
 
@@ -117,162 +128,189 @@ _USPACE = u(" ")
 MAX_PASSWORD_SIZE = int(os.environ.get("PASSLIB_MAX_PASSWORD_SIZE") or 4096)
 
 #=============================================================================
-# decorators and meta helpers
+# type helpers
 #=============================================================================
-class classproperty(object):
-    """Function decorator which acts like a combination of classmethod+property (limited to read-only properties)"""
 
-    def __init__(self, func):
-        self.im_func = func
-
-    def __get__(self, obj, cls):
-        return self.im_func(cls)
-
-    @property
-    def __func__(self):
-        """py3 compatible alias"""
-        return self.im_func
-
-def deprecated_function(msg=None, deprecated=None, removed=None, updoc=True,
-                        replacement=None, _is_method=False):
-    """decorator to deprecate a function.
-
-    :arg msg: optional msg, default chosen if omitted
-    :kwd deprecated: version when function was first deprecated
-    :kwd removed: version when function will be removed
-    :kwd replacement: alternate name / instructions for replacing this function.
-    :kwd updoc: add notice to docstring (default ``True``)
+class SequenceMixin(object):
     """
-    if msg is None:
-        if _is_method:
-            msg = "the method %(mod)s.%(klass)s.%(name)s() is deprecated"
-        else:
-            msg = "the function %(mod)s.%(name)s() is deprecated"
-        if deprecated:
-            msg += " as of Passlib %(deprecated)s"
-        if removed:
-            msg += ", and will be removed in Passlib %(removed)s"
-        if replacement:
-            msg += ", use %s instead" % replacement
-        msg += "."
-    def build(func):
-        opts = dict(
-            mod=func.__module__,
-            name=func.__name__,
-            deprecated=deprecated,
-            removed=removed,
-            )
-        if _is_method:
-            def wrapper(*args, **kwds):
-                tmp = opts.copy()
-                klass = args[0].__class__
-                tmp.update(klass=klass.__name__, mod=klass.__module__)
-                warn(msg % tmp, DeprecationWarning, stacklevel=2)
-                return func(*args, **kwds)
-        else:
-            text = msg % opts
-            def wrapper(*args, **kwds):
-                warn(text, DeprecationWarning, stacklevel=2)
-                return func(*args, **kwds)
-        update_wrapper(wrapper, func)
-        if updoc and (deprecated or removed) and \
-                   wrapper.__doc__ and ".. deprecated::" not in wrapper.__doc__:
-            txt = deprecated or ''
-            if removed or replacement:
-                txt += "\n    "
-                if removed:
-                    txt += "and will be removed in version %s" % (removed,)
-                if replacement:
-                    if removed:
-                        txt += ", "
-                    txt += "use %s instead" % replacement
-                txt += "."
-            if not wrapper.__doc__.strip(" ").endswith("\n"):
-                wrapper.__doc__ += "\n"
-            wrapper.__doc__ += "\n.. deprecated:: %s\n" % (txt,)
-        return wrapper
-    return build
-
-def deprecated_method(msg=None, deprecated=None, removed=None, updoc=True,
-                      replacement=None):
-    """decorator to deprecate a method.
-
-    :arg msg: optional msg, default chosen if omitted
-    :kwd deprecated: version when method was first deprecated
-    :kwd removed: version when method will be removed
-    :kwd replacement: alternate name / instructions for replacing this method.
-    :kwd updoc: add notice to docstring (default ``True``)
+    helper which lets result object act like a fixed-length sequence.
+    subclass just needs to provide :meth:`_as_tuple()`.
     """
-    return deprecated_function(msg, deprecated, removed, updoc, replacement,
-                               _is_method=True)
+    def _as_tuple(self):
+        raise NotImplemented("implement in subclass")
 
-class memoized_property(object):
-    """decorator which invokes method once, then replaces attr with result"""
-    def __init__(self, func):
-        self.im_func = func
+    def __repr__(self):
+        return repr(self._as_tuple())
 
-    def __get__(self, obj, cls):
-        if obj is None:
-            return self
-        func = self.im_func
-        value = func(obj)
-        setattr(obj, func.__name__, value)
-        return value
+    def __getitem__(self, idx):
+        return self._as_tuple()[idx]
 
-    @property
-    def __func__(self):
-        """py3 alias"""
-        return self.im_func
+    def __iter__(self):
+        return iter(self._as_tuple())
 
-# works but not used
-##class memoized_class_property(object):
-##    """function decorator which calls function as classmethod,
-##    and replaces itself with result for current and all future invocations.
-##    """
-##    def __init__(self, func):
-##        self.im_func = func
-##
-##    def __get__(self, obj, cls):
-##        func = self.im_func
-##        value = func(cls)
-##        setattr(cls, func.__name__, value)
-##        return value
-##
-##    @property
-##    def __func__(self):
-##        "py3 compatible alias"
+    def __len__(self):
+        return len(self._as_tuple())
+
+    def __eq__(self, other):
+        return self._as_tuple() == other
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+if PY3:
+    # getargspec() is deprecated, use this under py3.
+    # even though it's a lot more awkward to get basic info :|
+
+    _VAR_KEYWORD = inspect.Parameter.VAR_KEYWORD
+    _VAR_ANY_SET = set([_VAR_KEYWORD, inspect.Parameter.VAR_POSITIONAL])
+
+    def accepts_keyword(func, key):
+        """test if function accepts specified keyword"""
+        params = inspect.signature(get_method_function(func)).parameters
+        if not params:
+            return False
+        arg = params.get(key)
+        if arg and arg.kind not in _VAR_ANY_SET:
+            return True
+        # XXX: annoying what we have to do to determine if VAR_KWDS in use.
+        return params[list(params)[-1]].kind == _VAR_KEYWORD
+
+else:
+
+    def accepts_keyword(func, key):
+        """test if function accepts specified keyword"""
+        spec = inspect.getargspec(get_method_function(func))
+        return key in spec.args or spec.keywords is not None
+
+def update_mixin_classes(target, add=None, remove=None, append=False,
+                         before=None, after=None, dryrun=False):
+    """
+    helper to update mixin classes installed in target class.
+
+    :param target:
+        target class whose bases will be modified.
+
+    :param add:
+        class / classes to install into target's base class list.
+
+    :param remove:
+        class / classes to remove from target's base class list.
+
+    :param append:
+        by default, prepends mixins to front of list.
+        if True, appends to end of list instead.
+
+    :param after:
+        optionally make sure all mixins are inserted after
+        this class / classes.
+
+    :param before:
+        optionally make sure all mixins are inserted before
+        this class / classes.
+
+    :param dryrun:
+        optionally perform all calculations / raise errors,
+        but don't actually modify the class.
+    """
+    if isinstance(add, type):
+        add = [add]
+
+    bases = list(target.__bases__)
+
+    # strip out requested mixins
+    if remove:
+        if isinstance(remove, type):
+            remove = [remove]
+        for mixin in remove:
+            if add and mixin in add:
+                continue
+            if mixin in bases:
+                bases.remove(mixin)
+
+    # add requested mixins
+    if add:
+        for mixin in add:
+            # if mixin already present (explicitly or not), leave alone
+            if any(issubclass(base, mixin) for base in bases):
+                continue
+
+            # determine insertion point
+            if append:
+                for idx, base in enumerate(bases):
+                    if issubclass(mixin, base):
+                        # don't insert mixin after one of it's own bases
+                        break
+                    if before and issubclass(base, before):
+                        # don't insert mixin after any <before> classes.
+                        break
+                else:
+                    # append to end
+                    idx = len(bases)
+            elif after:
+                for end_idx, base in enumerate(reversed(bases)):
+                    if issubclass(base, after):
+                        # don't insert mixin before any <after> classes.
+                        idx = len(bases) - end_idx
+                        assert bases[idx-1] == base
+                        break
+                else:
+                    idx = 0
+            else:
+                # insert at start
+                idx = 0
+
+            # insert mixin
+            bases.insert(idx, mixin)
+
+    # modify class
+    if not dryrun:
+        target.__bases__ = tuple(bases)
+
+#=============================================================================
+# collection helpers
+#=============================================================================
+def batch(source, size):
+    """
+    split iterable into chunks of <size> elements.
+    """
+    if size < 1:
+        raise ValueError("size must be positive integer")
+    if isinstance(source, collections.Sequence):
+        end = len(source)
+        i = 0
+        while i < end:
+            n = i + size
+            yield source[i:n]
+            i = n
+    elif isinstance(source, collections.Iterable):
+        itr = iter(source)
+        while True:
+            chunk_itr = itertools.islice(itr, size)
+            try:
+                first = next(chunk_itr)
+            except StopIteration:
+                break
+            yield itertools.chain((first,), chunk_itr)
+    else:
+        raise TypeError("source must be iterable")
 
 #=============================================================================
 # unicode helpers
 #=============================================================================
 
+# XXX: should this be moved to passlib.crypto, or compat backports?
+
 def consteq(left, right):
     """Check two strings/bytes for equality.
-    This is functionally equivalent to ``left == right``,
-    but attempts to take constant time relative to the size of the righthand input.
 
-    The purpose of this function is to help prevent timing attacks
-    during digest comparisons: the standard ``==`` operator aborts
-    after the first mismatched character, causing its runtime to be
-    proportional to the longest prefix shared by the two inputs.
-    If an attacker is able to predict and control one of the two
-    inputs, repeated queries can be leveraged to reveal information about
-    the content of the second argument. To minimize this risk, :func:`!consteq`
-    is designed to take ``THETA(len(right))`` time, regardless
-    of the contents of the two strings.
-    It is recommended that the attacker-controlled input
-    be passed in as the left-hand value.
+    This function uses an approach designed to prevent
+    timing analysis, making it appropriate for cryptography.
+    a and b must both be of the same type: either str (ASCII only),
+    or any type that supports the buffer protocol (e.g. bytes).
 
-    .. warning::
-
-        This function is *not* perfect. Various VM-dependant issues
-        (e.g. the VM's integer object instantiation algorithm, internal unicode representation, etc),
-        may still cause the function's run time to be affected by the inputs,
-        though in a less predictable manner.
-        *To minimize such risks, this function should not be passed* :class:`unicode`
-        *inputs that might contain non-* ``ASCII`` *characters*.
-
-    .. versionadded:: 1.6
+    Note: If a and b are of different lengths, or if an error occurs,
+    a timing attack could theoretically reveal information about the
+    types and lengths of a and b--but not their values.
     """
     # NOTE:
     # resources & discussions considered in the design of this function:
@@ -320,6 +358,23 @@ def consteq(left, right):
             result |= ord(l) ^ ord(r)
     return result == 0
 
+# keep copy of this around since stdlib's version throws error on non-ascii chars in unicode strings.
+# our version does, but suffers from some underlying VM issues.  but something is better than
+# nothing for plaintext hashes, which need this.  everything else should use consteq(),
+# since the stdlib one is going to be as good / better in the general case.
+str_consteq = consteq
+
+try:
+    # for py3.3 and up, use the stdlib version
+    from hmac import compare_digest as consteq
+except ImportError:
+    pass
+
+    # TODO: could check for cryptography package's version,
+    #       but only operates on bytes, so would need a wrapper,
+    #       or separate consteq() into a unicode & a bytes variant.
+    # from cryptography.hazmat.primitives.constant_time import bytes_eq as consteq
+
 def splitcomma(source, sep=","):
     """split comma-separated string into list of elements,
     stripping whitespace.
@@ -347,12 +402,15 @@ def saslprep(source, param="value"):
         unicode string to normalize & validate
 
     :param param:
-        Optional noun used to refer to identify source parameter in error messages
+        Optional noun identifying source parameter in error messages
         (Defaults to the string ``"value"``). This is mainly useful to make the caller's error
-        messages make more sense.
+        messages make more sense contextually.
 
     :raises ValueError:
         if any characters forbidden by the SASLPrep profile are encountered.
+
+    :raises TypeError:
+        if input is not :class:`!unicode`
 
     :returns:
         normalized unicode string
@@ -370,6 +428,8 @@ def saslprep(source, param="value"):
     #              http://docs.python.org/library/stringprep.html
 
     # validate type
+    # XXX: support bytes (e.g. run through want_unicode)?
+    #      might be easier to just integrate this into cryptcontext.
     if not isinstance(source, unicode):
         raise TypeError("input must be unicode string, not %s" %
                         (type(source),))
@@ -481,7 +541,8 @@ def render_bytes(source, *args):
                             else arg for arg in args)
     return result.encode("latin-1")
 
-if PY_MIN_32:
+if PY3:
+    # new in py32
     def bytes_to_int(value):
         return int.from_bytes(value, 'big')
     def int_to_bytes(value, count):
@@ -491,13 +552,8 @@ else:
     from binascii import hexlify, unhexlify
     def bytes_to_int(value):
         return int(hexlify(value),16)
-    if PY3:
-        # grr, why did py3 have to break % for bytes?
-        def int_to_bytes(value, count):
-            return unhexlify((('%%0%dx' % (count<<1)) % value).encode("ascii"))
-    else:
-        def int_to_bytes(value, count):
-            return unhexlify(('%%0%dx' % (count<<1)) % value)
+    def int_to_bytes(value, count):
+        return unhexlify(('%%0%dx' % (count<<1)) % value)
 
 add_doc(bytes_to_int, "decode byte string as single big-endian integer")
 add_doc(int_to_bytes, "encode integer as single big-endian byte string")
@@ -515,7 +571,7 @@ def repeat_string(source, size):
     else:
         return source[:size]
 
-_BNULL = b("\x00")
+_BNULL = b"\x00"
 _UNULL = u("\x00")
 
 def right_pad_string(source, size, pad=None):
@@ -531,7 +587,7 @@ def right_pad_string(source, size, pad=None):
 #=============================================================================
 # encoding helpers
 #=============================================================================
-_ASCII_TEST_BYTES = b("\x00\n aA:#!\x7f")
+_ASCII_TEST_BYTES = b"\x00\n aA:#!\x7f"
 _ASCII_TEST_UNICODE = _ASCII_TEST_BYTES.decode("ascii")
 
 def is_ascii_codec(codec):
@@ -546,7 +602,7 @@ def is_same_codec(left, right):
         return False
     return _lookup_codec(left).name == _lookup_codec(right).name
 
-_B80 = b('\x80')[0]
+_B80 = b'\x80'[0]
 _U80 = u('\x80')
 def is_ascii_safe(source):
     """Check if string (bytes or unicode) contains only 7-bit ascii"""
@@ -659,670 +715,31 @@ def to_hash_str(source, encoding="ascii"): # pragma: no cover -- deprecated & un
     """deprecated, use to_native_str() instead"""
     return to_native_str(source, encoding, param="hash")
 
-#=============================================================================
-# base64-variant encoding
-#=============================================================================
+_true_set = set("true t yes y on 1 enable enabled".split())
+_false_set = set("false f no n off 0 disable disabled".split())
+_none_set = set(["", "none"])
 
-class Base64Engine(object):
-    """Provides routines for encoding/decoding base64 data using
-    arbitrary character mappings, selectable endianness, etc.
-
-    :arg charmap:
-        A string of 64 unique characters,
-        which will be used to encode successive 6-bit chunks of data.
-        A character's position within the string should correspond
-        to its 6-bit value.
-
-    :param big:
-        Whether the encoding should be big-endian (default False).
-
-    .. note::
-        This class does not currently handle base64's padding characters
-        in any way what so ever.
-
-    Raw Bytes <-> Encoded Bytes
-    ===========================
-    The following methods convert between raw bytes,
-    and strings encoded using the engine's specific base64 variant:
-
-    .. automethod:: encode_bytes
-    .. automethod:: decode_bytes
-    .. automethod:: encode_transposed_bytes
-    .. automethod:: decode_transposed_bytes
-
-    ..
-        .. automethod:: check_repair_unused
-        .. automethod:: repair_unused
-
-    Integers <-> Encoded Bytes
-    ==========================
-    The following methods allow encoding and decoding
-    unsigned integers to and from the engine's specific base64 variant.
-    Endianess is determined by the engine's ``big`` constructor keyword.
-
-    .. automethod:: encode_int6
-    .. automethod:: decode_int6
-
-    .. automethod:: encode_int12
-    .. automethod:: decode_int12
-
-    .. automethod:: encode_int24
-    .. automethod:: decode_int24
-
-    .. automethod:: encode_int64
-    .. automethod:: decode_int64
-
-    Informational Attributes
-    ========================
-    .. attribute:: charmap
-
-        unicode string containing list of characters used in encoding;
-        position in string matches 6bit value of character.
-
-    .. attribute:: bytemap
-
-        bytes version of :attr:`charmap`
-
-    .. attribute:: big
-
-        boolean flag indicating this using big-endian encoding.
+def as_bool(value, none=None, param="boolean"):
     """
-
-    #===================================================================
-    # instance attrs
-    #===================================================================
-    # public config
-    bytemap = None # charmap as bytes
-    big = None # little or big endian
-
-    # filled in by init based on charmap.
-    # (byte elem: single byte under py2, 8bit int under py3)
-    _encode64 = None # maps 6bit value -> byte elem
-    _decode64 = None # maps byte elem -> 6bit value
-
-    # helpers filled in by init based on endianness
-    _encode_bytes = None # throws IndexError if bad value (shouldn't happen)
-    _decode_bytes = None # throws KeyError if bad char.
-
-    #===================================================================
-    # init
-    #===================================================================
-    def __init__(self, charmap, big=False):
-        # validate charmap, generate encode64/decode64 helper functions.
-        if isinstance(charmap, unicode):
-            charmap = charmap.encode("latin-1")
-        elif not isinstance(charmap, bytes):
-            raise ExpectedStringError(charmap, "charmap")
-        if len(charmap) != 64:
-            raise ValueError("charmap must be 64 characters in length")
-        if len(set(charmap)) != 64:
-            raise ValueError("charmap must not contain duplicate characters")
-        self.bytemap = charmap
-        self._encode64 = charmap.__getitem__
-        lookup = dict((value, idx) for idx, value in enumerate(charmap))
-        self._decode64 = lookup.__getitem__
-
-        # validate big, set appropriate helper functions.
-        self.big = big
-        if big:
-            self._encode_bytes = self._encode_bytes_big
-            self._decode_bytes = self._decode_bytes_big
-        else:
-            self._encode_bytes = self._encode_bytes_little
-            self._decode_bytes = self._decode_bytes_little
-
-        # TODO: support padding character
-        ##if padding is not None:
-        ##    if isinstance(padding, unicode):
-        ##        padding = padding.encode("latin-1")
-        ##    elif not isinstance(padding, bytes):
-        ##        raise TypeError("padding char must be unicode or bytes")
-        ##    if len(padding) != 1:
-        ##        raise ValueError("padding must be single character")
-        ##self.padding = padding
-
-    @property
-    def charmap(self):
-        """charmap as unicode"""
-        return self.bytemap.decode("latin-1")
-
-    #===================================================================
-    # encoding byte strings
-    #===================================================================
-    def encode_bytes(self, source):
-        """encode bytes to base64 string.
-
-        :arg source: byte string to encode.
-        :returns: byte string containing encoded data.
-        """
-        if not isinstance(source, bytes):
-            raise TypeError("source must be bytes, not %s" % (type(source),))
-        chunks, tail = divmod(len(source), 3)
-        if PY3:
-            next_value = iter(source).__next__
-        else:
-            next_value = (ord(elem) for elem in source).next
-        gen = self._encode_bytes(next_value, chunks, tail)
-        out = join_byte_elems(imap(self._encode64, gen))
-        ##if tail:
-        ##    padding = self.padding
-        ##    if padding:
-        ##        out += padding * (3-tail)
-        return out
-
-    def _encode_bytes_little(self, next_value, chunks, tail):
-        """helper used by encode_bytes() to handle little-endian encoding"""
-        #
-        # output bit layout:
-        #
-        # first byte:   v1 543210
-        #
-        # second byte:  v1 ....76
-        #              +v2 3210..
-        #
-        # third byte:   v2 ..7654
-        #              +v3 10....
-        #
-        # fourth byte:  v3 765432
-        #
-        idx = 0
-        while idx < chunks:
-            v1 = next_value()
-            v2 = next_value()
-            v3 = next_value()
-            yield v1 & 0x3f
-            yield ((v2 & 0x0f)<<2)|(v1>>6)
-            yield ((v3 & 0x03)<<4)|(v2>>4)
-            yield v3>>2
-            idx += 1
-        if tail:
-            v1 = next_value()
-            if tail == 1:
-                # note: 4 msb of last byte are padding
-                yield v1 & 0x3f
-                yield v1>>6
-            else:
-                assert tail == 2
-                # note: 2 msb of last byte are padding
-                v2 = next_value()
-                yield v1 & 0x3f
-                yield ((v2 & 0x0f)<<2)|(v1>>6)
-                yield v2>>4
-
-    def _encode_bytes_big(self, next_value, chunks, tail):
-        """helper used by encode_bytes() to handle big-endian encoding"""
-        #
-        # output bit layout:
-        #
-        # first byte:   v1 765432
-        #
-        # second byte:  v1 10....
-        #              +v2 ..7654
-        #
-        # third byte:   v2 3210..
-        #              +v3 ....76
-        #
-        # fourth byte:  v3 543210
-        #
-        idx = 0
-        while idx < chunks:
-            v1 = next_value()
-            v2 = next_value()
-            v3 = next_value()
-            yield v1>>2
-            yield ((v1&0x03)<<4)|(v2>>4)
-            yield ((v2&0x0f)<<2)|(v3>>6)
-            yield v3 & 0x3f
-            idx += 1
-        if tail:
-            v1 = next_value()
-            if tail == 1:
-                # note: 4 lsb of last byte are padding
-                yield v1>>2
-                yield (v1&0x03)<<4
-            else:
-                assert tail == 2
-                # note: 2 lsb of last byte are padding
-                v2 = next_value()
-                yield v1>>2
-                yield ((v1&0x03)<<4)|(v2>>4)
-                yield ((v2&0x0f)<<2)
-
-    #===================================================================
-    # decoding byte strings
-    #===================================================================
-
-    def decode_bytes(self, source):
-        """decode bytes from base64 string.
-
-        :arg source: byte string to decode.
-        :returns: byte string containing decoded data.
-        """
-        if not isinstance(source, bytes):
-            raise TypeError("source must be bytes, not %s" % (type(source),))
-        ##padding = self.padding
-        ##if padding:
-        ##    # TODO: add padding size check?
-        ##    source = source.rstrip(padding)
-        chunks, tail = divmod(len(source), 4)
-        if tail == 1:
-            # only 6 bits left, can't encode a whole byte!
-            raise ValueError("input string length cannot be == 1 mod 4")
-        next_value = getattr(imap(self._decode64, source), next_method_attr)
-        try:
-            return join_byte_values(self._decode_bytes(next_value, chunks, tail))
-        except KeyError:
-            err = exc_err()
-            raise ValueError("invalid character: %r" % (err.args[0],))
-
-    def _decode_bytes_little(self, next_value, chunks, tail):
-        """helper used by decode_bytes() to handle little-endian encoding"""
-        #
-        # input bit layout:
-        #
-        # first byte:   v1 ..543210
-        #              +v2 10......
-        #
-        # second byte:  v2 ....5432
-        #              +v3 3210....
-        #
-        # third byte:   v3 ......54
-        #              +v4 543210..
-        #
-        idx = 0
-        while idx < chunks:
-            v1 = next_value()
-            v2 = next_value()
-            v3 = next_value()
-            v4 = next_value()
-            yield v1 | ((v2 & 0x3) << 6)
-            yield (v2>>2) | ((v3 & 0xF) << 4)
-            yield (v3>>4) | (v4<<2)
-            idx += 1
-        if tail:
-            # tail is 2 or 3
-            v1 = next_value()
-            v2 = next_value()
-            yield v1 | ((v2 & 0x3) << 6)
-            # NOTE: if tail == 2, 4 msb of v2 are ignored (should be 0)
-            if tail == 3:
-                # NOTE: 2 msb of v3 are ignored (should be 0)
-                v3 = next_value()
-                yield (v2>>2) | ((v3 & 0xF) << 4)
-
-    def _decode_bytes_big(self, next_value, chunks, tail):
-        """helper used by decode_bytes() to handle big-endian encoding"""
-        #
-        # input bit layout:
-        #
-        # first byte:   v1 543210..
-        #              +v2 ......54
-        #
-        # second byte:  v2 3210....
-        #              +v3 ....5432
-        #
-        # third byte:   v3 10......
-        #              +v4 ..543210
-        #
-        idx = 0
-        while idx < chunks:
-            v1 = next_value()
-            v2 = next_value()
-            v3 = next_value()
-            v4 = next_value()
-            yield (v1<<2) | (v2>>4)
-            yield ((v2&0xF)<<4) | (v3>>2)
-            yield ((v3&0x3)<<6) | v4
-            idx += 1
-        if tail:
-            # tail is 2 or 3
-            v1 = next_value()
-            v2 = next_value()
-            yield (v1<<2) | (v2>>4)
-            # NOTE: if tail == 2, 4 lsb of v2 are ignored (should be 0)
-            if tail == 3:
-                # NOTE: 2 lsb of v3 are ignored (should be 0)
-                v3 = next_value()
-                yield ((v2&0xF)<<4) | (v3>>2)
-
-    #===================================================================
-    # encode/decode helpers
-    #===================================================================
-
-    # padmap2/3 - dict mapping last char of string ->
-    # equivalent char with no padding bits set.
-
-    def __make_padset(self, bits):
-        """helper to generate set of valid last chars & bytes"""
-        pset = set(c for i,c in enumerate(self.bytemap) if not i & bits)
-        pset.update(c for i,c in enumerate(self.charmap) if not i & bits)
-        return frozenset(pset)
-
-    @memoized_property
-    def _padinfo2(self):
-        """mask to clear padding bits, and valid last bytes (for strings 2 % 4)"""
-        # 4 bits of last char unused (lsb for big, msb for little)
-        bits = 15 if self.big else (15<<2)
-        return ~bits, self.__make_padset(bits)
-
-    @memoized_property
-    def _padinfo3(self):
-        """mask to clear padding bits, and valid last bytes (for strings 3 % 4)"""
-        # 2 bits of last char unused (lsb for big, msb for little)
-        bits = 3 if self.big else (3<<4)
-        return ~bits, self.__make_padset(bits)
-
-    def check_repair_unused(self, source):
-        """helper to detect & clear invalid unused bits in last character.
-
-        :arg source:
-            encoded data (as ascii bytes or unicode).
-
-        :returns:
-            `(True, result)` if the string was repaired,
-            `(False, source)` if the string was ok as-is.
-        """
-        # figure out how many padding bits there are in last char.
-        tail = len(source) & 3
-        if tail == 2:
-            mask, padset = self._padinfo2
-        elif tail == 3:
-            mask, padset = self._padinfo3
-        elif not tail:
-            return False, source
-        else:
-            raise ValueError("source length must != 1 mod 4")
-
-        # check if last char is ok (padset contains bytes & unicode versions)
-        last = source[-1]
-        if last in padset:
-            return False, source
-
-        # we have dirty bits - repair the string by decoding last char,
-        # clearing the padding bits via <mask>, and encoding new char.
-        if isinstance(source, unicode):
-            cm = self.charmap
-            last = cm[cm.index(last) & mask]
-            assert last in padset, "failed to generate valid padding char"
-        else:
-            # NOTE: this assumes ascii-compat encoding, and that
-            # all chars used by encoding are 7-bit ascii.
-            last = self._encode64(self._decode64(last) & mask)
-            assert last in padset, "failed to generate valid padding char"
-            if PY3:
-                last = bytes([last])
-        return True, source[:-1] + last
-
-    def repair_unused(self, source):
-        return self.check_repair_unused(source)[1]
-
-    ##def transcode(self, source, other):
-    ##    return ''.join(
-    ##        other.charmap[self.charmap.index(char)]
-    ##        for char in source
-    ##    )
-
-    ##def random_encoded_bytes(self, size, random=None, unicode=False):
-    ##    "return random encoded string of given size"
-    ##    data = getrandstr(random or rng,
-    ##                      self.charmap if unicode else self.bytemap, size)
-    ##    return self.repair_unused(data)
-
-    #===================================================================
-    # transposed encoding/decoding
-    #===================================================================
-    def encode_transposed_bytes(self, source, offsets):
-        """encode byte string, first transposing source using offset list"""
-        if not isinstance(source, bytes):
-            raise TypeError("source must be bytes, not %s" % (type(source),))
-        tmp = join_byte_elems(source[off] for off in offsets)
-        return self.encode_bytes(tmp)
-
-    def decode_transposed_bytes(self, source, offsets):
-        """decode byte string, then reverse transposition described by offset list"""
-        # NOTE: if transposition does not use all bytes of source,
-        # the original can't be recovered... and join_byte_elems() will throw
-        # an error because 1+ values in <buf> will be None.
-        tmp = self.decode_bytes(source)
-        buf = [None] * len(offsets)
-        for off, char in zip(offsets, tmp):
-            buf[off] = char
-        return join_byte_elems(buf)
-
-    #===================================================================
-    # integer decoding helpers - mainly used by des_crypt family
-    #===================================================================
-    def _decode_int(self, source, bits):
-        """decode base64 string -> integer
-
-        :arg source: base64 string to decode.
-        :arg bits: number of bits in resulting integer.
-
-        :raises ValueError:
-            * if the string contains invalid base64 characters.
-            * if the string is not long enough - it must be at least
-              ``int(ceil(bits/6))`` in length.
-
-        :returns:
-            a integer in the range ``0 <= n < 2**bits``
-        """
-        if not isinstance(source, bytes):
-            raise TypeError("source must be bytes, not %s" % (type(source),))
-        big = self.big
-        pad = -bits % 6
-        chars = (bits+pad)/6
-        if len(source) != chars:
-            raise ValueError("source must be %d chars" % (chars,))
-        decode = self._decode64
-        out = 0
-        try:
-            for c in source if big else reversed(source):
-                out = (out<<6) + decode(c)
-        except KeyError:
-            raise ValueError("invalid character in string: %r" % (c,))
-        if pad:
-            # strip padding bits
-            if big:
-                out >>= pad
-            else:
-                out &= (1<<bits)-1
-        return out
-
-    #---------------------------------------------------------------
-    # optimized versions for common integer sizes
-    #---------------------------------------------------------------
-
-    def decode_int6(self, source):
-        """decode single character -> 6 bit integer"""
-        if not isinstance(source, bytes):
-            raise TypeError("source must be bytes, not %s" % (type(source),))
-        if len(source) != 1:
-            raise ValueError("source must be exactly 1 byte")
-        if PY3:
-            # convert to 8bit int before doing lookup
-            source = source[0]
-        try:
-            return self._decode64(source)
-        except KeyError:
-            raise ValueError("invalid character")
-
-    def decode_int12(self, source):
-        """decodes 2 char string -> 12-bit integer"""
-        if not isinstance(source, bytes):
-            raise TypeError("source must be bytes, not %s" % (type(source),))
-        if len(source) != 2:
-            raise ValueError("source must be exactly 2 bytes")
-        decode = self._decode64
-        try:
-            if self.big:
-                return decode(source[1]) + (decode(source[0])<<6)
-            else:
-                return decode(source[0]) + (decode(source[1])<<6)
-        except KeyError:
-            raise ValueError("invalid character")
-
-    def decode_int24(self, source):
-        """decodes 4 char string -> 24-bit integer"""
-        if not isinstance(source, bytes):
-            raise TypeError("source must be bytes, not %s" % (type(source),))
-        if len(source) != 4:
-            raise ValueError("source must be exactly 4 bytes")
-        decode = self._decode64
-        try:
-            if self.big:
-                return decode(source[3]) + (decode(source[2])<<6)+ \
-                       (decode(source[1])<<12) + (decode(source[0])<<18)
-            else:
-                return decode(source[0]) + (decode(source[1])<<6)+ \
-                       (decode(source[2])<<12) + (decode(source[3])<<18)
-        except KeyError:
-            raise ValueError("invalid character")
-
-    def decode_int64(self, source):
-        """decode 11 char base64 string -> 64-bit integer
-
-        this format is used primarily by des-crypt & variants to encode
-        the DES output value used as a checksum.
-        """
-        return self._decode_int(source, 64)
-
-    #===================================================================
-    # integer encoding helpers - mainly used by des_crypt family
-    #===================================================================
-    def _encode_int(self, value, bits):
-        """encode integer into base64 format
-
-        :arg value: non-negative integer to encode
-        :arg bits: number of bits to encode
-
-        :returns:
-            a string of length ``int(ceil(bits/6.0))``.
-        """
-        assert value >= 0, "caller did not sanitize input"
-        pad = -bits % 6
-        bits += pad
-        if self.big:
-            itr = irange(bits-6, -6, -6)
-            # shift to add lsb padding.
-            value <<= pad
-        else:
-            itr = irange(0, bits, 6)
-            # padding is msb, so no change needed.
-        return join_byte_elems(imap(self._encode64,
-                                ((value>>off) & 0x3f for off in itr)))
-
-    #---------------------------------------------------------------
-    # optimized versions for common integer sizes
-    #---------------------------------------------------------------
-
-    def encode_int6(self, value):
-        """encodes 6-bit integer -> single hash64 character"""
-        if value < 0 or value > 63:
-            raise ValueError("value out of range")
-        if PY3:
-            return self.bytemap[value:value+1]
-        else:
-            return self._encode64(value)
-
-    def encode_int12(self, value):
-        """encodes 12-bit integer -> 2 char string"""
-        if value < 0 or value > 0xFFF:
-            raise ValueError("value out of range")
-        raw = [value & 0x3f, (value>>6) & 0x3f]
-        if self.big:
-            raw = reversed(raw)
-        return join_byte_elems(imap(self._encode64, raw))
-
-    def encode_int24(self, value):
-        """encodes 24-bit integer -> 4 char string"""
-        if value < 0 or value > 0xFFFFFF:
-            raise ValueError("value out of range")
-        raw = [value & 0x3f, (value>>6) & 0x3f,
-               (value>>12) & 0x3f, (value>>18) & 0x3f]
-        if self.big:
-            raw = reversed(raw)
-        return join_byte_elems(imap(self._encode64, raw))
-
-    def encode_int64(self, value):
-        """encode 64-bit integer -> 11 char hash64 string
-
-        this format is used primarily by des-crypt & variants to encode
-        the DES output value used as a checksum.
-        """
-        if value < 0 or value > 0xffffffffffffffff:
-            raise ValueError("value out of range")
-        return self._encode_int(value, 64)
-
-    #===================================================================
-    # eof
-    #===================================================================
-
-class LazyBase64Engine(Base64Engine):
-    """Base64Engine which delays initialization until it's accessed"""
-    _lazy_opts = None
-
-    def __init__(self, *args, **kwds):
-        self._lazy_opts = (args, kwds)
-
-    def _lazy_init(self):
-        args, kwds = self._lazy_opts
-        super(LazyBase64Engine, self).__init__(*args, **kwds)
-        del self._lazy_opts
-        self.__class__ = Base64Engine
-
-    def __getattribute__(self, attr):
-        if not attr.startswith("_"):
-            self._lazy_init()
-        return object.__getattribute__(self, attr)
-
-# common charmaps
-BASE64_CHARS = u("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/")
-AB64_CHARS =   u("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789./")
-HASH64_CHARS = u("./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz")
-BCRYPT_CHARS = u("./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789")
-
-# common variants
-h64 = LazyBase64Engine(HASH64_CHARS)
-h64big = LazyBase64Engine(HASH64_CHARS, big=True)
-bcrypt64 = LazyBase64Engine(BCRYPT_CHARS, big=True)
-
-#=============================================================================
-# adapted-base64 encoding
-#=============================================================================
-_A64_ALTCHARS = b("./")
-_A64_STRIP = b("=\n")
-_A64_PAD1 = b("=")
-_A64_PAD2 = b("==")
-
-def ab64_encode(data):
-    """encode using variant of base64
-
-    the output of this function is identical to stdlib's b64_encode,
-    except that it uses ``.`` instead of ``+``,
-    and omits trailing padding ``=`` and whitepsace.
-
-    it is primarily used by Passlib's custom pbkdf2 hashes.
+    helper to convert value to boolean.
+    recognizes strings such as "true", "false"
     """
-    return b64encode(data, _A64_ALTCHARS).strip(_A64_STRIP)
-
-def ab64_decode(data):
-    """decode using variant of base64
-
-    the input of this function is identical to stdlib's b64_decode,
-    except that it uses ``.`` instead of ``+``,
-    and should not include trailing padding ``=`` or whitespace.
-
-    it is primarily used by Passlib's custom pbkdf2 hashes.
-    """
-    off = len(data) & 3
-    if off == 0:
-        return b64decode(data, _A64_ALTCHARS)
-    elif off == 2:
-        return b64decode(data + _A64_PAD2, _A64_ALTCHARS)
-    elif off == 3:
-        return b64decode(data + _A64_PAD1, _A64_ALTCHARS)
-    else: # off == 1
-        raise ValueError("invalid base64 input")
+    assert none in [True, False, None]
+    if isinstance(value, unicode_or_bytes_types):
+        clean = value.lower().strip()
+        if clean in _true_set:
+            return True
+        if clean in _false_set:
+            return False
+        if clean in _none_set:
+            return none
+        raise ValueError("unrecognized %s value: %r" % (param, value))
+    elif isinstance(value, bool):
+        return value
+    elif value is None:
+        return none
+    else:
+        return bool(value)
 
 #=============================================================================
 # host OS helpers
@@ -1425,10 +842,20 @@ def test_crypt(secret, hash):
 # pick best timer function to expose as "tick" - lifted from timeit module.
 if sys.platform == "win32":
     # On Windows, the best timer is time.clock()
-    from time import clock as tick
+    from time import clock as timer
 else:
     # On most other platforms the best timer is time.time()
-    from time import time as tick
+    from time import time as timer
+
+# legacy alias, will be removed in passlib 2.0
+tick = timer
+
+def parse_version(source):
+    """helper to parse version string"""
+    m = re.search(r"(\d+(?:\.\d+)+)", source)
+    if m:
+        return tuple(int(elem) for elem in m.group(1).split("."))
+    return None
 
 #=============================================================================
 # randomness
@@ -1454,12 +881,17 @@ except NotImplementedError: # pragma: no cover
 def genseed(value=None):
     """generate prng seed value from system resources"""
     from hashlib import sha512
-    text = u("%s %s %s %s %.15f %.15f %s") % (
+    if hasattr(value, "getstate") and hasattr(value, "getrandbits"):
+        # caller passed in RNG as seed value
+        try:
+            value = value.getstate()
+        except NotImplementedError:
+            # this method throws error for e.g. SystemRandom instances,
+            # so fall back to extracting 4k of state
+            value = value.getrandbits(1 << 15)
+    text = u("%s %s %s %.15f %.15f %s") % (
         # if caller specified a seed value, mix it in
         value,
-
-        # if caller's seed value was an RNG, mix in bits from its state
-        value.getrandbits(1<<15) if hasattr(value, "getrandbits") else None,
 
         # add current process id
         # NOTE: not available in some environments, e.g. GAE
@@ -1483,6 +915,7 @@ if has_urandom:
     rng = random.SystemRandom()
 else: # pragma: no cover -- runtime detection
     # NOTE: to reseed use ``rng.seed(genseed(rng))``
+    # XXX: could reseed on every call
     rng = random.Random(genseed())
 
 #------------------------------------------------------------------------
@@ -1540,6 +973,8 @@ def getrandstr(rng, charset, count):
 
 _52charset = '2346789ABCDEFGHJKMNPQRTUVWXYZabcdefghjkmnpqrstuvwxyz'
 
+@deprecated_function(deprecated="1.7", removed="2.0",
+                     replacement="passlib.pwd.genword() / passlib.pwd.genphrase()")
 def generate_password(size=10, charset=_52charset):
     """generate random password using given length & charset
 
@@ -1568,8 +1003,7 @@ def generate_password(size=10, charset=_52charset):
 _handler_attrs = (
         "name",
         "setting_kwds", "context_kwds",
-        "genconfig", "genhash",
-        "verify", "encrypt", "identify",
+        "verify", "hash", "identify",
         )
 
 def is_crypt_handler(obj):
