@@ -4799,10 +4799,10 @@ def doLicense(users, operation):
     if user.find(u'@') == -1:
       user = u'%s@%s' % (user, GC_Values[GC_DOMAIN])
     if operation == u'delete':
-      print u'Removing license %s from user %s' % (_skuIdToDisplayName(skuId), user)
+      print u'Removing license %s from user %s' % (_formatSKUIdDisplayName(skuId), user)
       callGAPI(lic.licenseAssignments(), operation, soft_errors=True, productId=productId, skuId=skuId, userId=user)
     elif operation == u'insert':
-      print u'Adding license %s to user %s' % (_skuIdToDisplayName(skuId), user)
+      print u'Adding license %s to user %s' % (_formatSKUIdDisplayName(skuId), user)
       callGAPI(lic.licenseAssignments(), operation, soft_errors=True, productId=productId, skuId=skuId, body={u'userId': user})
     elif operation == u'patch':
       try:
@@ -4813,7 +4813,7 @@ def doLicense(users, operation):
         print u'ERROR: You need to specify the user\'s old SKU as the last argument'
         sys.exit(2)
       _, old_sku = getProductAndSKU(old_sku)
-      print u'Changing user %s from license %s to %s' % (user, _skuIdToDisplayName(old_sku), _skuIdToDisplayName(skuId))
+      print u'Changing user %s from license %s to %s' % (user, _formatSKUIdDisplayName(old_sku), _formatSKUIdDisplayName(skuId))
       callGAPI(lic.licenseAssignments(), operation, soft_errors=True, productId=productId, skuId=old_sku, userId=user, body={u'skuId': skuId})
 
 def doPop(users):
@@ -8776,10 +8776,16 @@ def doGetUserInfo(user_email=None):
       lbatch.add(lic.licenseAssignments().get(userId=user_email, productId=productId, skuId=skuId, fields=u'skuId'))
     lbatch.execute()
     for user_license in user_licenses:
-      print '  %s' % _skuIdToDisplayName(user_license)
+      print '  %s' % (_formatSKUIdDisplayName(user_license))
 
 def _skuIdToDisplayName(skuId):
   return SKUS[skuId][u'displayName'] if skuId in SKUS else skuId
+
+def _formatSKUIdDisplayName(skuId):
+  skuIdDisplay = _skuIdToDisplayName(skuId)
+  if skuId == skuIdDisplay:
+    return skuId
+  return u'{0} ({1})'.format(skuId, skuIdDisplay)
 
 def doGetGroupInfo(group_name=None):
   cd = buildGAPIObject(u'directory')
