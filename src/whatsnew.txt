@@ -1,3 +1,10 @@
+GAM 4.31
+ - Update course owners in Classroom
+ - support for time deltas like -4h for some commands (danielx)
+ - Set location, ssh keys and posix accounts details on user create/update
+ - support batch move of Chrome OS devices for better performance
+ - Huge amount of cleanup / performance improvements by Ross
+
 GAM 4.30
  - Google Vault Matters and Hold API support
  - Ross - "gam update group" now uses batch for better performance
