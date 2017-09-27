@@ -138,11 +138,18 @@ ADDRESS_FIELDS_ARGUMENT_MAP = {
   u'country': u'countryCode', u'countrycode': u'countryCode',
   }
 
+SERVICE_NAME_TO_ID_MAP = {
+  u'Drive and Docs': u'55656082996',
+  u'Google+': u'553547912911',
+  u'Calendar': u'435070579839'
+  }
+
 SERVICE_NAME_CHOICES_MAP = {
   u'drive': u'Drive and Docs',
   u'drive and docs': u'Drive and Docs',
   u'googledrive': u'Drive and Docs',
   u'gdrive': u'Drive and Docs',
+  u'calendar': u'Calendar',
   }
 
 PRINTJOB_ASCENDINGORDER_MAP = {

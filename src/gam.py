@@ -1958,8 +1958,6 @@ def user_from_userid(userid):
     buildUserIdToNameMap()
   return GM_Globals[GM_MAP_USER_ID_TO_NAME].get(userid, u'')
 
-SERVICE_NAME_TO_ID_MAP = {u'Drive and Docs': u'55656082996', u'Google+': u'553547912911',}
-
 def appID2app(dt, appID):
   for serviceName, serviceID in SERVICE_NAME_TO_ID_MAP.items():
     if appID == serviceID:
