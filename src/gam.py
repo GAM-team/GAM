@@ -4797,10 +4797,10 @@ def doLicense(users, operation):
     if user.find(u'@') == -1:
       user = u'%s@%s' % (user, GC_Values[GC_DOMAIN])
     if operation == u'delete':
-      print u'Removing license %s from user %s' % (_skuIdToDisplayName(skuId), user)
+      print u'Removing license %s from user %s' % (_formatSKUIdDisplayName(skuId), user)
       callGAPI(lic.licenseAssignments(), operation, soft_errors=True, productId=productId, skuId=skuId, userId=user)
     elif operation == u'insert':
-      print u'Adding license %s to user %s' % (_skuIdToDisplayName(skuId), user)
+      print u'Adding license %s to user %s' % (_formatSKUIdDisplayName(skuId), user)
       callGAPI(lic.licenseAssignments(), operation, soft_errors=True, productId=productId, skuId=skuId, body={u'userId': user})
     elif operation == u'patch':
       try:
@@ -4811,7 +4811,7 @@ def doLicense(users, operation):
         print u'ERROR: You need to specify the user\'s old SKU as the last argument'
         sys.exit(2)
       _, old_sku = getProductAndSKU(old_sku)
-      print u'Changing user %s from license %s to %s' % (user, _skuIdToDisplayName(old_sku), _skuIdToDisplayName(skuId))
+      print u'Changing user %s from license %s to %s' % (user, _formatSKUIdDisplayName(old_sku), _formatSKUIdDisplayName(skuId))
       callGAPI(lic.licenseAssignments(), operation, soft_errors=True, productId=productId, skuId=old_sku, userId=user, body={u'skuId': skuId})
 
 def doPop(users):
@@ -8774,10 +8774,16 @@ def doGetUserInfo(user_email=None):
       lbatch.add(lic.licenseAssignments().get(userId=user_email, productId=productId, skuId=skuId, fields=u'skuId'))
     lbatch.execute()
     for user_license in user_licenses:
-      print '  %s' % _skuIdToDisplayName(user_license)
+      print '  %s' % (_formatSKUIdDisplayName(user_license))
 
 def _skuIdToDisplayName(skuId):
   return SKUS[skuId][u'displayName'] if skuId in SKUS else skuId
+
+def _formatSKUIdDisplayName(skuId):
+  skuIdDisplay = _skuIdToDisplayName(skuId)
+  if skuId == skuIdDisplay:
+    return skuId
+  return u'{0} ({1})'.format(skuId, skuIdDisplay)
 
 def doGetGroupInfo(group_name=None):
   cd = buildGAPIObject(u'directory')
@@ -12254,38 +12260,8 @@ def ProcessGAMCommand(args):
     GM_Globals[GM_SYSEXITRC] = e.code
   return GM_Globals[GM_SYSEXITRC]
 
-#
-# From: https://github.com/pyinstaller/pyinstaller/wiki/Recipe-Multiprocessing
-#
 if sys.platform.startswith('win'):
   from multiprocessing import freeze_support
-  try:
-    import multiprocessing.popen_spawn_win32 as forking
-  except ImportError:
-    import multiprocessing.forking as forking
-
-  # First define a modified version of Popen.
-  class _Popen(forking.Popen):
-    def __init__(self, *args, **kw):
-      if hasattr(sys, 'frozen'):
-        # We have to set original _MEIPASS2 value from sys._MEIPASS
-        # to get --onefile mode working.
-        os.putenv('_MEIPASS2', sys._MEIPASS)
-      try:
-        super(_Popen, self).__init__(*args, **kw)
-      finally:
-        if hasattr(sys, 'frozen'):
-          # On some platforms (e.g. AIX) 'os.unsetenv()' is not
-          # available. In those cases we cannot delete the variable
-          # but only set it to the empty string. The bootloader
-          # can handle this case.
-          if hasattr(os, 'unsetenv'):
-            os.unsetenv('_MEIPASS2')
-          else:
-            os.putenv('_MEIPASS2', '')
-
-  # Second override 'Popen' class with our modified version.
-  forking.Popen = _Popen
 
   def win32_unicode_argv():
     from ctypes import POINTER, byref, cdll, c_int, windll
@@ -12312,9 +12288,8 @@ if __name__ == "__main__":
   resetDefaultEncodingToUTF8()
   if sys.platform.startswith('win'):
     freeze_support()
+    win32_unicode_argv() # cleanup sys.argv on Windows
   if sys.version_info[:2] != (2, 7):
     print u'ERROR: GAM requires Python 2.7. You are running %s.%s.%s. Please upgrade your Python version or use one of the binary GAM downloads.' % sys.version_info[:3]
     sys.exit(5)
-  if sys.platform.startswith('win'):
-    win32_unicode_argv() # cleanup sys.argv on Windows
   sys.exit(ProcessGAMCommand(sys.argv))

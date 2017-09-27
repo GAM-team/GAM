@@ -553,7 +553,7 @@ Item attributes
 	(customerid <String>)|
 	(email|primaryemail|username <EmailAddress>)|
 	(otheremail clear|(work|home|other|<String> <String>))|
-	(externalid clear|(account|customer|network|organization|<String> <String>))|
+	(externalid clear|(account|customer|login_id|network|organization|<String> <String>))|
 	(firstname|givenname <String>)|
 	(gal|includeinglobaladdresslist <Boolean>)|
 	(im clear|(type work|home|other|(custom <String>) protocol aim|gtalk|icq|jabber|msn|net_meeting|qq|skype|yahoo|(custom_protocol <String>) <String> [notprimary|primary]))|
@@ -568,7 +568,7 @@ Item attributes
 	(phone clear|([type work|home|other|work_fax|home_fax|other_fax|main|company_main|assistant|mobile|work_mobile|pager|work_pager|car|radio|callback|isdn|telex|tty_tdd|grand_central|(custom <String>)]
 		[value <String>] notprimary|primary))|
 	(posix clear|(username <String> uid <Integer> gid <Integer> [system|systemid <String>] [home|homedirectory <String>] [shell <String>] [gecos <String>] [primary <Boolean>] endposix))|
-	(relation clear|(spouse|child|mother|father|parent|brother|sister|friend|relative|domestic_partner|manager|assistant|referred_by|partner|<String> <String>))|
+	(relation clear|(spouse|child|mother|father|parent|brother|sister|friend|relative|domestic_partner|manager|dotted-line_managerassistant|admin_assistant|exec_assistant|referred_by|partner|<String> <String>))|
 	(sshkeys clear|(key <String> [expires <Integer>] endssh))|
 	(suspended <Boolean>)|
 	(website clear|(home_page|blog|profile|work|home|other|ftp|reservations|app_install_page|<String> <URL> [notprimary|primary]))|
