@@ -1998,7 +1998,7 @@ def convertUserIDtoEmail(uid):
   except (GAPI_userNotFound, GAPI_badRequest, GAPI_forbidden):
     return u'uid:{0}'.format(uid)
 
-def doCreateDataTranfer():
+def doCreateDataTransfer():
   dt = buildGAPIObject(u'datatransfer')
   body = {}
   old_owner = sys.argv[3]
@@ -2012,10 +2012,10 @@ def doCreateDataTranfer():
     parameters[sys.argv[i].upper()] = sys.argv[i+1].upper().split(u',')
     i += 2
   body[u'applicationDataTransfers'] = [{u'applicationId': serviceID}]
-  for key in parameters:
-    if u'applicationDataTransferParams' not in body[u'applicationDataTransfers'][0]:
+  for key, value in parameters.items():
+    if u'applicationTransferParams' not in body[u'applicationDataTransfers'][0]:
       body[u'applicationDataTransfers'][0][u'applicationTransferParams'] = []
-    body[u'applicationDataTransfers'][0][u'applicationTransferParams'].append({u'key': key, u'value': parameters[key]})
+    body[u'applicationDataTransfers'][0][u'applicationTransferParams'].append({u'key': key, u'value': value})
   result = callGAPI(dt.transfers(), u'insert', body=body, fields=u'id')[u'id']
   print u'Submitted request id %s to transfer %s from %s to %s' % (result, serviceName, old_owner, new_owner)
 
@@ -11600,7 +11600,7 @@ def ProcessGAMCommand(args):
       elif argument in [u'course', u'class']:
         doCreateCourse()
       elif argument in [u'transfer', u'datatransfer']:
-        doCreateDataTranfer()
+        doCreateDataTransfer()
       elif argument == u'domain':
         doCreateDomain()
       elif argument in [u'domainalias', u'aliasdomain']:
