@@ -18,7 +18,7 @@ Primitives
 <String> ::= a string of characters, surrounded by " if it contains spaces
 <TrueValues> ::= true|on|yes|enabled|1
 <FalseValues>= false|off|no|disabled|0
-<DataTransferService> ::= googledrive|gdrive|drive|"drive and docs"
+<DataTransferService> ::= googledrive|gdrive|drive|"drive and docs"|calendar
 <ProductID> ::=
 	Google-Apps|
 	Google-Chrome-Device-Management|
