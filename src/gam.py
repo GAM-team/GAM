@@ -4033,17 +4033,15 @@ def printDriveFileList(users):
       sys.exit(2)
   if fieldsList or labelsList:
     fields = u'nextPageToken,items('
-    if fieldsList:
-      fields += u','.join(set(fieldsList))
-      if labelsList:
-        fields += u','
+    fields += u','.join(set(fieldsList + [u'owners']))
     if labelsList:
+      fields += u','
       fields += u'labels({0})'.format(u','.join(set(labelsList)))
     fields += u')'
   elif not allfields:
     for field in [u'name', u'alternatelink']:
       addFieldToCSVfile(field, {field: [DRIVEFILE_FIELDS_CHOICES_MAP[field]]}, fieldsList, fieldsTitles, titles)
-    fields = u'nextPageToken,items({0})'.format(u','.join(set(fieldsList)))
+    fields = u'nextPageToken,items({0})'.format(u','.join(set(fieldsList + [u'owners'])))
   else:
     fields = u'*'
   if orderByList:
@@ -4062,9 +4060,9 @@ def printDriveFileList(users):
                          page_message=page_message, soft_errors=True,
                          q=query, orderBy=orderBy, fields=fields, maxResults=GC_Values[GC_DRIVE_MAX_RESULTS])
     for f_file in feed:
-      a_file = {u'Owner': user}
+      a_file = {u'Owner': f_file[u'owners'][0][u'emailAddress']}
       for attrib in f_file:
-        if attrib in [u'kind', u'etag']:
+        if not allfields and not attrib in fieldsList:
           continue
         if not isinstance(f_file[attrib], dict):
           if isinstance(f_file[attrib], list):
