@@ -11,6 +11,7 @@ If an item contains spaces, it should be surrounded by ".
 | separates alternative items
 
 Primitives
+<Character> ::= a single character
 <Digit> ::= 0|1|2|3|4|5|6|7|8|9
 <Number> ::= <Digit>+
 <Hex> ::= <Digit>|a|b|c|d|e|f|A|B|C|D|E|F
@@ -725,10 +726,10 @@ The listlimit <Number> argument limits the number of repetitions to <Number>; if
 The start <Date> and end <Date> arguments filter the time ranges.
 
 gam print crosactivity [todrive] [query <QueryCrOS>] [limittoou <OrgUnitItem>]
-	[recentusers] [timeranges] [both] [listlimit <Number>] [start <Date>] [end <Date>] [delimiter <String>]
+	[recentusers] [timeranges] [both] [listlimit <Number>] [start <Date>] [end <Date>] [delimiter <Character>]
 
 The basic column headers are: deviceId,annotatedAssetId,annotatedLocation,serialNumber,orgUnitPath.
-If recentusers is specified, all of the recent users email addresses, separated by the delimiter <String>,
+If recentusers is specified, all of the recent users email addresses, separated by the delimiter <Character>,
 with header recentUsers.email, are output with the basic headers.
 If timeranges is specified, for each time range entry, activeTimeRanges.date and activeTimeRanges.duration and activeTimeRanges.minutes,
 are output on a separate row with the basic headers.
@@ -741,7 +742,7 @@ gam update mobile <MobileItem> action <MobileAction>
 gam delete mobile <MobileItem>
 gam info mobile <MobileItem>
 gam print mobile [todrive] [query <QueryMobile>] [basic|full] [orderby <MobileOrderByFieldName> [ascending|descending]]
-	fields <MobileFieldNameList>] [delimiter <String>] [appslimit <Number>] [listlimit <Number>]
+	fields <MobileFieldNameList>] [delimiter <Character>] [appslimit <Number>] [listlimit <Number>]
 
 gam create group <EmailAddress> <GroupAttributes>*
 gam update group <GroupItem> [admincreated <Boolean>] [email <EmailAddress>] <GroupAttributes>*
@@ -754,7 +755,7 @@ gam delete group <GroupItem>
 gam info group <GroupItem> [nousers] [noaliases] [groups]
 
 gam print groups [todrive] ([domain <DomainName>] [member <UserItem>])
-	[maxresults <Number>] [allfields|([settings] <GroupFieldName>* [fields <GroupFieldNameList>])] [delimiter <String>]
+	[maxresults <Number>] [allfields|([settings] <GroupFieldName>* [fields <GroupFieldNameList>])] [delimiter <Character>]
 	[members|memberscount] [managers|managerscount] [owners|ownerscount]
 
 gam print group-members|groups-members [todrive] ([domain <DomainName>] [member <UserItem>])|[group <GroupItem>]
@@ -805,7 +806,7 @@ gam create course id|alias <CourseAlias> <CourseAttributes>*
 gam update course <CourseID> <CourseAttributes>+
 gam delete course <CourseID>
 gam info course <CourseID>
-gam print courses [todrive] [teacher <UserItem>] [student <UserItem>] [alias|aliases] [delimiter <String>]
+gam print courses [todrive] [teacher <UserItem>] [student <UserItem>] [alias|aliases] [delimiter <Character>]
 	[show all|students|teachers] [countsonly] [fields <CourseFieldNameList>] [skipfields <CourseFieldNameList>]
 
 gam course <CourseID> add alias <CourseAlias>
