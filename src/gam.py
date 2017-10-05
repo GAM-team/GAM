@@ -7936,20 +7936,28 @@ def doUpdateGroup():
     return emailAddress
 
   def _getRoleAndUsers():
+    acceptPending = False
     checkNotSuspended = False
     role = ROLE_MEMBER
     i = 5
     if sys.argv[i].lower() in GROUP_ROLES_MAP:
       role = GROUP_ROLES_MAP[sys.argv[i].lower()]
       i += 1
-    if sys.argv[i] == u'notsuspended':
-      checkNotSuspended = True
-      i += 1
+    while i < len(sys.argv):
+      myarg = sys.argv[i].lower().replace(u'_', u'')
+      if myarg == u'notsuspended':
+        checkNotSuspended = True
+        i += 1
+      elif myarg == u'acceptpending':
+        acceptPending = True
+        i += 1
+      else:
+        break
     if sys.argv[i].lower() in usergroup_types:
       users_email = getUsersToModify(entity_type=sys.argv[i], entity=sys.argv[i+1], checkNotSuspended=checkNotSuspended, groupUserMembersOnly=False)
     else:
       users_email = [sys.argv[i],]
-    return (role, users_email)
+    return (role, acceptPending, users_email)
 
   cd = buildGAPIObject(u'directory')
   group = sys.argv[3]
@@ -7961,7 +7969,7 @@ def doUpdateGroup():
     elif group.find(u'@') == -1:
       group = u'%s@%s' % (group, GC_Values[GC_DOMAIN])
     if myarg == u'add':
-      role, users_email = _getRoleAndUsers()
+      role, acceptPending, users_email = _getRoleAndUsers()
       if not checkGroupExists(cd, group):
         return
       if len(users_email) > 1:
@@ -7977,14 +7985,18 @@ def doUpdateGroup():
                      groupKey=group, body=body)
             print u' Group: {0}, {1} Added as {2}'.format(group, users_email[0], role)
             break
-          except GAPI_duplicate, e:
+          except GAPI_duplicate as e:
             # check if user is a full member, not pending
             try:
-              callGAPI(cd.members(), u'get', memberKey=users_email[0], groupKey=group, throw_reasons=[GAPI_MEMBER_NOT_FOUND])
-              raise e # if get succeeds, user is a full member and we throw duplicate error
+              callGAPI(cd.members(), u'get', throw_reasons=[GAPI_MEMBER_NOT_FOUND], memberKey=users_email[0], groupKey=group, fields=u'')
+              print u' Group: {0}, {1} Add as {2} Failed: {3}'.format(group, users_email[0], role, str(e))
+              break
             except GAPI_memberNotFound:
               # insert fails on duplicate and get fails on not found, user is pending
-              print u' Group: {0}, {1} member is pending, deleting and re-adding to solve...'.format(group, users_email[0])
+              if not acceptPending:
+                print u' Group: {0}, {1} Add as {2} Failed: {3}'.format(group, users_email[0], role, u'Membership is pending, waiting for acceptance')
+                break
+              print u' Group: {0}, {1} Add as {2} Failed: {3}'.format(group, users_email[0], role, u'Membership is pending, will delete and add to accept')
               callGAPI(cd.members(), u'delete', memberKey=users_email[0], groupKey=group)
               continue # 2nd insert should succeed now that pending is clear
           except (GAPI_memberNotFound, GAPI_resourceNotFound, GAPI_invalidMember, GAPI_cyclicMembershipsNotAllowed) as e:
@@ -7993,7 +8005,7 @@ def doUpdateGroup():
     elif myarg == u'sync':
       syncMembersSet = set()
       syncMembersMap = {}
-      role, users_email = _getRoleAndUsers()
+      role, acceptPending, users_email = _getRoleAndUsers()
       for user_email in users_email:
         if user_email == u'*' or user_email == GC_Values[GC_CUSTOMER_ID]:
           syncMembersSet.add(GC_Values[GC_CUSTOMER_ID])
@@ -8012,12 +8024,16 @@ def doUpdateGroup():
         to_add = [syncMembersMap.get(emailAddress, emailAddress) for emailAddress in syncMembersSet-currentMembersSet]
         to_remove = [currentMembersMap.get(emailAddress, emailAddress) for emailAddress in currentMembersSet-syncMembersSet]
         sys.stderr.write(u'Group: {0}, Will add {1} and remove {2} {3}s.\n'.format(group, len(to_add), len(to_remove), role))
-        for user in to_add:
-          items.append([u'gam', u'update', u'group', group, u'add', role, user])
+        if not acceptPending:
+          for user in to_add:
+            items.append([u'gam', u'update', u'group', group, u'add', role, user])
+        else:
+          for user in to_add:
+            items.append([u'gam', u'update', u'group', group, u'add', role, u'acceptpending', user])
         for user in to_remove:
           items.append([u'gam', u'update', u'group', group, u'remove', user])
     elif myarg in [u'delete', u'remove']:
-      role, users_email = _getRoleAndUsers()
+      role, _, users_email = _getRoleAndUsers()
       if not checkGroupExists(cd, group):
         return
       if len(users_email) > 1:
@@ -8033,7 +8049,7 @@ def doUpdateGroup():
         except (GAPI_memberNotFound, GAPI_invalidMember) as e:
           print u' Group: {0}, {1} Remove Failed: {2}'.format(group, users_email[0], str(e))
     elif myarg == u'update':
-      role, users_email = _getRoleAndUsers()
+      role, _, users_email = _getRoleAndUsers()
       group = checkGroupExists(cd, group)
       if group:
         if len(users_email) > 1:
