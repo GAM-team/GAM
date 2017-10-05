@@ -7962,13 +7962,26 @@ def doUpdateGroup():
           items.append(['gam', 'update', 'group', group, 'add', role, user_email])
       else:
         body = {u'role': role, u'email': users_email[0]}
-        try:
-          callGAPI(cd.members(), u'insert',
-                   throw_reasons=[GAPI_DUPLICATE, GAPI_MEMBER_NOT_FOUND, GAPI_RESOURCE_NOT_FOUND, GAPI_INVALID_MEMBER, GAPI_CYCLIC_MEMBERSHIPS_NOT_ALLOWED],
-                   groupKey=group, body=body)
-          print u' Group: {0}, {1} Added as {2}'.format(group, users_email[0], role)
-        except (GAPI_duplicate, GAPI_memberNotFound, GAPI_resourceNotFound, GAPI_invalidMember, GAPI_cyclicMembershipsNotAllowed) as e:
-          print u' Group: {0}, {1} Add as {2} Failed: {3}'.format(group, users_email[0], role, str(e))
+        for i in range(2):
+          try:
+            callGAPI(cd.members(), u'insert',
+                     throw_reasons=[GAPI_DUPLICATE, GAPI_MEMBER_NOT_FOUND, GAPI_RESOURCE_NOT_FOUND, GAPI_INVALID_MEMBER, GAPI_CYCLIC_MEMBERSHIPS_NOT_ALLOWED],
+                     groupKey=group, body=body)
+            print u' Group: {0}, {1} Added as {2}'.format(group, users_email[0], role)
+            break
+          except GAPI_duplicate, e:
+            # check if user is a full member, not pending
+            try:
+              callGAPI(cd.members(), u'get', memberKey=users_email[0], groupKey=group, throw_reasons=[GAPI_MEMBER_NOT_FOUND])
+              raise e # if get succeeds, user is a full member and we throw duplicate error
+            except GAPI_memberNotFound:
+              # insert fails on duplicate and get fails on not found, user is pending
+              print u' Group: {0}, {1} member is pending, deleting and re-adding to solve...'.format(group, users_email[0])
+              callGAPI(cd.members(), u'delete', memberKey=users_email[0], groupKey=group)
+              continue # 2nd insert should succeed now that pending is clear
+          except (GAPI_memberNotFound, GAPI_resourceNotFound, GAPI_invalidMember, GAPI_cyclicMembershipsNotAllowed) as e:
+            print u' Group: {0}, {1} Add as {2} Failed: {3}'.format(group, users_email[0], role, str(e))
+            break
     elif myarg == u'sync':
       syncMembersSet = set()
       syncMembersMap = {}
