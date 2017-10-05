@@ -2379,6 +2379,7 @@ def doPrintCourses():
   csvRows = []
   teacherId = None
   studentId = None
+  courseStates = None
   showAliases = False
   countsOnly = False
   delimiter = u' '
@@ -2391,6 +2392,9 @@ def doPrintCourses():
       i += 2
     elif myarg == u'student':
       studentId = sys.argv[i+1]
+      i += 2
+    elif myarg in [u'state', u'states', u'status']:
+      courseStates = sys.argv[i+1].upper().split(u',')
       i += 2
     elif myarg == u'todrive':
       todrive = True
@@ -2424,7 +2428,7 @@ def doPrintCourses():
   fields = u'nextPageToken,courses({0})'.format(u','.join(set(fieldsList))) if fieldsList else None
   sys.stderr.write(u'Retrieving courses for organization (may take some time for large accounts)...\n')
   page_message = u'Got %%num_items%% courses...\n'
-  all_courses = callGAPIpages(croom.courses(), u'list', u'courses', page_message=page_message, teacherId=teacherId, studentId=studentId, fields=fields)
+  all_courses = callGAPIpages(croom.courses(), u'list', u'courses', page_message=page_message, teacherId=teacherId, studentId=studentId, courseStates=courseStates, fields=fields)
   for course in all_courses:
     for field in skipFieldsList:
       course.pop(field, None)
@@ -2474,6 +2478,7 @@ def doPrintCourseParticipants():
   courses = []
   teacherId = None
   studentId = None
+  courseStates = None
   showMembers = u'all'
   i = 3
   while i < len(sys.argv):
@@ -2490,6 +2495,9 @@ def doPrintCourseParticipants():
     elif myarg == u'student':
       studentId = sys.argv[i+1]
       i += 2
+    elif myarg in [u'state', u'states', u'status']:
+      courseStates = sys.argv[i+1].upper().split(u',')
+      i += 2
     elif myarg == u'todrive':
       todrive = True
       i += 1
@@ -2505,7 +2513,7 @@ def doPrintCourseParticipants():
   if len(courses) == 0:
     sys.stderr.write(u'Retrieving courses for organization (may take some time for large accounts)...\n')
     page_message = u'Got %%num_items%% courses...\n'
-    all_courses = callGAPIpages(croom.courses(), u'list', u'courses', page_message=page_message, teacherId=teacherId, studentId=studentId)
+    all_courses = callGAPIpages(croom.courses(), u'list', u'courses', page_message=page_message, teacherId=teacherId, studentId=studentId, courseStates=courseStates)
     for course in all_courses:
       courses.append(course[u'id'])
   else:
