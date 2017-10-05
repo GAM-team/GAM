@@ -83,6 +83,7 @@ Named items
 <CourseAlias> ::= <String>
 <CourseID> ::= <Number>|d:<CourseAlias>
 <CourseParticipantType> ::= teacher|teachers|student|students
+<CourseState> ::= active|archived|provisioned|declined
 <CrOSID> ::= <String>
 <CrOSItem> ::= <CrOSID>|(query:<QueryCrOS>)(query:orgunitpath:<OrgUnitPath>)
 <CustomerID> ::= <String>
@@ -409,6 +410,7 @@ Items, separated by spaces, with spaces or commas in the items themselves: "'it 
 <CalendarList> ::= "<CalendarItem>(,<CalendarItem>)*"
 <CollaboratorItemList> ::= "<CollaboratorItem>(,<CollaboratorItem>)*"
 <CourseAliasList> ::= "<CourseAlias>(,<CourseAlias>)*"
+<CourseStateList> ::= "<CourseState>(,<CourseState>)*"
 <CourseIDList> ::= "<CourseID>(,<CourseID>)*"
 <CrOSFieldNameList> ::= "<CrOSFieldName>(,<CrOSFieldName>)*"
 <CrOSList> ::= "<CrOSID>(,<CrOSID>)*"
@@ -471,7 +473,7 @@ Item attributes
 	(name <String>)|
 	(room <String>)|
 	(section <string>)|
-	(state|status active|archived|provisioned|declined)|
+	(state|status <CourseState>)|
 	(owner|ownerid|teacher <UserItem>)
 
 <CrOSAttributes> ::=
@@ -806,7 +808,7 @@ gam create course id|alias <CourseAlias> <CourseAttributes>*
 gam update course <CourseID> <CourseAttributes>+
 gam delete course <CourseID>
 gam info course <CourseID>
-gam print courses [todrive] [teacher <UserItem>] [student <UserItem>] [alias|aliases] [delimiter <Character>]
+gam print courses [todrive] [teacher <UserItem>] [student <UserItem>] [states <CourseStateList>] [alias|aliases] [delimiter <Character>]
 	[show all|students|teachers] [countsonly] [fields <CourseFieldNameList>] [skipfields <CourseFieldNameList>]
 
 gam course <CourseID> add alias <CourseAlias>
@@ -814,7 +816,7 @@ gam course <CourseID> delete alias <CourseAlias>
 gam course <CourseID> add teachers|students <UserItem>
 gam course <CourseID> delete|remove teachers|students <UserItem>
 gam course <CourseID> sync teachers|students <UserTypeEntity>
-gam print course-participants [todrive] (course|class <CourseID>)*|([teacher <UserItem>] [student <UserItem>]) [show all|students|teachers]
+gam print course-participants [todrive] (course|class <CourseID>)*|([teacher <UserItem>] [student <UserItem>] [states <CourseStateList>]) [show all|students|teachers]
 
 gam create guardian|guardianinvite|inviteguardian <EmailAddress> <StudentItem>
 gam delete guardian|guardians <GuardianItem> <StudentItem> [invitation]
