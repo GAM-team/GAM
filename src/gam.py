@@ -630,9 +630,13 @@ class GAPI_badRequest(Exception):
   pass
 class GAPI_conditionNotMet(Exception):
   pass
+class GAPI_cyclicMembershipsNotAllowed(Exception):
+  pass
 class GAPI_domainCannotUseApis(Exception):
   pass
 class GAPI_domainNotFound(Exception):
+  pass
+class GAPI_duplicate(Exception):
   pass
 class GAPI_failedPrecondition(Exception):
   pass
@@ -643,6 +647,8 @@ class GAPI_groupNotFound(Exception):
 class GAPI_invalid(Exception):
   pass
 class GAPI_invalidArgument(Exception):
+  pass
+class GAPI_invalidMember(Exception):
   pass
 class GAPI_memberNotFound(Exception):
   pass
@@ -662,13 +668,16 @@ GAPI_REASON_EXCEPTION_MAP = {
   GAPI_AUTH_ERROR: GAPI_authError,
   GAPI_BAD_REQUEST: GAPI_badRequest,
   GAPI_CONDITION_NOT_MET: GAPI_conditionNotMet,
+  GAPI_CYCLIC_MEMBERSHIPS_NOT_ALLOWED: GAPI_cyclicMembershipsNotAllowed,
   GAPI_DOMAIN_CANNOT_USE_APIS: GAPI_domainCannotUseApis,
   GAPI_DOMAIN_NOT_FOUND: GAPI_domainNotFound,
+  GAPI_DUPLICATE: GAPI_duplicate,
   GAPI_FAILED_PRECONDITION: GAPI_failedPrecondition,
   GAPI_FORBIDDEN: GAPI_forbidden,
   GAPI_GROUP_NOT_FOUND: GAPI_groupNotFound,
   GAPI_INVALID: GAPI_invalid,
   GAPI_INVALID_ARGUMENT: GAPI_invalidArgument,
+  GAPI_INVALID_MEMBER: GAPI_invalidMember,
   GAPI_MEMBER_NOT_FOUND: GAPI_memberNotFound,
   GAPI_NOT_FOUND: GAPI_notFound,
   GAPI_NOT_IMPLEMENTED: GAPI_notImplemented,
@@ -7953,8 +7962,13 @@ def doUpdateGroup():
           items.append(['gam', 'update', 'group', group, 'add', role, user_email])
       else:
         body = {u'role': role, u'email': users_email[0]}
-        print u' Adding %s %s to %s' % (role, users_email[0], group)
-        callGAPI(cd.members(), u'insert', groupKey=group, body=body)
+        try:
+          callGAPI(cd.members(), u'insert',
+                   throw_reasons=[GAPI_DUPLICATE, GAPI_MEMBER_NOT_FOUND, GAPI_RESOURCE_NOT_FOUND, GAPI_INVALID_MEMBER, GAPI_CYCLIC_MEMBERSHIPS_NOT_ALLOWED],
+                   groupKey=group, body=body)
+          print u' Group: {0}, {1} Added as {2}'.format(group, users_email[0], role)
+        except (GAPI_duplicate, GAPI_memberNotFound, GAPI_resourceNotFound, GAPI_invalidMember, GAPI_cyclicMembershipsNotAllowed) as e:
+          print u' Group: {0}, {1} Add as {2} Failed: {3}'.format(group, users_email[0], role, str(e))
     elif myarg == u'sync':
       syncMembersSet = set()
       syncMembersMap = {}
@@ -7990,8 +8004,13 @@ def doUpdateGroup():
         for user_email in users_email:
           items.append(['gam', 'update', 'group', group, 'remove', user_email])
       else:
-        print u' Removing %s from %s' % (users_email[0], group)
-        callGAPI(cd.members(), u'delete', groupKey=group, memberKey=users_email[0])
+        try:
+          callGAPI(cd.members(), u'delete',
+                   throw_reasons=[GAPI_MEMBER_NOT_FOUND, GAPI_INVALID_MEMBER],
+                   groupKey=group, memberKey=users_email[0])
+          print u' Group: {0}, {1} Removed'.format(group, users_email[0])
+        except (GAPI_memberNotFound, GAPI_invalidMember) as e:
+          print u' Group: {0}, {1} Remove Failed: {2}'.format(group, users_email[0], str(e))
     elif myarg == u'update':
       role, users_email = _getRoleAndUsers()
       group = checkGroupExists(cd, group)
@@ -8002,8 +8021,13 @@ def doUpdateGroup():
             items.append(['gam', 'update', 'group', group, 'update', role, user_email])
         else:
           body = {u'role': role}
-          print u' Updating %s in %s to %s' % (users_email[0], group, role)
-          callGAPI(cd.members(), u'update', groupKey=group, memberKey=users_email[0], body=body)
+          try:
+            callGAPI(cd.members(), u'update',
+                     throw_reasons=[GAPI_MEMBER_NOT_FOUND, GAPI_INVALID_MEMBER],
+                     groupKey=group, memberKey=users_email[0], body=body)
+            print u' Group: {0}, {1} Updated to {2}'.format(group, users_email[0], role)
+          except (GAPI_memberNotFound, GAPI_invalidMember) as e:
+            print u' Group: {0}, {1} Update to {2} Failed: {3}'.format(group, users_email[0], role, str(e))
     else: # clear
       suspended = False
       fields = [u'email', u'id']
@@ -8044,8 +8068,13 @@ def doUpdateGroup():
           for user_email in users_email:
             items.append(['gam', 'update', 'group', group, 'remove', user_email])
         else:
-          print u' Removing %s from %s' % (users_email[0], group)
-          callGAPI(cd.members(), u'delete', groupKey=group, memberKey=users_email[0])
+          try:
+            callGAPI(cd.members(), u'delete',
+                     throw_reasons=[GAPI_MEMBER_NOT_FOUND, GAPI_INVALID_MEMBER],
+                     groupKey=group, memberKey=users_email[0])
+            print u' Group: {0}, {1} Removed'.format(group, users_email[0])
+          except (GAPI_memberNotFound, GAPI_invalidMember) as e:
+            print u' Group: {0}, {1} Remove Failed: {2}'.format(group, users_email[0], str(e))
       except (GAPI_groupNotFound, GAPI_domainNotFound, GAPI_invalid, GAPI_forbidden):
         entityUnknownWarning(u'Group', group, 0, 0)
     if items:
