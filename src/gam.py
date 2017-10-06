@@ -1547,6 +1547,16 @@ def doDelCourse():
   callGAPI(croom.courses(), u'delete', id=courseId)
   print u'Deleted Course %s' % courseId
 
+def _getValidCourseStates(croom):
+  return [state for state in croom._rootDesc[u'schemas'][u'Course'][u'properties'][u'courseState'][u'enum'] if state != u'COURSE_STATE_UNSPECIFIED']
+
+def _getValidatedState(state, validStates):
+  state = state.upper()
+  if state not in validStates:
+    print u'ERROR: course state must be one of: %s. Got %s' % (u', '.join(validStates).lower(), state.lower())
+    sys.exit(2)
+  return state
+
 def getCourseAttribute(myarg, value, body, croom, function):
   if myarg == u'name':
     body[u'name'] = value
@@ -1561,17 +1571,16 @@ def getCourseAttribute(myarg, value, body, croom, function):
   elif myarg in [u'owner', u'ownerid', u'teacher']:
     body[u'ownerId'] = normalizeEmailAddressOrUID(value)
   elif myarg in [u'state', u'status']:
-    validStates = croom._rootDesc[u'schemas'][u'Course'][u'properties'][u'courseState'][u'enum'][:]
-    if u'COURSE_STATE_UNSPECIFIED' in validStates:
-      validStates.remove(u'COURSE_STATE_UNSPECIFIED')
-    value = value.upper()
-    if value not in validStates:
-      print u'ERROR: course state must be one of: %s. Got %s' % (u', '.join(validStates).lower(), value.lower())
-      sys.exit(2)
-    body[u'courseState'] = value
+    validStates = _getValidCourseStates(croom)
+    body[u'courseState'] = _getValidatedState(value, validStates)
   else:
     print u'ERROR: %s is not a valid argument to "gam %s course"' % (myarg, function)
     sys.exit(2)
+
+def _getCourseStates(croom, value, courseStates):
+  validStates = _getValidCourseStates(croom)
+  for state in value.replace(u',', u' ').split():
+    courseStates.append(_getValidatedState(state, validStates))
 
 def doUpdateCourse():
   croom = buildGAPIObject(u'classroom')
@@ -2379,7 +2388,7 @@ def doPrintCourses():
   csvRows = []
   teacherId = None
   studentId = None
-  courseStates = None
+  courseStates = []
   showAliases = False
   countsOnly = False
   delimiter = u' '
@@ -2394,7 +2403,7 @@ def doPrintCourses():
       studentId = sys.argv[i+1]
       i += 2
     elif myarg in [u'state', u'states', u'status']:
-      courseStates = sys.argv[i+1].upper().split(u',')
+      _getCourseStates(croom, sys.argv[i+1], courseStates)
       i += 2
     elif myarg == u'todrive':
       todrive = True
@@ -2478,7 +2487,7 @@ def doPrintCourseParticipants():
   courses = []
   teacherId = None
   studentId = None
-  courseStates = None
+  courseStates = []
   showMembers = u'all'
   i = 3
   while i < len(sys.argv):
@@ -2496,7 +2505,7 @@ def doPrintCourseParticipants():
       studentId = sys.argv[i+1]
       i += 2
     elif myarg in [u'state', u'states', u'status']:
-      courseStates = sys.argv[i+1].upper().split(u',')
+      _getCourseStates(croom, sys.argv[i+1], courseStates)
       i += 2
     elif myarg == u'todrive':
       todrive = True
@@ -2513,13 +2522,12 @@ def doPrintCourseParticipants():
   if len(courses) == 0:
     sys.stderr.write(u'Retrieving courses for organization (may take some time for large accounts)...\n')
     page_message = u'Got %%num_items%% courses...\n'
-    all_courses = callGAPIpages(croom.courses(), u'list', u'courses', page_message=page_message, teacherId=teacherId, studentId=studentId, courseStates=courseStates)
-    for course in all_courses:
-      courses.append(course[u'id'])
+    all_courses = callGAPIpages(croom.courses(), u'list', u'courses', page_message=page_message,
+                                teacherId=teacherId, studentId=studentId, courseStates=courseStates, fields=u'nextPageToken,courses(id,name)')
   else:
     all_courses = []
     for course in courses:
-      all_courses.append(callGAPI(croom.courses(), u'get', id=course))
+      all_courses.append(callGAPI(croom.courses(), u'get', id=course, fields=u'id,name'))
   i = 0
   count = len(all_courses)
   for course in all_courses:
@@ -2535,6 +2543,7 @@ def doPrintCourseParticipants():
       students = callGAPIpages(croom.courses().students(), u'list', u'students', page_message=page_message, courseId=courseId)
       for student in students:
         addRowTitlesToCSVfile(flatten_json(student, flattened={u'courseId': courseId, u'courseName': course[u'name'], u'userRole': u'STUDENT'}), csvRows, titles)
+  sortCSVTitles([u'courseId', u'courseName', u'userRole', u'userId'], titles)
   writeCSVfile(csvRows, titles, u'Course Participants', todrive)
 
 def doPrintPrintJobs():
