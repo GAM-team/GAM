@@ -9747,7 +9747,7 @@ def writeCSVfile(csvRows, titles, list_type, todrive):
     rows = len(csvRows)
     cell_count = rows * columns
     mimeType = u'application/vnd.google-apps.spreadsheet'
-    if cell_count > 500000 or columns > 256:
+    if cell_count > 2000000 or columns > 256:
       print u'{0}{1}'.format(WARNING_PREFIX, MESSAGE_RESULTS_TOO_LARGE_FOR_GOOGLE_SPREADSHEET)
       mimeType = u'text/csv'
     _, drive = buildDrive3GAPIObject(_getValueFromOAuth(u'email'))
