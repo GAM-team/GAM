@@ -7986,11 +7986,12 @@ def doUpdateGroup():
                      groupKey=group, body=body)
             print u' Group: {0}, {1} Added as {2}'.format(group, users_email[0], role)
             break
-          except GAPI_duplicate, e:
+          except GAPI_duplicate as e:
             # check if user is a full member, not pending
             try:
-              callGAPI(cd.members(), u'get', memberKey=users_email[0], groupKey=group, throw_reasons=[GAPI_MEMBER_NOT_FOUND])
-              raise e # if get succeeds, user is a full member and we throw duplicate error
+              result = callGAPI(cd.members(), u'get', throw_reasons=[GAPI_MEMBER_NOT_FOUND], memberKey=users_email[0], groupKey=group, fields=u'role')
+              print u' Group: {0}, {1} Add as {2} Failed: Duplicate, already a {3}'.format(group, users_email[0], role, result[u'role'])
+              break # if get succeeds, user is a full member and we throw duplicate error
             except GAPI_memberNotFound:
               # insert fails on duplicate and get fails on not found, user is pending
               print u' Group: {0}, {1} member is pending, deleting and re-adding to solve...'.format(group, users_email[0])
