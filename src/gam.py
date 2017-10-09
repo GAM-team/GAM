@@ -995,14 +995,14 @@ def buildGAPIServiceObject(api, act_as, use_scopes=None):
   GM_Globals[GM_CURRENT_API_SCOPES] = use_scopes or API_SCOPE_MAPPING[api]
   credentials = getSvcAcctCredentials(GM_Globals[GM_CURRENT_API_SCOPES], act_as)
   request = google_auth_httplib2.Request(http)
-  credentials.refresh(request)
   try:
+    credentials.refresh(request)
     service._http = google_auth_httplib2.AuthorizedHttp(credentials, http=http)
   except httplib2.ServerNotFoundError as e:
     systemErrorExit(4, e)
-  except oauth2client.client.AccessTokenRefreshError as e:
-    stderrErrorMsg(u'User {0}: {1}'.format(GM_Globals[GM_CURRENT_API_USER], str(e)))
-    return handleOAuthTokenError(str(e), True)
+  except google.auth.exceptions.RefreshError as e:
+    stderrErrorMsg(u'User {0}: {1}'.format(GM_Globals[GM_CURRENT_API_USER], str(e[0])))
+    return handleOAuthTokenError(str(e[0]), True)
   return service
 
 def buildActivityGAPIObject(user):
