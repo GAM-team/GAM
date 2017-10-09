@@ -538,7 +538,7 @@ def getSvcAcctCredentials(scopes, act_as):
     credentials = credentials.with_scopes(scopes)
     credentials = credentials.with_subject(act_as)
     # TODO: figure out how to set user agent
-    GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID] = credentials.project_id
+    GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID] = GM_Globals[GM_OAUTH2SERVICE_JSON_DATA]['client_id']
     return credentials
   except (ValueError, KeyError):
     printLine(MESSAGE_INSTRUCTIONS_OAUTH2SERVICE_JSON)
@@ -1064,11 +1064,11 @@ def doCheckServiceAccount(users):
         result = u'PASS'
       except httplib2.ServerNotFoundError as e:
         systemErrorExit(4, e)
-      except oauth2client.client.HttpAccessTokenRefreshError:
+      except google.auth.exceptions.RefreshError:
         result = u'FAIL'
         all_scopes_pass = False
       print u' Scope: {0:60} {1}'.format(scope, result)
-    service_account = credentials.project_id
+    service_account = GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID] 
     if all_scopes_pass:
       print u'\nAll scopes passed!\nService account %s is fully authorized.' % service_account
     else:
