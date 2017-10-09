@@ -47,7 +47,8 @@ import googleapiclient.errors
 import googleapiclient.http
 import httplib2
 import oauth2client.client
-import oauth2client.service_account
+import google.oauth2.service_account
+import google_auth_httplib2
 import oauth2client.file
 import oauth2client.tools
 
@@ -533,11 +534,11 @@ def getSvcAcctCredentials(scopes, act_as):
         printLine(MESSAGE_INSTRUCTIONS_OAUTH2SERVICE_JSON)
         systemErrorExit(6, None)
       GM_Globals[GM_OAUTH2SERVICE_JSON_DATA] = json.loads(json_string)
-    credentials = oauth2client.service_account.ServiceAccountCredentials.from_json_keyfile_dict(GM_Globals[GM_OAUTH2SERVICE_JSON_DATA], scopes)
-    credentials = credentials.create_delegated(act_as)
-    credentials.user_agent = GAM_INFO
-    serialization_data = credentials.serialization_data
-    GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID] = serialization_data[u'client_id']
+    credentials = google.oauth2.service_account.Credentials.from_service_account_info(GM_Globals[GM_OAUTH2SERVICE_JSON_DATA])
+    credentials = credentials.with_scopes(scopes)
+    credentials = credentials.with_subject(act_as)
+    # TODO: figure out how to set user agent
+    GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID] = credentials.project_id
     return credentials
   except (ValueError, KeyError):
     printLine(MESSAGE_INSTRUCTIONS_OAUTH2SERVICE_JSON)
@@ -993,8 +994,10 @@ def buildGAPIServiceObject(api, act_as, use_scopes=None):
   GM_Globals[GM_CURRENT_API_USER] = act_as
   GM_Globals[GM_CURRENT_API_SCOPES] = use_scopes or API_SCOPE_MAPPING[api]
   credentials = getSvcAcctCredentials(GM_Globals[GM_CURRENT_API_SCOPES], act_as)
+  request = google_auth_httplib2.Request(http)
+  credentials.refresh(request)
   try:
-    service._http = credentials.authorize(http)
+    service._http = google_auth_httplib2.AuthorizedHttp(credentials, http=http)
   except httplib2.ServerNotFoundError as e:
     systemErrorExit(4, e)
   except oauth2client.client.AccessTokenRefreshError as e:
@@ -1055,8 +1058,9 @@ def doCheckServiceAccount(users):
     print u'User: %s' % (user)
     for scope in all_scopes:
       try:
-        credentials = getSvcAcctCredentials(scope, user)
-        credentials.refresh(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL]))
+        credentials = getSvcAcctCredentials([scope], user)
+        request = google_auth_httplib2.Request(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL]))
+        credentials.refresh(request)
         result = u'PASS'
       except httplib2.ServerNotFoundError as e:
         systemErrorExit(4, e)
@@ -1064,7 +1068,7 @@ def doCheckServiceAccount(users):
         result = u'FAIL'
         all_scopes_pass = False
       print u' Scope: {0:60} {1}'.format(scope, result)
-    service_account = credentials.serialization_data[u'client_id']
+    service_account = credentials.project_id
     if all_scopes_pass:
       print u'\nAll scopes passed!\nService account %s is fully authorized.' % service_account
     else:
