@@ -12305,7 +12305,15 @@ def ProcessGAMCommand(args):
     elif command in [u'delegate', u'delegates']:
       addDelegates(users, 4)
     elif command == u'watch':
-      watchGmail(users)
+      if len(sys.argv) > 4:
+        watchWhat = sys.argv[4].lower()
+      else:
+        watchWhat = u'gmail'
+      if watchWhat == u'gmail':
+        watchGmail(users)
+      else:
+        print u'ERROR: %s is not a valid argument for "gam <users> watch"' % watchWhat
+        sys.exit(2)
     else:
       print u'ERROR: %s is not a valid argument for "gam"' % command
       sys.exit(2)
