@@ -9755,7 +9755,15 @@ def writeCSVfile(csvRows, titles, list_type, todrive):
     if cell_count > 2000000 or columns > 256:
       print u'{0}{1}'.format(WARNING_PREFIX, MESSAGE_RESULTS_TOO_LARGE_FOR_GOOGLE_SPREADSHEET)
       mimeType = u'text/csv'
-    _, drive = buildDrive3GAPIObject(_getValueFromOAuth(u'email'))
+    admin_email = _getValueFromOAuth(u'email')
+    _, drive = buildDrive3GAPIObject(admin_email)
+    if not drive:
+      print u'''\nGAM is not authorized to create Drive files. Please run:
+
+gam user %s check serviceaccount
+
+and follow recommend steps to authorize GAM for Drive access.''' % (admin_email)
+      sys.exit(5)
     body = {u'description': u' '.join(sys.argv),
             u'name': u'%s - %s' % (GC_Values[GC_DOMAIN], list_type),
             u'mimeType': mimeType}
