@@ -1068,7 +1068,7 @@ def doCheckServiceAccount(users):
         result = u'FAIL'
         all_scopes_pass = False
       print u' Scope: {0:60} {1}'.format(scope, result)
-    service_account = GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID] 
+    service_account = GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID]
     if all_scopes_pass:
       print u'\nAll scopes passed!\nService account %s is fully authorized.' % service_account
     else:
@@ -1272,33 +1272,32 @@ def showReport():
 def watchGmail(users):
   cs_data = readFile(GC_Values[GC_CLIENT_SECRETS_JSON], mode=u'rb', continueOnError=True, displayError=True, encoding=None)
   cs_json = json.loads(cs_data)
-  project = cs_json[u'installed'][u'project_id']
-  topic = None
+  project = u'projects/{0}'.format(cs_json[u'installed'][u'project_id'])
+  gamTopics = project+u'/topics/gam-pubsub-gmail-'
+  gamSubscriptions = project+u'/subscriptions/gam-pubsub-gmail-'
   pubsub = buildGAPIObject(u'pubsub')
-  topics = callGAPIpages(pubsub.projects().topics(), u'list', items=u'topics', project=u'projects/%s' % project)
+  topics = callGAPIpages(pubsub.projects().topics(), u'list', items=u'topics', project=project)
   for atopic in topics:
-    if atopic[u'name'].startswith(u'projects/%s/topics/gam-pubsub-gmail-' % project):
+    if atopic[u'name'].startswith(gamTopics):
       topic = atopic[u'name']
       break
-  if not topic:
-    topic = u'projects/%s/topics/gam-pubsub-gmail-%s' % (project, uuid.uuid4())
+  else:
+    topic = gamTopics+uuid.uuid4()
     callGAPI(pubsub.projects().topics(), u'create', name=topic, body={})
     body = {u'policy': {u'bindings': [{u'members': [u'serviceAccount:gmail-api-push@system.gserviceaccount.com'], u'role': u'roles/pubsub.editor'}]}}
     callGAPI(pubsub.projects().topics(), u'setIamPolicy', resource=topic, body=body)
-  subscription = None
   subscriptions = callGAPIpages(pubsub.projects().topics().subscriptions(), u'list', items=u'subscriptions', topic=topic)
   for asubscription in subscriptions:
-    if asubscription.startswith(u'projects/%s/subscriptions/gam-pubsub-gmail-' % project):
+    if asubscription.startswith(gamSubscriptions):
       subscription = asubscription
       break
-  if not subscription:
-    subscription = u'projects/%s/subscriptions/gam-pubsub-gmail-%s' % (project, uuid.uuid4())
-    sub_body = {u'topic': topic}
-    sub_result = callGAPI(pubsub.projects().subscriptions(), u'create', name=subscription, body=sub_body)
+  else:
+    subscription = gamSubscriptions+uuid.uuid4()
+    callGAPI(pubsub.projects().subscriptions(), u'create', name=subscription, body={u'topic': topic})
   gmails = {}
   for user in users:
     gmails[user] = {u'g': buildGmailGAPIObject(user)[1]}
-    watch_result = callGAPI(gmails[user][u'g'].users(), u'watch', userId=u'me', body={u'topicName': topic})
+    callGAPI(gmails[user][u'g'].users(), u'watch', userId=u'me', body={u'topicName': topic})
     gmails[user]['seen_historyId'] = callGAPI(gmails[user][u'g'].users(), u'getProfile', userId=u'me', fields=u'historyId')[u'historyId']
   print 'Watching for events...'
   while True:
@@ -1311,8 +1310,8 @@ def watchGmail(users):
           decoded_message = json.loads(base64.b64decode(message[u'message'][u'data']))
           if u'historyId' in decoded_message:
             update_history.append(decoded_message[u'emailAddress'])
-      if u'ackId' in message:
-        ackIds.append(message[u'ackId'])
+        if u'ackId' in message:
+          ackIds.append(message[u'ackId'])
       if ackIds:
         callGAPI(pubsub.projects().subscriptions(), u'acknowledge', subscription=subscription, body={u'ackIds': ackIds})
       if update_history:
