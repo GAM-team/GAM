@@ -824,7 +824,6 @@ gam show guardian|guardians [invitedguardian <EmailAddress>] [student <StudentIt
 gam print guardian|guardians [todrive] [invitedguardian <EmailAddress>] [student <StudentItem>] [invitations [states <GuardianStateList>]] [<UserTypeEntity>]
 gam cancel guardianinvitation|guardianinvitations <GuardianInvitationID> <StudentItem>
 
-gam printer register
 gam update printer <PrinterID> <PrinterAttributes>+
 gam delete printer <PrinterID>
 gam info printer <PrinterID> [everything]
