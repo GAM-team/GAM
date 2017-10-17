@@ -11957,6 +11957,9 @@ def ProcessGAMCommand(args):
         sys.exit(2)
       sys.exit(0)
     elif command == u'printer':
+      if sys.argv[2].lower() == u'register':
+        doPrinterRegister()
+        sys.exit(0)
       argument = sys.argv[3].lower()
       if argument == u'showacl':
         doPrinterShowACL()
@@ -11964,8 +11967,6 @@ def ProcessGAMCommand(args):
         doPrinterAddACL()
       elif argument in [u'del', u'delete', u'remove']:
         doPrinterDelACL()
-      elif argument == u'register':
-        doPrinterRegister()
       else:
         print u'ERROR: %s is not a valid argument for "gam printer..."' % argument
         sys.exit(2)
