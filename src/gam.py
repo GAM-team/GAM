@@ -46,9 +46,9 @@ import googleapiclient.discovery
 import googleapiclient.errors
 import googleapiclient.http
 import httplib2
-import oauth2client.client
 import google.oauth2.service_account
 import google_auth_httplib2
+import oauth2client.client
 import oauth2client.file
 import oauth2client.tools
 
@@ -987,12 +987,12 @@ def getTimeOrDeltaFromNow(time_string):
   else:
     return (datetime.datetime.utcnow() + deltaTime).isoformat() + u'Z'
 
-def buildGAPIServiceObject(api, act_as, use_scopes=None):
+def buildGAPIServiceObject(api, act_as, showAuthError=True):
   http = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL],
                        cache=GM_Globals[GM_CACHE_DIR])
   service = getService(api, http)
   GM_Globals[GM_CURRENT_API_USER] = act_as
-  GM_Globals[GM_CURRENT_API_SCOPES] = use_scopes or API_SCOPE_MAPPING[api]
+  GM_Globals[GM_CURRENT_API_SCOPES] = API_SCOPE_MAPPING[api]
   credentials = getSvcAcctCredentials(GM_Globals[GM_CURRENT_API_SCOPES], act_as)
   request = google_auth_httplib2.Request(http)
   try:
@@ -1001,7 +1001,8 @@ def buildGAPIServiceObject(api, act_as, use_scopes=None):
   except httplib2.ServerNotFoundError as e:
     systemErrorExit(4, e)
   except google.auth.exceptions.RefreshError as e:
-    stderrErrorMsg(u'User {0}: {1}'.format(GM_Globals[GM_CURRENT_API_USER], str(e[0])))
+    if showAuthError:
+      stderrErrorMsg(u'User {0}: {1}'.format(GM_Globals[GM_CURRENT_API_USER], str(e[0])))
     return handleOAuthTokenError(str(e[0]), True)
   return service
 
@@ -1022,11 +1023,10 @@ def buildCalendarGAPIObject(calname):
   return (calendarId, buildGAPIServiceObject(u'calendar', calendarId))
 
 def buildCalendarDataGAPIObject(calname):
-  calendarId, cal = buildCalendarGAPIObject(calname)
-  try:
-    # Force service account token request. If we fail fall back to using admin for authentication
-    cal._http.request.credentials.refresh(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL]))
-  except oauth2client.client.HttpAccessTokenRefreshError:
+  calendarId = normalizeCalendarId(calname)
+  # Force service account token request. If we fail fall back to using admin for authentication
+  cal = buildGAPIServiceObject(u'calendar', calendarId, False)
+  if cal is None:
     _, cal = buildCalendarGAPIObject(_getValueFromOAuth(u'email'))
   return (calendarId, cal)
 
@@ -3191,7 +3191,7 @@ def doPrinterRegister():
   cp = buildGAPIObject(u'cloudprint')
   form_fields = {u'name': u'GAM',
                  u'proxy': u'GAM',
-                 u'uuid': cp._http.request.credentials.id_token[u'sub'],
+                 u'uuid': _getValueFromOAuth(u'sub'),
                  u'manufacturer': gam_author,
                  u'model': u'cp1',
                  u'gcp_version': u'2.0',
@@ -3325,12 +3325,7 @@ def doCalendarAddACL(calendarId=None, act_as=None, role=None, scope=None, entity
   if not act_as:
     calendarId = normalizeCalendarId(calendarId)
     act_as = calendarId
-  _, cal = buildCalendarGAPIObject(act_as)
-  try:
-    # Force service account token request. If we fail fall back to using admin for authentication
-    cal._http.request.credentials.refresh(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL]))
-  except oauth2client.client.HttpAccessTokenRefreshError:
-    _, cal = buildCalendarGAPIObject(_getValueFromOAuth(u'email'))
+  _, cal = buildCalendarDataGAPIObject(act_as)
   body = {u'scope': {}}
   if role is not None:
     body[u'role'] = role
