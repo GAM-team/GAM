@@ -156,6 +156,16 @@ def getCharSet(i):
     return (i, GC_Values.get(GC_CHARSET, GM_Globals[GM_SYS_ENCODING]))
   return (i+2, sys.argv[i+1])
 
+def removeCourseIdScope(courseId):
+  if courseId.startswith(u'd:'):
+    return courseId[2:]
+  return courseId
+
+def addCourseIdScope(courseId):
+  if not courseId.isdigit() and courseId[:2] != u'd:':
+    return u'd:{0}'.format(courseId)
+  return courseId
+
 def getString(i, item, emptyOK=False, optional=False):
   if i < len(sys.argv):
     argstr = sys.argv[i]
@@ -1463,36 +1473,26 @@ def deleteDelegate(users):
 
 def doAddCourseParticipant():
   croom = buildGAPIObject(u'classroom')
-  courseId = sys.argv[2]
-  body_attribute = u'userId'
-  if len(courseId) < 3 or (not courseId.isdigit() and courseId[:2] != u'd:'):
-    courseId = u'd:%s' % courseId
+  courseId = addCourseIdScope(sys.argv[2])
   participant_type = sys.argv[4].lower()
   new_id = sys.argv[5]
   if participant_type in [u'teacher', u'teachers']:
     service = croom.courses().teachers()
+    body = {u'userId': new_id}
   elif participant_type in [u'students', u'student']:
     service = croom.courses().students()
+    body = {u'userId': new_id}
   elif participant_type in [u'alias']:
     service = croom.courses().aliases()
-    body_attribute = u'alias'
-    if new_id[1] != u':':
-      new_id = u'd:%s' % new_id
+    body = {u'alias': addCourseIdScope(new_id)}
   else:
     print u'ERROR: %s is not a valid argument to "gam course ID add"' % participant_type
     sys.exit(2)
-  body = {body_attribute: new_id}
   callGAPI(service, u'create', courseId=courseId, body=body)
-  if courseId[:2] == u'd:':
-    courseId = courseId[2:]
-  if new_id[:2] == u'd:':
-    new_id = new_id[2:]
-  print u'Added %s as a %s of course %s' % (new_id, participant_type, courseId)
+  print u'Added %s as a %s of course %s' % (removeCourseIdScope(new_id), participant_type, removeCourseIdScope(courseId))
 
 def doSyncCourseParticipants():
-  courseId = sys.argv[2]
-  if not courseId.isdigit() and courseId[:2] != u'd:':
-    courseId = u'd:%s' % courseId
+  courseId = addCourseIdScope(sys.argv[2])
   participant_type = sys.argv[4].lower()
   diff_entity_type = sys.argv[5]
   diff_entity = sys.argv[6]
@@ -1515,38 +1515,27 @@ def doSyncCourseParticipants():
 
 def doDelCourseParticipant():
   croom = buildGAPIObject(u'classroom')
-  courseId = sys.argv[2]
-  if not courseId.isdigit() and courseId[:2] != u'd:':
-    courseId = u'd:%s' % courseId
+  courseId = addCourseIdScope(sys.argv[2])
   participant_type = sys.argv[4].lower()
   remove_id = sys.argv[5]
-  kwargs = {}
   if participant_type in [u'teacher', u'teachers']:
     service = croom.courses().teachers()
-    kwargs[u'userId'] = remove_id
+    kwargs = {u'userId': remove_id}
   elif participant_type in [u'student', u'students']:
     service = croom.courses().students()
-    kwargs[u'userId'] = remove_id
+    kwargs = {u'userId': remove_id}
   elif participant_type in [u'alias']:
     service = croom.courses().aliases()
-    if remove_id[1] != u':':
-      remove_id = u'd:%s' % remove_id
-    kwargs[u'alias'] = remove_id
+    kwargs = {u'alias': addCourseIdScope(remove_id)}
   else:
     print u'ERROR: %s is not a valid argument to "gam course ID delete"' % participant_type
     sys.exit(2)
   callGAPI(service, u'delete', courseId=courseId, **kwargs)
-  if courseId[:2] == u'd:':
-    courseId = courseId[2:]
-  if remove_id[:2] == u'd:':
-    remove_id = remove_id[2:]
-  print u'Removed %s as a %s of course %s' % (remove_id, participant_type, courseId)
+  print u'Removed %s as a %s of course %s' % (removeCourseIdScope(remove_id), participant_type, removeCourseIdScope(courseId))
 
 def doDelCourse():
   croom = buildGAPIObject(u'classroom')
-  courseId = sys.argv[3]
-  if not courseId.isdigit() and courseId[:2] != u'd:':
-    courseId = u'd:%s' % courseId
+  courseId = addCourseIdScope(sys.argv[3])
   callGAPI(croom.courses(), u'delete', id=courseId)
   print u'Deleted Course %s' % courseId
 
@@ -1587,9 +1576,7 @@ def _getCourseStates(croom, value, courseStates):
 
 def doUpdateCourse():
   croom = buildGAPIObject(u'classroom')
-  courseId = sys.argv[3]
-  if not courseId.isdigit() and courseId[:2] != u'd:':
-    courseId = u'd:%s' % courseId
+  courseId = addCourseIdScope(sys.argv[3])
   body = {}
   i = 4
   while i < len(sys.argv):
@@ -2292,9 +2279,7 @@ def doCreateCourse():
 
 def doGetCourseInfo():
   croom = buildGAPIObject(u'classroom')
-  courseId = sys.argv[3]
-  if not courseId.isdigit() and courseId[:2] != u'd:':
-    courseId = u'd:%s' % courseId
+  courseId = addCourseIdScope(sys.argv[3])
   info = callGAPI(croom.courses(), u'get', id=courseId)
   info['ownerEmail'] = convertUIDtoEmailAddress(u'uid:%s' % info['ownerId'])
   print_json(None, info)
@@ -11115,8 +11100,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
   elif entity_type in [u'courseparticipants', u'teachers', u'students']:
     croom = buildGAPIObject(u'classroom')
     users = []
-    if not entity.isdigit() and entity[:2] != u'd:':
-      entity = u'd:%s' % entity
+    entity = addCourseIdScope(entity)
     if entity_type in [u'courseparticipants', u'teachers']:
       page_message = u'Got %%total_items%% teachers...'
       teachers = callGAPIpages(croom.courses().teachers(), u'list', u'teachers', page_message=page_message, courseId=entity)
