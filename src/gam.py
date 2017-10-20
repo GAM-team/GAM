@@ -9360,10 +9360,17 @@ def doGetASPs(users):
 
 def doDelASP(users):
   cd = buildGAPIObject(u'directory')
-  codeId = sys.argv[5]
+  codeIds = sys.argv[5].lower().split(u',')
   for user in users:
-    callGAPI(cd.asps(), u'delete', userKey=user, codeId=codeId)
-    print u'deleted ASP %s for %s' % (codeId, user)
+    if codeIds == [u'all']:
+      codeIds = []
+      asps = callGAPIitems(cd.asps(), u'list', u'items', userKey=user)
+      if asps:
+        for asp in asps:
+          codeIds.append(asp[u'codeId'])
+    for codeId in codeIds:
+      callGAPI(cd.asps(), u'delete', userKey=user, codeId=codeId)
+      print u'deleted ASP %s for %s' % (codeId, user)
 
 def printBackupCodes(user, codes):
   jcount = len(codes)
