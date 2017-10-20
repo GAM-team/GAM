@@ -46,9 +46,9 @@ import googleapiclient.discovery
 import googleapiclient.errors
 import googleapiclient.http
 import httplib2
-import oauth2client.client
 import google.oauth2.service_account
 import google_auth_httplib2
+import oauth2client.client
 import oauth2client.file
 import oauth2client.tools
 
@@ -155,6 +155,16 @@ def getCharSet(i):
   if (i == len(sys.argv)) or (sys.argv[i].lower() != u'charset'):
     return (i, GC_Values.get(GC_CHARSET, GM_Globals[GM_SYS_ENCODING]))
   return (i+2, sys.argv[i+1])
+
+def removeCourseIdScope(courseId):
+  if courseId.startswith(u'd:'):
+    return courseId[2:]
+  return courseId
+
+def addCourseIdScope(courseId):
+  if not courseId.isdigit() and courseId[:2] != u'd:':
+    return u'd:{0}'.format(courseId)
+  return courseId
 
 def getString(i, item, emptyOK=False, optional=False):
   if i < len(sys.argv):
@@ -987,12 +997,12 @@ def getTimeOrDeltaFromNow(time_string):
   else:
     return (datetime.datetime.utcnow() + deltaTime).isoformat() + u'Z'
 
-def buildGAPIServiceObject(api, act_as, use_scopes=None):
+def buildGAPIServiceObject(api, act_as, showAuthError=True):
   http = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL],
                        cache=GM_Globals[GM_CACHE_DIR])
   service = getService(api, http)
   GM_Globals[GM_CURRENT_API_USER] = act_as
-  GM_Globals[GM_CURRENT_API_SCOPES] = use_scopes or API_SCOPE_MAPPING[api]
+  GM_Globals[GM_CURRENT_API_SCOPES] = API_SCOPE_MAPPING[api]
   credentials = getSvcAcctCredentials(GM_Globals[GM_CURRENT_API_SCOPES], act_as)
   request = google_auth_httplib2.Request(http)
   try:
@@ -1001,7 +1011,8 @@ def buildGAPIServiceObject(api, act_as, use_scopes=None):
   except httplib2.ServerNotFoundError as e:
     systemErrorExit(4, e)
   except google.auth.exceptions.RefreshError as e:
-    stderrErrorMsg(u'User {0}: {1}'.format(GM_Globals[GM_CURRENT_API_USER], str(e[0])))
+    if showAuthError:
+      stderrErrorMsg(u'User {0}: {1}'.format(GM_Globals[GM_CURRENT_API_USER], str(e[0])))
     return handleOAuthTokenError(str(e[0]), True)
   return service
 
@@ -1022,11 +1033,10 @@ def buildCalendarGAPIObject(calname):
   return (calendarId, buildGAPIServiceObject(u'calendar', calendarId))
 
 def buildCalendarDataGAPIObject(calname):
-  calendarId, cal = buildCalendarGAPIObject(calname)
-  try:
-    # Force service account token request. If we fail fall back to using admin for authentication
-    cal._http.request.credentials.refresh(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL]))
-  except oauth2client.client.HttpAccessTokenRefreshError:
+  calendarId = normalizeCalendarId(calname)
+  # Force service account token request. If we fail fall back to using admin for authentication
+  cal = buildGAPIServiceObject(u'calendar', calendarId, False)
+  if cal is None:
     _, cal = buildCalendarGAPIObject(_getValueFromOAuth(u'email'))
   return (calendarId, cal)
 
@@ -1068,7 +1078,7 @@ def doCheckServiceAccount(users):
         result = u'FAIL'
         all_scopes_pass = False
       print u' Scope: {0:60} {1}'.format(scope, result)
-    service_account = GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID] 
+    service_account = GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID]
     if all_scopes_pass:
       print u'\nAll scopes passed!\nService account %s is fully authorized.' % service_account
     else:
@@ -1272,33 +1282,32 @@ def showReport():
 def watchGmail(users):
   cs_data = readFile(GC_Values[GC_CLIENT_SECRETS_JSON], mode=u'rb', continueOnError=True, displayError=True, encoding=None)
   cs_json = json.loads(cs_data)
-  project = cs_json[u'installed'][u'project_id']
-  topic = None
+  project = u'projects/{0}'.format(cs_json[u'installed'][u'project_id'])
+  gamTopics = project+u'/topics/gam-pubsub-gmail-'
+  gamSubscriptions = project+u'/subscriptions/gam-pubsub-gmail-'
   pubsub = buildGAPIObject(u'pubsub')
-  topics = callGAPIpages(pubsub.projects().topics(), u'list', items=u'topics', project=u'projects/%s' % project)
+  topics = callGAPIpages(pubsub.projects().topics(), u'list', items=u'topics', project=project)
   for atopic in topics:
-    if atopic[u'name'].startswith(u'projects/%s/topics/gam-pubsub-gmail-' % project):
+    if atopic[u'name'].startswith(gamTopics):
       topic = atopic[u'name']
       break
-  if not topic:
-    topic = u'projects/%s/topics/gam-pubsub-gmail-%s' % (project, uuid.uuid4())
+  else:
+    topic = gamTopics+uuid.uuid4()
     callGAPI(pubsub.projects().topics(), u'create', name=topic, body={})
     body = {u'policy': {u'bindings': [{u'members': [u'serviceAccount:gmail-api-push@system.gserviceaccount.com'], u'role': u'roles/pubsub.editor'}]}}
     callGAPI(pubsub.projects().topics(), u'setIamPolicy', resource=topic, body=body)
-  subscription = None
   subscriptions = callGAPIpages(pubsub.projects().topics().subscriptions(), u'list', items=u'subscriptions', topic=topic)
   for asubscription in subscriptions:
-    if asubscription.startswith(u'projects/%s/subscriptions/gam-pubsub-gmail-' % project):
+    if asubscription.startswith(gamSubscriptions):
       subscription = asubscription
       break
-  if not subscription:
-    subscription = u'projects/%s/subscriptions/gam-pubsub-gmail-%s' % (project, uuid.uuid4())
-    sub_body = {u'topic': topic}
-    sub_result = callGAPI(pubsub.projects().subscriptions(), u'create', name=subscription, body=sub_body)
+  else:
+    subscription = gamSubscriptions+uuid.uuid4()
+    callGAPI(pubsub.projects().subscriptions(), u'create', name=subscription, body={u'topic': topic})
   gmails = {}
   for user in users:
     gmails[user] = {u'g': buildGmailGAPIObject(user)[1]}
-    watch_result = callGAPI(gmails[user][u'g'].users(), u'watch', userId=u'me', body={u'topicName': topic})
+    callGAPI(gmails[user][u'g'].users(), u'watch', userId=u'me', body={u'topicName': topic})
     gmails[user]['seen_historyId'] = callGAPI(gmails[user][u'g'].users(), u'getProfile', userId=u'me', fields=u'historyId')[u'historyId']
   print 'Watching for events...'
   while True:
@@ -1311,8 +1320,8 @@ def watchGmail(users):
           decoded_message = json.loads(base64.b64decode(message[u'message'][u'data']))
           if u'historyId' in decoded_message:
             update_history.append(decoded_message[u'emailAddress'])
-      if u'ackId' in message:
-        ackIds.append(message[u'ackId'])
+        if u'ackId' in message:
+          ackIds.append(message[u'ackId'])
       if ackIds:
         callGAPI(pubsub.projects().subscriptions(), u'acknowledge', subscription=subscription, body={u'ackIds': ackIds})
       if update_history:
@@ -1464,36 +1473,26 @@ def deleteDelegate(users):
 
 def doAddCourseParticipant():
   croom = buildGAPIObject(u'classroom')
-  courseId = sys.argv[2]
-  body_attribute = u'userId'
-  if len(courseId) < 3 or (not courseId.isdigit() and courseId[:2] != u'd:'):
-    courseId = u'd:%s' % courseId
+  courseId = addCourseIdScope(sys.argv[2])
   participant_type = sys.argv[4].lower()
   new_id = sys.argv[5]
   if participant_type in [u'teacher', u'teachers']:
     service = croom.courses().teachers()
+    body = {u'userId': new_id}
   elif participant_type in [u'students', u'student']:
     service = croom.courses().students()
+    body = {u'userId': new_id}
   elif participant_type in [u'alias']:
     service = croom.courses().aliases()
-    body_attribute = u'alias'
-    if new_id[1] != u':':
-      new_id = u'd:%s' % new_id
+    body = {u'alias': addCourseIdScope(new_id)}
   else:
     print u'ERROR: %s is not a valid argument to "gam course ID add"' % participant_type
     sys.exit(2)
-  body = {body_attribute: new_id}
   callGAPI(service, u'create', courseId=courseId, body=body)
-  if courseId[:2] == u'd:':
-    courseId = courseId[2:]
-  if new_id[:2] == u'd:':
-    new_id = new_id[2:]
-  print u'Added %s as a %s of course %s' % (new_id, participant_type, courseId)
+  print u'Added %s as a %s of course %s' % (removeCourseIdScope(new_id), participant_type, removeCourseIdScope(courseId))
 
 def doSyncCourseParticipants():
-  courseId = sys.argv[2]
-  if not courseId.isdigit() and courseId[:2] != u'd:':
-    courseId = u'd:%s' % courseId
+  courseId = addCourseIdScope(sys.argv[2])
   participant_type = sys.argv[4].lower()
   diff_entity_type = sys.argv[5]
   diff_entity = sys.argv[6]
@@ -1516,38 +1515,27 @@ def doSyncCourseParticipants():
 
 def doDelCourseParticipant():
   croom = buildGAPIObject(u'classroom')
-  courseId = sys.argv[2]
-  if not courseId.isdigit() and courseId[:2] != u'd:':
-    courseId = u'd:%s' % courseId
+  courseId = addCourseIdScope(sys.argv[2])
   participant_type = sys.argv[4].lower()
   remove_id = sys.argv[5]
-  kwargs = {}
   if participant_type in [u'teacher', u'teachers']:
     service = croom.courses().teachers()
-    kwargs[u'userId'] = remove_id
+    kwargs = {u'userId': remove_id}
   elif participant_type in [u'student', u'students']:
     service = croom.courses().students()
-    kwargs[u'userId'] = remove_id
+    kwargs = {u'userId': remove_id}
   elif participant_type in [u'alias']:
     service = croom.courses().aliases()
-    if remove_id[1] != u':':
-      remove_id = u'd:%s' % remove_id
-    kwargs[u'alias'] = remove_id
+    kwargs = {u'alias': addCourseIdScope(remove_id)}
   else:
     print u'ERROR: %s is not a valid argument to "gam course ID delete"' % participant_type
     sys.exit(2)
   callGAPI(service, u'delete', courseId=courseId, **kwargs)
-  if courseId[:2] == u'd:':
-    courseId = courseId[2:]
-  if remove_id[:2] == u'd:':
-    remove_id = remove_id[2:]
-  print u'Removed %s as a %s of course %s' % (remove_id, participant_type, courseId)
+  print u'Removed %s as a %s of course %s' % (removeCourseIdScope(remove_id), participant_type, removeCourseIdScope(courseId))
 
 def doDelCourse():
   croom = buildGAPIObject(u'classroom')
-  courseId = sys.argv[3]
-  if not courseId.isdigit() and courseId[:2] != u'd:':
-    courseId = u'd:%s' % courseId
+  courseId = addCourseIdScope(sys.argv[3])
   callGAPI(croom.courses(), u'delete', id=courseId)
   print u'Deleted Course %s' % courseId
 
@@ -1588,9 +1576,7 @@ def _getCourseStates(croom, value, courseStates):
 
 def doUpdateCourse():
   croom = buildGAPIObject(u'classroom')
-  courseId = sys.argv[3]
-  if not courseId.isdigit() and courseId[:2] != u'd:':
-    courseId = u'd:%s' % courseId
+  courseId = addCourseIdScope(sys.argv[3])
   body = {}
   i = 4
   while i < len(sys.argv):
@@ -2293,9 +2279,7 @@ def doCreateCourse():
 
 def doGetCourseInfo():
   croom = buildGAPIObject(u'classroom')
-  courseId = sys.argv[3]
-  if not courseId.isdigit() and courseId[:2] != u'd:':
-    courseId = u'd:%s' % courseId
+  courseId = addCourseIdScope(sys.argv[3])
   info = callGAPI(croom.courses(), u'get', id=courseId)
   info['ownerEmail'] = convertUIDtoEmailAddress(u'uid:%s' % info['ownerId'])
   print_json(None, info)
@@ -3192,7 +3176,7 @@ def doPrinterRegister():
   cp = buildGAPIObject(u'cloudprint')
   form_fields = {u'name': u'GAM',
                  u'proxy': u'GAM',
-                 u'uuid': cp._http.request.credentials.id_token[u'sub'],
+                 u'uuid': _getValueFromOAuth(u'sub'),
                  u'manufacturer': gam_author,
                  u'model': u'cp1',
                  u'gcp_version': u'2.0',
@@ -3326,12 +3310,7 @@ def doCalendarAddACL(calendarId=None, act_as=None, role=None, scope=None, entity
   if not act_as:
     calendarId = normalizeCalendarId(calendarId)
     act_as = calendarId
-  _, cal = buildCalendarGAPIObject(act_as)
-  try:
-    # Force service account token request. If we fail fall back to using admin for authentication
-    cal._http.request.credentials.refresh(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL]))
-  except oauth2client.client.HttpAccessTokenRefreshError:
-    _, cal = buildCalendarGAPIObject(_getValueFromOAuth(u'email'))
+  _, cal = buildCalendarDataGAPIObject(act_as)
   body = {u'scope': {}}
   if role is not None:
     body[u'role'] = role
@@ -11129,8 +11108,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
   elif entity_type in [u'courseparticipants', u'teachers', u'students']:
     croom = buildGAPIObject(u'classroom')
     users = []
-    if not entity.isdigit() and entity[:2] != u'd:':
-      entity = u'd:%s' % entity
+    entity = addCourseIdScope(entity)
     if entity_type in [u'courseparticipants', u'teachers']:
       page_message = u'Got %%total_items%% teachers...'
       teachers = callGAPIpages(croom.courses().teachers(), u'list', u'teachers', page_message=page_message, courseId=entity)
@@ -11971,6 +11949,9 @@ def ProcessGAMCommand(args):
         sys.exit(2)
       sys.exit(0)
     elif command == u'printer':
+      if sys.argv[2].lower() == u'register':
+        doPrinterRegister()
+        sys.exit(0)
       argument = sys.argv[3].lower()
       if argument == u'showacl':
         doPrinterShowACL()
@@ -11978,8 +11959,6 @@ def ProcessGAMCommand(args):
         doPrinterAddACL()
       elif argument in [u'del', u'delete', u'remove']:
         doPrinterDelACL()
-      elif argument == u'register':
-        doPrinterRegister()
       else:
         print u'ERROR: %s is not a valid argument for "gam printer..."' % argument
         sys.exit(2)
