@@ -3843,11 +3843,22 @@ def printPermission(permission):
 
 def showDriveFileACL(users):
   fileId = sys.argv[5]
+  useDomainAdminAccess = False
+  i = 6
+  while i < len(sys.argv):
+    if sys.argv[i].lower().replace(u'_', u'') == u'asadmin':
+      useDomainAdminAccess = True
+      i += 1
+    else:
+      print u'ERROR: %s is not a valid argument to "gam <users> show drivefileacl".' % sys.argv[i]
+      sys.exit(3)
   for user in users:
     user, drive = buildDrive3GAPIObject(user)
     if not drive:
       continue
-    feed = callGAPIpages(drive.permissions(), u'list', u'permissions', fileId=fileId, fields=u'*', supportsTeamDrives=True)
+    feed = callGAPIpages(drive.permissions(), u'list', u'permissions',
+        fileId=fileId, fields=u'*', supportsTeamDrives=True,
+        useDomainAdminAccess=useDomainAdminAccess)
     for permission in feed:
       printPermission(permission)
       print u''
@@ -3870,12 +3881,23 @@ def getPermissionId(argstr):
 def delDriveFileACL(users):
   fileId = sys.argv[5]
   permissionId = getPermissionId(sys.argv[6])
+  useDomainAdminAccess = False
+  i = 7
+  while i < len(sys.argv):
+    if sys.argv[i].lower().replace(u'_', u'') == u'asadmin':
+      useDomainAdminAccess = True
+      i += 1
+    else:
+      print u'ERROR: %s is not a valid argument to "gam <users> delete drivefileacl".' % sys.argv[i]
+      sys.exit(3)
   for user in users:
     user, drive = buildDrive3GAPIObject(user)
     if not drive:
       continue
     print u'Removing permission for %s from %s' % (permissionId, fileId)
-    callGAPI(drive.permissions(), u'delete', fileId=fileId, permissionId=permissionId, supportsTeamDrives=True)
+    callGAPI(drive.permissions(), u'delete', fileId=fileId,
+        permissionId=permissionId, supportsTeamDrives=True,
+        useDomainAdminAccess=useDomainAdminAccess)
 
 def addDriveFileACL(users):
   fileId = sys.argv[5]
@@ -3883,6 +3905,7 @@ def addDriveFileACL(users):
   sendNotificationEmail = False
   emailMessage = None
   transferOwnership = None
+  useDomainAdminAccess = False
   if body[u'type'] == u'anyone':
     i = 7
   elif body[u'type'] in [u'user', u'group']:
@@ -3922,6 +3945,9 @@ def addDriveFileACL(users):
     elif sys.argv[i].lower() == u'expires':
       body[u'expirationTime'] = getTimeOrDeltaFromNow(sys.argv[i+1])
       i += 2
+    elif sys.argv[i].lower().replace(u'_', u'') == u'asadmin':
+      useDomainAdminAccess = True
+      i += 1
     else:
       print u'ERROR: %s is not a valid argument for "gam <users> add drivefileacl"' % sys.argv[i]
       sys.exit(2)
@@ -3932,7 +3958,8 @@ def addDriveFileACL(users):
     result = callGAPI(drive.permissions(), u'create', fields=u'*',
                       fileId=fileId, sendNotificationEmail=sendNotificationEmail,
                       emailMessage=emailMessage, body=body, supportsTeamDrives=True,
-                      transferOwnership=transferOwnership)
+                      transferOwnership=transferOwnership,
+                      useDomainAdminAccess=useDomainAdminAccess)
     printPermission(result)
 
 def updateDriveFileACL(users):
@@ -3940,6 +3967,7 @@ def updateDriveFileACL(users):
   permissionId = getPermissionId(sys.argv[6])
   transferOwnership = None
   removeExpiration = None
+  useDomainAdminAccess = False
   body = {}
   i = 7
   while i < len(sys.argv):
@@ -3962,6 +3990,9 @@ def updateDriveFileACL(users):
       elif body[u'role'] == u'owner':
         transferOwnership = True
       i += 2
+    elif sys.argv[i].lower().replace(u'_', u'') == u'asadmin':
+      useDomainAdminAccess = True
+      i += 1
     else:
       print u'ERROR: %s is not a valid argument for "gam <users> update drivefileacl"' % sys.argv[i]
       sys.exit(2)
@@ -3973,7 +4004,7 @@ def updateDriveFileACL(users):
     result = callGAPI(drive.permissions(), u'update', fields=u'*',
                       fileId=fileId, permissionId=permissionId, removeExpiration=removeExpiration,
                       transferOwnership=transferOwnership, body=body,
-                      supportsTeamDrives=True)
+                      supportsTeamDrives=True, useDomainAdminAccess=useDomainAdminAccess)
     printPermission(result)
 
 def _stripMeInOwners(query):
@@ -7284,10 +7315,14 @@ def doUpdateTeamDrive(users):
 
 def printShowTeamDrives(users, csvFormat):
   todrive = False
+  useDomainAdminAccess = False
   i = 5
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'todrive':
       todrive = True
+      i += 1
+    elif sys.argv[i].lower().replace(u'_', u'') == u'asadmin':
+      useDomainAdminAccess = True
       i += 1
     else:
       print u'ERROR: %s is not a valid argument for "gam <users> print|show teamdrives"'
@@ -7298,7 +7333,8 @@ def printShowTeamDrives(users, csvFormat):
     user, drive = buildDrive3GAPIObject(user)
     if not drive:
       continue
-    results = callGAPIpages(drive.teamdrives(), u'list', u'teamDrives', fields=u'*', soft_errors=True)
+    results = callGAPIpages(drive.teamdrives(), u'list', u'teamDrives',
+        useDomainAdminAccess=useDomainAdminAccess, fields=u'*', soft_errors=True)
     if not results:
       continue
     for td in results:
