@@ -3791,6 +3791,18 @@ def printDriveSettings(users):
     csvRows.append(row)
   writeCSVfile(csvRows, titles, u'User Drive Settings', todrive)
 
+def getTeamDriveThemes(users):
+  for user in users:
+    user, drive = buildDrive3GAPIObject(user)
+    if not drive:
+      continue
+    themes = callGAPI(drive.about(), u'get', fields=u'teamDriveThemes', soft_errors=True)
+    if themes is None or u'teamDriveThemes' not in themes:
+      continue
+    print u'theme'
+    for theme in themes[u'teamDriveThemes']:
+      print theme[u'id']
+
 def printDriveActivity(users):
   drive_ancestorId = u'root'
   drive_fileId = None
@@ -7283,6 +7295,15 @@ and accept the Terms of Service (ToS). As soon as you've accepted the ToS popup,
 
 def doCreateTeamDrive(users):
   body = {u'name': sys.argv[5]}
+  i = 6
+  while i < len(sys.argv):
+    if sys.argv[i].lower() == u'theme':
+      body[u'themeId'] = sys.argv[i+1]
+      i += 2
+    else:
+      print u'ERROR: %s is not a valid argument to "gam <users> create teamdrive"' % sys.argv[i]
+      print sys.argv
+      sys.exit(3)
   for user in users:
     drive = buildGAPIServiceObject(u'drive3', user)
     requestId = unicode(uuid.uuid4())
@@ -7296,6 +7317,9 @@ def doUpdateTeamDrive(users):
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'name':
       body[u'name'] = sys.argv[i+1]
+      i += 2
+    elif sys.argv[i].lower() == u'theme':
+      body[u'themeId'] = sys.argv[i+1]
       i += 2
     else:
       print u'ERROR: %s is not a valid argument for "gam <users> update drivefile"'
@@ -12069,6 +12093,8 @@ def ProcessGAMCommand(args):
         showCalSettings(users)
       elif showWhat == u'drivesettings':
         printDriveSettings(users)
+      elif showWhat == u'teamdrivethemes':
+        getTeamDriveThemes(users)
       elif showWhat == u'drivefileacl':
         showDriveFileACL(users)
       elif showWhat == u'filelist':
