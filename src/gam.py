@@ -7293,6 +7293,26 @@ and accept the Terms of Service (ToS). As soon as you've accepted the ToS popup,
   raw_input(u'Press Enter when done...')
   print u'That\'s it! Your GAM Project is created and ready to use.'
 
+def doGetTeamDriveInfo(users):
+  teamDriveId = sys.argv[5]
+  useDomainAdminAccess = False
+  i = 6
+  while i < len(sys.argv):
+    if sys.argv[i].lower().replace(u'_', u'') == u'asadmin':
+      useDomainAdminAccess = True
+      i += 1
+    else:
+      print u'ERROR: %s is not a valid command for "gam <users> show teamdrive"' % sys.argv[i]
+      sys.exit(3)
+  for user in users:
+    drive = buildGAPIServiceObject(u'drive3', user)
+    if not drive:
+      print u'Failed to access Drive as %s' % user
+      continue
+    result = callGAPI(drive.teamdrives(), u'get', teamDriveId=teamDriveId,
+        useDomainAdminAccess=useDomainAdminAccess, fields=u'*')
+    print_json(None, result)
+
 def doCreateTeamDrive(users):
   body = {u'name': sys.argv[5]}
   i = 6
@@ -7306,6 +7326,9 @@ def doCreateTeamDrive(users):
       sys.exit(3)
   for user in users:
     drive = buildGAPIServiceObject(u'drive3', user)
+    if not drive:
+      print u'Failed to access Drive as %s' % user
+      continue
     requestId = unicode(uuid.uuid4())
     result = callGAPI(drive.teamdrives(), u'create', requestId=requestId, body=body, fields=u'id')
     print u'Created Team Drive %s with id %s' % (body[u'name'], result[u'id'])
@@ -7320,6 +7343,19 @@ def doUpdateTeamDrive(users):
       i += 2
     elif sys.argv[i].lower() == u'theme':
       body[u'themeId'] = sys.argv[i+1]
+      i += 2
+    elif sys.argv[i].lower() == u'customtheme':
+      body[u'backgroundImageFile'] = {
+        u'id': sys.argv[i+1],
+        u'xCoordinate': float(sys.argv[i+2]),
+        u'yCoordinate': float(sys.argv[i+3]),
+        u'width': float(sys.argv[i+4])
+        }
+      i += 5
+    elif sys.argv[i].lower() == u'color':
+      body[u'colorRgb'] = sys.argv[i+1]
+      if body[u'colorRgb'] in WEBCOLOR_MAP.keys():
+        body[u'colorRgb'] = WEBCOLOR_MAP[body[u'colorRgb']]
       i += 2
     else:
       print u'ERROR: %s is not a valid argument for "gam <users> update drivefile"'
@@ -7340,6 +7376,7 @@ def doUpdateTeamDrive(users):
 def printShowTeamDrives(users, csvFormat):
   todrive = False
   useDomainAdminAccess = False
+  q = None
   i = 5
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'todrive':
@@ -7348,6 +7385,9 @@ def printShowTeamDrives(users, csvFormat):
     elif sys.argv[i].lower().replace(u'_', u'') == u'asadmin':
       useDomainAdminAccess = True
       i += 1
+    elif sys.argv[i].lower() == u'query':
+      q = sys.argv[i+1]
+      i += 2
     else:
       print u'ERROR: %s is not a valid argument for "gam <users> print|show teamdrives"'
       sys.exit(3)
@@ -7358,7 +7398,8 @@ def printShowTeamDrives(users, csvFormat):
     if not drive:
       continue
     results = callGAPIpages(drive.teamdrives(), u'list', u'teamDrives',
-        useDomainAdminAccess=useDomainAdminAccess, fields=u'*', soft_errors=True)
+        useDomainAdminAccess=useDomainAdminAccess, fields=u'*',
+        q=q, soft_errors=True)
     if not results:
       continue
     for td in results:
@@ -12139,6 +12180,8 @@ def ProcessGAMCommand(args):
         printShowForwardingAddresses(users, False)
       elif showWhat in [u'teamdrive', u'teamdrives']:
         printShowTeamDrives(users, False)
+      elif showWhat in [u'teamdriveinfo']:
+        doGetTeamDriveInfo(users)
       else:
         print u'ERROR: %s is not a valid argument for "gam <users> show"' % showWhat
         sys.exit(2)
@@ -12243,7 +12286,7 @@ def ProcessGAMCommand(args):
       else:
         print u'ERROR: %s is not a valid argument for "gam <users> delete"' % delWhat
         sys.exit(2)
-    elif command == u'add':
+    elif command in [u'add', u'create']:
       addWhat = sys.argv[4].lower()
       if addWhat == u'calendar':
         addCalendar(users)
