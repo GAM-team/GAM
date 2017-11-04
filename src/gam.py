@@ -7353,9 +7353,7 @@ def doUpdateTeamDrive(users):
         }
       i += 5
     elif sys.argv[i].lower() == u'color':
-      body[u'colorRgb'] = sys.argv[i+1]
-      if body[u'colorRgb'] in WEBCOLOR_MAP.keys():
-        body[u'colorRgb'] = WEBCOLOR_MAP[body[u'colorRgb']]
+      body[u'colorRgb'] = WEBCOLOR_MAP.get(sys.argv[i+1], sys.argv[i+1])
       i += 2
     else:
       print u'ERROR: %s is not a valid argument for "gam <users> update drivefile"'
