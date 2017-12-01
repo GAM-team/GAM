@@ -3877,8 +3877,8 @@ def showDriveFileACL(users):
     if not drive:
       continue
     feed = callGAPIpages(drive.permissions(), u'list', u'permissions',
-        fileId=fileId, fields=u'*', supportsTeamDrives=True,
-        useDomainAdminAccess=useDomainAdminAccess)
+                         fileId=fileId, fields=u'*', supportsTeamDrives=True,
+                         useDomainAdminAccess=useDomainAdminAccess)
     for permission in feed:
       printPermission(permission)
       print u''
@@ -3916,8 +3916,8 @@ def delDriveFileACL(users):
       continue
     print u'Removing permission for %s from %s' % (permissionId, fileId)
     callGAPI(drive.permissions(), u'delete', fileId=fileId,
-        permissionId=permissionId, supportsTeamDrives=True,
-        useDomainAdminAccess=useDomainAdminAccess)
+             permissionId=permissionId, supportsTeamDrives=True,
+             useDomainAdminAccess=useDomainAdminAccess)
 
 def addDriveFileACL(users):
   fileId = sys.argv[5]
@@ -7318,7 +7318,7 @@ def doGetTeamDriveInfo(users):
       print u'Failed to access Drive as %s' % user
       continue
     result = callGAPI(drive.teamdrives(), u'get', teamDriveId=teamDriveId,
-        useDomainAdminAccess=useDomainAdminAccess, fields=u'*')
+                      useDomainAdminAccess=useDomainAdminAccess, fields=u'*')
     print_json(None, result)
 
 def doCreateTeamDrive(users):
@@ -7330,7 +7330,6 @@ def doCreateTeamDrive(users):
       i += 2
     else:
       print u'ERROR: %s is not a valid argument to "gam <users> create teamdrive"' % sys.argv[i]
-      print sys.argv
       sys.exit(3)
   for user in users:
     drive = buildGAPIServiceObject(u'drive3', user)
@@ -7404,8 +7403,8 @@ def printShowTeamDrives(users, csvFormat):
     if not drive:
       continue
     results = callGAPIpages(drive.teamdrives(), u'list', u'teamDrives',
-        useDomainAdminAccess=useDomainAdminAccess, fields=u'*',
-        q=q, soft_errors=True)
+                            useDomainAdminAccess=useDomainAdminAccess, fields=u'*',
+                            q=q, soft_errors=True)
     if not results:
       continue
     for td in results:
@@ -9464,14 +9463,16 @@ def doGetASPs(users):
 
 def doDelASP(users):
   cd = buildGAPIObject(u'directory')
-  codeIds = sys.argv[5].lower().split(u',')
+  codeIdList = sys.argv[5].lower()
+  if codeIdList == u'all':
+    allCodeIds = True
+  else:
+    allCodeIds = False
+    codeIds = codeIdList.replace(u',', u' ').split()
   for user in users:
-    if codeIds == [u'all']:
-      codeIds = []
-      asps = callGAPIitems(cd.asps(), u'list', u'items', userKey=user)
-      if asps:
-        for asp in asps:
-          codeIds.append(asp[u'codeId'])
+    if allCodeIds:
+      asps = callGAPIitems(cd.asps(), u'list', u'items', userKey=user, fields=u'items/codeId')
+      codeIds = [asp[u'codeId'] for asp in asps]
     for codeId in codeIds:
       callGAPI(cd.asps(), u'delete', userKey=user, codeId=codeId)
       print u'deleted ASP %s for %s' % (codeId, user)
@@ -9923,7 +9924,7 @@ USER_ARGUMENT_TO_PROPERTY_MAP = {
   u'lastlogintime': [u'lastLoginTime',],
   u'lastname': [u'name.familyName',],
   u'location': [u'locations',],
-  u'locations': [u'locations'],
+  u'locations': [u'locations',],
   u'name': [u'name.givenName', u'name.familyName', u'name.fullName',],
   u'nicknames': [u'aliases', u'nonEditableAliases',],
   u'noneditablealiases': [u'aliases', u'nonEditableAliases',],
@@ -11290,7 +11291,6 @@ def OAuthInfo():
     credentials.user_agent = GAM_INFO
     access_token = credentials.access_token
     print u"\nOAuth File: %s" % GC_Values[GC_OAUTH2_TXT]
-
   oa2 = buildGAPIObject(u'oauth2')
   token_info = callGAPI(oa2, u'tokeninfo', access_token=access_token)
   print u"Client ID: %s" % token_info[u'issued_to']
