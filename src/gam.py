@@ -11274,7 +11274,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
     for user in users:
       if user[:4] == u'uid:':
         full_users.append(user[4:])
-      elif user != u'*' and user.find(u'@') == -1:
+      elif user != u'*' and user != GC_Values[GC_CUSTOMER_ID] and user.find(u'@') == -1:
         full_users.append(u'%s@%s' % (user, GC_Values[GC_DOMAIN]))
       else:
         full_users.append(user)
@@ -12320,7 +12320,7 @@ def ProcessGAMCommand(args):
       elif addWhat == u'teamdrive':
         doCreateTeamDrive(users)
       else:
-        print u'ERROR: %s is not a valid argument for "gam <users> add"' % addWhat
+        print u'ERROR: %s is not a valid argument for "gam <users> %s"' % (addWhat, command)
         sys.exit(2)
     elif command == u'update':
       updateWhat = sys.argv[4].lower()
