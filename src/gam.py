@@ -151,10 +151,31 @@ def csvFieldErrorExit(fieldName, fieldNames):
 def printLine(message):
   sys.stdout.write(message+u'\n')
 #
+def getBoolean(item, i):
+  if i < len(sys.argv):
+    value = sys.argv[i].lower()
+    if value in true_values:
+      return True
+    if value in false_values:
+      return False
+    print u'ERROR: Value for {0} must be {1} or {2}; got {3}'.format(item, u'|'.join(true_values), u'|'.join(false_values), value)
+    sys.exit(2)
+  print u'ERROR: Expected value {0} or {1} for {2}'.format(u'|'.join(true_values), u'|'.join(false_values), item)
+  sys.exit(2)
+
 def getCharSet(i):
   if (i == len(sys.argv)) or (sys.argv[i].lower() != u'charset'):
     return (i, GC_Values.get(GC_CHARSET, GM_Globals[GM_SYS_ENCODING]))
   return (i+2, sys.argv[i+1])
+
+def integerLimits(minVal, maxVal, item=u'integer'):
+  if (minVal is not None) and (maxVal is not None):
+    return u'{0} {1}<=x<={2}'.format(item, minVal, maxVal)
+  if minVal is not None:
+    return u'{0} x>={1}'.format(item, minVal)
+  if maxVal is not None:
+    return u'{0} x<={1}'.format(item, maxVal)
+  return u'{0} x'.format(item)
 
 def removeCourseIdScope(courseId):
   if courseId.startswith(u'd:'):
@@ -166,12 +187,15 @@ def addCourseIdScope(courseId):
     return u'd:{0}'.format(courseId)
   return courseId
 
-def getString(i, item, emptyOK=False, optional=False):
+def getString(item, i, optional=False, minLen=1, maxLen=None):
   if i < len(sys.argv):
     argstr = sys.argv[i]
     if argstr:
-      return argstr
-    if emptyOK or optional:
+      if (len(argstr) >= minLen) and ((maxLen is None) or (len(argstr) <= maxLen)):
+        return argstr
+      print u'ERROR: expected <{0} for {1}>'.format(integerLimits(minLen, maxLen, u'string length'), item)
+      sys.exit(2)
+    if optional or (minLen == 0):
       return u''
     print u'ERROR: expected a Non-empty <{0}>'.format(item)
     sys.exit(2)
@@ -2489,10 +2513,7 @@ def doPrintCourseParticipants():
   while i < len(sys.argv):
     myarg = sys.argv[i].lower()
     if myarg in [u'course', u'class']:
-      course = sys.argv[i+1]
-      if not course.isdigit():
-        course = u'd:%s' % course
-      courses.append(course)
+      courses.append(addCourseIdScope(sys.argv[i+1]))
       i += 2
     elif myarg == u'teacher':
       teacherId = sys.argv[i+1]
@@ -2805,22 +2826,10 @@ def getCalendarAttributes(i, body, function):
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace(u'_', u'')
     if myarg == u'selected':
-      if sys.argv[i+1].lower() in true_values:
-        body[u'selected'] = True
-      elif sys.argv[i+1].lower() in false_values:
-        body[u'selected'] = False
-      else:
-        print u'ERROR: Value for selected must be true or false; got %s' % sys.argv[i+1]
-        sys.exit(2)
+      body[u'selected'] = getBoolean(myarg, i+1)
       i += 2
     elif myarg == u'hidden':
-      if sys.argv[i+1].lower() in true_values:
-        body[u'hidden'] = True
-      elif sys.argv[i+1].lower() in false_values:
-        body[u'hidden'] = False
-      else:
-        print u'ERROR: Value for hidden must be true or false; got %s' % sys.argv[i+1]
-        sys.exit(2)
+      body[u'hidden'] = getBoolean(myarg, i+1)
       i += 2
     elif myarg == u'summary':
       body[u'summaryOverride'] = sys.argv[i+1]
@@ -4340,14 +4349,7 @@ def getDriveFileAttribute(i, body, parameters, myarg, update=False):
   elif myarg in DRIVEFILE_LABEL_CHOICES_MAP:
     body.setdefault(u'labels', {})
     if update:
-      value = sys.argv[i+1].lower()
-      if value in true_values:
-        body[u'labels'][DRIVEFILE_LABEL_CHOICES_MAP[myarg]] = True
-      elif value in false_values:
-        body[u'labels'][DRIVEFILE_LABEL_CHOICES_MAP[myarg]] = False
-      else:
-        print u'ERROR: value for %s must be true or false; got %s' % (myarg, sys.argv[i+1])
-        sys.exit(2)
+      body[u'labels'][DRIVEFILE_LABEL_CHOICES_MAP[myarg]] = getBoolean(myarg, i+1)
       i += 2
     else:
       body[u'labels'][DRIVEFILE_LABEL_CHOICES_MAP[myarg]] = True
@@ -4771,13 +4773,7 @@ def transferDriveFiles(users):
         break
 
 def doImap(users):
-  if sys.argv[4].lower() in true_values:
-    enable = True
-  elif sys.argv[4].lower() in false_values:
-    enable = False
-  else:
-    print u'ERROR: value for "gam <users> imap" must be true or false; got %s' % sys.argv[4]
-    sys.exit(2)
+  enable = getBoolean(u'gam <users> imap', 4)
   body = {u'enabled': enable, u'autoExpunge': True, u'expungeBehavior': u'archive', u'maxFolderSize': 0}
   i = 5
   while i < len(sys.argv):
@@ -4875,13 +4871,7 @@ def doLicense(users, operation):
       callGAPI(lic.licenseAssignments(), operation, soft_errors=True, productId=productId, skuId=old_sku, userId=user, body={u'skuId': skuId})
 
 def doPop(users):
-  if sys.argv[4].lower() in true_values:
-    enable = True
-  elif sys.argv[4].lower() in false_values:
-    enable = False
-  else:
-    print u'ERROR: value for "gam <users> pop" must be true or false; got %s' % sys.argv[4]
-    sys.exit(2)
+  enable = getBoolean(u'gam <users> pop', 4)
   body = {u'accessWindow': [u'disabled', u'allMail'][enable], u'disposition': u'leaveInInbox'}
   i = 5
   while i < len(sys.argv):
@@ -4986,8 +4976,8 @@ def _processSignature(tagReplacements, signature, html):
 
 def getSendAsAttributes(i, myarg, body, tagReplacements, command):
   if myarg == u'replace':
-    matchTag = getString(i+1, u'Tag')
-    matchReplacement = getString(i+2, u'String', emptyOK=True)
+    matchTag = getString(u'Tag', i+1)
+    matchReplacement = getString(u'String', i+2, minLen=0)
     tagReplacements[matchTag] = matchReplacement
     i += 3
   elif myarg == u'name':
@@ -5000,13 +4990,7 @@ def getSendAsAttributes(i, myarg, body, tagReplacements, command):
     body[u'isDefault'] = True
     i += 1
   elif myarg == u'treatasalias':
-    if sys.argv[i+1].lower() == u'true':
-      body[u'treatAsAlias'] = True
-    elif sys.argv[i+1].lower() == u'false':
-      body[u'treatAsAlias'] = False
-    else:
-      print u'ERROR: value for treatasalias must be true or false; got %s' % sys.argv[i+1]
-      sys.exit(2)
+    body[u'treatAsAlias'] = getBoolean(myarg, i+1)
     i += 2
   else:
     print u'ERROR: %s is not a valid argument for "gam <users> %s"' % (sys.argv[i], command)
@@ -6014,13 +5998,7 @@ def infoFilters(users):
       _showFilter(result, 1, 1, labels)
 
 def doForward(users):
-  if sys.argv[4].lower() in true_values:
-    enable = True
-  elif sys.argv[4].lower() in false_values:
-    enable = False
-  else:
-    print u'ERROR: value for "gam <users> forward" must be true or false; got %s' % sys.argv[4]
-    sys.exit(2)
+  enable = getBoolean(u'gam <users> forward', 4)
   body = {u'enabled': enable}
   i = 5
   while i < len(sys.argv):
@@ -6213,7 +6191,7 @@ def doSignature(users):
     i, encoding = getCharSet(i+2)
     signature = readFile(filename, encoding=encoding)
   else:
-    signature = getString(i, u'String', emptyOK=True)
+    signature = getString(u'String', i, minLen=0)
     i += 1
   body = {}
   html = False
@@ -6261,13 +6239,7 @@ def getSignature(users):
       _showSendAs(result, i, count, formatSig)
 
 def doVacation(users):
-  if sys.argv[4].lower() in true_values:
-    enable = True
-  elif sys.argv[4].lower() in false_values:
-    enable = False
-  else:
-    print u'ERROR: value for "gam <users> vacation" must be true or false; got %s' % sys.argv[4]
-    sys.exit(2)
+  enable = getBoolean(u'gam <users> vacation', 4)
   body = {u'enableAutoReply': enable}
   if enable:
     responseBodyType = u'responseBodyPlainText'
@@ -6287,8 +6259,8 @@ def doVacation(users):
         i, encoding = getCharSet(i+2)
         message = readFile(filename, encoding=encoding)
       elif myarg == u'replace':
-        matchTag = getString(i+1, u'Tag')
-        matchReplacement = getString(i+2, u'String', emptyOK=True)
+        matchTag = getString(u'Tag', i+1)
+        matchReplacement = getString(u'String', i+2, minLen=0)
         tagReplacements[matchTag] = matchReplacement
         i += 3
       elif myarg == u'html':
@@ -6598,31 +6570,13 @@ def getUserAttributes(i, cd, updateCmd=False):
         need_password = True
       i += 2
     elif myarg == u'admin':
-      if sys.argv[i+1].lower() in true_values:
-        admin_body[u'status'] = True
-      elif sys.argv[i+1].lower() in false_values:
-        admin_body[u'status'] = False
-      else:
-        print u'ERROR: admin must be on or off; got %s' % sys.argv[i+1]
-        sys.exit(2)
+      admin_body[u'status'] = getBoolean(myarg, i+1)
       i += 2
     elif myarg == u'suspended':
-      if sys.argv[i+1].lower() in true_values:
-        body[u'suspended'] = True
-      elif sys.argv[i+1].lower() in false_values:
-        body[u'suspended'] = False
-      else:
-        print u'ERROR: suspended must be on or off; got %s' % sys.argv[i+1]
-        sys.exit(2)
+      body[u'suspended'] = getBoolean(myarg, i+1)
       i += 2
     elif myarg == u'gal':
-      if sys.argv[i+1].lower() in true_values:
-        body[u'includeInGlobalAddressList'] = True
-      elif sys.argv[i+1].lower() in false_values:
-        body[u'includeInGlobalAddressList'] = False
-      else:
-        print u'ERROR: gal must be on or off; got %s' % sys.argv[i+1]
-        sys.exit(2)
+      body[u'includeInGlobalAddressList'] = getBoolean(myarg, i+1)
       i += 2
     elif myarg in [u'sha', u'sha1', u'sha-1']:
       body[u'hashFunction'] = u'SHA-1'
@@ -6640,31 +6594,13 @@ def getUserAttributes(i, cd, updateCmd=False):
       need_to_hash_password = False
       i += 1
     elif myarg == u'changepassword':
-      if sys.argv[i+1].lower() in true_values:
-        body[u'changePasswordAtNextLogin'] = True
-      elif sys.argv[i+1].lower() in false_values:
-        body[u'changePasswordAtNextLogin'] = False
-      else:
-        print u'ERROR: changepassword must be on or off; got %s' % sys.argv[i+1]
-        sys.exit(2)
+      body[u'changePasswordAtNextLogin'] = getBoolean(myarg, i+1)
       i += 2
     elif myarg == u'ipwhitelisted':
-      if sys.argv[i+1].lower() in true_values:
-        body[u'ipWhitelisted'] = True
-      elif sys.argv[i+1].lower() in false_values:
-        body[u'ipWhitelisted'] = False
-      else:
-        print u'ERROR: ipwhitelisted must be on or off; got %s' % sys.argv[i+1]
-        sys.exit(2)
+      body[u'ipWhitelisted'] = getBoolean(myarg, i+1)
       i += 2
     elif myarg == u'agreedtoterms':
-      if sys.argv[i+1].lower() in true_values:
-        body[u'agreedToTerms'] = True
-      elif sys.argv[i+1].lower() in false_values:
-        body[u'agreedToTerms'] = False
-      else:
-        print u'ERROR: agreedtoterms must be on or off; got %s' % sys.argv[i+1]
-        sys.exit(2)
+      body[u'agreedToTerms'] = getBoolean(myarg, i+1)
       i += 2
     elif myarg in [u'org', u'ou']:
       body[u'orgUnitPath'] = sys.argv[i+1]
@@ -6956,13 +6892,7 @@ def getUserAttributes(i, cd, updateCmd=False):
           posix[u'homeDirectory'] = sys.argv[i+1]
           i += 2
         elif myopt in [u'primary']:
-          if sys.argv[i+1].lower() in true_values:
-            posix[u'primary'] = True
-          elif sys.argv[i+1] in false_values:
-            posix[u'primary'] = False
-          else:
-            print u'ERROR: primary should be true or false, got %s' % sys.argv[i+1]
-            sys.exit(3)
+          posix[u'primary'] = getBoolean(myopt, i+1)
           i += 2
         elif myopt in [u'shell']:
           posix[u'shell'] = sys.argv[i+1]
@@ -8214,10 +8144,7 @@ def doUpdateGroup():
         i += 2
       elif myarg == u'admincreated':
         use_cd_api = True
-        cd_body[u'adminCreated'] = sys.argv[i+1].lower()
-        if cd_body[u'adminCreated'] not in [u'true', u'false']:
-          print u'ERROR: Value for admincreated must be true or false; got %s' % cd_body[u'adminCreated']
-          sys.exit(2)
+        cd_body[u'adminCreated'] = getBoolean(myarg, i+1)
         i += 2
       else:
         if not gs:
@@ -10448,7 +10375,7 @@ def doPrintAliases():
       doUsers = False
       i += 1
     elif myarg == u'query':
-      query = getString(i+1, u'Query')
+      query = getString(u'Query', i+1)
       doGroups = False
       doUsers = True
       i += 2
@@ -10741,8 +10668,7 @@ def doPrintCrosActivity():
   startDate = endDate = None
   listLimit = 0
   delimiter = u','
-  query = None
-  orgUnitPath = None
+  query = orgUnitPath = None
   i = 3
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace(u'_', u'')
