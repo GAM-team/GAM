@@ -860,6 +860,17 @@ def getOauth2TxtStorageCredentials():
   except (KeyError, ValueError):
     return (storage, None)
 
+def getValidOauth2TxtCredentials():
+  """Gets OAuth2 credentials which are guaranteed to be fresh and valid."""
+  storage, credentials = getOauth2TxtStorageCredentials()
+  if credentials is None or credentials.invalid:
+    doRequestOAuth()
+    credentials = storage.get()
+  elif credentials.access_token_expired:
+    http = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL])
+    credentials.refresh(http)
+  return credentials
+
 def getService(api, http):
   api, version, api_version = getAPIVersion(api)
   retries = 3
@@ -897,10 +908,7 @@ def getService(api, http):
 
 def buildGAPIObject(api):
   GM_Globals[GM_CURRENT_API_USER] = None
-  storage, credentials = getOauth2TxtStorageCredentials()
-  if not credentials or credentials.invalid:
-    doRequestOAuth()
-    credentials = storage.get()
+  credentials = getValidOauth2TxtCredentials()
   credentials.user_agent = GAM_INFO
   http = credentials.authorize(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL],
                                              cache=GM_Globals[GM_CACHE_DIR]))
@@ -923,7 +931,7 @@ def buildGAPIObject(api):
       except KeyError:
         GC_Values[GC_CUSTOMER_ID] = MY_CUSTOMER
   else:
-    GC_Values[GC_DOMAIN] = credentials.id_token.get(u'hd', u'UNKNOWN').lower()
+    GC_Values[GC_DOMAIN] = _getValueFromOAuth(u'hd', credentials=credentials)
     if not GC_Values[GC_CUSTOMER_ID]:
       GC_Values[GC_CUSTOMER_ID] = MY_CUSTOMER
   return service
@@ -3800,6 +3808,18 @@ def printDriveSettings(users):
     csvRows.append(row)
   writeCSVfile(csvRows, titles, u'User Drive Settings', todrive)
 
+def getTeamDriveThemes(users):
+  for user in users:
+    user, drive = buildDrive3GAPIObject(user)
+    if not drive:
+      continue
+    themes = callGAPI(drive.about(), u'get', fields=u'teamDriveThemes', soft_errors=True)
+    if themes is None or u'teamDriveThemes' not in themes:
+      continue
+    print u'theme'
+    for theme in themes[u'teamDriveThemes']:
+      print theme[u'id']
+
 def printDriveActivity(users):
   drive_ancestorId = u'root'
   drive_fileId = None
@@ -3852,11 +3872,22 @@ def printPermission(permission):
 
 def showDriveFileACL(users):
   fileId = sys.argv[5]
+  useDomainAdminAccess = False
+  i = 6
+  while i < len(sys.argv):
+    if sys.argv[i].lower().replace(u'_', u'') == u'asadmin':
+      useDomainAdminAccess = True
+      i += 1
+    else:
+      print u'ERROR: %s is not a valid argument to "gam <users> show drivefileacl".' % sys.argv[i]
+      sys.exit(3)
   for user in users:
     user, drive = buildDrive3GAPIObject(user)
     if not drive:
       continue
-    feed = callGAPIpages(drive.permissions(), u'list', u'permissions', fileId=fileId, fields=u'*', supportsTeamDrives=True)
+    feed = callGAPIpages(drive.permissions(), u'list', u'permissions',
+                         fileId=fileId, fields=u'*', supportsTeamDrives=True,
+                         useDomainAdminAccess=useDomainAdminAccess)
     for permission in feed:
       printPermission(permission)
       print u''
@@ -3879,12 +3910,23 @@ def getPermissionId(argstr):
 def delDriveFileACL(users):
   fileId = sys.argv[5]
   permissionId = getPermissionId(sys.argv[6])
+  useDomainAdminAccess = False
+  i = 7
+  while i < len(sys.argv):
+    if sys.argv[i].lower().replace(u'_', u'') == u'asadmin':
+      useDomainAdminAccess = True
+      i += 1
+    else:
+      print u'ERROR: %s is not a valid argument to "gam <users> delete drivefileacl".' % sys.argv[i]
+      sys.exit(3)
   for user in users:
     user, drive = buildDrive3GAPIObject(user)
     if not drive:
       continue
     print u'Removing permission for %s from %s' % (permissionId, fileId)
-    callGAPI(drive.permissions(), u'delete', fileId=fileId, permissionId=permissionId, supportsTeamDrives=True)
+    callGAPI(drive.permissions(), u'delete', fileId=fileId,
+             permissionId=permissionId, supportsTeamDrives=True,
+             useDomainAdminAccess=useDomainAdminAccess)
 
 def addDriveFileACL(users):
   fileId = sys.argv[5]
@@ -3892,6 +3934,7 @@ def addDriveFileACL(users):
   sendNotificationEmail = False
   emailMessage = None
   transferOwnership = None
+  useDomainAdminAccess = False
   if body[u'type'] == u'anyone':
     i = 7
   elif body[u'type'] in [u'user', u'group']:
@@ -3931,6 +3974,9 @@ def addDriveFileACL(users):
     elif sys.argv[i].lower() == u'expires':
       body[u'expirationTime'] = getTimeOrDeltaFromNow(sys.argv[i+1])
       i += 2
+    elif sys.argv[i].lower().replace(u'_', u'') == u'asadmin':
+      useDomainAdminAccess = True
+      i += 1
     else:
       print u'ERROR: %s is not a valid argument for "gam <users> add drivefileacl"' % sys.argv[i]
       sys.exit(2)
@@ -3941,7 +3987,8 @@ def addDriveFileACL(users):
     result = callGAPI(drive.permissions(), u'create', fields=u'*',
                       fileId=fileId, sendNotificationEmail=sendNotificationEmail,
                       emailMessage=emailMessage, body=body, supportsTeamDrives=True,
-                      transferOwnership=transferOwnership)
+                      transferOwnership=transferOwnership,
+                      useDomainAdminAccess=useDomainAdminAccess)
     printPermission(result)
 
 def updateDriveFileACL(users):
@@ -3949,6 +3996,7 @@ def updateDriveFileACL(users):
   permissionId = getPermissionId(sys.argv[6])
   transferOwnership = None
   removeExpiration = None
+  useDomainAdminAccess = False
   body = {}
   i = 7
   while i < len(sys.argv):
@@ -3971,6 +4019,9 @@ def updateDriveFileACL(users):
       elif body[u'role'] == u'owner':
         transferOwnership = True
       i += 2
+    elif sys.argv[i].lower().replace(u'_', u'') == u'asadmin':
+      useDomainAdminAccess = True
+      i += 1
     else:
       print u'ERROR: %s is not a valid argument for "gam <users> update drivefileacl"' % sys.argv[i]
       sys.exit(2)
@@ -3982,7 +4033,7 @@ def updateDriveFileACL(users):
     result = callGAPI(drive.permissions(), u'update', fields=u'*',
                       fileId=fileId, permissionId=permissionId, removeExpiration=removeExpiration,
                       transferOwnership=transferOwnership, body=body,
-                      supportsTeamDrives=True)
+                      supportsTeamDrives=True, useDomainAdminAccess=useDomainAdminAccess)
     printPermission(result)
 
 def _stripMeInOwners(query):
@@ -7180,10 +7231,41 @@ and accept the Terms of Service (ToS). As soon as you've accepted the ToS popup,
   raw_input(u'Press Enter when done...')
   print u'That\'s it! Your GAM Project is created and ready to use.'
 
-def doCreateTeamDrive(users):
-  body = {u'name': sys.argv[5]}
+def doGetTeamDriveInfo(users):
+  teamDriveId = sys.argv[5]
+  useDomainAdminAccess = False
+  i = 6
+  while i < len(sys.argv):
+    if sys.argv[i].lower().replace(u'_', u'') == u'asadmin':
+      useDomainAdminAccess = True
+      i += 1
+    else:
+      print u'ERROR: %s is not a valid command for "gam <users> show teamdrive"' % sys.argv[i]
+      sys.exit(3)
   for user in users:
     drive = buildGAPIServiceObject(u'drive3', user)
+    if not drive:
+      print u'Failed to access Drive as %s' % user
+      continue
+    result = callGAPI(drive.teamdrives(), u'get', teamDriveId=teamDriveId,
+                      useDomainAdminAccess=useDomainAdminAccess, fields=u'*')
+    print_json(None, result)
+
+def doCreateTeamDrive(users):
+  body = {u'name': sys.argv[5]}
+  i = 6
+  while i < len(sys.argv):
+    if sys.argv[i].lower() == u'theme':
+      body[u'themeId'] = sys.argv[i+1]
+      i += 2
+    else:
+      print u'ERROR: %s is not a valid argument to "gam <users> create teamdrive"' % sys.argv[i]
+      sys.exit(3)
+  for user in users:
+    drive = buildGAPIServiceObject(u'drive3', user)
+    if not drive:
+      print u'Failed to access Drive as %s' % user
+      continue
     requestId = unicode(uuid.uuid4())
     result = callGAPI(drive.teamdrives(), u'create', requestId=requestId, body=body, fields=u'id')
     print u'Created Team Drive %s with id %s' % (body[u'name'], result[u'id'])
@@ -7195,6 +7277,20 @@ def doUpdateTeamDrive(users):
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'name':
       body[u'name'] = sys.argv[i+1]
+      i += 2
+    elif sys.argv[i].lower() == u'theme':
+      body[u'themeId'] = sys.argv[i+1]
+      i += 2
+    elif sys.argv[i].lower() == u'customtheme':
+      body[u'backgroundImageFile'] = {
+        u'id': sys.argv[i+1],
+        u'xCoordinate': float(sys.argv[i+2]),
+        u'yCoordinate': float(sys.argv[i+3]),
+        u'width': float(sys.argv[i+4])
+        }
+      i += 5
+    elif sys.argv[i].lower() == u'color':
+      body[u'colorRgb'] = WEBCOLOR_MAP.get(sys.argv[i+1], sys.argv[i+1])
       i += 2
     else:
       print u'ERROR: %s is not a valid argument for "gam <users> update drivefile"'
@@ -7214,11 +7310,19 @@ def doUpdateTeamDrive(users):
 
 def printShowTeamDrives(users, csvFormat):
   todrive = False
+  useDomainAdminAccess = False
+  q = None
   i = 5
   while i < len(sys.argv):
     if sys.argv[i].lower() == u'todrive':
       todrive = True
       i += 1
+    elif sys.argv[i].lower().replace(u'_', u'') == u'asadmin':
+      useDomainAdminAccess = True
+      i += 1
+    elif sys.argv[i].lower() == u'query':
+      q = sys.argv[i+1]
+      i += 2
     else:
       print u'ERROR: %s is not a valid argument for "gam <users> print|show teamdrives"'
       sys.exit(3)
@@ -7228,7 +7332,9 @@ def printShowTeamDrives(users, csvFormat):
     user, drive = buildDrive3GAPIObject(user)
     if not drive:
       continue
-    results = callGAPIpages(drive.teamdrives(), u'list', u'teamDrives', fields=u'*', soft_errors=True)
+    results = callGAPIpages(drive.teamdrives(), u'list', u'teamDrives',
+                            useDomainAdminAccess=useDomainAdminAccess, fields=u'*',
+                            q=q, soft_errors=True)
     if not results:
       continue
     for td in results:
@@ -8490,11 +8596,8 @@ def doCreateResoldCustomer():
   result = callGAPI(res.customers(), u'insert', body=body, customerAuthToken=customerAuthToken, fields=u'customerId,customerDomain')
   print u'Created customer %s with id %s' % (result[u'customerDomain'], result[u'customerId'])
 
-def _getValueFromOAuth(field):
-  storage, credentials = getOauth2TxtStorageCredentials()
-  if credentials is None or credentials.invalid:
-    doRequestOAuth()
-    credentials = storage.get()
+def _getValueFromOAuth(field, credentials=None):
+  credentials = credentials if credentials is not None else getValidOauth2TxtCredentials()
   return credentials.id_token.get(field, u'Unknown')
 
 def doGetUserInfo(user_email=None):
@@ -9287,10 +9390,19 @@ def doGetASPs(users):
 
 def doDelASP(users):
   cd = buildGAPIObject(u'directory')
-  codeId = sys.argv[5]
+  codeIdList = sys.argv[5].lower()
+  if codeIdList == u'all':
+    allCodeIds = True
+  else:
+    allCodeIds = False
+    codeIds = codeIdList.replace(u',', u' ').split()
   for user in users:
-    callGAPI(cd.asps(), u'delete', userKey=user, codeId=codeId)
-    print u'deleted ASP %s for %s' % (codeId, user)
+    if allCodeIds:
+      asps = callGAPIitems(cd.asps(), u'list', u'items', userKey=user, fields=u'items/codeId')
+      codeIds = [asp[u'codeId'] for asp in asps]
+    for codeId in codeIds:
+      callGAPI(cd.asps(), u'delete', userKey=user, codeId=codeId)
+      print u'deleted ASP %s for %s' % (codeId, user)
 
 def printBackupCodes(user, codes):
   jcount = len(codes)
@@ -9661,7 +9773,15 @@ def writeCSVfile(csvRows, titles, list_type, todrive):
     if cell_count > 2000000 or columns > 256:
       print u'{0}{1}'.format(WARNING_PREFIX, MESSAGE_RESULTS_TOO_LARGE_FOR_GOOGLE_SPREADSHEET)
       mimeType = u'text/csv'
-    _, drive = buildDrive3GAPIObject(_getValueFromOAuth(u'email'))
+    admin_email = _getValueFromOAuth(u'email')
+    _, drive = buildDrive3GAPIObject(admin_email)
+    if not drive:
+      print u'''\nGAM is not authorized to create Drive files. Please run:
+
+gam user %s check serviceaccount
+
+and follow recommend steps to authorize GAM for Drive access.''' % (admin_email)
+      sys.exit(5)
     body = {u'description': u' '.join(sys.argv),
             u'name': u'%s - %s' % (GC_Values[GC_DOMAIN], list_type),
             u'mimeType': mimeType}
@@ -9731,7 +9851,7 @@ USER_ARGUMENT_TO_PROPERTY_MAP = {
   u'lastlogintime': [u'lastLoginTime',],
   u'lastname': [u'name.familyName',],
   u'location': [u'locations',],
-  u'locations': [u'locations'],
+  u'locations': [u'locations',],
   u'name': [u'name.givenName', u'name.familyName', u'name.fullName',],
   u'nicknames': [u'aliases', u'nonEditableAliases',],
   u'noneditablealiases': [u'aliases', u'nonEditableAliases',],
@@ -11080,7 +11200,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
     for user in users:
       if user[:4] == u'uid:':
         full_users.append(user[4:])
-      elif user != u'*' and user.find(u'@') == -1:
+      elif user != u'*' and user != GC_Values[GC_CUSTOMER_ID] and user.find(u'@') == -1:
         full_users.append(u'%s@%s' % (user, GC_Values[GC_DOMAIN]))
       else:
         full_users.append(user)
@@ -11089,31 +11209,25 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
   return full_users
 
 def OAuthInfo():
+  credentials = None
   if len(sys.argv) > 3:
     access_token = sys.argv[3]
   else:
-    storage, credentials = getOauth2TxtStorageCredentials()
-    if credentials is None or credentials.invalid:
-      doRequestOAuth()
-      credentials = storage.get()
+    credentials = getValidOauth2TxtCredentials()
     credentials.user_agent = GAM_INFO
-    http = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL])
-    if credentials.access_token_expired:
-      credentials.refresh(http)
     access_token = credentials.access_token
     print u"\nOAuth File: %s" % GC_Values[GC_OAUTH2_TXT]
   oa2 = buildGAPIObject(u'oauth2')
   token_info = callGAPI(oa2, u'tokeninfo', access_token=access_token)
   print u"Client ID: %s" % token_info[u'issued_to']
-  try:
+  if credentials is not None:
     print u"Secret: %s" % credentials.client_secret
-  except UnboundLocalError:
-    pass
   scopes = token_info[u'scope'].split(u' ')
   print u'Scopes (%s):' % len(scopes)
   for scope in sorted(scopes):
     print u'  %s' % scope
-  print u'G Suite Admin: %s' % credentials.id_token.get(u'email', u'Unknown')
+  if credentials is not None:
+    print u'G Suite Admin: %s' % _getValueFromOAuth(u'email', credentials=credentials)
 
 def doDeleteOAuth():
   _, credentials = getOauth2TxtStorageCredentials()
@@ -11136,6 +11250,48 @@ def doDeleteOAuth():
   except oauth2client.client.TokenRevokeError as e:
     stderrErrorMsg(str(e))
     os.remove(GC_Values[GC_OAUTH2_TXT])
+
+def doRequestOAuth(login_hint=None):
+  storage, credentials = getOauth2TxtStorageCredentials()
+  if credentials is None or credentials.invalid:
+    http = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL])
+    flags = cmd_flags(noLocalWebserver=GC_Values[GC_NO_BROWSER])
+    scopes = getScopesFromUser()
+    client_id, client_secret = getOAuthClientIDAndSecret()
+    login_hint = getValidateLoginHint(login_hint)
+    flow = oauth2client.client.OAuth2WebServerFlow(client_id=client_id,
+                                                   client_secret=client_secret, scope=scopes, redirect_uri=oauth2client.client.OOB_CALLBACK_URN,
+                                                   user_agent=GAM_INFO, response_type=u'code', login_hint=login_hint)
+    try:
+      credentials = oauth2client.tools.run_flow(flow=flow, storage=storage, flags=flags, http=http)
+    except httplib2.CertificateValidationUnsupported:
+      noPythonSSLExit()
+  else:
+    print u'It looks like you\'ve already authorized GAM. Refusing to overwrite existing file:\n\n%s' % GC_Values[GC_OAUTH2_TXT]
+
+def getOAuthClientIDAndSecret():
+  """Retrieves the OAuth client ID and client secret from JSON."""
+  MISSING_CLIENT_SECRETS_MESSAGE = u'''To use GAM you need to create an API project. Please run:
+
+gam create project
+'''
+
+  cs_data = readFile(GC_Values[GC_CLIENT_SECRETS_JSON], mode=u'rb', continueOnError=True, displayError=True, encoding=None)
+  if not cs_data:
+    systemErrorExit(14, MISSING_CLIENT_SECRETS_MESSAGE)
+  try:
+    cs_json = json.loads(cs_data)
+    client_id = cs_json[u'installed'][u'client_id']
+    # chop off .apps.googleusercontent.com suffix as it's not needed
+    # and we need to keep things short for the Auth URL.
+    client_id = re.sub(r'\.apps\.googleusercontent\.com$', u'', client_id)
+    client_secret = cs_json[u'installed'][u'client_secret']
+  except (ValueError, IndexError, KeyError):
+    message = (u'ERROR: the format of your client secrets file:\n\n%s\n\n is '
+               'incorrect. Please recreate the file.')
+    systemErrorExit(3, message)
+
+  return (client_id, client_secret)
 
 class cmd_flags(object):
   def __init__(self, noLocalWebserver):
@@ -11246,7 +11402,8 @@ OAUTH2_MENU += '''
 OAUTH2_CMDS = [u's', u'u', u'e', u'c']
 MAXIMUM_SCOPES = 28 # max of 30 - 2 for email scope always included
 
-def doRequestOAuth(login_hint=None):
+def getScopesFromUser():
+  """Prompts the user to choose from a list of scopes to authorize."""
   def _checkMakeScopesList(scopes):
     del scopes[:]
     for i in range(num_scopes):
@@ -11266,26 +11423,6 @@ def doRequestOAuth(login_hint=None):
     scopes.insert(0, u'email') # Email Display Scope, always included
     return (True, u'')
 
-  MISSING_CLIENT_SECRETS_MESSAGE = u'''To use GAM you need to create an API project. Please run:
-
-gam create project
-'''
-
-  cs_data = readFile(GC_Values[GC_CLIENT_SECRETS_JSON], mode=u'rb', continueOnError=True, displayError=True, encoding=None)
-  if not cs_data:
-    systemErrorExit(14, MISSING_CLIENT_SECRETS_MESSAGE)
-  try:
-    cs_json = json.loads(cs_data)
-    client_id = cs_json[u'installed'][u'client_id']
-    # chop off .apps.googleusercontent.com suffix as it's not needed
-    # and we need to keep things short for the Auth URL.
-    client_id = re.sub(r'\.apps\.googleusercontent\.com$', u'', client_id)
-    client_secret = cs_json[u'installed'][u'client_secret']
-  except (ValueError, IndexError, KeyError):
-    print u'ERROR: the format of your client secrets file:\n\n%s\n\n is incorrect. Please recreate the file.'
-    sys.exit(3)
-
-  login_hint = getValidateLoginHint(login_hint)
   num_scopes = len(OAUTH2_SCOPES)
   menu = OAUTH2_MENU % tuple(range(num_scopes))
   selected_scopes = []
@@ -11347,19 +11484,7 @@ gam create project
       status, message = _checkMakeScopesList(scopes)
       if status:
         break
-  flow = oauth2client.client.OAuth2WebServerFlow(client_id=client_id,
-                                                 client_secret=client_secret, scope=scopes, redirect_uri=oauth2client.client.OOB_CALLBACK_URN,
-                                                 user_agent=GAM_INFO, response_type=u'code', login_hint=login_hint)
-  storage, credentials = getOauth2TxtStorageCredentials()
-  if credentials is None or credentials.invalid:
-    http = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL])
-    flags = cmd_flags(noLocalWebserver=GC_Values[GC_NO_BROWSER])
-    try:
-      credentials = oauth2client.tools.run_flow(flow=flow, storage=storage, flags=flags, http=http)
-    except httplib2.CertificateValidationUnsupported:
-      noPythonSSLExit()
-  else:
-    print u'It looks like you\'ve already authorized GAM. Refusing to overwrite existing file:\n\n%s' % GC_Values[GC_OAUTH2_TXT]
+  return scopes
 
 def init_gam_worker():
   signal.signal(signal.SIGINT, signal.SIG_IGN)
@@ -11944,6 +12069,8 @@ def ProcessGAMCommand(args):
         showCalSettings(users)
       elif showWhat == u'drivesettings':
         printDriveSettings(users)
+      elif showWhat == u'teamdrivethemes':
+        getTeamDriveThemes(users)
       elif showWhat == u'drivefileacl':
         showDriveFileACL(users)
       elif showWhat == u'filelist':
@@ -11988,6 +12115,8 @@ def ProcessGAMCommand(args):
         printShowForwardingAddresses(users, False)
       elif showWhat in [u'teamdrive', u'teamdrives']:
         printShowTeamDrives(users, False)
+      elif showWhat in [u'teamdriveinfo']:
+        doGetTeamDriveInfo(users)
       else:
         print u'ERROR: %s is not a valid argument for "gam <users> show"' % showWhat
         sys.exit(2)
@@ -12092,7 +12221,7 @@ def ProcessGAMCommand(args):
       else:
         print u'ERROR: %s is not a valid argument for "gam <users> delete"' % delWhat
         sys.exit(2)
-    elif command == u'add':
+    elif command in [u'add', u'create']:
       addWhat = sys.argv[4].lower()
       if addWhat == u'calendar':
         addCalendar(users)
@@ -12117,7 +12246,7 @@ def ProcessGAMCommand(args):
       elif addWhat == u'teamdrive':
         doCreateTeamDrive(users)
       else:
-        print u'ERROR: %s is not a valid argument for "gam <users> add"' % addWhat
+        print u'ERROR: %s is not a valid argument for "gam <users> %s"' % (addWhat, command)
         sys.exit(2)
     elif command == u'update':
       updateWhat = sys.argv[4].lower()
