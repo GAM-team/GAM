@@ -14,12 +14,49 @@ Primitives
 <Character> ::= a single character
 <Digit> ::= 0|1|2|3|4|5|6|7|8|9
 <Number> ::= <Digit>+
+<Float> ::= <Digit>*.<Digit>+
 <Hex> ::= <Digit>|a|b|c|d|e|f|A|B|C|D|E|F
 <Space> ::= an actual space character
 <String> ::= a string of characters, surrounded by " if it contains spaces
 <TrueValues> ::= true|on|yes|enabled|1
 <FalseValues>= false|off|no|disabled|0
-<DataTransferService> ::= googledrive|gdrive|drive|"drive and docs"|calendar
+
+<Charset> ::= ascii|mbcs|utf-8|utf-8-sig|utf-16|<String>
+<ColorName> ::=
+	aliceblue|antiquewhite|aqua|aquamarine|azure|beige|bisque|black|blanchedalmond|blue|blueviolet|brown|burlywood|
+	cadetblue|chartreuse|chocolate|coral|cornflowerblue|cornsilk|crimson|cyan|
+	darkblue|darkcyan|darkgoldenrod|darkgray|darkgrey|darkgreen|darkkhaki|darkmagenta|darkolivegreen|darkorange|darkorchid|darkred|
+	darksalmon|darkseagreen|darkslateblue|darkslategray|darkslategrey|darkturquoise|darkviolet|deeppink|deepskyblue|dimgray|dimgrey|dodgerblue|
+	firebrick|floralwhite|forestgreen|fuchsia|gainsboro|ghostwhite|gold|goldenrod|gray|grey|green|greenyellow|
+	honeydew|hotpink|indianred|indigo|ivory|khaki|
+	lavender|lavenderblush|lawngreen|lemonchiffon|lightblue|lightcoral|lightcyan|lightgoldenrodyellow|lightgray|lightgrey|lightgreen|lightpink|
+	lightsalmon|lightseagreen|lightskyblue|lightslategray|lightslategrey|lightsteelblue|lightyellow|lime|limegreen|linen|
+	magenta|maroon|mediumaquamarine|mediumblue|mediumorchid|mediumpurple|mediumseagreen|mediumslateblue|
+	mediumspringgreen|mediumturquoise|mediumvioletred|midnightblue|mintcream|mistyrose|moccasin|navajowhite|navy|
+	oldlace|olive|olivedrab|orange|orangered|orchid|palegoldenrod|palegreen|paleturquoise|palevioletred|
+	papayawhip|peachpuff|peru|pink|plum|powderblue|purple|red|rosybrown|royalblue|
+	saddlebrown|salmon|sandybrown|seagreen|seashell|sienna|silver|skyblue|slateblue|slategray|slategrey|snow|springgreen|steelblue|
+	tan|teal|thistle|tomato|turquoise|violet|wheat|white|whitesmoke|yellow|yellowgreen
+<FileFormat> ::=
+	csv|html|txt|tsv|jpeg|jpg|png|svg|pdf|rtf|pptx|xlsx|docx|odt|ods|openoffice|ms|microsoft|micro$oft
+<Language> ::=
+	ach|af|ag|ak|am|ar|az|be|bem|bg|bn|br|bs|ca|chr|ckb|co|crs|cs|cy|da|de|ee|el|en|en-gb|en-us|eo|es|es-419|et|eu|
+	fa|fi|fo|fr|fr-ca|fy|ga|gaa|gd|gl|gn|gu|ha|haw|he|hi|hr|ht|hu|hy|ia|id|ig|in|is|it|iw|ja|jw|
+	ka|kg|kk|km|kn|ko|kri|ku|ky|la|lg|ln|lo|loz|lt|lua|lv|mfe|mg|mi|mk|ml|mn|mo|mr|ms|mt|my|
+	ne|nl|nn|no|nso|ny|nyn|oc|om|or|pa|pcm|pl|ps|pt-br|pt-pt|qu|rm|rn|ro|ru|rw|
+	sd|sh|si|sk|sl|sn|so|sq|sr|sr-me|st|su|sv|sw|ta|te|tg|th|ti|tk|tl|tn|to|tr|tt|tum|tw|
+	ug|uk|ur|uz|vi|wo|xh|yi|yo|zh-cn|zh-hk|zh-tw|zu
+<MimeType> ::=
+	gdoc|gdocument|
+	gdrawing|
+	gfolder|gdirectory|
+	gform|
+	gfusion|
+	gmap|
+	gpresentation|
+	gscript|
+	gsite|
+	gsheet|gspreadsheet
 <ProductID> ::=
 	Google-Apps|
 	Google-Chrome-Device-Management|
@@ -47,9 +84,6 @@ Primitives
 	drive16tb|16tb|googledrivestorage16tb|Google-Drive-storage-16TB|
 	vault|googlevault|Google-Vault|
 	vfe|googlevaultformeremployee|Google-Vault-Former-Employee
-<Charset> ::= ascii|mbcs|utf-8|utf-8-sig|utf-16|<String>
-<FileFormat> ::= csv|html|txt|tsv|jpeg|jpg|png|svg|pdf|rtf|pptx|xlsx|docx|odt|ods|openoffice|ms|microsoft|micro$oft
-<Language> ::= ar|bn|bg|ca|zh-CN|zh-TW|hr|cs|da|nl|en|en-GB|et|fi|fr|de|el|gu|iw|is|in|it|ja|kn|ko|lv|lt|ms|ml|mr|no|or|fa|pl|pt-BR|pt-PT|ro|ru|sr|sk|sl|es|sv|tl|ta|te|th|tr|uk|ur|vi
 
 Basic items built from primitives
 <Boolean> ::= <TrueValues>|<FalseValues>
@@ -65,9 +99,15 @@ Basic items built from primitives
 <Minute> ::= <Digit><Digit>
 <Second> ::= <Digit><Digit>
 <MilliSeconds> ::= <Digit><Digit><Digit>
-<Date> ::= <Year>-<Month>-<Day>
-<DateTime> ::= <Year>-<Month>-<Day>(<Space>|T)<Hour>:<Minute>
-<Time> ::= <Year>-<Month>-<Day>(<Space>|T)<Hour>:<Minute>[:<Second>[.<MilliSeconds>[Z]]]
+<Date> ::=
+	<Year>-<Month>-<Day> |
+	(+|-)<Number>(d|w)
+<DateTime> ::=
+	<Year>-<Month>-<Day>(<Space>|T)<Hour>:<Minute> |
+	(+|-)<Number>(m|h|d|w)
+<Time> ::=
+	<Year>-<Month>-<Day>(<Space>|T)<Hour>:<Minute>:<Second>[.<MilliSeconds>](Z|(+|-(<Hour>:<Minute>))) |
+	(+|-)<Number>(m|h|d|w)
 <RegularExpression> ::= <Python Regular Expression, see: https://docs.python.org/2/library/re.html>
 <Tag> ::= <String>
 <UniqueID> ::= uid:<String>
@@ -75,17 +115,19 @@ Basic items built from primitives
 Named items
 <AccessToken> ::= <String>
 <ACLScope> ::= [user:]<EmailAddress>|group:<EmailAddress>|domain[:<DomainName>]|default
+<ASPID> ::= <String>
 <CalendarACLRole> ::= editor|freebusy|freebusyreader|owner|reader|writer
 <CalendarColorIndex> ::== <Number in range 1-24>
 <CalendarItem> ::= <EmailAddress>|<String>
 <ClientID> ::= <String>
+<ColorValue> ::= <ColorName>|<ColorHex>
 <CollaboratorItem> ::= <EmailAddress>|<UniqueID>|<String>
 <CourseAlias> ::= <String>
 <CourseID> ::= <Number>|d:<CourseAlias>
 <CourseParticipantType> ::= teacher|teachers|student|students
 <CourseState> ::= active|archived|provisioned|declined
 <CrOSID> ::= <String>
-<CrOSItem> ::= <CrOSID>|(query:<QueryCrOS>)(query:orgunitpath:<OrgUnitPath>)
+<CrOSItem> ::= <CrOSID>|(query:<QueryCrOS>)|(query:orgunitpath:<OrgUnitPath>)
 <CustomerID> ::= <String>
 <DomainAlias> ::= <String>
 <DriveFileACLRole> :: =commenter|editor|organizer|owner|reader|writer
@@ -124,6 +166,7 @@ Named items
 <OrgUnitPath> ::= /|(/<String)+
 <ParameterKey> ::= <String>
 <ParameterValue> ::= <String>
+<Password> ::= <String>
 <PermissionID> ::= id:<String>|<EmailAddress>|anyone|anyonewithlink
 <PrinterID> ::= <String>
 <PrintJobAge> ::= <Number>[m|h|d]
@@ -407,11 +450,12 @@ Items, separated by commas, with spaces or commas in the items themselves: "'it 
 Items, separated by spaces, with spaces or commas in the items themselves: "'it em'( 'it,em')*"
 
 <ACLList> ::== "<ACLScope>(,<ACLScope>)*"
+<ASPIDList> ::= "<ASPID>(,<ASPID>)*"
 <CalendarList> ::= "<CalendarItem>(,<CalendarItem>)*"
 <CollaboratorItemList> ::= "<CollaboratorItem>(,<CollaboratorItem>)*"
 <CourseAliasList> ::= "<CourseAlias>(,<CourseAlias>)*"
-<CourseStateList> ::= "<CourseState>(,<CourseState>)*"
 <CourseIDList> ::= "<CourseID>(,<CourseID>)*"
+<CourseStateList> ::= "<CourseState>(,<CourseState>)*"
 <CrOSFieldNameList> ::= "<CrOSFieldName>(,<CrOSFieldName>)*"
 <CrOSList> ::= "<CrOSID>(,<CrOSID>)*"
 <DriveFileList> ::= "<DriveFileItem>(,<DriveFileItem>)*"
@@ -457,7 +501,6 @@ Specify a collection of Users by directly specifying them or by specifiying item
 		(license|licenses|licence|licences <SKUIDList>)|
 		(query <QueryUser>)
 
-
 Item attributes
 <CalendarAttributes> ::=
 	(selected <Boolean>)|(hidden <Boolean>)|(summary <String>)|(colorindex|colorid <CalendarColorIndex>)|(backgroundcolor <ColorHex>)|(foregroundcolor <ColorHex>)|
@@ -486,12 +529,12 @@ Item attributes
 <DriveFileAddAttributes> ::=
 	(localfile <FileName>)|
 	(convert)|(ocr)|(ocrlanguage <Language>)|(restricted|restrict)|(starred|star)|(trashed|trash)|(viewed|view)|
-	(lastviewedbyme <Time>)|(modifieddate|modifiedtime <Time>)|(description <String>)|(mimetype gdoc|gdocument|gdrawing|gfolder|gdirectory|gform|gfusion|gpresentation|gscript|gsite|gsheet|gspreadsheet)|
+	(lastviewedbyme <Time>)|(modifieddate|modifiedtime <Time>)|(description <String>)|(mimetype <MimeType>)|
 	(parentid <DriveFolderID>)|(parentname <FolderName>)|(anyownerparentname <FolderName>)|writerscantshare
 <DriveFileUpdateAttributes> ::=
 	(localfile <FileName>)|
 	(convert)|(ocr)|(ocrlanguage <Language>)|(restricted|restrict <Boolean>)|(starred|star <Boolean>)|(trashed|trash <Boolean>)|(viewed|view <Boolean>)|
-	(lastviewedbyme <Time>)|(modifieddate <Time>)|(description <String>)|(mimetype gdoc|gdocument|gdrawing|gfolder|gdirectory|gform|gfusion|gpresentation|gscript|gsite|gsheet|gspreadsheet)|
+	(lastviewedbyme <Time>)|(modifieddate <Time>)|(description <String>)|(mimetype <MimeType>)|
 	(parentid <DriveFolderID>)|(parentname <FolderName>)|(anyownerparentname <FolderName>)|writerscantshare
 <EventAttributes> ::=
 	(anyonecanaddself)|(guestscantinviteothers)|(guestscantseeothers)|(notifyattendees)|(available)|(visibility default|public|prvate)|(tentative)|
@@ -567,11 +610,11 @@ Item attributes
 	(organization clear|([type domain_only|school|unknown|work] [customtype <String>] [name <String>] [title <String>] [department <String>] [symbol <String>]
 		[costcenter <String>]  [location <String>] [description <String>] [domain <String>] notprimary|primary))|
 	(org|ou|orgunitpath <OrgUnitPath>)
-	(password random|<String>)|
+	(password random|<Password>)|
 	(phone clear|([type work|home|other|work_fax|home_fax|other_fax|main|company_main|assistant|mobile|work_mobile|pager|work_pager|car|radio|callback|isdn|telex|tty_tdd|grand_central|(custom <String>)]
 		[value <String>] notprimary|primary))|
 	(posix clear|(username <String> uid <Integer> gid <Integer> [system|systemid <String>] [home|homedirectory <String>] [shell <String>] [gecos <String>] [primary <Boolean>] endposix))|
-	(relation clear|(spouse|child|mother|father|parent|brother|sister|friend|relative|domestic_partner|manager|dotted-line_managerassistant|admin_assistant|exec_assistant|referred_by|partner|<String> <String>))|
+	(relation clear|(spouse|child|mother|father|parent|brother|sister|friend|relative|domestic_partner|manager|dotted-line_manager|assistant|admin_assistant|exec_assistant|referred_by|partner|<String> <String>))|
 	(sshkeys clear|(key <String> [expires <Integer>] endssh))|
 	(suspended <Boolean>)|
 	(website clear|(home_page|blog|profile|work|home|other|ftp|reservations|app_install_page|<String> <URL> [notprimary|primary]))|
@@ -670,6 +713,8 @@ gam print domainaliases|aliasdomains [todrive]
 gam update customer <CustomerAttributes>*
 
 gam info customer
+
+<DataTransferService> ::= googledrive|gdrive|drive|"drive and docs"|calendar
 
 gam create datatransfer|transfer <OldOwnerID> <DataTransferService> <NewOwnerID> (<ParameterKey> <ParameterValue>)*
 gam info datatransfer|transfer <TransferID>
@@ -872,7 +917,7 @@ gam undelete vaultmatter|matter <MatterItem>
 gam info vaultmatter|matter <MatterItem>
 gam print vaultmatters|matters [todrive] [basic|full]
 
-gam <UserTypeEntity> delete|del asp|asps|applicationspecificpasswords <AspID>
+gam <UserTypeEntity> delete|del asp|asps|applicationspecificpasswords all|<ASPIDList>
 gam <UserTypeEntity> show asps|asp|applicationspecificpasswords
 
 gam <UserTypeEntity> update backupcodes|backupcode|verificationcodes
@@ -899,7 +944,7 @@ gam <UserTypeEntity> show fileinfo <DriveFileID> [allfields|<DriveFieldName>*]
 gam <UserTypeEntity> show filerevisions <DriveFileID>
 gam <UserTypeEntity> show filetree [anyowner] (orderby <DriveOrderByFieldName> [ascending|descending])*
 
-gam <UserTypeEntity> add drivefile [drivefilename <DriveFileName>] <DriveFileAddAttributes>*
+gam <UserTypeEntity> create|add drivefile [drivefilename <DriveFileName>] <DriveFileAddAttributes>*
 gam <UserTypeEntity> update drivefile (id <DriveFileID)|(drivefilename <DriveFileName>)|(query <QueryDriveFile) [copy] [newfilename <DriveFileName>] <DriveFileUpdateAttributes>*
 gam <UserTypeEntity> get drivefile (id <DriveFileID>)|(drivefilename <DriveFileName>)|(query <QueryDriveFile>) [format <FileFormatList>] [targetfolder <FilePath>] [revision <Number>]
 gam <UserTypeEntity> delete|del drivefile <DriveFileID>|<DriveFileURL>|(query:<QueryDriveFile>) [purge|untrash]
@@ -907,18 +952,18 @@ gam <UserTypeEntity> transfer drive <UserItem> [keepuser]
 gam <UserTypeEntity> delete|del emptydrivefolders
 gam <UserTypeEntity> empty drivetrash
 
-gam <UserTypeEntity> add drivefileacl <DriveFileID> anyone|(user <UserItem>)|(group <GroupItem>)|(domain <DomainName>)
+gam <UserTypeEntity> create|add drivefileacl <DriveFileID> [asadmin] anyone|(user <UserItem>)|(group <GroupItem>)|(domain <DomainName>)
 	(role <DriveFileACLRole>) [withlink|discoverable] [expires <Time>] [sendemail] [emailmessage <String>]
-gam <UserTypeEntity> update drivefileacl <DriveFileID> <PermissionID>
+gam <UserTypeEntity> update drivefileacl <DriveFileID> <PermissionID> [asadmin]
 	(role <DriveFileACLRole>) [withlink|discoverable] [expires <Time>] [removeexpiration]
-gam <UserTypeEntity> delete|del drivefileacl <DriveFileID> <PermissionID>
-gam <UserTypeEntity> show drivefileacl <DriveFileID>
+gam <UserTypeEntity> delete|del drivefileacl <DriveFileID> <PermissionID> [asadmin]
+gam <UserTypeEntity> show drivefileacl <DriveFileID> [asadmin]
 
 gam <UserTypeEntity> delete|del alias|aliases
 
 gam <UserTypeEntity> delete|del group|groups
 
-gam <UserTypeEntity> add license <SKUID> [product|productid <ProductID>]
+gam <UserTypeEntity> create|add license <SKUID> [product|productid <ProductID>]
 gam <UserTypeEntity> update license <SKUID> [product|productid <ProductID>] [from] <SKUID>
 gam <UserTypeEntity> delete|del license <SKUID> [product|productid <ProductID>]
 
@@ -938,7 +983,7 @@ gam <UserTypeEntity> update user <UserAttributes>
 
 gam <UserTypeEntity> deprovision|deprov
 
-gam <UserTypeEntity> [add] label|labels <Name> [messagelistvisibility hide|show] [labellistvisibility hide|show|showifunread]
+gam <UserTypeEntity> [create|add] label|labels <Name> [messagelistvisibility hide|show] [labellistvisibility hide|show|showifunread]
 gam <UserTypeEntity> update labelsettings <LabelName> [name <Name>] [messagelistvisibility hide|show] [labellistvisibility hide|show|showifunread]
 gam <UserTypeEntity> update label|labels [search <RegularExpression>] [replace <LabelReplacement>] [merge]
 gam <UserTypeEntity> delete|del label|labels <LabelName>|regex:<RegularExpression>|--ALL_LABELS--
@@ -952,13 +997,13 @@ gam <UserTypeEntity> untrash messages query <QueryGmail> [doit] [max_to_untrash|
 gam <UserTypeEntity> show gmailprofile [todrive]
 gam <UserTypeEntity> show gplusprofile [todrive]
 
-gam <UserTypeEntity> add delegate|delegates <EmailAddress>
+gam <UserTypeEntity> create|add delegate|delegates <EmailAddress>
 gam <UserTypeEntity> delegate|delegates to <EmailAddress>
 gam <UserTypeEntity> delete|del delegate|delegates <EmailAddress>
 gam <UserTypeEntity> show delegates|delegate [csv]
 gam <UserTypeEntity> print delegates [todrive]
 
-gam <UserTypeEntity> [add] filter [from <EmailAddress>] [to <EmailAddress>] [subject <String>] [haswords|query <List>] [nowords|negatedquery <List>] [musthaveattachment|hasattachment] [excludechats] [size larger|smaller <ByteCount>]
+gam <UserTypeEntity> [create|add] filter [from <EmailAddress>] [to <EmailAddress>] [subject <String>] [haswords|query <List>] [nowords|negatedquery <List>] [musthaveattachment|hasattachment] [excludechats] [size larger|smaller <ByteCount>]
 	[label <LabelID>] [important|notimportant] [star] [trash] [markread] [archive] [neverspam] [forward <EmailAddress>]
 gam <UserTypeEntity> delete filters <FilterIDEntity>
 gam <UserTypeEntity> show filters
@@ -970,7 +1015,7 @@ gam <UserTypeEntity> forward <TrueValues> keep|leaveininbox|archive|delete|trash
 gam <UserTypeEntity> show forward
 gam <UserTypeEntity> print forward [todrive]
 
-gam <UserTypeEntity> add forwardingaddress|forwardingaddresses <EmailAddress>
+gam <UserTypeEntity> create|add forwardingaddress|forwardingaddresses <EmailAddress>
 gam <UserTypeEntity> delete forwardingaddress|forwardingaddresses <EmailAddress>
 gam <UserTypeEntity> show forwardingaddress|forwardingaddresses
 gam <UserTypeEntity> info forwardingaddress|forwardingaddresses <EmailAddress>
@@ -982,14 +1027,14 @@ gam <UserTypeEntity> show imap|imap4
 gam <UserTypeEntity> pop|pop3 <Boolean> [for allmail|newmail|mailfromnowon|fromnowown] [action keep|leaveininbox|archive|delete|trash|markread]
 gam <UserTypeEntity> show pop|pop3
 
-gam <UserTypeEntity> [add] sendas <EmailAddress> <Name> [signature|sig <String>|(file <FileName> [charset <Charset>]) (replace <Tag> <String>)*] [html] [replyto <EmailAddress>] [default] [treatasalias <Boolean>]
+gam <UserTypeEntity> [create|add] sendas <EmailAddress> <Name> [signature|sig <String>|(file <FileName> [charset <Charset>]) (replace <Tag> <String>)*] [html] [replyto <EmailAddress>] [default] [treatasalias <Boolean>]
 gam <UserTypeEntity> update sendas <EmailAddress> [name <Name>] [signature|sig <String>|(file <FileName> [charset <Charset>]) (replace <Tag> <String>)*] [html] [replyto <EmailAddress>] [default] [treatasalias <Boolean>]
 gam <UserTypeEntity> delete sendas <EmailAddress>
 gam <UserTypeEntity> show sendas [format]
 gam <UserTypeEntity> info sendas <EmailAddress> [format]
 gam <UserTypeEntity> print sendas [todrive]
 
-gam <UserTypeEntity> add smime file <FileName> [password <Password>] [sendas|sendasemail <EmailAddress>] [default]
+gam <UserTypeEntity> create|add smime file <FileName> [password <Password>] [sendas|sendasemail <EmailAddress>] [default]
 gam <UserTypeEntity> update smime [id <S/MIMEID>] [sendas|sendasemail <EmailAddress>] [default]
 gam <UserTypeEntity> delete smime [id <S/MIMEID>] [sendas|sendasemail <EmailAddress>]
 gam <UserTypeEntity> show smime [primaryonly]
@@ -998,11 +1043,13 @@ gam <UserTypeEntity> print smime [todrive] [primaryonly]
 gam <UserTypeEntity> signature|sig <String>|(file <FileName> [charset <Charset>]) (replace <Tag> <String>)* [html] [name <String>] [replyto <EmailAddress>] [default] [treatasalias <Boolean>]
 gam <UserTypeEntity> show signature|sig [format]
 
-gam <UserTypeEntity> add teamdrive <Name>
-gam <UserTypeEntity> update teamdrive <TeamDriveID> [name <Name>]
+gam <UserTypeEntity> create|add teamdrive <Name>
+gam <UserTypeEntity> update teamdrive <TeamDriveID> [name <Name>] [(theme|themeid <String>) | ([customtheme <DriveFileID> <Float> <Float> <Float>] [color <ColorValue>])]
 gam <UserTypeEntity> delete teamdrive <TeamDriveID>
-gam <UserTypeEntity> show teamdrives
-gam <UserTypeEntity> print teamdrives [todrive]
+gam <UserTypeEntity> show teamdriveinfo <TeamDriveID> [asadmin]
+gam <UserTypeEntity> show teamdrives [asadmin]
+gam <UserTypeEntity> print teamdrives [todrive] [asadmin]
+gam <UserTypeEntity> show teamdrivethemes
 
 gam <UserTypeEntity> vacation <FalseValues>
 gam <UserTypeEntity> vacation <TrueValues> subject <String> (message <String>)|(file <FileName> [charset <Charset>]) (replace <Tag> <String>)* [html]
