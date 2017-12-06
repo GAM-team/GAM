@@ -422,8 +422,8 @@ Named items
 	ipwhitelisted|
 	isdelegatedadmin|admin|isadmin|
 	ismailboxsetup|
-	is2svenforced|
-	is2svenrolled|
+	isenforcedin2sv|is2svenforced|
+	isenrolledin2sv|is2svenrolled|
 	lastlogintime|
 	locations|location|
 	noneditablealiases|aliases|nicknames|
@@ -468,6 +468,7 @@ Items, separated by spaces, with spaces or commas in the items themselves: "'it 
 <GroupList> ::= "<GroupItem>(,<GroupItem>)*"
 <GuardianStateList> ::= "<GuardianState>(,<GuardianState>)*"
 <LabelNameList> ::= "<LabelName>(,<LabelName)*"
+<LanguageList> ::= "<Language>(,<Language)*"
 <MatterItemList> ::= "<MatterItem>(,<MatterItem>)*"
 <MembersFieldNameList> ::= "<MembersFieldName>(,<MembersFieldName>)*"
 <MobileList> ::= "<MobileId>(,<MobileId>)*"
@@ -802,8 +803,9 @@ gam delete group <GroupItem>
 gam info group <GroupItem> [nousers] [noaliases] [groups]
 
 gam print groups [todrive] ([domain <DomainName>] [member <UserItem>])
-	[maxresults <Number>] [allfields|([settings] <GroupFieldName>* [fields <GroupFieldNameList>])] [delimiter <Character>]
+	[maxresults <Number>] [allfields|([settings] <GroupFieldName>* [fields <GroupFieldNameList>])]
 	[members|memberscount] [managers|managerscount] [owners|ownerscount]
+	[delimiter <Character>] [sortheaders]
 
 gam print group-members|groups-members [todrive] ([domain <DomainName>] [member <UserItem>])|[group <GroupItem>]
 	[membernames] [fields <MembersFieldNameList>]
@@ -837,6 +839,7 @@ gam print users [todrive] ([domain <DomainName>] [query <QueryUser>] [deleted_on
 	[groups] [license|licenses|licence|licences] [emailpart|emailparts|username]
 	[orderby <UserOrderByFieldName> [ascending|descending]] [userview]
 	[allfields|basic|full | ((<UserFieldName>* | fields <UserFieldNameList>) [schemas|custom all|<SchemaNameList>])]
+	[delimiter <Character>] [sortheaders]
 gam <UserTypeEntity> print
 
 Summary of printing:
