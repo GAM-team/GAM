@@ -11339,6 +11339,8 @@ def doRequestOAuth(login_hint=None):
     http = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL])
     flags = cmd_flags(noLocalWebserver=GC_Values[GC_NO_BROWSER])
     scopes = getScopesFromUser()
+    if scopes is None:
+      return
     client_id, client_secret = getOAuthClientIDAndSecret()
     login_hint = getValidateLoginHint(login_hint)
     flow = oauth2client.client.OAuth2WebServerFlow(client_id=client_id,
@@ -11559,7 +11561,7 @@ def getScopesFromUser():
             for i in range(num_scopes):
               selected_scopes[i] = u' '
           elif selection == u'e':
-            return
+            return None
           break
         sys.stdout.write(u'{0}Invalid input "{1}"\n'.format(ERROR_PREFIX, choice))
     if selection == u'c':
