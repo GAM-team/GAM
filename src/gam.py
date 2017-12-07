@@ -9918,6 +9918,8 @@ USER_ARGUMENT_TO_PROPERTY_MAP = {
   u'ipwhitelisted': [u'ipWhitelisted',],
   u'isadmin': [u'isAdmin', u'isDelegatedAdmin',],
   u'isdelegatedadmin': [u'isAdmin', u'isDelegatedAdmin',],
+  u'isenforcedin2sv': [u'isEnforcedIn2Sv',],
+  u'isenrolledin2sv': [u'isEnrolledIn2Sv',],
   u'is2svenforced': [u'isEnforcedIn2Sv',],
   u'is2svenrolled': [u'isEnrolledIn2Sv',],
   u'ismailboxsetup': [u'isMailboxSetup',],
@@ -9971,6 +9973,8 @@ def doPrintUsers():
   customFieldMask = None
   sortHeaders = getGroupFeed = getLicenseFeed = email_parts = False
   viewType = deleted_only = orderBy = sortOrder = None
+  groupDelimiter = u' '
+  licenseDelimiter = u','
   i = 3
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace(u'_', u'')
@@ -9983,6 +9987,12 @@ def doPrintUsers():
       projection = u'basic'
       sortHeaders = True
       fieldsList = []
+      i += 1
+    elif myarg == u'delimiter':
+      groupDelimiter = licenseDelimiter = sys.argv[i+1]
+      i += 2
+    elif myarg == u'sortheaders':
+      sortHeaders = True
       i += 1
     elif myarg in [u'custom', u'schemas']:
       fieldsList.append(u'customSchemas')
@@ -10079,12 +10089,7 @@ def doPrintUsers():
       user_email = user[u'primaryEmail']
       sys.stderr.write(u"Getting Group Membership for %s (%s/%s)\r\n" % (user_email, user_count, total_users))
       groups = callGAPIpages(cd.groups(), u'list', u'groups', userKey=user_email)
-      grouplist = u''
-      for groupname in groups:
-        grouplist += groupname[u'email']+u' '
-      if grouplist[-1:] == u' ':
-        grouplist = grouplist[:-1]
-      user.update(Groups=grouplist)
+      user[u'Groups'] = groupDelimiter.join([groupname[u'email'] for groupname in groups])
       user_count += 1
   if getLicenseFeed:
     titles.append(u'Licenses')
@@ -10093,7 +10098,7 @@ def doPrintUsers():
       for user in csvRows:
         u_licenses = licenses.get(user[u'primaryEmail'].lower())
         if u_licenses:
-          user[u'Licenses'] = u','.join([_skuIdToDisplayName(skuId) for skuId in u_licenses])
+          user[u'Licenses'] = licenseDelimiter.join([_skuIdToDisplayName(skuId) for skuId in u_licenses])
   writeCSVfile(csvRows, titles, u'Users', todrive)
 
 GROUP_ARGUMENT_TO_PROPERTY_TITLE_MAP = {
@@ -10187,6 +10192,9 @@ def doPrintGroups():
       fieldsTitles = {}
       for field in GROUP_ARGUMENT_TO_PROPERTY_TITLE_MAP:
         addFieldTitleToCSVfile(field, GROUP_ARGUMENT_TO_PROPERTY_TITLE_MAP, cdfieldsList, fieldsTitles, titles)
+      i += 1
+    elif myarg == u'sortheaders':
+      sortHeaders = True
       i += 1
     elif myarg == u'fields':
       fieldNameList = sys.argv[i+1]
@@ -11331,6 +11339,8 @@ def doRequestOAuth(login_hint=None):
     http = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL])
     flags = cmd_flags(noLocalWebserver=GC_Values[GC_NO_BROWSER])
     scopes = getScopesFromUser()
+    if scopes is None:
+      return
     client_id, client_secret = getOAuthClientIDAndSecret()
     login_hint = getValidateLoginHint(login_hint)
     flow = oauth2client.client.OAuth2WebServerFlow(client_id=client_id,
@@ -11551,7 +11561,7 @@ def getScopesFromUser():
             for i in range(num_scopes):
               selected_scopes[i] = u' '
           elif selection == u'e':
-            return
+            return None
           break
         sys.stdout.write(u'{0}Invalid input "{1}"\n'.format(ERROR_PREFIX, choice))
     if selection == u'c':
