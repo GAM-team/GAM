@@ -9059,6 +9059,8 @@ def doGetCrosInfo():
       devices.append(a_device[u'deviceId'])
   else:
     devices = [deviceId,]
+  downloadfile = None
+  downloadurl = None
   projection = None
   fieldsList = []
   noLists = False
@@ -9109,6 +9111,9 @@ def doGetCrosInfo():
           print u'ERROR: %s is not a valid argument for "gam info cros fields"' % field
           sys.exit(2)
       i += 2
+    elif myarg == u'downloadfile':
+      downloadfile = sys.argv[i+1]
+      i += 2
     else:
       print u'ERROR: %s is not a valid argument for "gam info cros"' % sys.argv[i]
       sys.exit(2)
@@ -9145,6 +9150,27 @@ def doGetCrosInfo():
         for recentUser in recentUsers[:min(lenRU, listLimit or lenRU)]:
           print u'    type: {0}'.format(recentUser[u'type'])
           print u'      email: {0}'.format(recentUser.get(u'email', [u'Unknown', u'UnmanagedUser'][recentUser[u'type'] == u'USER_TYPE_UNMANAGED']))
+      deviceFiles = cros.get(u'deviceFiles', [])
+      lenDF = len(deviceFiles)
+      if lenDF:
+        print u'  deviceFiles'
+        for deviceFile in deviceFiles[:min(lenDF, listLimit or lenDF)]:
+          print u'    %s: %s' % (deviceFile['type'], deviceFile['createTime'])
+      if downloadfile:
+        if downloadfile.lower() == u'latest':
+          downloadfilename = u'cros-logs-%s-%s.zip' % (deviceId, deviceFiles[-1][u'createTime'])
+          downloadurl = deviceFiles[-1][u'downloadUrl']
+        else:
+          for df in deviceFiles:
+            if df[u'createTime'] == downloadfile:
+              downloadurl = df[u'downloadUrl']
+              downloadfilename = u'cros-logs-%s-%s.zip' % (deviceId, df[u'createTime'])
+        if not downloadurl:
+          print u'ERROR: no such file to download.'
+          continue
+        _, content = cd._http.request(downloadurl)
+        writeFile(downloadfilename, content, continueOnError=True)
+        print u'Downloaded %s' % downloadfilename
 
 def doGetMobileInfo():
   cd = buildGAPIObject(u'directory')
@@ -10789,7 +10815,7 @@ def doPrintCrosActivity():
   for cros in all_cros:
     row = {}
     for attrib in cros:
-      if attrib not in [u'recentUsers', u'activeTimeRanges']:
+      if attrib not in [u'recentUsers', u'activeTimeRanges', u'deviceFiles']:
         row[attrib] = cros[attrib]
     if u'activeTimeRanges' in cros:
       activeTimeRanges = _filterTimeRanges(cros[u'activeTimeRanges'], startDate, endDate)
@@ -10938,6 +10964,8 @@ def doPrintCrosDevices():
                            orderBy=orderBy, sortOrder=sortOrder, fields=fields, maxResults=GC_Values[GC_DEVICE_MAX_RESULTS])
   if (not noLists) and (not selectActiveTimeRanges) and (not selectRecentUsers):
     for cros in all_cros:
+      if u'deviceFiles' in cros:
+        del(cros[u'deviceFiles'])
       if u'notes' in cros:
         cros[u'notes'] = cros[u'notes'].replace(u'\n', u'\\n')
       addRowTitlesToCSVfile(flatten_json(cros, listLimit=listLimit), csvRows, titles)
@@ -10952,7 +10980,7 @@ def doPrintCrosDevices():
         cros[u'notes'] = cros[u'notes'].replace(u'\n', u'\\n')
       row = {}
       for attrib in cros:
-        if attrib not in [u'kind', u'etag', u'recentUsers', u'activeTimeRanges']:
+        if attrib not in [u'kind', u'etag', u'recentUsers', u'activeTimeRanges', u'deviceFiles']:
           if attrib not in titles:
             titles.append(attrib)
           row[attrib] = cros[attrib]
