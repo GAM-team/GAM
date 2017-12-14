@@ -4692,8 +4692,11 @@ def transferDriveFiles(users):
   target_user, target_drive = buildDriveGAPIObject(target_user)
   if not target_drive:
     return
-  target_about = callGAPI(target_drive.about(), u'get', fields=u'quotaBytesTotal,quotaBytesUsed')
-  target_drive_free = int(target_about[u'quotaBytesTotal']) - int(target_about[u'quotaBytesUsed'])
+  target_about = callGAPI(target_drive.about(), u'get', fields=u'quotaType,quotaBytesTotal,quotaBytesUsed')
+  if target_about[u'quotaType'] != u'UNLIMITED':
+    target_drive_free = int(target_about[u'quotaBytesTotal']) - int(target_about[u'quotaBytesUsed'])
+  else:
+    target_drive_free = None
   for user in users:
     user, source_drive = buildDriveGAPIObject(user)
     if not source_drive:
@@ -4701,10 +4704,13 @@ def transferDriveFiles(users):
     counter = 0
     source_about = callGAPI(source_drive.about(), u'get', fields=u'quotaBytesTotal,quotaBytesUsed,rootFolderId,permissionId')
     source_drive_size = int(source_about[u'quotaBytesUsed'])
-    if target_drive_free < source_drive_size:
-      systemErrorExit(4, MESSAGE_NO_TRANSFER_LACK_OF_DISK_SPACE.format(source_drive_size / 1024 / 1024, target_drive_free / 1024 / 1024))
-    print u'Source drive size: %smb  Target drive free: %smb' % (source_drive_size / 1024 / 1024, target_drive_free / 1024 / 1024)
-    target_drive_free = target_drive_free - source_drive_size # prep target_drive_free for next user
+    if target_drive_free is not None:
+      if target_drive_free < source_drive_size:
+        systemErrorExit(4, MESSAGE_NO_TRANSFER_LACK_OF_DISK_SPACE.format(source_drive_size / 1024 / 1024, target_drive_free / 1024 / 1024))
+      print u'Source drive size: %smb  Target drive free: %smb' % (source_drive_size / 1024 / 1024, target_drive_free / 1024 / 1024)
+      target_drive_free = target_drive_free - source_drive_size # prep target_drive_free for next user
+    else:
+      print u'Source drive size: %smb  Target drive free: UNLIMITED' % (source_drive_size / 1024 / 1024)
     source_root = source_about[u'rootFolderId']
     source_permissionid = source_about[u'permissionId']
     print u"Getting file list for source user: %s..." % user
@@ -9064,7 +9070,6 @@ def doGetCrosInfo():
   else:
     devices = [deviceId,]
   downloadfile = None
-  downloadurl = None
   projection = None
   fieldsList = []
   noLists = False
@@ -9160,21 +9165,26 @@ def doGetCrosInfo():
         print u'  deviceFiles'
         for deviceFile in deviceFiles[:min(lenDF, listLimit or lenDF)]:
           print u'    %s: %s' % (deviceFile['type'], deviceFile['createTime'])
-      if downloadfile:
-        if downloadfile.lower() == u'latest':
-          downloadfilename = u'cros-logs-%s-%s.zip' % (deviceId, deviceFiles[-1][u'createTime'])
-          downloadurl = deviceFiles[-1][u'downloadUrl']
-        else:
-          for df in deviceFiles:
-            if df[u'createTime'] == downloadfile:
-              downloadurl = df[u'downloadUrl']
-              downloadfilename = u'cros-logs-%s-%s.zip' % (deviceId, df[u'createTime'])
-        if not downloadurl:
-          print u'ERROR: no such file to download.'
-          continue
-        _, content = cd._http.request(downloadurl)
-        writeFile(downloadfilename, content, continueOnError=True)
-        print u'Downloaded %s' % downloadfilename
+        if downloadfile:
+          if downloadfile.lower() == u'latest':
+            downloadfilename = u'cros-logs-%s-%s.zip' % (deviceId, deviceFiles[-1][u'createTime'])
+            downloadurl = deviceFiles[-1][u'downloadUrl']
+          else:
+            for df in deviceFiles:
+              if df[u'createTime'] == downloadfile:
+                downloadurl = df[u'downloadUrl']
+                downloadfilename = u'cros-logs-%s-%s.zip' % (deviceId, df[u'createTime'])
+                break
+            else:
+              downloadurl = None
+          if downloadurl:
+            _, content = cd._http.request(downloadurl)
+            writeFile(downloadfilename, content, continueOnError=True)
+            print u'Downloaded %s' % downloadfilename
+          else:
+            print u'ERROR: no such file to download.'
+      elif downloadfile:
+        print u'ERROR: no files to download.'
 
 def doGetMobileInfo():
   cd = buildGAPIObject(u'directory')
@@ -10977,8 +10987,7 @@ def doPrintCrosDevices():
                            orderBy=orderBy, sortOrder=sortOrder, fields=fields, maxResults=GC_Values[GC_DEVICE_MAX_RESULTS])
   if (not noLists) and (not selectActiveTimeRanges) and (not selectRecentUsers):
     for cros in all_cros:
-      if u'deviceFiles' in cros:
-        del(cros[u'deviceFiles'])
+      cros.pop(u'deviceFiles', None)
       if u'notes' in cros:
         cros[u'notes'] = cros[u'notes'].replace(u'\n', u'\\n')
       addRowTitlesToCSVfile(flatten_json(cros, listLimit=listLimit), csvRows, titles)
