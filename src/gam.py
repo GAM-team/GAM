@@ -9166,21 +9166,23 @@ def doGetCrosInfo():
         print u'  deviceFiles'
         for deviceFile in deviceFiles[:min(lenDF, listLimit or lenDF)]:
           print u'    %s: %s' % (deviceFile['type'], deviceFile['createTime'])
-      if downloadfile:
-        if downloadfile.lower() == u'latest':
-          downloadfilename = u'cros-logs-%s-%s.zip' % (deviceId, deviceFiles[-1][u'createTime'])
-          downloadurl = deviceFiles[-1][u'downloadUrl']
-        else:
-          for df in deviceFiles:
-            if df[u'createTime'] == downloadfile:
-              downloadurl = df[u'downloadUrl']
-              downloadfilename = u'cros-logs-%s-%s.zip' % (deviceId, df[u'createTime'])
-        if not downloadurl:
-          print u'ERROR: no such file to download.'
-          continue
-        _, content = cd._http.request(downloadurl)
-        writeFile(downloadfilename, content, continueOnError=True)
-        print u'Downloaded %s' % downloadfilename
+        if downloadfile:
+          if downloadfile.lower() == u'latest':
+            downloadfilename = u'cros-logs-%s-%s.zip' % (deviceId, deviceFiles[-1][u'createTime'])
+            downloadurl = deviceFiles[-1][u'downloadUrl']
+          else:
+            for df in deviceFiles:
+              if df[u'createTime'] == downloadfile:
+                downloadurl = df[u'downloadUrl']
+                downloadfilename = u'cros-logs-%s-%s.zip' % (deviceId, df[u'createTime'])
+          if downloadurl:
+            _, content = cd._http.request(downloadurl)
+            writeFile(downloadfilename, content, continueOnError=True)
+            print u'Downloaded %s' % downloadfilename
+          else:
+            print u'ERROR: no such file to download.'
+      elif downloadfile:
+        print u'ERROR: no files to download.'
 
 def doGetMobileInfo():
   cd = buildGAPIObject(u'directory')
