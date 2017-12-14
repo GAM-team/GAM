@@ -9070,7 +9070,6 @@ def doGetCrosInfo():
   else:
     devices = [deviceId,]
   downloadfile = None
-  downloadurl = None
   projection = None
   fieldsList = []
   noLists = False
@@ -9175,6 +9174,8 @@ def doGetCrosInfo():
               if df[u'createTime'] == downloadfile:
                 downloadurl = df[u'downloadUrl']
                 downloadfilename = u'cros-logs-%s-%s.zip' % (deviceId, df[u'createTime'])
+            else:
+              downloadurl = None
           if downloadurl:
             _, content = cd._http.request(downloadurl)
             writeFile(downloadfilename, content, continueOnError=True)
@@ -10985,8 +10986,7 @@ def doPrintCrosDevices():
                            orderBy=orderBy, sortOrder=sortOrder, fields=fields, maxResults=GC_Values[GC_DEVICE_MAX_RESULTS])
   if (not noLists) and (not selectActiveTimeRanges) and (not selectRecentUsers):
     for cros in all_cros:
-      if u'deviceFiles' in cros:
-        del(cros[u'deviceFiles'])
+      cros.pop(u'deviceFiles', None)
       if u'notes' in cros:
         cros[u'notes'] = cros[u'notes'].replace(u'\n', u'\\n')
       addRowTitlesToCSVfile(flatten_json(cros, listLimit=listLimit), csvRows, titles)
