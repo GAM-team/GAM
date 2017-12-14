@@ -4692,8 +4692,11 @@ def transferDriveFiles(users):
   target_user, target_drive = buildDriveGAPIObject(target_user)
   if not target_drive:
     return
-  target_about = callGAPI(target_drive.about(), u'get', fields=u'quotaBytesTotal,quotaBytesUsed')
-  target_drive_free = int(target_about[u'quotaBytesTotal']) - int(target_about[u'quotaBytesUsed'])
+  target_about = callGAPI(target_drive.about(), u'get', fields=u'quotaType,quotaBytesTotal,quotaBytesUsed')
+  if target_about[u'quotaType'] != u'UNLIMITED':
+    target_drive_free = int(target_about[u'quotaBytesTotal']) - int(target_about[u'quotaBytesUsed'])
+  else:
+    target_drive_free = None
   for user in users:
     user, source_drive = buildDriveGAPIObject(user)
     if not source_drive:
@@ -4701,10 +4704,13 @@ def transferDriveFiles(users):
     counter = 0
     source_about = callGAPI(source_drive.about(), u'get', fields=u'quotaBytesTotal,quotaBytesUsed,rootFolderId,permissionId')
     source_drive_size = int(source_about[u'quotaBytesUsed'])
-    if target_drive_free < source_drive_size:
-      systemErrorExit(4, MESSAGE_NO_TRANSFER_LACK_OF_DISK_SPACE.format(source_drive_size / 1024 / 1024, target_drive_free / 1024 / 1024))
-    print u'Source drive size: %smb  Target drive free: %smb' % (source_drive_size / 1024 / 1024, target_drive_free / 1024 / 1024)
-    target_drive_free = target_drive_free - source_drive_size # prep target_drive_free for next user
+    if target_drive_free is not None:
+      if target_drive_free < source_drive_size:
+        systemErrorExit(4, MESSAGE_NO_TRANSFER_LACK_OF_DISK_SPACE.format(source_drive_size / 1024 / 1024, target_drive_free / 1024 / 1024))
+      print u'Source drive size: %smb  Target drive free: %smb' % (source_drive_size / 1024 / 1024, target_drive_free / 1024 / 1024)
+      target_drive_free = target_drive_free - source_drive_size # prep target_drive_free for next user
+    else:
+      print u'Source drive size: %smb  Target drive free: UNLIMITED' % (source_drive_size / 1024 / 1024)
     source_root = source_about[u'rootFolderId']
     source_permissionid = source_about[u'permissionId']
     print u"Getting file list for source user: %s..." % user
