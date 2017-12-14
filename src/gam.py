@@ -9174,6 +9174,7 @@ def doGetCrosInfo():
               if df[u'createTime'] == downloadfile:
                 downloadurl = df[u'downloadUrl']
                 downloadfilename = u'cros-logs-%s-%s.zip' % (deviceId, df[u'createTime'])
+                break
             else:
               downloadurl = None
           if downloadurl:
