@@ -9168,26 +9168,23 @@ def doGetCrosInfo():
       lenDF = len(deviceFiles)
       if lenDF:
         print u'  deviceFiles'
-        for deviceFile in deviceFiles[:min(lenDF, listLimit or lenDF)]:
-          print u'    %s: %s' % (deviceFile['type'], deviceFile['createTime'])
+        for df in deviceFiles[:min(lenDF, listLimit or lenDF)]:
+          print u'    {0}: {1}'.format(df['type'], df['createTime'])
         if downloadfile:
           if downloadfile.lower() == u'latest':
-            downloadfilename = u'cros-logs-%s-%s.zip' % (deviceId, deviceFiles[-1][u'createTime'])
-            downloadurl = deviceFiles[-1][u'downloadUrl']
+            df = deviceFiles[-1]
           else:
             for df in deviceFiles:
               if df[u'createTime'] == downloadfile:
-                downloadurl = df[u'downloadUrl']
-                downloadfilename = u'cros-logs-%s-%s.zip' % (deviceId, df[u'createTime'])
                 break
             else:
-              downloadurl = None
-          if downloadurl:
-            _, content = cd._http.request(downloadurl)
+              print u'ERROR: file {0} not available to download.'.format(downloadfile)
+              df = None
+          if df:
+            downloadfilename = u'cros-logs-{0}-{1}.zip'.format(deviceId, df[u'createTime'])
+            _, content = cd._http.request(df[u'downloadUrl'])
             writeFile(downloadfilename, content, continueOnError=True)
-            print u'Downloaded %s' % downloadfilename
-          else:
-            print u'ERROR: no such file to download.'
+            print u'Downloaded: {0}'.format(downloadfilename)
       elif downloadfile:
         print u'ERROR: no files to download.'
 
