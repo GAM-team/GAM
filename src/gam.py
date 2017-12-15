@@ -9139,9 +9139,14 @@ def doGetCrosInfo():
     print u'CrOS Device: {0} ({1} of {2})'.format(deviceId, i, device_count)
     if u'notes' in cros:
       cros[u'notes'] = cros[u'notes'].replace(u'\n', u'\\n')
+    cros = _checkTPMVulnerability(cros)
     for up in CROS_SCALAR_PROPERTY_PRINT_ORDER:
       if up in cros:
-        print u'  {0}: {1}'.format(up, cros[up])
+        if isinstance(cros[up], basestring):
+          print u'  {0}: {1}'.format(up, cros[up])
+        else:
+          sys.stdout.write(u'  %s:' % up)
+          print_json(None, cros[up], u'  ')
     if not noLists:
       activeTimeRanges = _filterTimeRanges(cros.get(u'activeTimeRanges', []), startDate, endDate)
       lenATR = len(activeTimeRanges)
@@ -10863,6 +10868,16 @@ def doPrintCrosActivity():
       csvRows.append(row)
   writeCSVfile(csvRows, titles, u'CrOS Activity', todrive)
 
+def _checkTPMVulnerability(cros):
+  if u'tpmVersionInfo' in cros and u'firmwareVersion' in cros[u'tpmVersionInfo']:
+    if cros[u'tpmVersionInfo'][u'firmwareVersion'] in CROS_TPM_VULN_VERSIONS:
+      cros[u'tpmVersionInfo'][u'tpmVulnerability'] = u'VULNERABLE'
+    elif cros[u'tpmVersionInfo'][u'firmwareVersion'] in CROS_TPM_FIXED_VERSIONS:
+      cros[u'tpmVersionInfo'][u'tpmVulnerability'] = u'UPDATED'
+    else:
+      cros[u'tpmVersionInfo'][u'tpmVulnerability'] = u'NOT VULNERABLE'
+  return cros
+
 def doPrintCrosDevices():
   cd = buildGAPIObject(u'directory')
   todrive = False
@@ -10985,6 +11000,8 @@ def doPrintCrosDevices():
   all_cros = callGAPIpages(cd.chromeosdevices(), u'list', u'chromeosdevices', page_message=page_message,
                            query=query, customerId=GC_Values[GC_CUSTOMER_ID], projection=projection, orgUnitPath=orgUnitPath,
                            orderBy=orderBy, sortOrder=sortOrder, fields=fields, maxResults=GC_Values[GC_DEVICE_MAX_RESULTS])
+  for cros in all_cros:
+    cros = _checkTPMVulnerability(cros)
   if (not noLists) and (not selectActiveTimeRanges) and (not selectRecentUsers):
     for cros in all_cros:
       cros.pop(u'deviceFiles', None)
