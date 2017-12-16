@@ -243,6 +243,7 @@ Named items
 	serialnumber|
 	status|
 	supportenddate|
+	tpmversioninfo|
 	willautorenew
 
 <CrOSOrderByFieldName> ::=
