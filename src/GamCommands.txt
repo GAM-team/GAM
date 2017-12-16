@@ -421,6 +421,7 @@ Named items
 	features|
 	floor|
 	floorsection|
+	generatedresourcename|
 	id|
 	name|
 	type|
@@ -895,7 +896,7 @@ gam create resource <ResourceID> <Name> <ResourceAttributes>*
 gam update resource <ResourceID> <ResourceAttributes>*
 gam delete resource <ResourceID>
 gam info resource <ResourceID>
-gam print resources [todrive] <ResourceFieldName>*
+gam print resources [todrive] [allfields] <ResourceFieldName>*
 
 gam create schema|schemas <SchemaName> <SchemaFieldDefinition>+
 gam update schema <SchemaName> <SchemaFieldDefinition>* (deletefield <FieldName>)*

@@ -11327,6 +11327,7 @@ RESCAL_ARGUMENT_TO_PROPERTY_MAP = {
   u'floor': [u'floorName',],
   u'floorname': [u'floorName',],
   u'floorsection': [u'floorSection',],
+  u'generatedresourcename': [u'generatedResourceName',],
   u'id': [u'resourceId'],
   u'name': [u'resourceName'],
   u'type': [u'resourceType'],
