@@ -9069,7 +9069,8 @@ def doGetCrosInfo():
       devices.append(a_device[u'deviceId'])
   else:
     devices = [deviceId,]
-  downloadfile = None
+  downloadFileFieldName = downloadFileFieldValue = None
+  targetFolder = GC_Values[GC_DRIVE_DIR]
   projection = None
   fieldsList = []
   noLists = False
@@ -9121,7 +9122,23 @@ def doGetCrosInfo():
           sys.exit(2)
       i += 2
     elif myarg == u'downloadfile':
-      downloadfile = sys.argv[i+1]
+      value = sys.argv[i+1]
+      if value.lower() == u'latest':
+        downloadFileFieldName = u'latest'
+      elif value.lower().startswith(u'time:'):
+        downloadFileFieldName = u'createTime'
+        downloadFileFieldValue = value[5:]
+      elif value.lower().startswith(u'name:'):
+        downloadFileFieldName = u'name'
+        downloadFileFieldValue = value[5:]
+      else:
+        downloadFileFieldName = u'time'
+        downloadFileFieldValue = value
+      i += 2
+    elif myarg == u'targetfolder':
+      targetFolder = os.path.expanduser(sys.argv[i+1])
+      if not os.path.isdir(targetFolder):
+        os.makedirs(targetFolder)
       i += 2
     else:
       print u'ERROR: %s is not a valid argument for "gam info cros"' % sys.argv[i]
@@ -9139,7 +9156,7 @@ def doGetCrosInfo():
     print u'CrOS Device: {0} ({1} of {2})'.format(deviceId, i, device_count)
     if u'notes' in cros:
       cros[u'notes'] = cros[u'notes'].replace(u'\n', u'\\n')
-    cros = _checkTPMVulnerability(cros)
+    _checkTPMVulnerability(cros)
     for up in CROS_SCALAR_PROPERTY_PRINT_ORDER:
       if up in cros:
         if isinstance(cros[up], basestring):
@@ -9168,27 +9185,24 @@ def doGetCrosInfo():
       lenDF = len(deviceFiles)
       if lenDF:
         print u'  deviceFiles'
-        for deviceFile in deviceFiles[:min(lenDF, listLimit or lenDF)]:
-          print u'    %s: %s' % (deviceFile['type'], deviceFile['createTime'])
-        if downloadfile:
-          if downloadfile.lower() == u'latest':
-            downloadfilename = u'cros-logs-%s-%s.zip' % (deviceId, deviceFiles[-1][u'createTime'])
-            downloadurl = deviceFiles[-1][u'downloadUrl']
+        for devicefile in deviceFiles[:min(lenDF, listLimit or lenDF)]:
+          print u'    name: {0}, type: {1}, time: {2}'.format(devicefile[u'name'], devicefile[u'type'], devicefile[u'createTime'])
+        if downloadFileFieldName:
+          if downloadFileFieldName == u'latest':
+            devicefile = deviceFiles[-1]
           else:
-            for df in deviceFiles:
-              if df[u'createTime'] == downloadfile:
-                downloadurl = df[u'downloadUrl']
-                downloadfilename = u'cros-logs-%s-%s.zip' % (deviceId, df[u'createTime'])
+            for devicefile in deviceFiles:
+              if devicefile[downloadFileFieldName] == downloadFileFieldValue:
                 break
             else:
-              downloadurl = None
-          if downloadurl:
-            _, content = cd._http.request(downloadurl)
+              print u'ERROR: file {0}:{1} not available to download.'.format([u'time', u'name'][downloadFileFieldName == u'name'], downloadFileFieldValue)
+              devicefile = None
+          if devicefile:
+            downloadfilename = os.path.join(targetFolder, u'cros-logs-{0}-{1}.zip'.format(deviceId, devicefile[u'createTime']))
+            _, content = cd._http.request(devicefile[u'downloadUrl'])
             writeFile(downloadfilename, content, continueOnError=True)
-            print u'Downloaded %s' % downloadfilename
-          else:
-            print u'ERROR: no such file to download.'
-      elif downloadfile:
+            print u'Downloaded: {0}'.format(downloadfilename)
+      elif downloadFileFieldName:
         print u'ERROR: no files to download.'
 
 def doGetMobileInfo():
@@ -10876,7 +10890,6 @@ def _checkTPMVulnerability(cros):
       cros[u'tpmVersionInfo'][u'tpmVulnerability'] = u'UPDATED'
     else:
       cros[u'tpmVersionInfo'][u'tpmVulnerability'] = u'NOT VULNERABLE'
-  return cros
 
 def doPrintCrosDevices():
   cd = buildGAPIObject(u'directory')
@@ -11001,7 +11014,7 @@ def doPrintCrosDevices():
                            query=query, customerId=GC_Values[GC_CUSTOMER_ID], projection=projection, orgUnitPath=orgUnitPath,
                            orderBy=orderBy, sortOrder=sortOrder, fields=fields, maxResults=GC_Values[GC_DEVICE_MAX_RESULTS])
   for cros in all_cros:
-    cros = _checkTPMVulnerability(cros)
+    _checkTPMVulnerability(cros)
   if (not noLists) and (not selectActiveTimeRanges) and (not selectRecentUsers):
     for cros in all_cros:
       cros.pop(u'deviceFiles', None)
