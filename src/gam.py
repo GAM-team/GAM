@@ -10999,7 +10999,7 @@ def _checkTPMVulnerability(cros):
     elif cros[u'tpmVersionInfo'][u'firmwareVersion'] in CROS_TPM_FIXED_VERSIONS:
       cros[u'tpmVersionInfo'][u'tpmVulnerability'] = u'UPDATED'
     else:
-      cros[u'tpmVersionInfo'][u'tpmVulnerability'] = u'NOT VULNERABLE'
+      cros[u'tpmVersionInfo'][u'tpmVulnerability'] = u'NOT IMPACTED'
   return cros
 
 def doPrintCrosDevices():
