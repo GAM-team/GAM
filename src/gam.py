@@ -7976,9 +7976,10 @@ def _getBuildingAttributes(args, body=None):
 
 def doCreateBuilding():
   cd = buildGAPIObject(u'directory')
-  body = {u'floorNames': [u'1',],
-          u'buildingId': unicode(uuid.uuid4())}
-  body = _getBuildingAttributes(sys.argv[3:], body)
+  body = {u'buildingId': unicode(uuid.uuid4()),
+          u'buildingName': sys.argv[3],
+          u'floorNames': [u'1',]}
+  body = _getBuildingAttributes(sys.argv[4:], body)
   print u'Creating building %s...' % body[u'buildingId']
   callGAPI(cd.resources().buildings(), u'insert',
            customer=GC_Values[GC_CUSTOMER_ID], body=body)
@@ -8097,7 +8098,8 @@ def _getResourceCalendarAttributes(args, body=None):
 
 def doCreateResourceCalendar():
   cd = buildGAPIObject(u'directory')
-  body = {u'resourceId': sys.argv[3], u'resourceName': sys.argv[4]}
+  body = {u'resourceId': sys.argv[3],
+          u'resourceName': sys.argv[4]}
   body = _getResourceCalendarAttributes(sys.argv[5:], body)
   print u'Creating resource %s...' % body[u'resourceId']
   callGAPI(cd.resources().calendars(), u'insert',
