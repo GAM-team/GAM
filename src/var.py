@@ -439,7 +439,7 @@ CROS_ARGUMENT_TO_PROPERTY_MAP = {
   u'asset': [u'annotatedAssetId',],
   u'assetid': [u'annotatedAssetId',],
   u'bootmode': [u'bootMode',],
-  u'devicefiles': [u'deviceFiles',],
+  u'devicefiles': [u'deviceFiles.name', u'deviceFiles.type', u'deviceFiles.createTime',],
   u'deviceid': [u'deviceId',],
   u'ethernetmacaddress': [u'ethernetMacAddress',],
   u'firmwareversion': [u'firmwareVersion',],
@@ -463,7 +463,7 @@ CROS_ARGUMENT_TO_PROPERTY_MAP = {
   u'tag': [u'annotatedAssetId',],
   u'timeranges': [u'activeTimeRanges.activeTime', u'activeTimeRanges.date'],
   u'times': [u'activeTimeRanges.activeTime', u'activeTimeRanges.date'],
-  u'tpmversioninfo': [u'tpmVersionInfo'],
+  u'tpmversioninfo': [u'tpmVersionInfo',],
   u'user': [u'annotatedUser',],
   u'users': [u'recentUsers.email', u'recentUsers.type'],
   u'willautorenew': [u'willAutoRenew',],
@@ -497,11 +497,12 @@ CROS_SCALAR_PROPERTY_PRINT_ORDER = [
 
 CROS_RECENT_USERS_ARGUMENTS = [u'recentusers', u'users']
 CROS_ACTIVE_TIME_RANGES_ARGUMENTS = [u'timeranges', u'activetimeranges', u'times']
+CROS_DEVICE_FILES_ARGUMENTS = [u'devicefiles', u'files']
 CROS_START_ARGUMENTS = [u'start', u'startdate', u'oldestdate']
 CROS_END_ARGUMENTS = [u'end', u'enddate']
 
 # From https://www.chromium.org/chromium-os/tpm_firmware_update
-CROS_TPM_VULN_VERSIONS = [u'41f',  u'420', u'628', u'8520',]
+CROS_TPM_VULN_VERSIONS = [u'41f', u'420', u'628', u'8520',]
 CROS_TPM_FIXED_VERSIONS = [u'422', u'62b', u'8521',]
 
 #
