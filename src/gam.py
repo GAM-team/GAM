@@ -7941,24 +7941,170 @@ def doCreateOrg():
       sys.exit(2)
   callGAPI(cd.orgunits(), u'insert', customerId=GC_Values[GC_CUSTOMER_ID], body=body)
 
+def _getBuildingAttributes(args, body={}):
+  i = 0
+  while i < len(args):
+    myarg = args[i].lower().replace(u'_', u'')
+    if myarg == u'id':
+      body[u'buildingId'] = args[i+1]
+      i += 2
+    elif myarg == u'name':
+      body[u'buildingName'] = args[i+1]
+      i += 2
+    elif myarg in [u'lat', u'latitude']:
+      if u'coordinates' not in body:
+        body[u'coordinates'] = {}
+      body[u'coordinates'][u'latitude'] = args[i+1]
+      i += 2
+    elif myarg in [u'long', u'lng', u'longitude']:
+      if u'coordinates' not in body:
+        body[u'coordinates'] = {}
+      body[u'coordinates'][u'longitude'] = args[i+1]
+      i += 2
+    elif myarg == u'description':
+      body[u'description'] = args[i+1]
+      i += 2
+    elif myarg == u'floors':
+      body[u'floorNames'] = args[i+1].split(u',')
+      i += 2
+    else:
+      print u'ERROR: %s is not a valid argument for "gam create|update building"' % myarg
+      sys.exit(3)
+  return body
+
+def doCreateBuilding():
+  cd = buildGAPIObject(u'directory')
+  body = {u'floorNames': [u'1'],
+          u'buildingId': unicode(uuid.uuid4())}
+  body = _getBuildingAttributes(sys.argv[3:], body)
+  print u'Creating building %s...' % body[u'buildingId']
+  callGAPI(cd.resources().buildings(), u'insert',
+           customer=GC_Values[GC_CUSTOMER_ID], body=body)
+
+def doUpdateBuilding():
+  cd = buildGAPIObject(u'directory')
+  buildingId = sys.argv[3]
+  body = _getBuildingAttributes(sys.argv[4:])
+  print u'Updating building %s...' % buildingId
+  callGAPI(cd.resources().buildings(), u'patch',
+           customer=GC_Values[GC_CUSTOMER_ID], buildingId=buildingId, body=body)
+
+def doDeleteBuilding():
+  cd = buildGAPIObject(u'directory')
+  buildingId = sys.argv[3]
+  print u'Deleting building %s...' % buildingId
+  callGAPI(cd.resources().buildings(), u'delete',
+           customer=GC_Values[GC_CUSTOMER_ID], buildingId=buildingId)
+
+def _getFeatureAttributes(args, body={}):
+  i = 0
+  while i < len(args):
+    myarg = args[i].lower().replace(u'_', u'')
+    if myarg == u'name':
+      body[u'name'] = args[i+1]
+      i += 2
+    else:
+      print u'ERROR: %s is not a valid argument for "gam create|update feature"'
+      sys.exit(3)
+  return body
+
+def doCreateFeature():
+  cd = buildGAPIObject(u'directory')
+  body = _getFeatureAttributes(sys.argv[3:])
+  print u'Creating feature %s...' % body[u'name']
+  callGAPI(cd.resources().features(), u'insert',
+           customer=GC_Values[GC_CUSTOMER_ID], body=body)
+
+def doUpdateFeature():
+  # update does not work for name and name is only field to be updated
+  # if additional writable fields are added to feature in the future
+  # we'll add support for update as well as rename
+  cd = buildGAPIObject(u'directory')
+  oldName = sys.argv[3]
+  body = {u'newName': sys.argv[5:]}
+  print u'Updating feature %s...' % oldName
+  callGAPI(cd.resources().features(), u'rename',
+           customer=GC_Values[GC_CUSTOMER_ID], oldName=oldName,
+           body=body)
+
+def doPrintFeatures():
+  cd = buildGAPIObject(u'directory')
+  features = callGAPIpages(cd.resources().features(), u'list',
+           items=u'features', customer=GC_Values[GC_CUSTOMER_ID])
+  print features
+
+def doGetBuildingInfo():
+  cd = buildGAPIObject(u'directory')
+  buildingId = sys.argv[3]
+  building = callGAPI(cd.resources().buildings(), u'get',
+           customer=GC_Values[GC_CUSTOMER_ID], buildingId=buildingId)
+  if u'floorNames' in building:
+    building[u'floorNames'] = u' '.join(building[u'floorNames'])
+  if u'buildingName' in building:
+    sys.stdout.write(building[u'buildingName'])
+    del(building[u'buildingName'])
+  print_json(None, building)
+
+def _getResourceCalendarAttributes(args, body={}):
+  i = 0
+  while i < len(args):
+    myarg = args[i].lower().replace(u'_', u'')
+    if myarg == u'description':
+      body[u'resourceDescription'] = args[i+1].replace(u'\\n', u'\n')
+      i += 2
+    elif myarg == u'type':
+      body[u'resourceType'] = args[i+1]
+      i += 2
+    elif myarg in [u'building', u'buildingid']:
+      body[u'buildingId'] = args[i+1]
+      i += 2
+    elif myarg in [u'capacity']:
+      body[u'capacity'] = int(args[i+1])
+      i += 2
+    elif myarg in [u'feature', u'features']:
+      features = args[i+1].split(u',')
+      body[u'featureInstances'] = []
+      for feature in features:
+        body[u'featureInstances'].append({u'feature': {u'name': feature}})
+      i += 2
+    elif myarg in [u'floor', u'floorname']:
+      body[u'floorName'] = args[i+1]
+      i += 2
+    elif myarg in [u'floorsection']:
+      body[u'floorSection'] = args[i+1]
+      i += 2
+    elif myarg in [u'category']:
+      body[u'resourceCategory'] = args[i+1].upper()
+      if body[u'resourceCategory'] == u'ROOM':
+        body[u'resourceCategory'] = u'CONFERENCE_ROOM'
+      i += 2
+    elif myarg in [u'uservisibledescription', u'userdescription']:
+      body[u'userVisibleDescription'] = args[i+1]
+      i += 2 
+    else:
+      print u'ERROR: %s is not a valid argument for "gam create|update resource"' % args[i]
+      sys.exit(2)
+  return body
+
 def doCreateResourceCalendar():
   cd = buildGAPIObject(u'directory')
   body = {u'resourceId': sys.argv[3],
           u'resourceName': sys.argv[4]}
-  i = 5
-  while i < len(sys.argv):
-    if sys.argv[i].lower() == u'description':
-      body[u'resourceDescription'] = sys.argv[i+1].replace(u'\\n', u'\n')
-      i += 2
-    elif sys.argv[i].lower() == u'type':
-      body[u'resourceType'] = sys.argv[i+1]
-      i += 2
-    else:
-      print u'ERROR: %s is not a valid argument for "gam create resource"' % sys.argv[i]
-      sys.exit(2)
+  body = _getResourceCalendarAttributes(sys.argv[5:], body)
   print u'Creating resource %s...' % body[u'resourceId']
   callGAPI(cd.resources().calendars(), u'insert',
            customer=GC_Values[GC_CUSTOMER_ID], body=body)
+
+def doUpdateResourceCalendar():
+  cd = buildGAPIObject(u'directory')
+  resId = sys.argv[3]
+  body = _getResourceCalendarAttributes(sys.argv[4:])
+  # Use patch since it seems to work better.
+  # update requires name to be set.
+  callGAPI(cd.resources().calendars(), u'patch',
+           customer=GC_Values[GC_CUSTOMER_ID], calendarResourceId=resId, body=body,
+           fields=u'')
+  print u'updated resource %s' % resId
 
 def doUpdateUser(users, i):
   cd = buildGAPIObject(u'directory')
@@ -8280,31 +8426,6 @@ def doUpdateAlias():
     except GAPI_invalid:
       callGAPI(cd.groups().aliases(), u'insert', groupKey=target_email, body={u'alias': alias})
   print u'updated alias %s' % alias
-
-def doUpdateResourceCalendar():
-  cd = buildGAPIObject(u'directory')
-  resId = sys.argv[3]
-  body = {}
-  i = 4
-  while i < len(sys.argv):
-    if sys.argv[i].lower() == u'name':
-      body[u'resourceName'] = sys.argv[i+1]
-      i += 2
-    elif sys.argv[i].lower() == u'description':
-      body[u'resourceDescription'] = sys.argv[i+1].replace(u'\\n', u'\n')
-      i += 2
-    elif sys.argv[i].lower() == u'type':
-      body[u'resourceType'] = sys.argv[i+1]
-      i += 2
-    else:
-      print u'ERROR: %s is not a valid argument for "gam update resource"' % sys.argv[i]
-      sys.exit(2)
-  # Use patch since it seems to work better.
-  # update requires name to be set.
-  callGAPI(cd.resources().calendars(), u'patch',
-           customer=GC_Values[GC_CUSTOMER_ID], calendarResourceId=resId, body=body,
-           fields=u'')
-  print u'updated resource %s' % resId
 
 def doUpdateCros():
   cd = buildGAPIObject(u'directory')
@@ -9038,10 +9159,13 @@ def doGetResourceCalendarInfo():
   resId = sys.argv[3]
   resource = callGAPI(cd.resources().calendars(), u'get',
                       customer=GC_Values[GC_CUSTOMER_ID], calendarResourceId=resId)
-  for key, value in resource.items():
-    if key in [u'kind', u'etag', u'etags']:
-      continue
-    print u'%s: %s' % (key, value)
+  if u'featureInstances' in resource:
+    features = []
+    for a_feature in resource[u'featureInstances']:
+      features.append(a_feature[u'feature'][u'name'])
+    resource[u'features'] = u', '.join(features)
+    del(resource[u'featureInstances'])
+  print_json(None, resource)
 
 def _filterTimeRanges(activeTimeRanges, startDate, endDate):
   if startDate is None and endDate is None:
@@ -11127,6 +11251,26 @@ RESCAL_ARGUMENT_TO_PROPERTY_MAP = {
   u'type': [u'resourceType'],
   }
 
+def doPrintBuildings():
+  to_drive = False
+  cd = buildGAPIObject(u'directory')
+  buildings = callGAPI(cd.resources().buildings(), u'list', customer=GC_Values[GC_CUSTOMER_ID])
+  titles = []
+  csvRows = []
+  for building in buildings[u'buildings']:
+    building.pop(u'etags', None)
+    building.pop(u'etag', None)
+    building.pop(u'kind', None)
+    if u'floorNames' in building:
+      building[u'floorNames'] = u' '.join(building[u'floorNames'])
+    building = flatten_json(building)
+    for item in building:
+      if item not in titles:
+        titles.append(item)
+    csvRows.append(building)
+  sortCSVTitles(u'buildingId', titles)
+  writeCSVfile(csvRows, titles, u'Buildings', to_drive) 
+
 def doPrintResourceCalendars():
   cd = buildGAPIObject(u'directory')
   todrive = False
@@ -11854,6 +11998,10 @@ def ProcessGAMCommand(args):
         doCreateVaultMatter()
       elif argument in [u'hold', u'vaulthold']:
         doCreateVaultHold()
+      elif argument in [u'building']:
+        doCreateBuilding()
+      elif argument in [u'feature']:
+        doCreateFeature()
       else:
         print u'ERROR: %s is not a valid argument for "gam create"' % argument
         sys.exit(2)
@@ -11902,6 +12050,10 @@ def ProcessGAMCommand(args):
         except IndexError:
           login_hint = None
         doUpdateProject(login_hint)
+      elif argument in [u'building']:
+        doUpdateBuilding()
+      elif argument in [u'feature']:
+        doUpdateFeature()
       else:
         print u'ERROR: %s is not a valid argument for "gam update"' % argument
         sys.exit(2)
@@ -11950,6 +12102,8 @@ def ProcessGAMCommand(args):
         doGetVaultMatterInfo()
       elif argument in [u'hold', u'vaulthold']:
         doGetVaultHoldInfo()
+      elif argument in [u'building']:
+        doGetBuildingInfo()
       else:
         print u'ERROR: %s is not a valid argument for "gam info"' % argument
         sys.exit(2)
@@ -12004,6 +12158,8 @@ def ProcessGAMCommand(args):
         doUpdateVaultMatter(action=command)
       elif argument in [u'hold', u'vaulthold']:
         doDeleteVaultHold()
+      elif argument in [u'building']:
+        doDeleteBuilding()
       else:
         print u'ERROR: %s is not a valid argument for "gam delete"' % argument
         sys.exit(2)
@@ -12079,6 +12235,10 @@ def ProcessGAMCommand(args):
         doPrintVaultMatters()
       elif argument in [u'holds', u'vaultholds']:
         doPrintVaultHolds()
+      elif argument in [u'building', u'buildings']:
+        doPrintBuildings()
+      elif argument in [u'feature', u'features']:
+        doPrintFeatures()
       else:
         print u'ERROR: %s is not a valid argument for "gam print"' % argument
         sys.exit(2)
