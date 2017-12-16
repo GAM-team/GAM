@@ -7941,7 +7941,9 @@ def doCreateOrg():
       sys.exit(2)
   callGAPI(cd.orgunits(), u'insert', customerId=GC_Values[GC_CUSTOMER_ID], body=body)
 
-def _getBuildingAttributes(args, body):
+def _getBuildingAttributes(args, body=None):
+  if body is None:
+    body = {}
   i = 0
   while i < len(args):
     myarg = args[i].lower().replace(u'_', u'')
@@ -7974,7 +7976,9 @@ def _getBuildingAttributes(args, body):
 
 def doCreateBuilding():
   cd = buildGAPIObject(u'directory')
-  body = _getBuildingAttributes(sys.argv[3:], {u'floorNames': [u'1',], u'buildingId': unicode(uuid.uuid4())})
+  body = {u'floorNames': [u'1',],
+          u'buildingId': unicode(uuid.uuid4())}
+  body = _getBuildingAttributes(sys.argv[3:], body)
   print u'Creating building %s...' % body[u'buildingId']
   callGAPI(cd.resources().buildings(), u'insert',
            customer=GC_Values[GC_CUSTOMER_ID], body=body)
@@ -7982,7 +7986,7 @@ def doCreateBuilding():
 def doUpdateBuilding():
   cd = buildGAPIObject(u'directory')
   buildingId = sys.argv[3]
-  body = _getBuildingAttributes(sys.argv[4:], {})
+  body = _getBuildingAttributes(sys.argv[4:])
   print u'Updating building %s...' % buildingId
   callGAPI(cd.resources().buildings(), u'patch',
            customer=GC_Values[GC_CUSTOMER_ID], buildingId=buildingId, body=body)
@@ -7994,7 +7998,9 @@ def doDeleteBuilding():
   callGAPI(cd.resources().buildings(), u'delete',
            customer=GC_Values[GC_CUSTOMER_ID], buildingId=buildingId)
 
-def _getFeatureAttributes(args, body):
+def _getFeatureAttributes(args, body=None):
+  if body is None:
+    body = {}
   i = 0
   while i < len(args):
     myarg = args[i].lower().replace(u'_', u'')
@@ -8008,7 +8014,7 @@ def _getFeatureAttributes(args, body):
 
 def doCreateFeature():
   cd = buildGAPIObject(u'directory')
-  body = _getFeatureAttributes(sys.argv[3:], {})
+  body = _getFeatureAttributes(sys.argv[3:])
   print u'Creating feature %s...' % body[u'name']
   callGAPI(cd.resources().features(), u'insert',
            customer=GC_Values[GC_CUSTOMER_ID], body=body)
@@ -8043,7 +8049,9 @@ def doGetBuildingInfo():
     building.pop(u'buildingName')
   print_json(None, building)
 
-def _getResourceCalendarAttributes(args, body):
+def _getResourceCalendarAttributes(args, body=None):
+  if body is None:
+    body = {}
   i = 0
   while i < len(args):
     myarg = args[i].lower().replace(u'_', u'')
@@ -8089,7 +8097,8 @@ def _getResourceCalendarAttributes(args, body):
 
 def doCreateResourceCalendar():
   cd = buildGAPIObject(u'directory')
-  body = _getResourceCalendarAttributes(sys.argv[5:], {u'resourceId': sys.argv[3], u'resourceName': sys.argv[4]})
+  body = {u'resourceId': sys.argv[3], u'resourceName': sys.argv[4]}
+  body = _getResourceCalendarAttributes(sys.argv[5:], body)
   print u'Creating resource %s...' % body[u'resourceId']
   callGAPI(cd.resources().calendars(), u'insert',
            customer=GC_Values[GC_CUSTOMER_ID], body=body)
@@ -8097,7 +8106,7 @@ def doCreateResourceCalendar():
 def doUpdateResourceCalendar():
   cd = buildGAPIObject(u'directory')
   resId = sys.argv[3]
-  body = _getResourceCalendarAttributes(sys.argv[4:], {})
+  body = _getResourceCalendarAttributes(sys.argv[4:])
   # Use patch since it seems to work better.
   # update requires name to be set.
   callGAPI(cd.resources().calendars(), u'patch',
