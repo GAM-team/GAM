@@ -8032,11 +8032,30 @@ def doUpdateFeature():
            customer=GC_Values[GC_CUSTOMER_ID], oldName=oldName,
            body=body)
 
-def doPrintFeatures():
+def doPrintShowFeatures(csvFormat):
   cd = buildGAPIObject(u'directory')
-  features = callGAPIpages(cd.resources().features(), u'list',
-                           items=u'features', customer=GC_Values[GC_CUSTOMER_ID])
-  print features
+  if csvFormat:
+    todrive = False
+    titles = [u'name',]
+    csvRows = []
+  features = callGAPIpages(cd.resources().features(), u'list', u'features',
+                           customer=GC_Values[GC_CUSTOMER_ID])
+  for feature in features:
+    if not csvFormat:
+      print u'name: {0}'.format(feature[u'name'])
+    else:
+      feature.pop(u'etags', None)
+      feature.pop(u'kind', None)
+      addRowTitlesToCSVfile(flatten_json(feature), csvRows, titles)
+  if csvFormat:
+    sortCSVTitles([u'name',], titles)
+    writeCSVfile(csvRows, titles, u'Features', todrive)
+
+def _showBuilding(building):
+  if u'buildingName' in building:
+    sys.stdout.write(building[u'buildingName'])
+    building.pop(u'buildingName')
+  print_json(None, building)
 
 def doGetBuildingInfo():
   cd = buildGAPIObject(u'directory')
@@ -8045,10 +8064,28 @@ def doGetBuildingInfo():
                       customer=GC_Values[GC_CUSTOMER_ID], buildingId=buildingId)
   if u'floorNames' in building:
     building[u'floorNames'] = u','.join(building[u'floorNames'])
-  if u'buildingName' in building:
-    sys.stdout.write(building[u'buildingName'])
-    building.pop(u'buildingName')
-  print_json(None, building)
+  _showBuilding(building)
+
+def doPrintShowBuildings(csvFormat):
+  cd = buildGAPIObject(u'directory')
+  if csvFormat:
+    todrive = False
+    titles = [u'buildingId',]
+    csvRows = []
+  buildings = callGAPI(cd.resources().buildings(), u'list',
+                       customer=GC_Values[GC_CUSTOMER_ID], fields=u'buildings')
+  for building in buildings[u'buildings']:
+    building.pop(u'etags', None)
+    building.pop(u'kind', None)
+    if u'floorNames' in building:
+      building[u'floorNames'] = u','.join(building[u'floorNames'])
+    if not csvFormat:
+      _showBuilding(building)
+    else:
+      addRowTitlesToCSVfile(flatten_json(building), csvRows, titles)
+  if csvFormat:
+    sortCSVTitles([u'buildingId',], titles)
+    writeCSVfile(csvRows, titles, u'Buildings', todrive)
 
 def _getResourceCalendarAttributes(args, body=None):
   if body is None:
@@ -11291,27 +11328,6 @@ RESCAL_ARGUMENT_TO_PROPERTY_MAP = {
   u'type': [u'resourceType'],
   }
 
-def doPrintBuildings():
-  to_drive = False
-  cd = buildGAPIObject(u'directory')
-  buildings = callGAPI(cd.resources().buildings(), u'list',
-                       customer=GC_Values[GC_CUSTOMER_ID], fields=u'buildings')
-  titles = []
-  csvRows = []
-  for building in buildings[u'buildings']:
-    building.pop(u'etags', None)
-    building.pop(u'etag', None)
-    building.pop(u'kind', None)
-    if u'floorNames' in building:
-      building[u'floorNames'] = u','.join(building[u'floorNames'])
-    building = flatten_json(building)
-    for item in building:
-      if item not in titles:
-        titles.append(item)
-    csvRows.append(building)
-  sortCSVTitles(u'buildingId', titles)
-  writeCSVfile(csvRows, titles, u'Buildings', to_drive)
-
 def doPrintResourceCalendars():
   cd = buildGAPIObject(u'directory')
   todrive = False
@@ -12277,9 +12293,9 @@ def ProcessGAMCommand(args):
       elif argument in [u'holds', u'vaultholds']:
         doPrintVaultHolds()
       elif argument in [u'building', u'buildings']:
-        doPrintBuildings()
+        doPrintShowBuildings(True)
       elif argument in [u'feature', u'features']:
-        doPrintFeatures()
+        doPrintShowFeatures(True)
       else:
         print u'ERROR: %s is not a valid argument for "gam print"' % argument
         sys.exit(2)
@@ -12290,6 +12306,10 @@ def ProcessGAMCommand(args):
         doPrintShowUserSchemas(False)
       elif argument in [u'guardian', u'guardians']:
         doPrintShowGuardians(False)
+      elif argument in [u'building', u'buildings']:
+        doPrintShowBuildings(False)
+      elif argument in [u'feature', u'features']:
+        doPrintShowFeatures(False)
       else:
         print u'ERROR: %s is not a valid argument for "gam show"' % argument
         sys.exit(2)
