@@ -8049,7 +8049,10 @@ def _getResourceCalendarAttributes(args, body):
   i = 0
   while i < len(args):
     myarg = args[i].lower().replace(u'_', u'')
-    if myarg == u'description':
+    if myarg == u'name':
+      body[u'resourceName'] = args[i+1]
+      i += 2
+    elif myarg == u'description':
       body[u'resourceDescription'] = args[i+1].replace(u'\\n', u'\n')
       i += 2
     elif myarg == u'type':
