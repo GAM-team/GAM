@@ -243,6 +243,7 @@ Named items
 	serialnumber|
 	status|
 	supportenddate|
+	tpmversioninfo|
 	willautorenew
 
 <CrOSOrderByFieldName> ::=
@@ -748,10 +749,10 @@ gam calendar <CalendarItem> wipe
 
 gam update cros <CrOSItem> (<CrOSAttributes>+)|(action deprovision_same_model_replace|deprovision_different_model_replace|deprovision_retiring_device|disable|reenable [acknowledge_device_touch_requirement])
 gam info cros <CrOSItem> [nolists] [listlimit <Number>] [start <Date>] [end <Date>]
-	[basic|full|allfields] <CrOSFieldName>* [fields <CrOSFieldNameList>] [downloadfile latest|<Time>]
+	[basic|full|allfields] <CrOSFieldName>* [fields <CrOSFieldNameList>] [downloadfile latest|(name <String>)|(time <Time>)|<Time>] [targetfolder <FilePath>]
 
 gam print cros [todrive] [query <QueryCrOS>] [limittoou <OrgUnitItem>]
-	[orderby <CrOSOrderByFieldName> [ascending|descending]] [nolists] [listlimit <Number>] [start <Date>] [end <Date>]
+	[orderby <CrOSOrderByFieldName> [ascending|descending]] [nolists|recentusers|timeranges|devicefiles] [listlimit <Number>] [start <Date>] [end <Date>]
 	[basic|full|allfields] <CrOSFieldName>* [fields <CrOSFieldNameList>]
 gam <CrOSTypeEntity> print
 
@@ -763,27 +764,49 @@ Prints no header row and deviceId for specified CrOS devices.
 gam print cros ... basic|full
 Prints a header row and selected fields for specified CrOS devices.
 
-The basic argument yields these column headers: deviceId,annotatedAssetId,annotatedLocation,annotatedUser,lastSync,notes,serialNumber,status
-The full argument yields all column headers including two headers, recentUsers and activeTimeRanges,
-that repeat with two/four subvalues each, yielding a large number of columns that make the output hard to process.
-The nolists argument suppresses these two headers; if you want these headers in a more manageable form use the following arguments.
+Print a header row and selected fields for specified CrOS devices; deviceId is the always the first column.
+If you specify allfields|basic|full, all other column headers are sorted.
+If you specify <CrOSFieldName>* | fields <CrOSFieldNameList>, the column headers appear in the order specified.
+gam [<CrOSTypeEntity>] print cros [todrive [<ToDriveAttributes>]] [query <QueryCrOS>]|[select <CrOSTypeEntity>] [limittoou <OrgUnitItem>]
+	[orderby <CrOSOrderByFieldName> [ascending|descending]] [nolists|recentusers|timeranges|devicefiles] [listlimit <Number>] [start <Date>] [end <Date>]
+	[basic|full|allfields] <CrOSFieldName>* [fields <CrOSFieldNameList>]
+
+The basic argument outputs these column headers: deviceId,annotatedAssetId,annotatedLocation,annotatedUser,lastSync,notes,serialNumber,status
+The allfields/full arguments output all column headers including three headers, recentUsers, activeTimeRanges and deviceFiles,
+that repeat with two/four/three subvalues each, yielding a large number of columns that make the output hard to process.
+The nolists argument suppresses these three headers; if you want these headers in a more manageable form use the following arguments.
+
 If recentusers is specified, for each recent user, the columns recentUsers.email and recentUsers.type are output on a separate row
 with all of the other headers.
+
 If timeranges is specified, for each time range entry, the columns activeTimeRanges.date, activeTimeRange.activeTime,
 activeTimeRanges.duration and activeTimeRanges.minutes are output on a separate row with all of the other headers.
+
+If devicefiles is specified, for each deviceFile, the columns deviceFiles.name, deviceFiles.type and deviceFiles.createTime are output on a separate row
+with all of the other headers.
+
 The listlimit <Number> argument limits the number of repetitions to <Number>; if not specified or <Number> equals zero, there is no limit.
 The start <Date> and end <Date> arguments filter the time ranges.
 
 gam print crosactivity [todrive] [query <QueryCrOS>] [limittoou <OrgUnitItem>]
-	[recentusers] [timeranges] [both] [listlimit <Number>] [start <Date>] [end <Date>] [delimiter <Character>]
+	[recentusers] [timeranges] [both] [devicefiles] [all] [listlimit <Number>] [start <Date>] [end <Date>] [delimiter <Character>]
 
 The basic column headers are: deviceId,annotatedAssetId,annotatedLocation,serialNumber,orgUnitPath.
+
 If recentusers is specified, all of the recent users email addresses, separated by the delimiter <Character>,
 with header recentUsers.email, are output with the basic headers.
-If timeranges is specified, for each time range entry, activeTimeRanges.date and activeTimeRanges.duration and activeTimeRanges.minutes,
+
+If timeranges is specified, for each time range entry, activeTimeRanges.date and activeTimeRanges.duration and activeTimeRanges.minutes
 are output on a separate row with the basic headers.
-The default is to include both recentusers and timeranges.
-The listlimit <Number> argument limits the number of recent users and time ranges to <Number>; if not specified or <Number> equals zero, there is no limit.
+
+If devicefiles is specified, for each deviceFile, deviceFiles.name, deviceFiles.type and deviceFiles.createTime
+are output on a separate row with the basic headers.
+
+The both option specifies recentusers and timeranges.
+The all option specifies recentusers, timeranges and devicefiles..
+The default is to include recentusers and timeranges.
+
+The listlimit <Number> argument limits the number of recent users, time ranges and device files to <Number>; if not specified or <Number> equals zero, there is no limit.
 The start <Date> and end <Date> arguments filter the time ranges.
 Delimiter defaults to comma.
 
