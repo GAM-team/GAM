@@ -751,13 +751,12 @@ def callGAPIpages(service, function, items,
                   **kwargs):
   if throw_reasons is None:
     throw_reasons = []
-  pageToken = None
   all_pages = list()
   total_items = 0
   while True:
-    this_page = callGAPI(service, function, soft_errors=soft_errors, throw_reasons=throw_reasons, retry_reasons=retry_reasons, pageToken=pageToken, **kwargs)
+    this_page = callGAPI(service, function, soft_errors=soft_errors,
+           throw_reasons=throw_reasons, retry_reasons=retry_reasons, **kwargs)
     if this_page:
-      pageToken = this_page.get(u'nextPageToken')
       if items in this_page:
         page_items = len(this_page[items])
         total_items += page_items
@@ -766,7 +765,6 @@ def callGAPIpages(service, function, items,
         this_page = {items: []}
         page_items = 0
     else:
-      pageToken = None
       this_page = {items: []}
       page_items = 0
     if page_message:
@@ -782,7 +780,9 @@ def callGAPIpages(service, function, items,
       sys.stderr.write(u'\r')
       sys.stderr.flush()
       sys.stderr.write(show_message)
-    if not pageToken:
+    if this_page and u'nextPageToken' in this_page:
+      kwargs[u'pageToken'] = this_page[u'nextPageToken']
+    else:
       if page_message and (page_message[-1] != u'\n'):
         sys.stderr.write(u'\r\n')
         sys.stderr.flush()
@@ -8027,12 +8027,6 @@ def doUpdateFeature():
            customer=GC_Values[GC_CUSTOMER_ID], oldName=oldName,
            body=body)
 
-def doPrintFeatures():
-  cd = buildGAPIObject(u'directory')
-  features = callGAPIpages(cd.resources().features(), u'list',
-           items=u'features', customer=GC_Values[GC_CUSTOMER_ID])
-  print features
-
 def doGetBuildingInfo():
   cd = buildGAPIObject(u'directory')
   buildingId = sys.argv[3]
@@ -11251,13 +11245,87 @@ RESCAL_ARGUMENT_TO_PROPERTY_MAP = {
   u'type': [u'resourceType'],
   }
 
+def doPrintFeatures():
+  to_drive = False
+  cd = buildGAPIObject(u'directory')
+  titles = []
+  csvRows = []
+  fieldsList = [u'name']
+  fields = u'nextPageToken,features(%s)'
+  possible_fields = {}
+  for pfield in cd._rootDesc[u'schemas'][u'Feature'][u'properties']:
+    possible_fields[pfield.lower()] = pfield
+  i = 3
+  while i < len(sys.argv):
+    myarg = sys.argv[i].lower()
+    if myarg == u'todrive':
+      to_drive = True
+      i += 1
+    elif myarg == u'allfields':
+      fields = None
+      i += 1
+    elif myarg in possible_fields:
+      fieldsList.append(possible_fields[myarg])
+      i += 1
+    elif u'feature'+myarg in possible_fields:
+      fieldsList.append(possible_fields[u'feature'+myarg])
+      i += 1
+    else:
+      print u'ERROR: %s is not a valid argument to "gam print features"' % sys.argv[i]
+      sys.exit(3)
+  if fields:
+    fields = fields % u','.join(fieldsList)
+  features = callGAPIpages(cd.resources().features(), u'list',
+           items=u'features', customer=GC_Values[GC_CUSTOMER_ID], fields=fields)
+  for feature in features:
+    feature.pop(u'etags', None)
+    feature.pop(u'etag', None)
+    feature.pop(u'kind', None)
+    feature = flatten_json(feature)
+    for item in feature:
+      if item not in titles:
+        titles.append(item)
+    csvRows.append(feature)
+  sortCSVTitles(u'name', titles)
+  writeCSVfile(csvRows, titles, u'Features', to_drive)
+
 def doPrintBuildings():
   to_drive = False
   cd = buildGAPIObject(u'directory')
-  buildings = callGAPI(cd.resources().buildings(), u'list', customer=GC_Values[GC_CUSTOMER_ID])
   titles = []
   csvRows = []
-  for building in buildings[u'buildings']:
+  fieldsList = [u'buildingId']
+  # buildings.list() currently doesn't support paging
+  # but should soon, attempt to use it now so we
+  # won't break when it's turned on.
+  fields = u'nextPageToken,buildings(%s)'
+  possible_fields = {}
+  for pfield in cd._rootDesc[u'schemas'][u'Building'][u'properties']:
+    possible_fields[pfield.lower()] = pfield
+  i = 3
+  while i < len(sys.argv):
+    myarg = sys.argv[i].lower()
+    if myarg == u'todrive':
+      to_drive = True
+      i += 1
+    elif myarg == u'allfields':
+      fields = None
+      i += 1
+    elif myarg in possible_fields:
+      fieldsList.append(possible_fields[myarg])
+      i += 1
+    # Allows shorter arguments like "name" instead of "buildingname"
+    elif u'building'+myarg in possible_fields:
+      fieldsList.append(possible_fields[u'building'+myarg])
+      i += 1
+    else:
+      print u'ERROR: %s is not a valid argument to "gam print buildings"' % sys.argv[i]
+      sys.exit(3)
+  if fields:
+    fields = fields % u','.join(fieldsList)
+  buildings = callGAPIpages(cd.resources().buildings(), u'list',
+      items=u'buildings', customer=GC_Values[GC_CUSTOMER_ID], fields=fields)
+  for building in buildings:
     building.pop(u'etags', None)
     building.pop(u'etag', None)
     building.pop(u'kind', None)
