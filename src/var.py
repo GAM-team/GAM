@@ -463,7 +463,7 @@ CROS_ARGUMENT_TO_PROPERTY_MAP = {
   u'tag': [u'annotatedAssetId',],
   u'timeranges': [u'activeTimeRanges.activeTime', u'activeTimeRanges.date'],
   u'times': [u'activeTimeRanges.activeTime', u'activeTimeRanges.date'],
-  u'tpmversioninfo': [u'tpmVersionInfo'],
+  u'tpmversioninfo': [u'tpmVersionInfo',],
   u'user': [u'annotatedUser',],
   u'users': [u'recentUsers.email', u'recentUsers.type'],
   u'willautorenew': [u'willAutoRenew',],

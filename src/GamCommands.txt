@@ -243,6 +243,7 @@ Named items
 	serialnumber|
 	status|
 	supportenddate|
+	tpmversioninfo|
 	willautorenew
 
 <CrOSOrderByFieldName> ::=
@@ -748,7 +749,7 @@ gam calendar <CalendarItem> wipe
 
 gam update cros <CrOSItem> (<CrOSAttributes>+)|(action deprovision_same_model_replace|deprovision_different_model_replace|deprovision_retiring_device|disable|reenable [acknowledge_device_touch_requirement])
 gam info cros <CrOSItem> [nolists] [listlimit <Number>] [start <Date>] [end <Date>]
-	[basic|full|allfields] <CrOSFieldName>* [fields <CrOSFieldNameList>] [downloadfile latest|<Time>]
+	[basic|full|allfields] <CrOSFieldName>* [fields <CrOSFieldNameList>] [downloadfile latest|name:<String>|time:<Time>] [targetfolder <FilePath>]
 
 gam print cros [todrive] [query <QueryCrOS>] [limittoou <OrgUnitItem>]
 	[orderby <CrOSOrderByFieldName> [ascending|descending]] [nolists] [listlimit <Number>] [start <Date>] [end <Date>]
