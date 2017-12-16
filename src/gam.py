@@ -8039,7 +8039,7 @@ def doGetBuildingInfo():
   building = callGAPI(cd.resources().buildings(), u'get',
                       customer=GC_Values[GC_CUSTOMER_ID], buildingId=buildingId)
   if u'floorNames' in building:
-    building[u'floorNames'] = u' '.join(building[u'floorNames'])
+    building[u'floorNames'] = u','.join(building[u'floorNames'])
   if u'buildingName' in building:
     sys.stdout.write(building[u'buildingName'])
     building.pop(u'buildingName')
