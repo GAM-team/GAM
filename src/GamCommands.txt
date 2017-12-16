@@ -116,6 +116,7 @@ Named items
 <AccessToken> ::= <String>
 <ACLScope> ::= [user:]<EmailAddress>|group:<EmailAddress>|domain[:<DomainName>]|default
 <ASPID> ::= <String>
+<BuildingID> ::= <String>
 <CalendarACLRole> ::= editor|freebusy|freebusyreader|owner|reader|writer
 <CalendarColorIndex> ::== <Number in range 1-24>
 <CalendarItem> ::= <EmailAddress>|<String>
@@ -140,10 +141,12 @@ Named items
 <EmailItem> ::= <EmailAddress>|<UniqueID>|<String>
 <EventColorIndex> ::== <Number in range 1-11>
 <EventID> ::= <String>
+<FeatureName> ::= <String>
 <FieldName> ::= <String>
 <FileName> ::= <String>
 <FileNamePattern> ::= <String>
 <FilterID> ::= <Sttring>
+<FloorName> :== <String>
 <FolderName> ::= <String>
 <GroupItem> ::= <EmailAddress>|<UniqueID>|<String>
 <GuardianItem> ::= <EmailAddress>|<UniqueID>|<String>
@@ -409,6 +412,20 @@ Named items
 <PrintJobOrderByFieldName> ::=
 	create_time|status|title
 
+<ResourceFieldName> ::=
+	buildingid|
+	capacity|
+	category|
+	description|
+	email|
+	features|
+	floor|
+	floorsection|
+	id|
+	name|
+	type|
+	uservisibledescription
+	
 <UserFieldName> ::=
 	addresses|address|
 	agreedtoterms|agreed2terms|
@@ -464,8 +481,10 @@ Items, separated by spaces, with spaces or commas in the items themselves: "'it 
 <EmailAddressList> ::= "<EmailAddress>(,<EmailAddress>)*"
 <EmailItemList> ::= "<EmailItem>(,<EmailItem>)*"
 <EventIDList> ::= "<EventID>(,<EventID>)*"
+<FeatureNameList> ::= "<FeatureName>(,<FeatureName>)*"
 <FileFormatList> ::= "<FileFormat>(,<FileFormat)*"
 <FilterIDList> ::= "<FilterID>(,<FilterID>)*"
+<FloorNameList> ::= "<FloorName>(,<FloorName>)*"
 <GroupFieldNameList> ::= "<GroupFieldName>(,<GroupFieldName>)*"
 <GroupList> ::= "<GroupItem>(,<GroupItem>)*"
 <GuardianStateList> ::= "<GuardianState>(,<GuardianState>)*"
@@ -505,6 +524,13 @@ Specify a collection of Users by directly specifying them or by specifiying item
 		(query <QueryUser>)
 
 Item attributes
+<BuildingAttributes> ::=
+	(description <String>)|
+	(floors <FloorNameList>)|
+	(buildingid <BuildingID>)|
+	(latitude <Float>)|
+	(longitude <Float>)
+
 <CalendarAttributes> ::=
 	(selected <Boolean>)|(hidden <Boolean>)|(summary <String>)|(colorindex|colorid <CalendarColorIndex>)|(backgroundcolor <ColorHex>)|(foregroundcolor <ColorHex>)|
 	(reminder clear|(email|sms|pop <Number>))|
@@ -589,6 +615,18 @@ Item attributes
 	(quotaenabled <Boolean>)|(status <Number>)|(type <String>)|(uuid <String>)|
 	(setupurl <URL>)|(supporturl <URL>)|(updateurl <URL>)
 
+<ResourceAttributes> ::=
+	(buildingid <BuildingID>)|
+	(capacity <Number>)|
+	(category other|room|conference_room)|
+	(description <String>)|
+	(features <FeatureNameList>)|
+	(floor <FloorName>)|
+	(floorsection <String>)|
+	(name <String>)|
+	(type <String>)|
+	(uservisibledescription <String>)
+	
 <SchemaFieldDefinition> ::=
 	field <FieldName> (type bool|date|double|email|int64|phone|string) [multivalued|multivalue] [indexed] [restricted] [range <Number> <Number>] endfield
 
@@ -840,11 +878,24 @@ gam update notification|notifications [(id all)|(id <NotificationID>)*] unread|r
 gam delete notification|notifications [(id all)|(id <NotificationID>)*]
 gam info notification|notifications [unreadonly]
 
-gam create resource <ResourceID> <Name> [description <String>] [type <String>]
-gam update resource <ResourceID> [name <Name>] [description <String>] [type <String>]
+gam create building <Name> <BuildingAttributes>*
+gam update building <BuildIngID> <BuildingAttributes>*
+gam delete building <BuildingID>
+gam info building <BuildingID>
+gam show buildings
+gam print buildings [todrive]
+
+gam create feature <Name>
+gam update feature <Name> name <Name>
+gam delete feature <Name>
+gam show features
+gam print features [todrive]
+
+gam create resource <ResourceID> <Name> <ResourceAttributes>*
+gam update resource <ResourceID> <ResourceAttributes>*
 gam delete resource <ResourceID>
 gam info resource <ResourceID>
-gam print resources [todrive] [allfields] [id] [name] [description] [email] [type]
+gam print resources [todrive] <ResourceFieldName>*
 
 gam create schema|schemas <SchemaName> <SchemaFieldDefinition>+
 gam update schema <SchemaName> <SchemaFieldDefinition>* (deletefield <FieldName>)*
