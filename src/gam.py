@@ -7941,7 +7941,7 @@ def doCreateOrg():
       sys.exit(2)
   callGAPI(cd.orgunits(), u'insert', customerId=GC_Values[GC_CUSTOMER_ID], body=body)
 
-def _getBuildingAttributes(args, body={}):
+def _getBuildingAttributes(args, body):
   i = 0
   while i < len(args):
     myarg = args[i].lower().replace(u'_', u'')
@@ -7974,9 +7974,7 @@ def _getBuildingAttributes(args, body={}):
 
 def doCreateBuilding():
   cd = buildGAPIObject(u'directory')
-  body = {u'floorNames': [u'1'],
-          u'buildingId': unicode(uuid.uuid4())}
-  body = _getBuildingAttributes(sys.argv[3:], body)
+  body = _getBuildingAttributes(sys.argv[3:], {u'floorNames': [u'1',], u'buildingId': unicode(uuid.uuid4())})
   print u'Creating building %s...' % body[u'buildingId']
   callGAPI(cd.resources().buildings(), u'insert',
            customer=GC_Values[GC_CUSTOMER_ID], body=body)
@@ -7984,7 +7982,7 @@ def doCreateBuilding():
 def doUpdateBuilding():
   cd = buildGAPIObject(u'directory')
   buildingId = sys.argv[3]
-  body = _getBuildingAttributes(sys.argv[4:])
+  body = _getBuildingAttributes(sys.argv[4:], {})
   print u'Updating building %s...' % buildingId
   callGAPI(cd.resources().buildings(), u'patch',
            customer=GC_Values[GC_CUSTOMER_ID], buildingId=buildingId, body=body)
@@ -7996,7 +7994,7 @@ def doDeleteBuilding():
   callGAPI(cd.resources().buildings(), u'delete',
            customer=GC_Values[GC_CUSTOMER_ID], buildingId=buildingId)
 
-def _getFeatureAttributes(args, body={}):
+def _getFeatureAttributes(args, body):
   i = 0
   while i < len(args):
     myarg = args[i].lower().replace(u'_', u'')
@@ -8010,7 +8008,7 @@ def _getFeatureAttributes(args, body={}):
 
 def doCreateFeature():
   cd = buildGAPIObject(u'directory')
-  body = _getFeatureAttributes(sys.argv[3:])
+  body = _getFeatureAttributes(sys.argv[3:], {})
   print u'Creating feature %s...' % body[u'name']
   callGAPI(cd.resources().features(), u'insert',
            customer=GC_Values[GC_CUSTOMER_ID], body=body)
@@ -8030,26 +8028,29 @@ def doUpdateFeature():
 def doPrintFeatures():
   cd = buildGAPIObject(u'directory')
   features = callGAPIpages(cd.resources().features(), u'list',
-           items=u'features', customer=GC_Values[GC_CUSTOMER_ID])
+                           items=u'features', customer=GC_Values[GC_CUSTOMER_ID])
   print features
 
 def doGetBuildingInfo():
   cd = buildGAPIObject(u'directory')
   buildingId = sys.argv[3]
   building = callGAPI(cd.resources().buildings(), u'get',
-           customer=GC_Values[GC_CUSTOMER_ID], buildingId=buildingId)
+                      customer=GC_Values[GC_CUSTOMER_ID], buildingId=buildingId)
   if u'floorNames' in building:
-    building[u'floorNames'] = u' '.join(building[u'floorNames'])
+    building[u'floorNames'] = u','.join(building[u'floorNames'])
   if u'buildingName' in building:
     sys.stdout.write(building[u'buildingName'])
-    del(building[u'buildingName'])
+    building.pop(u'buildingName')
   print_json(None, building)
 
-def _getResourceCalendarAttributes(args, body={}):
+def _getResourceCalendarAttributes(args, body):
   i = 0
   while i < len(args):
     myarg = args[i].lower().replace(u'_', u'')
-    if myarg == u'description':
+    if myarg == u'name':
+      body[u'resourceName'] = args[i+1]
+      i += 2
+    elif myarg == u'description':
       body[u'resourceDescription'] = args[i+1].replace(u'\\n', u'\n')
       i += 2
     elif myarg == u'type':
@@ -8080,7 +8081,7 @@ def _getResourceCalendarAttributes(args, body={}):
       i += 2
     elif myarg in [u'uservisibledescription', u'userdescription']:
       body[u'userVisibleDescription'] = args[i+1]
-      i += 2 
+      i += 2
     else:
       print u'ERROR: %s is not a valid argument for "gam create|update resource"' % args[i]
       sys.exit(2)
@@ -8088,9 +8089,7 @@ def _getResourceCalendarAttributes(args, body={}):
 
 def doCreateResourceCalendar():
   cd = buildGAPIObject(u'directory')
-  body = {u'resourceId': sys.argv[3],
-          u'resourceName': sys.argv[4]}
-  body = _getResourceCalendarAttributes(sys.argv[5:], body)
+  body = _getResourceCalendarAttributes(sys.argv[5:], {u'resourceId': sys.argv[3], u'resourceName': sys.argv[4]})
   print u'Creating resource %s...' % body[u'resourceId']
   callGAPI(cd.resources().calendars(), u'insert',
            customer=GC_Values[GC_CUSTOMER_ID], body=body)
@@ -8098,7 +8097,7 @@ def doCreateResourceCalendar():
 def doUpdateResourceCalendar():
   cd = buildGAPIObject(u'directory')
   resId = sys.argv[3]
-  body = _getResourceCalendarAttributes(sys.argv[4:])
+  body = _getResourceCalendarAttributes(sys.argv[4:], {})
   # Use patch since it seems to work better.
   # update requires name to be set.
   callGAPI(cd.resources().calendars(), u'patch',
@@ -9164,7 +9163,7 @@ def doGetResourceCalendarInfo():
     for a_feature in resource[u'featureInstances']:
       features.append(a_feature[u'feature'][u'name'])
     resource[u'features'] = u', '.join(features)
-    del(resource[u'featureInstances'])
+    resource.pop(u'featureInstances')
   print_json(None, resource)
 
 def _filterTimeRanges(activeTimeRanges, startDate, endDate):
@@ -9193,7 +9192,8 @@ def doGetCrosInfo():
       devices.append(a_device[u'deviceId'])
   else:
     devices = [deviceId,]
-  downloadfile = None
+  downloadFileFieldName = downloadFileFieldValue = None
+  targetFolder = GC_Values[GC_DRIVE_DIR]
   projection = None
   fieldsList = []
   noLists = False
@@ -9237,7 +9237,7 @@ def doGetCrosInfo():
       for field in fieldNameList.lower().replace(u',', u' ').split():
         if field in CROS_ARGUMENT_TO_PROPERTY_MAP:
           fieldsList.extend(CROS_ARGUMENT_TO_PROPERTY_MAP[field])
-          if field in CROS_ACTIVE_TIME_RANGES_ARGUMENTS+CROS_RECENT_USERS_ARGUMENTS:
+          if field in CROS_ACTIVE_TIME_RANGES_ARGUMENTS+CROS_DEVICE_FILES_ARGUMENTS+CROS_RECENT_USERS_ARGUMENTS:
             projection = u'FULL'
             noLists = False
         else:
@@ -9245,7 +9245,26 @@ def doGetCrosInfo():
           sys.exit(2)
       i += 2
     elif myarg == u'downloadfile':
-      downloadfile = sys.argv[i+1]
+      value = sys.argv[i+1].lower()
+      if value == u'latest':
+        downloadFileFieldName = u'latest'
+        i += 1
+      elif value == u'time':
+        downloadFileFieldName = u'createTime'
+        downloadFileFieldValue = sys.argv[i+2]
+        i += 2
+      elif value == u'name':
+        downloadFileFieldName = u'name'
+        downloadFileFieldValue = sys.argv[i+2]
+        i += 2
+      else:
+        downloadFileFieldName = u'time'
+        downloadFileFieldValue = sys.argv[i+1]
+        i += 1
+    elif myarg == u'targetfolder':
+      targetFolder = os.path.expanduser(sys.argv[i+1])
+      if not os.path.isdir(targetFolder):
+        os.makedirs(targetFolder)
       i += 2
     else:
       print u'ERROR: %s is not a valid argument for "gam info cros"' % sys.argv[i]
@@ -9263,7 +9282,7 @@ def doGetCrosInfo():
     print u'CrOS Device: {0} ({1} of {2})'.format(deviceId, i, device_count)
     if u'notes' in cros:
       cros[u'notes'] = cros[u'notes'].replace(u'\n', u'\\n')
-    cros = _checkTPMVulnerability(cros)
+    _checkTPMVulnerability(cros)
     for up in CROS_SCALAR_PROPERTY_PRINT_ORDER:
       if up in cros:
         if isinstance(cros[up], basestring):
@@ -9292,27 +9311,24 @@ def doGetCrosInfo():
       lenDF = len(deviceFiles)
       if lenDF:
         print u'  deviceFiles'
-        for deviceFile in deviceFiles[:min(lenDF, listLimit or lenDF)]:
-          print u'    %s: %s' % (deviceFile['type'], deviceFile['createTime'])
-        if downloadfile:
-          if downloadfile.lower() == u'latest':
-            downloadfilename = u'cros-logs-%s-%s.zip' % (deviceId, deviceFiles[-1][u'createTime'])
-            downloadurl = deviceFiles[-1][u'downloadUrl']
+        for devicefile in deviceFiles[:min(lenDF, listLimit or lenDF)]:
+          print u'    name: {0}, type: {1}, time: {2}'.format(devicefile[u'name'], devicefile[u'type'], devicefile[u'createTime'])
+        if downloadFileFieldName:
+          if downloadFileFieldName == u'latest':
+            devicefile = deviceFiles[-1]
           else:
-            for df in deviceFiles:
-              if df[u'createTime'] == downloadfile:
-                downloadurl = df[u'downloadUrl']
-                downloadfilename = u'cros-logs-%s-%s.zip' % (deviceId, df[u'createTime'])
+            for devicefile in deviceFiles:
+              if devicefile[downloadFileFieldName] == downloadFileFieldValue:
                 break
             else:
-              downloadurl = None
-          if downloadurl:
-            _, content = cd._http.request(downloadurl)
+              print u'ERROR: file {0} {1} not available to download.'.format([u'time', u'name'][downloadFileFieldName == u'name'], downloadFileFieldValue)
+              devicefile = None
+          if devicefile:
+            downloadfilename = os.path.join(targetFolder, u'cros-logs-{0}-{1}.zip'.format(deviceId, devicefile[u'createTime']))
+            _, content = cd._http.request(devicefile[u'downloadUrl'])
             writeFile(downloadfilename, content, continueOnError=True)
-            print u'Downloaded %s' % downloadfilename
-          else:
-            print u'ERROR: no such file to download.'
-      elif downloadfile:
+            print u'Downloaded: {0}'.format(downloadfilename)
+      elif downloadFileFieldName:
         print u'ERROR: no files to download.'
 
 def doGetMobileInfo():
@@ -10911,8 +10927,9 @@ def doPrintCrosActivity():
   todrive = False
   titles = [u'deviceId', u'annotatedAssetId', u'annotatedLocation', u'serialNumber', u'orgUnitPath']
   csvRows = []
-  device_fields = [u'deviceId', u'annotatedAssetId', u'annotatedLocation', u'serialNumber', u'orgUnitPath']
+  fieldsList = [u'deviceId', u'annotatedAssetId', u'annotatedLocation', u'serialNumber', u'orgUnitPath']
   startDate = endDate = None
+  selectActiveTimeRanges = selectDeviceFiles = selectRecentUsers = False
   listLimit = 0
   delimiter = u','
   query = orgUnitPath = None
@@ -10929,13 +10946,19 @@ def doPrintCrosActivity():
       todrive = True
       i += 1
     elif myarg in CROS_ACTIVE_TIME_RANGES_ARGUMENTS:
-      device_fields.append(u'activeTimeRanges')
+      selectActiveTimeRanges = True
+      i += 1
+    elif myarg in CROS_DEVICE_FILES_ARGUMENTS:
+      selectDeviceFiles = True
       i += 1
     elif myarg in CROS_RECENT_USERS_ARGUMENTS:
-      device_fields.append(u'recentUsers')
+      selectRecentUsers = True
       i += 1
     elif myarg == u'both':
-      device_fields.extend([u'recentUsers', u'activeTimeRanges'])
+      selectActiveTimeRanges = selectRecentUsers = True
+      i += 1
+    elif myarg == u'all':
+      selectActiveTimeRanges = selectDeviceFiles = selectRecentUsers = True
       i += 1
     elif myarg in CROS_START_ARGUMENTS:
       startDate = datetime.datetime.strptime(sys.argv[i+1], u'%Y-%m-%d')
@@ -10952,13 +10975,18 @@ def doPrintCrosActivity():
     else:
       print u'ERROR: %s is not a valid argument for "gam print crosactivity"' % sys.argv[i]
       sys.exit(2)
-  if u'recentUsers' not in device_fields and u'activeTimeRanges' not in device_fields:
-    device_fields.extend([u'recentUsers', u'activeTimeRanges'])
-  if u'recentUsers' in device_fields:
-    titles.append(u'recentUsers.email')
-  if u'activeTimeRanges' in device_fields:
-    titles.extend([u'activeTimeRanges.date', u'activeTimeRanges.duration', u'activeTimeRanges.minutes'])
-  fields = u'chromeosdevices(%s),nextPageToken' % u','.join(device_fields)
+  if not selectActiveTimeRanges and not selectDeviceFiles and not selectRecentUsers:
+    selectActiveTimeRanges = selectRecentUsers = True
+  if selectRecentUsers:
+    fieldsList.append(u'recentUsers')
+    addTitlesToCSVfile([u'recentUsers.email',], titles)
+  if selectActiveTimeRanges:
+    fieldsList.append(u'activeTimeRanges')
+    addTitlesToCSVfile([u'activeTimeRanges.date', u'activeTimeRanges.duration', u'activeTimeRanges.minutes'], titles)
+  if selectDeviceFiles:
+    fieldsList.append(u'deviceFiles')
+    addTitlesToCSVfile([u'deviceFiles.name', u'deviceFiles.type', u'deviceFiles.createTime'], titles)
+  fields = u'chromeosdevices(%s),nextPageToken' % u','.join(fieldsList)
   sys.stderr.write(u'Retrieving All Chrome OS Devices for organization (may take some time for large accounts)...\n')
   page_message = u'Got %%num_items%% Chrome devices...\n'
   all_cros = callGAPIpages(cd.chromeosdevices(), u'list', u'chromeosdevices', page_message=page_message,
@@ -10969,8 +10997,8 @@ def doPrintCrosActivity():
     for attrib in cros:
       if attrib not in [u'recentUsers', u'activeTimeRanges', u'deviceFiles']:
         row[attrib] = cros[attrib]
-    if u'activeTimeRanges' in cros:
-      activeTimeRanges = _filterTimeRanges(cros[u'activeTimeRanges'], startDate, endDate)
+    if selectActiveTimeRanges:
+      activeTimeRanges = _filterTimeRanges(cros.get(u'activeTimeRanges', []), startDate, endDate)
       lenATR = len(activeTimeRanges)
       for activeTimeRange in activeTimeRanges[:min(lenATR, listLimit or lenATR)]:
         new_row = row.copy()
@@ -10978,18 +11006,20 @@ def doPrintCrosActivity():
         new_row[u'activeTimeRanges.duration'] = utils.formatMilliSeconds(activeTimeRange[u'activeTime'])
         new_row[u'activeTimeRanges.minutes'] = activeTimeRange[u'activeTime']/60000
         csvRows.append(new_row)
-    if u'recentUsers' in cros:
-      recentUsers = []
-      for recentUser in cros[u'recentUsers']:
-        if u'email' in recentUser:
-          recentUsers.append(recentUser[u'email'])
-        elif recentUser[u'type'] == u'USER_TYPE_UNMANAGED':
-          recentUsers.append(u'UnmanagedUser')
-        else:
-          recentUsers.append(u'Unknown')
+    if selectRecentUsers:
+      recentUsers = cros.get(u'recentUsers', [])
       lenRU = len(recentUsers)
-      row[u'recentUsers.email'] = delimiter.join(recentUsers[:min(lenRU, listLimit or lenRU)])
+      row[u'recentUsers.email'] = delimiter.join([recent_user.get(u'email', [u'Unknown', u'UnmanagedUser'][recent_user[u'type'] == u'USER_TYPE_UNMANAGED']) for recent_user in recentUsers[:min(lenRU, listLimit or lenRU)]])
       csvRows.append(row)
+    if selectDeviceFiles:
+      devicefiles = cros.get(u'deviceFiles', [])
+      lenDF = len(devicefiles)
+      for deviceFile in devicefiles[:min(lenDF, listLimit or lenDF)]:
+        new_row = row.copy()
+        new_row[u'deviceFiles.name'] = deviceFile[u'name']
+        new_row[u'deviceFiles.type'] = deviceFile[u'type']
+        new_row[u'deviceFiles.createTime'] = deviceFile[u'createTime']
+        csvRows.append(new_row)
   writeCSVfile(csvRows, titles, u'CrOS Activity', todrive)
 
 def _checkTPMVulnerability(cros):
@@ -11000,7 +11030,6 @@ def _checkTPMVulnerability(cros):
       cros[u'tpmVersionInfo'][u'tpmVulnerability'] = u'UPDATED'
     else:
       cros[u'tpmVersionInfo'][u'tpmVulnerability'] = u'NOT IMPACTED'
-  return cros
 
 def doPrintCrosDevices():
   cd = buildGAPIObject(u'directory')
@@ -11125,7 +11154,7 @@ def doPrintCrosDevices():
                            query=query, customerId=GC_Values[GC_CUSTOMER_ID], projection=projection, orgUnitPath=orgUnitPath,
                            orderBy=orderBy, sortOrder=sortOrder, fields=fields, maxResults=GC_Values[GC_DEVICE_MAX_RESULTS])
   for cros in all_cros:
-    cros = _checkTPMVulnerability(cros)
+    _checkTPMVulnerability(cros)
   if (not noLists) and (not selectActiveTimeRanges) and (not selectRecentUsers):
     for cros in all_cros:
       cros.pop(u'deviceFiles', None)
@@ -11254,7 +11283,8 @@ RESCAL_ARGUMENT_TO_PROPERTY_MAP = {
 def doPrintBuildings():
   to_drive = False
   cd = buildGAPIObject(u'directory')
-  buildings = callGAPI(cd.resources().buildings(), u'list', customer=GC_Values[GC_CUSTOMER_ID])
+  buildings = callGAPI(cd.resources().buildings(), u'list',
+                       customer=GC_Values[GC_CUSTOMER_ID], fields=u'buildings')
   titles = []
   csvRows = []
   for building in buildings[u'buildings']:
@@ -11262,14 +11292,14 @@ def doPrintBuildings():
     building.pop(u'etag', None)
     building.pop(u'kind', None)
     if u'floorNames' in building:
-      building[u'floorNames'] = u' '.join(building[u'floorNames'])
+      building[u'floorNames'] = u','.join(building[u'floorNames'])
     building = flatten_json(building)
     for item in building:
       if item not in titles:
         titles.append(item)
     csvRows.append(building)
   sortCSVTitles(u'buildingId', titles)
-  writeCSVfile(csvRows, titles, u'Buildings', to_drive) 
+  writeCSVfile(csvRows, titles, u'Buildings', to_drive)
 
 def doPrintResourceCalendars():
   cd = buildGAPIObject(u'directory')
