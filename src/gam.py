@@ -11287,7 +11287,8 @@ RESCAL_ARGUMENT_TO_PROPERTY_MAP = {
 def doPrintBuildings():
   to_drive = False
   cd = buildGAPIObject(u'directory')
-  buildings = callGAPI(cd.resources().buildings(), u'list', customer=GC_Values[GC_CUSTOMER_ID])
+  buildings = callGAPI(cd.resources().buildings(), u'list',
+                       customer=GC_Values[GC_CUSTOMER_ID], fields=u'buildings')
   titles = []
   csvRows = []
   for building in buildings[u'buildings']:
@@ -11295,7 +11296,7 @@ def doPrintBuildings():
     building.pop(u'etag', None)
     building.pop(u'kind', None)
     if u'floorNames' in building:
-      building[u'floorNames'] = u' '.join(building[u'floorNames'])
+      building[u'floorNames'] = u','.join(building[u'floorNames'])
     building = flatten_json(building)
     for item in building:
       if item not in titles:
