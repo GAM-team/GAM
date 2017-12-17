@@ -439,7 +439,7 @@ CROS_ARGUMENT_TO_PROPERTY_MAP = {
   u'asset': [u'annotatedAssetId',],
   u'assetid': [u'annotatedAssetId',],
   u'bootmode': [u'bootMode',],
-  u'devicefiles': [u'deviceFiles.name', u'deviceFiles.type', u'deviceFiles.createTime',],
+  u'devicefiles': [u'deviceFiles.name', u'deviceFiles.type', u'deviceFiles.createTime', u'deviceFiles.downloadUrl',],
   u'deviceid': [u'deviceId',],
   u'ethernetmacaddress': [u'ethernetMacAddress',],
   u'firmwareversion': [u'firmwareVersion',],

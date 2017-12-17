@@ -9243,19 +9243,19 @@ def doGetCrosInfo():
       value = sys.argv[i+1].lower()
       if value == u'latest':
         downloadFileFieldName = u'latest'
-        i += 1
+        i += 2
       elif value == u'time':
         downloadFileFieldName = u'createTime'
         downloadFileFieldValue = sys.argv[i+2]
-        i += 2
+        i += 3
       elif value == u'name':
         downloadFileFieldName = u'name'
         downloadFileFieldValue = sys.argv[i+2]
-        i += 2
+        i += 3
       else:
         downloadFileFieldName = u'time'
         downloadFileFieldValue = sys.argv[i+1]
-        i += 1
+        i += 2
     elif myarg == u'targetfolder':
       targetFolder = os.path.expanduser(sys.argv[i+1])
       if not os.path.isdir(targetFolder):
