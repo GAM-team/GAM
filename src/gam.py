@@ -11314,7 +11314,7 @@ def doPrintLicenses(returnFields=None, skus=None):
   writeCSVfile(csvRows, titles, u'Licenses', todrive)
 
 RESCAL_DFLTFIELDS = [u'id', u'name', u'email',]
-RESCAL_ALLFIELDS = [u'id', u'name', u'email', u'description', u'type', u'buildingid', u'category', u'capacity', u'features', u'floor', u'floorsection', u'uservisibledescription',]
+RESCAL_ALLFIELDS = [u'id', u'name', u'email', u'description', u'type', u'buildingid', u'category', u'capacity', u'features', u'floor', u'floorsection', u'generatedresourcename', u'uservisibledescription',]
 
 RESCAL_ARGUMENT_TO_PROPERTY_MAP = {
   u'description': [u'resourceDescription'],
