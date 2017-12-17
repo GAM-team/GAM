@@ -8037,8 +8037,7 @@ def doGetBuildingInfo():
   if u'floorNames' in building:
     building[u'floorNames'] = u','.join(building[u'floorNames'])
   if u'buildingName' in building:
-    sys.stdout.write(building[u'buildingName'])
-    building.pop(u'buildingName')
+    sys.stdout.write(building.pop(u'buildingName'))
   print_json(None, building)
 
 def _getResourceCalendarAttributes(args, body={}):
