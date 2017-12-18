@@ -755,8 +755,9 @@ def callGAPIpages(service, function, items,
   total_items = 0
   while True:
     this_page = callGAPI(service, function, soft_errors=soft_errors,
-           throw_reasons=throw_reasons, retry_reasons=retry_reasons, **kwargs)
+                         throw_reasons=throw_reasons, retry_reasons=retry_reasons, **kwargs)
     if this_page:
+      pageToken = this_page.get(u'nextPageToken')
       if items in this_page:
         page_items = len(this_page[items])
         total_items += page_items
@@ -765,6 +766,7 @@ def callGAPIpages(service, function, items,
         this_page = {items: []}
         page_items = 0
     else:
+      pageToken = None
       this_page = {items: []}
       page_items = 0
     if page_message:
@@ -780,13 +782,12 @@ def callGAPIpages(service, function, items,
       sys.stderr.write(u'\r')
       sys.stderr.flush()
       sys.stderr.write(show_message)
-    if this_page and u'nextPageToken' in this_page:
-      kwargs[u'pageToken'] = this_page[u'nextPageToken']
-    else:
+    if not pageToken:
       if page_message and (page_message[-1] != u'\n'):
         sys.stderr.write(u'\r\n')
         sys.stderr.flush()
       return all_pages
+    kwargs[u'pageToken'] = pageToken
 
 def callGAPIitems(service, function, items,
                   throw_reasons=None, retry_reasons=None,
