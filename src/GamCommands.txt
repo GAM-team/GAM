@@ -811,7 +811,7 @@ gam [<CrOSTypeEntity>] print cros [todrive [<ToDriveAttributes>]] [query <QueryC
 
 The basic argument outputs these column headers: deviceId,annotatedAssetId,annotatedLocation,annotatedUser,lastSync,notes,serialNumber,status
 The allfields/full arguments output all column headers including three headers, recentUsers, activeTimeRanges and deviceFiles,
-that repeat with two/four/three subvalues each, yielding a large number of columns that make the output hard to process.
+that repeat with two/four/two subvalues each, yielding a large number of columns that make the output hard to process.
 The nolists argument suppresses these three headers; if you want these headers in a more manageable form use the following arguments.
 
 If recentusers is specified, for each recent user, the columns recentUsers.email and recentUsers.type are output on a separate row
@@ -820,7 +820,7 @@ with all of the other headers.
 If timeranges is specified, for each time range entry, the columns activeTimeRanges.date, activeTimeRange.activeTime,
 activeTimeRanges.duration and activeTimeRanges.minutes are output on a separate row with all of the other headers.
 
-If devicefiles is specified, for each deviceFile, the columns deviceFiles.name, deviceFiles.type and deviceFiles.createTime are output on a separate row
+If devicefiles is specified, for each deviceFile, the columns deviceFiles.type and deviceFiles.createTime are output on a separate row
 with all of the other headers.
 
 The listlimit <Number> argument limits the number of repetitions to <Number>; if not specified or <Number> equals zero, there is no limit.
@@ -837,7 +837,7 @@ with header recentUsers.email, are output with the basic headers.
 If timeranges is specified, for each time range entry, activeTimeRanges.date and activeTimeRanges.duration and activeTimeRanges.minutes
 are output on a separate row with the basic headers.
 
-If devicefiles is specified, for each deviceFile, deviceFiles.name, deviceFiles.type and deviceFiles.createTime
+If devicefiles is specified, for each deviceFile, deviceFiles.type and deviceFiles.createTime
 are output on a separate row with the basic headers.
 
 The both option specifies recentusers and timeranges.
