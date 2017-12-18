@@ -9187,7 +9187,7 @@ def doGetCrosInfo():
       devices.append(a_device[u'deviceId'])
   else:
     devices = [deviceId,]
-  downloadFileFieldName = downloadFileFieldValue = None
+  downloadfile = None
   targetFolder = GC_Values[GC_DRIVE_DIR]
   projection = None
   fieldsList = []
@@ -9240,22 +9240,10 @@ def doGetCrosInfo():
           sys.exit(2)
       i += 2
     elif myarg == u'downloadfile':
-      value = sys.argv[i+1].lower()
-      if value == u'latest':
-        downloadFileFieldName = u'latest'
-        i += 2
-      elif value == u'time':
-        downloadFileFieldName = u'createTime'
-        downloadFileFieldValue = sys.argv[i+2]
-        i += 3
-      elif value == u'name':
-        downloadFileFieldName = u'name'
-        downloadFileFieldValue = sys.argv[i+2]
-        i += 3
-      else:
-        downloadFileFieldName = u'time'
-        downloadFileFieldValue = sys.argv[i+1]
-        i += 2
+      downloadfile = sys.argv[i+1]
+      if downloadfile.lower() == u'latest':
+        downloadfile = downloadfile.lower()
+      i += 2
     elif myarg == u'targetfolder':
       targetFolder = os.path.expanduser(sys.argv[i+1])
       if not os.path.isdir(targetFolder):
@@ -9307,23 +9295,23 @@ def doGetCrosInfo():
       if lenDF:
         print u'  deviceFiles'
         for devicefile in deviceFiles[:min(lenDF, listLimit or lenDF)]:
-          print u'    name: {0}, type: {1}, time: {2}'.format(devicefile[u'name'], devicefile[u'type'], devicefile[u'createTime'])
-        if downloadFileFieldName:
-          if downloadFileFieldName == u'latest':
+          print u'    type: {0}, time: {1}'.format(devicefile[u'type'], devicefile[u'createTime'])
+        if downloadfile:
+          if downloadfile == u'latest':
             devicefile = deviceFiles[-1]
           else:
             for devicefile in deviceFiles:
-              if devicefile[downloadFileFieldName] == downloadFileFieldValue:
+              if devicefile[u'createTime'] == downloadfile:
                 break
             else:
-              print u'ERROR: file {0} {1} not available to download.'.format([u'time', u'name'][downloadFileFieldName == u'name'], downloadFileFieldValue)
+              print u'ERROR: file {0} not available to download.'.format(downloadfile)
               devicefile = None
           if devicefile:
             downloadfilename = os.path.join(targetFolder, u'cros-logs-{0}-{1}.zip'.format(deviceId, devicefile[u'createTime']))
             _, content = cd._http.request(devicefile[u'downloadUrl'])
             writeFile(downloadfilename, content, continueOnError=True)
             print u'Downloaded: {0}'.format(downloadfilename)
-      elif downloadFileFieldName:
+      elif downloadfile:
         print u'ERROR: no files to download.'
 
 def doGetMobileInfo():

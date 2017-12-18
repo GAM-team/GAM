@@ -787,7 +787,7 @@ gam calendar <CalendarItem> wipe
 
 gam update cros <CrOSItem> (<CrOSAttributes>+)|(action deprovision_same_model_replace|deprovision_different_model_replace|deprovision_retiring_device|disable|reenable [acknowledge_device_touch_requirement])
 gam info cros <CrOSItem> [nolists] [listlimit <Number>] [start <Date>] [end <Date>]
-	[basic|full|allfields] <CrOSFieldName>* [fields <CrOSFieldNameList>] [downloadfile latest|(name <String>)|(time <Time>)|<Time>] [targetfolder <FilePath>]
+	[basic|full|allfields] <CrOSFieldName>* [fields <CrOSFieldNameList>] [downloadfile latest|<Time>] [targetfolder <FilePath>]
 
 gam print cros [todrive] [query <QueryCrOS>] [limittoou <OrgUnitItem>]
 	[orderby <CrOSOrderByFieldName> [ascending|descending]] [nolists|recentusers|timeranges|devicefiles] [listlimit <Number>] [start <Date>] [end <Date>]
