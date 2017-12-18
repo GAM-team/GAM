@@ -755,7 +755,7 @@ def callGAPIpages(service, function, items,
   total_items = 0
   while True:
     this_page = callGAPI(service, function, soft_errors=soft_errors,
-           throw_reasons=throw_reasons, retry_reasons=retry_reasons, **kwargs)
+                         throw_reasons=throw_reasons, retry_reasons=retry_reasons, **kwargs)
     if this_page:
       if items in this_page:
         page_items = len(this_page[items])
@@ -7945,10 +7945,7 @@ def _getBuildingAttributes(args, body={}):
   i = 0
   while i < len(args):
     myarg = args[i].lower().replace(u'_', u'')
-    if myarg == u'id':
-      body[u'buildingId'] = args[i+1]
-      i += 2
-    elif myarg == u'name':
+    if myarg == u'name':
       body[u'buildingName'] = args[i+1]
       i += 2
     elif myarg in [u'lat', u'latitude']:
@@ -7974,9 +7971,11 @@ def _getBuildingAttributes(args, body={}):
 
 def doCreateBuilding():
   cd = buildGAPIObject(u'directory')
-  body = {u'floorNames': [u'1'],
-          u'buildingId': unicode(uuid.uuid4())}
-  body = _getBuildingAttributes(sys.argv[3:], body)
+  buildIngId = sys.argv[3]
+  body = {u'buildingId': buildingId,
+          u'buildingName': buildingId,
+          u'floorNames': [u'1',]}
+  body = _getBuildingAttributes(sys.argv[4:], body)
   print u'Creating building %s...' % body[u'buildingId']
   callGAPI(cd.resources().buildings(), u'insert',
            customer=GC_Values[GC_CUSTOMER_ID], body=body)
