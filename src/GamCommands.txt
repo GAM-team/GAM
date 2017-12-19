@@ -1,4 +1,4 @@
-This document describes the GAM command line syntax in  modified BNF, see https://en.wikipedia.org/wiki/Backus-Naur_Form
+This document describes the GAM command line syntax in modified BNF, see https://en.wikipedia.org/wiki/Backus-Naur_Form
 Skip the History section and start reading at Introduction.
 
 Items on the command line are space separated, when an actual space character is required, it will be indicated by <Space>.
@@ -116,6 +116,7 @@ Named items
 <AccessToken> ::= <String>
 <ACLScope> ::= [user:]<EmailAddress>|group:<EmailAddress>|domain[:<DomainName>]|default
 <ASPID> ::= <String>
+<BuildingID> ::= <String>|id:<String>
 <CalendarACLRole> ::= editor|freebusy|freebusyreader|owner|reader|writer
 <CalendarColorIndex> ::== <Number in range 1-24>
 <CalendarItem> ::= <EmailAddress>|<String>
@@ -504,6 +505,14 @@ Specify a collection of Users by directly specifying them or by specifiying item
 		(query <QueryUser>)
 
 Item attributes
+<BuildingAttributes> ::=
+	(buildingid <String>)|
+	(description <String>)|
+	(floors <FloorNameList>)|
+	(latitude <Float>)|
+	(longitude <Float>)|
+	(name <String>)
+
 <CalendarAttributes> ::=
 	(selected <Boolean>)|(hidden <Boolean>)|(summary <String>)|(colorindex|colorid <CalendarColorIndex>)|(backgroundcolor <ColorHex>)|(foregroundcolor <ColorHex>)|
 	(reminder clear|(email|sms|pop <Number>))|
@@ -588,6 +597,18 @@ Item attributes
 	(quotaenabled <Boolean>)|(status <Number>)|(type <String>)|(uuid <String>)|
 	(setupurl <URL>)|(supporturl <URL>)|(updateurl <URL>)
 
+<ResourceAttributes> ::=
+	(buildingid <BuildingID>)|
+	(capacity <Number>)|
+	(category other|room|conference_room)|
+	(description <String>)|
+	(features <FeatureNameList>)|
+	(floor <FloorName>)|
+	(floorsection <String>)|
+	(name <String>)|
+	(type <String>)|
+	(uservisibledescription <String>)
+	
 <SchemaFieldDefinition> ::=
 	field <FieldName> (type bool|date|double|email|int64|phone|string) [multivalued|multivalue] [indexed] [restricted] [range <Number> <Number>] endfield
 
@@ -607,7 +628,7 @@ Item attributes
 	(im clear|(type work|home|other|(custom <String>) protocol aim|gtalk|icq|jabber|msn|net_meeting|qq|skype|yahoo|(custom_protocol <String>) <String> [notprimary|primary]))|
 	(ipwhitelisted <Boolean>)|
 	(lastname|familyname <String>)|
-	(location clear|(type default|desk|<String> area <String> [building|buildingid <String>] [floor|floorname <String>] [section|floorsection <String>] [desk|deskcode <String>] endlocation))|
+	(location clear|(type default|desk|<String> area <String> [building|buildingid <BuildingID>] [floor|floorname <FloorName>] [section|floorsection <String>] [desk|deskcode <String>] endlocation))|
 	(note clear|([text_plain|text_html] <String>|(file <FileName> [charset <Charset>])))|
 	(organization clear|([type domain_only|school|unknown|work] [customtype <String>] [name <String>] [title <String>] [department <String>] [symbol <String>]
 		[costcenter <String>]  [location <String>] [description <String>] [domain <String>] notprimary|primary))|
@@ -816,6 +837,16 @@ gam print license|licenses|licence|licences [todrive] [(products|product <Produc
 gam update notification|notifications [(id all)|(id <NotificationID>)*] unread|read
 gam delete notification|notifications [(id all)|(id <NotificationID>)*]
 gam info notification|notifications [unreadonly]
+
+gam create building <BuildingID> <BuildingAttributes>*
+gam update building <BuildIngID> <BuildingAttributes>*
+gam delete building <BuildingID>
+gam info building <BuildingID>
+gam print buildings [todrive]
+
+gam create feature <Name>
+gam update feature <Name> name <Name>
+gam print features [todrive]
 
 gam create resource <ResourceID> <Name> [description <String>] [type <String>]
 gam update resource <ResourceID> [name <Name>] [description <String>] [type <String>]
