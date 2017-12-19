@@ -1,3 +1,19 @@
+GAM 4.40
+ - Team Drive Admin "asadmin" to give admins special access.
+ - Manage Buildings, Features and Resource Calendars.
+ - Download log files for kiosk Chrome devices.
+ - TPM info and vulnerability status for Chrome devices.
+ - New Google library for service account auth.
+ - (Ross) increase cell count for "todrive" to 2M.
+ - (Ross) improved course id handling.
+ - (Ross) numerous cleanups and bug fixes
+
+GAM 4.32
+ - Fixes and improvements by Ross
+ - gam print courses now supports limiting results based on course state
+ - handle issues adding members to a group who were in a pending status before
+ - Data transfer commands now support transferring user Calendar events.
+
 GAM 4.31
  - Update course owners in Classroom
  - support for time deltas like -4h for some commands (danielx)
