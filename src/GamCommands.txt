@@ -1,4 +1,4 @@
-This document describes the GAM command line syntax in  modified BNF, see https://en.wikipedia.org/wiki/Backus-Naur_Form
+This document describes the GAM command line syntax in modified BNF, see https://en.wikipedia.org/wiki/Backus-Naur_Form
 Skip the History section and start reading at Introduction.
 
 Items on the command line are space separated, when an actual space character is required, it will be indicated by <Space>.
@@ -18,10 +18,10 @@ Primitives
 <Hex> ::= <Digit>|a|b|c|d|e|f|A|B|C|D|E|F
 <Space> ::= an actual space character
 <String> ::= a string of characters, surrounded by " if it contains spaces
-<TrueValues> ::= true|on|yes|enabled|1
 <FalseValues>= false|off|no|disabled|0
+<TrueValues> ::= true|on|yes|enabled|1
 
-<Charset> ::= ascii|mbcs|utf-8|utf-8-sig|utf-16|<String>
+<Charset> ::= ascii|latin1|mbcs|utf-8|utf-8-sig|utf-16|<String>
 <ColorName> ::=
 	aliceblue|antiquewhite|aqua|aquamarine|azure|beige|bisque|black|blanchedalmond|blue|blueviolet|brown|burlywood|
 	cadetblue|chartreuse|chocolate|coral|cornflowerblue|cornsilk|crimson|cyan|
@@ -116,6 +116,7 @@ Named items
 <AccessToken> ::= <String>
 <ACLScope> ::= [user:]<EmailAddress>|group:<EmailAddress>|domain[:<DomainName>]|default
 <ASPID> ::= <String>
+<BuildingID> ::= <String>
 <CalendarACLRole> ::= editor|freebusy|freebusyreader|owner|reader|writer
 <CalendarColorIndex> ::== <Number in range 1-24>
 <CalendarItem> ::= <EmailAddress>|<String>
@@ -140,11 +141,12 @@ Named items
 <EmailItem> ::= <EmailAddress>|<UniqueID>|<String>
 <EventColorIndex> ::== <Number in range 1-11>
 <EventID> ::= <String>
+<FeatureName> ::= <String>
 <FieldName> ::= <String>
 <FileName> ::= <String>
 <FileNamePattern> ::= <String>
 <FilterID> ::= <Sttring>
-<FolderName> ::= <String>
+<FloorName> :== <String>
 <GroupItem> ::= <EmailAddress>|<UniqueID>|<String>
 <GuardianItem> ::= <EmailAddress>|<UniqueID>|<String>
 <GuardianInvitationID> ::= <String>
@@ -243,6 +245,7 @@ Named items
 	serialnumber|
 	status|
 	supportenddate|
+	tpmversioninfo|
 	willautorenew
 
 <CrOSOrderByFieldName> ::=
@@ -408,6 +411,21 @@ Named items
 <PrintJobOrderByFieldName> ::=
 	create_time|status|title
 
+<ResourceFieldName> ::=
+	buildingid|
+	capacity|
+	category|
+	description|
+	email|
+	features|
+	floor|
+	floorsection|
+	generatedresourcename|
+	id|
+	name|
+	type|
+	uservisibledescription
+	
 <UserFieldName> ::=
 	addresses|address|
 	agreedtoterms|agreed2terms|
@@ -463,8 +481,10 @@ Items, separated by spaces, with spaces or commas in the items themselves: "'it 
 <EmailAddressList> ::= "<EmailAddress>(,<EmailAddress>)*"
 <EmailItemList> ::= "<EmailItem>(,<EmailItem>)*"
 <EventIDList> ::= "<EventID>(,<EventID>)*"
+<FeatureNameList> ::= "<FeatureName>(,<FeatureName>)*"
 <FileFormatList> ::= "<FileFormat>(,<FileFormat)*"
 <FilterIDList> ::= "<FilterID>(,<FilterID>)*"
+<FloorNameList> ::= "<FloorName>(,<FloorName>)*"
 <GroupFieldNameList> ::= "<GroupFieldName>(,<GroupFieldName>)*"
 <GroupList> ::= "<GroupItem>(,<GroupItem>)*"
 <GuardianStateList> ::= "<GuardianState>(,<GuardianState>)*"
@@ -504,8 +524,15 @@ Specify a collection of Users by directly specifying them or by specifiying item
 		(query <QueryUser>)
 
 Item attributes
+<BuildingAttributes> ::=
+	(description <String>)|
+	(floors <FloorNameList>)|
+	(latitude <Float>)|
+	(longitude <Float>)|
+	(name <String>)
+
 <CalendarAttributes> ::=
-	(selected <Boolean>)|(hidden <Boolean>)|(summary <String>)|(colorindex|colorid <CalendarColorIndex>)|(backgroundcolor <ColorHex>)|(foregroundcolor <ColorHex>)|
+	(selected <Boolean>)|(hidden <Boolean>)|(summary <String>)|(colorindex|colorid <CalendarColorIndex>)|(backgroundcolor <ColorValue>)|(foregroundcolor <ColorValue>)|
 	(reminder clear|(email|sms|pop <Number>))|
 	(notification clear|(email|sms eventcreation|eventchange|eventcancellation|eventresponse|agenda))
 
@@ -532,12 +559,12 @@ Item attributes
 	(localfile <FileName>)|
 	(convert)|(ocr)|(ocrlanguage <Language>)|(restricted|restrict)|(starred|star)|(trashed|trash)|(viewed|view)|
 	(lastviewedbyme <Time>)|(modifieddate|modifiedtime <Time>)|(description <String>)|(mimetype <MimeType>)|
-	(parentid <DriveFolderID>)|(parentname <FolderName>)|(anyownerparentname <FolderName>)|writerscantshare
+	(parentid <DriveFolderID>)|(parentname <DriveFolderName>)|(anyownerparentname <DriveFolderName>)|writerscantshare
 <DriveFileUpdateAttributes> ::=
 	(localfile <FileName>)|
 	(convert)|(ocr)|(ocrlanguage <Language>)|(restricted|restrict <Boolean>)|(starred|star <Boolean>)|(trashed|trash <Boolean>)|(viewed|view <Boolean>)|
 	(lastviewedbyme <Time>)|(modifieddate <Time>)|(description <String>)|(mimetype <MimeType>)|
-	(parentid <DriveFolderID>)|(parentname <FolderName>)|(anyownerparentname <FolderName>)|writerscantshare
+	(parentid <DriveFolderID>)|(parentname <DriveFolderName>)|(anyownerparentname <DriveFolderName>)|writerscantshare
 <EventAttributes> ::=
 	(anyonecanaddself)|(guestscantinviteothers)|(guestscantseeothers)|(notifyattendees)|(available)|(visibility default|public|prvate)|(tentative)|
 	(attendee <EmailAddress>)|(optionalattendee <EmailAddress>)|
@@ -588,6 +615,18 @@ Item attributes
 	(quotaenabled <Boolean>)|(status <Number>)|(type <String>)|(uuid <String>)|
 	(setupurl <URL>)|(supporturl <URL>)|(updateurl <URL>)
 
+<ResourceAttributes> ::=
+	(buildingid <BuildingID>)|
+	(capacity <Number>)|
+	(category other|room|conference_room)|
+	(description <String>)|
+	(features <FeatureNameList>)|
+	(floor <FloorName>)|
+	(floorsection <String>)|
+	(name <String>)|
+	(type <String>)|
+	(uservisibledescription <String>)
+	
 <SchemaFieldDefinition> ::=
 	field <FieldName> (type bool|date|double|email|int64|phone|string) [multivalued|multivalue] [indexed] [restricted] [range <Number> <Number>] endfield
 
@@ -748,10 +787,10 @@ gam calendar <CalendarItem> wipe
 
 gam update cros <CrOSItem> (<CrOSAttributes>+)|(action deprovision_same_model_replace|deprovision_different_model_replace|deprovision_retiring_device|disable|reenable [acknowledge_device_touch_requirement])
 gam info cros <CrOSItem> [nolists] [listlimit <Number>] [start <Date>] [end <Date>]
-	[basic|full|allfields] <CrOSFieldName>* [fields <CrOSFieldNameList>] [downloadfile latest|<Time>]
+	[basic|full|allfields] <CrOSFieldName>* [fields <CrOSFieldNameList>] [downloadfile latest|<Time>] [targetfolder <FilePath>]
 
 gam print cros [todrive] [query <QueryCrOS>] [limittoou <OrgUnitItem>]
-	[orderby <CrOSOrderByFieldName> [ascending|descending]] [nolists] [listlimit <Number>] [start <Date>] [end <Date>]
+	[orderby <CrOSOrderByFieldName> [ascending|descending]] [nolists|recentusers|timeranges|devicefiles] [listlimit <Number>] [start <Date>] [end <Date>]
 	[basic|full|allfields] <CrOSFieldName>* [fields <CrOSFieldNameList>]
 gam <CrOSTypeEntity> print
 
@@ -763,27 +802,49 @@ Prints no header row and deviceId for specified CrOS devices.
 gam print cros ... basic|full
 Prints a header row and selected fields for specified CrOS devices.
 
-The basic argument yields these column headers: deviceId,annotatedAssetId,annotatedLocation,annotatedUser,lastSync,notes,serialNumber,status
-The full argument yields all column headers including two headers, recentUsers and activeTimeRanges,
-that repeat with two/four subvalues each, yielding a large number of columns that make the output hard to process.
-The nolists argument suppresses these two headers; if you want these headers in a more manageable form use the following arguments.
+Print a header row and selected fields for specified CrOS devices; deviceId is the always the first column.
+If you specify allfields|basic|full, all other column headers are sorted.
+If you specify <CrOSFieldName>* | fields <CrOSFieldNameList>, the column headers appear in the order specified.
+gam [<CrOSTypeEntity>] print cros [todrive [<ToDriveAttributes>]] [query <QueryCrOS>]|[select <CrOSTypeEntity>] [limittoou <OrgUnitItem>]
+	[orderby <CrOSOrderByFieldName> [ascending|descending]] [nolists|recentusers|timeranges|devicefiles] [listlimit <Number>] [start <Date>] [end <Date>]
+	[basic|full|allfields] <CrOSFieldName>* [fields <CrOSFieldNameList>]
+
+The basic argument outputs these column headers: deviceId,annotatedAssetId,annotatedLocation,annotatedUser,lastSync,notes,serialNumber,status
+The allfields/full arguments output all column headers including three headers, recentUsers, activeTimeRanges and deviceFiles,
+that repeat with two/four/two subvalues each, yielding a large number of columns that make the output hard to process.
+The nolists argument suppresses these three headers; if you want these headers in a more manageable form use the following arguments.
+
 If recentusers is specified, for each recent user, the columns recentUsers.email and recentUsers.type are output on a separate row
 with all of the other headers.
+
 If timeranges is specified, for each time range entry, the columns activeTimeRanges.date, activeTimeRange.activeTime,
 activeTimeRanges.duration and activeTimeRanges.minutes are output on a separate row with all of the other headers.
+
+If devicefiles is specified, for each deviceFile, the columns deviceFiles.type and deviceFiles.createTime are output on a separate row
+with all of the other headers.
+
 The listlimit <Number> argument limits the number of repetitions to <Number>; if not specified or <Number> equals zero, there is no limit.
 The start <Date> and end <Date> arguments filter the time ranges.
 
 gam print crosactivity [todrive] [query <QueryCrOS>] [limittoou <OrgUnitItem>]
-	[recentusers] [timeranges] [both] [listlimit <Number>] [start <Date>] [end <Date>] [delimiter <Character>]
+	[recentusers] [timeranges] [both] [devicefiles] [all] [listlimit <Number>] [start <Date>] [end <Date>] [delimiter <Character>]
 
 The basic column headers are: deviceId,annotatedAssetId,annotatedLocation,serialNumber,orgUnitPath.
+
 If recentusers is specified, all of the recent users email addresses, separated by the delimiter <Character>,
 with header recentUsers.email, are output with the basic headers.
-If timeranges is specified, for each time range entry, activeTimeRanges.date and activeTimeRanges.duration and activeTimeRanges.minutes,
+
+If timeranges is specified, for each time range entry, activeTimeRanges.date and activeTimeRanges.duration and activeTimeRanges.minutes
 are output on a separate row with the basic headers.
-The default is to include both recentusers and timeranges.
-The listlimit <Number> argument limits the number of recent users and time ranges to <Number>; if not specified or <Number> equals zero, there is no limit.
+
+If devicefiles is specified, for each deviceFile, deviceFiles.type and deviceFiles.createTime
+are output on a separate row with the basic headers.
+
+The both option specifies recentusers and timeranges.
+The all option specifies recentusers, timeranges and devicefiles..
+The default is to include recentusers and timeranges.
+
+The listlimit <Number> argument limits the number of recent users, time ranges and device files to <Number>; if not specified or <Number> equals zero, there is no limit.
 The start <Date> and end <Date> arguments filter the time ranges.
 Delimiter defaults to comma.
 
@@ -817,11 +878,21 @@ gam update notification|notifications [(id all)|(id <NotificationID>)*] unread|r
 gam delete notification|notifications [(id all)|(id <NotificationID>)*]
 gam info notification|notifications [unreadonly]
 
-gam create resource <ResourceID> <Name> [description <String>] [type <String>]
-gam update resource <ResourceID> [name <Name>] [description <String>] [type <String>]
+gam create building <BuildIngID> <Name> <BuildingAttributes>*
+gam update building <BuildIngID> <BuildingAttributes>*
+gam delete building <BuildingID>
+gam info building <BuildingID>
+gam print buildings [todrive]
+
+gam create feature <Name>
+gam update feature <Name> name <Name>
+gam print features [todrive]
+
+gam create resource <ResourceID> <Name> <ResourceAttributes>*
+gam update resource <ResourceID> <ResourceAttributes>*
 gam delete resource <ResourceID>
 gam info resource <ResourceID>
-gam print resources [todrive] [allfields] [id] [name] [description] [email] [type]
+gam print resources [todrive] [allfields] <ResourceFieldName>*
 
 gam create schema|schemas <SchemaName> <SchemaFieldDefinition>+
 gam update schema <SchemaName> <SchemaFieldDefinition>* (deletefield <FieldName>)*
