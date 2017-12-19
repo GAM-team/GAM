@@ -463,7 +463,7 @@ CROS_ARGUMENT_TO_PROPERTY_MAP = {
   u'tag': [u'annotatedAssetId',],
   u'timeranges': [u'activeTimeRanges.activeTime', u'activeTimeRanges.date'],
   u'times': [u'activeTimeRanges.activeTime', u'activeTimeRanges.date'],
-  u'tpmversioninfo': [u'tpmVersionInfo'],
+  u'tpmversioninfo': [u'tpmVersionInfo',],
   u'user': [u'annotatedUser',],
   u'users': [u'recentUsers.email', u'recentUsers.type'],
   u'willautorenew': [u'willAutoRenew',],
@@ -501,7 +501,7 @@ CROS_START_ARGUMENTS = [u'start', u'startdate', u'oldestdate']
 CROS_END_ARGUMENTS = [u'end', u'enddate']
 
 # From https://www.chromium.org/chromium-os/tpm_firmware_update
-CROS_TPM_VULN_VERSIONS = [u'41f',  u'420', u'628', u'8520',]
+CROS_TPM_VULN_VERSIONS = [u'41f', u'420', u'628', u'8520',]
 CROS_TPM_FIXED_VERSIONS = [u'422', u'62b', u'8521',]
 
 #
@@ -540,6 +540,8 @@ GM_MAP_USER_ID_TO_NAME = u'ui2n'
 GM_CACHE_DIR = u'gacd'
 # Reset GAM cache directory after discovery
 GM_CACHE_DISCOVERY_ONLY = u'gcdo'
+# Dictionary mapping Building ID to Name
+GM_MAP_BUILDING_ID_TO_NAME = u'bi2n'
 #
 GM_Globals = {
   GM_SYSEXITRC: 0,
@@ -558,6 +560,7 @@ GM_Globals = {
   GM_MAP_USER_ID_TO_NAME: None,
   GM_CACHE_DIR: None,
   GM_CACHE_DISCOVERY_ONLY: True,
+  GM_MAP_BUILDING_ID_TO_NAME: None
   }
 #
 # Global variables defined by environment variables/signal files

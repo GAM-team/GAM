@@ -755,7 +755,7 @@ def callGAPIpages(service, function, items,
   total_items = 0
   while True:
     this_page = callGAPI(service, function, soft_errors=soft_errors,
-           throw_reasons=throw_reasons, retry_reasons=retry_reasons, **kwargs)
+                         throw_reasons=throw_reasons, retry_reasons=retry_reasons, **kwargs)
     if this_page:
       if items in this_page:
         page_items = len(this_page[items])
@@ -6902,7 +6902,7 @@ def getUserAttributes(i, cd, updateCmd=False):
           location[u'area'] = sys.argv[i+1]
           i += 2
         elif myopt in [u'building', u'buildingid']:
-          location[u'buildingId'] = sys.argv[i+1]
+          location[u'buildingId'] = _getBuildingByNameOrId(cd, sys.argv[i+1])
           i += 2
         elif myopt in [u'desk', u'deskcode']:
           location[u'deskCode'] = sys.argv[i+1]
@@ -7987,7 +7987,7 @@ def _getBuildingByNameOrId(cd, which_building):
     return which_building[3:]
   fields = u'nextPageToken,buildings(buildingId,buildingName)'
   buildings = callGAPIpages(cd.resources().buildings(), u'list',
-      u'buildings', customer=GC_Values[GC_CUSTOMER_ID], fields=fields)
+                            u'buildings', customer=GC_Values[GC_CUSTOMER_ID], fields=fields)
   ci_matches = []
   for building in buildings:
     # name is case sensitive. If case matches return immediately
@@ -8011,14 +8011,11 @@ def _getBuildingByNameOrId(cd, which_building):
     sys.exit(3)
 
 def _getBuildingNameById(cd, buildingId):
-  global all_buildings
-  try:
-    all_buildings
-  except NameError:
+  if not GM_Globals[GM_MAP_BUILDING_ID_TO_NAME]:
     fields = u'nextPageToken,buildings(buildingId,buildingName)'
-    all_buildings = callGAPIpages(cd.resources().buildings(), u'list',
-        u'buildings', customer=GC_Values[GC_CUSTOMER_ID], fields=fields)
-  for building in all_buildings:
+    GM_Globals[GM_MAP_BUILDING_ID_TO_NAME] = callGAPIpages(cd.resources().buildings(), u'list', u'buildings',
+                                                           customer=GC_Values[GC_CUSTOMER_ID], fields=fields)
+  for building in GM_Globals[GM_MAP_BUILDING_ID_TO_NAME]:
     if buildingId == building[u'buildingId']:
       return building[u'buildingName']
   print u'ERROR: No such building %s' % buildingId
@@ -8036,12 +8033,11 @@ def doGetBuildingInfo():
   cd = buildGAPIObject(u'directory')
   buildingId = _getBuildingByNameOrId(cd, sys.argv[3])
   building = callGAPI(cd.resources().buildings(), u'get',
-           customer=GC_Values[GC_CUSTOMER_ID], buildingId=buildingId)
+                      customer=GC_Values[GC_CUSTOMER_ID], buildingId=buildingId)
   if u'floorNames' in building:
-    building[u'floorNames'] = u' '.join(building[u'floorNames'])
+    building[u'floorNames'] = u','.join(building[u'floorNames'])
   if u'buildingName' in building:
-    sys.stdout.write(building[u'buildingName'])
-    del(building[u'buildingName'])
+    sys.stdout.write(building.pop(u'buildingName'))
   print_json(None, building)
 
 def doDeleteBuilding():
@@ -8086,7 +8082,10 @@ def _getResourceCalendarAttributes(cd, args, body={}):
   i = 0
   while i < len(args):
     myarg = args[i].lower().replace(u'_', u'')
-    if myarg == u'description':
+    if myarg == u'name':
+      body[u'resourceName'] = args[i+1]
+      i += 2
+    elif myarg == u'description':
       body[u'resourceDescription'] = args[i+1].replace(u'\\n', u'\n')
       i += 2
     elif myarg == u'type':
@@ -8117,7 +8116,7 @@ def _getResourceCalendarAttributes(cd, args, body={}):
       i += 2
     elif myarg in [u'uservisibledescription', u'userdescription']:
       body[u'userVisibleDescription'] = args[i+1]
-      i += 2 
+      i += 2
     else:
       print u'ERROR: %s is not a valid argument for "gam create|update resource"' % args[i]
       sys.exit(2)
@@ -9197,11 +9196,7 @@ def doGetResourceCalendarInfo():
   resource = callGAPI(cd.resources().calendars(), u'get',
                       customer=GC_Values[GC_CUSTOMER_ID], calendarResourceId=resId)
   if u'featureInstances' in resource:
-    features = []
-    for a_feature in resource[u'featureInstances']:
-      features.append(a_feature[u'feature'][u'name'])
-    resource[u'features'] = u', '.join(features)
-    del(resource[u'featureInstances'])
+    resource[u'features'] = u', '.join([a_feature[u'feature'][u'name'] for a_feature in resource.pop(u'featureInstances')])
   if u'buildingId' in resource:
     resource[u'buildingName'] = _getBuildingNameById(cd, resource[u'buildingId'])
   print_json(None, resource)
@@ -11321,7 +11316,7 @@ def doPrintFeatures():
   if fields:
     fields = fields % u','.join(fieldsList)
   features = callGAPIpages(cd.resources().features(), u'list',
-           items=u'features', customer=GC_Values[GC_CUSTOMER_ID], fields=fields)
+                           items=u'features', customer=GC_Values[GC_CUSTOMER_ID], fields=fields)
   for feature in features:
     feature.pop(u'etags', None)
     feature.pop(u'etag', None)
@@ -11369,20 +11364,20 @@ def doPrintBuildings():
   if fields:
     fields = fields % u','.join(fieldsList)
   buildings = callGAPIpages(cd.resources().buildings(), u'list',
-      items=u'buildings', customer=GC_Values[GC_CUSTOMER_ID], fields=fields)
+                            items=u'buildings', customer=GC_Values[GC_CUSTOMER_ID], fields=fields)
   for building in buildings:
     building.pop(u'etags', None)
     building.pop(u'etag', None)
     building.pop(u'kind', None)
     if u'floorNames' in building:
-      building[u'floorNames'] = u' '.join(building[u'floorNames'])
+      building[u'floorNames'] = u','.join(building[u'floorNames'])
     building = flatten_json(building)
     for item in building:
       if item not in titles:
         titles.append(item)
     csvRows.append(building)
   sortCSVTitles(u'buildingId', titles)
-  writeCSVfile(csvRows, titles, u'Buildings', to_drive) 
+  writeCSVfile(csvRows, titles, u'Buildings', to_drive)
 
 def doPrintResourceCalendars():
   cd = buildGAPIObject(u'directory')
