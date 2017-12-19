@@ -7982,24 +7982,34 @@ def doCreateBuilding():
   callGAPI(cd.resources().buildings(), u'insert',
            customer=GC_Values[GC_CUSTOMER_ID], body=body)
 
+def _makeBuildingIdNameMap(cd):
+  buildings = callGAPIpages(cd.resources().buildings(), u'list', u'buildings',
+                            customer=GC_Values[GC_CUSTOMER_ID],
+                            fields=u'nextPageToken,buildings(buildingId,buildingName)')
+  GM_Globals[GM_MAP_BUILDING_ID_TO_NAME] = {}
+  GM_Globals[GM_MAP_BUILDING_NAME_TO_ID] = {}
+  for building in buildings:
+    GM_Globals[GM_MAP_BUILDING_ID_TO_NAME][building[u'buildingId']] = building[u'buildingName']
+    GM_Globals[GM_MAP_BUILDING_NAME_TO_ID][building[u'buildingName']] = building[u'buildingId']
+
 def _getBuildingByNameOrId(cd, which_building):
   if which_building[:3].lower() == u'id:':
     return which_building[3:]
-  fields = u'nextPageToken,buildings(buildingId,buildingName)'
-  buildings = callGAPIpages(cd.resources().buildings(), u'list',
-                            u'buildings', customer=GC_Values[GC_CUSTOMER_ID], fields=fields)
+  if GM_Globals[GM_MAP_BUILDING_NAME_TO_ID] is None:
+    _makeBuildingIdNameMap(cd)
+  # name is case sensitive. If case matches return immediately
+  if which_building in GM_Globals[GM_MAP_BUILDING_NAME_TO_ID]:
+    return GM_Globals[GM_MAP_BUILDING_NAME_TO_ID][which_building]
+  which_building_lower = which_building.lower()
   ci_matches = []
-  for building in buildings:
-    # name is case sensitive. If case matches return immediately
+  for buildingName, buildingId in GM_Globals[GM_MAP_BUILDING_NAME_TO_ID].iteritems():
     # otherwise return a case mismatched name if only one exists
     # if 2+ case mismatches exist, fail with descriptive error.
-    if building[u'buildingName'] == which_building:
-      return building[u'buildingId']
-    elif building[u'buildingName'].lower() == which_building.lower():
-      ci_matches.append(building)
+    if buildingName.lower() == which_building_lower:
+      ci_matches.append({u'buildingName': buildingName, u'buildingId': buildingId})
   if len(ci_matches) == 1:
     return ci_matches[0][u'buildingId']
-  elif len(ci_matches) > 1:
+  if len(ci_matches) > 1:
     print u'ERROR: multiple buildings with same name:'
     for building in ci_matches:
       print u'  Name:%s  id:%s' % (building[u'buildingName'], building[u'buildingId'])
@@ -8012,12 +8022,7 @@ def _getBuildingByNameOrId(cd, which_building):
 
 def _getBuildingNameById(cd, buildingId):
   if GM_Globals[GM_MAP_BUILDING_ID_TO_NAME] is None:
-    buildings = callGAPIpages(cd.resources().buildings(), u'list', u'buildings',
-                              customer=GC_Values[GC_CUSTOMER_ID],
-                              fields=u'nextPageToken,buildings(buildingId,buildingName)')
-    GM_Globals[GM_MAP_BUILDING_ID_TO_NAME] = {}
-    for building in buildings:
-      GM_Globals[GM_MAP_BUILDING_ID_TO_NAME][building[u'buildingId']] = building[u'buildingName']
+    _makeBuildingIdNameMap(cd)
   if buildingId in GM_Globals[GM_MAP_BUILDING_ID_TO_NAME]:
     return GM_Globals[GM_MAP_BUILDING_ID_TO_NAME][buildingId]
   print u'ERROR: No such building %s' % buildingId

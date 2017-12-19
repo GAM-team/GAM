@@ -542,6 +542,8 @@ GM_CACHE_DIR = u'gacd'
 GM_CACHE_DISCOVERY_ONLY = u'gcdo'
 # Dictionary mapping Building ID to Name
 GM_MAP_BUILDING_ID_TO_NAME = u'bi2n'
+# Dictionary mapping Building Name to ID
+GM_MAP_BUILDING_NAME_TO_ID = u'bn2i'
 #
 GM_Globals = {
   GM_SYSEXITRC: 0,
@@ -560,7 +562,8 @@ GM_Globals = {
   GM_MAP_USER_ID_TO_NAME: None,
   GM_CACHE_DIR: None,
   GM_CACHE_DISCOVERY_ONLY: True,
-  GM_MAP_BUILDING_ID_TO_NAME: None
+  GM_MAP_BUILDING_ID_TO_NAME: None,
+  GM_MAP_BUILDING_NAME_TO_ID: None,
   }
 #
 # Global variables defined by environment variables/signal files
