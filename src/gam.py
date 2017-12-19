@@ -7971,11 +7971,10 @@ def _getBuildingAttributes(args, body={}):
 
 def doCreateBuilding():
   cd = buildGAPIObject(u'directory')
-  buildIngId = sys.argv[3]
-  body = {u'buildingId': buildingId,
-          u'buildingName': buildingId,
+  body = {u'buildingId': sys.argv[3],
+          u'buildingName': sys.argv[4],
           u'floorNames': [u'1',]}
-  body = _getBuildingAttributes(sys.argv[4:], body)
+  body = _getBuildingAttributes(sys.argv[5:], body)
   print u'Creating building %s...' % body[u'buildingId']
   callGAPI(cd.resources().buildings(), u'insert',
            customer=GC_Values[GC_CUSTOMER_ID], body=body)

@@ -878,7 +878,7 @@ gam update notification|notifications [(id all)|(id <NotificationID>)*] unread|r
 gam delete notification|notifications [(id all)|(id <NotificationID>)*]
 gam info notification|notifications [unreadonly]
 
-gam create building <BuildIngID> <BuildingAttributes>*
+gam create building <BuildIngID> <Name> <BuildingAttributes>*
 gam update building <BuildIngID> <BuildingAttributes>*
 gam delete building <BuildingID>
 gam info building <BuildingID>
