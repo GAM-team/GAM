@@ -8011,13 +8011,15 @@ def _getBuildingByNameOrId(cd, which_building):
     sys.exit(3)
 
 def _getBuildingNameById(cd, buildingId):
-  if not GM_Globals[GM_MAP_BUILDING_ID_TO_NAME]:
-    fields = u'nextPageToken,buildings(buildingId,buildingName)'
-    GM_Globals[GM_MAP_BUILDING_ID_TO_NAME] = callGAPIpages(cd.resources().buildings(), u'list', u'buildings',
-                                                           customer=GC_Values[GC_CUSTOMER_ID], fields=fields)
-  for building in GM_Globals[GM_MAP_BUILDING_ID_TO_NAME]:
-    if buildingId == building[u'buildingId']:
-      return building[u'buildingName']
+  if GM_Globals[GM_MAP_BUILDING_ID_TO_NAME] is None:
+    buildings = callGAPIpages(cd.resources().buildings(), u'list', u'buildings',
+                              customer=GC_Values[GC_CUSTOMER_ID],
+                              fields=u'nextPageToken,buildings(buildingId,buildingName)')
+    GM_Globals[GM_MAP_BUILDING_ID_TO_NAME] = {}
+    for building in buildings:
+      GM_Globals[GM_MAP_BUILDING_ID_TO_NAME][building[u'buildingId']] = building[u'buildingName']
+  if buildingId in GM_Globals[GM_MAP_BUILDING_ID_TO_NAME]:
+    return GM_Globals[GM_MAP_BUILDING_ID_TO_NAME][buildingId]
   print u'ERROR: No such building %s' % buildingId
   sys.exit(3)
 
