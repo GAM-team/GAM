@@ -7975,23 +7975,78 @@ def _getBuildingAttributes(args, body={}):
 def doCreateBuilding():
   cd = buildGAPIObject(u'directory')
   body = {u'floorNames': [u'1'],
-          u'buildingId': unicode(uuid.uuid4())}
-  body = _getBuildingAttributes(sys.argv[3:], body)
+          u'buildingId': unicode(uuid.uuid4()),
+          u'buildingName': sys.argv[3]}
+  body = _getBuildingAttributes(sys.argv[4:], body)
   print u'Creating building %s...' % body[u'buildingId']
   callGAPI(cd.resources().buildings(), u'insert',
            customer=GC_Values[GC_CUSTOMER_ID], body=body)
 
+def _getBuildingByNameOrId(cd, which_building):
+  if which_building[:3].lower() == u'id:':
+    return which_building[3:]
+  fields = u'nextPageToken,buildings(buildingId,buildingName)'
+  buildings = callGAPIpages(cd.resources().buildings(), u'list',
+      u'buildings', customer=GC_Values[GC_CUSTOMER_ID], fields=fields)
+  ci_matches = []
+  for building in buildings:
+    # name is case sensitive. If case matches return immediately
+    # otherwise return a case mismatched name if only one exists
+    # if 2+ case mismatches exist, fail with descriptive error.
+    if building[u'buildingName'] == which_building:
+      return building[u'buildingId']
+    elif building[u'buildingName'].lower() == which_building.lower():
+      ci_matches.append(building)
+  if len(ci_matches) == 1:
+    return ci_matches[0][u'buildingId']
+  elif len(ci_matches) > 1:
+    print u'ERROR: multiple buildings with same name:'
+    for building in ci_matches:
+      print u'  Name:%s  id:%s' % (building[u'buildingName'], building[u'buildingId'])
+    print
+    print u'Please specify building name by exact case or by id.'
+    sys.exit(3)
+  else:
+    print u'ERROR: No such building %s' % which_building
+    sys.exit(3)
+
+def _getBuildingNameById(cd, buildingId):
+  global all_buildings
+  try:
+    all_buildings
+  except NameError:
+    fields = u'nextPageToken,buildings(buildingId,buildingName)'
+    all_buildings = callGAPIpages(cd.resources().buildings(), u'list',
+        u'buildings', customer=GC_Values[GC_CUSTOMER_ID], fields=fields)
+  for building in all_buildings:
+    if buildingId == building[u'buildingId']:
+      return building[u'buildingName']
+  print u'ERROR: No such building %s' % buildingId
+  sys.exit(3)
+
 def doUpdateBuilding():
   cd = buildGAPIObject(u'directory')
-  buildingId = sys.argv[3]
+  buildingId = _getBuildingByNameOrId(cd, sys.argv[3])
   body = _getBuildingAttributes(sys.argv[4:])
   print u'Updating building %s...' % buildingId
   callGAPI(cd.resources().buildings(), u'patch',
            customer=GC_Values[GC_CUSTOMER_ID], buildingId=buildingId, body=body)
 
+def doGetBuildingInfo():
+  cd = buildGAPIObject(u'directory')
+  buildingId = _getBuildingByNameOrId(cd, sys.argv[3])
+  building = callGAPI(cd.resources().buildings(), u'get',
+           customer=GC_Values[GC_CUSTOMER_ID], buildingId=buildingId)
+  if u'floorNames' in building:
+    building[u'floorNames'] = u' '.join(building[u'floorNames'])
+  if u'buildingName' in building:
+    sys.stdout.write(building[u'buildingName'])
+    del(building[u'buildingName'])
+  print_json(None, building)
+
 def doDeleteBuilding():
   cd = buildGAPIObject(u'directory')
-  buildingId = sys.argv[3]
+  buildingId = _getBuildingByNameOrId(cd, sys.argv[3])
   print u'Deleting building %s...' % buildingId
   callGAPI(cd.resources().buildings(), u'delete',
            customer=GC_Values[GC_CUSTOMER_ID], buildingId=buildingId)
@@ -8027,19 +8082,7 @@ def doUpdateFeature():
            customer=GC_Values[GC_CUSTOMER_ID], oldName=oldName,
            body=body)
 
-def doGetBuildingInfo():
-  cd = buildGAPIObject(u'directory')
-  buildingId = sys.argv[3]
-  building = callGAPI(cd.resources().buildings(), u'get',
-           customer=GC_Values[GC_CUSTOMER_ID], buildingId=buildingId)
-  if u'floorNames' in building:
-    building[u'floorNames'] = u' '.join(building[u'floorNames'])
-  if u'buildingName' in building:
-    sys.stdout.write(building[u'buildingName'])
-    del(building[u'buildingName'])
-  print_json(None, building)
-
-def _getResourceCalendarAttributes(args, body={}):
+def _getResourceCalendarAttributes(cd, args, body={}):
   i = 0
   while i < len(args):
     myarg = args[i].lower().replace(u'_', u'')
@@ -8050,7 +8093,7 @@ def _getResourceCalendarAttributes(args, body={}):
       body[u'resourceType'] = args[i+1]
       i += 2
     elif myarg in [u'building', u'buildingid']:
-      body[u'buildingId'] = args[i+1]
+      body[u'buildingId'] = _getBuildingByNameOrId(cd, args[i+1])
       i += 2
     elif myarg in [u'capacity']:
       body[u'capacity'] = int(args[i+1])
@@ -8084,7 +8127,7 @@ def doCreateResourceCalendar():
   cd = buildGAPIObject(u'directory')
   body = {u'resourceId': sys.argv[3],
           u'resourceName': sys.argv[4]}
-  body = _getResourceCalendarAttributes(sys.argv[5:], body)
+  body = _getResourceCalendarAttributes(cd, sys.argv[5:], body)
   print u'Creating resource %s...' % body[u'resourceId']
   callGAPI(cd.resources().calendars(), u'insert',
            customer=GC_Values[GC_CUSTOMER_ID], body=body)
@@ -8092,7 +8135,7 @@ def doCreateResourceCalendar():
 def doUpdateResourceCalendar():
   cd = buildGAPIObject(u'directory')
   resId = sys.argv[3]
-  body = _getResourceCalendarAttributes(sys.argv[4:])
+  body = _getResourceCalendarAttributes(cd, sys.argv[4:])
   # Use patch since it seems to work better.
   # update requires name to be set.
   callGAPI(cd.resources().calendars(), u'patch',
@@ -9159,6 +9202,8 @@ def doGetResourceCalendarInfo():
       features.append(a_feature[u'feature'][u'name'])
     resource[u'features'] = u', '.join(features)
     del(resource[u'featureInstances'])
+  if u'buildingId' in resource:
+    resource[u'buildingName'] = _getBuildingNameById(cd, resource[u'buildingId'])
   print_json(None, resource)
 
 def _filterTimeRanges(activeTimeRanges, startDate, endDate):
