@@ -6902,7 +6902,7 @@ def getUserAttributes(i, cd, updateCmd=False):
           location[u'area'] = sys.argv[i+1]
           i += 2
         elif myopt in [u'building', u'buildingid']:
-          location[u'buildingId'] = sys.argv[i+1]
+          location[u'buildingId'] = _getBuildingNameById(cd, sys.argv[i+1])
           i += 2
         elif myopt in [u'desk', u'deskcode']:
           location[u'deskCode'] = sys.argv[i+1]
@@ -8023,7 +8023,7 @@ def _getBuildingByNameOrId(cd, which_building):
 def _getBuildingNameById(cd, buildingId):
   if GM_Globals[GM_MAP_BUILDING_ID_TO_NAME] is None:
     _makeBuildingIdNameMap(cd)
-  return GM.Globals[GM.MAP_BUILDING_ID_TO_NAME].get(buildingId, u'UNKNOWN')
+  return GM_Globals[GM_MAP_BUILDING_ID_TO_NAME].get(buildingId, u'UNKNOWN')
 
 def doUpdateBuilding():
   cd = buildGAPIObject(u'directory')
