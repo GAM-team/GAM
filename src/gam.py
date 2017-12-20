@@ -6902,7 +6902,7 @@ def getUserAttributes(i, cd, updateCmd=False):
           location[u'area'] = sys.argv[i+1]
           i += 2
         elif myopt in [u'building', u'buildingid']:
-          location[u'buildingId'] = _getBuildingNameById(cd, sys.argv[i+1])
+          location[u'buildingId'] = _getBuildingByNameOrId(cd, sys.argv[i+1])
           i += 2
         elif myopt in [u'desk', u'deskcode']:
           location[u'deskCode'] = sys.argv[i+1]
