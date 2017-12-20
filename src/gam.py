@@ -8023,9 +8023,7 @@ def _getBuildingByNameOrId(cd, which_building):
 def _getBuildingNameById(cd, buildingId):
   if GM_Globals[GM_MAP_BUILDING_ID_TO_NAME] is None:
     _makeBuildingIdNameMap(cd)
-  if buildingId in GM_Globals[GM_MAP_BUILDING_ID_TO_NAME]:
-    return GM_Globals[GM_MAP_BUILDING_ID_TO_NAME][buildingId]
-  return u'UNKNOWN'
+  return GM_Globals[GM_MAP_BUILDING_ID_TO_NAME].get(buildingId, u'UNKNOWN')
 
 def doUpdateBuilding():
   cd = buildGAPIObject(u'directory')
@@ -11281,14 +11279,25 @@ def doPrintLicenses(returnFields=None, skus=None):
   writeCSVfile(csvRows, titles, u'Licenses', todrive)
 
 RESCAL_DFLTFIELDS = [u'id', u'name', u'email',]
-RESCAL_ALLFIELDS = [u'id', u'name', u'email', u'description', u'type',]
+RESCAL_ALLFIELDS = [u'id', u'name', u'email', u'description', u'type', u'buildingid', u'category', u'capacity', u'features', u'floor', u'floorsection', u'generatedresourcename', u'uservisibledescription',]
 
 RESCAL_ARGUMENT_TO_PROPERTY_MAP = {
   u'description': [u'resourceDescription'],
+  u'buildingid': [u'buildingId',],
+  u'capacity': [u'capacity',],
+  u'category': [u'resourceCategory',],
   u'email': [u'resourceEmail'],
+  u'feature': [u'featureInstances',],
+  u'features': [u'featureInstances',],
+  u'floor': [u'floorName',],
+  u'floorname': [u'floorName',],
+  u'floorsection': [u'floorSection',],
+  u'generatedresourcename': [u'generatedResourceName',],
   u'id': [u'resourceId'],
   u'name': [u'resourceName'],
   u'type': [u'resourceType'],
+  u'userdescription': [u'userVisibleDescription',],
+  u'uservisibledescription': [u'userVisibleDescription',],
   }
 
 def doPrintFeatures():
@@ -11321,8 +11330,8 @@ def doPrintFeatures():
       sys.exit(3)
   if fields:
     fields = fields % u','.join(fieldsList)
-  features = callGAPIpages(cd.resources().features(), u'list',
-                           items=u'features', customer=GC_Values[GC_CUSTOMER_ID], fields=fields)
+  features = callGAPIpages(cd.resources().features(), u'list', u'features',
+                           customer=GC_Values[GC_CUSTOMER_ID], fields=fields)
   for feature in features:
     feature.pop(u'etags', None)
     feature.pop(u'etag', None)
@@ -11369,8 +11378,8 @@ def doPrintBuildings():
       sys.exit(3)
   if fields:
     fields = fields % u','.join(fieldsList)
-  buildings = callGAPIpages(cd.resources().buildings(), u'list',
-                            items=u'buildings', customer=GC_Values[GC_CUSTOMER_ID], fields=fields)
+  buildings = callGAPIpages(cd.resources().buildings(), u'list', u'buildings',
+                            customer=GC_Values[GC_CUSTOMER_ID], fields=fields)
   for building in buildings:
     building.pop(u'etags', None)
     building.pop(u'etag', None)
@@ -11420,10 +11429,13 @@ def doPrintResourceCalendars():
                             page_message=page_message, message_attribute=u'resourceId',
                             customer=GC_Values[GC_CUSTOMER_ID], fields=u'nextPageToken,items({0})'.format(u','.join(set(fieldsList))))
   for resource in resources:
+    if u'featureInstances' in resource:
+      resource[u'featureInstances'] = u','.join([a_feature[u'feature'][u'name'] for a_feature in resource.pop(u'featureInstances')])
     resUnit = {}
     for field in fieldsList:
       resUnit[fieldsTitles[field]] = resource.get(field, u'')
     csvRows.append(resUnit)
+  sortCSVTitles([u'resourceId', u'resourceName', u'resourceEmail'], titles)
   writeCSVfile(csvRows, titles, u'Resources', todrive)
 
 def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=None, checkNotSuspended=False, groupUserMembersOnly=True):
