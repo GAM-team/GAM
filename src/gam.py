@@ -8082,6 +8082,13 @@ def doUpdateFeature():
            customer=GC_Values[GC_CUSTOMER_ID], oldName=oldName,
            body=body)
 
+def doDeleteFeature():
+  cd = buildGAPIObject(u'directory')
+  featureKey = sys.argv[3]
+  print u'Deleting feature %s...' % featureKey
+  callGAPI(cd.resources().features(), u'delete',
+           customer=GC_Values[GC_CUSTOMER_ID], featureKey=featureKey)
+
 def _getResourceCalendarAttributes(cd, args, body={}):
   i = 0
   while i < len(args):
@@ -12286,6 +12293,8 @@ def ProcessGAMCommand(args):
         doDeleteVaultHold()
       elif argument in [u'building']:
         doDeleteBuilding()
+      elif argument in [u'feature']:
+        doDeleteFeature()
       else:
         print u'ERROR: %s is not a valid argument for "gam delete"' % argument
         sys.exit(2)
