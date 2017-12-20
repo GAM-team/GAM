@@ -8025,8 +8025,7 @@ def _getBuildingNameById(cd, buildingId):
     _makeBuildingIdNameMap(cd)
   if buildingId in GM_Globals[GM_MAP_BUILDING_ID_TO_NAME]:
     return GM_Globals[GM_MAP_BUILDING_ID_TO_NAME][buildingId]
-  print u'ERROR: No such building %s' % buildingId
-  sys.exit(3)
+  return u'UNKNOWN'
 
 def doUpdateBuilding():
   cd = buildGAPIObject(u'directory')
