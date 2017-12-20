@@ -780,7 +780,7 @@ def callGAPIpages(service, function, items,
       sys.stderr.write(u'\r')
       sys.stderr.flush()
       sys.stderr.write(show_message)
-    if this_page and u'nextPageToken' in this_page:
+    if this_page and this_page.get(u'nextPageToken'):
       kwargs[u'pageToken'] = this_page[u'nextPageToken']
     else:
       if page_message and (page_message[-1] != u'\n'):
