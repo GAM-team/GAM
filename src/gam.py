@@ -12701,7 +12701,11 @@ def ProcessGAMCommand(args):
     elif command in [u'add', u'create']:
       addWhat = sys.argv[4].lower()
       if addWhat == u'calendar':
-        addCalendar(users)
+        if command == u'add':
+          addCalendar(users)
+        else:
+          print u'ERROR: %s is not implemented for "gam <users> %s"' % (addWhat, command)
+          sys.exit(2)
       elif addWhat == u'drivefile':
         createDriveFile(users)
       elif addWhat in [u'license', u'licence']:
