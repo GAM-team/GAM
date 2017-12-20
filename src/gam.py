@@ -8052,6 +8052,8 @@ def doGetBuildingInfo():
   buildingId = _getBuildingByNameOrId(cd, sys.argv[3])
   building = callGAPI(cd.resources().buildings(), u'get',
                       customer=GC_Values[GC_CUSTOMER_ID], buildingId=buildingId)
+  if u'buildingId' in building:
+    building[u'buildingId'] = u'id:{0}'.format(building[u'buildingId'])
   if u'floorNames' in building:
     building[u'floorNames'] = u','.join(building[u'floorNames'])
   if u'buildingName' in building:
@@ -9224,6 +9226,7 @@ def doGetResourceCalendarInfo():
     resource[u'features'] = u', '.join([a_feature[u'feature'][u'name'] for a_feature in resource.pop(u'featureInstances')])
   if u'buildingId' in resource:
     resource[u'buildingName'] = _getBuildingNameById(cd, resource[u'buildingId'])
+    resource[u'buildingId'] = u'id:{0}'.format(resource[u'buildingId'])
   print_json(None, resource)
 
 def _filterTimeRanges(activeTimeRanges, startDate, endDate):
@@ -11322,6 +11325,7 @@ RESCAL_ALLFIELDS = [u'id', u'name', u'email', u'description', u'type', u'buildin
 
 RESCAL_ARGUMENT_TO_PROPERTY_MAP = {
   u'description': [u'resourceDescription'],
+  u'building': [u'buildingId',],
   u'buildingid': [u'buildingId',],
   u'capacity': [u'capacity',],
   u'category': [u'resourceCategory',],
@@ -11423,6 +11427,8 @@ def doPrintBuildings():
     building.pop(u'etags', None)
     building.pop(u'etag', None)
     building.pop(u'kind', None)
+    if u'buildingId' in building:
+      building[u'buildingId'] = u'id:{0}'.format(building[u'buildingId'])
     if u'floorNames' in building:
       building[u'floorNames'] = u','.join(building[u'floorNames'])
     building = flatten_json(building)
@@ -11462,14 +11468,20 @@ def doPrintResourceCalendars():
   if not fieldsList:
     for field in RESCAL_DFLTFIELDS:
       addFieldToCSVfile(field, RESCAL_ARGUMENT_TO_PROPERTY_MAP, fieldsList, fieldsTitles, titles)
+  fields = u'nextPageToken,items({0})'.format(u','.join(set(fieldsList)))
+  if u'buildingId' in fieldsList:
+    addFieldToCSVfile(u'buildingName', {u'buildingName': [u'buildingName',]}, fieldsList, fieldsTitles, titles)
   sys.stderr.write(u"Retrieving All Resource Calendars for your account (may take some time on a large domain)\n")
   page_message = u'Got %%total_items%% resources: %%first_item%% - %%last_item%%\n'
   resources = callGAPIpages(cd.resources().calendars(), u'list', u'items',
                             page_message=page_message, message_attribute=u'resourceId',
-                            customer=GC_Values[GC_CUSTOMER_ID], fields=u'nextPageToken,items({0})'.format(u','.join(set(fieldsList))))
+                            customer=GC_Values[GC_CUSTOMER_ID], fields=fields)
   for resource in resources:
     if u'featureInstances' in resource:
       resource[u'featureInstances'] = u','.join([a_feature[u'feature'][u'name'] for a_feature in resource.pop(u'featureInstances')])
+    if u'buildingId' in resource:
+      resource[u'buildingName'] = _getBuildingNameById(cd, resource[u'buildingId'])
+      resource[u'buildingId'] = u'id:{0}'.format(resource[u'buildingId'])
     resUnit = {}
     for field in fieldsList:
       resUnit[fieldsTitles[field]] = resource.get(field, u'')
