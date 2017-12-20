@@ -118,7 +118,7 @@ Named items
 <ASPID> ::= <String>
 <BuildingID> ::= <String>|id:<String>
 <CalendarACLRole> ::= editor|freebusy|freebusyreader|owner|reader|writer
-<CalendarColorIndex> ::== <Number in range 1-24>
+<CalendarColorIndex> ::= <Number in range 1-24>
 <CalendarItem> ::= <EmailAddress>|<String>
 <ClientID> ::= <String>
 <ColorValue> ::= <ColorName>|<ColorHex>
@@ -139,14 +139,14 @@ Named items
 <DriveFolderID> ::= <String>
 <DriveFolderName> ::= <String>
 <EmailItem> ::= <EmailAddress>|<UniqueID>|<String>
-<EventColorIndex> ::== <Number in range 1-11>
+<EventColorIndex> ::= <Number in range 1-11>
 <EventID> ::= <String>
 <FeatureName> ::= <String>
 <FieldName> ::= <String>
 <FileName> ::= <String>
 <FileNamePattern> ::= <String>
 <FilterID> ::= <Sttring>
-<FloorName> :== <String>
+<FloorName> ::= <String>
 <GroupItem> ::= <EmailAddress>|<UniqueID>|<String>
 <GuardianItem> ::= <EmailAddress>|<UniqueID>|<String>
 <GuardianInvitationID> ::= <String>
@@ -468,7 +468,7 @@ Items, separated by spaces, without spaces or commas in the items themselves: "i
 Items, separated by commas, with spaces or commas in the items themselves: "'it em'(,'it,em')*"
 Items, separated by spaces, with spaces or commas in the items themselves: "'it em'( 'it,em')*"
 
-<ACLList> ::== "<ACLScope>(,<ACLScope>)*"
+<ACLList> ::= "<ACLScope>(,<ACLScope>)*"
 <ASPIDList> ::= "<ASPID>(,<ASPID>)*"
 <CalendarList> ::= "<CalendarItem>(,<CalendarItem>)*"
 <CollaboratorItemList> ::= "<CollaboratorItem>(,<CollaboratorItem>)*"
@@ -493,7 +493,7 @@ Items, separated by spaces, with spaces or commas in the items themselves: "'it 
 <MatterItemList> ::= "<MatterItem>(,<MatterItem>)*"
 <MembersFieldNameList> ::= "<MembersFieldName>(,<MembersFieldName>)*"
 <MobileList> ::= "<MobileId>(,<MobileId>)*"
-<OrgUnitList> ::== "<OrgUnitPath>(,<OrgUnitPath>)*"
+<OrgUnitList> ::= "<OrgUnitPath>(,<OrgUnitPath>)*"
 <PrinterIDList> ::= "<PrinterID>(,<PrinterID>)*"
 <ProductIDList> ::= "(<ProductID>|SKUID>)(,<ProductID>|SKUID>)*"
 <PrintJobIDList> ::= "<PrintJobID>(,<PrintJobID>)*"
@@ -537,7 +537,7 @@ Item attributes
 	(reminder clear|(email|sms|pop <Number>))|
 	(notification clear|(email|sms eventcreation|eventchange|eventcancellation|eventresponse|agenda))
 
-<CalendarSettings> ::==
+<CalendarSettings> ::=
 	(summary <String>)|(description <String>)|(location <String>)|(timezone <String>)
 
 <CourseAttributes> ::=
