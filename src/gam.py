@@ -1234,17 +1234,21 @@ def showReport():
         else:
           values = []
           for subitem in item[u'msgValue']:
-            if u'count' not in subitem:
+            if u'count' in subitem:
+              mycount = myvalue = None
+              for key, value in subitem.items():
+                if key == u'count':
+                  mycount = value
+                else:
+                  myvalue = value
+                if mycount and myvalue:
+                  values.append(u'%s:%s' % (myvalue, mycount))
+              value = u' '.join(values)
+            elif u'version_number' in subitem and u'num_devices' in subitem:
+              values.append(u'%s:%s' % (subitem[u'version_number'], subitem[u'num_devices']))
+            else:
               continue
-            mycount = myvalue = None
-            for key, value in subitem.items():
-              if key == u'count':
-                mycount = value
-              else:
-                myvalue = value
-              if mycount and myvalue:
-                values.append(u'%s:%s' % (myvalue, mycount))
-          value = u' '.join(values)
+            value = u' '.join(sorted(values, reverse=True))
       csvRows.append({u'name': name, u'value': value})
     for app in auth_apps: # put apps at bottom
       csvRows.append(app)
