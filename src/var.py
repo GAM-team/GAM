@@ -497,6 +497,7 @@ CROS_SCALAR_PROPERTY_PRINT_ORDER = [
 
 CROS_RECENT_USERS_ARGUMENTS = [u'recentusers', u'users']
 CROS_ACTIVE_TIME_RANGES_ARGUMENTS = [u'timeranges', u'activetimeranges', u'times']
+CROS_DEVICE_FILES_ARGUMENTS = [u'devicefiles', u'files']
 CROS_START_ARGUMENTS = [u'start', u'startdate', u'oldestdate']
 CROS_END_ARGUMENTS = [u'end', u'enddate']
 
