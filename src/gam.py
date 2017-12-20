@@ -8001,28 +8001,38 @@ def _getBuildingByNameOrId(cd, which_building):
     return which_building[3:]
   if GM_Globals[GM_MAP_BUILDING_NAME_TO_ID] is None:
     _makeBuildingIdNameMap(cd)
-  # name is case sensitive. If case matches return immediately
+# Exact name match, return ID
   if which_building in GM_Globals[GM_MAP_BUILDING_NAME_TO_ID]:
     return GM_Globals[GM_MAP_BUILDING_NAME_TO_ID][which_building]
+# No exact name match, check for case insensitive name matches
   which_building_lower = which_building.lower()
   ci_matches = []
   for buildingName, buildingId in GM_Globals[GM_MAP_BUILDING_NAME_TO_ID].iteritems():
-    # otherwise return a case mismatched name if only one exists
-    # if 2+ case mismatches exist, fail with descriptive error.
     if buildingName.lower() == which_building_lower:
       ci_matches.append({u'buildingName': buildingName, u'buildingId': buildingId})
+# One match, return ID
   if len(ci_matches) == 1:
     return ci_matches[0][u'buildingId']
+# No or multiple name matches, try ID
+# Exact ID match, return ID
+  if which_building in GM_Globals[GM_MAP_BUILDING_ID_TO_NAME]:
+    return which_building
+# No exact ID match, check for case insensitive id match
+  for buildingId in GM_Globals[GM_MAP_BUILDING_ID_TO_NAME]:
+# Match, return ID
+    if buildingId.lower() == which_building_lower:
+      return buildingId
+# Multiple name  matches
   if len(ci_matches) > 1:
     print u'ERROR: multiple buildings with same name:'
     for building in ci_matches:
       print u'  Name:%s  id:%s' % (building[u'buildingName'], building[u'buildingId'])
     print
     print u'Please specify building name by exact case or by id.'
-    sys.exit(3)
+# No matches
   else:
     print u'ERROR: No such building %s' % which_building
-    sys.exit(3)
+  sys.exit(3)
 
 def _getBuildingNameById(cd, buildingId):
   if GM_Globals[GM_MAP_BUILDING_ID_TO_NAME] is None:
