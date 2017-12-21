@@ -9238,6 +9238,19 @@ def _filterTimeRanges(activeTimeRanges, startDate, endDate):
       filteredTimeRanges.append(timeRange)
   return filteredTimeRanges
 
+def _filterDeviceFiles(deviceFiles, startTime, endTime):
+  if startTime is None and endTime is None:
+    return deviceFiles
+  filteredDeviceFiles = []
+  for deviceFile in deviceFiles:
+    createTime = datetime.datetime.strptime(deviceFile[u'createTime'], u'%Y-%m-%dT%H:%M:%S.%fZ')
+    if ((startTime is None) or (createTime >= startTime)) and ((endTime is None) or (createTime <= endTime)):
+      filteredDeviceFiles.append(deviceFile)
+  return filteredDeviceFiles
+
+def _getFilterDate(dateStr):
+  return datetime.datetime.strptime(dateStr, YYYYMMDD_FORMAT)
+
 def doGetCrosInfo():
   cd = buildGAPIObject(u'directory')
   deviceId = sys.argv[3]
@@ -9268,10 +9281,10 @@ def doGetCrosInfo():
       noLists = True
       i += 1
     elif myarg in CROS_START_ARGUMENTS:
-      startDate = datetime.datetime.strptime(sys.argv[i+1], u'%Y-%m-%d')
+      startDate = _getFilterDate(sys.argv[i+1])
       i += 2
     elif myarg in CROS_END_ARGUMENTS:
-      endDate = datetime.datetime.strptime(sys.argv[i+1], u'%Y-%m-%d')
+      endDate = _getFilterDate(sys.argv[i+1])
       i += 2
     elif myarg == u'listlimit':
       listLimit = int(sys.argv[i+1])
@@ -9320,6 +9333,8 @@ def doGetCrosInfo():
       print u'ERROR: %s is not a valid argument for "gam info cros"' % sys.argv[i]
       sys.exit(2)
   if fieldsList:
+    if downloadfile:
+      fieldsList.append(u'deviceFiles.downloadUrl')
     fields = u','.join(set(fieldsList)).replace(u'.', u'/')
   else:
     fields = None
@@ -9357,13 +9372,16 @@ def doGetCrosInfo():
         for recentUser in recentUsers[:min(lenRU, listLimit or lenRU)]:
           print u'    type: {0}'.format(recentUser[u'type'])
           print u'      email: {0}'.format(recentUser.get(u'email', [u'Unknown', u'UnmanagedUser'][recentUser[u'type'] == u'USER_TYPE_UNMANAGED']))
-      deviceFiles = cros.get(u'deviceFiles', [])
+      deviceFiles = _filterDeviceFiles(cros.get(u'deviceFiles', []), startDate, endDate)
       lenDF = len(deviceFiles)
       if lenDF:
         print u'  deviceFiles'
         for deviceFile in deviceFiles[:min(lenDF, listLimit or lenDF)]:
           print u'    {0}: {1}'.format(deviceFile[u'type'], deviceFile[u'createTime'])
-        if downloadfile:
+      if downloadfile:
+        deviceFiles = cros.get(u'deviceFiles', [])
+        lenDF = len(deviceFiles)
+        if lenDF:
           if downloadfile == u'latest':
             deviceFile = deviceFiles[-1]
           else:
@@ -9378,8 +9396,8 @@ def doGetCrosInfo():
             _, content = cd._http.request(deviceFile[u'downloadUrl'])
             writeFile(downloadfilename, content, continueOnError=True)
             print u'Downloaded: {0}'.format(downloadfilename)
-      elif downloadfile:
-        print u'ERROR: no files to download.'
+        elif downloadfile:
+          print u'ERROR: no files to download.'
 
 def doGetMobileInfo():
   cd = buildGAPIObject(u'directory')
@@ -11011,10 +11029,10 @@ def doPrintCrosActivity():
       selectActiveTimeRanges = selectDeviceFiles = selectRecentUsers = True
       i += 1
     elif myarg in CROS_START_ARGUMENTS:
-      startDate = datetime.datetime.strptime(sys.argv[i+1], u'%Y-%m-%d')
+      startDate = _getFilterDate(sys.argv[i+1])
       i += 2
     elif myarg in CROS_END_ARGUMENTS:
-      endDate = datetime.datetime.strptime(sys.argv[i+1], u'%Y-%m-%d')
+      endDate = _getFilterDate(sys.argv[i+1])
       i += 2
     elif myarg == u'listlimit':
       listLimit = int(sys.argv[i+1])
@@ -11062,9 +11080,9 @@ def doPrintCrosActivity():
       row[u'recentUsers.email'] = delimiter.join([recent_user.get(u'email', [u'Unknown', u'UnmanagedUser'][recent_user[u'type'] == u'USER_TYPE_UNMANAGED']) for recent_user in recentUsers[:min(lenRU, listLimit or lenRU)]])
       csvRows.append(row)
     if selectDeviceFiles:
-      devicefiles = cros.get(u'deviceFiles', [])
-      lenDF = len(devicefiles)
-      for deviceFile in devicefiles[:min(lenDF, listLimit or lenDF)]:
+      deviceFiles = _filterDeviceFiles(cros.get(u'deviceFiles', []), startDate, endDate)
+      lenDF = len(deviceFiles)
+      for deviceFile in deviceFiles[:min(lenDF, listLimit or lenDF)]:
         new_row = row.copy()
         new_row[u'deviceFiles.type'] = deviceFile[u'type']
         new_row[u'deviceFiles.createTime'] = deviceFile[u'createTime']
@@ -11092,7 +11110,7 @@ def doPrintCrosDevices():
   sortHeaders = False
   query = projection = orderBy = sortOrder = orgUnitPath = None
   noLists = False
-  selectActiveTimeRanges = selectRecentUsers = False
+  selectActiveTimeRanges = selectDeviceFiles = selectRecentUsers = False
   startDate = endDate = None
   listLimit = 0
   i = 3
@@ -11109,7 +11127,7 @@ def doPrintCrosDevices():
       i += 1
     elif myarg == u'nolists':
       noLists = True
-      selectActiveTimeRanges = selectRecentUsers = False
+      selectActiveTimeRanges = selectDeviceFiles = selectRecentUsers = False
       i += 1
     elif myarg in CROS_ACTIVE_TIME_RANGES_ARGUMENTS:
       projection = u'FULL'
@@ -11117,6 +11135,13 @@ def doPrintCrosDevices():
       noLists = False
       if fieldsList:
         fieldsList.append(u'activeTimeRanges')
+      i += 1
+    elif myarg in CROS_DEVICE_FILES_ARGUMENTS:
+      projection = u'FULL'
+      selectDeviceFiles = True
+      noLists = False
+      if fieldsList:
+        fieldsList.append(u'deviceFiles')
       i += 1
     elif myarg in CROS_RECENT_USERS_ARGUMENTS:
       projection = u'FULL'
@@ -11126,10 +11151,10 @@ def doPrintCrosDevices():
         fieldsList.append(u'recentUsers')
       i += 1
     elif myarg in CROS_START_ARGUMENTS:
-      startDate = datetime.datetime.strptime(sys.argv[i+1], u'%Y-%m-%d')
+      startDate = _getFilterDate(sys.argv[i+1])
       i += 2
     elif myarg in CROS_END_ARGUMENTS:
-      endDate = datetime.datetime.strptime(sys.argv[i+1], u'%Y-%m-%d')
+      endDate = _getFilterDate(sys.argv[i+1])
       i += 2
     elif myarg == u'listlimit':
       listLimit = int(sys.argv[i+1])
@@ -11179,13 +11204,17 @@ def doPrintCrosDevices():
       for field in fieldNameList.lower().replace(u',', u' ').split():
         if field in CROS_ARGUMENT_TO_PROPERTY_MAP:
           addFieldToCSVfile(field, CROS_ARGUMENT_TO_PROPERTY_MAP, fieldsList, fieldsTitles, titles)
+          if field in CROS_ACTIVE_TIME_RANGES_ARGUMENTS:
+            projection = u'FULL'
+            selectActiveTimeRanges = True
+            noLists = False
+          elif field in CROS_DEVICE_FILES_ARGUMENTS:
+            projection = u'FULL'
+            selectDeviceFiles = True
+            noLists = False
           if field in CROS_RECENT_USERS_ARGUMENTS:
             projection = u'FULL'
             selectRecentUsers = True
-            noLists = False
-          elif field in CROS_ACTIVE_TIME_RANGES_ARGUMENTS:
-            projection = u'FULL'
-            selectActiveTimeRanges = True
             noLists = False
         else:
           print u'ERROR: %s is not a valid argument for "gam print cros fields"' % field
@@ -11205,9 +11234,8 @@ def doPrintCrosDevices():
                            orderBy=orderBy, sortOrder=sortOrder, fields=fields, maxResults=GC_Values[GC_DEVICE_MAX_RESULTS])
   for cros in all_cros:
     cros = _checkTPMVulnerability(cros)
-  if (not noLists) and (not selectActiveTimeRanges) and (not selectRecentUsers):
+  if (not noLists) and (not selectActiveTimeRanges) and (not selectRecentUsers) and (not selectDeviceFiles):
     for cros in all_cros:
-      cros.pop(u'deviceFiles', None)
       if u'notes' in cros:
         cros[u'notes'] = cros[u'notes'].replace(u'\n', u'\\n')
       addRowTitlesToCSVfile(flatten_json(cros, listLimit=listLimit), csvRows, titles)
@@ -11217,6 +11245,8 @@ def doPrintCrosDevices():
         titles.extend([u'activeTimeRanges.date', u'activeTimeRanges.activeTime', u'activeTimeRanges.duration', u'activeTimeRanges.minutes'])
       if selectRecentUsers:
         titles.extend([u'recentUsers.email', u'recentUsers.type'])
+      if selectDeviceFiles:
+        titles.extend([u'deviceFiles.type', u'deviceFiles.createTime'])
     for cros in all_cros:
       if u'notes' in cros:
         cros[u'notes'] = cros[u'notes'].replace(u'\n', u'\\n')
@@ -11228,11 +11258,13 @@ def doPrintCrosDevices():
           row[attrib] = cros[attrib]
       activeTimeRanges = _filterTimeRanges(cros.get(u'activeTimeRanges', []), startDate, endDate) if selectActiveTimeRanges else []
       recentUsers = cros.get(u'recentUsers', []) if selectRecentUsers else []
-      if noLists or (not activeTimeRanges and not recentUsers):
+      deviceFiles = _filterDeviceFiles(cros.get(u'deviceFiles', []), startDate, endDate) if selectDeviceFiles else []
+      if noLists or (not activeTimeRanges and not recentUsers and not deviceFiles):
         csvRows.append(row)
       else:
         lenATR = len(activeTimeRanges)
         lenRU = len(recentUsers)
+        lenDF = len(deviceFiles)
         for i in xrange(min(listLimit, max(lenATR, lenRU)) if listLimit else max(lenATR, lenRU)):
           new_row = row.copy()
           if i < lenATR:
@@ -11243,6 +11275,9 @@ def doPrintCrosDevices():
           if i < lenRU:
             new_row[u'recentUsers.email'] = recentUsers[i].get(u'email', [u'Unknown', u'UnmanagedUser'][recentUsers[i][u'type'] == u'USER_TYPE_UNMANAGED'])
             new_row[u'recentUsers.type'] = recentUsers[i][u'type']
+          if i < lenDF:
+            new_row[u'deviceFiles.type'] = deviceFiles[i][u'type']
+            new_row[u'deviceFiles.createTime'] = deviceFiles[i][u'createTime']
           csvRows.append(new_row)
   if sortHeaders:
     sortCSVTitles([u'deviceId',], titles)
