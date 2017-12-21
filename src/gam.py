@@ -1012,7 +1012,7 @@ def buildGAPIServiceObject(api, act_as, showAuthError=True):
   GM_Globals[GM_CURRENT_API_USER] = act_as
   GM_Globals[GM_CURRENT_API_SCOPES] = API_SCOPE_MAPPING[api]
   credentials = getSvcAcctCredentials(GM_Globals[GM_CURRENT_API_SCOPES], act_as)
-  request = google_auth_httplib2.Request(http)
+  request = google_auth_httplib2.Request(http, user_agent=GAM_INFO)
   try:
     credentials.refresh(request)
     service._http = google_auth_httplib2.AuthorizedHttp(credentials, http=http, user_agent=GAM_INFO)
@@ -1077,7 +1077,7 @@ def doCheckServiceAccount(users):
     for scope in all_scopes:
       try:
         credentials = getSvcAcctCredentials([scope], user)
-        request = google_auth_httplib2.Request(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL]))
+        request = google_auth_httplib2.Request(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL]), user_agent=GAM_INFO)
         credentials.refresh(request)
         result = u'PASS'
       except httplib2.ServerNotFoundError as e:

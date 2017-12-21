@@ -80,8 +80,9 @@ class Request(transport.Request):
 
     .. automethod:: __call__
     """
-    def __init__(self, http):
+    def __init__(self, http, user_agent=None):
         self.http = http
+        self.user_agent = user_agent
 
     def __call__(self, url, method='GET', body=None, headers=None,
                  timeout=None, **kwargs):
@@ -112,6 +113,8 @@ class Request(transport.Request):
             )
 
         try:
+            if self.user_agent is not None:
+                headers['user-agent'] = self.user_agent
             _LOGGER.debug('Making request: %s %s', method, url)
             response, data = self.http.request(
                 url, method=method, body=body, headers=headers, **kwargs)
@@ -157,6 +160,7 @@ class AuthorizedHttp(object):
             http (httplib2.Http): The underlying HTTP object to
                 use to make requests. If not specified, a
                 :class:`httplib2.Http` instance will be constructed.
+            user_agent: the user-agent header
             refresh_status_codes (Sequence[int]): Which HTTP status codes
                 indicate that credentials should be refreshed and the request
                 should be retried.
@@ -170,11 +174,12 @@ class AuthorizedHttp(object):
         self.http = http
         self.user_agent = user_agent
         self.credentials = credentials
+        self.user_agent = user_agent
         self._refresh_status_codes = refresh_status_codes
         self._max_refresh_attempts = max_refresh_attempts
         # Request instance used by internal methods (for example,
         # credentials.refresh).
-        self._request = Request(self.http)
+        self._request = Request(self.http, self.user_agent)
 
     def request(self, uri, method='GET', body=None, headers=None,
                 **kwargs):
@@ -186,6 +191,8 @@ class AuthorizedHttp(object):
         # Make a copy of the headers. They will be modified by the credentials
         # and we want to pass the original headers if we recurse.
         request_headers = headers.copy() if headers is not None else {}
+        if self.user_agent is not None:
+            request_headers['user-agent'] = self.user_agent
 
         if self.user_agent:
           if request_headers.get('user-agent'):
