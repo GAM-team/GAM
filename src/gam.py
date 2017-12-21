@@ -11244,7 +11244,7 @@ def doPrintCrosDevices():
       if selectRecentUsers:
         titles.extend([u'recentUsers.email', u'recentUsers.type'])
       if selectDeviceFiles:
-        titles.extend([u'deviceFiles.type', u'deviceFiles.createTime'])
+        titles.extend([u'deviceFiles.type', u'deviceFiles.createTime', u'deviceFiles.downloadUrl'])
     for cros in all_cros:
       if u'notes' in cros:
         cros[u'notes'] = cros[u'notes'].replace(u'\n', u'\\n')
@@ -11263,7 +11263,7 @@ def doPrintCrosDevices():
         lenATR = len(activeTimeRanges)
         lenRU = len(recentUsers)
         lenDF = len(deviceFiles)
-        for i in xrange(min(listLimit, max(lenATR, lenRU)) if listLimit else max(lenATR, lenRU)):
+        for i in xrange(min(listLimit, max(lenATR, lenRU)) if listLimit else max(lenATR, lenRU, lenDF)):
           new_row = row.copy()
           if i < lenATR:
             new_row[u'activeTimeRanges.date'] = activeTimeRanges[i][u'date']
