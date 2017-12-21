@@ -11263,7 +11263,7 @@ def doPrintCrosDevices():
         lenATR = len(activeTimeRanges)
         lenRU = len(recentUsers)
         lenDF = len(deviceFiles)
-        for i in xrange(min(listLimit, max(lenATR, lenRU)) if listLimit else max(lenATR, lenRU)):
+        for i in xrange(min(listLimit, max(lenATR, lenRU)) if listLimit else max(lenATR, lenRU, lenDF)):
           new_row = row.copy()
           if i < lenATR:
             new_row[u'activeTimeRanges.date'] = activeTimeRanges[i][u'date']
