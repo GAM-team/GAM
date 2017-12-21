@@ -9333,8 +9333,6 @@ def doGetCrosInfo():
       print u'ERROR: %s is not a valid argument for "gam info cros"' % sys.argv[i]
       sys.exit(2)
   if fieldsList:
-    if downloadfile:
-      fieldsList.append(u'deviceFiles.downloadUrl')
     fields = u','.join(set(fieldsList)).replace(u'.', u'/')
   else:
     fields = None
