@@ -112,9 +112,13 @@ class Request(transport.Request):
                 'Set the timeout when constructing the httplib2.Http instance.'
             )
 
+        if self.user_agent:
+          if headers.get('user-agent'):
+            headers['user-agent'] = '%s %s' % (self.user_agent, headers['user-agent'])
+          else:
+            headers['user-agent'] = self.user_agent
+
         try:
-            if self.user_agent is not None:
-                headers['user-agent'] = self.user_agent
             _LOGGER.debug('Making request: %s %s', method, url)
             response, data = self.http.request(
                 url, method=method, body=body, headers=headers, **kwargs)
@@ -172,7 +176,6 @@ class AuthorizedHttp(object):
             http = _make_default_http()
 
         self.http = http
-        self.user_agent = user_agent
         self.credentials = credentials
         self.user_agent = user_agent
         self._refresh_status_codes = refresh_status_codes
@@ -191,8 +194,6 @@ class AuthorizedHttp(object):
         # Make a copy of the headers. They will be modified by the credentials
         # and we want to pass the original headers if we recurse.
         request_headers = headers.copy() if headers is not None else {}
-        if self.user_agent is not None:
-            request_headers['user-agent'] = self.user_agent
 
         if self.user_agent:
           if request_headers.get('user-agent'):

@@ -547,7 +547,6 @@ def getSvcAcctCredentials(scopes, act_as):
     credentials = google.oauth2.service_account.Credentials.from_service_account_info(GM_Globals[GM_OAUTH2SERVICE_JSON_DATA])
     credentials = credentials.with_scopes(scopes)
     credentials = credentials.with_subject(act_as)
-    # TODO: figure out how to set user agent
     GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID] = GM_Globals[GM_OAUTH2SERVICE_JSON_DATA]['client_id']
     return credentials
   except (ValueError, KeyError):
