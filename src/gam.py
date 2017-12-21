@@ -1015,7 +1015,7 @@ def buildGAPIServiceObject(api, act_as, showAuthError=True):
   request = google_auth_httplib2.Request(http)
   try:
     credentials.refresh(request)
-    service._http = google_auth_httplib2.AuthorizedHttp(credentials, http=http)
+    service._http = google_auth_httplib2.AuthorizedHttp(credentials, http=http, user_agent=GAM_INFO)
   except httplib2.ServerNotFoundError as e:
     systemErrorExit(4, e)
   except google.auth.exceptions.RefreshError as e:

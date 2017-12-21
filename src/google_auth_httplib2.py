@@ -147,7 +147,7 @@ class AuthorizedHttp(object):
     The underlying :meth:`request` implementation handles adding the
     credentials' headers to the request and refreshing credentials as needed.
     """
-    def __init__(self, credentials, http=None,
+    def __init__(self, credentials, http=None, user_agent=None,
                  refresh_status_codes=transport.DEFAULT_REFRESH_STATUS_CODES,
                  max_refresh_attempts=transport.DEFAULT_MAX_REFRESH_ATTEMPTS):
         """
@@ -168,6 +168,7 @@ class AuthorizedHttp(object):
             http = _make_default_http()
 
         self.http = http
+        self.user_agent = user_agent
         self.credentials = credentials
         self._refresh_status_codes = refresh_status_codes
         self._max_refresh_attempts = max_refresh_attempts
@@ -185,6 +186,12 @@ class AuthorizedHttp(object):
         # Make a copy of the headers. They will be modified by the credentials
         # and we want to pass the original headers if we recurse.
         request_headers = headers.copy() if headers is not None else {}
+
+        if self.user_agent:
+          if request_headers.get('user-agent'):
+            request_headers['user-agent'] = '%s %s' % (self.user_agent, request_headers['user-agent'])
+          else:
+            request_headers['user-agent'] = self.user_agent
 
         self.credentials.before_request(
             self._request, method, uri, request_headers)
