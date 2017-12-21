@@ -11276,7 +11276,6 @@ def doPrintCrosDevices():
           if i < lenDF:
             new_row[u'deviceFiles.type'] = deviceFiles[i][u'type']
             new_row[u'deviceFiles.createTime'] = deviceFiles[i][u'createTime']
-            new_row[u'deviceFiles.downloadUrl'] = deviceFiles[i][u'downloadUrl']
           csvRows.append(new_row)
   if sortHeaders:
     sortCSVTitles([u'deviceId',], titles)
