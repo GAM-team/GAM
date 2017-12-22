@@ -200,6 +200,46 @@ def getYYYYMMDD(i, emptyOK=False, returnTimeStamp=False):
   print u'ERROR: expected a <{0}>'.format(YYYYMMDD_FORMAT_REQUIRED)
   sys.exit(2)
 
+def getTimeOrDeltaFromNow(time_string):
+  """Get an ISO 8601 date/time or a positive/negative delta applied to now.
+
+  Args:
+    time_string (string): The time or delta (e.g. '2017-09-01T12:34:56Z' or '-4h')
+
+  Returns:
+    string: iso8601 formatted datetime in UTC.
+
+  Exits:
+    2: Not a valid delta.
+
+  """
+  DELTA_PATTERN = re.compile(r'^([+-])(\d{1,4})([wdhm])$')
+  time_string = time_string.strip()
+  if not time_string or time_string[0] not in [u'+', u'-']:
+    return time_string
+  mg = re.match(DELTA_PATTERN, time_string.lower())
+  if mg is None:
+    print u'ERROR: %s is not a valid delta, expected (+|-)<Number>(m|h|d|w)' % time_string
+    sys.exit(2)
+
+  sign = mg.group(1)
+  delta = int(mg.group(2))
+  unit = mg.group(3)
+
+  if unit == u'w':
+    deltaTime = datetime.timedelta(weeks=delta)
+  elif unit == u'd':
+    deltaTime = datetime.timedelta(days=delta)
+  elif unit == u'h':
+    deltaTime = datetime.timedelta(hours=delta)
+  elif unit == u'm':
+    deltaTime = datetime.timedelta(minutes=delta)
+
+  if sign == u'-':
+    return (datetime.datetime.utcnow() - deltaTime).isoformat() + u'Z'
+  else:
+    return (datetime.datetime.utcnow() + deltaTime).isoformat() + u'Z'
+
 # Get domain from email address
 def getEmailAddressDomain(emailAddress):
   atLoc = emailAddress.find(u'@')
@@ -963,46 +1003,6 @@ def convertEmailAddressToUID(emailAddressOrUID, cd=None, email_type=u'user'):
       pass
     return None
   return normalizedEmailAddressOrUID
-
-def getTimeOrDeltaFromNow(time_string):
-  """Get an ISO 8601 date/time or a positive/negative delta applied to now.
-
-  Args:
-    time_string (string): The time or delta (e.g. '2017-09-01T12:34:56Z' or '-4h')
-
-  Returns:
-    string: iso8601 formatted datetime in UTC.
-
-  Exits:
-    2: Not a valid delta.
-
-  """
-  DELTA_PATTERN = re.compile(r'^([+-])(\d{1,4})([wdhm])$')
-  time_string = time_string.strip()
-  if not time_string or time_string[0] not in [u'+', u'-']:
-    return time_string
-  mg = re.match(DELTA_PATTERN, time_string.lower())
-  if mg is None:
-    print u'ERROR: %s is not a valid delta, expected (+|-)<Number>(m|h|d|w)' % time_string
-    sys.exit(2)
-
-  sign = mg.group(1)
-  delta = int(mg.group(2))
-  unit = mg.group(3)
-
-  if unit == u'w':
-    deltaTime = datetime.timedelta(weeks=delta)
-  elif unit == u'd':
-    deltaTime = datetime.timedelta(days=delta)
-  elif unit == u'h':
-    deltaTime = datetime.timedelta(hours=delta)
-  elif unit == u'm':
-    deltaTime = datetime.timedelta(minutes=delta)
-
-  if sign == u'-':
-    return (datetime.datetime.utcnow() - deltaTime).isoformat() + u'Z'
-  else:
-    return (datetime.datetime.utcnow() + deltaTime).isoformat() + u'Z'
 
 def buildGAPIServiceObject(api, act_as, showAuthError=True):
   http = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL],
@@ -11210,7 +11210,7 @@ def doPrintCrosDevices():
             projection = u'FULL'
             selectDeviceFiles = True
             noLists = False
-          if field in CROS_RECENT_USERS_ARGUMENTS:
+          elif field in CROS_RECENT_USERS_ARGUMENTS:
             projection = u'FULL'
             selectRecentUsers = True
             noLists = False
