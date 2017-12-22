@@ -1133,31 +1133,32 @@ def showReport():
   userKey = u'all'
   i = 3
   while i < len(sys.argv):
-    if sys.argv[i].lower() == u'date':
+    myarg = sys.argv[i].lower()
+    if myarg == u'date':
       try_date = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower() == u'start':
+    elif myarg == u'start':
       startTime = getTimeOrDeltaFromNow(sys.argv[i+1])
       i += 2
-    elif sys.argv[i].lower() == u'end':
+    elif myarg == u'end':
       endTime = getTimeOrDeltaFromNow(sys.argv[i+1])
       i += 2
-    elif sys.argv[i].lower() == u'event':
+    elif myarg == u'event':
       eventName = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower() == u'user':
+    elif myarg == u'user':
       userKey = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower() in [u'filter', u'filters']:
+    elif myarg in [u'filter', u'filters']:
       filters = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower() in [u'fields', u'parameters']:
+    elif myarg in [u'fields', u'parameters']:
       parameters = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower() == u'ip':
+    elif myarg == u'ip':
       actorIpAddress = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower() == u'todrive':
+    elif myarg == u'todrive':
       to_drive = True
       i += 1
     else:
@@ -1619,7 +1620,8 @@ def doUpdateDomain():
   i = 4
   body = {}
   while i < len(sys.argv):
-    if sys.argv[i].lower() == u'primary':
+    myarg = sys.argv[i].lower()
+    if myarg == u'primary':
       body[u'customerDomain'] = domain_name
       i += 1
     else:
@@ -1746,7 +1748,8 @@ def doPrintDomains():
   csvRows = []
   i = 3
   while i < len(sys.argv):
-    if sys.argv[i].lower() == u'todrive':
+    myarg = sys.argv[i].lower()
+    if myarg == u'todrive':
       todrive = True
       i += 1
     else:
@@ -1789,7 +1792,8 @@ def doPrintDomainAliases():
   csvRows = []
   i = 3
   while i < len(sys.argv):
-    if sys.argv[i].lower() == u'todrive':
+    myarg = sys.argv[i].lower()
+    if myarg == u'todrive':
       todrive = True
       i += 1
     else:
@@ -1866,7 +1870,8 @@ def doPrintAdminRoles():
   csvRows = []
   i = 3
   while i < len(sys.argv):
-    if sys.argv[i].lower() == u'todrive':
+    myarg = sys.argv[i].lower()
+    if myarg == u'todrive':
       todrive = True
       i += 1
     else:
@@ -1891,10 +1896,11 @@ def doPrintAdmins():
   csvRows = []
   i = 3
   while i < len(sys.argv):
-    if sys.argv[i].lower() == u'user':
+    myarg = sys.argv[i].lower()
+    if myarg == u'user':
       userKey = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower() == u'role':
+    elif myarg == u'role':
       role = sys.argv[i+1]
       if role[:4].lower() == u'uid:':
         roleId = role[4:]
@@ -1904,7 +1910,7 @@ def doPrintAdmins():
           print u'ERROR: %s is not a valid role' % role
           sys.exit(5)
       i += 2
-    elif sys.argv[i].lower() == u'todrive':
+    elif myarg == u'todrive':
       todrive = True
       i += 1
     else:
@@ -2055,16 +2061,17 @@ def doPrintDataTransfers():
   titles = [u'id',]
   csvRows = []
   while i < len(sys.argv):
-    if sys.argv[i].lower().replace(u'_', u'') in [u'olduser', u'oldowner']:
+    myarg = sys.argv[i].lower().replace(u'_', u'')
+    if myarg in [u'olduser', u'oldowner']:
       oldOwnerUserId = convertToUserID(sys.argv[i+1])
       i += 2
-    elif sys.argv[i].lower().replace(u'_', u'') in [u'newuser', u'newowner']:
+    elif myarg in [u'newuser', u'newowner']:
       newOwnerUserId = convertToUserID(sys.argv[i+1])
       i += 2
-    elif sys.argv[i].lower() == u'status':
+    elif myarg == u'status':
       status = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower() == u'todrive':
+    elif myarg == u'todrive':
       todrive = True
       i += 1
     else:
@@ -2681,19 +2688,20 @@ def doPrintPrinters():
   extra_fields = None
   i = 3
   while i < len(sys.argv):
-    if sys.argv[i].lower() == u'query':
+    myarg = sys.argv[i].lower().replace(u'_', u'')
+    if myarg == u'query':
       query = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower() == u'type':
+    elif myarg == u'type':
       printer_type = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower() == u'status':
+    elif myarg == u'status':
       connection_status = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower().replace(u'_', u'') == u'extrafields':
+    elif myarg == u'extrafields':
       extra_fields = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower() == u'todrive':
+    elif myarg == u'todrive':
       todrive = True
       i += 1
     else:
@@ -2718,19 +2726,20 @@ def changeCalendarAttendees(users):
   allevents = False
   start_date = end_date = None
   while len(sys.argv) > i:
-    if sys.argv[i].lower() == u'csv':
+    myarg = sys.argv[i].lower()
+    if myarg == u'csv':
       csv_file = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower() == u'dryrun':
+    elif myarg == u'dryrun':
       do_it = False
       i += 1
-    elif sys.argv[i].lower() == u'start':
+    elif myarg == u'start':
       start_date = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower() == u'end':
+    elif myarg == u'end':
       end_date = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower() == u'allevents':
+    elif myarg == u'allevents':
       allevents = True
       i += 1
     else:
@@ -3137,7 +3146,8 @@ def doGetPrinterInfo():
   everything = False
   i = 4
   while i < len(sys.argv):
-    if sys.argv[i] == u'everything':
+    myarg = sys.argv[i].lower()
+    if myarg == u'everything':
       everything = True
       i += 1
     else:
@@ -3242,10 +3252,11 @@ def doPrintJobSubmit():
                  u'tags': [u'GAM', GAM_URL]}
   i = 5
   while i < len(sys.argv):
-    if sys.argv[i].lower() == u'tag':
+    myarg = sys.argv[i].lower()
+    if myarg == u'tag':
       form_fields[u'tags'].append(sys.argv[i+1])
       i += 2
-    elif sys.argv[i].lower() in [u'name', u'title']:
+    elif myarg in [u'name', u'title']:
       form_fields[u'title'] = sys.argv[i+1]
       i += 2
     else:
@@ -3396,20 +3407,21 @@ def doCalendarDeleteEvent():
   doit = False
   i = 4
   while i < len(sys.argv):
-    if sys.argv[i].lower() == u'notifyattendees':
+    myarg = sys.argv[i].lower().replace(u'_', u'')
+    if myarg == u'notifyattendees':
       sendNotifications = True
       i += 1
-    elif sys.argv[i].lower() in [u'id', u'eventid']:
+    elif myarg in [u'id', u'eventid']:
       events.append(sys.argv[i+1])
       i += 2
-    elif sys.argv[i].lower() in [u'query', u'eventquery']:
+    elif myarg in [u'query', u'eventquery']:
       query = sys.argv[i+1]
       result = callGAPIpages(cal.events(), u'list', u'items', calendarId=calendarId, q=query)
       for event in result:
         if u'id' in event and event[u'id'] not in events:
           events.append(event[u'id'])
       i += 2
-    elif sys.argv[i].lower() == u'doit':
+    elif myarg == u'doit':
       doit = True
       i += 1
     else:
@@ -3431,102 +3443,103 @@ def doCalendarAddEvent():
   i = 4
   body = {}
   while i < len(sys.argv):
-    if sys.argv[i].lower() == u'notifyattendees':
+    myarg = sys.argv[i].lower().replace(u'_', u'')
+    if myarg == u'notifyattendees':
       sendNotifications = True
       i += 1
-    elif sys.argv[i].lower() == u'attendee':
+    elif myarg == u'attendee':
       try:
         body[u'attendees'].append({u'email': sys.argv[i+1]})
       except KeyError:
         body[u'attendees'] = [{u'email': sys.argv[i+1]},]
       i += 2
-    elif sys.argv[i].lower() == u'optionalattendee':
+    elif myarg == u'optionalattendee':
       try:
         body[u'attendees'].append({u'email': sys.argv[i+1], u'optional': True})
       except TypeError:
         body[u'attendees'] = [{u'email': sys.argv[i+1], u'optional': True},]
       i += 2
-    elif sys.argv[i].lower() == u'anyonecanaddself':
+    elif myarg == u'anyonecanaddself':
       body[u'anyoneCanAddSelf'] = True
       i += 1
-    elif sys.argv[i].lower() == u'description':
+    elif myarg == u'description':
       body[u'description'] = sys.argv[i+1].replace(u'\\n', u'\n')
       i += 2
-    elif sys.argv[i].lower() == u'start':
+    elif myarg == u'start':
       if sys.argv[i+1].lower() == u'allday':
         body[u'start'] = {u'date': sys.argv[i+2]}
         i += 3
       else:
         body[u'start'] = {u'dateTime': getTimeOrDeltaFromNow(sys.argv[i+1])}
         i += 2
-    elif sys.argv[i].lower() == u'end':
+    elif myarg == u'end':
       if sys.argv[i+1].lower() == u'allday':
         body[u'end'] = {u'date': sys.argv[i+2]}
         i += 3
       else:
         body[u'end'] = {u'dateTime': getTimeOrDeltaFromNow(sys.argv[i+1])}
         i += 2
-    elif sys.argv[i].lower() == u'guestscantinviteothers':
+    elif myarg == u'guestscantinviteothers':
       body[u'guestsCanInviteOthers'] = False
       i += 1
-    elif sys.argv[i].lower() == u'guestscantseeothers':
+    elif myarg == u'guestscantseeothers':
       body[u'guestsCanSeeOtherGuests'] = False
       i += 1
-    elif sys.argv[i].lower() == u'id':
+    elif myarg == u'id':
       body[u'id'] = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower() == u'summary':
+    elif myarg == u'summary':
       body[u'summary'] = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower() == u'location':
+    elif myarg == u'location':
       body[u'location'] = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower() == u'available':
+    elif myarg == u'available':
       body[u'transparency'] = u'transparent'
       i += 1
-    elif sys.argv[i].lower() == u'visibility':
+    elif myarg == u'visibility':
       if sys.argv[i+1].lower() in [u'default', u'public', u'private']:
         body[u'visibility'] = sys.argv[i+1].lower()
       else:
         print u'ERROR: visibility must be one of default, public, private; got %s' % sys.argv[i+1]
         sys.exit(2)
       i += 2
-    elif sys.argv[i].lower() == u'tentative':
+    elif myarg == u'tentative':
       body[u'status'] = u'tentative'
       i += 1
-    elif sys.argv[i].lower() == u'source':
+    elif myarg == u'source':
       body[u'source'] = {u'title': sys.argv[i+1], u'url': sys.argv[i+2]}
       i += 3
-    elif sys.argv[i].lower() == u'noreminders':
+    elif myarg == u'noreminders':
       body[u'reminders'] = {u'useDefault': False}
       i += 1
-    elif sys.argv[i].lower() == u'reminder':
+    elif myarg == u'reminder':
       try:
         body[u'reminders'][u'overrides'].append({u'minutes': sys.argv[i+1], u'method': sys.argv[i+2]})
         body[u'reminders'][u'useDefault'] = False
       except KeyError:
         body[u'reminders'] = {u'useDefault': False, u'overrides': [{u'minutes': sys.argv[i+1], u'method': sys.argv[i+2]},]}
       i += 3
-    elif sys.argv[i].lower() == u'recurrence':
+    elif myarg == u'recurrence':
       try:
         body[u'recurrence'].append(sys.argv[i+1])
       except KeyError:
         body[u'recurrence'] = [sys.argv[i+1],]
       i += 2
-    elif sys.argv[i].lower() == u'timezone':
+    elif myarg == u'timezone':
       timeZone = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower() == u'privateproperty':
+    elif myarg == u'privateproperty':
       if u'extendedProperties' not in body:
         body[u'extendedProperties'] = {u'private': {}, u'shared': {}}
       body[u'extendedProperties'][u'private'][sys.argv[i+1]] = sys.argv[i+2]
       i += 3
-    elif sys.argv[i].lower() == u'sharedproperty':
+    elif myarg == u'sharedproperty':
       if u'extendedProperties' not in body:
         body[u'extendedProperties'] = {u'private': {}, u'shared': {}}
       body[u'extendedProperties'][u'shared'][sys.argv[i+1]] = sys.argv[i+2]
       i += 3
-    elif sys.argv[i].lower() == u'colorindex':
+    elif myarg == u'colorindex':
       body[u'colorId'] = str(sys.argv[i+1])
       i += 2
     else:
@@ -3544,9 +3557,10 @@ def doCalendarAddEvent():
 
 def doProfile(users):
   cd = buildGAPIObject(u'directory')
-  if sys.argv[4].lower() == u'share' or sys.argv[4].lower() == u'shared':
+  myarg = sys.argv[4].lower()
+  if myarg in [u'share', u'shared']:
     body = {u'includeInGlobalAddressList': True}
-  elif sys.argv[4].lower() == u'unshare' or sys.argv[4].lower() == u'unshared':
+  elif myarg in [u'unshare', u'unshared']:
     body = {u'includeInGlobalAddressList': False}
   else:
     print u'ERROR: value for "gam <users> profile" must be true or false; got %s' % sys.argv[4]
@@ -3766,7 +3780,8 @@ def printDriveSettings(users):
   todrive = False
   i = 5
   while i < len(sys.argv):
-    if sys.argv[i].lower() == u'todrive':
+    myarg = sys.argv[i].lower()
+    if myarg == u'todrive':
       todrive = True
       i += 1
     else:
@@ -3869,7 +3884,8 @@ def showDriveFileACL(users):
   useDomainAdminAccess = False
   i = 6
   while i < len(sys.argv):
-    if sys.argv[i].lower().replace(u'_', u'') == u'asadmin':
+    myarg = sys.argv[i].lower().replace(u'_', u'')
+    if myarg == u'asadmin':
       useDomainAdminAccess = True
       i += 1
     else:
@@ -3907,7 +3923,8 @@ def delDriveFileACL(users):
   useDomainAdminAccess = False
   i = 7
   while i < len(sys.argv):
-    if sys.argv[i].lower().replace(u'_', u'') == u'asadmin':
+    myarg = sys.argv[i].lower().replace(u'_', u'')
+    if myarg == u'asadmin':
       useDomainAdminAccess = True
       i += 1
     else:
@@ -3941,13 +3958,14 @@ def addDriveFileACL(users):
     print u'ERROR: permission type must be user, group domain or anyone; got %s' % body[u'type']
     sys.exit(5)
   while i < len(sys.argv):
-    if sys.argv[i].lower().replace(u'_', u'') == u'withlink':
+    myarg = sys.argv[i].lower().replace(u'_', u'')
+    if myarg == u'withlink':
       body[u'allowFileDiscovery'] = False
       i += 1
-    elif sys.argv[i].lower() == u'discoverable':
+    elif myarg == u'discoverable':
       body[u'allowFileDiscovery'] = True
       i += 1
-    elif sys.argv[i].lower() == u'role':
+    elif myarg == u'role':
       body[u'role'] = sys.argv[i+1]
       if body[u'role'] not in [u'reader', u'commenter', u'writer', u'owner', u'organizer', u'editor']:
         print u'ERROR: role must be reader, commenter, writer, organizer, or owner; got %s' % body[u'role']
@@ -3958,17 +3976,17 @@ def addDriveFileACL(users):
         sendNotificationEmail = True
         transferOwnership = True
       i += 2
-    elif sys.argv[i].lower().replace(u'_', u'') == u'sendemail':
+    elif myarg == u'sendemail':
       sendNotificationEmail = True
       i += 1
-    elif sys.argv[i].lower().replace(u'_', u'') == u'emailmessage':
+    elif myarg == u'emailmessage':
       sendNotificationEmail = True
       emailMessage = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower() == u'expires':
+    elif myarg == u'expires':
       body[u'expirationTime'] = getTimeOrDeltaFromNow(sys.argv[i+1])
       i += 2
-    elif sys.argv[i].lower().replace(u'_', u'') == u'asadmin':
+    elif myarg.replace(u'_', u'') == u'asadmin':
       useDomainAdminAccess = True
       i += 1
     else:
@@ -3994,16 +4012,17 @@ def updateDriveFileACL(users):
   body = {}
   i = 7
   while i < len(sys.argv):
-    if sys.argv[i].lower().replace(u'_', u'') == u'withlink':
+    myarg = sys.argv[i].lower().replace(u'_', u'')
+    if myarg == u'withlink':
       body[u'allowFileDiscovery'] = False
       i += 1
-    elif sys.argv[i].lower() == u'discoverable':
+    elif myarg == u'discoverable':
       body[u'allowFileDiscovery'] = True
       i += 1
-    elif sys.argv[i].lower().replace(u'_', u'') == u'removeexpiration':
+    elif myarg == u'removeexpiration':
       removeExpiration = True
       i += 1
-    elif sys.argv[i].lower() == u'role':
+    elif myarg == u'role':
       body[u'role'] = sys.argv[i+1]
       if body[u'role'] not in [u'reader', u'commenter', u'writer', u'owner', u'organizer', u'editor']:
         print u'ERROR: role must be reader, commenter, writer, organizer, or owner; got %s' % body[u'role']
@@ -4013,7 +4032,7 @@ def updateDriveFileACL(users):
       elif body[u'role'] == u'owner':
         transferOwnership = True
       i += 2
-    elif sys.argv[i].lower().replace(u'_', u'') == u'asadmin':
+    elif myarg == u'asadmin':
       useDomainAdminAccess = True
       i += 1
     else:
@@ -4202,10 +4221,11 @@ def deleteDriveFile(users):
   function = u'trash'
   i = 6
   while i < len(sys.argv):
-    if sys.argv[i].lower() == u'purge':
+    myarg = sys.argv[i].lower()
+    if myarg == u'purge':
       function = u'delete'
       i += 1
-    elif sys.argv[i].lower() == u'untrash':
+    elif myarg == u'untrash':
       function = u'untrash'
       i += 1
     else:
@@ -4659,7 +4679,8 @@ def transferSecCals(users):
   remove_source_user = True
   i = 6
   while i < len(sys.argv):
-    if sys.argv[i].lower() == u'keepuser':
+    myarg = sys.argv[i].lower()
+    if myarg == u'keepuser':
       remove_source_user = False
       i += 1
     else:
@@ -4686,7 +4707,8 @@ def transferDriveFiles(users):
   remove_source_user = True
   i = 6
   while i < len(sys.argv):
-    if sys.argv[i].lower() == u'keepuser':
+    myarg = sys.argv[i].lower()
+    if myarg == u'keepuser':
       remove_source_user = False
       i += 1
     else:
@@ -5579,7 +5601,8 @@ def showGmailProfile(users):
   todrive = False
   i = 6
   while i < len(sys.argv):
-    if sys.argv[i].lower() == u'todrive':
+    myarg = sys.argv[i].lower()
+    if myarg == u'todrive':
       todrive = True
       i += 1
     else:
@@ -5613,7 +5636,8 @@ def showGplusProfile(users):
   todrive = False
   i = 6
   while i < len(sys.argv):
-    if sys.argv[i].lower() == u'todrive':
+    myarg = sys.argv[i].lower()
+    if myarg == u'todrive':
       todrive = True
       i += 1
     else:
@@ -5694,13 +5718,14 @@ def renameLabels(users):
   merge = False
   i = 5
   while i < len(sys.argv):
-    if sys.argv[i].lower() == u'search':
+    myarg = sys.argv[i].lower()
+    if myarg == u'search':
       search = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower() == u'replace':
+    elif myarg == u'replace':
       replace = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower() == u'merge':
+    elif myarg == u'merge':
       merge = True
       i += 1
     else:
@@ -5891,7 +5916,7 @@ def addFilter(users, i):
       elif myarg == u'neverspam':
         removeLabelIds.append(u'SPAM')
         i += 1
-      elif sys.argv[i].lower() == u'forward':
+      elif myarg == u'forward':
         body[u'action'][u'forward'] = sys.argv[i+1]
         i += 2
     else:
@@ -6250,7 +6275,8 @@ def getSignature(users):
   formatSig = False
   i = 5
   while i < len(sys.argv):
-    if sys.argv[i].lower() == u'format':
+    myarg = sys.argv[i].lower()
+    if myarg == u'format':
       formatSig = True
       i += 1
     else:
@@ -6345,7 +6371,8 @@ def getVacation(users):
   formatReply = False
   i = 5
   while i < len(sys.argv):
-    if sys.argv[i].lower() == u'format':
+    myarg = sys.argv[i].lower()
+    if myarg == u'format':
       formatReply = True
       i += 1
     else:
@@ -6409,7 +6436,8 @@ def doCreateOrUpdateUserSchema(updateCmd):
     body = {u'schemaName': schemaKey, u'fields': []}
   i = 4
   while i < len(sys.argv):
-    if sys.argv[i] in [u'field']:
+    myarg = sys.argv[i].lower()
+    if myarg == u'field':
       if updateCmd: # clear field if it exists on update
         for n, field in enumerate(body[u'fields']):
           if field[u'fieldName'].lower() == sys.argv[i+1].lower():
@@ -6418,32 +6446,33 @@ def doCreateOrUpdateUserSchema(updateCmd):
       a_field = {u'fieldName': sys.argv[i+1]}
       i += 2
       while True:
-        if sys.argv[i].lower() in [u'type']:
+        myarg = sys.argv[i].lower()
+        if myarg == u'type':
           a_field[u'fieldType'] = sys.argv[i+1].upper()
           if a_field[u'fieldType'] not in [u'BOOL', u'DOUBLE', u'EMAIL', u'INT64', u'PHONE', u'STRING']:
             print u'ERROR: type must be one of bool, double, email, int64, phone, string; got %s' % a_field[u'fieldType']
             sys.exit(2)
           i += 2
-        elif sys.argv[i].lower() in [u'multivalued']:
+        elif myarg == u'multivalued':
           a_field[u'multiValued'] = True
           i += 1
-        elif sys.argv[i].lower() in [u'indexed']:
+        elif myarg == u'indexed':
           a_field[u'indexed'] = True
           i += 1
-        elif sys.argv[i].lower() in [u'restricted']:
+        elif myarg == u'restricted':
           a_field[u'readAccessType'] = u'ADMINS_AND_SELF'
           i += 1
-        elif sys.argv[i].lower() in [u'range']:
+        elif myarg == u'range':
           a_field[u'numericIndexingSpec'] = {u'minValue': sys.argv[i+1], u'maxValue': sys.argv[i+2]}
           i += 3
-        elif sys.argv[i].lower() in [u'endfield']:
+        elif myarg == u'endfield':
           body[u'fields'].append(a_field)
           i += 1
           break
         else:
           print u'ERROR: %s is not a valid argument for "gam %s schema"' % (sys.argv[i], cmd)
           sys.exit(2)
-    elif updateCmd and sys.argv[i] in [u'deletefield']:
+    elif updateCmd and myarg == u'deletefield':
       for n, field in enumerate(body[u'fields']):
         if field[u'fieldName'].lower() == sys.argv[i+1].lower():
           del body[u'fields'][n]
@@ -7315,7 +7344,8 @@ def doGetTeamDriveInfo(users):
   useDomainAdminAccess = False
   i = 6
   while i < len(sys.argv):
-    if sys.argv[i].lower().replace(u'_', u'') == u'asadmin':
+    myarg = sys.argv[i].lower().replace(u'_', u'')
+    if myarg == u'asadmin':
       useDomainAdminAccess = True
       i += 1
     else:
@@ -7334,7 +7364,8 @@ def doCreateTeamDrive(users):
   body = {u'name': sys.argv[5]}
   i = 6
   while i < len(sys.argv):
-    if sys.argv[i].lower() == u'theme':
+    myarg = sys.argv[i].lower()
+    if myarg == u'theme':
       body[u'themeId'] = sys.argv[i+1]
       i += 2
     else:
@@ -7354,13 +7385,14 @@ def doUpdateTeamDrive(users):
   body = {}
   i = 6
   while i < len(sys.argv):
-    if sys.argv[i].lower() == u'name':
+    myarg = sys.argv[i].lower()
+    if myarg == u'name':
       body[u'name'] = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower() == u'theme':
+    elif myarg == u'theme':
       body[u'themeId'] = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower() == u'customtheme':
+    elif myarg == u'customtheme':
       body[u'backgroundImageFile'] = {
         u'id': sys.argv[i+1],
         u'xCoordinate': float(sys.argv[i+2]),
@@ -7368,7 +7400,7 @@ def doUpdateTeamDrive(users):
         u'width': float(sys.argv[i+4])
         }
       i += 5
-    elif sys.argv[i].lower() == u'color':
+    elif myarg == u'color':
       body[u'colorRgb'] = WEBCOLOR_MAP.get(sys.argv[i+1], sys.argv[i+1])
       i += 2
     else:
@@ -7393,13 +7425,14 @@ def printShowTeamDrives(users, csvFormat):
   q = None
   i = 5
   while i < len(sys.argv):
-    if sys.argv[i].lower() == u'todrive':
+    myarg = sys.argv[i].lower().replace(u'_', u'')
+    if myarg == u'todrive':
       todrive = True
       i += 1
-    elif sys.argv[i].lower().replace(u'_', u'') == u'asadmin':
+    elif myarg == u'asadmin':
       useDomainAdminAccess = True
       i += 1
-    elif sys.argv[i].lower() == u'query':
+    elif myarg == u'query':
       q = sys.argv[i+1]
       i += 2
     else:
@@ -7927,16 +7960,17 @@ def doCreateOrg():
   i = 4
   body[u'parentOrgUnitPath'] = u'/'
   while i < len(sys.argv):
-    if sys.argv[i].lower() == u'description':
+    myarg = sys.argv[i].lower()
+    if myarg == u'description':
       body[u'description'] = sys.argv[i+1].replace(u'\\n', u'\n')
       i += 2
-    elif sys.argv[i].lower() == u'parent':
+    elif myarg == u'parent':
       body[u'parentOrgUnitPath'] = sys.argv[i+1]
       i += 2
-    elif sys.argv[i].lower() == u'noinherit':
+    elif myarg == u'noinherit':
       body[u'blockInheritance'] = True
       i += 1
-    elif sys.argv[i].lower() == u'inherit':
+    elif myarg == u'inherit':
       body[u'blockInheritance'] = False
       i += 1
     else:
@@ -8254,7 +8288,7 @@ def doUpdateGroup():
     if sys.argv[i].lower() in GROUP_ROLES_MAP:
       role = GROUP_ROLES_MAP[sys.argv[i].lower()]
       i += 1
-    if sys.argv[i] == u'notsuspended':
+    if sys.argv[i].lower() == u'notsuspended':
       checkNotSuspended = True
       i += 1
     if sys.argv[i].lower() in usergroup_types:
@@ -8582,7 +8616,8 @@ def doUpdateMobile():
   i = 4
   body = {}
   while i < len(sys.argv):
-    if sys.argv[i].lower() == u'action':
+    myarg = sys.argv[i].lower()
+    if myarg == u'action':
       body[u'action'] = sys.argv[i+1].lower()
       if body[u'action'] == u'wipe':
         body[u'action'] = u'admin_remote_wipe'
@@ -8632,21 +8667,22 @@ def doUpdateOrg():
     body = {}
     i = 4
     while i < len(sys.argv):
-      if sys.argv[i].lower() == u'name':
+      myarg = sys.argv[i].lower()
+      if myarg == u'name':
         body[u'name'] = sys.argv[i+1]
         i += 2
-      elif sys.argv[i].lower() == u'description':
+      elif myarg == u'description':
         body[u'description'] = sys.argv[i+1].replace(u'\\n', u'\n')
         i += 2
-      elif sys.argv[i].lower() == u'parent':
+      elif myarg == u'parent':
         body[u'parentOrgUnitPath'] = sys.argv[i+1]
         if body[u'parentOrgUnitPath'][0] != u'/':
           body[u'parentOrgUnitPath'] = u'/'+body[u'parentOrgUnitPath']
         i += 2
-      elif sys.argv[i].lower() == u'noinherit':
+      elif myarg == u'noinherit':
         body[u'blockInheritance'] = True
         i += 1
-      elif sys.argv[i].lower() == u'inherit':
+      elif myarg == u'inherit':
         body[u'blockInheritance'] = False
         i += 1
       else:
@@ -9435,15 +9471,16 @@ def doUpdateNotification():
   i = 3
   isUnread = None
   while i < len(sys.argv):
-    if sys.argv[i].lower() == u'unread':
+    myarg = sys.argv[i].lower()
+    if myarg == u'unread':
       isUnread = True
       mark_as = u'unread'
       i += 1
-    elif sys.argv[i].lower() == u'read':
+    elif myarg == u'read':
       isUnread = False
       mark_as = u'read'
       i += 1
-    elif sys.argv[i].lower() == u'id':
+    elif myarg == u'id':
       if sys.argv[i+1].lower() == u'all':
         get_all = True
       else:
@@ -9475,7 +9512,8 @@ def doDeleteNotification():
   get_all = False
   i = 3
   while i < len(sys.argv):
-    if sys.argv[i].lower() == u'id':
+    myarg = sys.argv[i].lower()
+    if myarg == u'id':
       if sys.argv[i+1].lower() == u'all':
         get_all = True
       else:
@@ -9603,7 +9641,8 @@ def doGetNotifications():
   i = 3
   unread_only = False
   while i < len(sys.argv):
-    if sys.argv[i].lower() == u'unreadonly':
+    myarg = sys.argv[i].lower()
+    if myarg == u'unreadonly':
       unread_only = True
     else:
       print u'ERROR: %s is not a valid argument for "gam info notification", expected unreadonly' % sys.argv[i]
@@ -9649,10 +9688,11 @@ def doGetOrgInfo(name=None, return_attrib=None):
     show_children = False
     i = 4
     while i < len(sys.argv):
-      if sys.argv[i].lower() == u'nousers':
+      myarg = sys.argv[i].lower()
+      if myarg == u'nousers':
         get_users = False
         i += 1
-      elif sys.argv[i].lower() in [u'children', u'child']:
+      elif myarg in [u'children', u'child']:
         show_children = True
         i += 1
       else:
@@ -9775,7 +9815,8 @@ def doDelTokens(users):
   clientId = None
   i = 5
   while i < len(sys.argv):
-    if sys.argv[i].lower().replace(u'_', '') == u'clientid':
+    myarg = sys.argv[i].lower().replace(u'_', '')
+    if myarg == u'clientid':
       clientId = commonClientIds(sys.argv[i+1])
       i += 2
     else:
@@ -9913,7 +9954,8 @@ def doUndeleteUser():
   orgUnit = u'/'
   i = 4
   while i < len(sys.argv):
-    if sys.argv[i].lower() in [u'ou', u'org']:
+    myarg = sys.argv[i].lower()
+    if myarg in [u'ou', u'org']:
       orgUnit = sys.argv[i+1]
       i += 2
     else:
@@ -10748,26 +10790,27 @@ def doPrintGroupMembers():
   groups_to_get = []
   i = 3
   while i < len(sys.argv):
-    if sys.argv[i].lower() == u'domain':
+    myarg = sys.argv[i].lower()
+    if myarg == u'domain':
       usedomain = sys.argv[i+1].lower()
       customer = None
       i += 2
-    elif sys.argv[i].lower() == u'todrive':
+    elif myarg == u'todrive':
       todrive = True
       i += 1
-    elif sys.argv[i].lower() == u'member':
+    elif myarg == u'member':
       usemember = sys.argv[i+1].lower()
       customer = None
       i += 2
-    elif sys.argv[i].lower() == u'fields':
+    elif myarg == u'fields':
       memberFieldsList = sys.argv[i+1].replace(u',', u' ').lower().split()
       fields = u'nextPageToken,members(%s)' % (','.join(memberFieldsList))
       i += 2
-    elif sys.argv[i].lower() == u'membernames':
+    elif myarg == u'membernames':
       membernames = True
       titles.append(u'name')
       i += 1
-    elif sys.argv[i].lower() == u'group':
+    elif myarg == u'group':
       group_email = sys.argv[i+1].lower()
       if group_email.find(u'@') == -1:
         group_email = u'%s@%s' % (group_email, GC_Values[GC_DOMAIN])
@@ -11291,13 +11334,14 @@ def doPrintLicenses(returnFields=None, skus=None):
     todrive = False
     i = 3
     while i < len(sys.argv):
-      if sys.argv[i].lower() == u'todrive':
+      myarg = sys.argv[i].lower()
+      if myarg == u'todrive':
         todrive = True
         i += 1
-      elif sys.argv[i].lower() in [u'products', u'product']:
+      elif myarg in [u'products', u'product']:
         products = sys.argv[i+1].split(u',')
         i += 2
-      elif sys.argv[i].lower() in [u'sku', u'skus']:
+      elif myarg in [u'sku', u'skus']:
         skus = sys.argv[i+1].split(u',')
         i += 2
       else:
