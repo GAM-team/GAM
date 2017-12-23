@@ -247,6 +247,13 @@ def getEmailAddressDomain(emailAddress):
     return GC_Values[GC_DOMAIN].lower()
   return emailAddress[atLoc+1:].lower()
 
+# Split email address unto user and domain
+def splitEmailAddress(emailAddress):
+  atLoc = emailAddress.find(u'@')
+  if atLoc == -1:
+    return (emailAddress.lower(), GC_Values[GC_DOMAIN].lower())
+  return (emailAddress[:atLoc].lower(), emailAddress[atLoc+1:].lower())
+
 # Normalize user/group email address/uid
 # uid:12345abc -> 12345abc
 # foo -> foo@domain
@@ -2008,6 +2015,8 @@ def app2appID(dt, app):
 def convertToUserID(user):
   if user[:4].lower() == u'uid:':
     return user[4:]
+  if user[:3].lower() == u'id:':
+    return user[3:]
   cd = buildGAPIObject(u'directory')
   if user.find(u'@') == -1:
     user = u'%s@%s' % (user, GC_Values[GC_DOMAIN])
@@ -2500,10 +2509,7 @@ def doPrintCourseParticipants():
   while i < len(sys.argv):
     myarg = sys.argv[i].lower()
     if myarg in [u'course', u'class']:
-      course = sys.argv[i+1]
-      if not course.isdigit():
-        course = u'd:%s' % course
-      courses.append(course)
+      courses.append(addCourseIdScope(sys.argv[i+1]))
       i += 2
     elif myarg == u'teacher':
       teacherId = normalizeEmailAddressOrUID(sys.argv[i+1])
@@ -3570,10 +3576,6 @@ def doProfile(users):
   count = len(users)
   for user in users:
     i += 1
-    if user[:4].lower() == u'uid:':
-      user = user[4:]
-    elif user.find(u'@') == -1:
-      user = u'%s@%s' % (user, GC_Values[GC_DOMAIN])
     print u'Setting Profile Sharing to %s for %s (%s/%s)' % (body[u'includeInGlobalAddressList'], user, i, count)
     callGAPI(cd.users(), u'update', soft_errors=True, userKey=user, body=body)
 
@@ -3583,10 +3585,6 @@ def showProfile(users):
   count = len(users)
   for user in users:
     i += 1
-    if user[:4].lower() == u'uid:':
-      user = user[4:]
-    elif user.find(u'@') == -1:
-      user = u'%s@%s' % (user, GC_Values[GC_DOMAIN])
     result = callGAPI(cd.users(), u'get', userKey=user, fields=u'includeInGlobalAddressList')
     try:
       print u'User: %s  Profile Shared: %s (%s/%s)' % (user, result[u'includeInGlobalAddressList'], i, count)
@@ -3599,10 +3597,6 @@ def doPhoto(users):
   count = len(users)
   for user in users:
     i += 1
-    if user[:4].lower() == u'uid:':
-      user = user[4:]
-    elif user.find(u'@') == -1:
-      user = u'%s@%s' % (user, GC_Values[GC_DOMAIN])
     filename = sys.argv[5].replace(u'#user#', user)
     filename = filename.replace(u'#email#', user)
     filename = filename.replace(u'#username#', user[:user.find(u'@')])
@@ -3648,10 +3642,6 @@ def getPhoto(users):
   count = len(users)
   for user in users:
     i += 1
-    if user[:4].lower() == u'uid:':
-      user = user[4:]
-    elif user.find(u'@') == -1:
-      user = u'%s@%s' % (user, GC_Values[GC_DOMAIN])
     filename = os.path.join(targetFolder, u'{0}.jpg'.format(user))
     print u"Saving photo to %s (%s/%s)" % (filename, i, count)
     try:
@@ -3678,10 +3668,6 @@ def deletePhoto(users):
   count = len(users)
   for user in users:
     i += 1
-    if user[:4].lower() == u'uid:':
-      user = user[4:]
-    elif user.find(u'@') == -1:
-      user = u'%s@%s' % (user, GC_Values[GC_DOMAIN])
     print u"Deleting photo for %s (%s/%s)" % (user, i, count)
     callGAPI(cd.users().photos(), u'delete', userKey=user)
 
@@ -8183,16 +8169,11 @@ def doUpdateUser(users, i):
   cd = buildGAPIObject(u'directory')
   body, admin_body = getUserAttributes(i, cd, updateCmd=True)
   for user in users:
-    if user[:4].lower() == u'uid:':
-      user = user[4:]
-    elif user.find(u'@') == -1:
-      user = u'%s@%s' % (user, GC_Values[GC_DOMAIN])
     if u'primaryEmail' in body and body[u'primaryEmail'][:4].lower() == u'vfe@':
       user_primary = callGAPI(cd.users(), u'get', userKey=user, fields=u'primaryEmail,id')
       user = user_primary[u'id']
       user_primary = user_primary[u'primaryEmail']
-      user_name = user_primary[:user_primary.find(u'@')]
-      user_domain = user_primary[user_primary.find(u'@')+1:]
+      user_name, user_domain = splitEmailAddress(user_primary)
       body[u'primaryEmail'] = u'vfe.%s.%05d@%s' % (user_name, random.randint(1, 99999), user_domain)
       body[u'emails'] = [{u'type': u'custom', u'customType': u'former_employee', u'primary': False, u'address': user_primary}]
     sys.stdout.write(u'updating user %s...\n' % user)
@@ -10295,10 +10276,8 @@ def doPrintUsers():
   for user in all_users:
     if email_parts and (u'primaryEmail' in user):
       user_email = user[u'primaryEmail']
-      atLoc = user_email.find(u'@')
-      if atLoc != -1:
-        user[u'primaryEmailLocal'] = user_email[:atLoc]
-        user[u'primaryEmailDomain'] = user_email[atLoc+1:]
+      if user_email.find(u'@') != -1:
+        user[u'primaryEmailLocal'], user[u'primaryEmailDomain'] = splitEmailAddress(user_email)
     addRowTitlesToCSVfile(flatten_json(user), csvRows, titles)
   if sortHeaders:
     sortCSVTitles([u'primaryEmail',], titles)
