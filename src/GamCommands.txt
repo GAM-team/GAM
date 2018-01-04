@@ -885,7 +885,7 @@ gam delete building <BuildingID>
 gam info building <BuildingID>
 gam print buildings [todrive]
 
-gam create feature <Name>
+gam create feature name <Name>
 gam update feature <Name> name <Name>
 gam delete feature <Name>
 gam print features [todrive]
