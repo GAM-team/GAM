@@ -11763,9 +11763,9 @@ def OAuthInfo():
     print u'G Suite Admin: %s' % _getValueFromOAuth(u'email', credentials=credentials)
 
 def doDeleteOAuth():
-  _, credentials = getOauth2TxtStorageCredentials()
+  storage, credentials = getOauth2TxtStorageCredentials()
   if credentials is None or credentials.invalid:
-    os.remove(GC_Values[GC_OAUTH2_TXT])
+    storage.delete()
     return
   try:
     credentials.revoke_uri = oauth2client.GOOGLE_REVOKE_URI
@@ -11782,7 +11782,7 @@ def doDeleteOAuth():
     credentials.revoke(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL]))
   except oauth2client.client.TokenRevokeError as e:
     stderrErrorMsg(str(e))
-    os.remove(GC_Values[GC_OAUTH2_TXT])
+    storage.delete()
 
 def doRequestOAuth(login_hint=None):
   storage, credentials = getOauth2TxtStorageCredentials()
