@@ -11556,7 +11556,7 @@ gam create project
     client_id = re.sub(r'\.apps\.googleusercontent\.com$', u'', client_id)
     client_secret = cs_json[u'installed'][u'client_secret']
   except (ValueError, IndexError, KeyError):
-    systemErrorExit(3, u'the format of your client secrets file:\n\n%s\n\n is incorrect. Please recreate the file.'))
+    systemErrorExit(3, u'the format of your client secrets file:\n\n%s\n\n is incorrect. Please recreate the file.')
 
   return (client_id, client_secret)
 
