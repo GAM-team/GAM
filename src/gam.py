@@ -543,7 +543,7 @@ def doGAMVersion(checkForArgs=True):
         simple = True
         i += 1
       else:
-        systemErrorExit(2, u'ERROR: %s is not a valid argument for "gam version"' % sys.argv[i])
+        systemErrorExit(2, u'%s is not a valid argument for "gam version"' % sys.argv[i])
   if simple:
     sys.stdout.write(gam_version)
     return
@@ -5035,7 +5035,7 @@ def updateSmime(users):
         systemErrorExit(3, '%s has no S/MIME certificates for sendas address %s' % (user, sendAsEmail))
       elif len(smimes) > 1:
         ids = [u' %s\n' % smime[u'id']for smime in smimes]
-        systemErrorExit(3, u'ERROR: %s has more than one S/MIME certificate. Please specify a cert to update:\n%s' % (user, ids))
+        systemErrorExit(3, u'%s has more than one S/MIME certificate. Please specify a cert to update:\n%s' % (user, ids))
       smimeId = smimes[0][u'id']
     else:
       smimeId = smimeIdBase
@@ -5069,7 +5069,7 @@ def deleteSmime(users):
       elif len(smimes) > 1:
         ids = [u' %s' % smime[u'id'] for smime in smimes]
         systemErrorExit(
-            3, u'ERROR: %s has more than one S/MIME certificate. Please specify a cert to delete:\n%s' % (user, ids))
+            3, u'%s has more than one S/MIME certificate. Please specify a cert to delete:\n%s' % (user, ids))
       smimeId = smimes[0][u'id']
     else:
       smimeId = smimeIdBase
@@ -7230,7 +7230,7 @@ def doUpdateTeamDrive(users):
     else:
       systemErrorExit(3, '%s is not a valid argument for "gam <users> update drivefile"')
   if not body:
-    systemErrorExit(4, u'ERROR: nothing to update. Need at least a name argument.\n%s' % body)
+    systemErrorExit(4, u'nothing to update. Need at least a name argument.\n%s' % body)
   for user in users:
     user, drive = buildDrive3GAPIObject(user)
     if not drive:
@@ -11556,9 +11556,7 @@ gam create project
     client_id = re.sub(r'\.apps\.googleusercontent\.com$', u'', client_id)
     client_secret = cs_json[u'installed'][u'client_secret']
   except (ValueError, IndexError, KeyError):
-    message = (u'ERROR: the format of your client secrets file:\n\n%s\n\n is '
-               'incorrect. Please recreate the file.')
-    systemErrorExit(3, message)
+    systemErrorExit(3, u'the format of your client secrets file:\n\n%s\n\n is incorrect. Please recreate the file.'))
 
   return (client_id, client_secret)
 
