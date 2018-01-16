@@ -10784,6 +10784,7 @@ def doPrintGroupMembers():
   customer = GC_Values[GC_CUSTOMER_ID]
   usedomain = None
   usemember = None
+  roles = None
   fields = None
   titles = [u'group']
   csvRows = []
@@ -10810,6 +10811,9 @@ def doPrintGroupMembers():
       membernames = True
       titles.append(u'name')
       i += 1
+    elif myarg in [u'role', u'roles']:
+      roles = sys.argv[i+1]
+      i += 2
     elif myarg == u'group':
       group_email = sys.argv[i+1].lower()
       if group_email.find(u'@') == -1:
@@ -10829,7 +10833,7 @@ def doPrintGroupMembers():
     group_email = group[u'email']
     sys.stderr.write(u'Getting members for %s (%s/%s)\n' % (group_email, i, count))
     group_members = callGAPIpages(cd.members(), u'list', u'members',
-                                  soft_errors=True,
+                                  soft_errors=True, roles=roles,
                                   groupKey=group_email, fields=fields, maxResults=GC_Values[GC_MEMBER_MAX_RESULTS])
     for member in group_members:
       for unwanted_item in [u'kind', u'etag']:
