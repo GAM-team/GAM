@@ -148,6 +148,7 @@ Named items
 <FilterID> ::= <Sttring>
 <FloorName> ::= <String>
 <GroupItem> ::= <EmailAddress>|<UniqueID>|<String>
+<GroupRole> :;= owner|manager|member
 <GuardianItem> ::= <EmailAddress>|<UniqueID>|<String>
 <GuardianInvitationID> ::= <String>
 <HoldItem> ::= <UniqueID>|<String>
@@ -487,6 +488,7 @@ Items, separated by spaces, with spaces or commas in the items themselves: "'it 
 <FloorNameList> ::= "<FloorName>(,<FloorName>)*"
 <GroupFieldNameList> ::= "<GroupFieldName>(,<GroupFieldName>)*"
 <GroupList> ::= "<GroupItem>(,<GroupItem>)*"
+<GroupRoleList> ::= "<GroupRole>(,<GroupRole>)*"
 <GuardianStateList> ::= "<GuardianState>(,<GuardianState>)*"
 <LabelNameList> ::= "<LabelName>(,<LabelName)*"
 <LanguageList> ::= "<Language>(,<Language)*"
@@ -871,7 +873,7 @@ gam print groups [todrive] ([domain <DomainName>] [member <UserItem>])
 	[delimiter <Character>] [sortheaders]
 
 gam print group-members|groups-members [todrive] ([domain <DomainName>] [member <UserItem>])|[group <GroupItem>]
-	[membernames] [fields <MembersFieldNameList>]
+	[roles <GroupRoleList>] [membernames] [fields <MembersFieldNameList>]
 
 gam print license|licenses|licence|licences [todrive] [(products|product <ProductIDList>)|(skus|sku <SKUIDList>)]
 
@@ -885,7 +887,7 @@ gam delete building <BuildingID>
 gam info building <BuildingID>
 gam print buildings [todrive]
 
-gam create feature <Name>
+gam create feature name <Name>
 gam update feature <Name> name <Name>
 gam delete feature <Name>
 gam print features [todrive]
