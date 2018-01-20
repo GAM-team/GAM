@@ -319,7 +319,7 @@ def readFile(filename, mode=u'rb', continueOnError=False, displayError=True, enc
       return None
     systemErrorExit(6, e)
   except (LookupError, UnicodeDecodeError, UnicodeError) as e:
-    systemErrorExit(2, u'%s' % e)
+    systemErrorExit(2, str(e))
 #
 # Write a file
 #
@@ -364,7 +364,7 @@ class UnicodeDictReader(object):
     except (csv.Error, StopIteration):
       self.fieldnames = []
     except LookupError as e:
-      systemErrorExit(2, u'%s' % e)
+      systemErrorExit(2, str(e))
     self.numfields = len(self.fieldnames)
 
   def __iter__(self):
