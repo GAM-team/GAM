@@ -11657,7 +11657,7 @@ for a_scope in OAUTH2_SCOPES:
   OAUTH2_MENU += u'[%%%%s] %%2d)  %s' % (a_scope[u'name'])
   if a_scope[u'subscopes']:
     OAUTH2_MENU += u' (supports %s)' % (u' and '.join(a_scope[u'subscopes']))
-  OAUTH2_MENU += '\n'
+  OAUTH2_MENU += u'\n'
 OAUTH2_MENU += u'''
 
      s)  Select all scopes
