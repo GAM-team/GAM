@@ -1080,6 +1080,7 @@ def doCheckServiceAccount(users):
     service_account = GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID]
     if all_scopes_pass:
       print u'\nAll scopes passed!\nService account %s is fully authorized.' % service_account
+      return
     else:
       user_domain = user[user.find(u'@')+1:]
       scopes_failed = '''Some scopes failed! Please go to:
@@ -11675,7 +11676,7 @@ OAUTH2_MENU += '''
      c)  Continue to authorization
 '''
 OAUTH2_CMDS = [u's', u'u', u'e', u'c']
-MAXIMUM_SCOPES = 28 # max of 30 - 2 for email scope always included
+MAXIMUM_SCOPES = 48 # max of 50 - 2 for email scope always included
 
 def getScopesFromUser():
   """Prompts the user to choose from a list of scopes to authorize."""
