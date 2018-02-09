@@ -22,6 +22,8 @@ import json
 import logging
 import os
 
+import six
+
 from google.auth import environment_vars
 from google.auth import exceptions
 import google.auth.transport._http_client
@@ -67,9 +69,11 @@ def _load_credentials_from_file(filename):
     with io.open(filename, 'r') as file_obj:
         try:
             info = json.load(file_obj)
-        except ValueError as exc:
-            raise exceptions.DefaultCredentialsError(
-                'File {} is not a valid json file.'.format(filename), exc)
+        except ValueError as caught_exc:
+            new_exc = exceptions.DefaultCredentialsError(
+                'File {} is not a valid json file.'.format(filename),
+                caught_exc)
+            six.raise_from(new_exc, caught_exc)
 
     # The type key should indicate that the file is either a service account
     # credentials file or an authorized user credentials file.
@@ -80,10 +84,11 @@ def _load_credentials_from_file(filename):
 
         try:
             credentials = _cloud_sdk.load_authorized_user_credentials(info)
-        except ValueError as exc:
-            raise exceptions.DefaultCredentialsError(
-                'Failed to load authorized user credentials from {}'.format(
-                    filename), exc)
+        except ValueError as caught_exc:
+            msg = 'Failed to load authorized user credentials from {}'.format(
+                filename)
+            new_exc = exceptions.DefaultCredentialsError(msg, caught_exc)
+            six.raise_from(new_exc, caught_exc)
         # Authorized user credentials do not contain the project ID.
         return credentials, None
 
@@ -93,10 +98,11 @@ def _load_credentials_from_file(filename):
         try:
             credentials = (
                 service_account.Credentials.from_service_account_info(info))
-        except ValueError as exc:
-            raise exceptions.DefaultCredentialsError(
-                'Failed to load service account credentials from {}'.format(
-                    filename), exc)
+        except ValueError as caught_exc:
+            msg = 'Failed to load service account credentials from {}'.format(
+                filename)
+            new_exc = exceptions.DefaultCredentialsError(msg, caught_exc)
+            six.raise_from(new_exc, caught_exc)
         return credentials, info.get('project_id')
 
     else:
@@ -123,12 +129,6 @@ def _get_gcloud_sdk_credentials():
     if not project_id:
         project_id = _cloud_sdk.get_project_id()
 
-    if not project_id:
-        _LOGGER.warning(
-            'No project ID could be determined from the Cloud SDK '
-            'configuration. Consider running `gcloud config set project` or '
-            'setting the %s environment variable', environment_vars.PROJECT)
-
     return credentials, project_id
 
 
@@ -140,12 +140,6 @@ def _get_explicit_environ_credentials():
     if explicit_file is not None:
         credentials, project_id = _load_credentials_from_file(
             os.environ[environment_vars.CREDENTIALS])
-
-        if not project_id:
-            _LOGGER.warning(
-                'No project ID could be determined from the credentials at %s '
-                'Consider setting the %s environment variable',
-                environment_vars.CREDENTIALS, environment_vars.PROJECT)
 
         return credentials, project_id
 
@@ -182,10 +176,6 @@ def _get_gce_credentials(request=None):
         try:
             project_id = _metadata.get_project_id(request=request)
         except exceptions.TransportError:
-            _LOGGER.warning(
-                'No project ID could be determined from the Compute Engine '
-                'metadata service. Consider setting the %s environment '
-                'variable.', environment_vars.PROJECT)
             project_id = None
 
         return compute_engine.Credentials(), project_id
@@ -281,6 +271,13 @@ def default(scopes=None, request=None):
         credentials, project_id = checker()
         if credentials is not None:
             credentials = with_scopes_if_required(credentials, scopes)
-            return credentials, explicit_project_id or project_id
+            effective_project_id = explicit_project_id or project_id
+            if not effective_project_id:
+                _LOGGER.warning(
+                    'No project ID could be determined. Consider running '
+                    '`gcloud config set project` or setting the %s '
+                    'environment variable',
+                    environment_vars.PROJECT)
+            return credentials, effective_project_id
 
     raise exceptions.DefaultCredentialsError(_HELP_MESSAGE)

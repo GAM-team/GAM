@@ -16,15 +16,23 @@
 
 from __future__ import absolute_import
 
+import functools
 import logging
 
 try:
     import requests
-except ImportError:  # pragma: NO COVER
-    raise ImportError(
-        'The requests library is not installed, please install the requests '
-        'package to use the requests transport.')
-import requests.exceptions
+except ImportError as caught_exc:  # pragma: NO COVER
+    import six
+    six.raise_from(
+        ImportError(
+            'The requests library is not installed, please install the '
+            'requests package to use the requests transport.'
+        ),
+        caught_exc,
+    )
+import requests.adapters  # pylint: disable=ungrouped-imports
+import requests.exceptions  # pylint: disable=ungrouped-imports
+import six  # pylint: disable=ungrouped-imports
 
 from google.auth import exceptions
 from google.auth import transport
@@ -111,8 +119,9 @@ class Request(transport.Request):
                 method, url, data=body, headers=headers, timeout=timeout,
                 **kwargs)
             return _Response(response)
-        except requests.exceptions.RequestException as exc:
-            raise exceptions.TransportError(exc)
+        except requests.exceptions.RequestException as caught_exc:
+            new_exc = exceptions.TransportError(caught_exc)
+            six.raise_from(new_exc, caught_exc)
 
 
 class AuthorizedSession(requests.Session):
@@ -139,22 +148,35 @@ class AuthorizedSession(requests.Session):
             retried.
         max_refresh_attempts (int): The maximum number of times to attempt to
             refresh the credentials and retry the request.
+        refresh_timeout (Optional[int]): The timeout value in seconds for
+            credential refresh HTTP requests.
         kwargs: Additional arguments passed to the :class:`requests.Session`
             constructor.
     """
     def __init__(self, credentials,
                  refresh_status_codes=transport.DEFAULT_REFRESH_STATUS_CODES,
                  max_refresh_attempts=transport.DEFAULT_MAX_REFRESH_ATTEMPTS,
+                 refresh_timeout=None,
                  **kwargs):
         super(AuthorizedSession, self).__init__(**kwargs)
         self.credentials = credentials
         self._refresh_status_codes = refresh_status_codes
         self._max_refresh_attempts = max_refresh_attempts
+        self._refresh_timeout = refresh_timeout
+
+        auth_request_session = requests.Session()
+
+        # Using an adapter to make HTTP requests robust to network errors.
+        # This adapter retrys HTTP requests when network errors occur
+        # and the requests seems safely retryable.
+        retry_adapter = requests.adapters.HTTPAdapter(max_retries=3)
+        auth_request_session.mount("https://", retry_adapter)
+
         # Request instance used by internal methods (for example,
         # credentials.refresh).
         # Do not pass `self` as the session here, as it can lead to infinite
         # recursion.
-        self._auth_request = Request()
+        self._auth_request = Request(auth_request_session)
 
     def request(self, method, url, data=None, headers=None, **kwargs):
         """Implementation of Requests' request."""
@@ -191,7 +213,9 @@ class AuthorizedSession(requests.Session):
                 response.status_code, _credential_refresh_attempt + 1,
                 self._max_refresh_attempts)
 
-            self.credentials.refresh(self._auth_request)
+            auth_request_with_timeout = functools.partial(
+                self._auth_request, timeout=self._refresh_timeout)
+            self.credentials.refresh(auth_request_with_timeout)
 
             # Recurse. Pass in the original headers, not our modified set.
             return self.request(

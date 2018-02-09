@@ -122,6 +122,43 @@ class Credentials(object):
         self.apply(headers)
 
 
+class AnonymousCredentials(Credentials):
+    """Credentials that do not provide any authentication information.
+
+    These are useful in the case of services that support anonymous access or
+    local service emulators that do not use credentials.
+    """
+
+    @property
+    def expired(self):
+        """Returns `False`, anonymous credentials never expire."""
+        return False
+
+    @property
+    def valid(self):
+        """Returns `True`, anonymous credentials are always valid."""
+        return True
+
+    def refresh(self, request):
+        """Raises :class:`ValueError``, anonymous credentials cannot be
+        refreshed."""
+        raise ValueError("Anonymous credentials cannot be refreshed.")
+
+    def apply(self, headers, token=None):
+        """Anonymous credentials do nothing to the request.
+
+        The optional ``token`` argument is not supported.
+
+        Raises:
+            ValueError: If a token was specified.
+        """
+        if token is not None:
+            raise ValueError("Anonymous credentials don't support tokens.")
+
+    def before_request(self, request, method, url, headers):
+        """Anonymous credentials do nothing to the request."""
+
+
 @six.add_metaclass(abc.ABCMeta)
 class ReadOnlyScoped(object):
     """Interface for credentials whose scopes can be queried.
@@ -136,7 +173,7 @@ class ReadOnlyScoped(object):
 
         if credentials.requires_scopes:
             # Scoping is required.
-            credentials = credentials.create_scoped(['one', 'two'])
+            credentials = credentials.with_scopes(scopes=['one', 'two'])
 
     Credentials that require scopes must either be constructed with scopes::
 
@@ -171,6 +208,9 @@ class ReadOnlyScoped(object):
 
         .. warning: This method is not guaranteed to be accurate if the
             credentials are :attr:`~Credentials.invalid`.
+
+        Args:
+            scopes (Sequence[str]): The list of scopes to check.
 
         Returns:
             bool: True if the credentials have the given scopes.
@@ -211,7 +251,8 @@ class Scoped(ReadOnlyScoped):
         """Create a copy of these credentials with the specified scopes.
 
         Args:
-            scopes (Sequence[str]): The list of scopes to request.
+            scopes (Sequence[str]): The list of scopes to attach to the
+                current credentials.
 
         Raises:
             NotImplementedError: If the credentials' scopes can not be changed.
