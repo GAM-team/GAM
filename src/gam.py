@@ -242,6 +242,13 @@ def getEmailAddressDomain(emailAddress):
     return GC_Values[GC_DOMAIN].lower()
   return emailAddress[atLoc+1:].lower()
 
+# Split email address unto user and domain
+def splitEmailAddress(emailAddress):
+  atLoc = emailAddress.find(u'@')
+  if atLoc == -1:
+    return (emailAddress.lower(), GC_Values[GC_DOMAIN].lower())
+  return (emailAddress[:atLoc].lower(), emailAddress[atLoc+1:].lower())
+
 # Normalize user/group email address/uid
 # uid:12345abc -> 12345abc
 # foo -> foo@domain
@@ -1081,9 +1088,8 @@ def doCheckServiceAccount(users):
     if all_scopes_pass:
       print u'\nAll scopes passed!\nService account %s is fully authorized.' % service_account
       return
-    else:
-      user_domain = user[user.find(u'@')+1:]
-      scopes_failed = '''Some scopes failed! Please go to:
+    user_domain = user[user.find(u'@')+1:]
+    scopes_failed = '''Some scopes failed! Please go to:
 
 https://admin.google.com/%s/AdminHome?#OGX:ManageOauthClients
 
@@ -1094,7 +1100,7 @@ and grant Client name:
 Access to scopes:
 
 %s\n''' % (user_domain, service_account, ',\n'.join(all_scopes))
-    systemErrorExit(int(not all_scopes_pass), scopes_failed)
+    systemErrorExit(1, scopes_failed)
 
 # Batch processing request_id fields
 RI_ENTITY = 0
@@ -2244,8 +2250,7 @@ def doDeleteGuardian():
   else:
     if _cancelGuardianInvitation(croom, studentId, guardianId):
       return
-  stderrErrorMsg(u'%s is not a guardian of %s and no invitation exists.' % (guardianId, studentId))
-  sys.exit(3)
+  systemErrorExit(3, '%s is not a guardian of %s and no invitation exists.' % (guardianId, studentId))
 
 def doCreateCourse():
   croom = buildGAPIObject(u'classroom')
@@ -3249,8 +3254,7 @@ def checkCloudPrintResult(result):
     except ValueError:
       systemErrorExit(3, 'unexpected response: %s' % result)
   if not result[u'success']:
-    systemErrorExit(
-        result[u'errorCode'], '%s: %s' % (result[u'errorCode'], result[u'message']))
+    systemErrorExit(result[u'errorCode'], '%s: %s' % (result[u'errorCode'], result[u'message']))
 
 def formatACLRule(rule):
   if rule[u'scope'][u'type'] != u'default':
@@ -3915,7 +3919,7 @@ def addDriveFileACL(users):
     elif myarg == u'expires':
       body[u'expirationTime'] = getTimeOrDeltaFromNow(sys.argv[i+1])
       i += 2
-    elif myarg.replace(u'_', u'') == u'asadmin':
+    elif myarg == u'asadmin':
       useDomainAdminAccess = True
       i += 1
     else:
@@ -5035,8 +5039,7 @@ def updateSmime(users):
       if len(smimes) == 0:
         systemErrorExit(3, '%s has no S/MIME certificates for sendas address %s' % (user, sendAsEmail))
       elif len(smimes) > 1:
-        ids = [u' %s\n' % smime[u'id']for smime in smimes]
-        systemErrorExit(3, u'%s has more than one S/MIME certificate. Please specify a cert to update:\n%s' % (user, ids))
+        systemErrorExit(3, u'%s has more than one S/MIME certificate. Please specify a cert to update:\n %s' % (user, u'\n '.join([smime[u'id'] for smime in smimes])))
       smimeId = smimes[0][u'id']
     else:
       smimeId = smimeIdBase
@@ -5068,12 +5071,11 @@ def deleteSmime(users):
       if len(smimes) == 0:
         systemErrorExit(3, '%s has no S/MIME certificates for sendas address %s' % (user, sendAsEmail))
       elif len(smimes) > 1:
-        ids = [u' %s' % smime[u'id'] for smime in smimes]
-        systemErrorExit(
-            3, u'%s has more than one S/MIME certificate. Please specify a cert to delete:\n%s' % (user, ids))
+        systemErrorExit(3, u'%s has more than one S/MIME certificate. Please specify a cert to delete:\n %s' % (user, u'\n '.join([smime[u'id'] for smime in smimes])))
       smimeId = smimes[0][u'id']
     else:
       smimeId = smimeIdBase
+    print u'Deleting smime id %s for user %s and sendas %s' % (smimeId, user, sendAsEmail)
     callGAPI(gmail.users().settings().sendAs().smimeInfo(), u'delete', userId=u'me', sendAsEmail=sendAsEmail, id=smimeId)
 
 def printShowSmime(users, csvFormat):
@@ -7231,7 +7233,7 @@ def doUpdateTeamDrive(users):
     else:
       systemErrorExit(3, '%s is not a valid argument for "gam <users> update drivefile"')
   if not body:
-    systemErrorExit(4, u'nothing to update. Need at least a name argument.\n%s' % body)
+    systemErrorExit(4, 'nothing to update. Need at least a name argument.')
   for user in users:
     user, drive = buildDrive3GAPIObject(user)
     if not drive:
@@ -7848,11 +7850,11 @@ def _getBuildingByNameOrId(cd, which_building):
       return buildingId
 # Multiple name  matches
   if len(ci_matches) > 1:
-    print u'ERROR: multiple buildings with same name:'
+    message = u'Multiple buildings with same name:\n'
     for building in ci_matches:
-      print u'  Name:%s  id:%s' % (building[u'buildingName'], building[u'buildingId'])
-    print
-    print u'Please specify building name by exact case or by id.'
+      message += u'  Name:%s  id:%s\n' % (building[u'buildingName'], building[u'buildingId'])
+    message += u'\nPlease specify building name by exact case or by id.'
+    systemErrorExit(3, message)
 # No matches
   else:
     systemErrorExit(3, 'No such building %s' % which_building)
@@ -10113,14 +10115,10 @@ def doPrintUsers():
                             showDeleted=deleted_only, orderBy=orderBy, sortOrder=sortOrder, viewType=viewType,
                             query=query, projection=projection, customFieldMask=customFieldMask, maxResults=GC_Values[GC_USER_MAX_RESULTS])
   for user in all_users:
-    if email_parts:
-      try:
-        user_email = user[u'primaryEmail']
-        if user_email.find(u'@') != -1:
-          user[u'primaryEmailLocal'] = user_email[:user_email.find(u'@')]
-          user[u'primaryEmailDomain'] = user_email[user_email.find(u'@')+1:]
-      except KeyError:
-        pass
+    if email_parts and (u'primaryEmail' in user):
+      user_email = user[u'primaryEmail']
+      if user_email.find(u'@') != -1:
+        user[u'primaryEmailLocal'], user[u'primaryEmailDomain'] = splitEmailAddress(user_email)
     addRowTitlesToCSVfile(flatten_json(user), csvRows, titles)
   if sortHeaders:
     sortCSVTitles([u'primaryEmail',], titles)
@@ -11145,7 +11143,8 @@ def doPrintLicenses(returnFields=None, skus=None):
   writeCSVfile(csvRows, titles, u'Licenses', todrive)
 
 RESCAL_DFLTFIELDS = [u'id', u'name', u'email',]
-RESCAL_ALLFIELDS = [u'id', u'name', u'email', u'description', u'type', u'buildingid', u'category', u'capacity', u'features', u'floor', u'floorsection', u'generatedresourcename', u'uservisibledescription',]
+RESCAL_ALLFIELDS = [u'id', u'name', u'email', u'description', u'type', u'buildingid', u'category', u'capacity',
+                    u'features', u'floor', u'floorsection', u'generatedresourcename', u'uservisibledescription',]
 
 RESCAL_ARGUMENT_TO_PROPERTY_MAP = {
   u'description': [u'resourceDescription'],
@@ -11492,7 +11491,6 @@ def OAuthInfo():
     credentials.user_agent = GAM_INFO
     access_token = credentials.access_token
     print u"\nOAuth File: %s" % GC_Values[GC_OAUTH2_TXT]
-
   oa2 = buildGAPIObject(u'oauth2')
   token_info = callGAPI(oa2, u'tokeninfo', access_token=access_token)
   print u"Client ID: %s" % token_info[u'issued_to']
@@ -11566,7 +11564,6 @@ gam create project
     client_secret = cs_json[u'installed'][u'client_secret']
   except (ValueError, IndexError, KeyError):
     systemErrorExit(3, u'the format of your client secrets file:\n\n%s\n\n is incorrect. Please recreate the file.')
-
   return (client_id, client_secret)
 
 class cmd_flags(object):
@@ -12624,11 +12621,9 @@ def ProcessGAMCommand(args):
   except KeyboardInterrupt:
     sys.exit(50)
   except socket.error as e:
-    stderrErrorMsg(e)
-    sys.exit(3)
+    systemErrorExit(3, str(e))
   except MemoryError:
-    stderrErrorMsg(MESSAGE_GAM_OUT_OF_MEMORY)
-    sys.exit(99)
+    systemErrorExit(99, MESSAGE_GAM_OUT_OF_MEMORY)
   except SystemExit as e:
     GM_Globals[GM_SYSEXITRC] = e.code
   return GM_Globals[GM_SYSEXITRC]
