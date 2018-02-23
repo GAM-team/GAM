@@ -9431,7 +9431,7 @@ def doGetNotifications():
 
 def orgUnitPathQuery(path):
   if path != u'/':
-    return u"orgUnitPath='{0}'".format(path.replace(u"'", u"\'"))
+    return u"orgUnitPath='{0}'".format(path.replace(u"'", u"\\'"))
   return None
 
 def getTopLevelOrgId(cd, orgUnitPath):
