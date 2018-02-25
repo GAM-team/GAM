@@ -131,9 +131,9 @@ Named items
 <CrOSItem> ::= <CrOSID>|(query:<QueryCrOS>)|(query:orgunitpath:<OrgUnitPath>)
 <CustomerID> ::= <String>
 <DomainAlias> ::= <String>
-<DriveFileACLRole> :: =commenter|editor|organizer|owner|reader|writer
+<DriveFileACLRole> ::= commenter|editor|organizer|owner|reader|writer
 <DriveFileID> ::= <String>
-<DriveFileURL> :: = https://docs.google.com/a/<DomainName>/document/d/<DriveFileID>/<String>
+<DriveFileURL> ::= https://docs.google.com/a/<DomainName>/document/d/<DriveFileID>/<String>
 <DriveFileItem> ::= <DriveFileID>|<DriveFileURL>
 <DriveFileName> ::= <String>
 <DriveFolderID> ::= <String>
@@ -180,12 +180,12 @@ Named items
 <QueryCalendar> ::= <String>
 <QueryContact> ::= <String> See: https://developers.google.com/google-apps/contacts/v3/reference#contacts-query-parameters-reference
 <QueryCrOS> ::= <String> See: https://support.google.com/chrome/a/answer/1698333?hl=en
-<QueryDriveFile> :: = <String> See: https://developers.google.com/drive/v2/web/search-parameters
+<QueryDriveFile> ::= <String> See: https://developers.google.com/drive/v2/web/search-parameters
 <QueryGmail> ::= <String> See: https://support.google.com/mail/answer/7190
 <QueryMobile> ::= <String> See: https://support.google.com/a/answer/1408863?hl=en#search
 <QueryPrinter> ::= <String> See: https://developers.google.com/cloud-print/docs/appInterfaces#search
 <QueryPrintJob> ::= <String> See: https://developers.google.com/cloud-print/docs/appInterfaces#parameters_3
-<QueryUser> :: = <String> See: https://developers.google.com/admin-sdk/directory/v1/guides/search-users
+<QueryUser> ::= <String> See: https://developers.google.com/admin-sdk/directory/v1/guides/search-users
 <QueryVaultCorpus> ::= <String> See: https://developers.google.com/vault/reference/rest/v1/matters.holds#CorpusQuery
 <RequestID> ::= <String>
 <ResourceID> ::= <String>
