@@ -11284,7 +11284,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
       page_message = u'Got %%total_items%% users...'
     members = callGAPIpages(cd.users(), u'list', u'users', page_message=page_message,
                             customer=GC_Values[GC_CUSTOMER_ID], fields=u'nextPageToken,users(primaryEmail,suspended,orgUnitPath)',
-                            query=u"orgUnitPath='%s'" % ou, maxResults=GC_Values[GC_USER_MAX_RESULTS])
+                            query=orgUnitPathQuery(ou), maxResults=GC_Values[GC_USER_MAX_RESULTS])
     for member in members:
       if ou.lower() != member[u'orgUnitPath'].lower():
         continue
