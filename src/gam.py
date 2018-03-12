@@ -1153,7 +1153,7 @@ def showReport():
       eventName = sys.argv[i+1]
       i += 2
     elif myarg == u'user':
-      userKey = sys.argv[i+1]
+      userKey = normalizeEmailAddressOrUID(sys.argv[i+1])
       i += 2
     elif myarg in [u'filter', u'filters']:
       filters = sys.argv[i+1]
@@ -1815,14 +1815,8 @@ def doDelAdmin():
 
 def doCreateAdmin():
   cd = buildGAPIObject(u'directory')
-  body = {}
-  user = sys.argv[3]
-  if user[:4].lower() == u'uid:':
-    body[u'assignedTo'] = user[4:]
-  else:
-    print user[:3]
-    body[u'assignedTo'] = callGAPI(cd.users(), u'get',
-                                   userKey=user, projection=u'basic', fields=u'id')[u'id']
+  user = normalizeEmailAddressOrUID(sys.argv[3])
+  body = {u'assignedTo': convertEmailAddressToUID(user, cd)}
   role = sys.argv[4]
   if role[:4].lower() == u'uid:':
     body[u'roleId'] = role[4:]
@@ -1888,7 +1882,7 @@ def doPrintAdmins():
   while i < len(sys.argv):
     myarg = sys.argv[i].lower()
     if myarg == u'user':
-      userKey = sys.argv[i+1]
+      userKey = normalizeEmailAddressOrUID(sys.argv[i+1])
       i += 2
     elif myarg == u'role':
       role = sys.argv[i+1]
@@ -1994,6 +1988,8 @@ def app2appID(dt, app):
 def convertToUserID(user):
   if user[:4].lower() == u'uid:':
     return user[4:]
+  if user[:3].lower() == u'id:':
+    return user[3:]
   cd = buildGAPIObject(u'directory')
   if user.find(u'@') == -1:
     user = u'%s@%s' % (user, GC_Values[GC_DOMAIN])
@@ -2383,10 +2379,10 @@ def doPrintCourses():
   while i < len(sys.argv):
     myarg = sys.argv[i].lower()
     if myarg == u'teacher':
-      teacherId = sys.argv[i+1]
+      teacherId = normalizeEmailAddressOrUID(sys.argv[i+1])
       i += 2
     elif myarg == u'student':
-      studentId = sys.argv[i+1]
+      studentId = normalizeEmailAddressOrUID(sys.argv[i+1])
       i += 2
     elif myarg in [u'state', u'states', u'status']:
       _getCourseStates(croom, sys.argv[i+1], courseStates)
@@ -2483,10 +2479,10 @@ def doPrintCourseParticipants():
       courses.append(course)
       i += 2
     elif myarg == u'teacher':
-      teacherId = sys.argv[i+1]
+      teacherId = normalizeEmailAddressOrUID(sys.argv[i+1])
       i += 2
     elif myarg == u'student':
-      studentId = sys.argv[i+1]
+      studentId = normalizeEmailAddressOrUID(sys.argv[i+1])
       i += 2
     elif myarg in [u'state', u'states', u'status']:
       _getCourseStates(croom, sys.argv[i+1], courseStates)
@@ -3508,10 +3504,6 @@ def doProfile(users):
   count = len(users)
   for user in users:
     i += 1
-    if user[:4].lower() == u'uid:':
-      user = user[4:]
-    elif user.find(u'@') == -1:
-      user = u'%s@%s' % (user, GC_Values[GC_DOMAIN])
     print u'Setting Profile Sharing to %s for %s (%s/%s)' % (body[u'includeInGlobalAddressList'], user, i, count)
     callGAPI(cd.users(), u'update', soft_errors=True, userKey=user, body=body)
 
@@ -3521,10 +3513,6 @@ def showProfile(users):
   count = len(users)
   for user in users:
     i += 1
-    if user[:4].lower() == u'uid:':
-      user = user[4:]
-    elif user.find(u'@') == -1:
-      user = u'%s@%s' % (user, GC_Values[GC_DOMAIN])
     result = callGAPI(cd.users(), u'get', userKey=user, fields=u'includeInGlobalAddressList')
     try:
       print u'User: %s  Profile Shared: %s (%s/%s)' % (user, result[u'includeInGlobalAddressList'], i, count)
@@ -3537,10 +3525,6 @@ def doPhoto(users):
   count = len(users)
   for user in users:
     i += 1
-    if user[:4].lower() == u'uid:':
-      user = user[4:]
-    elif user.find(u'@') == -1:
-      user = u'%s@%s' % (user, GC_Values[GC_DOMAIN])
     filename = sys.argv[5].replace(u'#user#', user)
     filename = filename.replace(u'#email#', user)
     filename = filename.replace(u'#username#', user[:user.find(u'@')])
@@ -3585,10 +3569,6 @@ def getPhoto(users):
   count = len(users)
   for user in users:
     i += 1
-    if user[:4].lower() == u'uid:':
-      user = user[4:]
-    elif user.find(u'@') == -1:
-      user = u'%s@%s' % (user, GC_Values[GC_DOMAIN])
     filename = os.path.join(targetFolder, u'{0}.jpg'.format(user))
     print u"Saving photo to %s (%s/%s)" % (filename, i, count)
     try:
@@ -3615,10 +3595,6 @@ def deletePhoto(users):
   count = len(users)
   for user in users:
     i += 1
-    if user[:4].lower() == u'uid:':
-      user = user[4:]
-    elif user.find(u'@') == -1:
-      user = u'%s@%s' % (user, GC_Values[GC_DOMAIN])
     print u"Deleting photo for %s (%s/%s)" % (user, i, count)
     callGAPI(cd.users().photos(), u'delete', userKey=user)
 
@@ -3882,7 +3858,7 @@ def addDriveFileACL(users):
   if body[u'type'] == u'anyone':
     i = 7
   elif body[u'type'] in [u'user', u'group']:
-    body[u'emailAddress'] = sys.argv[7]
+    body[u'emailAddress'] = normalizeEmailAddressOrUID(sys.argv[7])
     i = 8
   elif body[u'type'] == u'domain':
     body[u'domain'] = sys.argv[7]
@@ -4780,8 +4756,6 @@ def doLicense(users, operation):
     productId = sys.argv[i+1]
     i += 2
   for user in users:
-    if user.find(u'@') == -1:
-      user = u'%s@%s' % (user, GC_Values[GC_DOMAIN])
     if operation == u'delete':
       print u'Removing license %s from user %s' % (_formatSKUIdDisplayName(skuId), user)
       callGAPI(lic.licenseAssignments(), operation, soft_errors=True, productId=productId, skuId=skuId, userId=user)
@@ -4923,9 +4897,7 @@ def getSendAsAttributes(i, myarg, body, tagReplacements, command):
   return i
 
 def addUpdateSendAs(users, i, addCmd):
-  emailAddress = sys.argv[i]
-  if emailAddress.find(u'@') < 0:
-    emailAddress = emailAddress+u'@'+GC_Values[GC_DOMAIN]
+  emailAddress = normalizeEmailAddressOrUID(sys.argv[i], noUid=True)
   i += 1
   if addCmd:
     command = [u'sendas', u'add sendas'][i == 6]
@@ -4969,9 +4941,7 @@ def addUpdateSendAs(users, i, addCmd):
              userId=u'me', **kwargs)
 
 def deleteSendAs(users):
-  emailAddress = sys.argv[5]
-  if emailAddress.find(u'@') < 0:
-    emailAddress = emailAddress+u'@'+GC_Values[GC_DOMAIN]
+  emailAddress = normalizeEmailAddressOrUID(sys.argv[5], noUid=True)
   i = 0
   count = len(users)
   for user in users:
@@ -5149,9 +5119,7 @@ def printShowSendAs(users, csvFormat):
     writeCSVfile(csvRows, titles, u'SendAs', todrive)
 
 def infoSendAs(users):
-  emailAddress = sys.argv[5]
-  if emailAddress.find(u'@') < 0:
-    emailAddress = emailAddress+u'@'+GC_Values[GC_DOMAIN]
+  emailAddress = normalizeEmailAddressOrUID(sys.argv[5], noUid=True)
   formatSig = False
   i = 6
   while i < len(sys.argv):
@@ -5985,9 +5953,7 @@ def printShowForward(users, csvFormat):
     writeCSVfile(csvRows, titles, u'Forward', todrive)
 
 def addForwardingAddresses(users):
-  emailAddress = sys.argv[5]
-  if emailAddress.find(u'@') == -1:
-    emailAddress = u'%s@%s' % (emailAddress, GC_Values[GC_DOMAIN])
+  emailAddress = normalizeEmailAddressOrUID(sys.argv[5], noUid=True)
   body = {u'forwardingEmail':  emailAddress}
   i = 0
   count = len(users)
@@ -6002,9 +5968,7 @@ def addForwardingAddresses(users):
              userId=u'me', body=body)
 
 def deleteForwardingAddresses(users):
-  emailAddress = sys.argv[5]
-  if emailAddress.find(u'@') == -1:
-    emailAddress = u'%s@%s' % (emailAddress, GC_Values[GC_DOMAIN])
+  emailAddress = normalizeEmailAddressOrUID(sys.argv[5], noUid=True)
   i = 0
   count = len(users)
   for user in users:
@@ -6059,9 +6023,7 @@ def printShowForwardingAddresses(users, csvFormat):
     writeCSVfile(csvRows, titles, u'Forwarding Addresses', todrive)
 
 def infoForwardingAddresses(users):
-  emailAddress = sys.argv[5]
-  if emailAddress.find(u'@') == -1:
-    emailAddress = u'%s@%s' % (emailAddress, GC_Values[GC_DOMAIN])
+  emailAddress = normalizeEmailAddressOrUID(sys.argv[5], noUid=True)
   i = 0
   count = len(users)
   for user in users:
@@ -6422,9 +6384,7 @@ def getUserAttributes(i, cd, updateCmd=False):
     need_password = False
   else:
     body = {u'name': {u'givenName': u'Unknown', u'familyName': u'Unknown'}}
-    body[u'primaryEmail'] = sys.argv[i]
-    if body[u'primaryEmail'].find(u'@') == -1:
-      body[u'primaryEmail'] = u'%s@%s' % (body[u'primaryEmail'], GC_Values[GC_DOMAIN])
+    body[u'primaryEmail'] = normalizeEmailAddressOrUID(sys.argv[i], noUid=True)
     i += 1
     need_password = True
   need_to_hash_password = True
@@ -6440,9 +6400,7 @@ def getUserAttributes(i, cd, updateCmd=False):
       body[u'name'][u'familyName'] = sys.argv[i+1]
       i += 2
     elif myarg in [u'username', u'email', u'primaryemail'] and updateCmd:
-      body[u'primaryEmail'] = sys.argv[i+1]
-      if body[u'primaryEmail'].find(u'@') == -1:
-        body[u'primaryEmail'] = u'%s@%s' % (body[u'primaryEmail'], GC_Values[GC_DOMAIN])
+      body[u'primaryEmail'] = normalizeEmailAddressOrUID(sys.argv[i+1], noUid=True)
       i += 2
     elif myarg == u'customerid' and updateCmd:
       body[u'customerId'] = sys.argv[i+1]
@@ -7612,9 +7570,7 @@ def getGroupAttrValue(myarg, value, gs_object, gs_body, function):
 
 def doCreateGroup():
   cd = buildGAPIObject(u'directory')
-  body = {u'email': sys.argv[3]}
-  if body[u'email'].find(u'@') == -1:
-    body[u'email'] = u'%s@%s' % (body[u'email'], GC_Values[GC_DOMAIN])
+  body = {u'email': normalizeEmailAddressOrUID(sys.argv[3], noUid=True)}
   got_name = False
   i = 4
   gs_body = {}
@@ -7659,15 +7615,11 @@ def doCreateGroup():
 
 def doCreateAlias():
   cd = buildGAPIObject(u'directory')
-  body = {u'alias': sys.argv[3]}
-  if body[u'alias'].find(u'@') == -1:
-    body[u'alias'] = u'%s@%s' % (body[u'alias'], GC_Values[GC_DOMAIN])
+  body = {u'alias': normalizeEmailAddressOrUID(sys.argv[3], noUid=True)}
   target_type = sys.argv[4].lower()
   if target_type not in [u'user', u'group', u'target']:
     systemErrorExit(2, 'type of target must be user or group; got %s' % target_type)
-  targetKey = sys.argv[5]
-  if targetKey.find(u'@') == -1:
-    targetKey = u'%s@%s' % (targetKey, GC_Values[GC_DOMAIN])
+  targetKey = normalizeEmailAddressOrUID(sys.argv[5])
   print u'Creating alias %s for %s %s' % (body[u'alias'], target_type, targetKey)
   if target_type == u'user':
     callGAPI(cd.users().aliases(), u'insert', userKey=targetKey, body=body)
@@ -7928,16 +7880,11 @@ def doUpdateUser(users, i):
   cd = buildGAPIObject(u'directory')
   body, admin_body = getUserAttributes(i, cd, updateCmd=True)
   for user in users:
-    if user[:4].lower() == u'uid:':
-      user = user[4:]
-    elif user.find(u'@') == -1:
-      user = u'%s@%s' % (user, GC_Values[GC_DOMAIN])
     if u'primaryEmail' in body and body[u'primaryEmail'][:4].lower() == u'vfe@':
       user_primary = callGAPI(cd.users(), u'get', userKey=user, fields=u'primaryEmail,id')
       user = user_primary[u'id']
       user_primary = user_primary[u'primaryEmail']
-      user_name = user_primary[:user_primary.find(u'@')]
-      user_domain = user_primary[user_primary.find(u'@')+1:]
+      user_name, user_domain = splitEmailAddress(user_primary)
       body[u'primaryEmail'] = u'vfe.%s.%05d@%s' % (user_name, random.randint(1, 99999), user_domain)
       body[u'emails'] = [{u'type': u'custom', u'customType': u'former_employee', u'primary': False, u'address': user_primary}]
     sys.stdout.write(u'updating user %s...\n' % user)
@@ -8016,7 +7963,7 @@ def doUpdateGroup():
     if sys.argv[i].lower() in usergroup_types:
       users_email = getUsersToModify(entity_type=sys.argv[i], entity=sys.argv[i+1], checkNotSuspended=checkNotSuspended, groupUserMembersOnly=False)
     else:
-      users_email = [sys.argv[i],]
+      users_email = [normalizeEmailAddressOrUID(sys.argv[i], checkForCustomerId=True)]
     return (role, users_email)
 
   cd = buildGAPIObject(u'directory')
@@ -8024,10 +7971,7 @@ def doUpdateGroup():
   myarg = sys.argv[4].lower()
   items = []
   if myarg in UPDATE_GROUP_SUBCMDS:
-    if group[0:3].lower() == u'uid:':
-      group = group[4:]
-    elif group.find(u'@') == -1:
-      group = u'%s@%s' % (group, GC_Values[GC_DOMAIN])
+    group = normalizeEmailAddressOrUID(group)
     if myarg == u'add':
       role, users_email = _getRoleAndUsers()
       if not checkGroupExists(cd, group):
@@ -8178,13 +8122,11 @@ def doUpdateGroup():
       myarg = sys.argv[i].lower().replace(u'_', u'')
       if myarg == u'email':
         use_cd_api = True
-        cd_body[u'email'] = sys.argv[i+1]
+        cd_body[u'email'] = normalizeEmailAddressOrUID(sys.argv[i+1])
         i += 2
       elif myarg == u'admincreated':
         use_cd_api = True
-        cd_body[u'adminCreated'] = sys.argv[i+1].lower()
-        if cd_body[u'adminCreated'] not in [u'true', u'false']:
-          systemErrorExit(2, 'Value for admincreated must be true or false; got %s' % cd_body[u'adminCreated'])
+        cd_body[u'adminCreated'] = getBoolean(sys.argv[i+1], myarg)
         i += 2
       else:
         if not gs:
@@ -8192,21 +8134,10 @@ def doUpdateGroup():
           gs_object = gs._rootDesc
         getGroupAttrValue(myarg, sys.argv[i+1], gs_object, gs_body, u'update')
         i += 2
-    if group[:4].lower() == u'uid:': # group settings API won't take uid so we make sure cd API is used so that we can grab real email.
-      use_cd_api = True
-      group = group[4:]
-    elif group.find(u'@') == -1:
-      group = u'%s@%s' % (group, GC_Values[GC_DOMAIN])
-    if use_cd_api:
-      try:
-        if cd_body[u'email'].find(u'@') == -1:
-          cd_body[u'email'] = u'%s@%s' % (cd_body[u'email'], GC_Values[GC_DOMAIN])
-      except KeyError:
-        pass
-      cd_result = callGAPI(cd.groups(), u'update', groupKey=group, body=cd_body)
+    group = normalizeEmailAddressOrUID(group)
+    if use_cd_api or (group.find(u'@') == -1): # group settings API won't take uid so we make sure cd API is used so that we can grab real email.
+      group = callGAPI(cd.groups(), u'update', groupKey=group, body=cd_body, fields=u'email')[u'email']
     if gs:
-      if use_cd_api:
-        group = cd_result[u'email']
       if not GroupIsAbuseOrPostmaster(group):
         settings = callGAPI(gs.groups(), u'get',
                             retry_reasons=[u'serviceLimit'],
@@ -8218,15 +8149,11 @@ def doUpdateGroup():
 
 def doUpdateAlias():
   cd = buildGAPIObject(u'directory')
-  alias = sys.argv[3]
+  alias = normalizeEmailAddressOrUID(sys.argv[3], noUid=True)
   target_type = sys.argv[4].lower()
   if target_type not in [u'user', u'group', u'target']:
     systemErrorExit(2, 'target type must be one of user, group, target; got %s' % target_type)
-  target_email = sys.argv[5]
-  if alias.find(u'@') == -1:
-    alias = u'%s@%s' % (alias, GC_Values[GC_DOMAIN])
-  if target_email.find(u'@') == -1:
-    target_email = u'%s@%s' % (target_email, GC_Values[GC_DOMAIN])
+  target_email = normalizeEmailAddressOrUID(sys.argv[5])
   try:
     callGAPI(cd.users().aliases(), u'delete', throw_reasons=[GAPI_INVALID], userKey=alias, alias=alias)
   except GAPI_invalid:
@@ -8408,12 +8335,10 @@ def doUpdateOrg():
 
 def doWhatIs():
   cd = buildGAPIObject(u'directory')
-  email = sys.argv[2]
-  if email.find(u'@') == -1:
-    email = u'%s@%s' % (email, GC_Values[GC_DOMAIN])
+  email = normalizeEmailAddressOrUID(sys.argv[2])
   try:
-    user_or_alias = callGAPI(cd.users(), u'get', throw_reasons=[GAPI_NOT_FOUND, GAPI_BAD_REQUEST, GAPI_INVALID], userKey=email, fields=u'primaryEmail')
-    if user_or_alias[u'primaryEmail'].lower() == email.lower():
+    user_or_alias = callGAPI(cd.users(), u'get', throw_reasons=[GAPI_NOT_FOUND, GAPI_BAD_REQUEST, GAPI_INVALID], userKey=email, fields=u'id,primaryEmail')
+    if (user_or_alias[u'primaryEmail'].lower() == email) or (user_or_alias[u'id'] == email):
       sys.stderr.write(u'%s is a user\n\n' % email)
       doGetUserInfo(user_email=email)
       return
@@ -8425,10 +8350,10 @@ def doWhatIs():
     sys.stderr.write(u'%s is not a user...\n' % email)
     sys.stderr.write(u'%s is not a user alias...\n' % email)
   try:
-    group = callGAPI(cd.groups(), u'get', throw_reasons=[GAPI_NOT_FOUND, GAPI_BAD_REQUEST], groupKey=email, fields=u'email')
+    group = callGAPI(cd.groups(), u'get', throw_reasons=[GAPI_NOT_FOUND, GAPI_BAD_REQUEST], groupKey=email, fields=u'id,email')
   except (GAPI_notFound, GAPI_badRequest):
     systemErrorExit(1, u'%s is not a group either!\n\nDoesn\'t seem to exist!\n\n' % email)
-  if group[u'email'].lower() == email.lower():
+  if (group[u'email'].lower() == email) or (group[u'id'] == email):
     sys.stderr.write(u'%s is a group\n\n' % email)
     doGetGroupInfo(group_name=email)
   else:
@@ -8615,14 +8540,10 @@ def doGetUserInfo(user_email=None):
   i = 3
   if user_email is None:
     if len(sys.argv) > 3:
-      user_email = sys.argv[3]
+      user_email = normalizeEmailAddressOrUID(sys.argv[3])
       i = 4
     else:
       user_email = _getValueFromOAuth(u'email')
-  if user_email[:4].lower() == u'uid:':
-    user_email = user_email[4:]
-  elif user_email.find(u'@') == -1:
-    user_email = u'%s@%s' % (user_email, GC_Values[GC_DOMAIN])
   getSchemas = getAliases = getGroups = getLicenses = True
   projection = u'full'
   customFieldMask = viewType = None
@@ -8868,7 +8789,7 @@ def doGetGroupInfo(group_name=None):
   getAliases = getUsers = True
   getGroups = False
   if group_name is None:
-    group_name = sys.argv[3]
+    group_name = normalizeEmailAddressOrUID(sys.argv[3])
     i = 4
   else:
     i = 3
@@ -8889,10 +8810,6 @@ def doGetGroupInfo(group_name=None):
         i += 1
     else:
       systemErrorExit(2, '%s is not a valid argument for "gam info group"' % myarg)
-  if group_name[:4].lower() == u'uid:':
-    group_name = group_name[4:]
-  elif group_name.find(u'@') == -1:
-    group_name = group_name+u'@'+GC_Values[GC_DOMAIN]
   basic_info = callGAPI(cd.groups(), u'get', groupKey=group_name)
   settings = {}
   if not GroupIsAbuseOrPostmaster(basic_info[u'email']):
@@ -8940,9 +8857,7 @@ def doGetGroupInfo(group_name=None):
 def doGetAliasInfo(alias_email=None):
   cd = buildGAPIObject(u'directory')
   if alias_email is None:
-    alias_email = sys.argv[3]
-  if alias_email.find(u'@') == -1:
-    alias_email = u'%s@%s' % (alias_email, GC_Values[GC_DOMAIN])
+    alias_email = normalizeEmailAddressOrUID(sys.argv[3])
   try:
     result = callGAPI(cd.users(), u'get', throw_reasons=[GAPI_INVALID, GAPI_BAD_REQUEST], userKey=alias_email)
   except (GAPI_invalid, GAPI_badRequest):
@@ -9633,18 +9548,13 @@ def doDeprovUser(users):
 
 def doDeleteUser():
   cd = buildGAPIObject(u'directory')
-  user_email = sys.argv[3]
-  if user_email[:4].lower() == u'uid:':
-    user_email = user_email[4:]
-  elif user_email.find(u'@') == -1:
-    user_email = u'%s@%s' % (user_email, GC_Values[GC_DOMAIN])
+  user_email = normalizeEmailAddressOrUID(sys.argv[3])
   print u"Deleting account for %s" % (user_email)
   callGAPI(cd.users(), u'delete', userKey=user_email)
 
 def doUndeleteUser():
   cd = buildGAPIObject(u'directory')
-  user = sys.argv[3].lower()
-  user_uid = False
+  user = normalizeEmailAddressOrUID(sys.argv[3])
   orgUnit = u'/'
   i = 4
   while i < len(sys.argv):
@@ -9654,11 +9564,9 @@ def doUndeleteUser():
       i += 2
     else:
       systemErrorExit(2, '%s is not a valid argument for "gam undelete user"' % sys.argv[i])
-  if user[:4].lower() == u'uid:':
-    user_uid = user[4:]
-  elif user.find(u'@') == -1:
-    user = u'%s@%s' % (user, GC_Values[GC_DOMAIN])
-  if not user_uid:
+  if user.find(u'@') == -1:
+    user_uid = user
+  else:
     print u'Looking up UID for %s...' % user
     deleted_users = callGAPIpages(cd.users(), u'list', u'users',
                                   customer=GC_Values[GC_CUSTOMER_ID], showDeleted=True, maxResults=GC_Values[GC_USER_MAX_RESULTS])
@@ -9689,11 +9597,7 @@ def doUndeleteUser():
 
 def doDeleteGroup():
   cd = buildGAPIObject(u'directory')
-  group = sys.argv[3]
-  if group[:4].lower() == u'uid:':
-    group = group[4:]
-  elif group.find(u'@') == -1:
-    group = u'%s@%s' % (group, GC_Values[GC_DOMAIN])
+  group = normalizeEmailAddressOrUID(sys.argv[3])
   print u"Deleting group %s" % group
   callGAPI(cd.groups(), u'delete', groupKey=group)
 
@@ -9708,8 +9612,7 @@ def doDeleteAlias(alias_email=None):
   elif alias_email.lower() == u'group':
     is_group = True
     alias_email = sys.argv[4]
-  if alias_email.find(u'@') == -1:
-    alias_email = u'%s@%s' % (alias_email, GC_Values[GC_DOMAIN])
+  alias_email = normalizeEmailAddressOrUID(alias_email, noUid=True)
   print u"Deleting alias %s" % alias_email
   if is_user or (not is_user and not is_group):
     try:
@@ -10143,7 +10046,7 @@ def doPrintGroups():
       customer = None
       i += 2
     elif myarg == u'member':
-      usemember = sys.argv[i+1].lower()
+      usemember = normalizeEmailAddressOrUID(sys.argv[i+1])
       customer = None
       i += 2
     elif myarg == u'maxresults':
@@ -10480,7 +10383,7 @@ def doPrintGroupMembers():
       todrive = True
       i += 1
     elif myarg == u'member':
-      usemember = sys.argv[i+1].lower()
+      usemember = normalizeEmailAddressOrUID(sys.argv[i+1])
       customer = None
       i += 2
     elif myarg == u'fields':
@@ -10499,9 +10402,7 @@ def doPrintGroupMembers():
           systemErrorExit(2, '%s is not a valid role for "gam print group-members %s"' % (role, myarg))
       i += 2
     elif myarg == u'group':
-      group_email = sys.argv[i+1].lower()
-      if group_email.find(u'@') == -1:
-        group_email = u'%s@%s' % (group_email, GC_Values[GC_DOMAIN])
+      group_email = normalizeEmailAddressOrUID(sys.argv[i+1])
       groups_to_get = [{u'email': group_email}]
       i += 2
     else:
@@ -11259,8 +11160,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
       member_type_message = u'all members'
     else:
       member_type_message = u'%ss' % member_type.lower()
-    if group.find(u'@') == -1:
-      group = u'%s@%s' % (group, GC_Values[GC_DOMAIN])
+    group = normalizeEmailAddressOrUID(group)
     page_message = None
     if not silent:
       sys.stderr.write(u"Getting %s of %s (may take some time for large groups)...\n" % (member_type_message, group))
@@ -11406,6 +11306,8 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
     for user in users:
       if user[:4] == u'uid:':
         full_users.append(user[4:])
+      elif user[:3] == u'id:':
+        full_users.append(user[3:])
       elif user != u'*' and user != GC_Values[GC_CUSTOMER_ID] and user.find(u'@') == -1:
         full_users.append(u'%s@%s' % (user, GC_Values[GC_DOMAIN]))
       else:
