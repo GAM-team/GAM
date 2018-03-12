@@ -151,6 +151,14 @@ def csvFieldErrorExit(fieldName, fieldNames):
 def printLine(message):
   sys.stdout.write(message+u'\n')
 #
+def getBoolean(value, item):
+  value = value.lower()
+  if value in true_values:
+    return True
+  if value in false_values:
+    return False
+  systemErrorExit(2, u'Value for {0} must be {1} or {2}; got {3}'.format(item, u'|'.join(true_values), u'|'.join(false_values), value))
+
 def getCharSet(i):
   if (i == len(sys.argv)) or (sys.argv[i].lower() != u'charset'):
     return (i, GC_Values.get(GC_CHARSET, GM_Globals[GM_SYS_ENCODING]))
@@ -2779,20 +2787,10 @@ def getCalendarAttributes(i, body, function):
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace(u'_', u'')
     if myarg == u'selected':
-      if sys.argv[i+1].lower() in true_values:
-        body[u'selected'] = True
-      elif sys.argv[i+1].lower() in false_values:
-        body[u'selected'] = False
-      else:
-        systemErrorExit(2, 'Value for selected must be true or false; got %s' % sys.argv[i+1])
+      body[u'selected'] = getBoolean(sys.argv[i+1], myarg)
       i += 2
     elif myarg == u'hidden':
-      if sys.argv[i+1].lower() in true_values:
-        body[u'hidden'] = True
-      elif sys.argv[i+1].lower() in false_values:
-        body[u'hidden'] = False
-      else:
-        systemErrorExit(2, 'Value for hidden must be true or false; got %s' % sys.argv[i+1])
+      body[u'hidden'] = getBoolean(sys.argv[i+1], myarg)
       i += 2
     elif myarg == u'summary':
       body[u'summaryOverride'] = sys.argv[i+1]
@@ -4287,13 +4285,7 @@ def getDriveFileAttribute(i, body, parameters, myarg, update=False):
   elif myarg in DRIVEFILE_LABEL_CHOICES_MAP:
     body.setdefault(u'labels', {})
     if update:
-      value = sys.argv[i+1].lower()
-      if value in true_values:
-        body[u'labels'][DRIVEFILE_LABEL_CHOICES_MAP[myarg]] = True
-      elif value in false_values:
-        body[u'labels'][DRIVEFILE_LABEL_CHOICES_MAP[myarg]] = False
-      else:
-        systemErrorExit(2, 'value for %s must be true or false; got %s' % (myarg, sys.argv[i+1]))
+      body[u'labels'][DRIVEFILE_LABEL_CHOICES_MAP[myarg]] = getBoolean(sys.argv[i+1], myarg)
       i += 2
     else:
       body[u'labels'][DRIVEFILE_LABEL_CHOICES_MAP[myarg]] = True
@@ -4714,12 +4706,7 @@ def transferDriveFiles(users):
         break
 
 def doImap(users):
-  if sys.argv[4].lower() in true_values:
-    enable = True
-  elif sys.argv[4].lower() in false_values:
-    enable = False
-  else:
-    systemErrorExit(2, 'value for "gam <users> imap" must be true or false; got %s' % sys.argv[4])
+  enable = getBoolean(sys.argv[4], u'gam <users> imap')
   body = {u'enabled': enable, u'autoExpunge': True, u'expungeBehavior': u'archive', u'maxFolderSize': 0}
   i = 5
   while i < len(sys.argv):
@@ -4813,12 +4800,7 @@ def doLicense(users, operation):
       callGAPI(lic.licenseAssignments(), operation, soft_errors=True, productId=productId, skuId=old_sku, userId=user, body={u'skuId': skuId})
 
 def doPop(users):
-  if sys.argv[4].lower() in true_values:
-    enable = True
-  elif sys.argv[4].lower() in false_values:
-    enable = False
-  else:
-    systemErrorExit(2, 'value for "gam <users> pop" must be true or false; got %s' % sys.argv[4])
+  enable = getBoolean(sys.argv[4], u'gam <users> pop')
   body = {u'accessWindow': [u'disabled', u'allMail'][enable], u'disposition': u'leaveInInbox'}
   i = 5
   while i < len(sys.argv):
@@ -4934,12 +4916,7 @@ def getSendAsAttributes(i, myarg, body, tagReplacements, command):
     body[u'isDefault'] = True
     i += 1
   elif myarg == u'treatasalias':
-    if sys.argv[i+1].lower() == u'true':
-      body[u'treatAsAlias'] = True
-    elif sys.argv[i+1].lower() == u'false':
-      body[u'treatAsAlias'] = False
-    else:
-      systemErrorExit(2, 'value for treatasalias must be true or false; got %s' % sys.argv[i+1])
+    body[u'treatAsAlias'] = getBoolean(sys.argv[i+1], myarg)
     i += 2
   else:
     systemErrorExit(2, '%s is not a valid argument for "gam <users> %s"' % (sys.argv[i], command))
@@ -5917,12 +5894,7 @@ def infoFilters(users):
       _showFilter(result, 1, 1, labels)
 
 def doForward(users):
-  if sys.argv[4].lower() in true_values:
-    enable = True
-  elif sys.argv[4].lower() in false_values:
-    enable = False
-  else:
-    systemErrorExit(2, 'value for "gam <users> forward" must be true or false; got %s' % sys.argv[4])
+  enable = getBoolean(sys.argv[4], u'gam <users> forward')
   body = {u'enabled': enable}
   i = 5
   while i < len(sys.argv):
@@ -6159,12 +6131,7 @@ def getSignature(users):
       _showSendAs(result, i, count, formatSig)
 
 def doVacation(users):
-  if sys.argv[4].lower() in true_values:
-    enable = True
-  elif sys.argv[4].lower() in false_values:
-    enable = False
-  else:
-    systemErrorExit(2, 'value for "gam <users> vacation" must be true or false; got %s' % sys.argv[4])
+  enable = getBoolean(sys.argv[4], u'gam <users> vacation')
   body = {u'enableAutoReply': enable}
   if enable:
     responseBodyType = u'responseBodyPlainText'
@@ -6487,28 +6454,13 @@ def getUserAttributes(i, cd, updateCmd=False):
         need_password = True
       i += 2
     elif myarg == u'admin':
-      if sys.argv[i+1].lower() in true_values:
-        admin_body[u'status'] = True
-      elif sys.argv[i+1].lower() in false_values:
-        admin_body[u'status'] = False
-      else:
-        systemErrorExit(2, 'admin must be on or off; got %s' % sys.argv[i+1])
+      admin_body[u'status'] = getBoolean(sys.argv[i+1], myarg)
       i += 2
     elif myarg == u'suspended':
-      if sys.argv[i+1].lower() in true_values:
-        body[u'suspended'] = True
-      elif sys.argv[i+1].lower() in false_values:
-        body[u'suspended'] = False
-      else:
-        systemErrorExit(2, 'suspended must be on or off; got %s' % sys.argv[i+1])
+      body[u'suspended'] = getBoolean(sys.argv[i+1], myarg)
       i += 2
     elif myarg == u'gal':
-      if sys.argv[i+1].lower() in true_values:
-        body[u'includeInGlobalAddressList'] = True
-      elif sys.argv[i+1].lower() in false_values:
-        body[u'includeInGlobalAddressList'] = False
-      else:
-        systemErrorExit(2, 'gal must be on or off; got %s' % sys.argv[i+1])
+      body[u'includeInGlobalAddressList'] = getBoolean(sys.argv[i+1], myarg)
       i += 2
     elif myarg in [u'sha', u'sha1', u'sha-1']:
       body[u'hashFunction'] = u'SHA-1'
@@ -6526,28 +6478,13 @@ def getUserAttributes(i, cd, updateCmd=False):
       need_to_hash_password = False
       i += 1
     elif myarg == u'changepassword':
-      if sys.argv[i+1].lower() in true_values:
-        body[u'changePasswordAtNextLogin'] = True
-      elif sys.argv[i+1].lower() in false_values:
-        body[u'changePasswordAtNextLogin'] = False
-      else:
-        systemErrorExit(2, 'changepassword must be on or off; got %s' % sys.argv[i+1])
+      body[u'changePasswordAtNextLogin'] = getBoolean(sys.argv[i+1], myarg)
       i += 2
     elif myarg == u'ipwhitelisted':
-      if sys.argv[i+1].lower() in true_values:
-        body[u'ipWhitelisted'] = True
-      elif sys.argv[i+1].lower() in false_values:
-        body[u'ipWhitelisted'] = False
-      else:
-        systemErrorExit(2, 'ipwhitelisted must be on or off; got %s' % sys.argv[i+1])
+      body[u'ipWhitelisted'] = getBoolean(sys.argv[i+1], myarg)
       i += 2
     elif myarg == u'agreedtoterms':
-      if sys.argv[i+1].lower() in true_values:
-        body[u'agreedToTerms'] = True
-      elif sys.argv[i+1].lower() in false_values:
-        body[u'agreedToTerms'] = False
-      else:
-        systemErrorExit(2, 'agreedtoterms must be on or off; got %s' % sys.argv[i+1])
+      body[u'agreedToTerms'] = getBoolean(sys.argv[i+1], myarg)
       i += 2
     elif myarg in [u'org', u'ou']:
       body[u'orgUnitPath'] = sys.argv[i+1]
@@ -6830,12 +6767,7 @@ def getUserAttributes(i, cd, updateCmd=False):
           posix[u'homeDirectory'] = sys.argv[i+1]
           i += 2
         elif myopt in [u'primary']:
-          if sys.argv[i+1].lower() in true_values:
-            posix[u'primary'] = True
-          elif sys.argv[i+1] in false_values:
-            posix[u'primary'] = False
-          else:
-            systemErrorExit(3, 'primary should be true or false, got %s' % sys.argv[i+1])
+          posix[u'primary'] = getBoolean(sys.argv[i+1], myopt)
           i += 2
         elif myopt in [u'shell']:
           posix[u'shell'] = sys.argv[i+1]
@@ -11352,7 +11284,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
       page_message = u'Got %%total_items%% users...'
     members = callGAPIpages(cd.users(), u'list', u'users', page_message=page_message,
                             customer=GC_Values[GC_CUSTOMER_ID], fields=u'nextPageToken,users(primaryEmail,suspended,orgUnitPath)',
-                            query=u"orgUnitPath='%s'" % ou, maxResults=GC_Values[GC_USER_MAX_RESULTS])
+                            query=orgUnitPathQuery(ou), maxResults=GC_Values[GC_USER_MAX_RESULTS])
     for member in members:
       if ou.lower() != member[u'orgUnitPath'].lower():
         continue
