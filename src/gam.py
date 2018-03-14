@@ -1368,24 +1368,26 @@ def addDelegates(users, i):
       systemErrorExit(2, u'%s is not a valid argument for "gam <users> delegate", expected to' % sys.argv[i])
     i += 1
   delegate = sys.argv[i].lower()
-  if not delegate.find(u'@') > 0:
+  atLoc = delegate.find(u'@')
+  if atLoc == -1:
     delegate_domain = GC_Values[GC_DOMAIN].lower()
     delegate_email = u'%s@%s' % (delegate, delegate_domain)
   else:
-    delegate_domain = delegate[delegate.find(u'@')+1:].lower()
+    delegate_domain = delegate[atLoc+1:].lower()
     delegate_email = delegate
   i = 0
   count = len(users)
   emailsettings = buildGAPIObject(u'email-settings')
   for delegator in users:
     i += 1
-    if delegator.find(u'@') > 0:
-      delegator_domain = delegator[delegator.find(u'@')+1:].lower()
-      delegator_email = delegator
-      delegator = delegator[:delegator.find(u'@')]
-    else:
+    atLocd = delegator.find(u'@')
+    if atLocd == -1:
       delegator_domain = GC_Values[GC_DOMAIN].lower()
       delegator_email = u'%s@%s' % (delegator, delegator_domain)
+    else:
+      delegator_domain = delegator[atLocd+1:].lower()
+      delegator_email = delegator
+      delegator = delegator[:atLocd]
     uri = u'https://apps-apis.google.com/a/feeds/emailsettings/2.0/%s/%s/delegation' % (delegator_domain, delegator)
     body = u'''<?xml version="1.0" encoding="utf-8"?>
 <atom:entry xmlns:atom="http://www.w3.org/2005/Atom" xmlns:apps="http://schemas.google.com/apps/2006">
@@ -1429,13 +1431,14 @@ def printShowDelegates(users, csvFormat):
     else:
       systemErrorExit(2, u'%s is not a valid argument for "gam <users> show delegates"' % sys.argv[i])
   for user in users:
-    if user.find(u'@') == -1:
+    atLoc = user.find(u'@')
+    if atLoc == -1:
       userName = user
-      user = u'%s@%s' % (user, GC_Values[GC_DOMAIN])
       domainName = GC_Values[GC_DOMAIN]
+      user = u'%s@%s' % (user, domainName)
     else:
-      userName = user[:user.find(u'@')]
-      domainName = user[user.find(u'@')+1:]
+      userName = user[:atLoc]
+      domainName = user[atLoc+1:]
     sys.stderr.write(u"Getting delegates for %s...\n" % (user))
     delegates = callGAPI(emailsettings.delegates(), u'get', soft_errors=True, v=u'2.0', domainName=domainName, delegator=userName)
     if delegates and u'feed' in delegates and u'entry' in delegates[u'feed']:
@@ -1477,11 +1480,12 @@ def deleteDelegate(users):
   count = len(users)
   for user in users:
     i += 1
-    if user.find(u'@') > 0:
-      domainName = user[user.find(u'@')+1:]
-      user = user[:user.find(u'@')]
-    else:
+    atLoc = user.find(u'@')
+    if atLoc == -1:
       domainName = GC_Values[GC_DOMAIN] #make sure it's back at default domain
+    else:
+      domainName = user[atLoc+1:]
+      user = user[:atLoc]
     print u"Deleting %s delegate access to %s (%s/%s)" % (delegate, user+u'@'+domainName, i, count)
     callGAPI(emailsettings.delegates(), u'delete', v=u'2.0', delegate=delegate, delegator=user, domainName=domainName)
 
