@@ -1380,14 +1380,14 @@ def addDelegates(users, i):
   emailsettings = buildGAPIObject(u'email-settings')
   for delegator in users:
     i += 1
-    atLoc = delegator.find(u'@')
-    if atLoc == -1:
+    atLocd = delegator.find(u'@')
+    if atLocd == -1:
       delegator_domain = GC_Values[GC_DOMAIN].lower()
       delegator_email = u'%s@%s' % (delegator, delegator_domain)
     else:
-      delegator_domain = delegator[atLoc+1:].lower()
+      delegator_domain = delegator[atLocd+1:].lower()
       delegator_email = delegator
-      delegator = delegator[:atLoc]
+      delegator = delegator[:atLocd]
     uri = u'https://apps-apis.google.com/a/feeds/emailsettings/2.0/%s/%s/delegation' % (delegator_domain, delegator)
     body = u'''<?xml version="1.0" encoding="utf-8"?>
 <atom:entry xmlns:atom="http://www.w3.org/2005/Atom" xmlns:apps="http://schemas.google.com/apps/2006">
