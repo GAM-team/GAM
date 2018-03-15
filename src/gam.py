@@ -7913,6 +7913,8 @@ def doUpdateResourceCalendar():
 
 def doUpdateUser(users, i):
   cd = buildGAPIObject(u'directory')
+  if users is None:
+    users = [normalizeEmailAddressOrUID(sys.argv[3])]
   body, admin_body = getUserAttributes(i, cd, updateCmd=True)
   for user in users:
     if u'primaryEmail' in body and body[u'primaryEmail'][:4].lower() == u'vfe@':
@@ -11867,7 +11869,7 @@ def ProcessGAMCommand(args):
     elif command == u'update':
       argument = sys.argv[2].lower()
       if argument == u'user':
-        doUpdateUser([normalizeEmailAddressOrUID(sys.argv[3])], 4)
+        doUpdateUser(None, 4)
       elif argument == u'group':
         doUpdateGroup()
       elif argument in [u'nickname', u'alias']:
