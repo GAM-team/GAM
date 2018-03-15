@@ -189,15 +189,17 @@ def getString(i, item, emptyOK=False, optional=False):
 YYYYMMDD_FORMAT = u'%Y-%m-%d'
 YYYYMMDD_FORMAT_REQUIRED = u'yyyy-mm-dd'
 
-def getYYYYMMDD(i, emptyOK=False, returnTimeStamp=False):
+def getYYYYMMDD(i, emptyOK=False, returnTimeStamp=False, returnDateTime=False):
   if i < len(sys.argv):
     argstr = sys.argv[i].strip()
     if argstr:
       try:
-        timeStamp = time.mktime(datetime.datetime.strptime(argstr, YYYYMMDD_FORMAT).timetuple())*1000
-        if not returnTimeStamp:
-          return argstr
-        return timeStamp
+        dateTime = datetime.datetime.strptime(argstr, YYYYMMDD_FORMAT)
+        if returnTimeStamp:
+          return time.mktime(dateTime.timetuple())*1000
+        if returnDateTime:
+          return dateTime
+        return argstr
       except ValueError:
         systemErrorExit(2, u'expected a <{0}>; got {1}'.format(YYYYMMDD_FORMAT_REQUIRED, argstr))
     elif emptyOK:
@@ -1128,20 +1130,35 @@ def _adjustDate(errMsg):
     systemErrorExit(4, errMsg)
   return unicode(match_date.group(1))
 
+def _checkFullDataAvailable(warnings, tryDate, tryDateInfo, fullDataRequired):
+  for warning in warnings:
+    if warning[u'code'] == u'PARTIAL_DATA_AVAILABLE':
+      for app in warning[u'data']:
+        if app[u'key'] == u'application' and app[u'value'] in fullDataRequired:
+          tryDateInfo[u'tryDelta'] += 1
+          tryDateInfo[u'tryDateTime'] = datetime.datetime.strptime(tryDate, YYYYMMDD_FORMAT)-datetime.timedelta(days=tryDateInfo[u'tryDelta'])
+          return (False, tryDateInfo[u'tryDateTime'].strftime(YYYYMMDD_FORMAT))
+  return (True, tryDate)
+
 def showReport():
   rep = buildGAPIObject(u'reports')
   report = sys.argv[2].lower()
   customerId = GC_Values[GC_CUSTOMER_ID]
   if customerId == MY_CUSTOMER:
     customerId = None
-  try_date = filters = parameters = actorIpAddress = startTime = endTime = eventName = None
+  filters = parameters = actorIpAddress = startTime = endTime = eventName = None
+  tryDateInfo = {u'tryDateTime': datetime.date.today(), u'tryDelta': 0}
   to_drive = False
   userKey = u'all'
+  fullDataRequired = []
   i = 3
   while i < len(sys.argv):
     myarg = sys.argv[i].lower()
     if myarg == u'date':
-      try_date = sys.argv[i+1]
+      tryDateInfo[u'tryDateTime'] = getYYYYMMDD(i+1, returnDateTime=True)
+      i += 2
+    elif myarg == u'fulldatarequired':
+      fullDataRequired = sys.argv[i+1].lower().replace(u',', u' ').split()
       i += 2
     elif myarg == u'start':
       startTime = getTimeOrDeltaFromNow(sys.argv[i+1])
@@ -1169,17 +1186,23 @@ def showReport():
       i += 1
     else:
       systemErrorExit(2, u'%s is not a valid argument to "gam report"' % sys.argv[i])
-  if try_date is None:
-    try_date = unicode(datetime.date.today())
+  tryDate = tryDateInfo[u'tryDateTime'].strftime(YYYYMMDD_FORMAT)
   if report in [u'users', u'user']:
     while True:
       try:
+        if fullDataRequired:
+          warnings = callGAPIitems(rep.userUsageReport(), u'get', u'warnings',
+                                   throw_reasons=[GAPI_INVALID],
+                                   date=tryDate, userKey=userKey, customerId=customerId, fields=u'warnings')
+          fullData, tryDate = _checkFullDataAvailable(warnings, tryDate, tryDateInfo, fullDataRequired)
+          if not fullData:
+            continue
         page_message = u'Got %%num_items%% users\n'
         usage = callGAPIpages(rep.userUsageReport(), u'get', u'usageReports', page_message=page_message, throw_reasons=[GAPI_INVALID],
-                              date=try_date, userKey=userKey, customerId=customerId, filters=filters, parameters=parameters)
+                              date=tryDate, userKey=userKey, customerId=customerId, filters=filters, parameters=parameters)
         break
       except GAPI_invalid as e:
-        try_date = _adjustDate(str(e))
+        tryDate = _adjustDate(str(e))
     if not usage:
       print u'No user report available.'
       sys.exit(1)
@@ -1188,7 +1211,7 @@ def showReport():
     for user_report in usage:
       if u'entity' not in user_report:
         continue
-      row = {u'email': user_report[u'entity'][u'userEmail'], u'date': try_date}
+      row = {u'email': user_report[u'entity'][u'userEmail'], u'date': tryDate}
       try:
         for report_item in user_report[u'parameters']:
           items = report_item.values()
@@ -1202,15 +1225,22 @@ def showReport():
       except KeyError:
         pass
       csvRows.append(row)
-    writeCSVfile(csvRows, titles, u'User Reports - %s' % try_date, to_drive)
+    writeCSVfile(csvRows, titles, u'User Reports - %s' % tryDate, to_drive)
   elif report in [u'customer', u'customers', u'domain']:
     while True:
       try:
+        if fullDataRequired:
+          warnings = callGAPIitems(rep.customerUsageReports(), u'get', u'warnings',
+                                   throw_reasons=[GAPI_INVALID],
+                                   customerId=customerId, date=tryDate, fields=u'warnings')
+          fullData, tryDate = _checkFullDataAvailable(warnings, tryDate, tryDateInfo, fullDataRequired)
+          if not fullData:
+            continue
         usage = callGAPIpages(rep.customerUsageReports(), u'get', u'usageReports', throw_reasons=[GAPI_INVALID],
-                              customerId=customerId, date=try_date, parameters=parameters)
+                              customerId=customerId, date=tryDate, parameters=parameters)
         break
       except GAPI_invalid as e:
-        try_date = _adjustDate(str(e))
+        tryDate = _adjustDate(str(e))
     if not usage:
       print u'No customer report available.'
       sys.exit(1)
@@ -1257,7 +1287,7 @@ def showReport():
       csvRows.append({u'name': name, u'value': value})
     for app in auth_apps: # put apps at bottom
       csvRows.append(app)
-    writeCSVfile(csvRows, titles, u'Customer Report - %s' % try_date, todrive=to_drive)
+    writeCSVfile(csvRows, titles, u'Customer Report - %s' % tryDate, todrive=to_drive)
   else:
     if report in [u'doc', u'docs']:
       report = u'drive'
@@ -1686,7 +1716,7 @@ def doGetCustomerInfo():
     u'accounts:gsuite_unlimited_used_licenses': u'G Suite Business Users'
     }
   parameters = u','.join(user_counts_map.keys())
-  try_date = unicode(datetime.date.today())
+  tryDate = datetime.date.today().strftime(YYYYMMDD_FORMAT)
   customerId = GC_Values[GC_CUSTOMER_ID]
   if customerId == MY_CUSTOMER:
     customerId = None
@@ -1694,14 +1724,14 @@ def doGetCustomerInfo():
   while True:
     try:
       usage = callGAPIpages(rep.customerUsageReports(), u'get', u'usageReports', throw_reasons=[GAPI_INVALID],
-                            customerId=customerId, date=try_date, parameters=parameters)
+                            customerId=customerId, date=tryDate, parameters=parameters)
       break
     except GAPI_invalid as e:
-      try_date = _adjustDate(str(e))
+      tryDate = _adjustDate(str(e))
   if not usage:
     print u'No user count data available.'
     return
-  print u'User counts as of %s:' % try_date
+  print u'User counts as of %s:' % tryDate
   for item in usage[0][u'parameters']:
     api_name = user_counts_map.get(item[u'name'])
     api_value = int(item.get(u'intValue', 0))
@@ -7126,14 +7156,14 @@ def doUpdateTeamDrive(users):
       body[u'colorRgb'] = WEBCOLOR_MAP.get(sys.argv[i+1], sys.argv[i+1])
       i += 2
     else:
-      systemErrorExit(3, '%s is not a valid argument for "gam <users> update drivefile"')
+      systemErrorExit(3, '%s is not a valid argument for "gam <users> update teamdrive"' % sys.argv[i])
   if not body:
     systemErrorExit(4, 'nothing to update. Need at least a name argument.')
   for user in users:
     user, drive = buildDrive3GAPIObject(user)
     if not drive:
       continue
-    result = callGAPI(drive.teamdrives(), u'update', body=body, teamDriveId=teamDriveId, fields=u'', soft_errors=True)
+    result = callGAPI(drive.teamdrives(), u'update', body=body, teamDriveId=teamDriveId, fields=u'id', soft_errors=True)
     if not result:
       continue
     print u'Updated Team Drive %s' % (teamDriveId)

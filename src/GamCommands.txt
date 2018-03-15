@@ -717,9 +717,9 @@ gam delete resoldsubscription <CustomerID> <SKUID> cancel|downgrade|transfer_to_
 gam info resoldsubscriptions <CustomerID> [customer_auth_token <String>]
 
 gam report users|user [todrive]
-	[date <Date>] [(user all|<UserItem>)] [filter|filters <String>] [fields|parameters <String>]
+	[date <Date>] [(user all|<UserItem>)] [filter|filters <String>] [fields|parameters <String>] [fulldatarequired <String>]
 gam report customers|customer|domain [todrive]
-	[date <Date>] [fields|parameters <String>]
+	[date <Date>] [fields|parameters <String>] [fulldatarequired <String>]
 gam report admin|calendar|calendars|drive|docs|doc|groups|group|logins|login|mobile|tokens|token [todrive]
 	[start <Time>] [end <Time>] [(user all|<UserItem>)] [event <String>] [filter|filters <String>] [ip <String>]
 
