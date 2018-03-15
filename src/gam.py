@@ -1492,21 +1492,23 @@ def deleteDelegate(users):
 def doAddCourseParticipant():
   croom = buildGAPIObject(u'classroom')
   courseId = addCourseIdScope(sys.argv[2])
+  noScopeCourseId = removeCourseIdScope(courseId)
   participant_type = sys.argv[4].lower()
   new_id = sys.argv[5]
-  if participant_type in [u'teacher', u'teachers']:
-    service = croom.courses().teachers()
-    body = {u'userId': new_id}
-  elif participant_type in [u'students', u'student']:
-    service = croom.courses().students()
-    body = {u'userId': new_id}
+  if participant_type in [u'student', u'students']:
+    new_id = normalizeEmailAddressOrUID(new_id)
+    callGAPI(croom.courses().students(), u'create', courseId=courseId, body={u'userId': new_id})
+    print u'Added %s as a student of course %s' % (new_id, noScopeCourseId)
+  elif participant_type in [u'teacher', u'teachers']:
+    new_id = normalizeEmailAddressOrUID(new_id)
+    callGAPI(croom.courses().teachers(), u'create', courseId=courseId, body={u'userId': new_id})
+    print u'Added %s as a teacher of course %s' % (new_id, noScopeCourseId)
   elif participant_type in [u'alias']:
-    service = croom.courses().aliases()
-    body = {u'alias': addCourseIdScope(new_id)}
+    new_id = addCourseIdScope(new_id)
+    callGAPI(croom.courses().aliases(), u'create', courseId=courseId, body={u'alias': new_id})
+    print u'Added %s as an alias of course %s' % (removeCourseIdScope(new_id), noScopeCourseId)
   else:
     systemErrorExit(2, u'%s is not a valid argument to "gam course ID add"' % participant_type)
-  callGAPI(service, u'create', courseId=courseId, body=body)
-  print u'Added %s as a %s of course %s' % (removeCourseIdScope(new_id), participant_type, removeCourseIdScope(courseId))
 
 def doSyncCourseParticipants():
   courseId = addCourseIdScope(sys.argv[2])
@@ -1533,21 +1535,23 @@ def doSyncCourseParticipants():
 def doDelCourseParticipant():
   croom = buildGAPIObject(u'classroom')
   courseId = addCourseIdScope(sys.argv[2])
+  noScopeCourseId = removeCourseIdScope(courseId)
   participant_type = sys.argv[4].lower()
   remove_id = sys.argv[5]
-  if participant_type in [u'teacher', u'teachers']:
-    service = croom.courses().teachers()
-    kwargs = {u'userId': remove_id}
-  elif participant_type in [u'student', u'students']:
-    service = croom.courses().students()
-    kwargs = {u'userId': remove_id}
+  if participant_type in [u'student', u'students']:
+    remove_id = normalizeEmailAddressOrUID(remove_id)
+    callGAPI(croom.courses().students(), u'delete', courseId=courseId, userId=remove_id)
+    print u'Removed %s as a student of course %s' % (remove_id, noScopeCourseId)
+  elif participant_type in [u'teacher', u'teachers']:
+    remove_id = normalizeEmailAddressOrUID(remove_id)
+    callGAPI(croom.courses().teachers(), u'delete', courseId=courseId, userId=remove_id)
+    print u'Removed %s as a teacher of course %s' % (remove_id, noScopeCourseId)
   elif participant_type in [u'alias']:
-    service = croom.courses().aliases()
-    kwargs = {u'alias': addCourseIdScope(remove_id)}
+    remove_id = addCourseIdScope(remove_id)
+    callGAPI(croom.courses().aliases(), u'delete', courseId=courseId, alias=remove_id)
+    print u'Removed %s as an alias of course %s' % (removeCourseIdScope(remove_id), noScopeCourseId)
   else:
     systemErrorExit(2, u'%s is not a valid argument to "gam course ID delete"' % participant_type)
-  callGAPI(service, u'delete', courseId=courseId, **kwargs)
-  print u'Removed %s as a %s of course %s' % (removeCourseIdScope(remove_id), participant_type, removeCourseIdScope(courseId))
 
 def doDelCourse():
   croom = buildGAPIObject(u'classroom')
@@ -2477,10 +2481,7 @@ def doPrintCourseParticipants():
   while i < len(sys.argv):
     myarg = sys.argv[i].lower()
     if myarg in [u'course', u'class']:
-      course = sys.argv[i+1]
-      if not course.isdigit():
-        course = u'd:%s' % course
-      courses.append(course)
+      courses.append(addCourseIdScope(sys.argv[i+1]))
       i += 2
     elif myarg == u'teacher':
       teacherId = normalizeEmailAddressOrUID(sys.argv[i+1])
