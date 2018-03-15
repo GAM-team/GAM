@@ -11867,7 +11867,7 @@ def ProcessGAMCommand(args):
     elif command == u'update':
       argument = sys.argv[2].lower()
       if argument == u'user':
-        doUpdateUser([sys.argv[3],], 4)
+        doUpdateUser([normalizeEmailAddressOrUID(sys.argv[3])], 4)
       elif argument == u'group':
         doUpdateGroup()
       elif argument in [u'nickname', u'alias']:
