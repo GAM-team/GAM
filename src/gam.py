@@ -1134,12 +1134,12 @@ def _checkFullDataAvailable(warnings, tryDate, fullDataRequired):
   for warning in warnings:
     if warning[u'code'] == u'PARTIAL_DATA_AVAILABLE':
       for app in warning[u'data']:
-        if app[u'key'] == u'application' and app[u'value'] != u'docs' and (fullDataRequired == u'all' or app[u'value'] in fullDataRequired):
+        if app[u'key'] == u'application' and app[u'value'] != u'docs' and (not fullDataRequired or app[u'value'] in fullDataRequired):
           tryDateTime = datetime.datetime.strptime(tryDate, YYYYMMDD_FORMAT)-datetime.timedelta(days=1)
           return (0, tryDateTime.strftime(YYYYMMDD_FORMAT))
     elif warning[u'code'] == u'DATA_NOT_AVAILABLE':
       for app in warning[u'data']:
-        if app[u'key'] == u'application' and app[u'value'] != u'docs' and (fullDataRequired == u'all' or app[u'value'] in fullDataRequired):
+        if app[u'key'] == u'application' and app[u'value'] != u'docs' and (not fullDataRequired or app[u'value'] in fullDataRequired):
           return (-1, tryDate)
   return (1, tryDate)
 
@@ -1161,11 +1161,10 @@ def showReport():
       tryDate = getYYYYMMDD(i+1)
       i += 2
     elif myarg == u'fulldatarequired':
-      fullDataRequired = sys.argv[i+1].lower()
-      if len(fullDataRequired) == 0:
-        fullDataRequired = u'all'
-      elif fullDataRequired != u'all':
-        fullDataRequired = fullDataRequired.replace(u',', u' ').split()
+      fullDataRequired = []
+      fdr = sys.argv[i+1].lower()
+      if len(fdr) > 0 and fdr != u'all':
+        fullDataRequired = fdr.replace(u',', u' ').split()
       i += 2
     elif myarg == u'start':
       startTime = getTimeOrDeltaFromNow(sys.argv[i+1])
