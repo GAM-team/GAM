@@ -164,6 +164,26 @@ def getCharSet(i):
     return (i, GC_Values.get(GC_CHARSET, GM_Globals[GM_SYS_ENCODING]))
   return (i+2, sys.argv[i+1])
 
+COLORHEX_PATTERN = re.compile(r'^#[0-9a-fA-F]{6}$')
+
+def getColor(color):
+  color = color.lower().strip()
+  if color in WEBCOLOR_MAP:
+    return WEBCOLOR_MAP[color]
+  tg = COLORHEX_PATTERN.match(color)
+  if tg:
+    return tg.group(0)
+  systemErrorExit(2, u'A color must be a valid name or # and six hex characters (#012345); got {0}'.format(color))
+
+def integerLimits(minVal, maxVal, item=u'integer'):
+  if (minVal is not None) and (maxVal is not None):
+    return u'{0} {1}<=x<={2}'.format(item, minVal, maxVal)
+  if minVal is not None:
+    return u'{0} x>={1}'.format(item, minVal)
+  if maxVal is not None:
+    return u'{0} x<={1}'.format(item, maxVal)
+  return u'{0} x'.format(item)
+
 def removeCourseIdScope(courseId):
   if courseId.startswith(u'd:'):
     return courseId[2:]
@@ -174,63 +194,27 @@ def addCourseIdScope(courseId):
     return u'd:{0}'.format(courseId)
   return courseId
 
-def getString(i, item, emptyOK=False, optional=False):
+def getString(i, item, optional=False, minLen=1, maxLen=None):
   if i < len(sys.argv):
     argstr = sys.argv[i]
     if argstr:
-      return argstr
-    if emptyOK or optional:
+      if (len(argstr) >= minLen) and ((maxLen is None) or (len(argstr) <= maxLen)):
+        return argstr
+      systemErrorExit(2, u'expected <{0} for {1}>'.format(integerLimits(minLen, maxLen, u'string length'), item))
+    if optional or (minLen == 0):
       return u''
     systemErrorExit(2, u'expected a Non-empty <{0}>'.format(item))
   elif optional:
     return u''
   systemErrorExit(2, u'expected a <{0}>'.format(item))
 
-YYYYMMDD_FORMAT = u'%Y-%m-%d'
-YYYYMMDD_FORMAT_REQUIRED = u'yyyy-mm-dd'
-
-def getYYYYMMDD(i, emptyOK=False, returnTimeStamp=False, returnDateTime=False):
-  if i < len(sys.argv):
-    argstr = sys.argv[i].strip()
-    if argstr:
-      try:
-        dateTime = datetime.datetime.strptime(argstr, YYYYMMDD_FORMAT)
-        if returnTimeStamp:
-          return time.mktime(dateTime.timetuple())*1000
-        if returnDateTime:
-          return dateTime
-        return argstr
-      except ValueError:
-        systemErrorExit(2, u'expected a <{0}>; got {1}'.format(YYYYMMDD_FORMAT_REQUIRED, argstr))
-    elif emptyOK:
-      return u''
-  systemErrorExit(2, u'expected a <{0}>'.format(YYYYMMDD_FORMAT_REQUIRED))
-
-def getTimeOrDeltaFromNow(time_string):
-  """Get an ISO 8601 date/time or a positive/negative delta applied to now.
-
-  Args:
-    time_string (string): The time or delta (e.g. '2017-09-01T12:34:56Z' or '-4h')
-
-  Returns:
-    string: iso8601 formatted datetime in UTC.
-
-  Exits:
-    2: Not a valid delta.
-
-  """
-  DELTA_PATTERN = re.compile(r'^([+-])(\d{1,4})([wdhm])$')
-  time_string = time_string.strip()
-  if not time_string or time_string[0] not in [u'+', u'-']:
-    return time_string
-  mg = re.match(DELTA_PATTERN, time_string.lower())
-  if mg is None:
-    systemErrorExit(2, u'%s is not a valid delta, expected (+|-)<Number>(m|h|d|w)' % time_string)
-
-  sign = mg.group(1)
-  delta = int(mg.group(2))
-  unit = mg.group(3)
-
+def getDelta(argstr, pattern, formatRequired):
+  tg = pattern.match(argstr.lower())
+  if tg is None:
+    systemErrorExit(2, u'expected a <{0}>; got {1}'.format(formatRequired, argstr))
+  sign = tg.group(1)
+  delta = int(tg.group(2))
+  unit = tg.group(3)
   if unit == u'w':
     deltaTime = datetime.timedelta(weeks=delta)
   elif unit == u'd':
@@ -239,11 +223,71 @@ def getTimeOrDeltaFromNow(time_string):
     deltaTime = datetime.timedelta(hours=delta)
   elif unit == u'm':
     deltaTime = datetime.timedelta(minutes=delta)
-
   if sign == u'-':
-    return (datetime.datetime.utcnow() - deltaTime).isoformat() + u'Z'
-  else:
-    return (datetime.datetime.utcnow() + deltaTime).isoformat() + u'Z'
+    return -deltaTime
+  return deltaTime
+
+DELTA_DATE_PATTERN = re.compile(r'^([+-])(\d+)([dw])$')
+DELTA_DATE_FORMAT_REQUIRED = u'(+|-)<Number>(d|w)'
+
+def getDeltaDate(argstr):
+  return getDelta(argstr, DELTA_DATE_PATTERN, DELTA_DATE_FORMAT_REQUIRED)
+
+DELTA_TIME_PATTERN = re.compile(r'^([+-])(\d+)([mhdw])$')
+DELTA_TIME_FORMAT_REQUIRED = u'(+|-)<Number>(m|h|d|w)'
+
+def getDeltaTime(argstr):
+  return getDelta(argstr, DELTA_TIME_PATTERN, DELTA_TIME_FORMAT_REQUIRED)
+
+YYYYMMDD_FORMAT = u'%Y-%m-%d'
+YYYYMMDD_FORMAT_REQUIRED = u'yyyy-mm-dd'
+
+def getYYYYMMDD(argstr, minLen=1, returnTimeStamp=False, returnDateTime=False):
+  argstr = argstr.strip()
+  if argstr:
+    if argstr[0] in [u'+', u'-']:
+      today = datetime.date.today()
+      argstr = (datetime.datetime(today.year, today.month, today.day)+getDeltaDate(argstr)).strftime(YYYYMMDD_FORMAT)
+    try:
+      dateTime = datetime.datetime.strptime(argstr, YYYYMMDD_FORMAT)
+      if returnTimeStamp:
+        return time.mktime(dateTime.timetuple())*1000
+      if returnDateTime:
+        return dateTime
+      return argstr
+    except ValueError:
+      systemErrorExit(2, u'expected a <{0}>; got {1}'.format(YYYYMMDD_FORMAT_REQUIRED, argstr))
+  elif minLen == 0:
+    return u''
+  systemErrorExit(2, u'expected a <{0}>'.format(YYYYMMDD_FORMAT_REQUIRED))
+
+YYYYMMDDTHHMMSS_FORMAT_REQUIRED = u'yyyy-mm-ddThh:mm:ss[.fff](Z|(+|-(hh:mm)))'
+
+def getTimeOrDeltaFromNow(time_string):
+  """Get an ISO 8601 date/time or a positive/negative delta applied to now.
+  Args:
+    time_string (string): The time or delta (e.g. '2017-09-01T12:34:56Z' or '-4h')
+  Returns:
+    string: iso8601 formatted datetime in UTC.
+  Exits:
+    2: Not a valid delta.
+  """
+  time_string = time_string.strip().upper()
+  if time_string:
+    if time_string[0] not in [u'+', u'-']:
+      return time_string
+    return (datetime.datetime.utcnow() + getDeltaTime(time_string)).isoformat() + u'Z'
+  systemErrorExit(2, u'expected a <{0}>'.format(YYYYMMDDTHHMMSS_FORMAT_REQUIRED))
+
+YYYYMMDD_PATTERN = re.compile(r'^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+
+def getDateZeroTimeOrFullTime(time_string):
+  time_string = time_string.strip()
+  if time_string:
+    if YYYYMMDD_PATTERN.match(time_string):
+      return getYYYYMMDD(time_string)+u'T00:00:00.000Z'
+    return getTimeOrDeltaFromNow(time_string)
+  systemErrorExit(2, u'expected a <{0}>'.format(YYYYMMDDTHHMMSS_FORMAT_REQUIRED))
 
 # Get domain from email address
 def getEmailAddressDomain(emailAddress):
@@ -1158,7 +1202,7 @@ def showReport():
   while i < len(sys.argv):
     myarg = sys.argv[i].lower()
     if myarg == u'date':
-      tryDate = getYYYYMMDD(i+1)
+      tryDate = getYYYYMMDD(sys.argv[i+1])
       i += 2
     elif myarg == u'fulldatarequired':
       fullDataRequired = []
@@ -2747,10 +2791,10 @@ def changeCalendarAttendees(users):
       do_it = False
       i += 1
     elif myarg == u'start':
-      start_date = sys.argv[i+1]
+      start_date = getTimeOrDeltaFromNow(sys.argv[i+1])
       i += 2
     elif myarg == u'end':
-      end_date = sys.argv[i+1]
+      end_date = getTimeOrDeltaFromNow(sys.argv[i+1])
       i += 2
     elif myarg == u'allevents':
       allevents = True
@@ -2841,11 +2885,11 @@ def getCalendarAttributes(i, body, function):
       body[u'colorId'] = str(sys.argv[i+1])
       i += 2
     elif myarg == u'backgroundcolor':
-      body[u'backgroundColor'] = sys.argv[i+1]
+      body[u'backgroundColor'] = getColor(sys.argv[i+1])
       colorRgbFormat = True
       i += 2
     elif myarg == u'foregroundcolor':
-      body[u'foregroundColor'] = sys.argv[i+1]
+      body[u'foregroundColor'] = getColor(sys.argv[i+1])
       colorRgbFormat = True
       i += 2
     elif myarg == u'reminder':
@@ -3451,14 +3495,14 @@ def doCalendarAddEvent():
       i += 2
     elif myarg == u'start':
       if sys.argv[i+1].lower() == u'allday':
-        body[u'start'] = {u'date': sys.argv[i+2]}
+        body[u'start'] = {u'date': getYYYYMMDD(sys.argv[i+2])}
         i += 3
       else:
         body[u'start'] = {u'dateTime': getTimeOrDeltaFromNow(sys.argv[i+1])}
         i += 2
     elif myarg == u'end':
       if sys.argv[i+1].lower() == u'allday':
-        body[u'end'] = {u'date': sys.argv[i+2]}
+        body[u'end'] = {u'date': getYYYYMMDD(sys.argv[i+2])}
         i += 3
       else:
         body[u'end'] = {u'dateTime': getTimeOrDeltaFromNow(sys.argv[i+1])}
@@ -4923,7 +4967,7 @@ def _processSignature(tagReplacements, signature, html):
 def getSendAsAttributes(i, myarg, body, tagReplacements, command):
   if myarg == u'replace':
     matchTag = getString(i+1, u'Tag')
-    matchReplacement = getString(i+2, u'String', emptyOK=True)
+    matchReplacement = getString(i+2, u'String', minLen=0)
     tagReplacements[matchTag] = matchReplacement
     i += 3
   elif myarg == u'name':
@@ -6091,7 +6135,7 @@ def doSignature(users):
     i, encoding = getCharSet(i+2)
     signature = readFile(filename, encoding=encoding)
   else:
-    signature = getString(i, u'String', emptyOK=True)
+    signature = getString(i, u'String', minLen=0)
     i += 1
   body = {}
   html = False
@@ -6160,7 +6204,7 @@ def doVacation(users):
         message = readFile(filename, encoding=encoding)
       elif myarg == u'replace':
         matchTag = getString(i+1, u'Tag')
-        matchReplacement = getString(i+2, u'String', emptyOK=True)
+        matchReplacement = getString(i+2, u'String', minLen=0)
         tagReplacements[matchTag] = matchReplacement
         i += 3
       elif myarg == u'html':
@@ -6173,10 +6217,10 @@ def doVacation(users):
         body[u'restrictToDomain'] = True
         i += 1
       elif myarg == u'startdate':
-        body[u'startTime'] = getYYYYMMDD(i+1, returnTimeStamp=True)
+        body[u'startTime'] = getYYYYMMDD(sys.argv[i+1], returnTimeStamp=True)
         i += 2
       elif myarg == u'enddate':
-        body[u'endTime'] = getYYYYMMDD(i+1, returnTimeStamp=True)
+        body[u'endTime'] = getYYYYMMDD(sys.argv[i+1], returnTimeStamp=True)
         i += 2
       else:
         systemErrorExit(2, '%s is not a valid argument for "gam <users> vacation"' % sys.argv[i])
@@ -7164,7 +7208,7 @@ def doUpdateTeamDrive(users):
         }
       i += 5
     elif myarg == u'color':
-      body[u'colorRgb'] = WEBCOLOR_MAP.get(sys.argv[i+1], sys.argv[i+1])
+      body[u'colorRgb'] = getColor(sys.argv[i+1])
       i += 2
     else:
       systemErrorExit(3, '%s is not a valid argument for "gam <users> update teamdrive"' % sys.argv[i])
@@ -7280,8 +7324,6 @@ def doCreateVaultHold():
   end_time = None
   matterId = None
   accounts = []
-  date_format = re.compile(r'^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
-  zero_hour = u'T00:00:00.000Z'
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace(u'_', u'')
     if myarg == u'name':
@@ -7302,14 +7344,10 @@ def doCreateVaultHold():
       body[u'orgUnit'] = {u'orgUnitId': doGetOrgInfo(name=sys.argv[i+1], return_attrib=u'orgUnitId')}
       i += 2
     elif myarg == u'starttime':
-      start_time = sys.argv[i+1]
-      if date_format.match(start_time):
-        start_time += zero_hour
+      start_time = getDateZeroTimeOrFullTime(sys.argv[i+1])
       i += 2
     elif myarg == u'endtime':
-      end_time = sys.argv[i+1]
-      if date_format.match(end_time):
-        end_time += zero_hour
+      end_time = getDateZeroTimeOrFullTime(sys.argv[i+1])
       i += 2
     elif myarg == u'matter':
       matterId = convertMatterNameToID(v, sys.argv[i+1])
@@ -7430,8 +7468,6 @@ def doUpdateVaultHold():
   del_accounts = []
   start_time = None
   end_time = None
-  date_format = re.compile(r'^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
-  zero_hour = u'T00:00:00.000Z'
   i = 4
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace(u'_', u'')
@@ -7450,14 +7486,10 @@ def doUpdateVaultHold():
       body[u'orgUnit'] = {u'orgUnitId': doGetOrgInfo(name=sys.argv[i+1], return_attrib=u'orgUnitId')}
       i += 2
     elif myarg == u'starttime':
-      start_time = sys.argv[i+1]
-      if date_format.match(start_time):
-        start_time += zero_hour
+      start_time = getDateZeroTimeOrFullTime(sys.argv[i+1])
       i += 2
     elif myarg == u'endtime':
-      end_time = sys.argv[i+1]
-      if date_format.match(end_time):
-        end_time += zero_hour
+      end_time = getDateZeroTimeOrFullTime(sys.argv[i+1])
       i += 2
     elif myarg in [u'addusers', u'addaccounts', u'addgroups']:
       add_accounts = sys.argv[i+1].split(u',')
