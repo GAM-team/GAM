@@ -1134,13 +1134,13 @@ def _checkFullDataAvailable(warnings, tryDate, tryDateInfo, fullDataRequired):
   for warning in warnings:
     if warning[u'code'] == u'PARTIAL_DATA_AVAILABLE':
       for app in warning[u'data']:
-        if app[u'key'] == u'application' and app[u'value'] in fullDataRequired:
+        if app[u'key'] == u'application' and app[u'value'] != u'docs' and (fullDataRequired == u'all' or app[u'value'] in fullDataRequired):
           tryDateInfo[u'tryDelta'] += 1
           tryDateInfo[u'tryDateTime'] = datetime.datetime.strptime(tryDate, YYYYMMDD_FORMAT)-datetime.timedelta(days=tryDateInfo[u'tryDelta'])
           return (0, tryDateInfo[u'tryDateTime'].strftime(YYYYMMDD_FORMAT))
     elif warning[u'code'] == u'DATA_NOT_AVAILABLE':
       for app in warning[u'data']:
-        if app[u'key'] == u'application' and app[u'value'] in fullDataRequired:
+        if app[u'key'] == u'application' and app[u'value'] != u'docs' and (fullDataRequired == u'all' or app[u'value'] in fullDataRequired):
           return (-1, tryDate)
   return (1, tryDate)
 
@@ -1154,7 +1154,7 @@ def showReport():
   tryDateInfo = {u'tryDateTime': datetime.date.today(), u'tryDelta': 0}
   to_drive = False
   userKey = u'all'
-  fullDataRequired = []
+  fullDataRequired = None
   i = 3
   while i < len(sys.argv):
     myarg = sys.argv[i].lower()
@@ -1162,7 +1162,11 @@ def showReport():
       tryDateInfo[u'tryDateTime'] = getYYYYMMDD(i+1, returnDateTime=True)
       i += 2
     elif myarg == u'fulldatarequired':
-      fullDataRequired = sys.argv[i+1].lower().replace(u',', u' ').split()
+      fullDataRequired = sys.argv[i+1].lower()
+      if len(fullDataRequired) == 0:
+        fullDataRequired = u'all'
+      elif fullDataRequired != u'all':
+        fullDataRequired = fullDataRequired.replace(u',', u' ').split()
       i += 2
     elif myarg == u'start':
       startTime = getTimeOrDeltaFromNow(sys.argv[i+1])
@@ -1194,7 +1198,7 @@ def showReport():
   if report in [u'users', u'user']:
     while True:
       try:
-        if fullDataRequired:
+        if fullDataRequired is not None:
           warnings = callGAPIitems(rep.userUsageReport(), u'get', u'warnings',
                                    throw_reasons=[GAPI_INVALID],
                                    date=tryDate, userKey=userKey, customerId=customerId, fields=u'warnings')
@@ -1236,7 +1240,7 @@ def showReport():
   elif report in [u'customer', u'customers', u'domain']:
     while True:
       try:
-        if fullDataRequired:
+        if fullDataRequired is not None:
           warnings = callGAPIitems(rep.customerUsageReports(), u'get', u'warnings',
                                    throw_reasons=[GAPI_INVALID],
                                    customerId=customerId, date=tryDate, fields=u'warnings')
