@@ -716,9 +716,25 @@ gam update resoldsubscription <CustomerID> <SKUID>
 gam delete resoldsubscription <CustomerID> <SKUID> cancel|downgrade|transfer_to_direct
 gam info resoldsubscriptions <CustomerID> [customer_auth_token <String>]
 
-gam report users|user [todrive] [date <Date>] [fulldatarequired <String>]
+<ReportsApp> ::=
+      accounts|
+      app_maker|
+      apps_scripts|
+      calendar|
+      classroom|
+      cros|
+      device_management|
+      drive|
+      gmail|
+      gplus|
+      meet|
+      mobile|
+      sites
+<ReportsAppList> ::= "<ReportsApp>(,<ReportsApp>)*"
+
+gam report users|user [todrive] [date <Date>] [fulldatarequired <ReportsAppList>]
 	[(user all|<UserItem>)] [filter|filters <String>] [fields|parameters <String>]
-gam report customers|customer|domain [todrive] [date <Date>] [fulldatarequired <String>]
+gam report customers|customer|domain [todrive] [date <Date>] [fulldatarequired <ReportsAppList>]
 	[fields|parameters <String>]
 gam report admin|calendar|calendars|drive|docs|doc|groups|group|logins|login|mobile|tokens|token [todrive]
 	[start <Time>] [end <Time>] [(user all|<UserItem>)] [event <String>] [filter|filters <String>] [ip <String>]
