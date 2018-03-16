@@ -1137,8 +1137,12 @@ def _checkFullDataAvailable(warnings, tryDate, tryDateInfo, fullDataRequired):
         if app[u'key'] == u'application' and app[u'value'] in fullDataRequired:
           tryDateInfo[u'tryDelta'] += 1
           tryDateInfo[u'tryDateTime'] = datetime.datetime.strptime(tryDate, YYYYMMDD_FORMAT)-datetime.timedelta(days=tryDateInfo[u'tryDelta'])
-          return (False, tryDateInfo[u'tryDateTime'].strftime(YYYYMMDD_FORMAT))
-  return (True, tryDate)
+          return (0, tryDateInfo[u'tryDateTime'].strftime(YYYYMMDD_FORMAT))
+    elif warning[u'code'] == u'DATA_NOT_AVAILABLE':
+      for app in warning[u'data']:
+        if app[u'key'] == u'application' and app[u'value'] in fullDataRequired:
+          return (-1, tryDate)
+  return (1, tryDate)
 
 def showReport():
   rep = buildGAPIObject(u'reports')
@@ -1195,7 +1199,10 @@ def showReport():
                                    throw_reasons=[GAPI_INVALID],
                                    date=tryDate, userKey=userKey, customerId=customerId, fields=u'warnings')
           fullData, tryDate = _checkFullDataAvailable(warnings, tryDate, tryDateInfo, fullDataRequired)
-          if not fullData:
+          if fullData < 0:
+            print u'No user report available.'
+            sys.exit(1)
+          if fullData == 0:
             continue
         page_message = u'Got %%num_items%% users\n'
         usage = callGAPIpages(rep.userUsageReport(), u'get', u'usageReports', page_message=page_message, throw_reasons=[GAPI_INVALID],
@@ -1234,7 +1241,10 @@ def showReport():
                                    throw_reasons=[GAPI_INVALID],
                                    customerId=customerId, date=tryDate, fields=u'warnings')
           fullData, tryDate = _checkFullDataAvailable(warnings, tryDate, tryDateInfo, fullDataRequired)
-          if not fullData:
+          if fullData < 0:
+            print u'No customer report available.'
+            sys.exit(1)
+          if fullData == 0:
             continue
         usage = callGAPIpages(rep.customerUsageReports(), u'get', u'usageReports', throw_reasons=[GAPI_INVALID],
                               customerId=customerId, date=tryDate, parameters=parameters)
