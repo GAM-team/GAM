@@ -63,7 +63,6 @@ except ImportError:
   from oauth2client import _helpers as util
 
 from googleapiclient import _auth
-from googleapiclient import mimeparse
 from googleapiclient.errors import BatchError
 from googleapiclient.errors import HttpError
 from googleapiclient.errors import InvalidChunkSizeError
@@ -75,7 +74,7 @@ from googleapiclient.model import JsonModel
 
 LOGGER = logging.getLogger(__name__)
 
-DEFAULT_CHUNK_SIZE = 512*1024
+DEFAULT_CHUNK_SIZE = 100*1024*1024
 
 MAX_URI_LENGTH = 2048
 
@@ -89,7 +88,7 @@ def _should_retry_response(resp_status, content):
 
   Args:
     resp_status: The response status received.
-    content: The response content body. 
+    content: The response content body.
 
   Returns:
     True if the response should be retried, otherwise False.
@@ -112,7 +111,10 @@ def _should_retry_response(resp_status, content):
     # Content is in JSON format.
     try:
       data = json.loads(content.decode('utf-8'))
-      reason = data['error']['errors'][0]['reason']
+      if isinstance(data, dict):
+        reason = data['error']['errors'][0]['reason']
+      else:
+        reason = data[0]['error']['errors']['reason']
     except (UnicodeDecodeError, ValueError, KeyError):
       LOGGER.warning('Invalid JSON content from response: %s', content)
       return False
@@ -510,7 +512,6 @@ class MediaFileUpload(MediaIoBaseUpload):
   Construct a MediaFileUpload and pass as the media_body parameter of the
   method. For example, if we had a service that allowed uploading images:
 
-
     media = MediaFileUpload('cow.png', mimetype='image/png',
       chunksize=1024*1024, resumable=True)
     farm.animals().insert(
@@ -654,9 +655,9 @@ class MediaIoBaseDownload(object):
             request only once.
 
     Returns:
-      (status, done): (MediaDownloadStatus, boolean)
+      (status, done): (MediaDownloadProgress, boolean)
          The value of 'done' will be True when the media has been fully
-         downloaded.
+         downloaded or the total size of the media is unknown.
 
     Raises:
       googleapiclient.errors.HttpError if the response was not a 2xx.
@@ -685,7 +686,7 @@ class MediaIoBaseDownload(object):
       elif 'content-length' in resp:
         self._total_size = int(resp['content-length'])
 
-      if self._progress == self._total_size:
+      if self._total_size is None or self._progress == self._total_size:
         self._done = True
       return MediaDownloadProgress(self._progress, self._total_size), self._done
     else:
@@ -766,10 +767,6 @@ class HttpRequest(object):
     self.resumable = resumable
     self.response_callbacks = []
     self._in_error_state = False
-
-    # Pull the multipart boundary out of the content-type header.
-    major, minor, params = mimeparse.parse_mime_type(
-        self.headers.get('content-type', 'application/json'))
 
     # The size of the non-media part of the request.
     self.body_size = len(self.body or '')
