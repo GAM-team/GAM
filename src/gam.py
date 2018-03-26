@@ -5461,7 +5461,8 @@ def doDeleteLabel(users):
     bcount = 0
     j = 0
     del_me_count = len(del_labels)
-    dbatch = googleapiclient.http.BatchHttpRequest()
+    batch_uri = gmail._rootDesc['rootUrl'] + gmail._rootDesc['batchPath']
+    dbatch = googleapiclient.http.BatchHttpRequest(batch_uri=batch_uri)
     for del_me in del_labels:
       j += 1
       print u' deleting label %s (%s/%s)' % (del_me[u'name'], j, del_me_count)
@@ -5469,7 +5470,7 @@ def doDeleteLabel(users):
       bcount += 1
       if bcount == 10:
         dbatch.execute()
-        dbatch = googleapiclient.http.BatchHttpRequest()
+        dbatch = googleapiclient.http.BatchHttpRequest(batch_uri=batch_uri)
         bcount = 0
     if bcount > 0:
       dbatch.execute()
@@ -8845,7 +8846,8 @@ def doGetUserInfo(user_email=None):
   if getLicenses:
     print u'Licenses:'
     lic = buildGAPIObject(u'licensing')
-    lbatch = googleapiclient.http.BatchHttpRequest(callback=user_lic_result)
+    batch_uri = lic._rootDesc['rootUrl'] + lic._rootDesc['batchPath']
+    lbatch = googleapiclient.http.BatchHttpRequest(callback=user_lic_result, batch_uri=batch_uri)
     user_licenses = []
     for sku in skus:
       productId, skuId = getProductAndSKU(sku)
