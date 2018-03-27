@@ -436,6 +436,7 @@ Named items
 	email|emails|otheremail|otheremails|
 	externalids|externalid|
 	familyname|firstname|fullname|givenname|lastname|name|
+	gender|
 	id|
 	ims|im|
 	includeinglobaladdresslist|gal|
@@ -444,6 +445,8 @@ Named items
 	ismailboxsetup|
 	isenforcedin2sv|is2svenforced|
 	isenrolledin2sv|is2svenrolled|
+	keyword|keywords|
+	language|languages|
 	lastlogintime|
 	locations|location|
 	noneditablealiases|aliases|nicknames|
@@ -646,9 +649,12 @@ Item attributes
 	(externalid clear|(account|customer|login_id|network|organization|<String> <String>))|
 	(firstname|givenname <String>)|
 	(gal|includeinglobaladdresslist <Boolean>)|
+	(gender clear|(female|male|unknown|(other <String>) [addressmeas <String>]))|
 	(im clear|(type work|home|other|(custom <String>) protocol aim|gtalk|icq|jabber|msn|net_meeting|qq|skype|yahoo|(custom_protocol <String>) <String> [notprimary|primary]))|
 	(ipwhitelisted <Boolean>)|
 	(lastname|familyname <String>)|
+	(keyword clear|(occupation|outlook|(custom <string>) <String>))|
+	(language clear|<LanguageList>)|
 	(location clear|(type default|desk|<String> area <String> [building|buildingid <BuildingID>] [floor|floorname <FloorName>] [section|floorsection <String>] [desk|deskcode <String>] endlocation))|
 	(note clear|([text_plain|text_html] <String>|(file <FileName> [charset <Charset>])))|
 	(organization clear|([type domain_only|school|unknown|work] [customtype <String>] [name <String>] [title <String>] [department <String>] [symbol <String>]
