@@ -10882,7 +10882,7 @@ def doPrintCrosDevices():
         orderBy = u'lastSync'
       elif orderBy == u'serialnumber':
         orderBy = u'serialNumber'
-      elif orderBy == u'supportEndDate':
+      elif orderBy == u'supportenddate':
         orderBy = u'supportEndDate'
       i += 2
     elif myarg in SORTORDER_CHOICES_MAP:
