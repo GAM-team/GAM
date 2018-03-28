@@ -4461,6 +4461,9 @@ def doUpdateDriveFile(users):
         print u'Successfully copied %s to %s' % (fileId, result[u'id'])
 
 def createDriveFile(users):
+  csv_output = None
+  csv_rows = []
+  csv_titles = [u'title',u'id']
   media_body = None
   body, parameters = initializeDriveFileAttributes()
   i = 5
@@ -4469,6 +4472,9 @@ def createDriveFile(users):
     if myarg == u'drivefilename':
       body[u'title'] = sys.argv[i+1]
       i += 2
+    elif myarg == u'csv':
+      csv_output = True
+      i += 1
     else:
       i = getDriveFileAttribute(i, body, parameters, myarg, False)
   for user in users:
@@ -4488,10 +4494,18 @@ def createDriveFile(users):
                       media_body=media_body, body=body, fields=u'id,title,mimeType',
                       supportsTeamDrives=True)
     titleInfo = u'{0}({1})'.format(result[u'title'], result[u'id'])
-    if parameters[DFA_LOCALFILENAME]:
-      print u'Successfully uploaded %s to Drive File %s' % (parameters[DFA_LOCALFILENAME], titleInfo)
+    if csv_output:
+      csv_rows.append({
+        u'title': result[u'title'],
+        u'id': result[u'id']
+      })
     else:
-      print u'Successfully created Drive %s %s' % ([u'Folder', u'File'][result[u'mimeType'] != MIMETYPE_GA_FOLDER], titleInfo)
+      if parameters[DFA_LOCALFILENAME]:
+        print u'Successfully uploaded %s to Drive File %s' % (parameters[DFA_LOCALFILENAME], titleInfo)
+      else:
+        print u'Successfully created Drive %s %s' % ([u'Folder', u'File'][result[u'mimeType'] != MIMETYPE_GA_FOLDER], titleInfo)
+  if csv_output:
+    writeCSVfile(csv_rows, csv_titles, u'Files', False)
 
 def downloadDriveFile(users):
   i = 5
