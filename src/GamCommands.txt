@@ -436,6 +436,7 @@ Named items
 	email|emails|otheremail|otheremails|
 	externalids|externalid|
 	familyname|firstname|fullname|givenname|lastname|name|
+	gender|
 	id|
 	ims|im|
 	includeinglobaladdresslist|gal|
@@ -444,6 +445,8 @@ Named items
 	ismailboxsetup|
 	isenforcedin2sv|is2svenforced|
 	isenrolledin2sv|is2svenrolled|
+	keyword|keywords|
+	language|languages|
 	lastlogintime|
 	locations|location|
 	noneditablealiases|aliases|nicknames|
@@ -463,11 +466,18 @@ Named items
 	familyname|lastname|givenname|firstname|email
 
 Named Lists
-Lists can be in the following formats
-Items, separated by commas, without spaces or commas in the items themselves: item(,item)*
-Items, separated by spaces, without spaces or commas in the items themselves: "item( item)*"
-Items, separated by commas, with spaces or commas in the items themselves: "'it em'(,'it,em')*"
-Items, separated by spaces, with spaces or commas in the items themselves: "'it em'( 'it,em')*"
+
+Items in a list can be separated by commas or spaces; if an item itself contains a comma, a space or a single quote, special quoting must be used.
+Typically, you will enclose the entire list in double quotes and quote each item in the list as detailed below.
+
+Items, separated by commas, without spaces, commas or single quotes in the items themselves
+    "item,item,item"
+Items, separated by spaces, without spaces, commas or single quotes in the items themselves
+    "item item item"
+Items, separated by commas, with spaces, commas or single quotes in the items themselves
+    "'it em','it,em',\"it'em\""
+Items, separated by spaces, with spaces, commas or single quotes in the items themselves
+    "'it em' 'it,em' \"it'em\""
 
 <ACLList> ::= "<ACLScope>(,<ACLScope>)*"
 <ASPIDList> ::= "<ASPID>(,<ASPID>)*"
@@ -507,29 +517,29 @@ Items, separated by spaces, with spaces or commas in the items themselves: "'it 
 
 Specify a collection of ChromeOS devices by directly specifying them
 <CrOSTypeEntity> ::=
-		(all cros)|
-		(cros <CrOSList>)|
+	(all cros)|
+	(cros <CrOSList>)|
 Specify a collection of Users by directly specifying them or by specifiying items that will yield a list of users
 <UserTypeEntity> ::=
-		(all users)|
-		(user <UserItem>)|
-		(users <UserList>)|
-		(group <GroupItem)|
-		(ou|org <OrgUnitPath)|
-		(ou_and_children|ou_and_child <OrgUnitPath>)|
-		(courseparticipants <CourseID>)|
-		(students <CourseID>)|
-		(teachers <CourseID>)|
-		(file <FileName>)|
-		(csvfile <FileName>:<FieldName>)|
-		(license|licenses|licence|licences <SKUIDList>)|
-		(query <QueryUser>)
+	(all users)|
+	(user <UserItem>)|
+	(users <UserList>)|
+	(group <GroupItem)|
+	(ou|org <OrgUnitPath)|
+	(ou_and_children|ou_and_child <OrgUnitPath>)|
+	(courseparticipants <CourseID>)|
+	(students <CourseID>)|
+	(teachers <CourseID>)|
+	(file <FileName>)|
+	(csvfile <FileName>:<FieldName>)|
+	(license|licenses|licence|licences <SKUIDList>)|
+	(query <QueryUser>)
 
 Item attributes
 <BuildingAttributes> ::=
-	(buildingid <String>)|
 	(description <String>)|
 	(floors <FloorNameList>)|
+	(id <String>)|
 	(latitude <Float>)|
 	(longitude <Float>)|
 	(name <String>)
@@ -621,7 +631,7 @@ Item attributes
 <ResourceAttributes> ::=
 	(buildingid <BuildingID>)|
 	(capacity <Number>)|
-	(category other|room|conference_room)|
+	(category other|room|conference_room|unknown_category)|
 	(description <String>)|
 	(features <FeatureNameList>)|
 	(floor <FloorName>)|
@@ -646,8 +656,11 @@ Item attributes
 	(externalid clear|(account|customer|login_id|network|organization|<String> <String>))|
 	(firstname|givenname <String>)|
 	(gal|includeinglobaladdresslist <Boolean>)|
+	(gender clear|(female|male|unknown|(other <String>) [addressmeas <String>]))|
 	(im clear|(type work|home|other|(custom <String>) protocol aim|gtalk|icq|jabber|msn|net_meeting|qq|skype|yahoo|(custom_protocol <String>) <String> [notprimary|primary]))|
 	(ipwhitelisted <Boolean>)|
+	(keyword clear|(occupation|outlook|(custom <string>) <String>))|
+	(language clear|<LanguageList>)|
 	(lastname|familyname <String>)|
 	(location clear|(type default|desk|<String> area <String> [building|buildingid <BuildingID>] [floor|floorname <FloorName>] [section|floorsection <String>] [desk|deskcode <String>] endlocation))|
 	(note clear|([text_plain|text_html] <String>|(file <FileName> [charset <Charset>])))|
@@ -820,13 +833,6 @@ gam <CrOSTypeEntity> print cros
 Prints no header row and deviceId for specified CrOS devices.
 gam print cros ... basic|full
 Prints a header row and selected fields for specified CrOS devices.
-
-Print a header row and selected fields for specified CrOS devices; deviceId is the always the first column.
-If you specify allfields|basic|full, all other column headers are sorted.
-If you specify <CrOSFieldName>* | fields <CrOSFieldNameList>, the column headers appear in the order specified.
-gam [<CrOSTypeEntity>] print cros [todrive [<ToDriveAttributes>]] [query <QueryCrOS>]|[select <CrOSTypeEntity>] [limittoou <OrgUnitItem>]
-	[orderby <CrOSOrderByFieldName> [ascending|descending]] [nolists|recentusers|timeranges|devicefiles] [listlimit <Number>] [start <Date>] [end <Date>]
-	[basic|full|allfields] <CrOSFieldName>* [fields <CrOSFieldNameList>]
 
 The basic argument outputs these column headers: deviceId,annotatedAssetId,annotatedLocation,annotatedUser,lastSync,notes,serialNumber,status
 The allfields/full arguments output all column headers including three headers, recentUsers, activeTimeRanges and deviceFiles,
@@ -1039,7 +1045,7 @@ gam <UserTypeEntity> show fileinfo <DriveFileID> [allfields|<DriveFieldName>*]
 gam <UserTypeEntity> show filerevisions <DriveFileID>
 gam <UserTypeEntity> show filetree [anyowner] (orderby <DriveOrderByFieldName> [ascending|descending])*
 
-gam <UserTypeEntity> create|add drivefile [drivefilename <DriveFileName>] <DriveFileAddAttributes>*
+gam <UserTypeEntity> create|add drivefile [drivefilename <DriveFileName>] <DriveFileAddAttributes>* [csv] [todrive]
 gam <UserTypeEntity> update drivefile (id <DriveFileID)|(drivefilename <DriveFileName>)|(query <QueryDriveFile) [copy] [newfilename <DriveFileName>] <DriveFileUpdateAttributes>*
 gam <UserTypeEntity> get drivefile (id <DriveFileID>)|(drivefilename <DriveFileName>)|(query <QueryDriveFile>) [format <FileFormatList>] [targetfolder <FilePath>] [revision <Number>]
 gam <UserTypeEntity> delete|del drivefile <DriveFileID>|<DriveFileURL>|(query:<QueryDriveFile>) [purge|untrash]
