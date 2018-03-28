@@ -4346,7 +4346,7 @@ def getDriveFileAttribute(i, body, parameters, myarg, update=False):
     parameters[DFA_OCR] = True
     i += 1
   elif myarg == u'ocrlanguage':
-    parameters[DFA_OCRLANGUAGE] = sys.argv[i+1]
+    parameters[DFA_OCRLANGUAGE] = LANGUAGE_CODES_MAP.get(sys.argv[i+1].lower(), sys.argv[i+1])
     i += 2
   elif myarg in DRIVEFILE_LABEL_CHOICES_MAP:
     body.setdefault(u'labels', {})
@@ -4461,9 +4461,9 @@ def doUpdateDriveFile(users):
         print u'Successfully copied %s to %s' % (fileId, result[u'id'])
 
 def createDriveFile(users):
-  csv_output = None
+  csv_output = to_drive = False
   csv_rows = []
-  csv_titles = [u'title',u'id']
+  csv_titles = [u'User', u'title', u'id']
   media_body = None
   body, parameters = initializeDriveFileAttributes()
   i = 5
@@ -4474,6 +4474,9 @@ def createDriveFile(users):
       i += 2
     elif myarg == u'csv':
       csv_output = True
+      i += 1
+    elif myarg == u'todrive':
+      to_drive = True
       i += 1
     else:
       i = getDriveFileAttribute(i, body, parameters, myarg, False)
@@ -4495,17 +4498,14 @@ def createDriveFile(users):
                       supportsTeamDrives=True)
     titleInfo = u'{0}({1})'.format(result[u'title'], result[u'id'])
     if csv_output:
-      csv_rows.append({
-        u'title': result[u'title'],
-        u'id': result[u'id']
-      })
+      csv_rows.append({u'User': user, u'title': result[u'title'], u'id': result[u'id']})
     else:
       if parameters[DFA_LOCALFILENAME]:
         print u'Successfully uploaded %s to Drive File %s' % (parameters[DFA_LOCALFILENAME], titleInfo)
       else:
         print u'Successfully created Drive %s %s' % ([u'Folder', u'File'][result[u'mimeType'] != MIMETYPE_GA_FOLDER], titleInfo)
   if csv_output:
-    writeCSVfile(csv_rows, csv_titles, u'Files', False)
+    writeCSVfile(csv_rows, csv_titles, u'Files', to_drive)
 
 def downloadDriveFile(users):
   i = 5
@@ -5475,7 +5475,7 @@ def doDeleteLabel(users):
     bcount = 0
     j = 0
     del_me_count = len(del_labels)
-    dbatch = gmail.new_batch_http_request() 
+    dbatch = gmail.new_batch_http_request()
     for del_me in del_labels:
       j += 1
       print u' deleting label %s (%s/%s)' % (del_me[u'name'], j, del_me_count)
@@ -6423,7 +6423,7 @@ def doGetUserSchema():
   _showSchema(schema)
 
 def getUserAttributes(i, cd, updateCmd=False):
-  def getEntryType(i, entry, entryTypes, setTypeCustom=True):
+  def getEntryType(i, entry, entryTypes, setTypeCustom=True, customKeyword=u'custom', customTypeKeyword=u'customType'):
     """ Get attribute entry type
     entryTypes is list of pre-defined types, a|b|c
     Allow a|b|c|<String>, a|b|c|custom <String>
@@ -6435,26 +6435,25 @@ def getUserAttributes(i, cd, updateCmd=False):
     """
     utype = sys.argv[i]
     ltype = utype.lower()
-    if ltype == u'custom':
+    if ltype == customKeyword:
       i += 1
       utype = sys.argv[i]
       ltype = utype.lower()
     if ltype in entryTypes:
       entry[u'type'] = ltype
-      entry.pop(u'customType', None)
+      entry.pop(customTypeKeyword, None)
     else:
-      entry[u'customType'] = utype
+      entry[customTypeKeyword] = utype
       if setTypeCustom:
-        entry[u'type'] = u'custom'
+        entry[u'type'] = customKeyword
       else:
         entry.pop(u'type', None)
     return i+1
 
   def checkClearBodyList(i, body, itemName):
     if sys.argv[i].lower() == u'clear':
-      if itemName in body:
-        del body[itemName]
-      body.setdefault(itemName, None)
+      body.pop(itemName, None)
+      body[itemName] = None
       return True
     return False
 
@@ -6553,6 +6552,28 @@ def getUserAttributes(i, cd, updateCmd=False):
       if body[u'orgUnitPath'][0] != u'/':
         body[u'orgUnitPath'] = u'/%s' % body[u'orgUnitPath']
       i += 2
+    elif myarg in [u'language', u'languages']:
+      i += 1
+      if checkClearBodyList(i, body, u'languages'):
+        i += 1
+        continue
+      for language in sys.argv[i].replace(u',', u' ').split():
+        if language.lower() in LANGUAGE_CODES_MAP:
+          appendItemToBodyList(body, u'languages', {u'languageCode': LANGUAGE_CODES_MAP[language.lower()]})
+        else:
+          appendItemToBodyList(body, u'languages', {u'customLanguage': language})
+      i += 1
+    elif myarg == u'gender':
+      i += 1
+      if checkClearBodyList(i, body, u'gender'):
+        i += 1
+        continue
+      gender = {}
+      i = getEntryType(i, gender, USER_GENDER_TYPES, customKeyword=u'other', customTypeKeyword=u'customGender')
+      if (i < len(sys.argv)) and (sys.argv[i].lower() == u'addressmeas'):
+        gender[u'addressMeAs'] = getString(i+1, u'String')
+        i += 2
+      body[u'gender'] = gender
     elif myarg in [u'address', u'addresses']:
       i += 1
       if checkClearBodyList(i, body, u'addresses'):
@@ -6846,6 +6867,16 @@ def getUserAttributes(i, cd, updateCmd=False):
         else:
           systemErrorExit(3, '%s is not a valid argument for user posix details. Make sure user posix details end with an endposix argument')
       appendItemToBodyList(body, u'posixAccounts', posix, checkSystemId=True)
+    elif myarg in [u'keyword', u'keywords']:
+      i += 1
+      if checkClearBodyList(i, body, u'keywords'):
+        i += 1
+        continue
+      keyword = {}
+      i = getEntryType(i, keyword, USER_KEYWORD_TYPES, customKeyword=u'custom', customTypeKeyword=u'customType')
+      keyword[u'value'] = sys.argv[i]
+      i += 1
+      appendItemToBodyList(body, u'keywords', keyword)
     elif myarg == u'clearschema':
       if not updateCmd:
         systemErrorExit(2, '%s is not a valid create user argument.' % sys.argv[i])
@@ -7650,6 +7681,8 @@ def getGroupAttrValue(myarg, value, gs_object, gs_body, function):
       elif params[u'type'] == u'string':
         if attrib == u'description':
           value = value.replace(u'\\n', u'\n')
+        elif attrib == u'primaryLanguage':
+          value = LANGUAGE_CODES_MAP.get(value.lower(), value)
         elif params[u'description'].find(value.upper()) != -1: # ugly hack because API wants some values uppercased.
           value = value.upper()
         elif value.lower() in true_values:
@@ -8683,6 +8716,15 @@ def doGetUserInfo(user_email=None):
     print utils.convertUTF8(u'First Name: %s' % user[u'name'][u'givenName'])
   if u'name' in user and u'familyName' in user[u'name']:
     print utils.convertUTF8(u'Last Name: %s' % user[u'name'][u'familyName'])
+  if u'languages' in user:
+    up = u'languageCode'
+    languages = [row[up] for row in user[u'languages'] if up in row]
+    if languages:
+      print u'Languages: %s' % u','.join(languages)
+    up = u'customLanguage'
+    languages = [row[up] for row in user[u'languages'] if up in row]
+    if languages:
+      print u'Custom Languages: %s' % u','.join(languages)
   if u'isAdmin' in user:
     print u'Is a Super Admin: %s' % user[u'isAdmin']
   if u'isDelegatedAdmin' in user:
@@ -8733,6 +8775,22 @@ def doGetUserInfo(user_email=None):
     else:
       print utils.convertUTF8(utils.indentMultiLineText(u' value: {0}'.format(notes), n=2))
     print u''
+  if u'gender' in user:
+    print u'Gender'
+    gender = user[u'gender']
+    for key in gender:
+      if key == u'customGender' and not gender[key]:
+        continue
+      print utils.convertUTF8(u' %s: %s' % (key, gender[key]))
+    print u''
+  if u'keywords' in user:
+    print u'Keywords:'
+    for keyword in user[u'keywords']:
+      for key in keyword:
+        if key == u'customType' and not keyword[key]:
+          continue
+        print utils.convertUTF8(u' %s: %s' % (key, keyword[key]))
+      print u''
   if u'ims' in user:
     print u'IMs:'
     for im in user[u'ims']:
@@ -9891,6 +9949,7 @@ USER_ARGUMENT_TO_PROPERTY_MAP = {
   u'firstname': [u'name.givenName',],
   u'fullname': [u'name.fullName',],
   u'gal': [u'includeInGlobalAddressList',],
+  u'gender': [u'gender.type', u'gender.customGender', u'gender.addressMeAs',],
   u'givenname': [u'name.givenName',],
   u'id': [u'id',],
   u'im': [u'ims',],
@@ -9904,6 +9963,10 @@ USER_ARGUMENT_TO_PROPERTY_MAP = {
   u'is2svenforced': [u'isEnforcedIn2Sv',],
   u'is2svenrolled': [u'isEnrolledIn2Sv',],
   u'ismailboxsetup': [u'isMailboxSetup',],
+  u'keyword': [u'keywords',],
+  u'keywords': [u'keywords',],
+  u'language': [u'languages',],
+  u'languages': [u'languages',],
   u'lastlogintime': [u'lastLoginTime',],
   u'lastname': [u'name.familyName',],
   u'location': [u'locations',],

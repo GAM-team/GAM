@@ -784,9 +784,10 @@ GAPI_MEMBERS_RETRY_REASONS = [GAPI_SYSTEM_ERROR]
 
 USER_ADDRESS_TYPES = [u'home', u'work', u'other']
 USER_EMAIL_TYPES = [u'home', u'work', u'other']
-USER_EXTERNALID_TYPES = [u'account', u'customer', u'login_id', u'network',
-                         u'organization']
+USER_EXTERNALID_TYPES = [u'account', u'customer', u'login_id', u'network', u'organization']
+USER_GENDER_TYPES = [u'female', u'male', u'unknown']
 USER_IM_TYPES = [u'home', u'work', u'other']
+USER_KEYWORD_TYPES = [u'occupation', u'outlook']
 USER_LOCATION_TYPES = [u'default', u'desk']
 USER_ORGANIZATION_TYPES = [u'domain_only', u'school', u'unknown', u'work']
 USER_PHONE_TYPES = [u'assistant', u'callback', u'car', u'company_main',
@@ -952,3 +953,28 @@ WEBCOLOR_MAP = {
     u'yellow': u'#ffff00',
     u'yellowgreen': u'#9acd32',
 }
+# Valid language codes
+LANGUAGE_CODES_MAP = {
+  u'ach': u'ach', u'af': u'af', u'ag': u'ga', u'ak': u'ak', u'am': u'am', u'ar': u'ar', u'az': u'az', #Luo, Afrikaans, Irish, Akan, Amharic, Arabica, Azerbaijani
+  u'be': u'be', u'bem': u'bem', u'bg': u'bg', u'bn': u'bn', u'br': u'br', u'bs': u'bs', u'ca': u'ca', #Belarusian, Bemba, Bulgarian, Bengali, Breton, Bosnian, Catalan
+  u'chr': u'chr', u'ckb': u'ckb', u'co': u'co', u'crs': u'crs', u'cs': u'cs', u'cy': u'cy', u'da': u'da', #Cherokee, Kurdish (Sorani), Corsican, Seychellois Creole, Czech, Welsh, Danish
+  u'de': u'de', u'ee': u'ee', u'el': u'el', u'en': u'en', u'en-gb': u'en-GB', u'en-us': u'en-US', u'eo': u'eo', #German, Ewe, Greek, English, English (UK), English (US), Esperanto
+  u'es': u'es', u'es-419': u'es-419', u'et': u'et', u'eu': u'eu', u'fa': u'fa', u'fi': u'fi', u'fo': u'fo', #Spanish, Spanish (Latin American), Estonian, Basque, Persian, Finnish, Faroese
+  u'fr': u'fr', u'fr-ca': u'fr-ca', u'fy': u'fy', u'ga': u'ga', u'gaa': u'gaa', u'gd': u'gd', u'gl': u'gl', #French, French (Canada), Frisian, Irish, Ga, Scots Gaelic, Galician
+  u'gn': u'gn', u'gu': u'gu', u'ha': u'ha', u'haw': u'haw', u'he': u'he', u'hi': u'hi', u'hr': u'hr', #Guarani, Gujarati, Hausa, Hawaiian, Hebrew, Hindi, Croatian
+  u'ht': u'ht', u'hu': u'hu', u'hy': u'hy', u'ia': u'ia', u'id': u'id', u'ig': u'ig', u'in': u'in', #Haitian Creole, Hungarian, Armenian, Interlingua, Indonesian, Igbo, in
+  u'is': u'is', u'it': u'it', u'iw': u'iw', u'ja': u'ja', u'jw': u'jw', u'ka': u'ka', u'kg': u'kg', #Icelandic, Italian, Hebrew, Japanese, Javanese, Georgian, Kongo
+  u'kk': u'kk', u'km': u'km', u'kn': u'kn', u'ko': u'ko', u'kri': u'kri', u'ku': u'ku', u'ky': u'ky', #Kazakh, Khmer, Kannada, Korean, Krio (Sierra Leone), Kurdish, Kyrgyz
+  u'la': u'la', u'lg': u'lg', u'ln': u'ln', u'lo': u'lo', u'loz': u'loz', u'lt': u'lt', u'lua': u'lua', #Latin, Luganda, Lingala, Laothian, Lozi, Lithuanian, Tshiluba
+  u'lv': u'lv', u'mfe': u'mfe', u'mg': u'mg', u'mi': u'mi', u'mk': u'mk', u'ml': u'ml', u'mn': u'mn', #Latvian, Mauritian Creole, Malagasy, Maori, Macedonian, Malayalam, Mongolian
+  u'mo': u'mo', u'mr': u'mr', u'ms': u'ms', u'mt': u'mt', u'my': u'my', u'ne': u'ne', u'nl': u'nl', #Moldavian, Marathi, Malay, Maltese, Burmese, Nepali, Dutch
+  u'nn': u'nn', u'no': u'no', u'nso': u'nso', u'ny': u'ny', u'nyn': u'nyn', u'oc': u'oc', u'om': u'om', #Norwegian (Nynorsk), Norwegian, Northern Sotho, Chichewa, Runyakitara, Occitan, Oromo
+  u'or': u'or', u'pa': u'pa', u'pcm': u'pcm', u'pl': u'pl', u'ps': u'ps', u'pt-br': u'pt-BR', u'pt-pt': u'pt-PT', #Oriya, Punjabi, Nigerian Pidgin, Polish, Pashto, Portuguese (Brazil), Portuguese (Portugal)
+  u'qu': u'qu', u'rm': u'rm', u'rn': u'rn', u'ro': u'ro', u'ru': u'ru', u'rw': u'rw', u'sd': u'sd', #Quechua, Romansh, Kirundi, Romanian, Russian, Kinyarwanda, Sindhi
+  u'sh': u'sh', u'si': u'si', u'sk': u'sk', u'sl': u'sl', u'sn': u'sn', u'so': u'so', u'sq': u'sq', #Serbo-Croatian, Sinhalese, Slovak, Slovenian, Shona, Somali, Albanian
+  u'sr': u'sr', u'sr-me': u'sr-ME', u'st': u'st', u'su': u'su', u'sv': u'sv', u'sw': u'sw', u'ta': u'ta', #Serbian, Montenegrin, Sesotho, Sundanese, Swedish, Swahili, Tamil
+  u'te': u'te', u'tg': u'tg', u'th': u'th', u'ti': u'ti', u'tk': u'tk', u'tl': u'tl', u'tn': u'tn', #Telugu, Tajik, Thai, Tigrinya, Turkmen, Tagalog, Setswana
+  u'to': u'to', u'tr': u'tr', u'tt': u'tt', u'tum': u'tum', u'tw': u'tw', u'ug': u'ug', u'uk': u'uk', #Tonga, Turkish, Tatar, Tumbuka, Twi, Uighur, Ukrainian
+  u'ur': u'ur', u'uz': u'uz', u'vi': u'vi', u'wo': u'wo', u'xh': u'xh', u'yi': u'yi', u'yo': u'yo', #Urdu, Uzbek, Vietnamese, Wolof, Xhosa, Yiddish, Yoruba
+  u'zh-cn': u'zh-CN', u'zh-hk': u'zh-HK', u'zh-tw': u'zh-TW', u'zu': u'zu', #Chinese (Simplified), Chinese (Hong Kong/Traditional), Chinese (Taiwan/Traditional), Zulu
+  }
