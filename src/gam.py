@@ -7784,7 +7784,11 @@ def _makeBuildingIdNameMap(cd):
     GM_Globals[GM_MAP_BUILDING_ID_TO_NAME][building[u'buildingId']] = building[u'buildingName']
     GM_Globals[GM_MAP_BUILDING_NAME_TO_ID][building[u'buildingName']] = building[u'buildingId']
 
-def _getBuildingByNameOrId(cd, which_building):
+def _getBuildingByNameOrId(cd, which_building, minLen=1):
+  if not which_building or which_building.lower() == u'id:':
+    if minLen == 0:
+      return u''
+    systemErrorExit(3, u'Building id/name is empty')
   if which_building[:3].lower() == u'id:':
     return which_building[3:]
   if GM_Globals[GM_MAP_BUILDING_NAME_TO_ID] is None:
@@ -7905,7 +7909,7 @@ def _getResourceCalendarAttributes(cd, args, body={}):
       body[u'resourceType'] = args[i+1]
       i += 2
     elif myarg in [u'building', u'buildingid']:
-      body[u'buildingId'] = _getBuildingByNameOrId(cd, args[i+1])
+      body[u'buildingId'] = _getBuildingByNameOrId(cd, args[i+1], minLen=0)
       i += 2
     elif myarg in [u'capacity']:
       body[u'capacity'] = int(args[i+1])
@@ -10876,7 +10880,7 @@ def doPrintCrosDevices():
         orderBy = u'lastSync'
       elif orderBy == u'serialnumber':
         orderBy = u'serialNumber'
-      elif orderBy == u'supportEndDate':
+      elif orderBy == u'supportenddate':
         orderBy = u'supportEndDate'
       i += 2
     elif myarg in SORTORDER_CHOICES_MAP:
@@ -11315,13 +11319,11 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
         users.append(user)
     closeFile(f)
   elif entity_type in [u'csv', u'csvfile']:
-    try:
-      (filename, column) = entity.split(u':')
-    except ValueError:
-      filename = column = None
-    if (not filename) or (not column):
+    drive, filenameColumn = os.path.splitdrive(entity)
+    if filenameColumn.find(u':') == -1:
       systemErrorExit(2, u'Expected {0} FileName:FieldName'.format(entity_type))
-    f = openFile(filename, mode='rbU')
+    (filename, column) = filenameColumn.split(u':')
+    f = openFile(drive+filename, mode='rbU')
     input_file = csv.DictReader(f, restval=u'')
     if column not in input_file.fieldnames:
       csvFieldErrorExit(column, input_file.fieldnames)
