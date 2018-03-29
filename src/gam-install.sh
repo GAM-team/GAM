@@ -42,6 +42,9 @@ do
      esac
 done
 
+# remove possible / from end of target_dir
+target_dir=${target_dir%/}
+
 update_profile() {
 	[ -f "$1" ] || return 1
 
@@ -184,7 +187,7 @@ fi
 
 # Update profile to add gam command
 if [ "$update_profile" = true ]; then
-  alias_line="alias gam=\"$target_dir/gam/gam\""
+  alias_line="gam() { \"$target_dir/gam/gam\" \"\$@\" ; }"
   if [ "$gamos" == "linux" ]; then
     update_profile "$HOME/.bashrc" || update_profile "$HOME/.bash_profile"
   elif [ "$gamos" == "macos" ]; then
