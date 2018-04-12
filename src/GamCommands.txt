@@ -161,7 +161,6 @@ Named items
 <MatterItem> ::= <UniqueID>|<String>
 <MaximumNumberOfSeats> ::= <Number>
 <MobileID> ::= <String>
-<MobileItem> ::= <MobileID>|(query:<QueryMobile>)|(query <QueryMobile>)
 <Name> ::= <String>
 <NotificationID> ::= <String>
 <NumberOfSeats> ::= <Number>
@@ -882,9 +881,9 @@ The listlimit <Number> argument limits the number of recent users, time ranges a
 The start <Date> and end <Date> arguments filter the time ranges.
 Delimiter defaults to comma.
 
-gam update mobile <MobileItem> action <MobileAction>
-gam delete mobile <MobileItem>
-gam info mobile <MobileItem>
+gam update mobile <MobileID> action <MobileAction>
+gam delete mobile <MobileID>
+gam info mobile <MobileID>
 gam print mobile [todrive] [(query <QueryMobile>)|(queries <QueryMobileList>)] [basic|full] [orderby <MobileOrderByFieldName> [ascending|descending]]
 	fields <MobileFieldNameList>] [delimiter <Character>] [appslimit <Number>] [listlimit <Number>]
 
