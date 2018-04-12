@@ -161,7 +161,6 @@ Named items
 <MatterItem> ::= <UniqueID>|<String>
 <MaximumNumberOfSeats> ::= <Number>
 <MobileID> ::= <String>
-<MobileItem> ::= <MobileID>|(query:<QueryMobile>)|(query <QueryMobile>)
 <Name> ::= <String>
 <NotificationID> ::= <String>
 <NumberOfSeats> ::= <Number>
@@ -509,6 +508,10 @@ Items, separated by spaces, with spaces, commas or single quotes in the items th
 <PrinterIDList> ::= "<PrinterID>(,<PrinterID>)*"
 <ProductIDList> ::= "(<ProductID>|SKUID>)(,<ProductID>|SKUID>)*"
 <PrintJobIDList> ::= "<PrintJobID>(,<PrintJobID>)*"
+<QueryCrOSList> ::= "<QueryCrOS>(,<QueryCrOS>)*"
+<QueryMobileList> ::= "<QueryMobile>(,<QueryMobile>)*"
+<QueryPrinterList> ::= "<QueryPrinter>(,<QueryPrinter>)*"
+<QueryUserList> ::= "<QueryUser>(,<QueryUser>)*"
 <ResourceIDList> ::= "<ResourceID>(,<ResourceID>)*"
 <SKUIDList> ="<SKUID>(,<SKUID>)*"
 <SchemaNameList> ::= "<SchemaName>(,<SchemaName>)*"
@@ -519,6 +522,10 @@ Specify a collection of ChromeOS devices by directly specifying them
 <CrOSTypeEntity> ::=
 	(all cros)|
 	(cros <CrOSList>)|
+	(crosfile <FileName>)|
+	(croscsvfile <FileName>:<FieldName>)|
+	(crosquery <QueryCrOS>)|
+	(crosqueries <QueryCrOSList>)
 Specify a collection of Users by directly specifying them or by specifiying items that will yield a list of users
 <UserTypeEntity> ::=
 	(all users)|
@@ -533,7 +540,8 @@ Specify a collection of Users by directly specifying them or by specifiying item
 	(file <FileName>)|
 	(csvfile <FileName>:<FieldName>)|
 	(license|licenses|licence|licences <SKUIDList>)|
-	(query <QueryUser>)
+	(query <QueryUser>)|
+	(queries <QueryUserList>)
 
 Item attributes
 <BuildingAttributes> ::=
@@ -806,7 +814,7 @@ gam create alias|nickname <EmailAddress> user|group|target <UniqueID>|<EmailAddr
 gam update alias|nickname <EmailAddress> user|group|target <UniqueID>|<EmailAddress>
 gam delete alias|nickname [user|group|target] <UniqueID>|<EmailAddress>
 gam info alias|nickname <EmailAddress>
-gam print aliases|nicknames [todrive] [shownoneditable] [nogroups] [nousers] [query <QueryUser>]
+gam print aliases|nicknames [todrive] [shownoneditable] [nogroups] [nousers] [(query <QueryUser>)|(queries <QueryUserList)]
 
 gam calendar <CalendarItem> add <CalendarACLRole> ([user] <EmailAddress>)|(group <EmailAddress>)|(domain [<DomainName>])|default
 gam calendar <CalendarItem> update <CalendarACLRole> ([user] <EmailAddress>)|(group <EmailAddress>)|(domain [<DomainName>])|default
@@ -821,7 +829,7 @@ gam update cros <CrOSItem> (<CrOSAttributes>+)|(action deprovision_same_model_re
 gam info cros <CrOSItem> [nolists] [listlimit <Number>] [start <Date>] [end <Date>]
 	[basic|full|allfields] <CrOSFieldName>* [fields <CrOSFieldNameList>] [downloadfile latest|<Time>] [targetfolder <FilePath>]
 
-gam print cros [todrive] [query <QueryCrOS>] [limittoou <OrgUnitItem>]
+gam print cros [todrive] [(query <QueryCrOS>)|(queries <QueryCrOSList>)] [limittoou <OrgUnitItem>]
 	[orderby <CrOSOrderByFieldName> [ascending|descending]] [nolists|recentusers|timeranges|devicefiles] [listlimit <Number>] [start <Date>] [end <Date>]
 	[basic|full|allfields] <CrOSFieldName>* [fields <CrOSFieldNameList>]
 gam <CrOSTypeEntity> print
@@ -851,7 +859,7 @@ with all of the other headers.
 The listlimit <Number> argument limits the number of repetitions to <Number>; if not specified or <Number> equals zero, there is no limit.
 The start <Date> and end <Date> arguments filter the time ranges.
 
-gam print crosactivity [todrive] [query <QueryCrOS>] [limittoou <OrgUnitItem>]
+gam print crosactivity [todrive] [(query <QueryCrOS>)|(queries <QueryCrOSList>)] [limittoou <OrgUnitItem>]
 	[recentusers] [timeranges] [both] [devicefiles] [all] [listlimit <Number>] [start <Date>] [end <Date>] [delimiter <Character>]
 
 The basic column headers are: deviceId,annotatedAssetId,annotatedLocation,serialNumber,orgUnitPath.
@@ -873,10 +881,10 @@ The listlimit <Number> argument limits the number of recent users, time ranges a
 The start <Date> and end <Date> arguments filter the time ranges.
 Delimiter defaults to comma.
 
-gam update mobile <MobileItem> action <MobileAction>
-gam delete mobile <MobileItem>
-gam info mobile <MobileItem>
-gam print mobile [todrive] [query <QueryMobile>] [basic|full] [orderby <MobileOrderByFieldName> [ascending|descending]]
+gam update mobile <MobileID> action <MobileAction>
+gam delete mobile <MobileID>
+gam info mobile <MobileID>
+gam print mobile [todrive] [(query <QueryMobile>)|(queries <QueryMobileList>)] [basic|full] [orderby <MobileOrderByFieldName> [ascending|descending]]
 	fields <MobileFieldNameList>] [delimiter <Character>] [appslimit <Number>] [listlimit <Number>]
 
 gam create group <EmailAddress> <GroupAttributes>*
@@ -933,7 +941,7 @@ gam delete user <UserItem>
 gam undelete user <UserItem> [org|ou <OrgUnitPath>]
 gam info user [<UserItem>] [noaliases] [nogroups] [nolicenses|nolicences] [noschemas] [schemas|custom <SchemaNameList>] [userview] [skus|sku <SKUIDList>]
 
-gam print users [todrive] ([domain <DomainName>] [query <QueryUser>] [deleted_only|only_deleted])
+gam print users [todrive] ([domain <DomainName>] [(query <QueryUser>)|(queries <QueryUserList>)] [deleted_only|only_deleted])
 	[groups] [license|licenses|licence|licences] [emailpart|emailparts|username]
 	[orderby <UserOrderByFieldName> [ascending|descending]] [userview]
 	[allfields|basic|full | ((<UserFieldName>* | fields <UserFieldNameList>) [schemas|custom all|<SchemaNameList>])]
@@ -973,7 +981,7 @@ gam cancel guardianinvitation|guardianinvitations <GuardianInvitationID> <Studen
 gam update printer <PrinterID> <PrinterAttributes>+
 gam delete printer <PrinterID>
 gam info printer <PrinterID> [everything]
-gam print printers [todrive] [query <QueryPrinter>] [type <String>] [status <String>] [extrafields <String>]
+gam print printers [todrive] [(query <QueryPrinter>)|(queries <QueryPrinterList>)] [type <String>] [status <String>] [extrafields <String>]
 
 gam printer <PrinterID> add user|manager|owner <EmailAddress>|[domain:]<DomainName>|public [notify]
 gam printer <PrinterID> delete <EmailAddress>|[domain:]<DomainName>|public
