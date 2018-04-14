@@ -80,6 +80,26 @@ Go to the following link in your browser:
     {address}
 """
 
+# Override and wrap google_auth_httplib2.Request.__call__ so that the GAM
+# user-agent string is inserted into HTTP request headers.
+google_auth_httplib2_request_call = google_auth_httplib2.Request.__call__
+def _request_with_user_agent(self, *args, **kwargs):
+  """Inserts the GAM user-agent header in all google_auth_httplib2 requests."""
+  GAM_USER_AGENT = GAM_INFO
+
+  if kwargs.get('headers') is not None:
+    if kwargs['headers'].get('user-agent'):
+      # Save the existing user-agent header and tack on the GAM user-agent.
+      kwargs['headers']['user-agent'] = '%s %s' % (
+          GAM_USER_AGENT, kwargs.headers['user-agent'])
+    else:
+      kwargs['headers']['user-agent'] = GAM_USER_AGENT
+  else:
+    kwargs.headers = {'user-agent': GAM_USER_AGENT}
+  return google_auth_httplib2_request_call(self, *args, **kwargs)
+
+google_auth_httplib2.Request.__call__ = _request_with_user_agent
+
 def showUsage():
   doGAMVersion(checkForArgs=False)
   print u'''
@@ -1064,10 +1084,10 @@ def buildGAPIServiceObject(api, act_as, showAuthError=True):
   GM_Globals[GM_CURRENT_API_USER] = act_as
   GM_Globals[GM_CURRENT_API_SCOPES] = API_SCOPE_MAPPING[api]
   credentials = getSvcAcctCredentials(GM_Globals[GM_CURRENT_API_SCOPES], act_as)
-  request = google_auth_httplib2.Request(http, user_agent=GAM_INFO)
+  request = google_auth_httplib2.Request(http)
   try:
     credentials.refresh(request)
-    service._http = google_auth_httplib2.AuthorizedHttp(credentials, http=http, user_agent=GAM_INFO)
+    service._http = google_auth_httplib2.AuthorizedHttp(credentials, http=http)
   except httplib2.ServerNotFoundError as e:
     systemErrorExit(4, e)
   except google.auth.exceptions.RefreshError as e:
@@ -1129,7 +1149,7 @@ def doCheckServiceAccount(users):
     for scope in all_scopes:
       try:
         credentials = getSvcAcctCredentials([scope], user)
-        request = google_auth_httplib2.Request(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL]), user_agent=GAM_INFO)
+        request = google_auth_httplib2.Request(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL]))
         credentials.refresh(request)
         result = u'PASS'
       except httplib2.ServerNotFoundError as e:
