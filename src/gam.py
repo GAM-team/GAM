@@ -95,7 +95,7 @@ def _request_with_user_agent(self, *args, **kwargs):
     else:
       kwargs['headers']['user-agent'] = GAM_USER_AGENT
   else:
-    kwargs.headers = {'user-agent': GAM_USER_AGENT}
+    kwargs['headers'] = {'user-agent': GAM_USER_AGENT}
   return google_auth_httplib2_request_call(self, *args, **kwargs)
 
 google_auth_httplib2.Request.__call__ = _request_with_user_agent
