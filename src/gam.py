@@ -80,25 +80,32 @@ Go to the following link in your browser:
     {address}
 """
 
-# Override and wrap google_auth_httplib2.Request.__call__ so that the GAM
+# Override and wrap google_auth_httplib2 request methods so that the GAM
 # user-agent string is inserted into HTTP request headers.
-google_auth_httplib2_request_call = google_auth_httplib2.Request.__call__
-def _request_with_user_agent(self, *args, **kwargs):
-  """Inserts the GAM user-agent header in all google_auth_httplib2 requests."""
+def _request_with_user_agent(request_method):
+  """Inserts the GAM user-agent header kwargs sent to a method."""
   GAM_USER_AGENT = GAM_INFO
 
-  if kwargs.get('headers') is not None:
-    if kwargs['headers'].get('user-agent'):
-      # Save the existing user-agent header and tack on the GAM user-agent.
-      kwargs['headers']['user-agent'] = '%s %s' % (
-          GAM_USER_AGENT, kwargs.headers['user-agent'])
+  def wrapped_request_method(self, *args, **kwargs):
+    if kwargs.get('headers') is not None:
+      if kwargs['headers'].get('user-agent'):
+        if GAM_USER_AGENT not in kwargs['headers']['user-agent']:
+          # Save the existing user-agent header and tack on the GAM user-agent.
+          kwargs['headers']['user-agent'] = '%s %s' % (
+              GAM_USER_AGENT, kwargs['headers']['user-agent'])
+      else:
+        kwargs['headers']['user-agent'] = GAM_USER_AGENT
     else:
-      kwargs['headers']['user-agent'] = GAM_USER_AGENT
-  else:
-    kwargs['headers'] = {'user-agent': GAM_USER_AGENT}
-  return google_auth_httplib2_request_call(self, *args, **kwargs)
+      kwargs['headers'] = {'user-agent': GAM_USER_AGENT}
 
-google_auth_httplib2.Request.__call__ = _request_with_user_agent
+    return request_method(self, *args, **kwargs)
+
+  return wrapped_request_method
+
+google_auth_httplib2.Request.__call__ = _request_with_user_agent(
+    google_auth_httplib2.Request.__call__)
+google_auth_httplib2.AuthorizedHttp.request = _request_with_user_agent(
+    google_auth_httplib2.AuthorizedHttp.request)
 
 def showUsage():
   doGAMVersion(checkForArgs=False)
