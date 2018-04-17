@@ -91,21 +91,17 @@ def _request_with_user_agent(request_method):
       if kwargs['headers'].get('user-agent'):
         if GAM_USER_AGENT not in kwargs['headers']['user-agent']:
           # Save the existing user-agent header and tack on the GAM user-agent.
-          kwargs['headers']['user-agent'] = '%s %s' % (
-              GAM_USER_AGENT, kwargs['headers']['user-agent'])
+          kwargs['headers']['user-agent'] = '%s %s' % (GAM_USER_AGENT, kwargs['headers']['user-agent'])
       else:
         kwargs['headers']['user-agent'] = GAM_USER_AGENT
     else:
       kwargs['headers'] = {'user-agent': GAM_USER_AGENT}
-
     return request_method(self, *args, **kwargs)
 
   return wrapped_request_method
 
-google_auth_httplib2.Request.__call__ = _request_with_user_agent(
-    google_auth_httplib2.Request.__call__)
-google_auth_httplib2.AuthorizedHttp.request = _request_with_user_agent(
-    google_auth_httplib2.AuthorizedHttp.request)
+google_auth_httplib2.Request.__call__ = _request_with_user_agent(google_auth_httplib2.Request.__call__)
+google_auth_httplib2.AuthorizedHttp.request = _request_with_user_agent(google_auth_httplib2.AuthorizedHttp.request)
 
 def showUsage():
   doGAMVersion(checkForArgs=False)
@@ -157,6 +153,12 @@ def getHTTPError(responses, http_status, reason, message):
   if reason in responses:
     return responses[reason]
   return formatHTTPError(http_status, reason, message)
+
+def printGettingAllItems(items, query):
+  if query:
+    sys.stderr.write(u"Getting all {0} in G Suite account that match query ({1}) (may take some time on a large account)...\n".format(items, query))
+  else:
+    sys.stderr.write(u"Getting all {0} in G Suite account (may take some time on a large account)...\n".format(items))
 
 def entityServiceNotApplicableWarning(entityType, entityName, i, count):
   sys.stderr.write(u'{0}: {1}, Service not applicable/Does not exist{2}'.format(entityType, entityName, currentCountNL(i, count)))
@@ -1276,7 +1278,7 @@ def showReport():
             sys.exit(1)
           if fullData == 0:
             continue
-        page_message = u'Got %%num_items%% users\n'
+        page_message = u'Got %%num_items%% Users\n'
         usage = callGAPIpages(rep.userUsageReport(), u'get', u'usageReports', page_message=page_message, throw_reasons=[GAPI_INVALID],
                               date=tryDate, userKey=userKey, customerId=customerId, filters=filters, parameters=parameters)
         break
@@ -2535,8 +2537,8 @@ def doPrintCourses():
     else:
       systemErrorExit(2, '%s is not a valid argument for "gam print courses"' % sys.argv[i])
   fields = u'nextPageToken,courses({0})'.format(u','.join(set(fieldsList))) if fieldsList else None
-  sys.stderr.write(u'Retrieving courses for organization (may take some time for large accounts)...\n')
-  page_message = u'Got %%num_items%% courses...\n'
+  printGettingAllItems(u'Courses', None)
+  page_message = u'Got %%num_items%% Courses...\n'
   all_courses = callGAPIpages(croom.courses(), u'list', u'courses', page_message=page_message, teacherId=teacherId, studentId=studentId, courseStates=courseStates, fields=fields)
   for course in all_courses:
     for field in skipFieldsList:
@@ -2558,20 +2560,20 @@ def doPrintCourses():
       i += 1
       courseId = course[u'id']
       if showAliases:
-        alias_message = u' got %%%%num_items%%%% aliases for course %s%s' % (courseId, currentCount(i, count))
+        alias_message = u' Got %%%%num_items%%%% Aliases for course %s%s' % (courseId, currentCount(i, count))
         course_aliases = callGAPIpages(croom.courses().aliases(), u'list', u'aliases',
                                        page_message=alias_message,
                                        courseId=courseId)
         course[u'Aliases'] = delimiter.join([alias[u'alias'][2:] for alias in course_aliases])
       if showMembers:
         if showMembers != u'students':
-          teacher_message = u' got %%%%num_items%%%% teachers for course %s%s' % (courseId, currentCount(i, count))
+          teacher_message = u' Got %%%%num_items%%%% Teachers for course %s%s' % (courseId, currentCount(i, count))
           results = callGAPIpages(croom.courses().teachers(), u'list', u'teachers',
                                   page_message=teacher_message,
                                   courseId=courseId, fields=teachersFields)
           _saveParticipants(course, results, u'teachers')
         if showMembers != u'teachers':
-          student_message = u' got %%%%num_items%%%% students for course %s%s' % (courseId, currentCount(i, count))
+          student_message = u' Got %%%%num_items%%%% Students for course %s%s' % (courseId, currentCount(i, count))
           results = callGAPIpages(croom.courses().students(), u'list', u'students',
                                   page_message=student_message,
                                   courseId=courseId, fields=studentsFields)
@@ -2615,8 +2617,8 @@ def doPrintCourseParticipants():
     else:
       systemErrorExit(2, '%s is not a valid argument for "gam print course-participants"' % sys.argv[i])
   if len(courses) == 0:
-    sys.stderr.write(u'Retrieving courses for organization (may take some time for large accounts)...\n')
-    page_message = u'Got %%num_items%% courses...\n'
+    printGettingAllItems(u'Courses', None)
+    page_message = u'Got %%num_items%% Courses...\n'
     all_courses = callGAPIpages(croom.courses(), u'list', u'courses', page_message=page_message,
                                 teacherId=teacherId, studentId=studentId, courseStates=courseStates, fields=u'nextPageToken,courses(id,name)')
   else:
@@ -2629,12 +2631,12 @@ def doPrintCourseParticipants():
     i += 1
     courseId = course[u'id']
     if showMembers != u'students':
-      page_message = u' got %%%%num_items%%%% teachers for course %s (%s/%s)' % (courseId, i, count)
+      page_message = u' Got %%%%num_items%%%% Teachers for course %s (%s/%s)' % (courseId, i, count)
       teachers = callGAPIpages(croom.courses().teachers(), u'list', u'teachers', page_message=page_message, courseId=courseId)
       for teacher in teachers:
         addRowTitlesToCSVfile(flatten_json(teacher, flattened={u'courseId': courseId, u'courseName': course[u'name'], u'userRole': u'TEACHER'}), csvRows, titles)
     if showMembers != u'teachers':
-      page_message = u' got %%%%num_items%%%% students for course %s (%s/%s)' % (courseId, i, count)
+      page_message = u' Got %%%%num_items%%%% Students for course %s (%s/%s)' % (courseId, i, count)
       students = callGAPIpages(croom.courses().students(), u'list', u'students', page_message=page_message, courseId=courseId)
       for student in students:
         addRowTitlesToCSVfile(flatten_json(student, flattened={u'courseId': courseId, u'courseName': course[u'name'], u'userRole': u'STUDENT'}), csvRows, titles)
@@ -2767,15 +2769,15 @@ def doPrintPrinters():
   todrive = False
   titles = [u'id',]
   csvRows = []
-  query = None
+  queries = [None]
   printer_type = None
   connection_status = None
   extra_fields = None
   i = 3
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace(u'_', u'')
-    if myarg == u'query':
-      query = sys.argv[i+1]
+    if myarg in [u'query', u'queries']:
+      queries = getQueries(myarg, sys.argv[i+1])
       i += 2
     elif myarg == u'type':
       printer_type = sys.argv[i+1]
@@ -2791,17 +2793,18 @@ def doPrintPrinters():
       i += 1
     else:
       systemErrorExit(2, '%s is not a valid argument for "gam print printers"' % sys.argv[i])
-  printers = callGAPI(cp.printers(), u'list', q=query, type=printer_type, connection_status=connection_status, extra_fields=extra_fields)
-  checkCloudPrintResult(printers)
-  for printer in printers[u'printers']:
-    createTime = int(printer[u'createTime'])/1000
-    accessTime = int(printer[u'accessTime'])/1000
-    updateTime = int(printer[u'updateTime'])/1000
-    printer[u'createTime'] = datetime.datetime.fromtimestamp(createTime).strftime(u'%Y-%m-%d %H:%M:%S')
-    printer[u'accessTime'] = datetime.datetime.fromtimestamp(accessTime).strftime(u'%Y-%m-%d %H:%M:%S')
-    printer[u'updateTime'] = datetime.datetime.fromtimestamp(updateTime).strftime(u'%Y-%m-%d %H:%M:%S')
-    printer[u'tags'] = u' '.join(printer[u'tags'])
-    addRowTitlesToCSVfile(flatten_json(printer), csvRows, titles)
+  for query in queries:
+    printers = callGAPI(cp.printers(), u'list', q=query, type=printer_type, connection_status=connection_status, extra_fields=extra_fields)
+    checkCloudPrintResult(printers)
+    for printer in printers[u'printers']:
+      createTime = int(printer[u'createTime'])/1000
+      accessTime = int(printer[u'accessTime'])/1000
+      updateTime = int(printer[u'updateTime'])/1000
+      printer[u'createTime'] = datetime.datetime.fromtimestamp(createTime).strftime(u'%Y-%m-%d %H:%M:%S')
+      printer[u'accessTime'] = datetime.datetime.fromtimestamp(accessTime).strftime(u'%Y-%m-%d %H:%M:%S')
+      printer[u'updateTime'] = datetime.datetime.fromtimestamp(updateTime).strftime(u'%Y-%m-%d %H:%M:%S')
+      printer[u'tags'] = u' '.join(printer[u'tags'])
+      addRowTitlesToCSVfile(flatten_json(printer), csvRows, titles)
   writeCSVfile(csvRows, titles, u'Printers', todrive)
 
 def changeCalendarAttendees(users):
@@ -3883,7 +3886,7 @@ def printDriveActivity(users):
     user, activity = buildActivityGAPIObject(user)
     if not activity:
       continue
-    page_message = u'Retrieved %%%%total_items%%%% activities for %s' % user
+    page_message = u'Got %%%%total_items%%%% activities for %s' % user
     feed = callGAPIpages(activity.activities(), u'list', u'activities',
                          page_message=page_message, source=u'drive.google.com', userId=u'me',
                          drive_ancestorId=drive_ancestorId, groupingStrategy=u'none',
@@ -4158,7 +4161,7 @@ def printDriveFileList(users):
     if not drive:
       continue
     sys.stderr.write(u'Getting files for %s...\n' % user)
-    page_message = u' got %%%%total_items%%%% files for %s...\n' % user
+    page_message = u' Got %%%%total_items%%%% files for %s...\n' % user
     feed = callGAPIpages(drive.files(), u'list', u'items',
                          page_message=page_message, soft_errors=True,
                          q=query, orderBy=orderBy, fields=fields, maxResults=GC_Values[GC_DRIVE_MAX_RESULTS])
@@ -4209,7 +4212,7 @@ def printDriveFileList(users):
 
 def doDriveSearch(drive, query=None):
   print u'Searching for files with query: "%s"...' % query
-  page_message = u' got %%total_items%% files...\n'
+  page_message = u' Got %%total_items%% files...\n'
   files = callGAPIpages(drive.files(), u'list', u'items',
                         page_message=page_message,
                         q=query, fields=u'nextPageToken,items(id)', maxResults=GC_Values[GC_DRIVE_MAX_RESULTS])
@@ -4317,7 +4320,7 @@ def showDriveFileTree(users):
       continue
     root_folder = callGAPI(drive.about(), u'get', fields=u'rootFolderId')[u'rootFolderId']
     sys.stderr.write(u'Getting all files for %s...\n' % user)
-    page_message = u' got %%%%total_items%%%% files for %s...\n' % user
+    page_message = u' Got %%%%total_items%%%% files for %s...\n' % user
     feed = callGAPIpages(drive.files(), u'list', u'items', page_message=page_message,
                          q=query, orderBy=orderBy, fields=u'items(id,title,parents(id),mimeType),nextPageToken', maxResults=GC_Values[GC_DRIVE_MAX_RESULTS])
     printDriveFolderContents(feed, root_folder, 0)
@@ -4331,7 +4334,7 @@ def deleteEmptyDriveFolders(users):
     deleted_empty = True
     while deleted_empty:
       sys.stderr.write(u'Getting folders for %s...\n' % user)
-      page_message = u' got %%%%total_items%%%% folders for %s...\n' % user
+      page_message = u' Got %%%%total_items%%%% folders for %s...\n' % user
       feed = callGAPIpages(drive.files(), u'list', u'items', page_message=page_message,
                            q=query, fields=u'items(title,id),nextPageToken', maxResults=GC_Values[GC_DRIVE_MAX_RESULTS])
       deleted_empty = False
@@ -4750,7 +4753,7 @@ def transferDriveFiles(users):
     source_root = source_about[u'rootFolderId']
     source_permissionid = source_about[u'permissionId']
     print u"Getting file list for source user: %s..." % user
-    page_message = u'  got %%total_items%% files\n'
+    page_message = u' Got %%total_items%% files\n'
     source_drive_files = callGAPIpages(source_drive.files(), u'list', u'items', page_message=page_message,
                                        q=u"'me' in owners and trashed = false", fields=u'items(id,parents,mimeType),nextPageToken')
     all_source_file_ids = []
@@ -4758,7 +4761,7 @@ def transferDriveFiles(users):
       all_source_file_ids.append(source_drive_file[u'id'])
     total_count = len(source_drive_files)
     print u"Getting folder list for target user: %s..." % target_user
-    page_message = u'  got %%total_items%% folders\n'
+    page_message = u' Got %%total_items%% folders\n'
     target_folders = callGAPIpages(target_drive.files(), u'list', u'items', page_message=page_message,
                                    q=u"'me' in owners and mimeType = 'application/vnd.google-apps.folder'", fields=u'items(id,title),nextPageToken')
     got_top_folder = False
@@ -8446,7 +8449,7 @@ def doUpdateOrg():
       users = getUsersToModify(entity_type=sys.argv[5].lower(), entity=sys.argv[6])
     else:
       users = getUsersToModify(entity_type=u'user', entity=sys.argv[5])
-    if (sys.argv[5].lower() == u'cros') or ((sys.argv[5].lower() == u'all') and (sys.argv[6].lower() == u'cros')):
+    if (sys.argv[5].lower().startswith(u'cros')) or ((sys.argv[5].lower() == u'all') and (sys.argv[6].lower() == u'cros')):
       for l in range(0, len(users), 50):
         move_body = {u'deviceIds': users[l:l+50]}
         print u' moving %s devices to %s' % (len(move_body[u'deviceIds']), orgUnitPath)
@@ -9512,7 +9515,7 @@ def doGetOrgInfo(name=None, return_attrib=None):
   if get_users:
     name = result[u'orgUnitPath']
     print u'Users: '
-    page_message = u'Got %%total_items%% users: %%first_item%% - %%last_item%%\n'
+    page_message = u'Got %%total_items%% Users: %%first_item%% - %%last_item%%\n'
     users = callGAPIpages(cd.users(), u'list', u'users', page_message=page_message,
                           message_attribute=u'primaryEmail', customer=GC_Values[GC_CUSTOMER_ID], query=orgUnitPathQuery(name),
                           fields=u'users(primaryEmail,orgUnitPath),nextPageToken', maxResults=GC_Values[GC_USER_MAX_RESULTS])
@@ -10039,7 +10042,7 @@ def doPrintUsers():
   addFieldToCSVfile(u'primaryemail', USER_ARGUMENT_TO_PROPERTY_MAP, fieldsList, fieldsTitles, titles)
   customer = GC_Values[GC_CUSTOMER_ID]
   domain = None
-  query = None
+  queries = [None]
   projection = u'basic'
   customFieldMask = None
   sortHeaders = getGroupFeed = getLicenseFeed = email_parts = False
@@ -10098,8 +10101,8 @@ def doPrintUsers():
       domain = sys.argv[i+1]
       customer = None
       i += 2
-    elif myarg == u'query':
-      query = sys.argv[i+1]
+    elif myarg in [u'query', u'queries']:
+      queries = getQueries(myarg, sys.argv[i+1])
       i += 2
     elif myarg in USER_ARGUMENT_TO_PROPERTY_MAP:
       if not fieldsList:
@@ -10131,18 +10134,19 @@ def doPrintUsers():
     fields = u'nextPageToken,users(%s)' % u','.join(set(fieldsList)).replace(u'.', u'/')
   else:
     fields = None
-  sys.stderr.write(u"Getting all users in G Suite account (may take some time on a large account)...\n")
-  page_message = u'Got %%total_items%% users: %%first_item%% - %%last_item%%\n'
-  all_users = callGAPIpages(cd.users(), u'list', u'users', page_message=page_message,
-                            message_attribute=u'primaryEmail', customer=customer, domain=domain, fields=fields,
-                            showDeleted=deleted_only, orderBy=orderBy, sortOrder=sortOrder, viewType=viewType,
-                            query=query, projection=projection, customFieldMask=customFieldMask, maxResults=GC_Values[GC_USER_MAX_RESULTS])
-  for user in all_users:
-    if email_parts and (u'primaryEmail' in user):
-      user_email = user[u'primaryEmail']
-      if user_email.find(u'@') != -1:
-        user[u'primaryEmailLocal'], user[u'primaryEmailDomain'] = splitEmailAddress(user_email)
-    addRowTitlesToCSVfile(flatten_json(user), csvRows, titles)
+  for query in queries:
+    printGettingAllItems(u'Users', query)
+    page_message = u'Got %%total_items%% Users: %%first_item%% - %%last_item%%\n'
+    all_users = callGAPIpages(cd.users(), u'list', u'users', page_message=page_message,
+                              message_attribute=u'primaryEmail', customer=customer, domain=domain, fields=fields,
+                              showDeleted=deleted_only, orderBy=orderBy, sortOrder=sortOrder, viewType=viewType,
+                              query=query, projection=projection, customFieldMask=customFieldMask, maxResults=GC_Values[GC_USER_MAX_RESULTS])
+    for user in all_users:
+      if email_parts and (u'primaryEmail' in user):
+        user_email = user[u'primaryEmail']
+        if user_email.find(u'@') != -1:
+          user[u'primaryEmailLocal'], user[u'primaryEmailDomain'] = splitEmailAddress(user_email)
+      addRowTitlesToCSVfile(flatten_json(user), csvRows, titles)
   if sortHeaders:
     sortCSVTitles([u'primaryEmail',], titles)
   if getGroupFeed:
@@ -10313,8 +10317,8 @@ def doPrintGroups():
       addTitlesToCSVfile([u'OwnersCount',], titles)
       if not ownersCountOnly:
         addTitlesToCSVfile([u'Owners',], titles)
-  sys.stderr.write(u"Retrieving All Groups for G Suite account (may take some time on a large account)...\n")
-  page_message = u'Got %%num_items%% groups: %%first_item%% - %%last_item%%\n'
+  printGettingAllItems(u'Groups', None)
+  page_message = u'Got %%num_items%% Groups: %%first_item%% - %%last_item%%\n'
   entityList = callGAPIpages(cd.groups(), u'list', u'groups',
                              page_message=page_message, message_attribute=u'email',
                              customer=customer, domain=usedomain, userKey=usemember,
@@ -10334,7 +10338,7 @@ def doPrintGroups():
           group[fieldsTitles[field]] = groupEntity[field]
     if roles:
       sys.stderr.write(u' Getting %s for %s (%s/%s)\n' % (roles, groupEmail, i, count))
-      page_message = u'Got %%num_items%% members: %%first_item%% - %%last_item%%\n'
+      page_message = u'  Got %%num_items%% members: %%first_item%% - %%last_item%%\n'
       groupMembers = callGAPIpages(cd.members(), u'list', u'members',
                                    page_message=page_message, message_attribute=u'email',
                                    soft_errors=True,
@@ -10446,7 +10450,7 @@ def doPrintOrgs():
       i += 2
     else:
       systemErrorExit(2, '%s is not a valid argument for "gam print orgs"' % sys.argv[i])
-  sys.stderr.write(u"Retrieving All Organizational Units for your account (may take some time on large domain)...\n")
+  printGettingAllItems(u'Organizational Units', None)
   if fields:
     get_fields = u','.join(fields)
     list_fields = u'organizationUnits(%s)' % get_fields
@@ -10499,7 +10503,7 @@ def doPrintAliases():
   userFields = [u'primaryEmail', u'aliases']
   groupFields = [u'email', u'aliases']
   doGroups = doUsers = True
-  query = None
+  queries = [None]
   i = 3
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace(u'_', u'')
@@ -10517,27 +10521,28 @@ def doPrintAliases():
     elif myarg == u'nousers':
       doUsers = False
       i += 1
-    elif myarg == u'query':
-      query = getString(i+1, u'Query')
+    elif myarg in [u'query', u'queries']:
+      queries = getQueries(myarg, sys.argv[i+1])
       doGroups = False
       doUsers = True
       i += 2
     else:
       systemErrorExit(2, '%s is not a valid argument for "gam print aliases"' % sys.argv[i])
   if doUsers:
-    sys.stderr.write(u"Retrieving All User Aliases for %s organization (may take some time on large domain)...\n" % GC_Values[GC_DOMAIN])
-    page_message = u'Got %%num_items%% users %%first_item%% - %%last_item%%\n'
-    all_users = callGAPIpages(cd.users(), u'list', u'users', page_message=page_message,
-                              message_attribute=u'primaryEmail', customer=GC_Values[GC_CUSTOMER_ID], query=query,
-                              fields=u'nextPageToken,users({0})'.format(u','.join(userFields)), maxResults=GC_Values[GC_USER_MAX_RESULTS])
-    for user in all_users:
-      for alias in user.get(u'aliases', []):
-        csvRows.append({u'Alias': alias, u'Target': user[u'primaryEmail'], u'TargetType': u'User'})
-      for alias in user.get(u'nonEditableAliases', []):
-        csvRows.append({u'NonEditableAlias': alias, u'Target': user[u'primaryEmail'], u'TargetType': u'User'})
+    for query in queries:
+      printGettingAllItems(u'User Aliases', query)
+      page_message = u'Got %%num_items%% Users %%first_item%% - %%last_item%%\n'
+      all_users = callGAPIpages(cd.users(), u'list', u'users', page_message=page_message,
+                                message_attribute=u'primaryEmail', customer=GC_Values[GC_CUSTOMER_ID], query=query,
+                                fields=u'nextPageToken,users({0})'.format(u','.join(userFields)), maxResults=GC_Values[GC_USER_MAX_RESULTS])
+      for user in all_users:
+        for alias in user.get(u'aliases', []):
+          csvRows.append({u'Alias': alias, u'Target': user[u'primaryEmail'], u'TargetType': u'User'})
+        for alias in user.get(u'nonEditableAliases', []):
+          csvRows.append({u'NonEditableAlias': alias, u'Target': user[u'primaryEmail'], u'TargetType': u'User'})
   if doGroups:
-    sys.stderr.write(u"Retrieving All Group Aliases for %s organization (may take some time on large domain)...\n" % GC_Values[GC_DOMAIN])
-    page_message = u'Got %%num_items%% groups %%first_item%% - %%last_item%%\n'
+    printGettingAllItems(u'Group Aliasess', None)
+    page_message = u'Got %%num_items%% Groups %%first_item%% - %%last_item%%\n'
     all_groups = callGAPIpages(cd.groups(), u'list', u'groups', page_message=page_message,
                                message_attribute=u'email', customer=GC_Values[GC_CUSTOMER_ID],
                                fields=u'nextPageToken,groups({0})'.format(u','.join(groupFields)))
@@ -10664,8 +10669,8 @@ def doPrintVaultMatters():
       i += 1
     else:
       systemErrorExit(3, '%s is not a valid argument to "gam print matters"' % myarg)
-  sys.stderr.write(u'Retrieving all Vault Matters...\n')
-  page_message = u' got %%num_items%% matters...\n'
+  printGettingAllItems(u'Vault Matters', None)
+  page_message = u'Got %%num_items%% Vault Matters...\n'
   matters = callGAPIpages(v.matters(), u'list', u'matters', page_message=page_message, view=view)
   for matter in matters:
     addRowTitlesToCSVfile(flatten_json(matter), csvRows, titles)
@@ -10714,7 +10719,8 @@ def doPrintMobileDevices():
   titles = []
   csvRows = []
   fields = None
-  query = projection = orderBy = sortOrder = None
+  projection = orderBy = sortOrder = None
+  queries = [None]
   delimiter = u' '
   listLimit = 1
   appsLimit = -1
@@ -10724,8 +10730,8 @@ def doPrintMobileDevices():
     if myarg == u'todrive':
       todrive = True
       i += 1
-    elif myarg == u'query':
-      query = sys.argv[i+1]
+    elif myarg in [u'query', u'queries']:
+      queries = getQueries(myarg, sys.argv[i+1])
       i += 2
     elif myarg == u'delimiter':
       delimiter = sys.argv[i+1]
@@ -10757,49 +10763,50 @@ def doPrintMobileDevices():
       i += 1
     else:
       systemErrorExit(2, '%s is not a valid argument for "gam print mobile"' % sys.argv[i])
-  sys.stderr.write(u'Retrieving All Mobile Devices for organization (may take some time for large accounts)...\n')
-  page_message = u'Got %%num_items%% mobile devices...\n'
-  all_mobile = callGAPIpages(cd.mobiledevices(), u'list', u'mobiledevices', page_message=page_message,
-                             customerId=GC_Values[GC_CUSTOMER_ID], query=query, projection=projection, fields=fields,
-                             orderBy=orderBy, sortOrder=sortOrder, maxResults=GC_Values[GC_DEVICE_MAX_RESULTS])
-  for mobile in all_mobile:
-    row = {}
-    for attrib in mobile:
-      if attrib in [u'kind', u'etag']:
-        continue
-      if attrib in [u'name', u'email', u'otherAccountsInfo']:
-        if attrib not in titles:
-          titles.append(attrib)
-        if listLimit > 0:
-          row[attrib] = delimiter.join(mobile[attrib][0:listLimit])
-        elif listLimit == 0:
-          row[attrib] = delimiter.join(mobile[attrib])
-      elif attrib == u'applications':
-        if appsLimit >= 0:
+  for query in queries:
+    printGettingAllItems(u'Mobile Devices', query)
+    page_message = u'Got %%num_items%% Mobile Devices...\n'
+    all_mobile = callGAPIpages(cd.mobiledevices(), u'list', u'mobiledevices', page_message=page_message,
+                               customerId=GC_Values[GC_CUSTOMER_ID], query=query, projection=projection, fields=fields,
+                               orderBy=orderBy, sortOrder=sortOrder, maxResults=GC_Values[GC_DEVICE_MAX_RESULTS])
+    for mobile in all_mobile:
+      row = {}
+      for attrib in mobile:
+        if attrib in [u'kind', u'etag']:
+          continue
+        if attrib in [u'name', u'email', u'otherAccountsInfo']:
           if attrib not in titles:
             titles.append(attrib)
-          applications = []
-          j = 0
-          for app in mobile[attrib]:
-            j += 1
-            if appsLimit and (j > appsLimit):
-              break
-            appDetails = []
-            for field in [u'displayName', u'packageName', u'versionName']:
-              appDetails.append(app.get(field, u'<None>'))
-            appDetails.append(unicode(app.get(u'versionCode', u'<None>')))
-            permissions = app.get(u'permission', [])
-            if permissions:
-              appDetails.append(u'/'.join(permissions))
-            else:
-              appDetails.append(u'<None>')
-            applications.append(u'-'.join(appDetails))
-          row[attrib] = delimiter.join(applications)
-      else:
-        if attrib not in titles:
-          titles.append(attrib)
-        row[attrib] = mobile[attrib]
-    csvRows.append(row)
+          if listLimit > 0:
+            row[attrib] = delimiter.join(mobile[attrib][0:listLimit])
+          elif listLimit == 0:
+            row[attrib] = delimiter.join(mobile[attrib])
+        elif attrib == u'applications':
+          if appsLimit >= 0:
+            if attrib not in titles:
+              titles.append(attrib)
+            applications = []
+            j = 0
+            for app in mobile[attrib]:
+              j += 1
+              if appsLimit and (j > appsLimit):
+                break
+              appDetails = []
+              for field in [u'displayName', u'packageName', u'versionName']:
+                appDetails.append(app.get(field, u'<None>'))
+              appDetails.append(unicode(app.get(u'versionCode', u'<None>')))
+              permissions = app.get(u'permission', [])
+              if permissions:
+                appDetails.append(u'/'.join(permissions))
+              else:
+                appDetails.append(u'<None>')
+              applications.append(u'-'.join(appDetails))
+            row[attrib] = delimiter.join(applications)
+        else:
+          if attrib not in titles:
+            titles.append(attrib)
+          row[attrib] = mobile[attrib]
+      csvRows.append(row)
   sortCSVTitles([u'resourceId', u'deviceId', u'serialNumber', u'name', u'email', u'status'], titles)
   writeCSVfile(csvRows, titles, u'Mobile', todrive)
 
@@ -10813,12 +10820,13 @@ def doPrintCrosActivity():
   selectActiveTimeRanges = selectDeviceFiles = selectRecentUsers = False
   listLimit = 0
   delimiter = u','
-  query = orgUnitPath = None
+  orgUnitPath = None
+  queries = [None]
   i = 3
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace(u'_', u'')
-    if myarg == u'query':
-      query = sys.argv[i+1]
+    if myarg in [u'query', u'queries']:
+      queries = getQueries(myarg, sys.argv[i+1])
       i += 2
     elif myarg == u'limittoou':
       orgUnitPath = sys.argv[i+1]
@@ -10867,38 +10875,39 @@ def doPrintCrosActivity():
     fieldsList.append(u'deviceFiles')
     addTitlesToCSVfile([u'deviceFiles.type', u'deviceFiles.createTime'], titles)
   fields = u'chromeosdevices(%s),nextPageToken' % u','.join(fieldsList)
-  sys.stderr.write(u'Retrieving All Chrome OS Devices for organization (may take some time for large accounts)...\n')
-  page_message = u'Got %%num_items%% Chrome devices...\n'
-  all_cros = callGAPIpages(cd.chromeosdevices(), u'list', u'chromeosdevices', page_message=page_message,
-                           query=query, customerId=GC_Values[GC_CUSTOMER_ID], projection=u'FULL',
-                           fields=fields, maxResults=GC_Values[GC_DEVICE_MAX_RESULTS], orgUnitPath=orgUnitPath)
-  for cros in all_cros:
-    row = {}
-    for attrib in cros:
-      if attrib not in [u'recentUsers', u'activeTimeRanges', u'deviceFiles']:
-        row[attrib] = cros[attrib]
-    if selectActiveTimeRanges:
-      activeTimeRanges = _filterTimeRanges(cros.get(u'activeTimeRanges', []), startDate, endDate)
-      lenATR = len(activeTimeRanges)
-      for activeTimeRange in activeTimeRanges[:min(lenATR, listLimit or lenATR)]:
-        new_row = row.copy()
-        new_row[u'activeTimeRanges.date'] = activeTimeRange[u'date']
-        new_row[u'activeTimeRanges.duration'] = utils.formatMilliSeconds(activeTimeRange[u'activeTime'])
-        new_row[u'activeTimeRanges.minutes'] = activeTimeRange[u'activeTime']/60000
-        csvRows.append(new_row)
-    if selectRecentUsers:
-      recentUsers = cros.get(u'recentUsers', [])
-      lenRU = len(recentUsers)
-      row[u'recentUsers.email'] = delimiter.join([recent_user.get(u'email', [u'Unknown', u'UnmanagedUser'][recent_user[u'type'] == u'USER_TYPE_UNMANAGED']) for recent_user in recentUsers[:min(lenRU, listLimit or lenRU)]])
-      csvRows.append(row)
-    if selectDeviceFiles:
-      deviceFiles = _filterDeviceFiles(cros.get(u'deviceFiles', []), startDate, endDate)
-      lenDF = len(deviceFiles)
-      for deviceFile in deviceFiles[:min(lenDF, listLimit or lenDF)]:
-        new_row = row.copy()
-        new_row[u'deviceFiles.type'] = deviceFile[u'type']
-        new_row[u'deviceFiles.createTime'] = deviceFile[u'createTime']
-        csvRows.append(new_row)
+  for query in queries:
+    printGettingAllItems(u'CrOS Devices', query)
+    page_message = u'Got %%num_items%% CrOS devices...\n'
+    all_cros = callGAPIpages(cd.chromeosdevices(), u'list', u'chromeosdevices', page_message=page_message,
+                             query=query, customerId=GC_Values[GC_CUSTOMER_ID], projection=u'FULL',
+                             fields=fields, maxResults=GC_Values[GC_DEVICE_MAX_RESULTS], orgUnitPath=orgUnitPath)
+    for cros in all_cros:
+      row = {}
+      for attrib in cros:
+        if attrib not in [u'recentUsers', u'activeTimeRanges', u'deviceFiles']:
+          row[attrib] = cros[attrib]
+      if selectActiveTimeRanges:
+        activeTimeRanges = _filterTimeRanges(cros.get(u'activeTimeRanges', []), startDate, endDate)
+        lenATR = len(activeTimeRanges)
+        for activeTimeRange in activeTimeRanges[:min(lenATR, listLimit or lenATR)]:
+          new_row = row.copy()
+          new_row[u'activeTimeRanges.date'] = activeTimeRange[u'date']
+          new_row[u'activeTimeRanges.duration'] = utils.formatMilliSeconds(activeTimeRange[u'activeTime'])
+          new_row[u'activeTimeRanges.minutes'] = activeTimeRange[u'activeTime']/60000
+          csvRows.append(new_row)
+      if selectRecentUsers:
+        recentUsers = cros.get(u'recentUsers', [])
+        lenRU = len(recentUsers)
+        row[u'recentUsers.email'] = delimiter.join([recent_user.get(u'email', [u'Unknown', u'UnmanagedUser'][recent_user[u'type'] == u'USER_TYPE_UNMANAGED']) for recent_user in recentUsers[:min(lenRU, listLimit or lenRU)]])
+        csvRows.append(row)
+      if selectDeviceFiles:
+        deviceFiles = _filterDeviceFiles(cros.get(u'deviceFiles', []), startDate, endDate)
+        lenDF = len(deviceFiles)
+        for deviceFile in deviceFiles[:min(lenDF, listLimit or lenDF)]:
+          new_row = row.copy()
+          new_row[u'deviceFiles.type'] = deviceFile[u'type']
+          new_row[u'deviceFiles.createTime'] = deviceFile[u'createTime']
+          csvRows.append(new_row)
   writeCSVfile(csvRows, titles, u'CrOS Activity', todrive)
 
 def _checkTPMVulnerability(cros):
@@ -10920,7 +10929,8 @@ def doPrintCrosDevices():
   csvRows = []
   addFieldToCSVfile(u'deviceid', CROS_ARGUMENT_TO_PROPERTY_MAP, fieldsList, fieldsTitles, titles)
   sortHeaders = False
-  query = projection = orderBy = sortOrder = orgUnitPath = None
+  projection = orderBy = sortOrder = orgUnitPath = None
+  queries = [None]
   noLists = False
   selectActiveTimeRanges = selectDeviceFiles = selectRecentUsers = False
   startDate = endDate = None
@@ -10928,8 +10938,8 @@ def doPrintCrosDevices():
   i = 3
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace(u'_', u'')
-    if myarg == u'query':
-      query = sys.argv[i+1]
+    if myarg in [u'query', u'queries']:
+      queries = getQueries(myarg, sys.argv[i+1])
       i += 2
     elif myarg == u'limittoou':
       orgUnitPath = sys.argv[i+1]
@@ -11036,58 +11046,59 @@ def doPrintCrosDevices():
     fields = u'nextPageToken,chromeosdevices({0})'.format(u','.join(set(fieldsList))).replace(u'.', u'/')
   else:
     fields = None
-  sys.stderr.write(u'Retrieving All Chrome OS Devices for organization (may take some time for large accounts)...\n')
-  page_message = u'Got %%num_items%% Chrome devices...\n'
-  all_cros = callGAPIpages(cd.chromeosdevices(), u'list', u'chromeosdevices', page_message=page_message,
-                           query=query, customerId=GC_Values[GC_CUSTOMER_ID], projection=projection, orgUnitPath=orgUnitPath,
-                           orderBy=orderBy, sortOrder=sortOrder, fields=fields, maxResults=GC_Values[GC_DEVICE_MAX_RESULTS])
-  for cros in all_cros:
-    cros = _checkTPMVulnerability(cros)
-  if (not noLists) and (not selectActiveTimeRanges) and (not selectRecentUsers) and (not selectDeviceFiles):
+  for query in queries:
+    printGettingAllItems(u'CrOS Devices', query)
+    page_message = u'Got %%num_items%% CrOS Devices...\n'
+    all_cros = callGAPIpages(cd.chromeosdevices(), u'list', u'chromeosdevices', page_message=page_message,
+                             query=query, customerId=GC_Values[GC_CUSTOMER_ID], projection=projection, orgUnitPath=orgUnitPath,
+                             orderBy=orderBy, sortOrder=sortOrder, fields=fields, maxResults=GC_Values[GC_DEVICE_MAX_RESULTS])
     for cros in all_cros:
-      if u'notes' in cros:
-        cros[u'notes'] = cros[u'notes'].replace(u'\n', u'\\n')
-      addRowTitlesToCSVfile(flatten_json(cros, listLimit=listLimit), csvRows, titles)
-  else:
-    if not noLists:
-      if selectActiveTimeRanges:
-        titles.extend([u'activeTimeRanges.date', u'activeTimeRanges.activeTime', u'activeTimeRanges.duration', u'activeTimeRanges.minutes'])
-      if selectRecentUsers:
-        titles.extend([u'recentUsers.email', u'recentUsers.type'])
-      if selectDeviceFiles:
-        titles.extend([u'deviceFiles.type', u'deviceFiles.createTime'])
-    for cros in all_cros:
-      if u'notes' in cros:
-        cros[u'notes'] = cros[u'notes'].replace(u'\n', u'\\n')
-      row = {}
-      for attrib in cros:
-        if attrib not in [u'kind', u'etag', u'recentUsers', u'activeTimeRanges', u'deviceFiles']:
-          if attrib not in titles:
-            titles.append(attrib)
-          row[attrib] = cros[attrib]
-      activeTimeRanges = _filterTimeRanges(cros.get(u'activeTimeRanges', []), startDate, endDate) if selectActiveTimeRanges else []
-      recentUsers = cros.get(u'recentUsers', []) if selectRecentUsers else []
-      deviceFiles = _filterDeviceFiles(cros.get(u'deviceFiles', []), startDate, endDate) if selectDeviceFiles else []
-      if noLists or (not activeTimeRanges and not recentUsers and not deviceFiles):
-        csvRows.append(row)
-      else:
-        lenATR = len(activeTimeRanges)
-        lenRU = len(recentUsers)
-        lenDF = len(deviceFiles)
-        for i in xrange(min(listLimit, max(lenATR, lenRU)) if listLimit else max(lenATR, lenRU, lenDF)):
-          new_row = row.copy()
-          if i < lenATR:
-            new_row[u'activeTimeRanges.date'] = activeTimeRanges[i][u'date']
-            new_row[u'activeTimeRanges.activeTime'] = str(activeTimeRanges[i][u'activeTime'])
-            new_row[u'activeTimeRanges.duration'] = utils.formatMilliSeconds(activeTimeRanges[i][u'activeTime'])
-            new_row[u'activeTimeRanges.minutes'] = activeTimeRanges[i][u'activeTime']/60000
-          if i < lenRU:
-            new_row[u'recentUsers.email'] = recentUsers[i].get(u'email', [u'Unknown', u'UnmanagedUser'][recentUsers[i][u'type'] == u'USER_TYPE_UNMANAGED'])
-            new_row[u'recentUsers.type'] = recentUsers[i][u'type']
-          if i < lenDF:
-            new_row[u'deviceFiles.type'] = deviceFiles[i][u'type']
-            new_row[u'deviceFiles.createTime'] = deviceFiles[i][u'createTime']
-          csvRows.append(new_row)
+      cros = _checkTPMVulnerability(cros)
+    if (not noLists) and (not selectActiveTimeRanges) and (not selectRecentUsers) and (not selectDeviceFiles):
+      for cros in all_cros:
+        if u'notes' in cros:
+          cros[u'notes'] = cros[u'notes'].replace(u'\n', u'\\n')
+        addRowTitlesToCSVfile(flatten_json(cros, listLimit=listLimit), csvRows, titles)
+    else:
+      if not noLists:
+        if selectActiveTimeRanges:
+          titles.extend([u'activeTimeRanges.date', u'activeTimeRanges.activeTime', u'activeTimeRanges.duration', u'activeTimeRanges.minutes'])
+        if selectRecentUsers:
+          titles.extend([u'recentUsers.email', u'recentUsers.type'])
+        if selectDeviceFiles:
+          titles.extend([u'deviceFiles.type', u'deviceFiles.createTime'])
+      for cros in all_cros:
+        if u'notes' in cros:
+          cros[u'notes'] = cros[u'notes'].replace(u'\n', u'\\n')
+        row = {}
+        for attrib in cros:
+          if attrib not in [u'kind', u'etag', u'recentUsers', u'activeTimeRanges', u'deviceFiles']:
+            if attrib not in titles:
+              titles.append(attrib)
+            row[attrib] = cros[attrib]
+        activeTimeRanges = _filterTimeRanges(cros.get(u'activeTimeRanges', []), startDate, endDate) if selectActiveTimeRanges else []
+        recentUsers = cros.get(u'recentUsers', []) if selectRecentUsers else []
+        deviceFiles = _filterDeviceFiles(cros.get(u'deviceFiles', []), startDate, endDate) if selectDeviceFiles else []
+        if noLists or (not activeTimeRanges and not recentUsers and not deviceFiles):
+          csvRows.append(row)
+        else:
+          lenATR = len(activeTimeRanges)
+          lenRU = len(recentUsers)
+          lenDF = len(deviceFiles)
+          for i in xrange(min(listLimit, max(lenATR, lenRU)) if listLimit else max(lenATR, lenRU, lenDF)):
+            new_row = row.copy()
+            if i < lenATR:
+              new_row[u'activeTimeRanges.date'] = activeTimeRanges[i][u'date']
+              new_row[u'activeTimeRanges.activeTime'] = str(activeTimeRanges[i][u'activeTime'])
+              new_row[u'activeTimeRanges.duration'] = utils.formatMilliSeconds(activeTimeRanges[i][u'activeTime'])
+              new_row[u'activeTimeRanges.minutes'] = activeTimeRanges[i][u'activeTime']/60000
+            if i < lenRU:
+              new_row[u'recentUsers.email'] = recentUsers[i].get(u'email', [u'Unknown', u'UnmanagedUser'][recentUsers[i][u'type'] == u'USER_TYPE_UNMANAGED'])
+              new_row[u'recentUsers.type'] = recentUsers[i][u'type']
+            if i < lenDF:
+              new_row[u'deviceFiles.type'] = deviceFiles[i][u'type']
+              new_row[u'deviceFiles.createTime'] = deviceFiles[i][u'createTime']
+            csvRows.append(new_row)
   if sortHeaders:
     sortCSVTitles([u'deviceId',], titles)
   writeCSVfile(csvRows, titles, u'CrOS', todrive)
@@ -11312,8 +11323,8 @@ def doPrintResourceCalendars():
   fields = u'nextPageToken,items({0})'.format(u','.join(set(fieldsList)))
   if u'buildingId' in fieldsList:
     addFieldToCSVfile(u'buildingName', {u'buildingName': [u'buildingName',]}, fieldsList, fieldsTitles, titles)
-  sys.stderr.write(u"Retrieving All Resource Calendars for your account (may take some time on a large domain)\n")
-  page_message = u'Got %%total_items%% resources: %%first_item%% - %%last_item%%\n'
+  printGettingAllItems(u'Resource Calendars', None)
+  page_message = u'Got %%total_items%% Resource Calendars: %%first_item%% - %%last_item%%\n'
   resources = callGAPIpages(cd.resources().calendars(), u'list', u'items',
                             page_message=page_message, message_attribute=u'resourceId',
                             customer=GC_Values[GC_CUSTOMER_ID], fields=fields)
@@ -11329,6 +11340,19 @@ def doPrintResourceCalendars():
     csvRows.append(resUnit)
   sortCSVTitles([u'resourceId', u'resourceName', u'resourceEmail'], titles)
   writeCSVfile(csvRows, titles, u'Resources', todrive)
+
+def shlexSplitList(entity, dataDelimiter=u' ,'):
+  import shlex
+  lexer = shlex.shlex(entity, posix=True)
+  lexer.whitespace = dataDelimiter
+  lexer.whitespace_split = True
+  return list(lexer)
+
+def getQueries(myarg, argstr):
+  if myarg == u'query':
+    return [argstr]
+  else:
+    return shlexSplitList(argstr)
 
 def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=None, checkNotSuspended=False, groupUserMembersOnly=True):
   got_uids = False
@@ -11366,55 +11390,66 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
     if ou[0] != u'/':
       ou = u'/%s' % ou
     users = []
+    query = orgUnitPathQuery(ou)
     page_message = None
     if not silent:
-      sys.stderr.write(u"Getting all users in the G Suite organization (may take some time on a large domain)...\n")
-      page_message = u'Got %%total_items%% users...'
+      printGettingAllItems(u'Users', query)
+      page_message = u'Got %%total_items%% Users...'
     members = callGAPIpages(cd.users(), u'list', u'users', page_message=page_message,
                             customer=GC_Values[GC_CUSTOMER_ID], fields=u'nextPageToken,users(primaryEmail,suspended,orgUnitPath)',
-                            query=orgUnitPathQuery(ou), maxResults=GC_Values[GC_USER_MAX_RESULTS])
+                            query=query, maxResults=GC_Values[GC_USER_MAX_RESULTS])
     for member in members:
       if ou.lower() != member[u'orgUnitPath'].lower():
         continue
       if not checkNotSuspended or not member[u'suspended']:
         users.append(member[u'primaryEmail'])
     if not silent:
-      sys.stderr.write(u"%s users are directly in the OU.\n" % len(users))
+      sys.stderr.write(u"%s Users are directly in the OU.\n" % len(users))
   elif entity_type in [u'ou_and_children', u'ou_and_child']:
     got_uids = True
     ou = entity
     if ou[0] != u'/':
       ou = u'/%s' % ou
     users = []
+    query = orgUnitPathQuery(ou)
     page_message = None
     if not silent:
-      sys.stderr.write(u"Getting all users in the G Suite organization (may take some time on a large domain)...\n")
-      page_message = u'Got %%total_items%% users..'
+      printGettingAllItems(u'Users', query)
+      page_message = u'Got %%total_items%% Users...'
     members = callGAPIpages(cd.users(), u'list', u'users', page_message=page_message,
                             customer=GC_Values[GC_CUSTOMER_ID], fields=u'nextPageToken,users(primaryEmail,suspended)',
-                            query=orgUnitPathQuery(ou), maxResults=GC_Values[GC_USER_MAX_RESULTS])
+                            query=query, maxResults=GC_Values[GC_USER_MAX_RESULTS])
     for member in members:
       if not checkNotSuspended or not member[u'suspended']:
         users.append(member[u'primaryEmail'])
     if not silent:
       sys.stderr.write(u"done.\r\n")
-  elif entity_type in [u'query',]:
+  elif entity_type in [u'query', u'queries']:
+    if entity_type == u'query':
+      queries = [entity]
+    else:
+      queries = shlexSplitList(entity)
     got_uids = True
     users = []
-    if not silent:
-      sys.stderr.write(u"Getting all users that match query %s (may take some time on a large domain)...\n" % entity)
-    page_message = u'Got %%total_items%% users...'
-    members = callGAPIpages(cd.users(), u'list', u'users', page_message=page_message,
-                            customer=GC_Values[GC_CUSTOMER_ID], fields=u'nextPageToken,users(primaryEmail,suspended)',
-                            query=entity, maxResults=GC_Values[GC_USER_MAX_RESULTS])
-    for member in members:
-      if not checkNotSuspended or not member[u'suspended']:
-        users.append(member[u'primaryEmail'])
-    if not silent:
-      sys.stderr.write(u"done.\r\n")
+    usersSet = set()
+    for query in queries:
+      if not silent:
+        printGettingAllItems(u'Users', query)
+      page_message = u'Got %%total_items%% Users...'
+      members = callGAPIpages(cd.users(), u'list', u'users', page_message=page_message,
+                              customer=GC_Values[GC_CUSTOMER_ID], fields=u'nextPageToken,users(primaryEmail,suspended)',
+                              query=query, maxResults=GC_Values[GC_USER_MAX_RESULTS])
+      for member in members:
+        if not checkNotSuspended or not member[u'suspended']:
+          email = member[u'primaryEmail']
+          if email not in usersSet:
+            usersSet.add(email)
+            users.append(email)
+      if not silent:
+        sys.stderr.write(u"done.\r\n")
   elif entity_type in [u'license', u'licenses', u'licence', u'licences']:
     users = doPrintLicenses(returnFields=u'userId', skus=entity.split(u','))
-  elif entity_type == u'file':
+  elif entity_type in [u'file', u'crosfile']:
     users = []
     f = openFile(entity)
     for row in f:
@@ -11422,7 +11457,9 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
       if user:
         users.append(user)
     closeFile(f)
-  elif entity_type in [u'csv', u'csvfile']:
+    if entity_type == u'crosfile':
+      entity = u'cros'
+  elif entity_type in [u'csv', u'csvfile', u'croscsv', u'croscsvfile']:
     drive, filenameColumn = os.path.splitdrive(entity)
     if filenameColumn.find(u':') == -1:
       systemErrorExit(2, u'Expected {0} FileName:FieldName'.format(entity_type))
@@ -11437,19 +11474,21 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
       if user:
         users.append(user)
     closeFile(f)
+    if entity_type in [u'croscsv', u'croscsvfile']:
+      entity = u'cros'
   elif entity_type in [u'courseparticipants', u'teachers', u'students']:
     croom = buildGAPIObject(u'classroom')
     users = []
     entity = addCourseIdScope(entity)
     if entity_type in [u'courseparticipants', u'teachers']:
-      page_message = u'Got %%total_items%% teachers...'
+      page_message = u'Got %%total_items%% Teachers...'
       teachers = callGAPIpages(croom.courses().teachers(), u'list', u'teachers', page_message=page_message, courseId=entity)
       for teacher in teachers:
         email = teacher[u'profile'].get(u'emailAddress', None)
         if email:
           users.append(email)
     if entity_type in [u'courseparticipants', u'students']:
-      page_message = u'Got %%total_items%% students...'
+      page_message = u'Got %%total_items%% Students...'
       students = callGAPIpages(croom.courses().students(), u'list', u'students', page_message=page_message, courseId=entity)
       for student in students:
         email = student[u'profile'].get(u'emailAddress', None)
@@ -11458,10 +11497,11 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
   elif entity_type == u'all':
     got_uids = True
     users = []
-    if entity.lower() == u'users':
+    entity = entity.lower()
+    if entity == u'users':
       if not silent:
-        sys.stderr.write(u"Getting all users in G Suite account (may take some time on a large account)...\n")
-      page_message = u'Got %%total_items%% users...'
+        printGettingAllItems(u'Users', None)
+      page_message = u'Got %%total_items%% Users...'
       all_users = callGAPIpages(cd.users(), u'list', u'users', page_message=page_message,
                                 customer=GC_Values[GC_CUSTOMER_ID],
                                 fields=u'nextPageToken,users(primaryEmail,suspended)', maxResults=GC_Values[GC_USER_MAX_RESULTS])
@@ -11469,21 +11509,44 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
         if not member[u'suspended']:
           users.append(member[u'primaryEmail'])
       if not silent:
-        sys.stderr.write(u"done getting %s users.\r\n" % len(users))
-    elif entity.lower() == u'cros':
+        sys.stderr.write(u"done getting %s Users.\r\n" % len(users))
+    elif entity == u'cros':
       if not silent:
-        sys.stderr.write(u"Getting all CrOS devices in G Suite account (may take some time on a large account)...\n")
-      all_cros = callGAPIpages(cd.chromeosdevices(), u'list', u'chromeosdevices',
+        printGettingAllItems(u'CrOS Devices', None)
+      page_message = u'Got %%total_items%% CrOS Devices...'
+      all_cros = callGAPIpages(cd.chromeosdevices(), u'list', u'chromeosdevices', page_message=page_message,
                                customerId=GC_Values[GC_CUSTOMER_ID], fields=u'nextPageToken,chromeosdevices(deviceId)',
                                maxResults=GC_Values[GC_DEVICE_MAX_RESULTS])
       for member in all_cros:
         users.append(member[u'deviceId'])
       if not silent:
-        sys.stderr.write(u"done getting %s CrOS devices.\r\n" % len(users))
+        sys.stderr.write(u"done getting %s CrOS Devices.\r\n" % len(users))
     else:
       systemErrorExit(3, '%s is not a valid argument for "gam all"' % entity)
   elif entity_type == u'cros':
     users = entity.replace(u',', u' ').split()
+    entity = u'cros'
+  elif entity_type in [u'crosquery', u'crosqueries']:
+    if entity_type == u'crosquery':
+      queries = [entity]
+    else:
+      queries = shlexSplitList(entity)
+    users = []
+    usersSet = set()
+    for query in queries:
+      if not silent:
+        printGettingAllItems(u'CrOS Devices', query)
+      page_message = u'Got %%total_items%% CrOS Devices...'
+      members = callGAPIpages(cd.chromeosdevices(), u'list', u'chromeosdevices', page_message=page_message,
+                              customerId=GC_Values[GC_CUSTOMER_ID], fields=u'nextPageToken,chromeosdevices(deviceId)',
+                              query=query, maxResults=GC_Values[GC_DEVICE_MAX_RESULTS])
+      for member in members:
+        deviceId = member[u'deviceId']
+        if deviceId not in usersSet:
+          usersSet.add(deviceId)
+          users.append(deviceId)
+      if not silent:
+        sys.stderr.write(u"done.\r\n")
     entity = u'cros'
   else:
     systemErrorExit(2, '%s is not a valid argument for "gam"' % entity_type)
