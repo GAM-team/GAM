@@ -825,6 +825,14 @@ gam calendar <CalendarItem> addevent <EventAttributes>+
 gam calendar <CalendarItem> deleteevent (id|eventid <EventID>)* (query|eventquery <QueryCalendar>)* [doit] [notifyattendees]
 gam calendar <CalendarItem> wipe
 
+<CalendarSettings> ::=
+        summary <String>|
+        description <String>|
+        location <String>|
+        timezone <String>
+
+gam calendar <CalendarItem> modify <CalendarSettings>+
+
 gam update cros <CrOSItem> (<CrOSAttributes>+)|(action deprovision_same_model_replace|deprovision_different_model_replace|deprovision_retiring_device|disable|reenable [acknowledge_device_touch_requirement])
 gam info cros <CrOSItem> [nolists] [listlimit <Number>] [start <Date>] [end <Date>]
 	[basic|full|allfields] <CrOSFieldName>* [fields <CrOSFieldNameList>] [downloadfile latest|<Time>] [targetfolder <FilePath>]
