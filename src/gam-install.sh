@@ -133,10 +133,13 @@ if type(release) is list:
       continue
     release = a_release
     break
-for asset in release['assets']:
-  if asset[sys.argv[1]].endswith('$gamfile'):
-    print(asset[sys.argv[1]])
-    break"
+try:
+  for asset in release['assets']:
+    if asset[sys.argv[1]].endswith('$gamfile'):
+      print(asset[sys.argv[1]])
+      break
+except KeyError:
+  print 'ERROR: assets value not found in JSON value of:\n\n%s' % release"
 
 pycmd="python"
 $pycmd -V >/dev/null 2>&1
