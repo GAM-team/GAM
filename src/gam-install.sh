@@ -139,7 +139,7 @@ try:
       print(asset[sys.argv[1]])
       break
 except KeyError:
-  print 'ERROR: assets value not found in JSON value of:\n\n%s' % release"
+  print('ERROR: assets value not found in JSON value of:\n\n%s' % release)"
 
 pycmd="python"
 $pycmd -V >/dev/null 2>&1
