@@ -181,6 +181,7 @@ Named items
 <QueryCrOS> ::= <String> See: https://support.google.com/chrome/a/answer/1698333?hl=en
 <QueryDriveFile> ::= <String> See: https://developers.google.com/drive/v2/web/search-parameters
 <QueryGmail> ::= <String> See: https://support.google.com/mail/answer/7190
+<QueryGroup> ::= <String> See: https://developers.google.com/admin-sdk/directory/v1/guides/search-groups
 <QueryMobile> ::= <String> See: https://support.google.com/a/answer/1408863?hl=en#search
 <QueryPrinter> ::= <String> See: https://developers.google.com/cloud-print/docs/appInterfaces#search
 <QueryPrintJob> ::= <String> See: https://developers.google.com/cloud-print/docs/appInterfaces#parameters_3
@@ -425,10 +426,11 @@ Named items
 	name|
 	type|
 	uservisibledescription
-	
+
 <UserFieldName> ::=
 	addresses|address|
 	agreedtoterms|agreed2terms|
+	aliases|
 	changepasswordatnextlogin|changepassword|
 	creationtime|
 	deletiontime|
@@ -1069,10 +1071,10 @@ gam <UserTypeEntity> transfer drive <UserItem> [keepuser]
 gam <UserTypeEntity> delete|del emptydrivefolders
 gam <UserTypeEntity> empty drivetrash
 
-gam <UserTypeEntity> create|add drivefileacl <DriveFileID> [asadmin] anyone|(user <UserItem>)|(group <GroupItem>)|(domain <DomainName>)
+gam <UserTypeEntity> create|add drivefileacl <DriveFileID> anyone|(user <UserItem>)|(group <GroupItem>)|(domain <DomainName>) [asadmin]
 	(role <DriveFileACLRole>) [withlink|discoverable] [expires <Time>] [sendemail] [emailmessage <String>]
 gam <UserTypeEntity> update drivefileacl <DriveFileID> <PermissionID> [asadmin]
-	(role <DriveFileACLRole>) [withlink|discoverable] [expires <Time>] [removeexpiration]
+	(role <DriveFileACLRole>) [expires <Time>] [removeexpiration]
 gam <UserTypeEntity> delete|del drivefileacl <DriveFileID> <PermissionID> [asadmin]
 gam <UserTypeEntity> show drivefileacl <DriveFileID> [asadmin]
 
