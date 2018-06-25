@@ -399,7 +399,6 @@ Named items
 	unknownsourcesstatus|
 	useragent|
 	wifimacaddress
-
 <MobileFieldNameList> ::= "<MobileFieldName>(,<MobileFieldName>)*"
 
 <MobileOrderByFieldName> ::=
@@ -407,6 +406,7 @@ Named items
 
 <OrgUnitFieldName> ::=
 	description|id|inherit|name|orgunitpath|parent|parentid|inherit
+<OrgUnitFieldNameList> ::= "<OrgUnitFieldName>(,<OrgUnitFieldName>)*"
 
 <PrintJobOrderByFieldName> ::=
 	create_time|status|title
@@ -425,10 +425,11 @@ Named items
 	name|
 	type|
 	uservisibledescription
-	
+
 <UserFieldName> ::=
 	addresses|address|
 	agreedtoterms|agreed2terms|
+	aliases|
 	changepasswordatnextlogin|changepassword|
 	creationtime|
 	deletiontime|
@@ -808,7 +809,7 @@ gam update org|ou <OrgUnitPath> [name <Name>] [description <String>] [parent <Or
 gam update org|ou <OrgUnitPath> add|move <CrOSTypeEntity>|<UserTypeEntity>
 gam delete org|ou <OrgUnitPath>
 gam info org|ou <OrgUnitPath> [nousers] [children|child]
-gam print orgs|ous [todrive] [toplevelonly] [from_parent <OrgUnitPath>] [allfields|<OrgUnitFieldName>*]
+gam print orgs|ous [todrive] [toplevelonly] [from_parent <OrgUnitPath>] [allfields|(fields <OrgUnitFieldNameKist>)]
 
 gam create alias|nickname <EmailAddress> user|group|target <UniqueID>|<EmailAddress>
 gam update alias|nickname <EmailAddress> user|group|target <UniqueID>|<EmailAddress>
