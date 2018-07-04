@@ -2990,7 +2990,7 @@ def updateCalendar(users):
     if not cal:
       continue
     print u"Updating %s's subscription to calendar %s (%s/%s)" % (user, calendarId, i, count)
-    callGAPI(cal.calendarList(), u'update', soft_errors=True, calendarId=calendarId, body=body, colorRgbFormat=colorRgbFormat)
+    callGAPI(cal.calendarList(), u'patch', soft_errors=True, calendarId=calendarId, body=body, colorRgbFormat=colorRgbFormat)
 
 def doPrinterShowACL():
   cp = buildGAPIObject(u'cloudprint')
@@ -3621,6 +3621,30 @@ def doCalendarAddEvent():
       except KeyError:
         pass
   callGAPI(cal.events(), u'insert', calendarId=calendarId, sendNotifications=sendNotifications, body=body)
+
+def doCalendarModifySettings():
+  calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
+  if not cal:
+    return
+  body = {}
+  i = 4
+  while i < len(sys.argv):
+    myarg = sys.argv[i].lower().replace(u'_', u'')
+    if myarg == u'description':
+      body[u'description'] = sys.argv[i+1]
+      i += 2
+    elif myarg == u'location':
+      body[u'location'] = sys.argv[i+1]
+      i += 2
+    elif myarg == u'summary':
+      body[u'summary'] = sys.argv[i+1]
+      i += 2
+    elif myarg == u'timezone':
+      body[u'timeZone'] = sys.argv[i+1]
+      i += 2
+    else:
+      systemErrorExit(2, '%s is not a valid argument for "gam calendar <email> modify"' % sys.argv[i])
+  callGAPI(cal.calendars(), u'patch', calendarId=calendarId, body=body)
 
 def doProfile(users):
   cd = buildGAPIObject(u'directory')
@@ -5510,15 +5534,15 @@ def doDeleteLabel(users):
     bcount = 0
     j = 0
     del_me_count = len(del_labels)
-    dbatch = gmail.new_batch_http_request()
+    dbatch = gmail.new_batch_http_request(callback=gmail_del_result)
     for del_me in del_labels:
       j += 1
       print u' deleting label %s (%s/%s)' % (del_me[u'name'], j, del_me_count)
-      dbatch.add(gmail.users().labels().delete(userId=user, id=del_me[u'id']), callback=gmail_del_result)
+      dbatch.add(gmail.users().labels().delete(userId=user, id=del_me[u'id']))
       bcount += 1
       if bcount == 10:
         dbatch.execute()
-        dbatch = gmail.new_batch_http_request()
+        dbatch = gmail.new_batch_http_request(callback=gmail_del_result)
         bcount = 0
     if bcount > 0:
       dbatch.execute()
@@ -6908,7 +6932,7 @@ def getUserAttributes(i, cd, updateCmd=False):
         i += 1
         continue
       keyword = {}
-      i = getEntryType(i, keyword, USER_KEYWORD_TYPES, customKeyword=u'custom', customTypeKeyword=u'customType')
+      i = getEntryType(i, keyword, USER_KEYWORD_TYPES)
       keyword[u'value'] = sys.argv[i]
       i += 1
       appendItemToBodyList(body, u'keywords', keyword)
@@ -8042,19 +8066,21 @@ def doUpdateUser(users, i):
   if users is None:
     users = [normalizeEmailAddressOrUID(sys.argv[3])]
   body, admin_body = getUserAttributes(i, cd, updateCmd=True)
+  vfe = u'primaryEmail' in body and body[u'primaryEmail'][:4].lower() == u'vfe@'
   for user in users:
-    if u'primaryEmail' in body and body[u'primaryEmail'][:4].lower() == u'vfe@':
-      user_primary = callGAPI(cd.users(), u'get', userKey=user, fields=u'primaryEmail,id')
-      user = user_primary[u'id']
+    userKey = user
+    if vfe:
+      user_primary = callGAPI(cd.users(), u'get', userKey=userKey, fields=u'primaryEmail,id')
+      userKey = user_primary[u'id']
       user_primary = user_primary[u'primaryEmail']
       user_name, user_domain = splitEmailAddress(user_primary)
       body[u'primaryEmail'] = u'vfe.%s.%05d@%s' % (user_name, random.randint(1, 99999), user_domain)
       body[u'emails'] = [{u'type': u'custom', u'customType': u'former_employee', u'primary': False, u'address': user_primary}]
     sys.stdout.write(u'updating user %s...\n' % user)
     if body:
-      callGAPI(cd.users(), u'update', userKey=user, body=body)
+      callGAPI(cd.users(), u'update', userKey=userKey, body=body)
     if admin_body:
-      callGAPI(cd.users(), u'makeAdmin', userKey=user, body=admin_body)
+      callGAPI(cd.users(), u'makeAdmin', userKey=userKey, body=admin_body)
 
 def doRemoveUsersAliases(users):
   cd = buildGAPIObject(u'directory')
@@ -9240,8 +9266,8 @@ def doGetCrosInfo():
 
 def doGetMobileInfo():
   cd = buildGAPIObject(u'directory')
-  deviceId = sys.argv[3]
-  info = callGAPI(cd.mobiledevices(), u'get', customerId=GC_Values[GC_CUSTOMER_ID], resourceId=deviceId)
+  resourceId = sys.argv[3]
+  info = callGAPI(cd.mobiledevices(), u'get', customerId=GC_Values[GC_CUSTOMER_ID], resourceId=resourceId)
   print_json(None, info)
 
 def print_json(object_name, object_value, spacing=u''):
@@ -12350,6 +12376,8 @@ def ProcessGAMCommand(args):
         doCalendarAddEvent()
       elif argument == u'deleteevent':
         doCalendarDeleteEvent()
+      elif argument == u'modify':
+        doCalendarModifySettings()
       else:
         systemErrorExit(2, '%s is not a valid argument for "gam calendar"' % argument)
       sys.exit(0)
