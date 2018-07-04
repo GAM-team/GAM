@@ -7719,24 +7719,22 @@ def doCreateUser():
 def GroupIsAbuseOrPostmaster(emailAddr):
   return emailAddr.startswith(u'abuse@') or emailAddr.startswith(u'postmaster@')
 
-COLLABORATIVE_INBOX_ATTRIBUTES = [
-  u'whoCanAddReferences',
-  u'whoCanAssignTopics',
-  u'whoCanEnterFreeFormTags',
-  u'whoCanMarkDuplicate',
-  u'whoCanMarkFavoriteReplyOnAnyTopic',
-  u'whoCanMarkFavoriteReplyOnOwnTopic',
-  u'whoCanMarkNoResponseNeeded',
-  u'whoCanModifyTagsAndCategories',
-  u'whoCanTakeTopics',
-  u'whoCanUnassignTopic',
-  u'whoCanUnmarkFavoriteReplyOnAnyTopic',
-  ]
-
 def getGroupAttrValue(myarg, value, gs_object, gs_body, function):
   if myarg == u'collaborative':
-    for attrName in COLLABORATIVE_INBOX_ATTRIBUTES:
-      gs_body[attrName] = value
+    value = value.upper()
+    if value in ['MEMBERS']:
+      value = 'ALL_MEMBERS'
+    elif value in ['OWNERS']:
+      value = 'OWNERS_ONLY'
+    elif value in ['MANAGERS']:
+      value = u'OWNERS_AND_MANAGERS'
+    elif value in ['MANAGERSONLY']:
+      value = u'MANAGERS_ONLY'
+    for attrName, attrValue in COLLABORATIVE_INBOX_ATTRIBUTES.items():
+      if attrValue == u'acl':
+        gs_body[attrName] = value
+      else:
+        gs_body[attrName] = attrValue
     return
   for (attrib, params) in gs_object[u'schemas'][u'Groups'][u'properties'].items():
     if attrib in [u'kind', u'etag', u'email']:

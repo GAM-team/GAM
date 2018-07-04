@@ -43,6 +43,10 @@ FN_OAUTH2SERVICE_JSON = u'oauth2service.json'
 FN_OAUTH2_TXT = u'oauth2.txt'
 MY_CUSTOMER = u'my_customer'
 SKUS = {
+  u'1010010001': {
+    u'product': u'101001', u'aliases': [u'identity', u'cloudidentity'], u'displayName': 'Cloud Identity'},
+  u'1010050001': {
+    u'product': u'101005', u'aliases': [u'identitypremium', u'cloudidentitypremium'], u'displayName': 'Cloud Identity Premium'},
   u'1010310002': {
     u'product': u'101031', u'aliases': [u'gsefe', u'e4e'], u'displayName': u'G Suite Enterprise for Education'},
   u'Google-Apps': {
@@ -506,6 +510,21 @@ CROS_END_ARGUMENTS = [u'end', u'enddate']
 # From https://www.chromium.org/chromium-os/tpm_firmware_update
 CROS_TPM_VULN_VERSIONS = [u'41f', u'420', u'628', u'8520',]
 CROS_TPM_FIXED_VERSIONS = [u'422', u'62b', u'8521',]
+
+COLLABORATIVE_INBOX_ATTRIBUTES = {
+  u'whoCanAddReferences': u'acl',
+  u'whoCanAssignTopics': u'acl',
+  u'whoCanEnterFreeFormTags': u'acl',
+  u'whoCanMarkDuplicate': u'acl',
+  u'whoCanMarkFavoriteReplyOnAnyTopic': u'acl',
+  u'whoCanMarkFavoriteReplyOnOwnTopic': u'acl',
+  u'whoCanMarkNoResponseNeeded': u'acl',
+  u'whoCanModifyTagsAndCategories': u'acl',
+  u'whoCanTakeTopics': u'acl',
+  u'whoCanUnassignTopic': u'acl',
+  u'whoCanUnmarkFavoriteReplyOnAnyTopic': u'acl',
+  u'favoriteRepliesOnTop': True,
+  }
 
 #
 # Global variables
