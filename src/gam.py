@@ -1959,21 +1959,11 @@ def doCreateAdmin():
   if body[u'scopeType'] not in [u'CUSTOMER', u'ORG_UNIT']:
     systemErrorExit(3, 'scope type must be customer or org_unit; got %s' % body[u'scopeType'])
   if body[u'scopeType'] == u'ORG_UNIT':
-    orgUnit = sys.argv[6]
-    if orgUnit[:3] == u'id:':
-      body[u'orgUnitId'] = orgUnit[3:]
-    elif orgUnit[:4] == u'uid:':
-      body[u'orgUnitId'] = orgUnit[4:]
-    else:
-      if orgUnit[0] == u'/':
-        orgUnit = orgUnit[1:]
-      body[u'orgUnitId'] = callGAPI(cd.orgunits(), u'get',
-                                    customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=orgUnit,
-                                    fields=u'orgUnitId')[u'orgUnitId'][3:]
-  if body[u'scopeType'] == u'CUSTOMER':
-    scope = u'customer'
+    orgUnit, orgUnitId = getOrgUnitId(sys.argv[6], cd)
+    body[u'orgUnitId'] = orgUnitId[3:]
+    scope = u'ORG_UNIT {0}'.format(orgUnit)
   else:
-    scope = orgUnit
+    scope = u'CUSTOMER'
   print u'Giving %s admin role %s for %s' % (user, role, scope)
   callGAPI(cd.roleAssignments(), u'insert',
            customer=GC_Values[GC_CUSTOMER_ID], body=body)
@@ -5837,7 +5827,6 @@ def _showFilter(userFilter, j, jcount, labels):
       print u'    Forwarding Address: {0}'.format(userFilter[u'action'][u'forward'])
   else:
     print u'      ERROR: No Filter actions'
-#
 
 def addFilter(users, i):
   body = {}
@@ -6607,9 +6596,7 @@ def getUserAttributes(i, cd, updateCmd=False):
       body[u'agreedToTerms'] = getBoolean(sys.argv[i+1], myarg)
       i += 2
     elif myarg in [u'org', u'ou']:
-      body[u'orgUnitPath'] = sys.argv[i+1]
-      if body[u'orgUnitPath'][0] != u'/':
-        body[u'orgUnitPath'] = u'/%s' % body[u'orgUnitPath']
+      body[u'orgUnitPath'] = getOrgUnitItem(sys.argv[i+1], pathOnly=True)
       i += 2
     elif myarg in [u'language', u'languages']:
       i += 1
@@ -7442,7 +7429,8 @@ def doCreateVaultHold():
       accounts = sys.argv[i+1].split(u',')
       i += 2
     elif myarg in [u'orgunit', u'ou']:
-      body[u'orgUnit'] = {u'orgUnitId': doGetOrgInfo(name=sys.argv[i+1], return_attrib=u'orgUnitId')}
+      _, orgUnitId = getOrgUnitId(sys.argv[i+1], None)
+      body[u'orgUnit'] = {u'orgUnitId': orgUnitId}
       i += 2
     elif myarg == u'starttime':
       start_time = getDateZeroTimeOrFullTime(sys.argv[i+1])
@@ -7584,7 +7572,8 @@ def doUpdateVaultHold():
       query = sys.argv[i+1]
       i += 2
     elif myarg in [u'orgunit', u'ou']:
-      body[u'orgUnit'] = {u'orgUnitId': doGetOrgInfo(name=sys.argv[i+1], return_attrib=u'orgUnitId')}
+      _, orgUnitId = getOrgUnitId(sys.argv[i+1], None)
+      body[u'orgUnit'] = {u'orgUnitId': orgUnitId}
       i += 2
     elif myarg == u'starttime':
       start_time = getDateZeroTimeOrFullTime(sys.argv[i+1])
@@ -7814,18 +7803,17 @@ def doCreateAlias():
 
 def doCreateOrg():
   cd = buildGAPIObject(u'directory')
-  body = {u'name': sys.argv[3]}
-  if body[u'name'][0] == u'/':
-    body[u'name'] = body[u'name'][1:]
+  name = getOrgUnitItem(sys.argv[3], pathOnly=True, absolutePath=False)
+  parent = u''
+  body = {}
   i = 4
-  body[u'parentOrgUnitPath'] = u'/'
   while i < len(sys.argv):
     myarg = sys.argv[i].lower()
     if myarg == u'description':
       body[u'description'] = sys.argv[i+1].replace(u'\\n', u'\n')
       i += 2
     elif myarg == u'parent':
-      body[u'parentOrgUnitPath'] = sys.argv[i+1]
+      parent = getOrgUnitItem(sys.argv[i+1])
       i += 2
     elif myarg == u'noinherit':
       body[u'blockInheritance'] = True
@@ -7835,6 +7823,19 @@ def doCreateOrg():
       i += 1
     else:
       systemErrorExit(2, '%s is not a valid argument for "gam create org"' % sys.argv[i])
+  if parent.startswith(u'id:'):
+    parent = callGAPI(cd.orgunits(), u'get',
+                      customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=parent, fields=u'orgUnitPath')[u'orgUnitPath']
+  if parent == u'/':
+    orgUnitPath = parent+name
+  else:
+    orgUnitPath = parent+u'/'+name
+  if orgUnitPath.count(u'/') > 1:
+    body[u'parentOrgUnitPath'], body[u'name'] = orgUnitPath.rsplit(u'/', 1)
+  else:
+    body[u'parentOrgUnitPath'] = u'/'
+    body[u'name'] = orgUnitPath[1:]
+  parent = body[u'parentOrgUnitPath']
   callGAPI(cd.orgunits(), u'insert', customerId=GC_Values[GC_CUSTOMER_ID], body=body)
 
 def _getBuildingAttributes(args, body={}):
@@ -8394,7 +8395,7 @@ def doUpdateCros():
       update_body[u'annotatedAssetId'] = sys.argv[i+1]
       i += 2
     elif myarg in [u'ou', u'org']:
-      orgUnitPath = sys.argv[i+1]
+      orgUnitPath = getOrgUnitItem(sys.argv[i+1])
       i += 2
     elif myarg == u'action':
       action = sys.argv[i+1].lower().replace(u'_', u'').replace(u'-', u'')
@@ -8471,7 +8472,7 @@ def doDeleteMobile():
 
 def doUpdateOrg():
   cd = buildGAPIObject(u'directory')
-  orgUnitPath = sys.argv[3]
+  orgUnitPath = getOrgUnitItem(sys.argv[3])
   if sys.argv[4].lower() in [u'move', u'add']:
     if sys.argv[5].lower() in usergroup_types:
       users = getUsersToModify(entity_type=sys.argv[5].lower(), entity=sys.argv[6])
@@ -8483,8 +8484,6 @@ def doUpdateOrg():
         print u' moving %s devices to %s' % (len(move_body[u'deviceIds']), orgUnitPath)
         callGAPI(cd.chromeosdevices(), u'moveDevicesToOu', customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=orgUnitPath, body=move_body)
     else:
-      if orgUnitPath != u'/' and orgUnitPath[0] != u'/': # we do want a / at the beginning for user updates
-        orgUnitPath = u'/%s' % orgUnitPath
       current_user = 0
       user_count = len(users)
       for user in users:
@@ -8506,9 +8505,11 @@ def doUpdateOrg():
         body[u'description'] = sys.argv[i+1].replace(u'\\n', u'\n')
         i += 2
       elif myarg == u'parent':
-        body[u'parentOrgUnitPath'] = sys.argv[i+1]
-        if body[u'parentOrgUnitPath'][0] != u'/':
-          body[u'parentOrgUnitPath'] = u'/'+body[u'parentOrgUnitPath']
+        parent = getOrgUnitItem(sys.argv[i+1])
+        if parent.startswith(u'id:'):
+          body[u'parentOrgUnitId'] = parent
+        else:
+          body[u'parentOrgUnitPath'] = parent
         i += 2
       elif myarg == u'noinherit':
         body[u'blockInheritance'] = True
@@ -8518,9 +8519,7 @@ def doUpdateOrg():
         i += 1
       else:
         systemErrorExit(2, '%s is not a valid argument for "gam update org"' % sys.argv[i])
-    if orgUnitPath[0] == u'/': # we don't want a / at the beginning for OU updates
-      orgUnitPath = orgUnitPath[1:]
-    callGAPI(cd.orgunits(), u'update', customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=orgUnitPath, body=body)
+    callGAPI(cd.orgunits(), u'update', customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=encodeOrgUnitPath(makeOrgUnitPathRelative(orgUnitPath)), body=body)
 
 def doWhatIs():
   cd = buildGAPIObject(u'directory')
@@ -9495,6 +9494,58 @@ def orgUnitPathQuery(path):
     return u"orgUnitPath='{0}'".format(path.replace(u"'", u"\\'"))
   return None
 
+def makeOrgUnitPathAbsolute(path):
+  if path == u'/':
+    return path
+  if path.startswith(u'/'):
+    return path.rstrip(u'/')
+  if path.startswith(u'id:'):
+    return path
+  if path.startswith(u'uid:'):
+    return path[1:]
+  return u'/'+path.rstrip(u'/')
+
+def makeOrgUnitPathRelative(path):
+  if path == u'/':
+    return path
+  if path.startswith(u'/'):
+    return path[1:].rstrip(u'/')
+  if path.startswith(u'id:'):
+    return path
+  if path.startswith(u'uid:'):
+    return path[1:]
+  return path.rstrip(u'/')
+
+def encodeOrgUnitPath(path):
+  if path.find(u'+') == -1 and path.find(u'%') == -1:
+    return path
+  encpath = u''
+  for c in path:
+    if c == u'+':
+      encpath += u'%2B'
+    elif c == u'%':
+      encpath += u'%25'
+    else:
+      encpath += c
+  return encpath
+
+def getOrgUnitItem(orgUnit, pathOnly=False, absolutePath=True):
+  if pathOnly and (orgUnit.startswith(u'id:') or orgUnit.startswith(u'uid:')):
+    systemErrorExit(2, '%s is not valid in this context' % orgUnit)
+  if absolutePath:
+    return makeOrgUnitPathAbsolute(orgUnit)
+  return makeOrgUnitPathRelative(orgUnit)
+
+def getOrgUnitId(orgUnit, cd=None):
+  if cd is None:
+    cd = buildGAPIObject(u'directory')
+  orgUnit = getOrgUnitItem(orgUnit)
+  if orgUnit[:3] == u'id:':
+    return (orgUnit, orgUnit)
+  result = callGAPI(cd.orgunits(), u'get',
+                    customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=encodeOrgUnitPath(makeOrgUnitPathRelative(orgUnit)), fields=u'orgUnitId')
+  return (orgUnit, result[u'orgUnitId'])
+
 def getTopLevelOrgId(cd, orgUnitPath):
   try:
     # create a temp org so we can learn what the top level org ID is (sigh)
@@ -9510,7 +9561,7 @@ def getTopLevelOrgId(cd, orgUnitPath):
 def doGetOrgInfo(name=None, return_attrib=None):
   cd = buildGAPIObject(u'directory')
   if not name:
-    name = sys.argv[3]
+    name = getOrgUnitItem(sys.argv[3])
     get_users = True
     show_children = False
     i = 4
@@ -9534,9 +9585,9 @@ def doGetOrgInfo(name=None, return_attrib=None):
       topLevelOrgId = getTopLevelOrgId(cd, u'/')
       if topLevelOrgId:
         name = topLevelOrgId
-  if len(name) > 1 and name[0] == u'/':
-    name = name[1:]
-  result = callGAPI(cd.orgunits(), u'get', customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=name)
+  else:
+    name = makeOrgUnitPathRelative(name)
+  result = callGAPI(cd.orgunits(), u'get', customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=encodeOrgUnitPath(name))
   if return_attrib:
     return result[return_attrib]
   print_json(None, result)
@@ -9774,7 +9825,7 @@ def doUndeleteUser():
   while i < len(sys.argv):
     myarg = sys.argv[i].lower()
     if myarg in [u'ou', u'org']:
-      orgUnit = sys.argv[i+1]
+      orgUnit = makeOrgUnitPathAbsolute(sys.argv[i+1])
       i += 2
     else:
       systemErrorExit(2, '%s is not a valid argument for "gam undelete user"' % sys.argv[i])
@@ -9848,11 +9899,9 @@ def doDeleteResourceCalendar():
 
 def doDeleteOrg():
   cd = buildGAPIObject(u'directory')
-  name = sys.argv[3]
-  if name[0] == u'/':
-    name = name[1:]
+  name = getOrgUnitItem(sys.argv[3])
   print u"Deleting organization %s" % name
-  callGAPI(cd.orgunits(), u'delete', customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=name)
+  callGAPI(cd.orgunits(), u'delete', customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=encodeOrgUnitPath(makeOrgUnitPathRelative(name)))
 
 # Send an email
 def send_email(msg_subj, msg_txt, msg_rcpt=None):
@@ -10468,7 +10517,7 @@ def doPrintOrgs():
       listType = u'children'
       i += 1
     elif myarg == u'fromparent':
-      orgUnitPath = sys.argv[i+1]
+      orgUnitPath = getOrgUnitItem(sys.argv[i+1])
       i += 2
     elif myarg == u'allfields':
       fields = None
@@ -10501,8 +10550,8 @@ def doPrintOrgs():
   missing_parents = set(parentOrgIds) - set(retrievedOrgIds)
   for missing_parent in missing_parents:
     try:
-      result = callGAPI(cd.orgunits(), u'get',
-                        customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=missing_parent, fields=get_fields, throw_reasons=[u'required'])
+      result = callGAPI(cd.orgunits(), u'get', throw_reasons=[u'required'],
+                        customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=missing_parent, fields=get_fields)
       orgunits.append(result)
     except:
       pass
@@ -10588,7 +10637,7 @@ def doPrintGroupMembers():
   customer = GC_Values[GC_CUSTOMER_ID]
   usedomain = usemember = usequery = None
   roles = []
-  fields = None
+  fields = u'nextPageToken,members(email,id,role,status,type)'
   titles = [u'group']
   csvRows = []
   groups_to_get = []
@@ -10641,6 +10690,7 @@ def doPrintGroupMembers():
     i += 1
     group_email = group[u'email']
     sys.stderr.write(u'Getting members for %s (%s/%s)\n' % (group_email, i, count))
+    validRoles, listRoles, listFields = _getRoleVerification(u','.join(roles), fields)
     group_members = callGAPIpages(cd.members(), u'list', u'members',
                                   soft_errors=True,
                                   groupKey=group_email, roles=listRoles, fields=listFields, maxResults=GC_Values[GC_MEMBER_MAX_RESULTS])
@@ -10863,7 +10913,7 @@ def doPrintCrosActivity():
       queries = getQueries(myarg, sys.argv[i+1])
       i += 2
     elif myarg == u'limittoou':
-      orgUnitPath = sys.argv[i+1]
+      orgUnitPath = getOrgUnitItem(sys.argv[i+1])
       i += 2
     elif myarg == u'todrive':
       todrive = True
@@ -10976,7 +11026,7 @@ def doPrintCrosDevices():
       queries = getQueries(myarg, sys.argv[i+1])
       i += 2
     elif myarg == u'limittoou':
-      orgUnitPath = sys.argv[i+1]
+      orgUnitPath = getOrgUnitItem(sys.argv[i+1])
       i += 2
     elif myarg == u'todrive':
       todrive = True
@@ -11428,10 +11478,11 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
         users.append(member.get(u'email', member[u'id']))
   elif entity_type in [u'ou', u'org']:
     got_uids = True
-    ou = entity
-    if ou[0] != u'/':
-      ou = u'/%s' % ou
+    ou = makeOrgUnitPathAbsolute(entity)
     users = []
+    if ou.startswith(u'id:'):
+      ou = callGAPI(cd.orgunits(), u'get',
+                    customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=ou, fields=u'orgUnitPath')[u'orgUnitPath']
     query = orgUnitPathQuery(ou)
     page_message = None
     if not silent:
@@ -11440,18 +11491,15 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
     members = callGAPIpages(cd.users(), u'list', u'users', page_message=page_message,
                             customer=GC_Values[GC_CUSTOMER_ID], fields=u'nextPageToken,users(primaryEmail,suspended,orgUnitPath)',
                             query=query, maxResults=GC_Values[GC_USER_MAX_RESULTS])
+    ou = ou.lower()
     for member in members:
-      if ou.lower() != member[u'orgUnitPath'].lower():
-        continue
-      if not checkNotSuspended or not member[u'suspended']:
+      if (ou == member[u'orgUnitPath'].lower()) and not (checkNotSuspended and member[u'suspended']):
         users.append(member[u'primaryEmail'])
     if not silent:
       sys.stderr.write(u"%s Users are directly in the OU.\n" % len(users))
   elif entity_type in [u'ou_and_children', u'ou_and_child']:
     got_uids = True
-    ou = entity
-    if ou[0] != u'/':
-      ou = u'/%s' % ou
+    ou = makeOrgUnitPathAbsolute(entity)
     users = []
     query = orgUnitPathQuery(ou)
     page_message = None
@@ -11462,7 +11510,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
                             customer=GC_Values[GC_CUSTOMER_ID], fields=u'nextPageToken,users(primaryEmail,suspended)',
                             query=query, maxResults=GC_Values[GC_USER_MAX_RESULTS])
     for member in members:
-      if not checkNotSuspended or not member[u'suspended']:
+      if not (checkNotSuspended and member[u'suspended']):
         users.append(member[u'primaryEmail'])
     if not silent:
       sys.stderr.write(u"done.\r\n")
