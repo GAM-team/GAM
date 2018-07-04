@@ -2151,8 +2151,7 @@ def doCreateDataTransfer():
     i += 2
   body[u'applicationDataTransfers'] = [{u'applicationId': serviceID}]
   for key, value in parameters.items():
-    if u'applicationTransferParams' not in body[u'applicationDataTransfers'][0]:
-      body[u'applicationDataTransfers'][0][u'applicationTransferParams'] = []
+    body[u'applicationDataTransfers'][0].setdefault(u'applicationTransferParams', [])
     body[u'applicationDataTransfers'][0][u'applicationTransferParams'].append({u'key': key, u'value': value})
   result = callGAPI(dt.transfers(), u'insert', body=body, fields=u'id')[u'id']
   print u'Submitted request id %s to transfer %s from %s to %s' % (result, serviceName, old_owner, new_owner)
@@ -2204,7 +2203,7 @@ def doPrintDataTransfers():
       a_transfer[u'id'] = transfer[u'id']
       if u'applicationTransferParams' in transfer[u'applicationDataTransfers'][i]:
         for param in transfer[u'applicationDataTransfers'][i][u'applicationTransferParams']:
-          a_transfer[param[u'key']] = u','.join(param[u'value'])
+          a_transfer[param[u'key']] = u','.join(param.get(u'value', []))
     for title in a_transfer:
       if title not in titles:
         titles.append(title)
@@ -2224,7 +2223,7 @@ def doGetDataTransferInfo():
     print u'Parameters:'
     if u'applicationTransferParams' in app:
       for param in app[u'applicationTransferParams']:
-        print   u' %s: %s' % (param[u'key'], u','.join(param[u'value']))
+        print   u' %s: %s' % (param[u'key'], u','.join(param.get(u'value', [])))
     else:
       print u' None'
     print
@@ -2389,8 +2388,7 @@ def doDeleteGuardian():
 
 def doCreateCourse():
   croom = buildGAPIObject(u'classroom')
-  body = {u'ownerId': u'me',
-          u'name': u'Unknown Course'}
+  body = {}
   i = 3
   while i < len(sys.argv):
     myarg = sys.argv[i].lower()
@@ -2400,6 +2398,10 @@ def doCreateCourse():
     else:
       getCourseAttribute(myarg, sys.argv[i+1], body, croom, u'create')
       i += 2
+  if u'ownerId' not in body:
+    systemErrorExit(2, 'expected teacher <UserItem>)')
+  if u'name' not in body:
+    systemErrorExit(2, 'expected name <String>)')
   result = callGAPI(croom.courses(), u'create', body=body)
   print u'Created course %s' % result[u'id']
 
@@ -4048,13 +4050,7 @@ def updateDriveFileACL(users):
   i = 7
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace(u'_', u'')
-    if myarg == u'withlink':
-      body[u'allowFileDiscovery'] = False
-      i += 1
-    elif myarg == u'discoverable':
-      body[u'allowFileDiscovery'] = True
-      i += 1
-    elif myarg == u'removeexpiration':
+    if myarg == u'removeexpiration':
       removeExpiration = True
       i += 1
     elif myarg == u'role':
