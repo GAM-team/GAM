@@ -323,11 +323,13 @@ Named items
 	allowgooglecommunication|
 	allowwebposting|
 	archiveonly|
+	collaborative|
 	customreplyto|
 	defaultmessagedenynotificationtext|
 	description|
 	directmemberscount|
 	email|
+	favoriterepliesontop|
 	id|
 	includeinglobaladdresslist|gal|
 	isarchived|
@@ -342,11 +344,22 @@ Named items
 	showingroupdirectory|
 	spammoderationlevel|
 	whocanadd|
+	whocanaddreferences|
+	whocanassigntopics|
 	whocancontactowner|
+	whocanenterfreeformtags|
 	whocaninvite|
 	whocanjoin|
 	whocanleavegroup|
+	whocanmarkduplicate|
+	whocanmarkfavoritereplyonanytopic|
+	whocanmarkfavoritereplyonowntopic|
+	whocanmarknoresponseneeded|
+	whocanmodifytagsandcategories|
 	whocanpostmessage|
+	whocantaketopics|
+	whocanunassigntopic|
+	whocanunmarkfavoritereplyonanytopic
 	whocanviewgroup|
 	whocanviewmembership
 
@@ -603,10 +616,12 @@ Item attributes
 	(allowgooglecommunication <Boolean>)|
 	(allowwebposting <Boolean>)|
 	(archiveonly <Boolean>)|
+	(collaborative ALL_MEMBERS|OWNERS_AND_MANAGERS|MANAGERS_ONLY|OWNERS_ONLY|NONE)|
 	(customfootertext <String>)|
 	(customreplyto <EmailAddress>)|
 	(defaultmessagedenynotificationtext <String>)|
 	(description <String>)|
+	(favoriterepliesontop <Boolean>)|
 	(gal|includeInGlobalAddressList <Boolean>)|
 	(includecustomfooter <Boolean>)|
 	(isarchived <Boolean>)|
@@ -621,11 +636,22 @@ Item attributes
 	(showingroupdirectory <Boolean>)|
 	(spammoderationlevel ALLOW|MODERATE|SILENTLY_MODERATE|REJECT)|
 	(whocanadd ALL_MEMBERS_CAN_ADD|ALL_MANAGERS_CAN_ADD|NONE_CAN_ADD)|
+	(whocanaddreferences ALL_MEMBERS|OWNERS_AND_MANAGERS|MANAGERS_ONLY|OWNERS_ONLY|NONE)|
+	(whocanassigntopics ALL_MEMBERS|OWNERS_AND_MANAGERS|MANAGERS_ONLY|OWNERS_ONLY|NONE)|
 	(whocancontactowner ANYONE_CAN_CONTACT|ALL_IN_DOMAIN_CAN_CONTACT|ALL_MEMBERS_CAN_CONTACT|ALL_MANAGERS_CAN_CONTACT)|
+	(whocanenterfreeformtags ALL_MEMBERS|OWNERS_AND_MANAGERS|MANAGERS_ONLY|OWNERS_ONLY|NONE)|
 	(whocaninvite ALL_MEMBERS_CAN_INVITE|ALL_MANAGERS_CAN_INVITE|NONE_CAN_INVITE)|
 	(whocanjoin ANYONE_CAN_JOIN|ALL_IN_DOMAIN_CAN_JOIN|INVITED_CAN_JOIN|CAN_REQUEST_TO_JOIN)|
 	(whocanleavegroup ALL_MANAGERS_CAN_LEAVE|ALL_MEMBERS_CAN_LEAVE|NONE_CAN_LEAVE)|
+	(whocanmarkduplicate ALL_MEMBERS|OWNERS_AND_MANAGERS|MANAGERS_ONLY|OWNERS_ONLY|NONE)|
+	(whocanmarkfavoritereplyonanytopic ALL_MEMBERS|OWNERS_AND_MANAGERS|MANAGERS_ONLY|OWNERS_ONLY|NONE)|
+	(whocanmarkfavoritereplyonowntopic ALL_MEMBERS|OWNERS_AND_MANAGERS|MANAGERS_ONLY|OWNERS_ONLY|NONE)|
+	(whocanmarknoresponseneeded ALL_MEMBERS|OWNERS_AND_MANAGERS|MANAGERS_ONLY|OWNERS_ONLY|NONE)|
+	(whocanmodifytagsandcategories ALL_MEMBERS|OWNERS_AND_MANAGERS|MANAGERS_ONLY|OWNERS_ONLY|NONE)|
+	(whocantaketopics ALL_MEMBERS|OWNERS_AND_MANAGERS|MANAGERS_ONLY|OWNERS_ONLY|NONE)|
 	(whocanpostmessage NONE_CAN_POST|ALL_MANAGERS_CAN_POST|ALL_MEMBERS_CAN_POST|ALL_IN_DOMAIN_CAN_POST|ANYONE_CAN_POST)|
+	(whocanunassigntopic ALL_MEMBERS|OWNERS_AND_MANAGERS|MANAGERS_ONLY|OWNERS_ONLY|NONE)|
+	(whocanunmarkfavoritereplyonanytopic ALL_MEMBERS|OWNERS_AND_MANAGERS|MANAGERS_ONLY|OWNERS_ONLY|NONE)|
 	(whocanviewgroup ANYONE_CAN_VIEW|ALL_IN_DOMAIN_CAN_VIEW|ALL_MEMBERS_CAN_VIEW|ALL_MANAGERS_CAN_VIEW)|
 	(whocanviewmembership ALL_IN_DOMAIN_CAN_VIEW|ALL_MEMBERS_CAN_VIEW|ALL_MANAGERS_CAN_VIEW)
 
@@ -828,10 +854,10 @@ gam calendar <CalendarItem> deleteevent (id|eventid <EventID>)* (query|eventquer
 gam calendar <CalendarItem> wipe
 
 <CalendarSettings> ::=
-        summary <String>|
-        description <String>|
-        location <String>|
-        timezone <String>
+	summary <String>|
+	description <String>|
+	location <String>|
+	timezone <String>
 
 gam calendar <CalendarItem> modify <CalendarSettings>+
 
@@ -907,12 +933,12 @@ gam update group <GroupItem> clear [member] [manager] [owner] [suspended]
 gam delete group <GroupItem>
 gam info group <GroupItem> [nousers] [noaliases] [groups]
 
-gam print groups [todrive] ([domain <DomainName>] [member <UserItem>])
+gam print groups [todrive] ([domain <DomainName>] ([member <UserItem>]|[query <QueryGroup>])
 	[maxresults <Number>] [allfields|([settings] <GroupFieldName>* [fields <GroupFieldNameList>])]
 	[members|memberscount] [managers|managerscount] [owners|ownerscount]
 	[delimiter <Character>] [sortheaders]
 
-gam print group-members|groups-members [todrive] ([domain <DomainName>] [member <UserItem>])|[group <GroupItem>]
+gam print group-members|groups-members [todrive] ([domain <DomainName>] ([member <UserItem>]|[query <QueryGroup>]))|[group <GroupItem>]
 	[roles <GroupRoleList>] [membernames] [fields <MembersFieldNameList>]
 
 gam print license|licenses|licence|licences [todrive] [(products|product <ProductIDList>)|(skus|sku <SKUIDList>)]
