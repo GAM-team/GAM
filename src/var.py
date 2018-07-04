@@ -43,6 +43,8 @@ FN_OAUTH2SERVICE_JSON = u'oauth2service.json'
 FN_OAUTH2_TXT = u'oauth2.txt'
 MY_CUSTOMER = u'my_customer'
 SKUS = {
+  u'1010310002': {
+    u'product': u'101031', u'aliases': [u'gsefe', u'e4e'], u'displayName': u'G Suite Enterprise for Education'},
   u'Google-Apps': {
     u'product': u'Google-Apps', u'aliases': [u'standard', u'free'], u'displayName': u'G Suite Free/Standard'},
   u'Google-Apps-For-Business': {
