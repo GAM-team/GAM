@@ -3622,6 +3622,17 @@ def doCalendarAddEvent():
         pass
   callGAPI(cal.events(), u'insert', calendarId=calendarId, sendNotifications=sendNotifications, body=body)
 
+def doCalendarPatchMetaData():
+  calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
+  if not cal:
+    return
+  props = [u'description', u'location', u'summary', u'timeZone']
+  prop = sys.argv[4]
+  if prop not in props:
+    print('"{}" is not a valid argument for "gam calendar <calendar email> metadata {} <string>"'.format(prop, "|".join(props)))
+  cal_prop = {prop: str(sys.argv[5])}
+  callGAPI(cal.calendars(), u'patch', calendarId=calendarId, body=cal_prop)
+
 def doProfile(users):
   cd = buildGAPIObject(u'directory')
   myarg = sys.argv[4].lower()
@@ -12350,6 +12361,8 @@ def ProcessGAMCommand(args):
         doCalendarAddEvent()
       elif argument == u'deleteevent':
         doCalendarDeleteEvent()
+      elif argument == u'metadata':
+        doCalendarPatchMetaData()
       else:
         systemErrorExit(2, '%s is not a valid argument for "gam calendar"' % argument)
       sys.exit(0)
