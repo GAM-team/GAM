@@ -1,5 +1,7 @@
 from __future__ import absolute_import
 
+from warnings import warn
+
 from .abc import DefaultMapping
 
 
@@ -14,16 +16,23 @@ class _DefaultSize(object):
         return 1
 
 
+_deprecated = object()
+
+
 class Cache(DefaultMapping):
     """Mutable mapping to serve as a simple cache or cache base class."""
 
     __size = _DefaultSize()
 
-    def __init__(self, maxsize, missing=None, getsizeof=None):
-        if missing:
-            self.__missing = missing
+    def __init__(self, maxsize, missing=_deprecated, getsizeof=None):
+        if missing is not _deprecated:
+            warn("Cache constructor parameter 'missing' is deprecated",
+                 DeprecationWarning, 3)
+            if missing:
+                self.__missing = missing
         if getsizeof:
-            self.__getsizeof = getsizeof
+            self.getsizeof = getsizeof
+        if self.getsizeof is not Cache.getsizeof:
             self.__size = dict()
         self.__data = dict()
         self.__currsize = 0
@@ -81,14 +90,6 @@ class Cache(DefaultMapping):
     def __len__(self):
         return len(self.__data)
 
-    @staticmethod
-    def __getsizeof(value):
-        return 1
-
-    @staticmethod
-    def __missing(key):
-        raise KeyError(key)
-
     @property
     def maxsize(self):
         """The maximum size of the cache."""
@@ -99,6 +100,11 @@ class Cache(DefaultMapping):
         """The current size of the cache."""
         return self.__currsize
 
-    def getsizeof(self, value):
+    @staticmethod
+    def getsizeof(value):
         """Return the size of a cache element's value."""
-        return self.__getsizeof(value)
+        return 1
+
+    @staticmethod
+    def __missing(key):
+        raise KeyError(key)

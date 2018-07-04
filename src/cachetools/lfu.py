@@ -2,13 +2,13 @@ from __future__ import absolute_import
 
 import collections
 
-from .cache import Cache
+from .cache import Cache, _deprecated
 
 
 class LFUCache(Cache):
     """Least Frequently Used (LFU) cache implementation."""
 
-    def __init__(self, maxsize, missing=None, getsizeof=None):
+    def __init__(self, maxsize, missing=_deprecated, getsizeof=None):
         Cache.__init__(self, maxsize, missing, getsizeof)
         self.__counter = collections.Counter()
 

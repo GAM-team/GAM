@@ -3,7 +3,7 @@ from __future__ import absolute_import
 import collections
 import time
 
-from .cache import Cache
+from .cache import Cache, _deprecated
 
 
 class _Link(object):
@@ -57,7 +57,7 @@ class _Timer(object):
 class TTLCache(Cache):
     """LRU Cache implementation with per-item time-to-live (TTL) value."""
 
-    def __init__(self, maxsize, ttl, timer=time.time, missing=None,
+    def __init__(self, maxsize, ttl, timer=time.time, missing=_deprecated,
                  getsizeof=None):
         Cache.__init__(self, maxsize, missing, getsizeof)
         self.__root = root = _Link()
