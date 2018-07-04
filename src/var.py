@@ -43,8 +43,6 @@ FN_OAUTH2SERVICE_JSON = u'oauth2service.json'
 FN_OAUTH2_TXT = u'oauth2.txt'
 MY_CUSTOMER = u'my_customer'
 SKUS = {
-  u'1010310002': {
-    u'product': u'101031', u'aliases': [u'gsefe', u'e4e'], u'displayName': u'G Suite Enterprise for Education'},
   u'Google-Apps': {
     u'product': u'Google-Apps', u'aliases': [u'standard', u'free'], u'displayName': u'G Suite Free/Standard'},
   u'Google-Apps-For-Business': {
@@ -522,6 +520,8 @@ GM_WINDOWS = u'wndo'
 GM_SYS_ENCODING = u'syen'
 # Extra arguments to pass to GAPI functions
 GM_EXTRA_ARGS_DICT = u'exad'
+# Current API services
+GM_CURRENT_API_SERVICES = u'caps'
 # Current API user
 GM_CURRENT_API_USER = u'capu'
 # Current API scope
@@ -554,6 +554,7 @@ GM_Globals = {
   GM_WINDOWS: os.name == u'nt',
   GM_SYS_ENCODING: DEFAULT_CHARSET,
   GM_EXTRA_ARGS_DICT:  {u'prettyPrint': False},
+  GM_CURRENT_API_SERVICES: {},
   GM_CURRENT_API_USER: None,
   GM_CURRENT_API_SCOPES: [],
   GM_OAUTH2SERVICE_JSON_DATA: None,

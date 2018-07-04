@@ -970,10 +970,17 @@ def getValidOauth2TxtCredentials():
 
 def getService(api, http):
   api, version, api_version = getAPIVersion(api)
+  if api in GM_Globals[GM_CURRENT_API_SERVICES] and version in GM_Globals[GM_CURRENT_API_SERVICES][api]:
+    service = googleapiclient.discovery.build_from_document(GM_Globals[GM_CURRENT_API_SERVICES][api][version], http=http)
+    if GM_Globals[GM_CACHE_DISCOVERY_ONLY]:
+      http.cache = None
+    return service
   retries = 3
   for n in range(1, retries+1):
     try:
       service = googleapiclient.discovery.build(api, version, http=http, cache_discovery=False)
+      GM_Globals[GM_CURRENT_API_SERVICES].setdefault(api, {})
+      GM_Globals[GM_CURRENT_API_SERVICES][api][version] = service._rootDesc.copy()
       if GM_Globals[GM_CACHE_DISCOVERY_ONLY]:
         http.cache = None
       return service
@@ -997,6 +1004,8 @@ def getService(api, http):
   disc_file, discovery = readDiscoveryFile(api_version)
   try:
     service = googleapiclient.discovery.build_from_document(discovery, http=http)
+    GM_Globals[GM_CURRENT_API_SERVICES].setdefault(api, {})
+    GM_Globals[GM_CURRENT_API_SERVICES][api][version] = service._rootDesc.copy()
     if GM_Globals[GM_CACHE_DISCOVERY_ONLY]:
       http.cache = None
     return service
@@ -1845,7 +1854,7 @@ def doUpdateCustomer():
       systemErrorExit(2, '%s is not a valid argument for "gam update customer"' % myarg)
   if not body:
     systemErrorExit(2, 'no arguments specified for "gam update customer"')
-  callGAPI(cd.customers(), u'update', customerKey=GC_Values[GC_CUSTOMER_ID], body=body)
+  callGAPI(cd.customers(), u'patch', customerKey=GC_Values[GC_CUSTOMER_ID], body=body)
   print u'Updated customer'
 
 def doDelDomain():
@@ -7150,8 +7159,7 @@ and accept the Terms of Service (ToS). As soon as you've accepted the ToS popup,
             break
         except (IndexError, KeyError):
           pass
-        print status
-        sys.exit(1)
+        systemErrorExit(1, status)
       if status.get(u'done', False):
         break
       sleep_time = i ** 2
@@ -7160,11 +7168,9 @@ and accept the Terms of Service (ToS). As soon as you've accepted the ToS popup,
     if create_again:
       continue
     if not status.get(u'done', False):
-      print u'Failed to create project: %s' % status
-      sys.exit(1)
+      systemErrorExit(1, u'Failed to create project: %s' % status)
     elif u'error' in status:
-      print status[u'error']
-      sys.exit(2)
+      systemErrorExit(2, status[u'error'])
     break
   simplehttp = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL])
   enableProjectAPIs(simplehttp, httpObj, project_name, False)
@@ -9908,7 +9914,7 @@ def writeCSVfile(csvRows, titles, list_type, todrive):
   except IOError as e:
     systemErrorExit(6, e)
   if todrive:
-    columns = len(csvRows[0])
+    columns = len(titles)
     rows = len(csvRows)
     cell_count = rows * columns
     mimeType = u'application/vnd.google-apps.spreadsheet'
@@ -10541,7 +10547,7 @@ def doPrintAliases():
         for alias in user.get(u'nonEditableAliases', []):
           csvRows.append({u'NonEditableAlias': alias, u'Target': user[u'primaryEmail'], u'TargetType': u'User'})
   if doGroups:
-    printGettingAllItems(u'Group Aliasess', None)
+    printGettingAllItems(u'Group Aliases', None)
     page_message = u'Got %%num_items%% Groups %%first_item%% - %%last_item%%\n'
     all_groups = callGAPIpages(cd.groups(), u'list', u'groups', page_message=page_message,
                                message_attribute=u'email', customer=GC_Values[GC_CUSTOMER_ID],
@@ -10877,7 +10883,7 @@ def doPrintCrosActivity():
   fields = u'chromeosdevices(%s),nextPageToken' % u','.join(fieldsList)
   for query in queries:
     printGettingAllItems(u'CrOS Devices', query)
-    page_message = u'Got %%num_items%% CrOS devices...\n'
+    page_message = u'Got %%num_items%% CrOS Devices...\n'
     all_cros = callGAPIpages(cd.chromeosdevices(), u'list', u'chromeosdevices', page_message=page_message,
                              query=query, customerId=GC_Values[GC_CUSTOMER_ID], projection=u'FULL',
                              fields=fields, maxResults=GC_Values[GC_DEVICE_MAX_RESULTS], orgUnitPath=orgUnitPath)
@@ -11646,7 +11652,7 @@ gam create project
     client_id = re.sub(r'\.apps\.googleusercontent\.com$', u'', client_id)
     client_secret = cs_json[u'installed'][u'client_secret']
   except (ValueError, IndexError, KeyError):
-    systemErrorExit(3, u'the format of your client secrets file:\n\n%s\n\n is incorrect. Please recreate the file.')
+    systemErrorExit(3, u'the format of your client secrets file:\n\n%s\n\nis incorrect. Please recreate the file.')
   return (client_id, client_secret)
 
 class cmd_flags(object):
@@ -12005,12 +12011,10 @@ def ProcessGAMCommand(args):
         run_batch(items)
         sys.exit(0)
       else:
-        sys.stderr.write(u'{0}batch file: {1}, not processed, {2} error{3}\n'.format(ERROR_PREFIX, filename, errors, [u'', u's'][errors != 1]))
-        sys.exit(2)
+        systemErrorExit(2, u'batch file: {0}, not processed, {1} error{2}'.format(filename, errors, [u'', u's'][errors != 1]))
     elif command == u'csv':
       if httplib2.debuglevel > 0:
-        print u'Sorry, CSV commands are not compatible with debug. Delete debug.gam and try again.'
-        sys.exit(1)
+        systemErrorExit(1, u'CSV commands are not compatible with debug. Delete debug.gam and try again.')
       i = 2
       filename = sys.argv[i]
       i, encoding = getCharSet(i+1)
