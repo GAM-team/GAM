@@ -4375,6 +4375,19 @@ def doEmptyDriveTrash(users):
     print u'Emptying Drive trash for %s' % user
     callGAPI(drive.files(), u'emptyTrash')
 
+def escapeDriveFileName(filename):
+  if filename.find(u"'") == -1 and filename.find(u'\\') == -1:
+    return filename
+  encfilename = u''
+  for c in filename:
+    if c == u"'":
+      encfilename += u"\\'"
+    elif c == u'\\':
+      encfilename += u'\\\\'
+    else:
+      encfilename += c
+  return encfilename
+
 def initializeDriveFileAttributes():
   return ({}, {DFA_LOCALFILEPATH: None, DFA_LOCALFILENAME: None, DFA_LOCALMIMETYPE: None, DFA_CONVERT: None, DFA_OCR: None, DFA_OCRLANGUAGE: None, DFA_PARENTQUERY: None})
 
@@ -4426,10 +4439,10 @@ def getDriveFileAttribute(i, body, parameters, myarg, update=False):
     body[u'parents'].append({u'id': sys.argv[i+1]})
     i += 2
   elif myarg == u'parentname':
-    parameters[DFA_PARENTQUERY] = u"'me' in owners and mimeType = '%s' and title = '%s'" % (MIMETYPE_GA_FOLDER, sys.argv[i+1])
+    parameters[DFA_PARENTQUERY] = u"'me' in owners and mimeType = '%s' and title = '%s'" % (MIMETYPE_GA_FOLDER, escapeDriveFileName(sys.argv[i+1]))
     i += 2
   elif myarg in [u'anyownerparentname']:
-    parameters[DFA_PARENTQUERY] = u"mimeType = '%s' and title = '%s'" % (MIMETYPE_GA_FOLDER, sys.argv[i+1])
+    parameters[DFA_PARENTQUERY] = u"mimeType = '%s' and title = '%s'" % (MIMETYPE_GA_FOLDER, escapeDriveFileName(sys.argv[i+1]))
     i += 2
   elif myarg == u'writerscantshare':
     body[u'writersCanShare'] = False
