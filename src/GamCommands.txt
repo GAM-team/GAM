@@ -648,8 +648,8 @@ Item attributes
 	(whocanmarkfavoritereplyonowntopic ALL_MEMBERS|OWNERS_AND_MANAGERS|MANAGERS_ONLY|OWNERS_ONLY|NONE)|
 	(whocanmarknoresponseneeded ALL_MEMBERS|OWNERS_AND_MANAGERS|MANAGERS_ONLY|OWNERS_ONLY|NONE)|
 	(whocanmodifytagsandcategories ALL_MEMBERS|OWNERS_AND_MANAGERS|MANAGERS_ONLY|OWNERS_ONLY|NONE)|
-	(whocantaketopics ALL_MEMBERS|OWNERS_AND_MANAGERS|MANAGERS_ONLY|OWNERS_ONLY|NONE)|
 	(whocanpostmessage NONE_CAN_POST|ALL_MANAGERS_CAN_POST|ALL_MEMBERS_CAN_POST|ALL_IN_DOMAIN_CAN_POST|ANYONE_CAN_POST)|
+	(whocantaketopics ALL_MEMBERS|OWNERS_AND_MANAGERS|MANAGERS_ONLY|OWNERS_ONLY|NONE)|
 	(whocanunassigntopic ALL_MEMBERS|OWNERS_AND_MANAGERS|MANAGERS_ONLY|OWNERS_ONLY|NONE)|
 	(whocanunmarkfavoritereplyonanytopic ALL_MEMBERS|OWNERS_AND_MANAGERS|MANAGERS_ONLY|OWNERS_ONLY|NONE)|
 	(whocanviewgroup ANYONE_CAN_VIEW|ALL_IN_DOMAIN_CAN_VIEW|ALL_MEMBERS_CAN_VIEW|ALL_MANAGERS_CAN_VIEW)|
@@ -766,19 +766,19 @@ gam delete resoldsubscription <CustomerID> <SKUID> cancel|downgrade|transfer_to_
 gam info resoldsubscriptions <CustomerID> [customer_auth_token <String>]
 
 <ReportsApp> ::=
-      accounts|
-      app_maker|
-      apps_scripts|
-      calendar|
-      classroom|
-      cros|
-      device_management|
-      drive|
-      gmail|
-      gplus|
-      meet|
-      mobile|
-      sites
+	accounts|
+	app_maker|
+	apps_scripts|
+	calendar|
+	classroom|
+	cros|
+	device_management|
+	drive|
+	gmail|
+	gplus|
+	meet|
+	mobile|
+	sites
 <ReportsAppList> ::= "<ReportsApp>(,<ReportsApp>)*"
 
 gam report users|user [todrive] [date <Date>] [fulldatarequired all|<ReportsAppList>]

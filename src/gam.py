@@ -7719,7 +7719,25 @@ def doCreateUser():
 def GroupIsAbuseOrPostmaster(emailAddr):
   return emailAddr.startswith(u'abuse@') or emailAddr.startswith(u'postmaster@')
 
+COLLABORATIVE_INBOX_ATTRIBUTES = [
+  u'whoCanAddReferences',
+  u'whoCanAssignTopics',
+  u'whoCanEnterFreeFormTags',
+  u'whoCanMarkDuplicate',
+  u'whoCanMarkFavoriteReplyOnAnyTopic',
+  u'whoCanMarkFavoriteReplyOnOwnTopic',
+  u'whoCanMarkNoResponseNeeded',
+  u'whoCanModifyTagsAndCategories',
+  u'whoCanTakeTopics',
+  u'whoCanUnassignTopic',
+  u'whoCanUnmarkFavoriteReplyOnAnyTopic',
+  ]
+
 def getGroupAttrValue(myarg, value, gs_object, gs_body, function):
+  if myarg == u'collaborative':
+    for attrName in COLLABORATIVE_INBOX_ATTRIBUTES:
+      gs_body[attrName] = value
+    return
   for (attrib, params) in gs_object[u'schemas'][u'Groups'][u'properties'].items():
     if attrib in [u'kind', u'etag', u'email']:
       continue
@@ -10277,6 +10295,7 @@ GROUP_ATTRIBUTES_ARGUMENT_TO_PROPERTY_MAP = {
   u'customfootertext': u'customFooterText',
   u'customreplyto': u'customReplyTo',
   u'defaultmessagedenynotificationtext': u'defaultMessageDenyNotificationText',
+  u'favoriterepliesontop': u'favoriteRepliesOnTop',
   u'gal': u'includeInGlobalAddressList',
   u'includecustomfooter': u'includeCustomFooter',
   u'includeinglobaladdresslist': u'includeInGlobalAddressList',
@@ -10291,11 +10310,22 @@ GROUP_ATTRIBUTES_ARGUMENT_TO_PROPERTY_MAP = {
   u'showingroupdirectory': u'showInGroupDirectory',
   u'spammoderationlevel': u'spamModerationLevel',
   u'whocanadd': u'whoCanAdd',
+  u'whocanaddreferences': u'whoCanAddReferences',
+  u'whocanassigntopics': u'whoCanAssignTopics',
   u'whocancontactowner': u'whoCanContactOwner',
+  u'whocanenterfreeformtags': u'whoCanEnterFreeFormTags',
   u'whocaninvite': u'whoCanInvite',
   u'whocanjoin': u'whoCanJoin',
   u'whocanleavegroup': u'whoCanLeaveGroup',
+  u'whocanmarkduplicate': u'whoCanMarkDuplicate',
+  u'whocanmarkfavoritereplyonanytopic': u'whoCanMarkFavoriteReplyOnAnyTopic',
+  u'whocanmarkfavoritereplyonowntopic': u'whoCanMarkFavoriteReplyOnOwnTopic',
+  u'whocanmarknoresponseneeded': u'whoCanMarkNoResponseNeeded',
+  u'whocanmodifytagsandcategories': u'whoCanModifyTagsAndCategories',
   u'whocanpostmessage': u'whoCanPostMessage',
+  u'whocantaketopics': u'whoCanTakeTopics',
+  u'whocanunassigntopic': u'whoCanUnassignTopic',
+  u'whocanunmarkfavoritereplyonanytopic': u'whoCanUnmarkFavoriteReplyOnAnyTopic',
   u'whocanviewgroup': u'whoCanViewGroup',
   u'whocanviewmembership': u'whoCanViewMembership',
   }
@@ -10365,7 +10395,9 @@ def doPrintGroups():
           addFieldTitleToCSVfile(field, GROUP_ARGUMENT_TO_PROPERTY_TITLE_MAP, cdfieldsList, fieldsTitles, titles)
         elif field in GROUP_ATTRIBUTES_ARGUMENT_TO_PROPERTY_MAP:
           addFieldToCSVfile(field, {field: [GROUP_ATTRIBUTES_ARGUMENT_TO_PROPERTY_MAP[field]]}, gsfieldsList, fieldsTitles, titles)
-          gsfieldsList.extend([GROUP_ATTRIBUTES_ARGUMENT_TO_PROPERTY_MAP[field],])
+        elif field == u'collaborative':
+          for attrName in COLLABORATIVE_INBOX_ATTRIBUTES:
+            addFieldToCSVfile(attrName, {attrName: [attrName]}, gsfieldsList, fieldsTitles, titles)
         else:
           systemErrorExit(2, '%s is not a valid argument for "gam print groups fields"' % field)
       i += 2
