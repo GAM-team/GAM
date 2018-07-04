@@ -8275,16 +8275,16 @@ def doUpdateGroup():
       member_type_message = u'%ss' % roles.lower()
       sys.stderr.write(u"Getting %s of %s (may take some time for large groups)...\n" % (member_type_message, group))
       page_message = u'Got %%%%total_items%%%% %s...' % member_type_message
+      validRoles, listRoles, listFields = _getRoleVerification(roles, u'nextPageToken,members({0})'.format(u','.join(fields)))
       try:
         result = callGAPIpages(cd.members(), u'list', u'members',
                                page_message=page_message,
                                throw_reasons=GAPI_MEMBERS_THROW_REASONS,
-                               groupKey=group, roles=roles, fields=u'nextPageToken,members({0})'.format(u','.join(fields)),
-                               maxResults=GC_Values[GC_MEMBER_MAX_RESULTS])
+                               groupKey=group, roles=listRoles, fields=listFields, maxResults=GC_Values[GC_MEMBER_MAX_RESULTS])
         if not suspended:
-          users_email = [member.get(u'email', member[u'id']) for member in result]
+          users_email = [member.get(u'email', member[u'id']) for member in result if not validRoles or member.get(u'role', ROLE_MEMBER) in validRoles]
         else:
-          users_email = [member.get(u'email', member[u'id']) for member in result if member[u'status'] == u'SUSPENDED']
+          users_email = [member.get(u'email', member[u'id']) for member in result if (not validRoles or member.get(u'role', ROLE_MEMBER) in validRoles) and member[u'status'] == u'SUSPENDED']
         if len(users_email) > 1:
           sys.stderr.write(u'Group: {0}, Will remove {1} {2}{3}s.\n'.format(group, len(users_email), [u'', u'suspended '][suspended], roles))
           for user_email in users_email:
@@ -10243,7 +10243,7 @@ def doPrintGroups():
   i = 3
   members = membersCountOnly = managers = managersCountOnly = owners = ownersCountOnly = False
   customer = GC_Values[GC_CUSTOMER_ID]
-  usedomain = usemember = None
+  usedomain = usemember = usequery = None
   aliasDelimiter = u' '
   memberDelimiter = u'\n'
   todrive = False
@@ -10267,7 +10267,11 @@ def doPrintGroups():
       i += 2
     elif myarg == u'member':
       usemember = normalizeEmailAddressOrUID(sys.argv[i+1])
-      customer = None
+      customer = usequery = None
+      i += 2
+    elif myarg == u'query':
+      usequery = sys.argv[i+1]
+      usemember = None
       i += 2
     elif myarg == u'maxresults':
       maxResults = int(sys.argv[i+1])
@@ -10349,7 +10353,7 @@ def doPrintGroups():
   page_message = u'Got %%num_items%% Groups: %%first_item%% - %%last_item%%\n'
   entityList = callGAPIpages(cd.groups(), u'list', u'groups',
                              page_message=page_message, message_attribute=u'email',
-                             customer=customer, domain=usedomain, userKey=usemember,
+                             customer=customer, domain=usedomain, userKey=usemember, query=usequery,
                              fields=u'nextPageToken,groups({0})'.format(cdfields),
                              maxResults=maxResults)
   i = 0
@@ -10367,11 +10371,11 @@ def doPrintGroups():
     if roles:
       sys.stderr.write(u' Getting %s for %s (%s/%s)\n' % (roles, groupEmail, i, count))
       page_message = u'  Got %%num_items%% members: %%first_item%% - %%last_item%%\n'
+      validRoles, listRoles, listFields = _getRoleVerification(roles, u'nextPageToken,members(email,id,role)')
       groupMembers = callGAPIpages(cd.members(), u'list', u'members',
                                    page_message=page_message, message_attribute=u'email',
                                    soft_errors=True,
-                                   groupKey=groupEmail, roles=roles, fields=u'nextPageToken,members(email,id,role)',
-                                   maxResults=GC_Values[GC_MEMBER_MAX_RESULTS])
+                                   groupKey=groupEmail, roles=listRoles, fields=listFields, maxResults=GC_Values[GC_MEMBER_MAX_RESULTS])
       if members:
         membersList = []
         membersCount = 0
@@ -10386,8 +10390,8 @@ def doPrintGroups():
         if not member_email:
           sys.stderr.write(u' Not sure what to do with: %s' % member)
           continue
-        role = member.get(u'role', None)
-        if role:
+        role = member.get(u'role', ROLE_MEMBER)
+        if not validRoles or role in validRoles:
           if role == ROLE_MEMBER:
             if members:
               membersCount += 1
@@ -10407,10 +10411,6 @@ def doPrintGroups():
             membersCount += 1
             if not membersCountOnly:
               membersList.append(member_email)
-        elif members:
-          membersCount += 1
-          if not membersCountOnly:
-            membersList.append(member_email)
       if members:
         group[u'MembersCount'] = membersCount
         if not membersCountOnly:
@@ -10586,8 +10586,7 @@ def doPrintGroupMembers():
   todrive = False
   membernames = False
   customer = GC_Values[GC_CUSTOMER_ID]
-  usedomain = None
-  usemember = None
+  usedomain = usemember = usequery = None
   roles = []
   fields = None
   titles = [u'group']
@@ -10596,16 +10595,20 @@ def doPrintGroupMembers():
   i = 3
   while i < len(sys.argv):
     myarg = sys.argv[i].lower()
-    if myarg == u'domain':
+    if myarg == u'todrive':
+      todrive = True
+      i += 1
+    elif myarg == u'domain':
       usedomain = sys.argv[i+1].lower()
       customer = None
       i += 2
-    elif myarg == u'todrive':
-      todrive = True
-      i += 1
     elif myarg == u'member':
       usemember = normalizeEmailAddressOrUID(sys.argv[i+1])
-      customer = None
+      customer = usequery = None
+      i += 2
+    elif myarg == u'query':
+      usequery = sys.argv[i+1]
+      usemember = None
       i += 2
     elif myarg == u'fields':
       memberFieldsList = sys.argv[i+1].replace(u',', u' ').lower().split()
@@ -10630,7 +10633,8 @@ def doPrintGroupMembers():
       systemErrorExit(2, '%s is not a valid argument for "gam print group-members"' % sys.argv[i])
   if not groups_to_get:
     groups_to_get = callGAPIpages(cd.groups(), u'list', u'groups', message_attribute=u'email',
-                                  customer=customer, domain=usedomain, userKey=usemember, fields=u'nextPageToken,groups(email)')
+                                  customer=customer, domain=usedomain, userKey=usemember, query=usequery,
+                                  fields=u'nextPageToken,groups(email)')
   i = 0
   count = len(groups_to_get)
   for group in groups_to_get:
@@ -10638,12 +10642,14 @@ def doPrintGroupMembers():
     group_email = group[u'email']
     sys.stderr.write(u'Getting members for %s (%s/%s)\n' % (group_email, i, count))
     group_members = callGAPIpages(cd.members(), u'list', u'members',
-                                  soft_errors=True, roles=u','.join(roles),
-                                  groupKey=group_email, fields=fields, maxResults=GC_Values[GC_MEMBER_MAX_RESULTS])
+                                  soft_errors=True,
+                                  groupKey=group_email, roles=listRoles, fields=listFields, maxResults=GC_Values[GC_MEMBER_MAX_RESULTS])
     for member in group_members:
       for unwanted_item in [u'kind', u'etag']:
         if unwanted_item in member:
           del member[unwanted_item]
+      if validRoles and member.get(u'role', ROLE_MEMBER) not in validRoles:
+        continue
       for title in member:
         if title not in titles:
           titles.append(title)
@@ -11382,6 +11388,12 @@ def getQueries(myarg, argstr):
   else:
     return shlexSplitList(argstr)
 
+def _getRoleVerification(memberRoles, fields):
+  if memberRoles and memberRoles.find(ROLE_MEMBER) != -1:
+    return (set(memberRoles.split(u',')), None, fields if fields.find(u'role') != -1 else fields[:-1]+u',role)')
+  else:
+    return (set(), memberRoles, fields)
+
 def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=None, checkNotSuspended=False, groupUserMembersOnly=True):
   got_uids = False
   if entity_type is None:
@@ -11405,12 +11417,14 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
     if not silent:
       sys.stderr.write(u"Getting %s of %s (may take some time for large groups)...\n" % (member_type_message, group))
       page_message = u'Got %%%%total_items%%%% %s...' % member_type_message
+    validRoles, listRoles, listFields = _getRoleVerification(member_type, u'nextPageToken,members(email,id,type,status)')
     members = callGAPIpages(cd.members(), u'list', u'members', page_message=page_message,
-                            groupKey=group, roles=member_type, fields=u'nextPageToken,members(email,id,type,status)',
-                            maxResults=GC_Values[GC_MEMBER_MAX_RESULTS])
+                            groupKey=group, roles=listRoles, fields=listFields, maxResults=GC_Values[GC_MEMBER_MAX_RESULTS])
     users = []
     for member in members:
-      if ((not groupUserMembersOnly) or (member[u'type'] == u'USER')) and not (checkNotSuspended and (member[u'status'] == u'SUSPENDED')):
+      if (((not groupUserMembersOnly) or (member[u'type'] == u'USER')) and
+          (not validRoles or member.get(u'role', ROLE_MEMBER) in validRoles) and
+          not (checkNotSuspended and (member[u'status'] == u'SUSPENDED'))):
         users.append(member.get(u'email', member[u'id']))
   elif entity_type in [u'ou', u'org']:
     got_uids = True
