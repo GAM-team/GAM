@@ -1,11 +1,16 @@
 #
 # This file is part of pyasn1 software.
 #
-# Copyright (c) 2005-2017, Ilya Etingof <etingof@gmail.com>
-# License: http://pyasn1.sf.net/license.html
+# Copyright (c) 2005-2018, Ilya Etingof <etingof@gmail.com>
+# License: http://snmplabs.com/pyasn1/license.html
 #
-from pyasn1.type import base, univ, char, useful, tag
-from pyasn1 import debug, error
+from pyasn1 import debug
+from pyasn1 import error
+from pyasn1.type import base
+from pyasn1.type import char
+from pyasn1.type import tag
+from pyasn1.type import univ
+from pyasn1.type import useful
 
 __all__ = ['decode']
 
@@ -177,6 +182,8 @@ class Decoder(object):
 #: pyObject: :py:class:`object`
 #:     A scalar or nested Python objects
 #:
+#: Keyword Args
+#: ------------
 #: asn1Spec: any pyasn1 type object e.g. :py:class:`~pyasn1.type.base.PyAsn1Item` derivative
 #:     A pyasn1 type object to act as a template guiding the decoder. It is required
 #:     for successful interpretation of Python objects mapping into their ASN.1
@@ -189,6 +196,19 @@ class Decoder(object):
 #:
 #: Raises
 #: ------
-#: : :py:class:`pyasn1.error.PyAsn1Error`
+#: :py:class:`~pyasn1.error.PyAsn1Error`
 #:     On decoding errors
+#:
+#: Examples
+#: --------
+#: Decode native Python object into ASN.1 objects with ASN.1 schema
+#:
+#: .. code-block:: pycon
+#:
+#:    >>> seq = SequenceOf(componentType=Integer())
+#:    >>> s, _ = decode([1, 2, 3], asn1Spec=seq)
+#:    >>> str(s)
+#:    SequenceOf:
+#:     1 2 3
+#:
 decode = Decoder(tagMap, typeMap)

@@ -1,8 +1,8 @@
 #
 # This file is part of pyasn1-modules software.
 #
-# Copyright (c) 2005-2017, Ilya Etingof <etingof@gmail.com>
-# License: http://pyasn1.sf.net/license.html
+# Copyright (c) 2005-2018, Ilya Etingof <etingof@gmail.com>
+# License: http://snmplabs.com/pyasn1/license.html
 #
 # PKCS#1 syntax
 #
@@ -11,7 +11,9 @@
 #
 # Sample captures could be obtained with "openssl genrsa" command
 #
-from pyasn1.type import constraint, namedval
+from pyasn1.type import constraint
+from pyasn1.type import namedval
+
 from pyasn1_modules.rfc2437 import *
 
 

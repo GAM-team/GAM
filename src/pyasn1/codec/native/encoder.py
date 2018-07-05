@@ -1,8 +1,8 @@
 #
 # This file is part of pyasn1 software.
 #
-# Copyright (c) 2005-2017, Ilya Etingof <etingof@gmail.com>
-# License: http://pyasn1.sf.net/license.html
+# Copyright (c) 2005-2018, Ilya Etingof <etingof@gmail.com>
+# License: http://snmplabs.com/pyasn1/license.html
 #
 try:
     from collections import OrderedDict
@@ -10,8 +10,13 @@ try:
 except ImportError:
     OrderedDict = dict
 
-from pyasn1.type import base, univ, tag, char, useful
-from pyasn1 import debug, error
+from pyasn1 import debug
+from pyasn1 import error
+from pyasn1.type import base
+from pyasn1.type import char
+from pyasn1.type import tag
+from pyasn1.type import univ
+from pyasn1.type import useful
 
 __all__ = ['encode']
 
@@ -43,7 +48,7 @@ class OctetStringEncoder(AbstractItemEncoder):
 
 class TextStringEncoder(AbstractItemEncoder):
     def encode(self, value, encodeFun, **options):
-        return value.prettyPrint()
+        return str(value)
 
 
 class NullEncoder(AbstractItemEncoder):
@@ -207,6 +212,18 @@ class Encoder(object):
 #:
 #: Raises
 #: ------
-#: : :py:class:`pyasn1.error.PyAsn1Error`
+#: :py:class:`~pyasn1.error.PyAsn1Error`
 #:     On encoding errors
+#:
+#: Examples
+#: --------
+#: Encode ASN.1 value object into native Python types
+#:
+#: .. code-block:: pycon
+#:
+#:    >>> seq = SequenceOf(componentType=Integer())
+#:    >>> seq.extend([1, 2, 3])
+#:    >>> encode(seq)
+#:    [1, 2, 3]
+#:
 encode = Encoder(tagMap, typeMap)

@@ -3,8 +3,8 @@
 # This file is part of pyasn1-modules software.
 #
 # Created by Stanisław Pitucha with asn1ate tool.
-# Copyright (c) 2005-2017, Ilya Etingof <etingof@gmail.com>
-# License: http://pyasn1.sf.net/license.html
+# Copyright (c) 2005-2018, Ilya Etingof <etingof@gmail.com>
+# License: http://snmplabs.com/pyasn1/license.html
 #
 # Internet X.509 Public Key Infrastructure Certificate and Certificate
 # Revocation List (CRL) Profile
@@ -12,15 +12,17 @@
 # ASN.1 source from:
 # http://www.ietf.org/rfc/rfc5280.txt
 #
-from pyasn1.type import univ
 from pyasn1.type import char
+from pyasn1.type import constraint
 from pyasn1.type import namedtype
 from pyasn1.type import namedval
+from pyasn1.type import opentype
 from pyasn1.type import tag
-from pyasn1.type import constraint
+from pyasn1.type import univ
 from pyasn1.type import useful
 
 MAX = float('inf')
+
 
 def _buildOid(*components):
     output = []
@@ -279,13 +281,10 @@ class CertificateSerialNumber(univ.Integer):
 
 
 class AlgorithmIdentifier(univ.Sequence):
-    pass
-
-
-AlgorithmIdentifier.componentType = namedtype.NamedTypes(
-    namedtype.NamedType('algorithm', univ.ObjectIdentifier()),
-    namedtype.OptionalNamedType('parameters', univ.Any())
-)
+    componentType = namedtype.NamedTypes(
+        namedtype.NamedType('algorithm', univ.ObjectIdentifier()),
+        namedtype.OptionalNamedType('parameters', univ.Any())
+    )
 
 
 class Time(univ.Choice):
@@ -302,14 +301,17 @@ class AttributeValue(univ.Any):
     pass
 
 
+certificateAttributesMap = {}
+
+
 class AttributeTypeAndValue(univ.Sequence):
-    pass
-
-
-AttributeTypeAndValue.componentType = namedtype.NamedTypes(
-    namedtype.NamedType('type', AttributeType()),
-    namedtype.NamedType('value', AttributeValue())
-)
+    componentType = namedtype.NamedTypes(
+        namedtype.NamedType('type', AttributeType()),
+        namedtype.NamedType(
+            'value', AttributeValue(),
+            openType=opentype.OpenType('type', certificateAttributesMap)
+        )
+    )
 
 
 class RelativeDistinguishedName(univ.SetOf):
@@ -379,18 +381,21 @@ class PhysicalDeliveryOfficeName(PDSParameter):
 
 ub_extension_attributes = univ.Integer(256)
 
+certificateExtensionsMap = {
+
+}
+
 
 class ExtensionAttribute(univ.Sequence):
-    pass
-
-
-ExtensionAttribute.componentType = namedtype.NamedTypes(
-    namedtype.NamedType('extension-attribute-type', univ.Integer().subtype(
-        subtypeSpec=constraint.ValueRangeConstraint(0, ub_extension_attributes)).subtype(
-        implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0))),
-    namedtype.NamedType('extension-attribute-value',
-                        univ.Any().subtype(explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 1)))
-)
+    componentType = namedtype.NamedTypes(
+        namedtype.NamedType(
+            'extension-attribute-type',
+            univ.Integer().subtype(subtypeSpec=constraint.ValueRangeConstraint(0, ub_extension_attributes)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0))),
+        namedtype.NamedType(
+            'extension-attribute-value',
+            univ.Any().subtype(explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 1)),
+            openType=opentype.OpenType('type', certificateExtensionsMap))
+    )
 
 id_qt = _buildOid(id_pkix, 2)
 
@@ -737,13 +742,12 @@ X520SerialNumber.subtypeSpec = constraint.ValueSizeConstraint(1, ub_serial_numbe
 
 
 class Attribute(univ.Sequence):
-    pass
-
-
-Attribute.componentType = namedtype.NamedTypes(
-    namedtype.NamedType('type', AttributeType()),
-    namedtype.NamedType('values', univ.SetOf(componentType=AttributeValue()))
-)
+    componentType = namedtype.NamedTypes(
+        namedtype.NamedType('type', AttributeType()),
+        namedtype.NamedType('values',
+                            univ.SetOf(componentType=AttributeValue()),
+                            openType=opentype.OpenType('type', certificateAttributesMap))
+    )
 
 ub_common_name = univ.Integer(64)
 
@@ -1066,14 +1070,20 @@ PrivateKeyUsagePeriod.componentType = namedtype.NamedTypes(
 )
 
 
+anotherNameMap = {
+
+}
+
+
 class AnotherName(univ.Sequence):
-    pass
-
-
-AnotherName.componentType = namedtype.NamedTypes(
-    namedtype.NamedType('type-id', univ.ObjectIdentifier()),
-    namedtype.NamedType('value', univ.Any().subtype(explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0)))
-)
+    componentType = namedtype.NamedTypes(
+        namedtype.NamedType('type-id', univ.ObjectIdentifier()),
+        namedtype.NamedType(
+            'value',
+            univ.Any().subtype(explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0)),
+            openType=opentype.OpenType('type-id', anotherNameMap)
+        )
+    )
 
 
 class EDIPartyName(univ.Sequence):
@@ -1311,14 +1321,19 @@ class PolicyQualifierId(univ.ObjectIdentifier):
     pass
 
 
+policyQualifierInfoMap = {
+
+}
+
+
 class PolicyQualifierInfo(univ.Sequence):
-    pass
-
-
-PolicyQualifierInfo.componentType = namedtype.NamedTypes(
-    namedtype.NamedType('policyQualifierId', PolicyQualifierId()),
-    namedtype.NamedType('qualifier', univ.Any())
-)
+    componentType = namedtype.NamedTypes(
+        namedtype.NamedType('policyQualifierId', PolicyQualifierId()),
+        namedtype.NamedType(
+            'qualifier', univ.Any(),
+            openType=opentype.OpenType('policyQualifierId', policyQualifierInfoMap)
+        )
+    )
 
 
 class CertPolicyId(univ.ObjectIdentifier):
@@ -1549,7 +1564,7 @@ id_ce_inhibitAnyPolicy = _buildOid(id_ce, 54)
 
 # map of AttributeType -> AttributeValue
 
-certificateAttributesMap = {
+_certificateAttributesMapUpdate = {
     id_at_name: X520name(),
     id_at_surname: X520name(),
     id_at_givenName: X520name(),
@@ -1569,9 +1584,12 @@ certificateAttributesMap = {
     id_emailAddress: EmailAddress(),
 }
 
+certificateAttributesMap.update(_certificateAttributesMapUpdate)
+
+
 # map of Certificate Extension OIDs to Extensions
 
-certificateExtensionsMap = {
+_certificateExtensionsMap = {
     id_ce_authorityKeyIdentifier: AuthorityKeyIdentifier(),
     id_ce_subjectKeyIdentifier: SubjectKeyIdentifier(),
     id_ce_keyUsage: KeyUsage(),
@@ -1595,3 +1613,5 @@ certificateExtensionsMap = {
     id_ce_invalidityDate: useful.GeneralizedTime(),
     id_ce_certificateIssuer: GeneralNames(),
 }
+
+certificateExtensionsMap.update(_certificateExtensionsMap)

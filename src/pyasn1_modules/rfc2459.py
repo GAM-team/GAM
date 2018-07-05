@@ -1,8 +1,8 @@
 #
 # This file is part of pyasn1-modules software.
 #
-# Copyright (c) 2005-2017, Ilya Etingof <etingof@gmail.com>
-# License: http://pyasn1.sf.net/license.html
+# Copyright (c) 2005-2018, Ilya Etingof <etingof@gmail.com>
+# License: http://snmplabs.com/pyasn1/license.html
 #
 # X.509 message syntax
 #
@@ -13,7 +13,14 @@
 # Sample captures from:
 # http://wiki.wireshark.org/SampleCaptures/
 #
-from pyasn1.type import tag, namedtype, namedval, univ, constraint, char, useful
+from pyasn1.type import char
+from pyasn1.type import constraint
+from pyasn1.type import namedtype
+from pyasn1.type import namedval
+from pyasn1.type import opentype
+from pyasn1.type import tag
+from pyasn1.type import univ
+from pyasn1.type import useful
 
 MAX = float('inf')
 
@@ -84,26 +91,6 @@ id_ad_ocsp = univ.ObjectIdentifier('1.3.6.1.5.5.7.48.1')
 id_ad_caIssuers = univ.ObjectIdentifier('1.3.6.1.5.5.7.48.2')
 
 
-class AttributeValue(univ.Any):
-    pass
-
-
-class AttributeType(univ.ObjectIdentifier):
-    pass
-
-
-class AttributeTypeAndValue(univ.Sequence):
-    componentType = namedtype.NamedTypes(
-        namedtype.NamedType('type', AttributeType()),
-        namedtype.NamedType('value', AttributeValue())
-    )
-
-
-class Attribute(univ.Sequence):
-    componentType = namedtype.NamedTypes(
-        namedtype.NamedType('type', AttributeType()),
-        namedtype.NamedType('vals', univ.SetOf(componentType=AttributeValue()))
-    )
 
 
 id_at = univ.ObjectIdentifier('2.5.4')
@@ -277,19 +264,6 @@ class DSAPrivateKey(univ.Sequence):
 
 # ----
 
-class RelativeDistinguishedName(univ.SetOf):
-    componentType = AttributeTypeAndValue()
-
-
-class RDNSequence(univ.SequenceOf):
-    componentType = RelativeDistinguishedName()
-
-
-class Name(univ.Choice):
-    componentType = namedtype.NamedTypes(
-        namedtype.NamedType('', RDNSequence())
-    )
-
 
 class DirectoryString(univ.Choice):
     componentType = namedtype.NamedTypes(
@@ -315,111 +289,6 @@ class AlgorithmIdentifier(univ.Sequence):
         namedtype.OptionalNamedType('parameters', univ.Any())
     )
 
-
-class Extension(univ.Sequence):
-    componentType = namedtype.NamedTypes(
-        namedtype.NamedType('extnID', univ.ObjectIdentifier()),
-        namedtype.DefaultedNamedType('critical', univ.Boolean('False')),
-        namedtype.NamedType('extnValue', univ.Any())
-    )
-
-
-class Extensions(univ.SequenceOf):
-    componentType = Extension()
-    sizeSpec = univ.SequenceOf.sizeSpec + constraint.ValueSizeConstraint(1, MAX)
-
-
-class SubjectPublicKeyInfo(univ.Sequence):
-    componentType = namedtype.NamedTypes(
-        namedtype.NamedType('algorithm', AlgorithmIdentifier()),
-        namedtype.NamedType('subjectPublicKey', univ.BitString())
-    )
-
-
-class UniqueIdentifier(univ.BitString):
-    pass
-
-
-class Time(univ.Choice):
-    componentType = namedtype.NamedTypes(
-        namedtype.NamedType('utcTime', useful.UTCTime()),
-        namedtype.NamedType('generalTime', useful.GeneralizedTime())
-    )
-
-
-class Validity(univ.Sequence):
-    componentType = namedtype.NamedTypes(
-        namedtype.NamedType('notBefore', Time()),
-        namedtype.NamedType('notAfter', Time())
-    )
-
-
-class CertificateSerialNumber(univ.Integer):
-    pass
-
-
-class Version(univ.Integer):
-    namedValues = namedval.NamedValues(
-        ('v1', 0), ('v2', 1), ('v3', 2)
-    )
-
-
-class TBSCertificate(univ.Sequence):
-    componentType = namedtype.NamedTypes(
-        namedtype.DefaultedNamedType('version', Version('v1').subtype(
-            explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0))),
-        namedtype.NamedType('serialNumber', CertificateSerialNumber()),
-        namedtype.NamedType('signature', AlgorithmIdentifier()),
-        namedtype.NamedType('issuer', Name()),
-        namedtype.NamedType('validity', Validity()),
-        namedtype.NamedType('subject', Name()),
-        namedtype.NamedType('subjectPublicKeyInfo', SubjectPublicKeyInfo()),
-        namedtype.OptionalNamedType('issuerUniqueID', UniqueIdentifier().subtype(
-            implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 1))),
-        namedtype.OptionalNamedType('subjectUniqueID', UniqueIdentifier().subtype(
-            implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 2))),
-        namedtype.OptionalNamedType('extensions', Extensions().subtype(
-            explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 3)))
-    )
-
-
-class Certificate(univ.Sequence):
-    componentType = namedtype.NamedTypes(
-        namedtype.NamedType('tbsCertificate', TBSCertificate()),
-        namedtype.NamedType('signatureAlgorithm', AlgorithmIdentifier()),
-        namedtype.NamedType('signatureValue', univ.BitString())
-    )
-
-
-# CRL structures
-
-class RevokedCertificate(univ.Sequence):
-    componentType = namedtype.NamedTypes(
-        namedtype.NamedType('userCertificate', CertificateSerialNumber()),
-        namedtype.NamedType('revocationDate', Time()),
-        namedtype.OptionalNamedType('crlEntryExtensions', Extensions())
-    )
-
-
-class TBSCertList(univ.Sequence):
-    componentType = namedtype.NamedTypes(
-        namedtype.OptionalNamedType('version', Version()),
-        namedtype.NamedType('signature', AlgorithmIdentifier()),
-        namedtype.NamedType('issuer', Name()),
-        namedtype.NamedType('thisUpdate', Time()),
-        namedtype.OptionalNamedType('nextUpdate', Time()),
-        namedtype.OptionalNamedType('revokedCertificates', univ.SequenceOf(componentType=RevokedCertificate())),
-        namedtype.OptionalNamedType('crlExtensions', Extensions().subtype(
-            explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 0)))
-    )
-
-
-class CertificateList(univ.Sequence):
-    componentType = namedtype.NamedTypes(
-        namedtype.NamedType('tbsCertList', TBSCertList()),
-        namedtype.NamedType('signatureAlgorithm', AlgorithmIdentifier()),
-        namedtype.NamedType('signature', univ.BitString())
-    )
 
 
 # Algorithm OIDs and parameter structures
@@ -972,11 +841,6 @@ class BasicConstraints(univ.Sequence):
 id_ce_subjectDirectoryAttributes = univ.ObjectIdentifier('2.5.29.9')
 
 
-class SubjectDirectoryAttributes(univ.SequenceOf):
-    componentType = Attribute()
-    subtypeSpec = univ.SequenceOf.subtypeSpec + constraint.ValueSizeConstraint(1, MAX)
-
-
 class EDIPartyName(univ.Sequence):
     componentType = namedtype.NamedTypes(
         namedtype.OptionalNamedType('nameAssigner', DirectoryString().subtype(
@@ -986,75 +850,9 @@ class EDIPartyName(univ.Sequence):
     )
 
 
-class AnotherName(univ.Sequence):
-    componentType = namedtype.NamedTypes(
-        namedtype.NamedType('type-id', univ.ObjectIdentifier()),
-        namedtype.NamedType('value',
-                            univ.Any().subtype(explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0)))
-    )
-
-
-class GeneralName(univ.Choice):
-    componentType = namedtype.NamedTypes(
-        namedtype.NamedType('otherName',
-                            AnotherName().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0))),
-        namedtype.NamedType('rfc822Name',
-                            char.IA5String().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 1))),
-        namedtype.NamedType('dNSName',
-                            char.IA5String().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 2))),
-        namedtype.NamedType('x400Address',
-                            ORAddress().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 3))),
-        namedtype.NamedType('directoryName',
-                            Name().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 4))),
-        namedtype.NamedType('ediPartyName',
-                            EDIPartyName().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 5))),
-        namedtype.NamedType('uniformResourceIdentifier',
-                            char.IA5String().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 6))),
-        namedtype.NamedType('iPAddress', univ.OctetString().subtype(
-            implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 7))),
-        namedtype.NamedType('registeredID', univ.ObjectIdentifier().subtype(
-            implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 8)))
-    )
-
-
-class GeneralNames(univ.SequenceOf):
-    componentType = GeneralName()
-    subtypeSpec = univ.SequenceOf.subtypeSpec + constraint.ValueSizeConstraint(1, MAX)
-
-
-class AccessDescription(univ.Sequence):
-    componentType = namedtype.NamedTypes(
-        namedtype.NamedType('accessMethod', univ.ObjectIdentifier()),
-        namedtype.NamedType('accessLocation', GeneralName())
-    )
-
-
-class AuthorityInfoAccessSyntax(univ.SequenceOf):
-    componentType = AccessDescription()
-    subtypeSpec = univ.SequenceOf.subtypeSpec + constraint.ValueSizeConstraint(1, MAX)
-
 
 id_ce_deltaCRLIndicator = univ.ObjectIdentifier('2.5.29.27')
 
-
-class DistributionPointName(univ.Choice):
-    componentType = namedtype.NamedTypes(
-        namedtype.NamedType('fullName', GeneralNames().subtype(
-            implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 0))),
-        namedtype.NamedType('nameRelativeToCRLIssuer', RelativeDistinguishedName().subtype(
-            implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 1)))
-    )
-
-
-class DistributionPoint(univ.Sequence):
-    componentType = namedtype.NamedTypes(
-        namedtype.OptionalNamedType('distributionPoint', DistributionPointName().subtype(
-            implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 0))),
-        namedtype.OptionalNamedType('reasons', ReasonFlags().subtype(
-            implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 1))),
-        namedtype.OptionalNamedType('cRLIssuer', GeneralNames().subtype(
-            implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 2)))
-    )
 
 
 class BaseDistance(univ.Integer):
@@ -1064,54 +862,12 @@ class BaseDistance(univ.Integer):
 id_ce_cRLDistributionPoints = univ.ObjectIdentifier('2.5.29.31')
 
 
-class CRLDistPointsSyntax(univ.SequenceOf):
-    componentType = DistributionPoint()
-    subtypeSpec = univ.SequenceOf.subtypeSpec + constraint.ValueSizeConstraint(1, MAX)
-
-
 id_ce_issuingDistributionPoint = univ.ObjectIdentifier('2.5.29.28')
 
 
-class IssuingDistributionPoint(univ.Sequence):
-    componentType = namedtype.NamedTypes(
-        namedtype.OptionalNamedType('distributionPoint', DistributionPointName().subtype(
-            implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 0))),
-        namedtype.NamedType('onlyContainsUserCerts', univ.Boolean(False).subtype(
-            implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 1))),
-        namedtype.NamedType('onlyContainsCACerts', univ.Boolean(False).subtype(
-            implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 2))),
-        namedtype.OptionalNamedType('onlySomeReasons', ReasonFlags().subtype(
-            implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 3))),
-        namedtype.NamedType('indirectCRL', univ.Boolean(False).subtype(
-            implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 4)))
-    )
-
-
-class GeneralSubtree(univ.Sequence):
-    componentType = namedtype.NamedTypes(
-        namedtype.NamedType('base', GeneralName()),
-        namedtype.DefaultedNamedType('minimum', BaseDistance(0).subtype(
-            implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 0))),
-        namedtype.OptionalNamedType('maximum', BaseDistance().subtype(
-            implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 1)))
-    )
-
-
-class GeneralSubtrees(univ.SequenceOf):
-    componentType = GeneralSubtree()
-    subtypeSpec = univ.SequenceOf.subtypeSpec + constraint.ValueSizeConstraint(1, MAX)
 
 
 id_ce_nameConstraints = univ.ObjectIdentifier('2.5.29.30')
-
-
-class NameConstraints(univ.Sequence):
-    componentType = namedtype.NamedTypes(
-        namedtype.OptionalNamedType('permittedSubtrees', GeneralSubtrees().subtype(
-            implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 0))),
-        namedtype.OptionalNamedType('excludedSubtrees', GeneralSubtrees().subtype(
-            implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 1)))
-    )
 
 
 class DisplayText(univ.Choice):
@@ -1232,6 +988,110 @@ class SubjectKeyIdentifier(KeyIdentifier):
     pass
 
 
+id_ce_certificateIssuer = univ.ObjectIdentifier('2.5.29.29')
+
+
+id_ce_subjectAltName = univ.ObjectIdentifier('2.5.29.17')
+
+
+id_ce_issuerAltName = univ.ObjectIdentifier('2.5.29.18')
+
+
+class AttributeValue(univ.Any):
+    pass
+
+
+class AttributeType(univ.ObjectIdentifier):
+    pass
+
+certificateAttributesMap = {}
+
+
+class AttributeTypeAndValue(univ.Sequence):
+    componentType = namedtype.NamedTypes(
+        namedtype.NamedType('type', AttributeType()),
+        namedtype.NamedType('value', AttributeValue(),
+                            openType=opentype.OpenType('type', certificateAttributesMap))
+    )
+
+
+class Attribute(univ.Sequence):
+    componentType = namedtype.NamedTypes(
+        namedtype.NamedType('type', AttributeType()),
+        namedtype.NamedType('vals', univ.SetOf(componentType=AttributeValue()))
+    )
+
+
+class SubjectDirectoryAttributes(univ.SequenceOf):
+    componentType = Attribute()
+    subtypeSpec = univ.SequenceOf.subtypeSpec + constraint.ValueSizeConstraint(1, MAX)
+
+
+class RelativeDistinguishedName(univ.SetOf):
+    componentType = AttributeTypeAndValue()
+
+
+class RDNSequence(univ.SequenceOf):
+    componentType = RelativeDistinguishedName()
+
+
+class Name(univ.Choice):
+    componentType = namedtype.NamedTypes(
+        namedtype.NamedType('', RDNSequence())
+    )
+
+class CertificateSerialNumber(univ.Integer):
+    pass
+
+
+class AnotherName(univ.Sequence):
+    componentType = namedtype.NamedTypes(
+        namedtype.NamedType('type-id', univ.ObjectIdentifier()),
+        namedtype.NamedType('value',
+                            univ.Any().subtype(explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0)))
+    )
+
+
+class GeneralName(univ.Choice):
+    componentType = namedtype.NamedTypes(
+        namedtype.NamedType('otherName',
+                            AnotherName().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0))),
+        namedtype.NamedType('rfc822Name',
+                            char.IA5String().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 1))),
+        namedtype.NamedType('dNSName',
+                            char.IA5String().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 2))),
+        namedtype.NamedType('x400Address',
+                            ORAddress().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 3))),
+        namedtype.NamedType('directoryName',
+                            Name().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 4))),
+        namedtype.NamedType('ediPartyName',
+                            EDIPartyName().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 5))),
+        namedtype.NamedType('uniformResourceIdentifier',
+                            char.IA5String().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 6))),
+        namedtype.NamedType('iPAddress', univ.OctetString().subtype(
+            implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 7))),
+        namedtype.NamedType('registeredID', univ.ObjectIdentifier().subtype(
+            implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 8)))
+    )
+
+
+class GeneralNames(univ.SequenceOf):
+    componentType = GeneralName()
+    subtypeSpec = univ.SequenceOf.subtypeSpec + constraint.ValueSizeConstraint(1, MAX)
+
+
+class AccessDescription(univ.Sequence):
+    componentType = namedtype.NamedTypes(
+        namedtype.NamedType('accessMethod', univ.ObjectIdentifier()),
+        namedtype.NamedType('accessLocation', GeneralName())
+    )
+
+
+class AuthorityInfoAccessSyntax(univ.SequenceOf):
+    componentType = AccessDescription()
+    subtypeSpec = univ.SequenceOf.subtypeSpec + constraint.ValueSizeConstraint(1, MAX)
+
+
 class AuthorityKeyIdentifier(univ.Sequence):
     componentType = namedtype.NamedTypes(
         namedtype.OptionalNamedType('keyIdentifier', KeyIdentifier().subtype(
@@ -1243,30 +1103,189 @@ class AuthorityKeyIdentifier(univ.Sequence):
     )
 
 
-id_ce_certificateIssuer = univ.ObjectIdentifier('2.5.29.29')
+class DistributionPointName(univ.Choice):
+    componentType = namedtype.NamedTypes(
+        namedtype.NamedType('fullName', GeneralNames().subtype(
+            implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 0))),
+        namedtype.NamedType('nameRelativeToCRLIssuer', RelativeDistinguishedName().subtype(
+            implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 1)))
+    )
+
+
+class DistributionPoint(univ.Sequence):
+    componentType = namedtype.NamedTypes(
+        namedtype.OptionalNamedType('distributionPoint', DistributionPointName().subtype(
+            implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 0))),
+        namedtype.OptionalNamedType('reasons', ReasonFlags().subtype(
+            implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 1))),
+        namedtype.OptionalNamedType('cRLIssuer', GeneralNames().subtype(
+            implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 2)))
+    )
+
+
+class CRLDistPointsSyntax(univ.SequenceOf):
+    componentType = DistributionPoint()
+    subtypeSpec = univ.SequenceOf.subtypeSpec + constraint.ValueSizeConstraint(1, MAX)
+
+
+class IssuingDistributionPoint(univ.Sequence):
+    componentType = namedtype.NamedTypes(
+        namedtype.OptionalNamedType('distributionPoint', DistributionPointName().subtype(
+            implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 0))),
+        namedtype.NamedType('onlyContainsUserCerts', univ.Boolean(False).subtype(
+            implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 1))),
+        namedtype.NamedType('onlyContainsCACerts', univ.Boolean(False).subtype(
+            implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 2))),
+        namedtype.OptionalNamedType('onlySomeReasons', ReasonFlags().subtype(
+            implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 3))),
+        namedtype.NamedType('indirectCRL', univ.Boolean(False).subtype(
+            implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 4)))
+    )
+
+
+class GeneralSubtree(univ.Sequence):
+    componentType = namedtype.NamedTypes(
+        namedtype.NamedType('base', GeneralName()),
+        namedtype.DefaultedNamedType('minimum', BaseDistance(0).subtype(
+            implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 0))),
+        namedtype.OptionalNamedType('maximum', BaseDistance().subtype(
+            implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 1)))
+    )
+
+
+class GeneralSubtrees(univ.SequenceOf):
+    componentType = GeneralSubtree()
+    subtypeSpec = univ.SequenceOf.subtypeSpec + constraint.ValueSizeConstraint(1, MAX)
+
+
+class NameConstraints(univ.Sequence):
+    componentType = namedtype.NamedTypes(
+        namedtype.OptionalNamedType('permittedSubtrees', GeneralSubtrees().subtype(
+            implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 0))),
+        namedtype.OptionalNamedType('excludedSubtrees', GeneralSubtrees().subtype(
+            implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 1)))
+    )
 
 
 class CertificateIssuer(GeneralNames):
     pass
 
 
-id_ce_subjectAltName = univ.ObjectIdentifier('2.5.29.17')
-
-
 class SubjectAltName(GeneralNames):
     pass
-
-
-id_ce_issuerAltName = univ.ObjectIdentifier('2.5.29.18')
 
 
 class IssuerAltName(GeneralNames):
     pass
 
 
+certificateExtensionsMap = {}
+
+
+class Extension(univ.Sequence):
+    componentType = namedtype.NamedTypes(
+        namedtype.NamedType('extnID', univ.ObjectIdentifier()),
+        namedtype.DefaultedNamedType('critical', univ.Boolean('False')),
+        namedtype.NamedType('extnValue', univ.OctetString(),
+                            openType=opentype.OpenType('extnID', certificateExtensionsMap))
+    )
+
+
+class Extensions(univ.SequenceOf):
+    componentType = Extension()
+    sizeSpec = univ.SequenceOf.sizeSpec + constraint.ValueSizeConstraint(1, MAX)
+
+
+class SubjectPublicKeyInfo(univ.Sequence):
+    componentType = namedtype.NamedTypes(
+        namedtype.NamedType('algorithm', AlgorithmIdentifier()),
+        namedtype.NamedType('subjectPublicKey', univ.BitString())
+    )
+
+
+class UniqueIdentifier(univ.BitString):
+    pass
+
+
+class Time(univ.Choice):
+    componentType = namedtype.NamedTypes(
+        namedtype.NamedType('utcTime', useful.UTCTime()),
+        namedtype.NamedType('generalTime', useful.GeneralizedTime())
+    )
+
+
+class Validity(univ.Sequence):
+    componentType = namedtype.NamedTypes(
+        namedtype.NamedType('notBefore', Time()),
+        namedtype.NamedType('notAfter', Time())
+    )
+
+
+class Version(univ.Integer):
+    namedValues = namedval.NamedValues(
+        ('v1', 0), ('v2', 1), ('v3', 2)
+    )
+
+
+class TBSCertificate(univ.Sequence):
+    componentType = namedtype.NamedTypes(
+        namedtype.DefaultedNamedType('version', Version('v1').subtype(
+            explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0))),
+        namedtype.NamedType('serialNumber', CertificateSerialNumber()),
+        namedtype.NamedType('signature', AlgorithmIdentifier()),
+        namedtype.NamedType('issuer', Name()),
+        namedtype.NamedType('validity', Validity()),
+        namedtype.NamedType('subject', Name()),
+        namedtype.NamedType('subjectPublicKeyInfo', SubjectPublicKeyInfo()),
+        namedtype.OptionalNamedType('issuerUniqueID', UniqueIdentifier().subtype(
+            implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 1))),
+        namedtype.OptionalNamedType('subjectUniqueID', UniqueIdentifier().subtype(
+            implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 2))),
+        namedtype.OptionalNamedType('extensions', Extensions().subtype(
+            explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 3)))
+    )
+
+
+class Certificate(univ.Sequence):
+    componentType = namedtype.NamedTypes(
+        namedtype.NamedType('tbsCertificate', TBSCertificate()),
+        namedtype.NamedType('signatureAlgorithm', AlgorithmIdentifier()),
+        namedtype.NamedType('signatureValue', univ.BitString())
+    )
+
+# CRL structures
+
+class RevokedCertificate(univ.Sequence):
+    componentType = namedtype.NamedTypes(
+        namedtype.NamedType('userCertificate', CertificateSerialNumber()),
+        namedtype.NamedType('revocationDate', Time()),
+        namedtype.OptionalNamedType('crlEntryExtensions', Extensions())
+    )
+
+
+class TBSCertList(univ.Sequence):
+    componentType = namedtype.NamedTypes(
+        namedtype.OptionalNamedType('version', Version()),
+        namedtype.NamedType('signature', AlgorithmIdentifier()),
+        namedtype.NamedType('issuer', Name()),
+        namedtype.NamedType('thisUpdate', Time()),
+        namedtype.OptionalNamedType('nextUpdate', Time()),
+        namedtype.OptionalNamedType('revokedCertificates', univ.SequenceOf(componentType=RevokedCertificate())),
+        namedtype.OptionalNamedType('crlExtensions', Extensions().subtype(
+            explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 0)))
+    )
+
+
+class CertificateList(univ.Sequence):
+    componentType = namedtype.NamedTypes(
+        namedtype.NamedType('tbsCertList', TBSCertList()),
+        namedtype.NamedType('signatureAlgorithm', AlgorithmIdentifier()),
+        namedtype.NamedType('signature', univ.BitString())
+    )
+
 # map of AttributeType -> AttributeValue
 
-certificateAttributesMap = {
+_certificateAttributesMapUpdate = {
     id_at_name: X520name(),
     id_at_surname: X520name(),
     id_at_givenName: X520name(),
@@ -1283,14 +1302,18 @@ certificateAttributesMap = {
     emailAddress: Pkcs9email(),
 }
 
+certificateAttributesMap.update(_certificateAttributesMapUpdate)
+
+
 # map of Certificate Extension OIDs to Extensions
 
-certificateExtensionsMap = {
+_certificateExtensionsMapUpdate = {
     id_ce_authorityKeyIdentifier: AuthorityKeyIdentifier(),
     id_ce_subjectKeyIdentifier: SubjectKeyIdentifier(),
     id_ce_keyUsage: KeyUsage(),
     id_ce_privateKeyUsagePeriod: PrivateKeyUsagePeriod(),
-    id_ce_certificatePolicies: PolicyInformation(),  # could be a sequence of concat'ed objects?
+# TODO
+#    id_ce_certificatePolicies: PolicyInformation(),  # could be a sequence of concat'ed objects?
     id_ce_policyMappings: PolicyMappings(),
     id_ce_subjectAltName: SubjectAltName(),
     id_ce_issuerAltName: IssuerAltName(),
@@ -1309,3 +1332,6 @@ certificateExtensionsMap = {
     id_ce_invalidityDate: useful.GeneralizedTime(),
     id_ce_certificateIssuer: GeneralNames(),
 }
+
+certificateExtensionsMap.update(_certificateExtensionsMapUpdate)
+

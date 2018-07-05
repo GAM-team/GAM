@@ -2,11 +2,13 @@
 # This file is part of pyasn1-modules.
 #
 # Copyright (c) 2017, Danielle Madeley <danielle@madeley.id.au>
-# License: http://pyasn1.sf.net/license.html
+# License: http://snmplabs.com/pyasn1/license.html
 #
 # Derived from RFC 3279
 #
-from pyasn1.type import univ, char, namedtype, namedval, tag, constraint, useful
+from pyasn1.type import namedtype
+from pyasn1.type import namedval
+from pyasn1.type import univ
 
 
 def _OID(*components):

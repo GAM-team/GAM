@@ -1,14 +1,23 @@
 #
 # This file is part of pyasn1 software.
 #
-# Copyright (c) 2005-2017, Ilya Etingof <etingof@gmail.com>
-# License: http://pyasn1.sf.net/license.html
+# Copyright (c) 2005-2018, Ilya Etingof <etingof@gmail.com>
+# License: http://snmplabs.com/pyasn1/license.html
 #
 import sys
-from pyasn1.type import tag, tagmap
-from pyasn1 import error
 
-__all__ = ['NamedType', 'OptionalNamedType', 'DefaultedNamedType', 'NamedTypes']
+from pyasn1 import error
+from pyasn1.type import tag
+from pyasn1.type import tagmap
+
+__all__ = ['NamedType', 'OptionalNamedType', 'DefaultedNamedType',
+           'NamedTypes']
+
+try:
+    any
+
+except NameError:
+    any = lambda x: bool(filter(bool, x))
 
 
 class NamedType(object):
@@ -30,13 +39,19 @@ class NamedType(object):
     isOptional = False
     isDefaulted = False
 
-    def __init__(self, name, asn1Object):
+    def __init__(self, name, asn1Object, openType=None):
         self.__name = name
         self.__type = asn1Object
         self.__nameAndType = name, asn1Object
+        self.__openType = openType
 
     def __repr__(self):
-        return '%s(%r, %r)' % (self.__class__.__name__, self.__name, self.__type)
+        representation = '%s=%r' % (self.name, self.asn1Object)
+
+        if self.openType:
+            representation += ' openType: %r' % self.openType
+
+        return '<%s object at 0x%x type %s>' % (self.__class__.__name__, id(self), representation)
 
     def __eq__(self, other):
         return self.__nameAndType == other
@@ -68,10 +83,14 @@ class NamedType(object):
     @property
     def name(self):
         return self.__name
-    
+
     @property
     def asn1Object(self):
         return self.__type
+
+    @property
+    def openType(self):
+        return self.__openType
 
     # Backward compatibility
 
@@ -105,6 +124,31 @@ class NamedTypes(object):
     Parameters
     ----------
     *namedTypes: :class:`~pyasn1.type.namedtype.NamedType`
+
+    Examples
+    --------
+
+    .. code-block:: python
+
+        class Description(Sequence):
+            '''
+            ASN.1 specification:
+
+            Description ::= SEQUENCE {
+                surname    IA5String,
+                first-name IA5String OPTIONAL,
+                age        INTEGER DEFAULT 40
+            }
+            '''
+            componentType = NamedTypes(
+                NamedType('surname', IA5String()),
+                OptionalNamedType('first-name', IA5String()),
+                DefaultedNamedType('age', Integer(40))
+            )
+
+        descr = Description()
+        descr['surname'] = 'Smith'
+        descr['first-name'] = 'John'
     """
     def __init__(self, *namedTypes, **kwargs):
         self.__namedTypes = namedTypes
@@ -115,8 +159,11 @@ class NamedTypes(object):
         self.__ambiguousTypes = 'terminal' not in kwargs and self.__computeAmbiguousTypes() or {}
         self.__uniqueTagMap = self.__computeTagMaps(unique=True)
         self.__nonUniqueTagMap = self.__computeTagMaps(unique=False)
-        self.__hasOptionalOrDefault = bool([True for namedType in self.__namedTypes
-                                            if namedType.isDefaulted or namedType.isOptional])
+        self.__hasOptionalOrDefault = any([True for namedType in self.__namedTypes
+                                           if namedType.isDefaulted or namedType.isOptional])
+        self.__hasOpenTypes = any([True for namedType in self.__namedTypes
+                                   if namedType.openType])
+
         self.__requiredComponents = frozenset(
                 [idx for idx, nt in enumerate(self.__namedTypes) if not nt.isOptional and not nt.isDefaulted]
             )
@@ -125,9 +172,8 @@ class NamedTypes(object):
         self.__items = tuple([(namedType.name, namedType.asn1Object) for namedType in self.__namedTypes])
 
     def __repr__(self):
-        return '%s(%s)' % (
-            self.__class__.__name__, ', '.join([repr(x) for x in self.__namedTypes])
-        )
+        representation = ', '.join(['%r' % x for x in self.__namedTypes])
+        return '<%s object at 0x%x types %s>' % (self.__class__.__name__, id(self), representation)
 
     def __eq__(self, other):
         return self.__namedTypes == other
@@ -331,7 +377,7 @@ class NamedTypes(object):
     def getTagMapNearPosition(self, idx):
         """Return ASN.1 types that are allowed at or past given field position.
 
-        Some ASN.1 serialization allow for skipping optional and defaulted fields.
+        Some ASN.1 serialisation allow for skipping optional and defaulted fields.
         Some constructed ASN.1 types allow reordering of the fields. When recovering
         such objects it may be important to know which types can possibly be
         present at any given position in the field sets.
@@ -360,7 +406,7 @@ class NamedTypes(object):
     def getPositionNearType(self, tagSet, idx):
         """Return the closest field position where given ASN.1 type is allowed.
 
-        Some ASN.1 serialization allow for skipping optional and defaulted fields.
+        Some ASN.1 serialisation allow for skipping optional and defaulted fields.
         Some constructed ASN.1 types allow reordering of the fields. When recovering
         such objects it may be important to know at which field position, in field set,
         given *tagSet* is allowed at or past *idx* position.
@@ -410,7 +456,7 @@ class NamedTypes(object):
     def minTagSet(self):
         """Return the minimal TagSet among ASN.1 type in callee *NamedTypes*.
 
-        Some ASN.1 types/serialization protocols require ASN.1 types to be
+        Some ASN.1 types/serialisation protocols require ASN.1 types to be
         arranged based on their numerical tag value. The *minTagSet* property
         returns that.
 
@@ -452,7 +498,6 @@ class NamedTypes(object):
 
         Example
         -------
-
         .. code-block:: python
 
            OuterType ::= CHOICE {
@@ -477,7 +522,6 @@ class NamedTypes(object):
 
         Example
         -------
-
         .. code-block:: python
 
            OuterType ::= CHOICE {
@@ -503,8 +547,12 @@ class NamedTypes(object):
         return self.__hasOptionalOrDefault
 
     @property
+    def hasOpenTypes(self):
+        return self.__hasOpenTypes
+
+    @property
     def namedTypes(self):
-        return iter(self.__namedTypes)
+        return tuple(self.__namedTypes)
 
     @property
     def requiredComponents(self):

@@ -1,8 +1,8 @@
 #
 # This file is part of pyasn1-modules software.
 #
-# Copyright (c) 2005-2017, Ilya Etingof <etingof@gmail.com>
-# License: http://pyasn1.sf.net/license.html
+# Copyright (c) 2005-2018, Ilya Etingof <etingof@gmail.com>
+# License: http://snmplabs.com/pyasn1/license.html
 #
 # PKCS#7 message syntax
 #
@@ -25,7 +25,8 @@ class Attribute(univ.Sequence):
 class AttributeValueAssertion(univ.Sequence):
     componentType = namedtype.NamedTypes(
         namedtype.NamedType('attributeType', AttributeType()),
-        namedtype.NamedType('attributeValue', AttributeValue())
+        namedtype.NamedType('attributeValue', AttributeValue(),
+                            openType=opentype.OpenType('type', certificateAttributesMap))
     )
 
 
@@ -50,12 +51,19 @@ class EncryptedContent(univ.OctetString):
     pass
 
 
+contentTypeMap = {}
+
+
 class EncryptedContentInfo(univ.Sequence):
     componentType = namedtype.NamedTypes(
         namedtype.NamedType('contentType', ContentType()),
         namedtype.NamedType('contentEncryptionAlgorithm', ContentEncryptionAlgorithmIdentifier()),
-        namedtype.OptionalNamedType('encryptedContent', EncryptedContent().subtype(
-            implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 0)))
+        namedtype.OptionalNamedType(
+            'encryptedContent', EncryptedContent().subtype(
+                implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 0)
+            ),
+            openType=opentype.OpenType('contentType', contentTypeMap)
+        )
     )
 
 
@@ -85,8 +93,11 @@ class Digest(univ.OctetString):
 class ContentInfo(univ.Sequence):
     componentType = namedtype.NamedTypes(
         namedtype.NamedType('contentType', ContentType()),
-        namedtype.OptionalNamedType('content', univ.Any().subtype(
-            explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 0)))
+        namedtype.OptionalNamedType(
+            'content',
+            univ.Any().subtype(explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 0)),
+            openType=opentype.OpenType('contentType', contentTypeMap)
+        )
     )
 
 
@@ -270,3 +281,14 @@ class SignedData(univ.Sequence):
 
 class Data(univ.OctetString):
     pass
+
+_contentTypeMapUpdate = {
+    data: Data(),
+    signedData: SignedData(),
+    envelopedData: EnvelopedData(),
+    signedAndEnvelopedData: SignedAndEnvelopedData(),
+    digestedData: DigestedData(),
+    encryptedData: EncryptedData()
+}
+
+contentTypeMap.update(_contentTypeMapUpdate)

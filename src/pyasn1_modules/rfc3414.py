@@ -1,15 +1,17 @@
 #
 # This file is part of pyasn1-modules software.
 #
-# Copyright (c) 2005-2017, Ilya Etingof <etingof@gmail.com>
-# License: http://pyasn1.sf.net/license.html
+# Copyright (c) 2005-2018, Ilya Etingof <etingof@gmail.com>
+# License: http://snmplabs.com/pyasn1/license.html
 #
 # SNMPv3 message syntax
 #
 # ASN.1 source from:
 # http://www.ietf.org/rfc/rfc3414.txt
 #
-from pyasn1.type import univ, namedtype, constraint
+from pyasn1.type import constraint
+from pyasn1.type import namedtype
+from pyasn1.type import univ
 
 
 class UsmSecurityParameters(univ.Sequence):

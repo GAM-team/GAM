@@ -1,15 +1,24 @@
 #
 # This file is part of pyasn1-modules software.
 #
-# Copyright (c) 2005-2017, Ilya Etingof <etingof@gmail.com>
-# License: http://pyasn1.sf.net/license.html
+# Copyright (c) 2005-2018, Ilya Etingof <etingof@gmail.com>
+# License: http://snmplabs.com/pyasn1/license.html
 #
 # Certificate Management Protocol structures as per RFC4210
 #
 # Based on Alex Railean's work
 #
-from pyasn1.type import tag, namedtype, namedval, univ, constraint, char, useful
-from pyasn1_modules import rfc2459, rfc2511, rfc2314
+from pyasn1.type import char
+from pyasn1.type import constraint
+from pyasn1.type import namedtype
+from pyasn1.type import namedval
+from pyasn1.type import tag
+from pyasn1.type import univ
+from pyasn1.type import useful
+
+from pyasn1_modules import rfc2314
+from pyasn1_modules import rfc2459
+from pyasn1_modules import rfc2511
 
 MAX = float('inf')
 

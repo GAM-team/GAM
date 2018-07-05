@@ -1,8 +1,8 @@
 #
 # This file is part of pyasn1-modules software.
 #
-# Copyright (c) 2005-2017, Ilya Etingof <etingof@gmail.com>
-# License: http://pyasn1.sf.net/license.html
+# Copyright (c) 2005-2018, Ilya Etingof <etingof@gmail.com>
+# License: http://snmplabs.com/pyasn1/license.html
 #
 # LDAP message syntax
 #
@@ -12,7 +12,11 @@
 # Sample captures from:
 # http://wiki.wireshark.org/SampleCaptures/
 #
-from pyasn1.type import tag, namedtype, namedval, univ, constraint
+from pyasn1.type import constraint
+from pyasn1.type import namedtype
+from pyasn1.type import namedval
+from pyasn1.type import tag
+from pyasn1.type import univ
 
 maxInt = univ.Integer(2147483647)
 
