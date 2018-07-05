@@ -7719,17 +7719,15 @@ def doCreateUser():
 def GroupIsAbuseOrPostmaster(emailAddr):
   return emailAddr.startswith(u'abuse@') or emailAddr.startswith(u'postmaster@')
 
+def mapCollaborativeACL(myarg, value):
+  value = value.lower().replace(u'_', u'')
+  if value in COLLABORATIVE_ACL_CHOICES:
+    return COLLABORATIVE_ACL_CHOICES[value]
+  systemErrorExit(3, 'allowed choices for %s are %s, got %s' % (myarg, u', '.join(sorted(COLLABORATIVE_ACL_CHOICES)), value))
+
 def getGroupAttrValue(myarg, value, gs_object, gs_body, function):
   if myarg == u'collaborative':
-    value = value.upper()
-    if value in ['MEMBERS']:
-      value = 'ALL_MEMBERS'
-    elif value in ['OWNERS']:
-      value = 'OWNERS_ONLY'
-    elif value in ['MANAGERS']:
-      value = u'OWNERS_AND_MANAGERS'
-    elif value in ['MANAGERSONLY']:
-      value = u'MANAGERS_ONLY'
+    value = mapCollaborativeACL(myarg, value)
     for attrName, attrValue in COLLABORATIVE_INBOX_ATTRIBUTES.items():
       if attrValue == u'acl':
         gs_body[attrName] = value
@@ -7757,6 +7755,8 @@ def getGroupAttrValue(myarg, value, gs_object, gs_body, function):
           value = value.replace(u'\\n', u'\n')
         elif attrib == u'primaryLanguage':
           value = LANGUAGE_CODES_MAP.get(value.lower(), value)
+        elif COLLABORATIVE_INBOX_ATTRIBUTES.get(attrib) == u'acl':
+          value = mapCollaborativeACL(myarg, value)
         elif params[u'description'].find(value.upper()) != -1: # ugly hack because API wants some values uppercased.
           value = value.upper()
         elif value.lower() in true_values:

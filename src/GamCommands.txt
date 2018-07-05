@@ -66,6 +66,8 @@ If an item contains spaces, it should be surrounded by ".
 	Google-Vault|
 	101031
 <SKUID> ::=
+	cloudidentity|identity|1010010001|
+	cloudidentitypremium|identitypremium|1010050001|
 	free|standard|Google-Apps|
 	gafb|gafw|basic|gsuitebasic|Google-Apps-For-Business|
 	gafg|gsuitegovernment|gsuitegov|Google-Apps-For-Government|
@@ -629,7 +631,7 @@ Specify a collection of Users by directly specifying them or by specifiying item
 	(allowgooglecommunication <Boolean>)|
 	(allowwebposting <Boolean>)|
 	(archiveonly <Boolean>)|
-	(collaborative ALL_MEMBERS|OWNERS_AND_MANAGERS|MANAGERS_ONLY|OWNERS_ONLY|NONE)|
+	(collaborative (members|all_members)|(managers|owners_and_managers)|(managers_only)|(owners|owners_only)|none)|
 	(customfootertext <String>)|
 	(customreplyto <EmailAddress>)|
 	(defaultmessagedenynotificationtext <String>)|
@@ -649,22 +651,22 @@ Specify a collection of Users by directly specifying them or by specifiying item
 	(showingroupdirectory <Boolean>)|
 	(spammoderationlevel ALLOW|MODERATE|SILENTLY_MODERATE|REJECT)|
 	(whocanadd ALL_MEMBERS_CAN_ADD|ALL_MANAGERS_CAN_ADD|NONE_CAN_ADD)|
-	(whocanaddreferences ALL_MEMBERS|OWNERS_AND_MANAGERS|MANAGERS_ONLY|OWNERS_ONLY|NONE)|
-	(whocanassigntopics ALL_MEMBERS|OWNERS_AND_MANAGERS|MANAGERS_ONLY|OWNERS_ONLY|NONE)|
+	(whocanaddreferences (members|all_members)|(managers|owners_and_managers)|(managers_only)|(owners|owners_only)|none)|
+	(whocanassigntopics (members|all_members)|(managers|owners_and_managers)|(managers_only)|(owners|owners_only)|none)|
 	(whocancontactowner ANYONE_CAN_CONTACT|ALL_IN_DOMAIN_CAN_CONTACT|ALL_MEMBERS_CAN_CONTACT|ALL_MANAGERS_CAN_CONTACT)|
-	(whocanenterfreeformtags ALL_MEMBERS|OWNERS_AND_MANAGERS|MANAGERS_ONLY|OWNERS_ONLY|NONE)|
+	(whocanenterfreeformtags (members|all_members)|(managers|owners_and_managers)|(managers_only)|(owners|owners_only)|none)|
 	(whocaninvite ALL_MEMBERS_CAN_INVITE|ALL_MANAGERS_CAN_INVITE|NONE_CAN_INVITE)|
 	(whocanjoin ANYONE_CAN_JOIN|ALL_IN_DOMAIN_CAN_JOIN|INVITED_CAN_JOIN|CAN_REQUEST_TO_JOIN)|
 	(whocanleavegroup ALL_MANAGERS_CAN_LEAVE|ALL_MEMBERS_CAN_LEAVE|NONE_CAN_LEAVE)|
-	(whocanmarkduplicate ALL_MEMBERS|OWNERS_AND_MANAGERS|MANAGERS_ONLY|OWNERS_ONLY|NONE)|
-	(whocanmarkfavoritereplyonanytopic ALL_MEMBERS|OWNERS_AND_MANAGERS|MANAGERS_ONLY|OWNERS_ONLY|NONE)|
-	(whocanmarkfavoritereplyonowntopic ALL_MEMBERS|OWNERS_AND_MANAGERS|MANAGERS_ONLY|OWNERS_ONLY|NONE)|
-	(whocanmarknoresponseneeded ALL_MEMBERS|OWNERS_AND_MANAGERS|MANAGERS_ONLY|OWNERS_ONLY|NONE)|
-	(whocanmodifytagsandcategories ALL_MEMBERS|OWNERS_AND_MANAGERS|MANAGERS_ONLY|OWNERS_ONLY|NONE)|
+	(whocanmarkduplicate (members|all_members)|(managers|owners_and_managers)|(managers_only)|(owners|owners_only)|none)|
+	(whocanmarkfavoritereplyonanytopic (members|all_members)|(managers|owners_and_managers)|(managers_only)|(owners|owners_only)|none)|
+	(whocanmarkfavoritereplyonowntopic (members|all_members)|(managers|owners_and_managers)|(managers_only)|(owners|owners_only)|none)|
+	(whocanmarknoresponseneeded (members|all_members)|(managers|owners_and_managers)|(managers_only)|(owners|owners_only)|none)|
+	(whocanmodifytagsandcategories (members|all_members)|(managers|owners_and_managers)|(managers_only)|(owners|owners_only)|none)|
 	(whocanpostmessage NONE_CAN_POST|ALL_MANAGERS_CAN_POST|ALL_MEMBERS_CAN_POST|ALL_IN_DOMAIN_CAN_POST|ANYONE_CAN_POST)|
-	(whocantaketopics ALL_MEMBERS|OWNERS_AND_MANAGERS|MANAGERS_ONLY|OWNERS_ONLY|NONE)|
-	(whocanunassigntopic ALL_MEMBERS|OWNERS_AND_MANAGERS|MANAGERS_ONLY|OWNERS_ONLY|NONE)|
-	(whocanunmarkfavoritereplyonanytopic ALL_MEMBERS|OWNERS_AND_MANAGERS|MANAGERS_ONLY|OWNERS_ONLY|NONE)|
+	(whocantaketopics (members|all_members)|(managers|owners_and_managers)|(managers_only)|(owners|owners_only)|none)|
+	(whocanunassigntopic (members|all_members)|(managers|owners_and_managers)|(managers_only)|(owners|owners_only)|none)|
+	(whocanunmarkfavoritereplyonanytopic (members|all_members)|(managers|owners_and_managers)|(managers_only)|(owners|owners_only)|none)|
 	(whocanviewgroup ANYONE_CAN_VIEW|ALL_IN_DOMAIN_CAN_VIEW|ALL_MEMBERS_CAN_VIEW|ALL_MANAGERS_CAN_VIEW)|
 	(whocanviewmembership ALL_IN_DOMAIN_CAN_VIEW|ALL_MEMBERS_CAN_VIEW|ALL_MANAGERS_CAN_VIEW)
 

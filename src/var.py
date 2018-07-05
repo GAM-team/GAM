@@ -511,6 +511,16 @@ CROS_END_ARGUMENTS = [u'end', u'enddate']
 CROS_TPM_VULN_VERSIONS = [u'41f', u'420', u'628', u'8520',]
 CROS_TPM_FIXED_VERSIONS = [u'422', u'62b', u'8521',]
 
+COLLABORATIVE_ACL_CHOICES = {
+  u'allmembers': u'ALL_MEMBERS',
+  u'members': u'ALL_MEMBERS',
+  u'ownersandmanagers': u'OWNERS_AND_MANAGERS',
+  u'managersonly': u'MANAGERS_ONLY',
+  u'managers': u'OWNERS_AND_MANAGERS',
+  u'ownersonly': u'OWNERS_ONLY',
+  u'owners': u'OWNERS_ONLY',
+  u'none': u'NONE',
+  }
 COLLABORATIVE_INBOX_ATTRIBUTES = {
   u'whoCanAddReferences': u'acl',
   u'whoCanAssignTopics': u'acl',
