@@ -1,3 +1,10 @@
+GAM 4.50
+ - many cleanups, bugfixes and improvements by Ross and ejochman
+ - multiple queries and more options for Chrome OS by Ross
+ - per-API batch calls to solve global batch deprecation
+ - handle new G Suite Enterprise for EDU and Cloud Identity SKUs
+ - Library updates
+
 GAM 4.40
  - Team Drive Admin "asadmin" to give admins special access.
  - Manage Buildings, Features and Resource Calendars.
