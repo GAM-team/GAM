@@ -1,15 +1,18 @@
-#!/usr/bin/python2
+#!/usr/bin/env python2
+from __future__ import print_function
 import BaseHTTPServer
 import logging
 import os.path
-import unittest
+import ssl
 import sys
+import unittest
 
 import httplib2
-
 from httplib2.test import miniserver
 
+
 logger = logging.getLogger(__name__)
+
 
 class KeepAliveHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     """
@@ -28,27 +31,23 @@ class KeepAliveHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         # output via logging so nose can catch it
         logger.info(s, *args)
 
+
 class HttpsContextTest(unittest.TestCase):
     def setUp(self):
         if sys.version_info < (2, 7, 9):
-            return
+            if hasattr(self, "skipTest"):
+                self.skipTest("SSLContext requires Python 2.7.9")
+            else:
+                return
 
-        self.httpd, self.port = miniserver.start_server(
-            KeepAliveHandler, True)
+        self.ca_certs_path = os.path.join(os.path.dirname(__file__), 'server.pem')
+        self.httpd, self.port = miniserver.start_server(KeepAliveHandler, True)
 
     def tearDown(self):
         self.httpd.shutdown()
 
     def testHttpsContext(self):
-        if sys.version_info < (2, 7, 9):
-            if hasattr(unittest, "skipTest"):
-                self.skipTest("SSLContext requires Python 2.7.9")# Python 2.7.0
-            else:
-                return
-        import ssl
-
-        client = httplib2.Http(
-            ca_certs=os.path.join(os.path.dirname(__file__), 'server.pem'))
+        client = httplib2.Http(ca_certs=self.ca_certs_path)
 
         # Establish connection to local server
         client.request('https://localhost:%d/' % (self.port))
@@ -61,6 +60,27 @@ class HttpsContextTest(unittest.TestCase):
         self.assertIsInstance(conn.sock.context, ssl.SSLContext)
         self.assertTrue(conn.sock.context.check_hostname)
         self.assertEqual(conn.sock.server_hostname, 'localhost')
-        self.assertEqual(conn.sock.context.check_hostname, True)
         self.assertEqual(conn.sock.context.verify_mode, ssl.CERT_REQUIRED)
         self.assertEqual(conn.sock.context.protocol, ssl.PROTOCOL_SSLv23)
+
+    def test_ssl_hostname_mismatch_repeat(self):
+        # https://github.com/httplib2/httplib2/issues/5
+
+        # FIXME(temoto): as of 2017-01-05 this is only a reference code, not useful test.
+        # Because it doesn't provoke described error on my machine.
+        # Instead `SSLContext.wrap_socket` raises `ssl.CertificateError`
+        # which was also added to original patch.
+
+        # url host is intentionally different, we provoke ssl hostname mismatch error
+        url = 'https://127.0.0.1:%d/' % (self.port,)
+        http = httplib2.Http(ca_certs=self.ca_certs_path, proxy_info=None)
+
+        def once():
+            try:
+                http.request(url)
+                assert False, 'expected certificate hostname mismatch error'
+            except Exception as e:
+                print('%s errno=%s' % (repr(e), getattr(e, 'errno', None)))
+
+        once()
+        once()
