@@ -66,6 +66,8 @@ If an item contains spaces, it should be surrounded by ".
 	Google-Vault|
 	101031
 <SKUID> ::=
+	cloudidentity|identity|1010010001|
+	cloudidentitypremium|identitypremium|1010050001|
 	free|standard|Google-Apps|
 	gafb|gafw|basic|gsuitebasic|Google-Apps-For-Business|
 	gafg|gsuitegovernment|gsuitegov|Google-Apps-For-Government|
@@ -629,7 +631,7 @@ Specify a collection of Users by directly specifying them or by specifiying item
 	(allowgooglecommunication <Boolean>)|
 	(allowwebposting <Boolean>)|
 	(archiveonly <Boolean>)|
-	(collaborative ALL_MEMBERS|OWNERS_AND_MANAGERS|MANAGERS_ONLY|OWNERS_ONLY|NONE)|
+	(collaborative (MEMBERS|ALL_MEMBERS)|(OWNERSMANAGERS|OWNERS_AND_MANAGERS)|(MANAGERS|MANAGERS_ONLY)|(OWNERS|OWNERS_ONLY)|NONE)|
 	(customfootertext <String>)|
 	(customreplyto <EmailAddress>)|
 	(defaultmessagedenynotificationtext <String>)|
