@@ -8,7 +8,7 @@ del /q /f gam-%1-windows-x64.msi
 del /q /f *.wixobj
 del /q /f *.wixpdb
 
-set WIXVERSION="3.11"
+set WIXVERSION=3.11
 
 c:\python27-32\scripts\pyinstaller --clean -F --distpath=gam windows-gam.spec
 xcopy LICENSE gam\
