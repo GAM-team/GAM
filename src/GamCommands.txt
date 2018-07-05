@@ -631,7 +631,7 @@ Specify a collection of Users by directly specifying them or by specifiying item
 	(allowgooglecommunication <Boolean>)|
 	(allowwebposting <Boolean>)|
 	(archiveonly <Boolean>)|
-	(collaborative (members|all_members)|(ownersmanagers|owners_and_managers)|(managers|managers_only)|(owners|owners_only)|none)|
+	(collaborative (members|all_members)|(managers|owners_and_managers)|(managers_only)|(owners|owners_only)|none)|
 	(customfootertext <String>)|
 	(customreplyto <EmailAddress>)|
 	(defaultmessagedenynotificationtext <String>)|
@@ -651,22 +651,22 @@ Specify a collection of Users by directly specifying them or by specifiying item
 	(showingroupdirectory <Boolean>)|
 	(spammoderationlevel ALLOW|MODERATE|SILENTLY_MODERATE|REJECT)|
 	(whocanadd ALL_MEMBERS_CAN_ADD|ALL_MANAGERS_CAN_ADD|NONE_CAN_ADD)|
-	(whocanaddreferences (members|all_members)|(ownersmanagers|owners_and_managers)|(managers|managers_only)|(owners|owners_only)|noneE)|
-	(whocanassigntopics (members|all_members)|(ownersmanagers|owners_and_managers)|(managers|managers_only)|(owners|owners_only)|noneE)|
+	(whocanaddreferences (members|all_members)|(managers|owners_and_managers)|(managers_only)|(owners|owners_only)|none)|
+	(whocanassigntopics (members|all_members)|(managers|owners_and_managers)|(managers_only)|(owners|owners_only)|none)|
 	(whocancontactowner ANYONE_CAN_CONTACT|ALL_IN_DOMAIN_CAN_CONTACT|ALL_MEMBERS_CAN_CONTACT|ALL_MANAGERS_CAN_CONTACT)|
-	(whocanenterfreeformtags (members|all_members)|(ownersmanagers|owners_and_managers)|(managers|managers_only)|(owners|owners_only)|noneE)|
+	(whocanenterfreeformtags (members|all_members)|(managers|owners_and_managers)|(managers_only)|(owners|owners_only)|none)|
 	(whocaninvite ALL_MEMBERS_CAN_INVITE|ALL_MANAGERS_CAN_INVITE|NONE_CAN_INVITE)|
 	(whocanjoin ANYONE_CAN_JOIN|ALL_IN_DOMAIN_CAN_JOIN|INVITED_CAN_JOIN|CAN_REQUEST_TO_JOIN)|
 	(whocanleavegroup ALL_MANAGERS_CAN_LEAVE|ALL_MEMBERS_CAN_LEAVE|NONE_CAN_LEAVE)|
-	(whocanmarkduplicate (members|all_members)|(ownersmanagers|owners_and_managers)|(managers|managers_only)|(owners|owners_only)|noneE)|
-	(whocanmarkfavoritereplyonanytopic (members|all_members)|(ownersmanagers|owners_and_managers)|(managers|managers_only)|(owners|owners_only)|noneE)|
-	(whocanmarkfavoritereplyonowntopic (members|all_members)|(ownersmanagers|owners_and_managers)|(managers|managers_only)|(owners|owners_only)|noneE)|
-	(whocanmarknoresponseneeded (members|all_members)|(ownersmanagers|owners_and_managers)|(managers|managers_only)|(owners|owners_only)|noneE)|
-	(whocanmodifytagsandcategories (members|all_members)|(ownersmanagers|owners_and_managers)|(managers|managers_only)|(owners|owners_only)|noneE)|
+	(whocanmarkduplicate (members|all_members)|(managers|owners_and_managers)|(managers_only)|(owners|owners_only)|none)|
+	(whocanmarkfavoritereplyonanytopic (members|all_members)|(managers|owners_and_managers)|(managers_only)|(owners|owners_only)|none)|
+	(whocanmarkfavoritereplyonowntopic (members|all_members)|(managers|owners_and_managers)|(managers_only)|(owners|owners_only)|none)|
+	(whocanmarknoresponseneeded (members|all_members)|(managers|owners_and_managers)|(managers_only)|(owners|owners_only)|none)|
+	(whocanmodifytagsandcategories (members|all_members)|(managers|owners_and_managers)|(managers_only)|(owners|owners_only)|none)|
 	(whocanpostmessage NONE_CAN_POST|ALL_MANAGERS_CAN_POST|ALL_MEMBERS_CAN_POST|ALL_IN_DOMAIN_CAN_POST|ANYONE_CAN_POST)|
-	(whocantaketopics (members|all_members)|(ownersmanagers|owners_and_managers)|(managers|managers_only)|(owners|owners_only)|noneE)|
-	(whocanunassigntopic (members|all_members)|(ownersmanagers|owners_and_managers)|(managers|managers_only)|(owners|owners_only)|noneE)|
-	(whocanunmarkfavoritereplyonanytopic (members|all_members)|(ownersmanagers|owners_and_managers)|(managers|managers_only)|(owners|owners_only)|noneE)|
+	(whocantaketopics (members|all_members)|(managers|owners_and_managers)|(managers_only)|(owners|owners_only)|none)|
+	(whocanunassigntopic (members|all_members)|(managers|owners_and_managers)|(managers_only)|(owners|owners_only)|none)|
+	(whocanunmarkfavoritereplyonanytopic (members|all_members)|(managers|owners_and_managers)|(managers_only)|(owners|owners_only)|none)|
 	(whocanviewgroup ANYONE_CAN_VIEW|ALL_IN_DOMAIN_CAN_VIEW|ALL_MEMBERS_CAN_VIEW|ALL_MANAGERS_CAN_VIEW)|
 	(whocanviewmembership ALL_IN_DOMAIN_CAN_VIEW|ALL_MEMBERS_CAN_VIEW|ALL_MANAGERS_CAN_VIEW)
 
