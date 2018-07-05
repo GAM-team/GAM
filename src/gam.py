@@ -7722,14 +7722,14 @@ def GroupIsAbuseOrPostmaster(emailAddr):
 def getGroupAttrValue(myarg, value, gs_object, gs_body, function):
   if myarg == u'collaborative':
     value = value.upper()
-    if value in ['MEMBERS']:
-      value = 'ALL_MEMBERS'
-    elif value in ['OWNERS']:
-      value = 'OWNERS_ONLY'
-    elif value in ['MANAGERS']:
-      value = u'OWNERS_AND_MANAGERS'
-    elif value in ['MANAGERSONLY']:
+    if value in [u'MEMBERS']:
+      value = u'ALL_MEMBERS'
+    elif value in [u'OWNERS']:
+      value = u'OWNERS_ONLY'
+    elif value in [u'MANAGERS']:
       value = u'MANAGERS_ONLY'
+    elif value in [u'OWNERSMANAGERS', u'MANAGERSOWNERS']:
+      value = u'OWNERS_AND_MANAGERS'
     for attrName, attrValue in COLLABORATIVE_INBOX_ATTRIBUTES.items():
       if attrValue == u'acl':
         gs_body[attrName] = value
