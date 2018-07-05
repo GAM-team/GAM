@@ -10,7 +10,8 @@ If an item contains spaces, it should be surrounded by ".
 + item may appear one or more times
 | separates alternative items
 
-Primitives
+## Primitives
+
 <Character> ::= a single character
 <Digit> ::= 0|1|2|3|4|5|6|7|8|9
 <Number> ::= <Digit>+
@@ -62,7 +63,8 @@ Primitives
 	Google-Chrome-Device-Management|
 	Google-Coordinate|
 	Google-Drive-storage|
-	Google-Vault
+	Google-Vault|
+	101031
 <SKUID> ::=
 	free|standard|Google-Apps|
 	gafb|gafw|basic|gsuitebasic|Google-Apps-For-Business|
@@ -71,6 +73,7 @@ Primitives
 	gal|lite|gsuitelite|Google-Apps-Lite|
 	gau|unlimited|gsuitebusiness|Google-Apps-Unlimited|
 	gae|enterprise|gsuiteenterprise|1010020020|
+	gsefe|e4e|gsuiteenterpriseeducation|1010310002|
 	chrome|cdm|googlechromedevicemanagement|Google-Chrome-Device-Management|
 	coordinate|googlecoordinate|Google-Coordinate|
 	drive20gb|20gb|googledrivestorage20gb|Google-Drive-storage-20GB|
@@ -85,7 +88,8 @@ Primitives
 	vault|googlevault|Google-Vault|
 	vfe|googlevaultformeremployee|Google-Vault-Former-Employee
 
-Basic items built from primitives
+## Basic items built from primitives
+
 <Boolean> ::= <TrueValues>|<FalseValues>
 <ByteCount> ::= <Number>[m|k|b]
 <CIDRnetmask> ::= <Number>.<Number>.<Number>.<Number>/<Number>
@@ -112,7 +116,8 @@ Basic items built from primitives
 <Tag> ::= <String>
 <UniqueID> ::= uid:<String>
 
-Named items
+## Named items
+
 <AccessToken> ::= <String>
 <ACLScope> ::= [user:]<EmailAddress>|group:<EmailAddress>|domain[:<DomainName>]|default
 <ASPID> ::= <String>
@@ -479,7 +484,7 @@ Named items
 <UserOrderByFieldName> ::=
 	familyname|lastname|givenname|firstname|email
 
-Named Lists
+## Named Lists
 
 Items in a list can be separated by commas or spaces; if an item itself contains a comma, a space or a single quote, special quoting must be used.
 Typically, you will enclose the entire list in double quotes and quote each item in the list as detailed below.
@@ -533,7 +538,10 @@ Items, separated by spaces, with spaces, commas or single quotes in the items th
 <UserFieldNameList> ::= "<UserFieldName>(,<UserFieldName>)*"
 <UserList> ::= "<UserItem>(,<UserItem>)*"
 
+## Collections of ChromeOs Devices
+
 Specify a collection of ChromeOS devices by directly specifying them
+
 <CrOSTypeEntity> ::=
 	(all cros)|
 	(cros <CrOSList>)|
@@ -541,7 +549,11 @@ Specify a collection of ChromeOS devices by directly specifying them
 	(croscsvfile <FileName>:<FieldName>)|
 	(crosquery <QueryCrOS>)|
 	(crosqueries <QueryCrOSList>)
+
+## Collections of Users
+
 Specify a collection of Users by directly specifying them or by specifiying items that will yield a list of users
+
 <UserTypeEntity> ::=
 	(all users)|
 	(user <UserItem>)|
@@ -558,7 +570,8 @@ Specify a collection of Users by directly specifying them or by specifiying item
 	(query <QueryUser>)|
 	(queries <QueryUserList>)
 
-Item attributes
+## Item attributes
+
 <BuildingAttributes> ::=
 	(description <String>)|
 	(floors <FloorNameList>)|
@@ -667,7 +680,7 @@ Item attributes
 <ResourceAttributes> ::=
 	(buildingid <BuildingID>)|
 	(capacity <Number>)|
-	(category other|room|conference_room|unknown_category)|
+	(category other|room|conference_room|category_unknown)|
 	(description <String>)|
 	(features <FeatureNameList>)|
 	(floor <FloorName>)|
@@ -836,7 +849,7 @@ gam update org|ou <OrgUnitPath> [name <Name>] [description <String>] [parent <Or
 gam update org|ou <OrgUnitPath> add|move <CrOSTypeEntity>|<UserTypeEntity>
 gam delete org|ou <OrgUnitPath>
 gam info org|ou <OrgUnitPath> [nousers] [children|child]
-gam print orgs|ous [todrive] [toplevelonly] [from_parent <OrgUnitPath>] [allfields|(fields <OrgUnitFieldNameKist>)]
+gam print orgs|ous [todrive] [toplevelonly] [from_parent <OrgUnitPath>] [allfields|(fields <OrgUnitFieldNameList>)]
 
 gam create alias|nickname <EmailAddress> user|group|target <UniqueID>|<EmailAddress>
 gam update alias|nickname <EmailAddress> user|group|target <UniqueID>|<EmailAddress>
