@@ -8185,43 +8185,194 @@ def doUpdateGroup():
       users_email = [normalizeEmailAddressOrUID(sys.argv[i], checkForCustomerId=True)]
     return (role, users_email)
 
+  _ADD_MEMBER_REASON_TO_MESSAGE_MAP = {GAPI_DUPLICATE: u'Duplicate',
+                                       GAPI_CONDITION_NOT_MET: u'Duplicate',
+                                       GAPI_MEMBER_NOT_FOUND: u'Does not exist',
+                                       GAPI_RESOURCE_NOT_FOUND: u'Does not exist',
+                                       GAPI_INVALID_MEMBER: u'Invalid role',
+                                       GAPI_CYCLIC_MEMBERSHIPS_NOT_ALLOWED: u'Would make membership cycle'}
+
+  def _handleDuplicateAdd(group, role, member, j, jcount):
+    try:
+      result = callGAPI(cd.members(), u'get',
+                        throw_reasons=[GAPI_MEMBER_NOT_FOUND, GAPI_RESOURCE_NOT_FOUND],
+                        groupKey=group, memberKey=member, fields=u'role')
+      sys.stderr.write(u'  Group: {0}, {1}: {2}, {3}: {4}{5}'.format(group, role, member,
+                                                                     actions[u'Failed'], u'Duplicate, already a {0}'.format(result[u'role']),
+                                                                     currentCountNL(j, jcount)))
+      return
+    except (GAPI_memberNotFound, GAPI_resourceNotFound):
+      pass
+    sys.stderr.write(u'  Group: {0}, {1}: {2}, {3}{4}'.format(group, role, member,
+                                                              u'Membership is pending, will delete and add to accept',
+                                                              currentCountNL(j, jcount)))
+    try:
+      callGAPI(cd.members(), u'delete',
+               throw_reasons=[GAPI_MEMBER_NOT_FOUND, GAPI_RESOURCE_NOT_FOUND],
+               groupKey=group, memberKey=member)
+    except (GAPI_memberNotFound, GAPI_resourceNotFound):
+      sys.stderr.write(u'  Group: {0}, {1}: {2}, {3}: {4}{5}'.format(group, role, member,
+                                                                     actions[u'Failed'], u'Duplicate',
+                                                                     currentCountNL(j, jcount)))
+      return
+    body = {u'role': role}
+    if member.find(u'@') != -1:
+      body[u'email'] = member
+    else:
+      body[u'id'] = member
+    try:
+      callGAPI(cd.members(), u'insert',
+               throw_reasons=[GAPI_DUPLICATE, GAPI_MEMBER_NOT_FOUND, GAPI_RESOURCE_NOT_FOUND, GAPI_INVALID_MEMBER, GAPI_CYCLIC_MEMBERSHIPS_NOT_ALLOWED],
+               groupKey=group, body=body, fields=u'')
+      sys.stderr.write(u'  Group: {0}, {1}: {2}, {3}{4}'.format(group, role, member,
+                                                                actions[u'Performed'], currentCountNL(j, jcount)))
+    except (GAPI_duplicate, GAPI_memberNotFound, GAPI_resourceNotFound, GAPI_invalidMember, GAPI_cyclicMembershipsNotAllowed) as e:
+      http_status, reason, message = checkGAPIError(e)
+      if reason in GAPI_MEMBERS_THROW_REASONS:
+        entityUnknownWarning(u'Group', group, 0, 0)
+      else:
+        errMsg = getHTTPError(_ADD_MEMBER_REASON_TO_MESSAGE_MAP, http_status, reason, message)
+        sys.stderr.write(u'  Group: {0}, {1}: {2}, {3}: {4}{5}'.format(group, role, member,
+                                                                       actions[u'Failed'], errMsg, currentCountNL(j, jcount)))
+
+  def _callbackAddGroupMembers(request_id, response, exception):
+    ri = request_id.splitlines()
+    if exception is None:
+      sys.stderr.write(u'  Group: {0}, {1}: {2}, {3}{4}'.format(ri[RI_ENTITY], ri[RI_ROLE], ri[RI_ITEM],
+                                                                actions[u'Performed'], currentCountNL(int(ri[RI_J]), int(ri[RI_JCOUNT]))))
+    else:
+      http_status, reason, message = checkGAPIError(exception)
+      if reason in GAPI_MEMBERS_THROW_REASONS:
+        entityUnknownWarning(u'Group', ri[RI_ENTITY], 0, 0)
+      elif reason in [GAPI_DUPLICATE, GAPI_CONDITION_NOT_MET]:
+        _handleDuplicateAdd(ri[RI_ENTITY], ri[RI_ROLE], ri[RI_ITEM], int(ri[RI_J]), int(ri[RI_JCOUNT]))
+      else:
+        errMsg = getHTTPError(_ADD_MEMBER_REASON_TO_MESSAGE_MAP, http_status, reason, message)
+        sys.stderr.write(u'  Group: {0}, {1}: {2}, {3}: {4}{5}'.format(ri[RI_ENTITY], ri[RI_ROLE], ri[RI_ITEM],
+                                                                       actions[u'Failed'], errMsg, currentCountNL(int(ri[RI_J]), int(ri[RI_JCOUNT]))))
+
+  def _batchAddGroupMembers(group, addMembers, role, actions):
+    jcount = len(addMembers)
+    if jcount == 0:
+      return
+    actions[u'Performed'] = u'Added'
+    actions[u'Failed'] = u'Add Failed'
+    svcargs = dict([(u'groupKey', group), (u'body', {u'role': role}), (u'fields', u'')]+GM_Globals[GM_EXTRA_ARGS_DICT].items())
+    dbatch = cd.new_batch_http_request(callback=_callbackAddGroupMembers)
+    bcount = 0
+    j = 0
+    for member in addMembers:
+      j += 1
+      svcparms = svcargs.copy()
+      member = normalizeEmailAddressOrUID(member, checkForCustomerId=True)
+      if member.find(u'@') != -1:
+        svcparms[u'body'][u'email'] = member
+        svcparms[u'body'].pop(u'id', None)
+      else:
+        svcparms[u'body'][u'id'] = member
+        svcparms[u'body'].pop(u'email', None)
+      dbatch.add(cd.members().insert(**svcparms), request_id=batchRequestID(group, j, jcount, member, role))
+      bcount += 1
+      if bcount >= GC_Values[GC_BATCH_SIZE]:
+        dbatch.execute()
+        dbatch = cd.new_batch_http_request(callback=_callbackAddGroupMembers)
+        bcount = 0
+    if bcount > 0:
+      dbatch.execute()
+
+  _REMOVE_MEMBER_REASON_TO_MESSAGE_MAP = {GAPI_MEMBER_NOT_FOUND: u'Not a member',
+                                          GAPI_CONDITION_NOT_MET: u'Not a member',
+                                          GAPI_INVALID_MEMBER: u'Does not exist'}
+
+  def _callbackRemoveGroupMembers(request_id, response, exception):
+    ri = request_id.splitlines()
+    if exception is None:
+      sys.stderr.write(u'Group: {0}, {1}: {2}, {3}{4}'.format(ri[RI_ENTITY], ri[RI_ROLE], ri[RI_ITEM],
+                                                              actions[u'Performed'], currentCountNL(int(ri[RI_J]), int(ri[RI_JCOUNT]))))
+    else:
+      http_status, reason, message = checkGAPIError(exception)
+      if reason in GAPI_MEMBERS_THROW_REASONS:
+        entityUnknownWarning(u'Group', ri[RI_ENTITY], 0, 0)
+      else:
+        errMsg = getHTTPError(_REMOVE_MEMBER_REASON_TO_MESSAGE_MAP, http_status, reason, message)
+        sys.stderr.write(u'Group: {0}, {1}: {2}, {3}: {4}{5}'.format(ri[RI_ENTITY], ri[RI_ROLE], ri[RI_ITEM],
+                                                                     actions[u'Failed'], errMsg, currentCountNL(int(ri[RI_J]), int(ri[RI_JCOUNT]))))
+
+  def _batchRemoveGroupMembers(group, removeMembers, role, actions):
+    jcount = len(removeMembers)
+    if jcount == 0:
+      return
+    actions[u'Performed'] = u'Removed'
+    actions[u'Failed'] = u'Remove Failed'
+    svcargs = dict([(u'groupKey', group), (u'memberKey', None), (u'fields', u'')]+GM_Globals[GM_EXTRA_ARGS_DICT].items())
+    dbatch = cd.new_batch_http_request(callback=_callbackRemoveGroupMembers)
+    bcount = 0
+    j = 0
+    for member in removeMembers:
+      j += 1
+      svcparms = svcargs.copy()
+      svcparms[u'memberKey'] = normalizeEmailAddressOrUID(member, checkForCustomerId=True)
+      dbatch.add(cd.members().delete(**svcparms), request_id=batchRequestID(group, j, jcount, svcparms[u'memberKey'], role))
+      bcount += 1
+      if bcount >= GC_Values[GC_BATCH_SIZE]:
+        dbatch.execute()
+        dbatch = cd.new_batch_http_request(callback=_callbackRemoveGroupMembers)
+        bcount = 0
+    if bcount > 0:
+      dbatch.execute()
+
+  _UPDATE_MEMBER_REASON_TO_MESSAGE_MAP = {GAPI_MEMBER_NOT_FOUND: u'Not a member',
+                                          GAPI_INVALID_MEMBER: u'Does not exist'}
+
+  def _callbackUpdateGroupMembers(request_id, response, exception):
+    ri = request_id.splitlines()
+    if exception is None:
+      sys.stderr.write(u'Group: {0}, {1}: {2}, {3}{4}'.format(ri[RI_ENTITY], ri[RI_ROLE], ri[RI_ITEM],
+                                                              actions[u'Performed'], currentCountNL(int(ri[RI_J]), int(ri[RI_JCOUNT]))))
+    else:
+      http_status, reason, message = checkGAPIError(exception)
+      if reason in GAPI_MEMBERS_THROW_REASONS:
+        entityUnknownWarning(u'Group', ri[RI_ENTITY], 0, 0)
+      else:
+        errMsg = getHTTPError(_UPDATE_MEMBER_REASON_TO_MESSAGE_MAP, http_status, reason, message)
+        sys.stderr.write(u'Group: {0}, {1}: {2}, {3}: {4}{5}'.format(ri[RI_ENTITY], ri[RI_ROLE], ri[RI_ITEM],
+                                                                     actions[u'Failed'], errMsg, currentCountNL(int(ri[RI_J]), int(ri[RI_JCOUNT]))))
+
+  def _batchUpdateGroupMembers(group, updateMembers, role, actions):
+    jcount = len(updateMembers)
+    if jcount == 0:
+      return
+    actions[u'Performed'] = u'Updated'
+    actions[u'Failed'] = u'Update Failed'
+    svcargs = dict([(u'groupKey', group), (u'memberKey', None), (u'body', {u'role': role}), (u'fields', u'')]+GM_Globals[GM_EXTRA_ARGS_DICT].items())
+    dbatch = cd.new_batch_http_request(callback=_callbackUpdateGroupMembers)
+    bcount = 0
+    j = 0
+    for member in updateMembers:
+      j += 1
+      svcparms = svcargs.copy()
+      svcparms[u'memberKey'] = normalizeEmailAddressOrUID(member, checkForCustomerId=True)
+      dbatch.add(cd.members().update(**svcparms), request_id=batchRequestID(group, j, jcount, svcparms[u'memberKey'], role))
+      bcount += 1
+      if bcount >= GC_Values[GC_BATCH_SIZE]:
+        dbatch.execute()
+        dbatch = cd.new_batch_http_request(callback=_callbackUpdateGroupMembers)
+        bcount = 0
+    if bcount > 0:
+      dbatch.execute()
+
   cd = buildGAPIObject(u'directory')
   group = sys.argv[3]
   myarg = sys.argv[4].lower()
-  items = []
+  actions = {}
   if myarg in UPDATE_GROUP_SUBCMDS:
     group = normalizeEmailAddressOrUID(group)
     if myarg == u'add':
       role, users_email = _getRoleAndUsers()
-      if not checkGroupExists(cd, group):
-        return
-      if len(users_email) > 1:
+      group = checkGroupExists(cd, group)
+      if group:
         sys.stderr.write(u'Group: {0}, Will add {1} {2}s.\n'.format(group, len(users_email), role))
-        for user_email in users_email:
-          items.append(['gam', 'update', 'group', group, 'add', role, user_email])
-      else:
-        body = {u'role': role, u'email': users_email[0]}
-        for i in range(2):
-          try:
-            callGAPI(cd.members(), u'insert',
-                     throw_reasons=[GAPI_DUPLICATE, GAPI_MEMBER_NOT_FOUND, GAPI_RESOURCE_NOT_FOUND, GAPI_INVALID_MEMBER, GAPI_CYCLIC_MEMBERSHIPS_NOT_ALLOWED],
-                     groupKey=group, body=body)
-            print u' Group: {0}, {1} Added as {2}'.format(group, users_email[0], role)
-            break
-          except GAPI_duplicate as e:
-            # check if user is a full member, not pending
-            try:
-              result = callGAPI(cd.members(), u'get', throw_reasons=[GAPI_MEMBER_NOT_FOUND], memberKey=users_email[0], groupKey=group, fields=u'role')
-              print u' Group: {0}, {1} Add as {2} Failed: Duplicate, already a {3}'.format(group, users_email[0], role, result[u'role'])
-              break # if get succeeds, user is a full member and we throw duplicate error
-            except GAPI_memberNotFound:
-              # insert fails on duplicate and get fails on not found, user is pending
-              print u' Group: {0}, {1} member is pending, deleting and re-adding to solve...'.format(group, users_email[0])
-              callGAPI(cd.members(), u'delete', memberKey=users_email[0], groupKey=group)
-              continue # 2nd insert should succeed now that pending is clear
-          except (GAPI_memberNotFound, GAPI_resourceNotFound, GAPI_invalidMember, GAPI_cyclicMembershipsNotAllowed) as e:
-            print u' Group: {0}, {1} Add as {2} Failed: {3}'.format(group, users_email[0], role, str(e))
-            break
+        _batchAddGroupMembers(group, users_email, role, actions)
     elif myarg == u'sync':
       syncMembersSet = set()
       syncMembersMap = {}
@@ -8244,43 +8395,20 @@ def doUpdateGroup():
         to_add = [syncMembersMap.get(emailAddress, emailAddress) for emailAddress in syncMembersSet-currentMembersSet]
         to_remove = [currentMembersMap.get(emailAddress, emailAddress) for emailAddress in currentMembersSet-syncMembersSet]
         sys.stderr.write(u'Group: {0}, Will add {1} and remove {2} {3}s.\n'.format(group, len(to_add), len(to_remove), role))
-        for user in to_add:
-          items.append([u'gam', u'update', u'group', group, u'add', role, user])
-        for user in to_remove:
-          items.append([u'gam', u'update', u'group', group, u'remove', user])
+        _batchAddGroupMembers(group, to_add, role, actions)
+        _batchRemoveGroupMembers(group, to_remove, role, actions)
     elif myarg in [u'delete', u'remove']:
       role, users_email = _getRoleAndUsers()
-      if not checkGroupExists(cd, group):
-        return
-      if len(users_email) > 1:
+      group = checkGroupExists(cd, group)
+      if group:
         sys.stderr.write(u'Group: {0}, Will remove {1} {2}s.\n'.format(group, len(users_email), role))
-        for user_email in users_email:
-          items.append(['gam', 'update', 'group', group, 'remove', user_email])
-      else:
-        try:
-          callGAPI(cd.members(), u'delete',
-                   throw_reasons=[GAPI_MEMBER_NOT_FOUND, GAPI_INVALID_MEMBER],
-                   groupKey=group, memberKey=users_email[0])
-          print u' Group: {0}, {1} Removed'.format(group, users_email[0])
-        except (GAPI_memberNotFound, GAPI_invalidMember) as e:
-          print u' Group: {0}, {1} Remove Failed: {2}'.format(group, users_email[0], str(e))
+        _batchRemoveGroupMembers(group, users_email, role, actions)
     elif myarg == u'update':
       role, users_email = _getRoleAndUsers()
       group = checkGroupExists(cd, group)
       if group:
-        if len(users_email) > 1:
-          sys.stderr.write(u'Group: {0}, Will update {1} {2}s.\n'.format(group, len(users_email), role))
-          for user_email in users_email:
-            items.append(['gam', 'update', 'group', group, 'update', role, user_email])
-        else:
-          body = {u'role': role}
-          try:
-            callGAPI(cd.members(), u'update',
-                     throw_reasons=[GAPI_MEMBER_NOT_FOUND, GAPI_INVALID_MEMBER],
-                     groupKey=group, memberKey=users_email[0], body=body)
-            print u' Group: {0}, {1} Updated to {2}'.format(group, users_email[0], role)
-          except (GAPI_memberNotFound, GAPI_invalidMember) as e:
-            print u' Group: {0}, {1} Update to {2} Failed: {3}'.format(group, users_email[0], role, str(e))
+        sys.stderr.write(u'Group: {0}, Will update {1} {2}s.\n'.format(group, len(users_email), role))
+        _batchUpdateGroupMembers(group, users_email, role, actions)
     else: # clear
       suspended = False
       fields = [u'email', u'id']
@@ -8315,22 +8443,10 @@ def doUpdateGroup():
           users_email = [member.get(u'email', member[u'id']) for member in result if not validRoles or member.get(u'role', ROLE_MEMBER) in validRoles]
         else:
           users_email = [member.get(u'email', member[u'id']) for member in result if (not validRoles or member.get(u'role', ROLE_MEMBER) in validRoles) and member[u'status'] == u'SUSPENDED']
-        if len(users_email) > 1:
-          sys.stderr.write(u'Group: {0}, Will remove {1} {2}{3}s.\n'.format(group, len(users_email), [u'', u'suspended '][suspended], roles))
-          for user_email in users_email:
-            items.append(['gam', 'update', 'group', group, 'remove', user_email])
-        else:
-          try:
-            callGAPI(cd.members(), u'delete',
-                     throw_reasons=[GAPI_MEMBER_NOT_FOUND, GAPI_INVALID_MEMBER],
-                     groupKey=group, memberKey=users_email[0])
-            print u' Group: {0}, {1} Removed'.format(group, users_email[0])
-          except (GAPI_memberNotFound, GAPI_invalidMember) as e:
-            print u' Group: {0}, {1} Remove Failed: {2}'.format(group, users_email[0], str(e))
+        sys.stderr.write(u'Group: {0}, Will remove {1} {2}{3}s.\n'.format(group, len(users_email), [u'', u'suspended '][suspended], roles))
+        _batchRemoveGroupMembers(group, users_email, ROLE_MEMBER, actions)
       except (GAPI_groupNotFound, GAPI_domainNotFound, GAPI_invalid, GAPI_forbidden):
         entityUnknownWarning(u'Group', group, 0, 0)
-    if items:
-      run_batch(items)
   else:
     i = 4
     use_cd_api = False
