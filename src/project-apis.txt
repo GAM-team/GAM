@@ -10,4 +10,5 @@ licensing.googleapis.com
 plus.googleapis.com
 reseller.googleapis.com
 siteverification.googleapis.com
+storage-api.googleapis.com
 vault.googleapis.com
