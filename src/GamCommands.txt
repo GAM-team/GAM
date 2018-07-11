@@ -64,7 +64,7 @@ If an item contains spaces, it should be surrounded by ".
 	Google-Coordinate|
 	Google-Drive-storage|
 	Google-Vault|
-	101031
+	101001|101005|101031
 <SKUID> ::=
 	cloudidentity|identity|1010010001|
 	cloudidentitypremium|identitypremium|1010050001|
@@ -1013,8 +1013,9 @@ gam create course id|alias <CourseAlias> <CourseAttributes>*
 gam update course <CourseID> <CourseAttributes>+
 gam delete course <CourseID>
 gam info course <CourseID>
-gam print courses [todrive] [teacher <UserItem>] [student <UserItem>] [states <CourseStateList>] [alias|aliases] [delimiter <Character>]
-	[show all|students|teachers] [countsonly] [fields <CourseFieldNameList>] [skipfields <CourseFieldNameList>]
+gam print courses [todrive] [teacher <UserItem>] [student <UserItem>] [states <CourseStateList>]
+	[owneremail] [alias|aliases] [delimiter <Character>] [show all|students|teachers] [countsonly]
+	[fields <CourseFieldNameList>] [skipfields <CourseFieldNameList>]
 
 gam course <CourseID> add alias <CourseAlias>
 gam course <CourseID> delete alias <CourseAlias>
