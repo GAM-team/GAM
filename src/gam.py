@@ -30,6 +30,7 @@ import base64
 import codecs
 import csv
 import datetime
+import hashlib
 import httplib
 import json
 import mimetypes
@@ -40,6 +41,7 @@ import signal
 import socket
 import StringIO
 import uuid
+import zipfile
 
 import googleapiclient
 import googleapiclient.discovery
@@ -7415,6 +7417,105 @@ def doCreateVaultMatter():
     print u' adding collaborator %s' % collaborator[u'email']
     callGAPI(v.matters(), u'addPermissions', matterId=matterId, body={u'matterPermission': {u'role': u'COLLABORATOR', u'accountId': collaborator[u'id']}})
 
+def doCreateVaultExport():
+  v = buildGAPIObject(u'vault')
+  allowed_corpuses = v._rootDesc[u'schemas'][u'Query'][u'properties'][u'corpus'][u'enum']
+  try:
+    allowed_corpuses.remove(u'CORPUS_TYPE_UNSPECIFIED')
+  except ValueError:
+    pass
+  allowed_scopes = v._rootDesc[u'schemas'][u'Query'][u'properties'][u'dataScope'][u'enum']
+  try:
+    allowed_scopes.remove(u'DATA_SCOPE_UNSPECIFIED')
+  except ValueError:
+    pass
+  matterId = None
+  body = {u'query': {}}
+  i = 3
+  while i < len(sys.argv):
+    myarg = sys.argv[i].lower().replace(u'_', u'')
+    if myarg == u'matter':
+      matterId = sys.argv[i+1]
+      body[u'matterId'] = matterId
+      i += 2
+    elif myarg == u'name':
+      body[u'name'] = sys.argv[i+1]
+      i += 2
+    elif myarg == u'corpus':
+      body[u'query'][u'corpus'] = sys.argv[i+1].upper()
+      if body[u'query'][u'corpus'] not in allowed_corpuses:
+        systemErrorExit(3, 'corpus must be one of %s. Got %s' % (u', '.join(allowed_corpuses), sys.argv[i+1]))
+      i += 2
+    elif myarg == u'scope':
+      body[u'query'][u'dataScope'] = sys.argv[i+1].upper()
+      if body[u'query']['dataScope'] not in allowed_scopes:
+        systemErrorExit(3, 'scope must be one of %s. Got %s' % (u', '.join(allowed_scopes), sys.argv[i+1]))
+      i += 2
+
+def doGetVaultExport():
+  v = buildGAPIObject(u'vault')
+  matterId = sys.argv[3]
+  exportId = sys.argv[4]
+  export = callGAPI(v.matters().exports(), u'get', matterId=matterId, exportId=exportId)
+  print_json(None, export)
+ 
+def doDownloadVaultExport():
+  verifyFiles = True
+  extractFiles = True
+  v = buildGAPIObject(u'vault')
+  s = buildGAPIObject(u'storage')
+  matterId = sys.argv[3]
+  exportId = sys.argv[4]
+  export = callGAPI(v.matters().exports(), u'get', matterId=matterId, exportId=exportId)
+  for file in export[u'cloudStorageSink']['files']:
+    bucket = file['bucketName']
+    object = file['objectName']
+    filename = object.replace(u'/', u'-')
+    print u'saving to %s' % filename
+    request = s.objects().get_media(bucket=bucket, object=object)
+    f = open(filename, 'wb')
+    downloader = googleapiclient.http.MediaIoBaseDownload(f, request)
+    done = False
+    while not done:
+      status, done = downloader.next_chunk()
+      sys.stdout.write(" %d%%" % int(status.progress() * 100))
+      sys.stdout.flush()
+    print u'\n Download complete, flushing to disk...'
+    f.flush()
+    os.fsync(f.fileno())
+    f.close()
+    f = open(filename, 'rb')
+    if verifyFiles:
+      expected_hash = file['md5Hash']
+      sys.stdout.write(u' Verifying file hash is %s...' % expected_hash)
+      sys.stdout.flush()
+      hash_md5 = hashlib.md5()
+      for chunk in iter(lambda: f.read(4096), b""):
+        hash_md5.update(chunk)
+      actual_hash = hash_md5.hexdigest()
+      if actual_hash == expected_hash:
+        print u'VERIFIED'
+      else:
+        print u'ERROR: actual hash was %s. Exiting on corrupt file.' % actual_hash
+        sys.exit(6)
+    f.close()
+    if extractFiles and re.search(r'\.zip$', filename):
+      extract_nested_zip(filename, u'/home/jay/GAM/src/')
+
+def extract_nested_zip(zippedFile, toFolder, spacing=u' '):
+    """ Extract a zip file including any nested zip files
+        Delete the zip file(s) after extraction
+    """
+    print u'%sextracting %s' % (spacing, zippedFile)
+    with zipfile.ZipFile(zippedFile, 'r') as zfile:
+      inner_files = zfile.infolist()
+      for inner_file in inner_files:
+        print u'%s %s' % (spacing, inner_file.filename)
+        zfile.extract(inner_file)
+        if re.search(r'\.zip$', inner_file.filename):
+          extract_nested_zip(inner_file.filename, toFolder, spacing=spacing+u' ')
+    os.remove(zippedFile)
+
 def doCreateVaultHold():
   v = buildGAPIObject(u'vault')
   allowed_corpuses = v._rootDesc[u'schemas'][u'Hold'][u'properties'][u'corpus'][u'enum']
@@ -11869,6 +11970,9 @@ OAUTH2_SCOPES = [
   {u'name': u'Vault Matters and Holds API',
    u'subscopes': [u'readonly'],
    u'scopes': u'https://www.googleapis.com/auth/ediscovery'},
+  {u'name': u'Cloud Storage (Vault Export - read only)',
+   u'subscopes': [],
+   u'scopes': u'https://www.googleapis.com/auth/devstorage.read_only'},
   ]
 
 OAUTH2_MENU = u'''
@@ -12202,6 +12306,8 @@ def ProcessGAMCommand(args):
         doCreateVaultMatter()
       elif argument in [u'hold', u'vaulthold']:
         doCreateVaultHold()
+      elif argument in [u'export', u'vaultexport']:
+        doCreateVaultExport()
       elif argument in [u'building']:
         doCreateBuilding()
       elif argument in [u'feature']:
@@ -12304,6 +12410,8 @@ def ProcessGAMCommand(args):
         doGetVaultMatterInfo()
       elif argument in [u'hold', u'vaulthold']:
         doGetVaultHoldInfo()
+      elif argument in [u'export', u'vaultexport']:
+        doGetVaultExport()
       elif argument in [u'building']:
         doGetBuildingInfo()
       else:
@@ -12531,6 +12639,12 @@ def ProcessGAMCommand(args):
         doSyncCourseParticipants()
       else:
         systemErrorExit(2, '%s is not a valid argument for "gam course"' % argument)
+      sys.exit(0)
+    elif command == u'download':
+      if argument in [u'exports', u'vaultexports']:
+        doDownloadVaultExport()
+      else:
+        systemErrorExit(2, '%s is not a valid argument for "gam download"' % argument)
       sys.exit(0)
     users = getUsersToModify()
     command = sys.argv[3].lower()
