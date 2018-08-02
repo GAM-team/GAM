@@ -11679,7 +11679,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
                             query=query, maxResults=GC_Values[GC_USER_MAX_RESULTS])
     ou = ou.lower()
     for member in members:
-      if (ou == member[u'orgUnitPath'].lower()) and not (checkNotSuspended and member[u'suspended']):
+      if (ou == member.get(u'orgUnitPath', u'').lower()) and not (checkNotSuspended and member[u'suspended']):
         users.append(member[u'primaryEmail'])
     if not silent:
       sys.stderr.write(u"%s Users are directly in the OU.\n" % len(users))
@@ -12824,7 +12824,7 @@ def ProcessGAMCommand(args):
         deleteDelegate(users)
       elif delWhat == u'calendar':
         deleteCalendar(users)
-      elif delWhat == u'label':
+      elif delWhat  in [u'labels', u'label']:
         doDeleteLabel(users)
       elif delWhat in [u'message', u'messages']:
         runCmdForUsers(doProcessMessagesOrThreads, users, default_to_batch=True, function=u'delete', unit=u'messages')

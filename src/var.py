@@ -156,6 +156,9 @@ SERVICE_NAME_CHOICES_MAP = {
   u'googledrive': u'Drive and Docs',
   u'gdrive': u'Drive and Docs',
   u'calendar': u'Calendar',
+  u'gplus': u'Google+',
+  u'google+': u'Google+',
+  u'googleplus': u'Google+',
   }
 
 PRINTJOB_ASCENDINGORDER_MAP = {
