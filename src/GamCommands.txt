@@ -189,7 +189,7 @@ If an item contains spaces, it should be surrounded by ".
 <QueryDriveFile> ::= <String> See: https://developers.google.com/drive/v2/web/search-parameters
 <QueryGmail> ::= <String> See: https://support.google.com/mail/answer/7190
 <QueryGroup> ::= <String> See: https://developers.google.com/admin-sdk/directory/v1/guides/search-groups
-<QueryMobile> ::= <String> See: https://support.google.com/a/answer/1408863?hl=en#search
+<QueryMobile> ::= <String> See: https://support.google.com/a/answer/7549103
 <QueryPrinter> ::= <String> See: https://developers.google.com/cloud-print/docs/appInterfaces#search
 <QueryPrintJob> ::= <String> See: https://developers.google.com/cloud-print/docs/appInterfaces#parameters_3
 <QueryUser> ::= <String> See: https://developers.google.com/admin-sdk/directory/v1/guides/search-users
@@ -838,7 +838,7 @@ gam update customer <CustomerAttributes>*
 
 gam info customer
 
-<DataTransferService> ::= googledrive|gdrive|drive|"drive and docs"|calendar
+<DataTransferService> ::= googledrive|gdrive|drive|"drive and docs"|calendar|gplus|google+|googleplus
 
 gam create datatransfer|transfer <OldOwnerID> <DataTransferService> <NewOwnerID> (<ParameterKey> <ParameterValue>)*
 gam info datatransfer|transfer <TransferID>
@@ -1009,7 +1009,7 @@ gam create verify|verification <DomainName>
 gam update verify|verification <DomainName> cname|txt|text|site|file
 gam info verify|verification
 
-gam create course id|alias <CourseAlias> <CourseAttributes>*
+gam create course [id|alias <CourseAlias>] <CourseAttributes>*
 gam update course <CourseID> <CourseAttributes>+
 gam delete course <CourseID>
 gam info course <CourseID>
