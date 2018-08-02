@@ -4579,6 +4579,8 @@ def downloadDriveFile(users):
   exportFormatChoices = [exportFormatName]
   exportFormats = DOCUMENT_FORMATS_MAP[exportFormatName]
   targetFolder = GC_Values[GC_DRIVE_DIR]
+  targetName = None
+  overwrite = showProgress = False
   safe_filename_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace(u'_', u'')
@@ -4608,6 +4610,15 @@ def downloadDriveFile(users):
       if not os.path.isdir(targetFolder):
         os.makedirs(targetFolder)
       i += 2
+    elif myarg == u'targetname':
+      targetName = sys.argv[i+1]
+      i += 2
+    elif myarg == u'overwrite':
+      overwrite = True
+      i += 1
+    elif myarg == u'showprogress':
+      showProgress = True
+      i += 1
     else:
       systemErrorExit(2, '%s is not a valid argument for "gam <users> get drivefile"' % sys.argv[i])
   if not fileIdSelection[u'query'] and not fileIdSelection[u'fileIds']:
@@ -4628,58 +4639,80 @@ def downloadDriveFile(users):
       print u'No files to download for %s' % user
     i = 0
     for fileId in fileIdSelection[u'fileIds']:
-      extension = None
-      result = callGAPI(drive.files(), u'get', fileId=fileId,
-                        fields=u'fileSize,title,mimeType,downloadUrl,exportLinks',
-                        supportsTeamDrives=True)
-      if result[u'mimeType'] == MIMETYPE_GA_FOLDER:
+      fileExtension = None
+      result = callGAPI(drive.files(), u'get',
+                        fileId=fileId, fields=u'fileExtension,fileSize,mimeType,title', supportsTeamDrives=True)
+      fileExtension = result.get(u'fileExtension')
+      mimeType = result[u'mimeType']
+      if mimeType == MIMETYPE_GA_FOLDER:
         print utils.convertUTF8(u'Skipping download of folder %s' % result[u'title'])
         continue
-      try:
-        result[u'fileSize'] = int(result[u'fileSize'])
-        if result[u'fileSize'] < 1024:
-          filesize = u'1kb'
-        elif result[u'fileSize'] < (1024 * 1024):
-          filesize = u'%skb' % (result[u'fileSize'] / 1024)
-        elif result[u'fileSize'] < (1024 * 1024 * 1024):
-          filesize = u'%smb' % (result[u'fileSize'] / 1024 / 1024)
-        else:
-          filesize = u'%sgb' % (result[u'fileSize'] / 1024 / 1024 / 1024)
-        my_line = u'Downloading: %%s of %s bytes' % filesize
-      except KeyError:
-        my_line = u'Downloading Google Doc: %s'
-      if u'downloadUrl' in result:
-        download_url = result[u'downloadUrl']
-      elif u'exportLinks' in result:
-        for exportFormat in exportFormats:
-          if exportFormat[u'mime'] in result[u'exportLinks']:
-            download_url = result[u'exportLinks'][exportFormat[u'mime']]
-            extension = exportFormat[u'ext']
-            break
-        else:
-          print utils.convertUTF8(u'Skipping download of file {0}, Format {1} not available'.format(result[u'title'], u','.join(exportFormatChoices)))
-          continue
-      else:
-        print utils.convertUTF8(u'Skipping download of file {0}, Format not downloadable')
+      if mimeType in NON_DOWNLOADABLE_MIMETYPES:
+        print utils.convertUTF8(u'Format of file %s not downloadable' % result[u'title'])
         continue
-      file_title = result[u'title']
-      safe_file_title = u''.join(c for c in file_title if c in safe_filename_chars)
-      if len(safe_file_title) < 1:
-        safe_file_title = fileId
-      filename = os.path.join(targetFolder, safe_file_title)
-      y = 0
-      while True:
-        if extension and filename.lower()[-len(extension):] != extension:
-          filename += extension
-        if not os.path.isfile(filename):
+      validExtensions = GOOGLEDOC_VALID_EXTENSIONS_MAP.get(mimeType)
+      if validExtensions:
+        my_line = u'Downloading Google Doc: %s'
+        googleDoc = True
+      else:
+        if u'fileSize' in result:
+          my_line = u'Downloading: %%s of %s bytes' % utils.formatFileSize(int(result[u'fileSize']))
+        else:
+          my_line = u'Downloading: %s of unknown size'
+        googleDoc = False
+      my_line += u' to %s'
+      fileDownloaded = fileDownloadFailed = False
+      for exportFormat in exportFormats:
+        extension = fileExtension or exportFormat[u'ext']
+        if googleDoc and (extension not in validExtensions):
+          continue
+        if targetName:
+          safe_file_title = targetName
+        else:
+          safe_file_title = u''.join(c for c in result[u'title'] if c in safe_filename_chars)
+          if len(safe_file_title) < 1:
+            safe_file_title = fileId
+        filename = os.path.join(targetFolder, safe_file_title)
+        y = 0
+        while True:
+          if filename.lower()[-len(extension):] != extension.lower():
+            filename += extension
+          if overwrite or not os.path.isfile(filename):
+            break
+          y += 1
+          filename = os.path.join(targetFolder, u'({0})-{1}'.format(y, safe_file_title))
+        print utils.convertUTF8(my_line % (result[u'title'], filename))
+        if googleDoc:
+          request = drive.files().export_media(fileId=fileId, mimeType=exportFormat[u'mime'])
+          if revisionId:
+            request.uri = u'{0}&revision={1}'.format(request.uri, revisionId)
+        else:
+          request = drive.files().get_media(fileId=fileId)
+        fh = None
+        try:
+          fh = open(filename, u'wb')
+          downloader = googleapiclient.http.MediaIoBaseDownload(fh, request)
+          done = False
+          while not done:
+            status, done = downloader.next_chunk()
+            if showProgress:
+              print u'Downloaded: {0:>7.2%}'.format(status.progress())
+          closeFile(fh)
+          fileDownloaded = True
           break
-        y += 1
-        filename = os.path.join(targetFolder, u'({0})-{1}'.format(y, safe_file_title))
-      print utils.convertUTF8(my_line % filename)
-      if revisionId:
-        download_url = u'{0}&revision={1}'.format(download_url, revisionId)
-      _, content = drive._http.request(download_url)
-      writeFile(filename, content, continueOnError=True)
+        except (IOError, httplib2.HttpLib2Error) as e:
+          stderrErrorMsg(str(e))
+          GM_Globals[GM_SYSEXITRC] = 6
+          fileDownloadFailed = True
+          break
+        except googleapiclient.http.HttpError:
+          sys.stderr.write(u'Format ({0}) not available\n'.format(extension[1:]))
+        if fh:
+          closeFile(fh)
+          os.remove(filename)
+      if not fileDownloaded and not fileDownloadFailed:
+        stderrErrorMsg(u'Format ({0}) not available'.format(u','.join(exportFormatChoices)))
+        GM_Globals[GM_SYSEXITRC] = 51
 
 def showDriveFileInfo(users):
   fieldsList = []
