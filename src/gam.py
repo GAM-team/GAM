@@ -2493,11 +2493,9 @@ def doPrintCourses():
   skipFieldsList = []
   titles = [u'id',]
   csvRows = []
-  teacherId = None
-  studentId = None
+  ownerEmails = studentId = teacherId = None
   courseStates = []
-  showAliases = False
-  countsOnly = False
+  countsOnly = showAliases = False
   delimiter = u' '
   showMembers = u''
   i = 3
@@ -2537,13 +2535,24 @@ def doPrintCourses():
     elif myarg == u'skipfields':
       _processFieldsList(myarg, i, skipFieldsList)
       i += 2
+    elif myarg == u'owneremail':
+      ownerEmails = {}
+      cd = buildGAPIObject(u'directory')
+      i += 1
     else:
       systemErrorExit(2, '%s is not a valid argument for "gam print courses"' % sys.argv[i])
+  if ownerEmails is not None and fieldsList:
+    fieldsList.append(u'ownerId')
   fields = u'nextPageToken,courses({0})'.format(u','.join(set(fieldsList))) if fieldsList else None
   printGettingAllItems(u'Courses', None)
   page_message = u'Got %%num_items%% Courses...\n'
   all_courses = callGAPIpages(croom.courses(), u'list', u'courses', page_message=page_message, teacherId=teacherId, studentId=studentId, courseStates=courseStates, fields=fields)
   for course in all_courses:
+    if ownerEmails is not None:
+      ownerId = course[u'ownerId']
+      if ownerId not in ownerEmails:
+        ownerEmails[ownerId] = convertUIDtoEmailAddress(u'uid:%s' % ownerId, cd=cd)
+      course[u'ownerEmail'] = ownerEmails[ownerId]
     for field in skipFieldsList:
       course.pop(field, None)
     addRowTitlesToCSVfile(flatten_json(course), csvRows, titles)
