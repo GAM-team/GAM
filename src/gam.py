@@ -7537,47 +7537,26 @@ def doCreateVaultExport():
       body[u'query'][u'terms'] = sys.argv[i+1]
       i += 2
     elif myarg in [u'start']:
-      body[u'query'][u'startTime'] = sys.argv[i+1]
+      body[u'query'][u'startTime'] = getDateZeroTimeOrFullTime(sys.argv[i+1])
       i += 2
     elif myarg in [u'end']:
-      body[u'query'][u'endTime'] = sys.argv[i+1]
+      body[u'query'][u'endTime'] = getDateZeroTimeOrFullTime(sys.argv[i+1])
       i += 2
     elif myarg in [u'timezone']:
       body[u'query'][u'timeZone'] = sys.argv[i+1]
       i += 2
     elif myarg in [u'excludedrafts']:
-      if sys.argv[i+1].lower() in true_values:
-        excludeDrafts = True
-      elif sys.argv[i+1].lower() in false_values:
-        excludeDrafts = False
-      else:
-        print u'ERROR: exclude_drafts should be true or false, got %s' % sys.argv[i+1]
-        sys.exit(3)
-      body[u'query'][u'mailOptions'] = {u'excludeDrafts': excludeDrafts}
-      i += 1
+      body[u'query'][u'mailOptions'] = {u'excludeDrafts': getBoolean(sys.argv[i+1], myarg)}
+      i += 2
     elif myarg in [u'driveversiondate']:
       body[u'query'].setdefault(u'driveOptions', {})[u'versionDate'] = sys.argv[i+1]
       i += 2
     elif myarg in [u'includeteamdrives']:
-      if sys.argv[i+1].lower() in true_values:
-        includeTeamDrives = True
-      elif sys.argv[i+1].lower() in false_values:
-        includeTeamDrives = False
-      else:
-        print u'ERROR: include_team_drives should be true or false, got %s' % sys.argv[i+1]
-        sys.exit(3)
-      body[u'query'].setdefault(u'driveOptions', {})[u'includeTeamDrives'] = includeTeamDrives
+      body[u'query'].setdefault(u'driveOptions', {})[u'includeTeamDrives'] = getBoolean(sys.argv[i+1], myarg)
       i += 2
     elif myarg in [u'includerooms']:
-      if sys.argv[i+1].lower() in true_values:
-        includeRooms = True
-      elif sys.argv[i+1].lower() in false_values:
-        includeRooms = False
-      else:
-        print u'ERROR: include_rooms should be true or false, got %s' % sys.argv[i+1]
-        sys.exit(3)
-      body[u'query'][u'hangoutsChatOptions'] = {u'includeRooms': includeRooms}
-      i += 1
+      body[u'query'][u'hangoutsChatOptions'] = {u'includeRooms': getBoolean(sys.argv[i+1], myarg)}
+      i += 2
     elif myarg in [u'format']:
       export_format = sys.argv[i+1].upper()
       if export_format not in allowed_formats:
@@ -7585,14 +7564,7 @@ def doCreateVaultExport():
         sys.exit(3)
       i += 2
     elif myarg in [u'includeaccessinfo']:
-      if sys.argv[i+1].lower() in true_values:
-        includeAccessInfo = True
-      elif sys.argv[i+1].lower() in false_values:
-        includeAccessInfo = False
-      else:
-        print u'ERROR: include_access_info should be true or false, got %s' % sys.argv[i+1]
-        sys.exit(3)
-      body[u'exportOptions'].setdefault(u'driveOptions', {})[u'includeAccessInfo'] = includeAccessInfo
+      body[u'exportOptions'].setdefault(u'driveOptions', {})[u'includeAccessInfo'] = getBoolean(sys.argv[i+1], myarg)
       i += 2
     else:
       print u'ERROR %s is not a valid argument for "gam create export".' % sys.argv[i]
