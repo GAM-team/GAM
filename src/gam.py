@@ -7497,7 +7497,7 @@ def doCreateVaultExport():
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace(u'_', u'')
     if myarg == u'matter':
-      matterId = sys.argv[i+1]
+      matterId = getMatterItem(v, sys.argv[i+1])
       body[u'matterId'] = matterId
       i += 2
     elif myarg == u'name':
@@ -7591,7 +7591,7 @@ def doCreateVaultExport():
 
 def doGetVaultExport():
   v = buildGAPIObject(u'vault')
-  matterId = sys.argv[3]
+  matterId = getMatterItem(v, sys.argv[3])
   exportId = sys.argv[4]
   export = callGAPI(v.matters().exports(), u'get', matterId=matterId, exportId=exportId)
   print_json(None, export)
@@ -7601,7 +7601,7 @@ def doDownloadVaultExport():
   extractFiles = True
   v = buildGAPIObject(u'vault')
   s = buildGAPIObject(u'storage')
-  matterId = sys.argv[3]
+  matterId = getMatterItem(v, sys.argv[3])
   exportId = sys.argv[4]
   targetFolder = GC_Values[GC_DRIVE_DIR]
   export = callGAPI(v.matters().exports(), u'get', matterId=matterId, exportId=exportId)
@@ -7691,9 +7691,7 @@ def doCreateVaultHold():
       end_time = getDateZeroTimeOrFullTime(sys.argv[i+1])
       i += 2
     elif myarg == u'matter':
-      matterId = convertMatterNameToID(v, sys.argv[i+1])
-      if not matterId:
-        systemErrorExit(4, 'could not find matter %s' % sys.argv[i+1])
+      matterId = getMatterItem(v, sys.argv[i+1])
       i += 2
     else:
       systemErrorExit(3, '%s is not a valid argument to "gam create hold"' % sys.argv[i])
@@ -7734,9 +7732,7 @@ def doDeleteVaultHold():
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace(u'_', u'')
     if myarg == u'matter':
-      matterId = convertMatterNameToID(v, sys.argv[i+1])
-      if not matterId:
-        systemErrorExit(4, 'could not find matter %s' % sys.argv[i+1])
+      matterId = getMatterItem(v, sys.argv[i+1])
       holdId = convertHoldNameToID(v, hold, matterId)
       if not holdId:
         systemErrorExit(4, 'could not find hold %s in matter %s' % (sys.argv[3], matterId))
@@ -7756,9 +7752,7 @@ def doGetVaultHoldInfo():
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace(u'_', u'')
     if myarg == u'matter':
-      matterId = convertMatterNameToID(v, sys.argv[i+1])
-      if not matterId:
-        systemErrorExit(4, 'could not find matter %s' % sys.argv[i+1])
+      matterId = getMatterItem(v, sys.argv[i+1])
       holdId = convertHoldNameToID(v, hold, matterId)
       if not holdId:
         systemErrorExit(4, 'could not find hold %s in matter %s' % (hold, matterId))
@@ -7799,6 +7793,12 @@ def convertMatterNameToID(v, nameOrID):
       return matter[u'matterId']
   return None
 
+def getMatterItem(v, nameOrID):
+  matterId = convertMatterNameToID(v, nameOrID)
+  if not matterId:
+    systemErrorExit(4, 'could not find matter %s' % nameOrID)
+  return matterId
+
 def doUpdateVaultHold():
   v = buildGAPIObject(u'vault')
   hold = sys.argv[3]
@@ -7813,9 +7813,7 @@ def doUpdateVaultHold():
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace(u'_', u'')
     if myarg == u'matter':
-      matterId = convertMatterNameToID(v, sys.argv[i+1])
-      if not matterId:
-        systemErrorExit(4, 'could not find matter %s' % sys.argv[i+1])
+      matterId = getMatterItem(v, sys.argv[i+1])
       holdId = convertHoldNameToID(v, hold, matterId)
       if not holdId:
         systemErrorExit(4, 'could not find hold %s in matter %s' % (hold, matterId))
@@ -7880,9 +7878,7 @@ def doUpdateVaultHold():
 
 def doUpdateVaultMatter(action=None):
   v = buildGAPIObject(u'vault')
-  matterId = convertMatterNameToID(v, sys.argv[3])
-  if not matterId:
-    systemErrorExit(4, 'failed to lookup matter named %s' % sys.argv[3])
+  matterId = getMatterItem(v, sys.argv[3])
   body = {}
   action_kwargs = {u'body': {}}
   add_collaborators = []
@@ -7936,7 +7932,7 @@ def doUpdateVaultMatter(action=None):
 
 def doGetVaultMatterInfo():
   v = buildGAPIObject(u'vault')
-  matterId = convertMatterNameToID(v, sys.argv[3])
+  matterId = getMatterItem(v, sys.argv[3])
   result = callGAPI(v.matters(), u'get', matterId=matterId, view=u'FULL')
   if u'matterPermissions' in result:
     cd = buildGAPIObject(u'directory')
