@@ -5436,8 +5436,8 @@ def checkLabelColor(body):
   if u'backgroundColor' in body[u'color']:
     if u'textColor' in body[u'color']:
       return
-    systemErrorExit(2, 'textcolor <LabelColorHex> is required.' % myarg)
-  systemErrorExit(2, 'backgroundcolor <LabelColorHex> is required.' % myarg)
+    systemErrorExit(2, 'textcolor <LabelColorHex> is required.')
+  systemErrorExit(2, 'backgroundcolor <LabelColorHex> is required.')
 
 def doLabel(users, i):
   label = sys.argv[i]
@@ -7526,27 +7526,28 @@ def doDownloadVaultExport():
   s = buildGAPIObject(u'storage')
   matterId = sys.argv[3]
   exportId = sys.argv[4]
+  targetFolder = GC_Values[GC_DRIVE_DIR]
   export = callGAPI(v.matters().exports(), u'get', matterId=matterId, exportId=exportId)
-  for file in export[u'cloudStorageSink']['files']:
-    bucket = file['bucketName']
-    object = file['objectName']
-    filename = object.replace(u'/', u'-')
+  for s_file in export[u'cloudStorageSink']['files']:
+    bucket = s_file['bucketName']
+    s_object = s_file['objectName']
+    filename = os.path.join(targetFolder, s_object.replace(u'/', u'-'))
     print u'saving to %s' % filename
-    request = s.objects().get_media(bucket=bucket, object=object)
+    request = s.objects().get_media(bucket=bucket, object=s_object)
     f = open(filename, 'wb')
     downloader = googleapiclient.http.MediaIoBaseDownload(f, request)
     done = False
     while not done:
       status, done = downloader.next_chunk()
-      sys.stdout.write(" %d%%" % int(status.progress() * 100))
+      sys.stdout.write(u' Downloaded: {0:>7.2%}\r'.format(status.progress()))
       sys.stdout.flush()
-    print u'\n Download complete, flushing to disk...'
+    sys.stdout.write(u'\n Download complete, flushing to disk...\n')
     f.flush()
     os.fsync(f.fileno())
     f.close()
     f = open(filename, 'rb')
     if verifyFiles:
-      expected_hash = file['md5Hash']
+      expected_hash = s_file['md5Hash']
       sys.stdout.write(u' Verifying file hash is %s...' % expected_hash)
       sys.stdout.flush()
       hash_md5 = hashlib.md5()
@@ -7560,7 +7561,7 @@ def doDownloadVaultExport():
         sys.exit(6)
     f.close()
     if extractFiles and re.search(r'\.zip$', filename):
-      extract_nested_zip(filename, u'/home/jay/GAM/src/')
+      extract_nested_zip(filename, targetFolder)
 
 def extract_nested_zip(zippedFile, toFolder, spacing=u' '):
   """ Extract a zip file including any nested zip files
