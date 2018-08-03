@@ -7539,9 +7539,9 @@ def doDownloadVaultExport():
     done = False
     while not done:
       status, done = downloader.next_chunk()
-      sys.stdout.write(" %d%%" % int(status.progress() * 100))
+      sys.stdout.write(u' Downloaded: {0:>7.2%}\r'.format(status.progress()))
       sys.stdout.flush()
-    print u'\n Download complete, flushing to disk...'
+    sys.stdout.write(u'\n Download complete, flushing to disk...\n')
     f.flush()
     os.fsync(f.fileno())
     f.close()
