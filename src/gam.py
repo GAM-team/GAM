@@ -7611,18 +7611,18 @@ def doDownloadVaultExport():
     filename = os.path.join(targetFolder, s_object.replace(u'/', u'-'))
     print u'saving to %s' % filename
     request = s.objects().get_media(bucket=bucket, object=s_object)
-    f = open(filename, 'wb')
+    f = openFile(filename, 'wb')
     downloader = googleapiclient.http.MediaIoBaseDownload(f, request)
     done = False
     while not done:
       status, done = downloader.next_chunk()
       sys.stdout.write(u' Downloaded: {0:>7.2%}\r'.format(status.progress()))
       sys.stdout.flush()
-    sys.stdout.write(u'\n Download complete, flushing to disk...\n')
+    sys.stdout.write(u'\n Download complete\n')
     f.flush()
     os.fsync(f.fileno())
-    f.close()
-    f = open(filename, 'rb')
+    closeFile(f)
+    f = openFile(filename, 'rb')
     if verifyFiles:
       expected_hash = s_file['md5Hash']
       sys.stdout.write(u' Verifying file hash is %s...' % expected_hash)
@@ -7636,7 +7636,7 @@ def doDownloadVaultExport():
       else:
         print u'ERROR: actual hash was %s. Exiting on corrupt file.' % actual_hash
         sys.exit(6)
-    f.close()
+    closeFile(f)
     if extractFiles and re.search(r'\.zip$', filename):
       extract_nested_zip(filename, targetFolder)
 
