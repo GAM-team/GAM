@@ -7471,8 +7471,10 @@ def doCreateVaultExport():
     allowed_scopes.remove(u'DATA_SCOPE_UNSPECIFIED')
   except ValueError:
     pass
+  allowed_formats = [u'MBOX', u'PST']
+  export_format = u'MBOX'
   matterId = None
-  body = {u'query': {}}
+  body = {u'query': {u'dataScope': u'ALL_DATA'}, u'exportOptions': {}}
   i = 3
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace(u'_', u'')
@@ -7493,6 +7495,109 @@ def doCreateVaultExport():
       if body[u'query']['dataScope'] not in allowed_scopes:
         systemErrorExit(3, 'scope must be one of %s. Got %s' % (u', '.join(allowed_scopes), sys.argv[i+1]))
       i += 2
+    elif myarg in [u'account', u'accounts']:
+      body[u'query'][u'searchMethod'] = u'ACCOUNT'
+      body[u'query'][u'accountInfo'] = {u'emails': sys.argv[i+1].split(u',')}
+      i += 2
+    elif myarg in [u'ou', u'orgunit']:
+      body[u'query'][u'searchMethod'] = u'ORG_UNIT'
+      orgUnitId = getOrgUnitId(sys.argv[i+1])[1]
+      body[u'query'][u'orgUnitInfo'] = {u'orgUnitId': orgUnitId}
+      i += 2
+    elif myarg in [u'teamdrive', u'teamdrives']:
+      body[u'query'][u'searchMethod'] = u'TEAM_DRIVE'
+      body[u'query'][u'teamDriveInfo'] = {u'teamDriveIds': sys.argv[i+1].split(u',')}
+      i += 2
+    elif myarg in [u'room', u'rooms']:
+      body[u'query'][u'searchMethod'] = u'ROOM'
+      body[u'query'][u'hangoutsChatInfo'] = {u'roomId': sys.argv[i+1].split(u',')}
+      i += 2
+    elif myarg in [u'everyone']:
+      body[u'query'][u'searchMethod'] = u'ENTIRE_ORG'
+      i += 2
+    elif myarg in [u'terms']:
+      body[u'query'][u'terms'] = sys.argv[i+1]
+      i += 2
+    elif myarg in [u'start']:
+      body[u'query'][u'startTime'] = sys.argv[i+1]
+      i += 2
+    elif myarg in [u'end']:
+      body[u'query'][u'endTime'] = sys.argv[i+1]
+      i += 2
+    elif myarg in [u'timezone']:
+      body[u'query'][u'timeZone'] = sys.argv[i+1]
+      i += 2
+    elif myarg in [u'excludedrafts']:
+      if sys.argv[i+1].lower() in true_values:
+        excludeDrafts = True
+      elif sys.argv[i+1].lower() in false_values:
+        excludeDrafts = False
+      else:
+        print u'ERROR: exclude_drafts should be true or false, got %s' % sys.argv[i+1]
+        sys.exit(3)
+      body[u'query'][u'mailOptions'] = {u'excludeDrafts': excludeDrafts}
+      i += 1
+    elif myarg in [u'driveversiondate']:
+      body[u'query'].setdefault(u'driveOptions', {})[u'versionDate'] = sys.argv[i+1]
+      i += 2
+    elif myarg in [u'includeteamdrives']:
+      if sys.argv[i+1].lower() in true_values:
+        includeTeamDrives = True
+      elif sys.argv[i+1].lower() in false_values:
+        includeTeamDrives = False
+      else:
+        print u'ERROR: include_team_drives should be true or false, got %s' % sys.argv[i+1]
+        sys.exit(3)
+      body[u'query'].setdefault(u'driveOptions', {})[u'includeTeamDrives'] = includeTeamDrives
+      i += 2
+    elif myarg in [u'includerooms']:
+      if sys.argv[i+1].lower() in true_values:
+        includeRooms = True
+      elif sys.argv[i+1].lower() in false_values:
+        includeRooms = False
+      else:
+        print u'ERROR: include_rooms should be true or false, got %s' % sys.argv[i+1]
+        sys.exit(3)
+      body[u'query'][u'hangoutsChatOptions'] = {u'includeRooms': includeRooms}
+      i += 1
+    elif myarg in [u'format']:
+      export_format = sys.argv[i+1].upper()
+      if export_format not in allowed_formats:
+        print u'ERROR: export format can be one of %s, got %s' % (u', '.join(allowed_formats), export_format)
+        sys.exit(3)
+      i += 2
+    elif myarg in [u'includeaccessinfo']:
+      if sys.argv[i+1].lower() in true_values:
+        includeAccessInfo = True
+      elif sys.argv[i+1].lower() in false_values:
+        includeAccessInfo = False
+      else:
+        print u'ERROR: include_access_info should be true or false, got %s' % sys.argv[i+1]
+        sys.exit(3)
+      body[u'exportOptions'].setdefault(u'driveOptions', {})[u'includeAccessInfo'] = includeAccessInfo
+      i += 2
+    else:
+      print u'ERROR %s is not a valid argument for "gam create export".' % sys.argv[i]
+      sys.exit(3)
+  if not matterId:
+    print u'ERROR: you must specify a matterId.'
+    sys.exit(3)
+  if u'corpus' not in body[u'query']:
+    print u'ERROR: you must specify a corpus type. Choose one of %s' % u', '.join(allowed_corpuses)
+    sys.exit(3)
+  if u'name' not in body:
+    body[u'name'] = u'GAM %s export - %s' % (body[u'query'][u'corpus'], datetime.datetime.now())
+  options_field = None
+  if body[u'query'][u'corpus'] == u'MAIL':
+    options_field = u'mailOptions'
+  elif body[u'query'][u'corpus'] == u'GROUPS':
+    options_field = u'groupsOptions'
+  elif body[u'query'][u'corpus'] == u'HANGOUTS_CHAT':
+    options_field = u'hangoutsChatOptions'
+  if options_field:
+    body[u'exportOptions'][options_field] = {u'exportFormat': export_format}
+  results = callGAPI(v.matters().exports(), u'create', matterId=matterId, body=body)
+  print_json(None, results)
 
 def doGetVaultExport():
   v = buildGAPIObject(u'vault')
@@ -12683,7 +12788,8 @@ def ProcessGAMCommand(args):
         systemErrorExit(2, '%s is not a valid argument for "gam course"' % argument)
       sys.exit(0)
     elif command == u'download':
-      if argument in [u'exports', u'vaultexports']:
+      argument = sys.argv[2].lower()
+      if argument in [u'export', u'vaultexport']:
         doDownloadVaultExport()
       else:
         systemErrorExit(2, '%s is not a valid argument for "gam download"' % argument)
