@@ -40,6 +40,15 @@ If an item contains spaces, it should be surrounded by ".
 	tan|teal|thistle|tomato|turquoise|violet|wheat|white|whitesmoke|yellow|yellowgreen
 <FileFormat> ::=
 	csv|html|txt|tsv|jpeg|jpg|png|svg|pdf|rtf|pptx|xlsx|docx|odt|ods|openoffice|ms|microsoft|micro$oft
+<LabelColorHex> ::=
+        #000000|#076239|#0b804b|#149e60|#16a766|#1a764d|#1c4587|#285bac|
+        #2a9c68|#3c78d8|#3dc789|#41236d|#434343|#43d692|#44b984|#4a86e8|
+        #653e9b|#666666|#68dfa9|#6d9eeb|#822111|#83334c|#89d3b2|#8e63ce|
+        #999999|#a0eac9|#a46a21|#a479e2|#a4c2f4|#aa8831|#ac2b16|#b65775|
+        #b694e8|#b9e4d0|#c6f3de|#c9daf8|#cc3a21|#cccccc|#cf8933|#d0bcf1|
+        #d5ae49|#e07798|#e4d7f5|#e66550|#eaa041|#efa093|#efefef|#f2c960|
+        #f3f3f3|#f691b3|#f6c5be|#f7a7c0|#fad165|#fb4c2f|#fbc8d9|#fcda83|
+        #fcdee8|#fce8b3|#fef1d1|#ffad47|#ffbc6b|#ffd6a2|#ffe6c7|#ffffff
 <Language> ::=
 	ach|af|ag|ak|am|ar|az|be|bem|bg|bn|br|bs|ca|chr|ckb|co|crs|cs|cy|da|de|ee|el|en|en-gb|en-us|eo|es|es-419|et|eu|
 	fa|fi|fo|fr|fr-ca|fy|ga|gaa|gd|gl|gn|gu|ha|haw|he|hi|hr|ht|hu|hy|ia|id|ig|in|is|it|iw|ja|jw|
@@ -1146,7 +1155,9 @@ gam <UserTypeEntity> update user <UserAttributes>
 gam <UserTypeEntity> deprovision|deprov
 
 gam <UserTypeEntity> [create|add] label|labels <Name> [messagelistvisibility hide|show] [labellistvisibility hide|show|showifunread]
+	[backgroundcolor <LabelColorHex>] [textcolor <LabelColorHex>]
 gam <UserTypeEntity> update labelsettings <LabelName> [name <Name>] [messagelistvisibility hide|show] [labellistvisibility hide|show|showifunread]
+	[backgroundcolor <LabelColorHex>] [textcolor <LabelColorHex>]
 gam <UserTypeEntity> update label|labels [search <RegularExpression>] [replace <LabelReplacement>] [merge]
 gam <UserTypeEntity> delete|del label|labels <LabelName>|regex:<RegularExpression>|--ALL_LABELS--
 gam <UserTypeEntity> show labels|label [onlyuser] [showcounts]

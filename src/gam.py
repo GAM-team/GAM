@@ -206,6 +206,16 @@ def getColor(color):
     return tg.group(0)
   systemErrorExit(2, u'A color must be a valid name or # and six hex characters (#012345); got {0}'.format(color))
 
+def getLabelColor(color):
+  color = color.lower().strip()
+  tg = COLORHEX_PATTERN.match(color)
+  if tg:
+    color = tg.group(0)
+    if color in LABEL_COLORS:
+      return color
+    systemErrorExit(2, u'A label color must be in the list: {0}; got {1}'.format(u'|'.join(LABEL_COLORS), color))
+  systemErrorExit(2, u'A label color must be # and six hex characters (#012345); got {0}'.format(color))
+
 def integerLimits(minVal, maxVal, item=u'integer'):
   if (minVal is not None) and (maxVal is not None):
     return u'{0} {1}<=x<={2}'.format(item, minVal, maxVal)
@@ -5390,30 +5400,53 @@ def addSmime(users):
       callGAPI(gmail.users().settings().sendAs().smimeInfo(), u'setDefault', userId=u'me', sendAsEmail=sendAsEmail, id=result[u'id'])
     print u'Added S/MIME certificate for user %s sendas %s issued by %s' % (user, sendAsEmail, result[u'issuerCn'])
 
+def getLabelAttributes(i, myarg, body):
+  if myarg == u'labellistvisibility':
+    value = sys.argv[i+1].lower().replace(u'_', u'')
+    if value == u'hide':
+      body[u'labelListVisibility'] = u'labelHide'
+    elif value == u'show':
+      body[u'labelListVisibility'] = u'labelShow'
+    elif value == u'showifunread':
+      body[u'labelListVisibility'] = u'labelShowIfUnread'
+    else:
+      systemErrorExit(2, 'label_list_visibility must be one of hide, show, show_if_unread; got %s' % value)
+    i += 2
+  elif myarg == u'messagelistvisibility':
+    value = sys.argv[i+1].lower().replace(u'_', u'')
+    if value not in [u'hide', u'show']:
+      systemErrorExit(2, 'message_list_visibility must be show or hide; got %s' % value)
+    body[u'messageListVisibility'] = value
+    i += 2
+  elif myarg == u'backgroundcolor':
+    body.setdefault(u'color', {})
+    body[u'color']['backgroundColor'] = getLabelColor(sys.argv[i+1])
+    i += 2
+  elif myarg == u'textcolor':
+    body.setdefault(u'color', {})
+    body[u'color']['textColor'] = getLabelColor(sys.argv[i+1])
+    i += 2
+  else:
+    systemErrorExit(2, '%s is not a valid argument for this command.' % myarg)
+  return i
+
+def checkLabelColor(body):
+  if u'color' not in body:
+    return
+  if u'backgroundColor' in body[u'color']:
+    if u'textColor' in body[u'color']:
+      return
+    systemErrorExit(2, 'textcolor <LabelColorHex> is required.' % myarg)
+  systemErrorExit(2, 'backgroundcolor <LabelColorHex> is required.' % myarg)
+
 def doLabel(users, i):
   label = sys.argv[i]
   i += 1
   body = {u'name': label}
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace(u'_', u'')
-    if myarg == u'labellistvisibility':
-      value = sys.argv[i+1].lower().replace(u'_', u'')
-      if value == u'hide':
-        body[u'labelListVisibility'] = u'labelHide'
-      elif value == u'show':
-        body[u'labelListVisibility'] = u'labelShow'
-      elif value == u'showifunread':
-        body[u'labelListVisibility'] = u'labelShowIfUnread'
-      else:
-        systemErrorExit(2, 'label_list_visibility must be one of hide, show, show_if_unread; got %s' % sys.argv[i+1])
-      i += 2
-    elif myarg == u'messagelistvisibility':
-      body[u'messageListVisibility'] = sys.argv[i+1].lower().replace(u'_', u'')
-      if body[u'messageListVisibility'] not in [u'hide', u'show']:
-        systemErrorExit(2, 'message_list_visibility must be show or hide; got %s' % sys.argv[i+1])
-      i += 2
-    else:
-      systemErrorExit(2, '%s is not a valid argument for this command.' % sys.argv[i])
+    i = getLabelAttributes(i, myarg, body)
+  checkLabelColor(body)
   i = 0
   count = len(users)
   for user in users:
@@ -5712,24 +5745,9 @@ def updateLabels(users):
     if myarg == u'name':
       body[u'name'] = sys.argv[i+1]
       i += 2
-    elif myarg == u'labellistvisibility':
-      value = sys.argv[i+1].lower().replace(u'_', u'')
-      if value == u'hide':
-        body[u'labelListVisibility'] = u'labelHide'
-      elif value == u'show':
-        body[u'labelListVisibility'] = u'labelShow'
-      elif value == u'showifunread':
-        body[u'labelListVisibility'] = u'labelShowIfUnread'
-      else:
-        systemErrorExit(2, 'label_list_visibility must be hide, show, show_if_unread; got %s' % sys.argv[i+1])
-      i += 2
-    elif myarg == u'messagelistvisibility':
-      body[u'messageListVisibility'] = sys.argv[i+1].lower().replace(u'_', u'')
-      if body[u'messageListVisibility'] not in [u'hide', u'show']:
-        systemErrorExit(2, 'message_list_visibility must be show or hide; got %s' % sys.argv[i+1])
-      i += 2
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam <users> update labels"' % sys.argv[i])
+      i = getLabelAttributes(i, myarg, body)
+  checkLabelColor(body)
   for user in users:
     user, gmail = buildGmailGAPIObject(user)
     if not gmail:
@@ -7500,7 +7518,7 @@ def doGetVaultExport():
   exportId = sys.argv[4]
   export = callGAPI(v.matters().exports(), u'get', matterId=matterId, exportId=exportId)
   print_json(None, export)
- 
+
 def doDownloadVaultExport():
   verifyFiles = True
   extractFiles = True
@@ -7545,18 +7563,18 @@ def doDownloadVaultExport():
       extract_nested_zip(filename, u'/home/jay/GAM/src/')
 
 def extract_nested_zip(zippedFile, toFolder, spacing=u' '):
-    """ Extract a zip file including any nested zip files
-        Delete the zip file(s) after extraction
-    """
-    print u'%sextracting %s' % (spacing, zippedFile)
-    with zipfile.ZipFile(zippedFile, 'r') as zfile:
-      inner_files = zfile.infolist()
-      for inner_file in inner_files:
-        print u'%s %s' % (spacing, inner_file.filename)
-        zfile.extract(inner_file)
-        if re.search(r'\.zip$', inner_file.filename):
-          extract_nested_zip(inner_file.filename, toFolder, spacing=spacing+u' ')
-    os.remove(zippedFile)
+  """ Extract a zip file including any nested zip files
+      Delete the zip file(s) after extraction
+  """
+  print u'%sextracting %s' % (spacing, zippedFile)
+  with zipfile.ZipFile(zippedFile, 'r') as zfile:
+    inner_files = zfile.infolist()
+    for inner_file in inner_files:
+      print u'%s %s' % (spacing, inner_file.filename)
+      zfile.extract(inner_file)
+      if re.search(r'\.zip$', inner_file.filename):
+        extract_nested_zip(inner_file.filename, toFolder, spacing=spacing+u' ')
+  os.remove(zippedFile)
 
 def doCreateVaultHold():
   v = buildGAPIObject(u'vault')

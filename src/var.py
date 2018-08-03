@@ -1020,6 +1020,19 @@ WEBCOLOR_MAP = {
     u'yellow': u'#ffff00',
     u'yellowgreen': u'#9acd32',
 }
+
+# Gmail label colors
+LABEL_COLORS = [
+  u'#000000', u'#076239', u'#0b804b', u'#149e60', u'#16a766', u'#1a764d', u'#1c4587', u'#285bac',
+  u'#2a9c68', u'#3c78d8', u'#3dc789', u'#41236d', u'#434343', u'#43d692', u'#44b984', u'#4a86e8',
+  u'#653e9b', u'#666666', u'#68dfa9', u'#6d9eeb', u'#822111', u'#83334c', u'#89d3b2', u'#8e63ce',
+  u'#999999', u'#a0eac9', u'#a46a21', u'#a479e2', u'#a4c2f4', u'#aa8831', u'#ac2b16', u'#b65775',
+  u'#b694e8', u'#b9e4d0', u'#c6f3de', u'#c9daf8', u'#cc3a21', u'#cccccc', u'#cf8933', u'#d0bcf1',
+  u'#d5ae49', u'#e07798', u'#e4d7f5', u'#e66550', u'#eaa041', u'#efa093', u'#efefef', u'#f2c960',
+  u'#f3f3f3', u'#f691b3', u'#f6c5be', u'#f7a7c0', u'#fad165', u'#fb4c2f', u'#fbc8d9', u'#fcda83',
+  u'#fcdee8', u'#fce8b3', u'#fef1d1', u'#ffad47', u'#ffbc6b', u'#ffd6a2', u'#ffe6c7', u'#ffffff',
+  ]
+
 # Valid language codes
 LANGUAGE_CODES_MAP = {
   u'ach': u'ach', u'af': u'af', u'ag': u'ga', u'ak': u'ak', u'am': u'am', u'ar': u'ar', u'az': u'az', #Luo, Afrikaans, Irish, Akan, Amharic, Arabica, Azerbaijani
