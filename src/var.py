@@ -110,6 +110,7 @@ API_VER_MAPPING = {
   u'reports': u'reports_v1',
   u'reseller': u'v1',
   u'siteVerification': u'v1',
+  u'storage': u'v1',
   u'urlshortener': u'v1',
   u'vault': u'v1',
   }
