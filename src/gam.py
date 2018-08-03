@@ -7592,7 +7592,7 @@ def doCreateVaultExport():
 def doGetVaultExport():
   v = buildGAPIObject(u'vault')
   matterId = getMatterItem(v, sys.argv[3])
-  exportId = sys.argv[4]
+  exportId = convertExportNameToID(v, sys.argv[4], matterId)
   export = callGAPI(v.matters().exports(), u'get', matterId=matterId, exportId=exportId)
   print_json(None, export)
 
@@ -7602,7 +7602,7 @@ def doDownloadVaultExport():
   v = buildGAPIObject(u'vault')
   s = buildGAPIObject(u'storage')
   matterId = getMatterItem(v, sys.argv[3])
-  exportId = sys.argv[4]
+  exportId = convertExportNameToID(v, sys.argv[4], matterId)
   targetFolder = GC_Values[GC_DRIVE_DIR]
   export = callGAPI(v.matters().exports(), u'get', matterId=matterId, exportId=exportId)
   for s_file in export[u'cloudStorageSink']['files']:
@@ -7734,8 +7734,6 @@ def doDeleteVaultHold():
     if myarg == u'matter':
       matterId = getMatterItem(v, sys.argv[i+1])
       holdId = convertHoldNameToID(v, hold, matterId)
-      if not holdId:
-        systemErrorExit(4, 'could not find hold %s in matter %s' % (sys.argv[3], matterId))
       i += 2
     else:
       systemErrorExit(3, '%s is not a valid argument to "gam delete hold"' % myarg)
@@ -7754,8 +7752,6 @@ def doGetVaultHoldInfo():
     if myarg == u'matter':
       matterId = getMatterItem(v, sys.argv[i+1])
       holdId = convertHoldNameToID(v, hold, matterId)
-      if not holdId:
-        systemErrorExit(4, 'could not find hold %s in matter %s' % (hold, matterId))
       i += 2
     else:
       systemErrorExit(3, '%s is not a valid argument for "gam info hold"' % myarg)
@@ -7773,6 +7769,16 @@ def doGetVaultHoldInfo():
     results[u'orgUnit'][u'orgUnitPath'] = doGetOrgInfo(results[u'orgUnit'][u'orgUnitId'], return_attrib=u'orgUnitPath')
   print_json(None, results)
 
+def convertExportNameToID(v, nameOrID, matterId):
+  nameOrID = nameOrID.lower()
+  if nameOrID[:4] == u'uid:':
+    return nameOrID[4:]
+  exports = callGAPIpages(v.matters().exports(), u'list', u'exports', matterId=matterId, fields=u'exports(id,name),nextPageToken')
+  for export in exports:
+    if export[u'name'].lower() == nameOrID:
+      return export[u'id']
+  systemErrorExit(4, 'could not find export name %s in matter %s' % (nameOrID, matterId))
+
 def convertHoldNameToID(v, nameOrID, matterId):
   nameOrID = nameOrID.lower()
   if nameOrID[:4] == u'uid:':
@@ -7781,7 +7787,7 @@ def convertHoldNameToID(v, nameOrID, matterId):
   for hold in holds:
     if hold[u'name'].lower() == nameOrID:
       return hold[u'holdId']
-  return None
+  systemErrorExit(4, 'could not find hold name %s in matter %s' % (nameOrID, matterId))
 
 def convertMatterNameToID(v, nameOrID):
   nameOrID = nameOrID.lower()
@@ -7815,8 +7821,6 @@ def doUpdateVaultHold():
     if myarg == u'matter':
       matterId = getMatterItem(v, sys.argv[i+1])
       holdId = convertHoldNameToID(v, hold, matterId)
-      if not holdId:
-        systemErrorExit(4, 'could not find hold %s in matter %s' % (hold, matterId))
       i += 2
     elif myarg == u'query':
       query = sys.argv[i+1]
