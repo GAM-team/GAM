@@ -5430,6 +5430,15 @@ def getLabelAttributes(i, myarg, body):
     systemErrorExit(2, '%s is not a valid argument for this command.' % myarg)
   return i
 
+def checkLabelColor(body):
+  if u'color' not in body:
+    return
+  if u'backgroundColor' in body[u'color']:
+    if u'textColor' in body[u'color']:
+      return
+    systemErrorExit(2, 'textcolor <LabelColorHex> is required.' % myarg)
+  systemErrorExit(2, 'backgroundcolor <LabelColorHex> is required.' % myarg)
+
 def doLabel(users, i):
   label = sys.argv[i]
   i += 1
@@ -5437,6 +5446,7 @@ def doLabel(users, i):
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace(u'_', u'')
     i = getLabelAttributes(i, myarg, body)
+  checkLabelColor(body)
   i = 0
   count = len(users)
   for user in users:
@@ -5737,6 +5747,7 @@ def updateLabels(users):
       i += 2
     else:
       i = getLabelAttributes(i, myarg, body)
+  checkLabelColor(body)
   for user in users:
     user, gmail = buildGmailGAPIObject(user)
     if not gmail:
