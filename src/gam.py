@@ -7497,7 +7497,7 @@ def doCreateVaultExport():
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace(u'_', u'')
     if myarg == u'matter':
-      matterId = sys.argv[i+1]
+      matterId = getMatterItem(v, sys.argv[i+1])
       body[u'matterId'] = matterId
       i += 2
     elif myarg == u'name':
@@ -7537,47 +7537,26 @@ def doCreateVaultExport():
       body[u'query'][u'terms'] = sys.argv[i+1]
       i += 2
     elif myarg in [u'start']:
-      body[u'query'][u'startTime'] = sys.argv[i+1]
+      body[u'query'][u'startTime'] = getDateZeroTimeOrFullTime(sys.argv[i+1])
       i += 2
     elif myarg in [u'end']:
-      body[u'query'][u'endTime'] = sys.argv[i+1]
+      body[u'query'][u'endTime'] = getDateZeroTimeOrFullTime(sys.argv[i+1])
       i += 2
     elif myarg in [u'timezone']:
       body[u'query'][u'timeZone'] = sys.argv[i+1]
       i += 2
     elif myarg in [u'excludedrafts']:
-      if sys.argv[i+1].lower() in true_values:
-        excludeDrafts = True
-      elif sys.argv[i+1].lower() in false_values:
-        excludeDrafts = False
-      else:
-        print u'ERROR: exclude_drafts should be true or false, got %s' % sys.argv[i+1]
-        sys.exit(3)
-      body[u'query'][u'mailOptions'] = {u'excludeDrafts': excludeDrafts}
-      i += 1
+      body[u'query'][u'mailOptions'] = {u'excludeDrafts': getBoolean(sys.argv[i+1], myarg)}
+      i += 2
     elif myarg in [u'driveversiondate']:
-      body[u'query'].setdefault(u'driveOptions', {})[u'versionDate'] = sys.argv[i+1]
+      body[u'query'].setdefault(u'driveOptions', {})[u'versionDate'] = getDateZeroTimeOrFullTime(sys.argv[i+1])
       i += 2
     elif myarg in [u'includeteamdrives']:
-      if sys.argv[i+1].lower() in true_values:
-        includeTeamDrives = True
-      elif sys.argv[i+1].lower() in false_values:
-        includeTeamDrives = False
-      else:
-        print u'ERROR: include_team_drives should be true or false, got %s' % sys.argv[i+1]
-        sys.exit(3)
-      body[u'query'].setdefault(u'driveOptions', {})[u'includeTeamDrives'] = includeTeamDrives
+      body[u'query'].setdefault(u'driveOptions', {})[u'includeTeamDrives'] = getBoolean(sys.argv[i+1], myarg)
       i += 2
     elif myarg in [u'includerooms']:
-      if sys.argv[i+1].lower() in true_values:
-        includeRooms = True
-      elif sys.argv[i+1].lower() in false_values:
-        includeRooms = False
-      else:
-        print u'ERROR: include_rooms should be true or false, got %s' % sys.argv[i+1]
-        sys.exit(3)
-      body[u'query'][u'hangoutsChatOptions'] = {u'includeRooms': includeRooms}
-      i += 1
+      body[u'query'][u'hangoutsChatOptions'] = {u'includeRooms': getBoolean(sys.argv[i+1], myarg)}
+      i += 2
     elif myarg in [u'format']:
       export_format = sys.argv[i+1].upper()
       if export_format not in allowed_formats:
@@ -7585,14 +7564,7 @@ def doCreateVaultExport():
         sys.exit(3)
       i += 2
     elif myarg in [u'includeaccessinfo']:
-      if sys.argv[i+1].lower() in true_values:
-        includeAccessInfo = True
-      elif sys.argv[i+1].lower() in false_values:
-        includeAccessInfo = False
-      else:
-        print u'ERROR: include_access_info should be true or false, got %s' % sys.argv[i+1]
-        sys.exit(3)
-      body[u'exportOptions'].setdefault(u'driveOptions', {})[u'includeAccessInfo'] = includeAccessInfo
+      body[u'exportOptions'].setdefault(u'driveOptions', {})[u'includeAccessInfo'] = getBoolean(sys.argv[i+1], myarg)
       i += 2
     else:
       print u'ERROR %s is not a valid argument for "gam create export".' % sys.argv[i]
@@ -7619,7 +7591,7 @@ def doCreateVaultExport():
 
 def doGetVaultExport():
   v = buildGAPIObject(u'vault')
-  matterId = sys.argv[3]
+  matterId = getMatterItem(v, sys.argv[3])
   exportId = sys.argv[4]
   export = callGAPI(v.matters().exports(), u'get', matterId=matterId, exportId=exportId)
   print_json(None, export)
@@ -7629,7 +7601,7 @@ def doDownloadVaultExport():
   extractFiles = True
   v = buildGAPIObject(u'vault')
   s = buildGAPIObject(u'storage')
-  matterId = sys.argv[3]
+  matterId = getMatterItem(v, sys.argv[3])
   exportId = sys.argv[4]
   targetFolder = GC_Values[GC_DRIVE_DIR]
   export = callGAPI(v.matters().exports(), u'get', matterId=matterId, exportId=exportId)
@@ -7719,9 +7691,7 @@ def doCreateVaultHold():
       end_time = getDateZeroTimeOrFullTime(sys.argv[i+1])
       i += 2
     elif myarg == u'matter':
-      matterId = convertMatterNameToID(v, sys.argv[i+1])
-      if not matterId:
-        systemErrorExit(4, 'could not find matter %s' % sys.argv[i+1])
+      matterId = getMatterItem(v, sys.argv[i+1])
       i += 2
     else:
       systemErrorExit(3, '%s is not a valid argument to "gam create hold"' % sys.argv[i])
@@ -7762,9 +7732,7 @@ def doDeleteVaultHold():
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace(u'_', u'')
     if myarg == u'matter':
-      matterId = convertMatterNameToID(v, sys.argv[i+1])
-      if not matterId:
-        systemErrorExit(4, 'could not find matter %s' % sys.argv[i+1])
+      matterId = getMatterItem(v, sys.argv[i+1])
       holdId = convertHoldNameToID(v, hold, matterId)
       if not holdId:
         systemErrorExit(4, 'could not find hold %s in matter %s' % (sys.argv[3], matterId))
@@ -7784,9 +7752,7 @@ def doGetVaultHoldInfo():
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace(u'_', u'')
     if myarg == u'matter':
-      matterId = convertMatterNameToID(v, sys.argv[i+1])
-      if not matterId:
-        systemErrorExit(4, 'could not find matter %s' % sys.argv[i+1])
+      matterId = getMatterItem(v, sys.argv[i+1])
       holdId = convertHoldNameToID(v, hold, matterId)
       if not holdId:
         systemErrorExit(4, 'could not find hold %s in matter %s' % (hold, matterId))
@@ -7827,6 +7793,12 @@ def convertMatterNameToID(v, nameOrID):
       return matter[u'matterId']
   return None
 
+def getMatterItem(v, nameOrID):
+  matterId = convertMatterNameToID(v, nameOrID)
+  if not matterId:
+    systemErrorExit(4, 'could not find matter %s' % nameOrID)
+  return matterId
+
 def doUpdateVaultHold():
   v = buildGAPIObject(u'vault')
   hold = sys.argv[3]
@@ -7841,9 +7813,7 @@ def doUpdateVaultHold():
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace(u'_', u'')
     if myarg == u'matter':
-      matterId = convertMatterNameToID(v, sys.argv[i+1])
-      if not matterId:
-        systemErrorExit(4, 'could not find matter %s' % sys.argv[i+1])
+      matterId = getMatterItem(v, sys.argv[i+1])
       holdId = convertHoldNameToID(v, hold, matterId)
       if not holdId:
         systemErrorExit(4, 'could not find hold %s in matter %s' % (hold, matterId))
@@ -7908,9 +7878,7 @@ def doUpdateVaultHold():
 
 def doUpdateVaultMatter(action=None):
   v = buildGAPIObject(u'vault')
-  matterId = convertMatterNameToID(v, sys.argv[3])
-  if not matterId:
-    systemErrorExit(4, 'failed to lookup matter named %s' % sys.argv[3])
+  matterId = getMatterItem(v, sys.argv[3])
   body = {}
   action_kwargs = {u'body': {}}
   add_collaborators = []
@@ -7964,7 +7932,7 @@ def doUpdateVaultMatter(action=None):
 
 def doGetVaultMatterInfo():
   v = buildGAPIObject(u'vault')
-  matterId = convertMatterNameToID(v, sys.argv[3])
+  matterId = getMatterItem(v, sys.argv[3])
   result = callGAPI(v.matters(), u'get', matterId=matterId, view=u'FULL')
   if u'matterPermissions' in result:
     cd = buildGAPIObject(u'directory')
