@@ -7549,7 +7549,7 @@ def doCreateVaultExport():
       body[u'query'][u'mailOptions'] = {u'excludeDrafts': getBoolean(sys.argv[i+1], myarg)}
       i += 2
     elif myarg in [u'driveversiondate']:
-      body[u'query'].setdefault(u'driveOptions', {})[u'versionDate'] = sys.argv[i+1]
+      body[u'query'].setdefault(u'driveOptions', {})[u'versionDate'] = getDateZeroTimeOrFullTime(sys.argv[i+1])
       i += 2
     elif myarg in [u'includeteamdrives']:
       body[u'query'].setdefault(u'driveOptions', {})[u'includeTeamDrives'] = getBoolean(sys.argv[i+1], myarg)
