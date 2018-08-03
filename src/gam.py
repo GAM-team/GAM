@@ -7619,6 +7619,8 @@ def doDownloadVaultExport():
       sys.stdout.write(u' Downloaded: {0:>7.2%}\r'.format(status.progress()))
       sys.stdout.flush()
     sys.stdout.write(u'\n Download complete\n')
+    f.flush()
+    os.fsync(f.fileno())
     closeFile(f)
     f = openFile(filename, 'rb')
     if verifyFiles:
