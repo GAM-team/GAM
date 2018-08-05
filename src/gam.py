@@ -7597,6 +7597,7 @@ def doCreateVaultExport():
   elif body[u'query'][u'corpus'] == u'HANGOUTS_CHAT':
     options_field = u'hangoutsChatOptions'
   if options_field:
+    body[u'exportOptions'].pop(u'driveOptions')
     body[u'exportOptions'][options_field] = {u'exportFormat': export_format}
   results = callGAPI(v.matters().exports(), u'create', matterId=matterId, body=body)
   print_json(None, results)
