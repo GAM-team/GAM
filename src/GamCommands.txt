@@ -136,6 +136,7 @@ If an item contains spaces, it should be surrounded by ".
 <CalendarACLRole> ::= editor|freebusy|freebusyreader|owner|reader|writer
 <CalendarColorIndex> ::= <Number in range 1-24>
 <CalendarItem> ::= <EmailAddress>|<String>
+<ChatRoom> ::= <String>
 <ClientID> ::= <String>
 <ColorValue> ::= <ColorName>|<ColorHex>
 <CollaboratorItem> ::= <EmailAddress>|<UniqueID>|<String>
@@ -208,7 +209,6 @@ If an item contains spaces, it should be surrounded by ".
 <ResourceID> ::= <String>
 <RoleItem> ::= <UniqueID>|<String>
 <RoleAssignmentID> ::= <String>
-<Room> ::= <String>
 <SchemaName> ::= <String>
 <Section> ::= <String>
 <S/MIMEID> ::= <String>	
@@ -514,6 +514,7 @@ Items, separated by spaces, with spaces, commas or single quotes in the items th
 <ACLList> ::= "<ACLScope>(,<ACLScope>)*"
 <ASPIDList> ::= "<ASPID>(,<ASPID>)*"
 <CalendarList> ::= "<CalendarItem>(,<CalendarItem>)*"
+<ChatRoomList> ::= "<ChatRoom>(,<ChatRoom>)*"
 <CollaboratorItemList> ::= "<CollaboratorItem>(,<CollaboratorItem>)*"
 <CourseAliasList> ::= "<CourseAlias>(,<CourseAlias>)*"
 <CourseIDList> ::= "<CourseID>(,<CourseID>)*"
@@ -546,7 +547,6 @@ Items, separated by spaces, with spaces, commas or single quotes in the items th
 <QueryPrinterList> ::= "<QueryPrinter>(,<QueryPrinter>)*"
 <QueryUserList> ::= "<QueryUser>(,<QueryUser>)*"
 <ResourceIDList> ::= "<ResourceID>(,<ResourceID>)*"
-<RoomList> ::= "<Room>(,<Room>)*"
 <SKUIDList> ="<SKUID>(,<SKUID>)*"
 <SchemaNameList> ::= "<SchemaName>(,<SchemaName>)*"
 <TeamDriveIDList> ::= "<TeamDriveID>(,<TeamDriveID>)*"
@@ -601,7 +601,7 @@ Specify a collection of Users by directly specifying them or by specifiying item
 	(notification clear|(email|sms eventcreation|eventchange|eventcancellation|eventresponse|agenda))
 
 <CalendarSettings> ::=
-	(summary <String>)|(description <String>)|(location <String>)|(timezone <String>)
+	(summary <String>)|(description <String>)|(location <String>)|(timezone <TimeZone>)
 
 <CourseAttributes> ::=
 	(description <String>)|
@@ -885,7 +885,7 @@ gam calendar <CalendarItem> wipe
 	summary <String>|
 	description <String>|
 	location <String>|
-	timezone <String>
+	timezone <TimeZone>
 
 gam calendar <CalendarItem> modify <CalendarSettings>+
 
@@ -1070,9 +1070,9 @@ gam print printjobs [todrive] [printer|printerid <PrinterID>]
 	[limit <Number>]
 
 gam create vaultexport|export matter <MatterItem> [name <name>] corpus <drive|mail|groups|hangouts_chat>
-	(accounts <EmailAddressList>) | (orgunit|ou <OrgUnitPath>) | (teamdrives <TeamDriveList>) | (rooms <RoomList>) | everyone
+	(accounts <EmailAddressList>) | (orgunit|ou <OrgUnitPath>) | (teamdrives <TeamDriveList>) | (rooms <ChatRoomList>) | everyone
 	[scope <all_data|held_data|unprocessed_data>]
-	[terms <terms>] [start|starttime <Date>|<DateTime>] [end|endtime <Date>|<DateTime>] [timezone <timezone>] [format mbox|pst]
+	[terms <terms>] [start|starttime <Date>|<DateTime>] [end|endtime <Date>|<DateTime>] [timezone <TimeZone>] [format mbox|pst]
 	[excludedrafts <Boolean>] [driveversiondate <Date>|<DateTime>] [includeteamdrives] [includerooms]
 	[includeaccessinfo <Boolean>]
 gam delete export <MatterItem> <ExportItem>
