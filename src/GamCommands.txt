@@ -136,6 +136,7 @@ If an item contains spaces, it should be surrounded by ".
 <CalendarACLRole> ::= editor|freebusy|freebusyreader|owner|reader|writer
 <CalendarColorIndex> ::= <Number in range 1-24>
 <CalendarItem> ::= <EmailAddress>|<String>
+<ChatRoom> ::= <String>
 <ClientID> ::= <String>
 <ColorValue> ::= <ColorName>|<ColorHex>
 <CollaboratorItem> ::= <EmailAddress>|<UniqueID>|<String>
@@ -157,6 +158,7 @@ If an item contains spaces, it should be surrounded by ".
 <EmailItem> ::= <EmailAddress>|<UniqueID>|<String>
 <EventColorIndex> ::= <Number in range 1-11>
 <EventID> ::= <String>
+<ExportItem> ::= <UniqueID>|<String>
 <FeatureName> ::= <String>
 <FieldName> ::= <String>
 <FileName> ::= <String>
@@ -512,6 +514,7 @@ Items, separated by spaces, with spaces, commas or single quotes in the items th
 <ACLList> ::= "<ACLScope>(,<ACLScope>)*"
 <ASPIDList> ::= "<ASPID>(,<ASPID>)*"
 <CalendarList> ::= "<CalendarItem>(,<CalendarItem>)*"
+<ChatRoomList> ::= "<ChatRoom>(,<ChatRoom>)*"
 <CollaboratorItemList> ::= "<CollaboratorItem>(,<CollaboratorItem>)*"
 <CourseAliasList> ::= "<CourseAlias>(,<CourseAlias>)*"
 <CourseIDList> ::= "<CourseID>(,<CourseID>)*"
@@ -546,6 +549,7 @@ Items, separated by spaces, with spaces, commas or single quotes in the items th
 <ResourceIDList> ::= "<ResourceID>(,<ResourceID>)*"
 <SKUIDList> ="<SKUID>(,<SKUID>)*"
 <SchemaNameList> ::= "<SchemaName>(,<SchemaName>)*"
+<TeamDriveIDList> ::= "<TeamDriveID>(,<TeamDriveID>)*"
 <UserFieldNameList> ::= "<UserFieldName>(,<UserFieldName>)*"
 <UserList> ::= "<UserItem>(,<UserItem>)*"
 
@@ -597,7 +601,7 @@ Specify a collection of Users by directly specifying them or by specifiying item
 	(notification clear|(email|sms eventcreation|eventchange|eventcancellation|eventresponse|agenda))
 
 <CalendarSettings> ::=
-	(summary <String>)|(description <String>)|(location <String>)|(timezone <String>)
+	(summary <String>)|(description <String>)|(location <String>)|(timezone <TimeZone>)
 
 <CourseAttributes> ::=
 	(description <String>)|
@@ -881,7 +885,7 @@ gam calendar <CalendarItem> wipe
 	summary <String>|
 	description <String>|
 	location <String>|
-	timezone <String>
+	timezone <TimeZone>
 
 gam calendar <CalendarItem> modify <CalendarSettings>+
 
@@ -1065,12 +1069,23 @@ gam print printjobs [todrive] [printer|printerid <PrinterID>]
 	[owner|user <EmailAddress>]
 	[limit <Number>]
 
+gam create vaultexport|export matter <MatterItem> [name <name>] corpus <drive|mail|groups|hangouts_chat>
+	(accounts <EmailAddressList>) | (orgunit|ou <OrgUnitPath>) | (teamdrives <TeamDriveList>) | (rooms <ChatRoomList>) | everyone
+	[scope <all_data|held_data|unprocessed_data>]
+	[terms <terms>] [start|starttime <Date>|<DateTime>] [end|endtime <Date>|<DateTime>] [timezone <TimeZone>] [format mbox|pst]
+	[excludedrafts <Boolean>] [driveversiondate <Date>|<DateTime>] [includeteamdrives] [includerooms]
+	[includeaccessinfo <Boolean>]
+gam delete export <MatterItem> <ExportItem>
+gam info export <MatterItem> <ExportItem>
+gam print exports [todrive] [matters <MatterItemList>]
+gam download export <MatterItem> <ExportItem> [noverify] [noextract] [targetfolder <FilePath>]
+
 gam create vaulthold|hold corpus drive|groups|mail matter <MatterItem> [name <String>] [query <QueryVaultCorpus>]
 	[(accounts|groups|users <EmailItemList>) | (orgunit|ou <OrgUnit>)]
-	[starttime <Date>|<DateTime>] [endtime <Date>|<DateTime>] 
+	[start|starttime <Date>|<DateTime>] [end|endtime <Date>|<DateTime>] 
 gam update vaulthold|hold <HoldItem> matter <MatterItem> [query <QueryVaultCorpus>]
 	[([addaccounts|addgroups|addusers <EmailItemList>] [removeaccounts|removegroups|removeusers <EmailItemList>]) | (orgunit|ou <OrgUnit>)]
-	[starttime <Date>|<DateTime>] [endtime <Date>|<DateTime>] 
+	[start|starttime <Date>|<DateTime>] [end|endtime <Date>|<DateTime>] 
 gam delete vaulthold|hold <HoldItem> matter <MatterItem>
 gam info vaulthold|hold <HoldItem> matter <MatterItem>
 gam print vaultholds|holds [todrive] [matters <MatterItemList>]
@@ -1117,7 +1132,7 @@ gam <UserTypeEntity> show filetree [anyowner] (orderby <DriveOrderByFieldName> [
 gam <UserTypeEntity> create|add drivefile [drivefilename <DriveFileName>] <DriveFileAddAttributes>* [csv] [todrive]
 gam <UserTypeEntity> update drivefile (id <DriveFileID)|(drivefilename <DriveFileName>)|(query <QueryDriveFile) [copy] [newfilename <DriveFileName>] <DriveFileUpdateAttributes>*
 gam <UserTypeEntity> get drivefile (id <DriveFileID>)|(drivefilename <DriveFileName>)|(query <QueryDriveFile>) [revision <Number>] [format <FileFormatList>]
-	targetfolder <FilePath>] [targetname <FileName>] [overwrite] [showprogress]
+	[targetfolder <FilePath>] [targetname <FileName>] [overwrite] [showprogress]
 gam <UserTypeEntity> delete|del drivefile <DriveFileID>|<DriveFileURL>|(query:<QueryDriveFile>) [purge|untrash]
 gam <UserTypeEntity> transfer drive <UserItem> [keepuser]
 gam <UserTypeEntity> delete|del emptydrivefolders

@@ -7477,6 +7477,20 @@ def doCreateVaultMatter():
     print u' adding collaborator %s' % collaborator[u'email']
     callGAPI(v.matters(), u'addPermissions', matterId=matterId, body={u'matterPermission': {u'role': u'COLLABORATOR', u'accountId': collaborator[u'id']}})
 
+VAULT_SEARCH_METHODS_MAP = {
+  u'account': u'ACCOUNT',
+  u'accounts': u'ACCOUNT',
+  u'entireorg': u'ENTIRE_ORG',
+  u'everyone': u'ENTIRE_ORG',
+  u'orgunit': u'ORG_UNIT',
+  u'ou': u'ORG_UNIT',
+  u'room': u'ROOM',
+  u'rooms': u'ROOM',
+  u'teamdrive': u'TEAM_DRIVE',
+  u'teamdrives': u'TEAM_DRIVE',
+  }
+VAULT_SEARCH_METHODS_LIST = [u'accounts', u'orgunit', u'teamdrives', u'rooms', u'everyone']
+
 def doCreateVaultExport():
   v = buildGAPIObject(u'vault')
   allowed_corpuses = v._rootDesc[u'schemas'][u'Query'][u'properties'][u'corpus'][u'enum']
@@ -7508,38 +7522,37 @@ def doCreateVaultExport():
       if body[u'query'][u'corpus'] not in allowed_corpuses:
         systemErrorExit(3, 'corpus must be one of %s. Got %s' % (u', '.join(allowed_corpuses), sys.argv[i+1]))
       i += 2
+    elif myarg in VAULT_SEARCH_METHODS_MAP:
+      if body[u'query'].get(u'searchMethod'):
+        systemErrorExit(3, 'Multiple search methods ({0}) specified, only one is allowed'.format(u', '.join(VAULT_SEARCH_METHODS_LIST)))
+      searchMethod = VAULT_SEARCH_METHODS_MAP[myarg]
+      body[u'query'][u'searchMethod'] = searchMethod
+      if searchMethod == u'ACCOUNT':
+        body[u'query'][u'accountInfo'] = {u'emails': sys.argv[i+1].split(u',')}
+        i += 2
+      elif searchMethod == u'ORG_UNIT':
+        body[u'query'][u'orgUnitInfo'] = {u'orgUnitId': getOrgUnitId(sys.argv[i+1])[1]}
+        i += 2
+      elif searchMethod == u'TEAM_DRIVE':
+        body[u'query'][u'teamDriveInfo'] = {u'teamDriveIds': sys.argv[i+1].split(u',')}
+        i += 2
+      elif searchMethod == u'ROOM':
+        body[u'query'][u'hangoutsChatInfo'] = {u'roomId': sys.argv[i+1].split(u',')}
+        i += 2
+      else:
+        i += 1
     elif myarg == u'scope':
       body[u'query'][u'dataScope'] = sys.argv[i+1].upper()
       if body[u'query']['dataScope'] not in allowed_scopes:
         systemErrorExit(3, 'scope must be one of %s. Got %s' % (u', '.join(allowed_scopes), sys.argv[i+1]))
       i += 2
-    elif myarg in [u'account', u'accounts']:
-      body[u'query'][u'searchMethod'] = u'ACCOUNT'
-      body[u'query'][u'accountInfo'] = {u'emails': sys.argv[i+1].split(u',')}
-      i += 2
-    elif myarg in [u'ou', u'orgunit']:
-      body[u'query'][u'searchMethod'] = u'ORG_UNIT'
-      orgUnitId = getOrgUnitId(sys.argv[i+1])[1]
-      body[u'query'][u'orgUnitInfo'] = {u'orgUnitId': orgUnitId}
-      i += 2
-    elif myarg in [u'teamdrive', u'teamdrives']:
-      body[u'query'][u'searchMethod'] = u'TEAM_DRIVE'
-      body[u'query'][u'teamDriveInfo'] = {u'teamDriveIds': sys.argv[i+1].split(u',')}
-      i += 2
-    elif myarg in [u'room', u'rooms']:
-      body[u'query'][u'searchMethod'] = u'ROOM'
-      body[u'query'][u'hangoutsChatInfo'] = {u'roomId': sys.argv[i+1].split(u',')}
-      i += 2
-    elif myarg in [u'everyone']:
-      body[u'query'][u'searchMethod'] = u'ENTIRE_ORG'
-      i += 2
     elif myarg in [u'terms']:
       body[u'query'][u'terms'] = sys.argv[i+1]
       i += 2
-    elif myarg in [u'start']:
+    elif myarg in [u'start', u'starttime']:
       body[u'query'][u'startTime'] = getDateZeroTimeOrFullTime(sys.argv[i+1])
       i += 2
-    elif myarg in [u'end']:
+    elif myarg in [u'end', u'endtime']:
       body[u'query'][u'endTime'] = getDateZeroTimeOrFullTime(sys.argv[i+1])
       i += 2
     elif myarg in [u'timezone']:
@@ -7567,14 +7580,13 @@ def doCreateVaultExport():
       body[u'exportOptions'].setdefault(u'driveOptions', {})[u'includeAccessInfo'] = getBoolean(sys.argv[i+1], myarg)
       i += 2
     else:
-      print u'ERROR %s is not a valid argument for "gam create export".' % sys.argv[i]
-      sys.exit(3)
+      systemErrorExit(3, '%s is not a valid argument to "gam create export"' % sys.argv[i])
   if not matterId:
-    print u'ERROR: you must specify a matterId.'
-    sys.exit(3)
+    systemErrorExit(3, 'you must specify a matter for the new export.')
   if u'corpus' not in body[u'query']:
-    print u'ERROR: you must specify a corpus type. Choose one of %s' % u', '.join(allowed_corpuses)
-    sys.exit(3)
+    systemErrorExit(3, 'you must specify a corpus for the new export. Choose one of %s' % u', '.join(allowed_corpuses))
+  if u'searchMethod' not in body[u'query']:
+    systemErrorExit(3, 'you must specify a search method for the new export. Choose one of %s' % u', '.join(VAULT_SEARCH_METHODS_LIST))
   if u'name' not in body:
     body[u'name'] = u'GAM %s export - %s' % (body[u'query'][u'corpus'], datetime.datetime.now())
   options_field = None
@@ -7585,11 +7597,19 @@ def doCreateVaultExport():
   elif body[u'query'][u'corpus'] == u'HANGOUTS_CHAT':
     options_field = u'hangoutsChatOptions'
   if options_field:
+    body[u'exportOptions'].pop(u'driveOptions', None)
     body[u'exportOptions'][options_field] = {u'exportFormat': export_format}
   results = callGAPI(v.matters().exports(), u'create', matterId=matterId, body=body)
   print_json(None, results)
 
-def doGetVaultExport():
+def doDeleteVaultExport():
+  v = buildGAPIObject(u'vault')
+  matterId = getMatterItem(v, sys.argv[3])
+  exportId = convertExportNameToID(v, sys.argv[4], matterId)
+  print u'Deleting export %s / %s' % (sys.argv[4], exportId)
+  callGAPI(v.matters().exports(), u'delete', matterId=matterId, exportId=exportId)
+
+def doGetVaultExportInfo():
   v = buildGAPIObject(u'vault')
   matterId = getMatterItem(v, sys.argv[3])
   exportId = convertExportNameToID(v, sys.argv[4], matterId)
@@ -7604,6 +7624,22 @@ def doDownloadVaultExport():
   matterId = getMatterItem(v, sys.argv[3])
   exportId = convertExportNameToID(v, sys.argv[4], matterId)
   targetFolder = GC_Values[GC_DRIVE_DIR]
+  i = 5
+  while i < len(sys.argv):
+    myarg = sys.argv[i].lower().replace(u'_', u'')
+    if myarg == u'targetfolder':
+      targetFolder = os.path.expanduser(sys.argv[i+1])
+      if not os.path.isdir(targetFolder):
+        os.makedirs(targetFolder)
+      i += 2
+    elif myarg == u'noverify':
+      verifyFiles = False
+      i += 1
+    elif myarg == u'noextract':
+      extractFiles = False
+      i += 1
+    else:
+      systemErrorExit(3, '%s is not a valid argument to "gam download export"' % sys.argv[i])
   export = callGAPI(v.matters().exports(), u'get', matterId=matterId, exportId=exportId)
   for s_file in export[u'cloudStorageSink']['files']:
     bucket = s_file['bucketName']
@@ -7683,13 +7719,12 @@ def doCreateVaultHold():
       accounts = sys.argv[i+1].split(u',')
       i += 2
     elif myarg in [u'orgunit', u'ou']:
-      _, orgUnitId = getOrgUnitId(sys.argv[i+1], None)
-      body[u'orgUnit'] = {u'orgUnitId': orgUnitId}
+      body[u'orgUnit'] = {u'orgUnitId': getOrgUnitId(sys.argv[i+1])[1]}
       i += 2
-    elif myarg == u'starttime':
+    elif myarg in [u'start', u'starttime']:
       start_time = getDateZeroTimeOrFullTime(sys.argv[i+1])
       i += 2
-    elif myarg == u'endtime':
+    elif myarg in [u'end', u'endtime']:
       end_time = getDateZeroTimeOrFullTime(sys.argv[i+1])
       i += 2
     elif myarg == u'matter':
@@ -7702,7 +7737,7 @@ def doCreateVaultHold():
   if not body.get(u'name'):
     systemErrorExit(3, 'you must specify a name for the new hold.')
   if not body.get(u'corpus'):
-    systemErrorExit(3, 'you must specify corpus for the new hold. One of %s' % (u', '.join(allowed_corpuses)))
+    systemErrorExit(3, 'you must specify a corpus for the new hold. Choose one of %s' % (u', '.join(allowed_corpuses)))
   query_type = u'%sQuery' % body[u'corpus'].lower()
   body[u'query'][query_type] = {}
   if body[u'corpus'] == u'DRIVE':
@@ -7828,13 +7863,12 @@ def doUpdateVaultHold():
       query = sys.argv[i+1]
       i += 2
     elif myarg in [u'orgunit', u'ou']:
-      _, orgUnitId = getOrgUnitId(sys.argv[i+1], None)
-      body[u'orgUnit'] = {u'orgUnitId': orgUnitId}
+      body[u'orgUnit'] = {u'orgUnitId': getOrgUnitId(sys.argv[i+1])[1]}
       i += 2
-    elif myarg == u'starttime':
+    elif myarg in [u'start', u'starttime']:
       start_time = getDateZeroTimeOrFullTime(sys.argv[i+1])
       i += 2
-    elif myarg == u'endtime':
+    elif myarg in [u'end', u'endtime']:
       end_time = getDateZeroTimeOrFullTime(sys.argv[i+1])
       i += 2
     elif myarg in [u'addusers', u'addaccounts', u'addgroups']:
@@ -11045,6 +11079,43 @@ def doPrintVaultMatters():
   sortCSVTitles(initialTitles, titles)
   writeCSVfile(csvRows, titles, u'Vault Matters', todrive)
 
+def doPrintVaultExports():
+  v = buildGAPIObject(u'vault')
+  todrive = False
+  csvRows = []
+  initialTitles = [u'matterId', u'id', u'name', u'createTime', u'status']
+  titles = initialTitles[:]
+  matters = []
+  matterIds = []
+  i = 3
+  while i < len(sys.argv):
+    myarg = sys.argv[i].lower().replace(u'_', u'')
+    if myarg == u'todrive':
+      todrive = True
+      i += 1
+    elif myarg in [u'matter', u'matters']:
+      matters = sys.argv[i+1].split(u',')
+      i += 2
+    else:
+      systemErrorExit(3, '%s is not a valid a valid argument to "gam print exports"' % myarg)
+  if not matters:
+    matters_results = callGAPIpages(v.matters(), u'list', u'matters', view=u'BASIC', fields=u'matters(matterId,state),nextPageToken')
+    for matter in matters_results:
+      if matter[u'state'] != u'OPEN':
+        print u'ignoring matter %s in state %s' % (matter[u'matterId'], matter[u'state'])
+        continue
+      matterIds.append(matter[u'matterId'])
+  else:
+    for matter in matters:
+      matterIds.append(getMatterItem(v, matter))
+  for matterId in matterIds:
+    sys.stderr.write(u'Retrieving exports for matter %s\n' % matterId)
+    exports = callGAPIpages(v.matters().exports(), u'list', u'exports', matterId=matterId)
+    for export in exports:
+      addRowTitlesToCSVfile(flatten_json(export, flattened={u'matterId': matterId}), csvRows, titles)
+  sortCSVTitles(initialTitles, titles)
+  writeCSVfile(csvRows, titles, u'Vault Exports', todrive)
+
 def doPrintVaultHolds():
   v = buildGAPIObject(u'vault')
   todrive = False
@@ -11071,8 +11142,9 @@ def doPrintVaultHolds():
         print u'ignoring matter %s in state %s' % (matter[u'matterId'], matter[u'state'])
         continue
       matterIds.append(matter[u'matterId'])
-  for matter in matters:
-    matterIds.append(convertMatterNameToID(v, matter))
+  else:
+    for matter in matters:
+      matterIds.append(getMatterItem(v, matter))
   for matterId in matterIds:
     sys.stderr.write(u'Retrieving holds for matter %s\n' % matterId)
     holds = callGAPIpages(v.matters().holds(), u'list', u'holds', matterId=matterId)
@@ -12551,7 +12623,7 @@ def ProcessGAMCommand(args):
       elif argument in [u'hold', u'vaulthold']:
         doGetVaultHoldInfo()
       elif argument in [u'export', u'vaultexport']:
-        doGetVaultExport()
+        doGetVaultExportInfo()
       elif argument in [u'building']:
         doGetBuildingInfo()
       else:
@@ -12606,6 +12678,8 @@ def ProcessGAMCommand(args):
         doUpdateVaultMatter(action=command)
       elif argument in [u'hold', u'vaulthold']:
         doDeleteVaultHold()
+      elif argument in [u'export', u'vaultexport']:
+        doDeleteVaultExport()
       elif argument in [u'building']:
         doDeleteBuilding()
       elif argument in [u'feature']:
@@ -12682,6 +12756,8 @@ def ProcessGAMCommand(args):
         doPrintVaultMatters()
       elif argument in [u'holds', u'vaultholds']:
         doPrintVaultHolds()
+      elif argument in [u'exports', u'vaultexports']:
+        doPrintVaultExports()
       elif argument in [u'building', u'buildings']:
         doPrintBuildings()
       elif argument in [u'feature', u'features']:
