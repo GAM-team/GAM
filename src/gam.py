@@ -7687,9 +7687,9 @@ def extract_nested_zip(zippedFile, toFolder, spacing=u' '):
     inner_files = zfile.infolist()
     for inner_file in inner_files:
       print u'%s %s' % (spacing, inner_file.filename)
-      zfile.extract(inner_file)
+      inner_file_path = zfile.extract(inner_file, toFolder)
       if re.search(r'\.zip$', inner_file.filename):
-        extract_nested_zip(inner_file.filename, toFolder, spacing=spacing+u' ')
+        extract_nested_zip(inner_file_path, toFolder, spacing=spacing+u' ')
   os.remove(zippedFile)
 
 def doCreateVaultHold():
