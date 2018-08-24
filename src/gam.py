@@ -1533,10 +1533,15 @@ def printShowDelegates(users, csvFormat):
       i += 1
     else:
       systemErrorExit(2, u'%s is not a valid argument for "gam <users> show delegates"' % sys.argv[i])
+  count = len(users)
+  i = 1
   for user in users:
     user, gmail = buildGmailGAPIObject(user)
-    sys.stderr.write(u"Getting delegates for %s...\n" % (user))
-    delegates = callGAPI(gmail.users().settings().delegates(), u'list', userId=u'me')
+    if not gmail:
+      continue
+    sys.stderr.write(u"Getting delegates for %s (%s/%s)...\n" % (user, i, count))
+    i += 1
+    delegates = callGAPI(gmail.users().settings().delegates(), u'list', soft_errors=True, userId=u'me')
     if delegates and u'delegates' in delegates:
       for delegate in delegates[u'delegates']:
         delegateAddress = delegate[u'delegateEmail']
