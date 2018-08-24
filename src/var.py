@@ -100,7 +100,6 @@ API_VER_MAPPING = {
   u'directory': u'directory_v1',
   u'drive': u'v2',
   u'drive3': u'v3',
-  u'email-settings': u'v2',
   u'gmail': u'v1',
   u'groupssettings': u'v1',
   u'licensing': u'v1',

@@ -1502,56 +1502,24 @@ def addDelegates(users, i):
     if sys.argv[i].lower() != u'to':
       systemErrorExit(2, u'%s is not a valid argument for "gam <users> delegate", expected to' % sys.argv[i])
     i += 1
-  delegate = sys.argv[i].lower()
-  atLoc = delegate.find(u'@')
-  if atLoc == -1:
-    delegate_domain = GC_Values[GC_DOMAIN].lower()
-    delegate_email = u'%s@%s' % (delegate, delegate_domain)
-  else:
-    delegate_domain = delegate[atLoc+1:].lower()
-    delegate_email = delegate
+  delegate = normalizeEmailAddressOrUID(sys.argv[i], noUid=True)
   i = 0
   count = len(users)
-  emailsettings = buildGAPIObject(u'email-settings')
   for delegator in users:
     i += 1
-    atLocd = delegator.find(u'@')
-    if atLocd == -1:
-      delegator_domain = GC_Values[GC_DOMAIN].lower()
-      delegator_email = u'%s@%s' % (delegator, delegator_domain)
-    else:
-      delegator_domain = delegator[atLocd+1:].lower()
-      delegator_email = delegator
-      delegator = delegator[:atLocd]
-    uri = u'https://apps-apis.google.com/a/feeds/emailsettings/2.0/%s/%s/delegation' % (delegator_domain, delegator)
-    body = u'''<?xml version="1.0" encoding="utf-8"?>
-<atom:entry xmlns:atom="http://www.w3.org/2005/Atom" xmlns:apps="http://schemas.google.com/apps/2006">
-<apps:property name="address" value="%s" />
-</atom:entry>''' % delegate_email
-    headers = {u'GData-Version': u'2.0', u'Content-Type': u'application/atom+xml; charset=UTF-8'}
-    print u"Giving %s delegate access to %s (%s/%s)" % (delegate_email, delegator_email, i, count)
-    retries = 10
-    for n in range(1, retries+1):
-      status, result = emailsettings._http.request(uri=uri, method=u'POST', body=body, headers=headers)
-      httpStatus = int(status[u'status'])
-      if httpStatus == 201: # Success
-        time.sleep(10) # on success, sleep 10 seconds before exiting or moving on to next user to prevent ghost delegates
-        break
-      elif httpStatus > 499:
-        waitOnFailure(n, retries, str(httpStatus))
-      else:
-        systemErrorExit(3, u'Could not create delegation - %s - %s' % (httpStatus, result))
+    delegator, gmail = buildGmailGAPIObject(delegator)
+    print u"Giving %s delegate access to %s (%s/%s)" % (delegate, delegator, i, count)
+    callGAPI(gmail.users().settings().delegates(), u'create', userId=u'me', body={u'delegateEmail': delegate})
 
 def gen_sha512_hash(password):
   from passlib.handlers.sha2_crypt import sha512_crypt
   return sha512_crypt.encrypt(password, rounds=5000)
 
 def printShowDelegates(users, csvFormat):
-  emailsettings = buildGAPIObject(u'email-settings')
   if csvFormat:
     todrive = False
     csvRows = []
-    titles = [u'User', u'delegateName', u'delegateAddress', u'delegationStatus']
+    titles = [u'User', u'delegateAddress', u'delegationStatus']
   else:
     csvStyle = False
   i = 5
@@ -1566,63 +1534,33 @@ def printShowDelegates(users, csvFormat):
     else:
       systemErrorExit(2, u'%s is not a valid argument for "gam <users> show delegates"' % sys.argv[i])
   for user in users:
-    atLoc = user.find(u'@')
-    if atLoc == -1:
-      userName = user
-      domainName = GC_Values[GC_DOMAIN]
-      user = u'%s@%s' % (user, domainName)
-    else:
-      userName = user[:atLoc]
-      domainName = user[atLoc+1:]
+    user, gmail = buildGmailGAPIObject(user)
     sys.stderr.write(u"Getting delegates for %s...\n" % (user))
-    delegates = callGAPI(emailsettings.delegates(), u'get', soft_errors=True, v=u'2.0', domainName=domainName, delegator=userName)
-    if delegates and u'feed' in delegates and u'entry' in delegates[u'feed']:
-      for delegate in delegates[u'feed']['entry']:
-        status = u''
-        delegateAddress = u''
-        delegateName = u''
-        delegationId = u''
-        for item in delegate[u'apps$property']:
-          if item[u'name'] == u'status':
-            status = item[u'value']
-          elif item[u'name'] == u'address':
-            delegateAddress = item[u'value']
-          elif item[u'name'] == u'delegate':
-            delegateName = item[u'value']
-          elif item[u'name'] == u'delegationId':
-            delegationId = item[u'value']
+    delegates = callGAPI(gmail.users().settings().delegates(), u'list', userId=u'me')
+    if delegates and u'delegates' in delegates:
+      for delegate in delegates[u'delegates']:
+        delegateAddress = delegate[u'delegateEmail']
+        status = delegate[u'verificationStatus']
         if csvFormat:
-          row = {u'User': user, u'delegateName': delegateName, u'delegateAddress': delegateAddress, u'delegationStatus': status}
+          row = {u'User': user, u'delegateAddress': delegateAddress, u'delegationStatus': status}
           csvRows.append(row)
         else:
           if csvStyle:
             print u'%s,%s,%s' % (user, delegateAddress, status)
           else:
-            print utils.convertUTF8(u"Delegator: %s\n Delegate: %s\n Status: %s\n Delegate Email: %s\n Delegate ID: %s\n" % (user, delegateName, status, delegateAddress, delegationId))
+            print utils.convertUTF8(u"Delegator: %s\n Status: %s\n Delegate Email: %s\n" % (user, status, delegateAddress))
   if csvFormat:
     writeCSVfile(csvRows, titles, u'Delegates', todrive)
 
 def deleteDelegate(users):
-  emailsettings = buildGAPIObject(u'email-settings')
-  delegate = sys.argv[5]
-  if not delegate.find(u'@') > 0:
-    if users[0].find(u'@') > 0:
-      delegatedomain = users[0][users[0].find(u'@')+1:]
-    else:
-      delegatedomain = GC_Values[GC_DOMAIN]
-    delegate = u'%s@%s' % (delegate, delegatedomain)
+  delegate = normalizeEmailAddressOrUID(sys.argv[5], noUid=True)
   i = 0
   count = len(users)
   for user in users:
     i += 1
-    atLoc = user.find(u'@')
-    if atLoc == -1:
-      domainName = GC_Values[GC_DOMAIN] #make sure it's back at default domain
-    else:
-      domainName = user[atLoc+1:]
-      user = user[:atLoc]
-    print u"Deleting %s delegate access to %s (%s/%s)" % (delegate, user+u'@'+domainName, i, count)
-    callGAPI(emailsettings.delegates(), u'delete', v=u'2.0', delegate=delegate, delegator=user, domainName=domainName)
+    user, gmail = buildGmailGAPIObject(user)
+    print u"Deleting %s delegate access to %s (%s/%s)" % (delegate, user, i, count)
+    callGAPI(gmail.users().settings().delegates(), u'delete', userId=user, delegateEmail=delegate)
 
 def doAddCourseParticipant():
   croom = buildGAPIObject(u'classroom')
@@ -12153,9 +12091,6 @@ OAUTH2_SCOPES = [
   {u'name': u'Directory API - Users',
    u'subscopes': [u'readonly'],
    u'scopes': u'https://www.googleapis.com/auth/admin.directory.user'},
-  {u'name': u'Email Settings API - Delegation',
-   u'subscopes': [],
-   u'scopes': u'https://apps-apis.google.com/a/feeds/emailsettings/2.0/'},
   {u'name': u'Group Settings API',
    u'subscopes': [],
    u'scopes': u'https://www.googleapis.com/auth/apps.groups.settings'},
