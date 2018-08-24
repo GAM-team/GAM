@@ -11999,7 +11999,7 @@ def doRequestOAuth(login_hint=None):
     flags = cmd_flags(noLocalWebserver=GC_Values[GC_NO_BROWSER])
     scopes = getScopesFromUser()
     if scopes is None:
-      return
+      systemErrorExit(0, u'')
     client_id, client_secret = getOAuthClientIDAndSecret()
     login_hint = getValidateLoginHint(login_hint)
     flow = oauth2client.client.OAuth2WebServerFlow(client_id=client_id,
