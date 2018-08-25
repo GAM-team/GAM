@@ -5743,8 +5743,8 @@ def renameLabels(users):
         except GAPI_aborted:
           if merge:
             print u'  Merging %s label to existing %s label' % (label[u'name'], new_label_name)
-            q = u'label:"%s"' % label[u'name']
-            messages_to_relabel = callGAPIpages(gmail.users().messages(), u'list', u'messages', userId=user, q=q)
+            messages_to_relabel = callGAPIpages(gmail.users().messages(), u'list', u'messages',
+                                                userId=user, q=u'label:%s' % label[u'name'].lower().replace(u'/', u'-').replace(u' ', u'-'))
             if len(messages_to_relabel) > 0:
               for new_label in labels[u'labels']:
                 if new_label[u'name'].lower() == new_label_name.lower():
