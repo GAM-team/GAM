@@ -1508,6 +1508,8 @@ def addDelegates(users, i):
   for delegator in users:
     i += 1
     delegator, gmail = buildGmailGAPIObject(delegator)
+    if not gmail:
+      continue
     print u"Giving %s delegate access to %s (%s/%s)" % (delegate, delegator, i, count)
     callGAPI(gmail.users().settings().delegates(), u'create', userId=u'me', body={u'delegateEmail': delegate})
 
@@ -1564,8 +1566,10 @@ def deleteDelegate(users):
   for user in users:
     i += 1
     user, gmail = buildGmailGAPIObject(user)
+    if not gmail:
+      continue
     print u"Deleting %s delegate access to %s (%s/%s)" % (delegate, user, i, count)
-    callGAPI(gmail.users().settings().delegates(), u'delete', userId=user, delegateEmail=delegate)
+    callGAPI(gmail.users().settings().delegates(), u'delete', userId=u'me', delegateEmail=delegate)
 
 def doAddCourseParticipant():
   croom = buildGAPIObject(u'classroom')
@@ -6488,7 +6492,7 @@ def doGetUserSchema():
   schema = callGAPI(cd.schemas(), u'get', customerId=GC_Values[GC_CUSTOMER_ID], schemaKey=schemaKey)
   _showSchema(schema)
 
-def getUserAttributes(i, cd, updateCmd=False):
+def getUserAttributes(i, cd, updateCmd):
   def getEntryType(i, entry, entryTypes, setTypeCustom=True, customKeyword=u'custom', customTypeKeyword=u'customType'):
     """ Get attribute entry type
     entryTypes is list of pre-defined types, a|b|c
@@ -6557,7 +6561,6 @@ def getUserAttributes(i, cd, updateCmd=False):
     i += 1
     need_password = True
   need_to_hash_password = True
-  admin_body = {}
   while i < len(sys.argv):
     myarg = sys.argv[i].lower()
     if myarg in [u'firstname', u'givenname']:
@@ -6581,7 +6584,9 @@ def getUserAttributes(i, cd, updateCmd=False):
         need_password = True
       i += 2
     elif myarg == u'admin':
-      admin_body[u'status'] = getBoolean(sys.argv[i+1], myarg)
+      value = getBoolean(sys.argv[i+1], myarg)
+      if updateCmd or value:
+        systemErrorExit(2, '%s %s is not a valid argument for "gam %s user"' % (sys.argv[i], value, [u'create', u'update'][updateCmd]))
       i += 2
     elif myarg == u'suspended':
       body[u'suspended'] = getBoolean(sys.argv[i+1], myarg)
@@ -6992,7 +6997,7 @@ def getUserAttributes(i, cd, updateCmd=False):
   if u'password' in body and need_to_hash_password:
     body[u'password'] = gen_sha512_hash(body[u'password'])
     body[u'hashFunction'] = u'crypt'
-  return (body, admin_body)
+  return body
 
 VALIDEMAIL_PATTERN = re.compile(r'^[^@]+@[^@]+\.[^@]+$')
 
@@ -7927,12 +7932,9 @@ def doGetVaultMatterInfo():
 
 def doCreateUser():
   cd = buildGAPIObject(u'directory')
-  body, admin_body = getUserAttributes(3, cd, updateCmd=False)
+  body = getUserAttributes(3, cd, False)
   print u"Creating account for %s" % body[u'primaryEmail']
   callGAPI(cd.users(), u'insert', body=body, fields=u'primaryEmail')
-  if admin_body:
-    print u' Changing admin status for %s to %s' % (body[u'primaryEmail'], admin_body[u'status'])
-    callGAPI(cd.users(), u'makeAdmin', userKey=body[u'primaryEmail'], body=admin_body)
 
 def GroupIsAbuseOrPostmaster(emailAddr):
   return emailAddr.startswith(u'abuse@') or emailAddr.startswith(u'postmaster@')
@@ -8313,7 +8315,7 @@ def doUpdateUser(users, i):
   cd = buildGAPIObject(u'directory')
   if users is None:
     users = [normalizeEmailAddressOrUID(sys.argv[3])]
-  body, admin_body = getUserAttributes(i, cd, updateCmd=True)
+  body = getUserAttributes(i, cd, True)
   vfe = u'primaryEmail' in body and body[u'primaryEmail'][:4].lower() == u'vfe@'
   for user in users:
     userKey = user
@@ -8327,8 +8329,6 @@ def doUpdateUser(users, i):
     sys.stdout.write(u'updating user %s...\n' % user)
     if body:
       callGAPI(cd.users(), u'update', userKey=userKey, body=body)
-    if admin_body:
-      callGAPI(cd.users(), u'makeAdmin', userKey=userKey, body=admin_body)
 
 def doRemoveUsersAliases(users):
   cd = buildGAPIObject(u'directory')
