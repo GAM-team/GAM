@@ -1173,7 +1173,7 @@ gam <UserTypeEntity> [create|add] label|labels <Name> [messagelistvisibility hid
 	[backgroundcolor <LabelColorHex>] [textcolor <LabelColorHex>]
 gam <UserTypeEntity> update labelsettings <LabelName> [name <Name>] [messagelistvisibility hide|show] [labellistvisibility hide|show|showifunread]
 	[backgroundcolor <LabelColorHex>] [textcolor <LabelColorHex>]
-gam <UserTypeEntity> update label|labels [search <RegularExpression>] [replace <LabelReplacement>] [merge [keepoldlabel]]
+gam <UserTypeEntity> update label|labels [search <RegularExpression>] [replace <LabelReplacement>] [merge]
 gam <UserTypeEntity> delete|del label|labels <LabelName>|regex:<RegularExpression>|--ALL_LABELS--
 gam <UserTypeEntity> show labels|label [onlyuser] [showcounts]
 

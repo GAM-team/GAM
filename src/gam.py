@@ -5707,7 +5707,7 @@ def updateLabels(users):
 def renameLabels(users):
   search = u'^Inbox/(.*)$'
   replace = u'%s'
-  keepOldLabel = merge = False
+  merge = False
   i = 5
   while i < len(sys.argv):
     myarg = sys.argv[i].lower()
@@ -5719,9 +5719,6 @@ def renameLabels(users):
       i += 2
     elif myarg == u'merge':
       merge = True
-      i += 1
-    elif myarg == u'keepoldlabel':
-      keepOldLabel = True
       i += 1
     else:
       systemErrorExit(2, '%s is not a valid argument for "gam <users> rename label"' % sys.argv[i])
@@ -5761,9 +5758,8 @@ def renameLabels(users):
                 j += 1
             else:
               print u'   no messages with %s label' % label[u'name']
-            if not keepOldLabel:
-              print u'   Deleting label %s' % label[u'name']
-              callGAPI(gmail.users().labels(), u'delete', id=label[u'id'], userId=user)
+            print u'   Deleting label %s' % label[u'name']
+            callGAPI(gmail.users().labels(), u'delete', id=label[u'id'], userId=user)
           else:
             print u'  Error: looks like %s already exists, not renaming. Use the "merge" argument to merge the labels' % new_label_name
 
