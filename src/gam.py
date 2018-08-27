@@ -1595,7 +1595,7 @@ def doAddCourseParticipant():
 def doSyncCourseParticipants():
   courseId = addCourseIdScope(sys.argv[2])
   participant_type = sys.argv[4].lower()
-  diff_entity_type = sys.argv[5]
+  diff_entity_type = sys.argv[5].lower()
   diff_entity = sys.argv[6]
   current_course_users = getUsersToModify(entity_type=participant_type, entity=courseId)
   print
@@ -8388,17 +8388,17 @@ def doUpdateGroup():
     return emailAddress
 
   def _getRoleAndUsers():
-    checkNotSuspended = False
+    checkSuspended = None
     role = ROLE_MEMBER
     i = 5
     if sys.argv[i].lower() in GROUP_ROLES_MAP:
       role = GROUP_ROLES_MAP[sys.argv[i].lower()]
       i += 1
-    if sys.argv[i].lower() == u'notsuspended':
-      checkNotSuspended = True
+    if sys.argv[i].lower() in [u'suspended', u'notsuspended']:
+      checkSuspended = sys.argv[i].lower() == u'suspended'
       i += 1
     if sys.argv[i].lower() in usergroup_types:
-      users_email = getUsersToModify(entity_type=sys.argv[i], entity=sys.argv[i+1], checkNotSuspended=checkNotSuspended, groupUserMembersOnly=False)
+      users_email = getUsersToModify(entity_type=sys.argv[i].lower(), entity=sys.argv[i+1], checkSuspended=checkSuspended, groupUserMembersOnly=False)
     else:
       users_email = [normalizeEmailAddressOrUID(sys.argv[i], checkForCustomerId=True)]
     return (role, users_email)
@@ -8500,7 +8500,7 @@ def doUpdateGroup():
           except (GAPI_memberNotFound, GAPI_invalidMember) as e:
             print u' Group: {0}, {1} Update to {2} Failed: {3}'.format(group, users_email[0], role, str(e))
     else: # clear
-      suspended = False
+      checkSuspended = None
       fields = [u'email', u'id']
       roles = []
       i = 5
@@ -8509,8 +8509,8 @@ def doUpdateGroup():
         if myarg.upper() in [ROLE_OWNER, ROLE_MANAGER, ROLE_MEMBER]:
           roles.append(myarg.upper())
           i += 1
-        elif myarg == u'suspended':
-          suspended = True
+        elif myarg in [u'suspended', u'notsuspended']:
+          checkSuspended = myarg == u'suspended'
           fields.append(u'status')
           i += 1
         else:
@@ -8529,12 +8529,14 @@ def doUpdateGroup():
                                page_message=page_message,
                                throw_reasons=GAPI_MEMBERS_THROW_REASONS,
                                groupKey=group, roles=listRoles, fields=listFields, maxResults=GC_Values[GC_MEMBER_MAX_RESULTS])
-        if not suspended:
+        if checkSuspended is None:
           users_email = [member.get(u'email', member[u'id']) for member in result if not validRoles or member.get(u'role', ROLE_MEMBER) in validRoles]
-        else:
+        elif checkSuspended:
           users_email = [member.get(u'email', member[u'id']) for member in result if (not validRoles or member.get(u'role', ROLE_MEMBER) in validRoles) and member[u'status'] == u'SUSPENDED']
+        else: # elif not checkSuspended
+          users_email = [member.get(u'email', member[u'id']) for member in result if (not validRoles or member.get(u'role', ROLE_MEMBER) in validRoles) and member[u'status'] != u'SUSPENDED']
         if len(users_email) > 1:
-          sys.stderr.write(u'Group: {0}, Will remove {1} {2}{3}s.\n'.format(group, len(users_email), [u'', u'suspended '][suspended], roles))
+          sys.stderr.write(u'Group: {0}, Will remove {1} {2}{3}s.\n'.format(group, len(users_email), u'' if checkSuspended is None else [u'Non-suspended ', u'Suspended '][checkSuspended], roles))
           for user_email in users_email:
             items.append(['gam', 'update', 'group', group, 'remove', user_email])
         else:
@@ -8606,23 +8608,27 @@ def doUpdateAlias():
       callGAPI(cd.groups().aliases(), u'insert', groupKey=target_email, body={u'alias': alias})
   print u'updated alias %s' % alias
 
-def doUpdateCros():
-  cd = buildGAPIObject(u'directory')
-  deviceId = sys.argv[3]
-  if deviceId[:6].lower() == u'query:':
-    query = deviceId[6:]
+def getCrOSDeviceEntity(i, cd):
+  myarg = sys.argv[i].lower()
+  if myarg == u'cros_sn':
+    return i+2, getUsersToModify(u'cros_sn', sys.argv[i+1])
+  if myarg == u'query':
+    return i+2, getUsersToModify(u'crosquery', sys.argv[i+1])
+  if myarg[:6] == u'query:':
+    query = sys.argv[i][6:]
     if query[:12].lower() == u'orgunitpath:':
       kwargs = {u'orgUnitPath': query[12:]}
     else:
       kwargs = {u'query': query}
-    devices_result = callGAPIpages(cd.chromeosdevices(), u'list', u'chromeosdevices',
-                                   customerId=GC_Values[GC_CUSTOMER_ID], fields=u'chromeosdevices/deviceId,nextPageToken', **kwargs)
-    devices = list()
-    for a_device in devices_result:
-      devices.append(a_device[u'deviceId'])
-  else:
-    devices = [deviceId,]
-  i = 4
+    devices = callGAPIpages(cd.chromeosdevices(), u'list', u'chromeosdevices',
+                            customerId=GC_Values[GC_CUSTOMER_ID],
+                            fields=u'nextPageToken,chromeosdevices(deviceId)', **kwargs)
+    return i+1, [device[u'deviceId'] for device in devices]
+  return i+1, sys.argv[i].replace(u',', u' ').split()
+
+def doUpdateCros():
+  cd = buildGAPIObject(u'directory')
+  i, devices = getCrOSDeviceEntity(3, cd)
   update_body = {}
   action_body = {}
   orgUnitPath = None
@@ -8721,11 +8727,13 @@ def doUpdateOrg():
   cd = buildGAPIObject(u'directory')
   orgUnitPath = getOrgUnitItem(sys.argv[3])
   if sys.argv[4].lower() in [u'move', u'add']:
-    if sys.argv[5].lower() in usergroup_types:
-      users = getUsersToModify(entity_type=sys.argv[5].lower(), entity=sys.argv[6])
+    entity_type = sys.argv[5].lower()
+    if entity_type in usergroup_types:
+      users = getUsersToModify(entity_type=entity_type, entity=sys.argv[6])
     else:
-      users = getUsersToModify(entity_type=u'user', entity=sys.argv[5])
-    if (sys.argv[5].lower().startswith(u'cros')) or ((sys.argv[5].lower() == u'all') and (sys.argv[6].lower() == u'cros')):
+      entity_type = u'users'
+      users = getUsersToModify(entity_type=entity_type, entity=sys.argv[5])
+    if (entity_type.startswith(u'cros')) or ((entity_type == u'all') and (sys.argv[6].lower() == u'cros')):
       for l in range(0, len(users), 50):
         move_body = {u'deviceIds': users[l:l+50]}
         print u' moving %s devices to %s' % (len(move_body[u'deviceIds']), orgUnitPath)
@@ -9368,20 +9376,7 @@ def _getFilterDate(dateStr):
 
 def doGetCrosInfo():
   cd = buildGAPIObject(u'directory')
-  deviceId = sys.argv[3]
-  if deviceId[:6].lower() == u'query:':
-    query = deviceId[6:]
-    if query[:12].lower() == u'orgunitpath:':
-      kwargs = {u'orgUnitPath': query[12:]}
-    else:
-      kwargs = {u'query': query}
-    devices_result = callGAPIpages(cd.chromeosdevices(), u'list', u'chromeosdevices',
-                                   customerId=GC_Values[GC_CUSTOMER_ID], fields=u'chromeosdevices/deviceId,nextPageToken', **kwargs)
-    devices = list()
-    for a_device in devices_result:
-      devices.append(a_device[u'deviceId'])
-  else:
-    devices = [deviceId,]
+  i, devices = getCrOSDeviceEntity(3, cd)
   downloadfile = None
   targetFolder = GC_Values[GC_DRIVE_DIR]
   projection = None
@@ -9389,7 +9384,6 @@ def doGetCrosInfo():
   noLists = False
   startDate = endDate = None
   listLimit = 0
-  i = 4
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace(u'_', u'')
     if myarg == u'nolists':
@@ -9736,10 +9730,11 @@ def doGetNotifications():
     print u'--------------'
     print u''
 
-def orgUnitPathQuery(path):
-  if path != u'/':
-    return u"orgUnitPath='{0}'".format(path.replace(u"'", u"\\'"))
-  return None
+def orgUnitPathQuery(path, checkSuspended):
+  query = u"orgUnitPath='{0}'".format(path.replace(u"'", u"\\'")) if path != u'/' else u''
+  if checkSuspended is not None:
+    query += u' isSuspended={0}'.format(checkSuspended)
+  return query
 
 def makeOrgUnitPathAbsolute(path):
   if path == u'/':
@@ -9807,6 +9802,7 @@ def getTopLevelOrgId(cd, orgUnitPath):
 
 def doGetOrgInfo(name=None, return_attrib=None):
   cd = buildGAPIObject(u'directory')
+  checkSuspended = None
   if not name:
     name = getOrgUnitItem(sys.argv[3])
     get_users = True
@@ -9819,6 +9815,9 @@ def doGetOrgInfo(name=None, return_attrib=None):
         i += 1
       elif myarg in [u'children', u'child']:
         show_children = True
+        i += 1
+      elif myarg in [u'suspended', u'notsuspended']:
+        checkSuspended = myarg == u'suspended'
         i += 1
       else:
         systemErrorExit(2, '%s is not a valid argument for "gam info org"' % sys.argv[i])
@@ -9840,11 +9839,16 @@ def doGetOrgInfo(name=None, return_attrib=None):
   print_json(None, result)
   if get_users:
     name = result[u'orgUnitPath']
-    print u'Users: '
     page_message = u'Got %%total_items%% Users: %%first_item%% - %%last_item%%\n'
     users = callGAPIpages(cd.users(), u'list', u'users', page_message=page_message,
-                          message_attribute=u'primaryEmail', customer=GC_Values[GC_CUSTOMER_ID], query=orgUnitPathQuery(name),
+                          message_attribute=u'primaryEmail', customer=GC_Values[GC_CUSTOMER_ID], query=orgUnitPathQuery(name, checkSuspended),
                           fields=u'users(primaryEmail,orgUnitPath),nextPageToken', maxResults=GC_Values[GC_USER_MAX_RESULTS])
+    if checkSuspended is None:
+      print u'Users:'
+    elif not checkSuspended:
+      print u'Users (Not suspended):'
+    else:
+      print u'Users (Suspended):'
     for user in users:
       if show_children or (name.lower() == user[u'orgUnitPath'].lower()):
         sys.stdout.write(u' %s' % user[u'primaryEmail'])
@@ -10896,7 +10900,7 @@ def doPrintGroupMembers():
   todrive = False
   membernames = False
   customer = GC_Values[GC_CUSTOMER_ID]
-  usedomain = usemember = usequery = None
+  checkSuspended = usedomain = usemember = usequery = None
   roles = []
   fields = u'nextPageToken,members(email,id,role,status,type)'
   titles = [u'group']
@@ -10904,7 +10908,7 @@ def doPrintGroupMembers():
   groups_to_get = []
   i = 3
   while i < len(sys.argv):
-    myarg = sys.argv[i].lower()
+    myarg = sys.argv[i].lower().replace(u'_', u'')
     if myarg == u'todrive':
       todrive = True
       i += 1
@@ -10935,10 +10939,17 @@ def doPrintGroupMembers():
         else:
           systemErrorExit(2, '%s is not a valid role for "gam print group-members %s"' % (role, myarg))
       i += 2
-    elif myarg == u'group':
+    elif myarg in [u'group', u'groupns', u'groupsusp']:
       group_email = normalizeEmailAddressOrUID(sys.argv[i+1])
       groups_to_get = [{u'email': group_email}]
+      if myarg == u'groupns':
+        checkSuspended = False
+      elif myarg == u'groupsusp':
+        checkSuspended = True
       i += 2
+    elif myarg in [u'suspended', u'notsuspended']:
+      checkSuspended = myarg == u'suspended'
+      i += 1
     else:
       systemErrorExit(2, '%s is not a valid argument for "gam print group-members"' % sys.argv[i])
   if not groups_to_get:
@@ -10956,10 +10967,8 @@ def doPrintGroupMembers():
                                   soft_errors=True,
                                   groupKey=group_email, roles=listRoles, fields=listFields, maxResults=GC_Values[GC_MEMBER_MAX_RESULTS])
     for member in group_members:
-      for unwanted_item in [u'kind', u'etag']:
-        if unwanted_item in member:
-          del member[unwanted_item]
-      if validRoles and member.get(u'role', ROLE_MEMBER) not in validRoles:
+      if ((validRoles and member.get(u'role', ROLE_MEMBER) not in validRoles) or
+          (checkSuspended is not None and ((not checkSuspended and member[u'status'] == u'SUSPENDED') or (checkSuspended and member[u'status'] != u'SUSPENDED')))):
         continue
       for title in member:
         if title not in titles:
@@ -11743,7 +11752,7 @@ def _getRoleVerification(memberRoles, fields):
   else:
     return (set(), memberRoles, fields)
 
-def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=None, checkNotSuspended=False, groupUserMembersOnly=True):
+def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=None, checkSuspended=None, groupUserMembersOnly=True):
   got_uids = False
   if entity_type is None:
     entity_type = sys.argv[1].lower()
@@ -11754,7 +11763,11 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
     users = [entity,]
   elif entity_type == u'users':
     users = entity.replace(u',', u' ').split()
-  elif entity_type == u'group':
+  elif entity_type in [u'group', u'group_ns', u'group_susp']:
+    if entity_type == u'group_ns':
+      checkSuspended = False
+    elif entity_type == u'group_susp':
+      checkSuspended = True
     got_uids = True
     group = entity
     if member_type is None:
@@ -11773,44 +11786,51 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
     for member in members:
       if (((not groupUserMembersOnly) or (member[u'type'] == u'USER')) and
           (not validRoles or member.get(u'role', ROLE_MEMBER) in validRoles) and
-          not (checkNotSuspended and (member[u'status'] == u'SUSPENDED'))):
+          (checkSuspended is None or (not checkSuspended and member[u'status'] != u'SUSPENDED') or (checkSuspended and member[u'status'] == u'SUSPENDED'))):
         users.append(member.get(u'email', member[u'id']))
-  elif entity_type in [u'ou', u'org']:
+  elif entity_type in [u'ou', u'org', u'ou_ns', u'org_ns', u'ou_susp', u'org_susp',]:
+    if entity_type in [u'ou_ns', u'org_ns']:
+      checkSuspended = False
+    elif entity_type in [u'ou_susp', u'org_susp']:
+      checkSuspended = True
     got_uids = True
     ou = makeOrgUnitPathAbsolute(entity)
     users = []
     if ou.startswith(u'id:'):
       ou = callGAPI(cd.orgunits(), u'get',
                     customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=ou, fields=u'orgUnitPath')[u'orgUnitPath']
-    query = orgUnitPathQuery(ou)
+    query = orgUnitPathQuery(ou, checkSuspended)
     page_message = None
     if not silent:
       printGettingAllItems(u'Users', query)
       page_message = u'Got %%total_items%% Users...'
     members = callGAPIpages(cd.users(), u'list', u'users', page_message=page_message,
-                            customer=GC_Values[GC_CUSTOMER_ID], fields=u'nextPageToken,users(primaryEmail,suspended,orgUnitPath)',
+                            customer=GC_Values[GC_CUSTOMER_ID], fields=u'nextPageToken,users(primaryEmail,orgUnitPath)',
                             query=query, maxResults=GC_Values[GC_USER_MAX_RESULTS])
     ou = ou.lower()
     for member in members:
-      if (ou == member.get(u'orgUnitPath', u'').lower()) and not (checkNotSuspended and member[u'suspended']):
+      if ou == member.get(u'orgUnitPath', u'').lower():
         users.append(member[u'primaryEmail'])
     if not silent:
       sys.stderr.write(u"%s Users are directly in the OU.\n" % len(users))
-  elif entity_type in [u'ou_and_children', u'ou_and_child']:
+  elif entity_type in [u'ou_and_children', u'ou_and_child', u'ou_and_children_ns', u'ou_and_child_ns', u'ou_and_children_susp', u'ou_and_child_susp']:
+    if entity_type in [u'ou_and_children_ns', u'ou_and_child_ns']:
+      checkSuspended = False
+    elif entity_type in [u'ou_and_children_susp', u'ou_and_child_susp']:
+      checkSuspended = True
     got_uids = True
     ou = makeOrgUnitPathAbsolute(entity)
     users = []
-    query = orgUnitPathQuery(ou)
+    query = orgUnitPathQuery(ou, checkSuspended)
     page_message = None
     if not silent:
       printGettingAllItems(u'Users', query)
       page_message = u'Got %%total_items%% Users...'
     members = callGAPIpages(cd.users(), u'list', u'users', page_message=page_message,
-                            customer=GC_Values[GC_CUSTOMER_ID], fields=u'nextPageToken,users(primaryEmail,suspended)',
+                            customer=GC_Values[GC_CUSTOMER_ID], fields=u'nextPageToken,users(primaryEmail)',
                             query=query, maxResults=GC_Values[GC_USER_MAX_RESULTS])
     for member in members:
-      if not (checkNotSuspended and member[u'suspended']):
-        users.append(member[u'primaryEmail'])
+      users.append(member[u'primaryEmail'])
     if not silent:
       sys.stderr.write(u"done.\r\n")
   elif entity_type in [u'query', u'queries']:
@@ -11829,11 +11849,10 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
                               customer=GC_Values[GC_CUSTOMER_ID], fields=u'nextPageToken,users(primaryEmail,suspended)',
                               query=query, maxResults=GC_Values[GC_USER_MAX_RESULTS])
       for member in members:
-        if not checkNotSuspended or not member[u'suspended']:
-          email = member[u'primaryEmail']
-          if email not in usersSet:
-            usersSet.add(email)
-            users.append(email)
+        email = member[u'primaryEmail']
+        if (checkSuspended is None or checkSuspended == member[u'suspended']) and email not in usersSet:
+          usersSet.add(email)
+          users.append(email)
       if not silent:
         sys.stderr.write(u"done.\r\n")
   elif entity_type in [u'license', u'licenses', u'licence', u'licences']:
@@ -11888,15 +11907,15 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
     users = []
     entity = entity.lower()
     if entity == u'users':
+      query = u'isSuspended=False'
       if not silent:
         printGettingAllItems(u'Users', None)
       page_message = u'Got %%total_items%% Users...'
       all_users = callGAPIpages(cd.users(), u'list', u'users', page_message=page_message,
-                                customer=GC_Values[GC_CUSTOMER_ID],
-                                fields=u'nextPageToken,users(primaryEmail,suspended)', maxResults=GC_Values[GC_USER_MAX_RESULTS])
+                                customer=GC_Values[GC_CUSTOMER_ID], query=query,
+                                fields=u'nextPageToken,users(primaryEmail)', maxResults=GC_Values[GC_USER_MAX_RESULTS])
       for member in all_users:
-        if not member[u'suspended']:
-          users.append(member[u'primaryEmail'])
+        users.append(member[u'primaryEmail'])
       if not silent:
         sys.stderr.write(u"done getting %s Users.\r\n" % len(users))
     elif entity == u'cros':
@@ -11915,11 +11934,13 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
   elif entity_type == u'cros':
     users = entity.replace(u',', u' ').split()
     entity = u'cros'
-  elif entity_type in [u'crosquery', u'crosqueries']:
-    if entity_type == u'crosquery':
-      queries = [entity]
-    else:
+  elif entity_type in [u'crosquery', u'crosqueries', u'cros_sn']:
+    if entity_type == u'cros_sn':
+      queries = [u'id:{0}'.format(sn) for sn in shlexSplitList(entity)]
+    elif entity_type == u'crosqueries':
       queries = shlexSplitList(entity)
+    else:
+      queries = [entity]
     users = []
     usersSet = set()
     for query in queries:
