@@ -1511,7 +1511,7 @@ def addDelegates(users, i):
     if not gmail:
       continue
     print u"Giving %s delegate access to %s (%s/%s)" % (delegate, delegator, i, count)
-    callGAPI(gmail.users().settings().delegates(), u'create', userId=u'me', body={u'delegateEmail': delegate})
+    callGAPI(gmail.users().settings().delegates(), u'create', soft_errors=True, userId=u'me', body={u'delegateEmail': delegate})
 
 def gen_sha512_hash(password):
   from passlib.handlers.sha2_crypt import sha512_crypt
@@ -1569,7 +1569,7 @@ def deleteDelegate(users):
     if not gmail:
       continue
     print u"Deleting %s delegate access to %s (%s/%s)" % (delegate, user, i, count)
-    callGAPI(gmail.users().settings().delegates(), u'delete', userId=u'me', delegateEmail=delegate)
+    callGAPI(gmail.users().settings().delegates(), u'delete', soft_errors=True, userId=u'me', delegateEmail=delegate)
 
 def doAddCourseParticipant():
   croom = buildGAPIObject(u'classroom')
