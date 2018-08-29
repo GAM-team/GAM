@@ -1749,7 +1749,7 @@ def doGetCustomerInfo():
                     customer=customer_info[u'id'], domainName=customer_info[u'customerDomain'], fields=u'verified')
   print u'Primary Domain Verified: %s' % result[u'verified']
   print u'Customer Creation Time: %s' % customer_info[u'customerCreationTime']
-  print u'Default Language: %s' % customer_info[u'language']
+  print u'Default Language: %s' % customer_info.get(u'language', u'Unset (defaults to en)')
   if u'postalAddress' in customer_info:
     print u'Address:'
     for field in ADDRESS_FIELDS_PRINT_ORDER:
