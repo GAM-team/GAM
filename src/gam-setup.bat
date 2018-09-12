@@ -1,5 +1,15 @@
+:neworupgrade
 @echo(
-@set /p adminemail= "Please enter your G Suite admin email address: "
+@set /p nu= "Is this a new install or an upgrade? [n or u] "
+@if /I "%nu%"=="u" (
+@  echo GAM installation and setup complete!
+@  goto alldone
+   )
+@if /I not "%nu%"=="n" (
+@  echo(
+@  echo Please answer n or u.
+@  goto neworupgrade
+   )
 
 :createproject
 @echo(
@@ -16,10 +26,12 @@
 @  echo Please answer y or n.
 @  goto createproject
    )
+@echo(
+@set /p adminemail= "Please enter your G Suite admin email address: "
 @gam create project %adminemail%
 @if not ERRORLEVEL 1 goto projectdone
 @echo(
-@echo Projection creation failed. Trying again. Say n to skip projection creation.
+@echo Project creation failed. Trying again. Say n to skip project creation.
 @goto createproject
 :projectdone
 
