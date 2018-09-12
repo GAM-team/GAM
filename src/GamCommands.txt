@@ -1015,18 +1015,32 @@ gam delete user <UserItem>
 gam undelete user <UserItem> [org|ou <OrgUnitPath>]
 gam info user [<UserItem>] [noaliases] [nogroups] [nolicenses|nolicences] [noschemas] [schemas|custom <SchemaNameList>] [userview] [skus|sku <SKUIDList>]
 
-gam print users [todrive] ([domain <DomainName>] [(query <QueryUser>)|(queries <QueryUserList>)] [deleted_only|only_deleted])
+Print fields for selected users; use domain, query/queries and deleted_only to select users to print;
+if none of these options are specified, all users are printed.
+The first column will always be primaryEmail; the remaining field names will be sorted if allfields, basic, full or sortheders is specified;
+otherwise, the remaining field names will appear in the order specified.
+
+gam print users [todrive]
+	([domain <DomainName>] [(query <QueryUser>)|(queries <QueryUserList>)] [deleted_only|only_deleted])
 	[groups] [license|licenses|licence|licences] [emailpart|emailparts|username]
 	[orderby <UserOrderByFieldName> [ascending|descending]] [userview]
 	[allfields|basic|full | ((<UserFieldName>* | fields <UserFieldNameList>) [schemas|custom all|<SchemaNameList>])]
 	[delimiter <Character>] [sortheaders]
-gam <UserTypeEntity> print
 
-Summary of printing:
-gam print users
-Prints a header row and primaryEmail for all users.
+Print fields for specified users.
+The first column will always be primaryEmail; the remaining field names will be sorted if allfields, basic, full or sortheders is specified;
+otherwise, the remaining field names will appear in the order specified.
+
+gam <UserTypeEntity> print users [todrive]
+	[groups] [license|licenses|licence|licences] [emailpart|emailparts|username]
+	[orderby <UserOrderByFieldName> [ascending|descending]] [userview]
+	[allfields|basic|full | ((<UserFieldName>* | fields <UserFieldNameList>) [schemas|custom all|<SchemaNameList>])]
+	[delimiter <Character>] [sortheaders]
+
+Print no header row and primaryEmail for specified users.
+
 gam <UserTypeEntity> print
-Prints no header row and primaryEmail for specified users.
+gam <UserTypeEntity> print users
 
 gam create verify|verification <DomainName>
 gam update verify|verification <DomainName> cname|txt|text|site|file

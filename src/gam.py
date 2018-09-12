@@ -10360,7 +10360,21 @@ USER_ARGUMENT_TO_PROPERTY_MAP = {
   u'websites': [u'websites',],
   }
 
-def doPrintUsers():
+def doPrintUsers(i, entityList=None):
+  def _printUser(userEntity):
+    if email_parts and (u'primaryEmail' in userEntity):
+      userEmail = userEntity[u'primaryEmail']
+      if userEmail.find(u'@') != -1:
+        userEntity[u'primaryEmailLocal'], userEntity[u'primaryEmailDomain'] = splitEmailAddress(userEmail)
+    addRowTitlesToCSVfile(flatten_json(userEntity), csvRows, titles)
+
+# These two forma are equivalient; just print list of users with no header row
+# gam <UserTypeEntity> print - Handled in ProcessGamCommand
+# gam <UserTypeEntity> print users - Handled here
+  if i == 5 and i == len(sys.argv):
+    for user in entityList:
+      print user
+    return
   cd = buildGAPIObject(u'directory')
   todrive = False
   fieldsList = []
@@ -10377,7 +10391,6 @@ def doPrintUsers():
   viewType = deleted_only = orderBy = sortOrder = None
   groupDelimiter = u' '
   licenseDelimiter = u','
-  i = 3
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace(u'_', u'')
     if myarg in PROJECTION_CHOICES_MAP:
@@ -10407,9 +10420,6 @@ def doPrintUsers():
     elif myarg == u'todrive':
       todrive = True
       i += 1
-    elif myarg in [u'deletedonly', u'onlydeleted']:
-      deleted_only = True
-      i += 1
     elif myarg == u'orderby':
       orderBy = sys.argv[i+1]
       if orderBy.lower() not in [u'email', u'familyname', u'givenname', u'firstname', u'lastname']:
@@ -10425,13 +10435,16 @@ def doPrintUsers():
     elif myarg in SORTORDER_CHOICES_MAP:
       sortOrder = SORTORDER_CHOICES_MAP[myarg]
       i += 1
-    elif myarg == u'domain':
+    elif entityList is None and myarg == u'domain':
       domain = sys.argv[i+1]
       customer = None
       i += 2
-    elif myarg in [u'query', u'queries']:
+    elif entityList is None and myarg in [u'query', u'queries']:
       queries = getQueries(myarg, sys.argv[i+1])
       i += 2
+    elif entityList is None and myarg in [u'deletedonly', u'onlydeleted']:
+      deleted_only = True
+      i += 1
     elif myarg in USER_ARGUMENT_TO_PROPERTY_MAP:
       if not fieldsList:
         fieldsList = [u'primaryEmail',]
@@ -10458,25 +10471,49 @@ def doPrintUsers():
       i += 1
     else:
       systemErrorExit(2, '%s is not a valid argument for "gam print users"' % sys.argv[i])
-  if fieldsList:
-    fields = u'nextPageToken,users(%s)' % u','.join(set(fieldsList)).replace(u'.', u'/')
+  if entityList is None:
+    sortRows = False
+    if fieldsList:
+      fields = u'nextPageToken,users(%s)' % u','.join(set(fieldsList)).replace(u'.', u'/')
+    else:
+      fields = None
+    for query in queries:
+      printGettingAllItems(u'Users', query)
+      page_message = u'Got %%total_items%% Users: %%first_item%% - %%last_item%%\n'
+      all_users = callGAPIpages(cd.users(), u'list', u'users', page_message=page_message,
+                                message_attribute=u'primaryEmail', customer=customer, domain=domain, fields=fields,
+                                showDeleted=deleted_only, orderBy=orderBy, sortOrder=sortOrder, viewType=viewType,
+                                query=query, projection=projection, customFieldMask=customFieldMask, maxResults=GC_Values[GC_USER_MAX_RESULTS])
+      for user in all_users:
+        _printUser(user)
   else:
-    fields = None
-  for query in queries:
-    printGettingAllItems(u'Users', query)
-    page_message = u'Got %%total_items%% Users: %%first_item%% - %%last_item%%\n'
-    all_users = callGAPIpages(cd.users(), u'list', u'users', page_message=page_message,
-                              message_attribute=u'primaryEmail', customer=customer, domain=domain, fields=fields,
-                              showDeleted=deleted_only, orderBy=orderBy, sortOrder=sortOrder, viewType=viewType,
-                              query=query, projection=projection, customFieldMask=customFieldMask, maxResults=GC_Values[GC_USER_MAX_RESULTS])
-    for user in all_users:
-      if email_parts and (u'primaryEmail' in user):
-        user_email = user[u'primaryEmail']
-        if user_email.find(u'@') != -1:
-          user[u'primaryEmailLocal'], user[u'primaryEmailDomain'] = splitEmailAddress(user_email)
-      addRowTitlesToCSVfile(flatten_json(user), csvRows, titles)
+    sortRows = True
+    if fieldsList:
+      fields = u','.join(set(fieldsList)).replace(u'.', u'/')
+      selectLookup = len(fieldsList) > 1
+    else:
+      fields = None
+      selectLookup = True
+# If no individual fields were specified (all_fields, basic, full) or individual fields other than primaryEmail were specified, look up each user
+    if selectLookup:
+      for userEntity in entityList:
+        try:
+          user = callGAPI(cd.users(), u'get',
+                          throw_reasons=[GAPI_USER_NOT_FOUND, GAPI_DOMAIN_NOT_FOUND, GAPI_DOMAIN_CANNOT_USE_APIS, GAPI_FORBIDDEN],
+                          userKey=userEntity, fields=fields, viewType=viewType, projection=projection, customFieldMask=customFieldMask)
+          _printUser(user)
+        except (GAPI_userNotFound, GAPI_domainNotFound, GAPI_domainCannotUseApis, GAPI_forbidden):
+          entityUnknownWarning(u'User', userEntity, 0, 0)
+# The only field specified was primaryEmail, just list the users
+    else:
+      for userEntity in entityList:
+        _printUser({u'primaryEmail': normalizeEmailAddressOrUID(userEntity)})
   if sortHeaders:
     sortCSVTitles([u'primaryEmail',], titles)
+  if sortRows and orderBy:
+    orderBy = [u'name.{0}'.format(orderBy), u'primaryEmail'][orderBy == u'email']
+    if orderBy in titles:
+      csvRows.sort(key=lambda k: k[orderBy], reverse=sortOrder == u'DESCENDING')
   if getGroupFeed:
     total_users = len(csvRows)
     user_count = 1
@@ -12668,7 +12705,7 @@ def ProcessGAMCommand(args):
     elif command == u'print':
       argument = sys.argv[2].lower().replace(u'-', u'')
       if argument == u'users':
-        doPrintUsers()
+        doPrintUsers(3)
       elif argument in [u'nicknames', u'aliases']:
         doPrintAliases()
       elif argument == u'groups':
@@ -12928,6 +12965,8 @@ def ProcessGAMCommand(args):
         printShowTokens(5, u'users', users, True)
       elif printWhat in [u'teamdrive', u'teamdrives']:
         printShowTeamDrives(users, True)
+      elif printWhat == u'users':
+        doPrintUsers(5, users)
       else:
         systemErrorExit(2, '%s is not a valid argument for "gam <users> print"' % printWhat)
     elif command == u'modify':
