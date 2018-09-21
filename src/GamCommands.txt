@@ -1017,7 +1017,7 @@ gam info user [<UserItem>] [noaliases] [nogroups] [nolicenses|nolicences] [nosch
 
 Print fields for selected users; use domain, query/queries and deleted_only to select users to print;
 if none of these options are specified, all users are printed.
-The first column will always be primaryEmail; the remaining field names will be sorted if allfields, basic, full or sortheders is specified;
+The first column will always be primaryEmail; the remaining field names will be sorted if allfields, basic, full or sortheaders is specified;
 otherwise, the remaining field names will appear in the order specified.
 
 gam print users [todrive]
@@ -1028,7 +1028,7 @@ gam print users [todrive]
 	[delimiter <Character>] [sortheaders]
 
 Print fields for specified users.
-The first column will always be primaryEmail; the remaining field names will be sorted if allfields, basic, full or sortheders is specified;
+The first column will always be primaryEmail; the remaining field names will be sorted if allfields, basic, full or sortheaders is specified;
 otherwise, the remaining field names will appear in the order specified.
 
 gam <UserTypeEntity> print users [todrive]
@@ -1036,6 +1036,7 @@ gam <UserTypeEntity> print users [todrive]
 	[orderby <UserOrderByFieldName> [ascending|descending]] [userview]
 	[allfields|basic|full | ((<UserFieldName>* | fields <UserFieldNameList>) [schemas|custom all|<SchemaNameList>])]
 	[delimiter <Character>] [sortheaders]
+	[minimizequotacount <Number>] [minimizequotapct <Number>] 
 
 Print no header row and primaryEmail for specified users.
 

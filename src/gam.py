@@ -225,6 +225,15 @@ def integerLimits(minVal, maxVal, item=u'integer'):
     return u'{0} x<={1}'.format(item, maxVal)
   return u'{0} x'.format(item)
 
+def getInteger(value, item, minVal=None, maxVal=None):
+  try:
+    number = int(value.strip())
+    if ((minVal is None) or (number >= minVal)) and ((maxVal is None) or (number <= maxVal)):
+      return number
+  except ValueError:
+    pass
+  systemErrorExit(2, u'expected {0} in range {1}'.format(item, integerLimits(minVal, maxVal)))
+
 def removeCourseIdScope(courseId):
   if courseId.startswith(u'd:'):
     return courseId[2:]
@@ -878,6 +887,41 @@ def callGAPI(service, function,
     except httplib2.ServerNotFoundError as e:
       systemErrorExit(4, str(e))
 
+def _processGAPIpagesResult(this_page, items, all_pages, total_items, page_message, message_attribute):
+  if this_page:
+    pageToken = this_page.get(u'nextPageToken')
+    if items in this_page:
+      page_items = len(this_page[items])
+      total_items += page_items
+      if all_pages is not None:
+        all_pages.extend(this_page[items])
+    else:
+      this_page = {items: []}
+      page_items = 0
+  else:
+    pageToken = None
+    this_page = {items: []}
+    page_items = 0
+  if page_message:
+    show_message = page_message.replace(u'%%num_items%%', str(page_items))
+    show_message = show_message.replace(u'%%total_items%%', str(total_items))
+    if message_attribute:
+      try:
+        show_message = show_message.replace(u'%%first_item%%', str(this_page[items][0][message_attribute]))
+        show_message = show_message.replace(u'%%last_item%%', str(this_page[items][-1][message_attribute]))
+      except (IndexError, KeyError):
+        show_message = show_message.replace(u'%%first_item%%', u'')
+        show_message = show_message.replace(u'%%last_item%%', u'')
+    sys.stderr.write(u'\r')
+    sys.stderr.flush()
+    sys.stderr.write(show_message)
+  return (pageToken, total_items)
+
+def _finalizeGAPIpagesResult(page_message):
+  if page_message and (page_message[-1] != u'\n'):
+    sys.stderr.write(u'\r\n')
+    sys.stderr.flush()
+
 def callGAPIpages(service, function, items,
                   page_message=None, message_attribute=None,
                   soft_errors=False, throw_reasons=None, retry_reasons=None,
@@ -889,37 +933,11 @@ def callGAPIpages(service, function, items,
   while True:
     this_page = callGAPI(service, function, soft_errors=soft_errors,
                          throw_reasons=throw_reasons, retry_reasons=retry_reasons, **kwargs)
-    if this_page:
-      if items in this_page:
-        page_items = len(this_page[items])
-        total_items += page_items
-        all_pages.extend(this_page[items])
-      else:
-        this_page = {items: []}
-        page_items = 0
-    else:
-      this_page = {items: []}
-      page_items = 0
-    if page_message:
-      show_message = page_message.replace(u'%%num_items%%', str(page_items))
-      show_message = show_message.replace(u'%%total_items%%', str(total_items))
-      if message_attribute:
-        try:
-          show_message = show_message.replace(u'%%first_item%%', str(this_page[items][0][message_attribute]))
-          show_message = show_message.replace(u'%%last_item%%', str(this_page[items][-1][message_attribute]))
-        except (IndexError, KeyError):
-          show_message = show_message.replace(u'%%first_item%%', u'')
-          show_message = show_message.replace(u'%%last_item%%', u'')
-      sys.stderr.write(u'\r')
-      sys.stderr.flush()
-      sys.stderr.write(show_message)
-    if this_page and this_page.get(u'nextPageToken'):
-      kwargs[u'pageToken'] = this_page[u'nextPageToken']
-    else:
-      if page_message and (page_message[-1] != u'\n'):
-        sys.stderr.write(u'\r\n')
-        sys.stderr.flush()
+    pageToken, total_items = _processGAPIpagesResult(this_page, items, all_pages, total_items, page_message, message_attribute)
+    if not pageToken:
+      _finalizeGAPIpagesResult(page_message)
       return all_pages
+    kwargs[u'pageToken'] = pageToken
 
 def callGAPIitems(service, function, items,
                   throw_reasons=None, retry_reasons=None,
@@ -1773,6 +1791,7 @@ def doGetCustomerInfo():
   if customerId == MY_CUSTOMER:
     customerId = None
   rep = buildGAPIObject(u'reports')
+  usage = None
   while True:
     try:
       usage = callGAPIpages(rep.customerUsageReports(), u'get', u'usageReports', throw_reasons=[GAPI_INVALID],
@@ -2306,10 +2325,11 @@ def doDeleteGuardian():
       try:
         results = callGAPIpages(croom.userProfiles().guardians(), u'list', u'guardians',
                                 throw_reasons=[GAPI_FORBIDDEN],
-                                studentId=studentId, invitedEmailAddress=guardianId)
+                                studentId=studentId, invitedEmailAddress=guardianId,
+                                fields=u'nextPageToken,guardians(studentId,guardianId)')
         if len(results) > 0:
           for result in results:
-            _deleteGuardian(croom, studentId, result[u'guardianId'], guardianId)
+            _deleteGuardian(croom, result[u'studentId'], result[u'guardianId'], guardianId)
           return
       except GAPI_forbidden:
         entityUnknownWarning(u'Student', studentId, 0, 0)
@@ -2322,10 +2342,11 @@ def doDeleteGuardian():
     try:
       results = callGAPIpages(croom.userProfiles().guardianInvitations(), u'list', u'guardianInvitations',
                               throw_reasons=[GAPI_FORBIDDEN],
-                              studentId=studentId, invitedEmailAddress=guardianId, states=[u'PENDING',])
+                              studentId=studentId, invitedEmailAddress=guardianId, states=[u'PENDING',],
+                              fields=u'nextPageToken,guardianInvitations(studentId,invitationId)')
       if len(results) > 0:
         for result in results:
-          status = _cancelGuardianInvitation(croom, studentId, result[u'invitationId'])
+          status = _cancelGuardianInvitation(croom, result[u'studentId'], result[u'invitationId'])
         sys.exit(status)
     except GAPI_forbidden:
       entityUnknownWarning(u'Student', studentId, 0, 0)
@@ -2675,7 +2696,7 @@ def doPrintPrintJobs():
       owner = sys.argv[i+1]
       i += 2
     elif myarg == u'limit':
-      jobLimit = max(0, int(sys.argv[i+1]))
+      jobLimit = getInteger(sys.argv[i+1], myarg, minVal=0)
       i += 2
     else:
       systemErrorExit(2, '%s is not a valid argument for "gam print printjobs"' % sys.argv[i])
@@ -2867,6 +2888,14 @@ def deleteCalendar(users):
       continue
     callGAPI(cal.calendarList(), u'delete', soft_errors=True, calendarId=calendarId)
 
+CALENDAR_REMINDER_MAX_MINUTES = 40320
+
+CALENDAR_MIN_COLOR_INDEX = 1
+CALENDAR_MAX_COLOR_INDEX = 24
+
+CALENDAR_EVENT_MIN_COLOR_INDEX = 1
+CALENDAR_EVENT_MAX_COLOR_INDEX = 11
+
 def getCalendarAttributes(i, body, function):
   colorRgbFormat = False
   while i < len(sys.argv):
@@ -2881,7 +2910,7 @@ def getCalendarAttributes(i, body, function):
       body[u'summaryOverride'] = sys.argv[i+1]
       i += 2
     elif myarg == u'colorindex':
-      body[u'colorId'] = str(sys.argv[i+1])
+      body[u'colorId'] = getInteger(sys.argv[i+1], myarg, minVal=CALENDAR_MIN_COLOR_INDEX, maxVal=CALENDAR_MAX_COLOR_INDEX)
       i += 2
     elif myarg == u'backgroundcolor':
       body[u'backgroundColor'] = getColor(sys.argv[i+1])
@@ -2897,10 +2926,7 @@ def getCalendarAttributes(i, body, function):
       if method not in CLEAR_NONE_ARGUMENT:
         if method not in CALENDAR_REMINDER_METHODS:
           systemErrorExit(2, 'Method must be one of %s; got %s' % (u', '.join(CALENDAR_REMINDER_METHODS+CLEAR_NONE_ARGUMENT), method))
-        try:
-          minutes = int(sys.argv[i+2])
-        except ValueError:
-          systemErrorExit(2, 'Reminder time must be specified in minutes; got %s' % sys.argv[i+2])
+        minutes = getInteger(sys.argv[i+2], myarg, minVal=0, maxVal=CALENDAR_REMINDER_MAX_MINUTES)
         body[u'defaultReminders'].append({u'method': method, u'minutes': minutes})
         i += 3
       else:
@@ -3097,7 +3123,7 @@ def doPrintJobFetch():
       owner = sys.argv[i+1]
       i += 2
     elif myarg == u'limit':
-      jobLimit = max(0, int(sys.argv[i+1]))
+      jobLimit = getInteger(sys.argv[i+1], myarg, minVal=0)
       i += 2
     elif myarg == u'drivedir':
       targetFolder = GC_Values[GC_DRIVE_DIR]
@@ -3475,16 +3501,12 @@ def doCalendarAddEvent():
       sendNotifications = True
       i += 1
     elif myarg == u'attendee':
-      try:
-        body[u'attendees'].append({u'email': sys.argv[i+1]})
-      except KeyError:
-        body[u'attendees'] = [{u'email': sys.argv[i+1]},]
+      body.setdefault(u'attendees', [])
+      body[u'attendees'].append({u'email': sys.argv[i+1]})
       i += 2
     elif myarg == u'optionalattendee':
-      try:
-        body[u'attendees'].append({u'email': sys.argv[i+1], u'optional': True})
-      except TypeError:
-        body[u'attendees'] = [{u'email': sys.argv[i+1], u'optional': True},]
+      body.setdefault(u'attendees', [])
+      body[u'attendees'].append({u'email': sys.argv[i+1], u'optional': True})
       i += 2
     elif myarg == u'anyonecanaddself':
       body[u'anyoneCanAddSelf'] = True
@@ -3540,17 +3562,13 @@ def doCalendarAddEvent():
       body[u'reminders'] = {u'useDefault': False}
       i += 1
     elif myarg == u'reminder':
-      try:
-        body[u'reminders'][u'overrides'].append({u'minutes': sys.argv[i+1], u'method': sys.argv[i+2]})
-        body[u'reminders'][u'useDefault'] = False
-      except KeyError:
-        body[u'reminders'] = {u'useDefault': False, u'overrides': [{u'minutes': sys.argv[i+1], u'method': sys.argv[i+2]},]}
+      body.setdefault(u'reminders', {u'overrides': [], u'useDefault': False})
+      body[u'reminders'][u'overrides'].append({u'minutes': getInteger(sys.argv[i+1], myarg, minVal=0, maxVal=CALENDAR_REMINDER_MAX_MINUTES),
+                                               u'method': sys.argv[i+2]})
       i += 3
     elif myarg == u'recurrence':
-      try:
-        body[u'recurrence'].append(sys.argv[i+1])
-      except KeyError:
-        body[u'recurrence'] = [sys.argv[i+1],]
+      body.setdefault(u'recurrence', [])
+      body[u'recurrence'].append(sys.argv[i+1])
       i += 2
     elif myarg == u'timezone':
       timeZone = sys.argv[i+1]
@@ -3566,18 +3584,17 @@ def doCalendarAddEvent():
       body[u'extendedProperties'][u'shared'][sys.argv[i+1]] = sys.argv[i+2]
       i += 3
     elif myarg == u'colorindex':
-      body[u'colorId'] = str(sys.argv[i+1])
+      body[u'colorId'] = getInteger(sys.argv[i+1], myarg, CALENDAR_EVENT_MIN_COLOR_INDEX, CALENDAR_EVENT_MAX_COLOR_INDEX)
       i += 2
     else:
       systemErrorExit(2, '%s is not a valid argument for "gam calendar <email> addevent"' % sys.argv[i])
-  if not timeZone and u'recurrence' in body:
-    timeZone = callGAPI(cal.calendars(), u'get', calendarId=calendarId, fields=u'timeZone')[u'timeZone']
-  if u'recurrence' in body:
-    for a_time in [u'start', u'end']:
-      try:
-        body[a_time][u'timeZone'] = timeZone
-      except KeyError:
-        pass
+  if (u'recurrence' in body) and ((u'start' in body) or (u'end' in body)):
+    if not timeZone:
+      timeZone = callGAPI(cal.calendars(), u'get', calendarId=calendarId, fields=u'timeZone')[u'timeZone']
+    if u'start' in body:
+      body[u'start'][u'timeZone'] = timeZone
+    if u'end' in body:
+      body[u'end'][u'timeZone'] = timeZone
   callGAPI(cal.events(), u'insert', calendarId=calendarId, sendNotifications=sendNotifications, body=body)
 
 def doCalendarModifySettings():
@@ -4560,7 +4577,7 @@ def downloadDriveFile(users):
       fileIdSelection[u'query'] = u"'me' in owners and title = '{0}'".format(sys.argv[i+1])
       i += 2
     elif myarg == u'revision':
-      revisionId = sys.argv[i+1]
+      revisionId = getInteger(sys.argv[i+1], myarg, minVal=1)
       i += 2
     elif myarg == u'format':
       exportFormatChoices = sys.argv[i+1].replace(u',', u' ').lower().split()
@@ -5467,7 +5484,7 @@ def doProcessMessagesOrThreads(users, function, unit=u'messages'):
       doIt = True
       i += 1
     elif myarg in [u'maxtodelete', u'maxtotrash', u'maxtomodify', u'maxtountrash']:
-      maxToProcess = int(sys.argv[i+1])
+      maxToProcess = getInteger(sys.argv[i+1], myarg, minVal=0)
       i += 2
     elif (function == u'modify') and (myarg == u'addlabel'):
       body.setdefault(u'addLabelIds', [])
@@ -6423,7 +6440,8 @@ def doCreateOrUpdateUserSchema(updateCmd):
           a_field[u'readAccessType'] = u'ADMINS_AND_SELF'
           i += 1
         elif myarg == u'range':
-          a_field[u'numericIndexingSpec'] = {u'minValue': sys.argv[i+1], u'maxValue': sys.argv[i+2]}
+          a_field[u'numericIndexingSpec'] = {u'minValue': getInteger(sys.argv[i+1], myarg),
+                                             u'maxValue': getInteger(sys.argv[i+2], myarg)}
           i += 3
         elif myarg == u'endfield':
           body[u'fields'].append(a_field)
@@ -6887,7 +6905,7 @@ def getUserAttributes(i, cd, updateCmd):
       while True:
         myopt = sys.argv[i].lower()
         if myopt == u'expires':
-          ssh[u'expirationTimeUsec'] = sys.argv[i+1]
+          ssh[u'expirationTimeUsec'] = getInteger(sys.argv[i+1], myopt, minVal=0)
           i += 2
         elif myopt == u'key':
           ssh[u'key'] = sys.argv[i+1]
@@ -6910,10 +6928,10 @@ def getUserAttributes(i, cd, updateCmd):
           posix[u'gecos'] = sys.argv[i+1]
           i += 2
         elif myopt == u'gid':
-          posix[u'gid'] = int(sys.argv[i+1])
+          posix[u'gid'] = getInteger(sys.argv[i+1], myopt, minVal=0)
           i += 2
         elif myopt == u'uid':
-          posix[u'uid'] = int(sys.argv[i+1])
+          posix[u'uid'] = getInteger(sys.argv[i+1], myopt, minVal=1000)
           i += 2
         elif myopt in [u'home', u'homedirectory']:
           posix[u'homeDirectory'] = sys.argv[i+1]
@@ -8265,7 +8283,7 @@ def _getResourceCalendarAttributes(cd, args, body={}):
       body[u'buildingId'] = _getBuildingByNameOrId(cd, args[i+1], minLen=0)
       i += 2
     elif myarg in [u'capacity']:
-      body[u'capacity'] = int(args[i+1])
+      body[u'capacity'] = getInteger(args[i+1], myarg, minVal=0)
       i += 2
     elif myarg in [u'feature', u'features']:
       features = args[i+1].split(u',')
@@ -8852,9 +8870,10 @@ def doUpdateResoldSubscription():
       i += 2
     elif myarg in [u'seats']:
       function = u'changeSeats'
-      kwargs[u'body'] = {u'numberOfSeats': sys.argv[i+1]}
+      kwargs[u'body'] = {u'numberOfSeats': getInteger(sys.argv[i+1], u'numberOfSeats', minVal=0)}
       if len(sys.argv) > i + 2 and sys.argv[i+2].isdigit():
-        kwargs[u'body'][u'maximumNumberOfSeats'] = sys.argv[i+2]
+        kwargs[u'body'][u'maximumNumberOfSeats'] = getInteger(sys.argv[i+2], u'maximumNumberOfSeats', minVal=0)
+
         i += 3
       else:
         i += 2
@@ -8865,9 +8884,9 @@ def doUpdateResoldSubscription():
       while i < len(sys.argv):
         planarg = sys.argv[i].lower()
         if planarg == u'seats':
-          kwargs[u'body'][u'seats'] = {u'numberOfSeats': sys.argv[i+1]}
+          kwargs[u'body'][u'seats'] = {u'numberOfSeats': getInteger(sys.argv[i+1], u'numberOfSeats', minVal=0)}
           if len(sys.argv) > i + 2 and sys.argv[i+2].isdigit():
-            kwargs[u'body'][u'seats'][u'maximumNumberOfSeats'] = sys.argv[i+2]
+            kwargs[u'body'][u'seats'][u'maximumNumberOfSeats'] = getInteger(sys.argv[i+2], u'maximumNumberOfSeats', minVal=0)
             i += 3
           else:
             i += 2
@@ -8916,9 +8935,9 @@ def _getResoldSubscriptionAttr(arg, customerId):
     elif myarg in [u'purchaseorderid', u'po']:
       body[u'purchaseOrderId'] = arg[i+1]
     elif myarg in [u'seats']:
-      body[u'seats'][u'numberOfSeats'] = arg[i+1]
+      body[u'seats'][u'numberOfSeats'] = getInteger(sys.argv[i+1], u'numberOfSeats', minVal=0)
       if len(arg) > i + 2 and arg[i+2].isdigit():
-        body[u'seats'][u'maximumNumberOfSeats'] = arg[i+2]
+        body[u'seats'][u'maximumNumberOfSeats'] = getInteger(sys.argv[i+2], u'maximumNumberOfSeats', minVal=0)
         i += 1
     elif myarg in [u'sku', u'skuid']:
       _, body[u'skuId'] = getProductAndSKU(arg[i+1])
@@ -9396,7 +9415,7 @@ def doGetCrosInfo():
       endDate = _getFilterDate(sys.argv[i+1])
       i += 2
     elif myarg == u'listlimit':
-      listLimit = int(sys.argv[i+1])
+      listLimit = getInteger(sys.argv[i+1], myarg, minVal=-1)
       i += 2
     elif myarg == u'allfields':
       projection = u'FULL'
@@ -10288,6 +10307,21 @@ def flatten_json(structure, key=u'', path=u'', flattened=None, listLimit=None):
       flatten_json(value, new_key, u'.'.join([item for item in [path, key] if item]), flattened=flattened, listLimit=listLimit)
   return flattened
 
+def _getNumUsers():
+  rep = buildGAPIObject(u'reports')
+  customerId = GC_Values[GC_CUSTOMER_ID]
+  if customerId == MY_CUSTOMER:
+    customerId = None
+  tryDate = getDeltaDate(u'-2d').strftime(YYYYMMDD_FORMAT)
+  while True:
+    try:
+      usage = callGAPI(rep.customerUsageReports(), u'get', throw_reasons=[GAPI_INVALID],
+                       customerId=customerId, date=tryDate, parameters=u'accounts:num_users',
+                       fields=u'usageReports(parameters(intValue))')
+      return int(usage.get(u'usageReports', [{}])[0].get(u'parameters', [{}])[0].get(u'intValue', u'0'))
+    except GAPI_invalid as e:
+      tryDate = _adjustDate(str(e))
+
 USER_ARGUMENT_TO_PROPERTY_MAP = {
   u'address': [u'addresses',],
   u'addresses': [u'addresses',],
@@ -10386,21 +10420,23 @@ def doPrintUsers(i, entityList=None):
   domain = None
   queries = [None]
   projection = u'basic'
+  projectionSet = False
   customFieldMask = None
   sortHeaders = getGroupFeed = getLicenseFeed = email_parts = False
   viewType = deleted_only = orderBy = sortOrder = None
   groupDelimiter = u' '
   licenseDelimiter = u','
+  minimizeQuotaCount = minimizeQuotaPct = 0
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace(u'_', u'')
     if myarg in PROJECTION_CHOICES_MAP:
       projection = myarg
-      sortHeaders = True
+      projectionSet = sortHeaders = True
       fieldsList = []
       i += 1
     elif myarg == u'allfields':
       projection = u'basic'
-      sortHeaders = True
+      projectionSet = sortHeaders = True
       fieldsList = []
       i += 1
     elif myarg == u'delimiter':
@@ -10416,6 +10452,7 @@ def doPrintUsers(i, entityList=None):
       else:
         projection = u'custom'
         customFieldMask = sys.argv[i+1]
+      projectionSet = True
       i += 2
     elif myarg == u'todrive':
       todrive = True
@@ -10435,7 +10472,7 @@ def doPrintUsers(i, entityList=None):
     elif myarg in SORTORDER_CHOICES_MAP:
       sortOrder = SORTORDER_CHOICES_MAP[myarg]
       i += 1
-    elif entityList is None and myarg == u'domain':
+    elif myarg == u'domain':
       domain = sys.argv[i+1]
       customer = None
       i += 2
@@ -10469,14 +10506,17 @@ def doPrintUsers(i, entityList=None):
     elif myarg in [u'emailpart', u'emailparts', u'username']:
       email_parts = True
       i += 1
+    elif myarg == u'minimizequotacount':
+      minimizeQuotaCount = getInteger(sys.argv[i+1], myarg, minVal=0)
+      i += 2
+    elif myarg == u'minimizequotapct':
+      minimizeQuotaPct = getInteger(sys.argv[i+1], myarg, minVal=0, maxVal=100)
+      i += 2
     else:
       systemErrorExit(2, '%s is not a valid argument for "gam print users"' % sys.argv[i])
   if entityList is None:
     sortRows = False
-    if fieldsList:
-      fields = u'nextPageToken,users(%s)' % u','.join(set(fieldsList)).replace(u'.', u'/')
-    else:
-      fields = None
+    fields = u'nextPageToken,users({0})'.format(u','.join(set(fieldsList))).replace(u'.', u'/') if fieldsList else None
     for query in queries:
       printGettingAllItems(u'Users', query)
       page_message = u'Got %%total_items%% Users: %%first_item%% - %%last_item%%\n'
@@ -10488,22 +10528,56 @@ def doPrintUsers(i, entityList=None):
         _printUser(user)
   else:
     sortRows = True
-    if fieldsList:
-      fields = u','.join(set(fieldsList)).replace(u'.', u'/')
-      selectLookup = len(fieldsList) > 1
-    else:
-      fields = None
-      selectLookup = True
-# If no individual fields were specified (all_fields, basic, full) or individual fields other than primaryEmail were specified, look up each user
-    if selectLookup:
-      for userEntity in entityList:
-        try:
-          user = callGAPI(cd.users(), u'get',
-                          throw_reasons=[GAPI_USER_NOT_FOUND, GAPI_DOMAIN_NOT_FOUND, GAPI_DOMAIN_CANNOT_USE_APIS, GAPI_FORBIDDEN],
-                          userKey=userEntity, fields=fields, viewType=viewType, projection=projection, customFieldMask=customFieldMask)
-          _printUser(user)
-        except (GAPI_userNotFound, GAPI_domainNotFound, GAPI_domainCannotUseApis, GAPI_forbidden):
-          entityUnknownWarning(u'User', userEntity, 0, 0)
+# If no individual fields were specified (allfields, basic, full) or individual fields other than primaryEmail were specified, look up each user
+    if len(fieldsList) > 1 or projectionSet:
+      jcount = len(entityList)
+      if minimizeQuotaCount > 0 and jcount >= minimizeQuotaCount:
+        minimizeQuota = True
+      elif minimizeQuotaPct > 0:
+        numUsers = _getNumUsers()
+        if numUsers == 0:
+          systemErrorExit(1, 'No user count data available.')
+        minimizeQuota = jcount/numUsers >= minimizeQuotaPct
+      else:
+        minimizeQuota = False
+      if not minimizeQuota:
+        fields = u','.join(set(fieldsList)).replace(u'.', u'/') if fieldsList else None
+        for userEntity in entityList:
+          try:
+            user = callGAPI(cd.users(), u'get',
+                            throw_reasons=[GAPI_USER_NOT_FOUND, GAPI_DOMAIN_NOT_FOUND, GAPI_DOMAIN_CANNOT_USE_APIS, GAPI_FORBIDDEN],
+                            userKey=userEntity, fields=fields, viewType=viewType, projection=projection, customFieldMask=customFieldMask)
+            _printUser(user)
+          except (GAPI_userNotFound, GAPI_domainNotFound, GAPI_domainCannotUseApis, GAPI_forbidden):
+            entityUnknownWarning(u'User', userEntity, 0, 0)
+# Minimize quota usage by downloading all users and only printing the selected ones
+      else:
+        entitySet = set(entityList)
+        fields = u'nextPageToken,users({0})'.format(u','.join(set(fieldsList))).replace(u'.', u'/') if fieldsList else None
+        printGettingAllItems(u'Users', None)
+        page_message = u'Got %%total_items%% Users: %%first_item%% - %%last_item%%\n'
+        pageToken = None
+        totalItems = 0
+        while True:
+          feed = callGAPI(cd.users(), u'list',
+                          pageToken=pageToken,
+                          customer=customer, domain=domain, fields=fields,
+                          orderBy=orderBy, sortOrder=sortOrder, viewType=viewType,
+                          projection=projection, customFieldMask=customFieldMask, maxResults=GC_Values[GC_USER_MAX_RESULTS])
+          pageToken, totalItems = _processGAPIpagesResult(feed, u'users', None, totalItems, page_message, u'primaryEmail')
+          if feed:
+            if u'users' in feed:
+              for user in feed[u'users']:
+                if user[u'primaryEmail'] in entitySet:
+                  _printUser(user)
+                  entitySet.remove(user[u'primaryEmail'])
+                  jcount -= 1
+                  if jcount == 0:
+                    break
+            del feed
+          if not pageToken or jcount == 0:
+            _finalizeGAPIpagesResult(page_message)
+            break
 # The only field specified was primaryEmail, just list the users
     else:
       for userEntity in entityList:
@@ -10623,7 +10697,7 @@ def doPrintGroups():
       usemember = None
       i += 2
     elif myarg == u'maxresults':
-      maxResults = int(sys.argv[i+1])
+      maxResults = getInteger(sys.argv[i+1], myarg, minVal=0)
       i += 2
     elif myarg == u'delimiter':
       aliasDelimiter = memberDelimiter = sys.argv[i+1]
@@ -11166,10 +11240,10 @@ def doPrintMobileDevices():
       delimiter = sys.argv[i+1]
       i += 2
     elif myarg == u'listlimit':
-      listLimit = int(sys.argv[i+1])
+      listLimit = getInteger(sys.argv[i+1], myarg, minVal=-1)
       i += 2
     elif myarg == u'appslimit':
-      appsLimit = int(sys.argv[i+1])
+      appsLimit = getInteger(sys.argv[i+1], myarg, minVal=-1)
       i += 2
     elif myarg == u'fields':
       fields = u'nextPageToken,mobiledevices(%s)' % sys.argv[i+1]
@@ -11285,7 +11359,7 @@ def doPrintCrosActivity():
       endDate = _getFilterDate(sys.argv[i+1])
       i += 2
     elif myarg == u'listlimit':
-      listLimit = int(sys.argv[i+1])
+      listLimit = getInteger(sys.argv[i+1], myarg, minVal=0)
       i += 2
     elif myarg == u'delimiter':
       delimiter = sys.argv[i+1]
@@ -11408,7 +11482,7 @@ def doPrintCrosDevices():
       endDate = _getFilterDate(sys.argv[i+1])
       i += 2
     elif myarg == u'listlimit':
-      listLimit = int(sys.argv[i+1])
+      listLimit = getInteger(sys.argv[i+1], myarg, minVal=0)
       i += 2
     elif myarg == u'orderby':
       orderBy = sys.argv[i+1].lower().replace(u'_', u'')
