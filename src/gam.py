@@ -359,7 +359,7 @@ def splitEmailAddress(emailAddress):
 # foo@ -> foo@domain
 # foo@bar.com -> foo@bar.com
 # @domain -> domain
-def normalizeEmailAddressOrUID(emailAddressOrUID, noUid=False, checkForCustomerId=False):
+def normalizeEmailAddressOrUID(emailAddressOrUID, noUid=False, checkForCustomerId=False, noLower=False):
   if checkForCustomerId and (emailAddressOrUID == GC_Values[GC_CUSTOMER_ID]):
     return emailAddressOrUID
   if (not noUid) and (emailAddressOrUID.find(u':') != -1):
@@ -369,13 +369,13 @@ def normalizeEmailAddressOrUID(emailAddressOrUID, noUid=False, checkForCustomerI
       return emailAddressOrUID[3:]
   atLoc = emailAddressOrUID.find(u'@')
   if atLoc == 0:
-    return emailAddressOrUID[1:].lower()
+    return emailAddressOrUID[1:].lower() if not noLower else emailAddressOrUID[1:]
   if (atLoc == -1) or (atLoc == len(emailAddressOrUID)-1) and GC_Values[GC_DOMAIN]:
     if atLoc == -1:
       emailAddressOrUID = u'{0}@{1}'.format(emailAddressOrUID, GC_Values[GC_DOMAIN])
     else:
       emailAddressOrUID = u'{0}{1}'.format(emailAddressOrUID, GC_Values[GC_DOMAIN])
-  return emailAddressOrUID.lower()
+  return emailAddressOrUID.lower() if not noLower else emailAddressOrUID
 
 # Normalize student/guardian email address/uid
 # 12345678 -> 12345678
@@ -8052,7 +8052,7 @@ def doCreateGroup():
 
 def doCreateAlias():
   cd = buildGAPIObject(u'directory')
-  body = {u'alias': normalizeEmailAddressOrUID(sys.argv[3], noUid=True)}
+  body = {u'alias': normalizeEmailAddressOrUID(sys.argv[3], noUid=True, noLower=True)}
   target_type = sys.argv[4].lower()
   if target_type not in [u'user', u'group', u'target']:
     systemErrorExit(2, 'type of target must be user or group; got %s' % target_type)
@@ -8606,7 +8606,7 @@ def doUpdateGroup():
 
 def doUpdateAlias():
   cd = buildGAPIObject(u'directory')
-  alias = normalizeEmailAddressOrUID(sys.argv[3], noUid=True)
+  alias = normalizeEmailAddressOrUID(sys.argv[3], noUid=True, noLower=True)
   target_type = sys.argv[4].lower()
   if target_type not in [u'user', u'group', u'target']:
     systemErrorExit(2, 'target type must be one of user, group, target; got %s' % target_type)
@@ -10147,7 +10147,7 @@ def doDeleteAlias(alias_email=None):
   elif alias_email.lower() == u'group':
     is_group = True
     alias_email = sys.argv[4]
-  alias_email = normalizeEmailAddressOrUID(alias_email, noUid=True)
+  alias_email = normalizeEmailAddressOrUID(alias_email, noUid=True, noLower=True)
   print u"Deleting alias %s" % alias_email
   if is_user or (not is_user and not is_group):
     try:
