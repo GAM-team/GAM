@@ -1438,8 +1438,10 @@ def showReport():
             if item[u'name'] in [u'start_time', u'end_time']:
               val = item.get(u'intValue')
               if val is not None:
-                item[u'dateTimeValue'] = datetime.datetime.fromtimestamp(int(val)-62135683200).isoformat()
-                item.pop(u'intValue')
+                val = int(val)
+                if val >= 62135683200:
+                  item[u'dateTimeValue'] = ISOformatTimeStamp(datetime.datetime.fromtimestamp(val-62135683200, GC.Values[GC.TIMEZONE]))
+                  item.pop(u'intValue')
           row = flatten_json(event)
           row.update(activity_row)
           for item in row:
