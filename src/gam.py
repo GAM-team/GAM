@@ -2976,7 +2976,8 @@ def updateCalendar(users):
     if not cal:
       continue
     print u"Updating %s's subscription to calendar %s (%s/%s)" % (user, calendarId, i, count)
-    callGAPI(cal.calendarList(), u'patch', soft_errors=True, calendarId=calendarId, body=body, colorRgbFormat=colorRgbFormat)
+    calId = calendarId if calendarId != u'primary' else user
+    callGAPI(cal.calendarList(), u'patch', soft_errors=True, calendarId=calId, body=body, colorRgbFormat=colorRgbFormat)
 
 def doPrinterShowACL():
   cp = buildGAPIObject(u'cloudprint')
