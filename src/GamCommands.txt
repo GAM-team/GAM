@@ -580,9 +580,9 @@ Specify a collection of Users by directly specifying them or by specifiying item
 	(user <UserItem>)|
 	(users <UserList>)|
 	(group|group_ns|group_susp <GroupItem)|
-	(ou|org <OrgUnitPath)|
-	(ou_ns|org_ns <OrgUnitPath)|
-	(ou_susp|org_susp <OrgUnitPath)|
+	(ou|org <OrgUnitPath>)|
+	(ou_ns|org_ns <OrgUnitPath>)|
+	(ou_susp|org_susp <OrgUnitPath>)|
 	(ou_and_children|ou_and_child <OrgUnitPath>)|
 	(ou_and_children_ns|ou_and_child_ns <OrgUnitPath>)|
 	(ou_and_children_susp|ou_and_child_susp <OrgUnitPath>)|
@@ -1026,7 +1026,6 @@ gam print users [todrive]
 	[orderby <UserOrderByFieldName> [ascending|descending]] [userview]
 	[allfields|basic|full | ((<UserFieldName>* | fields <UserFieldNameList>) [schemas|custom all|<SchemaNameList>])]
 	[delimiter <Character>] [sortheaders]
-gam <UserTypeEntity> print
 
 Print no header row and primaryEmail for specified users.
 
