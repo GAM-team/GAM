@@ -3368,6 +3368,11 @@ def checkCloudPrintResult(result):
   if not result[u'success']:
     systemErrorExit(result[u'errorCode'], '%s: %s' % (result[u'errorCode'], result[u'message']))
 
+def formatACLScope(rule):
+  if rule[u'scope'][u'type'] != u'default':
+    return u'(Scope: {0}:{1})'.format(rule[u'scope'][u'type'], rule[u'scope'][u'value'])
+  return u'(Scope: {0})'.format(rule[u'scope'][u'type'])
+
 def formatACLRule(rule):
   if rule[u'scope'][u'type'] != u'default':
     return u'(Scope: {0}:{1}, Role: {2})'.format(rule[u'scope'][u'type'], rule[u'scope'][u'value'], rule[u'role'])
@@ -3384,70 +3389,64 @@ def doCalendarShowACL():
     i += 1
     print u'Calendar: {0}, ACL: {1}{2}'.format(calendarId, formatACLRule(rule), currentCount(i, count))
 
-def doCalendarAddACL(calendarId=None, act_as=None, role=None, scope=None, entity=None):
-  if calendarId is None:
-    calendarId = sys.argv[2]
-  if not act_as:
-    calendarId = normalizeCalendarId(calendarId)
-    act_as = calendarId
-  _, cal = buildCalendarDataGAPIObject(act_as)
-  body = {u'scope': {}}
-  if role is not None:
-    body[u'role'] = role
-  else:
-    body[u'role'] = sys.argv[4].lower()
-  if body[u'role'] not in [u'freebusy', u'read', u'reader', u'editor', u'writer', u'owner', u'none']:
-    systemErrorExit(2, 'Role must be one of freebusy, reader, editor, writer, owner, none; got %s' % body[u'role'])
-  if body[u'role'] == u'freebusy':
-    body[u'role'] = u'freeBusyReader'
-  elif body[u'role'] in [u'read', u'reader']:
-    body[u'role'] = u'reader'
-  elif body[u'role'] == u'editor':
-    body[u'role'] = u'writer'
-  if scope is not None:
-    body[u'scope'][u'type'] = scope
-  else:
-    body[u'scope'][u'type'] = sys.argv[5].lower()
-  i = 6
-  if body[u'scope'][u'type'] not in [u'default', u'user', u'group', u'domain']:
-    body[u'scope'][u'type'] = u'user'
-    i = 5
-  try:
-    if entity is not None and body[u'scope'][u'type'] != u'default':
-      body[u'scope'][u'value'] = entity
-    else:
+def _getCalendarACLScope(i, body):
+  body[u'scope'] = {}
+  myarg = sys.argv[i].lower()
+  body[u'scope'][u'type'] = myarg
+  i += 1
+  if myarg in [u'user', u'group']:
+    body[u'scope'][u'value'] = normalizeEmailAddressOrUID(sys.argv[i], noUid=True)
+    i += 1
+  elif myarg == u'domain':
+    if i < len(sys.argv) and sys.argv[i].lower().replace(u'_', u'') != u'sendnotifications':
       body[u'scope'][u'value'] = sys.argv[i].lower()
-    if (body[u'scope'][u'type'] in [u'user', u'group']) and body[u'scope'][u'value'].find(u'@') == -1:
-      body[u'scope'][u'value'] = u'%s@%s' % (body[u'scope'][u'value'], GC_Values[GC_DOMAIN])
-  except IndexError:
-    pass
-  if body[u'scope'][u'type'] == u'domain':
-    try:
-      body[u'scope'][u'value'] = sys.argv[6].lower()
-    except IndexError:
+      i += 1
+    else:
       body[u'scope'][u'value'] = GC_Values[GC_DOMAIN]
-  callGAPI(cal.acl(), u'insert', calendarId=calendarId, body=body)
+  elif myarg != u'default':
+    body[u'scope'][u'type'] = u'user'
+    body[u'scope'][u'value'] = normalizeEmailAddressOrUID(myarg, noUid=True)
+  return i
 
-def doCalendarUpdateACL():
-  calendarId = sys.argv[2]
-  role = sys.argv[4].lower()
-  scope = sys.argv[5].lower()
-  if len(sys.argv) > 6:
-    entity = sys.argv[6].lower()
-  else:
-    entity = None
-  doCalendarAddACL(calendarId=calendarId, role=role, scope=scope, entity=entity)
+CALENDAR_ACL_ROLES_MAP = {
+  u'editor': u'writer',
+  u'freebusy': u'freeBusyReader',
+  u'freebusyreader': u'freeBusyReader',
+  u'owner': u'owner',
+  u'read': u'reader',
+  u'reader': u'reader',
+  u'writer': u'writer',
+  u'none': u'none',
+  }
+
+def doCalendarAddACL(function):
+  calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
+  if not cal:
+    return
+  myarg = sys.argv[4].lower().replace(u'_', u'')
+  if myarg not in CALENDAR_ACL_ROLES_MAP:
+    systemErrorExit(2, 'Role must be one of %s; got %s' % (u', '.join(sorted(CALENDAR_ACL_ROLES_MAP.keys())), myarg))
+  body = {u'role': CALENDAR_ACL_ROLES_MAP[myarg]}
+  i = _getCalendarACLScope(5, body)
+  sendNotifications = True
+  while i < len(sys.argv):
+    myarg = sys.argv[i].lower().replace(u'_', u'')
+    if myarg == u'sendnotifications':
+      sendNotifications = getBoolean(sys.argv[i+1], myarg)
+      i += 2
+    else:
+      systemErrorExit(2, '%s is not a valid argument for "gam calendar <email> %s"' % (sys.argv[i], function.lower()))
+  print u'Calendar: {0}, {1} ACL: {2}'.format(calendarId, function, formatACLRule(body))
+  callGAPI(cal.acl(), u'insert', calendarId=calendarId, body=body, sendNotifications=sendNotifications)
 
 def doCalendarDelACL():
-  calendarId = sys.argv[2]
-  entity = sys.argv[5].lower()
-  scope = u'user'
-  if entity == u'domain':
-    scope = u'domain'
-  elif entity == u'default':
-    scope = u'default'
-    entity = u''
-  doCalendarAddACL(calendarId=calendarId, role=u'none', scope=scope, entity=entity)
+  calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
+  if not cal:
+    return
+  body = {u'role': u'none'}
+  _getCalendarACLScope(5, body)
+  print u'Calendar: {0}, {1} ACL: {2}'.format(calendarId, u'Delete', formatACLScope(body))
+  callGAPI(cal.acl(), u'insert', calendarId=calendarId, body=body, sendNotifications=False)
 
 def doCalendarWipeData():
   calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
@@ -4755,13 +4754,16 @@ def showDriveFileRevisions(users):
 
 def transferSecCals(users):
   target_user = sys.argv[5]
-  remove_source_user = True
+  remove_source_user = sendNotifications = True
   i = 6
   while i < len(sys.argv):
-    myarg = sys.argv[i].lower()
+    myarg = sys.argv[i].lower().replace(u'_', u'')
     if myarg == u'keepuser':
       remove_source_user = False
       i += 1
+    elif myarg == u'sendnotifications':
+      sendNotifications = getBoolean(sys.argv[i+1], myarg)
+      i += 2
     else:
       systemErrorExit(2, '%s is not a valid argument for "gam <users> transfer seccals"' % sys.argv[i])
   if remove_source_user:
@@ -4772,13 +4774,16 @@ def transferSecCals(users):
     user, source_cal = buildCalendarGAPIObject(user)
     if not source_cal:
       continue
-    source_calendars = callGAPIpages(source_cal.calendarList(), u'list', u'items', soft_errors=True,
-                                     minAccessRole=u'owner', showHidden=True, fields=u'items(id),nextPageToken')
-    for source_cal in source_calendars:
-      if source_cal[u'id'].find(u'@group.calendar.google.com') != -1:
-        doCalendarAddACL(calendarId=source_cal[u'id'], act_as=user, role=u'owner', scope=u'user', entity=target_user)
+    calendars = callGAPIpages(source_cal.calendarList(), u'list', u'items', soft_errors=True,
+                              minAccessRole=u'owner', showHidden=True, fields=u'items(id),nextPageToken')
+    for calendar in calendars:
+      calendarId = calendar[u'id']
+      if calendarId.find(u'@group.calendar.google.com') != -1:
+        callGAPI(source_cal.acl(), u'insert', calendarId=calendarId,
+                 body={u'role': u'owner', u'scope': {u'type': u'user', u'value': target_user}}, sendNotifications=sendNotifications)
         if remove_source_user:
-          doCalendarAddACL(calendarId=source_cal[u'id'], act_as=target_user, role=u'none', scope=u'user', entity=user)
+          callGAPI(target_cal.acl(), u'insert', calendarId=calendarId,
+                   body={u'role': u'none', u'scope': {u'type': u'user', u'value': user}}, sendNotifications=sendNotifications)
 
 def transferDriveFiles(users):
   target_user = sys.argv[5]
@@ -12786,11 +12791,11 @@ def ProcessGAMCommand(args):
       if argument == u'showacl':
         doCalendarShowACL()
       elif argument == u'add':
-        doCalendarAddACL()
+        doCalendarAddACL(u'Add')
       elif argument in [u'del', u'delete']:
         doCalendarDelACL()
       elif argument == u'update':
-        doCalendarUpdateACL()
+        doCalendarAddACL(u'Update')
       elif argument == u'wipe':
         doCalendarWipeData()
       elif argument == u'addevent':
