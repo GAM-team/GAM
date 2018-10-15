@@ -6930,7 +6930,7 @@ def getUserAttributes(i, cd, updateCmd):
         elif myopt in [u'username', u'name']:
           posix[u'username'] = sys.argv[i+1]
           i += 2
-        elif myopt in [u'os', u'operatingSystemType']:
+        elif myopt in [u'os', u'operatingsystemtype']:
           posix[u'operatingSystemType'] = sys.argv[i+1]
           i += 2
         elif myopt in [u'endposix']:
