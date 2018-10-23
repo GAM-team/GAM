@@ -962,13 +962,14 @@ gam print mobile [todrive] [(query <QueryMobile>)|(queries <QueryMobileList>)] [
 
 gam create group <EmailAddress> <GroupAttributes>*
 gam update group <GroupItem> [admincreated <Boolean>] [email <EmailAddress>] <GroupAttributes>*
-gam update group <GroupItem> add [owner|manager|member] [notsuspended|suspended] <UserTypeEntity>
+gam update group <GroupItem> add [owner|manager|member] [notsuspended|suspended] [delivery allmail|daily|digest|none|noemail] <UserTypeEntity>
 gam update group <GroupItem> delete|remove [owner|manager|member] <UserTypeEntity>
-gam update group <GroupItem> sync [owner|manager|member] [notsuspended|suspended] <UserTypeEntity>
-gam update group <GroupItem> update [owner|manager|member] <UserTypeEntity>
+gam update group <GroupItem> sync [owner|manager|member] [notsuspended|suspended] [delivery allmail|daily|digest|none|noemail] <UserTypeEntity>
+gam update group <GroupItem> update [owner|manager|member] [delivery allmail|daily|digest|none|noemail] <UserTypeEntity>
 gam update group <GroupItem> clear [member] [manager] [owner] [notsuspended|suspended]
 gam delete group <GroupItem>
 gam info group <GroupItem> [nousers] [noaliases] [groups]
+gam info member <GroupItem> <UserItem>
 
 gam print groups [todrive] ([domain <DomainName>] ([member <UserItem>]|[query <QueryGroup>])
 	[maxresults <Number>] [allfields|([settings] <GroupFieldName>* [fields <GroupFieldNameList>])]
