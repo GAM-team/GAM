@@ -8412,10 +8412,7 @@ GROUP_ROLES_MAP = {
   u'manager': ROLE_MANAGER, u'managers': ROLE_MANAGER,
   u'member': ROLE_MEMBER, u'members': ROLE_MEMBER,
   }
-MEMBER_DELIVERY_MAP = {
-  u'allmail': u'ALL_MAIL', u'digest': u'DIGEST', u'daily': u'DAILY',
-  u'abridged': u'DAILY', u'nomail': u'NONE', u'none': u'NONE'
-  }
+
 def doUpdateGroup():
 
 # Convert foo@googlemail.com to foo@gmail.com; eliminate periods in name for foo.bar@gmail.com
@@ -8431,8 +8428,7 @@ def doUpdateGroup():
 
   def _getRoleAndUsers():
     checkSuspended = None
-    role = None
-    delivery = None
+    role = ROLE_MEMBER
     i = 5
     if sys.argv[i].lower() in GROUP_ROLES_MAP:
       role = GROUP_ROLES_MAP[sys.argv[i].lower()]
@@ -8440,14 +8436,11 @@ def doUpdateGroup():
     if sys.argv[i].lower() in [u'suspended', u'notsuspended']:
       checkSuspended = sys.argv[i].lower() == u'suspended'
       i += 1
-    if sys.argv[i].lower().replace(u'_', u'') in MEMBER_DELIVERY_MAP:
-      delivery = MEMBER_DELIVERY_MAP[sys.argv[i].lower()]
-      i += 1
     if sys.argv[i].lower() in usergroup_types:
       users_email = getUsersToModify(entity_type=sys.argv[i].lower(), entity=sys.argv[i+1], checkSuspended=checkSuspended, groupUserMembersOnly=False)
     else:
       users_email = [normalizeEmailAddressOrUID(sys.argv[i], checkForCustomerId=True)]
-    return (role, users_email, delivery)
+    return (role, users_email)
 
   cd = buildGAPIObject(u'directory')
   group = sys.argv[3]
@@ -8456,37 +8449,27 @@ def doUpdateGroup():
   if myarg in UPDATE_GROUP_SUBCMDS:
     group = normalizeEmailAddressOrUID(group)
     if myarg == u'add':
-      role, users_email, delivery = _getRoleAndUsers()
-      if not role:
-        role = ROLE_MEMBER
+      role, users_email = _getRoleAndUsers()
       if not checkGroupExists(cd, group):
         return
       if len(users_email) > 1:
         sys.stderr.write(u'Group: {0}, Will add {1} {2}s.\n'.format(group, len(users_email), role))
         for user_email in users_email:
-          item = ['gam', 'update', 'group', group, 'add', role]
-          if delivery:
-            item.append(delivery)
-          item.append(user_email)
-          items.append(item)
+          items.append(['gam', 'update', 'group', group, 'add', role, user_email])
       else:
         body = {u'role': role, u'email': users_email[0]}
-        add_text = [u'as %s' % role]
-        if delivery:
-          body[u'delivery_settings'] = delivery
-          add_text.append(u'delivery %s' % delivery)
         for i in range(2):
           try:
             callGAPI(cd.members(), u'insert',
                      throw_reasons=[GAPI_DUPLICATE, GAPI_MEMBER_NOT_FOUND, GAPI_RESOURCE_NOT_FOUND, GAPI_INVALID_MEMBER, GAPI_CYCLIC_MEMBERSHIPS_NOT_ALLOWED],
                      groupKey=group, body=body)
-            print u' Group: {0}, {1} Added {2}'.format(group, users_email[0], u' '.join(add_text))
+            print u' Group: {0}, {1} Added as {2}'.format(group, users_email[0], role)
             break
           except GAPI_duplicate as e:
             # check if user is a full member, not pending
             try:
               result = callGAPI(cd.members(), u'get', throw_reasons=[GAPI_MEMBER_NOT_FOUND], memberKey=users_email[0], groupKey=group, fields=u'role')
-              print u' Group: {0}, {1} Add {2} Failed: Duplicate, already a {3}'.format(group, users_email[0], u' '.join(add_text), result[u'role'])
+              print u' Group: {0}, {1} Add as {2} Failed: Duplicate, already a {3}'.format(group, users_email[0], role, result[u'role'])
               break # if get succeeds, user is a full member and we throw duplicate error
             except GAPI_memberNotFound:
               # insert fails on duplicate and get fails on not found, user is pending
@@ -8494,12 +8477,12 @@ def doUpdateGroup():
               callGAPI(cd.members(), u'delete', memberKey=users_email[0], groupKey=group)
               continue # 2nd insert should succeed now that pending is clear
           except (GAPI_memberNotFound, GAPI_resourceNotFound, GAPI_invalidMember, GAPI_cyclicMembershipsNotAllowed) as e:
-            print u' Group: {0}, {1} Add {2} Failed: {3}'.format(group, users_email[0], u' '.join(add_text), str(e))
+            print u' Group: {0}, {1} Add as {2} Failed: {3}'.format(group, users_email[0], role, str(e))
             break
     elif myarg == u'sync':
       syncMembersSet = set()
       syncMembersMap = {}
-      role, users_email, delivery = _getRoleAndUsers()
+      role, users_email = _getRoleAndUsers()
       for user_email in users_email:
         if user_email == u'*' or user_email == GC_Values[GC_CUSTOMER_ID]:
           syncMembersSet.add(GC_Values[GC_CUSTOMER_ID])
@@ -8519,21 +8502,15 @@ def doUpdateGroup():
         to_remove = [currentMembersMap.get(emailAddress, emailAddress) for emailAddress in currentMembersSet-syncMembersSet]
         sys.stderr.write(u'Group: {0}, Will add {1} and remove {2} {3}s.\n'.format(group, len(to_add), len(to_remove), role))
         for user in to_add:
-          item = [u'gam', u'update', u'group', group, u'add']
-          if role:
-            item.append(role)
-          if delivery:
-            item.append(delivery)
-          item.append(user)
-          items.append(item)
+          items.append([u'gam', u'update', u'group', group, u'add', role, user])
         for user in to_remove:
           items.append([u'gam', u'update', u'group', group, u'remove', user])
     elif myarg in [u'delete', u'remove']:
-      _, users_email, _ = _getRoleAndUsers()
+      role, users_email = _getRoleAndUsers()
       if not checkGroupExists(cd, group):
         return
       if len(users_email) > 1:
-        sys.stderr.write(u'Group: {0}, Will remove {1} emails.\n'.format(group, len(users_email)))
+        sys.stderr.write(u'Group: {0}, Will remove {1} {2}s.\n'.format(group, len(users_email), role))
         for user_email in users_email:
           items.append(['gam', 'update', 'group', group, 'remove', user_email])
       else:
@@ -8545,33 +8522,20 @@ def doUpdateGroup():
         except (GAPI_memberNotFound, GAPI_invalidMember) as e:
           print u' Group: {0}, {1} Remove Failed: {2}'.format(group, users_email[0], str(e))
     elif myarg == u'update':
-      role, users_email, delivery = _getRoleAndUsers()
+      role, users_email = _getRoleAndUsers()
       group = checkGroupExists(cd, group)
       if group:
         if len(users_email) > 1:
           sys.stderr.write(u'Group: {0}, Will update {1} {2}s.\n'.format(group, len(users_email), role))
           for user_email in users_email:
-            item = ['gam', 'update', 'group', group, 'update']
-            if role:
-              item.append(role)
-            if delivery:
-              item.append(delivery)
-            item.append(user_email)
-            items.append(item)
+            items.append(['gam', 'update', 'group', group, 'update', role, user_email])
         else:
-          body = {}
-          update_text = []
-          if role:
-            body[u'role'] = role
-            update_text.append(u'to %s' % role)
-          if delivery:
-            body[u'delivery_settings'] = delivery
-            update_text.append(u'delivery %s' % delivery)
+          body = {u'role': role}
           try:
             callGAPI(cd.members(), u'update',
                      throw_reasons=[GAPI_MEMBER_NOT_FOUND, GAPI_INVALID_MEMBER],
                      groupKey=group, memberKey=users_email[0], body=body)
-            print u' Group: {0}, {1} Updated {2}'.format(group, users_email[0], u' '.join(update_text))
+            print u' Group: {0}, {1} Updated to {2}'.format(group, users_email[0], role)
           except (GAPI_memberNotFound, GAPI_invalidMember) as e:
             print u' Group: {0}, {1} Update to {2} Failed: {3}'.format(group, users_email[0], role, str(e))
     else: # clear
@@ -8604,9 +8568,6 @@ def doUpdateGroup():
                                page_message=page_message,
                                throw_reasons=GAPI_MEMBERS_THROW_REASONS,
                                groupKey=group, roles=listRoles, fields=listFields, maxResults=GC_Values[GC_MEMBER_MAX_RESULTS])
-        if not result:
-          print u'Group already has 0 members'
-          return
         if checkSuspended is None:
           users_email = [member.get(u'email', member[u'id']) for member in result if not validRoles or member.get(u'role', ROLE_MEMBER) in validRoles]
         elif checkSuspended:
@@ -9050,13 +9011,6 @@ def doCreateResoldCustomer():
 def _getValueFromOAuth(field, credentials=None):
   credentials = credentials if credentials is not None else getValidOauth2TxtCredentials()
   return credentials.id_token.get(field, u'Unknown')
-
-def doGetMemberInfo():
-  cd = buildGAPIObject(u'directory')
-  memberKey = normalizeEmailAddressOrUID(sys.argv[3])
-  groupKey = normalizeEmailAddressOrUID(sys.argv[4])
-  info = callGAPI(cd.members(), u'get', memberKey=memberKey, groupKey=groupKey)
-  print_json(None, info)
 
 def doGetUserInfo(user_email=None):
 
@@ -10321,6 +10275,16 @@ def writeCSVfile(csvRows, titles, list_type, todrive):
   except IOError as e:
     systemErrorExit(6, e)
   if todrive:
+<<<<<<< HEAD
+=======
+    columns = len(titles)
+    rows = len(csvRows)
+    cell_count = rows * columns
+    mimeType = u'application/vnd.google-apps.spreadsheet'
+    if cell_count > 2000000 or columns > 256:
+      print u'{0}{1}'.format(WARNING_PREFIX, MESSAGE_RESULTS_TOO_LARGE_FOR_GOOGLE_SPREADSHEET)
+      mimeType = u'text/csv'
+>>>>>>> parent of 9eb90ba... Add Jay's changes
     admin_email = _getValueFromOAuth(u'email')
     _, drive = buildDrive3GAPIObject(admin_email)
     if not drive:
@@ -10330,12 +10294,15 @@ gam user %s check serviceaccount
 
 and follow recommend steps to authorize GAM for Drive access.''' % (admin_email)
       sys.exit(5)
+<<<<<<< HEAD
     result = callGAPI(drive.about(), u'get', fields=u'maxImportSizes')
     if len(csvRows)*len(titles) > 2000000 or string_file.len > int(result[u'maxImportSizes'][MIMETYPE_GA_SPREADSHEET]):
       print u'{0}{1}'.format(WARNING_PREFIX, MESSAGE_RESULTS_TOO_LARGE_FOR_GOOGLE_SPREADSHEET)
       mimeType = u'text/csv'
     else:
       mimeType = MIMETYPE_GA_SPREADSHEET
+=======
+>>>>>>> parent of 9eb90ba... Add Jay's changes
     body = {u'description': u' '.join(sys.argv),
             u'name': u'%s - %s' % (GC_Values[GC_DOMAIN], list_type),
             u'mimeType': mimeType}
@@ -12629,8 +12596,6 @@ def ProcessGAMCommand(args):
         doGetUserInfo()
       elif argument == u'group':
         doGetGroupInfo()
-      elif argument == u'member':
-       doGetMemberInfo()
       elif argument in [u'nickname', u'alias']:
         doGetAliasInfo()
       elif argument == u'instance':
