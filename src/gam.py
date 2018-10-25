@@ -10276,15 +10276,22 @@ def writeCSVfile(csvRows, titles, list_type, todrive):
     systemErrorExit(6, e)
   if todrive:
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+    data_size = string_file.len
+>>>>>>> parent of 139a2f7... Cleanup writeCSVfile sheet size checking
     columns = len(titles)
     rows = len(csvRows)
     cell_count = rows * columns
     mimeType = u'application/vnd.google-apps.spreadsheet'
+<<<<<<< HEAD
     if cell_count > 2000000 or columns > 256:
       print u'{0}{1}'.format(WARNING_PREFIX, MESSAGE_RESULTS_TOO_LARGE_FOR_GOOGLE_SPREADSHEET)
       mimeType = u'text/csv'
 >>>>>>> parent of 9eb90ba... Add Jay's changes
+=======
+>>>>>>> parent of 139a2f7... Cleanup writeCSVfile sheet size checking
     admin_email = _getValueFromOAuth(u'email')
     _, drive = buildDrive3GAPIObject(admin_email)
     if not drive:
@@ -10296,13 +10303,17 @@ and follow recommend steps to authorize GAM for Drive access.''' % (admin_email)
       sys.exit(5)
 <<<<<<< HEAD
     result = callGAPI(drive.about(), u'get', fields=u'maxImportSizes')
-    if len(csvRows)*len(titles) > 2000000 or string_file.len > int(result[u'maxImportSizes'][MIMETYPE_GA_SPREADSHEET]):
+    max_sheet_bytes = int(result[u'maxImportSizes'][u'application/vnd.google-apps.spreadsheet'])
+    if cell_count > 2000000 or columns > 256 or data_size > max_sheet_bytes:
       print u'{0}{1}'.format(WARNING_PREFIX, MESSAGE_RESULTS_TOO_LARGE_FOR_GOOGLE_SPREADSHEET)
       mimeType = u'text/csv'
+<<<<<<< HEAD
     else:
       mimeType = MIMETYPE_GA_SPREADSHEET
 =======
 >>>>>>> parent of 9eb90ba... Add Jay's changes
+=======
+>>>>>>> parent of 139a2f7... Cleanup writeCSVfile sheet size checking
     body = {u'description': u' '.join(sys.argv),
             u'name': u'%s - %s' % (GC_Values[GC_DOMAIN], list_type),
             u'mimeType': mimeType}
