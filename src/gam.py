@@ -10371,7 +10371,9 @@ and follow recommend steps to authorize GAM for Drive access.''' % (admin_email)
     columns = len(titles)
     rows = len(csvRows)
     cell_count = rows * columns
-    if cell_count > 2000000 or string_file.len > int(result[u'maxImportSizes'][MIMETYPE_GA_SPREADSHEET]):
+    data_size = string_file.len
+    max_sheet_bytes = int(result[u'maxImportSizes'][MIMETYPE_GA_SPREADSHEET])
+    if cell_count > 2000000 or data_size > max_sheet_bytes:
       print u'{0}{1}'.format(WARNING_PREFIX, MESSAGE_RESULTS_TOO_LARGE_FOR_GOOGLE_SPREADSHEET)
       mimeType = u'text/csv'
     else:
