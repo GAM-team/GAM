@@ -147,7 +147,7 @@ If an item contains spaces, it should be surrounded by ".
 <CrOSID> ::= <String>
 <CustomerID> ::= <String>
 <DomainAlias> ::= <String>
-<DriveFileACLRole> ::= commenter|editor|organizer|owner|reader|writer
+<DriveFileACLRole> ::= commenter|contentmanager|editor|fileorganizer|organizer|owner|reader|writer
 <DriveFileID> ::= <String>
 <DriveFileURL> ::= https://docs.google.com/a/<DomainName>/document/d/<DriveFileID>/<String>
 <DriveFileItem> ::= <DriveFileID>|<DriveFileURL>
@@ -388,8 +388,8 @@ If an item contains spaces, it should be surrounded by ".
 <MembersFieldName> ::=
 	email|
 	id|
-	name|
 	role|
+	status|
 	type
 
 <MobileFieldName> ::=
@@ -580,9 +580,9 @@ Specify a collection of Users by directly specifying them or by specifiying item
 	(user <UserItem>)|
 	(users <UserList>)|
 	(group|group_ns|group_susp <GroupItem)|
-	(ou|org <OrgUnitPath)|
-	(ou_ns|org_ns <OrgUnitPath)|
-	(ou_susp|org_susp <OrgUnitPath)|
+	(ou|org <OrgUnitPath>)|
+	(ou_ns|org_ns <OrgUnitPath>)|
+	(ou_susp|org_susp <OrgUnitPath>)|
 	(ou_and_children|ou_and_child <OrgUnitPath>)|
 	(ou_and_children_ns|ou_and_child_ns <OrgUnitPath>)|
 	(ou_and_children_susp|ou_and_child_susp <OrgUnitPath>)|
@@ -881,8 +881,8 @@ gam delete alias|nickname [user|group|target] <UniqueID>|<EmailAddress>
 gam info alias|nickname <EmailAddress>
 gam print aliases|nicknames [todrive] [shownoneditable] [nogroups] [nousers] [(query <QueryUser>)|(queries <QueryUserList)]
 
-gam calendar <CalendarItem> add <CalendarACLRole> ([user] <EmailAddress>)|(group <EmailAddress>)|(domain [<DomainName>])|default
-gam calendar <CalendarItem> update <CalendarACLRole> ([user] <EmailAddress>)|(group <EmailAddress>)|(domain [<DomainName>])|default
+gam calendar <CalendarItem> add <CalendarACLRole> ([user] <EmailAddress>)|(group <EmailAddress>)|(domain [<DomainName>])|default [sendnotifications <Boolean>]
+gam calendar <CalendarItem> update <CalendarACLRole> ([user] <EmailAddress>)|(group <EmailAddress>)|(domain [<DomainName>])|default [sendnotifications <Boolean>]
 gam calendar <CalendarItem> del|delete <CalendarACLRole> <EmailAddress>|(domain [<DomainName>])|default
 gam calendar <CalendarItem> showacl
 
@@ -1015,18 +1015,21 @@ gam delete user <UserItem>
 gam undelete user <UserItem> [org|ou <OrgUnitPath>]
 gam info user [<UserItem>] [noaliases] [nogroups] [nolicenses|nolicences] [noschemas] [schemas|custom <SchemaNameList>] [userview] [skus|sku <SKUIDList>]
 
-gam print users [todrive] ([domain <DomainName>] [(query <QueryUser>)|(queries <QueryUserList>)] [deleted_only|only_deleted])
+Print fields for selected users; use domain, query/queries and deleted_only to select users to print;
+if none of these options are specified, all users are printed.
+The first column will always be primaryEmail; the remaining field names will be sorted if allfields, basic, full or sortheaders is specified;
+otherwise, the remaining field names will appear in the order specified.
+
+gam print users [todrive]
+	([domain <DomainName>] [(query <QueryUser>)|(queries <QueryUserList>)] [deleted_only|only_deleted])
 	[groups] [license|licenses|licence|licences] [emailpart|emailparts|username]
 	[orderby <UserOrderByFieldName> [ascending|descending]] [userview]
 	[allfields|basic|full | ((<UserFieldName>* | fields <UserFieldNameList>) [schemas|custom all|<SchemaNameList>])]
 	[delimiter <Character>] [sortheaders]
-gam <UserTypeEntity> print
 
-Summary of printing:
-gam print users
-Prints a header row and primaryEmail for all users.
+Print no header row and primaryEmail for specified users.
+
 gam <UserTypeEntity> print
-Prints no header row and primaryEmail for specified users.
 
 gam create verify|verification <DomainName>
 gam update verify|verification <DomainName> cname|txt|text|site|file
@@ -1128,7 +1131,7 @@ gam <UserTypeEntity> print calendars [todrive]
 
 gam <UserTypeEntity> show calsettings
 gam <UserTypeEntity> update calattendees csv <FileName> [dryrun] [start <Date>] [end <Date>] [allevents]
-gam <UserTypeEntity> transfer seccals <UserItem> [keepuser]
+gam <UserTypeEntity> transfer seccals <UserItem> [keepuser] [sendnotifications <Boolean>]
 
 gam <UserTypeEntity> print|show driveactivity [todrive] [fileid <DriveFileID>] [folderid <DriveFolderID>]
 gam <UserTypeEntity> print|show drivesettings [todrive]

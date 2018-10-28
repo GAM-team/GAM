@@ -225,6 +225,15 @@ def integerLimits(minVal, maxVal, item=u'integer'):
     return u'{0} x<={1}'.format(item, maxVal)
   return u'{0} x'.format(item)
 
+def getInteger(value, item, minVal=None, maxVal=None):
+  try:
+    number = int(value.strip())
+    if ((minVal is None) or (number >= minVal)) and ((maxVal is None) or (number <= maxVal)):
+      return number
+  except ValueError:
+    pass
+  systemErrorExit(2, u'expected {0} in range <{1}>, got {2}'.format(item, integerLimits(minVal, maxVal), value))
+
 def removeCourseIdScope(courseId):
   if courseId.startswith(u'd:'):
     return courseId[2:]
@@ -350,7 +359,7 @@ def splitEmailAddress(emailAddress):
 # foo@ -> foo@domain
 # foo@bar.com -> foo@bar.com
 # @domain -> domain
-def normalizeEmailAddressOrUID(emailAddressOrUID, noUid=False, checkForCustomerId=False):
+def normalizeEmailAddressOrUID(emailAddressOrUID, noUid=False, checkForCustomerId=False, noLower=False):
   if checkForCustomerId and (emailAddressOrUID == GC_Values[GC_CUSTOMER_ID]):
     return emailAddressOrUID
   if (not noUid) and (emailAddressOrUID.find(u':') != -1):
@@ -360,13 +369,13 @@ def normalizeEmailAddressOrUID(emailAddressOrUID, noUid=False, checkForCustomerI
       return emailAddressOrUID[3:]
   atLoc = emailAddressOrUID.find(u'@')
   if atLoc == 0:
-    return emailAddressOrUID[1:].lower()
+    return emailAddressOrUID[1:].lower() if not noLower else emailAddressOrUID[1:]
   if (atLoc == -1) or (atLoc == len(emailAddressOrUID)-1) and GC_Values[GC_DOMAIN]:
     if atLoc == -1:
       emailAddressOrUID = u'{0}@{1}'.format(emailAddressOrUID, GC_Values[GC_DOMAIN])
     else:
       emailAddressOrUID = u'{0}{1}'.format(emailAddressOrUID, GC_Values[GC_DOMAIN])
-  return emailAddressOrUID.lower()
+  return emailAddressOrUID.lower() if not noLower else emailAddressOrUID
 
 # Normalize student/guardian email address/uid
 # 12345678 -> 12345678
@@ -878,6 +887,41 @@ def callGAPI(service, function,
     except httplib2.ServerNotFoundError as e:
       systemErrorExit(4, str(e))
 
+def _processGAPIpagesResult(this_page, items, all_pages, total_items, page_message, message_attribute):
+  if this_page:
+    pageToken = this_page.get(u'nextPageToken')
+    if items in this_page:
+      page_items = len(this_page[items])
+      total_items += page_items
+      if all_pages is not None:
+        all_pages.extend(this_page[items])
+    else:
+      this_page = {items: []}
+      page_items = 0
+  else:
+    pageToken = None
+    this_page = {items: []}
+    page_items = 0
+  if page_message:
+    show_message = page_message.replace(u'%%num_items%%', str(page_items))
+    show_message = show_message.replace(u'%%total_items%%', str(total_items))
+    if message_attribute:
+      try:
+        show_message = show_message.replace(u'%%first_item%%', str(this_page[items][0][message_attribute]))
+        show_message = show_message.replace(u'%%last_item%%', str(this_page[items][-1][message_attribute]))
+      except (IndexError, KeyError):
+        show_message = show_message.replace(u'%%first_item%%', u'')
+        show_message = show_message.replace(u'%%last_item%%', u'')
+    sys.stderr.write(u'\r')
+    sys.stderr.flush()
+    sys.stderr.write(show_message)
+  return (pageToken, total_items)
+
+def _finalizeGAPIpagesResult(page_message):
+  if page_message and (page_message[-1] != u'\n'):
+    sys.stderr.write(u'\r\n')
+    sys.stderr.flush()
+
 def callGAPIpages(service, function, items,
                   page_message=None, message_attribute=None,
                   soft_errors=False, throw_reasons=None, retry_reasons=None,
@@ -889,37 +933,11 @@ def callGAPIpages(service, function, items,
   while True:
     this_page = callGAPI(service, function, soft_errors=soft_errors,
                          throw_reasons=throw_reasons, retry_reasons=retry_reasons, **kwargs)
-    if this_page:
-      if items in this_page:
-        page_items = len(this_page[items])
-        total_items += page_items
-        all_pages.extend(this_page[items])
-      else:
-        this_page = {items: []}
-        page_items = 0
-    else:
-      this_page = {items: []}
-      page_items = 0
-    if page_message:
-      show_message = page_message.replace(u'%%num_items%%', str(page_items))
-      show_message = show_message.replace(u'%%total_items%%', str(total_items))
-      if message_attribute:
-        try:
-          show_message = show_message.replace(u'%%first_item%%', str(this_page[items][0][message_attribute]))
-          show_message = show_message.replace(u'%%last_item%%', str(this_page[items][-1][message_attribute]))
-        except (IndexError, KeyError):
-          show_message = show_message.replace(u'%%first_item%%', u'')
-          show_message = show_message.replace(u'%%last_item%%', u'')
-      sys.stderr.write(u'\r')
-      sys.stderr.flush()
-      sys.stderr.write(show_message)
-    if this_page and this_page.get(u'nextPageToken'):
-      kwargs[u'pageToken'] = this_page[u'nextPageToken']
-    else:
-      if page_message and (page_message[-1] != u'\n'):
-        sys.stderr.write(u'\r\n')
-        sys.stderr.flush()
+    pageToken, total_items = _processGAPIpagesResult(this_page, items, all_pages, total_items, page_message, message_attribute)
+    if not pageToken:
+      _finalizeGAPIpagesResult(page_message)
       return all_pages
+    kwargs[u'pageToken'] = pageToken
 
 def callGAPIitems(service, function, items,
                   throw_reasons=None, retry_reasons=None,
@@ -1420,8 +1438,10 @@ def showReport():
             if item[u'name'] in [u'start_time', u'end_time']:
               val = item.get(u'intValue')
               if val is not None:
-                item[u'dateTimeValue'] = datetime.datetime.fromtimestamp(int(val)-62135683200).isoformat()
-                item.pop(u'intValue')
+                val = int(val)
+                if val >= 62135683200:
+                  item[u'dateTimeValue'] = datetime.datetime.fromtimestamp(val-62135683200).isoformat()
+                  item.pop(u'intValue')
           row = flatten_json(event)
           row.update(activity_row)
           for item in row:
@@ -1773,6 +1793,7 @@ def doGetCustomerInfo():
   if customerId == MY_CUSTOMER:
     customerId = None
   rep = buildGAPIObject(u'reports')
+  usage = None
   while True:
     try:
       usage = callGAPIpages(rep.customerUsageReports(), u'get', u'usageReports', throw_reasons=[GAPI_INVALID],
@@ -2306,10 +2327,11 @@ def doDeleteGuardian():
       try:
         results = callGAPIpages(croom.userProfiles().guardians(), u'list', u'guardians',
                                 throw_reasons=[GAPI_FORBIDDEN],
-                                studentId=studentId, invitedEmailAddress=guardianId)
+                                studentId=studentId, invitedEmailAddress=guardianId,
+                                fields=u'nextPageToken,guardians(studentId,guardianId)')
         if len(results) > 0:
           for result in results:
-            _deleteGuardian(croom, studentId, result[u'guardianId'], guardianId)
+            _deleteGuardian(croom, result[u'studentId'], result[u'guardianId'], guardianId)
           return
       except GAPI_forbidden:
         entityUnknownWarning(u'Student', studentId, 0, 0)
@@ -2322,10 +2344,11 @@ def doDeleteGuardian():
     try:
       results = callGAPIpages(croom.userProfiles().guardianInvitations(), u'list', u'guardianInvitations',
                               throw_reasons=[GAPI_FORBIDDEN],
-                              studentId=studentId, invitedEmailAddress=guardianId, states=[u'PENDING',])
+                              studentId=studentId, invitedEmailAddress=guardianId, states=[u'PENDING',],
+                              fields=u'nextPageToken,guardianInvitations(studentId,invitationId)')
       if len(results) > 0:
         for result in results:
-          status = _cancelGuardianInvitation(croom, studentId, result[u'invitationId'])
+          status = _cancelGuardianInvitation(croom, result[u'studentId'], result[u'invitationId'])
         sys.exit(status)
     except GAPI_forbidden:
       entityUnknownWarning(u'Student', studentId, 0, 0)
@@ -2675,7 +2698,7 @@ def doPrintPrintJobs():
       owner = sys.argv[i+1]
       i += 2
     elif myarg == u'limit':
-      jobLimit = max(0, int(sys.argv[i+1]))
+      jobLimit = getInteger(sys.argv[i+1], myarg, minVal=0)
       i += 2
     else:
       systemErrorExit(2, '%s is not a valid argument for "gam print printjobs"' % sys.argv[i])
@@ -2867,6 +2890,14 @@ def deleteCalendar(users):
       continue
     callGAPI(cal.calendarList(), u'delete', soft_errors=True, calendarId=calendarId)
 
+CALENDAR_REMINDER_MAX_MINUTES = 40320
+
+CALENDAR_MIN_COLOR_INDEX = 1
+CALENDAR_MAX_COLOR_INDEX = 24
+
+CALENDAR_EVENT_MIN_COLOR_INDEX = 1
+CALENDAR_EVENT_MAX_COLOR_INDEX = 11
+
 def getCalendarAttributes(i, body, function):
   colorRgbFormat = False
   while i < len(sys.argv):
@@ -2881,7 +2912,7 @@ def getCalendarAttributes(i, body, function):
       body[u'summaryOverride'] = sys.argv[i+1]
       i += 2
     elif myarg == u'colorindex':
-      body[u'colorId'] = str(sys.argv[i+1])
+      body[u'colorId'] = getInteger(sys.argv[i+1], myarg, minVal=CALENDAR_MIN_COLOR_INDEX, maxVal=CALENDAR_MAX_COLOR_INDEX)
       i += 2
     elif myarg == u'backgroundcolor':
       body[u'backgroundColor'] = getColor(sys.argv[i+1])
@@ -2897,10 +2928,7 @@ def getCalendarAttributes(i, body, function):
       if method not in CLEAR_NONE_ARGUMENT:
         if method not in CALENDAR_REMINDER_METHODS:
           systemErrorExit(2, 'Method must be one of %s; got %s' % (u', '.join(CALENDAR_REMINDER_METHODS+CLEAR_NONE_ARGUMENT), method))
-        try:
-          minutes = int(sys.argv[i+2])
-        except ValueError:
-          systemErrorExit(2, 'Reminder time must be specified in minutes; got %s' % sys.argv[i+2])
+        minutes = getInteger(sys.argv[i+2], myarg, minVal=0, maxVal=CALENDAR_REMINDER_MAX_MINUTES)
         body[u'defaultReminders'].append({u'method': method, u'minutes': minutes})
         i += 3
       else:
@@ -2948,7 +2976,8 @@ def updateCalendar(users):
     if not cal:
       continue
     print u"Updating %s's subscription to calendar %s (%s/%s)" % (user, calendarId, i, count)
-    callGAPI(cal.calendarList(), u'patch', soft_errors=True, calendarId=calendarId, body=body, colorRgbFormat=colorRgbFormat)
+    calId = calendarId if calendarId != u'primary' else user
+    callGAPI(cal.calendarList(), u'patch', soft_errors=True, calendarId=calId, body=body, colorRgbFormat=colorRgbFormat)
 
 def doPrinterShowACL():
   cp = buildGAPIObject(u'cloudprint')
@@ -3097,7 +3126,7 @@ def doPrintJobFetch():
       owner = sys.argv[i+1]
       i += 2
     elif myarg == u'limit':
-      jobLimit = max(0, int(sys.argv[i+1]))
+      jobLimit = getInteger(sys.argv[i+1], myarg, minVal=0)
       i += 2
     elif myarg == u'drivedir':
       targetFolder = GC_Values[GC_DRIVE_DIR]
@@ -3339,6 +3368,11 @@ def checkCloudPrintResult(result):
   if not result[u'success']:
     systemErrorExit(result[u'errorCode'], '%s: %s' % (result[u'errorCode'], result[u'message']))
 
+def formatACLScope(rule):
+  if rule[u'scope'][u'type'] != u'default':
+    return u'(Scope: {0}:{1})'.format(rule[u'scope'][u'type'], rule[u'scope'][u'value'])
+  return u'(Scope: {0})'.format(rule[u'scope'][u'type'])
+
 def formatACLRule(rule):
   if rule[u'scope'][u'type'] != u'default':
     return u'(Scope: {0}:{1}, Role: {2})'.format(rule[u'scope'][u'type'], rule[u'scope'][u'value'], rule[u'role'])
@@ -3355,70 +3389,64 @@ def doCalendarShowACL():
     i += 1
     print u'Calendar: {0}, ACL: {1}{2}'.format(calendarId, formatACLRule(rule), currentCount(i, count))
 
-def doCalendarAddACL(calendarId=None, act_as=None, role=None, scope=None, entity=None):
-  if calendarId is None:
-    calendarId = sys.argv[2]
-  if not act_as:
-    calendarId = normalizeCalendarId(calendarId)
-    act_as = calendarId
-  _, cal = buildCalendarDataGAPIObject(act_as)
-  body = {u'scope': {}}
-  if role is not None:
-    body[u'role'] = role
-  else:
-    body[u'role'] = sys.argv[4].lower()
-  if body[u'role'] not in [u'freebusy', u'read', u'reader', u'editor', u'writer', u'owner', u'none']:
-    systemErrorExit(2, 'Role must be one of freebusy, reader, editor, writer, owner, none; got %s' % body[u'role'])
-  if body[u'role'] == u'freebusy':
-    body[u'role'] = u'freeBusyReader'
-  elif body[u'role'] in [u'read', u'reader']:
-    body[u'role'] = u'reader'
-  elif body[u'role'] == u'editor':
-    body[u'role'] = u'writer'
-  if scope is not None:
-    body[u'scope'][u'type'] = scope
-  else:
-    body[u'scope'][u'type'] = sys.argv[5].lower()
-  i = 6
-  if body[u'scope'][u'type'] not in [u'default', u'user', u'group', u'domain']:
-    body[u'scope'][u'type'] = u'user'
-    i = 5
-  try:
-    if entity is not None and body[u'scope'][u'type'] != u'default':
-      body[u'scope'][u'value'] = entity
-    else:
+def _getCalendarACLScope(i, body):
+  body[u'scope'] = {}
+  myarg = sys.argv[i].lower()
+  body[u'scope'][u'type'] = myarg
+  i += 1
+  if myarg in [u'user', u'group']:
+    body[u'scope'][u'value'] = normalizeEmailAddressOrUID(sys.argv[i], noUid=True)
+    i += 1
+  elif myarg == u'domain':
+    if i < len(sys.argv) and sys.argv[i].lower().replace(u'_', u'') != u'sendnotifications':
       body[u'scope'][u'value'] = sys.argv[i].lower()
-    if (body[u'scope'][u'type'] in [u'user', u'group']) and body[u'scope'][u'value'].find(u'@') == -1:
-      body[u'scope'][u'value'] = u'%s@%s' % (body[u'scope'][u'value'], GC_Values[GC_DOMAIN])
-  except IndexError:
-    pass
-  if body[u'scope'][u'type'] == u'domain':
-    try:
-      body[u'scope'][u'value'] = sys.argv[6].lower()
-    except IndexError:
+      i += 1
+    else:
       body[u'scope'][u'value'] = GC_Values[GC_DOMAIN]
-  callGAPI(cal.acl(), u'insert', calendarId=calendarId, body=body)
+  elif myarg != u'default':
+    body[u'scope'][u'type'] = u'user'
+    body[u'scope'][u'value'] = normalizeEmailAddressOrUID(myarg, noUid=True)
+  return i
 
-def doCalendarUpdateACL():
-  calendarId = sys.argv[2]
-  role = sys.argv[4].lower()
-  scope = sys.argv[5].lower()
-  if len(sys.argv) > 6:
-    entity = sys.argv[6].lower()
-  else:
-    entity = None
-  doCalendarAddACL(calendarId=calendarId, role=role, scope=scope, entity=entity)
+CALENDAR_ACL_ROLES_MAP = {
+  u'editor': u'writer',
+  u'freebusy': u'freeBusyReader',
+  u'freebusyreader': u'freeBusyReader',
+  u'owner': u'owner',
+  u'read': u'reader',
+  u'reader': u'reader',
+  u'writer': u'writer',
+  u'none': u'none',
+  }
+
+def doCalendarAddACL(function):
+  calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
+  if not cal:
+    return
+  myarg = sys.argv[4].lower().replace(u'_', u'')
+  if myarg not in CALENDAR_ACL_ROLES_MAP:
+    systemErrorExit(2, 'Role must be one of %s; got %s' % (u', '.join(sorted(CALENDAR_ACL_ROLES_MAP.keys())), myarg))
+  body = {u'role': CALENDAR_ACL_ROLES_MAP[myarg]}
+  i = _getCalendarACLScope(5, body)
+  sendNotifications = True
+  while i < len(sys.argv):
+    myarg = sys.argv[i].lower().replace(u'_', u'')
+    if myarg == u'sendnotifications':
+      sendNotifications = getBoolean(sys.argv[i+1], myarg)
+      i += 2
+    else:
+      systemErrorExit(2, '%s is not a valid argument for "gam calendar <email> %s"' % (sys.argv[i], function.lower()))
+  print u'Calendar: {0}, {1} ACL: {2}'.format(calendarId, function, formatACLRule(body))
+  callGAPI(cal.acl(), u'insert', calendarId=calendarId, body=body, sendNotifications=sendNotifications)
 
 def doCalendarDelACL():
-  calendarId = sys.argv[2]
-  entity = sys.argv[5].lower()
-  scope = u'user'
-  if entity == u'domain':
-    scope = u'domain'
-  elif entity == u'default':
-    scope = u'default'
-    entity = u''
-  doCalendarAddACL(calendarId=calendarId, role=u'none', scope=scope, entity=entity)
+  calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
+  if not cal:
+    return
+  body = {u'role': u'none'}
+  _getCalendarACLScope(5, body)
+  print u'Calendar: {0}, {1} ACL: {2}'.format(calendarId, u'Delete', formatACLScope(body))
+  callGAPI(cal.acl(), u'insert', calendarId=calendarId, body=body, sendNotifications=False)
 
 def doCalendarWipeData():
   calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
@@ -3475,16 +3503,12 @@ def doCalendarAddEvent():
       sendNotifications = True
       i += 1
     elif myarg == u'attendee':
-      try:
-        body[u'attendees'].append({u'email': sys.argv[i+1]})
-      except KeyError:
-        body[u'attendees'] = [{u'email': sys.argv[i+1]},]
+      body.setdefault(u'attendees', [])
+      body[u'attendees'].append({u'email': sys.argv[i+1]})
       i += 2
     elif myarg == u'optionalattendee':
-      try:
-        body[u'attendees'].append({u'email': sys.argv[i+1], u'optional': True})
-      except TypeError:
-        body[u'attendees'] = [{u'email': sys.argv[i+1], u'optional': True},]
+      body.setdefault(u'attendees', [])
+      body[u'attendees'].append({u'email': sys.argv[i+1], u'optional': True})
       i += 2
     elif myarg == u'anyonecanaddself':
       body[u'anyoneCanAddSelf'] = True
@@ -3540,17 +3564,13 @@ def doCalendarAddEvent():
       body[u'reminders'] = {u'useDefault': False}
       i += 1
     elif myarg == u'reminder':
-      try:
-        body[u'reminders'][u'overrides'].append({u'minutes': sys.argv[i+1], u'method': sys.argv[i+2]})
-        body[u'reminders'][u'useDefault'] = False
-      except KeyError:
-        body[u'reminders'] = {u'useDefault': False, u'overrides': [{u'minutes': sys.argv[i+1], u'method': sys.argv[i+2]},]}
+      body.setdefault(u'reminders', {u'overrides': [], u'useDefault': False})
+      body[u'reminders'][u'overrides'].append({u'minutes': getInteger(sys.argv[i+1], myarg, minVal=0, maxVal=CALENDAR_REMINDER_MAX_MINUTES),
+                                               u'method': sys.argv[i+2]})
       i += 3
     elif myarg == u'recurrence':
-      try:
-        body[u'recurrence'].append(sys.argv[i+1])
-      except KeyError:
-        body[u'recurrence'] = [sys.argv[i+1],]
+      body.setdefault(u'recurrence', [])
+      body[u'recurrence'].append(sys.argv[i+1])
       i += 2
     elif myarg == u'timezone':
       timeZone = sys.argv[i+1]
@@ -3566,18 +3586,17 @@ def doCalendarAddEvent():
       body[u'extendedProperties'][u'shared'][sys.argv[i+1]] = sys.argv[i+2]
       i += 3
     elif myarg == u'colorindex':
-      body[u'colorId'] = str(sys.argv[i+1])
+      body[u'colorId'] = getInteger(sys.argv[i+1], myarg, CALENDAR_EVENT_MIN_COLOR_INDEX, CALENDAR_EVENT_MAX_COLOR_INDEX)
       i += 2
     else:
       systemErrorExit(2, '%s is not a valid argument for "gam calendar <email> addevent"' % sys.argv[i])
-  if not timeZone and u'recurrence' in body:
-    timeZone = callGAPI(cal.calendars(), u'get', calendarId=calendarId, fields=u'timeZone')[u'timeZone']
-  if u'recurrence' in body:
-    for a_time in [u'start', u'end']:
-      try:
-        body[a_time][u'timeZone'] = timeZone
-      except KeyError:
-        pass
+  if (u'recurrence' in body) and ((u'start' in body) or (u'end' in body)):
+    if not timeZone:
+      timeZone = callGAPI(cal.calendars(), u'get', calendarId=calendarId, fields=u'timeZone')[u'timeZone']
+    if u'start' in body:
+      body[u'start'][u'timeZone'] = timeZone
+    if u'end' in body:
+      body[u'end'][u'timeZone'] = timeZone
   callGAPI(cal.events(), u'insert', calendarId=calendarId, sendNotifications=sendNotifications, body=body)
 
 def doCalendarModifySettings():
@@ -3961,6 +3980,18 @@ def delDriveFileACL(users):
              permissionId=permissionId, supportsTeamDrives=True,
              useDomainAdminAccess=useDomainAdminAccess)
 
+DRIVEFILE_ACL_ROLES_MAP = {
+  u'commenter': u'commenter',
+  u'contentmanager': u'fileOrganizer',
+  u'editor': u'writer',
+  u'fileorganizer': u'fileOrganizer',
+  u'organizer': u'organizer',
+  u'owner': u'owner',
+  u'read': u'reader',
+  u'reader': u'reader',
+  u'writer': u'writer',
+  }
+
 def addDriveFileACL(users):
   fileId = sys.argv[5]
   body = {u'type': sys.argv[6].lower()}
@@ -3987,12 +4018,11 @@ def addDriveFileACL(users):
       body[u'allowFileDiscovery'] = True
       i += 1
     elif myarg == u'role':
-      body[u'role'] = sys.argv[i+1]
-      if body[u'role'] not in [u'reader', u'commenter', u'writer', u'owner', u'organizer', u'editor']:
-        systemErrorExit(2, 'role must be reader, commenter, writer, organizer, or owner; got %s' % body[u'role'])
-      if body[u'role'] == u'editor':
-        body[u'role'] = u'writer'
-      elif body[u'role'] == u'owner':
+      role = sys.argv[i+1].lower()
+      if role not in DRIVEFILE_ACL_ROLES_MAP:
+        systemErrorExit(2, 'role must be {0}; got {1}'.format(u', '.join(DRIVEFILE_ACL_ROLES_MAP), role))
+      body[u'role'] = DRIVEFILE_ACL_ROLES_MAP[role]
+      if body[u'role'] == u'owner':
         sendNotificationEmail = True
         transferOwnership = True
       i += 2
@@ -4036,12 +4066,11 @@ def updateDriveFileACL(users):
       removeExpiration = True
       i += 1
     elif myarg == u'role':
-      body[u'role'] = sys.argv[i+1]
-      if body[u'role'] not in [u'reader', u'commenter', u'writer', u'owner', u'organizer', u'editor']:
-        systemErrorExit(2, 'role must be reader, commenter, writer, organizer, or owner; got %s' % body[u'role'])
-      if body[u'role'] == u'editor':
-        body[u'role'] = u'writer'
-      elif body[u'role'] == u'owner':
+      role = sys.argv[i+1].lower()
+      if role not in DRIVEFILE_ACL_ROLES_MAP:
+        systemErrorExit(2, 'role must be {0}; got {1}'.format(u', '.join(DRIVEFILE_ACL_ROLES_MAP), role))
+      body[u'role'] = DRIVEFILE_ACL_ROLES_MAP[role]
+      if body[u'role'] == u'owner':
         transferOwnership = True
       i += 2
     elif myarg == u'asadmin':
@@ -4560,7 +4589,7 @@ def downloadDriveFile(users):
       fileIdSelection[u'query'] = u"'me' in owners and title = '{0}'".format(sys.argv[i+1])
       i += 2
     elif myarg == u'revision':
-      revisionId = sys.argv[i+1]
+      revisionId = getInteger(sys.argv[i+1], myarg, minVal=1)
       i += 2
     elif myarg == u'format':
       exportFormatChoices = sys.argv[i+1].replace(u',', u' ').lower().split()
@@ -4725,13 +4754,16 @@ def showDriveFileRevisions(users):
 
 def transferSecCals(users):
   target_user = sys.argv[5]
-  remove_source_user = True
+  remove_source_user = sendNotifications = True
   i = 6
   while i < len(sys.argv):
-    myarg = sys.argv[i].lower()
+    myarg = sys.argv[i].lower().replace(u'_', u'')
     if myarg == u'keepuser':
       remove_source_user = False
       i += 1
+    elif myarg == u'sendnotifications':
+      sendNotifications = getBoolean(sys.argv[i+1], myarg)
+      i += 2
     else:
       systemErrorExit(2, '%s is not a valid argument for "gam <users> transfer seccals"' % sys.argv[i])
   if remove_source_user:
@@ -4742,13 +4774,16 @@ def transferSecCals(users):
     user, source_cal = buildCalendarGAPIObject(user)
     if not source_cal:
       continue
-    source_calendars = callGAPIpages(source_cal.calendarList(), u'list', u'items', soft_errors=True,
-                                     minAccessRole=u'owner', showHidden=True, fields=u'items(id),nextPageToken')
-    for source_cal in source_calendars:
-      if source_cal[u'id'].find(u'@group.calendar.google.com') != -1:
-        doCalendarAddACL(calendarId=source_cal[u'id'], act_as=user, role=u'owner', scope=u'user', entity=target_user)
+    calendars = callGAPIpages(source_cal.calendarList(), u'list', u'items', soft_errors=True,
+                              minAccessRole=u'owner', showHidden=True, fields=u'items(id),nextPageToken')
+    for calendar in calendars:
+      calendarId = calendar[u'id']
+      if calendarId.find(u'@group.calendar.google.com') != -1:
+        callGAPI(source_cal.acl(), u'insert', calendarId=calendarId,
+                 body={u'role': u'owner', u'scope': {u'type': u'user', u'value': target_user}}, sendNotifications=sendNotifications)
         if remove_source_user:
-          doCalendarAddACL(calendarId=source_cal[u'id'], act_as=target_user, role=u'none', scope=u'user', entity=user)
+          callGAPI(target_cal.acl(), u'insert', calendarId=calendarId,
+                   body={u'role': u'none', u'scope': {u'type': u'user', u'value': user}}, sendNotifications=sendNotifications)
 
 def transferDriveFiles(users):
   target_user = sys.argv[5]
@@ -5467,7 +5502,7 @@ def doProcessMessagesOrThreads(users, function, unit=u'messages'):
       doIt = True
       i += 1
     elif myarg in [u'maxtodelete', u'maxtotrash', u'maxtomodify', u'maxtountrash']:
-      maxToProcess = int(sys.argv[i+1])
+      maxToProcess = getInteger(sys.argv[i+1], myarg, minVal=0)
       i += 2
     elif (function == u'modify') and (myarg == u'addlabel'):
       body.setdefault(u'addLabelIds', [])
@@ -6423,7 +6458,8 @@ def doCreateOrUpdateUserSchema(updateCmd):
           a_field[u'readAccessType'] = u'ADMINS_AND_SELF'
           i += 1
         elif myarg == u'range':
-          a_field[u'numericIndexingSpec'] = {u'minValue': sys.argv[i+1], u'maxValue': sys.argv[i+2]}
+          a_field[u'numericIndexingSpec'] = {u'minValue': getInteger(sys.argv[i+1], myarg),
+                                             u'maxValue': getInteger(sys.argv[i+2], myarg)}
           i += 3
         elif myarg == u'endfield':
           body[u'fields'].append(a_field)
@@ -6887,7 +6923,7 @@ def getUserAttributes(i, cd, updateCmd):
       while True:
         myopt = sys.argv[i].lower()
         if myopt == u'expires':
-          ssh[u'expirationTimeUsec'] = sys.argv[i+1]
+          ssh[u'expirationTimeUsec'] = getInteger(sys.argv[i+1], myopt, minVal=0)
           i += 2
         elif myopt == u'key':
           ssh[u'key'] = sys.argv[i+1]
@@ -6910,10 +6946,10 @@ def getUserAttributes(i, cd, updateCmd):
           posix[u'gecos'] = sys.argv[i+1]
           i += 2
         elif myopt == u'gid':
-          posix[u'gid'] = int(sys.argv[i+1])
+          posix[u'gid'] = getInteger(sys.argv[i+1], myopt, minVal=0)
           i += 2
         elif myopt == u'uid':
-          posix[u'uid'] = int(sys.argv[i+1])
+          posix[u'uid'] = getInteger(sys.argv[i+1], myopt, minVal=1000)
           i += 2
         elif myopt in [u'home', u'homedirectory']:
           posix[u'homeDirectory'] = sys.argv[i+1]
@@ -8037,7 +8073,7 @@ def doCreateGroup():
 
 def doCreateAlias():
   cd = buildGAPIObject(u'directory')
-  body = {u'alias': normalizeEmailAddressOrUID(sys.argv[3], noUid=True)}
+  body = {u'alias': normalizeEmailAddressOrUID(sys.argv[3], noUid=True, noLower=True)}
   target_type = sys.argv[4].lower()
   if target_type not in [u'user', u'group', u'target']:
     systemErrorExit(2, 'type of target must be user or group; got %s' % target_type)
@@ -8268,7 +8304,7 @@ def _getResourceCalendarAttributes(cd, args, body={}):
       body[u'buildingId'] = _getBuildingByNameOrId(cd, args[i+1], minLen=0)
       i += 2
     elif myarg in [u'capacity']:
-      body[u'capacity'] = int(args[i+1])
+      body[u'capacity'] = getInteger(args[i+1], myarg, minVal=0)
       i += 2
     elif myarg in [u'feature', u'features']:
       features = args[i+1].split(u',')
@@ -8631,7 +8667,7 @@ def doUpdateGroup():
 
 def doUpdateAlias():
   cd = buildGAPIObject(u'directory')
-  alias = normalizeEmailAddressOrUID(sys.argv[3], noUid=True)
+  alias = normalizeEmailAddressOrUID(sys.argv[3], noUid=True, noLower=True)
   target_type = sys.argv[4].lower()
   if target_type not in [u'user', u'group', u'target']:
     systemErrorExit(2, 'target type must be one of user, group, target; got %s' % target_type)
@@ -8895,9 +8931,9 @@ def doUpdateResoldSubscription():
       i += 2
     elif myarg in [u'seats']:
       function = u'changeSeats'
-      kwargs[u'body'] = {u'numberOfSeats': sys.argv[i+1]}
+      kwargs[u'body'] = {u'numberOfSeats': getInteger(sys.argv[i+1], u'numberOfSeats', minVal=0)}
       if len(sys.argv) > i + 2 and sys.argv[i+2].isdigit():
-        kwargs[u'body'][u'maximumNumberOfSeats'] = sys.argv[i+2]
+        kwargs[u'body'][u'maximumNumberOfSeats'] = getInteger(sys.argv[i+2], u'maximumNumberOfSeats', minVal=0)
         i += 3
       else:
         i += 2
@@ -8908,9 +8944,9 @@ def doUpdateResoldSubscription():
       while i < len(sys.argv):
         planarg = sys.argv[i].lower()
         if planarg == u'seats':
-          kwargs[u'body'][u'seats'] = {u'numberOfSeats': sys.argv[i+1]}
+          kwargs[u'body'][u'seats'] = {u'numberOfSeats': getInteger(sys.argv[i+1], u'numberOfSeats', minVal=0)}
           if len(sys.argv) > i + 2 and sys.argv[i+2].isdigit():
-            kwargs[u'body'][u'seats'][u'maximumNumberOfSeats'] = sys.argv[i+2]
+            kwargs[u'body'][u'seats'][u'maximumNumberOfSeats'] = getInteger(sys.argv[i+2], u'maximumNumberOfSeats', minVal=0)
             i += 3
           else:
             i += 2
@@ -8959,9 +8995,9 @@ def _getResoldSubscriptionAttr(arg, customerId):
     elif myarg in [u'purchaseorderid', u'po']:
       body[u'purchaseOrderId'] = arg[i+1]
     elif myarg in [u'seats']:
-      body[u'seats'][u'numberOfSeats'] = arg[i+1]
+      body[u'seats'][u'numberOfSeats'] = getInteger(sys.argv[i+1], u'numberOfSeats', minVal=0)
       if len(arg) > i + 2 and arg[i+2].isdigit():
-        body[u'seats'][u'maximumNumberOfSeats'] = arg[i+2]
+        body[u'seats'][u'maximumNumberOfSeats'] = getInteger(sys.argv[i+2], u'maximumNumberOfSeats', minVal=0)
         i += 1
     elif myarg in [u'sku', u'skuid']:
       _, body[u'skuId'] = getProductAndSKU(arg[i+1])
@@ -9446,7 +9482,7 @@ def doGetCrosInfo():
       endDate = _getFilterDate(sys.argv[i+1])
       i += 2
     elif myarg == u'listlimit':
-      listLimit = int(sys.argv[i+1])
+      listLimit = getInteger(sys.argv[i+1], myarg, minVal=-1)
       i += 2
     elif myarg == u'allfields':
       projection = u'FULL'
@@ -10178,7 +10214,7 @@ def doDeleteAlias(alias_email=None):
   elif alias_email.lower() == u'group':
     is_group = True
     alias_email = sys.argv[4]
-  alias_email = normalizeEmailAddressOrUID(alias_email, noUid=True)
+  alias_email = normalizeEmailAddressOrUID(alias_email, noUid=True, noLower=True)
   print u"Deleting alias %s" % alias_email
   if is_user or (not is_user and not is_group):
     try:
@@ -10639,7 +10675,7 @@ def doPrintGroups():
       usemember = None
       i += 2
     elif myarg == u'maxresults':
-      maxResults = int(sys.argv[i+1])
+      maxResults = getInteger(sys.argv[i+1], myarg, minVal=0)
       i += 2
     elif myarg == u'delimiter':
       aliasDelimiter = memberDelimiter = sys.argv[i+1]
@@ -11182,10 +11218,10 @@ def doPrintMobileDevices():
       delimiter = sys.argv[i+1]
       i += 2
     elif myarg == u'listlimit':
-      listLimit = int(sys.argv[i+1])
+      listLimit = getInteger(sys.argv[i+1], myarg, minVal=-1)
       i += 2
     elif myarg == u'appslimit':
-      appsLimit = int(sys.argv[i+1])
+      appsLimit = getInteger(sys.argv[i+1], myarg, minVal=-1)
       i += 2
     elif myarg == u'fields':
       fields = u'nextPageToken,mobiledevices(%s)' % sys.argv[i+1]
@@ -11301,7 +11337,7 @@ def doPrintCrosActivity():
       endDate = _getFilterDate(sys.argv[i+1])
       i += 2
     elif myarg == u'listlimit':
-      listLimit = int(sys.argv[i+1])
+      listLimit = getInteger(sys.argv[i+1], myarg, minVal=0)
       i += 2
     elif myarg == u'delimiter':
       delimiter = sys.argv[i+1]
@@ -11424,7 +11460,7 @@ def doPrintCrosDevices():
       endDate = _getFilterDate(sys.argv[i+1])
       i += 2
     elif myarg == u'listlimit':
-      listLimit = int(sys.argv[i+1])
+      listLimit = getInteger(sys.argv[i+1], myarg, minVal=0)
       i += 2
     elif myarg == u'orderby':
       orderBy = sys.argv[i+1].lower().replace(u'_', u'')
@@ -12810,11 +12846,11 @@ def ProcessGAMCommand(args):
       if argument == u'showacl':
         doCalendarShowACL()
       elif argument == u'add':
-        doCalendarAddACL()
+        doCalendarAddACL(u'Add')
       elif argument in [u'del', u'delete']:
         doCalendarDelACL()
       elif argument == u'update':
-        doCalendarUpdateACL()
+        doCalendarAddACL(u'Update')
       elif argument == u'wipe':
         doCalendarWipeData()
       elif argument == u'addevent':
