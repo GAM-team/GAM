@@ -10368,7 +10368,10 @@ gam user %s check serviceaccount
 and follow recommend steps to authorize GAM for Drive access.''' % (admin_email)
       sys.exit(5)
     result = callGAPI(drive.about(), u'get', fields=u'maxImportSizes')
-    if len(csvRows)*len(titles) > 2000000 or string_file.len > int(result[u'maxImportSizes'][MIMETYPE_GA_SPREADSHEET]):
+    columns = len(titles)
+    rows = len(csvRows)
+    cell_count = rows * columns
+    if cell_count > 2000000 or string_file.len > int(result[u'maxImportSizes'][MIMETYPE_GA_SPREADSHEET]):
       print u'{0}{1}'.format(WARNING_PREFIX, MESSAGE_RESULTS_TOO_LARGE_FOR_GOOGLE_SPREADSHEET)
       mimeType = u'text/csv'
     else:
