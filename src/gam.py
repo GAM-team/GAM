@@ -8548,6 +8548,8 @@ def doUpdateGroup():
       role, users_email, delivery = _getRoleAndUsers()
       group = checkGroupExists(cd, group)
       if group:
+        if not role and not delivery:
+          role = ROLE_MEMBER
         if len(users_email) > 1:
           sys.stderr.write(u'Group: {0}, Will update {1} {2}s.\n'.format(group, len(users_email), role))
           for user_email in users_email:
@@ -8557,7 +8559,6 @@ def doUpdateGroup():
             if delivery:
               item.append(delivery)
             item.append(user_email)
-            print item
             items.append(item)
         else:
           body = {}
@@ -9447,15 +9448,15 @@ def _filterTimeRanges(activeTimeRanges, startDate, endDate):
       filteredTimeRanges.append(timeRange)
   return filteredTimeRanges
 
-def _filterDeviceFiles(deviceFiles, startTime, endTime):
+def _filterCreateReportTime(items, timeField, startTime, endTime):
   if startTime is None and endTime is None:
-    return deviceFiles
-  filteredDeviceFiles = []
-  for deviceFile in deviceFiles:
-    createTime = datetime.datetime.strptime(deviceFile[u'createTime'], u'%Y-%m-%dT%H:%M:%S.%fZ')
-    if ((startTime is None) or (createTime >= startTime)) and ((endTime is None) or (createTime <= endTime)):
-      filteredDeviceFiles.append(deviceFile)
-  return filteredDeviceFiles
+    return items
+  filteredItems = []
+  for item in items:
+    timeValue = datetime.datetime.strptime(item[timeField], u'%Y-%m-%dT%H:%M:%S.%fZ')
+    if ((startTime is None) or (timeValue >= startTime)) and ((endTime is None) or (timeValue <= endTime)):
+      filteredItems.append(item)
+  return filteredItems
 
 def _getFilterDate(dateStr):
   return datetime.datetime.strptime(dateStr, YYYYMMDD_FORMAT)
@@ -9563,7 +9564,7 @@ def doGetCrosInfo():
         for recentUser in recentUsers[:min(lenRU, listLimit or lenRU)]:
           print u'    type: {0}'.format(recentUser[u'type'])
           print u'      email: {0}'.format(recentUser.get(u'email', [u'Unknown', u'UnmanagedUser'][recentUser[u'type'] == u'USER_TYPE_UNMANAGED']))
-      deviceFiles = _filterDeviceFiles(cros.get(u'deviceFiles', []), startDate, endDate)
+      deviceFiles = _filterCreateReportTime(cros.get(u'deviceFiles', []), u'createTime', startDate, endDate)
       lenDF = len(deviceFiles)
       if lenDF:
         print u'  deviceFiles'
@@ -9589,6 +9590,34 @@ def doGetCrosInfo():
             print u'Downloaded: {0}'.format(downloadfilename)
         elif downloadfile:
           print u'ERROR: no files to download.'
+      cpuStatusReports = _filterCreateReportTime(cros.get(u'cpuStatusReports', []), u'reportTime', startDate, endDate)
+      lenCSR = len(cpuStatusReports)
+      if lenCSR:
+        print u'  cpuStatusReports'
+        for cpuStatusReport in cpuStatusReports[:min(lenCSR, listLimit or lenCSR)]:
+          print u'    reportTime: {0}'.format(cpuStatusReport[u'reportTime'])
+          print u'      cpuTemperatureInfo'
+          for tempInfo in cpuStatusReport.get(u'cpuTemperatureInfo', []):
+            print u'        {0}: {1}'.format(tempInfo[u'label'].strip(), tempInfo[u'temperature'])
+          print u'      cpuUtilizationPercentageInfo: {0}'.format(u','.join([str(x) for x in cpuStatusReport[u'cpuUtilizationPercentageInfo']]))
+      diskVolumeReports = cros.get(u'diskVolumeReports', [])
+      lenDVR = len(diskVolumeReports)
+      if lenDVR:
+        print u'  diskVolumeReports'
+        print u'    volumeInfo'
+        for diskVolumeReport in diskVolumeReports[:min(lenDVR, listLimit or lenDVR)]:
+          volumeInfo = diskVolumeReport[u'volumeInfo']
+          for volume in volumeInfo:
+            print u'      volumeId: {0}'.format(volume[u'volumeId'])
+            print u'        storageFree: {0}'.format(volume[u'storageFree'])
+            print u'        storageTotal: {0}'.format(volume[u'storageTotal'])
+      systemRamFreeReports = _filterCreateReportTime(cros.get(u'systemRamFreeReports', []), u'reportTime', startDate, endDate)
+      lenSRFR = len(systemRamFreeReports)
+      if lenSRFR:
+        print u'  systemRamFreeReports'
+        for systemRamFreeReport in systemRamFreeReports[:min(lenSRFR, listLimit or lenSRFR)]:
+          print u'    reportTime: {0}'.format(systemRamFreeReport[u'reportTime'])
+          print u'      systemRamFreeInfo: {0}'.format(u','.join(systemRamFreeReport[u'systemRamFreeInfo']))
 
 def doGetMobileInfo():
   cd = buildGAPIObject(u'directory')
@@ -10253,6 +10282,13 @@ def send_email(msg_subj, msg_txt, msg_rcpt=None):
   callGAPI(gmail.users().messages(), u'send',
            userId=userId, body={u'raw': base64.urlsafe_b64encode(msg.as_string())})
 
+def addFieldToFieldsList(fieldName, fieldsChoiceMap, fieldsList):
+  fields = fieldsChoiceMap[fieldName.lower()]
+  if isinstance(fields, list):
+    fieldsList.extend(fields)
+  else:
+    fieldsList.append(fields)
+
 # Write a CSV file
 def addTitleToCSVfile(title, titles):
   titles.append(title)
@@ -10322,11 +10358,6 @@ def writeCSVfile(csvRows, titles, list_type, todrive):
   except IOError as e:
     systemErrorExit(6, e)
   if todrive:
-    data_size = string_file.len
-    columns = len(titles)
-    rows = len(csvRows)
-    cell_count = rows * columns
-    mimeType = u'application/vnd.google-apps.spreadsheet'
     admin_email = _getValueFromOAuth(u'email')
     _, drive = buildDrive3GAPIObject(admin_email)
     if not drive:
@@ -10337,10 +10368,14 @@ gam user %s check serviceaccount
 and follow recommend steps to authorize GAM for Drive access.''' % (admin_email)
       sys.exit(5)
     result = callGAPI(drive.about(), u'get', fields=u'maxImportSizes')
-    max_sheet_bytes = int(result[u'maxImportSizes'][u'application/vnd.google-apps.spreadsheet'])
-    if cell_count > 2000000 or columns > 256 or data_size > max_sheet_bytes:
+    columns = len(titles)
+    rows = len(csvRows)
+    cell_count = rows * columns
+    if cell_count > 2000000 or string_file.len > int(result[u'maxImportSizes'][MIMETYPE_GA_SPREADSHEET]):
       print u'{0}{1}'.format(WARNING_PREFIX, MESSAGE_RESULTS_TOO_LARGE_FOR_GOOGLE_SPREADSHEET)
       mimeType = u'text/csv'
+    else:
+      mimeType = MIMETYPE_GA_SPREADSHEET
     body = {u'description': u' '.join(sys.argv),
             u'name': u'%s - %s' % (GC_Values[GC_DOMAIN], list_type),
             u'mimeType': mimeType}
@@ -11382,7 +11417,7 @@ def doPrintCrosActivity():
         row[u'recentUsers.email'] = delimiter.join([recent_user.get(u'email', [u'Unknown', u'UnmanagedUser'][recent_user[u'type'] == u'USER_TYPE_UNMANAGED']) for recent_user in recentUsers[:min(lenRU, listLimit or lenRU)]])
         csvRows.append(row)
       if selectDeviceFiles:
-        deviceFiles = _filterDeviceFiles(cros.get(u'deviceFiles', []), startDate, endDate)
+        deviceFiles = _filterCreateReportTime(cros.get(u'deviceFiles', []), u'createTime', startDate, endDate)
         lenDF = len(deviceFiles)
         for deviceFile in deviceFiles[:min(lenDF, listLimit or lenDF)]:
           new_row = row.copy()
@@ -11402,6 +11437,20 @@ def _checkTPMVulnerability(cros):
   return cros
 
 def doPrintCrosDevices():
+  def _getSelectedLists(myarg):
+    if myarg in CROS_ACTIVE_TIME_RANGES_ARGUMENTS:
+      selectedLists[u'activeTimeRanges'] = True
+    elif myarg in CROS_RECENT_USERS_ARGUMENTS:
+      selectedLists[u'recentUsers'] = True
+    elif myarg in CROS_DEVICE_FILES_ARGUMENTS:
+      selectedLists[u'deviceFiles'] = True
+    elif myarg in CROS_CPU_STATUS_REPORTS_ARGUMENTS:
+      selectedLists[u'cpuStatusReports'] = True
+    elif myarg in CROS_DISK_VOLUME_REPORTS_ARGUMENTS:
+      selectedLists[u'diskVolumeReports'] = True
+    elif myarg in CROS_SYSTEM_RAM_FREE_REPORTS_ARGUMENTS:
+      selectedLists[u'systemRamFreeReports'] = True
+
   cd = buildGAPIObject(u'directory')
   todrive = False
   fieldsList = []
@@ -11409,11 +11458,10 @@ def doPrintCrosDevices():
   titles = []
   csvRows = []
   addFieldToCSVfile(u'deviceid', CROS_ARGUMENT_TO_PROPERTY_MAP, fieldsList, fieldsTitles, titles)
-  sortHeaders = False
   projection = orderBy = sortOrder = orgUnitPath = None
   queries = [None]
-  noLists = False
-  selectActiveTimeRanges = selectDeviceFiles = selectRecentUsers = False
+  noLists = sortHeaders = False
+  selectedLists = {}
   startDate = endDate = None
   listLimit = 0
   i = 3
@@ -11430,28 +11478,7 @@ def doPrintCrosDevices():
       i += 1
     elif myarg == u'nolists':
       noLists = True
-      selectActiveTimeRanges = selectDeviceFiles = selectRecentUsers = False
-      i += 1
-    elif myarg in CROS_ACTIVE_TIME_RANGES_ARGUMENTS:
-      projection = u'FULL'
-      selectActiveTimeRanges = True
-      noLists = False
-      if fieldsList:
-        fieldsList.append(u'activeTimeRanges')
-      i += 1
-    elif myarg in CROS_DEVICE_FILES_ARGUMENTS:
-      projection = u'FULL'
-      selectDeviceFiles = True
-      noLists = False
-      if fieldsList:
-        fieldsList.append(u'deviceFiles')
-      i += 1
-    elif myarg in CROS_RECENT_USERS_ARGUMENTS:
-      projection = u'FULL'
-      selectRecentUsers = True
-      noLists = False
-      if fieldsList:
-        fieldsList.append(u'recentUsers')
+      selectedLists = {}
       i += 1
     elif myarg in CROS_START_ARGUMENTS:
       startDate = _getFilterDate(sys.argv[i+1])
@@ -11494,36 +11521,34 @@ def doPrintCrosDevices():
       sortHeaders = True
       fieldsList = []
       i += 1
+    elif myarg == u'sortheaders':
+      sortHeaders = True
+      i += 1
+    elif myarg in CROS_LISTS_ARGUMENTS:
+      _getSelectedLists(myarg)
+      i += 1
     elif myarg in CROS_ARGUMENT_TO_PROPERTY_MAP:
-      if not fieldsList:
-        fieldsList = [u'deviceId',]
-      addFieldToCSVfile(myarg, CROS_ARGUMENT_TO_PROPERTY_MAP, fieldsList, fieldsTitles, titles)
+      addFieldToFieldsList(myarg, CROS_ARGUMENT_TO_PROPERTY_MAP, fieldsList)
       i += 1
     elif myarg == u'fields':
-      if not fieldsList:
-        fieldsList = [u'deviceId',]
       fieldNameList = sys.argv[i+1]
       for field in fieldNameList.lower().replace(u',', u' ').split():
-        if field in CROS_ARGUMENT_TO_PROPERTY_MAP:
-          addFieldToCSVfile(field, CROS_ARGUMENT_TO_PROPERTY_MAP, fieldsList, fieldsTitles, titles)
-          if field in CROS_ACTIVE_TIME_RANGES_ARGUMENTS:
-            projection = u'FULL'
-            selectActiveTimeRanges = True
-            noLists = False
-          elif field in CROS_DEVICE_FILES_ARGUMENTS:
-            projection = u'FULL'
-            selectDeviceFiles = True
-            noLists = False
-          elif field in CROS_RECENT_USERS_ARGUMENTS:
-            projection = u'FULL'
-            selectRecentUsers = True
-            noLists = False
+        if field in CROS_LISTS_ARGUMENTS:
+          _getSelectedLists(field)
+        elif field in CROS_ARGUMENT_TO_PROPERTY_MAP:
+          addFieldToFieldsList(field, CROS_ARGUMENT_TO_PROPERTY_MAP, fieldsList)
         else:
           systemErrorExit(2, '%s is not a valid argument for "gam print cros fields"' % field)
       i += 2
     else:
       systemErrorExit(2, '%s is not a valid argument for "gam print cros"' % sys.argv[i])
+  if selectedLists:
+    noLists = False
+    projection = u'FULL'
+    for selectList in selectedLists:
+      addFieldToFieldsList(selectList, CROS_ARGUMENT_TO_PROPERTY_MAP, fieldsList)
   if fieldsList:
+    fieldsList.append(u'deviceId')
     fields = u'nextPageToken,chromeosdevices({0})'.format(u','.join(set(fieldsList))).replace(u'.', u'/')
   else:
     fields = None
@@ -11535,51 +11560,69 @@ def doPrintCrosDevices():
                              orderBy=orderBy, sortOrder=sortOrder, fields=fields, maxResults=GC_Values[GC_DEVICE_MAX_RESULTS])
     for cros in all_cros:
       cros = _checkTPMVulnerability(cros)
-    if (not noLists) and (not selectActiveTimeRanges) and (not selectRecentUsers) and (not selectDeviceFiles):
+    if not noLists and not selectedLists:
       for cros in all_cros:
         if u'notes' in cros:
           cros[u'notes'] = cros[u'notes'].replace(u'\n', u'\\n')
+        for cpuStatusReport in cros.get(u'cpuStatusReports', []):
+          for tempInfo in cpuStatusReport.get(u'cpuTemperatureInfo', []):
+            tempInfo[u'label'] = tempInfo[u'label'].strip()
         addRowTitlesToCSVfile(flatten_json(cros, listLimit=listLimit), csvRows, titles)
-    else:
-      if not noLists:
-        if selectActiveTimeRanges:
-          titles.extend([u'activeTimeRanges.date', u'activeTimeRanges.activeTime', u'activeTimeRanges.duration', u'activeTimeRanges.minutes'])
-        if selectRecentUsers:
-          titles.extend([u'recentUsers.email', u'recentUsers.type'])
-        if selectDeviceFiles:
-          titles.extend([u'deviceFiles.type', u'deviceFiles.createTime'])
-      for cros in all_cros:
-        if u'notes' in cros:
-          cros[u'notes'] = cros[u'notes'].replace(u'\n', u'\\n')
-        row = {}
-        for attrib in cros:
-          if attrib not in [u'kind', u'etag', u'recentUsers', u'activeTimeRanges', u'deviceFiles']:
-            if attrib not in titles:
-              titles.append(attrib)
-            row[attrib] = cros[attrib]
-        activeTimeRanges = _filterTimeRanges(cros.get(u'activeTimeRanges', []), startDate, endDate) if selectActiveTimeRanges else []
-        recentUsers = cros.get(u'recentUsers', []) if selectRecentUsers else []
-        deviceFiles = _filterDeviceFiles(cros.get(u'deviceFiles', []), startDate, endDate) if selectDeviceFiles else []
-        if noLists or (not activeTimeRanges and not recentUsers and not deviceFiles):
-          csvRows.append(row)
-        else:
-          lenATR = len(activeTimeRanges)
-          lenRU = len(recentUsers)
-          lenDF = len(deviceFiles)
-          for i in xrange(min(listLimit, max(lenATR, lenRU)) if listLimit else max(lenATR, lenRU, lenDF)):
-            new_row = row.copy()
-            if i < lenATR:
-              new_row[u'activeTimeRanges.date'] = activeTimeRanges[i][u'date']
-              new_row[u'activeTimeRanges.activeTime'] = str(activeTimeRanges[i][u'activeTime'])
-              new_row[u'activeTimeRanges.duration'] = utils.formatMilliSeconds(activeTimeRanges[i][u'activeTime'])
-              new_row[u'activeTimeRanges.minutes'] = activeTimeRanges[i][u'activeTime']/60000
-            if i < lenRU:
-              new_row[u'recentUsers.email'] = recentUsers[i].get(u'email', [u'Unknown', u'UnmanagedUser'][recentUsers[i][u'type'] == u'USER_TYPE_UNMANAGED'])
-              new_row[u'recentUsers.type'] = recentUsers[i][u'type']
-            if i < lenDF:
-              new_row[u'deviceFiles.type'] = deviceFiles[i][u'type']
-              new_row[u'deviceFiles.createTime'] = deviceFiles[i][u'createTime']
-            csvRows.append(new_row)
+      continue
+    for cros in all_cros:
+      if u'notes' in cros:
+        cros[u'notes'] = cros[u'notes'].replace(u'\n', u'\\n')
+      row = {}
+      for attrib in cros:
+        if attrib not in set([u'kind', u'etag', u'tpmVersionInfo', u'recentUsers', u'activeTimeRanges',
+                              u'deviceFiles', u'cpuStatusReports', u'diskVolumeReports', u'systemRamFreeReports']):
+          row[attrib] = cros[attrib]
+      activeTimeRanges = _filterTimeRanges(cros.get(u'activeTimeRanges', []) if selectedLists.get(u'activeTimeRanges') else [], startDate, endDate)
+      recentUsers = cros.get(u'recentUsers', []) if selectedLists.get(u'recentUsers') else []
+      deviceFiles = _filterCreateReportTime(cros.get(u'deviceFiles', []) if selectedLists.get(u'deviceFiles') else [], u'createTime', startDate, endDate)
+      cpuStatusReports = _filterCreateReportTime(cros.get(u'cpuStatusReports', []) if selectedLists.get(u'cpuStatusReports') else [], u'reportTime', startDate, endDate)
+      diskVolumeReports = cros.get(u'diskVolumeReports', []) if selectedLists.get(u'diskVolumeReports') else []
+      systemRamFreeReports = _filterCreateReportTime(cros.get(u'systemRamFreeReports', []) if selectedLists.get(u'systemRamFreeReports') else [], u'reportTime', startDate, endDate)
+      if noLists or (not activeTimeRanges and not recentUsers and not deviceFiles and
+                     not cpuStatusReports and not diskVolumeReports and not systemRamFreeReports):
+        addRowTitlesToCSVfile(row, csvRows, titles)
+        continue
+      lenATR = len(activeTimeRanges)
+      lenRU = len(recentUsers)
+      lenDF = len(deviceFiles)
+      lenCSR = len(cpuStatusReports)
+      lenDVR = len(diskVolumeReports)
+      lenSRFR = len(systemRamFreeReports)
+      for i in range(min(max(lenATR, lenRU, lenDF, lenCSR, lenDVR, lenSRFR), listLimit or max(lenATR, lenRU, lenDF, lenCSR, lenDVR, lenSRFR))):
+        new_row = row.copy()
+        if i < lenATR:
+          new_row[u'activeTimeRanges.date'] = activeTimeRanges[i][u'date']
+          new_row[u'activeTimeRanges.activeTime'] = str(activeTimeRanges[i][u'activeTime'])
+          new_row[u'activeTimeRanges.duration'] = utils.formatMilliSeconds(activeTimeRanges[i][u'activeTime'])
+          new_row[u'activeTimeRanges.minutes'] = activeTimeRanges[i][u'activeTime']/60000
+        if i < lenRU:
+          new_row[u'recentUsers.email'] = recentUsers[i].get(u'email', [u'Unknown', u'UnmanagedUser'][recentUsers[i][u'type'] == u'USER_TYPE_UNMANAGED'])
+          new_row[u'recentUsers.type'] = recentUsers[i][u'type']
+        if i < lenDF:
+          new_row[u'deviceFiles.type'] = deviceFiles[i][u'type']
+          new_row[u'deviceFiles.createTime'] = deviceFiles[i][u'createTime']
+        if i < lenCSR:
+          new_row[u'cpuStatusReports.reportTime'] = cpuStatusReports[i][u'reportTime']
+          for tempInfo in cpuStatusReports[i].get(u'cpuTemperatureInfo', []):
+            new_row[u'cpuStatusReports.cpuTemperatureInfo.{0}'.format(tempInfo[u'label'].strip())] = tempInfo[u'temperature']
+          new_row[u'cpuStatusReports.cpuUtilizationPercentageInfo'] = u','.join([str(x) for x in cpuStatusReports[i][u'cpuUtilizationPercentageInfo']])
+        if i < lenDVR:
+          volumeInfo = diskVolumeReports[i][u'volumeInfo']
+          j = 0
+          for volume in volumeInfo:
+            new_row[u'diskVolumeReports.volumeInfo.{0}.volumeId'.format(j)] = volume[u'volumeId']
+            new_row[u'diskVolumeReports.volumeInfo.{0}.storageFree'.format(j)] = volume[u'storageFree']
+            new_row[u'diskVolumeReports.volumeInfo.{0}.storageTotal'.format(j)] = volume[u'storageTotal']
+            j += 1
+        if i < lenSRFR:
+          new_row[u'systemRamFreeReports.reportTime'] = systemRamFreeReports[i][u'reportTime']
+          new_row[u'systenRamFreeReports.systemRamFreeInfo'] = u','.join([str(x) for x in systemRamFreeReports[i][u'systemRamFreeInfo']])
+        addRowTitlesToCSVfile(new_row, csvRows, titles)
   if sortHeaders:
     sortCSVTitles([u'deviceId',], titles)
   writeCSVfile(csvRows, titles, u'CrOS', todrive)
@@ -12635,7 +12678,7 @@ def ProcessGAMCommand(args):
       elif argument == u'group':
         doGetGroupInfo()
       elif argument == u'member':
-       doGetMemberInfo()
+        doGetMemberInfo()
       elif argument in [u'nickname', u'alias']:
         doGetAliasInfo()
       elif argument == u'instance':

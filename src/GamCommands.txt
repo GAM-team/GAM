@@ -246,8 +246,10 @@ If an item contains spaces, it should be surrounded by ".
 	annotatedlocation|location|
 	annotateduser|user|
 	bootmode|
+	cpustatusreports|
 	devicefiles|
 	deviceid|
+	diskvolumereports|
 	ethernetmacaddress|
 	firmwareversion|
 	lastenrollmenttime|
@@ -265,7 +267,17 @@ If an item contains spaces, it should be surrounded by ".
 	status|
 	supportenddate|
 	tpmversioninfo|
+	systemramtotal|
+	systemramfreereports|
 	willautorenew
+
+<CrOSListFieldName> ::=
+	activetimeranges|timeranges|
+	cpustatusreports|
+	devicefiles|
+	diskvolumereports|
+	recentusers|
+	systemramfreereports
 
 <CrOSOrderByFieldName> ::=
 	lastsync|location|notes|serialnumber|status|supportenddate|user
@@ -903,8 +915,8 @@ gam info cros <CrOSEntity> [nolists] [listlimit <Number>] [start <Date>] [end <D
 	[basic|full|allfields] <CrOSFieldName>* [fields <CrOSFieldNameList>] [downloadfile latest|<Time>] [targetfolder <FilePath>]
 
 gam print cros [todrive] [(query <QueryCrOS>)|(queries <QueryCrOSList>)] [limittoou <OrgUnitItem>]
-	[orderby <CrOSOrderByFieldName> [ascending|descending]] [nolists|recentusers|timeranges|devicefiles] [listlimit <Number>] [start <Date>] [end <Date>]
-	[basic|full|allfields] <CrOSFieldName>* [fields <CrOSFieldNameList>]
+	[orderby <CrOSOrderByFieldName> [ascending|descending]] [nolists|<CrOSListFieldName>*] [listlimit <Number>] [start <Date>] [end <Date>]
+	[basic|full|allfields] <CrOSFieldName>* [fields <CrOSFieldNameList>] [sortheaders]
 gam <CrOSTypeEntity> print
 
 Summary of printing:
@@ -915,22 +927,14 @@ Prints no header row and deviceId for specified CrOS devices.
 gam print cros ... basic|full
 Prints a header row and selected fields for specified CrOS devices.
 
-The basic argument outputs these column headers: deviceId,annotatedAssetId,annotatedLocation,annotatedUser,lastSync,notes,serialNumber,status
-The allfields/full arguments output all column headers including three headers, recentUsers, activeTimeRanges and deviceFiles,
-that repeat with two/four/two subvalues each, yielding a large number of columns that make the output hard to process.
-The nolists argument suppresses these three headers; if you want these headers in a more manageable form use the following arguments.
-
-If recentusers is specified, for each recent user, the columns recentUsers.email and recentUsers.type are output on a separate row
-with all of the other headers.
-
-If timeranges is specified, for each time range entry, the columns activeTimeRanges.date, activeTimeRange.activeTime,
-activeTimeRanges.duration and activeTimeRanges.minutes are output on a separate row with all of the other headers.
-
-If devicefiles is specified, for each deviceFile, the columns deviceFiles.type and deviceFiles.createTime are output on a separate row
-with all of the other headers.
+The basic argument outputs these column headers: deviceId,annotatedAssetId,annotatedLocation,annotatedUser,lastSync,notes,serialNumber,status.
+The allfields/full arguments output all column headers including six headers: activeTimeRanges, cpuStatusReports, deviceFiles, diskVolumeReports, recentUsers and systemRamFreeReports
+that repeat with multiple subvalues each, yielding a large number of columns that make the output hard to process.
+The nolists argument suppresses these six headers; if you want these headers in a more manageable form specify <CrOSListFieldName> values as desired.
+One set of values for all <CrOSListFieldName> fields specified will be output on a separate row with all of the other headers.
 
 The listlimit <Number> argument limits the number of repetitions to <Number>; if not specified or <Number> equals zero, there is no limit.
-The start <Date> and end <Date> arguments filter the time ranges.
+The start <Date> and end <Date> arguments constrain activeTimeRanges, cpuStatusReports, deviceFiles and systemRamFreeReports to fall within the specified <Dates>.
 
 gam print crosactivity [todrive] [(query <QueryCrOS>)|(queries <QueryCrOSList>)] [limittoou <OrgUnitItem>]
 	[recentusers] [timeranges] [both] [devicefiles] [all] [listlimit <Number>] [start <Date>] [end <Date>] [delimiter <Character>]
@@ -962,10 +966,10 @@ gam print mobile [todrive] [(query <QueryMobile>)|(queries <QueryMobileList>)] [
 
 gam create group <EmailAddress> <GroupAttributes>*
 gam update group <GroupItem> [admincreated <Boolean>] [email <EmailAddress>] <GroupAttributes>*
-gam update group <GroupItem> add [owner|manager|member] [notsuspended|suspended] <UserTypeEntity>
+gam update group <GroupItem> add [owner|manager|member] [notsuspended|suspended] [delivery allmail|daily|digest|none|nomail] <UserTypeEntity>
 gam update group <GroupItem> delete|remove [owner|manager|member] <UserTypeEntity>
-gam update group <GroupItem> sync [owner|manager|member] [notsuspended|suspended] <UserTypeEntity>
-gam update group <GroupItem> update [owner|manager|member] <UserTypeEntity>
+gam update group <GroupItem> sync [owner|manager|member] [notsuspended|suspended] [delivery allmail|daily|digest|none|nomail] <UserTypeEntity>
+gam update group <GroupItem> update [owner|manager|member] [notsuspended|suspended] [delivery allmail|daily|digest|none|nomail] <UserTypeEntity>
 gam update group <GroupItem> clear [member] [manager] [owner] [notsuspended|suspended]
 gam delete group <GroupItem>
 gam info group <GroupItem> [nousers] [noaliases] [groups]
@@ -975,6 +979,7 @@ gam print groups [todrive] ([domain <DomainName>] ([member <UserItem>]|[query <Q
 	[members|memberscount] [managers|managerscount] [owners|ownerscount]
 	[delimiter <Character>] [sortheaders]
 
+gam info member <UserItem> <GroupItem>
 gam print group-members|groups-members [todrive]
 	([domain <DomainName>] ([member <UserItem>]|[query <QueryGroup>]))|[group|group_ns|group_susp <GroupItem>] [notsuspended|suspended]
 	[roles <GroupRoleList>] [membernames] [fields <MembersFieldNameList>]
@@ -1026,10 +1031,6 @@ gam print users [todrive]
 	[orderby <UserOrderByFieldName> [ascending|descending]] [userview]
 	[allfields|basic|full | ((<UserFieldName>* | fields <UserFieldNameList>) [schemas|custom all|<SchemaNameList>])]
 	[delimiter <Character>] [sortheaders]
-
-Print no header row and primaryEmail for specified users.
-
-gam <UserTypeEntity> print
 
 gam create verify|verification <DomainName>
 gam update verify|verification <DomainName> cname|txt|text|site|file

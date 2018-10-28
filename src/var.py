@@ -482,8 +482,10 @@ CROS_ARGUMENT_TO_PROPERTY_MAP = {
   u'asset': [u'annotatedAssetId',],
   u'assetid': [u'annotatedAssetId',],
   u'bootmode': [u'bootMode',],
+  u'cpustatusreports': [u'cpuStatusReports',],
   u'devicefiles': [u'deviceFiles',],
   u'deviceid': [u'deviceId',],
+  u'diskvolumereports': [u'diskVolumeReports',],
   u'ethernetmacaddress': [u'ethernetMacAddress',],
   u'firmwareversion': [u'firmwareVersion',],
   u'lastenrollmenttime': [u'lastEnrollmentTime',],
@@ -503,6 +505,8 @@ CROS_ARGUMENT_TO_PROPERTY_MAP = {
   u'serialnumber': [u'serialNumber',],
   u'status': [u'status',],
   u'supportenddate': [u'supportEndDate',],
+  u'systemramtotal': [u'systemRamTotal',],
+  u'systemramfreereports': [u'systemRamFreeReports',],
   u'tag': [u'annotatedAssetId',],
   u'timeranges': [u'activeTimeRanges.activeTime', u'activeTimeRanges.date'],
   u'times': [u'activeTimeRanges.activeTime', u'activeTimeRanges.date'],
@@ -531,6 +535,7 @@ CROS_SCALAR_PROPERTY_PRINT_ORDER = [
   u'meid',
   u'ethernetMacAddress',
   u'macAddress',
+  u'systemRamTotal',
   u'lastEnrollmentTime',
   u'orderNumber',
   u'supportEndDate',
@@ -541,6 +546,10 @@ CROS_SCALAR_PROPERTY_PRINT_ORDER = [
 CROS_RECENT_USERS_ARGUMENTS = [u'recentusers', u'users']
 CROS_ACTIVE_TIME_RANGES_ARGUMENTS = [u'timeranges', u'activetimeranges', u'times']
 CROS_DEVICE_FILES_ARGUMENTS = [u'devicefiles', u'files']
+CROS_CPU_STATUS_REPORTS_ARGUMENTS = [u'cpustatusreports',]
+CROS_DISK_VOLUME_REPORTS_ARGUMENTS = [u'diskvolumereports',]
+CROS_SYSTEM_RAM_FREE_REPORTS_ARGUMENTS = [u'systemramfreereports',]
+CROS_LISTS_ARGUMENTS = CROS_ACTIVE_TIME_RANGES_ARGUMENTS+CROS_RECENT_USERS_ARGUMENTS+CROS_DEVICE_FILES_ARGUMENTS+CROS_CPU_STATUS_REPORTS_ARGUMENTS+CROS_DISK_VOLUME_REPORTS_ARGUMENTS+CROS_SYSTEM_RAM_FREE_REPORTS_ARGUMENTS
 CROS_START_ARGUMENTS = [u'start', u'startdate', u'oldestdate']
 CROS_END_ARGUMENTS = [u'end', u'enddate']
 
