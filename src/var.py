@@ -4,7 +4,7 @@ import platform
 import re
 
 gam_author = u'Jay Lee <jay0lee@gmail.com>'
-gam_version = u'4.61'
+gam_version = u'4.65'
 gam_license = u'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 GAM_URL = u'https://git.io/gam'

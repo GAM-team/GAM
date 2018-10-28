@@ -1,3 +1,11 @@
+GAM 4.65
+ - Manage email delivery settings for group members
+ - Add operatingSystemType to user posix config (Roman)
+ - Handle missing language setting (jalmeroth)
+ - handle mixed case aliases (Ross)
+ - contentmanager and fileorganizer roles in Team Drive (Ross)
+ - various other fixes and optimizations (Jay and Ross)
+
 GAM 4.61
  - New Gmail delegation API
  - Remove "admin" command from user create/update to avoid accidental super admins. Still possible to give super admin rights via "gam create admin" command. (Ross)
