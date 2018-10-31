@@ -5029,6 +5029,8 @@ def getPop(users):
       else:
         print u'User: {0}, POP Enabled: {1} ({2}/{3})'.format(user, enabled, i, count)
 
+SMTPMSA_DISPLAY_FIELDS = [u'host', u'port', u'securityMode']
+
 def _showSendAs(result, j, jcount, formatSig):
   if result[u'displayName']:
     print utils.convertUTF8(u'SendAs Address: {0} <{1}>{2}'.format(result[u'displayName'], result[u'sendAsEmail'], currentCount(j, jcount)))
@@ -5040,7 +5042,12 @@ def _showSendAs(result, j, jcount, formatSig):
   print u'  Default: {0}'.format(result.get(u'isDefault', False))
   if not result.get(u'isPrimary', False):
     print u'  TreatAsAlias: {0}'.format(result.get(u'treatAsAlias', False))
-    print u'  Verification Status: {0}'.format(result.get(u'verificationStatus', u'unspecified'))
+  if u'smtpMsa' in result:
+    for field in SMTPMSA_DISPLAY_FIELDS:
+      if field in result[u'smtpMsa']:
+        print u'  smtpMsa.{0}: {1}'.format(field, result[u'smtpMsa'][field])
+  if u'verificationStatus' in result:
+    print u'  Verification Status: {0}'.format(result[u'verificationStatus'])
   sys.stdout.write(u'  Signature:\n    ')
   signature = result.get(u'signature')
   if not signature:
@@ -5098,6 +5105,10 @@ def getSendAsAttributes(i, myarg, body, tagReplacements, command):
     systemErrorExit(2, '%s is not a valid argument for "gam <users> %s"' % (sys.argv[i], command))
   return i
 
+SMTPMSA_PORTS = [u'25', u'465', u'587']
+SMTPMSA_SECURITY_MODES = [u'none', u'ssl', u'starttls']
+SMTPMSA_REQUIRED_FIELDS = [u'host', u'port', u'username', u'password']
+
 def addUpdateSendAs(users, i, addCmd):
   emailAddress = normalizeEmailAddressOrUID(sys.argv[i], noUid=True)
   i += 1
@@ -5109,6 +5120,7 @@ def addUpdateSendAs(users, i, addCmd):
     command = u'update sendas'
     body = {}
   signature = None
+  smtpMsa = {}
   tagReplacements = {}
   html = False
   while i < len(sys.argv):
@@ -5123,10 +5135,39 @@ def addUpdateSendAs(users, i, addCmd):
     elif myarg == u'html':
       html = True
       i += 1
+    elif addCmd and myarg.startswith(u'smtpmsa.'):
+      if myarg == u'smtpmsa.host':
+        smtpMsa[u'host'] = sys.argv[i+1]
+        i += 2
+      elif myarg == u'smtpmsa.port':
+        value = sys.argv[i+1].lower()
+        if value not in SMTPMSA_PORTS:
+          systemErrorExit(2, '{0} must be {1}; got {2}'.format(myarg, u', '.join(SMTPMSA_PORTS), value))
+        smtpMsa[u'port'] = int(value)
+        i += 2
+      elif myarg == u'smtpmsa.username':
+        smtpMsa[u'username'] = sys.argv[i+1]
+        i += 2
+      elif myarg == u'smtpmsa.password':
+        smtpMsa[u'password'] = sys.argv[i+1]
+        i += 2
+      elif myarg == u'smtpmsa.securitymode':
+        value = sys.argv[i+1].lower()
+        if value not in SMTPMSA_SECURITY_MODES:
+          systemErrorExit(2, '{0} must be {1}; got {2}'.format(myarg, u', '.join(SMTPMSA_SECURITY_MODES), value))
+        smtpMsa[u'securityMode'] = value
+        i += 2
+      else:
+        systemErrorExit(2, '%s is not a valid argument for "gam <users> %s"' % (sys.argv[i], command))
     else:
       i = getSendAsAttributes(i, myarg, body, tagReplacements, command)
   if signature is not None:
     body[u'signature'] = _processSignature(tagReplacements, signature, html)
+  if smtpMsa:
+    for field in SMTPMSA_REQUIRED_FIELDS:
+      if field not in smtpMsa:
+        systemErrorExit(2, 'smtpmsa.{0} is required.'.format(field))
+    body[u'smtpMsa'] = smtpMsa
   kwargs = {u'body': body}
   if not addCmd:
     kwargs[u'sendAsEmail'] = emailAddress
@@ -5313,9 +5354,17 @@ def printShowSendAs(users, csvFormat):
       for sendas in result[u'sendAs']:
         row = {u'User': user, u'isPrimary': False}
         for item in sendas:
-          if item not in titles:
-            titles.append(item)
-          row[item] = sendas[item]
+          if item != u'smtpMsa':
+            if item not in titles:
+              titles.append(item)
+            row[item] = sendas[item]
+          else:
+            for field in SMTPMSA_DISPLAY_FIELDS:
+              if field in sendas[item]:
+                title = u'smtpMsa.{0}'.format(field)
+                if title not in titles:
+                  titles.append(title)
+                row[title] = sendas[item][field]
         csvRows.append(row)
   if csvFormat:
     writeCSVfile(csvRows, titles, u'SendAs', todrive)
