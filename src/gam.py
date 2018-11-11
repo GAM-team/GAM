@@ -11678,18 +11678,18 @@ def doPrintCrosDevices():
     sortCSVTitles([u'deviceId',], titles)
   writeCSVfile(csvRows, titles, u'CrOS', todrive)
 
-def doPrintLicenses(returnFields=None, skus=None):
+def doPrintLicenses(returnFields=None, skus=None, countsOnly=False, returnCounts=False):
   lic = buildGAPIObject(u'licensing')
   products = []
   licenses = []
+  licenseCounts = []
   if not returnFields:
-    titles = [u'userId', u'productId', u'skuId']
     csvRows = []
     todrive = False
     i = 3
     while i < len(sys.argv):
       myarg = sys.argv[i].lower()
-      if myarg == u'todrive':
+      if not returnCounts and myarg == u'todrive':
         todrive = True
         i += 1
       elif myarg in [u'products', u'product']:
@@ -11698,9 +11698,29 @@ def doPrintLicenses(returnFields=None, skus=None):
       elif myarg in [u'sku', u'skus']:
         skus = sys.argv[i+1].split(u',')
         i += 2
+      elif myarg == u'allskus':
+        skus = sorted(SKUS.keys())
+        products = []
+        i += 1
+      elif myarg == u'gsuite':
+        skus = [skuId for skuId in SKUS if SKUS[skuId][u'product'] in [u'Google-Apps', u'101031']]
+        products = []
+        i += 1
+      elif myarg == u'countsonly':
+        countsOnly = True
+        i += 1
       else:
         systemErrorExit(2, '%s is not a valid argument for "gam print licenses"' % sys.argv[i])
-    fields = u'nextPageToken,items(productId,skuId,userId)'
+    if not countsOnly:
+      fields = u'nextPageToken,items(productId,skuId,userId)'
+      titles = [u'userId', u'productId', u'skuId']
+    else:
+      fields = u'nextPageToken,items(userId)'
+      if not returnCounts:
+        if skus:
+          titles = [u'productId', u'skuId', u'licenses']
+        else:
+          titles = [u'productId', u'licenses']
   else:
     fields = u'nextPageToken,items({0})'.format(returnFields)
   if skus:
@@ -11710,6 +11730,9 @@ def doPrintLicenses(returnFields=None, skus=None):
       try:
         licenses += callGAPIpages(lic.licenseAssignments(), u'listForProductAndSku', u'items', throw_reasons=[GAPI_INVALID, GAPI_FORBIDDEN], page_message=page_message,
                                   customerId=GC_Values[GC_DOMAIN], productId=product, skuId=sku, fields=fields)
+        if countsOnly:
+          licenseCounts.append([u'Product', product, u'SKU', sku, u'Licenses', len(licenses)])
+          licenses = []
       except (GAPI_invalid, GAPI_forbidden):
         pass
   else:
@@ -11723,8 +11746,22 @@ def doPrintLicenses(returnFields=None, skus=None):
       try:
         licenses += callGAPIpages(lic.licenseAssignments(), u'listForProduct', u'items', throw_reasons=[GAPI_INVALID, GAPI_FORBIDDEN], page_message=page_message,
                                   customerId=GC_Values[GC_DOMAIN], productId=productId, fields=fields)
+        if countsOnly:
+          licenseCounts.append([u'Product', productId, u'Licenses', len(licenses)])
+          licenses = []
       except (GAPI_invalid, GAPI_forbidden):
         pass
+  if countsOnly:
+    if returnCounts:
+      return licenseCounts
+    if skus:
+      for u_license in licenseCounts:
+        csvRows.append({u'productId': u_license[1], u'skuId': u_license[3], u'licenses': u_license[5]})
+    else:
+      for u_license in licenseCounts:
+        csvRows.append({u'productId': u_license[1], u'licenses': u_license[3]})
+    writeCSVfile(csvRows, titles, u'Licenses', todrive)
+    return
   if returnFields:
     if returnFields == u'userId':
       userIds = []
@@ -11748,6 +11785,14 @@ def doPrintLicenses(returnFields=None, skus=None):
     csvRows.append({u'userId': userId, u'productId': u_license.get(u'productId', u''),
                     u'skuId': _skuIdToDisplayName(skuId)})
   writeCSVfile(csvRows, titles, u'Licenses', todrive)
+
+def doShowLicenses():
+  licenseCounts = doPrintLicenses(countsOnly=True, returnCounts=True)
+  for u_license in licenseCounts:
+    line = u''
+    for i in xrange(0, len(u_license), 2):
+      line += u'{0}: {1}, '.format(u_license[i], u_license[i+1])
+    print line[:-2]
 
 RESCAL_DFLTFIELDS = [u'id', u'name', u'email',]
 RESCAL_ALLFIELDS = [u'id', u'name', u'email', u'description', u'type', u'buildingid', u'category', u'capacity',
@@ -12917,6 +12962,8 @@ def ProcessGAMCommand(args):
         doPrintShowUserSchemas(False)
       elif argument in [u'guardian', u'guardians']:
         doPrintShowGuardians(False)
+      elif argument in [u'license', u'licenses', u'licence', u'licences']:
+        doShowLicenses()
       else:
         systemErrorExit(2, '%s is not a valid argument for "gam show"' % argument)
       sys.exit(0)

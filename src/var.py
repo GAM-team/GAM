@@ -50,7 +50,7 @@ SKUS = {
   u'1010050001': {
     u'product': u'101005', u'aliases': [u'identitypremium', u'cloudidentitypremium'], u'displayName': 'Cloud Identity Premium'},
   u'1010310002': {
-    u'product': u'101031', u'aliases': [u'gsefe', u'e4e'], u'displayName': u'G Suite Enterprise for Education'},
+    u'product': u'101031', u'aliases': [u'gsefe', u'e4e', u'gsuiteenterpriseeducation'], u'displayName': u'G Suite Enterprise for Education'},
   u'Google-Apps': {
     u'product': u'Google-Apps', u'aliases': [u'standard', u'free'], u'displayName': u'G Suite Free/Standard'},
   u'Google-Apps-For-Business': {

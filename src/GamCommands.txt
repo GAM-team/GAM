@@ -986,7 +986,8 @@ gam print group-members|groups-members [todrive]
 	([domain <DomainName>] ([member <UserItem>]|[query <QueryGroup>]))|[group|group_ns|group_susp <GroupItem>] [notsuspended|suspended]
 	[roles <GroupRoleList>] [membernames] [fields <MembersFieldNameList>]
 
-gam print license|licenses|licence|licences [todrive] [(products|product <ProductIDList>)|(skus|sku <SKUIDList>)]
+gam print licenses [todrive] [(products|product <ProductIDList>)|(skus|sku <SKUIDList>)|allskus|gsuite] [countsonly]
+gam show license|licenses|licence|licences [(products|product <ProductIDList>)|(skus|sku <SKUIDList>)|allskus|gsuite]
 
 gam update notification|notifications [(id all)|(id <NotificationID>)*] unread|read
 gam delete notification|notifications [(id all)|(id <NotificationID>)*]
