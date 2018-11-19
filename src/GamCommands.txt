@@ -212,6 +212,7 @@ If an item contains spaces, it should be surrounded by ".
 <Section> ::= <String>
 <SerialNumber> ::= <String>
 <S/MIMEID> ::= <String>	
+<SMTPHostName> ::= <String>
 <StudentItem> ::= <EmailAddress>|<UniqueID>|<String>
 <TeamDriveID> ::= <String>
 <Timezone> ::= <String>
@@ -219,6 +220,7 @@ If an item contains spaces, it should be surrounded by ".
 <URI> ::= <String>
 <URL> ::= <String>
 <UserItem> ::= <EmailAddress>|<UniqueID>|<String>
+<UserName> ::= <<String>
 
 <CourseFieldName> ::=
 	alternatelink|
@@ -984,7 +986,8 @@ gam print group-members|groups-members [todrive]
 	([domain <DomainName>] ([member <UserItem>]|[query <QueryGroup>]))|[group|group_ns|group_susp <GroupItem>] [notsuspended|suspended]
 	[roles <GroupRoleList>] [membernames] [fields <MembersFieldNameList>]
 
-gam print license|licenses|licence|licences [todrive] [(products|product <ProductIDList>)|(skus|sku <SKUIDList>)]
+gam print licenses [todrive] [(products|product <ProductIDList>)|(skus|sku <SKUIDList>)|allskus|gsuite] [countsonly]
+gam show license|licenses|licence|licences [(products|product <ProductIDList>)|(skus|sku <SKUIDList>)|allskus|gsuite]
 
 gam update notification|notifications [(id all)|(id <NotificationID>)*] unread|read
 gam delete notification|notifications [(id all)|(id <NotificationID>)*]
@@ -1230,6 +1233,7 @@ gam <UserTypeEntity> pop|pop3 <Boolean> [for allmail|newmail|mailfromnowon|fromn
 gam <UserTypeEntity> show pop|pop3
 
 gam <UserTypeEntity> [create|add] sendas <EmailAddress> <Name> [signature|sig <String>|(file <FileName> [charset <Charset>]) (replace <Tag> <String>)*] [html] [replyto <EmailAddress>] [default] [treatasalias <Boolean>]
+        [smtpmsa.host <SMTPHostName> smtpmsa.port 25|465|587 smtpmsa.username <UserName> smtpmsa.password <Password> [smtpmsa.securitymode none|ssl|starttls]]
 gam <UserTypeEntity> update sendas <EmailAddress> [name <Name>] [signature|sig <String>|(file <FileName> [charset <Charset>]) (replace <Tag> <String>)*] [html] [replyto <EmailAddress>] [default] [treatasalias <Boolean>]
 gam <UserTypeEntity> delete sendas <EmailAddress>
 gam <UserTypeEntity> show sendas [format]

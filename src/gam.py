@@ -5029,6 +5029,8 @@ def getPop(users):
       else:
         print u'User: {0}, POP Enabled: {1} ({2}/{3})'.format(user, enabled, i, count)
 
+SMTPMSA_DISPLAY_FIELDS = [u'host', u'port', u'securityMode']
+
 def _showSendAs(result, j, jcount, formatSig):
   if result[u'displayName']:
     print utils.convertUTF8(u'SendAs Address: {0} <{1}>{2}'.format(result[u'displayName'], result[u'sendAsEmail'], currentCount(j, jcount)))
@@ -5040,7 +5042,12 @@ def _showSendAs(result, j, jcount, formatSig):
   print u'  Default: {0}'.format(result.get(u'isDefault', False))
   if not result.get(u'isPrimary', False):
     print u'  TreatAsAlias: {0}'.format(result.get(u'treatAsAlias', False))
-    print u'  Verification Status: {0}'.format(result.get(u'verificationStatus', u'unspecified'))
+  if u'smtpMsa' in result:
+    for field in SMTPMSA_DISPLAY_FIELDS:
+      if field in result[u'smtpMsa']:
+        print u'  smtpMsa.{0}: {1}'.format(field, result[u'smtpMsa'][field])
+  if u'verificationStatus' in result:
+    print u'  Verification Status: {0}'.format(result[u'verificationStatus'])
   sys.stdout.write(u'  Signature:\n    ')
   signature = result.get(u'signature')
   if not signature:
@@ -5098,6 +5105,10 @@ def getSendAsAttributes(i, myarg, body, tagReplacements, command):
     systemErrorExit(2, '%s is not a valid argument for "gam <users> %s"' % (sys.argv[i], command))
   return i
 
+SMTPMSA_PORTS = [u'25', u'465', u'587']
+SMTPMSA_SECURITY_MODES = [u'none', u'ssl', u'starttls']
+SMTPMSA_REQUIRED_FIELDS = [u'host', u'port', u'username', u'password']
+
 def addUpdateSendAs(users, i, addCmd):
   emailAddress = normalizeEmailAddressOrUID(sys.argv[i], noUid=True)
   i += 1
@@ -5109,6 +5120,7 @@ def addUpdateSendAs(users, i, addCmd):
     command = u'update sendas'
     body = {}
   signature = None
+  smtpMsa = {}
   tagReplacements = {}
   html = False
   while i < len(sys.argv):
@@ -5123,10 +5135,39 @@ def addUpdateSendAs(users, i, addCmd):
     elif myarg == u'html':
       html = True
       i += 1
+    elif addCmd and myarg.startswith(u'smtpmsa.'):
+      if myarg == u'smtpmsa.host':
+        smtpMsa[u'host'] = sys.argv[i+1]
+        i += 2
+      elif myarg == u'smtpmsa.port':
+        value = sys.argv[i+1].lower()
+        if value not in SMTPMSA_PORTS:
+          systemErrorExit(2, '{0} must be {1}; got {2}'.format(myarg, u', '.join(SMTPMSA_PORTS), value))
+        smtpMsa[u'port'] = int(value)
+        i += 2
+      elif myarg == u'smtpmsa.username':
+        smtpMsa[u'username'] = sys.argv[i+1]
+        i += 2
+      elif myarg == u'smtpmsa.password':
+        smtpMsa[u'password'] = sys.argv[i+1]
+        i += 2
+      elif myarg == u'smtpmsa.securitymode':
+        value = sys.argv[i+1].lower()
+        if value not in SMTPMSA_SECURITY_MODES:
+          systemErrorExit(2, '{0} must be {1}; got {2}'.format(myarg, u', '.join(SMTPMSA_SECURITY_MODES), value))
+        smtpMsa[u'securityMode'] = value
+        i += 2
+      else:
+        systemErrorExit(2, '%s is not a valid argument for "gam <users> %s"' % (sys.argv[i], command))
     else:
       i = getSendAsAttributes(i, myarg, body, tagReplacements, command)
   if signature is not None:
     body[u'signature'] = _processSignature(tagReplacements, signature, html)
+  if smtpMsa:
+    for field in SMTPMSA_REQUIRED_FIELDS:
+      if field not in smtpMsa:
+        systemErrorExit(2, 'smtpmsa.{0} is required.'.format(field))
+    body[u'smtpMsa'] = smtpMsa
   kwargs = {u'body': body}
   if not addCmd:
     kwargs[u'sendAsEmail'] = emailAddress
@@ -5313,9 +5354,17 @@ def printShowSendAs(users, csvFormat):
       for sendas in result[u'sendAs']:
         row = {u'User': user, u'isPrimary': False}
         for item in sendas:
-          if item not in titles:
-            titles.append(item)
-          row[item] = sendas[item]
+          if item != u'smtpMsa':
+            if item not in titles:
+              titles.append(item)
+            row[item] = sendas[item]
+          else:
+            for field in SMTPMSA_DISPLAY_FIELDS:
+              if field in sendas[item]:
+                title = u'smtpMsa.{0}'.format(field)
+                if title not in titles:
+                  titles.append(title)
+                row[title] = sendas[item][field]
         csvRows.append(row)
   if csvFormat:
     writeCSVfile(csvRows, titles, u'SendAs', todrive)
@@ -11629,18 +11678,18 @@ def doPrintCrosDevices():
     sortCSVTitles([u'deviceId',], titles)
   writeCSVfile(csvRows, titles, u'CrOS', todrive)
 
-def doPrintLicenses(returnFields=None, skus=None):
+def doPrintLicenses(returnFields=None, skus=None, countsOnly=False, returnCounts=False):
   lic = buildGAPIObject(u'licensing')
   products = []
   licenses = []
+  licenseCounts = []
   if not returnFields:
-    titles = [u'userId', u'productId', u'skuId']
     csvRows = []
     todrive = False
     i = 3
     while i < len(sys.argv):
       myarg = sys.argv[i].lower()
-      if myarg == u'todrive':
+      if not returnCounts and myarg == u'todrive':
         todrive = True
         i += 1
       elif myarg in [u'products', u'product']:
@@ -11649,9 +11698,29 @@ def doPrintLicenses(returnFields=None, skus=None):
       elif myarg in [u'sku', u'skus']:
         skus = sys.argv[i+1].split(u',')
         i += 2
+      elif myarg == u'allskus':
+        skus = sorted(SKUS.keys())
+        products = []
+        i += 1
+      elif myarg == u'gsuite':
+        skus = [skuId for skuId in SKUS if SKUS[skuId][u'product'] in [u'Google-Apps', u'101031']]
+        products = []
+        i += 1
+      elif myarg == u'countsonly':
+        countsOnly = True
+        i += 1
       else:
         systemErrorExit(2, '%s is not a valid argument for "gam print licenses"' % sys.argv[i])
-    fields = u'nextPageToken,items(productId,skuId,userId)'
+    if not countsOnly:
+      fields = u'nextPageToken,items(productId,skuId,userId)'
+      titles = [u'userId', u'productId', u'skuId']
+    else:
+      fields = u'nextPageToken,items(userId)'
+      if not returnCounts:
+        if skus:
+          titles = [u'productId', u'skuId', u'licenses']
+        else:
+          titles = [u'productId', u'licenses']
   else:
     fields = u'nextPageToken,items({0})'.format(returnFields)
   if skus:
@@ -11661,6 +11730,9 @@ def doPrintLicenses(returnFields=None, skus=None):
       try:
         licenses += callGAPIpages(lic.licenseAssignments(), u'listForProductAndSku', u'items', throw_reasons=[GAPI_INVALID, GAPI_FORBIDDEN], page_message=page_message,
                                   customerId=GC_Values[GC_DOMAIN], productId=product, skuId=sku, fields=fields)
+        if countsOnly:
+          licenseCounts.append([u'Product', product, u'SKU', sku, u'Licenses', len(licenses)])
+          licenses = []
       except (GAPI_invalid, GAPI_forbidden):
         pass
   else:
@@ -11674,8 +11746,22 @@ def doPrintLicenses(returnFields=None, skus=None):
       try:
         licenses += callGAPIpages(lic.licenseAssignments(), u'listForProduct', u'items', throw_reasons=[GAPI_INVALID, GAPI_FORBIDDEN], page_message=page_message,
                                   customerId=GC_Values[GC_DOMAIN], productId=productId, fields=fields)
+        if countsOnly:
+          licenseCounts.append([u'Product', productId, u'Licenses', len(licenses)])
+          licenses = []
       except (GAPI_invalid, GAPI_forbidden):
         pass
+  if countsOnly:
+    if returnCounts:
+      return licenseCounts
+    if skus:
+      for u_license in licenseCounts:
+        csvRows.append({u'productId': u_license[1], u'skuId': u_license[3], u'licenses': u_license[5]})
+    else:
+      for u_license in licenseCounts:
+        csvRows.append({u'productId': u_license[1], u'licenses': u_license[3]})
+    writeCSVfile(csvRows, titles, u'Licenses', todrive)
+    return
   if returnFields:
     if returnFields == u'userId':
       userIds = []
@@ -11699,6 +11785,14 @@ def doPrintLicenses(returnFields=None, skus=None):
     csvRows.append({u'userId': userId, u'productId': u_license.get(u'productId', u''),
                     u'skuId': _skuIdToDisplayName(skuId)})
   writeCSVfile(csvRows, titles, u'Licenses', todrive)
+
+def doShowLicenses():
+  licenseCounts = doPrintLicenses(countsOnly=True, returnCounts=True)
+  for u_license in licenseCounts:
+    line = u''
+    for i in xrange(0, len(u_license), 2):
+      line += u'{0}: {1}, '.format(u_license[i], u_license[i+1])
+    print line[:-2]
 
 RESCAL_DFLTFIELDS = [u'id', u'name', u'email',]
 RESCAL_ALLFIELDS = [u'id', u'name', u'email', u'description', u'type', u'buildingid', u'category', u'capacity',
@@ -12868,6 +12962,8 @@ def ProcessGAMCommand(args):
         doPrintShowUserSchemas(False)
       elif argument in [u'guardian', u'guardians']:
         doPrintShowGuardians(False)
+      elif argument in [u'license', u'licenses', u'licence', u'licences']:
+        doShowLicenses()
       else:
         systemErrorExit(2, '%s is not a valid argument for "gam show"' % argument)
       sys.exit(0)
