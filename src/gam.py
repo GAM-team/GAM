@@ -995,7 +995,10 @@ def getValidOauth2TxtCredentials():
     credentials = storage.get()
   elif credentials.access_token_expired:
     http = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL])
-    credentials.refresh(http)
+    try:
+      credentials.refresh(http)
+    except oauth2client.client.HttpAccessTokenRefreshError as e:
+      systemErrorExit(18, str(e))
   return credentials
 
 def getService(api, http):
