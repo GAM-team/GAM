@@ -8,7 +8,7 @@ GAM installation script.
 OPTIONS:
    -h      show help.
    -d      Directory where gam folder will be installed. Default is \$HOME/bin/
-   -a      Architecture to install (i386, x86_64, arm). Default is to detect your arch with "uname -m".
+   -a      Architecture to install (i386, x86_64, arm, arm64). Default is to detect your arch with "uname -m".
    -o      OS we are running (linux, macos). Default is to detect your OS with "uname -s".
    -l      Just upgrade GAM to latest version. Skips project creation and auth.
    -p      Profile update (true, false). Should script add gam command to environment. Default is true.
@@ -81,7 +81,8 @@ case $gamos in
     case $gamarch in
       x86_64) gamfile="linux-x86_64.tar.xz";;
       i?86) gamfile="linux-i686.tar.xz";;
-      arm*) gamfile="linux-armv7l.tar.xz";;
+      arm|armv7l) gamfile="linux-armv7l.tar.xz";;
+      arm64|aarch64) gamfile="linux-aarch64.tar.xz";;
       *)
         echo_red "ERROR: this installer currently only supports i386, x86_64 and arm Linux. Looks like you're running on $gamarch. Exiting."
         exit
