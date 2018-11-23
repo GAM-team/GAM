@@ -27,7 +27,9 @@ import os
 import string
 import time
 import base64
+import calendar
 import codecs
+import ConfigParser
 import csv
 import datetime
 import hashlib
@@ -40,9 +42,17 @@ import re
 import signal
 import socket
 import StringIO
+import struct
+from urllib import urlencode
 import uuid
+import webbrowser
 import zipfile
+from email.mime.text import MIMEText
+import shlex
+from multiprocessing import Pool
+from multiprocessing import freeze_support
 
+import dns.resolver
 import googleapiclient
 import googleapiclient.discovery
 import googleapiclient.errors
@@ -53,6 +63,8 @@ import google_auth_httplib2
 import oauth2client.client
 import oauth2client.file
 import oauth2client.tools
+from passlib.handlers.sha2_crypt import sha512_crypt
+from oauth2client.contrib.dictionary_storage import DictionaryStorage
 
 import utils
 from var import *
@@ -571,7 +583,6 @@ def SetGlobalVariables():
   GM_Globals[GM_EXTRA_ARGS_DICT] = {u'prettyPrint': GC_Values[GC_DEBUG_LEVEL] > 0}
   httplib2.debuglevel = GC_Values[GC_DEBUG_LEVEL]
   if os.path.isfile(os.path.join(GC_Values[GC_CONFIG_DIR], FN_EXTRA_ARGS_TXT)):
-    import ConfigParser
     ea_config = ConfigParser.ConfigParser()
     ea_config.optionxform = str
     ea_config.read(os.path.join(GC_Values[GC_CONFIG_DIR], FN_EXTRA_ARGS_TXT))
@@ -586,7 +597,6 @@ def SetGlobalVariables():
   return True
 
 def doGAMCheckForUpdates(forceCheck=False):
-  import calendar
 
   def _gamLatestVersionNotAvailable():
     if forceCheck:
@@ -631,7 +641,6 @@ def doGAMCheckForUpdates(forceCheck=False):
       printLine(MESSAGE_HIT_CONTROL_C_TO_UPDATE)
       time.sleep(15)
     except KeyboardInterrupt:
-      import webbrowser
       webbrowser.open(release_data[u'html_url'])
       printLine(MESSAGE_GAM_EXITING_FOR_UPDATE)
       sys.exit(0)
@@ -658,7 +667,6 @@ def doGAMVersion(checkForArgs=True):
   if simple:
     sys.stdout.write(gam_version)
     return
-  import struct
   version_data = u'GAM {0} - {1}\n{2}\nPython {3}.{4}.{5} {6}-bit {7}\ngoogle-api-python-client {8}\noauth2client {9}\n{10} {11}\nPath: {12}'
   print version_data.format(gam_version, GAM_URL, gam_author, sys.version_info[0],
                             sys.version_info[1], sys.version_info[2], struct.calcsize(u'P')*8,
@@ -1537,7 +1545,6 @@ def addDelegates(users, i):
     callGAPI(gmail.users().settings().delegates(), u'create', soft_errors=True, userId=u'me', body={u'delegateEmail': delegate})
 
 def gen_sha512_hash(password):
-  from passlib.handlers.sha2_crypt import sha512_crypt
   return sha512_crypt.encrypt(password, rounds=5000)
 
 def printShowDelegates(users, csvFormat):
@@ -7104,7 +7111,6 @@ def getValidateLoginHint(login_hint):
     print u'Error: that is not a valid email address'
 
 def getCRMService(login_hint):
-  from oauth2client.contrib.dictionary_storage import DictionaryStorage
   scope = u'https://www.googleapis.com/auth/cloud-platform'
   client_id = u'297408095146-fug707qsjv4ikron0hugpevbrjhkmsk7.apps.googleusercontent.com'
   client_secret = u'qM3dP8f_4qedwzWQE1VR4zzU'
@@ -7190,7 +7196,6 @@ def doCreateProject(login_hint=None):
                  u'code': u'ThisIsAnInvalidCodeOnlyBeingUsedToTestIfClientAndSecretAreValid',
                  u'redirect_uri': u'urn:ietf:wg:oauth:2.0:oob', u'grant_type': u'authorization_code'}
     headers = {'Content-type': 'application/x-www-form-urlencoded'}
-    from urllib import urlencode
     _, content = simplehttp.request(url, u'POST', urlencode(post_data), headers=headers)
     try:
       content = json.loads(content)
@@ -9830,7 +9835,6 @@ def doSiteVerifyAttempt():
     print u'Token:      %s' % verify_data[u'token']
     if verify_data[u'method'] == u'DNS_CNAME':
       try:
-        import dns.resolver
         resolver = dns.resolver.Resolver()
         resolver.nameservers = [u'8.8.8.8', u'8.8.4.4']
         cname_token = verify_data[u'token']
@@ -9846,7 +9850,6 @@ def doSiteVerifyAttempt():
         pass
     elif verify_data[u'method'] == u'DNS_TXT':
       try:
-        import dns.resolver
         resolver = dns.resolver.Resolver()
         resolver.nameservers = [u'8.8.8.8', u'8.8.4.4']
         try:
@@ -10323,7 +10326,6 @@ def doDeleteOrg():
 
 # Send an email
 def send_email(msg_subj, msg_txt, msg_rcpt=None):
-  from email.mime.text import MIMEText
   userId, gmail = buildGmailGAPIObject(_getValueFromOAuth(u'email'))
   if not msg_rcpt:
     msg_rcpt = userId
@@ -10444,7 +10446,6 @@ and follow recommend steps to authorize GAM for Drive access.''' % (admin_email)
       send_email(msg_subj, msg_txt)
       print msg_txt
     else:
-      import webbrowser
       webbrowser.open(file_url)
 
 def flatten_json(structure, key=u'', path=u'', flattened=None, listLimit=None):
@@ -11965,7 +11966,6 @@ def doPrintResourceCalendars():
   writeCSVfile(csvRows, titles, u'Resources', todrive)
 
 def shlexSplitList(entity, dataDelimiter=u' ,'):
-  import shlex
   lexer = shlex.shlex(entity, posix=True)
   lexer.whitespace = dataDelimiter
   lexer.whitespace_split = True
@@ -12487,7 +12487,6 @@ def init_gam_worker():
   signal.signal(signal.SIGINT, signal.SIG_IGN)
 
 def run_batch(items):
-  from multiprocessing import Pool
   if not items:
     return
   num_worker_threads = min(len(items), GC_Values[GC_NUM_THREADS])
@@ -12613,7 +12612,6 @@ def ProcessGAMCommand(args):
     SetGlobalVariables()
     command = sys.argv[1].lower()
     if command == u'batch':
-      import shlex
       i = 2
       filename = sys.argv[i]
       i, encoding = getCharSet(i+1)
@@ -13372,7 +13370,6 @@ def ProcessGAMCommand(args):
   return GM_Globals[GM_SYSEXITRC]
 
 if sys.platform.startswith('win'):
-  from multiprocessing import freeze_support
 
   def win32_unicode_argv():
     from ctypes import POINTER, byref, cdll, c_int, windll
