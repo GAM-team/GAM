@@ -51,7 +51,11 @@ import shlex
 from multiprocessing import Pool
 from multiprocessing import freeze_support
 
-import dns.resolver
+try:
+  import dns.resolver
+  dnsAvailable = True
+except ImportError:
+  dnsAvailable = False
 import googleapiclient
 import googleapiclient.discovery
 import googleapiclient.errors
@@ -9832,27 +9836,29 @@ def doSiteVerifyAttempt():
     verify_data = callGAPI(verif.webResource(), u'getToken', body=body)
     print u'Method:  %s' % verify_data[u'method']
     print u'Token:      %s' % verify_data[u'token']
-    if verify_data[u'method'] == u'DNS_CNAME':
+    if verify_data[u'method'] in [u'DNS_CNAME', u'DNS_TXT']:
+      if not dnsAvailable:
+        print u'ERROR: No DNS capability available!'
+        return
       resolver = dns.resolver.Resolver()
       resolver.nameservers = [u'8.8.8.8', u'8.8.4.4']
-      cname_token = verify_data[u'token']
-      cname_list = cname_token.split(u' ')
-      cname_subdomain = cname_list[0]
-      try:
-        answers = resolver.query(u'%s.%s' % (cname_subdomain, a_domain), u'A')
-        for answer in answers:
-          print u'DNS Record: %s' % answer
-      except (dns.resolver.NXDOMAIN, dns.resolver.NoAnswer):
-        print u'ERROR: No such domain found in DNS!'
-    elif verify_data[u'method'] == u'DNS_TXT':
-      resolver = dns.resolver.Resolver()
-      resolver.nameservers = [u'8.8.8.8', u'8.8.4.4']
-      try:
-        answers = resolver.query(a_domain, u'TXT')
-        for answer in answers:
-          print u'DNS Record: %s' % str(answer).replace(u'"', u'')
-      except dns.resolver.NXDOMAIN:
-        print u'ERROR: no such domain found in DNS!'
+      if verify_data[u'method'] == u'DNS_CNAME':
+        cname_token = verify_data[u'token']
+        cname_list = cname_token.split(u' ')
+        cname_subdomain = cname_list[0]
+        try:
+          answers = resolver.query(u'%s.%s' % (cname_subdomain, a_domain), u'A')
+          for answer in answers:
+            print u'DNS Record: %s' % answer
+        except (dns.resolver.NXDOMAIN, dns.resolver.NoAnswer):
+          print u'ERROR: No such domain found in DNS!'
+      else:
+        try:
+          answers = resolver.query(a_domain, u'TXT')
+          for answer in answers:
+            print u'DNS Record: %s' % str(answer).replace(u'"', u'')
+        except dns.resolver.NXDOMAIN:
+          print u'ERROR: no such domain found in DNS!'
     return
   print u'SUCCESS!'
   print u'Verified:  %s' % verify_result[u'site'][u'identifier']
