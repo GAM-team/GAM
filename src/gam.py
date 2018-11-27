@@ -51,11 +51,8 @@ import shlex
 from multiprocessing import Pool
 from multiprocessing import freeze_support
 
-try:
-  import dns.resolver
-  dnsAvailable = True
-except ImportError:
-  dnsAvailable = False
+import dns.resolver
+
 import googleapiclient
 import googleapiclient.discovery
 import googleapiclient.errors
@@ -9837,9 +9834,6 @@ def doSiteVerifyAttempt():
     print u'Method:  %s' % verify_data[u'method']
     print u'Token:      %s' % verify_data[u'token']
     if verify_data[u'method'] in [u'DNS_CNAME', u'DNS_TXT']:
-      if not dnsAvailable:
-        print u'ERROR: No DNS capability available!'
-        return
       resolver = dns.resolver.Resolver()
       resolver.nameservers = [u'8.8.8.8', u'8.8.4.4']
       if verify_data[u'method'] == u'DNS_CNAME':
