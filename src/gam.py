@@ -604,25 +604,20 @@ def doGAMCheckForUpdates(forceCheck=False):
 
   current_version = gam_version
   now_time = int(time.time())
-  if forceCheck:
-    check_url = GAM_ALL_RELEASES # includes pre-releases
-  else:
+  if not forceCheck:
     last_check_time_str = readFile(GM_Globals[GM_LAST_UPDATE_CHECK_TXT], continueOnError=True, displayError=False)
     last_check_time = int(last_check_time_str) if last_check_time_str and last_check_time_str.isdigit() else 0
     if last_check_time > now_time-604800:
       return
-    check_url = GAM_LATEST_RELEASE # latest full release
   headers = {u'Accept': u'application/vnd.github.v3.text+json'}
   simplehttp = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL])
   try:
-    (_, c) = simplehttp.request(check_url, u'GET', headers=headers)
+    (_, c) = simplehttp.request(GAM_LATEST_RELEASE, u'GET', headers=headers)
     try:
       release_data = json.loads(c)
     except ValueError:
       _gamLatestVersionNotAvailable()
       return
-    if isinstance(release_data, list):
-      release_data = release_data[0] # only care about latest release
     if not isinstance(release_data, dict) or u'tag_name' not in release_data:
       _gamLatestVersionNotAvailable()
       return
@@ -646,7 +641,9 @@ def doGAMCheckForUpdates(forceCheck=False):
       sys.exit(0)
     writeFile(GM_Globals[GM_LAST_UPDATE_CHECK_TXT], str(now_time), continueOnError=True, displayError=forceCheck)
     return
-  except (httplib2.HttpLib2Error, httplib2.ServerNotFoundError, httplib2.CertificateValidationUnsupported):
+  except (httplib2.HttpLib2Error, httplib2.ServerNotFoundError, httplib2.CertificateValidationUnsupported) as e:
+    if forceCheck:
+      systemErrorExit(4, str(e))
     return
 
 def doGAMVersion(checkForArgs=True):
