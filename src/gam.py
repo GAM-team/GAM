@@ -2119,22 +2119,38 @@ def convertUserIDtoEmail(uid):
 def doCreateDataTransfer():
   dt = buildGAPIObject(u'datatransfer')
   body = {}
+
   old_owner = sys.argv[3]
   body[u'oldOwnerUserId'] = convertToUserID(old_owner)
-  serviceName, serviceID = app2appID(dt, sys.argv[4])
+
+  apps = sys.argv[4].split(",")
+  appNameList=[]
+  appIDList = []
+  i = 0
+  while i < len(apps):  
+    serviceName, serviceID = app2appID(dt, apps[i])
+    appNameList.append(serviceName)
+    appIDList.append({u'applicationId': serviceID})
+    i += 1
+  body[u'applicationDataTransfers'] = (appIDList)
   new_owner = sys.argv[5]
   body[u'newOwnerUserId'] = convertToUserID(new_owner)
+
+
   parameters = {}
   i = 6
   while i < len(sys.argv):
     parameters[sys.argv[i].upper()] = sys.argv[i+1].upper().split(u',')
     i += 2
-  body[u'applicationDataTransfers'] = [{u'applicationId': serviceID}]
+
+  i = 0
   for key, value in parameters.items():
-    body[u'applicationDataTransfers'][0].setdefault(u'applicationTransferParams', [])
-    body[u'applicationDataTransfers'][0][u'applicationTransferParams'].append({u'key': key, u'value': value})
+    body[u'applicationDataTransfers'][i].setdefault(u'applicationTransferParams', [])
+    body[u'applicationDataTransfers'][i][u'applicationTransferParams'].append({u'key': key, u'value': value})
+    i += 1  
+  
   result = callGAPI(dt.transfers(), u'insert', body=body, fields=u'id')[u'id']
-  print u'Submitted request id %s to transfer %s from %s to %s' % (result, serviceName, old_owner, new_owner)
+  print u'Submitted request id %s to transfer %s from %s to %s' % (result, ','.join(map(str,appNameList)), old_owner, new_owner)
 
 def doPrintTransferApps():
   dt = buildGAPIObject(u'datatransfer')
