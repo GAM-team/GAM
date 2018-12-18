@@ -16,8 +16,7 @@ GAM_INFO = u'GAM {0} - {1} / {2} / Python {3}.{4}.{5} {6} / {7} {8} /'.format(ga
 
 GAM_RELEASES = u'https://github.com/jay0lee/GAM/releases'
 GAM_WIKI = u'https://github.com/jay0lee/GAM/wiki'
-GAM_ALL_RELEASES = u'https://api.github.com/repos/jay0lee/GAM/releases'
-GAM_LATEST_RELEASE = GAM_ALL_RELEASES+u'/latest'
+GAM_LATEST_RELEASE = u'https://api.github.com/repos/jay0lee/GAM/releases/latest'
 GAM_PROJECT_APIS = u'https://raw.githubusercontent.com/jay0lee/GAM/master/src/project-apis.txt'
 
 TRUE = u'true'
