@@ -9704,70 +9704,6 @@ def print_json(object_name, object_value, spacing=u''):
   else:
     sys.stdout.write(utils.convertUTF8(u'%s\n' % (object_value)))
 
-def doUpdateNotification():
-  cd = buildGAPIObject(u'directory')
-  ids = list()
-  get_all = False
-  i = 3
-  isUnread = None
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower()
-    if myarg == u'unread':
-      isUnread = True
-      mark_as = u'unread'
-      i += 1
-    elif myarg == u'read':
-      isUnread = False
-      mark_as = u'read'
-      i += 1
-    elif myarg == u'id':
-      if sys.argv[i+1].lower() == u'all':
-        get_all = True
-      else:
-        ids.append(sys.argv[i+1])
-      i += 2
-    else:
-      systemErrorExit(2, '%s is not a valid argument for "gam update notification"' % sys.argv[i])
-  if isUnread is None:
-    systemErrorExit(2, 'notifications need to be marked as read or unread.')
-  if get_all:
-    notifications = callGAPIpages(cd.notifications(), u'list', u'items', customer=GC_Values[GC_CUSTOMER_ID], fields=u'items(notificationId,isUnread),nextPageToken')
-    for noti in notifications:
-      if noti[u'isUnread'] != isUnread:
-        ids.append(noti[u'notificationId'])
-  print u'Marking %s notification(s) as %s...' % (len(ids), mark_as)
-  for notificationId in ids:
-    result = callGAPI(cd.notifications(), u'update', customer=GC_Values[GC_CUSTOMER_ID], notificationId=notificationId, body={u'isUnread': isUnread}, fields=u'notificationId,isUnread')
-    if result[u'isUnread']:
-      read_result = u'unread'
-    else:
-      read_result = u'read'
-    print u'marked %s as %s' % (result[u'notificationId'], read_result)
-
-def doDeleteNotification():
-  cd = buildGAPIObject(u'directory')
-  ids = list()
-  get_all = False
-  i = 3
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower()
-    if myarg == u'id':
-      if sys.argv[i+1].lower() == u'all':
-        get_all = True
-      else:
-        ids.append(sys.argv[i+1])
-      i += 2
-    else:
-      systemErrorExit(2, '%s is not a valid argument for "gam delete notification", expected id' % sys.argv[i])
-  if get_all:
-    notifications = callGAPIpages(cd.notifications(), u'list', u'items', customer=GC_Values[GC_CUSTOMER_ID], fields=u'items(notificationId),nextPageToken')
-    for noti in notifications:
-      ids.append(noti[u'notificationId'])
-  print u'Deleting %s notification(s)...' % len(ids)
-  for notificationId in ids:
-    callGAPI(cd.notifications(), u'delete', customer=GC_Values[GC_CUSTOMER_ID], notificationId=notificationId)
-    print u'deleted %s' % id
-
 def doSiteVerifyShow():
   verif = buildGAPIObject(u'siteVerification')
   a_domain = sys.argv[3]
@@ -9863,32 +9799,6 @@ def doSiteVerifyAttempt():
     pass
   print
   print u'You can now add %s or it\'s subdomains as secondary or domain aliases of the %s G Suite Account.' % (a_domain, GC_Values[GC_DOMAIN])
-
-def doGetNotifications():
-  cd = buildGAPIObject(u'directory')
-  i = 3
-  unread_only = False
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower()
-    if myarg == u'unreadonly':
-      unread_only = True
-    else:
-      systemErrorExit(2, '%s is not a valid argument for "gam info notification", expected unreadonly' % sys.argv[i])
-    i += 1
-  notifications = callGAPIpages(cd.notifications(), u'list', u'items', customer=GC_Values[GC_CUSTOMER_ID])
-  for notification in notifications:
-    if unread_only and not notification[u'isUnread']:
-      continue
-    print u'From: %s' % notification[u'fromAddress']
-    print u'Subject: %s' % notification[u'subject']
-    print u'Date: %s' % notification[u'sendTime']
-    print u'ID: %s' % notification[u'notificationId']
-    print u'Read Status: %s' % ([u'READ', u'UNREAD'][notification[u'isUnread']])
-    print u''
-    print utils.convertUTF8(utils.dehtml(notification[u'body']))
-    print u''
-    print u'--------------'
-    print u''
 
 def orgUnitPathQuery(path, checkSuspended):
   query = u"orgUnitPath='{0}'".format(path.replace(u"'", u"\\'")) if path != u'/' else u''
@@ -12317,9 +12227,6 @@ OAUTH2_SCOPES = [
   {u'name': u'Directory API - Mobile Devices',
    u'subscopes': [u'readonly', u'action'],
    u'scopes': u'https://www.googleapis.com/auth/admin.directory.device.mobile'},
-  {u'name': u'Directory API - Notifications',
-   u'subscopes': [],
-   u'scopes': u'https://www.googleapis.com/auth/admin.directory.notifications'},
   {u'name': u'Directory API - Organizational Units',
    u'subscopes': [u'readonly'],
    u'scopes': u'https://www.googleapis.com/auth/admin.directory.orgunit'},
@@ -12723,8 +12630,6 @@ def ProcessGAMCommand(args):
         doUpdateCros()
       elif argument == u'mobile':
         doUpdateMobile()
-      elif argument in [u'notification', u'notifications']:
-        doUpdateNotification()
       elif argument in [u'verify', u'verification']:
         doSiteVerifyAttempt()
       elif argument in [u'schema', u'schemas']:
@@ -12778,8 +12683,6 @@ def ProcessGAMCommand(args):
         doGetCrosInfo()
       elif argument == u'mobile':
         doGetMobileInfo()
-      elif argument in [u'notifications', u'notification']:
-        doGetNotifications()
       elif argument in [u'verify', u'verification']:
         doGetSiteVerifications()
       elif argument in [u'schema', u'schemas']:
@@ -12832,8 +12735,6 @@ def ProcessGAMCommand(args):
         doDeleteResourceCalendar()
       elif argument == u'mobile':
         doDeleteMobile()
-      elif argument in [u'notification', u'notifications']:
-        doDeleteNotification()
       elif argument in [u'schema', u'schemas']:
         doDelSchema()
       elif argument in [u'course', u'class']:
