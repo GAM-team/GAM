@@ -117,9 +117,6 @@ If an item contains spaces, it should be surrounded by ".
 <Date> ::=
 	<Year>-<Month>-<Day> |
 	(+|-)<Number>(d|w)
-<DateTime> ::=
-	<Year>-<Month>-<Day>(<Space>|T)<Hour>:<Minute> |
-	(+|-)<Number>(m|h|d|w)
 <Time> ::=
 	<Year>-<Month>-<Day>(<Space>|T)<Hour>:<Minute>:<Second>[.<MilliSeconds>](Z|(+|-(<Hour>:<Minute>))) |
 	(+|-)<Number>(m|h|d|w)
@@ -874,9 +871,13 @@ gam update customer <CustomerAttributes>*
 
 gam info customer
 
-<DataTransferService> ::= googledrive|gdrive|drive|"drive and docs"|calendar|gplus|google+|googleplus
+<DataTransferService> ::=
+        calendar|
+        googledrive|gdrive|drive|"drive and docs"|
+        gplus|googleplus|google+
+<DataTransferServiceList> ::= "<DataTransferService>(,<DataTransferService>)*"
 
-gam create datatransfer|transfer <OldOwnerID> <DataTransferService> <NewOwnerID> (<ParameterKey> <ParameterValue>)*
+gam create datatransfer|transfer <OldOwnerID> <DataTransferServiceList> <NewOwnerID> (<ParameterKey> <ParameterValue>)*
 gam info datatransfer|transfer <TransferID>
 gam print datatransfers|transfers [todrive] [olduser|oldowner <UserItem>] [newuser|newowner <UserItem>] [status <String>]
 
@@ -1089,8 +1090,8 @@ gam print printjobs [todrive] [printer|printerid <PrinterID>]
 gam create vaultexport|export matter <MatterItem> [name <name>] corpus <drive|mail|groups|hangouts_chat>
 	(accounts <EmailAddressList>) | (orgunit|ou <OrgUnitPath>) | (teamdrives <TeamDriveList>) | (rooms <ChatRoomList>) | everyone
 	[scope <all_data|held_data|unprocessed_data>]
-	[terms <terms>] [start|starttime <Date>|<DateTime>] [end|endtime <Date>|<DateTime>] [timezone <TimeZone>] [format mbox|pst]
-	[excludedrafts <Boolean>] [driveversiondate <Date>|<DateTime>] [includeteamdrives] [includerooms]
+	[terms <terms>] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>] [timezone <TimeZone>] [format mbox|pst]
+	[excludedrafts <Boolean>] [driveversiondate <Date>|<Time>] [includeteamdrives] [includerooms]
 	[includeaccessinfo <Boolean>]
 gam delete export <MatterItem> <ExportItem>
 gam info export <MatterItem> <ExportItem>
@@ -1099,10 +1100,10 @@ gam download export <MatterItem> <ExportItem> [noverify] [noextract] [targetfold
 
 gam create vaulthold|hold corpus drive|groups|mail matter <MatterItem> [name <String>] [query <QueryVaultCorpus>]
 	[(accounts|groups|users <EmailItemList>) | (orgunit|ou <OrgUnit>)]
-	[start|starttime <Date>|<DateTime>] [end|endtime <Date>|<DateTime>] 
+	[start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>] 
 gam update vaulthold|hold <HoldItem> matter <MatterItem> [query <QueryVaultCorpus>]
 	[([addaccounts|addgroups|addusers <EmailItemList>] [removeaccounts|removegroups|removeusers <EmailItemList>]) | (orgunit|ou <OrgUnit>)]
-	[start|starttime <Date>|<DateTime>] [end|endtime <Date>|<DateTime>] 
+	[start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>] 
 gam delete vaulthold|hold <HoldItem> matter <MatterItem>
 gam info vaulthold|hold <HoldItem> matter <MatterItem>
 gam print vaultholds|holds [todrive] [matters <MatterItemList>]
