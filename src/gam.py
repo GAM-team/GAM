@@ -8784,7 +8784,7 @@ def doUpdateCros():
   i, devices = getCrOSDeviceEntity(3, cd)
   update_body = {}
   action_body = {}
-  orgUnitPath = None
+  orgUnitPath = updateNotes = None
   ack_wipe = False
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace(u'_', u'')
@@ -8794,8 +8794,9 @@ def doUpdateCros():
     elif myarg == u'location':
       update_body[u'annotatedLocation'] = sys.argv[i+1]
       i += 2
-    elif myarg == u'notes':
+    elif myarg in [u'notes', u'updatenotes']:
       update_body[u'notes'] = sys.argv[i+1].replace(u'\\n', u'\n')
+      updateNotes = update_body[u'notes'] if myarg == u'updatenotes' and update_body[u'notes'].find(u'#notes#') != -1 else None
       i += 2
     elif myarg in [u'tag', u'asset', u'assetid']:
       update_body[u'annotatedAssetId'] = sys.argv[i+1]
@@ -8840,6 +8841,10 @@ def doUpdateCros():
     if update_body:
       for deviceId in devices:
         i += 1
+        if updateNotes:
+          oldNotes = callGAPI(cd.chromeosdevices(), u'get',
+                              customerId=GC.Values[GC.CUSTOMER_ID], deviceId=deviceId, fields=u'notes')[u'notes']
+          update_body[u'notes'] = updateNotes.replace(u'#notes#', oldNotes)
         print u' updating %s (%s of %s)' % (deviceId, i, count)
         callGAPI(service=cd.chromeosdevices(), function=u'update', customerId=GC_Values[GC_CUSTOMER_ID], deviceId=deviceId, body=update_body)
     if orgUnitPath:
