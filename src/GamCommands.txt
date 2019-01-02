@@ -990,10 +990,6 @@ gam print group-members|groups-members [todrive]
 gam print licenses [todrive] [(products|product <ProductIDList>)|(skus|sku <SKUIDList>)|allskus|gsuite] [countsonly]
 gam show license|licenses|licence|licences [(products|product <ProductIDList>)|(skus|sku <SKUIDList>)|allskus|gsuite]
 
-gam update notification|notifications [(id all)|(id <NotificationID>)*] unread|read
-gam delete notification|notifications [(id all)|(id <NotificationID>)*]
-gam info notification|notifications [unreadonly]
-
 gam create building <Name> <BuildingAttributes>*
 gam update building <BuildIngID> <BuildingAttributes>*
 gam delete building <BuildingID>
