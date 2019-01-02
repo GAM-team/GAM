@@ -1272,7 +1272,7 @@ def showReport():
   customerId = GC_Values[GC_CUSTOMER_ID]
   if customerId == MY_CUSTOMER:
     customerId = None
-  filters = parameters = actorIpAddress = startTime = endTime = eventName = None
+  filters = parameters = actorIpAddress = startTime = endTime = eventName = orgUnitId = None
   tryDate = datetime.date.today().strftime(YYYYMMDD_FORMAT)
   to_drive = False
   userKey = u'all'
@@ -1282,6 +1282,9 @@ def showReport():
     myarg = sys.argv[i].lower()
     if myarg == u'date':
       tryDate = getYYYYMMDD(sys.argv[i+1])
+      i += 2
+    elif myarg in [u'orgunit', u'org', u'ou']:
+      _, orgUnitId = getOrgUnitId(sys.argv[i+1])
       i += 2
     elif myarg == u'fulldatarequired':
       fullDataRequired = []
@@ -1321,7 +1324,7 @@ def showReport():
         if fullDataRequired is not None:
           warnings = callGAPIitems(rep.userUsageReport(), u'get', u'warnings',
                                    throw_reasons=[GAPI_INVALID],
-                                   date=tryDate, userKey=userKey, customerId=customerId, fields=u'warnings')
+                                   date=tryDate, userKey=userKey, customerId=customerId, orgUnitID=orgUnitId, fields=u'warnings')
           fullData, tryDate = _checkFullDataAvailable(warnings, tryDate, fullDataRequired)
           if fullData < 0:
             print u'No user report available.'
@@ -1330,7 +1333,7 @@ def showReport():
             continue
         page_message = u'Got %%num_items%% Users\n'
         usage = callGAPIpages(rep.userUsageReport(), u'get', u'usageReports', page_message=page_message, throw_reasons=[GAPI_INVALID],
-                              date=tryDate, userKey=userKey, customerId=customerId, filters=filters, parameters=parameters)
+                              date=tryDate, userKey=userKey, customerId=customerId, orgUnitID=orgUnitId, filters=filters, parameters=parameters)
         break
       except GAPI_invalid as e:
         tryDate = _adjustDate(str(e))
