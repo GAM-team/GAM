@@ -1246,8 +1246,16 @@ gam <UserTypeEntity> print smime [todrive] [primaryonly]
 gam <UserTypeEntity> signature|sig <String>|(file <FileName> [charset <Charset>]) (replace <Tag> <String>)* [html] [name <String>] [replyto <EmailAddress>] [default] [treatasalias <Boolean>]
 gam <UserTypeEntity> show signature|sig [format]
 
+<TeamDriveRestrictionsSubfieldName> ::=
+        adminmanagedrestrictions|
+        copyrequireswriterpermission|
+        domainusersonly|
+        teammembersonly
+
 gam <UserTypeEntity> create|add teamdrive <Name>
-gam <UserTypeEntity> update teamdrive <TeamDriveID> [name <Name>] [(theme|themeid <String>) | ([customtheme <DriveFileID> <Float> <Float> <Float>] [color <ColorValue>])]
+gam <UserTypeEntity> update teamdrive <TeamDriveID> [name <Name>]
+	[(theme|themeid <String>) | ([customtheme <DriveFileID> <Float> <Float> <Float>] [color <ColorValue>])]
+        (<TeamDriveRestrictionsSubfieldName> <Boolean>)*
 gam <UserTypeEntity> delete teamdrive <TeamDriveID>
 gam <UserTypeEntity> show teamdriveinfo <TeamDriveID> [asadmin]
 gam <UserTypeEntity> show teamdrives [asadmin]
