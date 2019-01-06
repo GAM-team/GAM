@@ -7413,12 +7413,20 @@ def doCreateTeamDrive(users):
     result = callGAPI(drive.teamdrives(), u'create', requestId=requestId, body=body, fields=u'id')
     print u'Created Team Drive %s with id %s' % (body[u'name'], result[u'id'])
 
+TEAMDRIVE_RESTRICTIONS_MAP = {
+  u'adminmanagedrestrictions': u'adminManagedRestrictions',
+  u'copyrequireswriterpermission': u'copyRequiresWriterPermission',
+  u'domainusersonly': u'domainUsersOnly',
+  u'teammembersonly': u'teamMembersOnly',
+  }
+
 def doUpdateTeamDrive(users):
   teamDriveId = sys.argv[5]
   body = {}
+  useDomainAdminAccess = False
   i = 6
   while i < len(sys.argv):
-    myarg = sys.argv[i].lower()
+    myarg = sys.argv[i].lower().replace(u'_', u'')
     if myarg == u'name':
       body[u'name'] = sys.argv[i+1]
       i += 2
@@ -7436,6 +7444,13 @@ def doUpdateTeamDrive(users):
     elif myarg == u'color':
       body[u'colorRgb'] = getColor(sys.argv[i+1])
       i += 2
+    elif myarg == u'asadmin':
+      useDomainAdminAccess = True
+      i += 1
+    elif myarg in TEAMDRIVE_RESTRICTIONS_MAP:
+      body.setdefault(u'restrictions', {})
+      body[u'restrictions'][TEAMDRIVE_RESTRICTIONS_MAP[myarg]] = getBoolean(sys.argv[i+1], myarg)
+      i += 2
     else:
       systemErrorExit(3, '%s is not a valid argument for "gam <users> update teamdrive"' % sys.argv[i])
   if not body:
@@ -7444,7 +7459,8 @@ def doUpdateTeamDrive(users):
     user, drive = buildDrive3GAPIObject(user)
     if not drive:
       continue
-    result = callGAPI(drive.teamdrives(), u'update', body=body, teamDriveId=teamDriveId, fields=u'id', soft_errors=True)
+    result = callGAPI(drive.teamdrives(), u'update',
+                      useDomainAdminAccess=useDomainAdminAccess, body=body, teamDriveId=teamDriveId, fields=u'id', soft_errors=True)
     if not result:
       continue
     print u'Updated Team Drive %s' % (teamDriveId)
