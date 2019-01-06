@@ -1253,7 +1253,7 @@ gam <UserTypeEntity> show signature|sig [format]
         teammembersonly
 
 gam <UserTypeEntity> create|add teamdrive <Name>
-gam <UserTypeEntity> update teamdrive <TeamDriveID> [name <Name>]
+gam <UserTypeEntity> update teamdrive <TeamDriveID> [asadmin] [name <Name>]
 	[(theme|themeid <String>) | ([customtheme <DriveFileID> <Float> <Float> <Float>] [color <ColorValue>])]
         (<TeamDriveRestrictionsSubfieldName> <Boolean>)*
 gam <UserTypeEntity> delete teamdrive <TeamDriveID>
