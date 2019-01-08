@@ -7549,8 +7549,7 @@ def doCreateVaultMatter():
       i += 2
     else:
       systemErrorExit(3, '%s is not a valid argument to "gam create matter"' % sys.argv[i])
-  result = callGAPI(v.matters(), u'create', body=body, fields=u'matterId')
-  matterId = result[u'matterId']
+  matterId = callGAPI(v.matters(), u'create', body=body, fields=u'matterId')[u'matterId']
   print u'Created matter %s' % matterId
   for collaborator in collaborators:
     print u' adding collaborator %s' % collaborator[u'email']
@@ -7679,6 +7678,7 @@ def doCreateVaultExport():
     body[u'exportOptions'].pop(u'driveOptions', None)
     body[u'exportOptions'][options_field] = {u'exportFormat': export_format}
   results = callGAPI(v.matters().exports(), u'create', matterId=matterId, body=body)
+  print u'Created export %s' % results[u'id']
   print_json(None, results)
 
 def doDeleteVaultExport():
@@ -7838,7 +7838,8 @@ def doCreateVaultHold():
     account_type = u'group' if body[u'corpus'] == u'GROUPS' else u'user'
     for account in accounts:
       body[u'accounts'].append({u'accountId': convertEmailAddressToUID(account, cd, account_type)})
-  callGAPI(v.matters().holds(), u'create', matterId=matterId, body=body)
+  holdId = callGAPI(v.matters().holds(), u'create', matterId=matterId, body=body, fields=u'holdId')[u'holdId']
+  print u'Created hold %s' % holdId
 
 def doDeleteVaultHold():
   v = buildGAPIObject(u'vault')
