@@ -2120,6 +2120,7 @@ def convertUserIDtoEmail(uid):
     return u'uid:{0}'.format(uid)
 
 def doCreateDataTransfer():
+  os.environ.pop(u'GAM_DATATRANSFERID', None)
   dt = buildGAPIObject(u'datatransfer')
   body = {}
 
@@ -2152,8 +2153,9 @@ def doCreateDataTransfer():
     body[u'applicationDataTransfers'][i][u'applicationTransferParams'].append({u'key': key, u'value': value})
     i += 1  
   
-  result = callGAPI(dt.transfers(), u'insert', body=body, fields=u'id')[u'id']
-  print u'Submitted request id %s to transfer %s from %s to %s' % (result, ','.join(map(str,appNameList)), old_owner, new_owner)
+  dtId = callGAPI(dt.transfers(), u'insert', body=body, fields=u'id')[u'id']
+  print u'Submitted request id %s to transfer %s from %s to %s' % (dtId, ','.join(map(str,appNameList)), old_owner, new_owner)
+  os.environ[u'GAM_DATATRANSFERID'] = dtId
 
 def doPrintTransferApps():
   dt = buildGAPIObject(u'datatransfer')
@@ -7529,6 +7531,7 @@ def validateCollaborators(collaboratorList, cd):
   return collaborators
 
 def doCreateVaultMatter():
+  os.environ.pop(u'GAM_MATTERID', None)
   v = buildGAPIObject(u'vault')
   body = {u'name': u'New Matter - %s' % datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
   collaborators = []
@@ -7549,9 +7552,9 @@ def doCreateVaultMatter():
       i += 2
     else:
       systemErrorExit(3, '%s is not a valid argument to "gam create matter"' % sys.argv[i])
-  result = callGAPI(v.matters(), u'create', body=body, fields=u'matterId')
-  matterId = result[u'matterId']
+  matterId = callGAPI(v.matters(), u'create', body=body, fields=u'matterId')[u'matterId']
   print u'Created matter %s' % matterId
+  os.environ[u'GAM_MATTERID'] =  u'uid:{0}'.format(matterId)
   for collaborator in collaborators:
     print u' adding collaborator %s' % collaborator[u'email']
     callGAPI(v.matters(), u'addPermissions', matterId=matterId, body={u'matterPermission': {u'role': u'COLLABORATOR', u'accountId': collaborator[u'id']}})
@@ -7571,6 +7574,7 @@ VAULT_SEARCH_METHODS_MAP = {
 VAULT_SEARCH_METHODS_LIST = [u'accounts', u'orgunit', u'teamdrives', u'rooms', u'everyone']
 
 def doCreateVaultExport():
+  os.environ.pop(u'GAM_EXPORTID', None)
   v = buildGAPIObject(u'vault')
   allowed_corpuses = v._rootDesc[u'schemas'][u'Query'][u'properties'][u'corpus'][u'enum']
   try:
@@ -7680,6 +7684,7 @@ def doCreateVaultExport():
     body[u'exportOptions'][options_field] = {u'exportFormat': export_format}
   results = callGAPI(v.matters().exports(), u'create', matterId=matterId, body=body)
   print_json(None, results)
+  os.environ[u'GAM_EXPORTID'] = u'uid:{0}'.format(results[u'id'])
 
 def doDeleteVaultExport():
   v = buildGAPIObject(u'vault')
@@ -7772,6 +7777,7 @@ def extract_nested_zip(zippedFile, toFolder, spacing=u' '):
   os.remove(zippedFile)
 
 def doCreateVaultHold():
+  os.environ.pop(u'GAM_HOLDID', None)
   v = buildGAPIObject(u'vault')
   allowed_corpuses = v._rootDesc[u'schemas'][u'Hold'][u'properties'][u'corpus'][u'enum']
   body = {u'query': {}}
@@ -7838,7 +7844,8 @@ def doCreateVaultHold():
     account_type = u'group' if body[u'corpus'] == u'GROUPS' else u'user'
     for account in accounts:
       body[u'accounts'].append({u'accountId': convertEmailAddressToUID(account, cd, account_type)})
-  callGAPI(v.matters().holds(), u'create', matterId=matterId, body=body)
+  holdId = callGAPI(v.matters().holds(), u'create', matterId=matterId, body=body, fields=u'holdId')[u'holdId']
+  os.environ[u'GAM_HOLDID'] = u'uid:{0}'.format(holdId)
 
 def doDeleteVaultHold():
   v = buildGAPIObject(u'vault')
