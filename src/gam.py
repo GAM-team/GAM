@@ -2122,15 +2122,13 @@ def convertUserIDtoEmail(uid):
 def doCreateDataTransfer():
   dt = buildGAPIObject(u'datatransfer')
   body = {}
-
   old_owner = sys.argv[3]
   body[u'oldOwnerUserId'] = convertToUserID(old_owner)
-
   apps = sys.argv[4].split(",")
-  appNameList=[]
+  appNameList = []
   appIDList = []
   i = 0
-  while i < len(apps):  
+  while i < len(apps):
     serviceName, serviceID = app2appID(dt, apps[i])
     appNameList.append(serviceName)
     appIDList.append({u'applicationId': serviceID})
@@ -2138,22 +2136,18 @@ def doCreateDataTransfer():
   body[u'applicationDataTransfers'] = (appIDList)
   new_owner = sys.argv[5]
   body[u'newOwnerUserId'] = convertToUserID(new_owner)
-
-
   parameters = {}
   i = 6
   while i < len(sys.argv):
     parameters[sys.argv[i].upper()] = sys.argv[i+1].upper().split(u',')
     i += 2
-
   i = 0
   for key, value in parameters.items():
     body[u'applicationDataTransfers'][i].setdefault(u'applicationTransferParams', [])
     body[u'applicationDataTransfers'][i][u'applicationTransferParams'].append({u'key': key, u'value': value})
-    i += 1  
-  
+    i += 1
   result = callGAPI(dt.transfers(), u'insert', body=body, fields=u'id')[u'id']
-  print u'Submitted request id %s to transfer %s from %s to %s' % (result, ','.join(map(str,appNameList)), old_owner, new_owner)
+  print u'Submitted request id %s to transfer %s from %s to %s' % (result, ','.join(map(str, appNameList)), old_owner, new_owner)
 
 def doPrintTransferApps():
   dt = buildGAPIObject(u'datatransfer')
@@ -7549,8 +7543,7 @@ def doCreateVaultMatter():
       i += 2
     else:
       systemErrorExit(3, '%s is not a valid argument to "gam create matter"' % sys.argv[i])
-  result = callGAPI(v.matters(), u'create', body=body, fields=u'matterId')
-  matterId = result[u'matterId']
+  matterId = callGAPI(v.matters(), u'create', body=body, fields=u'matterId')[u'matterId']
   print u'Created matter %s' % matterId
   for collaborator in collaborators:
     print u' adding collaborator %s' % collaborator[u'email']
@@ -7679,6 +7672,7 @@ def doCreateVaultExport():
     body[u'exportOptions'].pop(u'driveOptions', None)
     body[u'exportOptions'][options_field] = {u'exportFormat': export_format}
   results = callGAPI(v.matters().exports(), u'create', matterId=matterId, body=body)
+  print u'Created export %s' % results[u'id']
   print_json(None, results)
 
 def doDeleteVaultExport():
@@ -7838,7 +7832,8 @@ def doCreateVaultHold():
     account_type = u'group' if body[u'corpus'] == u'GROUPS' else u'user'
     for account in accounts:
       body[u'accounts'].append({u'accountId': convertEmailAddressToUID(account, cd, account_type)})
-  callGAPI(v.matters().holds(), u'create', matterId=matterId, body=body)
+  holdId = callGAPI(v.matters().holds(), u'create', matterId=matterId, body=body, fields=u'holdId')[u'holdId']
+  print u'Created hold %s' % holdId
 
 def doDeleteVaultHold():
   v = buildGAPIObject(u'vault')
