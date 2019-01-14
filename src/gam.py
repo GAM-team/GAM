@@ -7367,7 +7367,7 @@ and accept the Terms of Service (ToS). As soon as you've accepted the ToS popup,
 2. Click "Manage service accounts" on the right of the screen.
 3. Click the 3 dots to the right of your service account.
 4. Choose Edit.
-5. Click Save.
+5. Click "Show Domain-Wide Delegation". Check "Enable G Suite Domain-wide Delegation". Click Save.
 '''
   raw_input(u'Press Enter when done...')
   print u'That\'s it! Your GAM Project is created and ready to use.'
