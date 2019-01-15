@@ -6699,6 +6699,9 @@ def getUserAttributes(i, cd, updateCmd):
     elif myarg == u'suspended':
       body[u'suspended'] = getBoolean(sys.argv[i+1], myarg)
       i += 2
+    elif myarg == u'archived':
+      body[u'archived'] = getBoolean(sys.argv[i+1], myarg)
+      i += 2
     elif myarg == u'gal':
       body[u'includeInGlobalAddressList'] = getBoolean(sys.argv[i+1], myarg)
       i += 2
