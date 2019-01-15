@@ -7329,15 +7329,22 @@ and accept the Terms of Service (ToS). As soon as you've accepted the ToS popup,
 %s
 
 1. Click the blue "Create credentials" button. Choose "OAuth client ID".
-2. Click the blue "Configure consent screen" button. Enter "GAM" for "Product name to show to users".
+2. Click the blue "Configure consent screen" button. Enter "GAM" for "Application name".
 3. Leave other fields blank. Click "Save" button.
-3. Choose "Other" and click the blue "Create" button.
+3. Choose "Other". Enter a desired value for "Name". Click the blue "Create" button.
 4. Copy your "client ID" value.
 
 ''' % console_credentials_url
+# If you use Firefox to copy the Client ID and Secret, the data has leading and trailing newlines
+# The first raw_input will get the leading newline, thus we have to issue another raw_input to get the data
+# If the newlines are not present, the data is correctly read with the first raw_input
     client_id = raw_input(u'Enter your Client ID: ').strip()
+    if not client_id:
+      client_id = raw_input().strip()
     print u'\nNow go back to your browser and copy your client secret.'
     client_secret = raw_input(u'Enter your Client Secret: ').strip()
+    if not client_secret:
+      client_secret = raw_input().strip()
     client_valid = _checkClientAndSecret(simplehttp, client_id, client_secret)
     if client_valid:
       break
@@ -7363,7 +7370,7 @@ and accept the Terms of Service (ToS). As soon as you've accepted the ToS popup,
 2. Click "Manage service accounts" on the right of the screen.
 3. Click the 3 dots to the right of your service account.
 4. Choose Edit.
-5. Check the "Enable G Suite Domain-wide Delegation" box and click Save.
+5. Click "Show Domain-Wide Delegation". Check "Enable G Suite Domain-wide Delegation". Click Save.
 '''
   raw_input(u'Press Enter when done...')
   print u'That\'s it! Your GAM Project is created and ready to use.'
