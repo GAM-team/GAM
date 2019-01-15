@@ -7335,6 +7335,9 @@ and accept the Terms of Service (ToS). As soon as you've accepted the ToS popup,
 4. Copy your "client ID" value.
 
 ''' % console_credentials_url
+# If you use Firefox to copy the Client ID and Secret, the data has leading and trailing newlines
+# The first raw_input will get the leading newline, thus we have to issue another raw_input to get the data
+# If the newlines are not present, the data is correctly read with the first raw_input
     client_id = raw_input(u'Enter your Client ID: ').strip()
     if not client_id:
       client_id = raw_input().strip()
