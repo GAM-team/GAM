@@ -121,6 +121,7 @@ If an item contains spaces, it should be surrounded by ".
 	<Year>-<Month>-<Day>(<Space>|T)<Hour>:<Minute>:<Second>[.<MilliSeconds>](Z|(+|-(<Hour>:<Minute>))) |
 	(+|-)<Number>(m|h|d|w)
 <RegularExpression> ::= <Python Regular Expression, see: https://docs.python.org/2/library/re.html>
+<ProjectID> ::= <String> # Must match this Python Regular Expression: [a-z][a-z0-9-]{4,28}[a-z0-9]
 <Tag> ::= <String>
 <UniqueID> ::= uid:<String>
 
@@ -774,8 +775,12 @@ An argument containing instances of ~~xxx~~ has xxx replaced by the value of fie
 Example: gam csv Users.csv gam update user "~primaryEmail" address type work unstructured "~~Street~~, ~~City~~, ~~State~~ ~~ZIP~~"
 Each user (~primaryEmail, e.g. foo@bar.com) would have their work address updated
 
-gam create project [<EmailAddress>]
-gam update project [<EmailAddress>]
+gam create project [<EmailAddress>] [<ProjectID>]
+gam use project [<EmailAddress>] [<ProjectID>]
+gam update project [<EmailAddress>] [gam|<ProjectID>|(filter <String>)]
+gam delete project [<EmailAddress>] [gam|<ProjectID>|(filter <String>)]
+gam show projects [<EmailAddress>] [all|gam|<ProjectID>|(filter <String>)]
+gam print projects [<EmailAddress>] [all|gam|<ProjectID>|(filter <String>)] [todrive]
 
 gam oauth|oauth2 create|request [<EmailAddress>]
 gam oauth|oauth2 delete|revoke
