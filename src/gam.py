@@ -4744,7 +4744,7 @@ def downloadDriveFile(users):
               csvSheetNotFound = True
               continue
         else:
-          request = drive.files().get_media(fileId=fileId)
+          request = drive.files().get_media(fileId=fileId, revisionId=revisionId)
         fh = None
         try:
           fh = open(filename, u'wb') if not targetStdout else sys.stdout
