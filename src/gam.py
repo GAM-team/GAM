@@ -9642,11 +9642,6 @@ def doGetGroupInfo(group_name=None):
   for key, value in settings.items():
     if key in [u'kind', u'etag', u'description', u'email', u'name']:
       continue
-    elif key == u'maxMessageBytes':
-      if value > 1024*1024:
-        value = u'%sM' % (value / 1024 / 1024)
-      elif value > 1024:
-        value = u'%sK' % (value / 1024)
     print u' %s: %s' % (key, value)
   if getGroups:
     groups = callGAPIpages(cd.groups(), u'list', u'groups',
@@ -10787,20 +10782,17 @@ GROUP_ARGUMENT_TO_PROPERTY_TITLE_MAP = {
 
 GROUP_ATTRIBUTES_ARGUMENT_TO_PROPERTY_MAP = {
   u'allowexternalmembers': u'allowExternalMembers',
-  u'allowgooglecommunication': u'allowGoogleCommunication',
   u'allowwebposting': u'allowWebPosting',
   u'archiveonly': u'archiveOnly',
   u'customfootertext': u'customFooterText',
   u'customreplyto': u'customReplyTo',
   u'defaultmessagedenynotificationtext': u'defaultMessageDenyNotificationText',
-  u'favoriterepliesontop': u'favoriteRepliesOnTop',
   u'gal': u'includeInGlobalAddressList',
   u'includecustomfooter': u'includeCustomFooter',
   u'includeinglobaladdresslist': u'includeInGlobalAddressList',
   u'isarchived': u'isArchived',
   u'maxmessagebytes': u'maxMessageBytes',
   u'memberscanpostasthegroup': u'membersCanPostAsTheGroup',
-  u'messagedisplayfont': u'messageDisplayFont',
   u'messagemoderationlevel': u'messageModerationLevel',
   u'primarylanguage': u'primaryLanguage',
   u'replyto': u'replyTo',
@@ -10808,7 +10800,6 @@ GROUP_ATTRIBUTES_ARGUMENT_TO_PROPERTY_MAP = {
   u'showingroupdirectory': u'showInGroupDirectory',
   u'spammoderationlevel': u'spamModerationLevel',
   u'whocanadd': u'whoCanAdd',
-  u'whocanaddreferences': u'whoCanAddReferences',
   u'whocanassigntopics': u'whoCanAssignTopics',
   u'whocancontactowner': u'whoCanContactOwner',
   u'whocanenterfreeformtags': u'whoCanEnterFreeFormTags',
@@ -10817,7 +10808,6 @@ GROUP_ATTRIBUTES_ARGUMENT_TO_PROPERTY_MAP = {
   u'whocanleavegroup': u'whoCanLeaveGroup',
   u'whocanmarkduplicate': u'whoCanMarkDuplicate',
   u'whocanmarkfavoritereplyonanytopic': u'whoCanMarkFavoriteReplyOnAnyTopic',
-  u'whocanmarkfavoritereplyonowntopic': u'whoCanMarkFavoriteReplyOnOwnTopic',
   u'whocanmarknoresponseneeded': u'whoCanMarkNoResponseNeeded',
   u'whocanmodifytagsandcategories': u'whoCanModifyTagsAndCategories',
   u'whocanpostmessage': u'whoCanPostMessage',
