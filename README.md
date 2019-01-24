@@ -1,5 +1,8 @@
 GAM is a command line tool for Google G Suite Administrators to manage domain and user settings quickly and easily.
 # Quick Start
+
+[![Join the chat at https://gitter.im/jay0lee-GAM/community](https://badges.gitter.im/jay0lee-GAM/community.svg)](https://gitter.im/jay0lee-GAM/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 ## Linux / MacOS
 Open a terminal and run:
 ```
