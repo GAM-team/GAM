@@ -111,6 +111,7 @@ API_VER_MAPPING = {
   u'pubsub': u'v1',
   u'reports': u'reports_v1',
   u'reseller': u'v1',
+  u'sheets': u'v4',
   u'siteVerification': u'v1',
   u'storage': u'v1',
   u'urlshortener': u'v1',
@@ -128,6 +129,7 @@ API_SCOPE_MAPPING = {
              u'https://www.googleapis.com/auth/gmail.settings.basic',
              u'https://www.googleapis.com/auth/gmail.settings.sharing',],
   u'plus': [u'https://www.googleapis.com/auth/plus.me',],
+  u'sheets': [u'https://www.googleapis.com/auth/spreadsheets',],
 }
 
 ADDRESS_FIELDS_PRINT_ORDER = [

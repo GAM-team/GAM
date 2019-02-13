@@ -365,6 +365,8 @@ def splitEmailAddress(emailAddress):
     return (emailAddress.lower(), GC_Values[GC_DOMAIN].lower())
   return (emailAddress[:atLoc].lower(), emailAddress[atLoc+1:].lower())
 
+UID_PATTERN = re.compile(r'u?id: ?(.+)', re.IGNORECASE)
+
 # Normalize user/group email address/uid
 # uid:12345abc -> 12345abc
 # foo -> foo@domain
@@ -374,11 +376,10 @@ def splitEmailAddress(emailAddress):
 def normalizeEmailAddressOrUID(emailAddressOrUID, noUid=False, checkForCustomerId=False, noLower=False):
   if checkForCustomerId and (emailAddressOrUID == GC_Values[GC_CUSTOMER_ID]):
     return emailAddressOrUID
-  if (not noUid) and (emailAddressOrUID.find(u':') != -1):
-    if emailAddressOrUID[:4].lower() == u'uid:':
-      return emailAddressOrUID[4:]
-    if emailAddressOrUID[:3].lower() == u'id:':
-      return emailAddressOrUID[3:]
+  if not noUid:
+    cg = UID_PATTERN.match(emailAddressOrUID)
+    if cg:
+      return cg.group(1)
   atLoc = emailAddressOrUID.find(u'@')
   if atLoc == 0:
     return emailAddressOrUID[1:].lower() if not noLower else emailAddressOrUID[1:]
@@ -1949,12 +1950,7 @@ def doCreateAdmin():
   user = normalizeEmailAddressOrUID(sys.argv[3])
   body = {u'assignedTo': convertEmailAddressToUID(user, cd)}
   role = sys.argv[4]
-  if role[:4].lower() == u'uid:':
-    body[u'roleId'] = role[4:]
-  else:
-    body[u'roleId'] = roleid_from_role(role)
-  if not body[u'roleId']:
-    systemErrorExit(4, '%s is not a valid role. Please ensure role name is exactly as shown in admin console.' % role)
+  body[u'roleId'] = getRoleId(role)
   body[u'scopeType'] = sys.argv[5].upper()
   if body[u'scopeType'] not in [u'CUSTOMER', u'ORG_UNIT']:
     systemErrorExit(3, 'scope type must be customer or org_unit; got %s' % body[u'scopeType'])
@@ -2006,13 +2002,7 @@ def doPrintAdmins():
       userKey = normalizeEmailAddressOrUID(sys.argv[i+1])
       i += 2
     elif myarg == u'role':
-      role = sys.argv[i+1]
-      if role[:4].lower() == u'uid:':
-        roleId = role[4:]
-      else:
-        roleId = roleid_from_role(role)
-        if not roleId:
-          systemErrorExit(5, '%s is not a valid role' % role)
+      roleId = getRoleId(sys.argv[i+1])
       i += 2
     elif myarg == u'todrive':
       todrive = True
@@ -2071,6 +2061,16 @@ def roleid_from_role(role):
     buildRoleIdToNameToIdMap()
   return GM_Globals[GM_MAP_ROLE_NAME_TO_ID].get(role, None)
 
+def getRoleId(role):
+  cg = UID_PATTERN.match(role)
+  if cg:
+    roleId = cg.group(1)
+  else:
+    roleId = roleid_from_role(role)
+    if not roleId:
+      systemErrorExit(4, '%s is not a valid role. Please ensure role name is exactly as shown in admin console.' % role)
+  return roleId
+
 def buildUserIdToNameMap():
   cd = buildGAPIObject(u'directory')
   result = callGAPIpages(cd.users(), u'list', u'users',
@@ -2107,10 +2107,9 @@ def app2appID(dt, app):
   systemErrorExit(2, '%s is not a valid service for data transfer.' % app)
 
 def convertToUserID(user):
-  if user[:4].lower() == u'uid:':
-    return user[4:]
-  if user[:3].lower() == u'id:':
-    return user[3:]
+  cg = UID_PATTERN.match(user)
+  if cg:
+    return cg.group(1)
   cd = buildGAPIObject(u'directory')
   if user.find(u'@') == -1:
     user = u'%s@%s' % (user, GC_Values[GC_DOMAIN])
@@ -3975,15 +3974,17 @@ def showDriveFileACL(users):
       print u''
 
 def getPermissionId(argstr):
-  permissionId = argstr.strip().lower()
-  if permissionId[:3] == u'id:':
-    return argstr.strip()[3:]
+  permissionId = argstr.strip()
+  cg = UID_PATTERN.match(permissionId)
+  if cg:
+    return cg.group(1)
+  permissionId = argstr.lower()
   if permissionId == u'anyone':
     return u'anyone'
   if permissionId == u'anyonewithlink':
     return u'anyoneWithLink'
   if permissionId.find(u'@') == -1:
-    permissionId = u'%s@%s' % (permissionId, GC_Values[GC_DOMAIN])
+    permissionId = u'%s@%s' % (permissionId, GC_Values[GC_DOMAIN].lower())
   # We have to use v2 here since v3 has no permissions.getIdForEmail equivalent
   # https://code.google.com/a/google.com/p/apps-api-issues/issues/detail?id=4313
   _, drive2 = buildDriveGAPIObject(_getValueFromOAuth(u'email'))
@@ -4256,9 +4257,12 @@ def printDriveFileList(users):
     sortCSVTitles([u'Owner', u'id', u'title'], titles)
   writeCSVfile(csvRows, titles, u'%s %s Drive Files' % (sys.argv[1], sys.argv[2]), todrive)
 
-def doDriveSearch(drive, query=None):
-  print u'Searching for files with query: "%s"...' % query
-  page_message = u' Got %%total_items%% files...\n'
+def doDriveSearch(drive, query=None, quiet=False):
+  if not quiet:
+    print u'Searching for files with query: "%s"...' % query
+    page_message = u' Got %%total_items%% files...\n'
+  else:
+    page_message = None
   files = callGAPIpages(drive.files(), u'list', u'items',
                         page_message=page_message,
                         q=query, fields=u'nextPageToken,items(id)', maxResults=GC_Values[GC_DRIVE_MAX_RESULTS])
@@ -4599,13 +4603,13 @@ def createDriveFile(users):
 def downloadDriveFile(users):
   i = 5
   fileIdSelection = {u'fileIds': [], u'query': None}
-  revisionId = None
+  csvSheetTitle = revisionId = None
   exportFormatName = u'openoffice'
   exportFormatChoices = [exportFormatName]
   exportFormats = DOCUMENT_FORMATS_MAP[exportFormatName]
   targetFolder = GC_Values[GC_DRIVE_DIR]
   targetName = None
-  overwrite = showProgress = False
+  overwrite = showProgress = targetStdout = False
   safe_filename_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace(u'_', u'')
@@ -4620,6 +4624,10 @@ def downloadDriveFile(users):
       i += 2
     elif myarg == u'revision':
       revisionId = getInteger(sys.argv[i+1], myarg, minVal=1)
+      i += 2
+    elif myarg == u'csvsheet':
+      csvSheetTitle = sys.argv[i+1]
+      csvSheetTitleLower = csvSheetTitle.lower()
       i += 2
     elif myarg == u'format':
       exportFormatChoices = sys.argv[i+1].replace(u',', u' ').lower().split()
@@ -4637,6 +4645,7 @@ def downloadDriveFile(users):
       i += 2
     elif myarg == u'targetname':
       targetName = sys.argv[i+1]
+      targetStdout = targetName == u'-'
       i += 2
     elif myarg == u'overwrite':
       overwrite = True
@@ -4650,12 +4659,20 @@ def downloadDriveFile(users):
     systemErrorExit(2, 'you need to specify either id, query or drivefilename in order to determine the file(s) to download')
   if fileIdSelection[u'query'] and fileIdSelection[u'fileIds']:
     systemErrorExit(2, 'you cannot specify multiple file identifiers. Choose one of id, drivefilename, query.')
+  if csvSheetTitle:
+    exportFormatName = u'csv'
+    exportFormatChoices = [exportFormatName]
+    exportFormats = DOCUMENT_FORMATS_MAP[exportFormatName]
   for user in users:
     user, drive = buildDriveGAPIObject(user)
     if not drive:
       continue
+    if csvSheetTitle:
+      sheet = buildGAPIServiceObject(u'sheets', user)
+      if not sheet:
+        continue
     if fileIdSelection[u'query']:
-      fileIdSelection[u'fileIds'] = doDriveSearch(drive, query=fileIdSelection[u'query'])
+      fileIdSelection[u'fileIds'] = doDriveSearch(drive, query=fileIdSelection[u'query'], quiet=targetStdout)
     else:
       fileId = fileIdSelection[u'fileIds'][0]
       if fileId[:8].lower() == u'https://' or fileId[:7].lower() == u'http://':
@@ -4678,6 +4695,8 @@ def downloadDriveFile(users):
       validExtensions = GOOGLEDOC_VALID_EXTENSIONS_MAP.get(mimeType)
       if validExtensions:
         my_line = u'Downloading Google Doc: %s'
+        if csvSheetTitle:
+          my_line += u', Sheet: %s' % csvSheetTitle
         googleDoc = True
       else:
         if u'fileSize' in result:
@@ -4686,43 +4705,67 @@ def downloadDriveFile(users):
           my_line = u'Downloading: %s of unknown size'
         googleDoc = False
       my_line += u' to %s'
-      fileDownloaded = fileDownloadFailed = False
+      csvSheetNotFound = fileDownloaded = fileDownloadFailed = False
       for exportFormat in exportFormats:
         extension = fileExtension or exportFormat[u'ext']
         if googleDoc and (extension not in validExtensions):
           continue
-        if targetName:
-          safe_file_title = targetName
+        if targetStdout:
+          filename = u'stdout'
         else:
-          safe_file_title = u''.join(c for c in result[u'title'] if c in safe_filename_chars)
-          if len(safe_file_title) < 1:
-            safe_file_title = fileId
-        filename = os.path.join(targetFolder, safe_file_title)
-        y = 0
-        while True:
-          if filename.lower()[-len(extension):] != extension.lower():
-            filename += extension
-          if overwrite or not os.path.isfile(filename):
-            break
-          y += 1
-          filename = os.path.join(targetFolder, u'({0})-{1}'.format(y, safe_file_title))
-        print utils.convertUTF8(my_line % (result[u'title'], filename))
+          if targetName:
+            safe_file_title = targetName
+          else:
+            safe_file_title = u''.join(c for c in result[u'title'] if c in safe_filename_chars)
+            if len(safe_file_title) < 1:
+              safe_file_title = fileId
+          filename = os.path.join(targetFolder, safe_file_title)
+          y = 0
+          while True:
+            if filename.lower()[-len(extension):] != extension.lower():
+              filename += extension
+            if overwrite or not os.path.isfile(filename):
+              break
+            y += 1
+            filename = os.path.join(targetFolder, u'({0})-{1}'.format(y, safe_file_title))
+          print utils.convertUTF8(my_line % (result[u'title'], filename))
+        spreadsheetUrl = None
         if googleDoc:
-          request = drive.files().export_media(fileId=fileId, mimeType=exportFormat[u'mime'])
-          if revisionId:
-            request.uri = u'{0}&revision={1}'.format(request.uri, revisionId)
+          if csvSheetTitle is None or mimeType != MIMETYPE_GA_SPREADSHEET:
+            request = drive.files().export_media(fileId=fileId, mimeType=exportFormat[u'mime'])
+            if revisionId:
+              request.uri = u'{0}&revision={1}'.format(request.uri, revisionId)
+          else:
+            spreadsheet = callGAPI(sheet.spreadsheets(), u'get',
+                                   spreadsheetId=fileId, fields=u'spreadsheetUrl,sheets(properties(sheetId,title))')
+            for sheet in spreadsheet[u'sheets']:
+              if sheet[u'properties'][u'title'].lower() == csvSheetTitleLower:
+                spreadsheetUrl = u'{0}?format=csv&id={1}&gid={2}'.format(re.sub(u'/edit$', u'/export', spreadsheet[u'spreadsheetUrl']),
+                                                                         fileId, sheet[u'properties'][u'sheetId'])
+                break
+            else:
+              stderrErrorMsg(u'Google Doc: %s, Sheet: %s, does not exist' % (result[u'title'], csvSheetTitle))
+              csvSheetNotFound = True
+              continue
         else:
-          request = drive.files().get_media(fileId=fileId)
+          request = drive.files().get_media(fileId=fileId, revisionId=revisionId)
         fh = None
         try:
-          fh = open(filename, u'wb')
-          downloader = googleapiclient.http.MediaIoBaseDownload(fh, request)
-          done = False
-          while not done:
-            status, done = downloader.next_chunk()
-            if showProgress:
-              print u'Downloaded: {0:>7.2%}'.format(status.progress())
-          closeFile(fh)
+          fh = open(filename, u'wb') if not targetStdout else sys.stdout
+          if not spreadsheetUrl:
+            downloader = googleapiclient.http.MediaIoBaseDownload(fh, request)
+            done = False
+            while not done:
+              status, done = downloader.next_chunk()
+              if showProgress:
+                print u'Downloaded: {0:>7.2%}'.format(status.progress())
+          else:
+            _, content = drive._http.request(uri=spreadsheetUrl, method='GET')
+            fh.write(content)
+            if targetStdout and content[-1] != u'\n':
+              fh.write(u'\n')
+          if not targetStdout:
+            closeFile(fh)
           fileDownloaded = True
           break
         except (IOError, httplib2.HttpLib2Error) as e:
@@ -4732,10 +4775,10 @@ def downloadDriveFile(users):
           break
         except googleapiclient.http.HttpError:
           sys.stderr.write(u'Format ({0}) not available\n'.format(extension[1:]))
-        if fh:
+        if fh and not targetStdout:
           closeFile(fh)
           os.remove(filename)
-      if not fileDownloaded and not fileDownloadFailed:
+      if not fileDownloaded and not fileDownloadFailed and not csvSheetNotFound:
         stderrErrorMsg(u'Format ({0}) not available'.format(u','.join(exportFormatChoices)))
         GM_Globals[GM_SYSEXITRC] = 51
 
@@ -8052,8 +8095,9 @@ def doGetVaultHoldInfo():
 
 def convertExportNameToID(v, nameOrID, matterId):
   nameOrID = nameOrID.lower()
-  if nameOrID[:4] == u'uid:':
-    return nameOrID[4:]
+  cg = UID_PATTERN.match(nameOrID)
+  if cg:
+    return cg.group(1)
   exports = callGAPIpages(v.matters().exports(), u'list', u'exports', matterId=matterId, fields=u'exports(id,name),nextPageToken')
   for export in exports:
     if export[u'name'].lower() == nameOrID:
@@ -8062,8 +8106,9 @@ def convertExportNameToID(v, nameOrID, matterId):
 
 def convertHoldNameToID(v, nameOrID, matterId):
   nameOrID = nameOrID.lower()
-  if nameOrID[:4] == u'uid:':
-    return nameOrID[4:]
+  cg = UID_PATTERN.match(nameOrID)
+  if cg:
+    return cg.group(1)
   holds = callGAPIpages(v.matters().holds(), u'list', u'holds', matterId=matterId, fields=u'holds(holdId,name),nextPageToken')
   for hold in holds:
     if hold[u'name'].lower() == nameOrID:
@@ -8072,8 +8117,9 @@ def convertHoldNameToID(v, nameOrID, matterId):
 
 def convertMatterNameToID(v, nameOrID):
   nameOrID = nameOrID.lower()
-  if nameOrID[:4] == u'uid:':
-    return nameOrID[4:]
+  cg = UID_PATTERN.match(nameOrID)
+  if cg:
+    return cg.group(1)
   matters = callGAPIpages(v.matters(), u'list', u'matters', view=u'BASIC', fields=u'matters(matterId,name),nextPageToken')
   for matter in matters:
     if matter[u'name'].lower() == nameOrID:
@@ -8434,12 +8480,13 @@ def _makeBuildingIdNameMap(cd):
     GM_Globals[GM_MAP_BUILDING_NAME_TO_ID][building[u'buildingName']] = building[u'buildingId']
 
 def _getBuildingByNameOrId(cd, which_building, minLen=1):
-  if not which_building or which_building.lower() == u'id:':
+  if not which_building or (minLen == 0 and which_building in [u'id:', u'uid:']):
     if minLen == 0:
       return u''
     systemErrorExit(3, u'Building id/name is empty')
-  if which_building[:3].lower() == u'id:':
-    return which_building[3:]
+  cg = UID_PATTERN.match(which_building)
+  if cg:
+    return cg.group(1)
   if GM_Globals[GM_MAP_BUILDING_NAME_TO_ID] is None:
     _makeBuildingIdNameMap(cd)
 # Exact name match, return ID
@@ -12336,10 +12383,9 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
   full_users = list()
   if entity != u'cros' and not got_uids:
     for user in users:
-      if user[:4] == u'uid:':
-        full_users.append(user[4:])
-      elif user[:3] == u'id:':
-        full_users.append(user[3:])
+      cg = UID_PATTERN.match(user)
+      if cg:
+        full_users.append(cg.group(1))
       elif user != u'*' and user != GC_Values[GC_CUSTOMER_ID] and user.find(u'@') == -1:
         full_users.append(u'%s@%s' % (user, GC_Values[GC_DOMAIN]))
       else:
