@@ -1158,6 +1158,10 @@ def buildGAPIServiceObject(api, act_as, showAuthError=True):
     return handleOAuthTokenError(str(e[0]), True)
   return service
 
+def buildAlertCenterGAPIObject(user):
+  userEmail = convertUIDtoEmailAddress(user)
+  return (userEmail, buildGAPIServiceObject(u'alertcenter', userEmail))
+
 def buildActivityGAPIObject(user):
   userEmail = convertUIDtoEmailAddress(user)
   return (userEmail, buildGAPIServiceObject(u'appsactivity', userEmail))
@@ -10559,7 +10563,7 @@ def flatten_json(structure, key=u'', path=u'', flattened=None, listLimit=None):
       flatten_json(item, u'{0}'.format(i), u'.'.join([item for item in [path, key] if item]), flattened=flattened, listLimit=listLimit)
   else:
     for new_key, value in structure.items():
-      if new_key in [u'kind', u'etag']:
+      if new_key in [u'kind', u'etag', u'@type']:
         continue
       if value == NEVER_TIME:
         value = u'Never'
@@ -10774,6 +10778,45 @@ def doPrintUsers():
         if u_licenses:
           user[u'Licenses'] = licenseDelimiter.join([_skuIdToDisplayName(skuId) for skuId in u_licenses])
   writeCSVfile(csvRows, titles, u'Users', todrive)
+
+def doPrintShowAlerts():
+  _, ac = buildAlertCenterGAPIObject(_getValueFromOAuth(u'email'))
+  alerts = callGAPIpages(ac.alerts(), u'list', u'alerts')
+  titles = []
+  csv_rows = []
+  for alert in alerts:
+    aj = flatten_json(alert)
+    for field in aj:
+      if field not in titles:
+        titles.append(field)
+    csv_rows.append(aj)
+  writeCSVfile(csv_rows, titles, u'Alerts', False)
+ 
+def doPrintShowAlertFeedback():
+  _, ac = buildAlertCenterGAPIObject(_getValueFromOAuth(u'email'))
+  feedback = callGAPIpages(ac.alerts().feedback(), u'list', u'feedback', alertId=u'-')
+  for feedbac in feedback:
+    print feedbac
+
+def _getValidAlertFeedbackTypes(ac):
+  return [type for type in ac._rootDesc[u'schemas'][u'AlertFeedback'][u'properties'][u'type'][u'enum'] if type != u'ALERT_FEEDBACK_TYPE_UNSPECIFIED']
+
+def doCreateAlertFeedback():
+  _, ac = buildAlertCenterGAPIObject(_getValueFromOAuth(u'email'))
+  valid_types = _getValidAlertFeedbackTypes(ac)
+  alertId = sys.argv[3]
+  body = {u'type': sys.argv[4].upper()}
+  if body[u'type'] not in valid_types:
+    systemErrorExit(2, '%s is not a valid feedback value, expected one of: %s' % (body[u'type'], u', '.join(valid_types)))
+  callGAPI(ac.alerts().feedback(), u'create', alertId=alertId, body=body)
+
+def doDeleteOrUndeleteAlert(action):
+  _, ac = buildAlertCenterGAPIObject(_getValueFromOAuth(u'email'))
+  alertId = sys.argv[3]
+  kwargs = {}
+  if action == u'undelete':
+    kwargs[u'body'] = {}
+  callGAPI(ac.alerts(), action, alertId=alertId, **kwargs)
 
 GROUP_ARGUMENT_TO_PROPERTY_TITLE_MAP = {
   u'admincreated': [u'adminCreated', u'Admin_Created'],
@@ -12806,6 +12849,8 @@ def ProcessGAMCommand(args):
         doCreateBuilding()
       elif argument in [u'feature']:
         doCreateFeature()
+      elif argument in [u'alertfeedback']:
+        doCreateAlertFeedback()
       else:
         systemErrorExit(2, '%s is not a valid argument for "gam create"' % argument)
       sys.exit(0)
@@ -12961,6 +13006,8 @@ def ProcessGAMCommand(args):
         doDeleteBuilding()
       elif argument in [u'feature']:
         doDeleteFeature()
+      elif argument in [u'alert']:
+        doDeleteOrUndeleteAlert(u'delete')
       else:
         systemErrorExit(2, '%s is not a valid argument for "gam delete"' % argument)
       sys.exit(0)
@@ -12970,6 +13017,8 @@ def ProcessGAMCommand(args):
         doUndeleteUser()
       elif argument in [u'matter', u'vaultmatter']:
         doUpdateVaultMatter(action=command)
+      elif argument == u'alert':
+        doDeleteOrUndeleteAlert(u'undelete')
       else:
         systemErrorExit(2, '%s is not a valid argument for "gam undelete"' % argument)
       sys.exit(0)
@@ -13041,6 +13090,10 @@ def ProcessGAMCommand(args):
         doPrintFeatures()
       elif argument in [u'project', u'projects']:
         doPrintShowProjects(True)
+      elif argument in [u'alert', u'alerts']:
+        doPrintShowAlerts()
+      elif argument in [u'alertfeedback', u'alertsfeedback']:
+        doPrintShowAlertFeedback()
       else:
         systemErrorExit(2, '%s is not a valid argument for "gam print"' % argument)
       sys.exit(0)

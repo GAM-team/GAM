@@ -94,6 +94,7 @@ SKUS = {
   }
 
 API_VER_MAPPING = {
+  u'alertcenter': u'v1beta1',
   u'appsactivity': u'v1',
   u'calendar': u'v3',
   u'classroom': u'v1',
@@ -117,8 +118,9 @@ API_VER_MAPPING = {
   }
 
 API_SCOPE_MAPPING = {
+  u'alertcenter': [u'https://www.googleapis.com/auth/apps.alerts',],
   u'appsactivity': [u'https://www.googleapis.com/auth/activity',
-                    u'https://www.googleapis.com/auth/drive'],
+                    u'https://www.googleapis.com/auth/drive',],
   u'calendar': [u'https://www.googleapis.com/auth/calendar',],
   u'drive': [u'https://www.googleapis.com/auth/drive',],
   u'drive3': [u'https://www.googleapis.com/auth/drive',],

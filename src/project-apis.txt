@@ -1,4 +1,5 @@
 admin.googleapis.com
+alertcenter.googleapis.com
 appsactivity.googleapis.com
 calendar-json.googleapis.com
 classroom.googleapis.com
