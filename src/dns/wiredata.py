@@ -1,4 +1,6 @@
-# Copyright (C) 2011 Nominum, Inc.
+# Copyright (C) Dnspython Contributors, see LICENSE for text of ISC license
+
+# Copyright (C) 2011,2017 Nominum, Inc.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose with or without fee is hereby granted,
@@ -15,10 +17,8 @@
 
 """DNS Wire Data Helper"""
 
-import sys
-
 import dns.exception
-from ._compat import binary_type, string_types
+from ._compat import binary_type, string_types, PY2
 
 # Figure out what constant python passes for an unspecified slice bound.
 # It's supposed to be sys.maxint, yet on 64-bit windows sys.maxint is 2^31 - 1
@@ -32,7 +32,7 @@ class _SliceUnspecifiedBound(binary_type):
     def __getitem__(self, key):
         return key.stop
 
-    if sys.version_info < (3,):
+    if PY2:
         def __getslice__(self, i, j):  # pylint: disable=getslice-method
             return self.__getitem__(slice(i, j))
 
@@ -40,7 +40,7 @@ _unspecified_bound = _SliceUnspecifiedBound()[1:]
 
 
 class WireData(binary_type):
-    # WireData is a string with stricter slicing
+    # WireData is a binary type with stricter slicing
 
     def __getitem__(self, key):
         try:
@@ -51,7 +51,7 @@ class WireData(binary_type):
                 start = key.start
                 stop = key.stop
 
-                if sys.version_info < (3,):
+                if PY2:
                     if stop == _unspecified_bound:
                         # handle the case where the right bound is unspecified
                         stop = len(self)
@@ -76,7 +76,7 @@ class WireData(binary_type):
         except IndexError:
             raise dns.exception.FormError
 
-    if sys.version_info < (3,):
+    if PY2:
         def __getslice__(self, i, j):  # pylint: disable=getslice-method
             return self.__getitem__(slice(i, j))
 

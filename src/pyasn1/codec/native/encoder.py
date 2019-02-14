@@ -1,7 +1,7 @@
 #
 # This file is part of pyasn1 software.
 #
-# Copyright (c) 2005-2018, Ilya Etingof <etingof@gmail.com>
+# Copyright (c) 2005-2019, Ilya Etingof <etingof@gmail.com>
 # License: http://snmplabs.com/pyasn1/license.html
 #
 try:
@@ -19,6 +19,8 @@ from pyasn1.type import univ
 from pyasn1.type import useful
 
 __all__ = ['encode']
+
+LOG = debug.registerLoggee(__name__, flags=debug.DEBUG_ENCODER)
 
 
 class AbstractItemEncoder(object):
@@ -132,14 +134,40 @@ tagMap = {
     useful.UTCTime.tagSet: OctetStringEncoder()
 }
 
-# Type-to-codec map for ambiguous ASN.1 types
+
+# Put in ambiguous & non-ambiguous types for faster codec lookup
 typeMap = {
+    univ.Boolean.typeId: BooleanEncoder(),
+    univ.Integer.typeId: IntegerEncoder(),
+    univ.BitString.typeId: BitStringEncoder(),
+    univ.OctetString.typeId: OctetStringEncoder(),
+    univ.Null.typeId: NullEncoder(),
+    univ.ObjectIdentifier.typeId: ObjectIdentifierEncoder(),
+    univ.Enumerated.typeId: IntegerEncoder(),
+    univ.Real.typeId: RealEncoder(),
+    # Sequence & Set have same tags as SequenceOf & SetOf
     univ.Set.typeId: SetEncoder(),
     univ.SetOf.typeId: SequenceOfEncoder(),
     univ.Sequence.typeId: SequenceEncoder(),
     univ.SequenceOf.typeId: SequenceOfEncoder(),
     univ.Choice.typeId: ChoiceEncoder(),
-    univ.Any.typeId: AnyEncoder()
+    univ.Any.typeId: AnyEncoder(),
+    # character string types
+    char.UTF8String.typeId: OctetStringEncoder(),
+    char.NumericString.typeId: OctetStringEncoder(),
+    char.PrintableString.typeId: OctetStringEncoder(),
+    char.TeletexString.typeId: OctetStringEncoder(),
+    char.VideotexString.typeId: OctetStringEncoder(),
+    char.IA5String.typeId: OctetStringEncoder(),
+    char.GraphicString.typeId: OctetStringEncoder(),
+    char.VisibleString.typeId: OctetStringEncoder(),
+    char.GeneralString.typeId: OctetStringEncoder(),
+    char.UniversalString.typeId: OctetStringEncoder(),
+    char.BMPString.typeId: OctetStringEncoder(),
+    # useful types
+    useful.ObjectDescriptor.typeId: OctetStringEncoder(),
+    useful.GeneralizedTime.typeId: OctetStringEncoder(),
+    useful.UTCTime.typeId: OctetStringEncoder()
 }
 
 
@@ -154,14 +182,9 @@ class Encoder(object):
         if not isinstance(value, base.Asn1Item):
             raise error.PyAsn1Error('value is not valid (should be an instance of an ASN.1 Item)')
 
-        if debug.logger & debug.flagEncoder:
-            logger = debug.logger
-        else:
-            logger = None
-
-        if logger:
+        if LOG:
             debug.scope.push(type(value).__name__)
-            logger('encoder called for type %s <%s>' % (type(value).__name__, value.prettyPrint()))
+            LOG('encoder called for type %s <%s>' % (type(value).__name__, value.prettyPrint()))
 
         tagSet = value.tagSet
 
@@ -178,13 +201,13 @@ class Encoder(object):
             except KeyError:
                 raise error.PyAsn1Error('No encoder for %s' % (value,))
 
-        if logger:
-            logger('using value codec %s chosen by %s' % (concreteEncoder.__class__.__name__, tagSet))
+        if LOG:
+            LOG('using value codec %s chosen by %s' % (concreteEncoder.__class__.__name__, tagSet))
 
         pyObject = concreteEncoder.encode(value, self, **options)
 
-        if logger:
-            logger('encoder %s produced: %s' % (type(concreteEncoder).__name__, repr(pyObject)))
+        if LOG:
+            LOG('encoder %s produced: %s' % (type(concreteEncoder).__name__, repr(pyObject)))
             debug.scope.pop()
 
         return pyObject

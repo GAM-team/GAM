@@ -1,4 +1,6 @@
-# Copyright (C) 2003-2007, 2009-2011 Nominum, Inc.
+# Copyright (C) Dnspython Contributors, see LICENSE for text of ISC license
+
+# Copyright (C) 2003-2017 Nominum, Inc.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose with or without fee is hereby granted,
@@ -22,15 +24,15 @@ import dns.exception
 import dns.ipv4
 from ._compat import xrange, binary_type, maybe_decode
 
-_leading_zero = re.compile(b'0+([0-9a-f]+)')
+_leading_zero = re.compile(r'0+([0-9a-f]+)')
 
 def inet_ntoa(address):
-    """Convert a network format IPv6 address into text.
+    """Convert an IPv6 address in binary form to text form.
 
-    @param address: the binary address
-    @type address: string
-    @rtype: string
-    @raises ValueError: the address isn't 16 bytes long
+    *address*, a ``binary``, the IPv6 address in binary form.
+
+    Raises ``ValueError`` if the address isn't 16 bytes long.
+    Returns a ``text``.
     """
 
     if len(address) != 16:
@@ -40,7 +42,7 @@ def inet_ntoa(address):
     i = 0
     l = len(hex)
     while i < l:
-        chunk = hex[i : i + 4]
+        chunk = maybe_decode(hex[i : i + 4])
         # strip leading zeros.  we do this with an re instead of
         # with lstrip() because lstrip() didn't support chars until
         # python 2.2.2
@@ -57,7 +59,7 @@ def inet_ntoa(address):
     start = -1
     last_was_zero = False
     for i in xrange(8):
-        if chunks[i] != b'0':
+        if chunks[i] != '0':
             if last_was_zero:
                 end = i
                 current_len = end - start
@@ -77,31 +79,30 @@ def inet_ntoa(address):
     if best_len > 1:
         if best_start == 0 and \
            (best_len == 6 or
-            best_len == 5 and chunks[5] == b'ffff'):
+            best_len == 5 and chunks[5] == 'ffff'):
             # We have an embedded IPv4 address
             if best_len == 6:
-                prefix = b'::'
+                prefix = '::'
             else:
-                prefix = b'::ffff:'
+                prefix = '::ffff:'
             hex = prefix + dns.ipv4.inet_ntoa(address[12:])
         else:
-            hex = b':'.join(chunks[:best_start]) + b'::' + \
-                  b':'.join(chunks[best_start + best_len:])
+            hex = ':'.join(chunks[:best_start]) + '::' + \
+                  ':'.join(chunks[best_start + best_len:])
     else:
-        hex = b':'.join(chunks)
-    return maybe_decode(hex)
+        hex = ':'.join(chunks)
+    return hex
 
-_v4_ending = re.compile(b'(.*):(\d+\.\d+\.\d+\.\d+)$')
-_colon_colon_start = re.compile(b'::.*')
-_colon_colon_end = re.compile(b'.*::$')
+_v4_ending = re.compile(br'(.*):(\d+\.\d+\.\d+\.\d+)$')
+_colon_colon_start = re.compile(br'::.*')
+_colon_colon_end = re.compile(br'.*::$')
 
 def inet_aton(text):
-    """Convert a text format IPv6 address into network format.
+    """Convert an IPv6 address in text form to binary form.
 
-    @param text: the textual address
-    @type text: string
-    @rtype: string
-    @raises dns.exception.SyntaxError: the text was not properly formatted
+    *text*, a ``text``, the IPv6 address in textual form.
+
+    Returns a ``binary``.
     """
 
     #
@@ -118,8 +119,9 @@ def inet_aton(text):
     m = _v4_ending.match(text)
     if not m is None:
         b = bytearray(dns.ipv4.inet_aton(m.group(2)))
-        text = (u"%s:%02x%02x:%02x%02x" % (m.group(1).decode(), b[0], b[1],
-                                           b[2], b[3])).encode()
+        text = (u"{}:{:02x}{:02x}:{:02x}{:02x}".format(m.group(1).decode(),
+                                                       b[0], b[1], b[2],
+                                                       b[3])).encode()
     #
     # Try to turn '::<whatever>' into ':<whatever>'; if no match try to
     # turn '<whatever>::' into '<whatever>:'
@@ -169,4 +171,11 @@ def inet_aton(text):
 _mapped_prefix = b'\x00' * 10 + b'\xff\xff'
 
 def is_mapped(address):
+    """Is the specified address a mapped IPv4 address?
+
+    *address*, a ``binary`` is an IPv6 address in binary form.
+
+    Returns a ``bool``.
+    """
+
     return address.startswith(_mapped_prefix)

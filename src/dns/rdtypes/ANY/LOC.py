@@ -1,3 +1,5 @@
+# Copyright (C) Dnspython Contributors, see LICENSE for text of ISC license
+
 # Copyright (C) 2003-2007, 2009-2011 Nominum, Inc.
 #
 # Permission to use, copy, modify, and distribute this software and its
@@ -156,7 +158,7 @@ class LOC(dns.rdata.Rdata):
         if self.size != _default_size or \
             self.horizontal_precision != _default_hprec or \
                 self.vertical_precision != _default_vprec:
-            text += " %0.2fm %0.2fm %0.2fm" % (
+            text += " {:0.2f}m {:0.2f}m {:0.2f}m".format(
                 self.size / 100.0, self.horizontal_precision / 100.0,
                 self.vertical_precision / 100.0
             )

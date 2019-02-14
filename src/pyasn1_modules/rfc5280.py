@@ -3,7 +3,7 @@
 # This file is part of pyasn1-modules software.
 #
 # Created by Stanisław Pitucha with asn1ate tool.
-# Copyright (c) 2005-2018, Ilya Etingof <etingof@gmail.com>
+# Copyright (c) 2005-2019, Ilya Etingof <etingof@gmail.com>
 # License: http://snmplabs.com/pyasn1/license.html
 #
 # Internet X.509 Public Key Infrastructure Certificate and Certificate
@@ -283,7 +283,7 @@ class CertificateSerialNumber(univ.Integer):
 class AlgorithmIdentifier(univ.Sequence):
     componentType = namedtype.NamedTypes(
         namedtype.NamedType('algorithm', univ.ObjectIdentifier()),
-        namedtype.OptionalNamedType('parameters', univ.Any())
+        namedtype.OptionalNamedType('parameters', univ.Any(), openType=opentype.OpenType)
     )
 
 

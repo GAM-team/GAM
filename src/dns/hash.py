@@ -1,3 +1,5 @@
+# Copyright (C) Dnspython Contributors, see LICENSE for text of ISC license
+
 # Copyright (C) 2011 Nominum, Inc.
 #
 # Permission to use, copy, modify, and distribute this software and its
@@ -16,7 +18,11 @@
 """Hashing backwards compatibility wrapper"""
 
 import hashlib
+import warnings
 
+warnings.warn(
+    "dns.hash module will be removed in future versions. Please use hashlib instead.",
+    DeprecationWarning)
 
 hashes = {}
 hashes['MD5'] = hashlib.md5

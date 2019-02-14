@@ -1,4 +1,6 @@
-# Copyright (C) 2009, 2011 Nominum, Inc.
+# Copyright (C) Dnspython Contributors, see LICENSE for text of ISC license
+
+# Copyright (C) 2009-2017 Nominum, Inc.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose with or without fee is hereby granted,
@@ -24,6 +26,11 @@ except ImportError:
 
 
 class EntropyPool(object):
+
+    # This is an entropy pool for Python implementations that do not
+    # have a working SystemRandom.  I'm not sure there are any, but
+    # leaving this code doesn't hurt anything as the library code
+    # is used if present.
 
     def __init__(self, seed=None):
         self.pool_index = 0

@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 import random
 
-from .cache import Cache, _deprecated
+from .cache import Cache
 
 
 # random.choice cannot be pickled in Python 2.7
@@ -13,9 +13,8 @@ def _choice(seq):
 class RRCache(Cache):
     """Random Replacement (RR) cache implementation."""
 
-    def __init__(self, maxsize, choice=random.choice, missing=_deprecated,
-                 getsizeof=None):
-        Cache.__init__(self, maxsize, missing, getsizeof)
+    def __init__(self, maxsize, choice=random.choice, getsizeof=None):
+        Cache.__init__(self, maxsize, getsizeof)
         # TODO: use None as default, assing to self.choice directly?
         if choice is random.choice:
             self.__choice = _choice

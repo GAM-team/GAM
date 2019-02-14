@@ -1,3 +1,5 @@
+# Copyright (C) Dnspython Contributors, see LICENSE for text of ISC license
+
 # Copyright (C) 2003-2007, 2009-2011 Nominum, Inc.
 #
 # Permission to use, copy, modify, and distribute this software and its
@@ -48,5 +50,5 @@ class A(dns.rdata.Rdata):
 
     @classmethod
     def from_wire(cls, rdclass, rdtype, wire, current, rdlen, origin=None):
-        address = dns.ipv4.inet_ntoa(wire[current: current + rdlen]).decode()
+        address = dns.ipv4.inet_ntoa(wire[current: current + rdlen])
         return cls(rdclass, rdtype, address)

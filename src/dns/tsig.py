@@ -1,3 +1,5 @@
+# Copyright (C) Dnspython Contributors, see LICENSE for text of ISC license
+
 # Copyright (C) 2001-2007, 2009-2011 Nominum, Inc.
 #
 # Permission to use, copy, modify, and distribute this software and its
@@ -15,11 +17,11 @@
 
 """DNS TSIG support."""
 
+import hashlib
 import hmac
 import struct
 
 import dns.exception
-import dns.hash
 import dns.rdataclass
 import dns.name
 from ._compat import long, string_types, text_type
@@ -68,12 +70,12 @@ HMAC_SHA384 = dns.name.from_text("hmac-sha384")
 HMAC_SHA512 = dns.name.from_text("hmac-sha512")
 
 _hashes = {
-    HMAC_SHA224: 'SHA224',
-    HMAC_SHA256: 'SHA256',
-    HMAC_SHA384: 'SHA384',
-    HMAC_SHA512: 'SHA512',
-    HMAC_SHA1: 'SHA1',
-    HMAC_MD5: 'MD5',
+    HMAC_SHA224: hashlib.sha224,
+    HMAC_SHA256: hashlib.sha256,
+    HMAC_SHA384: hashlib.sha384,
+    HMAC_SHA512: hashlib.sha512,
+    HMAC_SHA1: hashlib.sha1,
+    HMAC_MD5: hashlib.md5,
 }
 
 default_algorithm = HMAC_MD5
@@ -211,7 +213,7 @@ def get_algorithm(algorithm):
         algorithm = dns.name.from_text(algorithm)
 
     try:
-        return (algorithm.to_digestable(), dns.hash.hashes[_hashes[algorithm]])
+        return (algorithm.to_digestable(), _hashes[algorithm])
     except KeyError:
         raise NotImplementedError("TSIG algorithm " + str(algorithm) +
                                   " is not supported")

@@ -1,4 +1,6 @@
-# Copyright (C) 2004-2007, 2009-2011 Nominum, Inc.
+# Copyright (C) Dnspython Contributors, see LICENSE for text of ISC license
+
+# Copyright (C) 2004-2017 Nominum, Inc.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose with or without fee is hereby granted,
@@ -21,18 +23,21 @@ import struct
 import dns.exception
 import dns.rdata
 import dns.rdatatype
-from dns._compat import xrange, text_type
+from dns._compat import xrange, text_type, PY3
 
-try:
-    b32_hex_to_normal = string.maketrans('0123456789ABCDEFGHIJKLMNOPQRSTUV',
-                                         'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567')
-    b32_normal_to_hex = string.maketrans('ABCDEFGHIJKLMNOPQRSTUVWXYZ234567',
-                                         '0123456789ABCDEFGHIJKLMNOPQRSTUV')
-except AttributeError:
+# pylint: disable=deprecated-string-function
+if PY3:
     b32_hex_to_normal = bytes.maketrans(b'0123456789ABCDEFGHIJKLMNOPQRSTUV',
                                         b'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567')
     b32_normal_to_hex = bytes.maketrans(b'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567',
                                         b'0123456789ABCDEFGHIJKLMNOPQRSTUV')
+else:
+    b32_hex_to_normal = string.maketrans('0123456789ABCDEFGHIJKLMNOPQRSTUV',
+                                         'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567')
+    b32_normal_to_hex = string.maketrans('ABCDEFGHIJKLMNOPQRSTUVWXYZ234567',
+                                         '0123456789ABCDEFGHIJKLMNOPQRSTUV')
+# pylint: enable=deprecated-string-function
+
 
 # hash algorithm constants
 SHA1 = 1
@@ -130,7 +135,7 @@ class NSEC3(dns.rdata.Rdata):
             new_window = nrdtype // 256
             if new_window != window:
                 if octets != 0:
-                    windows.append((window, ''.join(bitmap[0:octets])))
+                    windows.append((window, bitmap[0:octets]))
                 bitmap = bytearray(b'\0' * 32)
                 window = new_window
             offset = nrdtype % 256

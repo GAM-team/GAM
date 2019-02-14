@@ -1,4 +1,6 @@
-# Copyright (C) 2003-2007, 2009-2011 Nominum, Inc.
+# Copyright (C) Dnspython Contributors, see LICENSE for text of ISC license
+
+# Copyright (C) 2003-2017 Nominum, Inc.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose with or without fee is hereby granted,
@@ -13,27 +15,22 @@
 # ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
 # OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-"""A simple Set class."""
-
-
 class Set(object):
 
     """A simple set class.
 
-    Sets are not in Python until 2.3, and rdata are not immutable so
-    we cannot use sets.Set anyway.  This class implements subset of
-    the 2.3 Set interface using a list as the container.
-
-    @ivar items: A list of the items which are in the set
-    @type items: list"""
+    This class was originally used to deal with sets being missing in
+    ancient versions of python, but dnspython will continue to use it
+    as these sets are based on lists and are thus indexable, and this
+    ability is widely used in dnspython applications.
+    """
 
     __slots__ = ['items']
 
     def __init__(self, items=None):
         """Initialize the set.
 
-        @param items: the initial set of items
-        @type items: any iterable or None
+        *items*, an iterable or ``None``, the initial set of items.
         """
 
         self.items = []
@@ -45,16 +42,22 @@ class Set(object):
         return "dns.simpleset.Set(%s)" % repr(self.items)
 
     def add(self, item):
-        """Add an item to the set."""
+        """Add an item to the set.
+        """
+
         if item not in self.items:
             self.items.append(item)
 
     def remove(self, item):
-        """Remove an item from the set."""
+        """Remove an item from the set.
+        """
+
         self.items.remove(item)
 
     def discard(self, item):
-        """Remove an item from the set if present."""
+        """Remove an item from the set if present.
+        """
+
         try:
             self.items.remove(item)
         except ValueError:
@@ -79,19 +82,22 @@ class Set(object):
         return obj
 
     def __copy__(self):
-        """Make a (shallow) copy of the set."""
+        """Make a (shallow) copy of the set.
+        """
+
         return self._clone()
 
     def copy(self):
-        """Make a (shallow) copy of the set."""
+        """Make a (shallow) copy of the set.
+        """
+
         return self._clone()
 
     def union_update(self, other):
         """Update the set, adding any elements from other which are not
         already in the set.
-        @param other: the collection of items with which to update the set
-        @type other: Set object
         """
+
         if not isinstance(other, Set):
             raise ValueError('other must be a Set instance')
         if self is other:
@@ -102,9 +108,8 @@ class Set(object):
     def intersection_update(self, other):
         """Update the set, removing any elements from other which are not
         in both sets.
-        @param other: the collection of items with which to update the set
-        @type other: Set object
         """
+
         if not isinstance(other, Set):
             raise ValueError('other must be a Set instance')
         if self is other:
@@ -118,9 +123,8 @@ class Set(object):
     def difference_update(self, other):
         """Update the set, removing any elements from other which are in
         the set.
-        @param other: the collection of items with which to update the set
-        @type other: Set object
         """
+
         if not isinstance(other, Set):
             raise ValueError('other must be a Set instance')
         if self is other:
@@ -130,11 +134,9 @@ class Set(object):
                 self.discard(item)
 
     def union(self, other):
-        """Return a new set which is the union of I{self} and I{other}.
+        """Return a new set which is the union of ``self`` and ``other``.
 
-        @param other: the other set
-        @type other: Set object
-        @rtype: the same type as I{self}
+        Returns the same Set type as this set.
         """
 
         obj = self._clone()
@@ -142,11 +144,10 @@ class Set(object):
         return obj
 
     def intersection(self, other):
-        """Return a new set which is the intersection of I{self} and I{other}.
+        """Return a new set which is the intersection of ``self`` and
+        ``other``.
 
-        @param other: the other set
-        @type other: Set object
-        @rtype: the same type as I{self}
+        Returns the same Set type as this set.
         """
 
         obj = self._clone()
@@ -154,12 +155,10 @@ class Set(object):
         return obj
 
     def difference(self, other):
-        """Return a new set which I{self} - I{other}, i.e. the items
-        in I{self} which are not also in I{other}.
+        """Return a new set which ``self`` - ``other``, i.e. the items
+        in ``self`` which are not also in ``other``.
 
-        @param other: the other set
-        @type other: Set object
-        @rtype: the same type as I{self}
+        Returns the same Set type as this set.
         """
 
         obj = self._clone()
@@ -197,8 +196,11 @@ class Set(object):
     def update(self, other):
         """Update the set, adding any elements from other which are not
         already in the set.
-        @param other: the collection of items with which to update the set
-        @type other: any iterable type"""
+
+        *other*, the collection of items with which to update the set, which
+        may be any iterable type.
+        """
+
         for item in other:
             self.add(item)
 
@@ -233,9 +235,9 @@ class Set(object):
         del self.items[i]
 
     def issubset(self, other):
-        """Is I{self} a subset of I{other}?
+        """Is this set a subset of *other*?
 
-        @rtype: bool
+        Returns a ``bool``.
         """
 
         if not isinstance(other, Set):
@@ -246,9 +248,9 @@ class Set(object):
         return True
 
     def issuperset(self, other):
-        """Is I{self} a superset of I{other}?
+        """Is this set a superset of *other*?
 
-        @rtype: bool
+        Returns a ``bool``.
         """
 
         if not isinstance(other, Set):

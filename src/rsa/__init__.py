@@ -18,19 +18,18 @@
 Module for calculating large primes, and RSA encryption, decryption, signing
 and verification. Includes generating public and private keys.
 
-WARNING: this implementation does not use random padding, compression of the
-cleartext input to prevent repetitions, or other common security improvements.
-Use with care.
+WARNING: this implementation does not use compression of the cleartext input to
+prevent repetitions, or other common security improvements. Use with care.
 
 """
 
 from rsa.key import newkeys, PrivateKey, PublicKey
 from rsa.pkcs1 import encrypt, decrypt, sign, verify, DecryptionError, \
-    VerificationError
+    VerificationError, find_signature_hash,  sign_hash, compute_hash
 
 __author__ = "Sybren Stuvel, Barry Mead and Yesudeep Mangalapilly"
-__date__ = "2016-03-29"
-__version__ = '3.4.2'
+__date__ = "2018-09-16"
+__version__ = '4.0'
 
 # Do doctest if we're run directly
 if __name__ == "__main__":
@@ -39,4 +38,5 @@ if __name__ == "__main__":
     doctest.testmod()
 
 __all__ = ["newkeys", "encrypt", "decrypt", "sign", "verify", 'PublicKey',
-           'PrivateKey', 'DecryptionError', 'VerificationError']
+           'PrivateKey', 'DecryptionError', 'VerificationError',
+           'compute_hash', 'sign_hash']

@@ -1,10 +1,14 @@
 from __future__ import absolute_import
 
-import collections
 from abc import abstractmethod
 
+try:
+    from collections.abc import MutableMapping
+except ImportError:
+    from collections import MutableMapping
 
-class DefaultMapping(collections.MutableMapping):
+
+class DefaultMapping(MutableMapping):
 
     __slots__ = ()
 

@@ -1,4 +1,6 @@
-# Copyright (C) 2003-2007, 2009-2011 Nominum, Inc.
+# Copyright (C) Dnspython Contributors, see LICENSE for text of ISC license
+
+# Copyright (C) 2003-2017 Nominum, Inc.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose with or without fee is hereby granted,
@@ -67,10 +69,6 @@ class RRset(dns.rdataset.Rdataset):
         return self.to_text()
 
     def __eq__(self, other):
-        """Two RRsets are equal if they have the same name and the same
-        rdataset
-
-        @rtype: bool"""
         if not isinstance(other, RRset):
             return False
         if self.name != other.name:
@@ -78,8 +76,9 @@ class RRset(dns.rdataset.Rdataset):
         return super(RRset, self).__eq__(other)
 
     def match(self, name, rdclass, rdtype, covers, deleting=None):
-        """Returns True if this rrset matches the specified class, type,
-        covers, and deletion state."""
+        """Returns ``True`` if this rrset matches the specified class, type,
+        covers, and deletion state.
+        """
 
         if not super(RRset, self).match(rdclass, rdtype, covers):
             return False
@@ -90,23 +89,31 @@ class RRset(dns.rdataset.Rdataset):
     def to_text(self, origin=None, relativize=True, **kw):
         """Convert the RRset into DNS master file format.
 
-        @see: L{dns.name.Name.choose_relativity} for more information
-        on how I{origin} and I{relativize} determine the way names
+        See ``dns.name.Name.choose_relativity`` for more information
+        on how *origin* and *relativize* determine the way names
         are emitted.
 
         Any additional keyword arguments are passed on to the rdata
-        to_text() method.
+        ``to_text()`` method.
 
-        @param origin: The origin for relative names, or None.
-        @type origin: dns.name.Name object
-        @param relativize: True if names should names be relativized
-        @type relativize: bool"""
+        *origin*, a ``dns.name.Name`` or ``None``, the origin for relative
+        names.
+
+        *relativize*, a ``bool``.  If ``True``, names will be relativized
+        to *origin*.
+        """
 
         return super(RRset, self).to_text(self.name, origin, relativize,
                                           self.deleting, **kw)
 
     def to_wire(self, file, compress=None, origin=None, **kw):
-        """Convert the RRset to wire format."""
+        """Convert the RRset to wire format.
+
+        All keyword arguments are passed to ``dns.rdataset.to_wire()``; see
+        that function for details.
+
+        Returns an ``int``, the number of records emitted.
+        """
 
         return super(RRset, self).to_wire(self.name, file, compress, origin,
                                           self.deleting, **kw)
@@ -114,7 +121,7 @@ class RRset(dns.rdataset.Rdataset):
     def to_rdataset(self):
         """Convert an RRset into an Rdataset.
 
-        @rtype: dns.rdataset.Rdataset object
+        Returns a ``dns.rdataset.Rdataset``.
         """
         return dns.rdataset.from_rdata_list(self.ttl, list(self))
 
@@ -124,7 +131,7 @@ def from_text_list(name, ttl, rdclass, rdtype, text_rdatas,
     """Create an RRset with the specified name, TTL, class, and type, and with
     the specified list of rdatas in text format.
 
-    @rtype: dns.rrset.RRset object
+    Returns a ``dns.rrset.RRset`` object.
     """
 
     if isinstance(name, string_types):
@@ -145,7 +152,7 @@ def from_text(name, ttl, rdclass, rdtype, *text_rdatas):
     """Create an RRset with the specified name, TTL, class, and type and with
     the specified rdatas in text format.
 
-    @rtype: dns.rrset.RRset object
+    Returns a ``dns.rrset.RRset`` object.
     """
 
     return from_text_list(name, ttl, rdclass, rdtype, text_rdatas)
@@ -155,7 +162,7 @@ def from_rdata_list(name, ttl, rdatas, idna_codec=None):
     """Create an RRset with the specified name and TTL, and with
     the specified list of rdata objects.
 
-    @rtype: dns.rrset.RRset object
+    Returns a ``dns.rrset.RRset`` object.
     """
 
     if isinstance(name, string_types):
@@ -176,7 +183,7 @@ def from_rdata(name, ttl, *rdatas):
     """Create an RRset with the specified name and TTL, and with
     the specified rdata objects.
 
-    @rtype: dns.rrset.RRset object
+    Returns a ``dns.rrset.RRset`` object.
     """
 
     return from_rdata_list(name, ttl, rdatas)

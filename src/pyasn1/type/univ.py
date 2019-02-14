@@ -1,7 +1,7 @@
 #
 # This file is part of pyasn1 software.
 #
-# Copyright (c) 2005-2018, Ilya Etingof <etingof@gmail.com>
+# Copyright (c) 2005-2019, Ilya Etingof <etingof@gmail.com>
 # License: http://snmplabs.com/pyasn1/license.html
 #
 import math
@@ -2347,7 +2347,9 @@ class SequenceAndSetBase(base.AbstractConstructedAsn1Item):
 
         if value is noValue:
             if componentTypeLen:
-                value = componentType.getTypeByPosition(idx).clone()
+                value = componentType.getTypeByPosition(idx)
+                if isinstance(value, base.AbstractConstructedAsn1Item):
+                    value = value.clone(cloneValueFlag=componentType[idx].isDefaulted)
 
             elif currentValue is noValue:
                 raise error.PyAsn1Error('Component type not defined')
@@ -2457,7 +2459,7 @@ class SequenceAndSetBase(base.AbstractConstructedAsn1Item):
         scope += 1
         representation = self.__class__.__name__ + ':\n'
         for idx, componentValue in enumerate(self._componentValues):
-            if componentValue is not noValue:
+            if componentValue is not noValue and componentValue.isValue:
                 representation += ' ' * scope
                 if self.componentType:
                     representation += self.componentType.getNameByPosition(idx)

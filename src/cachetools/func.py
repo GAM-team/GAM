@@ -5,11 +5,15 @@ from __future__ import absolute_import
 import collections
 import functools
 import random
-import time
+
+try:
+    from time import monotonic as default_timer
+except ImportError:
+    from time import time as default_timer
 
 try:
     from threading import RLock
-except ImportError:
+except ImportError:  # pragma: no cover
     from dummy_threading import RLock
 
 from . import keys
@@ -24,6 +28,24 @@ __all__ = ('lfu_cache', 'lru_cache', 'rr_cache', 'ttl_cache')
 _CacheInfo = collections.namedtuple('CacheInfo', [
     'hits', 'misses', 'maxsize', 'currsize'
 ])
+
+
+class _UnboundCache(dict):
+
+    maxsize = None
+
+    @property
+    def currsize(self):
+        return len(self)
+
+
+class _UnboundTTLCache(TTLCache):
+    def __init__(self, ttl, timer):
+        TTLCache.__init__(self, float('inf'), ttl, timer)
+
+    @property
+    def maxsize(self):
+        return None
 
 
 def _cache(cache, typed=False):
@@ -77,7 +99,10 @@ def lfu_cache(maxsize=128, typed=False):
     algorithm.
 
     """
-    return _cache(LFUCache(maxsize), typed)
+    if maxsize is None:
+        return _cache(_UnboundCache(), typed)
+    else:
+        return _cache(LFUCache(maxsize), typed)
 
 
 def lru_cache(maxsize=128, typed=False):
@@ -86,7 +111,10 @@ def lru_cache(maxsize=128, typed=False):
     algorithm.
 
     """
-    return _cache(LRUCache(maxsize), typed)
+    if maxsize is None:
+        return _cache(_UnboundCache(), typed)
+    else:
+        return _cache(LRUCache(maxsize), typed)
 
 
 def rr_cache(maxsize=128, choice=random.choice, typed=False):
@@ -95,12 +123,18 @@ def rr_cache(maxsize=128, choice=random.choice, typed=False):
     algorithm.
 
     """
-    return _cache(RRCache(maxsize, choice), typed)
+    if maxsize is None:
+        return _cache(_UnboundCache(), typed)
+    else:
+        return _cache(RRCache(maxsize, choice), typed)
 
 
-def ttl_cache(maxsize=128, ttl=600, timer=time.time, typed=False):
+def ttl_cache(maxsize=128, ttl=600, timer=default_timer, typed=False):
     """Decorator to wrap a function with a memoizing callable that saves
     up to `maxsize` results based on a Least Recently Used (LRU)
     algorithm with a per-item time-to-live (TTL) value.
     """
-    return _cache(TTLCache(maxsize, ttl, timer), typed)
+    if maxsize is None:
+        return _cache(_UnboundTTLCache(ttl, timer), typed)
+    else:
+        return _cache(TTLCache(maxsize, ttl, timer), typed)

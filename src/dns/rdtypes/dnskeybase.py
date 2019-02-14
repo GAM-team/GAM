@@ -1,3 +1,5 @@
+# Copyright (C) Dnspython Contributors, see LICENSE for text of ISC license
+
 # Copyright (C) 2004-2007, 2009-2011 Nominum, Inc.
 #
 # Permission to use, copy, modify, and distribute this software and its
@@ -38,7 +40,7 @@ _flag_by_text = {
 # We construct the inverse mapping programmatically to ensure that we
 # cannot make any mistakes (e.g. omissions, cut-and-paste errors) that
 # would cause the mapping not to be true inverse.
-_flag_by_value = dict((y, x) for x, y in _flag_by_text.items())
+_flag_by_value = {y: x for x, y in _flag_by_text.items()}
 
 
 def flags_to_text_set(flags):

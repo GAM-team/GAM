@@ -1,3 +1,5 @@
+# Copyright (C) Dnspython Contributors, see LICENSE for text of ISC license
+
 # Copyright (C) 2003-2007, 2009-2011 Nominum, Inc.
 #
 # Permission to use, copy, modify, and distribute this software and its
@@ -32,26 +34,25 @@ class Update(dns.message.Message):
                  keyname=None, keyalgorithm=dns.tsig.default_algorithm):
         """Initialize a new DNS Update object.
 
-        @param zone: The zone which is being updated.
-        @type zone: A dns.name.Name or string
-        @param rdclass: The class of the zone; defaults to dns.rdataclass.IN.
-        @type rdclass: An int designating the class, or a string whose value
-        is the name of a class.
-        @param keyring: The TSIG keyring to use; defaults to None.
-        @type keyring: dict
-        @param keyname: The name of the TSIG key to use; defaults to None.
-        The key must be defined in the keyring.  If a keyring is specified
-        but a keyname is not, then the key used will be the first key in the
-        keyring.  Note that the order of keys in a dictionary is not defined,
-        so applications should supply a keyname when a keyring is used, unless
-        they know the keyring contains only one key.
-        @type keyname: dns.name.Name or string
-        @param keyalgorithm: The TSIG algorithm to use; defaults to
-        dns.tsig.default_algorithm.  Constants for TSIG algorithms are defined
-        in dns.tsig, and the currently implemented algorithms are
-        HMAC_MD5, HMAC_SHA1, HMAC_SHA224, HMAC_SHA256, HMAC_SHA384, and
-        HMAC_SHA512.
-        @type keyalgorithm: string
+        See the documentation of the Message class for a complete
+        description of the keyring dictionary.
+
+        *zone*, a ``dns.name.Name`` or ``text``, the zone which is being
+        updated.
+
+        *rdclass*, an ``int`` or ``text``, the class of the zone.
+
+        *keyring*, a ``dict``, the TSIG keyring to use.  If a
+        *keyring* is specified but a *keyname* is not, then the key
+        used will be the first key in the *keyring*.  Note that the
+        order of keys in a dictionary is not defined, so applications
+        should supply a keyname when a keyring is used, unless they
+        know the keyring contains only one key.
+
+        *keyname*, a ``dns.name.Name`` or ``None``, the name of the TSIG key
+        to use; defaults to ``None``. The key must be defined in the keyring.
+
+        *keyalgorithm*, a ``dns.name.Name``, the TSIG algorithm to use.
         """
         super(Update, self).__init__()
         self.flags |= dns.opcode.to_flags(dns.opcode.UPDATE)
@@ -77,8 +78,10 @@ class Update(dns.message.Message):
         rrset.add(rd, ttl)
 
     def _add(self, replace, section, name, *args):
-        """Add records.  The first argument is the replace mode.  If
-        false, RRs are added to an existing RRset; if true, the RRset
+        """Add records.
+
+        *replace* is the replacement mode.  If ``False``,
+        RRs are added to an existing RRset; if ``True``, the RRset
         is replaced with the specified contents.  The second
         argument is the section to add to.  The third argument
         is always a name.  The other arguments can be:
@@ -87,7 +90,8 @@ class Update(dns.message.Message):
 
                 - ttl, rdata...
 
-                - ttl, rdtype, string..."""
+                - ttl, rdtype, string...
+        """
 
         if isinstance(name, string_types):
             name = dns.name.from_text(name, None)
@@ -117,27 +121,34 @@ class Update(dns.message.Message):
                     self._add_rr(name, ttl, rd, section=section)
 
     def add(self, name, *args):
-        """Add records.  The first argument is always a name.  The other
+        """Add records.
+
+        The first argument is always a name.  The other
         arguments can be:
 
                 - rdataset...
 
                 - ttl, rdata...
 
-                - ttl, rdtype, string..."""
+                - ttl, rdtype, string...
+        """
+
         self._add(False, self.authority, name, *args)
 
     def delete(self, name, *args):
-        """Delete records.  The first argument is always a name.  The other
+        """Delete records.
+
+        The first argument is always a name.  The other
         arguments can be:
 
-                - I{nothing}
+                - *empty*
 
                 - rdataset...
 
                 - rdata...
 
-                - rdtype, [string...]"""
+                - rdtype, [string...]
+        """
 
         if isinstance(name, string_types):
             name = dns.name.from_text(name, None)
@@ -171,7 +182,9 @@ class Update(dns.message.Message):
                         self._add_rr(name, 0, rd, dns.rdataclass.NONE)
 
     def replace(self, name, *args):
-        """Replace records.  The first argument is always a name.  The other
+        """Replace records.
+
+        The first argument is always a name.  The other
         arguments can be:
 
                 - rdataset...
@@ -181,21 +194,25 @@ class Update(dns.message.Message):
                 - ttl, rdtype, string...
 
         Note that if you want to replace the entire node, you should do
-        a delete of the name followed by one or more calls to add."""
+        a delete of the name followed by one or more calls to add.
+        """
 
         self._add(True, self.authority, name, *args)
 
     def present(self, name, *args):
         """Require that an owner name (and optionally an rdata type,
         or specific rdataset) exists as a prerequisite to the
-        execution of the update.  The first argument is always a name.
+        execution of the update.
+
+        The first argument is always a name.
         The other arguments can be:
 
                 - rdataset...
 
                 - rdata...
 
-                - rdtype, string..."""
+                - rdtype, string...
+        """
 
         if isinstance(name, string_types):
             name = dns.name.from_text(name, None)
@@ -243,7 +260,20 @@ class Update(dns.message.Message):
     def to_wire(self, origin=None, max_size=65535):
         """Return a string containing the update in DNS compressed wire
         format.
-        @rtype: string"""
+
+        *origin*, a ``dns.name.Name`` or ``None``, the origin to be
+        appended to any relative names.  If *origin* is ``None``, then
+        the origin of the ``dns.update.Update`` message object is used
+        (i.e. the *zone* parameter passed when the Update object was
+        created).
+
+        *max_size*, an ``int``, the maximum size of the wire format
+        output; default is 0, which means "the message's request
+        payload, if nonzero, or 65535".
+
+        Returns a ``binary``.
+        """
+
         if origin is None:
             origin = self.origin
         return super(Update, self).to_wire(origin, max_size)

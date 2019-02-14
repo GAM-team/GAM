@@ -1,4 +1,6 @@
-# Copyright (C) 2003-2007, 2009-2011 Nominum, Inc.
+# Copyright (C) Dnspython Contributors, see LICENSE for text of ISC license
+
+# Copyright (C) 2003-2017 Nominum, Inc.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose with or without fee is hereby granted,
@@ -15,13 +17,19 @@
 
 """dnspython release version information."""
 
+#: MAJOR
 MAJOR = 1
-MINOR = 15
+#: MINOR
+MINOR = 16
+#: MICRO
 MICRO = 0
+#: RELEASELEVEL
 RELEASELEVEL = 0x0f
+#: SERIAL
 SERIAL = 0
 
 if RELEASELEVEL == 0x0f:
+    #: version
     version = '%d.%d.%d' % (MAJOR, MINOR, MICRO)
 elif RELEASELEVEL == 0x00:
     version = '%d.%d.%dx%d' % \
@@ -30,5 +38,6 @@ else:
     version = '%d.%d.%d%x%d' % \
               (MAJOR, MINOR, MICRO, RELEASELEVEL, SERIAL)
 
+#: hexversion
 hexversion = MAJOR << 24 | MINOR << 16 | MICRO << 8 | RELEASELEVEL << 4 | \
     SERIAL

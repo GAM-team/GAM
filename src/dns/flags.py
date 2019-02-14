@@ -1,4 +1,6 @@
-# Copyright (C) 2001-2007, 2009-2011 Nominum, Inc.
+# Copyright (C) Dnspython Contributors, see LICENSE for text of ISC license
+
+# Copyright (C) 2001-2017 Nominum, Inc.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose with or without fee is hereby granted,
@@ -17,16 +19,24 @@
 
 # Standard DNS flags
 
+#: Query Response
 QR = 0x8000
+#: Authoritative Answer
 AA = 0x0400
+#: Truncated Response
 TC = 0x0200
+#: Recursion Desired
 RD = 0x0100
+#: Recursion Available
 RA = 0x0080
+#: Authentic Data
 AD = 0x0020
+#: Checking Disabled
 CD = 0x0010
 
 # EDNS flags
 
+#: DNSSEC answer OK
 DO = 0x8000
 
 _by_text = {
@@ -48,9 +58,9 @@ _edns_by_text = {
 # cannot make any mistakes (e.g. omissions, cut-and-paste errors) that
 # would cause the mappings not to be true inverses.
 
-_by_value = dict((y, x) for x, y in _by_text.items())
+_by_value = {y: x for x, y in _by_text.items()}
 
-_edns_by_value = dict((y, x) for x, y in _edns_by_text.items())
+_edns_by_value = {y: x for x, y in _edns_by_text.items()}
 
 
 def _order_flags(table):
@@ -83,7 +93,9 @@ def _to_text(flags, table, order):
 def from_text(text):
     """Convert a space-separated list of flag text values into a flags
     value.
-    @rtype: int"""
+
+    Returns an ``int``
+    """
 
     return _from_text(text, _by_text)
 
@@ -91,7 +103,9 @@ def from_text(text):
 def to_text(flags):
     """Convert a flags value into a space-separated list of flag text
     values.
-    @rtype: string"""
+
+    Returns a ``text``.
+    """
 
     return _to_text(flags, _by_value, _flags_order)
 
@@ -99,7 +113,9 @@ def to_text(flags):
 def edns_from_text(text):
     """Convert a space-separated list of EDNS flag text values into a EDNS
     flags value.
-    @rtype: int"""
+
+    Returns an ``int``
+    """
 
     return _from_text(text, _edns_by_text)
 
@@ -107,6 +123,8 @@ def edns_from_text(text):
 def edns_to_text(flags):
     """Convert an EDNS flags value into a space-separated list of EDNS flag
     text values.
-    @rtype: string"""
+
+    Returns a ``text``.
+    """
 
     return _to_text(flags, _edns_by_value, _edns_flags_order)

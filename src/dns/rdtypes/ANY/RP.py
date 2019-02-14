@@ -1,3 +1,5 @@
+# Copyright (C) Dnspython Contributors, see LICENSE for text of ISC license
+
 # Copyright (C) 2003-2007, 2009-2011 Nominum, Inc.
 #
 # Permission to use, copy, modify, and distribute this software and its
@@ -39,7 +41,7 @@ class RP(dns.rdata.Rdata):
     def to_text(self, origin=None, relativize=True, **kw):
         mbox = self.mbox.choose_relativity(origin, relativize)
         txt = self.txt.choose_relativity(origin, relativize)
-        return "%s %s" % (str(mbox), str(txt))
+        return "{} {}".format(str(mbox), str(txt))
 
     @classmethod
     def from_text(cls, rdclass, rdtype, tok, origin=None, relativize=True):

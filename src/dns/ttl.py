@@ -1,4 +1,6 @@
-# Copyright (C) 2003-2007, 2009-2011 Nominum, Inc.
+# Copyright (C) Dnspython Contributors, see LICENSE for text of ISC license
+
+# Copyright (C) 2003-2017 Nominum, Inc.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose with or without fee is hereby granted,
@@ -20,7 +22,6 @@ from ._compat import long
 
 
 class BadTTL(dns.exception.SyntaxError):
-
     """DNS TTL value is not well-formed."""
 
 
@@ -29,10 +30,11 @@ def from_text(text):
 
     The BIND 8 units syntax for TTLs (e.g. '1w6d4h3m10s') is supported.
 
-    @param text: the textual TTL
-    @type text: string
-    @raises dns.ttl.BadTTL: the TTL is not well-formed
-    @rtype: int
+    *text*, a ``text``, the textual TTL.
+
+    Raises ``dns.ttl.BadTTL`` if the TTL is not well-formed.
+
+    Returns an ``int``.
     """
 
     if text.isdigit():

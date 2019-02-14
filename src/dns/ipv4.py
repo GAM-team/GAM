@@ -1,4 +1,6 @@
-# Copyright (C) 2003-2007, 2009-2011 Nominum, Inc.
+# Copyright (C) Dnspython Contributors, see LICENSE for text of ISC license
+
+# Copyright (C) 2003-2017 Nominum, Inc.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose with or without fee is hereby granted,
@@ -21,26 +23,28 @@ import dns.exception
 from ._compat import binary_type
 
 def inet_ntoa(address):
-    """Convert an IPv4 address in network form to text form.
+    """Convert an IPv4 address in binary form to text form.
 
-    @param address: The IPv4 address
-    @type address: string
-    @returns: string
+    *address*, a ``binary``, the IPv4 address in binary form.
+
+    Returns a ``text``.
     """
+
     if len(address) != 4:
         raise dns.exception.SyntaxError
     if not isinstance(address, bytearray):
         address = bytearray(address)
-    return (u'%u.%u.%u.%u' % (address[0], address[1],
-                              address[2], address[3])).encode()
+    return ('%u.%u.%u.%u' % (address[0], address[1],
+                             address[2], address[3]))
 
 def inet_aton(text):
-    """Convert an IPv4 address in text form to network form.
+    """Convert an IPv4 address in text form to binary form.
 
-    @param text: The IPv4 address
-    @type text: string
-    @returns: string
+    *text*, a ``text``, the IPv4 address in textual form.
+
+    Returns a ``binary``.
     """
+
     if not isinstance(text, binary_type):
         text = text.encode()
     parts = text.split(b'.')

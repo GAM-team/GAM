@@ -1,7 +1,7 @@
 #
 # This file is part of pyasn1 software.
 #
-# Copyright (c) 2005-2018, Ilya Etingof <etingof@gmail.com>
+# Copyright (c) 2005-2019, Ilya Etingof <etingof@gmail.com>
 # License: http://snmplabs.com/pyasn1/license.html
 #
 # Original concept and code by Mike C. Fletcher.
@@ -352,7 +352,7 @@ class InnerTypeConstraint(AbstractConstraint):
             if idx not in self.__multipleTypeConstraint:
                 raise error.ValueConstraintError(value)
             constraint, status = self.__multipleTypeConstraint[idx]
-            if status == 'ABSENT':  # XXX presense is not checked!
+            if status == 'ABSENT':  # XXX presence is not checked!
                 raise error.ValueConstraintError(value)
             constraint(value)
 

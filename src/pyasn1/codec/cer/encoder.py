@@ -1,7 +1,7 @@
 #
 # This file is part of pyasn1 software.
 #
-# Copyright (c) 2005-2018, Ilya Etingof <etingof@gmail.com>
+# Copyright (c) 2005-2019, Ilya Etingof <etingof@gmail.com>
 # License: http://snmplabs.com/pyasn1/license.html
 #
 from pyasn1 import error
@@ -41,7 +41,7 @@ class TimeEncoderMixIn(object):
     def encodeValue(self, value, asn1Spec, encodeFun, **options):
         # Encoding constraints:
         # - minutes are mandatory, seconds are optional
-        # - subseconds must NOT be zero
+        # - sub-seconds must NOT be zero
         # - no hanging fraction dot
         # - time in UTC (Z)
         # - only dot is allowed for fractions

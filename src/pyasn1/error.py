@@ -1,7 +1,7 @@
 #
 # This file is part of pyasn1 software.
 #
-# Copyright (c) 2005-2018, Ilya Etingof <etingof@gmail.com>
+# Copyright (c) 2005-2019, Ilya Etingof <etingof@gmail.com>
 # License: http://snmplabs.com/pyasn1/license.html
 #
 
@@ -25,5 +25,5 @@ class SubstrateUnderrunError(PyAsn1Error):
     """Create pyasn1 exception object
 
     The `SubstrateUnderrunError` exception indicates insufficient serialised
-    data on input of a deserialisation routine.
+    data on input of a de-serialization routine.
     """

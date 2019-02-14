@@ -1,4 +1,6 @@
-# Copyright (C) 2003-2007, 2009-2011 Nominum, Inc.
+# Copyright (C) Dnspython Contributors, see LICENSE for text of ISC license
+
+# Copyright (C) 2003-2017 Nominum, Inc.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose with or without fee is hereby granted,
@@ -20,6 +22,7 @@ import socket
 import dns.ipv4
 import dns.ipv6
 
+from ._compat import maybe_ord
 
 # We assume that AF_INET is always defined.
 
@@ -38,13 +41,14 @@ except AttributeError:
 def inet_pton(family, text):
     """Convert the textual form of a network address into its binary form.
 
-    @param family: the address family
-    @type family: int
-    @param text: the textual address
-    @type text: string
-    @raises NotImplementedError: the address family specified is not
+    *family* is an ``int``, the address family.
+
+    *text* is a ``text``, the textual address.
+
+    Raises ``NotImplementedError`` if the address family specified is not
     implemented.
-    @rtype: string
+
+    Returns a ``binary``.
     """
 
     if family == AF_INET:
@@ -58,14 +62,16 @@ def inet_pton(family, text):
 def inet_ntop(family, address):
     """Convert the binary form of a network address into its textual form.
 
-    @param family: the address family
-    @type family: int
-    @param address: the binary address
-    @type address: string
-    @raises NotImplementedError: the address family specified is not
+    *family* is an ``int``, the address family.
+
+    *address* is a ``binary``, the network address in binary form.
+
+    Raises ``NotImplementedError`` if the address family specified is not
     implemented.
-    @rtype: string
+
+    Returns a ``text``.
     """
+
     if family == AF_INET:
         return dns.ipv4.inet_ntoa(address)
     elif family == AF_INET6:
@@ -77,11 +83,14 @@ def inet_ntop(family, address):
 def af_for_address(text):
     """Determine the address family of a textual-form network address.
 
-    @param text: the textual address
-    @type text: string
-    @raises ValueError: the address family cannot be determined from the input.
-    @rtype: int
+    *text*, a ``text``, the textual address.
+
+    Raises ``ValueError`` if the address family cannot be determined
+    from the input.
+
+    Returns an ``int``.
     """
+
     try:
         dns.ipv4.inet_aton(text)
         return AF_INET
@@ -96,16 +105,20 @@ def af_for_address(text):
 def is_multicast(text):
     """Is the textual-form network address a multicast address?
 
-    @param text: the textual address
-    @raises ValueError: the address family cannot be determined from the input.
-    @rtype: bool
+    *text*, a ``text``, the textual address.
+
+    Raises ``ValueError`` if the address family cannot be determined
+    from the input.
+
+    Returns a ``bool``.
     """
+
     try:
-        first = ord(dns.ipv4.inet_aton(text)[0])
+        first = maybe_ord(dns.ipv4.inet_aton(text)[0])
         return first >= 224 and first <= 239
     except Exception:
         try:
-            first = ord(dns.ipv6.inet_aton(text)[0])
+            first = maybe_ord(dns.ipv6.inet_aton(text)[0])
             return first == 255
         except Exception:
             raise ValueError

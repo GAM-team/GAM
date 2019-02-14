@@ -1,4 +1,6 @@
-# Copyright (C) 2006, 2007, 2009-2011 Nominum, Inc.
+# Copyright (C) Dnspython Contributors, see LICENSE for text of ISC license
+
+# Copyright (C) 2006-2017 Nominum, Inc.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose with or without fee is hereby granted,
@@ -20,30 +22,35 @@ import struct
 import dns.exception
 import dns.rdata
 import dns.tokenizer
-from dns._compat import binary_type
+from dns._compat import binary_type, string_types
 
 
 class TXTBase(dns.rdata.Rdata):
 
     """Base class for rdata that is like a TXT record
 
-    @ivar strings: the text strings
-    @type strings: list of string
+    @ivar strings: the strings
+    @type strings: list of binary
     @see: RFC 1035"""
 
     __slots__ = ['strings']
 
     def __init__(self, rdclass, rdtype, strings):
         super(TXTBase, self).__init__(rdclass, rdtype)
-        if isinstance(strings, str):
+        if isinstance(strings, binary_type) or \
+           isinstance(strings, string_types):
             strings = [strings]
-        self.strings = strings[:]
+        self.strings = []
+        for string in strings:
+            if isinstance(string, string_types):
+                string = string.encode()
+            self.strings.append(string)
 
     def to_text(self, origin=None, relativize=True, **kw):
         txt = ''
         prefix = ''
         for s in self.strings:
-            txt += '%s"%s"' % (prefix, dns.rdata._escapify(s))
+            txt += '{}"{}"'.format(prefix, dns.rdata._escapify(s))
             prefix = ' '
         return txt
 

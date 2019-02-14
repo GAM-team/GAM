@@ -1,4 +1,6 @@
-# Copyright (C) 2003-2007, 2009-2011 Nominum, Inc.
+# Copyright (C) Dnspython Contributors, see LICENSE for text of ISC license
+
+# Copyright (C) 2003-2017 Nominum, Inc.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose with or without fee is hereby granted,
@@ -28,11 +30,12 @@ import dns.exception
 import dns.inet
 import dns.name
 import dns.message
+import dns.rcode
 import dns.rdataclass
 import dns.rdatatype
-from ._compat import long, string_types
+from ._compat import long, string_types, PY3
 
-if sys.version_info > (3,):
+if PY3:
     select_error = OSError
 else:
     select_error = select.error
@@ -42,13 +45,20 @@ else:
 socket_factory = socket.socket
 
 class UnexpectedSource(dns.exception.DNSException):
-
     """A DNS query response came from an unexpected address or port."""
 
 
 class BadResponse(dns.exception.FormError):
-
     """A DNS query response does not respond to the question asked."""
+
+
+class TransferError(dns.exception.DNSException):
+    """A zone transfer response got a non-zero rcode."""
+
+    def __init__(self, rcode):
+        message = 'Zone transfer error: %s' % dns.rcode.to_text(rcode)
+        super(TransferError, self).__init__(message)
+        self.rcode = rcode
 
 
 def _compute_expiration(timeout):
@@ -57,19 +67,14 @@ def _compute_expiration(timeout):
     else:
         return time.time() + timeout
 
+# This module can use either poll() or select() as the "polling backend".
+#
+# A backend function takes an fd, bools for readability, writablity, and
+# error detection, and a timeout.
 
 def _poll_for(fd, readable, writable, error, timeout):
-    """Poll polling backend.
-    @param fd: File descriptor
-    @type fd: int
-    @param readable: Whether to wait for readability
-    @type readable: bool
-    @param writable: Whether to wait for writability
-    @type writable: bool
-    @param timeout: Deadline timeout (expiration time, in seconds)
-    @type timeout: float
-    @return True on success, False on timeout
-    """
+    """Poll polling backend."""
+
     event_mask = 0
     if readable:
         event_mask |= select.POLLIN
@@ -90,17 +95,8 @@ def _poll_for(fd, readable, writable, error, timeout):
 
 
 def _select_for(fd, readable, writable, error, timeout):
-    """Select polling backend.
-    @param fd: File descriptor
-    @type fd: int
-    @param readable: Whether to wait for readability
-    @type readable: bool
-    @param writable: Whether to wait for writability
-    @type writable: bool
-    @param timeout: Deadline timeout (expiration time, in seconds)
-    @type timeout: float
-    @return True on success, False on timeout
-    """
+    """Select polling backend."""
+
     rset, wset, xset = [], [], []
 
     if readable:
@@ -119,6 +115,10 @@ def _select_for(fd, readable, writable, error, timeout):
 
 
 def _wait_for(fd, readable, writable, error, expiration):
+    # Use the selected polling backend to wait for any of the specified
+    # events.  An "expiration" absolute time is converted into a relative
+    # timeout.
+
     done = False
     while not done:
         if expiration is None:
@@ -137,9 +137,8 @@ def _wait_for(fd, readable, writable, error, expiration):
 
 
 def _set_polling_backend(fn):
-    """
-    Internal API. Do not use.
-    """
+    # Internal API. Do not use.
+
     global _polling_backend
 
     _polling_backend = fn
@@ -165,8 +164,11 @@ def _addresses_equal(af, a1, a2):
     # Convert the first value of the tuple, which is a textual format
     # address into binary form, so that we are not confused by different
     # textual representations of the same address
-    n1 = dns.inet.inet_pton(af, a1[0])
-    n2 = dns.inet.inet_pton(af, a2[0])
+    try:
+        n1 = dns.inet.inet_pton(af, a1[0])
+        n2 = dns.inet.inet_pton(af, a2[0])
+    except dns.exception.SyntaxError:
+        return False
     return n1 == n2 and a1[1:] == a2[1:]
 
 
@@ -193,68 +195,140 @@ def _destination_and_source(af, where, port, source, source_port):
     return (af, destination, source)
 
 
+def send_udp(sock, what, destination, expiration=None):
+    """Send a DNS message to the specified UDP socket.
+
+    *sock*, a ``socket``.
+
+    *what*, a ``binary`` or ``dns.message.Message``, the message to send.
+
+    *destination*, a destination tuple appropriate for the address family
+    of the socket, specifying where to send the query.
+
+    *expiration*, a ``float`` or ``None``, the absolute time at which
+    a timeout exception should be raised.  If ``None``, no timeout will
+    occur.
+
+    Returns an ``(int, float)`` tuple of bytes sent and the sent time.
+    """
+
+    if isinstance(what, dns.message.Message):
+        what = what.to_wire()
+    _wait_for_writable(sock, expiration)
+    sent_time = time.time()
+    n = sock.sendto(what, destination)
+    return (n, sent_time)
+
+
+def receive_udp(sock, destination, expiration=None,
+                ignore_unexpected=False, one_rr_per_rrset=False,
+                keyring=None, request_mac=b'', ignore_trailing=False):
+    """Read a DNS message from a UDP socket.
+
+    *sock*, a ``socket``.
+
+    *destination*, a destination tuple appropriate for the address family
+    of the socket, specifying where the associated query was sent.
+
+    *expiration*, a ``float`` or ``None``, the absolute time at which
+    a timeout exception should be raised.  If ``None``, no timeout will
+    occur.
+
+    *ignore_unexpected*, a ``bool``.  If ``True``, ignore responses from
+    unexpected sources.
+
+    *one_rr_per_rrset*, a ``bool``.  If ``True``, put each RR into its own
+    RRset.
+
+    *keyring*, a ``dict``, the keyring to use for TSIG.
+
+    *request_mac*, a ``binary``, the MAC of the request (for TSIG).
+
+    *ignore_trailing*, a ``bool``.  If ``True``, ignore trailing
+    junk at end of the received message.
+
+    Raises if the message is malformed, if network errors occur, of if
+    there is a timeout.
+
+    Returns a ``dns.message.Message`` object.
+    """
+
+    wire = b''
+    while 1:
+        _wait_for_readable(sock, expiration)
+        (wire, from_address) = sock.recvfrom(65535)
+        if _addresses_equal(sock.family, from_address, destination) or \
+           (dns.inet.is_multicast(destination[0]) and
+            from_address[1:] == destination[1:]):
+            break
+        if not ignore_unexpected:
+            raise UnexpectedSource('got a response from '
+                                   '%s instead of %s' % (from_address,
+                                                         destination))
+    received_time = time.time()
+    r = dns.message.from_wire(wire, keyring=keyring, request_mac=request_mac,
+                              one_rr_per_rrset=one_rr_per_rrset,
+                              ignore_trailing=ignore_trailing)
+    return (r, received_time)
+
 def udp(q, where, timeout=None, port=53, af=None, source=None, source_port=0,
-        ignore_unexpected=False, one_rr_per_rrset=False):
+        ignore_unexpected=False, one_rr_per_rrset=False, ignore_trailing=False):
     """Return the response obtained after sending a query via UDP.
 
-    @param q: the query
-    @type q: dns.message.Message
-    @param where: where to send the message
-    @type where: string containing an IPv4 or IPv6 address
-    @param timeout: The number of seconds to wait before the query times out.
-    If None, the default, wait forever.
-    @type timeout: float
-    @param port: The port to which to send the message.  The default is 53.
-    @type port: int
-    @param af: the address family to use.  The default is None, which
-    causes the address family to use to be inferred from the form of where.
-    If the inference attempt fails, AF_INET is used.
-    @type af: int
-    @rtype: dns.message.Message object
-    @param source: source address.  The default is the wildcard address.
-    @type source: string
-    @param source_port: The port from which to send the message.
+    *q*, a ``dns.message.Message``, the query to send
+
+    *where*, a ``text`` containing an IPv4 or IPv6 address,  where
+    to send the message.
+
+    *timeout*, a ``float`` or ``None``, the number of seconds to wait before the
+    query times out.  If ``None``, the default, wait forever.
+
+    *port*, an ``int``, the port send the message to.  The default is 53.
+
+    *af*, an ``int``, the address family to use.  The default is ``None``,
+    which causes the address family to use to be inferred from the form of
+    *where*.  If the inference attempt fails, AF_INET is used.  This
+    parameter is historical; you need never set it.
+
+    *source*, a ``text`` containing an IPv4 or IPv6 address, specifying
+    the source address.  The default is the wildcard address.
+
+    *source_port*, an ``int``, the port from which to send the message.
     The default is 0.
-    @type source_port: int
-    @param ignore_unexpected: If True, ignore responses from unexpected
-    sources.  The default is False.
-    @type ignore_unexpected: bool
-    @param one_rr_per_rrset: Put each RR into its own RRset
-    @type one_rr_per_rrset: bool
+
+    *ignore_unexpected*, a ``bool``.  If ``True``, ignore responses from
+    unexpected sources.
+
+    *one_rr_per_rrset*, a ``bool``.  If ``True``, put each RR into its own
+    RRset.
+
+    *ignore_trailing*, a ``bool``.  If ``True``, ignore trailing
+    junk at end of the received message.
+
+    Returns a ``dns.message.Message``.
     """
 
     wire = q.to_wire()
     (af, destination, source) = _destination_and_source(af, where, port,
                                                         source, source_port)
     s = socket_factory(af, socket.SOCK_DGRAM, 0)
-    begin_time = None
+    received_time = None
+    sent_time = None
     try:
         expiration = _compute_expiration(timeout)
         s.setblocking(0)
         if source is not None:
             s.bind(source)
-        _wait_for_writable(s, expiration)
-        begin_time = time.time()
-        s.sendto(wire, destination)
-        while 1:
-            _wait_for_readable(s, expiration)
-            (wire, from_address) = s.recvfrom(65535)
-            if _addresses_equal(af, from_address, destination) or \
-                    (dns.inet.is_multicast(where) and
-                     from_address[1:] == destination[1:]):
-                break
-            if not ignore_unexpected:
-                raise UnexpectedSource('got a response from '
-                                       '%s instead of %s' % (from_address,
-                                                             destination))
+        (_, sent_time) = send_udp(s, wire, destination, expiration)
+        (r, received_time) = receive_udp(s, destination, expiration,
+                                         ignore_unexpected, one_rr_per_rrset,
+                                         q.keyring, q.mac, ignore_trailing)
     finally:
-        if begin_time is None:
+        if sent_time is None or received_time is None:
             response_time = 0
         else:
-            response_time = time.time() - begin_time
+            response_time = received_time - sent_time
         s.close()
-    r = dns.message.from_wire(wire, keyring=q.keyring, request_mac=q.mac,
-                              one_rr_per_rrset=one_rr_per_rrset)
     r.time = response_time
     if not q.is_response(r):
         raise BadResponse
@@ -290,6 +364,67 @@ def _net_write(sock, data, expiration):
         current += sock.send(data[current:])
 
 
+def send_tcp(sock, what, expiration=None):
+    """Send a DNS message to the specified TCP socket.
+
+    *sock*, a ``socket``.
+
+    *what*, a ``binary`` or ``dns.message.Message``, the message to send.
+
+    *expiration*, a ``float`` or ``None``, the absolute time at which
+    a timeout exception should be raised.  If ``None``, no timeout will
+    occur.
+
+    Returns an ``(int, float)`` tuple of bytes sent and the sent time.
+    """
+
+    if isinstance(what, dns.message.Message):
+        what = what.to_wire()
+    l = len(what)
+    # copying the wire into tcpmsg is inefficient, but lets us
+    # avoid writev() or doing a short write that would get pushed
+    # onto the net
+    tcpmsg = struct.pack("!H", l) + what
+    _wait_for_writable(sock, expiration)
+    sent_time = time.time()
+    _net_write(sock, tcpmsg, expiration)
+    return (len(tcpmsg), sent_time)
+
+def receive_tcp(sock, expiration=None, one_rr_per_rrset=False,
+                keyring=None, request_mac=b'', ignore_trailing=False):
+    """Read a DNS message from a TCP socket.
+
+    *sock*, a ``socket``.
+
+    *expiration*, a ``float`` or ``None``, the absolute time at which
+    a timeout exception should be raised.  If ``None``, no timeout will
+    occur.
+
+    *one_rr_per_rrset*, a ``bool``.  If ``True``, put each RR into its own
+    RRset.
+
+    *keyring*, a ``dict``, the keyring to use for TSIG.
+
+    *request_mac*, a ``binary``, the MAC of the request (for TSIG).
+
+    *ignore_trailing*, a ``bool``.  If ``True``, ignore trailing
+    junk at end of the received message.
+
+    Raises if the message is malformed, if network errors occur, of if
+    there is a timeout.
+
+    Returns a ``dns.message.Message`` object.
+    """
+
+    ldata = _net_read(sock, 2, expiration)
+    (l,) = struct.unpack("!H", ldata)
+    wire = _net_read(sock, l, expiration)
+    received_time = time.time()
+    r = dns.message.from_wire(wire, keyring=keyring, request_mac=request_mac,
+                              one_rr_per_rrset=one_rr_per_rrset,
+                              ignore_trailing=ignore_trailing)
+    return (r, received_time)
+
 def _connect(s, address):
     try:
         s.connect(address)
@@ -305,30 +440,37 @@ def _connect(s, address):
 
 
 def tcp(q, where, timeout=None, port=53, af=None, source=None, source_port=0,
-        one_rr_per_rrset=False):
+        one_rr_per_rrset=False, ignore_trailing=False):
     """Return the response obtained after sending a query via TCP.
 
-    @param q: the query
-    @type q: dns.message.Message object
-    @param where: where to send the message
-    @type where: string containing an IPv4 or IPv6 address
-    @param timeout: The number of seconds to wait before the query times out.
-    If None, the default, wait forever.
-    @type timeout: float
-    @param port: The port to which to send the message.  The default is 53.
-    @type port: int
-    @param af: the address family to use.  The default is None, which
-    causes the address family to use to be inferred from the form of where.
-    If the inference attempt fails, AF_INET is used.
-    @type af: int
-    @rtype: dns.message.Message object
-    @param source: source address.  The default is the wildcard address.
-    @type source: string
-    @param source_port: The port from which to send the message.
+    *q*, a ``dns.message.Message``, the query to send
+
+    *where*, a ``text`` containing an IPv4 or IPv6 address,  where
+    to send the message.
+
+    *timeout*, a ``float`` or ``None``, the number of seconds to wait before the
+    query times out.  If ``None``, the default, wait forever.
+
+    *port*, an ``int``, the port send the message to.  The default is 53.
+
+    *af*, an ``int``, the address family to use.  The default is ``None``,
+    which causes the address family to use to be inferred from the form of
+    *where*.  If the inference attempt fails, AF_INET is used.  This
+    parameter is historical; you need never set it.
+
+    *source*, a ``text`` containing an IPv4 or IPv6 address, specifying
+    the source address.  The default is the wildcard address.
+
+    *source_port*, an ``int``, the port from which to send the message.
     The default is 0.
-    @type source_port: int
-    @param one_rr_per_rrset: Put each RR into its own RRset
-    @type one_rr_per_rrset: bool
+
+    *one_rr_per_rrset*, a ``bool``.  If ``True``, put each RR into its own
+    RRset.
+
+    *ignore_trailing*, a ``bool``.  If ``True``, ignore trailing
+    junk at end of the received message.
+
+    Returns a ``dns.message.Message``.
     """
 
     wire = q.to_wire()
@@ -336,6 +478,7 @@ def tcp(q, where, timeout=None, port=53, af=None, source=None, source_port=0,
                                                         source, source_port)
     s = socket_factory(af, socket.SOCK_STREAM, 0)
     begin_time = None
+    received_time = None
     try:
         expiration = _compute_expiration(timeout)
         s.setblocking(0)
@@ -343,25 +486,15 @@ def tcp(q, where, timeout=None, port=53, af=None, source=None, source_port=0,
         if source is not None:
             s.bind(source)
         _connect(s, destination)
-
-        l = len(wire)
-
-        # copying the wire into tcpmsg is inefficient, but lets us
-        # avoid writev() or doing a short write that would get pushed
-        # onto the net
-        tcpmsg = struct.pack("!H", l) + wire
-        _net_write(s, tcpmsg, expiration)
-        ldata = _net_read(s, 2, expiration)
-        (l,) = struct.unpack("!H", ldata)
-        wire = _net_read(s, l, expiration)
+        send_tcp(s, wire, expiration)
+        (r, received_time) = receive_tcp(s, expiration, one_rr_per_rrset,
+                                         q.keyring, q.mac, ignore_trailing)
     finally:
-        if begin_time is None:
+        if begin_time is None or received_time is None:
             response_time = 0
         else:
-            response_time = time.time() - begin_time
+            response_time = received_time - begin_time
         s.close()
-    r = dns.message.from_wire(wire, keyring=q.keyring, request_mac=q.mac,
-                              one_rr_per_rrset=one_rr_per_rrset)
     r.time = response_time
     if not q.is_response(r):
         raise BadResponse
@@ -374,51 +507,59 @@ def xfr(where, zone, rdtype=dns.rdatatype.AXFR, rdclass=dns.rdataclass.IN,
         use_udp=False, keyalgorithm=dns.tsig.default_algorithm):
     """Return a generator for the responses to a zone transfer.
 
-    @param where: where to send the message
-    @type where: string containing an IPv4 or IPv6 address
-    @param zone: The name of the zone to transfer
-    @type zone: dns.name.Name object or string
-    @param rdtype: The type of zone transfer.  The default is
-    dns.rdatatype.AXFR.
-    @type rdtype: int or string
-    @param rdclass: The class of the zone transfer.  The default is
-    dns.rdataclass.IN.
-    @type rdclass: int or string
-    @param timeout: The number of seconds to wait for each response message.
-    If None, the default, wait forever.
-    @type timeout: float
-    @param port: The port to which to send the message.  The default is 53.
-    @type port: int
-    @param keyring: The TSIG keyring to use
-    @type keyring: dict
-    @param keyname: The name of the TSIG key to use
-    @type keyname: dns.name.Name object or string
-    @param relativize: If True, all names in the zone will be relativized to
-    the zone origin.  It is essential that the relativize setting matches
-    the one specified to dns.zone.from_xfr().
-    @type relativize: bool
-    @param af: the address family to use.  The default is None, which
-    causes the address family to use to be inferred from the form of where.
-    If the inference attempt fails, AF_INET is used.
-    @type af: int
-    @param lifetime: The total number of seconds to spend doing the transfer.
-    If None, the default, then there is no limit on the time the transfer may
-    take.
-    @type lifetime: float
-    @rtype: generator of dns.message.Message objects.
-    @param source: source address.  The default is the wildcard address.
-    @type source: string
-    @param source_port: The port from which to send the message.
+    *where*.  If the inference attempt fails, AF_INET is used.  This
+    parameter is historical; you need never set it.
+
+    *zone*, a ``dns.name.Name`` or ``text``, the name of the zone to transfer.
+
+    *rdtype*, an ``int`` or ``text``, the type of zone transfer.  The
+    default is ``dns.rdatatype.AXFR``.  ``dns.rdatatype.IXFR`` can be
+    used to do an incremental transfer instead.
+
+    *rdclass*, an ``int`` or ``text``, the class of the zone transfer.
+    The default is ``dns.rdataclass.IN``.
+
+    *timeout*, a ``float``, the number of seconds to wait for each
+    response message.  If None, the default, wait forever.
+
+    *port*, an ``int``, the port send the message to.  The default is 53.
+
+    *keyring*, a ``dict``, the keyring to use for TSIG.
+
+    *keyname*, a ``dns.name.Name`` or ``text``, the name of the TSIG
+    key to use.
+
+    *relativize*, a ``bool``.  If ``True``, all names in the zone will be
+    relativized to the zone origin.  It is essential that the
+    relativize setting matches the one specified to
+    ``dns.zone.from_xfr()`` if using this generator to make a zone.
+
+    *af*, an ``int``, the address family to use.  The default is ``None``,
+    which causes the address family to use to be inferred from the form of
+    *where*.  If the inference attempt fails, AF_INET is used.  This
+    parameter is historical; you need never set it.
+
+    *lifetime*, a ``float``, the total number of seconds to spend
+    doing the transfer.  If ``None``, the default, then there is no
+    limit on the time the transfer may take.
+
+    *source*, a ``text`` containing an IPv4 or IPv6 address, specifying
+    the source address.  The default is the wildcard address.
+
+    *source_port*, an ``int``, the port from which to send the message.
     The default is 0.
-    @type source_port: int
-    @param serial: The SOA serial number to use as the base for an IXFR diff
-    sequence (only meaningful if rdtype == dns.rdatatype.IXFR).
-    @type serial: int
-    @param use_udp: Use UDP (only meaningful for IXFR)
-    @type use_udp: bool
-    @param keyalgorithm: The TSIG algorithm to use; defaults to
-    dns.tsig.default_algorithm
-    @type keyalgorithm: string
+
+    *serial*, an ``int``, the SOA serial number to use as the base for
+    an IXFR diff sequence (only meaningful if *rdtype* is
+    ``dns.rdatatype.IXFR``).
+
+    *use_udp*, a ``bool``.  If ``True``, use UDP (only meaningful for IXFR).
+
+    *keyalgorithm*, a ``dns.name.Name`` or ``text``, the TSIG algorithm to use.
+
+    Raises on errors, and so does the generator.
+
+    Returns a generator of ``dns.message.Message`` objects.
     """
 
     if isinstance(zone, string_types):
@@ -481,6 +622,9 @@ def xfr(where, zone, rdtype=dns.rdatatype.AXFR, rdclass=dns.rdataclass.IN,
                                   xfr=True, origin=origin, tsig_ctx=tsig_ctx,
                                   multi=True, first=first,
                                   one_rr_per_rrset=is_ixfr)
+        rcode = r.rcode()
+        if rcode != dns.rcode.NOERROR:
+            raise TransferError(rcode)
         tsig_ctx = r.tsig_ctx
         first = False
         answer_index = 0

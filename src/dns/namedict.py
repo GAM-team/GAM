@@ -1,4 +1,6 @@
-# Copyright (C) 2003-2007, 2009-2011 Nominum, Inc.
+# Copyright (C) Dnspython Contributors, see LICENSE for text of ISC license
+
+# Copyright (C) 2003-2017 Nominum, Inc.
 # Copyright (C) 2016 Coresec Systems AB
 #
 # Permission to use, copy, modify, and distribute this software and its
@@ -31,20 +33,20 @@ from ._compat import xrange
 
 
 class NameDict(collections.MutableMapping):
-
     """A dictionary whose keys are dns.name.Name objects.
-    @ivar max_depth: the maximum depth of the keys that have ever been
-    added to the dictionary.
-    @type max_depth: int
-    @ivar max_depth_items: the number of items of maximum depth
-    @type max_depth_items: int
+
+    In addition to being like a regular Python dictionary, this
+    dictionary can also get the deepest match for a given key.
     """
 
     __slots__ = ["max_depth", "max_depth_items", "__store"]
 
     def __init__(self, *args, **kwargs):
+        super(NameDict, self).__init__()
         self.__store = dict()
+        #: the maximum depth of the keys that have ever been added
         self.max_depth = 0
+        #: the number of items of maximum depth
         self.max_depth_items = 0
         self.update(dict(*args, **kwargs))
 
@@ -83,14 +85,16 @@ class NameDict(collections.MutableMapping):
         return key in self.__store
 
     def get_deepest_match(self, name):
-        """Find the deepest match to I{name} in the dictionary.
+        """Find the deepest match to *fname* in the dictionary.
 
         The deepest match is the longest name in the dictionary which is
-        a superdomain of I{name}.
+        a superdomain of *name*.  Note that *superdomain* includes matching
+        *name* itself.
 
-        @param name: the name
-        @type name: dns.name.Name object
-        @rtype: (key, value) tuple
+        *name*, a ``dns.name.Name``, the name to find.
+
+        Returns a ``(key, value)`` where *key* is the deepest
+        ``dns.name.Name``, and *value* is the value associated with *key*.
         """
 
         depth = len(name)

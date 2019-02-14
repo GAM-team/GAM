@@ -16,7 +16,7 @@ __all__ = (
     'cached', 'cachedmethod'
 )
 
-__version__ = '2.1.0'
+__version__ = '3.1.0'
 
 if hasattr(functools.update_wrapper(lambda f: f(), lambda: 42), '__wrapped__'):
     _update_wrapper = functools.update_wrapper
@@ -79,7 +79,7 @@ def cachedmethod(cache, key=keys.hashkey, lock=None):
                 c = cache(self)
                 if c is None:
                     return method(self, *args, **kwargs)
-                k = key(self, *args, **kwargs)
+                k = key(*args, **kwargs)
                 try:
                     return c[k]
                 except KeyError:
@@ -95,7 +95,7 @@ def cachedmethod(cache, key=keys.hashkey, lock=None):
                 c = cache(self)
                 if c is None:
                     return method(self, *args, **kwargs)
-                k = key(self, *args, **kwargs)
+                k = key(*args, **kwargs)
                 try:
                     with lock(self):
                         return c[k]

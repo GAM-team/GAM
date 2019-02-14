@@ -1,4 +1,6 @@
-# Copyright (C) 2003-2007, 2009-2011 Nominum, Inc.
+# Copyright (C) Dnspython Contributors, see LICENSE for text of ISC license
+
+# Copyright (C) 2012-2017 Nominum, Inc.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose with or without fee is hereby granted,
@@ -17,18 +19,16 @@
 
 import dns
 
-
 def from_text(text):
-    """Convert the text form of a range in a GENERATE statement to an
+    """Convert the text form of a range in a ``$GENERATE`` statement to an
     integer.
 
-    @param text: the textual range
-    @type text: string
-    @return: The start, stop and step values.
-    @rtype: tuple
-    """
-    # TODO, figure out the bounds on start, stop and step.
+    *text*, a ``str``, the textual range in ``$GENERATE`` form.
 
+    Returns a tuple of three ``int`` values ``(start, stop, step)``.
+    """
+
+    # TODO, figure out the bounds on start, stop and step.
     step = 1
     cur = ''
     state = 0

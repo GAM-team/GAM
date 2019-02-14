@@ -1,4 +1,6 @@
-# Copyright (C) 2003-2007, 2009-2011 Nominum, Inc.
+# Copyright (C) Dnspython Contributors, see LICENSE for text of ISC license
+
+# Copyright (C) 2003-2017 Nominum, Inc.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose with or without fee is hereby granted,
@@ -13,10 +15,7 @@
 # ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
 # OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-"""DNS stub resolver.
-
-@var default_resolver: The default resolver object
-@type default_resolver: dns.resolver.Resolver object"""
+"""DNS stub resolver."""
 
 import socket
 import sys
@@ -49,9 +48,8 @@ if sys.platform == 'win32':
         import _winreg  # pylint: disable=import-error
 
 class NXDOMAIN(dns.exception.DNSException):
-
     """The DNS query name does not exist."""
-    supp_kwargs = set(['qnames', 'responses'])
+    supp_kwargs = {'qnames', 'responses'}
     fmt = None  # we have our own __str__ implementation
 
     def _check_kwargs(self, qnames, responses=None):
@@ -73,9 +71,9 @@ class NXDOMAIN(dns.exception.DNSException):
         if len(qnames) > 1:
             msg = 'None of DNS query names exist'
         else:
-            msg = self.__doc__[:-1]
+            msg = 'The DNS query name does not exist'
         qnames = ', '.join(map(str, qnames))
-        return "%s: %s" % (msg, qnames)
+        return "{}: {}".format(msg, qnames)
 
     def canonical_name(self):
         if not 'qnames' in self.kwargs:
@@ -107,9 +105,30 @@ class NXDOMAIN(dns.exception.DNSException):
                 responses0[qname1] = responses1[qname1]
         return NXDOMAIN(qnames=qnames0, responses=responses0)
 
+    def qnames(self):
+        """All of the names that were tried.
+
+        Returns a list of ``dns.name.Name``.
+        """
+        return self.kwargs['qnames']
+
+    def responses(self):
+        """A map from queried names to their NXDOMAIN responses.
+
+        Returns a dict mapping a ``dns.name.Name`` to a
+        ``dns.message.Message``.
+        """
+        return self.kwargs['responses']
+
+    def response(self, qname):
+        """The response for query *qname*.
+
+        Returns a ``dns.message.Message``.
+        """
+        return self.kwargs['responses'][qname]
+
 
 class YXDOMAIN(dns.exception.DNSException):
-
     """The DNS query name is too long after DNAME substitution."""
 
 # The definition of the Timeout exception has moved from here to the
@@ -120,11 +139,10 @@ Timeout = dns.exception.Timeout
 
 
 class NoAnswer(dns.exception.DNSException):
-
     """The DNS response does not contain an answer to the question."""
     fmt = 'The DNS response does not contain an answer ' + \
           'to the question: {query}'
-    supp_kwargs = set(['response'])
+    supp_kwargs = {'response'}
 
     def _fmt_kwargs(self, **kwargs):
         return super(NoAnswer, self)._fmt_kwargs(
@@ -132,73 +150,53 @@ class NoAnswer(dns.exception.DNSException):
 
 
 class NoNameservers(dns.exception.DNSException):
-
     """All nameservers failed to answer the query.
 
     errors: list of servers and respective errors
     The type of errors is
-    [(server ip address, any object convertible to string)].
+    [(server IP address, any object convertible to string)].
     Non-empty errors list will add explanatory message ()
     """
 
     msg = "All nameservers failed to answer the query."
     fmt = "%s {query}: {errors}" % msg[:-1]
-    supp_kwargs = set(['request', 'errors'])
+    supp_kwargs = {'request', 'errors'}
 
     def _fmt_kwargs(self, **kwargs):
         srv_msgs = []
         for err in kwargs['errors']:
-            srv_msgs.append('Server %s %s port %s answered %s' % (err[0],
+            srv_msgs.append('Server {} {} port {} answered {}'.format(err[0],
                             'TCP' if err[1] else 'UDP', err[2], err[3]))
         return super(NoNameservers, self)._fmt_kwargs(
             query=kwargs['request'].question, errors='; '.join(srv_msgs))
 
 
 class NotAbsolute(dns.exception.DNSException):
-
     """An absolute domain name is required but a relative name was provided."""
 
 
 class NoRootSOA(dns.exception.DNSException):
-
     """There is no SOA RR at the DNS root name. This should never happen!"""
 
 
 class NoMetaqueries(dns.exception.DNSException):
-
     """DNS metaqueries are not allowed."""
 
 
 class Answer(object):
-
-    """DNS stub resolver answer
+    """DNS stub resolver answer.
 
     Instances of this class bundle up the result of a successful DNS
     resolution.
 
     For convenience, the answer object implements much of the sequence
-    protocol, forwarding to its rrset.  E.g. "for a in answer" is
-    equivalent to "for a in answer.rrset", "answer[i]" is equivalent
-    to "answer.rrset[i]", and "answer[i:j]" is equivalent to
-    "answer.rrset[i:j]".
+    protocol, forwarding to its ``rrset`` attribute.  E.g.
+    ``for a in answer`` is equivalent to ``for a in answer.rrset``.
+    ``answer[i]`` is equivalent to ``answer.rrset[i]``, and
+    ``answer[i:j]`` is equivalent to ``answer.rrset[i:j]``.
 
     Note that CNAMEs or DNAMEs in the response may mean that answer
-    node's name might not be the query name.
-
-    @ivar qname: The query name
-    @type qname: dns.name.Name object
-    @ivar rdtype: The query type
-    @type rdtype: int
-    @ivar rdclass: The query class
-    @type rdclass: int
-    @ivar response: The response message
-    @type response: dns.message.Message object
-    @ivar rrset: The answer
-    @type rrset: dns.rrset.RRset object
-    @ivar expiration: The time when the answer expires
-    @type expiration: float (seconds since the epoch)
-    @ivar canonical_name: The canonical name of the query name
-    @type canonical_name: dns.name.Name object
+    RRset's name might not be the query name.
     """
 
     def __init__(self, qname, rdtype, rdclass, response,
@@ -278,32 +276,22 @@ class Answer(object):
         return self.rrset and iter(self.rrset) or iter(tuple())
 
     def __getitem__(self, i):
+        if self.rrset is None:
+            raise IndexError
         return self.rrset[i]
 
     def __delitem__(self, i):
+        if self.rrset is None:
+            raise IndexError
         del self.rrset[i]
 
 
 class Cache(object):
-
-    """Simple DNS answer cache.
-
-    @ivar data: A dictionary of cached data
-    @type data: dict
-    @ivar cleaning_interval: The number of seconds between cleanings.  The
-    default is 300 (5 minutes).
-    @type cleaning_interval: float
-    @ivar next_cleaning: The time the cache should next be cleaned (in seconds
-    since the epoch.)
-    @type next_cleaning: float
-    """
+    """Simple thread-safe DNS answer cache."""
 
     def __init__(self, cleaning_interval=300.0):
-        """Initialize a DNS cache.
-
-        @param cleaning_interval: the number of seconds between periodic
-        cleanings.  The default is 300.0
-        @type cleaning_interval: float.
+        """*cleaning_interval*, a ``float`` is the number of seconds between
+        periodic cleanings.
         """
 
         self.data = {}
@@ -326,12 +314,14 @@ class Cache(object):
             self.next_cleaning = now + self.cleaning_interval
 
     def get(self, key):
-        """Get the answer associated with I{key}.  Returns None if
-        no answer is cached for the key.
-        @param key: the key
-        @type key: (dns.name.Name, int, int) tuple whose values are the
-        query name, rdtype, and rdclass.
-        @rtype: dns.resolver.Answer object or None
+        """Get the answer associated with *key*.
+
+        Returns None if no answer is cached for the key.
+
+        *key*, a ``(dns.name.Name, int, int)`` tuple whose values are the
+        query name, rdtype, and rdclass respectively.
+
+        Returns a ``dns.resolver.Answer`` or ``None``.
         """
 
         try:
@@ -346,11 +336,11 @@ class Cache(object):
 
     def put(self, key, value):
         """Associate key and value in the cache.
-        @param key: the key
-        @type key: (dns.name.Name, int, int) tuple whose values are the
-        query name, rdtype, and rdclass.
-        @param value: The answer being cached
-        @type value: dns.resolver.Answer object
+
+        *key*, a ``(dns.name.Name, int, int)`` tuple whose values are the
+        query name, rdtype, and rdclass respectively.
+
+        *value*, a ``dns.resolver.Answer``, the answer.
         """
 
         try:
@@ -363,11 +353,11 @@ class Cache(object):
     def flush(self, key=None):
         """Flush the cache.
 
-        If I{key} is specified, only that item is flushed.  Otherwise
+        If *key* is not ``None``, only that item is flushed.  Otherwise
         the entire cache is flushed.
 
-        @param key: the key to flush
-        @type key: (dns.name.Name, int, int) tuple or None
+        *key*, a ``(dns.name.Name, int, int)`` tuple whose values are the
+        query name, rdtype, and rdclass respectively.
         """
 
         try:
@@ -383,9 +373,7 @@ class Cache(object):
 
 
 class LRUCacheNode(object):
-
-    """LRUCache node.
-    """
+    """LRUCache node."""
 
     def __init__(self, key, value):
         self.key = key
@@ -411,30 +399,20 @@ class LRUCacheNode(object):
 
 
 class LRUCache(object):
-
-    """Bounded least-recently-used DNS answer cache.
+    """Thread-safe, bounded, least-recently-used DNS answer cache.
 
     This cache is better than the simple cache (above) if you're
     running a web crawler or other process that does a lot of
     resolutions.  The LRUCache has a maximum number of nodes, and when
     it is full, the least-recently used node is removed to make space
     for a new one.
-
-    @ivar data: A dictionary of cached data
-    @type data: dict
-    @ivar sentinel: sentinel node for circular doubly linked list of nodes
-    @type sentinel: LRUCacheNode object
-    @ivar max_size: The maximum number of nodes
-    @type max_size: int
     """
 
     def __init__(self, max_size=100000):
-        """Initialize a DNS cache.
-
-        @param max_size: The maximum number of nodes to cache; the default is
-        100,000. Must be greater than 1.
-        @type max_size: int
+        """*max_size*, an ``int``, is the maximum number of nodes to cache;
+        it must be greater than 0.
         """
+
         self.data = {}
         self.set_max_size(max_size)
         self.sentinel = LRUCacheNode(None, None)
@@ -446,13 +424,16 @@ class LRUCache(object):
         self.max_size = max_size
 
     def get(self, key):
-        """Get the answer associated with I{key}.  Returns None if
-        no answer is cached for the key.
-        @param key: the key
-        @type key: (dns.name.Name, int, int) tuple whose values are the
-        query name, rdtype, and rdclass.
-        @rtype: dns.resolver.Answer object or None
+        """Get the answer associated with *key*.
+
+        Returns None if no answer is cached for the key.
+
+        *key*, a ``(dns.name.Name, int, int)`` tuple whose values are the
+        query name, rdtype, and rdclass respectively.
+
+        Returns a ``dns.resolver.Answer`` or ``None``.
         """
+
         try:
             self.lock.acquire()
             node = self.data.get(key)
@@ -471,12 +452,13 @@ class LRUCache(object):
 
     def put(self, key, value):
         """Associate key and value in the cache.
-        @param key: the key
-        @type key: (dns.name.Name, int, int) tuple whose values are the
-        query name, rdtype, and rdclass.
-        @param value: The answer being cached
-        @type value: dns.resolver.Answer object
+
+        *key*, a ``(dns.name.Name, int, int)`` tuple whose values are the
+        query name, rdtype, and rdclass respectively.
+
+        *value*, a ``dns.resolver.Answer``, the answer.
         """
+
         try:
             self.lock.acquire()
             node = self.data.get(key)
@@ -496,12 +478,13 @@ class LRUCache(object):
     def flush(self, key=None):
         """Flush the cache.
 
-        If I{key} is specified, only that item is flushed.  Otherwise
+        If *key* is not ``None``, only that item is flushed.  Otherwise
         the entire cache is flushed.
 
-        @param key: the key to flush
-        @type key: (dns.name.Name, int, int) tuple or None
+        *key*, a ``(dns.name.Name, int, int)`` tuple whose values are the
+        query name, rdtype, and rdclass respectively.
         """
+
         try:
             self.lock.acquire()
             if key is not None:
@@ -522,62 +505,19 @@ class LRUCache(object):
 
 
 class Resolver(object):
-
-    """DNS stub resolver
-
-    @ivar domain: The domain of this host
-    @type domain: dns.name.Name object
-    @ivar nameservers: A list of nameservers to query.  Each nameserver is
-    a string which contains the IP address of a nameserver.
-    @type nameservers: list of strings
-    @ivar search: The search list.  If the query name is a relative name,
-    the resolver will construct an absolute query name by appending the search
-    names one by one to the query name.
-    @type search: list of dns.name.Name objects
-    @ivar port: The port to which to send queries.  The default is 53.
-    @type port: int
-    @ivar timeout: The number of seconds to wait for a response from a
-    server, before timing out.
-    @type timeout: float
-    @ivar lifetime: The total number of seconds to spend trying to get an
-    answer to the question.  If the lifetime expires, a Timeout exception
-    will occur.
-    @type lifetime: float
-    @ivar keyring: The TSIG keyring to use.  The default is None.
-    @type keyring: dict
-    @ivar keyname: The TSIG keyname to use.  The default is None.
-    @type keyname: dns.name.Name object
-    @ivar keyalgorithm: The TSIG key algorithm to use.  The default is
-    dns.tsig.default_algorithm.
-    @type keyalgorithm: string
-    @ivar edns: The EDNS level to use.  The default is -1, no Edns.
-    @type edns: int
-    @ivar ednsflags: The EDNS flags
-    @type ednsflags: int
-    @ivar payload: The EDNS payload size.  The default is 0.
-    @type payload: int
-    @ivar flags: The message flags to use.  The default is None (i.e. not
-    overwritten)
-    @type flags: int
-    @ivar cache: The cache to use.  The default is None.
-    @type cache: dns.resolver.Cache object
-    @ivar retry_servfail: should we retry a nameserver if it says SERVFAIL?
-    The default is 'false'.
-    @type retry_servfail: bool
-    """
+    """DNS stub resolver."""
 
     def __init__(self, filename='/etc/resolv.conf', configure=True):
-        """Initialize a resolver instance.
+        """*filename*, a ``text`` or file object, specifying a file
+        in standard /etc/resolv.conf format.  This parameter is meaningful
+        only when *configure* is true and the platform is POSIX.
 
-        @param filename: The filename of a configuration file in
-        standard /etc/resolv.conf format.  This parameter is meaningful
-        only when I{configure} is true and the platform is POSIX.
-        @type filename: string or file object
-        @param configure: If True (the default), the resolver instance
-        is configured in the normal fashion for the operating system
-        the resolver is running on.  (I.e. a /etc/resolv.conf file on
-        POSIX systems and from the registry on Windows systems.)
-        @type configure: bool"""
+        *configure*, a ``bool``.  If True (the default), the resolver
+        instance is configured in the normal fashion for the operating
+        system the resolver is running on.  (I.e. by reading a
+        /etc/resolv.conf file on POSIX systems and from the registry
+        on Windows systems.)
+        """
 
         self.domain = None
         self.nameservers = None
@@ -606,6 +546,7 @@ class Resolver(object):
 
     def reset(self):
         """Reset all resolver configuration to the defaults."""
+
         self.domain = \
             dns.name.Name(dns.name.from_text(socket.gethostname())[1:])
         if len(self.domain) == 0:
@@ -628,9 +569,10 @@ class Resolver(object):
         self.rotate = False
 
     def read_resolv_conf(self, f):
-        """Process f as a file in the /etc/resolv.conf format.  If f is
-        a string, it is used as the name of the file to open; otherwise it
+        """Process *f* as a file in the /etc/resolv.conf format.  If f is
+        a ``text``, it is used as the name of the file to open; otherwise it
         is treated as the file itself."""
+
         if isinstance(f, string_types):
             try:
                 f = open(f, 'r')
@@ -684,7 +626,6 @@ class Resolver(object):
         return split_char
 
     def _config_win32_nameservers(self, nameservers):
-        """Configure a NameServer registry entry."""
         # we call str() on nameservers to convert it from unicode to ascii
         nameservers = str(nameservers)
         split_char = self._determine_split_char(nameservers)
@@ -694,12 +635,10 @@ class Resolver(object):
                 self.nameservers.append(ns)
 
     def _config_win32_domain(self, domain):
-        """Configure a Domain registry entry."""
         # we call str() on domain to convert it from unicode to ascii
         self.domain = dns.name.from_text(str(domain))
 
     def _config_win32_search(self, search):
-        """Configure a Search registry entry."""
         # we call str() on search to convert it from unicode to ascii
         search = str(search)
         split_char = self._determine_split_char(search)
@@ -708,14 +647,14 @@ class Resolver(object):
             if s not in self.search:
                 self.search.append(dns.name.from_text(s))
 
-    def _config_win32_fromkey(self, key):
-        """Extract DNS info from a registry key."""
+    def _config_win32_fromkey(self, key, always_try_domain):
         try:
             servers, rtype = _winreg.QueryValueEx(key, 'NameServer')
         except WindowsError:  # pylint: disable=undefined-variable
             servers = None
         if servers:
             self._config_win32_nameservers(servers)
+        if servers or always_try_domain:
             try:
                 dom, rtype = _winreg.QueryValueEx(key, 'Domain')
                 if dom:
@@ -744,6 +683,7 @@ class Resolver(object):
 
     def read_registry(self):
         """Extract resolver configuration from the Windows registry."""
+
         lm = _winreg.ConnectRegistry(None, _winreg.HKEY_LOCAL_MACHINE)
         want_scan = False
         try:
@@ -759,7 +699,7 @@ class Resolver(object):
                                              r'SYSTEM\CurrentControlSet'
                                              r'\Services\VxD\MSTCP')
             try:
-                self._config_win32_fromkey(tcp_params)
+                self._config_win32_fromkey(tcp_params, True)
             finally:
                 tcp_params.Close()
             if want_scan:
@@ -777,7 +717,7 @@ class Resolver(object):
                             if not self._win32_is_nic_enabled(lm, guid, key):
                                 continue
                             try:
-                                self._config_win32_fromkey(key)
+                                self._config_win32_fromkey(key, False)
                             finally:
                                 key.Close()
                         except EnvironmentError:
@@ -842,7 +782,8 @@ class Resolver(object):
             except WindowsError:  # pylint: disable=undefined-variable
                 return False
 
-    def _compute_timeout(self, start):
+    def _compute_timeout(self, start, lifetime=None):
+        lifetime = self.lifetime if lifetime is None else lifetime
         now = time.time()
         duration = now - start
         if duration < 0:
@@ -854,44 +795,54 @@ class Resolver(object):
                 # happen, e.g. under vmware with older linux kernels.
                 # Pretend it didn't happen.
                 now = start
-        if duration >= self.lifetime:
+        if duration >= lifetime:
             raise Timeout(timeout=duration)
-        return min(self.lifetime - duration, self.timeout)
+        return min(lifetime - duration, self.timeout)
 
     def query(self, qname, rdtype=dns.rdatatype.A, rdclass=dns.rdataclass.IN,
-              tcp=False, source=None, raise_on_no_answer=True, source_port=0):
+              tcp=False, source=None, raise_on_no_answer=True, source_port=0,
+              lifetime=None):
         """Query nameservers to find the answer to the question.
 
-        The I{qname}, I{rdtype}, and I{rdclass} parameters may be objects
+        The *qname*, *rdtype*, and *rdclass* parameters may be objects
         of the appropriate type, or strings that can be converted into objects
-        of the appropriate type.  E.g. For I{rdtype} the integer 2 and the
-        the string 'NS' both mean to query for records with DNS rdata type NS.
+        of the appropriate type.
 
-        @param qname: the query name
-        @type qname: dns.name.Name object or string
-        @param rdtype: the query type
-        @type rdtype: int or string
-        @param rdclass: the query class
-        @type rdclass: int or string
-        @param tcp: use TCP to make the query (default is False).
-        @type tcp: bool
-        @param source: bind to this IP address (defaults to machine default
-        IP).
-        @type source: IP address in dotted quad notation
-        @param raise_on_no_answer: raise NoAnswer if there's no answer
-        (defaults is True).
-        @type raise_on_no_answer: bool
-        @param source_port: The port from which to send the message.
-        The default is 0.
-        @type source_port: int
-        @rtype: dns.resolver.Answer instance
-        @raises Timeout: no answers could be found in the specified lifetime
-        @raises NXDOMAIN: the query name does not exist
-        @raises YXDOMAIN: the query name is too long after DNAME substitution
-        @raises NoAnswer: the response did not contain an answer and
-        raise_on_no_answer is True.
-        @raises NoNameservers: no non-broken nameservers are available to
-        answer the question."""
+        *qname*, a ``dns.name.Name`` or ``text``, the query name.
+
+        *rdtype*, an ``int`` or ``text``,  the query type.
+
+        *rdclass*, an ``int`` or ``text``,  the query class.
+
+        *tcp*, a ``bool``.  If ``True``, use TCP to make the query.
+
+        *source*, a ``text`` or ``None``.  If not ``None``, bind to this IP
+        address when making queries.
+
+        *raise_on_no_answer*, a ``bool``.  If ``True``, raise
+        ``dns.resolver.NoAnswer`` if there's no answer to the question.
+
+        *source_port*, an ``int``, the port from which to send the message.
+
+        *lifetime*, a ``float``, how long query should run before timing out.
+
+        Raises ``dns.exception.Timeout`` if no answers could be found
+        in the specified lifetime.
+
+        Raises ``dns.resolver.NXDOMAIN`` if the query name does not exist.
+
+        Raises ``dns.resolver.YXDOMAIN`` if the query name is too long after
+        DNAME substitution.
+
+        Raises ``dns.resolver.NoAnswer`` if *raise_on_no_answer* is
+        ``True`` and the query name exists but has no RRset of the
+        desired type and class.
+
+        Raises ``dns.resolver.NoNameservers`` if no non-broken
+        nameservers are available to answer the question.
+
+        Returns a ``dns.resolver.Answer`` instance.
+        """
 
         if isinstance(qname, string_types):
             qname = dns.name.from_text(qname, None)
@@ -946,7 +897,7 @@ class Resolver(object):
                 if len(nameservers) == 0:
                     raise NoNameservers(request=request, errors=errors)
                 for nameserver in nameservers[:]:
-                    timeout = self._compute_timeout(start)
+                    timeout = self._compute_timeout(start, lifetime)
                     port = self.nameserver_ports.get(nameserver, self.port)
                     try:
                         tcp_attempt = tcp
@@ -963,7 +914,7 @@ class Resolver(object):
                             if response.flags & dns.flags.TC:
                                 # Response truncated; retry with TCP.
                                 tcp_attempt = True
-                                timeout = self._compute_timeout(start)
+                                timeout = self._compute_timeout(start, lifetime)
                                 response = \
                                     dns.query.tcp(request, nameserver,
                                                   timeout, port,
@@ -1038,7 +989,7 @@ class Resolver(object):
                     # But we still have servers to try.  Sleep a bit
                     # so we don't pound them!
                     #
-                    timeout = self._compute_timeout(start)
+                    timeout = self._compute_timeout(start, lifetime)
                     sleep_time = min(timeout, backoff)
                     backoff *= 2
                     time.sleep(sleep_time)
@@ -1059,17 +1010,22 @@ class Resolver(object):
                  algorithm=dns.tsig.default_algorithm):
         """Add a TSIG signature to the query.
 
-        @param keyring: The TSIG keyring to use; defaults to None.
-        @type keyring: dict
-        @param keyname: The name of the TSIG key to use; defaults to None.
-        The key must be defined in the keyring.  If a keyring is specified
-        but a keyname is not, then the key used will be the first key in the
-        keyring.  Note that the order of keys in a dictionary is not defined,
-        so applications should supply a keyname when a keyring is used, unless
-        they know the keyring contains only one key.
-        @param algorithm: The TSIG key algorithm to use.  The default
-        is dns.tsig.default_algorithm.
-        @type algorithm: string"""
+        See the documentation of the Message class for a complete
+        description of the keyring dictionary.
+
+        *keyring*, a ``dict``, the TSIG keyring to use.  If a
+        *keyring* is specified but a *keyname* is not, then the key
+        used will be the first key in the *keyring*.  Note that the
+        order of keys in a dictionary is not defined, so applications
+        should supply a keyname when a keyring is used, unless they
+        know the keyring contains only one key.
+
+        *keyname*, a ``dns.name.Name`` or ``None``, the name of the TSIG key
+        to use; defaults to ``None``. The key must be defined in the keyring.
+
+        *algorithm*, a ``dns.name.Name``, the TSIG algorithm to use.
+        """
+
         self.keyring = keyring
         if keyname is None:
             self.keyname = list(self.keyring.keys())[0]
@@ -1078,14 +1034,19 @@ class Resolver(object):
         self.keyalgorithm = algorithm
 
     def use_edns(self, edns, ednsflags, payload):
-        """Configure Edns.
+        """Configure EDNS behavior.
 
-        @param edns: The EDNS level to use.  The default is -1, no Edns.
-        @type edns: int
-        @param ednsflags: The EDNS flags
-        @type ednsflags: int
-        @param payload: The EDNS payload size.  The default is 0.
-        @type payload: int"""
+        *edns*, an ``int``, is the EDNS level to use.  Specifying
+        ``None``, ``False``, or ``-1`` means "do not use EDNS", and in this case
+        the other parameters are ignored.  Specifying ``True`` is
+        equivalent to specifying 0, i.e. "use EDNS0".
+
+        *ednsflags*, an ``int``, the EDNS flag values.
+
+        *payload*, an ``int``, is the EDNS sender's payload field, which is the
+        maximum size of UDP datagram the sender can handle.  I.e. how big
+        a response to this message can be.
+        """
 
         if edns is None:
             edns = -1
@@ -1094,12 +1055,15 @@ class Resolver(object):
         self.payload = payload
 
     def set_flags(self, flags):
-        """Overrides the default flags with your own
+        """Overrides the default flags with your own.
 
-        @param flags: The flags to overwrite the default with
-        @type flags: int"""
+        *flags*, an ``int``, the message flags to use.
+        """
+
         self.flags = flags
 
+
+#: The default resolver.
 default_resolver = None
 
 
@@ -1113,37 +1077,49 @@ def get_default_resolver():
 def reset_default_resolver():
     """Re-initialize default resolver.
 
-    resolv.conf will be re-read immediatelly.
+    Note that the resolver configuration (i.e. /etc/resolv.conf on UNIX
+    systems) will be re-read immediately.
     """
+
     global default_resolver
     default_resolver = Resolver()
 
 
 def query(qname, rdtype=dns.rdatatype.A, rdclass=dns.rdataclass.IN,
           tcp=False, source=None, raise_on_no_answer=True,
-          source_port=0):
+          source_port=0, lifetime=None):
     """Query nameservers to find the answer to the question.
 
     This is a convenience function that uses the default resolver
     object to make the query.
-    @see: L{dns.resolver.Resolver.query} for more information on the
-    parameters."""
+
+    See ``dns.resolver.Resolver.query`` for more information on the
+    parameters.
+    """
+
     return get_default_resolver().query(qname, rdtype, rdclass, tcp, source,
-                                        raise_on_no_answer, source_port)
+                                        raise_on_no_answer, source_port,
+                                        lifetime)
 
 
 def zone_for_name(name, rdclass=dns.rdataclass.IN, tcp=False, resolver=None):
     """Find the name of the zone which contains the specified name.
 
-    @param name: the query name
-    @type name: absolute dns.name.Name object or string
-    @param rdclass: The query class
-    @type rdclass: int
-    @param tcp: use TCP to make the query (default is False).
-    @type tcp: bool
-    @param resolver: the resolver to use
-    @type resolver: dns.resolver.Resolver object or None
-    @rtype: dns.name.Name"""
+    *name*, an absolute ``dns.name.Name`` or ``text``, the query name.
+
+    *rdclass*, an ``int``, the query class.
+
+    *tcp*, a ``bool``.  If ``True``, use TCP to make the query.
+
+    *resolver*, a ``dns.resolver.Resolver`` or ``None``, the resolver to use.
+    If ``None``, the default resolver is used.
+
+    Raises ``dns.resolver.NoRootSOA`` if there is no SOA RR at the DNS
+    root.  (This is only likely to happen if you're using non-default
+    root servers in your network and they are misconfigured.)
+
+    Returns a ``dns.name.Name``.
+    """
 
     if isinstance(name, string_types):
         name = dns.name.from_text(name, dns.name.root)
@@ -1240,7 +1216,7 @@ def _getaddrinfo(host=None, service=None, family=socket.AF_UNSPEC, socktype=0,
                                 v4addrs.append(rdata.address)
                 except dns.resolver.NXDOMAIN:
                     raise socket.gaierror(socket.EAI_NONAME)
-                except:
+                except Exception:
                     raise socket.gaierror(socket.EAI_SYSTEM)
     port = None
     try:
@@ -1379,9 +1355,9 @@ def override_system_resolver(resolver=None):
     The resolver to use may be specified; if it's not, the default
     resolver will be used.
 
-    @param resolver: the resolver to use
-    @type resolver: dns.resolver.Resolver object or None
+    resolver, a ``dns.resolver.Resolver`` or ``None``, the resolver to use.
     """
+
     if resolver is None:
         resolver = get_default_resolver()
     global _resolver
@@ -1395,8 +1371,8 @@ def override_system_resolver(resolver=None):
 
 
 def restore_system_resolver():
-    """Undo the effects of override_system_resolver().
-    """
+    """Undo the effects of prior override_system_resolver()."""
+
     global _resolver
     _resolver = None
     socket.getaddrinfo = _original_getaddrinfo
