@@ -18,7 +18,7 @@ __version__ = '4.1.3'
 
 GOOGLE_AUTH_URI = 'https://accounts.google.com/o/oauth2/v2/auth'
 GOOGLE_DEVICE_URI = 'https://oauth2.googleapis.com/device/code'
-GOOGLE_REVOKE_URI = 'https://oauth2.googleapis.com/revoke'
+GOOGLE_REVOKE_URI = 'https://accounts.google.com/o/oauth2/revoke'
 GOOGLE_TOKEN_URI = 'https://oauth2.googleapis.com/token'
 GOOGLE_TOKEN_INFO_URI = 'https://oauth2.googleapis.com/tokeninfo'
 
