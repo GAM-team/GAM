@@ -901,7 +901,7 @@ def callGAPI(service, function,
         stderrErrorMsg(u'{0}: {1} - {2}{3}'.format(http_status, message, reason, [u'', u': Giving up.'][n > 1]))
         return None
       systemErrorExit(int(http_status), u'{0}: {1} - {2}'.format(http_status, message, reason))
-    except oauth2client_4_0.client.AccessTokenRefreshError as e:
+    except oauth2client.client.AccessTokenRefreshError as e:
       handleOAuthTokenError(str(e), soft_errors or GAPI_SERVICE_NOT_AVAILABLE in throw_reasons)
       if GAPI_SERVICE_NOT_AVAILABLE in throw_reasons:
         raise GAPI_serviceNotAvailable(str(e))
