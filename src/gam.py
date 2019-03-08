@@ -5025,9 +5025,9 @@ def transferDriveFiles(users):
       if not skipped_files:
         break
 
-def doImap(users):
-  enable = getBoolean(sys.argv[4], u'gam <users> imap')
-  body = {u'enabled': enable, u'autoExpunge': True, u'expungeBehavior': u'archive', u'maxFolderSize': 0}
+def parseDoImap(users):
+  state = getBoolean(sys.argv[4], u'gam <users> imap')
+
   i = 5
   while i < len(sys.argv):
     myarg = sys.argv[i].lower()
@@ -5050,6 +5050,11 @@ def doImap(users):
         systemErrorExit(2, 'value for "gam <users> imap maxfoldersize" must be one of %s; got %s' % (u'|'.join(EMAILSETTINGS_IMAP_MAX_FOLDER_SIZE_CHOICES), opt))
     else:
       systemErrorExit(2, '%s is not a valid argument for "gam <users> imap"' % myarg)
+  doImap(users, state)
+
+def doImap(users, state):
+  body = {u'enabled': state, u'autoExpunge': True, u'expungeBehavior': u'archive', u'maxFolderSize': 0}
+
   i = 0
   count = len(users)
   for user in users:
@@ -5117,9 +5122,9 @@ def doLicense(users, operation):
       print u'Changing user %s from license %s to %s' % (user, _formatSKUIdDisplayName(old_sku), _formatSKUIdDisplayName(skuId))
       callGAPI(lic.licenseAssignments(), operation, soft_errors=True, productId=productId, skuId=old_sku, userId=user, body={u'skuId': skuId})
 
-def doPop(users):
-  enable = getBoolean(sys.argv[4], u'gam <users> pop')
-  body = {u'accessWindow': [u'disabled', u'allMail'][enable], u'disposition': u'leaveInInbox'}
+def parseDoPop(users):
+  state = getBoolean(sys.argv[4], u'gam <users> pop')
+
   i = 5
   while i < len(sys.argv):
     myarg = sys.argv[i].lower()
@@ -5141,6 +5146,11 @@ def doPop(users):
       i += 1
     else:
       systemErrorExit(2, '%s is not a valid argument for "gam <users> pop"' % myarg)
+  doPop(users, state)
+
+def doPop(users, state):
+  body = {u'accessWindow': [u'disabled', u'allMail'][state], u'disposition': u'leaveInInbox'}
+
   i = 0
   count = len(users)
   for user in users:
@@ -10449,6 +10459,8 @@ def doDeprovUser(users):
         callGAPI(cd.tokens(), u'delete', userKey=user, clientId=token[u'clientId'])
     else:
       print u'No Tokens'
+    doPop([user], 0)
+    doImap([user], 0)
     print u'Done deprovisioning %s' % user
 
 def doDeleteUser():
@@ -13584,10 +13596,9 @@ def ProcessGAMCommand(args):
     elif command == u'profile':
       doProfile(users)
     elif command == u'imap':
-      #doImap(users)
-      runCmdForUsers(doImap, users, default_to_batch=True)
+      runCmdForUsers(parseDoImap, users, default_to_batch=True)
     elif command in [u'pop', u'pop3']:
-      doPop(users)
+      parseDoPop(users)
     elif command == u'sendas':
       addUpdateSendAs(users, 4, True)
     elif command == u'label':
