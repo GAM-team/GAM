@@ -94,6 +94,12 @@ Go to the following link in your browser:
     {address}
 """
 
+def cp65001(name):
+  if name.lower() == "cp65001":
+    return codecs.lookup("utf-8")
+
+codecs.register(cp65001)
+
 # Override and wrap google_auth_httplib2 request methods so that the GAM
 # user-agent string is inserted into HTTP request headers.
 def _request_with_user_agent(request_method):
@@ -10907,7 +10913,7 @@ def doPrintShowAlerts():
         titles.append(field)
     csv_rows.append(aj)
   writeCSVfile(csv_rows, titles, u'Alerts', False)
- 
+
 def doPrintShowAlertFeedback():
   _, ac = buildAlertCenterGAPIObject(_getValueFromOAuth(u'email'))
   feedback = callGAPIpages(ac.alerts().feedback(), u'list', u'feedback', alertId=u'-')
