@@ -51,6 +51,8 @@ SKUS = {
     u'product': u'101005', u'aliases': [u'identitypremium', u'cloudidentitypremium'], u'displayName': 'Cloud Identity Premium'},
   u'1010310002': {
     u'product': u'101031', u'aliases': [u'gsefe', u'e4e', u'gsuiteenterpriseeducation'], u'displayName': u'G Suite Enterprise for Education'},
+  u'1010310003': {
+    u'product': u'101031', u'aliases': [u'gse4es', u'e4es', u'gsuiteenterpriseeducationstudent'], u'displayName': u'G Suite Enterprise for Education Student'},
   u'Google-Apps': {
     u'product': u'Google-Apps', u'aliases': [u'standard', u'free'], u'displayName': u'G Suite Free/Standard'},
   u'Google-Apps-For-Business': {
@@ -65,6 +67,8 @@ SKUS = {
     u'product': u'Google-Apps', u'aliases': [u'gau', u'unlimited', u'gsuitebusiness'], u'displayName': u'G Suite Business'},
   u'1010020020': {
     u'product': u'Google-Apps', u'aliases': [u'gae', u'enterprise', u'gsuiteenterprise'], u'displayName': u'G Suite Enterprise'},
+  u'1010060001': {
+    u'product': u'Google-Apps', u'aliases': [u'd4e', u'driveenterprise', u'drive4enterprise'], u'displayName': u'Drive Enterprise'},
   u'Google-Drive-storage-20GB': {
     u'product': u'Google-Drive-storage', u'aliases': [u'drive20gb', u'20gb', u'googledrivestorage20gb'], u'displayName': u'Google Drive Storage 20GB'},
   u'Google-Drive-storage-50GB': {
