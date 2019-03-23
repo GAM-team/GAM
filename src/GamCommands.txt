@@ -85,8 +85,10 @@ If an item contains spaces, it should be surrounded by ".
 	gau|unlimited|gsuitebusiness|Google-Apps-Unlimited|
 	gae|enterprise|gsuiteenterprise|1010020020|
 	gsefe|e4e|gsuiteenterpriseeducation|1010310002|
+	gsefes|e4es|gsuiteenterpriseeducationstudent|1010310003|
 	chrome|cdm|googlechromedevicemanagement|Google-Chrome-Device-Management|
 	coordinate|googlecoordinate|Google-Coordinate|
+	d4e|driveenterprise|drive4enterprise|
 	drive20gb|20gb|googledrivestorage20gb|Google-Drive-storage-20GB|
 	drive50gb|50gb|googledrivestorage50gb|Google-Drive-storage-50GB|
 	drive200gb|200gb|googledrivestorage200gb|Google-Drive-storage-200GB|
