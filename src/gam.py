@@ -8394,6 +8394,11 @@ def getGroupAttrValue(myarg, value, gs_object, gs_body, function):
           value = u'true'
         elif value.lower() in false_values:
           value = u'false'
+      # Another ugly hack because Groups Settings API doesn't have proper enumerator values set in discovery file.
+      if u'description' in params and params[u'description'].find(u'Possible values are: ') != -1:
+        possible_values = params[u'description'][params[u'description'].find(u'Possible values are: ')+21:].split(u' ')
+        if value not in possible_values:
+          systemErrorExit(2, u'value for %s must be one of %s. Got %s.' % (attrib, u', '.join(possible_values), value))
       gs_body[attrib] = value
       return
   systemErrorExit(2, '%s is not a valid argument for "gam %s group"' % (myarg, function))
