@@ -8827,6 +8827,7 @@ def doUpdateGroup():
       users_email = [normalizeEmailAddressOrUID(sys.argv[i], checkForCustomerId=True)]
     return (role, users_email, delivery)
 
+  gs_get_before_update = False
   cd = buildGAPIObject(u'directory')
   group = sys.argv[3]
   myarg = sys.argv[4].lower()
@@ -9025,6 +9026,9 @@ def doUpdateGroup():
         use_cd_api = True
         cd_body[u'adminCreated'] = getBoolean(sys.argv[i+1], myarg)
         i += 2
+      elif myarg == u'getbeforeupdate':
+        gs_get_before_update = True
+        i += 1
       else:
         if not gs:
           gs = buildGAPIObject(u'groupssettings')
@@ -9036,12 +9040,14 @@ def doUpdateGroup():
       group = callGAPI(cd.groups(), u'update', groupKey=group, body=cd_body, fields=u'email')[u'email']
     if gs:
       if not GroupIsAbuseOrPostmaster(group):
-        settings = callGAPI(gs.groups(), u'get',
+        if gs_get_before_update:
+          current_settings = callGAPI(gs.groups(), u'get',
                             retry_reasons=[u'serviceLimit'],
                             groupUniqueId=group, fields=u'*')
-        if settings is not None:
-          settings.update(gs_body)
-          callGAPI(gs.groups(), u'update', retry_reasons=[u'serviceLimit'], groupUniqueId=group, body=settings)
+          if current_settings is not None:
+            gs_body = dict(current_settings.items() + gs_body.items())
+        if gs_body:
+          callGAPI(gs.groups(), u'update', retry_reasons=[u'serviceLimit'], groupUniqueId=group, body=gs_body)
     print u'updated group %s' % group
 
 def doUpdateAlias():
@@ -13618,9 +13624,9 @@ def ProcessGAMCommand(args):
         systemErrorExit(2, '%s is not a valid argument for "gam <users> watch"' % watchWhat)
     else:
       systemErrorExit(2, '%s is not a valid argument for "gam"' % command)
-  except IndexError:
-    showUsage()
-    sys.exit(2)
+  #except IndexError:
+  #  showUsage()
+  #  sys.exit(2)
   except KeyboardInterrupt:
     sys.exit(50)
   except socket.error as e:
