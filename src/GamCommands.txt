@@ -697,52 +697,52 @@ Specify a collection of Users by directly specifying them or by specifiying item
 	(replyto reply_to_custom|reply_to_sender|reply_to_list|reply_to_owner|reply_to_ignore|reply_to_managers)|
 	(sendmessagedenynotification <Boolean>)|
 	(spammoderationlevel allow|moderate|silently_moderate|reject)|
-	(whocanadd all_members_can_add|all_managers_can_add|none_can_add)|
+	(whocanadd all_members_can_add|all_managers_can_add|all_owners_can_add|none_can_add)|
 	(whocancontactowner anyone_can_contact|all_in_domain_can_contact|all_members_can_contact|all_managers_can_contact)|
 	(whocanjoin anyone_can_join|all_in_domain_can_join|invited_can_join|can_request_to_join)|
-	(whocanleavegroup all_managers_can_leave|all_members_can_leave|none_can_leave)|
-	(whocanpostmessage none_can_post|all_managers_can_post|all_members_can_post|all_in_domain_can_post|anyone_can_post)|
-	(whocanviewgroup anyone_can_view|all_in_domain_can_view|all_members_can_view|all_managers_can_view)|
-	(whocanviewmembership all_in_domain_can_view|all_members_can_view|all_managers_can_view)
+	(whocanleavegroup all_members_can_leave|all_managers_can_leave|all_owners_can_leave|none_can_leave)|
+	(whocanpostmessage none_can_post|all_managers_can_post|all_members_can_post|all_owners_can_post|all_in_domain_can_post|anyone_can_post)|
+	(whocanviewgroup anyone_can_view|all_in_domain_can_view|all_members_can_view|all_managers_can_view|all_owners_can_view)|
+	(whocanviewmembership all_in_domain_can_view|all_members_can_view|all_managers_can_view|all_owners_can_view)
 <GroupWhoCanDiscoverGroupAttribute> ::=
 	(whocandiscovergroup allmemberscandiscover|allindomaincandiscover|anyonecandiscover)|
 	(showingroupdirectory <Boolean>)
 <GroupWhoCanAssistContentAttribute> ::=
-	(whocanassistcontent (members|all_members)|owners_and_managers|managers_only|owners_only|none)|
-	(whocanassigntopics (members|all_members)|owners_and_managers|managers_only|owners_only|none)|
-	(whocanenterfreeformtags (members|all_members)|owners_and_managers|managers_only|owners_only|none)|
-	(whocanhideabuse (members|all_members)|owners_and_managers|managers_only|owners_only|none)|
-	(whocanmaketopicssticky (members|all_members)|owners_and_managers|managers_only|owners_only|none)|
-	(whocanmarkduplicate (members|all_members)|owners_and_managers|managers_only|owners_only|none)|
-	(whocanmarkfavoritereplyonanytopic (members|all_members)|owners_and_managers|managers_only|owners_only|none)|
-	(whocanmarknoresponseneeded (members|all_members)|owners_and_managers|managers_only|owners_only|none)|
-	(whocanmodifytagsandcategories (members|all_members)|owners_and_managers|managers_only|owners_only|none)|
-	(whocantaketopics (members|all_members)|owners_and_managers|managers_only|owners_only|none)|
-	(whocanunassigntopic (members|all_members)|owners_and_managers|managers_only|owners_only|none)|
-	(whocanunmarkfavoritereplyonanytopic (members|all_members)|owners_and_managers|managers_only|owners_only|none)
+	(whocanassistcontent all_members|owners_and_managers|managers_only|owners_only|none)|
+	(whocanassigntopics all_members|owners_and_managers|managers_only|owners_only|none)|
+	(whocanenterfreeformtags all_members|owners_and_managers|managers_only|owners_only|none)|
+	(whocanhideabuse all_members|owners_and_managers|managers_only|owners_only|none)|
+	(whocanmaketopicssticky all_members|owners_and_managers|managers_only|owners_only|none)|
+	(whocanmarkduplicate all_members|owners_and_managers|managers_only|owners_only|none)|
+	(whocanmarkfavoritereplyonanytopic all_members|owners_and_managers|managers_only|owners_only|none)|
+	(whocanmarknoresponseneeded all_members|owners_and_managers|managers_only|owners_only|none)|
+	(whocanmodifytagsandcategories all_members|owners_and_managers|managers_only|owners_only|none)|
+	(whocantaketopics all_members|owners_and_managers|managers_only|owners_only|none)|
+	(whocanunassigntopic all_members|owners_and_managers|managers_only|owners_only|none)|
+	(whocanunmarkfavoritereplyonanytopic all_members|owners_and_managers|managers_only|owners_only|none)
 <GroupWhoCanModerateContentAttribute> ::=
-	(whocanmoderatecontent (members|all_members)|owners_and_managers|owners_only|none)|
-	(whocanapprovemessages (members|all_members)|owners_and_managers|owners_only|none)|
-	(whocandeleteanypost (members|all_members)|owners_and_managers|owners_only|none)|
-	(whocandeletetopics (members|all_members)|owners_and_managers|owners_only|none)|
-	(whocanlocktopics (members|all_members)|owners_and_managers|owners_only|none)|
-	(whocanmovetopicsin (members|all_members)|owners_and_managers|owners_only|none)|
-	(whocanmovetopicsout (members|all_members)|owners_and_managers|owners_only|none)|
-	(whocanpostannouncements (members|all_members)|owners_and_managers|owners_only|none)
+	(whocanmoderatecontent all_members|owners_and_managers|owners_only|none)|
+	(whocanapprovemessages all_members|owners_and_managers|owners_only|none)|
+	(whocandeleteanypost all_members|owners_and_managers|owners_only|none)|
+	(whocandeletetopics all_members|owners_and_managers|owners_only|none)|
+	(whocanlocktopics all_members|owners_and_managers|owners_only|none)|
+	(whocanmovetopicsin all_members|owners_and_managers|owners_only|none)|
+	(whocanmovetopicsout all_members|owners_and_managers|owners_only|none)|
+	(whocanpostannouncements all_members|owners_and_managers|owners_only|none)
 <GroupWhoCanModerateMembersAttribute> ::=
-	(whocanmoderatemembers (members|all_members)|owners_and_managers|owners_only|none)|
+	(whocanmoderatemembers all_members|owners_and_managers|owners_only|none)|
 	(whocanadd all_members_can_add|all_managers_can_add|none_can_add)|
 	(whocanapprovemembers all_members_can_approve|all_managers_can_approve|all_owners_can_approve|none_can_approve)|
-	(whocanbanusers (members|all_members)|owners_and_managers|owners_only|none)|
-	(whocaninvite all_members_can_invite|all_managers_can_invite|none_can_invite)|
-	(whocanmodifymembers (members|all_members)|owners_and_managers|owners_only|none)
+	(whocanbanusers all_members|owners_and_managers|owners_only|none)|
+	(whocaninvite all_members_can_invite|all_managers_can_invite|all_owners_can_invite|none_can_invite)|
+	(whocanmodifymembers all_members|owners_and_managers|owners_only|none)
 <GroupDeprecatedAttribute> ::=
 	(allowgooglecommunication <Boolean>)|
 	(favoriterepliesontop <Boolean>)|
 	(maxmessagebytes <ByteCount>)|
 	(messagedisplayfont default_font|fixed_width_font)|
-	(whocanaddreferences (members|all_members)|owners_and_managers|managers_only|owners_only|none)|
-	(whocanmarkfavoritereplyonowntopic (members|all_members)|owners_and_managers|managers_only|owners_only|none)
+	(whocanaddreferences all_members|owners_and_managers|managers_only|owners_only|none)|
+	(whocanmarkfavoritereplyonowntopic all_members|owners_and_managers|managers_only|owners_only|none)
 <GroupAttribute> ::=
 	<GroupSettingsAttribute>|
 	<GroupWhoCanDiscoverGroupAttribute>|
