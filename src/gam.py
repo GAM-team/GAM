@@ -1089,10 +1089,14 @@ def getService(api, http):
     if GM_Globals[GM_CACHE_DISCOVERY_ONLY]:
       http.cache = None
     return service
+  if api in V1_DISCOVERY_APIS:
+    discoveryServiceUrl = googleapiclient.discovery.DISCOVERY_URI
+  else:
+    discoveryServiceUrl = googleapiclient.discovery.V2_DISCOVERY_URI
   retries = 3
   for n in range(1, retries+1):
     try:
-      service = googleapiclient.discovery.build(api, version, http=http, cache_discovery=False)
+      service = googleapiclient.discovery.build(api, version, http=http, cache_discovery=False, discoveryServiceUrl=discoveryServiceUrl)
       GM_Globals[GM_CURRENT_API_SERVICES].setdefault(api, {})
       GM_Globals[GM_CURRENT_API_SERVICES][api][version] = service._rootDesc.copy()
       if GM_Globals[GM_CACHE_DISCOVERY_ONLY]:
@@ -1267,10 +1271,6 @@ def buildDrive3GAPIObject(user):
 def buildGmailGAPIObject(user):
   userEmail = convertUIDtoEmailAddress(user)
   return (userEmail, buildGAPIServiceObject(u'gmail', userEmail))
-
-def buildGplusGAPIObject(user):
-  userEmail = convertUIDtoEmailAddress(user)
-  return (userEmail, buildGAPIServiceObject(u'plus', userEmail))
 
 def doCheckServiceAccount(users):
   all_scopes = []
@@ -5873,41 +5873,6 @@ def showGmailProfile(users):
   sortCSVTitles([u'emailAddress',], titles)
   writeCSVfile(csvRows, titles, list_type=u'Gmail Profiles', todrive=todrive)
 
-def showGplusProfile(users):
-  todrive = False
-  i = 6
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower()
-    if myarg == u'todrive':
-      todrive = True
-      i += 1
-    else:
-      systemErrorExit(2, '%s is not a valid argument for gam <users> show gplusprofile' % sys.argv[i])
-  csvRows = []
-  titles = [u'id']
-  i = 0
-  count = len(users)
-  for user in users:
-    i += 1
-    user, gplus = buildGplusGAPIObject(user)
-    if not gplus:
-      continue
-    sys.stderr.write(u'Getting Gplus profile for %s\n' % user)
-    try:
-      results = callGAPI(gplus.people(), u'get',
-                         throw_reasons=GAPI_GPLUS_THROW_REASONS,
-                         userId=u'me')
-      if results:
-        results = flatten_json(results)
-        csvRows.append(results)
-        for item in results:
-          if item not in titles:
-            titles.append(item)
-    except GAPI_serviceNotAvailable:
-      entityServiceNotApplicableWarning(u'User', user, i, count)
-  sortCSVTitles([u'id',], titles)
-  writeCSVfile(csvRows, titles, list_type=u'Gplus Profiles', todrive=todrive)
-
 def updateLabels(users):
   label_name = sys.argv[5]
   label_name_lower = label_name.lower()
@@ -7249,7 +7214,10 @@ def getCRMService(login_hint):
     noPythonSSLExit()
   credentials.user_agent = GAM_INFO
   http = credentials.authorize(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL], cache=None))
-  return (googleapiclient.discovery.build(u'cloudresourcemanager', u'v1', http=http, cache_discovery=False), http)
+  discoveryServiceUrl = googleapiclient.discovery.V2_DISCOVERY_URI
+  return (googleapiclient.discovery.build(u'cloudresourcemanager', u'v1',
+       http=http, cache_discovery=False, discoveryServiceUrl=discoveryServiceUrl),
+       http)
 
 def getGAMProjectAPIs():
   httpObj = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL])
@@ -7259,7 +7227,10 @@ def getGAMProjectAPIs():
 def enableGAMProjectAPIs(GAMProjectAPIs, httpObj, projectId, checkEnabled, i=0, count=0):
   apis = GAMProjectAPIs[:]
   project_name = u'project:{0}'.format(projectId)
-  serveman = googleapiclient.discovery.build(u'servicemanagement', u'v1', http=httpObj, cache_discovery=False)
+  discoveryServiceUrl = googleapiclient.discovery.V2_DISCOVERY_URI
+  serveman = googleapiclient.discovery.build(u'servicemanagement', u'v1',
+        http=httpObj, cache_discovery=False,
+        discoveryServiceUrl=discoveryServiceUrl)
   status = True
   if checkEnabled:
     try:
@@ -13360,8 +13331,6 @@ def ProcessGAMCommand(args):
         printShowSmime(users, False)
       elif showWhat == u'gmailprofile':
         showGmailProfile(users)
-      elif showWhat == u'gplusprofile':
-        showGplusProfile(users)
       elif showWhat in [u'sig', u'signature']:
         getSignature(users)
       elif showWhat == u'forward':

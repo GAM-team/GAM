@@ -97,6 +97,21 @@ SKUS = {
     u'product': u'Google-Chrome-Device-Management', u'aliases': [u'chrome', u'cdm', u'googlechromedevicemanagement'], u'displayName': u'Google Chrome Device Management'}
   }
 
+# Legacy APIs that use v1 discovery. Newer APIs should all use v2.
+V1_DISCOVERY_APIS = {
+  u'oauth2',
+  u'reseller',
+  u'storage',
+  u'drive',
+  u'admin',
+  u'groupssettings',
+  u'licensing',
+  u'calendar',
+  u'appsactivity',
+  u'siteVerification',
+  u'gmail',
+  }
+
 API_VER_MAPPING = {
   u'alertcenter': u'v1beta1',
   u'appsactivity': u'v1',
@@ -111,7 +126,6 @@ API_VER_MAPPING = {
   u'groupssettings': u'v1',
   u'licensing': u'v1',
   u'oauth2': u'v2',
-  u'plus': u'v1',
   u'pubsub': u'v1',
   u'reports': u'reports_v1',
   u'reseller': u'v1',
@@ -132,7 +146,6 @@ API_SCOPE_MAPPING = {
   u'gmail': [u'https://mail.google.com/',
              u'https://www.googleapis.com/auth/gmail.settings.basic',
              u'https://www.googleapis.com/auth/gmail.settings.sharing',],
-  u'plus': [u'https://www.googleapis.com/auth/plus.me',],
   u'sheets': [u'https://www.googleapis.com/auth/spreadsheets',],
 }
 
@@ -166,9 +179,6 @@ SERVICE_NAME_CHOICES_MAP = {
   u'googledrive': u'Drive and Docs',
   u'gdrive': u'Drive and Docs',
   u'calendar': u'Calendar',
-  u'gplus': u'Google+',
-  u'google+': u'Google+',
-  u'googleplus': u'Google+',
   }
 
 PRINTJOB_ASCENDINGORDER_MAP = {
