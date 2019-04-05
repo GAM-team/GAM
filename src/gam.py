@@ -963,14 +963,13 @@ def callGAPIpages(service, function, items=u'items',
   page_token = None
   total_items = 0
   while True:
-    page = callGAPI(
-        service,
-        function,
-        soft_errors=soft_errors,
-        throw_reasons=throw_reasons,
-        retry_reasons=retry_reasons,
-        pageToken=page_token,
-        **kwargs)
+    page = callGAPI(service,
+                    function,
+                    soft_errors=soft_errors,
+                    throw_reasons=throw_reasons,
+                    retry_reasons=retry_reasons,
+                    pageToken=page_token,
+                    **kwargs)
     if page:
       page_token = page.get(u'nextPageToken')
       page_items = page.get(items, [])
@@ -988,10 +987,8 @@ def callGAPIpages(service, function, items=u'items',
       if message_attribute:
         first_item = page_items[0] if num_page_items > 0 else {}
         last_item = page_items[-1] if num_page_items > 1 else first_item
-        show_message = show_message.replace(
-            u'%%first_item%%', str(first_item.get(message_attribute, u'')))
-        show_message = show_message.replace(
-            u'%%last_item%%', str(last_item.get(message_attribute, u'')))
+        show_message = show_message.replace(u'%%first_item%%', str(first_item.get(message_attribute, u'')))
+        show_message = show_message.replace(u'%%last_item%%', str(last_item.get(message_attribute, u'')))
       sys.stderr.write(u'\r')
       sys.stderr.flush()
       sys.stderr.write(show_message)
@@ -1024,12 +1021,11 @@ def callGAPIitems(service, function, items=u'items',
   Returns:
     The list of items in the first page of a response.
   """
-  results = callGAPI(
-      service,
-      function,
-      throw_reasons=throw_reasons,
-      retry_reasons=retry_reasons,
-      **kwargs)
+  results = callGAPI(service,
+                     function,
+                     throw_reasons=throw_reasons,
+                     retry_reasons=retry_reasons,
+                     **kwargs)
   if results:
     return results.get(items, [])
   return []
@@ -8365,6 +8361,11 @@ def getGroupAttrValue(myarg, value, gs_object, gs_body, function):
           value = u'true'
         elif value.lower() in false_values:
           value = u'false'
+      # Another ugly hack because Groups Settings API doesn't have proper enumerator values set in discovery file.
+      if u'description' in params and params[u'description'].find(u'Possible values are: ') != -1:
+        possible_values = params[u'description'][params[u'description'].find(u'Possible values are: ')+21:].split(u' ')
+        if value not in possible_values:
+          systemErrorExit(2, u'value for %s must be one of %s. Got %s.' % (attrib, u', '.join(possible_values), value))
       gs_body[attrib] = value
       return
   systemErrorExit(2, '%s is not a valid argument for "gam %s group"' % (myarg, function))
@@ -8372,7 +8373,7 @@ def getGroupAttrValue(myarg, value, gs_object, gs_body, function):
 def doCreateGroup():
   cd = buildGAPIObject(u'directory')
   body = {u'email': normalizeEmailAddressOrUID(sys.argv[3], noUid=True)}
-  got_name = False
+  gs_get_before_update = got_name = False
   i = 4
   gs_body = {}
   gs = None
@@ -8396,6 +8397,9 @@ def doCreateGroup():
       else:
         body[u'description'] = description
       i += 2
+    elif myarg == u'getbeforeupdate':
+      gs_get_before_update = True
+      i += 1
     else:
       if not gs:
         gs = buildGAPIObject(u'groupssettings')
@@ -8407,12 +8411,14 @@ def doCreateGroup():
   print u"Creating group %s" % body[u'email']
   callGAPI(cd.groups(), u'insert', body=body, fields=u'email')
   if gs and not GroupIsAbuseOrPostmaster(body[u'email']):
-    settings = callGAPI(gs.groups(), u'get',
-                        retry_reasons=[u'serviceLimit'],
-                        groupUniqueId=body[u'email'], fields=u'*')
-    if settings is not None:
-      settings.update(gs_body)
-      callGAPI(gs.groups(), u'update', retry_reasons=[u'serviceLimit'], groupUniqueId=body[u'email'], body=settings)
+    if gs_get_before_update:
+      current_settings = callGAPI(gs.groups(), u'get',
+                                  retry_reasons=[u'serviceLimit'],
+                                  groupUniqueId=body[u'email'], fields=u'*')
+      if current_settings is not None:
+        gs_body = dict(current_settings.items() + gs_body.items())
+    if gs_body:
+      callGAPI(gs.groups(), u'update', retry_reasons=[u'serviceLimit'], groupUniqueId=body[u'email'], body=gs_body)
 
 def doCreateAlias():
   cd = buildGAPIObject(u'directory')
@@ -8793,6 +8799,7 @@ def doUpdateGroup():
       users_email = [normalizeEmailAddressOrUID(sys.argv[i], checkForCustomerId=True)]
     return (role, users_email, delivery)
 
+  gs_get_before_update = False
   cd = buildGAPIObject(u'directory')
   group = sys.argv[3]
   myarg = sys.argv[4].lower()
@@ -8991,6 +8998,9 @@ def doUpdateGroup():
         use_cd_api = True
         cd_body[u'adminCreated'] = getBoolean(sys.argv[i+1], myarg)
         i += 2
+      elif myarg == u'getbeforeupdate':
+        gs_get_before_update = True
+        i += 1
       else:
         if not gs:
           gs = buildGAPIObject(u'groupssettings')
@@ -9002,12 +9012,14 @@ def doUpdateGroup():
       group = callGAPI(cd.groups(), u'update', groupKey=group, body=cd_body, fields=u'email')[u'email']
     if gs:
       if not GroupIsAbuseOrPostmaster(group):
-        settings = callGAPI(gs.groups(), u'get',
-                            retry_reasons=[u'serviceLimit'],
-                            groupUniqueId=group, fields=u'*')
-        if settings is not None:
-          settings.update(gs_body)
-          callGAPI(gs.groups(), u'update', retry_reasons=[u'serviceLimit'], groupUniqueId=group, body=settings)
+        if gs_get_before_update:
+          current_settings = callGAPI(gs.groups(), u'get',
+                                      retry_reasons=[u'serviceLimit'],
+                                      groupUniqueId=group, fields=u'*')
+          if current_settings is not None:
+            gs_body = dict(current_settings.items() + gs_body.items())
+        if gs_body:
+          callGAPI(gs.groups(), u'update', retry_reasons=[u'serviceLimit'], groupUniqueId=group, body=gs_body)
     print u'updated group %s' % group
 
 def doUpdateAlias():
@@ -10878,7 +10890,7 @@ def doPrintShowAlerts():
         titles.append(field)
     csv_rows.append(aj)
   writeCSVfile(csv_rows, titles, u'Alerts', False)
- 
+
 def doPrintShowAlertFeedback():
   _, ac = buildAlertCenterGAPIObject(_getValueFromOAuth(u'email'))
   feedback = callGAPIpages(ac.alerts().feedback(), u'list', u'feedback', alertId=u'-')
@@ -10886,7 +10898,7 @@ def doPrintShowAlertFeedback():
     print feedbac
 
 def _getValidAlertFeedbackTypes(ac):
-  return [type for type in ac._rootDesc[u'schemas'][u'AlertFeedback'][u'properties'][u'type'][u'enum'] if type != u'ALERT_FEEDBACK_TYPE_UNSPECIFIED']
+  return [aftype for aftype in ac._rootDesc[u'schemas'][u'AlertFeedback'][u'properties'][u'type'][u'enum'] if aftype != u'ALERT_FEEDBACK_TYPE_UNSPECIFIED']
 
 def doCreateAlertFeedback():
   _, ac = buildAlertCenterGAPIObject(_getValueFromOAuth(u'email'))
@@ -13582,9 +13594,9 @@ def ProcessGAMCommand(args):
         systemErrorExit(2, '%s is not a valid argument for "gam <users> watch"' % watchWhat)
     else:
       systemErrorExit(2, '%s is not a valid argument for "gam"' % command)
-  except IndexError:
-    showUsage()
-    sys.exit(2)
+  #except IndexError:
+  #  showUsage()
+  #  sys.exit(2)
   except KeyboardInterrupt:
     sys.exit(50)
   except socket.error as e:

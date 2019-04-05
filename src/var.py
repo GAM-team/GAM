@@ -52,7 +52,7 @@ SKUS = {
   u'1010310002': {
     u'product': u'101031', u'aliases': [u'gsefe', u'e4e', u'gsuiteenterpriseeducation'], u'displayName': u'G Suite Enterprise for Education'},
   u'1010310003': {
-    u'product': u'101031', u'aliases': [u'gse4es', u'e4es', u'gsuiteenterpriseeducationstudent'], u'displayName': u'G Suite Enterprise for Education Student'},
+    u'product': u'101031', u'aliases': [u'gsefes', u'e4es', u'gsuiteenterpriseeducationstudent'], u'displayName': u'G Suite Enterprise for Education Student'},
   u'Google-Apps': {
     u'product': u'Google-Apps', u'aliases': [u'standard', u'free'], u'displayName': u'G Suite Free/Standard'},
   u'Google-Apps-For-Business': {

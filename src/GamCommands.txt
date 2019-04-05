@@ -85,8 +85,10 @@ If an item contains spaces, it should be surrounded by ".
 	gau|unlimited|gsuitebusiness|Google-Apps-Unlimited|
 	gae|enterprise|gsuiteenterprise|1010020020|
 	gsefe|e4e|gsuiteenterpriseeducation|1010310002|
+	gsefes|e4es|gsuiteenterpriseeducationstudent|1010310003|
 	chrome|cdm|googlechromedevicemanagement|Google-Chrome-Device-Management|
 	coordinate|googlecoordinate|Google-Coordinate|
+	d4e|driveenterprise|drive4enterprise|
 	drive20gb|20gb|googledrivestorage20gb|Google-Drive-storage-20GB|
 	drive50gb|50gb|googledrivestorage50gb|Google-Drive-storage-50GB|
 	drive200gb|200gb|googledrivestorage200gb|Google-Drive-storage-200GB|
@@ -353,43 +355,58 @@ If an item contains spaces, it should be surrounded by ".
 	allowgooglecommunication|
 	allowwebposting|
 	archiveonly|
-	collaborative|
+	customfootertext|
 	customreplyto|
+	customrolesenabledforsettingstobemerged|
 	defaultmessagedenynotificationtext|
 	description|
 	directmemberscount|
 	email|
+	enablecollaborativeinbox|collaborative|
 	favoriterepliesontop|
 	id|
+	includecustomfooter|
 	includeinglobaladdresslist|gal|
 	isarchived|
 	maxmessagebytes|
 	memberscanpostasthegroup|
 	messagedisplayfont|
 	messagemoderationlevel|
-	name
+	name|
 	primarylanguage|
 	replyto|
 	sendmessagedenynotification|
 	showingroupdirectory|
 	spammoderationlevel|
-	whocanadd|
 	whocanaddreferences|
+	whocanadd|
+	whocanapprovemessages|
 	whocanassigntopics|
+	whocanassistcontent|
 	whocancontactowner|
+	whocandeleteanypost|
+	whocandeletetopics|
+	whocandiscovergroup|
 	whocanenterfreeformtags|
+	whocanhideabuse|
 	whocaninvite|
 	whocanjoin|
 	whocanleavegroup|
+	whocanlocktopics|
+	whocanmaketopicssticky|
 	whocanmarkduplicate|
 	whocanmarkfavoritereplyonanytopic|
 	whocanmarkfavoritereplyonowntopic|
 	whocanmarknoresponseneeded|
+	whocanmoderatecontent|
 	whocanmodifytagsandcategories|
+	whocanmovetopicsin|
+	whocanmovetopicsout|
+	whocanpostannouncements|
 	whocanpostmessage|
 	whocantaketopics|
 	whocanunassigntopic|
-	whocanunmarkfavoritereplyonanytopic
+	whocanunmarkfavoritereplyonanytopic|
 	whocanviewgroup|
 	whocanviewmembership
 
@@ -661,49 +678,78 @@ Specify a collection of Users by directly specifying them or by specifiying item
 	(noreminders|(reminder <Number> email|popup|sms))|
 	(colorindex|colorid <EventColorIndex>)
 
-<GroupAttributes> ::=
+<GroupSettingsAttribute> ::=
 	(allowexternalmembers <Boolean>)|
-	(allowgooglecommunication <Boolean>)|
 	(allowwebposting <Boolean>)|
 	(archiveonly <Boolean>)|
-	(collaborative (members|all_members)|(managers|owners_and_managers)|(managers_only)|(owners|owners_only)|none)|
 	(customfootertext <String>)|
 	(customreplyto <EmailAddress>)|
 	(defaultmessagedenynotificationtext <String>)|
 	(description <String>)|
-	(favoriterepliesontop <Boolean>)|
-	(gal|includeInGlobalAddressList <Boolean>)|
+	(enablecollaborativeinbox|collaborative <Boolean>)|
+	(includeinglobaladdresslist|gal <Boolean>)|
 	(includecustomfooter <Boolean>)|
 	(isarchived <Boolean>)|
-	(maxmessagebytes <ByteCount>)|
 	(memberscanpostasthegroup <Boolean>)|
-	(messagedisplayfont DEFAULT_FONT|FIXED_WIDTH_FONT)|
-	(messagemoderationlevel MODERATE_ALL_MESSAGES|MODERATE_NON_MEMBERS|MODERATE_NEW_MEMBERS|MODERATE_NONE)|
+	(messagemoderationlevel moderate_all_messages|moderate_non_members|moderate_new_members|moderate_none)|
 	(name <String>)|
 	(primarylanguage <Language>)|
-	(replyto REPLY_TO_CUSTOM|REPLY_TO_SENDER|REPLY_TO_LIST|REPLY_TO_OWNER|REPLY_TO_IGNORE|REPLY_TO_MANAGERS)|
+	(replyto reply_to_custom|reply_to_sender|reply_to_list|reply_to_owner|reply_to_ignore|reply_to_managers)|
 	(sendmessagedenynotification <Boolean>)|
-	(showingroupdirectory <Boolean>)|
-	(spammoderationlevel ALLOW|MODERATE|SILENTLY_MODERATE|REJECT)|
-	(whocanadd ALL_MEMBERS_CAN_ADD|ALL_MANAGERS_CAN_ADD|NONE_CAN_ADD)|
-	(whocanaddreferences (members|all_members)|(managers|owners_and_managers)|(managers_only)|(owners|owners_only)|none)|
-	(whocanassigntopics (members|all_members)|(managers|owners_and_managers)|(managers_only)|(owners|owners_only)|none)|
-	(whocancontactowner ANYONE_CAN_CONTACT|ALL_IN_DOMAIN_CAN_CONTACT|ALL_MEMBERS_CAN_CONTACT|ALL_MANAGERS_CAN_CONTACT)|
-	(whocanenterfreeformtags (members|all_members)|(managers|owners_and_managers)|(managers_only)|(owners|owners_only)|none)|
-	(whocaninvite ALL_MEMBERS_CAN_INVITE|ALL_MANAGERS_CAN_INVITE|NONE_CAN_INVITE)|
-	(whocanjoin ANYONE_CAN_JOIN|ALL_IN_DOMAIN_CAN_JOIN|INVITED_CAN_JOIN|CAN_REQUEST_TO_JOIN)|
-	(whocanleavegroup ALL_MANAGERS_CAN_LEAVE|ALL_MEMBERS_CAN_LEAVE|NONE_CAN_LEAVE)|
-	(whocanmarkduplicate (members|all_members)|(managers|owners_and_managers)|(managers_only)|(owners|owners_only)|none)|
-	(whocanmarkfavoritereplyonanytopic (members|all_members)|(managers|owners_and_managers)|(managers_only)|(owners|owners_only)|none)|
-	(whocanmarkfavoritereplyonowntopic (members|all_members)|(managers|owners_and_managers)|(managers_only)|(owners|owners_only)|none)|
-	(whocanmarknoresponseneeded (members|all_members)|(managers|owners_and_managers)|(managers_only)|(owners|owners_only)|none)|
-	(whocanmodifytagsandcategories (members|all_members)|(managers|owners_and_managers)|(managers_only)|(owners|owners_only)|none)|
-	(whocanpostmessage NONE_CAN_POST|ALL_MANAGERS_CAN_POST|ALL_MEMBERS_CAN_POST|ALL_IN_DOMAIN_CAN_POST|ANYONE_CAN_POST)|
-	(whocantaketopics (members|all_members)|(managers|owners_and_managers)|(managers_only)|(owners|owners_only)|none)|
-	(whocanunassigntopic (members|all_members)|(managers|owners_and_managers)|(managers_only)|(owners|owners_only)|none)|
-	(whocanunmarkfavoritereplyonanytopic (members|all_members)|(managers|owners_and_managers)|(managers_only)|(owners|owners_only)|none)|
-	(whocanviewgroup ANYONE_CAN_VIEW|ALL_IN_DOMAIN_CAN_VIEW|ALL_MEMBERS_CAN_VIEW|ALL_MANAGERS_CAN_VIEW)|
-	(whocanviewmembership ALL_IN_DOMAIN_CAN_VIEW|ALL_MEMBERS_CAN_VIEW|ALL_MANAGERS_CAN_VIEW)
+	(spammoderationlevel allow|moderate|silently_moderate|reject)|
+	(whocanadd all_members_can_add|all_managers_can_add|all_owners_can_add|none_can_add)|
+	(whocancontactowner anyone_can_contact|all_in_domain_can_contact|all_members_can_contact|all_managers_can_contact)|
+	(whocanjoin anyone_can_join|all_in_domain_can_join|invited_can_join|can_request_to_join)|
+	(whocanleavegroup all_members_can_leave|all_managers_can_leave|all_owners_can_leave|none_can_leave)|
+	(whocanpostmessage none_can_post|all_managers_can_post|all_members_can_post|all_owners_can_post|all_in_domain_can_post|anyone_can_post)|
+	(whocanviewgroup anyone_can_view|all_in_domain_can_view|all_members_can_view|all_managers_can_view|all_owners_can_view)|
+	(whocanviewmembership all_in_domain_can_view|all_members_can_view|all_managers_can_view|all_owners_can_view)
+<GroupWhoCanDiscoverGroupAttribute> ::=
+	(whocandiscovergroup allmemberscandiscover|allindomaincandiscover|anyonecandiscover)|
+	(showingroupdirectory <Boolean>)
+<GroupWhoCanAssistContentAttribute> ::=
+	(whocanassistcontent all_members|owners_and_managers|managers_only|owners_only|none)|
+	(whocanassigntopics all_members|owners_and_managers|managers_only|owners_only|none)|
+	(whocanenterfreeformtags all_members|owners_and_managers|managers_only|owners_only|none)|
+	(whocanhideabuse all_members|owners_and_managers|managers_only|owners_only|none)|
+	(whocanmaketopicssticky all_members|owners_and_managers|managers_only|owners_only|none)|
+	(whocanmarkduplicate all_members|owners_and_managers|managers_only|owners_only|none)|
+	(whocanmarkfavoritereplyonanytopic all_members|owners_and_managers|managers_only|owners_only|none)|
+	(whocanmarknoresponseneeded all_members|owners_and_managers|managers_only|owners_only|none)|
+	(whocanmodifytagsandcategories all_members|owners_and_managers|managers_only|owners_only|none)|
+	(whocantaketopics all_members|owners_and_managers|managers_only|owners_only|none)|
+	(whocanunassigntopic all_members|owners_and_managers|managers_only|owners_only|none)|
+	(whocanunmarkfavoritereplyonanytopic all_members|owners_and_managers|managers_only|owners_only|none)
+<GroupWhoCanModerateContentAttribute> ::=
+	(whocanmoderatecontent all_members|owners_and_managers|owners_only|none)|
+	(whocanapprovemessages all_members|owners_and_managers|owners_only|none)|
+	(whocandeleteanypost all_members|owners_and_managers|owners_only|none)|
+	(whocandeletetopics all_members|owners_and_managers|owners_only|none)|
+	(whocanlocktopics all_members|owners_and_managers|owners_only|none)|
+	(whocanmovetopicsin all_members|owners_and_managers|owners_only|none)|
+	(whocanmovetopicsout all_members|owners_and_managers|owners_only|none)|
+	(whocanpostannouncements all_members|owners_and_managers|owners_only|none)
+<GroupWhoCanModerateMembersAttribute> ::=
+	(whocanmoderatemembers all_members|owners_and_managers|owners_only|none)|
+	(whocanadd all_members_can_add|all_managers_can_add|none_can_add)|
+	(whocanapprovemembers all_members_can_approve|all_managers_can_approve|all_owners_can_approve|none_can_approve)|
+	(whocanbanusers all_members|owners_and_managers|owners_only|none)|
+	(whocaninvite all_members_can_invite|all_managers_can_invite|all_owners_can_invite|none_can_invite)|
+	(whocanmodifymembers all_members|owners_and_managers|owners_only|none)
+<GroupDeprecatedAttribute> ::=
+	(allowgooglecommunication <Boolean>)|
+	(favoriterepliesontop <Boolean>)|
+	(maxmessagebytes <ByteCount>)|
+	(messagedisplayfont default_font|fixed_width_font)|
+	(whocanaddreferences all_members|owners_and_managers|managers_only|owners_only|none)|
+	(whocanmarkfavoritereplyonowntopic all_members|owners_and_managers|managers_only|owners_only|none)
+<GroupAttribute> ::=
+	<GroupSettingsAttribute>|
+	<GroupWhoCanDiscoverGroupAttribute>|
+	<GroupWhoCanAssistContentAttribute>|
+	<GroupWhoCanModerateContentAttribute>|
+	<GroupWhoCanModerateMembersAttribute>|
+	<GroupDeprecatedAttribute>
 
 <MobileAction> ::=
 	admin_remote_wipe|wipe|admin_account_wipe|accountwipe|wipeaccount|approve|block|cancel_remote_wipe_then_activate|cancel_remote_wipe_then_block
@@ -877,9 +923,9 @@ gam update customer <CustomerAttributes>*
 gam info customer
 
 <DataTransferService> ::=
-        calendar|
-        googledrive|gdrive|drive|"drive and docs"|
-        gplus|googleplus|google+
+	calendar|
+	googledrive|gdrive|drive|"drive and docs"|
+	gplus|googleplus|google+
 <DataTransferServiceList> ::= "<DataTransferService>(,<DataTransferService>)*"
 
 gam create datatransfer|transfer <OldOwnerID> <DataTransferServiceList> <NewOwnerID> (<ParameterKey> <ParameterValue>)*
@@ -1236,7 +1282,7 @@ gam <UserTypeEntity> pop|pop3 <Boolean> [for allmail|newmail|mailfromnowon|fromn
 gam <UserTypeEntity> show pop|pop3
 
 gam <UserTypeEntity> [create|add] sendas <EmailAddress> <Name> [signature|sig <String>|(file <FileName> [charset <Charset>]) (replace <Tag> <String>)*] [html] [replyto <EmailAddress>] [default] [treatasalias <Boolean>]
-        [smtpmsa.host <SMTPHostName> smtpmsa.port 25|465|587 smtpmsa.username <UserName> smtpmsa.password <Password> [smtpmsa.securitymode none|ssl|starttls]]
+	[smtpmsa.host <SMTPHostName> smtpmsa.port 25|465|587 smtpmsa.username <UserName> smtpmsa.password <Password> [smtpmsa.securitymode none|ssl|starttls]]
 gam <UserTypeEntity> update sendas <EmailAddress> [name <Name>] [signature|sig <String>|(file <FileName> [charset <Charset>]) (replace <Tag> <String>)*] [html] [replyto <EmailAddress>] [default] [treatasalias <Boolean>]
 gam <UserTypeEntity> delete sendas <EmailAddress>
 gam <UserTypeEntity> show sendas [format]
@@ -1253,15 +1299,15 @@ gam <UserTypeEntity> signature|sig <String>|(file <FileName> [charset <Charset>]
 gam <UserTypeEntity> show signature|sig [format]
 
 <TeamDriveRestrictionsSubfieldName> ::=
-        adminmanagedrestrictions|
-        copyrequireswriterpermission|
-        domainusersonly|
-        teammembersonly
+	adminmanagedrestrictions|
+	copyrequireswriterpermission|
+	domainusersonly|
+	teammembersonly
 
 gam <UserTypeEntity> create|add teamdrive <Name>
 gam <UserTypeEntity> update teamdrive <TeamDriveID> [asadmin] [name <Name>]
 	[(theme|themeid <String>) | ([customtheme <DriveFileID> <Float> <Float> <Float>] [color <ColorValue>])]
-        (<TeamDriveRestrictionsSubfieldName> <Boolean>)*
+	(<TeamDriveRestrictionsSubfieldName> <Boolean>)*
 gam <UserTypeEntity> delete teamdrive <TeamDriveID>
 gam <UserTypeEntity> show teamdriveinfo <TeamDriveID> [asadmin]
 gam <UserTypeEntity> show teamdrives [asadmin]
