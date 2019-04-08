@@ -879,7 +879,6 @@ gam info resoldsubscriptions <CustomerID> [customer_auth_token <String>]
 	device_management|
 	drive|
 	gmail|
-	gplus|
 	meet|
 	mobile|
 	sites
@@ -929,8 +928,7 @@ gam info customer
 
 <DataTransferService> ::=
 	calendar|
-	googledrive|gdrive|drive|"drive and docs"|
-	gplus|googleplus|google+
+	googledrive|gdrive|drive|"drive and docs"
 <DataTransferServiceList> ::= "<DataTransferService>(,<DataTransferService>)*"
 
 gam create datatransfer|transfer <OldOwnerID> <DataTransferServiceList> <NewOwnerID> (<ParameterKey> <ParameterValue>)*
@@ -1254,7 +1252,6 @@ gam <UserTypeEntity> trash messages query <QueryGmail> [doit] [max_to_trash|max_
 gam <UserTypeEntity> untrash messages query <QueryGmail> [doit] [max_to_untrash|max_to_process <Number>]
 
 gam <UserTypeEntity> show gmailprofile [todrive]
-gam <UserTypeEntity> show gplusprofile [todrive]
 
 gam <UserTypeEntity> create|add delegate|delegates <EmailAddress>
 gam <UserTypeEntity> delegate|delegates to <EmailAddress>
