@@ -4665,6 +4665,8 @@ def createDriveFile(users):
   if csv_output:
     writeCSVfile(csv_rows, csv_titles, u'Files', to_drive)
 
+HTTP_ERROR_PATTERN = re.compile(r'^.*returned "(.*)">$')
+
 def downloadDriveFile(users):
   i = 5
   fileIdSelection = {u'fileIds': [], u'query': None}
@@ -4838,8 +4840,14 @@ def downloadDriveFile(users):
           GM_Globals[GM_SYSEXITRC] = 6
           fileDownloadFailed = True
           break
-        except googleapiclient.http.HttpError:
-          sys.stderr.write(u'Format ({0}) not available\n'.format(extension[1:]))
+        except googleapiclient.http.HttpError as e:
+          mg = HTTP_ERROR_PATTERN.match(str(e))
+          if mg:
+            stderrErrorMsg(mg.group(1))
+          else:
+            stderrErrorMsg(str(e))
+          fileDownloadFailed = True
+          break
         if fh and not targetStdout:
           closeFile(fh)
           os.remove(filename)
