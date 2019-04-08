@@ -783,9 +783,11 @@ Specify a collection of Users by directly specifying them or by specifiying item
 	(email|primaryemail|username <EmailAddress>)|
 	(firstname|givenname <String>)|
 	(gal|includeinglobaladdresslist <Boolean>)|
+	(gender clear|(female|male|unknown|(other <String>) [addressmeas <String>]))|
 	(ipwhitelisted <Boolean>)|
 	(language clear|<LanguageList>)|
 	(lastname|familyname <String>)|
+	(note clear|([text_html|text_plain] <String>|(file <FileName> [charset <Charset>])))|
 	(org|ou|orgunitpath <OrgUnitPath>)
 	(password random|<Password>)|
 	(suspended <Boolean>)|
@@ -795,11 +797,9 @@ Specify a collection of Users by directly specifying them or by specifiying item
 		[locality <String>] [region <String>] [postalcode <String>] [country <String>] [countrycode <String>] notprimary|primary))|
 	(otheremail clear|(home|other|work|<String> <String>))|
 	(externalid clear|(account|customer|login_id|network|organization|<String> <String>))|
-	(gender clear|(female|male|unknown|(other <String>) [addressmeas <String>]))|
 	(im clear|(type home|other|work|(custom <String>) protocol aim|gtalk|icq|jabber|msn|net_meeting|qq|skype|yahoo|(custom_protocol <String>) <String> [notprimary|primary]))|
 	(keyword clear|(mission|occupation|outlook|(custom <string>) <String>))|
 	(location clear|(type default|desk|<String> area <String> [building|buildingid <String>] [floor|floorname <String>] [section|floorsection <String>] [desk|deskcode <String>] endlocation))|
-	(note clear|([text_html|text_plain] <String>|(file <FileName> [charset <Charset>])))|
 	(organization clear|([type domain_only|school|unknown|work] [customtype <String>] [name <String>] [title <String>] [department <String>] [symbol <String>]
 		[costcenter <String>]  [location <String>] [description <String>] [domain <String>] [fulltimeequivalent <Integer>] notprimary|primary))|
 	(phone clear|([type assistant|callback|car|company_main|grand_central|home|home_fax|isdn|main|mobile|other|other_fax|pager|radio|telex|tty_tdd|work|work_fax|work_mobile|work_pager|(custom <String>)]
