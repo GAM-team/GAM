@@ -7218,10 +7218,10 @@ def getCRMService(login_hint):
     noPythonSSLExit()
   credentials.user_agent = GAM_INFO
   http = credentials.authorize(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL], cache=None))
-  discoveryServiceUrl = googleapiclient.discovery.V2_DISCOVERY_URI
   return (googleapiclient.discovery.build(u'cloudresourcemanager', u'v1',
-       http=http, cache_discovery=False, discoveryServiceUrl=discoveryServiceUrl),
-       http)
+                                          http=http, cache_discovery=False,
+                                          discoveryServiceUrl=googleapiclient.discovery.V2_DISCOVERY_URI),
+          http)
 
 def getGAMProjectAPIs():
   httpObj = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL])
@@ -7231,10 +7231,9 @@ def getGAMProjectAPIs():
 def enableGAMProjectAPIs(GAMProjectAPIs, httpObj, projectId, checkEnabled, i=0, count=0):
   apis = GAMProjectAPIs[:]
   project_name = u'project:{0}'.format(projectId)
-  discoveryServiceUrl = googleapiclient.discovery.V2_DISCOVERY_URI
   serveman = googleapiclient.discovery.build(u'servicemanagement', u'v1',
-        http=httpObj, cache_discovery=False,
-        discoveryServiceUrl=discoveryServiceUrl)
+                                             http=httpObj, cache_discovery=False,
+                                             discoveryServiceUrl=googleapiclient.discovery.V2_DISCOVERY_URI)
   status = True
   if checkEnabled:
     try:
@@ -7309,7 +7308,9 @@ def _createClientSecretsOauth2service(httpObj, projectId):
 
   simplehttp, GAMProjectAPIs = getGAMProjectAPIs()
   enableGAMProjectAPIs(GAMProjectAPIs, httpObj, projectId, False)
-  iam = googleapiclient.discovery.build(u'iam', u'v1', http=httpObj, cache_discovery=False)
+  iam = googleapiclient.discovery.build(u'iam', u'v1',
+                                        http=httpObj, cache_discovery=False,
+                                        discoveryServiceUrl=googleapiclient.discovery.V2_DISCOVERY_URI)
   sa_list = callGAPI(iam.projects().serviceAccounts(), u'list',
                      name=u'projects/%s' % projectId)
   service_account = None
