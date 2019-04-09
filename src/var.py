@@ -99,17 +99,18 @@ SKUS = {
 
 # Legacy APIs that use v1 discovery. Newer APIs should all use v2.
 V1_DISCOVERY_APIS = {
-  u'oauth2',
-  u'reseller',
-  u'storage',
-  u'drive',
   u'admin',
+  u'appsactivity',
+  u'calendar',
+  u'drive',
+  u'drive3',
+  u'gmail',
   u'groupssettings',
   u'licensing',
-  u'calendar',
-  u'appsactivity',
+  u'oauth2',
+  u'reseller',
   u'siteVerification',
-  u'gmail',
+  u'storage',
   }
 
 API_VER_MAPPING = {
@@ -132,7 +133,6 @@ API_VER_MAPPING = {
   u'sheets': u'v4',
   u'siteVerification': u'v1',
   u'storage': u'v1',
-  u'urlshortener': u'v1',
   u'vault': u'v1',
   }
 
