@@ -99,17 +99,17 @@ SKUS = {
 
 # Legacy APIs that use v1 discovery. Newer APIs should all use v2.
 V1_DISCOVERY_APIS = {
-  u'oauth2',
-  u'reseller',
-  u'storage',
-  u'drive',
   u'admin',
+  u'appsactivity',
+  u'calendar',
+  u'drive',
+  u'gmail',
   u'groupssettings',
   u'licensing',
-  u'calendar',
-  u'appsactivity',
+  u'oauth2',
+  u'reseller',
   u'siteVerification',
-  u'gmail',
+  u'storage',
   }
 
 API_VER_MAPPING = {
@@ -132,7 +132,6 @@ API_VER_MAPPING = {
   u'sheets': u'v4',
   u'siteVerification': u'v1',
   u'storage': u'v1',
-  u'urlshortener': u'v1',
   u'vault': u'v1',
   }
 
@@ -169,7 +168,6 @@ ADDRESS_FIELDS_ARGUMENT_MAP = {
 
 SERVICE_NAME_TO_ID_MAP = {
   u'Drive and Docs': u'55656082996',
-  u'Google+': u'553547912911',
   u'Calendar': u'435070579839'
   }
 
@@ -873,7 +871,6 @@ GAPI_USER_RATE_LIMIT_EXCEEDED = u'userRateLimitExceeded'
 #
 GAPI_DEFAULT_RETRY_REASONS = [GAPI_QUOTA_EXCEEDED, GAPI_RATE_LIMIT_EXCEEDED, GAPI_USER_RATE_LIMIT_EXCEEDED, GAPI_BACKEND_ERROR, GAPI_INTERNAL_ERROR]
 GAPI_GMAIL_THROW_REASONS = [GAPI_SERVICE_NOT_AVAILABLE]
-GAPI_GPLUS_THROW_REASONS = [GAPI_SERVICE_NOT_AVAILABLE]
 GAPI_GROUP_GET_THROW_REASONS = [GAPI_GROUP_NOT_FOUND, GAPI_DOMAIN_NOT_FOUND, GAPI_DOMAIN_CANNOT_USE_APIS, GAPI_FORBIDDEN, GAPI_BAD_REQUEST]
 GAPI_GROUP_GET_RETRY_REASONS = [GAPI_INVALID, GAPI_SYSTEM_ERROR]
 GAPI_MEMBERS_THROW_REASONS = [GAPI_GROUP_NOT_FOUND, GAPI_DOMAIN_NOT_FOUND, GAPI_DOMAIN_CANNOT_USE_APIS, GAPI_INVALID, GAPI_FORBIDDEN]
