@@ -10638,6 +10638,7 @@ and follow recommend steps to authorize GAM for Drive access.''' % (admin_email)
     cell_count = rows * columns
     data_size = string_file.len
     max_sheet_bytes = int(result[u'maxImportSizes'][MIMETYPE_GA_SPREADSHEET])
+# See https://support.google.com/drive/answer/37603 for limits
     if cell_count > 5000000 or data_size > max_sheet_bytes:
       print u'{0}{1}'.format(WARNING_PREFIX, MESSAGE_RESULTS_TOO_LARGE_FOR_GOOGLE_SPREADSHEET)
       mimeType = u'text/csv'
