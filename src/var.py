@@ -103,7 +103,6 @@ V1_DISCOVERY_APIS = {
   u'appsactivity',
   u'calendar',
   u'drive',
-  u'drive3',
   u'gmail',
   u'groupssettings',
   u'licensing',
