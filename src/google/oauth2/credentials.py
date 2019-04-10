@@ -38,11 +38,12 @@ import six
 
 from google.auth import _helpers
 from google.auth import credentials
+from google.auth import exceptions
 from google.oauth2 import _client
 
 
 # The Google OAuth 2.0 token endpoint. Used for authorized user credentials.
-_GOOGLE_OAUTH2_TOKEN_ENDPOINT = 'https://accounts.google.com/o/oauth2/token'
+_GOOGLE_OAUTH2_TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token'
 
 
 class Credentials(credentials.ReadOnlyScoped, credentials.Credentials):
@@ -120,6 +121,15 @@ class Credentials(credentials.ReadOnlyScoped, credentials.Credentials):
 
     @_helpers.copy_docstring(credentials.Credentials)
     def refresh(self, request):
+        if (self._refresh_token is None or
+                self._token_uri is None or
+                self._client_id is None or
+                self._client_secret is None):
+            raise exceptions.RefreshError(
+                'The credentials do not contain the necessary fields need to '
+                'refresh the access token. You must specify refresh_token, '
+                'token_uri, client_id, and client_secret.')
+
         access_token, refresh_token, expiry, grant_response = (
             _client.refresh_grant(
                 request, self._token_uri, self._refresh_token, self._client_id,

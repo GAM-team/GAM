@@ -3,7 +3,7 @@ import re
 import sys
 from htmlentitydefs import name2codepoint
 from HTMLParser import HTMLParser
-from var import GM_Globals, GM_WINDOWS, GM_SYS_ENCODING
+from var import GM_Globals, GM_WINDOWS, GM_SYS_ENCODING, ONE_KILO_BYTES, ONE_MEGA_BYTES, ONE_GIGA_BYTES
 
 def convertUTF8(data):
   if isinstance(data, str):
@@ -72,6 +72,17 @@ def dehtml(text):
 
 def indentMultiLineText(message, n=0):
   return message.replace(u'\n', u'\n{0}'.format(u' '*n)).rstrip()
+
+def formatFileSize(fileSize):
+  if fileSize == 0:
+    return u'0kb'
+  if fileSize < ONE_KILO_BYTES:
+    return u'1kb'
+  if fileSize < ONE_MEGA_BYTES:
+    return u'{0}kb'.format(fileSize/ONE_KILO_BYTES)
+  if fileSize < ONE_GIGA_BYTES:
+    return u'{0}mb'.format(fileSize/ONE_MEGA_BYTES)
+  return u'{0}gb'.format(fileSize/ONE_GIGA_BYTES)
 
 def formatMilliSeconds(millis):
   seconds, millis = divmod(millis, 1000)

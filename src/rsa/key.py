@@ -34,13 +34,15 @@ of pyasn1.
 """
 
 import logging
-from rsa._compat import b
+import warnings
 
+from rsa._compat import range
 import rsa.prime
 import rsa.pem
 import rsa.common
 import rsa.randnum
 import rsa.core
+
 
 log = logging.getLogger(__name__)
 DEFAULT_EXPONENT = 65537
@@ -56,14 +58,55 @@ class AbstractKey(object):
         self.e = e
 
     @classmethod
+    def _load_pkcs1_pem(cls, keyfile):
+        """Loads a key in PKCS#1 PEM format, implement in a subclass.
+
+        :param keyfile: contents of a PEM-encoded file that contains
+            the public key.
+        :type keyfile: bytes
+
+        :return: the loaded key
+        :rtype: AbstractKey
+        """
+
+    @classmethod
+    def _load_pkcs1_der(cls, keyfile):
+        """Loads a key in PKCS#1 PEM format, implement in a subclass.
+
+        :param keyfile: contents of a DER-encoded file that contains
+            the public key.
+        :type keyfile: bytes
+
+        :return: the loaded key
+        :rtype: AbstractKey
+        """
+
+    def _save_pkcs1_pem(self):
+        """Saves the key in PKCS#1 PEM format, implement in a subclass.
+
+        :returns: the PEM-encoded key.
+        :rtype: bytes
+        """
+
+    def _save_pkcs1_der(self):
+        """Saves the key in PKCS#1 DER format, implement in a subclass.
+
+        :returns: the DER-encoded key.
+        :rtype: bytes
+        """
+
+    @classmethod
     def load_pkcs1(cls, keyfile, format='PEM'):
         """Loads a key in PKCS#1 DER or PEM format.
 
         :param keyfile: contents of a DER- or PEM-encoded file that contains
-            the public key.
+            the key.
+        :type keyfile: bytes
         :param format: the format of the file to load; 'PEM' or 'DER'
+        :type format: str
 
-        :return: a PublicKey object
+        :return: the loaded key
+        :rtype: AbstractKey
         """
 
         methods = {
@@ -87,10 +130,12 @@ class AbstractKey(object):
                                                                         formats))
 
     def save_pkcs1(self, format='PEM'):
-        """Saves the public key in PKCS#1 DER or PEM format.
+        """Saves the key in PKCS#1 DER or PEM format.
 
         :param format: the format to save; 'PEM' or 'DER'
-        :returns: the DER- or PEM-encoded public key.
+        :type format: str
+        :returns: the DER- or PEM-encoded key.
+        :rtype: bytes
         """
 
         methods = {
@@ -139,7 +184,7 @@ class PublicKey(AbstractKey):
     This key is also known as the 'encryption key'. It contains the 'n' and 'e'
     values.
 
-    Supports attributes as well as dictionary-like access. Attribute accesss is
+    Supports attributes as well as dictionary-like access. Attribute access is
     faster, though.
 
     >>> PublicKey(5, 3)
@@ -185,6 +230,9 @@ class PublicKey(AbstractKey):
     def __ne__(self, other):
         return not (self == other)
 
+    def __hash__(self):
+        return hash((self.n, self.e))
+
     @classmethod
     def _load_pkcs1_der(cls, keyfile):
         """Loads a key in PKCS#1 DER format.
@@ -215,7 +263,8 @@ class PublicKey(AbstractKey):
     def _save_pkcs1_der(self):
         """Saves the public key in PKCS#1 DER format.
 
-        @returns: the DER-encoded public key.
+        :returns: the DER-encoded public key.
+        :rtype: bytes
         """
 
         from pyasn1.codec.der import encoder
@@ -247,6 +296,7 @@ class PublicKey(AbstractKey):
         """Saves a PKCS#1 PEM-encoded public key file.
 
         :return: contents of a PEM-encoded file that contains the public key.
+        :rtype: bytes
         """
 
         der = self._save_pkcs1_der()
@@ -264,6 +314,7 @@ class PublicKey(AbstractKey):
 
         :param keyfile: contents of a PEM-encoded file that contains the public
             key, from OpenSSL.
+        :type keyfile: bytes
         :return: a PublicKey object
         """
 
@@ -277,6 +328,7 @@ class PublicKey(AbstractKey):
         :param keyfile: contents of a DER-encoded file that contains the public
             key, from OpenSSL.
         :return: a PublicKey object
+        :rtype: bytes
 
         """
 
@@ -298,57 +350,36 @@ class PrivateKey(AbstractKey):
     This key is also known as the 'decryption key'. It contains the 'n', 'e',
     'd', 'p', 'q' and other values.
 
-    Supports attributes as well as dictionary-like access. Attribute accesss is
+    Supports attributes as well as dictionary-like access. Attribute access is
     faster, though.
 
     >>> PrivateKey(3247, 65537, 833, 191, 17)
     PrivateKey(3247, 65537, 833, 191, 17)
 
-    exp1, exp2 and coef can be given, but if None or omitted they will be calculated:
+    exp1, exp2 and coef will be calculated:
 
-    >>> pk = PrivateKey(3727264081, 65537, 3349121513, 65063, 57287, exp2=4)
+    >>> pk = PrivateKey(3727264081, 65537, 3349121513, 65063, 57287)
     >>> pk.exp1
     55063
-    >>> pk.exp2  # this is of course not a correct value, but it is the one we passed.
-    4
+    >>> pk.exp2
+    10095
     >>> pk.coef
     50797
-
-    If you give exp1, exp2 or coef, they will be used as-is:
-
-    >>> pk = PrivateKey(1, 2, 3, 4, 5, 6, 7, 8)
-    >>> pk.exp1
-    6
-    >>> pk.exp2
-    7
-    >>> pk.coef
-    8
 
     """
 
     __slots__ = ('n', 'e', 'd', 'p', 'q', 'exp1', 'exp2', 'coef')
 
-    def __init__(self, n, e, d, p, q, exp1=None, exp2=None, coef=None):
+    def __init__(self, n, e, d, p, q):
         AbstractKey.__init__(self, n, e)
         self.d = d
         self.p = p
         self.q = q
 
-        # Calculate the other values if they aren't supplied
-        if exp1 is None:
-            self.exp1 = int(d % (p - 1))
-        else:
-            self.exp1 = exp1
-
-        if exp2 is None:
-            self.exp2 = int(d % (q - 1))
-        else:
-            self.exp2 = exp2
-
-        if coef is None:
-            self.coef = rsa.common.inverse(q, p)
-        else:
-            self.coef = coef
+        # Calculate exponents and coefficient.
+        self.exp1 = int(d % (p - 1))
+        self.exp2 = int(d % (q - 1))
+        self.coef = rsa.common.inverse(q, p)
 
     def __getitem__(self, key):
         return getattr(self, key)
@@ -382,6 +413,9 @@ class PrivateKey(AbstractKey):
 
     def __ne__(self, other):
         return not (self == other)
+
+    def __hash__(self):
+        return hash((self.n, self.e, self.d, self.p, self.q, self.exp1, self.exp2, self.coef))
 
     def blinded_decrypt(self, encrypted):
         """Decrypts the message using blinding to prevent side-channel attacks.
@@ -420,6 +454,7 @@ class PrivateKey(AbstractKey):
 
         :param keyfile: contents of a DER-encoded file that contains the private
             key.
+        :type keyfile: bytes
         :return: a PrivateKey object
 
         First let's construct a DER encoded key:
@@ -456,13 +491,26 @@ class PrivateKey(AbstractKey):
         if priv[0] != 0:
             raise ValueError('Unable to read this file, version %s != 0' % priv[0])
 
-        as_ints = tuple(int(x) for x in priv[1:9])
-        return cls(*as_ints)
+        as_ints = map(int, priv[1:6])
+        key = cls(*as_ints)
+
+        exp1, exp2, coef = map(int, priv[6:9])
+
+        if (key.exp1, key.exp2, key.coef) != (exp1, exp2, coef):
+            warnings.warn(
+                'You have provided a malformed keyfile. Either the exponents '
+                'or the coefficient are incorrect. Using the correct values '
+                'instead.',
+                UserWarning,
+            )
+
+        return key
 
     def _save_pkcs1_der(self):
         """Saves the private key in PKCS#1 DER format.
 
-        @returns: the DER-encoded private key.
+        :returns: the DER-encoded private key.
+        :rtype: bytes
         """
 
         from pyasn1.type import univ, namedtype
@@ -470,15 +518,15 @@ class PrivateKey(AbstractKey):
 
         class AsnPrivKey(univ.Sequence):
             componentType = namedtype.NamedTypes(
-                    namedtype.NamedType('version', univ.Integer()),
-                    namedtype.NamedType('modulus', univ.Integer()),
-                    namedtype.NamedType('publicExponent', univ.Integer()),
-                    namedtype.NamedType('privateExponent', univ.Integer()),
-                    namedtype.NamedType('prime1', univ.Integer()),
-                    namedtype.NamedType('prime2', univ.Integer()),
-                    namedtype.NamedType('exponent1', univ.Integer()),
-                    namedtype.NamedType('exponent2', univ.Integer()),
-                    namedtype.NamedType('coefficient', univ.Integer()),
+                namedtype.NamedType('version', univ.Integer()),
+                namedtype.NamedType('modulus', univ.Integer()),
+                namedtype.NamedType('publicExponent', univ.Integer()),
+                namedtype.NamedType('privateExponent', univ.Integer()),
+                namedtype.NamedType('prime1', univ.Integer()),
+                namedtype.NamedType('prime2', univ.Integer()),
+                namedtype.NamedType('exponent1', univ.Integer()),
+                namedtype.NamedType('exponent2', univ.Integer()),
+                namedtype.NamedType('coefficient', univ.Integer()),
             )
 
         # Create the ASN object
@@ -504,20 +552,22 @@ class PrivateKey(AbstractKey):
 
         :param keyfile: contents of a PEM-encoded file that contains the private
             key.
+        :type keyfile: bytes
         :return: a PrivateKey object
         """
 
-        der = rsa.pem.load_pem(keyfile, b('RSA PRIVATE KEY'))
+        der = rsa.pem.load_pem(keyfile, b'RSA PRIVATE KEY')
         return cls._load_pkcs1_der(der)
 
     def _save_pkcs1_pem(self):
         """Saves a PKCS#1 PEM-encoded private key file.
 
         :return: contents of a PEM-encoded file that contains the private key.
+        :rtype: bytes
         """
 
         der = self._save_pkcs1_der()
-        return rsa.pem.save_pem(der, b('RSA PRIVATE KEY'))
+        return rsa.pem.save_pem(der, b'RSA PRIVATE KEY')
 
 
 def find_p_q(nbits, getprime_func=rsa.prime.getprime, accurate=True):
@@ -615,9 +665,11 @@ def calculate_keys_custom_exponent(p, q, exponent):
 
     try:
         d = rsa.common.inverse(exponent, phi_n)
-    except ValueError:
-        raise ValueError("e (%d) and phi_n (%d) are not relatively prime" %
-                         (exponent, phi_n))
+    except rsa.common.NotRelativePrimeError as ex:
+        raise rsa.common.NotRelativePrimeError(
+            exponent, phi_n, ex.d,
+            msg="e (%d) and phi_n (%d) are not relatively prime (divider=%i)" %
+                (exponent, phi_n, ex.d))
 
     if (exponent * d) % phi_n != 1:
         raise ValueError("e (%d) and d (%d) are not mult. inv. modulo "
@@ -731,7 +783,7 @@ if __name__ == '__main__':
             if failures:
                 break
 
-            if (count and count % 10 == 0) or count == 1:
+            if (count % 10 == 0 and count) or count == 1:
                 print('%i times' % count)
     except KeyboardInterrupt:
         print('Aborted')

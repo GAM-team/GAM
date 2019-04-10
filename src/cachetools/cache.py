@@ -19,11 +19,10 @@ class Cache(DefaultMapping):
 
     __size = _DefaultSize()
 
-    def __init__(self, maxsize, missing=None, getsizeof=None):
-        if missing:
-            self.__missing = missing
+    def __init__(self, maxsize, getsizeof=None):
         if getsizeof:
-            self.__getsizeof = getsizeof
+            self.getsizeof = getsizeof
+        if self.getsizeof is not Cache.getsizeof:
             self.__size = dict()
         self.__data = dict()
         self.__currsize = 0
@@ -68,26 +67,13 @@ class Cache(DefaultMapping):
         return key in self.__data
 
     def __missing__(self, key):
-        value = self.__missing(key)
-        try:
-            self.__setitem__(key, value)
-        except ValueError:
-            pass  # value too large
-        return value
+        raise KeyError(key)
 
     def __iter__(self):
         return iter(self.__data)
 
     def __len__(self):
         return len(self.__data)
-
-    @staticmethod
-    def __getsizeof(value):
-        return 1
-
-    @staticmethod
-    def __missing(key):
-        raise KeyError(key)
 
     @property
     def maxsize(self):
@@ -99,6 +85,7 @@ class Cache(DefaultMapping):
         """The current size of the cache."""
         return self.__currsize
 
-    def getsizeof(self, value):
+    @staticmethod
+    def getsizeof(value):
         """Return the size of a cache element's value."""
-        return self.__getsizeof(value)
+        return 1

@@ -8,8 +8,8 @@ from .cache import Cache
 class LRUCache(Cache):
     """Least Recently Used (LRU) cache implementation."""
 
-    def __init__(self, maxsize, missing=None, getsizeof=None):
-        Cache.__init__(self, maxsize, missing, getsizeof)
+    def __init__(self, maxsize, getsizeof=None):
+        Cache.__init__(self, maxsize, getsizeof)
         self.__order = collections.OrderedDict()
 
     def __getitem__(self, key, cache_getitem=Cache.__getitem__):

@@ -8,7 +8,7 @@ GAM installation script.
 OPTIONS:
    -h      show help.
    -d      Directory where gam folder will be installed. Default is \$HOME/bin/
-   -a      Architecture to install (i386, x86_64, arm). Default is to detect your arch with "uname -m".
+   -a      Architecture to install (i386, x86_64, arm, arm64). Default is to detect your arch with "uname -m".
    -o      OS we are running (linux, macos). Default is to detect your OS with "uname -s".
    -l      Just upgrade GAM to latest version. Skips project creation and auth.
    -p      Profile update (true, false). Should script add gam command to environment. Default is true.
@@ -81,9 +81,10 @@ case $gamos in
     case $gamarch in
       x86_64) gamfile="linux-x86_64.tar.xz";;
       i?86) gamfile="linux-i686.tar.xz";;
-      arm*) gamfile="linux-armv7l.tar.xz";;
+      arm|armv7l) gamfile="linux-armv7l.tar.xz";;
+      arm64|aarch64) gamfile="linux-aarch64.tar.xz";;
       *)
-        echo_red "ERROR: this installer currently only supports i386, x86_64 and arm Linux. Looks like you're running on $gamarch. Exiting."
+        echo_red "ERROR: this installer currently only supports i386, x86_64, arm and arm64 Linux. Looks like you're running on $gamarch. Exiting."
         exit
     esac
     ;;
@@ -133,10 +134,15 @@ if type(release) is list:
       continue
     release = a_release
     break
-for asset in release['assets']:
-  if asset[sys.argv[1]].endswith('$gamfile'):
-    print(asset[sys.argv[1]])
-    break"
+try:
+  for asset in release['assets']:
+    if asset[attrib].endswith('$gamfile'):
+      print(asset[attrib])
+      break
+  else:
+    print('ERROR: Attribute: {0} for $gamfile version {1} not found'.format(attrib, gamversion))
+except KeyError:
+  print('ERROR: assets value not found in JSON value of:\n\n%s' % release)"
 
 pycmd="python"
 $pycmd -V >/dev/null 2>&1
@@ -152,7 +158,15 @@ if (( $rc != 0 )); then
 fi
 
 browser_download_url=$(echo "$release_json" | $pycmd -c "$pycode" browser_download_url $gamversion)
+if [[ ${browser_download_url:0:5} = "ERROR" ]]; then
+  echo_red "${browser_download_url}"
+  exit
+fi
 name=$(echo "$release_json" | $pycmd -c "$pycode" name $gamversion)
+if [[ ${name:0:5} = "ERROR" ]]; then
+  echo_red "${name}"
+  exit
+fi
 # Temp dir for archive
 #temp_archive_dir=$(mktemp -d)
 temp_archive_dir=$(mktemp -d 2>/dev/null || mktemp -d -t 'mytmpdir')

@@ -28,6 +28,7 @@ from django import shortcuts
 from django.conf import settings
 from django.core import urlresolvers
 from django.shortcuts import redirect
+from django.utils import html
 import jsonpickle
 from six.moves.urllib import parse
 
@@ -109,6 +110,7 @@ def oauth2_callback(request):
     if 'error' in request.GET:
         reason = request.GET.get(
             'error_description', request.GET.get('error', ''))
+        reason = html.escape(reason)
         return http.HttpResponseBadRequest(
             'Authorization failed {0}'.format(reason))
 

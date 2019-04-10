@@ -72,16 +72,9 @@ from googleapiclient.model import JsonModel
 from googleapiclient.model import MediaModel
 from googleapiclient.model import RawModel
 from googleapiclient.schema import Schemas
-from oauth2client.client import GoogleCredentials
 
-# Oauth2client < 3 has the positional helper in 'util', >= 3 has it
-# in '_helpers'.
-try:
-  from oauth2client.util import _add_query_parameter
-  from oauth2client.util import positional
-except ImportError:
-  from oauth2client._helpers import _add_query_parameter
-  from oauth2client._helpers import positional
+from googleapiclient._helpers import _add_query_parameter
+from googleapiclient._helpers import positional
 
 
 # The client library requires a version of httplib2 that supports RETRIES.
@@ -133,14 +126,16 @@ class _BytesGenerator(BytesGenerator):
   _write_lines = BytesGenerator.write
 
 def fix_method_name(name):
-  """Fix method names to avoid reserved word conflicts.
+  """Fix method names to avoid '$' characters and reserved word conflicts.
 
   Args:
     name: string, method name.
 
   Returns:
-    The name with a '_' prefixed if the name is a reserved word.
+    The name with '_' appended if the name is a reserved word and '$' 
+    replaced with '_'. 
   """
+  name = name.replace('$', '_')
   if keyword.iskeyword(name) or name in RESERVED_WORDS:
     return name + '_'
   else:
@@ -226,7 +221,7 @@ def build(serviceName,
 
     try:
       content = _retrieve_discovery_doc(
-        requested_url, discovery_http, cache_discovery, cache)
+        requested_url, discovery_http, cache_discovery, cache, developerKey)
       return build_from_document(content, base=discovery_url, http=http,
           developerKey=developerKey, model=model, requestBuilder=requestBuilder,
           credentials=credentials)
@@ -240,7 +235,8 @@ def build(serviceName,
         "name: %s  version: %s" % (serviceName, version))
 
 
-def _retrieve_discovery_doc(url, http, cache_discovery, cache=None):
+def _retrieve_discovery_doc(url, http, cache_discovery, cache=None,
+                            developerKey=None):
   """Retrieves the discovery_doc from cache or the internet.
 
   Args:
@@ -271,6 +267,8 @@ def _retrieve_discovery_doc(url, http, cache_discovery, cache=None):
   # document to avoid exceeding the quota on discovery requests.
   if 'REMOTE_ADDR' in os.environ:
     actual_url = _add_query_parameter(url, 'userIp', os.environ['REMOTE_ADDR'])
+  if developerKey:
+    actual_url = _add_query_parameter(url, 'key', developerKey)
   logger.info('URL being requested: GET %s', actual_url)
 
   resp, content = http.request(actual_url)
@@ -367,7 +365,9 @@ def build_from_document(
       # The credentials need to be scoped.
       credentials = _auth.with_scopes(credentials, scopes)
 
-      # Create an authorized http instance
+    # If credentials are provided, create an authorized http instance;
+    # otherwise, skip authentication.
+    if credentials:
       http = _auth.authorized_http(credentials)
 
     # If the service doesn't require scopes then there is no need for
@@ -455,7 +455,7 @@ def _media_path_url_from_info(root_desc, path_url):
   }
 
 
-def _fix_up_parameters(method_desc, root_desc, http_method):
+def _fix_up_parameters(method_desc, root_desc, http_method, schema):
   """Updates parameters of an API method with values specific to this library.
 
   Specifically, adds whatever global parameters are specified by the API to the
@@ -473,6 +473,7 @@ def _fix_up_parameters(method_desc, root_desc, http_method):
     root_desc: Dictionary; the entire original deserialized discovery document.
     http_method: String; the HTTP method used to call the API method described
         in method_desc.
+    schema: Object, mapping of schema names to schema descriptions.
 
   Returns:
     The updated Dictionary stored in the 'parameters' key of the method
@@ -493,6 +494,9 @@ def _fix_up_parameters(method_desc, root_desc, http_method):
   if http_method in HTTP_PAYLOAD_METHODS and 'request' in method_desc:
     body = BODY_PARAMETER_DEFAULT_VALUE.copy()
     body.update(method_desc['request'])
+    # Make body optional for requests with no parameters.
+    if not _methodProperties(method_desc, schema, 'request'):
+      body['required'] = False
     parameters['body'] = body
 
   return parameters
@@ -543,7 +547,7 @@ def _fix_up_media_upload(method_desc, root_desc, path_url, parameters):
   return accept, max_size, media_path_url
 
 
-def _fix_up_method_description(method_desc, root_desc):
+def _fix_up_method_description(method_desc, root_desc, schema):
   """Updates a method description in a discovery document.
 
   SIDE EFFECTS: Changes the parameters dictionary in the method description with
@@ -554,6 +558,7 @@ def _fix_up_method_description(method_desc, root_desc):
         from the dictionary of methods stored in the 'methods' key in the
         deserialized discovery document.
     root_desc: Dictionary; the entire original deserialized discovery document.
+    schema: Object, mapping of schema names to schema descriptions.
 
   Returns:
     Tuple (path_url, http_method, method_id, accept, max_size, media_path_url)
@@ -578,7 +583,7 @@ def _fix_up_method_description(method_desc, root_desc):
   http_method = method_desc['httpMethod']
   method_id = method_desc['id']
 
-  parameters = _fix_up_parameters(method_desc, root_desc, http_method)
+  parameters = _fix_up_parameters(method_desc, root_desc, http_method, schema)
   # Order is important. `_fix_up_media_upload` needs `method_desc` to have a
   # 'parameters' key and needs to know if there is a 'body' parameter because it
   # also sets a 'media_body' parameter.
@@ -706,7 +711,7 @@ def createMethod(methodName, methodDesc, rootDesc, schema):
   """
   methodName = fix_method_name(methodName)
   (pathUrl, httpMethod, methodId, accept,
-   maxSize, mediaPathUrl) = _fix_up_method_description(methodDesc, rootDesc)
+   maxSize, mediaPathUrl) = _fix_up_method_description(methodDesc, rootDesc, schema)
 
   parameters = ResourceMethodParameters(methodDesc)
 

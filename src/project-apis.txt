@@ -1,4 +1,5 @@
 admin.googleapis.com
+alertcenter.googleapis.com
 appsactivity.googleapis.com
 calendar-json.googleapis.com
 classroom.googleapis.com
@@ -9,5 +10,7 @@ groupssettings.googleapis.com
 licensing.googleapis.com
 plus.googleapis.com
 reseller.googleapis.com
+sheets.googleapis.com
 siteverification.googleapis.com
+storage-api.googleapis.com
 vault.googleapis.com

@@ -28,10 +28,12 @@ from google.auth import _helpers
 from google.auth import credentials
 from google.auth import crypt
 
+# pytype: disable=import-error
 try:
     from google.appengine.api import app_identity
 except ImportError:
     app_identity = None
+# pytype: enable=import-error
 
 
 class Signer(crypt.Signer):
@@ -136,7 +138,7 @@ class Credentials(credentials.Scoped, credentials.Signing,
 
     @_helpers.copy_docstring(credentials.Scoped)
     def with_scopes(self, scopes):
-        return Credentials(
+        return self.__class__(
             scopes=scopes, service_account_id=self._service_account_id)
 
     @_helpers.copy_docstring(credentials.Signing)

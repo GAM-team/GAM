@@ -21,7 +21,7 @@ See `rfc7519`_ for more details on JWTs.
 
 To encode a JWT use :func:`encode`::
 
-    from google.auth import crypto
+    from google.auth import crypt
     from google.auth import jwt
 
     signer = crypt.Signer(private_key)
@@ -438,7 +438,7 @@ class Credentials(google.auth.credentials.Signing,
         new_additional_claims = copy.deepcopy(self._additional_claims)
         new_additional_claims.update(additional_claims or {})
 
-        return Credentials(
+        return self.__class__(
             self._signer,
             issuer=issuer if issuer is not None else self._issuer,
             subject=subject if subject is not None else self._subject,
@@ -643,7 +643,7 @@ class OnDemandCredentials(
         new_additional_claims = copy.deepcopy(self._additional_claims)
         new_additional_claims.update(additional_claims or {})
 
-        return OnDemandCredentials(
+        return self.__class__(
             self._signer,
             issuer=issuer if issuer is not None else self._issuer,
             subject=subject if subject is not None else self._subject,
@@ -738,7 +738,7 @@ class OnDemandCredentials(
         parts = urllib.parse.urlsplit(url)
         # Strip query string and fragment
         audience = urllib.parse.urlunsplit(
-            (parts.scheme, parts.netloc, parts.path, None, None))
+            (parts.scheme, parts.netloc, parts.path, "", ""))
         token = self._get_jwt_for_audience(audience)
         self.apply(headers, token=token)
 

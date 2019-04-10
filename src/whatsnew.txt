@@ -1,3 +1,31 @@
+GAM 4.65
+ - Manage email delivery settings for group members
+ - Add operatingSystemType to user posix config (Roman)
+ - Handle missing language setting (jalmeroth)
+ - handle mixed case aliases (Ross)
+ - contentmanager and fileorganizer roles in Team Drive (Ross)
+ - various other fixes and optimizations (Jay and Ross)
+
+GAM 4.61
+ - New Gmail delegation API
+ - Remove "admin" command from user create/update to avoid accidental super admins. Still possible to give super admin rights via "gam create admin" command. (Ross)
+ - Vault export fixes by Ross
+ - minor fixes and improvements by Ross and Jay
+
+GAM 4.60
+ - Google Vault Export API gam support
+ - Ross - add textcolor and backgroundcolor options for Gmail labels
+ - Ross - add owneremail option to print courses
+ - GAM 4.50 had no bugs at all, nothing to fix.
+ - Just kidding, lots of bug fixes and code cleanup. Thanks Ross.
+
+GAM 4.50
+ - many cleanups, bugfixes and improvements by Ross and ejochman
+ - multiple queries and more options for Chrome OS by Ross
+ - per-API batch calls to solve global batch deprecation
+ - handle new G Suite Enterprise for EDU and Cloud Identity SKUs
+ - Library updates
+
 GAM 4.40
  - Team Drive Admin "asadmin" to give admins special access.
  - Manage Buildings, Features and Resource Calendars.

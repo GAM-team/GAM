@@ -4,7 +4,7 @@ import platform
 import re
 
 gam_author = u'Jay Lee <jay0lee@gmail.com>'
-gam_version = u'4.40'
+gam_version = u'4.65'
 gam_license = u'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 GAM_URL = u'https://git.io/gam'
@@ -24,10 +24,12 @@ TRUE = u'true'
 FALSE = u'false'
 true_values = [u'on', u'yes', u'enabled', u'true', u'1']
 false_values = [u'off', u'no', u'disabled', u'false', u'0']
-usergroup_types = [u'user', u'users', u'group', u'ou', u'org',
-                   u'ou_and_children', u'ou_and_child', u'query',
-                   u'license', u'licenses', u'licence', u'licences', u'file', u'csv', u'csvfile', u'all',
-                   u'cros']
+usergroup_types = [u'user', u'users',
+                   u'group', u'group_ns', u'grooup_susp',
+                   u'ou', u'org', u'ou_ns', u'org_ns', u'ou_susp', u'org_susp',
+                   u'ou_and_children', u'ou_and_child', u'ou_and_children_ns', u'ou_and_child_ns', u'ou_and_children_susp', u'ou_and_child_susp',
+                   u'query', u'queries', u'license', u'licenses', u'licence', u'licences', u'file', u'csv', u'csvfile', u'all',
+                   u'cros', u'cros_sn', u'crosquery', u'crosqueries', u'crosfile', u'croscsv', u'croscsvfile']
 ERROR = u'ERROR'
 ERROR_PREFIX = ERROR+u': '
 WARNING = u'WARNING'
@@ -43,6 +45,14 @@ FN_OAUTH2SERVICE_JSON = u'oauth2service.json'
 FN_OAUTH2_TXT = u'oauth2.txt'
 MY_CUSTOMER = u'my_customer'
 SKUS = {
+  u'1010010001': {
+    u'product': u'101001', u'aliases': [u'identity', u'cloudidentity'], u'displayName': 'Cloud Identity'},
+  u'1010050001': {
+    u'product': u'101005', u'aliases': [u'identitypremium', u'cloudidentitypremium'], u'displayName': 'Cloud Identity Premium'},
+  u'1010310002': {
+    u'product': u'101031', u'aliases': [u'gsefe', u'e4e', u'gsuiteenterpriseeducation'], u'displayName': u'G Suite Enterprise for Education'},
+  u'1010310003': {
+    u'product': u'101031', u'aliases': [u'gsefes', u'e4es', u'gsuiteenterpriseeducationstudent'], u'displayName': u'G Suite Enterprise for Education Student'},
   u'Google-Apps': {
     u'product': u'Google-Apps', u'aliases': [u'standard', u'free'], u'displayName': u'G Suite Free/Standard'},
   u'Google-Apps-For-Business': {
@@ -57,6 +67,8 @@ SKUS = {
     u'product': u'Google-Apps', u'aliases': [u'gau', u'unlimited', u'gsuitebusiness'], u'displayName': u'G Suite Business'},
   u'1010020020': {
     u'product': u'Google-Apps', u'aliases': [u'gae', u'enterprise', u'gsuiteenterprise'], u'displayName': u'G Suite Enterprise'},
+  u'1010060001': {
+    u'product': u'Google-Apps', u'aliases': [u'd4e', u'driveenterprise', u'drive4enterprise'], u'displayName': u'Drive Enterprise'},
   u'Google-Drive-storage-20GB': {
     u'product': u'Google-Drive-storage', u'aliases': [u'drive20gb', u'20gb', u'googledrivestorage20gb'], u'displayName': u'Google Drive Storage 20GB'},
   u'Google-Drive-storage-50GB': {
@@ -85,7 +97,23 @@ SKUS = {
     u'product': u'Google-Chrome-Device-Management', u'aliases': [u'chrome', u'cdm', u'googlechromedevicemanagement'], u'displayName': u'Google Chrome Device Management'}
   }
 
+# Legacy APIs that use v1 discovery. Newer APIs should all use v2.
+V1_DISCOVERY_APIS = {
+  u'admin',
+  u'appsactivity',
+  u'calendar',
+  u'drive',
+  u'gmail',
+  u'groupssettings',
+  u'licensing',
+  u'oauth2',
+  u'reseller',
+  u'siteVerification',
+  u'storage',
+  }
+
 API_VER_MAPPING = {
+  u'alertcenter': u'v1beta1',
   u'appsactivity': u'v1',
   u'calendar': u'v3',
   u'classroom': u'v1',
@@ -94,30 +122,30 @@ API_VER_MAPPING = {
   u'directory': u'directory_v1',
   u'drive': u'v2',
   u'drive3': u'v3',
-  u'email-settings': u'v2',
   u'gmail': u'v1',
   u'groupssettings': u'v1',
   u'licensing': u'v1',
   u'oauth2': u'v2',
-  u'plus': u'v1',
   u'pubsub': u'v1',
   u'reports': u'reports_v1',
   u'reseller': u'v1',
+  u'sheets': u'v4',
   u'siteVerification': u'v1',
-  u'urlshortener': u'v1',
+  u'storage': u'v1',
   u'vault': u'v1',
   }
 
 API_SCOPE_MAPPING = {
+  u'alertcenter': [u'https://www.googleapis.com/auth/apps.alerts',],
   u'appsactivity': [u'https://www.googleapis.com/auth/activity',
-                    u'https://www.googleapis.com/auth/drive'],
+                    u'https://www.googleapis.com/auth/drive',],
   u'calendar': [u'https://www.googleapis.com/auth/calendar',],
   u'drive': [u'https://www.googleapis.com/auth/drive',],
   u'drive3': [u'https://www.googleapis.com/auth/drive',],
   u'gmail': [u'https://mail.google.com/',
              u'https://www.googleapis.com/auth/gmail.settings.basic',
              u'https://www.googleapis.com/auth/gmail.settings.sharing',],
-  u'plus': [u'https://www.googleapis.com/auth/plus.me',],
+  u'sheets': [u'https://www.googleapis.com/auth/spreadsheets',],
 }
 
 ADDRESS_FIELDS_PRINT_ORDER = [
@@ -140,7 +168,6 @@ ADDRESS_FIELDS_ARGUMENT_MAP = {
 
 SERVICE_NAME_TO_ID_MAP = {
   u'Drive and Docs': u'55656082996',
-  u'Google+': u'553547912911',
   u'Calendar': u'435070579839'
   }
 
@@ -322,34 +349,66 @@ DFA_OCR = u'ocr'
 DFA_OCRLANGUAGE = u'ocrLanguage'
 DFA_PARENTQUERY = u'parentQuery'
 
+NON_DOWNLOADABLE_MIMETYPES = [MIMETYPE_GA_FORM, MIMETYPE_GA_FUSIONTABLE, MIMETYPE_GA_MAP]
+
+GOOGLEDOC_VALID_EXTENSIONS_MAP = {
+  MIMETYPE_GA_DRAWING: [u'.jpeg', u'.jpg', u'.pdf', u'.png', u'.svg'],
+  MIMETYPE_GA_DOCUMENT: [u'.docx', u'.html', u'.odt', u'.pdf', u'.rtf', u'.txt', u'.zip'],
+  MIMETYPE_GA_PRESENTATION: [u'.pdf', u'.pptx', u'.odp', u'.txt'],
+  MIMETYPE_GA_SPREADSHEET: [u'.csv', u'.ods', u'.pdf', u'.xlsx', u'.zip'],
+  }
+
+MICROSOFT_FORMATS_LIST = [{u'mime': u'application/vnd.openxmlformats-officedocument.wordprocessingml.document', u'ext': u'.docx'},
+                          {u'mime': u'application/vnd.openxmlformats-officedocument.wordprocessingml.template', u'ext': u'.dotx'},
+                          {u'mime': u'application/vnd.openxmlformats-officedocument.presentationml.presentation', u'ext': u'.pptx'},
+                          {u'mime': u'application/vnd.openxmlformats-officedocument.presentationml.template', u'ext': u'.potx'},
+                          {u'mime': u'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', u'ext': u'.xlsx'},
+                          {u'mime': u'application/vnd.openxmlformats-officedocument.spreadsheetml.template', u'ext': u'.xltx'},
+                          {u'mime': u'application/msword', u'ext': u'.doc'},
+                          {u'mime': u'application/msword', u'ext': u'.dot'},
+                          {u'mime': u'application/vnd.ms-powerpoint', u'ext': u'.ppt'},
+                          {u'mime': u'application/vnd.ms-powerpoint', u'ext': u'.pot'},
+                          {u'mime': u'application/vnd.ms-excel', u'ext': u'.xls'},
+                          {u'mime': u'application/vnd.ms-excel', u'ext': u'.xlt'}]
+
 DOCUMENT_FORMATS_MAP = {
   u'csv': [{u'mime': u'text/csv', u'ext': u'.csv'}],
+  u'doc': [{u'mime': u'application/msword', u'ext': u'.doc'}],
+  u'dot': [{u'mime': u'application/msword', u'ext': u'.dot'}],
+  u'docx': [{u'mime': u'application/vnd.openxmlformats-officedocument.wordprocessingml.document', u'ext': u'.docx'}],
+  u'dotx': [{u'mime': u'application/vnd.openxmlformats-officedocument.wordprocessingml.template', u'ext': u'.dotx'}],
+  u'epub': [{u'mime': u'application/epub+zip', u'ext': u'.epub'}],
   u'html': [{u'mime': u'text/html', u'ext': u'.html'}],
-  u'txt': [{u'mime': u'text/plain', u'ext': u'.txt'}],
-  u'tsv': [{u'mime': u'text/tsv', u'ext': u'.tsv'}],
   u'jpeg': [{u'mime': u'image/jpeg', u'ext': u'.jpeg'}],
   u'jpg': [{u'mime': u'image/jpeg', u'ext': u'.jpg'}],
-  u'png': [{u'mime': u'image/png', u'ext': u'.png'}],
-  u'svg': [{u'mime': u'image/svg+xml', u'ext': u'.svg'}],
-  u'pdf': [{u'mime': u'application/pdf', u'ext': u'.pdf'}],
-  u'rtf': [{u'mime': u'application/rtf', u'ext': u'.rtf'}],
-  u'zip': [{u'mime': u'application/zip', u'ext': u'.zip'}],
-  u'pptx': [{u'mime': u'application/vnd.openxmlformats-officedocument.presentationml.presentation', u'ext': u'.pptx'}],
-  u'xlsx': [{u'mime': u'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', u'ext': u'.xlsx'}],
-  u'docx': [{u'mime': u'application/vnd.openxmlformats-officedocument.wordprocessingml.document', u'ext': u'.docx'}],
-  u'ms': [{u'mime': u'application/vnd.openxmlformats-officedocument.presentationml.presentation', u'ext': u'.pptx'},
-          {u'mime': u'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', u'ext': u'.xlsx'},
-          {u'mime': u'application/vnd.openxmlformats-officedocument.wordprocessingml.document', u'ext': u'.docx'}],
-  u'microsoft': [{u'mime': u'application/vnd.openxmlformats-officedocument.presentationml.presentation', u'ext': u'.pptx'},
-                 {u'mime': u'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', u'ext': u'.xlsx'},
-                 {u'mime': u'application/vnd.openxmlformats-officedocument.wordprocessingml.document', u'ext': u'.docx'}],
-  u'micro$oft': [{u'mime': u'application/vnd.openxmlformats-officedocument.presentationml.presentation', u'ext': u'.pptx'},
-                 {u'mime': u'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', u'ext': u'.xlsx'},
-                 {u'mime': u'application/vnd.openxmlformats-officedocument.wordprocessingml.document', u'ext': u'.docx'}],
+  u'mht': [{u'mime': u'message/rfc822', u'ext': u'mht'}],
+  u'odp': [{u'mime': u'application/vnd.oasis.opendocument.presentation', u'ext': u'.odp'}],
+  u'ods': [{u'mime': u'application/x-vnd.oasis.opendocument.spreadsheet', u'ext': u'.ods'},
+           {u'mime': u'application/vnd.oasis.opendocument.spreadsheet', u'ext': u'.ods'}],
   u'odt': [{u'mime': u'application/vnd.oasis.opendocument.text', u'ext': u'.odt'}],
-  u'ods': [{u'mime': u'application/x-vnd.oasis.opendocument.spreadsheet', u'ext': u'.ods'}],
-  u'openoffice': [{u'mime': u'application/vnd.oasis.opendocument.text', u'ext': u'.odt'},
-                  {u'mime': u'application/x-vnd.oasis.opendocument.spreadsheet', u'ext': u'.ods'}],
+  u'pdf': [{u'mime': u'application/pdf', u'ext': u'.pdf'}],
+  u'png': [{u'mime': u'image/png', u'ext': u'.png'}],
+  u'ppt': [{u'mime': u'application/vnd.ms-powerpoint', u'ext': u'.ppt'}],
+  u'pot': [{u'mime': u'application/vnd.ms-powerpoint', u'ext': u'.pot'}],
+  u'potx': [{u'mime': u'application/vnd.openxmlformats-officedocument.presentationml.template', u'ext': u'.potx'}],
+  u'pptx': [{u'mime': u'application/vnd.openxmlformats-officedocument.presentationml.presentation', u'ext': u'.pptx'}],
+  u'rtf': [{u'mime': u'application/rtf', u'ext': u'.rtf'}],
+  u'svg': [{u'mime': u'image/svg+xml', u'ext': u'.svg'}],
+  u'tsv': [{u'mime': u'text/tab-separated-values', u'ext': u'.tsv'},
+           {u'mime': u'text/tsv', u'ext': u'.tsv'}],
+  u'txt': [{u'mime': u'text/plain', u'ext': u'.txt'}],
+  u'xls': [{u'mime': u'application/vnd.ms-excel', u'ext': u'.xls'}],
+  u'xlt': [{u'mime': u'application/vnd.ms-excel', u'ext': u'.xlt'}],
+  u'xlsx': [{u'mime': u'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', u'ext': u'.xlsx'}],
+  u'xltx': [{u'mime': u'application/vnd.openxmlformats-officedocument.spreadsheetml.template', u'ext': u'.xltx'}],
+  u'zip': [{u'mime': u'application/zip', u'ext': u'.zip'}],
+  u'ms': MICROSOFT_FORMATS_LIST,
+  u'microsoft': MICROSOFT_FORMATS_LIST,
+  u'micro$oft': MICROSOFT_FORMATS_LIST,
+  u'openoffice': [{u'mime': u'application/vnd.oasis.opendocument.presentation', u'ext': u'.odp'},
+                  {u'mime': u'application/x-vnd.oasis.opendocument.spreadsheet', u'ext': u'.ods'},
+                  {u'mime': u'application/vnd.oasis.opendocument.spreadsheet', u'ext': u'.ods'},
+                  {u'mime': u'application/vnd.oasis.opendocument.text', u'ext': u'.odt'}],
   }
 
 EMAILSETTINGS_OLD_NEW_OLD_FORWARD_ACTION_MAP = {
@@ -439,8 +498,10 @@ CROS_ARGUMENT_TO_PROPERTY_MAP = {
   u'asset': [u'annotatedAssetId',],
   u'assetid': [u'annotatedAssetId',],
   u'bootmode': [u'bootMode',],
+  u'cpustatusreports': [u'cpuStatusReports',],
   u'devicefiles': [u'deviceFiles',],
   u'deviceid': [u'deviceId',],
+  u'diskvolumereports': [u'diskVolumeReports',],
   u'ethernetmacaddress': [u'ethernetMacAddress',],
   u'firmwareversion': [u'firmwareVersion',],
   u'lastenrollmenttime': [u'lastEnrollmentTime',],
@@ -460,6 +521,8 @@ CROS_ARGUMENT_TO_PROPERTY_MAP = {
   u'serialnumber': [u'serialNumber',],
   u'status': [u'status',],
   u'supportenddate': [u'supportEndDate',],
+  u'systemramtotal': [u'systemRamTotal',],
+  u'systemramfreereports': [u'systemRamFreeReports',],
   u'tag': [u'annotatedAssetId',],
   u'timeranges': [u'activeTimeRanges.activeTime', u'activeTimeRanges.date'],
   u'times': [u'activeTimeRanges.activeTime', u'activeTimeRanges.date'],
@@ -488,6 +551,7 @@ CROS_SCALAR_PROPERTY_PRINT_ORDER = [
   u'meid',
   u'ethernetMacAddress',
   u'macAddress',
+  u'systemRamTotal',
   u'lastEnrollmentTime',
   u'orderNumber',
   u'supportEndDate',
@@ -498,12 +562,39 @@ CROS_SCALAR_PROPERTY_PRINT_ORDER = [
 CROS_RECENT_USERS_ARGUMENTS = [u'recentusers', u'users']
 CROS_ACTIVE_TIME_RANGES_ARGUMENTS = [u'timeranges', u'activetimeranges', u'times']
 CROS_DEVICE_FILES_ARGUMENTS = [u'devicefiles', u'files']
+CROS_CPU_STATUS_REPORTS_ARGUMENTS = [u'cpustatusreports',]
+CROS_DISK_VOLUME_REPORTS_ARGUMENTS = [u'diskvolumereports',]
+CROS_SYSTEM_RAM_FREE_REPORTS_ARGUMENTS = [u'systemramfreereports',]
+CROS_LISTS_ARGUMENTS = CROS_ACTIVE_TIME_RANGES_ARGUMENTS+CROS_RECENT_USERS_ARGUMENTS+CROS_DEVICE_FILES_ARGUMENTS+CROS_CPU_STATUS_REPORTS_ARGUMENTS+CROS_DISK_VOLUME_REPORTS_ARGUMENTS+CROS_SYSTEM_RAM_FREE_REPORTS_ARGUMENTS
 CROS_START_ARGUMENTS = [u'start', u'startdate', u'oldestdate']
 CROS_END_ARGUMENTS = [u'end', u'enddate']
 
 # From https://www.chromium.org/chromium-os/tpm_firmware_update
 CROS_TPM_VULN_VERSIONS = [u'41f', u'420', u'628', u'8520',]
 CROS_TPM_FIXED_VERSIONS = [u'422', u'62b', u'8521',]
+
+COLLABORATIVE_ACL_CHOICES = {
+  u'members': u'ALL_MEMBERS',
+  u'managersonly': u'MANAGERS_ONLY',
+  u'managers': u'OWNERS_AND_MANAGERS',
+  u'owners': u'OWNERS_ONLY',
+  u'none': u'NONE',
+  }
+
+COLLABORATIVE_INBOX_ATTRIBUTES = {
+  u'whoCanAddReferences': u'acl',
+  u'whoCanAssignTopics': u'acl',
+  u'whoCanEnterFreeFormTags': u'acl',
+  u'whoCanMarkDuplicate': u'acl',
+  u'whoCanMarkFavoriteReplyOnAnyTopic': u'acl',
+  u'whoCanMarkFavoriteReplyOnOwnTopic': u'acl',
+  u'whoCanMarkNoResponseNeeded': u'acl',
+  u'whoCanModifyTagsAndCategories': u'acl',
+  u'whoCanTakeTopics': u'acl',
+  u'whoCanUnassignTopic': u'acl',
+  u'whoCanUnmarkFavoriteReplyOnAnyTopic': u'acl',
+  u'favoriteRepliesOnTop': True,
+  }
 
 #
 # Global variables
@@ -520,6 +611,8 @@ GM_WINDOWS = u'wndo'
 GM_SYS_ENCODING = u'syen'
 # Extra arguments to pass to GAPI functions
 GM_EXTRA_ARGS_DICT = u'exad'
+# Current API services
+GM_CURRENT_API_SERVICES = u'caps'
 # Current API user
 GM_CURRENT_API_USER = u'capu'
 # Current API scope
@@ -552,6 +645,7 @@ GM_Globals = {
   GM_WINDOWS: os.name == u'nt',
   GM_SYS_ENCODING: DEFAULT_CHARSET,
   GM_EXTRA_ARGS_DICT:  {u'prettyPrint': False},
+  GM_CURRENT_API_SERVICES: {},
   GM_CURRENT_API_USER: None,
   GM_CURRENT_API_SCOPES: [],
   GM_OAUTH2SERVICE_JSON_DATA: None,
@@ -766,6 +860,7 @@ GAPI_INVALID_MEMBER = u'invalidMember'
 GAPI_MEMBER_NOT_FOUND = u'memberNotFound'
 GAPI_NOT_FOUND = u'notFound'
 GAPI_NOT_IMPLEMENTED = u'notImplemented'
+GAPI_PERMISSION_DENIED = u'permissionDenied'
 GAPI_QUOTA_EXCEEDED = u'quotaExceeded'
 GAPI_RATE_LIMIT_EXCEEDED = u'rateLimitExceeded'
 GAPI_RESOURCE_NOT_FOUND = u'resourceNotFound'
@@ -776,7 +871,6 @@ GAPI_USER_RATE_LIMIT_EXCEEDED = u'userRateLimitExceeded'
 #
 GAPI_DEFAULT_RETRY_REASONS = [GAPI_QUOTA_EXCEEDED, GAPI_RATE_LIMIT_EXCEEDED, GAPI_USER_RATE_LIMIT_EXCEEDED, GAPI_BACKEND_ERROR, GAPI_INTERNAL_ERROR]
 GAPI_GMAIL_THROW_REASONS = [GAPI_SERVICE_NOT_AVAILABLE]
-GAPI_GPLUS_THROW_REASONS = [GAPI_SERVICE_NOT_AVAILABLE]
 GAPI_GROUP_GET_THROW_REASONS = [GAPI_GROUP_NOT_FOUND, GAPI_DOMAIN_NOT_FOUND, GAPI_DOMAIN_CANNOT_USE_APIS, GAPI_FORBIDDEN, GAPI_BAD_REQUEST]
 GAPI_GROUP_GET_RETRY_REASONS = [GAPI_INVALID, GAPI_SYSTEM_ERROR]
 GAPI_MEMBERS_THROW_REASONS = [GAPI_GROUP_NOT_FOUND, GAPI_DOMAIN_NOT_FOUND, GAPI_DOMAIN_CANNOT_USE_APIS, GAPI_INVALID, GAPI_FORBIDDEN]
@@ -953,6 +1047,19 @@ WEBCOLOR_MAP = {
     u'yellow': u'#ffff00',
     u'yellowgreen': u'#9acd32',
 }
+
+# Gmail label colors
+LABEL_COLORS = [
+  u'#000000', u'#076239', u'#0b804b', u'#149e60', u'#16a766', u'#1a764d', u'#1c4587', u'#285bac',
+  u'#2a9c68', u'#3c78d8', u'#3dc789', u'#41236d', u'#434343', u'#43d692', u'#44b984', u'#4a86e8',
+  u'#653e9b', u'#666666', u'#68dfa9', u'#6d9eeb', u'#822111', u'#83334c', u'#89d3b2', u'#8e63ce',
+  u'#999999', u'#a0eac9', u'#a46a21', u'#a479e2', u'#a4c2f4', u'#aa8831', u'#ac2b16', u'#b65775',
+  u'#b694e8', u'#b9e4d0', u'#c6f3de', u'#c9daf8', u'#cc3a21', u'#cccccc', u'#cf8933', u'#d0bcf1',
+  u'#d5ae49', u'#e07798', u'#e4d7f5', u'#e66550', u'#eaa041', u'#efa093', u'#efefef', u'#f2c960',
+  u'#f3f3f3', u'#f691b3', u'#f6c5be', u'#f7a7c0', u'#fad165', u'#fb4c2f', u'#fbc8d9', u'#fcda83',
+  u'#fcdee8', u'#fce8b3', u'#fef1d1', u'#ffad47', u'#ffbc6b', u'#ffd6a2', u'#ffe6c7', u'#ffffff',
+  ]
+
 # Valid language codes
 LANGUAGE_CODES_MAP = {
   u'ach': u'ach', u'af': u'af', u'ag': u'ga', u'ak': u'ak', u'am': u'am', u'ar': u'ar', u'az': u'az', #Luo, Afrikaans, Irish, Akan, Amharic, Arabica, Azerbaijani

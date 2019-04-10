@@ -12,8 +12,8 @@ logger = logging.getLogger(__name__)
 
 class ThisDirHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
     def translate_path(self, path):
-        path = path.split('?', 1)[0].split('#', 1)[0]
-        return os.path.join(HERE, *filter(None, path.split('/')))
+        path = path.split("?", 1)[0].split("#", 1)[0]
+        return os.path.join(HERE, *filter(None, path.split("/")))
 
     def log_message(self, s, *args):
         # output via logging so nose can catch it
@@ -38,12 +38,13 @@ class ShutdownServer(SocketServer.TCPServer):
         SocketServer.TCPServer.server_bind(self)
         if self.__use_tls:
             import ssl
-            self.socket = ssl.wrap_socket(self.socket,
-                    os.path.join(os.path.dirname(__file__), 'server.key'),
-                    os.path.join(os.path.dirname(__file__), 'server.pem'),
-                    True
-            )
 
+            self.socket = ssl.wrap_socket(
+                self.socket,
+                os.path.join(os.path.dirname(__file__), "server.key"),
+                os.path.join(os.path.dirname(__file__), "server.pem"),
+                True,
+            )
 
     def serve_forever(self, poll_interval=0.1):
         """Handle one request at a time until shutdown.

@@ -28,6 +28,7 @@ from __future__ import print_function
 
 import multiprocessing as mp
 
+from rsa._compat import range
 import rsa.prime
 import rsa.randnum
 
@@ -94,7 +95,7 @@ if __name__ == '__main__':
         if failures:
             break
 
-        if count and count % 10 == 0:
+        if count % 10 == 0 and count:
             print('%i times' % count)
 
     print('Doctests done')

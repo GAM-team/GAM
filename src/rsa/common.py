@@ -14,16 +14,24 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+from rsa._compat import zip
+
 """Common functionality shared by several modules."""
+
+
+class NotRelativePrimeError(ValueError):
+    def __init__(self, a, b, d, msg=None):
+        super(NotRelativePrimeError, self).__init__(
+            msg or "%d and %d are not relatively prime, divider=%i" % (a, b, d))
+        self.a = a
+        self.b = b
+        self.d = d
 
 
 def bit_size(num):
     """
     Number of bits needed to represent a integer excluding any prefix
     0 bits.
-
-    As per definition from https://wiki.python.org/moin/BitManipulation and
-    to match the behavior of the Python 3 API.
 
     Usage::
 
@@ -41,41 +49,11 @@ def bit_size(num):
     :returns:
         Returns the number of bits in the integer.
     """
-    if num == 0:
-        return 0
-    if num < 0:
-        num = -num
 
-    # Make sure this is an int and not a float.
-    num & 1
-
-    hex_num = "%x" % num
-    return ((len(hex_num) - 1) * 4) + {
-        '0': 0, '1': 1, '2': 2, '3': 2,
-        '4': 3, '5': 3, '6': 3, '7': 3,
-        '8': 4, '9': 4, 'a': 4, 'b': 4,
-        'c': 4, 'd': 4, 'e': 4, 'f': 4,
-    }[hex_num[0]]
-
-
-def _bit_size(number):
-    """
-    Returns the number of bits required to hold a specific long number.
-    """
-    if number < 0:
-        raise ValueError('Only nonnegative numbers possible: %s' % number)
-
-    if number == 0:
-        return 0
-
-    # This works, even with very large numbers. When using math.log(number, 2),
-    # you'll get rounding errors and it'll fail.
-    bits = 0
-    while number:
-        bits += 1
-        number >>= 1
-
-    return bits
+    try:
+        return num.bit_length()
+    except AttributeError:
+        raise TypeError('bit_size(num) only supports integers, not %r' % type(num))
 
 
 def byte_size(number):
@@ -98,11 +76,33 @@ def byte_size(number):
     :returns:
         The number of bytes required to hold a specific long number.
     """
-    quanta, mod = divmod(bit_size(number), 8)
-    if mod or number == 0:
+    if number == 0:
+        return 1
+    return ceil_div(bit_size(number), 8)
+
+
+def ceil_div(num, div):
+    """
+    Returns the ceiling function of a division between `num` and `div`.
+
+    Usage::
+
+        >>> ceil_div(100, 7)
+        15
+        >>> ceil_div(100, 10)
+        10
+        >>> ceil_div(1, 4)
+        1
+
+    :param num: Division's numerator, a number
+    :param div: Division's divisor, a number
+
+    :return: Rounded up result of the division between the parameters.
+    """
+    quanta, mod = divmod(num, div)
+    if mod:
         quanta += 1
     return quanta
-    # return int(math.ceil(bit_size(number) / 8.0))
 
 
 def extended_gcd(a, b):
@@ -131,7 +131,7 @@ def extended_gcd(a, b):
 
 
 def inverse(x, n):
-    """Returns x^-1 (mod n)
+    """Returns the inverse of x % n under multiplication, a.k.a x^-1 (mod n)
 
     >>> inverse(7, 4)
     3
@@ -142,7 +142,7 @@ def inverse(x, n):
     (divider, inv, _) = extended_gcd(x, n)
 
     if divider != 1:
-        raise ValueError("x (%d) and n (%d) are not relatively prime" % (x, n))
+        raise NotRelativePrimeError(x, n, divider)
 
     return inv
 
