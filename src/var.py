@@ -44,6 +44,8 @@ FN_LAST_UPDATE_CHECK_TXT = u'lastupdatecheck.txt'
 FN_OAUTH2SERVICE_JSON = u'oauth2service.json'
 FN_OAUTH2_TXT = u'oauth2.txt'
 MY_CUSTOMER = u'my_customer'
+# See https://support.google.com/drive/answer/37603
+MAX_GOOGLE_SHEET_CELLS = 5000000
 SKUS = {
   u'1010010001': {
     u'product': u'101001', u'aliases': [u'identity', u'cloudidentity'], u'displayName': 'Cloud Identity'},

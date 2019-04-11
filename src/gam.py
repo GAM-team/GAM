@@ -115,7 +115,7 @@ def _request_with_user_agent(request_method):
   return wrapped_request_method
 
 google_auth_httplib2.Request.__call__ = _request_with_user_agent(
-    google_auth_httplib2.Request.__call__)	
+    google_auth_httplib2.Request.__call__)
 google_auth_httplib2.AuthorizedHttp.request = _request_with_user_agent(
     google_auth_httplib2.AuthorizedHttp.request)
 
@@ -10640,7 +10640,7 @@ and follow recommend steps to authorize GAM for Drive access.''' % (admin_email)
     cell_count = rows * columns
     data_size = string_file.len
     max_sheet_bytes = int(result[u'maxImportSizes'][MIMETYPE_GA_SPREADSHEET])
-    if cell_count > 2000000 or data_size > max_sheet_bytes:
+    if cell_count > MAX_GOOGLE_SHEET_CELLS or data_size > max_sheet_bytes:
       print u'{0}{1}'.format(WARNING_PREFIX, MESSAGE_RESULTS_TOO_LARGE_FOR_GOOGLE_SPREADSHEET)
       mimeType = u'text/csv'
     else:
