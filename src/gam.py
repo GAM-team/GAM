@@ -114,8 +114,10 @@ def _request_with_user_agent(request_method):
 
   return wrapped_request_method
 
-google_auth_httplib2.Request.__call__ = _request_with_user_agent(google_auth_httplib2.Request.__call__)
-google_auth_httplib2.AuthorizedHttp.request = _request_with_user_agent(google_auth_httplib2.AuthorizedHttp.request)
+google_auth_httplib2.Request.__call__ = _request_with_user_agent(
+    google_auth_httplib2.Request.__call__)	
+google_auth_httplib2.AuthorizedHttp.request = _request_with_user_agent(
+    google_auth_httplib2.AuthorizedHttp.request)
 
 def showUsage():
   doGAMVersion(checkForArgs=False)
@@ -7366,7 +7368,7 @@ def _createClientSecretsOauth2service(httpObj, projectId):
         "redirect_uris": [
             "urn:ietf:wg:oauth:2.0:oob",
             "http://localhost"
-`        ],
+        ],
         "token_uri": "https://accounts.google.com/o/oauth2/token"
     }
 }''' % (client_id, client_secret, projectId)
@@ -12524,8 +12526,8 @@ def getOAuthClientIDAndSecret():
 
 gam create project
 '''
-
-  cs_data = readFile(GC_Values[GC_CLIENT_SECRETS_JSON], mode=u'rb', continueOnError=True, displayError=True, encoding=None)
+  filename = GC_Values[GC_CLIENT_SECRETS_JSON]
+  cs_data = readFile(filename, mode=u'rb', continueOnError=True, displayError=True, encoding=None)
   if not cs_data:
     systemErrorExit(14, MISSING_CLIENT_SECRETS_MESSAGE)
   try:
@@ -12536,7 +12538,8 @@ gam create project
     client_id = re.sub(r'\.apps\.googleusercontent\.com$', u'', client_id)
     client_secret = cs_json[u'installed'][u'client_secret']
   except (ValueError, IndexError, KeyError):
-    systemErrorExit(3, u'the format of your client secrets file:\n\n%s\n\nis incorrect. Please recreate the file.')
+    systemErrorExit(3, u'the format of your client secrets file:\n\n%s\n\n'
+                    'is incorrect. Please recreate the file.' % filename)
   return (client_id, client_secret)
 
 class cmd_flags(object):
