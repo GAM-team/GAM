@@ -114,6 +114,10 @@ def _request_with_user_agent(request_method):
 
   return wrapped_request_method
 
+google_auth_httplib2.Request.__call__ = _request_with_user_agent(
+    google_auth_httplib2.Request.__call__)	
+google_auth_httplib2.AuthorizedHttp.request = _request_with_user_agent(
+    google_auth_httplib2.AuthorizedHttp.request)
 
 def showUsage():
   doGAMVersion(checkForArgs=False)
