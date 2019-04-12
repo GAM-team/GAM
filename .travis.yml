@@ -22,8 +22,8 @@ before_install:
 - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then
     cinst -y python2;
     ls -l /c
-    ls -al /c/python2;
-    PATH=$PATH:/c/python2/scripts;
+    ls -al /c/Python27;
+    PATH=$PATH:/c/Python27/scripts;
   fi
 - pip install pyinstaller
 
