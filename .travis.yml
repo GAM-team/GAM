@@ -23,7 +23,7 @@ install:
 - tar cfJ gam-$TRAVIS_BUILd_NUMBER-$GAMOS.tar.xz gam/
 
 script:
-- src/dist/gam version
+- src/gam/gam version
 
 deploy:
   provider: release
