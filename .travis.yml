@@ -24,8 +24,7 @@ before_install:
     cinst -y python2;
     PATH=$PATH:/c/Python27/scripts;
   fi
-- pip install --user --upgrade pip
-- pip install --user pyinstaller
+- pip install pyinstaller
 
 install:
 - cd src
