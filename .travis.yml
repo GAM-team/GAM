@@ -1,6 +1,6 @@
 language: python
 dist: precise
-osx_image: xcode9.2
+osx_image: xcode10.1
 
 python:
  - "2.7.15"
@@ -26,6 +26,5 @@ script:
 - gam/gam version
 
 deploy:
-  provider: release
   skip_cleanup: true
   file: gam-$TRAVIS_BUILd_NUMBER-$GAMOS.tar.xz
