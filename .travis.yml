@@ -33,8 +33,8 @@ install:
 - cp whatsnew.txt gam
 - cp GamCommands.txt gam
 - if [[ "$TRAVIS_OSNAME" == "windows" ]]; then
+    set
     ls -l $ProgramFiles;
-    ls -l $ProgramFiles(x86);
     GAM_ARCHIVE=gam-$TRAVIS_BUILD_NUMBER-$GAMOS.zip;
     $ProgramFiles/7-Zip/7z.exe a -tzip $GAM_ARCHIVE -xr!.svn;
   else
