@@ -1,0 +1,14 @@
+language: python
+dist: precise
+
+python:
+ - "2.7"
+
+os:
+ - linux
+ - osx
+ - windows
+
+before_install:
+- pip install pyinstaller
+- pyinstaller src/gam.py
