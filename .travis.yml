@@ -21,7 +21,8 @@ matrix:
 before_install:
 - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then
     powershell Install-WindowsFeature Net-Framework-Core;
-    cinst -y python2 wixtoolset;
+    cinst -y python2;
+    cinst -y wixtoolset;
     PATH=$PATH:/c/Python27/scripts;
   fi
 - pip install pyinstaller
