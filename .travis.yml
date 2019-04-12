@@ -23,9 +23,9 @@ install:
 - tar cfJ gam-$TRAVIS_BUILd_NUMBER-$GAMOS.tar.xz gam/
 
 script:
-- src/gam/gam version
+- gam/gam version
 
 deploy:
   provider: release
   skip_cleanup: true
-  file: src/gam-$TRAVIS_BUILd_NUMBER-$GAMOS.tar.xz
+  file: gam-$TRAVIS_BUILd_NUMBER-$GAMOS.tar.xz
