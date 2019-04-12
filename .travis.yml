@@ -12,3 +12,5 @@ os:
 before_install:
 - pip install pyinstaller
 - pyinstaller src/gam.py
+
+install: pip install --upgrade pip 
