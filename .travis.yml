@@ -8,6 +8,8 @@ matrix:
       env: GAMOS=linux
     - os: osx
       osx_image: xcode9.2
+      python:
+        - "3.6"
       env: GAMOS=macos
       addons:
         homebrew:
