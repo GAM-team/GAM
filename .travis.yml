@@ -35,8 +35,8 @@ install:
 - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then
     GAM_ARCHIVE=gam-$TRAVIS_BUILD_NUMBER-$GAMOS.zip;
     /c/Program\ Files/7-Zip/7z.exe a -tzip $GAM_ARCHIVE -xr!.svn;
-    /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.11/bin/candle.exe -arch x64 gam.wxs
-    /c/Program\ Files\ \(x86\)/Wix\ Toolset\ v3.11/bin/light.exe -ext /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.11/bin/WixUIExtension.dll gam.wixobj -o gam-$TRAVIS_BUILD_NUMBER-$GAMOS-x64.msi
+    /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.11/bin/candle.exe -arch x64 gam.wxs;
+    /c/Program\ Files\ \(x86\)/Wix\ Toolset\ v3.11/bin/light.exe -ext /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.11/bin/WixUIExtension.dll gam.wixobj -o gam-$TRAVIS_BUILD_NUMBER-$GAMOS-x64.msi;
   else
     GAM_ARCHIVE=gam-$TRAVIS_BUILD_NUMBER-$GAMOS.tar.xz;
     tar cfJ $GAM_ARCHIVE gam/;
