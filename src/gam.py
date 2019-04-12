@@ -12872,7 +12872,7 @@ class ScopeSelectionMenu():
       options: A list of ScopeMenuOption objects from which to generate the menu
           Options will be presented on screen in the same order as the provided
           list.
-    """"
+    """
     self._options = options
 
   def get_options(self):
