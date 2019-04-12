@@ -1,3 +1,4 @@
+language: generic
 matrix:
   include:
     - os: linux
