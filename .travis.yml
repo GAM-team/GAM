@@ -71,3 +71,14 @@ install:
 
 script:
 - gam/gam version
+
+deploy:
+  provider: releases
+  api_key:
+    secure: bzambMcQwyv/o5c5GrKGCsZHgE5R85tg8sNFvPfpISz3+uosCjnBXas7wvCKzT75XUFi2ztfbYak6HdKf4sGnNHk0saEicB3slH+ghPyZbYzp76yvvduhFO2nWW3/F01tL+Yfqqt4/q8wFaWGjrC5km+6GLVyB4lWA/Uyu49qKnz02uSwyhBD/VFbO7DOQ65a1iWk9HngyMsu0Oi7HIbSjSLtxTHedNfOf3waW0NivTTxYXiYGX/MCu3GWhgIGj47a+H3A6FcQ/9QWvnKgnoixdgPBUz7kDb7ktsWwQsILPGStgH7iMuG49ZlXdEFmqwifBri2wvzmFEevBGZjHcupy1IGrNFRG+IUGKMotio+OkLHlLjuv7ZJtqCz/Vf5SNFgNyMSanx6jKEUJuYvndVg99IRXmYVwHFwPu5BAcJACpU6C0AfyGmmSqqwxCd46uXL62ynxNFpHuRfOqlDnmCTfZgjOciJSlDDpf+Xz9fF7+oCoeCi3mrcZVFjhd3tT6Oxw5HrsDtm0ZNld1cdLidaq8H6vOFgHMd0A9yNYZzTzXTvpmxzkXT4Zc7s+PYKN6z5fRZ+pJeckUjRXblvVEfs5HFSymavcOc5AkRwxpvOsTQMNmlnaJCBo5UNs0K/rVmRi5cFmaiwTcBCY0kTllOBJ4zWsfq8seiokWwNUNK2g=
+  file_glob: true
+  file: gam-$TRAVIS_BUILD_NUMBER-*
+  skip_cleanup: true
+  draft: true
+  on:
+    repo: jay0lee/GAM
