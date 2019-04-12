@@ -1,18 +1,21 @@
 language: python
-dist: precise
-osx_image: xcode10.1
-
-python:
- - "2.7.15"
-
-os:
- - linux
- - osx
+matrix:
+  include:
+    - os: linux
+      dist: precise
+      python:
+        - "2.7.15"
+      env: GAMOS=linux
+    - os: osx
+      osx_image: xcode9.2
+      env: GAMOS=macos
+      addons:
+        homebrew:
+          packages:
+            python@2
 
 before_install:
 - pip install pyinstaller
-- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then GAMOS="linux" ; fi
-- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then GAMOS="macos" ; fi
 
 install:
 - cd src
