@@ -3,7 +3,7 @@ dist: precise
 osx_image: xcode9.2
 
 python:
- - "2.7.16"
+ - "2.7.15"
 
 os:
  - linux
