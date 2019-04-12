@@ -15,13 +15,14 @@ before_install:
 - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then GAMOS="macos" ; fi
 
 install:
+- cd src
 - pyinstaller --clean -F --distpath=gam src/$GAMOS-gam.spec
-- cp src/LICENSE src/gam
-- cp src/whatsnew.txt src/gam
-- cp src/GamCommands.txt src/gam
-- tar cfJ gam-$TRAVIS_BUILd_NUMBER-$GAMOS.tar.xz src/gam/
+- cp LICENSE gam
+- cp whatsnew.txt gam
+- cp GamCommands.txt gam
+- tar cfJ gam-$TRAVIS_BUILd_NUMBER-$GAMOS.tar.xz gam/
 
-script: src/dist/gam version
+script: dist/gam version
 deploy:
   provider: release
   skip_cleanup: true
