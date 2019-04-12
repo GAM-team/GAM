@@ -7,9 +7,7 @@ matrix:
         - "2.7.15"
       env: GAMOS=linux
     - os: osx
-      osx_image: xcode9.2
-      python:
-        - "3.6"
+      osx_image: xcode10.1
       env: GAMOS=macos
       addons:
         homebrew:
