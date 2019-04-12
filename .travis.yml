@@ -7,6 +7,7 @@ matrix:
         - "2.7.15"
       env:
         - GAMOS=linux
+        - PLATFORM=x64
     - os: linux
       language: python
       dist: precise
@@ -20,6 +21,7 @@ matrix:
       osx_image: xcode10.1
       env:
         - GAMOS=macos
+        - PLATFORM=x64
       addons:
         homebrew:
           packages:
@@ -28,18 +30,17 @@ matrix:
       language: shell
       env:
         - GAMOS=windows
+          PLATFORM=x64
     - os: windows
       language: shell
       env:
         - GAMOS=windows
+        - CINST_ARGS=--forcex86
         - PLATFORM=x86
 
 before_install:
 - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then
     powershell Install-WindowsFeature Net-Framework-Core;
-    if [[ "$PLATFORM" == "x86" ]]; then
-      CINST_ARGS="--forcex86";
-    fi
     cinst -y $CINST_ARGS python2;
     export PATH=$PATH:/c/Python27/scripts;
     cinst -y wixtoolset;
@@ -53,13 +54,13 @@ install:
 - cp whatsnew.txt gam
 - cp GamCommands.txt gam
 - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then
-    GAM_ARCHIVE=gam-$TRAVIS_BUILD_NUMBER-$GAMOS.zip;
+    GAM_ARCHIVE=gam-$TRAVIS_BUILD_NUMBER-$GAMOS-PLATFORM.zip;
     /c/Program\ Files/7-Zip/7z.exe a -tzip $GAM_ARCHIVE -xr!.svn;
     export GAMVERSION=$TRAVIS_BUILD_NUMBER.0;
-    /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.11/bin/candle.exe -arch x64 gam.wxs;
-    /c/Program\ Files\ \(x86\)/Wix\ Toolset\ v3.11/bin/light.exe -ext /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.11/bin/WixUIExtension.dll gam.wixobj -o gam-$TRAVIS_BUILD_NUMBER-$GAMOS-x64.msi;
+    /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.11/bin/candle.exe -arch $PLATFORM gam.wxs;
+    /c/Program\ Files\ \(x86\)/Wix\ Toolset\ v3.11/bin/light.exe -ext /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.11/bin/WixUIExtension.dll gam.wixobj -o gam-$TRAVIS_BUILD_NUMBER-$GAMOS-$PLATFORM.msi;
   else
-    GAM_ARCHIVE=gam-$TRAVIS_BUILD_NUMBER-$GAMOS.tar.xz;
+    GAM_ARCHIVE=gam-$TRAVIS_BUILD_NUMBER-$GAMOS-$PLATFORM.tar.xz;
     tar cfJ $GAM_ARCHIVE gam/;
   fi
 
