@@ -1,21 +1,23 @@
-language: python
 matrix:
   include:
     - os: linux
+      language: python
       dist: precise
       python:
         - "2.7.15"
       env: GAMOS=linux
     - os: osx
-      language: generic
-      osx_image: xcode10.1
+      osx_image: xcode9.2
       env: GAMOS=macos
       addons:
         homebrew:
           packages:
             python@2
+    - os: windows
+      env: GAMOS=windows
 
 before_install:
+- if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then cinst -y python2; fi
 - pip install pyinstaller
 
 install:
