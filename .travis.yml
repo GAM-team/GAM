@@ -1,4 +1,3 @@
-language: generic
 matrix:
   include:
     - os: linux
@@ -8,6 +7,7 @@ matrix:
         - "2.7.15"
       env: GAMOS=linux
     - os: osx
+      language: generic
       osx_image: xcode9.2
       env: GAMOS=macos
       addons:
@@ -15,6 +15,7 @@ matrix:
           packages:
             python@2
     - os: windows
+      language: go
       env: GAMOS=windows
 
 before_install:
