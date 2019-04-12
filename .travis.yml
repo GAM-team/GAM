@@ -16,7 +16,7 @@ before_install:
 
 install:
 - cd src
-- pyinstaller --clean -F --distpath=gam src/$GAMOS-gam.spec
+- pyinstaller --clean -F --distpath=gam $GAMOS-gam.spec
 - cp LICENSE gam
 - cp whatsnew.txt gam
 - cp GamCommands.txt gam
