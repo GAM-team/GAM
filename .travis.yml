@@ -56,7 +56,7 @@ install:
 - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then
     GAM_ARCHIVE=gam-$TRAVIS_BUILD_NUMBER-$GAMOS-$PLATFORM.zip;
     /c/Program\ Files/7-Zip/7z.exe a -tzip $GAM_ARCHIVE -xr!.svn;
-    mv gam gam-64
+    mv gam gam-64;
     export GAMVERSION=$TRAVIS_BUILD_NUMBER.0;
     /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.11/bin/candle.exe -arch $PLATFORM gam.wxs;
     /c/Program\ Files\ \(x86\)/Wix\ Toolset\ v3.11/bin/light.exe -ext /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.11/bin/WixUIExtension.dll gam.wixobj -o gam-$TRAVIS_BUILD_NUMBER-$GAMOS-$PLATFORM.msi;
