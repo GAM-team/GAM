@@ -12,30 +12,39 @@ matrix:
       dist: precise
       python:
         - "2.7.15"
-      env: GAMOS=linux
+      env:
         - GAMOS=linux
-        - PLAT=i686
+        - PLATFORM=x86
     - os: osx
       language: generic
       osx_image: xcode10.1
-      env: GAMOS=macos
+      env:
+        - GAMOS=macos
       addons:
         homebrew:
           packages:
             python@2
     - os: windows
       language: shell
-      env: GAMOS=windows
+      env:
+        - GAMOS=windows
+    - os: windows
+      language: shell
+      env:
+        - GAMOS=windows
+        - PLATFORM=x86
 
 before_install:
 - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then
     powershell Install-WindowsFeature Net-Framework-Core;
-    cinst -y python2;
-    cinst -y --forcex86 --installdirectory=c:\Python27-32;
+    if [[ "$PLATFORM" == "x86" ]]; then
+      CINST_ARGS="--forcex86";
+    fi
+    cinst -y $CINST_ARGS python2;
+    export PATH=$PATH:/c/Python27/scripts;
     cinst -y wixtoolset;
-    alias python32=/c/Python27-32/python;
   fi
-- python -m pip install pyinstaller
+- pip install pyinstaller
 
 install:
 - cd src
