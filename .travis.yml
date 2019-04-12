@@ -7,15 +7,15 @@ matrix:
         - "2.7.15"
       env:
         - GAMOS=linux
-        - PLATFORM=x64
-    - os: linux
-      language: python
-      dist: precise
-      python:
-        - "2.7.15"
-      env:
-        - GAMOS=linux
-        - PLATFORM=x86
+        - PLATFORM=x86_64
+#    - os: linux
+#      language: python
+#      dist: precise
+#      python:
+#        - "2.7.15"
+#      env:
+#        - GAMOS=linux
+#        - PLATFORM=i686
     - os: osx
       language: generic
       osx_image: xcode10.1
