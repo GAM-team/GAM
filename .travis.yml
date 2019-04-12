@@ -54,21 +54,21 @@ install:
 - cd src
 - pyinstaller --clean -F --distpath=gam $GAMOS-gam.spec
 - gam/gam version
+- export GAMVERSION=`gam/gam version simple`
 - cp LICENSE gam
 - cp whatsnew.txt gam
 - cp GamCommands.txt gam
 - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then
     cp gam-setup.bat gam;
-    GAM_ARCHIVE=gam-$TRAVIS_BUILD_NUMBER-$GAMOS-$PLATFORM.zip;
+    GAM_ARCHIVE=gam-$GAMVERSION-$GAMOS-$PLATFORM.zip;
     /c/Program\ Files/7-Zip/7z.exe a -tzip $GAM_ARCHIVE gam -xr!.svn;
     mkdir gam-64;
     cp -rf gam/* gam-64/;
-    export GAMVERSION=$TRAVIS_BUILD_NUMBER.0;
     /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.11/bin/candle.exe -arch $PLATFORM gam.wxs;
-    /c/Program\ Files\ \(x86\)/Wix\ Toolset\ v3.11/bin/light.exe -ext /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.11/bin/WixUIExtension.dll gam.wixobj -o gam-$TRAVIS_BUILD_NUMBER-$GAMOS-$PLATFORM.msi || true;
+    /c/Program\ Files\ \(x86\)/Wix\ Toolset\ v3.11/bin/light.exe -ext /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.11/bin/WixUIExtension.dll gam.wixobj -o gam-$GAMVERSION-$GAMOS-$PLATFORM.msi || true;
     rm *.wixpdb;
   else
-    GAM_ARCHIVE=gam-$TRAVIS_BUILD_NUMBER-$GAMOS-$PLATFORM.tar.xz;
+    GAM_ARCHIVE=gam-$GAMVERSION-$GAMOS-$PLATFORM.tar.xz;
     tar cfJ $GAM_ARCHIVE gam/;
   fi
 
@@ -83,7 +83,8 @@ deploy:
   api_key:
     secure: bzambMcQwyv/o5c5GrKGCsZHgE5R85tg8sNFvPfpISz3+uosCjnBXas7wvCKzT75XUFi2ztfbYak6HdKf4sGnNHk0saEicB3slH+ghPyZbYzp76yvvduhFO2nWW3/F01tL+Yfqqt4/q8wFaWGjrC5km+6GLVyB4lWA/Uyu49qKnz02uSwyhBD/VFbO7DOQ65a1iWk9HngyMsu0Oi7HIbSjSLtxTHedNfOf3waW0NivTTxYXiYGX/MCu3GWhgIGj47a+H3A6FcQ/9QWvnKgnoixdgPBUz7kDb7ktsWwQsILPGStgH7iMuG49ZlXdEFmqwifBri2wvzmFEevBGZjHcupy1IGrNFRG+IUGKMotio+OkLHlLjuv7ZJtqCz/Vf5SNFgNyMSanx6jKEUJuYvndVg99IRXmYVwHFwPu5BAcJACpU6C0AfyGmmSqqwxCd46uXL62ynxNFpHuRfOqlDnmCTfZgjOciJSlDDpf+Xz9fF7+oCoeCi3mrcZVFjhd3tT6Oxw5HrsDtm0ZNld1cdLidaq8H6vOFgHMd0A9yNYZzTzXTvpmxzkXT4Zc7s+PYKN6z5fRZ+pJeckUjRXblvVEfs5HFSymavcOc5AkRwxpvOsTQMNmlnaJCBo5UNs0K/rVmRi5cFmaiwTcBCY0kTllOBJ4zWsfq8seiokWwNUNK2g=
   file_glob: true
-  file: gam-$TRAVIS_BUILD_NUMBER-*
+  overwrite: true
+  file: gam-$GAMVERSION-*
   skip_cleanup: true
   draft: true
   on:
