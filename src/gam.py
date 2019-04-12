@@ -13126,6 +13126,7 @@ Append an 'r' to grant read-only access or an 'a' to grant action-only access.
       if selected is None:
         # Toggle the option on/off
         option.is_selected = not option.is_selected
+        option._restriction = None
       else:
         option.is_selected = selected
     else:
