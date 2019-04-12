@@ -58,7 +58,7 @@ install:
 - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then
     cp gam-setup.bat gam;
     GAM_ARCHIVE=gam-$TRAVIS_BUILD_NUMBER-$GAMOS-$PLATFORM.zip;
-    /c/Program\ Files/7-Zip/7z.exe a -tzip $GAM_ARCHIVE gam\ -xr!.svn;
+    /c/Program\ Files/7-Zip/7z.exe a -tzip $GAM_ARCHIVE gam -xr!.svn;
     mkdir gam-64;
     cp -rf gam/* gam-64/;
     export GAMVERSION=$TRAVIS_BUILD_NUMBER.0;
