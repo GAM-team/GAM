@@ -13,6 +13,7 @@ matrix:
       addons:
         homebrew:
           packages:
+            openssl
             python@2
     - os: windows
       language: shell
@@ -21,8 +22,6 @@ matrix:
 before_install:
 - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then
     cinst -y python2;
-    ls -l /c
-    ls -al /c/Python27;
     PATH=$PATH:/c/Python27/scripts;
   fi
 - pip install pyinstaller
@@ -33,7 +32,14 @@ install:
 - cp LICENSE gam
 - cp whatsnew.txt gam
 - cp GamCommands.txt gam
-- tar cfJ gam-$TRAVIS_BUILd_NUMBER-$GAMOS.tar.xz gam/
+- if [[ "$TRAVIS_OSNAME" == "windows" ]]; then
+    ls -l $ProgramFiles;
+    ls -l $ProgramFiles(x86);
+    GAM_ARCHIVE=gam-$TRAVIS_BUILD_NUMBER-$GAMOS.zip;
+    $ProgramFiles/7-Zip/7z.exe a -tzip $GAM_ARCHIVE -xr!.svn;
+  else
+    tar cfJ gam-$TRAVIS_BUILD_NUMBER-$GAMOS.tar.xz gam/;
+  fi
 
 script:
 - gam/gam version
