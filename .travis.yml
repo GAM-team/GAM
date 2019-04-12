@@ -3,7 +3,7 @@ dist: precise
 osx_image: xcode9.2
 
 python:
- - "2.7"
+ - "2.7.16"
 
 os:
  - linux
@@ -22,8 +22,10 @@ install:
 - cp GamCommands.txt gam
 - tar cfJ gam-$TRAVIS_BUILd_NUMBER-$GAMOS.tar.xz gam/
 
-script: dist/gam version
+script:
+- src/dist/gam version
+
 deploy:
   provider: release
   skip_cleanup: true
-  file: gam-$TRAVIS_BUILd_NUMBER-$GAMOS.tar.xz
+  file: src/gam-$TRAVIS_BUILd_NUMBER-$GAMOS.tar.xz
