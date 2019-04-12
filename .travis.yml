@@ -7,6 +7,7 @@ matrix:
         - "2.7.15"
       env: GAMOS=linux
     - os: osx
+      language: generic
       osx_image: xcode10.1
       env: GAMOS=macos
       addons:
