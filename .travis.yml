@@ -19,9 +19,8 @@ matrix:
       env: GAMOS=windows
 
 before_install:
-- set
 - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then
-    powershell Install-WindowsFeature Net-Framework-Core
+    powershell Install-WindowsFeature Net-Framework-Core;
     cinst -y python2 wixtoolset;
     PATH=$PATH:/c/Python27/scripts;
   fi
