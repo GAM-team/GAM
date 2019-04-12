@@ -15,16 +15,14 @@ matrix:
           packages:
             python@2
     - os: windows
-      language: go
+      language: shell
       env: GAMOS=windows
 
 before_install:
 - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then
-    cinst -y python2
-    ls -al c:/python2
-    dir c:\python2
-    dir c:\
-    PATH=$PATH:c:/python2/scripts
+    cinst -y python2;
+    ls -al c:/python2;
+    PATH=$PATH:c:/python2/scripts;
   fi
 - pip install pyinstaller
 
