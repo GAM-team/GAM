@@ -1,3 +1,5 @@
+if: tag IS blank
+
 matrix:
   include:
     - os: linux
@@ -72,6 +74,9 @@ install:
 
 script:
 - gam/gam version
+
+before_deploy:
+- export TRAVIS_TAG="preview"
 
 deploy:
   provider: releases
