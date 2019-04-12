@@ -8,12 +8,11 @@ matrix:
       env: GAMOS=linux
     - os: osx
       language: generic
-      osx_image: xcode9.2
+      osx_image: xcode10.1
       env: GAMOS=macos
       addons:
         homebrew:
           packages:
-            openssl
             python@2
     - os: windows
       language: shell
@@ -32,13 +31,14 @@ install:
 - cp LICENSE gam
 - cp whatsnew.txt gam
 - cp GamCommands.txt gam
-- if [[ "$TRAVIS_OSNAME" == "windows" ]]; then
+- if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then
     set
     ls -l $ProgramFiles;
     GAM_ARCHIVE=gam-$TRAVIS_BUILD_NUMBER-$GAMOS.zip;
     $ProgramFiles/7-Zip/7z.exe a -tzip $GAM_ARCHIVE -xr!.svn;
   else
-    tar cfJ gam-$TRAVIS_BUILD_NUMBER-$GAMOS.tar.xz gam/;
+    GAM_ARCHIVE=gam-$TRAVIS_BUILD_NUMBER-$GAMOS.tar.xz
+    tar cfJ $GAM_ARCHIVE gam/;
   fi
 
 script:
