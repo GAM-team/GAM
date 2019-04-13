@@ -1,4 +1,4 @@
-GAM is a command line tool for Google G Suite Administrators to manage domain and user settings quickly and easily.
+GAM is a command line tool for Google G Suite Administrators to manage domain and user settings quickly and easily. [![Build Status](https://travis-ci.org/jay0lee/GAM.svg?branch=master)](https://travis-ci.org/jay0lee/GAM)
 # Quick Start
 ## Linux / MacOS
 Open a terminal and run:
