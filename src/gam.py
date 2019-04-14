@@ -10985,7 +10985,6 @@ GROUP_ATTRIBUTES_ARGUMENT_TO_PROPERTY_MAP = {
   u'includecustomfooter': u'includeCustomFooter',
   u'includeinglobaladdresslist': u'includeInGlobalAddressList',
   u'isarchived': u'isArchived',
-  u'maxmessagebytes': u'maxMessageBytes',
   u'memberscanpostasthegroup': u'membersCanPostAsTheGroup',
   u'messagemoderationlevel': u'messageModerationLevel',
   u'primarylanguage': u'primaryLanguage',
