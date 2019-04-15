@@ -67,6 +67,7 @@ before_install:
     apt install -y python:i386;
     python -V;
   fi
+- curl https://bootstrap.pypa.io/get-pip.py | python
 - pip install pyinstaller
 
 install:
