@@ -1,4 +1,6 @@
 if: tag IS blank
+env:
+  - TESTING=FALSE
 
 matrix:
   include:
@@ -32,13 +34,13 @@ matrix:
         - GAMOS=windows
         - CINST_ARGS=--forcex86
         - PLATFORM=x86
-  allow_failures:
     - os: osx
       language: generic
       osx_image: xcode9.2
       env:
         - GAMOS=macos
         - PLATFORM=x64-sierra-testing
+        - TESTING=TRUE
       addons:
         homebrew:
           packages:
@@ -49,6 +51,10 @@ matrix:
       env:
         - GAMOS=linux
         - PLATFORM=i686-precise-testing
+        - TESTING=TRUE
+  allow_failures:
+    -env:
+      TESTING=TRUE
 
 before_install:
 - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then
