@@ -8873,7 +8873,7 @@ def doUpdateGroup():
           item.append(user_email)
           items.append(item)
       else:
-        body = {u'role': role, u'email': users_email[0]}
+        body = {u'role': role, u'email' if users_email[0].find(u'@') != -1 else u'id': users_email[0]}
         add_text = [u'as %s' % role]
         if delivery:
           body[u'delivery_settings'] = delivery
