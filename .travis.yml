@@ -22,29 +22,29 @@ matrix:
         homebrew:
           packages:
             python@2
+          update: true
     - os: windows
       language: shell
       env:
         - GAMOS=windows
           PLATFORM=x64
-          CINST_ARGS=""
     - os: windows
       language: shell
       env:
         - GAMOS=windows
-        - CINST_ARGS=--forcex86
         - PLATFORM=x86
     - os: osx
       language: generic
       osx_image: xcode9.2
       env:
         - GAMOS=macos
-        - PLATFORM=x64-sierra-testing
+        - PLATFORM=x86_64-sierra-testing
         - TESTING=TRUE
       addons:
         homebrew:
           packages:
             python@2
+          update: true
     - os: linux
       language: python
       dist: precise
@@ -57,41 +57,10 @@ matrix:
       TESTING=TRUE
 
 before_install:
-- if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then
-    powershell Install-WindowsFeature Net-Framework-Core;
-    cinst -y $CINST_ARGS python2;
-    export PATH=$PATH:/c/Python27/scripts;
-    cinst -y wixtoolset;
-  elif [[ "$PLATFORM" == "i686-precise-testing" ]]; then
-    dpkg --add-architecture i386;
-    apt install -y python:i386;
-    python -V;
-  fi
-- curl https://bootstrap.pypa.io/get-pip.py | sudo python
-- pip freeze > requirements.txt && pip install --user --upgrade -r requirements.txt && sudo rm requirements.txt
-- pip install --user pyinstaller
+- source src/travis/$TRAVIS_OS_NAME-$PLATFORM-before-install.sh
 
 install:
-- cd src
-- python -m PyInstaller --clean -F --distpath=gam $GAMOS-gam.spec
-- gam/gam version
-- export GAMVERSION=`gam/gam version simple`
-- cp LICENSE gam
-- cp whatsnew.txt gam
-- cp GamCommands.txt gam
-- if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then
-    cp gam-setup.bat gam;
-    GAM_ARCHIVE=gam-$GAMVERSION-$GAMOS-$PLATFORM.zip;
-    /c/Program\ Files/7-Zip/7z.exe a -tzip $GAM_ARCHIVE gam -xr!.svn;
-    mkdir gam-64;
-    cp -rf gam/* gam-64/;
-    /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.11/bin/candle.exe -arch $PLATFORM gam.wxs;
-    /c/Program\ Files\ \(x86\)/Wix\ Toolset\ v3.11/bin/light.exe -ext /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.11/bin/WixUIExtension.dll gam.wixobj -o gam-$GAMVERSION-$GAMOS-$PLATFORM.msi || true;
-    rm *.wixpdb;
-  else
-    GAM_ARCHIVE=gam-$GAMVERSION-$GAMOS-$PLATFORM.tar.xz;
-    tar cfJ $GAM_ARCHIVE gam/;
-  fi
+- source src/travis/$TRAVIS_OS_NAME-$PLATFORM-install.sh
 
 script:
 - gam/gam version
