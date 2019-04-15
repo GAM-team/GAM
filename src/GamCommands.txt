@@ -352,7 +352,6 @@ If an item contains spaces, it should be surrounded by ".
 	admincreated|
 	aliases|
 	allowexternalmembers|
-	allowgooglecommunication|
 	allowwebposting|
 	archiveonly|
 	customfootertext|
@@ -363,14 +362,11 @@ If an item contains spaces, it should be surrounded by ".
 	directmemberscount|
 	email|
 	enablecollaborativeinbox|collaborative|
-	favoriterepliesontop|
 	id|
 	includecustomfooter|
 	includeinglobaladdresslist|gal|
 	isarchived|
-	maxmessagebytes|
 	memberscanpostasthegroup|
-	messagedisplayfont|
 	messagemoderationlevel|
 	name|
 	primarylanguage|
@@ -378,7 +374,6 @@ If an item contains spaces, it should be surrounded by ".
 	sendmessagedenynotification|
 	showingroupdirectory|
 	spammoderationlevel|
-	whocanaddreferences|
 	whocanadd|
 	whocanapprovemessages|
 	whocanassigntopics|
@@ -396,7 +391,6 @@ If an item contains spaces, it should be surrounded by ".
 	whocanmaketopicssticky|
 	whocanmarkduplicate|
 	whocanmarkfavoritereplyonanytopic|
-	whocanmarkfavoritereplyonowntopic|
 	whocanmarknoresponseneeded|
 	whocanmoderatecontent|
 	whocanmodifytagsandcategories|
@@ -736,20 +730,12 @@ Specify a collection of Users by directly specifying them or by specifiying item
 	(whocanbanusers all_members|owners_and_managers|owners_only|none)|
 	(whocaninvite all_members_can_invite|all_managers_can_invite|all_owners_can_invite|none_can_invite)|
 	(whocanmodifymembers all_members|owners_and_managers|owners_only|none)
-<GroupDeprecatedAttribute> ::=
-	(allowgooglecommunication <Boolean>)|
-	(favoriterepliesontop <Boolean>)|
-	(maxmessagebytes <ByteCount>)|
-	(messagedisplayfont default_font|fixed_width_font)|
-	(whocanaddreferences all_members|owners_and_managers|managers_only|owners_only|none)|
-	(whocanmarkfavoritereplyonowntopic all_members|owners_and_managers|managers_only|owners_only|none)
 <GroupAttribute> ::=
 	<GroupSettingsAttribute>|
 	<GroupWhoCanDiscoverGroupAttribute>|
 	<GroupWhoCanAssistContentAttribute>|
 	<GroupWhoCanModerateContentAttribute>|
-	<GroupWhoCanModerateMembersAttribute>|
-	<GroupDeprecatedAttribute>
+	<GroupWhoCanModerateMembersAttribute>
 
 <MobileAction> ::=
 	admin_remote_wipe|wipe|admin_account_wipe|accountwipe|wipeaccount|approve|block|cancel_remote_wipe_then_activate|cancel_remote_wipe_then_block
