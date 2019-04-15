@@ -26,18 +26,6 @@ matrix:
       env:
         - GAMOS=windows
         - PLATFORM=x86
-    - os: osx
-      language: generic
-      osx_image: xcode9.2
-      env:
-        - GAMOS=macos
-        - PLATFORM=x86_64-sierra-testing
-    - os: linux
-      language: python
-      dist: precise
-      env:
-        - GAMOS=linux
-        - PLATFORM=x86
 
 before_install:
 - source src/travis/$TRAVIS_OS_NAME-$PLATFORM-before-install.sh
