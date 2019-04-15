@@ -2,7 +2,8 @@ if: tag IS blank
 
 matrix:
   include:
-    - os: linux
+    - name: "Linux Ubuntu Precise 12.04 x86_64"
+      os: linux
       language: python
       dist: precise
       python:
@@ -10,15 +11,8 @@ matrix:
       env:
         - GAMOS=linux
         - PLATFORM=x86_64
-#    - os: linux
-#      language: python
-#      dist: precise
-#      python:
-#        - "2.7.15"
-#      env:
-#        - GAMOS=linux
-#        - PLATFORM=i686
-    - os: osx
+    - name "MacOS 10.13 High Sierra x86_64"
+      os: osx
       language: generic
       osx_image: xcode10.1
       env:
@@ -28,18 +22,39 @@ matrix:
         homebrew:
           packages:
             python@2
-    - os: windows
+    - name: "Windows x64"
+      os: windows
       language: shell
       env:
         - GAMOS=windows
           PLATFORM=x64
           CINST_ARGS=""
-    - os: windows
+    - name: "Windows x86"
+      os: windows
       language: shell
       env:
         - GAMOS=windows
         - CINST_ARGS=--forcex86
         - PLATFORM=x86
+  allow_failures:
+    - name "MacOS 10.12 Sierra x86_64"
+      os: osx
+      language: generic
+      osx_image: xcode9.2
+      env:
+        - GAMOS=macos
+        - PLATFORM=x64-sierra-testing
+      addons:
+        homebrew:
+          packages:
+            python@2
+    - name: "Linux Ubuntu Precise 12.04 i686"
+      os: linux
+      language: python
+      dist: precise
+      env:
+        - GAMOS=linux
+        - PLATFORM=i686-precise-testing
 
 before_install:
 - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then
@@ -47,6 +62,10 @@ before_install:
     cinst -y $CINST_ARGS python2;
     export PATH=$PATH:/c/Python27/scripts;
     cinst -y wixtoolset;
+  elif [[ "$PLATFORM" == "i686-precise-testing" ]]; then
+    dpkg --add-architecture i386;
+    apt install -y python:i386;
+    python -V;
   fi
 - pip install pyinstaller
 
