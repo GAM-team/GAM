@@ -73,7 +73,7 @@ before_install:
 
 install:
 - cd src
-- pyinstaller --clean -F --distpath=gam $GAMOS-gam.spec
+- python -m PyInstaller --clean -F --distpath=gam $GAMOS-gam.spec
 - gam/gam version
 - export GAMVERSION=`gam/gam version simple`
 - cp LICENSE gam
