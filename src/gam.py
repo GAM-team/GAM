@@ -12686,7 +12686,7 @@ def getScopesFromUser(menu_options=None):
 
   return menu.get_selected_scopes()
 
-class ScopeMenuOption():
+class ScopeMenuOption(object):
   """A single GAM API/feature with scopes that can be turned on/off."""
 
   def __init__(self, oauth_scopes, description,
@@ -12717,6 +12717,9 @@ class ScopeMenuOption():
       restriction: String, the currently enabled restriction on all scopes in
           this ScopeMenuOption. Default is no restrictions (highest permission).
     """
+    # Initialize private members
+    self._is_selected = False
+    self._restriction = None
 
     self.scopes = oauth_scopes
     self.description = description
@@ -12725,7 +12728,8 @@ class ScopeMenuOption():
     self.is_selected = is_required or is_selected
     self.supported_restrictions = (
         supported_restrictions if supported_restrictions is not None else [])
-    self._restriction = restriction
+    if restriction:
+      self.restrict_to(restriction)
 
   def select(self, restriction=None):
     """Selects/enables the ScopeMenuOption with an optional restriction."""
@@ -12790,7 +12794,7 @@ class ScopeMenuOption():
       error = 'Scope does not support a %s restriction.' % restriction
       if self.supported_restrictions is not None:
         restriction_list = ', '.join(self.supported_restrictions)
-        error.append(' Supported restrictions are: %s' % restriction_list)
+        error = error + (' Supported restrictions are: %s' % restriction_list)
       raise ValueError(error)
 
   def unrestrict(self):
@@ -12850,7 +12854,7 @@ class ScopeMenuOption():
         supported_restrictions=scope_definition.get('subscopes', []),
         is_required=scope_definition.get('required', False))
 
-class ScopeSelectionMenu():
+class ScopeSelectionMenu(object):
   """A text menu which prompts the user to select the scopes to authorize."""
 
   class MenuChoiceError(Exception):
@@ -13122,7 +13126,6 @@ Append an 'r' to grant read-only access or an 'a' to grant action-only access.
       if selected is None:
         # Toggle the option on/off
         option.is_selected = not option.is_selected
-        option.unrestrict()
       else:
         option.is_selected = selected
     else:
