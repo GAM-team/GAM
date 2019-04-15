@@ -4,6 +4,7 @@ gam/gam version
 export GAMVERSION=`gam/gam version simple`
 cp LICENSE gam
 cp GamCommands.txt gam
+cp whatsnew.txt gam
 cp gam-setup.bat gam
 GAM_ARCHIVE=gam-$GAMVERSION-$GAMOS-$PLATFORM.zip
 /c/Program\ Files/7-Zip/7z.exe a -tzip $GAM_ARCHIVE gam -xr!.svn

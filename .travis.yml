@@ -1,6 +1,4 @@
 if: tag IS blank
-env:
-  - TESTING=FALSE
 
 matrix:
   include:
@@ -18,11 +16,6 @@ matrix:
       env:
         - GAMOS=macos
         - PLATFORM=x86_64
-      addons:
-        homebrew:
-          packages:
-            python@2
-          update: true
     - os: windows
       language: shell
       env:
@@ -39,22 +32,12 @@ matrix:
       env:
         - GAMOS=macos
         - PLATFORM=x86_64-sierra-testing
-        - TESTING=TRUE
-      addons:
-        homebrew:
-          packages:
-            python@2
-          update: true
     - os: linux
       language: python
       dist: precise
       env:
         - GAMOS=linux
         - PLATFORM=x86
-        - TESTING=TRUE
-  allow_failures:
-    -env:
-      TESTING=TRUE
 
 before_install:
 - source src/travis/$TRAVIS_OS_NAME-$PLATFORM-before-install.sh
