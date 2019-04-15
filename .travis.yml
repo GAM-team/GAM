@@ -68,6 +68,7 @@ before_install:
     python -V;
   fi
 - curl https://bootstrap.pypa.io/get-pip.py | sudo python
+- pip freeze > requirements.txt && pip install --upgrade -r requirements.txt && rm requirements.txt
 - pip install pyinstaller
 
 install:
