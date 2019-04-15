@@ -2,8 +2,7 @@ if: tag IS blank
 
 matrix:
   include:
-    - name: "Linux Ubuntu Precise 12.04 x86_64"
-      os: linux
+    - os: linux
       language: python
       dist: precise
       python:
@@ -11,8 +10,7 @@ matrix:
       env:
         - GAMOS=linux
         - PLATFORM=x86_64
-    - name "MacOS 10.13 High Sierra x86_64"
-      os: osx
+    - os: osx
       language: generic
       osx_image: xcode10.1
       env:
@@ -22,23 +20,20 @@ matrix:
         homebrew:
           packages:
             python@2
-    - name: "Windows x64"
-      os: windows
+    - os: windows
       language: shell
       env:
         - GAMOS=windows
           PLATFORM=x64
           CINST_ARGS=""
-    - name: "Windows x86"
-      os: windows
+    - os: windows
       language: shell
       env:
         - GAMOS=windows
         - CINST_ARGS=--forcex86
         - PLATFORM=x86
   allow_failures:
-    - name "MacOS 10.12 Sierra x86_64"
-      os: osx
+    - os: osx
       language: generic
       osx_image: xcode9.2
       env:
@@ -48,8 +43,7 @@ matrix:
         homebrew:
           packages:
             python@2
-    - name: "Linux Ubuntu Precise 12.04 i686"
-      os: linux
+    - os: linux
       language: python
       dist: precise
       env:
