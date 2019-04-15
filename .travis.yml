@@ -17,7 +17,7 @@ matrix:
       osx_image: xcode10.1
       env:
         - GAMOS=macos
-        - PLATFORM=x64
+        - PLATFORM=x86_64
       addons:
         homebrew:
           packages:
@@ -27,7 +27,7 @@ matrix:
       language: shell
       env:
         - GAMOS=windows
-          PLATFORM=x64
+          PLATFORM=x86_64
     - os: windows
       language: shell
       env:
@@ -50,7 +50,7 @@ matrix:
       dist: precise
       env:
         - GAMOS=linux
-        - PLATFORM=i686-precise-testing
+        - PLATFORM=x86
         - TESTING=TRUE
   allow_failures:
     -env:
