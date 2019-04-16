@@ -97,7 +97,7 @@ case $gamos in
       echo_green "Good, you're running MacOS 10.$osver..."
     fi
     gamos="macos"
-    gamfile="macos.tar.xz"
+    gamfile="macos-x86_64.tar.xz"
     ;;
   *)
     echo_red "Sorry, this installer currently only supports Linux and MacOS. Looks like you're runnning on $gamos. Exiting."
