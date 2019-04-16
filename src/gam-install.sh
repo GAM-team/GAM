@@ -91,7 +91,7 @@ case $gamos in
   [Mm]ac[Oo][sS]|[Dd]arwin)
     osver=$(sw_vers -productVersion | awk -F'.' '{print $2}')
     if (( $osver < 13 )); then
-      echo_red "ERROR: GAM currently requires MacOS 10.10 or newer. You are running MacOS 13.$osver. Please upgrade." 
+      echo_red "ERROR: GAM currently requires MacOS 10.13 or newer. You are running MacOS 10.$osver. Please upgrade." 
       exit
     else
       echo_green "Good, you're running MacOS 10.$osver..."
