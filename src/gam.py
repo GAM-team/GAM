@@ -14009,9 +14009,9 @@ def ProcessGAMCommand(args):
         systemErrorExit(2, '%s is not a valid argument for "gam <users> watch"' % watchWhat)
     else:
       systemErrorExit(2, '%s is not a valid argument for "gam"' % command)
-  #except IndexError:
-  #  showUsage()
-  #  sys.exit(2)
+  except IndexError:
+    showUsage()
+    sys.exit(2)
   except KeyboardInterrupt:
     sys.exit(50)
   except socket.error as e:
