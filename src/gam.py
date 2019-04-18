@@ -8112,7 +8112,10 @@ def doCreateVaultHold():
     systemErrorExit(3, 'you must specify a name for the new hold.')
   if not body.get(u'corpus'):
     systemErrorExit(3, 'you must specify a corpus for the new hold. Choose one of %s' % (u', '.join(allowed_corpuses)))
-  query_type = u'%sQuery' % body[u'corpus'].lower()
+  if body[u'corpus'] == u'HANGOUTS_CHAT':
+    query_type = u'hangoutsChatQuery'
+  else:
+    query_type = u'%sQuery' % body[u'corpus'].lower()
   body[u'query'][query_type] = {}
   if body[u'corpus'] == u'DRIVE':
     if query:
