@@ -721,6 +721,10 @@ GC_SHOW_GETTINGS = u'show_gettings'
 GC_SITE_DIR = u'site_dir'
 # When retrieving lists of Users from API, how many should be retrieved in each chunk
 GC_USER_MAX_RESULTS = u'user_max_results'
+# CSV Columns GAM should show on CSV output
+GC_CSV_HEADER_FILTER = u'csv_header_filter'
+# CSV Rows GAM should filter
+GC_CSV_ROW_FILTER = u'csv_row_filter'
 
 GC_Defaults = {
   GC_ACTIVITY_MAX_RESULTS: 100,
@@ -750,6 +754,8 @@ GC_Defaults = {
   GC_SHOW_GETTINGS: True,
   GC_SITE_DIR: u'',
   GC_USER_MAX_RESULTS: 500,
+  GC_CSV_HEADER_FILTER: u'',
+  GC_CSV_ROW_FILTER: u'',
   }
 
 GC_Values = {}
@@ -794,6 +800,8 @@ GC_VAR_INFO = {
   GC_SHOW_GETTINGS: {GC_VAR_TYPE: GC_TYPE_BOOLEAN},
   GC_SITE_DIR: {GC_VAR_TYPE: GC_TYPE_DIRECTORY},
   GC_USER_MAX_RESULTS: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (1, 500)},
+  GC_CSV_HEADER_FILTER: {GC_VAR_TYPE: GC_TYPE_STRING},
+  GC_CSV_ROW_FILTER: {GC_VAR_TYPE: GC_TYPE_STRING},
   }
 # Google API constants
 

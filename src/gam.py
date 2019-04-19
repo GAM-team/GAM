@@ -51,6 +51,7 @@ import shlex
 from multiprocessing import Pool
 from multiprocessing import freeze_support
 
+import dateutil.parser
 import dns.resolver
 
 import googleapiclient
@@ -601,6 +602,8 @@ def SetGlobalVariables():
   _getOldEnvVar(GC_DRIVE_MAX_RESULTS, u'GAM_DRIVE_MAX_RESULTS')
   _getOldEnvVar(GC_MEMBER_MAX_RESULTS, u'GAM_MEMBER_MAX_RESULTS')
   _getOldEnvVar(GC_USER_MAX_RESULTS, u'GAM_USER_MAX_RESULTS')
+  _getOldEnvVar(GC_CSV_HEADER_FILTER, u'GAM_CSV_HEADER_FILTER')
+  _getOldEnvVar(GC_CSV_ROW_FILTER, u'GAM_CSV_ROW_FILTER')
   _getOldSignalFile(GC_DEBUG_LEVEL, u'debug.gam', filePresentValue=4, fileAbsentValue=0)
   _getOldSignalFile(GC_NO_VERIFY_SSL, u'noverifyssl.txt')
   _getOldSignalFile(GC_NO_BROWSER, u'nobrowser.txt')
@@ -10652,12 +10655,46 @@ def sortCSVTitles(firstTitle, titles):
     titles.insert(0, title)
 
 def writeCSVfile(csvRows, titles, list_type, todrive):
+  if GC_Values[GC_CSV_ROW_FILTER]:
+    row_dict = json.loads(GC_Values[GC_CSV_ROW_FILTER])
+    for match_column, filter_str in row_dict.items():
+      if filter_str.lower()[:4] == u'date':
+        new_csvRows = []
+        direction = filter_str[4]
+        if direction not in [u'<', u'>']:
+          systemErrorExit(3, u'%s is not a valid filter date direction' % direction)
+        try:
+          date_str = filter_str[5:]
+          filter_date = dateutil.parser.parse(date_str, ignoretz=True)
+        except ValueError:
+          systemErrorExit(3, u'%s is not a date GAM understands' % filter_str)
+        for row in csvRows:
+          try:
+            row_date = dateutil.parser.parse(row[match_column], ignoretz=True)
+          except ValueError:
+            row_date = dateutil.parser.parse(u'1/1/1970')
+          if direction == u'<' and row_date < filter_date:
+            new_csvRows.append(row)
+          elif direction == u'>' and row_date > filter_date:
+            new_csvRows.append(row)
+        csvRows = new_csvRows
+      else:
+        if filter_str.lower()[:6] == u'regex':
+          filter_str = filter_str[6:]
+        if match_column not in titles:
+          sys.stderr.write(u'WARNING: Row filter %s is not in output columns\n' % match_column)
+          continue
+        regex = re.compile(filter_str)
+        csvRows = [row for row in csvRows if regex.search(row.get(match_column, u''))]
+  if GC_Values[GC_CSV_HEADER_FILTER]:
+    titles_filter = GC_Values[GC_CSV_HEADER_FILTER].lower().split(u',')
+    titles = [t for t in titles if t.lower() in titles_filter]
   csv.register_dialect(u'nixstdout', lineterminator=u'\n')
   if todrive:
-    string_file = StringIO.StringIO()
-    writer = csv.DictWriter(string_file, fieldnames=titles, dialect=u'nixstdout', quoting=csv.QUOTE_MINIMAL)
+    write_to = StringIO.StringIO()
   else:
-    writer = csv.DictWriter(sys.stdout, fieldnames=titles, dialect=u'nixstdout', quoting=csv.QUOTE_MINIMAL)
+    write_to = sys.stdout
+  writer = csv.DictWriter(write_to, fieldnames=titles, dialect=u'nixstdout', extrasaction=u'ignore', quoting=csv.QUOTE_MINIMAL)
   try:
     writer.writerow(dict((item, item) for item in writer.fieldnames))
     writer.writerows(csvRows)
