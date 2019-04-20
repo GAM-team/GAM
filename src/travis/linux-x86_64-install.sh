@@ -13,9 +13,9 @@ mv gam/gam-static gam/gam
 echo "StaticX GAM is:"
 du -ch gam/gam
 echo "PyInstaller GAM time is:"
-gam/gam-linked version check
+time gam/gam-linked version check
 echo "StaticX GAM is:"
-gam/gam version check
+time gam/gam version check
 GAM_ARCHIVE=gam-$GAMVERSION-$GAMOS-$PLATFORM.tar.xz
 tar cfJ $GAM_ARCHIVE gam/
 echo "Archive size is:"
