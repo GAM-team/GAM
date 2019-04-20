@@ -52,5 +52,9 @@ deploy:
   file: gam-$GAMVERSION-*
   skip_cleanup: true
   draft: true
+  branches:
+    only:
+      - master
+      - python3
   on:
     repo: jay0lee/GAM
