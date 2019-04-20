@@ -3,7 +3,6 @@ if: tag IS blank
 matrix:
   include:
     - os: linux
-      dist: precise
       language: python
       python: 
         - "2.7"
