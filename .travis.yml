@@ -4,6 +4,7 @@ matrix:
   include:
     - os: linux
       language: python
+      dist: precise
       env:
         - GAMOS=linux
         - PLATFORM=x86_64
