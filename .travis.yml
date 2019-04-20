@@ -3,8 +3,13 @@ if: tag IS blank
 matrix:
   include:
     - os: linux
-      language: bash
       dist: precise
+      language: python
+      python: 
+        - "2.7"
+        - "3.2" 
+      virtualenv:
+        system_site_packages: true
       env:
         - GAMOS=linux
         - PLATFORM=x86_64
