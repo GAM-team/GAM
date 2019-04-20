@@ -3,6 +3,7 @@ if: tag IS blank
 matrix:
   include:
     - os: linux
+      name: "Linux 64-bit"
       dist: xenial
       language: python
       python: 
@@ -11,17 +12,20 @@ matrix:
         - GAMOS=linux
         - PLATFORM=x86_64
     - os: osx
+      name: "MacOS 64-bit"
       language: generic
       osx_image: xcode10.1
       env:
         - GAMOS=macos
         - PLATFORM=x86_64
     - os: windows
+      name: "Windows 64-bit"
       language: shell
       env:
         - GAMOS=windows
           PLATFORM=x86_64
     - os: windows
+      name: "Windows 32-bit"
       language: shell
       env:
         - GAMOS=windows
