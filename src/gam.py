@@ -14088,6 +14088,6 @@ if __name__ == "__main__":
   if sys.platform.startswith('win'):
     freeze_support()
     win32_unicode_argv() # cleanup sys.argv on Windows
-  if sys.version_info[0] < 3 or sys.version_info[1] < 7:
-    systemErrorExit(5, 'GAM requires Python 3.7 or newer. You are running %s.%s.%s. Please upgrade your Python version or use one of the binary GAM downloads.' % sys.version_info[:3])
+  if sys.version_info[0] < 3 or sys.version_info[1] < 5:
+    systemErrorExit(5, 'GAM requires Python 3.5 or newer. You are running %s.%s.%s. Please upgrade your Python version or use one of the binary GAM downloads.' % sys.version_info[:3])
   sys.exit(ProcessGAMCommand(sys.argv))
