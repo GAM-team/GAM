@@ -11,7 +11,8 @@ sudo apt --yes dist-upgrade
 #sudo /usr/local/bin/python3.7 get-pip.py
 #echo "pip3.7 installed"
 #ls -alRF /usr/local/bin
-pip3 freeze > requirements.txt
-sudo pip3 install --upgrade -r requirements.txt
+
+pip freeze > requirements.txt
+pip install --upgrade -r requirements.txt
 sudo rm requirements.txt
-sudo pip3 install pyinstaller
+pip install pyinstaller
