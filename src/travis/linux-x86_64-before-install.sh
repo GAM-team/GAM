@@ -6,8 +6,9 @@ sudo apt --yes install build-essential checkinstall libreadline-gplv2-dev libncu
 wget https://www.python.org/ftp/python/3.7.3/Python-3.7.3.tar.xz
 tar xf Python-3.7.3.tar.xz
 cd Python-3.7.3
-sudo ./configure --enable-optimizations
-sudo make altinstall
+sudo ./configure --enable-optimizations > /dev/null
+sudo make altinstall > /dev/null || sudo make altinstall
+echo "installing pip"
 curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
 sudo /usr/local/bin/python3.7 get-pip.py
 ls -alRF /usr/local/bin
