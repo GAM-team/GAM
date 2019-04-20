@@ -11,9 +11,9 @@ sudo make altinstall > /dev/null || sudo make altinstall
 echo "installing pip"
 curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
 sudo /usr/local/bin/python3.7 get-pip.py
+echo "pip3.7 installed"
 ls -alRF /usr/local/bin
-sudo /usr/local/bin/pip install --upgrade pip
-sudo /usr/local/bin/pip freeze > requirements.txt
+sudo /usr/local/bin/pip3.7 freeze > requirements.txt
 sudo /usr/local/bin/pip install --upgrade -r requirements.txt
 sudo rm requirements.txt
-sudo /usr/local/bin/pip pip install pyinstaller
+sudo /usr/local/bin/pip3.7 install pyinstaller
