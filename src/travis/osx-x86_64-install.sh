@@ -1,5 +1,5 @@
 cd src
-pyinstaller --clean -F --distpath=gam -v --hidden-import=google $GAMOS-gam.spec
+pyinstaller --clean --debug -F --distpath=gam -v --hidden-import=google $GAMOS-gam.spec
 gam/gam version
 export GAMVERSION=`gam/gam version simple`
 cp LICENSE gam
