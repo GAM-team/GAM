@@ -9,7 +9,7 @@ cd Python-3.7.3
 sudo ./configure --enable-optimizations > /dev/null
 sudo make altinstall > /dev/null || sudo make altinstall
 echo "installing pip"
-curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+wget https://bootstrap.pypa.io/get-pip.py
 sudo /usr/local/bin/python3.7 get-pip.py
 echo "pip3.7 installed"
 ls -alRF /usr/local/bin
