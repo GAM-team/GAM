@@ -4,7 +4,6 @@ matrix:
   include:
     - os: linux
       language: python
-      dist: precise
       python:
         - "3.7.3"
       env:
