@@ -7,8 +7,16 @@ cd Python-3.7.3
 ./configure --enable-optimizations
 sudo make altinstall
 PATH=/usr/local/bin:$PATH
+ls -alRF /usr/local/bin
+echo "PYTHON -V"
+/usr/local/bin/python -V
+echo "PYTHON3 -V"
 /usr/local/bin/python3 -V
+echo "general PYTHON -V"
+/usr/local/bin/python -V
 python3 -V
+curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+sudo python get-pip.py
 pip3 install --upgrade pip
 pip3 freeze > requirements.txt
 pip3 install --upgrade -r requirements.txt
