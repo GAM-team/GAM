@@ -3,10 +3,9 @@ if: tag IS blank
 matrix:
   include:
     - os: linux
-      dist: xenial
       language: python
       python: 
-        - "3.7"
+        - 3.7.3
       env:
         - GAMOS=linux
         - PLATFORM=x86_64
