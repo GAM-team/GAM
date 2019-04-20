@@ -7,10 +7,10 @@ cd Python-3.7.3
 ./configure --enable-optimizations
 sudo make altinstall
 PATH=/usr/local/bin:$PATH
-/usr/local/bin/python -V
-python -V
-pip install --upgrade pip
-pip freeze > requirements.txt
-pip install --upgrade -r requirements.txt
+/usr/local/bin/python3 -V
+python3 -V
+pip3 install --upgrade pip
+pip3 freeze > requirements.txt
+pip3 install --upgrade -r requirements.txt
 rm requirements.txt
-pip install pyinstaller
+pip3 install pyinstaller
