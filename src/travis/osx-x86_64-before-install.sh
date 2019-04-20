@@ -1,5 +1,6 @@
 brew update
-brew install python@2
+brew upgrade python3
+export PATH=/usr/local/opt/python/libexec/bin:$PATH
 pip install --upgrade pip
 pip freeze > requirements.txt
 pip install --upgrade -r requirements.txt

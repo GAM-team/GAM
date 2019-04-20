@@ -6,7 +6,7 @@ matrix:
       language: python
       dist: precise
       python:
-        - "2.7.15"
+        - "3.7.3"
       env:
         - GAMOS=linux
         - PLATFORM=x86_64
