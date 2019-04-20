@@ -206,8 +206,14 @@ class socksocket(socket.socket):
         return "\r\n".join(hdrs)
 
     def __getauthheader(self):
-        auth = self.__proxy[4] + ":" + self.__proxy[5]
-        return "Proxy-Authorization: Basic " + base64.b64encode(auth)
+        username = self.__proxy[4]
+        password = self.__proxy[5]
+        if isinstance(username, str):
+            username = username.encode()
+        if isinstance(password, str):
+            password = password.encode()
+        auth = username + b":" + password
+        return "Proxy-Authorization: Basic " + base64.b64encode(auth).decode()
 
     def setproxy(
         self,
@@ -469,7 +475,7 @@ class socksocket(socket.socket):
         if (
             (not type(destpair) in (list, tuple))
             or (len(destpair) < 2)
-            or (not isinstance(destpair[0], basestring))
+            or (not isinstance(destpair[0], (str, bytes)))
             or (type(destpair[1]) != int)
         ):
             raise GeneralProxyError((5, _generalerrors[5]))
