@@ -26,7 +26,7 @@ upgrade_only=false
 gamversion="latest"
 adminuser=""
 regularuser=""
-gam_glibc_version=2.23 # Ubuntu 16.04 Xenial
+gam_glibc_ver="2.23" # Ubuntu 16.04 Xenial
 
 while getopts "hd:a:o:lp:u:r:v:" OPTION
 do
