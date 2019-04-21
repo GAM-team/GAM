@@ -5,19 +5,18 @@ export GAMVERSION=`gam/gam version simple`
 cp LICENSE gam
 cp whatsnew.txt gam
 cp GamCommands.txt gam
-echo "PyInstaller GAM is:"
-du -ch gam/gam
-staticx gam/gam gam/gam-static
-mv gam/gam gam/gam-linked
-mv gam/gam-static gam/gam
-echo "StaticX GAM is:"
-du -ch gam/gam
-echo "PyInstaller GAM time is:"
-time gam/gam-linked version check
-echo "StaticX GAM is:"
-time gam/gam version check
-rm gam/gam-linked
 GAM_ARCHIVE=gam-$GAMVERSION-$GAMOS-$PLATFORM.tar.xz
 tar cfJ $GAM_ARCHIVE gam/
-echo "Archive size is:"
-du -ch $GAM_ARCHIVE
+echo "PyInstaller GAM  info:"
+du -h gam/gam
+time gam/gam version
+
+GAM_LEGACY_ARCHIVE=gam-$GAMVERSION-$GAMOS-$PLATFORM-legacy.tar.xz
+staticx gam/gam gam/gam-staticx
+strip gam/gam-staticx
+rm gam/gam
+cp staticx-gam.sh gam/gam
+tar cfJ $GAM_LEGACY_ARCHIVE gam/
+echo "Legacy StaticX GAM info:"
+du -h gam/gam-staticx
+time gam/gam version
