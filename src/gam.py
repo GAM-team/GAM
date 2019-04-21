@@ -73,8 +73,9 @@ from var import *
 # Nasty hack to support StaticX.
 # - we do this in gam.py because if we do it in var.py StaticX can't get right path at all.
 # - StaticX is frozen but it seems to mix up the path checking results.
-staticx_temp = '%s/staticx' % os.environ.get('TMPDIR', '/tmp')
-if getattr(sys, 'frozen', False) and os.path.dirname(sys.executable)[:len(staticx_temp)] != staticx_temp:
+if os.environ.get('GAM_REAL_PATH', False):
+  GM_Globals[GM_GAM_PATH] = os.environ['GAM_REAL_PATH']
+elif getattr(sys, 'frozen', False):
   GM_Globals[GM_GAM_PATH] = os.path.dirname(sys.executable)
 else:
   GM_Globals[GM_GAM_PATH] = os.path.dirname(os.path.realpath(__file__))
@@ -769,7 +770,7 @@ def waitOnFailure(n, retries, errMsg):
 
 def checkGAPIError(e, soft_errors=False, silent_errors=False, retryOnHttpError=False, service=None):
   try:
-    error = json.loads(e.content)
+    error = json.loads(e.content.decode('utf-8'))
   except ValueError:
     if (e.resp['status'] == '503') and (e.content == 'Quota exceeded for the current request'):
       return (e.resp['status'], GAPI_QUOTA_EXCEEDED, e.content)

@@ -93,7 +93,7 @@ case $gamos in
     fi
     case $gamarch in
       x86_64) gamfile="linux-x86_64.tar.xz";;
-      x86_64_legacy) gamfile="linux-x86_64_legacy.tar.xz";;
+      x86_64_legacy) gamfile="linux-x86_64-legacy.tar.xz";;
       i?86) gamfile="linux-i686.tar.xz";;
       arm|armv7l) gamfile="linux-armv7l.tar.xz";;
       arm64|aarch64) gamfile="linux-aarch64.tar.xz";;
