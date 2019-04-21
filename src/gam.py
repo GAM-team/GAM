@@ -70,6 +70,15 @@ from oauth2client.contrib.dictionary_storage import DictionaryStorage
 import utils
 from var import *
 
+# Nasty hack to support StaticX.
+# - we do this in gam.py because if we do it in var.py StaticX can't get right path at all.
+# - StaticX is frozen but it seems to mix up the path checking results.
+staticx_temp = '%s/staticx' % os.environ.get('TMPDIR', '/tmp')
+if getattr(sys, 'frozen', False) and os.path.dirname(sys.executable)[:len(staticx_temp)] != staticx_temp:
+  GM_Globals[GM_GAM_PATH] = os.path.dirname(sys.executable)
+else:
+  GM_Globals[GM_GAM_PATH] = os.path.dirname(os.path.realpath(__file__))
+
 # Override some oauth2client.tools strings saving us a few GAM-specific mods to oauth2client
 oauth2client.tools._FAILED_START_MESSAGE = """
 Failed to start a local webserver listening on either port 8080
@@ -664,7 +673,7 @@ def doGAMCheckForUpdates(forceCheck=False):
   try:
     (_, c) = simplehttp.request(check_url, 'GET', headers=headers)
     try:
-      release_data = json.loads(c)
+      release_data = json.loads(c.decode('utf-8'))
     except ValueError:
       _gamLatestVersionNotAvailable()
       return

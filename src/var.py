@@ -643,7 +643,7 @@ GM_MAP_BUILDING_NAME_TO_ID = 'bn2i'
 #
 GM_Globals = {
   GM_SYSEXITRC: 0,
-  GM_GAM_PATH: os.path.dirname(os.path.realpath(__file__)) if not getattr(sys, 'frozen', False) else os.path.dirname(sys.executable),
+  GM_GAM_PATH: None,
   GM_WINDOWS: os.name == 'nt',
   GM_SYS_ENCODING: DEFAULT_CHARSET,
   GM_EXTRA_ARGS_DICT:  {'prettyPrint': False},
@@ -662,6 +662,7 @@ GM_Globals = {
   GM_MAP_BUILDING_ID_TO_NAME: None,
   GM_MAP_BUILDING_NAME_TO_ID: None,
   }
+
 #
 # Global variables defined by environment variables/signal files
 #
