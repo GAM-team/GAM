@@ -26,7 +26,7 @@ upgrade_only=false
 gamversion="latest"
 adminuser=""
 regularuser=""
-gam_glibc_version="2.23" # Ubuntu 16.04 Xenial
+gam_glibc_version=2.23 # Ubuntu 16.04 Xenial
 
 while getopts "hd:a:o:lp:u:r:v:" OPTION
 do
@@ -86,6 +86,7 @@ case $gamos in
   [lL]inux)
     gamos="linux"
     this_glibc_ver=$(ldd --version | awk '/ldd/{print $NF}')
+    echo "This Linux distribution uses glibc $this_glibc_ver"
     if version_gt $gam_glibc_ver $this_glibc_ver; then
       echo_yellow "You are running an older Linux distro then the one GAM was compiled on. A legacy GAM version that should be compatible with your system but may run slower will be installed. For best performance, upgrade to a newer Linux distribution like Debian 9 stable, Ubuntu Xenial 16.04, Fedora 24+ or RedHat Enterprise Linux 7."
       gamarch=x86_64_legacy
