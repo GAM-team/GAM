@@ -7,6 +7,6 @@ sudo apt-get --yes install binutils patchelf
 echo "Upgrading pip packages..."
 pip freeze > upgrades.txt
 pip install --upgrade -r upgrades.txt
-pip install -r requirements.txt
+pip install -r src/requirements.txt
 pip install pyinstaller
 pip install staticx

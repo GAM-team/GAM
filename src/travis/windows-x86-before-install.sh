@@ -5,5 +5,5 @@ cinst -y wixtoolset
 pip install --upgrade pip
 pip freeze > upgrades.txt
 pip install --upgrade -r upgrades.txt
-pip install -r requirements.txt
+pip install -r src/requirements.txt
 pip install pyinstaller
