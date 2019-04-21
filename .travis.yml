@@ -3,25 +3,29 @@ if: tag IS blank
 matrix:
   include:
     - os: linux
+      name: "Linux 64-bit"
+      dist: xenial
       language: python
-      dist: precise
-      python:
-        - "2.7.15"
+      python: 
+        - 3.7.3
       env:
         - GAMOS=linux
         - PLATFORM=x86_64
     - os: osx
+      name: "MacOS 64-bit"
       language: generic
       osx_image: xcode10.1
       env:
         - GAMOS=macos
         - PLATFORM=x86_64
     - os: windows
+      name: "Windows 64-bit"
       language: shell
       env:
         - GAMOS=windows
           PLATFORM=x86_64
     - os: windows
+      name: "Windows 32-bit"
       language: shell
       env:
         - GAMOS=windows
@@ -48,5 +52,6 @@ deploy:
   file: gam-$GAMVERSION-*
   skip_cleanup: true
   draft: true
+  all_branches: true
   on:
     repo: jay0lee/GAM

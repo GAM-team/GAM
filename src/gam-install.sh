@@ -8,7 +8,7 @@ GAM installation script.
 OPTIONS:
    -h      show help.
    -d      Directory where gam folder will be installed. Default is \$HOME/bin/
-   -a      Architecture to install (i386, x86_64, arm, arm64). Default is to detect your arch with "uname -m".
+   -a      Architecture to install (i386, x86_64, x86_64_legacy, arm, arm64). Default is to detect your arch with "uname -m".
    -o      OS we are running (linux, macos). Default is to detect your OS with "uname -s".
    -l      Just upgrade GAM to latest version. Skips project creation and auth.
    -p      Profile update (true, false). Should script add gam command to environment. Default is true.
@@ -26,6 +26,8 @@ upgrade_only=false
 gamversion="latest"
 adminuser=""
 regularuser=""
+gam_glibc_ver="2.23" # Ubuntu 16.04 Xenial
+
 while getopts "hd:a:o:lp:u:r:v:" OPTION
 do
      case $OPTION in
@@ -75,11 +77,23 @@ echo -e "\x1B[1;33m$1"
 echo -e '\x1B[0m'
 }
 
+version_gt()
+{
+test "$(printf '%s\n' "$@" | sort -V | head -n 1)" != "$1"
+}
+
 case $gamos in
   [lL]inux)
     gamos="linux"
+    this_glibc_ver=$(ldd --version | awk '/ldd/{print $NF}')
+    echo "This Linux distribution uses glibc $this_glibc_ver"
+    if version_gt $gam_glibc_ver $this_glibc_ver; then
+      echo_yellow "NOTICE: You are running an older Linux distro than the one GAM was compiled on. A legacy GAM version that should be compatible with your system but may run slower will be installed. For best performance, upgrade to a newer Linux distribution like Debian 9 stable, Ubuntu Xenial 16.04, Fedora 24+ or RedHat Enterprise Linux 8."
+      gamarch=x86_64_legacy
+    fi
     case $gamarch in
       x86_64) gamfile="linux-x86_64.tar.xz";;
+      x86_64_legacy) gamfile="linux-x86_64-legacy.tar.xz";;
       i?86) gamfile="linux-i686.tar.xz";;
       arm|armv7l) gamfile="linux-armv7l.tar.xz";;
       arm64|aarch64) gamfile="linux-aarch64.tar.xz";;

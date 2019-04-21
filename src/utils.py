@@ -1,21 +1,21 @@
 import collections
 import re
 import sys
-from htmlentitydefs import name2codepoint
-from HTMLParser import HTMLParser
+from html.entities import name2codepoint
+from html.parser import HTMLParser
 from var import GM_Globals, GM_WINDOWS, GM_SYS_ENCODING, ONE_KILO_BYTES, ONE_MEGA_BYTES, ONE_GIGA_BYTES
 
 def convertUTF8(data):
   if isinstance(data, str):
     return data
-  if isinstance(data, unicode):
+  if isinstance(data, str):
     if GM_Globals[GM_WINDOWS]:
       return data
     return data.encode(GM_Globals[GM_SYS_ENCODING])
   if isinstance(data, collections.Mapping):
-    return dict(map(convertUTF8, data.iteritems()))
+    return dict(list(map(convertUTF8, iter(data.items()))))
   if isinstance(data, collections.Iterable):
-    return type(data)(map(convertUTF8, data))
+    return type(data)(list(map(convertUTF8, data)))
   return data
 
 class _DeHTMLParser(HTMLParser):
@@ -27,14 +27,14 @@ class _DeHTMLParser(HTMLParser):
     self.__text.append(data)
 
   def handle_charref(self, name):
-    self.__text.append(unichr(int(name[1:], 16)) if name.startswith('x') else unichr(int(name)))
+    self.__text.append(chr(int(name[1:], 16)) if name.startswith('x') else chr(int(name)))
 
   def handle_entityref(self, name):
     cp = name2codepoint.get(name)
     if cp:
-      self.__text.append(unichr(cp))
+      self.__text.append(chr(cp))
     else:
-      self.__text.append(u'&'+name)
+      self.__text.append('&'+name)
 
   def handle_starttag(self, tag, attrs):
     if tag == 'p':
@@ -62,7 +62,7 @@ class _DeHTMLParser(HTMLParser):
 def dehtml(text):
   try:
     parser = _DeHTMLParser()
-    parser.feed(text.encode(u'utf-8'))
+    parser.feed(text.encode('utf-8'))
     parser.close()
     return parser.text()
   except:
@@ -71,21 +71,21 @@ def dehtml(text):
     return text
 
 def indentMultiLineText(message, n=0):
-  return message.replace(u'\n', u'\n{0}'.format(u' '*n)).rstrip()
+  return message.replace('\n', '\n{0}'.format(' '*n)).rstrip()
 
 def formatFileSize(fileSize):
   if fileSize == 0:
-    return u'0kb'
+    return '0kb'
   if fileSize < ONE_KILO_BYTES:
-    return u'1kb'
+    return '1kb'
   if fileSize < ONE_MEGA_BYTES:
-    return u'{0}kb'.format(fileSize/ONE_KILO_BYTES)
+    return '{0}kb'.format(fileSize/ONE_KILO_BYTES)
   if fileSize < ONE_GIGA_BYTES:
-    return u'{0}mb'.format(fileSize/ONE_MEGA_BYTES)
-  return u'{0}gb'.format(fileSize/ONE_GIGA_BYTES)
+    return '{0}mb'.format(fileSize/ONE_MEGA_BYTES)
+  return '{0}gb'.format(fileSize/ONE_GIGA_BYTES)
 
 def formatMilliSeconds(millis):
   seconds, millis = divmod(millis, 1000)
   minutes, seconds = divmod(seconds, 60)
   hours, minutes = divmod(minutes, 60)
-  return u'%02d:%02d:%02d' % (hours, minutes, seconds)
+  return '%02d:%02d:%02d' % (hours, minutes, seconds)

@@ -1,0 +1,7 @@
+python-dateutil
+dnspython
+google-api-python-client
+google-auth-httplib2
+google-oauth
+oauth2client
+passlib
