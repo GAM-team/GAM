@@ -62,7 +62,7 @@ class _DeHTMLParser(HTMLParser):
 def dehtml(text):
   try:
     parser = _DeHTMLParser()
-    parser.feed(text.encode('utf-8'))
+    parser.feed(str(text))
     parser.close()
     return parser.text()
   except:
@@ -79,10 +79,10 @@ def formatFileSize(fileSize):
   if fileSize < ONE_KILO_BYTES:
     return '1kb'
   if fileSize < ONE_MEGA_BYTES:
-    return '{0}kb'.format(fileSize/ONE_KILO_BYTES)
+    return '{0}kb'.format(fileSize//ONE_KILO_BYTES)
   if fileSize < ONE_GIGA_BYTES:
-    return '{0}mb'.format(fileSize/ONE_MEGA_BYTES)
-  return '{0}gb'.format(fileSize/ONE_GIGA_BYTES)
+    return '{0}mb'.format(fileSize//ONE_MEGA_BYTES)
+  return '{0}gb'.format(fileSize//ONE_GIGA_BYTES)
 
 def formatMilliSeconds(millis):
   seconds, millis = divmod(millis, 1000)
