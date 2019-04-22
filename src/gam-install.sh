@@ -26,7 +26,7 @@ upgrade_only=false
 gamversion="latest"
 adminuser=""
 regularuser=""
-gam_glibc_ver="2.12" # CentOS 6
+gam_glibc_ver="2.19" # Ubuntu 14.04 Trusty 
 
 while getopts "hd:a:o:lp:u:r:v:" OPTION
 do
