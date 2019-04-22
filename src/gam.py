@@ -3819,7 +3819,8 @@ def getPhoto(users):
     except KeyError:
       print(' no photo for %s' % user)
       continue
-    writeFile(filename, base64.urlsafe_b64decode(photo_data), mode='wb', continueOnError=True)
+    decoded_photo_data = base64.urlsafe_b64decode(photo_data)
+    writeFile(filename, decoded_photo_data, mode='wb', continueOnError=True)
 
 def deletePhoto(users):
   cd = buildGAPIObject('directory')
