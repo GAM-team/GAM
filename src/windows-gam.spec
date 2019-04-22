@@ -9,8 +9,13 @@ for d in a.datas:
     if 'pyconfig' in d[0]:
         a.datas.remove(d)
         break
-a.datas += [('httplib2/cacerts.txt', 'cacerts.txt', 'DATA')]
 a.datas += [('cloudprint-v2.json', 'cloudprint-v2.json', 'DATA')]
+
+# dynamically determine where httplib2/cacerts.txt lives
+import importlib
+proot = os.path.dirname(importlib.import_module('httplib2').__file__)
+a.datas += [('httplib2/cacerts.txt', os.path.join(proot, 'cacerts.txt'), 'DATA')]
+
 pyz = PYZ(a.pure)
 exe = EXE(pyz,
           a.scripts,

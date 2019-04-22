@@ -73,11 +73,14 @@ from var import *
 # Nasty hack to support StaticX.
 # - we do this in gam.py because if we do it in var.py StaticX can't get right path at all.
 # - StaticX is frozen but it seems to mix up the path checking results.
-if os.environ.get('GAM_REAL_PATH', False):
-  GM_Globals[GM_GAM_PATH] = os.environ['GAM_REAL_PATH']
+if os.environ.get('STATICX_PROG_PATH', False):
+  # StaticX static executable
+  GM_Globals[GM_GAM_PATH] = os.path.dirname(os.environ['STATICX_PROG_PATH'])
+  # Pyinstaller executable
 elif getattr(sys, 'frozen', False):
   GM_Globals[GM_GAM_PATH] = os.path.dirname(sys.executable)
 else:
+  # Source code
   GM_Globals[GM_GAM_PATH] = os.path.dirname(os.path.realpath(__file__))
 
 # Override some oauth2client.tools strings saving us a few GAM-specific mods to oauth2client
@@ -476,7 +479,7 @@ def closeFile(f):
 #
 # Read a file
 #
-def readFile(filename, mode='rb', continueOnError=False, displayError=True, encoding=None):
+def readFile(filename, mode='r', continueOnError=False, displayError=True, encoding=None):
   try:
     if filename != '-':
       if not encoding:
@@ -1548,7 +1551,7 @@ def showReport():
       writeCSVfile(csvRows, titles, '%s Activity Report' % report.capitalize(), to_drive)
 
 def watchGmail(users):
-  cs_data = readFile(GC_Values[GC_CLIENT_SECRETS_JSON], mode='rb', continueOnError=True, displayError=True, encoding=None)
+  cs_data = readFile(GC_Values[GC_CLIENT_SECRETS_JSON], continueOnError=True, displayError=True, encoding=None)
   cs_json = json.loads(cs_data)
   project = 'projects/{0}'.format(cs_json['installed']['project_id'])
   gamTopics = project+'/topics/gam-pubsub-gmail-'
@@ -3435,7 +3438,7 @@ def doPrintJobSubmit():
     mimetype = mimetypes.guess_type(filepath)[0]
     if mimetype is None:
       mimetype = 'application/octet-stream'
-    filecontent = readFile(filepath)
+    filecontent = readFile(filepath, mode='rb')
     form_files['content'] = {'filename': content, 'content': filecontent, 'mimetype': mimetype}
   #result = callGAPI(cp.printers(), u'submit', body=body)
   body, headers = encode_multipart(form_fields, form_files)
@@ -7466,7 +7469,7 @@ def _getLoginHintProjects(printShowCmd):
   login_hint = _getValidateLoginHint(login_hint)
   crm, httpObj = getCRMService(login_hint)
   if pfilter == 'current':
-    cs_data = readFile(GC_Values[GC_CLIENT_SECRETS_JSON], mode='rb', continueOnError=True, displayError=True, encoding=None)
+    cs_data = readFile(GC_Values[GC_CLIENT_SECRETS_JSON], continueOnError=True, displayError=True, encoding=None)
     if not cs_data:
       systemErrorExit(14, 'Your client secrets file:\n\n%s\n\nis missing. Please recreate the file.' % GC_Values[GC_CLIENT_SECRETS_JSON])
     try:
@@ -12545,7 +12548,7 @@ def getOAuthClientIDAndSecret():
 gam create project
 '''
   filename = GC_Values[GC_CLIENT_SECRETS_JSON]
-  cs_data = readFile(filename, mode='rb', continueOnError=True, displayError=True, encoding=None)
+  cs_data = readFile(filename, continueOnError=True, displayError=True, encoding=None)
   if not cs_data:
     systemErrorExit(14, MISSING_CLIENT_SECRETS_MESSAGE)
   try:
