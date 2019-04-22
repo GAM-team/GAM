@@ -170,9 +170,6 @@ def systemErrorExit(sysRC, message):
 def invalidJSONExit(fileName):
   systemErrorExit(17, MESSAGE_INVALID_JSON.format(fileName))
 
-def noPythonSSLExit():
-  systemErrorExit(8, MESSAGE_NO_PYTHON_SSL)
-
 def currentCount(i, count):
   return ' ({0}/{1})'.format(i, count) if (count > GC_Values[GC_SHOW_COUNTS_MIN]) else ''
 
@@ -963,8 +960,6 @@ def callGAPI(service, function,
         raise GAPI_serviceNotAvailable(str(e))
       stderrErrorMsg('User {0}: {1}'.format(GM_Globals[GM_CURRENT_API_USER], str(e)))
       return None
-    except httplib2.CertificateValidationUnsupported:
-      noPythonSSLExit()
     except ValueError as e:
       if service._http.cache is not None:
         service._http.cache = None
@@ -3814,8 +3809,7 @@ def doPhoto(users):
     if re.match('^(ht|f)tps?://.*$', filename):
       simplehttp = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL])
       try:
-        (_, f) = simplehttp.request(filename, 'GET')
-        image_data = str(f)
+        (_, image_data) = simplehttp.request(filename, 'GET')
       except (httplib2.HttpLib2Error, httplib2.ServerNotFoundError, httplib2.CertificateValidationUnsupported) as e:
         print(e)
         continue
@@ -3823,7 +3817,7 @@ def doPhoto(users):
       image_data = readFile(filename, continueOnError=True, displayError=True)
       if image_data is None:
         continue
-    image_data = base64.urlsafe_b64encode(image_data)
+    image_data = base64.urlsafe_b64encode(image_data).decode('utf-8')
     body = {'photoData': image_data}
     callGAPI(cd.users().photos(), 'update', soft_errors=True, userKey=user, body=body)
 
@@ -3862,14 +3856,14 @@ def getPhoto(users):
       print(' no photo for %s' % user)
       continue
     try:
-      photo_data = str(photo['photoData'])
+      photo_data = photo['photoData']
       if showPhotoData:
         print(photo_data)
       photo_data = base64.urlsafe_b64decode(photo_data)
     except KeyError:
       print(' no photo for %s' % user)
       continue
-    writeFile(filename, photo_data, continueOnError=True)
+    writeFile(filename, photo_data, mode='wb', continueOnError=True)
 
 def deletePhoto(users):
   cd = buildGAPIObject('directory')
@@ -7282,7 +7276,7 @@ def getCRMService(login_hint):
 def getGAMProjectAPIs():
   httpObj = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL])
   _, c = httpObj.request(GAM_PROJECT_APIS, 'GET')
-  return httpObj, c.splitlines()
+  return httpObj, c.decode('utf-8').splitlines()
 
 def enableGAMProjectAPIs(GAMProjectAPIs, httpObj, projectId, checkEnabled, i=0, count=0):
   apis = GAMProjectAPIs[:]
@@ -7381,19 +7375,18 @@ def _createClientSecretsOauth2service(httpObj, projectId):
     service_account = callGAPI(iam.projects().serviceAccounts(), 'create',
                                name='projects/%s' % projectId,
                                body={'accountId': projectId, 'serviceAccount': {'displayName': 'GAM Project'}})
-  key = callGAPI(list(iam.projects().serviceAccounts().keys()), 'create',
+  key = callGAPI(iam.projects().serviceAccounts().keys(), 'create',
                  name=service_account['name'], body={'privateKeyType': 'TYPE_GOOGLE_CREDENTIALS_FILE', 'keyAlgorithm': 'KEY_ALG_RSA_2048'})
-  oauth2service_data = base64.b64decode(key['privateKeyData'])
+  oauth2service_data = base64.b64decode(key['privateKeyData']).decode('utf-8')
   writeFile(GC_Values[GC_OAUTH2SERVICE_JSON], oauth2service_data, continueOnError=False)
-  console_credentials_url = 'https://console.developers.google.com/apis/credentials?project=%s' % projectId
+  console_credentials_url = 'https://console.developers.google.com/apis/credentials/consent?createClient&project=%s' % projectId
   while True:
     print('''Please go to:
 
 %s
 
-1. Click the blue "Create credentials" button. Choose "OAuth client ID".
-2. Click the blue "Configure consent screen" button. Enter "GAM" for "Application name".
-3. Leave other fields blank. Click "Save" button.
+1. Enter "GAM" for "Application name".
+2. Leave other fields blank. Click "Save" button.
 3. Choose "Other". Enter a desired value for "Name". Click the blue "Create" button.
 4. Copy your "client ID" value.
 
@@ -7548,7 +7541,7 @@ def doCreateProject():
     print('Creating project "%s"...' % body['name'])
     create_operation = callGAPI(crm.projects(), 'create', body=body)
     operation_name = create_operation['name']
-    time.sleep(5) # Google recommends always waiting at least 5 seconds
+    time.sleep(8) # Google recommends always waiting at least 5 seconds
     for i in range(1, 5):
       print('Checking project status...')
       status = callGAPI(crm.operations(), 'get',
@@ -10599,7 +10592,7 @@ def send_email(msg_subj, msg_txt, msg_rcpt=None):
   msg['From'] = userId
   msg['To'] = msg_rcpt
   callGAPI(gmail.users().messages(), 'send',
-           userId=userId, body={'raw': base64.urlsafe_b64encode(msg.as_string())})
+           userId=userId, body={'raw': base64.urlsafe_b64encode(msg.as_bytes()).decode()})
 
 def addFieldToFieldsList(fieldName, fieldsChoiceMap, fieldsList):
   fields = fieldsChoiceMap[fieldName.lower()]
@@ -10724,7 +10717,7 @@ and follow recommend steps to authorize GAM for Drive access.''' % (admin_email)
     columns = len(titles)
     rows = len(csvRows)
     cell_count = rows * columns
-    data_size = string_file.len
+    data_size = len(write_to.getvalue())
     max_sheet_bytes = int(result['maxImportSizes'][MIMETYPE_GA_SPREADSHEET])
     if cell_count > MAX_GOOGLE_SHEET_CELLS or data_size > max_sheet_bytes:
       print('{0}{1}'.format(WARNING_PREFIX, MESSAGE_RESULTS_TOO_LARGE_FOR_GOOGLE_SPREADSHEET))
@@ -10736,7 +10729,7 @@ and follow recommend steps to authorize GAM for Drive access.''' % (admin_email)
             'mimeType': mimeType}
     result = callGAPI(drive.files(), 'create', fields='webViewLink',
                       body=body,
-                      media_body=googleapiclient.http.MediaInMemoryUpload(string_file.getvalue(),
+                      media_body=googleapiclient.http.MediaInMemoryUpload(write_to.getvalue().encode(),
                                                                           mimetype='text/csv'))
     file_url = result['webViewLink']
     if GC_Values[GC_NO_BROWSER]:
@@ -12593,10 +12586,7 @@ def doRequestOAuth(login_hint=None):
     flow = oauth2client.client.OAuth2WebServerFlow(client_id=client_id,
                                                    client_secret=client_secret, scope=scopes, redirect_uri=oauth2client.client.OOB_CALLBACK_URN,
                                                    user_agent=GAM_INFO, response_type='code', login_hint=login_hint)
-    try:
-      credentials = oauth2client.tools.run_flow(flow=flow, storage=storage, flags=flags, http=http)
-    except httplib2.CertificateValidationUnsupported:
-      noPythonSSLExit()
+    credentials = oauth2client.tools.run_flow(flow=flow, storage=storage, flags=flags, http=http)
   else:
     print('It looks like you\'ve already authorized GAM. Refusing to overwrite existing file:\n\n%s' % GC_Values[GC_OAUTH2_TXT])
 
