@@ -32,7 +32,7 @@ import configparser
 import csv
 import datetime
 import hashlib
-import http.client
+import http.client as http_client
 import json
 import mimetypes
 import platform
@@ -64,7 +64,7 @@ import google_auth_httplib2
 import oauth2client.client
 import oauth2client.file
 import oauth2client.tools
-from passlib.hash import sha512_crypt 
+from passlib.hash import sha512_crypt
 from oauth2client.contrib.dictionary_storage import DictionaryStorage
 
 import utils
@@ -452,10 +452,12 @@ def normalizeStudentGuardianEmailAddressOrUID(emailAddressOrUID):
 #
 # Open a file
 #
-def openFile(filename, mode='rU'):
+def openFile(filename, mode='r', encoding=None, newline=None):
   try:
     if filename != '-':
-      return open(os.path.expanduser(filename), mode)
+      if mode.endswith('b'):
+        return open(os.path.expanduser(filename), mode)
+      return open(os.path.expanduser(filename), mode, encoding=encoding, newline=newline)
     if mode.startswith('r'):
       return io.StringIO(str(sys.stdin.read()))
     return sys.stdout
@@ -509,48 +511,6 @@ def writeFile(filename, data, mode='w', continueOnError=False, displayError=True
         stderrErrorMsg(e)
       return False
     systemErrorExit(6, e)
-#
-class UTF8Recoder(object):
-  """
-  Iterator that reads an encoded stream and reencodes the input to UTF-8
-  """
-  def __init__(self, f, encoding):
-    self.reader = codecs.getreader(encoding)(f)
-
-  def __iter__(self):
-    return self
-
-  def __next__(self):
-    return self.reader.next().encode('utf-8')
-
-class UnicodeDictReader(object):
-  """
-  A CSV reader which will iterate over lines in the CSV file "f",
-  which is encoded in the given encoding.
-  """
-
-  def __init__(self, f, dialect=csv.excel, encoding='utf-8', **kwds):
-    self.encoding = encoding
-    try:
-      self.reader = csv.reader(UTF8Recoder(f, encoding) if self.encoding != 'utf-8' else f, dialect=dialect, **kwds)
-      self.fieldnames = next(self.reader)
-      if len(self.fieldnames) > 0 and self.fieldnames[0].startswith(codecs.BOM_UTF8):
-        self.fieldnames[0] = self.fieldnames[0].replace(codecs.BOM_UTF8, '', 1)
-    except (csv.Error, StopIteration):
-      self.fieldnames = []
-    except LookupError as e:
-      systemErrorExit(2, str(e))
-    self.numfields = len(self.fieldnames)
-
-  def __iter__(self):
-    return self
-
-  def __next__(self):
-    row = next(self.reader)
-    l = len(row)
-    if l < self.numfields:
-      row += ['']*(self.numfields-l) # Must be '', not u''
-    return dict((self.fieldnames[x], str(row[x], 'utf-8')) for x in range(self.numfields))
 #
 # Set global variables
 # Check for GAM updates based on status of noupdatecheck.txt
@@ -1151,15 +1111,13 @@ def getService(api, http):
       return service
     except httplib2.ServerNotFoundError as e:
       systemErrorExit(4, str(e))
-    except httplib2.CertificateValidationUnsupported:
-      noPythonSSLExit()
     except (googleapiclient.errors.InvalidJsonError, KeyError, ValueError) as e:
       http.cache = None
       if n != retries:
         waitOnFailure(n, retries, str(e))
         continue
       systemErrorExit(17, str(e))
-    except (http.client.ResponseNotReady, httplib2.SSLHandshakeError, socket.error) as e:
+    except (http_client.ResponseNotReady, socket.error) as e:
       if n != retries:
         waitOnFailure(n, retries, str(e))
         continue
@@ -3140,7 +3098,7 @@ def doPrinterAddACL():
   printer = sys.argv[2]
   role = sys.argv[4].upper()
   scope = sys.argv[5]
-  notify = True if len(sys.argv) > 6 and sys.argv[6].lower() == 'notify' else False
+  notify = bool(len(sys.argv) > 6 and sys.argv[6].lower() == 'notify')
   public = None
   skip_notification = True
   if scope.lower() == 'public':
@@ -3414,18 +3372,18 @@ def doPrinterRegister():
                  'semantic_state': {"version": "1.0", "printer": {"state": "IDLE",}},
                  'use_cdd': True,
                  'capabilities': {"version": "1.0",
-                                   "printer": {"supported_content_type": [{"content_type": "application/pdf", "min_version": "1.5"},
-                                                                          {"content_type": "image/jpeg"},
-                                                                          {"content_type": "text/plain"}
-                                                                         ],
-                                               "copies": {"default": 1, "max": 100},
-                                               "media_size": {"option": [{"name": "ISO_A4", "width_microns": 210000, "height_microns": 297000},
-                                                                         {"name": "NA_LEGAL", "width_microns": 215900, "height_microns": 355600},
-                                                                         {"name": "NA_LETTER", "width_microns": 215900, "height_microns": 279400, "is_default": True}
+                                  "printer": {"supported_content_type": [{"content_type": "application/pdf", "min_version": "1.5"},
+                                                                         {"content_type": "image/jpeg"},
+                                                                         {"content_type": "text/plain"}
                                                                         ],
-                                                             },
-                                              },
-                                  },
+                                              "copies": {"default": 1, "max": 100},
+                                              "media_size": {"option": [{"name": "ISO_A4", "width_microns": 210000, "height_microns": 297000},
+                                                                        {"name": "NA_LEGAL", "width_microns": 215900, "height_microns": 355600},
+                                                                        {"name": "NA_LETTER", "width_microns": 215900, "height_microns": 279400, "is_default": True}
+                                                                       ],
+                                                            },
+                                             },
+                                 },
                  'tags': ['GAM', GAM_URL],
                 }
   body, headers = encode_multipart(form_fields, {})
@@ -3711,7 +3669,7 @@ def doCalendarAddEvent():
     elif myarg == 'reminder':
       body.setdefault('reminders', {'overrides': [], 'useDefault': False})
       body['reminders']['overrides'].append({'minutes': getInteger(sys.argv[i+1], myarg, minVal=0, maxVal=CALENDAR_REMINDER_MAX_MINUTES),
-                                               'method': sys.argv[i+2]})
+                                             'method': sys.argv[i+2]})
       i += 3
     elif myarg == 'recurrence':
       body.setdefault('recurrence', [])
@@ -3810,15 +3768,14 @@ def doPhoto(users):
       simplehttp = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL])
       try:
         (_, image_data) = simplehttp.request(filename, 'GET')
-      except (httplib2.HttpLib2Error, httplib2.ServerNotFoundError, httplib2.CertificateValidationUnsupported) as e:
+      except (httplib2.HttpLib2Error, httplib2.ServerNotFoundError) as e:
         print(e)
         continue
     else:
-      image_data = readFile(filename, continueOnError=True, displayError=True)
+      image_data = readFile(filename, mode='rb', continueOnError=True, displayError=True)
       if image_data is None:
         continue
-    image_data = base64.urlsafe_b64encode(image_data).decode('utf-8')
-    body = {'photoData': image_data}
+    body = {'photoData': base64.urlsafe_b64encode(image_data).decode('utf-8')}
     callGAPI(cd.users().photos(), 'update', soft_errors=True, userKey=user, body=body)
 
 def getPhoto(users):
@@ -3859,11 +3816,10 @@ def getPhoto(users):
       photo_data = photo['photoData']
       if showPhotoData:
         print(photo_data)
-      photo_data = base64.urlsafe_b64decode(photo_data)
     except KeyError:
       print(' no photo for %s' % user)
       continue
-    writeFile(filename, photo_data, mode='wb', continueOnError=True)
+    writeFile(filename, base64.urlsafe_b64decode(photo_data), mode='wb', continueOnError=True)
 
 def deletePhoto(users):
   cd = buildGAPIObject('directory')
@@ -4858,7 +4814,7 @@ def downloadDriveFile(users):
             for sheet in spreadsheet['sheets']:
               if sheet['properties']['title'].lower() == csvSheetTitleLower:
                 spreadsheetUrl = '{0}?format=csv&id={1}&gid={2}'.format(re.sub('/edit$', '/export', spreadsheet['spreadsheetUrl']),
-                                                                         fileId, sheet['properties']['sheetId'])
+                                                                        fileId, sheet['properties']['sheetId'])
                 break
             else:
               stderrErrorMsg('Google Doc: %s, Sheet: %s, does not exist' % (result['title'], csvSheetTitle))
@@ -5482,7 +5438,6 @@ def printShowSmime(users, csvFormat):
     else:
       systemErrorExit(3, '%s is not a valid argument for "gam <users> %s smime"' % (myarg, ['show', 'print'][csvFormat]))
   i = 0
-  count = len(users)
   for user in users:
     i += 1
     user, gmail = buildGmailGAPIObject(user)
@@ -5615,7 +5570,6 @@ def addSmime(users):
   if 'pkcs12' not in body:
     systemErrorExit(3, 'you must specify a file to upload')
   i = 0
-  count = len(users)
   for user in users:
     i += 1
     user, gmail = buildGmailGAPIObject(user)
@@ -6026,7 +5980,7 @@ def _getUserGmailLabels(gmail, user, i, count, **kwargs):
 
 def _getLabelId(labels, labelName):
   for label in labels['labels']:
-    if label['id'] == labelName or label['name'] == labelName:
+    if labelName in (label['id'], label['name']):
       return label['id']
   return None
 
@@ -6669,7 +6623,7 @@ def doCreateOrUpdateUserSchema(updateCmd):
           i += 1
         elif myarg == 'range':
           a_field['numericIndexingSpec'] = {'minValue': getInteger(sys.argv[i+1], myarg),
-                                             'maxValue': getInteger(sys.argv[i+2], myarg)}
+                                            'maxValue': getInteger(sys.argv[i+2], myarg)}
           i += 3
         elif myarg == 'endfield':
           body['fields'].append(a_field)
@@ -7262,10 +7216,7 @@ def getCRMService(login_hint):
   storage = DictionaryStorage(storage_dict, 'credentials')
   flags = cmd_flags(noLocalWebserver=GC_Values[GC_NO_BROWSER])
   http = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL])
-  try:
-    credentials = oauth2client.tools.run_flow(flow=flow, storage=storage, flags=flags, http=http)
-  except httplib2.CertificateValidationUnsupported:
-    noPythonSSLExit()
+  credentials = oauth2client.tools.run_flow(flow=flow, storage=storage, flags=flags, http=http)
   credentials.user_agent = GAM_INFO
   http = credentials.authorize(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL], cache=None))
   return (googleapiclient.discovery.build('cloudresourcemanager', 'v1',
@@ -8913,7 +8864,7 @@ def doUpdateGroup():
       syncMembersMap = {}
       role, users_email, delivery = _getRoleAndUsers()
       for user_email in users_email:
-        if user_email == '*' or user_email == GC_Values[GC_CUSTOMER_ID]:
+        if user_email in ('*', GC_Values[GC_CUSTOMER_ID]):
           syncMembersSet.add(GC_Values[GC_CUSTOMER_ID])
         else:
           syncMembersSet.add(_cleanConsumerAddress(user_email.lower(), syncMembersMap))
@@ -9282,10 +9233,9 @@ def doWhatIs():
       sys.stderr.write('%s is a user\n\n' % email)
       doGetUserInfo(user_email=email)
       return
-    else:
-      sys.stderr.write('%s is a user alias\n\n' % email)
-      doGetAliasInfo(alias_email=email)
-      return
+    sys.stderr.write('%s is a user alias\n\n' % email)
+    doGetAliasInfo(alias_email=email)
+    return
   except (GAPI_notFound, GAPI_badRequest, GAPI_invalid):
     sys.stderr.write('%s is not a user...\n' % email)
     sys.stderr.write('%s is not a user alias...\n' % email)
@@ -12099,15 +12049,14 @@ def doPrintLicenses(returnFields=None, skus=None, countsOnly=False, returnCounts
         if userId:
           userIds.append(userId)
       return userIds
-    else:
-      userSkuIds = {}
-      for u_license in licenses:
-        userId = u_license.get('userId', '').lower()
-        skuId = u_license.get('skuId')
-        if userId and skuId:
-          userSkuIds.setdefault(userId, [])
-          userSkuIds[userId].append(skuId)
-      return userSkuIds
+    userSkuIds = {}
+    for u_license in licenses:
+      userId = u_license.get('userId', '').lower()
+      skuId = u_license.get('skuId')
+      if userId and skuId:
+        userSkuIds.setdefault(userId, [])
+        userSkuIds[userId].append(skuId)
+    return userSkuIds
   for u_license in licenses:
     userId = u_license.get('userId', '').lower()
     skuId = u_license.get('skuId', '')
@@ -12299,14 +12248,12 @@ def shlexSplitList(entity, dataDelimiter=' ,'):
 def getQueries(myarg, argstr):
   if myarg == 'query':
     return [argstr]
-  else:
-    return shlexSplitList(argstr)
+  return shlexSplitList(argstr)
 
 def _getRoleVerification(memberRoles, fields):
   if memberRoles and memberRoles.find(ROLE_MEMBER) != -1:
     return (set(memberRoles.split(',')), None, fields if fields.find('role') != -1 else fields[:-1]+',role)')
-  else:
-    return (set(), memberRoles, fields)
+  return (set(), memberRoles, fields)
 
 def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=None, checkSuspended=None, groupUserMembersOnly=True):
   got_uids = False
@@ -12428,7 +12375,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
     if filenameColumn.find(':') == -1:
       systemErrorExit(2, 'Expected {0} FileName:FieldName'.format(entity_type))
     (filename, column) = filenameColumn.split(':')
-    f = openFile(drive+filename, mode='rbU')
+    f = openFile(drive+filename)
     input_file = csv.DictReader(f, restval='')
     if column not in input_file.fieldnames:
       csvFieldErrorExit(column, input_file.fieldnames)
@@ -12612,7 +12559,7 @@ gam create project
                     'is incorrect. Please recreate the file.' % filename)
   return (client_id, client_secret)
 
-class cmd_flags(object):
+class cmd_flags():
   def __init__(self, noLocalWebserver):
     self.short_url = True
     self.noauth_local_webserver = noLocalWebserver
@@ -12624,10 +12571,10 @@ OAUTH2_SCOPES = [
   {'name': 'Classroom API - counts as 5 scopes',
    'subscopes': [],
    'scopes': ['https://www.googleapis.com/auth/classroom.rosters',
-               'https://www.googleapis.com/auth/classroom.courses',
-               'https://www.googleapis.com/auth/classroom.profile.emails',
-               'https://www.googleapis.com/auth/classroom.profile.photos',
-               'https://www.googleapis.com/auth/classroom.guardianlinks.students']},
+              'https://www.googleapis.com/auth/classroom.courses',
+              'https://www.googleapis.com/auth/classroom.profile.emails',
+              'https://www.googleapis.com/auth/classroom.profile.photos',
+              'https://www.googleapis.com/auth/classroom.guardianlinks.students']},
   {'name': 'Cloud Print API',
    'subscopes': [],
    'scopes': 'https://www.googleapis.com/auth/cloudprint'},
@@ -12725,7 +12672,7 @@ def getScopesFromUser(menu_options=None):
 
   return menu.get_selected_scopes()
 
-class ScopeMenuOption(object):
+class ScopeMenuOption():
   """A single GAM API/feature with scopes that can be turned on/off."""
 
   def __init__(self, oauth_scopes, description,
@@ -12766,7 +12713,7 @@ class ScopeMenuOption(object):
     # Required scopes must be selected
     self.is_selected = is_required or is_selected
     self.supported_restrictions = (
-        supported_restrictions if supported_restrictions is not None else [])
+      supported_restrictions if supported_restrictions is not None else [])
     if restriction:
       self.restrict_to(restriction)
 
@@ -12887,13 +12834,13 @@ class ScopeMenuOption(object):
     # If the scope is a single string, make it into a list.
     scope_list = scopes if isinstance(scopes, list) else [scopes]
     return cls(
-        oauth_scopes=scope_list,
-        description=scope_definition.get('name'),
-        is_selected=not scope_definition.get('offByDefault'),
-        supported_restrictions=scope_definition.get('subscopes', []),
-        is_required=scope_definition.get('required', False))
+      oauth_scopes=scope_list,
+      description=scope_definition.get('name'),
+      is_selected=not scope_definition.get('offByDefault'),
+      supported_restrictions=scope_definition.get('subscopes', []),
+      is_required=scope_definition.get('required', False))
 
-class ScopeSelectionMenu(object):
+class ScopeSelectionMenu():
   """A text menu which prompts the user to select the scopes to authorize."""
 
   class MenuChoiceError(Exception):
@@ -12951,8 +12898,8 @@ Append an 'r' to grant read-only access or an 'a' to grant action-only access.
   def get_menu_text(self):
     """Returns a text menu with numbered options."""
     scope_menu_items = [
-        self._build_scope_menu_item(option, counter)
-        for counter, option in enumerate(self._options)
+      self._build_scope_menu_item(option, counter)
+      for counter, option in enumerate(self._options)
     ]
     return ScopeSelectionMenu._MENU_DISPLAY_TEXT % '\n'.join(scope_menu_items)
 
@@ -12988,9 +12935,9 @@ Append an 'r' to grant read-only access or an 'a' to grant action-only access.
       A string containing the line item text without a trailing newline.
     """
     SELECTION_INDICATOR = {
-        'ALL_SELECTED': '*',
-        'UNSELECTED': ' ',
-    }
+      'ALL_SELECTED': '*',
+      'UNSELECTED': ' ',
+      }
     indicator = SELECTION_INDICATOR['UNSELECTED']
     if scope_option.is_selected:
       if scope_option.is_restricted:
@@ -13000,14 +12947,14 @@ Append an 'r' to grant read-only access or an 'a' to grant action-only access.
         indicator = SELECTION_INDICATOR['ALL_SELECTED']
 
     item_description = [
-        '[%s]' % indicator,
-        '%2d)' % option_number,
-        scope_option.description,
-    ]
+      '[%s]' % indicator,
+      '%2d)' % option_number,
+      scope_option.description,
+      ]
 
     if scope_option.supported_restrictions:
       item_description.append(
-          '(supports %s)' % ' and '.join(scope_option.supported_restrictions))
+        '(supports %s)' % ' and '.join(scope_option.supported_restrictions))
 
     if scope_option.is_required:
       item_description.append('[required]')
@@ -13018,13 +12965,13 @@ Append an 'r' to grant read-only access or an 'a' to grant action-only access.
     """Builds and returns a prompt requesting user input."""
     # Get all the available restrictions and create the list of available
     # commands that the user can input.
-    restrictions = set([
-        restriction for option in self._options
-        for restriction in option.supported_restrictions
-    ])
+    restrictions = {
+      restriction for option in self._options
+      for restriction in option.supported_restrictions
+      }
     restriction_choices = [
-        restriction[0].lower() for restriction in restrictions
-    ]
+      restriction[0].lower() for restriction in restrictions
+      ]
     return ('Please enter 0-%d[%s] or %s: ' %
             (len(self._options)-1, # Keep the menu options 0-based
              '|'.join(restriction_choices),
@@ -13062,7 +13009,7 @@ Append an 'r' to grant read-only access or an 'a' to grant action-only access.
         error_message = e.message
 
   _SINGLE_SCOPE_CHANGE_REGEX = re.compile(
-      '\s*(?P<scope_number>\d{1,2})\s*(?P<restriction>[a-z]?)', re.IGNORECASE)
+    r'\s*(?P<scope_number>\d{1,2})\s*(?P<restriction>[a-z]?)', re.IGNORECASE)
 
   # Google-defined maximum number of scopes that can be authorized on a single
   # access token.
@@ -13087,11 +13034,11 @@ Append an 'r' to grant read-only access or an 'a' to grant action-only access.
     """
     user_input = raw_menu_input.lower().strip()
     single_scope_change = (
-        ScopeSelectionMenu._SINGLE_SCOPE_CHANGE_REGEX.match(user_input))
+      ScopeSelectionMenu._SINGLE_SCOPE_CHANGE_REGEX.match(user_input))
 
     if single_scope_change:
       scope_number, restriction_command = single_scope_change.group(
-          'scope_number', 'restriction')
+        'scope_number', 'restriction')
       # Make sure we get an actual number to deal with.
       scope_number = int(scope_number)
       # Scope option numbers displayed in the menu are 0-based and map directly
@@ -13106,8 +13053,8 @@ Append an 'r' to grant read-only access or an 'a' to grant action-only access.
         matching_restrictions = [r for r in selected_option.supported_restrictions if r.startswith(restriction_command)]
         if len(matching_restrictions) < 1:
           raise ScopeSelectionMenu.MenuChoiceError(
-              'Scope "%s" does not support "%s" mode!' % (
-                  selected_option.description, restriction_command))
+            'Scope "%s" does not support "%s" mode!' % (
+              selected_option.description, restriction_command))
         restriction = matching_restrictions[0]
       else:
         restriction = None
@@ -13126,7 +13073,7 @@ Append an 'r' to grant read-only access or an 'a' to grant action-only access.
       raise ScopeSelectionMenu.UserRequestedExitException()
     else:
       raise ScopeSelectionMenu.MenuChoiceError(
-          'Invalid input "%s"' % user_input)
+        'Invalid input "%s"' % user_input)
 
     return True
 
@@ -13145,8 +13092,8 @@ Append an 'r' to grant read-only access or an 'a' to grant action-only access.
     """
     if option.is_required and (not selected or selected is None):
       raise ScopeSelectionMenu.MenuChoiceError(
-              'Scope "%s" is required and cannot be unselected!' %
-              option.description)
+        'Scope "%s" is required and cannot be unselected!' %
+        option.description)
     elif selected and not option.is_selected:
       # Make sure we're not about to exceed the maximum number of scopes
       # authorized on a single token.
@@ -13155,9 +13102,9 @@ Append an 'r' to grant read-only access or an 'a' to grant action-only access.
       expected_num_scopes = num_scopes_to_add + num_selected_scopes
       if expected_num_scopes > ScopeSelectionMenu.MAXIMUM_NUM_SCOPES:
         raise ScopeSelectionMenu.MenuChoiceError(
-            'Too many scopes selected (%d). Maximum is %d. Please remove some '
-            'scopes and try again.' % (
-                expected_num_scopes, ScopeSelectionMenu.MAXIMUM_NUM_SCOPES))
+          'Too many scopes selected (%d). Maximum is %d. Please remove some '
+          'scopes and try again.' % (
+            expected_num_scopes, ScopeSelectionMenu.MAXIMUM_NUM_SCOPES))
 
     if restriction is None:
       if selected is None:
@@ -13170,8 +13117,8 @@ Append an 'r' to grant read-only access or an 'a' to grant action-only access.
         option.select(restriction)
       else:
         raise ScopeSelectionMenu.MenuChoiceError(
-            'Scope "%s" does not support %s mode!' % (
-                option.description, restriction))
+          'Scope "%s" does not support %s mode!' % (
+            option.description, restriction))
 
 def init_gam_worker():
   signal.signal(signal.SIGINT, signal.SIG_IGN)
@@ -13283,14 +13230,7 @@ def runCmdForUsers(cmd, users, default_to_batch=False, **kwargs):
   else:
     cmd(users, **kwargs)
 
-def resetDefaultEncodingToUTF8():
-  if sys.getdefaultencoding().upper() != 'UTF-8':
-    reload(sys)
-    if hasattr(sys, 'setdefaultencoding'):
-      sys.setdefaultencoding('UTF-8')
-
 def ProcessGAMCommandMulti(args):
-  resetDefaultEncodingToUTF8()
   ProcessGAMCommand(args)
 
 # Process GAM command
@@ -13305,11 +13245,10 @@ def ProcessGAMCommand(args):
       i = 2
       filename = sys.argv[i]
       i, encoding = getCharSet(i+1)
-      f = openFile(filename)
-      batchFile = UTF8Recoder(f, encoding) if encoding != 'utf-8' else f
+      f = openFile(filename, encoding=encoding)
       items = []
       errors = 0
-      for line in batchFile:
+      for line in f:
         try:
           argv = shlex.split(line)
         except ValueError as e:
@@ -13341,8 +13280,8 @@ def ProcessGAMCommand(args):
       i = 2
       filename = sys.argv[i]
       i, encoding = getCharSet(i+1)
-      f = openFile(filename, mode='rbU')
-      csvFile = UnicodeDictReader(f, encoding=encoding)
+      f = openFile(filename, encoding=encoding)
+      csvFile = csv.DictReader(f)
       if (i == len(sys.argv)) or (sys.argv[i].lower() != 'gam') or (i+1 == len(sys.argv)):
         systemErrorExit(3, '"gam csv <filename>" must be followed by a full GAM command...')
       i += 1
@@ -14084,7 +14023,6 @@ if sys.platform.startswith('win'):
 
 # Run from command line
 if __name__ == "__main__":
-  resetDefaultEncodingToUTF8()
   if sys.platform.startswith('win'):
     freeze_support()
     win32_unicode_argv() # cleanup sys.argv on Windows
