@@ -108,12 +108,6 @@ Go to the following link in your browser:
     {address}
 """
 
-def cp65001(name):
-  if name.lower() == "cp65001":
-    return codecs.lookup("utf-8")
-
-codecs.register(cp65001)
-
 # Override and wrap google_auth_httplib2 request methods so that the GAM
 # user-agent string is inserted into HTTP request headers.
 def _request_with_user_agent(request_method):
