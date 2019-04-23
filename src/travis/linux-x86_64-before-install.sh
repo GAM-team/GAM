@@ -41,7 +41,7 @@ echo "Extracting Python..."
 tar xf Python-$PYTHON_VER.tar.xz
 cd Python-$PYTHON_VER
 echo "Compiling Python $PYTHON_VER..."
-./configure --with-openssl=$mypath/ssl --enable-optimizations --enable-shared \
+./configure --with-openssl=$mypath/ssl --enable-shared \
 	--prefix=$mypath/python --with-ensurepip=upgrade > /dev/null
 make -j$cpucount -s
 echo "Installing Python..."
