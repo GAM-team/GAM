@@ -12,7 +12,7 @@ du -h gam/gam
 time gam/gam version
 
 GAM_LEGACY_ARCHIVE=gam-$GAMVERSION-$GAMOS-$PLATFORM-legacy.tar.xz
-staticx gam/gam gam/gam-staticx
+$python -OO -m staticx gam/gam gam/gam-staticx
 strip gam/gam-staticx
 rm gam/gam
 cp staticx-gam.sh gam/gam
