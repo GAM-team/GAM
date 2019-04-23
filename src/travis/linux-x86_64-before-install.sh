@@ -9,6 +9,7 @@ echo "Installing StaticX deps..."
 sudo apt-get --yes install binutils patchelf
 echo "Installing deps for python3"
 sudo cp -v /etc/apt/sources.list /tmp
+chmod a+rwx /tmp/sources.list
 echo "deb-src http://archive.ubuntu.com/ubuntu/ precise main" >> /tmp/sources.list
 sudo cp -v /tmp/sources.list /etc/apt
 sudo apt-get --yes update > /dev/null
