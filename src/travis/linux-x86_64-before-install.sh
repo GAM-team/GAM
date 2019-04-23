@@ -1,4 +1,4 @@
-sudo /etc/init.d/postgresql stop
+whereibelong=$(pwd)
 echo "RUNNING: apt update..."
 sudo apt-get --yes update > /dev/null
 echo "RUNNING: apt dist-upgrade..."
@@ -60,3 +60,5 @@ $pip install --upgrade -r upgrades.txt
 $pip install -r src/requirements.txt
 $pip install pyinstaller
 $pip install staticx
+
+cd $whereibelong
