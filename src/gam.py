@@ -669,6 +669,7 @@ def doGAMCheckForUpdates(forceCheck=False):
 def doGAMVersion(checkForArgs=True):
   force_check = False
   simple = False
+  extended = False
   if checkForArgs:
     i = 2
     while i < len(sys.argv):
@@ -678,6 +679,9 @@ def doGAMVersion(checkForArgs=True):
         i += 1
       elif myarg == 'simple':
         simple = True
+        i += 1
+      elif myarg == 'extended':
+        extended = True
         i += 1
       else:
         systemErrorExit(2, '%s is not a valid argument for "gam version"' % sys.argv[i])
@@ -691,6 +695,16 @@ def doGAMVersion(checkForArgs=True):
                             platform.machine(), GM_Globals[GM_GAM_PATH]))
   if force_check:
     doGAMCheckForUpdates(forceCheck=True)
+  if extended:
+    import ssl, socket, importlib
+    print(ssl.OPENSSL_VERSION)
+    proot = os.path.dirname(importlib.import_module('httplib2').__file__)
+    ca_path = os.path.join(proot, 'cacerts.txt')
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    ssl_sock = ssl.wrap_socket(s, cert_reqs=ssl.CERT_NONE, ca_certs=ca_path)
+    ssl_sock.connect(('www.googleapis.com', 443))
+    cipher_name, tls_ver, _ = ssl_sock.cipher()
+    print('www.googleapis.com connects using %s %s' % (tls_ver, cipher_name))
 
 def handleOAuthTokenError(e, soft_errors):
   if e.replace('.', '') in OAUTH2_TOKEN_ERRORS or e.startswith('Invalid response'):
