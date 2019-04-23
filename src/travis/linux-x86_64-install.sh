@@ -1,6 +1,6 @@
 cd src
 $python -OO -m PyInstaller --clean --debug -F --distpath=gam $GAMOS-gam.spec
-gam/gam version
+gam/gam version extended
 export GAMVERSION=`gam/gam version simple`
 cp LICENSE gam
 cp whatsnew.txt gam
@@ -9,7 +9,7 @@ GAM_ARCHIVE=gam-$GAMVERSION-$GAMOS-$PLATFORM.tar.xz
 tar cfJ $GAM_ARCHIVE gam/
 echo "PyInstaller GAM  info:"
 du -h gam/gam
-time gam/gam version
+time gam/gam version extended
 
 GAM_LEGACY_ARCHIVE=gam-$GAMVERSION-$GAMOS-$PLATFORM-legacy.tar.xz
 $python -OO -m staticx gam/gam gam/gam-staticx
@@ -19,4 +19,4 @@ cp staticx-gam.sh gam/gam
 tar cfJ $GAM_LEGACY_ARCHIVE gam/
 echo "Legacy StaticX GAM info:"
 du -h gam/gam-staticx
-time gam/gam version
+time gam/gam version extended
