@@ -49,6 +49,9 @@ install:
 
 script:
 - gam/gam version extended
+- gam/gam version | grep Python 3\.7\.3 # We should be building with Python 3.7.3
+- gam/gam version | grep travis # travis should be part of the path (not /tmp or such)
+- gam/gam version extended | grep TLSv1\.3 # We should support TLS 1.3 to Google
 
 before_deploy:
 - export TRAVIS_TAG="preview"
