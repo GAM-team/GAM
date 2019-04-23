@@ -11,6 +11,12 @@ matrix:
       env:
         - GAMOS=linux
         - PLATFORM=x86_64
+    - os: linux
+      name: Linux 64-bit Precise custom compile"
+      language: bash
+      env:
+        - GAMOS=linux
+        - PLATFORM=x86_64
     - os: osx
       name: "MacOS 64-bit"
       language: generic
