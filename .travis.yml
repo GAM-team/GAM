@@ -3,13 +3,6 @@ if: tag IS blank
 matrix:
   include:
     - os: linux
-      name: "Linux 64-it Bionic"
-      dist: bionic
-      language: bash
-      env:
-        - GAMOS=linux
-        - PLATFORM=x86_64
-    - os: linux
       name: "Linux 64-bit Xenial"
       dist: xenial
       language: bash 
