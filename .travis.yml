@@ -38,7 +38,7 @@ install:
 - source src/travis/$TRAVIS_OS_NAME-$PLATFORM-install.sh
 
 script:
-- gam/gam version
+- gam/gam version extended
 
 before_deploy:
 - export TRAVIS_TAG="preview"
