@@ -54,6 +54,8 @@ pip=~/python/bin/pip3
 
 $python -V
 
+cd $whereibelong
+
 echo "Upgrading pip packages..."
 $pip freeze > upgrades.txt
 $pip install --upgrade -r upgrades.txt
