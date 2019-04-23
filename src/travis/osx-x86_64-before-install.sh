@@ -1,3 +1,4 @@
+mypath=$HOME
 whereibelong=$(pwd)
 brew install xz
 
