@@ -2,6 +2,8 @@ echo "RUNNING: apt update..."
 sudo apt-get --yes update > /dev/null
 echo "RUNNING: apt dist-upgrade..."
 sudo apt-get --yes dist-upgrade > /dev/null
+echo "Installing build tools..."
+sudo apt-get --yes install build-essential
 echo "Installing StaticX deps..."
 sudo apt-get --yes install binutils patchelf
 
