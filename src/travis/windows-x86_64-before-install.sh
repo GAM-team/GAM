@@ -1,8 +1,7 @@
 powershell Install-WindowsFeature Net-Framework-Core
-cinst -y $CINST_ARGS python3
-cinst -y $CINST_ARGS openssl.light
-ls -alRF "/c/Program Files/OpenSSL"
-ls -alRF "/c/Python37/"
+cinst -y python3
+cinst -y openssl.light
+/c/Program\ Files/OpenSSL/openssl version
 cp "/c/Program Files/OpenSSL/*.dll" "/c/Python37/DLLs"
 export PATH=$PATH:/c/Python37/scripts
 cinst -y wixtoolset
