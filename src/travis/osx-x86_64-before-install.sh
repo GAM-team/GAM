@@ -40,8 +40,8 @@ $python -V
 cd $whereibelong
 
 export PATH=/usr/local/opt/python/libexec/bin:$PATH
-pip install --upgrade pip
-pip freeze > upgrades.txt
-pip install --upgrade -r upgrades.txt
-pip install -r src/requirements.txt
-pip install pyinstaller
+$pip install --upgrade pip
+$pip freeze > upgrades.txt
+$pip install --upgrade -r upgrades.txt
+$pip install -r src/requirements.txt
+$pip install pyinstaller
