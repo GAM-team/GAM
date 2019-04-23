@@ -19,6 +19,16 @@ mypath=$HOME
 echo "My Path is $mypath"
 cpucount=$(nproc --all)
 echo "This device has $cpucount CPUs for compiling..."
+
+# Compile patchelf (no ubuntu package till Xenial)
+PATCHELF_VER=0.10
+wget https://nixos.org/releases/patchelf/patchelf-$PATCHELF_VER/patchelf-$PATCHELF_VER.tar.bz2
+tar xf patchelf-$PATCHELF_VER.tar.bz2
+cd patchelf-$PATCHELF_VER
+./configure
+make
+sudo make install
+
 # Compile latest OpenSSL
 OPENSSL_VER=1.1.1b
 wget https://www.openssl.org/source/openssl-$OPENSSL_VER.tar.gz
