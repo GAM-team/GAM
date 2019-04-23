@@ -1,3 +1,4 @@
+sudo /etc/init.d/postgresql stop
 echo "RUNNING: apt update..."
 sudo apt-get --yes update > /dev/null
 echo "RUNNING: apt dist-upgrade..."
@@ -47,11 +48,10 @@ make install > /dev/null
 cd ~
 
 export LD_LIBRARY_PATH=~/ssl/lib:~/python/lib
-$python=~/python/bin/python3
-$pip=~/python/bin/pip3
+python=~/python/bin/python3
+pip=~/python/bin/pip3
 
 $python -V
-ls -al ~/python/bin
 
 echo "Upgrading pip packages..."
 $pip freeze > upgrades.txt

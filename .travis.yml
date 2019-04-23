@@ -12,8 +12,7 @@ matrix:
         - GAMOS=linux
         - PLATFORM=x86_64
     - os: linux
-      name: "Linux 64-bit Precise custom compile"
-      dist: precise
+      name: "Linux 64-bit Trusty custom compile"
       language: bash
       env:
         - GAMOS=linux
