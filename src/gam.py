@@ -319,14 +319,16 @@ def getString(i, item, optional=False, minLen=1, maxLen=None):
     return ''
   systemErrorExit(2, 'expected a <{0}>'.format(item))
 
-def getDelta(argstr, pattern, formatRequired):
+def getDelta(argstr, pattern):
   tg = pattern.match(argstr.lower())
   if tg is None:
-    systemErrorExit(2, 'expected a <{0}>; got {1}'.format(formatRequired, argstr))
+    return None
   sign = tg.group(1)
   delta = int(tg.group(2))
   unit = tg.group(3)
-  if unit == 'w':
+  if unit == 'y':
+    deltaTime = datetime.timedelta(days=delta*365)
+  elif unit == 'w':
     deltaTime = datetime.timedelta(weeks=delta)
   elif unit == 'd':
     deltaTime = datetime.timedelta(days=delta)
@@ -338,17 +340,23 @@ def getDelta(argstr, pattern, formatRequired):
     return -deltaTime
   return deltaTime
 
-DELTA_DATE_PATTERN = re.compile(r'^([+-])(\d+)([dw])$')
-DELTA_DATE_FORMAT_REQUIRED = '(+|-)<Number>(d|w)'
+DELTA_DATE_PATTERN = re.compile(r'^([+-])(\d+)([dwy])$')
+DELTA_DATE_FORMAT_REQUIRED = '(+|-)<Number>(d|w|y)'
 
 def getDeltaDate(argstr):
-  return getDelta(argstr, DELTA_DATE_PATTERN, DELTA_DATE_FORMAT_REQUIRED)
+  deltaDate = getDelta(argstr, DELTA_DATE_PATTERN)
+  if deltaDate is None:
+    systemErrorExit(2, 'expected a <{0}>; got {1}'.format(DELTA_DATE_FORMAT_REQUIRED, argstr))
+  return deltaDate
 
 DELTA_TIME_PATTERN = re.compile(r'^([+-])(\d+)([mhdw])$')
 DELTA_TIME_FORMAT_REQUIRED = '(+|-)<Number>(m|h|d|w)'
 
 def getDeltaTime(argstr):
-  return getDelta(argstr, DELTA_TIME_PATTERN, DELTA_TIME_FORMAT_REQUIRED)
+  deltaTime = getDelta(argstr, DELTA_TIME_PATTERN)
+  if deltaTime is None:
+    systemErrorExit(2, 'expected a <{0}>; got {1}'.format(DELTA_TIME_FORMAT_REQUIRED, argstr))
+  return deltaTime
 
 YYYYMMDD_FORMAT = '%Y-%m-%d'
 YYYYMMDD_FORMAT_REQUIRED = 'yyyy-mm-dd'
@@ -375,7 +383,43 @@ def getYYYYMMDD(argstr, minLen=1, returnTimeStamp=False, returnDateTime=False):
 YYYYMMDDTHHMMSS_FORMAT_REQUIRED = 'yyyy-mm-ddThh:mm:ss[.fff](Z|(+|-(hh:mm)))'
 
 def getTimeOrDeltaFromNow(time_string):
-  """Get an ISO 8601 date/time or a positive/negative delta applied to now.
+  """Get an ISO 8601 time or a positive/negative delta applied to now.
+  Args:
+    time_string (string): The time or delta (e.g. '2017-09-01T12:34:56Z' or '-4h')
+  Returns:
+    string: iso8601 formatted datetime in UTC.
+  """
+  time_string = time_string.strip().upper()
+  if time_string:
+    if time_string[0] not in ['+', '-']:
+      return time_string
+    return (datetime.datetime.utcnow() + getDeltaTime(time_string)).isoformat() + 'Z'
+  systemErrorExit(2, 'expected a <{0}>'.format(YYYYMMDDTHHMMSS_FORMAT_REQUIRED))
+
+def getRowFilterDateOrDeltaFromNow(date_string):
+  """Get an ISO 8601 date or a positive/negative delta applied to now.
+  Args:
+    date_string (string): The time or delta (e.g. '2017-09-01' or '-4y')
+  Returns:
+    string: iso8601 formatted datetime in UTC.
+  """
+  date_string = date_string.strip().upper()
+  if date_string:
+    if date_string[0] in ['+', '-']:
+      deltaDate = getDelta(date_string, DELTA_DATE_PATTERN)
+      if deltaDate is None:
+        return (False, DELTA_DATE_FORMAT_REQUIRED)
+      today = datetime.date.today()
+      return (True, (datetime.datetime(today.year, today.month, today.day)+deltaDate).isoformat()+'Z')
+    try:
+      deltaDate = dateutil.parser.parse(date_string, ignoretz=True)
+      return (True, datetime.datetime(deltaDate.year, deltaDate.month, deltaDate.day).isoformat()+'Z')
+    except ValueError:
+      pass
+  return (False, YYYYMMDD_FORMAT_REQUIRED)
+
+def getRowFilterTimeOrDeltaFromNow(time_string):
+  """Get an ISO 8601 time or a positive/negative delta applied to now.
   Args:
     time_string (string): The time or delta (e.g. '2017-09-01T12:34:56Z' or '-4h')
   Returns:
@@ -385,10 +429,17 @@ def getTimeOrDeltaFromNow(time_string):
   """
   time_string = time_string.strip().upper()
   if time_string:
-    if time_string[0] not in ['+', '-']:
-      return time_string
-    return (datetime.datetime.utcnow() + getDeltaTime(time_string)).isoformat() + 'Z'
-  systemErrorExit(2, 'expected a <{0}>'.format(YYYYMMDDTHHMMSS_FORMAT_REQUIRED))
+    if time_string[0] in ['+', '-']:
+      deltaTime = getDelta(time_string, DELTA_TIME_PATTERN)
+      if deltaTime is None:
+        return (False, DELTA_TIME_FORMAT_REQUIRED)
+      return (True, (datetime.datetime.utcnow()+deltaTime).isoformat()+'Z')
+    try:
+      deltaTime = dateutil.parser.parse(time_string, ignoretz=True)
+      return (True, deltaTime.isoformat()+'Z')
+    except ValueError:
+      pass
+  return (False, YYYYMMDDTHHMMSS_FORMAT_REQUIRED)
 
 YYYYMMDD_PATTERN = re.compile(r'^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
 
@@ -542,6 +593,43 @@ def SetGlobalVariables():
       value = os.path.expanduser(os.path.join(GC_Values[GC_CONFIG_DIR], value))
     return value
 
+  ROW_FILTER_DATE_PATTERN = re.compile(r'^(date)([<>]=?|=|!=)(.+)$', re.IGNORECASE)
+  ROW_FILTER_TIME_PATTERN = re.compile(r'^(time)([<>]=?|=|!=)(.+)$', re.IGNORECASE)
+  ROW_FILTER_RE_PATTERN = re.compile(r'^(regex:)?(.*)$', re.IGNORECASE)
+
+  def _getCfgRowFilter(itemName):
+    value = GC_Defaults[itemName]
+    rowFilters = {}
+    if not value:
+      return rowFilters
+    try:
+      for column, filterStr in iter(json.loads(value).items()):
+        mg = ROW_FILTER_DATE_PATTERN.match(filterStr)
+        if mg:
+          valid, filterDate = getRowFilterDateOrDeltaFromNow(mg.group(3))
+          if valid:
+            rowFilters[column] = (mg.group(1), mg.group(2), filterDate)
+            continue
+          systemErrorExit(3, 'Item: {0}, Value: "{1}", Expected: {2}'.format(itemName, value, filterDate))
+        mg = ROW_FILTER_TIME_PATTERN.match(filterStr)
+        if mg:
+          valid, filterTime = getRowFilterTimeOrDeltaFromNow(mg.group(3))
+          if valid:
+            rowFilters[column] = (mg.group(1), mg.group(2), filterTime)
+            continue
+          systemErrorExit(3, 'Item: {0}, Value: "{1}", Expected: {2}'.format(itemName, value, filterTime))
+        mg = ROW_FILTER_RE_PATTERN.match(filterStr)
+        if mg:
+          try:
+            rowFilters[column] = ('re', re.compile(mg.group(2)))
+            continue
+          except re.error as e:
+            systemErrorExit(3, 'Item: {0}, Value: "{1}", Invalid RE: {2}'.format(itemName, value, e))
+        systemErrorExit(3, 'Item: {0}, Value: "{1}", Expected: (date|time <Operator> <Date>|<Time>) or (regex:<RegularExpression>)'.format(itemName, value))
+      return rowFilters
+    except (TypeError, ValueError) as e:
+      systemErrorExit(3, 'Item: {0}, Value: "{1}", Failed to parse as JSON: {2}'.format(itemName, value, str(e)))
+
   GC_Defaults[GC_CONFIG_DIR] = GM_Globals[GM_GAM_PATH]
   GC_Defaults[GC_CACHE_DIR] = os.path.join(GM_Globals[GM_GAM_PATH], 'gamcache')
   GC_Defaults[GC_DRIVE_DIR] = GM_Globals[GM_GAM_PATH]
@@ -584,6 +672,8 @@ def SetGlobalVariables():
     varType = GC_VAR_INFO[itemName][GC_VAR_TYPE]
     if varType == GC_TYPE_FILE:
       GC_Values[itemName] = _getCfgFile(itemName)
+    elif varType == GC_TYPE_ROWFILTER:
+      GC_Values[itemName] = _getCfgRowFilter(itemName)
     else:
       GC_Values[itemName] = GC_Defaults[itemName]
   GM_Globals[GM_LAST_UPDATE_CHECK_TXT] = os.path.join(GC_Values[GC_CONFIG_DIR], FN_LAST_UPDATE_CHECK_TXT)
@@ -10620,37 +10710,35 @@ def sortCSVTitles(firstTitle, titles):
     titles.insert(0, title)
 
 def writeCSVfile(csvRows, titles, list_type, todrive):
+  def rowDateFilterMatch(dateMode, column, op, filterDate, row):
+    rowDate = row[column]
+    try:
+      rowTime = dateutil.parser.parse(rowDate, ignoretz=True)
+      if dateMode:
+        rowDate = datetime.datetime(rowTime.year, rowTime.month, rowTime.day).isoformat()+'Z'
+    except ValueError:
+      rowDate = NEVER_TIME
+    if op == '<':
+      return rowDate < filterDate
+    if op == '<=':
+      return rowDate <= filterDate
+    if op == '>':
+      return rowDate > filterDate
+    if op == '>=':
+      return rowDate >= filterDate
+    if op == '!=':
+      return rowDate != filterDate
+    return rowDate == filterDate
+
   if GC_Values[GC_CSV_ROW_FILTER]:
-    row_dict = json.loads(GC_Values[GC_CSV_ROW_FILTER])
-    for match_column, filter_str in list(row_dict.items()):
-      if filter_str.lower()[:4] == 'date':
-        new_csvRows = []
-        direction = filter_str[4]
-        if direction not in ['<', '>']:
-          systemErrorExit(3, '%s is not a valid filter date direction' % direction)
-        try:
-          date_str = filter_str[5:]
-          filter_date = dateutil.parser.parse(date_str, ignoretz=True)
-        except ValueError:
-          systemErrorExit(3, '%s is not a date GAM understands' % filter_str)
-        for row in csvRows:
-          try:
-            row_date = dateutil.parser.parse(row[match_column], ignoretz=True)
-          except ValueError:
-            row_date = dateutil.parser.parse('1/1/1970')
-          if direction == '<' and row_date < filter_date:
-            new_csvRows.append(row)
-          elif direction == '>' and row_date > filter_date:
-            new_csvRows.append(row)
-        csvRows = new_csvRows
-      else:
-        if filter_str.lower()[:6] == 'regex:':
-          filter_str = filter_str[6:]
-        if match_column not in titles:
-          sys.stderr.write('WARNING: Row filter %s is not in output columns\n' % match_column)
-          continue
-        regex = re.compile(filter_str)
-        csvRows = [row for row in csvRows if regex.search(row.get(match_column, ''))]
+    for column, filterStr in iter(GC_Values[GC_CSV_ROW_FILTER].items()):
+      if column not in titles:
+        sys.stderr.write('WARNING: Row filter column "{0}" is not in output columns\n'.format(column))
+        continue
+      if filterStr[0] == 're':
+        csvRows = [row for row in csvRows if filterStr[1].search(row[column])]
+      else: #date/time
+        csvRows = [row for row in csvRows if rowDateFilterMatch(filterStr[0] == 'date', column, filterStr[1], filterStr[2], row)]
   if GC_Values[GC_CSV_HEADER_FILTER]:
     titles_filter = GC_Values[GC_CSV_HEADER_FILTER].lower().split(',')
     titles = [t for t in titles if t.lower() in titles_filter]
@@ -13106,7 +13194,7 @@ Append an 'r' to grant read-only access or an 'a' to grant action-only access.
       raise ScopeSelectionMenu.MenuChoiceError(
         'Scope "%s" is required and cannot be unselected!' %
         option.description)
-    elif selected and not option.is_selected:
+    if selected and not option.is_selected:
       # Make sure we're not about to exceed the maximum number of scopes
       # authorized on a single token.
       num_scopes_to_add = len(option.get_effective_scopes())

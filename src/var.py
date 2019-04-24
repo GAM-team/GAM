@@ -4,7 +4,7 @@ import platform
 import re
 
 gam_author = 'Jay Lee <jay0lee@gmail.com>'
-gam_version = '4.80'
+gam_version = '4.81'
 gam_license = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 GAM_URL = 'https://git.io/gam'
@@ -762,6 +762,7 @@ GC_TYPE_EMAIL = 'emai'
 GC_TYPE_FILE = 'file'
 GC_TYPE_INTEGER = 'inte'
 GC_TYPE_LANGUAGE = 'lang'
+GC_TYPE_ROWFILTER = 'rowf'
 GC_TYPE_STRING = 'stri'
 
 GC_VAR_TYPE = 'type'
@@ -796,7 +797,7 @@ GC_VAR_INFO = {
   GC_SITE_DIR: {GC_VAR_TYPE: GC_TYPE_DIRECTORY},
   GC_USER_MAX_RESULTS: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (1, 500)},
   GC_CSV_HEADER_FILTER: {GC_VAR_TYPE: GC_TYPE_STRING},
-  GC_CSV_ROW_FILTER: {GC_VAR_TYPE: GC_TYPE_STRING},
+  GC_CSV_ROW_FILTER: {GC_VAR_TYPE: GC_TYPE_ROWFILTER},
   }
 # Google API constants
 

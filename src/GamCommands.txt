@@ -118,7 +118,7 @@ If an item contains spaces, it should be surrounded by ".
 <MilliSeconds> ::= <Digit><Digit><Digit>
 <Date> ::=
 	<Year>-<Month>-<Day> |
-	(+|-)<Number>(d|w)
+	(+|-)<Number>(d|w|y)
 <Time> ::=
 	<Year>-<Month>-<Day>(<Space>|T)<Hour>:<Minute>:<Second>[.<MilliSeconds>](Z|(+|-(<Hour>:<Minute>))) |
 	(+|-)<Number>(m|h|d|w)
