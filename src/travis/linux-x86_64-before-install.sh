@@ -11,7 +11,7 @@ sudo apt-get --yes install build-essential
 echo "Installing deps for python3"
 sudo cp -v /etc/apt/sources.list /tmp
 chmod a+rwx /tmp/sources.list
-echo "deb-src http://archive.ubuntu.com/ubuntu/ precise main" >> /tmp/sources.list
+echo "deb-src http://archive.ubuntu.com/ubuntu/ $dist main" >> /tmp/sources.list
 sudo cp -v /tmp/sources.list /etc/apt
 sudo apt-get --yes update > /dev/null
 sudo apt-get --yes build-dep python3
@@ -57,16 +57,9 @@ pip=~/python/bin/pip3
 
 $python -V
 
-if [[ "$dist" == "precise" ]]; then
-  echo "Installing patchelf for StaticX..."
-  # Compile patchelf (no ubuntu package till Xenial)
-  PATCHELF_VER=0.10
-  wget https://nixos.org/releases/patchelf/patchelf-$PATCHELF_VER/patchelf-$PATCHELF_VER.tar.bz2
-  tar xf patchelf-$PATCHELF_VER.tar.bz2
-  cd patchelf-$PATCHELF_VER
-  ./configure
-  make
-  sudo make install
+if [[ "$dist" == "xenial" ]]; then
+  echo "Installing deps for StaticX..."
+  sudo apt-get install --yes patchelf scons musl
 fi
 
 cd $whereibelong
