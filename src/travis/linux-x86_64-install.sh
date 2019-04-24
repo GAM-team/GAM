@@ -12,7 +12,6 @@ echo "PyInstaller GAM  info:"
 du -h gam/gam
 time gam/gam version extended
 
-dist=$(lsb_release --codename --short)
 if [[ "$dist" == "precise" ]]; then
   GAM_LEGACY_ARCHIVE=gam-$GAMVERSION-$GAMOS-$PLATFORM-legacy.tar.xz
   $python -OO -m staticx gam/gam gam/gam-staticx

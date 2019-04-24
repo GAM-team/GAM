@@ -1,12 +1,13 @@
-whereibelong=$(pwd)
+export whereibelong=$(pwd)
+export dist=$(lsb_release --codename --short)
+echo "We are running on Ubuntu $dist"
 echo "RUNNING: apt update..."
 sudo apt-get --yes update > /dev/null
 echo "RUNNING: apt dist-upgrade..."
 sudo apt-get --yes dist-upgrade > /dev/null
 echo "Installing build tools..."
 sudo apt-get --yes install build-essential
-echo "Installing StaticX deps..."
-sudo apt-get --yes install binutils patchelf
+
 echo "Installing deps for python3"
 sudo cp -v /etc/apt/sources.list /tmp
 chmod a+rwx /tmp/sources.list
@@ -20,14 +21,6 @@ echo "My Path is $mypath"
 cpucount=$(nproc --all)
 echo "This device has $cpucount CPUs for compiling..."
 
-# Compile patchelf (no ubuntu package till Xenial)
-PATCHELF_VER=0.10
-wget https://nixos.org/releases/patchelf/patchelf-$PATCHELF_VER/patchelf-$PATCHELF_VER.tar.bz2
-tar xf patchelf-$PATCHELF_VER.tar.bz2
-cd patchelf-$PATCHELF_VER
-./configure
-make
-sudo make install
 
 # Compile latest OpenSSL
 OPENSSL_VER=1.1.1b
@@ -63,6 +56,18 @@ python=~/python/bin/python3
 pip=~/python/bin/pip3
 
 $python -V
+
+if [[ "$dist" == "precise" ]]; then
+  echo "Installing patchelf for StaticX..."
+  # Compile patchelf (no ubuntu package till Xenial)
+  PATCHELF_VER=0.10
+  wget https://nixos.org/releases/patchelf/patchelf-$PATCHELF_VER/patchelf-$PATCHELF_VER.tar.bz2
+  tar xf patchelf-$PATCHELF_VER.tar.bz2
+  cd patchelf-$PATCHELF_VER
+  ./configure
+  make
+  sudo make install
+fi
 
 cd $whereibelong
 
