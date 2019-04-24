@@ -10644,7 +10644,7 @@ def writeCSVfile(csvRows, titles, list_type, todrive):
             new_csvRows.append(row)
         csvRows = new_csvRows
       else:
-        if filter_str.lower()[:6] == 'regex':
+        if filter_str.lower()[:6] == 'regex:':
           filter_str = filter_str[6:]
         if match_column not in titles:
           sys.stderr.write('WARNING: Row filter %s is not in output columns\n' % match_column)
