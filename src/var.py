@@ -20,8 +20,6 @@ GAM_ALL_RELEASES = 'https://api.github.com/repos/jay0lee/GAM/releases'
 GAM_LATEST_RELEASE = GAM_ALL_RELEASES+'/latest'
 GAM_PROJECT_APIS = 'https://raw.githubusercontent.com/jay0lee/GAM/master/src/project-apis.txt'
 
-TRUE = 'true'
-FALSE = 'false'
 true_values = ['on', 'yes', 'enabled', 'true', '1']
 false_values = ['off', 'no', 'disabled', 'false', '0']
 usergroup_types = ['user', 'users',
@@ -30,19 +28,10 @@ usergroup_types = ['user', 'users',
                    'ou_and_children', 'ou_and_child', 'ou_and_children_ns', 'ou_and_child_ns', 'ou_and_children_susp', 'ou_and_child_susp',
                    'query', 'queries', 'license', 'licenses', 'licence', 'licences', 'file', 'csv', 'csvfile', 'all',
                    'cros', 'cros_sn', 'crosquery', 'crosqueries', 'crosfile', 'croscsv', 'croscsvfile']
-ERROR = 'ERROR'
-ERROR_PREFIX = ERROR+': '
-WARNING = 'WARNING'
-WARNING_PREFIX = WARNING+': '
-DEFAULT_CHARSET = ['mbcs', 'utf-8'][os.name != 'nt']
-ONE_KILO_BYTES = 1000
-ONE_MEGA_BYTES = 1000000
-ONE_GIGA_BYTES = 1000000000
-FN_CLIENT_SECRETS_JSON = 'client_secrets.json'
+ERROR_PREFIX = 'ERROR: '
+WARNING_PREFIX = 'WARNING: '
 FN_EXTRA_ARGS_TXT = 'extra-args.txt'
 FN_LAST_UPDATE_CHECK_TXT = 'lastupdatecheck.txt'
-FN_OAUTH2SERVICE_JSON = 'oauth2service.json'
-FN_OAUTH2_TXT = 'oauth2.txt'
 MY_CUSTOMER = 'my_customer'
 # See https://support.google.com/drive/answer/37603
 MAX_GOOGLE_SHEET_CELLS = 5000000
@@ -360,18 +349,18 @@ GOOGLEDOC_VALID_EXTENSIONS_MAP = {
   MIMETYPE_GA_SPREADSHEET: ['.csv', '.ods', '.pdf', '.xlsx', '.zip'],
   }
 
-MICROSOFT_FORMATS_LIST = [{'mime': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'ext': '.docx'},
-                          {'mime': 'application/vnd.openxmlformats-officedocument.wordprocessingml.template', 'ext': '.dotx'},
-                          {'mime': 'application/vnd.openxmlformats-officedocument.presentationml.presentation', 'ext': '.pptx'},
-                          {'mime': 'application/vnd.openxmlformats-officedocument.presentationml.template', 'ext': '.potx'},
-                          {'mime': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'ext': '.xlsx'},
-                          {'mime': 'application/vnd.openxmlformats-officedocument.spreadsheetml.template', 'ext': '.xltx'},
-                          {'mime': 'application/msword', 'ext': '.doc'},
-                          {'mime': 'application/msword', 'ext': '.dot'},
-                          {'mime': 'application/vnd.ms-powerpoint', 'ext': '.ppt'},
-                          {'mime': 'application/vnd.ms-powerpoint', 'ext': '.pot'},
-                          {'mime': 'application/vnd.ms-excel', 'ext': '.xls'},
-                          {'mime': 'application/vnd.ms-excel', 'ext': '.xlt'}]
+_MICROSOFT_FORMATS_LIST = [{'mime': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'ext': '.docx'},
+                           {'mime': 'application/vnd.openxmlformats-officedocument.wordprocessingml.template', 'ext': '.dotx'},
+                           {'mime': 'application/vnd.openxmlformats-officedocument.presentationml.presentation', 'ext': '.pptx'},
+                           {'mime': 'application/vnd.openxmlformats-officedocument.presentationml.template', 'ext': '.potx'},
+                           {'mime': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'ext': '.xlsx'},
+                           {'mime': 'application/vnd.openxmlformats-officedocument.spreadsheetml.template', 'ext': '.xltx'},
+                           {'mime': 'application/msword', 'ext': '.doc'},
+                           {'mime': 'application/msword', 'ext': '.dot'},
+                           {'mime': 'application/vnd.ms-powerpoint', 'ext': '.ppt'},
+                           {'mime': 'application/vnd.ms-powerpoint', 'ext': '.pot'},
+                           {'mime': 'application/vnd.ms-excel', 'ext': '.xls'},
+                           {'mime': 'application/vnd.ms-excel', 'ext': '.xlt'}]
 
 DOCUMENT_FORMATS_MAP = {
   'csv': [{'mime': 'text/csv', 'ext': '.csv'}],
@@ -404,9 +393,9 @@ DOCUMENT_FORMATS_MAP = {
   'xlsx': [{'mime': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'ext': '.xlsx'}],
   'xltx': [{'mime': 'application/vnd.openxmlformats-officedocument.spreadsheetml.template', 'ext': '.xltx'}],
   'zip': [{'mime': 'application/zip', 'ext': '.zip'}],
-  'ms': MICROSOFT_FORMATS_LIST,
-  'microsoft': MICROSOFT_FORMATS_LIST,
-  'micro$oft': MICROSOFT_FORMATS_LIST,
+  'ms': _MICROSOFT_FORMATS_LIST,
+  'microsoft': _MICROSOFT_FORMATS_LIST,
+  'micro$oft': _MICROSOFT_FORMATS_LIST,
   'openoffice': [{'mime': 'application/vnd.oasis.opendocument.presentation', 'ext': '.odp'},
                   {'mime': 'application/x-vnd.oasis.opendocument.spreadsheet', 'ext': '.ods'},
                   {'mime': 'application/vnd.oasis.opendocument.spreadsheet', 'ext': '.ods'},
@@ -641,11 +630,16 @@ GM_MAP_BUILDING_ID_TO_NAME = 'bi2n'
 # Dictionary mapping Building Name to ID
 GM_MAP_BUILDING_NAME_TO_ID = 'bn2i'
 #
+_DEFAULT_CHARSET = ['mbcs', 'utf-8'][os.name != 'nt']
+_FN_CLIENT_SECRETS_JSON = 'client_secrets.json'
+_FN_OAUTH2SERVICE_JSON = 'oauth2service.json'
+_FN_OAUTH2_TXT = 'oauth2.txt'
+#
 GM_Globals = {
   GM_SYSEXITRC: 0,
   GM_GAM_PATH: None,
   GM_WINDOWS: os.name == 'nt',
-  GM_SYS_ENCODING: DEFAULT_CHARSET,
+  GM_SYS_ENCODING: _DEFAULT_CHARSET,
   GM_EXTRA_ARGS_DICT:  {'prettyPrint': False},
   GM_CURRENT_API_SERVICES: {},
   GM_CURRENT_API_USER: None,
@@ -734,7 +728,7 @@ GC_Defaults = {
   GC_CACHE_DIR: '',
   GC_CACHE_DISCOVERY_ONLY: True,
   GC_CHARSET: DEFAULT_CHARSET,
-  GC_CLIENT_SECRETS_JSON: FN_CLIENT_SECRETS_JSON,
+  GC_CLIENT_SECRETS_JSON: _FN_CLIENT_SECRETS_JSON,
   GC_CONFIG_DIR: '',
   GC_CUSTOMER_ID: MY_CUSTOMER,
   GC_DEBUG_LEVEL: 0,
@@ -748,8 +742,8 @@ GC_Defaults = {
   GC_NO_UPDATE_CHECK: False,
   GC_NO_VERIFY_SSL: False,
   GC_NUM_THREADS: 25,
-  GC_OAUTH2_TXT: FN_OAUTH2_TXT,
-  GC_OAUTH2SERVICE_JSON: FN_OAUTH2SERVICE_JSON,
+  GC_OAUTH2_TXT: _FN_OAUTH2_TXT,
+  GC_OAUTH2SERVICE_JSON: _FN_OAUTH2SERVICE_JSON,
   GC_SECTION: '',
   GC_SHOW_COUNTS_MIN: 0,
   GC_SHOW_GETTINGS: True,
@@ -807,16 +801,9 @@ GC_VAR_INFO = {
 # Google API constants
 
 NEVER_TIME = '1970-01-01T00:00:00.000Z'
-NEVER_START_DATE = '1970-01-01'
-NEVER_END_DATE = '1969-12-31'
 ROLE_MANAGER = 'MANAGER'
 ROLE_MEMBER = 'MEMBER'
 ROLE_OWNER = 'OWNER'
-ROLE_USER = 'USER'
-ROLE_MANAGER_MEMBER = ','.join([ROLE_MANAGER, ROLE_MEMBER])
-ROLE_MANAGER_OWNER = ','.join([ROLE_MANAGER, ROLE_OWNER])
-ROLE_MANAGER_MEMBER_OWNER = ','.join([ROLE_MANAGER, ROLE_MEMBER, ROLE_OWNER])
-ROLE_MEMBER_OWNER = ','.join([ROLE_MEMBER, ROLE_OWNER])
 PROJECTION_CHOICES_MAP = {'basic': 'BASIC', 'full': 'FULL',}
 SORTORDER_CHOICES_MAP = {'ascending': 'ASCENDING', 'descending': 'DESCENDING',}
 #
@@ -830,14 +817,10 @@ MESSAGE_HEADER_NOT_FOUND_IN_CSV_HEADERS = 'Header "{0}" not found in CSV headers
 MESSAGE_HIT_CONTROL_C_TO_UPDATE = '\n\nHit CTRL+C to visit the GAM website and download the latest release or wait 15 seconds continue with this boring old version. GAM won\'t bother you with this announcement for 1 week or you can create a file named noupdatecheck.txt in the same location as gam.py or gam.exe and GAM won\'t ever check for updates.'
 MESSAGE_INVALID_JSON = 'The file {0} has an invalid format.'
 MESSAGE_NO_DISCOVERY_INFORMATION = 'No online discovery doc and {0} does not exist locally'
-MESSAGE_NO_PYTHON_SSL = 'You don\'t have the Python SSL module installed so we can\'t verify SSL Certificates. You can fix this by installing the Python SSL module or you can live on the edge and turn SSL validation off by creating a file named noverifyssl.txt in the same location as gam.exe / gam.py'
 MESSAGE_NO_TRANSFER_LACK_OF_DISK_SPACE = 'Cowardly refusing to perform migration due to lack of target drive space. Source size: {0}mb Target Free: {1}mb'
-MESSAGE_REQUEST_COMPLETED_NO_FILES = 'Request completed but no results/files were returned, try requesting again'
-MESSAGE_REQUEST_NOT_COMPLETE = 'Request needs to be completed before downloading, current status is: {0}'
 MESSAGE_RESULTS_TOO_LARGE_FOR_GOOGLE_SPREADSHEET = 'Results are too large for Google Spreadsheets. Uploading as a regular CSV file.'
 MESSAGE_SERVICE_NOT_APPLICABLE = 'Service not applicable for this address: {0}. Please make sure service is enabled for user and run\n\ngam user <user> check serviceaccount\n\nfor further instructions'
 MESSAGE_INSTRUCTIONS_OAUTH2SERVICE_JSON = 'Please run\n\ngam create project\ngam user <user> check serviceaccount\n\nto create and configure a service account.'
-MESSAGE_OAUTH2SERVICE_JSON_INVALID = 'The file {0} is missing required keys (client_email, client_id or private_key). Please remove it and recreate with the commands:\n\ngam create project\ngam user <user> check serviceaccount'
 # oauth errors
 OAUTH2_TOKEN_ERRORS = [
   'access_denied',
@@ -854,7 +837,6 @@ OAUTH2_TOKEN_ERRORS = [
 # callGAPI throw reasons
 GAPI_ABORTED = 'aborted'
 GAPI_AUTH_ERROR = 'authError'
-GAPI_BACKEND_ERROR = 'backendError'
 GAPI_BAD_REQUEST = 'badRequest'
 GAPI_CONDITION_NOT_MET = 'conditionNotMet'
 GAPI_CYCLIC_MEMBERSHIPS_NOT_ALLOWED = 'cyclicMembershipsNotAllowed'
@@ -864,7 +846,6 @@ GAPI_DUPLICATE = 'duplicate'
 GAPI_FAILED_PRECONDITION = 'failedPrecondition'
 GAPI_FORBIDDEN = 'forbidden'
 GAPI_GROUP_NOT_FOUND = 'groupNotFound'
-GAPI_INTERNAL_ERROR = 'internalError'
 GAPI_INVALID = 'invalid'
 GAPI_INVALID_ARGUMENT = 'invalidArgument'
 GAPI_INVALID_MEMBER = 'invalidMember'
@@ -873,19 +854,15 @@ GAPI_NOT_FOUND = 'notFound'
 GAPI_NOT_IMPLEMENTED = 'notImplemented'
 GAPI_PERMISSION_DENIED = 'permissionDenied'
 GAPI_QUOTA_EXCEEDED = 'quotaExceeded'
-GAPI_RATE_LIMIT_EXCEEDED = 'rateLimitExceeded'
 GAPI_RESOURCE_NOT_FOUND = 'resourceNotFound'
 GAPI_SERVICE_NOT_AVAILABLE = 'serviceNotAvailable'
-GAPI_SYSTEM_ERROR = 'systemError'
 GAPI_USER_NOT_FOUND = 'userNotFound'
-GAPI_USER_RATE_LIMIT_EXCEEDED = 'userRateLimitExceeded'
 #
 GAPI_DEFAULT_RETRY_REASONS = [GAPI_QUOTA_EXCEEDED, GAPI_RATE_LIMIT_EXCEEDED, GAPI_USER_RATE_LIMIT_EXCEEDED, GAPI_BACKEND_ERROR, GAPI_INTERNAL_ERROR]
 GAPI_GMAIL_THROW_REASONS = [GAPI_SERVICE_NOT_AVAILABLE]
 GAPI_GROUP_GET_THROW_REASONS = [GAPI_GROUP_NOT_FOUND, GAPI_DOMAIN_NOT_FOUND, GAPI_DOMAIN_CANNOT_USE_APIS, GAPI_FORBIDDEN, GAPI_BAD_REQUEST]
 GAPI_GROUP_GET_RETRY_REASONS = [GAPI_INVALID, GAPI_SYSTEM_ERROR]
 GAPI_MEMBERS_THROW_REASONS = [GAPI_GROUP_NOT_FOUND, GAPI_DOMAIN_NOT_FOUND, GAPI_DOMAIN_CANNOT_USE_APIS, GAPI_INVALID, GAPI_FORBIDDEN]
-GAPI_MEMBERS_RETRY_REASONS = [GAPI_SYSTEM_ERROR]
 
 USER_ADDRESS_TYPES = ['home', 'work', 'other']
 USER_EMAIL_TYPES = ['home', 'work', 'other']

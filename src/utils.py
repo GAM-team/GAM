@@ -3,7 +3,11 @@ import re
 import sys
 from html.entities import name2codepoint
 from html.parser import HTMLParser
-from var import GM_Globals, GM_WINDOWS, GM_SYS_ENCODING, ONE_KILO_BYTES, ONE_MEGA_BYTES, ONE_GIGA_BYTES
+from var import GM_Globals, GM_WINDOWS, GM_SYS_ENCODING
+
+ONE_KILO_BYTES = 1000
+ONE_MEGA_BYTES = 1000000
+ONE_GIGA_BYTES = 1000000000
 
 def convertUTF8(data):
   if isinstance(data, str):
