@@ -11,12 +11,14 @@ matrix:
         - PLATFORM=x86_64
     - os: linux
       name: "Linux 64-bit Trusty"
+      dist: trusty
       language: bash
       env:
         - GAMOS=linux
         - PLATFORM=x86_64
     - os: linux
       name: "Linux 64-bit Precise"
+      dist: precise
       language: bash
       env:
         - GAMOS=linux
