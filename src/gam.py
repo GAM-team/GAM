@@ -3,7 +3,7 @@
 #
 # GAM
 #
-# Copyright 2015, LLC All Rights Reserved.
+# Copyright 2019, LLC All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,49 +22,50 @@ With GAM you can programatically create users, turn on/off services for users li
 For more information, see https://git.io/gam
 """
 
-import sys
-import os
-import string
-import time
 import base64
 import codecs
 import configparser
 import csv
 import datetime
 import hashlib
-import http.client as http_client
+import importlib
+import io
 import json
 import mimetypes
+import os
 import platform
 import random
 import re
+import shlex
 import signal
 import socket
-import io
+import ssl
+import string
 import struct
-from urllib.parse import urlencode
+import sys
+import time
 import uuid
 import webbrowser
 import zipfile
+import http.client as http_client
 from email.mime.text import MIMEText
-import shlex
 from multiprocessing import Pool
 from multiprocessing import freeze_support
-
-import dateutil.parser
+from urllib.parse import urlencode
+from passlib.hash import sha512_crypt
 import dns.resolver
+import dateutil.parser
 
 import googleapiclient
 import googleapiclient.discovery
 import googleapiclient.errors
 import googleapiclient.http
-import httplib2
 import google.oauth2.service_account
 import google_auth_httplib2
+import httplib2
 import oauth2client.client
 import oauth2client.file
 import oauth2client.tools
-from passlib.hash import sha512_crypt
 from oauth2client.contrib.dictionary_storage import DictionaryStorage
 
 import utils
@@ -129,9 +130,9 @@ def _request_with_user_agent(request_method):
   return wrapped_request_method
 
 google_auth_httplib2.Request.__call__ = _request_with_user_agent(
-    google_auth_httplib2.Request.__call__)
+  google_auth_httplib2.Request.__call__)
 google_auth_httplib2.AuthorizedHttp.request = _request_with_user_agent(
-    google_auth_httplib2.AuthorizedHttp.request)
+  google_auth_httplib2.AuthorizedHttp.request)
 
 def showUsage():
   doGAMVersion(checkForArgs=False)
@@ -690,7 +691,6 @@ def doGAMVersion(checkForArgs=True):
   if force_check:
     doGAMCheckForUpdates(forceCheck=True)
   if extended:
-    import ssl, socket, importlib
     print(ssl.OPENSSL_VERSION)
     proot = os.path.dirname(importlib.import_module('httplib2').__file__)
     ca_path = os.path.join(proot, 'cacerts.txt')
@@ -1382,7 +1382,7 @@ def showReport():
     elif myarg == 'fulldatarequired':
       fullDataRequired = []
       fdr = sys.argv[i+1].lower()
-      if len(fdr) > 0 and fdr != 'all':
+      if fdr and fdr != 'all':
         fullDataRequired = fdr.replace(',', ' ').split()
       i += 2
     elif myarg == 'start':
@@ -1533,7 +1533,7 @@ def showReport():
     activities = callGAPIpages(rep.activities(), 'list', 'items', page_message=page_message, applicationName=report,
                                userKey=userKey, customerId=customerId, actorIpAddress=actorIpAddress,
                                startTime=startTime, endTime=endTime, eventName=eventName, filters=filters)
-    if len(activities) > 0:
+    if activities:
       titles = ['name']
       csvRows = []
       for activity in activities:
@@ -2443,7 +2443,7 @@ def doDeleteGuardian():
                                 throw_reasons=[GAPI_FORBIDDEN],
                                 studentId=studentId, invitedEmailAddress=guardianId,
                                 fields='nextPageToken,guardians(studentId,guardianId)')
-        if len(results) > 0:
+        if results:
           for result in results:
             _deleteGuardian(croom, result['studentId'], result['guardianId'], guardianId)
           return
@@ -2460,7 +2460,7 @@ def doDeleteGuardian():
                               throw_reasons=[GAPI_FORBIDDEN],
                               studentId=studentId, invitedEmailAddress=guardianId, states=['PENDING',],
                               fields='nextPageToken,guardianInvitations(studentId,invitationId)')
-      if len(results) > 0:
+      if results:
         for result in results:
           status = _cancelGuardianInvitation(croom, result['studentId'], result['invitationId'])
         sys.exit(status)
@@ -2722,7 +2722,7 @@ def doPrintCourseParticipants():
       i += 2
     else:
       systemErrorExit(2, '%s is not a valid argument for "gam print course-participants"' % sys.argv[i])
-  if len(courses) == 0:
+  if not courses:
     printGettingAllItems('Courses', None)
     page_message = 'Got %%num_items%% Courses...\n'
     all_courses = callGAPIpages(croom.courses(), 'list', 'courses', page_message=page_message,
@@ -4474,7 +4474,7 @@ def deleteEmptyDriveFolders(users):
       for folder in feed:
         children = callGAPI(drive.children(), 'list',
                             folderId=folder['id'], fields='items(id)', maxResults=1)
-        if not 'items' in children or len(children['items']) == 0:
+        if 'items' not in children or not children['items']:
           print(utils.convertUTF8(' deleting empty folder %s...' % folder['title']))
           callGAPI(drive.files(), 'delete', fileId=folder['id'])
           deleted_empty = True
@@ -4802,7 +4802,7 @@ def downloadDriveFile(users):
             safe_file_title = targetName
           else:
             safe_file_title = ''.join(c for c in result['title'] if c in safe_filename_chars)
-            if len(safe_file_title) < 1:
+            if not safe_file_title:
               safe_file_title = fileId
           filename = os.path.join(targetFolder, safe_file_title)
           y = 0
@@ -5390,9 +5390,9 @@ def updateSmime(users):
     if not smimeIdBase:
       result = callGAPI(gmail.users().settings().sendAs().smimeInfo(), 'list', userId='me', sendAsEmail=sendAsEmail, fields='smimeInfo(id)')
       smimes = result.get('smimeInfo', [])
-      if len(smimes) == 0:
+      if not smimes:
         systemErrorExit(3, '%s has no S/MIME certificates for sendas address %s' % (user, sendAsEmail))
-      elif len(smimes) > 1:
+      if len(smimes) > 1:
         systemErrorExit(3, '%s has more than one S/MIME certificate. Please specify a cert to update:\n %s' % (user, '\n '.join([smime['id'] for smime in smimes])))
       smimeId = smimes[0]['id']
     else:
@@ -5422,9 +5422,9 @@ def deleteSmime(users):
     if not smimeIdBase:
       result = callGAPI(gmail.users().settings().sendAs().smimeInfo(), 'list', userId='me', sendAsEmail=sendAsEmail, fields='smimeInfo(id)')
       smimes = result.get('smimeInfo', [])
-      if len(smimes) == 0:
+      if not smimes:
         systemErrorExit(3, '%s has no S/MIME certificates for sendas address %s' % (user, sendAsEmail))
-      elif len(smimes) > 1:
+      if len(smimes) > 1:
         systemErrorExit(3, '%s has more than one S/MIME certificate. Please specify a cert to delete:\n %s' % (user, '\n '.join([smime['id'] for smime in smimes])))
       smimeId = smimes[0]['id']
     else:
@@ -5960,7 +5960,7 @@ def renameLabels(users):
             print('  Merging %s label to existing %s label' % (label['name'], new_label_name))
             messages_to_relabel = callGAPIpages(gmail.users().messages(), 'list', 'messages',
                                                 userId=user, q='label:%s' % label['name'].lower().replace('/', '-').replace(' ', '-'))
-            if len(messages_to_relabel) > 0:
+            if messages_to_relabel:
               for new_label in labels['labels']:
                 if new_label['name'].lower() == new_label_name.lower():
                   new_label_id = new_label['id']
@@ -9692,7 +9692,7 @@ def doGetUserInfo(user_email=None):
         print('  %s' % alias)
   if getGroups:
     groups = callGAPIpages(cd.groups(), 'list', 'groups', userKey=user_email, fields='groups(name,email),nextPageToken')
-    if len(groups) > 0:
+    if groups:
       print('Groups: (%s)' % len(groups))
       for group in groups:
         print('   %s <%s>' % (group['name'], group['email']))
@@ -10053,7 +10053,7 @@ def doSiteVerifyShow():
 def doGetSiteVerifications():
   verif = buildGAPIObject('siteVerification')
   sites = callGAPIitems(verif.webResource(), 'list', 'items')
-  if len(sites) > 0:
+  if sites:
     for site in sites:
       print('Site: %s' % site['site']['identifier'])
       print('Type: %s' % site['site']['type'])
@@ -10251,7 +10251,7 @@ def doGetASPs(users):
   cd = buildGAPIObject('directory')
   for user in users:
     asps = callGAPIitems(cd.asps(), 'list', 'items', userKey=user)
-    if len(asps) > 0:
+    if asps:
       print('Application-Specific Passwords for %s' % user)
       for asp in asps:
         if asp['creationTime'] == '0':
@@ -10480,7 +10480,7 @@ def doUndeleteUser():
     for deleted_user in deleted_users:
       if str(deleted_user['primaryEmail']).lower() == user:
         matching_users.append(deleted_user)
-    if len(matching_users) < 1:
+    if not matching_users:
       systemErrorExit(3, 'could not find deleted user with that address.')
     elif len(matching_users) > 1:
       print('ERROR: more than one matching deleted %s user. Please select the correct one to undelete and specify with "gam undelete user uid:<uid>"' % user)
@@ -10644,7 +10644,7 @@ def writeCSVfile(csvRows, titles, list_type, todrive):
             new_csvRows.append(row)
         csvRows = new_csvRows
       else:
-        if filter_str.lower()[:6] == 'regex':
+        if filter_str.lower()[:6] == 'regex:':
           filter_str = filter_str[6:]
         if match_column not in titles:
           sys.stderr.write('WARNING: Row filter %s is not in output columns\n' % match_column)
@@ -11108,7 +11108,7 @@ def doPrintGroups():
     else:
       systemErrorExit(2, '%s is not a valid argument for "gam print groups"' % sys.argv[i])
   cdfields = ','.join(set(cdfieldsList))
-  if len(gsfieldsList) > 0:
+  if gsfieldsList:
     getSettings = True
     gsfields = ','.join(set(gsfieldsList))
   elif getSettings:
@@ -13018,7 +13018,7 @@ Append an 'r' to grant read-only access or an 'a' to grant action-only access.
         if not prompt_again:
           return
       except ScopeSelectionMenu.MenuChoiceError as e:
-        error_message = e.message
+        error_message = str(e)
 
   _SINGLE_SCOPE_CHANGE_REGEX = re.compile(
     r'\s*(?P<scope_number>\d{1,2})\s*(?P<restriction>[a-z]?)', re.IGNORECASE)
@@ -13063,7 +13063,7 @@ Append an 'r' to grant read-only access or an 'a' to grant action-only access.
       # Find the restriction that the user intended to apply.
       if restriction_command != '':
         matching_restrictions = [r for r in selected_option.supported_restrictions if r.startswith(restriction_command)]
-        if len(matching_restrictions) < 1:
+        if not matching_restrictions:
           raise ScopeSelectionMenu.MenuChoiceError(
             'Scope "%s" does not support "%s" mode!' % (
               selected_option.description, restriction_command))
@@ -13268,7 +13268,7 @@ def ProcessGAMCommand(args):
           sys.stderr.write('{0}{1}\n'.format(ERROR_PREFIX, str(e)))
           errors += 1
           continue
-        if len(argv) > 0:
+        if argv:
           cmd = argv[0].strip().lower()
           if (not cmd) or cmd.startswith('#') or ((len(argv) == 1) and (cmd != 'commit-batch')):
             continue
