@@ -6,7 +6,7 @@ cp LICENSE gam
 cp whatsnew.txt gam
 cp GamCommands.txt gam
 this_glibc_ver=$(ldd --version | awk '/ldd/{print $NF}')
-GAM_ARCHIVE=gam-$GAMVERSION-$GAMOS-$PLATFORM-$this_glibc_ver.tar.xz
+GAM_ARCHIVE=gam-$GAMVERSION-$GAMOS-$PLATFORM-glibc$this_glibc_ver.tar.xz
 tar cfJ $GAM_ARCHIVE gam/
 echo "PyInstaller GAM info:"
 du -h gam/gam
