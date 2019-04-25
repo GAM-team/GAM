@@ -629,6 +629,7 @@ GM_CACHE_DISCOVERY_ONLY = 'gcdo'
 GM_MAP_BUILDING_ID_TO_NAME = 'bi2n'
 # Dictionary mapping Building Name to ID
 GM_MAP_BUILDING_NAME_TO_ID = 'bn2i'
+
 #
 _DEFAULT_CHARSET = ['mbcs', 'utf-8'][os.name != 'nt']
 _FN_CLIENT_SECRETS_JSON = 'client_secrets.json'
@@ -720,6 +721,10 @@ GC_USER_MAX_RESULTS = 'user_max_results'
 GC_CSV_HEADER_FILTER = 'csv_header_filter'
 # CSV Rows GAM should filter
 GC_CSV_ROW_FILTER = 'csv_row_filter'
+# Minimum TLS Version required for HTTPS connections
+GC_TLS_MIN_VERSION = 'tls_min_ver'
+# Maximum TLS Version used for HTTPS connections
+GC_TLS_MAX_VERSION = 'tls_max_ver'
 
 GC_Defaults = {
   GC_ACTIVITY_MAX_RESULTS: 100,
@@ -751,6 +756,8 @@ GC_Defaults = {
   GC_USER_MAX_RESULTS: 500,
   GC_CSV_HEADER_FILTER: '',
   GC_CSV_ROW_FILTER: '',
+  GC_TLS_MIN_VERSION: 'TLSv1_2',
+  GC_TLS_MAX_VERSION: None,
   }
 
 GC_Values = {}
@@ -798,6 +805,8 @@ GC_VAR_INFO = {
   GC_USER_MAX_RESULTS: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (1, 500)},
   GC_CSV_HEADER_FILTER: {GC_VAR_TYPE: GC_TYPE_STRING},
   GC_CSV_ROW_FILTER: {GC_VAR_TYPE: GC_TYPE_ROWFILTER},
+  GC_TLS_MIN_VERSION: {GC_VAR_TYPE: GC_TYPE_STRING},
+  GC_TLS_MAX_VERSION: {GC_VAR_TYPE: GC_TYPE_STRING},
   }
 # Google API constants
 
