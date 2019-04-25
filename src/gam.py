@@ -71,9 +71,7 @@ from oauth2client.contrib.dictionary_storage import DictionaryStorage
 import utils
 from var import *
 
-# Nasty hack to support StaticX.
-# - we do this in gam.py because if we do it in var.py StaticX can't get right path at all.
-# - StaticX is frozen but it seems to mix up the path checking results.
+# Finding path method varies between Python source, PyInstaller and StaticX
 if os.environ.get('STATICX_PROG_PATH', False):
   # StaticX static executable
   GM_Globals[GM_GAM_PATH] = os.path.dirname(os.environ['STATICX_PROG_PATH'])
@@ -83,6 +81,21 @@ elif getattr(sys, 'frozen', False):
 else:
   # Source code
   GM_Globals[GM_GAM_PATH] = os.path.dirname(os.path.realpath(__file__))
+
+# override httplib2._build_ssl_context so we can force min/max TLS values
+# actual function replacement happens in processGAM command so we have config options set
+def _build_ssl_context(disable_ssl_certificate_validation, ca_certs, cert_file=None, key_file=None):
+    context = ssl.SSLContext(httplib2.DEFAULT_TLS_VERSION)
+    context.verify_mode = ssl.CERT_REQUIRED
+    context.check_hostname = True
+    context.load_verify_locations(ca_certs)
+    if cert_file:
+        context.load_cert_chain(cert_file, key_file)
+    if GC_Values[GC_TLS_MIN_VERSION]:
+      context.minimum_version = getattr(ssl.TLSVersion, GC_Values[GC_TLS_MIN_VERSION])
+    if GC_Values[GC_TLS_MAX_VERSION]:
+      context.maximum_version = getattr(ssl.TLSVersion, GC_Values[GC_TLS_MAX_VERSION])
+    return context
 
 # Override some oauth2client.tools strings saving us a few GAM-specific mods to oauth2client
 oauth2client.tools._FAILED_START_MESSAGE = """
@@ -569,6 +582,8 @@ def SetGlobalVariables():
   _getOldEnvVar(GC_USER_MAX_RESULTS, 'GAM_USER_MAX_RESULTS')
   _getOldEnvVar(GC_CSV_HEADER_FILTER, 'GAM_CSV_HEADER_FILTER')
   _getOldEnvVar(GC_CSV_ROW_FILTER, 'GAM_CSV_ROW_FILTER')
+  _getOldEnvVar(GC_TLS_MIN_VERSION, 'GAM_TLS_MIN_VERSION')
+  _getOldEnvVar(GC_TLS_MAX_VERSION, 'GAM_TLS_MAX_VERSION')
   _getOldSignalFile(GC_DEBUG_LEVEL, 'debug.gam', filePresentValue=4, fileAbsentValue=0)
   _getOldSignalFile(GC_NO_VERIFY_SSL, 'noverifyssl.txt')
   _getOldSignalFile(GC_NO_BROWSER, 'nobrowser.txt')
@@ -692,12 +707,9 @@ def doGAMVersion(checkForArgs=True):
     doGAMCheckForUpdates(forceCheck=True)
   if extended:
     print(ssl.OPENSSL_VERSION)
-    proot = os.path.dirname(importlib.import_module('httplib2').__file__)
-    ca_path = os.path.join(proot, 'cacerts.txt')
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    ssl_sock = ssl.wrap_socket(s, cert_reqs=ssl.CERT_NONE, ca_certs=ca_path)
-    ssl_sock.connect(('www.googleapis.com', 443))
-    cipher_name, tls_ver, _ = ssl_sock.cipher()
+    httpc = httplib2.Http()
+    httpc.request('https://www.googleapis.com')
+    cipher_name, tls_ver, _ = httpc.connections['https:www.googleapis.com'].sock.cipher()
     print('www.googleapis.com connects using %s %s' % (tls_ver, cipher_name))
 
 def handleOAuthTokenError(e, soft_errors):
@@ -13252,6 +13264,8 @@ def ProcessGAMCommand(args):
   GM_Globals[GM_SYSEXITRC] = 0
   try:
     SetGlobalVariables()
+    # override here so we have GV set
+    httplib2._build_ssl_context = _build_ssl_context
     command = sys.argv[1].lower()
     if command == 'batch':
       i = 2
@@ -14038,6 +14052,6 @@ if __name__ == "__main__":
   if sys.platform.startswith('win'):
     freeze_support()
     win32_unicode_argv() # cleanup sys.argv on Windows
-  if sys.version_info[0] < 3 or sys.version_info[1] < 5:
-    systemErrorExit(5, 'GAM requires Python 3.5 or newer. You are running %s.%s.%s. Please upgrade your Python version or use one of the binary GAM downloads.' % sys.version_info[:3])
+  if sys.version_info[0] < 3 or sys.version_info[1] < 7:
+    systemErrorExit(5, 'GAM requires Python 3.7 or newer. You are running %s.%s.%s. Please upgrade your Python version or use one of the binary GAM downloads.' % sys.version_info[:3])
   sys.exit(ProcessGAMCommand(sys.argv))
