@@ -594,7 +594,8 @@ def SetGlobalVariables():
     return value
 
   ROW_FILTER_COMP_PATTERN = re.compile(r'^(date|time|count)\s*([<>]=?|=|!=)\s*(.+)$', re.IGNORECASE)
-  ROW_FILTER_RE_PATTERN = re.compile(r'^(regex:)(.*)$', re.IGNORECASE)
+  ROW_FILTER_BOOL_PATTERN = re.compile(r'^(boolean):(.+)$', re.IGNORECASE)
+  ROW_FILTER_RE_PATTERN = re.compile(r'^(regex):(.+)$', re.IGNORECASE)
 
   def _getCfgRowFilter(itemName):
     value = GC_Defaults[itemName]
@@ -619,14 +620,25 @@ def SetGlobalVariables():
               rowFilters[column] = (mg.group(1), mg.group(2), int(mg.group(3)))
               continue
             systemErrorExit(3, 'Item: {0}, Value: "{1}", Expected: <Number>'.format(itemName, value))
+        mg = ROW_FILTER_BOOL_PATTERN.match(filterStr)
+        if mg:
+          value = mg.group(2).lower()
+          if value in true_values:
+            filterValue = True
+          elif value in false_values:
+            filterValue = False
+          else:
+            systemErrorExit(3, 'Item: {0}, Value: "{1}", Expected true|false'.format(itemName, value))
+          rowFilters[column] = (mg.group(1), filterValue)
+          continue
         mg = ROW_FILTER_RE_PATTERN.match(filterStr)
         if mg:
           try:
-            rowFilters[column] = ('re', re.compile(mg.group(2)))
+            rowFilters[column] = (mg.group(1), re.compile(mg.group(2)))
             continue
           except re.error as e:
             systemErrorExit(3, 'Item: {0}, Value: "{1}", Invalid RE: {2}'.format(itemName, value, e))
-        systemErrorExit(3, 'Item: {0}, Value: "{1}", Expected: (date|time|count<Operator><Value>) or (regex:<RegularExpression>)'.format(itemName, value))
+        systemErrorExit(3, 'Item: {0}, Value: "{1}", Expected: (date|time|count<Operator><Value>) or (boolean:true|false) or (regex:<RegularExpression>)'.format(itemName, value))
       return rowFilters
     except (TypeError, ValueError) as e:
       systemErrorExit(3, 'Item: {0}, Value: "{1}", Failed to parse as JSON: {2}'.format(itemName, value, str(e)))
@@ -10747,17 +10759,24 @@ def writeCSVfile(csvRows, titles, list_type, todrive):
       return rowCount != filterCount
     return rowCount == filterCount
 
+  def rowBooleanFilterMatch(rowBoolean, filterBoolean):
+    if not isinstance(rowBoolean, bool):
+      return False
+    return rowBoolean == filterBoolean
+
   if GC_Values[GC_CSV_ROW_FILTER]:
-    for column, filterStr in iter(GC_Values[GC_CSV_ROW_FILTER].items()):
+    for column, filterVal in iter(GC_Values[GC_CSV_ROW_FILTER].items()):
       if column not in titles:
         sys.stderr.write('WARNING: Row filter column "{0}" is not in output columns\n'.format(column))
         continue
-      if filterStr[0] == 're':
-        csvRows = [row for row in csvRows if filterStr[1].search(row.get(column, ''))]
-      elif filterStr[0] in ['date', 'time']:
-        csvRows = [row for row in csvRows if rowDateTimeFilterMatch(filterStr[0] == 'date', row.get(column, ''), filterStr[1], filterStr[2])]
-      else: #count
-        csvRows = [row for row in csvRows if rowCountFilterMatch(row.get(column, ''), filterStr[1], filterStr[2])]
+      if filterVal[0] == 'regex':
+        csvRows = [row for row in csvRows if filterVal[1].search(row.get(column, ''))]
+      elif filterVal[0] in ['date', 'time']:
+        csvRows = [row for row in csvRows if rowDateTimeFilterMatch(filterVal[0] == 'date', row.get(column, ''), filterVal[1], filterVal[2])]
+      elif filterVal[0] == 'count':
+        csvRows = [row for row in csvRows if rowCountFilterMatch(row.get(column, ''), filterVal[1], filterVal[2])]
+      else: #boolean
+        csvRows = [row for row in csvRows if rowBooleanFilterMatch(row.get(column, False), filterVal[1])]
   if GC_Values[GC_CSV_HEADER_FILTER]:
     titles_filter = GC_Values[GC_CSV_HEADER_FILTER].lower().split(',')
     titles = [t for t in titles if t.lower() in titles_filter]
