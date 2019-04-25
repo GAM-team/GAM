@@ -614,12 +614,12 @@ def SetGlobalVariables():
             if valid:
               rowFilters[column] = (mg.group(1), mg.group(2), filterValue)
               continue
-            systemErrorExit(3, 'Item: {0}, Value: "{1}", Expected: {2}'.format(itemName, value, filterValue))
+            systemErrorExit(3, 'Item: {0}, Value: "{1}": "{2}", Expected: {3}'.format(itemName, column, filterStr, filterValue))
           else: #count
             if mg.group(3).isdigit():
               rowFilters[column] = (mg.group(1), mg.group(2), int(mg.group(3)))
               continue
-            systemErrorExit(3, 'Item: {0}, Value: "{1}", Expected: <Number>'.format(itemName, value))
+            systemErrorExit(3, 'Item: {0}, Value: "{1}": "{2}", Expected: {3}'.format(itemName, column, filterStr, '<Number>'))
         mg = ROW_FILTER_BOOL_PATTERN.match(filterStr)
         if mg:
           value = mg.group(2).lower()
@@ -628,7 +628,7 @@ def SetGlobalVariables():
           elif value in false_values:
             filterValue = False
           else:
-            systemErrorExit(3, 'Item: {0}, Value: "{1}", Expected true|false'.format(itemName, value))
+            systemErrorExit(3, 'Item: {0}, Value: "{1}": "{2}", Expected true|false'.format(itemName, column, filterStr))
           rowFilters[column] = (mg.group(1), filterValue)
           continue
         mg = ROW_FILTER_RE_PATTERN.match(filterStr)
@@ -637,8 +637,8 @@ def SetGlobalVariables():
             rowFilters[column] = (mg.group(1), re.compile(mg.group(2)))
             continue
           except re.error as e:
-            systemErrorExit(3, 'Item: {0}, Value: "{1}", Invalid RE: {2}'.format(itemName, value, e))
-        systemErrorExit(3, 'Item: {0}, Value: "{1}", Expected: (date|time|count<Operator><Value>) or (boolean:true|false) or (regex:<RegularExpression>)'.format(itemName, value))
+            systemErrorExit(3, 'Item: {0}, Value: "{1}": {2}, Invalid RE: {3}'.format(itemName, column, filterStr, e))
+        systemErrorExit(3, 'Item: {0}, Value: "{1}": {2}, Expected: (date|time|count<Operator><Value>) or (boolean:true|false) or (regex:<RegularExpression>)'.format(itemName, column, filterStr))
       return rowFilters
     except (TypeError, ValueError) as e:
       systemErrorExit(3, 'Item: {0}, Value: "{1}", Failed to parse as JSON: {2}'.format(itemName, value, str(e)))
