@@ -83,19 +83,19 @@ else:
   GM_Globals[GM_GAM_PATH] = os.path.dirname(os.path.realpath(__file__))
 
 # override httplib2._build_ssl_context so we can force min/max TLS values
-# actual function replacement happens in processGAM command so we have config options set
+# actual function replacement happens in SetGlobalVariables so we have config options set
 def _build_ssl_context(disable_ssl_certificate_validation, ca_certs, cert_file=None, key_file=None):
-    context = ssl.SSLContext(httplib2.DEFAULT_TLS_VERSION)
-    context.verify_mode = ssl.CERT_REQUIRED
-    context.check_hostname = True
-    context.load_verify_locations(ca_certs)
-    if cert_file:
-        context.load_cert_chain(cert_file, key_file)
-    if GC_Values[GC_TLS_MIN_VERSION]:
-      context.minimum_version = getattr(ssl.TLSVersion, GC_Values[GC_TLS_MIN_VERSION])
-    if GC_Values[GC_TLS_MAX_VERSION]:
-      context.maximum_version = getattr(ssl.TLSVersion, GC_Values[GC_TLS_MAX_VERSION])
-    return context
+  context = ssl.SSLContext(httplib2.DEFAULT_TLS_VERSION)
+  context.verify_mode = ssl.CERT_REQUIRED
+  context.check_hostname = True
+  context.load_verify_locations(ca_certs)
+  if cert_file:
+    context.load_cert_chain(cert_file, key_file)
+  if GC_Values[GC_TLS_MIN_VERSION]:
+    context.minimum_version = getattr(ssl.TLSVersion, GC_Values[GC_TLS_MIN_VERSION])
+  if GC_Values[GC_TLS_MAX_VERSION]:
+    context.maximum_version = getattr(ssl.TLSVersion, GC_Values[GC_TLS_MAX_VERSION])
+  return context
 
 # Override some oauth2client.tools strings saving us a few GAM-specific mods to oauth2client
 oauth2client.tools._FAILED_START_MESSAGE = """
@@ -711,7 +711,9 @@ def SetGlobalVariables():
   GM_Globals[GM_OAUTH2SERVICE_JSON_DATA] = None
   GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID] = None
   GM_Globals[GM_EXTRA_ARGS_DICT] = {'prettyPrint': GC_Values[GC_DEBUG_LEVEL] > 0}
+# override httplib2 settings
   httplib2.debuglevel = GC_Values[GC_DEBUG_LEVEL]
+  httplib2._build_ssl_context = _build_ssl_context
   if os.path.isfile(os.path.join(GC_Values[GC_CONFIG_DIR], FN_EXTRA_ARGS_TXT)):
     ea_config = configparser.ConfigParser()
     ea_config.optionxform = str
@@ -13390,8 +13392,6 @@ def ProcessGAMCommand(args):
   GM_Globals[GM_SYSEXITRC] = 0
   try:
     SetGlobalVariables()
-    # override here so we have GV set
-    httplib2._build_ssl_context = _build_ssl_context
     command = sys.argv[1].lower()
     if command == 'batch':
       i = 2
