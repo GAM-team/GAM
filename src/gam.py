@@ -514,7 +514,7 @@ def normalizeStudentGuardianEmailAddressOrUID(emailAddressOrUID):
 #
 # Open a file
 #
-def openFile(filename, mode='r', encoding=None, newline=None):
+def openFile(filename, mode='r', encoding=GM_Globals[GM_SYS_ENCODING], newline=None):
   try:
     if filename != '-':
       if mode.endswith('b'):
@@ -538,7 +538,7 @@ def closeFile(f):
 #
 # Read a file
 #
-def readFile(filename, mode='r', continueOnError=False, displayError=True, encoding=None):
+def readFile(filename, mode='r', continueOnError=False, displayError=True, encoding=GM_Globals[GM_SYS_ENCODING]):
   try:
     if filename != '-':
       if not encoding:
@@ -564,7 +564,8 @@ def readFile(filename, mode='r', continueOnError=False, displayError=True, encod
 #
 def writeFile(filename, data, mode='w', continueOnError=False, displayError=True):
   try:
-    with open(os.path.expanduser(filename), mode) as f:
+    kwargs = {'encoding': GM_Globals[GM_SYS_ENCODING]} if 'b' not in mode else {}
+    with open(os.path.expanduser(filename), mode, **kwargs) as f:
       f.write(data)
     return True
   except IOError as e:
@@ -14151,33 +14152,10 @@ def ProcessGAMCommand(args):
     GM_Globals[GM_SYSEXITRC] = e.code
   return GM_Globals[GM_SYSEXITRC]
 
-if sys.platform.startswith('win'):
-
-  def win32_unicode_argv():
-    from ctypes import POINTER, byref, cdll, c_int, windll
-    from ctypes.wintypes import LPCWSTR, LPWSTR
-
-    GetCommandLineW = cdll.kernel32.GetCommandLineW
-    GetCommandLineW.argtypes = []
-    GetCommandLineW.restype = LPCWSTR
-
-    CommandLineToArgvW = windll.shell32.CommandLineToArgvW
-    CommandLineToArgvW.argtypes = [LPCWSTR, POINTER(c_int)]
-    CommandLineToArgvW.restype = POINTER(LPWSTR)
-
-    cmd = GetCommandLineW()
-    argc = c_int(0)
-    argv = CommandLineToArgvW(cmd, byref(argc))
-    if argc.value > 0:
-      # Remove Python executable and commands if present
-      argc_value = int(argc.value)
-      sys.argv = argv[argc_value-len(sys.argv):argc_value]
-
 # Run from command line
 if __name__ == "__main__":
   if sys.platform.startswith('win'):
     freeze_support()
-    win32_unicode_argv() # cleanup sys.argv on Windows
   if sys.version_info[0] < 3 or sys.version_info[1] < 7:
     systemErrorExit(5, 'GAM requires Python 3.7 or newer. You are running %s.%s.%s. Please upgrade your Python version or use one of the binary GAM downloads.' % sys.version_info[:3])
   sys.exit(ProcessGAMCommand(sys.argv))
