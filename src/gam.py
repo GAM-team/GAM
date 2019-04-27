@@ -541,10 +541,10 @@ def closeFile(f):
 def readFile(filename, mode='r', continueOnError=False, displayError=True, encoding=None):
   try:
     if filename != '-':
-      if 'b' in mode:
+      if not encoding or 'b' in mode:
         with open(os.path.expanduser(filename), mode) as f:
           return f.read()
-      with codecs.open(os.path.expanduser(filename), mode, encoding=GM_Globals[GM_SYS_ENCODING] if not encoding else encoding) as f:
+      with codecs.open(os.path.expanduser(filename), mode, encoding) as f:
         content = f.read()
 # codecs does not strip UTF-8 BOM (ef:bb:bf) so we must
         if not content.startswith(str(codecs.BOM_UTF8)):
