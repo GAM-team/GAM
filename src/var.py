@@ -631,7 +631,7 @@ GM_MAP_BUILDING_ID_TO_NAME = 'bi2n'
 GM_MAP_BUILDING_NAME_TO_ID = 'bn2i'
 
 #
-_DEFAULT_CHARSET = ['mbcs', 'utf-8'][os.name != 'nt']
+_DEFAULT_CHARSET = 'utf-8'
 _FN_CLIENT_SECRETS_JSON = 'client_secrets.json'
 _FN_OAUTH2SERVICE_JSON = 'oauth2service.json'
 _FN_OAUTH2_TXT = 'oauth2.txt'

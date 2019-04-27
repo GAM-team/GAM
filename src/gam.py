@@ -83,19 +83,19 @@ else:
   GM_Globals[GM_GAM_PATH] = os.path.dirname(os.path.realpath(__file__))
 
 # override httplib2._build_ssl_context so we can force min/max TLS values
-# actual function replacement happens in processGAM command so we have config options set
+# actual function replacement happens in SetGlobalVariables so we have config options set
 def _build_ssl_context(disable_ssl_certificate_validation, ca_certs, cert_file=None, key_file=None):
-    context = ssl.SSLContext(httplib2.DEFAULT_TLS_VERSION)
-    context.verify_mode = ssl.CERT_REQUIRED
-    context.check_hostname = True
-    context.load_verify_locations(ca_certs)
-    if cert_file:
-        context.load_cert_chain(cert_file, key_file)
-    if GC_Values[GC_TLS_MIN_VERSION]:
-      context.minimum_version = getattr(ssl.TLSVersion, GC_Values[GC_TLS_MIN_VERSION])
-    if GC_Values[GC_TLS_MAX_VERSION]:
-      context.maximum_version = getattr(ssl.TLSVersion, GC_Values[GC_TLS_MAX_VERSION])
-    return context
+  context = ssl.SSLContext(httplib2.DEFAULT_TLS_VERSION)
+  context.verify_mode = ssl.CERT_REQUIRED
+  context.check_hostname = True
+  context.load_verify_locations(ca_certs)
+  if cert_file:
+    context.load_cert_chain(cert_file, key_file)
+  if GC_Values[GC_TLS_MIN_VERSION]:
+    context.minimum_version = getattr(ssl.TLSVersion, GC_Values[GC_TLS_MIN_VERSION])
+  if GC_Values[GC_TLS_MAX_VERSION]:
+    context.maximum_version = getattr(ssl.TLSVersion, GC_Values[GC_TLS_MAX_VERSION])
+  return context
 
 # Override some oauth2client.tools strings saving us a few GAM-specific mods to oauth2client
 oauth2client.tools._FAILED_START_MESSAGE = """
@@ -514,10 +514,10 @@ def normalizeStudentGuardianEmailAddressOrUID(emailAddressOrUID):
 #
 # Open a file
 #
-def openFile(filename, mode='r', encoding=None, newline=None):
+def openFile(filename, mode='r', encoding=GM_Globals[GM_SYS_ENCODING], newline=None):
   try:
     if filename != '-':
-      if mode.endswith('b'):
+      if 'b' in mode:
         return open(os.path.expanduser(filename), mode)
       return open(os.path.expanduser(filename), mode, encoding=encoding, newline=newline)
     if mode.startswith('r'):
@@ -541,13 +541,13 @@ def closeFile(f):
 def readFile(filename, mode='r', continueOnError=False, displayError=True, encoding=None):
   try:
     if filename != '-':
-      if not encoding:
+      if 'b' in mode:
         with open(os.path.expanduser(filename), mode) as f:
           return f.read()
-      with codecs.open(os.path.expanduser(filename), mode, encoding) as f:
+      with codecs.open(os.path.expanduser(filename), mode, encoding=GM_Globals[GM_SYS_ENCODING] if not encoding else encoding) as f:
         content = f.read()
 # codecs does not strip UTF-8 BOM (ef:bb:bf) so we must
-        if not content.startswith(codecs.BOM_UTF8):
+        if not content.startswith(str(codecs.BOM_UTF8)):
           return content
         return content[3:]
     return str(sys.stdin.read())
@@ -564,7 +564,8 @@ def readFile(filename, mode='r', continueOnError=False, displayError=True, encod
 #
 def writeFile(filename, data, mode='w', continueOnError=False, displayError=True):
   try:
-    with open(os.path.expanduser(filename), mode) as f:
+    kwargs = {'encoding': GM_Globals[GM_SYS_ENCODING]} if 'b' not in mode else {}
+    with open(os.path.expanduser(filename), mode, **kwargs) as f:
       f.write(data)
     return True
   except IOError as e:
@@ -711,7 +712,9 @@ def SetGlobalVariables():
   GM_Globals[GM_OAUTH2SERVICE_JSON_DATA] = None
   GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID] = None
   GM_Globals[GM_EXTRA_ARGS_DICT] = {'prettyPrint': GC_Values[GC_DEBUG_LEVEL] > 0}
+# override httplib2 settings
   httplib2.debuglevel = GC_Values[GC_DEBUG_LEVEL]
+  httplib2._build_ssl_context = _build_ssl_context
   if os.path.isfile(os.path.join(GC_Values[GC_CONFIG_DIR], FN_EXTRA_ARGS_TXT)):
     ea_config = configparser.ConfigParser()
     ea_config.optionxform = str
@@ -13390,8 +13393,6 @@ def ProcessGAMCommand(args):
   GM_Globals[GM_SYSEXITRC] = 0
   try:
     SetGlobalVariables()
-    # override here so we have GV set
-    httplib2._build_ssl_context = _build_ssl_context
     command = sys.argv[1].lower()
     if command == 'batch':
       i = 2
@@ -14151,33 +14152,10 @@ def ProcessGAMCommand(args):
     GM_Globals[GM_SYSEXITRC] = e.code
   return GM_Globals[GM_SYSEXITRC]
 
-if sys.platform.startswith('win'):
-
-  def win32_unicode_argv():
-    from ctypes import POINTER, byref, cdll, c_int, windll
-    from ctypes.wintypes import LPCWSTR, LPWSTR
-
-    GetCommandLineW = cdll.kernel32.GetCommandLineW
-    GetCommandLineW.argtypes = []
-    GetCommandLineW.restype = LPCWSTR
-
-    CommandLineToArgvW = windll.shell32.CommandLineToArgvW
-    CommandLineToArgvW.argtypes = [LPCWSTR, POINTER(c_int)]
-    CommandLineToArgvW.restype = POINTER(LPWSTR)
-
-    cmd = GetCommandLineW()
-    argc = c_int(0)
-    argv = CommandLineToArgvW(cmd, byref(argc))
-    if argc.value > 0:
-      # Remove Python executable and commands if present
-      argc_value = int(argc.value)
-      sys.argv = argv[argc_value-len(sys.argv):argc_value]
-
 # Run from command line
 if __name__ == "__main__":
   if sys.platform.startswith('win'):
     freeze_support()
-    win32_unicode_argv() # cleanup sys.argv on Windows
   if sys.version_info[0] < 3 or sys.version_info[1] < 7:
     systemErrorExit(5, 'GAM requires Python 3.7 or newer. You are running %s.%s.%s. Please upgrade your Python version or use one of the binary GAM downloads.' % sys.version_info[:3])
   sys.exit(ProcessGAMCommand(sys.argv))
