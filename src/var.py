@@ -30,6 +30,8 @@ usergroup_types = ['user', 'users',
                    'cros', 'cros_sn', 'crosquery', 'crosqueries', 'crosfile', 'croscsv', 'croscsvfile']
 ERROR_PREFIX = 'ERROR: '
 WARNING_PREFIX = 'WARNING: '
+UTF8 = 'utf-8'
+UTF8_SIG = 'utf-8-sig'
 FN_EXTRA_ARGS_TXT = 'extra-args.txt'
 FN_LAST_UPDATE_CHECK_TXT = 'lastupdatecheck.txt'
 MY_CUSTOMER = 'my_customer'
@@ -631,7 +633,7 @@ GM_MAP_BUILDING_ID_TO_NAME = 'bi2n'
 GM_MAP_BUILDING_NAME_TO_ID = 'bn2i'
 
 #
-_DEFAULT_CHARSET = ['mbcs', 'utf-8'][os.name != 'nt']
+_DEFAULT_CHARSET = UTF8
 _FN_CLIENT_SECRETS_JSON = 'client_secrets.json'
 _FN_OAUTH2SERVICE_JSON = 'oauth2service.json'
 _FN_OAUTH2_TXT = 'oauth2.txt'

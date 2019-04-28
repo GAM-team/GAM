@@ -23,12 +23,10 @@ For more information, see https://git.io/gam
 """
 
 import base64
-import codecs
 import configparser
 import csv
 import datetime
 import hashlib
-import importlib
 import io
 import json
 import mimetypes
@@ -83,19 +81,19 @@ else:
   GM_Globals[GM_GAM_PATH] = os.path.dirname(os.path.realpath(__file__))
 
 # override httplib2._build_ssl_context so we can force min/max TLS values
-# actual function replacement happens in processGAM command so we have config options set
+# actual function replacement happens in SetGlobalVariables so we have config options set
 def _build_ssl_context(disable_ssl_certificate_validation, ca_certs, cert_file=None, key_file=None):
-    context = ssl.SSLContext(httplib2.DEFAULT_TLS_VERSION)
-    context.verify_mode = ssl.CERT_REQUIRED
-    context.check_hostname = True
-    context.load_verify_locations(ca_certs)
-    if cert_file:
-        context.load_cert_chain(cert_file, key_file)
-    if GC_Values[GC_TLS_MIN_VERSION]:
-      context.minimum_version = getattr(ssl.TLSVersion, GC_Values[GC_TLS_MIN_VERSION])
-    if GC_Values[GC_TLS_MAX_VERSION]:
-      context.maximum_version = getattr(ssl.TLSVersion, GC_Values[GC_TLS_MAX_VERSION])
-    return context
+  context = ssl.SSLContext(httplib2.DEFAULT_TLS_VERSION)
+  context.verify_mode = ssl.CERT_REQUIRED
+  context.check_hostname = True
+  context.load_verify_locations(ca_certs)
+  if cert_file:
+    context.load_cert_chain(cert_file, key_file)
+  if GC_Values[GC_TLS_MIN_VERSION]:
+    context.minimum_version = getattr(ssl.TLSVersion, GC_Values[GC_TLS_MIN_VERSION])
+  if GC_Values[GC_TLS_MAX_VERSION]:
+    context.maximum_version = getattr(ssl.TLSVersion, GC_Values[GC_TLS_MAX_VERSION])
+  return context
 
 # Override some oauth2client.tools strings saving us a few GAM-specific mods to oauth2client
 oauth2client.tools._FAILED_START_MESSAGE = """
@@ -512,15 +510,34 @@ def normalizeStudentGuardianEmailAddressOrUID(emailAddressOrUID):
     return emailAddressOrUID
   return normalizeEmailAddressOrUID(emailAddressOrUID)
 #
+# Set file encoding to handle UTF8 BOM
+#
+def setEncoding(mode, encoding):
+  if 'b' in mode:
+    return {}
+  if not encoding:
+    encoding = GM_Globals[GM_SYS_ENCODING]
+  if 'r' in mode and encoding.lower().replace('-', '') == 'utf8':
+    encoding = UTF8_SIG
+  return {'encoding': encoding}
+#
 # Open a file
 #
-def openFile(filename, mode='r', encoding=None, newline=None):
+def openFile(filename, mode='r', encoding=None, newline=None,
+             stripUTFBOM=False):
   try:
     if filename != '-':
-      if mode.endswith('b'):
-        return open(os.path.expanduser(filename), mode)
-      return open(os.path.expanduser(filename), mode, encoding=encoding, newline=newline)
-    if mode.startswith('r'):
+      kwargs = setEncoding(mode, encoding)
+      f = open(os.path.expanduser(filename), mode, newline=newline, **kwargs)
+      if stripUTFBOM:
+        if 'b' in mode or not kwargs['encoding'].lower().startswith('utf'):
+          if f.read(3).encode('iso-8859-1', 'replace') != b'\xef\xbb\xbf':
+            f.seek(0)
+        else:
+          if f.read(1) != '\ufeff':
+            f.seek(0)
+      return f
+    if 'r' in mode:
       return io.StringIO(str(sys.stdin.read()))
     return sys.stdout
   except IOError as e:
@@ -538,18 +555,13 @@ def closeFile(f):
 #
 # Read a file
 #
-def readFile(filename, mode='r', continueOnError=False, displayError=True, encoding=None):
+def readFile(filename, mode='r', encoding=None, newline=None,
+             continueOnError=False, displayError=True):
   try:
     if filename != '-':
-      if not encoding:
-        with open(os.path.expanduser(filename), mode) as f:
-          return f.read()
-      with codecs.open(os.path.expanduser(filename), mode, encoding) as f:
-        content = f.read()
-# codecs does not strip UTF-8 BOM (ef:bb:bf) so we must
-        if not content.startswith(codecs.BOM_UTF8):
-          return content
-        return content[3:]
+      kwargs = setEncoding(mode, encoding)
+      with open(os.path.expanduser(filename), mode, newline=newline, **kwargs) as f:
+        return f.read()
     return str(sys.stdin.read())
   except IOError as e:
     if continueOnError:
@@ -564,7 +576,8 @@ def readFile(filename, mode='r', continueOnError=False, displayError=True, encod
 #
 def writeFile(filename, data, mode='w', continueOnError=False, displayError=True):
   try:
-    with open(os.path.expanduser(filename), mode) as f:
+    kwargs = setEncoding(mode, None)
+    with open(os.path.expanduser(filename), mode, **kwargs) as f:
       f.write(data)
     return True
   except IOError as e:
@@ -711,7 +724,9 @@ def SetGlobalVariables():
   GM_Globals[GM_OAUTH2SERVICE_JSON_DATA] = None
   GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID] = None
   GM_Globals[GM_EXTRA_ARGS_DICT] = {'prettyPrint': GC_Values[GC_DEBUG_LEVEL] > 0}
+# override httplib2 settings
   httplib2.debuglevel = GC_Values[GC_DEBUG_LEVEL]
+  httplib2._build_ssl_context = _build_ssl_context
   if os.path.isfile(os.path.join(GC_Values[GC_CONFIG_DIR], FN_EXTRA_ARGS_TXT)):
     ea_config = configparser.ConfigParser()
     ea_config.optionxform = str
@@ -747,7 +762,7 @@ def doGAMCheckForUpdates(forceCheck=False):
   try:
     (_, c) = simplehttp.request(check_url, 'GET', headers=headers)
     try:
-      release_data = json.loads(c.decode('utf-8'))
+      release_data = json.loads(c.decode(UTF8))
     except ValueError:
       _gamLatestVersionNotAvailable()
       return
@@ -853,27 +868,28 @@ def waitOnFailure(n, retries, errMsg):
 
 def checkGAPIError(e, soft_errors=False, silent_errors=False, retryOnHttpError=False, service=None):
   try:
-    error = json.loads(e.content.decode('utf-8'))
+    error = json.loads(e.content)
   except ValueError:
-    if (e.resp['status'] == '503') and (e.content == 'Quota exceeded for the current request'):
-      return (e.resp['status'], GAPI_QUOTA_EXCEEDED, e.content)
-    if (e.resp['status'] == '403') and (e.content.startswith('Request rate higher than configured')):
-      return (e.resp['status'], GAPI_QUOTA_EXCEEDED, e.content)
-    if (e.resp['status'] == '403') and ('Invalid domain.' in e.content):
+    eContent = e.content.decode(UTF8) if isinstance(e.content, bytes) else e.content
+    if (e.resp['status'] == '503') and (eContent == 'Quota exceeded for the current request'):
+      return (e.resp['status'], GAPI_QUOTA_EXCEEDED, eContent)
+    if (e.resp['status'] == '403') and (eContent.startswith('Request rate higher than configured')):
+      return (e.resp['status'], GAPI_QUOTA_EXCEEDED, eContent)
+    if (e.resp['status'] == '403') and ('Invalid domain.' in eContent):
       error = {'error': {'code': 403, 'errors': [{'reason': GAPI_NOT_FOUND, 'message': 'Domain not found'}]}}
-    elif (e.resp['status'] == '400') and ('InvalidSsoSigningKey' in e.content):
+    elif (e.resp['status'] == '400') and ('InvalidSsoSigningKey' in eContent):
       error = {'error': {'code': 400, 'errors': [{'reason': GAPI_INVALID, 'message': 'InvalidSsoSigningKey'}]}}
-    elif (e.resp['status'] == '400') and ('UnknownError' in e.content):
+    elif (e.resp['status'] == '400') and ('UnknownError' in eContent):
       error = {'error': {'code': 400, 'errors': [{'reason': GAPI_INVALID, 'message': 'UnknownError'}]}}
     elif retryOnHttpError:
       service._http.request.credentials.refresh(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL]))
       return (-1, None, None)
     elif soft_errors:
       if not silent_errors:
-        stderrErrorMsg(e.content)
+        stderrErrorMsg(eContent)
       return (0, None, None)
     else:
-      systemErrorExit(5, e.content)
+      systemErrorExit(5, eContent)
   if 'error' in error:
     http_status = error['error']['code']
     try:
@@ -1674,7 +1690,7 @@ def showReport():
       writeCSVfile(csvRows, titles, '%s Activity Report' % report.capitalize(), to_drive)
 
 def watchGmail(users):
-  cs_data = readFile(GC_Values[GC_CLIENT_SECRETS_JSON], continueOnError=True, displayError=True, encoding=None)
+  cs_data = readFile(GC_Values[GC_CLIENT_SECRETS_JSON], continueOnError=True, displayError=True)
   cs_json = json.loads(cs_data)
   project = 'projects/{0}'.format(cs_json['installed']['project_id'])
   gamTopics = project+'/topics/gam-pubsub-gmail-'
@@ -3901,7 +3917,7 @@ def doPhoto(users):
       image_data = readFile(filename, mode='rb', continueOnError=True, displayError=True)
       if image_data is None:
         continue
-    body = {'photoData': base64.urlsafe_b64encode(image_data).decode('utf-8')}
+    body = {'photoData': base64.urlsafe_b64encode(image_data).decode(UTF8)}
     callGAPI(cd.users().photos(), 'update', soft_errors=True, userKey=user, body=body)
 
 def getPhoto(users):
@@ -7354,7 +7370,7 @@ def getCRMService(login_hint):
 def getGAMProjectAPIs():
   httpObj = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL])
   _, c = httpObj.request(GAM_PROJECT_APIS, 'GET')
-  return httpObj, c.decode('utf-8').splitlines()
+  return httpObj, c.decode(UTF8).splitlines()
 
 def enableGAMProjectAPIs(GAMProjectAPIs, httpObj, projectId, checkEnabled, i=0, count=0):
   apis = GAMProjectAPIs[:]
@@ -7455,7 +7471,7 @@ def _createClientSecretsOauth2service(httpObj, projectId):
                                body={'accountId': projectId, 'serviceAccount': {'displayName': 'GAM Project'}})
   key = callGAPI(iam.projects().serviceAccounts().keys(), 'create',
                  name=service_account['name'], body={'privateKeyType': 'TYPE_GOOGLE_CREDENTIALS_FILE', 'keyAlgorithm': 'KEY_ALG_RSA_2048'})
-  oauth2service_data = base64.b64decode(key['privateKeyData']).decode('utf-8')
+  oauth2service_data = base64.b64decode(key['privateKeyData']).decode(UTF8)
   writeFile(GC_Values[GC_OAUTH2SERVICE_JSON], oauth2service_data, continueOnError=False)
   console_credentials_url = 'https://console.developers.google.com/apis/credentials/consent?createClient&project=%s' % projectId
   while True:
@@ -7592,7 +7608,7 @@ def _getLoginHintProjects(printShowCmd):
   login_hint = _getValidateLoginHint(login_hint)
   crm, httpObj = getCRMService(login_hint)
   if pfilter == 'current':
-    cs_data = readFile(GC_Values[GC_CLIENT_SECRETS_JSON], continueOnError=True, displayError=True, encoding=None)
+    cs_data = readFile(GC_Values[GC_CLIENT_SECRETS_JSON], continueOnError=True, displayError=True)
     if not cs_data:
       systemErrorExit(14, 'Your client secrets file:\n\n%s\n\nis missing. Please recreate the file.' % GC_Values[GC_CLIENT_SECRETS_JSON])
     try:
@@ -12512,7 +12528,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
     users = doPrintLicenses(returnFields='userId', skus=entity.split(','))
   elif entity_type in ['file', 'crosfile']:
     users = []
-    f = openFile(entity)
+    f = openFile(entity, stripUTFBOM=True)
     for row in f:
       user = row.strip()
       if user:
@@ -12654,16 +12670,21 @@ def doDeleteOAuth():
     storage.delete()
     return
   try:
-    credentials.revoke_uri = oauth2client.GOOGLE_REVOKE_URI
+#    credentials.revoke_uri = oauth2client.GOOGLE_REVOKE_URI
+    credentials.revoke_uri = 'https://accounts.google.com/o/oauth2/revoke'
   except AttributeError:
     systemErrorExit(1, 'Authorization doesn\'t exist')
   sys.stderr.write('This OAuth token will self-destruct in 3...')
+  sys.stderr.flush()
   time.sleep(1)
   sys.stderr.write('2...')
+  sys.stderr.flush()
   time.sleep(1)
   sys.stderr.write('1...')
+  sys.stderr.flush()
   time.sleep(1)
   sys.stderr.write('boom!\n')
+  sys.stderr.flush()
   try:
     credentials.revoke(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL]))
   except oauth2client.client.TokenRevokeError as e:
@@ -12694,7 +12715,7 @@ def getOAuthClientIDAndSecret():
 gam create project
 '''
   filename = GC_Values[GC_CLIENT_SECRETS_JSON]
-  cs_data = readFile(filename, continueOnError=True, displayError=True, encoding=None)
+  cs_data = readFile(filename, continueOnError=True, displayError=True)
   if not cs_data:
     systemErrorExit(14, MISSING_CLIENT_SECRETS_MESSAGE)
   try:
@@ -13390,14 +13411,12 @@ def ProcessGAMCommand(args):
   GM_Globals[GM_SYSEXITRC] = 0
   try:
     SetGlobalVariables()
-    # override here so we have GV set
-    httplib2._build_ssl_context = _build_ssl_context
     command = sys.argv[1].lower()
     if command == 'batch':
       i = 2
       filename = sys.argv[i]
       i, encoding = getCharSet(i+1)
-      f = openFile(filename, encoding=encoding)
+      f = openFile(filename, encoding=encoding, stripUTFBOM=True)
       items = []
       errors = 0
       for line in f:
@@ -14151,33 +14170,10 @@ def ProcessGAMCommand(args):
     GM_Globals[GM_SYSEXITRC] = e.code
   return GM_Globals[GM_SYSEXITRC]
 
-if sys.platform.startswith('win'):
-
-  def win32_unicode_argv():
-    from ctypes import POINTER, byref, cdll, c_int, windll
-    from ctypes.wintypes import LPCWSTR, LPWSTR
-
-    GetCommandLineW = cdll.kernel32.GetCommandLineW
-    GetCommandLineW.argtypes = []
-    GetCommandLineW.restype = LPCWSTR
-
-    CommandLineToArgvW = windll.shell32.CommandLineToArgvW
-    CommandLineToArgvW.argtypes = [LPCWSTR, POINTER(c_int)]
-    CommandLineToArgvW.restype = POINTER(LPWSTR)
-
-    cmd = GetCommandLineW()
-    argc = c_int(0)
-    argv = CommandLineToArgvW(cmd, byref(argc))
-    if argc.value > 0:
-      # Remove Python executable and commands if present
-      argc_value = int(argc.value)
-      sys.argv = argv[argc_value-len(sys.argv):argc_value]
-
 # Run from command line
 if __name__ == "__main__":
   if sys.platform.startswith('win'):
     freeze_support()
-    win32_unicode_argv() # cleanup sys.argv on Windows
   if sys.version_info[0] < 3 or sys.version_info[1] < 7:
     systemErrorExit(5, 'GAM requires Python 3.7 or newer. You are running %s.%s.%s. Please upgrade your Python version or use one of the binary GAM downloads.' % sys.version_info[:3])
   sys.exit(ProcessGAMCommand(sys.argv))
