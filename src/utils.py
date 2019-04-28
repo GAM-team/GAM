@@ -10,16 +10,6 @@ ONE_MEGA_BYTES = 1000000
 ONE_GIGA_BYTES = 1000000000
 
 def convertUTF8(data):
-  if isinstance(data, str):
-    return data
-  if isinstance(data, str):
-    if GM_Globals[GM_WINDOWS]:
-      return data
-    return data.encode(GM_Globals[GM_SYS_ENCODING])
-  if isinstance(data, collections.Mapping):
-    return dict(list(map(convertUTF8, iter(data.items()))))
-  if isinstance(data, collections.Iterable):
-    return type(data)(list(map(convertUTF8, data)))
   return data
 
 class _DeHTMLParser(HTMLParser):
