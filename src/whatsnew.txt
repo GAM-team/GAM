@@ -1,3 +1,5 @@
+This file has been deprecated. For the latest features see https://git.io/gam-releases notes
+
 GAM 4.65
  - Manage email delivery settings for group members
  - Add operatingSystemType to user posix config (Roman)

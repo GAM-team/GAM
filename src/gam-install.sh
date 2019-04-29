@@ -26,7 +26,7 @@ upgrade_only=false
 gamversion="latest"
 adminuser=""
 regularuser=""
-gam_glibc_ver="2.19" # Ubuntu 14.04 Trusty 
+gam_glibc_vers="2.23 2.19 2.15"
 
 while getopts "hd:a:o:lp:u:r:v:" OPTION
 do
@@ -87,13 +87,16 @@ case $gamos in
     gamos="linux"
     this_glibc_ver=$(ldd --version | awk '/ldd/{print $NF}')
     echo "This Linux distribution uses glibc $this_glibc_ver"
-    if version_gt $gam_glibc_ver $this_glibc_ver; then
-      echo_yellow "NOTICE: You are running an older Linux distro than the one GAM was compiled on. A legacy GAM version that should be compatible with your system but may run slower will be installed. For best performance, upgrade to a newer Linux distribution like Debian 9 stable, Ubuntu Xenial 16.04, Fedora 24+ or RedHat Enterprise Linux 8."
-      gamarch=x86_64_legacy
-    fi
+    useglibc="legacy"
+    for gam_glibc_ver in $gam_glibc_vers; do
+      if version_gt $this_glibc_ver $gam_glibc_ver; then
+        useglibc="glibc$gam_glibc_ver"
+        echo_green "Using GAM compiled against $useglibc"
+        break
+      fi
+    done
     case $gamarch in
-      x86_64) gamfile="linux-x86_64.tar.xz";;
-      x86_64_legacy) gamfile="linux-x86_64-legacy.tar.xz";;
+      x86_64) gamfile="linux-x86_64-$useglibc.tar.xz";;
       i?86) gamfile="linux-i686.tar.xz";;
       arm|armv7l) gamfile="linux-armv7l.tar.xz";;
       arm64|aarch64) gamfile="linux-aarch64.tar.xz";;
