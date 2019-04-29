@@ -5232,6 +5232,33 @@ def doImap(users):
              soft_errors=True,
              userId='me', body=body)
 
+def doLanguage(users):
+  i = 0
+  count = len(users)
+  displayLanguage = sys.argv[4]
+  for user in users:
+    i += 1
+    user, gmail = buildGmailGAPIObject(user)
+    if not gmail:
+      continue
+    print('Setting language to %s for %s' % (displayLanguage, user))
+    result = callGAPI(gmail.users().settings(), 'updateLanguage', userId='me', body={'displayLanguage': displayLanguage})
+    print('Language is set to %s for %s' % (result['displayLanguage'], user))
+
+def getLanguage(users):
+  i = 0
+  count = len(users)
+  for user in users:
+    i += 1
+    user, gmail = buildGmailGAPIObject(user)
+    if not gmail:
+      continue
+    result = callGAPI(gmail.users().settings(), 'getLanguage',
+                      soft_errors=True,
+                      userId='me')
+    if result:
+      print('User: {0}, Language: {1}'.format(user, result['displayLanguage']))
+
 def getImap(users):
   i = 0
   count = len(users)
@@ -13939,6 +13966,8 @@ def ProcessGAMCommand(args):
         getPop(users)
       elif showWhat in ['imap', 'imap4']:
         getImap(users)
+      elif showWhat in ['language']:
+        getLanguage(users)
       elif showWhat == 'vacation':
         getVacation(users)
       elif showWhat in ['delegate', 'delegates']:
@@ -14155,6 +14184,8 @@ def ProcessGAMCommand(args):
     elif command == 'imap':
       #doImap(users)
       runCmdForUsers(doImap, users, default_to_batch=True)
+    elif command == 'language':
+      doLanguage(users)
     elif command in ['pop', 'pop3']:
       doPop(users)
     elif command == 'sendas':
