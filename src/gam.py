@@ -86,6 +86,8 @@ def _build_ssl_context(disable_ssl_certificate_validation, ca_certs, cert_file=N
   context = ssl.SSLContext(httplib2.DEFAULT_TLS_VERSION)
   context.verify_mode = ssl.CERT_REQUIRED
   context.check_hostname = True
+  if GC_Values[GC_CA_FILE]:
+    ca_certs = GC_Values[GC_CA_FILE]
   context.load_verify_locations(ca_certs)
   if cert_file:
     context.load_cert_chain(cert_file, key_file)
@@ -614,6 +616,8 @@ def SetGlobalVariables():
     return GC_Defaults[itemName]
 
   def _getCfgFile(itemName):
+    if not GC_Defaults[itemName]:
+      return None
     value = os.path.expanduser(GC_Defaults[itemName])
     if not os.path.isabs(value):
       value = os.path.expanduser(os.path.join(GC_Values[GC_CONFIG_DIR], value))
@@ -711,8 +715,8 @@ def SetGlobalVariables():
   _getOldEnvVar(GC_CSV_ROW_FILTER, 'GAM_CSV_ROW_FILTER')
   _getOldEnvVar(GC_TLS_MIN_VERSION, 'GAM_TLS_MIN_VERSION')
   _getOldEnvVar(GC_TLS_MAX_VERSION, 'GAM_TLS_MAX_VERSION')
+  _getOldEnvVar(GC_CA_FILE, 'GAM_CA_FILE')
   _getOldSignalFile(GC_DEBUG_LEVEL, 'debug.gam', filePresentValue=4, fileAbsentValue=0)
-  _getOldSignalFile(GC_NO_VERIFY_SSL, 'noverifyssl.txt')
   _getOldSignalFile(GC_NO_BROWSER, 'nobrowser.txt')
 #  _getOldSignalFile(GC_NO_CACHE, u'nocache.txt')
 #  _getOldSignalFile(GC_CACHE_DISCOVERY_ONLY, u'allcache.txt', filePresentValue=False, fileAbsentValue=True)
@@ -773,7 +777,7 @@ def doGAMCheckForUpdates(forceCheck=False):
       return
     check_url = GAM_LATEST_RELEASE # latest full release
   headers = {'Accept': 'application/vnd.github.v3.text+json'}
-  simplehttp = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL])
+  simplehttp = httplib2.Http()
   try:
     (_, c) = simplehttp.request(check_url, 'GET', headers=headers)
     try:
@@ -897,7 +901,7 @@ def checkGAPIError(e, soft_errors=False, silent_errors=False, retryOnHttpError=F
     elif (e.resp['status'] == '400') and ('UnknownError' in eContent):
       error = {'error': {'code': 400, 'errors': [{'reason': GAPI_INVALID, 'message': 'UnknownError'}]}}
     elif retryOnHttpError:
-      service._http.request.credentials.refresh(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL]))
+      service._http.request.credentials.refresh(httplib2.Http())
       return (-1, None, None)
     elif soft_errors:
       if not silent_errors:
@@ -1239,7 +1243,7 @@ def getValidOauth2TxtCredentials():
     doRequestOAuth()
     credentials = storage.get()
   elif credentials.access_token_expired:
-    http = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL])
+    http = httplib2.Http()
     try:
       credentials.refresh(http)
     except oauth2client.client.HttpAccessTokenRefreshError as e:
@@ -1296,8 +1300,7 @@ def buildGAPIObject(api):
   GM_Globals[GM_CURRENT_API_USER] = None
   credentials = getValidOauth2TxtCredentials()
   credentials.user_agent = GAM_INFO
-  http = credentials.authorize(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL],
-                                             cache=GM_Globals[GM_CACHE_DIR]))
+  http = credentials.authorize(httplib2.Http(cache=GM_Globals[GM_CACHE_DIR]))
   service = getService(api, http)
   if GC_Values[GC_DOMAIN]:
     if not GC_Values[GC_CUSTOMER_ID]:
@@ -1376,8 +1379,7 @@ def convertEmailAddressToUID(emailAddressOrUID, cd=None, email_type='user'):
   return normalizedEmailAddressOrUID
 
 def buildGAPIServiceObject(api, act_as, showAuthError=True):
-  http = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL],
-                       cache=GM_Globals[GM_CACHE_DIR])
+  http = httplib2.Http(cache=GM_Globals[GM_CACHE_DIR])
   service = getService(api, http)
   GM_Globals[GM_CURRENT_API_USER] = act_as
   GM_Globals[GM_CURRENT_API_SCOPES] = API_SCOPE_MAPPING[api]
@@ -1447,7 +1449,7 @@ def doCheckServiceAccount(users):
     for scope in all_scopes:
       try:
         credentials = getSvcAcctCredentials([scope], user)
-        request = google_auth_httplib2.Request(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL]))
+        request = google_auth_httplib2.Request(httplib2.Http())
         credentials.refresh(request)
         result = 'PASS'
       except httplib2.ServerNotFoundError as e:
@@ -3922,7 +3924,7 @@ def doPhoto(users):
     filename = filename.replace('#username#', user[:user.find('@')])
     print("Updating photo for %s with %s (%s/%s)" % (user, filename, i, count))
     if re.match('^(ht|f)tps?://.*$', filename):
-      simplehttp = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL])
+      simplehttp = httplib2.Http()
       try:
         (_, image_data) = simplehttp.request(filename, 'GET')
       except (httplib2.HttpLib2Error, httplib2.ServerNotFoundError) as e:
@@ -7373,17 +7375,17 @@ def getCRMService(login_hint):
   storage_dict = {}
   storage = DictionaryStorage(storage_dict, 'credentials')
   flags = cmd_flags(noLocalWebserver=GC_Values[GC_NO_BROWSER])
-  http = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL])
+  http = httplib2.Http()
   credentials = oauth2client.tools.run_flow(flow=flow, storage=storage, flags=flags, http=http)
   credentials.user_agent = GAM_INFO
-  http = credentials.authorize(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL], cache=None))
+  http = credentials.authorize(httplib2.Http(cache=None))
   return (googleapiclient.discovery.build('cloudresourcemanager', 'v1',
                                           http=http, cache_discovery=False,
                                           discoveryServiceUrl=googleapiclient.discovery.V2_DISCOVERY_URI),
           http)
 
 def getGAMProjectAPIs():
-  httpObj = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL])
+  httpObj = httplib2.Http()
   _, c = httpObj.request(GAM_PROJECT_APIS, 'GET')
   return httpObj, c.decode(UTF8).splitlines()
 
@@ -12709,7 +12711,7 @@ def doDeleteOAuth():
   sys.stderr.write('boom!\n')
   sys.stderr.flush()
   try:
-    credentials.revoke(httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL]))
+    credentials.revoke(httplib2.Http())
   except oauth2client.client.TokenRevokeError as e:
     stderrErrorMsg(str(e))
     storage.delete()
@@ -12717,7 +12719,7 @@ def doDeleteOAuth():
 def doRequestOAuth(login_hint=None):
   storage, credentials = getOauth2TxtStorageCredentials()
   if credentials is None or credentials.invalid:
-    http = httplib2.Http(disable_ssl_certificate_validation=GC_Values[GC_NO_VERIFY_SSL])
+    http = httplib2.Http()
     flags = cmd_flags(noLocalWebserver=GC_Values[GC_NO_BROWSER])
     scopes = getScopesFromUser()
     if scopes is None:

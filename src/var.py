@@ -701,8 +701,6 @@ GC_NO_BROWSER = 'no_browser'
 GC_NO_CACHE = 'no_cache'
 # Disable GAM update check
 GC_NO_UPDATE_CHECK = 'no_update_check'
-# Disable SSL certificate validation
-GC_NO_VERIFY_SSL = 'no_verify_ssl'
 # Number of threads for gam batch
 GC_NUM_THREADS = 'num_threads'
 # Path to oauth2.txt
@@ -727,6 +725,8 @@ GC_CSV_ROW_FILTER = 'csv_row_filter'
 GC_TLS_MIN_VERSION = 'tls_min_ver'
 # Maximum TLS Version used for HTTPS connections
 GC_TLS_MAX_VERSION = 'tls_max_ver'
+# Path to certificate authority file for validating TLS hosts
+GC_CA_FILE = 'ca_file'
 
 GC_Defaults = {
   GC_ACTIVITY_MAX_RESULTS: 100,
@@ -747,7 +747,6 @@ GC_Defaults = {
   GC_NO_BROWSER: False,
   GC_NO_CACHE: False,
   GC_NO_UPDATE_CHECK: False,
-  GC_NO_VERIFY_SSL: False,
   GC_NUM_THREADS: 25,
   GC_OAUTH2_TXT: _FN_OAUTH2_TXT,
   GC_OAUTH2SERVICE_JSON: _FN_OAUTH2SERVICE_JSON,
@@ -760,6 +759,7 @@ GC_Defaults = {
   GC_CSV_ROW_FILTER: '',
   GC_TLS_MIN_VERSION: 'TLSv1_2',
   GC_TLS_MAX_VERSION: None,
+  GC_CA_FILE: None,
   }
 
 GC_Values = {}
@@ -797,7 +797,6 @@ GC_VAR_INFO = {
   GC_NO_BROWSER: {GC_VAR_TYPE: GC_TYPE_BOOLEAN},
   GC_NO_CACHE: {GC_VAR_TYPE: GC_TYPE_BOOLEAN},
   GC_NO_UPDATE_CHECK: {GC_VAR_TYPE: GC_TYPE_BOOLEAN},
-  GC_NO_VERIFY_SSL: {GC_VAR_TYPE: GC_TYPE_BOOLEAN},
   GC_NUM_THREADS: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (1, None)},
   GC_OAUTH2_TXT: {GC_VAR_TYPE: GC_TYPE_FILE},
   GC_OAUTH2SERVICE_JSON: {GC_VAR_TYPE: GC_TYPE_FILE},
@@ -810,6 +809,7 @@ GC_VAR_INFO = {
   GC_CSV_ROW_FILTER: {GC_VAR_TYPE: GC_TYPE_ROWFILTER},
   GC_TLS_MIN_VERSION: {GC_VAR_TYPE: GC_TYPE_STRING},
   GC_TLS_MAX_VERSION: {GC_VAR_TYPE: GC_TYPE_STRING},
+  GC_CA_FILE: {GC_VAR_TYPE: GC_TYPE_FILE},
   }
 # Google API constants
 
