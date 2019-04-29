@@ -1269,6 +1269,9 @@ gam <UserTypeEntity> show imap|imap4
 gam <UserTypeEntity> pop|pop3 <Boolean> [for allmail|newmail|mailfromnowon|fromnowown] [action keep|leaveininbox|archive|delete|trash|markread]
 gam <UserTypeEntity> show pop|pop3
 
+gam <UserTypeEntity> language <Language>
+gam <UserTypeEntity> show language
+
 gam <UserTypeEntity> [create|add] sendas <EmailAddress> <Name> [signature|sig <String>|(file <FileName> [charset <Charset>]) (replace <Tag> <String>)*] [html] [replyto <EmailAddress>] [default] [treatasalias <Boolean>]
 	[smtpmsa.host <SMTPHostName> smtpmsa.port 25|465|587 smtpmsa.username <UserName> smtpmsa.password <Password> [smtpmsa.securitymode none|ssl|starttls]]
 gam <UserTypeEntity> update sendas <EmailAddress> [name <Name>] [signature|sig <String>|(file <FileName> [charset <Charset>]) (replace <Tag> <String>)*] [html] [replyto <EmailAddress>] [default] [treatasalias <Boolean>]
