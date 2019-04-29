@@ -10828,6 +10828,9 @@ def writeCSVfile(csvRows, titles, list_type, todrive):
         csvRows = [row for row in csvRows if rowBooleanFilterMatch(row.get(column, False), filterVal[1])]
   if GC_Values[GC_CSV_HEADER_FILTER]:
     titles = [t for t in titles if headerFilterMatch(t)]
+    if not titles:
+      systemErrorExit(3, 'No columns selected with GAM_CSV_HEADER_FILTER\n')
+      return
   csv.register_dialect('nixstdout', lineterminator='\n')
   if todrive:
     write_to = io.StringIO()
