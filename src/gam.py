@@ -619,6 +619,19 @@ def SetGlobalVariables():
       value = os.path.expanduser(os.path.join(GC_Values[GC_CONFIG_DIR], value))
     return value
 
+  def _getCfgHeaderFilter(itemName):
+    value = GC_Defaults[itemName]
+    headerFilters = []
+    if not value:
+      return headerFilters
+    filters = shlexSplitList(value)
+    for filterStr in filters:
+      try:
+        headerFilters.append(re.compile(filterStr, re.IGNORECASE))
+      except re.error as e:
+        systemErrorExit(3, 'Item: {0}: "{1}", Invalid RE: {2}'.format(itemName, filterStr, e))
+    return headerFilters
+
   ROW_FILTER_COMP_PATTERN = re.compile(r'^(date|time|count)\s*([<>]=?|=|!=)\s*(.+)$', re.IGNORECASE)
   ROW_FILTER_BOOL_PATTERN = re.compile(r'^(boolean):(.+)$', re.IGNORECASE)
   ROW_FILTER_RE_PATTERN = re.compile(r'^(regex):(.+)$', re.IGNORECASE)
@@ -663,7 +676,7 @@ def SetGlobalVariables():
             rowFilters[column] = (mg.group(1), re.compile(mg.group(2)))
             continue
           except re.error as e:
-            systemErrorExit(3, 'Item: {0}, Value: "{1}": {2}, Invalid RE: {3}'.format(itemName, column, filterStr, e))
+            systemErrorExit(3, 'Item: {0}, Value: "{1}": "{2}", Invalid RE: {3}'.format(itemName, column, filterStr, e))
         systemErrorExit(3, 'Item: {0}, Value: "{1}": {2}, Expected: (date|time|count<Operator><Value>) or (boolean:true|false) or (regex:<RegularExpression>)'.format(itemName, column, filterStr))
       return rowFilters
     except (TypeError, ValueError) as e:
@@ -713,6 +726,8 @@ def SetGlobalVariables():
     varType = GC_VAR_INFO[itemName][GC_VAR_TYPE]
     if varType == GC_TYPE_FILE:
       GC_Values[itemName] = _getCfgFile(itemName)
+    elif varType == GC_TYPE_HEADERFILTER:
+      GC_Values[itemName] = _getCfgHeaderFilter(itemName)
     elif varType == GC_TYPE_ROWFILTER:
       GC_Values[itemName] = _getCfgRowFilter(itemName)
     else:
@@ -10792,6 +10807,12 @@ def writeCSVfile(csvRows, titles, list_type, todrive):
       return False
     return rowBoolean == filterBoolean
 
+  def headerFilterMatch(title):
+    for filterStr in GC_Values[GC_CSV_HEADER_FILTER]:
+      if filterStr.match(title):
+        return True
+    return False
+
   if GC_Values[GC_CSV_ROW_FILTER]:
     for column, filterVal in iter(GC_Values[GC_CSV_ROW_FILTER].items()):
       if column not in titles:
@@ -10806,8 +10827,10 @@ def writeCSVfile(csvRows, titles, list_type, todrive):
       else: #boolean
         csvRows = [row for row in csvRows if rowBooleanFilterMatch(row.get(column, False), filterVal[1])]
   if GC_Values[GC_CSV_HEADER_FILTER]:
-    titles_filter = GC_Values[GC_CSV_HEADER_FILTER].lower().split(',')
-    titles = [t for t in titles if t.lower() in titles_filter]
+    titles = [t for t in titles if headerFilterMatch(t)]
+    if not titles:
+      systemErrorExit(3, 'No columns selected with GAM_CSV_HEADER_FILTER\n')
+      return
   csv.register_dialect('nixstdout', lineterminator='\n')
   if todrive:
     write_to = io.StringIO()
