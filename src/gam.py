@@ -10105,7 +10105,7 @@ def doGetCrosInfo():
           print('    date: {0}'.format(activeTimeRange['date']))
           print('      activeTime: {0}'.format(str(activeTimeRange['activeTime'])))
           print('      duration: {0}'.format(utils.formatMilliSeconds(activeTimeRange['activeTime'])))
-          print('      minutes: {0}'.format(activeTimeRange['activeTime']/60000))
+          print('      minutes: {0}'.format(activeTimeRange['activeTime']//60000))
       recentUsers = cros.get('recentUsers', [])
       lenRU = len(recentUsers)
       if lenRU:
@@ -11957,7 +11957,7 @@ def doPrintCrosActivity():
           new_row = row.copy()
           new_row['activeTimeRanges.date'] = activeTimeRange['date']
           new_row['activeTimeRanges.duration'] = utils.formatMilliSeconds(activeTimeRange['activeTime'])
-          new_row['activeTimeRanges.minutes'] = activeTimeRange['activeTime']/60000
+          new_row['activeTimeRanges.minutes'] = activeTimeRange['activeTime']//60000
           csvRows.append(new_row)
       if selectRecentUsers:
         recentUsers = cros.get('recentUsers', [])
@@ -12147,7 +12147,7 @@ def doPrintCrosDevices():
           new_row['activeTimeRanges.date'] = activeTimeRanges[i]['date']
           new_row['activeTimeRanges.activeTime'] = str(activeTimeRanges[i]['activeTime'])
           new_row['activeTimeRanges.duration'] = utils.formatMilliSeconds(activeTimeRanges[i]['activeTime'])
-          new_row['activeTimeRanges.minutes'] = activeTimeRanges[i]['activeTime']/60000
+          new_row['activeTimeRanges.minutes'] = activeTimeRanges[i]['activeTime']//60000
         if i < lenRU:
           new_row['recentUsers.email'] = recentUsers[i].get('email', ['Unknown', 'UnmanagedUser'][recentUsers[i]['type'] == 'USER_TYPE_UNMANAGED'])
           new_row['recentUsers.type'] = recentUsers[i]['type']
