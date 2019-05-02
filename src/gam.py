@@ -5241,7 +5241,7 @@ def doLanguage(users):
     user, gmail = buildGmailGAPIObject(user)
     if not gmail:
       continue
-    print('Setting language to %s for %s' % (displayLanguage, user))
+    print('Setting language to %s for %s (%s/%s)' % (displayLanguage, user, i, count))
     result = callGAPI(gmail.users().settings(), 'updateLanguage', userId='me', body={'displayLanguage': displayLanguage})
     print('Language is set to %s for %s' % (result['displayLanguage'], user))
 
@@ -5257,7 +5257,7 @@ def getLanguage(users):
                       soft_errors=True,
                       userId='me')
     if result:
-      print('User: {0}, Language: {1}'.format(user, result['displayLanguage']))
+      print('User: {0}, Language: {1} ({2}/{3})'.format(user, result['displayLanguage']), i, count)
 
 def getImap(users):
   i = 0
@@ -10172,6 +10172,8 @@ def doGetMobileInfo():
   cd = buildGAPIObject('directory')
   resourceId = sys.argv[3]
   info = callGAPI(cd.mobiledevices(), 'get', customerId=GC_Values[GC_CUSTOMER_ID], resourceId=resourceId)
+  if 'deviceId' in info:
+    info['deviceId'] = info['deviceId'].encode('unicode-escape').decode(UTF8)
   print_json(None, info)
 
 def print_json(object_name, object_value, spacing=''):
@@ -11866,6 +11868,8 @@ def doPrintMobileDevices():
                 appDetails.append('<None>')
               applications.append('-'.join(appDetails))
             row[attrib] = delimiter.join(applications)
+        elif attrib == 'deviceId':
+          row[attrib] = mobile[attrib].encode('unicode-escape').decode(UTF8)
         else:
           if attrib not in titles:
             titles.append(attrib)
