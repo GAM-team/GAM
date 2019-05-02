@@ -4198,7 +4198,7 @@ def showDriveFileACL(users):
     if not drive:
       continue
     feed = callGAPIpages(drive.permissions(), 'list', 'permissions',
-                         fileId=fileId, fields='*', supportsTeamDrives=True,
+                         fileId=fileId, fields='*', supportsAllDrives=True,
                          useDomainAdminAccess=useDomainAdminAccess)
     for permission in feed:
       printPermission(permission)
@@ -4239,7 +4239,7 @@ def delDriveFileACL(users):
       continue
     print('Removing permission for %s from %s' % (permissionId, fileId))
     callGAPI(drive.permissions(), 'delete', fileId=fileId,
-             permissionId=permissionId, supportsTeamDrives=True,
+             permissionId=permissionId, supportsAllDrives=True,
              useDomainAdminAccess=useDomainAdminAccess)
 
 DRIVEFILE_ACL_ROLES_MAP = {
@@ -4309,7 +4309,7 @@ def addDriveFileACL(users):
       continue
     result = callGAPI(drive.permissions(), 'create', fields='*',
                       fileId=fileId, sendNotificationEmail=sendNotificationEmail,
-                      emailMessage=emailMessage, body=body, supportsTeamDrives=True,
+                      emailMessage=emailMessage, body=body, supportsAllDrives=True,
                       transferOwnership=transferOwnership,
                       useDomainAdminAccess=useDomainAdminAccess)
     printPermission(result)
@@ -4348,7 +4348,7 @@ def updateDriveFileACL(users):
     result = callGAPI(drive.permissions(), 'update', fields='*',
                       fileId=fileId, permissionId=permissionId, removeExpiration=removeExpiration,
                       transferOwnership=transferOwnership, body=body,
-                      supportsTeamDrives=True, useDomainAdminAccess=useDomainAdminAccess)
+                      supportsAllDrives=True, useDomainAdminAccess=useDomainAdminAccess)
     printPermission(result)
 
 def _stripMeInOwners(query):
@@ -4549,7 +4549,7 @@ def deleteDriveFile(users):
     for fileId in file_ids:
       i += 1
       print('%s %s for %s (%s/%s)' % (action, fileId, user, i, len(file_ids)))
-      callGAPI(drive.files(), function, fileId=fileId, supportsTeamDrives=True)
+      callGAPI(drive.files(), function, fileId=fileId, supportsAllDrives=True)
 
 def printDriveFolderContents(feed, folderId, indent):
   for f_file in feed:
@@ -4766,14 +4766,14 @@ def doUpdateDriveFile(users):
                             ocr=parameters[DFA_OCR],
                             ocrLanguage=parameters[DFA_OCRLANGUAGE],
                             media_body=media_body, body=body, fields='id',
-                            supportsTeamDrives=True)
+                            supportsAllDrives=True)
           print('Successfully updated %s drive file with content from %s' % (result['id'], parameters[DFA_LOCALFILENAME]))
         else:
           result = callGAPI(drive.files(), 'patch',
                             fileId=fileId, convert=parameters[DFA_CONVERT],
                             ocr=parameters[DFA_OCR],
                             ocrLanguage=parameters[DFA_OCRLANGUAGE], body=body,
-                            fields='id', supportsTeamDrives=True)
+                            fields='id', supportsAllDrives=True)
           print('Successfully updated drive file/folder ID %s' % (result['id']))
     else:
       for fileId in fileIdSelection['fileIds']:
@@ -4781,7 +4781,7 @@ def doUpdateDriveFile(users):
                           fileId=fileId, convert=parameters[DFA_CONVERT],
                           ocr=parameters[DFA_OCR],
                           ocrLanguage=parameters[DFA_OCRLANGUAGE],
-                          body=body, fields='id', supportsTeamDrives=True)
+                          body=body, fields='id', supportsAllDrives=True)
         print('Successfully copied %s to %s' % (fileId, result['id']))
 
 def createDriveFile(users):
@@ -4819,7 +4819,7 @@ def createDriveFile(users):
                       convert=parameters[DFA_CONVERT], ocr=parameters[DFA_OCR],
                       ocrLanguage=parameters[DFA_OCRLANGUAGE],
                       media_body=media_body, body=body, fields='id,title,mimeType',
-                      supportsTeamDrives=True)
+                      supportsAllDrives=True)
     titleInfo = '{0}({1})'.format(result['title'], result['id'])
     if csv_output:
       csv_rows.append({'User': user, 'title': result['title'], 'id': result['id']})
@@ -4916,7 +4916,7 @@ def downloadDriveFile(users):
     for fileId in fileIdSelection['fileIds']:
       fileExtension = None
       result = callGAPI(drive.files(), 'get',
-                        fileId=fileId, fields='fileExtension,fileSize,mimeType,title', supportsTeamDrives=True)
+                        fileId=fileId, fields='fileExtension,fileSize,mimeType,title', supportsAllDrives=True)
       fileExtension = result.get('fileExtension')
       mimeType = result['mimeType']
       if mimeType == MIMETYPE_GA_FOLDER:
@@ -5050,7 +5050,7 @@ def showDriveFileInfo(users):
     user, drive = buildDriveGAPIObject(user)
     if not drive:
       continue
-    feed = callGAPI(drive.files(), 'get', fileId=fileId, fields=fields, supportsTeamDrives=True)
+    feed = callGAPI(drive.files(), 'get', fileId=fileId, fields=fields, supportsAllDrives=True)
     if feed:
       print_json(None, feed)
 
@@ -5241,7 +5241,7 @@ def doLanguage(users):
     user, gmail = buildGmailGAPIObject(user)
     if not gmail:
       continue
-    print('Setting language to %s for %s' % (displayLanguage, user))
+    print('Setting language to %s for %s (%s/%s)' % (displayLanguage, user, i, count))
     result = callGAPI(gmail.users().settings(), 'updateLanguage', userId='me', body={'displayLanguage': displayLanguage})
     print('Language is set to %s for %s' % (result['displayLanguage'], user))
 
@@ -5257,7 +5257,7 @@ def getLanguage(users):
                       soft_errors=True,
                       userId='me')
     if result:
-      print('User: {0}, Language: {1}'.format(user, result['displayLanguage']))
+      print('User: {0}, Language: {1} ({2}/{3})'.format(user, result['displayLanguage']), i, count)
 
 def getImap(users):
   i = 0
@@ -7829,7 +7829,7 @@ def doGetTeamDriveInfo(users):
     if not drive:
       print('Failed to access Drive as %s' % user)
       continue
-    result = callGAPI(drive.teamdrives(), 'get', teamDriveId=teamDriveId,
+    result = callGAPI(drive.drives(), 'get', driveId=teamDriveId,
                       useDomainAdminAccess=useDomainAdminAccess, fields='*')
     print_json(None, result)
 
@@ -7849,7 +7849,7 @@ def doCreateTeamDrive(users):
       print('Failed to access Drive as %s' % user)
       continue
     requestId = str(uuid.uuid4())
-    result = callGAPI(drive.teamdrives(), 'create', requestId=requestId, body=body, fields='id')
+    result = callGAPI(drive.drives(), 'create', requestId=requestId, body=body, fields='id')
     print('Created Team Drive %s with id %s' % (body['name'], result['id']))
 
 TEAMDRIVE_RESTRICTIONS_MAP = {
@@ -7898,8 +7898,8 @@ def doUpdateTeamDrive(users):
     user, drive = buildDrive3GAPIObject(user)
     if not drive:
       continue
-    result = callGAPI(drive.teamdrives(), 'update',
-                      useDomainAdminAccess=useDomainAdminAccess, body=body, teamDriveId=teamDriveId, fields='id', soft_errors=True)
+    result = callGAPI(drive.drives(), 'update',
+                      useDomainAdminAccess=useDomainAdminAccess, body=body, driveId=teamDriveId, fields='id', soft_errors=True)
     if not result:
       continue
     print('Updated Team Drive %s' % (teamDriveId))
@@ -7928,7 +7928,7 @@ def printShowTeamDrives(users, csvFormat):
     user, drive = buildDrive3GAPIObject(user)
     if not drive:
       continue
-    results = callGAPIpages(drive.teamdrives(), 'list', 'teamDrives',
+    results = callGAPIpages(drive.drives(), 'list', 'drives',
                             useDomainAdminAccess=useDomainAdminAccess, fields='*',
                             q=q, soft_errors=True)
     if not results:
@@ -7956,7 +7956,7 @@ def doDeleteTeamDrive(users):
     if not drive:
       continue
     print('Deleting Team Drive %s' % (teamDriveId))
-    callGAPI(drive.teamdrives(), 'delete', teamDriveId=teamDriveId, soft_errors=True)
+    callGAPI(drive.drives(), 'delete', driveId=teamDriveId, soft_errors=True)
 
 def validateCollaborators(collaboratorList, cd):
   collaborators = []
@@ -10105,7 +10105,7 @@ def doGetCrosInfo():
           print('    date: {0}'.format(activeTimeRange['date']))
           print('      activeTime: {0}'.format(str(activeTimeRange['activeTime'])))
           print('      duration: {0}'.format(utils.formatMilliSeconds(activeTimeRange['activeTime'])))
-          print('      minutes: {0}'.format(activeTimeRange['activeTime']/60000))
+          print('      minutes: {0}'.format(activeTimeRange['activeTime']//60000))
       recentUsers = cros.get('recentUsers', [])
       lenRU = len(recentUsers)
       if lenRU:
@@ -10172,6 +10172,8 @@ def doGetMobileInfo():
   cd = buildGAPIObject('directory')
   resourceId = sys.argv[3]
   info = callGAPI(cd.mobiledevices(), 'get', customerId=GC_Values[GC_CUSTOMER_ID], resourceId=resourceId)
+  if 'deviceId' in info:
+    info['deviceId'] = info['deviceId'].encode('unicode-escape').decode(UTF8)
   print_json(None, info)
 
 def print_json(object_name, object_value, spacing=''):
@@ -11866,6 +11868,8 @@ def doPrintMobileDevices():
                 appDetails.append('<None>')
               applications.append('-'.join(appDetails))
             row[attrib] = delimiter.join(applications)
+        elif attrib == 'deviceId':
+          row[attrib] = mobile[attrib].encode('unicode-escape').decode(UTF8)
         else:
           if attrib not in titles:
             titles.append(attrib)
@@ -11957,7 +11961,7 @@ def doPrintCrosActivity():
           new_row = row.copy()
           new_row['activeTimeRanges.date'] = activeTimeRange['date']
           new_row['activeTimeRanges.duration'] = utils.formatMilliSeconds(activeTimeRange['activeTime'])
-          new_row['activeTimeRanges.minutes'] = activeTimeRange['activeTime']/60000
+          new_row['activeTimeRanges.minutes'] = activeTimeRange['activeTime']//60000
           csvRows.append(new_row)
       if selectRecentUsers:
         recentUsers = cros.get('recentUsers', [])
@@ -12147,7 +12151,7 @@ def doPrintCrosDevices():
           new_row['activeTimeRanges.date'] = activeTimeRanges[i]['date']
           new_row['activeTimeRanges.activeTime'] = str(activeTimeRanges[i]['activeTime'])
           new_row['activeTimeRanges.duration'] = utils.formatMilliSeconds(activeTimeRanges[i]['activeTime'])
-          new_row['activeTimeRanges.minutes'] = activeTimeRanges[i]['activeTime']/60000
+          new_row['activeTimeRanges.minutes'] = activeTimeRanges[i]['activeTime']//60000
         if i < lenRU:
           new_row['recentUsers.email'] = recentUsers[i].get('email', ['Unknown', 'UnmanagedUser'][recentUsers[i]['type'] == 'USER_TYPE_UNMANAGED'])
           new_row['recentUsers.type'] = recentUsers[i]['type']
