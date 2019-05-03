@@ -5741,7 +5741,8 @@ def addSmime(users):
     myarg = sys.argv[i].lower()
     if myarg == 'file':
       smimefile = sys.argv[i+1]
-      body['pkcs12'] = base64.urlsafe_b64encode(readFile(smimefile, mode='rb'))
+      smimeData = readFile(smimefile, mode='rb')
+      body['pkcs12'] = base64.urlsafe_b64encode(smimeData).decode(UTF8)
       i += 2
     elif myarg == 'password':
       body['encryptedKeyPassword'] = sys.argv[i+1]
