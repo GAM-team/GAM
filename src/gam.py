@@ -3622,6 +3622,8 @@ def doCancelPrintJob():
   print('Print Job %s cancelled' % job)
 
 def checkCloudPrintResult(result):
+  if isinstance(result, bytes):
+    result = result.decode(UTF8)
   if isinstance(result, str):
     try:
       result = json.loads(result)
