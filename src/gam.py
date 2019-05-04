@@ -91,10 +91,11 @@ def _build_ssl_context(disable_ssl_certificate_validation, ca_certs, cert_file=N
   context.load_verify_locations(ca_certs)
   if cert_file:
     context.load_cert_chain(cert_file, key_file)
-  if hasattr(context, 'minimum_version') and GC_Values[GC_TLS_MIN_VERSION]:
-    context.minimum_version = getattr(ssl.TLSVersion, GC_Values[GC_TLS_MIN_VERSION])
-  if hasattr(context, 'maximum_version') and GC_Values[GC_TLS_MAX_VERSION]:
-    context.maximum_version = getattr(ssl.TLSVersion, GC_Values[GC_TLS_MAX_VERSION])
+  if hasattr(context, 'minimum_version'):
+    if GC_Values[GC_TLS_MIN_VERSION]:
+      context.minimum_version = getattr(ssl.TLSVersion, GC_Values[GC_TLS_MIN_VERSION])
+    if GC_Values[GC_TLS_MAX_VERSION]:
+      context.maximum_version = getattr(ssl.TLSVersion, GC_Values[GC_TLS_MAX_VERSION])
   return context
 
 # Override some oauth2client.tools strings saving us a few GAM-specific mods to oauth2client
