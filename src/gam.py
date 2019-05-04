@@ -96,6 +96,8 @@ def _build_ssl_context(disable_ssl_certificate_validation, ca_certs, cert_file=N
       context.minimum_version = getattr(ssl.TLSVersion, GC_Values[GC_TLS_MIN_VERSION])
     if GC_Values[GC_TLS_MAX_VERSION]:
       context.maximum_version = getattr(ssl.TLSVersion, GC_Values[GC_TLS_MAX_VERSION])
+  elif GC_Values[GC_TLS_MIN_VERSION] or GC_Values[GC_TLS_MAX_VERSION]:
+    systemErrorExit(5, 'GAM_TLS_MIN_VERSION and GAM_TLS_MAX_VERSION are not supported with %s.%s.%s'  % sys.version_info[:3])
   return context
 
 # Override some oauth2client.tools strings saving us a few GAM-specific mods to oauth2client
