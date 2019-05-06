@@ -1,6 +1,7 @@
 cd src
 $python -OO -m PyInstaller --clean --debug -F --distpath=gam $GAMOS-gam.spec
-gam/gam version
+export gam="gam/gam"
+$gam version extended
 export GAMVERSION=`gam/gam version simple`
 cp LICENSE gam
 cp whatsnew.txt gam
