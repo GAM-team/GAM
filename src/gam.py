@@ -91,10 +91,13 @@ def _build_ssl_context(disable_ssl_certificate_validation, ca_certs, cert_file=N
   context.load_verify_locations(ca_certs)
   if cert_file:
     context.load_cert_chain(cert_file, key_file)
-  if GC_Values[GC_TLS_MIN_VERSION]:
-    context.minimum_version = getattr(ssl.TLSVersion, GC_Values[GC_TLS_MIN_VERSION])
-  if GC_Values[GC_TLS_MAX_VERSION]:
-    context.maximum_version = getattr(ssl.TLSVersion, GC_Values[GC_TLS_MAX_VERSION])
+  if hasattr(context, 'minimum_version'):
+    if GC_Values[GC_TLS_MIN_VERSION]:
+      context.minimum_version = getattr(ssl.TLSVersion, GC_Values[GC_TLS_MIN_VERSION])
+    if GC_Values[GC_TLS_MAX_VERSION]:
+      context.maximum_version = getattr(ssl.TLSVersion, GC_Values[GC_TLS_MAX_VERSION])
+  elif GC_Values[GC_TLS_MIN_VERSION] or GC_Values[GC_TLS_MAX_VERSION]:
+    systemErrorExit(5, 'GAM_TLS_MIN_VERSION and GAM_TLS_MAX_VERSION require Python 3.7+ and OpenSSL 1.1+')
   return context
 
 # Override some oauth2client.tools strings saving us a few GAM-specific mods to oauth2client
@@ -1391,6 +1394,8 @@ def buildGAPIServiceObject(api, act_as, showAuthError=True):
   except httplib2.ServerNotFoundError as e:
     systemErrorExit(4, e)
   except google.auth.exceptions.RefreshError as e:
+    if isinstance(e.args, tuple):
+      e = e.args[0]
     if showAuthError:
       stderrErrorMsg('User {0}: {1}'.format(GM_Globals[GM_CURRENT_API_USER], str(e)))
     return handleOAuthTokenError(str(e), True)
