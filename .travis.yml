@@ -136,11 +136,14 @@ script:
 - export newuser=$newbase@pdl.jaylee.us
 - export newgroup=$newbase-group@pdl.jaylee.us
 - export newalias=$newbase-alias@pdl.jaylee.us
+- echo email > sample.csv; for i in {01..25}; do echo $newbase-$i >> sample.csv; done
 - $gam create user $newuser firstname Travis lastname $jid password random travis.jid $jid
 - $gam create group $newgroup name "Travis $jid group" description "This is a description" isarchived true
 - $gam user $newuser add license gsuitebusiness
 - $gam update group $newgroup add owner $gam_user
 - $gam update group $newgroup add member $newuser
+- $gam csv sample.csv gam create user ~~email~~ firstname "Travis Bulk" lastname ~~email~~ travis.jid $jid
+- $gam csv sample.csv gam update group $newgroup add member ~email
 - $gam info group $newgroup
 - $gam delete group $newgroup
 - $gam create alias $newalias user $newuser
