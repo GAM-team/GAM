@@ -132,9 +132,20 @@ script:
 - $gam info domain
 - $gam info user
 - export tstamp=$(date +%s%3N)
-- export newuser=travis-test-$jid-$tstamp@pdl.jaylee.us
+- export newbase=travis-test-$jid-$tstamp
+- export newuser=$newbase@pdl.jaylee.us
+- export newgroup=$newbase-group@pdl.jaylee.us
+- export newalias=$newbase-alias@pdl.jaylee.us
 - $gam create user $newuser firstname Travis lastname $jid password random travis.jid $jid
-- $gam info user $newuser
+- $gam create group $newgroup name "Travis $jid group" description "This is a description" isarchived true
+- $gam user $newuser add license gsuitebusiness
+- $gam update group $newgroup add owner $gam_user
+- $gam update group $newgroup add member $newuser
+- $gam info group $newgroup
+- $gam delete group $newgroup
+- $gam create alias $newalias user $newuser
+- $gam whatis $newuser
+- $gam user $gam_user show tokens
 - $gam delete user $newuser
 
 before_deploy:
