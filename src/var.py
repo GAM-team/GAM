@@ -1,4 +1,5 @@
 import os
+import ssl
 import sys
 import platform
 import re
@@ -734,6 +735,7 @@ GC_TLS_MAX_VERSION = 'tls_max_ver'
 # Path to certificate authority file for validating TLS hosts
 GC_CA_FILE = 'ca_file'
 
+tls_min = "TLSv1_2" if hasattr(ssl.SSLContext(), "minimum_version") else None
 GC_Defaults = {
   GC_ACTIVITY_MAX_RESULTS: 100,
   GC_AUTO_BATCH_MIN: 0,
@@ -763,7 +765,7 @@ GC_Defaults = {
   GC_USER_MAX_RESULTS: 500,
   GC_CSV_HEADER_FILTER: '',
   GC_CSV_ROW_FILTER: '',
-  GC_TLS_MIN_VERSION: 'TLSv1_2',
+  GC_TLS_MIN_VERSION: tls_min,
   GC_TLS_MAX_VERSION: None,
   GC_CA_FILE: None,
   }
