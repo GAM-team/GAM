@@ -23,6 +23,33 @@ matrix:
       env:
         - GAMOS=linux
         - PLATFORM=x86_64
+    - os: linux
+      name: "Linux 64-bit Xenial - Python 3.5 Source Testing"
+      dist: xenial
+      language: python
+      python:
+        - "3.5"
+      deploy: true # skips full deploy steps
+    - os: linux
+      name: "Linux 64-bit Xenial - Python 3.6 Source Testing"
+      dist: xenial
+      language: python
+      python:
+        - "3.6"
+      deploy: true
+    - os: linux
+      name: "Linux 64-bit Xenial - Python 3.8-dev Source Testing"
+      dist: xenial
+      language: python
+      python:
+        - "3.8-dev"
+      deploy: true
+    - os: linux
+      name: "Linux 64-bit Xenial - Python nightly Source Testing"
+      dist: xenial
+      python:
+        - "nightly"
+      deploy: true
     - os: osx
       name: "MacOS 64-bit"
       language: generic
