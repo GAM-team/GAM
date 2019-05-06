@@ -1394,6 +1394,8 @@ def buildGAPIServiceObject(api, act_as, showAuthError=True):
   except httplib2.ServerNotFoundError as e:
     systemErrorExit(4, e)
   except google.auth.exceptions.RefreshError as e:
+    if isinstance(e.args, tuple):
+      e = e.args[0]
     if showAuthError:
       stderrErrorMsg('User {0}: {1}'.format(GM_Globals[GM_CURRENT_API_USER], str(e)))
     return handleOAuthTokenError(str(e), True)
