@@ -9,6 +9,7 @@ matrix:
       env:
         - GAMOS=linux
         - PLATFORM=x86_64
+        - VMTYPE=build
     - os: linux
       name: "Linux 64-bit Trusty"
       dist: trusty
@@ -16,6 +17,7 @@ matrix:
       env:
         - GAMOS=linux
         - PLATFORM=x86_64
+        - VMTYPE=build
     - os: linux
       name: "Linux 64-bit Precise"
       dist: precise
@@ -23,12 +25,15 @@ matrix:
       env:
         - GAMOS=linux
         - PLATFORM=x86_64
+        - VMTYPE=build
     - os: linux
       name: "Linux 64-bit Xenial - Python 3.5 Source Testing"
       dist: xenial
       language: python
       python:
         - "3.5"
+      env:
+        - VMTYPE=test
       deploy: true # skips full deploy steps
     - os: linux
       name: "Linux 64-bit Xenial - Python 3.6 Source Testing"
@@ -36,6 +41,8 @@ matrix:
       language: python
       python:
         - "3.6"
+      env:
+        - VMTYPE=test
       deploy: true
     - os: linux
       name: "Linux 64-bit Xenial - Python 3.8-dev Source Testing"
@@ -43,12 +50,16 @@ matrix:
       language: python
       python:
         - "3.8-dev"
+      env:
+        - VMTYPE=test
       deploy: true
     - os: linux
       name: "Linux 64-bit Xenial - Python nightly Source Testing"
       dist: xenial
       python:
         - "nightly"
+      env:
+        - VMTYPE=test
       deploy: true
     - os: osx
       name: "MacOS 64-bit"
