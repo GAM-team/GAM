@@ -36,7 +36,6 @@ matrix:
         - GAMOS=linux
         - PLATFORM=x86_64
         - VMTYPE=test
-      deploy: {} # skips full deploy steps
     - os: linux
       name: "Linux 64-bit Xenial - Python 3.6 Source Testing"
       dist: xenial
@@ -47,18 +46,6 @@ matrix:
         - GAMOS=linux
         - PLATFORM=x86_64
         - VMTYPE=test
-      deploy: {}
-    - os: linux
-      name: "Linux 64-bit Xenial - Python 3.8-dev Source Testing"
-      dist: xenial
-      language: python
-      python:
-        - "3.8-dev"
-      env:
-        - GAMOS=linux
-        - PLATFORM=x86_64
-        - VMTYPE=test
-      deploy: {}
     - os: linux
       name: "Linux 64-bit Xenial - Python nightly Source Testing"
       dist: xenial
@@ -68,7 +55,6 @@ matrix:
         - GAMOS=linux
         - PLATFORM=x86_64
         - VMTYPE=test
-      deploy: {}
     - os: osx
       name: "MacOS 64-bit"
       language: generic
@@ -76,18 +62,21 @@ matrix:
       env:
         - GAMOS=macos
         - PLATFORM=x86_64
+        - VMTYPE=build
     - os: windows
       name: "Windows 64-bit"
       language: shell
       env:
         - GAMOS=windows
-          PLATFORM=x86_64
+        - PLATFORM=x86_64
+        - VMTYPE=build
     - os: windows
       name: "Windows 32-bit"
       language: shell
       env:
         - GAMOS=windows
         - PLATFORM=x86
+        - VMTYPE=build
 
 before_install:
 - source src/travis/$TRAVIS_OS_NAME-$PLATFORM-before-install.sh
@@ -116,3 +105,4 @@ deploy:
   all_branches: true
   on:
     repo: jay0lee/GAM
+    condition: $VMTYPE = build
