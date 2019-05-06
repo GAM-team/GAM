@@ -73,6 +73,7 @@ matrix:
     - os: linux
       name: "Linux 64-bit Xenial - Python 3.8-dev Source Testing"
       dist: xenial
+      language: python
       python:
         - "3.8-dev"
       env:
