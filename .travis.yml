@@ -80,6 +80,16 @@ matrix:
         - GAMOS=linux
         - PLATFORM=x86_64
         - VMTYPE=test
+    - os: linux
+      name: "Linux 64-bit Xenial - Python nightly Source Testing"
+      dist: xenial
+      language: python
+      python:
+        - "nightly"
+      env:
+        - GAMOS=linux
+        - PLATFORM=x86_64
+        - VMTYPE=test
     - os: osx
       name: "MacOS 64-bit"
       language: generic
