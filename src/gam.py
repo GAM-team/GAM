@@ -890,7 +890,7 @@ def waitOnFailure(n, retries, errMsg):
 
 def checkGAPIError(e, soft_errors=False, silent_errors=False, retryOnHttpError=False, service=None):
   try:
-    error = json.loads(e.content)
+    error = json.loads(e.content.decode('utf-8'))
   except ValueError:
     eContent = e.content.decode(UTF8) if isinstance(e.content, bytes) else e.content
     if (e.resp['status'] == '503') and (eContent == 'Quota exceeded for the current request'):
