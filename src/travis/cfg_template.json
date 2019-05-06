@@ -1,0 +1,12 @@
+{
+    "_class": "OAuth2Credentials",
+    "_module": "oauth2client.client",
+    "access_token": "",
+    "client_id": "118850122376-72t6r2666n5rbjlfebftqat5qjai2def.apps.googleusercontent.com",
+    "client_secret": "",
+    "invalid": false,
+    "refresh_token": "",
+    "token_expiry": "2010-04-17T15:18:45Z",
+    "token_uri": "https://accounts.google.com/o/oauth2/token",
+    "user_agent": ""
+}
