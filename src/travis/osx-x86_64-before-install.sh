@@ -1,6 +1,7 @@
 mypath=$HOME
 whereibelong=$(pwd)
-brew install xz
+echo "Brew installing xz..."
+brew install xz > /dev/null
 
 # Compile latest OpenSSL
 OPENSSL_VER=1.1.1b

@@ -33,6 +33,8 @@ matrix:
       python:
         - "3.5"
       env:
+        - GAMOS=linux
+        - PLATFORM=x86_64
         - VMTYPE=test
       deploy: {} # skips full deploy steps
     - os: linux
@@ -42,6 +44,8 @@ matrix:
       python:
         - "3.6"
       env:
+        - GAMOS=linux
+        - PLATFORM=x86_64
         - VMTYPE=test
       deploy: {}
     - os: linux
@@ -51,6 +55,8 @@ matrix:
       python:
         - "3.8-dev"
       env:
+        - GAMOS=linux
+        - PLATFORM=x86_64
         - VMTYPE=test
       deploy: {}
     - os: linux
@@ -59,6 +65,8 @@ matrix:
       python:
         - "nightly"
       env:
+        - GAMOS=linux
+        - PLATFORM=x86_64
         - VMTYPE=test
       deploy: {}
     - os: osx
