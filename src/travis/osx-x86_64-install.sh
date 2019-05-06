@@ -7,4 +7,5 @@ cp LICENSE gam
 cp whatsnew.txt gam
 cp GamCommands.txt gam
 GAM_ARCHIVE=gam-$GAMVERSION-$GAMOS-$PLATFORM.tar.xz
+rm gam/lastupdatecheck.txt
 tar cfJ $GAM_ARCHIVE gam/
