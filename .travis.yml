@@ -34,7 +34,7 @@ matrix:
         - "3.5"
       env:
         - VMTYPE=test
-      deploy: true # skips full deploy steps
+      deploy: {} # skips full deploy steps
     - os: linux
       name: "Linux 64-bit Xenial - Python 3.6 Source Testing"
       dist: xenial
@@ -43,7 +43,7 @@ matrix:
         - "3.6"
       env:
         - VMTYPE=test
-      deploy: true
+      deploy: {}
     - os: linux
       name: "Linux 64-bit Xenial - Python 3.8-dev Source Testing"
       dist: xenial
@@ -52,7 +52,7 @@ matrix:
         - "3.8-dev"
       env:
         - VMTYPE=test
-      deploy: true
+      deploy: {}
     - os: linux
       name: "Linux 64-bit Xenial - Python nightly Source Testing"
       dist: xenial
@@ -60,7 +60,7 @@ matrix:
         - "nightly"
       env:
         - VMTYPE=test
-      deploy: true
+      deploy: {}
     - os: osx
       name: "MacOS 64-bit"
       language: generic
