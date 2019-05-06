@@ -845,11 +845,15 @@ OAUTH2_TOKEN_ERRORS = [
   'access_denied',
   'access_denied: Requested client not authorized',
   'internal_failure: Backend Error',
+  'internal_failure: None',
+  'invalid_grant',
   'invalid_grant: Bad Request',
   'invalid_grant: Invalid email or User ID',
   'invalid_grant: Not a valid email',
+  'invalid_grant: Invalid JWT: No valid verifier found for issuer',
   'invalid_request: Invalid impersonation prn email address',
   'unauthorized_client: Client is unauthorized to retrieve access tokens using this method',
+  'unauthorized_client: Client is unauthorized to retrieve access tokens using this method, or client not authorized for any of the scopes requested',
   'unauthorized_client: Unauthorized client or scope in request',
   ]
 #
