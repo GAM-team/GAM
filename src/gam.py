@@ -649,7 +649,7 @@ def SetGlobalVariables():
     if not value:
       return rowFilters
     try:
-      for column, filterStr in iter(json.loads(value.encode('unicode-escape').decode(UTF8)).items())
+      for column, filterStr in iter(json.loads(value.encode('unicode-escape').decode(UTF8)).items()):
         mg = ROW_FILTER_COMP_PATTERN.match(filterStr)
         if mg:
           if mg.group(1) in ['date', 'time']:
