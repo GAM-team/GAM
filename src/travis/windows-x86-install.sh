@@ -1,6 +1,7 @@
 cd src
 pyinstaller --clean -F --distpath=gam $GAMOS-gam.spec
 export gam="gam/gam"
+export gampath=$(readlink -e gam)
 $gam version extended
 export GAMVERSION=`$gam version simple`
 rm gam/lastupdatecheck.txt
