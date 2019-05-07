@@ -176,7 +176,7 @@ script:
 - $gam whatis $newuser
 - $gam user $gam_user show tokens
 - $gam delete user $newuser
-- $gam print users query "travis.jid-$jid" | $gam csv - gam delete user ~primaryEmail
+- $gam print users query "travis.jid=$jid" | $gam csv - gam delete user ~primaryEmail
 
 before_deploy:
 - export TRAVIS_TAG="preview"
