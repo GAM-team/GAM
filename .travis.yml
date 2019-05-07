@@ -158,7 +158,7 @@ script:
 - $gam users "$newbase-bulkuser-7 $newbase-bulkuser-8 $newbase-bulkuser-9" modify messages query in:anywhere maxtomodify 99999 addlabel IMPORTANT addlabel STARRED doit
 - $gam create feature name Whiteboard-$newbase
 - $gam create feature name VC-$newbase
-- $gam create building "My Building" id $newbuilding floors 1,2,3,4,5,6,7,8,9,10,11,12,14,15 description "No 13th floor here..."
+- $gam create building "My Building - $newbase" id $newbuilding floors 1,2,3,4,5,6,7,8,9,10,11,12,14,15 description "No 13th floor here..."
 - $gam create resource $newresource "Resource Calendar $tstamp" capacity 25 features Whiteboard-$newbase,VC-$newbase building $newbuilding floor 15 type Room
 - $gam info resource $newresource
 - $gam calendar $newuser update read domain
@@ -171,12 +171,12 @@ script:
 - $gam delete feature Whiteboard-$newbase
 - $gam delete feature VC-$newbase
 - $gam delete building $newbuilding
-- $gam print users query "travis.jid=$jid" | $gam csv - gam delete user ~primaryEmail
 - $gam delete group $newgroup
 - $gam create alias $newalias user $newuser
 - $gam whatis $newuser
 - $gam user $gam_user show tokens
 - $gam delete user $newuser
+- $gam print users query "travis.jid-$jid" | $gam csv - gam delete user ~primaryEmail
 
 before_deploy:
 - export TRAVIS_TAG="preview"
