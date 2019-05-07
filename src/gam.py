@@ -1849,6 +1849,8 @@ def printShowDelegates(users, csvFormat):
             print(utils.convertUTF8("Delegator: %s\n Status: %s\n Delegate Email: %s\n" % (user, status, delegateAddress)))
   if csvFormat:
     writeCSVfile(csvRows, titles, 'Delegates', todrive)
+  elif not csvStyle:
+    print('Total %s delegates' % len(delegates['delegates']))
 
 def deleteDelegate(users):
   delegate = normalizeEmailAddressOrUID(sys.argv[5], noUid=True)
