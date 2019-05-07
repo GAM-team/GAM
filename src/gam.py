@@ -1329,13 +1329,15 @@ def buildGAPIObject(api):
   return service
 
 # Convert UID to email address
-def convertUIDtoEmailAddress(emailAddressOrUID, cd=None, email_type='user'):
+def convertUIDtoEmailAddress(emailAddressOrUID, cd=None, email_types=['user']):
+  if type(email_types) is str:
+    email_types = email_types.split(',')
   normalizedEmailAddressOrUID = normalizeEmailAddressOrUID(emailAddressOrUID)
   if normalizedEmailAddressOrUID.find('@') > 0:
     return normalizedEmailAddressOrUID
   if not cd:
     cd = buildGAPIObject('directory')
-  if email_type == 'user':
+  if 'user' in email_types:
     try:
       result = callGAPI(cd.users(), 'get',
                         throw_reasons=[GAPI_USER_NOT_FOUND],
@@ -1344,7 +1346,7 @@ def convertUIDtoEmailAddress(emailAddressOrUID, cd=None, email_type='user'):
         return result['primaryEmail'].lower()
     except GAPI_userNotFound:
       pass
-  else:
+  if 'group' in email_types:
     try:
       result = callGAPI(cd.groups(), 'get',
                         throw_reasons=[GAPI_GROUP_NOT_FOUND],
@@ -1352,6 +1354,16 @@ def convertUIDtoEmailAddress(emailAddressOrUID, cd=None, email_type='user'):
       if 'email' in result:
         return result['email'].lower()
     except GAPI_groupNotFound:
+      pass
+  if 'resource' in email_types:
+    try:
+      result = callGAPI(cd.resources().calendars(), 'get',
+                        throw_reasons=[GAPI_RESOURCE_NOT_FOUND],
+                        calendarResourceId=normalizedEmailAddressOrUID,
+                        customer=GC_Values[GC_CUSTOMER_ID], fields='resourceEmail')
+      if 'resourceEmail' in result:
+        return result['resourceEmail'].lower()
+    except GAPI_resourceNotFound:
       pass
   return normalizedEmailAddressOrUID
 
@@ -1415,7 +1427,7 @@ def normalizeCalendarId(calname, checkPrimary=False):
     return calname
   if not GC_Values[GC_DOMAIN]:
     GC_Values[GC_DOMAIN] = _getValueFromOAuth('hd')
-  return convertUIDtoEmailAddress(calname)
+  return convertUIDtoEmailAddress(calname, email_types=['user', 'resource'])
 
 def buildCalendarGAPIObject(calname):
   calendarId = normalizeCalendarId(calname)
@@ -8330,7 +8342,7 @@ def doGetVaultHoldInfo():
     account_type = 'group' if results['corpus'] == 'GROUPS' else 'user'
     for i in range(0, len(results['accounts'])):
       uid = 'uid:%s' % results['accounts'][i]['accountId']
-      acct_email = convertUIDtoEmailAddress(uid, cd, account_type)
+      acct_email = convertUIDtoEmailAddress(uid, cd, [account_type])
       results['accounts'][i]['email'] = acct_email
   if 'orgUnit' in results:
     results['orgUnit']['orgUnitPath'] = doGetOrgInfo(results['orgUnit']['orgUnitId'], return_attrib='orgUnitPath')
