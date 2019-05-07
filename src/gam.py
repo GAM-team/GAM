@@ -1847,10 +1847,10 @@ def printShowDelegates(users, csvFormat):
             print('%s,%s,%s' % (user, delegateAddress, status))
           else:
             print(utils.convertUTF8("Delegator: %s\n Status: %s\n Delegate Email: %s\n" % (user, status, delegateAddress)))
+      if not csvStyle and delegates['delegates']:
+        print('Total %s delegates' % len(delegates['delegates']))
   if csvFormat:
     writeCSVfile(csvRows, titles, 'Delegates', todrive)
-  elif not csvStyle:
-    print('Total %s delegates' % len(delegates['delegates']))
 
 def deleteDelegate(users):
   delegate = normalizeEmailAddressOrUID(sys.argv[5], noUid=True)
@@ -10958,6 +10958,7 @@ USER_ARGUMENT_TO_PROPERTY_MAP = {
   'agreed2terms': ['agreedToTerms',],
   'agreedtoterms': ['agreedToTerms',],
   'aliases': ['aliases', 'nonEditableAliases',],
+  'archived': ['archived',],
   'changepassword': ['changePasswordAtNextLogin',],
   'changepasswordatnextlogin': ['changePasswordAtNextLogin',],
   'creationtime': ['creationTime',],
