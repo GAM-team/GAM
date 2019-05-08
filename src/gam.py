@@ -66,8 +66,8 @@ import oauth2client.file
 import oauth2client.tools
 from oauth2client.contrib.dictionary_storage import DictionaryStorage
 
-import utils
-from var import *
+from . import utils
+from .var import *
 
 # Finding path method varies between Python source, PyInstaller and StaticX
 if os.environ.get('STATICX_PROG_PATH', False):
