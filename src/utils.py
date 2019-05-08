@@ -1,9 +1,7 @@
-import collections
 import re
 import sys
 from html.entities import name2codepoint
 from html.parser import HTMLParser
-from .var import GM_Globals, GM_WINDOWS, GM_SYS_ENCODING
 
 ONE_KILO_BYTES = 1000
 ONE_MEGA_BYTES = 1000000
