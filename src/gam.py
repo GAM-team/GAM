@@ -1330,7 +1330,7 @@ def buildGAPIObject(api):
 
 # Convert UID to email address
 def convertUIDtoEmailAddress(emailAddressOrUID, cd=None, email_types=['user']):
-  if type(email_types) is str:
+  if isinstance(email_types, str):
     email_types = email_types.split(',')
   normalizedEmailAddressOrUID = normalizeEmailAddressOrUID(emailAddressOrUID)
   if normalizedEmailAddressOrUID.find('@') > 0:
@@ -5277,7 +5277,7 @@ def getLanguage(users):
                       soft_errors=True,
                       userId='me')
     if result:
-      print('User: {0}, Language: {1} ({2}/{3})'.format(user, result['displayLanguage']), i, count)
+      print('User: {0}, Language: {1} ({2}/{3})'.format(user, result['displayLanguage'], i, count))
 
 def getImap(users):
   i = 0
