@@ -1422,8 +1422,7 @@ def buildActivityGAPIObject(user):
   return (userEmail, buildGAPIServiceObject('appsactivity', userEmail))
 
 def normalizeCalendarId(calname, checkPrimary=False):
-  calname = calname.lower()
-  if checkPrimary and calname == 'primary':
+  if checkPrimary and calname.lower() == 'primary':
     return calname
   if not GC_Values[GC_DOMAIN]:
     GC_Values[GC_DOMAIN] = _getValueFromOAuth('hd')
