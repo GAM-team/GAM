@@ -649,7 +649,7 @@ def SetGlobalVariables():
     if not value:
       return rowFilters
     try:
-      for column, filterStr in iter(json.loads(value).items()):
+      for column, filterStr in iter(json.loads(value.encode('unicode-escape').decode(UTF8)).items()):
         mg = ROW_FILTER_COMP_PATTERN.match(filterStr)
         if mg:
           if mg.group(1) in ['date', 'time']:
@@ -890,7 +890,7 @@ def waitOnFailure(n, retries, errMsg):
 
 def checkGAPIError(e, soft_errors=False, silent_errors=False, retryOnHttpError=False, service=None):
   try:
-    error = json.loads(e.content.decode('utf-8'))
+    error = json.loads(e.content.decode(UTF8))
   except ValueError:
     eContent = e.content.decode(UTF8) if isinstance(e.content, bytes) else e.content
     if (e.resp['status'] == '503') and (eContent == 'Quota exceeded for the current request'):
@@ -1847,7 +1847,7 @@ def printShowDelegates(users, csvFormat):
             print('%s,%s,%s' % (user, delegateAddress, status))
           else:
             print(utils.convertUTF8("Delegator: %s\n Status: %s\n Delegate Email: %s\n" % (user, status, delegateAddress)))
-      if not csvStyle and delegates['delegates']:
+      if not csvFormat and not csvStyle and delegates['delegates']:
         print('Total %s delegates' % len(delegates['delegates']))
   if csvFormat:
     writeCSVfile(csvRows, titles, 'Delegates', todrive)
