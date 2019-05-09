@@ -10840,12 +10840,12 @@ def writeCSVfile(csvRows, titles, list_type, todrive):
     return rowDate == filterDate
 
   def rowCountFilterMatch(rowCount, op, filterCount):
-      if isinstance(rowCount, str):
-        if not rowCount.isdigit():
-          return False
-        rowCount = int(rowCount)
-      elif not isinstance(rowCount, int):
+    if isinstance(rowCount, str):
+      if not rowCount.isdigit():
         return False
+      rowCount = int(rowCount)
+    elif not isinstance(rowCount, int):
+      return False
     if op == '<':
       return rowCount < filterCount
     if op == '<=':
