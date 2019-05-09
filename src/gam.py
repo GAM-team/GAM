@@ -10840,8 +10840,12 @@ def writeCSVfile(csvRows, titles, list_type, todrive):
     return rowDate == filterDate
 
   def rowCountFilterMatch(rowCount, op, filterCount):
-    if not isinstance(rowCount, int):
-      return False
+      if isinstance(rowCount, str):
+        if not rowCount.isdigit():
+          return False
+        rowCount = int(rowCount)
+      elif not isinstance(rowCount, int):
+        return False
     if op == '<':
       return rowCount < filterCount
     if op == '<=':
@@ -10875,7 +10879,7 @@ def writeCSVfile(csvRows, titles, list_type, todrive):
       elif filterVal[0] in ['date', 'time']:
         csvRows = [row for row in csvRows if rowDateTimeFilterMatch(filterVal[0] == 'date', row.get(column, ''), filterVal[1], filterVal[2])]
       elif filterVal[0] == 'count':
-        csvRows = [row for row in csvRows if rowCountFilterMatch(row.get(column, ''), filterVal[1], filterVal[2])]
+        csvRows = [row for row in csvRows if rowCountFilterMatch(row.get(column, 0), filterVal[1], filterVal[2])]
       else: #boolean
         csvRows = [row for row in csvRows if rowBooleanFilterMatch(row.get(column, False), filterVal[1])]
   if GC_Values[GC_CSV_HEADER_FILTER]:
