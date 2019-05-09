@@ -171,15 +171,15 @@ script:
 - $gam calendar $newuser add editor $gam_user
 - $gam calendar $newuser showacl
 - $gam printer register
-- export GAM_CSV_ROW_FILTER="{\"type\": \"regex:^GOOGLE\$\"}"
+- export GAM_CSV_ROW_FILTER='{"type": "regex:^GOOGLE"}'
 - $gam print printers > printers.csv
 - unset GAM_CSV_ROW_FILTER
 - $gam csv printers.csv gam printer ~id add USER $newgroup
-- $gam csv printers.csv gam printjob ~id submit https://www.google.com
+- $gam csv printers.csv gam printjob ~id submit https://www.github.com/jay0lee/GAM
 - $gam csv printers.csv gam info printer ~id
-- $gam print printers
 - $gam print printjobs
-
+- $gam csv printers.csv gam printjob ~id fetch
+- $gam csv printers.csv gam delete printer ~id
 #- $gam calendar id:$newresource add editor $newuser
 #- $gam calendar id:$newresource update read domain
 #- $gam calendar id:$newresource showacl

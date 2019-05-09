@@ -3467,7 +3467,7 @@ def doPrintJobFetch():
       jobid = job['id']
       fileName = os.path.join(targetFolder, '{0}-{1}'.format(''.join(c if c in valid_chars else '_' for c in job['title']), jobid))
       _, content = cp._http.request(uri=fileUrl, method='GET')
-      if writeFile(fileName, content, continueOnError=True):
+      if writeFile(fileName, content, mode='wb', continueOnError=True):
 #        ticket = callGAPI(cp.jobs(), u'getticket', jobid=jobid, use_cjt=True)
         result = callGAPI(cp.jobs(), 'update', jobid=jobid, semantic_state_diff=ssd)
         checkCloudPrintResult(result)
@@ -3620,6 +3620,8 @@ def doPrintJobSubmit():
   #Get the printer first to make sure our OAuth access token is fresh
   callGAPI(cp.printers(), 'get', printerid=printer)
   _, result = cp._http.request(uri='https://www.google.com/cloudprint/submit', method='POST', body=body, headers=headers)
+  result = result.decode(UTF8)
+  result = json.loads(result)
   checkCloudPrintResult(result)
   if isinstance(result, str):
     result = json.loads(result)
