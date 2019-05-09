@@ -649,7 +649,7 @@ def SetGlobalVariables():
     if not value:
       return rowFilters
     try:
-      for column, filterStr in iter(json.loads(value).items()):
+      for column, filterStr in iter(json.loads(value.encode('unicode-escape').decode(UTF8)).items()):
         mg = ROW_FILTER_COMP_PATTERN.match(filterStr)
         if mg:
           if mg.group(1) in ['date', 'time']:
@@ -890,7 +890,7 @@ def waitOnFailure(n, retries, errMsg):
 
 def checkGAPIError(e, soft_errors=False, silent_errors=False, retryOnHttpError=False, service=None):
   try:
-    error = json.loads(e.content.decode('utf-8'))
+    error = json.loads(e.content.decode(UTF8))
   except ValueError:
     eContent = e.content.decode(UTF8) if isinstance(e.content, bytes) else e.content
     if (e.resp['status'] == '503') and (eContent == 'Quota exceeded for the current request'):
@@ -1330,7 +1330,7 @@ def buildGAPIObject(api):
 
 # Convert UID to email address
 def convertUIDtoEmailAddress(emailAddressOrUID, cd=None, email_types=['user']):
-  if type(email_types) is str:
+  if isinstance(email_types, str):
     email_types = email_types.split(',')
   normalizedEmailAddressOrUID = normalizeEmailAddressOrUID(emailAddressOrUID)
   if normalizedEmailAddressOrUID.find('@') > 0:
@@ -1422,8 +1422,7 @@ def buildActivityGAPIObject(user):
   return (userEmail, buildGAPIServiceObject('appsactivity', userEmail))
 
 def normalizeCalendarId(calname, checkPrimary=False):
-  calname = calname.lower()
-  if checkPrimary and calname == 'primary':
+  if checkPrimary and calname.lower() == 'primary':
     return calname
   if not GC_Values[GC_DOMAIN]:
     GC_Values[GC_DOMAIN] = _getValueFromOAuth('hd')
@@ -1847,7 +1846,7 @@ def printShowDelegates(users, csvFormat):
             print('%s,%s,%s' % (user, delegateAddress, status))
           else:
             print(utils.convertUTF8("Delegator: %s\n Status: %s\n Delegate Email: %s\n" % (user, status, delegateAddress)))
-      if not csvStyle and delegates['delegates']:
+      if not csvFormat and not csvStyle and delegates['delegates']:
         print('Total %s delegates' % len(delegates['delegates']))
   if csvFormat:
     writeCSVfile(csvRows, titles, 'Delegates', todrive)
@@ -5278,7 +5277,7 @@ def getLanguage(users):
                       soft_errors=True,
                       userId='me')
     if result:
-      print('User: {0}, Language: {1} ({2}/{3})'.format(user, result['displayLanguage']), i, count)
+      print('User: {0}, Language: {1} ({2}/{3})'.format(user, result['displayLanguage'], i, count))
 
 def getImap(users):
   i = 0
@@ -10841,7 +10840,11 @@ def writeCSVfile(csvRows, titles, list_type, todrive):
     return rowDate == filterDate
 
   def rowCountFilterMatch(rowCount, op, filterCount):
-    if not isinstance(rowCount, int):
+    if isinstance(rowCount, str):
+      if not rowCount.isdigit():
+        return False
+      rowCount = int(rowCount)
+    elif not isinstance(rowCount, int):
       return False
     if op == '<':
       return rowCount < filterCount
@@ -10876,7 +10879,7 @@ def writeCSVfile(csvRows, titles, list_type, todrive):
       elif filterVal[0] in ['date', 'time']:
         csvRows = [row for row in csvRows if rowDateTimeFilterMatch(filterVal[0] == 'date', row.get(column, ''), filterVal[1], filterVal[2])]
       elif filterVal[0] == 'count':
-        csvRows = [row for row in csvRows if rowCountFilterMatch(row.get(column, ''), filterVal[1], filterVal[2])]
+        csvRows = [row for row in csvRows if rowCountFilterMatch(row.get(column, 0), filterVal[1], filterVal[2])]
       else: #boolean
         csvRows = [row for row in csvRows if rowBooleanFilterMatch(row.get(column, False), filterVal[1])]
   if GC_Values[GC_CSV_HEADER_FILTER]:
