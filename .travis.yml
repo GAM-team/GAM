@@ -137,9 +137,10 @@ script:
   export newuser=$newbase@pdl.jaylee.us;
   export newgroup=$newbase-group@pdl.jaylee.us;
   export newalias=$newbase-alias@pdl.jaylee.us;
-  export newbuilding=$newbase-building
+  export newbuilding=$newbase-building;
   export newresource=$newbase-resource;
-- echo email > sample.csv; for i in {01..50}; do echo $newbase-bulkuser-$i >> sample.csv; done
+  export GAM_THREADS=5;
+- echo email > sample.csv; for i in {01..20}; do echo $newbase-bulkuser-$i >> sample.csv; done
 - $gam create user $newuser firstname Travis lastname $jid password random travis.jid $jid
 - $gam create group $newgroup name "Travis $jid group" description "This is a description" isarchived true
 - $gam user $newuser add license gsuitebusiness
@@ -152,7 +153,7 @@ script:
 - $gam user $gam_user check serviceaccount
 - $gam user $newuser imap on 
 - $gam user $newuser show imap
-- cat sample.csv | head -n 26 | $gam csv - gam user $newuser delegate to ~email
+- $gam csv sample.csv gam user $newuser delegate to ~email
 - $gam user $newuser show delegates
 - $gam users "$newbase-bulkuser-01 $newbase-bulkuser-02 $newbase-bulkuser-03" delete messages query in:anywhere maxtodelete 99999 doit
 - $gam users "$newbase-bulkuser-04 $newbase-bulkuser-05 $newbase-bulkuser-06" trash messages query in:anywhere maxtotrash 99999 doit
@@ -167,7 +168,9 @@ script:
 - $gam calendar $newuser add editor $gam_user
 - $gam calendar $newuser showacl
 - $gam printer register
-- GAM_CSV_ROW_FILTER="{\"type\": \"regex:^GOOGLE$\"}" $gam print printers > printers.csv
+- export GAM_CSV_ROW_FILTER="{\"type\": \"regex:^GOOGLE$\"}";
+  $gam print printers > printers.csv;
+  unset GAM_CSV_ROW_FILTER;
 - $gam csv printers.csv gam printer ~id add USER $newgroup
 - $gam csv printers.csv gam printjob ~id submit https://www.google.com
 - $gam csv printers.csv gam info printer ~id

@@ -3567,6 +3567,7 @@ def doPrinterRegister():
   #Get the printer first to make sure our OAuth access token is fresh
   callGAPI(cp.printers(), 'list')
   _, result = cp._http.request(uri='https://www.google.com/cloudprint/register', method='POST', body=body, headers=headers)
+  result = result.decode(UTF8)
   result = json.loads(result)
   checkCloudPrintResult(result)
   print('Created printer %s' % result['printers'][0]['id'])
