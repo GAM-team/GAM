@@ -3567,8 +3567,7 @@ def doPrinterRegister():
   #Get the printer first to make sure our OAuth access token is fresh
   callGAPI(cp.printers(), 'list')
   _, result = cp._http.request(uri='https://www.google.com/cloudprint/register', method='POST', body=body, headers=headers)
-  result = result.decode(UTF8)
-  result = json.loads(result)
+  result = json.loads(result.decode(UTF8))
   checkCloudPrintResult(result)
   print('Created printer %s' % result['printers'][0]['id'])
 
@@ -3620,11 +3619,8 @@ def doPrintJobSubmit():
   #Get the printer first to make sure our OAuth access token is fresh
   callGAPI(cp.printers(), 'get', printerid=printer)
   _, result = cp._http.request(uri='https://www.google.com/cloudprint/submit', method='POST', body=body, headers=headers)
-  result = result.decode(UTF8)
-  result = json.loads(result)
+  result = json.loads(result.decode(UTF8))
   checkCloudPrintResult(result)
-  if isinstance(result, str):
-    result = json.loads(result)
   print('Submitted print job %s' % result['job']['id'])
 
 def doDeletePrintJob():
