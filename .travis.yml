@@ -180,9 +180,9 @@ script:
 - $gam print printjobs
 - $gam csv printers.csv gam printjob ~id fetch
 - $gam csv printers.csv gam delete printer ~id
-- $gam calendar id:$newresource add editor $newuser
-- $gam calendar id:$newresource update read domain
-- $gam calendar id:$newresource showacl
+#- $gam calendar id:$newresource add editor $newuser
+#- $gam calendar id:$newresource update read domain
+#- $gam calendar id:$newresource showacl
 - $gam csv sample.csv gam user ~email add calendar id:$newresource
 - $gam delete resource $newresource
 - $gam delete feature Whiteboard-$newbase
