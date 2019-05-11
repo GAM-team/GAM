@@ -9714,6 +9714,8 @@ def doGetUserInfo(user_email=None):
     print('Account Suspended: %s' % user['suspended'])
   if 'suspensionReason' in user:
     print('Suspension Reason: %s' % user['suspensionReason'])
+  if 'archived' in user:
+    print('Is Archived: %s' % user['archived'])
   if 'changePasswordAtNextLogin' in user:
     print('Must Change Password: %s' % user['changePasswordAtNextLogin'])
   if 'id' in user:
@@ -12251,8 +12253,11 @@ def doPrintLicenses(returnFields=None, skus=None, countsOnly=False, returnCounts
     fields = 'nextPageToken,items({0})'.format(returnFields)
   if skus:
     for sku in skus:
-      product, sku = getProductAndSKU(sku)
-      page_message = 'Got %%%%total_items%%%% Licenses for %s...\n' % sku
+      if not products:
+        product, sku = getProductAndSKU(sku)
+      else:
+        product = products[0]
+      page_message = 'Got %%%%total_items%%%% Licenses for %s...\n' % SKUS.get(sku, {'displayName': sku})['displayName']
       try:
         licenses += callGAPIpages(lic.licenseAssignments(), 'listForProductAndSku', 'items', throw_reasons=[GAPI_INVALID, GAPI_FORBIDDEN], page_message=page_message,
                                   customerId=GC_Values[GC_DOMAIN], productId=product, skuId=sku, fields=fields)
@@ -12268,7 +12273,7 @@ def doPrintLicenses(returnFields=None, skus=None, countsOnly=False, returnCounts
           products.append(sku['product'])
       products.sort()
     for productId in products:
-      page_message = 'Got %%%%total_items%%%% Licenses for %s...\n' % productId
+      page_message = 'Got %%%%total_items%%%% Licenses for %s...\n' % PRODUCTID_NAME_MAPPINGS.get(productId, productId)
       try:
         licenses += callGAPIpages(lic.licenseAssignments(), 'listForProduct', 'items', throw_reasons=[GAPI_INVALID, GAPI_FORBIDDEN], page_message=page_message,
                                   customerId=GC_Values[GC_DOMAIN], productId=productId, fields=fields)

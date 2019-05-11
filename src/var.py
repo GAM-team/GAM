@@ -62,11 +62,15 @@ SKUS = {
   'Google-Apps-For-Postini': {
     'product': 'Google-Apps', 'aliases': ['gams', 'postini', 'gsuitegams', 'gsuitepostini', 'gsuitemessagesecurity'], 'displayName': 'G Suite Message Security'},
   'Google-Apps-Lite': {
-    'product': 'Google-Apps', 'aliases': ['gal', 'lite', 'gsuitelite'], 'displayName': 'G Suite Lite'},
+    'product': 'Google-Apps', 'aliases': ['gal', 'gsl', 'lite', 'gsuitelite'], 'displayName': 'G Suite Lite'},
   'Google-Apps-Unlimited': {
-    'product': 'Google-Apps', 'aliases': ['gau', 'unlimited', 'gsuitebusiness'], 'displayName': 'G Suite Business'},
+    'product': 'Google-Apps', 'aliases': ['gau', 'gsb', 'unlimited', 'gsuitebusiness'], 'displayName': 'G Suite Business'},
   '1010020020': {
-    'product': 'Google-Apps', 'aliases': ['gae', 'enterprise', 'gsuiteenterprise'], 'displayName': 'G Suite Enterprise'},
+    'product': 'Google-Apps', 'aliases': ['gae', 'gse', 'enterprise', 'gsuiteenterprise'], 'displayName': 'G Suite Enterprise'},
+  '1010340002': {
+    'product': '101034', 'aliases': ['gsbau', 'businessarchived', 'gsuitebusinessarchived'], 'displayName': 'G Suite Business Archived'},
+  '1010340001': {
+    'product': '101034', 'aliases': ['gseau', 'enterprisearchived', 'gsuiteenterprisearchived'], 'displayName': 'G Suite Enterprise Archived'},
   '1010060001': {
     'product': 'Google-Apps', 'aliases': ['d4e', 'driveenterprise', 'drive4enterprise'], 'displayName': 'Drive Enterprise'},
   'Google-Drive-storage-20GB': {
@@ -95,6 +99,20 @@ SKUS = {
     'product': 'Google-Coordinate', 'aliases': ['coordinate', 'googlecoordinate'], 'displayName': 'Google Coordinate'},
   'Google-Chrome-Device-Management': {
     'product': 'Google-Chrome-Device-Management', 'aliases': ['chrome', 'cdm', 'googlechromedevicemanagement'], 'displayName': 'Google Chrome Device Management'}
+  }
+
+PRODUCTID_NAME_MAPPINGS = {
+  '101001': 'Cloud Identity Free',
+  '101005': 'Cloud Identity Premium',
+  '101031': 'G Suite Enterprise for Education',
+  '101033': 'Google Voice',
+  'Google-Apps': 'G Suite',
+  '101034': 'G Suite Archived',
+  '101006': 'Drive Enterprise',
+  'Google-Drive-storage': 'Google Drive Storage',
+  'Google-Vault': 'Google Vault',
+  'Google-Coordinate': 'Google Coordinate',
+  'Google-Chrome-Device-Management': 'Google Chrome Device Management'
   }
 
 # Legacy APIs that use v1 discovery. Newer APIs should all use v2.
