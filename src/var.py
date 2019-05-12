@@ -104,15 +104,15 @@ SKUS = {
 PRODUCTID_NAME_MAPPINGS = {
   '101001': 'Cloud Identity Free',
   '101005': 'Cloud Identity Premium',
+  '101006': 'Drive Enterprise',
   '101031': 'G Suite Enterprise for Education',
   '101033': 'Google Voice',
-  'Google-Apps': 'G Suite',
   '101034': 'G Suite Archived',
-  '101006': 'Drive Enterprise',
+  'Google-Apps': 'G Suite',
+  'Google-Chrome-Device-Management': 'Google Chrome Device Management',
+  'Google-Coordinate': 'Google Coordinate',
   'Google-Drive-storage': 'Google Drive Storage',
   'Google-Vault': 'Google Vault',
-  'Google-Coordinate': 'Google Coordinate',
-  'Google-Chrome-Device-Management': 'Google Chrome Device Management'
   }
 
 # Legacy APIs that use v1 discovery. Newer APIs should all use v2.

@@ -1772,7 +1772,7 @@ def watchGmail(users):
           results = callGAPI(gmails[a_user]['g'].users().history(), 'list', userId='me', startHistoryId=gmails[a_user]['seen_historyId'])
           if 'history' in results:
             for history in results['history']:
-              if list(history.keys()) == ['messages', 'id']:
+              if list(history) == ['messages', 'id']:
                 continue
               if 'labelsAdded' in history:
                 for labelling in history['labelsAdded']:
@@ -1975,7 +1975,7 @@ def doUpdateCourse():
     myarg = sys.argv[i].lower()
     getCourseAttribute(myarg, sys.argv[i+1], body, croom, 'update')
     i += 2
-  updateMask = ','.join(list(body.keys()))
+  updateMask = ','.join(list(body))
   body['id'] = courseId
   result = callGAPI(croom.courses(), 'patch', id=courseId, body=body, updateMask=updateMask)
   print('Updated Course %s' % result['id'])
@@ -2059,7 +2059,7 @@ def doGetCustomerInfo():
     'accounts:gsuite_unlimited_total_licenses': 'G Suite Business Licenses',
     'accounts:gsuite_unlimited_used_licenses': 'G Suite Business Users'
     }
-  parameters = ','.join(list(user_counts_map.keys()))
+  parameters = ','.join(list(user_counts_map))
   tryDate = datetime.date.today().strftime(YYYYMMDD_FORMAT)
   customerId = GC_Values[GC_CUSTOMER_ID]
   if customerId == MY_CUSTOMER:
@@ -3706,7 +3706,7 @@ def doCalendarAddACL(function):
     return
   myarg = sys.argv[4].lower().replace('_', '')
   if myarg not in CALENDAR_ACL_ROLES_MAP:
-    systemErrorExit(2, 'Role must be one of %s; got %s' % (', '.join(sorted(CALENDAR_ACL_ROLES_MAP.keys())), myarg))
+    systemErrorExit(2, 'Role must be one of %s; got %s' % (', '.join(sorted(CALENDAR_ACL_ROLES_MAP)), myarg))
   body = {'role': CALENDAR_ACL_ROLES_MAP[myarg]}
   i = _getCalendarACLScope(5, body)
   sendNotifications = True
@@ -4410,7 +4410,7 @@ def printDriveFileList(users):
         else:
           orderByList.append('{0} desc'.format(fieldName))
       else:
-        systemErrorExit(2, 'orderby must be one of {0}; got {1}'.format(', '.join(sorted(DRIVEFILE_ORDERBY_CHOICES_MAP.keys())), fieldName))
+        systemErrorExit(2, 'orderby must be one of {0}; got {1}'.format(', '.join(sorted(DRIVEFILE_ORDERBY_CHOICES_MAP)), fieldName))
     elif myarg == 'query':
       query += ' and %s' % sys.argv[i+1]
       i += 2
@@ -4605,7 +4605,7 @@ def showDriveFileTree(users):
         else:
           orderByList.append('{0} desc'.format(fieldName))
       else:
-        systemErrorExit(2, 'orderby must be one of {0}; got {1}'.format(', '.join(sorted(DRIVEFILE_ORDERBY_CHOICES_MAP.keys())), fieldName))
+        systemErrorExit(2, 'orderby must be one of {0}; got {1}'.format(', '.join(sorted(DRIVEFILE_ORDERBY_CHOICES_MAP)), fieldName))
     else:
       systemErrorExit(2, '%s is not a valid argument for "gam <users> show filetree"' % myarg)
   if orderByList:
@@ -9651,7 +9651,7 @@ def doGetUserInfo(user_email=None):
   getSchemas = getAliases = getGroups = getLicenses = True
   projection = 'full'
   customFieldMask = viewType = None
-  skus = sorted(SKUS.keys())
+  skus = sorted(SKUS)
   while i < len(sys.argv):
     myarg = sys.argv[i].lower()
     if myarg == 'noaliases':
@@ -12227,7 +12227,7 @@ def doPrintLicenses(returnFields=None, skus=None, countsOnly=False, returnCounts
         skus = sys.argv[i+1].split(',')
         i += 2
       elif myarg == 'allskus':
-        skus = sorted(SKUS.keys())
+        skus = sorted(SKUS)
         products = []
         i += 1
       elif myarg == 'gsuite':
@@ -12268,10 +12268,7 @@ def doPrintLicenses(returnFields=None, skus=None, countsOnly=False, returnCounts
         pass
   else:
     if not products:
-      for sku in list(SKUS.values()):
-        if sku['product'] not in products:
-          products.append(sku['product'])
-      products.sort()
+      products = sorted(PRODUCTID_NAME_MAPPINGS)
     for productId in products:
       page_message = 'Got %%%%total_items%%%% Licenses for %s...\n' % PRODUCTID_NAME_MAPPINGS.get(productId, productId)
       try:
