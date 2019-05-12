@@ -74,6 +74,13 @@ If an item contains spaces, it should be surrounded by ".
 	Google-Drive-storage|
 	Google-Vault|
 	101001|101005|101031
+<ProductID> ::=
+	Google-Apps|
+	Google-Chrome-Device-Management|
+	Google-Coordinate|
+	Google-Drive-storage|
+	Google-Vault|
+	101001|101005|101006|101031|101033|101034
 <SKUID> ::=
 	cloudidentity|identity|1010010001|
 	cloudidentitypremium|identitypremium|1010050001|
@@ -81,11 +88,13 @@ If an item contains spaces, it should be surrounded by ".
 	gafb|gafw|basic|gsuitebasic|Google-Apps-For-Business|
 	gafg|gsuitegovernment|gsuitegov|Google-Apps-For-Government|
 	gams|postini|gsuitegams|gsuitepostini|gsuitemessagesecurity|Google-Apps-For-Postini|
-	gal|lite|gsuitelite|Google-Apps-Lite|
-	gau|unlimited|gsuitebusiness|Google-Apps-Unlimited|
-	gae|enterprise|gsuiteenterprise|1010020020|
+	gal|gsl|lite|gsuitelite|Google-Apps-Lite|
+	gau|gsb|unlimited|gsuitebusiness|Google-Apps-Unlimited|
+	gae|gse|enterprise|gsuiteenterprise|1010020020|
 	gsefe|e4e|gsuiteenterpriseeducation|1010310002|
 	gsefes|e4es|gsuiteenterpriseeducationstudent|1010310003|
+	gsbau|businessarchived|gsuitebusinessarchived|
+	gseau|enterprisearchived|gsuiteenterprisearchived|
 	chrome|cdm|googlechromedevicemanagement|Google-Chrome-Device-Management|
 	coordinate|googlecoordinate|Google-Coordinate|
 	d4e|driveenterprise|drive4enterprise|
