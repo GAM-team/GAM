@@ -11895,12 +11895,13 @@ def doPrintMobileDevices():
                 appDetails.append('<None>')
               applications.append('-'.join(appDetails))
             row[attrib] = delimiter.join(applications)
-        elif attrib == 'deviceId':
-          row[attrib] = mobile[attrib].encode('unicode-escape').decode(UTF8)
         else:
           if attrib not in titles:
             titles.append(attrib)
-          row[attrib] = mobile[attrib]
+          if attrib != 'deviceId':
+            row[attrib] = mobile[attrib]
+          else:
+            row[attrib] = mobile[attrib].encode('unicode-escape').decode(UTF8)
       csvRows.append(row)
   sortCSVTitles(['resourceId', 'deviceId', 'serialNumber', 'name', 'email', 'status'], titles)
   writeCSVfile(csvRows, titles, 'Mobile', todrive)
