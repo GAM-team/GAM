@@ -12025,8 +12025,8 @@ def _guessAUE(cros):
   if 'model' in cros:
     closest_match = difflib.get_close_matches(cros['model'], CROS_AUE_DATES.keys(), n=1)
     if closest_match:
-      cros['guessedAUE'] = CROS_AUE_DATES[closest_match[0]]
-      cros['modelForAUEGuess'] = closest_match[0]
+      cros['guessedAUEDate'] = CROS_AUE_DATES[closest_match[0]]
+      cros['guessedAUEModel'] = closest_match[0]
 
 def doPrintCrosDevices():
   def _getSelectedLists(myarg):

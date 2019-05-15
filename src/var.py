@@ -573,8 +573,8 @@ CROS_SCALAR_PROPERTY_PRINT_ORDER = [
   'lastEnrollmentTime',
   'orderNumber',
   'supportEndDate',
-  'modelForAUEGuess',
-  'guessedAUE',
+  'guessedAUEDate',
+  'guessedAUEModel',
   'tpmVersionInfo',
   'willAutoRenew',
   ]
