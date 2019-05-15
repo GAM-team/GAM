@@ -670,6 +670,7 @@ CROS_AUE_DATES = {
   "CTL J5 Chromebook": "2021-08-01T00:00:00.000Z",
   "CTL NL61 Chromebook": "2021-08-01T00:00:00.000Z",
   "CTL Chromebook NL7 / NL7T-360 / NL7TW-360": "2023-11-01T00:00:00.000Z",
+  "CTL Chromebook NL7": "2023-11-01T00:00:00.000Z",
   "CTL Chromebook J41 / J41T": "2023-11-01T00:00:00.000Z",
   "CTL Chromebox CBx1": "2024-06-01T00:00:00.000Z",
   "Dell Chromebook 11": "2019-06-01T00:00:00.000Z",
