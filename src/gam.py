@@ -26,6 +26,7 @@ import base64
 import configparser
 import csv
 import datetime
+import difflib
 import hashlib
 import io
 import json
@@ -12016,6 +12017,14 @@ def _checkTPMVulnerability(cros):
       cros['tpmVersionInfo']['tpmVulnerability'] = 'NOT IMPACTED'
   return cros
 
+def _guessAUE(cros):
+  if 'model' in cros:
+    closest_match = difflib.get_close_matches(cros['model'], CROS_AUE_DATES.keys(), n=1)
+    if closest_match:
+      cros['guessedAUE'] = CROS_AUE_DATES[closest_match[0]]
+      cros['modelForAUEGuess'] = closest_match[0]
+  return cros
+
 def doPrintCrosDevices():
   def _getSelectedLists(myarg):
     if myarg in CROS_ACTIVE_TIME_RANGES_ARGUMENTS:
@@ -12043,6 +12052,7 @@ def doPrintCrosDevices():
   noLists = sortHeaders = False
   selectedLists = {}
   startDate = endDate = None
+  guess_aue = False
   listLimit = 0
   i = 3
   while i < len(sys.argv):
@@ -12059,6 +12069,9 @@ def doPrintCrosDevices():
     elif myarg == 'nolists':
       noLists = True
       selectedLists = {}
+      i += 1
+    elif myarg == 'guessaue':
+      guess_aue = True
       i += 1
     elif myarg in CROS_START_ARGUMENTS:
       startDate = _getFilterDate(sys.argv[i+1])
@@ -12140,6 +12153,8 @@ def doPrintCrosDevices():
                              orderBy=orderBy, sortOrder=sortOrder, fields=fields, maxResults=GC_Values[GC_DEVICE_MAX_RESULTS])
     for cros in all_cros:
       cros = _checkTPMVulnerability(cros)
+      if guess_aue:
+        cros = _guessAUE(cros)
     if not noLists and not selectedLists:
       for cros in all_cros:
         if 'notes' in cros:
