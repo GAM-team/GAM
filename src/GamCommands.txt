@@ -963,11 +963,11 @@ gam calendar <CalendarItem> wipe
 gam calendar <CalendarItem> modify <CalendarSettings>+
 
 gam update cros <CrOSEntity> (<CrOSAttributes>+)|(action deprovision_same_model_replace|deprovision_different_model_replace|deprovision_retiring_device|disable|reenable [acknowledge_device_touch_requirement])
-gam info cros <CrOSEntity> [nolists] [listlimit <Number>] [start <Date>] [end <Date>]
+gam info cros <CrOSEntity> [guessaue] [nolists] [listlimit <Number>] [start <Date>] [end <Date>]
 	[basic|full|allfields] <CrOSFieldName>* [fields <CrOSFieldNameList>] [downloadfile latest|<Time>] [targetfolder <FilePath>]
 
 gam print cros [todrive] [(query <QueryCrOS>)|(queries <QueryCrOSList>)] [limittoou <OrgUnitItem>]
-	[orderby <CrOSOrderByFieldName> [ascending|descending]] [nolists|<CrOSListFieldName>*] [listlimit <Number>] [start <Date>] [end <Date>]
+	[orderby <CrOSOrderByFieldName> [ascending|descending]] [guessaue] [nolists|<CrOSListFieldName>*] [listlimit <Number>] [start <Date>] [end <Date>]
 	[basic|full|allfields] <CrOSFieldName>* [fields <CrOSFieldNameList>] [sortheaders]
 gam <CrOSTypeEntity> print
 

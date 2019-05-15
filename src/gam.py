@@ -10040,7 +10040,7 @@ def doGetCrosInfo():
   targetFolder = GC_Values[GC_DRIVE_DIR]
   projection = None
   fieldsList = []
-  noLists = False
+  guess_aue = noLists = False
   startDate = endDate = None
   listLimit = 0
   while i < len(sys.argv):
@@ -10048,14 +10048,17 @@ def doGetCrosInfo():
     if myarg == 'nolists':
       noLists = True
       i += 1
+    elif myarg == 'listlimit':
+      listLimit = getInteger(sys.argv[i+1], myarg, minVal=-1)
+      i += 2
+    elif myarg == 'guessaue':
+      guess_aue = True
+      i += 1
     elif myarg in CROS_START_ARGUMENTS:
       startDate = _getFilterDate(sys.argv[i+1])
       i += 2
     elif myarg in CROS_END_ARGUMENTS:
       endDate = _getFilterDate(sys.argv[i+1])
-      i += 2
-    elif myarg == 'listlimit':
-      listLimit = getInteger(sys.argv[i+1], myarg, minVal=-1)
       i += 2
     elif myarg == 'allfields':
       projection = 'FULL'
@@ -10069,13 +10072,9 @@ def doGetCrosInfo():
         fieldsList = CROS_BASIC_FIELDS_LIST[:]
       i += 1
     elif myarg in CROS_ARGUMENT_TO_PROPERTY_MAP:
-      if not fieldsList:
-        fieldsList = ['deviceId',]
       fieldsList.extend(CROS_ARGUMENT_TO_PROPERTY_MAP[myarg])
       i += 1
     elif myarg == 'fields':
-      if not fieldsList:
-        fieldsList = ['deviceId',]
       fieldNameList = sys.argv[i+1]
       for field in fieldNameList.lower().replace(',', ' ').split():
         if field in CROS_ARGUMENT_TO_PROPERTY_MAP:
@@ -10099,6 +10098,9 @@ def doGetCrosInfo():
     else:
       systemErrorExit(2, '%s is not a valid argument for "gam info cros"' % sys.argv[i])
   if fieldsList:
+    fieldsList.append('deviceId')
+    if guess_aue:
+      fieldsList.append('model')
     fields = ','.join(set(fieldsList)).replace('.', '/')
   else:
     fields = None
@@ -10111,7 +10113,9 @@ def doGetCrosInfo():
     print('CrOS Device: {0} ({1} of {2})'.format(deviceId, i, device_count))
     if 'notes' in cros:
       cros['notes'] = cros['notes'].replace('\n', '\\n')
-    cros = _checkTPMVulnerability(cros)
+    _checkTPMVulnerability(cros)
+    if guess_aue:
+      _guessAUE(cros)
     for up in CROS_SCALAR_PROPERTY_PRINT_ORDER:
       if up in cros:
         if isinstance(cros[up], str):
@@ -12015,15 +12019,13 @@ def _checkTPMVulnerability(cros):
       cros['tpmVersionInfo']['tpmVulnerability'] = 'UPDATED'
     else:
       cros['tpmVersionInfo']['tpmVulnerability'] = 'NOT IMPACTED'
-  return cros
 
 def _guessAUE(cros):
   if 'model' in cros:
     closest_match = difflib.get_close_matches(cros['model'], CROS_AUE_DATES.keys(), n=1)
     if closest_match:
-      cros['guessedAUE'] = CROS_AUE_DATES[closest_match[0]]
-      cros['modelForAUEGuess'] = closest_match[0]
-  return cros
+      cros['guessedAUEDate'] = CROS_AUE_DATES[closest_match[0]]
+      cros['guessedAUEModel'] = closest_match[0]
 
 def doPrintCrosDevices():
   def _getSelectedLists(myarg):
@@ -12049,10 +12051,9 @@ def doPrintCrosDevices():
   addFieldToCSVfile('deviceid', CROS_ARGUMENT_TO_PROPERTY_MAP, fieldsList, fieldsTitles, titles)
   projection = orderBy = sortOrder = orgUnitPath = None
   queries = [None]
-  noLists = sortHeaders = False
+  guess_aue = noLists = sortHeaders = False
   selectedLists = {}
   startDate = endDate = None
-  guess_aue = False
   listLimit = 0
   i = 3
   while i < len(sys.argv):
@@ -12070,6 +12071,9 @@ def doPrintCrosDevices():
       noLists = True
       selectedLists = {}
       i += 1
+    elif myarg == 'listlimit':
+      listLimit = getInteger(sys.argv[i+1], myarg, minVal=0)
+      i += 2
     elif myarg == 'guessaue':
       guess_aue = True
       i += 1
@@ -12078,9 +12082,6 @@ def doPrintCrosDevices():
       i += 2
     elif myarg in CROS_END_ARGUMENTS:
       endDate = _getFilterDate(sys.argv[i+1])
-      i += 2
-    elif myarg == 'listlimit':
-      listLimit = getInteger(sys.argv[i+1], myarg, minVal=0)
       i += 2
     elif myarg == 'orderby':
       orderBy = sys.argv[i+1].lower().replace('_', '')
@@ -12142,6 +12143,8 @@ def doPrintCrosDevices():
       addFieldToFieldsList(selectList, CROS_ARGUMENT_TO_PROPERTY_MAP, fieldsList)
   if fieldsList:
     fieldsList.append('deviceId')
+    if guess_aue:
+      fieldsList.append('model')
     fields = 'nextPageToken,chromeosdevices({0})'.format(','.join(set(fieldsList))).replace('.', '/')
   else:
     fields = None
@@ -12152,9 +12155,9 @@ def doPrintCrosDevices():
                              query=query, customerId=GC_Values[GC_CUSTOMER_ID], projection=projection, orgUnitPath=orgUnitPath,
                              orderBy=orderBy, sortOrder=sortOrder, fields=fields, maxResults=GC_Values[GC_DEVICE_MAX_RESULTS])
     for cros in all_cros:
-      cros = _checkTPMVulnerability(cros)
+      _checkTPMVulnerability(cros)
       if guess_aue:
-        cros = _guessAUE(cros)
+        _guessAUE(cros)
     if not noLists and not selectedLists:
       for cros in all_cros:
         if 'notes' in cros:
