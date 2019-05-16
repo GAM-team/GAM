@@ -10041,6 +10041,7 @@ def doGetCrosInfo():
   projection = None
   fieldsList = []
   guess_aue = noLists = False
+  guessedAUEs = {}
   startDate = endDate = None
   listLimit = 0
   while i < len(sys.argv):
@@ -10115,7 +10116,7 @@ def doGetCrosInfo():
       cros['notes'] = cros['notes'].replace('\n', '\\n')
     _checkTPMVulnerability(cros)
     if guess_aue:
-      _guessAUE(cros)
+      _guessAUE(cros, guessedAUEs)
     for up in CROS_SCALAR_PROPERTY_PRINT_ORDER:
       if up in cros:
         if isinstance(cros[up], str):
@@ -12020,12 +12021,18 @@ def _checkTPMVulnerability(cros):
     else:
       cros['tpmVersionInfo']['tpmVulnerability'] = 'NOT IMPACTED'
 
-def _guessAUE(cros):
-  if 'model' in cros:
-    closest_match = difflib.get_close_matches(cros['model'], CROS_AUE_DATES.keys(), n=1)
-    if closest_match:
-      cros['guessedAUEDate'] = CROS_AUE_DATES[closest_match[0]]
-      cros['guessedAUEModel'] = closest_match[0]
+def _guessAUE(cros, guessedAUEs):
+  crosModel = cros.get('model')
+  if crosModel:
+    if crosModel not in guessedAUEs:
+      closest_match = difflib.get_close_matches(crosModel, CROS_AUE_DATES, n=1)
+      if closest_match:
+        guessedAUEs[crosModel] = {'guessedAUEDate': CROS_AUE_DATES[closest_match[0]],
+                                  'guessedAUEModel': closest_match[0]}
+      else:
+        guessedAUEs[crosModel] = {'guessedAUEDate': u'',
+                                  'guessedAUEModel': u''}
+    cros.update(guessedAUEs[crosModel])
 
 def doPrintCrosDevices():
   def _getSelectedLists(myarg):
@@ -12052,6 +12059,7 @@ def doPrintCrosDevices():
   projection = orderBy = sortOrder = orgUnitPath = None
   queries = [None]
   guess_aue = noLists = sortHeaders = False
+  guessedAUEs = {}
   selectedLists = {}
   startDate = endDate = None
   listLimit = 0
@@ -12157,7 +12165,7 @@ def doPrintCrosDevices():
     for cros in all_cros:
       _checkTPMVulnerability(cros)
       if guess_aue:
-        _guessAUE(cros)
+        _guessAUE(cros, guessedAUEs)
     if not noLists and not selectedLists:
       for cros in all_cros:
         if 'notes' in cros:
