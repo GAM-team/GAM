@@ -12025,7 +12025,7 @@ def _guessAUE(cros, guessedAUEs):
   crosModel = cros.get('model')
   if crosModel:
     if crosModel not in guessedAUEs:
-      closest_match = difflib.get_close_matches(crosModel, CROS_AUE_DATES, n=1)
+      closest_match = difflib.get_close_matches(crosModel.lower(), CROS_AUE_DATES, n=1)
       if closest_match:
         guessedAUEs[crosModel] = {'guessedAUEDate': CROS_AUE_DATES[closest_match[0]],
                                   'guessedAUEModel': closest_match[0]}
