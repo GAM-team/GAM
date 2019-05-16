@@ -94,7 +94,7 @@ next_data_is_oem = False
 next_data_is_td = False
 data_is_date = False
 auepage = requests.get('https://support.google.com/chrome/a/answer/6220366?hl=en')
-print('cros_aue = {')
+print('CROS_AUE_DATES = {')
 parser = MyHTMLParser()
 parser.feed(auepage.content.decode('utf-8'))
 output_rows.sort(key=str.lower)
