@@ -11,10 +11,10 @@ if [ ! -e ssl/libeay32.dll ]; then
   /c/Program\ Files/7-Zip/7z.exe e $msifile -ossl
 fi
 echo "OpenSSL dlls..."
-ls -al ssl
+ls -alRF ssl
 echo "Python dlls..."
 ls -al /c/Python37/DLLs
-cp -v ssl/*.dll /c/Python37/DLLs
+cp -v ssl/MainInstaller/*.dll /c/Python37/DLLs
 export PATH=$PATH:/c/Python37/scripts
 until cinst -y wixtoolset; do echo "trying again..."; done
 cd ~
