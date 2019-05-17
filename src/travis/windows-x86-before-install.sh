@@ -7,7 +7,8 @@ if [ ! -e $msifile ]; then
   wget --quiet https://slproweb.com/download/$msifile
 fi
 if [ ! -e ssl/libeay32.dll ]; then
-  msiexec /a $msifile /qn TARGETDIR=ssl
+  echo "Extracting $msifile..."
+  /c/Program\ Files/7-Zip/7z.exe e $msifile -ossl
 fi
 echo "OpenSSL dlls..."
 ls -al ssl
@@ -16,6 +17,7 @@ ls -al /c/Python37/DLLs
 cp -v ssl/*.dll /c/Python37/DLLs
 export PATH=$PATH:/c/Python37/scripts
 until cinst -y wixtoolset; do echo "trying again..."; done
+cd ~
 pip install --upgrade pip
 pip freeze > upgrades.txt
 pip install --upgrade -r upgrades.txt
