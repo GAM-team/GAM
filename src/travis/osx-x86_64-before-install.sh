@@ -3,6 +3,7 @@ whereibelong=$(pwd)
 echo "Brew installing xz..."
 brew install xz > /dev/null
 
+cd ~/pybuild
 # Compile latest OpenSSL
 if [ ! -d openssl-$BUILD_OPENSSL_VERSION ]; then
   wget --quiet https://www.openssl.org/source/openssl-$BUILD_OPENSSL_VERSION.tar.gz
@@ -17,10 +18,10 @@ make -j$cpucount -s
 echo "Running make install for OpenSSL..."
 make install > /dev/null
 export LD_LIBRARY_PATH=~/ssl/lib
-cd ~
+cd ~/pybuild
 
 # Compile latest Python
-if [ -d Python-$BUILD_PYTHON_VERSION ]; then
+if [ ! -d Python-$BUILD_PYTHON_VERSION ]; then
   wget --quiet https://www.python.org/ftp/python/$BUILD_PYTHON_VERSION/Python-$BUILD_PYTHON_VERSION.tar.xz
   echo "Extracting Python..."
   tar xf Python-$BUILD_PYTHON_VERSION.tar.xz
