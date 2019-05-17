@@ -57,6 +57,7 @@ else
   unsafe_flags="--enable-optimizations --with-lto"
   if [ ! -e Makefile ]; then
     ./configure $safe_flags $unsafe_flags > /dev/null
+  fi
   make -j$cpucount -s
   RESULT=$?
   echo "First make exited with $RESULT"
