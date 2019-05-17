@@ -138,10 +138,10 @@ script:
 - export jid="$(cut -d'.' -f2 <<<"$TRAVIS_JOB_NUMBER")"
 - if [ "$TRAVIS_EVENT_TYPE" != "pull_request" ]; then export e2e=true; fi
 - if [ "$e2e" = true ]; then export gam_user=gam-travis-$jid@pdl.jaylee.us; fi
-- if [ "$e2e" = true ]; then openssl aes-256-cbc -K $encrypted_ab10ec38326e_key -iv $encrypted_ab10ec38326e_iv -in travis/oauth2service.json.enc -out $gampath/oauth2service.json -d
-- if [ "$e2e" = true ]; then cat travis/cfg_template.json | python travis/svars-write.py &> /dev/null
-- if [ "$e2e" = true ]; then $gam info domain
-- if [ "$e2e" = true ]; then $gam info user
+- if [ "$e2e" = true ]; then openssl aes-256-cbc -K $encrypted_ab10ec38326e_key -iv $encrypted_ab10ec38326e_iv -in travis/oauth2service.json.enc -out $gampath/oauth2service.json -d; fi
+- if [ "$e2e" = true ]; then cat travis/cfg_template.json | python travis/svars-write.py &> /dev/null; fi
+- if [ "$e2e" = true ]; then $gam info domain; fi
+- if [ "$e2e" = true ]; then $gam info user; fi
 - if [ "$e2e" = true ]; then export tstamp=$(date +%s%3N);
   export newbase=travis-test-$jid-$tstamp;
   export newuser=$newbase@pdl.jaylee.us;
@@ -149,7 +149,7 @@ script:
   export newalias=$newbase-alias@pdl.jaylee.us;
   export newbuilding=$newbase-building;
   export newresource=$newbase-resource;
-  export GAM_THREADS=5;
+  export GAM_THREADS=5; fi
 - if [ "$e2e" = true ]; then echo email > sample.csv;
   for i in {01..20};
     do echo $newbase-bulkuser-$i >> sample.csv;
