@@ -1604,18 +1604,18 @@ def showReport():
       if 'entity' not in user_report:
         continue
       row = {'email': user_report['entity']['userEmail'], 'date': tryDate}
-      try:
-        for report_item in user_report['parameters']:
-          items = list(report_item.values())
-          if len(items) < 2:
-            continue
-          name = items[1]
-          value = items[0]
-          if not name in titles:
-            titles.append(name)
-          row[name] = value
-      except KeyError:
-        pass
+      for item in user_report.get('parameters', []):
+        if 'name' not in item:
+          continue
+        name = item['name']
+        if not name in titles:
+          titles.append(name)
+        for ptype in ['intValue', 'boolValue', 'datetimeValue', 'stringValue']:
+          if ptype in item:
+            row[name] = item[ptype]
+            break
+        else:
+          row[name] = ''
       csvRows.append(row)
     writeCSVfile(csvRows, titles, 'User Reports - %s' % tryDate, to_drive)
   elif report in ['customer', 'customers', 'domain']:
