@@ -8,33 +8,34 @@ else
   export dist=$(lsb_release --codename --short)
   echo "We are running on Ubuntu $dist"
   echo "RUNNING: apt update..."
-  sudo apt-get --yes update > /dev/null
+  sudo apt-get -qq --yes update > /dev/null
   echo "RUNNING: apt dist-upgrade..."
-  sudo apt-get --yes dist-upgrade > /dev/null
+  sudo apt-get -qq --yes dist-upgrade > /dev/null
   echo "Installing build tools..."
-  sudo apt-get --yes install build-essential
+  sudo apt-get -qq --yes install build-essential
 
   echo "Installing deps for python3"
   sudo cp -v /etc/apt/sources.list /tmp
-  chmod a+rwx /tmp/sources.list
+  sudo chmod a+rwx /tmp/sources.list
   echo "deb-src http://archive.ubuntu.com/ubuntu/ $dist main" >> /tmp/sources.list
   sudo cp -v /tmp/sources.list /etc/apt
-  sudo apt-get --yes update > /dev/null
-  sudo apt-get --yes build-dep python3
+  sudo apt-get -qq --yes update > /dev/null
+  sudo apt-get -qq --yes build-dep python3 > /dev/null
 
   mypath=$HOME
   echo "My Path is $mypath"
   cpucount=$(nproc --all)
   echo "This device has $cpucount CPUs for compiling..."
 
-
+  cd ~/pybuild
   # Compile latest OpenSSL
-  OPENSSL_VER=1.1.1b
-  wget --quiet https://www.openssl.org/source/openssl-$OPENSSL_VER.tar.gz
-  echo "Extracting OpenSSL..."
-  tar xf openssl-$OPENSSL_VER.tar.gz
-  cd openssl-$OPENSSL_VER
-  echo "Compiling OpenSSL $OPENSSL_VER..."
+  if [ ! -d openssl-$BUILD_OPENSSL_VERSION ]; then
+    wget --quiet https://www.openssl.org/source/openssl-$BUILD_OPENSSL_VERSION.tar.gz
+    echo "Extracting OpenSSL..."
+    tar xf openssl-$BUILD_OPENSSL_VERSION.tar.gz
+  fi
+  cd openssl-$BUILD_OPENSSL_VERSION
+  echo "Compiling OpenSSL $BUILD_OPENSSL_VERSION..."
   ./config shared --prefix=$mypath/ssl
   echo "Running make for OpenSSL..."
   make -j$cpucount -s
@@ -43,16 +44,28 @@ else
   export LD_LIBRARY_PATH=~/ssl/lib
   cd ~
 
+  cd ~/pybuild
   # Compile latest Python
-  PYTHON_VER=3.7.3
-  wget --quiet https://www.python.org/ftp/python/$PYTHON_VER/Python-$PYTHON_VER.tar.xz
-  echo "Extracting Python..."
-  tar xf Python-$PYTHON_VER.tar.xz
-  cd Python-$PYTHON_VER
-  echo "Compiling Python $PYTHON_VER..."
-  ./configure --with-openssl=$mypath/ssl --enable-shared \
-	--prefix=$mypath/python --with-ensurepip=upgrade > /dev/null
+  if [ ! -d Python-$BUILD_PYTHON_VERSION ]; then
+    wget --quiet https://www.python.org/ftp/python/$BUILD_PYTHON_VERSION/Python-$BUILD_PYTHON_VERSION.tar.xz
+    echo "Extracting Python..."
+    tar xf Python-$BUILD_PYTHON_VERSION.tar.xz
+  fi
+  cd Python-$BUILD_PYTHON_VERSION
+  echo "Compiling Python $BUILD_PYTHON_VERSION..."
+  safe_flags="--with-openssl=$mypath/ssl --enable-shared --prefix=$mypath/python --with-ensurepip=upgrade"
+  unsafe_flags="--enable-optimizations --with-lto"
+  if [ ! -e Makefile ]; then
+    ./configure $safe_flags $unsafe_flags > /dev/null
   make -j$cpucount -s
+  RESULT=$?
+  echo "First make exited with $RESULT"
+  if [ $RESULT != 0 ]; then
+    echo "Trying Python compile again without unsafe flags..."
+    make clean
+    ./configure $safe_flags > /dev/null
+    make -j$cpucount -s
+  fi
   echo "Installing Python..."
   make install > /dev/null
   cd ~

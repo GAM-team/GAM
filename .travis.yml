@@ -2,6 +2,8 @@ if: tag IS blank
 
 env:
   global:
+    - BUILD_PYTHON_VERSION=3.7.3
+    - BUILD_OPENSSL_VERSION=1.1.1b
     - secure: "FSKvLaiqhKz21SVgAQZI3bSX34Ffyev4l+R2G//QXNDu6UVQcuFsykzw+eZEG7fkhotXr8BMDL7xIkookiL8eLwUtcd/Z95HCjPBBHcmCSQleyvuuJBxdrQ9xldmiGLzMCYiumSH9OH4uJhQ39Yjnjsa8TK+PlTci6a/BTzlYyBSyDYDf7Iv/uhfQPDHL3pNwrQPHf4fL6/jcvo+uaPcv83AVZkNzZjjyoi9Aa+uh9xlbyHg11jp44463qqxoxTdYik3pYuXRBPjknjOGcnFHqn+QOVSdRQoiwbmT8xVuYuCzTv9THhuJ//i5u7s4y3Xyl7u17B3tdm86UlMpQHy/w9EsYaSBPOU4oPNomRtOnTSugh0v9ZBwptP5XfbslII/iA+LQdzTHhchn0W0CRyDqjOMSestWlrsq5NZJtBJTYHbebllOhEI7xbj9tY+re1zFWSPMOPgHJP23ovsdk3hD9OT93AzRHInCx5IxL6QvEgRhAancRuGkf2rGP0g/vX9fQ0Il3rNMSQxHB5CyHUBtUJ9nhU79YkMDZicD0jFMEwjWJO3itAp3ynoLXRgktgQCYUfgc9SpdWKD5SXLCYnSo22JD3D1P6h2EertRHaoKRLb+CRXQC/lM8uh/W+BjA2Xe6Vut2I/72ndjM+10T7E2xk1CFyCH37a5p8cH26Fs="
     - secure: "J9380tGLOZWa7dSH1y5Il8T5JQpN6ad81gI6VR1HIU0svpRdjgikyDA7ca2MKYDUYYY9yVSkTV6gCl6iIU/9+SKaYugpP+tkvdGYkC2moJdcTgYM/WOnIK9ExQ3BPhN1neGxJjPTwKo1ft27mtZ2I5vuCiBwIcnKWLnKPyW3PD+mWpfqiLuEzkHoAh6G3jC4qbcCrZDeX/knE+PzqESUEi+8k1G8gYcSDWujba9ypSsqZ8T/MXagGla6l7y2Rz+/KZTJmFHwKAA10V+xPLVqxoiqi4ar66yUqy0BamwRXPcseI+ns3Q+4lUpMqVQ5GlRy7LF1xC8myjmcAexXk0F9hg+CMzewKI8UgmQH/ZJvQZEh8s6mW26+CqA4d3zMQkWaR0WtEtpiuH7AGHCflIqvEQ6UiG7ia3B8iZfW2wl0j/kqx4OuHkS3r0pWKVVIIvCj9Ow2BHP7SpiV1AcUGsVxzwbgTh67fitna3Z3c6Uj8ccQlNr7ZIt1az6Wf3w5njijkLOiBpQSLKunTTCTSge/JzBTKUcie3RE9vzirl58gUxAt36nDtPWnory+RttMZrOkBVbTeSxp+IUe8pNwLFPHABsafXsjkfzBOtFmm+0ZXWt2Rlog5NvlemJfQUWDlsL4g+BSakzN+4sIPKzSauWDHyaEeULY7Uprkil6c5zwo="
     - secure: "szcjWHPr0Bf1KCkyTrV5Fu3ADhWk+pg8YWucjXHdybmhaQIKG7iBNg8LJ5d0OBTwAg31wK4ZgyLVSa2gKrAZ3UeDjykJFsR711xDSQOod51Wrgqu4FbXDewE817DUk3Cwe1l5DCu3/fjEw4vbm8B/qb7iMTRKCq6hJd97FwT5oauP0QHNPer9JjrW4F0Hk9ttkgEU2dXWvBMsTJsDOGNI3ddABE2HskxV4T4thelDYGKBDHhUOAsRwSjXgWy77Tvz98psPIvd+6+WPYNRdRWcPDyAR3Z1O/fNjUymrQI6eMaHoSFrmhDS5lbhjINRfdUmECyfCfIFeLWWiw4g4bq7l+4HBORbei55tAIjhEsxJQoqHi0Q5dD5TFh8IiWqowkFbpvNonMSIpKtB0cyT5jU1G/jRA7MPcIvSrdzHaDkoDNHJgAeZfgjOhzTGYYD19lGIljz5BQBcNFZY2dJbja+Jr4He2CMAOBOdERa4Zn1VyNfOmd8Bn5hu0C9D2ybnSCxjXXq5TRiktR8X7WycVZYfqMZXAwP9FEHVitJ4MZEGUc7S92K5gX4wmjcJjLS+Xo/0nsduQm8PuiMjbcPM7/oGx8Xm1KuSfHdKWMBoaesPaDvRX+YcuiNstXf1DkCWl72TsFABzddlNUMl/s2YSKkCSHAJ5ILqrB28Gx89kzVlg="
@@ -23,6 +25,12 @@ env:
     - secure: "sskZYJ/+xmHh5GNvw3QRf10+sBGOjlub29jOTxjXIRYUyZfkhjsF8CR9NP59CBFuqgN716Mj1uEVEcx0aaepr/zWweQSnqa9lZgFD9nDYALVNh1b4oyqfhYG1sw57ZHdBsJOBF4mKBnahly/QQj11Ya25GyIS2IewwCWVNtCOJYietSssG9l0+qc+RPG5Ub/lEKA3VRrtbUuApcIYszt33DumgZ4wzkzICl1SuOy8V15vHVlkBqASJheEDa4Hia+eAMo6e7OCE5KWjl7K2MxTvtszwFi7lgMCyPCOy6DkaULACfBnQeloh42B2Qhd/ta04vuRKg6y4fKSrnegpeOAa9aGxF1ufvG9IvPsRTsu4+w63b9xsQUN9MyDgxcJe0YeUHPgPYL6mqAjCIKvL62LlIyrQ8IAteoh3MC+4Xb8crXaLGINTcLwYvLwxsHMuC/58hdQ23I4DqnyZGAS3L1IhpX4QvYN6xc7H+ptaiQttweoH5VpMAduSrmSnNmvLOc4g2PvbRES6D95moQ7qk7iX6vpu+PevL5HtQCbB8SFyFLTYWsqZaG+4NrjpIi2hLzUT35meHwrvxG/MsfeqOVlnBfa93VnX75vxOkRFNY56sOtrTJaiVZ+rQUdszAZz3KGPbyrSlz3KxV+ZKxZH6/0oFteAJttXFjWQdICnKGDSo="
     - secure: "sdzU5bPs1w7Nzf3F5Gtk/iq2Kfq3zfLQNGcehLZp1gJXzNf7F6HZLOn6GaXQ/5RVlhqR5nOmzMpVQs88rZv+6PE6YqGMugTxHIQeNmXtGnuEDJSBvGT9Ok8ENxcwKwL93g9SCd9P8mTspxklOsW2Bk3No2+Zlc/aQguBcX44TwYF42KuBU4O7oS6pUg8NjnuQp2zTyhp0ouzyAudatPyu1BLci/3lbx+MehutQw1y4Om6g8tfwf950UONZQdqq9MBluu7yYb1oHkdC1J4qgwdCZkJslWIwQHCH5UE4AW9iVG0qVrLpzBGtV27Kfy/Vf8r2gMYzbiur2h2+zzWSDm8/bk8YLn7u1FBpjGJdJ0pX0ZrZr+hMV2vH3e54NvA5WyRU7tw8mZ1PoDYd/FM5KXIYbscSbSRCqTsbPgyVIHuoOWXeeSe+/Ef1ifZv3HHf6ARfUIWupKfAipxChc7QUMI/HEQ9QPsqgBaooZD9chGsWAgv+8tFxdteqkx4Yh+AuZp1rVykB/9vAamUBebQxy0oeGm65j6X1rksfjAPkfeDYB7L4Ruy7tUwPtvYrAHPoWrf9O0g/qDRsw0vdqp42CjszpIxhuPhVRDx0i0wquqw2LnIU3ejRv2R8d1SecVKBBcVsWLFvc9iR4rNIi5JnxITRtiwL1Xv3Vcgx7WwxExtE="
     - secure: "f9n1KmU5NuV4jGkrhLNiPD+3Cy7t4D7Rq8YsPlmyB2A6u6IHMuOVP95IwH6Zt0cmMDBrZGthj3/0iu5kzxzqD0m135PT17wSEqsDfDMyKRZJQuYSO/ESVxnSca3afRH7Ds7/ipQVd/ljZgwEnW3JMaOQiIdbbIquNOOTeY0/wsXkreDamXZaKKqUoeadkAV4AkKhM0xcMg+Vni1i71TYPBWrZPLVAu3ZrSvU/cE5mtBUIkbr9EgsEE+WR23QCgtwxKzNxrXetBcPXDsJb98/ABgpoItm5Ko/Zk6pkib44f+iQtn7Y6j3lieELCH5Sn0uy3RrMxkl7xicB7zPYME94NEPHCmshyVsH3RxWfcBG4kauRNBCLYLl5HYF2t1lWZ6In5qlx8xN3Tf0KrbM3vzAEOnnfZt83h3q5OuWl+jzTOcv9xHmeW0lnwEEfS0nxUV3KDqLFBczcUxKBmsA2aWnJZ2HV+kls6OaWZ987m6V2pIGR2uviGT7I4ngjCSOJzbwYbvJbJqYAI97FWP/5pqv97xHLCSSJh6TBO4NMQ7Ib/W1XT6NZyPOjNGSLpd79UA3cTzU2+UYr/7RxZpAKONSAMTJh7CX451XQwgovpFZ2quXs2BzqcVpy8AlUc45ygnFOALOANAkcRP5QFhmff0jpXstjPW83/GksbtaiLhIiQ="
+cache:
+  directories:
+    - $HOME/.cache/pip
+    - $HOME/python
+    - $HOME/ssl
+    - $HOME/pybuild
 
 matrix:
   include:
@@ -124,7 +132,8 @@ install:
 script:
 - $gam version extended
 - $gam version | grep travis # travis should be part of the path (not /tmp or such)
-- if [ "$VMTYPE" == "build" ]; then $gam version | grep "Python 3\.7\.3"; fi # We should be building with Python 3.7.3
+- if [ "$VMTYPE" == "build" ]; then $gam version | grep "Python ${BUILD_PYTHON_VERSION//./\\.}"; fi # We should be building with latest Python
+- if [ "$VMTYPE" == "build" ]; then $gam version extended | grep "OpenSSL 1.1.1"; fi # We should be using OpenSSL 1.1.1+
 - if [ "$VMTYPE" == "build" ]; then $gam version extended | grep TLSv1\.[23]; fi # Builds should support TLS 1.2 or 1.3 to Google
 - export jid="$(cut -d'.' -f2 <<<"$TRAVIS_JOB_NUMBER")"
 - export gam_user=gam-travis-$jid@pdl.jaylee.us

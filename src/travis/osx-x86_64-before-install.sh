@@ -4,12 +4,13 @@ echo "Brew installing xz..."
 brew install xz > /dev/null
 
 # Compile latest OpenSSL
-OPENSSL_VER=1.1.1b
-wget --quiet https://www.openssl.org/source/openssl-$OPENSSL_VER.tar.gz
-echo "Extracting OpenSSL..."
-tar xf openssl-$OPENSSL_VER.tar.gz
-cd openssl-$OPENSSL_VER
-echo "Compiling OpenSSL $OPENSSL_VER..."
+if [ ! -d openssl-$BUILD_OPENSSL_VERSION ]; then
+  wget --quiet https://www.openssl.org/source/openssl-$BUILD_OPENSSL_VERSION.tar.gz
+  echo "Extracting OpenSSL..."
+  tar xf openssl-$BUILD_OPENSSL_VERSION.tar.gz
+fi
+cd openssl-$BUILD_OPENSSL_VERSION
+echo "Compiling OpenSSL $BUILD_OPENSSL_VERSION..."
 ./config shared --prefix=$mypath/ssl
 echo "Running make for OpenSSL..."
 make -j$cpucount -s
@@ -19,15 +20,25 @@ export LD_LIBRARY_PATH=~/ssl/lib
 cd ~
 
 # Compile latest Python
-PYTHON_VER=3.7.3
-wget --quiet https://www.python.org/ftp/python/$PYTHON_VER/Python-$PYTHON_VER.tar.xz
-echo "Extracting Python..."
-tar xf Python-$PYTHON_VER.tar.xz
-cd Python-$PYTHON_VER
-echo "Compiling Python $PYTHON_VER..."
-./configure --with-openssl=$mypath/ssl --enable-shared \
-		--prefix=$mypath/python --with-ensurepip=upgrade > /dev/null
+if [ -d Python-$BUILD_PYTHON_VERSION ]; then
+  wget --quiet https://www.python.org/ftp/python/$BUILD_PYTHON_VERSION/Python-$BUILD_PYTHON_VERSION.tar.xz
+  echo "Extracting Python..."
+  tar xf Python-$BUILD_PYTHON_VERSION.tar.xz
+fi
+cd Python-$BUILD_PYTHON_VERSION
+echo "Compiling Python $BUILD_PYTHON_VERSION..."
+safe_flags="--with-openssl=$mypath/ssl --enable-shared --prefix=$mypath/python --with-ensurepip=upgrade"
+unsafe_flags="--enable-optimizations --with-lto"
+./configure $safe_flags $unsafe_flags > /dev/null
 make -j$cpucount -s
+RESULT=$?
+echo "Make Python exited with $RESULT"
+if [ $RESULT != 0 ]; then
+  echo "Trying Python make again without unsafe flags..."
+  make clean
+  ./configure $safe_flags > /dev/null
+  make -j$cpucount -s
+fi
 echo "Installing Python..."
 make install > /dev/null
 cd ~
