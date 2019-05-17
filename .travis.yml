@@ -136,12 +136,13 @@ script:
 - if [ "$VMTYPE" == "build" ]; then $gam version extended | grep "OpenSSL 1.1.1"; fi # We should be using OpenSSL 1.1.1+
 - if [ "$VMTYPE" == "build" ]; then $gam version extended | grep TLSv1\.[23]; fi # Builds should support TLS 1.2 or 1.3 to Google
 - export jid="$(cut -d'.' -f2 <<<"$TRAVIS_JOB_NUMBER")"
-- export gam_user=gam-travis-$jid@pdl.jaylee.us
-- openssl aes-256-cbc -K $encrypted_ab10ec38326e_key -iv $encrypted_ab10ec38326e_iv -in travis/oauth2service.json.enc -out $gampath/oauth2service.json -d
-- cat travis/cfg_template.json | python travis/svars-write.py &> /dev/null
-- $gam info domain
-- $gam info user
-- export tstamp=$(date +%s%3N);
+- if [ "$TRAVIS_EVENT_TYPE" != "pull_request" ]; then export e2e=true; fi
+- if [ "$e2e" = true ]; then export gam_user=gam-travis-$jid@pdl.jaylee.us; fi
+- if [ "$e2e" = true ]; then openssl aes-256-cbc -K $encrypted_ab10ec38326e_key -iv $encrypted_ab10ec38326e_iv -in travis/oauth2service.json.enc -out $gampath/oauth2service.json -d
+- if [ "$e2e" = true ]; then cat travis/cfg_template.json | python travis/svars-write.py &> /dev/null
+- if [ "$e2e" = true ]; then $gam info domain
+- if [ "$e2e" = true ]; then $gam info user
+- if [ "$e2e" = true ]; then export tstamp=$(date +%s%3N);
   export newbase=travis-test-$jid-$tstamp;
   export newuser=$newbase@pdl.jaylee.us;
   export newgroup=$newbase-group@pdl.jaylee.us;
@@ -149,60 +150,60 @@ script:
   export newbuilding=$newbase-building;
   export newresource=$newbase-resource;
   export GAM_THREADS=5;
-- echo email > sample.csv;
+- if [ "$e2e" = true ]; then echo email > sample.csv;
   for i in {01..20};
     do echo $newbase-bulkuser-$i >> sample.csv;
-  done
-- $gam create user $newuser firstname Travis lastname $jid password random travis.jid $jid
-- $gam create group $newgroup name "Travis $jid group" description "This is a description" isarchived true
-- $gam user $newuser add license gsuitebusiness
-- $gam update group $newgroup add owner $gam_user
-- $gam update group $newgroup add member $newuser
-- $gam csv sample.csv gam create user ~~email~~ firstname "Travis Bulk" lastname ~~email~~ travis.jid $jid
-- $gam csv sample.csv gam user ~email add license gsuitebusiness
-- $gam csv sample.csv gam update group $newgroup add member ~email
-- $gam info group $newgroup
-- $gam user $gam_user check serviceaccount
-- $gam user $newuser imap on 
-- $gam user $newuser show imap
-- $gam csv sample.csv gam user $newuser delegate to ~email
-- $gam user $newuser show delegates
-- $gam users "$newbase-bulkuser-01 $newbase-bulkuser-02 $newbase-bulkuser-03" delete messages query in:anywhere maxtodelete 99999 doit
-- $gam users "$newbase-bulkuser-04 $newbase-bulkuser-05 $newbase-bulkuser-06" trash messages query in:anywhere maxtotrash 99999 doit
-- $gam users "$newbase-bulkuser-07 $newbase-bulkuser-08 $newbase-bulkuser-09" modify messages query in:anywhere maxtomodify 99999 addlabel IMPORTANT addlabel STARRED doit
-- $gam create feature name Whiteboard-$newbase
-- $gam create feature name VC-$newbase
-- $gam create building "My Building - $newbase" id $newbuilding floors 1,2,3,4,5,6,7,8,9,10,11,12,14,15 description "No 13th floor here..."
-- $gam create resource $newresource "Resource Calendar $tstamp" capacity 25 features Whiteboard-$newbase,VC-$newbase building $newbuilding floor 15 type Room
-- $gam info resource $newresource
-- $gam user $newuser show filelist
-- $gam calendar $newuser update read domain
-- $gam calendar $newuser add editor $gam_user
-- $gam calendar $newuser showacl
-- $gam printer register
-- source travis/set_printer_csv_filter.sh
-- $gam print printers > printers.csv
-- unset GAM_CSV_ROW_FILTER
-- $gam csv printers.csv gam printer ~id add USER $newgroup
-- $gam csv printers.csv gam printjob ~id submit https://www.github.com/jay0lee/GAM
-- $gam csv printers.csv gam info printer ~id
-- $gam print printjobs
-- $gam csv printers.csv gam printjob ~id fetch
-- $gam csv printers.csv gam delete printer ~id
-#- $gam calendar id:$newresource add editor $newuser
-#- $gam calendar id:$newresource update read domain
-#- $gam calendar id:$newresource showacl
-- $gam csv sample.csv gam user ~email add calendar id:$newresource
-- $gam delete resource $newresource
-- $gam delete feature Whiteboard-$newbase
-- $gam delete feature VC-$newbase
-- $gam delete building $newbuilding
-- $gam delete group $newgroup
-- $gam create alias $newalias user $newuser
-- $gam whatis $newuser
-- $gam user $gam_user show tokens
-- $gam delete user $newuser
-- $gam print users query "travis.jid=$jid" | $gam csv - gam delete user ~primaryEmail
+  done; fi
+- if [ "$e2e" = true ]; then $gam create user $newuser firstname Travis lastname $jid password random travis.jid $jid; fi
+- if [ "$e2e" = true ]; then $gam create group $newgroup name "Travis $jid group" description "This is a description" isarchived true; fi
+- if [ "$e2e" = true ]; then $gam user $newuser add license gsuitebusiness; fi
+- if [ "$e2e" = true ]; then $gam update group $newgroup add owner $gam_user; fi
+- if [ "$e2e" = true ]; then $gam update group $newgroup add member $newuser; fi
+- if [ "$e2e" = true ]; then $gam csv sample.csv gam create user ~~email~~ firstname "Travis Bulk" lastname ~~email~~ travis.jid $jid; fi
+- if [ "$e2e" = true ]; then $gam csv sample.csv gam user ~email add license gsuitebusiness; fi
+- if [ "$e2e" = true ]; then $gam csv sample.csv gam update group $newgroup add member ~email; fi
+- if [ "$e2e" = true ]; then $gam info group $newgroup; fi
+- if [ "$e2e" = true ]; then $gam user $gam_user check serviceaccount; fi
+- if [ "$e2e" = true ]; then $gam user $newuser imap on; fi
+- if [ "$e2e" = true ]; then $gam user $newuser show imap; fi
+- if [ "$e2e" = true ]; then $gam csv sample.csv gam user $newuser delegate to ~email; fi
+- if [ "$e2e" = true ]; then $gam user $newuser show delegates; fi
+- if [ "$e2e" = true ]; then $gam users "$newbase-bulkuser-01 $newbase-bulkuser-02 $newbase-bulkuser-03" delete messages query in:anywhere maxtodelete 99999 doit; fi
+- if [ "$e2e" = true ]; then $gam users "$newbase-bulkuser-04 $newbase-bulkuser-05 $newbase-bulkuser-06" trash messages query in:anywhere maxtotrash 99999 doit; fi
+- if [ "$e2e" = true ]; then $gam users "$newbase-bulkuser-07 $newbase-bulkuser-08 $newbase-bulkuser-09" modify messages query in:anywhere maxtomodify 99999 addlabel IMPORTANT addlabel STARRED doit; fi
+- if [ "$e2e" = true ]; then $gam create feature name Whiteboard-$newbase; fi
+- if [ "$e2e" = true ]; then $gam create feature name VC-$newbase; fi
+- if [ "$e2e" = true ]; then $gam create building "My Building - $newbase" id $newbuilding floors 1,2,3,4,5,6,7,8,9,10,11,12,14,15 description "No 13th floor here..."; fi
+- if [ "$e2e" = true ]; then $gam create resource $newresource "Resource Calendar $tstamp" capacity 25 features Whiteboard-$newbase,VC-$newbase building $newbuilding floor 15 type Room; fi
+- if [ "$e2e" = true ]; then $gam info resource $newresource; fi
+- if [ "$e2e" = true ]; then $gam user $newuser show filelist; fi
+- if [ "$e2e" = true ]; then $gam calendar $newuser update read domain; fi
+- if [ "$e2e" = true ]; then $gam calendar $newuser add editor $gam_user; fi
+- if [ "$e2e" = true ]; then $gam calendar $newuser showacl; fi
+- if [ "$e2e" = true ]; then $gam printer register; fi
+- if [ "$e2e" = true ]; then source travis/set_printer_csv_filter.sh; fi
+- if [ "$e2e" = true ]; then $gam print printers > printers.csv; fi
+- if [ "$e2e" = true ]; then unset GAM_CSV_ROW_FILTER; fi
+- if [ "$e2e" = true ]; then $gam csv printers.csv gam printer ~id add USER $newgroup; fi
+- if [ "$e2e" = true ]; then $gam csv printers.csv gam printjob ~id submit https://www.github.com/jay0lee/GAM; fi
+- if [ "$e2e" = true ]; then $gam csv printers.csv gam info printer ~id; fi
+- if [ "$e2e" = true ]; then $gam print printjobs; fi
+- if [ "$e2e" = true ]; then $gam csv printers.csv gam printjob ~id fetch; fi
+- if [ "$e2e" = true ]; then $gam csv printers.csv gam delete printer ~id; fi
+#- if [ "$e2e" = true ]; then $gam calendar id:$newresource add editor $newuser; fi
+#- if [ "$e2e" = true ]; then $gam calendar id:$newresource update read domain; fi
+#- if [ "$e2e" = true ]; then $gam calendar id:$newresource showacl; fi
+- if [ "$e2e" = true ]; then $gam csv sample.csv gam user ~email add calendar id:$newresource; fi
+- if [ "$e2e" = true ]; then $gam delete resource $newresource; fi
+- if [ "$e2e" = true ]; then $gam delete feature Whiteboard-$newbase; fi
+- if [ "$e2e" = true ]; then $gam delete feature VC-$newbase; fi
+- if [ "$e2e" = true ]; then $gam delete building $newbuilding; fi
+- if [ "$e2e" = true ]; then $gam delete group $newgroup; fi
+- if [ "$e2e" = true ]; then $gam create alias $newalias user $newuser; fi
+- if [ "$e2e" = true ]; then $gam whatis $newuser; fi
+- if [ "$e2e" = true ]; then $gam user $gam_user show tokens; fi
+- if [ "$e2e" = true ]; then $gam delete user $newuser; fi
+- if [ "$e2e" = true ]; then $gam print users query "travis.jid=$jid" | $gam csv - gam delete user ~primaryEmail; fi
 
 before_deploy:
 - export TRAVIS_TAG="preview"
