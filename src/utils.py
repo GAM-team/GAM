@@ -1,18 +1,19 @@
-import collections
 import re
 import sys
 from html.entities import name2codepoint
 from html.parser import HTMLParser
-from var import GM_Globals, GM_WINDOWS, GM_SYS_ENCODING
 
 ONE_KILO_BYTES = 1000
 ONE_MEGA_BYTES = 1000000
 ONE_GIGA_BYTES = 1000000000
 
+
 def convertUTF8(data):
   return data
 
+
 class _DeHTMLParser(HTMLParser):
+
   def __init__(self):
     HTMLParser.__init__(self)
     self.__text = []
@@ -21,14 +22,15 @@ class _DeHTMLParser(HTMLParser):
     self.__text.append(data)
 
   def handle_charref(self, name):
-    self.__text.append(chr(int(name[1:], 16)) if name.startswith('x') else chr(int(name)))
+    self.__text.append(
+        chr(int(name[1:], 16)) if name.startswith('x') else chr(int(name)))
 
   def handle_entityref(self, name):
     cp = name2codepoint.get(name)
     if cp:
       self.__text.append(chr(cp))
     else:
-      self.__text.append('&'+name)
+      self.__text.append('&' + name)
 
   def handle_starttag(self, tag, attrs):
     if tag == 'p':
@@ -51,7 +53,9 @@ class _DeHTMLParser(HTMLParser):
       self.__text.append('\n\n')
 
   def text(self):
-    return re.sub(r'\n{2}\n+', '\n\n', re.sub(r'\n +', '\n', ''.join(self.__text))).strip()
+    return re.sub(r'\n{2}\n+', '\n\n',
+                  re.sub(r'\n +', '\n', ''.join(self.__text))).strip()
+
 
 def dehtml(text):
   try:
@@ -64,8 +68,10 @@ def dehtml(text):
     print_exc(file=sys.stderr)
     return text
 
+
 def indentMultiLineText(message, n=0):
-  return message.replace('\n', '\n{0}'.format(' '*n)).rstrip()
+  return message.replace('\n', '\n{0}'.format(' ' * n)).rstrip()
+
 
 def formatFileSize(fileSize):
   if fileSize == 0:
@@ -73,10 +79,11 @@ def formatFileSize(fileSize):
   if fileSize < ONE_KILO_BYTES:
     return '1kb'
   if fileSize < ONE_MEGA_BYTES:
-    return '{0}kb'.format(fileSize//ONE_KILO_BYTES)
+    return '{0}kb'.format(fileSize // ONE_KILO_BYTES)
   if fileSize < ONE_GIGA_BYTES:
-    return '{0}mb'.format(fileSize//ONE_MEGA_BYTES)
-  return '{0}gb'.format(fileSize//ONE_GIGA_BYTES)
+    return '{0}mb'.format(fileSize // ONE_MEGA_BYTES)
+  return '{0}gb'.format(fileSize // ONE_GIGA_BYTES)
+
 
 def formatMilliSeconds(millis):
   seconds, millis = divmod(millis, 1000)

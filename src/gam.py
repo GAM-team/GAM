@@ -18,7 +18,7 @@
 # limitations under the License.
 """GAM is a command line tool which allows Administrators to control their G Suite domain and accounts.
 
-With GAM you can programatically create users, turn on/off services for users like POP and Forwarding and much more.
+With GAM you can programmatically create users, turn on/off services for users like POP and Forwarding and much more.
 For more information, see https://git.io/gam
 """
 
@@ -7185,7 +7185,7 @@ def getUserAttributes(i, cd, updateCmd):
         i += 1
         im['customProtocol'] = sys.argv[i]
       i += 1
-      # Backwards compatability: notprimary|primary on either side of IM address
+      # Backwards compatibility: notprimary|primary on either side of IM address
       myopt = sys.argv[i].lower()
       if myopt in ['notprimary', 'primary']:
         im['primary'] = myopt == 'primary'
@@ -9140,7 +9140,7 @@ def doUpdateGroup():
             currentMembersSet.add(current_email)
           else:
             currentMembersSet.add(_cleanConsumerAddress(current_email.lower(), currentMembersMap))
-# Compare incoming members and current memebers using the cleaned addresses; we actually add/remove with the original addresses
+# Compare incoming members and current members using the cleaned addresses; we actually add/remove with the original addresses
         to_add = [syncMembersMap.get(emailAddress, emailAddress) for emailAddress in syncMembersSet-currentMembersSet]
         to_remove = [currentMembersMap.get(emailAddress, emailAddress) for emailAddress in currentMembersSet-syncMembersSet]
         sys.stderr.write('Group: {0}, Will add {1} and remove {2} {3}s.\n'.format(group, len(to_add), len(to_remove), role))
