@@ -366,8 +366,8 @@ def getDeltaDate(argstr):
     systemErrorExit(2, 'expected a <{0}>; got {1}'.format(DELTA_DATE_FORMAT_REQUIRED, argstr))
   return deltaDate
 
-DELTA_TIME_PATTERN = re.compile(r'^([+-])(\d+)([mhdw])$')
-DELTA_TIME_FORMAT_REQUIRED = '(+|-)<Number>(m|h|d|w)'
+DELTA_TIME_PATTERN = re.compile(r'^([+-])(\d+)([mhdwy])$')
+DELTA_TIME_FORMAT_REQUIRED = '(+|-)<Number>(m|h|d|w|y)'
 
 def getDeltaTime(argstr):
   deltaTime = getDelta(argstr, DELTA_TIME_PATTERN)
@@ -3736,41 +3736,96 @@ def doCalendarWipeData():
     return
   callGAPI(cal.calendars(), 'clear', calendarId=calendarId)
 
-def doCalendarDeleteEvent():
+def doCalendarPrintEvents():
   calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
   if not cal:
     return
-  events = []
-  sendNotifications = None
+  q = showDeleted = showHiddenInvitations = timeMin = timeMax = timeZone = updatedMin = None
+  toDrive = False
+  titles = []
+  csvRows = []
+  i = 4
+  while i < len(sys.argv):
+    myarg = sys.argv[i].lower().replace('_', '')
+    if myarg == 'query':
+      q = sys.argv[i+1]
+      i += 2
+    elif myarg == 'includedeleted':
+      showDeleted = True
+      i += 1
+    elif myarg == 'includehidden':
+      showHiddenInvitations = True
+      i += 1
+    elif myarg == 'after':
+      timeMin = getTimeOrDeltaFromNow(sys.argv[i+1])
+      i += 2
+    elif myarg == 'before':
+      timeMax = getTimeOrDeltaFromNow(sys.argv[i+1])
+      i += 2
+    elif myarg == 'timezone':
+      timeZone = sys.argv[i+1]
+      i += 2
+    elif myarg == 'updated':
+      updatedMin = getTimeOrDeltaFromNow(sys.argv[i+1])
+      i += 2
+    elif myarg == 'todrive':
+      toDrive = True
+      i += 1
+    else:
+      systemErrorExit(2, '%s is not a valid argument for "gam calendar <email> printevents"' % sys.argv[i])
+  page_message = 'Got %%%%total_items%%%% events for %s' % calendarId
+  results = callGAPIpages(cal.events(), 'list', 'items', page_message=page_message,
+          maxResults=2500, calendarId=calendarId,
+          q=q, showDeleted=showDeleted, showHiddenInvitations=showHiddenInvitations,
+          timeMin=timeMin, timeMax=timeMax, timeZone=timeZone, updatedMin=updatedMin)
+  for result in results:
+    row = {'primaryEmail': calendarId}
+    addRowTitlesToCSVfile(flatten_json(result, flattened=row), csvRows, titles)
+  sortCSVTitles(['id', 'primaryEmail', 'summary', 'status'], titles)
+  writeCSVfile(csvRows, titles, 'Calendar Events', toDrive)
+
+def doCalendarMoveOrDeleteEvent(moveOrDelete):
+  calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
+  if not cal:
+    return
+  sendUpdatesVals = cal._rootDesc['resources']['events']['methods']['delete']['parameters']['sendUpdates']['enum']
+  sendUpdatesMap = {}
+  for val in sendUpdatesVals:
+    sendUpdatesMap[val.lower()] = val
+  sendUpdates = None
   doit = False
+  kwargs = {}
   i = 4
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace('_', '')
     if myarg == 'notifyattendees':
-      sendNotifications = True
+      sendUpdates = 'all'
       i += 1
+    elif myarg == 'sendupdates':
+      sendUpdates = sendUpdatesMap.get(sys.argv[i+1].lower(), False)
+      if not sendUpdates:
+        systemErrorExit(3, 'sendupdates must be one of: %s. Got %s' % (', '.join(sendUpdatesVals), sys.argv[i+1]))
+      i += 2
     elif myarg in ['id', 'eventid']:
-      events.append(sys.argv[i+1])
+      eventId = sys.argv[i+1]
       i += 2
     elif myarg in ['query', 'eventquery']:
-      query = sys.argv[i+1]
-      result = callGAPIpages(cal.events(), 'list', 'items', calendarId=calendarId, q=query)
-      for event in result:
-        if 'id' in event and event['id'] not in events:
-          events.append(event['id'])
-      i += 2
+      systemErrorExit(2, 'query is no longer supported for deleteevent. Use "gam calendar <email> printevents query <query> | gam csv - gam delete event id ~id" instead.')
     elif myarg == 'doit':
       doit = True
       i += 1
+    elif myarg == 'destination':
+      if moveOrDelete == 'delete':
+        systemErrorExit(2, 'destination is not a valid arguemnt for "gam calendar <email> deleteevent"' % sys.argv[i])
+      kwargs['destination'] = sys.argv[i+1]
+      i += 2
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam calendar <email> deleteevent"' % sys.argv[i])
+      systemErrorExit(2, '%s is not a valid argument for "gam calendar <email> %sevent"' % (sys.argv[i], moveOrDelete))
   if doit:
-    for eventId in events:
-      print(' deleting eventId %s' % eventId)
-      callGAPI(cal.events(), 'delete', calendarId=calendarId, eventId=eventId, sendNotifications=sendNotifications)
+    print(' going to %s eventId %s' % (moveOrDelete, eventId))
+    callGAPI(cal.events(), moveOrDelete, calendarId=calendarId, eventId=eventId, sendUpdates=sendUpdates, **kwargs)
   else:
-    for eventId in events:
-      print(' would delete eventId %s. Add doit to command to actually delete event' % eventId)
+    print(' would %s eventId %s. Add doit to command to actually %s event' % (moveOrDelete, eventId, moveOrDelete))
 
 def doCalendarAddEvent():
   calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
@@ -10769,19 +10824,16 @@ def addFieldToFieldsList(fieldName, fieldsChoiceMap, fieldsList):
     fieldsList.append(fields)
 
 # Write a CSV file
-def addTitleToCSVfile(title, titles):
-  titles.append(title)
-
 def addTitlesToCSVfile(addTitles, titles):
   for title in addTitles:
     if title not in titles:
-      addTitleToCSVfile(title, titles)
+      titles.append(title)
 
 def addRowTitlesToCSVfile(row, csvRows, titles):
   csvRows.append(row)
   for title in row:
     if title not in titles:
-      addTitleToCSVfile(title, titles)
+      titles.append(title)
 
 # fieldName is command line argument
 # fieldNameMap maps fieldName to API field names; CSV file header will be API field name
@@ -11458,7 +11510,7 @@ def doPrintGroups():
           if setting_value is None:
             setting_value = ''
           if key not in titles:
-            addTitleToCSVfile(key, titles)
+            titles.append(key)
           group[key] = setting_value
       else:
         sys.stderr.write(" Settings unavailable for group %s (%s/%s)...\r\n" % (groupEmail, i, count))
@@ -13911,7 +13963,11 @@ def ProcessGAMCommand(args):
       elif argument == 'addevent':
         doCalendarAddEvent()
       elif argument == 'deleteevent':
-        doCalendarDeleteEvent()
+        doCalendarMoveOrDeleteEvent('delete')
+      elif argument == 'moveevent':
+        doCalendarMoveOrDeleteEvent('move')
+      elif argument == 'printevents':
+        doCalendarPrintEvents()
       elif argument == 'modify':
         doCalendarModifySettings()
       else:
