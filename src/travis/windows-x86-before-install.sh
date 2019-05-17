@@ -6,7 +6,7 @@ if [ ! -e $msifile ]; then
   echo "Downloading $msifile..."
   wget --quiet https://slproweb.com/download/$msifile
 fi
-if { ! -e ssl/libeay32.dll ]; then
+if [ ! -e ssl/libeay32.dll ]; then
   msiexec /a $msifile /qn TARGETDIR=ssl
 fi
 echo "OpenSSL dlls..."
