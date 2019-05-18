@@ -3779,9 +3779,9 @@ def doCalendarPrintEvents():
           q=q, showDeleted=showDeleted, showHiddenInvitations=showHiddenInvitations,
           timeMin=timeMin, timeMax=timeMax, timeZone=timeZone, updatedMin=updatedMin)
   for result in results:
-    row = {'primaryEmail': calendarId}
+    row = {'calendarId': calendarId}
     addRowTitlesToCSVfile(flatten_json(result, flattened=row), csvRows, titles)
-  sortCSVTitles(['id', 'primaryEmail', 'summary', 'status'], titles)
+  sortCSVTitles(['calendarId', 'id', 'summary', 'status'], titles)
   writeCSVfile(csvRows, titles, 'Calendar Events', toDrive)
 
 def doCalendarMoveOrDeleteEvent(moveOrDelete):
