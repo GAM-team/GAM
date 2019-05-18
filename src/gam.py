@@ -3775,9 +3775,9 @@ def doCalendarPrintEvents():
       systemErrorExit(2, '%s is not a valid argument for "gam calendar <email> printevents"' % sys.argv[i])
   page_message = 'Got %%%%total_items%%%% events for %s' % calendarId
   results = callGAPIpages(cal.events(), 'list', 'items', page_message=page_message,
-          maxResults=2500, calendarId=calendarId,
-          q=q, showDeleted=showDeleted, showHiddenInvitations=showHiddenInvitations,
-          timeMin=timeMin, timeMax=timeMax, timeZone=timeZone, updatedMin=updatedMin)
+                          maxResults=2500, calendarId=calendarId,
+                          q=q, showDeleted=showDeleted, showHiddenInvitations=showHiddenInvitations,
+                          timeMin=timeMin, timeMax=timeMax, timeZone=timeZone, updatedMin=updatedMin)
   for result in results:
     row = {'calendarId': calendarId}
     addRowTitlesToCSVfile(flatten_json(result, flattened=row), csvRows, titles)
@@ -3810,13 +3810,11 @@ def doCalendarMoveOrDeleteEvent(moveOrDelete):
       eventId = sys.argv[i+1]
       i += 2
     elif myarg in ['query', 'eventquery']:
-      systemErrorExit(2, 'query is no longer supported for deleteevent. Use "gam calendar <email> printevents query <query> | gam csv - gam delete event id ~id" instead.')
+      systemErrorExit(2, 'query is no longer supported for {0}event. Use "gam calendar <email> printevents query <query> | gam csv - gam {0}event id ~id" instead.'.format(moveOrDelete))
     elif myarg == 'doit':
       doit = True
       i += 1
-    elif myarg == 'destination':
-      if moveOrDelete == 'delete':
-        systemErrorExit(2, 'destination is not a valid arguemnt for "gam calendar <email> deleteevent"' % sys.argv[i])
+    elif moveOrDelete == 'move' and myarg == 'destination':
       kwargs['destination'] = sys.argv[i+1]
       i += 2
     else:
@@ -3825,7 +3823,7 @@ def doCalendarMoveOrDeleteEvent(moveOrDelete):
     print(' going to %s eventId %s' % (moveOrDelete, eventId))
     callGAPI(cal.events(), moveOrDelete, calendarId=calendarId, eventId=eventId, sendUpdates=sendUpdates, **kwargs)
   else:
-    print(' would %s eventId %s. Add doit to command to actually %s event' % (moveOrDelete, eventId, moveOrDelete))
+    print(' would {0} eventId {1}. Add doit to command to actually {0} event'.format(moveOrDelete, eventId))
 
 def doCalendarAddEvent():
   calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
