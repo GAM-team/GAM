@@ -9,10 +9,10 @@ if [ ! -e $exefile ]; then
   wget --quiet https://slproweb.com/download/$exefile
 fi
 echo "Installing $exefile..."
-mkdir /c/ssl
 powershell ".\\${exefile} /silent /sp- /suppressmsgboxes /DIR=C:\\ssl"
 echo "OpenSSL dlls..."
 ls -alRF /c/ssl
+echo "c drive"
 ls -al /c/
 echo "Python dlls..."
 ls -al /c/Python37/DLLs
