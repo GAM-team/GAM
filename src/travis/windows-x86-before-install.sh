@@ -8,12 +8,12 @@ if [ ! -e $exefile ]; then
   echo "Downloading $exefile..."
   wget --quiet https://slproweb.com/download/$exefile
 fi
-if [ ! -e ssl/libssl-1_1-x64.dll ]; then
-  echo "Installing $exefile..."
-  powershell ".\\${exefile} /silent /sp- /suppressmsgboxes /DIR=C:\\ssl"
-fi
+echo "Installing $exefile..."
+mkdir /c/ssl
+powershell ".\\${exefile} /silent /sp- /suppressmsgboxes /DIR=C:\\ssl"
 echo "OpenSSL dlls..."
 ls -alRF /c/ssl
+ls -al /c/
 echo "Python dlls..."
 ls -al /c/Python37/DLLs
 cp -v /c/ssl/*.dll /c/Python37/DLLs
