@@ -1,14 +1,14 @@
 until powershell Install-WindowsFeature Net-Framework-Core; do echo "trying again..."; done
 cinst -y python3
 cd ~/pybuild
-msifile=Win64OpenSSL_Light-${BUILD_OPENSSL_VERSION//./_}.msi
-if [ ! -e $msifile ]; then
-  echo "Downloading $msifile..."
-  wget --quiet https://slproweb.com/download/$msifile
+exefile=Win64OpenSSL_Light-${BUILD_OPENSSL_VERSION//./_}.exe
+if [ ! -e $exefile ]; then
+  echo "Downloading $exefile..."
+  wget --quiet https://slproweb.com/download/$exefile
 fi
-if [ ! -e ssl/libeay32.dll ]; then
-  echo "Extracting $msifile..."
-  /c/Program\ Files/7-Zip/7z.exe e $msifile -ossl
+if [ ! -e ssl/libssl-1_1-x64.dll ]; then
+  echo "Installing $exefile..."
+  powershell ".\\${exefile} /silent /sp- /suppressmsgboxes /DIR=ssl"
 fi
 echo "OpenSSL dlls..."
 ls -alRF ssl
