@@ -133,7 +133,7 @@ script:
 - $gam version extended
 - $gam version | grep travis # travis should be part of the path (not /tmp or such)
 - if [ "$VMTYPE" == "build" ]; then $gam version | grep "Python ${BUILD_PYTHON_VERSION//./\\.}"; fi # We should be building with latest Python
-- if [ "$VMTYPE" == "build" ]; then $gam version extended | grep "OpenSSL 1.1.1"; fi # We should be using OpenSSL 1.1.1+
+- if [ "$VMTYPE" == "build" ]; then $gam version extended | grep "OpenSSL ${BUILD_OPENSSL_VERSION//./\\.}"; fi # We should be using OpenSSL 1.1.1+
 - if [ "$VMTYPE" == "build" ]; then $gam version extended | grep TLSv1\.[23]; fi # Builds should support TLS 1.2 or 1.3 to Google
 - export jid="$(cut -d'.' -f2 <<<"$TRAVIS_JOB_NUMBER")"
 - if [ "$TRAVIS_EVENT_TYPE" != "pull_request" ]; then export e2e=true; fi
