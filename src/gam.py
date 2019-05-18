@@ -3775,48 +3775,53 @@ def doCalendarPrintEvents():
       systemErrorExit(2, '%s is not a valid argument for "gam calendar <email> printevents"' % sys.argv[i])
   page_message = 'Got %%%%total_items%%%% events for %s' % calendarId
   results = callGAPIpages(cal.events(), 'list', 'items', page_message=page_message,
-          maxResults=2500, calendarId=calendarId,
-          q=q, showDeleted=showDeleted, showHiddenInvitations=showHiddenInvitations,
-          timeMin=timeMin, timeMax=timeMax, timeZone=timeZone, updatedMin=updatedMin)
+                          maxResults=2500, calendarId=calendarId,
+                          q=q, showDeleted=showDeleted, showHiddenInvitations=showHiddenInvitations,
+                          timeMin=timeMin, timeMax=timeMax, timeZone=timeZone, updatedMin=updatedMin)
   for result in results:
-    row = {'primaryEmail': calendarId}
+    row = {'calendarId': calendarId}
     addRowTitlesToCSVfile(flatten_json(result, flattened=row), csvRows, titles)
-  sortCSVTitles(['id', 'primaryEmail', 'summary', 'status'], titles)
+  sortCSVTitles(['calendarId', 'id', 'summary', 'status'], titles)
   writeCSVfile(csvRows, titles, 'Calendar Events', toDrive)
+
+def getSendUpdates(myarg, i, cal):
+  if myarg == 'notifyattendees':
+    sendUpdates = 'all'
+    i += 1
+  elif myarg == 'sendnotifications':
+    sendUpdates = 'all' if getBoolean(sys.argv[i+1], myarg) else 'none'
+    i += 2
+  else: #'sendupdates':
+    sendUpdatesMap = {}
+    for val in cal._rootDesc['resources']['events']['methods']['delete']['parameters']['sendUpdates']['enum']:
+      sendUpdatesMap[val.lower()] = val
+    sendUpdates = sendUpdatesMap.get(sys.argv[i+1].lower(), False)
+    if not sendUpdates:
+      systemErrorExit(3, 'sendupdates must be one of: %s. Got %s' % (', '.join(sendUpdatesVals), sys.argv[i+1]))
+    i += 2
+  return (sendUpdates, i)
 
 def doCalendarMoveOrDeleteEvent(moveOrDelete):
   calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
   if not cal:
     return
-  sendUpdatesVals = cal._rootDesc['resources']['events']['methods']['delete']['parameters']['sendUpdates']['enum']
-  sendUpdatesMap = {}
-  for val in sendUpdatesVals:
-    sendUpdatesMap[val.lower()] = val
   sendUpdates = None
   doit = False
   kwargs = {}
   i = 4
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace('_', '')
-    if myarg == 'notifyattendees':
-      sendUpdates = 'all'
-      i += 1
-    elif myarg == 'sendupdates':
-      sendUpdates = sendUpdatesMap.get(sys.argv[i+1].lower(), False)
-      if not sendUpdates:
-        systemErrorExit(3, 'sendupdates must be one of: %s. Got %s' % (', '.join(sendUpdatesVals), sys.argv[i+1]))
-      i += 2
+    if myarg in ['notifyattendees', 'sendnotifications', 'sendupdates']:
+      sendUpdates, i = getSendUpdates(myarg, i, cal)
     elif myarg in ['id', 'eventid']:
       eventId = sys.argv[i+1]
       i += 2
     elif myarg in ['query', 'eventquery']:
-      systemErrorExit(2, 'query is no longer supported for deleteevent. Use "gam calendar <email> printevents query <query> | gam csv - gam delete event id ~id" instead.')
+      systemErrorExit(2, 'query is no longer supported for {0}event. Use "gam calendar <email> printevents query <query> | gam csv - gam {0}event id ~id" instead.'.format(moveOrDelete))
     elif myarg == 'doit':
       doit = True
       i += 1
-    elif myarg == 'destination':
-      if moveOrDelete == 'delete':
-        systemErrorExit(2, 'destination is not a valid arguemnt for "gam calendar <email> deleteevent"' % sys.argv[i])
+    elif moveOrDelete == 'move' and myarg == 'destination':
       kwargs['destination'] = sys.argv[i+1]
       i += 2
     else:
@@ -3825,20 +3830,19 @@ def doCalendarMoveOrDeleteEvent(moveOrDelete):
     print(' going to %s eventId %s' % (moveOrDelete, eventId))
     callGAPI(cal.events(), moveOrDelete, calendarId=calendarId, eventId=eventId, sendUpdates=sendUpdates, **kwargs)
   else:
-    print(' would %s eventId %s. Add doit to command to actually %s event' % (moveOrDelete, eventId, moveOrDelete))
+    print(' would {0} eventId {1}. Add doit to command to actually {0} event'.format(moveOrDelete, eventId))
 
 def doCalendarAddEvent():
   calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
   if not cal:
     return
-  sendNotifications = timeZone = None
+  sendUpdates = timeZone = None
   i = 4
   body = {}
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace('_', '')
-    if myarg == 'notifyattendees':
-      sendNotifications = True
-      i += 1
+    if myarg in ['notifyattendees', 'sendnotifications', 'sendupdates']:
+      sendUpdates, i = getSendUpdates(myarg, i, cal)
     elif myarg == 'attendee':
       body.setdefault('attendees', [])
       body['attendees'].append({'email': sys.argv[i+1]})
@@ -3934,7 +3938,7 @@ def doCalendarAddEvent():
       body['start']['timeZone'] = timeZone
     if 'end' in body:
       body['end']['timeZone'] = timeZone
-  callGAPI(cal.events(), 'insert', calendarId=calendarId, sendNotifications=sendNotifications, body=body)
+  callGAPI(cal.events(), 'insert', calendarId=calendarId, sendUpdates=sendUpdates, body=body)
 
 def doCalendarModifySettings():
   calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])

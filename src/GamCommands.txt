@@ -671,16 +671,6 @@ Specify a collection of Users by directly specifying them or by specifiying item
 	(convert)|(ocr)|(ocrlanguage <Language>)|(restricted|restrict <Boolean>)|(starred|star <Boolean>)|(trashed|trash <Boolean>)|(viewed|view <Boolean>)|
 	(lastviewedbyme <Time>)|(modifieddate <Time>)|(description <String>)|(mimetype <MimeType>)|
 	(parentid <DriveFolderID>)|(parentname <DriveFolderName>)|(anyownerparentname <DriveFolderName>)|writerscantshare
-<EventAttributes> ::=
-	(anyonecanaddself)|(guestscantinviteothers)|(guestscantseeothers)|(notifyattendees)|(available)|(visibility default|public|prvate)|(tentative)|
-	(attendee <EmailAddress>)|(optionalattendee <EmailAddress>)|
-	(description <String>)|(summary <String>)|(location <String>)|(id <String>)|
-	(source <String> <URL>)|(privateproperty <PropertyKey> <PropertyValue>)|(sharedproperty <PropertyKey> <PropertyValue>)|
-	(recurrence <RRULE, EXRULE, RDATE and EXDATE line>)|
-	(start allday <Date>)|(start <Time>)|(end allday <Date>)|(end <Time>)|(timezone <Timezone>)|
-	(noreminders|(reminder <Number> email|popup|sms))|
-	(colorindex|colorid <EventColorIndex>)
-
 <GroupSettingsAttribute> ::=
 	(allowexternalmembers <Boolean>)|
 	(allowwebposting <Boolean>)|
@@ -950,9 +940,53 @@ gam calendar <CalendarItem> update <CalendarACLRole> ([user] <EmailAddress>)|(gr
 gam calendar <CalendarItem> del|delete <CalendarACLRole> <EmailAddress>|(domain [<DomainName>])|default
 gam calendar <CalendarItem> showacl
 
-gam calendar <CalendarItem> addevent <EventAttributes>+
-gam calendar <CalendarItem> deleteevent (id|eventid <EventID>)* (query|eventquery <QueryCalendar>)* [doit] [notifyattendees]
+<EventNotificationAttribute> ::=
+        notifyattendees|(sendnotifications <Boolean>)|(sendupdates all|enternalonly|none)
+
+The following attributes are equivalent:
+        notifyattendees - sendupdates all
+        sendnotifications false - sendupdates none
+        sendnotifications true - sendupdates all
+
+<EventAttributes> ::=
+	anyonecanaddself|
+	(attendee <EmailAddress>)|
+	available|
+	(colorindex|colorid <EventColorIndex>)
+	(description <String>)|
+	(end (allday <Date>)|<Time>)|
+	guestscantinviteothers|
+	guestscantseeothers|
+	(id <String>)|
+	(location <String>)|
+	(noreminders| (reminder <Number> email|popup|sms))|
+	(optionalattendee <EmailAddress>)|
+	(privateproperty <PropertyKey> <PropertyValue>)|
+	(recurrence <RRULE, EXRULE, RDATE and EXDATE line>)|
+	(sharedproperty <PropertyKey> <PropertyValue>)|
+	(source <String> <URL>)|
+	(start (allday <Date>)|<Time>)|
+	(summary <String>)|
+	tentative|
+	(timezone <Timezone>)|
+	(visibility default|public|prvate)
+
+<EventSelectProperty:> ::=
+        (after <Time>)|
+        (before <Time>)|
+        includeeleted|
+        includehidden|
+        (query <QueryCalendar>)|
+        (updatedmin <Time>)
+
+<EventDisplayProperty> ::=
+        (timezone <TimeZone>)
+
+gam calendar <CalendarItem> addevent <EventAttributes>+ [<EventNotificationAttribute>]
+gam calendar <CalendarItem> deleteevent id|eventid <EventID> [doit] [<EventNotificationAttribute>]
+gam calendar <CalendarItem> moveevent id|eventid <EventID> [doit] [<EventNotificationAttribute>]
 gam calendar <CalendarItem> wipe
+gam calendar <CalendarItem> printevents <EventSelectProperty>* <EventDisplayProperty>* [todrive]
 
 <CalendarSettings> ::=
 	summary <String>|
