@@ -3784,28 +3784,35 @@ def doCalendarPrintEvents():
   sortCSVTitles(['calendarId', 'id', 'summary', 'status'], titles)
   writeCSVfile(csvRows, titles, 'Calendar Events', toDrive)
 
+def getSendUpdates(myarg, i, cal):
+  if myarg == 'notifyattendees':
+    sendUpdates = 'all'
+    i += 1
+  elif myarg == 'sendnotifications':
+    sendUpdates = 'all' if getBoolean(sys.argv[i+1], myarg) else 'none'
+    i += 2
+  else: #'sendupdates':
+    sendUpdatesMap = {}
+    for val in cal._rootDesc['resources']['events']['methods']['delete']['parameters']['sendUpdates']['enum']:
+      sendUpdatesMap[val.lower()] = val
+    sendUpdates = sendUpdatesMap.get(sys.argv[i+1].lower(), False)
+    if not sendUpdates:
+      systemErrorExit(3, 'sendupdates must be one of: %s. Got %s' % (', '.join(sendUpdatesVals), sys.argv[i+1]))
+    i += 2
+  return (sendUpdates, i)
+
 def doCalendarMoveOrDeleteEvent(moveOrDelete):
   calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
   if not cal:
     return
-  sendUpdatesVals = cal._rootDesc['resources']['events']['methods']['delete']['parameters']['sendUpdates']['enum']
-  sendUpdatesMap = {}
-  for val in sendUpdatesVals:
-    sendUpdatesMap[val.lower()] = val
   sendUpdates = None
   doit = False
   kwargs = {}
   i = 4
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace('_', '')
-    if myarg == 'notifyattendees':
-      sendUpdates = 'all'
-      i += 1
-    elif myarg == 'sendupdates':
-      sendUpdates = sendUpdatesMap.get(sys.argv[i+1].lower(), False)
-      if not sendUpdates:
-        systemErrorExit(3, 'sendupdates must be one of: %s. Got %s' % (', '.join(sendUpdatesVals), sys.argv[i+1]))
-      i += 2
+    if myarg in ['notifyattendees', 'sendnotifications', 'sendupdates']:
+      sendUpdates, i = getSendUpdates(myarg, i, cal)
     elif myarg in ['id', 'eventid']:
       eventId = sys.argv[i+1]
       i += 2
@@ -3829,14 +3836,13 @@ def doCalendarAddEvent():
   calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
   if not cal:
     return
-  sendNotifications = timeZone = None
+  sendUpdates = timeZone = None
   i = 4
   body = {}
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace('_', '')
-    if myarg == 'notifyattendees':
-      sendNotifications = True
-      i += 1
+    if myarg in ['notifyattendees', 'sendnotifications', 'sendupdates']:
+      sendUpdates, i = getSendUpdates(myarg, i, cal)
     elif myarg == 'attendee':
       body.setdefault('attendees', [])
       body['attendees'].append({'email': sys.argv[i+1]})
@@ -3932,7 +3938,7 @@ def doCalendarAddEvent():
       body['start']['timeZone'] = timeZone
     if 'end' in body:
       body['end']['timeZone'] = timeZone
-  callGAPI(cal.events(), 'insert', calendarId=calendarId, sendNotifications=sendNotifications, body=body)
+  callGAPI(cal.events(), 'insert', calendarId=calendarId, sendUpdates=sendUpdates, body=body)
 
 def doCalendarModifySettings():
   calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
