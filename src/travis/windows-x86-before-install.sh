@@ -1,3 +1,4 @@
+echo "Installing Net-Framework-Core..."
 until powershell Install-WindowsFeature Net-Framework-Core; do echo "trying again..."; done
 cinst -y --forcex86 python3
 cd ~/pybuild
@@ -14,7 +15,7 @@ echo "OpenSSL dlls..."
 ls -alRF ssl
 echo "Python dlls..."
 ls -al /c/Python37/DLLs
-cp -v ssl/MainInstaller/*.dll /c/Python37/DLLs
+cp -v ssl/*.dll /c/Python37/DLLs
 export PATH=$PATH:/c/Python37/scripts
 until cinst -y wixtoolset; do echo "trying again..."; done
 cd ~
