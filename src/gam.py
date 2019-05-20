@@ -1695,9 +1695,14 @@ def showReport():
     elif report == 'group':
       report = 'groups'
     page_message = 'Got %%num_items%% items\n'
-    activities = callGAPIpages(rep.activities(), 'list', 'items', page_message=page_message, applicationName=report,
-                               userKey=userKey, customerId=customerId, actorIpAddress=actorIpAddress,
-                               startTime=startTime, endTime=endTime, eventName=eventName, filters=filters)
+    activities = callGAPIpages(rep.activities(), 'list', 'items',
+                               page_message=page_message,
+                               applicationName=report, userKey=userKey,
+                               customerId=customerId,
+                               actorIpAddress=actorIpAddress,
+                               startTime=startTime, endTime=endTime,
+                               eventName=eventName, filters=filters,
+                               orgUnitID=orgUnitId)
     if activities:
       titles = ['name']
       csvRows = []
