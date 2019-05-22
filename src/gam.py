@@ -1220,10 +1220,10 @@ def getOauth2TxtStorageCredentials():
   GC_Values[GC_DECODED_ID_TOKEN] = oauth_data.get('decoded_id_token', '')
   return creds
 
-def getValidOauth2TxtCredentials():
+def getValidOauth2TxtCredentials(force_refresh=False):
   """Gets OAuth2 credentials which are guaranteed to be fresh and valid."""
   credentials = getOauth2TxtStorageCredentials()
-  if credentials and credentials.expired:
+  if (credentials and credentials.expired) or force_refresh:
     try:
       credentials.refresh(google_auth_httplib2.Request(httplib2.Http()))
       writeCredentials(credentials)
@@ -13973,6 +13973,12 @@ def ProcessGAMCommand(args):
         OAuthInfo()
       elif argument in ['delete', 'revoke']:
         doDeleteOAuth()
+      elif argument in ['refresh']:
+        creds = getValidOauth2TxtCredentials(force_refresh=True)
+        if not creds:
+          systemErrorExit(5, 'Credential refresh failed')
+        else:
+          print('Credenials refreshed')
       else:
         systemErrorExit(2, '%s is not a valid argument for "gam oauth"' % argument)
       sys.exit(0)
