@@ -32,6 +32,7 @@ import io
 import json
 import mimetypes
 import os
+import pkg_resources
 import platform
 import random
 import re
@@ -59,13 +60,12 @@ import googleapiclient
 import googleapiclient.discovery
 import googleapiclient.errors
 import googleapiclient.http
+import google.oauth2.id_token
 import google.oauth2.service_account
+import google_auth_oauthlib.flow
 import google_auth_httplib2
 import httplib2
-import oauth2client.client
-import oauth2client.file
-import oauth2client.tools
-from oauth2client.contrib.dictionary_storage import DictionaryStorage
+import six
 
 import utils
 from var import *
@@ -100,31 +100,6 @@ def _build_ssl_context(disable_ssl_certificate_validation, ca_certs, cert_file=N
   elif GC_Values[GC_TLS_MIN_VERSION] or GC_Values[GC_TLS_MAX_VERSION]:
     systemErrorExit(5, 'GAM_TLS_MIN_VERSION and GAM_TLS_MAX_VERSION require Python 3.7+ and OpenSSL 1.1+')
   return context
-
-# Override some oauth2client.tools strings saving us a few GAM-specific mods to oauth2client
-oauth2client.tools._FAILED_START_MESSAGE = """
-Failed to start a local webserver listening on either port 8080
-or port 8090. Please check your firewall settings and locally
-running programs that may be blocking or using those ports.
-
-Falling back to nobrowser.txt  and continuing with
-authorization.
-"""
-
-oauth2client.tools._BROWSER_OPENED_MESSAGE = """
-Your browser has been opened to visit:
-
-    {address}
-
-If your browser is on a different machine then press CTRL+C and
-create a file called nobrowser.txt in the same folder as GAM.
-"""
-
-oauth2client.tools._GO_TO_LINK_MESSAGE = """
-Go to the following link in your browser:
-
-    {address}
-"""
 
 # Override and wrap google_auth_httplib2 request methods so that the GAM
 # user-agent string is inserted into HTTP request headers.
@@ -839,11 +814,12 @@ def doGAMVersion(checkForArgs=True):
   if simple:
     sys.stdout.write(gam_version)
     return
-  version_data = 'GAM {0} - {1}\n{2}\nPython {3}.{4}.{5} {6}-bit {7}\ngoogle-api-python-client {8}\noauth2client {9}\n{10} {11}\nPath: {12}'
+  version_data = 'GAM {0} - {1}\n{2}\nPython {3}.{4}.{5} {6}-bit {7}\ngoogle-api-python-client {8}\ngoogle-auth {9}\n{10} {11}\nPath: {12}'
   print(version_data.format(gam_version, GAM_URL, gam_author, sys.version_info[0],
                             sys.version_info[1], sys.version_info[2], struct.calcsize('P')*8,
-                            sys.version_info[3], googleapiclient.__version__, oauth2client.__version__, platform.platform(),
-                            platform.machine(), GM_Globals[GM_GAM_PATH]))
+                            sys.version_info[3], googleapiclient.__version__,
+                            pkg_resources.get_distribution('google-auth').version,
+                            platform.platform(), platform.machine(), GM_Globals[GM_GAM_PATH]))
   if force_check:
     doGAMCheckForUpdates(forceCheck=True)
   if extended:
@@ -1079,7 +1055,7 @@ def callGAPI(service, function,
         stderrErrorMsg('{0}: {1} - {2}{3}'.format(http_status, message, reason, ['', ': Giving up.'][n > 1]))
         return None
       systemErrorExit(int(http_status), '{0}: {1} - {2}'.format(http_status, message, reason))
-    except oauth2client.client.AccessTokenRefreshError as e:
+    except google.auth.exceptions.RefreshError as e:
       handleOAuthTokenError(str(e), soft_errors or GAPI_SERVICE_NOT_AVAILABLE in throw_reasons)
       if GAPI_SERVICE_NOT_AVAILABLE in throw_reasons:
         raise GAPI_serviceNotAvailable(str(e))
@@ -1234,24 +1210,28 @@ def readDiscoveryFile(api_version):
     invalidJSONExit(disc_file)
 
 def getOauth2TxtStorageCredentials():
-  storage = oauth2client.file.Storage(GC_Values[GC_OAUTH2_TXT])
-  try:
-    return (storage, storage.get())
-  except (KeyError, ValueError):
-    return (storage, None)
+  oauth_data = json.loads(readFile(GC_Values[GC_OAUTH2_TXT]))
+  creds = google.oauth2.credentials.Credentials.from_authorized_user_file(GC_Values[GC_OAUTH2_TXT])
+  creds.token = oauth_data.get('token', oauth_data.get('auth_token', ''))
+  creds._id_token = oauth_data.get('id_token', None)
+  token_expiry = oauth_data.get('token_expiry', '1970-01-01T00:00:01Z')
+  creds.expiry = datetime.datetime.strptime(token_expiry, '%Y-%m-%dT%H:%M:%SZ')
+  GC_Values[GC_DECODED_ID_TOKEN] = oauth_data.get('decoded_id_token', '')
+  return creds
 
 def getValidOauth2TxtCredentials():
   """Gets OAuth2 credentials which are guaranteed to be fresh and valid."""
-  storage, credentials = getOauth2TxtStorageCredentials()
-  if credentials is None or credentials.invalid:
-    doRequestOAuth()
-    credentials = storage.get()
-  elif credentials.access_token_expired:
-    http = httplib2.Http()
+  credentials = getOauth2TxtStorageCredentials()
+  if credentials and credentials.expired:
+    print('trying a refresh')
     try:
-      credentials.refresh(http)
-    except oauth2client.client.HttpAccessTokenRefreshError as e:
+      credentials.refresh(google_auth_httplib2.Request(httplib2.Http()))
+      writeCredentials(credentials)
+    except google.auth.exceptions.RefreshError as e:
       systemErrorExit(18, str(e))
+  elif credentials is None or not credentials.valid:
+    doRequestOAuth()
+    credentials = getOauth2TxtStorageCredentials()
   return credentials
 
 def getService(api, http):
@@ -1304,7 +1284,8 @@ def buildGAPIObject(api):
   GM_Globals[GM_CURRENT_API_USER] = None
   credentials = getValidOauth2TxtCredentials()
   credentials.user_agent = GAM_INFO
-  http = credentials.authorize(httplib2.Http(cache=GM_Globals[GM_CACHE_DIR]))
+  #http = credentials.authorize(httplib2.Http(cache=GM_Globals[GM_CACHE_DIR]))
+  http = google_auth_httplib2.AuthorizedHttp(credentials, httplib2.Http(cache=GM_Globals[GM_CACHE_DIR]))
   service = getService(api, http)
   if GC_Values[GC_DOMAIN]:
     if not GC_Values[GC_CUSTOMER_ID]:
@@ -7477,20 +7458,35 @@ def getUserAttributes(i, cd, updateCmd):
     body['hashFunction'] = 'crypt'
   return body
 
+def _run_oauth_flow(client_id, client_secret, scopes, access_type, login_hint=None):
+  client_config = {
+          'installed': {
+              'client_id': client_id,
+              'client_secret': client_secret,
+              'redirect_uris': ['http://localhost', 'urn:ietf:wg:oauth:2.0:oob'],
+              'auth_uri': 'https://accounts.google.com/o/oauth2/auth',
+              'token_uri': 'https://accounts.google.com/o/oauth2/token',
+              }
+          }
+  flow = google_auth_oauthlib.flow.InstalledAppFlow.from_client_config(client_config, scopes)
+  kwargs = {
+          'prompt': 'consent',
+          'access_type': access_type,
+          }
+  if login_hint:
+    kwargs['login_hint'] = login_hint
+  if GC_Values[GC_NO_BROWSER]:
+    flow.run_console(**kwargs)
+  else:
+    flow.run_local_server(**kwargs)
+  return flow.credentials
+
 def getCRMService(login_hint):
-  scope = 'https://www.googleapis.com/auth/cloud-platform'
+  scopes = ['https://www.googleapis.com/auth/cloud-platform']
   client_id = '297408095146-fug707qsjv4ikron0hugpevbrjhkmsk7.apps.googleusercontent.com'
   client_secret = 'qM3dP8f_4qedwzWQE1VR4zzU'
-  flow = oauth2client.client.OAuth2WebServerFlow(client_id=client_id,
-                                                 client_secret=client_secret, scope=scope, redirect_uri=oauth2client.client.OOB_CALLBACK_URN,
-                                                 user_agent=GAM_INFO, access_type='online', response_type='code', login_hint=login_hint)
-  storage_dict = {}
-  storage = DictionaryStorage(storage_dict, 'credentials')
-  flags = cmd_flags(noLocalWebserver=GC_Values[GC_NO_BROWSER])
-  http = httplib2.Http()
-  credentials = oauth2client.tools.run_flow(flow=flow, storage=storage, flags=flags, http=http)
-  credentials.user_agent = GAM_INFO
-  http = credentials.authorize(httplib2.Http(cache=None))
+  credentials = _run_oauth_flow(client_id, client_secret, scopes, 'online', login_hint)
+  http = google_auth_httplib2.AuthorizedHttp(credentials)
   return (googleapiclient.discovery.build('cloudresourcemanager', 'v1',
                                           http=http, cache_discovery=False,
                                           discoveryServiceUrl=googleapiclient.discovery.V2_DISCOVERY_URI),
@@ -9689,8 +9685,11 @@ def doCreateResoldCustomer():
   print('Created customer %s with id %s' % (result['customerDomain'], result['customerId']))
 
 def _getValueFromOAuth(field, credentials=None):
-  credentials = credentials if credentials is not None else getValidOauth2TxtCredentials()
-  return credentials.id_token.get(field, 'Unknown')
+  if not GC_Values[GC_DECODED_ID_TOKEN]:
+    credentials = credentials if credentials is not None else getValidOauth2TxtCredentials()
+    http = google_auth_httplib2.Request(httplib2.Http())
+    GC_Values[GC_DECODED_ID_TOKEN] = google.oauth2.id_token.verify_oauth2_token(credentials.id_token, http)
+  return GC_Values[GC_DECODED_ID_TOKEN].get(field, 'Unknown')
 
 def doGetMemberInfo():
   cd = buildGAPIObject('directory')
@@ -12040,7 +12039,7 @@ def doPrintCrosActivity():
   fields = 'chromeosdevices(%s),nextPageToken' % ','.join(fieldsList)
   for query in queries:
     printGettingAllItems('CrOS Devices', query)
-    page_message = 'Got %%num_items%% CrOS Devices...\n'
+    page_message = 'Got %%total_items%% CrOS Devices...\n'
     all_cros = callGAPIpages(cd.chromeosdevices(), 'list', 'chromeosdevices', page_message=page_message,
                              query=query, customerId=GC_Values[GC_CUSTOMER_ID], projection='FULL',
                              fields=fields, maxResults=GC_Values[GC_DEVICE_MAX_RESULTS], orgUnitPath=orgUnitPath)
@@ -12219,7 +12218,7 @@ def doPrintCrosDevices():
     fields = None
   for query in queries:
     printGettingAllItems('CrOS Devices', query)
-    page_message = 'Got %%num_items%% CrOS Devices...\n'
+    page_message = 'Got %%total_items%% CrOS Devices...\n'
     all_cros = callGAPIpages(cd.chromeosdevices(), 'list', 'chromeosdevices', page_message=page_message,
                              query=query, customerId=GC_Values[GC_CUSTOMER_ID], projection=projection, orgUnitPath=orgUnitPath,
                              orderBy=orderBy, sortOrder=sortOrder, fields=fields, maxResults=GC_Values[GC_DEVICE_MAX_RESULTS])
@@ -12841,7 +12840,6 @@ def doDeleteOAuth():
     storage.delete()
     return
   try:
-#    credentials.revoke_uri = oauth2client.GOOGLE_REVOKE_URI
     credentials.revoke_uri = 'https://accounts.google.com/o/oauth2/revoke'
   except AttributeError:
     systemErrorExit(1, 'Authorization doesn\'t exist')
@@ -12862,20 +12860,35 @@ def doDeleteOAuth():
     stderrErrorMsg(str(e))
     storage.delete()
 
+def writeCredentials(creds):
+  creds_data = {
+          'token': creds.token,
+          'refresh_token': creds.refresh_token,
+          'token_uri': creds.token_uri,
+          'client_id': creds.client_id,
+          'client_secret': creds.client_secret,
+          #'scopes': list(creds.scopes),
+          'id_token': creds.id_token,
+          'token_expiry': creds.expiry.strftime('%Y-%m-%dT%H:%M:%SZ'),
+          }
+  if _getValueFromOAuth('iss', creds) != 'https://accounts.google.com':
+    systemExitError(13, 'Wrong OAuth 2.0 credentials issuer.')
+  creds_data['decoded_id_token'] = GC_Values[GC_DECODED_ID_TOKEN]
+  data = json.dumps(creds_data, indent=2, sort_keys=True)
+  writeFile(GC_Values[GC_OAUTH2_TXT], data)
+
 def doRequestOAuth(login_hint=None):
-  storage, credentials = getOauth2TxtStorageCredentials()
-  if credentials is None or credentials.invalid:
-    http = httplib2.Http()
-    flags = cmd_flags(noLocalWebserver=GC_Values[GC_NO_BROWSER])
+  credentials = getOauth2TxtStorageCredentials()
+  if credentials is None or not credentials.valid:
     scopes = getScopesFromUser()
     if scopes is None:
       systemErrorExit(0, '')
     client_id, client_secret = getOAuthClientIDAndSecret()
     login_hint = _getValidateLoginHint(login_hint)
-    flow = oauth2client.client.OAuth2WebServerFlow(client_id=client_id,
-                                                   client_secret=client_secret, scope=scopes, redirect_uri=oauth2client.client.OOB_CALLBACK_URN,
-                                                   user_agent=GAM_INFO, response_type='code', login_hint=login_hint)
-    credentials = oauth2client.tools.run_flow(flow=flow, storage=storage, flags=flags, http=http)
+    # Needs to be set so oauthlib doesn't puke when Google changes our scopes
+    os.environ['OAUTHLIB_RELAX_TOKEN_SCOPE'] = 'true'
+    creds = _run_oauth_flow(client_id, client_secret, scopes, 'offline', login_hint)
+    writeCredentials(creds)
   else:
     print('It looks like you\'ve already authorized GAM. Refusing to overwrite existing file:\n\n%s' % GC_Values[GC_OAUTH2_TXT])
 

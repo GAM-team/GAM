@@ -968,6 +968,8 @@ GC_CONFIG_DIR = 'config_dir'
 GC_CUSTOMER_ID = 'customer_id'
 # If debug_level > 0: extra_args[u'prettyPrint'] = True, httplib2.debuglevel = gam_debug_level, appsObj.debug = True
 GC_DEBUG_LEVEL = 'debug_level'
+# ID Token decoded from OAuth 2.0 refresh token response. Includes hd (domain) and email of authorized user
+GC_DECODED_ID_TOKEN = 'decoded_id_token'
 # When retrieving lists of ChromeOS/Mobile devices from API, how many should be retrieved in each chunk
 GC_DEVICE_MAX_RESULTS = 'device_max_results'
 # Domain obtained from gam.cfg or oauth2.txt
@@ -1024,6 +1026,7 @@ GC_Defaults = {
   GC_CONFIG_DIR: '',
   GC_CUSTOMER_ID: MY_CUSTOMER,
   GC_DEBUG_LEVEL: 0,
+  GC_DECODED_ID_TOKEN: '',
   GC_DEVICE_MAX_RESULTS: 500,
   GC_DOMAIN: '',
   GC_DRIVE_DIR: '',
@@ -1074,6 +1077,7 @@ GC_VAR_INFO = {
   GC_CONFIG_DIR: {GC_VAR_TYPE: GC_TYPE_DIRECTORY},
   GC_CUSTOMER_ID: {GC_VAR_TYPE: GC_TYPE_STRING},
   GC_DEBUG_LEVEL: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (0, None)},
+  GC_DECODED_ID_TOKEN: {GC_VAR_TYPE: GC_TYPE_STRING},
   GC_DEVICE_MAX_RESULTS: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (1, 1000)},
   GC_DOMAIN: {GC_VAR_TYPE: GC_TYPE_STRING},
   GC_DRIVE_DIR: {GC_VAR_TYPE: GC_TYPE_DIRECTORY},
