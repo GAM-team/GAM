@@ -12876,9 +12876,9 @@ def writeCredentials(creds):
           'id_token': creds.id_token,
           'token_expiry': creds.expiry.strftime('%Y-%m-%dT%H:%M:%SZ'),
           }
-  expected_iss = 'accounts.google.com'
-  if _getValueFromOAuth('iss', creds) != expected_iss:
-    systemErrorExit(13, 'Wrong OAuth 2.0 credentials issuer. Got %s, expected %s' % (_getValueFromOAuth('iss', creds), expected_iss))
+  expected_iss = ['https://accounts.google.com', 'accounts.google.com']
+  if _getValueFromOAuth('iss', creds) not in expected_iss:
+    systemErrorExit(13, 'Wrong OAuth 2.0 credentials issuer. Got %s, expected one of %s' % (_getValueFromOAuth('iss', creds), ', '.join(expected_iss)))
   creds_data['decoded_id_token'] = GC_Values[GC_DECODED_ID_TOKEN]
   data = json.dumps(creds_data, indent=2, sort_keys=True)
   writeFile(GC_Values[GC_OAUTH2_TXT], data)
