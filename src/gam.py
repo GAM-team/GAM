@@ -32,7 +32,6 @@ import io
 import json
 import mimetypes
 import os
-import pkg_resources
 import platform
 import random
 import re
@@ -814,11 +813,10 @@ def doGAMVersion(checkForArgs=True):
   if simple:
     sys.stdout.write(gam_version)
     return
-  version_data = 'GAM {0} - {1}\n{2}\nPython {3}.{4}.{5} {6}-bit {7}\ngoogle-api-python-client {8}\ngoogle-auth {9}\n{10} {11}\nPath: {12}'
+  version_data = 'GAM {0} - {1}\n{2}\nPython {3}.{4}.{5} {6}-bit {7}\ngoogle-api-python-client {8}\n{9} {10}\nPath: {11}'
   print(version_data.format(gam_version, GAM_URL, gam_author, sys.version_info[0],
                             sys.version_info[1], sys.version_info[2], struct.calcsize('P')*8,
                             sys.version_info[3], googleapiclient.__version__,
-                            pkg_resources.get_distribution('google-auth').version,
                             platform.platform(), platform.machine(), GM_Globals[GM_GAM_PATH]))
   if force_check:
     doGAMCheckForUpdates(forceCheck=True)
@@ -1210,7 +1208,10 @@ def readDiscoveryFile(api_version):
     invalidJSONExit(disc_file)
 
 def getOauth2TxtStorageCredentials():
-  oauth_data = json.loads(readFile(GC_Values[GC_OAUTH2_TXT]))
+  oauth_string = readFile(GC_Values[GC_OAUTH2_TXT], continueOnError=True, displayError=False)
+  if not oauth_string:
+    return
+  oauth_data = json.loads(oauth_string)
   creds = google.oauth2.credentials.Credentials.from_authorized_user_file(GC_Values[GC_OAUTH2_TXT])
   creds.token = oauth_data.get('token', oauth_data.get('auth_token', ''))
   creds._id_token = oauth_data.get('id_token', None)
@@ -1223,7 +1224,6 @@ def getValidOauth2TxtCredentials():
   """Gets OAuth2 credentials which are guaranteed to be fresh and valid."""
   credentials = getOauth2TxtStorageCredentials()
   if credentials and credentials.expired:
-    print('trying a refresh')
     try:
       credentials.refresh(google_auth_httplib2.Request(httplib2.Http()))
       writeCredentials(credentials)
@@ -12814,18 +12814,30 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
   return full_users
 
 def OAuthInfo():
-  credentials = None
-  if len(sys.argv) > 3:
-    access_token = sys.argv[3]
-  else:
+  credentials = access_token = id_token = None
+  show_secret = False
+  i = 3
+  while i < len(sys.argv):
+    myarg = sys.argv[i].lower().replace('_', '')
+    if myarg == 'accesstoken':
+      access_token = sys.argv[i+1]
+      i += 2
+    elif myarg == 'idtoken':
+      id_token = sys.argv[i+1]
+      i += 2
+    elif myarg == 'showsecret':
+      show_secret = True
+      i += 1
+    else:
+      systemErrorExit(3, '%s is not a valid argument to "gam oauth info"' % sys.argv[i])
+  if not access_token and not id_token:
     credentials = getValidOauth2TxtCredentials()
-    credentials.user_agent = GAM_INFO
-    access_token = credentials.access_token
+    access_token = credentials.token
     print("\nOAuth File: %s" % GC_Values[GC_OAUTH2_TXT])
   oa2 = buildGAPIObject('oauth2')
-  token_info = callGAPI(oa2, 'tokeninfo', access_token=access_token)
+  token_info = callGAPI(oa2, 'tokeninfo', access_token=access_token, id_token=id_token)
   print("Client ID: %s" % token_info['issued_to'])
-  if credentials is not None:
+  if credentials is not None and show_secret:
     print("Secret: %s" % credentials.client_secret)
   scopes = token_info['scope'].split(' ')
   print('Scopes (%s):' % len(scopes))
@@ -12835,14 +12847,10 @@ def OAuthInfo():
     print('G Suite Admin: %s' % _getValueFromOAuth('email', credentials=credentials))
 
 def doDeleteOAuth():
-  storage, credentials = getOauth2TxtStorageCredentials()
-  if credentials is None or credentials.invalid:
-    storage.delete()
-    return
-  try:
-    credentials.revoke_uri = 'https://accounts.google.com/o/oauth2/revoke'
-  except AttributeError:
-    systemErrorExit(1, 'Authorization doesn\'t exist')
+  credentials = getOauth2TxtStorageCredentials()
+  simplehttp = httplib2.Http()
+  params = {'token': credentials.refresh_token}
+  revoke_uri = 'https://accounts.google.com/o/oauth2/revoke?%s' % urlencode(params)
   sys.stderr.write('This OAuth token will self-destruct in 3...')
   sys.stderr.flush()
   time.sleep(1)
@@ -12854,11 +12862,8 @@ def doDeleteOAuth():
   time.sleep(1)
   sys.stderr.write('boom!\n')
   sys.stderr.flush()
-  try:
-    credentials.revoke(httplib2.Http())
-  except oauth2client.client.TokenRevokeError as e:
-    stderrErrorMsg(str(e))
-    storage.delete()
+  resp, _ = simplehttp.request(revoke_uri, 'GET')
+  os.remove(GC_Values[GC_OAUTH2_TXT])
 
 def writeCredentials(creds):
   creds_data = {
@@ -12871,8 +12876,9 @@ def writeCredentials(creds):
           'id_token': creds.id_token,
           'token_expiry': creds.expiry.strftime('%Y-%m-%dT%H:%M:%SZ'),
           }
-  if _getValueFromOAuth('iss', creds) != 'https://accounts.google.com':
-    systemExitError(13, 'Wrong OAuth 2.0 credentials issuer.')
+  expected_iss = 'accounts.google.com'
+  if _getValueFromOAuth('iss', creds) != expected_iss:
+    systemErrorExit(13, 'Wrong OAuth 2.0 credentials issuer. Got %s, expected %s' % (_getValueFromOAuth('iss', creds), expected_iss))
   creds_data['decoded_id_token'] = GC_Values[GC_DECODED_ID_TOKEN]
   data = json.dumps(creds_data, indent=2, sort_keys=True)
   writeFile(GC_Values[GC_OAUTH2_TXT], data)
