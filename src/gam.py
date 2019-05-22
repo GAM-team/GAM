@@ -12836,15 +12836,20 @@ def OAuthInfo():
     print("\nOAuth File: %s" % GC_Values[GC_OAUTH2_TXT])
   oa2 = buildGAPIObject('oauth2')
   token_info = callGAPI(oa2, 'tokeninfo', access_token=access_token, id_token=id_token)
-  print("Client ID: %s" % token_info['issued_to'])
   if credentials is not None and show_secret:
     print("Secret: %s" % credentials.client_secret)
-  scopes = token_info['scope'].split(' ')
-  print('Scopes (%s):' % len(scopes))
-  for scope in sorted(scopes):
-    print('  %s' % scope)
-  if credentials is not None:
-    print('G Suite Admin: %s' % _getValueFromOAuth('email', credentials=credentials))
+  for key, value in token_info.items():
+    if key == 'scope':
+      scopes = value.split(' ')
+      print('Scopes (%s):' % len(scopes))
+      for scope in sorted(scopes):
+        print('  %s' % scope)
+    elif key == 'email':
+      print('G Suite Admin: %s' % value)
+    elif key == 'issued_to':
+      print('Client ID %s' % value)
+    else:
+      print('%s: %s' % (key, value))
 
 def doDeleteOAuth():
   credentials = getOauth2TxtStorageCredentials()
