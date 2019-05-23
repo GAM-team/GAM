@@ -7487,9 +7487,15 @@ def _run_oauth_flow(client_id, client_secret, scopes, access_type, login_hint=No
   if login_hint:
     kwargs['login_hint'] = login_hint
   if GC_Values[GC_NO_BROWSER]:
-    flow.run_console(**kwargs)
+    flow.run_console(
+            authorization_prompt_message=MESSAGE_CONSOLE_AUTHORIZATION_PROMPT,
+            authorization_code_message=MESSAGE_CONSOLE_AUTHORIZATION_CODE,
+            **kwargs)
   else:
-    flow.run_local_server(**kwargs)
+    flow.run_local_server(
+            authorization_prompt_message=MESSAGE_LOCAL_SERVER_AUTHORIZATION_PROMPT,
+            success_message=MESSAGE_LOCAL_SERVER_SUCCESS,
+            **kwargs)
   return flow.credentials
 
 def getCRMService(login_hint):
@@ -7638,7 +7644,7 @@ def _createClientSecretsOauth2service(httpObj, projectId):
   cs_data = '''{
     "installed": {
         "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-        "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+        "auth_uri": "https://accounts.google.com/o/oauth2/v2/auth",
         "client_id": "%s",
         "client_secret": "%s",
         "project_id": "%s",
@@ -7646,7 +7652,7 @@ def _createClientSecretsOauth2service(httpObj, projectId):
             "urn:ietf:wg:oauth:2.0:oob",
             "http://localhost"
         ],
-        "token_uri": "https://accounts.google.com/o/oauth2/token"
+        "token_uri": "https://oauth2.googleapis.com/token"
     }
 }''' % (client_id, client_secret, projectId)
   writeFile(GC_Values[GC_CLIENT_SECRETS_JSON], cs_data, continueOnError=False)
@@ -12888,7 +12894,6 @@ def writeCredentials(creds):
           'token_uri': creds.token_uri,
           'client_id': creds.client_id,
           'client_secret': creds.client_secret,
-          #'scopes': list(creds.scopes),
           'id_token': creds.id_token,
           'token_expiry': creds.expiry.strftime('%Y-%m-%dT%H:%M:%SZ'),
           }
@@ -13994,7 +13999,7 @@ def ProcessGAMCommand(args):
         if not creds:
           systemErrorExit(5, 'Credential refresh failed')
         else:
-          print('Credenials refreshed')
+          print('Credentials refreshed')
       else:
         systemErrorExit(2, '%s is not a valid argument for "gam oauth"' % argument)
       sys.exit(0)
