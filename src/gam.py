@@ -2027,7 +2027,16 @@ def doGetCustomerInfo():
   result = callGAPI(cd.domains(), 'get',
                     customer=customer_info['id'], domainName=customer_info['customerDomain'], fields='verified')
   print('Primary Domain Verified: %s' % result['verified'])
-  print('Customer Creation Time: %s' % customer_info['customerCreationTime'])
+  # If customer has changed primary domain customerCreationTime is date
+  # of current primary being added, not customer create date.
+  # We should also get all domains and use oldest date
+  domains = doPrintDomains(return_results=True)
+  oldest = datetime.datetime.strptime(customer_info['customerCreationTime'], '%Y-%m-%dT%H:%M:%S.%fZ')
+  for domain in domains:
+    domain_creation = datetime.datetime.strptime(domain['creationTime'], '%Y-%m-%d %H:%M:%S.%f')
+    if domain_creation < oldest:
+      oldest = domain_creation
+  print('Customer Creation Time: %s' % oldest)
   print('Default Language: %s' % customer_info.get('language', 'Unset (defaults to en)'))
   if 'postalAddress' in customer_info:
     print('Address:')
@@ -2106,7 +2115,7 @@ def doDelDomainAlias():
   domainAliasName = sys.argv[3]
   callGAPI(cd.domainAliases(), 'delete', customer=GC_Values[GC_CUSTOMER_ID], domainAliasName=domainAliasName)
 
-def doPrintDomains():
+def doPrintDomains(return_results=False):
   cd = buildGAPIObject('directory')
   todrive = False
   titles = ['domainName',]
@@ -2147,6 +2156,8 @@ def doPrintDomains():
             titles.append(attr)
           aliasdomain_attributes[attr] = aliasdomain[attr]
         csvRows.append(aliasdomain_attributes)
+  if return_results:
+    return csvRows
   writeCSVfile(csvRows, titles, 'Domains', todrive)
 
 def doPrintDomainAliases():
