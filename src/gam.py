@@ -3422,7 +3422,7 @@ def doPrintJobFetch():
     result = callGAPI(cp.printers(), 'get',
                       printerid=printerid)
     checkCloudPrintResult(result)
-  valid_chars = '-_.() abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+  valid_chars = '-_.() '+string.ascii_letters+string.ascii_digits
   ssd = '{"state": {"type": "DONE"}}'
   if ((not sortorder) or (sortorder == 'CREATE_TIME_DESC')) and (older_or_newer == 'newer'):
     timeExit = True
@@ -7463,7 +7463,7 @@ def getUserAttributes(i, cd, updateCmd):
     else:
       systemErrorExit(2, '%s is not a valid argument for "gam %s user"' % (sys.argv[i], ['create', 'update'][updateCmd]))
   if need_password:
-    body['password'] = ''.join(random.sample('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789~`!@#$%^&*()-=_+:;"\'{}[]\\|', 25))
+    body['password'] = ''.join(random.sample(string.printable, 25))
   if 'password' in body and need_to_hash_password:
     body['password'] = gen_sha512_hash(body['password'])
     body['hashFunction'] = 'crypt'
@@ -7481,7 +7481,6 @@ def _run_oauth_flow(client_id, client_secret, scopes, access_type, login_hint=No
           }
   flow = google_auth_oauthlib.flow.InstalledAppFlow.from_client_config(client_config, scopes)
   kwargs = {
-          'prompt': 'consent',
           'access_type': access_type,
           }
   if login_hint:
