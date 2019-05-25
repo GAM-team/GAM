@@ -64,7 +64,6 @@ import google.oauth2.service_account
 import google_auth_oauthlib.flow
 import google_auth_httplib2
 import httplib2
-import six
 
 import utils
 from var import *
@@ -3422,7 +3421,7 @@ def doPrintJobFetch():
     result = callGAPI(cp.printers(), 'get',
                       printerid=printerid)
     checkCloudPrintResult(result)
-  valid_chars = '-_.() '+string.ascii_letters+string.ascii_digits
+  valid_chars = '-_.() '+string.ascii_letters+string.digits
   ssd = '{"state": {"type": "DONE"}}'
   if ((not sortorder) or (sortorder == 'CREATE_TIME_DESC')) and (older_or_newer == 'newer'):
     timeExit = True
@@ -3794,7 +3793,7 @@ def getSendUpdates(myarg, i, cal):
       sendUpdatesMap[val.lower()] = val
     sendUpdates = sendUpdatesMap.get(sys.argv[i+1].lower(), False)
     if not sendUpdates:
-      systemErrorExit(3, 'sendupdates must be one of: %s. Got %s' % (', '.join(sendUpdatesVals), sys.argv[i+1]))
+      systemErrorExit(3, 'sendupdates must be one of: %s. Got %s' % (', '.join(sendUpdatesMap), sys.argv[i+1]))
     i += 2
   return (sendUpdates, i)
 
@@ -7471,18 +7470,16 @@ def getUserAttributes(i, cd, updateCmd):
 
 def _run_oauth_flow(client_id, client_secret, scopes, access_type, login_hint=None):
   client_config = {
-          'installed': {
-              'client_id': client_id,
-              'client_secret': client_secret,
-              'redirect_uris': ['http://localhost', 'urn:ietf:wg:oauth:2.0:oob'],
-              'auth_uri': 'https://accounts.google.com/o/oauth2/auth',
-              'token_uri': 'https://accounts.google.com/o/oauth2/token',
-              }
-          }
+    'installed': {
+      'client_id': client_id,
+      'client_secret': client_secret,
+      'redirect_uris': ['http://localhost', 'urn:ietf:wg:oauth:2.0:oob'],
+      'auth_uri': 'https://accounts.google.com/o/oauth2/auth',
+      'token_uri': 'https://accounts.google.com/o/oauth2/token',
+      }
+    }
   flow = google_auth_oauthlib.flow.InstalledAppFlow.from_client_config(client_config, scopes)
-  kwargs = {
-          'access_type': access_type,
-          }
+  kwargs = {'access_type': access_type}
   if login_hint:
     kwargs['login_hint'] = login_hint
   if GC_Values[GC_NO_BROWSER]:
@@ -12852,19 +12849,21 @@ def OAuthInfo():
     print("\nOAuth File: %s" % GC_Values[GC_OAUTH2_TXT])
   oa2 = buildGAPIObject('oauth2')
   token_info = callGAPI(oa2, 'tokeninfo', access_token=access_token, id_token=id_token)
+  if 'issued_to' in token_info:
+    print('Client ID: %s' % token_info['issued_to'])
   if credentials is not None and show_secret:
     print("Secret: %s" % credentials.client_secret)
+  if 'scope' in token_info:
+    scopes = token_info['scope'].split(' ')
+    print('Scopes (%s):' % len(scopes))
+    for scope in sorted(scopes):
+      print('  %s' % scope)
+  if 'email' in token_info:
+    print('G Suite Admin: %s' % token_info['email'])
+  if 'expires_in' in token_info:
+    print('Expires: %s' % (datetime.datetime.now()+datetime.timedelta(seconds=token_info['expires_in'])).isoformat())
   for key, value in token_info.items():
-    if key == 'scope':
-      scopes = value.split(' ')
-      print('Scopes (%s):' % len(scopes))
-      for scope in sorted(scopes):
-        print('  %s' % scope)
-    elif key == 'email':
-      print('G Suite Admin: %s' % value)
-    elif key == 'issued_to':
-      print('Client ID %s' % value)
-    else:
+    if key not in ['issued_to', 'scope', 'email', 'expires_in']:
       print('%s: %s' % (key, value))
 
 def doDeleteOAuth():
@@ -12883,19 +12882,19 @@ def doDeleteOAuth():
   time.sleep(1)
   sys.stderr.write('boom!\n')
   sys.stderr.flush()
-  resp, _ = simplehttp.request(revoke_uri, 'GET')
+  simplehttp.request(revoke_uri, 'GET')
   os.remove(GC_Values[GC_OAUTH2_TXT])
 
 def writeCredentials(creds):
   creds_data = {
-          'token': creds.token,
-          'refresh_token': creds.refresh_token,
-          'token_uri': creds.token_uri,
-          'client_id': creds.client_id,
-          'client_secret': creds.client_secret,
-          'id_token': creds.id_token,
-          'token_expiry': creds.expiry.strftime('%Y-%m-%dT%H:%M:%SZ'),
-          }
+    'token': creds.token,
+    'refresh_token': creds.refresh_token,
+    'token_uri': creds.token_uri,
+    'client_id': creds.client_id,
+    'client_secret': creds.client_secret,
+    'id_token': creds.id_token,
+    'token_expiry': creds.expiry.strftime('%Y-%m-%dT%H:%M:%SZ'),
+    }
   expected_iss = ['https://accounts.google.com', 'accounts.google.com']
   if _getValueFromOAuth('iss', creds) not in expected_iss:
     systemErrorExit(13, 'Wrong OAuth 2.0 credentials issuer. Got %s, expected one of %s' % (_getValueFromOAuth('iss', creds), ', '.join(expected_iss)))
@@ -12939,14 +12938,6 @@ gam create project
     systemErrorExit(3, 'the format of your client secrets file:\n\n%s\n\n'
                     'is incorrect. Please recreate the file.' % filename)
   return (client_id, client_secret)
-
-class cmd_flags():
-  def __init__(self, noLocalWebserver):
-    self.short_url = True
-    self.noauth_local_webserver = noLocalWebserver
-    self.logging_level = 'ERROR'
-    self.auth_host_name = 'localhost'
-    self.auth_host_port = [8080, 9090]
 
 OAUTH2_SCOPES = [
   {'name': 'Classroom API - counts as 5 scopes',
