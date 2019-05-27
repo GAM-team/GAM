@@ -7474,8 +7474,8 @@ def _run_oauth_flow(client_id, client_secret, scopes, access_type, login_hint=No
       'client_id': client_id,
       'client_secret': client_secret,
       'redirect_uris': ['http://localhost', 'urn:ietf:wg:oauth:2.0:oob'],
-      'auth_uri': 'https://accounts.google.com/o/oauth2/auth',
-      'token_uri': 'https://accounts.google.com/o/oauth2/token',
+      'auth_uri': 'https://accounts.google.com/o/oauth2/v2/auth',
+      'token_uri': 'https://oauth2.googleapis.com/token',
       }
     }
   flow = google_auth_oauthlib.flow.InstalledAppFlow.from_client_config(client_config, scopes)
