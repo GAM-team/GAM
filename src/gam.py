@@ -12868,6 +12868,8 @@ def OAuthInfo():
 
 def doDeleteOAuth():
   credentials = getOauth2TxtStorageCredentials()
+  if credentials is None:
+    return
   simplehttp = httplib2.Http()
   params = {'token': credentials.refresh_token}
   revoke_uri = 'https://accounts.google.com/o/oauth2/revoke?%s' % urlencode(params)
