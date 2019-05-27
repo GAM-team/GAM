@@ -7474,8 +7474,8 @@ def _run_oauth_flow(client_id, client_secret, scopes, access_type, login_hint=No
       'client_id': client_id,
       'client_secret': client_secret,
       'redirect_uris': ['http://localhost', 'urn:ietf:wg:oauth:2.0:oob'],
-      'auth_uri': 'https://accounts.google.com/o/oauth2/auth',
-      'token_uri': 'https://accounts.google.com/o/oauth2/token',
+      'auth_uri': 'https://accounts.google.com/o/oauth2/v2/auth',
+      'token_uri': 'https://oauth2.googleapis.com/token',
       }
     }
   flow = google_auth_oauthlib.flow.InstalledAppFlow.from_client_config(client_config, scopes)
@@ -12868,6 +12868,8 @@ def OAuthInfo():
 
 def doDeleteOAuth():
   credentials = getOauth2TxtStorageCredentials()
+  if credentials is None:
+    return
   simplehttp = httplib2.Http()
   params = {'token': credentials.refresh_token}
   revoke_uri = 'https://accounts.google.com/o/oauth2/revoke?%s' % urlencode(params)
@@ -12894,6 +12896,7 @@ def writeCredentials(creds):
     'client_secret': creds.client_secret,
     'id_token': creds.id_token,
     'token_expiry': creds.expiry.strftime('%Y-%m-%dT%H:%M:%SZ'),
+    'scopes': sorted(creds.scopes),
     }
   expected_iss = ['https://accounts.google.com', 'accounts.google.com']
   if _getValueFromOAuth('iss', creds) not in expected_iss:
