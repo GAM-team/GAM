@@ -820,7 +820,7 @@ gam print projects [<EmailAddress>] [all|gam|<ProjectID>|(filter <String>)] [tod
 
 gam oauth|oauth2 create|request [<EmailAddress>]
 gam oauth|oauth2 delete|revoke
-gam oauth|oauth2 info|verify [accesstoken <AccessToken>] [idtoken <IDToken>] [showdetails] [showsecret]
+gam oauth|oauth2 info|verify [accesstoken <AccessToken>] [idtoken <IDToken>] [showsecret]
 gam oauth|oauth2 refresh
 
 gam <UserTypeEntity> check serviceaccount

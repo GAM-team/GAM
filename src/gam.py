@@ -12828,7 +12828,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
 
 def OAuthInfo():
   credentials = access_token = id_token = None
-  show_details = show_secret = False
+  show_secret = False
   i = 3
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace('_', '')
@@ -12840,9 +12840,6 @@ def OAuthInfo():
       i += 2
     elif myarg == 'showsecret':
       show_secret = True
-      i += 1
-    elif myarg == 'showdetails':
-      show_details = True
       i += 1
     else:
       systemErrorExit(3, '%s is not a valid argument to "gam oauth info"' % sys.argv[i])
@@ -12865,10 +12862,9 @@ def OAuthInfo():
     print('G Suite Admin: %s' % token_info['email'])
   if 'expires_in' in token_info:
     print('Expires: %s' % (datetime.datetime.now()+datetime.timedelta(seconds=token_info['expires_in'])).isoformat())
-  if show_details:
-    for key, value in token_info.items():
-      if key not in ['issued_to', 'scope', 'email', 'expires_in']:
-        print('%s: %s' % (key, value))
+  for key, value in token_info.items():
+    if key not in ['issued_to', 'scope', 'email', 'expires_in']:
+      print('%s: %s' % (key, value))
 
 def doDeleteOAuth():
   credentials = getOauth2TxtStorageCredentials()
