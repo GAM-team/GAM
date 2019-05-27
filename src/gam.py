@@ -12896,6 +12896,7 @@ def writeCredentials(creds):
     'client_secret': creds.client_secret,
     'id_token': creds.id_token,
     'token_expiry': creds.expiry.strftime('%Y-%m-%dT%H:%M:%SZ'),
+    'scopes': sorted(creds.scopes),
     }
   expected_iss = ['https://accounts.google.com', 'accounts.google.com']
   if _getValueFromOAuth('iss', creds) not in expected_iss:
