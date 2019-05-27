@@ -1211,7 +1211,7 @@ def getOauth2TxtStorageCredentials():
   if not oauth_string:
     return
   oauth_data = json.loads(oauth_string)
-  creds = google.oauth2.credentials.Credentials.from_authorized_user_file(GC_Values[GC_OAUTH2_TXT])
+  creds = google.oauth2.credentials.Credentials.from_authorized_user_file(GC_Values[GC_OAUTH2_TXT], oauth_data.get('scopes', None))
   creds.token = oauth_data.get('token', oauth_data.get('auth_token', ''))
   creds._id_token = oauth_data.get('id_token', None)
   token_expiry = oauth_data.get('token_expiry', '1970-01-01T00:00:01Z')
