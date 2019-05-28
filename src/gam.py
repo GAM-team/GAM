@@ -7563,7 +7563,7 @@ def enableGAMProjectAPIs(GAMProjectAPIs, httpObj, projectId, checkEnabled, i=0, 
 def _createClientSecretsOauth2service(httpObj, projectId):
 
   def _checkClientAndSecret(simplehttp, client_id, client_secret):
-    url = 'https://www.googleapis.com/oauth2/v4/token'
+    url = 'https://oauth2.googleapis.com/token'
     post_data = {'client_id': client_id, 'client_secret': client_secret,
                  'code': 'ThisIsAnInvalidCodeOnlyBeingUsedToTestIfClientAndSecretAreValid',
                  'redirect_uri': 'urn:ietf:wg:oauth:2.0:oob', 'grant_type': 'authorization_code'}
@@ -12896,7 +12896,7 @@ def writeCredentials(creds):
     'client_secret': creds.client_secret,
     'id_token': creds.id_token,
     'token_expiry': creds.expiry.strftime('%Y-%m-%dT%H:%M:%SZ'),
-    'scopes': sorted(creds.scopes),
+    #'scopes': sorted(creds.scopes), # Google auth doesn't currently give us scopes back on refresh
     }
   expected_iss = ['https://accounts.google.com', 'accounts.google.com']
   if _getValueFromOAuth('iss', creds) not in expected_iss:
