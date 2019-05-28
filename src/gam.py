@@ -7652,15 +7652,6 @@ def _createClientSecretsOauth2service(httpObj, projectId):
     }
 }''' % (client_id, client_secret, projectId)
   writeFile(GC_Values[GC_CLIENT_SECRETS_JSON], cs_data, continueOnError=False)
-  print('''Almost there! Now please switch back to your browser and:
-
-1. Click OK to close "OAuth client" popup if it's still open.
-2. Click "Manage service accounts" on the right of the screen.
-3. Click the 3 dots to the right of your service account.
-4. Choose Edit.
-5. Click "Show Domain-Wide Delegation". Check "Enable G Suite Domain-wide Delegation", Click Save.
-''')
-  input('Press Enter when done...')
   print('That\'s it! Your GAM Project is created and ready to use.')
 
 VALIDEMAIL_PATTERN = re.compile(r'^[^@]+@[^@]+\.[^@]+$')
