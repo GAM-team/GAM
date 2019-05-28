@@ -1211,7 +1211,7 @@ def getOauth2TxtStorageCredentials():
   if not oauth_string:
     return
   oauth_data = json.loads(oauth_string)
-  creds = google.oauth2.credentials.Credentials.from_authorized_user_file(GC_Values[GC_OAUTH2_TXT], oauth_data.get('scopes', None))
+  creds = google.oauth2.credentials.Credentials.from_authorized_user_file(GC_Values[GC_OAUTH2_TXT])
   creds.token = oauth_data.get('token', oauth_data.get('auth_token', ''))
   creds._id_token = oauth_data.get('id_token', None)
   token_expiry = oauth_data.get('token_expiry', '1970-01-01T00:00:01Z')
@@ -12896,7 +12896,6 @@ def writeCredentials(creds):
     'client_secret': creds.client_secret,
     'id_token': creds.id_token,
     'token_expiry': creds.expiry.strftime('%Y-%m-%dT%H:%M:%SZ'),
-    'scopes': sorted(creds.scopes),
     }
   expected_iss = ['https://accounts.google.com', 'accounts.google.com']
   if _getValueFromOAuth('iss', creds) not in expected_iss:
