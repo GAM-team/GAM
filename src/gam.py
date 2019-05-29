@@ -136,7 +136,7 @@ def _authorization_url(self, **kwargs):
   kwargs.setdefault('access_type', 'offline')
   chars = string.ascii_letters+string.digits+'-._~'
   rnd = SystemRandom()
-  random_verifier = [rnd.choice(chars) for _ in range(0, 128)]
+  random_verifier = [rnd.choice(chars) for _ in range(128)]
   self.code_verifier = ''.join(random_verifier)
   code_hash = hashlib.sha256()
   code_hash.update(str.encode(self.code_verifier))
@@ -3351,7 +3351,7 @@ def encode_multipart(fields, files, boundary=None):
     return '--{0}'.format(boundary), 'Content-Disposition: form-data; name="{0}"'.format(escape_quote(name)), '', str(value)
 
   if boundary is None:
-    boundary = ''.join(random.sample(string.digits+string.ascii_letters, 30))
+    boundary = ''.join(random.choice(string.digits+string.ascii_letters) for _ in range(30))
   lines = []
   for name, value in list(fields.items()):
     if name == 'tags':
@@ -7497,7 +7497,7 @@ def getUserAttributes(i, cd, updateCmd):
       systemErrorExit(2, '%s is not a valid argument for "gam %s user"' % (sys.argv[i], ['create', 'update'][updateCmd]))
   if need_password:
     rnd = SystemRandom()
-    body['password'] = ''.join(rnd.sample(string.digits+string.ascii_letters, 25))
+    body['password'] = ''.join(rnd.choice(string.digits+string.ascii_letters) for _ in range(100))
   if 'password' in body and need_to_hash_password:
     body['password'] = gen_sha512_hash(body['password'])
     body['hashFunction'] = 'crypt'
@@ -7723,7 +7723,7 @@ def _getLoginHintProjectId(createCmd):
   elif createCmd:
     projectId = 'gam-project'
     for _ in range(3):
-      projectId += '-{0}'.format(''.join(random.sample(string.digits+string.ascii_lowercase, 3)))
+      projectId += '-{0}'.format(''.join(random.choice(string.digits+string.ascii_lowercase) for _ in range(3)))
   else:
     projectId = input('\nWhat is your API project ID? ').strip()
     if not PROJECTID_PATTERN.match(projectId):
