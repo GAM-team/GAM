@@ -34,6 +34,10 @@ import mimetypes
 import os
 import platform
 import random
+try:
+  from secrets import SystemRandom
+except ImportError:
+  from random import SystemRandom
 import re
 import shlex
 import signal
@@ -81,6 +85,7 @@ else:
 
 # override httplib2._build_ssl_context so we can force min/max TLS values
 # actual function replacement happens in SetGlobalVariables so we have config options set
+# remove once https://github.com/httplib2/httplib2/pull/138 lands and is released.
 def _build_ssl_context(disable_ssl_certificate_validation, ca_certs, cert_file=None, key_file=None):
   context = ssl.SSLContext(httplib2.DEFAULT_TLS_VERSION)
   context.verify_mode = ssl.CERT_REQUIRED
@@ -123,6 +128,35 @@ google_auth_httplib2.Request.__call__ = _request_with_user_agent(
   google_auth_httplib2.Request.__call__)
 google_auth_httplib2.AuthorizedHttp.request = _request_with_user_agent(
   google_auth_httplib2.AuthorizedHttp.request)
+
+# Override google_auth_oauthlib classes so we use PKCE
+# Remove once https://github.com/googleapis/google-auth-library-python-oauthlib/pull/42
+# is landed and released.
+def _authorization_url(self, **kwargs):
+  kwargs.setdefault('access_type', 'offline')
+  chars = string.ascii_letters+string.digits+'-._~'
+  rnd = SystemRandom()
+  random_verifier = [rnd.choice(chars) for _ in range(0, 128)]
+  self.code_verifier = ''.join(random_verifier)
+  code_hash = hashlib.sha256()
+  code_hash.update(str.encode(self.code_verifier))
+  unencoded_challenge = code_hash.digest()
+  b64_challenge = base64.urlsafe_b64encode(unencoded_challenge)
+  code_challenge = b64_challenge.decode().split('=')[0]
+  kwargs.setdefault('code_challenge', code_challenge)
+  kwargs.setdefault('code_challenge_method', 'S256')
+  url, state = self.oauth2session.authorization_url(
+  self.client_config['auth_uri'], **kwargs)
+  return url, state
+
+def _fetch_token(self, **kwargs):
+  kwargs.setdefault('client_secret', self.client_config['client_secret'])
+  kwargs.setdefault('code_verifier', self.code_verifier)
+  return self.oauth2session.fetch_token(
+         self.client_config['token_uri'], **kwargs)
+
+google_auth_oauthlib.flow.Flow.authorization_url = _authorization_url
+google_auth_oauthlib.flow.Flow.fetch_token = _fetch_token
 
 def showUsage():
   doGAMVersion(checkForArgs=False)
@@ -7462,7 +7496,8 @@ def getUserAttributes(i, cd, updateCmd):
     else:
       systemErrorExit(2, '%s is not a valid argument for "gam %s user"' % (sys.argv[i], ['create', 'update'][updateCmd]))
   if need_password:
-    body['password'] = ''.join(random.sample(string.digits+string.ascii_letters, 25))
+    rnd = SystemRandom()
+    body['password'] = ''.join(rnd.sample(string.digits+string.ascii_letters, 25))
   if 'password' in body and need_to_hash_password:
     body['password'] = gen_sha512_hash(body['password'])
     body['hashFunction'] = 'crypt'
