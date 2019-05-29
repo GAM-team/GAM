@@ -7679,10 +7679,7 @@ def _createClientSecretsOauth2service(httpObj, projectId):
         "client_id": "%s",
         "client_secret": "%s",
         "project_id": "%s",
-        "redirect_uris": [
-            "urn:ietf:wg:oauth:2.0:oob",
-            "http://localhost"
-        ],
+        "redirect_uris": ["http://localhost", "urn:ietf:wg:oauth:2.0:oob"],
         "token_uri": "https://oauth2.googleapis.com/token"
     }
 }''' % (client_id, client_secret, projectId)
