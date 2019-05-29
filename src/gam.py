@@ -7497,7 +7497,8 @@ def getUserAttributes(i, cd, updateCmd):
       systemErrorExit(2, '%s is not a valid argument for "gam %s user"' % (sys.argv[i], ['create', 'update'][updateCmd]))
   if need_password:
     rnd = SystemRandom()
-    body['password'] = ''.join(rnd.choice(string.digits+string.ascii_letters) for _ in range(100))
+    valid_chars = string.digits+string.ascii_letters+string.punctuation
+    body['password'] = ''.join(rnd.choice(valid_chars) for _ in range(100))
   if 'password' in body and need_to_hash_password:
     body['password'] = gen_sha512_hash(body['password'])
     body['hashFunction'] = 'crypt'
