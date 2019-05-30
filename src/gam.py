@@ -43,7 +43,6 @@ import shlex
 import signal
 import socket
 import ssl
-import string
 import struct
 import sys
 import time
@@ -134,9 +133,8 @@ google_auth_httplib2.AuthorizedHttp.request = _request_with_user_agent(
 # is landed and released.
 def _authorization_url(self, **kwargs):
   kwargs.setdefault('access_type', 'offline')
-  chars = string.ascii_letters+string.digits+'-._~'
   rnd = SystemRandom()
-  random_verifier = [rnd.choice(chars) for _ in range(128)]
+  random_verifier = [rnd.choice(URL_SAFE_CHARS) for _ in range(128)]
   self.code_verifier = ''.join(random_verifier)
   code_hash = hashlib.sha256()
   code_hash.update(str.encode(self.code_verifier))
@@ -3351,7 +3349,7 @@ def encode_multipart(fields, files, boundary=None):
     return '--{0}'.format(boundary), 'Content-Disposition: form-data; name="{0}"'.format(escape_quote(name)), '', str(value)
 
   if boundary is None:
-    boundary = ''.join(random.choice(string.digits+string.ascii_letters) for _ in range(30))
+    boundary = ''.join(random.choice(ALPHANUMERIC_CHARS) for _ in range(30))
   lines = []
   for name, value in list(fields.items()):
     if name == 'tags':
@@ -3455,7 +3453,6 @@ def doPrintJobFetch():
     result = callGAPI(cp.printers(), 'get',
                       printerid=printerid)
     checkCloudPrintResult(result)
-  valid_chars = '-_.() '+string.ascii_letters+string.digits
   ssd = '{"state": {"type": "DONE"}}'
   if ((not sortorder) or (sortorder == 'CREATE_TIME_DESC')) and (older_or_newer == 'newer'):
     timeExit = True
@@ -3496,7 +3493,7 @@ def doPrintJobFetch():
           continue
       fileUrl = job['fileUrl']
       jobid = job['id']
-      fileName = os.path.join(targetFolder, '{0}-{1}'.format(''.join(c if c in valid_chars else '_' for c in job['title']), jobid))
+      fileName = os.path.join(targetFolder, '{0}-{1}'.format(''.join(c if c in FILENAME_SAFE_CHARS else '_' for c in job['title']), jobid))
       _, content = cp._http.request(uri=fileUrl, method='GET')
       if writeFile(fileName, content, mode='wb', continueOnError=True):
 #        ticket = callGAPI(cp.jobs(), u'getticket', jobid=jobid, use_cjt=True)
@@ -4952,7 +4949,6 @@ def downloadDriveFile(users):
   targetFolder = GC_Values[GC_DRIVE_DIR]
   targetName = None
   overwrite = showProgress = targetStdout = False
-  safe_filename_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace('_', '')
     if myarg == 'id':
@@ -5058,7 +5054,7 @@ def downloadDriveFile(users):
           if targetName:
             safe_file_title = targetName
           else:
-            safe_file_title = ''.join(c for c in result['title'] if c in safe_filename_chars)
+            safe_file_title = ''.join(c for c in result['title'] if c in FILENAME_SAFE_CHARS)
             if not safe_file_title:
               safe_file_title = fileId
           filename = os.path.join(targetFolder, safe_file_title)
@@ -7497,8 +7493,7 @@ def getUserAttributes(i, cd, updateCmd):
       systemErrorExit(2, '%s is not a valid argument for "gam %s user"' % (sys.argv[i], ['create', 'update'][updateCmd]))
   if need_password:
     rnd = SystemRandom()
-    valid_chars = string.digits+string.ascii_letters+string.punctuation
-    body['password'] = ''.join(rnd.choice(valid_chars) for _ in range(100))
+    body['password'] = ''.join(rnd.choice(PASSWORD_SAFE_CHARS) for _ in range(100))
   if 'password' in body and need_to_hash_password:
     body['password'] = gen_sha512_hash(body['password'])
     body['hashFunction'] = 'crypt'
@@ -7514,6 +7509,7 @@ def _run_oauth_flow(client_id, client_secret, scopes, access_type, login_hint=No
       'token_uri': 'https://oauth2.googleapis.com/token',
       }
     }
+
   flow = google_auth_oauthlib.flow.InstalledAppFlow.from_client_config(client_config, scopes)
   kwargs = {'access_type': access_type}
   if login_hint:
@@ -7724,7 +7720,7 @@ def _getLoginHintProjectId(createCmd):
   elif createCmd:
     projectId = 'gam-project'
     for _ in range(3):
-      projectId += '-{0}'.format(''.join(random.choice(string.digits+string.ascii_lowercase) for _ in range(3)))
+      projectId += '-{0}'.format(''.join(random.choice(LOWERNUMERIC_CHARS) for _ in range(3)))
   else:
     projectId = input('\nWhat is your API project ID? ').strip()
     if not PROJECTID_PATTERN.match(projectId):

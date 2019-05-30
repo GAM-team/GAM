@@ -1,5 +1,6 @@
 import os
 import ssl
+import string
 import sys
 import platform
 import re
@@ -469,6 +470,12 @@ RT_OPEN_PATTERN = re.compile(r'{RT}')
 RT_CLOSE_PATTERN = re.compile(r'{/RT}')
 RT_STRIP_PATTERN = re.compile(r'(?s){RT}.*?{/RT}')
 RT_TAG_REPLACE_PATTERN = re.compile(r'{(.*?)}')
+
+LOWERNUMERIC_CHARS = string.ascii_lowercase+string.digits
+ALPHANUMERIC_CHARS = LOWERNUMERIC_CHARS+string.ascii_uppercase
+URL_SAFE_CHARS = ALPHANUMERIC_CHARS+'-._~'
+PASSWORD_SAFE_CHARS = ALPHANUMERIC_CHARS+string.punctuation+' '
+FILENAME_SAFE_CHARS = ALPHANUMERIC_CHARS+'-_.() '
 
 FILTER_ADD_LABEL_TO_ARGUMENT_MAP = {
   'IMPORTANT': 'important',
