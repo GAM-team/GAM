@@ -143,15 +143,13 @@ def _authorization_url(self, **kwargs):
   code_challenge = b64_challenge.decode().split('=')[0]
   kwargs.setdefault('code_challenge', code_challenge)
   kwargs.setdefault('code_challenge_method', 'S256')
-  url, state = self.oauth2session.authorization_url(
-  self.client_config['auth_uri'], **kwargs)
+  url, state = self.oauth2session.authorization_url(self.client_config['auth_uri'], **kwargs)
   return url, state
 
 def _fetch_token(self, **kwargs):
   kwargs.setdefault('client_secret', self.client_config['client_secret'])
   kwargs.setdefault('code_verifier', self.code_verifier)
-  return self.oauth2session.fetch_token(
-         self.client_config['token_uri'], **kwargs)
+  return self.oauth2session.fetch_token(self.client_config['token_uri'], **kwargs)
 
 google_auth_oauthlib.flow.Flow.authorization_url = _authorization_url
 google_auth_oauthlib.flow.Flow.fetch_token = _fetch_token
@@ -1741,9 +1739,7 @@ def showReport():
       writeCSVfile(csvRows, titles, '%s Activity Report' % report.capitalize(), to_drive)
 
 def watchGmail(users):
-  cs_data = readFile(GC_Values[GC_CLIENT_SECRETS_JSON], continueOnError=True, displayError=True)
-  cs_json = json.loads(cs_data)
-  project = 'projects/{0}'.format(cs_json['installed']['project_id'])
+  project = 'projects/{0}'.format(_getCurrentProjectID())
   gamTopics = project+'/topics/gam-pubsub-gmail-'
   gamSubscriptions = project+'/subscriptions/gam-pubsub-gmail-'
   pubsub = buildGAPIObject('pubsub')
@@ -1753,7 +1749,7 @@ def watchGmail(users):
       topic = atopic['name']
       break
   else:
-    topic = gamTopics+uuid.uuid4()
+    topic = gamTopics+str(uuid.uuid4())
     callGAPI(pubsub.projects().topics(), 'create', name=topic, body={})
     body = {'policy': {'bindings': [{'members': ['serviceAccount:gmail-api-push@system.gserviceaccount.com'], 'role': 'roles/pubsub.editor'}]}}
     callGAPI(pubsub.projects().topics(), 'setIamPolicy', resource=topic, body=body)
@@ -1763,7 +1759,7 @@ def watchGmail(users):
       subscription = asubscription
       break
   else:
-    subscription = gamSubscriptions+uuid.uuid4()
+    subscription = gamSubscriptions+str(uuid.uuid4())
     callGAPI(pubsub.projects().subscriptions(), 'create', name=subscription, body={'topic': topic})
   gmails = {}
   for user in users:
@@ -7696,6 +7692,15 @@ def _getValidateLoginHint(login_hint):
     print('{0}Invalid email address: {1}'.format(ERROR_PREFIX, login_hint))
     login_hint = None
 
+def _getCurrentProjectID():
+  cs_data = readFile(GC_Values[GC_CLIENT_SECRETS_JSON], continueOnError=True, displayError=True)
+  if not cs_data:
+    systemErrorExit(14, 'Your client secrets file:\n\n%s\n\nis missing. Please recreate the file.' % GC_Values[GC_CLIENT_SECRETS_JSON])
+  try:
+    return json.loads(cs_data)['installed']['project_id']
+  except (ValueError, IndexError, KeyError):
+    systemErrorExit(3, 'The format of your client secrets file:\n\n%s\n\nis incorrect. Please recreate the file.' % GC_Values[GC_CLIENT_SECRETS_JSON])
+
 def _getProjects(crm, pfilter):
   try:
     return callGAPIpages(crm.projects(), 'list', 'projects', throw_reasons=[GAPI_BAD_REQUEST], filter=pfilter)
@@ -7765,15 +7770,12 @@ def _getLoginHintProjects(printShowCmd):
     systemErrorExit(2, 'Invalid Project ID: {0}, expected <{1}{2}>'.format(pfilter, ['', 'all|'][printShowCmd], PROJECTID_FILTER_REQUIRED))
   login_hint = _getValidateLoginHint(login_hint)
   crm, httpObj = getCRMService(login_hint)
-  if pfilter == 'current':
-    cs_data = readFile(GC_Values[GC_CLIENT_SECRETS_JSON], continueOnError=True, displayError=True)
-    if not cs_data:
-      systemErrorExit(14, 'Your client secrets file:\n\n%s\n\nis missing. Please recreate the file.' % GC_Values[GC_CLIENT_SECRETS_JSON])
-    try:
-      cs_json = json.loads(cs_data)
-      projects = [{'projectId': cs_json['installed']['project_id']}]
-    except (ValueError, IndexError, KeyError):
-      systemErrorExit(3, 'The format of your client secrets file:\n\n%s\n\nis incorrect. Please recreate the file.' % GC_Values[GC_CLIENT_SECRETS_JSON])
+  if pfilter in ['current', 'id:current']:
+    projectID = _getCurrentProjectID()
+    if not printShowCmd:
+      projects = [{'projectId': projectID}]
+    else:
+      projects = _getProjects(crm, 'id:{0}'.format(projectID))
   else:
     projects = _getProjects(crm, pfilter)
   return (crm, httpObj, login_hint, projects, i)
