@@ -9106,7 +9106,7 @@ def doUpdateGroup():
       checkSuspended = sys.argv[i].lower() == 'suspended'
       i += 1
     if sys.argv[i].lower().replace('_', '') in MEMBER_DELIVERY_MAP:
-      delivery = MEMBER_DELIVERY_MAP[sys.argv[i].lower()]
+      delivery = MEMBER_DELIVERY_MAP[sys.argv[i].lower().replace('_', '')]
       i += 1
     if sys.argv[i].lower() in usergroup_types:
       users_email = getUsersToModify(entity_type=sys.argv[i].lower(), entity=sys.argv[i+1], checkSuspended=checkSuspended, groupUserMembersOnly=False)
