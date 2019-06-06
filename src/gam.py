@@ -82,27 +82,6 @@ else:
   # Source code
   GM_Globals[GM_GAM_PATH] = os.path.dirname(os.path.realpath(__file__))
 
-# override httplib2._build_ssl_context so we can force min/max TLS values
-# actual function replacement happens in SetGlobalVariables so we have config options set
-# remove once https://github.com/httplib2/httplib2/pull/138 lands and is released.
-def _build_ssl_context(disable_ssl_certificate_validation, ca_certs, cert_file=None, key_file=None):
-  context = ssl.SSLContext(httplib2.DEFAULT_TLS_VERSION)
-  context.verify_mode = ssl.CERT_REQUIRED
-  context.check_hostname = True
-  if GC_Values[GC_CA_FILE]:
-    ca_certs = GC_Values[GC_CA_FILE]
-  context.load_verify_locations(ca_certs)
-  if cert_file:
-    context.load_cert_chain(cert_file, key_file)
-  if hasattr(context, 'minimum_version'):
-    if GC_Values[GC_TLS_MIN_VERSION]:
-      context.minimum_version = getattr(ssl.TLSVersion, GC_Values[GC_TLS_MIN_VERSION])
-    if GC_Values[GC_TLS_MAX_VERSION]:
-      context.maximum_version = getattr(ssl.TLSVersion, GC_Values[GC_TLS_MAX_VERSION])
-  elif GC_Values[GC_TLS_MIN_VERSION] or GC_Values[GC_TLS_MAX_VERSION]:
-    systemErrorExit(5, 'GAM_TLS_MIN_VERSION and GAM_TLS_MAX_VERSION require Python 3.7+ and OpenSSL 1.1+')
-  return context
-
 # Override and wrap google_auth_httplib2 request methods so that the GAM
 # user-agent string is inserted into HTTP request headers.
 def _request_with_user_agent(request_method):
@@ -127,6 +106,12 @@ google_auth_httplib2.Request.__call__ = _request_with_user_agent(
   google_auth_httplib2.Request.__call__)
 google_auth_httplib2.AuthorizedHttp.request = _request_with_user_agent(
   google_auth_httplib2.AuthorizedHttp.request)
+
+def _createHttpObj(cache=None, override_min_tls=None, override_max_tls=None):
+  tls_minimum_version = override_min_tls if override_min_tls else GC_Values[GC_TLS_MIN_VERSION]
+  tls_maximum_version = override_max_tls if override_max_tls else GC_Values[GC_TLS_MAX_VERSION]
+  return httplib2.Http(tls_maximum_version=tls_maximum_version, tls_minimum_version=tls_minimum_version,
+          cache=cache)
 
 # Override google_auth_oauthlib classes so we use PKCE
 # Remove once https://github.com/googleapis/google-auth-library-python-oauthlib/pull/42
@@ -752,7 +737,6 @@ def SetGlobalVariables():
   GM_Globals[GM_EXTRA_ARGS_DICT] = {'prettyPrint': GC_Values[GC_DEBUG_LEVEL] > 0}
 # override httplib2 settings
   httplib2.debuglevel = GC_Values[GC_DEBUG_LEVEL]
-  httplib2._build_ssl_context = _build_ssl_context
   if os.path.isfile(os.path.join(GC_Values[GC_CONFIG_DIR], FN_EXTRA_ARGS_TXT)):
     ea_config = configparser.ConfigParser()
     ea_config.optionxform = str
@@ -784,7 +768,7 @@ def doGAMCheckForUpdates(forceCheck=False):
       return
     check_url = GAM_LATEST_RELEASE # latest full release
   headers = {'Accept': 'application/vnd.github.v3.text+json'}
-  simplehttp = httplib2.Http()
+  simplehttp = _createHttpObj()
   try:
     (_, c) = simplehttp.request(check_url, 'GET', headers=headers)
     try:
@@ -851,7 +835,7 @@ def doGAMVersion(checkForArgs=True):
     doGAMCheckForUpdates(forceCheck=True)
   if extended:
     print(ssl.OPENSSL_VERSION)
-    httpc = httplib2.Http()
+    httpc = _createHttpObj()
     httpc.request('https://www.googleapis.com')
     cipher_name, tls_ver, _ = httpc.connections['https:www.googleapis.com'].sock.cipher()
     print('www.googleapis.com connects using %s %s' % (tls_ver, cipher_name))
@@ -908,7 +892,7 @@ def checkGAPIError(e, soft_errors=False, silent_errors=False, retryOnHttpError=F
     elif (e.resp['status'] == '400') and ('UnknownError' in eContent):
       error = {'error': {'code': 400, 'errors': [{'reason': GAPI_INVALID, 'message': 'UnknownError'}]}}
     elif retryOnHttpError:
-      service._http.request.credentials.refresh(httplib2.Http())
+      service._http.request.credentials.refresh(_createHttpObj())
       return (-1, None, None)
     elif soft_errors:
       if not silent_errors:
@@ -1254,7 +1238,7 @@ def getValidOauth2TxtCredentials(force_refresh=False):
   credentials = getOauth2TxtStorageCredentials()
   if (credentials and credentials.expired) or force_refresh:
     try:
-      credentials.refresh(google_auth_httplib2.Request(httplib2.Http()))
+      credentials.refresh(google_auth_httplib2.Request(_createHttpObj()))
       writeCredentials(credentials)
     except google.auth.exceptions.RefreshError as e:
       systemErrorExit(18, str(e))
@@ -1314,7 +1298,7 @@ def buildGAPIObject(api):
   credentials = getValidOauth2TxtCredentials()
   credentials.user_agent = GAM_INFO
   #http = credentials.authorize(httplib2.Http(cache=GM_Globals[GM_CACHE_DIR]))
-  http = google_auth_httplib2.AuthorizedHttp(credentials, httplib2.Http(cache=GM_Globals[GM_CACHE_DIR]))
+  http = google_auth_httplib2.AuthorizedHttp(credentials, _createHttpObj(cache=GM_Globals[GM_CACHE_DIR]))
   service = getService(api, http)
   if GC_Values[GC_DOMAIN]:
     if not GC_Values[GC_CUSTOMER_ID]:
@@ -1405,7 +1389,7 @@ def convertEmailAddressToUID(emailAddressOrUID, cd=None, email_type='user'):
   return normalizedEmailAddressOrUID
 
 def buildGAPIServiceObject(api, act_as, showAuthError=True):
-  http = httplib2.Http(cache=GM_Globals[GM_CACHE_DIR])
+  http = _createHttpObj(cache=GM_Globals[GM_CACHE_DIR])
   service = getService(api, http)
   GM_Globals[GM_CURRENT_API_USER] = act_as
   GM_Globals[GM_CURRENT_API_SCOPES] = API_SCOPE_MAPPING[api]
@@ -1476,7 +1460,7 @@ def doCheckServiceAccount(users):
     for scope in all_scopes:
       try:
         credentials = getSvcAcctCredentials([scope], user)
-        request = google_auth_httplib2.Request(httplib2.Http())
+        request = google_auth_httplib2.Request(_createHttpObj())
         credentials.refresh(request)
         result = 'PASS'
       except httplib2.ServerNotFoundError as e:
@@ -4047,7 +4031,7 @@ def doPhoto(users):
     filename = filename.replace('#username#', user[:user.find('@')])
     print("Updating photo for %s with %s (%s/%s)" % (user, filename, i, count))
     if re.match('^(ht|f)tps?://.*$', filename):
-      simplehttp = httplib2.Http()
+      simplehttp = _createHttpObj()
       try:
         (_, image_data) = simplehttp.request(filename, 'GET')
       except (httplib2.HttpLib2Error, httplib2.ServerNotFoundError) as e:
@@ -7555,7 +7539,7 @@ def getCRMService(login_hint):
           http)
 
 def getGAMProjectAPIs():
-  httpObj = httplib2.Http()
+  httpObj = _createHttpObj()
   _, c = httpObj.request(GAM_PROJECT_APIS, 'GET')
   return httpObj, c.decode(UTF8).splitlines()
 
@@ -9743,7 +9727,7 @@ def doCreateResoldCustomer():
 def _getValueFromOAuth(field, credentials=None):
   if not GC_Values[GC_DECODED_ID_TOKEN]:
     credentials = credentials if credentials is not None else getValidOauth2TxtCredentials()
-    http = google_auth_httplib2.Request(httplib2.Http())
+    http = google_auth_httplib2.Request(_createHttpObj())
     GC_Values[GC_DECODED_ID_TOKEN] = google.oauth2.id_token.verify_oauth2_token(credentials.id_token, http)
   return GC_Values[GC_DECODED_ID_TOKEN].get(field, 'Unknown')
 
@@ -12913,7 +12897,7 @@ def doDeleteOAuth():
   credentials = getOauth2TxtStorageCredentials()
   if credentials is None:
     return
-  simplehttp = httplib2.Http()
+  simplehttp = _createHttpObj() 
   params = {'token': credentials.refresh_token}
   revoke_uri = 'https://accounts.google.com/o/oauth2/revoke?%s' % urlencode(params)
   sys.stderr.write('This OAuth token will self-destruct in 3...')

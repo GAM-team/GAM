@@ -4,4 +4,5 @@ google-api-python-client
 google-auth
 google-auth-httplib2
 google-auth-oauthlib
+httplib2>=0.13.0
 passlib
