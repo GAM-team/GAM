@@ -1722,15 +1722,36 @@ def showReport():
         events = activity['events']
         del activity['events']
         activity_row = flatten_json(activity)
+        purge_parameters = True
         for event in events:
           for item in event.get('parameters', []):
-            if item['name'] in ['start_time', 'end_time']:
-              val = item.get('intValue')
-              if val is not None:
-                val = int(val)
-                if val >= 62135683200:
-                  item['dateTimeValue'] = datetime.datetime.fromtimestamp(val-62135683200).isoformat()
-                  item.pop('intValue')
+            if set(item) == set(['value', 'name']):
+              event[item['name']] = item['value']
+            elif set(item) == set(['intValue', 'name']):
+              if item['name'] in ['start_time', 'end_time']:
+                val = item.get('intValue')
+                if val is not None:
+                  val = int(val)
+                  if val >= 62135683200:
+                    event[item['name']] = datetime.datetime.fromtimestamp(val-62135683200).isoformat()
+              else:
+                event[item['name']] = item['intValue']
+            elif set(item) == set(['multiValue', 'name']):
+              event[item['name']] = ' '.join(item['multiValue'])
+            elif item['name'] == 'scope_data':
+              parts = {}
+              for message in item['multiMessageValue']:
+                for mess in message['parameter']:
+                  value = mess.get('value', ' '.join(mess.get('multiValue', [])))
+                  parts[mess['name']] = parts.get(mess['name'], [])+[value]
+              for part, v in parts.items():
+                if part == 'scope_name':
+                  part = 'scope'
+                event[part] = ' '.join(v)
+            else:
+              purge_parameters = False
+          if purge_parameters:
+            event.pop('parameters')
           row = flatten_json(event)
           row.update(activity_row)
           for item in row:
