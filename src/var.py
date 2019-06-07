@@ -601,7 +601,7 @@ CROS_TPM_VULN_VERSIONS = ['41f', '420', '628', '8520',]
 CROS_TPM_FIXED_VERSIONS = ['422', '62b', '8521',]
 
 # parsed from https://support.google.com/chrome/a/answer/6220366?hl=en
-# parse script at https://gist.github.com/jay0lee/bf123375022a08e72ab1c53f01719ee6
+# using src/tools/parse-aue.py
 CROS_AUE_DATES = {
   'acer ac700': '2016-08-01T00:00:00.000Z',
   'acer c7 chromebook (c710)': '2017-10-01T00:00:00.000Z',
@@ -618,8 +618,9 @@ CROS_AUE_DATES = {
   'acer chromebook 11 (cb3-131, c735)': '2021-01-01T00:00:00.000Z',
   'acer chromebook 11 (cb311-8h, cb311-8ht)': '2023-11-01T00:00:00.000Z',
   'acer chromebook 11 n7 (c731, c731t)': '2022-01-01T00:00:00.000Z',
+  'acer chromebook 13 (cb5-311)': '2019-09-01T00:00:00.000Z',
   'acer chromebook 13 (cb713-1w)': '2024-06-01T00:00:00.000Z',
-  'acer chromebook 13(cb5-311)': '2019-09-01T00:00:00.000Z',
+  'acer chromebook 13(cb5-311, c810)': '2019-09-01T00:00:00.000Z',
   'acer chromebook 14 (cb3-431)': '2021-06-01T00:00:00.000Z',
   'acer chromebook 14 for work (cp5-471)': '2022-11-01T00:00:00.000Z',
   'acer chromebook 15 (c910 / cb5-571)': '2020-06-01T00:00:00.000Z',
@@ -628,8 +629,8 @@ CROS_AUE_DATES = {
   'acer chromebook 15 (cb315-1h,cb315-1ht)': '2023-11-01T00:00:00.000Z',
   'acer chromebook 15 (cb5-571, c910)': '2020-06-01T00:00:00.000Z',
   'acer chromebook 15 (cb515-1h,cb515-1ht)': '2023-11-01T00:00:00.000Z',
-  'acer chromebook 311 (c721)': '2025-06-01T00:00:00.000Z',
-  'acer chromebook 311 (c733, c733u, c733t)': '2025-06-01T00:00:00.000Z',
+  'acer chromebook 311 (c721, c733, c733u, c733t)': '2025-06-01T00:00:00.000Z',
+  'acer chromebook 311': '2025-06-01T00:00:00.000Z',
   'acer chromebook 311': '2025-06-01T00:00:00.000Z',
   'acer chromebook 315 (cb315-2h)': '2025-06-01T00:00:00.000Z',
   'acer chromebook 315': '2025-06-01T00:00:00.000Z',
@@ -654,6 +655,7 @@ CROS_AUE_DATES = {
   'acer chromebox': '2019-09-01T00:00:00.000Z',
   'aopen chromebase commercial': '2020-09-01T00:00:00.000Z',
   'aopen chromebase mini': '2022-02-01T00:00:00.000Z',
+  'aopen chromebox commercial 2': '2024-06-01T00:00:00.000Z',
   'aopen chromebox commercial': '2020-09-01T00:00:00.000Z',
   'aopen chromebox mini': '2022-02-01T00:00:00.000Z',
   'asi chromebook': '2020-06-01T00:00:00.000Z',
@@ -690,6 +692,7 @@ CROS_AUE_DATES = {
   'chromebook 11 (c730 / cb3-111)': '2019-08-01T00:00:00.000Z',
   'chromebook 11 (c735)': '2021-01-01T00:00:00.000Z',
   'chromebook 15 (cb515 - 1ht / 1h)': '2023-11-01T00:00:00.000Z',
+  'chromebook 311 (c721)': '2025-06-01T00:00:00.000Z',
   'chromebook pcm-116e': '2020-06-01T00:00:00.000Z',
   'consumer chromebook': '2020-06-01T00:00:00.000Z',
   'cr-48': '2015-12-01T00:00:00.000Z',
