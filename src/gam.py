@@ -111,7 +111,7 @@ def _createHttpObj(cache=None, override_min_tls=None, override_max_tls=None):
   tls_minimum_version = override_min_tls if override_min_tls else GC_Values[GC_TLS_MIN_VERSION]
   tls_maximum_version = override_max_tls if override_max_tls else GC_Values[GC_TLS_MAX_VERSION]
   return httplib2.Http(tls_maximum_version=tls_maximum_version, tls_minimum_version=tls_minimum_version,
-          cache=cache)
+                       cache=cache)
 
 # Override google_auth_oauthlib classes so we use PKCE
 # Remove once https://github.com/googleapis/google-auth-library-python-oauthlib/pull/42
@@ -12897,7 +12897,7 @@ def doDeleteOAuth():
   credentials = getOauth2TxtStorageCredentials()
   if credentials is None:
     return
-  simplehttp = _createHttpObj() 
+  simplehttp = _createHttpObj()
   params = {'token': credentials.refresh_token}
   revoke_uri = 'https://accounts.google.com/o/oauth2/revoke?%s' % urlencode(params)
   sys.stderr.write('This OAuth token will self-destruct in 3...')
