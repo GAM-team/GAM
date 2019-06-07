@@ -77,7 +77,7 @@ else
 
   $python -V
 
-  if [[ "$dist" == "xenial" ]]; then
+  if [[ "$dist" == "precise" ]]; then
     echo "Installing deps for StaticX..."
     sudo apt-get install --yes patchelf scons musl
     $pip install git+https://github.com/JonathonReinhart/staticx.git@master
