@@ -79,7 +79,26 @@ else
 
   if [[ "$dist" == "precise" ]]; then
     echo "Installing deps for StaticX..."
-    sudo apt-get install --yes patchelf scons musl
+    sudo apt-get install --yes scons
+    if [ ! -d patchelf-$PATCHELF_VERSION ]; then
+      echo "Downloading PatchELF $PATCHELF_VERSION"
+      wget https://nixos.org/releases/patchelf/patchelf-$PATCHELF_VERSION/patchelf-$PATCHELF_VERSION.tar.bz2
+      tar xf patchelf-$PATCHELF_VERSION.tar.bz2
+      cd patchelf-$PATCHELF_VERSION
+      ./bootstrap.sh
+      ./configure
+      make
+      sudo make install
+    fi
+    if [ ! -d musl=$MUSL_VERSION ]; then
+      echo "Downloading MUSL $MUSL_VERSION"
+      wget https://www.musl-libc.org/releases/musl-$MUSL_VERSION.tar.gz
+      tar xf musl-$MUSL_VERSION.tar.gz
+      cd musl-$MUSL_VERSION
+      ./configure
+      make
+      sudo make install
+    fi
     $pip install git+https://github.com/JonathonReinhart/staticx.git@master
   fi
   $pip install pyinstaller
