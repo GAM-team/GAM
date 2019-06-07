@@ -85,7 +85,7 @@ else
       wget https://nixos.org/releases/patchelf/patchelf-$PATCHELF_VERSION/patchelf-$PATCHELF_VERSION.tar.bz2
       tar xf patchelf-$PATCHELF_VERSION.tar.bz2
       cd patchelf-$PATCHELF_VERSION
-      ./bootstrap.sh
+      sed -e s/-std=c++11//g -i */* # Precise compiler doesn't support c++11
       ./configure
       make
       sudo make install
