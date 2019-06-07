@@ -136,7 +136,7 @@ script:
 - if [ "$VMTYPE" == "build" ]; then $gam version extended | grep "OpenSSL ${BUILD_OPENSSL_VERSION//./\\.}"; fi # We should be using OpenSSL 1.1.1+
 - if [ "$VMTYPE" == "build" ]; then $gam version extended | grep TLSv1\.[23]; fi # Builds should default TLS 1.2 or 1.3 to Google
 - if [ "$VMTYPE" == "build" ]; then GAM_TLS_MIN_VERSION=TLSv1 GAM_TLS_MAX_VERSION=TLSv1 $gam version extended | grep TLSv1\.0; fi # Force TLS 1.0
-- if [ "$VMTYPE" == "build" ]; then GAM_TLS_MIN_VERSION=TLSv1_2 gamd version extended location tls-v1-0.badssl.com:1010; [[ $? == 3 ]]
+- if [ "$VMTYPE" == "build" ]; then GAM_TLS_MIN_VERSION=TLSv1_2 gamd version extended location tls-v1-0.badssl.com:1010; [[ $? == 3 ]]; fi # expect fail if server doesn't support our TLS version
 - export jid="$(cut -d'.' -f2 <<<"$TRAVIS_JOB_NUMBER")"
 - if [ "$TRAVIS_EVENT_TYPE" != "pull_request" ]; then export e2e=true; fi
 - if [ "$e2e" = true ]; then export gam_user=gam-travis-$jid@pdl.jaylee.us; fi
