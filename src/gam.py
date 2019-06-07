@@ -847,7 +847,8 @@ def _getServerTLSUsed(location):
   _, netloc, _, _, _, _ = urlparse(url) 
   conn = 'https:%s' % netloc
   httpc = _createHttpObj()
-  httpc.request(url)
+  headers = {'user-agent': GAM_INFO}
+  httpc.request(url, headers=headers)
   cipher_name, tls_ver, _ = httpc.connections[conn].sock.cipher()
   return tls_ver, cipher_name
 
