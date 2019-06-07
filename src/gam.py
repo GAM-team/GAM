@@ -844,10 +844,13 @@ def doGAMVersion(checkForArgs=True):
 
 def _getServerTLSUsed(location):
   url = 'https://%s' % location
-  _, netloc, _, _, _, _ = urlparse(url) 
+  _, netloc, _, _, _, _ = urlparse(url)
   conn = 'https:%s' % netloc
   httpc = _createHttpObj()
-  httpc.request(url)
+  try:
+    httpc.request(url)
+  except httplib2.ServerNotFoundError as e:
+    systemErrorExit(4, e)
   cipher_name, tls_ver, _ = httpc.connections[conn].sock.cipher()
   return tls_ver, cipher_name
 
