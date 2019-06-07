@@ -1718,6 +1718,8 @@ def showReport():
                     event[item['name']] = datetime.datetime.fromtimestamp(val-62135683200).isoformat()
               else:
                 event[item['name']] = item['intValue']
+            elif set(item) == set(['boolValue', 'name']):
+              event[item['name']] = item['boolValue']
             elif set(item) == set(['multiValue', 'name']):
               event[item['name']] = ' '.join(item['multiValue'])
             elif item['name'] == 'scope_data':
