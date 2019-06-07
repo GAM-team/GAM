@@ -801,7 +801,7 @@ def doGAMCheckForUpdates(forceCheck=False):
       sys.exit(0)
     writeFile(GM_Globals[GM_LAST_UPDATE_CHECK_TXT], str(now_time), continueOnError=True, displayError=forceCheck)
     return
-  except (httplib2.HttpLib2Error, httplib2.ServerNotFoundError):
+  except (httplib2.HttpLib2Error, httplib2.ServerNotFoundError, RuntimeError):
     return
 
 def doGAMVersion(checkForArgs=True):
@@ -850,7 +850,7 @@ def _getServerTLSUsed(location):
   headers = {'user-agent': GAM_INFO}
   try:
     httpc.request(url, headers=headers)
-  except httplib2.ServerNotFoundError as e:
+  except (httplib2.ServerNotFoundError, RuntimeError) as e:
     systemErrorExit(4, e)
   cipher_name, tls_ver, _ = httpc.connections[conn].sock.cipher()
   return tls_ver, cipher_name
@@ -1092,7 +1092,7 @@ def callGAPI(service, function,
         service._http.cache = None
         continue
       systemErrorExit(4, str(e))
-    except (TypeError, httplib2.ServerNotFoundError) as e:
+    except (TypeError, httplib2.ServerNotFoundError, RuntimeError) as e:
       systemErrorExit(4, str(e))
 
 def callGAPIpages(service, function, items='items',
@@ -1282,7 +1282,7 @@ def getService(api, http):
       if GM_Globals[GM_CACHE_DISCOVERY_ONLY]:
         http.cache = None
       return service
-    except httplib2.ServerNotFoundError as e:
+    except (httplib2.ServerNotFoundError, RuntimeError) as e:
       systemErrorExit(4, str(e))
     except (googleapiclient.errors.InvalidJsonError, KeyError, ValueError) as e:
       http.cache = None
@@ -1413,7 +1413,7 @@ def buildGAPIServiceObject(api, act_as, showAuthError=True):
   try:
     credentials.refresh(request)
     service._http = google_auth_httplib2.AuthorizedHttp(credentials, http=http)
-  except httplib2.ServerNotFoundError as e:
+  except (httplib2.ServerNotFoundError, RuntimeError) as e:
     systemErrorExit(4, e)
   except google.auth.exceptions.RefreshError as e:
     if isinstance(e.args, tuple):
@@ -1478,7 +1478,7 @@ def doCheckServiceAccount(users):
         request = google_auth_httplib2.Request(_createHttpObj())
         credentials.refresh(request)
         result = 'PASS'
-      except httplib2.ServerNotFoundError as e:
+      except (httplib2.ServerNotFoundError, RuntimeError) as e:
         systemErrorExit(4, e)
       except google.auth.exceptions.RefreshError:
         result = 'FAIL'
