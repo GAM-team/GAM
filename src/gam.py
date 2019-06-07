@@ -1735,7 +1735,7 @@ def showReport():
             else:
               purge_parameters = False
           if purge_parameters:
-            event.pop('parameters')
+            event.pop('parameters', None)
           row = flatten_json(event)
           row.update(activity_row)
           for item in row:
