@@ -53,7 +53,7 @@ import http.client as http_client
 from email.mime.text import MIMEText
 from multiprocessing import Pool
 from multiprocessing import freeze_support
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlparse
 from passlib.hash import sha512_crypt
 import dns.resolver
 import dateutil.parser
@@ -808,6 +808,7 @@ def doGAMVersion(checkForArgs=True):
   force_check = False
   simple = False
   extended = False
+  testLocation = 'www.googleapis.com'
   if checkForArgs:
     i = 2
     while i < len(sys.argv):
@@ -821,6 +822,9 @@ def doGAMVersion(checkForArgs=True):
       elif myarg == 'extended':
         extended = True
         i += 1
+      elif myarg == 'location':
+        testLocation = sys.argv[i+1]
+        i += 2
       else:
         systemErrorExit(2, '%s is not a valid argument for "gam version"' % sys.argv[i])
   if simple:
@@ -835,10 +839,17 @@ def doGAMVersion(checkForArgs=True):
     doGAMCheckForUpdates(forceCheck=True)
   if extended:
     print(ssl.OPENSSL_VERSION)
-    httpc = _createHttpObj()
-    httpc.request('https://www.googleapis.com')
-    cipher_name, tls_ver, _ = httpc.connections['https:www.googleapis.com'].sock.cipher()
-    print('www.googleapis.com connects using %s %s' % (tls_ver, cipher_name))
+    tls_ver, cipher_name = _getServerTLSUsed(testLocation)
+    print('%s connects using %s %s' % (testLocation, tls_ver, cipher_name))
+
+def _getServerTLSUsed(location):
+  url = 'https://%s' % location
+  _, netloc, _, _, _, _ = urlparse(url) 
+  conn = 'https:%s' % netloc
+  httpc = _createHttpObj()
+  httpc.request(url)
+  cipher_name, tls_ver, _ = httpc.connections[conn].sock.cipher()
+  return tls_ver, cipher_name
 
 def handleOAuthTokenError(e, soft_errors):
   if e.replace('.', '') in OAUTH2_TOKEN_ERRORS or e.startswith('Invalid response'):
