@@ -1242,7 +1242,7 @@ def getOauth2TxtStorageCredentials():
   oauth_data = json.loads(oauth_string)
   creds = google.oauth2.credentials.Credentials.from_authorized_user_file(GC_Values[GC_OAUTH2_TXT])
   creds.token = oauth_data.get('token', oauth_data.get('auth_token', ''))
-  creds._id_token = oauth_data.get('id_token', None)
+  creds._id_token = oauth_data.get('id_token_jwt', oauth_data.get('id_token', None))
   token_expiry = oauth_data.get('token_expiry', '1970-01-01T00:00:01Z')
   creds.expiry = datetime.datetime.strptime(token_expiry, '%Y-%m-%dT%H:%M:%SZ')
   GC_Values[GC_DECODED_ID_TOKEN] = oauth_data.get('decoded_id_token', '')
