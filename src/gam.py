@@ -3709,6 +3709,15 @@ def doCalendarShowPrintACL(csvOut=False):
   calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
   if not cal:
     return
+  toDrive = False
+  i = 4
+  while i < len(sys.argv):
+    myarg = sys.argv[i].lower().replace('_', '')
+    if csvOut and myarg == 'todrive':
+      toDrive = True
+      i += 1
+    else:
+      systemErrorExit(2, '%s is not a valid argument for "gam calendar <email> printacl"' % sys.argv[i])
   acls = callGAPIpages(cal.acl(), 'list', 'items', calendarId=calendarId)
   i = 0
   if csvOut:
@@ -3727,7 +3736,7 @@ def doCalendarShowPrintACL(csvOut=False):
     else:
       print('Calendar: {0}, ACL: {1}{2}'.format(calendarId, formatACLRule(rule), currentCount(i, count)))
   if csvOut:
-    writeCSVfile(rows, titles, '%s Calendar ACLs' % calendarId, False)
+    writeCSVfile(rows, titles, '%s Calendar ACLs' % calendarId, toDrive)
 
 def _getCalendarACLScope(i, body):
   body['scope'] = {}
@@ -3783,15 +3792,15 @@ def doCalendarDelACL():
   calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
   if not cal:
     return
-  if sys.argv[4].lower() == 'user':
+  if sys.argv[4].lower() == 'id':
+    ruleId = sys.argv[5]
+    print('Removing rights for %s to %s' % (ruleId, calendarId))
+    callGAPI(cal.acl(), 'delete', calendarId=calendarId, ruleId=ruleId)
+  else:
     body = {'role': 'none'}
     _getCalendarACLScope(5, body)
     print('Calendar: {0}, {1} ACL: {2}'.format(calendarId, 'Delete', formatACLScope(body)))
     callGAPI(cal.acl(), 'insert', calendarId=calendarId, body=body, sendNotifications=False)
-  elif sys.argv[4].lower() == 'id':
-    ruleId = sys.argv[5]
-    print('Removing rights for %s to %s' % (ruleId, calendarId))
-    callGAPI(cal.acl(), 'delete', calendarId=calendarId, ruleId=ruleId)
 
 def doCalendarWipeData():
   calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
@@ -14063,7 +14072,7 @@ def ProcessGAMCommand(args):
       if argument == 'showacl':
         doCalendarShowPrintACL(csvOut=False)
       elif argument == 'printacl':
-          doCalendarShowPrintACL(csvOut=True)
+        doCalendarShowPrintACL(csvOut=True)
       elif argument == 'add':
         doCalendarAddACL('Add')
       elif argument in ['del', 'delete']:

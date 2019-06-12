@@ -798,7 +798,7 @@ Specify a collection of Users by directly specifying them or by specifiying item
 	<UserBasicAttribute>|
 	<UserMultiAttribute>
 
-gam version [check] [simple]
+gam version [check|checkrc|simple|extended] [location <HostName>]
 gam help
 
 gam batch <FileName>|- [charset <Charset>]
@@ -939,7 +939,9 @@ gam print aliases|nicknames [todrive] [shownoneditable] [nogroups] [nousers] [(q
 gam calendar <CalendarItem> add <CalendarACLRole> ([user] <EmailAddress>)|(group <EmailAddress>)|(domain [<DomainName>])|default [sendnotifications <Boolean>]
 gam calendar <CalendarItem> update <CalendarACLRole> ([user] <EmailAddress>)|(group <EmailAddress>)|(domain [<DomainName>])|default [sendnotifications <Boolean>]
 gam calendar <CalendarItem> del|delete <CalendarACLRole> <EmailAddress>|(domain [<DomainName>])|default
+gam calendar <CalendarItem> del|delete id <CalendarACLRuleID>
 gam calendar <CalendarItem> showacl
+gam calendar <CalendarItem> printacl [todrive]
 
 <EventNotificationAttribute> ::=
         notifyattendees|(sendnotifications <Boolean>)|(sendupdates all|enternalonly|none)
