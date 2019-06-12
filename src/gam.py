@@ -3705,16 +3705,29 @@ def formatACLRule(rule):
     return '(Scope: {0}:{1}, Role: {2})'.format(rule['scope']['type'], rule['scope']['value'], rule['role'])
   return '(Scope: {0}, Role: {1})'.format(rule['scope']['type'], rule['role'])
 
-def doCalendarShowACL():
+def doCalendarShowPrintACL(csvOut=False):
   calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
   if not cal:
     return
-  acls = callGAPIpages(cal.acl(), 'list', 'items', calendarId=calendarId, fields='nextPageToken,items(role,scope)')
+  acls = callGAPIpages(cal.acl(), 'list', 'items', calendarId=calendarId)
   i = 0
-  count = len(acls)
+  if csvOut:
+    titles = []
+    rows = []
+  else:
+    count = len(acls)
   for rule in acls:
     i += 1
-    print('Calendar: {0}, ACL: {1}{2}'.format(calendarId, formatACLRule(rule), currentCount(i, count)))
+    if csvOut:
+      row = flatten_json(rule, None)
+      for key in row:
+        if key not in titles:
+          titles.append(key)
+      rows.append(row)
+    else:
+      print('Calendar: {0}, ACL: {1}{2}'.format(calendarId, formatACLRule(rule), currentCount(i, count)))
+  if csvOut:
+    writeCSVfile(rows, titles, '%s Calendar ACLs' % calendarId, False)
 
 def _getCalendarACLScope(i, body):
   body['scope'] = {}
@@ -3770,10 +3783,15 @@ def doCalendarDelACL():
   calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
   if not cal:
     return
-  body = {'role': 'none'}
-  _getCalendarACLScope(5, body)
-  print('Calendar: {0}, {1} ACL: {2}'.format(calendarId, 'Delete', formatACLScope(body)))
-  callGAPI(cal.acl(), 'insert', calendarId=calendarId, body=body, sendNotifications=False)
+  if sys.argv[4].lower() == 'user':
+    body = {'role': 'none'}
+    _getCalendarACLScope(5, body)
+    print('Calendar: {0}, {1} ACL: {2}'.format(calendarId, 'Delete', formatACLScope(body)))
+    callGAPI(cal.acl(), 'insert', calendarId=calendarId, body=body, sendNotifications=False)
+  elif sys.argv[4].lower() == 'id':
+    ruleId = sys.argv[5]
+    print('Removing rights for %s to %s' % (ruleId, calendarId))
+    callGAPI(cal.acl(), 'delete', calendarId=calendarId, ruleId=ruleId)
 
 def doCalendarWipeData():
   calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
@@ -14043,7 +14061,9 @@ def ProcessGAMCommand(args):
     elif command == 'calendar':
       argument = sys.argv[3].lower()
       if argument == 'showacl':
-        doCalendarShowACL()
+        doCalendarShowPrintACL(csvOut=False)
+      elif argument == 'printacl':
+          doCalendarShowPrintACL(csvOut=True)
       elif argument == 'add':
         doCalendarAddACL('Add')
       elif argument in ['del', 'delete']:
