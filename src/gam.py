@@ -10943,7 +10943,7 @@ def sortCSVTitles(firstTitle, titles):
 
 def writeCSVfile(csvRows, titles, list_type, todrive):
   def rowDateTimeFilterMatch(dateMode, rowDate, op, filterDate):
-    if not rowDate:
+    if not rowDate or not isinstance(rowDate, str):
       return False
     try:
       rowTime = dateutil.parser.parse(rowDate, ignoretz=True)
@@ -10999,7 +10999,7 @@ def writeCSVfile(csvRows, titles, list_type, todrive):
         sys.stderr.write('WARNING: Row filter column "{0}" is not in output columns\n'.format(column))
         continue
       if filterVal[0] == 'regex':
-        csvRows = [row for row in csvRows if filterVal[1].search(row.get(column, ''))]
+        csvRows = [row for row in csvRows if filterVal[1].search(str(row.get(column, '')))]
       elif filterVal[0] in ['date', 'time']:
         csvRows = [row for row in csvRows if rowDateTimeFilterMatch(filterVal[0] == 'date', row.get(column, ''), filterVal[1], filterVal[2])]
       elif filterVal[0] == 'count':
