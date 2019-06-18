@@ -1,3 +1,4 @@
+import datetime
 import re
 import sys
 from html.entities import name2codepoint
@@ -22,8 +23,7 @@ class _DeHTMLParser(HTMLParser):
     self.__text.append(data)
 
   def handle_charref(self, name):
-    self.__text.append(
-        chr(int(name[1:], 16)) if name.startswith('x') else chr(int(name)))
+    self.__text.append(chr(int(name[1:], 16)) if name.startswith('x') else chr(int(name)))
 
   def handle_entityref(self, name):
     cp = name2codepoint.get(name)
@@ -71,6 +71,16 @@ def dehtml(text):
 
 def indentMultiLineText(message, n=0):
   return message.replace('\n', '\n{0}'.format(' ' * n)).rstrip()
+
+
+def formatTimestampYMD(timestamp):
+  return datetime.datetime.fromtimestamp(int(timestamp)/1000).strftime('%Y-%m-%d')
+
+def formatTimestampYMDHMS(timestamp):
+  return datetime.datetime.fromtimestamp(int(timestamp)/1000).strftime('%Y-%m-%d %H:%M:%S')
+
+def formatTimestampYMDHMSF(timestamp):
+  return str(datetime.datetime.fromtimestamp(int(timestamp)/1000))
 
 
 def formatFileSize(fileSize):
