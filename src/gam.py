@@ -604,7 +604,7 @@ def SetGlobalVariables():
 
   ROW_FILTER_COMP_PATTERN = re.compile(r'^(date|time|count)\s*([<>]=?|=|!=)\s*(.+)$', re.IGNORECASE)
   ROW_FILTER_BOOL_PATTERN = re.compile(r'^(boolean):(.+)$', re.IGNORECASE)
-  ROW_FILTER_RE_PATTERN = re.compile(r'^(regex):(.+)$', re.IGNORECASE)
+  ROW_FILTER_RE_PATTERN = re.compile(r'^(regex|notregex):(.+)$', re.IGNORECASE)
 
   def _getCfgRowFilter(itemName):
     value = GC_Defaults[itemName]
@@ -647,7 +647,7 @@ def SetGlobalVariables():
             continue
           except re.error as e:
             systemErrorExit(3, 'Item: {0}, Value: "{1}": "{2}", Invalid RE: {3}'.format(itemName, column, filterStr, e))
-        systemErrorExit(3, 'Item: {0}, Value: "{1}": {2}, Expected: (date|time|count<Operator><Value>) or (boolean:true|false) or (regex:<RegularExpression>)'.format(itemName, column, filterStr))
+        systemErrorExit(3, 'Item: {0}, Value: "{1}": {2}, Expected: (date|time|count<Operator><Value>) or (boolean:true|false) or (regex|notregex:<RegularExpression>)'.format(itemName, column, filterStr))
       return rowFilters
     except (TypeError, ValueError) as e:
       systemErrorExit(3, 'Item: {0}, Value: "{1}", Failed to parse as JSON: {2}'.format(itemName, value, str(e)))
@@ -2027,11 +2027,11 @@ def doGetDomainInfo():
   domainName = sys.argv[3]
   result = callGAPI(cd.domains(), 'get', customer=GC_Values[GC_CUSTOMER_ID], domainName=domainName)
   if 'creationTime' in result:
-    result['creationTime'] = str(datetime.datetime.fromtimestamp(int(result['creationTime'])/1000))
+    result['creationTime'] = utils.formatTimestampYMDHMSF(result['creationTime'])
   if 'domainAliases' in result:
     for i in range(0, len(result['domainAliases'])):
       if 'creationTime' in result['domainAliases'][i]:
-        result['domainAliases'][i]['creationTime'] = str(datetime.datetime.fromtimestamp(int(result['domainAliases'][i]['creationTime'])/1000))
+        result['domainAliases'][i]['creationTime'] = utils.formatTimestampYMDHMSF(result['domainAliases'][i]['creationTime'])
   print_json(None, result)
 
 def doGetDomainAliasInfo():
@@ -2039,7 +2039,7 @@ def doGetDomainAliasInfo():
   alias = sys.argv[3]
   result = callGAPI(cd.domainAliases(), 'get', customer=GC_Values[GC_CUSTOMER_ID], domainAliasName=alias)
   if 'creationTime' in result:
-    result['creationTime'] = str(datetime.datetime.fromtimestamp(int(result['creationTime'])/1000))
+    result['creationTime'] = utils.formatTimestampYMDHMSF(result['creationTime'])
   print_json(None, result)
 
 def doGetCustomerInfo():
@@ -2159,7 +2159,7 @@ def doPrintDomains(return_results=False):
       if attr in ['kind', 'etag', 'domainAliases', 'isPrimary']:
         continue
       if attr in ['creationTime',]:
-        domain[attr] = str(datetime.datetime.fromtimestamp(int(domain[attr])/1000))
+        domain[attr] = utils.formatTimestampYMDHMSF(domain[attr])
       if attr not in titles:
         titles.append(attr)
       domain_attributes[attr] = domain[attr]
@@ -2174,7 +2174,7 @@ def doPrintDomains(return_results=False):
           if attr in ['kind', 'etag']:
             continue
           if attr in ['creationTime',]:
-            aliasdomain[attr] = str(datetime.datetime.fromtimestamp(int(aliasdomain[attr])/1000))
+            aliasdomain[attr] = utils.formatTimestampYMDHMSF(aliasdomain[attr])
           if attr not in titles:
             titles.append(attr)
           aliasdomain_attributes[attr] = aliasdomain[attr]
@@ -2203,7 +2203,7 @@ def doPrintDomainAliases():
       if attr in ['kind', 'etag']:
         continue
       if attr == 'creationTime':
-        domainAlias[attr] = str(datetime.datetime.fromtimestamp(int(domainAlias[attr])/1000))
+        domainAlias[attr] = utils.formatTimestampYMDHMSF(domainAlias[attr])
       if attr not in titles:
         titles.append(attr)
       domainAlias_attributes[attr] = domainAlias[attr]
@@ -3048,9 +3048,8 @@ def doPrintPrintJobs():
             jobCount = totalJobs
             break
           continue
-      updateTime = int(job['updateTime'])/1000
-      job['createTime'] = datetime.datetime.fromtimestamp(createTime).strftime('%Y-%m-%d %H:%M:%S')
-      job['updateTime'] = datetime.datetime.fromtimestamp(updateTime).strftime('%Y-%m-%d %H:%M:%S')
+      job['createTime'] = utils.formatTimestampYMDHMS(job['createTime'])
+      job['updateTime'] = utils.formatTimestampYMDHMS(job['updateTime'])
       job['tags'] = ' '.join(job['tags'])
       addRowTitlesToCSVfile(flatten_json(job), csvRows, titles)
     if jobCount >= totalJobs:
@@ -3090,12 +3089,9 @@ def doPrintPrinters():
     printers = callGAPI(cp.printers(), 'list', q=query, type=printer_type, connection_status=connection_status, extra_fields=extra_fields)
     checkCloudPrintResult(printers)
     for printer in printers['printers']:
-      createTime = int(printer['createTime'])/1000
-      accessTime = int(printer['accessTime'])/1000
-      updateTime = int(printer['updateTime'])/1000
-      printer['createTime'] = datetime.datetime.fromtimestamp(createTime).strftime('%Y-%m-%d %H:%M:%S')
-      printer['accessTime'] = datetime.datetime.fromtimestamp(accessTime).strftime('%Y-%m-%d %H:%M:%S')
-      printer['updateTime'] = datetime.datetime.fromtimestamp(updateTime).strftime('%Y-%m-%d %H:%M:%S')
+      printer['createTime'] = utils.formatTimestampYMDHMS(printer['createTime'])
+      printer['accessTime'] = utils.formatTimestampYMDHMS(printer['accessTime'])
+      printer['updateTime'] = utils.formatTimestampYMDHMS(printer['updateTime'])
       printer['tags'] = ' '.join(printer['tags'])
       addRowTitlesToCSVfile(flatten_json(printer), csvRows, titles)
   writeCSVfile(csvRows, titles, 'Printers', todrive)
@@ -3518,12 +3514,9 @@ def doGetPrinterInfo():
   result = callGAPI(cp.printers(), 'get', printerid=printerid)
   checkCloudPrintResult(result)
   printer_info = result['printers'][0]
-  createTime = int(printer_info['createTime'])/1000
-  accessTime = int(printer_info['accessTime'])/1000
-  updateTime = int(printer_info['updateTime'])/1000
-  printer_info['createTime'] = datetime.datetime.fromtimestamp(createTime).strftime('%Y-%m-%d %H:%M:%S')
-  printer_info['accessTime'] = datetime.datetime.fromtimestamp(accessTime).strftime('%Y-%m-%d %H:%M:%S')
-  printer_info['updateTime'] = datetime.datetime.fromtimestamp(updateTime).strftime('%Y-%m-%d %H:%M:%S')
+  printer_info['createTime'] = utils.formatTimestampYMDHMS(printer_info['createTime'])
+  printer_info['accessTime'] = utils.formatTimestampYMDHMS(printer_info['accessTime'])
+  printer_info['updateTime'] = utils.formatTimestampYMDHMS(printer_info['updateTime'])
   printer_info['tags'] = ' '.join(printer_info['tags'])
   if not everything:
     del printer_info['capabilities']
@@ -5765,7 +5758,7 @@ def printShowSmime(users, csvFormat):
       result = callGAPI(gmail.users().settings().sendAs().smimeInfo(), 'list', sendAsEmail=sendAsEmail, userId='me')
       smimes = result.get('smimeInfo', [])
       for j, _ in enumerate(smimes):
-        smimes[j]['expiration'] = datetime.datetime.fromtimestamp(int(smimes[j]['expiration'])/1000).strftime('%Y-%m-%d %H:%M:%S')
+        smimes[j]['expiration'] = utils.formatTimestampYMDHMS(smimes[j]['expiration'])
       if csvFormat:
         for smime in smimes:
           addRowTitlesToCSVfile(flatten_json(smime, flattened={'User': user}), csvRows, titles)
@@ -6869,11 +6862,11 @@ def getVacation(users):
         print('  Contacts Only: {0}'.format(result['restrictToContacts']))
         print('  Domain Only: {0}'.format(result['restrictToDomain']))
         if 'startTime' in result:
-          print('  Start Date: {0}'.format(datetime.datetime.fromtimestamp(int(result['startTime'])/1000).strftime('%Y-%m-%d')))
+          print('  Start Date: {0}'.format(utils.formatTimestampYMD(result['startTime'])))
         else:
           print('  Start Date: Started')
         if 'endTime' in result:
-          print('  End Date: {0}'.format(datetime.datetime.fromtimestamp(int(result['endTime'])/1000).strftime('%Y-%m-%d')))
+          print('  End Date: {0}'.format(utils.formatTimestampYMD(result['endTime'])))
         else:
           print('  End Date: Not specified')
         print(utils.convertUTF8('  Subject: {0}'.format(result.get('responseSubject', 'None'))))
@@ -7528,8 +7521,8 @@ def _run_oauth_flow(client_id, client_secret, scopes, access_type, login_hint=No
       'token_uri': 'https://oauth2.googleapis.com/token',
       }
     }
-  flow = google_auth_oauthlib.flow.InstalledAppFlow.from_client_config(
-          client_config, scopes)
+
+  flow = google_auth_oauthlib.flow.InstalledAppFlow.from_client_config(client_config, scopes)
   kwargs = {'access_type': access_type}
   if login_hint:
     kwargs['login_hint'] = login_hint
@@ -10325,6 +10318,9 @@ def doGetMobileInfo():
   info = callGAPI(cd.mobiledevices(), 'get', customerId=GC_Values[GC_CUSTOMER_ID], resourceId=resourceId)
   if 'deviceId' in info:
     info['deviceId'] = info['deviceId'].encode('unicode-escape').decode(UTF8)
+  attrib = 'securityPatchLevel'
+  if attrib in info and int(info[attrib]):
+    info[attrib] = utils.formatTimestampYMDHMS(info[attrib])
   print_json(None, info)
 
 def print_json(object_name, object_value, spacing=''):
@@ -10585,11 +10581,11 @@ def doGetASPs(users):
         if asp['creationTime'] == '0':
           created_date = 'Unknown'
         else:
-          created_date = datetime.datetime.fromtimestamp(int(asp['creationTime'])/1000).strftime('%Y-%m-%d %H:%M:%S')
+          created_date = utils.formatTimestampYMDHMS(asp['creationTime'])
         if asp['lastTimeUsed'] == '0':
           used_date = 'Never'
         else:
-          used_date = datetime.datetime.fromtimestamp(int(asp['lastTimeUsed'])/1000).strftime('%Y-%m-%d %H:%M:%S')
+          used_date = utils.formatTimestampYMDHMS(asp['lastTimeUsed'])
         print(' ID: %s\n  Name: %s\n  Created: %s\n  Last Used: %s\n' % (asp['codeId'], asp['name'], created_date, used_date))
     else:
       print(' no ASPs for %s\n' % user)
@@ -11003,6 +10999,8 @@ def writeCSVfile(csvRows, titles, list_type, todrive):
         continue
       if filterVal[0] == 'regex':
         csvRows = [row for row in csvRows if filterVal[1].search(str(row.get(column, '')))]
+      elif filterVal[0] == 'notregex':
+        csvRows = [row for row in csvRows if not filterVal[1].search(str(row.get(column, '')))]
       elif filterVal[0] in ['date', 'time']:
         csvRows = [row for row in csvRows if rowDateTimeFilterMatch(filterVal[0] == 'date', row.get(column, ''), filterVal[1], filterVal[2])]
       elif filterVal[0] == 'count':
@@ -12024,10 +12022,12 @@ def doPrintMobileDevices():
         else:
           if attrib not in titles:
             titles.append(attrib)
-          if attrib != 'deviceId':
-            row[attrib] = mobile[attrib]
-          else:
+          if attrib == 'deviceId':
             row[attrib] = mobile[attrib].encode('unicode-escape').decode(UTF8)
+          elif attrib == 'securityPatchLevel' and int(mobile[attrib]):
+            row[attrib] = utils.formatTimestampYMDHMS(mobile[attrib])
+          else:
+            row[attrib] = mobile[attrib]
       csvRows.append(row)
   sortCSVTitles(['resourceId', 'deviceId', 'serialNumber', 'name', 'email', 'status'], titles)
   writeCSVfile(csvRows, titles, 'Mobile', todrive)
