@@ -35,7 +35,7 @@ class MyHTMLParser(HTMLParser):
                         output_rows[value] = date
                 data_is_date = False
             else:
-                model = ''.join(filter(lambda x: x in printable, data)).replace('"', '\\"')
+                model = ''.join(filter(lambda x: x in printable, data))
                 data_is_date = True
             next_data_is_td = False
 
