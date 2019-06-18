@@ -143,6 +143,7 @@ If an item contains spaces, it should be surrounded by ".
 <ASPID> ::= <String>
 <BuildingID> ::= <String>|id:<String>
 <CalendarACLRole> ::= editor|freebusy|freebusyreader|owner|reader|writer
+<CalendarACLRuleID> ::= user:<EmailAddress>|group:<EmailAddress>|domain:<DomainName>|default
 <CalendarColorIndex> ::= <Number in range 1-24>
 <CalendarItem> ::= <EmailAddress>|<String>
 <ChatRoom> ::= <String>
