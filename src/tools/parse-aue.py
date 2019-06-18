@@ -35,7 +35,7 @@ class MyHTMLParser(HTMLParser):
                         output_rows[value] = date
                 data_is_date = False
             else:
-                model = ''.join(filter(lambda x: x in printable, data)).replace('"', '\\"')
+                model = ''.join(filter(lambda x: x in printable, data))
                 data_is_date = True
             next_data_is_td = False
 
@@ -89,7 +89,7 @@ exceptions = {
         'lenovo thinkpad 13': ['thinkpad 13 chromebook'],
         'poin2 chromebook 14': ['poin2 chromebook 11c'],
         'prowise chromebook eduline': ['viglen chromebook 11c'],
-        'prowise chromebook entryline': ['prowise 11.6\" entry line chromebook'],
+        'prowise chromebook entryline': ['prowise 11.6" entry line chromebook'],
         'prowise chromebook proline': ['prowise proline chromebook'],
         'samsung chromebook - xe303': ['samsung chromebook'],
         }
