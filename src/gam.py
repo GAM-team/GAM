@@ -113,32 +113,6 @@ def _createHttpObj(cache=None, override_min_tls=None, override_max_tls=None):
   return httplib2.Http(tls_maximum_version=tls_maximum_version, tls_minimum_version=tls_minimum_version,
                        cache=cache)
 
-# Override google_auth_oauthlib classes so we use PKCE
-# Remove once https://github.com/googleapis/google-auth-library-python-oauthlib/pull/42
-# is landed and released.
-def _authorization_url(self, **kwargs):
-  kwargs.setdefault('access_type', 'offline')
-  rnd = SystemRandom()
-  random_verifier = [rnd.choice(URL_SAFE_CHARS) for _ in range(128)]
-  self.code_verifier = ''.join(random_verifier)
-  code_hash = hashlib.sha256()
-  code_hash.update(str.encode(self.code_verifier))
-  unencoded_challenge = code_hash.digest()
-  b64_challenge = base64.urlsafe_b64encode(unencoded_challenge)
-  code_challenge = b64_challenge.decode().split('=')[0]
-  kwargs.setdefault('code_challenge', code_challenge)
-  kwargs.setdefault('code_challenge_method', 'S256')
-  url, state = self.oauth2session.authorization_url(self.client_config['auth_uri'], **kwargs)
-  return url, state
-
-def _fetch_token(self, **kwargs):
-  kwargs.setdefault('client_secret', self.client_config['client_secret'])
-  kwargs.setdefault('code_verifier', self.code_verifier)
-  return self.oauth2session.fetch_token(self.client_config['token_uri'], **kwargs)
-
-google_auth_oauthlib.flow.Flow.authorization_url = _authorization_url
-google_auth_oauthlib.flow.Flow.fetch_token = _fetch_token
-
 def showUsage():
   doGAMVersion(checkForArgs=False)
   print('''
@@ -7554,8 +7528,8 @@ def _run_oauth_flow(client_id, client_secret, scopes, access_type, login_hint=No
       'token_uri': 'https://oauth2.googleapis.com/token',
       }
     }
-
-  flow = google_auth_oauthlib.flow.InstalledAppFlow.from_client_config(client_config, scopes)
+  flow = google_auth_oauthlib.flow.InstalledAppFlow.from_client_config(
+          client_config, scopes)
   kwargs = {'access_type': access_type}
   if login_hint:
     kwargs['login_hint'] = login_hint

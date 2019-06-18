@@ -3,6 +3,6 @@ dnspython
 google-api-python-client
 google-auth
 google-auth-httplib2
-google-auth-oauthlib
+google-auth-oauthlib==0.4.0
 httplib2>=0.13.0
 passlib
