@@ -4,6 +4,8 @@ from xml.etree import ElementTree as ET
 import requests
 from html.parser import HTMLParser
 import string
+import sys
+import json
 import dateutil.parser
 
 class MyHTMLParser(HTMLParser):
@@ -27,10 +29,10 @@ class MyHTMLParser(HTMLParser):
                     fullname = '%s %s' % (oem, model)
                     fullname = fullname.lower()
                 date = dateutil.parser.parse(data).replace(day=1).strftime('%Y-%m-%dT00:00:00.000Z')
-                output_rows.append("  '%s': '%s'," % (fullname, date))
+                output_rows[fullname] = date
                 if fullname in exceptions:
                     for value in exceptions[fullname]:
-                        output_rows.append("  '%s': '%s'," % (value, date))
+                        output_rows[value] = date
                 data_is_date = False
             else:
                 model = ''.join(filter(lambda x: x in printable, data)).replace('"', '\\"')
@@ -38,7 +40,7 @@ class MyHTMLParser(HTMLParser):
             next_data_is_td = False
 
 global oem, next_data_is_oem, next_data_is_td, data_is_date, model, printable, exceptions, output_rows
-output_rows = []
+output_rows = {}
 printable = set(string.printable)
 exceptions = {
         # 'AUE OEM MODEL': ['API MODEL 1', ...]
@@ -95,10 +97,6 @@ next_data_is_oem = False
 next_data_is_td = False
 data_is_date = False
 auepage = requests.get('https://support.google.com/chrome/a/answer/6220366?hl=en')
-print('CROS_AUE_DATES = {')
 parser = MyHTMLParser()
 parser.feed(auepage.content.decode('utf-8'))
-output_rows.sort(key=str.lower)
-for row in output_rows:
-    print(row)
-print('}')
+print(json.dumps(output_rows, indent=2, sort_keys=True))

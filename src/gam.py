@@ -7556,10 +7556,11 @@ def getCRMService(login_hint):
                                           discoveryServiceUrl=googleapiclient.discovery.V2_DISCOVERY_URI),
           http)
 
-def getGAMProjectAPIs():
+def getGAMProjectFile(filepath):
+  file_url = GAM_PROJECT_FILEPATH+filepath
   httpObj = _createHttpObj()
-  _, c = httpObj.request(GAM_PROJECT_APIS, 'GET')
-  return httpObj, c.decode(UTF8).splitlines()
+  _, c = httpObj.request(file_url, 'GET')
+  return c.decode(UTF8)
 
 def enableGAMProjectAPIs(GAMProjectAPIs, httpObj, projectId, checkEnabled, i=0, count=0):
   apis = GAMProjectAPIs[:]
@@ -7639,7 +7640,7 @@ def _createClientSecretsOauth2service(httpObj, projectId):
     print('Unknown error: %s' % content)
     return False
 
-  simplehttp, GAMProjectAPIs = getGAMProjectAPIs()
+  GAMProjectAPIs = getGAMProjectFile('src/project-apis.txt').splitlines()
   enableGAMProjectAPIs(GAMProjectAPIs, httpObj, projectId, False)
   iam = googleapiclient.discovery.build('iam', 'v1',
                                         http=httpObj, cache_discovery=False,
@@ -7684,6 +7685,7 @@ def _createClientSecretsOauth2service(httpObj, projectId):
     client_secret = input('Enter your Client Secret: ').strip()
     if not client_secret:
       client_secret = input().strip()
+    simplehttp = _createHttpObj()
     client_valid = _checkClientAndSecret(simplehttp, client_id, client_secret)
     if client_valid:
       break
@@ -7890,7 +7892,7 @@ def doUseProject():
 
 def doUpdateProjects():
   _, httpObj, login_hint, projects, _ = _getLoginHintProjects(False)
-  _, GAMProjectAPIs = getGAMProjectAPIs()
+  GAMProjectAPIs = getGAMProjectFile('src/project-apis.txt').splitlines()
   count = len(projects)
   print('User: {0}, Update {1} Projects'.format(login_hint, count))
   i = 0
@@ -12140,12 +12142,14 @@ def _checkTPMVulnerability(cros):
       cros['tpmVersionInfo']['tpmVulnerability'] = 'NOT IMPACTED'
 
 def _guessAUE(cros, guessedAUEs):
+  if not GC_Values.get('CROS_AUE_DATES', None):
+    GC_Values['CROS_AUE_DATES'] = json.loads(getGAMProjectFile('src/cros-aue-dates.json'))
   crosModel = cros.get('model')
   if crosModel:
     if crosModel not in guessedAUEs:
-      closest_match = difflib.get_close_matches(crosModel.lower(), CROS_AUE_DATES, n=1)
+      closest_match = difflib.get_close_matches(crosModel.lower(), GC_Values['CROS_AUE_DATES'], n=1)
       if closest_match:
-        guessedAUEs[crosModel] = {'guessedAUEDate': CROS_AUE_DATES[closest_match[0]],
+        guessedAUEs[crosModel] = {'guessedAUEDate': GC_Values['CROS_AUE_DATES'][closest_match[0]],
                                   'guessedAUEModel': closest_match[0]}
       else:
         guessedAUEs[crosModel] = {'guessedAUEDate': u'',
