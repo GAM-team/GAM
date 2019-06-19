@@ -14443,7 +14443,7 @@ def ProcessGAMCommand(args):
       #doImap(users)
       runCmdForUsers(doImap, users, default_to_batch=True)
     elif command == 'sendemail':
-      runCmdForUsers(sendEmail, users, default_to_batch=True)
+      sendEmail(users)
     elif command == 'language':
       doLanguage(users)
     elif command in ['pop', 'pop3']:
