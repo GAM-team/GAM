@@ -197,10 +197,8 @@ script:
 - if [ "$e2e" = true ]; then $gam csv printers.csv gam info printer ~id; fi
 - if [ "$e2e" = true ]; then $gam print printjobs; fi
 - if [ "$e2e" = true ]; then $gam csv printers.csv gam printjob ~id fetch; fi
+- if [ "$e2e" = true ]; then $gam print printjobs | $gam csv - gam printjob ~id delete; fi
 - if [ "$e2e" = true ]; then $gam csv printers.csv gam delete printer ~id; fi
-#- if [ "$e2e" = true ]; then $gam calendar id:$newresource add editor $newuser; fi
-#- if [ "$e2e" = true ]; then $gam calendar id:$newresource update read domain; fi
-#- if [ "$e2e" = true ]; then $gam calendar id:$newresource showacl; fi
 - if [ "$e2e" = true ]; then $gam csv sample.csv gam user ~email add calendar id:$newresource; fi
 - if [ "$e2e" = true ]; then $gam delete resource $newresource; fi
 - if [ "$e2e" = true ]; then $gam delete feature Whiteboard-$newbase; fi
