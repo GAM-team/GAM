@@ -1066,7 +1066,13 @@ def callGAPI(service, function,
         service._http.cache = None
         continue
       systemErrorExit(4, str(e))
-    except (TypeError, httplib2.ServerNotFoundError, RuntimeError) as e:
+    except (httplib2.ServerNotFoundError, RuntimeError) as e:
+      if (n != retries):
+        service._http.connections = {}
+        waitOnFailure(n, retries, str(e))
+        continue
+      systemErrorExit(4, str(e))
+    except TypeError as e:
       systemErrorExit(4, str(e))
 
 def callGAPIpages(service, function, items='items',
@@ -1257,6 +1263,10 @@ def getService(api, http):
         http.cache = None
       return service
     except (httplib2.ServerNotFoundError, RuntimeError) as e:
+      if n != retries:
+        http.connections = {}
+        waitOnFailure(n, retries, str(e))
+        continue
       systemErrorExit(4, str(e))
     except (googleapiclient.errors.InvalidJsonError, KeyError, ValueError) as e:
       http.cache = None
@@ -1384,17 +1394,23 @@ def buildGAPIServiceObject(api, act_as, showAuthError=True):
   GM_Globals[GM_CURRENT_API_SCOPES] = API_SCOPE_MAPPING[api]
   credentials = getSvcAcctCredentials(GM_Globals[GM_CURRENT_API_SCOPES], act_as)
   request = google_auth_httplib2.Request(http)
-  try:
-    credentials.refresh(request)
-    service._http = google_auth_httplib2.AuthorizedHttp(credentials, http=http)
-  except (httplib2.ServerNotFoundError, RuntimeError) as e:
-    systemErrorExit(4, e)
-  except google.auth.exceptions.RefreshError as e:
-    if isinstance(e.args, tuple):
-      e = e.args[0]
-    if showAuthError:
-      stderrErrorMsg('User {0}: {1}'.format(GM_Globals[GM_CURRENT_API_USER], str(e)))
-    return handleOAuthTokenError(str(e), True)
+  retries = 3
+  for n in range(1, retries+1):
+    try:
+      credentials.refresh(request)
+      service._http = google_auth_httplib2.AuthorizedHttp(credentials, http=http)
+    except (httplib2.ServerNotFoundError, RuntimeError) as e:
+      if n != retries:
+        http.connections = {}
+        waitOnFailure(n, retries, str(e))
+        continue
+      systemErrorExit(4, e)
+    except google.auth.exceptions.RefreshError as e:
+      if isinstance(e.args, tuple):
+        e = e.args[0]
+      if showAuthError:
+        stderrErrorMsg('User {0}: {1}'.format(GM_Globals[GM_CURRENT_API_USER], str(e)))
+      return handleOAuthTokenError(str(e), True)
   return service
 
 def buildAlertCenterGAPIObject(user):
