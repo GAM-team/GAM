@@ -1232,11 +1232,18 @@ def getValidOauth2TxtCredentials(force_refresh=False):
   """Gets OAuth2 credentials which are guaranteed to be fresh and valid."""
   credentials = getOauth2TxtStorageCredentials()
   if (credentials and credentials.expired) or force_refresh:
-    try:
-      credentials.refresh(google_auth_httplib2.Request(_createHttpObj()))
-      writeCredentials(credentials)
-    except google.auth.exceptions.RefreshError as e:
-      systemErrorExit(18, str(e))
+    retries = 3
+    for n in range(1, retries+1):
+      try:
+        credentials.refresh(google_auth_httplib2.Request(_createHttpObj()))
+        writeCredentials(credentials)
+      except google.auth.exceptions.RefreshError as e:
+        systemErrorExit(18, str(e))
+      except (google.auth.exceptions.TransportError, httplib2.ServerNotFoundError, RuntimeError) as e:
+        if n != retries:
+          waitOnFailure(n, retries, str(e))
+          continue
+        systemErrorExit(4, str(e))
   elif credentials is None or not credentials.valid:
     doRequestOAuth()
     credentials = getOauth2TxtStorageCredentials()
