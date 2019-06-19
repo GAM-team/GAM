@@ -5335,6 +5335,26 @@ def transferDriveFiles(users):
       if not skipped_files:
         break
 
+def sendEmail(users):
+  body = subject = ''
+  recipient = None
+  i = 4
+  while i < len(sys.argv):
+    myarg = sys.argv[i].lower().replace('_', '')
+    if myarg == 'body':
+      body = sys.argv[i+1]
+      i += 2
+    elif myarg == 'subject':
+      subject = sys.argv[i+1]
+      i += 2
+    elif myarg == 'recipient':
+      recipient = sys.argv[i+1]
+      i += 2
+    else:
+      systemErrorExit(2, '%s is not a valid argument for "gam <users> sendemail"' % sys.argv[i])
+  for user in users:
+    send_email(subject, body, recipient, user)
+
 def doImap(users):
   enable = getBoolean(sys.argv[4], 'gam <users> imap')
   body = {'enabled': enable, 'autoExpunge': True, 'expungeBehavior': 'archive', 'maxFolderSize': 0}
@@ -10892,14 +10912,16 @@ def doDeleteOrg():
   callGAPI(cd.orgunits(), 'delete', customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=encodeOrgUnitPath(makeOrgUnitPathRelative(name)))
 
 # Send an email
-def send_email(msg_subj, msg_txt, msg_rcpt=None):
-  userId, gmail = buildGmailGAPIObject(_getValueFromOAuth('email'))
-  if not msg_rcpt:
-    msg_rcpt = userId
-  msg = MIMEText(msg_txt)
-  msg['Subject'] = msg_subj
+def send_email(subject, body, recipient=None, sender=None):
+  if not sender:
+    sender = _getValueFromOAuth('email')
+  userId, gmail = buildGmailGAPIObject(sender)
+  if not recipient:
+    recipient = userId
+  msg = MIMEText(body)
+  msg['Subject'] = subject
   msg['From'] = userId
-  msg['To'] = msg_rcpt
+  msg['To'] = recipient
   callGAPI(gmail.users().messages(), 'send',
            userId=userId, body={'raw': base64.urlsafe_b64encode(msg.as_bytes()).decode()})
 
@@ -14420,6 +14442,8 @@ def ProcessGAMCommand(args):
     elif command == 'imap':
       #doImap(users)
       runCmdForUsers(doImap, users, default_to_batch=True)
+    elif command == 'sendemail':
+      runCmdForUsers(sendEmail, users, default_to_batch=True)
     elif command == 'language':
       doLanguage(users)
     elif command in ['pop', 'pop3']:
