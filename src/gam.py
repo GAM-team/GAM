@@ -822,10 +822,16 @@ def _getServerTLSUsed(location):
   conn = 'https:%s' % netloc
   httpc = _createHttpObj()
   headers = {'user-agent': GAM_INFO}
-  try:
-    httpc.request(url, headers=headers)
-  except (httplib2.ServerNotFoundError, RuntimeError) as e:
-    systemErrorExit(4, e)
+  retries = 5
+  for n in range(1, retries+1):
+    try:
+      httpc.request(url, headers=headers)
+    except (httplib2.ServerNotFoundError, RuntimeError) as e:
+      if n != retries:
+        httpc.connections = {}
+        waitOnFailure(n, retries, str(e))
+        continue
+      systemErrorExit(4, str(e))
   cipher_name, tls_ver, _ = httpc.connections[conn].sock.cipher()
   return tls_ver, cipher_name
 
