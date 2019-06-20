@@ -27,6 +27,7 @@ import configparser
 import csv
 import datetime
 import difflib
+from email import message_from_string
 import hashlib
 import io
 import json
@@ -50,7 +51,6 @@ import uuid
 import webbrowser
 import zipfile
 import http.client as http_client
-from email.mime.text import MIMEText
 from multiprocessing import Pool
 from multiprocessing import freeze_support
 from urllib.parse import urlencode, urlparse
@@ -5344,14 +5344,18 @@ def transferDriveFiles(users):
       if not skipped_files:
         break
 
-def sendEmail(users):
+def sendOrDropEmail(users, method='send'):
   body = subject = ''
   recipient = None
+  labels = None
   i = 4
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace('_', '')
     if myarg == 'body':
       body = sys.argv[i+1]
+      i += 2
+    elif myarg == 'bodyfile':
+      body = readFile(sys.argv[i+1])
       i += 2
     elif myarg == 'subject':
       subject = sys.argv[i+1]
@@ -5359,10 +5363,13 @@ def sendEmail(users):
     elif myarg == 'recipient':
       recipient = sys.argv[i+1]
       i += 2
+    elif myarg == 'labels':
+      labels = sys.argv[i+1].split(',')
+      i += 2
     else:
       systemErrorExit(2, '%s is not a valid argument for "gam <users> sendemail"' % sys.argv[i])
   for user in users:
-    send_email(subject, body, recipient, user)
+    send_email(subject, body, recipient, user, method, labels)
 
 def doImap(users):
   enable = getBoolean(sys.argv[4], 'gam <users> imap')
@@ -10920,19 +10927,33 @@ def doDeleteOrg():
   print("Deleting organization %s" % name)
   callGAPI(cd.orgunits(), 'delete', customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=encodeOrgUnitPath(makeOrgUnitPathRelative(name)))
 
-# Send an email
-def send_email(subject, body, recipient=None, sender=None):
+def send_email(subject, body, recipient=None, sender=None, method='send', labels=None):
+  api_body = {}
+  kwargs = {}
   if not sender:
     sender = _getValueFromOAuth('email')
   userId, gmail = buildGmailGAPIObject(sender)
+  resource = gmail.users().messages()
+  if labels and method in ['insert', 'import']:
+    api_body['labelIds'] = labelsToLabelIds(gmail, labels)
+  elif labels:
+    systemErrorExit(3, 'labels argument is only valid for importemail and insertemail')
   if not recipient:
     recipient = userId
-  msg = MIMEText(body)
+  msg = message_from_string(body)
   msg['Subject'] = subject
   msg['From'] = userId
   msg['To'] = recipient
-  callGAPI(gmail.users().messages(), 'send',
-           userId=userId, body={'raw': base64.urlsafe_b64encode(msg.as_bytes()).decode()})
+  api_body['raw'] = base64.urlsafe_b64encode(msg.as_bytes()).decode()
+  if method == 'draft':
+    resource = gmail.users().drafts()
+    method = 'create'
+    api_body = {'message': api_body}
+  elif method in ['insert', 'import']:
+    kwargs['internalDateSource'] = 'dateHeader'
+  if method == 'import':
+    method = 'import_'
+  callGAPI(resource, method, userId=userId, body=api_body, **kwargs)
 
 def addFieldToFieldsList(fieldName, fieldsChoiceMap, fieldsList):
   fields = fieldsChoiceMap[fieldName.lower()]
@@ -14452,7 +14473,13 @@ def ProcessGAMCommand(args):
       #doImap(users)
       runCmdForUsers(doImap, users, default_to_batch=True)
     elif command == 'sendemail':
-      sendEmail(users)
+      sendOrDropEmail(users, 'send')
+    elif command == 'importemail':
+      sendOrDropEmail(users, 'import')
+    elif command == 'insertemail':
+      sendOrDropEmail(users, 'insert')
+    elif command == 'draftemail':
+      sendOrDropEmail(users, 'draft')
     elif command == 'language':
       doLanguage(users)
     elif command in ['pop', 'pop3']:
