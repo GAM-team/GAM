@@ -1286,6 +1286,8 @@ gam <UserTypeEntity> untrash messages query <QueryGmail> [doit] [max_to_untrash|
 
 gam <UserTypeEntity> show gmailprofile [todrive]
 
+gam <UserTypeEntity> sendemail [recipient <EmailAddress>] [subject <String>] [body <String>]
+
 gam <UserTypeEntity> create|add delegate|delegates <EmailAddress>
 gam <UserTypeEntity> delegate|delegates to <EmailAddress>
 gam <UserTypeEntity> delete|del delegate|delegates <EmailAddress>
