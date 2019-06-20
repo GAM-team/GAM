@@ -826,6 +826,7 @@ def _getServerTLSUsed(location):
   for n in range(1, retries+1):
     try:
       httpc.request(url, headers=headers)
+      break
     except (httplib2.ServerNotFoundError, RuntimeError) as e:
       if n != retries:
         httpc.connections = {}
@@ -1243,6 +1244,7 @@ def getValidOauth2TxtCredentials(force_refresh=False):
       try:
         credentials.refresh(google_auth_httplib2.Request(_createHttpObj()))
         writeCredentials(credentials)
+        break
       except google.auth.exceptions.RefreshError as e:
         systemErrorExit(18, str(e))
       except (google.auth.exceptions.TransportError, httplib2.ServerNotFoundError, RuntimeError) as e:
@@ -1412,6 +1414,7 @@ def buildGAPIServiceObject(api, act_as, showAuthError=True):
     try:
       credentials.refresh(request)
       service._http = google_auth_httplib2.AuthorizedHttp(credentials, http=http)
+      break
     except (httplib2.ServerNotFoundError, RuntimeError) as e:
       if n != retries:
         http.connections = {}
