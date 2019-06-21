@@ -10952,8 +10952,8 @@ def send_email(subject, body, recipient=None, sender=None, method='send', labels
     api_body = {'message': api_body}
   elif method in ['insert', 'import']:
     kwargs['internalDateSource'] = 'dateHeader'
-  if method == 'import':
-    method = 'import_'
+    if method == 'import':
+      method = 'import_'
   callGAPI(resource, method, userId=userId, body=api_body, **kwargs)
 
 def addFieldToFieldsList(fieldName, fieldsChoiceMap, fieldsList):
