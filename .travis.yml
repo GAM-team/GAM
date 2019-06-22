@@ -160,7 +160,7 @@ script:
     do echo $newbase-bulkuser-$i >> sample.csv;
   done; fi
 - if [ "$e2e" = true ]; then $gam create user $newuser firstname Travis lastname $jid password random travis.jid $jid; fi
-- if [ "$e2e" = true ]; then $gam user $gam_user sendemail recipient $newuser subject "test message $newbase" body "Travis test message"; fi
+- if [ "$e2e" = true ]; then $gam user $gam_user sendemail recipient $newuser subject "test message $newbase" message "Travis test message"; fi
 - if [ "$e2e" = true ]; then $gam create group $newgroup name "Travis $jid group" description "This is a description" isarchived true; fi
 - if [ "$e2e" = true ]; then $gam user $newuser add license gsuitebusiness; fi
 - if [ "$e2e" = true ]; then $gam update group $newgroup add owner $gam_user; fi
@@ -175,10 +175,10 @@ script:
 - if [ "$e2e" = true ]; then $gam user $newuser show imap; fi
 - if [ "$e2e" = true ]; then $gam csv sample.csv gam user $newuser delegate to ~email; fi
 - if [ "$e2e" = true ]; then $gam user $newuser show delegates; fi
-- if [ "$e2e" = true ]; then $gam user $gam_user importemail subject "Travis import $newbase" body "This is a test import" labels IMPORTANT,UNREAD,INBOX,STARRED; fi
-- if [ "$e2e" = true ]; then $gam user $gam_user insertemail subject "Travis insert $newbase" bodyfile gam.py labels INBOX,UNREAD; fi # yep body is gam code/binary
-- if [ "$e2e" = true ]; then $gam user $gam_user sendemail subject "Travis send $gam_user $newbase" bodyfile gam.py recipient admin@pdl.jaylee.us; fi
-- if [ "$e2e" = true ]; then $gam user $gam_user draftemail subject "Travis draft $newbase" body "Draft message test"; fi
+- if [ "$e2e" = true ]; then $gam user $gam_user importemail subject "Travis import $newbase" message "This is a test import" labels IMPORTANT,UNREAD,INBOX,STARRED; fi
+- if [ "$e2e" = true ]; then $gam user $gam_user insertemail subject "Travis insert $newbase" file gam.py labels INBOX,UNREAD; fi # yep body is gam code/binary
+- if [ "$e2e" = true ]; then $gam user $gam_user sendemail subject "Travis send $gam_user $newbase" file gam.py recipient admin@pdl.jaylee.us; fi
+- if [ "$e2e" = true ]; then $gam user $gam_user draftemail subject "Travis draft $newbase" message "Draft message test"; fi
 - if [ "$e2e" = true ]; then $gam users "$gam_user $newbase-bulkuser-01 $newbase-bulkuser-02 $newbase-bulkuser-03" delete messages query in:anywhere maxtodelete 99999 doit; fi
 - if [ "$e2e" = true ]; then $gam users "$newbase-bulkuser-04 $newbase-bulkuser-05 $newbase-bulkuser-06" trash messages query in:anywhere maxtotrash 99999 doit; fi
 - if [ "$e2e" = true ]; then $gam users "$newbase-bulkuser-07 $newbase-bulkuser-08 $newbase-bulkuser-09" modify messages query in:anywhere maxtomodify 99999 addlabel IMPORTANT addlabel STARRED doit; fi
