@@ -1074,7 +1074,7 @@ def callGAPI(service, function,
         continue
       systemErrorExit(4, str(e))
     except (httplib2.ServerNotFoundError, RuntimeError) as e:
-      if (n != retries):
+      if n != retries:
         service._http.connections = {}
         waitOnFailure(n, retries, str(e))
         continue
@@ -5351,12 +5351,13 @@ def sendOrDropEmail(users, method='send'):
   i = 4
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace('_', '')
-    if myarg == 'body':
+    if myarg == 'message':
       body = sys.argv[i+1]
       i += 2
-    elif myarg == 'bodyfile':
-      body = readFile(sys.argv[i+1])
-      i += 2
+    elif myarg == 'file':
+      filename = sys.argv[i+1]
+      i, encoding = getCharSet(i+2)
+      body = readFile(filename, encoding=encoding)
     elif myarg == 'subject':
       subject = sys.argv[i+1]
       i += 2
@@ -10951,8 +10952,8 @@ def send_email(subject, body, recipient=None, sender=None, method='send', labels
     api_body = {'message': api_body}
   elif method in ['insert', 'import']:
     kwargs['internalDateSource'] = 'dateHeader'
-  if method == 'import':
-    method = 'import_'
+    if method == 'import':
+      method = 'import_'
   callGAPI(resource, method, userId=userId, body=api_body, **kwargs)
 
 def addFieldToFieldsList(fieldName, fieldsChoiceMap, fieldsList):
