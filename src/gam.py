@@ -5346,8 +5346,12 @@ def transferDriveFiles(users):
 
 def sendOrDropEmail(users, method='send'):
   body = subject = ''
-  recipient = labels = sender = None
+  recipient = sender = None
+  labels = []
   kwargs = {}
+  if method in ['insert', 'import']:
+    kwargs['internalDateSource'] = 'receivedTime'
+  msgHeaders = {}
   i = 4
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace('_', '')
@@ -5361,38 +5365,31 @@ def sendOrDropEmail(users, method='send'):
     elif myarg == 'subject':
       subject = sys.argv[i+1]
       i += 2
-    elif myarg == 'recipient':
+    elif myarg in ['recipient', 'to']:
       recipient = sys.argv[i+1]
       i += 2
-    elif myarg == 'sender':
+    elif myarg in ['sender', 'from']:
       sender = sys.argv[i+1]
       i += 2
-    elif myarg == 'labels':
-      labels = sys.argv[i+1].split(',')
+    elif method != 'send' and myarg == 'labels':
+      labels.extend(shlexSplitList(sys.argv[i+1]))
       i += 2
-    elif myarg == 'deleted':
-      if method not in ['insert', 'import']:
-        systemErrorExit(3, 'deleted is only valid on insertemail and importemail')
+    elif method in ['insert', 'import'] and myarg == 'deleted':
       kwargs['deleted'] = True
       i += 1
-    elif myarg == 'receivednow':
-      if method not in ['insert', 'import']:
-        systemErrorExit(3, 'received_now is only valid on insertemail and importemail')
-      kwargs['internalDateSource'] = 'receivedTime'
+    elif method in ['insert', 'import'] and myarg == 'date':
+      msgHeaders['Date'] = getTimeOrDeltaFromNow(sys.argv[i+1])
+      kwargs['internalDateSource'] = 'dateHeader'
+      i += 2
+    elif method == 'import' and myarg == 'nevercheckspam':
+      kwargs['neverMarkSpam'] = True
       i += 1
-    elif myarg == 'checkspam':
-      if method not in ['import']:
-        systemErrorExit(3, 'check_spam is only valid on importemail')
-      kwargs['neverMarkSpam'] = False
-      i += 1
-    elif myarg == 'checkcalendar':
-      if method not in ['import']:
-        systemErrorExit(3, 'check_calendar is only valid on importemail')
+    elif method == 'import' and myarg == 'processforcalendar':
       kwargs['processForCalendar'] = True
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam <users> sendemail"' % sys.argv[i])
+      systemErrorExit(2, '%s is not a valid argument for "gam <users> %semail"' % (sys.argv[i], method))
   for user in users:
-    send_email(subject, body, recipient, sender, user, method, labels, kwargs)
+    send_email(subject, body, recipient, sender, user, method, labels, msgHeaders, kwargs)
 
 def doImap(users):
   enable = getBoolean(sys.argv[4], 'gam <users> imap')
@@ -10950,7 +10947,7 @@ def doDeleteOrg():
   print("Deleting organization %s" % name)
   callGAPI(cd.orgunits(), 'delete', customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=encodeOrgUnitPath(makeOrgUnitPathRelative(name)))
 
-def send_email(subject, body, recipient=None, sender=None, user=None, method='send', labels=None, kwargs={}):
+def send_email(subject, body, recipient=None, sender=None, user=None, method='send', labels=None, msgHeaders={}, kwargs={}):
   api_body = {}
   default_sender = default_recipient = False
   if not user:
@@ -10968,6 +10965,7 @@ def send_email(subject, body, recipient=None, sender=None, user=None, method='se
     recipient = userId
     default_recipient = True
   msg = message_from_string(body)
+  msg.update(msgHeaders)
   if subject:
     del msg['Subject']
     msg['Subject'] = subject
@@ -10986,7 +10984,6 @@ def send_email(subject, body, recipient=None, sender=None, user=None, method='se
     method = 'create'
     api_body = {'message': api_body}
   elif method in ['insert', 'import']:
-    kwargs['internalDateSource'] = 'dateHeader'
     if method == 'import':
       method = 'import_'
   callGAPI(resource, method, userId=userId, body=api_body, **kwargs)
