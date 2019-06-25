@@ -5346,8 +5346,8 @@ def transferDriveFiles(users):
 
 def sendOrDropEmail(users, method='send'):
   body = subject = ''
-  recipient = None
-  labels = None
+  recipient = labels = sender = None
+  kwargs = {}
   i = 4
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace('_', '')
@@ -5364,13 +5364,35 @@ def sendOrDropEmail(users, method='send'):
     elif myarg == 'recipient':
       recipient = sys.argv[i+1]
       i += 2
+    elif myarg == 'sender':
+      sender = sys.argv[i+1]
+      i += 2
     elif myarg == 'labels':
       labels = sys.argv[i+1].split(',')
       i += 2
+    elif myarg == 'deleted':
+      if method not in ['insert', 'import']:
+        systemErrorExit(3, 'deleted is only valid on insertemail and importemail')
+      kwargs['deleted'] = True
+      i += 1
+    elif myarg == 'receivednow':
+      if method not in ['insert', 'import']:
+        systemErrorExit(3, 'received_now is only valid on insertemail and importemail')
+      kwargs['internalDateSource'] = 'receivedTime'
+      i += 1
+    elif myarg == 'checkspam':
+      if method not in ['import']:
+        systemErrorExit(3, 'check_spam is only valid on importemail')
+      kwargs['neverMarkSpam'] = False
+      i += 1
+    elif myarg == 'checkcalendar':
+      if method not in ['import']:
+        systemErrorExit(3, 'check_calendar is only valid on importemail')
+      kwargs['processForCalendar'] = True
     else:
       systemErrorExit(2, '%s is not a valid argument for "gam <users> sendemail"' % sys.argv[i])
   for user in users:
-    send_email(subject, body, recipient, user, method, labels)
+    send_email(subject, body, recipient, sender, user, method, labels, kwargs)
 
 def doImap(users):
   enable = getBoolean(sys.argv[4], 'gam <users> imap')
@@ -10928,23 +10950,36 @@ def doDeleteOrg():
   print("Deleting organization %s" % name)
   callGAPI(cd.orgunits(), 'delete', customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=encodeOrgUnitPath(makeOrgUnitPathRelative(name)))
 
-def send_email(subject, body, recipient=None, sender=None, method='send', labels=None):
+def send_email(subject, body, recipient=None, sender=None, user=None, method='send', labels=None, kwargs={}):
   api_body = {}
-  kwargs = {}
-  if not sender:
-    sender = _getValueFromOAuth('email')
-  userId, gmail = buildGmailGAPIObject(sender)
+  default_sender = default_recipient = False
+  if not user:
+    user = _getValueFromOAuth('email')
+  userId, gmail = buildGmailGAPIObject(user)
   resource = gmail.users().messages()
   if labels and method in ['insert', 'import']:
     api_body['labelIds'] = labelsToLabelIds(gmail, labels)
   elif labels:
     systemErrorExit(3, 'labels argument is only valid for importemail and insertemail')
+  if not sender:
+    sender = userId
+    default_sender = True
   if not recipient:
     recipient = userId
+    default_recipient = True
   msg = message_from_string(body)
-  msg['Subject'] = subject
-  msg['From'] = userId
-  msg['To'] = recipient
+  if subject:
+    del msg['Subject']
+    msg['Subject'] = subject
+  if not default_sender:
+    del msg['From']
+  if not msg['From']:
+    msg['From'] = sender
+  if not default_recipient:
+    del msg['To']
+  if not msg['To']:
+    msg['To'] = recipient
+  print(msg)
   api_body['raw'] = base64.urlsafe_b64encode(msg.as_bytes()).decode()
   if method == 'draft':
     resource = gmail.users().drafts()
