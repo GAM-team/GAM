@@ -1288,16 +1288,18 @@ gam <UserTypeEntity> show gmailprofile [todrive]
 
 gam <UserTypeEntity> draftemail [recipient|to <EmailAddress>] [sender|from <EmailAddress>]
 	[subject <String>] [(message <String>)|(file <FileName> [charset <Charset>])]
-	[labels <LabelsList>]
 gam <UserTypeEntity> importemail [recipient|to <EmailAddress>] [sender|from <EmailAddress>]
 	[subject <String>] [(message <String>)|(file <FileName> [charset <Charset>])]
-	[labels <LabelsList>] [deleted] [date <Time>]
+	[labels <LabelsList>] (header <String> <String>)*
+        [deleted] [date <Time>]
 	[nevercheckspam] [processforcalendar]
 gam <UserTypeEntity> insertemail [recipient|to <EmailAddress>] [sender|from <EmailAddress>]
 	[subject <String>] [(message <String>)|(file <FileName> [charset <Charset>])]
-	[labels <LabelsList>] [deleted] [date <Time>]
+	[labels <LabelsList>] (header <String> <String>)*
+	[deleted] [date <Time>]
 gam <UserTypeEntity> sendemail [recipient|to <EmailAddress>] [sender|from <EmailAddress>]
 	[subject <String>] [(message <String>)|(file <FileName> [charset <Charset>])]
+	(header <String> <String>)* 
 
 gam <UserTypeEntity> create|add delegate|delegates <EmailAddress>
 gam <UserTypeEntity> delegate|delegates to <EmailAddress>

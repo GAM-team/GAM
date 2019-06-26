@@ -5371,7 +5371,10 @@ def sendOrDropEmail(users, method='send'):
     elif myarg in ['sender', 'from']:
       sender = sys.argv[i+1]
       i += 2
-    elif method != 'send' and myarg == 'labels':
+    elif myarg == 'header':
+      msgHeaders[sys.argv[i+1]] = sys.argv[i+2]
+      i += 3
+    elif method in ['insert', 'import'] and myarg == 'labels':
       labels.extend(shlexSplitList(sys.argv[i+1]))
       i += 2
     elif method in ['insert', 'import'] and myarg == 'deleted':
@@ -10955,10 +10958,8 @@ def send_email(subject, body, recipient=None, sender=None, user=None, method='se
     user = _getValueFromOAuth('email')
   userId, gmail = buildGmailGAPIObject(user)
   resource = gmail.users().messages()
-  if labels and method in ['insert', 'import']:
+  if labels:
     api_body['labelIds'] = labelsToLabelIds(gmail, labels)
-  elif labels:
-    systemErrorExit(3, 'labels argument is only valid for importemail and insertemail')
   if not sender:
     sender = userId
     default_sender = True
@@ -11048,6 +11049,16 @@ def sortCSVTitles(firstTitle, titles):
   titles.sort()
   for title in restoreTitles[::-1]:
     titles.insert(0, title)
+
+def QuotedArgumentList(items):
+  qstr = ''
+  for item in items:
+    if item and (item.find(' ') == -1) and (item.find(',') == -1):
+      qstr += item
+    else:
+      qstr += '"'+item+'"'
+    qstr += ' '
+  return qstr[:-1] if qstr else ''
 
 def writeCSVfile(csvRows, titles, list_type, todrive):
   def rowDateTimeFilterMatch(dateMode, rowDate, op, filterDate):
@@ -11153,7 +11164,7 @@ and follow recommend steps to authorize GAM for Drive access.''' % (admin_email)
       mimeType = 'text/csv'
     else:
       mimeType = MIMETYPE_GA_SPREADSHEET
-    body = {'description': ' '.join(sys.argv),
+    body = {'description': QuotedArgumentList(sys.argv),
             'name': '%s - %s' % (GC_Values[GC_DOMAIN], list_type),
             'mimeType': mimeType}
     result = callGAPI(drive.files(), 'create', fields='webViewLink',
