@@ -5346,8 +5346,7 @@ def transferDriveFiles(users):
 
 def sendOrDropEmail(users, method='send'):
   body = subject = ''
-  recipient = sender = None
-  labels = []
+  recipient = labels = sender = None
   kwargs = {}
   if method in ['insert', 'import']:
     kwargs['internalDateSource'] = 'receivedTime'
@@ -5375,7 +5374,7 @@ def sendOrDropEmail(users, method='send'):
       msgHeaders[sys.argv[i+1]] = sys.argv[i+2]
       i += 3
     elif method in ['insert', 'import'] and myarg == 'labels':
-      labels.extend(shlexSplitList(sys.argv[i+1]))
+      labels = shlexSplitList(sys.argv[i+1])
       i += 2
     elif method in ['insert', 'import'] and myarg == 'deleted':
       kwargs['deleted'] = True
@@ -11051,14 +11050,7 @@ def sortCSVTitles(firstTitle, titles):
     titles.insert(0, title)
 
 def QuotedArgumentList(items):
-  qstr = ''
-  for item in items:
-    if item and (item.find(' ') == -1) and (item.find(',') == -1):
-      qstr += item
-    else:
-      qstr += '"'+item+'"'
-    qstr += ' '
-  return qstr[:-1] if qstr else ''
+  return ' '.join([item if item and (item.find(' ') == -1) and (item.find(',') == -1) else '"'+item+'"' for item in items])
 
 def writeCSVfile(csvRows, titles, list_type, todrive):
   def rowDateTimeFilterMatch(dateMode, rowDate, op, filterDate):

@@ -1290,12 +1290,12 @@ gam <UserTypeEntity> draftemail [recipient|to <EmailAddress>] [sender|from <Emai
 	[subject <String>] [(message <String>)|(file <FileName> [charset <Charset>])]
 gam <UserTypeEntity> importemail [recipient|to <EmailAddress>] [sender|from <EmailAddress>]
 	[subject <String>] [(message <String>)|(file <FileName> [charset <Charset>])]
-	[labels <LabelsList>] (header <String> <String>)*
+	[labels <LabelNameList>] (header <String> <String>)*
         [deleted] [date <Time>]
 	[nevercheckspam] [processforcalendar]
 gam <UserTypeEntity> insertemail [recipient|to <EmailAddress>] [sender|from <EmailAddress>]
 	[subject <String>] [(message <String>)|(file <FileName> [charset <Charset>])]
-	[labels <LabelsList>] (header <String> <String>)*
+	[labels <LabelNameList>] (header <String> <String>)*
 	[deleted] [date <Time>]
 gam <UserTypeEntity> sendemail [recipient|to <EmailAddress>] [sender|from <EmailAddress>]
 	[subject <String>] [(message <String>)|(file <FileName> [charset <Charset>])]
