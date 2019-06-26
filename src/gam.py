@@ -5377,9 +5377,10 @@ def sendOrDropEmail(users, method='send'):
     elif method in ['insert', 'import'] and myarg == 'deleted':
       kwargs['deleted'] = True
       i += 1
-    elif method in ['insert', 'import'] and myarg == 'date':
+    elif myarg == 'date':
       msgHeaders['Date'] = getTimeOrDeltaFromNow(sys.argv[i+1])
-      kwargs['internalDateSource'] = 'dateHeader'
+      if method in ['insert', 'import']:
+        kwargs['internalDateSource'] = 'dateHeader'
       i += 2
     elif method == 'import' and myarg == 'nevercheckspam':
       kwargs['neverMarkSpam'] = True
