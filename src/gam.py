@@ -5367,7 +5367,7 @@ def sendOrDropEmail(users, method='send'):
     elif myarg in ['recipient', 'to']:
       recipient = sys.argv[i+1]
       i += 2
-    elif myarg in ['sender', 'from']:
+    elif myarg == 'from':
       sender = sys.argv[i+1]
       i += 2
     elif myarg == 'header':
