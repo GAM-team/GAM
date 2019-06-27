@@ -5350,6 +5350,8 @@ def sendOrDropEmail(users, method='send'):
   kwargs = {}
   if method in ['insert', 'import']:
     kwargs['internalDateSource'] = 'receivedTime'
+    if method == 'import':
+      kwargs['neverMarkSpam'] = True
   msgHeaders = {}
   i = 4
   while i < len(sys.argv):
@@ -5384,8 +5386,8 @@ def sendOrDropEmail(users, method='send'):
       if method in ['insert', 'import']:
         kwargs['internalDateSource'] = 'dateHeader'
       i += 2
-    elif method == 'import' and myarg == 'nevercheckspam':
-      kwargs['neverMarkSpam'] = True
+    elif method == 'import' and myarg == 'checkspam':
+      kwargs['neverMarkSpam'] = False
       i += 1
     elif method == 'import' and myarg == 'processforcalendar':
       kwargs['processForCalendar'] = True
