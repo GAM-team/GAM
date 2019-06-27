@@ -5348,6 +5348,11 @@ def sendOrDropEmail(users, method='send'):
   body = subject = ''
   recipient = labels = sender = None
   kwargs = {}
+  if method in ['insert', 'import']:
+    kwargs['internalDateSource'] = 'receivedTime'
+    if method == 'import':
+      kwargs['neverMarkSpam'] = True
+  msgHeaders = {}
   i = 4
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace('_', '')
@@ -5361,38 +5366,35 @@ def sendOrDropEmail(users, method='send'):
     elif myarg == 'subject':
       subject = sys.argv[i+1]
       i += 2
-    elif myarg == 'recipient':
+    elif myarg in ['recipient', 'to']:
       recipient = sys.argv[i+1]
       i += 2
-    elif myarg == 'sender':
+    elif myarg == 'from':
       sender = sys.argv[i+1]
       i += 2
-    elif myarg == 'labels':
-      labels = sys.argv[i+1].split(',')
+    elif myarg == 'header':
+      msgHeaders[sys.argv[i+1]] = sys.argv[i+2]
+      i += 3
+    elif method in ['insert', 'import'] and myarg == 'labels':
+      labels = shlexSplitList(sys.argv[i+1])
       i += 2
-    elif myarg == 'deleted':
-      if method not in ['insert', 'import']:
-        systemErrorExit(3, 'deleted is only valid on insertemail and importemail')
+    elif method in ['insert', 'import'] and myarg == 'deleted':
       kwargs['deleted'] = True
       i += 1
-    elif myarg == 'receivednow':
-      if method not in ['insert', 'import']:
-        systemErrorExit(3, 'received_now is only valid on insertemail and importemail')
-      kwargs['internalDateSource'] = 'receivedTime'
-      i += 1
-    elif myarg == 'checkspam':
-      if method not in ['import']:
-        systemErrorExit(3, 'check_spam is only valid on importemail')
+    elif myarg == 'date':
+      msgHeaders['Date'] = getTimeOrDeltaFromNow(sys.argv[i+1])
+      if method in ['insert', 'import']:
+        kwargs['internalDateSource'] = 'dateHeader'
+      i += 2
+    elif method == 'import' and myarg == 'checkspam':
       kwargs['neverMarkSpam'] = False
       i += 1
-    elif myarg == 'checkcalendar':
-      if method not in ['import']:
-        systemErrorExit(3, 'check_calendar is only valid on importemail')
+    elif method == 'import' and myarg == 'processforcalendar':
       kwargs['processForCalendar'] = True
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam <users> sendemail"' % sys.argv[i])
+      systemErrorExit(2, '%s is not a valid argument for "gam <users> %semail"' % (sys.argv[i], method))
   for user in users:
-    send_email(subject, body, recipient, sender, user, method, labels, kwargs)
+    send_email(subject, body, recipient, sender, user, method, labels, msgHeaders, kwargs)
 
 def doImap(users):
   enable = getBoolean(sys.argv[4], 'gam <users> imap')
@@ -10950,17 +10952,15 @@ def doDeleteOrg():
   print("Deleting organization %s" % name)
   callGAPI(cd.orgunits(), 'delete', customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=encodeOrgUnitPath(makeOrgUnitPathRelative(name)))
 
-def send_email(subject, body, recipient=None, sender=None, user=None, method='send', labels=None, kwargs={}):
+def send_email(subject, body, recipient=None, sender=None, user=None, method='send', labels=None, msgHeaders={}, kwargs={}):
   api_body = {}
   default_sender = default_recipient = False
   if not user:
     user = _getValueFromOAuth('email')
   userId, gmail = buildGmailGAPIObject(user)
   resource = gmail.users().messages()
-  if labels and method in ['insert', 'import']:
+  if labels:
     api_body['labelIds'] = labelsToLabelIds(gmail, labels)
-  elif labels:
-    systemErrorExit(3, 'labels argument is only valid for importemail and insertemail')
   if not sender:
     sender = userId
     default_sender = True
@@ -10968,6 +10968,7 @@ def send_email(subject, body, recipient=None, sender=None, user=None, method='se
     recipient = userId
     default_recipient = True
   msg = message_from_string(body)
+  msg.update(msgHeaders)
   if subject:
     del msg['Subject']
     msg['Subject'] = subject
@@ -10986,7 +10987,6 @@ def send_email(subject, body, recipient=None, sender=None, user=None, method='se
     method = 'create'
     api_body = {'message': api_body}
   elif method in ['insert', 'import']:
-    kwargs['internalDateSource'] = 'dateHeader'
     if method == 'import':
       method = 'import_'
   callGAPI(resource, method, userId=userId, body=api_body, **kwargs)
@@ -11050,6 +11050,9 @@ def sortCSVTitles(firstTitle, titles):
   titles.sort()
   for title in restoreTitles[::-1]:
     titles.insert(0, title)
+
+def QuotedArgumentList(items):
+  return ' '.join([item if item and (item.find(' ') == -1) and (item.find(',') == -1) else '"'+item+'"' for item in items])
 
 def writeCSVfile(csvRows, titles, list_type, todrive):
   def rowDateTimeFilterMatch(dateMode, rowDate, op, filterDate):
@@ -11155,7 +11158,7 @@ and follow recommend steps to authorize GAM for Drive access.''' % (admin_email)
       mimeType = 'text/csv'
     else:
       mimeType = MIMETYPE_GA_SPREADSHEET
-    body = {'description': ' '.join(sys.argv),
+    body = {'description': QuotedArgumentList(sys.argv),
             'name': '%s - %s' % (GC_Values[GC_DOMAIN], list_type),
             'mimeType': mimeType}
     result = callGAPI(drive.files(), 'create', fields='webViewLink',

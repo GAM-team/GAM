@@ -945,12 +945,12 @@ gam calendar <CalendarItem> showacl
 gam calendar <CalendarItem> printacl [todrive]
 
 <EventNotificationAttribute> ::=
-        notifyattendees|(sendnotifications <Boolean>)|(sendupdates all|enternalonly|none)
+	notifyattendees|(sendnotifications <Boolean>)|(sendupdates all|enternalonly|none)
 
 The following attributes are equivalent:
-        notifyattendees - sendupdates all
-        sendnotifications false - sendupdates none
-        sendnotifications true - sendupdates all
+	notifyattendees - sendupdates all
+	sendnotifications false - sendupdates none
+	sendnotifications true - sendupdates all
 
 <EventAttributes> ::=
 	anyonecanaddself|
@@ -976,15 +976,15 @@ The following attributes are equivalent:
 	(visibility default|public|prvate)
 
 <EventSelectProperty:> ::=
-        (after <Time>)|
-        (before <Time>)|
-        includeeleted|
-        includehidden|
-        (query <QueryCalendar>)|
-        (updatedmin <Time>)
+	(after <Time>)|
+	(before <Time>)|
+	includeeleted|
+	includehidden|
+	(query <QueryCalendar>)|
+	(updatedmin <Time>)
 
 <EventDisplayProperty> ::=
-        (timezone <TimeZone>)
+	(timezone <TimeZone>)
 
 gam calendar <CalendarItem> addevent <EventAttributes>+ [<EventNotificationAttribute>]
 gam calendar <CalendarItem> deleteevent id|eventid <EventID> [doit] [<EventNotificationAttribute>]
@@ -1286,10 +1286,20 @@ gam <UserTypeEntity> untrash messages query <QueryGmail> [doit] [max_to_untrash|
 
 gam <UserTypeEntity> show gmailprofile [todrive]
 
-gam <UserTypeEntity> draftemail [recipient <EmailAddress>] [subject <String>] [(message <String>)|(file <FileName> [charset <Charset>])]
-gam <UserTypeEntity> importemail [recipient <EmailAddress>] [subject <String> [(message <String>)|(file <FileName> [charset <Charset>])]]
-gam <UserTypeEntity> insertemail [recipient <EmailAddress>] [subject <String>] [(message <String>)|(file <FileName> [charset <Charset>])]
-gam <UserTypeEntity> sendemail [recipient <EmailAddress>] [subject <String>] [(message <String>)|(file <FileName> [charset <Charset>])]
+gam <UserTypeEntity> draftemail [recipient|to <EmailAddress>] [from <EmailAddress>]
+	[subject <String>] [(message <String>)|(file <FileName> [charset <Charset>])]
+gam <UserTypeEntity> importemail [recipient|to <EmailAddress>] [from <EmailAddress>]
+	[subject <String>] [(message <String>)|(file <FileName> [charset <Charset>])]
+	[labels <LabelNameList>] (header <String> <String>)*
+        [deleted] [date <Time>]
+	[nevercheckspam] [processforcalendar]
+gam <UserTypeEntity> insertemail [recipient|to <EmailAddress>] [from <EmailAddress>]
+	[subject <String>] [(message <String>)|(file <FileName> [charset <Charset>])]
+	[labels <LabelNameList>] (header <String> <String>)*
+	[deleted] [date <Time>]
+gam <UserTypeEntity> sendemail [recipient|to <EmailAddress>] [from <EmailAddress>]
+	[subject <String>] [(message <String>)|(file <FileName> [charset <Charset>])]
+	(header <String> <String>)* 
 
 gam <UserTypeEntity> create|add delegate|delegates <EmailAddress>
 gam <UserTypeEntity> delegate|delegates to <EmailAddress>
