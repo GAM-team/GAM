@@ -10968,19 +10968,20 @@ def send_email(subject, body, recipient=None, sender=None, user=None, method='se
     recipient = userId
     default_recipient = True
   msg = message_from_string(body)
-  msg.update(msgHeaders)
+  for header, value in msgHeaders.items():
+    msg.__delitem__(header) # can remove multiple case-insensitive matching headers
+    msg.add_header(header, value)
   if subject:
-    del msg['Subject']
+    msg.__delitem__('Subject')
     msg['Subject'] = subject
   if not default_sender:
-    del msg['From']
+    msg.__delitem__('From')
   if not msg['From']:
     msg['From'] = sender
   if not default_recipient:
-    del msg['To']
+    msg.__delitem__('to')
   if not msg['To']:
     msg['To'] = recipient
-  print(msg)
   api_body['raw'] = base64.urlsafe_b64encode(msg.as_bytes()).decode()
   if method == 'draft':
     resource = gmail.users().drafts()
