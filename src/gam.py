@@ -9174,9 +9174,14 @@ def checkGroupExists(cd, group, i=0, count=0):
     return None
 
 def _checkMemberRoleIsSuspended(member, validRoles, isSuspended):
+  if validRoles and member.get('role', ROLE_MEMBER) not in validRoles:
+    return False
+  if isSuspended is None:
+    return True
   memberStatus = member.get('status', 'UNKNOWN')
-  return ((not validRoles or member.get('role', ROLE_MEMBER) in validRoles) and
-          (isSuspended is None or (not isSuspended and memberStatus != 'SUSPENDED') or (isSuspended and memberStatus == 'SUSPENDED')))
+  if not isSuspended:
+    return memberStatus != 'SUSPENDED'
+  return memberStatus == 'SUSPENDED'
 
 UPDATE_GROUP_SUBCMDS = ['add', 'clear', 'delete', 'remove', 'sync', 'update']
 GROUP_ROLES_MAP = {
