@@ -9173,6 +9173,11 @@ def checkGroupExists(cd, group, i=0, count=0):
     entityUnknownWarning('Group', group, i, count)
     return None
 
+def _checkMemberRoleIsSuspended(member, validRoles, isSuspended):
+  memberStatus = member.get('status', 'UNKNOWN')
+  return ((not validRoles or member.get('role', Ent.ROLE_MEMBER) in validRoles) and
+          (isSuspended is None or (not isSuspended and memberStatus != 'SUSPENDED') or (isSuspended and memberStatus == 'SUSPENDED')))
+
 UPDATE_GROUP_SUBCMDS = ['add', 'clear', 'delete', 'remove', 'sync', 'update']
 GROUP_ROLES_MAP = {
   'owner': ROLE_OWNER, 'owners': ROLE_OWNER,
@@ -9377,12 +9382,7 @@ def doUpdateGroup():
         if not result:
           print('Group already has 0 members')
           return
-        if checkSuspended is None:
-          users_email = [member.get('email', member['id']) for member in result if not validRoles or member.get('role', ROLE_MEMBER) in validRoles]
-        elif checkSuspended:
-          users_email = [member.get('email', member['id']) for member in result if (not validRoles or member.get('role', ROLE_MEMBER) in validRoles) and member['status'] == 'SUSPENDED']
-        else: # elif not checkSuspended
-          users_email = [member.get('email', member['id']) for member in result if (not validRoles or member.get('role', ROLE_MEMBER) in validRoles) and member['status'] != 'SUSPENDED']
+        users_email = [member.get('email', member['id']) for member in result if _checkMemberRoleIsSuspended(member, validRoles, checkSuspended)]
         if len(users_email) > 1:
           sys.stderr.write('Group: {0}, Will remove {1} {2}{3}s.\n'.format(group, len(users_email), '' if checkSuspended is None else ['Non-suspended ', 'Suspended '][checkSuspended], roles))
           for user_email in users_email:
@@ -11907,8 +11907,7 @@ def doPrintGroupMembers():
                                   soft_errors=True,
                                   groupKey=group_email, roles=listRoles, fields=listFields, maxResults=GC_Values[GC_MEMBER_MAX_RESULTS])
     for member in group_members:
-      if ((validRoles and member.get('role', ROLE_MEMBER) not in validRoles) or
-          (checkSuspended is not None and ((not checkSuspended and member['status'] == 'SUSPENDED') or (checkSuspended and member['status'] != 'SUSPENDED')))):
+      if not _checkMemberRoleIsSuspended(member, validRoles, checkSuspended):
         continue
       for title in member:
         if title not in titles:
@@ -12800,9 +12799,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
                             groupKey=group, roles=listRoles, fields=listFields, maxResults=GC_Values[GC_MEMBER_MAX_RESULTS])
     users = []
     for member in members:
-      if (((not groupUserMembersOnly) or (member['type'] == 'USER')) and
-          (not validRoles or member.get('role', ROLE_MEMBER) in validRoles) and
-          (checkSuspended is None or (not checkSuspended and member['status'] != 'SUSPENDED') or (checkSuspended and member['status'] == 'SUSPENDED'))):
+      if ((not groupUserMembersOnly) or (member['type'] == 'USER')) and _checkMemberRoleIsSuspended(member, validRoles, checkSuspended):
         users.append(member.get('email', member['id']))
   elif entity_type in ['ou', 'org', 'ou_ns', 'org_ns', 'ou_susp', 'org_susp',]:
     if entity_type in ['ou_ns', 'org_ns']:
