@@ -55,7 +55,6 @@ from multiprocessing import Pool
 from multiprocessing import freeze_support
 from urllib.parse import urlencode, urlparse
 from passlib.hash import sha512_crypt
-import dns.resolver
 import dateutil.parser
 
 import googleapiclient
@@ -10498,27 +10497,41 @@ def doSiteVerifyAttempt():
     print('ERROR: %s' % str(e))
     verify_data = callGAPI(verif.webResource(), 'getToken', body=body)
     print('Method:  %s' % verify_data['method'])
-    print('Token:      %s' % verify_data['token'])
+    print('Expected Token:      %s' % verify_data['token'])
     if verify_data['method'] in ['DNS_CNAME', 'DNS_TXT']:
-      resolver = dns.resolver.Resolver()
-      resolver.nameservers = ['8.8.8.8', '8.8.4.4']
+      simplehttp = _createHttpObj()
+      base_url = 'https://dns.google/resolve?'
+      query_params = {}
       if verify_data['method'] == 'DNS_CNAME':
         cname_token = verify_data['token']
         cname_list = cname_token.split(' ')
         cname_subdomain = cname_list[0]
-        try:
-          answers = resolver.query('%s.%s' % (cname_subdomain, a_domain), 'A')
-          for answer in answers:
-            print('DNS Record: %s' % answer)
-        except (dns.resolver.NXDOMAIN, dns.resolver.NoAnswer):
-          print('ERROR: No such domain found in DNS!')
+        query_params['name'] = '%s.%s' % (cname_subdomain, a_domain)
+        query_params['type'] = 'cname'
       else:
-        try:
-          answers = resolver.query(a_domain, 'TXT')
-          for answer in answers:
-            print('DNS Record: %s' % str(answer).replace('"', ''))
-        except dns.resolver.NXDOMAIN:
-          print('ERROR: no such domain found in DNS!')
+        query_params['name'] = a_domain
+        query_params['type'] = 'txt'
+      full_url = base_url + urlencode(query_params)
+      (_, c) = simplehttp.request(full_url, 'GET')
+      result = json.loads(c.decode(UTF8))
+      status = result['Status']
+      if status == 0 and 'Answer' in result:
+        answers = result['Answer']
+        if verify_data['method'] == 'DNS_CNAME':
+          answer = answers[0]['data']
+        else:
+          answer = 'no matching record found'
+          for possible_answer in answers:
+            if possible_answer['data'].startswith('google-site-verification='):
+              answer = possible_answer
+              break
+            else:
+              print('Unrelated TXT record: %s' % possible_answer['data'])
+        print('Found DNS Record: %s' % answer)
+      elif status == 0:
+        systemErrorExit(1, 'DNS record not found')
+      else:
+        systemErrorExit(status, DNS_ERROR_CODES_MAP.get(status, 'Unknown error %s' % status))
     return
   print('SUCCESS!')
   print('Verified:  %s' % verify_result['site']['identifier'])

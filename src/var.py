@@ -430,6 +430,18 @@ DOCUMENT_FORMATS_MAP = {
                   {'mime': 'application/vnd.oasis.opendocument.text', 'ext': '.odt'}],
   }
 
+DNS_ERROR_CODES_MAP = {
+  1: 'DNS Query Format Error',
+  2: 'Server failed to complete the DNS request',
+  3: 'Domain name does not exist',
+  4: 'Function not implemented',
+  5: 'The server refused to answer for the query',
+  6: 'Name that should not exist, does exist',
+  7: 'RRset that should not exist, does exist',
+  8: 'Server not authoritative for the zone',
+  9: 'Name not in zone'
+  }
+
 EMAILSETTINGS_OLD_NEW_OLD_FORWARD_ACTION_MAP = {
   'ARCHIVE': 'archive',
   'DELETE': 'trash',
