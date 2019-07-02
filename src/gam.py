@@ -10522,8 +10522,9 @@ def doSiteVerifyAttempt():
         else:
           answer = 'no matching record found'
           for possible_answer in answers:
-            if possible_answer['data'].startswith('google-site-verification='):
-              answer = possible_answer
+            possible_answer['data'] = possible_answer['data'].strip('"')
+            if possible_answer['data'].startswith('google-site-verification'):
+              answer = possible_answer['data']
               break
             else:
               print('Unrelated TXT record: %s' % possible_answer['data'])
