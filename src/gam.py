@@ -1974,9 +1974,6 @@ def doDelCourse():
   callGAPI(croom.courses(), 'delete', id=courseId)
   print('Deleted Course %s' % courseId)
 
-def _getValidCourseStates(croom):
-  return _getEnumValuesMinusUnspecified(croom._rootDesc['schemas']['Course']['properties']['courseState']['enum'])
-
 def _getValidatedState(state, validStates):
   state = state.upper()
   if state not in validStates:
@@ -1997,13 +1994,13 @@ def getCourseAttribute(myarg, value, body, croom, function):
   elif myarg in ['owner', 'ownerid', 'teacher']:
     body['ownerId'] = normalizeEmailAddressOrUID(value)
   elif myarg in ['state', 'status']:
-    validStates = _getValidCourseStates(croom)
+    validStates = _getEnumValuesMinusUnspecified(croom._rootDesc['schemas']['Course']['properties']['courseState']['enum'])
     body['courseState'] = _getValidatedState(value, validStates)
   else:
     systemErrorExit(2, '%s is not a valid argument to "gam %s course"' % (myarg, function))
 
 def _getCourseStates(croom, value, courseStates):
-  validStates = _getValidCourseStates(croom)
+  validStates = _getEnumValuesMinusUnspecified(croom._rootDesc['schemas']['Course']['properties']['courseState']['enum'])
   for state in value.replace(',', ' ').split():
     courseStates.append(_getValidatedState(state, validStates))
 
