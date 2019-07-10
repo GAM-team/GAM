@@ -10,7 +10,7 @@ else
   echo "RUNNING: apt update..."
   sudo apt-get -qq --yes update > /dev/null
   echo "RUNNING: apt dist-upgrade..."
-  sudo apt-get -qq --yes dist-upgrade > /dev/null
+  #sudo apt-get -qq --yes dist-upgrade > /dev/null
   echo "Installing build tools..."
   sudo apt-get -qq --yes install build-essential
 
@@ -36,11 +36,11 @@ else
   fi
   cd openssl-$BUILD_OPENSSL_VERSION
   echo "Compiling OpenSSL $BUILD_OPENSSL_VERSION..."
-  ./config shared --prefix=$mypath/ssl
+  #./config shared --prefix=$mypath/ssl
   echo "Running make for OpenSSL..."
-  make -j$cpucount -s
+  #make -j$cpucount -s
   echo "Running make install for OpenSSL..."
-  make install > /dev/null
+  #make install > /dev/null
   export LD_LIBRARY_PATH=~/ssl/lib
   cd ~
 
