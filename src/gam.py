@@ -1974,9 +1974,6 @@ def doDelCourse():
   callGAPI(croom.courses(), 'delete', id=courseId)
   print('Deleted Course %s' % courseId)
 
-def _getValidCourseStates(croom):
-  return [state for state in croom._rootDesc['schemas']['Course']['properties']['courseState']['enum'] if state != 'COURSE_STATE_UNSPECIFIED']
-
 def _getValidatedState(state, validStates):
   state = state.upper()
   if state not in validStates:
@@ -1997,7 +1994,7 @@ def getCourseAttribute(myarg, value, body, croom, function):
   elif myarg in ['owner', 'ownerid', 'teacher']:
     body['ownerId'] = normalizeEmailAddressOrUID(value)
   elif myarg in ['state', 'status']:
-    validStates = _getValidCourseStates(croom)
+    validStates = _getEnumValuesMinusUnspecified(croom._rootDesc['schemas']['Course']['properties']['courseState']['enum'])
     body['courseState'] = _getValidatedState(value, validStates)
   else:
     systemErrorExit(2, '%s is not a valid argument to "gam %s course"' % (myarg, function))
@@ -8227,18 +8224,11 @@ VAULT_SEARCH_METHODS_LIST = ['accounts', 'orgunit', 'teamdrives', 'rooms', 'ever
 
 def doCreateVaultExport():
   v = buildGAPIObject('vault')
-  allowed_corpuses = v._rootDesc['schemas']['Query']['properties']['corpus']['enum']
-  try:
-    allowed_corpuses.remove('CORPUS_TYPE_UNSPECIFIED')
-  except ValueError:
-    pass
-  allowed_scopes = v._rootDesc['schemas']['Query']['properties']['dataScope']['enum']
-  try:
-    allowed_scopes.remove('DATA_SCOPE_UNSPECIFIED')
-  except ValueError:
-    pass
-  allowed_formats = ['MBOX', 'PST']
+  allowed_corpuses = _getEnumValuesMinusUnspecified(v._rootDesc['schemas']['Query']['properties']['corpus']['enum'])
+  allowed_scopes = _getEnumValuesMinusUnspecified(v._rootDesc['schemas']['Query']['properties']['dataScope']['enum'])
+  allowed_formats = _getEnumValuesMinusUnspecified(v._rootDesc['schemas']['MailExportOptions']['properties']['exportFormat']['enum'])
   export_format = 'MBOX'
+  showConfidentialModeContent = None # default to not even set 
   matterId = None
   body = {'query': {'dataScope': 'ALL_DATA'}, 'exportOptions': {}}
   i = 3
@@ -8310,6 +8300,15 @@ def doCreateVaultExport():
         print('ERROR: export format can be one of %s, got %s' % (', '.join(allowed_formats), export_format))
         sys.exit(3)
       i += 2
+    elif myarg in ['showconfidentialmodecontent']:
+      showConfidentialModeContent = getBoolean(sys.argv[i+1], myarg)
+      i += 2
+    elif myarg in ['region']:
+      allowed_regions = _getEnumValuesMinusUnspecified(v._rootDesc['schemas']['ExportOptions']['properties']['region']['enum'])
+      body['exportOptions']['region'] = sys.argv[i+1].upper()
+      if body['exportOptions']['region'] not in allowed_regions:
+        systemErrorExit(3, 'region should be one of %s, got %s' % (', '.join(allowed_regions), body['exportOptions']['region']))
+      i += 2
     elif myarg in ['includeaccessinfo']:
       body['exportOptions'].setdefault('driveOptions', {})['includeAccessInfo'] = getBoolean(sys.argv[i+1], myarg)
       i += 2
@@ -8333,6 +8332,8 @@ def doCreateVaultExport():
   if options_field:
     body['exportOptions'].pop('driveOptions', None)
     body['exportOptions'][options_field] = {'exportFormat': export_format}
+    if showConfidentialModeContent is not None:
+      body['exportOptions'][options_field]['showConfidentialModeContent'] = showConfidentialModeContent
   results = callGAPI(v.matters().exports(), 'create', matterId=matterId, body=body)
   print('Created export %s' % results['id'])
   print_json(None, results)
@@ -11442,12 +11443,12 @@ def doPrintShowAlertFeedback():
   for feedbac in feedback:
     print(feedbac)
 
-def _getValidAlertFeedbackTypes(ac):
-  return [aftype for aftype in ac._rootDesc['schemas']['AlertFeedback']['properties']['type']['enum'] if aftype != 'ALERT_FEEDBACK_TYPE_UNSPECIFIED']
+def _getEnumValuesMinusUnspecified(values):
+  return [a_type for a_type in values if '_UNSPECIFIED' not in a_type] 
 
 def doCreateAlertFeedback():
   _, ac = buildAlertCenterGAPIObject(_getValueFromOAuth('email'))
-  valid_types = _getValidAlertFeedbackTypes(ac)
+  valid_types = _getEnumValuesMinusUnspecified(ac._rootDesc['schemas']['AlertFeedback']['properties']['type']['enum'])
   alertId = sys.argv[3]
   body = {'type': sys.argv[4].upper()}
   if body['type'] not in valid_types:
@@ -12728,12 +12729,16 @@ def doPrintResourceCalendars():
   fieldsTitles = {}
   titles = []
   csvRows = []
+  query = None
   i = 3
   while i < len(sys.argv):
     myarg = sys.argv[i].lower()
     if myarg == 'todrive':
       todrive = True
       i += 1
+    elif myarg == 'query':
+      query = sys.argv[i+1]
+      i += 2
     elif myarg == 'allfields':
       fieldsList = []
       fieldsTitles = {}
@@ -12756,7 +12761,8 @@ def doPrintResourceCalendars():
   page_message = 'Got %%total_items%% Resource Calendars: %%first_item%% - %%last_item%%\n'
   resources = callGAPIpages(cd.resources().calendars(), 'list', 'items',
                             page_message=page_message, message_attribute='resourceId',
-                            customer=GC_Values[GC_CUSTOMER_ID], fields=fields)
+                            customer=GC_Values[GC_CUSTOMER_ID], query=query,
+                            fields=fields)
   for resource in resources:
     if 'featureInstances' in resource:
       resource['featureInstances'] = ','.join([a_feature['feature']['name'] for a_feature in resource.pop('featureInstances')])
