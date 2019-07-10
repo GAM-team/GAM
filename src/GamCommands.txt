@@ -1173,9 +1173,11 @@ gam print printjobs [todrive] [printer|printerid <PrinterID>]
 gam create vaultexport|export matter <MatterItem> [name <name>] corpus <drive|mail|groups|hangouts_chat>
 	(accounts <EmailAddressList>) | (orgunit|ou <OrgUnitPath>) | (teamdrives <TeamDriveList>) | (rooms <ChatRoomList>) | everyone
 	[scope <all_data|held_data|unprocessed_data>]
-	[terms <terms>] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>] [timezone <TimeZone>] [format mbox|pst]
-	[excludedrafts <Boolean>] [driveversiondate <Date>|<Time>] [includeteamdrives] [includerooms]
-	[includeaccessinfo <Boolean>]
+	[terms <terms>] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>] [timezone <TimeZone>]
+	[excludedrafts <Boolean>] [format mbox|pst] [showconfidentialmodecontent <Boolean>]
+	[includerooms]
+	[driveversiondate <Date>|<Time>] [includeteamdrives] [includeaccessinfo <Boolean>]
+	[region any|europe|us]
 gam delete export <MatterItem> <ExportItem>
 gam info export <MatterItem> <ExportItem>
 gam print exports [todrive] [matters <MatterItemList>]
