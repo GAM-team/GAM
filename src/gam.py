@@ -1997,7 +1997,7 @@ def getCourseAttribute(myarg, value, body, croom, function):
   elif myarg in ['owner', 'ownerid', 'teacher']:
     body['ownerId'] = normalizeEmailAddressOrUID(value)
   elif myarg in ['state', 'status']:
-    validStates = _getValidCourseStates(croom))
+    validStates = _getValidCourseStates(croom)
     body['courseState'] = _getValidatedState(value, validStates)
   else:
     systemErrorExit(2, '%s is not a valid argument to "gam %s course"' % (myarg, function))
