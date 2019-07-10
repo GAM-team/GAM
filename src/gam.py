@@ -8217,10 +8217,12 @@ VAULT_SEARCH_METHODS_MAP = {
   'ou': 'ORG_UNIT',
   'room': 'ROOM',
   'rooms': 'ROOM',
-  'teamdrive': 'TEAM_DRIVE',
-  'teamdrives': 'TEAM_DRIVE',
+  'shareddrive': 'SHARED_DRIVE',
+  'shareddrives': 'SHARED_DRIVE',
+  'teamdrive': 'SHARED_DRIVE',
+  'teamdrives': 'SHARED_DRIVE',
   }
-VAULT_SEARCH_METHODS_LIST = ['accounts', 'orgunit', 'teamdrives', 'rooms', 'everyone']
+VAULT_SEARCH_METHODS_LIST = ['accounts', 'orgunit', 'shareddrives', 'rooms', 'everyone']
 
 def doCreateVaultExport():
   v = buildGAPIObject('vault')
@@ -8257,8 +8259,8 @@ def doCreateVaultExport():
       elif searchMethod == 'ORG_UNIT':
         body['query']['orgUnitInfo'] = {'orgUnitId': getOrgUnitId(sys.argv[i+1])[1]}
         i += 2
-      elif searchMethod == 'TEAM_DRIVE':
-        body['query']['teamDriveInfo'] = {'teamDriveIds': sys.argv[i+1].split(',')}
+      elif searchMethod == 'SHARED_DRIVE':
+        body['query']['sharedDriveInfo'] = {'sharedDriveIds': sys.argv[i+1].split(',')}
         i += 2
       elif searchMethod == 'ROOM':
         body['query']['hangoutsChatInfo'] = {'roomId': sys.argv[i+1].split(',')}
@@ -8288,8 +8290,8 @@ def doCreateVaultExport():
     elif myarg in ['driveversiondate']:
       body['query'].setdefault('driveOptions', {})['versionDate'] = getDateZeroTimeOrFullTime(sys.argv[i+1])
       i += 2
-    elif myarg in ['includeteamdrives']:
-      body['query'].setdefault('driveOptions', {})['includeTeamDrives'] = getBoolean(sys.argv[i+1], myarg)
+    elif myarg in ['includeshareddrives', 'includeteamdrives']:
+      body['query'].setdefault('driveOptions', {})['includeSharedDrives'] = getBoolean(sys.argv[i+1], myarg)
       i += 2
     elif myarg in ['includerooms']:
       body['query']['hangoutsChatOptions'] = {'includeRooms': getBoolean(sys.argv[i+1], myarg)}
