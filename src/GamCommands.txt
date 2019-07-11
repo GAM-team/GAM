@@ -1092,7 +1092,7 @@ gam create resource <ResourceID> <Name> <ResourceAttributes>*
 gam update resource <ResourceID> <ResourceAttributes>*
 gam delete resource <ResourceID>
 gam info resource <ResourceID>
-gam print resources [todrive] [allfields] <ResourceFieldName>*
+gam print resources [todrive] [allfields] <ResourceFieldName>* [query <String>]
 
 gam create schema|schemas <SchemaName> <SchemaFieldDefinition>+
 gam update schema <SchemaName> <SchemaFieldDefinition>* (deletefield <FieldName>)*
@@ -1176,7 +1176,7 @@ gam create vaultexport|export matter <MatterItem> [name <name>] corpus <drive|ma
 	[terms <terms>] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>] [timezone <TimeZone>]
 	[excludedrafts <Boolean>] [format mbox|pst] [showconfidentialmodecontent <Boolean>]
 	[includerooms]
-	[driveversiondate <Date>|<Time>] [includeteamdrives] [includeaccessinfo <Boolean>]
+	[driveversiondate <Date>|<Time>] [includeshareddrives|includeteamdrives] [includeaccessinfo <Boolean>]
 	[region any|europe|us]
 gam delete export <MatterItem> <ExportItem>
 gam info export <MatterItem> <ExportItem>
