@@ -4691,11 +4691,25 @@ def deleteDriveFile(users):
       file_ids = [fileIds,]
     if not file_ids:
       print('No files to %s for %s' % (function, user))
-    i = 0
+    j = 0
+    batch_size = 10
+    del_me_count = len(file_ids)
+    dbatch = drive.new_batch_http_request(callback=drive_del_result)
+    method = getattr(drive.files(), function)
     for fileId in file_ids:
-      i += 1
-      print('%s %s for %s (%s/%s)' % (action, fileId, user, i, len(file_ids)))
-      callGAPI(drive.files(), function, fileId=fileId, supportsAllDrives=True)
+      j += 1
+      dbatch.add(method(fileId=fileId, supportsAllDrives=True))
+      if len(dbatch._order) == batch_size:
+        print('%s %s files...' % (action, len(dbatch._order)))
+        dbatch.execute()
+        dbatch = drive.new_batch_http_request(callback=drive_del_result)
+    if len(dbatch._order) > 0:
+      print('%s %s files...' % (action, len(dbatch._order)))
+      dbatch.execute()
+
+def drive_del_result(request_id, response, exception):
+  if exception:
+    print(exception)
 
 def printDriveFolderContents(feed, folderId, indent):
   for f_file in feed:
