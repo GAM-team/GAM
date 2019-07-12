@@ -109,8 +109,8 @@ google_auth_httplib2.AuthorizedHttp.request = _request_with_user_agent(
 def _createHttpObj(cache=None, override_min_tls=None, override_max_tls=None):
   tls_minimum_version = override_min_tls if override_min_tls else GC_Values[GC_TLS_MIN_VERSION]
   tls_maximum_version = override_max_tls if override_max_tls else GC_Values[GC_TLS_MAX_VERSION]
-  return httplib2.Http(tls_maximum_version=tls_maximum_version, tls_minimum_version=tls_minimum_version,
-                       cache=cache)
+  return httplib2.Http(ca_certs=GC_Values[GC_CA_FILE], tls_maximum_version=tls_maximum_version, tls_minimum_version=tls_minimum_version, 
+        cache=cache)
 
 def showUsage():
   doGAMVersion(checkForArgs=False)
