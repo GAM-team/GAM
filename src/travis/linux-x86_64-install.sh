@@ -3,7 +3,7 @@ if [ "$VMTYPE" == "test" ]; then
   export gam="$python gam.py"
   export gampath=$(readlink -e .)
 else
-  $python -OO -m PyInstaller --clean --debug -F --distpath=gam $GAMOS-gam.spec
+  $python -OO -m PyInstaller --clean -F --distpath=gam $GAMOS-gam.spec
   export gam="gam/gam"
   export gampath=$(readlink -e gam)
   export GAMVERSION=`$gam version simple`

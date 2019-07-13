@@ -1,5 +1,5 @@
 cd src
-$python -OO -m PyInstaller --clean --debug -F --distpath=gam $GAMOS-gam.spec
+$python -OO -m PyInstaller --clean -F --distpath=gam $GAMOS-gam.spec
 export gam="gam/gam"
 export gampath=gam
 $gam version extended
