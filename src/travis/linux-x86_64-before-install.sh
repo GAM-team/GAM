@@ -100,11 +100,11 @@ else
     fi
     $pip install git+https://github.com/JonathonReinhart/staticx.git@master
   fi
-  $pip install pyinstaller
+  $pip install --upgrade pyinstaller
   cd $whereibelong
 fi
 
 echo "Upgrading pip packages..."
 $pip freeze > upgrades.txt
 $pip install --upgrade -r upgrades.txt
-$pip install -r src/requirements.txt
+$pip install --upgrade -r src/requirements.txt
