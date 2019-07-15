@@ -7637,11 +7637,17 @@ def getCRMService(login_hint):
   client_id = '297408095146-fug707qsjv4ikron0hugpevbrjhkmsk7.apps.googleusercontent.com'
   client_secret = 'qM3dP8f_4qedwzWQE1VR4zzU'
   credentials = _run_oauth_flow(client_id, client_secret, scopes, 'online', login_hint)
-  http = google_auth_httplib2.AuthorizedHttp(credentials)
+  httpc = google_auth_httplib2.AuthorizedHttp(credentials)
   return (googleapiclient.discovery.build('cloudresourcemanager', 'v1',
-                                          http=http, cache_discovery=False,
+                                          http=httpc, cache_discovery=False,
                                           discoveryServiceUrl=googleapiclient.discovery.V2_DISCOVERY_URI),
-          http)
+          httpc)
+
+# Ugh, v2 doesn't contain all the operations of v1 so we need to use both here.
+def getCRM2Service(httpc):
+  return googleapiclient.discovery.build('cloudresourcemanager', 'v2',
+                                         http=httpc, cache_discovery=False,
+                                         discoveryServiceUrl=googleapiclient.discovery.V2_DISCOVERY_URI)
 
 def getGAMProjectFile(filepath):
   file_url = GAM_PROJECT_FILEPATH+filepath
@@ -7825,11 +7831,29 @@ PROJECTID_FORMAT_REQUIRED = '[a-z][a-z0-9-]{4,28}[a-z0-9]'
 def _getLoginHintProjectId(createCmd):
   login_hint = None
   projectId = None
-  try:
-    login_hint = sys.argv[3]
-    projectId = sys.argv[4]
-  except IndexError:
-    pass
+  parent = None
+  if len(sys.argv) >= 4 and sys.argv[3].lower() not in ['admin', 'project', 'parent']:
+    # legacy "gam create/use project <email> <project-id>
+    try:
+      login_hint = sys.argv[3]
+      projectId = sys.argv[4]
+    except IndexError:
+      pass
+  else:
+    i = 3
+    while i < len(sys.argv):
+      myarg = sys.argv[i].lower().replace('_', '')
+      if myarg == 'admin':
+        login_hint = sys.argv[i+1]
+        i +=2
+      elif myarg == 'project':
+        projectId = sys.argv[i+1]
+        i +=2
+      elif myarg == 'parent':
+        parent = sys.argv[i+1]
+        i +=2
+      else:
+        systemErrorExit(3, "%s is not a valid argument, expected admin, project or parent" % myarg)
   login_hint = _getValidateLoginHint(login_hint)
   if projectId:
     if not PROJECTID_PATTERN.match(projectId):
@@ -7843,6 +7867,14 @@ def _getLoginHintProjectId(createCmd):
     if not PROJECTID_PATTERN.match(projectId):
       systemErrorExit(2, 'Invalid Project ID: {0}, expected <{1}>'.format(projectId, PROJECTID_FORMAT_REQUIRED))
   crm, httpObj = getCRMService(login_hint)
+  crm2 = getCRM2Service(httpObj)
+  if parent and not parent.startswith('organizations/') and not parent.startswith('folders/'):
+    parent = convertGCPFolderNameToID(parent, crm2)
+  if parent:
+    parent_type, parent_id = parent.split('/')
+    if parent_type[-1] == 's':
+      parent_type = parent_type[:-1] # folders > folder, organizations > organization
+    parent = {'type': parent_type, 'id': parent_id}
   projects = _getProjects(crm, 'id:{0}'.format(projectId))
   if not createCmd:
     if not projects:
@@ -7852,9 +7884,24 @@ def _getLoginHintProjectId(createCmd):
   else:
     if projects:
       systemErrorExit(2, 'User: {0}, Project ID: {1}, Duplicate'.format(login_hint, projectId))
-  return (crm, httpObj, login_hint, projectId)
+  return (crm, httpObj, login_hint, projectId, parent)
 
 PROJECTID_FILTER_REQUIRED = 'gam|<ProjectID>|(filter <String>)'
+
+def convertGCPFolderNameToID(parent, crm2):
+  # crm2.folders() is broken requiring pageToken, etc in body, not URL.
+  # for now just use callGAPI and if user has that many folders they'll
+  # just need to be specific.
+  body = {'pageSize': 1000, 'query': 'displayName="%s"' % parent}
+  folders = callGAPI(crm2.folders(), 'search', body=body)
+  if not 'folders' in folders or len(folders['folders']) == 0:
+    systemErrorExit(1, 'ERROR: No folder found matching displayName=%s' % parent)
+  elif len(folders['folders']) > 1:
+    print('Multiple matches:')
+    for folder in folders['folders']:
+      print('  Name: %s  ID: %s' % (folder['name'], folder['displayName']))
+    systemErrorExit(2, 'ERROR: Multiple matching folders, please specify one.')
+  return folders['folders'][0]['name']
 
 def _getLoginHintProjects(printShowCmd):
   login_hint = None
@@ -7899,9 +7946,11 @@ def _checkForExistingProjectFiles():
 
 def doCreateProject():
   _checkForExistingProjectFiles()
-  crm, httpObj, login_hint, projectId = _getLoginHintProjectId(True)
+  crm, httpObj, login_hint, projectId, parent = _getLoginHintProjectId(True)
   login_domain = login_hint[login_hint.find('@')+1:]
   body = {'projectId': projectId, 'name': 'GAM Project'}
+  if parent:
+    body['parent'] = parent
   while True:
     create_again = False
     print('Creating project "%s"...' % body['name'])
