@@ -7895,9 +7895,9 @@ def convertGCPFolderNameToID(parent, crm2):
                           body={'pageSize': 1000, 'query': 'displayName="%s"' % parent})
   if not folders:
     systemErrorExit(1, 'ERROR: No folder found matching displayName=%s' % parent)
-  if len(folders['folders']) > 1:
+  if len(folders) > 1:
     print('Multiple matches:')
-    for folder in folders['folders']:
+    for folder in folders:
       print('  Name: %s  ID: %s' % (folder['name'], folder['displayName']))
     systemErrorExit(2, 'ERROR: Multiple matching folders, please specify one.')
   return folders['folders'][0]['name']
