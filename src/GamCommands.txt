@@ -815,7 +815,7 @@ Each user (~primaryEmail, e.g. foo@bar.com) would have their work address update
 gam create project [<EmailAddress>] [<ProjectID>]
 gam create project [admin <EmailAddress>] [project <ProjectID>] [parent <String>]
 gam use project [<EmailAddress>] [<ProjectID>]
-gam use project [admin <EmailAddress>] [project <ProjectID>] [parent <String>]
+gam use project [admin <EmailAddress>] [project <ProjectID>]
 gam update project [<EmailAddress>] [gam|<ProjectID>|(filter <String>)]
 gam delete project [<EmailAddress>] [gam|<ProjectID>|(filter <String>)]
 gam show projects [<EmailAddress>] [all|gam|<ProjectID>|(filter <String>)]
