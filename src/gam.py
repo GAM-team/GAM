@@ -7900,7 +7900,7 @@ def convertGCPFolderNameToID(parent, crm2):
     for folder in folders:
       print('  Name: %s  ID: %s' % (folder['name'], folder['displayName']))
     systemErrorExit(2, 'ERROR: Multiple matching folders, please specify one.')
-  return folders['folders'][0]['name']
+  return folders[0]['name']
 
 def _getLoginHintProjects(printShowCmd):
   login_hint = None
