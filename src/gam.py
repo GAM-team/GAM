@@ -109,8 +109,8 @@ google_auth_httplib2.AuthorizedHttp.request = _request_with_user_agent(
 def _createHttpObj(cache=None, override_min_tls=None, override_max_tls=None):
   tls_minimum_version = override_min_tls if override_min_tls else GC_Values[GC_TLS_MIN_VERSION]
   tls_maximum_version = override_max_tls if override_max_tls else GC_Values[GC_TLS_MAX_VERSION]
-  return httplib2.Http(ca_certs=GC_Values[GC_CA_FILE], tls_maximum_version=tls_maximum_version, tls_minimum_version=tls_minimum_version, 
-        cache=cache)
+  return httplib2.Http(ca_certs=GC_Values[GC_CA_FILE], tls_maximum_version=tls_maximum_version, tls_minimum_version=tls_minimum_version,
+                       cache=cache)
 
 def showUsage():
   doGAMVersion(checkForArgs=False)
@@ -4693,7 +4693,6 @@ def deleteDriveFile(users):
       print('No files to %s for %s' % (function, user))
     j = 0
     batch_size = 10
-    del_me_count = len(file_ids)
     dbatch = drive.new_batch_http_request(callback=drive_del_result)
     method = getattr(drive.files(), function)
     for fileId in file_ids:
@@ -7845,15 +7844,15 @@ def _getLoginHintProjectId(createCmd):
       myarg = sys.argv[i].lower().replace('_', '')
       if myarg == 'admin':
         login_hint = sys.argv[i+1]
-        i +=2
+        i += 2
       elif myarg == 'project':
         projectId = sys.argv[i+1]
-        i +=2
-      elif myarg == 'parent':
+        i += 2
+      elif createCmd and myarg == 'parent':
         parent = sys.argv[i+1]
-        i +=2
+        i += 2
       else:
-        systemErrorExit(3, "%s is not a valid argument, expected admin, project or parent" % myarg)
+        systemErrorExit(3, '%s is not a valid argument for "gam %s project", expected one of: admin, project%s' % (myarg, ['use', 'create'][createCmd], ['', ' or parent'][createCmd]))
   login_hint = _getValidateLoginHint(login_hint)
   if projectId:
     if not PROJECTID_PATTERN.match(projectId):
@@ -7892,13 +7891,13 @@ def convertGCPFolderNameToID(parent, crm2):
   # crm2.folders() is broken requiring pageToken, etc in body, not URL.
   # for now just use callGAPI and if user has that many folders they'll
   # just need to be specific.
-  body = {'pageSize': 1000, 'query': 'displayName="%s"' % parent}
-  folders = callGAPI(crm2.folders(), 'search', body=body)
-  if not 'folders' in folders or len(folders['folders']) == 0:
+  folders = callGAPIitems(crm2.folders(), 'search', items='folders',
+                          body={'pageSize': 1000, 'query': 'displayName="%s"' % parent})
+  if not folders:
     systemErrorExit(1, 'ERROR: No folder found matching displayName=%s' % parent)
-  elif len(folders['folders']) > 1:
+  if len(folders) > 1:
     print('Multiple matches:')
-    for folder in folders['folders']:
+    for folder in folders:
       print('  Name: %s  ID: %s' % (folder['name'], folder['displayName']))
     systemErrorExit(2, 'ERROR: Multiple matching folders, please specify one.')
   return folders['folders'][0]['name']
@@ -8023,7 +8022,7 @@ and accept the Terms of Service (ToS). As soon as you've accepted the ToS popup,
 
 def doUseProject():
   _checkForExistingProjectFiles()
-  _, httpObj, _, projectId = _getLoginHintProjectId(False)
+  _, httpObj, _, projectId, _ = _getLoginHintProjectId(False)
   _createClientSecretsOauth2service(httpObj, projectId)
 
 def doUpdateProjects():
@@ -8064,7 +8063,7 @@ def doPrintShowProjects(csvFormat):
       todrive = True
       i += 1
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam %s projects"' % (myarg, ['show', 'print'][csvFormat]))
+      systemErrorExit(3, '%s is not a valid argument for "gam %s projects"' % (myarg, ['show', 'print'][csvFormat]))
   if not csvFormat:
     count = len(projects)
     print('User: {0}, Show {1} Projects'.format(login_hint, count))
