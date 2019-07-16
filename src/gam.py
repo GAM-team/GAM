@@ -7893,9 +7893,10 @@ def convertGCPFolderNameToID(parent, crm2):
   # just need to be specific.
   body = {'pageSize': 1000, 'query': 'displayName="%s"' % parent}
   folders = callGAPI(crm2.folders(), 'search', body=body)
-  if not 'folders' in folders or len(folders['folders']) == 0:
+  folders = folders.get('folders', [])
+  if not folders:
     systemErrorExit(1, 'ERROR: No folder found matching displayName=%s' % parent)
-  elif len(folders['folders']) > 1:
+  if len(folders['folders']) > 1:
     print('Multiple matches:')
     for folder in folders['folders']:
       print('  Name: %s  ID: %s' % (folder['name'], folder['displayName']))
