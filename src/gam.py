@@ -7891,9 +7891,8 @@ def convertGCPFolderNameToID(parent, crm2):
   # crm2.folders() is broken requiring pageToken, etc in body, not URL.
   # for now just use callGAPI and if user has that many folders they'll
   # just need to be specific.
-  body = {'pageSize': 1000, 'query': 'displayName="%s"' % parent}
-  folders = callGAPI(crm2.folders(), 'search', body=body)
-  folders = folders.get('folders', [])
+  folders = callGAPIitems(crm2.folders(), 'search', items='folders',
+                          body={'pageSize': 1000, 'query': 'displayName="%s"' % parent})
   if not folders:
     systemErrorExit(1, 'ERROR: No folder found matching displayName=%s' % parent)
   if len(folders['folders']) > 1:
