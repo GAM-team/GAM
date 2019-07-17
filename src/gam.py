@@ -7866,8 +7866,8 @@ def _getLoginHintProjectId(createCmd):
     if not PROJECTID_PATTERN.match(projectId):
       systemErrorExit(2, 'Invalid Project ID: {0}, expected <{1}>'.format(projectId, PROJECTID_FORMAT_REQUIRED))
   crm, httpObj = getCRMService(login_hint)
-  crm2 = getCRM2Service(httpObj)
   if parent and not parent.startswith('organizations/') and not parent.startswith('folders/'):
+    crm2 = getCRM2Service(httpObj)
     parent = convertGCPFolderNameToID(parent, crm2)
   if parent:
     parent_type, parent_id = parent.split('/')
