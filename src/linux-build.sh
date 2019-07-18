@@ -4,7 +4,7 @@ rm -rf dist
 rm -rf gam-$1-linux-$(arch).tar.xz
 
 export LD_LIBRARY_PATH=/usr/local/lib
-pyinstaller --clean -F --distpath=gam linux-gam.spec
+pyinstaller --clean --noupx --strip -F --distpath=gam linux-gam.spec
 cp LICENSE gam
 cp whatsnew.txt gam
 cp GamCommands.txt gam

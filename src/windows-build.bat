@@ -10,7 +10,7 @@ del /q /f *.wixpdb
 
 set WIXVERSION=3.11
 
-c:\python37-32\scripts\pyinstaller --clean -F --distpath=gam windows-gam.spec
+c:\python37-32\scripts\pyinstaller --clean --noupx -F --distpath=gam windows-gam.spec
 xcopy LICENSE gam\
 xcopy whatsnew.txt gam\
 xcopy gam-setup.bat gam\
@@ -18,7 +18,7 @@ xcopy GamCommands.txt gam\
 del gam\w9xpopen.exe
 "%ProgramFiles%\7-Zip\7z.exe" a -tzip gam-%1-windows.zip gam\ -xr!.svn
 
-c:\python37-64\scripts\pyinstaller --clean -F --distpath=gam-64 windows-gam.spec
+c:\python37-64\scripts\pyinstaller --clean --noupx -F --distpath=gam-64 windows-gam.spec
 xcopy LICENSE gam-64\
 xcopy whatsnew.txt gam-64\
 xcopy gam-setup.bat gam-64\
