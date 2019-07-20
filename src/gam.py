@@ -7799,7 +7799,7 @@ def _createClientSecretsOauth2service(httpObj, projectId):
 
 VALIDEMAIL_PATTERN = re.compile(r'^[^@]+@[^@]+\.[^@]+$')
 
-def _getValidateLoginHint(login_hint):
+def _getValidateLoginHint(login_hint=None):
   while True:
     if not login_hint:
       login_hint = input('\nWhat is your G Suite admin email address? ').strip()
@@ -7887,7 +7887,6 @@ def _getLoginHintProjectId(createCmd):
   return (crm, httpObj, login_hint, projectId, parent)
 
 PROJECTID_FILTER_REQUIRED = 'gam|<ProjectID>|(filter <String>)'
-
 def convertGCPFolderNameToID(parent, crm2):
   # crm2.folders() is broken requiring pageToken, etc in body, not URL.
   # for now just use callGAPI and if user has that many folders they'll
@@ -7902,6 +7901,12 @@ def convertGCPFolderNameToID(parent, crm2):
       print('  Name: %s  ID: %s' % (folder['name'], folder['displayName']))
     systemErrorExit(2, 'ERROR: Multiple matching folders, please specify one.')
   return folders[0]['name']
+
+def createGCPFolder():
+  login_hint = _getValidateLoginHint()
+  _, httpObj = getCRMService(login_hint)
+  crm2 = getCRM2Service(httpObj)
+  callGAPI(crm2.folders(), 'create', body={'name': sys.argv[3], 'displayName': sys.argv[3]})
 
 def _getLoginHintProjects(printShowCmd):
   login_hint = None
@@ -8417,6 +8422,77 @@ def doGetVaultExportInfo():
   export = callGAPI(v.matters().exports(), 'get', matterId=matterId, exportId=exportId)
   print_json(None, export)
 
+def _getCloudStorageObject(s, bucket, object_, local_file=None, expectedMd5=None):
+  if not local_file:
+    local_file = object_
+  if os.path.exists(local_file):
+    sys.stdout.write(' File already exists. ')
+    sys.stdout.flush()
+    if expectedMd5:
+      sys.stdout.write('Verifying %s hash...' % expectedMd5)
+      sys.stdout.flush()
+      if md5MatchesFile(local_file, expectedMd5):
+        print('VERIFIED')
+        return
+      else:
+        print('not verified. Downloading again and over-writing...')
+    else:
+      return # nothing to verify, just assume we're good.
+  print('saving to %s' % local_file)
+  request = s.objects().get_media(bucket=bucket, object=object_)
+  file_path = os.path.dirname(local_file)
+  if not os.path.exists(file_path):
+    os.makedirs(file_path)
+  f = openFile(local_file, 'wb')
+  downloader = googleapiclient.http.MediaIoBaseDownload(f, request)
+  done = False
+  while not done:
+    status, done = downloader.next_chunk()
+    sys.stdout.write(' Downloaded: {0:>7.2%}\r'.format(status.progress()))
+    sys.stdout.flush()
+  sys.stdout.write('\n Download complete. Flushing to disk...\n')
+  # Necessary to make sure file is flushed by both Python and OS
+  # https://stackoverflow.com/a/13762137/1503886
+  f.flush()
+  os.fsync(f.fileno())
+  closeFile(f)
+  if expectedMd5:
+    f = openFile(local_file, 'rb')
+    sys.stdout.write(' Verifying file hash is %s...' % expectedMd5)
+    sys.stdout.flush()
+    if md5MatchesFile(local_file, expectedMd5):
+      print('VERIFIED')
+    else:
+      print('ERROR: actual hash was %s. Exiting on corrupt file.' % actual_hash)
+      sys.exit(6)
+    closeFile(f)
+
+def md5MatchesFile(local_file, expected_md5):
+  f = openFile(local_file, 'rb')
+  hash_md5 = hashlib.md5()
+  for chunk in iter(lambda: f.read(4096), b""):
+    hash_md5.update(chunk)
+  actual_hash = hash_md5.hexdigest()
+  return actual_hash == expected_md5
+
+def doDownloadCloudStorageBucket():
+  bucket_url = sys.argv[3]
+  bucket_regex = r'(takeout-export-[a-f,0-9,-]*)'
+  bucket_match = re.search(bucket_regex, bucket_url)
+  if bucket_match:
+    bucket = bucket_match.group(1)
+  else:
+    systemErrorExit(5, 'Could not find a takeout-export-* bucket in that URL')
+  s = buildGAPIObject('storage')
+  page_message = 'Got %%total_items%% files...'
+  objects = callGAPIpages(s.objects(), 'list', 'items', page_message=page_message, bucket=bucket, projection='noAcl', fields='nextPageToken,items(name,id,md5Hash)')
+  i = 1
+  for object_ in objects:
+    print("%s/%s" % (i, len(objects)))
+    expectedMd5 = base64.b64decode(object_['md5Hash']).hex()
+    _getCloudStorageObject(s, bucket, object_['name'], expectedMd5=expectedMd5)
+    i += 1
+
 def doDownloadVaultExport():
   verifyFiles = True
   extractFiles = True
@@ -8461,21 +8537,15 @@ def doDownloadVaultExport():
     f.flush()
     os.fsync(f.fileno())
     closeFile(f)
-    f = openFile(filename, 'rb')
     if verifyFiles:
       expected_hash = s_file['md5Hash']
       sys.stdout.write(' Verifying file hash is %s...' % expected_hash)
       sys.stdout.flush()
-      hash_md5 = hashlib.md5()
-      for chunk in iter(lambda: f.read(4096), b""):
-        hash_md5.update(chunk)
-      actual_hash = hash_md5.hexdigest()
-      if actual_hash == expected_hash:
+      if md5MatchesFile(filename, expected_hash):
         print('VERIFIED')
       else:
         print('ERROR: actual hash was %s. Exiting on corrupt file.' % actual_hash)
         sys.exit(6)
-    closeFile(f)
     if extractFiles and re.search(r'\.zip$', filename):
       extract_nested_zip(filename, targetFolder)
 
@@ -13967,6 +14037,8 @@ def ProcessGAMCommand(args):
         doCreateFeature()
       elif argument in ['alertfeedback']:
         doCreateAlertFeedback()
+      elif argument in ['gcpfolder']:
+        createGCPFolder()
       else:
         systemErrorExit(2, '%s is not a valid argument for "gam create"' % argument)
       sys.exit(0)
@@ -14324,6 +14396,8 @@ def ProcessGAMCommand(args):
       argument = sys.argv[2].lower()
       if argument in ['export', 'vaultexport']:
         doDownloadVaultExport()
+      elif argument in ['storagebucket']:
+        doDownloadCloudStorageBucket()
       else:
         systemErrorExit(2, '%s is not a valid argument for "gam download"' % argument)
       sys.exit(0)
