@@ -742,6 +742,7 @@ def doGAMCheckForUpdates(forceCheck=False):
     check_url = GAM_LATEST_RELEASE # latest full release
   headers = {'Accept': 'application/vnd.github.v3.text+json'}
   simplehttp = _createHttpObj()
+  simplehttp.timeout = 10
   try:
     (_, c) = simplehttp.request(check_url, 'GET', headers=headers)
     try:
@@ -774,7 +775,7 @@ def doGAMCheckForUpdates(forceCheck=False):
       sys.exit(0)
     writeFile(GM_Globals[GM_LAST_UPDATE_CHECK_TXT], str(now_time), continueOnError=True, displayError=forceCheck)
     return
-  except (httplib2.HttpLib2Error, httplib2.ServerNotFoundError, RuntimeError):
+  except (httplib2.HttpLib2Error, httplib2.ServerNotFoundError, RuntimeError, socket.timeout):
     return
 
 def doGAMVersion(checkForArgs=True):
