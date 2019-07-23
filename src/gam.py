@@ -8965,12 +8965,12 @@ def doCreateGroup():
   if gs and not GroupIsAbuseOrPostmaster(body['email']):
     if gs_get_before_update:
       current_settings = callGAPI(gs.groups(), 'get',
-                                  retry_reasons=['serviceLimit'],
+                                  retry_reasons=['serviceLimit', 'notFound'],
                                   groupUniqueId=body['email'], fields='*')
       if current_settings is not None:
         gs_body = dict(list(current_settings.items()) + list(gs_body.items()))
     if gs_body:
-      callGAPI(gs.groups(), 'update', retry_reasons=['serviceLimit'], groupUniqueId=body['email'], body=gs_body)
+      callGAPI(gs.groups(), 'update', retry_reasons=['serviceLimit', 'notFound'], groupUniqueId=body['email'], body=gs_body)
 
 def doCreateAlias():
   cd = buildGAPIObject('directory')
