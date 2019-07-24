@@ -9694,6 +9694,7 @@ def doUpdateMobile():
   cd = buildGAPIObject('directory')
   resourceIds = sys.argv[3]
   only_users = None
+  doit = False
   if resourceIds[:6] == 'query:':
     query = resourceIds[6:]
     fields='nextPageToken,mobiledevices(resourceId,email)'
@@ -9716,17 +9717,27 @@ def doUpdateMobile():
     elif myarg == 'ifusers':
       only_users = getUsersToModify(entity_type=sys.argv[i+1].lower(), entity=sys.argv[i+2])
       i += 3
+    elif myarg == 'doit':
+      doit = True
     else:
       systemErrorExit(2, '%s is not a valid argument for "gam update mobile"' % sys.argv[i])
   if body:
-    print('Updating %s devices' % len(devices))
+    if len(devices) == 1:
+      doit = True
+    if doit:
+      print('Updating %s devices' % len(devices))
+      describe_as = 'Performing'
+    else:
+      print('Showing changes that would be made, not actually making changes because doit argument not specified')
+      describe_as = 'Would perform'
     for device in devices:
       device_user = device.get('email', [''])[0]
       if only_users and device_user not in only_users:
         print('Skipping device for user %s that did not match if_users argument' % device_user)
       else:
-        print('Performing %s on user %s device %s' % (body['action'], device_user, device['resourceId']))
-        callGAPI(cd.mobiledevices(), 'action', resourceId=device['resourceId'], body=body, customerId=GC_Values[GC_CUSTOMER_ID])
+        print('%s %s on user %s device %s' % (describe_as, body['action'], device_user, device['resourceId'])
+        if doit:
+          callGAPI(cd.mobiledevices(), 'action', resourceId=device['resourceId'], body=body, customerId=GC_Values[GC_CUSTOMER_ID])
 
 def doDeleteMobile():
   cd = buildGAPIObject('directory')
