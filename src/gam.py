@@ -9719,6 +9719,7 @@ def doUpdateMobile():
       i += 3
     elif myarg == 'doit':
       doit = True
+      i += 1
     else:
       systemErrorExit(2, '%s is not a valid argument for "gam update mobile"' % sys.argv[i])
   if body:
