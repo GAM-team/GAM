@@ -9728,14 +9728,14 @@ def doUpdateMobile():
       print('Updating %s devices' % len(devices))
       describe_as = 'Performing'
     else:
-      print('Showing changes that would be made, not actually making changes because doit argument not specified')
+      print('Showing %s changes that would be made, not actually making changes because doit argument not specified' % len(devices))
       describe_as = 'Would perform'
     for device in devices:
       device_user = device.get('email', [''])[0]
       if only_users and device_user not in only_users:
         print('Skipping device for user %s that did not match if_users argument' % device_user)
       else:
-        print('%s %s on user %s device %s' % (describe_as, body['action'], device_user, device['resourceId'])
+        print('%s %s on user %s device %s' % (describe_as, body['action'], device_user, device['resourceId']))
         if doit:
           callGAPI(cd.mobiledevices(), 'action', resourceId=device['resourceId'], body=body, customerId=GC_Values[GC_CUSTOMER_ID])
 
