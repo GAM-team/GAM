@@ -9692,11 +9692,18 @@ def doUpdateCros():
 
 def doUpdateMobile():
   cd = buildGAPIObject('directory')
-  resourceId = sys.argv[3]
+  resourceIds = sys.argv[3]
+  only_users = None
+  if resourceIds[:6] == 'query:':
+    query = resourceIds[6:]
+    fields='nextPageToken,mobiledevices(resourceId,email)'
+    devices = callGAPIpages(cd.mobiledevices(), 'list', customerId=GC_Values[GC_CUSTOMER_ID], items='mobiledevices', query=query, fields=fields)
+  else:
+    devices = [{'resourceId': resourceIds, 'email': ['not set']}]
   i = 4
   body = {}
   while i < len(sys.argv):
-    myarg = sys.argv[i].lower()
+    myarg = sys.argv[i].lower().replace('_', '')
     if myarg == 'action':
       body['action'] = sys.argv[i+1].lower()
       if body['action'] == 'wipe':
@@ -9706,10 +9713,20 @@ def doUpdateMobile():
       if body['action'] not in ['admin_remote_wipe', 'admin_account_wipe', 'approve', 'block', 'cancel_remote_wipe_then_activate', 'cancel_remote_wipe_then_block']:
         systemErrorExit(2, 'action must be one of wipe, wipeaccount, approve, block, cancel_remote_wipe_then_activate, cancel_remote_wipe_then_block; got %s' % body['action'])
       i += 2
+    elif myarg == 'ifusers':
+      only_users = getUsersToModify(entity_type=sys.argv[i+1].lower(), entity=sys.argv[i+2])
+      i += 3
     else:
       systemErrorExit(2, '%s is not a valid argument for "gam update mobile"' % sys.argv[i])
   if body:
-    callGAPI(cd.mobiledevices(), 'action', resourceId=resourceId, body=body, customerId=GC_Values[GC_CUSTOMER_ID])
+    print('Updating %s devices' % len(devices))
+    for device in devices:
+      device_user = device.get('email', [''])[0]
+      if only_users and device_user not in only_users:
+        print('Skipping device for user %s that did not match if_users argument' % device_user)
+      else:
+        print('Performing %s on user %s device %s' % (body['action'], device_user, device['resourceId']))
+        callGAPI(cd.mobiledevices(), 'action', resourceId=device['resourceId'], body=body, customerId=GC_Values[GC_CUSTOMER_ID])
 
 def doDeleteMobile():
   cd = buildGAPIObject('directory')
