@@ -10,7 +10,7 @@ else
   echo "RUNNING: apt update..."
   sudo apt-get -qq --yes update > /dev/null
   echo "RUNNING: apt dist-upgrade..."
-  sudo apt-get -qq --yes dist-upgrade > /dev/null
+#  sudo apt-get -qq --yes dist-upgrade > /dev/null
   echo "Installing build tools..."
   sudo apt-get -qq --yes install build-essential
 
@@ -101,7 +101,6 @@ else
     fi
     $pip install git+https://github.com/JonathonReinhart/staticx.git@master
   fi
-  $pip install --upgrade pyinstaller
   cd $whereibelong
 fi
 
@@ -109,3 +108,4 @@ echo "Upgrading pip packages..."
 $pip freeze > upgrades.txt
 $pip install --upgrade -r upgrades.txt
 $pip install --upgrade -r src/requirements.txt
+$pip install --upgrade pyinstaller
