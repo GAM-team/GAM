@@ -47,7 +47,8 @@ else
   cd ~/pybuild
   # Compile latest Python
   if [ ! -d Python-$BUILD_PYTHON_VERSION ]; then
-    wget https://www.python.org/ftp/python/$BUILD_PYTHON_VERSION/Python-$BUILD_PYTHON_VERSION.tar.xz
+    echo "Downloading Python $BUILD_PYTHON_VERSION..."
+    curl -O https://www.python.org/ftp/python/$BUILD_PYTHON_VERSION/Python-$BUILD_PYTHON_VERSION.tar.xz
     echo "Extracting Python..."
     tar xf Python-$BUILD_PYTHON_VERSION.tar.xz
   fi
