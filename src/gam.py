@@ -9714,7 +9714,7 @@ def doUpdateMobile():
       if body['action'] not in ['admin_remote_wipe', 'admin_account_wipe', 'approve', 'block', 'cancel_remote_wipe_then_activate', 'cancel_remote_wipe_then_block']:
         systemErrorExit(2, 'action must be one of wipe, wipeaccount, approve, block, cancel_remote_wipe_then_activate, cancel_remote_wipe_then_block; got %s' % body['action'])
       i += 2
-    elif myarg == 'matchusers':
+    elif myarg in ['ifusers', 'matchusers']:
       match_users = getUsersToModify(entity_type=sys.argv[i+1].lower(), entity=sys.argv[i+2])
       i += 3
     elif myarg == 'doit':

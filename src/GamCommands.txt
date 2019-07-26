@@ -1050,7 +1050,7 @@ The listlimit <Number> argument limits the number of recent users, time ranges a
 The start <Date> and end <Date> arguments filter the time ranges.
 Delimiter defaults to comma.
 
-gam update mobile <MobileID>|query:<QueryMobile> action <MobileAction> [doit] [match_users <UserTypeEntity>]
+gam update mobile <MobileID>|query:<QueryMobile> action <MobileAction> [doit] [if_users|match_users <UserTypeEntity>]
 gam delete mobile <MobileID>
 gam info mobile <MobileID>
 gam print mobile [todrive] [(query <QueryMobile>)|(queries <QueryMobileList>)] [basic|full] [orderby <MobileOrderByFieldName> [ascending|descending]]
