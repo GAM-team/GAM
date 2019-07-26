@@ -24,4 +24,20 @@ pip install --upgrade pip
 pip freeze > upgrades.txt
 pip install --upgrade -r upgrades.txt
 pip install --upgrade -r src/requirements.txt
-pip install --upgrade pyinstaller
+
+#pip install --upgrade pyinstaller
+# Install PyInstaller from source and build bootloader
+# to try and avoid getting flagged as malware since
+# lots of malware uses PyInstaller default bootloader
+# https://stackoverflow.com/questions/53584395/how-to-recompile-the-bootloader-of-pyinstaller
+echo "Downloading PyInstaller..."
+wget --quiet https://github.com/pyinstaller/pyinstaller/releases/download/v$PYINSTALLER_VERSION/PyInstaller-$PYINSTALLER_VERSION.tar.gz
+tar xf PyInstaller-$PYINSTALLER_VERSION.tar.gz
+cd PyInstaller-$PYINSTALLER_VERSION/bootloader
+echo "bootloader before:"
+md5sum ../PyInstaller/bootloader/Windows-32bit/
+python ./waf all
+echo "bootloader after:"
+md5sum ../PyInstaller/bootloader/Windows-32bit/
+cd ..
+python setup.py install
