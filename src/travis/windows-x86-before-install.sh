@@ -36,9 +36,9 @@ tar xf PyInstaller-$PYINSTALLER_VERSION.tar.gz
 cd PyInstaller-$PYINSTALLER_VERSION/bootloader
 echo "bootloader before:"
 md5sum ../PyInstaller/bootloader/Windows-32bit/*
-\python37\python ./waf all
+/c/python37/python ./waf all
 echo "bootloader after:"
 md5sum ../PyInstaller/bootloader/Windows-32bit/*
 echo "PATH: $PATH"
 cd ..
-\python37\python setup.py install
+/c/python37/python setup.py install
