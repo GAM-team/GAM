@@ -35,9 +35,10 @@ wget --quiet https://github.com/pyinstaller/pyinstaller/releases/download/v$PYIN
 tar xf PyInstaller-$PYINSTALLER_VERSION.tar.gz
 cd PyInstaller-$PYINSTALLER_VERSION/bootloader
 echo "bootloader before:"
-md5sum ../PyInstaller/bootloader/Windows-32bit/
-python3 ./waf all
+md5sum ../PyInstaller/bootloader/Windows-32bit/*
+\python37\python ./waf all
 echo "bootloader after:"
-md5sum ../PyInstaller/bootloader/Windows-32bit/
+md5sum ../PyInstaller/bootloader/Windows-32bit/*
+echo "PATH: $PATH"
 cd ..
-python3 setup.py install
+\python37\python setup.py install

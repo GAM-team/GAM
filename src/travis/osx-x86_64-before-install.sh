@@ -10,6 +10,7 @@ if [ ! -f python-$BUILD_PYTHON_VERSION-macosx10.9.pkg ]; then
 fi
 sudo installer -pkg python-$BUILD_PYTHON_VERSION-macosx10.9.pkg -target /
 export python=python3
+export pip=pip3
 
 # Compile latest OpenSSL
 #if [ ! -d openssl-$BUILD_OPENSSL_VERSION ]; then
