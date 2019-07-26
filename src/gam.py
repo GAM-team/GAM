@@ -9693,7 +9693,7 @@ def doUpdateCros():
 def doUpdateMobile():
   cd = buildGAPIObject('directory')
   resourceIds = sys.argv[3]
-  only_users = None
+  match_users = None
   doit = False
   if resourceIds[:6] == 'query:':
     query = resourceIds[6:]
@@ -9714,8 +9714,8 @@ def doUpdateMobile():
       if body['action'] not in ['admin_remote_wipe', 'admin_account_wipe', 'approve', 'block', 'cancel_remote_wipe_then_activate', 'cancel_remote_wipe_then_block']:
         systemErrorExit(2, 'action must be one of wipe, wipeaccount, approve, block, cancel_remote_wipe_then_activate, cancel_remote_wipe_then_block; got %s' % body['action'])
       i += 2
-    elif myarg == 'ifusers':
-      only_users = getUsersToModify(entity_type=sys.argv[i+1].lower(), entity=sys.argv[i+2])
+    elif myarg == 'matchusers':
+      match_users = getUsersToModify(entity_type=sys.argv[i+1].lower(), entity=sys.argv[i+2])
       i += 3
     elif myarg == 'doit':
       doit = True
@@ -9733,8 +9733,8 @@ def doUpdateMobile():
       describe_as = 'Would perform'
     for device in devices:
       device_user = device.get('email', [''])[0]
-      if only_users and device_user not in only_users:
-        print('Skipping device for user %s that did not match if_users argument' % device_user)
+      if match_users and device_user not in match_users:
+        print('Skipping device for user %s that did not match match_users argument' % device_user)
       else:
         print('%s %s on user %s device %s' % (describe_as, body['action'], device_user, device['resourceId']))
         if doit:
