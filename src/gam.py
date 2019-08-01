@@ -1778,7 +1778,7 @@ def watchGmail(users):
       break
   else:
     topic = gamTopics+str(uuid.uuid4())
-    callGAPI(pubsub.projects().topics(), 'create', name=topic, body={})
+    callGAPI(pubsub.projects().topics(), 'create', name=topic)
     body = {'policy': {'bindings': [{'members': ['serviceAccount:gmail-api-push@system.gserviceaccount.com'], 'role': 'roles/pubsub.editor'}]}}
     callGAPI(pubsub.projects().topics(), 'setIamPolicy', resource=topic, body=body)
   subscriptions = callGAPIpages(pubsub.projects().topics().subscriptions(), 'list', items='subscriptions', topic=topic)
@@ -7978,7 +7978,7 @@ def doCreateProject():
           except (KeyError, IndexError):
             systemErrorExit(3, 'you have no rights to create projects for your organization and you don\'t seem to be a super admin! Sorry, there\'s nothing more I can do.')
           org_policy = callGAPI(crm.organizations(), 'getIamPolicy',
-                                resource=organization, body={})
+                                resource=organization)
           if 'bindings' not in org_policy:
             org_policy['bindings'] = []
             print('Looks like no one has rights to your Google Cloud Organization. Attempting to give you create rights...')
