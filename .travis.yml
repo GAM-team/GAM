@@ -38,6 +38,8 @@ cache:
 matrix:
   include:
     - os: linux
+      allow_failures: true
+      fast_finish: true
       name: "Linux 64-bit Bionic"
       dist: bionic
       language: bash

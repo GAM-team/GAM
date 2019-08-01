@@ -9698,9 +9698,11 @@ def doUpdateMobile():
   if resourceIds[:6] == 'query:':
     query = resourceIds[6:]
     fields='nextPageToken,mobiledevices(resourceId,email)'
-    devices = callGAPIpages(cd.mobiledevices(), 'list', customerId=GC_Values[GC_CUSTOMER_ID], items='mobiledevices', query=query, fields=fields)
+    page_message = 'Got %%total_items%% mobile devices...\n'
+    devices = callGAPIpages(cd.mobiledevices(), 'list', page_message=page_message, customerId=GC_Values[GC_CUSTOMER_ID], items='mobiledevices', query=query, fields=fields)
   else:
     devices = [{'resourceId': resourceIds, 'email': ['not set']}]
+    doit = True
   i = 4
   body = {}
   while i < len(sys.argv):
@@ -9723,8 +9725,6 @@ def doUpdateMobile():
     else:
       systemErrorExit(2, '%s is not a valid argument for "gam update mobile"' % sys.argv[i])
   if body:
-    if len(devices) == 1:
-      doit = True
     if doit:
       print('Updating %s devices' % len(devices))
       describe_as = 'Performing'
