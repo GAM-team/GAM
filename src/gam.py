@@ -8431,11 +8431,10 @@ def _getCloudStorageObject(s, bucket, object_, local_file=None, expectedMd5=None
     if expectedMd5:
       sys.stdout.write('Verifying %s hash...' % expectedMd5)
       sys.stdout.flush()
-      if md5MatchesFile(local_file, expectedMd5):
+      if md5MatchesFile(local_file, expectedMd5, False):
         print('VERIFIED')
         return
-      else:
-        print('not verified. Downloading again and over-writing...')
+      print('not verified. Downloading again and over-writing...')
     else:
       return # nothing to verify, just assume we're good.
   print('saving to %s' % local_file)
@@ -8460,19 +8459,18 @@ def _getCloudStorageObject(s, bucket, object_, local_file=None, expectedMd5=None
     f = openFile(local_file, 'rb')
     sys.stdout.write(' Verifying file hash is %s...' % expectedMd5)
     sys.stdout.flush()
-    if md5MatchesFile(local_file, expectedMd5):
-      print('VERIFIED')
-    else:
-      print('ERROR: actual hash was %s. Exiting on corrupt file.' % actual_hash)
-      sys.exit(6)
+    md5MatchesFile(local_file, expectedMd5, True)
+    print('VERIFIED')
     closeFile(f)
 
-def md5MatchesFile(local_file, expected_md5):
+def md5MatchesFile(local_file, expected_md5, exitOnError):
   f = openFile(local_file, 'rb')
   hash_md5 = hashlib.md5()
   for chunk in iter(lambda: f.read(4096), b""):
     hash_md5.update(chunk)
   actual_hash = hash_md5.hexdigest()
+  if exitOnError and actual_hash != expected_md5:
+    systemErrorExit(6, 'actual hash was %s. Exiting on corrupt file.' % actual_hash)
   return actual_hash == expected_md5
 
 def doDownloadCloudStorageBucket():
@@ -8541,11 +8539,8 @@ def doDownloadVaultExport():
       expected_hash = s_file['md5Hash']
       sys.stdout.write(' Verifying file hash is %s...' % expected_hash)
       sys.stdout.flush()
-      if md5MatchesFile(filename, expected_hash):
-        print('VERIFIED')
-      else:
-        print('ERROR: actual hash was %s. Exiting on corrupt file.' % actual_hash)
-        sys.exit(6)
+      md5MatchesFile(filename, expected_hash, True)
+      print('VERIFIED')
     if extractFiles and re.search(r'\.zip$', filename):
       extract_nested_zip(filename, targetFolder)
 
@@ -8869,21 +8864,11 @@ def doCreateUser():
 def GroupIsAbuseOrPostmaster(emailAddr):
   return emailAddr.startswith('abuse@') or emailAddr.startswith('postmaster@')
 
-def mapCollaborativeACL(myarg, value):
-  value = value.lower().replace('_', '')
-  if value in COLLABORATIVE_ACL_CHOICES:
-    return COLLABORATIVE_ACL_CHOICES[value]
-  systemErrorExit(3, 'allowed choices for %s are %s, got %s' % (myarg, ', '.join(sorted(COLLABORATIVE_ACL_CHOICES)), value))
+GROUP_SETTINGS_LIST_PATTERN = re.compile(r'([A-Z][A-Z_]+[A-Z]?):')
 
 def getGroupAttrValue(myarg, value, gs_object, gs_body, function):
   if myarg == 'collaborative':
-    value = mapCollaborativeACL(myarg, value)
-    for attrName, attrValue in list(COLLABORATIVE_INBOX_ATTRIBUTES.items()):
-      if attrValue == 'acl':
-        gs_body[attrName] = value
-      else:
-        gs_body[attrName] = attrValue
-    return
+    myarg = 'enablecollaborativeinbox'
   for (attrib, params) in list(gs_object['schemas']['Groups']['properties'].items()):
     if attrib in ['kind', 'etag', 'email']:
       continue
@@ -8905,19 +8890,19 @@ def getGroupAttrValue(myarg, value, gs_object, gs_body, function):
           value = value.replace('\\n', '\n')
         elif attrib == 'primaryLanguage':
           value = LANGUAGE_CODES_MAP.get(value.lower(), value)
-        elif COLLABORATIVE_INBOX_ATTRIBUTES.get(attrib) == 'acl':
-          value = mapCollaborativeACL(myarg, value)
-        elif params['description'].find(value.upper()) != -1: # ugly hack because API wants some values uppercased.
+        elif attrib in GROUP_SETTINGS_LIST_ATTRIBUTES:
           value = value.upper()
-        elif value.lower() in true_values:
-          value = 'true'
-        elif value.lower() in false_values:
-          value = 'false'
-      # Another ugly hack because Groups Settings API doesn't have proper enumerator values set in discovery file.
-      if 'description' in params and params['description'].find('Possible values are: ') != -1:
-        possible_values = params['description'][params['description'].find('Possible values are: ')+21:].split(' ')
-        if value not in possible_values:
-          systemErrorExit(2, 'value for %s must be one of %s. Got %s.' % (attrib, ', '.join(possible_values), value))
+          possible_values = GROUP_SETTINGS_LIST_PATTERN.findall(params['description'])
+          if value not in possible_values:
+            systemErrorExit(2, 'value for %s must be one of %s. Got %s.' % (attrib, ', '.join(possible_values), value))
+        elif attrib in GROUP_SETTINGS_BOOLEAN_ATTRIBUTES:
+          value = value.lower()
+          if value in true_values:
+            value = 'true'
+          elif value in false_values:
+            value = 'false'
+          else:
+            systemErrorExit(2, 'value for %s must be true|false. Got %s.' % (attrib, value))
       gs_body[attrib] = value
       return
   systemErrorExit(2, '%s is not a valid argument for "gam %s group"' % (myarg, function))
@@ -9697,7 +9682,7 @@ def doUpdateMobile():
   doit = False
   if resourceIds[:6] == 'query:':
     query = resourceIds[6:]
-    fields='nextPageToken,mobiledevices(resourceId,email)'
+    fields = 'nextPageToken,mobiledevices(resourceId,email)'
     page_message = 'Got %%total_items%% mobile devices...\n'
     devices = callGAPIpages(cd.mobiledevices(), 'list', page_message=page_message, customerId=GC_Values[GC_CUSTOMER_ID], items='mobiledevices', query=query, fields=fields)
   else:
@@ -11639,11 +11624,14 @@ GROUP_ARGUMENT_TO_PROPERTY_TITLE_MAP = {
 
 GROUP_ATTRIBUTES_ARGUMENT_TO_PROPERTY_MAP = {
   'allowexternalmembers': 'allowExternalMembers',
+  'allowgooglecommunication': 'allowGoogleCommunication',
   'allowwebposting': 'allowWebPosting',
   'archiveonly': 'archiveOnly',
   'customfootertext': 'customFooterText',
   'customreplyto': 'customReplyTo',
   'defaultmessagedenynotificationtext': 'defaultMessageDenyNotificationText',
+  'enablecollaborativeinbox': 'enableCollaborativeInbox',
+  'favoriterepliesontop': 'favoriteRepliesOnTop',
   'gal': 'includeInGlobalAddressList',
   'includecustomfooter': 'includeCustomFooter',
   'includeinglobaladdresslist': 'includeInGlobalAddressList',
@@ -11656,16 +11644,33 @@ GROUP_ATTRIBUTES_ARGUMENT_TO_PROPERTY_MAP = {
   'showingroupdirectory': 'showInGroupDirectory',
   'spammoderationlevel': 'spamModerationLevel',
   'whocanadd': 'whoCanAdd',
+  'whocanapprovemembers': 'whoCanApproveMembers',
+  'whocanapprovemessages': 'whoCanApproveMessages',
   'whocanassigntopics': 'whoCanAssignTopics',
+  'whocanassistcontent': 'whoCanAssistContent',
+  'whocanbanusers': 'whoCanBanUsers',
   'whocancontactowner': 'whoCanContactOwner',
+  'whocandeleteanypost': 'whoCanDeleteAnyPost',
+  'whocandeletetopics': 'whoCanDeleteTopics',
+  'whocandiscovergroup': 'whoCanDiscoverGroup',
   'whocanenterfreeformtags': 'whoCanEnterFreeFormTags',
+  'whocanhideabuse': 'whoCanHideAbuse',
   'whocaninvite': 'whoCanInvite',
   'whocanjoin': 'whoCanJoin',
   'whocanleavegroup': 'whoCanLeaveGroup',
+  'whocanlocktopics': 'whoCanLockTopics',
+  'whocanmaketopicssticky': 'whoCanMakeTopicsSticky',
   'whocanmarkduplicate': 'whoCanMarkDuplicate',
   'whocanmarkfavoritereplyonanytopic': 'whoCanMarkFavoriteReplyOnAnyTopic',
+  'whocanmarkfavoritereplyonowntopic': 'whoCanMarkFavoriteReplyOnOwnTopic',
   'whocanmarknoresponseneeded': 'whoCanMarkNoResponseNeeded',
+  'whocanmoderatecontent': 'whoCanModerateContent',
+  'whocanmoderatemembers': 'whoCanModerateMembers',
+  'whocanmodifymembers': 'whoCanModifyMembers',
   'whocanmodifytagsandcategories': 'whoCanModifyTagsAndCategories',
+  'whocanmovetopicsin': 'whoCanMoveTopicsIn',
+  'whocanmovetopicsout': 'whoCanMoveTopicsOut',
+  'whocanpostannouncements': 'whoCanPostAnnouncements',
   'whocanpostmessage': 'whoCanPostMessage',
   'whocantaketopics': 'whoCanTakeTopics',
   'whocanunassigntopic': 'whoCanUnassignTopic',

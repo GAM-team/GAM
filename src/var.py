@@ -11,10 +11,10 @@ gam_license = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 GAM_URL = 'https://git.io/gam'
 GAM_INFO = 'GAM {0} - {1} / {2} / Python {3}.{4}.{5} {6} / {7} {8} /'.format(gam_version, GAM_URL,
-                                                                              gam_author,
-                                                                              sys.version_info[0], sys.version_info[1],
-                                                                              sys.version_info[2], sys.version_info[3],
-                                                                              platform.platform(), platform.machine())
+                                                                             gam_author,
+                                                                             sys.version_info[0], sys.version_info[1],
+                                                                             sys.version_info[2], sys.version_info[3],
+                                                                             platform.platform(), platform.machine())
 
 GAM_RELEASES = 'https://github.com/jay0lee/GAM/releases'
 GAM_WIKI = 'https://github.com/jay0lee/GAM/wiki'
@@ -157,13 +157,13 @@ API_VER_MAPPING = {
 API_SCOPE_MAPPING = {
   'alertcenter': ['https://www.googleapis.com/auth/apps.alerts',],
   'appsactivity': ['https://www.googleapis.com/auth/activity',
-                    'https://www.googleapis.com/auth/drive',],
+                   'https://www.googleapis.com/auth/drive',],
   'calendar': ['https://www.googleapis.com/auth/calendar',],
   'drive': ['https://www.googleapis.com/auth/drive',],
   'drive3': ['https://www.googleapis.com/auth/drive',],
   'gmail': ['https://mail.google.com/',
-             'https://www.googleapis.com/auth/gmail.settings.basic',
-             'https://www.googleapis.com/auth/gmail.settings.sharing',],
+            'https://www.googleapis.com/auth/gmail.settings.basic',
+            'https://www.googleapis.com/auth/gmail.settings.sharing',],
   'sheets': ['https://www.googleapis.com/auth/spreadsheets',],
 }
 
@@ -403,7 +403,7 @@ DOCUMENT_FORMATS_MAP = {
   'mht': [{'mime': 'message/rfc822', 'ext': 'mht'}],
   'odp': [{'mime': 'application/vnd.oasis.opendocument.presentation', 'ext': '.odp'}],
   'ods': [{'mime': 'application/x-vnd.oasis.opendocument.spreadsheet', 'ext': '.ods'},
-           {'mime': 'application/vnd.oasis.opendocument.spreadsheet', 'ext': '.ods'}],
+          {'mime': 'application/vnd.oasis.opendocument.spreadsheet', 'ext': '.ods'}],
   'odt': [{'mime': 'application/vnd.oasis.opendocument.text', 'ext': '.odt'}],
   'pdf': [{'mime': 'application/pdf', 'ext': '.pdf'}],
   'png': [{'mime': 'image/png', 'ext': '.png'}],
@@ -414,7 +414,7 @@ DOCUMENT_FORMATS_MAP = {
   'rtf': [{'mime': 'application/rtf', 'ext': '.rtf'}],
   'svg': [{'mime': 'image/svg+xml', 'ext': '.svg'}],
   'tsv': [{'mime': 'text/tab-separated-values', 'ext': '.tsv'},
-           {'mime': 'text/tsv', 'ext': '.tsv'}],
+          {'mime': 'text/tsv', 'ext': '.tsv'}],
   'txt': [{'mime': 'text/plain', 'ext': '.txt'}],
   'xls': [{'mime': 'application/vnd.ms-excel', 'ext': '.xls'}],
   'xlt': [{'mime': 'application/vnd.ms-excel', 'ext': '.xlt'}],
@@ -425,9 +425,9 @@ DOCUMENT_FORMATS_MAP = {
   'microsoft': _MICROSOFT_FORMATS_LIST,
   'micro$oft': _MICROSOFT_FORMATS_LIST,
   'openoffice': [{'mime': 'application/vnd.oasis.opendocument.presentation', 'ext': '.odp'},
-                  {'mime': 'application/x-vnd.oasis.opendocument.spreadsheet', 'ext': '.ods'},
-                  {'mime': 'application/vnd.oasis.opendocument.spreadsheet', 'ext': '.ods'},
-                  {'mime': 'application/vnd.oasis.opendocument.text', 'ext': '.odt'}],
+                 {'mime': 'application/x-vnd.oasis.opendocument.spreadsheet', 'ext': '.ods'},
+                 {'mime': 'application/vnd.oasis.opendocument.spreadsheet', 'ext': '.ods'},
+                 {'mime': 'application/vnd.oasis.opendocument.text', 'ext': '.odt'}],
   }
 
 DNS_ERROR_CODES_MAP = {
@@ -612,28 +612,76 @@ CROS_END_ARGUMENTS = ['end', 'enddate']
 CROS_TPM_VULN_VERSIONS = ['41f', '420', '628', '8520',]
 CROS_TPM_FIXED_VERSIONS = ['422', '62b', '8521',]
 
-COLLABORATIVE_ACL_CHOICES = {
-  'members': 'ALL_MEMBERS',
-  'managersonly': 'MANAGERS_ONLY',
-  'managers': 'OWNERS_AND_MANAGERS',
-  'owners': 'OWNERS_ONLY',
-  'none': 'NONE',
-  }
+COLLABORATIVE_INBOX_ATTRIBUTES = [
+  'whoCanAddReferences',
+  'whoCanAssignTopics',
+  'whoCanEnterFreeFormTags',
+  'whoCanMarkDuplicate',
+  'whoCanMarkFavoriteReplyOnAnyTopic',
+  'whoCanMarkFavoriteReplyOnOwnTopic',
+  'whoCanMarkNoResponseNeeded',
+  'whoCanModifyTagsAndCategories',
+  'whoCanTakeTopics',
+  'whoCanUnassignTopic',
+  'whoCanUnmarkFavoriteReplyOnAnyTopic',
+  'favoriteRepliesOnTop',
+  ]
 
-COLLABORATIVE_INBOX_ATTRIBUTES = {
-  'whoCanAddReferences': 'acl',
-  'whoCanAssignTopics': 'acl',
-  'whoCanEnterFreeFormTags': 'acl',
-  'whoCanMarkDuplicate': 'acl',
-  'whoCanMarkFavoriteReplyOnAnyTopic': 'acl',
-  'whoCanMarkFavoriteReplyOnOwnTopic': 'acl',
-  'whoCanMarkNoResponseNeeded': 'acl',
-  'whoCanModifyTagsAndCategories': 'acl',
-  'whoCanTakeTopics': 'acl',
-  'whoCanUnassignTopic': 'acl',
-  'whoCanUnmarkFavoriteReplyOnAnyTopic': 'acl',
-  'favoriteRepliesOnTop': True,
-  }
+GROUP_SETTINGS_LIST_ATTRIBUTES = set([
+  # ACL choices
+  'whoCanAdd',
+  'whoCanApproveMembers',
+  'whoCanApproveMessages',
+  'whoCanAssignTopics',
+  'whoCanAssistContent',
+  'whoCanBanUsers',
+  'whoCanContactOwner',
+  'whoCanDeleteAnyPost',
+  'whoCanDeleteTopics',
+  'whoCanDiscoverGroup',
+  'whoCanEnterFreeFormTags',
+  'whoCanHideAbuse',
+  'whoCanInvite',
+  'whoCanJoin',
+  'whoCanLeaveGroup',
+  'whoCanLockTopics',
+  'whoCanMakeTopicsSticky',
+  'whoCanMarkDuplicate',
+  'whoCanMarkFavoriteReplyOnAnyTopic',
+  'whoCanMarkFavoriteReplyOnOwnTopic',
+  'whoCanMarkNoResponseNeeded',
+  'whoCanModerateContent',
+  'whoCanModerateMembers',
+  'whoCanModifyMembers',
+  'whoCanModifyTagsAndCategories',
+  'whoCanMoveTopicsIn',
+  'whoCanMoveTopicsOut',
+  'whoCanPostAnnouncements',
+  'whoCanPostMessage',
+  'whoCanTakeTopics',
+  'whoCanUnassignTopic',
+  'whoCanUnmarkFavoriteReplyOnAnyTopic',
+  'whoCanViewGroup',
+  'whoCanViewMembership',
+  # Miscellaneous hoices
+  'messageModerationLevel',
+  'replyTo',
+  'spamModerationLevel',
+  ])
+GROUP_SETTINGS_BOOLEAN_ATTRIBUTES = set([
+  'allowExternalMembers',
+  'allowGoogleCommunication',
+  'allowWebPosting',
+  'archiveOnly',
+  'enableCollaborativeInbox',
+  'favoriteRepliesOnTop',
+  'includeCustomFooter',
+  'includeInGlobalAddressList',
+  'isArchived',
+  'membersCanPostAsTheGroup',
+  'sendMessageDenyNotification',
+  'showInGroupDirectory',
+  ])
 
 #
 # Global variables
