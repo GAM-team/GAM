@@ -874,7 +874,7 @@ gam info resoldsubscriptions <CustomerID> [customer_auth_token <String>]
 <ReportsAppList> ::= "<ReportsApp>(,<ReportsApp>)*"
 
 gam report users|user [todrive] [date <Date>] [fulldatarequired all|<ReportsAppList>]
-	[(user all|<UserItem>)|(orgunit|org|ou <OrgUnitPath>)] [filter|filters <String>] [fields|parameters <String>]
+	[(user <UserItem>)|(orgunit|org|ou <OrgUnitPath>)] [filter|filters <String>] [fields|parameters <String>]
 gam report customers|customer|domain [todrive] [date <Date>] [fulldatarequired all|<ReportsAppList>]
 	[fields|parameters <String>]
 gam report admin|calendar|calendars|drive|docs|doc|groups|group|logins|login|mobile|tokens|token [todrive]
