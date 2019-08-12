@@ -71,7 +71,7 @@ matrix:
         - VMTYPE=build
     - os: linux
       name: "Linux 64-bit - Python 3.5 Source Testing"
-      dist: bionic
+      dist: xenial
       language: python
       python:
         - "3.5"
