@@ -8863,7 +8863,7 @@ def doCreateUser():
 def GroupIsAbuseOrPostmaster(emailAddr):
   return emailAddr.startswith('abuse@') or emailAddr.startswith('postmaster@')
 
-GROUP_SETTINGS_LIST_PATTERN = re.compile(r'([A-Z][A-Z_]+[A-Z]?):')
+GROUP_SETTINGS_LIST_PATTERN = re.compile(r'([A-Z][A-Z_]+[A-Z]?)')
 
 def getGroupAttrValue(myarg, value, gs_object, gs_body, function):
   if myarg == 'collaborative':
