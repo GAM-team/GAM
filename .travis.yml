@@ -227,8 +227,8 @@ script:
 - if [ "$e2e" = true ]; then $gam user $gam_user show tokens; fi
 - if [ "$e2e" = true ]; then $gam delete user $newuser; fi
 - if [ "$e2e" = true ]; then $gam print users query "travis.jid=$jid" | $gam csv - gam delete user ~primaryEmail; fi
-- if [ "$e2e" = true ]; then $gam print mobile
-- if [ "$e2e" = true ]; then $gam print cros allfields nolists
+- if [ "$e2e" = true ]; then $gam print mobile; fi
+- if [ "$e2e" = true ]; then $gam print cros allfields nolists; fi
 
 before_deploy:
 - export TRAVIS_TAG="preview"
