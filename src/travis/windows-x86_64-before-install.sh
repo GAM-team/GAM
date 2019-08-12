@@ -38,3 +38,7 @@ md5sum ../PyInstaller/bootloader/Windows-64bit/*
 /c/python37/python ./waf all --target-arch=64bit
 echo "bootloader after:"
 md5sum ../PyInstaller/bootloader/Windows-64bit/*
+echo "PATH: $PATH"
+cd ..
+/c/python37/python setup.py install
+cd $mypath
