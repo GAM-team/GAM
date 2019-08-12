@@ -683,6 +683,7 @@ def SetGlobalVariables():
   _getOldEnvVar(GC_CA_FILE, 'GAM_CA_FILE')
   _getOldSignalFile(GC_DEBUG_LEVEL, 'debug.gam', filePresentValue=4, fileAbsentValue=0)
   _getOldSignalFile(GC_NO_BROWSER, 'nobrowser.txt')
+  _getOldSignalFile(GC_OAUTH_BROWSER, 'usebrowser.txt')
 #  _getOldSignalFile(GC_NO_CACHE, u'nocache.txt')
 #  _getOldSignalFile(GC_CACHE_DISCOVERY_ONLY, u'allcache.txt', filePresentValue=False, fileAbsentValue=True)
   _getOldSignalFile(GC_NO_CACHE, 'allcache.txt', filePresentValue=False, fileAbsentValue=True)
@@ -7604,6 +7605,19 @@ def getUserAttributes(i, cd, updateCmd):
     body['hashFunction'] = 'crypt'
   return body
 
+class ShortURLFlow(google_auth_oauthlib.flow.InstalledAppFlow):
+  def authorization_url(self, **kwargs):
+    long_url, state = super(ShortURLFlow, self).authorization_url(**kwargs)
+    simplehttp = httplib2.Http()
+    simplehttp.timeout = 10
+    url_shortnr = 'https://gam-shortn.appspot.com/create'
+    headers = {'Content-Type': 'application/json'}
+    try:
+      _, content = simplehttp.request(url_shortnr, 'POST', '{"long_url": "%s"}' % long_url, headers=headers)
+    except:
+      return long_url, state
+    return json.loads(content).get('short_url', ''), state
+
 def _run_oauth_flow(client_id, client_secret, scopes, access_type, login_hint=None):
   client_config = {
     'installed': {
@@ -7615,11 +7629,11 @@ def _run_oauth_flow(client_id, client_secret, scopes, access_type, login_hint=No
       }
     }
 
-  flow = google_auth_oauthlib.flow.InstalledAppFlow.from_client_config(client_config, scopes)
+  flow = ShortURLFlow.from_client_config(client_config, scopes)
   kwargs = {'access_type': access_type}
   if login_hint:
     kwargs['login_hint'] = login_hint
-  if GC_Values[GC_NO_BROWSER]:
+  if not GC_Values[GC_OAUTH_BROWSER]:
     flow.run_console(
             authorization_prompt_message=MESSAGE_CONSOLE_AUTHORIZATION_PROMPT,
             authorization_code_message=MESSAGE_CONSOLE_AUTHORIZATION_CODE,
