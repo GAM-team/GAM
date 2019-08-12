@@ -675,6 +675,7 @@ def SetGlobalVariables():
   _getOldEnvVar(GC_DEVICE_MAX_RESULTS, 'GAM_DEVICE_MAX_RESULTS')
   _getOldEnvVar(GC_DRIVE_MAX_RESULTS, 'GAM_DRIVE_MAX_RESULTS')
   _getOldEnvVar(GC_MEMBER_MAX_RESULTS, 'GAM_MEMBER_MAX_RESULTS')
+  _getOldEnvVar(GC_MOBILE_MAX_RESULTS, 'GAM_MOBILE_MAX_RESULTS')
   _getOldEnvVar(GC_USER_MAX_RESULTS, 'GAM_USER_MAX_RESULTS')
   _getOldEnvVar(GC_CSV_HEADER_FILTER, 'GAM_CSV_HEADER_FILTER')
   _getOldEnvVar(GC_CSV_ROW_FILTER, 'GAM_CSV_ROW_FILTER')
@@ -12301,7 +12302,7 @@ def doPrintMobileDevices():
     page_message = 'Got %%num_items%% Mobile Devices...\n'
     all_mobile = callGAPIpages(cd.mobiledevices(), 'list', 'mobiledevices', page_message=page_message,
                                customerId=GC_Values[GC_CUSTOMER_ID], query=query, projection=projection, fields=fields,
-                               orderBy=orderBy, sortOrder=sortOrder, maxResults=GC_Values[GC_DEVICE_MAX_RESULTS])
+                               orderBy=orderBy, sortOrder=sortOrder, maxResults=GC_Values[GC_MOBILE_MAX_RESULTS])
     for mobile in all_mobile:
       row = {}
       for attrib in mobile:

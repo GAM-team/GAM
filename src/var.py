@@ -780,7 +780,7 @@ GC_CUSTOMER_ID = 'customer_id'
 GC_DEBUG_LEVEL = 'debug_level'
 # ID Token decoded from OAuth 2.0 refresh token response. Includes hd (domain) and email of authorized user
 GC_DECODED_ID_TOKEN = 'decoded_id_token'
-# When retrieving lists of ChromeOS/Mobile devices from API, how many should be retrieved in each chunk
+# When retrieving lists of ChromeOS devices from API, how many should be retrieved in each chunk
 GC_DEVICE_MAX_RESULTS = 'device_max_results'
 # Domain obtained from gam.cfg or oauth2.txt
 GC_DOMAIN = 'domain'
@@ -790,6 +790,8 @@ GC_DRIVE_DIR = 'drive_dir'
 GC_DRIVE_MAX_RESULTS = 'drive_max_results'
 # When retrieving lists of Google Group members from API, how many should be retrieved in each chunk
 GC_MEMBER_MAX_RESULTS = 'member_max_results'
+# When retrieving lists of Mobile devices from API, how many should be retrieved in each chunk
+GC_MOBILE_MAX_RESULTS = 'mobile_max_results'
 # If no_browser is False, writeCSVfile won't open a browser when todrive is set
 # and doRequestOAuth prints a link and waits for the verification code when oauth2.txt is being created
 GC_NO_BROWSER = 'no_browser'
@@ -839,11 +841,12 @@ GC_Defaults = {
   GC_CUSTOMER_ID: MY_CUSTOMER,
   GC_DEBUG_LEVEL: 0,
   GC_DECODED_ID_TOKEN: '',
-  GC_DEVICE_MAX_RESULTS: 100,
+  GC_DEVICE_MAX_RESULTS: 200,
   GC_DOMAIN: '',
   GC_DRIVE_DIR: '',
   GC_DRIVE_MAX_RESULTS: 1000,
   GC_MEMBER_MAX_RESULTS: 200,
+  GC_MOBILE_MAX_RESULTS: 100,
   GC_NO_BROWSER: False,
   GC_NO_CACHE: False,
   GC_NO_UPDATE_CHECK: False,
@@ -891,11 +894,12 @@ GC_VAR_INFO = {
   GC_CUSTOMER_ID: {GC_VAR_TYPE: GC_TYPE_STRING},
   GC_DEBUG_LEVEL: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (0, None)},
   GC_DECODED_ID_TOKEN: {GC_VAR_TYPE: GC_TYPE_STRING},
-  GC_DEVICE_MAX_RESULTS: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (1, 1000)},
+  GC_DEVICE_MAX_RESULTS: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (1, 200)},
   GC_DOMAIN: {GC_VAR_TYPE: GC_TYPE_STRING},
   GC_DRIVE_DIR: {GC_VAR_TYPE: GC_TYPE_DIRECTORY},
   GC_DRIVE_MAX_RESULTS: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (1, 1000)},
-  GC_MEMBER_MAX_RESULTS: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (1, 10000)},
+  GC_MEMBER_MAX_RESULTS: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (1, 200)},
+  GC_MOBILE_MAX_RESULTS: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (1, 100)},
   GC_NO_BROWSER: {GC_VAR_TYPE: GC_TYPE_BOOLEAN},
   GC_NO_CACHE: {GC_VAR_TYPE: GC_TYPE_BOOLEAN},
   GC_NO_UPDATE_CHECK: {GC_VAR_TYPE: GC_TYPE_BOOLEAN},
