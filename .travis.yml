@@ -70,8 +70,8 @@ matrix:
         - PLATFORM=x86_64
         - VMTYPE=build
     - os: linux
-      name: "Linux 64-bit Xenial - Python 3.5 Source Testing"
-      dist: xenial
+      name: "Linux 64-bit - Python 3.5 Source Testing"
+      dist: bionic
       language: python
       python:
         - "3.5"
@@ -80,8 +80,8 @@ matrix:
         - PLATFORM=x86_64
         - VMTYPE=test
     - os: linux
-      name: "Linux 64-bit Xenial - Python 3.6 Source Testing"
-      dist: xenial
+      name: "Linux 64-bit - Python 3.6 Source Testing"
+      dist: bionic
       language: python
       python:
         - "3.6"
@@ -90,8 +90,8 @@ matrix:
         - PLATFORM=x86_64
         - VMTYPE=test
     - os: linux
-      name: "Linux 64-bit Xenial - Python 3.8-dev Source Testing"
-      dist: xenial
+      name: "Linux 64-bit - Python 3.8-dev Source Testing"
+      dist: bionic
       language: python
       python:
         - "3.8-dev"
@@ -100,8 +100,8 @@ matrix:
         - PLATFORM=x86_64
         - VMTYPE=test
     - os: linux
-      name: "Linux 64-bit Xenial - Python nightly Source Testing"
-      dist: xenial
+      name: "Linux 64-bit - Python nightly Source Testing"
+      dist: bionic
       language: python
       python:
         - "nightly"
