@@ -795,8 +795,9 @@ GC_MOBILE_MAX_RESULTS = 'mobile_max_results'
 # If no_browser is False, writeCSVfile won't open a browser when todrive is set
 # and doRequestOAuth prints a link and waits for the verification code when oauth2.txt is being created
 GC_NO_BROWSER = 'no_browser'
-# oauth_browser forces usage of web server OAuth flow that proved problematic.
-GC_OAUTH_BROWSER = 'oauth_browser'
+# If no_shortoauth is False (the default), a shortened URL and no browser will be used to create oauth2.txt
+# Id no_shortouath is True, then the normal URL will be used and no_browser sets the usage/non-usage of web server OAuth flow that proved problematic.
+GC_NO_SHORTOAUTH = 'no_shortoauth'
 # Disable GAM API caching
 GC_NO_CACHE = 'no_cache'
 # Disable GAM update check
@@ -848,10 +849,10 @@ GC_Defaults = {
   GC_MEMBER_MAX_RESULTS: 200,
   GC_MOBILE_MAX_RESULTS: 100,
   GC_NO_BROWSER: False,
+  GC_NO_SHORTOAUTH: False,
   GC_NO_CACHE: False,
   GC_NO_UPDATE_CHECK: False,
   GC_NUM_THREADS: 25,
-  GC_OAUTH_BROWSER: False,
   GC_OAUTH2_TXT: _FN_OAUTH2_TXT,
   GC_OAUTH2SERVICE_JSON: _FN_OAUTH2SERVICE_JSON,
   GC_SECTION: '',
@@ -901,10 +902,10 @@ GC_VAR_INFO = {
   GC_MEMBER_MAX_RESULTS: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (1, 200)},
   GC_MOBILE_MAX_RESULTS: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (1, 100)},
   GC_NO_BROWSER: {GC_VAR_TYPE: GC_TYPE_BOOLEAN},
+  GC_NO_SHORTOAUTH: {GC_VAR_TYPE: GC_TYPE_BOOLEAN},
   GC_NO_CACHE: {GC_VAR_TYPE: GC_TYPE_BOOLEAN},
   GC_NO_UPDATE_CHECK: {GC_VAR_TYPE: GC_TYPE_BOOLEAN},
   GC_NUM_THREADS: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (1, None)},
-  GC_OAUTH_BROWSER: {GC_VAR_TYPE: GC_TYPE_BOOLEAN},
   GC_OAUTH2_TXT: {GC_VAR_TYPE: GC_TYPE_FILE},
   GC_OAUTH2SERVICE_JSON: {GC_VAR_TYPE: GC_TYPE_FILE},
   GC_SECTION: {GC_VAR_TYPE: GC_TYPE_STRING},

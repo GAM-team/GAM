@@ -684,7 +684,7 @@ def SetGlobalVariables():
   _getOldEnvVar(GC_CA_FILE, 'GAM_CA_FILE')
   _getOldSignalFile(GC_DEBUG_LEVEL, 'debug.gam', filePresentValue=4, fileAbsentValue=0)
   _getOldSignalFile(GC_NO_BROWSER, 'nobrowser.txt')
-  _getOldSignalFile(GC_OAUTH_BROWSER, 'oauthbrowser.txt')
+  _getOldSignalFile(GC_NO_SHORTOAUTH, 'noshortoauth.txt')
 #  _getOldSignalFile(GC_NO_CACHE, u'nocache.txt')
 #  _getOldSignalFile(GC_CACHE_DISCOVERY_ONLY, u'allcache.txt', filePresentValue=False, fileAbsentValue=True)
   _getOldSignalFile(GC_NO_CACHE, 'allcache.txt', filePresentValue=False, fileAbsentValue=True)
@@ -7630,11 +7630,16 @@ def _run_oauth_flow(client_id, client_secret, scopes, access_type, login_hint=No
       }
     }
 
-  flow = ShortURLFlow.from_client_config(client_config, scopes)
+  if not GC_Values[GC_NO_SHORTOAUTH]:
+    flow = ShortURLFlow.from_client_config(client_config, scopes)
+    noBrowser = True
+  else:
+    flow = google_auth_oauthlib.flow.InstalledAppFlow.from_client_config(client_config, scopes)
+    noBrowser = GC_Values[GC_NO_BROWSER]
   kwargs = {'access_type': access_type}
   if login_hint:
     kwargs['login_hint'] = login_hint
-  if not GC_Values[GC_OAUTH_BROWSER]:
+  if noBrowser:
     flow.run_console(
             authorization_prompt_message=MESSAGE_CONSOLE_AUTHORIZATION_PROMPT,
             authorization_code_message=MESSAGE_CONSOLE_AUTHORIZATION_CODE,
