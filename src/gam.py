@@ -7613,8 +7613,10 @@ class ShortURLFlow(google_auth_oauthlib.flow.InstalledAppFlow):
     url_shortnr = 'https://gam-shortn.appspot.com/create'
     headers = {'Content-Type': 'application/json'}
     try:
-      _, content = simplehttp.request(url_shortnr, 'POST', '{"long_url": "%s"}' % long_url, headers=headers)
+      resp, content = simplehttp.request(url_shortnr, 'POST', '{"long_url": "%s"}' % long_url, headers=headers)
     except:
+      return long_url, state
+    if resp.status != 200:
       return long_url, state
     return json.loads(content).get('short_url', ''), state
 
