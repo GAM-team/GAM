@@ -1203,3 +1203,19 @@ LANGUAGE_CODES_MAP = {
   'ur': 'ur', 'uz': 'uz', 'vi': 'vi', 'wo': 'wo', 'xh': 'xh', 'yi': 'yi', 'yo': 'yo', #Urdu, Uzbek, Vietnamese, Wolof, Xhosa, Yiddish, Yoruba
   'zh-cn': 'zh-CN', 'zh-hk': 'zh-HK', 'zh-tw': 'zh-TW', 'zu': 'zu', #Chinese (Simplified), Chinese (Hong Kong/Traditional), Chinese (Taiwan/Traditional), Zulu
   }
+
+# maxResults exception values for API list calls. Should only be listed if:
+#   - discovery doc does not specify maximum value (we use maximum value if it
+#     exists, not this)
+#   - actual max API returns with maxResults=<bigNum>  > default API returns
+#     when maxResults isn't specified (we should use default otherwise by not
+#     setting maxResults)
+
+MAX_RESULTS_API_EXCEPTIONS = {
+  'calendar.acl.list': 250,
+  'calendar.calendarList.list': 250,
+  'calendar.events.list': 2500,
+  'calendar.settings.list': 250,
+  'directory.chromeosdevices.list': 200,
+  'drive.files.list': 1000,
+  }

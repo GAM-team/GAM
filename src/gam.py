@@ -673,7 +673,6 @@ def SetGlobalVariables():
   _getOldEnvVar(GC_AUTO_BATCH_MIN, 'GAM_AUTOBATCH')
   _getOldEnvVar(GC_BATCH_SIZE, 'GAM_BATCH_SIZE')
   _getOldEnvVar(GC_DEVICE_MAX_RESULTS, 'GAM_DEVICE_MAX_RESULTS')
-  _getOldEnvVar(GC_DRIVE_MAX_RESULTS, 'GAM_DRIVE_MAX_RESULTS')
   _getOldEnvVar(GC_MEMBER_MAX_RESULTS, 'GAM_MEMBER_MAX_RESULTS')
   _getOldEnvVar(GC_USER_MAX_RESULTS, 'GAM_USER_MAX_RESULTS')
   _getOldEnvVar(GC_CSV_HEADER_FILTER, 'GAM_CSV_HEADER_FILTER')
@@ -1083,6 +1082,19 @@ def callGAPI(service, function,
     except TypeError as e:
       systemErrorExit(4, str(e))
 
+def getPageSize(service, function, kwargs):
+  """Gets maximum maxResults value for API call. Uses value from discovery if
+     it exists, otherwise value from MAX_RESULTS_API_EXCEPTIONS, otherwise None"""
+
+  method = getattr(service, function)
+  api_id = method(**kwargs).methodId
+  for resource in service._rootDesc.get('resources', {}).values():
+    for a_method in resource.get('methods', {}).values():
+      if a_method.get('id')  == api_id:
+        if a_method['parameters'].get('pageSize'):
+          return
+        return {'maxResults': a_method['parameters']['maxResults'].get('maximum', MAX_RESULTS_API_EXCEPTIONS.get(api_id, None))}
+
 def callGAPIpages(service, function, items='items',
                   page_message=None, message_attribute=None,
                   soft_errors=False, throw_reasons=None, retry_reasons=None,
@@ -1125,6 +1137,10 @@ def callGAPIpages(service, function, items='items',
   Returns:
     A list of all items received from all paged responses.
   """
+  if 'maxResults' not in kwargs and 'pageSize' not in kwargs:
+    page_key = getPageSize(service, function, kwargs)
+    if page_key:
+      kwargs.update(page_key)
   all_items = []
   page_token = None
   total_items = 0
@@ -2344,8 +2360,7 @@ def buildRoleIdToNameToIdMap():
   cd = buildGAPIObject('directory')
   result = callGAPIpages(cd.roles(), 'list', 'items',
                          customer=GC_Values[GC_CUSTOMER_ID],
-                         fields='nextPageToken,items(roleId,roleName)',
-                         maxResults=100)
+                         fields='nextPageToken,items(roleId,roleName)')
   GM_Globals[GM_MAP_ROLE_ID_TO_NAME] = {}
   GM_Globals[GM_MAP_ROLE_NAME_TO_ID] = {}
   for role in result:
@@ -2376,8 +2391,7 @@ def buildUserIdToNameMap():
   cd = buildGAPIObject('directory')
   result = callGAPIpages(cd.users(), 'list', 'users',
                          customer=GC_Values[GC_CUSTOMER_ID],
-                         fields='nextPageToken,users(id,primaryEmail)',
-                         maxResults=GC_Values[GC_USER_MAX_RESULTS])
+                         fields='nextPageToken,users(id,primaryEmail)')
   GM_Globals[GM_MAP_USER_ID_TO_NAME] = {}
   for user in result:
     GM_Globals[GM_MAP_USER_ID_TO_NAME][user['id']] = user['primaryEmail']
@@ -3162,7 +3176,10 @@ def changeCalendarAttendees(users):
       continue
     page_token = None
     while True:
-      events_page = callGAPI(cal.events(), 'list', calendarId=user, pageToken=page_token, timeMin=start_date, timeMax=end_date, showDeleted=False, showHiddenInvitations=False)
+      events_page = callGAPI(cal.events(), 'list', calendarId=user,
+                             pageToken=page_token, timeMin=start_date,
+                             timeMax=end_date, showDeleted=False,
+                             showHiddenInvitations=False)
       print('Got %s items' % len(events_page.get('items', [])))
       for event in events_page.get('items', []):
         if event['status'] == 'cancelled':
@@ -3843,8 +3860,8 @@ def doCalendarPrintEvents():
       systemErrorExit(2, '%s is not a valid argument for "gam calendar <email> printevents"' % sys.argv[i])
   page_message = 'Got %%%%total_items%%%% events for %s' % calendarId
   results = callGAPIpages(cal.events(), 'list', 'items', page_message=page_message,
-                          maxResults=2500, calendarId=calendarId,
-                          q=q, showDeleted=showDeleted, showHiddenInvitations=showHiddenInvitations,
+                          calendarId=calendarId, q=q, showDeleted=showDeleted,
+                          showHiddenInvitations=showHiddenInvitations,
                           timeMin=timeMin, timeMax=timeMax, timeZone=timeZone, updatedMin=updatedMin)
   for result in results:
     row = {'calendarId': calendarId}
@@ -4309,7 +4326,7 @@ def printDriveActivity(users):
     feed = callGAPIpages(activity.activities(), 'list', 'activities',
                          page_message=page_message, source='drive.google.com', userId='me',
                          drive_ancestorId=drive_ancestorId, groupingStrategy='none',
-                         drive_fileId=drive_fileId, pageSize=GC_Values[GC_ACTIVITY_MAX_RESULTS])
+                         drive_fileId=drive_fileId)
     for item in feed:
       addRowTitlesToCSVfile(flatten_json(item['combinedEvent']), csvRows, titles)
   writeCSVfile(csvRows, titles, 'Drive Activity', todrive)
@@ -4589,7 +4606,7 @@ def printDriveFileList(users):
     page_message = ' Got %%%%total_items%%%% files for %s...\n' % user
     feed = callGAPIpages(drive.files(), 'list', 'items',
                          page_message=page_message, soft_errors=True,
-                         q=query, orderBy=orderBy, fields=fields, maxResults=GC_Values[GC_DRIVE_MAX_RESULTS])
+                         q=query, orderBy=orderBy, fields=fields)
     for f_file in feed:
       a_file = {'Owner': user}
       for attrib in f_file:
@@ -4643,7 +4660,7 @@ def doDriveSearch(drive, query=None, quiet=False):
     page_message = None
   files = callGAPIpages(drive.files(), 'list', 'items',
                         page_message=page_message,
-                        q=query, fields='nextPageToken,items(id)', maxResults=GC_Values[GC_DRIVE_MAX_RESULTS])
+                        q=query, fields='nextPageToken,items(id)')
   ids = list()
   for f_file in files:
     ids.append(f_file['id'])
@@ -4763,7 +4780,7 @@ def showDriveFileTree(users):
     sys.stderr.write('Getting all files for %s...\n' % user)
     page_message = ' Got %%%%total_items%%%% files for %s...\n' % user
     feed = callGAPIpages(drive.files(), 'list', 'items', page_message=page_message,
-                         q=query, orderBy=orderBy, fields='items(id,title,parents(id),mimeType),nextPageToken', maxResults=GC_Values[GC_DRIVE_MAX_RESULTS])
+                         q=query, orderBy=orderBy, fields='items(id,title,parents(id),mimeType),nextPageToken')
     printDriveFolderContents(feed, root_folder, 0)
 
 def deleteEmptyDriveFolders(users):
@@ -4777,7 +4794,7 @@ def deleteEmptyDriveFolders(users):
       sys.stderr.write('Getting folders for %s...\n' % user)
       page_message = ' Got %%%%total_items%%%% folders for %s...\n' % user
       feed = callGAPIpages(drive.files(), 'list', 'items', page_message=page_message,
-                           q=query, fields='items(title,id),nextPageToken', maxResults=GC_Values[GC_DRIVE_MAX_RESULTS])
+                           q=query, fields='items(title,id),nextPageToken')
       deleted_empty = False
       for folder in feed:
         children = callGAPI(drive.children(), 'list',
@@ -9518,7 +9535,7 @@ def doUpdateGroup():
         result = callGAPIpages(cd.members(), 'list', 'members',
                                page_message=page_message,
                                throw_reasons=GAPI_MEMBERS_THROW_REASONS,
-                               groupKey=group, roles=listRoles, fields=listFields, maxResults=GC_Values[GC_MEMBER_MAX_RESULTS])
+                               groupKey=group, roles=listRoles, fields=listFields)
         if not result:
           print('Group already has 0 members')
           return
@@ -9699,7 +9716,10 @@ def doUpdateMobile():
     query = resourceIds[6:]
     fields = 'nextPageToken,mobiledevices(resourceId,email)'
     page_message = 'Got %%total_items%% mobile devices...\n'
-    devices = callGAPIpages(cd.mobiledevices(), 'list', page_message=page_message, customerId=GC_Values[GC_CUSTOMER_ID], items='mobiledevices', query=query, fields=fields)
+    devices = callGAPIpages(cd.mobiledevices(), 'list',
+                            page_message=page_message,
+                            customerId=GC_Values[GC_CUSTOMER_ID],
+                            items='mobiledevices', query=query, fields=fields)
   else:
     devices = [{'resourceId': resourceIds, 'email': ['not set']}]
     doit = True
@@ -10344,7 +10364,7 @@ def doGetGroupInfo(group_name=None):
       for groupm in groups:
         print('  %s: %s' % (groupm['name'], groupm['email']))
   if getUsers:
-    members = callGAPIpages(cd.members(), 'list', 'members', groupKey=group_name, fields='nextPageToken,members(email,id,role,type)', maxResults=GC_Values[GC_MEMBER_MAX_RESULTS])
+    members = callGAPIpages(cd.members(), 'list', 'members', groupKey=group_name, fields='nextPageToken,members(email,id,role,type)')
     print('Members:')
     for member in members:
       print(' %s: %s (%s)' % (member.get('role', ROLE_MEMBER).lower(), member.get('email', member['id']), member['type'].lower()))
@@ -10824,7 +10844,7 @@ def doGetOrgInfo(name=None, return_attrib=None):
     page_message = 'Got %%total_items%% Users: %%first_item%% - %%last_item%%\n'
     users = callGAPIpages(cd.users(), 'list', 'users', page_message=page_message,
                           message_attribute='primaryEmail', customer=GC_Values[GC_CUSTOMER_ID], query=orgUnitPathQuery(name, checkSuspended),
-                          fields='users(primaryEmail,orgUnitPath),nextPageToken', maxResults=GC_Values[GC_USER_MAX_RESULTS])
+                          fields='users(primaryEmail,orgUnitPath),nextPageToken')
     if checkSuspended is None:
       print('Users:')
     elif not checkSuspended:
@@ -11067,7 +11087,7 @@ def doUndeleteUser():
   else:
     print('Looking up UID for %s...' % user)
     deleted_users = callGAPIpages(cd.users(), 'list', 'users',
-                                  customer=GC_Values[GC_CUSTOMER_ID], showDeleted=True, maxResults=GC_Values[GC_USER_MAX_RESULTS])
+                                  customer=GC_Values[GC_CUSTOMER_ID], showDeleted=True)
     matching_users = list()
     for deleted_user in deleted_users:
       if str(deleted_user['primaryEmail']).lower() == user:
@@ -11559,7 +11579,7 @@ def doPrintUsers():
     all_users = callGAPIpages(cd.users(), 'list', 'users', page_message=page_message,
                               message_attribute='primaryEmail', customer=customer, domain=domain, fields=fields,
                               showDeleted=deleted_only, orderBy=orderBy, sortOrder=sortOrder, viewType=viewType,
-                              query=query, projection=projection, customFieldMask=customFieldMask, maxResults=GC_Values[GC_USER_MAX_RESULTS])
+                              query=query, projection=projection, customFieldMask=customFieldMask)
     for user in all_users:
       if email_parts and ('primaryEmail' in user):
         user_email = user['primaryEmail']
@@ -11709,7 +11729,6 @@ def doPrintGroups():
   titles = []
   csvRows = []
   addFieldTitleToCSVfile('email', GROUP_ARGUMENT_TO_PROPERTY_TITLE_MAP, cdfieldsList, fieldsTitles, titles)
-  maxResults = None
   roles = []
   getSettings = sortHeaders = False
   while i < len(sys.argv):
@@ -11730,7 +11749,7 @@ def doPrintGroups():
       usemember = None
       i += 2
     elif myarg == 'maxresults':
-      maxResults = getInteger(sys.argv[i+1], myarg, minVal=0)
+      # deprecated argument
       i += 2
     elif myarg == 'delimiter':
       aliasDelimiter = memberDelimiter = sys.argv[i+1]
@@ -11812,8 +11831,7 @@ def doPrintGroups():
   entityList = callGAPIpages(cd.groups(), 'list', 'groups',
                              page_message=page_message, message_attribute='email',
                              customer=customer, domain=usedomain, userKey=usemember, query=usequery,
-                             fields='nextPageToken,groups({0})'.format(cdfields),
-                             maxResults=maxResults)
+                             fields='nextPageToken,groups({0})'.format(cdfields))
   i = 0
   count = len(entityList)
   for groupEntity in entityList:
@@ -11833,7 +11851,7 @@ def doPrintGroups():
       groupMembers = callGAPIpages(cd.members(), 'list', 'members',
                                    page_message=page_message, message_attribute='email',
                                    soft_errors=True,
-                                   groupKey=groupEmail, roles=listRoles, fields=listFields, maxResults=GC_Values[GC_MEMBER_MAX_RESULTS])
+                                   groupKey=groupEmail, roles=listRoles, fields=listFields)
       if members:
         membersList = []
         membersCount = 0
@@ -12020,7 +12038,7 @@ def doPrintAliases():
       page_message = 'Got %%num_items%% Users %%first_item%% - %%last_item%%\n'
       all_users = callGAPIpages(cd.users(), 'list', 'users', page_message=page_message,
                                 message_attribute='primaryEmail', customer=GC_Values[GC_CUSTOMER_ID], query=query,
-                                fields='nextPageToken,users({0})'.format(','.join(userFields)), maxResults=GC_Values[GC_USER_MAX_RESULTS])
+                                fields='nextPageToken,users({0})'.format(','.join(userFields)))
       for user in all_users:
         for alias in user.get('aliases', []):
           csvRows.append({'Alias': alias, 'Target': user['primaryEmail'], 'TargetType': 'User'})
@@ -12109,7 +12127,7 @@ def doPrintGroupMembers():
     validRoles, listRoles, listFields = _getRoleVerification(','.join(roles), fields)
     group_members = callGAPIpages(cd.members(), 'list', 'members',
                                   soft_errors=True,
-                                  groupKey=group_email, roles=listRoles, fields=listFields, maxResults=GC_Values[GC_MEMBER_MAX_RESULTS])
+                                  groupKey=group_email, roles=listRoles, fields=listFields)
     for member in group_members:
       if not _checkMemberRoleIsSuspended(member, validRoles, checkSuspended):
         continue
@@ -12303,7 +12321,7 @@ def doPrintMobileDevices():
     page_message = 'Got %%num_items%% Mobile Devices...\n'
     all_mobile = callGAPIpages(cd.mobiledevices(), 'list', 'mobiledevices', page_message=page_message,
                                customerId=GC_Values[GC_CUSTOMER_ID], query=query, projection=projection, fields=fields,
-                               orderBy=orderBy, sortOrder=sortOrder, maxResults=GC_Values[GC_DEVICE_MAX_RESULTS])
+                               orderBy=orderBy, sortOrder=sortOrder)
     for mobile in all_mobile:
       row = {}
       for attrib in mobile:
@@ -12420,7 +12438,7 @@ def doPrintCrosActivity():
     page_message = 'Got %%total_items%% CrOS Devices...\n'
     all_cros = callGAPIpages(cd.chromeosdevices(), 'list', 'chromeosdevices', page_message=page_message,
                              query=query, customerId=GC_Values[GC_CUSTOMER_ID], projection='FULL',
-                             fields=fields, maxResults=GC_Values[GC_DEVICE_MAX_RESULTS], orgUnitPath=orgUnitPath)
+                             fields=fields, orgUnitPath=orgUnitPath)
     for cros in all_cros:
       row = {}
       for attrib in cros:
@@ -12601,7 +12619,7 @@ def doPrintCrosDevices():
     page_message = 'Got %%total_items%% CrOS Devices...\n'
     all_cros = callGAPIpages(cd.chromeosdevices(), 'list', 'chromeosdevices', page_message=page_message,
                              query=query, customerId=GC_Values[GC_CUSTOMER_ID], projection=projection, orgUnitPath=orgUnitPath,
-                             orderBy=orderBy, sortOrder=sortOrder, fields=fields, maxResults=GC_Values[GC_DEVICE_MAX_RESULTS])
+                             orderBy=orderBy, sortOrder=sortOrder, fields=fields)
     for cros in all_cros:
       _checkTPMVulnerability(cros)
       if guess_aue:
@@ -13005,7 +13023,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
       page_message = 'Got %%%%total_items%%%% %s...' % member_type_message
     validRoles, listRoles, listFields = _getRoleVerification(member_type, 'nextPageToken,members(email,id,type,status)')
     members = callGAPIpages(cd.members(), 'list', 'members', page_message=page_message,
-                            groupKey=group, roles=listRoles, fields=listFields, maxResults=GC_Values[GC_MEMBER_MAX_RESULTS])
+                            groupKey=group, roles=listRoles, fields=listFields)
     users = []
     for member in members:
       if ((not groupUserMembersOnly) or (member['type'] == 'USER')) and _checkMemberRoleIsSuspended(member, validRoles, checkSuspended):
@@ -13028,7 +13046,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
       page_message = 'Got %%total_items%% Users...'
     members = callGAPIpages(cd.users(), 'list', 'users', page_message=page_message,
                             customer=GC_Values[GC_CUSTOMER_ID], fields='nextPageToken,users(primaryEmail,orgUnitPath)',
-                            query=query, maxResults=GC_Values[GC_USER_MAX_RESULTS])
+                            query=query)
     ou = ou.lower()
     for member in members:
       if ou == member.get('orgUnitPath', '').lower():
@@ -13050,7 +13068,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
       page_message = 'Got %%total_items%% Users...'
     members = callGAPIpages(cd.users(), 'list', 'users', page_message=page_message,
                             customer=GC_Values[GC_CUSTOMER_ID], fields='nextPageToken,users(primaryEmail)',
-                            query=query, maxResults=GC_Values[GC_USER_MAX_RESULTS])
+                            query=query)
     for member in members:
       users.append(member['primaryEmail'])
     if not silent:
@@ -13069,7 +13087,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
       page_message = 'Got %%total_items%% Users...'
       members = callGAPIpages(cd.users(), 'list', 'users', page_message=page_message,
                               customer=GC_Values[GC_CUSTOMER_ID], fields='nextPageToken,users(primaryEmail,suspended)',
-                              query=query, maxResults=GC_Values[GC_USER_MAX_RESULTS])
+                              query=query)
       for member in members:
         email = member['primaryEmail']
         if (checkSuspended is None or checkSuspended == member['suspended']) and email not in usersSet:
@@ -13135,7 +13153,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
       page_message = 'Got %%total_items%% Users...'
       all_users = callGAPIpages(cd.users(), 'list', 'users', page_message=page_message,
                                 customer=GC_Values[GC_CUSTOMER_ID], query=query,
-                                fields='nextPageToken,users(primaryEmail)', maxResults=GC_Values[GC_USER_MAX_RESULTS])
+                                fields='nextPageToken,users(primaryEmail)')
       for member in all_users:
         users.append(member['primaryEmail'])
       if not silent:
@@ -13145,8 +13163,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
         printGettingAllItems('CrOS Devices', None)
       page_message = 'Got %%total_items%% CrOS Devices...'
       all_cros = callGAPIpages(cd.chromeosdevices(), 'list', 'chromeosdevices', page_message=page_message,
-                               customerId=GC_Values[GC_CUSTOMER_ID], fields='nextPageToken,chromeosdevices(deviceId)',
-                               maxResults=GC_Values[GC_DEVICE_MAX_RESULTS])
+                               customerId=GC_Values[GC_CUSTOMER_ID], fields='nextPageToken,chromeosdevices(deviceId)')
       for member in all_cros:
         users.append(member['deviceId'])
       if not silent:
@@ -13171,7 +13188,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
       page_message = 'Got %%total_items%% CrOS Devices...'
       members = callGAPIpages(cd.chromeosdevices(), 'list', 'chromeosdevices', page_message=page_message,
                               customerId=GC_Values[GC_CUSTOMER_ID], fields='nextPageToken,chromeosdevices(deviceId)',
-                              query=query, maxResults=GC_Values[GC_DEVICE_MAX_RESULTS])
+                              query=query)
       for member in members:
         deviceId = member['deviceId']
         if deviceId not in usersSet:
