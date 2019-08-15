@@ -6,7 +6,7 @@ import platform
 import re
 
 gam_author = 'Jay Lee <jay0lee@gmail.com>'
-gam_version = '4.92'
+gam_version = '4.93'
 gam_license = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 GAM_URL = 'https://git.io/gam'
@@ -757,8 +757,6 @@ GM_Globals = {
 #
 # Global variables defined by environment variables/signal files
 #
-# When retrieving lists of Google Drive activities from API, how many should be retrieved in each chunk
-GC_ACTIVITY_MAX_RESULTS = 'activity_max_results'
 # Automatically generate gam batch command if number of users specified in gam users xxx command exceeds this number
 # Default: 0, don't automatically generate gam batch commands
 GC_AUTO_BATCH_MIN = 'auto_batch_min'
@@ -780,16 +778,10 @@ GC_CUSTOMER_ID = 'customer_id'
 GC_DEBUG_LEVEL = 'debug_level'
 # ID Token decoded from OAuth 2.0 refresh token response. Includes hd (domain) and email of authorized user
 GC_DECODED_ID_TOKEN = 'decoded_id_token'
-# When retrieving lists of ChromeOS/Mobile devices from API, how many should be retrieved in each chunk
-GC_DEVICE_MAX_RESULTS = 'device_max_results'
 # Domain obtained from gam.cfg or oauth2.txt
 GC_DOMAIN = 'domain'
 # Google Drive download directory
 GC_DRIVE_DIR = 'drive_dir'
-# When retrieving lists of Drive files/folders from API, how many should be retrieved in each chunk
-GC_DRIVE_MAX_RESULTS = 'drive_max_results'
-# When retrieving lists of Google Group members from API, how many should be retrieved in each chunk
-GC_MEMBER_MAX_RESULTS = 'member_max_results'
 # If no_browser is False, writeCSVfile won't open a browser when todrive is set
 # and doRequestOAuth prints a link and waits for the verification code when oauth2.txt is being created
 GC_NO_BROWSER = 'no_browser'
@@ -813,8 +805,6 @@ GC_SHOW_COUNTS_MIN = 'show_counts_min'
 GC_SHOW_GETTINGS = 'show_gettings'
 # GAM config directory containing json discovery files
 GC_SITE_DIR = 'site_dir'
-# When retrieving lists of Users from API, how many should be retrieved in each chunk
-GC_USER_MAX_RESULTS = 'user_max_results'
 # CSV Columns GAM should show on CSV output
 GC_CSV_HEADER_FILTER = 'csv_header_filter'
 # CSV Rows GAM should filter
@@ -828,7 +818,6 @@ GC_CA_FILE = 'ca_file'
 
 tls_min = "TLSv1_2" if hasattr(ssl.SSLContext(), "minimum_version") else None
 GC_Defaults = {
-  GC_ACTIVITY_MAX_RESULTS: 100,
   GC_AUTO_BATCH_MIN: 0,
   GC_BATCH_SIZE: 50,
   GC_CACHE_DIR: '',
@@ -839,11 +828,8 @@ GC_Defaults = {
   GC_CUSTOMER_ID: MY_CUSTOMER,
   GC_DEBUG_LEVEL: 0,
   GC_DECODED_ID_TOKEN: '',
-  GC_DEVICE_MAX_RESULTS: 100,
   GC_DOMAIN: '',
   GC_DRIVE_DIR: '',
-  GC_DRIVE_MAX_RESULTS: 1000,
-  GC_MEMBER_MAX_RESULTS: 200,
   GC_NO_BROWSER: False,
   GC_NO_CACHE: False,
   GC_NO_UPDATE_CHECK: False,
@@ -855,7 +841,6 @@ GC_Defaults = {
   GC_SHOW_COUNTS_MIN: 0,
   GC_SHOW_GETTINGS: True,
   GC_SITE_DIR: '',
-  GC_USER_MAX_RESULTS: 500,
   GC_CSV_HEADER_FILTER: '',
   GC_CSV_ROW_FILTER: '',
   GC_TLS_MIN_VERSION: tls_min,
@@ -880,7 +865,6 @@ GC_VAR_TYPE = 'type'
 GC_VAR_LIMITS = 'lmit'
 
 GC_VAR_INFO = {
-  GC_ACTIVITY_MAX_RESULTS: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (1, 500)},
   GC_AUTO_BATCH_MIN: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (0, None)},
   GC_BATCH_SIZE: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (1, 1000)},
   GC_CACHE_DIR: {GC_VAR_TYPE: GC_TYPE_DIRECTORY},
@@ -891,11 +875,8 @@ GC_VAR_INFO = {
   GC_CUSTOMER_ID: {GC_VAR_TYPE: GC_TYPE_STRING},
   GC_DEBUG_LEVEL: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (0, None)},
   GC_DECODED_ID_TOKEN: {GC_VAR_TYPE: GC_TYPE_STRING},
-  GC_DEVICE_MAX_RESULTS: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (1, 1000)},
   GC_DOMAIN: {GC_VAR_TYPE: GC_TYPE_STRING},
   GC_DRIVE_DIR: {GC_VAR_TYPE: GC_TYPE_DIRECTORY},
-  GC_DRIVE_MAX_RESULTS: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (1, 1000)},
-  GC_MEMBER_MAX_RESULTS: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (1, 10000)},
   GC_NO_BROWSER: {GC_VAR_TYPE: GC_TYPE_BOOLEAN},
   GC_NO_CACHE: {GC_VAR_TYPE: GC_TYPE_BOOLEAN},
   GC_NO_UPDATE_CHECK: {GC_VAR_TYPE: GC_TYPE_BOOLEAN},
@@ -907,7 +888,6 @@ GC_VAR_INFO = {
   GC_SHOW_COUNTS_MIN: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (0, None)},
   GC_SHOW_GETTINGS: {GC_VAR_TYPE: GC_TYPE_BOOLEAN},
   GC_SITE_DIR: {GC_VAR_TYPE: GC_TYPE_DIRECTORY},
-  GC_USER_MAX_RESULTS: {GC_VAR_TYPE: GC_TYPE_INTEGER, GC_VAR_LIMITS: (1, 500)},
   GC_CSV_HEADER_FILTER: {GC_VAR_TYPE: GC_TYPE_HEADERFILTER},
   GC_CSV_ROW_FILTER: {GC_VAR_TYPE: GC_TYPE_ROWFILTER},
   GC_TLS_MIN_VERSION: {GC_VAR_TYPE: GC_TYPE_STRING},
