@@ -7571,6 +7571,14 @@ def getUserAttributes(i, cd, updateCmd):
       keyword['value'] = sys.argv[i]
       i += 1
       appendItemToBodyList(body, 'keywords', keyword)
+    elif myarg in ['recoveryemail']:
+      body['recoveryEmail'] = sys.argv[i+1]
+      i += 2
+    elif myarg in ['recoveryphone']:
+      body['recoveryPhone'] = sys.argv[i+1]
+      if body['recoveryPhone'][0] != '+':
+        body['recoveryPhone'] = '+' + body['recoveryPhone']
+      i += 2
     elif myarg == 'clearschema':
       if not updateCmd:
         systemErrorExit(2, '%s is not a valid create user argument.' % sys.argv[i])
@@ -10127,9 +10135,13 @@ def doGetUserInfo(user_email=None):
     else:
       print('Last login time: %s' % user['lastLoginTime'])
   if 'orgUnitPath' in user:
-    print('Google Org Unit Path: %s\n' % user['orgUnitPath'])
+    print('Google Org Unit Path: %s' % user['orgUnitPath'])
   if 'thumbnailPhotoUrl' in user:
     print('Photo URL: %s\n' % user['thumbnailPhotoUrl'])
+  if 'recoveryPhone' in user:
+    print('Recovery Phone: %s' % user['recoveryPhone'])
+  if 'recoveryEmail' in user:
+    print('Recovery Email: %s' % user['recoveryEmail'])
   if 'notes' in user:
     print('Notes:')
     notes = user['notes']
