@@ -170,14 +170,14 @@ script:
   for i in {01..20};
     do echo $newbase-bulkuser-$i >> sample.csv;
   done; fi
-- if [ "$e2e" = true ]; then $gam create user $newuser firstname Travis lastname $jid password random travis.jid $jid; fi
+- if [ "$e2e" = true ]; then phonenumber="+1212$(cat /dev/urandom | tr -dc '0-9' | fold -w 256 | head -n 1 | sed -e 's/^0*//' | head --bytes 7)"; echo "Phone number $phonenumber"; fi
+- if [ "$e2e" = true ]; then $gam create user $newuser firstname Travis lastname $jid password random recoveryphone $phonenumber recoveryemail jay0lee@gmail.com travis.jid $jid; fi
 - if [ "$e2e" = true ]; then $gam user $gam_user sendemail recipient $newuser subject "test message $newbase" message "Travis test message"; fi
 - if [ "$e2e" = true ]; then $gam create group $newgroup name "Travis $jid group" description "This is a description" isarchived true; fi
 - if [ "$e2e" = true ]; then $gam user $newuser add license gsuitebusiness; fi
 - if [ "$e2e" = true ]; then $gam update group $newgroup add owner $gam_user; fi
 - if [ "$e2e" = true ]; then $gam update group $newgroup add member $newuser; fi
 - if [ "$e2e" = true ]; then $gam csv sample.csv gam create user ~~email~~ firstname "Travis Bulk" lastname ~~email~~ travis.jid $jid; fi
-- if [ "$e2e" = true ]; then phonenumber="+1$(cat /dev/urandom | tr -dc '0-9' | fold -w 256 | head -n 1 | sed -e 's/^0*//' | head --bytes 10)"; echo "Phone number $phonenumber"; fi
 - if [ "$e2e" = true ]; then $gam csv sample.csv gam update user ~~email~~ recoveryphone "$phonenumber" recoveryemail jay0lee@gmail.com; fi
 - if [ "$e2e" = true ]; then $gam csv sample.csv gam user ~email add license gsuitebusiness; fi
 - if [ "$e2e" = true ]; then $gam csv sample.csv gam user $gam_user sendemail recipient ~~email~~@pdl.jaylee.us subject "test message $newbase" message "Travis test message"; fi
