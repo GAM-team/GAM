@@ -1091,7 +1091,10 @@ def getPageSize(service, function, kwargs):
   for resource in service._rootDesc.get('resources', {}).values():
     for a_method in resource.get('methods', {}).values():
       if a_method.get('id')  == api_id:
-        if a_method['parameters'].get('pageSize'):
+        if not a_method.get('parameters') or a_method['parameters'].get('pageSize') or not a_method['parameters'].get('maxResults'):
+          # make sure API call supports maxResults. For now we don't care to
+          # set pageSize since all known pageSize API calls have
+          # default pageSize == max pageSize
           return
         return {'maxResults': a_method['parameters']['maxResults'].get('maximum', MAX_RESULTS_API_EXCEPTIONS.get(api_id, None))}
 
