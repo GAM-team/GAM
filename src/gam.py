@@ -7634,7 +7634,8 @@ class ShortURLFlow(google_auth_oauthlib.flow.InstalledAppFlow):
     simplehttp = _createHttpObj()
     simplehttp.timeout = 10
     url_shortnr = 'https://gam-shortn.appspot.com/create'
-    headers = {'Content-Type': 'application/json'}
+    headers = { 'Content-Type': 'application/json',
+               'user-agent': GAM_INFO }
     try:
       resp, content = simplehttp.request(url_shortnr, 'POST', '{"long_url": "%s"}' % long_url, headers=headers)
     except:
