@@ -1327,7 +1327,6 @@ def buildGAPIObject(api):
   GM_Globals[GM_CURRENT_API_USER] = None
   credentials = getValidOauth2TxtCredentials()
   credentials.user_agent = GAM_INFO
-  #http = credentials.authorize(httplib2.Http(cache=GM_Globals[GM_CACHE_DIR]))
   http = google_auth_httplib2.AuthorizedHttp(credentials, _createHttpObj(cache=GM_Globals[GM_CACHE_DIR]))
   service = getService(api, http)
   if GC_Values[GC_DOMAIN]:
@@ -7632,7 +7631,7 @@ def getUserAttributes(i, cd, updateCmd):
 class ShortURLFlow(google_auth_oauthlib.flow.InstalledAppFlow):
   def authorization_url(self, **kwargs):
     long_url, state = super(ShortURLFlow, self).authorization_url(**kwargs)
-    simplehttp = httplib2.Http()
+    simplehttp = _createHttpObj()
     simplehttp.timeout = 10
     url_shortnr = 'https://gam-shortn.appspot.com/create'
     headers = {'Content-Type': 'application/json'}
