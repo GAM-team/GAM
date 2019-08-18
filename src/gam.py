@@ -106,11 +106,11 @@ google_auth_httplib2.Request.__call__ = _request_with_user_agent(
 google_auth_httplib2.AuthorizedHttp.request = _request_with_user_agent(
   google_auth_httplib2.AuthorizedHttp.request)
 
-def _createHttpObj(cache=None, override_min_tls=None, override_max_tls=None):
+def _createHttpObj(cache=None, timeout=None, override_min_tls=None, override_max_tls=None):
   tls_minimum_version = override_min_tls if override_min_tls else GC_Values[GC_TLS_MIN_VERSION]
   tls_maximum_version = override_max_tls if override_max_tls else GC_Values[GC_TLS_MAX_VERSION]
   return httplib2.Http(ca_certs=GC_Values[GC_CA_FILE], tls_maximum_version=tls_maximum_version, tls_minimum_version=tls_minimum_version,
-                       cache=cache)
+                       cache=cache, timeout=timeout)
 
 def showUsage():
   doGAMVersion(checkForArgs=False)
@@ -737,8 +737,7 @@ def doGAMCheckForUpdates(forceCheck=False):
       return
     check_url = GAM_LATEST_RELEASE # latest full release
   headers = {'Accept': 'application/vnd.github.v3.text+json'}
-  simplehttp = _createHttpObj()
-  simplehttp.timeout = 10
+  simplehttp = _createHttpObj(timeout=10)
   try:
     (_, c) = simplehttp.request(check_url, 'GET', headers=headers)
     try:
@@ -1086,7 +1085,7 @@ def getPageSize(service, function, kwargs):
   api_id = method(**kwargs).methodId
   for resource in service._rootDesc.get('resources', {}).values():
     for a_method in resource.get('methods', {}).values():
-      if a_method.get('id')  == api_id:
+      if a_method.get('id') == api_id:
         if not a_method.get('parameters') or a_method['parameters'].get('pageSize') or not a_method['parameters'].get('maxResults'):
           # make sure API call supports maxResults. For now we don't care to
           # set pageSize since all known pageSize API calls have
@@ -7631,18 +7630,20 @@ def getUserAttributes(i, cd, updateCmd):
 class ShortURLFlow(google_auth_oauthlib.flow.InstalledAppFlow):
   def authorization_url(self, **kwargs):
     long_url, state = super(ShortURLFlow, self).authorization_url(**kwargs)
-    simplehttp = _createHttpObj()
-    simplehttp.timeout = 10
+    simplehttp = _createHttpObj(timeout=10)
     url_shortnr = 'https://gam-shortn.appspot.com/create'
-    headers = { 'Content-Type': 'application/json',
-               'user-agent': GAM_INFO }
+    headers = {'Content-Type': 'application/json',
+               'user-agent': GAM_INFO}
     try:
       resp, content = simplehttp.request(url_shortnr, 'POST', '{"long_url": "%s"}' % long_url, headers=headers)
     except:
       return long_url, state
     if resp.status != 200:
       return long_url, state
-    return json.loads(content).get('short_url', ''), state
+    try:
+      return json.loads(content).get('short_url', long_url), state
+    except:
+      return long_url, state
 
 def _run_oauth_flow(client_id, client_secret, scopes, access_type, login_hint=None):
   client_config = {
