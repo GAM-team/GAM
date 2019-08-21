@@ -7570,7 +7570,7 @@ def getUserAttributes(i, cd, updateCmd):
       i += 2
     elif myarg in ['recoveryphone']:
       body['recoveryPhone'] = sys.argv[i+1]
-      if body['recoveryPhone'][0] != '+':
+      if body['recoveryPhone'] and body['recoveryPhone'][0] != '+':
         body['recoveryPhone'] = '+' + body['recoveryPhone']
       i += 2
     elif myarg == 'clearschema':
@@ -10515,6 +10515,8 @@ def doGetCrosInfo():
     print('CrOS Device: {0} ({1} of {2})'.format(deviceId, i, device_count))
     if 'notes' in cros:
       cros['notes'] = cros['notes'].replace('\n', '\\n')
+    if 'autoUpdateExpiration' in cros:
+      cros['autoUpdateExpiration'] = utils.formatTimestampYMD(cros['autoUpdateExpiration'])
     _checkTPMVulnerability(cros)
     if guess_aue:
       _guessAUE(cros, guessedAUEs)
@@ -12640,6 +12642,8 @@ def doPrintCrosDevices():
       for cros in all_cros:
         if 'notes' in cros:
           cros['notes'] = cros['notes'].replace('\n', '\\n')
+        if 'autoUpdateExpiration' in cros:
+          cros['autoUpdateExpiration'] = utils.formatTimestampYMD(cros['autoUpdateExpiration'])
         for cpuStatusReport in cros.get('cpuStatusReports', []):
           for tempInfo in cpuStatusReport.get('cpuTemperatureInfo', []):
             tempInfo['label'] = tempInfo['label'].strip()
@@ -12648,6 +12652,8 @@ def doPrintCrosDevices():
     for cros in all_cros:
       if 'notes' in cros:
         cros['notes'] = cros['notes'].replace('\n', '\\n')
+      if 'autoUpdateExpiration' in cros:
+        cros['autoUpdateExpiration'] = utils.formatTimestampYMD(cros['autoUpdateExpiration'])
       row = {}
       for attrib in cros:
         if attrib not in set(['kind', 'etag', 'tpmVersionInfo', 'recentUsers', 'activeTimeRanges',
