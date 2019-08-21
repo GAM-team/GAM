@@ -257,16 +257,20 @@ If an item contains spaces, it should be surrounded by ".
 	annotatedassetid|assedid|asset|
 	annotatedlocation|location|
 	annotateduser|user|
+	autoupdateexpiration|
 	bootmode|
 	cpustatusreports|
 	devicefiles|
 	deviceid|
 	diskvolumereports|
+	dockmacaddress|
 	ethernetmacaddress|
+	ethernetmacaddress0|
 	firmwareversion|
 	lastenrollmenttime|
 	lastsync|
 	macaddress|
+	manufacturedate|
 	meid|
 	model|
 	notes|
@@ -521,6 +525,8 @@ If an item contains spaces, it should be surrounded by ".
 	phones|phone|
 	posixaccounts|posix|
 	primaryemail|username|
+	recoveryemail|
+	recoveryphone|
 	relations|relation|
 	ssh|sshkeys|sshpublickeys|
 	suspended|
@@ -776,6 +782,8 @@ Specify a collection of Users by directly specifying them or by specifiying item
 	(note clear|([text_html|text_plain] <String>|(file <FileName> [charset <Charset>])))|
 	(org|ou|orgunitpath <OrgUnitPath>)
 	(password random|<Password>)|
+	(recoveryemail <EmailAddress>)|
+	(recoveryphone <string>)|
 	(suspended <Boolean>)|
 	(<SchemaName>.<FieldName> [multivalued|multivalue|value|multinonempty [type home|other|work|(custom <String>)]] <String>)
 <UserMultiAttributes> ::=
@@ -1295,7 +1303,7 @@ gam <UserTypeEntity> draftemail [recipient|to <EmailAddress>] [from <EmailAddres
 gam <UserTypeEntity> importemail [recipient|to <EmailAddress>] [from <EmailAddress>]
 	[subject <String>] [(message <String>)|(file <FileName> [charset <Charset>])]
 	[labels <LabelNameList>] (header <String> <String>)*
-        [deleted] [date <Time>]
+	[deleted] [date <Time>]
 	[nevercheckspam] [processforcalendar]
 gam <UserTypeEntity> insertemail [recipient|to <EmailAddress>] [from <EmailAddress>]
 	[subject <String>] [(message <String>)|(file <FileName> [charset <Charset>])]
