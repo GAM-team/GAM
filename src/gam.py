@@ -1491,16 +1491,29 @@ def doCheckServiceAccount(users):
   all_scopes.sort()
   for user in users:
     all_scopes_pass = True
+    oa2 = googleapiclient.discovery.build('oauth2', 'v1', _createHttpObj())
     print('User: %s' % (user))
     for scope in all_scopes:
-      try:
-        credentials = getSvcAcctCredentials([scope], user)
-        request = google_auth_httplib2.Request(_createHttpObj())
-        credentials.refresh(request)
-        result = 'PASS'
-      except (httplib2.ServerNotFoundError, RuntimeError) as e:
-        systemErrorExit(4, e)
-      except google.auth.exceptions.RefreshError:
+      # try with and without email scope
+      for scopes in [[scope, 'https://www.googleapis.com/auth/userinfo.email'], [scope]]:
+        try:
+          credentials = getSvcAcctCredentials(scopes, user)
+          request = google_auth_httplib2.Request(_createHttpObj())
+          credentials.refresh(request)
+          break
+        except (httplib2.ServerNotFoundError, RuntimeError) as e:
+          systemErrorExit(4, e)
+        except google.auth.exceptions.RefreshError:
+          continue
+      if credentials.token:
+        token_info = callGAPI(oa2, 'tokeninfo', access_token=credentials.token)
+        has_scopes = token_info.get('scope', '').split(' ')
+        if scope in has_scopes and ('email' not in token_info or user.lower() == token_info.get('email')):
+          result = 'PASS'
+        else:
+          result = 'FAIL'
+          all_scopes_pass = False
+      else:
         result = 'FAIL'
         all_scopes_pass = False
       print(' Scope: {0:60} {1}'.format(scope, result))

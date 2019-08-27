@@ -161,6 +161,7 @@ API_SCOPE_MAPPING = {
   'calendar': ['https://www.googleapis.com/auth/calendar',],
   'drive': ['https://www.googleapis.com/auth/drive',],
   'drive3': ['https://www.googleapis.com/auth/drive',],
+  'email': ['https://www.googleapis.com/auth/userinfo.email'],
   'gmail': ['https://mail.google.com/',
             'https://www.googleapis.com/auth/gmail.settings.basic',
             'https://www.googleapis.com/auth/gmail.settings.sharing',],
