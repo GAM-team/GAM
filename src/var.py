@@ -39,6 +39,8 @@ FN_LAST_UPDATE_CHECK_TXT = 'lastupdatecheck.txt'
 MY_CUSTOMER = 'my_customer'
 # See https://support.google.com/drive/answer/37603
 MAX_GOOGLE_SHEET_CELLS = 5000000
+MAX_LOCAL_GOOGLE_TIME_OFFSET = 30
+
 SKUS = {
   '1010010001': {
     'product': '101001', 'aliases': ['identity', 'cloudidentity'], 'displayName': 'Cloud Identity'},

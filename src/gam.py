@@ -720,6 +720,14 @@ def SetGlobalVariables():
     GM_Globals[GM_CACHE_DISCOVERY_ONLY] = False
   return True
 
+def getLocalGoogleTimeOffset(testLocation='www.googleapis.com'):
+  localUTC = datetime.datetime.now(datetime.timezone.utc)
+  try:
+    googleUTC = dateutil.parser.parse(_createHttpObj().request('https://'+testLocation, 'HEAD')[0]['date'])
+    return (localUTC-googleUTC).total_seconds()
+  except (httplib2.ServerNotFoundError, RuntimeError, ValueError) as e:
+    systemErrorExit(4, str(e))
+
 def doGAMCheckForUpdates(forceCheck=False):
 
   def _gamLatestVersionNotAvailable():
@@ -806,12 +814,7 @@ def doGAMVersion(checkForArgs=True):
                             sys.version_info[3], googleapiclient.__version__,
                             platform.platform(), platform.machine(), GM_Globals[GM_GAM_PATH]))
   if timeOffset:
-    localUTC = datetime.datetime.now(datetime.timezone.utc)
-    try:
-      googleUTC = dateutil.parser.parse(_createHttpObj().request('https://'+testLocation, 'HEAD')[0]['date'])
-    except (httplib2.ServerNotFoundError, RuntimeError, ValueError) as e:
-      systemErrorExit(4, str(e))
-    print('Time offset from Google, correct local time if more than 30 seconds: %s' % str(localUTC-googleUTC))
+    print('Time offset from Google, correct local time if more than %s seconds: %s' % (MAX_LOCAL_GOOGLE_TIME_OFFSET, getLocalGoogleTimeOffset(testLocation)))
   if force_check:
     doGAMCheckForUpdates(forceCheck=True)
   if extended:
@@ -1491,6 +1494,9 @@ def buildGmailGAPIObject(user):
   return (userEmail, buildGAPIServiceObject('gmail', userEmail))
 
 def doCheckServiceAccount(users):
+  timeOffset = getLocalGoogleTimeOffset()
+  if timeOffset > MAX_LOCAL_GOOGLE_TIME_OFFSET:
+    systemErrorExit(4, 'Time offset from Google is more than %s seconds, correct local time: %s' % (MAX_LOCAL_GOOGLE_TIME_OFFSET, timeOffset))
   all_scopes = []
   for _, scopes in list(API_SCOPE_MAPPING.items()):
     for scope in scopes:
