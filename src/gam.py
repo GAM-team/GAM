@@ -774,9 +774,7 @@ def doGAMCheckForUpdates(forceCheck=False):
     return
 
 def doGAMVersion(checkForArgs=True):
-  force_check = False
-  simple = False
-  extended = False
+  force_check = extended = simple = timeOffset = False
   testLocation = 'www.googleapis.com'
   if checkForArgs:
     i = 2
@@ -791,6 +789,9 @@ def doGAMVersion(checkForArgs=True):
       elif myarg == 'extended':
         extended = True
         i += 1
+      elif myarg == 'timeoffset':
+        timeOffset = True
+        i += 1
       elif myarg == 'location':
         testLocation = sys.argv[i+1]
         i += 2
@@ -804,6 +805,13 @@ def doGAMVersion(checkForArgs=True):
                             sys.version_info[1], sys.version_info[2], struct.calcsize('P')*8,
                             sys.version_info[3], googleapiclient.__version__,
                             platform.platform(), platform.machine(), GM_Globals[GM_GAM_PATH]))
+  if timeOffset:
+    localUTC = datetime.datetime.now(datetime.timezone.utc)
+    try:
+      googleUTC = dateutil.parser.parse(_createHttpObj().request('https://'+testLocation, 'HEAD')[0]['date'])
+    except (httplib2.ServerNotFoundError, RuntimeError, ValueError) as e:
+      systemErrorExit(4, str(e))
+    print('Time offset from Google, correct local time if more than 30 seconds: %s' % str(localUTC-googleUTC))
   if force_check:
     doGAMCheckForUpdates(forceCheck=True)
   if extended:
