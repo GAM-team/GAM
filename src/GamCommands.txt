@@ -807,7 +807,7 @@ Specify a collection of Users by directly specifying them or by specifiying item
 	<UserBasicAttribute>|
 	<UserMultiAttribute>
 
-gam version [check|checkrc|simple|extended] [location <HostName>]
+gam version [check|checkrc|simple|extended] [timeoffset] [location <HostName>]
 gam help
 
 gam batch <FileName>|- [charset <Charset>]
