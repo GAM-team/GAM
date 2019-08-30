@@ -156,6 +156,8 @@ API_VER_MAPPING = {
   'vault': 'v1',
   }
 
+USERINFO_EMAIL_SCOPE = 'https://www.googleapis.com/auth/userinfo.email'
+
 API_SCOPE_MAPPING = {
   'alertcenter': ['https://www.googleapis.com/auth/apps.alerts',],
   'appsactivity': ['https://www.googleapis.com/auth/activity',
@@ -163,7 +165,7 @@ API_SCOPE_MAPPING = {
   'calendar': ['https://www.googleapis.com/auth/calendar',],
   'drive': ['https://www.googleapis.com/auth/drive',],
   'drive3': ['https://www.googleapis.com/auth/drive',],
-  'email': ['https://www.googleapis.com/auth/userinfo.email'],
+  'email': [USERINFO_EMAIL_SCOPE,],
   'gmail': ['https://mail.google.com/',
             'https://www.googleapis.com/auth/gmail.settings.basic',
             'https://www.googleapis.com/auth/gmail.settings.sharing',],

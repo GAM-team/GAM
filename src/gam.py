@@ -1504,12 +1504,13 @@ def doCheckServiceAccount(users):
         all_scopes.append(scope)
   all_scopes.sort()
   for user in users:
+    user = user.lower()
     all_scopes_pass = True
     oa2 = googleapiclient.discovery.build('oauth2', 'v1', _createHttpObj())
     print('User: %s' % (user))
     for scope in all_scopes:
       # try with and without email scope
-      for scopes in [[scope, 'https://www.googleapis.com/auth/userinfo.email'], [scope]]:
+      for scopes in [[scope, USERINFO_EMAIL_SCOPE], [scope]]:
         try:
           credentials = getSvcAcctCredentials(scopes, user)
           request = google_auth_httplib2.Request(_createHttpObj())
@@ -1521,8 +1522,7 @@ def doCheckServiceAccount(users):
           continue
       if credentials.token:
         token_info = callGAPI(oa2, 'tokeninfo', access_token=credentials.token)
-        has_scopes = token_info.get('scope', '').split(' ')
-        if scope in has_scopes and ('email' not in token_info or user.lower() == token_info.get('email')):
+        if scope in token_info.get('scope', '').split(' ') and user == token_info.get('email', user):
           result = 'PASS'
         else:
           result = 'FAIL'
