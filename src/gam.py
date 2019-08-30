@@ -724,7 +724,21 @@ def getLocalGoogleTimeOffset(testLocation='www.googleapis.com'):
   localUTC = datetime.datetime.now(datetime.timezone.utc)
   try:
     googleUTC = dateutil.parser.parse(_createHttpObj().request('https://'+testLocation, 'HEAD')[0]['date'])
-    return (localUTC-googleUTC).total_seconds()
+    offset = abs(localUTC-googleUTC).total_seconds()
+    days, remainder = divmod(offset, 86400)
+    hours, remainder = divmod(remainder, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    timeoff = []
+    if days:
+      timeoff.append('%d days' % days)
+    if hours:
+      timeoff.append('%d hours' % hours)
+    if minutes:
+      timeoff.append('%d minutes' % minutes)
+    if seconds:
+      timeoff.append('%d seconds' % seconds)
+    nicetime = ', '.join(timeoff)
+    return (offset, nicetime)
   except (httplib2.ServerNotFoundError, RuntimeError, ValueError) as e:
     systemErrorExit(4, str(e))
 
@@ -796,6 +810,7 @@ def doGAMVersion(checkForArgs=True):
         i += 1
       elif myarg == 'extended':
         extended = True
+        timeOffset = True
         i += 1
       elif myarg == 'timeoffset':
         timeOffset = True
@@ -814,7 +829,10 @@ def doGAMVersion(checkForArgs=True):
                             sys.version_info[3], googleapiclient.__version__,
                             platform.platform(), platform.machine(), GM_Globals[GM_GAM_PATH]))
   if timeOffset:
-    print('Time offset from Google, correct local time if more than %s seconds: %s' % (MAX_LOCAL_GOOGLE_TIME_OFFSET, getLocalGoogleTimeOffset(testLocation)))
+    offset, nicetime = getLocalGoogleTimeOffset(testLocation)
+    print('Your computer is %s off from Google\'s time.' % (nicetime))
+    if offset > MAX_LOCAL_GOOGLE_TIME_OFFSET:
+      systemErrorExit(4, 'Please fix your system clock.')
   if force_check:
     doGAMCheckForUpdates(forceCheck=True)
   if extended:
@@ -864,7 +882,8 @@ def getSvcAcctCredentials(scopes, act_as):
       GM_Globals[GM_OAUTH2SERVICE_JSON_DATA] = json.loads(json_string)
     credentials = google.oauth2.service_account.Credentials.from_service_account_info(GM_Globals[GM_OAUTH2SERVICE_JSON_DATA])
     credentials = credentials.with_scopes(scopes)
-    credentials = credentials.with_subject(act_as)
+    if act_as:
+      credentials = credentials.with_subject(act_as)
     GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID] = GM_Globals[GM_OAUTH2SERVICE_JSON_DATA]['client_id']
     return credentials
   except (ValueError, KeyError):
@@ -1493,10 +1512,40 @@ def buildGmailGAPIObject(user):
   userEmail = convertUIDtoEmailAddress(user)
   return (userEmail, buildGAPIServiceObject('gmail', userEmail))
 
+def printPassFail(description, result):
+  padding = 80 - len(description) - 2
+  print(' {} {:>{padding}}'.format(description, result, padding=str(padding)))
+
 def doCheckServiceAccount(users):
-  timeOffset = getLocalGoogleTimeOffset()
-  if timeOffset > MAX_LOCAL_GOOGLE_TIME_OFFSET:
-    systemErrorExit(4, 'Time offset from Google is more than %s seconds, correct local time: %s' % (MAX_LOCAL_GOOGLE_TIME_OFFSET, timeOffset))
+  email_scope = 'https://www.googleapis.com/auth/userinfo.email'
+  something_failed = False
+  print('Computer clock status:')
+  timeOffset, nicetime = getLocalGoogleTimeOffset()
+  if timeOffset < MAX_LOCAL_GOOGLE_TIME_OFFSET:
+    time_status = 'PASS'
+  else:
+    time_status = 'FAIL'
+    something_failed = True
+  printPassFail('Your computer clock differs from Google by %s' % nicetime, time_status)
+  oa2 = googleapiclient.discovery.build('oauth2', 'v1', _createHttpObj())
+  print('Service Account Private Key Authentication:')
+  # We are explicitly not doing DwD here, just confirming service account can auth
+  auth_error = ''
+  try:
+    credentials = getSvcAcctCredentials([email_scope], None)
+    request = google_auth_httplib2.Request(_createHttpObj())
+    credentials.refresh(request)
+    sa_token_info = callGAPI(oa2, 'tokeninfo', access_token=credentials.token)
+    if sa_token_info:
+      sa_token_result = 'PASS'
+    else:
+      sa_token_result = 'FAIL'
+      something_failed = True
+  except google.auth.exceptions.RefreshError as e:
+    sa_token_result = 'FAIL'
+    something_failed = True
+    auth_error = str(e.args[0])
+  printPassFail('Authenticating...%s' % auth_error, sa_token_result)
   all_scopes = []
   for _, scopes in list(API_SCOPE_MAPPING.items()):
     for scope in scopes:
@@ -1506,13 +1555,12 @@ def doCheckServiceAccount(users):
   for user in users:
     all_scopes_pass = True
     oa2 = googleapiclient.discovery.build('oauth2', 'v1', _createHttpObj())
-    print('User: %s' % (user))
+    print('User authentication: %s' % (user))
     for scope in all_scopes:
       # try with and without email scope
-      for scopes in [[scope, 'https://www.googleapis.com/auth/userinfo.email'], [scope]]:
+      for scopes in [[scope, email_scope], [scope]]:
         try:
           credentials = getSvcAcctCredentials(scopes, user)
-          request = google_auth_httplib2.Request(_createHttpObj())
           credentials.refresh(request)
           break
         except (httplib2.ServerNotFoundError, RuntimeError) as e:
@@ -1530,12 +1578,14 @@ def doCheckServiceAccount(users):
       else:
         result = 'FAIL'
         all_scopes_pass = False
-      print(' Scope: {0:60} {1}'.format(scope, result))
+      printPassFail(scope, result)
     service_account = GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID]
     if all_scopes_pass:
       print('\nAll scopes passed!\nService account %s is fully authorized.' % service_account)
       return
     user_domain = user[user.find('@')+1:]
+    # Tack on email scope for more accurate checking
+    all_scopes.append('https://www.googleapis.com/auth/userinfo.email')
     scopes_failed = '''Some scopes failed! Please go to:
 
 https://admin.google.com/%s/AdminHome?#OGX:ManageOauthClients
