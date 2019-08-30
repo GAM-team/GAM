@@ -1522,7 +1522,6 @@ def printPassFail(description, result):
   print(' {} {:>{padding}}'.format(description, result, padding=str(padding)))
 
 def doCheckServiceAccount(users):
-  email_scope = 'https://www.googleapis.com/auth/userinfo.email'
   something_failed = False
   print('Computer clock status:')
   timeOffset, nicetime = getLocalGoogleTimeOffset()
@@ -1537,7 +1536,7 @@ def doCheckServiceAccount(users):
   # We are explicitly not doing DwD here, just confirming service account can auth
   auth_error = ''
   try:
-    credentials = getSvcAcctCredentials([email_scope], None)
+    credentials = getSvcAcctCredentials([USERINFO_EMAIL_SCOPE], None)
     request = google_auth_httplib2.Request(_createHttpObj())
     credentials.refresh(request)
     sa_token_info = callGAPI(oa2, 'tokeninfo', access_token=credentials.token)
@@ -1558,12 +1557,13 @@ def doCheckServiceAccount(users):
         all_scopes.append(scope)
   all_scopes.sort()
   for user in users:
+    user = user.lower()
     all_scopes_pass = True
     oa2 = googleapiclient.discovery.build('oauth2', 'v1', _createHttpObj())
-    print('User authentication: %s' % (user))
+    print('Domain-Wide Delegation authentication as %s:' % (user))
     for scope in all_scopes:
       # try with and without email scope
-      for scopes in [[scope, email_scope], [scope]]:
+      for scopes in [[scope, USERINFO_EMAIL_SCOPE], [scope]]:
         try:
           credentials = getSvcAcctCredentials(scopes, user)
           credentials.refresh(request)
@@ -1574,8 +1574,8 @@ def doCheckServiceAccount(users):
           continue
       if credentials.token:
         token_info = callGAPI(oa2, 'tokeninfo', access_token=credentials.token)
-        has_scopes = token_info.get('scope', '').split(' ')
-        if scope in has_scopes and ('email' not in token_info or user.lower() == token_info.get('email')):
+        if scope in token_info.get('scope', '').split(' ') and \
+           user == token_info.get('email', user).lower():
           result = 'PASS'
         else:
           result = 'FAIL'

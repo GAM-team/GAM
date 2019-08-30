@@ -6,7 +6,7 @@ import platform
 import re
 
 gam_author = 'Jay Lee <jay0lee@gmail.com>'
-gam_version = '4.93'
+gam_version = '4.94'
 gam_license = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 GAM_URL = 'https://git.io/gam'
@@ -155,6 +155,8 @@ API_VER_MAPPING = {
   'storage': 'v1',
   'vault': 'v1',
   }
+
+USERINFO_EMAIL_SCOPE = 'https://www.googleapis.com/auth/userinfo.email'
 
 API_SCOPE_MAPPING = {
   'alertcenter': ['https://www.googleapis.com/auth/apps.alerts',],
