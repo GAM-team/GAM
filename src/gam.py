@@ -723,7 +723,12 @@ def SetGlobalVariables():
 def getLocalGoogleTimeOffset(testLocation='www.googleapis.com'):
   localUTC = datetime.datetime.now(datetime.timezone.utc)
   try:
-    googleUTC = dateutil.parser.parse(_createHttpObj().request('https://'+testLocation, 'HEAD')[0]['date'])
+    # we disable SSL verify so we can still get time even if clock
+    # is way off. This could be spoofed / MitM but we'll fail for those
+    # situations everywhere else but here.
+    badhttp = _createHttpObj()
+    badhttp.disable_ssl_certificate_validation = True
+    googleUTC = dateutil.parser.parse(badhttp.request('https://'+testLocation, 'HEAD')[0]['date'])
     offset = abs(localUTC-googleUTC).total_seconds()
     days, remainder = divmod(offset, 86400)
     hours, remainder = divmod(remainder, 3600)
