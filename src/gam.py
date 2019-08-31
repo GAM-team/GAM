@@ -1518,8 +1518,7 @@ def buildGmailGAPIObject(user):
   return (userEmail, buildGAPIServiceObject('gmail', userEmail))
 
 def printPassFail(description, result):
-  padding = 80 - len(description) - 2
-  print(' {} {:>{padding}}'.format(description, result, padding=str(padding)))
+  print(' {0:74} {1}'.format(description, result))
 
 def doCheckServiceAccount(users):
   something_failed = False
