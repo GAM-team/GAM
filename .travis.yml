@@ -110,9 +110,41 @@ matrix:
         - PLATFORM=x86_64
         - VMTYPE=test
     - os: osx
-      name: "MacOS 64-bit"
+      name: "MacOS 10.10"
+      language: generic
+      osx_image: xcode6.4
+      env:
+        - GAMOS=macos
+        - PLATFORM=x86_64
+        - VMTYPE=build
+    - os: osx
+      name: "MacOS 10.11"
+      language: generic
+      osx_image: xcode8
+      env:
+        - GAMOS=macos
+        - PLATFORM=x86_64
+        - VMTYPE=build
+    - os: osx
+      name: "MacOS 10.12"
       language: generic
       osx_image: xcode9.2
+      env:
+        - GAMOS=macos
+        - PLATFORM=x86_64
+        - VMTYPE=build
+    - os: osx
+      name: "MacOS 10.13"
+      language: generic
+      osx_image: xcode10.1
+      env:
+        - GAMOS=macos
+        - PLATFORM=x86_64
+        - VMTYPE=build
+    - os: osx
+      name: "MacOS 10.14"
+      language: generic
+      osx_image: xcode11
       env:
         - GAMOS=macos
         - PLATFORM=x86_64

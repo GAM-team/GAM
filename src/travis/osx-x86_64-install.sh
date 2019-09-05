@@ -7,6 +7,7 @@ export GAMVERSION=`gam/gam version simple`
 cp LICENSE gam
 cp whatsnew.txt gam
 cp GamCommands.txt gam
-GAM_ARCHIVE=gam-$GAMVERSION-$GAMOS-$PLATFORM.tar.xz
+MACOSVERSION=$(defaults read loginwindow SystemVersionStampAsString)
+GAM_ARCHIVE=gam-$GAMVERSION-$GAMOS-$PLATFORM-MacOS$MACOSVERSION.tar.xz
 rm gam/lastupdatecheck.txt
 tar cfJ $GAM_ARCHIVE gam/
