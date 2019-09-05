@@ -4,6 +4,7 @@ on: [push]
 
 jobs:
   test:
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: [3.5, 3.6, 3.7]
