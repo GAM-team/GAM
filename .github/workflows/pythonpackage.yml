@@ -1,0 +1,23 @@
+name: GAM
+
+on: [push]
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        python-version: [3.5, 3.6, 3.7]
+        os: [ubuntu-latest, windows-latest, macOS-latest]
+    steps:
+    - uses: actions/checkout@v1
+    - name: Set up $(( matrix.runs-on )) Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r src/requirements.txt
+    - name: Run GAM
+      run: |
+        python src/gam.py version extended
