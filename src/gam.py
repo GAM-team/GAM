@@ -722,6 +722,8 @@ def SetGlobalVariables():
     GM_Globals[GM_CACHE_DISCOVERY_ONLY] = False
   return True
 
+TIME_OFFSET_UNITS = [('day', 86400), ('hour', 3600), ('minute', 60), ('second', 1)]
+
 def getLocalGoogleTimeOffset(testLocation='www.googleapis.com'):
   localUTC = datetime.datetime.now(datetime.timezone.utc)
   try:
@@ -731,23 +733,18 @@ def getLocalGoogleTimeOffset(testLocation='www.googleapis.com'):
     badhttp = _createHttpObj()
     badhttp.disable_ssl_certificate_validation = True
     googleUTC = dateutil.parser.parse(badhttp.request('https://'+testLocation, 'HEAD')[0]['date'])
-    offset = abs(localUTC-googleUTC).total_seconds()
-    days, remainder = divmod(offset, 86400)
-    hours, remainder = divmod(remainder, 3600)
-    minutes, seconds = divmod(remainder, 60)
-    timeoff = []
-    if days:
-      timeoff.append('%d days' % days)
-    if hours:
-      timeoff.append('%d hours' % hours)
-    if minutes:
-      timeoff.append('%d minutes' % minutes)
-    if seconds:
-      timeoff.append('%d seconds' % seconds)
-    nicetime = ', '.join(timeoff)
-    return (offset, nicetime)
   except (httplib2.ServerNotFoundError, RuntimeError, ValueError) as e:
     systemErrorExit(4, str(e))
+  offset = remainder = int(abs((localUTC-googleUTC).total_seconds()))
+  timeoff = []
+  for tou in TIME_OFFSET_UNITS:
+    uval, remainder = divmod(remainder, tou[1])
+    if uval:
+      timeoff.append('{0} {1}{2}'.format(uval, tou[0], 's' if uval != 1 else ''))
+  if not timeoff:
+    timeoff.append('less than 1 second')
+  nicetime = ', '.join(timeoff)
+  return (offset, nicetime)
 
 def doGAMCheckForUpdates(forceCheck=False):
 
@@ -853,9 +850,9 @@ def doGAMVersion(checkForArgs=True):
                             getOSPlatform(), platform.machine(), GM_Globals[GM_GAM_PATH]))
   if timeOffset:
     offset, nicetime = getLocalGoogleTimeOffset(testLocation)
-    print('Your computer is %s off from Google\'s time.' % (nicetime))
+    print(MESSAGE_YOUR_SYSTEM_TIME_DIFFERS_FROM_GOOGLE_BY % nicetime)
     if offset > MAX_LOCAL_GOOGLE_TIME_OFFSET:
-      systemErrorExit(4, 'Please fix your system clock.')
+      systemErrorExit(4, 'Please fix your system time.')
   if force_check:
     doGAMCheckForUpdates(forceCheck=True)
   if extended:
@@ -1536,8 +1533,7 @@ def buildGmailGAPIObject(user):
   return (userEmail, buildGAPIServiceObject('gmail', userEmail))
 
 def printPassFail(description, result):
-  padding = 80 - len(description) - 2
-  print(' {} {:>{padding}}'.format(description, result, padding=str(padding)))
+  print(' {0:74} {1}'.format(description, result))
 
 def doCheckServiceAccount(users):
   something_failed = False
@@ -1548,7 +1544,7 @@ def doCheckServiceAccount(users):
   else:
     time_status = 'FAIL'
     something_failed = True
-  printPassFail('Your computer clock differs from Google by %s' % nicetime, time_status)
+  printPassFail(MESSAGE_YOUR_SYSTEM_TIME_DIFFERS_FROM_GOOGLE_BY % nicetime, time_status)
   oa2 = googleapiclient.discovery.build('oauth2', 'v1', _createHttpObj())
   print('Service Account Private Key Authentication:')
   # We are explicitly not doing DwD here, just confirming service account can auth
@@ -1608,7 +1604,7 @@ def doCheckServiceAccount(users):
       return
     user_domain = user[user.find('@')+1:]
     # Tack on email scope for more accurate checking
-    all_scopes.append('https://www.googleapis.com/auth/userinfo.email')
+    all_scopes.append(USERINFO_EMAIL_SCOPE)
     scopes_failed = '''Some scopes failed! Please go to:
 
 https://admin.google.com/%s/AdminHome?#OGX:ManageOauthClients
