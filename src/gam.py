@@ -57,6 +57,8 @@ from urllib.parse import urlencode, urlparse
 from passlib.hash import sha512_crypt
 import dateutil.parser
 
+if platform.system() == 'Linux':
+  import distro
 import googleapiclient
 import googleapiclient.discovery
 import googleapiclient.errors
@@ -800,6 +802,18 @@ def doGAMCheckForUpdates(forceCheck=False):
   except (httplib2.HttpLib2Error, httplib2.ServerNotFoundError, RuntimeError, socket.timeout):
     return
 
+def getOSPlatform():
+  myos = platform.system()
+  if myos == 'Linux':
+    pltfrm = ' '.join(distro.linux_distribution(full_distribution_name=False)).title()
+  elif myos == 'Windows':
+    pltfrm = ' '.join(platform.win32_ver())
+  elif myos == 'Darwin':
+    pltfrm = 'MacOS %s' % platform.mac_ver()[0]
+  else:
+    pltfrm = platform.platform()
+  return '%s %s' % (myos, pltfrm)
+
 def doGAMVersion(checkForArgs=True):
   force_check = extended = simple = timeOffset = False
   testLocation = 'www.googleapis.com'
@@ -832,7 +846,7 @@ def doGAMVersion(checkForArgs=True):
   print(version_data.format(gam_version, GAM_URL, gam_author, sys.version_info[0],
                             sys.version_info[1], sys.version_info[2], struct.calcsize('P')*8,
                             sys.version_info[3], googleapiclient.__version__,
-                            platform.platform(), platform.machine(), GM_Globals[GM_GAM_PATH]))
+                            getOSPlatform(), platform.machine(), GM_Globals[GM_GAM_PATH]))
   if timeOffset:
     offset, nicetime = getLocalGoogleTimeOffset(testLocation)
     print('Your computer is %s off from Google\'s time.' % (nicetime))
