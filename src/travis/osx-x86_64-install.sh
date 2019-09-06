@@ -1,4 +1,6 @@
 cd src
+echo "MacOS Version Info According to Python:"
+python -c "import platform; print(platform.mac_ver())"
 $python -OO -m PyInstaller --clean --noupx --strip -F --distpath=gam $GAMOS-gam.spec
 export gam="gam/gam"
 export gampath=gam
