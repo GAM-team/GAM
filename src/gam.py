@@ -809,7 +809,8 @@ def getOSPlatform():
   elif myos == 'Windows':
     pltfrm = ' '.join(platform.win32_ver())
   elif myos == 'Darwin':
-    pltfrm = 'MacOS %s' % platform.mac_ver()[0]
+    myos = 'MacOS'
+    pltfrm = platform.mac_ver()[0]
   else:
     pltfrm = platform.platform()
   return '%s %s' % (myos, pltfrm)
