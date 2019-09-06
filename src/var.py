@@ -381,6 +381,19 @@ GOOGLEDOC_VALID_EXTENSIONS_MAP = {
   MIMETYPE_GA_SPREADSHEET: ['.csv', '.ods', '.pdf', '.xlsx', '.zip'],
   }
 
+MACOS_CODENAMES = {
+                   6:  'Snow Leopard',
+                   7:  'Lion',
+                   8:  'Mountain Lion',
+                   9:  'Mavericks',
+                   10: 'Yosemite',
+                   11: 'El Capitan',
+                   12: 'Sierra',
+                   13: 'High Sierra',
+                   14: 'Mojave',
+                   15: 'Catalina'
+                  }
+
 _MICROSOFT_FORMATS_LIST = [{'mime': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'ext': '.docx'},
                            {'mime': 'application/vnd.openxmlformats-officedocument.wordprocessingml.template', 'ext': '.dotx'},
                            {'mime': 'application/vnd.openxmlformats-officedocument.presentationml.presentation', 'ext': '.pptx'},
