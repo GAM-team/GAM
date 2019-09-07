@@ -382,30 +382,32 @@ GOOGLEDOC_VALID_EXTENSIONS_MAP = {
   }
 
 MACOS_CODENAMES = {
-                   6:  'Snow Leopard',
-                   7:  'Lion',
-                   8:  'Mountain Lion',
-                   9:  'Mavericks',
-                   10: 'Yosemite',
-                   11: 'El Capitan',
-                   12: 'Sierra',
-                   13: 'High Sierra',
-                   14: 'Mojave',
-                   15: 'Catalina'
-                  }
+  6:  'Snow Leopard',
+  7:  'Lion',
+  8:  'Mountain Lion',
+  9:  'Mavericks',
+  10: 'Yosemite',
+  11: 'El Capitan',
+  12: 'Sierra',
+  13: 'High Sierra',
+  14: 'Mojave',
+  15: 'Catalina'
+  }
 
-_MICROSOFT_FORMATS_LIST = [{'mime': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'ext': '.docx'},
-                           {'mime': 'application/vnd.openxmlformats-officedocument.wordprocessingml.template', 'ext': '.dotx'},
-                           {'mime': 'application/vnd.openxmlformats-officedocument.presentationml.presentation', 'ext': '.pptx'},
-                           {'mime': 'application/vnd.openxmlformats-officedocument.presentationml.template', 'ext': '.potx'},
-                           {'mime': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'ext': '.xlsx'},
-                           {'mime': 'application/vnd.openxmlformats-officedocument.spreadsheetml.template', 'ext': '.xltx'},
-                           {'mime': 'application/msword', 'ext': '.doc'},
-                           {'mime': 'application/msword', 'ext': '.dot'},
-                           {'mime': 'application/vnd.ms-powerpoint', 'ext': '.ppt'},
-                           {'mime': 'application/vnd.ms-powerpoint', 'ext': '.pot'},
-                           {'mime': 'application/vnd.ms-excel', 'ext': '.xls'},
-                           {'mime': 'application/vnd.ms-excel', 'ext': '.xlt'}]
+_MICROSOFT_FORMATS_LIST = [
+  {'mime': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'ext': '.docx'},
+  {'mime': 'application/vnd.openxmlformats-officedocument.wordprocessingml.template', 'ext': '.dotx'},
+  {'mime': 'application/vnd.openxmlformats-officedocument.presentationml.presentation', 'ext': '.pptx'},
+  {'mime': 'application/vnd.openxmlformats-officedocument.presentationml.template', 'ext': '.potx'},
+  {'mime': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'ext': '.xlsx'},
+  {'mime': 'application/vnd.openxmlformats-officedocument.spreadsheetml.template', 'ext': '.xltx'},
+  {'mime': 'application/msword', 'ext': '.doc'},
+  {'mime': 'application/msword', 'ext': '.dot'},
+  {'mime': 'application/vnd.ms-powerpoint', 'ext': '.ppt'},
+  {'mime': 'application/vnd.ms-powerpoint', 'ext': '.pot'},
+  {'mime': 'application/vnd.ms-excel', 'ext': '.xls'},
+  {'mime': 'application/vnd.ms-excel', 'ext': '.xlt'}
+  ]
 
 DOCUMENT_FORMATS_MAP = {
   'csv': [{'mime': 'text/csv', 'ext': '.csv'}],
