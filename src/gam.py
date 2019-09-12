@@ -57,8 +57,6 @@ from urllib.parse import urlencode, urlparse
 from passlib.hash import sha512_crypt
 import dateutil.parser
 
-if platform.system() == 'Linux':
-  import distro
 import googleapiclient
 import googleapiclient.discovery
 import googleapiclient.errors
@@ -71,6 +69,9 @@ import httplib2
 
 import utils
 from var import *
+
+if platform.system() == 'Linux':
+  import distro
 
 # Finding path method varies between Python source, PyInstaller and StaticX
 if os.environ.get('STATICX_PROG_PATH', False):
