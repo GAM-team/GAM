@@ -11570,6 +11570,8 @@ USER_ARGUMENT_TO_PROPERTY_MAP = {
   'posix': ['posixAccounts',],
   'posixaccounts': ['posixAccounts',],
   'primaryemail': ['primaryEmail',],
+  'recoveryemail': ['recoveryEmail',],
+  'recoveryphone': ['recoveryPhone',],
   'relation': ['relations',],
   'relations': ['relations',],
   'ssh': ['sshPublicKeys',],
