@@ -43,4 +43,5 @@ md5sum ../PyInstaller/bootloader/Windows-64bit/*
 echo "PATH: $PATH"
 cd ..
 $python setup.py install
+echo "cd to $mypath..."
 cd $mypath
