@@ -20,7 +20,7 @@ ls -al /c/Python37/DLLs
 until cp -v /c/ssl/*.dll /c/Python37/DLLs; do echo "trying again..."; done
 export PATH=$PATH:/c/Python37/scripts
 cd $mypath
-export python=python
+export python=/c/Python37/python.exe
 export pip=pip
 
 $pip install --upgrade pip
