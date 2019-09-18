@@ -20,10 +20,13 @@ ls -al /c/Python37/DLLs
 until cp -v /c/ssl/*.dll /c/Python37/DLLs; do echo "trying again..."; done
 export PATH=$PATH:/c/Python37/scripts
 cd $mypath
-pip install --upgrade pip
-pip list --outdated --format=freeze | grep -v '^\-e' | cut -d = -f 1  | xargs -n1 pip install -U
-pip install --upgrade -r src/requirements.txt
-#pip install --upgrade pyinstaller
+export python=python
+export pip=pip
+
+$pip install --upgrade pip
+$pip list --outdated --format=freeze | grep -v '^\-e' | cut -d = -f 1  | xargs -n1 $pip install -U
+$pip install --upgrade -r src/requirements.txt
+#$pip install --upgrade pyinstaller
 # Install PyInstaller from source and build bootloader
 # to try and avoid getting flagged as malware since
 # lots of malware uses PyInstaller default bootloader
@@ -34,10 +37,10 @@ tar xf PyInstaller-$PYINSTALLER_VERSION.tar.gz
 cd PyInstaller-$PYINSTALLER_VERSION/bootloader
 echo "bootloader before:"
 md5sum ../PyInstaller/bootloader/Windows-64bit/*
-/c/python37/python ./waf all --target-arch=64bit
+$python ./waf all --target-arch=64bit
 echo "bootloader after:"
 md5sum ../PyInstaller/bootloader/Windows-64bit/*
 echo "PATH: $PATH"
 cd ..
-/c/python37/python setup.py install
+$python setup.py install
 cd $mypath
