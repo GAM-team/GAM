@@ -3,6 +3,8 @@ whereibelong=$(pwd)
 #echo "Brew installing xz..."
 #brew install xz > /dev/null
 
+brew upgrade
+
 cd ~/pybuild
 
 if [ ! -f python-$BUILD_PYTHON_VERSION-macosx10.9.pkg ]; then
