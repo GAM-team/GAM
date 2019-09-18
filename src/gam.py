@@ -1162,7 +1162,6 @@ def callGAPIpages(service, function, items='items',
         Template strings allow for dynamic content to be inserted during paging.
 
         Supported template strings:
-          %%num_items%%   : The number of items in the current page.
           %%total_items%% : The current number of items discovered across all
                             pages.
           %%first_item%%  : In conjunction with `message_attribute` arg, will
@@ -1213,8 +1212,7 @@ def callGAPIpages(service, function, items='items',
 
     # Show a paging message to the user that indicates paging progress
     if page_message:
-      show_message = page_message.replace('%%num_items%%', str(num_page_items))
-      show_message = show_message.replace('%%total_items%%', str(total_items))
+      show_message = page_message.replace('%%total_items%%', str(total_items))
       if message_attribute:
         first_item = page_items[0] if num_page_items > 0 else {}
         last_item = page_items[-1] if num_page_items > 1 else first_item
@@ -1715,7 +1713,7 @@ def showReport():
             sys.exit(1)
           if fullData == 0:
             continue
-        page_message = 'Got %%num_items%% Users\n'
+        page_message = 'Got %%total_items%% Users\n'
         usage = callGAPIpages(rep.userUsageReport(), 'get', 'usageReports', page_message=page_message, throw_reasons=[GAPI_INVALID],
                               date=tryDate, userKey=userKey, customerId=customerId, orgUnitID=orgUnitId, filters=filters, parameters=parameters)
         break
@@ -1820,7 +1818,7 @@ def showReport():
       report = 'token'
     elif report == 'group':
       report = 'groups'
-    page_message = 'Got %%num_items%% items\n'
+    page_message = 'Got %%total_items%% items\n'
     activities = callGAPIpages(rep.activities(), 'list', 'items',
                                page_message=page_message,
                                applicationName=report, userKey=userKey,
@@ -2963,7 +2961,7 @@ def doPrintCourses():
     fieldsList.append('ownerId')
   fields = 'nextPageToken,courses({0})'.format(','.join(set(fieldsList))) if fieldsList else None
   printGettingAllItems('Courses', None)
-  page_message = 'Got %%num_items%% Courses...\n'
+  page_message = 'Got %%total_items%% Courses...\n'
   all_courses = callGAPIpages(croom.courses(), 'list', 'courses', page_message=page_message, teacherId=teacherId, studentId=studentId, courseStates=courseStates, fields=fields)
   for course in all_courses:
     if ownerEmails is not None:
@@ -2990,20 +2988,20 @@ def doPrintCourses():
       i += 1
       courseId = course['id']
       if showAliases:
-        alias_message = ' Got %%%%num_items%%%% Aliases for course %s%s' % (courseId, currentCount(i, count))
+        alias_message = ' Got %%%%total_items%%%% Aliases for course %s%s' % (courseId, currentCount(i, count))
         course_aliases = callGAPIpages(croom.courses().aliases(), 'list', 'aliases',
                                        page_message=alias_message,
                                        courseId=courseId)
         course['Aliases'] = delimiter.join([alias['alias'][2:] for alias in course_aliases])
       if showMembers:
         if showMembers != 'students':
-          teacher_message = ' Got %%%%num_items%%%% Teachers for course %s%s' % (courseId, currentCount(i, count))
+          teacher_message = ' Got %%%%total_items%%%% Teachers for course %s%s' % (courseId, currentCount(i, count))
           results = callGAPIpages(croom.courses().teachers(), 'list', 'teachers',
                                   page_message=teacher_message,
                                   courseId=courseId, fields=teachersFields)
           _saveParticipants(course, results, 'teachers')
         if showMembers != 'teachers':
-          student_message = ' Got %%%%num_items%%%% Students for course %s%s' % (courseId, currentCount(i, count))
+          student_message = ' Got %%%%total_items%%%% Students for course %s%s' % (courseId, currentCount(i, count))
           results = callGAPIpages(croom.courses().students(), 'list', 'students',
                                   page_message=student_message,
                                   courseId=courseId, fields=studentsFields)
@@ -3048,7 +3046,7 @@ def doPrintCourseParticipants():
       systemErrorExit(2, '%s is not a valid argument for "gam print course-participants"' % sys.argv[i])
   if not courses:
     printGettingAllItems('Courses', None)
-    page_message = 'Got %%num_items%% Courses...\n'
+    page_message = 'Got %%total_items%% Courses...\n'
     all_courses = callGAPIpages(croom.courses(), 'list', 'courses', page_message=page_message,
                                 teacherId=teacherId, studentId=studentId, courseStates=courseStates, fields='nextPageToken,courses(id,name)')
   else:
@@ -3061,12 +3059,12 @@ def doPrintCourseParticipants():
     i += 1
     courseId = course['id']
     if showMembers != 'students':
-      page_message = ' Got %%%%num_items%%%% Teachers for course %s (%s/%s)' % (courseId, i, count)
+      page_message = ' Got %%%%total_items%%%% Teachers for course %s (%s/%s)' % (courseId, i, count)
       teachers = callGAPIpages(croom.courses().teachers(), 'list', 'teachers', page_message=page_message, courseId=courseId)
       for teacher in teachers:
         addRowTitlesToCSVfile(flatten_json(teacher, flattened={'courseId': courseId, 'courseName': course['name'], 'userRole': 'TEACHER'}), csvRows, titles)
     if showMembers != 'teachers':
-      page_message = ' Got %%%%num_items%%%% Students for course %s (%s/%s)' % (courseId, i, count)
+      page_message = ' Got %%%%total_items%%%% Students for course %s (%s/%s)' % (courseId, i, count)
       students = callGAPIpages(croom.courses().students(), 'list', 'students', page_message=page_message, courseId=courseId)
       for student in students:
         addRowTitlesToCSVfile(flatten_json(student, flattened={'courseId': courseId, 'courseName': course['name'], 'userRole': 'STUDENT'}), csvRows, titles)
@@ -11940,7 +11938,7 @@ def doPrintGroups():
       if not ownersCountOnly:
         addTitlesToCSVfile(['Owners',], titles)
   printGettingAllItems('Groups', None)
-  page_message = 'Got %%num_items%% Groups: %%first_item%% - %%last_item%%\n'
+  page_message = 'Got %%total_items%% Groups: %%first_item%% - %%last_item%%\n'
   entityList = callGAPIpages(cd.groups(), 'list', 'groups',
                              page_message=page_message, message_attribute='email',
                              customer=customer, domain=usedomain, userKey=usemember, query=usequery,
@@ -11959,7 +11957,7 @@ def doPrintGroups():
           group[fieldsTitles[field]] = groupEntity[field]
     if roles:
       sys.stderr.write(' Getting %s for %s (%s/%s)\n' % (roles, groupEmail, i, count))
-      page_message = '  Got %%num_items%% members: %%first_item%% - %%last_item%%\n'
+      page_message = '  Got %%total_items%% members: %%first_item%% - %%last_item%%\n'
       validRoles, listRoles, listFields = _getRoleVerification(roles, 'nextPageToken,members(email,id,role)')
       groupMembers = callGAPIpages(cd.members(), 'list', 'members',
                                    page_message=page_message, message_attribute='email',
@@ -12148,7 +12146,7 @@ def doPrintAliases():
   if doUsers:
     for query in queries:
       printGettingAllItems('User Aliases', query)
-      page_message = 'Got %%num_items%% Users %%first_item%% - %%last_item%%\n'
+      page_message = 'Got %%total_items%% Users %%first_item%% - %%last_item%%\n'
       all_users = callGAPIpages(cd.users(), 'list', 'users', page_message=page_message,
                                 message_attribute='primaryEmail', customer=GC_Values[GC_CUSTOMER_ID], query=query,
                                 fields='nextPageToken,users({0})'.format(','.join(userFields)))
@@ -12159,7 +12157,7 @@ def doPrintAliases():
           csvRows.append({'NonEditableAlias': alias, 'Target': user['primaryEmail'], 'TargetType': 'User'})
   if doGroups:
     printGettingAllItems('Group Aliases', None)
-    page_message = 'Got %%num_items%% Groups %%first_item%% - %%last_item%%\n'
+    page_message = 'Got %%total_items%% Groups %%first_item%% - %%last_item%%\n'
     all_groups = callGAPIpages(cd.groups(), 'list', 'groups', page_message=page_message,
                                message_attribute='email', customer=GC_Values[GC_CUSTOMER_ID],
                                fields='nextPageToken,groups({0})'.format(','.join(groupFields)))
@@ -12298,7 +12296,7 @@ def doPrintVaultMatters():
     else:
       systemErrorExit(3, '%s is not a valid argument to "gam print matters"' % myarg)
   printGettingAllItems('Vault Matters', None)
-  page_message = 'Got %%num_items%% Vault Matters...\n'
+  page_message = 'Got %%total_items%% Vault Matters...\n'
   matters = callGAPIpages(v.matters(), 'list', 'matters', page_message=page_message, view=view)
   for matter in matters:
     addRowTitlesToCSVfile(flatten_json(matter), csvRows, titles)
@@ -12431,7 +12429,7 @@ def doPrintMobileDevices():
       systemErrorExit(2, '%s is not a valid argument for "gam print mobile"' % sys.argv[i])
   for query in queries:
     printGettingAllItems('Mobile Devices', query)
-    page_message = 'Got %%num_items%% Mobile Devices...\n'
+    page_message = 'Got %%total_items%% Mobile Devices...\n'
     all_mobile = callGAPIpages(cd.mobiledevices(), 'list', 'mobiledevices', page_message=page_message,
                                customerId=GC_Values[GC_CUSTOMER_ID], query=query, projection=projection, fields=fields,
                                orderBy=orderBy, sortOrder=sortOrder)
