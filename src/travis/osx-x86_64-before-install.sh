@@ -12,7 +12,10 @@ sudo installer -pkg python-$BUILD_PYTHON_VERSION-macosx10.9.pkg -target /
 export python=python3
 export pip=pip3
 
+echo "PYthon location:"
+which $python
 brew install openssl@1.1 > /dev/null
+brew info openssl@1.1
 
 # Compile latest OpenSSL
 #if [ ! -d openssl-$BUILD_OPENSSL_VERSION ]; then
