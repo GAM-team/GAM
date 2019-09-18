@@ -44,4 +44,5 @@ echo "PATH: $PATH"
 cd ..
 $python setup.py install
 echo "cd to $mypath..."
+until cp -v /c/ssl/*.dll /c/Python37/DLLs; do echo "trying again..."; done
 cd $mypath
