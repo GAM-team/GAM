@@ -269,11 +269,17 @@ while $project_created; do
   read -p "Are you ready to authorize GAM to manage G Suite user data and settings? (yes or no) " yn
   case $yn in
     [Yy]*)
-      if [ "$regularuser" == "" ]; then
+      while true ; do
         read -p "Please enter the email address of a regular G Suite user: " regularuser
-      fi
+        if [ "${adminuser#*@}" == "${regularuser#*@}" ] ; then 
+          break 
+        fi
+        echo_red "Regular G Suite user must be in same domain as $adminuser"        
+      done
+
       echo_yellow "Great! Checking service account scopes.This will fail the first time. Follow the steps to authorize and retry. It can take a few minutes for scopes to PASS after they've been authorized in the admin console."
       "$target_dir/gam/gam" user $adminuser check serviceaccount
+      
       rc=$?
       if (( $rc == 0 )); then
         echo_green "Service account authorization complete."
