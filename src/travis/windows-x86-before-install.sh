@@ -26,8 +26,8 @@ export pip=pip
 $pip install --upgrade pip
 $pip list --outdated --format=freeze | grep -v '^\-e' | cut -d = -f 1  | xargs -n1 $pip install -U
 $pip install --upgrade -r src/requirements.txt
-
 #$pip install --upgrade pyinstaller
+
 # Install PyInstaller from source and build bootloader
 # to try and avoid getting flagged as malware since
 # lots of malware uses PyInstaller default bootloader
@@ -44,5 +44,5 @@ md5sum ../PyInstaller/bootloader/Windows-32bit/*
 echo "PATH: $PATH"
 cd ..
 $python setup.py install
-echo "cd to $mypath"
+echo "cd to $mypath..."
 cd $mypath

@@ -14,7 +14,7 @@ until cinst -y wixtoolset; do echo "trying again..."; done
 echo "OpenSSL dlls..."
 ls -alRF /c/ssl
 echo "c drive"
-ls -al /c
+ls -al /c/
 echo "Python dlls..."
 ls -al /c/Python37/DLLs
 until cp -v /c/ssl/*.dll /c/Python37/DLLs; do echo "trying again..."; done
@@ -27,6 +27,7 @@ $pip install --upgrade pip
 $pip list --outdated --format=freeze | grep -v '^\-e' | cut -d = -f 1  | xargs -n1 $pip install -U
 $pip install --upgrade -r src/requirements.txt
 #$pip install --upgrade pyinstaller
+
 # Install PyInstaller from source and build bootloader
 # to try and avoid getting flagged as malware since
 # lots of malware uses PyInstaller default bootloader
@@ -44,5 +45,4 @@ echo "PATH: $PATH"
 cd ..
 $python setup.py install
 echo "cd to $mypath..."
-until cp -v /c/ssl/*.dll /c/Python37/DLLs; do echo "trying again..."; done
 cd $mypath
