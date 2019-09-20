@@ -232,6 +232,7 @@ DRIVEFILE_FIELDS_CHOICES_MAP = {
   'cancomment': 'canComment',
   'canreadrevisions': 'canReadRevisions',
   'copyable': 'copyable',
+  'copyrequireswriterpermission': 'copyRequiresWriterPermission',
   'createddate': 'createdDate',
   'createdtime': 'createdDate',
   'description': 'description',

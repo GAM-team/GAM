@@ -4941,6 +4941,13 @@ def getDriveFileAttribute(i, body, parameters, myarg, update=False):
   elif myarg == 'ocrlanguage':
     parameters[DFA_OCRLANGUAGE] = LANGUAGE_CODES_MAP.get(sys.argv[i+1].lower(), sys.argv[i+1])
     i += 2
+  elif myarg in ['copyrequireswriterpermission', 'restrict', 'restricted']:
+    if update:
+      body['copyRequiresWriterPermission'] = getBoolean(sys.argv[i+1], myarg)
+      i += 2
+    else:
+      body['copyRequiresWriterPermission'] = True
+      i += 1
   elif myarg in DRIVEFILE_LABEL_CHOICES_MAP:
     body.setdefault('labels', {})
     if update:

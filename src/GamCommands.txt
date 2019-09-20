@@ -303,6 +303,7 @@ If an item contains spaces, it should be surrounded by ".
 	cancomment|
 	canreadrevisions|
 	copyable|
+	copyrequireswriterpermission|
 	createddate|createdtime|
 	description|
 	editable|
@@ -670,12 +671,16 @@ Specify a collection of Users by directly specifying them or by specifiying item
 
 <DriveFileAddAttributes> ::=
 	(localfile <FileName>)|
-	(convert)|(ocr)|(ocrlanguage <Language>)|(restricted|restrict)|(starred|star)|(trashed|trash)|(viewed|view)|
+	(convert)|(ocr)|(ocrlanguage <Language>)|
+	(restricted|restrict)|(starred|star)|(trashed|trash)|(viewed|view)|
+	copyrequireswriterpermission|
 	(lastviewedbyme <Time>)|(modifieddate|modifiedtime <Time>)|(description <String>)|(mimetype <MimeType>)|
 	(parentid <DriveFolderID>)|(parentname <DriveFolderName>)|(anyownerparentname <DriveFolderName>)|writerscantshare
 <DriveFileUpdateAttributes> ::=
 	(localfile <FileName>)|
-	(convert)|(ocr)|(ocrlanguage <Language>)|(restricted|restrict <Boolean>)|(starred|star <Boolean>)|(trashed|trash <Boolean>)|(viewed|view <Boolean>)|
+	(convert)|(ocr)|(ocrlanguage <Language>)|
+	(restricted|restrict <Boolean>)|(starred|star <Boolean>)|(trashed|trash <Boolean>)|(viewed|view <Boolean>)|
+	(copyrequireswriterpermission <Boolean>)|
 	(lastviewedbyme <Time>)|(modifieddate <Time>)|(description <String>)|(mimetype <MimeType>)|
 	(parentid <DriveFolderID>)|(parentname <DriveFolderName>)|(anyownerparentname <DriveFolderName>)|writerscantshare
 <GroupSettingsAttribute> ::=
