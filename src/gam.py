@@ -10668,7 +10668,7 @@ def doGetCrosInfo():
           if deviceFile:
             downloadfilename = os.path.join(targetFolder, 'cros-logs-{0}-{1}.zip'.format(deviceId, deviceFile['createTime']))
             _, content = cd._http.request(deviceFile['downloadUrl'])
-            writeFile(downloadfilename, content, continueOnError=True)
+            writeFile(downloadfilename, content, mode='wb', continueOnError=True)
             print('Downloaded: {0}'.format(downloadfilename))
         elif downloadfile:
           print('ERROR: no files to download.')
@@ -12179,6 +12179,7 @@ def doPrintGroupMembers():
   cd = buildGAPIObject('directory')
   todrive = False
   membernames = False
+  includeDerivedMembership = False
   customer = GC_Values[GC_CUSTOMER_ID]
   checkSuspended = usedomain = usemember = usequery = None
   roles = []
@@ -12230,6 +12231,9 @@ def doPrintGroupMembers():
     elif myarg in ['suspended', 'notsuspended']:
       checkSuspended = myarg == 'suspended'
       i += 1
+    elif myarg == 'includederivedmembership':
+      includeDerivedMembership = True
+      i += 1
     else:
       systemErrorExit(2, '%s is not a valid argument for "gam print group-members"' % sys.argv[i])
   if not groups_to_get:
@@ -12245,6 +12249,7 @@ def doPrintGroupMembers():
     validRoles, listRoles, listFields = _getRoleVerification(','.join(roles), fields)
     group_members = callGAPIpages(cd.members(), 'list', 'members',
                                   soft_errors=True,
+                                  includeDerivedMembership=includeDerivedMembership,
                                   groupKey=group_email, roles=listRoles, fields=listFields)
     for member in group_members:
       if not _checkMemberRoleIsSuspended(member, validRoles, checkSuspended):
