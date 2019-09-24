@@ -1088,6 +1088,7 @@ gam info member <UserItem> <GroupItem>
 gam print group-members|groups-members [todrive]
 	([domain <DomainName>] ([member <UserItem>]|[query <QueryGroup>]))|[group|group_ns|group_susp <GroupItem>] [notsuspended|suspended]
 	[roles <GroupRoleList>] [membernames] [fields <MembersFieldNameList>]
+	[includederivedmembership]
 
 gam print licenses [todrive] [(products|product <ProductIDList>)|(skus|sku <SKUIDList>)|allskus|gsuite] [countsonly]
 gam show license|licenses|licence|licences [(products|product <ProductIDList>)|(skus|sku <SKUIDList>)|allskus|gsuite]
