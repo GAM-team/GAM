@@ -66,14 +66,14 @@ else
     echo "running configure with safe and unsafe"
     ./configure $safe_flags $unsafe_flags > /dev/null
   fi
-  timeout 1800 make -j$cpucount -s
+  make -j$cpucount -s
   RESULT=$?
   echo "First make exited with $RESULT"
   if [ $RESULT != 0 ]; then
-    #echo "Trying Python compile again without unsafe flags..."
-    #make clean
-    #./configure $safe_flags > /dev/null
-    #make -j$cpucount -s
+    echo "Trying Python compile again without unsafe flags..."
+    make clean
+    ./configure $safe_flags > /dev/null
+    make -j$cpucount -s
     echo "Sticking with safe Python for now..."
   else
     echo "Installing optimized Python..."
