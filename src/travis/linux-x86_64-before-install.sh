@@ -61,7 +61,7 @@ else
     echo "running configure with safe and unsafe"
     ./configure $safe_flags $unsafe_flags > /dev/null
   fi
-  make -j$cpucount -s
+  make -j$cpucount PROFILE_TASK="-m test.regrtest --pgo -j$cpucount" -s
   RESULT=$?
   echo "First make exited with $RESULT"
   if [ $RESULT != 0 ]; then
