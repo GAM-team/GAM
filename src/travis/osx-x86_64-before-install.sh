@@ -3,7 +3,7 @@ whereibelong=$(pwd)
 #echo "Brew installing xz..."
 #brew install xz > /dev/null
 
-brew upgrade
+#brew upgrade
 
 cd ~/pybuild
 
@@ -14,8 +14,6 @@ cd ~/pybuild
 
 brew install openssl@1.1
 brew upgrade python
-brew ls --verbose openssl@1.1 | grep libssl
-brew ls --verbose python3 | grep lib
 
 export python=python3
 export pip=pip3
