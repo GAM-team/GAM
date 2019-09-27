@@ -5,7 +5,6 @@ env:
     - BUILD_PYTHON_VERSION=3.7.4
     - BUILD_OPENSSL_VERSION=1.1.1d
     - PATCHELF_VERSION=0.9
-    - MUSL_VERSION=1.1.23
     - PYINSTALLER_VERSION=3.5
     - secure: "FSKvLaiqhKz21SVgAQZI3bSX34Ffyev4l+R2G//QXNDu6UVQcuFsykzw+eZEG7fkhotXr8BMDL7xIkookiL8eLwUtcd/Z95HCjPBBHcmCSQleyvuuJBxdrQ9xldmiGLzMCYiumSH9OH4uJhQ39Yjnjsa8TK+PlTci6a/BTzlYyBSyDYDf7Iv/uhfQPDHL3pNwrQPHf4fL6/jcvo+uaPcv83AVZkNzZjjyoi9Aa+uh9xlbyHg11jp44463qqxoxTdYik3pYuXRBPjknjOGcnFHqn+QOVSdRQoiwbmT8xVuYuCzTv9THhuJ//i5u7s4y3Xyl7u17B3tdm86UlMpQHy/w9EsYaSBPOU4oPNomRtOnTSugh0v9ZBwptP5XfbslII/iA+LQdzTHhchn0W0CRyDqjOMSestWlrsq5NZJtBJTYHbebllOhEI7xbj9tY+re1zFWSPMOPgHJP23ovsdk3hD9OT93AzRHInCx5IxL6QvEgRhAancRuGkf2rGP0g/vX9fQ0Il3rNMSQxHB5CyHUBtUJ9nhU79YkMDZicD0jFMEwjWJO3itAp3ynoLXRgktgQCYUfgc9SpdWKD5SXLCYnSo22JD3D1P6h2EertRHaoKRLb+CRXQC/lM8uh/W+BjA2Xe6Vut2I/72ndjM+10T7E2xk1CFyCH37a5p8cH26Fs="
     - secure: "J9380tGLOZWa7dSH1y5Il8T5JQpN6ad81gI6VR1HIU0svpRdjgikyDA7ca2MKYDUYYY9yVSkTV6gCl6iIU/9+SKaYugpP+tkvdGYkC2moJdcTgYM/WOnIK9ExQ3BPhN1neGxJjPTwKo1ft27mtZ2I5vuCiBwIcnKWLnKPyW3PD+mWpfqiLuEzkHoAh6G3jC4qbcCrZDeX/knE+PzqESUEi+8k1G8gYcSDWujba9ypSsqZ8T/MXagGla6l7y2Rz+/KZTJmFHwKAA10V+xPLVqxoiqi4ar66yUqy0BamwRXPcseI+ns3Q+4lUpMqVQ5GlRy7LF1xC8myjmcAexXk0F9hg+CMzewKI8UgmQH/ZJvQZEh8s6mW26+CqA4d3zMQkWaR0WtEtpiuH7AGHCflIqvEQ6UiG7ia3B8iZfW2wl0j/kqx4OuHkS3r0pWKVVIIvCj9Ow2BHP7SpiV1AcUGsVxzwbgTh67fitna3Z3c6Uj8ccQlNr7ZIt1az6Wf3w5njijkLOiBpQSLKunTTCTSge/JzBTKUcie3RE9vzirl58gUxAt36nDtPWnory+RttMZrOkBVbTeSxp+IUe8pNwLFPHABsafXsjkfzBOtFmm+0ZXWt2Rlog5NvlemJfQUWDlsL4g+BSakzN+4sIPKzSauWDHyaEeULY7Uprkil6c5zwo="
@@ -182,7 +181,7 @@ script:
 - if [ "$VMTYPE" == "build" ]; then $gam version extended | grep TLSv1\.[23]; fi # Builds should default TLS 1.2 or 1.3 to Google
 - if [ "$VMTYPE" == "build" ]; then GAM_TLS_MIN_VERSION=TLSv1_2 $gam version extended location tls-v1-0.badssl.com:1010; [[ $? == 3 ]]; fi # expect fail since server doesn't support our TLS version
 - export jid="$(cut -d'.' -f2 <<<"$TRAVIS_JOB_NUMBER")"
-- if [ "$TRAVIS_EVENT_TYPE" != "pull_request" ]; then export e2e=true; fi
+#- if [ "$TRAVIS_EVENT_TYPE" != "pull_request" ]; then export e2e=true; fi
 - if [ "$e2e" = true ]; then export gam_user=gam-travis-$jid@pdl.jaylee.us; fi
 - if [ "$e2e" = true ]; then openssl aes-256-cbc -K $encrypted_ab10ec38326e_key -iv $encrypted_ab10ec38326e_iv -in travis/oauth2service.json.enc -out $gampath/oauth2service.json -d; fi
 - if [ "$e2e" = true ]; then cat travis/cfg_template.json | python travis/svars-write.py &> /dev/null; fi
