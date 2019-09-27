@@ -13,7 +13,7 @@ cd ~/pybuild
 #sudo installer -pkg python-$BUILD_PYTHON_VERSION-macosx10.9.pkg -target /
 
 brew install openssl@1.1
-brew install python3
+brew upgrade python
 brew ls --verbose openssl@1.1 | grep libssl
 brew ls --verbose python3 | grep lib
 

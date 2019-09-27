@@ -53,11 +53,6 @@ else
     tar xf Python-$BUILD_PYTHON_VERSION.tar.xz
   fi
   cd Python-$BUILD_PYTHON_VERSION
-  #if [[ "$dist" == "bionic" ]]; then
-  #  echo "running bionic make clean"
-  #  make clean
-   # rm Makefile
-  #fi
   echo "Compiling Python $BUILD_PYTHON_VERSION..."
   safe_flags="--with-openssl=$mypath/ssl --enable-shared --prefix=$mypath/python --with-ensurepip=upgrade"
   unsafe_flags="--enable-optimizations --with-lto"

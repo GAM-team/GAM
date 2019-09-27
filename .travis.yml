@@ -37,14 +37,14 @@ cache:
 
 matrix:
   include:
-#    - os: linux
-#      name: "Linux 64-bit Bionic"
-#      dist: bionic
-#      language: bash
-#      env:
-#         - GAMOS=linux
-#         - PLATFORM=x86_64
-#         - VMTYPE=cache
+    - os: linux
+      name: "Linux 64-bit Bionic"
+      dist: bionic
+      language: bash
+      env:
+         - GAMOS=linux
+         - PLATFORM=x86_64
+         - VMTYPE=build
     - os: linux
       name: "Linux 64-bit Xenial"
       dist: xenial
