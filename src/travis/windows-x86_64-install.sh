@@ -1,5 +1,5 @@
 cd src
-sha1sum /c/Python37/DLLs
+sha1sum /c/Python37/DLLs/*.dll
 pyinstaller --clean --noupx -F --distpath=gam $GAMOS-gam.spec
 export gam="gam/gam"
 export gampath=$(readlink -e gam)

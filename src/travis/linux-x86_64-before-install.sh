@@ -75,10 +75,9 @@ else
     ./configure $safe_flags > /dev/null
     make -j$cpucount -s
     echo "Sticking with safe Python for now..."
-  else
-    echo "Installing optimized Python..."
-    make install > /dev/null
   fi
+  echo "Installing Python..."
+  make install > /dev/null
   cd ~
 
   export LD_LIBRARY_PATH=~/ssl/lib:~/python/lib

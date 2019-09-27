@@ -16,7 +16,7 @@ ls -alRF /c/ssl
 sha1sum /c/ssl/*.dll
 echo "Python dlls..."
 ls -al /c/Python37/DLLs
-sha1sum /c/Python37/DLLs
+sha1sum /c/Python37/DLLs/*.dll
 until cp -v /c/ssl/*.dll /c/Python37/DLLs; do echo "trying again..."; done
 export PATH=$PATH:/c/Python37/scripts
 cd $mypath

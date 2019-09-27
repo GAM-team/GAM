@@ -14,14 +14,16 @@ sudo installer -pkg python-$BUILD_PYTHON_VERSION-macosx10.9.pkg -target /
 export python=python3
 export pip=pip3
 
-echo "PYthon location:"
+echo "Python location:"
 which $python
 brew install openssl@1.1 > /dev/null
 brew info openssl@1.1
 echo "OpenSSL Lib"
 ls -al /usr/local/opt/openssl@1.1/lib
 echo "Local Python Lib"
-ls -al /usr/local/lib/python3.7
+ls -al /usr/local/opt
+ls -al /usr/local/opt/python
+ls -al /usr/local/opt/python/lib
 
 # Compile latest OpenSSL
 #if [ ! -d openssl-$BUILD_OPENSSL_VERSION ]; then
