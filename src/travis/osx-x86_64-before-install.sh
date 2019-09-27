@@ -20,8 +20,8 @@ brew install openssl@1.1 > /dev/null
 brew info openssl@1.1
 echo "OpenSSL Lib"
 ls -al /usr/local/opt/openssl@1.1/lib
-echo "Local Lib"
-ls -al /usr/local/lib
+echo "Local Python Lib"
+ls -al /usr/local/lib/python3.7
 
 # Compile latest OpenSSL
 #if [ ! -d openssl-$BUILD_OPENSSL_VERSION ]; then
