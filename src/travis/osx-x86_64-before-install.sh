@@ -3,7 +3,7 @@ whereibelong=$(pwd)
 #echo "Brew installing xz..."
 #brew install xz > /dev/null
 
-#brew upgrade
+brew upgrade
 
 cd ~/pybuild
 
@@ -13,8 +13,10 @@ cd ~/pybuild
 #sudo installer -pkg python-$BUILD_PYTHON_VERSION-macosx10.9.pkg -target /
 
 brew install openssl@1.1
-brew link openssl --force
-brew install python --with-brewed-openssl
+brew install python
+brew ls --verbose openssl@1.1
+brew ls --verbose python
+
 export python=python3
 export pip=pip3
 
