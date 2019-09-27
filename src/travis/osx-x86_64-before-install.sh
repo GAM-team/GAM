@@ -21,9 +21,7 @@ brew info openssl@1.1
 echo "OpenSSL Lib"
 ls -al /usr/local/opt/openssl@1.1/lib
 echo "Local Python Lib"
-ls -al /usr/local/opt
-ls -al /usr/local/opt/python
-ls -al /usr/local/opt/python/lib
+ls -alRF /usr/local/opt/python
 
 # Compile latest OpenSSL
 #if [ ! -d openssl-$BUILD_OPENSSL_VERSION ]; then
