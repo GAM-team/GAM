@@ -29,4 +29,8 @@ else
     du -h gam/gam
     time $gam version extended
   fi
+
+  # attempt to fix deploy phase
+  gem update --system
+  gem update
 fi
