@@ -68,46 +68,46 @@ matrix:
         - GAMOS=linux
         - PLATFORM=x86_64
         - VMTYPE=build
-#    - os: linux
-#      name: "Linux 64-bit - Python 3.5 Source Testing"
-#      dist: xenial
-#      language: python
-#      python:
-#        - "3.5"
-#      env:
-#        - GAMOS=linux
-#        - PLATFORM=x86_64
-#        - VMTYPE=test
-#    - os: linux
-#      name: "Linux 64-bit - Python 3.6 Source Testing"
-#      dist: bionic
-#      language: python
-#      python:
-#        - "3.6"
-#      env:
-#        - GAMOS=linux
-#        - PLATFORM=x86_64
-#        - VMTYPE=test
-#    - os: linux
-#      name: "Linux 64-bit - Python 3.8-dev Source Testing"
-#      dist: bionic
-#      language: python
-#      python:
-#        - "3.8-dev"
-#      env:
-#        - GAMOS=linux
-#        - PLATFORM=x86_64
-#        - VMTYPE=test
-#    - os: linux
-#      name: "Linux 64-bit - Python nightly Source Testing"
-#      dist: bionic
-#      language: python
-#      python:
-#        - "nightly"
-#      env:
-#        - GAMOS=linux
-#        - PLATFORM=x86_64
-#        - VMTYPE=test
+    - os: linux
+      name: "Linux 64-bit - Python 3.5 Source Testing"
+      dist: xenial
+      language: python
+      python:
+        - "3.5"
+      env:
+        - GAMOS=linux
+        - PLATFORM=x86_64
+        - VMTYPE=test
+    - os: linux
+      name: "Linux 64-bit - Python 3.6 Source Testing"
+      dist: bionic
+      language: python
+      python:
+        - "3.6"
+      env:
+        - GAMOS=linux
+        - PLATFORM=x86_64
+        - VMTYPE=test
+    - os: linux
+      name: "Linux 64-bit - Python 3.8-dev Source Testing"
+      dist: bionic
+      language: python
+      python:
+        - "3.8-dev"
+      env:
+        - GAMOS=linux
+        - PLATFORM=x86_64
+        - VMTYPE=test
+    - os: linux
+      name: "Linux 64-bit - Python nightly Source Testing"
+      dist: bionic
+      language: python
+      python:
+        - "nightly"
+      env:
+        - GAMOS=linux
+        - PLATFORM=x86_64
+        - VMTYPE=test
     - os: osx
       name: "MacOS 10.12"
       language: generic
