@@ -13,3 +13,7 @@ MACOSVERSION=$(defaults read loginwindow SystemVersionStampAsString)
 GAM_ARCHIVE=gam-$GAMVERSION-$GAMOS-$PLATFORM-MacOS$MACOSVERSION.tar.xz
 rm gam/lastupdatecheck.txt
 tar cfJ $GAM_ARCHIVE gam/
+
+# attempt to fix deploy phase
+gem update --system
+gem update
