@@ -31,6 +31,5 @@ else
   fi
 
   # attempt to fix deploy phase
-  gem update --system
-  gem update
+  unset LD_LIBRARY_PATH
 fi
