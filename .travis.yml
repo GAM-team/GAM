@@ -249,6 +249,7 @@ script:
 
 before_deploy:
 - export TRAVIS_TAG="preview"
+- unset LD_LIBRARY_PATH
 
 deploy:
   provider: releases

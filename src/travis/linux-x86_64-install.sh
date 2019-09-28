@@ -30,6 +30,4 @@ else
     time $gam version extended
   fi
 
-  # attempt to fix deploy phase
-  unset LD_LIBRARY_PATH
 fi
