@@ -28,6 +28,7 @@ import csv
 import datetime
 import difflib
 from email import message_from_string
+from filelock import FileLock
 import hashlib
 import io
 import json
@@ -1287,7 +1288,11 @@ def readDiscoveryFile(api_version):
     invalidJSONExit(disc_file)
 
 def getOauth2TxtStorageCredentials():
-  oauth_string = readFile(GC_Values[GC_OAUTH2_TXT], continueOnError=True, displayError=False)
+  lock_file = '%s.lock' % GC_Values[GC_OAUTH2_TXT]
+  lock = FileLock(lock_file, timeout=10)
+  # wait for write before read of oauth2.txt so creds are fresh
+  with lock:
+    oauth_string = readFile(GC_Values[GC_OAUTH2_TXT], continueOnError=True, displayError=False)
   if not oauth_string:
     return
   oauth_data = json.loads(oauth_string)
@@ -13417,7 +13422,10 @@ def writeCredentials(creds):
     systemErrorExit(13, 'Wrong OAuth 2.0 credentials issuer. Got %s, expected one of %s' % (_getValueFromOAuth('iss', creds), ', '.join(expected_iss)))
   creds_data['decoded_id_token'] = GC_Values[GC_DECODED_ID_TOKEN]
   data = json.dumps(creds_data, indent=2, sort_keys=True)
-  writeFile(GC_Values[GC_OAUTH2_TXT], data)
+  lock_file = '%s.lock' %GC_Values[GC_OAUTH2_TXT]
+  lock = FileLock(lock_file, timeout=10)
+  with lock:
+    writeFile(GC_Values[GC_OAUTH2_TXT], data)
 
 def doRequestOAuth(login_hint=None):
   credentials = getOauth2TxtStorageCredentials()
