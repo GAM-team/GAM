@@ -22,3 +22,6 @@ jobs:
     - name: Run GAM
       run: |
         python src/gam.py version extended
+    - name: Test Install
+      run: |
+        bash <(curl -s -S -L https://git.io/install-gam) -l

@@ -27,6 +27,7 @@ gamversion="latest"
 adminuser=""
 regularuser=""
 gam_glibc_vers="2.23 2.19 2.15"
+gam_macos_vers="10.14.4 10.13.6 10.12.6"
 
 while getopts "hd:a:o:lp:u:r:v:" OPTION
 do
@@ -106,15 +107,22 @@ case $gamos in
     esac
     ;;
   [Mm]ac[Oo][sS]|[Dd]arwin)
-    osver=$(sw_vers -productVersion | awk -F'.' '{print $2}')
-    if (( $osver < 13 )); then
-      echo_red "ERROR: GAM currently requires MacOS 10.13 or newer. You are running MacOS 10.$osver. Please upgrade." 
-      exit
-    else
-      echo_green "Good, you're running MacOS 10.$osver..."
-    fi
     gamos="macos"
-    gamfile="macos-x86_64.tar.xz"
+    this_macos_ver=$(sw_vers -productVersion)
+    echo "You are running MacOS $this_macos_ver"
+    use_macos_ver=""
+    for gam_macos_ver in $gam_macos_vers; do
+      if version_gt $this_macos_ver $gam_macos_ver; then
+        use_macos_ver="MacOS$gam_macos_ver"
+        echo_green "Using GAM compiled on $use_macos_ver"
+        break
+      fi
+    done
+    if [ "$use_macos_ver" == "" ]; then
+      echo_red "Sorry, you need to be running at least MacOS $gam_macos_ver to run GAM"
+      exit
+    fi
+    gamfile="macos-x86_64-$use_macos_ver.tar.xz"
     ;;
   *)
     echo_red "Sorry, this installer currently only supports Linux and MacOS. Looks like you're runnning on $gamos. Exiting."
