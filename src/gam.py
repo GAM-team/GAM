@@ -1288,11 +1288,7 @@ def readDiscoveryFile(api_version):
     invalidJSONExit(disc_file)
 
 def getOauth2TxtStorageCredentials():
-  lock_file = '%s.lock' % GC_Values[GC_OAUTH2_TXT]
-  lock = FileLock(lock_file, timeout=10)
-  # wait for write before read of oauth2.txt so creds are fresh
-  with lock:
-    oauth_string = readFile(GC_Values[GC_OAUTH2_TXT], continueOnError=True, displayError=False)
+  oauth_string = readFile(GC_Values[GC_OAUTH2_TXT], continueOnError=True, displayError=False)
   if not oauth_string:
     return
   oauth_data = json.loads(oauth_string)
@@ -1305,25 +1301,35 @@ def getOauth2TxtStorageCredentials():
   return creds
 
 def getValidOauth2TxtCredentials(force_refresh=False):
-  """Gets OAuth2 credentials which are guaranteed to be fresh and valid."""
-  credentials = getOauth2TxtStorageCredentials()
-  if (credentials and credentials.expired) or force_refresh:
-    retries = 3
-    for n in range(1, retries+1):
-      try:
-        credentials.refresh(google_auth_httplib2.Request(_createHttpObj()))
-        writeCredentials(credentials)
-        break
-      except google.auth.exceptions.RefreshError as e:
-        systemErrorExit(18, str(e))
-      except (google.auth.exceptions.TransportError, httplib2.ServerNotFoundError, RuntimeError) as e:
-        if n != retries:
-          waitOnFailure(n, retries, str(e))
-          continue
-        systemErrorExit(4, str(e))
-  elif credentials is None or not credentials.valid:
-    doRequestOAuth()
+  """Gets OAuth2 credentials which are guaranteed to be fresh and valid.
+     Locks during read and possible write so that only one process will
+     attempt refresh/write when running in parallel. """
+  lock_file = '%s.lock' % GC_Values[GC_OAUTH2_TXT]
+  lock = FileLock(lock_file, timeout=10)
+  with lock:
     credentials = getOauth2TxtStorageCredentials()
+    if (credentials and credentials.expired) or force_refresh:
+      retries = 3
+      for n in range(1, retries+1):
+        try:
+          credentials.refresh(google_auth_httplib2.Request(_createHttpObj()))
+          writeCredentials(credentials)
+          break
+        except google.auth.exceptions.RefreshError as e:
+          systemErrorExit(18, str(e))
+        except (google.auth.exceptions.TransportError, httplib2.ServerNotFoundError, RuntimeError) as e:
+          if n != retries:
+            waitOnFailure(n, retries, str(e))
+            continue
+          systemErrorExit(4, str(e))
+    elif credentials is None or not credentials.valid:
+      doRequestOAuth()
+      credentials = getOauth2TxtStorageCredentials()
+  if not GM_Globals[GM_WINDOWS]:
+    try:
+      os.remove(lock_file)
+    except IOError:
+      pass
   return credentials
 
 def getService(api, http):
@@ -13386,25 +13392,33 @@ def OAuthInfo():
       print('%s: %s' % (key, value))
 
 def doDeleteOAuth():
-  credentials = getOauth2TxtStorageCredentials()
-  if credentials is None:
-    return
-  simplehttp = _createHttpObj()
-  params = {'token': credentials.refresh_token}
-  revoke_uri = 'https://accounts.google.com/o/oauth2/revoke?%s' % urlencode(params)
-  sys.stderr.write('This OAuth token will self-destruct in 3...')
-  sys.stderr.flush()
-  time.sleep(1)
-  sys.stderr.write('2...')
-  sys.stderr.flush()
-  time.sleep(1)
-  sys.stderr.write('1...')
-  sys.stderr.flush()
-  time.sleep(1)
-  sys.stderr.write('boom!\n')
-  sys.stderr.flush()
-  simplehttp.request(revoke_uri, 'GET')
-  os.remove(GC_Values[GC_OAUTH2_TXT])
+  lock_file = '%s.lock' % GC_Values[GC_OAUTH2_TXT]
+  lock = FileLock(lock_file, timeout=10)
+  with lock:
+    credentials = getOauth2TxtStorageCredentials()
+    if credentials is None:
+      return
+    simplehttp = _createHttpObj()
+    params = {'token': credentials.refresh_token}
+    revoke_uri = 'https://accounts.google.com/o/oauth2/revoke?%s' % urlencode(params)
+    sys.stderr.write('This OAuth token will self-destruct in 3...')
+    sys.stderr.flush()
+    time.sleep(1)
+    sys.stderr.write('2...')
+    sys.stderr.flush()
+    time.sleep(1)
+    sys.stderr.write('1...')
+    sys.stderr.flush()
+    time.sleep(1)
+    sys.stderr.write('boom!\n')
+    sys.stderr.flush()
+    simplehttp.request(revoke_uri, 'GET')
+    os.remove(GC_Values[GC_OAUTH2_TXT])
+  if not GM_Globals[GM_WINDOWS]:
+    try:
+      os.remove(lock_file)
+    except IOError:
+      pass
 
 def writeCredentials(creds):
   creds_data = {
@@ -13422,10 +13436,7 @@ def writeCredentials(creds):
     systemErrorExit(13, 'Wrong OAuth 2.0 credentials issuer. Got %s, expected one of %s' % (_getValueFromOAuth('iss', creds), ', '.join(expected_iss)))
   creds_data['decoded_id_token'] = GC_Values[GC_DECODED_ID_TOKEN]
   data = json.dumps(creds_data, indent=2, sort_keys=True)
-  lock_file = '%s.lock' %GC_Values[GC_OAUTH2_TXT]
-  lock = FileLock(lock_file, timeout=10)
-  with lock:
-    writeFile(GC_Values[GC_OAUTH2_TXT], data)
+  writeFile(GC_Values[GC_OAUTH2_TXT], data)
 
 def doRequestOAuth(login_hint=None):
   credentials = getOauth2TxtStorageCredentials()
