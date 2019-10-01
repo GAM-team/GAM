@@ -1305,7 +1305,7 @@ def getValidOauth2TxtCredentials(force_refresh=False):
      Locks during read and possible write so that only one process will
      attempt refresh/write when running in parallel. """
   lock_file = '%s.lock' % GC_Values[GC_OAUTH2_TXT]
-  lock = FileLock(lock_file, timeout=10)
+  lock = FileLock(lock_file)
   with lock:
     credentials = getOauth2TxtStorageCredentials()
     if (credentials and credentials.expired) or force_refresh:
