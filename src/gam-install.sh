@@ -26,7 +26,7 @@ upgrade_only=false
 gamversion="latest"
 adminuser=""
 regularuser=""
-gam_glibc_vers="2.23 2.19 2.15"
+gam_glibc_vers="2.27 2.23 2.19 2.15"
 gam_macos_vers="10.14.4 10.13.6 10.12.6"
 
 while getopts "hd:a:o:lp:u:r:v:" OPTION
@@ -336,7 +336,7 @@ while $project_created; do
 done
 
 echo_green "Here's information about your new GAM installation:"
-"$target_dir/gam/gam" version
+"$target_dir/gam/gam" version extended
 rc=$?
 if (( $rc != 0 )); then
   echo_red "ERROR: Failed running GAM for the first time with $rc. Please report this error to GAM mailing list. Exiting."
