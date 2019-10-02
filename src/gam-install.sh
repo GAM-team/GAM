@@ -10,6 +10,7 @@ OPTIONS:
    -d      Directory where gam folder will be installed. Default is \$HOME/bin/
    -a      Architecture to install (i386, x86_64, x86_64_legacy, arm, arm64). Default is to detect your arch with "uname -m".
    -o      OS we are running (linux, macos). Default is to detect your OS with "uname -s".
+   -b      OS version. Default is to detect on MacOS and Linux.
    -l      Just upgrade GAM to latest version. Skips project creation and auth.
    -p      Profile update (true, false). Should script add gam command to environment. Default is true.
    -u      Admin user email address to use with GAM. Default is to prompt.
@@ -21,6 +22,7 @@ EOF
 target_dir="$HOME/bin"
 gamarch=$(uname -m)
 gamos=$(uname -s)
+osversion=""
 update_profile=true
 upgrade_only=false
 gamversion="latest"
@@ -29,13 +31,14 @@ regularuser=""
 gam_glibc_vers="2.27 2.23 2.19 2.15"
 gam_macos_vers="10.14.4 10.13.6 10.12.6"
 
-while getopts "hd:a:o:lp:u:r:v:" OPTION
+while getopts "hd:a:o:b:lp:u:r:v:" OPTION
 do
      case $OPTION in
          h) usage; exit;;
          d) target_dir="$OPTARG";;
          a) gamarch="$OPTARG";;
          o) gamos="$OPTARG";;
+         b) osversion="$OPTARG";;
          l) upgrade_only=true;;
          p) update_profile="$OPTARG";;
          u) adminuser="$OPTARG";;
@@ -80,7 +83,7 @@ echo -e '\x1B[0m'
 
 version_gt()
 {
-if [ "${1,,}" = "${2,,}" ]; then
+if [ "${1}" = "${2}" ]; then
   true
 else
   test "$(printf '%s\n' "$@" | sort -V | head -n 1)" != "$1"
@@ -90,7 +93,11 @@ fi
 case $gamos in
   [lL]inux)
     gamos="linux"
-    this_glibc_ver=$(ldd --version | awk '/ldd/{print $NF}')
+    if [ "$osversion" == "" ]; then
+      this_glibc_ver=$(ldd --version | awk '/ldd/{print $NF}')
+    else
+      this_glibc_ver=$osversion
+    fi
     echo "This Linux distribution uses glibc $this_glibc_ver"
     useglibc="legacy"
     for gam_glibc_ver in $gam_glibc_vers; do
@@ -112,7 +119,11 @@ case $gamos in
     ;;
   [Mm]ac[Oo][sS]|[Dd]arwin)
     gamos="macos"
-    this_macos_ver=$(sw_vers -productVersion)
+    if [ "$osversion" == "" ]; then
+      this_macos_ver=$(sw_vers -productVersion)
+    else
+      this_macos_ver=$osversion
+    fi
     echo "You are running MacOS $this_macos_ver"
     use_macos_ver=""
     for gam_macos_ver in $gam_macos_vers; do
@@ -217,7 +228,7 @@ fi
 
 if [ "$upgrade_only" = true ]; then
   echo_green "Here's information about your GAM upgrade:"
-  "$target_dir/gam/gam" version
+  "$target_dir/gam/gam" version extended
   rc=$?
   if (( $rc != 0 )); then
     echo_red "ERROR: Failed running GAM for the first time with $rc. Please report this error to GAM mailing list. Exiting."
