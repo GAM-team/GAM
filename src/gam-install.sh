@@ -80,7 +80,11 @@ echo -e '\x1B[0m'
 
 version_gt()
 {
-test "$(printf '%s\n' "$@" | sort -V | head -n 1)" != "$1"
+if [ "${1,,}" = "${2,,}" ]; then
+  true
+else
+  test "$(printf '%s\n' "$@" | sort -V | head -n 1)" != "$1"
+fi
 }
 
 case $gamos in
