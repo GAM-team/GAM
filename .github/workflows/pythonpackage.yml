@@ -24,4 +24,4 @@ jobs:
         python src/gam.py version extended
     - name: Test Install
       run: |
-        if [[ "$(uname -s)" == "Linux" || "$(uname -s)" == "Darwin" ]]; then bash <(curl -s -S -L https://git.io/install-gam) -l; fi
+        if [[ $(uname -s) == "Linux" || $(uname -s) == "Darwin" ]]; then bash <(curl -s -S -L https://git.io/install-gam) -l; fi
