@@ -1546,6 +1546,15 @@ def printPassFail(description, result):
   print(' {0:74} {1}'.format(description, result))
 
 def doCheckServiceAccount(users):
+  i = 5
+  check_scopes = []
+  while i < len(sys.argv):
+    myarg = sys.argv[i].lower()
+    if myarg in ['scope', 'scopes']:
+      check_scopes = sys.argv[i+1].replace(',', ' ').split()
+      i += 2
+    else:
+      systemErrorExit(3, '%s is not a valid argument for "gam user <email> check serviceaccount"' % myarg)
   something_failed = False
   print('Computer clock status:')
   timeOffset, nicetime = getLocalGoogleTimeOffset()
@@ -1574,18 +1583,18 @@ def doCheckServiceAccount(users):
     something_failed = True
     auth_error = str(e.args[0])
   printPassFail('Authenticating...%s' % auth_error, sa_token_result)
-  all_scopes = []
-  for _, scopes in list(API_SCOPE_MAPPING.items()):
-    for scope in scopes:
-      if scope not in all_scopes:
-        all_scopes.append(scope)
-  all_scopes.sort()
+  if not check_scopes:
+    for _, scopes in list(API_SCOPE_MAPPING.items()):
+      for scope in scopes:
+        if scope not in check_scopes:
+          check_scopes.append(scope)
+  check_scopes.sort()
   for user in users:
     user = user.lower()
     all_scopes_pass = True
     oa2 = googleapiclient.discovery.build('oauth2', 'v1', _createHttpObj())
     print('Domain-Wide Delegation authentication as %s:' % (user))
-    for scope in all_scopes:
+    for scope in check_scopes:
       # try with and without email scope
       for scopes in [[scope, USERINFO_EMAIL_SCOPE], [scope]]:
         try:
@@ -1614,7 +1623,7 @@ def doCheckServiceAccount(users):
       return
     user_domain = user[user.find('@')+1:]
     # Tack on email scope for more accurate checking
-    all_scopes.append(USERINFO_EMAIL_SCOPE)
+    check_scopes.append(USERINFO_EMAIL_SCOPE)
     scopes_failed = '''Some scopes failed! Please go to:
 
 https://admin.google.com/%s/AdminHome?#OGX:ManageOauthClients
@@ -1625,7 +1634,7 @@ and grant Client name:
 
 Access to scopes:
 
-%s\n''' % (user_domain, service_account, ',\n'.join(all_scopes))
+%s\n''' % (user_domain, service_account, ',\n'.join(check_scopes))
     systemErrorExit(1, scopes_failed)
 
 # Batch processing request_id fields
