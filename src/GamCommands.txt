@@ -140,6 +140,7 @@ If an item contains spaces, it should be surrounded by ".
 
 <AccessToken> ::= <String>
 <ACLScope> ::= [user:]<EmailAddress>|group:<EmailAddress>|domain[:<DomainName>]|default
+<APIScopeURL> ::= <String>
 <ASPID> ::= <String>
 <BuildingID> ::= <String>|id:<String>
 <CalendarACLRole> ::= editor|freebusy|freebusyreader|owner|reader|writer
@@ -552,6 +553,7 @@ Items, separated by spaces, with spaces, commas or single quotes in the items th
     "'it em' 'it,em' \"it'em\""
 
 <ACLList> ::= "<ACLScope>(,<ACLScope>)*"
+<APIScopeURLList> ::= "<APIScopeURL>(,<APIScopeURL>)*"
 <ASPIDList> ::= "<ASPID>(,<ASPID>)*"
 <CalendarList> ::= "<CalendarItem>(,<CalendarItem>)*"
 <ChatRoomList> ::= "<ChatRoom>(,<ChatRoom>)*"
@@ -839,7 +841,7 @@ gam oauth|oauth2 delete|revoke
 gam oauth|oauth2 info|verify [accesstoken <AccessToken>] [idtoken <IDToken>] [showsecret]
 gam oauth|oauth2 refresh
 
-gam <UserTypeEntity> check serviceaccount
+gam <UserTypeEntity> check serviceaccount [scope|scopes <APIScopeURLList>]
 
 gam whatis <EmailItem>
 
