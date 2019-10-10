@@ -83,8 +83,13 @@ echo -e '\x1B[0m'
 
 version_gt()
 {
+# MacOS < 10.13 doesn't support sort -V
+echo "" | sort -V > /dev/null 2>&1
+vsort_failed=$?
 if [ "${1}" = "${2}" ]; then
   true
+elif $vsort_failed; then
+  false
 else
   test "$(printf '%s\n' "$@" | sort -V | head -n 1)" != "$1"
 fi
@@ -184,11 +189,16 @@ try:
 except KeyError:
   print('ERROR: assets value not found in JSON value of:\n\n%s' % release)"
 
-pycmd="python"
+pycmd="python3"
 $pycmd -V >/dev/null 2>&1
 rc=$?
 if (( $rc != 0 )); then
-  pycmd="python3"
+  pycmd="python"
+fi
+$pycmd -V >/dev/null 2>&1
+rc=$?
+if (( $rc != 0 )); then
+  pycmd="python2"
 fi
 $pycmd -V >/dev/null 2>&1
 rc=$?
