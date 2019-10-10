@@ -88,7 +88,7 @@ echo "" | sort -V > /dev/null 2>&1
 vsort_failed=$?
 if [ "${1}" = "${2}" ]; then
   true
-elif $vsort_failed; then
+elif (( $vsort_failed != 0 )); then
   false
 else
   test "$(printf '%s\n' "$@" | sort -V | head -n 1)" != "$1"
