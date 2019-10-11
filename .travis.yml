@@ -54,9 +54,9 @@ matrix:
         - VMTYPE=build
     - os: linux
       arch: arm64
-      name: "Linux 64-bit Xenial"
-      dist: xenial
-      language: bash 
+      name: "Linux ARM64"
+      language: bash
+      filter_secrets: false
       env:
         - GAMOS=linux
         - PLATFORM=arm64
