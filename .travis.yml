@@ -59,7 +59,7 @@ matrix:
       language: bash
       env:
         - GAMOS=linux
-        - PLATFORM=x86_64
+        - PLATFORM=arm64
         - VMTYPE=build
     - os: linux
       name: "Linux 64-bit Trusty"
