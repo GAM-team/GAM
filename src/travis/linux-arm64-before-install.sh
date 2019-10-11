@@ -1,20 +1,11 @@
-if [ "$VMTYPE" == "test" ]; then
-  python -V
-  python3 -V
-  sudo apt-get -qq --yes update
-  sudo apt-get -qq --yes install python-pip
-  export python="python"
-  export pip="pip"
-  echo "Travis setup Python $TRAVIS_PYTHON_VERSION"
-  echo "running tests with this version"
-else
   export whereibelong=$(pwd)
-  export dist=$(lsb_release --codename --short)
-  echo "We are running on Ubuntu $dist"
+  export dist="xenial"
+#  export dist=$(lsb_release --codename --short)
+#  echo "We are running on Ubuntu $dist"
   echo "RUNNING: apt update..."
   sudo apt-get -qq --yes update > /dev/null
   echo "RUNNING: apt dist-upgrade..."
-#  sudo apt-get -qq --yes dist-upgrade > /dev/null
+  sudo apt-get -qq --yes dist-upgrade > /dev/null
   echo "Installing build tools..."
   sudo apt-get -qq --yes install build-essential
 
@@ -83,23 +74,6 @@ else
   pip=~/python/bin/pip3
 
   $python -V
-
-  if [[ "$dist" == "precise" ]]; then
-    echo "Installing deps for StaticX..."
-    sudo apt-get install --yes scons
-    if [ ! -d patchelf-$PATCHELF_VERSION ]; then
-      echo "Downloading PatchELF $PATCHELF_VERSION"
-      wget https://nixos.org/releases/patchelf/patchelf-$PATCHELF_VERSION/patchelf-$PATCHELF_VERSION.tar.bz2
-      tar xf patchelf-$PATCHELF_VERSION.tar.bz2
-      cd patchelf-$PATCHELF_VERSION
-      ./configure
-      make
-      sudo make install
-    fi
-    $pip install git+https://github.com/JonathonReinhart/staticx.git@master
-  fi
-  cd $whereibelong
-fi
 
 echo "Upgrading pip packages..."
 $pip list --outdated --format=freeze | grep -v '^\-e' | cut -d = -f 1  | xargs -n1 $pip install -U
