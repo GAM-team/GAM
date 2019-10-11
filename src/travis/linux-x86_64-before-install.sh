@@ -70,6 +70,7 @@ else
     echo "Installing Python..."
     make install > /dev/null
     cd ~
+  fi
 fi
 python=~/python/bin/python3
 pip=~/python/bin/pip3
