@@ -56,7 +56,7 @@ matrix:
       arch: arm64
       name: "Linux 64-bit Xenial"
       dist: xenial
-      language: bash
+      language: c
       env:
         - GAMOS=linux
         - PLATFORM=arm64
