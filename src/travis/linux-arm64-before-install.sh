@@ -61,7 +61,7 @@ if [ "$?" != "0" ] || [[ "$PYVER" != *"$BUILD_PYTHON_VERSION"* ]]; then
   cd ~
 fi
 
-cd $WHEREIBELONG
+cd $whereibelong
 
 python=~/python/bin/python3
 pip=~/python/bin/pip3
