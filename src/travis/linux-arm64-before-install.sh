@@ -34,7 +34,7 @@ if [ "$?" != "0" ] || [[ "$SSLVER" != *"$BUILD_OPENSSL_VERSION"* ]]; then
   tar xf openssl-$BUILD_OPENSSL_VERSION.tar.gz
   cd openssl-$BUILD_OPENSSL_VERSION
   echo "Compiling OpenSSL $BUILD_OPENSSL_VERSION..."
-  ./config shared --prefix=~/ssl
+  ./config shared --prefix=$HOME/ssl
   echo "Running make for OpenSSL..."
   make -j$cpucount -s
   echo "Running make install for OpenSSL..."
@@ -51,7 +51,7 @@ if [ "$?" != "0" ] || [[ "$PYVER" != *"$BUILD_PYTHON_VERSION"* ]]; then
   tar xf Python-$BUILD_PYTHON_VERSION.tar.xz
   cd Python-$BUILD_PYTHON_VERSION
   echo "Compiling Python $BUILD_PYTHON_VERSION..."
-  safe_flags="--with-openssl=~/ssl --enable-shared --prefix=~/python --with-ensurepip=upgrade"
+  safe_flags="--with-openssl=$HOME/ssl --enable-shared --prefix=$HOME/python --with-ensurepip=upgrade"
   unsafe_flags="--enable-optimizations --with-lto"  
   echo "running configure with safe and unsafe"
   ./configure $safe_flags $unsafe_flags > /dev/null
