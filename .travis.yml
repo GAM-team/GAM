@@ -61,6 +61,7 @@ matrix:
       env:
         - GAMOS=linux
         - PLATFORM=arm64
+        - VMTYPE=build
     - os: linux
       name: "Linux 64-bit Trusty"
       dist: trusty
