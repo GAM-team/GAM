@@ -57,14 +57,7 @@ matrix:
       arch: arm64
       name: "Linux ARM64 Bionic"
       language: bash
-      env:
-        - GAMOS=linux
-        - PLATFORM=arm64
-    - os: linux
-      dist: xenial
-      arch: arm64
-      name: "Linux ARM64 Xenial"
-      language: bash
+      filter_secrets: false
       env:
         - GAMOS=linux
         - PLATFORM=arm64
