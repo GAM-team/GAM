@@ -1,4 +1,8 @@
 if [ "$VMTYPE" == "test" ]; then
+  python -V
+  python3 -V
+  sudo apt-get -qq --yes update
+  sudo apt-get -qq --yes install python-pip
   export python="python"
   export pip="pip"
   echo "Travis setup Python $TRAVIS_PYTHON_VERSION"
