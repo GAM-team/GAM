@@ -17,13 +17,13 @@
   cat /etc/apt/sources.list
   sudo apt-get -qq --yes update > /dev/null
   sudo apt-get -qq --yes build-dep python3 > /dev/null
+  sudo apt-get -qq --yes install zlib1g-dev > /dev/null
 
   mypath=$HOME
   echo "My Path is $mypath"
   cpucount=$(nproc --all)
   echo "This device has $cpucount CPUs for compiling..."
 
-  cd ~/pybuild
   # Compile latest OpenSSL
   if [ ! -d openssl-$BUILD_OPENSSL_VERSION ]; then
     wget --quiet https://www.openssl.org/source/openssl-$BUILD_OPENSSL_VERSION.tar.gz
@@ -40,7 +40,6 @@
   export LD_LIBRARY_PATH=~/ssl/lib
   cd ~
 
-  cd ~/pybuild
   # Compile latest Python
   if [ ! -d Python-$BUILD_PYTHON_VERSION ]; then
     echo "Downloading Python $BUILD_PYTHON_VERSION..."
