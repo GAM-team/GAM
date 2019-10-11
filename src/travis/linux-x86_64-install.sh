@@ -29,5 +29,4 @@ else
     du -h gam/gam
     time $gam version extended
   fi
-
 fi
