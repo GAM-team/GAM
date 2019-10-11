@@ -1,7 +1,6 @@
   export whereibelong=$(pwd)
-  export dist="xenial"
-#  export dist=$(lsb_release --codename --short)
-#  echo "We are running on Ubuntu $dist"
+  export dist=$(lsb_release --codename --short)
+  echo "We are running on Ubuntu $dist"
   echo "RUNNING: apt update..."
   sudo apt-get -qq --yes update > /dev/null
   echo "RUNNING: apt dist-upgrade..."
@@ -10,10 +9,12 @@
   sudo apt-get -qq --yes install build-essential
 
   echo "Installing deps for python3"
+  cat /etc/apt/sources.list
   sudo cp -v /etc/apt/sources.list /tmp
   sudo chmod a+rwx /tmp/sources.list
   echo "deb-src http://archive.ubuntu.com/ubuntu/ $dist main" >> /tmp/sources.list
   sudo cp -v /tmp/sources.list /etc/apt
+  cat /etc/apt/sources.list
   sudo apt-get -qq --yes update > /dev/null
   sudo apt-get -qq --yes build-dep python3 > /dev/null
 
