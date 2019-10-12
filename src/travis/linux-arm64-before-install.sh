@@ -75,4 +75,4 @@ $pip install --upgrade pyinstaller
 
 mkdir ~/.ruby
 export GEM_HOME=~/.ruby
-export "$PATH:~/.ruby/bin"
+export PATH=$PATH:~/.ruby/bin
