@@ -26,8 +26,7 @@ else
     sudo cp -v /tmp/sources.list /etc/apt
     sudo apt-get -qq --yes update > /dev/null
     sudo apt-get -qq --yes build-dep python3 > /dev/null
-    mypath=$HOME
-    echo "My Path is $mypath"
+    cd ~
     cpucount=$(nproc --all)
     echo "This device has $cpucount CPUs for compiling..."
 
@@ -37,7 +36,7 @@ else
     tar xf openssl-$BUILD_OPENSSL_VERSION.tar.gz
     cd openssl-$BUILD_OPENSSL_VERSION
     echo "Compiling OpenSSL $BUILD_OPENSSL_VERSION..."
-    ./config shared --prefix=$mypath/ssl
+    ./config shared --prefix=$HOME/ssl
     echo "Running make for OpenSSL..."
     make -j$cpucount -s
     echo "Running make install for OpenSSL..."
@@ -51,7 +50,7 @@ else
     tar xf Python-$BUILD_PYTHON_VERSION.tar.xz
     cd Python-$BUILD_PYTHON_VERSION
     echo "Compiling Python $BUILD_PYTHON_VERSION..."
-    safe_flags="--with-openssl=$mypath/ssl --enable-shared --prefix=$mypath/python --with-ensurepip=upgrade"
+    safe_flags="--with-openssl=$HOME/ssl --enable-shared --prefix=$HOME/python --with-ensurepip=upgrade"
     unsafe_flags="--enable-optimizations --with-lto"
     if [ ! -e Makefile ]; then
       echo "running configure with safe and unsafe"
