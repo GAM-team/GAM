@@ -73,8 +73,8 @@ else
   fi
   python=~/python/bin/python3
   pip=~/python/bin/pip3
+  cd $whereibelong
 fi
-$python -V
 
 if [[ "$dist" == "precise" ]]; then
   echo "Installing deps for StaticX..."
@@ -89,7 +89,6 @@ if [[ "$dist" == "precise" ]]; then
     sudo make install
   fi
   $pip install git+https://github.com/JonathonReinhart/staticx.git@master
-  cd $whereibelong
 fi
 
 echo "Upgrading pip packages..."
