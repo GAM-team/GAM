@@ -614,46 +614,61 @@ def SetGlobalVariables():
     rowFilters = {}
     if not value:
       return rowFilters
-    try:
-      for column, filterStr in iter(json.loads(value.encode('unicode-escape').decode(UTF8)).items()):
-        mg = ROW_FILTER_COMP_PATTERN.match(filterStr)
-        if mg:
-          if mg.group(1) in ['date', 'time']:
-            if mg.group(1) == 'date':
-              valid, filterValue = getRowFilterDateOrDeltaFromNow(mg.group(3))
-            else:
-              valid, filterValue = getRowFilterTimeOrDeltaFromNow(mg.group(3))
-            if valid:
-              rowFilters[column] = (mg.group(1), mg.group(2), filterValue)
-              continue
-            systemErrorExit(3, 'Item: {0}, Value: "{1}": "{2}", Expected: {3}'.format(itemName, column, filterStr, filterValue))
-          else: #count
-            if mg.group(3).isdigit():
-              rowFilters[column] = (mg.group(1), mg.group(2), int(mg.group(3)))
-              continue
-            systemErrorExit(3, 'Item: {0}, Value: "{1}": "{2}", Expected: {3}'.format(itemName, column, filterStr, '<Number>'))
-        mg = ROW_FILTER_BOOL_PATTERN.match(filterStr)
-        if mg:
-          value = mg.group(2).lower()
-          if value in true_values:
-            filterValue = True
-          elif value in false_values:
-            filterValue = False
-          else:
-            systemErrorExit(3, 'Item: {0}, Value: "{1}": "{2}", Expected true|false'.format(itemName, column, filterStr))
-          rowFilters[column] = (mg.group(1), filterValue)
+    if value.startswith('{'):
+      try:
+        filterDict = json.loads(value.encode('unicode-escape').decode(UTF8))
+      except (TypeError, ValueError) as e:
+        systemErrorExit(3, 'Item: {0}, Value: "{1}", Failed to parse as JSON: {2}'.format(itemName, value, str(e)))
+    else:
+      filterDict = {}
+      status, filterList = shlexSplitListStatus(value)
+      if not status:
+        systemErrorExit(3, 'Item: {0}, Value: "{1}", Failed to parse as list'.format(itemName, value))
+      for filterVal in filterList:
+        if not filterVal:
           continue
-        mg = ROW_FILTER_RE_PATTERN.match(filterStr)
-        if mg:
-          try:
-            rowFilters[column] = (mg.group(1), re.compile(mg.group(2)))
+        try:
+          column, filterStr = filterVal.split(':', 1)
+        except ValueError:
+          systemErrorExit(3, 'Item: {0}, Value: "{1}", Expected column:filter'.format(itemName, filterVal))
+        filterDict[column] = filterStr
+    for column, filterStr in iter(filterDict.items()):
+      mg = ROW_FILTER_COMP_PATTERN.match(filterStr)
+      if mg:
+        if mg.group(1) in ['date', 'time']:
+          if mg.group(1) == 'date':
+            valid, filterValue = getRowFilterDateOrDeltaFromNow(mg.group(3))
+          else:
+            valid, filterValue = getRowFilterTimeOrDeltaFromNow(mg.group(3))
+          if valid:
+            rowFilters[column] = (mg.group(1), mg.group(2), filterValue)
             continue
-          except re.error as e:
-            systemErrorExit(3, 'Item: {0}, Value: "{1}": "{2}", Invalid RE: {3}'.format(itemName, column, filterStr, e))
-        systemErrorExit(3, 'Item: {0}, Value: "{1}": {2}, Expected: (date|time|count<Operator><Value>) or (boolean:true|false) or (regex|notregex:<RegularExpression>)'.format(itemName, column, filterStr))
-      return rowFilters
-    except (TypeError, ValueError) as e:
-      systemErrorExit(3, 'Item: {0}, Value: "{1}", Failed to parse as JSON: {2}'.format(itemName, value, str(e)))
+          systemErrorExit(3, 'Item: {0}, Value: "{1}": "{2}", Expected: {3}'.format(itemName, column, filterStr, filterValue))
+        else: #count
+          if mg.group(3).isdigit():
+            rowFilters[column] = (mg.group(1), mg.group(2), int(mg.group(3)))
+            continue
+          systemErrorExit(3, 'Item: {0}, Value: "{1}": "{2}", Expected: {3}'.format(itemName, column, filterStr, '<Number>'))
+      mg = ROW_FILTER_BOOL_PATTERN.match(filterStr)
+      if mg:
+        value = mg.group(2).lower()
+        if value in true_values:
+          filterValue = True
+        elif value in false_values:
+          filterValue = False
+        else:
+          systemErrorExit(3, 'Item: {0}, Value: "{1}": "{2}", Expected true|false'.format(itemName, column, filterStr))
+        rowFilters[column] = (mg.group(1), filterValue)
+        continue
+      mg = ROW_FILTER_RE_PATTERN.match(filterStr)
+      if mg:
+        try:
+          rowFilters[column] = (mg.group(1), re.compile(mg.group(2)))
+          continue
+        except re.error as e:
+          systemErrorExit(3, 'Item: {0}, Value: "{1}": "{2}", Invalid RE: {3}'.format(itemName, column, filterStr, e))
+      systemErrorExit(3, 'Item: {0}, Value: "{1}": {2}, Expected: (date|time|count<Operator><Value>) or (boolean:true|false) or (regex|notregex:<RegularExpression>)'.format(itemName, column, filterStr))
+    return rowFilters
 
   GC_Defaults[GC_CONFIG_DIR] = GM_Globals[GM_GAM_PATH]
   GC_Defaults[GC_CACHE_DIR] = os.path.join(GM_Globals[GM_GAM_PATH], 'gamcache')
@@ -13130,6 +13145,15 @@ def shlexSplitList(entity, dataDelimiter=' ,'):
   lexer.whitespace = dataDelimiter
   lexer.whitespace_split = True
   return list(lexer)
+
+def shlexSplitListStatus(entity, dataDelimiter=' ,'):
+  lexer = shlex.shlex(entity, posix=True)
+  lexer.whitespace = dataDelimiter
+  lexer.whitespace_split = True
+  try:
+    return (True, list(lexer))
+  except ValueError as e:
+    return (False, str(e))
 
 def getQueries(myarg, argstr):
   if myarg == 'query':
