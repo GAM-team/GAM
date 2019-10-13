@@ -71,24 +71,25 @@ else
     make install > /dev/null
     cd ~
   fi
+
+  if [[ "$dist" == "precise" ]]; then
+    echo "Installing deps for StaticX..."
+    sudo apt-get install --yes scons
+    if [ ! -d patchelf-$PATCHELF_VERSION ]; then
+      echo "Downloading PatchELF $PATCHELF_VERSION"
+      wget https://nixos.org/releases/patchelf/patchelf-$PATCHELF_VERSION/patchelf-$PATCHELF_VERSION.tar.bz2
+      tar xf patchelf-$PATCHELF_VERSION.tar.bz2
+      cd patchelf-$PATCHELF_VERSION
+      ./configure
+      make
+      sudo make install
+    fi
+    $pip install git+https://github.com/JonathonReinhart/staticx.git@master
+  fi
+
   python=~/python/bin/python3
   pip=~/python/bin/pip3
   cd $whereibelong
-fi
-
-if [[ "$dist" == "precise" ]]; then
-  echo "Installing deps for StaticX..."
-  sudo apt-get install --yes scons
-  if [ ! -d patchelf-$PATCHELF_VERSION ]; then
-    echo "Downloading PatchELF $PATCHELF_VERSION"
-    wget https://nixos.org/releases/patchelf/patchelf-$PATCHELF_VERSION/patchelf-$PATCHELF_VERSION.tar.bz2
-    tar xf patchelf-$PATCHELF_VERSION.tar.bz2
-    cd patchelf-$PATCHELF_VERSION
-    ./configure
-    make
-    sudo make install
-  fi
-  $pip install git+https://github.com/JonathonReinhart/staticx.git@master
 fi
 
 echo "Upgrading pip packages..."
