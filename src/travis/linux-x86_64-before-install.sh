@@ -71,9 +71,9 @@ else
     make install > /dev/null
     cd ~
   fi
+  python=~/python/bin/python3
+  pip=~/python/bin/pip3
 fi
-python=~/python/bin/python3
-pip=~/python/bin/pip3
 $python -V
 
 if [[ "$dist" == "precise" ]]; then
