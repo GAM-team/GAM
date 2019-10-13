@@ -89,8 +89,8 @@ if [[ "$dist" == "precise" ]]; then
     sudo make install
   fi
   $pip install git+https://github.com/JonathonReinhart/staticx.git@master
+  cd $whereibelong
 fi
-cd $whereibelong
 
 echo "Upgrading pip packages..."
 $pip list --outdated --format=freeze | grep -v '^\-e' | cut -d = -f 1  | xargs -n1 $pip install -U
