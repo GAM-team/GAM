@@ -57,7 +57,7 @@ matrix:
       name: "Linux ARM64 Bionic"
       language: bash
       filter_secrets: false
-      allow_failures: true
+      cache: true
       env:
         - GAMOS=linux
         - PLATFORM=arm64
@@ -158,6 +158,9 @@ matrix:
         - GAMOS=windows
         - PLATFORM=x86
         - VMTYPE=build
+
+before_cache:
+- echo "this is before cache"
 
 before_install:
 - source src/travis/$TRAVIS_OS_NAME-$PLATFORM-before-install.sh
