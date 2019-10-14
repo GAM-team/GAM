@@ -2,7 +2,7 @@ if: tag IS blank
 
 env:
   global:
-    - BUILD_PYTHON_VERSION=3.7.4
+    - BUILD_PYTHON_VERSION=3.8.0
     - BUILD_OPENSSL_VERSION=1.1.1d
     - PATCHELF_VERSION=0.9
     - PYINSTALLER_VERSION=3.5
@@ -34,6 +34,7 @@ cache:
     - $HOME/ssl
 
 matrix:
+  fast_finish: true
   allow_failures:
     - arch: arm64
   include:
