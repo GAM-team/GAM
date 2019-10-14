@@ -10,7 +10,7 @@ else
   export LD_LIBRARY_PATH=~/ssl/lib:~/python/lib
   SSLVER=$(~/ssl/bin/openssl version)
   SSLRESULT=$?
-  PYVER=$(~/python/bin/python -V)
+  PYVER=$(~/python/bin/python3 -V)
   PYRESULT=$?
   if [[ "$SSLRESULT" != "0" ]] || [[ "$SSLVER" != *"$BUILD_OPENSSL_VERSION"* ]] || [[ "$PYRESULT" != "0" ]] || [[ "$PYVER" != *"$PYTHON_BUILD_VERSION"* ]]; then
     echo "RUNNING: apt update..."
