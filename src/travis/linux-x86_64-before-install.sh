@@ -73,6 +73,9 @@ else
     cd ~
   fi
 
+  python=~/python/bin/python3
+  pip=~/python/bin/pip3
+
   if [[ "$dist" == "precise" ]]; then
     echo "Installing deps for StaticX..."
     sudo apt-get install --yes scons
@@ -88,8 +91,6 @@ else
     $pip install git+https://github.com/JonathonReinhart/staticx.git@master
   fi
 
-  python=~/python/bin/python3
-  pip=~/python/bin/pip3
   cd $whereibelong
 fi
 
