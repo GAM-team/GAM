@@ -100,4 +100,4 @@ fi
 echo "Upgrading pip packages..."
 $pip list --outdated --format=freeze | grep -v '^\-e' | cut -d = -f 1  | xargs -n1 $pip install -U
 $pip install --upgrade -r src/requirements.txt
-$pip install --upgrade pyinstaller
+$pip install --upgrade https://github.com/pyinstaller/pyinstaller/archive/develop.tar.gz
