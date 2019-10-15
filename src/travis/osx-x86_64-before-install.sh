@@ -5,15 +5,15 @@ whereibelong=$(pwd)
 
 #brew upgrade
 
-cd ~/pybuild
+cd ~
 
-#if [ ! -f python-$BUILD_PYTHON_VERSION-macosx10.9.pkg ]; then
-#  wget --quiet https://www.python.org/ftp/python/$BUILD_PYTHON_VERSION/python-$BUILD_PYTHON_VERSION-macosx10.9.pkg
-#fi
-#sudo installer -pkg python-$BUILD_PYTHON_VERSION-macosx10.9.pkg -target /
+if [ ! -f python-$BUILD_PYTHON_VERSION-macosx10.9.pkg ]; then
+  wget --quiet https://www.python.org/ftp/python/$BUILD_PYTHON_VERSION/python-$BUILD_PYTHON_VERSION-macosx10.9.pkg
+fi
+sudo installer -pkg python-$BUILD_PYTHON_VERSION-macosx10.9.pkg -target /
 
-brew install openssl@1.1
-brew upgrade python
+#brew install openssl@1.1
+#brew upgrade python
 
 export python=python3
 export pip=pip3
@@ -35,7 +35,7 @@ which $python
 #echo "Running make install for OpenSSL..."
 #make install > /dev/null
 #export LD_LIBRARY_PATH=~/ssl/lib
-#cd ~/pybuild
+#cd ~
 
 # Compile latest Python
 #if [ ! -d Python-$BUILD_PYTHON_VERSION ]; then

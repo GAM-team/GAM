@@ -1,22 +1,31 @@
 echo "Installing Net-Framework-Core..."
 export mypath=$(pwd)
 until powershell Install-WindowsFeature Net-Framework-Core; do echo "trying again..."; done
-cd ~/pybuild
-export exefile=Win64OpenSSL_Light-${BUILD_OPENSSL_VERSION//./_}.exe
-if [ ! -e $exefile ]; then
-  echo "Downloading $exefile..."
-  wget --quiet https://slproweb.com/download/$exefile
+cd ~
+#export exefile=Win64OpenSSL_Light-${BUILD_OPENSSL_VERSION//./_}.exe
+#if [ ! -e $exefile ]; then
+#  echo "Downloading $exefile..."
+#  wget --quiet https://slproweb.com/download/$exefile
+#fi
+#echo "Installing $exefile..."
+#powershell ".\\${exefile} /silent /sp- /suppressmsgboxes /DIR=C:\\ssl"
+#cinst -y python3
+PYVER=$(~/python/python.exe -V)
+PYRESULT=$?
+if [[ "$PYRESULT" != "0" ]] || [[ "$PYVER" != *"$BUILD_PYTHON_VERSION"* ]]; then
+  rm -rf python
+  mkdir python
+  echo "Downloading Python $BUILD_PYTHON_VERSION..."
+  wget --quiet https://www.python.org/ftp/python/$BUILD_PYTHON_VERSION/python-$BUILD_PYTHON_VERSION-embed-amd64.zip
+  7z e python-$BUILD_PYTHON_VERSION-embed-amd64.zip -oC:\Users\travis\python
 fi
-echo "Installing $exefile..."
-powershell ".\\${exefile} /silent /sp- /suppressmsgboxes /DIR=C:\\ssl"
-cinst -y python3
 until cinst -y wixtoolset; do echo "trying again..."; done
-until cp -v /c/ssl/libcrypto-1_1-x64.dll /c/Python37/DLLs/libcrypto-1_1.dll; do echo "trying again..."; done
-until cp -v /c/ssl/libssl-1_1-x64.dll /c/Python37/DLLs/libssl-1_1.dll; do echo "trying again..."; done
-export PATH=$PATH:/c/Python37/scripts
+#until cp -v /c/ssl/libcrypto-1_1-x64.dll /c/Python37/DLLs/libcrypto-1_1.dll; do echo "trying again..."; done
+#until cp -v /c/ssl/libssl-1_1-x64.dll /c/Python37/DLLs/libssl-1_1.dll; do echo "trying again..."; done
+export PATH=$PATH:/c/Users/travis/python/scripts
 cd $mypath
-export python=/c/Python37/python.exe
-export pip=pip
+export python=/c/Users/travis/python/python.exe
+export pip=/c/Users/travis/python/scripts/pip.exe
 
 $pip install --upgrade pip
 $pip list --outdated --format=freeze | grep -v '^\-e' | cut -d = -f 1  | xargs -n1 $pip install -U

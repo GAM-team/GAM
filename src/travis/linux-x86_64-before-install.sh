@@ -12,7 +12,11 @@ else
   SSLRESULT=$?
   PYVER=$(~/python/bin/python3 -V)
   PYRESULT=$?
-  if [[ "$SSLRESULT" != "0" ]] || [[ "$SSLVER" != *"$BUILD_OPENSSL_VERSION"* ]] || [[ "$PYRESULT" != "0" ]] || [[ "$PYVER" != *"$PYTHON_BUILD_VERSION"* ]]; then
+  if [[ "$SSLRESULT" != "0" ]] || [[ "$SSLVER" != "OpenSSL $BUILD_OPENSSL_VERSION "* ]] || [[ "$PYRESULT" != "0" ]] || [[ "$PYVER" != "Python $PYTHON_BUILD_VERSION "* ]]; then
+    rm -rf ~/ssl
+    rm -rf ~/python
+    mkdir ~/ssl
+    mkdir ~/python
     echo "RUNNING: apt update..."
     sudo apt-get -qq --yes update > /dev/null
     echo "RUNNING: apt dist-upgrade..."
