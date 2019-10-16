@@ -9,17 +9,7 @@ cd ~
 #fi
 #echo "Installing $exefile..."
 #powershell ".\\${exefile} /silent /sp- /suppressmsgboxes /DIR=C:\\ssl"
-#cinst -y python3
-PYVER=$(~/python/python.exe -V)
-PYRESULT=$?
-if [[ "$PYRESULT" != "0" ]] || [[ "$PYVER" != *"$BUILD_PYTHON_VERSION"* ]]; then
-  rm -rf python
-  mkdir python
-  echo "Downloading Python $BUILD_PYTHON_VERSION..."
-  wget --quiet https://www.python.org/ftp/python/$BUILD_PYTHON_VERSION/python-$BUILD_PYTHON_VERSION-embed-amd64.zip
-  7z e python-$BUILD_PYTHON_VERSION-embed-amd64.zip -opython
-  rm -rf python/*._pth # screws up pip library location
-fi
+cinst -y python3
 until cinst -y wixtoolset; do echo "trying again..."; done
 #until cp -v /c/ssl/libcrypto-1_1-x64.dll /c/Python37/DLLs/libcrypto-1_1.dll; do echo "trying again..."; done
 #until cp -v /c/ssl/libssl-1_1-x64.dll /c/Python37/DLLs/libssl-1_1.dll; do echo "trying again..."; done
@@ -27,9 +17,6 @@ export PATH=$PATH:/c/Users/travis/python/scripts
 cd $mypath
 export python=/c/Users/travis/python/python.exe
 export pip=/c/Users/travis/python/scripts/pip.exe
-
-curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-$python get-pip.py
 
 $pip install --upgrade pip
 $pip list --outdated --format=freeze | grep -v '^\-e' | cut -d = -f 1  | xargs -n1 $pip install -U

@@ -13,10 +13,12 @@ else
   PYVER=$(~/python/bin/python3 -V)
   PYRESULT=$?
   if [[ "$SSLRESULT" != "0" ]] || [[ "$SSLVER" != "OpenSSL $BUILD_OPENSSL_VERSION "* ]] || [[ "$PYRESULT" != "0" ]] || [[ "$PYVER" != "Python $PYTHON_BUILD_VERSION "* ]]; then
-    rm -rf ~/ssl
-    rm -rf ~/python
-    mkdir ~/ssl
-    mkdir ~/python
+    echo "SSL Result: $SSLRESULT - SSL Ver: $SSLVER - Py Result: $PYRESULT - Py Ver: $PYVER"
+    cd ~
+    rm -rf ssl
+    rm -rf python
+    mkdir ssl
+    mkdir python
     echo "RUNNING: apt update..."
     sudo apt-get -qq --yes update > /dev/null
     echo "RUNNING: apt dist-upgrade..."
@@ -30,8 +32,6 @@ else
     sudo cp -v /tmp/sources.list /etc/apt
     sudo apt-get -qq --yes update > /dev/null
     sudo apt-get -qq --yes build-dep python3 > /dev/null
-    cd ~
-    echo "EVERYTHING IN HOME..."
     cpucount=$(nproc --all)
     echo "This device has $cpucount CPUs for compiling..."
 
