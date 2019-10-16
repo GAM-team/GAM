@@ -14971,6 +14971,11 @@ def ProcessGAMCommand(args):
 # Run from command line
 if __name__ == "__main__":
   freeze_support()
+  if sys.platform == 'darwin':
+    # https://bugs.python.org/issue33725 in Python 3.8.0 seems
+    # to break parallel operations with errors about extra -b
+    # command line arguments
+    multiprocessing.set_start_method('fork')
   if sys.version_info[0] < 3 or sys.version_info[1] < 5:
     systemErrorExit(5, 'GAM requires Python 3.5 or newer. You are running %s.%s.%s. Please upgrade your Python version or use one of the binary GAM downloads.' % sys.version_info[:3])
   sys.exit(ProcessGAMCommand(sys.argv))

@@ -17,7 +17,7 @@ if [[ "$PYRESULT" != "0" ]] || [[ "$PYVER" != *"$BUILD_PYTHON_VERSION"* ]]; then
   mkdir python
   echo "Downloading Python $BUILD_PYTHON_VERSION..."
   wget --quiet https://www.python.org/ftp/python/$BUILD_PYTHON_VERSION/python-$BUILD_PYTHON_VERSION-embed-amd64.zip
-  7z e python-$BUILD_PYTHON_VERSION-embed-amd64.zip -oC:\Users\travis\python
+  7z e python-$BUILD_PYTHON_VERSION-embed-amd64.zip -opython
   ls -alRF /c/Users/travis
 fi
 until cinst -y wixtoolset; do echo "trying again..."; done
