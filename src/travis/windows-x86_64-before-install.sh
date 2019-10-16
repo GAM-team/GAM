@@ -27,6 +27,9 @@ cd $mypath
 export python=/c/Users/travis/python/python.exe
 export pip=/c/Users/travis/python/scripts/pip.exe
 
+curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+$python get-pip.py
+
 $pip install --upgrade pip
 $pip list --outdated --format=freeze | grep -v '^\-e' | cut -d = -f 1  | xargs -n1 $pip install -U
 $pip install --upgrade -r src/requirements.txt
@@ -51,5 +54,5 @@ echo "PATH: $PATH"
 cd ..
 $python setup.py install
 echo "cd to $mypath..."
-until cp -v /c/ssl/*.dll /c/Python37/DLLs; do echo "trying again..."; done
+#until cp -v /c/ssl/*.dll /c/Python37/DLLs; do echo "trying again..."; done
 cd $mypath
