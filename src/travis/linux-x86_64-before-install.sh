@@ -14,6 +14,18 @@ else
   PYRESULT=$?
   if [ $SSLRESULT -ne 0 ] || [[ "$SSLVER" != "OpenSSL $BUILD_OPENSSL_VERSION "* ]] || [ $PYRESULT -ne 0 ] || [[ "$PYVER" != "Python $PYTHON_BUILD_VERSION" ]]; then
     echo "SSL Result: $SSLRESULT - SSL Ver: $SSLVER - Py Result: $PYRESULT - Py Ver: $PYVER"
+    if [ $SSLRESULT -ne 0 ]; then
+      echo "sslresult -ne 0"
+    fi
+    if [[ "$SSLVER" != "OpenSSL $BUILD_OPENSSL_VERSION "* ]]; then
+      echo "sslver not equal to..."
+    fi
+    if [ $PYRESULT -ne 0 ]; then
+      echo "pyresult -ne 0"
+    fi
+    if [[ "$PYVER" != "Python $PYTHON_BUILD_VERSION" ]]; then
+      echo "pyver not equal to..."
+    fi
     cd ~
     rm -rf ssl
     rm -rf python
