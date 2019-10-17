@@ -13,7 +13,7 @@ cinst -y python3
 until cinst -y wixtoolset; do echo "trying again..."; done
 #until cp -v /c/ssl/libcrypto-1_1-x64.dll /c/Python37/DLLs/libcrypto-1_1.dll; do echo "trying again..."; done
 #until cp -v /c/ssl/libssl-1_1-x64.dll /c/Python37/DLLs/libssl-1_1.dll; do echo "trying again..."; done
-export PATH=$PATH:/c/Users/travis/python/scripts
+export PATH=$PATH:/c/Python38/scripts
 cd $mypath
 export python=/c/Python38/python.exe
 export pip=/c/Python38/scripts/pip.exe
