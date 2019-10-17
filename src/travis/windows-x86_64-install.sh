@@ -1,7 +1,9 @@
 cd src
+echo "compiling GAM with pyinstaller..."
 pyinstaller --clean --noupx -F --distpath=gam $GAMOS-gam.spec
 export gam="gam/gam"
 export gampath=$(readlink -e gam)
+echo "running compiled GAM..."
 $gam version
 export GAMVERSION=`$gam version simple`
 rm gam/lastupdatecheck.txt
