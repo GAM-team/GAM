@@ -15,8 +15,8 @@ until cinst -y wixtoolset; do echo "trying again..."; done
 #until cp -v /c/ssl/libssl-1_1-x64.dll /c/Python37/DLLs/libssl-1_1.dll; do echo "trying again..."; done
 export PATH=$PATH:/c/Users/travis/python/scripts
 cd $mypath
-export python=/c/Users/travis/python/python.exe
-export pip=/c/Users/travis/python/scripts/pip.exe
+export python=/c/Python38/python.exe
+export pip=/c/Python38/scripts/pip.exe
 
 $pip install --upgrade pip
 $pip list --outdated --format=freeze | grep -v '^\-e' | cut -d = -f 1  | xargs -n1 $pip install -U
