@@ -52,8 +52,7 @@ import uuid
 import webbrowser
 import zipfile
 import http.client as http_client
-from multiprocessing import Pool
-from multiprocessing import freeze_support
+from multiprocessing import Pool,freeze_support,set_start_method
 from urllib.parse import urlencode, urlparse
 # workaround https://bitbucket.org/ecollins/passlib/issues/107/timeclock-has-gone
 # can be removed with passlib > 1.7.1
@@ -14980,7 +14979,7 @@ if __name__ == "__main__":
     # https://bugs.python.org/issue33725 in Python 3.8.0 seems
     # to break parallel operations with errors about extra -b
     # command line arguments
-    multiprocessing.set_start_method('fork')
+    set_start_method('fork')
   if sys.version_info[0] < 3 or sys.version_info[1] < 5:
     systemErrorExit(5, 'GAM requires Python 3.5 or newer. You are running %s.%s.%s. Please upgrade your Python version or use one of the binary GAM downloads.' % sys.version_info[:3])
   sys.exit(ProcessGAMCommand(sys.argv))
