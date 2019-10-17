@@ -7798,7 +7798,7 @@ def _run_oauth_flow(client_id, client_secret, scopes, access_type, login_hint=No
       }
     }
 
-  flow = ShortURLFlow.from_client_config(client_config, scopes)
+  flow = ShortURLFlow.from_client_config(client_config, scopes, autogenerate_code_verifier=True)
   kwargs = {'access_type': access_type}
   if login_hint:
     kwargs['login_hint'] = login_hint
