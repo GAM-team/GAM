@@ -1,33 +1,32 @@
 export whereibelong=$(pwd)
 export dist=$(lsb_release --codename --short)
 echo "We are running on Ubuntu $dist"
-echo "RUNNING: apt update..."
-sudo apt-get -qq --yes update > /dev/null
-echo "RUNNING: apt dist-upgrade..."
-sudo apt-get -qq --yes dist-upgrade > /dev/null
-echo "Installing build tools..."
-sudo apt-get -qq --yes install build-essential
-
-echo "Installing deps for python3"
-cat /etc/apt/sources.list
-sudo cp -v /etc/apt/sources.list /tmp
-sudo chmod a+rwx /tmp/sources.list
-echo "deb-src http://archive.ubuntu.com/ubuntu/ $dist main" >> /tmp/sources.list
-sudo cp -v /tmp/sources.list /etc/apt
-cat /etc/apt/sources.list
-sudo apt-get -qq --yes update > /dev/null
-sudo apt-get -qq --yes build-dep python3 > /dev/null
-sudo apt-get -qq --yes install zlib1g-dev > /dev/null
-
-echo "My Path is $HOME"
-cpucount=$(nproc --all)
-echo "This device has $cpucount CPUs for compiling..."
-
 export LD_LIBRARY_PATH=~/ssl/lib:~/python/lib
-
-# Compile latest OpenSSL
 SSLVER=$(~/ssl/bin/openssl version)
-if [ "$?" != "0" ] || [[ "$SSLVER" != *"$BUILD_OPENSSL_VERSION"* ]]; then
+SSLRESULT=$?
+PYVER=$(~/python/bin/python3 -V)
+PYRESULT=$?
+if [ $SSLRESULT -ne 0 ] || [[ "$SSLVER" != "OpenSSL $BUILD_OPENSSL_VERSION "* ]] || [ $PYRESULT -ne 0 ] || [[ "$PYVER" != "Python $PYTHON_BUILD_VERSION"* ]]; then
+  echo "RUNNING: apt update..."
+  sudo apt-get -qq --yes update > /dev/null
+  echo "RUNNING: apt dist-upgrade..."
+  sudo apt-get -qq --yes dist-upgrade > /dev/null
+  echo "Installing build tools..."
+  sudo apt-get -qq --yes install build-essential
+
+  echo "Installing deps for python3"
+  sudo cp -v /etc/apt/sources.list /tmp
+  sudo chmod a+rwx /tmp/sources.list
+  echo "deb-src http://archive.ubuntu.com/ubuntu/ $dist main" >> /tmp/sources.list
+  sudo cp -v /tmp/sources.list /etc/apt
+  sudo apt-get -qq --yes update > /dev/null
+  sudo apt-get -qq --yes build-dep python3 > /dev/null
+  sudo apt-get -qq --yes install zlib1g-dev > /dev/null
+
+  cpucount=$(nproc --all)
+  echo "This device has $cpucount CPUs for compiling..."
+
+  # Compile latest OpenSSL
   echo "Downloading OpenSSL..."
   wget --quiet https://www.openssl.org/source/openssl-$BUILD_OPENSSL_VERSION.tar.gz
   echo "Extracting OpenSSL..."
@@ -40,11 +39,8 @@ if [ "$?" != "0" ] || [[ "$SSLVER" != *"$BUILD_OPENSSL_VERSION"* ]]; then
   echo "Running make install for OpenSSL..."
   make install > /dev/null
   cd ~
-fi
 
-# Compile latest Python
-PYVER=$(~/python/bin/python -V)
-if [ "$?" != "0" ] || [[ "$PYVER" != *"$BUILD_PYTHON_VERSION"* ]]; then
+  # Compile latest Python
   echo "Downloading Python $BUILD_PYTHON_VERSION..."
   curl -O https://www.python.org/ftp/python/$BUILD_PYTHON_VERSION/Python-$BUILD_PYTHON_VERSION.tar.xz
   echo "Extracting Python..."
@@ -58,10 +54,7 @@ if [ "$?" != "0" ] || [[ "$PYVER" != *"$BUILD_PYTHON_VERSION"* ]]; then
   make -j$cpucount PROFILE_TASK="-m test.regrtest --pgo -j$(( $cpucount * 2 ))" -s
   echo "Installing Python..."
   make install > /dev/null
-  cd ~
 fi
-
-cd $whereibelong
 
 python=~/python/bin/python3
 pip=~/python/bin/pip3
@@ -71,7 +64,9 @@ $python -V
 echo "Upgrading pip packages..."
 $pip list --outdated --format=freeze | grep -v '^\-e' | cut -d = -f 1  | xargs -n1 $pip install -U
 $pip install --upgrade -r src/requirements.txt
-$pip install --upgrade pyinstaller
+$pip install --upgrade https://github.com/pyinstaller/pyinstaller/archive/develop.tar.gz
+
+cd $whereibelong
 
 mkdir ~/.ruby
 export GEM_HOME=~/.ruby
