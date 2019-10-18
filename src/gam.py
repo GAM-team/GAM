@@ -871,6 +871,8 @@ def doGAMVersion(checkForArgs=True):
                             sys.version_info[1], sys.version_info[2], struct.calcsize('P')*8,
                             sys.version_info[3], googleapiclient.__version__,
                             getOSPlatform(), platform.machine(), GM_Globals[GM_GAM_PATH]))
+  if sys.platform.startswith('win') and str(struct.calcsize('P')*8).find('32') != -1 and platform.machine().find('64') != -1:
+    print(MESSAGE_UPDATE_GAM_TO_64BIT)
   if timeOffset:
     offset, nicetime = getLocalGoogleTimeOffset(testLocation)
     print(MESSAGE_YOUR_SYSTEM_TIME_DIFFERS_FROM_GOOGLE_BY % nicetime)
