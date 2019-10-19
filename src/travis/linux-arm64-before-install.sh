@@ -2,6 +2,9 @@ export whereibelong=$(pwd)
 export dist=$(lsb_release --codename --short)
 echo "We are running on Ubuntu $dist"
 export LD_LIBRARY_PATH=~/ssl/lib:~/python/lib
+cat /proc/cpuinfo
+cpucount=$(nproc --all)
+echo "This device has $cpucount CPUs for compiling..."
 SSLVER=$(~/ssl/bin/openssl version)
 SSLRESULT=$?
 PYVER=$(~/python/bin/python3 -V)
@@ -22,10 +25,6 @@ if [ $SSLRESULT -ne 0 ] || [[ "$SSLVER" != "OpenSSL $BUILD_OPENSSL_VERSION "* ]]
   sudo apt-get -qq --yes update > /dev/null
   sudo apt-get -qq --yes build-dep python3 > /dev/null
   sudo apt-get -qq --yes install zlib1g-dev > /dev/null
-
-  cat /proc/cpuinfo
-  cpucount=$(nproc --all)
-  echo "This device has $cpucount CPUs for compiling..."
 
   # Compile latest OpenSSL
   echo "Downloading OpenSSL..."
