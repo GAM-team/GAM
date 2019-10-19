@@ -44,6 +44,7 @@ else
     sudo cp -v /tmp/sources.list /etc/apt
     sudo apt-get -qq --yes update > /dev/null
     sudo apt-get -qq --yes build-dep python3 > /dev/null
+    cat /proc/cpuinfo
     cpucount=$(nproc --all)
     echo "This device has $cpucount CPUs for compiling..."
 

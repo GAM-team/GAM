@@ -23,6 +23,7 @@ if [ $SSLRESULT -ne 0 ] || [[ "$SSLVER" != "OpenSSL $BUILD_OPENSSL_VERSION "* ]]
   sudo apt-get -qq --yes build-dep python3 > /dev/null
   sudo apt-get -qq --yes install zlib1g-dev > /dev/null
 
+  cat /proc/cpuinfo
   cpucount=$(nproc --all)
   echo "This device has $cpucount CPUs for compiling..."
 
