@@ -139,7 +139,7 @@ matrix:
     - os: osx
       name: "MacOS 10.14"
       language: generic
-      osx_image: xcode11
+      osx_image: xcode11.1
       env:
         - GAMOS=macos
         - PLATFORM=x86_64
