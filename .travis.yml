@@ -60,6 +60,24 @@ matrix:
       name: "Linux ARM64 Bionic"
       language: bash
       filter_secrets: false
+      addons:
+        apt:
+          packages:
+            - ruby
+      env:
+        - GAMOS=linux
+        - PLATFORM=arm64
+        - VMTYPE=build
+    - os: linux
+      dist: xenial
+      arch: arm64
+      name: "Linux ARM64 Xenial"
+      language: bash
+      filter_secrets: false
+      addons:
+        apt:
+          packages:
+            - ruby
       env:
         - GAMOS=linux
         - PLATFORM=arm64
