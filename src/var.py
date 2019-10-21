@@ -949,6 +949,7 @@ MESSAGE_NO_TRANSFER_LACK_OF_DISK_SPACE = 'Cowardly refusing to perform migration
 MESSAGE_RESULTS_TOO_LARGE_FOR_GOOGLE_SPREADSHEET = 'Results are too large for Google Spreadsheets. Uploading as a regular CSV file.'
 MESSAGE_SERVICE_NOT_APPLICABLE = 'Service not applicable for this address: {0}. Please make sure service is enabled for user and run\n\ngam user <user> check serviceaccount\n\nfor further instructions'
 MESSAGE_INSTRUCTIONS_OAUTH2SERVICE_JSON = 'Please run\n\ngam create project\ngam user <user> check serviceaccount\n\nto create and configure a service account.'
+MESSAGE_UPDATE_GAM_TO_64BIT = "You're running a 32-bit version of GAM on a 64-bit version of Windows, upgrade to a windows-x86_64 version of GAM"
 MESSAGE_YOUR_SYSTEM_TIME_DIFFERS_FROM_GOOGLE_BY = 'Your system time differs from Google by %s'
 # oauth errors
 OAUTH2_TOKEN_ERRORS = [

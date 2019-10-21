@@ -52,8 +52,9 @@ import uuid
 import webbrowser
 import zipfile
 import http.client as http_client
-from multiprocessing import Pool
-from multiprocessing import freeze_support
+from multiprocessing import Pool as mp_pool
+from multiprocessing import freeze_support as mp_freeze_support
+from multiprocessing import set_start_method as mp_set_start_method
 from urllib.parse import urlencode, urlparse
 # workaround https://bitbucket.org/ecollins/passlib/issues/107/timeclock-has-gone
 # can be removed with passlib > 1.7.1
@@ -870,6 +871,8 @@ def doGAMVersion(checkForArgs=True):
                             sys.version_info[1], sys.version_info[2], struct.calcsize('P')*8,
                             sys.version_info[3], googleapiclient.__version__,
                             getOSPlatform(), platform.machine(), GM_Globals[GM_GAM_PATH]))
+  if sys.platform.startswith('win') and str(struct.calcsize('P')*8).find('32') != -1 and platform.machine().find('64') != -1:
+    print(MESSAGE_UPDATE_GAM_TO_64BIT)
   if timeOffset:
     offset, nicetime = getLocalGoogleTimeOffset(testLocation)
     print(MESSAGE_YOUR_SYSTEM_TIME_DIFFERS_FROM_GOOGLE_BY % nicetime)
@@ -14073,7 +14076,7 @@ def run_batch(items):
   if not items:
     return
   num_worker_threads = min(len(items), GC_Values[GC_NUM_THREADS])
-  pool = Pool(num_worker_threads, init_gam_worker)
+  pool = mp_pool(num_worker_threads, init_gam_worker)
   sys.stderr.write('Using %s processes...\n' % num_worker_threads)
   try:
     results = []
@@ -14082,7 +14085,7 @@ def run_batch(items):
         sys.stderr.write('commit-batch - waiting for running processes to finish before proceeding\n')
         pool.close()
         pool.join()
-        pool = Pool(num_worker_threads, init_gam_worker)
+        pool = mp_pool(num_worker_threads, init_gam_worker)
         sys.stderr.write('commit-batch - running processes finished, proceeding\n')
         continue
       results.append(pool.apply_async(ProcessGAMCommandMulti, [item]))
@@ -14975,12 +14978,12 @@ def ProcessGAMCommand(args):
 
 # Run from command line
 if __name__ == "__main__":
-  freeze_support()
+  mp_freeze_support()
   if sys.platform == 'darwin':
     # https://bugs.python.org/issue33725 in Python 3.8.0 seems
     # to break parallel operations with errors about extra -b
     # command line arguments
-    multiprocessing.set_start_method('fork')
+    mp_set_start_method('fork')
   if sys.version_info[0] < 3 or sys.version_info[1] < 5:
     systemErrorExit(5, 'GAM requires Python 3.5 or newer. You are running %s.%s.%s. Please upgrade your Python version or use one of the binary GAM downloads.' % sys.version_info[:3])
   sys.exit(ProcessGAMCommand(sys.argv))
