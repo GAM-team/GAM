@@ -8,7 +8,6 @@ else
   export dist=$(lsb_release --codename --short)
   echo "We are running on Ubuntu $dist"
   export LD_LIBRARY_PATH=~/ssl/lib:~/python/lib
-  cat /proc/cpuinfo
   cpucount=$(nproc --all)
   echo "This device has $cpucount CPUs for compiling..."
   SSLVER=$(~/ssl/bin/openssl version)
