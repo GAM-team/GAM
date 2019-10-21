@@ -25,6 +25,7 @@ if [ $SSLRESULT -ne 0 ] || [[ "$SSLVER" != "OpenSSL $BUILD_OPENSSL_VERSION "* ]]
   sudo apt-get -qq --yes update > /dev/null
   sudo apt-get -qq --yes build-dep python3 > /dev/null
   sudo apt-get -qq --yes install zlib1g-dev > /dev/null
+  sudo apt-get -qq --yes install libffi-dev > /dev/null
 
   # Compile latest OpenSSL
   echo "Downloading OpenSSL..."

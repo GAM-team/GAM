@@ -60,10 +60,6 @@ matrix:
       name: "Linux ARM64 Bionic"
       language: bash
       filter_secrets: false
-      addons:
-        apt:
-          packages:
-            - ruby
       env:
         - GAMOS=linux
         - PLATFORM=arm64
