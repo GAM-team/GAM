@@ -4,13 +4,13 @@ echo "We are running on Ubuntu $dist"
 export LD_LIBRARY_PATH=~/ssl/lib:~/python/lib
 cpucount=$(nproc --all)
 echo "This device has $cpucount CPUs for compiling..."
+sudo apt-get -qq --yes update > /dev/null
+sudo apt-get -qq --yes install xz-utils > /dev/null
 SSLVER=$(~/ssl/bin/openssl version)
 SSLRESULT=$?
 PYVER=$(~/python/bin/python3 -V)
 PYRESULT=$?
 if [ $SSLRESULT -ne 0 ] || [[ "$SSLVER" != "OpenSSL $BUILD_OPENSSL_VERSION "* ]] || [ $PYRESULT -ne 0 ] || [[ "$PYVER" != "Python $PYTHON_BUILD_VERSION"* ]]; then
-  echo "RUNNING: apt update..."
-  sudo apt-get -qq --yes update > /dev/null
   echo "RUNNING: apt dist-upgrade..."
   sudo apt-get -qq --yes dist-upgrade > /dev/null
   echo "Installing build tools..."
@@ -24,7 +24,7 @@ if [ $SSLRESULT -ne 0 ] || [[ "$SSLVER" != "OpenSSL $BUILD_OPENSSL_VERSION "* ]]
   sudo apt-get -qq --yes update > /dev/null
   sudo apt-get -qq --yes build-dep python3 > /dev/null
   sudo apt-get -qq --yes install zlib1g-dev > /dev/null
-  sudo apt-get -qq --yes install libffi-dev xz-utils > /dev/null
+  sudo apt-get -qq --yes install libffi-dev > /dev/null
 
   # Compile latest OpenSSL
   echo "Downloading OpenSSL..."
