@@ -10,7 +10,7 @@ SSLVER=$(~/ssl/bin/openssl version)
 SSLRESULT=$?
 PYVER=$(~/python/bin/python3 -V)
 PYRESULT=$?
-if [ $SSLRESULT -ne 0 ] || [[ "$SSLVER" != "OpenSSL $BUILD_OPENSSL_VERSION "* ]] || [ $PYRESULT -ne 0 ] || [[ "$PYVER" != "Python $PYTHON_BUILD_VERSION"* ]]; then
+if [ $SSLRESULT -ne 0 ] || [[ "$SSLVER" != "OpenSSL $BUILD_OPENSSL_VERSION "* ]] || [ $PYRESULT -ne 0 ] || [[ "$PYVER" != "Python $BUILD_PYTHON_VERSION"* ]]; then
   echo "RUNNING: apt dist-upgrade..."
   sudo apt-get -qq --yes dist-upgrade > /dev/null
   echo "Installing build tools..."
