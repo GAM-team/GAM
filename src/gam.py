@@ -1348,11 +1348,6 @@ def getValidOauth2TxtCredentials(force_refresh=False):
     elif credentials is None or not credentials.valid:
       doRequestOAuth()
       credentials = getOauth2TxtStorageCredentials()
-  if not GM_Globals[GM_WINDOWS]:
-    try:
-      os.remove(lock_file)
-    except IOError:
-      pass
   return credentials
 
 def getService(api, http):
