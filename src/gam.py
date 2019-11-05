@@ -6460,6 +6460,11 @@ def updateLabels(users):
     else:
       print('Error: user does not have a label named %s' % label_name)
 
+def cleanLabelQuery(labelQuery):
+  for ch in '/ (){}':
+    labelQuery = labelQuery.replace(ch, '-')
+  return labelQuery.lower()
+
 def renameLabels(users):
   search = '^Inbox/(.*)$'
   replace = '%s'
@@ -6500,7 +6505,7 @@ def renameLabels(users):
           if merge:
             print('  Merging %s label to existing %s label' % (label['name'], new_label_name))
             messages_to_relabel = callGAPIpages(gmail.users().messages(), 'list', 'messages',
-                                                userId=user, q='label:%s' % label['name'].lower().replace('/', '-').replace(' ', '-'))
+                                                userId=user, q='label:%s' % cleanLabelQuery(label['name']))
             if messages_to_relabel:
               for new_label in labels['labels']:
                 if new_label['name'].lower() == new_label_name.lower():
