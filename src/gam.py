@@ -6325,20 +6325,17 @@ def doDeleteLabel(users):
     labels = callGAPI(gmail.users().labels(), 'list', userId=user, fields='labels(id,name,type)')
     del_labels = []
     if label == '--ALL_LABELS--':
-      for del_label in labels['labels']:
-        if del_label['type'] == 'system':
-          continue
-        del_labels.append(del_label)
+      for del_label in sorted(labels['labels'], key=lambda k: k['name'], reverse=True):
+        if del_label['type'] != 'system':
+          del_labels.append(del_label)
     elif label[:6].lower() == 'regex:':
       regex = label[6:]
       p = re.compile(regex)
-      for del_label in labels['labels']:
-        if del_label['type'] == 'system':
-          continue
-        elif p.match(del_label['name']):
+      for del_label in sorted(labels['labels'], key=lambda k: k['name'], reverse=True):
+        if del_label['type'] != 'system' and p.match(del_label['name']):
           del_labels.append(del_label)
     else:
-      for del_label in labels['labels']:
+      for del_label in sorted(labels['labels'], key=lambda k: k['name'], reverse=True):
         if label_name_lower == del_label['name'].lower():
           del_labels.append(del_label)
           break
