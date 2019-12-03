@@ -951,58 +951,6 @@ MESSAGE_SERVICE_NOT_APPLICABLE = 'Service not applicable for this address: {0}. 
 MESSAGE_INSTRUCTIONS_OAUTH2SERVICE_JSON = 'Please run\n\ngam create project\ngam user <user> check serviceaccount\n\nto create and configure a service account.'
 MESSAGE_UPDATE_GAM_TO_64BIT = "You're running a 32-bit version of GAM on a 64-bit version of Windows, upgrade to a windows-x86_64 version of GAM"
 MESSAGE_YOUR_SYSTEM_TIME_DIFFERS_FROM_GOOGLE_BY = 'Your system time differs from Google by %s'
-# oauth errors
-OAUTH2_TOKEN_ERRORS = [
-  'access_denied',
-  'access_denied: Requested client not authorized',
-  'internal_failure: Backend Error',
-  'internal_failure: None',
-  'invalid_grant',
-  'invalid_grant: Bad Request',
-  'invalid_grant: Invalid email or User ID',
-  'invalid_grant: Not a valid email',
-  'invalid_grant: Invalid JWT: No valid verifier found for issuer',
-  'invalid_request: Invalid impersonation prn email address',
-  'unauthorized_client: Client is unauthorized to retrieve access tokens using this method',
-  'unauthorized_client: Client is unauthorized to retrieve access tokens using this method, or client not authorized for any of the scopes requested',
-  'unauthorized_client: Unauthorized client or scope in request',
-  ]
-#
-# callGAPI throw reasons
-GAPI_ABORTED = 'aborted'
-GAPI_AUTH_ERROR = 'authError'
-GAPI_BACKEND_ERROR = 'backendError'
-GAPI_BAD_REQUEST = 'badRequest'
-GAPI_CONDITION_NOT_MET = 'conditionNotMet'
-GAPI_CYCLIC_MEMBERSHIPS_NOT_ALLOWED = 'cyclicMembershipsNotAllowed'
-GAPI_DOMAIN_CANNOT_USE_APIS = 'domainCannotUseApis'
-GAPI_DOMAIN_NOT_FOUND = 'domainNotFound'
-GAPI_DUPLICATE = 'duplicate'
-GAPI_FAILED_PRECONDITION = 'failedPrecondition'
-GAPI_FORBIDDEN = 'forbidden'
-GAPI_GROUP_NOT_FOUND = 'groupNotFound'
-GAPI_INTERNAL_ERROR = 'internalError'
-GAPI_INVALID = 'invalid'
-GAPI_INVALID_ARGUMENT = 'invalidArgument'
-GAPI_INVALID_MEMBER = 'invalidMember'
-GAPI_MEMBER_NOT_FOUND = 'memberNotFound'
-GAPI_NOT_FOUND = 'notFound'
-GAPI_NOT_IMPLEMENTED = 'notImplemented'
-GAPI_PERMISSION_DENIED = 'permissionDenied'
-GAPI_QUOTA_EXCEEDED = 'quotaExceeded'
-GAPI_RATE_LIMIT_EXCEEDED = 'rateLimitExceeded'
-GAPI_RESOURCE_NOT_FOUND = 'resourceNotFound'
-GAPI_SERVICE_NOT_AVAILABLE = 'serviceNotAvailable'
-GAPI_SYSTEM_ERROR = 'systemError'
-GAPI_USER_NOT_FOUND = 'userNotFound'
-GAPI_USER_RATE_LIMIT_EXCEEDED = 'userRateLimitExceeded'
-#
-GAPI_DEFAULT_RETRY_REASONS = [GAPI_QUOTA_EXCEEDED, GAPI_RATE_LIMIT_EXCEEDED, GAPI_USER_RATE_LIMIT_EXCEEDED, GAPI_BACKEND_ERROR, GAPI_INTERNAL_ERROR]
-GAPI_GMAIL_THROW_REASONS = [GAPI_SERVICE_NOT_AVAILABLE]
-GAPI_GROUP_GET_THROW_REASONS = [GAPI_GROUP_NOT_FOUND, GAPI_DOMAIN_NOT_FOUND, GAPI_DOMAIN_CANNOT_USE_APIS, GAPI_FORBIDDEN, GAPI_BAD_REQUEST]
-GAPI_GROUP_GET_RETRY_REASONS = [GAPI_INVALID, GAPI_SYSTEM_ERROR]
-GAPI_MEMBERS_THROW_REASONS = [GAPI_GROUP_NOT_FOUND, GAPI_DOMAIN_NOT_FOUND, GAPI_DOMAIN_CANNOT_USE_APIS, GAPI_INVALID, GAPI_FORBIDDEN]
-GAPI_MEMBERS_RETRY_REASONS = [GAPI_SYSTEM_ERROR]
 
 USER_ADDRESS_TYPES = ['home', 'work', 'other']
 USER_EMAIL_TYPES = ['home', 'work', 'other']
