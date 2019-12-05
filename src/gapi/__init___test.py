@@ -72,14 +72,14 @@ class CreateHttpTest(unittest.TestCase):
     self.assertEqual(http.timeout, 1234)
 
 
-class CallTest(unittest.TestCase):
+class GapiTest(unittest.TestCase):
 
   def setUp(self):
     SetGlobalVariables()
     self.mock_service = MagicMock()
     self.mock_method_name = 'mock_method'
     self.mock_method = getattr(self.mock_service, self.mock_method_name)
-    super(CallTest, self).setUp()
+    super(GapiTest, self).setUp()
 
   def test_call_returns_basic_200_response(self):
     response = gapi.call(self.mock_service, self.mock_method_name)
@@ -235,6 +235,38 @@ class CallTest(unittest.TestCase):
     self.assertEqual(self.mock_method.return_value.execute.call_count, 2)
     # Make sure a backoff technique was used for retry.
     self.assertEqual(mock_wait_on_failure.call_count, 1)
+
+  def test_get_first_page_calls_correct_service_function(self):
+    pass
+
+  def test_get_first_page_returns_one_page(self):
+    fake_response = {'items': [{}, {}, {}]}
+    self.mock_method.return_value.execute.return_value = fake_response
+    page = gapi.get_first_page(self.mock_service, self.mock_method_name)
+    self.assertEqual(page, fake_response['items'])
+
+  def test_get_first_page_non_standard_page_field_name(self):
+    field_name = 'things'
+    fake_response = {field_name: [{}, {}, {}]}
+    self.mock_method.return_value.execute.return_value = fake_response
+    page = gapi.get_first_page(
+        self.mock_service, self.mock_method_name, items=field_name)
+    self.assertEqual(page, fake_response[field_name])
+
+  def test_get_first_page_passes_additional_kwargs_to_service(self):
+    gapi.get_first_page(
+        self.mock_service, self.mock_method_name, my_param_1=1, my_param_2=2)
+    self.mock_method.assert_called_once()
+    method_kwargs = self.mock_method.call_args[1]
+    self.assertEqual(1, method_kwargs.get('my_param_1'))
+    self.assertEqual(2, method_kwargs.get('my_param_2'))
+
+  def test_get_first_page_returns_empty_list_when_no_items_returned(self):
+    non_items_response = {'noItemsInThisResponse': {}}
+    self.mock_method.return_value.execute.return_value = non_items_response
+    page = gapi.get_first_page(self.mock_service, self.mock_method_name)
+    self.assertIsInstance(page, list)
+    self.assertEqual(0, len(page))
 
 
 if __name__ == '__main__':
