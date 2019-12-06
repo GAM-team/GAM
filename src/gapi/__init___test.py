@@ -88,10 +88,10 @@ class CallTest(unittest.TestCase):
   def test_call_passes_target_method_params(self):
     gapi.call(
         self.mock_service, self.mock_method_name, my_param_1=1, my_param_2=2)
-    self.mock_method.assert_called_once()
+    self.assertEqual(self.mock_method.call_count, 1)
     method_kwargs = self.mock_method.call_args[1]
-    self.assertEqual(1, method_kwargs.get('my_param_1'))
-    self.assertEqual(2, method_kwargs.get('my_param_2'))
+    self.assertEqual(method_kwargs.get('my_param_1'), 1)
+    self.assertEqual(method_kwargs.get('my_param_2'), 2)
 
   @patch.object(gapi.errors, 'get_gapi_error_detail')
   def test_call_retries_with_soft_errors(self, mock_error_detail):
@@ -107,7 +107,8 @@ class CallTest(unittest.TestCase):
     response = gapi.call(
         self.mock_service, self.mock_method_name, soft_errors=True)
     self.assertEqual(response, fake_200_response)
-    self.mock_service._http.request.credentials.refresh.assert_called_once()
+    self.assertEqual(
+        self.mock_service._http.request.credentials.refresh.call_count, 1)
     self.assertEqual(self.mock_method.return_value.execute.call_count, 2)
 
   def test_call_throws_for_provided_reason(self):
@@ -144,7 +145,7 @@ class CallTest(unittest.TestCase):
     self.assertEqual(response, fake_200_response)
     self.assertEqual(self.mock_method.return_value.execute.call_count, 2)
     # Make sure a backoff technique was used for retry.
-    mock_wait_on_failure.assert_called_once()
+    self.assertEqual(mock_wait_on_failure.call_count, 1)
 
   # Prevent wait_on_failure from performing actual backoff unnecessarily, since
   # we're not actually testing over a network connection
@@ -233,7 +234,7 @@ class CallTest(unittest.TestCase):
     self.assertNotEqual(http_connections, self.mock_service._http.connections)
     self.assertEqual(self.mock_method.return_value.execute.call_count, 2)
     # Make sure a backoff technique was used for retry.
-    mock_wait_on_failure.assert_called_once()
+    self.assertEqual(mock_wait_on_failure.call_count, 1)
 
 
 if __name__ == '__main__':
