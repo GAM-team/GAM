@@ -74,6 +74,10 @@ import google_auth_oauthlib.flow
 import google_auth_httplib2
 import httplib2
 
+import controlflow
+import display
+import gapi.errors
+import gapi
 import utils
 from var import *
 
@@ -116,11 +120,6 @@ google_auth_httplib2.Request.__call__ = _request_with_user_agent(
 google_auth_httplib2.AuthorizedHttp.request = _request_with_user_agent(
   google_auth_httplib2.AuthorizedHttp.request)
 
-def _createHttpObj(cache=None, timeout=None, override_min_tls=None, override_max_tls=None):
-  tls_minimum_version = override_min_tls if override_min_tls else GC_Values[GC_TLS_MIN_VERSION]
-  tls_maximum_version = override_max_tls if override_max_tls else GC_Values[GC_TLS_MAX_VERSION]
-  return httplib2.Http(ca_certs=GC_Values[GC_CA_FILE], tls_maximum_version=tls_maximum_version, tls_minimum_version=tls_minimum_version,
-                       cache=cache, timeout=timeout)
 
 def showUsage():
   doGAMVersion(checkForArgs=False)
@@ -139,36 +138,12 @@ gam.exe update group announcements add member jsmith
 ...
 
 ''')
-#
-# Error handling
-#
-def stderrErrorMsg(message):
-  sys.stderr.write(utils.convertUTF8('\n{0}{1}\n'.format(ERROR_PREFIX, message)))
-
-def stderrWarningMsg(message):
-  sys.stderr.write(utils.convertUTF8('\n{0}{1}\n'.format(WARNING_PREFIX, message)))
-
-def systemErrorExit(sysRC, message):
-  if message:
-    stderrErrorMsg(message)
-  sys.exit(sysRC)
-
-def invalidJSONExit(fileName):
-  systemErrorExit(17, MESSAGE_INVALID_JSON.format(fileName))
 
 def currentCount(i, count):
   return ' ({0}/{1})'.format(i, count) if (count > GC_Values[GC_SHOW_COUNTS_MIN]) else ''
 
 def currentCountNL(i, count):
   return ' ({0}/{1})\n'.format(i, count) if (count > GC_Values[GC_SHOW_COUNTS_MIN]) else '\n'
-
-def formatHTTPError(http_status, reason, message):
-  return '{0}: {1} - {2}'.format(http_status, reason, message)
-
-def getHTTPError(responses, http_status, reason, message):
-  if reason in responses:
-    return responses[reason]
-  return formatHTTPError(http_status, reason, message)
 
 def printGettingAllItems(items, query):
   if query:
@@ -189,20 +164,16 @@ def entityUnknownWarning(entityType, entityName, i, count):
   else:
     entityServiceNotApplicableWarning(entityType, entityName, i, count)
 
-# Invalid CSV ~Header or ~~Header~~
-def csvFieldErrorExit(fieldName, fieldNames):
-  systemErrorExit(2, MESSAGE_HEADER_NOT_FOUND_IN_CSV_HEADERS.format(fieldName, ','.join(fieldNames)))
-
 def printLine(message):
   sys.stdout.write(message+'\n')
-#
+
 def getBoolean(value, item):
   value = value.lower()
   if value in true_values:
     return True
   if value in false_values:
     return False
-  systemErrorExit(2, 'Value for {0} must be {1} or {2}; got {3}'.format(item, '|'.join(true_values), '|'.join(false_values), value))
+  controlflow.system_error_exit(2, 'Value for {0} must be {1} or {2}; got {3}'.format(item, '|'.join(true_values), '|'.join(false_values), value))
 
 def getCharSet(i):
   if (i == len(sys.argv)) or (sys.argv[i].lower() != 'charset'):
@@ -253,7 +224,7 @@ def getColor(color):
   tg = COLORHEX_PATTERN.match(color)
   if tg:
     return tg.group(0)
-  systemErrorExit(2, 'A color must be a valid name or # and six hex characters (#012345); got {0}'.format(color))
+  controlflow.system_error_exit(2, 'A color must be a valid name or # and six hex characters (#012345); got {0}'.format(color))
 
 def getLabelColor(color):
   color = color.lower().strip()
@@ -262,8 +233,8 @@ def getLabelColor(color):
     color = tg.group(0)
     if color in LABEL_COLORS:
       return color
-    systemErrorExit(2, 'A label color must be in the list: {0}; got {1}'.format('|'.join(LABEL_COLORS), color))
-  systemErrorExit(2, 'A label color must be # and six hex characters (#012345); got {0}'.format(color))
+    controlflow.system_error_exit(2, 'A label color must be in the list: {0}; got {1}'.format('|'.join(LABEL_COLORS), color))
+  controlflow.system_error_exit(2, 'A label color must be # and six hex characters (#012345); got {0}'.format(color))
 
 def integerLimits(minVal, maxVal, item='integer'):
   if (minVal is not None) and (maxVal is not None):
@@ -281,7 +252,7 @@ def getInteger(value, item, minVal=None, maxVal=None):
       return number
   except ValueError:
     pass
-  systemErrorExit(2, 'expected {0} in range <{1}>, got {2}'.format(item, integerLimits(minVal, maxVal), value))
+  controlflow.system_error_exit(2, 'expected {0} in range <{1}>, got {2}'.format(item, integerLimits(minVal, maxVal), value))
 
 def removeCourseIdScope(courseId):
   if courseId.startswith('d:'):
@@ -299,13 +270,13 @@ def getString(i, item, optional=False, minLen=1, maxLen=None):
     if argstr:
       if (len(argstr) >= minLen) and ((maxLen is None) or (len(argstr) <= maxLen)):
         return argstr
-      systemErrorExit(2, 'expected <{0} for {1}>'.format(integerLimits(minLen, maxLen, 'string length'), item))
+      controlflow.system_error_exit(2, 'expected <{0} for {1}>'.format(integerLimits(minLen, maxLen, 'string length'), item))
     if optional or (minLen == 0):
       return ''
-    systemErrorExit(2, 'expected a Non-empty <{0}>'.format(item))
+    controlflow.system_error_exit(2, 'expected a Non-empty <{0}>'.format(item))
   elif optional:
     return ''
-  systemErrorExit(2, 'expected a <{0}>'.format(item))
+  controlflow.system_error_exit(2, 'expected a <{0}>'.format(item))
 
 def getDelta(argstr, pattern):
   tg = pattern.match(argstr.lower())
@@ -334,7 +305,7 @@ DELTA_DATE_FORMAT_REQUIRED = '(+|-)<Number>(d|w|y)'
 def getDeltaDate(argstr):
   deltaDate = getDelta(argstr, DELTA_DATE_PATTERN)
   if deltaDate is None:
-    systemErrorExit(2, 'expected a <{0}>; got {1}'.format(DELTA_DATE_FORMAT_REQUIRED, argstr))
+    controlflow.system_error_exit(2, 'expected a <{0}>; got {1}'.format(DELTA_DATE_FORMAT_REQUIRED, argstr))
   return deltaDate
 
 DELTA_TIME_PATTERN = re.compile(r'^([+-])(\d+)([mhdwy])$')
@@ -343,7 +314,7 @@ DELTA_TIME_FORMAT_REQUIRED = '(+|-)<Number>(m|h|d|w|y)'
 def getDeltaTime(argstr):
   deltaTime = getDelta(argstr, DELTA_TIME_PATTERN)
   if deltaTime is None:
-    systemErrorExit(2, 'expected a <{0}>; got {1}'.format(DELTA_TIME_FORMAT_REQUIRED, argstr))
+    controlflow.system_error_exit(2, 'expected a <{0}>; got {1}'.format(DELTA_TIME_FORMAT_REQUIRED, argstr))
   return deltaTime
 
 YYYYMMDD_FORMAT = '%Y-%m-%d'
@@ -363,10 +334,10 @@ def getYYYYMMDD(argstr, minLen=1, returnTimeStamp=False, returnDateTime=False):
         return dateTime
       return argstr
     except ValueError:
-      systemErrorExit(2, 'expected a <{0}>; got {1}'.format(YYYYMMDD_FORMAT_REQUIRED, argstr))
+      controlflow.system_error_exit(2, 'expected a <{0}>; got {1}'.format(YYYYMMDD_FORMAT_REQUIRED, argstr))
   elif minLen == 0:
     return ''
-  systemErrorExit(2, 'expected a <{0}>'.format(YYYYMMDD_FORMAT_REQUIRED))
+  controlflow.system_error_exit(2, 'expected a <{0}>'.format(YYYYMMDD_FORMAT_REQUIRED))
 
 YYYYMMDDTHHMMSS_FORMAT_REQUIRED = 'yyyy-mm-ddThh:mm:ss[.fff](Z|(+|-(hh:mm)))'
 
@@ -382,7 +353,7 @@ def getTimeOrDeltaFromNow(time_string):
     if time_string[0] not in ['+', '-']:
       return time_string
     return (datetime.datetime.utcnow() + getDeltaTime(time_string)).isoformat() + 'Z'
-  systemErrorExit(2, 'expected a <{0}>'.format(YYYYMMDDTHHMMSS_FORMAT_REQUIRED))
+  controlflow.system_error_exit(2, 'expected a <{0}>'.format(YYYYMMDDTHHMMSS_FORMAT_REQUIRED))
 
 def getRowFilterDateOrDeltaFromNow(date_string):
   """Get an ISO 8601 date or a positive/negative delta applied to now.
@@ -437,7 +408,7 @@ def getDateZeroTimeOrFullTime(time_string):
     if YYYYMMDD_PATTERN.match(time_string):
       return getYYYYMMDD(time_string)+'T00:00:00.000Z'
     return getTimeOrDeltaFromNow(time_string)
-  systemErrorExit(2, 'expected a <{0}>'.format(YYYYMMDDTHHMMSS_FORMAT_REQUIRED))
+  controlflow.system_error_exit(2, 'expected a <{0}>'.format(YYYYMMDDTHHMMSS_FORMAT_REQUIRED))
 
 # Get domain from email address
 def getEmailAddressDomain(emailAddress):
@@ -518,7 +489,7 @@ def openFile(filename, mode='r', encoding=None, newline=None,
       return io.StringIO(str(sys.stdin.read()))
     return sys.stdout
   except IOError as e:
-    systemErrorExit(6, e)
+    controlflow.system_error_exit(6, e)
 #
 # Close a file
 #
@@ -527,7 +498,7 @@ def closeFile(f):
     f.close()
     return True
   except IOError as e:
-    stderrErrorMsg(e)
+    display.print_error(e)
     return False
 #
 # Read a file
@@ -543,11 +514,11 @@ def readFile(filename, mode='r', encoding=None, newline=None,
   except IOError as e:
     if continueOnError:
       if displayError:
-        stderrWarningMsg(e)
+        display.print_warning(e)
       return None
-    systemErrorExit(6, e)
+    controlflow.system_error_exit(6, e)
   except (LookupError, UnicodeDecodeError, UnicodeError) as e:
-    systemErrorExit(2, str(e))
+    controlflow.system_error_exit(2, str(e))
 #
 # Write a file
 #
@@ -560,9 +531,9 @@ def writeFile(filename, data, mode='w', continueOnError=False, displayError=True
   except IOError as e:
     if continueOnError:
       if displayError:
-        stderrErrorMsg(e)
+        display.print_error(e)
       return False
-    systemErrorExit(6, e)
+    controlflow.system_error_exit(6, e)
 #
 # Set global variables
 # Check for GAM updates based on status of noupdatecheck.txt
@@ -608,7 +579,7 @@ def SetGlobalVariables():
       try:
         headerFilters.append(re.compile(filterStr, re.IGNORECASE))
       except re.error as e:
-        systemErrorExit(3, 'Item: {0}: "{1}", Invalid RE: {2}'.format(itemName, filterStr, e))
+        controlflow.system_error_exit(3, 'Item: {0}: "{1}", Invalid RE: {2}'.format(itemName, filterStr, e))
     return headerFilters
 
   ROW_FILTER_COMP_PATTERN = re.compile(r'^(date|time|count)\s*([<>]=?|=|!=)\s*(.+)$', re.IGNORECASE)
@@ -624,19 +595,19 @@ def SetGlobalVariables():
       try:
         filterDict = json.loads(value.encode('unicode-escape').decode(UTF8))
       except (TypeError, ValueError) as e:
-        systemErrorExit(3, 'Item: {0}, Value: "{1}", Failed to parse as JSON: {2}'.format(itemName, value, str(e)))
+        controlflow.system_error_exit(3, 'Item: {0}, Value: "{1}", Failed to parse as JSON: {2}'.format(itemName, value, str(e)))
     else:
       filterDict = {}
       status, filterList = shlexSplitListStatus(value)
       if not status:
-        systemErrorExit(3, 'Item: {0}, Value: "{1}", Failed to parse as list'.format(itemName, value))
+        controlflow.system_error_exit(3, 'Item: {0}, Value: "{1}", Failed to parse as list'.format(itemName, value))
       for filterVal in filterList:
         if not filterVal:
           continue
         try:
           column, filterStr = filterVal.split(':', 1)
         except ValueError:
-          systemErrorExit(3, 'Item: {0}, Value: "{1}", Expected column:filter'.format(itemName, filterVal))
+          controlflow.system_error_exit(3, 'Item: {0}, Value: "{1}", Expected column:filter'.format(itemName, filterVal))
         filterDict[column] = filterStr
     for column, filterStr in iter(filterDict.items()):
       mg = ROW_FILTER_COMP_PATTERN.match(filterStr)
@@ -649,12 +620,12 @@ def SetGlobalVariables():
           if valid:
             rowFilters[column] = (mg.group(1), mg.group(2), filterValue)
             continue
-          systemErrorExit(3, 'Item: {0}, Value: "{1}": "{2}", Expected: {3}'.format(itemName, column, filterStr, filterValue))
+          controlflow.system_error_exit(3, 'Item: {0}, Value: "{1}": "{2}", Expected: {3}'.format(itemName, column, filterStr, filterValue))
         else: #count
           if mg.group(3).isdigit():
             rowFilters[column] = (mg.group(1), mg.group(2), int(mg.group(3)))
             continue
-          systemErrorExit(3, 'Item: {0}, Value: "{1}": "{2}", Expected: {3}'.format(itemName, column, filterStr, '<Number>'))
+          controlflow.system_error_exit(3, 'Item: {0}, Value: "{1}": "{2}", Expected: {3}'.format(itemName, column, filterStr, '<Number>'))
       mg = ROW_FILTER_BOOL_PATTERN.match(filterStr)
       if mg:
         value = mg.group(2).lower()
@@ -663,7 +634,7 @@ def SetGlobalVariables():
         elif value in false_values:
           filterValue = False
         else:
-          systemErrorExit(3, 'Item: {0}, Value: "{1}": "{2}", Expected true|false'.format(itemName, column, filterStr))
+          controlflow.system_error_exit(3, 'Item: {0}, Value: "{1}": "{2}", Expected true|false'.format(itemName, column, filterStr))
         rowFilters[column] = (mg.group(1), filterValue)
         continue
       mg = ROW_FILTER_RE_PATTERN.match(filterStr)
@@ -672,8 +643,8 @@ def SetGlobalVariables():
           rowFilters[column] = (mg.group(1), re.compile(mg.group(2)))
           continue
         except re.error as e:
-          systemErrorExit(3, 'Item: {0}, Value: "{1}": "{2}", Invalid RE: {3}'.format(itemName, column, filterStr, e))
-      systemErrorExit(3, 'Item: {0}, Value: "{1}": {2}, Expected: (date|time|count<Operator><Value>) or (boolean:true|false) or (regex|notregex:<RegularExpression>)'.format(itemName, column, filterStr))
+          controlflow.system_error_exit(3, 'Item: {0}, Value: "{1}": "{2}", Invalid RE: {3}'.format(itemName, column, filterStr, e))
+      controlflow.system_error_exit(3, 'Item: {0}, Value: "{1}": {2}, Expected: (date|time|count<Operator><Value>) or (boolean:true|false) or (regex|notregex:<RegularExpression>)'.format(itemName, column, filterStr))
     return rowFilters
 
   GC_Defaults[GC_CONFIG_DIR] = GM_Globals[GM_GAM_PATH]
@@ -753,11 +724,11 @@ def getLocalGoogleTimeOffset(testLocation='www.googleapis.com'):
     # we disable SSL verify so we can still get time even if clock
     # is way off. This could be spoofed / MitM but we'll fail for those
     # situations everywhere else but here.
-    badhttp = _createHttpObj()
+    badhttp = gapi.create_http()
     badhttp.disable_ssl_certificate_validation = True
     googleUTC = dateutil.parser.parse(badhttp.request('https://'+testLocation, 'HEAD')[0]['date'])
   except (httplib2.ServerNotFoundError, RuntimeError, ValueError) as e:
-    systemErrorExit(4, str(e))
+    controlflow.system_error_exit(4, str(e))
   offset = remainder = int(abs((localUTC-googleUTC).total_seconds()))
   timeoff = []
   for tou in TIME_OFFSET_UNITS:
@@ -773,7 +744,7 @@ def doGAMCheckForUpdates(forceCheck=False):
 
   def _gamLatestVersionNotAvailable():
     if forceCheck:
-      systemErrorExit(4, 'GAM Latest Version information not available')
+      controlflow.system_error_exit(4, 'GAM Latest Version information not available')
 
   current_version = gam_version
   now_time = int(time.time())
@@ -786,7 +757,7 @@ def doGAMCheckForUpdates(forceCheck=False):
       return
     check_url = GAM_LATEST_RELEASE # latest full release
   headers = {'Accept': 'application/vnd.github.v3.text+json'}
-  simplehttp = _createHttpObj(timeout=10)
+  simplehttp = gapi.create_http(timeout=10)
   try:
     (_, c) = simplehttp.request(check_url, 'GET', headers=headers)
     try:
@@ -862,7 +833,7 @@ def doGAMVersion(checkForArgs=True):
         testLocation = sys.argv[i+1]
         i += 2
       else:
-        systemErrorExit(2, '%s is not a valid argument for "gam version"' % sys.argv[i])
+        controlflow.system_error_exit(2, '%s is not a valid argument for "gam version"' % sys.argv[i])
   if simple:
     sys.stdout.write(gam_version)
     return
@@ -877,7 +848,7 @@ def doGAMVersion(checkForArgs=True):
     offset, nicetime = getLocalGoogleTimeOffset(testLocation)
     print(MESSAGE_YOUR_SYSTEM_TIME_DIFFERS_FROM_GOOGLE_BY % nicetime)
     if offset > MAX_LOCAL_GOOGLE_TIME_OFFSET:
-      systemErrorExit(4, 'Please fix your system time.')
+      controlflow.system_error_exit(4, 'Please fix your system time.')
   if force_check:
     doGAMCheckForUpdates(forceCheck=True)
   if extended:
@@ -889,7 +860,7 @@ def _getServerTLSUsed(location):
   url = 'https://%s' % location
   _, netloc, _, _, _, _ = urlparse(url)
   conn = 'https:%s' % netloc
-  httpc = _createHttpObj()
+  httpc = gapi.create_http()
   headers = {'user-agent': GAM_INFO}
   retries = 5
   for n in range(1, retries+1):
@@ -899,23 +870,11 @@ def _getServerTLSUsed(location):
     except (httplib2.ServerNotFoundError, RuntimeError) as e:
       if n != retries:
         httpc.connections = {}
-        waitOnFailure(n, retries, str(e))
+        controlflow.wait_on_failure(n, retries, str(e))
         continue
-      systemErrorExit(4, str(e))
+      controlflow.system_error_exit(4, str(e))
   cipher_name, tls_ver, _ = httpc.connections[conn].sock.cipher()
   return tls_ver, cipher_name
-
-def handleOAuthTokenError(e, soft_errors):
-  if e.replace('.', '') in OAUTH2_TOKEN_ERRORS or e.startswith('Invalid response'):
-    if soft_errors:
-      return None
-    if not GM_Globals[GM_CURRENT_API_USER]:
-      stderrErrorMsg(MESSAGE_API_ACCESS_DENIED.format(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID],
-                                                      ','.join(GM_Globals[GM_CURRENT_API_SCOPES])))
-      systemErrorExit(12, MESSAGE_API_ACCESS_CONFIG)
-    else:
-      systemErrorExit(19, MESSAGE_SERVICE_NOT_APPLICABLE.format(GM_Globals[GM_CURRENT_API_USER]))
-  systemErrorExit(18, 'Authentication Token Error - {0}'.format(e))
 
 def getSvcAcctCredentials(scopes, act_as):
   try:
@@ -923,7 +882,7 @@ def getSvcAcctCredentials(scopes, act_as):
       json_string = readFile(GC_Values[GC_OAUTH2SERVICE_JSON], continueOnError=True, displayError=True)
       if not json_string:
         printLine(MESSAGE_INSTRUCTIONS_OAUTH2SERVICE_JSON)
-        systemErrorExit(6, None)
+        controlflow.system_error_exit(6, None)
       GM_Globals[GM_OAUTH2SERVICE_JSON_DATA] = json.loads(json_string)
     credentials = google.oauth2.service_account.Credentials.from_service_account_info(GM_Globals[GM_OAUTH2SERVICE_JSON_DATA])
     credentials = credentials.with_scopes(scopes)
@@ -933,224 +892,7 @@ def getSvcAcctCredentials(scopes, act_as):
     return credentials
   except (ValueError, KeyError):
     printLine(MESSAGE_INSTRUCTIONS_OAUTH2SERVICE_JSON)
-    invalidJSONExit(GC_Values[GC_OAUTH2SERVICE_JSON])
-
-def waitOnFailure(n, retries, errMsg):
-  wait_on_fail = min(2 ** n, 60) + float(random.randint(1, 1000)) / 1000
-  if n > 3:
-    sys.stderr.write('Temporary error: {0}, Backing off: {1} seconds, Retry: {2}/{3}\n'.format(errMsg, int(wait_on_fail), n, retries))
-    sys.stderr.flush()
-  time.sleep(wait_on_fail)
-
-def checkGAPIError(e, soft_errors=False, silent_errors=False, retryOnHttpError=False, service=None):
-  try:
-    error = json.loads(e.content.decode(UTF8))
-  except ValueError:
-    eContent = e.content.decode(UTF8) if isinstance(e.content, bytes) else e.content
-    if (e.resp['status'] == '503') and (eContent == 'Quota exceeded for the current request'):
-      return (e.resp['status'], GAPI_QUOTA_EXCEEDED, eContent)
-    if (e.resp['status'] == '403') and (eContent.startswith('Request rate higher than configured')):
-      return (e.resp['status'], GAPI_QUOTA_EXCEEDED, eContent)
-    if (e.resp['status'] == '403') and ('Invalid domain.' in eContent):
-      error = {'error': {'code': 403, 'errors': [{'reason': GAPI_NOT_FOUND, 'message': 'Domain not found'}]}}
-    elif (e.resp['status'] == '400') and ('InvalidSsoSigningKey' in eContent):
-      error = {'error': {'code': 400, 'errors': [{'reason': GAPI_INVALID, 'message': 'InvalidSsoSigningKey'}]}}
-    elif (e.resp['status'] == '400') and ('UnknownError' in eContent):
-      error = {'error': {'code': 400, 'errors': [{'reason': GAPI_INVALID, 'message': 'UnknownError'}]}}
-    elif retryOnHttpError:
-      service._http.request.credentials.refresh(_createHttpObj())
-      return (-1, None, None)
-    elif soft_errors:
-      if not silent_errors:
-        stderrErrorMsg(eContent)
-      return (0, None, None)
-    else:
-      systemErrorExit(5, eContent)
-  if 'error' in error:
-    http_status = error['error']['code']
-    try:
-      message = error['error']['errors'][0]['message']
-    except KeyError:
-      message = error['error']['message']
-  else:
-    if 'error_description' in error:
-      if error['error_description'] == 'Invalid Value':
-        message = error['error_description']
-        http_status = 400
-        error = {'error': {'errors': [{'reason': GAPI_INVALID, 'message': message}]}}
-      else:
-        systemErrorExit(4, str(error))
-    else:
-      systemErrorExit(4, str(error))
-  try:
-    reason = error['error']['errors'][0]['reason']
-    if reason == 'notFound':
-      if 'userKey' in message:
-        reason = GAPI_USER_NOT_FOUND
-      elif 'groupKey' in message:
-        reason = GAPI_GROUP_NOT_FOUND
-      elif 'memberKey' in message:
-        reason = GAPI_MEMBER_NOT_FOUND
-      elif 'Domain not found' in message:
-        reason = GAPI_DOMAIN_NOT_FOUND
-      elif 'Resource Not Found' in message:
-        reason = GAPI_RESOURCE_NOT_FOUND
-    elif reason == 'invalid':
-      if 'userId' in message:
-        reason = GAPI_USER_NOT_FOUND
-      elif 'memberKey' in message:
-        reason = GAPI_INVALID_MEMBER
-    elif reason == 'failedPrecondition':
-      if 'Bad Request' in message:
-        reason = GAPI_BAD_REQUEST
-      elif 'Mail service not enabled' in message:
-        reason = GAPI_SERVICE_NOT_AVAILABLE
-    elif reason == 'required':
-      if 'memberKey' in message:
-        reason = GAPI_MEMBER_NOT_FOUND
-    elif reason == 'conditionNotMet':
-      if 'Cyclic memberships not allowed' in message:
-        reason = GAPI_CYCLIC_MEMBERSHIPS_NOT_ALLOWED
-  except KeyError:
-    reason = '{0}'.format(http_status)
-  return (http_status, reason, message)
-
-class GAPI_aborted(Exception):
-  pass
-class GAPI_authError(Exception):
-  pass
-class GAPI_badRequest(Exception):
-  pass
-class GAPI_conditionNotMet(Exception):
-  pass
-class GAPI_cyclicMembershipsNotAllowed(Exception):
-  pass
-class GAPI_domainCannotUseApis(Exception):
-  pass
-class GAPI_domainNotFound(Exception):
-  pass
-class GAPI_duplicate(Exception):
-  pass
-class GAPI_failedPrecondition(Exception):
-  pass
-class GAPI_forbidden(Exception):
-  pass
-class GAPI_groupNotFound(Exception):
-  pass
-class GAPI_invalid(Exception):
-  pass
-class GAPI_invalidArgument(Exception):
-  pass
-class GAPI_invalidMember(Exception):
-  pass
-class GAPI_memberNotFound(Exception):
-  pass
-class GAPI_notFound(Exception):
-  pass
-class GAPI_notImplemented(Exception):
-  pass
-class GAPI_permissionDenied(Exception):
-  pass
-class GAPI_resourceNotFound(Exception):
-  pass
-class GAPI_serviceNotAvailable(Exception):
-  pass
-class GAPI_userNotFound(Exception):
-  pass
-
-GAPI_REASON_EXCEPTION_MAP = {
-  GAPI_ABORTED: GAPI_aborted,
-  GAPI_AUTH_ERROR: GAPI_authError,
-  GAPI_BAD_REQUEST: GAPI_badRequest,
-  GAPI_CONDITION_NOT_MET: GAPI_conditionNotMet,
-  GAPI_CYCLIC_MEMBERSHIPS_NOT_ALLOWED: GAPI_cyclicMembershipsNotAllowed,
-  GAPI_DOMAIN_CANNOT_USE_APIS: GAPI_domainCannotUseApis,
-  GAPI_DOMAIN_NOT_FOUND: GAPI_domainNotFound,
-  GAPI_DUPLICATE: GAPI_duplicate,
-  GAPI_FAILED_PRECONDITION: GAPI_failedPrecondition,
-  GAPI_FORBIDDEN: GAPI_forbidden,
-  GAPI_GROUP_NOT_FOUND: GAPI_groupNotFound,
-  GAPI_INVALID: GAPI_invalid,
-  GAPI_INVALID_ARGUMENT: GAPI_invalidArgument,
-  GAPI_INVALID_MEMBER: GAPI_invalidMember,
-  GAPI_MEMBER_NOT_FOUND: GAPI_memberNotFound,
-  GAPI_NOT_FOUND: GAPI_notFound,
-  GAPI_NOT_IMPLEMENTED: GAPI_notImplemented,
-  GAPI_PERMISSION_DENIED: GAPI_permissionDenied,
-  GAPI_RESOURCE_NOT_FOUND: GAPI_resourceNotFound,
-  GAPI_SERVICE_NOT_AVAILABLE: GAPI_serviceNotAvailable,
-  GAPI_USER_NOT_FOUND: GAPI_userNotFound,
-  }
-
-def callGAPI(service, function,
-             silent_errors=False, soft_errors=False,
-             throw_reasons=None, retry_reasons=None,
-             **kwargs):
-  """Executes a single request on a Google service function.
-
-  Args:
-    service: A Google service object for the desired API.
-    function: String, The name of a service request method to execute.
-    silent_errors: Bool, If True, error messages are suppressed when
-        encountered.
-    soft_errors: Bool, If True, writes non-fatal errors to stderr.
-    throw_reasons: A list of Google HTTP error reason strings indicating the
-        errors generated by this request should be re-thrown. All other HTTP
-        errors are consumed.
-    retry_reasons: A list of Google HTTP error reason strings indicating which
-        error should be retried, using exponential backoff techniques, when the
-        error reason is encountered.
-
-  Returns:
-    The given Google service function's response object.
-  """
-  if throw_reasons is None:
-    throw_reasons = []
-  if retry_reasons is None:
-    retry_reasons = []
-
-  method = getattr(service, function)
-  retries = 10
-  parameters = dict(list(kwargs.items()) + list(GM_Globals[GM_EXTRA_ARGS_DICT].items()))
-  for n in range(1, retries+1):
-    try:
-      return method(**parameters).execute()
-    except googleapiclient.errors.HttpError as e:
-      http_status, reason, message = checkGAPIError(e, soft_errors=soft_errors, silent_errors=silent_errors, retryOnHttpError=n < 3, service=service)
-      if http_status == -1:
-        continue
-      if http_status == 0:
-        return None
-      if reason in throw_reasons:
-        if reason in GAPI_REASON_EXCEPTION_MAP:
-          raise GAPI_REASON_EXCEPTION_MAP[reason](message)
-        raise e
-      if (n != retries) and (reason in GAPI_DEFAULT_RETRY_REASONS+retry_reasons):
-        waitOnFailure(n, retries, reason)
-        continue
-      if soft_errors:
-        stderrErrorMsg('{0}: {1} - {2}{3}'.format(http_status, message, reason, ['', ': Giving up.'][n > 1]))
-        return None
-      systemErrorExit(int(http_status), '{0}: {1} - {2}'.format(http_status, message, reason))
-    except google.auth.exceptions.RefreshError as e:
-      handleOAuthTokenError(str(e), soft_errors or GAPI_SERVICE_NOT_AVAILABLE in throw_reasons)
-      if GAPI_SERVICE_NOT_AVAILABLE in throw_reasons:
-        raise GAPI_serviceNotAvailable(str(e))
-      stderrErrorMsg('User {0}: {1}'.format(GM_Globals[GM_CURRENT_API_USER], str(e)))
-      return None
-    except ValueError as e:
-      if service._http.cache is not None:
-        service._http.cache = None
-        continue
-      systemErrorExit(4, str(e))
-    except (httplib2.ServerNotFoundError, RuntimeError) as e:
-      if n != retries:
-        service._http.connections = {}
-        waitOnFailure(n, retries, str(e))
-        continue
-      systemErrorExit(4, str(e))
-    except TypeError as e:
-      systemErrorExit(4, str(e))
+    controlflow.invalid_json_exit(GC_Values[GC_OAUTH2SERVICE_JSON])
 
 def getPageSize(service, function, kwargs):
   """Gets maximum maxResults value for API call. Uses value from discovery if
@@ -1217,7 +959,7 @@ def callGAPIpages(service, function, items='items',
   page_token = None
   total_items = 0
   while True:
-    page = callGAPI(service,
+    page = gapi.call(service,
                     function,
                     soft_errors=soft_errors,
                     throw_reasons=throw_reasons,
@@ -1274,7 +1016,7 @@ def callGAPIitems(service, function, items='items',
   Returns:
     The list of items in the first page of a response.
   """
-  results = callGAPI(service,
+  results = gapi.call(service,
                      function,
                      throw_reasons=throw_reasons,
                      retry_reasons=retry_reasons,
@@ -1303,12 +1045,12 @@ def readDiscoveryFile(api_version):
   elif pyinstaller_disc_file:
     json_string = readFile(pyinstaller_disc_file)
   else:
-    systemErrorExit(11, MESSAGE_NO_DISCOVERY_INFORMATION.format(disc_file))
+    controlflow.system_error_exit(11, MESSAGE_NO_DISCOVERY_INFORMATION.format(disc_file))
   try:
     discovery = json.loads(json_string)
     return (disc_file, discovery)
   except ValueError:
-    invalidJSONExit(disc_file)
+    controlflow.invalid_json_exit(disc_file)
 
 def getOauth2TxtStorageCredentials():
   oauth_string = readFile(GC_Values[GC_OAUTH2_TXT], continueOnError=True, displayError=False)
@@ -1335,16 +1077,16 @@ def getValidOauth2TxtCredentials(force_refresh=False):
       retries = 3
       for n in range(1, retries+1):
         try:
-          credentials.refresh(google_auth_httplib2.Request(_createHttpObj()))
+          credentials.refresh(google_auth_httplib2.Request(gapi.create_http()))
           writeCredentials(credentials)
           break
         except google.auth.exceptions.RefreshError as e:
-          systemErrorExit(18, str(e))
+          controlflow.system_error_exit(18, str(e))
         except (google.auth.exceptions.TransportError, httplib2.ServerNotFoundError, RuntimeError) as e:
           if n != retries:
-            waitOnFailure(n, retries, str(e))
+            controlflow.wait_on_failure(n, retries, str(e))
             continue
-          systemErrorExit(4, str(e))
+          controlflow.system_error_exit(4, str(e))
     elif credentials is None or not credentials.valid:
       doRequestOAuth()
       credentials = getOauth2TxtStorageCredentials()
@@ -1373,20 +1115,20 @@ def getService(api, http):
     except (httplib2.ServerNotFoundError, RuntimeError) as e:
       if n != retries:
         http.connections = {}
-        waitOnFailure(n, retries, str(e))
+        controlflow.wait_on_failure(n, retries, str(e))
         continue
-      systemErrorExit(4, str(e))
+      controlflow.system_error_exit(4, str(e))
     except (googleapiclient.errors.InvalidJsonError, KeyError, ValueError) as e:
       http.cache = None
       if n != retries:
-        waitOnFailure(n, retries, str(e))
+        controlflow.wait_on_failure(n, retries, str(e))
         continue
-      systemErrorExit(17, str(e))
+      controlflow.system_error_exit(17, str(e))
     except (http_client.ResponseNotReady, socket.error) as e:
       if n != retries:
-        waitOnFailure(n, retries, str(e))
+        controlflow.wait_on_failure(n, retries, str(e))
         continue
-      systemErrorExit(3, str(e))
+      controlflow.system_error_exit(3, str(e))
     except googleapiclient.errors.UnknownApiNameOrVersion:
       break
   disc_file, discovery = readDiscoveryFile(api_version)
@@ -1398,13 +1140,13 @@ def getService(api, http):
       http.cache = None
     return service
   except (KeyError, ValueError):
-    invalidJSONExit(disc_file)
+    controlflow.invalid_json_exit(disc_file)
 
 def buildGAPIObject(api):
   GM_Globals[GM_CURRENT_API_USER] = None
   credentials = getValidOauth2TxtCredentials()
   credentials.user_agent = GAM_INFO
-  http = google_auth_httplib2.AuthorizedHttp(credentials, _createHttpObj(cache=GM_Globals[GM_CACHE_DIR]))
+  http = google_auth_httplib2.AuthorizedHttp(credentials, gapi.create_http(cache=GM_Globals[GM_CACHE_DIR]))
   service = getService(api, http)
   if GC_Values[GC_DOMAIN]:
     if not GC_Values[GC_CUSTOMER_ID]:
@@ -1412,13 +1154,13 @@ def buildGAPIObject(api):
       try:
         resultObj = json.loads(result)
       except ValueError:
-        systemErrorExit(8, 'Unexpected response: {0}'.format(result))
+        controlflow.system_error_exit(8, 'Unexpected response: {0}'.format(result))
       if resp['status'] in ['403', '404']:
         try:
           message = resultObj['error']['errors'][0]['message']
         except KeyError:
           message = resultObj['error']['message']
-        systemErrorExit(8, '{0} - {1}'.format(message, GC_Values[GC_DOMAIN]))
+        controlflow.system_error_exit(8, '{0} - {1}'.format(message, GC_Values[GC_DOMAIN]))
       try:
         GC_Values[GC_CUSTOMER_ID] = resultObj['users'][0]['customerId']
       except KeyError:
@@ -1440,31 +1182,31 @@ def convertUIDtoEmailAddress(emailAddressOrUID, cd=None, email_types=['user']):
     cd = buildGAPIObject('directory')
   if 'user' in email_types:
     try:
-      result = callGAPI(cd.users(), 'get',
-                        throw_reasons=[GAPI_USER_NOT_FOUND],
+      result = gapi.call(cd.users(), 'get',
+                        throw_reasons=[gapi.errors.ErrorReason.USER_NOT_FOUND],
                         userKey=normalizedEmailAddressOrUID, fields='primaryEmail')
       if 'primaryEmail' in result:
         return result['primaryEmail'].lower()
-    except GAPI_userNotFound:
+    except gapi.errors.GapiUserNotFoundError:
       pass
   if 'group' in email_types:
     try:
-      result = callGAPI(cd.groups(), 'get',
-                        throw_reasons=[GAPI_GROUP_NOT_FOUND],
+      result = gapi.call(cd.groups(), 'get',
+                        throw_reasons=[gapi.errors.ErrorReason.GROUP_NOT_FOUND],
                         groupKey=normalizedEmailAddressOrUID, fields='email')
       if 'email' in result:
         return result['email'].lower()
-    except GAPI_groupNotFound:
+    except gapi.errors.GapiGroupNotFoundError:
       pass
   if 'resource' in email_types:
     try:
-      result = callGAPI(cd.resources().calendars(), 'get',
-                        throw_reasons=[GAPI_RESOURCE_NOT_FOUND],
+      result = gapi.call(cd.resources().calendars(), 'get',
+                        throw_reasons=[gapi.errors.ErrorReason.RESOURCE_NOT_FOUND],
                         calendarResourceId=normalizedEmailAddressOrUID,
                         customer=GC_Values[GC_CUSTOMER_ID], fields='resourceEmail')
       if 'resourceEmail' in result:
         return result['resourceEmail'].lower()
-    except GAPI_resourceNotFound:
+    except gapi.errors.GapiResourceNotFoundError:
       pass
   return normalizedEmailAddressOrUID
 
@@ -1476,26 +1218,26 @@ def convertEmailAddressToUID(emailAddressOrUID, cd=None, email_type='user'):
       cd = buildGAPIObject('directory')
     if email_type != 'group':
       try:
-        result = callGAPI(cd.users(), 'get',
-                          throw_reasons=[GAPI_USER_NOT_FOUND],
+        result = gapi.call(cd.users(), 'get',
+                          throw_reasons=[gapi.errors.ErrorReason.USER_NOT_FOUND],
                           userKey=normalizedEmailAddressOrUID, fields='id')
         if 'id' in result:
           return result['id']
-      except GAPI_userNotFound:
+      except gapi.errors.GapiUserNotFoundError:
         pass
     try:
-      result = callGAPI(cd.groups(), 'get',
-                        throw_reasons=[GAPI_NOT_FOUND],
+      result = gapi.call(cd.groups(), 'get',
+                        throw_reasons=[gapi.errors.ErrorReason.NOT_FOUND],
                         groupKey=normalizedEmailAddressOrUID, fields='id')
       if 'id' in result:
         return result['id']
-    except GAPI_notFound:
+    except gapi.errors.GapiNotFoundError:
       pass
     return None
   return normalizedEmailAddressOrUID
 
 def buildGAPIServiceObject(api, act_as, showAuthError=True):
-  http = _createHttpObj(cache=GM_Globals[GM_CACHE_DIR])
+  http = gapi.create_http(cache=GM_Globals[GM_CACHE_DIR])
   service = getService(api, http)
   GM_Globals[GM_CURRENT_API_USER] = act_as
   GM_Globals[GM_CURRENT_API_SCOPES] = API_SCOPE_MAPPING[api]
@@ -1510,15 +1252,15 @@ def buildGAPIServiceObject(api, act_as, showAuthError=True):
     except (httplib2.ServerNotFoundError, RuntimeError) as e:
       if n != retries:
         http.connections = {}
-        waitOnFailure(n, retries, str(e))
+        controlflow.wait_on_failure(n, retries, str(e))
         continue
-      systemErrorExit(4, e)
+      controlflow.system_error_exit(4, e)
     except google.auth.exceptions.RefreshError as e:
       if isinstance(e.args, tuple):
         e = e.args[0]
       if showAuthError:
-        stderrErrorMsg('User {0}: {1}'.format(GM_Globals[GM_CURRENT_API_USER], str(e)))
-      return handleOAuthTokenError(str(e), True)
+        display.print_error('User {0}: {1}'.format(GM_Globals[GM_CURRENT_API_USER], str(e)))
+      return gapi.handle_oauth_token_error(str(e), True)
   return service
 
 def buildAlertCenterGAPIObject(user):
@@ -1572,7 +1314,7 @@ def doCheckServiceAccount(users):
       check_scopes = sys.argv[i+1].replace(',', ' ').split()
       i += 2
     else:
-      systemErrorExit(3, '%s is not a valid argument for "gam user <email> check serviceaccount"' % myarg)
+      controlflow.system_error_exit(3, '%s is not a valid argument for "gam user <email> check serviceaccount"' % myarg)
   something_failed = False
   print('Computer clock status:')
   timeOffset, nicetime = getLocalGoogleTimeOffset()
@@ -1582,15 +1324,15 @@ def doCheckServiceAccount(users):
     time_status = 'FAIL'
     something_failed = True
   printPassFail(MESSAGE_YOUR_SYSTEM_TIME_DIFFERS_FROM_GOOGLE_BY % nicetime, time_status)
-  oa2 = googleapiclient.discovery.build('oauth2', 'v1', _createHttpObj())
+  oa2 = googleapiclient.discovery.build('oauth2', 'v1', gapi.create_http())
   print('Service Account Private Key Authentication:')
   # We are explicitly not doing DwD here, just confirming service account can auth
   auth_error = ''
   try:
     credentials = getSvcAcctCredentials([USERINFO_EMAIL_SCOPE], None)
-    request = google_auth_httplib2.Request(_createHttpObj())
+    request = google_auth_httplib2.Request(gapi.create_http())
     credentials.refresh(request)
-    sa_token_info = callGAPI(oa2, 'tokeninfo', access_token=credentials.token)
+    sa_token_info = gapi.call(oa2, 'tokeninfo', access_token=credentials.token)
     if sa_token_info:
       sa_token_result = 'PASS'
     else:
@@ -1610,7 +1352,7 @@ def doCheckServiceAccount(users):
   for user in users:
     user = user.lower()
     all_scopes_pass = True
-    oa2 = googleapiclient.discovery.build('oauth2', 'v1', _createHttpObj())
+    oa2 = googleapiclient.discovery.build('oauth2', 'v1', gapi.create_http())
     print('Domain-Wide Delegation authentication as %s:' % (user))
     for scope in check_scopes:
       # try with and without email scope
@@ -1620,11 +1362,11 @@ def doCheckServiceAccount(users):
           credentials.refresh(request)
           break
         except (httplib2.ServerNotFoundError, RuntimeError) as e:
-          systemErrorExit(4, e)
+          controlflow.system_error_exit(4, e)
         except google.auth.exceptions.RefreshError:
           continue
       if credentials.token:
-        token_info = callGAPI(oa2, 'tokeninfo', access_token=credentials.token)
+        token_info = gapi.call(oa2, 'tokeninfo', access_token=credentials.token)
         if scope in token_info.get('scope', '').split(' ') and \
            user == token_info.get('email', user).lower():
           result = 'PASS'
@@ -1653,7 +1395,7 @@ and grant Client name:
 Access to scopes:
 
 %s\n''' % (user_domain, service_account, ',\n'.join(check_scopes))
-    systemErrorExit(1, scopes_failed)
+    controlflow.system_error_exit(1, scopes_failed)
 
 # Batch processing request_id fields
 RI_ENTITY = 0
@@ -1670,7 +1412,7 @@ def _adjustDate(errMsg):
   if not match_date:
     match_date = re.match('Start date can not be later than (.*)', errMsg)
   if not match_date:
-    systemErrorExit(4, errMsg)
+    controlflow.system_error_exit(4, errMsg)
   return str(match_date.group(1))
 
 def _checkFullDataAvailable(warnings, tryDate, fullDataRequired):
@@ -1737,13 +1479,13 @@ def showReport():
       to_drive = True
       i += 1
     else:
-      systemErrorExit(2, '%s is not a valid argument to "gam report"' % sys.argv[i])
+      controlflow.system_error_exit(2, '%s is not a valid argument to "gam report"' % sys.argv[i])
   if report in ['users', 'user']:
     while True:
       try:
         if fullDataRequired is not None:
           warnings = callGAPIitems(rep.userUsageReport(), 'get', 'warnings',
-                                   throw_reasons=[GAPI_INVALID],
+                                   throw_reasons=[gapi.errors.ErrorReason.INVALID],
                                    date=tryDate, userKey=userKey, customerId=customerId, orgUnitID=orgUnitId, fields='warnings')
           fullData, tryDate = _checkFullDataAvailable(warnings, tryDate, fullDataRequired)
           if fullData < 0:
@@ -1752,10 +1494,10 @@ def showReport():
           if fullData == 0:
             continue
         page_message = 'Got %%total_items%% Users\n'
-        usage = callGAPIpages(rep.userUsageReport(), 'get', 'usageReports', page_message=page_message, throw_reasons=[GAPI_INVALID],
+        usage = callGAPIpages(rep.userUsageReport(), 'get', 'usageReports', page_message=page_message, throw_reasons=[gapi.errors.ErrorReason.INVALID],
                               date=tryDate, userKey=userKey, customerId=customerId, orgUnitID=orgUnitId, filters=filters, parameters=parameters)
         break
-      except GAPI_invalid as e:
+      except gapi.errors.GapiInvalidError as e:
         tryDate = _adjustDate(str(e))
     if not usage:
       print('No user report available.')
@@ -1785,7 +1527,7 @@ def showReport():
       try:
         if fullDataRequired is not None:
           warnings = callGAPIitems(rep.customerUsageReports(), 'get', 'warnings',
-                                   throw_reasons=[GAPI_INVALID],
+                                   throw_reasons=[gapi.errors.ErrorReason.INVALID],
                                    customerId=customerId, date=tryDate, fields='warnings')
           fullData, tryDate = _checkFullDataAvailable(warnings, tryDate, fullDataRequired)
           if fullData < 0:
@@ -1793,10 +1535,10 @@ def showReport():
             sys.exit(1)
           if fullData == 0:
             continue
-        usage = callGAPIpages(rep.customerUsageReports(), 'get', 'usageReports', throw_reasons=[GAPI_INVALID],
+        usage = callGAPIpages(rep.customerUsageReports(), 'get', 'usageReports', throw_reasons=[gapi.errors.ErrorReason.INVALID],
                               customerId=customerId, date=tryDate, parameters=parameters)
         break
-      except GAPI_invalid as e:
+      except gapi.errors.GapiInvalidError as e:
         tryDate = _adjustDate(str(e))
     if not usage:
       print('No customer report available.')
@@ -1925,9 +1667,9 @@ def watchGmail(users):
       break
   else:
     topic = gamTopics+str(uuid.uuid4())
-    callGAPI(pubsub.projects().topics(), 'create', name=topic)
+    gapi.call(pubsub.projects().topics(), 'create', name=topic)
     body = {'policy': {'bindings': [{'members': ['serviceAccount:gmail-api-push@system.gserviceaccount.com'], 'role': 'roles/pubsub.editor'}]}}
-    callGAPI(pubsub.projects().topics(), 'setIamPolicy', resource=topic, body=body)
+    gapi.call(pubsub.projects().topics(), 'setIamPolicy', resource=topic, body=body)
   subscriptions = callGAPIpages(pubsub.projects().topics().subscriptions(), 'list', items='subscriptions', topic=topic)
   for asubscription in subscriptions:
     if asubscription.startswith(gamSubscriptions):
@@ -1935,15 +1677,15 @@ def watchGmail(users):
       break
   else:
     subscription = gamSubscriptions+str(uuid.uuid4())
-    callGAPI(pubsub.projects().subscriptions(), 'create', name=subscription, body={'topic': topic})
+    gapi.call(pubsub.projects().subscriptions(), 'create', name=subscription, body={'topic': topic})
   gmails = {}
   for user in users:
     gmails[user] = {'g': buildGmailGAPIObject(user)[1]}
-    callGAPI(gmails[user]['g'].users(), 'watch', userId='me', body={'topicName': topic})
-    gmails[user]['seen_historyId'] = callGAPI(gmails[user]['g'].users(), 'getProfile', userId='me', fields='historyId')['historyId']
+    gapi.call(gmails[user]['g'].users(), 'watch', userId='me', body={'topicName': topic})
+    gmails[user]['seen_historyId'] = gapi.call(gmails[user]['g'].users(), 'getProfile', userId='me', fields='historyId')['historyId']
   print('Watching for events...')
   while True:
-    results = callGAPI(pubsub.projects().subscriptions(), 'pull', subscription=subscription, body={'maxMessages': 100})
+    results = gapi.call(pubsub.projects().subscriptions(), 'pull', subscription=subscription, body={'maxMessages': 100})
     if 'receivedMessages' in results:
       ackIds = []
       update_history = []
@@ -1955,10 +1697,10 @@ def watchGmail(users):
         if 'ackId' in message:
           ackIds.append(message['ackId'])
       if ackIds:
-        callGAPI(pubsub.projects().subscriptions(), 'acknowledge', subscription=subscription, body={'ackIds': ackIds})
+        gapi.call(pubsub.projects().subscriptions(), 'acknowledge', subscription=subscription, body={'ackIds': ackIds})
       if update_history:
         for a_user in update_history:
-          results = callGAPI(gmails[a_user]['g'].users().history(), 'list', userId='me', startHistoryId=gmails[a_user]['seen_historyId'])
+          results = gapi.call(gmails[a_user]['g'].users().history(), 'list', userId='me', startHistoryId=gmails[a_user]['seen_historyId'])
           if 'history' in results:
             for history in results['history']:
               if list(history) == ['messages', 'id']:
@@ -1980,7 +1722,7 @@ def watchGmail(users):
 def addDelegates(users, i):
   if i == 4:
     if sys.argv[i].lower() != 'to':
-      systemErrorExit(2, '%s is not a valid argument for "gam <users> delegate", expected to' % sys.argv[i])
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> delegate", expected to' % sys.argv[i])
     i += 1
   delegate = normalizeEmailAddressOrUID(sys.argv[i], noUid=True)
   i = 0
@@ -1991,7 +1733,7 @@ def addDelegates(users, i):
     if not gmail:
       continue
     print("Giving %s delegate access to %s (%s/%s)" % (delegate, delegator, i, count))
-    callGAPI(gmail.users().settings().delegates(), 'create', soft_errors=True, userId='me', body={'delegateEmail': delegate})
+    gapi.call(gmail.users().settings().delegates(), 'create', soft_errors=True, userId='me', body={'delegateEmail': delegate})
 
 def gen_sha512_hash(password):
   return sha512_crypt.hash(password, rounds=5000)
@@ -2013,7 +1755,7 @@ def printShowDelegates(users, csvFormat):
       todrive = True
       i += 1
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam <users> show delegates"' % sys.argv[i])
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> show delegates"' % sys.argv[i])
   count = len(users)
   i = 1
   for user in users:
@@ -2022,7 +1764,7 @@ def printShowDelegates(users, csvFormat):
       continue
     sys.stderr.write("Getting delegates for %s (%s/%s)...\n" % (user, i, count))
     i += 1
-    delegates = callGAPI(gmail.users().settings().delegates(), 'list', soft_errors=True, userId='me')
+    delegates = gapi.call(gmail.users().settings().delegates(), 'list', soft_errors=True, userId='me')
     if delegates and 'delegates' in delegates:
       for delegate in delegates['delegates']:
         delegateAddress = delegate['delegateEmail']
@@ -2050,7 +1792,7 @@ def deleteDelegate(users):
     if not gmail:
       continue
     print("Deleting %s delegate access to %s (%s/%s)" % (delegate, user, i, count))
-    callGAPI(gmail.users().settings().delegates(), 'delete', soft_errors=True, userId='me', delegateEmail=delegate)
+    gapi.call(gmail.users().settings().delegates(), 'delete', soft_errors=True, userId='me', delegateEmail=delegate)
 
 def doAddCourseParticipant():
   croom = buildGAPIObject('classroom')
@@ -2060,18 +1802,18 @@ def doAddCourseParticipant():
   new_id = sys.argv[5]
   if participant_type in ['student', 'students']:
     new_id = normalizeEmailAddressOrUID(new_id)
-    callGAPI(croom.courses().students(), 'create', courseId=courseId, body={'userId': new_id})
+    gapi.call(croom.courses().students(), 'create', courseId=courseId, body={'userId': new_id})
     print('Added %s as a student of course %s' % (new_id, noScopeCourseId))
   elif participant_type in ['teacher', 'teachers']:
     new_id = normalizeEmailAddressOrUID(new_id)
-    callGAPI(croom.courses().teachers(), 'create', courseId=courseId, body={'userId': new_id})
+    gapi.call(croom.courses().teachers(), 'create', courseId=courseId, body={'userId': new_id})
     print('Added %s as a teacher of course %s' % (new_id, noScopeCourseId))
   elif participant_type in ['alias']:
     new_id = addCourseIdScope(new_id)
-    callGAPI(croom.courses().aliases(), 'create', courseId=courseId, body={'alias': new_id})
+    gapi.call(croom.courses().aliases(), 'create', courseId=courseId, body={'alias': new_id})
     print('Added %s as an alias of course %s' % (removeCourseIdScope(new_id), noScopeCourseId))
   else:
-    systemErrorExit(2, '%s is not a valid argument to "gam course ID add"' % participant_type)
+    controlflow.system_error_exit(2, '%s is not a valid argument to "gam course ID add"' % participant_type)
 
 def doSyncCourseParticipants():
   courseId = addCourseIdScope(sys.argv[2])
@@ -2103,29 +1845,29 @@ def doDelCourseParticipant():
   remove_id = sys.argv[5]
   if participant_type in ['student', 'students']:
     remove_id = normalizeEmailAddressOrUID(remove_id)
-    callGAPI(croom.courses().students(), 'delete', courseId=courseId, userId=remove_id)
+    gapi.call(croom.courses().students(), 'delete', courseId=courseId, userId=remove_id)
     print('Removed %s as a student of course %s' % (remove_id, noScopeCourseId))
   elif participant_type in ['teacher', 'teachers']:
     remove_id = normalizeEmailAddressOrUID(remove_id)
-    callGAPI(croom.courses().teachers(), 'delete', courseId=courseId, userId=remove_id)
+    gapi.call(croom.courses().teachers(), 'delete', courseId=courseId, userId=remove_id)
     print('Removed %s as a teacher of course %s' % (remove_id, noScopeCourseId))
   elif participant_type in ['alias']:
     remove_id = addCourseIdScope(remove_id)
-    callGAPI(croom.courses().aliases(), 'delete', courseId=courseId, alias=remove_id)
+    gapi.call(croom.courses().aliases(), 'delete', courseId=courseId, alias=remove_id)
     print('Removed %s as an alias of course %s' % (removeCourseIdScope(remove_id), noScopeCourseId))
   else:
-    systemErrorExit(2, '%s is not a valid argument to "gam course ID delete"' % participant_type)
+    controlflow.system_error_exit(2, '%s is not a valid argument to "gam course ID delete"' % participant_type)
 
 def doDelCourse():
   croom = buildGAPIObject('classroom')
   courseId = addCourseIdScope(sys.argv[3])
-  callGAPI(croom.courses(), 'delete', id=courseId)
+  gapi.call(croom.courses(), 'delete', id=courseId)
   print('Deleted Course %s' % courseId)
 
 def _getValidatedState(state, validStates):
   state = state.upper()
   if state not in validStates:
-    systemErrorExit(2, 'course state must be one of: %s. Got %s' % (', '.join(validStates).lower(), state.lower()))
+    controlflow.system_error_exit(2, 'course state must be one of: %s. Got %s' % (', '.join(validStates).lower(), state.lower()))
   return state
 
 def getCourseAttribute(myarg, value, body, croom, function):
@@ -2145,7 +1887,7 @@ def getCourseAttribute(myarg, value, body, croom, function):
     validStates = _getEnumValuesMinusUnspecified(croom._rootDesc['schemas']['Course']['properties']['courseState']['enum'])
     body['courseState'] = _getValidatedState(value, validStates)
   else:
-    systemErrorExit(2, '%s is not a valid argument to "gam %s course"' % (myarg, function))
+    controlflow.system_error_exit(2, '%s is not a valid argument to "gam %s course"' % (myarg, function))
 
 def _getCourseStates(croom, value, courseStates):
   validStates = _getEnumValuesMinusUnspecified(croom._rootDesc['schemas']['Course']['properties']['courseState']['enum'])
@@ -2163,14 +1905,14 @@ def doUpdateCourse():
     i += 2
   updateMask = ','.join(list(body))
   body['id'] = courseId
-  result = callGAPI(croom.courses(), 'patch', id=courseId, body=body, updateMask=updateMask)
+  result = gapi.call(croom.courses(), 'patch', id=courseId, body=body, updateMask=updateMask)
   print('Updated Course %s' % result['id'])
 
 def doCreateDomain():
   cd = buildGAPIObject('directory')
   domain_name = sys.argv[3]
   body = {'domainName': domain_name}
-  callGAPI(cd.domains(), 'insert', customer=GC_Values[GC_CUSTOMER_ID], body=body)
+  gapi.call(cd.domains(), 'insert', customer=GC_Values[GC_CUSTOMER_ID], body=body)
   print('Added domain %s' % domain_name)
 
 def doCreateDomainAlias():
@@ -2178,7 +1920,7 @@ def doCreateDomainAlias():
   body = {}
   body['domainAliasName'] = sys.argv[3]
   body['parentDomainName'] = sys.argv[4]
-  callGAPI(cd.domainAliases(), 'insert', customer=GC_Values[GC_CUSTOMER_ID], body=body)
+  gapi.call(cd.domainAliases(), 'insert', customer=GC_Values[GC_CUSTOMER_ID], body=body)
 
 def doUpdateDomain():
   cd = buildGAPIObject('directory')
@@ -2191,8 +1933,8 @@ def doUpdateDomain():
       body['customerDomain'] = domain_name
       i += 1
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam update domain"' % sys.argv[i])
-  callGAPI(cd.customers(), 'update', customerKey=GC_Values[GC_CUSTOMER_ID], body=body)
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam update domain"' % sys.argv[i])
+  gapi.call(cd.customers(), 'update', customerKey=GC_Values[GC_CUSTOMER_ID], body=body)
   print('%s is now the primary domain.' % domain_name)
 
 def doGetDomainInfo():
@@ -2201,7 +1943,7 @@ def doGetDomainInfo():
     return
   cd = buildGAPIObject('directory')
   domainName = sys.argv[3]
-  result = callGAPI(cd.domains(), 'get', customer=GC_Values[GC_CUSTOMER_ID], domainName=domainName)
+  result = gapi.call(cd.domains(), 'get', customer=GC_Values[GC_CUSTOMER_ID], domainName=domainName)
   if 'creationTime' in result:
     result['creationTime'] = utils.formatTimestampYMDHMSF(result['creationTime'])
   if 'domainAliases' in result:
@@ -2213,17 +1955,17 @@ def doGetDomainInfo():
 def doGetDomainAliasInfo():
   cd = buildGAPIObject('directory')
   alias = sys.argv[3]
-  result = callGAPI(cd.domainAliases(), 'get', customer=GC_Values[GC_CUSTOMER_ID], domainAliasName=alias)
+  result = gapi.call(cd.domainAliases(), 'get', customer=GC_Values[GC_CUSTOMER_ID], domainAliasName=alias)
   if 'creationTime' in result:
     result['creationTime'] = utils.formatTimestampYMDHMSF(result['creationTime'])
   print_json(None, result)
 
 def doGetCustomerInfo():
   cd = buildGAPIObject('directory')
-  customer_info = callGAPI(cd.customers(), 'get', customerKey=GC_Values[GC_CUSTOMER_ID])
+  customer_info = gapi.call(cd.customers(), 'get', customerKey=GC_Values[GC_CUSTOMER_ID])
   print('Customer ID: %s' % customer_info['id'])
   print('Primary Domain: %s' % customer_info['customerDomain'])
-  result = callGAPI(cd.domains(), 'get',
+  result = gapi.call(cd.domains(), 'get',
                     customer=customer_info['id'], domainName=customer_info['customerDomain'], fields='verified')
   print('Primary Domain Verified: %s' % result['verified'])
   # If customer has changed primary domain customerCreationTime is date
@@ -2264,10 +2006,10 @@ def doGetCustomerInfo():
   usage = None
   while True:
     try:
-      usage = callGAPIpages(rep.customerUsageReports(), 'get', 'usageReports', throw_reasons=[GAPI_INVALID],
+      usage = callGAPIpages(rep.customerUsageReports(), 'get', 'usageReports', throw_reasons=[gapi.errors.ErrorReason.INVALID],
                             customerId=customerId, date=tryDate, parameters=parameters)
       break
-    except GAPI_invalid as e:
+    except gapi.errors.GapiInvalidError as e:
       tryDate = _adjustDate(str(e))
   if not usage:
     print('No user count data available.')
@@ -2299,21 +2041,21 @@ def doUpdateCustomer():
       body['language'] = sys.argv[i+1]
       i += 2
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam update customer"' % myarg)
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam update customer"' % myarg)
   if not body:
-    systemErrorExit(2, 'no arguments specified for "gam update customer"')
-  callGAPI(cd.customers(), 'patch', customerKey=GC_Values[GC_CUSTOMER_ID], body=body)
+    controlflow.system_error_exit(2, 'no arguments specified for "gam update customer"')
+  gapi.call(cd.customers(), 'patch', customerKey=GC_Values[GC_CUSTOMER_ID], body=body)
   print('Updated customer')
 
 def doDelDomain():
   cd = buildGAPIObject('directory')
   domainName = sys.argv[3]
-  callGAPI(cd.domains(), 'delete', customer=GC_Values[GC_CUSTOMER_ID], domainName=domainName)
+  gapi.call(cd.domains(), 'delete', customer=GC_Values[GC_CUSTOMER_ID], domainName=domainName)
 
 def doDelDomainAlias():
   cd = buildGAPIObject('directory')
   domainAliasName = sys.argv[3]
-  callGAPI(cd.domainAliases(), 'delete', customer=GC_Values[GC_CUSTOMER_ID], domainAliasName=domainAliasName)
+  gapi.call(cd.domainAliases(), 'delete', customer=GC_Values[GC_CUSTOMER_ID], domainAliasName=domainAliasName)
 
 def doPrintDomains():
   cd = buildGAPIObject('directory')
@@ -2327,8 +2069,8 @@ def doPrintDomains():
       todrive = True
       i += 1
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam print domains".' % sys.argv[i])
-  results = callGAPI(cd.domains(), 'list', customer=GC_Values[GC_CUSTOMER_ID])
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam print domains".' % sys.argv[i])
+  results = gapi.call(cd.domains(), 'list', customer=GC_Values[GC_CUSTOMER_ID])
   for domain in results['domains']:
     domain_attributes = {}
     domain['type'] = ['secondary', 'primary'][domain['isPrimary']]
@@ -2370,8 +2112,8 @@ def doPrintDomainAliases():
       todrive = True
       i += 1
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam print domainaliases".' % sys.argv[i])
-  results = callGAPI(cd.domainAliases(), 'list', customer=GC_Values[GC_CUSTOMER_ID])
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam print domainaliases".' % sys.argv[i])
+  results = gapi.call(cd.domainAliases(), 'list', customer=GC_Values[GC_CUSTOMER_ID])
   for domainAlias in results['domainAliases']:
     domainAlias_attributes = {}
     for attr in domainAlias:
@@ -2389,7 +2131,7 @@ def doDelAdmin():
   cd = buildGAPIObject('directory')
   roleAssignmentId = sys.argv[3]
   print('Deleting Admin Role Assignment %s' % roleAssignmentId)
-  callGAPI(cd.roleAssignments(), 'delete',
+  gapi.call(cd.roleAssignments(), 'delete',
            customer=GC_Values[GC_CUSTOMER_ID], roleAssignmentId=roleAssignmentId)
 
 def doCreateAdmin():
@@ -2400,7 +2142,7 @@ def doCreateAdmin():
   body['roleId'] = getRoleId(role)
   body['scopeType'] = sys.argv[5].upper()
   if body['scopeType'] not in ['CUSTOMER', 'ORG_UNIT']:
-    systemErrorExit(3, 'scope type must be customer or org_unit; got %s' % body['scopeType'])
+    controlflow.system_error_exit(3, 'scope type must be customer or org_unit; got %s' % body['scopeType'])
   if body['scopeType'] == 'ORG_UNIT':
     orgUnit, orgUnitId = getOrgUnitId(sys.argv[6], cd)
     body['orgUnitId'] = orgUnitId[3:]
@@ -2408,7 +2150,7 @@ def doCreateAdmin():
   else:
     scope = 'CUSTOMER'
   print('Giving %s admin role %s for %s' % (user, role, scope))
-  callGAPI(cd.roleAssignments(), 'insert',
+  gapi.call(cd.roleAssignments(), 'insert',
            customer=GC_Values[GC_CUSTOMER_ID], body=body)
 
 def doPrintAdminRoles():
@@ -2424,7 +2166,7 @@ def doPrintAdminRoles():
       todrive = True
       i += 1
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam print adminroles".' % sys.argv[i])
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam print adminroles".' % sys.argv[i])
   roles = callGAPIpages(cd.roles(), 'list', 'items',
                         customer=GC_Values[GC_CUSTOMER_ID], fields=fields)
   for role in roles:
@@ -2455,7 +2197,7 @@ def doPrintAdmins():
       todrive = True
       i += 1
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam print admins".' % sys.argv[i])
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam print admins".' % sys.argv[i])
   admins = callGAPIpages(cd.roleAssignments(), 'list', 'items',
                          customer=GC_Values[GC_CUSTOMER_ID], userKey=userKey, roleId=roleId, fields=fields)
   for admin in admins:
@@ -2474,7 +2216,7 @@ def doPrintAdmins():
 
 def buildOrgUnitIdToNameMap():
   cd = buildGAPIObject('directory')
-  result = callGAPI(cd.orgunits(), 'list',
+  result = gapi.call(cd.orgunits(), 'list',
                     customerId=GC_Values[GC_CUSTOMER_ID],
                     fields='organizationUnits(orgUnitPath,orgUnitId)', type='all')
   GM_Globals[GM_MAP_ORGUNIT_ID_TO_NAME] = {}
@@ -2514,7 +2256,7 @@ def getRoleId(role):
   else:
     roleId = roleid_from_role(role)
     if not roleId:
-      systemErrorExit(4, '%s is not a valid role. Please ensure role name is exactly as shown in admin console.' % role)
+      controlflow.system_error_exit(4, '%s is not a valid role. Please ensure role name is exactly as shown in admin console.' % role)
   return roleId
 
 def buildUserIdToNameMap():
@@ -2549,7 +2291,7 @@ def app2appID(dt, app):
   for online_service in online_services:
     if serviceName == online_service['name'].lower():
       return (online_service['name'], online_service['id'])
-  systemErrorExit(2, '%s is not a valid service for data transfer.' % app)
+  controlflow.system_error_exit(2, '%s is not a valid service for data transfer.' % app)
 
 def convertToUserID(user):
   cg = UID_PATTERN.match(user)
@@ -2559,15 +2301,15 @@ def convertToUserID(user):
   if user.find('@') == -1:
     user = '%s@%s' % (user, GC_Values[GC_DOMAIN])
   try:
-    return callGAPI(cd.users(), 'get', throw_reasons=[GAPI_USER_NOT_FOUND, GAPI_BAD_REQUEST, GAPI_FORBIDDEN], userKey=user, fields='id')['id']
-  except (GAPI_userNotFound, GAPI_badRequest, GAPI_forbidden):
-    systemErrorExit(3, 'no such user %s' % user)
+    return gapi.call(cd.users(), 'get', throw_reasons=[gapi.errors.ErrorReason.USER_NOT_FOUND, gapi.errors.ErrorReason.BAD_REQUEST, gapi.errors.ErrorReason.FORBIDDEN], userKey=user, fields='id')['id']
+  except (gapi.errors.GapiUserNotFoundError, gapi.errors.GapiBadRequestError, gapi.errors.GapiForbiddenError):
+    controlflow.system_error_exit(3, 'no such user %s' % user)
 
 def convertUserIDtoEmail(uid):
   cd = buildGAPIObject('directory')
   try:
-    return callGAPI(cd.users(), 'get', throw_reasons=[GAPI_USER_NOT_FOUND, GAPI_BAD_REQUEST, GAPI_FORBIDDEN], userKey=uid, fields='primaryEmail')['primaryEmail']
-  except (GAPI_userNotFound, GAPI_badRequest, GAPI_forbidden):
+    return gapi.call(cd.users(), 'get', throw_reasons=[gapi.errors.ErrorReason.USER_NOT_FOUND, gapi.errors.ErrorReason.BAD_REQUEST, gapi.errors.ErrorReason.FORBIDDEN], userKey=uid, fields='primaryEmail')['primaryEmail']
+  except (gapi.errors.GapiUserNotFoundError, gapi.errors.GapiBadRequestError, gapi.errors.GapiForbiddenError):
     return 'uid:{0}'.format(uid)
 
 def doCreateDataTransfer():
@@ -2597,7 +2339,7 @@ def doCreateDataTransfer():
     body['applicationDataTransfers'][i].setdefault('applicationTransferParams', [])
     body['applicationDataTransfers'][i]['applicationTransferParams'].append({'key': key, 'value': value})
     i += 1
-  result = callGAPI(dt.transfers(), 'insert', body=body, fields='id')['id']
+  result = gapi.call(dt.transfers(), 'insert', body=body, fields='id')['id']
   print('Submitted request id %s to transfer %s from %s to %s' % (result, ','.join(map(str, appNameList)), old_owner, new_owner))
 
 def doPrintTransferApps():
@@ -2631,7 +2373,7 @@ def doPrintDataTransfers():
       todrive = True
       i += 1
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam print transfers"' % sys.argv[i])
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam print transfers"' % sys.argv[i])
   transfers = callGAPIpages(dt.transfers(), 'list', 'dataTransfers',
                             customerId=GC_Values[GC_CUSTOMER_ID], status=status,
                             newOwnerUserId=newOwnerUserId, oldOwnerUserId=oldOwnerUserId)
@@ -2657,7 +2399,7 @@ def doPrintDataTransfers():
 def doGetDataTransferInfo():
   dt = buildGAPIObject('datatransfer')
   dtId = sys.argv[3]
-  transfer = callGAPI(dt.transfers(), 'get', dataTransferId=dtId)
+  transfer = gapi.call(dt.transfers(), 'get', dataTransferId=dtId)
   print('Old Owner: %s' % convertUserIDtoEmail(transfer['oldOwnerUserId']))
   print('New Owner: %s' % convertUserIDtoEmail(transfer['newOwnerUserId']))
   print('Request Time: %s' % transfer['requestTime'])
@@ -2711,7 +2453,7 @@ def doPrintShowGuardians(csvFormat):
       studentIds = getUsersToModify(entity_type=myarg, entity=sys.argv[i+1])
       i += 2
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam %s guardians"' % (sys.argv[i], ['show', 'print'][csvFormat]))
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam %s guardians"' % (sys.argv[i], ['show', 'print'][csvFormat]))
   i = 0
   count = len(studentIds)
   for studentId in studentIds:
@@ -2742,24 +2484,24 @@ def doInviteGuardian():
   croom = buildGAPIObject('classroom')
   body = {'invitedEmailAddress': normalizeEmailAddressOrUID(sys.argv[3])}
   studentId = normalizeStudentGuardianEmailAddressOrUID(sys.argv[4])
-  result = callGAPI(croom.userProfiles().guardianInvitations(), 'create', studentId=studentId, body=body)
+  result = gapi.call(croom.userProfiles().guardianInvitations(), 'create', studentId=studentId, body=body)
   print('Invited email %s as guardian of %s. Invite ID %s' % (result['invitedEmailAddress'], studentId, result['invitationId']))
 
 def _cancelGuardianInvitation(croom, studentId, invitationId):
   try:
-    result = callGAPI(croom.userProfiles().guardianInvitations(), 'patch',
-                      throw_reasons=[GAPI_FAILED_PRECONDITION, GAPI_FORBIDDEN, GAPI_NOT_FOUND],
+    result = gapi.call(croom.userProfiles().guardianInvitations(), 'patch',
+                      throw_reasons=[gapi.errors.ErrorReason.FAILED_PRECONDITION, gapi.errors.ErrorReason.FORBIDDEN, gapi.errors.ErrorReason.NOT_FOUND],
                       studentId=studentId, invitationId=invitationId, updateMask='state', body={'state': 'COMPLETE'})
     print('Cancelled PENDING guardian invitation for %s as guardian of %s' % (result['invitedEmailAddress'], studentId))
     return True
-  except GAPI_failedPrecondition:
-    stderrErrorMsg('Guardian invitation %s for %s status is not PENDING' % (invitationId, studentId))
+  except gapi.errors.GapiFailedPreconditionError:
+    display.print_error('Guardian invitation %s for %s status is not PENDING' % (invitationId, studentId))
     GM_Globals[GM_SYSEXITRC] = 3
     return True
-  except GAPI_forbidden:
+  except gapi.errors.GapiForbiddenError:
     entityUnknownWarning('Student', studentId, 0, 0)
     sys.exit(3)
-  except GAPI_notFound:
+  except gapi.errors.GapiNotFoundError:
     return False
 
 def doCancelGuardianInvitation():
@@ -2767,19 +2509,19 @@ def doCancelGuardianInvitation():
   invitationId = sys.argv[3]
   studentId = normalizeStudentGuardianEmailAddressOrUID(sys.argv[4])
   if not _cancelGuardianInvitation(croom, studentId, invitationId):
-    systemErrorExit(3, 'Guardian invitation %s for %s does not exist' % (invitationId, studentId))
+    controlflow.system_error_exit(3, 'Guardian invitation %s for %s does not exist' % (invitationId, studentId))
 
 def _deleteGuardian(croom, studentId, guardianId, guardianEmail):
   try:
-    callGAPI(croom.userProfiles().guardians(), 'delete',
-             throw_reasons=[GAPI_FORBIDDEN, GAPI_NOT_FOUND],
+    gapi.call(croom.userProfiles().guardians(), 'delete',
+             throw_reasons=[gapi.errors.ErrorReason.FORBIDDEN, gapi.errors.ErrorReason.NOT_FOUND],
              studentId=studentId, guardianId=guardianId)
     print('Deleted %s as a guardian of %s' % (guardianEmail, studentId))
     return True
-  except GAPI_forbidden:
+  except gapi.errors.GapiForbiddenError:
     entityUnknownWarning('Student', studentId, 0, 0)
     sys.exit(3)
-  except GAPI_notFound:
+  except gapi.errors.GapiNotFoundError:
     return False
 
 def doDeleteGuardian():
@@ -2795,19 +2537,19 @@ def doDeleteGuardian():
       invitationsOnly = True
       i += 1
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam delete guardian"' % (sys.argv[i]))
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam delete guardian"' % (sys.argv[i]))
   if not invitationsOnly:
     if guardianIdIsEmail:
       try:
         results = callGAPIpages(croom.userProfiles().guardians(), 'list', 'guardians',
-                                throw_reasons=[GAPI_FORBIDDEN],
+                                throw_reasons=[gapi.errors.ErrorReason.FORBIDDEN],
                                 studentId=studentId, invitedEmailAddress=guardianId,
                                 fields='nextPageToken,guardians(studentId,guardianId)')
         if results:
           for result in results:
             _deleteGuardian(croom, result['studentId'], result['guardianId'], guardianId)
           return
-      except GAPI_forbidden:
+      except gapi.errors.GapiForbiddenError:
         entityUnknownWarning('Student', studentId, 0, 0)
         sys.exit(3)
     else:
@@ -2817,20 +2559,20 @@ def doDeleteGuardian():
   if guardianIdIsEmail:
     try:
       results = callGAPIpages(croom.userProfiles().guardianInvitations(), 'list', 'guardianInvitations',
-                              throw_reasons=[GAPI_FORBIDDEN],
+                              throw_reasons=[gapi.errors.ErrorReason.FORBIDDEN],
                               studentId=studentId, invitedEmailAddress=guardianId, states=['PENDING',],
                               fields='nextPageToken,guardianInvitations(studentId,invitationId)')
       if results:
         for result in results:
           status = _cancelGuardianInvitation(croom, result['studentId'], result['invitationId'])
         sys.exit(status)
-    except GAPI_forbidden:
+    except gapi.errors.GapiForbiddenError:
       entityUnknownWarning('Student', studentId, 0, 0)
       sys.exit(3)
   else:
     if _cancelGuardianInvitation(croom, studentId, guardianId):
       return
-  systemErrorExit(3, '%s is not a guardian of %s and no invitation exists.' % (guardianId, studentId))
+  controlflow.system_error_exit(3, '%s is not a guardian of %s and no invitation exists.' % (guardianId, studentId))
 
 def doCreateCourse():
   croom = buildGAPIObject('classroom')
@@ -2845,23 +2587,23 @@ def doCreateCourse():
       getCourseAttribute(myarg, sys.argv[i+1], body, croom, 'create')
       i += 2
   if 'ownerId' not in body:
-    systemErrorExit(2, 'expected teacher <UserItem>)')
+    controlflow.system_error_exit(2, 'expected teacher <UserItem>)')
   if 'name' not in body:
-    systemErrorExit(2, 'expected name <String>)')
-  result = callGAPI(croom.courses(), 'create', body=body)
+    controlflow.system_error_exit(2, 'expected name <String>)')
+  result = gapi.call(croom.courses(), 'create', body=body)
   print('Created course %s' % result['id'])
 
 def doGetCourseInfo():
   croom = buildGAPIObject('classroom')
   courseId = addCourseIdScope(sys.argv[3])
-  info = callGAPI(croom.courses(), 'get', id=courseId)
+  info = gapi.call(croom.courses(), 'get', id=courseId)
   info['ownerEmail'] = convertUIDtoEmailAddress('uid:%s' % info['ownerId'])
   print_json(None, info)
   teachers = callGAPIpages(croom.courses().teachers(), 'list', 'teachers', courseId=courseId)
   students = callGAPIpages(croom.courses().students(), 'list', 'students', courseId=courseId)
   try:
-    aliases = callGAPIpages(croom.courses().aliases(), 'list', 'aliases', throw_reasons=[GAPI_NOT_IMPLEMENTED], courseId=courseId)
-  except GAPI_notImplemented:
+    aliases = callGAPIpages(croom.courses().aliases(), 'list', 'aliases', throw_reasons=[gapi.errors.ErrorReason.NOT_IMPLEMENTED], courseId=courseId)
+  except gapi.errors.GapiNotImplementedError:
     aliases = []
   if aliases:
     print('Aliases:')
@@ -2910,7 +2652,7 @@ def doPrintCourses():
         if field != 'id':
           fList.append(COURSE_ARGUMENT_TO_PROPERTY_MAP[field])
       else:
-        systemErrorExit(2, '%s is not a valid argument for "gam print courses %s"' % (field, myarg))
+        controlflow.system_error_exit(2, '%s is not a valid argument for "gam print courses %s"' % (field, myarg))
 
   def _saveParticipants(course, participants, role):
     jcount = len(participants)
@@ -2979,7 +2721,7 @@ def doPrintCourses():
     elif myarg == 'show':
       showMembers = sys.argv[i+1].lower()
       if showMembers not in ['all', 'students', 'teachers']:
-        systemErrorExit(2, 'show must be all, students or teachers; got %s' % showMembers)
+        controlflow.system_error_exit(2, 'show must be all, students or teachers; got %s' % showMembers)
       i += 2
     elif myarg == 'fields':
       if not fieldsList:
@@ -2994,7 +2736,7 @@ def doPrintCourses():
       cd = buildGAPIObject('directory')
       i += 1
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam print courses"' % sys.argv[i])
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam print courses"' % sys.argv[i])
   if ownerEmails is not None and fieldsList:
     fieldsList.append('ownerId')
   fields = 'nextPageToken,courses({0})'.format(','.join(set(fieldsList))) if fieldsList else None
@@ -3078,10 +2820,10 @@ def doPrintCourseParticipants():
     elif myarg == 'show':
       showMembers = sys.argv[i+1].lower()
       if showMembers not in ['all', 'students', 'teachers']:
-        systemErrorExit(2, 'show must be all, students or teachers; got %s' % showMembers)
+        controlflow.system_error_exit(2, 'show must be all, students or teachers; got %s' % showMembers)
       i += 2
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam print course-participants"' % sys.argv[i])
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam print course-participants"' % sys.argv[i])
   if not courses:
     printGettingAllItems('Courses', None)
     page_message = 'Got %%total_items%% Courses...\n'
@@ -3090,7 +2832,7 @@ def doPrintCourseParticipants():
   else:
     all_courses = []
     for course in courses:
-      all_courses.append(callGAPI(croom.courses(), 'get', id=course, fields='id,name'))
+      all_courses.append(gapi.call(croom.courses(), 'get', id=course, fields='id,name'))
   i = 0
   count = len(all_courses)
   for course in all_courses:
@@ -3136,7 +2878,7 @@ def doPrintPrintJobs():
         older_or_newer = 'newer'
       age_number = sys.argv[i+1][:-1]
       if not age_number.isdigit():
-        systemErrorExit(2, 'expected a number; got %s' % age_number)
+        controlflow.system_error_exit(2, 'expected a number; got %s' % age_number)
       age_unit = sys.argv[i+1][-1].lower()
       if age_unit == 'm':
         age = int(time.time()) - (int(age_number) * 60)
@@ -3145,7 +2887,7 @@ def doPrintPrintJobs():
       elif age_unit == 'd':
         age = int(time.time()) - (int(age_number) * 60 * 60 * 24)
       else:
-        systemErrorExit(2, 'expected m (minutes), h (hours) or d (days); got %s' % age_unit)
+        controlflow.system_error_exit(2, 'expected m (minutes), h (hours) or d (days); got %s' % age_unit)
       i += 2
     elif myarg == 'query':
       query = sys.argv[i+1]
@@ -3162,7 +2904,7 @@ def doPrintPrintJobs():
     elif myarg == 'orderby':
       sortorder = sys.argv[i+1].lower().replace('_', '')
       if sortorder not in PRINTJOB_ASCENDINGORDER_MAP:
-        systemErrorExit(2, 'orderby must be one of %s; got %s' % (', '.join(PRINTJOB_ASCENDINGORDER_MAP), sortorder))
+        controlflow.system_error_exit(2, 'orderby must be one of %s; got %s' % (', '.join(PRINTJOB_ASCENDINGORDER_MAP), sortorder))
       sortorder = PRINTJOB_ASCENDINGORDER_MAP[sortorder]
       i += 2
     elif myarg in ['printer', 'printerid']:
@@ -3175,11 +2917,11 @@ def doPrintPrintJobs():
       jobLimit = getInteger(sys.argv[i+1], myarg, minVal=0)
       i += 2
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam print printjobs"' % sys.argv[i])
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam print printjobs"' % sys.argv[i])
   if sortorder and descending:
     sortorder = PRINTJOB_DESCENDINGORDER_MAP[sortorder]
   if printerid:
-    result = callGAPI(cp.printers(), 'get',
+    result = gapi.call(cp.printers(), 'get',
                       printerid=printerid)
     checkCloudPrintResult(result)
   if ((not sortorder) or (sortorder == 'CREATE_TIME_DESC')) and (older_or_newer == 'newer'):
@@ -3196,7 +2938,7 @@ def doPrintPrintJobs():
       limit = min(PRINTJOBS_DEFAULT_MAX_RESULTS, jobLimit-jobCount)
       if limit == 0:
         break
-    result = callGAPI(cp.jobs(), 'list',
+    result = gapi.call(cp.jobs(), 'list',
                       printerid=printerid, q=query, status=status, sortorder=sortorder,
                       owner=owner, offset=offset, limit=limit)
     checkCloudPrintResult(result)
@@ -3257,9 +2999,9 @@ def doPrintPrinters():
       todrive = True
       i += 1
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam print printers"' % sys.argv[i])
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam print printers"' % sys.argv[i])
   for query in queries:
-    printers = callGAPI(cp.printers(), 'list', q=query, type=printer_type, connection_status=connection_status, extra_fields=extra_fields)
+    printers = gapi.call(cp.printers(), 'list', q=query, type=printer_type, connection_status=connection_status, extra_fields=extra_fields)
     checkCloudPrintResult(printers)
     for printer in printers['printers']:
       printer['createTime'] = utils.formatTimestampYMDHMS(printer['createTime'])
@@ -3292,7 +3034,7 @@ def changeCalendarAttendees(users):
       allevents = True
       i += 1
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam <users> update calattendees"' % sys.argv[i])
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> update calattendees"' % sys.argv[i])
   attendee_map = {}
   f = openFile(csv_file)
   csvFile = csv.reader(f)
@@ -3306,7 +3048,7 @@ def changeCalendarAttendees(users):
       continue
     page_token = None
     while True:
-      events_page = callGAPI(cal.events(), 'list', calendarId=user,
+      events_page = gapi.call(cal.events(), 'list', calendarId=user,
                              pageToken=page_token, timeMin=start_date,
                              timeMax=end_date, showDeleted=False,
                              showHiddenInvitations=False)
@@ -3345,7 +3087,7 @@ def changeCalendarAttendees(users):
           body['attendees'] = event['attendees']
           print('UPDATING %s' % event_summary)
           if do_it:
-            callGAPI(cal.events(), 'patch', calendarId=user, eventId=event['id'], sendNotifications=False, body=body)
+            gapi.call(cal.events(), 'patch', calendarId=user, eventId=event['id'], sendNotifications=False, body=body)
           else:
             print(' not pulling the trigger.')
         #else:
@@ -3361,7 +3103,7 @@ def deleteCalendar(users):
     user, cal = buildCalendarGAPIObject(user)
     if not cal:
       continue
-    callGAPI(cal.calendarList(), 'delete', soft_errors=True, calendarId=calendarId)
+    gapi.call(cal.calendarList(), 'delete', soft_errors=True, calendarId=calendarId)
 
 CALENDAR_REMINDER_MAX_MINUTES = 40320
 
@@ -3400,7 +3142,7 @@ def getCalendarAttributes(i, body, function):
       method = sys.argv[i+1].lower()
       if method not in CLEAR_NONE_ARGUMENT:
         if method not in CALENDAR_REMINDER_METHODS:
-          systemErrorExit(2, 'Method must be one of %s; got %s' % (', '.join(CALENDAR_REMINDER_METHODS+CLEAR_NONE_ARGUMENT), method))
+          controlflow.system_error_exit(2, 'Method must be one of %s; got %s' % (', '.join(CALENDAR_REMINDER_METHODS+CLEAR_NONE_ARGUMENT), method))
         minutes = getInteger(sys.argv[i+2], myarg, minVal=0, maxVal=CALENDAR_REMINDER_MAX_MINUTES)
         body['defaultReminders'].append({'method': method, 'minutes': minutes})
         i += 3
@@ -3411,16 +3153,16 @@ def getCalendarAttributes(i, body, function):
       method = sys.argv[i+1].lower()
       if method not in CLEAR_NONE_ARGUMENT:
         if method not in CALENDAR_NOTIFICATION_METHODS:
-          systemErrorExit(2, 'Method must be one of %s; got %s' % (', '.join(CALENDAR_NOTIFICATION_METHODS+CLEAR_NONE_ARGUMENT), method))
+          controlflow.system_error_exit(2, 'Method must be one of %s; got %s' % (', '.join(CALENDAR_NOTIFICATION_METHODS+CLEAR_NONE_ARGUMENT), method))
         eventType = sys.argv[i+2].lower()
         if eventType not in CALENDAR_NOTIFICATION_TYPES_MAP:
-          systemErrorExit(2, 'Event must be one of %s; got %s' % (', '.join(CALENDAR_NOTIFICATION_TYPES_MAP), eventType))
+          controlflow.system_error_exit(2, 'Event must be one of %s; got %s' % (', '.join(CALENDAR_NOTIFICATION_TYPES_MAP), eventType))
         body['notificationSettings']['notifications'].append({'method': method, 'type': CALENDAR_NOTIFICATION_TYPES_MAP[eventType]})
         i += 3
       else:
         i += 2
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam %s calendar"' % (sys.argv[i], function))
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam %s calendar"' % (sys.argv[i], function))
   return colorRgbFormat
 
 def addCalendar(users):
@@ -3435,7 +3177,7 @@ def addCalendar(users):
     if not cal:
       continue
     print("Subscribing %s to %s calendar (%s/%s)" % (user, calendarId, i, count))
-    callGAPI(cal.calendarList(), 'insert', soft_errors=True, body=body, colorRgbFormat=colorRgbFormat)
+    gapi.call(cal.calendarList(), 'insert', soft_errors=True, body=body, colorRgbFormat=colorRgbFormat)
 
 def updateCalendar(users):
   calendarId = normalizeCalendarId(sys.argv[5], checkPrimary=True)
@@ -3450,12 +3192,12 @@ def updateCalendar(users):
       continue
     print("Updating %s's subscription to calendar %s (%s/%s)" % (user, calendarId, i, count))
     calId = calendarId if calendarId != 'primary' else user
-    callGAPI(cal.calendarList(), 'patch', soft_errors=True, calendarId=calId, body=body, colorRgbFormat=colorRgbFormat)
+    gapi.call(cal.calendarList(), 'patch', soft_errors=True, calendarId=calId, body=body, colorRgbFormat=colorRgbFormat)
 
 def doPrinterShowACL():
   cp = buildGAPIObject('cloudprint')
   show_printer = sys.argv[2]
-  printer_info = callGAPI(cp.printers(), 'get', printerid=show_printer)
+  printer_info = gapi.call(cp.printers(), 'get', printerid=show_printer)
   checkCloudPrintResult(printer_info)
   for acl in printer_info['printers'][0]['access']:
     if 'key' in acl:
@@ -3480,7 +3222,7 @@ def doPrinterAddACL():
     scope = '/hd/domain/%s' % scope
   else:
     skip_notification = not notify
-  result = callGAPI(cp.printers(), 'share', printerid=printer, role=role, scope=scope, public=public, skip_notification=skip_notification)
+  result = gapi.call(cp.printers(), 'share', printerid=printer, role=role, scope=scope, public=public, skip_notification=skip_notification)
   checkCloudPrintResult(result)
   who = scope
   if who is None:
@@ -3498,7 +3240,7 @@ def doPrinterDelACL():
     scope = None
   elif scope.find('@') == -1:
     scope = '/hd/domain/%s' % scope
-  result = callGAPI(cp.printers(), 'unshare', printerid=printer, scope=scope, public=public)
+  result = gapi.call(cp.printers(), 'unshare', printerid=printer, scope=scope, public=public)
   checkCloudPrintResult(result)
   who = scope
   if who is None:
@@ -3566,7 +3308,7 @@ def doPrintJobFetch():
         older_or_newer = 'newer'
       age_number = sys.argv[i+1][:-1]
       if not age_number.isdigit():
-        systemErrorExit(2, 'expected a number; got %s' % age_number)
+        controlflow.system_error_exit(2, 'expected a number; got %s' % age_number)
       age_unit = sys.argv[i+1][-1].lower()
       if age_unit == 'm':
         age = int(time.time()) - (int(age_number) * 60)
@@ -3575,7 +3317,7 @@ def doPrintJobFetch():
       elif age_unit == 'd':
         age = int(time.time()) - (int(age_number) * 60 * 60 * 24)
       else:
-        systemErrorExit(2, 'expected m (minutes), h (hours) or d (days); got %s' % age_unit)
+        controlflow.system_error_exit(2, 'expected m (minutes), h (hours) or d (days); got %s' % age_unit)
       i += 2
     elif myarg == 'query':
       query = sys.argv[i+1]
@@ -3592,7 +3334,7 @@ def doPrintJobFetch():
     elif myarg == 'orderby':
       sortorder = sys.argv[i+1].lower().replace('_', '')
       if sortorder not in PRINTJOB_ASCENDINGORDER_MAP:
-        systemErrorExit(2, 'orderby must be one of %s; got %s' % (', '.join(PRINTJOB_ASCENDINGORDER_MAP), sortorder))
+        controlflow.system_error_exit(2, 'orderby must be one of %s; got %s' % (', '.join(PRINTJOB_ASCENDINGORDER_MAP), sortorder))
       sortorder = PRINTJOB_ASCENDINGORDER_MAP[sortorder]
       i += 2
     elif myarg in ['owner', 'user']:
@@ -3610,11 +3352,11 @@ def doPrintJobFetch():
         os.makedirs(targetFolder)
       i += 2
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam printjobs fetch"' % sys.argv[i])
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam printjobs fetch"' % sys.argv[i])
   if sortorder and descending:
     sortorder = PRINTJOB_DESCENDINGORDER_MAP[sortorder]
   if printerid:
-    result = callGAPI(cp.printers(), 'get',
+    result = gapi.call(cp.printers(), 'get',
                       printerid=printerid)
     checkCloudPrintResult(result)
   ssd = '{"state": {"type": "DONE"}}'
@@ -3632,7 +3374,7 @@ def doPrintJobFetch():
       limit = min(PRINTJOBS_DEFAULT_MAX_RESULTS, jobLimit-jobCount)
       if limit == 0:
         break
-    result = callGAPI(cp.jobs(), 'list',
+    result = gapi.call(cp.jobs(), 'list',
                       printerid=printerid, q=query, status=status, sortorder=sortorder,
                       owner=owner, offset=offset, limit=limit)
     checkCloudPrintResult(result)
@@ -3660,8 +3402,8 @@ def doPrintJobFetch():
       fileName = os.path.join(targetFolder, '{0}-{1}'.format(''.join(c if c in FILENAME_SAFE_CHARS else '_' for c in job['title']), jobid))
       _, content = cp._http.request(uri=fileUrl, method='GET')
       if writeFile(fileName, content, mode='wb', continueOnError=True):
-#        ticket = callGAPI(cp.jobs(), u'getticket', jobid=jobid, use_cjt=True)
-        result = callGAPI(cp.jobs(), 'update', jobid=jobid, semantic_state_diff=ssd)
+#        ticket = gapi.call(cp.jobs(), u'getticket', jobid=jobid, use_cjt=True)
+        result = gapi.call(cp.jobs(), 'update', jobid=jobid, semantic_state_diff=ssd)
         checkCloudPrintResult(result)
         print('Printed job %s to %s' % (jobid, fileName))
     if jobCount >= totalJobs:
@@ -3672,7 +3414,7 @@ def doPrintJobFetch():
 def doDelPrinter():
   cp = buildGAPIObject('cloudprint')
   printerid = sys.argv[3]
-  result = callGAPI(cp.printers(), 'delete', printerid=printerid)
+  result = gapi.call(cp.printers(), 'delete', printerid=printerid)
   checkCloudPrintResult(result)
 
 def doGetPrinterInfo():
@@ -3686,8 +3428,8 @@ def doGetPrinterInfo():
       everything = True
       i += 1
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam info printer"' % sys.argv[i])
-  result = callGAPI(cp.printers(), 'get', printerid=printerid)
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam info printer"' % sys.argv[i])
+  result = gapi.call(cp.printers(), 'get', printerid=printerid)
   checkCloudPrintResult(result)
   printer_info = result['printers'][0]
   printer_info['createTime'] = utils.formatTimestampYMDHMS(printer_info['createTime'])
@@ -3718,8 +3460,8 @@ def doUpdatePrinter():
         arg_in_item = True
         break
     if not arg_in_item:
-      systemErrorExit(2, '%s is not a valid argument for "gam update printer"' % sys.argv[i])
-  result = callGAPI(cp.printers(), 'update', printerid=printerid, **kwargs)
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam update printer"' % sys.argv[i])
+  result = gapi.call(cp.printers(), 'update', printerid=printerid, **kwargs)
   checkCloudPrintResult(result)
   print('Updated printer %s' % printerid)
 
@@ -3754,7 +3496,7 @@ def doPrinterRegister():
                 }
   body, headers = encode_multipart(form_fields, {})
   #Get the printer first to make sure our OAuth access token is fresh
-  callGAPI(cp.printers(), 'list')
+  gapi.call(cp.printers(), 'list')
   _, result = cp._http.request(uri='https://www.google.com/cloudprint/register', method='POST', body=body, headers=headers)
   result = json.loads(result.decode(UTF8))
   checkCloudPrintResult(result)
@@ -3765,10 +3507,10 @@ def doPrintJobResubmit():
   jobid = sys.argv[2]
   printerid = sys.argv[4]
   ssd = '{"state": {"type": "HELD"}}'
-  result = callGAPI(cp.jobs(), 'update', jobid=jobid, semantic_state_diff=ssd)
+  result = gapi.call(cp.jobs(), 'update', jobid=jobid, semantic_state_diff=ssd)
   checkCloudPrintResult(result)
-  ticket = callGAPI(cp.jobs(), 'getticket', jobid=jobid, use_cjt=True)
-  result = callGAPI(cp.jobs(), 'resubmit', printerid=printerid, jobid=jobid, ticket=ticket)
+  ticket = gapi.call(cp.jobs(), 'getticket', jobid=jobid, use_cjt=True)
+  result = gapi.call(cp.jobs(), 'resubmit', printerid=printerid, jobid=jobid, ticket=ticket)
   checkCloudPrintResult(result)
   print('Success resubmitting %s as job %s to printer %s' % (jobid, result['job']['id'], printerid))
 
@@ -3790,7 +3532,7 @@ def doPrintJobSubmit():
       form_fields['title'] = sys.argv[i+1]
       i += 2
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam printer ... print"' % sys.argv[i])
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam printer ... print"' % sys.argv[i])
   form_files = {}
   if content[:4] == 'http':
     form_fields['content'] = content
@@ -3803,10 +3545,10 @@ def doPrintJobSubmit():
       mimetype = 'application/octet-stream'
     filecontent = readFile(filepath, mode='rb')
     form_files['content'] = {'filename': content, 'content': filecontent, 'mimetype': mimetype}
-  #result = callGAPI(cp.printers(), u'submit', body=body)
+  #result = gapi.call(cp.printers(), u'submit', body=body)
   body, headers = encode_multipart(form_fields, form_files)
   #Get the printer first to make sure our OAuth access token is fresh
-  callGAPI(cp.printers(), 'get', printerid=printer)
+  gapi.call(cp.printers(), 'get', printerid=printer)
   _, result = cp._http.request(uri='https://www.google.com/cloudprint/submit', method='POST', body=body, headers=headers)
   result = json.loads(result.decode(UTF8))
   checkCloudPrintResult(result)
@@ -3815,7 +3557,7 @@ def doPrintJobSubmit():
 def doDeletePrintJob():
   cp = buildGAPIObject('cloudprint')
   job = sys.argv[2]
-  result = callGAPI(cp.jobs(), 'delete', jobid=job)
+  result = gapi.call(cp.jobs(), 'delete', jobid=job)
   checkCloudPrintResult(result)
   print('Print Job %s deleted' % job)
 
@@ -3823,7 +3565,7 @@ def doCancelPrintJob():
   cp = buildGAPIObject('cloudprint')
   job = sys.argv[2]
   ssd = '{"state": {"type": "ABORTED", "user_action_cause": {"action_code": "CANCELLED"}}}'
-  result = callGAPI(cp.jobs(), 'update', jobid=job, semantic_state_diff=ssd)
+  result = gapi.call(cp.jobs(), 'update', jobid=job, semantic_state_diff=ssd)
   checkCloudPrintResult(result)
   print('Print Job %s cancelled' % job)
 
@@ -3834,9 +3576,9 @@ def checkCloudPrintResult(result):
     try:
       result = json.loads(result)
     except ValueError:
-      systemErrorExit(3, 'unexpected response: %s' % result)
+      controlflow.system_error_exit(3, 'unexpected response: %s' % result)
   if not result['success']:
-    systemErrorExit(result['errorCode'], '%s: %s' % (result['errorCode'], result['message']))
+    controlflow.system_error_exit(result['errorCode'], '%s: %s' % (result['errorCode'], result['message']))
 
 def formatACLScope(rule):
   if rule['scope']['type'] != 'default':
@@ -3860,7 +3602,7 @@ def doCalendarPrintShowACLs(csvFormat):
       toDrive = True
       i += 1
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam calendar <email> %s"' % (sys.argv[i], ['showacl', 'printacl'][csvFormat]))
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam calendar <email> %s"' % (sys.argv[i], ['showacl', 'printacl'][csvFormat]))
   acls = callGAPIpages(cal.acl(), 'list', 'items', calendarId=calendarId)
   i = 0
   if csvFormat:
@@ -3917,7 +3659,7 @@ def doCalendarAddACL(function):
     return
   myarg = sys.argv[4].lower().replace('_', '')
   if myarg not in CALENDAR_ACL_ROLES_MAP:
-    systemErrorExit(2, 'Role must be one of %s; got %s' % (', '.join(sorted(CALENDAR_ACL_ROLES_MAP)), myarg))
+    controlflow.system_error_exit(2, 'Role must be one of %s; got %s' % (', '.join(sorted(CALENDAR_ACL_ROLES_MAP)), myarg))
   body = {'role': CALENDAR_ACL_ROLES_MAP[myarg]}
   i = _getCalendarACLScope(5, body)
   sendNotifications = True
@@ -3927,9 +3669,9 @@ def doCalendarAddACL(function):
       sendNotifications = getBoolean(sys.argv[i+1], myarg)
       i += 2
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam calendar <email> %s"' % (sys.argv[i], function.lower()))
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam calendar <email> %s"' % (sys.argv[i], function.lower()))
   print('Calendar: {0}, {1} ACL: {2}'.format(calendarId, function, formatACLRule(body)))
-  callGAPI(cal.acl(), 'insert', calendarId=calendarId, body=body, sendNotifications=sendNotifications)
+  gapi.call(cal.acl(), 'insert', calendarId=calendarId, body=body, sendNotifications=sendNotifications)
 
 def doCalendarDelACL():
   calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
@@ -3938,18 +3680,18 @@ def doCalendarDelACL():
   if sys.argv[4].lower() == 'id':
     ruleId = sys.argv[5]
     print('Removing rights for %s to %s' % (ruleId, calendarId))
-    callGAPI(cal.acl(), 'delete', calendarId=calendarId, ruleId=ruleId)
+    gapi.call(cal.acl(), 'delete', calendarId=calendarId, ruleId=ruleId)
   else:
     body = {'role': 'none'}
     _getCalendarACLScope(5, body)
     print('Calendar: {0}, {1} ACL: {2}'.format(calendarId, 'Delete', formatACLScope(body)))
-    callGAPI(cal.acl(), 'insert', calendarId=calendarId, body=body, sendNotifications=False)
+    gapi.call(cal.acl(), 'insert', calendarId=calendarId, body=body, sendNotifications=False)
 
 def doCalendarWipeData():
   calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
   if not cal:
     return
-  callGAPI(cal.calendars(), 'clear', calendarId=calendarId)
+  gapi.call(cal.calendars(), 'clear', calendarId=calendarId)
 
 def doCalendarPrintEvents():
   calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
@@ -3987,7 +3729,7 @@ def doCalendarPrintEvents():
       toDrive = True
       i += 1
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam calendar <email> printevents"' % sys.argv[i])
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam calendar <email> printevents"' % sys.argv[i])
   page_message = 'Got %%%%total_items%%%% events for %s' % calendarId
   results = callGAPIpages(cal.events(), 'list', 'items', page_message=page_message,
                           calendarId=calendarId, q=q, showDeleted=showDeleted,
@@ -4012,7 +3754,7 @@ def getSendUpdates(myarg, i, cal):
       sendUpdatesMap[val.lower()] = val
     sendUpdates = sendUpdatesMap.get(sys.argv[i+1].lower(), False)
     if not sendUpdates:
-      systemErrorExit(3, 'sendupdates must be one of: %s. Got %s' % (', '.join(sendUpdatesMap), sys.argv[i+1]))
+      controlflow.system_error_exit(3, 'sendupdates must be one of: %s. Got %s' % (', '.join(sendUpdatesMap), sys.argv[i+1]))
     i += 2
   return (sendUpdates, i)
 
@@ -4032,7 +3774,7 @@ def doCalendarMoveOrDeleteEvent(moveOrDelete):
       eventId = sys.argv[i+1]
       i += 2
     elif myarg in ['query', 'eventquery']:
-      systemErrorExit(2, 'query is no longer supported for {0}event. Use "gam calendar <email> printevents query <query> | gam csv - gam {0}event id ~id" instead.'.format(moveOrDelete))
+      controlflow.system_error_exit(2, 'query is no longer supported for {0}event. Use "gam calendar <email> printevents query <query> | gam csv - gam {0}event id ~id" instead.'.format(moveOrDelete))
     elif myarg == 'doit':
       doit = True
       i += 1
@@ -4040,10 +3782,10 @@ def doCalendarMoveOrDeleteEvent(moveOrDelete):
       kwargs['destination'] = sys.argv[i+1]
       i += 2
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam calendar <email> %sevent"' % (sys.argv[i], moveOrDelete))
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam calendar <email> %sevent"' % (sys.argv[i], moveOrDelete))
   if doit:
     print(' going to %s eventId %s' % (moveOrDelete, eventId))
-    callGAPI(cal.events(), moveOrDelete, calendarId=calendarId, eventId=eventId, sendUpdates=sendUpdates, **kwargs)
+    gapi.call(cal.events(), moveOrDelete, calendarId=calendarId, eventId=eventId, sendUpdates=sendUpdates, **kwargs)
   else:
     print(' would {0} eventId {1}. Add doit to command to actually {0} event'.format(moveOrDelete, eventId))
 
@@ -4108,7 +3850,7 @@ def doCalendarAddEvent():
       if sys.argv[i+1].lower() in ['default', 'public', 'private']:
         body['visibility'] = sys.argv[i+1].lower()
       else:
-        systemErrorExit(2, 'visibility must be one of default, public, private; got %s' % sys.argv[i+1])
+        controlflow.system_error_exit(2, 'visibility must be one of default, public, private; got %s' % sys.argv[i+1])
       i += 2
     elif myarg == 'tentative':
       body['status'] = 'tentative'
@@ -4145,15 +3887,15 @@ def doCalendarAddEvent():
       body['colorId'] = getInteger(sys.argv[i+1], myarg, CALENDAR_EVENT_MIN_COLOR_INDEX, CALENDAR_EVENT_MAX_COLOR_INDEX)
       i += 2
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam calendar <email> addevent"' % sys.argv[i])
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam calendar <email> addevent"' % sys.argv[i])
   if ('recurrence' in body) and (('start' in body) or ('end' in body)):
     if not timeZone:
-      timeZone = callGAPI(cal.calendars(), 'get', calendarId=calendarId, fields='timeZone')['timeZone']
+      timeZone = gapi.call(cal.calendars(), 'get', calendarId=calendarId, fields='timeZone')['timeZone']
     if 'start' in body:
       body['start']['timeZone'] = timeZone
     if 'end' in body:
       body['end']['timeZone'] = timeZone
-  callGAPI(cal.events(), 'insert', calendarId=calendarId, sendUpdates=sendUpdates, body=body)
+  gapi.call(cal.events(), 'insert', calendarId=calendarId, sendUpdates=sendUpdates, body=body)
 
 def doCalendarModifySettings():
   calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
@@ -4176,8 +3918,8 @@ def doCalendarModifySettings():
       body['timeZone'] = sys.argv[i+1]
       i += 2
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam calendar <email> modify"' % sys.argv[i])
-  callGAPI(cal.calendars(), 'patch', calendarId=calendarId, body=body)
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam calendar <email> modify"' % sys.argv[i])
+  gapi.call(cal.calendars(), 'patch', calendarId=calendarId, body=body)
 
 def doProfile(users):
   cd = buildGAPIObject('directory')
@@ -4187,13 +3929,13 @@ def doProfile(users):
   elif myarg in ['unshare', 'unshared']:
     body = {'includeInGlobalAddressList': False}
   else:
-    systemErrorExit(2, 'value for "gam <users> profile" must be true or false; got %s' % sys.argv[4])
+    controlflow.system_error_exit(2, 'value for "gam <users> profile" must be true or false; got %s' % sys.argv[4])
   i = 0
   count = len(users)
   for user in users:
     i += 1
     print('Setting Profile Sharing to %s for %s (%s/%s)' % (body['includeInGlobalAddressList'], user, i, count))
-    callGAPI(cd.users(), 'update', soft_errors=True, userKey=user, body=body)
+    gapi.call(cd.users(), 'update', soft_errors=True, userKey=user, body=body)
 
 def showProfile(users):
   cd = buildGAPIObject('directory')
@@ -4201,7 +3943,7 @@ def showProfile(users):
   count = len(users)
   for user in users:
     i += 1
-    result = callGAPI(cd.users(), 'get', userKey=user, fields='includeInGlobalAddressList')
+    result = gapi.call(cd.users(), 'get', userKey=user, fields='includeInGlobalAddressList')
     try:
       print('User: %s  Profile Shared: %s (%s/%s)' % (user, result['includeInGlobalAddressList'], i, count))
     except IndexError:
@@ -4218,7 +3960,7 @@ def doPhoto(users):
     filename = filename.replace('#username#', user[:user.find('@')])
     print("Updating photo for %s with %s (%s/%s)" % (user, filename, i, count))
     if re.match('^(ht|f)tps?://.*$', filename):
-      simplehttp = _createHttpObj()
+      simplehttp = gapi.create_http()
       try:
         (_, image_data) = simplehttp.request(filename, 'GET')
       except (httplib2.HttpLib2Error, httplib2.ServerNotFoundError) as e:
@@ -4229,7 +3971,7 @@ def doPhoto(users):
       if image_data is None:
         continue
     body = {'photoData': base64.urlsafe_b64encode(image_data).decode(UTF8)}
-    callGAPI(cd.users().photos(), 'update', soft_errors=True, userKey=user, body=body)
+    gapi.call(cd.users().photos(), 'update', soft_errors=True, userKey=user, body=body)
 
 def getPhoto(users):
   cd = buildGAPIObject('directory')
@@ -4250,7 +3992,7 @@ def getPhoto(users):
       showPhotoData = False
       i += 1
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam <users> get photo"' % sys.argv[i])
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> get photo"' % sys.argv[i])
   i = 0
   count = len(users)
   for user in users:
@@ -4258,11 +4000,11 @@ def getPhoto(users):
     filename = os.path.join(targetFolder, '{0}.jpg'.format(user))
     print("Saving photo to %s (%s/%s)" % (filename, i, count))
     try:
-      photo = callGAPI(cd.users().photos(), 'get', throw_reasons=[GAPI_USER_NOT_FOUND, GAPI_RESOURCE_NOT_FOUND], userKey=user)
-    except GAPI_userNotFound:
+      photo = gapi.call(cd.users().photos(), 'get', throw_reasons=[gapi.errors.ErrorReason.USER_NOT_FOUND, gapi.errors.ErrorReason.RESOURCE_NOT_FOUND], userKey=user)
+    except gapi.errors.gapi.errors.GapiUserNotFoundError:
       print(' unknown user %s' % user)
       continue
-    except GAPI_resourceNotFound:
+    except gapi.errors.gapi.errors.GapiResourceNotFoundError:
       print(' no photo for %s' % user)
       continue
     try:
@@ -4282,7 +4024,7 @@ def deletePhoto(users):
   for user in users:
     i += 1
     print("Deleting photo for %s (%s/%s)" % (user, i, count))
-    callGAPI(cd.users().photos(), 'delete', userKey=user)
+    gapi.call(cd.users().photos(), 'delete', userKey=user)
 
 def _showCalendar(userCalendar, j, jcount):
   print('  Calendar: {0} ({1}/{2})'.format(userCalendar['id'], j, jcount))
@@ -4311,7 +4053,7 @@ def infoCalendar(users):
     user, cal = buildCalendarGAPIObject(user)
     if not cal:
       continue
-    result = callGAPI(cal.calendarList(), 'get',
+    result = gapi.call(cal.calendarList(), 'get',
                       soft_errors=True,
                       calendarId=calendarId)
     if result:
@@ -4330,7 +4072,7 @@ def printShowCalendars(users, csvFormat):
       todrive = True
       i += 1
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam <users> %s calendars"' %  (myarg, ['show', 'print'][csvFormat]))
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> %s calendars"' %  (myarg, ['show', 'print'][csvFormat]))
   i = 0
   count = len(users)
   for user in users:
@@ -4384,7 +4126,7 @@ def printDriveSettings(users):
       todrive = True
       i += 1
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam <users> show drivesettings"' % sys.argv[i])
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> show drivesettings"' % sys.argv[i])
   dont_show = ['kind', 'exportFormats', 'importFormats', 'maxUploadSize', 'maxImportSizes', 'user', 'appInstalled']
   csvRows = []
   titles = ['email',]
@@ -4396,7 +4138,7 @@ def printDriveSettings(users):
     if not drive:
       continue
     sys.stderr.write('Getting Drive settings for %s (%s/%s)\n' % (user, i, count))
-    feed = callGAPI(drive.about(), 'get', fields='*', soft_errors=True)
+    feed = gapi.call(drive.about(), 'get', fields='*', soft_errors=True)
     if feed is None:
       continue
     row = {'email': user}
@@ -4420,7 +4162,7 @@ def getTeamDriveThemes(users):
     user, drive = buildDrive3GAPIObject(user)
     if not drive:
       continue
-    themes = callGAPI(drive.about(), 'get', fields='teamDriveThemes', soft_errors=True)
+    themes = gapi.call(drive.about(), 'get', fields='teamDriveThemes', soft_errors=True)
     if themes is None or 'teamDriveThemes' not in themes:
       continue
     print('theme')
@@ -4447,7 +4189,7 @@ def printDriveActivity(users):
       todrive = True
       i += 1
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam <users> show driveactivity"' % sys.argv[i])
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> show driveactivity"' % sys.argv[i])
   for user in users:
     user, activity = buildActivityGAPIObject(user)
     if not activity:
@@ -4486,7 +4228,7 @@ def showDriveFileACL(users):
       useDomainAdminAccess = True
       i += 1
     else:
-      systemErrorExit(3, '%s is not a valid argument to "gam <users> show drivefileacl".' % sys.argv[i])
+      controlflow.system_error_exit(3, '%s is not a valid argument to "gam <users> show drivefileacl".' % sys.argv[i])
   for user in users:
     user, drive = buildDrive3GAPIObject(user)
     if not drive:
@@ -4513,7 +4255,7 @@ def getPermissionId(argstr):
   # We have to use v2 here since v3 has no permissions.getIdForEmail equivalent
   # https://code.google.com/a/google.com/p/apps-api-issues/issues/detail?id=4313
   _, drive2 = buildDriveGAPIObject(_getValueFromOAuth('email'))
-  return callGAPI(drive2.permissions(), 'getIdForEmail', email=permissionId, fields='id')['id']
+  return gapi.call(drive2.permissions(), 'getIdForEmail', email=permissionId, fields='id')['id']
 
 def delDriveFileACL(users):
   fileId = sys.argv[5]
@@ -4526,13 +4268,13 @@ def delDriveFileACL(users):
       useDomainAdminAccess = True
       i += 1
     else:
-      systemErrorExit(3, '%s is not a valid argument to "gam <users> delete drivefileacl".' % sys.argv[i])
+      controlflow.system_error_exit(3, '%s is not a valid argument to "gam <users> delete drivefileacl".' % sys.argv[i])
   for user in users:
     user, drive = buildDrive3GAPIObject(user)
     if not drive:
       continue
     print('Removing permission for %s from %s' % (permissionId, fileId))
-    callGAPI(drive.permissions(), 'delete', fileId=fileId,
+    gapi.call(drive.permissions(), 'delete', fileId=fileId,
              permissionId=permissionId, supportsAllDrives=True,
              useDomainAdminAccess=useDomainAdminAccess)
 
@@ -4564,7 +4306,7 @@ def addDriveFileACL(users):
     body['domain'] = sys.argv[7]
     i = 8
   else:
-    systemErrorExit(5, 'permission type must be user, group domain or anyone; got %s' % body['type'])
+    controlflow.system_error_exit(5, 'permission type must be user, group domain or anyone; got %s' % body['type'])
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace('_', '')
     if myarg == 'withlink':
@@ -4576,7 +4318,7 @@ def addDriveFileACL(users):
     elif myarg == 'role':
       role = sys.argv[i+1].lower()
       if role not in DRIVEFILE_ACL_ROLES_MAP:
-        systemErrorExit(2, 'role must be {0}; got {1}'.format(', '.join(DRIVEFILE_ACL_ROLES_MAP), role))
+        controlflow.system_error_exit(2, 'role must be {0}; got {1}'.format(', '.join(DRIVEFILE_ACL_ROLES_MAP), role))
       body['role'] = DRIVEFILE_ACL_ROLES_MAP[role]
       if body['role'] == 'owner':
         sendNotificationEmail = True
@@ -4596,12 +4338,12 @@ def addDriveFileACL(users):
       useDomainAdminAccess = True
       i += 1
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam <users> add drivefileacl"' % sys.argv[i])
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> add drivefileacl"' % sys.argv[i])
   for user in users:
     user, drive = buildDrive3GAPIObject(user)
     if not drive:
       continue
-    result = callGAPI(drive.permissions(), 'create', fields='*',
+    result = gapi.call(drive.permissions(), 'create', fields='*',
                       fileId=fileId, sendNotificationEmail=sendNotificationEmail,
                       emailMessage=emailMessage, body=body, supportsAllDrives=True,
                       transferOwnership=transferOwnership,
@@ -4624,7 +4366,7 @@ def updateDriveFileACL(users):
     elif myarg == 'role':
       role = sys.argv[i+1].lower()
       if role not in DRIVEFILE_ACL_ROLES_MAP:
-        systemErrorExit(2, 'role must be {0}; got {1}'.format(', '.join(DRIVEFILE_ACL_ROLES_MAP), role))
+        controlflow.system_error_exit(2, 'role must be {0}; got {1}'.format(', '.join(DRIVEFILE_ACL_ROLES_MAP), role))
       body['role'] = DRIVEFILE_ACL_ROLES_MAP[role]
       if body['role'] == 'owner':
         transferOwnership = True
@@ -4633,13 +4375,13 @@ def updateDriveFileACL(users):
       useDomainAdminAccess = True
       i += 1
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam <users> update drivefileacl"' % sys.argv[i])
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> update drivefileacl"' % sys.argv[i])
   for user in users:
     user, drive = buildDrive3GAPIObject(user)
     if not drive:
       continue
     print('updating permissions for %s to file %s' % (permissionId, fileId))
-    result = callGAPI(drive.permissions(), 'update', fields='*',
+    result = gapi.call(drive.permissions(), 'update', fields='*',
                       fileId=fileId, permissionId=permissionId, removeExpiration=removeExpiration,
                       transferOwnership=transferOwnership, body=body,
                       supportsAllDrives=True, useDomainAdminAccess=useDomainAdminAccess)
@@ -4685,7 +4427,7 @@ def printDriveFileList(users):
         else:
           orderByList.append('{0} desc'.format(fieldName))
       else:
-        systemErrorExit(2, 'orderby must be one of {0}; got {1}'.format(', '.join(sorted(DRIVEFILE_ORDERBY_CHOICES_MAP)), fieldName))
+        controlflow.system_error_exit(2, 'orderby must be one of {0}; got {1}'.format(', '.join(sorted(DRIVEFILE_ORDERBY_CHOICES_MAP)), fieldName))
     elif myarg == 'query':
       query += ' and %s' % sys.argv[i+1]
       i += 2
@@ -4706,7 +4448,7 @@ def printDriveFileList(users):
       addFieldToCSVfile(myarg, {myarg: [DRIVEFILE_LABEL_CHOICES_MAP[myarg]]}, labelsList, fieldsTitles, titles)
       i += 1
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam <users> show filelist"' % myarg)
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> show filelist"' % myarg)
   if fieldsList or labelsList:
     fields = 'nextPageToken,items('
     if fieldsList:
@@ -4810,7 +4552,7 @@ def getFileIdFromAlternateLink(altLink):
       loc = fileId.find('&')
       if loc != -1:
         return fileId[:loc]
-  systemErrorExit(2, '%s is not a valid Drive File alternateLink' % altLink)
+  controlflow.system_error_exit(2, '%s is not a valid Drive File alternateLink' % altLink)
 
 def deleteDriveFile(users):
   fileIds = sys.argv[5]
@@ -4825,7 +4567,7 @@ def deleteDriveFile(users):
       function = 'untrash'
       i += 1
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam <users> delete drivefile"' % sys.argv[i])
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> delete drivefile"' % sys.argv[i])
   action = DELETE_DRIVEFILE_FUNCTION_TO_ACTION_MAP[function]
   for user in users:
     user, drive = buildDriveGAPIObject(user)
@@ -4893,9 +4635,9 @@ def showDriveFileTree(users):
         else:
           orderByList.append('{0} desc'.format(fieldName))
       else:
-        systemErrorExit(2, 'orderby must be one of {0}; got {1}'.format(', '.join(sorted(DRIVEFILE_ORDERBY_CHOICES_MAP)), fieldName))
+        controlflow.system_error_exit(2, 'orderby must be one of {0}; got {1}'.format(', '.join(sorted(DRIVEFILE_ORDERBY_CHOICES_MAP)), fieldName))
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam <users> show filetree"' % myarg)
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> show filetree"' % myarg)
   if orderByList:
     orderBy = ','.join(orderByList)
   else:
@@ -4906,7 +4648,7 @@ def showDriveFileTree(users):
     user, drive = buildDriveGAPIObject(user)
     if not drive:
       continue
-    root_folder = callGAPI(drive.about(), 'get', fields='rootFolderId')['rootFolderId']
+    root_folder = gapi.call(drive.about(), 'get', fields='rootFolderId')['rootFolderId']
     sys.stderr.write('Getting all files for %s...\n' % user)
     page_message = ' Got %%%%total_items%%%% files for %s...\n' % user
     feed = callGAPIpages(drive.files(), 'list', 'items', page_message=page_message,
@@ -4927,11 +4669,11 @@ def deleteEmptyDriveFolders(users):
                            q=query, fields='items(title,id),nextPageToken')
       deleted_empty = False
       for folder in feed:
-        children = callGAPI(drive.children(), 'list',
+        children = gapi.call(drive.children(), 'list',
                             folderId=folder['id'], fields='items(id)', maxResults=1)
         if 'items' not in children or not children['items']:
           print(utils.convertUTF8(' deleting empty folder %s...' % folder['title']))
-          callGAPI(drive.files(), 'delete', fileId=folder['id'])
+          gapi.call(drive.files(), 'delete', fileId=folder['id'])
           deleted_empty = True
         else:
           print(utils.convertUTF8(' not deleting folder %s because it contains at least 1 item (%s)' % (folder['title'], children['items'][0]['id'])))
@@ -4942,7 +4684,7 @@ def doEmptyDriveTrash(users):
     if not drive:
       continue
     print('Emptying Drive trash for %s' % user)
-    callGAPI(drive.files(), 'emptyTrash')
+    gapi.call(drive.files(), 'emptyTrash')
 
 def escapeDriveFileName(filename):
   if filename.find("'") == -1 and filename.find('\\') == -1:
@@ -5008,7 +4750,7 @@ def getDriveFileAttribute(i, body, parameters, myarg, update=False):
     if mimeType in MIMETYPE_CHOICES_MAP:
       body['mimeType'] = MIMETYPE_CHOICES_MAP[mimeType]
     else:
-      systemErrorExit(2, 'mimetype must be one of %s; got %s"' % (', '.join(MIMETYPE_CHOICES_MAP), mimeType))
+      controlflow.system_error_exit(2, 'mimetype must be one of %s; got %s"' % (', '.join(MIMETYPE_CHOICES_MAP), mimeType))
     i += 2
   elif myarg == 'parentid':
     body.setdefault('parents', [])
@@ -5024,7 +4766,7 @@ def getDriveFileAttribute(i, body, parameters, myarg, update=False):
     body['writersCanShare'] = False
     i += 1
   else:
-    systemErrorExit(2, '%s is not a valid argument for "gam <users> %s drivefile"' % (myarg, ['add', 'update'][update]))
+    controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> %s drivefile"' % (myarg, ['add', 'update'][update]))
   return i
 
 def doUpdateDriveFile(users):
@@ -5053,9 +4795,9 @@ def doUpdateDriveFile(users):
     else:
       i = getDriveFileAttribute(i, body, parameters, myarg, True)
   if not fileIdSelection['query'] and not fileIdSelection['fileIds']:
-    systemErrorExit(2, 'you need to specify either id, query or drivefilename in order to determine the file(s) to update')
+    controlflow.system_error_exit(2, 'you need to specify either id, query or drivefilename in order to determine the file(s) to update')
   if fileIdSelection['query'] and fileIdSelection['fileIds']:
-    systemErrorExit(2, 'you cannot specify multiple file identifiers. Choose one of id, drivefilename, query.')
+    controlflow.system_error_exit(2, 'you cannot specify multiple file identifiers. Choose one of id, drivefilename, query.')
   for user in users:
     user, drive = buildDriveGAPIObject(user)
     if not drive:
@@ -5075,7 +4817,7 @@ def doUpdateDriveFile(users):
         media_body = googleapiclient.http.MediaFileUpload(parameters[DFA_LOCALFILEPATH], mimetype=parameters[DFA_LOCALMIMETYPE], resumable=True)
       for fileId in fileIdSelection['fileIds']:
         if media_body:
-          result = callGAPI(drive.files(), 'update',
+          result = gapi.call(drive.files(), 'update',
                             fileId=fileId, convert=parameters[DFA_CONVERT],
                             ocr=parameters[DFA_OCR],
                             ocrLanguage=parameters[DFA_OCRLANGUAGE],
@@ -5083,7 +4825,7 @@ def doUpdateDriveFile(users):
                             supportsAllDrives=True)
           print('Successfully updated %s drive file with content from %s' % (result['id'], parameters[DFA_LOCALFILENAME]))
         else:
-          result = callGAPI(drive.files(), 'patch',
+          result = gapi.call(drive.files(), 'patch',
                             fileId=fileId, convert=parameters[DFA_CONVERT],
                             ocr=parameters[DFA_OCR],
                             ocrLanguage=parameters[DFA_OCRLANGUAGE], body=body,
@@ -5091,7 +4833,7 @@ def doUpdateDriveFile(users):
           print('Successfully updated drive file/folder ID %s' % (result['id']))
     else:
       for fileId in fileIdSelection['fileIds']:
-        result = callGAPI(drive.files(), 'copy',
+        result = gapi.call(drive.files(), 'copy',
                           fileId=fileId, convert=parameters[DFA_CONVERT],
                           ocr=parameters[DFA_OCR],
                           ocrLanguage=parameters[DFA_OCRLANGUAGE],
@@ -5129,7 +4871,7 @@ def createDriveFile(users):
         body['parents'].append({'id': a_parent})
     if parameters[DFA_LOCALFILEPATH]:
       media_body = googleapiclient.http.MediaFileUpload(parameters[DFA_LOCALFILEPATH], mimetype=parameters[DFA_LOCALMIMETYPE], resumable=True)
-    result = callGAPI(drive.files(), 'insert',
+    result = gapi.call(drive.files(), 'insert',
                       convert=parameters[DFA_CONVERT], ocr=parameters[DFA_OCR],
                       ocrLanguage=parameters[DFA_OCRLANGUAGE],
                       media_body=media_body, body=body, fields='id,title,mimeType',
@@ -5182,7 +4924,7 @@ def downloadDriveFile(users):
         if exportFormat in DOCUMENT_FORMATS_MAP:
           exportFormats.extend(DOCUMENT_FORMATS_MAP[exportFormat])
         else:
-          systemErrorExit(2, 'format must be one of {0}; got {1}'.format(', '.join(DOCUMENT_FORMATS_MAP), exportFormat))
+          controlflow.system_error_exit(2, 'format must be one of {0}; got {1}'.format(', '.join(DOCUMENT_FORMATS_MAP), exportFormat))
       i += 2
     elif myarg == 'targetfolder':
       targetFolder = os.path.expanduser(sys.argv[i+1])
@@ -5200,11 +4942,11 @@ def downloadDriveFile(users):
       showProgress = True
       i += 1
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam <users> get drivefile"' % sys.argv[i])
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> get drivefile"' % sys.argv[i])
   if not fileIdSelection['query'] and not fileIdSelection['fileIds']:
-    systemErrorExit(2, 'you need to specify either id, query or drivefilename in order to determine the file(s) to download')
+    controlflow.system_error_exit(2, 'you need to specify either id, query or drivefilename in order to determine the file(s) to download')
   if fileIdSelection['query'] and fileIdSelection['fileIds']:
-    systemErrorExit(2, 'you cannot specify multiple file identifiers. Choose one of id, drivefilename, query.')
+    controlflow.system_error_exit(2, 'you cannot specify multiple file identifiers. Choose one of id, drivefilename, query.')
   if csvSheetTitle:
     exportFormatName = 'csv'
     exportFormatChoices = [exportFormatName]
@@ -5228,7 +4970,7 @@ def downloadDriveFile(users):
     i = 0
     for fileId in fileIdSelection['fileIds']:
       fileExtension = None
-      result = callGAPI(drive.files(), 'get',
+      result = gapi.call(drive.files(), 'get',
                         fileId=fileId, fields='fileExtension,fileSize,mimeType,title', supportsAllDrives=True)
       fileExtension = result.get('fileExtension')
       mimeType = result['mimeType']
@@ -5282,7 +5024,7 @@ def downloadDriveFile(users):
             if revisionId:
               request.uri = '{0}&revision={1}'.format(request.uri, revisionId)
           else:
-            spreadsheet = callGAPI(sheet.spreadsheets(), 'get',
+            spreadsheet = gapi.call(sheet.spreadsheets(), 'get',
                                    spreadsheetId=fileId, fields='spreadsheetUrl,sheets(properties(sheetId,title))')
             for sheet in spreadsheet['sheets']:
               if sheet['properties']['title'].lower() == csvSheetTitleLower:
@@ -5290,7 +5032,7 @@ def downloadDriveFile(users):
                                                                         fileId, sheet['properties']['sheetId'])
                 break
             else:
-              stderrErrorMsg('Google Doc: %s, Sheet: %s, does not exist' % (result['title'], csvSheetTitle))
+              display.print_error('Google Doc: %s, Sheet: %s, does not exist' % (result['title'], csvSheetTitle))
               csvSheetNotFound = True
               continue
         else:
@@ -5315,23 +5057,23 @@ def downloadDriveFile(users):
           fileDownloaded = True
           break
         except (IOError, httplib2.HttpLib2Error) as e:
-          stderrErrorMsg(str(e))
+          display.print_error(str(e))
           GM_Globals[GM_SYSEXITRC] = 6
           fileDownloadFailed = True
           break
         except googleapiclient.http.HttpError as e:
           mg = HTTP_ERROR_PATTERN.match(str(e))
           if mg:
-            stderrErrorMsg(mg.group(1))
+            display.print_error(mg.group(1))
           else:
-            stderrErrorMsg(str(e))
+            display.print_error(str(e))
           fileDownloadFailed = True
           break
         if fh and not targetStdout:
           closeFile(fh)
           os.remove(filename)
       if not fileDownloaded and not fileDownloadFailed and not csvSheetNotFound:
-        stderrErrorMsg('Format ({0}) not available'.format(','.join(exportFormatChoices)))
+        display.print_error('Format ({0}) not available'.format(','.join(exportFormatChoices)))
         GM_Globals[GM_SYSEXITRC] = 51
 
 def showDriveFileInfo(users):
@@ -5351,7 +5093,7 @@ def showDriveFileInfo(users):
       labelsList.append(DRIVEFILE_LABEL_CHOICES_MAP[myarg])
       i += 1
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam <users> show fileinfo"' % myarg)
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> show fileinfo"' % myarg)
   if fieldsList or labelsList:
     fieldsList.append('title')
     fields = ','.join(set(fieldsList))
@@ -5363,7 +5105,7 @@ def showDriveFileInfo(users):
     user, drive = buildDriveGAPIObject(user)
     if not drive:
       continue
-    feed = callGAPI(drive.files(), 'get', fileId=fileId, fields=fields, supportsAllDrives=True)
+    feed = gapi.call(drive.files(), 'get', fileId=fileId, fields=fields, supportsAllDrives=True)
     if feed:
       print_json(None, feed)
 
@@ -5373,7 +5115,7 @@ def showDriveFileRevisions(users):
     user, drive = buildDriveGAPIObject(user)
     if not drive:
       continue
-    feed = callGAPI(drive.revisions(), 'list', fileId=fileId)
+    feed = gapi.call(drive.revisions(), 'list', fileId=fileId)
     if feed:
       print_json(None, feed)
 
@@ -5390,7 +5132,7 @@ def transferSecCals(users):
       sendNotifications = getBoolean(sys.argv[i+1], myarg)
       i += 2
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam <users> transfer seccals"' % sys.argv[i])
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> transfer seccals"' % sys.argv[i])
   if remove_source_user:
     target_user, target_cal = buildCalendarGAPIObject(target_user)
     if not target_cal:
@@ -5404,10 +5146,10 @@ def transferSecCals(users):
     for calendar in calendars:
       calendarId = calendar['id']
       if calendarId.find('@group.calendar.google.com') != -1:
-        callGAPI(source_cal.acl(), 'insert', calendarId=calendarId,
+        gapi.call(source_cal.acl(), 'insert', calendarId=calendarId,
                  body={'role': 'owner', 'scope': {'type': 'user', 'value': target_user}}, sendNotifications=sendNotifications)
         if remove_source_user:
-          callGAPI(target_cal.acl(), 'insert', calendarId=calendarId,
+          gapi.call(target_cal.acl(), 'insert', calendarId=calendarId,
                    body={'role': 'none', 'scope': {'type': 'user', 'value': user}}, sendNotifications=sendNotifications)
 
 def transferDriveFiles(users):
@@ -5420,11 +5162,11 @@ def transferDriveFiles(users):
       remove_source_user = False
       i += 1
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam <users> transfer drive"' % sys.argv[i])
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> transfer drive"' % sys.argv[i])
   target_user, target_drive = buildDriveGAPIObject(target_user)
   if not target_drive:
     return
-  target_about = callGAPI(target_drive.about(), 'get', fields='quotaType,quotaBytesTotal,quotaBytesUsed')
+  target_about = gapi.call(target_drive.about(), 'get', fields='quotaType,quotaBytesTotal,quotaBytesUsed')
   if target_about['quotaType'] != 'UNLIMITED':
     target_drive_free = int(target_about['quotaBytesTotal']) - int(target_about['quotaBytesUsed'])
   else:
@@ -5434,11 +5176,11 @@ def transferDriveFiles(users):
     if not source_drive:
       continue
     counter = 0
-    source_about = callGAPI(source_drive.about(), 'get', fields='quotaBytesTotal,quotaBytesUsed,rootFolderId,permissionId')
+    source_about = gapi.call(source_drive.about(), 'get', fields='quotaBytesTotal,quotaBytesUsed,rootFolderId,permissionId')
     source_drive_size = int(source_about['quotaBytesUsed'])
     if target_drive_free is not None:
       if target_drive_free < source_drive_size:
-        systemErrorExit(4, MESSAGE_NO_TRANSFER_LACK_OF_DISK_SPACE.format(source_drive_size / 1024 / 1024, target_drive_free / 1024 / 1024))
+        controlflow.system_error_exit(4, MESSAGE_NO_TRANSFER_LACK_OF_DISK_SPACE.format(source_drive_size / 1024 / 1024, target_drive_free / 1024 / 1024))
       print('Source drive size: %smb  Target drive free: %smb' % (source_drive_size / 1024 / 1024, target_drive_free / 1024 / 1024))
       target_drive_free = target_drive_free - source_drive_size # prep target_drive_free for next user
     else:
@@ -5465,7 +5207,7 @@ def transferDriveFiles(users):
         target_top_folder = target_folder['id']
         got_top_folder = True
     if not got_top_folder:
-      create_folder = callGAPI(target_drive.files(), 'insert', body={'title': '%s old files' % user, 'mimeType': 'application/vnd.google-apps.folder'}, fields='id')
+      create_folder = gapi.call(target_drive.files(), 'insert', body={'title': '%s old files' % user, 'mimeType': 'application/vnd.google-apps.folder'}, fields='id')
       target_top_folder = create_folder['id']
     transferred_files = []
     while True: # we loop thru, skipping files until all of their parents are done
@@ -5490,7 +5232,7 @@ def transferDriveFiles(users):
         counter += 1
         print('Changing owner for file %s (%s/%s)' % (drive_file['id'], counter, total_count))
         body = {'role': 'owner', 'type': 'user', 'value': target_user}
-        callGAPI(source_drive.permissions(), 'insert', soft_errors=True, fileId=file_id, sendNotificationEmails=False, body=body)
+        gapi.call(source_drive.permissions(), 'insert', soft_errors=True, fileId=file_id, sendNotificationEmails=False, body=body)
         target_parents = []
         for parent in source_parents:
           try:
@@ -5502,9 +5244,9 @@ def transferDriveFiles(users):
             pass
         if not target_parents:
           target_parents.append({'id': target_top_folder})
-        callGAPI(target_drive.files(), 'patch', soft_errors=True, retry_reasons=['notFound'], fileId=file_id, body={'parents': target_parents})
+        gapi.call(target_drive.files(), 'patch', soft_errors=True, retry_reasons=['notFound'], fileId=file_id, body={'parents': target_parents})
         if remove_source_user:
-          callGAPI(target_drive.permissions(), 'delete', soft_errors=True, fileId=file_id, permissionId=source_permissionid)
+          gapi.call(target_drive.permissions(), 'delete', soft_errors=True, fileId=file_id, permissionId=source_permissionid)
       if not skipped_files:
         break
 
@@ -5556,7 +5298,7 @@ def sendOrDropEmail(users, method='send'):
     elif method == 'import' and myarg == 'processforcalendar':
       kwargs['processForCalendar'] = True
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam <users> %semail"' % (sys.argv[i], method))
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> %semail"' % (sys.argv[i], method))
   for user in users:
     send_email(subject, body, recipient, sender, user, method, labels, msgHeaders, kwargs)
 
@@ -5575,16 +5317,16 @@ def doImap(users):
         body['expungeBehavior'] = EMAILSETTINGS_IMAP_EXPUNGE_BEHAVIOR_CHOICES_MAP[opt]
         i += 2
       else:
-        systemErrorExit(2, 'value for "gam <users> imap expungebehavior" must be one of %s; got %s' % (', '.join(EMAILSETTINGS_IMAP_EXPUNGE_BEHAVIOR_CHOICES_MAP), opt))
+        controlflow.system_error_exit(2, 'value for "gam <users> imap expungebehavior" must be one of %s; got %s' % (', '.join(EMAILSETTINGS_IMAP_EXPUNGE_BEHAVIOR_CHOICES_MAP), opt))
     elif myarg == 'maxfoldersize':
       opt = sys.argv[i+1].lower()
       if opt in EMAILSETTINGS_IMAP_MAX_FOLDER_SIZE_CHOICES:
         body['maxFolderSize'] = int(opt)
         i += 2
       else:
-        systemErrorExit(2, 'value for "gam <users> imap maxfoldersize" must be one of %s; got %s' % ('|'.join(EMAILSETTINGS_IMAP_MAX_FOLDER_SIZE_CHOICES), opt))
+        controlflow.system_error_exit(2, 'value for "gam <users> imap maxfoldersize" must be one of %s; got %s' % ('|'.join(EMAILSETTINGS_IMAP_MAX_FOLDER_SIZE_CHOICES), opt))
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam <users> imap"' % myarg)
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> imap"' % myarg)
   i = 0
   count = len(users)
   for user in users:
@@ -5593,7 +5335,7 @@ def doImap(users):
     if not gmail:
       continue
     print("Setting IMAP Access to %s for %s (%s/%s)" % (str(enable), user, i, count))
-    callGAPI(gmail.users().settings(), 'updateImap',
+    gapi.call(gmail.users().settings(), 'updateImap',
              soft_errors=True,
              userId='me', body=body)
 
@@ -5607,7 +5349,7 @@ def doLanguage(users):
     if not gmail:
       continue
     print('Setting language to %s for %s (%s/%s)' % (displayLanguage, user, i, count))
-    result = callGAPI(gmail.users().settings(), 'updateLanguage', userId='me', body={'displayLanguage': displayLanguage})
+    result = gapi.call(gmail.users().settings(), 'updateLanguage', userId='me', body={'displayLanguage': displayLanguage})
     print('Language is set to %s for %s' % (result['displayLanguage'], user))
 
 def getLanguage(users):
@@ -5618,7 +5360,7 @@ def getLanguage(users):
     user, gmail = buildGmailGAPIObject(user)
     if not gmail:
       continue
-    result = callGAPI(gmail.users().settings(), 'getLanguage',
+    result = gapi.call(gmail.users().settings(), 'getLanguage',
                       soft_errors=True,
                       userId='me')
     if result:
@@ -5632,7 +5374,7 @@ def getImap(users):
     user, gmail = buildGmailGAPIObject(user)
     if not gmail:
       continue
-    result = callGAPI(gmail.users().settings(), 'getImap',
+    result = gapi.call(gmail.users().settings(), 'getImap',
                       soft_errors=True,
                       userId='me')
     if result:
@@ -5664,20 +5406,20 @@ def doLicense(users, operation):
   for user in users:
     if operation == 'delete':
       print('Removing license %s from user %s' % (_formatSKUIdDisplayName(skuId), user))
-      callGAPI(lic.licenseAssignments(), operation, soft_errors=True, productId=productId, skuId=skuId, userId=user)
+      gapi.call(lic.licenseAssignments(), operation, soft_errors=True, productId=productId, skuId=skuId, userId=user)
     elif operation == 'insert':
       print('Adding license %s to user %s' % (_formatSKUIdDisplayName(skuId), user))
-      callGAPI(lic.licenseAssignments(), operation, soft_errors=True, productId=productId, skuId=skuId, body={'userId': user})
+      gapi.call(lic.licenseAssignments(), operation, soft_errors=True, productId=productId, skuId=skuId, body={'userId': user})
     elif operation == 'patch':
       try:
         old_sku = sys.argv[i]
         if old_sku.lower() == 'from':
           old_sku = sys.argv[i+1]
       except KeyError:
-        systemErrorExit(2, 'You need to specify the user\'s old SKU as the last argument')
+        controlflow.system_error_exit(2, 'You need to specify the user\'s old SKU as the last argument')
       _, old_sku = getProductAndSKU(old_sku)
       print('Changing user %s from license %s to %s' % (user, _formatSKUIdDisplayName(old_sku), _formatSKUIdDisplayName(skuId)))
-      callGAPI(lic.licenseAssignments(), operation, soft_errors=True, productId=productId, skuId=old_sku, userId=user, body={'skuId': skuId})
+      gapi.call(lic.licenseAssignments(), operation, soft_errors=True, productId=productId, skuId=old_sku, userId=user, body={'skuId': skuId})
 
 def doPop(users):
   enable = getBoolean(sys.argv[4], 'gam <users> pop')
@@ -5691,18 +5433,18 @@ def doPop(users):
         body['accessWindow'] = EMAILSETTINGS_POP_ENABLE_FOR_CHOICES_MAP[opt]
         i += 2
       else:
-        systemErrorExit(2, 'value for "gam <users> pop for" must be one of %s; got %s' % (', '.join(EMAILSETTINGS_POP_ENABLE_FOR_CHOICES_MAP), opt))
+        controlflow.system_error_exit(2, 'value for "gam <users> pop for" must be one of %s; got %s' % (', '.join(EMAILSETTINGS_POP_ENABLE_FOR_CHOICES_MAP), opt))
     elif myarg == 'action':
       opt = sys.argv[i+1].lower()
       if opt in EMAILSETTINGS_FORWARD_POP_ACTION_CHOICES_MAP:
         body['disposition'] = EMAILSETTINGS_FORWARD_POP_ACTION_CHOICES_MAP[opt]
         i += 2
       else:
-        systemErrorExit(2, 'value for "gam <users> pop action" must be one of %s; got %s' % (', '.join(EMAILSETTINGS_FORWARD_POP_ACTION_CHOICES_MAP), opt))
+        controlflow.system_error_exit(2, 'value for "gam <users> pop action" must be one of %s; got %s' % (', '.join(EMAILSETTINGS_FORWARD_POP_ACTION_CHOICES_MAP), opt))
     elif myarg == 'confirm':
       i += 1
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam <users> pop"' % myarg)
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> pop"' % myarg)
   i = 0
   count = len(users)
   for user in users:
@@ -5711,7 +5453,7 @@ def doPop(users):
     if not gmail:
       continue
     print("Setting POP Access to %s for %s (%s/%s)" % (str(enable), user, i, count))
-    callGAPI(gmail.users().settings(), 'updatePop',
+    gapi.call(gmail.users().settings(), 'updatePop',
              soft_errors=True,
              userId='me', body=body)
 
@@ -5723,7 +5465,7 @@ def getPop(users):
     user, gmail = buildGmailGAPIObject(user)
     if not gmail:
       continue
-    result = callGAPI(gmail.users().settings(), 'getPop',
+    result = gapi.call(gmail.users().settings(), 'getPop',
                       soft_errors=True,
                       userId='me')
     if result:
@@ -5806,7 +5548,7 @@ def getSendAsAttributes(i, myarg, body, tagReplacements, command):
     body['treatAsAlias'] = getBoolean(sys.argv[i+1], myarg)
     i += 2
   else:
-    systemErrorExit(2, '%s is not a valid argument for "gam <users> %s"' % (sys.argv[i], command))
+    controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> %s"' % (sys.argv[i], command))
   return i
 
 SMTPMSA_PORTS = ['25', '465', '587']
@@ -5846,7 +5588,7 @@ def addUpdateSendAs(users, i, addCmd):
       elif myarg == 'smtpmsa.port':
         value = sys.argv[i+1].lower()
         if value not in SMTPMSA_PORTS:
-          systemErrorExit(2, '{0} must be {1}; got {2}'.format(myarg, ', '.join(SMTPMSA_PORTS), value))
+          controlflow.system_error_exit(2, '{0} must be {1}; got {2}'.format(myarg, ', '.join(SMTPMSA_PORTS), value))
         smtpMsa['port'] = int(value)
         i += 2
       elif myarg == 'smtpmsa.username':
@@ -5858,11 +5600,11 @@ def addUpdateSendAs(users, i, addCmd):
       elif myarg == 'smtpmsa.securitymode':
         value = sys.argv[i+1].lower()
         if value not in SMTPMSA_SECURITY_MODES:
-          systemErrorExit(2, '{0} must be {1}; got {2}'.format(myarg, ', '.join(SMTPMSA_SECURITY_MODES), value))
+          controlflow.system_error_exit(2, '{0} must be {1}; got {2}'.format(myarg, ', '.join(SMTPMSA_SECURITY_MODES), value))
         smtpMsa['securityMode'] = value
         i += 2
       else:
-        systemErrorExit(2, '%s is not a valid argument for "gam <users> %s"' % (sys.argv[i], command))
+        controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> %s"' % (sys.argv[i], command))
     else:
       i = getSendAsAttributes(i, myarg, body, tagReplacements, command)
   if signature is not None:
@@ -5870,7 +5612,7 @@ def addUpdateSendAs(users, i, addCmd):
   if smtpMsa:
     for field in SMTPMSA_REQUIRED_FIELDS:
       if field not in smtpMsa:
-        systemErrorExit(2, 'smtpmsa.{0} is required.'.format(field))
+        controlflow.system_error_exit(2, 'smtpmsa.{0} is required.'.format(field))
     body['smtpMsa'] = smtpMsa
   kwargs = {'body': body}
   if not addCmd:
@@ -5883,7 +5625,7 @@ def addUpdateSendAs(users, i, addCmd):
     if not gmail:
       continue
     print("Allowing %s to send as %s (%s/%s)" % (user, emailAddress, i, count))
-    callGAPI(gmail.users().settings().sendAs(), ['patch', 'create'][addCmd],
+    gapi.call(gmail.users().settings().sendAs(), ['patch', 'create'][addCmd],
              soft_errors=True,
              userId='me', **kwargs)
 
@@ -5897,7 +5639,7 @@ def deleteSendAs(users):
     if not gmail:
       continue
     print("Disallowing %s to send as %s (%s/%s)" % (user, emailAddress, i, count))
-    callGAPI(gmail.users().settings().sendAs(), 'delete',
+    gapi.call(gmail.users().settings().sendAs(), 'delete',
              soft_errors=True,
              userId='me', sendAsEmail=emailAddress)
 
@@ -5918,7 +5660,7 @@ def updateSmime(users):
       make_default = True
       i += 1
     else:
-      systemErrorExit(3, '%s is not a valid argument to "gam <users> update smime"' % myarg)
+      controlflow.system_error_exit(3, '%s is not a valid argument to "gam <users> update smime"' % myarg)
   if not make_default:
     print('Nothing to update for smime.')
     sys.exit(0)
@@ -5928,17 +5670,17 @@ def updateSmime(users):
       continue
     sendAsEmail = sendAsEmailBase if sendAsEmailBase else user
     if not smimeIdBase:
-      result = callGAPI(gmail.users().settings().sendAs().smimeInfo(), 'list', userId='me', sendAsEmail=sendAsEmail, fields='smimeInfo(id)')
+      result = gapi.call(gmail.users().settings().sendAs().smimeInfo(), 'list', userId='me', sendAsEmail=sendAsEmail, fields='smimeInfo(id)')
       smimes = result.get('smimeInfo', [])
       if not smimes:
-        systemErrorExit(3, '%s has no S/MIME certificates for sendas address %s' % (user, sendAsEmail))
+        controlflow.system_error_exit(3, '%s has no S/MIME certificates for sendas address %s' % (user, sendAsEmail))
       if len(smimes) > 1:
-        systemErrorExit(3, '%s has more than one S/MIME certificate. Please specify a cert to update:\n %s' % (user, '\n '.join([smime['id'] for smime in smimes])))
+        controlflow.system_error_exit(3, '%s has more than one S/MIME certificate. Please specify a cert to update:\n %s' % (user, '\n '.join([smime['id'] for smime in smimes])))
       smimeId = smimes[0]['id']
     else:
       smimeId = smimeIdBase
     print('Setting smime id %s as default for user %s and sendas %s' % (smimeId, user, sendAsEmail))
-    callGAPI(gmail.users().settings().sendAs().smimeInfo(), 'setDefault', userId='me', sendAsEmail=sendAsEmail, id=smimeId)
+    gapi.call(gmail.users().settings().sendAs().smimeInfo(), 'setDefault', userId='me', sendAsEmail=sendAsEmail, id=smimeId)
 
 def deleteSmime(users):
   smimeIdBase = None
@@ -5953,24 +5695,24 @@ def deleteSmime(users):
       sendAsEmailBase = sys.argv[i+1]
       i += 2
     else:
-      systemErrorExit(3, '%s is not a valid argument to "gam <users> delete smime"' % myarg)
+      controlflow.system_error_exit(3, '%s is not a valid argument to "gam <users> delete smime"' % myarg)
   for user in users:
     user, gmail = buildGmailGAPIObject(user)
     if not gmail:
       continue
     sendAsEmail = sendAsEmailBase if sendAsEmailBase else user
     if not smimeIdBase:
-      result = callGAPI(gmail.users().settings().sendAs().smimeInfo(), 'list', userId='me', sendAsEmail=sendAsEmail, fields='smimeInfo(id)')
+      result = gapi.call(gmail.users().settings().sendAs().smimeInfo(), 'list', userId='me', sendAsEmail=sendAsEmail, fields='smimeInfo(id)')
       smimes = result.get('smimeInfo', [])
       if not smimes:
-        systemErrorExit(3, '%s has no S/MIME certificates for sendas address %s' % (user, sendAsEmail))
+        controlflow.system_error_exit(3, '%s has no S/MIME certificates for sendas address %s' % (user, sendAsEmail))
       if len(smimes) > 1:
-        systemErrorExit(3, '%s has more than one S/MIME certificate. Please specify a cert to delete:\n %s' % (user, '\n '.join([smime['id'] for smime in smimes])))
+        controlflow.system_error_exit(3, '%s has more than one S/MIME certificate. Please specify a cert to delete:\n %s' % (user, '\n '.join([smime['id'] for smime in smimes])))
       smimeId = smimes[0]['id']
     else:
       smimeId = smimeIdBase
     print('Deleting smime id %s for user %s and sendas %s' % (smimeId, user, sendAsEmail))
-    callGAPI(gmail.users().settings().sendAs().smimeInfo(), 'delete', userId='me', sendAsEmail=sendAsEmail, id=smimeId)
+    gapi.call(gmail.users().settings().sendAs().smimeInfo(), 'delete', userId='me', sendAsEmail=sendAsEmail, id=smimeId)
 
 def printShowSmime(users, csvFormat):
   if csvFormat:
@@ -5988,7 +5730,7 @@ def printShowSmime(users, csvFormat):
       primaryonly = True
       i += 1
     else:
-      systemErrorExit(3, '%s is not a valid argument for "gam <users> %s smime"' % (myarg, ['show', 'print'][csvFormat]))
+      controlflow.system_error_exit(3, '%s is not a valid argument for "gam <users> %s smime"' % (myarg, ['show', 'print'][csvFormat]))
   i = 0
   for user in users:
     i += 1
@@ -5998,12 +5740,12 @@ def printShowSmime(users, csvFormat):
     if primaryonly:
       sendAsEmails = [user]
     else:
-      result = callGAPI(gmail.users().settings().sendAs(), 'list', userId='me', fields='sendAs(sendAsEmail)')
+      result = gapi.call(gmail.users().settings().sendAs(), 'list', userId='me', fields='sendAs(sendAsEmail)')
       sendAsEmails = []
       for sendAs in result['sendAs']:
         sendAsEmails.append(sendAs['sendAsEmail'])
     for sendAsEmail in sendAsEmails:
-      result = callGAPI(gmail.users().settings().sendAs().smimeInfo(), 'list', sendAsEmail=sendAsEmail, userId='me')
+      result = gapi.call(gmail.users().settings().sendAs().smimeInfo(), 'list', sendAsEmail=sendAsEmail, userId='me')
       smimes = result.get('smimeInfo', [])
       for j, _ in enumerate(smimes):
         smimes[j]['expiration'] = utils.formatTimestampYMDHMS(smimes[j]['expiration'])
@@ -6031,7 +5773,7 @@ def printShowSendAs(users, csvFormat):
       formatSig = True
       i += 1
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam <users> %s sendas"' %  (myarg, ['show', 'print'][csvFormat]))
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> %s sendas"' %  (myarg, ['show', 'print'][csvFormat]))
   i = 0
   count = len(users)
   for user in users:
@@ -6039,7 +5781,7 @@ def printShowSendAs(users, csvFormat):
     user, gmail = buildGmailGAPIObject(user)
     if not gmail:
       continue
-    result = callGAPI(gmail.users().settings().sendAs(), 'list',
+    result = gapi.call(gmail.users().settings().sendAs(), 'list',
                       soft_errors=True,
                       userId='me')
     jcount = len(result.get('sendAs', [])) if (result) else 0
@@ -6082,7 +5824,7 @@ def infoSendAs(users):
       formatSig = True
       i += 1
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam <users> info sendas"' % sys.argv[i])
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> info sendas"' % sys.argv[i])
   i = 0
   count = len(users)
   for user in users:
@@ -6091,7 +5833,7 @@ def infoSendAs(users):
     if not gmail:
       continue
     print('User: {0}, Show SendAs Address:{1}'.format(user, currentCount(i, count)))
-    result = callGAPI(gmail.users().settings().sendAs(), 'get',
+    result = gapi.call(gmail.users().settings().sendAs(), 'get',
                       soft_errors=True,
                       userId='me', sendAsEmail=emailAddress)
     if result:
@@ -6119,9 +5861,9 @@ def addSmime(users):
       sendAsEmailBase = sys.argv[i+1]
       i += 2
     else:
-      systemErrorExit(3, '%s is not a valid argument for "gam <users> add smime"' % myarg)
+      controlflow.system_error_exit(3, '%s is not a valid argument for "gam <users> add smime"' % myarg)
   if 'pkcs12' not in body:
-    systemErrorExit(3, 'you must specify a file to upload')
+    controlflow.system_error_exit(3, 'you must specify a file to upload')
   i = 0
   for user in users:
     i += 1
@@ -6129,9 +5871,9 @@ def addSmime(users):
     if not gmail:
       continue
     sendAsEmail = sendAsEmailBase if sendAsEmailBase else user
-    result = callGAPI(gmail.users().settings().sendAs().smimeInfo(), 'insert', userId='me', sendAsEmail=sendAsEmail, body=body)
+    result = gapi.call(gmail.users().settings().sendAs().smimeInfo(), 'insert', userId='me', sendAsEmail=sendAsEmail, body=body)
     if setDefault:
-      callGAPI(gmail.users().settings().sendAs().smimeInfo(), 'setDefault', userId='me', sendAsEmail=sendAsEmail, id=result['id'])
+      gapi.call(gmail.users().settings().sendAs().smimeInfo(), 'setDefault', userId='me', sendAsEmail=sendAsEmail, id=result['id'])
     print('Added S/MIME certificate for user %s sendas %s issued by %s' % (user, sendAsEmail, result['issuerCn']))
 
 def getLabelAttributes(i, myarg, body):
@@ -6144,12 +5886,12 @@ def getLabelAttributes(i, myarg, body):
     elif value == 'showifunread':
       body['labelListVisibility'] = 'labelShowIfUnread'
     else:
-      systemErrorExit(2, 'label_list_visibility must be one of hide, show, show_if_unread; got %s' % value)
+      controlflow.system_error_exit(2, 'label_list_visibility must be one of hide, show, show_if_unread; got %s' % value)
     i += 2
   elif myarg == 'messagelistvisibility':
     value = sys.argv[i+1].lower().replace('_', '')
     if value not in ['hide', 'show']:
-      systemErrorExit(2, 'message_list_visibility must be show or hide; got %s' % value)
+      controlflow.system_error_exit(2, 'message_list_visibility must be show or hide; got %s' % value)
     body['messageListVisibility'] = value
     i += 2
   elif myarg == 'backgroundcolor':
@@ -6161,7 +5903,7 @@ def getLabelAttributes(i, myarg, body):
     body['color']['textColor'] = getLabelColor(sys.argv[i+1])
     i += 2
   else:
-    systemErrorExit(2, '%s is not a valid argument for this command.' % myarg)
+    controlflow.system_error_exit(2, '%s is not a valid argument for this command.' % myarg)
   return i
 
 def checkLabelColor(body):
@@ -6170,8 +5912,8 @@ def checkLabelColor(body):
   if 'backgroundColor' in body['color']:
     if 'textColor' in body['color']:
       return
-    systemErrorExit(2, 'textcolor <LabelColorHex> is required.')
-  systemErrorExit(2, 'backgroundcolor <LabelColorHex> is required.')
+    controlflow.system_error_exit(2, 'textcolor <LabelColorHex> is required.')
+  controlflow.system_error_exit(2, 'backgroundcolor <LabelColorHex> is required.')
 
 def doLabel(users, i):
   label = sys.argv[i]
@@ -6189,7 +5931,7 @@ def doLabel(users, i):
     if not gmail:
       continue
     print("Creating label %s for %s (%s/%s)" % (label, user, i, count))
-    callGAPI(gmail.users().labels(), 'create', soft_errors=True, userId=user, body=body)
+    gapi.call(gmail.users().labels(), 'create', soft_errors=True, userId=user, body=body)
 
 PROCESS_MESSAGE_FUNCTION_TO_ACTION_MAP = {'delete': 'deleted', 'trash': 'trashed', 'untrash': 'untrashed', 'modify': 'modified'}
 
@@ -6208,7 +5950,7 @@ def labelsToLabelIds(gmail, labels):
   for label in labels:
     if label not in allLabels:
       # first refresh labels in user mailbox
-      label_results = callGAPI(gmail.users().labels(), 'list',
+      label_results = gapi.call(gmail.users().labels(), 'list',
                                userId='me', fields='labels(id,name,type)')
       for a_label in label_results['labels']:
         if a_label['type'] == 'system':
@@ -6217,7 +5959,7 @@ def labelsToLabelIds(gmail, labels):
           allLabels[a_label['name']] = a_label['id']
     if label not in allLabels:
       # if still not there, create it
-      label_results = callGAPI(gmail.users().labels(), 'create',
+      label_results = gapi.call(gmail.users().labels(), 'create',
                                body={'labelListVisibility': 'labelShow',
                                      'messageListVisibility': 'show', 'name': label},
                                userId='me', fields='id')
@@ -6231,7 +5973,7 @@ def labelsToLabelIds(gmail, labels):
       parent_label = label[:label.rfind('/')]
       while True:
         if not parent_label in allLabels:
-          label_result = callGAPI(gmail.users().labels(), 'create',
+          label_result = gapi.call(gmail.users().labels(), 'create',
                                   userId='me', body={'name': parent_label})
           allLabels[parent_label] = label_result['id']
         if parent_label.find('/') == -1:
@@ -6265,9 +6007,9 @@ def doProcessMessagesOrThreads(users, function, unit='messages'):
       body['removeLabelIds'].append(sys.argv[i+1])
       i += 2
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam <users> %s %s"' % (sys.argv[i], function, unit))
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> %s %s"' % (sys.argv[i], function, unit))
   if not query:
-    systemErrorExit(2, 'No query specified. You must specify some query!')
+    controlflow.system_error_exit(2, 'No query specified. You must specify some query!')
   action = PROCESS_MESSAGE_FUNCTION_TO_ACTION_MAP[function]
   for user in users:
     user, gmail = buildGmailGAPIObject(user)
@@ -6301,7 +6043,7 @@ def doProcessMessagesOrThreads(users, function, unit='messages'):
       for id_batch in id_batches:
         kwargs['body']['ids'] = id_batch
         print('%s %s messages' % (function, len(id_batch)))
-        callGAPI(unitmethod(), batchFunction,
+        gapi.call(unitmethod(), batchFunction,
                  userId='me', **kwargs)
         processed_messages += len(id_batch)
         print('%s %s of %s messages' % (function, processed_messages, result_count))
@@ -6311,7 +6053,7 @@ def doProcessMessagesOrThreads(users, function, unit='messages'):
     for a_unit in listResult:
       i += 1
       print(' %s %s %s for user %s (%s/%s)' % (function, unit, a_unit['id'], user, i, result_count))
-      callGAPI(unitmethod(), function,
+      gapi.call(unitmethod(), function,
                id=a_unit['id'], userId='me', **kwargs)
 
 def doDeleteLabel(users):
@@ -6322,7 +6064,7 @@ def doDeleteLabel(users):
     if not gmail:
       continue
     print('Getting all labels for %s...' % user)
-    labels = callGAPI(gmail.users().labels(), 'list', userId=user, fields='labels(id,name,type)')
+    labels = gapi.call(gmail.users().labels(), 'list', userId=user, fields='labels(id,name,type)')
     del_labels = []
     if label == '--ALL_LABELS--':
       for del_label in sorted(labels['labels'], key=lambda k: k['name'], reverse=True):
@@ -6374,12 +6116,12 @@ def showLabels(users):
       showCounts = True
       i += 1
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam <users> show labels"' % sys.argv[i])
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> show labels"' % sys.argv[i])
   for user in users:
     user, gmail = buildGmailGAPIObject(user)
     if not gmail:
       continue
-    labels = callGAPI(gmail.users().labels(), 'list', userId=user, soft_errors=True)
+    labels = gapi.call(gmail.users().labels(), 'list', userId=user, soft_errors=True)
     if labels:
       for label in labels['labels']:
         if onlyUser and (label['type'] == 'system'):
@@ -6390,7 +6132,7 @@ def showLabels(users):
             continue
           print(' %s: %s' % (a_key, label[a_key]))
         if showCounts:
-          counts = callGAPI(gmail.users().labels(), 'get',
+          counts = gapi.call(gmail.users().labels(), 'get',
                             userId=user, id=label['id'],
                             fields='messagesTotal,messagesUnread,threadsTotal,threadsUnread')
           for a_key in counts:
@@ -6406,7 +6148,7 @@ def showGmailProfile(users):
       todrive = True
       i += 1
     else:
-      systemErrorExit(2, '%s is not a valid argument for gam <users> show gmailprofile' % sys.argv[i])
+      controlflow.system_error_exit(2, '%s is not a valid argument for gam <users> show gmailprofile' % sys.argv[i])
   csvRows = []
   titles = ['emailAddress']
   i = 0
@@ -6418,15 +6160,15 @@ def showGmailProfile(users):
       continue
     sys.stderr.write('Getting Gmail profile for %s\n' % user)
     try:
-      results = callGAPI(gmail.users(), 'getProfile',
-                         throw_reasons=GAPI_GMAIL_THROW_REASONS,
+      results = gapi.call(gmail.users(), 'getProfile',
+                         throw_reasons=gapi.errors.ErrorReason.GMAIL_THROW_REASONS,
                          userId='me')
       if results:
         for item in results:
           if item not in titles:
             titles.append(item)
         csvRows.append(results)
-    except GAPI_serviceNotAvailable:
+    except gapi.errors.gapi.errors.GapiServiceNotAvailableError:
       entityServiceNotApplicableWarning('User', user, i, count)
   sortCSVTitles(['emailAddress',], titles)
   writeCSVfile(csvRows, titles, list_type='Gmail Profiles', todrive=todrive)
@@ -6448,10 +6190,10 @@ def updateLabels(users):
     user, gmail = buildGmailGAPIObject(user)
     if not gmail:
       continue
-    labels = callGAPI(gmail.users().labels(), 'list', userId=user, fields='labels(id,name)')
+    labels = gapi.call(gmail.users().labels(), 'list', userId=user, fields='labels(id,name)')
     for label in labels['labels']:
       if label['name'].lower() == label_name_lower:
-        callGAPI(gmail.users().labels(), 'patch', soft_errors=True,
+        gapi.call(gmail.users().labels(), 'patch', soft_errors=True,
                  userId=user, id=label['id'], body=body)
         break
     else:
@@ -6479,13 +6221,13 @@ def renameLabels(users):
       merge = True
       i += 1
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam <users> rename label"' % sys.argv[i])
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> rename label"' % sys.argv[i])
   pattern = re.compile(search, re.IGNORECASE)
   for user in users:
     user, gmail = buildGmailGAPIObject(user)
     if not gmail:
       continue
-    labels = callGAPI(gmail.users().labels(), 'list', userId=user)
+    labels = gapi.call(gmail.users().labels(), 'list', userId=user)
     for label in labels['labels']:
       if label['type'] == 'system':
         continue
@@ -6494,11 +6236,11 @@ def renameLabels(users):
         try:
           new_label_name = replace % match_result.groups()
         except TypeError:
-          systemErrorExit(2, 'The number of subfields ({0}) in search "{1}" does not match the number of subfields ({2}) in replace "{3}"'.format(len(match_result.groups()), search, replace.count('%s'), replace))
+          controlflow.system_error_exit(2, 'The number of subfields ({0}) in search "{1}" does not match the number of subfields ({2}) in replace "{3}"'.format(len(match_result.groups()), search, replace.count('%s'), replace))
         print(' Renaming "%s" to "%s"' % (label['name'], new_label_name))
         try:
-          callGAPI(gmail.users().labels(), 'patch', soft_errors=True, throw_reasons=[GAPI_ABORTED], id=label['id'], userId=user, body={'name': new_label_name})
-        except GAPI_aborted:
+          gapi.call(gmail.users().labels(), 'patch', soft_errors=True, throw_reasons=[gapi.errors.ErrorReason.ABORTED], id=label['id'], userId=user, body={'name': new_label_name})
+        except gapi.errors.gapi.errors.GapiAbortedError:
           if merge:
             print('  Merging %s label to existing %s label' % (label['name'], new_label_name))
             messages_to_relabel = callGAPIpages(gmail.users().messages(), 'list', 'messages',
@@ -6512,24 +6254,24 @@ def renameLabels(users):
               j = 1
               for message_to_relabel in messages_to_relabel:
                 print('    relabeling message %s (%s/%s)' % (message_to_relabel['id'], j, len(messages_to_relabel)))
-                callGAPI(gmail.users().messages(), 'modify', userId=user, id=message_to_relabel['id'], body=body)
+                gapi.call(gmail.users().messages(), 'modify', userId=user, id=message_to_relabel['id'], body=body)
                 j += 1
             else:
               print('   no messages with %s label' % label['name'])
             print('   Deleting label %s' % label['name'])
-            callGAPI(gmail.users().labels(), 'delete', id=label['id'], userId=user)
+            gapi.call(gmail.users().labels(), 'delete', id=label['id'], userId=user)
           else:
             print('  Error: looks like %s already exists, not renaming. Use the "merge" argument to merge the labels' % new_label_name)
 
 def _getUserGmailLabels(gmail, user, i, count, **kwargs):
   try:
-    labels = callGAPI(gmail.users().labels(), 'list',
-                      throw_reasons=GAPI_GMAIL_THROW_REASONS,
+    labels = gapi.call(gmail.users().labels(), 'list',
+                      throw_reasons=gapi.errors.ErrorReason.GMAIL_THROW_REASONS,
                       userId='me', **kwargs)
     if not labels:
       labels = {'labels': []}
     return labels
-  except GAPI_serviceNotAvailable:
+  except gapi.errors.GapiServiceNotAvailableError:
     entityServiceNotApplicableWarning('User', user, i, count)
     return None
 
@@ -6629,7 +6371,7 @@ def addFilter(users, i):
       elif myarg == 'size':
         body['criteria']['sizeComparison'] = sys.argv[i+1].lower()
         if body['criteria']['sizeComparison'] not in ['larger', 'smaller']:
-          systemErrorExit(2, 'size must be followed by larger or smaller; got %s' % sys.argv[i+1].lower())
+          controlflow.system_error_exit(2, 'size must be followed by larger or smaller; got %s' % sys.argv[i+1].lower())
         body['criteria'][myarg] = sys.argv[i+2]
         i += 3
     elif myarg in FILTER_ACTION_CHOICES:
@@ -6666,11 +6408,11 @@ def addFilter(users, i):
         body['action']['forward'] = sys.argv[i+1]
         i += 2
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam <users> filter"' % sys.argv[i])
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> filter"' % sys.argv[i])
   if 'criteria' not in body:
-    systemErrorExit(2, 'you must specify a crtieria <{0}> for "gam <users> filter"'.format('|'.join(FILTER_CRITERIA_CHOICES_MAP)))
+    controlflow.system_error_exit(2, 'you must specify a crtieria <{0}> for "gam <users> filter"'.format('|'.join(FILTER_CRITERIA_CHOICES_MAP)))
   if 'action' not in body:
-    systemErrorExit(2, 'you must specify an action <{0}> for "gam <users> filter"'.format('|'.join(FILTER_ACTION_CHOICES)))
+    controlflow.system_error_exit(2, 'you must specify an action <{0}> for "gam <users> filter"'.format('|'.join(FILTER_ACTION_CHOICES)))
   if removeLabelIds:
     body['action']['removeLabelIds'] = removeLabelIds
   i = 0
@@ -6690,7 +6432,7 @@ def addFilter(users, i):
         body['action']['addLabelIds'] = []
       addLabelId = _getLabelId(labels, addLabelName)
       if not addLabelId:
-        result = callGAPI(gmail.users().labels(), 'create',
+        result = gapi.call(gmail.users().labels(), 'create',
                           soft_errors=True,
                           userId='me', body={'name': addLabelName}, fields='id')
         if not result:
@@ -6698,7 +6440,7 @@ def addFilter(users, i):
         addLabelId = result['id']
       body['action']['addLabelIds'].append(addLabelId)
     print("Adding filter for %s (%s/%s)" % (user, i, count))
-    result = callGAPI(gmail.users().settings().filters(), 'create',
+    result = gapi.call(gmail.users().settings().filters(), 'create',
                       soft_errors=True,
                       userId='me', body=body)
     if result:
@@ -6714,7 +6456,7 @@ def deleteFilters(users):
     if not gmail:
       continue
     print("Deleting filter %s for %s (%s/%s)" % (filterId, user, i, count))
-    callGAPI(gmail.users().settings().filters(), 'delete',
+    gapi.call(gmail.users().settings().filters(), 'delete',
              soft_errors=True,
              userId='me', id=filterId)
 
@@ -6730,7 +6472,7 @@ def printShowFilters(users, csvFormat):
       todrive = True
       i += 1
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam <users> %s filter"' % (myarg, ['show', 'print'][csvFormat]))
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> %s filter"' % (myarg, ['show', 'print'][csvFormat]))
   i = 0
   count = len(users)
   for user in users:
@@ -6738,12 +6480,12 @@ def printShowFilters(users, csvFormat):
     user, gmail = buildGmailGAPIObject(user)
     if not gmail:
       continue
-    labels = callGAPI(gmail.users().labels(), 'list',
+    labels = gapi.call(gmail.users().labels(), 'list',
                       soft_errors=True,
                       userId='me', fields='labels(id,name)')
     if not labels:
       labels = {'labels': []}
-    result = callGAPI(gmail.users().settings().filters(), 'list',
+    result = gapi.call(gmail.users().settings().filters(), 'list',
                       soft_errors=True,
                       userId='me')
     jcount = len(result.get('filter', [])) if (result) else 0
@@ -6777,12 +6519,12 @@ def infoFilters(users):
     user, gmail = buildGmailGAPIObject(user)
     if not gmail:
       continue
-    labels = callGAPI(gmail.users().labels(), 'list',
+    labels = gapi.call(gmail.users().labels(), 'list',
                       soft_errors=True,
                       userId='me', fields='labels(id,name)')
     if not labels:
       labels = {'labels': []}
-    result = callGAPI(gmail.users().settings().filters(), 'get',
+    result = gapi.call(gmail.users().settings().filters(), 'get',
                       soft_errors=True,
                       userId='me', id=filterId)
     if result:
@@ -6804,9 +6546,9 @@ def doForward(users):
       body['emailAddress'] = sys.argv[i]
       i += 1
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam <users> forward"' % myarg)
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> forward"' % myarg)
   if enable and (not body.get('disposition') or not body.get('emailAddress')):
-    systemErrorExit(2, 'you must specify an action and a forwarding address for "gam <users> forward')
+    controlflow.system_error_exit(2, 'you must specify an action and a forwarding address for "gam <users> forward')
   i = 0
   count = len(users)
   for user in users:
@@ -6818,7 +6560,7 @@ def doForward(users):
       print("User: %s, Forward Enabled: %s, Forwarding Address: %s, Action: %s (%s/%s)" % (user, enable, body['emailAddress'], body['disposition'], i, count))
     else:
       print("User: %s, Forward Enabled: %s (%s/%s)" % (user, enable, i, count))
-    callGAPI(gmail.users().settings(), 'updateAutoForwarding',
+    gapi.call(gmail.users().settings(), 'updateAutoForwarding',
              soft_errors=True,
              userId='me', body=body)
 
@@ -6861,7 +6603,7 @@ def printShowForward(users, csvFormat):
       todrive = True
       i += 1
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam <users> %s forward"' % (myarg, ['show', 'print'][csvFormat]))
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> %s forward"' % (myarg, ['show', 'print'][csvFormat]))
   i = 0
   count = len(users)
   for user in users:
@@ -6869,7 +6611,7 @@ def printShowForward(users, csvFormat):
     user, gmail = buildGmailGAPIObject(user)
     if not gmail:
       continue
-    result = callGAPI(gmail.users().settings(), 'getAutoForwarding',
+    result = gapi.call(gmail.users().settings(), 'getAutoForwarding',
                       soft_errors=True,
                       userId='me')
     if result:
@@ -6891,7 +6633,7 @@ def addForwardingAddresses(users):
     if not gmail:
       continue
     print("Adding Forwarding Address %s for %s (%s/%s)" % (emailAddress, user, i, count))
-    callGAPI(gmail.users().settings().forwardingAddresses(), 'create',
+    gapi.call(gmail.users().settings().forwardingAddresses(), 'create',
              soft_errors=True,
              userId='me', body=body)
 
@@ -6905,7 +6647,7 @@ def deleteForwardingAddresses(users):
     if not gmail:
       continue
     print("Deleting Forwarding Address %s for %s (%s/%s)" % (emailAddress, user, i, count))
-    callGAPI(gmail.users().settings().forwardingAddresses(), 'delete',
+    gapi.call(gmail.users().settings().forwardingAddresses(), 'delete',
              soft_errors=True,
              userId='me', forwardingEmail=emailAddress)
 
@@ -6921,7 +6663,7 @@ def printShowForwardingAddresses(users, csvFormat):
       todrive = True
       i += 1
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam <users> %s forwardingaddresses"' % (myarg, ['show', 'print'][csvFormat]))
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> %s forwardingaddresses"' % (myarg, ['show', 'print'][csvFormat]))
   i = 0
   count = len(users)
   for user in users:
@@ -6929,7 +6671,7 @@ def printShowForwardingAddresses(users, csvFormat):
     user, gmail = buildGmailGAPIObject(user)
     if not gmail:
       continue
-    result = callGAPI(gmail.users().settings().forwardingAddresses(), 'list',
+    result = gapi.call(gmail.users().settings().forwardingAddresses(), 'list',
                       soft_errors=True,
                       userId='me')
     jcount = len(result.get('forwardingAddresses', [])) if (result) else 0
@@ -6959,7 +6701,7 @@ def infoForwardingAddresses(users):
     user, gmail = buildGmailGAPIObject(user)
     if not gmail:
       continue
-    forward = callGAPI(gmail.users().settings().forwardingAddresses(), 'get',
+    forward = gapi.call(gmail.users().settings().forwardingAddresses(), 'get',
                        soft_errors=True,
                        userId='me', forwardingEmail=emailAddress)
     if forward:
@@ -6993,7 +6735,7 @@ def doSignature(users):
     if not gmail:
       continue
     print('Setting Signature for {0} ({1}/{2})'.format(user, i, count))
-    callGAPI(gmail.users().settings().sendAs(), 'patch',
+    gapi.call(gmail.users().settings().sendAs(), 'patch',
              soft_errors=True,
              userId='me', body=body, sendAsEmail=user)
 
@@ -7006,7 +6748,7 @@ def getSignature(users):
       formatSig = True
       i += 1
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam <users> show signature"' % sys.argv[i])
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> show signature"' % sys.argv[i])
   i = 0
   count = len(users)
   for user in users:
@@ -7014,7 +6756,7 @@ def getSignature(users):
     user, gmail = buildGmailGAPIObject(user)
     if not gmail:
       continue
-    result = callGAPI(gmail.users().settings().sendAs(), 'get',
+    result = gapi.call(gmail.users().settings().sendAs(), 'get',
                       soft_errors=True,
                       userId='me', sendAsEmail=user)
     if result:
@@ -7061,7 +6803,7 @@ def doVacation(users):
         body['endTime'] = getYYYYMMDD(sys.argv[i+1], returnTimeStamp=True)
         i += 2
       else:
-        systemErrorExit(2, '%s is not a valid argument for "gam <users> vacation"' % sys.argv[i])
+        controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> vacation"' % sys.argv[i])
     if message:
       if responseBodyType == 'responseBodyHtml':
         message = message.replace('\r', '').replace('\\n', '<br/>')
@@ -7071,7 +6813,7 @@ def doVacation(users):
         message = _processTags(tagReplacements, message)
       body[responseBodyType] = message
     if not message and not body.get('responseSubject'):
-      systemErrorExit(2, 'You must specify a non-blank subject or message!')
+      controlflow.system_error_exit(2, 'You must specify a non-blank subject or message!')
   i = 0
   count = len(users)
   for user in users:
@@ -7080,7 +6822,7 @@ def doVacation(users):
     if not gmail:
       continue
     print("Setting Vacation for %s (%s/%s)" % (user, i, count))
-    callGAPI(gmail.users().settings(), 'updateVacation',
+    gapi.call(gmail.users().settings(), 'updateVacation',
              soft_errors=True,
              userId='me', body=body)
 
@@ -7093,7 +6835,7 @@ def getVacation(users):
       formatReply = True
       i += 1
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam <users> show vacation"' % sys.argv[i])
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> show vacation"' % sys.argv[i])
   i = 0
   count = len(users)
   for user in users:
@@ -7101,7 +6843,7 @@ def getVacation(users):
     user, gmail = buildGmailGAPIObject(user)
     if not gmail:
       continue
-    result = callGAPI(gmail.users().settings(), 'getVacation',
+    result = gapi.call(gmail.users().settings(), 'getVacation',
                       soft_errors=True,
                       userId='me')
     if result:
@@ -7134,7 +6876,7 @@ def getVacation(users):
 def doDelSchema():
   cd = buildGAPIObject('directory')
   schemaKey = sys.argv[3]
-  callGAPI(cd.schemas(), 'delete', customerId=GC_Values[GC_CUSTOMER_ID], schemaKey=schemaKey)
+  gapi.call(cd.schemas(), 'delete', customerId=GC_Values[GC_CUSTOMER_ID], schemaKey=schemaKey)
   print('Deleted schema %s' % schemaKey)
 
 def doCreateOrUpdateUserSchema(updateCmd):
@@ -7143,9 +6885,9 @@ def doCreateOrUpdateUserSchema(updateCmd):
   if updateCmd:
     cmd = 'update'
     try:
-      body = callGAPI(cd.schemas(), 'get', throw_reasons=[GAPI_NOT_FOUND], customerId=GC_Values[GC_CUSTOMER_ID], schemaKey=schemaKey)
-    except GAPI_notFound:
-      systemErrorExit(3, 'Schema %s does not exist.' % schemaKey)
+      body = gapi.call(cd.schemas(), 'get', throw_reasons=[gapi.errors.ErrorReason.NOT_FOUND], customerId=GC_Values[GC_CUSTOMER_ID], schemaKey=schemaKey)
+    except gapi.errors.GapiNotFoundError:
+      controlflow.system_error_exit(3, 'Schema %s does not exist.' % schemaKey)
   else: # create
     cmd = 'create'
     body = {'schemaName': schemaKey, 'fields': []}
@@ -7165,7 +6907,7 @@ def doCreateOrUpdateUserSchema(updateCmd):
         if myarg == 'type':
           a_field['fieldType'] = sys.argv[i+1].upper()
           if a_field['fieldType'] not in ['BOOL', 'DOUBLE', 'EMAIL', 'INT64', 'PHONE', 'STRING']:
-            systemErrorExit(2, 'type must be one of bool, double, email, int64, phone, string; got %s' % a_field['fieldType'])
+            controlflow.system_error_exit(2, 'type must be one of bool, double, email, int64, phone, string; got %s' % a_field['fieldType'])
           i += 2
         elif myarg == 'multivalued':
           a_field['multiValued'] = True
@@ -7185,22 +6927,22 @@ def doCreateOrUpdateUserSchema(updateCmd):
           i += 1
           break
         else:
-          systemErrorExit(2, '%s is not a valid argument for "gam %s schema"' % (sys.argv[i], cmd))
+          controlflow.system_error_exit(2, '%s is not a valid argument for "gam %s schema"' % (sys.argv[i], cmd))
     elif updateCmd and myarg == 'deletefield':
       for n, field in enumerate(body['fields']):
         if field['fieldName'].lower() == sys.argv[i+1].lower():
           del body['fields'][n]
           break
       else:
-        systemErrorExit(3, 'field %s not found in schema %s' % (sys.argv[i+1], schemaKey))
+        controlflow.system_error_exit(3, 'field %s not found in schema %s' % (sys.argv[i+1], schemaKey))
       i += 2
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam %s schema"' % (sys.argv[i], cmd))
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam %s schema"' % (sys.argv[i], cmd))
   if updateCmd:
-    result = callGAPI(cd.schemas(), 'update', customerId=GC_Values[GC_CUSTOMER_ID], body=body, schemaKey=schemaKey)
+    result = gapi.call(cd.schemas(), 'update', customerId=GC_Values[GC_CUSTOMER_ID], body=body, schemaKey=schemaKey)
     print('Updated user schema %s' % result['schemaName'])
   else:
-    result = callGAPI(cd.schemas(), 'insert', customerId=GC_Values[GC_CUSTOMER_ID], body=body)
+    result = gapi.call(cd.schemas(), 'insert', customerId=GC_Values[GC_CUSTOMER_ID], body=body)
     print('Created user schema %s' % result['schemaName'])
 
 def _showSchema(schema):
@@ -7227,8 +6969,8 @@ def doPrintShowUserSchemas(csvFormat):
       todrive = True
       i += 1
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam %s schemas"' % (myarg, ['show', 'print'][csvFormat]))
-  schemas = callGAPI(cd.schemas(), 'list', customerId=GC_Values[GC_CUSTOMER_ID])
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam %s schemas"' % (myarg, ['show', 'print'][csvFormat]))
+  schemas = gapi.call(cd.schemas(), 'list', customerId=GC_Values[GC_CUSTOMER_ID])
   if not schemas or 'schemas' not in schemas:
     return
   for schema in schemas['schemas']:
@@ -7244,7 +6986,7 @@ def doPrintShowUserSchemas(csvFormat):
 def doGetUserSchema():
   cd = buildGAPIObject('directory')
   schemaKey = sys.argv[3]
-  schema = callGAPI(cd.schemas(), 'get', customerId=GC_Values[GC_CUSTOMER_ID], schemaKey=schemaKey)
+  schema = gapi.call(cd.schemas(), 'get', customerId=GC_Values[GC_CUSTOMER_ID], schemaKey=schemaKey)
   _showSchema(schema)
 
 def getUserAttributes(i, cd, updateCmd):
@@ -7291,7 +7033,7 @@ def getUserAttributes(i, cd, updateCmd):
       for citem in body[itemName]:
         if citem.get('primary', False):
           if not checkSystemId or itemValue.get('systemId') == citem.get('systemId'):
-            systemErrorExit(2, 'Multiple {0} are marked primary, only one can be primary'.format(itemName))
+            controlflow.system_error_exit(2, 'Multiple {0} are marked primary, only one can be primary'.format(itemName))
     body[itemName].append(itemValue)
 
   def _splitSchemaNameDotFieldName(sn_fn, fnRequired=True):
@@ -7305,7 +7047,7 @@ def getUserAttributes(i, cd, updateCmd):
       schemaName = sn_fn.strip()
       if schemaName:
         return (schemaName, None)
-    systemErrorExit(2, '%s is not a valid custom schema.field name.' % sn_fn)
+    controlflow.system_error_exit(2, '%s is not a valid custom schema.field name.' % sn_fn)
 
   if updateCmd:
     body = {}
@@ -7341,7 +7083,7 @@ def getUserAttributes(i, cd, updateCmd):
     elif myarg == 'admin':
       value = getBoolean(sys.argv[i+1], myarg)
       if updateCmd or value:
-        systemErrorExit(2, '%s %s is not a valid argument for "gam %s user"' % (sys.argv[i], value, ['create', 'update'][updateCmd]))
+        controlflow.system_error_exit(2, '%s %s is not a valid argument for "gam %s user"' % (sys.argv[i], value, ['create', 'update'][updateCmd]))
       i += 2
     elif myarg == 'suspended':
       body['suspended'] = getBoolean(sys.argv[i+1], myarg)
@@ -7408,7 +7150,7 @@ def getUserAttributes(i, cd, updateCmd):
         continue
       address = {}
       if sys.argv[i].lower() != 'type':
-        systemErrorExit(2, 'wrong format for account address details. Expected type got %s' % sys.argv[i])
+        controlflow.system_error_exit(2, 'wrong format for account address details. Expected type got %s' % sys.argv[i])
       i = getEntryType(i+1, address, USER_ADDRESS_TYPES)
       if sys.argv[i].lower() in ['unstructured', 'formatted']:
         i += 1
@@ -7446,7 +7188,7 @@ def getUserAttributes(i, cd, updateCmd):
           i += 1
           break
         else:
-          systemErrorExit(2, 'invalid argument (%s) for account address details' % sys.argv[i])
+          controlflow.system_error_exit(2, 'invalid argument (%s) for account address details' % sys.argv[i])
       appendItemToBodyList(body, 'addresses', address)
     elif myarg in ['emails', 'otheremail', 'otheremails']:
       i += 1
@@ -7465,14 +7207,14 @@ def getUserAttributes(i, cd, updateCmd):
         continue
       im = {}
       if sys.argv[i].lower() != 'type':
-        systemErrorExit(2, 'wrong format for account im details. Expected type got %s' % sys.argv[i])
+        controlflow.system_error_exit(2, 'wrong format for account im details. Expected type got %s' % sys.argv[i])
       i = getEntryType(i+1, im, USER_IM_TYPES)
       if sys.argv[i].lower() != 'protocol':
-        systemErrorExit(2, 'wrong format for account details. Expected protocol got %s' % sys.argv[i])
+        controlflow.system_error_exit(2, 'wrong format for account details. Expected protocol got %s' % sys.argv[i])
       i += 1
       im['protocol'] = sys.argv[i].lower()
       if im['protocol'] not in ['custom_protocol', 'aim', 'gtalk', 'icq', 'jabber', 'msn', 'net_meeting', 'qq', 'skype', 'yahoo']:
-        systemErrorExit(2, 'protocol must be one of custom_protocol, aim, gtalk, icq, jabber, msn, net_meeting, qq, skype, yahoo; got %s' % im['protocol'])
+        controlflow.system_error_exit(2, 'protocol must be one of custom_protocol, aim, gtalk, icq, jabber, msn, net_meeting, qq, skype, yahoo; got %s' % im['protocol'])
       if im['protocol'] == 'custom_protocol':
         i += 1
         im['customProtocol'] = sys.argv[i]
@@ -7532,7 +7274,7 @@ def getUserAttributes(i, cd, updateCmd):
           i += 1
           break
         else:
-          systemErrorExit(2, 'invalid argument (%s) for account organization details' % sys.argv[i])
+          controlflow.system_error_exit(2, 'invalid argument (%s) for account organization details' % sys.argv[i])
       appendItemToBodyList(body, 'organizations', organization)
     elif myarg in ['phone', 'phones']:
       i += 1
@@ -7552,7 +7294,7 @@ def getUserAttributes(i, cd, updateCmd):
           i += 1
           break
         else:
-          systemErrorExit(2, 'invalid argument (%s) for account phone details' % sys.argv[i])
+          controlflow.system_error_exit(2, 'invalid argument (%s) for account phone details' % sys.argv[i])
       appendItemToBodyList(body, 'phones', phone)
     elif myarg in ['relation', 'relations']:
       i += 1
@@ -7634,7 +7376,7 @@ def getUserAttributes(i, cd, updateCmd):
           i += 1
           break
         else:
-          systemErrorExit(3, '%s is not a valid argument for user location details. Make sure user location details end with an endlocation argument')
+          controlflow.system_error_exit(3, '%s is not a valid argument for user location details. Make sure user location details end with an endlocation argument')
       appendItemToBodyList(body, 'locations', location)
     elif myarg in ['ssh', 'sshkeys', 'sshpublickeys']:
       i += 1
@@ -7654,7 +7396,7 @@ def getUserAttributes(i, cd, updateCmd):
           i += 1
           break
         else:
-          systemErrorExit(3, '%s is not a valid argument for user ssh details. Make sure user ssh details end with an endssh argument')
+          controlflow.system_error_exit(3, '%s is not a valid argument for user ssh details. Make sure user ssh details end with an endssh argument')
       appendItemToBodyList(body, 'sshPublicKeys', ssh)
     elif myarg in ['posix', 'posixaccounts']:
       i += 1
@@ -7695,7 +7437,7 @@ def getUserAttributes(i, cd, updateCmd):
           i += 1
           break
         else:
-          systemErrorExit(3, '%s is not a valid argument for user posix details. Make sure user posix details end with an endposix argument')
+          controlflow.system_error_exit(3, '%s is not a valid argument for user posix details. Make sure user posix details end with an endposix argument')
       appendItemToBodyList(body, 'posixAccounts', posix, checkSystemId=True)
     elif myarg in ['keyword', 'keywords']:
       i += 1
@@ -7717,13 +7459,13 @@ def getUserAttributes(i, cd, updateCmd):
       i += 2
     elif myarg == 'clearschema':
       if not updateCmd:
-        systemErrorExit(2, '%s is not a valid create user argument.' % sys.argv[i])
+        controlflow.system_error_exit(2, '%s is not a valid create user argument.' % sys.argv[i])
       schemaName, fieldName = _splitSchemaNameDotFieldName(sys.argv[i+1], False)
       up = 'customSchemas'
       body.setdefault(up, {})
       body[up].setdefault(schemaName, {})
       if fieldName is None:
-        schema = callGAPI(cd.schemas(), 'get',
+        schema = gapi.call(cd.schemas(), 'get',
                           soft_errors=True,
                           customerId=GC_Values[GC_CUSTOMER_ID], schemaKey=schemaName, fields='fields(fieldName)')
         if not schema:
@@ -7748,7 +7490,7 @@ def getUserAttributes(i, cd, updateCmd):
           i += 1
           schemaValue['type'] = sys.argv[i].lower()
           if schemaValue['type'] not in ['custom', 'home', 'other', 'work']:
-            systemErrorExit(2, 'wrong type must be one of custom, home, other, work; got %s' % schemaValue['type'])
+            controlflow.system_error_exit(2, 'wrong type must be one of custom, home, other, work; got %s' % schemaValue['type'])
           i += 1
           if schemaValue['type'] == 'custom':
             schemaValue['customType'] = sys.argv[i]
@@ -7760,7 +7502,7 @@ def getUserAttributes(i, cd, updateCmd):
         body[up][schemaName][fieldName] = sys.argv[i]
       i += 1
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam %s user"' % (sys.argv[i], ['create', 'update'][updateCmd]))
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam %s user"' % (sys.argv[i], ['create', 'update'][updateCmd]))
   if need_password:
     rnd = SystemRandom()
     body['password'] = ''.join(rnd.choice(PASSWORD_SAFE_CHARS) for _ in range(100))
@@ -7772,7 +7514,7 @@ def getUserAttributes(i, cd, updateCmd):
 class ShortURLFlow(google_auth_oauthlib.flow.InstalledAppFlow):
   def authorization_url(self, **kwargs):
     long_url, state = super(ShortURLFlow, self).authorization_url(**kwargs)
-    simplehttp = _createHttpObj(timeout=10)
+    simplehttp = gapi.create_http(timeout=10)
     url_shortnr = 'https://gam-shortn.appspot.com/create'
     headers = {'Content-Type': 'application/json',
                'user-agent': GAM_INFO}
@@ -7833,7 +7575,7 @@ def getCRM2Service(httpc):
 
 def getGAMProjectFile(filepath):
   file_url = GAM_PROJECT_FILEPATH+filepath
-  httpObj = _createHttpObj()
+  httpObj = gapi.create_http()
   _, c = httpObj.request(file_url, 'GET')
   return c.decode(UTF8)
 
@@ -7847,7 +7589,7 @@ def enableGAMProjectAPIs(GAMProjectAPIs, httpObj, projectId, checkEnabled, i=0, 
   if checkEnabled:
     try:
       services = callGAPIpages(serveman.services(), 'list', 'services',
-                               throw_reasons=[GAPI_NOT_FOUND],
+                               throw_reasons=[gapi.errors.ErrorReason.NOT_FOUND],
                                consumerId=project_name, fields='nextPageToken,services(serviceName)')
       jcount = len(services)
       print('  Project: {0}, Check {1} APIs{2}'.format(projectId, jcount, currentCount(i, count)))
@@ -7860,7 +7602,7 @@ def enableGAMProjectAPIs(GAMProjectAPIs, httpObj, projectId, checkEnabled, i=0, 
             apis.remove(service['serviceName'])
           else:
             print('    API: {0}, Already enabled (non-GAM which is fine){1}'.format(service['serviceName'], currentCount(j, jcount)))
-    except GAPI_notFound as e:
+    except gapi.errors.GapiNotFoundError as e:
       print('  Project: {0}, Update Failed: {1}{2}'.format(projectId, str(e), currentCount(i, count)))
       status = False
   jcount = len(apis)
@@ -7871,18 +7613,18 @@ def enableGAMProjectAPIs(GAMProjectAPIs, httpObj, projectId, checkEnabled, i=0, 
       j += 1
       while True:
         try:
-          callGAPI(serveman.services(), 'enable',
-                   throw_reasons=[GAPI_FAILED_PRECONDITION, GAPI_FORBIDDEN, GAPI_PERMISSION_DENIED],
+          gapi.call(serveman.services(), 'enable',
+                   throw_reasons=[gapi.errors.ErrorReason.FAILED_PRECONDITION, gapi.errors.ErrorReason.FORBIDDEN, gapi.errors.ErrorReason.PERMISSION_DENIED],
                    serviceName=api, body={'consumerId': project_name})
           print('    API: {0}, Enabled{1}'.format(api, currentCount(j, jcount)))
           break
-        except GAPI_failedPrecondition as e:
+        except gapi.errors.GapiFailedPreconditionError as e:
           print('\nThere was an error enabling %s. Please resolve error as described below:' % api)
           print()
           print('\n%s\n' % e)
           print()
           input('Press enter once resolved and we will try enabling the API again.')
-        except (GAPI_forbidden, GAPI_permissionDenied) as e:
+        except (gapi.errors.GapiForbiddenError, gapi.errors.GapiPermissionDeniedError) as e:
           print('    API: {0}, Enable Failed: {1}{2}'.format(api, str(e), currentCount(j, jcount)))
           status = False
   return status
@@ -7920,7 +7662,7 @@ def _createClientSecretsOauth2service(httpObj, projectId):
   iam = googleapiclient.discovery.build('iam', 'v1',
                                         http=httpObj, cache_discovery=False,
                                         discoveryServiceUrl=googleapiclient.discovery.V2_DISCOVERY_URI)
-  sa_list = callGAPI(iam.projects().serviceAccounts(), 'list',
+  sa_list = gapi.call(iam.projects().serviceAccounts(), 'list',
                      name='projects/%s' % projectId)
   service_account = None
   if 'accounts' in sa_list:
@@ -7931,10 +7673,10 @@ def _createClientSecretsOauth2service(httpObj, projectId):
         break
   if not service_account:
     print('Creating Service Account')
-    service_account = callGAPI(iam.projects().serviceAccounts(), 'create',
+    service_account = gapi.call(iam.projects().serviceAccounts(), 'create',
                                name='projects/%s' % projectId,
                                body={'accountId': projectId, 'serviceAccount': {'displayName': 'GAM Project'}})
-  key = callGAPI(iam.projects().serviceAccounts().keys(), 'create',
+  key = gapi.call(iam.projects().serviceAccounts().keys(), 'create',
                  name=service_account['name'], body={'privateKeyType': 'TYPE_GOOGLE_CREDENTIALS_FILE', 'keyAlgorithm': 'KEY_ALG_RSA_2048'})
   oauth2service_data = base64.b64decode(key['privateKeyData']).decode(UTF8)
   writeFile(GC_Values[GC_OAUTH2SERVICE_JSON], oauth2service_data, continueOnError=False)
@@ -7960,7 +7702,7 @@ def _createClientSecretsOauth2service(httpObj, projectId):
     client_secret = input('Enter your Client Secret: ').strip()
     if not client_secret:
       client_secret = input().strip()
-    simplehttp = _createHttpObj()
+    simplehttp = gapi.create_http()
     client_valid = _checkClientAndSecret(simplehttp, client_id, client_secret)
     if client_valid:
       break
@@ -7995,17 +7737,17 @@ def _getValidateLoginHint(login_hint=None):
 def _getCurrentProjectID():
   cs_data = readFile(GC_Values[GC_CLIENT_SECRETS_JSON], continueOnError=True, displayError=True)
   if not cs_data:
-    systemErrorExit(14, 'Your client secrets file:\n\n%s\n\nis missing. Please recreate the file.' % GC_Values[GC_CLIENT_SECRETS_JSON])
+    controlflow.system_error_exit(14, 'Your client secrets file:\n\n%s\n\nis missing. Please recreate the file.' % GC_Values[GC_CLIENT_SECRETS_JSON])
   try:
     return json.loads(cs_data)['installed']['project_id']
   except (ValueError, IndexError, KeyError):
-    systemErrorExit(3, 'The format of your client secrets file:\n\n%s\n\nis incorrect. Please recreate the file.' % GC_Values[GC_CLIENT_SECRETS_JSON])
+    controlflow.system_error_exit(3, 'The format of your client secrets file:\n\n%s\n\nis incorrect. Please recreate the file.' % GC_Values[GC_CLIENT_SECRETS_JSON])
 
 def _getProjects(crm, pfilter):
   try:
-    return callGAPIpages(crm.projects(), 'list', 'projects', throw_reasons=[GAPI_BAD_REQUEST], filter=pfilter)
-  except GAPI_badRequest as e:
-    systemErrorExit(2, 'Project: {0}, {1}'.format(pfilter, str(e)))
+    return callGAPIpages(crm.projects(), 'list', 'projects', throw_reasons=[gapi.errors.ErrorReason.BAD_REQUEST], filter=pfilter)
+  except gapi.errors.GapiBadRequestError as e:
+    controlflow.system_error_exit(2, 'Project: {0}, {1}'.format(pfilter, str(e)))
 
 PROJECTID_PATTERN = re.compile(r'^[a-z][a-z0-9-]{4,28}[a-z0-9]$')
 PROJECTID_FORMAT_REQUIRED = '[a-z][a-z0-9-]{4,28}[a-z0-9]'
@@ -8035,11 +7777,11 @@ def _getLoginHintProjectId(createCmd):
         parent = sys.argv[i+1]
         i += 2
       else:
-        systemErrorExit(3, '%s is not a valid argument for "gam %s project", expected one of: admin, project%s' % (myarg, ['use', 'create'][createCmd], ['', ' or parent'][createCmd]))
+        controlflow.system_error_exit(3, '%s is not a valid argument for "gam %s project", expected one of: admin, project%s' % (myarg, ['use', 'create'][createCmd], ['', ' or parent'][createCmd]))
   login_hint = _getValidateLoginHint(login_hint)
   if projectId:
     if not PROJECTID_PATTERN.match(projectId):
-      systemErrorExit(2, 'Invalid Project ID: {0}, expected <{1}>'.format(projectId, PROJECTID_FORMAT_REQUIRED))
+      controlflow.system_error_exit(2, 'Invalid Project ID: {0}, expected <{1}>'.format(projectId, PROJECTID_FORMAT_REQUIRED))
   elif createCmd:
     projectId = 'gam-project'
     for _ in range(3):
@@ -8047,7 +7789,7 @@ def _getLoginHintProjectId(createCmd):
   else:
     projectId = input('\nWhat is your API project ID? ').strip()
     if not PROJECTID_PATTERN.match(projectId):
-      systemErrorExit(2, 'Invalid Project ID: {0}, expected <{1}>'.format(projectId, PROJECTID_FORMAT_REQUIRED))
+      controlflow.system_error_exit(2, 'Invalid Project ID: {0}, expected <{1}>'.format(projectId, PROJECTID_FORMAT_REQUIRED))
   crm, httpObj = getCRMService(login_hint)
   if parent and not parent.startswith('organizations/') and not parent.startswith('folders/'):
     crm2 = getCRM2Service(httpObj)
@@ -8060,12 +7802,12 @@ def _getLoginHintProjectId(createCmd):
   projects = _getProjects(crm, 'id:{0}'.format(projectId))
   if not createCmd:
     if not projects:
-      systemErrorExit(2, 'User: {0}, Project ID: {1}, Does not exist'.format(login_hint, projectId))
+      controlflow.system_error_exit(2, 'User: {0}, Project ID: {1}, Does not exist'.format(login_hint, projectId))
     if projects[0]['lifecycleState'] != 'ACTIVE':
-      systemErrorExit(2, 'User: {0}, Project ID: {1}, Not active'.format(login_hint, projectId))
+      controlflow.system_error_exit(2, 'User: {0}, Project ID: {1}, Not active'.format(login_hint, projectId))
   else:
     if projects:
-      systemErrorExit(2, 'User: {0}, Project ID: {1}, Duplicate'.format(login_hint, projectId))
+      controlflow.system_error_exit(2, 'User: {0}, Project ID: {1}, Duplicate'.format(login_hint, projectId))
   return (crm, httpObj, login_hint, projectId, parent)
 
 PROJECTID_FILTER_REQUIRED = 'gam|<ProjectID>|(filter <String>)'
@@ -8076,19 +7818,19 @@ def convertGCPFolderNameToID(parent, crm2):
   folders = callGAPIitems(crm2.folders(), 'search', items='folders',
                           body={'pageSize': 1000, 'query': 'displayName="%s"' % parent})
   if not folders:
-    systemErrorExit(1, 'ERROR: No folder found matching displayName=%s' % parent)
+    controlflow.system_error_exit(1, 'ERROR: No folder found matching displayName=%s' % parent)
   if len(folders) > 1:
     print('Multiple matches:')
     for folder in folders:
       print('  Name: %s  ID: %s' % (folder['name'], folder['displayName']))
-    systemErrorExit(2, 'ERROR: Multiple matching folders, please specify one.')
+    controlflow.system_error_exit(2, 'ERROR: Multiple matching folders, please specify one.')
   return folders[0]['name']
 
 def createGCPFolder():
   login_hint = _getValidateLoginHint()
   _, httpObj = getCRMService(login_hint)
   crm2 = getCRM2Service(httpObj)
-  callGAPI(crm2.folders(), 'create', body={'name': sys.argv[3], 'displayName': sys.argv[3]})
+  gapi.call(crm2.folders(), 'create', body={'name': sys.argv[3], 'displayName': sys.argv[3]})
 
 def _getLoginHintProjects(printShowCmd):
   login_hint = None
@@ -8113,7 +7855,7 @@ def _getLoginHintProjects(printShowCmd):
   elif PROJECTID_PATTERN.match(pfilter):
     pfilter = 'id:{0}'.format(pfilter)
   else:
-    systemErrorExit(2, 'Invalid Project ID: {0}, expected <{1}{2}>'.format(pfilter, ['', 'all|'][printShowCmd], PROJECTID_FILTER_REQUIRED))
+    controlflow.system_error_exit(2, 'Invalid Project ID: {0}, expected <{1}{2}>'.format(pfilter, ['', 'all|'][printShowCmd], PROJECTID_FILTER_REQUIRED))
   login_hint = _getValidateLoginHint(login_hint)
   crm, httpObj = getCRMService(login_hint)
   if pfilter in ['current', 'id:current']:
@@ -8129,7 +7871,7 @@ def _getLoginHintProjects(printShowCmd):
 def _checkForExistingProjectFiles():
   for a_file in [GC_Values[GC_OAUTH2SERVICE_JSON], GC_Values[GC_CLIENT_SECRETS_JSON]]:
     if os.path.exists(a_file):
-      systemErrorExit(5, '%s already exists. Please delete or rename it before attempting to use another project.' % a_file)
+      controlflow.system_error_exit(5, '%s already exists. Please delete or rename it before attempting to use another project.' % a_file)
 
 def doCreateProject():
   _checkForExistingProjectFiles()
@@ -8141,25 +7883,25 @@ def doCreateProject():
   while True:
     create_again = False
     print('Creating project "%s"...' % body['name'])
-    create_operation = callGAPI(crm.projects(), 'create', body=body)
+    create_operation = gapi.call(crm.projects(), 'create', body=body)
     operation_name = create_operation['name']
     time.sleep(8) # Google recommends always waiting at least 5 seconds
     for i in range(1, 5):
       print('Checking project status...')
-      status = callGAPI(crm.operations(), 'get',
+      status = gapi.call(crm.operations(), 'get',
                         name=operation_name)
       if 'error' in status:
         if status['error'].get('message', '') == 'No permission to create project in organization':
           print('Hmm... Looks like you have no rights to your Google Cloud Organization.')
           print('Attempting to fix that...')
-          getorg = callGAPI(crm.organizations(), 'search',
+          getorg = gapi.call(crm.organizations(), 'search',
                             body={'filter': 'domain:%s' % login_domain})
           try:
             organization = getorg['organizations'][0]['name']
             print('Your organization name is %s' % organization)
           except (KeyError, IndexError):
-            systemErrorExit(3, 'you have no rights to create projects for your organization and you don\'t seem to be a super admin! Sorry, there\'s nothing more I can do.')
-          org_policy = callGAPI(crm.organizations(), 'getIamPolicy',
+            controlflow.system_error_exit(3, 'you have no rights to create projects for your organization and you don\'t seem to be a super admin! Sorry, there\'s nothing more I can do.')
+          org_policy = gapi.call(crm.organizations(), 'getIamPolicy',
                                 resource=organization)
           if 'bindings' not in org_policy:
             org_policy['bindings'] = []
@@ -8177,7 +7919,7 @@ def doCreateProject():
           my_role = 'roles/resourcemanager.projectCreator'
           print('Giving %s the role of %s...' % (login_hint, my_role))
           org_policy['bindings'].append({'role': my_role, 'members': ['user:%s' % login_hint]})
-          callGAPI(crm.organizations(), 'setIamPolicy',
+          gapi.call(crm.organizations(), 'setIamPolicy',
                    resource=organization, body={'policy': org_policy})
           create_again = True
           break
@@ -8193,7 +7935,7 @@ and accept the Terms of Service (ToS). As soon as you've accepted the ToS popup,
             break
         except (IndexError, KeyError):
           pass
-        systemErrorExit(1, status)
+        controlflow.system_error_exit(1, status)
       if status.get('done', False):
         break
       sleep_time = i ** 2
@@ -8202,9 +7944,9 @@ and accept the Terms of Service (ToS). As soon as you've accepted the ToS popup,
     if create_again:
       continue
     if not status.get('done', False):
-      systemErrorExit(1, 'Failed to create project: %s' % status)
+      controlflow.system_error_exit(1, 'Failed to create project: %s' % status)
     elif 'error' in status:
-      systemErrorExit(2, status['error'])
+      controlflow.system_error_exit(2, status['error'])
     break
   _createClientSecretsOauth2service(httpObj, projectId)
 
@@ -8233,9 +7975,9 @@ def doDelProjects():
     i += 1
     projectId = project['projectId']
     try:
-      callGAPI(crm.projects(), 'delete', throw_reasons=[GAPI_FORBIDDEN], projectId=projectId)
+      gapi.call(crm.projects(), 'delete', throw_reasons=[gapi.errors.ErrorReason.FORBIDDEN], projectId=projectId)
       print('  Project: {0} Deleted{1}'.format(projectId, currentCount(i, count)))
-    except GAPI_forbidden as e:
+    except gapi.errors.GapiForbiddenError as e:
       print('  Project: {0} Delete Failed: {1}{2}'.format(projectId, str(e), currentCount(i, count)))
 
 
@@ -8251,7 +7993,7 @@ def doPrintShowProjects(csvFormat):
       todrive = True
       i += 1
     else:
-      systemErrorExit(3, '%s is not a valid argument for "gam %s projects"' % (myarg, ['show', 'print'][csvFormat]))
+      controlflow.system_error_exit(3, '%s is not a valid argument for "gam %s projects"' % (myarg, ['show', 'print'][csvFormat]))
   if not csvFormat:
     count = len(projects)
     print('User: {0}, Show {1} Projects'.format(login_hint, count))
@@ -8287,13 +8029,13 @@ def doGetTeamDriveInfo(users):
       useDomainAdminAccess = True
       i += 1
     else:
-      systemErrorExit(3, '%s is not a valid command for "gam <users> show teamdrive"' % sys.argv[i])
+      controlflow.system_error_exit(3, '%s is not a valid command for "gam <users> show teamdrive"' % sys.argv[i])
   for user in users:
     drive = buildGAPIServiceObject('drive3', user)
     if not drive:
       print('Failed to access Drive as %s' % user)
       continue
-    result = callGAPI(drive.drives(), 'get', driveId=teamDriveId,
+    result = gapi.call(drive.drives(), 'get', driveId=teamDriveId,
                       useDomainAdminAccess=useDomainAdminAccess, fields='*')
     print_json(None, result)
 
@@ -8306,14 +8048,14 @@ def doCreateTeamDrive(users):
       body['themeId'] = sys.argv[i+1]
       i += 2
     else:
-      systemErrorExit(3, '%s is not a valid argument to "gam <users> create teamdrive"' % sys.argv[i])
+      controlflow.system_error_exit(3, '%s is not a valid argument to "gam <users> create teamdrive"' % sys.argv[i])
   for user in users:
     drive = buildGAPIServiceObject('drive3', user)
     if not drive:
       print('Failed to access Drive as %s' % user)
       continue
     requestId = str(uuid.uuid4())
-    result = callGAPI(drive.drives(), 'create', requestId=requestId, body=body, fields='id')
+    result = gapi.call(drive.drives(), 'create', requestId=requestId, body=body, fields='id')
     print('Created Team Drive %s with id %s' % (body['name'], result['id']))
 
 TEAMDRIVE_RESTRICTIONS_MAP = {
@@ -8355,14 +8097,14 @@ def doUpdateTeamDrive(users):
       body['restrictions'][TEAMDRIVE_RESTRICTIONS_MAP[myarg]] = getBoolean(sys.argv[i+1], myarg)
       i += 2
     else:
-      systemErrorExit(3, '%s is not a valid argument for "gam <users> update teamdrive"' % sys.argv[i])
+      controlflow.system_error_exit(3, '%s is not a valid argument for "gam <users> update teamdrive"' % sys.argv[i])
   if not body:
-    systemErrorExit(4, 'nothing to update. Need at least a name argument.')
+    controlflow.system_error_exit(4, 'nothing to update. Need at least a name argument.')
   for user in users:
     user, drive = buildDrive3GAPIObject(user)
     if not drive:
       continue
-    result = callGAPI(drive.drives(), 'update',
+    result = gapi.call(drive.drives(), 'update',
                       useDomainAdminAccess=useDomainAdminAccess, body=body, driveId=teamDriveId, fields='id', soft_errors=True)
     if not result:
       continue
@@ -8385,7 +8127,7 @@ def printShowTeamDrives(users, csvFormat):
       q = sys.argv[i+1]
       i += 2
     else:
-      systemErrorExit(3, '%s is not a valid argument for "gam <users> print|show teamdrives"')
+      controlflow.system_error_exit(3, '%s is not a valid argument for "gam <users> print|show teamdrives"')
   tds = []
   for user in users:
     sys.stderr.write('Getting Team Drives for %s\n' % user)
@@ -8420,14 +8162,14 @@ def doDeleteTeamDrive(users):
     if not drive:
       continue
     print('Deleting Team Drive %s' % (teamDriveId))
-    callGAPI(drive.drives(), 'delete', driveId=teamDriveId, soft_errors=True)
+    gapi.call(drive.drives(), 'delete', driveId=teamDriveId, soft_errors=True)
 
 def validateCollaborators(collaboratorList, cd):
   collaborators = []
   for collaborator in collaboratorList.split(','):
     collaborator_id = convertEmailAddressToUID(collaborator, cd)
     if not collaborator_id:
-      systemErrorExit(4, 'failed to get a UID for %s. Please make sure this is a real user.' % collaborator)
+      controlflow.system_error_exit(4, 'failed to get a UID for %s. Please make sure this is a real user.' % collaborator)
     collaborators.append({'email': collaborator, 'id': collaborator_id})
   return collaborators
 
@@ -8451,12 +8193,12 @@ def doCreateVaultMatter():
       collaborators.extend(validateCollaborators(sys.argv[i+1], cd))
       i += 2
     else:
-      systemErrorExit(3, '%s is not a valid argument to "gam create matter"' % sys.argv[i])
-  matterId = callGAPI(v.matters(), 'create', body=body, fields='matterId')['matterId']
+      controlflow.system_error_exit(3, '%s is not a valid argument to "gam create matter"' % sys.argv[i])
+  matterId = gapi.call(v.matters(), 'create', body=body, fields='matterId')['matterId']
   print('Created matter %s' % matterId)
   for collaborator in collaborators:
     print(' adding collaborator %s' % collaborator['email'])
-    callGAPI(v.matters(), 'addPermissions', matterId=matterId, body={'matterPermission': {'role': 'COLLABORATOR', 'accountId': collaborator['id']}})
+    gapi.call(v.matters(), 'addPermissions', matterId=matterId, body={'matterPermission': {'role': 'COLLABORATOR', 'accountId': collaborator['id']}})
 
 VAULT_SEARCH_METHODS_MAP = {
   'account': 'ACCOUNT',
@@ -8496,11 +8238,11 @@ def doCreateVaultExport():
     elif myarg == 'corpus':
       body['query']['corpus'] = sys.argv[i+1].upper()
       if body['query']['corpus'] not in allowed_corpuses:
-        systemErrorExit(3, 'corpus must be one of %s. Got %s' % (', '.join(allowed_corpuses), sys.argv[i+1]))
+        controlflow.system_error_exit(3, 'corpus must be one of %s. Got %s' % (', '.join(allowed_corpuses), sys.argv[i+1]))
       i += 2
     elif myarg in VAULT_SEARCH_METHODS_MAP:
       if body['query'].get('searchMethod'):
-        systemErrorExit(3, 'Multiple search methods ({0}) specified, only one is allowed'.format(', '.join(VAULT_SEARCH_METHODS_LIST)))
+        controlflow.system_error_exit(3, 'Multiple search methods ({0}) specified, only one is allowed'.format(', '.join(VAULT_SEARCH_METHODS_LIST)))
       searchMethod = VAULT_SEARCH_METHODS_MAP[myarg]
       body['query']['searchMethod'] = searchMethod
       if searchMethod == 'ACCOUNT':
@@ -8520,7 +8262,7 @@ def doCreateVaultExport():
     elif myarg == 'scope':
       body['query']['dataScope'] = sys.argv[i+1].upper()
       if body['query']['dataScope'] not in allowed_scopes:
-        systemErrorExit(3, 'scope must be one of %s. Got %s' % (', '.join(allowed_scopes), sys.argv[i+1]))
+        controlflow.system_error_exit(3, 'scope must be one of %s. Got %s' % (', '.join(allowed_scopes), sys.argv[i+1]))
       i += 2
     elif myarg in ['terms']:
       body['query']['terms'] = sys.argv[i+1]
@@ -8559,19 +8301,19 @@ def doCreateVaultExport():
       allowed_regions = _getEnumValuesMinusUnspecified(v._rootDesc['schemas']['ExportOptions']['properties']['region']['enum'])
       body['exportOptions']['region'] = sys.argv[i+1].upper()
       if body['exportOptions']['region'] not in allowed_regions:
-        systemErrorExit(3, 'region should be one of %s, got %s' % (', '.join(allowed_regions), body['exportOptions']['region']))
+        controlflow.system_error_exit(3, 'region should be one of %s, got %s' % (', '.join(allowed_regions), body['exportOptions']['region']))
       i += 2
     elif myarg in ['includeaccessinfo']:
       body['exportOptions'].setdefault('driveOptions', {})['includeAccessInfo'] = getBoolean(sys.argv[i+1], myarg)
       i += 2
     else:
-      systemErrorExit(3, '%s is not a valid argument to "gam create export"' % sys.argv[i])
+      controlflow.system_error_exit(3, '%s is not a valid argument to "gam create export"' % sys.argv[i])
   if not matterId:
-    systemErrorExit(3, 'you must specify a matter for the new export.')
+    controlflow.system_error_exit(3, 'you must specify a matter for the new export.')
   if 'corpus' not in body['query']:
-    systemErrorExit(3, 'you must specify a corpus for the new export. Choose one of %s' % ', '.join(allowed_corpuses))
+    controlflow.system_error_exit(3, 'you must specify a corpus for the new export. Choose one of %s' % ', '.join(allowed_corpuses))
   if 'searchMethod' not in body['query']:
-    systemErrorExit(3, 'you must specify a search method for the new export. Choose one of %s' % ', '.join(VAULT_SEARCH_METHODS_LIST))
+    controlflow.system_error_exit(3, 'you must specify a search method for the new export. Choose one of %s' % ', '.join(VAULT_SEARCH_METHODS_LIST))
   if 'name' not in body:
     body['name'] = 'GAM %s export - %s' % (body['query']['corpus'], datetime.datetime.now())
   options_field = None
@@ -8586,7 +8328,7 @@ def doCreateVaultExport():
     body['exportOptions'][options_field] = {'exportFormat': export_format}
     if showConfidentialModeContent is not None:
       body['exportOptions'][options_field]['showConfidentialModeContent'] = showConfidentialModeContent
-  results = callGAPI(v.matters().exports(), 'create', matterId=matterId, body=body)
+  results = gapi.call(v.matters().exports(), 'create', matterId=matterId, body=body)
   print('Created export %s' % results['id'])
   print_json(None, results)
 
@@ -8595,13 +8337,13 @@ def doDeleteVaultExport():
   matterId = getMatterItem(v, sys.argv[3])
   exportId = convertExportNameToID(v, sys.argv[4], matterId)
   print('Deleting export %s / %s' % (sys.argv[4], exportId))
-  callGAPI(v.matters().exports(), 'delete', matterId=matterId, exportId=exportId)
+  gapi.call(v.matters().exports(), 'delete', matterId=matterId, exportId=exportId)
 
 def doGetVaultExportInfo():
   v = buildGAPIObject('vault')
   matterId = getMatterItem(v, sys.argv[3])
   exportId = convertExportNameToID(v, sys.argv[4], matterId)
-  export = callGAPI(v.matters().exports(), 'get', matterId=matterId, exportId=exportId)
+  export = gapi.call(v.matters().exports(), 'get', matterId=matterId, exportId=exportId)
   print_json(None, export)
 
 def _getCloudStorageObject(s, bucket, object_, local_file=None, expectedMd5=None):
@@ -8652,7 +8394,7 @@ def md5MatchesFile(local_file, expected_md5, exitOnError):
     hash_md5.update(chunk)
   actual_hash = hash_md5.hexdigest()
   if exitOnError and actual_hash != expected_md5:
-    systemErrorExit(6, 'actual hash was %s. Exiting on corrupt file.' % actual_hash)
+    controlflow.system_error_exit(6, 'actual hash was %s. Exiting on corrupt file.' % actual_hash)
   return actual_hash == expected_md5
 
 def doDownloadCloudStorageBucket():
@@ -8662,7 +8404,7 @@ def doDownloadCloudStorageBucket():
   if bucket_match:
     bucket = bucket_match.group(1)
   else:
-    systemErrorExit(5, 'Could not find a takeout-export-* bucket in that URL')
+    controlflow.system_error_exit(5, 'Could not find a takeout-export-* bucket in that URL')
   s = buildGAPIObject('storage')
   page_message = 'Got %%total_items%% files...'
   objects = callGAPIpages(s.objects(), 'list', 'items', page_message=page_message, bucket=bucket, projection='noAcl', fields='nextPageToken,items(name,id,md5Hash)')
@@ -8696,8 +8438,8 @@ def doDownloadVaultExport():
       extractFiles = False
       i += 1
     else:
-      systemErrorExit(3, '%s is not a valid argument to "gam download export"' % sys.argv[i])
-  export = callGAPI(v.matters().exports(), 'get', matterId=matterId, exportId=exportId)
+      controlflow.system_error_exit(3, '%s is not a valid argument to "gam download export"' % sys.argv[i])
+  export = gapi.call(v.matters().exports(), 'get', matterId=matterId, exportId=exportId)
   for s_file in export['cloudStorageSink']['files']:
     bucket = s_file['bucketName']
     s_object = s_file['objectName']
@@ -8761,7 +8503,7 @@ def doCreateVaultHold():
     elif myarg == 'corpus':
       body['corpus'] = sys.argv[i+1].upper()
       if body['corpus'] not in allowed_corpuses:
-        systemErrorExit(3, 'corpus must be one of %s. Got %s' % (', '.join(allowed_corpuses), sys.argv[i+1]))
+        controlflow.system_error_exit(3, 'corpus must be one of %s. Got %s' % (', '.join(allowed_corpuses), sys.argv[i+1]))
       i += 2
     elif myarg in ['accounts', 'users', 'groups']:
       accounts = sys.argv[i+1].split(',')
@@ -8779,13 +8521,13 @@ def doCreateVaultHold():
       matterId = getMatterItem(v, sys.argv[i+1])
       i += 2
     else:
-      systemErrorExit(3, '%s is not a valid argument to "gam create hold"' % sys.argv[i])
+      controlflow.system_error_exit(3, '%s is not a valid argument to "gam create hold"' % sys.argv[i])
   if not matterId:
-    systemErrorExit(3, 'you must specify a matter for the new hold.')
+    controlflow.system_error_exit(3, 'you must specify a matter for the new hold.')
   if not body.get('name'):
-    systemErrorExit(3, 'you must specify a name for the new hold.')
+    controlflow.system_error_exit(3, 'you must specify a name for the new hold.')
   if not body.get('corpus'):
-    systemErrorExit(3, 'you must specify a corpus for the new hold. Choose one of %s' % (', '.join(allowed_corpuses)))
+    controlflow.system_error_exit(3, 'you must specify a corpus for the new hold. Choose one of %s' % (', '.join(allowed_corpuses)))
   if body['corpus'] == 'HANGOUTS_CHAT':
     query_type = 'hangoutsChatQuery'
   else:
@@ -8796,7 +8538,7 @@ def doCreateVaultHold():
       try:
         body['query'][query_type] = json.loads(query)
       except ValueError as e:
-        systemErrorExit(3, '{0}, query: {1}'.format(str(e), query))
+        controlflow.system_error_exit(3, '{0}, query: {1}'.format(str(e), query))
   elif body['corpus'] in ['GROUPS', 'MAIL']:
     if query:
       body['query'][query_type] = {'terms': query}
@@ -8810,7 +8552,7 @@ def doCreateVaultHold():
     account_type = 'group' if body['corpus'] == 'GROUPS' else 'user'
     for account in accounts:
       body['accounts'].append({'accountId': convertEmailAddressToUID(account, cd, account_type)})
-  holdId = callGAPI(v.matters().holds(), 'create', matterId=matterId, body=body, fields='holdId')['holdId']
+  holdId = gapi.call(v.matters().holds(), 'create', matterId=matterId, body=body, fields='holdId')['holdId']
   print('Created hold %s' % holdId)
 
 def doDeleteVaultHold():
@@ -8825,11 +8567,11 @@ def doDeleteVaultHold():
       holdId = convertHoldNameToID(v, hold, matterId)
       i += 2
     else:
-      systemErrorExit(3, '%s is not a valid argument to "gam delete hold"' % myarg)
+      controlflow.system_error_exit(3, '%s is not a valid argument to "gam delete hold"' % myarg)
   if not matterId:
-    systemErrorExit(3, 'you must specify a matter for the hold.')
+    controlflow.system_error_exit(3, 'you must specify a matter for the hold.')
   print('Deleting hold %s / %s' % (hold, holdId))
-  callGAPI(v.matters().holds(), 'delete', matterId=matterId, holdId=holdId)
+  gapi.call(v.matters().holds(), 'delete', matterId=matterId, holdId=holdId)
 
 def doGetVaultHoldInfo():
   v = buildGAPIObject('vault')
@@ -8843,10 +8585,10 @@ def doGetVaultHoldInfo():
       holdId = convertHoldNameToID(v, hold, matterId)
       i += 2
     else:
-      systemErrorExit(3, '%s is not a valid argument for "gam info hold"' % myarg)
+      controlflow.system_error_exit(3, '%s is not a valid argument for "gam info hold"' % myarg)
   if not matterId:
-    systemErrorExit(3, 'you must specify a matter for the hold.')
-  results = callGAPI(v.matters().holds(), 'get', matterId=matterId, holdId=holdId)
+    controlflow.system_error_exit(3, 'you must specify a matter for the hold.')
+  results = gapi.call(v.matters().holds(), 'get', matterId=matterId, holdId=holdId)
   cd = buildGAPIObject('directory')
   if 'accounts' in results:
     account_type = 'group' if results['corpus'] == 'GROUPS' else 'user'
@@ -8867,7 +8609,7 @@ def convertExportNameToID(v, nameOrID, matterId):
   for export in exports:
     if export['name'].lower() == nameOrID:
       return export['id']
-  systemErrorExit(4, 'could not find export name %s in matter %s' % (nameOrID, matterId))
+  controlflow.system_error_exit(4, 'could not find export name %s in matter %s' % (nameOrID, matterId))
 
 def convertHoldNameToID(v, nameOrID, matterId):
   nameOrID = nameOrID.lower()
@@ -8878,7 +8620,7 @@ def convertHoldNameToID(v, nameOrID, matterId):
   for hold in holds:
     if hold['name'].lower() == nameOrID:
       return hold['holdId']
-  systemErrorExit(4, 'could not find hold name %s in matter %s' % (nameOrID, matterId))
+  controlflow.system_error_exit(4, 'could not find hold name %s in matter %s' % (nameOrID, matterId))
 
 def convertMatterNameToID(v, nameOrID):
   nameOrID = nameOrID.lower()
@@ -8894,7 +8636,7 @@ def convertMatterNameToID(v, nameOrID):
 def getMatterItem(v, nameOrID):
   matterId = convertMatterNameToID(v, nameOrID)
   if not matterId:
-    systemErrorExit(4, 'could not find matter %s' % nameOrID)
+    controlflow.system_error_exit(4, 'could not find matter %s' % nameOrID)
   return matterId
 
 def doUpdateVaultHold():
@@ -8933,11 +8675,11 @@ def doUpdateVaultHold():
       del_accounts = sys.argv[i+1].split(',')
       i += 2
     else:
-      systemErrorExit(3, '%s is not a valid argument to "gam update hold"' % myarg)
+      controlflow.system_error_exit(3, '%s is not a valid argument to "gam update hold"' % myarg)
   if not matterId:
-    systemErrorExit(3, 'you must specify a matter for the hold.')
+    controlflow.system_error_exit(3, 'you must specify a matter for the hold.')
   if query or start_time or end_time or body.get('orgUnit'):
-    old_body = callGAPI(v.matters().holds(), 'get', matterId=matterId, holdId=holdId, fields='corpus,query,orgUnit')
+    old_body = gapi.call(v.matters().holds(), 'get', matterId=matterId, holdId=holdId, fields='corpus,query,orgUnit')
     body['query'] = old_body['query']
     body['corpus'] = old_body['corpus']
     if 'orgUnit' in old_body and 'orgUnit' not in body:
@@ -8949,7 +8691,7 @@ def doUpdateVaultHold():
         try:
           body['query'][query_type] = json.loads(query)
         except ValueError as e:
-          systemErrorExit(3, '{0}, query: {1}'.format(str(e), query))
+          controlflow.system_error_exit(3, '{0}, query: {1}'.format(str(e), query))
     elif body['corpus'] in ['GROUPS', 'MAIL']:
       if query:
         body['query'][query_type]['terms'] = query
@@ -8959,17 +8701,17 @@ def doUpdateVaultHold():
         body['query'][query_type]['endTime'] = end_time
   if body:
     print('Updating hold %s / %s' % (hold, holdId))
-    callGAPI(v.matters().holds(), 'update', matterId=matterId, holdId=holdId, body=body)
+    gapi.call(v.matters().holds(), 'update', matterId=matterId, holdId=holdId, body=body)
   if add_accounts or del_accounts:
     cd = buildGAPIObject('directory')
     for account in add_accounts:
       print('adding %s to hold.' % account)
       add_body = {'accountId': convertEmailAddressToUID(account, cd)}
-      callGAPI(v.matters().holds().accounts(), 'create', matterId=matterId, holdId=holdId, body=add_body)
+      gapi.call(v.matters().holds().accounts(), 'create', matterId=matterId, holdId=holdId, body=add_body)
     for account in del_accounts:
       print('removing %s from hold.' % account)
       accountId = convertEmailAddressToUID(account, cd)
-      callGAPI(v.matters().holds().accounts(), 'delete', matterId=matterId, holdId=holdId, accountId=accountId)
+      gapi.call(v.matters().holds().accounts(), 'delete', matterId=matterId, holdId=holdId, accountId=accountId)
 
 def doUpdateVaultMatter(action=None):
   v = buildGAPIObject('vault')
@@ -8985,7 +8727,7 @@ def doUpdateVaultMatter(action=None):
     if myarg == 'action':
       action = sys.argv[i+1].lower()
       if action not in VAULT_MATTER_ACTIONS:
-        systemErrorExit(3, 'allowed actions are %s, got %s' % (', '.join(VAULT_MATTER_ACTIONS), action))
+        controlflow.system_error_exit(3, 'allowed actions are %s, got %s' % (', '.join(VAULT_MATTER_ACTIONS), action))
       i += 2
     elif myarg == 'name':
       body['name'] = sys.argv[i+1]
@@ -9004,31 +8746,31 @@ def doUpdateVaultMatter(action=None):
       remove_collaborators.extend(validateCollaborators(sys.argv[i+1], cd))
       i += 2
     else:
-      systemErrorExit(3, '%s is not a valid argument for "gam update matter"' % sys.argv[i])
+      controlflow.system_error_exit(3, '%s is not a valid argument for "gam update matter"' % sys.argv[i])
   if action == 'delete':
     action_kwargs = {}
   if body:
     print('Updating matter %s...' % sys.argv[3])
     if 'name' not in body or 'description' not in body:
       # bah, API requires name/description to be sent on update even when it's not changing
-      result = callGAPI(v.matters(), 'get', matterId=matterId, view='BASIC')
+      result = gapi.call(v.matters(), 'get', matterId=matterId, view='BASIC')
       body.setdefault('name', result['name'])
       body.setdefault('description', result.get('description'))
-    callGAPI(v.matters(), 'update', body=body, matterId=matterId)
+    gapi.call(v.matters(), 'update', body=body, matterId=matterId)
   if action:
     print('Performing %s on matter %s' % (action, sys.argv[3]))
-    callGAPI(v.matters(), action, matterId=matterId, **action_kwargs)
+    gapi.call(v.matters(), action, matterId=matterId, **action_kwargs)
   for collaborator in add_collaborators:
     print(' adding collaborator %s' % collaborator['email'])
-    callGAPI(v.matters(), 'addPermissions', matterId=matterId, body={'matterPermission': {'role': 'COLLABORATOR', 'accountId': collaborator['id']}})
+    gapi.call(v.matters(), 'addPermissions', matterId=matterId, body={'matterPermission': {'role': 'COLLABORATOR', 'accountId': collaborator['id']}})
   for collaborator in remove_collaborators:
     print(' removing collaborator %s' % collaborator['email'])
-    callGAPI(v.matters(), 'removePermissions', matterId=matterId, body={'accountId': collaborator['id']})
+    gapi.call(v.matters(), 'removePermissions', matterId=matterId, body={'accountId': collaborator['id']})
 
 def doGetVaultMatterInfo():
   v = buildGAPIObject('vault')
   matterId = getMatterItem(v, sys.argv[3])
-  result = callGAPI(v.matters(), 'get', matterId=matterId, view='FULL')
+  result = gapi.call(v.matters(), 'get', matterId=matterId, view='FULL')
   if 'matterPermissions' in result:
     cd = buildGAPIObject('directory')
     for i in range(0, len(result['matterPermissions'])):
@@ -9041,7 +8783,7 @@ def doCreateUser():
   cd = buildGAPIObject('directory')
   body = getUserAttributes(3, cd, False)
   print("Creating account for %s" % body['primaryEmail'])
-  callGAPI(cd.users(), 'insert', body=body, fields='primaryEmail')
+  gapi.call(cd.users(), 'insert', body=body, fields='primaryEmail')
 
 def GroupIsAbuseOrPostmaster(emailAddr):
   return emailAddr.startswith('abuse@') or emailAddr.startswith('postmaster@')
@@ -9066,7 +8808,7 @@ def getGroupAttrValue(myarg, value, gs_object, gs_body, function):
           else:
             value = int(value)
         except ValueError:
-          systemErrorExit(2, '%s must be a number ending with M (megabytes), K (kilobytes) or nothing (bytes); got %s' % value)
+          controlflow.system_error_exit(2, '%s must be a number ending with M (megabytes), K (kilobytes) or nothing (bytes); got %s' % value)
       elif params['type'] == 'string':
         if attrib == 'description':
           value = value.replace('\\n', '\n')
@@ -9076,7 +8818,7 @@ def getGroupAttrValue(myarg, value, gs_object, gs_body, function):
           value = value.upper()
           possible_values = GROUP_SETTINGS_LIST_PATTERN.findall(params['description'])
           if value not in possible_values:
-            systemErrorExit(2, 'value for %s must be one of %s. Got %s.' % (attrib, ', '.join(possible_values), value))
+            controlflow.system_error_exit(2, 'value for %s must be one of %s. Got %s.' % (attrib, ', '.join(possible_values), value))
         elif attrib in GROUP_SETTINGS_BOOLEAN_ATTRIBUTES:
           value = value.lower()
           if value in true_values:
@@ -9084,10 +8826,10 @@ def getGroupAttrValue(myarg, value, gs_object, gs_body, function):
           elif value in false_values:
             value = 'false'
           else:
-            systemErrorExit(2, 'value for %s must be true|false. Got %s.' % (attrib, value))
+            controlflow.system_error_exit(2, 'value for %s must be true|false. Got %s.' % (attrib, value))
       gs_body[attrib] = value
       return
-  systemErrorExit(2, '%s is not a valid argument for "gam %s group"' % (myarg, function))
+  controlflow.system_error_exit(2, '%s is not a valid argument for "gam %s group"' % (myarg, function))
 
 def doCreateGroup():
   cd = buildGAPIObject('directory')
@@ -9128,34 +8870,34 @@ def doCreateGroup():
   if not got_name:
     body['name'] = body['email']
   print("Creating group %s" % body['email'])
-  callGAPI(cd.groups(), 'insert', body=body, fields='email')
+  gapi.call(cd.groups(), 'insert', body=body, fields='email')
   if gs and not GroupIsAbuseOrPostmaster(body['email']):
     if gs_get_before_update:
-      current_settings = callGAPI(gs.groups(), 'get',
+      current_settings = gapi.call(gs.groups(), 'get',
                                   retry_reasons=['serviceLimit', 'notFound'],
                                   groupUniqueId=body['email'], fields='*')
       if current_settings is not None:
         gs_body = dict(list(current_settings.items()) + list(gs_body.items()))
     if gs_body:
-      callGAPI(gs.groups(), 'update', retry_reasons=['serviceLimit', 'notFound'], groupUniqueId=body['email'], body=gs_body)
+      gapi.call(gs.groups(), 'update', retry_reasons=['serviceLimit', 'notFound'], groupUniqueId=body['email'], body=gs_body)
 
 def doCreateAlias():
   cd = buildGAPIObject('directory')
   body = {'alias': normalizeEmailAddressOrUID(sys.argv[3], noUid=True, noLower=True)}
   target_type = sys.argv[4].lower()
   if target_type not in ['user', 'group', 'target']:
-    systemErrorExit(2, 'type of target must be user or group; got %s' % target_type)
+    controlflow.system_error_exit(2, 'type of target must be user or group; got %s' % target_type)
   targetKey = normalizeEmailAddressOrUID(sys.argv[5])
   print('Creating alias %s for %s %s' % (body['alias'], target_type, targetKey))
   if target_type == 'user':
-    callGAPI(cd.users().aliases(), 'insert', userKey=targetKey, body=body)
+    gapi.call(cd.users().aliases(), 'insert', userKey=targetKey, body=body)
   elif target_type == 'group':
-    callGAPI(cd.groups().aliases(), 'insert', groupKey=targetKey, body=body)
+    gapi.call(cd.groups().aliases(), 'insert', groupKey=targetKey, body=body)
   elif target_type == 'target':
     try:
-      callGAPI(cd.users().aliases(), 'insert', throw_reasons=[GAPI_INVALID, GAPI_BAD_REQUEST], userKey=targetKey, body=body)
-    except (GAPI_invalid, GAPI_badRequest):
-      callGAPI(cd.groups().aliases(), 'insert', groupKey=targetKey, body=body)
+      gapi.call(cd.users().aliases(), 'insert', throw_reasons=[gapi.errors.ErrorReason.INVALID, gapi.errors.ErrorReason.BAD_REQUEST], userKey=targetKey, body=body)
+    except (gapi.errors.GapiInvalidError, gapi.errors.GapiBadRequestError):
+      gapi.call(cd.groups().aliases(), 'insert', groupKey=targetKey, body=body)
 
 def doCreateOrg():
   cd = buildGAPIObject('directory')
@@ -9178,9 +8920,9 @@ def doCreateOrg():
       body['blockInheritance'] = False
       i += 1
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam create org"' % sys.argv[i])
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam create org"' % sys.argv[i])
   if parent.startswith('id:'):
-    parent = callGAPI(cd.orgunits(), 'get',
+    parent = gapi.call(cd.orgunits(), 'get',
                       customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=parent, fields='orgUnitPath')['orgUnitPath']
   if parent == '/':
     orgUnitPath = parent+name
@@ -9192,7 +8934,7 @@ def doCreateOrg():
     body['parentOrgUnitPath'] = '/'
     body['name'] = orgUnitPath[1:]
   parent = body['parentOrgUnitPath']
-  callGAPI(cd.orgunits(), 'insert', customerId=GC_Values[GC_CUSTOMER_ID], body=body)
+  gapi.call(cd.orgunits(), 'insert', customerId=GC_Values[GC_CUSTOMER_ID], body=body)
 
 def _getBuildingAttributes(args, body={}):
   i = 0
@@ -9221,7 +8963,7 @@ def _getBuildingAttributes(args, body={}):
       body['floorNames'] = args[i+1].split(',')
       i += 2
     else:
-      systemErrorExit(3, '%s is not a valid argument for "gam create|update building"' % myarg)
+      controlflow.system_error_exit(3, '%s is not a valid argument for "gam create|update building"' % myarg)
   return body
 
 def doCreateBuilding():
@@ -9231,7 +8973,7 @@ def doCreateBuilding():
           'buildingName': sys.argv[3]}
   body = _getBuildingAttributes(sys.argv[4:], body)
   print('Creating building %s...' % body['buildingId'])
-  callGAPI(cd.resources().buildings(), 'insert',
+  gapi.call(cd.resources().buildings(), 'insert',
            customer=GC_Values[GC_CUSTOMER_ID], body=body)
 
 def _makeBuildingIdNameMap(cd):
@@ -9248,7 +8990,7 @@ def _getBuildingByNameOrId(cd, which_building, minLen=1):
   if not which_building or (minLen == 0 and which_building in ['id:', 'uid:']):
     if minLen == 0:
       return ''
-    systemErrorExit(3, 'Building id/name is empty')
+    controlflow.system_error_exit(3, 'Building id/name is empty')
   cg = UID_PATTERN.match(which_building)
   if cg:
     return cg.group(1)
@@ -9281,10 +9023,10 @@ def _getBuildingByNameOrId(cd, which_building, minLen=1):
     for building in ci_matches:
       message += '  Name:%s  id:%s\n' % (building['buildingName'], building['buildingId'])
     message += '\nPlease specify building name by exact case or by id.'
-    systemErrorExit(3, message)
+    controlflow.system_error_exit(3, message)
 # No matches
   else:
-    systemErrorExit(3, 'No such building %s' % which_building)
+    controlflow.system_error_exit(3, 'No such building %s' % which_building)
 
 def _getBuildingNameById(cd, buildingId):
   if GM_Globals[GM_MAP_BUILDING_ID_TO_NAME] is None:
@@ -9296,13 +9038,13 @@ def doUpdateBuilding():
   buildingId = _getBuildingByNameOrId(cd, sys.argv[3])
   body = _getBuildingAttributes(sys.argv[4:])
   print('Updating building %s...' % buildingId)
-  callGAPI(cd.resources().buildings(), 'patch',
+  gapi.call(cd.resources().buildings(), 'patch',
            customer=GC_Values[GC_CUSTOMER_ID], buildingId=buildingId, body=body)
 
 def doGetBuildingInfo():
   cd = buildGAPIObject('directory')
   buildingId = _getBuildingByNameOrId(cd, sys.argv[3])
-  building = callGAPI(cd.resources().buildings(), 'get',
+  building = gapi.call(cd.resources().buildings(), 'get',
                       customer=GC_Values[GC_CUSTOMER_ID], buildingId=buildingId)
   if 'buildingId' in building:
     building['buildingId'] = 'id:{0}'.format(building['buildingId'])
@@ -9316,7 +9058,7 @@ def doDeleteBuilding():
   cd = buildGAPIObject('directory')
   buildingId = _getBuildingByNameOrId(cd, sys.argv[3])
   print('Deleting building %s...' % buildingId)
-  callGAPI(cd.resources().buildings(), 'delete',
+  gapi.call(cd.resources().buildings(), 'delete',
            customer=GC_Values[GC_CUSTOMER_ID], buildingId=buildingId)
 
 def _getFeatureAttributes(args, body={}):
@@ -9327,14 +9069,14 @@ def _getFeatureAttributes(args, body={}):
       body['name'] = args[i+1]
       i += 2
     else:
-      systemErrorExit(3, '%s is not a valid argument for "gam create|update feature"')
+      controlflow.system_error_exit(3, '%s is not a valid argument for "gam create|update feature"')
   return body
 
 def doCreateFeature():
   cd = buildGAPIObject('directory')
   body = _getFeatureAttributes(sys.argv[3:])
   print('Creating feature %s...' % body['name'])
-  callGAPI(cd.resources().features(), 'insert',
+  gapi.call(cd.resources().features(), 'insert',
            customer=GC_Values[GC_CUSTOMER_ID], body=body)
 
 def doUpdateFeature():
@@ -9345,7 +9087,7 @@ def doUpdateFeature():
   oldName = sys.argv[3]
   body = {'newName': sys.argv[5:]}
   print('Updating feature %s...' % oldName)
-  callGAPI(cd.resources().features(), 'rename',
+  gapi.call(cd.resources().features(), 'rename',
            customer=GC_Values[GC_CUSTOMER_ID], oldName=oldName,
            body=body)
 
@@ -9353,7 +9095,7 @@ def doDeleteFeature():
   cd = buildGAPIObject('directory')
   featureKey = sys.argv[3]
   print('Deleting feature %s...' % featureKey)
-  callGAPI(cd.resources().features(), 'delete',
+  gapi.call(cd.resources().features(), 'delete',
            customer=GC_Values[GC_CUSTOMER_ID], featureKey=featureKey)
 
 def _getResourceCalendarAttributes(cd, args, body={}):
@@ -9396,7 +9138,7 @@ def _getResourceCalendarAttributes(cd, args, body={}):
       body['userVisibleDescription'] = args[i+1]
       i += 2
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam create|update resource"' % args[i])
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam create|update resource"' % args[i])
   return body
 
 def doCreateResourceCalendar():
@@ -9405,7 +9147,7 @@ def doCreateResourceCalendar():
           'resourceName': sys.argv[4]}
   body = _getResourceCalendarAttributes(cd, sys.argv[5:], body)
   print('Creating resource %s...' % body['resourceId'])
-  callGAPI(cd.resources().calendars(), 'insert',
+  gapi.call(cd.resources().calendars(), 'insert',
            customer=GC_Values[GC_CUSTOMER_ID], body=body)
 
 def doUpdateResourceCalendar():
@@ -9414,7 +9156,7 @@ def doUpdateResourceCalendar():
   body = _getResourceCalendarAttributes(cd, sys.argv[4:])
   # Use patch since it seems to work better.
   # update requires name to be set.
-  callGAPI(cd.resources().calendars(), 'patch',
+  gapi.call(cd.resources().calendars(), 'patch',
            customer=GC_Values[GC_CUSTOMER_ID], calendarResourceId=resId, body=body,
            fields='')
   print('updated resource %s' % resId)
@@ -9428,7 +9170,7 @@ def doUpdateUser(users, i):
   for user in users:
     userKey = user
     if vfe:
-      user_primary = callGAPI(cd.users(), 'get', userKey=userKey, fields='primaryEmail,id')
+      user_primary = gapi.call(cd.users(), 'get', userKey=userKey, fields='primaryEmail,id')
       userKey = user_primary['id']
       user_primary = user_primary['primaryEmail']
       user_name, user_domain = splitEmailAddress(user_primary)
@@ -9436,19 +9178,19 @@ def doUpdateUser(users, i):
       body['emails'] = [{'type': 'custom', 'customType': 'former_employee', 'primary': False, 'address': user_primary}]
     sys.stdout.write('updating user %s...\n' % user)
     if body:
-      callGAPI(cd.users(), 'update', userKey=userKey, body=body)
+      gapi.call(cd.users(), 'update', userKey=userKey, body=body)
 
 def doRemoveUsersAliases(users):
   cd = buildGAPIObject('directory')
   for user in users:
-    user_aliases = callGAPI(cd.users(), 'get', userKey=user, fields='aliases,id,primaryEmail')
+    user_aliases = gapi.call(cd.users(), 'get', userKey=user, fields='aliases,id,primaryEmail')
     user_id = user_aliases['id']
     user_primary = user_aliases['primaryEmail']
     if 'aliases' in user_aliases:
       print('%s has %s aliases' % (user_primary, len(user_aliases['aliases'])))
       for an_alias in user_aliases['aliases']:
         print(' removing alias %s for %s...' % (an_alias, user_primary))
-        callGAPI(cd.users().aliases(), 'delete', userKey=user_id, alias=an_alias)
+        gapi.call(cd.users().aliases(), 'delete', userKey=user_id, alias=an_alias)
     else:
       print('%s has no aliases' % user_primary)
 
@@ -9462,16 +9204,16 @@ def deleteUserFromGroups(users):
     for user_group in user_groups:
       j += 1
       print(' removing %s from %s (%s/%s)' % (user, user_group['email'], j, num_groups))
-      callGAPI(cd.members(), 'delete', soft_errors=True, groupKey=user_group['id'], memberKey=user)
+      gapi.call(cd.members(), 'delete', soft_errors=True, groupKey=user_group['id'], memberKey=user)
     print('')
 
 def checkGroupExists(cd, group, i=0, count=0):
   group = normalizeEmailAddressOrUID(group)
   try:
-    return callGAPI(cd.groups(), 'get',
-                    throw_reasons=GAPI_GROUP_GET_THROW_REASONS, retry_reasons=GAPI_GROUP_GET_RETRY_REASONS,
+    return gapi.call(cd.groups(), 'get',
+                    throw_reasons=gapi.errors.GROUP_GET_THROW_REASONS, retry_reasons=gapi.errors.GROUP_GET_RETRY_REASONS,
                     groupKey=group, fields='email')['email']
-  except (GAPI_groupNotFound, GAPI_domainNotFound, GAPI_domainCannotUseApis, GAPI_forbidden, GAPI_badRequest):
+  except (gapi.errors.GapiGroupNotFoundError, gapi.errors.GapiDomainNotFoundError, gapi.errors.GapiDomainCannotUseApisError, gapi.errors.GapiForbiddenError, gapi.errors.GapiBadRequestError):
     entityUnknownWarning('Group', group, i, count)
     return None
 
@@ -9557,23 +9299,23 @@ def doUpdateGroup():
           add_text.append('delivery %s' % delivery)
         for i in range(2):
           try:
-            callGAPI(cd.members(), 'insert',
-                     throw_reasons=[GAPI_DUPLICATE, GAPI_MEMBER_NOT_FOUND, GAPI_RESOURCE_NOT_FOUND, GAPI_INVALID_MEMBER, GAPI_CYCLIC_MEMBERSHIPS_NOT_ALLOWED],
+            gapi.call(cd.members(), 'insert',
+                     throw_reasons=[gapi.errors.ErrorReason.DUPLICATE, gapi.errors.ErrorReason.MEMBER_NOT_FOUND, gapi.errors.ErrorReason.RESOURCE_NOT_FOUND, gapi.errors.ErrorReason.INVALID_MEMBER, gapi.errors.ErrorReason.CYCLIC_MEMBERSHIPS_NOT_ALLOWED],
                      groupKey=group, body=body)
             print(' Group: {0}, {1} Added {2}'.format(group, users_email[0], ' '.join(add_text)))
             break
-          except GAPI_duplicate as e:
+          except gapi.errors.GapiDuplicateError as e:
             # check if user is a full member, not pending
             try:
-              result = callGAPI(cd.members(), 'get', throw_reasons=[GAPI_MEMBER_NOT_FOUND], memberKey=users_email[0], groupKey=group, fields='role')
+              result = gapi.call(cd.members(), 'get', throw_reasons=[gapi.errors.ErrorReason.MEMBER_NOT_FOUND], memberKey=users_email[0], groupKey=group, fields='role')
               print(' Group: {0}, {1} Add {2} Failed: Duplicate, already a {3}'.format(group, users_email[0], ' '.join(add_text), result['role']))
               break # if get succeeds, user is a full member and we throw duplicate error
-            except GAPI_memberNotFound:
+            except gapi.errors.GapiMemberNotFoundError:
               # insert fails on duplicate and get fails on not found, user is pending
               print(' Group: {0}, {1} member is pending, deleting and re-adding to solve...'.format(group, users_email[0]))
-              callGAPI(cd.members(), 'delete', memberKey=users_email[0], groupKey=group)
+              gapi.call(cd.members(), 'delete', memberKey=users_email[0], groupKey=group)
               continue # 2nd insert should succeed now that pending is clear
-          except (GAPI_memberNotFound, GAPI_resourceNotFound, GAPI_invalidMember, GAPI_cyclicMembershipsNotAllowed) as e:
+          except (gapi.errors.GapiMemberNotFoundError, gapi.errors.GapiResourceNotFoundError, gapi.errors.GapiInvalidMemberError, gapi.errors.GapiCyclicMembershipsNotAllowedError) as e:
             print(' Group: {0}, {1} Add {2} Failed: {3}'.format(group, users_email[0], ' '.join(add_text), str(e)))
             break
     elif myarg == 'sync':
@@ -9618,11 +9360,11 @@ def doUpdateGroup():
           items.append(['gam', 'update', 'group', group, 'remove', user_email])
       else:
         try:
-          callGAPI(cd.members(), 'delete',
-                   throw_reasons=[GAPI_MEMBER_NOT_FOUND, GAPI_INVALID_MEMBER],
+          gapi.call(cd.members(), 'delete',
+                   throw_reasons=[gapi.errors.ErrorReason.MEMBER_NOT_FOUND, gapi.errors.ErrorReason.INVALID_MEMBER],
                    groupKey=group, memberKey=users_email[0])
           print(' Group: {0}, {1} Removed'.format(group, users_email[0]))
-        except (GAPI_memberNotFound, GAPI_invalidMember) as e:
+        except (gapi.errors.GapiMemberNotFoundError, gapi.errors.GapiInvalidMemberError) as e:
           print(' Group: {0}, {1} Remove Failed: {2}'.format(group, users_email[0], str(e)))
     elif myarg == 'update':
       role, users_email, delivery = _getRoleAndUsers()
@@ -9650,11 +9392,11 @@ def doUpdateGroup():
             body['delivery_settings'] = delivery
             update_text.append('delivery %s' % delivery)
           try:
-            callGAPI(cd.members(), 'update',
-                     throw_reasons=[GAPI_MEMBER_NOT_FOUND, GAPI_INVALID_MEMBER],
+            gapi.call(cd.members(), 'update',
+                     throw_reasons=[gapi.errors.ErrorReason.MEMBER_NOT_FOUND, gapi.errors.ErrorReason.INVALID_MEMBER],
                      groupKey=group, memberKey=users_email[0], body=body)
             print(' Group: {0}, {1} Updated {2}'.format(group, users_email[0], ' '.join(update_text)))
-          except (GAPI_memberNotFound, GAPI_invalidMember) as e:
+          except (gapi.errors.GapiMemberNotFoundError, gapi.errors.GapiInvalidMemberError) as e:
             print(' Group: {0}, {1} Update to {2} Failed: {3}'.format(group, users_email[0], role, str(e)))
     else: # clear
       checkSuspended = None
@@ -9671,7 +9413,7 @@ def doUpdateGroup():
           fields.append('status')
           i += 1
         else:
-          systemErrorExit(2, '%s is not a valid argument for "gam update group clear"' % sys.argv[i])
+          controlflow.system_error_exit(2, '%s is not a valid argument for "gam update group clear"' % sys.argv[i])
       if roles:
         roles = ','.join(sorted(set(roles)))
       else:
@@ -9684,7 +9426,7 @@ def doUpdateGroup():
       try:
         result = callGAPIpages(cd.members(), 'list', 'members',
                                page_message=page_message,
-                               throw_reasons=GAPI_MEMBERS_THROW_REASONS,
+                               throw_reasons=gapi.errors.MEMBERS_THROW_REASONS,
                                groupKey=group, roles=listRoles, fields=listFields)
         if not result:
           print('Group already has 0 members')
@@ -9696,13 +9438,13 @@ def doUpdateGroup():
             items.append(['gam', 'update', 'group', group, 'remove', user_email])
         else:
           try:
-            callGAPI(cd.members(), 'delete',
-                     throw_reasons=[GAPI_MEMBER_NOT_FOUND, GAPI_INVALID_MEMBER],
+            gapi.call(cd.members(), 'delete',
+                     throw_reasons=[gapi.errors.ErrorReason.MEMBER_NOT_FOUND, gapi.errors.ErrorReason.INVALID_MEMBER],
                      groupKey=group, memberKey=users_email[0])
             print(' Group: {0}, {1} Removed'.format(group, users_email[0]))
-          except (GAPI_memberNotFound, GAPI_invalidMember) as e:
+          except (gapi.errors.GapiMemberNotFoundError, gapi.errors.GapiInvalidMemberError) as e:
             print(' Group: {0}, {1} Remove Failed: {2}'.format(group, users_email[0], str(e)))
-      except (GAPI_groupNotFound, GAPI_domainNotFound, GAPI_invalid, GAPI_forbidden):
+      except (gapi.errors.GapiGroupNotFoundError, gapi.errors.GapiDomainNotFoundError, gapi.errors.GapiInvalidError, gapi.errors.GapiForbiddenError):
         entityUnknownWarning('Group', group, 0, 0)
     if items:
       run_batch(items)
@@ -9733,17 +9475,17 @@ def doUpdateGroup():
         i += 2
     group = normalizeEmailAddressOrUID(group)
     if use_cd_api or (group.find('@') == -1): # group settings API won't take uid so we make sure cd API is used so that we can grab real email.
-      group = callGAPI(cd.groups(), 'update', groupKey=group, body=cd_body, fields='email')['email']
+      group = gapi.call(cd.groups(), 'update', groupKey=group, body=cd_body, fields='email')['email']
     if gs:
       if not GroupIsAbuseOrPostmaster(group):
         if gs_get_before_update:
-          current_settings = callGAPI(gs.groups(), 'get',
+          current_settings = gapi.call(gs.groups(), 'get',
                                       retry_reasons=['serviceLimit'],
                                       groupUniqueId=group, fields='*')
           if current_settings is not None:
             gs_body = dict(list(current_settings.items()) + list(gs_body.items()))
         if gs_body:
-          callGAPI(gs.groups(), 'update', retry_reasons=['serviceLimit'], groupUniqueId=group, body=gs_body)
+          gapi.call(gs.groups(), 'update', retry_reasons=['serviceLimit'], groupUniqueId=group, body=gs_body)
     print('updated group %s' % group)
 
 def doUpdateAlias():
@@ -9751,21 +9493,21 @@ def doUpdateAlias():
   alias = normalizeEmailAddressOrUID(sys.argv[3], noUid=True, noLower=True)
   target_type = sys.argv[4].lower()
   if target_type not in ['user', 'group', 'target']:
-    systemErrorExit(2, 'target type must be one of user, group, target; got %s' % target_type)
+    controlflow.system_error_exit(2, 'target type must be one of user, group, target; got %s' % target_type)
   target_email = normalizeEmailAddressOrUID(sys.argv[5])
   try:
-    callGAPI(cd.users().aliases(), 'delete', throw_reasons=[GAPI_INVALID], userKey=alias, alias=alias)
-  except GAPI_invalid:
-    callGAPI(cd.groups().aliases(), 'delete', groupKey=alias, alias=alias)
+    gapi.call(cd.users().aliases(), 'delete', throw_reasons=[gapi.errors.ErrorReason.INVALID], userKey=alias, alias=alias)
+  except gapi.errors.GapiInvalidError:
+    gapi.call(cd.groups().aliases(), 'delete', groupKey=alias, alias=alias)
   if target_type == 'user':
-    callGAPI(cd.users().aliases(), 'insert', userKey=target_email, body={'alias': alias})
+    gapi.call(cd.users().aliases(), 'insert', userKey=target_email, body={'alias': alias})
   elif target_type == 'group':
-    callGAPI(cd.groups().aliases(), 'insert', groupKey=target_email, body={'alias': alias})
+    gapi.call(cd.groups().aliases(), 'insert', groupKey=target_email, body={'alias': alias})
   elif target_type == 'target':
     try:
-      callGAPI(cd.users().aliases(), 'insert', throw_reasons=[GAPI_INVALID], userKey=target_email, body={'alias': alias})
-    except GAPI_invalid:
-      callGAPI(cd.groups().aliases(), 'insert', groupKey=target_email, body={'alias': alias})
+      gapi.call(cd.users().aliases(), 'insert', throw_reasons=[gapi.errors.ErrorReason.INVALID], userKey=target_email, body={'alias': alias})
+    except gapi.errors.GapiInvalidError:
+      gapi.call(cd.groups().aliases(), 'insert', groupKey=target_email, body={'alias': alias})
   print('updated alias %s' % alias)
 
 def getCrOSDeviceEntity(i, cd):
@@ -9823,7 +9565,7 @@ def doUpdateCros():
         action = 'deprovision'
         deprovisionReason = 'retiring_device'
       elif action not in ['disable', 'reenable']:
-        systemErrorExit(2, 'expected action of deprovision_same_model_replace, deprovision_different_model_replace, deprovision_retiring_device, disable or reenable, got %s' % action)
+        controlflow.system_error_exit(2, 'expected action of deprovision_same_model_replace, deprovision_different_model_replace, deprovision_retiring_device, disable or reenable, got %s' % action)
       action_body = {'action': action}
       if deprovisionReason:
         action_body['deprovisionReason'] = deprovisionReason
@@ -9832,7 +9574,7 @@ def doUpdateCros():
       ack_wipe = True
       i += 1
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam update cros"' % sys.argv[i])
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam update cros"' % sys.argv[i])
   i = 0
   count = len(devices)
   if action_body:
@@ -9842,20 +9584,20 @@ def doUpdateCros():
     for deviceId in devices:
       i += 1
       print(' performing action %s for %s (%s of %s)' % (action, deviceId, i, count))
-      callGAPI(cd.chromeosdevices(), function='action', customerId=GC_Values[GC_CUSTOMER_ID], resourceId=deviceId, body=action_body)
+      gapi.call(cd.chromeosdevices(), function='action', customerId=GC_Values[GC_CUSTOMER_ID], resourceId=deviceId, body=action_body)
   else:
     if update_body:
       for deviceId in devices:
         i += 1
         print(' updating %s (%s of %s)' % (deviceId, i, count))
-        callGAPI(service=cd.chromeosdevices(), function='update', customerId=GC_Values[GC_CUSTOMER_ID], deviceId=deviceId, body=update_body)
+        gapi.call(service=cd.chromeosdevices(), function='update', customerId=GC_Values[GC_CUSTOMER_ID], deviceId=deviceId, body=update_body)
     if orgUnitPath:
       #move_body[u'deviceIds'] = devices
       # split moves into max 50 devices per batch
       for l in range(0, len(devices), 50):
         move_body = {'deviceIds': devices[l:l+50]}
         print(' moving %s devices to %s' % (len(move_body['deviceIds']), orgUnitPath))
-        callGAPI(cd.chromeosdevices(), 'moveDevicesToOu', customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=orgUnitPath, body=move_body)
+        gapi.call(cd.chromeosdevices(), 'moveDevicesToOu', customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=orgUnitPath, body=move_body)
 
 def doUpdateMobile():
   cd = buildGAPIObject('directory')
@@ -9884,7 +9626,7 @@ def doUpdateMobile():
       elif body['action'].replace('_', '') in ['accountwipe', 'wipeaccount']:
         body['action'] = 'admin_account_wipe'
       if body['action'] not in ['admin_remote_wipe', 'admin_account_wipe', 'approve', 'block', 'cancel_remote_wipe_then_activate', 'cancel_remote_wipe_then_block']:
-        systemErrorExit(2, 'action must be one of wipe, wipeaccount, approve, block, cancel_remote_wipe_then_activate, cancel_remote_wipe_then_block; got %s' % body['action'])
+        controlflow.system_error_exit(2, 'action must be one of wipe, wipeaccount, approve, block, cancel_remote_wipe_then_activate, cancel_remote_wipe_then_block; got %s' % body['action'])
       i += 2
     elif myarg in ['ifusers', 'matchusers']:
       match_users = getUsersToModify(entity_type=sys.argv[i+1].lower(), entity=sys.argv[i+2])
@@ -9893,7 +9635,7 @@ def doUpdateMobile():
       doit = True
       i += 1
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam update mobile"' % sys.argv[i])
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam update mobile"' % sys.argv[i])
   if body:
     if doit:
       print('Updating %s devices' % len(devices))
@@ -9908,12 +9650,12 @@ def doUpdateMobile():
       else:
         print('%s %s on user %s device %s' % (describe_as, body['action'], device_user, device['resourceId']))
         if doit:
-          callGAPI(cd.mobiledevices(), 'action', resourceId=device['resourceId'], body=body, customerId=GC_Values[GC_CUSTOMER_ID])
+          gapi.call(cd.mobiledevices(), 'action', resourceId=device['resourceId'], body=body, customerId=GC_Values[GC_CUSTOMER_ID])
 
 def doDeleteMobile():
   cd = buildGAPIObject('directory')
   resourceId = sys.argv[3]
-  callGAPI(cd.mobiledevices(), 'delete', resourceId=resourceId, customerId=GC_Values[GC_CUSTOMER_ID])
+  gapi.call(cd.mobiledevices(), 'delete', resourceId=resourceId, customerId=GC_Values[GC_CUSTOMER_ID])
 
 def doUpdateOrg():
   cd = buildGAPIObject('directory')
@@ -9929,7 +9671,7 @@ def doUpdateOrg():
       for l in range(0, len(users), 50):
         move_body = {'deviceIds': users[l:l+50]}
         print(' moving %s devices to %s' % (len(move_body['deviceIds']), orgUnitPath))
-        callGAPI(cd.chromeosdevices(), 'moveDevicesToOu', customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=orgUnitPath, body=move_body)
+        gapi.call(cd.chromeosdevices(), 'moveDevicesToOu', customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=orgUnitPath, body=move_body)
     else:
       current_user = 0
       user_count = len(users)
@@ -9937,8 +9679,8 @@ def doUpdateOrg():
         current_user += 1
         sys.stderr.write(' moving %s to %s (%s/%s)\n' % (user, orgUnitPath, current_user, user_count))
         try:
-          callGAPI(cd.users(), 'update', throw_reasons=[GAPI_CONDITION_NOT_MET], userKey=user, body={'orgUnitPath': orgUnitPath})
-        except GAPI_conditionNotMet:
+          gapi.call(cd.users(), 'update', throw_reasons=[gapi.errors.ErrorReason.CONDITION_NOT_MET], userKey=user, body={'orgUnitPath': orgUnitPath})
+        except gapi.errors.GapiConditionNotMetError:
           pass
   else:
     body = {}
@@ -9965,14 +9707,14 @@ def doUpdateOrg():
         body['blockInheritance'] = False
         i += 1
       else:
-        systemErrorExit(2, '%s is not a valid argument for "gam update org"' % sys.argv[i])
-    callGAPI(cd.orgunits(), 'update', customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=encodeOrgUnitPath(makeOrgUnitPathRelative(orgUnitPath)), body=body)
+        controlflow.system_error_exit(2, '%s is not a valid argument for "gam update org"' % sys.argv[i])
+    gapi.call(cd.orgunits(), 'update', customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=encodeOrgUnitPath(makeOrgUnitPathRelative(orgUnitPath)), body=body)
 
 def doWhatIs():
   cd = buildGAPIObject('directory')
   email = normalizeEmailAddressOrUID(sys.argv[2])
   try:
-    user_or_alias = callGAPI(cd.users(), 'get', throw_reasons=[GAPI_NOT_FOUND, GAPI_BAD_REQUEST, GAPI_INVALID], userKey=email, fields='id,primaryEmail')
+    user_or_alias = gapi.call(cd.users(), 'get', throw_reasons=[gapi.errors.ErrorReason.NOT_FOUND, gapi.errors.ErrorReason.BAD_REQUEST, gapi.errors.ErrorReason.INVALID], userKey=email, fields='id,primaryEmail')
     if (user_or_alias['primaryEmail'].lower() == email) or (user_or_alias['id'] == email):
       sys.stderr.write('%s is a user\n\n' % email)
       doGetUserInfo(user_email=email)
@@ -9980,13 +9722,13 @@ def doWhatIs():
     sys.stderr.write('%s is a user alias\n\n' % email)
     doGetAliasInfo(alias_email=email)
     return
-  except (GAPI_notFound, GAPI_badRequest, GAPI_invalid):
+  except (gapi.errors.GapiNotFoundError, gapi.errors.GapiBadRequestError, gapi.errors.GapiInvalidError):
     sys.stderr.write('%s is not a user...\n' % email)
     sys.stderr.write('%s is not a user alias...\n' % email)
   try:
-    group = callGAPI(cd.groups(), 'get', throw_reasons=[GAPI_NOT_FOUND, GAPI_BAD_REQUEST], groupKey=email, fields='id,email')
-  except (GAPI_notFound, GAPI_badRequest):
-    systemErrorExit(1, '%s is not a group either!\n\nDoesn\'t seem to exist!\n\n' % email)
+    group = gapi.call(cd.groups(), 'get', throw_reasons=[gapi.errors.ErrorReason.NOT_FOUND, gapi.errors.ErrorReason.BAD_REQUEST], groupKey=email, fields='id,email')
+  except (gapi.errors.GapiNotFoundError, gapi.errors.GapiBadRequestError):
+    controlflow.system_error_exit(1, '%s is not a group either!\n\nDoesn\'t seem to exist!\n\n' % email)
   if (group['email'].lower() == email) or (group['id'] == email):
     sys.stderr.write('%s is a group\n\n' % email)
     doGetGroupInfo(group_name=email)
@@ -9995,11 +9737,11 @@ def doWhatIs():
     doGetAliasInfo(alias_email=email)
 
 def convertSKU2ProductId(res, sku, customerId):
-  results = callGAPI(res.subscriptions(), 'list', customerId=customerId)
+  results = gapi.call(res.subscriptions(), 'list', customerId=customerId)
   for subscription in results['subscriptions']:
     if sku == subscription['skuId']:
       return subscription['subscriptionId']
-  systemErrorExit(3, 'could not find subscription for customer %s and SKU %s' % (customerId, sku))
+  controlflow.system_error_exit(3, 'could not find subscription for customer %s and SKU %s' % (customerId, sku))
 
 def doDeleteResoldSubscription():
   res = buildGAPIObject('reseller')
@@ -10007,14 +9749,14 @@ def doDeleteResoldSubscription():
   sku = sys.argv[4]
   deletionType = sys.argv[5]
   subscriptionId = convertSKU2ProductId(res, sku, customerId)
-  callGAPI(res.subscriptions(), 'delete', customerId=customerId, subscriptionId=subscriptionId, deletionType=deletionType)
+  gapi.call(res.subscriptions(), 'delete', customerId=customerId, subscriptionId=subscriptionId, deletionType=deletionType)
   print('Cancelled %s for %s' % (sku, customerId))
 
 def doCreateResoldSubscription():
   res = buildGAPIObject('reseller')
   customerId = sys.argv[3]
   customerAuthToken, body = _getResoldSubscriptionAttr(sys.argv[4:], customerId)
-  result = callGAPI(res.subscriptions(), 'insert', customerId=customerId, customerAuthToken=customerAuthToken, body=body, fields='customerId')
+  result = gapi.call(res.subscriptions(), 'insert', customerId=customerId, customerAuthToken=customerAuthToken, body=body, fields='customerId')
   print('Created subscription:')
   print_json(None, result)
 
@@ -10069,10 +9811,10 @@ def doUpdateResoldSubscription():
           kwargs['body']['dealCode'] = sys.argv[i+1]
           i += 2
         else:
-          systemErrorExit(3, '%s is not a valid argument to "gam update resoldsubscription plan"' % planarg)
+          controlflow.system_error_exit(3, '%s is not a valid argument to "gam update resoldsubscription plan"' % planarg)
     else:
-      systemErrorExit(3, '%s is not a valid argument to "gam update resoldsubscription"' % myarg)
-  result = callGAPI(res.subscriptions(), function, customerId=customerId, subscriptionId=subscriptionId, **kwargs)
+      controlflow.system_error_exit(3, '%s is not a valid argument to "gam update resoldsubscription"' % myarg)
+  result = gapi.call(res.subscriptions(), function, customerId=customerId, subscriptionId=subscriptionId, **kwargs)
   print('Updated %s SKU %s subscription:' % (customerId, sku))
   if result:
     print_json(None, result)
@@ -10088,8 +9830,8 @@ def doGetResoldSubscriptions():
       customerAuthToken = sys.argv[i+1]
       i += 2
     else:
-      systemErrorExit(3, '%s is not a valid argument for "gam info resoldsubscriptions"' % myarg)
-  result = callGAPI(res.subscriptions(), 'list', customerId=customerId, customerAuthToken=customerAuthToken)
+      controlflow.system_error_exit(3, '%s is not a valid argument for "gam info resoldsubscriptions"' % myarg)
+  result = gapi.call(res.subscriptions(), 'list', customerId=customerId, customerAuthToken=customerAuthToken)
   print_json(None, result)
 
 def _getResoldSubscriptionAttr(arg, customerId):
@@ -10116,14 +9858,14 @@ def _getResoldSubscriptionAttr(arg, customerId):
     elif myarg in ['customerauthtoken', 'transfertoken']:
       customerAuthToken = arg[i+1]
     else:
-      systemErrorExit(3, '%s is not a valid argument for "gam create resoldsubscription"' % myarg)
+      controlflow.system_error_exit(3, '%s is not a valid argument for "gam create resoldsubscription"' % myarg)
     i += 2
   return customerAuthToken, body
 
 def doGetResoldCustomer():
   res = buildGAPIObject('reseller')
   customerId = sys.argv[3]
-  result = callGAPI(res.customers(), 'get', customerId=customerId)
+  result = gapi.call(res.customers(), 'get', customerId=customerId)
   print_json(None, result)
 
 def _getResoldCustomerAttr(arg):
@@ -10142,7 +9884,7 @@ def _getResoldCustomerAttr(arg):
     elif myarg in ['customerauthtoken', 'transfertoken']:
       customerAuthToken = arg[i+1]
     else:
-      systemErrorExit(3, '%s is not a valid argument for "gam %s resoldcustomer"' % (myarg, sys.argv[1]))
+      controlflow.system_error_exit(3, '%s is not a valid argument for "gam %s resoldcustomer"' % (myarg, sys.argv[1]))
     i += 2
   return customerAuthToken, body
 
@@ -10150,20 +9892,20 @@ def doUpdateResoldCustomer():
   res = buildGAPIObject('reseller')
   customerId = sys.argv[3]
   customerAuthToken, body = _getResoldCustomerAttr(sys.argv[4:])
-  callGAPI(res.customers(), 'patch', customerId=customerId, body=body, customerAuthToken=customerAuthToken, fields='customerId')
+  gapi.call(res.customers(), 'patch', customerId=customerId, body=body, customerAuthToken=customerAuthToken, fields='customerId')
   print('updated customer %s' % customerId)
 
 def doCreateResoldCustomer():
   res = buildGAPIObject('reseller')
   customerAuthToken, body = _getResoldCustomerAttr(sys.argv[4:])
   body['customerDomain'] = sys.argv[3]
-  result = callGAPI(res.customers(), 'insert', body=body, customerAuthToken=customerAuthToken, fields='customerId,customerDomain')
+  result = gapi.call(res.customers(), 'insert', body=body, customerAuthToken=customerAuthToken, fields='customerId,customerDomain')
   print('Created customer %s with id %s' % (result['customerDomain'], result['customerId']))
 
 def _getValueFromOAuth(field, credentials=None):
   if not GC_Values[GC_DECODED_ID_TOKEN]:
     credentials = credentials if credentials is not None else getValidOauth2TxtCredentials()
-    http = google_auth_httplib2.Request(_createHttpObj())
+    http = google_auth_httplib2.Request(gapi.create_http())
     GC_Values[GC_DECODED_ID_TOKEN] = google.oauth2.id_token.verify_oauth2_token(credentials.id_token, http)
   return GC_Values[GC_DECODED_ID_TOKEN].get(field, 'Unknown')
 
@@ -10171,7 +9913,7 @@ def doGetMemberInfo():
   cd = buildGAPIObject('directory')
   memberKey = normalizeEmailAddressOrUID(sys.argv[3])
   groupKey = normalizeEmailAddressOrUID(sys.argv[4])
-  info = callGAPI(cd.members(), 'get', memberKey=memberKey, groupKey=groupKey)
+  info = gapi.call(cd.members(), 'get', memberKey=memberKey, groupKey=groupKey)
   print_json(None, info)
 
 def doGetUserInfo(user_email=None):
@@ -10222,8 +9964,8 @@ def doGetUserInfo(user_email=None):
     elif myarg in ['nousers', 'groups']:
       i += 1
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam info user"' % myarg)
-  user = callGAPI(cd.users(), 'get', userKey=user_email, projection=projection, customFieldMask=customFieldMask, viewType=viewType)
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam info user"' % myarg)
+  user = gapi.call(cd.users(), 'get', userKey=user_email, projection=projection, customFieldMask=customFieldMask, viewType=viewType)
   print('User: %s' % user['primaryEmail'])
   if 'name' in user and 'givenName' in user['name']:
     print(utils.convertUTF8('First Name: %s' % user['name']['givenName']))
@@ -10484,16 +10226,16 @@ def doGetGroupInfo(group_name=None):
       if myarg == 'schemas':
         i += 1
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam info group"' % myarg)
-  basic_info = callGAPI(cd.groups(), 'get', groupKey=group_name)
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam info group"' % myarg)
+  basic_info = gapi.call(cd.groups(), 'get', groupKey=group_name)
   settings = {}
   if not GroupIsAbuseOrPostmaster(basic_info['email']):
     try:
-      settings = callGAPI(gs.groups(), 'get', throw_reasons=[GAPI_AUTH_ERROR], retry_reasons=['serviceLimit'],
+      settings = gapi.call(gs.groups(), 'get', throw_reasons=[gapi.errors.ErrorReason.AUTH_ERROR], retry_reasons=['serviceLimit'],
                           groupUniqueId=basic_info['email']) # Use email address retrieved from cd since GS API doesn't support uid
       if settings is None:
         settings = {}
-    except GAPI_authError:
+    except gapi.errors.GapiAuthErrorError:
       pass
   print('')
   print('Group Settings:')
@@ -10529,13 +10271,13 @@ def doGetAliasInfo(alias_email=None):
   if alias_email is None:
     alias_email = normalizeEmailAddressOrUID(sys.argv[3])
   try:
-    result = callGAPI(cd.users(), 'get', throw_reasons=[GAPI_INVALID, GAPI_BAD_REQUEST], userKey=alias_email)
-  except (GAPI_invalid, GAPI_badRequest):
-    result = callGAPI(cd.groups(), 'get', groupKey=alias_email)
+    result = gapi.call(cd.users(), 'get', throw_reasons=[gapi.errors.ErrorReason.INVALID, gapi.errors.ErrorReason.BAD_REQUEST], userKey=alias_email)
+  except (gapi.errors.GapiInvalidError, gapi.errors.GapiBadRequestError):
+    result = gapi.call(cd.groups(), 'get', groupKey=alias_email)
   print(' Alias Email: %s' % alias_email)
   try:
     if result['primaryEmail'].lower() == alias_email.lower():
-      systemErrorExit(3, '%s is a primary user email address, not an alias.' % alias_email)
+      controlflow.system_error_exit(3, '%s is a primary user email address, not an alias.' % alias_email)
     print(' User Email: %s' % result['primaryEmail'])
   except KeyError:
     print(' Group Email: %s' % result['email'])
@@ -10544,7 +10286,7 @@ def doGetAliasInfo(alias_email=None):
 def doGetResourceCalendarInfo():
   cd = buildGAPIObject('directory')
   resId = sys.argv[3]
-  resource = callGAPI(cd.resources().calendars(), 'get',
+  resource = gapi.call(cd.resources().calendars(), 'get',
                       customer=GC_Values[GC_CUSTOMER_ID], calendarResourceId=resId)
   if 'featureInstances' in resource:
     resource['features'] = ', '.join([a_feature['feature']['name'] for a_feature in resource.pop('featureInstances')])
@@ -10627,7 +10369,7 @@ def doGetCrosInfo():
             projection = 'FULL'
             noLists = False
         else:
-          systemErrorExit(2, '%s is not a valid argument for "gam info cros fields"' % field)
+          controlflow.system_error_exit(2, '%s is not a valid argument for "gam info cros fields"' % field)
       i += 2
     elif myarg == 'downloadfile':
       downloadfile = sys.argv[i+1]
@@ -10640,7 +10382,7 @@ def doGetCrosInfo():
         os.makedirs(targetFolder)
       i += 2
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam info cros"' % sys.argv[i])
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam info cros"' % sys.argv[i])
   if fieldsList:
     fieldsList.append('deviceId')
     if guess_aue:
@@ -10652,7 +10394,7 @@ def doGetCrosInfo():
   device_count = len(devices)
   for deviceId in devices:
     i += 1
-    cros = callGAPI(cd.chromeosdevices(), 'get', customerId=GC_Values[GC_CUSTOMER_ID],
+    cros = gapi.call(cd.chromeosdevices(), 'get', customerId=GC_Values[GC_CUSTOMER_ID],
                     deviceId=deviceId, projection=projection, fields=fields)
     print('CrOS Device: {0} ({1} of {2})'.format(deviceId, i, device_count))
     if 'notes' in cros:
@@ -10744,7 +10486,7 @@ def doGetCrosInfo():
 def doGetMobileInfo():
   cd = buildGAPIObject('directory')
   resourceId = sys.argv[3]
-  info = callGAPI(cd.mobiledevices(), 'get', customerId=GC_Values[GC_CUSTOMER_ID], resourceId=resourceId)
+  info = gapi.call(cd.mobiledevices(), 'get', customerId=GC_Values[GC_CUSTOMER_ID], resourceId=resourceId)
   if 'deviceId' in info:
     info['deviceId'] = info['deviceId'].encode('unicode-escape').decode(UTF8)
   attrib = 'securityPatchLevel'
@@ -10780,11 +10522,11 @@ def print_json(object_name, object_value, spacing=''):
 def doSiteVerifyShow():
   verif = buildGAPIObject('siteVerification')
   a_domain = sys.argv[3]
-  txt_record = callGAPI(verif.webResource(), 'getToken', body={'site':{'type':'INET_DOMAIN', 'identifier':a_domain}, 'verificationMethod':'DNS_TXT'})
+  txt_record = gapi.call(verif.webResource(), 'getToken', body={'site':{'type':'INET_DOMAIN', 'identifier':a_domain}, 'verificationMethod':'DNS_TXT'})
   print('TXT Record Name:   %s' % a_domain)
   print('TXT Record Value:  %s' % txt_record['token'])
   print()
-  cname_record = callGAPI(verif.webResource(), 'getToken', body={'site':{'type':'INET_DOMAIN', 'identifier':a_domain}, 'verificationMethod':'DNS_CNAME'})
+  cname_record = gapi.call(verif.webResource(), 'getToken', body={'site':{'type':'INET_DOMAIN', 'identifier':a_domain}, 'verificationMethod':'DNS_CNAME'})
   cname_token = cname_record['token']
   cname_list = cname_token.split(' ')
   cname_subdomain = cname_list[0]
@@ -10792,13 +10534,13 @@ def doSiteVerifyShow():
   print('CNAME Record Name:   %s.%s' % (cname_subdomain, a_domain))
   print('CNAME Record Value:  %s' % cname_value)
   print('')
-  webserver_file_record = callGAPI(verif.webResource(), 'getToken', body={'site':{'type':'SITE', 'identifier':'http://%s/' % a_domain}, 'verificationMethod':'FILE'})
+  webserver_file_record = gapi.call(verif.webResource(), 'getToken', body={'site':{'type':'SITE', 'identifier':'http://%s/' % a_domain}, 'verificationMethod':'FILE'})
   webserver_file_token = webserver_file_record['token']
   print('Saving web server verification file to: %s' % webserver_file_token)
   writeFile(webserver_file_token, 'google-site-verification: {0}'.format(webserver_file_token), continueOnError=True)
   print('Verification File URL: http://%s/%s' % (a_domain, webserver_file_token))
   print()
-  webserver_meta_record = callGAPI(verif.webResource(), 'getToken', body={'site':{'type':'SITE', 'identifier':'http://%s/' % a_domain}, 'verificationMethod':'META'})
+  webserver_meta_record = gapi.call(verif.webResource(), 'getToken', body={'site':{'type':'SITE', 'identifier':'http://%s/' % a_domain}, 'verificationMethod':'META'})
   print('Meta URL:               http://%s/' % a_domain)
   print('Meta HTML Header Data:  %s' % webserver_meta_record['token'])
   print()
@@ -10833,14 +10575,14 @@ def doSiteVerifyAttempt():
     identifier = 'http://%s/' % a_domain
   body = {'site':{'type':verify_type, 'identifier':identifier}, 'verificationMethod':verificationMethod}
   try:
-    verify_result = callGAPI(verif.webResource(), 'insert', throw_reasons=[GAPI_BAD_REQUEST], verificationMethod=verificationMethod, body=body)
-  except GAPI_badRequest as e:
+    verify_result = gapi.call(verif.webResource(), 'insert', throw_reasons=[gapi.errors.ErrorReason.BAD_REQUEST], verificationMethod=verificationMethod, body=body)
+  except gapi.errors.GapiBadRequestError as e:
     print('ERROR: %s' % str(e))
-    verify_data = callGAPI(verif.webResource(), 'getToken', body=body)
+    verify_data = gapi.call(verif.webResource(), 'getToken', body=body)
     print('Method:  %s' % verify_data['method'])
     print('Expected Token:      %s' % verify_data['token'])
     if verify_data['method'] in ['DNS_CNAME', 'DNS_TXT']:
-      simplehttp = _createHttpObj()
+      simplehttp = gapi.create_http()
       base_url = 'https://dns.google/resolve?'
       query_params = {}
       if verify_data['method'] == 'DNS_CNAME':
@@ -10871,9 +10613,9 @@ def doSiteVerifyAttempt():
               print('Unrelated TXT record: %s' % possible_answer['data'])
         print('Found DNS Record: %s' % answer)
       elif status == 0:
-        systemErrorExit(1, 'DNS record not found')
+        controlflow.system_error_exit(1, 'DNS record not found')
       else:
-        systemErrorExit(status, DNS_ERROR_CODES_MAP.get(status, 'Unknown error %s' % status))
+        controlflow.system_error_exit(status, DNS_ERROR_CODES_MAP.get(status, 'Unknown error %s' % status))
     return
   print('SUCCESS!')
   print('Verified:  %s' % verify_result['site']['identifier'])
@@ -10931,7 +10673,7 @@ def encodeOrgUnitPath(path):
 
 def getOrgUnitItem(orgUnit, pathOnly=False, absolutePath=True):
   if pathOnly and (orgUnit.startswith('id:') or orgUnit.startswith('uid:')):
-    systemErrorExit(2, '%s is not valid in this context' % orgUnit)
+    controlflow.system_error_exit(2, '%s is not valid in this context' % orgUnit)
   if absolutePath:
     return makeOrgUnitPathAbsolute(orgUnit)
   return makeOrgUnitPathRelative(orgUnit)
@@ -10942,17 +10684,17 @@ def getOrgUnitId(orgUnit, cd=None):
   orgUnit = getOrgUnitItem(orgUnit)
   if orgUnit[:3] == 'id:':
     return (orgUnit, orgUnit)
-  result = callGAPI(cd.orgunits(), 'get',
+  result = gapi.call(cd.orgunits(), 'get',
                     customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=encodeOrgUnitPath(makeOrgUnitPathRelative(orgUnit)), fields='orgUnitId')
   return (orgUnit, result['orgUnitId'])
 
 def getTopLevelOrgId(cd, orgUnitPath):
   try:
     # create a temp org so we can learn what the top level org ID is (sigh)
-    temp_org = callGAPI(cd.orgunits(), 'insert', customerId=GC_Values[GC_CUSTOMER_ID],
+    temp_org = gapi.call(cd.orgunits(), 'insert', customerId=GC_Values[GC_CUSTOMER_ID],
                         body={'name': 'temp-delete-me', 'parentOrgUnitPath': orgUnitPath},
                         fields='parentOrgUnitId,orgUnitId')
-    callGAPI(cd.orgunits(), 'delete', customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=temp_org['orgUnitId'])
+    gapi.call(cd.orgunits(), 'delete', customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=temp_org['orgUnitId'])
     return temp_org['parentOrgUnitId']
   except:
     pass
@@ -10978,9 +10720,9 @@ def doGetOrgInfo(name=None, return_attrib=None):
         checkSuspended = myarg == 'suspended'
         i += 1
       else:
-        systemErrorExit(2, '%s is not a valid argument for "gam info org"' % sys.argv[i])
+        controlflow.system_error_exit(2, '%s is not a valid argument for "gam info org"' % sys.argv[i])
   if name == '/':
-    orgs = callGAPI(cd.orgunits(), 'list',
+    orgs = gapi.call(cd.orgunits(), 'list',
                     customerId=GC_Values[GC_CUSTOMER_ID], type='children',
                     fields='organizationUnits/parentOrgUnitId')
     if 'organizationUnits' in orgs and orgs['organizationUnits']:
@@ -10991,7 +10733,7 @@ def doGetOrgInfo(name=None, return_attrib=None):
         name = topLevelOrgId
   else:
     name = makeOrgUnitPathRelative(name)
-  result = callGAPI(cd.orgunits(), 'get', customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=encodeOrgUnitPath(name))
+  result = gapi.call(cd.orgunits(), 'get', customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=encodeOrgUnitPath(name))
   if return_attrib:
     return result[return_attrib]
   print_json(None, result)
@@ -11047,7 +10789,7 @@ def doDelASP(users):
       asps = callGAPIitems(cd.asps(), 'list', 'items', userKey=user, fields='items/codeId')
       codeIds = [asp['codeId'] for asp in asps]
     for codeId in codeIds:
-      callGAPI(cd.asps(), 'delete', userKey=user, codeId=codeId)
+      gapi.call(cd.asps(), 'delete', userKey=user, codeId=codeId)
       print('deleted ASP %s for %s' % (codeId, user))
 
 def printBackupCodes(user, codes):
@@ -11069,15 +10811,15 @@ def doGetBackupCodes(users):
   cd = buildGAPIObject('directory')
   for user in users:
     try:
-      codes = callGAPIitems(cd.verificationCodes(), 'list', 'items', throw_reasons=[GAPI_INVALID_ARGUMENT, GAPI_INVALID], userKey=user)
-    except (GAPI_invalidArgument, GAPI_invalid):
+      codes = callGAPIitems(cd.verificationCodes(), 'list', 'items', throw_reasons=[gapi.errors.ErrorReason.INVALID_ARGUMENT, gapi.errors.ErrorReason.INVALID], userKey=user)
+    except (gapi.errors.GapiInvalidArgumentError, gapi.errors.GapiInvalidError):
       codes = []
     printBackupCodes(user, codes)
 
 def doGenBackupCodes(users):
   cd = buildGAPIObject('directory')
   for user in users:
-    callGAPI(cd.verificationCodes(), 'generate', userKey=user)
+    gapi.call(cd.verificationCodes(), 'generate', userKey=user)
     codes = callGAPIitems(cd.verificationCodes(), 'list', 'items', userKey=user)
     printBackupCodes(user, codes)
 
@@ -11085,8 +10827,8 @@ def doDelBackupCodes(users):
   cd = buildGAPIObject('directory')
   for user in users:
     try:
-      callGAPI(cd.verificationCodes(), 'invalidate', soft_errors=True, throw_reasons=[GAPI_INVALID], userKey=user)
-    except GAPI_invalid:
+      gapi.call(cd.verificationCodes(), 'invalidate', soft_errors=True, throw_reasons=[gapi.errors.ErrorReason.INVALID], userKey=user)
+    except gapi.errors.GapiInvalidError:
       print('No 2SV backup codes for %s' % user)
       continue
     print('2SV backup codes for %s invalidated' % user)
@@ -11106,16 +10848,16 @@ def doDelTokens(users):
       clientId = commonClientIds(sys.argv[i+1])
       i += 2
     else:
-      systemErrorExit(3, '%s is not a valid argument to "gam <users> delete token"' % sys.argv[i])
+      controlflow.system_error_exit(3, '%s is not a valid argument to "gam <users> delete token"' % sys.argv[i])
   if not clientId:
-    systemErrorExit(3, 'you must specify a clientid for "gam <users> delete token"')
+    controlflow.system_error_exit(3, 'you must specify a clientid for "gam <users> delete token"')
   for user in users:
     try:
-      callGAPI(cd.tokens(), 'get', throw_reasons=[GAPI_NOT_FOUND, GAPI_RESOURCE_NOT_FOUND], userKey=user, clientId=clientId)
-    except (GAPI_notFound, GAPI_resourceNotFound):
+      gapi.call(cd.tokens(), 'get', throw_reasons=[gapi.errors.ErrorReason.NOT_FOUND, gapi.errors.ErrorReason.RESOURCE_NOT_FOUND], userKey=user, clientId=clientId)
+    except (gapi.errors.GapiNotFoundError, gapi.errors.GapiResourceNotFoundError):
       print('User %s did not authorize %s' % (user, clientId))
       continue
-    callGAPI(cd.tokens(), 'delete', userKey=user, clientId=clientId)
+    gapi.call(cd.tokens(), 'delete', userKey=user, clientId=clientId)
     print('Deleted token for %s' % user)
 
 def printShowTokens(i, entityType, users, csvFormat):
@@ -11148,7 +10890,7 @@ def printShowTokens(i, entityType, users, csvFormat):
       users = getUsersToModify(entity_type=entityType, entity=sys.argv[i+1], silent=False)
       i += 2
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam <users> %s tokens"' % (myarg, ['show', 'print'][csvFormat]))
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> %s tokens"' % (myarg, ['show', 'print'][csvFormat]))
   if not entityType:
     users = getUsersToModify(entity_type='all', entity='users', silent=False)
   fields = ','.join(['clientId', 'displayText', 'anonymous', 'nativeApp', 'userKey', 'scopes'])
@@ -11160,12 +10902,12 @@ def printShowTokens(i, entityType, users, csvFormat):
       if csvFormat:
         sys.stderr.write('Getting Access Tokens for %s\n' % (user))
       if clientId:
-        results = [callGAPI(cd.tokens(), 'get',
-                            throw_reasons=[GAPI_NOT_FOUND, GAPI_USER_NOT_FOUND, GAPI_RESOURCE_NOT_FOUND],
+        results = [gapi.call(cd.tokens(), 'get',
+                            throw_reasons=[gapi.errors.ErrorReason.NOT_FOUND, gapi.errors.ErrorReason.USER_NOT_FOUND, gapi.errors.ErrorReason.RESOURCE_NOT_FOUND],
                             userKey=user, clientId=clientId, fields=fields)]
       else:
         results = callGAPIitems(cd.tokens(), 'list', 'items',
-                                throw_reasons=[GAPI_USER_NOT_FOUND],
+                                throw_reasons=[gapi.errors.ErrorReason.USER_NOT_FOUND],
                                 userKey=user, fields='items({0})'.format(fields))
       jcount = len(results)
       if not csvFormat:
@@ -11183,7 +10925,7 @@ def printShowTokens(i, entityType, users, csvFormat):
             if item not in ['scopes']:
               row[item] = token.get(item, '')
           csvRows.append(row)
-    except (GAPI_notFound, GAPI_userNotFound, GAPI_resourceNotFound):
+    except (gapi.errors.GapiNotFoundError, gapi.errors.GapiUserNotFoundError, gapi.errors.GapiResourceNotFoundError):
       pass
   if csvFormat:
     writeCSVfile(csvRows, titles, 'OAuth Tokens', todrive)
@@ -11199,13 +10941,13 @@ def doDeprovUser(users):
       for asp in asps:
         j += 1
         print(' deleting ASP %s of %s' % (j, jcount))
-        callGAPI(cd.asps(), 'delete', userKey=user, codeId=asp['codeId'])
+        gapi.call(cd.asps(), 'delete', userKey=user, codeId=asp['codeId'])
     else:
       print('No ASPs')
     print('Invalidating 2SV Backup Codes for %s' % user)
     try:
-      callGAPI(cd.verificationCodes(), 'invalidate', soft_errors=True, throw_reasons=[GAPI_INVALID], userKey=user)
-    except GAPI_invalid:
+      gapi.call(cd.verificationCodes(), 'invalidate', soft_errors=True, throw_reasons=[gapi.errors.ErrorReason.INVALID], userKey=user)
+    except gapi.errors.GapiInvalidError:
       print('No 2SV Backup Codes')
     print('Getting tokens for %s...' % user)
     tokens = callGAPIitems(cd.tokens(), 'list', 'items', userKey=user, fields='items/clientId')
@@ -11215,7 +10957,7 @@ def doDeprovUser(users):
       for token in tokens:
         j += 1
         print(' deleting token %s of %s' % (j, jcount))
-        callGAPI(cd.tokens(), 'delete', userKey=user, clientId=token['clientId'])
+        gapi.call(cd.tokens(), 'delete', userKey=user, clientId=token['clientId'])
     else:
       print('No Tokens')
     print('Done deprovisioning %s' % user)
@@ -11224,7 +10966,7 @@ def doDeleteUser():
   cd = buildGAPIObject('directory')
   user_email = normalizeEmailAddressOrUID(sys.argv[3])
   print("Deleting account for %s" % (user_email))
-  callGAPI(cd.users(), 'delete', userKey=user_email)
+  gapi.call(cd.users(), 'delete', userKey=user_email)
 
 def doUndeleteUser():
   cd = buildGAPIObject('directory')
@@ -11237,7 +10979,7 @@ def doUndeleteUser():
       orgUnit = makeOrgUnitPathAbsolute(sys.argv[i+1])
       i += 2
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam undelete user"' % sys.argv[i])
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam undelete user"' % sys.argv[i])
   if user.find('@') == -1:
     user_uid = user
   else:
@@ -11249,7 +10991,7 @@ def doUndeleteUser():
       if str(deleted_user['primaryEmail']).lower() == user:
         matching_users.append(deleted_user)
     if not matching_users:
-      systemErrorExit(3, 'could not find deleted user with that address.')
+      controlflow.system_error_exit(3, 'could not find deleted user with that address.')
     elif len(matching_users) > 1:
       print('ERROR: more than one matching deleted %s user. Please select the correct one to undelete and specify with "gam undelete user uid:<uid>"' % user)
       print('')
@@ -11267,13 +11009,13 @@ def doUndeleteUser():
     else:
       user_uid = matching_users[0]['id']
   print("Undeleting account for %s" % user)
-  callGAPI(cd.users(), 'undelete', userKey=user_uid, body={'orgUnitPath': orgUnit})
+  gapi.call(cd.users(), 'undelete', userKey=user_uid, body={'orgUnitPath': orgUnit})
 
 def doDeleteGroup():
   cd = buildGAPIObject('directory')
   group = normalizeEmailAddressOrUID(sys.argv[3])
   print("Deleting group %s" % group)
-  callGAPI(cd.groups(), 'delete', groupKey=group)
+  gapi.call(cd.groups(), 'delete', groupKey=group)
 
 def doDeleteAlias(alias_email=None):
   cd = buildGAPIObject('directory')
@@ -11290,27 +11032,27 @@ def doDeleteAlias(alias_email=None):
   print("Deleting alias %s" % alias_email)
   if is_user or (not is_user and not is_group):
     try:
-      callGAPI(cd.users().aliases(), 'delete', throw_reasons=[GAPI_INVALID, GAPI_BAD_REQUEST, GAPI_NOT_FOUND], userKey=alias_email, alias=alias_email)
+      gapi.call(cd.users().aliases(), 'delete', throw_reasons=[gapi.errors.ErrorReason.INVALID, gapi.errors.ErrorReason.BAD_REQUEST, gapi.errors.ErrorReason.NOT_FOUND], userKey=alias_email, alias=alias_email)
       return
-    except (GAPI_invalid, GAPI_badRequest):
+    except (gapi.errors.GapiInvalidError, gapi.errors.GapiBadRequestError):
       pass
-    except GAPI_notFound:
-      systemErrorExit(4, 'The alias %s does not exist' % alias_email)
+    except gapi.errors.GapiNotFoundError:
+      controlflow.system_error_exit(4, 'The alias %s does not exist' % alias_email)
   if not is_user or (not is_user and not is_group):
-    callGAPI(cd.groups().aliases(), 'delete', groupKey=alias_email, alias=alias_email)
+    gapi.call(cd.groups().aliases(), 'delete', groupKey=alias_email, alias=alias_email)
 
 def doDeleteResourceCalendar():
   resId = sys.argv[3]
   cd = buildGAPIObject('directory')
   print("Deleting resource calendar %s" % resId)
-  callGAPI(cd.resources().calendars(), 'delete',
+  gapi.call(cd.resources().calendars(), 'delete',
            customer=GC_Values[GC_CUSTOMER_ID], calendarResourceId=resId)
 
 def doDeleteOrg():
   cd = buildGAPIObject('directory')
   name = getOrgUnitItem(sys.argv[3])
   print("Deleting organization %s" % name)
-  callGAPI(cd.orgunits(), 'delete', customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=encodeOrgUnitPath(makeOrgUnitPathRelative(name)))
+  gapi.call(cd.orgunits(), 'delete', customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=encodeOrgUnitPath(makeOrgUnitPathRelative(name)))
 
 def send_email(subject, body, recipient=None, sender=None, user=None, method='send', labels=None, msgHeaders={}, kwargs={}):
   api_body = {}
@@ -11350,7 +11092,7 @@ def send_email(subject, body, recipient=None, sender=None, user=None, method='se
   elif method in ['insert', 'import']:
     if method == 'import':
       method = 'import_'
-  callGAPI(resource, method, userId=userId, body=api_body, **kwargs)
+  gapi.call(resource, method, userId=userId, body=api_body, **kwargs)
 
 def addFieldToFieldsList(fieldName, fieldsChoiceMap, fieldsList):
   fields = fieldsChoiceMap[fieldName.lower()]
@@ -11485,7 +11227,7 @@ def writeCSVfile(csvRows, titles, list_type, todrive):
   if GC_Values[GC_CSV_HEADER_FILTER]:
     titles = [t for t in titles if headerFilterMatch(t)]
     if not titles:
-      systemErrorExit(3, 'No columns selected with GAM_CSV_HEADER_FILTER\n')
+      controlflow.system_error_exit(3, 'No columns selected with GAM_CSV_HEADER_FILTER\n')
       return
   csv.register_dialect('nixstdout', lineterminator='\n')
   if todrive:
@@ -11497,7 +11239,7 @@ def writeCSVfile(csvRows, titles, list_type, todrive):
     writer.writerow(dict((item, item) for item in writer.fieldnames))
     writer.writerows(csvRows)
   except IOError as e:
-    systemErrorExit(6, e)
+    controlflow.system_error_exit(6, e)
   if todrive:
     admin_email = _getValueFromOAuth('email')
     _, drive = buildDrive3GAPIObject(admin_email)
@@ -11508,7 +11250,7 @@ gam user %s check serviceaccount
 
 and follow recommend steps to authorize GAM for Drive access.''' % (admin_email))
       sys.exit(5)
-    result = callGAPI(drive.about(), 'get', fields='maxImportSizes')
+    result = gapi.call(drive.about(), 'get', fields='maxImportSizes')
     columns = len(titles)
     rows = len(csvRows)
     cell_count = rows * columns
@@ -11522,7 +11264,7 @@ and follow recommend steps to authorize GAM for Drive access.''' % (admin_email)
     body = {'description': QuotedArgumentList(sys.argv),
             'name': '%s - %s' % (GC_Values[GC_DOMAIN], list_type),
             'mimeType': mimeType}
-    result = callGAPI(drive.files(), 'create', fields='webViewLink',
+    result = gapi.call(drive.files(), 'create', fields='webViewLink',
                       body=body,
                       media_body=googleapiclient.http.MediaInMemoryUpload(write_to.getvalue().encode(),
                                                                           mimetype='text/csv'))
@@ -11682,7 +11424,7 @@ def doPrintUsers():
     elif myarg == 'orderby':
       orderBy = sys.argv[i+1]
       if orderBy.lower() not in ['email', 'familyname', 'givenname', 'firstname', 'lastname']:
-        systemErrorExit(2, 'orderby must be one of email, familyName, givenName; got %s' % orderBy)
+        controlflow.system_error_exit(2, 'orderby must be one of email, familyName, givenName; got %s' % orderBy)
       elif orderBy.lower() in ['familyname', 'lastname']:
         orderBy = 'familyName'
       elif orderBy.lower() in ['givenname', 'firstname']:
@@ -11714,7 +11456,7 @@ def doPrintUsers():
         if field in USER_ARGUMENT_TO_PROPERTY_MAP:
           addFieldToCSVfile(field, USER_ARGUMENT_TO_PROPERTY_MAP, fieldsList, fieldsTitles, titles)
         else:
-          systemErrorExit(2, '%s is not a valid argument for "gam print users fields"' % field)
+          controlflow.system_error_exit(2, '%s is not a valid argument for "gam print users fields"' % field)
       i += 2
     elif myarg == 'groups':
       getGroupFeed = True
@@ -11726,7 +11468,7 @@ def doPrintUsers():
       email_parts = True
       i += 1
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam print users"' % sys.argv[i])
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam print users"' % sys.argv[i])
   if fieldsList:
     fields = 'nextPageToken,users(%s)' % ','.join(set(fieldsList)).replace('.', '/')
   else:
@@ -11794,8 +11536,8 @@ def doCreateAlertFeedback():
   alertId = sys.argv[3]
   body = {'type': sys.argv[4].upper()}
   if body['type'] not in valid_types:
-    systemErrorExit(2, '%s is not a valid feedback value, expected one of: %s' % (body['type'], ', '.join(valid_types)))
-  callGAPI(ac.alerts().feedback(), 'create', alertId=alertId, body=body)
+    controlflow.system_error_exit(2, '%s is not a valid feedback value, expected one of: %s' % (body['type'], ', '.join(valid_types)))
+  gapi.call(ac.alerts().feedback(), 'create', alertId=alertId, body=body)
 
 def doDeleteOrUndeleteAlert(action):
   _, ac = buildAlertCenterGAPIObject(_getValueFromOAuth('email'))
@@ -11803,7 +11545,7 @@ def doDeleteOrUndeleteAlert(action):
   kwargs = {}
   if action == 'undelete':
     kwargs['body'] = {}
-  callGAPI(ac.alerts(), action, alertId=alertId, **kwargs)
+  gapi.call(ac.alerts(), action, alertId=alertId, **kwargs)
 
 GROUP_ARGUMENT_TO_PROPERTY_TITLE_MAP = {
   'admincreated': ['adminCreated', 'Admin_Created'],
@@ -11940,7 +11682,7 @@ def doPrintGroups():
           for attrName in COLLABORATIVE_INBOX_ATTRIBUTES:
             addFieldToCSVfile(attrName, {attrName: [attrName]}, gsfieldsList, fieldsTitles, titles)
         else:
-          systemErrorExit(2, '%s is not a valid argument for "gam print groups fields"' % field)
+          controlflow.system_error_exit(2, '%s is not a valid argument for "gam print groups fields"' % field)
       i += 2
     elif myarg in ['members', 'memberscount']:
       roles.append(ROLE_MEMBER)
@@ -11961,7 +11703,7 @@ def doPrintGroups():
         managersCountOnly = True
       i += 1
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam print groups"' % sys.argv[i])
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam print groups"' % sys.argv[i])
   cdfields = ','.join(set(cdfieldsList))
   if gsfieldsList:
     getSettings = True
@@ -12059,7 +11801,7 @@ def doPrintGroups():
           group['Owners'] = memberDelimiter.join(ownersList)
     if getSettings and not GroupIsAbuseOrPostmaster(groupEmail):
       sys.stderr.write(" Retrieving Settings for group %s (%s/%s)...\r\n" % (groupEmail, i, count))
-      settings = callGAPI(gs.groups(), 'get',
+      settings = gapi.call(gs.groups(), 'get',
                           soft_errors=True,
                           retry_reasons=['serviceLimit', 'invalid'],
                           groupUniqueId=groupEmail, fields=gsfields)
@@ -12111,7 +11853,7 @@ def doPrintOrgs():
       fields += sys.argv[i+1].split(',')
       i += 2
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam print orgs"' % sys.argv[i])
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam print orgs"' % sys.argv[i])
   printGettingAllItems('Organizational Units', None)
   if fields:
     get_fields = ','.join(fields)
@@ -12119,7 +11861,7 @@ def doPrintOrgs():
   else:
     list_fields = None
     get_fields = None
-  orgs = callGAPI(cd.orgunits(), 'list',
+  orgs = gapi.call(cd.orgunits(), 'list',
                   customerId=GC_Values[GC_CUSTOMER_ID], type=listType, orgUnitPath=orgUnitPath, fields=list_fields)
   if not 'organizationUnits' in orgs:
     topLevelOrgId = getTopLevelOrgId(cd, orgUnitPath)
@@ -12135,7 +11877,7 @@ def doPrintOrgs():
   missing_parents = set(parentOrgIds) - set(retrievedOrgIds)
   for missing_parent in missing_parents:
     try:
-      result = callGAPI(cd.orgunits(), 'get', throw_reasons=['required'],
+      result = gapi.call(cd.orgunits(), 'get', throw_reasons=['required'],
                         customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=missing_parent, fields=get_fields)
       orgunits.append(result)
     except:
@@ -12189,7 +11931,7 @@ def doPrintAliases():
       doUsers = True
       i += 2
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam print aliases"' % sys.argv[i])
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam print aliases"' % sys.argv[i])
   if doUsers:
     for query in queries:
       printGettingAllItems('User Aliases', query)
@@ -12258,7 +12000,7 @@ def doPrintGroupMembers():
         if role in GROUP_ROLES_MAP:
           roles.append(GROUP_ROLES_MAP[role])
         else:
-          systemErrorExit(2, '%s is not a valid role for "gam print group-members %s"' % (role, myarg))
+          controlflow.system_error_exit(2, '%s is not a valid role for "gam print group-members %s"' % (role, myarg))
       i += 2
     elif myarg in ['group', 'groupns', 'groupsusp']:
       group_email = normalizeEmailAddressOrUID(sys.argv[i+1])
@@ -12275,7 +12017,7 @@ def doPrintGroupMembers():
       includeDerivedMembership = True
       i += 1
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam print group-members"' % sys.argv[i])
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam print group-members"' % sys.argv[i])
   if not groups_to_get:
     groups_to_get = callGAPIpages(cd.groups(), 'list', 'groups', message_attribute='email',
                                   customer=customer, domain=usedomain, userKey=usemember, query=usequery,
@@ -12301,27 +12043,27 @@ def doPrintGroupMembers():
       if membernames and 'type' in member and 'id' in member:
         if member['type'] == 'USER':
           try:
-            mbinfo = callGAPI(cd.users(), 'get',
-                              throw_reasons=[GAPI_USER_NOT_FOUND, GAPI_NOT_FOUND, GAPI_FORBIDDEN],
+            mbinfo = gapi.call(cd.users(), 'get',
+                              throw_reasons=[gapi.errors.ErrorReason.USER_NOT_FOUND, gapi.errors.ErrorReason.NOT_FOUND, gapi.errors.ErrorReason.FORBIDDEN],
                               userKey=member['id'], fields='name')
             memberName = mbinfo['name']['fullName']
-          except (GAPI_userNotFound, GAPI_notFound, GAPI_forbidden):
+          except (gapi.errors.GapiUserNotFoundError, gapi.errors.GapiNotFoundError, gapi.errors.GapiForbiddenError):
             memberName = 'Unknown'
         elif member['type'] == 'GROUP':
           try:
-            mbinfo = callGAPI(cd.groups(), 'get',
-                              throw_reasons=[GAPI_NOT_FOUND, GAPI_FORBIDDEN],
+            mbinfo = gapi.call(cd.groups(), 'get',
+                              throw_reasons=[gapi.errors.ErrorReason.NOT_FOUND, gapi.errors.ErrorReason.FORBIDDEN],
                               groupKey=member['id'], fields='name')
             memberName = mbinfo['name']
-          except (GAPI_notFound, GAPI_forbidden):
+          except (gapi.errors.GapiNotFoundError, gapi.errors.GapiForbiddenError):
             memberName = 'Unknown'
         elif member['type'] == 'CUSTOMER':
           try:
-            mbinfo = callGAPI(cd.customers(), 'get',
-                              throw_reasons=[GAPI_BAD_REQUEST, GAPI_RESOURCE_NOT_FOUND, GAPI_FORBIDDEN],
+            mbinfo = gapi.call(cd.customers(), 'get',
+                              throw_reasons=[gapi.errors.ErrorReason.BAD_REQUEST, gapi.errors.ErrorReason.RESOURCE_NOT_FOUND, gapi.errors.ErrorReason.FORBIDDEN],
                               customerKey=member['id'], fields='customerDomain')
             memberName = mbinfo['customerDomain']
-          except (GAPI_badRequest, GAPI_resourceNotFound, GAPI_forbidden):
+          except (gapi.errors.GapiBadRequestError, gapi.errors.GapiResourceNotFoundError, gapi.errors.GapiForbiddenError):
             memberName = 'Unknown'
         else:
           memberName = 'Unknown'
@@ -12346,7 +12088,7 @@ def doPrintVaultMatters():
       view = PROJECTION_CHOICES_MAP[myarg]
       i += 1
     else:
-      systemErrorExit(3, '%s is not a valid argument to "gam print matters"' % myarg)
+      controlflow.system_error_exit(3, '%s is not a valid argument to "gam print matters"' % myarg)
   printGettingAllItems('Vault Matters', None)
   page_message = 'Got %%total_items%% Vault Matters...\n'
   matters = callGAPIpages(v.matters(), 'list', 'matters', page_message=page_message, view=view)
@@ -12373,7 +12115,7 @@ def doPrintVaultExports():
       matters = sys.argv[i+1].split(',')
       i += 2
     else:
-      systemErrorExit(3, '%s is not a valid a valid argument to "gam print exports"' % myarg)
+      controlflow.system_error_exit(3, '%s is not a valid a valid argument to "gam print exports"' % myarg)
   if not matters:
     matters_results = callGAPIpages(v.matters(), 'list', 'matters', view='BASIC', fields='matters(matterId,state),nextPageToken')
     for matter in matters_results:
@@ -12410,7 +12152,7 @@ def doPrintVaultHolds():
       matters = sys.argv[i+1].split(',')
       i += 2
     else:
-      systemErrorExit(3, '%s is not a valid a valid argument to "gam print holds"' % myarg)
+      controlflow.system_error_exit(3, '%s is not a valid a valid argument to "gam print holds"' % myarg)
   if not matters:
     matters_results = callGAPIpages(v.matters(), 'list', 'matters', view='BASIC', fields='matters(matterId,state),nextPageToken')
     for matter in matters_results:
@@ -12465,7 +12207,7 @@ def doPrintMobileDevices():
       orderBy = sys.argv[i+1].lower()
       allowed_values = ['deviceid', 'email', 'lastsync', 'model', 'name', 'os', 'status', 'type']
       if orderBy.lower() not in allowed_values:
-        systemErrorExit(2, 'orderBy must be one of %s; got %s' % (', '.join(allowed_values), orderBy))
+        controlflow.system_error_exit(2, 'orderBy must be one of %s; got %s' % (', '.join(allowed_values), orderBy))
       elif orderBy == 'lastsync':
         orderBy = 'lastSync'
       elif orderBy == 'deviceid':
@@ -12478,7 +12220,7 @@ def doPrintMobileDevices():
       projection = PROJECTION_CHOICES_MAP[myarg]
       i += 1
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam print mobile"' % sys.argv[i])
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam print mobile"' % sys.argv[i])
   for query in queries:
     printGettingAllItems('Mobile Devices', query)
     page_message = 'Got %%total_items%% Mobile Devices...\n'
@@ -12583,7 +12325,7 @@ def doPrintCrosActivity():
       delimiter = sys.argv[i+1]
       i += 2
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam print crosactivity"' % sys.argv[i])
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam print crosactivity"' % sys.argv[i])
   if not selectActiveTimeRanges and not selectDeviceFiles and not selectRecentUsers:
     selectActiveTimeRanges = selectRecentUsers = True
   if selectRecentUsers:
@@ -12716,7 +12458,7 @@ def doPrintCrosDevices():
       orderBy = sys.argv[i+1].lower().replace('_', '')
       allowed_values = ['location', 'user', 'lastsync', 'notes', 'serialnumber', 'status', 'supportenddate']
       if orderBy not in allowed_values:
-        systemErrorExit(2, 'orderBy must be one of %s; got %s' % (', '.join(allowed_values), orderBy))
+        controlflow.system_error_exit(2, 'orderBy must be one of %s; got %s' % (', '.join(allowed_values), orderBy))
       elif orderBy == 'location':
         orderBy = 'annotatedLocation'
       elif orderBy == 'user':
@@ -12761,10 +12503,10 @@ def doPrintCrosDevices():
         elif field in CROS_ARGUMENT_TO_PROPERTY_MAP:
           addFieldToFieldsList(field, CROS_ARGUMENT_TO_PROPERTY_MAP, fieldsList)
         else:
-          systemErrorExit(2, '%s is not a valid argument for "gam print cros fields"' % field)
+          controlflow.system_error_exit(2, '%s is not a valid argument for "gam print cros fields"' % field)
       i += 2
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam print cros"' % sys.argv[i])
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam print cros"' % sys.argv[i])
   if selectedLists:
     noLists = False
     projection = 'FULL'
@@ -12890,7 +12632,7 @@ def doPrintLicenses(returnFields=None, skus=None, countsOnly=False, returnCounts
         countsOnly = True
         i += 1
       else:
-        systemErrorExit(2, '%s is not a valid argument for "gam print licenses"' % sys.argv[i])
+        controlflow.system_error_exit(2, '%s is not a valid argument for "gam print licenses"' % sys.argv[i])
     if not countsOnly:
       fields = 'nextPageToken,items(productId,skuId,userId)'
       titles = ['userId', 'productId', 'skuId']
@@ -12911,12 +12653,12 @@ def doPrintLicenses(returnFields=None, skus=None, countsOnly=False, returnCounts
         product = products[0]
       page_message = 'Got %%%%total_items%%%% Licenses for %s...\n' % SKUS.get(sku, {'displayName': sku})['displayName']
       try:
-        licenses += callGAPIpages(lic.licenseAssignments(), 'listForProductAndSku', 'items', throw_reasons=[GAPI_INVALID, GAPI_FORBIDDEN], page_message=page_message,
+        licenses += callGAPIpages(lic.licenseAssignments(), 'listForProductAndSku', 'items', throw_reasons=[gapi.errors.ErrorReason.INVALID, gapi.errors.ErrorReason.FORBIDDEN], page_message=page_message,
                                   customerId=GC_Values[GC_DOMAIN], productId=product, skuId=sku, fields=fields)
         if countsOnly:
           licenseCounts.append(['Product', product, 'SKU', sku, 'Licenses', len(licenses)])
           licenses = []
-      except (GAPI_invalid, GAPI_forbidden):
+      except (gapi.errors.GapiInvalidError, gapi.errors.GapiForbiddenError):
         pass
   else:
     if not products:
@@ -12924,12 +12666,12 @@ def doPrintLicenses(returnFields=None, skus=None, countsOnly=False, returnCounts
     for productId in products:
       page_message = 'Got %%%%total_items%%%% Licenses for %s...\n' % PRODUCTID_NAME_MAPPINGS.get(productId, productId)
       try:
-        licenses += callGAPIpages(lic.licenseAssignments(), 'listForProduct', 'items', throw_reasons=[GAPI_INVALID, GAPI_FORBIDDEN], page_message=page_message,
+        licenses += callGAPIpages(lic.licenseAssignments(), 'listForProduct', 'items', throw_reasons=[gapi.errors.ErrorReason.INVALID, gapi.errors.ErrorReason.FORBIDDEN], page_message=page_message,
                                   customerId=GC_Values[GC_DOMAIN], productId=productId, fields=fields)
         if countsOnly:
           licenseCounts.append(['Product', productId, 'Licenses', len(licenses)])
           licenses = []
-      except (GAPI_invalid, GAPI_forbidden):
+      except (gapi.errors.GapiInvalidError, gapi.errors.GapiForbiddenError):
         pass
   if countsOnly:
     if returnCounts:
@@ -13023,7 +12765,7 @@ def doPrintFeatures():
       fieldsList.append(possible_fields['feature'+myarg])
       i += 1
     else:
-      systemErrorExit(3, '%s is not a valid argument to "gam print features"' % sys.argv[i])
+      controlflow.system_error_exit(3, '%s is not a valid argument to "gam print features"' % sys.argv[i])
   if fields:
     fields = fields % ','.join(fieldsList)
   features = callGAPIpages(cd.resources().features(), 'list', 'features',
@@ -13070,7 +12812,7 @@ def doPrintBuildings():
       fieldsList.append(possible_fields['building'+myarg])
       i += 1
     else:
-      systemErrorExit(3, '%s is not a valid argument to "gam print buildings"' % sys.argv[i])
+      controlflow.system_error_exit(3, '%s is not a valid argument to "gam print buildings"' % sys.argv[i])
   if fields:
     fields = fields % ','.join(fieldsList)
   buildings = callGAPIpages(cd.resources().buildings(), 'list', 'buildings',
@@ -13119,7 +12861,7 @@ def doPrintResourceCalendars():
       addFieldToCSVfile(myarg, RESCAL_ARGUMENT_TO_PROPERTY_MAP, fieldsList, fieldsTitles, titles)
       i += 1
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam print resources"' % sys.argv[i])
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam print resources"' % sys.argv[i])
   if not fieldsList:
     for field in RESCAL_DFLTFIELDS:
       addFieldToCSVfile(field, RESCAL_ARGUMENT_TO_PROPERTY_MAP, fieldsList, fieldsTitles, titles)
@@ -13213,7 +12955,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
     ou = makeOrgUnitPathAbsolute(entity)
     users = []
     if ou.startswith('id:'):
-      ou = callGAPI(cd.orgunits(), 'get',
+      ou = gapi.call(cd.orgunits(), 'get',
                     customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=ou, fields='orgUnitPath')['orgUnitPath']
     query = orgUnitPathQuery(ou, checkSuspended)
     page_message = None
@@ -13286,12 +13028,12 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
   elif entity_type in ['csv', 'csvfile', 'croscsv', 'croscsvfile']:
     drive, filenameColumn = os.path.splitdrive(entity)
     if filenameColumn.find(':') == -1:
-      systemErrorExit(2, 'Expected {0} FileName:FieldName'.format(entity_type))
+      controlflow.system_error_exit(2, 'Expected {0} FileName:FieldName'.format(entity_type))
     (filename, column) = filenameColumn.split(':')
     f = openFile(drive+filename)
     input_file = csv.DictReader(f, restval='')
     if column not in input_file.fieldnames:
-      csvFieldErrorExit(column, input_file.fieldnames)
+      controlflow.csv_field_error_exit(column, input_file.fieldnames)
     users = []
     for row in input_file:
       user = row[column].strip()
@@ -13345,7 +13087,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
       if not silent:
         sys.stderr.write("done getting %s CrOS Devices.\r\n" % len(users))
     else:
-      systemErrorExit(3, '%s is not a valid argument for "gam all"' % entity)
+      controlflow.system_error_exit(3, '%s is not a valid argument for "gam all"' % entity)
   elif entity_type == 'cros':
     users = entity.replace(',', ' ').split()
     entity = 'cros'
@@ -13374,7 +13116,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
         sys.stderr.write("done.\r\n")
     entity = 'cros'
   else:
-    systemErrorExit(2, '%s is not a valid argument for "gam"' % entity_type)
+    controlflow.system_error_exit(2, '%s is not a valid argument for "gam"' % entity_type)
   full_users = list()
   if entity != 'cros' and not got_uids:
     for user in users:
@@ -13405,13 +13147,13 @@ def OAuthInfo():
       show_secret = True
       i += 1
     else:
-      systemErrorExit(3, '%s is not a valid argument to "gam oauth info"' % sys.argv[i])
+      controlflow.system_error_exit(3, '%s is not a valid argument to "gam oauth info"' % sys.argv[i])
   if not access_token and not id_token:
     credentials = getValidOauth2TxtCredentials()
     access_token = credentials.token
     print("\nOAuth File: %s" % GC_Values[GC_OAUTH2_TXT])
   oa2 = buildGAPIObject('oauth2')
-  token_info = callGAPI(oa2, 'tokeninfo', access_token=access_token, id_token=id_token)
+  token_info = gapi.call(oa2, 'tokeninfo', access_token=access_token, id_token=id_token)
   if 'issued_to' in token_info:
     print('Client ID: %s' % token_info['issued_to'])
   if credentials is not None and show_secret:
@@ -13436,7 +13178,7 @@ def doDeleteOAuth():
     credentials = getOauth2TxtStorageCredentials()
     if credentials is None:
       return
-    simplehttp = _createHttpObj()
+    simplehttp = gapi.create_http()
     params = {'token': credentials.refresh_token}
     revoke_uri = 'https://accounts.google.com/o/oauth2/revoke?%s' % urlencode(params)
     sys.stderr.write('This OAuth token will self-destruct in 3...')
@@ -13471,7 +13213,7 @@ def writeCredentials(creds):
     }
   expected_iss = ['https://accounts.google.com', 'accounts.google.com']
   if _getValueFromOAuth('iss', creds) not in expected_iss:
-    systemErrorExit(13, 'Wrong OAuth 2.0 credentials issuer. Got %s, expected one of %s' % (_getValueFromOAuth('iss', creds), ', '.join(expected_iss)))
+    controlflow.system_error_exit(13, 'Wrong OAuth 2.0 credentials issuer. Got %s, expected one of %s' % (_getValueFromOAuth('iss', creds), ', '.join(expected_iss)))
   creds_data['decoded_id_token'] = GC_Values[GC_DECODED_ID_TOKEN]
   data = json.dumps(creds_data, indent=2, sort_keys=True)
   writeFile(GC_Values[GC_OAUTH2_TXT], data)
@@ -13481,7 +13223,7 @@ def doRequestOAuth(login_hint=None):
   if credentials is None or not credentials.valid:
     scopes = getScopesFromUser()
     if scopes is None:
-      systemErrorExit(0, '')
+      controlflow.system_error_exit(0, '')
     client_id, client_secret = getOAuthClientIDAndSecret()
     login_hint = _getValidateLoginHint(login_hint)
     # Needs to be set so oauthlib doesn't puke when Google changes our scopes
@@ -13500,7 +13242,7 @@ gam create project
   filename = GC_Values[GC_CLIENT_SECRETS_JSON]
   cs_data = readFile(filename, continueOnError=True, displayError=True)
   if not cs_data:
-    systemErrorExit(14, MISSING_CLIENT_SECRETS_MESSAGE)
+    controlflow.system_error_exit(14, MISSING_CLIENT_SECRETS_MESSAGE)
   try:
     cs_json = json.loads(cs_data)
     client_id = cs_json['installed']['client_id']
@@ -13509,7 +13251,7 @@ gam create project
     client_id = re.sub(r'\.apps\.googleusercontent\.com$', '', client_id)
     client_secret = cs_json['installed']['client_secret']
   except (ValueError, IndexError, KeyError):
-    systemErrorExit(3, 'the format of your client secrets file:\n\n%s\n\n'
+    controlflow.system_error_exit(3, 'the format of your client secrets file:\n\n%s\n\n'
                     'is incorrect. Please recreate the file.' % filename)
   return (client_id, client_secret)
 
@@ -13614,7 +13356,7 @@ def getScopesFromUser(menu_options=None):
   try:
     menu.run()
   except ScopeSelectionMenu.UserRequestedExitException:
-    systemErrorExit(0, '')
+    controlflow.system_error_exit(0, '')
 
   return menu.get_selected_scopes()
 
@@ -14136,7 +13878,7 @@ def getSubFields(i, fieldNames):
           subFields.setdefault(GAM_argvI, [])
           subFields[GAM_argvI].append((fieldName, match.start(), match.end()))
         else:
-          csvFieldErrorExit(fieldName, fieldNames)
+          controlflow.csv_field_error_exit(fieldName, fieldNames)
         pos = match.end()
       GAM_argv.append(myarg)
     elif myarg[0] == '~':
@@ -14145,7 +13887,7 @@ def getSubFields(i, fieldNames):
         subFields[GAM_argvI] = [(fieldName, 0, len(myarg))]
         GAM_argv.append(myarg)
       else:
-        csvFieldErrorExit(fieldName, fieldNames)
+        controlflow.csv_field_error_exit(fieldName, fieldNames)
     else:
       GAM_argv.append(myarg)
     GAM_argvI += 1
@@ -14219,17 +13961,17 @@ def ProcessGAMCommand(args):
         run_batch(items)
         sys.exit(0)
       else:
-        systemErrorExit(2, 'batch file: {0}, not processed, {1} error{2}'.format(filename, errors, ['', 's'][errors != 1]))
+        controlflow.system_error_exit(2, 'batch file: {0}, not processed, {1} error{2}'.format(filename, errors, ['', 's'][errors != 1]))
     elif command == 'csv':
       if httplib2.debuglevel > 0:
-        systemErrorExit(1, 'CSV commands are not compatible with debug. Delete debug.gam and try again.')
+        controlflow.system_error_exit(1, 'CSV commands are not compatible with debug. Delete debug.gam and try again.')
       i = 2
       filename = sys.argv[i]
       i, encoding = getCharSet(i+1)
       f = openFile(filename, encoding=encoding)
       csvFile = csv.DictReader(f)
       if (i == len(sys.argv)) or (sys.argv[i].lower() != 'gam') or (i+1 == len(sys.argv)):
-        systemErrorExit(3, '"gam csv <filename>" must be followed by a full GAM command...')
+        controlflow.system_error_exit(3, '"gam csv <filename>" must be followed by a full GAM command...')
       i += 1
       GAM_argv, subFields = getSubFields(i, csvFile.fieldnames)
       items = []
@@ -14290,14 +14032,14 @@ def ProcessGAMCommand(args):
       elif argument in ['gcpfolder']:
         createGCPFolder()
       else:
-        systemErrorExit(2, '%s is not a valid argument for "gam create"' % argument)
+        controlflow.system_error_exit(2, '%s is not a valid argument for "gam create"' % argument)
       sys.exit(0)
     elif command == 'use':
       argument = sys.argv[2].lower()
       if argument in ['project', 'apiproject']:
         doUseProject()
       else:
-        systemErrorExit(2, '%s is not a valid argument for "gam use"' % argument)
+        controlflow.system_error_exit(2, '%s is not a valid argument for "gam use"' % argument)
       sys.exit(0)
     elif command == 'update':
       argument = sys.argv[2].lower()
@@ -14342,7 +14084,7 @@ def ProcessGAMCommand(args):
       elif argument in ['feature']:
         doUpdateFeature()
       else:
-        systemErrorExit(2, '%s is not a valid argument for "gam update"' % argument)
+        controlflow.system_error_exit(2, '%s is not a valid argument for "gam update"' % argument)
       sys.exit(0)
     elif command == 'info':
       argument = sys.argv[2].lower()
@@ -14393,14 +14135,14 @@ def ProcessGAMCommand(args):
       elif argument in ['building']:
         doGetBuildingInfo()
       else:
-        systemErrorExit(2, '%s is not a valid argument for "gam info"' % argument)
+        controlflow.system_error_exit(2, '%s is not a valid argument for "gam info"' % argument)
       sys.exit(0)
     elif command == 'cancel':
       argument = sys.argv[2].lower()
       if argument in ['guardianinvitation', 'guardianinvitations']:
         doCancelGuardianInvitation()
       else:
-        systemErrorExit(2, '%s is not a valid argument for "gam cancel"' % argument)
+        controlflow.system_error_exit(2, '%s is not a valid argument for "gam cancel"' % argument)
       sys.exit(0)
     elif command == 'delete':
       argument = sys.argv[2].lower()
@@ -14447,7 +14189,7 @@ def ProcessGAMCommand(args):
       elif argument in ['alert']:
         doDeleteOrUndeleteAlert('delete')
       else:
-        systemErrorExit(2, '%s is not a valid argument for "gam delete"' % argument)
+        controlflow.system_error_exit(2, '%s is not a valid argument for "gam delete"' % argument)
       sys.exit(0)
     elif command == 'undelete':
       argument = sys.argv[2].lower()
@@ -14458,7 +14200,7 @@ def ProcessGAMCommand(args):
       elif argument == 'alert':
         doDeleteOrUndeleteAlert('undelete')
       else:
-        systemErrorExit(2, '%s is not a valid argument for "gam undelete"' % argument)
+        controlflow.system_error_exit(2, '%s is not a valid argument for "gam undelete"' % argument)
       sys.exit(0)
     elif command in ['close', 'reopen']:
       # close and reopen will have to be split apart if either takes a new argument
@@ -14466,7 +14208,7 @@ def ProcessGAMCommand(args):
       if argument in ['matter', 'vaultmatter']:
         doUpdateVaultMatter(action=command)
       else:
-        systemErrorExit(2, '%s is not a valid argument for "gam %s"' % (argument, command))
+        controlflow.system_error_exit(2, '%s is not a valid argument for "gam %s"' % (argument, command))
       sys.exit(0)
     elif command == 'print':
       argument = sys.argv[2].lower().replace('-', '')
@@ -14533,7 +14275,7 @@ def ProcessGAMCommand(args):
       elif argument in ['alertfeedback', 'alertsfeedback']:
         doPrintShowAlertFeedback()
       else:
-        systemErrorExit(2, '%s is not a valid argument for "gam print"' % argument)
+        controlflow.system_error_exit(2, '%s is not a valid argument for "gam print"' % argument)
       sys.exit(0)
     elif command == 'show':
       argument = sys.argv[2].lower()
@@ -14546,7 +14288,7 @@ def ProcessGAMCommand(args):
       elif argument in ['project', 'projects']:
         doPrintShowProjects(False)
       else:
-        systemErrorExit(2, '%s is not a valid argument for "gam show"' % argument)
+        controlflow.system_error_exit(2, '%s is not a valid argument for "gam show"' % argument)
       sys.exit(0)
     elif command in ['oauth', 'oauth2']:
       argument = sys.argv[2].lower()
@@ -14563,11 +14305,11 @@ def ProcessGAMCommand(args):
       elif argument in ['refresh']:
         creds = getValidOauth2TxtCredentials(force_refresh=True)
         if not creds:
-          systemErrorExit(5, 'Credential refresh failed')
+          controlflow.system_error_exit(5, 'Credential refresh failed')
         else:
           print('Credentials refreshed')
       else:
-        systemErrorExit(2, '%s is not a valid argument for "gam oauth"' % argument)
+        controlflow.system_error_exit(2, '%s is not a valid argument for "gam oauth"' % argument)
       sys.exit(0)
     elif command == 'calendar':
       argument = sys.argv[3].lower()
@@ -14594,7 +14336,7 @@ def ProcessGAMCommand(args):
       elif argument == 'modify':
         doCalendarModifySettings()
       else:
-        systemErrorExit(2, '%s is not a valid argument for "gam calendar"' % argument)
+        controlflow.system_error_exit(2, '%s is not a valid argument for "gam calendar"' % argument)
       sys.exit(0)
     elif command == 'printer':
       if sys.argv[2].lower() == 'register':
@@ -14608,7 +14350,7 @@ def ProcessGAMCommand(args):
       elif argument in ['del', 'delete', 'remove']:
         doPrinterDelACL()
       else:
-        systemErrorExit(2, '%s is not a valid argument for "gam printer..."' % argument)
+        controlflow.system_error_exit(2, '%s is not a valid argument for "gam printer..."' % argument)
       sys.exit(0)
     elif command == 'printjob':
       argument = sys.argv[3].lower()
@@ -14623,7 +14365,7 @@ def ProcessGAMCommand(args):
       elif argument == 'resubmit':
         doPrintJobResubmit()
       else:
-        systemErrorExit(2, '%s is not a valid argument for "gam printjob"' % argument)
+        controlflow.system_error_exit(2, '%s is not a valid argument for "gam printjob"' % argument)
       sys.exit(0)
     elif command == 'report':
       showReport()
@@ -14640,7 +14382,7 @@ def ProcessGAMCommand(args):
       elif argument == 'sync':
         doSyncCourseParticipants()
       else:
-        systemErrorExit(2, '%s is not a valid argument for "gam course"' % argument)
+        controlflow.system_error_exit(2, '%s is not a valid argument for "gam course"' % argument)
       sys.exit(0)
     elif command == 'download':
       argument = sys.argv[2].lower()
@@ -14649,7 +14391,7 @@ def ProcessGAMCommand(args):
       elif argument in ['storagebucket']:
         doDownloadCloudStorageBucket()
       else:
-        systemErrorExit(2, '%s is not a valid argument for "gam download"' % argument)
+        controlflow.system_error_exit(2, '%s is not a valid argument for "gam download"' % argument)
       sys.exit(0)
     users = getUsersToModify()
     command = sys.argv[3].lower()
@@ -14666,7 +14408,7 @@ def ProcessGAMCommand(args):
       elif transferWhat == 'seccals':
         transferSecCals(users)
       else:
-        systemErrorExit(2, '%s is not a valid argument for "gam <users> transfer"' % transferWhat)
+        controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> transfer"' % transferWhat)
     elif command == 'show':
       showWhat = sys.argv[4].lower()
       if showWhat in ['labels', 'label']:
@@ -14728,7 +14470,7 @@ def ProcessGAMCommand(args):
       elif showWhat in ['teamdriveinfo']:
         doGetTeamDriveInfo(users)
       else:
-        systemErrorExit(2, '%s is not a valid argument for "gam <users> show"' % showWhat)
+        controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> show"' % showWhat)
     elif command == 'print':
       printWhat = sys.argv[4].lower()
       if printWhat == 'calendars':
@@ -14756,7 +14498,7 @@ def ProcessGAMCommand(args):
       elif printWhat in ['teamdrive', 'teamdrives']:
         printShowTeamDrives(users, True)
       else:
-        systemErrorExit(2, '%s is not a valid argument for "gam <users> print"' % printWhat)
+        controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> print"' % printWhat)
     elif command == 'modify':
       modifyWhat = sys.argv[4].lower()
       if modifyWhat in ['message', 'messages']:
@@ -14764,7 +14506,7 @@ def ProcessGAMCommand(args):
       elif modifyWhat in ['thread', 'threads']:
         doProcessMessagesOrThreads(users, 'modify', 'threads')
       else:
-        systemErrorExit(2, '%s is not a valid argument for "gam <users> modify"' % modifyWhat)
+        controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> modify"' % modifyWhat)
     elif command == 'trash':
       trashWhat = sys.argv[4].lower()
       if trashWhat in ['message', 'messages']:
@@ -14772,7 +14514,7 @@ def ProcessGAMCommand(args):
       elif trashWhat in ['thread', 'threads']:
         doProcessMessagesOrThreads(users, 'trash', 'threads')
       else:
-        systemErrorExit(2, '%s is not a valid argument for "gam <users> trash"' % trashWhat)
+        controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> trash"' % trashWhat)
     elif command == 'untrash':
       untrashWhat = sys.argv[4].lower()
       if untrashWhat in ['message', 'messages']:
@@ -14780,7 +14522,7 @@ def ProcessGAMCommand(args):
       elif untrashWhat in ['thread', 'threads']:
         doProcessMessagesOrThreads(users, 'untrash', 'threads')
       else:
-        systemErrorExit(2, '%s is not a valid argument for "gam <users> untrash"' % untrashWhat)
+        controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> untrash"' % untrashWhat)
     elif command in ['delete', 'del']:
       delWhat = sys.argv[4].lower()
       if delWhat == 'delegate':
@@ -14824,14 +14566,14 @@ def ProcessGAMCommand(args):
       elif delWhat == 'teamdrive':
         doDeleteTeamDrive(users)
       else:
-        systemErrorExit(2, '%s is not a valid argument for "gam <users> delete"' % delWhat)
+        controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> delete"' % delWhat)
     elif command in ['add', 'create']:
       addWhat = sys.argv[4].lower()
       if addWhat == 'calendar':
         if command == 'add':
           addCalendar(users)
         else:
-          systemErrorExit(2, '%s is not implemented for "gam <users> %s"' % (addWhat, command))
+          controlflow.system_error_exit(2, '%s is not implemented for "gam <users> %s"' % (addWhat, command))
       elif addWhat == 'drivefile':
         createDriveFile(users)
       elif addWhat in ['license', 'licence']:
@@ -14853,7 +14595,7 @@ def ProcessGAMCommand(args):
       elif addWhat == 'teamdrive':
         doCreateTeamDrive(users)
       else:
-        systemErrorExit(2, '%s is not a valid argument for "gam <users> %s"' % (addWhat, command))
+        controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> %s"' % (addWhat, command))
     elif command == 'update':
       updateWhat = sys.argv[4].lower()
       if updateWhat == 'calendar':
@@ -14883,7 +14625,7 @@ def ProcessGAMCommand(args):
       elif updateWhat == 'teamdrive':
         doUpdateTeamDrive(users)
       else:
-        systemErrorExit(2, '%s is not a valid argument for "gam <users> update"' % updateWhat)
+        controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> update"' % updateWhat)
     elif command in ['deprov', 'deprovision']:
       doDeprovUser(users)
     elif command == 'get':
@@ -14893,13 +14635,13 @@ def ProcessGAMCommand(args):
       elif getWhat == 'drivefile':
         downloadDriveFile(users)
       else:
-        systemErrorExit(2, '%s is not a valid argument for "gam <users> get"' % getWhat)
+        controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> get"' % getWhat)
     elif command == 'empty':
       emptyWhat = sys.argv[4].lower()
       if emptyWhat == 'drivetrash':
         doEmptyDriveTrash(users)
       else:
-        systemErrorExit(2, '%s is not a valid argument for "gam <users> empty"' % emptyWhat)
+        controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> empty"' % emptyWhat)
     elif command == 'info':
       infoWhat = sys.argv[4].lower()
       if infoWhat == 'calendar':
@@ -14911,13 +14653,13 @@ def ProcessGAMCommand(args):
       elif infoWhat == 'sendas':
         infoSendAs(users)
       else:
-        systemErrorExit(2, '%s is not a valid argument for "gam <users> info"' % infoWhat)
+        controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> info"' % infoWhat)
     elif command == 'check':
       checkWhat = sys.argv[4].replace('_', '').lower()
       if checkWhat == 'serviceaccount':
         doCheckServiceAccount(users)
       else:
-        systemErrorExit(2, '%s is not a valid argument for "gam <users> check"' % checkWhat)
+        controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> check"' % checkWhat)
     elif command == 'profile':
       doProfile(users)
     elif command == 'imap':
@@ -14957,18 +14699,18 @@ def ProcessGAMCommand(args):
       if watchWhat == 'gmail':
         watchGmail(users)
       else:
-        systemErrorExit(2, '%s is not a valid argument for "gam <users> watch"' % watchWhat)
+        controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> watch"' % watchWhat)
     else:
-      systemErrorExit(2, '%s is not a valid argument for "gam"' % command)
+      controlflow.system_error_exit(2, '%s is not a valid argument for "gam"' % command)
   except IndexError:
     showUsage()
     sys.exit(2)
   except KeyboardInterrupt:
     sys.exit(50)
   except socket.error as e:
-    systemErrorExit(3, str(e))
+    controlflow.system_error_exit(3, str(e))
   except MemoryError:
-    systemErrorExit(99, MESSAGE_GAM_OUT_OF_MEMORY)
+    controlflow.system_error_exit(99, MESSAGE_GAM_OUT_OF_MEMORY)
   except SystemExit as e:
     GM_Globals[GM_SYSEXITRC] = e.code
   return GM_Globals[GM_SYSEXITRC]
@@ -14982,5 +14724,5 @@ if __name__ == "__main__":
     # command line arguments
     mp_set_start_method('fork')
   if sys.version_info[0] < 3 or sys.version_info[1] < 5:
-    systemErrorExit(5, 'GAM requires Python 3.5 or newer. You are running %s.%s.%s. Please upgrade your Python version or use one of the binary GAM downloads.' % sys.version_info[:3])
+    controlflow.system_error_exit(5, 'GAM requires Python 3.5 or newer. You are running %s.%s.%s. Please upgrade your Python version or use one of the binary GAM downloads.' % sys.version_info[:3])
   sys.exit(ProcessGAMCommand(sys.argv))

@@ -198,6 +198,8 @@ install:
 - source src/travis/$TRAVIS_OS_NAME-$PLATFORM-install.sh
 
 script:
+# Discover and run all Python unit tests
+- $python -m unittest discover -s ./ -p "*_test.py"
 - $gam version extended
 - $gam version | grep travis # travis should be part of the path (not /tmp or such)
 # determine which Python version GAM is built with and ensure it's at least build version from above.
