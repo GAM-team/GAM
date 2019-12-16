@@ -56,12 +56,7 @@ from multiprocessing import Pool as mp_pool
 from multiprocessing import freeze_support as mp_freeze_support
 from multiprocessing import set_start_method as mp_set_start_method
 from urllib.parse import urlencode, urlparse
-# workaround https://bitbucket.org/ecollins/passlib/issues/107/timeclock-has-gone
-# can be removed with passlib > 1.7.1
-if sys.platform == 'win32' and sys.version_info[1] >= 8:
-  time.clock = time.time
 from passlib.hash import sha512_crypt
-time.__dict__.pop('clock', None)
 import dateutil.parser
 
 import googleapiclient
