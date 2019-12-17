@@ -7684,10 +7684,13 @@ def _createClientSecretsOauth2service(httpObj, projectId):
 
 %s
 
-1. Enter "GAM" for "Application name".
-2. Leave other fields blank. Click "Save" button.
-3. Choose "Other". Enter a desired value for "Name". Click the blue "Create" button.
-4. Copy your "client ID" value.
+1. Select "Internal" under User Type. Click the blue "Create" button.
+2. Enter "GAM" for "Application name".
+3. Leave other fields blank. Click "Save" button.
+4. Click Credentials in the left column.
+5. Click the blue "Create credentials" button. Choose "OAuth client ID".
+6. Choose "Other". Enter a desired value for "Name". Click the blue "Create" button.
+7. Copy your "client ID" value.
 
 ''' % console_credentials_url)
 # If you use Firefox to copy the Client ID and Secret, the data has leading and trailing newlines
@@ -7696,7 +7699,7 @@ def _createClientSecretsOauth2service(httpObj, projectId):
     client_id = input('Enter your Client ID: ').strip()
     if not client_id:
       client_id = input().strip()
-    print('\nNow go back to your browser and copy your client secret.')
+    print('\n8. Go back to your browser and copy your "client secret" value.')
     client_secret = input('Enter your Client Secret: ').strip()
     if not client_secret:
       client_secret = input().strip()
@@ -7717,6 +7720,7 @@ def _createClientSecretsOauth2service(httpObj, projectId):
     }
 }''' % (client_id, client_secret, projectId)
   writeFile(GC_Values[GC_CLIENT_SECRETS_JSON], cs_data, continueOnError=False)
+  print('9. Go back to your browser and click OK to close the "OAuth client" popup if it\'s still open.')
   print('That\'s it! Your GAM Project is created and ready to use.')
 
 VALIDEMAIL_PATTERN = re.compile(r'^[^@]+@[^@]+\.[^@]+$')
