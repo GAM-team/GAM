@@ -7523,6 +7523,8 @@ class ShortURLFlow(google_auth_oauthlib.flow.InstalledAppFlow):
     if resp.status != 200:
       return long_url, state
     try:
+      if type(content) is bytes:
+        content = content.decode()
       return json.loads(content).get('short_url', long_url), state
     except:
       return long_url, state
@@ -7678,7 +7680,7 @@ def _createClientSecretsOauth2service(httpObj, projectId):
                  name=service_account['name'], body={'privateKeyType': 'TYPE_GOOGLE_CREDENTIALS_FILE', 'keyAlgorithm': 'KEY_ALG_RSA_2048'})
   oauth2service_data = base64.b64decode(key['privateKeyData']).decode(UTF8)
   writeFile(GC_Values[GC_OAUTH2SERVICE_JSON], oauth2service_data, continueOnError=False)
-  console_credentials_url = 'https://console.developers.google.com/apis/credentials/consent?createClient&project=%s' % projectId
+  console_credentials_url = 'https://console.developers.google.com/apis/credentials/consent/edit?createClient&newAppInternalUser=true&project=%s' % projectId
   while True:
     print('''Please go to:
 
