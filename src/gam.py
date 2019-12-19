@@ -1081,6 +1081,12 @@ def getValidOauth2TxtCredentials(force_refresh=False):
           writeCredentials(credentials)
           break
         except google.auth.exceptions.RefreshError as e:
+          try:
+            if e.args[0] in REFRESH_PERM_ERRORS:
+              # remove OAuth file so we kick off auth next time
+              os.remove(GC_Values[GC_OAUTH2_TXT])
+          except SyntaxError:
+            pass
           controlflow.system_error_exit(18, str(e))
         except (google.auth.exceptions.TransportError, httplib2.ServerNotFoundError, RuntimeError) as e:
           if n != retries:

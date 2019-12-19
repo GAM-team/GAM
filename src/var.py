@@ -450,6 +450,11 @@ DOCUMENT_FORMATS_MAP = {
                  {'mime': 'application/vnd.oasis.opendocument.text', 'ext': '.odt'}],
   }
 
+REFRESH_PERM_ERRORS = [
+  'invalid_grant: reauth related error (rapt_required)', # no way to reauth today
+  'invalid_grant: Token has been expired or revoked.',
+  ]
+
 DNS_ERROR_CODES_MAP = {
   1: 'DNS Query Format Error',
   2: 'Server failed to complete the DNS request',
