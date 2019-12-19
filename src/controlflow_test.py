@@ -82,7 +82,7 @@ class ControlFlowTest(unittest.TestCase):
           # Suppress messages while we make a lot of attempts.
           error_print_threshold=total_attempts + 1)
       # Wait time may be between 60 and 61 secs, due to rand addition.
-      self.assertLess(mock_sleep.call_args[0][0], 61)
+      self.assertLessEqual(mock_sleep.call_args[0][0], 61)
 
   # Prevent the system from actually sleeping and thus slowing down the test.
   @patch.object(controlflow.time, 'sleep')

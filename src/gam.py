@@ -56,12 +56,7 @@ from multiprocessing import Pool as mp_pool
 from multiprocessing import freeze_support as mp_freeze_support
 from multiprocessing import set_start_method as mp_set_start_method
 from urllib.parse import urlencode, urlparse
-# workaround https://bitbucket.org/ecollins/passlib/issues/107/timeclock-has-gone
-# can be removed with passlib > 1.7.1
-if sys.platform == 'win32' and sys.version_info[1] >= 8:
-  time.clock = time.time
 from passlib.hash import sha512_crypt
-time.__dict__.pop('clock', None)
 import dateutil.parser
 
 import googleapiclient
@@ -7460,8 +7455,11 @@ def getUserAttributes(i, cd, updateCmd):
       i += 2
     elif myarg in ['recoveryphone']:
       body['recoveryPhone'] = sys.argv[i+1]
-      if body['recoveryPhone'] and body['recoveryPhone'][0] != '+':
-        body['recoveryPhone'] = '+' + body['recoveryPhone']
+      if body['recoveryPhone']:
+        if body['recoveryPhone'][0] != '+':
+          body['recoveryPhone'] = '+' + body['recoveryPhone']
+      else:
+        body['recoveryPhone'] = None
       i += 2
     elif myarg == 'clearschema':
       if not updateCmd:
@@ -7531,6 +7529,8 @@ class ShortURLFlow(google_auth_oauthlib.flow.InstalledAppFlow):
     if resp.status != 200:
       return long_url, state
     try:
+      if type(content) is bytes:
+        content = content.decode()
       return json.loads(content).get('short_url', long_url), state
     except:
       return long_url, state
@@ -7686,7 +7686,7 @@ def _createClientSecretsOauth2service(httpObj, projectId):
                  name=service_account['name'], body={'privateKeyType': 'TYPE_GOOGLE_CREDENTIALS_FILE', 'keyAlgorithm': 'KEY_ALG_RSA_2048'})
   oauth2service_data = base64.b64decode(key['privateKeyData']).decode(UTF8)
   writeFile(GC_Values[GC_OAUTH2SERVICE_JSON], oauth2service_data, continueOnError=False)
-  console_credentials_url = 'https://console.developers.google.com/apis/credentials/consent?createClient&project=%s' % projectId
+  console_credentials_url = 'https://console.developers.google.com/apis/credentials/consent/edit?createClient&newAppInternalUser=true&project=%s' % projectId
   while True:
     print('''Please go to:
 
