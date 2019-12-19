@@ -2,7 +2,7 @@ if: tag IS blank
 
 env:
   global:
-    - BUILD_PYTHON_VERSION=3.8.0
+    - BUILD_PYTHON_VERSION=3.8.1
     - BUILD_OPENSSL_VERSION=1.1.1d
     - PATCHELF_VERSION=0.9
     - PYINSTALLER_VERSION=3.5
