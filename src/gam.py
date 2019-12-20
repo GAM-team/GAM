@@ -871,14 +871,17 @@ def _getServerTLSUsed(location):
   cipher_name, tls_ver, _ = httpc.connections[conn].sock.cipher()
   return tls_ver, cipher_name
 
+def _getSvcAcctData():
+  if not GM_Globals[GM_OAUTH2SERVICE_JSON_DATA]:
+    json_string = readFile(GC_Values[GC_OAUTH2SERVICE_JSON], continueOnError=True, displayError=True)
+    if not json_string:
+      printLine(MESSAGE_INSTRUCTIONS_OAUTH2SERVICE_JSON)
+      controlflow.system_error_exit(6, None)
+    GM_Globals[GM_OAUTH2SERVICE_JSON_DATA] = json.loads(json_string)
+
 def getSvcAcctCredentials(scopes, act_as):
   try:
-    if not GM_Globals[GM_OAUTH2SERVICE_JSON_DATA]:
-      json_string = readFile(GC_Values[GC_OAUTH2SERVICE_JSON], continueOnError=True, displayError=True)
-      if not json_string:
-        printLine(MESSAGE_INSTRUCTIONS_OAUTH2SERVICE_JSON)
-        controlflow.system_error_exit(6, None)
-      GM_Globals[GM_OAUTH2SERVICE_JSON_DATA] = json.loads(json_string)
+    _getSvcAcctData()
     credentials = google.oauth2.service_account.Credentials.from_service_account_info(GM_Globals[GM_OAUTH2SERVICE_JSON_DATA])
     credentials = credentials.with_scopes(scopes)
     if act_as:
@@ -1241,7 +1244,7 @@ def buildGAPIServiceObject(api, act_as, showAuthError=True):
   http = gapi.create_http(cache=GM_Globals[GM_CACHE_DIR])
   service = getService(api, http)
   GM_Globals[GM_CURRENT_API_USER] = act_as
-  GM_Globals[GM_CURRENT_API_SCOPES] = API_SCOPE_MAPPING[api]
+  GM_Globals[GM_CURRENT_API_SCOPES] = API_SCOPE_MAPPING.get(api, service._rootDesc['auth']['oauth2']['scopes'])
   credentials = getSvcAcctCredentials(GM_Globals[GM_CURRENT_API_SCOPES], act_as)
   request = google_auth_httplib2.Request(http)
   retries = 3
@@ -7635,6 +7638,23 @@ def enableGAMProjectAPIs(GAMProjectAPIs, httpObj, projectId, checkEnabled, i=0, 
           status = False
   return status
 
+def _grantSARekeyRights(iam, sa_email):
+  print('Giving service account {0} rights to rotate own private key'.format(sa_email))
+  body = {
+    'policy': {
+      'bindings': [
+        {
+          'role': 'roles/iam.serviceAccountKeyAdmin',
+          'members': [
+            'serviceAccount:{0}'.format(sa_email)
+          ]
+        }
+      ]
+    }
+  }
+  gapi.call(iam.projects().serviceAccounts(), 'setIamPolicy', resource='projects/-/serviceAccounts/{0}'.format(sa_email),
+      body=body)
+
 def _createClientSecretsOauth2service(httpObj, projectId):
 
   def _checkClientAndSecret(simplehttp, client_id, client_secret):
@@ -7684,6 +7704,7 @@ def _createClientSecretsOauth2service(httpObj, projectId):
                                body={'accountId': projectId, 'serviceAccount': {'displayName': 'GAM Project'}})
   key = gapi.call(iam.projects().serviceAccounts().keys(), 'create',
                  name=service_account['name'], body={'privateKeyType': 'TYPE_GOOGLE_CREDENTIALS_FILE', 'keyAlgorithm': 'KEY_ALG_RSA_2048'})
+  _grantSARekeyRights(iam, service_account['name'].rsplit('/', 1)[-1])
   oauth2service_data = base64.b64decode(key['privateKeyData']).decode(UTF8)
   writeFile(GC_Values[GC_OAUTH2SERVICE_JSON], oauth2service_data, continueOnError=False)
   console_credentials_url = 'https://console.developers.google.com/apis/credentials/consent/edit?createClient&newAppInternalUser=true&project=%s' % projectId
@@ -7971,6 +7992,39 @@ def doUpdateProjects():
     i += 1
     projectId = project['projectId']
     enableGAMProjectAPIs(GAMProjectAPIs, httpObj, projectId, True, i, count)
+    iam = googleapiclient.discovery.build('iam', 'v1',
+                                        http=httpObj, cache_discovery=False,
+                                        discoveryServiceUrl=googleapiclient.discovery.V2_DISCOVERY_URI)
+    _getSvcAcctData()
+    sa_email = GM_Globals[GM_OAUTH2SERVICE_JSON_DATA]['client_email'] 
+    _grantSARekeyRights(iam, sa_email)
+
+def rotateServiceAccountKeys():
+  delete_existing = True
+  body = {}
+  i = 3
+  while i < len(sys.argv):
+    myarg = sys.argv[i].lower().replace('_', '')
+    if myarg == 'algorithm':
+      body['keyAlgorithm'] = sys.argv[i+1].upper()
+      i += 2
+    if myarg == 'leaveexisting':
+      delete_existing = False
+      i += 1
+    else:
+      controlflow.system_error_exit(3, '%s is not a valid argument to "gam rotate key"' % myarg)
+  iam = buildGAPIServiceObject('iam', None)
+  name = 'projects/-/serviceAccounts/%s' % GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID]
+  keys = gapi.call(iam.projects().serviceAccounts().keys(), 'list', name=name, keyTypes='USER_MANAGED')
+  print(' Service Account {0} has {1} existing key(s)'.format(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID], len(keys.get('keys'))))
+  newkey = gapi.call(iam.projects().serviceAccounts().keys(), 'create', name=name, body=body)
+  oauth2service_data = base64.b64decode(newkey['privateKeyData']).decode(UTF8)
+  writeFile(GC_Values[GC_OAUTH2SERVICE_JSON], oauth2service_data, continueOnError=False)
+  print(' Wrote new private key {0} to {1}'.format(newkey['name'].rsplit('/', 1)[-1], GC_Values[GC_OAUTH2SERVICE_JSON]))
+  if delete_existing:
+    for akey in keys.get('keys'):
+      print(' Revoking existing key %s for service account' % akey['name'].rsplit('/', 1)[-1])
+      gapi.call(iam.projects().serviceAccounts().keys(), 'delete', name=akey['name'])
 
 def doDelProjects():
   crm, _, login_hint, projects, _ = _getLoginHintProjects(False)
@@ -14398,6 +14452,13 @@ def ProcessGAMCommand(args):
         doDownloadCloudStorageBucket()
       else:
         controlflow.system_error_exit(2, '%s is not a valid argument for "gam download"' % argument)
+      sys.exit(0)
+    elif command == 'rotate':
+      argument = sys.argv[2].lower()
+      if argument == 'keys':
+        rotateServiceAccountKeys()
+      else:
+        controlflow.system_error_exit(2, '%s is not a valid argument for "gam rotate"' % argument)
       sys.exit(0)
     users = getUsersToModify()
     command = sys.argv[3].lower()
