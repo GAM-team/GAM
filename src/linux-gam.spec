@@ -1,8 +1,13 @@
 # -*- mode: python -*-
+
+import sys
+
+sys.modules['FixTk'] = None
+
 a = Analysis(['gam.py'],
              hiddenimports=[],
              hookspath=None,
-             excludes=['_tkinter'],
+             excludes=['FixTk', 'tcl', 'tk', '_tkinter', 'tkinter', 'Tkinter'],
              runtime_hooks=None)
 for d in a.datas:
     if 'pyconfig' in d[0]:
