@@ -247,6 +247,9 @@ script:
 - if [ "$e2e" = true ]; then $gam user $newuser show imap; fi
 - if [ "$e2e" = true ]; then $gam csv sample.csv gam user $newuser delegate to ~email; fi
 - if [ "$e2e" = true ]; then $gam user $newuser show delegates; fi
+- if [ "$e2e" = true ]; then $gam user $newuser label "✔ unicode checkmark ✔"; fi
+- if [ "$e2e" = true ]; then $gam user $newuser show labels; fi
+- if [ "$e2e" = true ]; then $gam user $newuser show labels > labels.txt; fi
 - if [ "$e2e" = true ]; then $gam user $gam_user importemail subject "Travis import $newbase" message "This is a test import" labels IMPORTANT,UNREAD,INBOX,STARRED; fi
 - if [ "$e2e" = true ]; then $gam user $gam_user insertemail subject "Travis insert $newbase" file gam.py labels INBOX,UNREAD; fi # yep body is gam code
 - if [ "$e2e" = true ]; then $gam user $gam_user sendemail subject "Travis send $gam_user $newbase" file gam.py recipient admin@pdl.jaylee.us; fi
@@ -254,6 +257,7 @@ script:
 - if [ "$e2e" = true ]; then $gam users "$gam_user $newbase-bulkuser-01 $newbase-bulkuser-02 $newbase-bulkuser-03" delete messages query in:anywhere maxtodelete 99999 doit; fi
 - if [ "$e2e" = true ]; then $gam users "$newbase-bulkuser-04 $newbase-bulkuser-05 $newbase-bulkuser-06" trash messages query in:anywhere maxtotrash 99999 doit; fi
 - if [ "$e2e" = true ]; then $gam users "$newbase-bulkuser-07 $newbase-bulkuser-08 $newbase-bulkuser-09" modify messages query in:anywhere maxtomodify 99999 addlabel IMPORTANT addlabel STARRED doit; fi
+- if [ "$e2e" = true ]; then $gam user $newuser delete label --ALL_LABELS--; fi
 - if [ "$e2e" = true ]; then $gam create feature name Whiteboard-$newbase; fi
 - if [ "$e2e" = true ]; then $gam create feature name VC-$newbase; fi
 - if [ "$e2e" = true ]; then $gam create building "My Building - $newbase" id $newbuilding floors 1,2,3,4,5,6,7,8,9,10,11,12,14,15 description "No 13th floor here..."; fi

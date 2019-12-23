@@ -14759,4 +14759,7 @@ if __name__ == "__main__":
     mp_set_start_method('fork')
   if sys.version_info[0] < 3 or sys.version_info[1] < 5:
     controlflow.system_error_exit(5, 'GAM requires Python 3.5 or newer. You are running %s.%s.%s. Please upgrade your Python version or use one of the binary GAM downloads.' % sys.version_info[:3])
+  elif sys.version_info[1] >= 7:
+    sys.stdout.reconfigure(encoding=UTF8, errors='namereplace')
+    sys.stdin.reconfigure(encoding=UTF8, errors='namereplace')
   sys.exit(ProcessGAMCommand(sys.argv))
