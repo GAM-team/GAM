@@ -7905,7 +7905,7 @@ def _formatOAuth2ServiceData(private_key, private_key_id):
   key_json['private_key_id'] = private_key_id
   return json.dumps(key_json, indent=2, sort_keys=True)
 
-def showServiceAccountKeys():
+def doShowServiceAccountKeys():
   iam = buildGAPIServiceObject('iam', None)
   name = 'projects/-/serviceAccounts/%s' % GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID]
   result = gapi.call(iam.projects().serviceAccounts().keys(), 'list', name=name)
@@ -7921,7 +7921,7 @@ def showServiceAccountKeys():
     for field in ['keyAlgorithm', 'keyOrigin', 'keyType', 'validAfterTime', 'validBeforeTime']:
       print('  {0}: {1}'.format(field, key[field]))
 
-def rotateServiceAccountKeys():
+def doRotateServiceAccountKeys():
   local_key_size = 2048
   delete_existing = True
   generate_locally = False
@@ -14276,8 +14276,8 @@ def ProcessGAMCommand(args):
         doShowLicenses()
       elif argument in ['project', 'projects']:
         doPrintShowProjects(False)
-      elif argument in ['key', 'keys']:
-        showServiceAccountKeys()
+      elif argument in ['sakey', 'sakeys']:
+        doShowServiceAccountKeys()
       else:
         controlflow.system_error_exit(2, '%s is not a valid argument for "gam show"' % argument)
       sys.exit(0)
@@ -14386,8 +14386,8 @@ def ProcessGAMCommand(args):
       sys.exit(0)
     elif command == 'rotate':
       argument = sys.argv[2].lower()
-      if argument in ['key', 'keys']:
-        rotateServiceAccountKeys()
+      if argument in ['sakey', 'sakeys']:
+        doRotateServiceAccountKeys()
       else:
         controlflow.system_error_exit(2, '%s is not a valid argument for "gam rotate"' % argument)
       sys.exit(0)
