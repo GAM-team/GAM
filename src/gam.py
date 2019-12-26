@@ -7907,8 +7907,24 @@ def _formatOAuth2ServiceData(private_key, private_key_id):
 
 def doShowServiceAccountKeys():
   iam = buildGAPIServiceObject('iam', None)
+  keyTypes = 'USER_MANAGED'
+  i = 3
+  while i < len(sys.argv):
+    myarg = sys.argv[i].lower().replace('_', '')
+    if myarg == 'all':
+      keyTypes = None
+      i += 1
+    elif myarg in ['system', 'systemmanaged']:
+      keyTypes = 'SYSTEM_MANAGED'
+      i += 1
+    elif myarg in ['user', 'usermanaged']:
+      keyTypes = 'USER_MANAGED'
+      i += 1
+    else:
+      controlflow.system_error_exit(3, '%s is not a valid argument to "gam show sakeys"' % myarg)
   name = 'projects/-/serviceAccounts/%s' % GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID]
-  keys = gapi.get_items(iam.projects().serviceAccounts().keys(), 'list', 'keys', name=name)
+  keys = gapi.get_items(iam.projects().serviceAccounts().keys(), 'list', 'keys',
+                        name=name, keyTypes=keyTypes)
   if not keys:
     print('No keys')
     return
@@ -7918,41 +7934,35 @@ def doShowServiceAccountKeys():
   for key in keys:
     print('{0}: {1}'.format('name', key['name'].rsplit('/', 1)[-1]))
     for field in ['keyAlgorithm', 'keyOrigin', 'keyType', 'validAfterTime', 'validBeforeTime']:
-      print('  {0}: {1}'.format(field, key[field]))
+      if field in key:
+        print('  {0}: {1}'.format(field, key[field]))
 
-def doRotateServiceAccountKeys():
-  local_key_size = 2048
-  delete_existing = True
-  generate_locally = False
+def doCreateRotateServiceAccountKeys(rotateCmd):
+  iam = buildGAPIServiceObject('iam', None)
+  local_key_size = 0
   body = {}
   i = 3
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace('_', '')
     if myarg == 'algorithm':
       body['keyAlgorithm'] = sys.argv[i+1].upper()
+      allowed_algorithms = _getEnumValuesMinusUnspecified(iam._rootDesc['schemas']['CreateServiceAccountKeyRequest']['properties']['keyAlgorithm']['enum'])
+      if body['keyAlgorithm'] not in allowed_algorithms:
+        controlflow.system_error_exit(3, 'algorithm must be one of {0}. Got {1}'.format(', '.join(allowed_algorithms), body['keyAlgorithm']))
+      local_key_size = 0
       i += 2
-    elif myarg == 'leaveexisting':
-      delete_existing = False
-      i += 1
-    elif myarg == 'generatelocally':
-      generate_locally = True
-      i += 1
     elif myarg == 'localkeysize':
       local_key_size = int(sys.argv[i+1])
       if local_key_size not in [1024, 2048, 4096]:
-        controlflow.system_error_exit(3, 'local_key_size must be 1024, 2048 or 4096. 1024 is weak and dangerous. 2048 is recommended. 4096 is slow.')
+        controlflow.system_error_exit(3, 'localkeysize must be 1024, 2048 or 4096. 1024 is weak and dangerous. 2048 is recommended. 4096 is slow.')
       i += 2
     else:
-      controlflow.system_error_exit(3, '%s is not a valid argument to "gam rotate key"' % myarg)
-  iam = buildGAPIServiceObject('iam', None)
-  if body.get('keyAlgorithm'):
-    allowed_algorithms = _getEnumValuesMinusUnspecified(iam._rootDesc['schemas']['CreateServiceAccountKeyRequest']['properties']['keyAlgorithm']['enum'])
-    if body['keyAlgorithm'] not in allowed_algorithms:
-      controlflow.system_error_exit(3, 'algorithm must be one of {0}. Got {1}'.format(', '.join(allowed_algorithms), body['keyAlgorithm']))
+      controlflow.system_error_exit(3, '%s is not a valid argument to "gam %s sakey"' % (myarg, ['create', 'rotate'][rotateCmd]))
   name = 'projects/-/serviceAccounts/%s' % GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID]
-  keys = gapi.get_items(iam.projects().serviceAccounts().keys(), 'list', 'keys', name=name, keyTypes='USER_MANAGED')
-  print(' Service Account {0} has {1} existing key(s)'.format(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID], len(keys.get('keys'))))
-  if generate_locally:
+  keys = gapi.get_items(iam.projects().serviceAccounts().keys(), 'list', 'keys',
+                        name=name, keyTypes='USER_MANAGED')
+  print(' Service Account {0} has {1} existing key(s)'.format(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID], len(keys)))
+  if local_key_size:
     private_key, publicKeyData = _generatePrivateKeyAndPublicCert(name, local_key_size)
     print(' Uploading new public certificate to Google...')
     result = gapi.call(iam.projects().serviceAccounts().keys(), 'upload',
@@ -7965,10 +7975,31 @@ def doRotateServiceAccountKeys():
     private_key_id = result['name'].rsplit('/', 1)[-1]
   writeFile(GC_Values[GC_OAUTH2SERVICE_JSON], oauth2service_data, continueOnError=False)
   print(' Wrote new private key {0} to {1}'.format(private_key_id, GC_Values[GC_OAUTH2SERVICE_JSON]))
-  if delete_existing:
+  if rotateCmd:
     for akey in keys:
       print(' Revoking existing key %s for service account' % akey['name'].rsplit('/', 1)[-1])
       gapi.call(iam.projects().serviceAccounts().keys(), 'delete', name=akey['name'])
+
+def doDeleteServiceAccountKeys():
+  iam = buildGAPIServiceObject('iam', None)
+  keyList = []
+  i = 3
+  while i < len(sys.argv):
+    keyList.extend(sys.argv[i].replace(',', ' ').split())
+    i += 1
+  name = 'projects/-/serviceAccounts/%s' % GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID]
+  keys = gapi.get_items(iam.projects().serviceAccounts().keys(), 'list', 'keys',
+                        name=name, keyTypes='USER_MANAGED')
+  print(' Service Account {0} has {1} existing key(s)'.format(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID], len(keys)))
+  for dkeyName in keyList:
+    for akey in keys:
+      akeyName = akey['name'].rsplit('/', 1)[-1]
+      if dkeyName == akeyName:
+        print(' Revoking existing key %s for service account' % akeyName)
+        gapi.call(iam.projects().serviceAccounts().keys(), 'delete', name=akey['name'])
+        break
+    else:
+      print(' Existing key %s for service account not found' % dkeyName)
 
 def doDelProjects():
   crm, _, login_hint, projects, _ = _getLoginHintProjects(False)
@@ -14019,6 +14050,8 @@ def ProcessGAMCommand(args):
         doCreateAlertFeedback()
       elif argument in ['gcpfolder']:
         createGCPFolder()
+      elif argument in ['sakey', 'sakeys']:
+        doCreateRotateServiceAccountKeys(False)
       else:
         controlflow.system_error_exit(2, '%s is not a valid argument for "gam create"' % argument)
       sys.exit(0)
@@ -14176,6 +14209,8 @@ def ProcessGAMCommand(args):
         doDeleteFeature()
       elif argument in ['alert']:
         doDeleteOrUndeleteAlert('delete')
+      elif argument in ['sakey', 'sakeys']:
+        doDeleteServiceAccountKeys()
       else:
         controlflow.system_error_exit(2, '%s is not a valid argument for "gam delete"' % argument)
       sys.exit(0)
@@ -14386,7 +14421,7 @@ def ProcessGAMCommand(args):
     elif command == 'rotate':
       argument = sys.argv[2].lower()
       if argument in ['sakey', 'sakeys']:
-        doRotateServiceAccountKeys()
+        doCreateRotateServiceAccountKeys(True)
       else:
         controlflow.system_error_exit(2, '%s is not a valid argument for "gam rotate"' % argument)
       sys.exit(0)

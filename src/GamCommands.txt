@@ -222,6 +222,7 @@ If an item contains spaces, it should be surrounded by ".
 <SchemaName> ::= <String>
 <Section> ::= <String>
 <SerialNumber> ::= <String>
+<ServiceAccountKey> ::= <String>
 <S/MIMEID> ::= <String>	
 <SMTPHostName> ::= <String>
 <StudentItem> ::= <EmailAddress>|<UniqueID>|<String>
@@ -592,6 +593,7 @@ Items, separated by spaces, with spaces, commas or single quotes in the items th
 <SKUIDList> ="<SKUID>(,<SKUID>)*"
 <SchemaNameList> ::= "<SchemaName>(,<SchemaName>)*"
 <SerialNumberList> ::= "<SerialNumber>(,<SerialNumber>)*"
+<ServiceAccountKeyList> ::= "<ServiceAccountKey>(,<ServiceAccountKey>)*"
 <TeamDriveIDList> ::= "<TeamDriveID>(,<TeamDriveID>)*"
 <UserFieldNameList> ::= "<UserFieldName>(,<UserFieldName>)*"
 <UserList> ::= "<UserItem>(,<UserItem>)*"
@@ -835,6 +837,11 @@ gam update project [<EmailAddress>] [gam|<ProjectID>|(filter <String>)]
 gam delete project [<EmailAddress>] [gam|<ProjectID>|(filter <String>)]
 gam show projects [<EmailAddress>] [all|gam|<ProjectID>|(filter <String>)]
 gam print projects [<EmailAddress>] [all|gam|<ProjectID>|(filter <String>)] [todrive]
+
+gam create sakey|sakeys [(algorithm KEY_ALG_RSA_1024|KEY_ALG_RSA_2048)|(localkeysize 1024|2048|4096)]
+gam rotate sakey|sakeys [(algorithm KEY_ALG_RSA_1024|KEY_ALG_RSA_2048)|(localkeysize 1024|2048|4096)]
+gam delete sakey|sakeys <ServiceAccountKeyList>
+gam show sakey|sakeys [all|system|user]
 
 gam oauth|oauth2 create|request [<EmailAddress>]
 gam oauth|oauth2 delete|revoke
