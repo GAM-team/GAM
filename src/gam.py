@@ -7908,9 +7908,8 @@ def _formatOAuth2ServiceData(private_key, private_key_id):
 def doShowServiceAccountKeys():
   iam = buildGAPIServiceObject('iam', None)
   name = 'projects/-/serviceAccounts/%s' % GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID]
-  result = gapi.call(iam.projects().serviceAccounts().keys(), 'list', name=name)
-  keys = result.get('keys')
-  if not keys or len(keys) == 0:
+  keys = gapi.get_items(iam.projects().serviceAccounts().keys(), 'list', 'keys', name=name)
+  if not keys:
     print('No keys')
     return
   parts = keys[0]['name'].rsplit('/')
@@ -7951,7 +7950,7 @@ def doRotateServiceAccountKeys():
     if body['keyAlgorithm'] not in allowed_algorithms:
       controlflow.system_error_exit(3, 'algorithm must be one of {0}. Got {1}'.format(', '.join(allowed_algorithms), body['keyAlgorithm']))
   name = 'projects/-/serviceAccounts/%s' % GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID]
-  keys = gapi.call(iam.projects().serviceAccounts().keys(), 'list', name=name, keyTypes='USER_MANAGED')
+  keys = gapi.get_items(iam.projects().serviceAccounts().keys(), 'list', 'keys', name=name, keyTypes='USER_MANAGED')
   print(' Service Account {0} has {1} existing key(s)'.format(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID], len(keys.get('keys'))))
   if generate_locally:
     private_key, publicKeyData = _generatePrivateKeyAndPublicCert(name, local_key_size)
@@ -7967,7 +7966,7 @@ def doRotateServiceAccountKeys():
   writeFile(GC_Values[GC_OAUTH2SERVICE_JSON], oauth2service_data, continueOnError=False)
   print(' Wrote new private key {0} to {1}'.format(private_key_id, GC_Values[GC_OAUTH2SERVICE_JSON]))
   if delete_existing:
-    for akey in keys.get('keys'):
+    for akey in keys:
       print(' Revoking existing key %s for service account' % akey['name'].rsplit('/', 1)[-1])
       gapi.call(iam.projects().serviceAccounts().keys(), 'delete', name=akey['name'])
 
