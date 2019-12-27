@@ -34,7 +34,7 @@ def open_file(filename,
 
   Args:
     filename: String, the name of the file to open, or '-' to use stdin/stdout,
-      to read/write, depending on the mode, respectively.
+      to read/write, depending on the mode param, respectively.
     mode: String, the common file mode to open the file with. Default is read.
     encoding: String, the name of the encoding used to decode or encode the
       file. This should only be used in text mode.
@@ -57,12 +57,23 @@ def open_file(filename,
     # Open a file on disk
     f = _open_file(filename, mode, newline=newline, encoding=encoding)
     if strip_utf_bom:
-      if 'b' in mode or not f.encoding.lower().startswith('utf'):
-        if f.read(3).decode('iso-8859-1', 'replace') != b'\xef\xbb\xbf':
-          f.seek(0)
+      utf_bom = u'\ufeff'
+      has_bom = False
+
+      if 'b' in mode:
+        has_bom = f.read(3).decode('UTF-8') == utf_bom
+      elif f.encoding and not f.encoding.lower().startswith('utf'):
+        # Convert UTF BOM into ISO-8859-1 via Bytes
+        utf8_bom_bytes = utf_bom.encode('UTF-8')
+        iso_8859_1_bom = utf8_bom_bytes.decode('iso-8859-1').encode(
+            'iso-8859-1')
+        has_bom = f.read(3).encode('iso-8859-1', 'replace') == iso_8859_1_bom
       else:
-        if f.read(1) != u'\ufeff':
-          f.seek(0)
+        has_bom = f.read(1) == utf_bom
+
+      if not has_bom:
+        f.seek(0)
+
     return f
 
   except IOError as e:

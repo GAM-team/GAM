@@ -1,5 +1,6 @@
 """Tests for fileutils."""
 
+import io
 import os
 import unittest
 from unittest.mock import MagicMock
@@ -61,32 +62,51 @@ class FileutilsTest(unittest.TestCase):
     fileutils.open_file(self.fake_path, encoding='UTF-8')
     self.assertEqual(fileutils.UTF8_SIG, mock_open.call_args[1]['encoding'])
 
-  def test_open_file_strips_utf_bom_in_text(self):
+  def test_open_file_strips_utf_bom_in_utf(self):
     bom_prefixed_data = u'\ufefffoobar'
-    mock_open = unittest.mock.mock_open(read_data=bom_prefixed_data)
+    fake_file = io.StringIO(bom_prefixed_data)
+    mock_open = MagicMock(spec=open, return_value=fake_file)
+    with patch.object(fileutils, 'open', mock_open):
+      f = fileutils.open_file(self.fake_path, strip_utf_bom=True)
+      self.assertEqual('foobar', f.read())
+
+  def test_open_file_strips_utf_bom_in_non_utf(self):
+    bom_prefixed_data = b'\xef\xbb\xbffoobar'.decode('iso-8859-1')
+
+    # We need to trick the method under test into believing that a StringIO
+    # instance is a file with an encoding. Since StringIO does not usually have,
+    # an encoding, we'll mock it and add our own encoding, but send the other
+    # methods in use (read and seek) back to the real StringIO object.
+    real_stringio = io.StringIO(bom_prefixed_data)
+    mock_file = MagicMock(spec=io.StringIO)
+    mock_file.read.side_effect = real_stringio.read
+    mock_file.seek.side_effect = real_stringio.seek
+    mock_file.encoding = 'iso-8859-1'
+
+    mock_open = MagicMock(spec=open, return_value=mock_file)
     with patch.object(fileutils, 'open', mock_open):
       f = fileutils.open_file(self.fake_path, strip_utf_bom=True)
       self.assertEqual('foobar', f.read())
 
   def test_open_file_strips_utf_bom_in_binary(self):
-    bom_prefixed_data = b'\xef\xbb\xbffoobar'
-    mock_open = unittest.mock.mock_open(read_data=bom_prefixed_data)
+    bom_prefixed_data = u'\ufefffoobar'.encode('UTF-8')
+    fake_file = io.BytesIO(bom_prefixed_data)
+    mock_open = MagicMock(spec=open, return_value=fake_file)
     with patch.object(fileutils, 'open', mock_open):
       f = fileutils.open_file(self.fake_path, mode='rb', strip_utf_bom=True)
       self.assertEqual(b'foobar', f.read())
 
   def test_open_file_strip_utf_bom_when_no_bom_in_data(self):
     no_bom_data = 'This data has no BOM'
-    mock_open = unittest.mock.mock_open(read_data=no_bom_data)
+    fake_file = io.StringIO(no_bom_data)
+    mock_open = MagicMock(spec=open, return_value=fake_file)
+
     with patch.object(fileutils, 'open', mock_open):
       f = fileutils.open_file(self.fake_path, strip_utf_bom=True)
-      # If the file has no BOM, it should seek to the beginning.
-      # Since the mock_open() return object does not support seeking directly,
-      # We need to assert seek() was called correctly, rather than validate
-      # the returned data (which won't work with the mock).
-      last_called_method_name, last_called_method_args, _ = f.method_calls[-1]
-      self.assertEqual(last_called_method_name, 'seek')
-      self.assertEqual(last_called_method_args[0], 0)
+      # Since there was no opening BOM, we should be back at the beginning of
+      # the file.
+      self.assertEqual(fake_file.tell(), 0)
+      self.assertEqual(f.read(), no_bom_data)
 
   @patch.object(fileutils, 'open', new_callable=unittest.mock.mock_open)
   def test_open_file_exits_on_io_error(self, mock_open):
