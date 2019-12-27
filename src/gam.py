@@ -7982,19 +7982,30 @@ def doCreateRotateServiceAccountKeys(rotateCmd):
 
 def doDeleteServiceAccountKeys():
   iam = buildGAPIServiceObject('iam', None)
+  doit = False
   keyList = []
   i = 3
   while i < len(sys.argv):
-    keyList.extend(sys.argv[i].replace(',', ' ').split())
-    i += 1
-  name = 'projects/-/serviceAccounts/%s' % GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID]
+    myarg = sys.argv[i].lower()
+    if myarg == 'doit':
+      doit = True
+      i += 1
+    else:
+      keyList.extend(sys.argv[i].replace(',', ' ').split())
+      i += 1
+  clientId = GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID]
+  currentPrivateKeyId = GM_Globals[GM_OAUTH2SERVICE_JSON_DATA]['private_key_id']
+  name = 'projects/-/serviceAccounts/%s' % clientId
   keys = gapi.get_items(iam.projects().serviceAccounts().keys(), 'list', 'keys',
                         name=name, keyTypes='USER_MANAGED')
-  print(' Service Account {0} has {1} existing key(s)'.format(GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID], len(keys)))
+  print(' Service Account {0} has {1} existing key(s)'.format(clientId, len(keys)))
   for dkeyName in keyList:
     for akey in keys:
       akeyName = akey['name'].rsplit('/', 1)[-1]
       if dkeyName == akeyName:
+        if akeyName == currentPrivateKeyId and not doit:
+          print(' Current existing key %s for service account not revoked because doit argument not specified ' % akeyName)
+          break
         print(' Revoking existing key %s for service account' % akeyName)
         gapi.call(iam.projects().serviceAccounts().keys(), 'delete', name=akey['name'])
         break
