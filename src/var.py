@@ -145,6 +145,7 @@ API_VER_MAPPING = {
   'drive3': 'v3',
   'gmail': 'v1',
   'groupssettings': 'v1',
+  'iam': 'v1',
   'licensing': 'v1',
   'oauth2': 'v2',
   'pubsub': 'v1',
