@@ -7866,11 +7866,9 @@ def doShowServiceAccountKeys():
   for i in range(0, 4, 2):
     print('{0}: {1}'.format(parts[i][:-1], parts[i+1]))
   for key in keys:
-    keyName = key['name'].rsplit('/', 1)[-1]
-    print('{0}: {1}, Current: {2}'.format('name', keyName, keyName == currentPrivateKeyId))
-    for field in ['keyAlgorithm', 'keyOrigin', 'keyType', 'validAfterTime', 'validBeforeTime']:
-      if field in key:
-        print('  {0}: {1}'.format(field, key[field]))
+    key['name'] = key['name'].rsplit('/', 1)[-1]
+    key['current'] = key['name'] == currentPrivateKeyId
+  print_json(None, keys)
 
 def doCreateRotateServiceAccountKeys(rotateCmd):
   iam = buildGAPIServiceObject('iam', None)
