@@ -803,7 +803,7 @@ def _getServerTLSUsed(location):
 
 def _getSvcAcctData():
   if not GM_Globals[GM_OAUTH2SERVICE_JSON_DATA]:
-    json_string = fileutils.read_file(GC_Values[GC_OAUTH2SERVICE_JSON], continueOnError=True, displayError=True)
+    json_string = fileutils.read_file(GC_Values[GC_OAUTH2SERVICE_JSON], continue_on_error=True, display_errors=True)
     if not json_string:
       printLine(MESSAGE_INSTRUCTIONS_OAUTH2SERVICE_JSON)
       controlflow.system_error_exit(6, None)
@@ -7908,7 +7908,7 @@ def rotateServiceAccountKeys():
     result = gapi.call(iam.projects().serviceAccounts().keys(), 'create', name=name, body=body)
     oauth2service_data = base64.b64decode(result['privateKeyData']).decode(UTF8)
     private_key_id = result.get('name').rsplit('/', 1)[-1]
-  fileutils.write_file(GC_Values[GC_OAUTH2SERVICE_JSON], oauth2service_data, continueOnError=False)
+  fileutils.write_file(GC_Values[GC_OAUTH2SERVICE_JSON], oauth2service_data, continue_on_error=False)
   print(' Wrote new private key {0} to {1}'.format(private_key_id, GC_Values[GC_OAUTH2SERVICE_JSON]))
   if delete_existing:
     for akey in keys.get('keys'):
