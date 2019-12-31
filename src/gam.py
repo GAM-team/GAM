@@ -7870,9 +7870,9 @@ def doShowServiceAccountKeys():
     key['current'] = key['name'] == currentPrivateKeyId
   print_json(None, keys)
 
-def doUpdateServiceAccountKeys():
+def doRotateServiceAccountKeys():
   iam = buildGAPIServiceObject('iam', None)
-  local_key_size = 0
+  local_key_size = 2048
   body = {}
   mode = 'retainnone'
   i = 3
@@ -7894,7 +7894,7 @@ def doUpdateServiceAccountKeys():
       mode = myarg
       i += 1
     else:
-      controlflow.system_error_exit(3, '%s is not a valid argument to "gam update sakeys"' % myarg)
+      controlflow.system_error_exit(3, '%s is not a valid argument to "gam rotate sakeys"' % myarg)
   clientId = GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID]
   currentPrivateKeyId = GM_Globals[GM_OAUTH2SERVICE_JSON_DATA]['private_key_id']
   name = 'projects/-/serviceAccounts/%s' % clientId
@@ -14073,8 +14073,6 @@ def ProcessGAMCommand(args):
         doUpdateBuilding()
       elif argument in ['feature']:
         doUpdateFeature()
-      elif argument in ['sakey', 'sakeys']:
-        doUpdateServiceAccountKeys()
       else:
         controlflow.system_error_exit(2, '%s is not a valid argument for "gam update"' % argument)
       sys.exit(0)
@@ -14388,6 +14386,13 @@ def ProcessGAMCommand(args):
         doDownloadCloudStorageBucket()
       else:
         controlflow.system_error_exit(2, '%s is not a valid argument for "gam download"' % argument)
+      sys.exit(0)
+    elif command == 'rotate':
+      argument = sys.argv[2].lower()
+      if argument in ['sakey', 'sakeys']:
+        doRotateServiceAccountKeys()
+      else:
+        controlflow.system_error_exit(2, '%s is not a valid argument for "gam rotate"' % argument)
       sys.exit(0)
     users = getUsersToModify()
     command = sys.argv[3].lower()
