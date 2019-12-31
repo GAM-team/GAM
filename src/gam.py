@@ -7892,6 +7892,7 @@ def doUpdateServiceAccountKeys():
       i += 2
     elif myarg in ['retainexisting', 'replacecurrent']:
       mode = myarg
+      i += 1
     else:
       controlflow.system_error_exit(3, '%s is not a valid argument to "gam update sakeys"' % myarg)
   clientId = GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID]
