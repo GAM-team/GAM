@@ -7892,6 +7892,7 @@ def doCreateRotateServiceAccountKeys(rotateCmd):
     else:
       controlflow.system_error_exit(3, '%s is not a valid argument to "gam %s sakey"' % (myarg, ['create', 'rotate'][rotateCmd]))
   clientId = GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID]
+  currentPrivateKeyId = GM_Globals[GM_OAUTH2SERVICE_JSON_DATA]['private_key_id']
   name = 'projects/-/serviceAccounts/%s' % clientId
   keys = gapi.get_items(iam.projects().serviceAccounts().keys(), 'list', 'keys',
                         name=name, keyTypes='USER_MANAGED')
@@ -7911,8 +7912,10 @@ def doCreateRotateServiceAccountKeys(rotateCmd):
   print(' Wrote new private key {0} to {1}'.format(private_key_id, GC_Values[GC_OAUTH2SERVICE_JSON]))
   if rotateCmd:
     for key in keys:
-      print(' Revoking existing key %s for service account' % key['name'].rsplit('/', 1)[-1])
-      gapi.call(iam.projects().serviceAccounts().keys(), 'delete', name=key['name'])
+      if key['name'].rsplit('/', 1)[-1] == currentPrivateKeyId:
+        print(' Revoking existing key %s for service account' % currentPrivateKeyId)
+        gapi.call(iam.projects().serviceAccounts().keys(), 'delete', name=key['name'])
+        break
 
 def doDeleteServiceAccountKeys():
   iam = buildGAPIServiceObject('iam', None)
