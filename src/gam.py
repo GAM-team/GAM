@@ -7890,7 +7890,7 @@ def doRotateServiceAccountKeys():
       if local_key_size not in [1024, 2048, 4096]:
         controlflow.system_error_exit(3, 'localkeysize must be 1024, 2048 or 4096. 1024 is weak and dangerous. 2048 is recommended. 4096 is slow.')
       i += 2
-    elif myarg in ['retainexisting', 'replacecurrent']:
+    elif myarg in ['retainnone', 'retainexisting', 'replacecurrent']:
       mode = myarg
       i += 1
     else:
