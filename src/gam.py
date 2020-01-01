@@ -7867,7 +7867,8 @@ def doShowServiceAccountKeys():
     print('{0}: {1}'.format(parts[i][:-1], parts[i+1]))
   for key in keys:
     key['name'] = key['name'].rsplit('/', 1)[-1]
-    key['current'] = key['name'] == currentPrivateKeyId
+    if key.get('keyType', '') == 'USER_MANAGED':
+      key['current'] = key['name'] == currentPrivateKeyId
   print_json(None, keys)
 
 def doRotateServiceAccountKeys():
