@@ -161,7 +161,7 @@ class ErrorsTest(unittest.TestCase):
     # This error does not have an "errors" key describing each error.
     content = {'error': {'code': status_code, 'message': 'unknown error'}}
     content_as_bytes = json.dumps(content).encode('UTF-8')
-    err = errors.googleapiclient.errors.HttpError(response, content_as_bytes)
+    err = googleapiclient.errors.HttpError(response, content_as_bytes)
 
     http_status, reason, message = errors.get_gapi_error_detail(err)
     self.assertEqual(http_status, status_code)
@@ -175,7 +175,7 @@ class ErrorsTest(unittest.TestCase):
     # This error only has an error_description_field and an unknown description.
     content = {'error_description': 'something errored'}
     content_as_bytes = json.dumps(content).encode('UTF-8')
-    err = errors.googleapiclient.errors.HttpError(response, content_as_bytes)
+    err = googleapiclient.errors.HttpError(response, content_as_bytes)
 
     with self.assertRaises(SystemExit) as context:
       errors.get_gapi_error_detail(err)
@@ -186,7 +186,7 @@ class ErrorsTest(unittest.TestCase):
     response = {'status': status_code}
     content = {'error_description': 'Invalid Value'}
     content_as_bytes = json.dumps(content).encode('UTF-8')
-    err = errors.googleapiclient.errors.HttpError(response, content_as_bytes)
+    err = googleapiclient.errors.HttpError(response, content_as_bytes)
 
     http_status, reason, message = errors.get_gapi_error_detail(err)
     self.assertEqual(http_status, status_code)
@@ -198,7 +198,7 @@ class ErrorsTest(unittest.TestCase):
     response = {'status': status_code}
     content = {'notErrorContentThatIsExpected': 'foo'}
     content_as_bytes = json.dumps(content).encode('UTF-8')
-    err = errors.googleapiclient.errors.HttpError(response, content_as_bytes)
+    err = googleapiclient.errors.HttpError(response, content_as_bytes)
 
     with self.assertRaises(SystemExit) as context:
       errors.get_gapi_error_detail(err)
