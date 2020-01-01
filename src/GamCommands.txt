@@ -838,8 +838,8 @@ gam delete project [<EmailAddress>] [gam|<ProjectID>|(filter <String>)]
 gam show projects [<EmailAddress>] [all|gam|<ProjectID>|(filter <String>)]
 gam print projects [<EmailAddress>] [all|gam|<ProjectID>|(filter <String>)] [todrive]
 
-gam create sakey|sakeys [(algorithm KEY_ALG_RSA_1024|KEY_ALG_RSA_2048)|(localkeysize 1024|2048|4096)]
-gam rotate sakey|sakeys [(algorithm KEY_ALG_RSA_1024|KEY_ALG_RSA_2048)|(localkeysize 1024|2048|4096)]
+gam rotate sakey|sakeys [retain_none|retain_existing|replace_current]
+         [(algorithm KEY_ALG_RSA_1024|KEY_ALG_RSA_2048)|(localkeysize 1024|2048|4096)]
 gam delete sakey|sakeys <ServiceAccountKeyList>+ [doit]
 gam show sakey|sakeys [all|system|user]
 

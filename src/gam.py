@@ -7870,10 +7870,11 @@ def doShowServiceAccountKeys():
     key['current'] = key['name'] == currentPrivateKeyId
   print_json(None, keys)
 
-def doCreateRotateServiceAccountKeys(rotateCmd):
+def doRotateServiceAccountKeys():
   iam = buildGAPIServiceObject('iam', None)
-  local_key_size = 0
+  local_key_size = 2048
   body = {}
+  mode = 'retainnone'
   i = 3
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace('_', '')
@@ -7889,13 +7890,17 @@ def doCreateRotateServiceAccountKeys(rotateCmd):
       if local_key_size not in [1024, 2048, 4096]:
         controlflow.system_error_exit(3, 'localkeysize must be 1024, 2048 or 4096. 1024 is weak and dangerous. 2048 is recommended. 4096 is slow.')
       i += 2
+    elif myarg in ['retainnone', 'retainexisting', 'replacecurrent']:
+      mode = myarg
+      i += 1
     else:
-      controlflow.system_error_exit(3, '%s is not a valid argument to "gam %s sakey"' % (myarg, ['create', 'rotate'][rotateCmd]))
+      controlflow.system_error_exit(3, '%s is not a valid argument to "gam rotate sakeys"' % myarg)
   clientId = GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID]
+  currentPrivateKeyId = GM_Globals[GM_OAUTH2SERVICE_JSON_DATA]['private_key_id']
   name = 'projects/-/serviceAccounts/%s' % clientId
-  keys = gapi.get_items(iam.projects().serviceAccounts().keys(), 'list', 'keys',
-                        name=name, keyTypes='USER_MANAGED')
-  print(' Service Account {0} has {1} existing key(s)'.format(clientId, len(keys)))
+  if mode != 'retainexisting':
+    keys = gapi.get_items(iam.projects().serviceAccounts().keys(), 'list', 'keys',
+                          name=name, keyTypes='USER_MANAGED')
   if local_key_size:
     private_key, publicKeyData = _generatePrivateKeyAndPublicCert(name, local_key_size)
     print(' Uploading new public certificate to Google...')
@@ -7909,10 +7914,16 @@ def doCreateRotateServiceAccountKeys(rotateCmd):
     private_key_id = result['name'].rsplit('/', 1)[-1]
   fileutils.write_file(GC_Values[GC_OAUTH2SERVICE_JSON], oauth2service_data, continue_on_error=False)
   print(' Wrote new private key {0} to {1}'.format(private_key_id, GC_Values[GC_OAUTH2SERVICE_JSON]))
-  if rotateCmd:
+  if mode != 'retainexisting':
+    count = len(keys) if mode == 'retainnone' else 1
+    print(' Revoking {0} existing key(s) for Service Account {1}'.format(count, clientId))
     for key in keys:
-      print(' Revoking existing key %s for service account' % key['name'].rsplit('/', 1)[-1])
-      gapi.call(iam.projects().serviceAccounts().keys(), 'delete', name=key['name'])
+      keyName = key['name'].rsplit('/', 1)[-1]
+      if mode == 'retainnone' or keyName == currentPrivateKeyId:
+        print('  Revoking existing key %s for service account' % keyName)
+        gapi.call(iam.projects().serviceAccounts().keys(), 'delete', name=key['name'])
+        if mode != 'retainnone':
+          break
 
 def doDeleteServiceAccountKeys():
   iam = buildGAPIServiceObject('iam', None)
@@ -14379,7 +14390,7 @@ def ProcessGAMCommand(args):
     elif command == 'rotate':
       argument = sys.argv[2].lower()
       if argument in ['sakey', 'sakeys']:
-        doCreateRotateServiceAccountKeys(True)
+        doRotateServiceAccountKeys()
       else:
         controlflow.system_error_exit(2, '%s is not a valid argument for "gam rotate"' % argument)
       sys.exit(0)
