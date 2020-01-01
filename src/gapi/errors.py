@@ -1,12 +1,11 @@
 """GAPI and OAuth Token related errors methods."""
 
+from enum import Enum
 import json
 
 import controlflow
-from enum import Enum
-import googleapiclient.errors
-from var import UTF8
 import display  # TODO: Change to relative import when gam is setup as a package
+from var import UTF8
 
 
 class GapiAbortedError(Exception):
@@ -14,6 +13,10 @@ class GapiAbortedError(Exception):
 
 
 class GapiAuthErrorError(Exception):
+  pass
+
+
+class GapiBadGatewayError(Exception):
   pass
 
 
@@ -46,6 +49,10 @@ class GapiFailedPreconditionError(Exception):
 
 
 class GapiForbiddenError(Exception):
+  pass
+
+
+class GapiGatewayTimeoutError(Exception):
   pass
 
 
@@ -99,6 +106,7 @@ class ErrorReason(Enum):
   ABORTED = 'aborted'
   AUTH_ERROR = 'authError'
   BACKEND_ERROR = 'backendError'
+  BAD_GATEWAY = 'badGateway'
   BAD_REQUEST = 'badRequest'
   CONDITION_NOT_MET = 'conditionNotMet'
   CYCLIC_MEMBERSHIPS_NOT_ALLOWED = 'cyclicMembershipsNotAllowed'
@@ -107,6 +115,7 @@ class ErrorReason(Enum):
   DUPLICATE = 'duplicate'
   FAILED_PRECONDITION = 'failedPrecondition'
   FORBIDDEN = 'forbidden'
+  GATEWAY_TIMEOUT = 'gatewayTimeout'
   GROUP_NOT_FOUND = 'groupNotFound'
   INTERNAL_ERROR = 'internalError'
   INVALID = 'invalid'
@@ -130,89 +139,94 @@ class ErrorReason(Enum):
 
 # Common sets of GAPI error reasons
 DEFAULT_RETRY_REASONS = [
-    ErrorReason.QUOTA_EXCEEDED, ErrorReason.RATE_LIMIT_EXCEEDED,
-    ErrorReason.USER_RATE_LIMIT_EXCEEDED, ErrorReason.BACKEND_ERROR,
-    ErrorReason.INTERNAL_ERROR
-]
+  ErrorReason.QUOTA_EXCEEDED, ErrorReason.RATE_LIMIT_EXCEEDED,
+  ErrorReason.USER_RATE_LIMIT_EXCEEDED, ErrorReason.BACKEND_ERROR,
+  ErrorReason.BAD_GATEWAY, ErrorReason.GATEWAY_TIMEOUT,
+  ErrorReason.INTERNAL_ERROR
+  ]
 GMAIL_THROW_REASONS = [ErrorReason.SERVICE_NOT_AVAILABLE]
 GROUP_GET_THROW_REASONS = [
-    ErrorReason.GROUP_NOT_FOUND, ErrorReason.DOMAIN_NOT_FOUND,
-    ErrorReason.DOMAIN_CANNOT_USE_APIS, ErrorReason.FORBIDDEN,
-    ErrorReason.BAD_REQUEST
-]
+  ErrorReason.GROUP_NOT_FOUND, ErrorReason.DOMAIN_NOT_FOUND,
+  ErrorReason.DOMAIN_CANNOT_USE_APIS, ErrorReason.FORBIDDEN,
+  ErrorReason.BAD_REQUEST
+  ]
 GROUP_GET_RETRY_REASONS = [ErrorReason.INVALID, ErrorReason.SYSTEM_ERROR]
 MEMBERS_THROW_REASONS = [
-    ErrorReason.GROUP_NOT_FOUND, ErrorReason.DOMAIN_NOT_FOUND,
-    ErrorReason.DOMAIN_CANNOT_USE_APIS, ErrorReason.INVALID,
-    ErrorReason.FORBIDDEN
-]
+  ErrorReason.GROUP_NOT_FOUND, ErrorReason.DOMAIN_NOT_FOUND,
+  ErrorReason.DOMAIN_CANNOT_USE_APIS, ErrorReason.INVALID,
+  ErrorReason.FORBIDDEN
+  ]
 MEMBERS_RETRY_REASONS = [ErrorReason.SYSTEM_ERROR]
 
 # A map of GAPI error reasons to the corresponding GAM Python Exception
 ERROR_REASON_TO_EXCEPTION = {
-    ErrorReason.ABORTED:
-        GapiAbortedError,
-    ErrorReason.AUTH_ERROR:
-        GapiAuthErrorError,
-    ErrorReason.BAD_REQUEST:
-        GapiBadRequestError,
-    ErrorReason.CONDITION_NOT_MET:
-        GapiConditionNotMetError,
-    ErrorReason.CYCLIC_MEMBERSHIPS_NOT_ALLOWED:
-        GapiCyclicMembershipsNotAllowedError,
-    ErrorReason.DOMAIN_CANNOT_USE_APIS:
-        GapiDomainCannotUseApisError,
-    ErrorReason.DOMAIN_NOT_FOUND:
-        GapiDomainNotFoundError,
-    ErrorReason.DUPLICATE:
-        GapiDuplicateError,
-    ErrorReason.FAILED_PRECONDITION:
-        GapiFailedPreconditionError,
-    ErrorReason.FORBIDDEN:
-        GapiForbiddenError,
-    ErrorReason.GROUP_NOT_FOUND:
-        GapiGroupNotFoundError,
-    ErrorReason.INVALID:
-        GapiInvalidError,
-    ErrorReason.INVALID_ARGUMENT:
-        GapiInvalidArgumentError,
-    ErrorReason.INVALID_MEMBER:
-        GapiInvalidMemberError,
-    ErrorReason.MEMBER_NOT_FOUND:
-        GapiMemberNotFoundError,
-    ErrorReason.NOT_FOUND:
-        GapiNotFoundError,
-    ErrorReason.NOT_IMPLEMENTED:
-        GapiNotImplementedError,
-    ErrorReason.PERMISSION_DENIED:
-        GapiPermissionDeniedError,
-    ErrorReason.RESOURCE_NOT_FOUND:
-        GapiResourceNotFoundError,
-    ErrorReason.SERVICE_NOT_AVAILABLE:
-        GapiServiceNotAvailableError,
-    ErrorReason.USER_NOT_FOUND:
-        GapiUserNotFoundError,
-}
+  ErrorReason.ABORTED:
+    GapiAbortedError,
+  ErrorReason.AUTH_ERROR:
+    GapiAuthErrorError,
+  ErrorReason.BAD_GATEWAY:
+    GapiBadGatewayError,
+  ErrorReason.BAD_REQUEST:
+    GapiBadRequestError,
+  ErrorReason.CONDITION_NOT_MET:
+    GapiConditionNotMetError,
+  ErrorReason.CYCLIC_MEMBERSHIPS_NOT_ALLOWED:
+    GapiCyclicMembershipsNotAllowedError,
+  ErrorReason.DOMAIN_CANNOT_USE_APIS:
+    GapiDomainCannotUseApisError,
+  ErrorReason.DOMAIN_NOT_FOUND:
+    GapiDomainNotFoundError,
+  ErrorReason.DUPLICATE:
+    GapiDuplicateError,
+  ErrorReason.FAILED_PRECONDITION:
+    GapiFailedPreconditionError,
+  ErrorReason.FORBIDDEN:
+    GapiForbiddenError,
+  ErrorReason.GATEWAY_TIMEOUT:
+    GapiGatewayTimeoutError,
+  ErrorReason.GROUP_NOT_FOUND:
+    GapiGroupNotFoundError,
+  ErrorReason.INVALID:
+    GapiInvalidError,
+  ErrorReason.INVALID_ARGUMENT:
+    GapiInvalidArgumentError,
+  ErrorReason.INVALID_MEMBER:
+    GapiInvalidMemberError,
+  ErrorReason.MEMBER_NOT_FOUND:
+    GapiMemberNotFoundError,
+  ErrorReason.NOT_FOUND:
+    GapiNotFoundError,
+  ErrorReason.NOT_IMPLEMENTED:
+    GapiNotImplementedError,
+  ErrorReason.PERMISSION_DENIED:
+    GapiPermissionDeniedError,
+  ErrorReason.RESOURCE_NOT_FOUND:
+    GapiResourceNotFoundError,
+  ErrorReason.SERVICE_NOT_AVAILABLE:
+    GapiServiceNotAvailableError,
+  ErrorReason.USER_NOT_FOUND:
+    GapiUserNotFoundError,
+  }
 
 # OAuth Token Errors
 OAUTH2_TOKEN_ERRORS = [
-    'access_denied',
-    'access_denied: Requested client not authorized',
-    'internal_failure: Backend Error',
-    'internal_failure: None',
-    'invalid_grant',
-    'invalid_grant: Bad Request',
-    'invalid_grant: Invalid email or User ID',
-    'invalid_grant: Not a valid email',
-    'invalid_grant: Invalid JWT: No valid verifier found for issuer',
-    'invalid_request: Invalid impersonation prn email address',
-    'unauthorized_client: Client is unauthorized to retrieve access tokens '
-    'using this method',
-    'unauthorized_client: Client is unauthorized to retrieve access tokens '
-    'using this method, or client not authorized for any of the scopes '
-    'requested',
-    'unauthorized_client: Unauthorized client or scope in request',
-]
+  'access_denied',
+  'access_denied: Requested client not authorized',
+  'internal_failure: Backend Error',
+  'internal_failure: None',
+  'invalid_grant',
+  'invalid_grant: Bad Request',
+  'invalid_grant: Invalid email or User ID',
+  'invalid_grant: Not a valid email',
+  'invalid_grant: Invalid JWT: No valid verifier found for issuer',
+  'invalid_request: Invalid impersonation prn email address',
+  'unauthorized_client: Client is unauthorized to retrieve access tokens '
+  'using this method',
+  'unauthorized_client: Client is unauthorized to retrieve access tokens '
+  'using this method, or client not authorized for any of the scopes '
+  'requested',
+  'unauthorized_client: Unauthorized client or scope in request',
+  ]
 
 
 def _create_http_error_dict(status_code, reason, message):
@@ -227,12 +241,12 @@ def _create_http_error_dict(status_code, reason, message):
     dict
   """
   return {
-      'error': {
-          'code': status_code,
-          'errors': [{
-              'reason': str(reason),
-              'message': message,
-          }]
+    'error': {
+      'code': status_code,
+      'errors': [{
+        'reason': str(reason),
+        'message': message,
+        }]
       }
   }
 
@@ -268,6 +282,10 @@ def get_gapi_error_detail(e,
     if (e.resp['status'] == '403') and (
         error_content.startswith('Request rate higher than configured')):
       return (e.resp['status'], ErrorReason.QUOTA_EXCEEDED.value, error_content)
+    if (e.resp['status'] == '502') and ('Bad Gateway' in error_content):
+      return (e.resp['status'], ErrorReason.BAD_GATEWAY.value, error_content)
+    if (e.resp['status'] == '504') and ('Gateway Timeout' in error_content):
+      return (e.resp['status'], ErrorReason.GATEWAY_TIMEOUT.value, error_content)
     if (e.resp['status'] == '403') and ('Invalid domain.' in error_content):
       error = _create_http_error_dict(403, ErrorReason.NOT_FOUND.value,
                                       'Domain not found')
