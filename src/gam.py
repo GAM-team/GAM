@@ -1574,7 +1574,7 @@ def printShowDelegates(users, csvFormat):
           if csvStyle:
             print('%s,%s,%s' % (user, delegateAddress, status))
           else:
-            print(utils.convertUTF8("Delegator: %s\n Status: %s\n Delegate Email: %s\n" % (user, status, delegateAddress)))
+            print("Delegator: %s\n Status: %s\n Delegate Email: %s\n" % (user, status, delegateAddress))
       if not csvFormat and not csvStyle and delegates['delegates']:
         print('Total %s delegates' % len(delegates['delegates']))
   if csvFormat:
@@ -2412,15 +2412,15 @@ def doGetCourseInfo():
   print(' Teachers:')
   for teacher in teachers:
     try:
-      print(utils.convertUTF8('  %s - %s' % (teacher['profile']['name']['fullName'], teacher['profile']['emailAddress'])))
+      print('  %s - %s' % (teacher['profile']['name']['fullName'], teacher['profile']['emailAddress']))
     except KeyError:
-      print(utils.convertUTF8('  %s' % teacher['profile']['name']['fullName']))
+      print('  %s' % teacher['profile']['name']['fullName'])
   print(' Students:')
   for student in students:
     try:
-      print(utils.convertUTF8('  %s - %s' % (student['profile']['name']['fullName'], student['profile']['emailAddress'])))
+      print('  %s - %s' % (student['profile']['name']['fullName'], student['profile']['emailAddress']))
     except KeyError:
-      print(utils.convertUTF8('  %s' % student['profile']['name']['fullName']))
+      print('  %s' % student['profile']['name']['fullName'])
 
 COURSE_ARGUMENT_TO_PROPERTY_MAP = {
   'alternatelink': 'alternateLink',
@@ -2857,7 +2857,7 @@ def changeCalendarAttendees(users):
           #print u' skipping cancelled event'
           continue
         try:
-          event_summary = utils.convertUTF8(event['summary'])
+          event_summary = event['summary']
         except (KeyError, UnicodeEncodeError, UnicodeDecodeError):
           event_summary = event['id']
         try:
@@ -3827,11 +3827,11 @@ def deletePhoto(users):
 
 def _showCalendar(userCalendar, j, jcount):
   print('  Calendar: {0} ({1}/{2})'.format(userCalendar['id'], j, jcount))
-  print(utils.convertUTF8('    Summary: {0}'.format(userCalendar.get('summaryOverride', userCalendar['summary']))))
-  print(utils.convertUTF8('    Description: {0}'.format(userCalendar.get('description', ''))))
+  print('    Summary: {0}'.format(userCalendar.get('summaryOverride', userCalendar['summary'])))
+  print('    Description: {0}'.format(userCalendar.get('description', '')))
   print('    Access Level: {0}'.format(userCalendar['accessRole']))
   print('    Timezone: {0}'.format(userCalendar['timeZone']))
-  print(utils.convertUTF8('    Location: {0}'.format(userCalendar.get('location', ''))))
+  print('    Location: {0}'.format(userCalendar.get('location', '')))
   print('    Hidden: {0}'.format(userCalendar.get('hidden', 'False')))
   print('    Selected: {0}'.format(userCalendar.get('selected', 'False')))
   print('    Color ID: {0}, Background Color: {1}, Foreground Color: {2}'.format(userCalendar['colorId'], userCalendar['backgroundColor'], userCalendar['foregroundColor']))
@@ -4004,7 +4004,7 @@ def printDriveActivity(users):
 
 def printPermission(permission):
   if 'name' in permission:
-    print(utils.convertUTF8(permission['name']))
+    print(permission['name'])
   elif 'id' in permission:
     if permission['id'] == 'anyone':
       print('Anyone')
@@ -4015,7 +4015,7 @@ def printPermission(permission):
   for key in permission:
     if key in ['name', 'kind', 'etag', 'selfLink',]:
       continue
-    print(utils.convertUTF8(' %s: %s' % (key, permission[key])))
+    print(' %s: %s' % (key, permission[key]))
 
 def showDriveFileACL(users):
   fileId = sys.argv[5]
@@ -4403,7 +4403,7 @@ def printDriveFolderContents(feed, folderId, indent):
   for f_file in feed:
     for parent in f_file['parents']:
       if folderId == parent['id']:
-        print(' ' * indent, utils.convertUTF8(f_file['title']))
+        print(' ' * indent, f_file['title'])
         if f_file['mimeType'] == 'application/vnd.google-apps.folder':
           printDriveFolderContents(feed, f_file['id'], indent+1)
         break
@@ -4471,11 +4471,11 @@ def deleteEmptyDriveFolders(users):
         children = gapi.call(drive.children(), 'list',
                              folderId=folder['id'], fields='items(id)', maxResults=1)
         if 'items' not in children or not children['items']:
-          print(utils.convertUTF8(' deleting empty folder %s...' % folder['title']))
+          print(' deleting empty folder %s...' % folder['title'])
           gapi.call(drive.files(), 'delete', fileId=folder['id'])
           deleted_empty = True
         else:
-          print(utils.convertUTF8(' not deleting folder %s because it contains at least 1 item (%s)' % (folder['title'], children['items'][0]['id'])))
+          print(' not deleting folder %s because it contains at least 1 item (%s)' % (folder['title'], children['items'][0]['id']))
 
 def doEmptyDriveTrash(users):
   for user in users:
@@ -4774,10 +4774,10 @@ def downloadDriveFile(users):
       fileExtension = result.get('fileExtension')
       mimeType = result['mimeType']
       if mimeType == MIMETYPE_GA_FOLDER:
-        print(utils.convertUTF8('Skipping download of folder %s' % result['title']))
+        print('Skipping download of folder %s' % result['title'])
         continue
       if mimeType in NON_DOWNLOADABLE_MIMETYPES:
-        print(utils.convertUTF8('Format of file %s not downloadable' % result['title']))
+        print('Format of file %s not downloadable' % result['title'])
         continue
       validExtensions = GOOGLEDOC_VALID_EXTENSIONS_MAP.get(mimeType)
       if validExtensions:
@@ -4815,7 +4815,7 @@ def downloadDriveFile(users):
               break
             y += 1
             filename = os.path.join(targetFolder, '({0})-{1}'.format(y, safe_file_title))
-          print(utils.convertUTF8(my_line % (result['title'], filename)))
+          print(my_line % (result['title'], filename))
         spreadsheetUrl = None
         if googleDoc:
           if csvSheetTitle is None or mimeType != MIMETYPE_GA_SPREADSHEET:
@@ -5277,9 +5277,9 @@ SMTPMSA_DISPLAY_FIELDS = ['host', 'port', 'securityMode']
 
 def _showSendAs(result, j, jcount, formatSig):
   if result['displayName']:
-    print(utils.convertUTF8('SendAs Address: {0} <{1}>{2}'.format(result['displayName'], result['sendAsEmail'], currentCount(j, jcount))))
+    print('SendAs Address: {0} <{1}>{2}'.format(result['displayName'], result['sendAsEmail'], currentCount(j, jcount)))
   else:
-    print(utils.convertUTF8('SendAs Address: <{0}>{1}'.format(result['sendAsEmail'], currentCount(j, jcount))))
+    print('SendAs Address: <{0}>{1}'.format(result['sendAsEmail'], currentCount(j, jcount)))
   if result.get('replyToAddress'):
     print('  ReplyTo: {0}'.format(result['replyToAddress']))
   print('  IsPrimary: {0}'.format(result.get('isPrimary', False)))
@@ -5297,9 +5297,9 @@ def _showSendAs(result, j, jcount, formatSig):
   if not signature:
     signature = 'None'
   if formatSig:
-    print(utils.convertUTF8(utils.indentMultiLineText(utils.dehtml(signature), n=4)))
+    print(utils.indentMultiLineText(utils.dehtml(signature), n=4))
   else:
-    print(utils.convertUTF8(utils.indentMultiLineText(signature, n=4)))
+    print(utils.indentMultiLineText(signature, n=4))
 
 def _processTags(tagReplacements, message):
   while True:
@@ -5924,7 +5924,7 @@ def showLabels(users):
       for label in labels['labels']:
         if onlyUser and (label['type'] == 'system'):
           continue
-        print(utils.convertUTF8(label['name']))
+        print(label['name'])
         for a_key in label:
           if a_key == 'name':
             continue
@@ -6126,7 +6126,7 @@ def _showFilter(userFilter, j, jcount, labels):
       elif item == 'sizeComparison':
         pass
       else:
-        print(utils.convertUTF8('      {0} "{1}"'.format(item, userFilter['criteria'][item])))
+        print('      {0} "{1}"'.format(item, userFilter['criteria'][item]))
   else:
     print('      ERROR: No Filter criteria')
   print('    Actions:')
@@ -6135,7 +6135,7 @@ def _showFilter(userFilter, j, jcount, labels):
       if labelId in FILTER_ADD_LABEL_TO_ARGUMENT_MAP:
         print('      {0}'.format(FILTER_ADD_LABEL_TO_ARGUMENT_MAP[labelId]))
       else:
-        print(utils.convertUTF8('      label "{0}"'.format(_getLabelName(labels, labelId))))
+        print('      label "{0}"'.format(_getLabelName(labels, labelId)))
     for labelId in userFilter['action'].get('removeLabelIds', []):
       if labelId in FILTER_REMOVE_LABEL_TO_ARGUMENT_MAP:
         print('      {0}'.format(FILTER_REMOVE_LABEL_TO_ARGUMENT_MAP[labelId]))
@@ -6659,15 +6659,15 @@ def getVacation(users):
           print('  End Date: {0}'.format(utils.formatTimestampYMD(result['endTime'])))
         else:
           print('  End Date: Not specified')
-        print(utils.convertUTF8('  Subject: {0}'.format(result.get('responseSubject', 'None'))))
+        print('  Subject: {0}'.format(result.get('responseSubject', 'None')))
         sys.stdout.write('  Message:\n   ')
         if result.get('responseBodyPlainText'):
-          print(utils.convertUTF8(utils.indentMultiLineText(result['responseBodyPlainText'], n=4)))
+          print(utils.indentMultiLineText(result['responseBodyPlainText'], n=4))
         elif result.get('responseBodyHtml'):
           if formatReply:
-            print(utils.convertUTF8(utils.indentMultiLineText(utils.dehtml(result['responseBodyHtml']), n=4)))
+            print(utils.indentMultiLineText(utils.dehtml(result['responseBodyHtml']), n=4))
           else:
-            print(utils.convertUTF8(utils.indentMultiLineText(result['responseBodyHtml'], n=4)))
+            print(utils.indentMultiLineText(result['responseBodyHtml'], n=4))
         else:
           print('None')
 
@@ -7498,8 +7498,8 @@ def _createClientSecretsOauth2service(httpObj, projectId):
                                 body={'accountId': projectId, 'serviceAccount': {'displayName': 'GAM Project'}})
     GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID] = service_account['uniqueId']
   doCreateOrRotateServiceAccountKeys(iam, project_id=service_account['projectId'],
-                  client_email=service_account['email'],
-                  client_id=service_account['uniqueId'])
+                                     client_email=service_account['email'],
+                                     client_id=service_account['uniqueId'])
   _grantSARotateRights(iam, service_account['name'].rsplit('/', 1)[-1])
   console_credentials_url = 'https://console.developers.google.com/apis/credentials/consent/edit?createClient&newAppInternalUser=true&project=%s' % projectId
   while True:
@@ -9973,9 +9973,9 @@ def doGetUserInfo(user_email=None):
   user = gapi.call(cd.users(), 'get', userKey=user_email, projection=projection, customFieldMask=customFieldMask, viewType=viewType)
   print('User: %s' % user['primaryEmail'])
   if 'name' in user and 'givenName' in user['name']:
-    print(utils.convertUTF8('First Name: %s' % user['name']['givenName']))
+    print('First Name: %s' % user['name']['givenName'])
   if 'name' in user and 'familyName' in user['name']:
-    print(utils.convertUTF8('Last Name: %s' % user['name']['familyName']))
+    print('Last Name: %s' % user['name']['familyName'])
   if 'languages' in user:
     up = 'languageCode'
     languages = [row[up] for row in user['languages'] if up in row]
@@ -10035,11 +10035,11 @@ def doGetUserInfo(user_email=None):
       contentType = notes.get('contentType', 'text_plain')
       print(' %s: %s' % ('contentType', contentType))
       if contentType == 'text_html':
-        print(utils.convertUTF8(utils.indentMultiLineText(' value: {0}'.format(utils.dehtml(notes['value'])), n=2)))
+        print(utils.indentMultiLineText(' value: {0}'.format(utils.dehtml(notes['value'])), n=2))
       else:
-        print(utils.convertUTF8(utils.indentMultiLineText(' value: {0}'.format(notes['value']), n=2)))
+        print(utils.indentMultiLineText(' value: {0}'.format(notes['value']), n=2))
     else:
-      print(utils.convertUTF8(utils.indentMultiLineText(' value: {0}'.format(notes), n=2)))
+      print(utils.indentMultiLineText(' value: {0}'.format(notes), n=2))
     print('')
   if 'gender' in user:
     print('Gender')
@@ -10047,7 +10047,7 @@ def doGetUserInfo(user_email=None):
     for key in gender:
       if key == 'customGender' and not gender[key]:
         continue
-      print(utils.convertUTF8(' %s: %s' % (key, gender[key])))
+      print(' %s: %s' % (key, gender[key]))
     print('')
   if 'keywords' in user:
     print('Keywords:')
@@ -10055,22 +10055,22 @@ def doGetUserInfo(user_email=None):
       for key in keyword:
         if key == 'customType' and not keyword[key]:
           continue
-        print(utils.convertUTF8(' %s: %s' % (key, keyword[key])))
+        print(' %s: %s' % (key, keyword[key]))
       print('')
   if 'ims' in user:
     print('IMs:')
     for im in user['ims']:
       for key in im:
-        print(utils.convertUTF8(' %s: %s' % (key, im[key])))
+        print(' %s: %s' % (key, im[key]))
       print('')
   if 'addresses' in user:
     print('Addresses:')
     for address in user['addresses']:
       for key in address:
         if key != 'formatted':
-          print(utils.convertUTF8(' %s: %s' % (key, address[key])))
+          print(' %s: %s' % (key, address[key]))
         else:
-          print(utils.convertUTF8(' %s: %s' % (key, address[key].replace('\n', '\\n'))))
+          print(' %s: %s' % (key, address[key].replace('\n', '\\n')))
       print('')
   if 'organizations' in user:
     print('Organizations:')
@@ -10078,7 +10078,7 @@ def doGetUserInfo(user_email=None):
       for key in org:
         if key == 'customType' and not org[key]:
           continue
-        print(utils.convertUTF8(' %s: %s' % (key, org[key])))
+        print(' %s: %s' % (key, org[key]))
       print('')
   if 'locations' in user:
     print('Locations:')
@@ -10086,25 +10086,25 @@ def doGetUserInfo(user_email=None):
       for key in location:
         if key == 'customType' and not location[key]:
           continue
-        print(utils.convertUTF8(' %s: %s' % (key, location[key])))
+        print(' %s: %s' % (key, location[key]))
       print('')
   if 'sshPublicKeys' in user:
     print('SSH Public Keys:')
     for sshkey in user['sshPublicKeys']:
       for key in sshkey:
-        print(utils.convertUTF8(' %s: %s' % (key, sshkey[key])))
+        print(' %s: %s' % (key, sshkey[key]))
       print('')
   if 'posixAccounts' in user:
     print('Posix Accounts:')
     for posix in user['posixAccounts']:
       for key in posix:
-        print(utils.convertUTF8(' %s: %s' % (key, posix[key])))
+        print(' %s: %s' % (key, posix[key]))
       print('')
   if 'phones' in user:
     print('Phones:')
     for phone in user['phones']:
       for key in phone:
-        print(utils.convertUTF8(' %s: %s' % (key, phone[key])))
+        print(' %s: %s' % (key, phone[key]))
       print('')
   if 'emails' in user:
     if len(user['emails']) > 1:
@@ -10116,9 +10116,9 @@ def doGetUserInfo(user_email=None):
           if key == 'type' and an_email[key] == 'custom':
             continue
           if key == 'customType':
-            print(utils.convertUTF8(' type: %s' % an_email[key]))
+            print(' type: %s' % an_email[key])
           else:
-            print(utils.convertUTF8(' %s: %s' % (key, an_email[key])))
+            print(' %s: %s' % (key, an_email[key]))
       print('')
   if 'relations' in user:
     print('Relations:')
@@ -10127,9 +10127,9 @@ def doGetUserInfo(user_email=None):
         if key == 'type' and relation[key] == 'custom':
           continue
         if key == 'customType':
-          print(utils.convertUTF8(' %s: %s' % ('type', relation[key])))
+          print(' %s: %s' % ('type', relation[key]))
         else:
-          print(utils.convertUTF8(' %s: %s' % (key, relation[key])))
+          print(' %s: %s' % (key, relation[key]))
       print('')
   if 'externalIds' in user:
     print('External IDs:')
@@ -10138,9 +10138,9 @@ def doGetUserInfo(user_email=None):
         if key == 'type' and externalId[key] == 'custom':
           continue
         if key == 'customType':
-          print(utils.convertUTF8(' %s: %s' % ('type', externalId[key])))
+          print(' %s: %s' % ('type', externalId[key]))
         else:
-          print(utils.convertUTF8(' %s: %s' % (key, externalId[key])))
+          print(' %s: %s' % (key, externalId[key]))
       print('')
   if 'websites' in user:
     print('Websites:')
@@ -10149,9 +10149,9 @@ def doGetUserInfo(user_email=None):
         if key == 'type' and website[key] == 'custom':
           continue
         if key == 'customType':
-          print(utils.convertUTF8(' %s: %s' % ('type', website[key])))
+          print(' %s: %s' % ('type', website[key]))
         else:
-          print(utils.convertUTF8(' %s: %s' % (key, website[key])))
+          print(' %s: %s' % (key, website[key]))
       print('')
   if getSchemas:
     if 'customSchemas' in user:
@@ -10162,12 +10162,12 @@ def doGetUserInfo(user_email=None):
           if isinstance(user['customSchemas'][schema][field], list):
             print('  %s:' % field)
             for an_item in user['customSchemas'][schema][field]:
-              print(utils.convertUTF8('   type: %s' % (an_item['type'])))
+              print('   type: %s' % (an_item['type']))
               if an_item['type'] == 'custom':
-                print(utils.convertUTF8('    customType: %s' % (an_item['customType'])))
-              print(utils.convertUTF8('    value: %s' % (an_item['value'])))
+                print('    customType: %s' % (an_item['customType']))
+              print('    value: %s' % (an_item['value']))
           else:
-            print(utils.convertUTF8('  %s: %s' % (field, user['customSchemas'][schema][field])))
+            print('  %s: %s' % (field, user['customSchemas'][schema][field]))
         print()
   if getAliases:
     if 'aliases' in user:
@@ -10252,7 +10252,7 @@ def doGetGroupInfo(group_name=None):
       for val in value:
         print('  %s' % val)
     else:
-      print(utils.convertUTF8(' %s: %s' % (key, value)))
+      print(' %s: %s' % (key, value))
   for key, value in list(settings.items()):
     if key in ['kind', 'etag', 'description', 'email', 'name']:
       continue
@@ -10506,13 +10506,13 @@ def print_json(object_name, object_value, spacing=''):
     sys.stdout.write('%s%s: ' % (spacing, object_name))
   if isinstance(object_value, list):
     if len(object_value) == 1 and isinstance(object_value[0], (str, int, bool)):
-      sys.stdout.write(utils.convertUTF8('%s\n' % object_value[0]))
+      sys.stdout.write('%s\n' % object_value[0])
       return
     if object_name is not None:
       sys.stdout.write('\n')
     for a_value in object_value:
       if isinstance(a_value, (str, int, bool)):
-        sys.stdout.write(utils.convertUTF8(' %s%s\n' % (spacing, a_value)))
+        sys.stdout.write(' %s%s\n' % (spacing, a_value))
       else:
         print_json(None, a_value, ' %s' % spacing)
   elif isinstance(object_value, dict):
@@ -10522,7 +10522,7 @@ def print_json(object_name, object_value, spacing=''):
     for another_object in object_value:
       print_json(another_object, object_value[another_object], ' %s' % spacing)
   else:
-    sys.stdout.write(utils.convertUTF8('%s\n' % (object_value)))
+    sys.stdout.write('%s\n' % (object_value))
 
 def doSiteVerifyShow():
   verif = buildGAPIObject('siteVerification')
@@ -10869,7 +10869,7 @@ def printShowTokens(i, entityType, users, csvFormat):
     print('  Client ID: %s' % token['clientId'])
     for item in token:
       if item not in ['clientId', 'scopes']:
-        print(utils.convertUTF8('    %s: %s' % (item, token.get(item, ''))))
+        print('    %s: %s' % (item, token.get(item, '')))
     item = 'scopes'
     print('    %s:' % item)
     for it in token.get(item, []):
@@ -13933,6 +13933,9 @@ def ProcessGAMCommand(args):
   GM_Globals[GM_SYSEXITRC] = 0
   try:
     SetGlobalVariables()
+    if sys.version_info[1] >= 7:
+      sys.stdout.reconfigure(encoding=GC_Values[GC_CHARSET], errors='backslashreplace')
+      sys.stdin.reconfigure(encoding=GC_Values[GC_CHARSET], errors='backslashreplace')
     command = sys.argv[1].lower()
     if command == 'batch':
       i = 2
@@ -13945,7 +13948,7 @@ def ProcessGAMCommand(args):
         try:
           argv = shlex.split(line)
         except ValueError as e:
-          sys.stderr.write(utils.convertUTF8('Command: >>>{0}<<<\n'.format(line.strip())))
+          sys.stderr.write('Command: >>>{0}<<<\n'.format(line.strip()))
           sys.stderr.write('{0}{1}\n'.format(ERROR_PREFIX, str(e)))
           errors += 1
           continue
@@ -13958,7 +13961,7 @@ def ProcessGAMCommand(args):
           elif cmd == 'commit-batch':
             items.append([cmd])
           else:
-            sys.stderr.write(utils.convertUTF8('Command: >>>{0}<<<\n'.format(line.strip())))
+            sys.stderr.write('Command: >>>{0}<<<\n'.format(line.strip()))
             sys.stderr.write('{0}Invalid: Expected <gam|commit-batch>\n'.format(ERROR_PREFIX))
             errors += 1
       fileutils.close_file(f)
@@ -14741,7 +14744,4 @@ if __name__ == "__main__":
     mp_set_start_method('fork')
   if sys.version_info[0] < 3 or sys.version_info[1] < 5:
     controlflow.system_error_exit(5, 'GAM requires Python 3.5 or newer. You are running %s.%s.%s. Please upgrade your Python version or use one of the binary GAM downloads.' % sys.version_info[:3])
-  elif sys.version_info[1] >= 7:
-    sys.stdout.reconfigure(encoding=UTF8, errors='backslashreplace')
-    sys.stdin.reconfigure(encoding=UTF8, errors='backslashreplace')
   sys.exit(ProcessGAMCommand(sys.argv))
