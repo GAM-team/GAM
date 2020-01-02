@@ -54,7 +54,7 @@ import http.client as http_client
 from multiprocessing import Pool as mp_pool
 from multiprocessing import freeze_support as mp_freeze_support
 from multiprocessing import set_start_method as mp_set_start_method
-from urllib.parse import urlencode, urlparse
+from urllib.parse import quote, urlencode, urlparse
 from passlib.hash import sha512_crypt
 import dateutil.parser
 
@@ -7496,11 +7496,11 @@ def _createClientSecretsOauth2service(httpObj, projectId):
     service_account = gapi.call(iam.projects().serviceAccounts(), 'create',
                                 name='projects/%s' % projectId,
                                 body={'accountId': projectId, 'serviceAccount': {'displayName': 'GAM Project'}})
-  key = gapi.call(iam.projects().serviceAccounts().keys(), 'create',
-                  name=service_account['name'], body={'privateKeyType': 'TYPE_GOOGLE_CREDENTIALS_FILE', 'keyAlgorithm': 'KEY_ALG_RSA_2048'})
+    GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID] = service_account['uniqueId']
+  doCreateOrRotateServiceAccountKeys(iam, project_id=service_account['projectId'],
+                  client_email=service_account['email'],
+                  client_id=service_account['uniqueId'])
   _grantSARotateRights(iam, service_account['name'].rsplit('/', 1)[-1])
-  oauth2service_data = base64.b64decode(key['privateKeyData']).decode(UTF8)
-  fileutils.write_file(GC_Values[GC_OAUTH2SERVICE_JSON], oauth2service_data, continue_on_error=False)
   console_credentials_url = 'https://console.developers.google.com/apis/credentials/consent/edit?createClient&newAppInternalUser=true&project=%s' % projectId
   while True:
     print('''Please go to:
@@ -7823,7 +7823,7 @@ def _generatePrivateKeyAndPublicCert(client_id, key_size):
     x509.ExtendedKeyUsage([x509.oid.ExtendedKeyUsageOID.SERVER_AUTH]),
     critical=True)
   certificate = builder.sign(private_key=private_key,
-                             algorithm=hashes.SHA1(), backend=default_backend())
+                             algorithm=hashes.SHA256(), backend=default_backend())
   public_cert_pem = certificate.public_bytes(serialization.Encoding.PEM).decode()
   publicKeyData = base64.b64encode(public_cert_pem.encode())
   if isinstance(publicKeyData, bytes):
@@ -7831,11 +7831,19 @@ def _generatePrivateKeyAndPublicCert(client_id, key_size):
   print(' Done generating private key and public certificate.')
   return private_pem, publicKeyData
 
-def _formatOAuth2ServiceData(private_key, private_key_id):
-  _getSvcAcctData() # make sure GM_OAUTH2SERVICE_JSON_DATA is set
-  key_json = GM_Globals[GM_OAUTH2SERVICE_JSON_DATA]
-  key_json['private_key'] = private_key
-  key_json['private_key_id'] = private_key_id
+def _formatOAuth2ServiceData(project_id, client_email, client_id, private_key, private_key_id):
+  key_json = {
+    'auth_provider_x509_cert_url': 'https://www.googleapis.com/oauth2/v1/certs',
+    'auth_uri': 'https://accounts.google.com/o/oauth2/auth',
+    'client_email': client_email,
+    'client_id': client_id,
+    'client_x509_cert_url': 'https://www.googleapis.com/robot/v1/metadata/x509/%s' % quote(client_email),
+    'private_key': private_key,
+    'private_key_id': private_key_id,
+    'project_id': project_id,
+    'token_uri': 'https://oauth2.googleapis.com/token',
+    'type': 'service_account',
+    }
   return json.dumps(key_json, indent=2, sort_keys=True)
 
 def doShowServiceAccountKeys():
@@ -7870,33 +7878,39 @@ def doShowServiceAccountKeys():
     key['current'] = key['name'] == currentPrivateKeyId
   print_json(None, keys)
 
-def doRotateServiceAccountKeys():
-  iam = buildGAPIServiceObject('iam', None)
+def doCreateOrRotateServiceAccountKeys(iam=None, project_id=None, client_email=None, client_id=None):
   local_key_size = 2048
   body = {}
-  mode = 'retainnone'
-  i = 3
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower().replace('_', '')
-    if myarg == 'algorithm':
-      body['keyAlgorithm'] = sys.argv[i+1].upper()
-      allowed_algorithms = _getEnumValuesMinusUnspecified(iam._rootDesc['schemas']['CreateServiceAccountKeyRequest']['properties']['keyAlgorithm']['enum'])
-      if body['keyAlgorithm'] not in allowed_algorithms:
-        controlflow.system_error_exit(3, 'algorithm must be one of {0}. Got {1}'.format(', '.join(allowed_algorithms), body['keyAlgorithm']))
-      local_key_size = 0
-      i += 2
-    elif myarg == 'localkeysize':
-      local_key_size = int(sys.argv[i+1])
-      if local_key_size not in [1024, 2048, 4096]:
-        controlflow.system_error_exit(3, 'localkeysize must be 1024, 2048 or 4096. 1024 is weak and dangerous. 2048 is recommended. 4096 is slow.')
-      i += 2
-    elif myarg in ['retainnone', 'retainexisting', 'replacecurrent']:
-      mode = myarg
-      i += 1
-    else:
-      controlflow.system_error_exit(3, '%s is not a valid argument to "gam rotate sakeys"' % myarg)
+  if iam:
+    mode = 'retainexisting'
+  else:
+    mode = 'retainnone'
+    i = 3
+    iam = buildGAPIServiceObject('iam', None)
+    while i < len(sys.argv):
+      myarg = sys.argv[i].lower().replace('_', '')
+      if myarg == 'algorithm':
+        body['keyAlgorithm'] = sys.argv[i+1].upper()
+        allowed_algorithms = _getEnumValuesMinusUnspecified(iam._rootDesc['schemas']['CreateServiceAccountKeyRequest']['properties']['keyAlgorithm']['enum'])
+        if body['keyAlgorithm'] not in allowed_algorithms:
+          controlflow.system_error_exit(3, 'algorithm must be one of {0}. Got {1}'.format(', '.join(allowed_algorithms), body['keyAlgorithm']))
+        local_key_size = 0
+        i += 2
+      elif myarg == 'localkeysize':
+        local_key_size = int(sys.argv[i+1])
+        if local_key_size not in [1024, 2048, 4096]:
+          controlflow.system_error_exit(3, 'localkeysize must be 1024, 2048 or 4096. 1024 is weak and dangerous. 2048 is recommended. 4096 is slow.')
+        i += 2
+      elif myarg in ['retainnone', 'retainexisting', 'replacecurrent']:
+        mode = myarg
+        i += 1
+      else:
+        controlflow.system_error_exit(3, '%s is not a valid argument to "gam rotate sakeys"' % myarg)
+    currentPrivateKeyId = GM_Globals[GM_OAUTH2SERVICE_JSON_DATA]['private_key_id']
+    project_id = GM_Globals[GM_OAUTH2SERVICE_JSON_DATA]['project_id']
+    client_email = GM_Globals[GM_OAUTH2SERVICE_JSON_DATA]['client_email']
+    client_id = GM_Globals[GM_OAUTH2SERVICE_JSON_DATA]['client_id']
   clientId = GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID]
-  currentPrivateKeyId = GM_Globals[GM_OAUTH2SERVICE_JSON_DATA]['private_key_id']
   name = 'projects/-/serviceAccounts/%s' % clientId
   if mode != 'retainexisting':
     keys = gapi.get_items(iam.projects().serviceAccounts().keys(), 'list', 'keys',
@@ -7907,7 +7921,7 @@ def doRotateServiceAccountKeys():
     result = gapi.call(iam.projects().serviceAccounts().keys(), 'upload',
                        name=name, body={'publicKeyData': publicKeyData})
     private_key_id = result['name'].rsplit('/', 1)[-1]
-    oauth2service_data = _formatOAuth2ServiceData(private_key, private_key_id)
+    oauth2service_data = _formatOAuth2ServiceData(project_id, client_email, client_id, private_key, private_key_id)
   else:
     result = gapi.call(iam.projects().serviceAccounts().keys(), 'create', name=name, body=body)
     oauth2service_data = base64.b64decode(result['privateKeyData']).decode(UTF8)
@@ -14390,7 +14404,7 @@ def ProcessGAMCommand(args):
     elif command == 'rotate':
       argument = sys.argv[2].lower()
       if argument in ['sakey', 'sakeys']:
-        doRotateServiceAccountKeys()
+        doCreateOrRotateServiceAccountKeys()
       else:
         controlflow.system_error_exit(2, '%s is not a valid argument for "gam rotate"' % argument)
       sys.exit(0)
