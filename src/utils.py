@@ -9,10 +9,6 @@ ONE_MEGA_BYTES = 1000000
 ONE_GIGA_BYTES = 1000000000
 
 
-def convertUTF8(data):
-  return data
-
-
 class _DeHTMLParser(HTMLParser):
 
   def __init__(self):
