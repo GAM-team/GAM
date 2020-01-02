@@ -7848,7 +7848,7 @@ def _formatOAuth2ServiceData(project_id, client_email, client_id, private_key, p
 
 def doShowServiceAccountKeys():
   iam = buildGAPIServiceObject('iam', None)
-  keyTypes = 'USER_MANAGED'
+  keyTypes = None
   i = 3
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace('_', '')
@@ -7875,7 +7875,8 @@ def doShowServiceAccountKeys():
     print('{0}: {1}'.format(parts[i][:-1], parts[i+1]))
   for key in keys:
     key['name'] = key['name'].rsplit('/', 1)[-1]
-    key['current'] = key['name'] == currentPrivateKeyId
+    if key['name'] == currentPrivateKeyId:
+      key['usedToAuthenticateThisRequest'] = True
   print_json(None, keys)
 
 def doCreateOrRotateServiceAccountKeys(iam=None, project_id=None, client_email=None, client_id=None):
