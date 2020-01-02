@@ -35,8 +35,6 @@ cache:
 
 matrix:
   fast_finish: true
-  allow_failures:
-    - arch: arm64
   include:
     - os: linux
       name: "Linux 64-bit Bionic"
