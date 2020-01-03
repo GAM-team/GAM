@@ -361,25 +361,25 @@ class GapiTest(unittest.TestCase):
     self.assertIn('pageSize', request_method_kwargs)
     self.assertEqual(123456, request_method_kwargs['pageSize'])
 
-  @patch.object(gapi.sys.stderr, 'write')
-  def test_get_all_pages_prints_paging_message(self, mock_write):
+  def test_get_all_pages_prints_paging_message(self):
     self.mock_method.return_value.execute.side_effect = self.simple_3_page_response
 
     paging_message = 'A simple string displayed during paging'
-    gapi.get_all_pages(
-        self.mock_service, self.mock_method_name, page_message=paging_message)
+    with patch.object(gapi.sys.stderr, 'write') as mock_write:
+      gapi.get_all_pages(
+          self.mock_service, self.mock_method_name, page_message=paging_message)
     messages_written = [
         call_args[0][0] for call_args in mock_write.call_args_list
     ]
     self.assertIn(paging_message, messages_written)
 
-  @patch.object(gapi.sys.stderr, 'write')
-  def test_get_all_pages_prints_paging_message_inline(self, mock_write):
+  def test_get_all_pages_prints_paging_message_inline(self):
     self.mock_method.return_value.execute.side_effect = self.simple_3_page_response
 
     paging_message = 'A simple string displayed during paging'
-    gapi.get_all_pages(
-        self.mock_service, self.mock_method_name, page_message=paging_message)
+    with patch.object(gapi.sys.stderr, 'write') as mock_write:
+      gapi.get_all_pages(
+          self.mock_service, self.mock_method_name, page_message=paging_message)
     messages_written = [
         call_args[0][0] for call_args in mock_write.call_args_list
     ]
@@ -394,13 +394,13 @@ class GapiTest(unittest.TestCase):
         paging_message_call_positions[0]:paging_message_call_positions[1]]
     self.assertIn('\r', printed_between_page_messages)
 
-  @patch.object(gapi.sys.stderr, 'write')
-  def test_get_all_pages_ends_paging_message_with_newline(self, mock_write):
+  def test_get_all_pages_ends_paging_message_with_newline(self):
     self.mock_method.return_value.execute.side_effect = self.simple_3_page_response
 
     paging_message = 'A simple string displayed during paging'
-    gapi.get_all_pages(
-        self.mock_service, self.mock_method_name, page_message=paging_message)
+    with patch.object(gapi.sys.stderr, 'write') as mock_write:
+      gapi.get_all_pages(
+          self.mock_service, self.mock_method_name, page_message=paging_message)
     messages_written = [
         call_args[0][0] for call_args in mock_write.call_args_list
     ]
@@ -410,14 +410,13 @@ class GapiTest(unittest.TestCase):
         messages_written) - messages_written[::-1].index('\r\n')
     self.assertGreater(last_carriage_return_index, last_page_message_index)
 
-  @patch.object(gapi.sys.stderr, 'write')
-  def test_get_all_pages_prints_attribute_total_items_in_paging_message(
-      self, mock_write):
+  def test_get_all_pages_prints_attribute_total_items_in_paging_message(self):
     self.mock_method.return_value.execute.side_effect = self.simple_3_page_response
 
     paging_message = 'Total number of items discovered: %%total_items%%'
-    gapi.get_all_pages(
-        self.mock_service, self.mock_method_name, page_message=paging_message)
+    with patch.object(gapi.sys.stderr, 'write') as mock_write:
+      gapi.get_all_pages(
+          self.mock_service, self.mock_method_name, page_message=paging_message)
 
     messages_written = [
         call_args[0][0] for call_args in mock_write.call_args_list
@@ -442,17 +441,17 @@ class GapiTest(unittest.TestCase):
     for message in messages_written:
       self.assertNotIn('%%total_items', message)
 
-  @patch.object(gapi.sys.stderr, 'write')
-  def test_get_all_pages_prints_attribute_first_item_in_paging_message(
-      self, mock_write):
+  def test_get_all_pages_prints_attribute_first_item_in_paging_message(self):
     self.mock_method.return_value.execute.side_effect = self.simple_3_page_response
 
     paging_message = 'First item in page: %%first_item%%'
-    gapi.get_all_pages(
-        self.mock_service,
-        self.mock_method_name,
-        page_message=paging_message,
-        message_attribute='position')
+
+    with patch.object(gapi.sys.stderr, 'write') as mock_write:
+      gapi.get_all_pages(
+          self.mock_service,
+          self.mock_method_name,
+          page_message=paging_message,
+          message_attribute='position')
 
     messages_written = [
         call_args[0][0] for call_args in mock_write.call_args_list
@@ -471,17 +470,16 @@ class GapiTest(unittest.TestCase):
     for message in messages_written:
       self.assertNotIn('%%first_item', message)
 
-  @patch.object(gapi.sys.stderr, 'write')
-  def test_get_all_pages_prints_attribute_last_item_in_paging_message(
-      self, mock_write):
+  def test_get_all_pages_prints_attribute_last_item_in_paging_message(self):
     self.mock_method.return_value.execute.side_effect = self.simple_3_page_response
 
     paging_message = 'Last item in page: %%last_item%%'
-    gapi.get_all_pages(
-        self.mock_service,
-        self.mock_method_name,
-        page_message=paging_message,
-        message_attribute='position')
+    with patch.object(gapi.sys.stderr, 'write') as mock_write:
+      gapi.get_all_pages(
+          self.mock_service,
+          self.mock_method_name,
+          page_message=paging_message,
+          message_attribute='position')
 
     messages_written = [
         call_args[0][0] for call_args in mock_write.call_args_list

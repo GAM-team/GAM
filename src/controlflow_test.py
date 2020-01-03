@@ -86,23 +86,21 @@ class ControlFlowTest(unittest.TestCase):
 
   # Prevent the system from actually sleeping and thus slowing down the test.
   @patch.object(controlflow.time, 'sleep')
-  @patch.object(controlflow.sys.stderr, 'write')
-  def test_wait_on_failure_prints_errors(self, mock_stderr_write,
-                                         unused_mock_sleep):
+  def test_wait_on_failure_prints_errors(self, unused_mock_sleep):
     message = 'An error message to display'
-    controlflow.wait_on_failure(1, 5, message, error_print_threshold=0)
+    with patch.object(controlflow.sys.stderr, 'write') as mock_stderr_write:
+      controlflow.wait_on_failure(1, 5, message, error_print_threshold=0)
     self.assertIn(message, mock_stderr_write.call_args[0][0])
 
   @patch.object(controlflow.time, 'sleep')
-  @patch.object(controlflow.sys.stderr, 'write')
-  def test_wait_on_failure_only_prints_after_threshold(self, mock_stderr_write,
-                                                       unused_mock_sleep):
+  def test_wait_on_failure_only_prints_after_threshold(self, unused_mock_sleep):
     total_attempts = 5
     threshold = 3
-    for attempt in range(1, total_attempts + 1):
-      controlflow.wait_on_failure(
-          attempt,
-          total_attempts,
-          'Attempt #%s' % attempt,
-          error_print_threshold=threshold)
+    with patch.object(controlflow.sys.stderr, 'write') as mock_stderr_write:
+      for attempt in range(1, total_attempts + 1):
+        controlflow.wait_on_failure(
+            attempt,
+            total_attempts,
+            'Attempt #%s' % attempt,
+            error_print_threshold=threshold)
     self.assertEqual(total_attempts - threshold, mock_stderr_write.call_count)
