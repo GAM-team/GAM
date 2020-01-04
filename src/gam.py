@@ -65,7 +65,6 @@ import googleapiclient.http
 import google.oauth2.id_token
 import google.oauth2.service_account
 import google_auth_oauthlib.flow
-import google_auth_httplib2
 import httplib2
 
 from cryptography import x509
@@ -81,6 +80,7 @@ import display
 import fileutils
 import gapi.errors
 import gapi
+import transport
 import utils
 from var import *
 
@@ -97,31 +97,6 @@ elif getattr(sys, 'frozen', False):
 else:
   # Source code
   GM_Globals[GM_GAM_PATH] = os.path.dirname(os.path.realpath(__file__))
-
-# Override and wrap google_auth_httplib2 request methods so that the GAM
-# user-agent string is inserted into HTTP request headers.
-def _request_with_user_agent(request_method):
-  """Inserts the GAM user-agent header kwargs sent to a method."""
-  GAM_USER_AGENT = GAM_INFO
-
-  def wrapped_request_method(self, *args, **kwargs):
-    if kwargs.get('headers') is not None:
-      if kwargs['headers'].get('user-agent'):
-        if GAM_USER_AGENT not in kwargs['headers']['user-agent']:
-          # Save the existing user-agent header and tack on the GAM user-agent.
-          kwargs['headers']['user-agent'] = '%s %s' % (GAM_USER_AGENT, kwargs['headers']['user-agent'])
-      else:
-        kwargs['headers']['user-agent'] = GAM_USER_AGENT
-    else:
-      kwargs['headers'] = {'user-agent': GAM_USER_AGENT}
-    return request_method(self, *args, **kwargs)
-
-  return wrapped_request_method
-
-google_auth_httplib2.Request.__call__ = _request_with_user_agent(
-  google_auth_httplib2.Request.__call__)
-google_auth_httplib2.AuthorizedHttp.request = _request_with_user_agent(
-  google_auth_httplib2.AuthorizedHttp.request)
 
 def showUsage():
   doGAMVersion(checkForArgs=False)
@@ -649,7 +624,7 @@ def getLocalGoogleTimeOffset(testLocation='www.googleapis.com'):
     # we disable SSL verify so we can still get time even if clock
     # is way off. This could be spoofed / MitM but we'll fail for those
     # situations everywhere else but here.
-    badhttp = gapi.create_http()
+    badhttp = transport.create_http()
     badhttp.disable_ssl_certificate_validation = True
     googleUTC = dateutil.parser.parse(badhttp.request('https://'+testLocation, 'HEAD')[0]['date'])
   except (httplib2.ServerNotFoundError, RuntimeError, ValueError) as e:
@@ -682,7 +657,7 @@ def doGAMCheckForUpdates(forceCheck=False):
       return
     check_url = GAM_LATEST_RELEASE # latest full release
   headers = {'Accept': 'application/vnd.github.v3.text+json'}
-  simplehttp = gapi.create_http(timeout=10)
+  simplehttp = transport.create_http(timeout=10)
   try:
     (_, c) = simplehttp.request(check_url, 'GET', headers=headers)
     try:
@@ -785,7 +760,7 @@ def _getServerTLSUsed(location):
   url = 'https://%s' % location
   _, netloc, _, _, _, _ = urlparse(url)
   conn = 'https:%s' % netloc
-  httpc = gapi.create_http()
+  httpc = transport.create_http()
   headers = {'user-agent': GAM_INFO}
   retries = 5
   for n in range(1, retries+1):
@@ -874,7 +849,7 @@ def getValidOauth2TxtCredentials(force_refresh=False):
       retries = 3
       for n in range(1, retries+1):
         try:
-          credentials.refresh(google_auth_httplib2.Request(gapi.create_http()))
+          credentials.refresh(transport.create_request())
           writeCredentials(credentials)
           break
         except google.auth.exceptions.RefreshError as e:
@@ -949,7 +924,7 @@ def buildGAPIObject(api):
   GM_Globals[GM_CURRENT_API_USER] = None
   credentials = getValidOauth2TxtCredentials()
   credentials.user_agent = GAM_INFO
-  http = google_auth_httplib2.AuthorizedHttp(credentials, gapi.create_http(cache=GM_Globals[GM_CACHE_DIR]))
+  http = transport.AuthorizedHttp(credentials, transport.create_http(cache=GM_Globals[GM_CACHE_DIR]))
   service = getService(api, http)
   if GC_Values[GC_DOMAIN]:
     if not GC_Values[GC_CUSTOMER_ID]:
@@ -1040,17 +1015,17 @@ def convertEmailAddressToUID(emailAddressOrUID, cd=None, email_type='user'):
   return normalizedEmailAddressOrUID
 
 def buildGAPIServiceObject(api, act_as, showAuthError=True):
-  http = gapi.create_http(cache=GM_Globals[GM_CACHE_DIR])
+  http = transport.create_http(cache=GM_Globals[GM_CACHE_DIR])
   service = getService(api, http)
   GM_Globals[GM_CURRENT_API_USER] = act_as
   GM_Globals[GM_CURRENT_API_SCOPES] = API_SCOPE_MAPPING.get(api, service._rootDesc['auth']['oauth2']['scopes'])
   credentials = getSvcAcctCredentials(GM_Globals[GM_CURRENT_API_SCOPES], act_as)
-  request = google_auth_httplib2.Request(http)
+  request = transport.create_request(http)
   retries = 3
   for n in range(1, retries+1):
     try:
       credentials.refresh(request)
-      service._http = google_auth_httplib2.AuthorizedHttp(credentials, http=http)
+      service._http = transport.AuthorizedHttp(credentials, http=http)
       break
     except (httplib2.ServerNotFoundError, RuntimeError) as e:
       if n != retries:
@@ -1125,13 +1100,13 @@ def doCheckServiceAccount(users):
   else:
     time_status = 'FAIL'
   printPassFail(MESSAGE_YOUR_SYSTEM_TIME_DIFFERS_FROM_GOOGLE_BY % nicetime, time_status)
-  oa2 = googleapiclient.discovery.build('oauth2', 'v1', gapi.create_http())
+  oa2 = googleapiclient.discovery.build('oauth2', 'v1', transport.create_http())
   print('Service Account Private Key Authentication:')
   # We are explicitly not doing DwD here, just confirming service account can auth
   auth_error = ''
   try:
     credentials = getSvcAcctCredentials([USERINFO_EMAIL_SCOPE], None)
-    request = google_auth_httplib2.Request(gapi.create_http())
+    request = transport.create_request()
     credentials.refresh(request)
     sa_token_info = gapi.call(oa2, 'tokeninfo', access_token=credentials.token)
     if sa_token_info:
@@ -1151,7 +1126,7 @@ def doCheckServiceAccount(users):
   for user in users:
     user = user.lower()
     all_scopes_pass = True
-    oa2 = googleapiclient.discovery.build('oauth2', 'v1', gapi.create_http())
+    oa2 = googleapiclient.discovery.build('oauth2', 'v1', transport.create_http())
     print('Domain-Wide Delegation authentication as %s:' % (user))
     for scope in check_scopes:
       # try with and without email scope
@@ -3759,7 +3734,7 @@ def doPhoto(users):
     filename = filename.replace('#username#', user[:user.find('@')])
     print("Updating photo for %s with %s (%s/%s)" % (user, filename, i, count))
     if re.match('^(ht|f)tps?://.*$', filename):
-      simplehttp = gapi.create_http()
+      simplehttp = transport.create_http()
       try:
         (_, image_data) = simplehttp.request(filename, 'GET')
       except (httplib2.HttpLib2Error, httplib2.ServerNotFoundError) as e:
@@ -7315,7 +7290,7 @@ def getUserAttributes(i, cd, updateCmd):
 class ShortURLFlow(google_auth_oauthlib.flow.InstalledAppFlow):
   def authorization_url(self, **kwargs):
     long_url, state = super(ShortURLFlow, self).authorization_url(**kwargs)
-    simplehttp = gapi.create_http(timeout=10)
+    simplehttp = transport.create_http(timeout=10)
     url_shortnr = 'https://gam-shortn.appspot.com/create'
     headers = {'Content-Type': 'application/json',
                'user-agent': GAM_INFO}
@@ -7364,7 +7339,7 @@ def getCRMService(login_hint):
   client_id = '297408095146-fug707qsjv4ikron0hugpevbrjhkmsk7.apps.googleusercontent.com'
   client_secret = 'qM3dP8f_4qedwzWQE1VR4zzU'
   credentials = _run_oauth_flow(client_id, client_secret, scopes, 'online', login_hint)
-  httpc = google_auth_httplib2.AuthorizedHttp(credentials)
+  httpc = transport.AuthorizedHttp(credentials)
   return (googleapiclient.discovery.build('cloudresourcemanager', 'v1',
                                           http=httpc, cache_discovery=False,
                                           discoveryServiceUrl=googleapiclient.discovery.V2_DISCOVERY_URI),
@@ -7378,7 +7353,7 @@ def getCRM2Service(httpc):
 
 def getGAMProjectFile(filepath):
   file_url = GAM_PROJECT_FILEPATH+filepath
-  httpObj = gapi.create_http()
+  httpObj = transport.create_http()
   _, c = httpObj.request(file_url, 'GET')
   return c.decode(UTF8)
 
@@ -7523,7 +7498,7 @@ def _createClientSecretsOauth2service(httpObj, projectId):
     client_secret = input('Enter your Client Secret: ').strip()
     if not client_secret:
       client_secret = input().strip()
-    simplehttp = gapi.create_http()
+    simplehttp = transport.create_http()
     client_valid = _checkClientAndSecret(simplehttp, client_id, client_secret)
     if client_valid:
       break
@@ -9910,8 +9885,8 @@ def doCreateResoldCustomer():
 def _getValueFromOAuth(field, credentials=None):
   if not GC_Values[GC_DECODED_ID_TOKEN]:
     credentials = credentials if credentials is not None else getValidOauth2TxtCredentials()
-    http = google_auth_httplib2.Request(gapi.create_http())
-    GC_Values[GC_DECODED_ID_TOKEN] = google.oauth2.id_token.verify_oauth2_token(credentials.id_token, http)
+    request = transport.create_request()
+    GC_Values[GC_DECODED_ID_TOKEN] = google.oauth2.id_token.verify_oauth2_token(credentials.id_token, request)
   return GC_Values[GC_DECODED_ID_TOKEN].get(field, 'Unknown')
 
 def doGetMemberInfo():
@@ -10587,7 +10562,7 @@ def doSiteVerifyAttempt():
     print('Method:  %s' % verify_data['method'])
     print('Expected Token:      %s' % verify_data['token'])
     if verify_data['method'] in ['DNS_CNAME', 'DNS_TXT']:
-      simplehttp = gapi.create_http()
+      simplehttp = transport.create_http()
       base_url = 'https://dns.google/resolve?'
       query_params = {}
       if verify_data['method'] == 'DNS_CNAME':
@@ -13182,7 +13157,7 @@ def doDeleteOAuth():
     credentials = getOauth2TxtStorageCredentials()
     if credentials is None:
       return
-    simplehttp = gapi.create_http()
+    simplehttp = transport.create_http()
     params = {'token': credentials.refresh_token}
     revoke_uri = 'https://accounts.google.com/o/oauth2/revoke?%s' % urlencode(params)
     sys.stderr.write('This OAuth token will self-destruct in 3...')

@@ -38,40 +38,6 @@ def create_http_error(status, reason, message):
   return gapi.googleapiclient.errors.HttpError(response, content_bytes)
 
 
-class CreateHttpTest(unittest.TestCase):
-
-  def setUp(self):
-    SetGlobalVariables()
-    super(CreateHttpTest, self).setUp()
-
-  def test_create_http_sets_default_values_on_http(self):
-    http = gapi.create_http()
-    self.assertIsNone(http.cache)
-    self.assertIsNone(http.timeout)
-    self.assertEqual(http.tls_minimum_version,
-                     gapi.GC_Values[gapi.GC_TLS_MIN_VERSION])
-    self.assertEqual(http.tls_maximum_version,
-                     gapi.GC_Values[gapi.GC_TLS_MAX_VERSION])
-    self.assertEqual(http.ca_certs, gapi.GC_Values[gapi.GC_CA_FILE])
-
-  def test_create_http_sets_tls_min_version(self):
-    http = gapi.create_http(override_min_tls=1111)
-    self.assertEqual(http.tls_minimum_version, 1111)
-
-  def test_create_http_sets_tls_max_version(self):
-    http = gapi.create_http(override_max_tls=9999)
-    self.assertEqual(http.tls_maximum_version, 9999)
-
-  def test_create_http_sets_cache(self):
-    fake_cache = {}
-    http = gapi.create_http(cache=fake_cache)
-    self.assertEqual(http.cache, fake_cache)
-
-  def test_create_http_sets_cache_timeout(self):
-    http = gapi.create_http(timeout=1234)
-    self.assertEqual(http.timeout, 1234)
-
-
 class GapiTest(unittest.TestCase):
 
   def setUp(self):

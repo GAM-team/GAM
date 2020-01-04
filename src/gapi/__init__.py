@@ -9,40 +9,11 @@ import httplib2
 import controlflow
 import display
 from gapi import errors
-from var import (GC_CA_FILE, GC_Values, GC_TLS_MIN_VERSION, GC_TLS_MAX_VERSION,
-                 GM_Globals, GM_CURRENT_API_SCOPES, GM_CURRENT_API_USER,
+import transport
+from var import (GM_Globals, GM_CURRENT_API_SCOPES, GM_CURRENT_API_USER,
                  GM_EXTRA_ARGS_DICT, GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID,
                  MAX_RESULTS_API_EXCEPTIONS, MESSAGE_API_ACCESS_CONFIG,
                  MESSAGE_API_ACCESS_DENIED, MESSAGE_SERVICE_NOT_APPLICABLE)
-
-
-def create_http(cache=None,
-                timeout=None,
-                override_min_tls=None,
-                override_max_tls=None):
-  """Creates a uniform HTTP transport object.
-
-  Args:
-    cache: The HTTP cache to use.
-    timeout: The cache timeout, in seconds.
-    override_min_tls: The minimum TLS version to require. If not provided, the
-      default is used.
-    override_max_tls: The maximum TLS version to require. If not provided, the
-      default is used.
-
-  Returns:
-    httplib2.Http with the specified options.
-  """
-  tls_minimum_version = override_min_tls if override_min_tls else GC_Values[
-    GC_TLS_MIN_VERSION]
-  tls_maximum_version = override_max_tls if override_max_tls else GC_Values[
-    GC_TLS_MAX_VERSION]
-  return httplib2.Http(
-    ca_certs=GC_Values[GC_CA_FILE],
-    tls_maximum_version=tls_maximum_version,
-    tls_minimum_version=tls_minimum_version,
-    cache=cache,
-    timeout=timeout)
 
 
 def call(service,
@@ -79,20 +50,20 @@ def call(service,
   method = getattr(service, function)
   retries = 10
   parameters = dict(
-    list(kwargs.items()) + list(GM_Globals[GM_EXTRA_ARGS_DICT].items()))
+      list(kwargs.items()) + list(GM_Globals[GM_EXTRA_ARGS_DICT].items()))
   for n in range(1, retries + 1):
     try:
       return method(**parameters).execute()
     except googleapiclient.errors.HttpError as e:
       http_status, reason, message = errors.get_gapi_error_detail(
-        e,
-        soft_errors=soft_errors,
-        silent_errors=silent_errors,
-        retry_on_http_error=n < 3)
+          e,
+          soft_errors=soft_errors,
+          silent_errors=silent_errors,
+          retry_on_http_error=n < 3)
       if http_status == -1:
         # The error detail indicated that we should retry this request
         # We'll refresh credentials and make another pass
-        service._http.request.credentials.refresh(create_http())
+        service._http.request.credentials.refresh(transport.create_http())
         continue
       if http_status == 0:
         return None
@@ -101,7 +72,7 @@ def call(service,
       if is_known_error_reason and errors.ErrorReason(reason) in throw_reasons:
         if errors.ErrorReason(reason) in errors.ERROR_REASON_TO_EXCEPTION:
           raise errors.ERROR_REASON_TO_EXCEPTION[errors.ErrorReason(reason)](
-            message)
+              message)
         raise e
       if (n != retries) and (is_known_error_reason and errors.ErrorReason(
           reason) in errors.DEFAULT_RETRY_REASONS + retry_reasons):
@@ -114,16 +85,16 @@ def call(service,
                                                         ': Giving up.'][n > 1]))
         return None
       controlflow.system_error_exit(
-        int(http_status), '{0}: {1} - {2}'.format(http_status, message,
-                                                  reason))
+          int(http_status), '{0}: {1} - {2}'.format(http_status, message,
+                                                    reason))
     except google.auth.exceptions.RefreshError as e:
       handle_oauth_token_error(
-        e, soft_errors or
-        errors.ErrorReason.SERVICE_NOT_AVAILABLE in throw_reasons)
+          e, soft_errors or
+          errors.ErrorReason.SERVICE_NOT_AVAILABLE in throw_reasons)
       if errors.ErrorReason.SERVICE_NOT_AVAILABLE in throw_reasons:
         raise errors.GapiServiceNotAvailableError(str(e))
       display.print_error('User {0}: {1}'.format(
-        GM_Globals[GM_CURRENT_API_USER], str(e)))
+          GM_Globals[GM_CURRENT_API_USER], str(e)))
       return None
     except ValueError as e:
       if service._http.cache is not None:
@@ -165,11 +136,11 @@ def get_items(service,
     The list of items in the first page of a response.
   """
   results = call(
-    service,
-    function,
-    throw_reasons=throw_reasons,
-    retry_reasons=retry_reasons,
-    **kwargs)
+      service,
+      function,
+      throw_reasons=throw_reasons,
+      retry_reasons=retry_reasons,
+      **kwargs)
   if results:
     return results.get(items, [])
   return []
@@ -200,7 +171,7 @@ def _get_max_page_size_for_api_call(service, function, **kwargs):
           return None
         known_api_max = MAX_RESULTS_API_EXCEPTIONS.get(api_id)
         max_results = a_method['parameters']['maxResults'].get(
-          'maximum', known_api_max)
+            'maximum', known_api_max)
         return {'maxResults': max_results}
 
   return None
@@ -258,13 +229,13 @@ def get_all_pages(service,
   total_items = 0
   while True:
     page = call(
-      service,
-      function,
-      soft_errors=soft_errors,
-      throw_reasons=throw_reasons,
-      retry_reasons=retry_reasons,
-      pageToken=page_token,
-      **kwargs)
+        service,
+        function,
+        soft_errors=soft_errors,
+        throw_reasons=throw_reasons,
+        retry_reasons=retry_reasons,
+        pageToken=page_token,
+        **kwargs)
     if page:
       page_token = page.get('nextPageToken')
       page_items = page.get(items, [])
@@ -282,9 +253,9 @@ def get_all_pages(service,
         first_item = page_items[0] if num_page_items > 0 else {}
         last_item = page_items[-1] if num_page_items > 1 else first_item
         show_message = show_message.replace(
-          '%%first_item%%', str(first_item.get(message_attribute, '')))
+            '%%first_item%%', str(first_item.get(message_attribute, '')))
         show_message = show_message.replace(
-          '%%last_item%%', str(last_item.get(message_attribute, '')))
+            '%%last_item%%', str(last_item.get(message_attribute, '')))
       sys.stderr.write('\r')
       sys.stderr.flush()
       sys.stderr.write(show_message)
@@ -314,14 +285,14 @@ def handle_oauth_token_error(e, soft_errors):
       return
     if not GM_Globals[GM_CURRENT_API_USER]:
       display.print_error(
-        MESSAGE_API_ACCESS_DENIED.format(
-          GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID],
-          ','.join(GM_Globals[GM_CURRENT_API_SCOPES])))
+          MESSAGE_API_ACCESS_DENIED.format(
+              GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID],
+              ','.join(GM_Globals[GM_CURRENT_API_SCOPES])))
       controlflow.system_error_exit(12, MESSAGE_API_ACCESS_CONFIG)
     else:
       controlflow.system_error_exit(
-        19,
-        MESSAGE_SERVICE_NOT_APPLICABLE.format(
-          GM_Globals[GM_CURRENT_API_USER]))
+          19,
+          MESSAGE_SERVICE_NOT_APPLICABLE.format(
+              GM_Globals[GM_CURRENT_API_USER]))
   controlflow.system_error_exit(18,
                                 'Authentication Token Error - {0}'.format(e))
