@@ -9465,10 +9465,6 @@ def doUpdateGroup():
         use_cd_api = True
         cd_body['email'] = normalizeEmailAddressOrUID(sys.argv[i+1])
         i += 2
-      elif myarg == 'admincreated':
-        use_cd_api = True
-        cd_body['adminCreated'] = getBoolean(sys.argv[i+1], myarg)
-        i += 2
       elif myarg == 'getbeforeupdate':
         gs_get_before_update = True
         i += 1
