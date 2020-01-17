@@ -7509,7 +7509,7 @@ def _createClientSecretsOauth2service(httpObj, projectId):
 
 1. Enter "GAM" as the "Application name".
 2. Leave all other fields blank. Click "Save" to continue.
-3. Select "Credentials" from the side menu -> "Create credentials" -> OAuth client ID
+3. Select "Credentials" from the sidebar menu -> "Create credentials" -> "OAuth client ID"
 4. Choose "Other". Enter a desired value for "Name" such as GAM. Click the "Create" button.
 5. Copy your "client ID" and "client secret" values and paste them when prompted below. 
 
