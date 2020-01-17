@@ -7503,14 +7503,17 @@ def _createClientSecretsOauth2service(httpObj, projectId):
   _grantSARotateRights(iam, service_account['name'].rsplit('/', 1)[-1])
   console_credentials_url = 'https://console.developers.google.com/apis/credentials/consent/edit?createClient&newAppInternalUser=true&project=%s' % projectId
   while True:
-    print('''Please go to:
+    print('''\nPlease go to:
 
 %s
 
-1. Enter "GAM" for "Application name".
-2. Leave other fields blank. Click "Save" button.
-3. Choose "Other". Enter a desired value for "Name". Click the blue "Create" button.
-4. Copy your "client ID" value.
+1. Enter "GAM" as the "Application name".
+2. Leave all other fields blank. Click "Save" to continue.
+3. Select "Credentials" from the side menu -> "Create credentials" -> OAuth client ID
+3. Choose "Other". Enter a desired value for "Name" such as GAM. Click the "Create" button.
+4. Copy your "client ID" and "client secret" values and paste them when prompted below. 
+
+It is recommended to save these in a secure location such as a password manager.
 
 ''' % console_credentials_url)
 # If you use Firefox to copy the Client ID and Secret, the data has leading and trailing newlines
