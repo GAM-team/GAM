@@ -1079,7 +1079,7 @@ gam print mobile [todrive] [(query <QueryMobile>)|(queries <QueryMobileList>)] [
 	fields <MobileFieldNameList>] [delimiter <Character>] [appslimit <Number>] [listlimit <Number>]
 
 gam create group <EmailAddress> <GroupAttributes>*
-gam update group <GroupItem> [admincreated <Boolean>] [email <EmailAddress>] <GroupAttributes>*
+gam update group <GroupItem> [email <EmailAddress>] <GroupAttributes>*
 gam update group <GroupItem> add [owner|manager|member] [notsuspended|suspended] [allmail|daily|digest|none|nomail] <UserTypeEntity>
 gam update group <GroupItem> delete|remove [owner|manager|member] <UserTypeEntity>
 gam update group <GroupItem> sync [owner|manager|member] [notsuspended|suspended] [allmail|daily|digest|none|nomail] <UserTypeEntity>

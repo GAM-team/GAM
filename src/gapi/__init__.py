@@ -126,7 +126,7 @@ def call(service,
         GM_Globals[GM_CURRENT_API_USER], str(e)))
       return None
     except ValueError as e:
-      if service._http.cache is not None:
+      if hasattr(service._http, 'cache') and service._http.cache is not None:
         service._http.cache = None
         continue
       controlflow.system_error_exit(4, str(e))
