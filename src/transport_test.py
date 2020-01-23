@@ -28,12 +28,12 @@ class CreateHttpTest(unittest.TestCase):
     self.assertEqual(http.ca_certs, transport.GC_Values[transport.GC_CA_FILE])
 
   def test_create_http_sets_tls_min_version(self):
-    http = transport.create_http(override_min_tls=1111)
-    self.assertEqual(http.tls_minimum_version, 1111)
+    http = transport.create_http(override_min_tls='TLSv1_1')
+    self.assertEqual(http.tls_minimum_version, 'TLSv1_1')
 
   def test_create_http_sets_tls_max_version(self):
-    http = transport.create_http(override_max_tls=9999)
-    self.assertEqual(http.tls_maximum_version, 9999)
+    http = transport.create_http(override_max_tls='TLSv1_3')
+    self.assertEqual(http.tls_maximum_version, 'TLSv1_3')
 
   def test_create_http_sets_cache(self):
     fake_cache = {}
