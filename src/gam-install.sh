@@ -234,6 +234,18 @@ else
   echo_green "Finished extracting GAM archive."
 fi
 
+# Update profile to add gam command
+if [ "$update_profile" = true ]; then
+  alias_line="gam() { \"$target_dir/gam/gam\" \"\$@\" ; }"
+  if [ "$gamos" == "linux" ]; then
+    update_profile "$HOME/.bash_aliases" 0 || update_profile "$HOME/.bash_profile" 0 || update_profile "$HOME/.bashrc" 0 || update_profile "$HOME/.zshrc" 0
+  elif [ "$gamos" == "macos" ]; then
+    update_profile "$HOME/.bash_aliases" 0 || update_profile "$HOME/.bash_profile" 0 || update_profile "$HOME/.bashrc" 0 || update_profile "$HOME/.zshrc" 0 || update_profile "$HOME/.profile" 1
+  fi
+else
+  echo_yellow "skipping profile update."
+fi
+
 if [ "$upgrade_only" = true ]; then
   echo_green "Here's information about your GAM upgrade:"
   "$target_dir/gam/gam" version extended
@@ -245,18 +257,6 @@ if [ "$upgrade_only" = true ]; then
 
   echo_green "GAM upgrade complete!"
   exit
-fi
-
-# Update profile to add gam command
-if [ "$update_profile" = true ]; then
-  alias_line="gam() { \"$target_dir/gam/gam\" \"\$@\" ; }"
-  if [ "$gamos" == "linux" ]; then
-    update_profile "$HOME/.bash_aliases" 0 || update_profile "$HOME/.bash_profile" 0 || update_profile "$HOME/.bashrc" 0 || update_profile "$HOME/.zshrc" 0
-  elif [ "$gamos" == "macos" ]; then
-    update_profile "$HOME/.bash_aliases" 0 || update_profile "$HOME/.bash_profile" 0 || update_profile "$HOME/.bashrc" 0 || update_profile "$HOME/.zshrc" 0 || update_profile "$HOME/.profile" 1
-  fi
-else
-  echo_yellow "skipping profile update."
 fi
 
 while true; do
