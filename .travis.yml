@@ -130,7 +130,7 @@ matrix:
       name: "Python PyPi Source Testing"
       dist: xenial
       language: python
-      python: pypy3.5
+      python: pypy3
       env:
         - GAMOS=linux
         - PLATFORM=x86_64
