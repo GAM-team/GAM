@@ -58,9 +58,8 @@ def wait_on_failure(current_attempt_num,
   wait_on_fail = min(2**current_attempt_num,
                      60) + float(random.randint(1, 1000)) / 1000
   if current_attempt_num > error_print_threshold:
-    sys.stderr.write(
-        'Temporary error: {0}, Backing off: {1} seconds, Retry: {2}/{3}\n'
-        .format(error_message, int(wait_on_fail), current_attempt_num,
-                total_num_retries))
+    sys.stderr.write((f'Temporary error: {error_message}, Backing off: '
+        f'{int(wait_on_fail)} seconds, Retry: '
+        f'{current_attempt_num}/{total_num_retries}\n'))
     sys.stderr.flush()
   time.sleep(wait_on_fail)

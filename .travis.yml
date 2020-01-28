@@ -97,16 +97,6 @@ matrix:
         - PLATFORM=x86_64
         - VMTYPE=build
     - os: linux
-      name: "Python 3.5 Source Testing"
-      dist: xenial
-      language: python
-      python:
-        - "3.5"
-      env:
-        - GAMOS=linux
-        - PLATFORM=x86_64
-        - VMTYPE=test
-    - os: linux
       name: "Python 3.6 Source Testing"
       dist: bionic
       language: python

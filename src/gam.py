@@ -35,10 +35,7 @@ import mimetypes
 import os
 import platform
 import random
-try:
-  from secrets import SystemRandom
-except ImportError:
-  from random import SystemRandom
+from secrets import SystemRandom
 import re
 import shlex
 import signal
@@ -117,16 +114,16 @@ gam.exe update group announcements add member jsmith
 ''')
 
 def currentCount(i, count):
-  return ' ({0}/{1})'.format(i, count) if (count > GC_Values[GC_SHOW_COUNTS_MIN]) else ''
+  return f' ({i}/{count})' if (count > GC_Values[GC_SHOW_COUNTS_MIN]) else ''
 
 def currentCountNL(i, count):
-  return ' ({0}/{1})\n'.format(i, count) if (count > GC_Values[GC_SHOW_COUNTS_MIN]) else '\n'
+  return f' ({i}/{count})\n' if (count > GC_Values[GC_SHOW_COUNTS_MIN]) else '\n'
 
 def printGettingAllItems(items, query):
   if query:
-    sys.stderr.write("Getting all {0} in G Suite account that match query ({1}) (may take some time on a large account)...\n".format(items, query))
+    sys.stderr.write(f"Getting all {items} in G Suite account that match query ({query}) (may take some time on a large account)...\n")
   else:
-    sys.stderr.write("Getting all {0} in G Suite account (may take some time on a large account)...\n".format(items))
+    sys.stderr.write(f"Getting all {items} in G Suite account (may take some time on a large account)...\n")
 
 def entityServiceNotApplicableWarning(entityType, entityName, i, count):
   sys.stderr.write('{0}: {1}, Service not applicable/Does not exist{2}'.format(entityType, entityName, currentCountNL(i, count)))
@@ -679,7 +676,7 @@ def doGAMCheckForUpdates(forceCheck=False):
       fileutils.write_file(GM_Globals[GM_LAST_UPDATE_CHECK_TXT], str(now_time), continue_on_error=True, display_errors=forceCheck)
       return
     announcement = release_data.get('body_text', 'No details about this release')
-    sys.stderr.write('\nGAM %s release notes:\n\n' % latest_version)
+    sys.stderr.write(f'\nGAM {latest_version} release notes:\n\n')
     sys.stderr.write(announcement)
     try:
       printLine(MESSAGE_HIT_CONTROL_C_TO_UPDATE)
@@ -707,7 +704,7 @@ def getOSPlatform():
     pltfrm = ' '.join([codename, mac_ver])
   else:
     pltfrm = platform.platform()
-  return '%s %s' % (myos, pltfrm)
+  return f'{myos} {pltfrm}'
 
 def doGAMVersion(checkForArgs=True):
   force_check = extended = simple = timeOffset = False
@@ -733,16 +730,21 @@ def doGAMVersion(checkForArgs=True):
         testLocation = sys.argv[i+1]
         i += 2
       else:
-        controlflow.system_error_exit(2, '%s is not a valid argument for "gam version"' % sys.argv[i])
+        controlflow.system_error_exit(2, f'{sys.argv[i]} is not a valid argument for "gam version"')
   if simple:
     sys.stdout.write(gam_version)
     return
-  version_data = 'GAM {0} - {1}\n{2}\nPython {3}.{4}.{5} {6}-bit {7}\ngoogle-api-python-client {8}\n{9} {10}\nPath: {11}'
-  print(version_data.format(gam_version, GAM_URL, gam_author, sys.version_info[0],
-                            sys.version_info[1], sys.version_info[2], struct.calcsize('P')*8,
-                            sys.version_info[3], googleapiclient.__version__,
-                            getOSPlatform(), platform.machine(), GM_Globals[GM_GAM_PATH]))
-  if sys.platform.startswith('win') and str(struct.calcsize('P')*8).find('32') != -1 and platform.machine().find('64') != -1:
+  pyversion = platform.python_version()
+  cpu_bits = struct.calcsize('P') * 8
+  print((f'GAM {gam_version} - {GAM_URL}\n'
+         f'{gam_author}\n'
+         f'Python {pyversion} {cpu_bits}-bit {sys.version_info.releaselevel}\n'
+         f'google-api-python-client {googleapiclient.__version__}\n'
+         f'{getOSPlatform()} {platform.machine()}\n'
+         f'Path: {GM_Globals[GM_GAM_PATH]}'))
+  if sys.platform.startswith('win') and \
+     cpu_bits != 32 and \
+     platform.machine().find('64') != -1:
     print(MESSAGE_UPDATE_GAM_TO_64BIT)
   if timeOffset:
     offset, nicetime = getLocalGoogleTimeOffset(testLocation)
@@ -753,13 +755,13 @@ def doGAMVersion(checkForArgs=True):
     doGAMCheckForUpdates(forceCheck=True)
   if extended:
     print(ssl.OPENSSL_VERSION)
-    tls_ver, cipher_name = _getServerTLSUsed(testLocation)
-    print('%s connects using %s %s' % (testLocation, tls_ver, cipher_name))
+    tls_ver, cipher_name, used_ip = _getServerTLSUsed(testLocation)
+    print(f'{testLocation} ({used_ip}) connects using {tls_ver} {cipher_name}')
 
 def _getServerTLSUsed(location):
-  url = 'https://%s' % location
+  url = f'https://{location}'
   _, netloc, _, _, _, _ = urlparse(url)
-  conn = 'https:%s' % netloc
+  conn = f'https:{netloc}'
   httpc = transport.create_http()
   headers = {'user-agent': GAM_INFO}
   retries = 5
@@ -774,7 +776,8 @@ def _getServerTLSUsed(location):
         continue
       controlflow.system_error_exit(4, str(e))
   cipher_name, tls_ver, _ = httpc.connections[conn].sock.cipher()
-  return tls_ver, cipher_name
+  used_ip = httpc.connections[conn].sock.getpeername()[0]
+  return tls_ver, cipher_name, used_ip
 
 def _getSvcAcctData():
   if not GM_Globals[GM_OAUTH2SERVICE_JSON_DATA]:
@@ -806,7 +809,7 @@ def getAPIVersion(api):
   return (api, version, '{0}-{1}'.format(api, version))
 
 def readDiscoveryFile(api_version):
-  disc_filename = '%s.json' % (api_version)
+  disc_filename = f'{api_version}.json'
   disc_file = os.path.join(GM_Globals[GM_GAM_PATH], disc_filename)
   if hasattr(sys, '_MEIPASS'):
     pyinstaller_disc_file = os.path.join(sys._MEIPASS, disc_filename)
@@ -841,7 +844,7 @@ def getValidOauth2TxtCredentials(force_refresh=False):
   """Gets OAuth2 credentials which are guaranteed to be fresh and valid.
      Locks during read and possible write so that only one process will
      attempt refresh/write when running in parallel. """
-  lock_file = '%s.lock' % GC_Values[GC_OAUTH2_TXT]
+  lock_file = f'{GC_Values[GC_OAUTH2_TXT]}.lock'
   lock = FileLock(lock_file)
   with lock:
     credentials = getOauth2TxtStorageCredentials()
@@ -1081,7 +1084,7 @@ def buildGmailGAPIObject(user):
   return (userEmail, buildGAPIServiceObject('gmail', userEmail))
 
 def printPassFail(description, result):
-  print(' {0:74} {1}'.format(description, result))
+  print(f' {description:74} {result}')
 
 def doCheckServiceAccount(users):
   i = 5
@@ -1092,7 +1095,7 @@ def doCheckServiceAccount(users):
       check_scopes = sys.argv[i+1].replace(',', ' ').split()
       i += 2
     else:
-      controlflow.system_error_exit(3, '%s is not a valid argument for "gam user <email> check serviceaccount"' % myarg)
+      controlflow.system_error_exit(3, f'{myarg} is not a valid argument for "gam user <email> check serviceaccount"')
   print('Computer clock status:')
   timeOffset, nicetime = getLocalGoogleTimeOffset()
   if timeOffset < MAX_LOCAL_GOOGLE_TIME_OFFSET:
@@ -1116,7 +1119,7 @@ def doCheckServiceAccount(users):
   except google.auth.exceptions.RefreshError as e:
     sa_token_result = 'FAIL'
     auth_error = str(e.args[0])
-  printPassFail('Authenticating...%s' % auth_error, sa_token_result)
+  printPassFail(f'Authenticating...{auth_error}', sa_token_result)
   if not check_scopes:
     for _, scopes in list(API_SCOPE_MAPPING.items()):
       for scope in scopes:
@@ -1127,7 +1130,7 @@ def doCheckServiceAccount(users):
     user = user.lower()
     all_scopes_pass = True
     oa2 = googleapiclient.discovery.build('oauth2', 'v1', transport.create_http())
-    print('Domain-Wide Delegation authentication as %s:' % (user))
+    print(f'Domain-Wide Delegation authentication as {user}:')
     for scope in check_scopes:
       # try with and without email scope
       for scopes in [[scope, USERINFO_EMAIL_SCOPE], [scope]]:
@@ -1153,22 +1156,23 @@ def doCheckServiceAccount(users):
       printPassFail(scope, result)
     service_account = GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID]
     if all_scopes_pass:
-      print('\nAll scopes passed!\nService account %s is fully authorized.' % service_account)
+      print(f'\nAll scopes passed!\nService account {service_account} is fully authorized.')
       return
     user_domain = user[user.find('@')+1:]
     # Tack on email scope for more accurate checking
     check_scopes.append(USERINFO_EMAIL_SCOPE)
-    scopes_failed = '''Some scopes failed! Please go to:
+    nl = ',\n'
+    scopes_failed = f'''Some scopes failed! Please go to:
 
-https://admin.google.com/%s/AdminHome?#OGX:ManageOauthClients
+https://admin.google.com/{user_domain}/AdminHome?#OGX:ManageOauthClients
 
 and grant Client name:
 
-%s
+{service_account}
 
 Access to scopes:
 
-%s\n''' % (user_domain, service_account, ',\n'.join(check_scopes))
+{nl.join(check_scopes)}{nl}'''
     controlflow.system_error_exit(1, scopes_failed)
 
 # Batch processing request_id fields
@@ -1253,7 +1257,7 @@ def showReport():
       to_drive = True
       i += 1
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument to "gam report"' % sys.argv[i])
+      controlflow.system_error_exit(2, f'{sys.argv[i]} is not a valid argument to "gam report"')
   if report in ['users', 'user']:
     while True:
       try:
@@ -1295,7 +1299,7 @@ def showReport():
         else:
           row[name] = ''
       csvRows.append(row)
-    writeCSVfile(csvRows, titles, 'User Reports - %s' % tryDate, to_drive)
+    writeCSVfile(csvRows, titles, f'User Reports - {tryDate}', to_drive)
   elif report in ['customer', 'customers', 'domain']:
     while True:
       try:
@@ -1332,9 +1336,9 @@ def showReport():
             app = {}
             for an_item in subitem:
               if an_item == 'client_name':
-                app['name'] = 'App: %s' % subitem[an_item].replace('\n', '\\n')
+                app['name'] = 'App: ' + subitem[an_item].replace('\n', '\\n')
               elif an_item == 'num_users':
-                app['value'] = '%s users' % subitem[an_item]
+                app['value'] = f'{subitem[an_item]} users'
               elif an_item == 'client_id':
                 app['client_id'] = subitem[an_item]
             auth_apps.append(app)
@@ -1349,17 +1353,17 @@ def showReport():
               else:
                 myvalue = value
               if mycount and myvalue:
-                values.append('%s:%s' % (myvalue, mycount))
+                values.append(f'{myvalue}:{mycount}')
             value = ' '.join(values)
           elif 'version_number' in subitem and 'num_devices' in subitem:
-            values.append('%s:%s' % (subitem['version_number'], subitem['num_devices']))
+            values.append(f'{subitem["version_number"]}:{subitem["num_devices"]}')
           else:
             continue
           value = ' '.join(sorted(values, reverse=True))
       csvRows.append({'name': name, 'value': value})
     for app in auth_apps: # put apps at bottom
       csvRows.append(app)
-    writeCSVfile(csvRows, titles, 'Customer Report - %s' % tryDate, todrive=to_drive)
+    writeCSVfile(csvRows, titles, f'Customer Report - {tryDate}', todrive=to_drive)
   else:
     if report in ['doc', 'docs']:
       report = 'drive'
@@ -1426,7 +1430,7 @@ def showReport():
               titles.append(item)
           csvRows.append(row)
       sortCSVTitles(['name',], titles)
-      writeCSVfile(csvRows, titles, '%s Activity Report' % report.capitalize(), to_drive)
+      writeCSVfile(csvRows, titles, f'{report.capitalize()} Activity Report', to_drive)
 
 def watchGmail(users):
   project = 'projects/{0}'.format(_getCurrentProjectID())
@@ -1736,11 +1740,11 @@ def doGetDomainAliasInfo():
 def doGetCustomerInfo():
   cd = buildGAPIObject('directory')
   customer_info = gapi.call(cd.customers(), 'get', customerKey=GC_Values[GC_CUSTOMER_ID])
-  print('Customer ID: %s' % customer_info['id'])
-  print('Primary Domain: %s' % customer_info['customerDomain'])
+  print(f'Customer ID: {customer_info["id"]}')
+  print(f'Primary Domain: {customer_info["customerDomain"]}')
   result = gapi.call(cd.domains(), 'get',
                      customer=customer_info['id'], domainName=customer_info['customerDomain'], fields='verified')
-  print('Primary Domain Verified: %s' % result['verified'])
+  print(f'Primary Domain Verified: {result["verified"]}')
   # If customer has changed primary domain customerCreationTime is date
   # of current primary being added, not customer create date.
   # We should also get all domains and use oldest date
@@ -1752,16 +1756,17 @@ def doGetCustomerInfo():
     domain_creation = datetime.datetime.fromtimestamp(int(domain['creationTime'])/1000)
     if domain_creation < oldest:
       oldest = domain_creation
-  print('Customer Creation Time: %s' % oldest.strftime('%Y-%m-%dT%H:%M:%SZ'))
-  print('Default Language: %s' % customer_info.get('language', 'Unset (defaults to en)'))
+  print(f'Customer Creation Time: {oldest.strftime("%Y-%m-%dT%H:%M:%SZ")}')
+  customer_language = customer_info.get('language', 'Unset (defaults to en)')
+  print(f'Default Language: {customer_language}')
   if 'postalAddress' in customer_info:
     print('Address:')
     for field in ADDRESS_FIELDS_PRINT_ORDER:
       if field in customer_info['postalAddress']:
-        print(' %s: %s' % (field, customer_info['postalAddress'][field]))
+        print(f' {field}: {customer_info["postalAddress"][field]}')
   if 'phoneNumber' in customer_info:
-    print('Phone: %s' % customer_info['phoneNumber'])
-  print('Admin Secondary Email: %s' % customer_info['alternateEmail'])
+    print(f'Phone: {customer_info["phoneNumber"]}')
+  print(f'Admin Secondary Email: {customer_info["alternateEmail"]}')
   user_counts_map = {
     'accounts:num_users': 'Total Users',
     'accounts:gsuite_basic_total_licenses': 'G Suite Basic Licenses',
@@ -1788,12 +1793,12 @@ def doGetCustomerInfo():
   if not usage:
     print('No user count data available.')
     return
-  print('User counts as of %s:' % tryDate)
+  print(f'User counts as of {tryDate}:')
   for item in usage[0]['parameters']:
     api_name = user_counts_map.get(item['name'])
     api_value = int(item.get('intValue', 0))
     if api_name and api_value:
-      print('  {}: {:,}'.format(api_name, api_value))
+      print(f'  {api_name}: {api_value:,}')
 
 def doUpdateCustomer():
   cd = buildGAPIObject('directory')
@@ -1815,7 +1820,7 @@ def doUpdateCustomer():
       body['language'] = sys.argv[i+1]
       i += 2
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam update customer"' % myarg)
+      controlflow.system_error_exit(2, f'{myarg} is not a valid argument for "gam update customer"')
   if not body:
     controlflow.system_error_exit(2, 'no arguments specified for "gam update customer"')
   gapi.call(cd.customers(), 'patch', customerKey=GC_Values[GC_CUSTOMER_ID], body=body)
@@ -1843,7 +1848,7 @@ def doPrintDomains():
       todrive = True
       i += 1
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam print domains".' % sys.argv[i])
+      controlflow.system_error_exit(2, f'{sys.argv[i]} is not a valid argument for "gam print domains".')
   results = gapi.call(cd.domains(), 'list', customer=GC_Values[GC_CUSTOMER_ID])
   for domain in results['domains']:
     domain_attributes = {}
@@ -1886,7 +1891,7 @@ def doPrintDomainAliases():
       todrive = True
       i += 1
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam print domainaliases".' % sys.argv[i])
+      controlflow.system_error_exit(2, f'{sys.argv[i]} is not a valid argument for "gam print domainaliases".')
   results = gapi.call(cd.domainAliases(), 'list', customer=GC_Values[GC_CUSTOMER_ID])
   for domainAlias in results['domainAliases']:
     domainAlias_attributes = {}
@@ -1904,7 +1909,7 @@ def doPrintDomainAliases():
 def doDelAdmin():
   cd = buildGAPIObject('directory')
   roleAssignmentId = sys.argv[3]
-  print('Deleting Admin Role Assignment %s' % roleAssignmentId)
+  print(f'Deleting Admin Role Assignment {roleAssignmentId}')
   gapi.call(cd.roleAssignments(), 'delete',
             customer=GC_Values[GC_CUSTOMER_ID], roleAssignmentId=roleAssignmentId)
 
@@ -1916,14 +1921,14 @@ def doCreateAdmin():
   body['roleId'] = getRoleId(role)
   body['scopeType'] = sys.argv[5].upper()
   if body['scopeType'] not in ['CUSTOMER', 'ORG_UNIT']:
-    controlflow.system_error_exit(3, 'scope type must be customer or org_unit; got %s' % body['scopeType'])
+    controlflow.system_error_exit(3, f'scope type must be customer or org_unit; got {body["scopeType"]}')
   if body['scopeType'] == 'ORG_UNIT':
     orgUnit, orgUnitId = getOrgUnitId(sys.argv[6], cd)
     body['orgUnitId'] = orgUnitId[3:]
     scope = 'ORG_UNIT {0}'.format(orgUnit)
   else:
     scope = 'CUSTOMER'
-  print('Giving %s admin role %s for %s' % (user, role, scope))
+  print(f'Giving {user} admin role {role} for {scope}')
   gapi.call(cd.roleAssignments(), 'insert',
             customer=GC_Values[GC_CUSTOMER_ID], body=body)
 
@@ -1931,7 +1936,7 @@ def doPrintAdminRoles():
   cd = buildGAPIObject('directory')
   todrive = False
   titles = ['roleId', 'roleName', 'roleDescription', 'isSuperAdminRole', 'isSystemRole']
-  fields = 'nextPageToken,items({0})'.format(','.join(titles))
+  fields = f'nextPageToken,items({",".join(titles)})'
   csvRows = []
   i = 3
   while i < len(sys.argv):
@@ -1940,7 +1945,7 @@ def doPrintAdminRoles():
       todrive = True
       i += 1
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam print adminroles".' % sys.argv[i])
+      controlflow.system_error_exit(2, f'{sys.argv[i]} is not a valid argument for "gam print adminroles".')
   roles = gapi.get_all_pages(cd.roles(), 'list', 'items',
                              customer=GC_Values[GC_CUSTOMER_ID], fields=fields)
   for role in roles:
@@ -1955,7 +1960,7 @@ def doPrintAdmins():
   roleId = None
   userKey = None
   todrive = False
-  fields = 'nextPageToken,items({0})'.format(','.join(['roleAssignmentId', 'roleId', 'assignedTo', 'scopeType', 'orgUnitId']))
+  fields = 'nextPageToken,items(roleAssignmentId,roleId,assignedTo,scopeType,orgUnitId)'
   titles = ['roleAssignmentId', 'roleId', 'role', 'assignedTo', 'assignedToUser', 'scopeType', 'orgUnitId', 'orgUnit']
   csvRows = []
   i = 3
@@ -1971,7 +1976,7 @@ def doPrintAdmins():
       todrive = True
       i += 1
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam print admins".' % sys.argv[i])
+      controlflow.system_error_exit(2, f'{sys.argv[i]} is not a valid argument for "gam print admins".')
   admins = gapi.get_all_pages(cd.roleAssignments(), 'list', 'items',
                               customer=GC_Values[GC_CUSTOMER_ID], userKey=userKey, roleId=roleId, fields=fields)
   for admin in admins:
@@ -2030,7 +2035,7 @@ def getRoleId(role):
   else:
     roleId = roleid_from_role(role)
     if not roleId:
-      controlflow.system_error_exit(4, '%s is not a valid role. Please ensure role name is exactly as shown in admin console.' % role)
+      controlflow.system_error_exit(4, f'{role} is not a valid role. Please ensure role name is exactly as shown in admin console.')
   return roleId
 
 def buildUserIdToNameMap():
@@ -2055,7 +2060,7 @@ def appID2app(dt, appID):
   for online_service in online_services:
     if appID == online_service['id']:
       return online_service['name']
-  return 'applicationId: {0}'.format(appID)
+  return f'applicationId: {appID}'
 
 def app2appID(dt, app):
   serviceName = app.lower()
@@ -2065,7 +2070,7 @@ def app2appID(dt, app):
   for online_service in online_services:
     if serviceName == online_service['name'].lower():
       return (online_service['name'], online_service['id'])
-  controlflow.system_error_exit(2, '%s is not a valid service for data transfer.' % app)
+  controlflow.system_error_exit(2, f'{app} is not a valid service for data transfer.')
 
 def convertToUserID(user):
   cg = UID_PATTERN.match(user)
@@ -2073,18 +2078,18 @@ def convertToUserID(user):
     return cg.group(1)
   cd = buildGAPIObject('directory')
   if user.find('@') == -1:
-    user = '%s@%s' % (user, GC_Values[GC_DOMAIN])
+    user = f'{user}@{GC_Values[GC_DOMAIN]}'
   try:
     return gapi.call(cd.users(), 'get', throw_reasons=[gapi.errors.ErrorReason.USER_NOT_FOUND, gapi.errors.ErrorReason.BAD_REQUEST, gapi.errors.ErrorReason.FORBIDDEN], userKey=user, fields='id')['id']
   except (gapi.errors.GapiUserNotFoundError, gapi.errors.GapiBadRequestError, gapi.errors.GapiForbiddenError):
-    controlflow.system_error_exit(3, 'no such user %s' % user)
+    controlflow.system_error_exit(3, f'no such user {user}')
 
 def convertUserIDtoEmail(uid):
   cd = buildGAPIObject('directory')
   try:
     return gapi.call(cd.users(), 'get', throw_reasons=[gapi.errors.ErrorReason.USER_NOT_FOUND, gapi.errors.ErrorReason.BAD_REQUEST, gapi.errors.ErrorReason.FORBIDDEN], userKey=uid, fields='primaryEmail')['primaryEmail']
   except (gapi.errors.GapiUserNotFoundError, gapi.errors.GapiBadRequestError, gapi.errors.GapiForbiddenError):
-    return 'uid:{0}'.format(uid)
+    return f'uid:{uid}'
 
 def doCreateDataTransfer():
   dt = buildGAPIObject('datatransfer')
@@ -2114,7 +2119,7 @@ def doCreateDataTransfer():
     body['applicationDataTransfers'][i]['applicationTransferParams'].append({'key': key, 'value': value})
     i += 1
   result = gapi.call(dt.transfers(), 'insert', body=body, fields='id')['id']
-  print('Submitted request id %s to transfer %s from %s to %s' % (result, ','.join(map(str, appNameList)), old_owner, new_owner))
+  print(f'Submitted request id {result} to transfer {",".join(map(str, appNameList))} from {old_owner} to {new_owner}')
 
 def doPrintTransferApps():
   dt = buildGAPIObject('datatransfer')
@@ -2147,7 +2152,7 @@ def doPrintDataTransfers():
       todrive = True
       i += 1
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam print transfers"' % sys.argv[i])
+      controlflow.system_error_exit(2, f'{sys.argv[i]} is not a valid argument for "gam print transfers"')
   transfers = gapi.get_all_pages(dt.transfers(), 'list', 'dataTransfers',
                                  customerId=GC_Values[GC_CUSTOMER_ID], status=status,
                                  newOwnerUserId=newOwnerUserId, oldOwnerUserId=oldOwnerUserId)
@@ -2174,16 +2179,16 @@ def doGetDataTransferInfo():
   dt = buildGAPIObject('datatransfer')
   dtId = sys.argv[3]
   transfer = gapi.call(dt.transfers(), 'get', dataTransferId=dtId)
-  print('Old Owner: %s' % convertUserIDtoEmail(transfer['oldOwnerUserId']))
-  print('New Owner: %s' % convertUserIDtoEmail(transfer['newOwnerUserId']))
-  print('Request Time: %s' % transfer['requestTime'])
+  print(f'Old Owner: {convertUserIDtoEmail(transfer["oldOwnerUserId"])}')
+  print(f'New Owner: {convertUserIDtoEmail(transfer["newOwnerUserId"])}')
+  print(f'Request Time: {transfer["requestTime"]}')
   for app in transfer['applicationDataTransfers']:
-    print('Application: %s' % appID2app(dt, app['applicationId']))
-    print('Status: %s' % app['applicationTransferStatus'])
+    print(f'Application: {appID2app(dt, app["applicationId"])}')
+    print(f'Status: {app["applicationTransferStatus"]}')
     print('Parameters:')
     if 'applicationTransferParams' in app:
       for param in app['applicationTransferParams']:
-        print(' %s: %s' % (param['key'], ','.join(param.get('value', []))))
+        print(f' {param["key"]}: {",".join(param.get("value", []))}')
     else:
       print(' None')
     print()
@@ -4655,9 +4660,10 @@ def createDriveFile(users):
       csv_rows.append({'User': user, 'title': result['title'], 'id': result['id']})
     else:
       if parameters[DFA_LOCALFILENAME]:
-        print('Successfully uploaded %s to Drive File %s' % (parameters[DFA_LOCALFILENAME], titleInfo))
+        print(f'Successfully uploaded {parameters[DFA_LOCALFILENAME]} to Drive File {titleInfo}')
       else:
-        print('Successfully created Drive %s %s' % (['Folder', 'File'][result['mimeType'] != MIMETYPE_GA_FOLDER], titleInfo))
+        created_type = ['Folder', 'File'][result['mimeType'] != MIMETYPE_GA_FOLDER]
+        print(f'Successfully created Drive {created_type} {titleInfo}')
   if csv_output:
     writeCSVfile(csv_rows, csv_titles, 'Files', to_drive)
 
@@ -5994,13 +6000,14 @@ def renameLabels(users):
       merge = True
       i += 1
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> rename label"' % sys.argv[i])
+      controlflow.system_error_exit(2, f'{sys.argv[i]} is not a valid argument for "gam <users> rename label"')
   pattern = re.compile(search, re.IGNORECASE)
   for user in users:
     user, gmail = buildGmailGAPIObject(user)
     if not gmail:
       continue
     labels = gapi.call(gmail.users().labels(), 'list', userId=user)
+    print(f'got {len(labels["labels"])} labels')
     for label in labels['labels']:
       if label['type'] == 'system':
         continue
@@ -6009,15 +6016,15 @@ def renameLabels(users):
         try:
           new_label_name = replace % match_result.groups()
         except TypeError:
-          controlflow.system_error_exit(2, 'The number of subfields ({0}) in search "{1}" does not match the number of subfields ({2}) in replace "{3}"'.format(len(match_result.groups()), search, replace.count('%s'), replace))
-        print(' Renaming "%s" to "%s"' % (label['name'], new_label_name))
+          controlflow.system_error_exit(2, f'The number of subfields ({len(match_result.groups())}) in search "{search}" does not match the number of subfields ({replace.count("%s")}) in replace "{replace}"')
+        print(f' Renaming "{label["name"]}" to "{new_label_name}"')
         try:
           gapi.call(gmail.users().labels(), 'patch', soft_errors=True, throw_reasons=[gapi.errors.ErrorReason.ABORTED], id=label['id'], userId=user, body={'name': new_label_name})
         except gapi.errors.GapiAbortedError:
           if merge:
-            print('  Merging %s label to existing %s label' % (label['name'], new_label_name))
+            print(f'  Merging {label["name"]} label to existing {new_label_name} label')
             messages_to_relabel = gapi.get_all_pages(gmail.users().messages(), 'list', 'messages',
-                                                     userId=user, q='label:%s' % cleanLabelQuery(label['name']))
+                                                     userId=user, q=f'label:{cleanLabelQuery(label["name"])}')
             if messages_to_relabel:
               for new_label in labels['labels']:
                 if new_label['name'].lower() == new_label_name.lower():
@@ -10478,26 +10485,26 @@ def print_json(object_name, object_value, spacing=''):
   if object_name in ['kind', 'etag', 'etags']:
     return
   if object_name is not None:
-    sys.stdout.write('%s%s: ' % (spacing, object_name))
+    sys.stdout.write(f'{spacing}{object_name}: ')
   if isinstance(object_value, list):
     if len(object_value) == 1 and isinstance(object_value[0], (str, int, bool)):
-      sys.stdout.write('%s\n' % object_value[0])
+      sys.stdout.write(f'{object_value[0]}\n')
       return
     if object_name is not None:
       sys.stdout.write('\n')
     for a_value in object_value:
       if isinstance(a_value, (str, int, bool)):
-        sys.stdout.write(' %s%s\n' % (spacing, a_value))
+        sys.stdout.write(f' {spacing}{a_value}\n')
       else:
-        print_json(None, a_value, ' %s' % spacing)
+        print_json(None, a_value, f' {spacing}')
   elif isinstance(object_value, dict):
     print()
     if object_name is not None:
       sys.stdout.write('\n')
     for another_object in object_value:
-      print_json(another_object, object_value[another_object], ' %s' % spacing)
+      print_json(another_object, object_value[another_object], f' {spacing}')
   else:
-    sys.stdout.write('%s\n' % (object_value))
+    sys.stdout.write(f'{object_value}\n')
 
 def doSiteVerifyShow():
   verif = buildGAPIObject('siteVerification')
@@ -10576,7 +10583,7 @@ def doSiteVerifyAttempt():
         query_params['type'] = 'txt'
       full_url = base_url + urlencode(query_params)
       (_, c) = simplehttp.request(full_url, 'GET')
-      result = json.loads(c.decode(UTF8))
+      result = json.loads(c)
       status = result['Status']
       if status == 0 and 'Answer' in result:
         answers = result['Answer']
@@ -13126,29 +13133,30 @@ def OAuthInfo():
       show_secret = True
       i += 1
     else:
-      controlflow.system_error_exit(3, '%s is not a valid argument to "gam oauth info"' % sys.argv[i])
+      controlflow.system_error_exit(3, f'{sys.argv[i]} is not a valid argument to "gam oauth info"')
   if not access_token and not id_token:
     credentials = getValidOauth2TxtCredentials()
     access_token = credentials.token
-    print("\nOAuth File: %s" % GC_Values[GC_OAUTH2_TXT])
+    print(f'\nOAuth File: {GC_Values[GC_OAUTH2_TXT]}')
   oa2 = buildGAPIObject('oauth2')
   token_info = gapi.call(oa2, 'tokeninfo', access_token=access_token, id_token=id_token)
   if 'issued_to' in token_info:
-    print('Client ID: %s' % token_info['issued_to'])
+    print(f'Client ID: {token_info["issued_to"]}')
   if credentials is not None and show_secret:
-    print("Secret: %s" % credentials.client_secret)
+    print(f'Secret: {credentials.client_secret}')
   if 'scope' in token_info:
     scopes = token_info['scope'].split(' ')
-    print('Scopes (%s):' % len(scopes))
+    print(f'Scopes ({len(scopes)})')
     for scope in sorted(scopes):
-      print('  %s' % scope)
+      print(f'  {scope}')
   if 'email' in token_info:
-    print('G Suite Admin: %s' % token_info['email'])
+    print(f'G Suite Admin: {token_info["email"]}')
   if 'expires_in' in token_info:
-    print('Expires: %s' % (datetime.datetime.now()+datetime.timedelta(seconds=token_info['expires_in'])).isoformat())
+    expires = (datetime.datetime.now() + datetime.timedelta(seconds=token_info['expires_in'])).isoformat()
+    print(f'Expires: {expires}')
   for key, value in token_info.items():
     if key not in ['issued_to', 'scope', 'email', 'expires_in']:
-      print('%s: %s' % (key, value))
+        print(f'{key}: {value}')
 
 def doDeleteOAuth():
   lock_file = '%s.lock' % GC_Values[GC_OAUTH2_TXT]
@@ -13159,7 +13167,7 @@ def doDeleteOAuth():
       return
     simplehttp = transport.create_http()
     params = {'token': credentials.refresh_token}
-    revoke_uri = 'https://accounts.google.com/o/oauth2/revoke?%s' % urlencode(params)
+    revoke_uri = f'https://accounts.google.com/o/oauth2/revoke?{urlencode(params)}'
     sys.stderr.write('This OAuth token will self-destruct in 3...')
     sys.stderr.flush()
     time.sleep(1)
@@ -13192,7 +13200,7 @@ def writeCredentials(creds):
     }
   expected_iss = ['https://accounts.google.com', 'accounts.google.com']
   if _getValueFromOAuth('iss', creds) not in expected_iss:
-    controlflow.system_error_exit(13, 'Wrong OAuth 2.0 credentials issuer. Got %s, expected one of %s' % (_getValueFromOAuth('iss', creds), ', '.join(expected_iss)))
+    controlflow.system_error_exit(13, f'Wrong OAuth 2.0 credentials issuer. Got {_getValueFromOAuth("iss", creds)} expected one of {", ".join(expected_iss)}')
   creds_data['decoded_id_token'] = GC_Values[GC_DECODED_ID_TOKEN]
   data = json.dumps(creds_data, indent=2, sort_keys=True)
   fileutils.write_file(GC_Values[GC_OAUTH2_TXT], data)
@@ -13210,7 +13218,7 @@ def doRequestOAuth(login_hint=None):
     creds = _run_oauth_flow(client_id, client_secret, scopes, 'offline', login_hint)
     writeCredentials(creds)
   else:
-    print('It looks like you\'ve already authorized GAM. Refusing to overwrite existing file:\n\n%s' % GC_Values[GC_OAUTH2_TXT])
+    print(f'It looks like you\'ve already authorized GAM. Refusing to overwrite existing file:\n\n{GC_Values[GC_OAUTH2_TXT]}')
 
 def getOAuthClientIDAndSecret():
   """Retrieves the OAuth client ID and client secret from JSON."""
@@ -13230,8 +13238,8 @@ gam create project
     client_id = re.sub(r'\.apps\.googleusercontent\.com$', '', client_id)
     client_secret = cs_json['installed']['client_secret']
   except (ValueError, IndexError, KeyError):
-    controlflow.system_error_exit(3, 'the format of your client secrets file:\n\n%s\n\n'
-                                  'is incorrect. Please recreate the file.' % filename)
+    controlflow.system_error_exit(3, f'the format of your client secrets file:\n\n{filename}\n\n'
+                                  'is incorrect. Please recreate the file.')
   return (client_id, client_secret)
 
 OAUTH2_SCOPES = [
@@ -13444,10 +13452,10 @@ class ScopeMenuOption():
     if self.supports_restriction(restriction):
       self._restriction = restriction
     else:
-      error = 'Scope does not support a %s restriction.' % restriction
+      error = f'Scope does not support a {restriction} restriction.'
       if self.supported_restrictions is not None:
         restriction_list = ', '.join(self.supported_restrictions)
-        error = error + (' Supported restrictions are: %s' % restriction_list)
+        error = error + (f' Supported restrictions are: {restriction_list}')
       raise ValueError(error)
 
   def unrestrict(self):
@@ -13463,7 +13471,7 @@ class ScopeMenuOption():
     effective_scopes = []
     for scope in self.scopes:
       if self.is_restricted:
-        scope = '%s.%s' % (scope, self._restriction)
+        scope = f'{scope}.{self._restriction}'
       effective_scopes.append(scope)
     return effective_scopes
 
@@ -13614,15 +13622,12 @@ Append an 'r' to grant read-only access or an 'a' to grant action-only access.
       else:
         indicator = SELECTION_INDICATOR['ALL_SELECTED']
 
-    item_description = [
-      '[%s]' % indicator,
-      '%2d)' % option_number,
-      scope_option.description,
-      ]
+    item_description = [f'[{indicator}]', f'{option_number:2d})',
+      scope_option.description,]
 
     if scope_option.supported_restrictions:
-      item_description.append(
-        '(supports %s)' % ' and '.join(scope_option.supported_restrictions))
+      restrictions = ' and '.join(scope_option.supported_restrictions)
+      item_description.append(f'(supports {restrictions})')
 
     if scope_option.is_required:
       item_description.append('[required]')
@@ -13713,7 +13718,7 @@ Append an 'r' to grant read-only access or an 'a' to grant action-only access.
       # to the indices in the list of scopes.
       if scope_number < 0 or scope_number > len(self._options) - 1:
         raise ScopeSelectionMenu.MenuChoiceError(
-          'Invalid scope number "%d"' % scope_number)
+          f'Invalid scope number "{scope_number}"')
       selected_option = self._options[scope_number]
 
       # Find the restriction that the user intended to apply.
@@ -13721,8 +13726,7 @@ Append an 'r' to grant read-only access or an 'a' to grant action-only access.
         matching_restrictions = [r for r in selected_option.supported_restrictions if r.startswith(restriction_command)]
         if not matching_restrictions:
           raise ScopeSelectionMenu.MenuChoiceError(
-            'Scope "%s" does not support "%s" mode!' % (
-              selected_option.description, restriction_command))
+            f'Scope "{selected_option.description}" does not support "{restriction_command}" mode!')
         restriction = matching_restrictions[0]
       else:
         restriction = None
@@ -13741,7 +13745,7 @@ Append an 'r' to grant read-only access or an 'a' to grant action-only access.
       raise ScopeSelectionMenu.UserRequestedExitException()
     else:
       raise ScopeSelectionMenu.MenuChoiceError(
-        'Invalid input "%s"' % user_input)
+        f'Invalid input "{user_input}"')
 
     return True
 
@@ -13760,8 +13764,7 @@ Append an 'r' to grant read-only access or an 'a' to grant action-only access.
     """
     if option.is_required and (not selected or selected is None):
       raise ScopeSelectionMenu.MenuChoiceError(
-        'Scope "%s" is required and cannot be unselected!' %
-        option.description)
+        f'Scope "{option.description}" is required and cannot be unselected!')
     if selected and not option.is_selected:
       # Make sure we're not about to exceed the maximum number of scopes
       # authorized on a single token.
@@ -13770,9 +13773,9 @@ Append an 'r' to grant read-only access or an 'a' to grant action-only access.
       expected_num_scopes = num_scopes_to_add + num_selected_scopes
       if expected_num_scopes > ScopeSelectionMenu.MAXIMUM_NUM_SCOPES:
         raise ScopeSelectionMenu.MenuChoiceError(
-          'Too many scopes selected (%d). Maximum is %d. Please remove some '
-          'scopes and try again.' % (
-            expected_num_scopes, ScopeSelectionMenu.MAXIMUM_NUM_SCOPES))
+          f'Too many scopes selected ({expected_num_scopes}). Maximum is '
+          f'{ScopeSelectionMenu.MAXIMUM_NUM_SCOPES}.Please remove some scopes '
+          'and try again.')
 
     if restriction is None:
       if selected is None:
@@ -13785,8 +13788,7 @@ Append an 'r' to grant read-only access or an 'a' to grant action-only access.
         option.select(restriction)
       else:
         raise ScopeSelectionMenu.MenuChoiceError(
-          'Scope "%s" does not support %s mode!' % (
-            option.description, restriction))
+          f'Scope "{option.description}" does not support {restriction} mode!')
 
 def init_gam_worker():
   signal.signal(signal.SIGINT, signal.SIG_IGN)
@@ -14717,6 +14719,6 @@ if __name__ == "__main__":
     # to break parallel operations with errors about extra -b
     # command line arguments
     mp_set_start_method('fork')
-  if sys.version_info[0] < 3 or sys.version_info[1] < 5:
-    controlflow.system_error_exit(5, 'GAM requires Python 3.5 or newer. You are running %s.%s.%s. Please upgrade your Python version or use one of the binary GAM downloads.' % sys.version_info[:3])
+  if sys.version_info[0] < 3 or sys.version_info[1] < 6:
+    controlflow.system_error_exit(5, f'GAM requires Python 3.6 or newer. You are running %s.%s.%s. Please upgrade your Python version or use one of the binary GAM downloads.' % sys.version_info[:3])
   sys.exit(ProcessGAMCommand(sys.argv))

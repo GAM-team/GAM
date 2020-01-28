@@ -10,11 +10,9 @@ gam_version = '4.97'
 gam_license = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 GAM_URL = 'https://git.io/gam'
-GAM_INFO = 'GAM {0} - {1} / {2} / Python {3}.{4}.{5} {6} / {7} {8} /'.format(gam_version, GAM_URL,
-                                                                             gam_author,
-                                                                             sys.version_info[0], sys.version_info[1],
-                                                                             sys.version_info[2], sys.version_info[3],
-                                                                             platform.platform(), platform.machine())
+GAM_INFO = (f'GAM {gam_version} - {GAM_URL} / {gam_author} / '
+           f'Python {platform.python_version()} {sys.version_info.releaselevel} / '
+           f'{platform.platform()} {platform.machine()}')
 
 GAM_RELEASES = 'https://github.com/jay0lee/GAM/releases'
 GAM_WIKI = 'https://github.com/jay0lee/GAM/wiki'
