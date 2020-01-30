@@ -20,6 +20,40 @@ def system_error_exit(return_code, message):
   sys.exit(return_code)
 
 
+def invalid_argument_exit(argument, command):
+  '''Indicate that the argument is not valid for the command.
+
+  Args:
+    argument: the invalid agrument
+    command: the base GAM command
+  '''
+  system_error_exit(
+      2,
+      f'{argument} is not a valid argument for "{command}"')
+
+def missing_argument_exit(argument, command):
+  '''Indicate that the argument is missing for the command.
+
+  Args:
+    argument: the missingagrument
+    command: the base GAM command
+  '''
+  system_error_exit(
+      2,
+      f'missing argument {argument} for "{command}"')
+
+def expected_argument_exit(name, expected, argument):
+  '''Indicate that the argument does not have an expected value for the command.
+
+  Args:
+    name: the field name
+    expected: the expected values
+    argument: the invalid argument
+  '''
+  system_error_exit(
+      2,
+      f'{name} must be one of {expected}; got {argument}')
+
 def csv_field_error_exit(field_name, field_names):
   """Raises a system exit when a CSV field is malformed.
 
