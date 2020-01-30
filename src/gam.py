@@ -207,7 +207,7 @@ def getLabelColor(color):
     color = tg.group(0)
     if color in LABEL_COLORS:
       return color
-    controlflow.system_error_exit(2, 'A label color must be in the list: {0}; got {1}'.format('|'.join(LABEL_COLORS), color))
+    controlflow.expected_argument_exit("label color", ", ".join(LABEL_COLORS), color)
   controlflow.system_error_exit(2, 'A label color must be # and six hex characters (#012345); got {0}'.format(color))
 
 def integerLimits(minVal, maxVal, item='integer'):
@@ -730,7 +730,7 @@ def doGAMVersion(checkForArgs=True):
         testLocation = sys.argv[i+1]
         i += 2
       else:
-        controlflow.system_error_exit(2, f'{sys.argv[i]} is not a valid argument for "gam version"')
+        controlflow.invalid_argument_exit(sys.argv[i], "gam version")
   if simple:
     sys.stdout.write(gam_version)
     return
@@ -1095,7 +1095,7 @@ def doCheckServiceAccount(users):
       check_scopes = sys.argv[i+1].replace(',', ' ').split()
       i += 2
     else:
-      controlflow.system_error_exit(3, f'{myarg} is not a valid argument for "gam user <email> check serviceaccount"')
+      controlflow.invalid_argument_exit(myarg, "gam user <email> check serviceaccount")
   print('Computer clock status:')
   timeOffset, nicetime = getLocalGoogleTimeOffset()
   if timeOffset < MAX_LOCAL_GOOGLE_TIME_OFFSET:
@@ -1257,7 +1257,7 @@ def showReport():
       to_drive = True
       i += 1
     else:
-      controlflow.system_error_exit(2, f'{sys.argv[i]} is not a valid argument to "gam report"')
+      controlflow.invalid_argument_exit(sys.argv[i], "gam report")
   if report in ['users', 'user']:
     while True:
       try:
@@ -1499,7 +1499,7 @@ def watchGmail(users):
 def addDelegates(users, i):
   if i == 4:
     if sys.argv[i].lower() != 'to':
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> delegate", expected to' % sys.argv[i])
+      controlflow.missing_argument_exit("to", "gam <users> delegate")
     i += 1
   delegate = normalizeEmailAddressOrUID(sys.argv[i], noUid=True)
   i = 0
@@ -1532,7 +1532,7 @@ def printShowDelegates(users, csvFormat):
       todrive = True
       i += 1
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> show delegates"' % sys.argv[i])
+      controlflow.invalid_argument_exit(sys.argv[i], "gam <users> show delegates")
   count = len(users)
   i = 1
   for user in users:
@@ -1590,7 +1590,7 @@ def doAddCourseParticipant():
     gapi.call(croom.courses().aliases(), 'create', courseId=courseId, body={'alias': new_id})
     print('Added %s as an alias of course %s' % (removeCourseIdScope(new_id), noScopeCourseId))
   else:
-    controlflow.system_error_exit(2, '%s is not a valid argument to "gam course ID add"' % participant_type)
+    controlflow.invalid_argument_exit(participant_type, "gam course ID add")
 
 def doSyncCourseParticipants():
   courseId = addCourseIdScope(sys.argv[2])
@@ -1633,7 +1633,7 @@ def doDelCourseParticipant():
     gapi.call(croom.courses().aliases(), 'delete', courseId=courseId, alias=remove_id)
     print('Removed %s as an alias of course %s' % (removeCourseIdScope(remove_id), noScopeCourseId))
   else:
-    controlflow.system_error_exit(2, '%s is not a valid argument to "gam course ID delete"' % participant_type)
+    controlflow.invalid_argument_exit(participant_type, "gam course ID delete")
 
 def doDelCourse():
   croom = buildGAPIObject('classroom')
@@ -1644,7 +1644,7 @@ def doDelCourse():
 def _getValidatedState(state, validStates):
   state = state.upper()
   if state not in validStates:
-    controlflow.system_error_exit(2, 'course state must be one of: %s. Got %s' % (', '.join(validStates).lower(), state.lower()))
+    controlflow.expected_argument_exit("course state", ", ".join(validStates).lower(), state.lower())
   return state
 
 def getCourseAttribute(myarg, value, body, croom, function):
@@ -1664,7 +1664,7 @@ def getCourseAttribute(myarg, value, body, croom, function):
     validStates = _getEnumValuesMinusUnspecified(croom._rootDesc['schemas']['Course']['properties']['courseState']['enum'])
     body['courseState'] = _getValidatedState(value, validStates)
   else:
-    controlflow.system_error_exit(2, '%s is not a valid argument to "gam %s course"' % (myarg, function))
+    controlflow.invalid_argument_exit(myarg, f"gam {function} course")
 
 def _getCourseStates(croom, value, courseStates):
   validStates = _getEnumValuesMinusUnspecified(croom._rootDesc['schemas']['Course']['properties']['courseState']['enum'])
@@ -1710,7 +1710,7 @@ def doUpdateDomain():
       body['customerDomain'] = domain_name
       i += 1
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam update domain"' % sys.argv[i])
+      controlflow.invalid_argument_exit(sys.argv[i], "gam update domain")
   gapi.call(cd.customers(), 'update', customerKey=GC_Values[GC_CUSTOMER_ID], body=body)
   print('%s is now the primary domain.' % domain_name)
 
@@ -1820,7 +1820,7 @@ def doUpdateCustomer():
       body['language'] = sys.argv[i+1]
       i += 2
     else:
-      controlflow.system_error_exit(2, f'{myarg} is not a valid argument for "gam update customer"')
+      controlflow.invalid_argument_exit(myarg, "gam update customer")
   if not body:
     controlflow.system_error_exit(2, 'no arguments specified for "gam update customer"')
   gapi.call(cd.customers(), 'patch', customerKey=GC_Values[GC_CUSTOMER_ID], body=body)
@@ -1848,7 +1848,7 @@ def doPrintDomains():
       todrive = True
       i += 1
     else:
-      controlflow.system_error_exit(2, f'{sys.argv[i]} is not a valid argument for "gam print domains".')
+      controlflow.invalid_argument_exit(sys.argv[i], "gam print domains")
   results = gapi.call(cd.domains(), 'list', customer=GC_Values[GC_CUSTOMER_ID])
   for domain in results['domains']:
     domain_attributes = {}
@@ -1891,7 +1891,7 @@ def doPrintDomainAliases():
       todrive = True
       i += 1
     else:
-      controlflow.system_error_exit(2, f'{sys.argv[i]} is not a valid argument for "gam print domainaliases".')
+      controlflow.invalid_argument_exit(sys.argv[i], "gam print domainaliases")
   results = gapi.call(cd.domainAliases(), 'list', customer=GC_Values[GC_CUSTOMER_ID])
   for domainAlias in results['domainAliases']:
     domainAlias_attributes = {}
@@ -1921,7 +1921,7 @@ def doCreateAdmin():
   body['roleId'] = getRoleId(role)
   body['scopeType'] = sys.argv[5].upper()
   if body['scopeType'] not in ['CUSTOMER', 'ORG_UNIT']:
-    controlflow.system_error_exit(3, f'scope type must be customer or org_unit; got {body["scopeType"]}')
+    controlflow.expected_argument_exit("scope type", ", ".join(["customer", "org_unit"]), body["scopeType"])
   if body['scopeType'] == 'ORG_UNIT':
     orgUnit, orgUnitId = getOrgUnitId(sys.argv[6], cd)
     body['orgUnitId'] = orgUnitId[3:]
@@ -1945,7 +1945,7 @@ def doPrintAdminRoles():
       todrive = True
       i += 1
     else:
-      controlflow.system_error_exit(2, f'{sys.argv[i]} is not a valid argument for "gam print adminroles".')
+      controlflow.invalid_argument_exit(sys.argv[i], "gam print adminroles")
   roles = gapi.get_all_pages(cd.roles(), 'list', 'items',
                              customer=GC_Values[GC_CUSTOMER_ID], fields=fields)
   for role in roles:
@@ -1976,7 +1976,7 @@ def doPrintAdmins():
       todrive = True
       i += 1
     else:
-      controlflow.system_error_exit(2, f'{sys.argv[i]} is not a valid argument for "gam print admins".')
+      controlflow.invalid_argument_exit(sys.argv[i], "gam print admins")
   admins = gapi.get_all_pages(cd.roleAssignments(), 'list', 'items',
                               customer=GC_Values[GC_CUSTOMER_ID], userKey=userKey, roleId=roleId, fields=fields)
   for admin in admins:
@@ -2152,7 +2152,7 @@ def doPrintDataTransfers():
       todrive = True
       i += 1
     else:
-      controlflow.system_error_exit(2, f'{sys.argv[i]} is not a valid argument for "gam print transfers"')
+      controlflow.invalid_argument_exit(sys.argv[i], "gam print transfers")
   transfers = gapi.get_all_pages(dt.transfers(), 'list', 'dataTransfers',
                                  customerId=GC_Values[GC_CUSTOMER_ID], status=status,
                                  newOwnerUserId=newOwnerUserId, oldOwnerUserId=oldOwnerUserId)
@@ -2232,7 +2232,7 @@ def doPrintShowGuardians(csvFormat):
       studentIds = getUsersToModify(entity_type=myarg, entity=sys.argv[i+1])
       i += 2
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam %s guardians"' % (sys.argv[i], ['show', 'print'][csvFormat]))
+      controlflow.invalid_argument_exit(sys.argv[i], f"gam {['show', 'print'][csvFormat]} guardians")
   i = 0
   count = len(studentIds)
   for studentId in studentIds:
@@ -2316,7 +2316,7 @@ def doDeleteGuardian():
       invitationsOnly = True
       i += 1
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam delete guardian"' % (sys.argv[i]))
+      controlflow.invalid_argument_exit(sys.argv[i], "gam delete guardian")
   if not invitationsOnly:
     if guardianIdIsEmail:
       try:
@@ -2351,7 +2351,7 @@ def doDeleteGuardian():
   else:
     if _cancelGuardianInvitation(croom, studentId, guardianId):
       return
-  controlflow.system_error_exit(3, '%s is not a guardian of %s and no invitation exists.' % (guardianId, studentId))
+  controlflow.system_error_exit(3, f'{guardianId} is not a guardian of {studentId} and no invitation exists.')
 
 def doCreateCourse():
   croom = buildGAPIObject('classroom')
@@ -2431,7 +2431,7 @@ def doPrintCourses():
         if field != 'id':
           fList.append(COURSE_ARGUMENT_TO_PROPERTY_MAP[field])
       else:
-        controlflow.system_error_exit(2, '%s is not a valid argument for "gam print courses %s"' % (field, myarg))
+        controlflow.invalid_argument_exit(field, f"gam print courses {myarg}")
 
   def _saveParticipants(course, participants, role):
     jcount = len(participants)
@@ -2499,8 +2499,9 @@ def doPrintCourses():
       i += 2
     elif myarg == 'show':
       showMembers = sys.argv[i+1].lower()
-      if showMembers not in ['all', 'students', 'teachers']:
-        controlflow.system_error_exit(2, 'show must be all, students or teachers; got %s' % showMembers)
+      validShows = ['all', 'students', 'teachers']
+      if showMembers not in validShows:
+        controlflow.expected_argument_exit("show", ", ".join(validShows), showMembers)
       i += 2
     elif myarg == 'fields':
       if not fieldsList:
@@ -2515,7 +2516,7 @@ def doPrintCourses():
       cd = buildGAPIObject('directory')
       i += 1
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam print courses"' % sys.argv[i])
+      controlflow.invalid_argument_exit(sys.argv[i], "gam print courses")
   if ownerEmails is not None and fieldsList:
     fieldsList.append('ownerId')
   fields = 'nextPageToken,courses({0})'.format(','.join(set(fieldsList))) if fieldsList else None
@@ -2598,11 +2599,12 @@ def doPrintCourseParticipants():
       i += 1
     elif myarg == 'show':
       showMembers = sys.argv[i+1].lower()
-      if showMembers not in ['all', 'students', 'teachers']:
-        controlflow.system_error_exit(2, 'show must be all, students or teachers; got %s' % showMembers)
+      validShows = ['all', 'students', 'teachers']
+      if showMembers not in validShows:
+        controlflow.expected_argument_exit("show", ", ".join(validShows), showMembers)
       i += 2
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam print course-participants"' % sys.argv[i])
+      controlflow.invalid_argument_exit(sys.argv[i], "gam print course-participants")
   if not courses:
     printGettingAllItems('Courses', None)
     page_message = 'Got %%total_items%% Courses...\n'
@@ -2683,7 +2685,7 @@ def doPrintPrintJobs():
     elif myarg == 'orderby':
       sortorder = sys.argv[i+1].lower().replace('_', '')
       if sortorder not in PRINTJOB_ASCENDINGORDER_MAP:
-        controlflow.system_error_exit(2, 'orderby must be one of %s; got %s' % (', '.join(PRINTJOB_ASCENDINGORDER_MAP), sortorder))
+        controlflow.expected_argument_exit("orderby", ", ".join(PRINTJOB_ASCENDINGORDER_MAP), sortorder)
       sortorder = PRINTJOB_ASCENDINGORDER_MAP[sortorder]
       i += 2
     elif myarg in ['printer', 'printerid']:
@@ -2696,7 +2698,7 @@ def doPrintPrintJobs():
       jobLimit = getInteger(sys.argv[i+1], myarg, minVal=0)
       i += 2
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam print printjobs"' % sys.argv[i])
+      controlflow.invalid_argument_exit(sys.argv[i], "gam print printjobs")
   if sortorder and descending:
     sortorder = PRINTJOB_DESCENDINGORDER_MAP[sortorder]
   if printerid:
@@ -2778,7 +2780,7 @@ def doPrintPrinters():
       todrive = True
       i += 1
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam print printers"' % sys.argv[i])
+      controlflow.invalid_argument_exit(sys.argv[i], "gam print printers")
   for query in queries:
     printers = gapi.call(cp.printers(), 'list', q=query, type=printer_type, connection_status=connection_status, extra_fields=extra_fields)
     checkCloudPrintResult(printers)
@@ -2813,7 +2815,7 @@ def changeCalendarAttendees(users):
       allevents = True
       i += 1
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> update calattendees"' % sys.argv[i])
+      controlflow.invalid_argument_exit(sys.argv[i], "gam <users> update calattendees")
   attendee_map = {}
   f = fileutils.open_file(csv_file)
   csvFile = csv.reader(f)
@@ -2921,7 +2923,7 @@ def getCalendarAttributes(i, body, function):
       method = sys.argv[i+1].lower()
       if method not in CLEAR_NONE_ARGUMENT:
         if method not in CALENDAR_REMINDER_METHODS:
-          controlflow.system_error_exit(2, 'Method must be one of %s; got %s' % (', '.join(CALENDAR_REMINDER_METHODS+CLEAR_NONE_ARGUMENT), method))
+          controlflow.expected_argument_exit("Method", ", ".join(CALENDAR_REMINDER_METHODS+CLEAR_NONE_ARGUMENT), method)
         minutes = getInteger(sys.argv[i+2], myarg, minVal=0, maxVal=CALENDAR_REMINDER_MAX_MINUTES)
         body['defaultReminders'].append({'method': method, 'minutes': minutes})
         i += 3
@@ -2932,16 +2934,16 @@ def getCalendarAttributes(i, body, function):
       method = sys.argv[i+1].lower()
       if method not in CLEAR_NONE_ARGUMENT:
         if method not in CALENDAR_NOTIFICATION_METHODS:
-          controlflow.system_error_exit(2, 'Method must be one of %s; got %s' % (', '.join(CALENDAR_NOTIFICATION_METHODS+CLEAR_NONE_ARGUMENT), method))
+          controlflow.expected_argument_exit("Method", ", ".join(CALENDAR_NOTIFICATION_METHODS+CLEAR_NONE_ARGUMENT), method)
         eventType = sys.argv[i+2].lower()
         if eventType not in CALENDAR_NOTIFICATION_TYPES_MAP:
-          controlflow.system_error_exit(2, 'Event must be one of %s; got %s' % (', '.join(CALENDAR_NOTIFICATION_TYPES_MAP), eventType))
+          controlflow.expected_argument_exit("Event", ", ".join(CALENDAR_NOTIFICATION_TYPES_MAP), eventType)
         body['notificationSettings']['notifications'].append({'method': method, 'type': CALENDAR_NOTIFICATION_TYPES_MAP[eventType]})
         i += 3
       else:
         i += 2
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam %s calendar"' % (sys.argv[i], function))
+      controlflow.invalid_argument_exit(sys.argv[i], f"gam {function} calendar")
   return colorRgbFormat
 
 def addCalendar(users):
@@ -3113,7 +3115,7 @@ def doPrintJobFetch():
     elif myarg == 'orderby':
       sortorder = sys.argv[i+1].lower().replace('_', '')
       if sortorder not in PRINTJOB_ASCENDINGORDER_MAP:
-        controlflow.system_error_exit(2, 'orderby must be one of %s; got %s' % (', '.join(PRINTJOB_ASCENDINGORDER_MAP), sortorder))
+        controlflow.expected_argument_exit("orderby", ", ".join(PRINTJOB_ASCENDINGORDER_MAP), sortorder)
       sortorder = PRINTJOB_ASCENDINGORDER_MAP[sortorder]
       i += 2
     elif myarg in ['owner', 'user']:
@@ -3131,7 +3133,7 @@ def doPrintJobFetch():
         os.makedirs(targetFolder)
       i += 2
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam printjobs fetch"' % sys.argv[i])
+      controlflow.invalid_argument_exit(sys.argv[i], "gam printjobs fetch")
   if sortorder and descending:
     sortorder = PRINTJOB_DESCENDINGORDER_MAP[sortorder]
   if printerid:
@@ -3207,7 +3209,7 @@ def doGetPrinterInfo():
       everything = True
       i += 1
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam info printer"' % sys.argv[i])
+      controlflow.invalid_argument_exit(sys.argv[i], "gam info printer")
   result = gapi.call(cp.printers(), 'get', printerid=printerid)
   checkCloudPrintResult(result)
   printer_info = result['printers'][0]
@@ -3239,7 +3241,7 @@ def doUpdatePrinter():
         arg_in_item = True
         break
     if not arg_in_item:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam update printer"' % sys.argv[i])
+      controlflow.invalid_argument_exit(sys.argv[i], "gam update printer")
   result = gapi.call(cp.printers(), 'update', printerid=printerid, **kwargs)
   checkCloudPrintResult(result)
   print('Updated printer %s' % printerid)
@@ -3311,7 +3313,7 @@ def doPrintJobSubmit():
       form_fields['title'] = sys.argv[i+1]
       i += 2
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam printer ... print"' % sys.argv[i])
+      controlflow.invalid_argument_exit(sys.argv[i], "gam printer ... print")
   form_files = {}
   if content[:4] == 'http':
     form_fields['content'] = content
@@ -3381,7 +3383,7 @@ def doCalendarPrintShowACLs(csvFormat):
       toDrive = True
       i += 1
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam calendar <email> %s"' % (sys.argv[i], ['showacl', 'printacl'][csvFormat]))
+      controlflow.invalid_argument_exit(sys.argv[i], f"gam calendar <email> {['showacl', 'printacl'][csvFormat]}")
   acls = gapi.get_all_pages(cal.acl(), 'list', 'items', calendarId=calendarId)
   i = 0
   if csvFormat:
@@ -3438,7 +3440,7 @@ def doCalendarAddACL(function):
     return
   myarg = sys.argv[4].lower().replace('_', '')
   if myarg not in CALENDAR_ACL_ROLES_MAP:
-    controlflow.system_error_exit(2, 'Role must be one of %s; got %s' % (', '.join(sorted(CALENDAR_ACL_ROLES_MAP)), myarg))
+    controlflow.expected_argument_exit("Role", ", ".join(CALENDAR_ACL_ROLES_MAP), myarg)
   body = {'role': CALENDAR_ACL_ROLES_MAP[myarg]}
   i = _getCalendarACLScope(5, body)
   sendNotifications = True
@@ -3448,7 +3450,7 @@ def doCalendarAddACL(function):
       sendNotifications = getBoolean(sys.argv[i+1], myarg)
       i += 2
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam calendar <email> %s"' % (sys.argv[i], function.lower()))
+      controlflow.invalid_argument_exit(sys.argv[i], f"gam calendar <email> {function.lower()}")
   print('Calendar: {0}, {1} ACL: {2}'.format(calendarId, function, formatACLRule(body)))
   gapi.call(cal.acl(), 'insert', calendarId=calendarId, body=body, sendNotifications=sendNotifications)
 
@@ -3508,7 +3510,7 @@ def doCalendarPrintEvents():
       toDrive = True
       i += 1
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam calendar <email> printevents"' % sys.argv[i])
+      controlflow.invalid_argument_exit(sys.argv[i], "gam calendar <email> printevents")
   page_message = 'Got %%%%total_items%%%% events for %s' % calendarId
   results = gapi.get_all_pages(cal.events(), 'list', 'items', page_message=page_message,
                                calendarId=calendarId, q=q, showDeleted=showDeleted,
@@ -3533,7 +3535,7 @@ def getSendUpdates(myarg, i, cal):
       sendUpdatesMap[val.lower()] = val
     sendUpdates = sendUpdatesMap.get(sys.argv[i+1].lower(), False)
     if not sendUpdates:
-      controlflow.system_error_exit(3, 'sendupdates must be one of: %s. Got %s' % (', '.join(sendUpdatesMap), sys.argv[i+1]))
+      controlflow.expected_argument_exit("sendupdates", ", ".join(sendUpdatesMap), sys.argv[i+1])
     i += 2
   return (sendUpdates, i)
 
@@ -3561,7 +3563,7 @@ def doCalendarMoveOrDeleteEvent(moveOrDelete):
       kwargs['destination'] = sys.argv[i+1]
       i += 2
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam calendar <email> %sevent"' % (sys.argv[i], moveOrDelete))
+      controlflow.invalid_argument_exit(sys.argv[i], f"gam calendar <email> {moveOrDelete}event")
   if doit:
     print(' going to %s eventId %s' % (moveOrDelete, eventId))
     gapi.call(cal.events(), moveOrDelete, calendarId=calendarId, eventId=eventId, sendUpdates=sendUpdates, **kwargs)
@@ -3626,10 +3628,11 @@ def doCalendarAddEvent():
       body['transparency'] = 'transparent'
       i += 1
     elif myarg == 'visibility':
-      if sys.argv[i+1].lower() in ['default', 'public', 'private']:
+      validVisibility = ['default', 'public', 'private']
+      if sys.argv[i+1].lower() in validVisibility:
         body['visibility'] = sys.argv[i+1].lower()
       else:
-        controlflow.system_error_exit(2, 'visibility must be one of default, public, private; got %s' % sys.argv[i+1])
+        controlflow.expected_argument_exit("visibility", ", ".join(validVisibility), sys.argv[i+1])
       i += 2
     elif myarg == 'tentative':
       body['status'] = 'tentative'
@@ -3666,7 +3669,7 @@ def doCalendarAddEvent():
       body['colorId'] = getInteger(sys.argv[i+1], myarg, CALENDAR_EVENT_MIN_COLOR_INDEX, CALENDAR_EVENT_MAX_COLOR_INDEX)
       i += 2
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam calendar <email> addevent"' % sys.argv[i])
+      controlflow.invalid_argument_exit(sys.argv[i], "gam calendar <email> addevent")
   if ('recurrence' in body) and (('start' in body) or ('end' in body)):
     if not timeZone:
       timeZone = gapi.call(cal.calendars(), 'get', calendarId=calendarId, fields='timeZone')['timeZone']
@@ -3697,7 +3700,7 @@ def doCalendarModifySettings():
       body['timeZone'] = sys.argv[i+1]
       i += 2
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam calendar <email> modify"' % sys.argv[i])
+      controlflow.invalid_argument_exit(sys.argv[i], "gam calendar <email> modify")
   gapi.call(cal.calendars(), 'patch', calendarId=calendarId, body=body)
 
 def doProfile(users):
@@ -3708,7 +3711,7 @@ def doProfile(users):
   elif myarg in ['unshare', 'unshared']:
     body = {'includeInGlobalAddressList': False}
   else:
-    controlflow.system_error_exit(2, 'value for "gam <users> profile" must be true or false; got %s' % sys.argv[4])
+    controlflow.expected_argument_exit('value for "gam <users> profile"', ", ".join(["share", "shared", "unshare", "unshared"]), sys.argv[4])
   i = 0
   count = len(users)
   for user in users:
@@ -3771,7 +3774,7 @@ def getPhoto(users):
       showPhotoData = False
       i += 1
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> get photo"' % sys.argv[i])
+      controlflow.invalid_argument_exit(sys.argv[i], "gam <users> get photo")
   i = 0
   count = len(users)
   for user in users:
@@ -3851,7 +3854,7 @@ def printShowCalendars(users, csvFormat):
       todrive = True
       i += 1
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> %s calendars"' %  (myarg, ['show', 'print'][csvFormat]))
+      controlflow.invalid_argument_exit(myarg, f"gam <users> {['show', 'print'][csvFormat]} calendars")
   i = 0
   count = len(users)
   for user in users:
@@ -3905,7 +3908,7 @@ def printDriveSettings(users):
       todrive = True
       i += 1
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> show drivesettings"' % sys.argv[i])
+      controlflow.invalid_argument_exit(sys.argv[i], "gam <users> show drivesettings")
   dont_show = ['kind', 'exportFormats', 'importFormats', 'maxUploadSize', 'maxImportSizes', 'user', 'appInstalled']
   csvRows = []
   titles = ['email',]
@@ -3968,7 +3971,7 @@ def printDriveActivity(users):
       todrive = True
       i += 1
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> show driveactivity"' % sys.argv[i])
+      controlflow.invalid_argument_exit(sys.argv[i], "gam <users> show driveactivity")
   for user in users:
     user, activity = buildActivityGAPIObject(user)
     if not activity:
@@ -4007,7 +4010,7 @@ def showDriveFileACL(users):
       useDomainAdminAccess = True
       i += 1
     else:
-      controlflow.system_error_exit(3, '%s is not a valid argument to "gam <users> show drivefileacl".' % sys.argv[i])
+      controlflow.invalid_argument_exit(sys.argv[i], "gam <users> show drivefileacl")
   for user in users:
     user, drive = buildDrive3GAPIObject(user)
     if not drive:
@@ -4047,7 +4050,7 @@ def delDriveFileACL(users):
       useDomainAdminAccess = True
       i += 1
     else:
-      controlflow.system_error_exit(3, '%s is not a valid argument to "gam <users> delete drivefileacl".' % sys.argv[i])
+      controlflow.invalid_argument_exit(sys.argv[i], "gam <users> delete drivefileacl")
   for user in users:
     user, drive = buildDrive3GAPIObject(user)
     if not drive:
@@ -4085,7 +4088,7 @@ def addDriveFileACL(users):
     body['domain'] = sys.argv[7]
     i = 8
   else:
-    controlflow.system_error_exit(5, 'permission type must be user, group domain or anyone; got %s' % body['type'])
+    controlflow.expected_argument_exit("permission type", ", ".join(["user", "group", "domain", "anyone"]), body['type'])
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace('_', '')
     if myarg == 'withlink':
@@ -4097,7 +4100,7 @@ def addDriveFileACL(users):
     elif myarg == 'role':
       role = sys.argv[i+1].lower()
       if role not in DRIVEFILE_ACL_ROLES_MAP:
-        controlflow.system_error_exit(2, 'role must be {0}; got {1}'.format(', '.join(DRIVEFILE_ACL_ROLES_MAP), role))
+        controlflow.expected_argument_exit("role", ", ".join(DRIVEFILE_ACL_ROLES_MAP), role)
       body['role'] = DRIVEFILE_ACL_ROLES_MAP[role]
       if body['role'] == 'owner':
         sendNotificationEmail = True
@@ -4117,7 +4120,7 @@ def addDriveFileACL(users):
       useDomainAdminAccess = True
       i += 1
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> add drivefileacl"' % sys.argv[i])
+      controlflow.invalid_argument_exit(sys.argv[i], "gam <users> add drivefileacl")
   for user in users:
     user, drive = buildDrive3GAPIObject(user)
     if not drive:
@@ -4145,7 +4148,7 @@ def updateDriveFileACL(users):
     elif myarg == 'role':
       role = sys.argv[i+1].lower()
       if role not in DRIVEFILE_ACL_ROLES_MAP:
-        controlflow.system_error_exit(2, 'role must be {0}; got {1}'.format(', '.join(DRIVEFILE_ACL_ROLES_MAP), role))
+        controlflow.expected_argument_exit("role", ", ".join(DRIVEFILE_ACL_ROLES_MAP), role)
       body['role'] = DRIVEFILE_ACL_ROLES_MAP[role]
       if body['role'] == 'owner':
         transferOwnership = True
@@ -4154,7 +4157,7 @@ def updateDriveFileACL(users):
       useDomainAdminAccess = True
       i += 1
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> update drivefileacl"' % sys.argv[i])
+      controlflow.invalid_argument_exit(sys.argv[i], "gam <users> update drivefileacl")
   for user in users:
     user, drive = buildDrive3GAPIObject(user)
     if not drive:
@@ -4206,7 +4209,7 @@ def printDriveFileList(users):
         else:
           orderByList.append('{0} desc'.format(fieldName))
       else:
-        controlflow.system_error_exit(2, 'orderby must be one of {0}; got {1}'.format(', '.join(sorted(DRIVEFILE_ORDERBY_CHOICES_MAP)), fieldName))
+        controlflow.expected_argument_exit("orderby", ", ".join(sorted(DRIVEFILE_ORDERBY_CHOICES_MAP)), fieldName)
     elif myarg == 'query':
       query += ' and %s' % sys.argv[i+1]
       i += 2
@@ -4227,7 +4230,7 @@ def printDriveFileList(users):
       addFieldToCSVfile(myarg, {myarg: [DRIVEFILE_LABEL_CHOICES_MAP[myarg]]}, labelsList, fieldsTitles, titles)
       i += 1
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> show filelist"' % myarg)
+      controlflow.invalid_argument_exit(myarg, "gam <users> show filelist")
   if fieldsList or labelsList:
     fields = 'nextPageToken,items('
     if fieldsList:
@@ -4331,7 +4334,7 @@ def getFileIdFromAlternateLink(altLink):
       loc = fileId.find('&')
       if loc != -1:
         return fileId[:loc]
-  controlflow.system_error_exit(2, '%s is not a valid Drive File alternateLink' % altLink)
+  controlflow.system_error_exit(2, f'{altLink} is not a valid Drive File alternateLink')
 
 def deleteDriveFile(users):
   fileIds = sys.argv[5]
@@ -4346,7 +4349,7 @@ def deleteDriveFile(users):
       function = 'untrash'
       i += 1
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> delete drivefile"' % sys.argv[i])
+      controlflow.invalid_argument_exit(sys.argv[i], "gam <users> delete drivefile")
   action = DELETE_DRIVEFILE_FUNCTION_TO_ACTION_MAP[function]
   for user in users:
     user, drive = buildDriveGAPIObject(user)
@@ -4414,9 +4417,9 @@ def showDriveFileTree(users):
         else:
           orderByList.append('{0} desc'.format(fieldName))
       else:
-        controlflow.system_error_exit(2, 'orderby must be one of {0}; got {1}'.format(', '.join(sorted(DRIVEFILE_ORDERBY_CHOICES_MAP)), fieldName))
+        controlflow.expected_argument_exit("orderby", ", ".join(sorted(DRIVEFILE_ORDERBY_CHOICES_MAP)), fieldName)
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> show filetree"' % myarg)
+      controlflow.invalid_argument_exit(myarg, "gam <users> show filetree")
   if orderByList:
     orderBy = ','.join(orderByList)
   else:
@@ -4529,7 +4532,7 @@ def getDriveFileAttribute(i, body, parameters, myarg, update=False):
     if mimeType in MIMETYPE_CHOICES_MAP:
       body['mimeType'] = MIMETYPE_CHOICES_MAP[mimeType]
     else:
-      controlflow.system_error_exit(2, 'mimetype must be one of %s; got %s"' % (', '.join(MIMETYPE_CHOICES_MAP), mimeType))
+      controlflow.expected_argument_exit("mimetype", ", ".join(MIMETYPE_CHOICES_MAP), mimeType)
     i += 2
   elif myarg == 'parentid':
     body.setdefault('parents', [])
@@ -4545,7 +4548,7 @@ def getDriveFileAttribute(i, body, parameters, myarg, update=False):
     body['writersCanShare'] = False
     i += 1
   else:
-    controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> %s drivefile"' % (myarg, ['add', 'update'][update]))
+    controlflow.invalid_argument_exit(myarg, f"gam <users> {['add', 'update'][update]} drivefile")
   return i
 
 def doUpdateDriveFile(users):
@@ -4704,7 +4707,7 @@ def downloadDriveFile(users):
         if exportFormat in DOCUMENT_FORMATS_MAP:
           exportFormats.extend(DOCUMENT_FORMATS_MAP[exportFormat])
         else:
-          controlflow.system_error_exit(2, 'format must be one of {0}; got {1}'.format(', '.join(DOCUMENT_FORMATS_MAP), exportFormat))
+          controlflow.expected_argument_exit("format", ", ".join(DOCUMENT_FORMATS_MAP), exportFormat)
       i += 2
     elif myarg == 'targetfolder':
       targetFolder = os.path.expanduser(sys.argv[i+1])
@@ -4722,7 +4725,7 @@ def downloadDriveFile(users):
       showProgress = True
       i += 1
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> get drivefile"' % sys.argv[i])
+      controlflow.invalid_argument_exit(sys.argv[i], "gam <users> get drivefile")
   if not fileIdSelection['query'] and not fileIdSelection['fileIds']:
     controlflow.system_error_exit(2, 'you need to specify either id, query or drivefilename in order to determine the file(s) to download')
   if fileIdSelection['query'] and fileIdSelection['fileIds']:
@@ -4873,7 +4876,7 @@ def showDriveFileInfo(users):
       labelsList.append(DRIVEFILE_LABEL_CHOICES_MAP[myarg])
       i += 1
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> show fileinfo"' % myarg)
+      controlflow.invalid_argument_exit(myarg, "gam <users> show fileinfo")
   if fieldsList or labelsList:
     fieldsList.append('title')
     fields = ','.join(set(fieldsList))
@@ -4912,7 +4915,7 @@ def transferSecCals(users):
       sendNotifications = getBoolean(sys.argv[i+1], myarg)
       i += 2
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> transfer seccals"' % sys.argv[i])
+      controlflow.invalid_argument_exit(sys.argv[i], "gam <users> transfer seccals")
   if remove_source_user:
     target_user, target_cal = buildCalendarGAPIObject(target_user)
     if not target_cal:
@@ -4942,7 +4945,7 @@ def transferDriveFiles(users):
       remove_source_user = False
       i += 1
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> transfer drive"' % sys.argv[i])
+      controlflow.invalid_argument_exit(sys.argv[i], "gam <users> transfer drive")
   target_user, target_drive = buildDriveGAPIObject(target_user)
   if not target_drive:
     return
@@ -5077,7 +5080,7 @@ def sendOrDropEmail(users, method='send'):
     elif method == 'import' and myarg == 'processforcalendar':
       kwargs['processForCalendar'] = True
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> %semail"' % (sys.argv[i], method))
+      controlflow.invalid_argument_exit(sys.argv[i], f"gam <users> {method}email")
   for user in users:
     send_email(subject, body, recipient, sender, user, method, labels, msgHeaders, kwargs)
 
@@ -5096,16 +5099,16 @@ def doImap(users):
         body['expungeBehavior'] = EMAILSETTINGS_IMAP_EXPUNGE_BEHAVIOR_CHOICES_MAP[opt]
         i += 2
       else:
-        controlflow.system_error_exit(2, 'value for "gam <users> imap expungebehavior" must be one of %s; got %s' % (', '.join(EMAILSETTINGS_IMAP_EXPUNGE_BEHAVIOR_CHOICES_MAP), opt))
+        controlflow.expected_argument_exit("gam <users> imap expungebehavior", ", ".join(EMAILSETTINGS_IMAP_EXPUNGE_BEHAVIOR_CHOICES_MAP), opt)
     elif myarg == 'maxfoldersize':
       opt = sys.argv[i+1].lower()
       if opt in EMAILSETTINGS_IMAP_MAX_FOLDER_SIZE_CHOICES:
         body['maxFolderSize'] = int(opt)
         i += 2
       else:
-        controlflow.system_error_exit(2, 'value for "gam <users> imap maxfoldersize" must be one of %s; got %s' % ('|'.join(EMAILSETTINGS_IMAP_MAX_FOLDER_SIZE_CHOICES), opt))
+        controlflow.expected_argument_exit("gam <users> imap maxfoldersize", "| ".join(EMAILSETTINGS_IMAP_MAX_FOLDER_SIZE_CHOICES), opt)
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> imap"' % myarg)
+      controlflow.invalid_argument_exit(myarg, "gam <users> imap")
   i = 0
   count = len(users)
   for user in users:
@@ -5212,18 +5215,18 @@ def doPop(users):
         body['accessWindow'] = EMAILSETTINGS_POP_ENABLE_FOR_CHOICES_MAP[opt]
         i += 2
       else:
-        controlflow.system_error_exit(2, 'value for "gam <users> pop for" must be one of %s; got %s' % (', '.join(EMAILSETTINGS_POP_ENABLE_FOR_CHOICES_MAP), opt))
+        controlflow.expected_argument_exit("gam <users> pop for", ", ".join(EMAILSETTINGS_POP_ENABLE_FOR_CHOICES_MAP), opt)
     elif myarg == 'action':
       opt = sys.argv[i+1].lower()
       if opt in EMAILSETTINGS_FORWARD_POP_ACTION_CHOICES_MAP:
         body['disposition'] = EMAILSETTINGS_FORWARD_POP_ACTION_CHOICES_MAP[opt]
         i += 2
       else:
-        controlflow.system_error_exit(2, 'value for "gam <users> pop action" must be one of %s; got %s' % (', '.join(EMAILSETTINGS_FORWARD_POP_ACTION_CHOICES_MAP), opt))
+        controlflow.expected_argument_exit("gam <users> pop action", ", ".join(EMAILSETTINGS_FORWARD_POP_ACTION_CHOICES_MAP), opt)
     elif myarg == 'confirm':
       i += 1
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> pop"' % myarg)
+      controlflow.invalid_argument_exit(myarg, "gam <users> pop")
   i = 0
   count = len(users)
   for user in users:
@@ -5327,7 +5330,7 @@ def getSendAsAttributes(i, myarg, body, tagReplacements, command):
     body['treatAsAlias'] = getBoolean(sys.argv[i+1], myarg)
     i += 2
   else:
-    controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> %s"' % (sys.argv[i], command))
+    controlflow.invalid_argument_exit(myarg, f"gam <users> {command}")
   return i
 
 SMTPMSA_PORTS = ['25', '465', '587']
@@ -5367,7 +5370,7 @@ def addUpdateSendAs(users, i, addCmd):
       elif myarg == 'smtpmsa.port':
         value = sys.argv[i+1].lower()
         if value not in SMTPMSA_PORTS:
-          controlflow.system_error_exit(2, '{0} must be {1}; got {2}'.format(myarg, ', '.join(SMTPMSA_PORTS), value))
+          controlflow.expected_argument_exit(myarg, ", ".join(SMTPMSA_PORTS), value)
         smtpMsa['port'] = int(value)
         i += 2
       elif myarg == 'smtpmsa.username':
@@ -5379,11 +5382,11 @@ def addUpdateSendAs(users, i, addCmd):
       elif myarg == 'smtpmsa.securitymode':
         value = sys.argv[i+1].lower()
         if value not in SMTPMSA_SECURITY_MODES:
-          controlflow.system_error_exit(2, '{0} must be {1}; got {2}'.format(myarg, ', '.join(SMTPMSA_SECURITY_MODES), value))
+          controlflow.expected_argument_exit(myarg, ", ".join(SMTPMSA_SECURITY_MODES), value)
         smtpMsa['securityMode'] = value
         i += 2
       else:
-        controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> %s"' % (sys.argv[i], command))
+        controlflow.invalid_argument_exit(sys.argv[i], f"gam <users> {command}")
     else:
       i = getSendAsAttributes(i, myarg, body, tagReplacements, command)
   if signature is not None:
@@ -5439,7 +5442,7 @@ def updateSmime(users):
       make_default = True
       i += 1
     else:
-      controlflow.system_error_exit(3, '%s is not a valid argument to "gam <users> update smime"' % myarg)
+      controlflow.invalid_argument_exit(myarg, "gam <users> update smime")
   if not make_default:
     print('Nothing to update for smime.')
     sys.exit(0)
@@ -5474,7 +5477,7 @@ def deleteSmime(users):
       sendAsEmailBase = sys.argv[i+1]
       i += 2
     else:
-      controlflow.system_error_exit(3, '%s is not a valid argument to "gam <users> delete smime"' % myarg)
+      controlflow.invalid_argument_exit(myarg, "gam <users> delete smime")
   for user in users:
     user, gmail = buildGmailGAPIObject(user)
     if not gmail:
@@ -5509,7 +5512,7 @@ def printShowSmime(users, csvFormat):
       primaryonly = True
       i += 1
     else:
-      controlflow.system_error_exit(3, '%s is not a valid argument for "gam <users> %s smime"' % (myarg, ['show', 'print'][csvFormat]))
+      controlflow.invalid_argument_exit(myarg, f"gam <users> {['show', 'print'][csvFormat]} smime")
   i = 0
   for user in users:
     i += 1
@@ -5552,7 +5555,7 @@ def printShowSendAs(users, csvFormat):
       formatSig = True
       i += 1
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> %s sendas"' %  (myarg, ['show', 'print'][csvFormat]))
+      controlflow.invalid_argument_exit(myarg, f"gam <users> {['show', 'print'][csvFormat]} sendas")
   i = 0
   count = len(users)
   for user in users:
@@ -5603,7 +5606,7 @@ def infoSendAs(users):
       formatSig = True
       i += 1
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> info sendas"' % sys.argv[i])
+      controlflow.invalid_argument_exit(sys.argv[i], "gam <users> info sendas")
   i = 0
   count = len(users)
   for user in users:
@@ -5640,7 +5643,7 @@ def addSmime(users):
       sendAsEmailBase = sys.argv[i+1]
       i += 2
     else:
-      controlflow.system_error_exit(3, '%s is not a valid argument for "gam <users> add smime"' % myarg)
+      controlflow.invalid_argument_exit(myarg, "gam <users> add smime")
   if 'pkcs12' not in body:
     controlflow.system_error_exit(3, 'you must specify a file to upload')
   i = 0
@@ -5655,7 +5658,7 @@ def addSmime(users):
       gapi.call(gmail.users().settings().sendAs().smimeInfo(), 'setDefault', userId='me', sendAsEmail=sendAsEmail, id=result['id'])
     print('Added S/MIME certificate for user %s sendas %s issued by %s' % (user, sendAsEmail, result['issuerCn']))
 
-def getLabelAttributes(i, myarg, body):
+def getLabelAttributes(i, myarg, body, function):
   if myarg == 'labellistvisibility':
     value = sys.argv[i+1].lower().replace('_', '')
     if value == 'hide':
@@ -5665,12 +5668,12 @@ def getLabelAttributes(i, myarg, body):
     elif value == 'showifunread':
       body['labelListVisibility'] = 'labelShowIfUnread'
     else:
-      controlflow.system_error_exit(2, 'label_list_visibility must be one of hide, show, show_if_unread; got %s' % value)
+      controlflow.expected_argument_exit("label_list_visibility", ", ".join(["hide", "show", "show_if_unread"]), value)
     i += 2
   elif myarg == 'messagelistvisibility':
     value = sys.argv[i+1].lower().replace('_', '')
     if value not in ['hide', 'show']:
-      controlflow.system_error_exit(2, 'message_list_visibility must be show or hide; got %s' % value)
+      controlflow.expected_argument_exit("message_list_visibility", ", ".join(["hide", "show"]), value)
     body['messageListVisibility'] = value
     i += 2
   elif myarg == 'backgroundcolor':
@@ -5682,7 +5685,7 @@ def getLabelAttributes(i, myarg, body):
     body['color']['textColor'] = getLabelColor(sys.argv[i+1])
     i += 2
   else:
-    controlflow.system_error_exit(2, '%s is not a valid argument for this command.' % myarg)
+    controlflow.invalid_argument_exit(myarg, f"gam <users> {function} labels")
   return i
 
 def checkLabelColor(body):
@@ -5700,7 +5703,7 @@ def doLabel(users, i):
   body = {'name': label}
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace('_', '')
-    i = getLabelAttributes(i, myarg, body)
+    i = getLabelAttributes(i, myarg, body, "create")
   checkLabelColor(body)
   i = 0
   count = len(users)
@@ -5786,7 +5789,7 @@ def doProcessMessagesOrThreads(users, function, unit='messages'):
       body['removeLabelIds'].append(sys.argv[i+1])
       i += 2
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> %s %s"' % (sys.argv[i], function, unit))
+      controlflow.invalid_argument_exit(sys.argv[i], f"gam <users> {function} {unit}")
   if not query:
     controlflow.system_error_exit(2, 'No query specified. You must specify some query!')
   action = PROCESS_MESSAGE_FUNCTION_TO_ACTION_MAP[function]
@@ -5895,7 +5898,7 @@ def showLabels(users):
       showCounts = True
       i += 1
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> show labels"' % sys.argv[i])
+      controlflow.invalid_argument_exit(sys.argv[i], "gam <users> show labels")
   for user in users:
     user, gmail = buildGmailGAPIObject(user)
     if not gmail:
@@ -5927,7 +5930,7 @@ def showGmailProfile(users):
       todrive = True
       i += 1
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for gam <users> show gmailprofile' % sys.argv[i])
+      controlflow.invalid_argument_exit(sys.argv[i], "gam <users> show gmailprofile")
   csvRows = []
   titles = ['emailAddress']
   i = 0
@@ -5963,7 +5966,7 @@ def updateLabels(users):
       body['name'] = sys.argv[i+1]
       i += 2
     else:
-      i = getLabelAttributes(i, myarg, body)
+      i = getLabelAttributes(i, myarg, body, "update")
   checkLabelColor(body)
   for user in users:
     user, gmail = buildGmailGAPIObject(user)
@@ -6000,7 +6003,7 @@ def renameLabels(users):
       merge = True
       i += 1
     else:
-      controlflow.system_error_exit(2, f'{sys.argv[i]} is not a valid argument for "gam <users> rename label"')
+      controlflow.invalid_argument_exit(sys.argv[i], "gam <users> rename label")
   pattern = re.compile(search, re.IGNORECASE)
   for user in users:
     user, gmail = buildGmailGAPIObject(user)
@@ -6188,7 +6191,7 @@ def addFilter(users, i):
         body['action']['forward'] = sys.argv[i+1]
         i += 2
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> filter"' % sys.argv[i])
+      controlflow.invalid_argument_exit(sys.argv[i], "gam <users> filter")
   if 'criteria' not in body:
     controlflow.system_error_exit(2, 'you must specify a crtieria <{0}> for "gam <users> filter"'.format('|'.join(FILTER_CRITERIA_CHOICES_MAP)))
   if 'action' not in body:
@@ -6252,7 +6255,7 @@ def printShowFilters(users, csvFormat):
       todrive = True
       i += 1
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> %s filter"' % (myarg, ['show', 'print'][csvFormat]))
+      controlflow.invalid_argument_exit(myarg, f"gam <users> {['show', 'print'][csvFormat]} filter")
   i = 0
   count = len(users)
   for user in users:
@@ -6326,7 +6329,7 @@ def doForward(users):
       body['emailAddress'] = sys.argv[i]
       i += 1
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> forward"' % myarg)
+      controlflow.invalid_argument_exit(myarg, "gam <users> forward")
   if enable and (not body.get('disposition') or not body.get('emailAddress')):
     controlflow.system_error_exit(2, 'you must specify an action and a forwarding address for "gam <users> forward')
   i = 0
@@ -6383,7 +6386,7 @@ def printShowForward(users, csvFormat):
       todrive = True
       i += 1
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> %s forward"' % (myarg, ['show', 'print'][csvFormat]))
+      controlflow.invalid_argument_exit(myarg, f"gam <users> {['show', 'print'][csvFormat]} forward")
   i = 0
   count = len(users)
   for user in users:
@@ -6443,7 +6446,7 @@ def printShowForwardingAddresses(users, csvFormat):
       todrive = True
       i += 1
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> %s forwardingaddresses"' % (myarg, ['show', 'print'][csvFormat]))
+      controlflow.invalid_argument_exit(myarg, f"gam <users> {['show', 'print'][csvFormat]} forwardingaddresses")
   i = 0
   count = len(users)
   for user in users:
@@ -6528,7 +6531,7 @@ def getSignature(users):
       formatSig = True
       i += 1
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> show signature"' % sys.argv[i])
+      controlflow.invalid_argument_exit(sys.argv[i], "gam <users> show signature")
   i = 0
   count = len(users)
   for user in users:
@@ -6583,7 +6586,7 @@ def doVacation(users):
         body['endTime'] = getYYYYMMDD(sys.argv[i+1], returnTimeStamp=True)
         i += 2
       else:
-        controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> vacation"' % sys.argv[i])
+        controlflow.invalid_argument_exit(sys.argv[i], "gam <users> vacation")
     if message:
       if responseBodyType == 'responseBodyHtml':
         message = message.replace('\r', '').replace('\\n', '<br/>')
@@ -6615,7 +6618,7 @@ def getVacation(users):
       formatReply = True
       i += 1
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> show vacation"' % sys.argv[i])
+      controlflow.invalid_argument_exit(sys.argv[i], "gam <users> show vacation")
   i = 0
   count = len(users)
   for user in users:
@@ -6686,8 +6689,9 @@ def doCreateOrUpdateUserSchema(updateCmd):
         myarg = sys.argv[i].lower()
         if myarg == 'type':
           a_field['fieldType'] = sys.argv[i+1].upper()
-          if a_field['fieldType'] not in ['BOOL', 'DOUBLE', 'EMAIL', 'INT64', 'PHONE', 'STRING']:
-            controlflow.system_error_exit(2, 'type must be one of bool, double, email, int64, phone, string; got %s' % a_field['fieldType'])
+          validTypes = ['BOOL', 'DOUBLE', 'EMAIL', 'INT64', 'PHONE', 'STRING']
+          if a_field['fieldType'] not in validTypes:
+            controlflow.expected_argument_exit("type", ", ".join(validTypes).lower(), a_field['fieldType'])
           i += 2
         elif myarg == 'multivalued':
           a_field['multiValued'] = True
@@ -6707,17 +6711,17 @@ def doCreateOrUpdateUserSchema(updateCmd):
           i += 1
           break
         else:
-          controlflow.system_error_exit(2, '%s is not a valid argument for "gam %s schema"' % (sys.argv[i], cmd))
+          controlflow.invalid_argument_exit(sys.argv[i], f"gam {cmd} schema")
     elif updateCmd and myarg == 'deletefield':
       for n, field in enumerate(body['fields']):
         if field['fieldName'].lower() == sys.argv[i+1].lower():
           del body['fields'][n]
           break
       else:
-        controlflow.system_error_exit(3, 'field %s not found in schema %s' % (sys.argv[i+1], schemaKey))
+        controlflow.system_error_exit(2, f'field {sys.argv[i+1]} not found in schema {schemaKey}')
       i += 2
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam %s schema"' % (sys.argv[i], cmd))
+      controlflow.invalid_argument_exit(sys.argv[i], f"gam {cmd} schema")
   if updateCmd:
     result = gapi.call(cd.schemas(), 'update', customerId=GC_Values[GC_CUSTOMER_ID], body=body, schemaKey=schemaKey)
     print('Updated user schema %s' % result['schemaName'])
@@ -6749,7 +6753,7 @@ def doPrintShowUserSchemas(csvFormat):
       todrive = True
       i += 1
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam %s schemas"' % (myarg, ['show', 'print'][csvFormat]))
+      controlflow.invalid_argument_exit(myarg, f"gam <users> {['show', 'print'][csvFormat]} schemas")
   schemas = gapi.call(cd.schemas(), 'list', customerId=GC_Values[GC_CUSTOMER_ID])
   if not schemas or 'schemas' not in schemas:
     return
@@ -6827,7 +6831,7 @@ def getUserAttributes(i, cd, updateCmd):
       schemaName = sn_fn.strip()
       if schemaName:
         return (schemaName, None)
-    controlflow.system_error_exit(2, '%s is not a valid custom schema.field name.' % sn_fn)
+    controlflow.system_error_exit(2, f'{sn_fn} is not a valid custom schema.field name.')
 
   if updateCmd:
     body = {}
@@ -6863,7 +6867,7 @@ def getUserAttributes(i, cd, updateCmd):
     elif myarg == 'admin':
       value = getBoolean(sys.argv[i+1], myarg)
       if updateCmd or value:
-        controlflow.system_error_exit(2, '%s %s is not a valid argument for "gam %s user"' % (sys.argv[i], value, ['create', 'update'][updateCmd]))
+        controlflow.invalid_argument_exit(f"{sys.argv[i]} {value}", f"gam {['create', 'update'][updateCmd]} user")
       i += 2
     elif myarg == 'suspended':
       body['suspended'] = getBoolean(sys.argv[i+1], myarg)
@@ -6993,8 +6997,9 @@ def getUserAttributes(i, cd, updateCmd):
         controlflow.system_error_exit(2, 'wrong format for account details. Expected protocol got %s' % sys.argv[i])
       i += 1
       im['protocol'] = sys.argv[i].lower()
-      if im['protocol'] not in ['custom_protocol', 'aim', 'gtalk', 'icq', 'jabber', 'msn', 'net_meeting', 'qq', 'skype', 'yahoo']:
-        controlflow.system_error_exit(2, 'protocol must be one of custom_protocol, aim, gtalk, icq, jabber, msn, net_meeting, qq, skype, yahoo; got %s' % im['protocol'])
+      validProtocols = ['custom_protocol', 'aim', 'gtalk', 'icq', 'jabber', 'msn', 'net_meeting', 'qq', 'skype', 'yahoo']
+      if im['protocol'] not in validProtocols:
+        controlflow.expected_argument_exit("protocol", ", ".join(validProtocols), im['protocol'])
       if im['protocol'] == 'custom_protocol':
         i += 1
         im['customProtocol'] = sys.argv[i]
@@ -7156,7 +7161,7 @@ def getUserAttributes(i, cd, updateCmd):
           i += 1
           break
         else:
-          controlflow.system_error_exit(3, '%s is not a valid argument for user location details. Make sure user location details end with an endlocation argument')
+          controlflow.system_error_exit(3, f'{myopt} is not a valid argument for user location details. Make sure user location details end with an endlocation argument')
       appendItemToBodyList(body, 'locations', location)
     elif myarg in ['ssh', 'sshkeys', 'sshpublickeys']:
       i += 1
@@ -7176,7 +7181,7 @@ def getUserAttributes(i, cd, updateCmd):
           i += 1
           break
         else:
-          controlflow.system_error_exit(3, '%s is not a valid argument for user ssh details. Make sure user ssh details end with an endssh argument')
+          controlflow.system_error_exit(3, f'{myopt} is not a valid argument for user ssh details. Make sure user ssh details end with an endssh argument')
       appendItemToBodyList(body, 'sshPublicKeys', ssh)
     elif myarg in ['posix', 'posixaccounts']:
       i += 1
@@ -7217,7 +7222,7 @@ def getUserAttributes(i, cd, updateCmd):
           i += 1
           break
         else:
-          controlflow.system_error_exit(3, '%s is not a valid argument for user posix details. Make sure user posix details end with an endposix argument')
+          controlflow.system_error_exit(3, f'{myopt} is not a valid argument for user posix details. Make sure user posix details end with an endposix argument')
       appendItemToBodyList(body, 'posixAccounts', posix, checkSystemId=True)
     elif myarg in ['keyword', 'keywords']:
       i += 1
@@ -7242,7 +7247,7 @@ def getUserAttributes(i, cd, updateCmd):
       i += 2
     elif myarg == 'clearschema':
       if not updateCmd:
-        controlflow.system_error_exit(2, '%s is not a valid create user argument.' % sys.argv[i])
+        controlflow.invalid_argument_exit(sys.argv[i], "gam create user")
       schemaName, fieldName = _splitSchemaNameDotFieldName(sys.argv[i+1], False)
       up = 'customSchemas'
       body.setdefault(up, {})
@@ -7272,8 +7277,9 @@ def getUserAttributes(i, cd, updateCmd):
         if sys.argv[i].lower() == 'type':
           i += 1
           schemaValue['type'] = sys.argv[i].lower()
-          if schemaValue['type'] not in ['custom', 'home', 'other', 'work']:
-            controlflow.system_error_exit(2, 'wrong type must be one of custom, home, other, work; got %s' % schemaValue['type'])
+          validSchemaTypes = ['custom', 'home', 'other', 'work']
+          if schemaValue['type'] not in validSchemaTypes:
+            controlflow.expected_argument_exit("schema type", ", ".join(validSchemaTypes), schemaValue['type'])
           i += 1
           if schemaValue['type'] == 'custom':
             schemaValue['customType'] = sys.argv[i]
@@ -7285,7 +7291,7 @@ def getUserAttributes(i, cd, updateCmd):
         body[up][schemaName][fieldName] = sys.argv[i]
       i += 1
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam %s user"' % (sys.argv[i], ['create', 'update'][updateCmd]))
+      controlflow.invalid_argument_exit(sys.argv[i], f"gam {['create', 'update'][updateCmd]} user")
   if need_password:
     rnd = SystemRandom()
     body['password'] = ''.join(rnd.choice(PASSWORD_SAFE_CHARS) for _ in range(100))
@@ -7451,10 +7457,10 @@ def _createClientSecretsOauth2service(httpObj, projectId):
     if content['error'] == 'invalid_grant':
       return True
     if content['error_description'] == 'The OAuth client was not found.':
-      print('Ooops!!\n\n%s\n\nIs not a valid client ID. Please make sure you are following the directions exactly and that there are no extra spaces in your client ID.' % client_id)
+      print(f'Ooops!!\n\n{client_id}\n\nIs not a valid client ID. Please make sure you are following the directions exactly and that there are no extra spaces in your client ID.')
       return False
     if content['error_description'] == 'Unauthorized':
-      print('Ooops!!\n\n%s\n\nIs not a valid client secret. Please make sure you are following the directions exactly and that there are no extra spaces in your client secret.' % client_secret)
+      print(f'Ooops!!\n\n{client_secret}\n\nIs not a valid client secret. Please make sure you are following the directions exactly and that there are no extra spaces in your client secret.')
       return False
     print('Unknown error: %s' % content)
     return False
@@ -7580,7 +7586,10 @@ def _getLoginHintProjectId(createCmd):
         parent = sys.argv[i+1]
         i += 2
       else:
-        controlflow.system_error_exit(3, '%s is not a valid argument for "gam %s project", expected one of: admin, project%s' % (myarg, ['use', 'create'][createCmd], ['', ' or parent'][createCmd]))
+        expected = ['admin', 'project']
+        if createCmd:
+          expected.append('parent')
+        controlflow.system_error_exit(3, f'{myarg} is not a valid argument for "gam {["use", "create"][createCmd]} project", expected one of: {", ".join(expected)}')
   login_hint = _getValidateLoginHint(login_hint)
   if projectId:
     if not PROJECTID_PATTERN.match(projectId):
@@ -7844,7 +7853,7 @@ def doShowServiceAccountKeys():
       keyTypes = 'USER_MANAGED'
       i += 1
     else:
-      controlflow.system_error_exit(3, '%s is not a valid argument to "gam show sakeys"' % myarg)
+      controlflow.invalid_argument_exit(myarg, "gam show sakeys")
   name = 'projects/-/serviceAccounts/%s' % GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID]
   currentPrivateKeyId = GM_Globals[GM_OAUTH2SERVICE_JSON_DATA]['private_key_id']
   keys = gapi.get_items(iam.projects().serviceAccounts().keys(), 'list', 'keys',
@@ -7876,7 +7885,7 @@ def doCreateOrRotateServiceAccountKeys(iam=None, project_id=None, client_email=N
         body['keyAlgorithm'] = sys.argv[i+1].upper()
         allowed_algorithms = _getEnumValuesMinusUnspecified(iam._rootDesc['schemas']['CreateServiceAccountKeyRequest']['properties']['keyAlgorithm']['enum'])
         if body['keyAlgorithm'] not in allowed_algorithms:
-          controlflow.system_error_exit(3, 'algorithm must be one of {0}. Got {1}'.format(', '.join(allowed_algorithms), body['keyAlgorithm']))
+          controlflow.expected_argument_exit("algorithm", ", ".join(allowed_algorithms), body['keyAlgorithm'])
         local_key_size = 0
         i += 2
       elif myarg == 'localkeysize':
@@ -7888,7 +7897,7 @@ def doCreateOrRotateServiceAccountKeys(iam=None, project_id=None, client_email=N
         mode = myarg
         i += 1
       else:
-        controlflow.system_error_exit(3, '%s is not a valid argument to "gam rotate sakeys"' % myarg)
+        controlflow.invalid_argument_exit(myarg, "gam rotate sakeys")
     currentPrivateKeyId = GM_Globals[GM_OAUTH2SERVICE_JSON_DATA]['private_key_id']
     project_id = GM_Globals[GM_OAUTH2SERVICE_JSON_DATA]['project_id']
     client_email = GM_Globals[GM_OAUTH2SERVICE_JSON_DATA]['client_email']
@@ -7980,7 +7989,7 @@ def doPrintShowProjects(csvFormat):
       todrive = True
       i += 1
     else:
-      controlflow.system_error_exit(3, '%s is not a valid argument for "gam %s projects"' % (myarg, ['show', 'print'][csvFormat]))
+      controlflow.invalid_argument_exit(myarg, f"gam <users> {['show', 'print'][csvFormat]} projects")
   if not csvFormat:
     count = len(projects)
     print('User: {0}, Show {1} Projects'.format(login_hint, count))
@@ -8016,7 +8025,7 @@ def doGetTeamDriveInfo(users):
       useDomainAdminAccess = True
       i += 1
     else:
-      controlflow.system_error_exit(3, '%s is not a valid command for "gam <users> show teamdrive"' % sys.argv[i])
+      controlflow.invalid_argument_exit(myarg, "gam <users> show teamdrive")
   for user in users:
     drive = buildGAPIServiceObject('drive3', user)
     if not drive:
@@ -8035,7 +8044,7 @@ def doCreateTeamDrive(users):
       body['themeId'] = sys.argv[i+1]
       i += 2
     else:
-      controlflow.system_error_exit(3, '%s is not a valid argument to "gam <users> create teamdrive"' % sys.argv[i])
+      controlflow.invalid_argument_exit(sys.argv[i], "gam <users> create teamdrive")
   for user in users:
     drive = buildGAPIServiceObject('drive3', user)
     if not drive:
@@ -8084,7 +8093,7 @@ def doUpdateTeamDrive(users):
       body['restrictions'][TEAMDRIVE_RESTRICTIONS_MAP[myarg]] = getBoolean(sys.argv[i+1], myarg)
       i += 2
     else:
-      controlflow.system_error_exit(3, '%s is not a valid argument for "gam <users> update teamdrive"' % sys.argv[i])
+      controlflow.invalid_argument_exit(sys.argv[i], "gam <users> update teamdrive")
   if not body:
     controlflow.system_error_exit(4, 'nothing to update. Need at least a name argument.')
   for user in users:
@@ -8114,7 +8123,7 @@ def printShowTeamDrives(users, csvFormat):
       q = sys.argv[i+1]
       i += 2
     else:
-      controlflow.system_error_exit(3, '%s is not a valid argument for "gam <users> print|show teamdrives"')
+      controlflow.invalid_argument_exit(myarg, "gam <users> print|show teamdrives")
   tds = []
   for user in users:
     sys.stderr.write('Getting Team Drives for %s\n' % user)
@@ -8180,7 +8189,7 @@ def doCreateVaultMatter():
       collaborators.extend(validateCollaborators(sys.argv[i+1], cd))
       i += 2
     else:
-      controlflow.system_error_exit(3, '%s is not a valid argument to "gam create matter"' % sys.argv[i])
+      controlflow.invalid_argument_exit(sys.argv[i], "gam create matter")
   matterId = gapi.call(v.matters(), 'create', body=body, fields='matterId')['matterId']
   print('Created matter %s' % matterId)
   for collaborator in collaborators:
@@ -8225,7 +8234,7 @@ def doCreateVaultExport():
     elif myarg == 'corpus':
       body['query']['corpus'] = sys.argv[i+1].upper()
       if body['query']['corpus'] not in allowed_corpuses:
-        controlflow.system_error_exit(3, 'corpus must be one of %s. Got %s' % (', '.join(allowed_corpuses), sys.argv[i+1]))
+        controlflow.expected_argument_exit("corpus", ", ".join(allowed_corpuses), sys.argv[i+1])
       i += 2
     elif myarg in VAULT_SEARCH_METHODS_MAP:
       if body['query'].get('searchMethod'):
@@ -8249,7 +8258,7 @@ def doCreateVaultExport():
     elif myarg == 'scope':
       body['query']['dataScope'] = sys.argv[i+1].upper()
       if body['query']['dataScope'] not in allowed_scopes:
-        controlflow.system_error_exit(3, 'scope must be one of %s. Got %s' % (', '.join(allowed_scopes), sys.argv[i+1]))
+        controlflow.expected_argument_exit("scope", ", ".join(allowed_scopes), sys.argv[i+1])
       i += 2
     elif myarg in ['terms']:
       body['query']['terms'] = sys.argv[i+1]
@@ -8278,8 +8287,7 @@ def doCreateVaultExport():
     elif myarg in ['format']:
       export_format = sys.argv[i+1].upper()
       if export_format not in allowed_formats:
-        print('ERROR: export format can be one of %s, got %s' % (', '.join(allowed_formats), export_format))
-        sys.exit(3)
+        controlflow.expected_argument_exit("export format", ", ".join(allowed_formats), export_format)
       i += 2
     elif myarg in ['showconfidentialmodecontent']:
       showConfidentialModeContent = getBoolean(sys.argv[i+1], myarg)
@@ -8288,13 +8296,13 @@ def doCreateVaultExport():
       allowed_regions = _getEnumValuesMinusUnspecified(v._rootDesc['schemas']['ExportOptions']['properties']['region']['enum'])
       body['exportOptions']['region'] = sys.argv[i+1].upper()
       if body['exportOptions']['region'] not in allowed_regions:
-        controlflow.system_error_exit(3, 'region should be one of %s, got %s' % (', '.join(allowed_regions), body['exportOptions']['region']))
+        controlflow.expected_argument_exit("region", ", ".join(allowed_regions), body['exportOptions']['region'])
       i += 2
     elif myarg in ['includeaccessinfo']:
       body['exportOptions'].setdefault('driveOptions', {})['includeAccessInfo'] = getBoolean(sys.argv[i+1], myarg)
       i += 2
     else:
-      controlflow.system_error_exit(3, '%s is not a valid argument to "gam create export"' % sys.argv[i])
+      controlflow.invalid_argument_exit(sys.argv[i], "gam create export")
   if not matterId:
     controlflow.system_error_exit(3, 'you must specify a matter for the new export.')
   if 'corpus' not in body['query']:
@@ -8425,7 +8433,7 @@ def doDownloadVaultExport():
       extractFiles = False
       i += 1
     else:
-      controlflow.system_error_exit(3, '%s is not a valid argument to "gam download export"' % sys.argv[i])
+      controlflow.invalid_argument_exit(sys.argv[i], "gam download export")
   export = gapi.call(v.matters().exports(), 'get', matterId=matterId, exportId=exportId)
   for s_file in export['cloudStorageSink']['files']:
     bucket = s_file['bucketName']
@@ -8490,7 +8498,7 @@ def doCreateVaultHold():
     elif myarg == 'corpus':
       body['corpus'] = sys.argv[i+1].upper()
       if body['corpus'] not in allowed_corpuses:
-        controlflow.system_error_exit(3, 'corpus must be one of %s. Got %s' % (', '.join(allowed_corpuses), sys.argv[i+1]))
+        controlflow.expected_argument_exit("corpus", ", ".join(allowed_corpuses), sys.argv[i+1])
       i += 2
     elif myarg in ['accounts', 'users', 'groups']:
       accounts = sys.argv[i+1].split(',')
@@ -8508,7 +8516,7 @@ def doCreateVaultHold():
       matterId = getMatterItem(v, sys.argv[i+1])
       i += 2
     else:
-      controlflow.system_error_exit(3, '%s is not a valid argument to "gam create hold"' % sys.argv[i])
+      controlflow.invalid_argument_exit(sys.argv[i], "gam create hold")
   if not matterId:
     controlflow.system_error_exit(3, 'you must specify a matter for the new hold.')
   if not body.get('name'):
@@ -8554,7 +8562,7 @@ def doDeleteVaultHold():
       holdId = convertHoldNameToID(v, hold, matterId)
       i += 2
     else:
-      controlflow.system_error_exit(3, '%s is not a valid argument to "gam delete hold"' % myarg)
+      controlflow.invalid_argument_exit(myarg, "gam delete hold")
   if not matterId:
     controlflow.system_error_exit(3, 'you must specify a matter for the hold.')
   print('Deleting hold %s / %s' % (hold, holdId))
@@ -8572,7 +8580,7 @@ def doGetVaultHoldInfo():
       holdId = convertHoldNameToID(v, hold, matterId)
       i += 2
     else:
-      controlflow.system_error_exit(3, '%s is not a valid argument for "gam info hold"' % myarg)
+      controlflow.invalid_argument_exit(myarg, "gam info hold")
   if not matterId:
     controlflow.system_error_exit(3, 'you must specify a matter for the hold.')
   results = gapi.call(v.matters().holds(), 'get', matterId=matterId, holdId=holdId)
@@ -8662,7 +8670,7 @@ def doUpdateVaultHold():
       del_accounts = sys.argv[i+1].split(',')
       i += 2
     else:
-      controlflow.system_error_exit(3, '%s is not a valid argument to "gam update hold"' % myarg)
+      controlflow.invalid_argument_exit(myarg, "gam update hold")
   if not matterId:
     controlflow.system_error_exit(3, 'you must specify a matter for the hold.')
   if query or start_time or end_time or body.get('orgUnit'):
@@ -8733,7 +8741,7 @@ def doUpdateVaultMatter(action=None):
       remove_collaborators.extend(validateCollaborators(sys.argv[i+1], cd))
       i += 2
     else:
-      controlflow.system_error_exit(3, '%s is not a valid argument for "gam update matter"' % sys.argv[i])
+      controlflow.invalid_argument_exit(sys.argv[i], "gam update matter")
   if action == 'delete':
     action_kwargs = {}
   if body:
@@ -8805,7 +8813,7 @@ def getGroupAttrValue(myarg, value, gs_object, gs_body, function):
           value = value.upper()
           possible_values = GROUP_SETTINGS_LIST_PATTERN.findall(params['description'])
           if value not in possible_values:
-            controlflow.system_error_exit(2, 'value for %s must be one of %s. Got %s.' % (attrib, ', '.join(possible_values), value))
+            controlflow.expected_argument_exit(f"value for {attrib}", ", ".join(possible_values), value)
         elif attrib in GROUP_SETTINGS_BOOLEAN_ATTRIBUTES:
           value = value.lower()
           if value in true_values:
@@ -8813,10 +8821,10 @@ def getGroupAttrValue(myarg, value, gs_object, gs_body, function):
           elif value in false_values:
             value = 'false'
           else:
-            controlflow.system_error_exit(2, 'value for %s must be true|false. Got %s.' % (attrib, value))
+            controlflow.expected_argument_exit(f"value for {attrib}", ", ".join(['true', 'false']), value)
       gs_body[attrib] = value
       return
-  controlflow.system_error_exit(2, '%s is not a valid argument for "gam %s group"' % (myarg, function))
+  controlflow.invalid_argument_exit(myarg, f"gam {function} group")
 
 def doCreateGroup():
   cd = buildGAPIObject('directory')
@@ -8873,7 +8881,7 @@ def doCreateAlias():
   body = {'alias': normalizeEmailAddressOrUID(sys.argv[3], noUid=True, noLower=True)}
   target_type = sys.argv[4].lower()
   if target_type not in ['user', 'group', 'target']:
-    controlflow.system_error_exit(2, 'type of target must be user or group; got %s' % target_type)
+    controlflow.expected_argument_exit("target type", ", ".join(['user', 'group', 'target']), target_type)
   targetKey = normalizeEmailAddressOrUID(sys.argv[5])
   print('Creating alias %s for %s %s' % (body['alias'], target_type, targetKey))
   if target_type == 'user':
@@ -8907,7 +8915,7 @@ def doCreateOrg():
       body['blockInheritance'] = False
       i += 1
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam create org"' % sys.argv[i])
+      controlflow.invalid_argument_exit(sys.argv[i], "gam create org")
   if parent.startswith('id:'):
     parent = gapi.call(cd.orgunits(), 'get',
                        customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=parent, fields='orgUnitPath')['orgUnitPath']
@@ -8950,7 +8958,7 @@ def _getBuildingAttributes(args, body={}):
       body['floorNames'] = args[i+1].split(',')
       i += 2
     else:
-      controlflow.system_error_exit(3, '%s is not a valid argument for "gam create|update building"' % myarg)
+      controlflow.invalid_argument_exit(myarg, "gam create|update building")
   return body
 
 def doCreateBuilding():
@@ -9056,7 +9064,7 @@ def _getFeatureAttributes(args, body={}):
       body['name'] = args[i+1]
       i += 2
     else:
-      controlflow.system_error_exit(3, '%s is not a valid argument for "gam create|update feature"')
+      controlflow.invalid_argument_exit(myarg, "gam create|update feature")
   return body
 
 def doCreateFeature():
@@ -9125,7 +9133,7 @@ def _getResourceCalendarAttributes(cd, args, body={}):
       body['userVisibleDescription'] = args[i+1]
       i += 2
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam create|update resource"' % args[i])
+      controlflow.invalid_argument_exit(args[i], "gam create|update resource")
   return body
 
 def doCreateResourceCalendar():
@@ -9400,7 +9408,7 @@ def doUpdateGroup():
           fields.append('status')
           i += 1
         else:
-          controlflow.system_error_exit(2, '%s is not a valid argument for "gam update group clear"' % sys.argv[i])
+          controlflow.invalid_argument_exit(sys.argv[i], "gam update group clear")
       if roles:
         roles = ','.join(sorted(set(roles)))
       else:
@@ -9480,7 +9488,7 @@ def doUpdateAlias():
   alias = normalizeEmailAddressOrUID(sys.argv[3], noUid=True, noLower=True)
   target_type = sys.argv[4].lower()
   if target_type not in ['user', 'group', 'target']:
-    controlflow.system_error_exit(2, 'target type must be one of user, group, target; got %s' % target_type)
+    controlflow.expected_argument_exit("target type", ", ".join(['user', 'group', 'target']), target_type)
   target_email = normalizeEmailAddressOrUID(sys.argv[5])
   try:
     gapi.call(cd.users().aliases(), 'delete', throw_reasons=[gapi.errors.ErrorReason.INVALID], userKey=alias, alias=alias)
@@ -9561,7 +9569,7 @@ def doUpdateCros():
       ack_wipe = True
       i += 1
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam update cros"' % sys.argv[i])
+      controlflow.invalid_argument_exit(sys.argv[i], "gam update cros")
   i = 0
   count = len(devices)
   if action_body:
@@ -9608,12 +9616,13 @@ def doUpdateMobile():
     myarg = sys.argv[i].lower().replace('_', '')
     if myarg == 'action':
       body['action'] = sys.argv[i+1].lower()
+      validActions = ['wipe', 'wipeaccount', 'accountwipe', 'wipe_account', 'account_wipe', 'approve', 'block', 'cancel_remote_wipe_then_activate', 'cancel_remote_wipe_then_block']
+      if body['action'] not in validActions:
+        controlflow.expected_argument_exit("action", ", ".join(validActions), body['action'])
       if body['action'] == 'wipe':
         body['action'] = 'admin_remote_wipe'
       elif body['action'].replace('_', '') in ['accountwipe', 'wipeaccount']:
         body['action'] = 'admin_account_wipe'
-      if body['action'] not in ['admin_remote_wipe', 'admin_account_wipe', 'approve', 'block', 'cancel_remote_wipe_then_activate', 'cancel_remote_wipe_then_block']:
-        controlflow.system_error_exit(2, 'action must be one of wipe, wipeaccount, approve, block, cancel_remote_wipe_then_activate, cancel_remote_wipe_then_block; got %s' % body['action'])
       i += 2
     elif myarg in ['ifusers', 'matchusers']:
       match_users = getUsersToModify(entity_type=sys.argv[i+1].lower(), entity=sys.argv[i+2])
@@ -9622,7 +9631,7 @@ def doUpdateMobile():
       doit = True
       i += 1
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam update mobile"' % sys.argv[i])
+      controlflow.invalid_argument_exit(sys.argv[i], "gam update mobile")
   if body:
     if doit:
       print('Updating %s devices' % len(devices))
@@ -9694,7 +9703,7 @@ def doUpdateOrg():
         body['blockInheritance'] = False
         i += 1
       else:
-        controlflow.system_error_exit(2, '%s is not a valid argument for "gam update org"' % sys.argv[i])
+        controlflow.invalid_argument_exit(sys.argv[i], "gam update org")
     gapi.call(cd.orgunits(), 'update', customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=encodeOrgUnitPath(makeOrgUnitPathRelative(orgUnitPath)), body=body)
 
 def doWhatIs():
@@ -9703,19 +9712,19 @@ def doWhatIs():
   try:
     user_or_alias = gapi.call(cd.users(), 'get', throw_reasons=[gapi.errors.ErrorReason.NOT_FOUND, gapi.errors.ErrorReason.BAD_REQUEST, gapi.errors.ErrorReason.INVALID], userKey=email, fields='id,primaryEmail')
     if (user_or_alias['primaryEmail'].lower() == email) or (user_or_alias['id'] == email):
-      sys.stderr.write('%s is a user\n\n' % email)
+      sys.stderr.write(f'{email} is a user\n\n')
       doGetUserInfo(user_email=email)
       return
-    sys.stderr.write('%s is a user alias\n\n' % email)
+    sys.stderr.write(f'{email} is a user alias\n\n')
     doGetAliasInfo(alias_email=email)
     return
   except (gapi.errors.GapiNotFoundError, gapi.errors.GapiBadRequestError, gapi.errors.GapiInvalidError):
-    sys.stderr.write('%s is not a user...\n' % email)
-    sys.stderr.write('%s is not a user alias...\n' % email)
+    sys.stderr.write(f'{email} is not a user...\n')
+    sys.stderr.write(f'{email} is is not a user alias...\n')
   try:
     group = gapi.call(cd.groups(), 'get', throw_reasons=[gapi.errors.ErrorReason.NOT_FOUND, gapi.errors.ErrorReason.BAD_REQUEST], groupKey=email, fields='id,email')
   except (gapi.errors.GapiNotFoundError, gapi.errors.GapiBadRequestError):
-    controlflow.system_error_exit(1, '%s is not a group either!\n\nDoesn\'t seem to exist!\n\n' % email)
+    controlflow.system_error_exit(1, f'{email} is not a group either!\n\nDoesn\'t seem to exist!\n\n')
   if (group['email'].lower() == email) or (group['id'] == email):
     sys.stderr.write('%s is a group\n\n' % email)
     doGetGroupInfo(group_name=email)
@@ -9798,9 +9807,9 @@ def doUpdateResoldSubscription():
           kwargs['body']['dealCode'] = sys.argv[i+1]
           i += 2
         else:
-          controlflow.system_error_exit(3, '%s is not a valid argument to "gam update resoldsubscription plan"' % planarg)
+          controlflow.invalid_argument_exit(planarg, "gam update resoldsubscription plan")
     else:
-      controlflow.system_error_exit(3, '%s is not a valid argument to "gam update resoldsubscription"' % myarg)
+      controlflow.invalid_argument_exit(myarg, "gam update resoldsubscription")
   result = gapi.call(res.subscriptions(), function, customerId=customerId, subscriptionId=subscriptionId, **kwargs)
   print('Updated %s SKU %s subscription:' % (customerId, sku))
   if result:
@@ -9817,7 +9826,7 @@ def doGetResoldSubscriptions():
       customerAuthToken = sys.argv[i+1]
       i += 2
     else:
-      controlflow.system_error_exit(3, '%s is not a valid argument for "gam info resoldsubscriptions"' % myarg)
+      controlflow.invalid_argument_exit(myarg, "gam info resoldsubscriptions")
   result = gapi.call(res.subscriptions(), 'list', customerId=customerId, customerAuthToken=customerAuthToken)
   print_json(None, result)
 
@@ -9845,7 +9854,7 @@ def _getResoldSubscriptionAttr(arg, customerId):
     elif myarg in ['customerauthtoken', 'transfertoken']:
       customerAuthToken = arg[i+1]
     else:
-      controlflow.system_error_exit(3, '%s is not a valid argument for "gam create resoldsubscription"' % myarg)
+      controlflow.invalid_argument_exit(myarg, "gam create resoldsubscription")
     i += 2
   return customerAuthToken, body
 
@@ -9871,7 +9880,7 @@ def _getResoldCustomerAttr(arg):
     elif myarg in ['customerauthtoken', 'transfertoken']:
       customerAuthToken = arg[i+1]
     else:
-      controlflow.system_error_exit(3, '%s is not a valid argument for "gam %s resoldcustomer"' % (myarg, sys.argv[1]))
+      controlflow.invalid_argument_exit(myarg, f"gam {sys.argv[1]} resoldcustomer")
     i += 2
   return customerAuthToken, body
 
@@ -9951,7 +9960,7 @@ def doGetUserInfo(user_email=None):
     elif myarg in ['nousers', 'groups']:
       i += 1
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam info user"' % myarg)
+      controlflow.invalid_argument_exit(myarg, "gam info user")
   user = gapi.call(cd.users(), 'get', userKey=user_email, projection=projection, customFieldMask=customFieldMask, viewType=viewType)
   print('User: %s' % user['primaryEmail'])
   if 'name' in user and 'givenName' in user['name']:
@@ -10213,7 +10222,7 @@ def doGetGroupInfo(group_name=None):
       if myarg == 'schemas':
         i += 1
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam info group"' % myarg)
+      controlflow.invalid_argument_exit(myarg, "gam info group")
   basic_info = gapi.call(cd.groups(), 'get', groupKey=group_name)
   settings = {}
   if not GroupIsAbuseOrPostmaster(basic_info['email']):
@@ -10356,7 +10365,7 @@ def doGetCrosInfo():
             projection = 'FULL'
             noLists = False
         else:
-          controlflow.system_error_exit(2, '%s is not a valid argument for "gam info cros fields"' % field)
+          controlflow.invalid_argument_exit(field, "gam info cros fields")
       i += 2
     elif myarg == 'downloadfile':
       downloadfile = sys.argv[i+1]
@@ -10369,7 +10378,7 @@ def doGetCrosInfo():
         os.makedirs(targetFolder)
       i += 2
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam info cros"' % sys.argv[i])
+      controlflow.invalid_argument_exit(sys.argv[i], "gam info cros")
   if fieldsList:
     fieldsList.append('deviceId')
     if guess_aue:
@@ -10706,7 +10715,7 @@ def doGetOrgInfo(name=None, return_attrib=None):
         checkSuspended = myarg == 'suspended'
         i += 1
       else:
-        controlflow.system_error_exit(2, '%s is not a valid argument for "gam info org"' % sys.argv[i])
+        controlflow.invalid_argument_exit(sys.argv[i], "gam info org")
   if name == '/':
     orgs = gapi.call(cd.orgunits(), 'list',
                      customerId=GC_Values[GC_CUSTOMER_ID], type='children',
@@ -10834,7 +10843,7 @@ def doDelTokens(users):
       clientId = commonClientIds(sys.argv[i+1])
       i += 2
     else:
-      controlflow.system_error_exit(3, '%s is not a valid argument to "gam <users> delete token"' % sys.argv[i])
+      controlflow.invalid_argument_exit(sys.argv[i], "gam <users> delete token")
   if not clientId:
     controlflow.system_error_exit(3, 'you must specify a clientid for "gam <users> delete token"')
   for user in users:
@@ -10876,7 +10885,7 @@ def printShowTokens(i, entityType, users, csvFormat):
       users = getUsersToModify(entity_type=entityType, entity=sys.argv[i+1], silent=False)
       i += 2
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> %s tokens"' % (myarg, ['show', 'print'][csvFormat]))
+      controlflow.invalid_argument_exit(myarg, f"gam <users> {['show', 'print'][csvFormat]} tokens")
   if not entityType:
     users = getUsersToModify(entity_type='all', entity='users', silent=False)
   fields = ','.join(['clientId', 'displayText', 'anonymous', 'nativeApp', 'userKey', 'scopes'])
@@ -10965,7 +10974,7 @@ def doUndeleteUser():
       orgUnit = makeOrgUnitPathAbsolute(sys.argv[i+1])
       i += 2
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam undelete user"' % sys.argv[i])
+      controlflow.invalid_argument_exit(sys.argv[i], "gam undelete user")
   if user.find('@') == -1:
     user_uid = user
   else:
@@ -11409,9 +11418,10 @@ def doPrintUsers():
       i += 1
     elif myarg == 'orderby':
       orderBy = sys.argv[i+1]
-      if orderBy.lower() not in ['email', 'familyname', 'givenname', 'firstname', 'lastname']:
-        controlflow.system_error_exit(2, 'orderby must be one of email, familyName, givenName; got %s' % orderBy)
-      elif orderBy.lower() in ['familyname', 'lastname']:
+      validOrderBy = ['email', 'familyname', 'givenname', 'firstname', 'lastname']
+      if orderBy.lower() not in validOrderBy:
+        controlflow.expected_argument_exit("orderby", ", ".join(validOrderBy), orderBy)
+      if orderBy.lower() in ['familyname', 'lastname']:
         orderBy = 'familyName'
       elif orderBy.lower() in ['givenname', 'firstname']:
         orderBy = 'givenName'
@@ -11442,7 +11452,7 @@ def doPrintUsers():
         if field in USER_ARGUMENT_TO_PROPERTY_MAP:
           addFieldToCSVfile(field, USER_ARGUMENT_TO_PROPERTY_MAP, fieldsList, fieldsTitles, titles)
         else:
-          controlflow.system_error_exit(2, '%s is not a valid argument for "gam print users fields"' % field)
+          controlflow.invalid_argument_exit(field, "gam print users fields")
       i += 2
     elif myarg == 'groups':
       getGroupFeed = True
@@ -11454,7 +11464,7 @@ def doPrintUsers():
       email_parts = True
       i += 1
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam print users"' % sys.argv[i])
+      controlflow.invalid_argument_exit(sys.argv[i], "gam print users")
   if fieldsList:
     fields = 'nextPageToken,users(%s)' % ','.join(set(fieldsList)).replace('.', '/')
   else:
@@ -11522,7 +11532,8 @@ def doCreateAlertFeedback():
   alertId = sys.argv[3]
   body = {'type': sys.argv[4].upper()}
   if body['type'] not in valid_types:
-    controlflow.system_error_exit(2, '%s is not a valid feedback value, expected one of: %s' % (body['type'], ', '.join(valid_types)))
+###
+    controlflow.system_error_exit(2, f'{body["type"]} is not a valid feedback value, expected one of: {", ".join(valid_types)}')
   gapi.call(ac.alerts().feedback(), 'create', alertId=alertId, body=body)
 
 def doDeleteOrUndeleteAlert(action):
@@ -11668,7 +11679,7 @@ def doPrintGroups():
           for attrName in COLLABORATIVE_INBOX_ATTRIBUTES:
             addFieldToCSVfile(attrName, {attrName: [attrName]}, gsfieldsList, fieldsTitles, titles)
         else:
-          controlflow.system_error_exit(2, '%s is not a valid argument for "gam print groups fields"' % field)
+          controlflow.invalid_argument_exit(field, "gam print groups fields")
       i += 2
     elif myarg in ['members', 'memberscount']:
       roles.append(ROLE_MEMBER)
@@ -11689,7 +11700,7 @@ def doPrintGroups():
         managersCountOnly = True
       i += 1
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam print groups"' % sys.argv[i])
+      controlflow.invalid_argument_exit(sys.argv[i], "gam print groups")
   cdfields = ','.join(set(cdfieldsList))
   if gsfieldsList:
     getSettings = True
@@ -11839,7 +11850,7 @@ def doPrintOrgs():
       fields += sys.argv[i+1].split(',')
       i += 2
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam print orgs"' % sys.argv[i])
+      controlflow.invalid_argument_exit(sys.argv[i], "gam print orgs")
   printGettingAllItems('Organizational Units', None)
   if fields:
     get_fields = ','.join(fields)
@@ -11917,7 +11928,7 @@ def doPrintAliases():
       doUsers = True
       i += 2
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam print aliases"' % sys.argv[i])
+      controlflow.invalid_argument_exit(sys.argv[i], "gam print aliases")
   if doUsers:
     for query in queries:
       printGettingAllItems('User Aliases', query)
@@ -11986,7 +11997,7 @@ def doPrintGroupMembers():
         if role in GROUP_ROLES_MAP:
           roles.append(GROUP_ROLES_MAP[role])
         else:
-          controlflow.system_error_exit(2, '%s is not a valid role for "gam print group-members %s"' % (role, myarg))
+          controlflow.system_error_exit(2, f'{role} is not a valid role for "gam print group-members {myarg}"')
       i += 2
     elif myarg in ['group', 'groupns', 'groupsusp']:
       group_email = normalizeEmailAddressOrUID(sys.argv[i+1])
@@ -12003,7 +12014,7 @@ def doPrintGroupMembers():
       includeDerivedMembership = True
       i += 1
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam print group-members"' % sys.argv[i])
+      controlflow.invalid_argument_exit(sys.argv[i], "gam print group-members")
   if not groups_to_get:
     groups_to_get = gapi.get_all_pages(cd.groups(), 'list', 'groups', message_attribute='email',
                                        customer=customer, domain=usedomain, userKey=usemember, query=usequery,
@@ -12074,7 +12085,7 @@ def doPrintVaultMatters():
       view = PROJECTION_CHOICES_MAP[myarg]
       i += 1
     else:
-      controlflow.system_error_exit(3, '%s is not a valid argument to "gam print matters"' % myarg)
+      controlflow.invalid_argument_exit(myarg, "gam print matters")
   printGettingAllItems('Vault Matters', None)
   page_message = 'Got %%total_items%% Vault Matters...\n'
   matters = gapi.get_all_pages(v.matters(), 'list', 'matters', page_message=page_message, view=view)
@@ -12101,7 +12112,7 @@ def doPrintVaultExports():
       matters = sys.argv[i+1].split(',')
       i += 2
     else:
-      controlflow.system_error_exit(3, '%s is not a valid a valid argument to "gam print exports"' % myarg)
+      controlflow.invalid_argument_exit(myarg, "gam print exports")
   if not matters:
     matters_results = gapi.get_all_pages(v.matters(), 'list', 'matters', view='BASIC', fields='matters(matterId,state),nextPageToken')
     for matter in matters_results:
@@ -12138,7 +12149,7 @@ def doPrintVaultHolds():
       matters = sys.argv[i+1].split(',')
       i += 2
     else:
-      controlflow.system_error_exit(3, '%s is not a valid a valid argument to "gam print holds"' % myarg)
+      controlflow.invalid_argument_exit(myarg, "gam print holds")
   if not matters:
     matters_results = gapi.get_all_pages(v.matters(), 'list', 'matters', view='BASIC', fields='matters(matterId,state),nextPageToken')
     for matter in matters_results:
@@ -12191,10 +12202,10 @@ def doPrintMobileDevices():
       i += 2
     elif myarg == 'orderby':
       orderBy = sys.argv[i+1].lower()
-      allowed_values = ['deviceid', 'email', 'lastsync', 'model', 'name', 'os', 'status', 'type']
-      if orderBy.lower() not in allowed_values:
-        controlflow.system_error_exit(2, 'orderBy must be one of %s; got %s' % (', '.join(allowed_values), orderBy))
-      elif orderBy == 'lastsync':
+      validOrderBy = ['deviceid', 'email', 'lastsync', 'model', 'name', 'os', 'status', 'type']
+      if orderBy not in validOrderBy:
+        controlflow.expected_argument_exit("orderby", ", ".join(validOrderBy), orderBy)
+      if orderBy == 'lastsync':
         orderBy = 'lastSync'
       elif orderBy == 'deviceid':
         orderBy = 'deviceId'
@@ -12206,7 +12217,7 @@ def doPrintMobileDevices():
       projection = PROJECTION_CHOICES_MAP[myarg]
       i += 1
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam print mobile"' % sys.argv[i])
+      controlflow.invalid_argument_exit(sys.argv[i], "gam print mobile")
   for query in queries:
     printGettingAllItems('Mobile Devices', query)
     page_message = 'Got %%total_items%% Mobile Devices...\n'
@@ -12311,7 +12322,7 @@ def doPrintCrosActivity():
       delimiter = sys.argv[i+1]
       i += 2
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam print crosactivity"' % sys.argv[i])
+      controlflow.invalid_argument_exit(sys.argv[i], "gam print crosactivity")
   if not selectActiveTimeRanges and not selectDeviceFiles and not selectRecentUsers:
     selectActiveTimeRanges = selectRecentUsers = True
   if selectRecentUsers:
@@ -12442,10 +12453,10 @@ def doPrintCrosDevices():
       i += 2
     elif myarg == 'orderby':
       orderBy = sys.argv[i+1].lower().replace('_', '')
-      allowed_values = ['location', 'user', 'lastsync', 'notes', 'serialnumber', 'status', 'supportenddate']
-      if orderBy not in allowed_values:
-        controlflow.system_error_exit(2, 'orderBy must be one of %s; got %s' % (', '.join(allowed_values), orderBy))
-      elif orderBy == 'location':
+      validOrderBy = ['location', 'user', 'lastsync', 'notes', 'serialnumber', 'status', 'supportenddate']
+      if orderBy not in validOrderBy:
+        controlflow.expected_argument_exit("orderby", ", ".join(validOrderBy), orderBy)
+      if orderBy == 'location':
         orderBy = 'annotatedLocation'
       elif orderBy == 'user':
         orderBy = 'annotatedUser'
@@ -12489,10 +12500,10 @@ def doPrintCrosDevices():
         elif field in CROS_ARGUMENT_TO_PROPERTY_MAP:
           addFieldToFieldsList(field, CROS_ARGUMENT_TO_PROPERTY_MAP, fieldsList)
         else:
-          controlflow.system_error_exit(2, '%s is not a valid argument for "gam print cros fields"' % field)
+          controlflow.invalid_argument_exit(field, "gam print cros fields")
       i += 2
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam print cros"' % sys.argv[i])
+      controlflow.invalid_argument_exit(sys.argv[i], "gam print cros")
   if selectedLists:
     noLists = False
     projection = 'FULL'
@@ -12618,7 +12629,7 @@ def doPrintLicenses(returnFields=None, skus=None, countsOnly=False, returnCounts
         countsOnly = True
         i += 1
       else:
-        controlflow.system_error_exit(2, '%s is not a valid argument for "gam print licenses"' % sys.argv[i])
+        controlflow.invalid_argument_exit(sys.argv[i], "gam print licenses")
     if not countsOnly:
       fields = 'nextPageToken,items(productId,skuId,userId)'
       titles = ['userId', 'productId', 'skuId']
@@ -12751,7 +12762,7 @@ def doPrintFeatures():
       fieldsList.append(possible_fields['feature'+myarg])
       i += 1
     else:
-      controlflow.system_error_exit(3, '%s is not a valid argument to "gam print features"' % sys.argv[i])
+      controlflow.invalid_argument_exit(sys.argv[i], "gam print features")
   if fields:
     fields = fields % ','.join(fieldsList)
   features = gapi.get_all_pages(cd.resources().features(), 'list', 'features',
@@ -12798,7 +12809,7 @@ def doPrintBuildings():
       fieldsList.append(possible_fields['building'+myarg])
       i += 1
     else:
-      controlflow.system_error_exit(3, '%s is not a valid argument to "gam print buildings"' % sys.argv[i])
+      controlflow.invalid_argument_exit(sys.argv[i], "gam print buildings")
   if fields:
     fields = fields % ','.join(fieldsList)
   buildings = gapi.get_all_pages(cd.resources().buildings(), 'list', 'buildings',
@@ -12847,7 +12858,7 @@ def doPrintResourceCalendars():
       addFieldToCSVfile(myarg, RESCAL_ARGUMENT_TO_PROPERTY_MAP, fieldsList, fieldsTitles, titles)
       i += 1
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam print resources"' % sys.argv[i])
+      controlflow.invalid_argument_exit(sys.argv[i], "gam print resources")
   if not fieldsList:
     for field in RESCAL_DFLTFIELDS:
       addFieldToCSVfile(field, RESCAL_ARGUMENT_TO_PROPERTY_MAP, fieldsList, fieldsTitles, titles)
@@ -13073,7 +13084,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
       if not silent:
         sys.stderr.write("done getting %s CrOS Devices.\r\n" % len(users))
     else:
-      controlflow.system_error_exit(3, '%s is not a valid argument for "gam all"' % entity)
+      controlflow.invalid_argument_exit(entity, "gam all")
   elif entity_type == 'cros':
     users = entity.replace(',', ' ').split()
     entity = 'cros'
@@ -13102,7 +13113,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
         sys.stderr.write("done.\r\n")
     entity = 'cros'
   else:
-    controlflow.system_error_exit(2, '%s is not a valid argument for "gam"' % entity_type)
+    controlflow.invalid_argument_exit(entity_type, "gam")
   full_users = list()
   if entity != 'cros' and not got_uids:
     for user in users:
@@ -13133,7 +13144,7 @@ def OAuthInfo():
       show_secret = True
       i += 1
     else:
-      controlflow.system_error_exit(3, f'{sys.argv[i]} is not a valid argument to "gam oauth info"')
+      controlflow.invalid_argument_exit(sys.argv[i], "gam oauth info")
   if not access_token and not id_token:
     credentials = getValidOauth2TxtCredentials()
     access_token = credentials.token
@@ -13156,7 +13167,7 @@ def OAuthInfo():
     print(f'Expires: {expires}')
   for key, value in token_info.items():
     if key not in ['issued_to', 'scope', 'email', 'expires_in']:
-        print(f'{key}: {value}')
+      print(f'{key}: {value}')
 
 def doDeleteOAuth():
   lock_file = '%s.lock' % GC_Values[GC_OAUTH2_TXT]
@@ -13622,8 +13633,7 @@ Append an 'r' to grant read-only access or an 'a' to grant action-only access.
       else:
         indicator = SELECTION_INDICATOR['ALL_SELECTED']
 
-    item_description = [f'[{indicator}]', f'{option_number:2d})',
-      scope_option.description,]
+    item_description = [f'[{indicator}]', f'{option_number:2d})', scope_option.description,]
 
     if scope_option.supported_restrictions:
       restrictions = ' and '.join(scope_option.supported_restrictions)
@@ -14017,14 +14027,14 @@ def ProcessGAMCommand(args):
       elif argument in ['gcpfolder']:
         createGCPFolder()
       else:
-        controlflow.system_error_exit(2, '%s is not a valid argument for "gam create"' % argument)
+        controlflow.invalid_argument_exit(argument, "gam create")
       sys.exit(0)
     elif command == 'use':
       argument = sys.argv[2].lower()
       if argument in ['project', 'apiproject']:
         doUseProject()
       else:
-        controlflow.system_error_exit(2, '%s is not a valid argument for "gam use"' % argument)
+        controlflow.invalid_argument_exit(argument, "gam use")
       sys.exit(0)
     elif command == 'update':
       argument = sys.argv[2].lower()
@@ -14069,7 +14079,7 @@ def ProcessGAMCommand(args):
       elif argument in ['feature']:
         doUpdateFeature()
       else:
-        controlflow.system_error_exit(2, '%s is not a valid argument for "gam update"' % argument)
+        controlflow.invalid_argument_exit(argument, "gam update")
       sys.exit(0)
     elif command == 'info':
       argument = sys.argv[2].lower()
@@ -14120,14 +14130,14 @@ def ProcessGAMCommand(args):
       elif argument in ['building']:
         doGetBuildingInfo()
       else:
-        controlflow.system_error_exit(2, '%s is not a valid argument for "gam info"' % argument)
+        controlflow.invalid_argument_exit(argument, "gam info")
       sys.exit(0)
     elif command == 'cancel':
       argument = sys.argv[2].lower()
       if argument in ['guardianinvitation', 'guardianinvitations']:
         doCancelGuardianInvitation()
       else:
-        controlflow.system_error_exit(2, '%s is not a valid argument for "gam cancel"' % argument)
+        controlflow.invalid_argument_exit(argument, "gam cancel")
       sys.exit(0)
     elif command == 'delete':
       argument = sys.argv[2].lower()
@@ -14176,7 +14186,7 @@ def ProcessGAMCommand(args):
       elif argument in ['sakey', 'sakeys']:
         doDeleteServiceAccountKeys()
       else:
-        controlflow.system_error_exit(2, '%s is not a valid argument for "gam delete"' % argument)
+        controlflow.invalid_argument_exit(argument, "gam delete")
       sys.exit(0)
     elif command == 'undelete':
       argument = sys.argv[2].lower()
@@ -14187,7 +14197,7 @@ def ProcessGAMCommand(args):
       elif argument == 'alert':
         doDeleteOrUndeleteAlert('undelete')
       else:
-        controlflow.system_error_exit(2, '%s is not a valid argument for "gam undelete"' % argument)
+        controlflow.invalid_argument_exit(argument, "gam undelete")
       sys.exit(0)
     elif command in ['close', 'reopen']:
       # close and reopen will have to be split apart if either takes a new argument
@@ -14195,7 +14205,7 @@ def ProcessGAMCommand(args):
       if argument in ['matter', 'vaultmatter']:
         doUpdateVaultMatter(action=command)
       else:
-        controlflow.system_error_exit(2, '%s is not a valid argument for "gam %s"' % (argument, command))
+        controlflow.invalid_argument_exit(argument, f"gam {command}")
       sys.exit(0)
     elif command == 'print':
       argument = sys.argv[2].lower().replace('-', '')
@@ -14262,7 +14272,7 @@ def ProcessGAMCommand(args):
       elif argument in ['alertfeedback', 'alertsfeedback']:
         doPrintShowAlertFeedback()
       else:
-        controlflow.system_error_exit(2, '%s is not a valid argument for "gam print"' % argument)
+        controlflow.invalid_argument_exit(argument, "gam print")
       sys.exit(0)
     elif command == 'show':
       argument = sys.argv[2].lower()
@@ -14277,7 +14287,7 @@ def ProcessGAMCommand(args):
       elif argument in ['sakey', 'sakeys']:
         doShowServiceAccountKeys()
       else:
-        controlflow.system_error_exit(2, '%s is not a valid argument for "gam show"' % argument)
+        controlflow.invalid_argument_exit(argument, "gam show")
       sys.exit(0)
     elif command in ['oauth', 'oauth2']:
       argument = sys.argv[2].lower()
@@ -14298,7 +14308,7 @@ def ProcessGAMCommand(args):
         else:
           print('Credentials refreshed')
       else:
-        controlflow.system_error_exit(2, '%s is not a valid argument for "gam oauth"' % argument)
+        controlflow.invalid_argument_exit(argument, "gam oauth")
       sys.exit(0)
     elif command == 'calendar':
       argument = sys.argv[3].lower()
@@ -14325,7 +14335,7 @@ def ProcessGAMCommand(args):
       elif argument == 'modify':
         doCalendarModifySettings()
       else:
-        controlflow.system_error_exit(2, '%s is not a valid argument for "gam calendar"' % argument)
+        controlflow.invalid_argument_exit(argument, "gam calendar")
       sys.exit(0)
     elif command == 'printer':
       if sys.argv[2].lower() == 'register':
@@ -14339,7 +14349,7 @@ def ProcessGAMCommand(args):
       elif argument in ['del', 'delete', 'remove']:
         doPrinterDelACL()
       else:
-        controlflow.system_error_exit(2, '%s is not a valid argument for "gam printer..."' % argument)
+        controlflow.invalid_argument_exit(argument, "gam printer...")
       sys.exit(0)
     elif command == 'printjob':
       argument = sys.argv[3].lower()
@@ -14354,7 +14364,7 @@ def ProcessGAMCommand(args):
       elif argument == 'resubmit':
         doPrintJobResubmit()
       else:
-        controlflow.system_error_exit(2, '%s is not a valid argument for "gam printjob"' % argument)
+        controlflow.invalid_argument_exit(argument, "gam printjob")
       sys.exit(0)
     elif command == 'report':
       showReport()
@@ -14371,7 +14381,7 @@ def ProcessGAMCommand(args):
       elif argument == 'sync':
         doSyncCourseParticipants()
       else:
-        controlflow.system_error_exit(2, '%s is not a valid argument for "gam course"' % argument)
+        controlflow.invalid_argument_exit(argument, "gam course")
       sys.exit(0)
     elif command == 'download':
       argument = sys.argv[2].lower()
@@ -14380,14 +14390,14 @@ def ProcessGAMCommand(args):
       elif argument in ['storagebucket']:
         doDownloadCloudStorageBucket()
       else:
-        controlflow.system_error_exit(2, '%s is not a valid argument for "gam download"' % argument)
+        controlflow.invalid_argument_exit(argument, "gam download")
       sys.exit(0)
     elif command == 'rotate':
       argument = sys.argv[2].lower()
       if argument in ['sakey', 'sakeys']:
         doCreateOrRotateServiceAccountKeys()
       else:
-        controlflow.system_error_exit(2, '%s is not a valid argument for "gam rotate"' % argument)
+        controlflow.invalid_argument_exit(argument, "gam rotate")
       sys.exit(0)
     users = getUsersToModify()
     command = sys.argv[3].lower()
@@ -14404,7 +14414,7 @@ def ProcessGAMCommand(args):
       elif transferWhat == 'seccals':
         transferSecCals(users)
       else:
-        controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> transfer"' % transferWhat)
+        controlflow.invalid_argument_exit(transferWhat, "gam <users> transfer")
     elif command == 'show':
       showWhat = sys.argv[4].lower()
       if showWhat in ['labels', 'label']:
@@ -14466,7 +14476,7 @@ def ProcessGAMCommand(args):
       elif showWhat in ['teamdriveinfo']:
         doGetTeamDriveInfo(users)
       else:
-        controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> show"' % showWhat)
+        controlflow.invalid_argument_exit(showWhat, "gam <users> show")
     elif command == 'print':
       printWhat = sys.argv[4].lower()
       if printWhat == 'calendars':
@@ -14494,7 +14504,7 @@ def ProcessGAMCommand(args):
       elif printWhat in ['teamdrive', 'teamdrives']:
         printShowTeamDrives(users, True)
       else:
-        controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> print"' % printWhat)
+        controlflow.invalid_argument_exit(printWhat, "gam <users> print")
     elif command == 'modify':
       modifyWhat = sys.argv[4].lower()
       if modifyWhat in ['message', 'messages']:
@@ -14502,7 +14512,7 @@ def ProcessGAMCommand(args):
       elif modifyWhat in ['thread', 'threads']:
         doProcessMessagesOrThreads(users, 'modify', 'threads')
       else:
-        controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> modify"' % modifyWhat)
+        controlflow.invalid_argument_exit(modifyWhat, "gam <users> modify")
     elif command == 'trash':
       trashWhat = sys.argv[4].lower()
       if trashWhat in ['message', 'messages']:
@@ -14510,7 +14520,7 @@ def ProcessGAMCommand(args):
       elif trashWhat in ['thread', 'threads']:
         doProcessMessagesOrThreads(users, 'trash', 'threads')
       else:
-        controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> trash"' % trashWhat)
+        controlflow.invalid_argument_exit(trashWhat, "gam <users> trash")
     elif command == 'untrash':
       untrashWhat = sys.argv[4].lower()
       if untrashWhat in ['message', 'messages']:
@@ -14518,7 +14528,7 @@ def ProcessGAMCommand(args):
       elif untrashWhat in ['thread', 'threads']:
         doProcessMessagesOrThreads(users, 'untrash', 'threads')
       else:
-        controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> untrash"' % untrashWhat)
+        controlflow.invalid_argument_exit(untrashWhat, "gam <users> untrash")
     elif command in ['delete', 'del']:
       delWhat = sys.argv[4].lower()
       if delWhat == 'delegate':
@@ -14562,7 +14572,7 @@ def ProcessGAMCommand(args):
       elif delWhat == 'teamdrive':
         doDeleteTeamDrive(users)
       else:
-        controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> delete"' % delWhat)
+        controlflow.invalid_argument_exit(delWhat, "gam <users> delete")
     elif command in ['add', 'create']:
       addWhat = sys.argv[4].lower()
       if addWhat == 'calendar':
@@ -14591,7 +14601,7 @@ def ProcessGAMCommand(args):
       elif addWhat == 'teamdrive':
         doCreateTeamDrive(users)
       else:
-        controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> %s"' % (addWhat, command))
+        controlflow.invalid_argument_exit(addWhat, f"gam <users> {command}")
     elif command == 'update':
       updateWhat = sys.argv[4].lower()
       if updateWhat == 'calendar':
@@ -14621,7 +14631,7 @@ def ProcessGAMCommand(args):
       elif updateWhat == 'teamdrive':
         doUpdateTeamDrive(users)
       else:
-        controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> update"' % updateWhat)
+        controlflow.invalid_argument_exit(updateWhat, "gam <users> update")
     elif command in ['deprov', 'deprovision']:
       doDeprovUser(users)
     elif command == 'get':
@@ -14631,13 +14641,13 @@ def ProcessGAMCommand(args):
       elif getWhat == 'drivefile':
         downloadDriveFile(users)
       else:
-        controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> get"' % getWhat)
+        controlflow.invalid_argument_exit(getWhat, "gam <users> get")
     elif command == 'empty':
       emptyWhat = sys.argv[4].lower()
       if emptyWhat == 'drivetrash':
         doEmptyDriveTrash(users)
       else:
-        controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> empty"' % emptyWhat)
+        controlflow.invalid_argument_exit(emptyWhat, "gam <users> empty")
     elif command == 'info':
       infoWhat = sys.argv[4].lower()
       if infoWhat == 'calendar':
@@ -14649,13 +14659,13 @@ def ProcessGAMCommand(args):
       elif infoWhat == 'sendas':
         infoSendAs(users)
       else:
-        controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> info"' % infoWhat)
+        controlflow.invalid_argument_exit(infoWhat, "gam <users> info")
     elif command == 'check':
       checkWhat = sys.argv[4].replace('_', '').lower()
       if checkWhat == 'serviceaccount':
         doCheckServiceAccount(users)
       else:
-        controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> check"' % checkWhat)
+        controlflow.invalid_argument_exit(checkWhat, "gam <users> check")
     elif command == 'profile':
       doProfile(users)
     elif command == 'imap':
@@ -14695,9 +14705,9 @@ def ProcessGAMCommand(args):
       if watchWhat == 'gmail':
         watchGmail(users)
       else:
-        controlflow.system_error_exit(2, '%s is not a valid argument for "gam <users> watch"' % watchWhat)
+        controlflow.invalid_argument_exit(watchWhat, "gam <users> watch")
     else:
-      controlflow.system_error_exit(2, '%s is not a valid argument for "gam"' % command)
+      controlflow.invalid_argument_exit(command, "gam")
   except IndexError:
     showUsage()
     sys.exit(2)
