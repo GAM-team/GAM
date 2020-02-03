@@ -502,7 +502,9 @@ def SetGlobalVariables():
         if not filterVal:
           continue
         try:
-          column, filterStr = filterVal.split(':', 1)
+          filterTokens = shlexSplitList(filterVal, ':')
+          column = filterTokens[0]
+          filterStr = ':'.join(filterTokens[1:])
         except ValueError:
           controlflow.system_error_exit(3, 'Item: {0}, Value: "{1}", Expected column:filter'.format(itemName, filterVal))
         filterDict[column] = filterStr
