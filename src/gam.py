@@ -10675,16 +10675,6 @@ def getOrgUnitItem(orgUnit, pathOnly=False, absolutePath=True):
     return makeOrgUnitPathAbsolute(orgUnit)
   return makeOrgUnitPathRelative(orgUnit)
 
-def getOrgUnitId(orgUnit, cd=None):
-  if cd is None:
-    cd = buildGAPIObject('directory')
-  orgUnit = getOrgUnitItem(orgUnit)
-  if orgUnit[:3] == 'id:':
-    return (orgUnit, orgUnit)
-  result = gapi.call(cd.orgunits(), 'get',
-                     customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=encodeOrgUnitPath(makeOrgUnitPathRelative(orgUnit)), fields='orgUnitId')
-  return (orgUnit, result['orgUnitId'])
-
 def getTopLevelOrgId(cd, orgUnitPath):
   try:
     # create a temp org so we can learn what the top level org ID is (sigh)
@@ -10696,6 +10686,26 @@ def getTopLevelOrgId(cd, orgUnitPath):
   except:
     pass
   return None
+
+def getOrgUnitId(orgUnit, cd=None):
+  if cd is None:
+    cd = buildGAPIObject('directory')
+  orgUnit = getOrgUnitItem(orgUnit)
+  if orgUnit[:3] == 'id:':
+    return (orgUnit, orgUnit)
+  if orgUnit == '/':
+    result = gapi.call(cd.orgunits(), 'list',
+                       customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath='/', type='children',
+                       fields='organizationUnits(parentOrgUnitId)')
+    if result.get('organizationUnits', []):
+      return (orgUnit, result['organizationUnits'][0]['parentOrgUnitId'])
+    topLevelOrgId = getTopLevelOrgId(cd, '/')
+    if topLevelOrgId:
+      return (orgUnit, topLevelOrgId)
+    return (orgUnit, '/') #Bogus but should never happen
+  result = gapi.call(cd.orgunits(), 'get',
+                     customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=encodeOrgUnitPath(makeOrgUnitPathRelative(orgUnit)), fields='orgUnitId')
+  return (orgUnit, result['orgUnitId'])
 
 def doGetOrgInfo(name=None, return_attrib=None):
   cd = buildGAPIObject('directory')
