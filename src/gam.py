@@ -1522,7 +1522,7 @@ def gen_sha512_hash(password):
   if platform.system() == 'Windows':
     return sha512_crypt.hash(password, rounds=5000)
   else:
-    return crypt.crypt(password)
+    return crypt(password)
 
 def printShowDelegates(users, csvFormat):
   if csvFormat:
