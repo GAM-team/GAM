@@ -33,13 +33,13 @@ cache:
     - $HOME/python
     - $HOME/ssl
 
-matrix:
+jobs:
   fast_finish: true
   include:
     - os: linux
       name: "Linux 64-bit Bionic"
       dist: bionic
-      language: bash
+      language: shell
       env:
          - GAMOS=linux
          - PLATFORM=x86_64
@@ -47,7 +47,7 @@ matrix:
     - os: linux
       name: "Linux 64-bit Xenial"
       dist: xenial
-      language: bash
+      language: shell
       env:
         - GAMOS=linux
         - PLATFORM=x86_64
@@ -56,7 +56,7 @@ matrix:
       dist: bionic
       arch: arm64
       name: "Linux ARM64 Bionic"
-      language: bash
+      language: shell
       filter_secrets: false
       addons:
         apt:
@@ -70,7 +70,7 @@ matrix:
       dist: xenial
       arch: arm64
       name: "Linux ARM64 Xenial"
-      language: bash
+      language: shell
       filter_secrets: false
       addons:
         apt:
@@ -83,7 +83,7 @@ matrix:
     - os: linux
       name: "Linux 64-bit Trusty"
       dist: trusty
-      language: bash
+      language: shell
       env:
         - GAMOS=linux
         - PLATFORM=x86_64
@@ -91,7 +91,7 @@ matrix:
     - os: linux
       name: "Linux 64-bit Precise"
       dist: precise
-      language: bash
+      language: shell
       env:
         - GAMOS=linux
         - PLATFORM=x86_64
@@ -100,8 +100,7 @@ matrix:
       name: "Python 3.6 Source Testing"
       dist: bionic
       language: python
-      python:
-        - "3.6"
+      python: 3.6
       env:
         - GAMOS=linux
         - PLATFORM=x86_64
@@ -110,8 +109,7 @@ matrix:
       name: "Python 3.7 Source Testing"
       dist: bionic
       language: python
-      python:
-        - "3.7"
+      python: 3.7
       env:
         - GAMOS=linux
         - PLATFORM=x86_64
@@ -120,8 +118,7 @@ matrix:
       name: "Python nightly Source Testing"
       dist: bionic
       language: python
-      python:
-        - "nightly"
+      python: nightly
       env:
         - GAMOS=linux
         - PLATFORM=x86_64
@@ -290,7 +287,7 @@ before_deploy:
 
 deploy:
   provider: releases
-  api_key:
+  token:
     secure: bzambMcQwyv/o5c5GrKGCsZHgE5R85tg8sNFvPfpISz3+uosCjnBXas7wvCKzT75XUFi2ztfbYak6HdKf4sGnNHk0saEicB3slH+ghPyZbYzp76yvvduhFO2nWW3/F01tL+Yfqqt4/q8wFaWGjrC5km+6GLVyB4lWA/Uyu49qKnz02uSwyhBD/VFbO7DOQ65a1iWk9HngyMsu0Oi7HIbSjSLtxTHedNfOf3waW0NivTTxYXiYGX/MCu3GWhgIGj47a+H3A6FcQ/9QWvnKgnoixdgPBUz7kDb7ktsWwQsILPGStgH7iMuG49ZlXdEFmqwifBri2wvzmFEevBGZjHcupy1IGrNFRG+IUGKMotio+OkLHlLjuv7ZJtqCz/Vf5SNFgNyMSanx6jKEUJuYvndVg99IRXmYVwHFwPu5BAcJACpU6C0AfyGmmSqqwxCd46uXL62ynxNFpHuRfOqlDnmCTfZgjOciJSlDDpf+Xz9fF7+oCoeCi3mrcZVFjhd3tT6Oxw5HrsDtm0ZNld1cdLidaq8H6vOFgHMd0A9yNYZzTzXTvpmxzkXT4Zc7s+PYKN6z5fRZ+pJeckUjRXblvVEfs5HFSymavcOc5AkRwxpvOsTQMNmlnaJCBo5UNs0K/rVmRi5cFmaiwTcBCY0kTllOBJ4zWsfq8seiokWwNUNK2g=
   file_glob: true
   overwrite: true
