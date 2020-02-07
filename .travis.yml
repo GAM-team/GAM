@@ -1,4 +1,6 @@
 if: tag IS blank
+os: linux
+language: python
 
 env:
   global:
@@ -34,7 +36,6 @@ cache:
     - $HOME/ssl
 
 jobs:
-  fast_finish: true
   include:
     - os: linux
       name: "Linux 64-bit Bionic"
@@ -57,10 +58,6 @@ jobs:
       arch: arm64
       name: "Linux ARM64 Bionic"
       language: shell
-      addons:
-        apt:
-          packages:
-            - ruby
       env:
         - GAMOS=linux
         - PLATFORM=arm64
@@ -70,10 +67,6 @@ jobs:
       arch: arm64
       name: "Linux ARM64 Xenial"
       language: shell
-      addons:
-        apt:
-          packages:
-            - ruby
       env:
         - GAMOS=linux
         - PLATFORM=arm64
@@ -168,9 +161,6 @@ jobs:
         - GAMOS=windows
         - PLATFORM=x86
         - VMTYPE=build
-
-before_cache:
-- echo "this is before cache"
 
 before_install:
 - source src/travis/$TRAVIS_OS_NAME-$PLATFORM-before-install.sh
@@ -288,7 +278,7 @@ deploy:
   file_glob: true
   overwrite: true
   file: gam-$GAMVERSION-*
-  cleanup: true
+  cleanup: false
   draft: true
   on:
     repo: jay0lee/GAM
