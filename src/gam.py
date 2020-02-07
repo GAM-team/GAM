@@ -52,11 +52,11 @@ from multiprocessing import Pool as mp_pool
 from multiprocessing import freeze_support as mp_freeze_support
 from multiprocessing import set_start_method as mp_set_start_method
 from urllib.parse import quote, urlencode, urlparse
-try:
-  from crypt import crypt
-except ImportError:
+if platform.system() == 'Windows':
   # No crypt module on Win, use passlib
-  from passlib.hash import crypt
+  from passlib.hash import sha512_crypt as crypt
+else:
+  from crypt import crypt
 import dateutil.parser
 
 import googleapiclient
