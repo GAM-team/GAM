@@ -7,4 +7,4 @@ google-auth
 google-auth-httplib2
 google-auth-oauthlib>=0.4.1
 httplib2>=0.13.0
-passlib>=1.7.2; sys_platform == 'windows'
+passlib>=1.7.2; sys_platform == 'win32'
