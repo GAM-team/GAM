@@ -57,7 +57,6 @@ jobs:
       arch: arm64
       name: "Linux ARM64 Bionic"
       language: shell
-      filter_secrets: false
       addons:
         apt:
           packages:
@@ -71,7 +70,6 @@ jobs:
       arch: arm64
       name: "Linux ARM64 Xenial"
       language: shell
-      filter_secrets: false
       addons:
         apt:
           packages:
@@ -159,7 +157,6 @@ jobs:
     - os: windows
       name: "Windows 64-bit"
       language: shell
-      filter_secrets: false
       env:
         - GAMOS=windows
         - PLATFORM=x86_64
@@ -167,7 +164,6 @@ jobs:
     - os: windows
       name: "Windows 32-bit"
       language: shell
-      filter_secrets: false
       env:
         - GAMOS=windows
         - PLATFORM=x86
@@ -292,9 +288,8 @@ deploy:
   file_glob: true
   overwrite: true
   file: gam-$GAMVERSION-*
-  skip_cleanup: true
+  cleanup: true
   draft: true
-  all_branches: true
   on:
     repo: jay0lee/GAM
     condition: $VMTYPE = build
