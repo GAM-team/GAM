@@ -54,7 +54,7 @@ from multiprocessing import set_start_method as mp_set_start_method
 from urllib.parse import quote, urlencode, urlparse
 if platform.system() == 'Windows':
   # No crypt module on Win, use passlib
-  from passlib.hash import sha512_crypt as crypt
+  from passlib.hash import sha512_crypt
 else:
   from crypt import crypt
 import dateutil.parser
@@ -1515,6 +1515,12 @@ def addDelegates(users, i):
       continue
     print("Giving %s delegate access to %s (%s/%s)" % (delegate, delegator, i, count))
     gapi.call(gmail.users().settings().delegates(), 'create', soft_errors=True, userId='me', body={'delegateEmail': delegate})
+
+def gen_sha512_hash(password):
+  if platform.system() == 'Windows':
+    return sha512_crypt.hash(password, rounds=5000)
+  else:
+    return crypt.crypt(password)
 
 def printShowDelegates(users, csvFormat):
   if csvFormat:
@@ -7297,7 +7303,7 @@ def getUserAttributes(i, cd, updateCmd):
     rnd = SystemRandom()
     body['password'] = ''.join(rnd.choice(PASSWORD_SAFE_CHARS) for _ in range(100))
   if 'password' in body and need_to_hash_password:
-    body['password'] = crypt(body['password'])
+    body['password'] = gen_sha512_hash(body['password'])
     body['hashFunction'] = 'crypt'
   return body
 
