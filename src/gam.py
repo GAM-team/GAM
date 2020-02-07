@@ -52,11 +52,6 @@ from multiprocessing import Pool as mp_pool
 from multiprocessing import freeze_support as mp_freeze_support
 from multiprocessing import set_start_method as mp_set_start_method
 from urllib.parse import quote, urlencode, urlparse
-if platform.system() == 'Windows':
-  # No crypt module on Win, use passlib
-  from passlib.hash import sha512_crypt
-else:
-  from crypt import crypt
 import dateutil.parser
 
 import googleapiclient
@@ -84,6 +79,12 @@ import gapi
 import transport
 import utils
 from var import *
+
+if platform.system() == 'Windows':
+  # No crypt module on Win, use passlib
+  from passlib.hash import sha512_crypt
+else:
+  from crypt import crypt
 
 if platform.system() == 'Linux':
   import distro
