@@ -278,7 +278,7 @@ deploy:
   file_glob: true
   overwrite: true
   file: gam-$GAMVERSION-*
-  cleanup: false
+  skip_cleanup: true
   draft: true
   on:
     repo: jay0lee/GAM
