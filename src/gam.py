@@ -5467,7 +5467,7 @@ def updateSmime(users):
       if not smimes:
         controlflow.system_error_exit(3, f'{user} has no S/MIME certificates for sendas address {sendAsEmail}')
       if len(smimes) > 1:
-        certList = "\n ".join([smime["id"] for smime in smimes]
+        certList = "\n ".join([smime["id"] for smime in smimes])
         controlflow.system_error_exit(3, f'{user} has more than one S/MIME certificate. Please specify a cert to update:\n {certList}')
       smimeId = smimes[0]['id']
     else:
@@ -5500,7 +5500,7 @@ def deleteSmime(users):
       if not smimes:
         controlflow.system_error_exit(3, f'{user} has no S/MIME certificates for sendas address {sendAsEmail}')
       if len(smimes) > 1:
-        certList = "\n ".join([smime["id"] for smime in smimes]
+        certList = "\n ".join([smime["id"] for smime in smimes])
         controlflow.system_error_exit(3, f'{user} has more than one S/MIME certificate. Please specify a cert to delete:\n {certList}')
       smimeId = smimes[0]['id']
     else:
@@ -6643,20 +6643,20 @@ def getVacation(users):
                        userId='me')
     if result:
       enabled = result['enableAutoReply']
-      print('User: {0}, Vacation: ({1}/{2})'.format(user, i, count))
-      print('  Enabled: {0}'.format(enabled))
+      print(f'User: {user}, Vacation: ({i}/{count})')
+      print(f'  Enabled: {enabled}')
       if enabled:
-        print('  Contacts Only: {0}'.format(result['restrictToContacts']))
-        print('  Domain Only: {0}'.format(result['restrictToDomain']))
+        print(f'  Contacts Only: {result["restrictToContacts"]}')
+        print(f'  Domain Only: {result["restrictToDomain"]}')
         if 'startTime' in result:
-          print('  Start Date: {0}'.format(utils.formatTimestampYMD(result['startTime'])))
+          print(f'  Start Date: {utils.formatTimestampYMD(result["startTime"])}')
         else:
           print('  Start Date: Started')
         if 'endTime' in result:
-          print('  End Date: {0}'.format(utils.formatTimestampYMD(result['endTime'])))
+          print(f'  End Date: {utils.formatTimestampYMD(result["endTime"])}')
         else:
           print('  End Date: Not specified')
-        print('  Subject: {0}'.format(result.get('responseSubject', 'None')))
+        print(f'  Subject: {result.get("responseSubject", "None")}')
         sys.stdout.write('  Message:\n   ')
         if result.get('responseBodyPlainText'):
           print(utils.indentMultiLineText(result['responseBodyPlainText'], n=4))
@@ -6672,7 +6672,7 @@ def doDelSchema():
   cd = buildGAPIObject('directory')
   schemaKey = sys.argv[3]
   gapi.call(cd.schemas(), 'delete', customerId=GC_Values[GC_CUSTOMER_ID], schemaKey=schemaKey)
-  print('Deleted schema %s' % schemaKey)
+  print(f'Deleted schema {schemaKey}')
 
 def doCreateOrUpdateUserSchema(updateCmd):
   cd = buildGAPIObject('directory')
@@ -6682,7 +6682,7 @@ def doCreateOrUpdateUserSchema(updateCmd):
     try:
       body = gapi.call(cd.schemas(), 'get', throw_reasons=[gapi.errors.ErrorReason.NOT_FOUND], customerId=GC_Values[GC_CUSTOMER_ID], schemaKey=schemaKey)
     except gapi.errors.GapiNotFoundError:
-      controlflow.system_error_exit(3, 'Schema %s does not exist.' % schemaKey)
+      controlflow.system_error_exit(3, f'Schema {schemaKey} does not exist.')
   else: # create
     cmd = 'create'
     body = {'schemaName': schemaKey, 'fields': []}
@@ -6736,21 +6736,21 @@ def doCreateOrUpdateUserSchema(updateCmd):
       controlflow.invalid_argument_exit(sys.argv[i], f"gam {cmd} schema")
   if updateCmd:
     result = gapi.call(cd.schemas(), 'update', customerId=GC_Values[GC_CUSTOMER_ID], body=body, schemaKey=schemaKey)
-    print('Updated user schema %s' % result['schemaName'])
+    print(f'Updated user schema {result["schemaName"]}')
   else:
     result = gapi.call(cd.schemas(), 'insert', customerId=GC_Values[GC_CUSTOMER_ID], body=body)
-    print('Created user schema %s' % result['schemaName'])
+    print(f'Created user schema {result["schemaName"]}')
 
 def _showSchema(schema):
-  print('Schema: %s' % schema['schemaName'])
+  print(f'Schema: {schema["schemaName"]}')
   for a_key in schema:
     if a_key not in ['schemaName', 'fields', 'etag', 'kind']:
-      print(' %s: %s' % (a_key, schema[a_key]))
+      print(f' {a_key}: {schema[a_key]}')
   for field in schema['fields']:
-    print(' Field: %s' % field['fieldName'])
+    print(f' Field: {field["fieldName"]}')
     for a_key in field:
       if a_key not in ['fieldName', 'kind', 'etag']:
-        print('  %s: %s' % (a_key, field[a_key]))
+        print(f'  {a_key}: {field[a_key]}')
 
 def doPrintShowUserSchemas(csvFormat):
   cd = buildGAPIObject('directory')
@@ -6946,7 +6946,7 @@ def getUserAttributes(i, cd, updateCmd):
         continue
       address = {}
       if sys.argv[i].lower() != 'type':
-        controlflow.system_error_exit(2, 'wrong format for account address details. Expected type got %s' % sys.argv[i])
+        controlflow.system_error_exit(2, f'wrong format for account address details. Expected type got {sys.argv[i]}')
       i = getEntryType(i+1, address, USER_ADDRESS_TYPES)
       if sys.argv[i].lower() in ['unstructured', 'formatted']:
         i += 1
@@ -6984,7 +6984,7 @@ def getUserAttributes(i, cd, updateCmd):
           i += 1
           break
         else:
-          controlflow.system_error_exit(2, 'invalid argument (%s) for account address details' % sys.argv[i])
+          controlflow.system_error_exit(2, f'invalid argument ({sys.argv[i]}) for account address details')
       appendItemToBodyList(body, 'addresses', address)
     elif myarg in ['emails', 'otheremail', 'otheremails']:
       i += 1
@@ -7003,10 +7003,10 @@ def getUserAttributes(i, cd, updateCmd):
         continue
       im = {}
       if sys.argv[i].lower() != 'type':
-        controlflow.system_error_exit(2, 'wrong format for account im details. Expected type got %s' % sys.argv[i])
+        controlflow.system_error_exit(2, f'wrong format for account im details. Expected type got {sys.argv[i]}')
       i = getEntryType(i+1, im, USER_IM_TYPES)
       if sys.argv[i].lower() != 'protocol':
-        controlflow.system_error_exit(2, 'wrong format for account details. Expected protocol got %s' % sys.argv[i])
+        controlflow.system_error_exit(2, f'wrong format for account details. Expected protocol got {sys.argv[i]}')
       i += 1
       im['protocol'] = sys.argv[i].lower()
       validProtocols = ['custom_protocol', 'aim', 'gtalk', 'icq', 'jabber', 'msn', 'net_meeting', 'qq', 'skype', 'yahoo']
@@ -7071,7 +7071,7 @@ def getUserAttributes(i, cd, updateCmd):
           i += 1
           break
         else:
-          controlflow.system_error_exit(2, 'invalid argument (%s) for account organization details' % sys.argv[i])
+          controlflow.system_error_exit(2, f'invalid argument ({sys.argv[i]}) for account organization details')
       appendItemToBodyList(body, 'organizations', organization)
     elif myarg in ['phone', 'phones']:
       i += 1
@@ -7091,7 +7091,7 @@ def getUserAttributes(i, cd, updateCmd):
           i += 1
           break
         else:
-          controlflow.system_error_exit(2, 'invalid argument (%s) for account phone details' % sys.argv[i])
+          controlflow.system_error_exit(2, f'invalid argument ({sys.argv[i]}) for account phone details')
       appendItemToBodyList(body, 'phones', phone)
     elif myarg in ['relation', 'relations']:
       i += 1
@@ -7320,7 +7320,7 @@ class ShortURLFlow(google_auth_oauthlib.flow.InstalledAppFlow):
     headers = {'Content-Type': 'application/json',
                'user-agent': GAM_INFO}
     try:
-      resp, content = simplehttp.request(url_shortnr, 'POST', '{"long_url": "%s"}' % long_url, headers=headers)
+      resp, content = simplehttp.request(url_shortnr, 'POST', f'{"long_url": "{long_url}"}', headers=headers)
     except:
       return long_url, state
     if resp.status != 200:
@@ -7422,18 +7422,18 @@ def enableGAMProjectAPIs(GAMProjectAPIs, httpObj, projectId, checkEnabled, i=0, 
           print('    API: {0}, Enabled{1}'.format(api, currentCount(j, jcount)))
           break
         except gapi.errors.GapiFailedPreconditionError as e:
-          print('\nThere was an error enabling %s. Please resolve error as described below:' % api)
+          print(f'\nThere was an error enabling {api}. Please resolve error as described below:')
           print()
-          print('\n%s\n' % e)
+          print(f'\n{str(e)}\n')
           print()
           input('Press enter once resolved and we will try enabling the API again.')
         except (gapi.errors.GapiForbiddenError, gapi.errors.GapiPermissionDeniedError) as e:
-          print('    API: {0}, Enable Failed: {1}{2}'.format(api, str(e), currentCount(j, jcount)))
+          print(f'    API: {api}, Enable Failed: {str(e)}{currentCount(j, jcount)}')
           status = False
   return status
 
 def _grantSARotateRights(iam, sa_email):
-  print('Giving service account {0} rights to rotate own private key'.format(sa_email))
+  print(f'Giving service account {sa_email} rights to rotate own private key')
   body = {
     'policy': {
       'bindings': [
@@ -7461,10 +7461,10 @@ def _createClientSecretsOauth2service(httpObj, projectId):
     try:
       content = json.loads(content)
     except ValueError:
-      print('Unknown error: %s' % content)
+      print(f'Unknown error: {content}')
       return False
     if not 'error' in content or not 'error_description' in content:
-      print('Unknown error: %s' % content)
+      print(f'Unknown error: {content}')
       return False
     if content['error'] == 'invalid_grant':
       return True
@@ -7474,7 +7474,7 @@ def _createClientSecretsOauth2service(httpObj, projectId):
     if content['error_description'] == 'Unauthorized':
       print(f'Ooops!!\n\n{client_secret}\n\nIs not a valid client secret. Please make sure you are following the directions exactly and that there are no extra spaces in your client secret.')
       return False
-    print('Unknown error: %s' % content)
+    print(f'Unknown error: {content}')
     return False
 
   GAMProjectAPIs = getGAMProjectFile('src/project-apis.txt').splitlines()
@@ -7483,36 +7483,36 @@ def _createClientSecretsOauth2service(httpObj, projectId):
                                         http=httpObj, cache_discovery=False,
                                         discoveryServiceUrl=googleapiclient.discovery.V2_DISCOVERY_URI)
   sa_list = gapi.call(iam.projects().serviceAccounts(), 'list',
-                      name='projects/%s' % projectId)
+                      name=f'projects/{projectId}')
   service_account = None
   if 'accounts' in sa_list:
     for account in sa_list['accounts']:
-      sa_email = '%s@%s.iam.gserviceaccount.com' % (projectId, projectId)
+      sa_email = f'{projectId}@{projectId}.iam.gserviceaccount.com'
       if sa_email in account['name']:
         service_account = account
         break
   if not service_account:
     print('Creating Service Account')
     service_account = gapi.call(iam.projects().serviceAccounts(), 'create',
-                                name='projects/%s' % projectId,
+                                name=f'projects/{projectId}',
                                 body={'accountId': projectId, 'serviceAccount': {'displayName': 'GAM Project'}})
     GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID] = service_account['uniqueId']
   doCreateOrRotateServiceAccountKeys(iam, project_id=service_account['projectId'],
                                      client_email=service_account['email'],
                                      client_id=service_account['uniqueId'])
   _grantSARotateRights(iam, service_account['name'].rsplit('/', 1)[-1])
-  console_credentials_url = 'https://console.developers.google.com/apis/credentials/consent/edit?createClient&newAppInternalUser=true&project=%s' % projectId
+  console_credentials_url = f'https://console.developers.google.com/apis/credentials/consent/edit?createClient&newAppInternalUser=true&project={projectId}'
   while True:
-    print('''Please go to:
+    print(f'''Please go to:
 
-%s
+{console_credentials_url}
 
 1. Enter "GAM" for "Application name".
 2. Leave other fields blank. Click "Save" button.
 3. Choose "Other". Enter a desired value for "Name". Click the blue "Create" button.
 4. Copy your "client ID" value.
 
-''' % console_credentials_url)
+''')
 # If you use Firefox to copy the Client ID and Secret, the data has leading and trailing newlines
 # The first raw_input will get the leading newline, thus we have to issue another raw_input to get the data
 # If the newlines are not present, the data is correctly read with the first raw_input
@@ -7558,11 +7558,11 @@ def _getValidateLoginHint(login_hint=None):
 def _getCurrentProjectID():
   cs_data = fileutils.read_file(GC_Values[GC_CLIENT_SECRETS_JSON], continue_on_error=True, display_errors=True)
   if not cs_data:
-    controlflow.system_error_exit(14, 'Your client secrets file:\n\n%s\n\nis missing. Please recreate the file.' % GC_Values[GC_CLIENT_SECRETS_JSON])
+    controlflow.system_error_exit(14, f'Your client secrets file:\n\n{GC_Values[GC_CLIENT_SECRETS_JSON]}\n\nis missing. Please recreate the file.')
   try:
     return json.loads(cs_data)['installed']['project_id']
   except (ValueError, IndexError, KeyError):
-    controlflow.system_error_exit(3, 'The format of your client secrets file:\n\n%s\n\nis incorrect. Please recreate the file.' % GC_Values[GC_CLIENT_SECRETS_JSON])
+    controlflow.system_error_exit(3, f'The format of your client secrets file:\n\n{GC_Values[GC_CLIENT_SECRETS_JSON]}\n\nis incorrect. Please recreate the file.')
 
 def _getProjects(crm, pfilter):
   try:
@@ -7640,13 +7640,13 @@ def convertGCPFolderNameToID(parent, crm2):
   # for now just use callGAPI and if user has that many folders they'll
   # just need to be specific.
   folders = gapi.get_items(crm2.folders(), 'search', items='folders',
-                           body={'pageSize': 1000, 'query': 'displayName="%s"' % parent})
+                           body={'pageSize': 1000, 'query': f'displayName="{parent}"'})
   if not folders:
-    controlflow.system_error_exit(1, 'ERROR: No folder found matching displayName=%s' % parent)
+    controlflow.system_error_exit(1, f'ERROR: No folder found matching displayName={parent}')
   if len(folders) > 1:
     print('Multiple matches:')
     for folder in folders:
-      print('  Name: %s  ID: %s' % (folder['name'], folder['displayName']))
+      print(f'  Name: {folder["name"]}  ID: {folder["displayName"]}')
     controlflow.system_error_exit(2, 'ERROR: Multiple matching folders, please specify one.')
   return folders[0]['name']
 
@@ -7695,7 +7695,7 @@ def _getLoginHintProjects(printShowCmd):
 def _checkForExistingProjectFiles():
   for a_file in [GC_Values[GC_OAUTH2SERVICE_JSON], GC_Values[GC_CLIENT_SECRETS_JSON]]:
     if os.path.exists(a_file):
-      controlflow.system_error_exit(5, '%s already exists. Please delete or rename it before attempting to use another project.' % a_file)
+      controlflow.system_error_exit(5, f'{a_file} already exists. Please delete or rename it before attempting to use another project.')
 
 def doCreateProject():
   _checkForExistingProjectFiles()
@@ -7706,7 +7706,7 @@ def doCreateProject():
     body['parent'] = parent
   while True:
     create_again = False
-    print('Creating project "%s"...' % body['name'])
+    print(f'Creating project "{body["name"]}"...')
     create_operation = gapi.call(crm.projects(), 'create', body=body)
     operation_name = create_operation['name']
     time.sleep(8) # Google recommends always waiting at least 5 seconds
@@ -7719,10 +7719,10 @@ def doCreateProject():
           print('Hmm... Looks like you have no rights to your Google Cloud Organization.')
           print('Attempting to fix that...')
           getorg = gapi.call(crm.organizations(), 'search',
-                             body={'filter': 'domain:%s' % login_domain})
+                             body={'filter': f'domain:{login_domain}'})
           try:
             organization = getorg['organizations'][0]['name']
-            print('Your organization name is %s' % organization)
+            print(f'Your organization name is {organization}')
           except (KeyError, IndexError):
             controlflow.system_error_exit(3, 'you have no rights to create projects for your organization and you don\'t seem to be a super admin! Sorry, there\'s nothing more I can do.')
           org_policy = gapi.call(crm.organizations(), 'getIamPolicy',
@@ -7734,15 +7734,15 @@ def doCreateProject():
             print('The following rights seem to exist:')
             for a_policy in org_policy['bindings']:
               if 'role' in a_policy:
-                print(' Role: %s' % a_policy['role'])
+                print(f' Role: {a_policy["role"]}')
               if 'members' in a_policy:
                 print(' Members:')
                 for member in a_policy['members']:
-                  print('  %s' % member)
+                  print(f'  {member}')
               print()
           my_role = 'roles/resourcemanager.projectCreator'
-          print('Giving %s the role of %s...' % (login_hint, my_role))
-          org_policy['bindings'].append({'role': my_role, 'members': ['user:%s' % login_hint]})
+          print(f'Giving {login_hint} the role of {my_role}...')
+          org_policy['bindings'].append({'role': my_role, 'members': [f'user:{login_hint}']})
           gapi.call(crm.organizations(), 'setIamPolicy',
                     resource=organization, body={'policy': org_policy})
           create_again = True
@@ -7763,12 +7763,12 @@ and accept the Terms of Service (ToS). As soon as you've accepted the ToS popup,
       if status.get('done', False):
         break
       sleep_time = i ** 2
-      print('Project still being created. Sleeping %s seconds' % sleep_time)
+      print(f'Project still being created. Sleeping {sleep_time} seconds')
       time.sleep(sleep_time)
     if create_again:
       continue
     if not status.get('done', False):
-      controlflow.system_error_exit(1, 'Failed to create project: %s' % status)
+      controlflow.system_error_exit(1, f'Failed to create project: {status}')
     elif 'error' in status:
       controlflow.system_error_exit(2, status['error'])
     break
@@ -7840,7 +7840,7 @@ def _formatOAuth2ServiceData(project_id, client_email, client_id, private_key, p
     'auth_uri': 'https://accounts.google.com/o/oauth2/auth',
     'client_email': client_email,
     'client_id': client_id,
-    'client_x509_cert_url': 'https://www.googleapis.com/robot/v1/metadata/x509/%s' % quote(client_email),
+    'client_x509_cert_url': f'https://www.googleapis.com/robot/v1/metadata/x509/{quote(client_email)}',
     'private_key': private_key,
     'private_key_id': private_key_id,
     'project_id': project_id,
@@ -7866,7 +7866,7 @@ def doShowServiceAccountKeys():
       i += 1
     else:
       controlflow.invalid_argument_exit(myarg, "gam show sakeys")
-  name = 'projects/-/serviceAccounts/%s' % GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID]
+  name = f'projects/-/serviceAccounts/{GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID]}'
   currentPrivateKeyId = GM_Globals[GM_OAUTH2SERVICE_JSON_DATA]['private_key_id']
   keys = gapi.get_items(iam.projects().serviceAccounts().keys(), 'list', 'keys',
                         name=name, keyTypes=keyTypes)
@@ -7915,7 +7915,7 @@ def doCreateOrRotateServiceAccountKeys(iam=None, project_id=None, client_email=N
     client_email = GM_Globals[GM_OAUTH2SERVICE_JSON_DATA]['client_email']
     client_id = GM_Globals[GM_OAUTH2SERVICE_JSON_DATA]['client_id']
   clientId = GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID]
-  name = 'projects/-/serviceAccounts/%s' % clientId
+  name = f'projects/-/serviceAccounts/{clientId}'
   if mode != 'retainexisting':
     keys = gapi.get_items(iam.projects().serviceAccounts().keys(), 'list', 'keys',
                           name=name, keyTypes='USER_MANAGED')
@@ -7938,7 +7938,7 @@ def doCreateOrRotateServiceAccountKeys(iam=None, project_id=None, client_email=N
     for key in keys:
       keyName = key['name'].rsplit('/', 1)[-1]
       if mode == 'retainnone' or keyName == currentPrivateKeyId:
-        print('  Revoking existing key %s for service account' % keyName)
+        print(f'  Revoking existing key {keyName} for service account')
         gapi.call(iam.projects().serviceAccounts().keys(), 'delete', name=key['name'])
         if mode != 'retainnone':
           break
@@ -7958,22 +7958,22 @@ def doDeleteServiceAccountKeys():
       i += 1
   clientId = GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID]
   currentPrivateKeyId = GM_Globals[GM_OAUTH2SERVICE_JSON_DATA]['private_key_id']
-  name = 'projects/-/serviceAccounts/%s' % clientId
+  name = f'projects/-/serviceAccounts/{clientId}'
   keys = gapi.get_items(iam.projects().serviceAccounts().keys(), 'list', 'keys',
                         name=name, keyTypes='USER_MANAGED')
-  print(' Service Account {0} has {1} existing key(s)'.format(clientId, len(keys)))
+  print(f' Service Account {clientId} has {len(keys)} existing key(s)')
   for dkeyName in keyList:
     for key in keys:
       keyName = key['name'].rsplit('/', 1)[-1]
       if dkeyName == keyName:
         if keyName == currentPrivateKeyId and not doit:
-          print(' Current existing key %s for service account not revoked because doit argument not specified ' % keyName)
+          print(f' Current existing key {keyName} for service account not revoked because doit argument not specified ')
           break
-        print(' Revoking existing key %s for service account' % keyName)
+        print(f' Revoking existing key {keyName} for service account')
         gapi.call(iam.projects().serviceAccounts().keys(), 'delete', name=key['name'])
         break
     else:
-      print(' Existing key %s for service account not found' % dkeyName)
+      print(f' Existing key {dkeyName} for service account not found')
 
 def doDelProjects():
   crm, _, login_hint, projects, _ = _getLoginHintProjects(False)
@@ -8041,7 +8041,7 @@ def doGetTeamDriveInfo(users):
   for user in users:
     drive = buildGAPIServiceObject('drive3', user)
     if not drive:
-      print('Failed to access Drive as %s' % user)
+      print(f'Failed to access Drive as {user}')
       continue
     result = gapi.call(drive.drives(), 'get', driveId=teamDriveId,
                        useDomainAdminAccess=useDomainAdminAccess, fields='*')
@@ -8060,11 +8060,11 @@ def doCreateTeamDrive(users):
   for user in users:
     drive = buildGAPIServiceObject('drive3', user)
     if not drive:
-      print('Failed to access Drive as %s' % user)
+      print(f'Failed to access Drive as {user}')
       continue
     requestId = str(uuid.uuid4())
     result = gapi.call(drive.drives(), 'create', requestId=requestId, body=body, fields='id')
-    print('Created Team Drive %s with id %s' % (body['name'], result['id']))
+    print(f'Created Team Drive {body["name"]} with id {result["id"]}')
 
 TEAMDRIVE_RESTRICTIONS_MAP = {
   'adminmanagedrestrictions': 'adminManagedRestrictions',
@@ -8116,7 +8116,7 @@ def doUpdateTeamDrive(users):
                        useDomainAdminAccess=useDomainAdminAccess, body=body, driveId=teamDriveId, fields='id', soft_errors=True)
     if not result:
       continue
-    print('Updated Team Drive %s' % (teamDriveId))
+    print(f'Updated Team Drive {teamDriveId}')
 
 def printShowTeamDrives(users, csvFormat):
   todrive = False
@@ -8138,7 +8138,7 @@ def printShowTeamDrives(users, csvFormat):
       controlflow.invalid_argument_exit(myarg, "gam <users> print|show teamdrives")
   tds = []
   for user in users:
-    sys.stderr.write('Getting Team Drives for %s\n' % user)
+    sys.stderr.write(f'Getting Team Drives for {user}\n')
     user, drive = buildDrive3GAPIObject(user)
     if not drive:
       continue
@@ -8161,7 +8161,7 @@ def printShowTeamDrives(users, csvFormat):
     writeCSVfile(tds, titles, 'Team Drives', todrive)
   else:
     for td in tds:
-      print('Name: %s  ID: %s' % (td['name'], td['id']))
+      print(f'Name: {td["name"]}  ID: {td["id"]}')
 
 def doDeleteTeamDrive(users):
   teamDriveId = sys.argv[5]
@@ -8169,7 +8169,7 @@ def doDeleteTeamDrive(users):
     user, drive = buildDrive3GAPIObject(user)
     if not drive:
       continue
-    print('Deleting Team Drive %s' % (teamDriveId))
+    print(f'Deleting Team Drive {teamDriveId}')
     gapi.call(drive.drives(), 'delete', driveId=teamDriveId, soft_errors=True)
 
 def validateCollaborators(collaboratorList, cd):
@@ -8177,13 +8177,13 @@ def validateCollaborators(collaboratorList, cd):
   for collaborator in collaboratorList.split(','):
     collaborator_id = convertEmailAddressToUID(collaborator, cd)
     if not collaborator_id:
-      controlflow.system_error_exit(4, 'failed to get a UID for %s. Please make sure this is a real user.' % collaborator)
+      controlflow.system_error_exit(4, f'failed to get a UID for {collaborator}. Please make sure this is a real user.')
     collaborators.append({'email': collaborator, 'id': collaborator_id})
   return collaborators
 
 def doCreateVaultMatter():
   v = buildGAPIObject('vault')
-  body = {'name': 'New Matter - %s' % datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+  body = {'name': f'New Matter - {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'}
   collaborators = []
   cd = None
   i = 3
@@ -8203,9 +8203,9 @@ def doCreateVaultMatter():
     else:
       controlflow.invalid_argument_exit(sys.argv[i], "gam create matter")
   matterId = gapi.call(v.matters(), 'create', body=body, fields='matterId')['matterId']
-  print('Created matter %s' % matterId)
+  print(f'Created matter {matterId}')
   for collaborator in collaborators:
-    print(' adding collaborator %s' % collaborator['email'])
+    print(f' adding collaborator {collaborator["email"]}')
     gapi.call(v.matters(), 'addPermissions', matterId=matterId, body={'matterPermission': {'role': 'COLLABORATOR', 'accountId': collaborator['id']}})
 
 VAULT_SEARCH_METHODS_MAP = {
@@ -8318,11 +8318,11 @@ def doCreateVaultExport():
   if not matterId:
     controlflow.system_error_exit(3, 'you must specify a matter for the new export.')
   if 'corpus' not in body['query']:
-    controlflow.system_error_exit(3, 'you must specify a corpus for the new export. Choose one of %s' % ', '.join(allowed_corpuses))
+    controlflow.system_error_exit(3, f'you must specify a corpus for the new export. Choose one of {", ".join(allowed_corpuses)}')
   if 'searchMethod' not in body['query']:
-    controlflow.system_error_exit(3, 'you must specify a search method for the new export. Choose one of %s' % ', '.join(VAULT_SEARCH_METHODS_LIST))
+    controlflow.system_error_exit(3, f'you must specify a search method for the new export. Choose one of {", ".join(VAULT_SEARCH_METHODS_LIST)}')
   if 'name' not in body:
-    body['name'] = 'GAM %s export - %s' % (body['query']['corpus'], datetime.datetime.now())
+    body['name'] = f'GAM {body["query"]["corpus"]} export - {datetime.datetime.now()}'
   options_field = None
   if body['query']['corpus'] == 'MAIL':
     options_field = 'mailOptions'
@@ -8336,14 +8336,14 @@ def doCreateVaultExport():
     if showConfidentialModeContent is not None:
       body['exportOptions'][options_field]['showConfidentialModeContent'] = showConfidentialModeContent
   results = gapi.call(v.matters().exports(), 'create', matterId=matterId, body=body)
-  print('Created export %s' % results['id'])
+  print(f'Created export {results["id"]}')
   print_json(None, results)
 
 def doDeleteVaultExport():
   v = buildGAPIObject('vault')
   matterId = getMatterItem(v, sys.argv[3])
   exportId = convertExportNameToID(v, sys.argv[4], matterId)
-  print('Deleting export %s / %s' % (sys.argv[4], exportId))
+  print(f'Deleting export {sys.argv[4]} / {exportId}')
   gapi.call(v.matters().exports(), 'delete', matterId=matterId, exportId=exportId)
 
 def doGetVaultExportInfo():
@@ -8360,7 +8360,7 @@ def _getCloudStorageObject(s, bucket, object_, local_file=None, expectedMd5=None
     sys.stdout.write(' File already exists. ')
     sys.stdout.flush()
     if expectedMd5:
-      sys.stdout.write('Verifying %s hash...' % expectedMd5)
+      sys.stdout.write(f'Verifying {expectedMd5} hash...')
       sys.stdout.flush()
       if md5MatchesFile(local_file, expectedMd5, False):
         print('VERIFIED')
@@ -8368,7 +8368,7 @@ def _getCloudStorageObject(s, bucket, object_, local_file=None, expectedMd5=None
       print('not verified. Downloading again and over-writing...')
     else:
       return # nothing to verify, just assume we're good.
-  print('saving to %s' % local_file)
+  print(f'saving to {local_file}')
   request = s.objects().get_media(bucket=bucket, object=object_)
   file_path = os.path.dirname(local_file)
   if not os.path.exists(file_path):
@@ -8378,7 +8378,7 @@ def _getCloudStorageObject(s, bucket, object_, local_file=None, expectedMd5=None
   done = False
   while not done:
     status, done = downloader.next_chunk()
-    sys.stdout.write(' Downloaded: {0:>7.2%}\r'.format(status.progress()))
+    sys.stdout.write(f' Downloaded: {status.progress():>7.2%}\r')
     sys.stdout.flush()
   sys.stdout.write('\n Download complete. Flushing to disk...\n')
   # Necessary to make sure file is flushed by both Python and OS
@@ -8388,7 +8388,7 @@ def _getCloudStorageObject(s, bucket, object_, local_file=None, expectedMd5=None
   fileutils.close_file(f)
   if expectedMd5:
     f = fileutils.open_file(local_file, 'rb')
-    sys.stdout.write(' Verifying file hash is %s...' % expectedMd5)
+    sys.stdout.write(f' Verifying file hash is {expectedMd5}...')
     sys.stdout.flush()
     md5MatchesFile(local_file, expectedMd5, True)
     print('VERIFIED')
@@ -8401,7 +8401,7 @@ def md5MatchesFile(local_file, expected_md5, exitOnError):
     hash_md5.update(chunk)
   actual_hash = hash_md5.hexdigest()
   if exitOnError and actual_hash != expected_md5:
-    controlflow.system_error_exit(6, 'actual hash was %s. Exiting on corrupt file.' % actual_hash)
+    controlflow.system_error_exit(6, f'actual hash was {actual_hash}. Exiting on corrupt file.')
   return actual_hash == expected_md5
 
 def doDownloadCloudStorageBucket():
@@ -8417,7 +8417,7 @@ def doDownloadCloudStorageBucket():
   objects = gapi.get_all_pages(s.objects(), 'list', 'items', page_message=page_message, bucket=bucket, projection='noAcl', fields='nextPageToken,items(name,id,md5Hash)')
   i = 1
   for object_ in objects:
-    print("%s/%s" % (i, len(objects)))
+    print(f'{i}/{len(objects)}')
     expectedMd5 = base64.b64decode(object_['md5Hash']).hex()
     _getCloudStorageObject(s, bucket, object_['name'], expectedMd5=expectedMd5)
     i += 1
@@ -8451,7 +8451,7 @@ def doDownloadVaultExport():
     bucket = s_file['bucketName']
     s_object = s_file['objectName']
     filename = os.path.join(targetFolder, s_object.replace('/', '-'))
-    print('saving to %s' % filename)
+    print(f'saving to {filename}')
     request = s.objects().get_media(bucket=bucket, object=s_object)
     f = fileutils.open_file(filename, 'wb')
     downloader = googleapiclient.http.MediaIoBaseDownload(f, request)
@@ -8468,7 +8468,7 @@ def doDownloadVaultExport():
     fileutils.close_file(f)
     if verifyFiles:
       expected_hash = s_file['md5Hash']
-      sys.stdout.write(' Verifying file hash is %s...' % expected_hash)
+      sys.stdout.write(f' Verifying file hash is {expected_hash}...')
       sys.stdout.flush()
       md5MatchesFile(filename, expected_hash, True)
       print('VERIFIED')
@@ -8479,11 +8479,11 @@ def extract_nested_zip(zippedFile, toFolder, spacing=' '):
   """ Extract a zip file including any nested zip files
       Delete the zip file(s) after extraction
   """
-  print('%sextracting %s' % (spacing, zippedFile))
+  print(f'{spacing}extracting {zippedFile}')
   with zipfile.ZipFile(zippedFile, 'r') as zfile:
     inner_files = zfile.infolist()
     for inner_file in inner_files:
-      print('%s %s' % (spacing, inner_file.filename))
+      print(f'{spacing} {inner_file.filename}')
       inner_file_path = zfile.extract(inner_file, toFolder)
       if re.search(r'\.zip$', inner_file.filename):
         extract_nested_zip(inner_file_path, toFolder, spacing=spacing+' ')
@@ -8534,11 +8534,11 @@ def doCreateVaultHold():
   if not body.get('name'):
     controlflow.system_error_exit(3, 'you must specify a name for the new hold.')
   if not body.get('corpus'):
-    controlflow.system_error_exit(3, 'you must specify a corpus for the new hold. Choose one of %s' % (', '.join(allowed_corpuses)))
+    controlflow.system_error_exit(3, f'you must specify a corpus for the new hold. Choose one of {", ".join(allowed_corpuses)}')
   if body['corpus'] == 'HANGOUTS_CHAT':
     query_type = 'hangoutsChatQuery'
   else:
-    query_type = '%sQuery' % body['corpus'].lower()
+    query_type = f'{body["corpus"].lower()}Query'
   body['query'][query_type] = {}
   if body['corpus'] == 'DRIVE':
     if query:
@@ -8560,7 +8560,7 @@ def doCreateVaultHold():
     for account in accounts:
       body['accounts'].append({'accountId': convertEmailAddressToUID(account, cd, account_type)})
   holdId = gapi.call(v.matters().holds(), 'create', matterId=matterId, body=body, fields='holdId')['holdId']
-  print('Created hold %s' % holdId)
+  print(f'Created hold {holdId}')
 
 def doDeleteVaultHold():
   v = buildGAPIObject('vault')
@@ -8577,7 +8577,7 @@ def doDeleteVaultHold():
       controlflow.invalid_argument_exit(myarg, "gam delete hold")
   if not matterId:
     controlflow.system_error_exit(3, 'you must specify a matter for the hold.')
-  print('Deleting hold %s / %s' % (hold, holdId))
+  print(f'Deleting hold {hold} / {holdId}')
   gapi.call(v.matters().holds(), 'delete', matterId=matterId, holdId=holdId)
 
 def doGetVaultHoldInfo():
@@ -8600,7 +8600,7 @@ def doGetVaultHoldInfo():
   if 'accounts' in results:
     account_type = 'group' if results['corpus'] == 'GROUPS' else 'user'
     for i in range(0, len(results['accounts'])):
-      uid = 'uid:%s' % results['accounts'][i]['accountId']
+      uid = f'uid:{results["accounts"][i]["accountId"]}'
       acct_email = convertUIDtoEmailAddress(uid, cd, [account_type])
       results['accounts'][i]['email'] = acct_email
   if 'orgUnit' in results:
@@ -8616,7 +8616,7 @@ def convertExportNameToID(v, nameOrID, matterId):
   for export in exports:
     if export['name'].lower() == nameOrID:
       return export['id']
-  controlflow.system_error_exit(4, 'could not find export name %s in matter %s' % (nameOrID, matterId))
+  controlflow.system_error_exit(4, f'could not find export name {nameOrID} in matter {matterId}')
 
 def convertHoldNameToID(v, nameOrID, matterId):
   nameOrID = nameOrID.lower()
@@ -8627,7 +8627,7 @@ def convertHoldNameToID(v, nameOrID, matterId):
   for hold in holds:
     if hold['name'].lower() == nameOrID:
       return hold['holdId']
-  controlflow.system_error_exit(4, 'could not find hold name %s in matter %s' % (nameOrID, matterId))
+  controlflow.system_error_exit(4, f'could not find hold name {nameOrID} in matter {matterId}')
 
 def convertMatterNameToID(v, nameOrID):
   nameOrID = nameOrID.lower()
@@ -8643,7 +8643,7 @@ def convertMatterNameToID(v, nameOrID):
 def getMatterItem(v, nameOrID):
   matterId = convertMatterNameToID(v, nameOrID)
   if not matterId:
-    controlflow.system_error_exit(4, 'could not find matter %s' % nameOrID)
+    controlflow.system_error_exit(4, f'could not find matter {nameOrID}')
   return matterId
 
 def doUpdateVaultHold():
@@ -8692,13 +8692,13 @@ def doUpdateVaultHold():
     if 'orgUnit' in old_body and 'orgUnit' not in body:
       # bah, API requires this to be sent on update even when it's not changing
       body['orgUnit'] = old_body['orgUnit']
-    query_type = '%sQuery' % body['corpus'].lower()
+    query_type = f'{body["corpus"].lower()}Query'
     if body['corpus'] == 'DRIVE':
       if query:
         try:
           body['query'][query_type] = json.loads(query)
         except ValueError as e:
-          controlflow.system_error_exit(3, '{0}, query: {1}'.format(str(e), query))
+          controlflow.system_error_exit(3, f'{str(e)}, query: {query}')
     elif body['corpus'] in ['GROUPS', 'MAIL']:
       if query:
         body['query'][query_type]['terms'] = query
@@ -8707,16 +8707,16 @@ def doUpdateVaultHold():
       if end_time:
         body['query'][query_type]['endTime'] = end_time
   if body:
-    print('Updating hold %s / %s' % (hold, holdId))
+    print(f'Updating hold {hold} / {holdId}')
     gapi.call(v.matters().holds(), 'update', matterId=matterId, holdId=holdId, body=body)
   if add_accounts or del_accounts:
     cd = buildGAPIObject('directory')
     for account in add_accounts:
-      print('adding %s to hold.' % account)
+      print(f'adding {account} to hold.')
       add_body = {'accountId': convertEmailAddressToUID(account, cd)}
       gapi.call(v.matters().holds().accounts(), 'create', matterId=matterId, holdId=holdId, body=add_body)
     for account in del_accounts:
-      print('removing %s from hold.' % account)
+      print(f'removing {account} from hold.')
       accountId = convertEmailAddressToUID(account, cd)
       gapi.call(v.matters().holds().accounts(), 'delete', matterId=matterId, holdId=holdId, accountId=accountId)
 
@@ -8734,7 +8734,7 @@ def doUpdateVaultMatter(action=None):
     if myarg == 'action':
       action = sys.argv[i+1].lower()
       if action not in VAULT_MATTER_ACTIONS:
-        controlflow.system_error_exit(3, 'allowed actions are %s, got %s' % (', '.join(VAULT_MATTER_ACTIONS), action))
+        controlflow.system_error_exit(3, f'allowed actions are {", ".join(VAULT_MATTER_ACTIONS)}, got {action}')
       i += 2
     elif myarg == 'name':
       body['name'] = sys.argv[i+1]
@@ -8757,7 +8757,7 @@ def doUpdateVaultMatter(action=None):
   if action == 'delete':
     action_kwargs = {}
   if body:
-    print('Updating matter %s...' % sys.argv[3])
+    print(f'Updating matter {sys.argv[3]}...')
     if 'name' not in body or 'description' not in body:
       # bah, API requires name/description to be sent on update even when it's not changing
       result = gapi.call(v.matters(), 'get', matterId=matterId, view='BASIC')
@@ -8765,13 +8765,13 @@ def doUpdateVaultMatter(action=None):
       body.setdefault('description', result.get('description'))
     gapi.call(v.matters(), 'update', body=body, matterId=matterId)
   if action:
-    print('Performing %s on matter %s' % (action, sys.argv[3]))
+    print(f'Performing {action} on matter {sys.argv[3]}')
     gapi.call(v.matters(), action, matterId=matterId, **action_kwargs)
   for collaborator in add_collaborators:
-    print(' adding collaborator %s' % collaborator['email'])
+    print(f' adding collaborator {collaborator["email"]}')
     gapi.call(v.matters(), 'addPermissions', matterId=matterId, body={'matterPermission': {'role': 'COLLABORATOR', 'accountId': collaborator['id']}})
   for collaborator in remove_collaborators:
-    print(' removing collaborator %s' % collaborator['email'])
+    print(f' removing collaborator {collaborator["email"]}')
     gapi.call(v.matters(), 'removePermissions', matterId=matterId, body={'accountId': collaborator['id']})
 
 def doGetVaultMatterInfo():
@@ -8781,7 +8781,7 @@ def doGetVaultMatterInfo():
   if 'matterPermissions' in result:
     cd = buildGAPIObject('directory')
     for i in range(0, len(result['matterPermissions'])):
-      uid = 'uid:%s' % result['matterPermissions'][i]['accountId']
+      uid = f'uid:{result["matterPermissions"][i]["accountId"]}'
       user_email = convertUIDtoEmailAddress(uid, cd)
       result['matterPermissions'][i]['email'] = user_email
   print_json(None, result)
@@ -8789,7 +8789,7 @@ def doGetVaultMatterInfo():
 def doCreateUser():
   cd = buildGAPIObject('directory')
   body = getUserAttributes(3, cd, False)
-  print("Creating account for %s" % body['primaryEmail'])
+  print(f'Creating account for {body["primaryEmail"]}')
   gapi.call(cd.users(), 'insert', body=body, fields='primaryEmail')
 
 def GroupIsAbuseOrPostmaster(emailAddr):
@@ -8815,7 +8815,7 @@ def getGroupAttrValue(myarg, value, gs_object, gs_body, function):
           else:
             value = int(value)
         except ValueError:
-          controlflow.system_error_exit(2, '%s must be a number ending with M (megabytes), K (kilobytes) or nothing (bytes); got %s' % value)
+          controlflow.system_error_exit(2, f'{myarg} must be a number ending with M (megabytes), K (kilobytes) or nothing (bytes); got {value}')
       elif params['type'] == 'string':
         if attrib == 'description':
           value = value.replace('\\n', '\n')
@@ -8876,7 +8876,7 @@ def doCreateGroup():
       i += 2
   if not got_name:
     body['name'] = body['email']
-  print("Creating group %s" % body['email'])
+  print(f'Creating group {body["email"]}')
   gapi.call(cd.groups(), 'insert', body=body, fields='email')
   if gs and not GroupIsAbuseOrPostmaster(body['email']):
     if gs_get_before_update:
@@ -8895,7 +8895,7 @@ def doCreateAlias():
   if target_type not in ['user', 'group', 'target']:
     controlflow.expected_argument_exit("target type", ", ".join(['user', 'group', 'target']), target_type)
   targetKey = normalizeEmailAddressOrUID(sys.argv[5])
-  print('Creating alias %s for %s %s' % (body['alias'], target_type, targetKey))
+  print(f'Creating alias {body["alias"]} for {target_type} {targetKey}')
   if target_type == 'user':
     gapi.call(cd.users().aliases(), 'insert', userKey=targetKey, body=body)
   elif target_type == 'group':
@@ -8979,7 +8979,7 @@ def doCreateBuilding():
           'buildingId': str(uuid.uuid4()),
           'buildingName': sys.argv[3]}
   body = _getBuildingAttributes(sys.argv[4:], body)
-  print('Creating building %s...' % body['buildingId'])
+  print(f'Creating building {body["buildingId"]}...')
   gapi.call(cd.resources().buildings(), 'insert',
             customer=GC_Values[GC_CUSTOMER_ID], body=body)
 
@@ -9028,12 +9028,12 @@ def _getBuildingByNameOrId(cd, which_building, minLen=1):
   if len(ci_matches) > 1:
     message = 'Multiple buildings with same name:\n'
     for building in ci_matches:
-      message += '  Name:%s  id:%s\n' % (building['buildingName'], building['buildingId'])
+      message += f'  Name:{building["buildingName"]}  id:{building["buildingId"]}\n'
     message += '\nPlease specify building name by exact case or by id.'
     controlflow.system_error_exit(3, message)
 # No matches
   else:
-    controlflow.system_error_exit(3, 'No such building %s' % which_building)
+    controlflow.system_error_exit(3, f'No such building {which_building}')
 
 def _getBuildingNameById(cd, buildingId):
   if GM_Globals[GM_MAP_BUILDING_ID_TO_NAME] is None:
@@ -9044,7 +9044,7 @@ def doUpdateBuilding():
   cd = buildGAPIObject('directory')
   buildingId = _getBuildingByNameOrId(cd, sys.argv[3])
   body = _getBuildingAttributes(sys.argv[4:])
-  print('Updating building %s...' % buildingId)
+  print(f'Updating building {buildingId}...')
   gapi.call(cd.resources().buildings(), 'patch',
             customer=GC_Values[GC_CUSTOMER_ID], buildingId=buildingId, body=body)
 
@@ -9064,7 +9064,7 @@ def doGetBuildingInfo():
 def doDeleteBuilding():
   cd = buildGAPIObject('directory')
   buildingId = _getBuildingByNameOrId(cd, sys.argv[3])
-  print('Deleting building %s...' % buildingId)
+  print(f'Deleting building {buildingId}...')
   gapi.call(cd.resources().buildings(), 'delete',
             customer=GC_Values[GC_CUSTOMER_ID], buildingId=buildingId)
 
@@ -9082,7 +9082,7 @@ def _getFeatureAttributes(args, body={}):
 def doCreateFeature():
   cd = buildGAPIObject('directory')
   body = _getFeatureAttributes(sys.argv[3:])
-  print('Creating feature %s...' % body['name'])
+  print(f'Creating feature {body["name"]}...')
   gapi.call(cd.resources().features(), 'insert',
             customer=GC_Values[GC_CUSTOMER_ID], body=body)
 
@@ -9093,7 +9093,7 @@ def doUpdateFeature():
   cd = buildGAPIObject('directory')
   oldName = sys.argv[3]
   body = {'newName': sys.argv[5:]}
-  print('Updating feature %s...' % oldName)
+  print(f'Updating feature {oldName}...')
   gapi.call(cd.resources().features(), 'rename',
             customer=GC_Values[GC_CUSTOMER_ID], oldName=oldName,
             body=body)
@@ -9101,7 +9101,7 @@ def doUpdateFeature():
 def doDeleteFeature():
   cd = buildGAPIObject('directory')
   featureKey = sys.argv[3]
-  print('Deleting feature %s...' % featureKey)
+  print(f'Deleting feature {featureKey}...')
   gapi.call(cd.resources().features(), 'delete',
             customer=GC_Values[GC_CUSTOMER_ID], featureKey=featureKey)
 
@@ -9153,7 +9153,7 @@ def doCreateResourceCalendar():
   body = {'resourceId': sys.argv[3],
           'resourceName': sys.argv[4]}
   body = _getResourceCalendarAttributes(cd, sys.argv[5:], body)
-  print('Creating resource %s...' % body['resourceId'])
+  print(f'Creating resource {body["resourceId"]}...')
   gapi.call(cd.resources().calendars(), 'insert',
             customer=GC_Values[GC_CUSTOMER_ID], body=body)
 
@@ -9166,7 +9166,7 @@ def doUpdateResourceCalendar():
   gapi.call(cd.resources().calendars(), 'patch',
             customer=GC_Values[GC_CUSTOMER_ID], calendarResourceId=resId, body=body,
             fields='')
-  print('updated resource %s' % resId)
+  print(f'updated resource {resId}')
 
 def doUpdateUser(users, i):
   cd = buildGAPIObject('directory')
@@ -9181,9 +9181,9 @@ def doUpdateUser(users, i):
       userKey = user_primary['id']
       user_primary = user_primary['primaryEmail']
       user_name, user_domain = splitEmailAddress(user_primary)
-      body['primaryEmail'] = 'vfe.%s.%05d@%s' % (user_name, random.randint(1, 99999), user_domain)
+      body['primaryEmail'] = f'vfe.{user_name}.{random.randint(1, 99999):05d}@{user_domain}'
       body['emails'] = [{'type': 'custom', 'customType': 'former_employee', 'primary': False, 'address': user_primary}]
-    sys.stdout.write('updating user %s...\n' % user)
+    sys.stdout.write(f'updating user {user}...\n')
     if body:
       gapi.call(cd.users(), 'update', userKey=userKey, body=body)
 
@@ -9194,23 +9194,23 @@ def doRemoveUsersAliases(users):
     user_id = user_aliases['id']
     user_primary = user_aliases['primaryEmail']
     if 'aliases' in user_aliases:
-      print('%s has %s aliases' % (user_primary, len(user_aliases['aliases'])))
+      print(f'{user_primary} has {len(user_aliases["aliases"])} aliases')
       for an_alias in user_aliases['aliases']:
-        print(' removing alias %s for %s...' % (an_alias, user_primary))
+        print(f' removing alias {an_alias} for {user_primary}...')
         gapi.call(cd.users().aliases(), 'delete', userKey=user_id, alias=an_alias)
     else:
-      print('%s has no aliases' % user_primary)
+      print(f'{user_primary} has no aliases')
 
 def deleteUserFromGroups(users):
   cd = buildGAPIObject('directory')
   for user in users:
     user_groups = gapi.get_all_pages(cd.groups(), 'list', 'groups', userKey=user, fields='groups(id,email)')
     num_groups = len(user_groups)
-    print('%s is in %s groups' % (user, num_groups))
+    print(f'{user} is in {num_groups} groups')
     j = 0
     for user_group in user_groups:
       j += 1
-      print(' removing %s from %s (%s/%s)' % (user, user_group['email'], j, num_groups))
+      print(f' removing {user} from {user_group["email"]} ({j}/{num_groups})')
       gapi.call(cd.members(), 'delete', soft_errors=True, groupKey=user_group['id'], memberKey=user)
     print('')
 
@@ -9300,10 +9300,10 @@ def doUpdateGroup():
           items.append(item)
       else:
         body = {'role': role, 'email' if users_email[0].find('@') != -1 else 'id': users_email[0]}
-        add_text = ['as %s' % role]
+        add_text = [f'as {role}']
         if delivery:
           body['delivery_settings'] = delivery
-          add_text.append('delivery %s' % delivery)
+          add_text.append(f'delivery {delivery}')
         for i in range(2):
           try:
             gapi.call(cd.members(), 'insert',
@@ -9394,10 +9394,10 @@ def doUpdateGroup():
           update_text = []
           if role:
             body['role'] = role
-            update_text.append('to %s' % role)
+            update_text.append(f'to {role}')
           if delivery:
             body['delivery_settings'] = delivery
-            update_text.append('delivery %s' % delivery)
+            update_text.append(f'delivery {delivery}')
           try:
             gapi.call(cd.members(), 'update',
                       throw_reasons=[gapi.errors.ErrorReason.MEMBER_NOT_FOUND, gapi.errors.ErrorReason.INVALID_MEMBER],
@@ -9426,8 +9426,8 @@ def doUpdateGroup():
       else:
         roles = ROLE_MEMBER
       group = normalizeEmailAddressOrUID(group)
-      member_type_message = '%ss' % roles.lower()
-      sys.stderr.write("Getting %s of %s (may take some time for large groups)...\n" % (member_type_message, group))
+      member_type_message = f'{roles.lower()}s'
+      sys.stderr.write(f'Getting {member_type_message} of {group} (may take some time for large groups)...\n')
       page_message = 'Got %%%%total_items%%%% %s...' % member_type_message
       validRoles, listRoles, listFields = _getRoleVerification(roles, 'nextPageToken,members({0})'.format(','.join(fields)))
       try:
@@ -9493,7 +9493,7 @@ def doUpdateGroup():
             gs_body = dict(list(current_settings.items()) + list(gs_body.items()))
         if gs_body:
           gapi.call(gs.groups(), 'update', retry_reasons=['serviceLimit'], groupUniqueId=group, body=gs_body)
-    print('updated group %s' % group)
+    print(f'updated group {group}')
 
 def doUpdateAlias():
   cd = buildGAPIObject('directory')
@@ -9515,7 +9515,7 @@ def doUpdateAlias():
       gapi.call(cd.users().aliases(), 'insert', throw_reasons=[gapi.errors.ErrorReason.INVALID], userKey=target_email, body={'alias': alias})
     except gapi.errors.GapiInvalidError:
       gapi.call(cd.groups().aliases(), 'insert', groupKey=target_email, body={'alias': alias})
-  print('updated alias %s' % alias)
+  print(f'updated alias {alias}')
 
 def getCrOSDeviceEntity(i, cd):
   myarg = sys.argv[i].lower()
