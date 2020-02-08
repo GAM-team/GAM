@@ -1491,16 +1491,16 @@ def watchGmail(users):
                 continue
               if 'labelsAdded' in history:
                 for labelling in history['labelsAdded']:
-                  print('%s labels %s added to %s' % (a_user, ', '.join(labelling['labelIds']), labelling['message']['id']))
+                  print(f'{a_user} labels {", ".join(labelling["labelIds"])} added to {labelling["message"]["id"]}')
               if 'labelsRemoved' in history:
                 for labelling in history['labelsRemoved']:
-                  print('%s labels %s removed from %s' % (a_user, ', '.join(labelling['labelIds']), labelling['message']['id']))
+                  print(f'{a_user} labels {", ".join(labelling["labelIds"])} removed from {labelling["message"]["id"]}')
               if 'messagesDeleted' in history:
                 for deleting in history['messagesDeleted']:
-                  print('%s permanently deleted message %s' % (a_user, deleting['message']['id']))
+                  print(f'{a_user} permanently deleted message {deleting["message"]["id"]}')
               if 'messagesAdded' in history:
                 for adding in history['messagesAdded']:
-                  print('%s created message %s with labels %s' % (a_user, adding['message']['id'], ', '.join(adding['message']['labelIds'])))
+                  print(f'{a_user} created message {adding["message"]["id"]} with labels {", ".join(adding["message"]["labelIds"])}')
           gmails[a_user]['seen_historyId'] = results['historyId']
 
 def addDelegates(users, i):
@@ -1516,7 +1516,7 @@ def addDelegates(users, i):
     delegator, gmail = buildGmailGAPIObject(delegator)
     if not gmail:
       continue
-    print("Giving %s delegate access to %s (%s/%s)" % (delegate, delegator, i, count))
+    print(f'Giving {delegate} delegate access to {delegator} ({i}/{count})')
     gapi.call(gmail.users().settings().delegates(), 'create', soft_errors=True, userId='me', body={'delegateEmail': delegate})
 
 def gen_sha512_hash(password):
@@ -1549,7 +1549,7 @@ def printShowDelegates(users, csvFormat):
     user, gmail = buildGmailGAPIObject(user)
     if not gmail:
       continue
-    sys.stderr.write("Getting delegates for %s (%s/%s)...\n" % (user, i, count))
+    sys.stderr.write(f'Getting delegates for {user} ({i}/{count})...\n')
     i += 1
     delegates = gapi.call(gmail.users().settings().delegates(), 'list', soft_errors=True, userId='me')
     if delegates and 'delegates' in delegates:
@@ -1561,11 +1561,11 @@ def printShowDelegates(users, csvFormat):
           csvRows.append(row)
         else:
           if csvStyle:
-            print('%s,%s,%s' % (user, delegateAddress, status))
+            print(f'{user},{delegateAddress},{status}')
           else:
-            print("Delegator: %s\n Status: %s\n Delegate Email: %s\n" % (user, status, delegateAddress))
+            print(f'Delegator: {user}\n Status: {status}\n Delegate Email: {delegateAddress}\n')
       if not csvFormat and not csvStyle and delegates['delegates']:
-        print('Total %s delegates' % len(delegates['delegates']))
+        print(f'Total {len(delegates["delegates"])}')
   if csvFormat:
     writeCSVfile(csvRows, titles, 'Delegates', todrive)
 
@@ -1578,7 +1578,7 @@ def deleteDelegate(users):
     user, gmail = buildGmailGAPIObject(user)
     if not gmail:
       continue
-    print("Deleting %s delegate access to %s (%s/%s)" % (delegate, user, i, count))
+    print(f'Deleting {delegate} delegate access to {user} ({i}/{count})')
     gapi.call(gmail.users().settings().delegates(), 'delete', soft_errors=True, userId='me', delegateEmail=delegate)
 
 def doAddCourseParticipant():
@@ -1590,15 +1590,15 @@ def doAddCourseParticipant():
   if participant_type in ['student', 'students']:
     new_id = normalizeEmailAddressOrUID(new_id)
     gapi.call(croom.courses().students(), 'create', courseId=courseId, body={'userId': new_id})
-    print('Added %s as a student of course %s' % (new_id, noScopeCourseId))
+    print(f'Added {new_id} as a student of course {noScopeCourseId}')
   elif participant_type in ['teacher', 'teachers']:
     new_id = normalizeEmailAddressOrUID(new_id)
     gapi.call(croom.courses().teachers(), 'create', courseId=courseId, body={'userId': new_id})
-    print('Added %s as a teacher of course %s' % (new_id, noScopeCourseId))
+    print(f'Added {new_id} as a teacher of course {noScopeCourseId}')
   elif participant_type in ['alias']:
     new_id = addCourseIdScope(new_id)
     gapi.call(croom.courses().aliases(), 'create', courseId=courseId, body={'alias': new_id})
-    print('Added %s as an alias of course %s' % (removeCourseIdScope(new_id), noScopeCourseId))
+    print(f'Added {removeCourseIdScope(new_id)} as an alias of course {noScopeCourseId}')
   else:
     controlflow.invalid_argument_exit(participant_type, "gam course ID add")
 
@@ -1633,15 +1633,15 @@ def doDelCourseParticipant():
   if participant_type in ['student', 'students']:
     remove_id = normalizeEmailAddressOrUID(remove_id)
     gapi.call(croom.courses().students(), 'delete', courseId=courseId, userId=remove_id)
-    print('Removed %s as a student of course %s' % (remove_id, noScopeCourseId))
+    print(f'Removed {remove_id} as a student of course {noScopeCourseId}')
   elif participant_type in ['teacher', 'teachers']:
     remove_id = normalizeEmailAddressOrUID(remove_id)
     gapi.call(croom.courses().teachers(), 'delete', courseId=courseId, userId=remove_id)
-    print('Removed %s as a teacher of course %s' % (remove_id, noScopeCourseId))
+    print(f'Removed {remove_id} as a teacher of course {noScopeCourseId}')
   elif participant_type in ['alias']:
     remove_id = addCourseIdScope(remove_id)
     gapi.call(croom.courses().aliases(), 'delete', courseId=courseId, alias=remove_id)
-    print('Removed %s as an alias of course %s' % (removeCourseIdScope(remove_id), noScopeCourseId))
+    print(f'Removed {removeCourseIdScope(remove_id)} as an alias of course {noScopeCourseId}')
   else:
     controlflow.invalid_argument_exit(participant_type, "gam course ID delete")
 
@@ -1649,7 +1649,7 @@ def doDelCourse():
   croom = buildGAPIObject('classroom')
   courseId = addCourseIdScope(sys.argv[3])
   gapi.call(croom.courses(), 'delete', id=courseId)
-  print('Deleted Course %s' % courseId)
+  print(f'Deleted Course {courseId}')
 
 def _getValidatedState(state, validStates):
   state = state.upper()
@@ -1693,14 +1693,14 @@ def doUpdateCourse():
   updateMask = ','.join(list(body))
   body['id'] = courseId
   result = gapi.call(croom.courses(), 'patch', id=courseId, body=body, updateMask=updateMask)
-  print('Updated Course %s' % result['id'])
+  print(f'Updated Course {result["id"]}')
 
 def doCreateDomain():
   cd = buildGAPIObject('directory')
   domain_name = sys.argv[3]
   body = {'domainName': domain_name}
   gapi.call(cd.domains(), 'insert', customer=GC_Values[GC_CUSTOMER_ID], body=body)
-  print('Added domain %s' % domain_name)
+  print(f'Added domain {domain_name}')
 
 def doCreateDomainAlias():
   cd = buildGAPIObject('directory')
@@ -1722,7 +1722,7 @@ def doUpdateDomain():
     else:
       controlflow.invalid_argument_exit(sys.argv[i], "gam update domain")
   gapi.call(cd.customers(), 'update', customerKey=GC_Values[GC_CUSTOMER_ID], body=body)
-  print('%s is now the primary domain.' % domain_name)
+  print(f'{domain_name} is now the primary domain.')
 
 def doGetDomainInfo():
   if (len(sys.argv) < 4) or (sys.argv[3] == 'logo'):
@@ -2255,10 +2255,10 @@ def doPrintShowGuardians(csvFormat):
       if csvFormat:
         sys.stderr.write('\r')
         sys.stderr.flush()
-        sys.stderr.write('Getting %s for %s%s%s' % (itemName, studentId, currentCount(i, count), ' ' * 40))
+        sys.stderr.write(f'Getting {itemName} for {studentId}{currentCount(i, count)}{" " * 40}')
     guardians = gapi.get_all_pages(service, 'list', items, soft_errors=True, **kwargs)
     if not csvFormat:
-      print('Student: {0}, {1}:{2}'.format(studentId, itemName, currentCount(i, count)))
+      print(f'Student: {studentId}, {itemName}:{currentCount(i, count)}')
       for guardian in guardians:
         print_json(None, guardian, spacing='  ')
     else:
@@ -2274,17 +2274,17 @@ def doInviteGuardian():
   body = {'invitedEmailAddress': normalizeEmailAddressOrUID(sys.argv[3])}
   studentId = normalizeStudentGuardianEmailAddressOrUID(sys.argv[4])
   result = gapi.call(croom.userProfiles().guardianInvitations(), 'create', studentId=studentId, body=body)
-  print('Invited email %s as guardian of %s. Invite ID %s' % (result['invitedEmailAddress'], studentId, result['invitationId']))
+  print(f'Invited email {result["invitedEmailAddress"]} as guardian of {studentId}. Invite ID {result["invitationId"]}')
 
 def _cancelGuardianInvitation(croom, studentId, invitationId):
   try:
     result = gapi.call(croom.userProfiles().guardianInvitations(), 'patch',
                        throw_reasons=[gapi.errors.ErrorReason.FAILED_PRECONDITION, gapi.errors.ErrorReason.FORBIDDEN, gapi.errors.ErrorReason.NOT_FOUND],
                        studentId=studentId, invitationId=invitationId, updateMask='state', body={'state': 'COMPLETE'})
-    print('Cancelled PENDING guardian invitation for %s as guardian of %s' % (result['invitedEmailAddress'], studentId))
+    print(f'Cancelled PENDING guardian invitation for {result["invitedEmailAddress"]} as guardian of {studentId}')
     return True
   except gapi.errors.GapiFailedPreconditionError:
-    display.print_error('Guardian invitation %s for %s status is not PENDING' % (invitationId, studentId))
+    display.print_error(f'Guardian invitation {invitationId} for {studentId} status is not PENDING')
     GM_Globals[GM_SYSEXITRC] = 3
     return True
   except gapi.errors.GapiForbiddenError:
@@ -2298,14 +2298,14 @@ def doCancelGuardianInvitation():
   invitationId = sys.argv[3]
   studentId = normalizeStudentGuardianEmailAddressOrUID(sys.argv[4])
   if not _cancelGuardianInvitation(croom, studentId, invitationId):
-    controlflow.system_error_exit(3, 'Guardian invitation %s for %s does not exist' % (invitationId, studentId))
+    controlflow.system_error_exit(3, f'Guardian invitation {invitationId} for {studentId} does not exist')
 
 def _deleteGuardian(croom, studentId, guardianId, guardianEmail):
   try:
     gapi.call(croom.userProfiles().guardians(), 'delete',
               throw_reasons=[gapi.errors.ErrorReason.FORBIDDEN, gapi.errors.ErrorReason.NOT_FOUND],
               studentId=studentId, guardianId=guardianId)
-    print('Deleted %s as a guardian of %s' % (guardianEmail, studentId))
+    print(f'Deleted {guardianEmail} as a guardian of {studentId}')
     return True
   except gapi.errors.GapiForbiddenError:
     entityUnknownWarning('Student', studentId, 0, 0)
@@ -2370,7 +2370,7 @@ def doCreateCourse():
   while i < len(sys.argv):
     myarg = sys.argv[i].lower()
     if myarg in ['alias', 'id']:
-      body['id'] = 'd:%s' % sys.argv[i+1]
+      body['id'] = f'd:{sys.argv[i+1]}'
       i += 2
     else:
       getCourseAttribute(myarg, sys.argv[i+1], body, croom, 'create')
@@ -2380,13 +2380,13 @@ def doCreateCourse():
   if 'name' not in body:
     controlflow.system_error_exit(2, 'expected name <String>)')
   result = gapi.call(croom.courses(), 'create', body=body)
-  print('Created course %s' % result['id'])
+  print(f'Created course {result["id"]}')
 
 def doGetCourseInfo():
   croom = buildGAPIObject('classroom')
   courseId = addCourseIdScope(sys.argv[3])
   info = gapi.call(croom.courses(), 'get', id=courseId)
-  info['ownerEmail'] = convertUIDtoEmailAddress('uid:%s' % info['ownerId'])
+  info['ownerEmail'] = convertUIDtoEmailAddress(f'uid:{info["ownerId"]}')
   print_json(None, info)
   teachers = gapi.get_all_pages(croom.courses().teachers(), 'list', 'teachers', courseId=courseId)
   students = gapi.get_all_pages(croom.courses().students(), 'list', 'students', courseId=courseId)
@@ -2397,20 +2397,20 @@ def doGetCourseInfo():
   if aliases:
     print('Aliases:')
     for alias in aliases:
-      print('  %s' % alias['alias'][2:])
+      print(f'  {alias["alias"][2:]}')
   print('Participants:')
   print(' Teachers:')
   for teacher in teachers:
     try:
-      print('  %s - %s' % (teacher['profile']['name']['fullName'], teacher['profile']['emailAddress']))
+      print(f'  {teacher["profile"]["name"]["fullName"]} - {teacher["profile"]["emailAddress"]}')
     except KeyError:
-      print('  %s' % teacher['profile']['name']['fullName'])
+      print(f'  {teacher["profile"]["name"]["fullName"]}')
   print(' Students:')
   for student in students:
     try:
-      print('  %s - %s' % (student['profile']['name']['fullName'], student['profile']['emailAddress']))
+      print(f'  {student["profile"]["name"]["fullName"]} - {student["profile"]["emailAddress"]}')
     except KeyError:
-      print('  %s' % student['profile']['name']['fullName'])
+      print(f'  {student["profile"]["name"]["fullName"]}')
 
 COURSE_ARGUMENT_TO_PROPERTY_MAP = {
   'alternatelink': 'alternateLink',
@@ -2537,7 +2537,7 @@ def doPrintCourses():
     if ownerEmails is not None:
       ownerId = course['ownerId']
       if ownerId not in ownerEmails:
-        ownerEmails[ownerId] = convertUIDtoEmailAddress('uid:%s' % ownerId, cd=cd)
+        ownerEmails[ownerId] = convertUIDtoEmailAddress(f'uid{ownerId}', cd=cd)
       course['ownerEmail'] = ownerEmails[ownerId]
     for field in skipFieldsList:
       course.pop(field, None)
@@ -2669,7 +2669,7 @@ def doPrintPrintJobs():
         older_or_newer = 'newer'
       age_number = sys.argv[i+1][:-1]
       if not age_number.isdigit():
-        controlflow.system_error_exit(2, 'expected a number; got %s' % age_number)
+        controlflow.system_error_exit(2, f'expected a number; got {age_number}')
       age_unit = sys.argv[i+1][-1].lower()
       if age_unit == 'm':
         age = int(time.time()) - (int(age_number) * 60)
@@ -2678,7 +2678,7 @@ def doPrintPrintJobs():
       elif age_unit == 'd':
         age = int(time.time()) - (int(age_number) * 60 * 60 * 24)
       else:
-        controlflow.system_error_exit(2, 'expected m (minutes), h (hours) or d (days); got %s' % age_unit)
+        controlflow.system_error_exit(2, f'expected m (minutes), h (hours) or d (days); got {age_unit}')
       i += 2
     elif myarg == 'query':
       query = sys.argv[i+1]
@@ -2833,7 +2833,7 @@ def changeCalendarAttendees(users):
     attendee_map[row[0].lower()] = row[1].lower()
   fileutils.close_file(f)
   for user in users:
-    sys.stdout.write('Checking user %s\n' % user)
+    sys.stdout.write(f'Checking user {user}\n')
     user, cal = buildCalendarGAPIObject(user)
     if not cal:
       continue
@@ -2843,7 +2843,7 @@ def changeCalendarAttendees(users):
                               pageToken=page_token, timeMin=start_date,
                               timeMax=end_date, showDeleted=False,
                               showHiddenInvitations=False)
-      print('Got %s items' % len(events_page.get('items', [])))
+      print(f'Got {len(events_page.get("items", []))}')
       for event in events_page.get('items', []):
         if event['status'] == 'cancelled':
           #print u' skipping cancelled event'
@@ -2854,7 +2854,7 @@ def changeCalendarAttendees(users):
           event_summary = event['id']
         try:
           if not allevents and event['organizer']['email'].lower() != user:
-            #print u' skipping not-my-event %s' % event_summary
+            #print(f' skipping not-my-event {event_summary}')
             continue
         except KeyError:
           pass # no email for organizer
@@ -2865,7 +2865,7 @@ def changeCalendarAttendees(users):
               if attendee['email'].lower() in attendee_map:
                 old_email = attendee['email'].lower()
                 new_email = attendee_map[attendee['email'].lower()]
-                print(' SWITCHING attendee %s to %s for %s' % (old_email, new_email, event_summary))
+                print(f' SWITCHING attendee {old_email} to {new_email} for {event_summary}')
                 event['attendees'].remove(attendee)
                 event['attendees'].append({'email': new_email})
                 needs_update = True
@@ -2876,13 +2876,13 @@ def changeCalendarAttendees(users):
         if needs_update:
           body = {}
           body['attendees'] = event['attendees']
-          print('UPDATING %s' % event_summary)
+          print(f'UPDATING {event_summary}')
           if do_it:
             gapi.call(cal.events(), 'patch', calendarId=user, eventId=event['id'], sendNotifications=False, body=body)
           else:
             print(' not pulling the trigger.')
         #else:
-        #  print u' no update needed for %s' % event_summary
+        #  print(f' no update needed for {event_summary}')
       try:
         page_token = events_page['nextPageToken']
       except KeyError:
@@ -2967,7 +2967,7 @@ def addCalendar(users):
     user, cal = buildCalendarGAPIObject(user)
     if not cal:
       continue
-    print("Subscribing %s to %s calendar (%s/%s)" % (user, calendarId, i, count))
+    print(f'Subscribing {user} to calendar {calendarId} ({i}/{count})')
     gapi.call(cal.calendarList(), 'insert', soft_errors=True, body=body, colorRgbFormat=colorRgbFormat)
 
 def updateCalendar(users):
@@ -2981,7 +2981,7 @@ def updateCalendar(users):
     user, cal = buildCalendarGAPIObject(user)
     if not cal:
       continue
-    print("Updating %s's subscription to calendar %s (%s/%s)" % (user, calendarId, i, count))
+    print(f"Updating {user}'s subscription to calendar {calendarId} ({i}/{count})")
     calId = calendarId if calendarId != 'primary' else user
     gapi.call(cal.calendarList(), 'patch', soft_errors=True, calendarId=calId, body=body, colorRgbFormat=colorRgbFormat)
 
@@ -2992,7 +2992,7 @@ def doPrinterShowACL():
   checkCloudPrintResult(printer_info)
   for acl in printer_info['printers'][0]['access']:
     if 'key' in acl:
-      acl['accessURL'] = 'https://www.google.com/cloudprint/addpublicprinter.html?printerid=%s&key=%s' % (show_printer, acl['key'])
+      acl['accessURL'] = f'https://www.google.com/cloudprint/addpublicprinter.html?printerid={show_printer}&key={acl["key"]}'
     print_json(None, acl)
     print()
 
@@ -3010,7 +3010,7 @@ def doPrinterAddACL():
     role = None
     skip_notification = None
   elif scope.find('@') == -1:
-    scope = '/hd/domain/%s' % scope
+    scope = f'/hd/domain/{scope}'
   else:
     skip_notification = not notify
   result = gapi.call(cp.printers(), 'share', printerid=printer, role=role, scope=scope, public=public, skip_notification=skip_notification)
@@ -3019,7 +3019,7 @@ def doPrinterAddACL():
   if who is None:
     who = 'public'
     role = 'user'
-  print('Added %s %s' % (role, who))
+  print(f'Added {role} {who}')
 
 def doPrinterDelACL():
   cp = buildGAPIObject('cloudprint')
@@ -3030,13 +3030,13 @@ def doPrinterDelACL():
     public = True
     scope = None
   elif scope.find('@') == -1:
-    scope = '/hd/domain/%s' % scope
+    scope = f'/hd/domain/{scope}'
   result = gapi.call(cp.printers(), 'unshare', printerid=printer, scope=scope, public=public)
   checkCloudPrintResult(result)
   who = scope
   if who is None:
     who = 'public'
-  print('Removed %s' % who)
+  print(f'Removed {who}')
 
 def encode_multipart(fields, files, boundary=None):
   def escape_quote(s):
@@ -3099,7 +3099,7 @@ def doPrintJobFetch():
         older_or_newer = 'newer'
       age_number = sys.argv[i+1][:-1]
       if not age_number.isdigit():
-        controlflow.system_error_exit(2, 'expected a number; got %s' % age_number)
+        controlflow.system_error_exit(2, f'expected a number; got {age_number}')
       age_unit = sys.argv[i+1][-1].lower()
       if age_unit == 'm':
         age = int(time.time()) - (int(age_number) * 60)
@@ -3108,7 +3108,7 @@ def doPrintJobFetch():
       elif age_unit == 'd':
         age = int(time.time()) - (int(age_number) * 60 * 60 * 24)
       else:
-        controlflow.system_error_exit(2, 'expected m (minutes), h (hours) or d (days); got %s' % age_unit)
+        controlflow.system_error_exit(2, f'expected m (minutes), h (hours) or d (days); got {age_unit}')
       i += 2
     elif myarg == 'query':
       query = sys.argv[i+1]
@@ -3196,7 +3196,7 @@ def doPrintJobFetch():
 #        ticket = gapi.call(cp.jobs(), u'getticket', jobid=jobid, use_cjt=True)
         result = gapi.call(cp.jobs(), 'update', jobid=jobid, semantic_state_diff=ssd)
         checkCloudPrintResult(result)
-        print('Printed job %s to %s' % (jobid, fileName))
+        print(f'Printed job {jobid} to {fileName}')
     if jobCount >= totalJobs:
       break
   if jobCount == 0:
@@ -3254,7 +3254,7 @@ def doUpdatePrinter():
       controlflow.invalid_argument_exit(sys.argv[i], "gam update printer")
   result = gapi.call(cp.printers(), 'update', printerid=printerid, **kwargs)
   checkCloudPrintResult(result)
-  print('Updated printer %s' % printerid)
+  print(f'Updated printer {printerid}')
 
 def doPrinterRegister():
   cp = buildGAPIObject('cloudprint')
@@ -3291,7 +3291,7 @@ def doPrinterRegister():
   _, result = cp._http.request(uri='https://www.google.com/cloudprint/register', method='POST', body=body, headers=headers)
   result = json.loads(result.decode(UTF8))
   checkCloudPrintResult(result)
-  print('Created printer %s' % result['printers'][0]['id'])
+  print(f'Created printer {result["printers"][0]["id"]}')
 
 def doPrintJobResubmit():
   cp = buildGAPIObject('cloudprint')
@@ -3303,7 +3303,7 @@ def doPrintJobResubmit():
   ticket = gapi.call(cp.jobs(), 'getticket', jobid=jobid, use_cjt=True)
   result = gapi.call(cp.jobs(), 'resubmit', printerid=printerid, jobid=jobid, ticket=ticket)
   checkCloudPrintResult(result)
-  print('Success resubmitting %s as job %s to printer %s' % (jobid, result['job']['id'], printerid))
+  print(f'Success resubmitting {jobid} as job {result["job"]["id"]} to printer {printerid}')
 
 def doPrintJobSubmit():
   cp = buildGAPIObject('cloudprint')
@@ -3343,14 +3343,14 @@ def doPrintJobSubmit():
   _, result = cp._http.request(uri='https://www.google.com/cloudprint/submit', method='POST', body=body, headers=headers)
   result = json.loads(result.decode(UTF8))
   checkCloudPrintResult(result)
-  print('Submitted print job %s' % result['job']['id'])
+  print(f'Submitted print job {result["job"]["id"]}')
 
 def doDeletePrintJob():
   cp = buildGAPIObject('cloudprint')
   job = sys.argv[2]
   result = gapi.call(cp.jobs(), 'delete', jobid=job)
   checkCloudPrintResult(result)
-  print('Print Job %s deleted' % job)
+  print(f'Print Job {job} deleted')
 
 def doCancelPrintJob():
   cp = buildGAPIObject('cloudprint')
@@ -3358,7 +3358,7 @@ def doCancelPrintJob():
   ssd = '{"state": {"type": "ABORTED", "user_action_cause": {"action_code": "CANCELLED"}}}'
   result = gapi.call(cp.jobs(), 'update', jobid=job, semantic_state_diff=ssd)
   checkCloudPrintResult(result)
-  print('Print Job %s cancelled' % job)
+  print(f'Print Job {job} cancelled')
 
 def checkCloudPrintResult(result):
   if isinstance(result, bytes):
@@ -3367,19 +3367,19 @@ def checkCloudPrintResult(result):
     try:
       result = json.loads(result)
     except ValueError:
-      controlflow.system_error_exit(3, 'unexpected response: %s' % result)
+      controlflow.system_error_exit(3, f'unexpected response: {result}')
   if not result['success']:
-    controlflow.system_error_exit(result['errorCode'], '%s: %s' % (result['errorCode'], result['message']))
+    controlflow.system_error_exit(result['errorCode'], f'{result["errorCode"]}: {result["message"]}')
 
 def formatACLScope(rule):
   if rule['scope']['type'] != 'default':
-    return '(Scope: {0}:{1})'.format(rule['scope']['type'], rule['scope']['value'])
-  return '(Scope: {0})'.format(rule['scope']['type'])
+    return f'(Scope: {rule["scope"]["type"]}:{rule["scope"]["value"]})'
+  return f'(Scope: {rule["scope"]["type"]})'
 
 def formatACLRule(rule):
   if rule['scope']['type'] != 'default':
-    return '(Scope: {0}:{1}, Role: {2})'.format(rule['scope']['type'], rule['scope']['value'], rule['role'])
-  return '(Scope: {0}, Role: {1})'.format(rule['scope']['type'], rule['role'])
+    return f'(Scope: {rule["scope"]["type"]}:{rule["scope"]["value"]}, Role: {rule["role"]})'
+  return f'(Scope: {rule["scope"]["type"]}, Role: {rule["role"]})'
 
 def doCalendarPrintShowACLs(csvFormat):
   calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
@@ -3412,7 +3412,7 @@ def doCalendarPrintShowACLs(csvFormat):
     else:
       print('Calendar: {0}, ACL: {1}{2}'.format(calendarId, formatACLRule(rule), currentCount(i, count)))
   if csvFormat:
-    writeCSVfile(rows, titles, '%s Calendar ACLs' % calendarId, toDrive)
+    writeCSVfile(rows, titles, f'{calendarId} Calendar ACLs', toDrive)
 
 def _getCalendarACLScope(i, body):
   body['scope'] = {}
@@ -3470,12 +3470,12 @@ def doCalendarDelACL():
     return
   if sys.argv[4].lower() == 'id':
     ruleId = sys.argv[5]
-    print('Removing rights for %s to %s' % (ruleId, calendarId))
+    print(f'Removing rights for {ruleId} to {calendarId}')
     gapi.call(cal.acl(), 'delete', calendarId=calendarId, ruleId=ruleId)
   else:
     body = {'role': 'none'}
     _getCalendarACLScope(5, body)
-    print('Calendar: {0}, {1} ACL: {2}'.format(calendarId, 'Delete', formatACLScope(body)))
+    print(f'Calendar: {calendarId}, Delete ACL: {formatACLScope(body)}')
     gapi.call(cal.acl(), 'insert', calendarId=calendarId, body=body, sendNotifications=False)
 
 def doCalendarWipeData():
@@ -3575,10 +3575,10 @@ def doCalendarMoveOrDeleteEvent(moveOrDelete):
     else:
       controlflow.invalid_argument_exit(sys.argv[i], f"gam calendar <email> {moveOrDelete}event")
   if doit:
-    print(' going to %s eventId %s' % (moveOrDelete, eventId))
+    print(f' going to {moveOrDelete} eventId {eventId}')
     gapi.call(cal.events(), moveOrDelete, calendarId=calendarId, eventId=eventId, sendUpdates=sendUpdates, **kwargs)
   else:
-    print(' would {0} eventId {1}. Add doit to command to actually {0} event'.format(moveOrDelete, eventId))
+    print(f' would {moveOrDelete} eventId {eventId}. Add doit to command to actually {moveOrDelete} event')
 
 def doCalendarAddEvent():
   calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
@@ -3726,7 +3726,7 @@ def doProfile(users):
   count = len(users)
   for user in users:
     i += 1
-    print('Setting Profile Sharing to %s for %s (%s/%s)' % (body['includeInGlobalAddressList'], user, i, count))
+    print(f'Setting Profile Sharing to {body["includeInGlobalAddressList"]} for {user} ({i}/{count})')
     gapi.call(cd.users(), 'update', soft_errors=True, userKey=user, body=body)
 
 def showProfile(users):
@@ -3737,7 +3737,7 @@ def showProfile(users):
     i += 1
     result = gapi.call(cd.users(), 'get', userKey=user, fields='includeInGlobalAddressList')
     try:
-      print('User: %s  Profile Shared: %s (%s/%s)' % (user, result['includeInGlobalAddressList'], i, count))
+      print(f'User: {user}  Profile Shared: {result["includeInGlobalAddressList"]} ({i}/{count})')
     except IndexError:
       pass
 
@@ -3750,7 +3750,7 @@ def doPhoto(users):
     filename = sys.argv[5].replace('#user#', user)
     filename = filename.replace('#email#', user)
     filename = filename.replace('#username#', user[:user.find('@')])
-    print("Updating photo for %s with %s (%s/%s)" % (user, filename, i, count))
+    print(f'Updating photo for {user} with {filename} ({i}/{count})')
     if re.match('^(ht|f)tps?://.*$', filename):
       simplehttp = transport.create_http()
       try:
@@ -3790,21 +3790,21 @@ def getPhoto(users):
   for user in users:
     i += 1
     filename = os.path.join(targetFolder, '{0}.jpg'.format(user))
-    print("Saving photo to %s (%s/%s)" % (filename, i, count))
+    print(f'Saving photo to {filename} ({i}/{count})')
     try:
       photo = gapi.call(cd.users().photos(), 'get', throw_reasons=[gapi.errors.ErrorReason.USER_NOT_FOUND, gapi.errors.ErrorReason.RESOURCE_NOT_FOUND], userKey=user)
     except gapi.errors.GapiUserNotFoundError:
-      print(' unknown user %s' % user)
+      print(f' unknown user {user}')
       continue
     except gapi.errors.GapiResourceNotFoundError:
-      print(' no photo for %s' % user)
+      print(f' no photo for {user}')
       continue
     try:
       photo_data = photo['photoData']
       if showPhotoData:
         print(photo_data)
     except KeyError:
-      print(' no photo for %s' % user)
+      print(f' no photo for {user}')
       continue
     decoded_photo_data = base64.urlsafe_b64decode(photo_data)
     fileutils.write_file(filename, decoded_photo_data, mode='wb', continue_on_error=True)
@@ -3815,26 +3815,26 @@ def deletePhoto(users):
   count = len(users)
   for user in users:
     i += 1
-    print("Deleting photo for %s (%s/%s)" % (user, i, count))
+    print(f'Deleting photo for {user} ({i}/{count})')
     gapi.call(cd.users().photos(), 'delete', userKey=user)
 
 def _showCalendar(userCalendar, j, jcount):
-  print('  Calendar: {0} ({1}/{2})'.format(userCalendar['id'], j, jcount))
-  print('    Summary: {0}'.format(userCalendar.get('summaryOverride', userCalendar['summary'])))
-  print('    Description: {0}'.format(userCalendar.get('description', '')))
-  print('    Access Level: {0}'.format(userCalendar['accessRole']))
-  print('    Timezone: {0}'.format(userCalendar['timeZone']))
-  print('    Location: {0}'.format(userCalendar.get('location', '')))
-  print('    Hidden: {0}'.format(userCalendar.get('hidden', 'False')))
-  print('    Selected: {0}'.format(userCalendar.get('selected', 'False')))
-  print('    Color ID: {0}, Background Color: {1}, Foreground Color: {2}'.format(userCalendar['colorId'], userCalendar['backgroundColor'], userCalendar['foregroundColor']))
-  print('    Default Reminders:')
+  print(f'  Calendar: {userCalendar["id"]} ({j}/{jcount})')
+  print(f'    Summary: {userCalendar.get("summaryOverride", userCalendar["summary"])}')
+  print(f'    Description: {userCalendar.get("description", "")}')
+  print(f'    Access Level: {userCalendar["accessRole"]}')
+  print(f'    Timezone: {userCalendar["timeZone"]}')
+  print(f'    Location: {userCalendar.get("location", "")}')
+  print(f'    Hidden: {userCalendar.get("hidden", "False")}')
+  print(f'    Selected: {userCalendar.get("selected", "False")}')
+  print(f'    Color ID: {userCalendar["colorId"]}, Background Color: {userCalendar["backgroundColor"]}, Foreground Color: {userCalendar["foregroundColor"]}')
+  print(f'    Default Reminders:')
   for reminder in userCalendar.get('defaultReminders', []):
-    print('      Method: {0}, Minutes: {1}'.format(reminder['method'], reminder['minutes']))
+    print(f'      Method: {reminder["method"]}, Minutes: {reminder["minutes"]}')
   print('    Notifications:')
   if 'notificationSettings' in userCalendar:
     for notification in userCalendar['notificationSettings'].get('notifications', []):
-      print('      Method: {0}, Type: {1}'.format(notification['method'], notification['type']))
+      print(f'      Method: {notification["method"]}, Type: {notification["type"]}')
 
 def infoCalendar(users):
   calendarId = normalizeCalendarId(sys.argv[5], checkPrimary=True)
@@ -3849,7 +3849,7 @@ def infoCalendar(users):
                        soft_errors=True,
                        calendarId=calendarId)
     if result:
-      print('User: {0}, Calendar: ({1}/{2})'.format(user, i, count))
+      print(f'User: {user}, Calendar: ({i}/{count})')
       _showCalendar(result, 1, 1)
 
 def printShowCalendars(users, csvFormat):
@@ -3875,7 +3875,7 @@ def printShowCalendars(users, csvFormat):
     result = gapi.get_all_pages(cal.calendarList(), 'list', 'items', soft_errors=True)
     jcount = len(result)
     if not csvFormat:
-      print('User: {0}, Calendars: ({1}/{2})'.format(user, i, count))
+      print(f'User: {user}, Calendars: ({i}/{count})')
       if jcount == 0:
         continue
       j = 0
@@ -3902,12 +3902,12 @@ def showCalSettings(users):
       continue
     feed = gapi.get_all_pages(cal.settings(), 'list', 'items', soft_errors=True)
     if feed:
-      print('User: {0}, Calendar Settings: ({1}/{2})'.format(user, i, count))
+      print(f'User: {user}, Calendar Settings: ({i}/{count})')
       settings = {}
       for setting in feed:
         settings[setting['id']] = setting['value']
       for attr, value in sorted(settings.items()):
-        print('  {0}: {1}'.format(attr, value))
+        print(f'  {attr}: {value}')
 
 def printDriveSettings(users):
   todrive = False
