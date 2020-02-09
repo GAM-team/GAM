@@ -354,5 +354,5 @@ def get_gapi_error_detail(e,
       if 'Cyclic memberships not allowed' in message:
         reason = ErrorReason.CYCLIC_MEMBERSHIPS_NOT_ALLOWED.value
   except KeyError:
-    reason = '{0}'.format(http_status)
+    reason = f'{http_status}'
   return (http_status, reason, message)

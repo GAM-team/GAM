@@ -16,6 +16,16 @@ from var import (GM_Globals, GM_CURRENT_API_SCOPES, GM_CURRENT_API_USER,
                  MESSAGE_API_ACCESS_DENIED, MESSAGE_SERVICE_NOT_APPLICABLE)
 
 
+TOTAL_ITEMS_MARKER = '%%total_items%%'
+FIRST_ITEM_MARKER = '%%first_item%%'
+LAST_ITEM_MARKER = '%%last_item%%'
+
+def setGotTotalItems(items, eol=''):
+  return f'Got {TOTAL_ITEMS_MARKER} {items}{eol}'
+
+def setGotTotalItemsFirsLast(items):
+  return f'Got {TOTAL_ITEMS_MARKER} {items}: {FIRST_ITEM_MARKER} - {LAST_ITEM_MARKER}'+'\n'
+
 def call(service,
          function,
          silent_errors=False,
@@ -79,22 +89,17 @@ def call(service,
         controlflow.wait_on_failure(n, retries, reason)
         continue
       if soft_errors:
-        display.print_error('{0}: {1} - {2}{3}'.format(http_status, message,
-                                                       reason,
-                                                       ['',
-                                                        ': Giving up.'][n > 1]))
+        display.print_error(f'{http_status}: {message} - {reason}{["", ": Giving up."][n > 1]}')
         return None
       controlflow.system_error_exit(
-          int(http_status), '{0}: {1} - {2}'.format(http_status, message,
-                                                    reason))
+          int(http_status), f'{http_status}: {message} - {reason}')
     except google.auth.exceptions.RefreshError as e:
       handle_oauth_token_error(
           e, soft_errors or
           errors.ErrorReason.SERVICE_NOT_AVAILABLE in throw_reasons)
       if errors.ErrorReason.SERVICE_NOT_AVAILABLE in throw_reasons:
         raise errors.GapiServiceNotAvailableError(str(e))
-      display.print_error('User {0}: {1}'.format(
-          GM_Globals[GM_CURRENT_API_USER], str(e)))
+      display.print_error(f'User {GM_Globals[GM_CURRENT_API_USER]}: {str(e)}')
       return None
     except ValueError as e:
       if hasattr(service._http, 'cache') and service._http.cache is not None:
@@ -199,11 +204,11 @@ def get_all_pages(service,
     page_message: String, a message to be displayed to the user during paging.
       Template strings allow for dynamic content to be inserted during paging.
         Supported template strings:
-          %%total_items%% : The current number of items discovered across all
+          TOTAL_ITEMS_MARKER : The current number of items discovered across all
             pages.
-          %%first_item%%  : In conjunction with `message_attribute` arg, will
+          FIRST_ITEM_MARKER  : In conjunction with `message_attribute` arg, will
             display a unique property of the first item in the current page.
-          %%last_item%%   : In conjunction with `message_attribute` arg, will
+          LAST_ITEM_MARKER   : In conjunction with `message_attribute` arg, will
             display a unique property of the last item in the current page.
     message_attribute: String, the name of a signature field within a single
       returned item which identifies that unique item. This field is used with
@@ -248,14 +253,12 @@ def get_all_pages(service,
 
     # Show a paging message to the user that indicates paging progress
     if page_message:
-      show_message = page_message.replace('%%total_items%%', str(total_items))
+      show_message = page_message.replace(TOTAL_ITEMS_MARKER, str(total_items))
       if message_attribute:
         first_item = page_items[0] if num_page_items > 0 else {}
         last_item = page_items[-1] if num_page_items > 1 else first_item
-        show_message = show_message.replace(
-            '%%first_item%%', str(first_item.get(message_attribute, '')))
-        show_message = show_message.replace(
-            '%%last_item%%', str(last_item.get(message_attribute, '')))
+        show_message = show_message.replace(FIRST_ITEM_MARKER, str(first_item.get(message_attribute, '')))
+        show_message = show_message.replace(LAST_ITEM_MARKER, str(last_item.get(message_attribute, '')))
       sys.stderr.write('\r')
       sys.stderr.flush()
       sys.stderr.write(show_message)
@@ -294,5 +297,4 @@ def handle_oauth_token_error(e, soft_errors):
           19,
           MESSAGE_SERVICE_NOT_APPLICABLE.format(
               GM_Globals[GM_CURRENT_API_USER]))
-  controlflow.system_error_exit(18,
-                                'Authentication Token Error - {0}'.format(e))
+  controlflow.system_error_exit(18, f'Authentication Token Error - {str(e)}')

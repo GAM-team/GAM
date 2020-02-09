@@ -1278,7 +1278,7 @@ def showReport():
             sys.exit(1)
           if fullData == 0:
             continue
-        page_message = 'Got %%total_items%% Users\n'
+        page_message = gapi.setGotTotalItems('Users', '\n')
         usage = gapi.get_all_pages(rep.userUsageReport(), 'get', 'usageReports', page_message=page_message, throw_reasons=[gapi.errors.ErrorReason.INVALID],
                                    date=tryDate, userKey=userKey, customerId=customerId, orgUnitID=orgUnitId, filters=filters, parameters=parameters)
         break
@@ -1382,7 +1382,7 @@ def showReport():
       report = 'token'
     elif report == 'group':
       report = 'groups'
-    page_message = 'Got %%total_items%% items\n'
+    page_message = gapi.setGotTotalItems('items', '\n')
     activities = gapi.get_all_pages(rep.activities(), 'list', 'items',
                                     page_message=page_message,
                                     applicationName=report, userKey=userKey,
@@ -2530,7 +2530,7 @@ def doPrintCourses():
     fieldsList.append('ownerId')
   fields = f'nextPageToken,courses({",".join(set(fieldsList))})' if fieldsList else None
   printGettingAllItems('Courses', None)
-  page_message = 'Got %%total_items%% Courses...\n'
+  page_message = gapi.setGotTotalItems('Courses', '...\n')
   all_courses = gapi.get_all_pages(croom.courses(), 'list', 'courses', page_message=page_message, teacherId=teacherId, studentId=studentId, courseStates=courseStates, fields=fields)
   for course in all_courses:
     if ownerEmails is not None:
@@ -2557,20 +2557,20 @@ def doPrintCourses():
       i += 1
       courseId = course['id']
       if showAliases:
-        alias_message = ' Got %%%%total_items%%%% Aliases for course %s%s' % (courseId, currentCount(i, count))
+        alias_message = gapi.setGotTotalItems(f'Aliases for course {courseId}{currentCount(i, count)}')
         course_aliases = gapi.get_all_pages(croom.courses().aliases(), 'list', 'aliases',
                                             page_message=alias_message,
                                             courseId=courseId)
         course['Aliases'] = delimiter.join([alias['alias'][2:] for alias in course_aliases])
       if showMembers:
         if showMembers != 'students':
-          teacher_message = ' Got %%%%total_items%%%% Teachers for course %s%s' % (courseId, currentCount(i, count))
+          teacher_message = gapi.setGotTotalItems(f'Teachers for course {courseId}{currentCount(i, count)}')
           results = gapi.get_all_pages(croom.courses().teachers(), 'list', 'teachers',
                                        page_message=teacher_message,
                                        courseId=courseId, fields=teachersFields)
           _saveParticipants(course, results, 'teachers')
         if showMembers != 'teachers':
-          student_message = ' Got %%%%total_items%%%% Students for course %s%s' % (courseId, currentCount(i, count))
+          student_message = gapi.setGotTotalItems(f'Students for course {courseId}{currentCount(i, count)}')
           results = gapi.get_all_pages(croom.courses().students(), 'list', 'students',
                                        page_message=student_message,
                                        courseId=courseId, fields=studentsFields)
@@ -2616,7 +2616,7 @@ def doPrintCourseParticipants():
       controlflow.invalid_argument_exit(sys.argv[i], "gam print course-participants")
   if not courses:
     printGettingAllItems('Courses', None)
-    page_message = 'Got %%total_items%% Courses...\n'
+    page_message = gapi.setGotTotalItems('Courses', '...\n')
     all_courses = gapi.get_all_pages(croom.courses(), 'list', 'courses', page_message=page_message,
                                      teacherId=teacherId, studentId=studentId, courseStates=courseStates, fields='nextPageToken,courses(id,name)')
   else:
@@ -2629,12 +2629,12 @@ def doPrintCourseParticipants():
     i += 1
     courseId = course['id']
     if showMembers != 'students':
-      page_message = ' Got %%%%total_items%%%% Teachers for course %s (%s/%s)' % (courseId, i, count)
+      page_message = gapi.setGotTotalItems(f'Teachers for course {courseId} ({i}/{count})')
       teachers = gapi.get_all_pages(croom.courses().teachers(), 'list', 'teachers', page_message=page_message, courseId=courseId)
       for teacher in teachers:
         addRowTitlesToCSVfile(flatten_json(teacher, flattened={'courseId': courseId, 'courseName': course['name'], 'userRole': 'TEACHER'}), csvRows, titles)
     if showMembers != 'teachers':
-      page_message = ' Got %%%%total_items%%%% Students for course %s (%s/%s)' % (courseId, i, count)
+      page_message = gapi.setGotTotalItems(f'Students for course {courseId} ({i}/{count})')
       students = gapi.get_all_pages(croom.courses().students(), 'list', 'students', page_message=page_message, courseId=courseId)
       for student in students:
         addRowTitlesToCSVfile(flatten_json(student, flattened={'courseId': courseId, 'courseName': course['name'], 'userRole': 'STUDENT'}), csvRows, titles)
@@ -3520,7 +3520,7 @@ def doCalendarPrintEvents():
       i += 1
     else:
       controlflow.invalid_argument_exit(sys.argv[i], "gam calendar <email> printevents")
-  page_message = 'Got %%%%total_items%%%% events for %s' % calendarId
+  page_message = gapi.setGotTotalItems(f'events for {calendarId}')
   results = gapi.get_all_pages(cal.events(), 'list', 'items', page_message=page_message,
                                calendarId=calendarId, q=q, showDeleted=showDeleted,
                                showHiddenInvitations=showHiddenInvitations,
@@ -3985,7 +3985,7 @@ def printDriveActivity(users):
     user, activity = buildActivityGAPIObject(user)
     if not activity:
       continue
-    page_message = 'Got %%%%total_items%%%% activities for %s' % user
+    page_message = gapi.setGotTotalItems(f'activities for {user}')
     feed = gapi.get_all_pages(activity.activities(), 'list', 'activities',
                               page_message=page_message, source='drive.google.com', userId='me',
                               drive_ancestorId=drive_ancestorId, groupingStrategy='none',
@@ -4266,7 +4266,7 @@ def printDriveFileList(users):
     if not drive:
       continue
     sys.stderr.write(f'Getting files for {user}...\n')
-    page_message = ' Got %%%%total_items%%%% files for %s...\n' % user
+    page_message = gapi.setGotTotalItems(f'files for {user}', '...\n')
     feed = gapi.get_all_pages(drive.files(), 'list', 'items',
                               page_message=page_message, soft_errors=True,
                               q=query, orderBy=orderBy, fields=fields)
@@ -4318,7 +4318,7 @@ def printDriveFileList(users):
 def doDriveSearch(drive, query=None, quiet=False):
   if not quiet:
     print(f'Searching for files with query: "{query}"...')
-    page_message = ' Got %%total_items%% files...\n'
+    page_message = gapi.setGotTotalItems('files', '...\n')
   else:
     page_message = None
   files = gapi.get_all_pages(drive.files(), 'list', 'items',
@@ -4441,7 +4441,7 @@ def showDriveFileTree(users):
       continue
     root_folder = gapi.call(drive.about(), 'get', fields='rootFolderId')['rootFolderId']
     sys.stderr.write(f'Getting all files for {user}...\n')
-    page_message = ' Got %%%%total_items%%%% files for %s...\n' % user
+    page_message = gapi.setGotTotalItems(f'files for {user}', '...\n')
     feed = gapi.get_all_pages(drive.files(), 'list', 'items', page_message=page_message,
                               q=query, orderBy=orderBy, fields='items(id,title,parents(id),mimeType),nextPageToken')
     printDriveFolderContents(feed, root_folder, 0)
@@ -4455,7 +4455,7 @@ def deleteEmptyDriveFolders(users):
     deleted_empty = True
     while deleted_empty:
       sys.stderr.write(f'Getting folders for {user}...\n')
-      page_message = ' Got %%%%total_items%%%% folders for %s...\n' % user
+      page_message = gapi.setGotTotalItems(f'folders for {user}', '...\n')
       feed = gapi.get_all_pages(drive.files(), 'list', 'items', page_message=page_message,
                                 q=query, fields='items(title,id),nextPageToken')
       deleted_empty = False
@@ -4980,7 +4980,7 @@ def transferDriveFiles(users):
     source_root = source_about['rootFolderId']
     source_permissionid = source_about['permissionId']
     print(f'Getting file list for source user: {user}...')
-    page_message = ' Got %%total_items%% files\n'
+    page_message = gapi.setGotTotalItems('files', '\n')
     source_drive_files = gapi.get_all_pages(source_drive.files(), 'list', 'items', page_message=page_message,
                                             q="'me' in owners and trashed = false", fields='items(id,parents,mimeType),nextPageToken')
     all_source_file_ids = []
@@ -4988,7 +4988,7 @@ def transferDriveFiles(users):
       all_source_file_ids.append(source_drive_file['id'])
     total_count = len(source_drive_files)
     print(f'Getting folder list for target user: {target_user}...')
-    page_message = ' Got %%total_items%% folders\n'
+    page_message = gapi.setGotTotalItems('folders', '\n')
     target_folders = gapi.get_all_pages(target_drive.files(), 'list', 'items', page_message=page_message,
                                         q="'me' in owners and mimeType = 'application/vnd.google-apps.folder'", fields='items(id,title),nextPageToken')
     got_top_folder = False
@@ -5810,7 +5810,7 @@ def doProcessMessagesOrThreads(users, function, unit='messages'):
       continue
     print(f'Searching {unit} for {user}')
     unitmethod = getattr(gmail.users(), unit)
-    page_message = 'Got %%%%total_items%%%% %s for user %s' % (unit, user)
+    page_message = gapi.setGotTotalItems(f'{unit} for user {user}')
     listResult = gapi.get_all_pages(unitmethod(), 'list', unit, page_message=page_message,
                                     userId='me', q=query, includeSpamTrash=True, soft_errors=True, fields=f'nextPageToken,{unit}(id)')
     result_count = len(listResult)
@@ -8410,7 +8410,7 @@ def doDownloadCloudStorageBucket():
   else:
     controlflow.system_error_exit(5, 'Could not find a takeout-export-* bucket in that URL')
   s = buildGAPIObject('storage')
-  page_message = 'Got %%total_items%% files...'
+  page_message = gapi.setGotTotalItems('files', '...')
   objects = gapi.get_all_pages(s.objects(), 'list', 'items', page_message=page_message, bucket=bucket, projection='noAcl', fields='nextPageToken,items(name,id,md5Hash)')
   i = 1
   for object_ in objects:
@@ -9425,7 +9425,7 @@ def doUpdateGroup():
       group = normalizeEmailAddressOrUID(group)
       member_type_message = f'{roles.lower()}s'
       sys.stderr.write(f'Getting {member_type_message} of {group} (may take some time for large groups)...\n')
-      page_message = 'Got %%%%total_items%%%% %s...' % member_type_message
+      page_message = gapi.setGotTotalItems(f'{member_type_message}', '...')
       validRoles, listRoles, listFields = _getRoleVerification(roles, f'nextPageToken,members({",".join(fields)})')
       try:
         result = gapi.get_all_pages(cd.members(), 'list', 'members',
@@ -9611,7 +9611,7 @@ def doUpdateMobile():
   if resourceIds[:6] == 'query:':
     query = resourceIds[6:]
     fields = 'nextPageToken,mobiledevices(resourceId,email)'
-    page_message = 'Got %%total_items%% mobile devices...\n'
+    page_message = gapi.setGotTotalItems('Mobile Devices', '...\n')
     devices = gapi.get_all_pages(cd.mobiledevices(), 'list',
                                  page_message=page_message,
                                  customerId=GC_Values[GC_CUSTOMER_ID],
@@ -10754,7 +10754,7 @@ def doGetOrgInfo(name=None, return_attrib=None):
   print_json(None, result)
   if get_users:
     name = result['orgUnitPath']
-    page_message = 'Got %%total_items%% Users: %%first_item%% - %%last_item%%\n'
+    page_message = gapi.setGotTotalItemsFirsLast('Users')
     users = gapi.get_all_pages(cd.users(), 'list', 'users', page_message=page_message,
                                message_attribute='primaryEmail', customer=GC_Values[GC_CUSTOMER_ID], query=orgUnitPathQuery(name, checkSuspended),
                                fields='users(primaryEmail,orgUnitPath),nextPageToken')
@@ -11491,7 +11491,7 @@ def doPrintUsers():
     fields = None
   for query in queries:
     printGettingAllItems('Users', query)
-    page_message = 'Got %%total_items%% Users: %%first_item%% - %%last_item%%\n'
+    page_message = gapi.setGotTotalItemsFirsLast('Users')
     all_users = gapi.get_all_pages(cd.users(), 'list', 'users', page_message=page_message,
                                    message_attribute='primaryEmail', customer=customer, domain=domain, fields=fields,
                                    showDeleted=deleted_only, orderBy=orderBy, sortOrder=sortOrder, viewType=viewType,
@@ -11744,7 +11744,7 @@ def doPrintGroups():
       if not ownersCountOnly:
         addTitlesToCSVfile(['Owners',], titles)
   printGettingAllItems('Groups', None)
-  page_message = 'Got %%total_items%% Groups: %%first_item%% - %%last_item%%\n'
+  page_message = gapi.setGotTotalItemsFirsLast('Groups')
   entityList = gapi.get_all_pages(cd.groups(), 'list', 'groups',
                                   page_message=page_message, message_attribute='email',
                                   customer=customer, domain=usedomain, userKey=usemember, query=usequery,
@@ -11763,7 +11763,7 @@ def doPrintGroups():
           group[fieldsTitles[field]] = groupEntity[field]
     if roles:
       sys.stderr.write(f' Getting {roles} for {groupEmail} ({i}/{count})\n')
-      page_message = '  Got %%total_items%% members: %%first_item%% - %%last_item%%\n'
+      page_message = gapi.setGotTotalItemsFirsLast('members')
       validRoles, listRoles, listFields = _getRoleVerification(roles, 'nextPageToken,members(email,id,role)')
       groupMembers = gapi.get_all_pages(cd.members(), 'list', 'members',
                                         page_message=page_message, message_attribute='email',
@@ -11952,7 +11952,7 @@ def doPrintAliases():
   if doUsers:
     for query in queries:
       printGettingAllItems('User Aliases', query)
-      page_message = 'Got %%total_items%% Users %%first_item%% - %%last_item%%\n'
+      page_message = gapi.setGotTotalItemsFirsLast('Users')
       all_users = gapi.get_all_pages(cd.users(), 'list', 'users', page_message=page_message,
                                      message_attribute='primaryEmail', customer=GC_Values[GC_CUSTOMER_ID], query=query,
                                      fields=f'nextPageToken,users({",".join(userFields)})')
@@ -11963,7 +11963,7 @@ def doPrintAliases():
           csvRows.append({'NonEditableAlias': alias, 'Target': user['primaryEmail'], 'TargetType': 'User'})
   if doGroups:
     printGettingAllItems('Group Aliases', None)
-    page_message = 'Got %%total_items%% Groups %%first_item%% - %%last_item%%\n'
+    page_message = gapi.setGotTotalItemsFirsLast('Groups')
     all_groups = gapi.get_all_pages(cd.groups(), 'list', 'groups', page_message=page_message,
                                     message_attribute='email', customer=GC_Values[GC_CUSTOMER_ID],
                                     fields=f'nextPageToken,groups({",".join(groupFields)})')
@@ -12107,7 +12107,7 @@ def doPrintVaultMatters():
     else:
       controlflow.invalid_argument_exit(myarg, "gam print matters")
   printGettingAllItems('Vault Matters', None)
-  page_message = 'Got %%total_items%% Vault Matters...\n'
+  page_message = gapi.setGotTotalItems('Vault Matters', '...\n')
   matters = gapi.get_all_pages(v.matters(), 'list', 'matters', page_message=page_message, view=view)
   for matter in matters:
     addRowTitlesToCSVfile(flatten_json(matter), csvRows, titles)
@@ -12240,7 +12240,7 @@ def doPrintMobileDevices():
       controlflow.invalid_argument_exit(sys.argv[i], "gam print mobile")
   for query in queries:
     printGettingAllItems('Mobile Devices', query)
-    page_message = 'Got %%total_items%% Mobile Devices...\n'
+    page_message = gapi.setGotTotalItems('Mobile Devices', '...\n')
     all_mobile = gapi.get_all_pages(cd.mobiledevices(), 'list', 'mobiledevices', page_message=page_message,
                                     customerId=GC_Values[GC_CUSTOMER_ID], query=query, projection=projection, fields=fields,
                                     orderBy=orderBy, sortOrder=sortOrder)
@@ -12357,7 +12357,7 @@ def doPrintCrosActivity():
   fields = f'nextPageToken,chromeosdevices({",".join(fieldsList)})'
   for query in queries:
     printGettingAllItems('CrOS Devices', query)
-    page_message = 'Got %%total_items%% CrOS Devices...\n'
+    page_message = gapi.setGotTotalItems('CrOS Devices', '...\n')
     all_cros = gapi.get_all_pages(cd.chromeosdevices(), 'list', 'chromeosdevices', page_message=page_message,
                                   query=query, customerId=GC_Values[GC_CUSTOMER_ID], projection='FULL',
                                   fields=fields, orgUnitPath=orgUnitPath)
@@ -12538,7 +12538,7 @@ def doPrintCrosDevices():
     fields = None
   for query in queries:
     printGettingAllItems('CrOS Devices', query)
-    page_message = 'Got %%total_items%% CrOS Devices...\n'
+    page_message = gapi.setGotTotalItems('CrOS Devices', '...\n')
     all_cros = gapi.get_all_pages(cd.chromeosdevices(), 'list', 'chromeosdevices', page_message=page_message,
                                   query=query, customerId=GC_Values[GC_CUSTOMER_ID], projection=projection, orgUnitPath=orgUnitPath,
                                   orderBy=orderBy, sortOrder=sortOrder, fields=fields)
@@ -12668,7 +12668,7 @@ def doPrintLicenses(returnFields=None, skus=None, countsOnly=False, returnCounts
         product, sku = getProductAndSKU(sku)
       else:
         product = products[0]
-      page_message = 'Got %%%%total_items%%%% Licenses for %s...\n' % SKUS.get(sku, {'displayName': sku})['displayName']
+      page_message = gapi.setGotTotalItems(f'Licenses for {SKUS.get(sku, {"displayName": sku})["displayName"]}', '...\n')
       try:
         licenses += gapi.get_all_pages(lic.licenseAssignments(), 'listForProductAndSku', 'items', throw_reasons=[gapi.errors.ErrorReason.INVALID, gapi.errors.ErrorReason.FORBIDDEN], page_message=page_message,
                                        customerId=GC_Values[GC_DOMAIN], productId=product, skuId=sku, fields=fields)
@@ -12681,7 +12681,7 @@ def doPrintLicenses(returnFields=None, skus=None, countsOnly=False, returnCounts
     if not products:
       products = sorted(PRODUCTID_NAME_MAPPINGS)
     for productId in products:
-      page_message = 'Got %%%%total_items%%%% Licenses for %s...\n' % PRODUCTID_NAME_MAPPINGS.get(productId, productId)
+      page_message = gapi.setGotTotalItems(f'Licenses for {PRODUCTID_NAME_MAPPINGS.get(productId, productId)}', '...\n')
       try:
         licenses += gapi.get_all_pages(lic.licenseAssignments(), 'listForProduct', 'items', throw_reasons=[gapi.errors.ErrorReason.INVALID, gapi.errors.ErrorReason.FORBIDDEN], page_message=page_message,
                                        customerId=GC_Values[GC_DOMAIN], productId=productId, fields=fields)
@@ -12886,7 +12886,7 @@ def doPrintResourceCalendars():
   if 'buildingId' in fieldsList:
     addFieldToCSVfile('buildingName', {'buildingName': ['buildingName',]}, fieldsList, fieldsTitles, titles)
   printGettingAllItems('Resource Calendars', None)
-  page_message = 'Got %%total_items%% Resource Calendars: %%first_item%% - %%last_item%%\n'
+  page_message = gapi.setGotTotalItemsFirsLast('Resource Calendars')
   resources = gapi.get_all_pages(cd.resources().calendars(), 'list', 'items',
                                  page_message=page_message, message_attribute='resourceId',
                                  customer=GC_Values[GC_CUSTOMER_ID], query=query,
@@ -12955,7 +12955,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
     page_message = None
     if not silent:
       sys.stderr.write(f'Getting {member_type_message} of {group} (may take some time for large groups)...\n')
-      page_message = 'Got %%%%total_items%%%% %s...' % member_type_message
+      page_message = gapi.setGotTotalItems(f'{member_type_message}', '...')
     validRoles, listRoles, listFields = _getRoleVerification(member_type, 'nextPageToken,members(email,id,type,status)')
     members = gapi.get_all_pages(cd.members(), 'list', 'members', page_message=page_message,
                                  groupKey=group, roles=listRoles, fields=listFields)
@@ -12978,7 +12978,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
     page_message = None
     if not silent:
       printGettingAllItems('Users', query)
-      page_message = 'Got %%total_items%% Users...'
+      page_message = gapi.setGotTotalItems('Users', '...')
     members = gapi.get_all_pages(cd.users(), 'list', 'users', page_message=page_message,
                                  customer=GC_Values[GC_CUSTOMER_ID], fields='nextPageToken,users(primaryEmail,orgUnitPath)',
                                  query=query)
@@ -13000,7 +13000,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
     page_message = None
     if not silent:
       printGettingAllItems('Users', query)
-      page_message = 'Got %%total_items%% Users...'
+      page_message = gapi.setGotTotalItems('Users', '...')
     members = gapi.get_all_pages(cd.users(), 'list', 'users', page_message=page_message,
                                  customer=GC_Values[GC_CUSTOMER_ID], fields='nextPageToken,users(primaryEmail)',
                                  query=query)
@@ -13019,7 +13019,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
     for query in queries:
       if not silent:
         printGettingAllItems('Users', query)
-      page_message = 'Got %%total_items%% Users...'
+      page_message = gapi.setGotTotalItems('Users', '...')
       members = gapi.get_all_pages(cd.users(), 'list', 'users', page_message=page_message,
                                    customer=GC_Values[GC_CUSTOMER_ID], fields='nextPageToken,users(primaryEmail,suspended)',
                                    query=query)
@@ -13064,14 +13064,14 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
     users = []
     entity = addCourseIdScope(entity)
     if entity_type in ['courseparticipants', 'teachers']:
-      page_message = 'Got %%total_items%% Teachers...'
+      page_message = gapi.setGotTotalItems('Teachers', '...')
       teachers = gapi.get_all_pages(croom.courses().teachers(), 'list', 'teachers', page_message=page_message, courseId=entity)
       for teacher in teachers:
         email = teacher['profile'].get('emailAddress', None)
         if email:
           users.append(email)
     if entity_type in ['courseparticipants', 'students']:
-      page_message = 'Got %%total_items%% Students...'
+      page_message = gapi.setGotTotalItems('Students', '...')
       students = gapi.get_all_pages(croom.courses().students(), 'list', 'students', page_message=page_message, courseId=entity)
       for student in students:
         email = student['profile'].get('emailAddress', None)
@@ -13085,7 +13085,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
       query = 'isSuspended=False'
       if not silent:
         printGettingAllItems('Users', None)
-      page_message = 'Got %%total_items%% Users...'
+      page_message = gapi.setGotTotalItems('Users', '...')
       all_users = gapi.get_all_pages(cd.users(), 'list', 'users', page_message=page_message,
                                      customer=GC_Values[GC_CUSTOMER_ID], query=query,
                                      fields='nextPageToken,users(primaryEmail)')
@@ -13096,7 +13096,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
     elif entity == 'cros':
       if not silent:
         printGettingAllItems('CrOS Devices', None)
-      page_message = 'Got %%total_items%% CrOS Devices...'
+      page_message = gapi.setGotTotalItems('CrOS Devices', '...')
       all_cros = gapi.get_all_pages(cd.chromeosdevices(), 'list', 'chromeosdevices', page_message=page_message,
                                     customerId=GC_Values[GC_CUSTOMER_ID], fields='nextPageToken,chromeosdevices(deviceId)')
       for member in all_cros:
@@ -13120,7 +13120,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
     for query in queries:
       if not silent:
         printGettingAllItems('CrOS Devices', query)
-      page_message = 'Got %%total_items%% CrOS Devices...'
+      page_message = gapi.setGotTotalItems('CrOS Devices', '...')
       members = gapi.get_all_pages(cd.chromeosdevices(), 'list', 'chromeosdevices', page_message=page_message,
                                    customerId=GC_Values[GC_CUSTOMER_ID], fields='nextPageToken,chromeosdevices(deviceId)',
                                    query=query)

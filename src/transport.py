@@ -27,16 +27,13 @@ def create_http(cache=None,
   Returns:
     httplib2.Http with the specified options.
   """
-  tls_minimum_version = override_min_tls if override_min_tls else GC_Values[
-      GC_TLS_MIN_VERSION]
-  tls_maximum_version = override_max_tls if override_max_tls else GC_Values[
-      GC_TLS_MAX_VERSION]
-  return httplib2.Http(
-      ca_certs=GC_Values[GC_CA_FILE],
-      tls_maximum_version=tls_maximum_version,
-      tls_minimum_version=tls_minimum_version,
-      cache=cache,
-      timeout=timeout)
+  tls_minimum_version = override_min_tls if override_min_tls else GC_Values[GC_TLS_MIN_VERSION]
+  tls_maximum_version = override_max_tls if override_max_tls else GC_Values[GC_TLS_MAX_VERSION]
+  return httplib2.Http(ca_certs=GC_Values[GC_CA_FILE],
+                       tls_maximum_version=tls_maximum_version,
+                       tls_minimum_version=tls_minimum_version,
+                       cache=cache,
+                       timeout=timeout)
 
 
 def create_request(http=None):
@@ -69,8 +66,7 @@ def _force_user_agent(user_agent):
         if kwargs['headers'].get('user-agent'):
           if user_agent not in kwargs['headers']['user-agent']:
             # Save the existing user-agent header and tack on our own.
-            kwargs['headers']['user-agent'] = '%s %s' % (
-                user_agent, kwargs['headers']['user-agent'])
+            kwargs['headers']['user-agent'] = f'{user_agent} {kwargs["headers"]["user-agent"]}'
         else:
           kwargs['headers']['user-agent'] = user_agent
       else:
