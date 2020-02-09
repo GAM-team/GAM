@@ -16,16 +16,6 @@ from var import (GM_Globals, GM_CURRENT_API_SCOPES, GM_CURRENT_API_USER,
                  MESSAGE_API_ACCESS_DENIED, MESSAGE_SERVICE_NOT_APPLICABLE)
 
 
-TOTAL_ITEMS_MARKER = '%%total_items%%'
-FIRST_ITEM_MARKER = '%%first_item%%'
-LAST_ITEM_MARKER = '%%last_item%%'
-
-def setGotTotalItems(items, eol=''):
-  return f'Got {TOTAL_ITEMS_MARKER} {items}{eol}'
-
-def setGotTotalItemsFirsLast(items):
-  return f'Got {TOTAL_ITEMS_MARKER} {items}: {FIRST_ITEM_MARKER} - {LAST_ITEM_MARKER}'+'\n'
-
 def call(service,
          function,
          silent_errors=False,
@@ -181,6 +171,41 @@ def _get_max_page_size_for_api_call(service, function, **kwargs):
 
   return None
 
+
+TOTAL_ITEMS_MARKER = '%%total_items%%'
+FIRST_ITEM_MARKER = '%%first_item%%'
+LAST_ITEM_MARKER = '%%last_item%%'
+
+def got_total_items_msg(items, eol=''):
+  """Format a page_message to be used by get_all_pages
+
+  The page message indicates the number of items returned
+
+  Args:
+    items: String, the description of the items being returned by get_all_pages
+    eol: String, the line terminator
+       Values used: '', '...', '\n', '...\n'
+
+  Returns:
+    The formatted page_message
+  """
+
+  return f'Got {TOTAL_ITEMS_MARKER} {items}{eol}'
+
+def got_total_items_first_last_msg(items):
+  """Format a page_message to be used by get_all_pages
+
+  The page message indicates the number of items returned and the
+  value of the first and list items
+
+  Args:
+    items: String, the description of the items being returned by get_all_pages
+
+  Returns:
+    The formatted page_message
+  """
+
+  return f'Got {TOTAL_ITEMS_MARKER} {items}: {FIRST_ITEM_MARKER} - {LAST_ITEM_MARKER}'+'\n'
 
 def get_all_pages(service,
                   function,

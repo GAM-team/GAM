@@ -1278,7 +1278,7 @@ def showReport():
             sys.exit(1)
           if fullData == 0:
             continue
-        page_message = gapi.setGotTotalItems('Users', '\n')
+        page_message = gapi.got_total_items_msg('Users', '\n')
         usage = gapi.get_all_pages(rep.userUsageReport(), 'get', 'usageReports', page_message=page_message, throw_reasons=[gapi.errors.ErrorReason.INVALID],
                                    date=tryDate, userKey=userKey, customerId=customerId, orgUnitID=orgUnitId, filters=filters, parameters=parameters)
         break
@@ -1382,7 +1382,7 @@ def showReport():
       report = 'token'
     elif report == 'group':
       report = 'groups'
-    page_message = gapi.setGotTotalItems('items', '\n')
+    page_message = gapi.got_total_items_msg('items', '\n')
     activities = gapi.get_all_pages(rep.activities(), 'list', 'items',
                                     page_message=page_message,
                                     applicationName=report, userKey=userKey,
@@ -1516,7 +1516,7 @@ def addDelegates(users, i):
     delegator, gmail = buildGmailGAPIObject(delegator)
     if not gmail:
       continue
-    print(f'Giving {delegate} delegate access to {delegator} ({i}/{count})')
+    print(f'Giving {delegate} delegate access to {delegator}{currentCount(i, count)}')
     gapi.call(gmail.users().settings().delegates(), 'create', soft_errors=True, userId='me', body={'delegateEmail': delegate})
 
 def gen_sha512_hash(password):
@@ -1548,7 +1548,7 @@ def printShowDelegates(users, csvFormat):
     user, gmail = buildGmailGAPIObject(user)
     if not gmail:
       continue
-    sys.stderr.write(f'Getting delegates for {user} ({i}/{count})...\n')
+    sys.stderr.write(f'Getting delegates for {user}{currentCountNL(i, count)}')
     i += 1
     delegates = gapi.call(gmail.users().settings().delegates(), 'list', soft_errors=True, userId='me')
     if delegates and 'delegates' in delegates:
@@ -1577,7 +1577,7 @@ def deleteDelegate(users):
     user, gmail = buildGmailGAPIObject(user)
     if not gmail:
       continue
-    print(f'Deleting {delegate} delegate access to {user} ({i}/{count})')
+    print(f'Deleting {delegate} delegate access to {user}{currentCount(i, count)}')
     gapi.call(gmail.users().settings().delegates(), 'delete', soft_errors=True, userId='me', delegateEmail=delegate)
 
 def doAddCourseParticipant():
@@ -2530,7 +2530,7 @@ def doPrintCourses():
     fieldsList.append('ownerId')
   fields = f'nextPageToken,courses({",".join(set(fieldsList))})' if fieldsList else None
   printGettingAllItems('Courses', None)
-  page_message = gapi.setGotTotalItems('Courses', '...\n')
+  page_message = gapi.got_total_items_msg('Courses', '...\n')
   all_courses = gapi.get_all_pages(croom.courses(), 'list', 'courses', page_message=page_message, teacherId=teacherId, studentId=studentId, courseStates=courseStates, fields=fields)
   for course in all_courses:
     if ownerEmails is not None:
@@ -2557,20 +2557,20 @@ def doPrintCourses():
       i += 1
       courseId = course['id']
       if showAliases:
-        alias_message = gapi.setGotTotalItems(f'Aliases for course {courseId}{currentCount(i, count)}')
+        alias_message = gapi.got_total_items_msg(f'Aliases for course {courseId}{currentCount(i, count)}')
         course_aliases = gapi.get_all_pages(croom.courses().aliases(), 'list', 'aliases',
                                             page_message=alias_message,
                                             courseId=courseId)
         course['Aliases'] = delimiter.join([alias['alias'][2:] for alias in course_aliases])
       if showMembers:
         if showMembers != 'students':
-          teacher_message = gapi.setGotTotalItems(f'Teachers for course {courseId}{currentCount(i, count)}')
+          teacher_message = gapi.got_total_items_msg(f'Teachers for course {courseId}{currentCount(i, count)}')
           results = gapi.get_all_pages(croom.courses().teachers(), 'list', 'teachers',
                                        page_message=teacher_message,
                                        courseId=courseId, fields=teachersFields)
           _saveParticipants(course, results, 'teachers')
         if showMembers != 'teachers':
-          student_message = gapi.setGotTotalItems(f'Students for course {courseId}{currentCount(i, count)}')
+          student_message = gapi.got_total_items_msg(f'Students for course {courseId}{currentCount(i, count)}')
           results = gapi.get_all_pages(croom.courses().students(), 'list', 'students',
                                        page_message=student_message,
                                        courseId=courseId, fields=studentsFields)
@@ -2616,7 +2616,7 @@ def doPrintCourseParticipants():
       controlflow.invalid_argument_exit(sys.argv[i], "gam print course-participants")
   if not courses:
     printGettingAllItems('Courses', None)
-    page_message = gapi.setGotTotalItems('Courses', '...\n')
+    page_message = gapi.got_total_items_msg('Courses', '...\n')
     all_courses = gapi.get_all_pages(croom.courses(), 'list', 'courses', page_message=page_message,
                                      teacherId=teacherId, studentId=studentId, courseStates=courseStates, fields='nextPageToken,courses(id,name)')
   else:
@@ -2629,12 +2629,12 @@ def doPrintCourseParticipants():
     i += 1
     courseId = course['id']
     if showMembers != 'students':
-      page_message = gapi.setGotTotalItems(f'Teachers for course {courseId} ({i}/{count})')
+      page_message = gapi.got_total_items_msg(f'Teachers for course {courseId}{currentCount(i, count)}')
       teachers = gapi.get_all_pages(croom.courses().teachers(), 'list', 'teachers', page_message=page_message, courseId=courseId)
       for teacher in teachers:
         addRowTitlesToCSVfile(flatten_json(teacher, flattened={'courseId': courseId, 'courseName': course['name'], 'userRole': 'TEACHER'}), csvRows, titles)
     if showMembers != 'teachers':
-      page_message = gapi.setGotTotalItems(f'Students for course {courseId} ({i}/{count})')
+      page_message = gapi.got_total_items_msg(f'Students for course {courseId}{currentCount(i, count)}')
       students = gapi.get_all_pages(croom.courses().students(), 'list', 'students', page_message=page_message, courseId=courseId)
       for student in students:
         addRowTitlesToCSVfile(flatten_json(student, flattened={'courseId': courseId, 'courseName': course['name'], 'userRole': 'STUDENT'}), csvRows, titles)
@@ -2966,7 +2966,7 @@ def addCalendar(users):
     user, cal = buildCalendarGAPIObject(user)
     if not cal:
       continue
-    print(f'Subscribing {user} to calendar {calendarId} ({i}/{count})')
+    print(f'Subscribing {user} to calendar {calendarId}{currentCount(i, count)}')
     gapi.call(cal.calendarList(), 'insert', soft_errors=True, body=body, colorRgbFormat=colorRgbFormat)
 
 def updateCalendar(users):
@@ -2980,7 +2980,7 @@ def updateCalendar(users):
     user, cal = buildCalendarGAPIObject(user)
     if not cal:
       continue
-    print(f"Updating {user}'s subscription to calendar {calendarId} ({i}/{count})")
+    print(f"Updating {user}'s subscription to calendar {calendarId}{currentCount(i, count)}")
     calId = calendarId if calendarId != 'primary' else user
     gapi.call(cal.calendarList(), 'patch', soft_errors=True, calendarId=calId, body=body, colorRgbFormat=colorRgbFormat)
 
@@ -3520,7 +3520,7 @@ def doCalendarPrintEvents():
       i += 1
     else:
       controlflow.invalid_argument_exit(sys.argv[i], "gam calendar <email> printevents")
-  page_message = gapi.setGotTotalItems(f'events for {calendarId}')
+  page_message = gapi.got_total_items_msg(f'events for {calendarId}')
   results = gapi.get_all_pages(cal.events(), 'list', 'items', page_message=page_message,
                                calendarId=calendarId, q=q, showDeleted=showDeleted,
                                showHiddenInvitations=showHiddenInvitations,
@@ -3725,7 +3725,7 @@ def doProfile(users):
   count = len(users)
   for user in users:
     i += 1
-    print(f'Setting Profile Sharing to {body["includeInGlobalAddressList"]} for {user} ({i}/{count})')
+    print(f'Setting Profile Sharing to {body["includeInGlobalAddressList"]} for {user}{currentCount(i, count)}')
     gapi.call(cd.users(), 'update', soft_errors=True, userKey=user, body=body)
 
 def showProfile(users):
@@ -3736,7 +3736,7 @@ def showProfile(users):
     i += 1
     result = gapi.call(cd.users(), 'get', userKey=user, fields='includeInGlobalAddressList')
     try:
-      print(f'User: {user}  Profile Shared: {result["includeInGlobalAddressList"]} ({i}/{count})')
+      print(f'User: {user}  Profile Shared: {result["includeInGlobalAddressList"]}{currentCount(i, count)}')
     except IndexError:
       pass
 
@@ -3749,7 +3749,7 @@ def doPhoto(users):
     filename = sys.argv[5].replace('#user#', user)
     filename = filename.replace('#email#', user)
     filename = filename.replace('#username#', user[:user.find('@')])
-    print(f'Updating photo for {user} with {filename} ({i}/{count})')
+    print(f'Updating photo for {user} with {filename}{currentCount(i, count)}')
     if re.match('^(ht|f)tps?://.*$', filename):
       simplehttp = transport.create_http()
       try:
@@ -3789,7 +3789,7 @@ def getPhoto(users):
   for user in users:
     i += 1
     filename = os.path.join(targetFolder, f'{user}.jpg')
-    print(f'Saving photo to {filename} ({i}/{count})')
+    print(f'Saving photo to {filename}{currentCount(i, count)}')
     try:
       photo = gapi.call(cd.users().photos(), 'get', throw_reasons=[gapi.errors.ErrorReason.USER_NOT_FOUND, gapi.errors.ErrorReason.RESOURCE_NOT_FOUND], userKey=user)
     except gapi.errors.GapiUserNotFoundError:
@@ -3814,11 +3814,11 @@ def deletePhoto(users):
   count = len(users)
   for user in users:
     i += 1
-    print(f'Deleting photo for {user} ({i}/{count})')
+    print(f'Deleting photo for {user}{currentCount(i, count)}')
     gapi.call(cd.users().photos(), 'delete', userKey=user)
 
 def _showCalendar(userCalendar, j, jcount):
-  print(f'  Calendar: {userCalendar["id"]} ({j}/{jcount})')
+  print(f'  Calendar: {userCalendar["id"]}{currentCount(j, jcount)}')
   print(f'    Summary: {userCalendar.get("summaryOverride", userCalendar["summary"])}')
   print(f'    Description: {userCalendar.get("description", "")}')
   print(f'    Access Level: {userCalendar["accessRole"]}')
@@ -3848,7 +3848,7 @@ def infoCalendar(users):
                        soft_errors=True,
                        calendarId=calendarId)
     if result:
-      print(f'User: {user}, Calendar: ({i}/{count})')
+      print(f'User: {user}, Calendar:{currentCount(i, count)}')
       _showCalendar(result, 1, 1)
 
 def printShowCalendars(users, csvFormat):
@@ -3874,7 +3874,7 @@ def printShowCalendars(users, csvFormat):
     result = gapi.get_all_pages(cal.calendarList(), 'list', 'items', soft_errors=True)
     jcount = len(result)
     if not csvFormat:
-      print(f'User: {user}, Calendars: ({i}/{count})')
+      print(f'User: {user}, Calendars:{currentCount(i, count)}')
       if jcount == 0:
         continue
       j = 0
@@ -3901,7 +3901,7 @@ def showCalSettings(users):
       continue
     feed = gapi.get_all_pages(cal.settings(), 'list', 'items', soft_errors=True)
     if feed:
-      print(f'User: {user}, Calendar Settings: ({i}/{count})')
+      print(f'User: {user}, Calendar Settings:{currentCount(i, count)}')
       settings = {}
       for setting in feed:
         settings[setting['id']] = setting['value']
@@ -3928,7 +3928,7 @@ def printDriveSettings(users):
     user, drive = buildDrive3GAPIObject(user)
     if not drive:
       continue
-    sys.stderr.write(f'Getting Drive settings for {user} ({i}/{count})\n')
+    sys.stderr.write(f'Getting Drive settings for {user}{currentCountNL(i, count)}')
     feed = gapi.call(drive.about(), 'get', fields='*', soft_errors=True)
     if feed is None:
       continue
@@ -3985,7 +3985,7 @@ def printDriveActivity(users):
     user, activity = buildActivityGAPIObject(user)
     if not activity:
       continue
-    page_message = gapi.setGotTotalItems(f'activities for {user}')
+    page_message = gapi.got_total_items_msg(f'activities for {user}')
     feed = gapi.get_all_pages(activity.activities(), 'list', 'activities',
                               page_message=page_message, source='drive.google.com', userId='me',
                               drive_ancestorId=drive_ancestorId, groupingStrategy='none',
@@ -4266,7 +4266,7 @@ def printDriveFileList(users):
     if not drive:
       continue
     sys.stderr.write(f'Getting files for {user}...\n')
-    page_message = gapi.setGotTotalItems(f'files for {user}', '...\n')
+    page_message = gapi.got_total_items_msg(f'files for {user}', '...\n')
     feed = gapi.get_all_pages(drive.files(), 'list', 'items',
                               page_message=page_message, soft_errors=True,
                               q=query, orderBy=orderBy, fields=fields)
@@ -4318,7 +4318,7 @@ def printDriveFileList(users):
 def doDriveSearch(drive, query=None, quiet=False):
   if not quiet:
     print(f'Searching for files with query: "{query}"...')
-    page_message = gapi.setGotTotalItems('files', '...\n')
+    page_message = gapi.got_total_items_msg('files', '...\n')
   else:
     page_message = None
   files = gapi.get_all_pages(drive.files(), 'list', 'items',
@@ -4441,7 +4441,7 @@ def showDriveFileTree(users):
       continue
     root_folder = gapi.call(drive.about(), 'get', fields='rootFolderId')['rootFolderId']
     sys.stderr.write(f'Getting all files for {user}...\n')
-    page_message = gapi.setGotTotalItems(f'files for {user}', '...\n')
+    page_message = gapi.got_total_items_msg(f'files for {user}', '...\n')
     feed = gapi.get_all_pages(drive.files(), 'list', 'items', page_message=page_message,
                               q=query, orderBy=orderBy, fields='items(id,title,parents(id),mimeType),nextPageToken')
     printDriveFolderContents(feed, root_folder, 0)
@@ -4455,7 +4455,7 @@ def deleteEmptyDriveFolders(users):
     deleted_empty = True
     while deleted_empty:
       sys.stderr.write(f'Getting folders for {user}...\n')
-      page_message = gapi.setGotTotalItems(f'folders for {user}', '...\n')
+      page_message = gapi.got_total_items_msg(f'folders for {user}', '...\n')
       feed = gapi.get_all_pages(drive.files(), 'list', 'items', page_message=page_message,
                                 q=query, fields='items(title,id),nextPageToken')
       deleted_empty = False
@@ -4980,7 +4980,7 @@ def transferDriveFiles(users):
     source_root = source_about['rootFolderId']
     source_permissionid = source_about['permissionId']
     print(f'Getting file list for source user: {user}...')
-    page_message = gapi.setGotTotalItems('files', '\n')
+    page_message = gapi.got_total_items_msg('files', '\n')
     source_drive_files = gapi.get_all_pages(source_drive.files(), 'list', 'items', page_message=page_message,
                                             q="'me' in owners and trashed = false", fields='items(id,parents,mimeType),nextPageToken')
     all_source_file_ids = []
@@ -4988,7 +4988,7 @@ def transferDriveFiles(users):
       all_source_file_ids.append(source_drive_file['id'])
     total_count = len(source_drive_files)
     print(f'Getting folder list for target user: {target_user}...')
-    page_message = gapi.setGotTotalItems('folders', '\n')
+    page_message = gapi.got_total_items_msg('folders', '\n')
     target_folders = gapi.get_all_pages(target_drive.files(), 'list', 'items', page_message=page_message,
                                         q="'me' in owners and mimeType = 'application/vnd.google-apps.folder'", fields='items(id,title),nextPageToken')
     got_top_folder = False
@@ -5021,7 +5021,7 @@ def transferDriveFiles(users):
           continue
         transferred_files.append(drive_file['id'])
         counter += 1
-        print(f'Changing owner for file {drive_file["id"]} ({counter}/{total_count})')
+        print(f'Changing owner for file {drive_file["id"]}{currentCount(counter, total_count)}')
         body = {'role': 'owner', 'type': 'user', 'value': target_user}
         gapi.call(source_drive.permissions(), 'insert', soft_errors=True, fileId=file_id, sendNotificationEmails=False, body=body)
         target_parents = []
@@ -5125,7 +5125,7 @@ def doImap(users):
     user, gmail = buildGmailGAPIObject(user)
     if not gmail:
       continue
-    print(f'Setting IMAP Access to {str(enable)} for {user} ({i}/{count})')
+    print(f'Setting IMAP Access to {str(enable)} for {user}{currentCount(i, count)}')
     gapi.call(gmail.users().settings(), 'updateImap',
               soft_errors=True,
               userId='me', body=body)
@@ -5139,7 +5139,7 @@ def doLanguage(users):
     user, gmail = buildGmailGAPIObject(user)
     if not gmail:
       continue
-    print(f'Setting languaged to {displayLanguage} for {user} ({i}/{count})')
+    print(f'Setting languaged to {displayLanguage} for {user}{currentCount(i, count)}')
     result = gapi.call(gmail.users().settings(), 'updateLanguage', userId='me', body={'displayLanguage': displayLanguage})
     print(f'Language is set to {result["displayLanguage"]} for {user}')
 
@@ -5155,7 +5155,7 @@ def getLanguage(users):
                        soft_errors=True,
                        userId='me')
     if result:
-      print(f'User: {user}, Language: {result["displayLanguage"]} ({i}/{count})')
+      print(f'User: {user}, Language: {result["displayLanguage"]}{currentCount(i, count)}')
 
 def getImap(users):
   i = 0
@@ -5171,9 +5171,9 @@ def getImap(users):
     if result:
       enabled = result['enabled']
       if enabled:
-        print(f'User: {user}, IMAP Enabled: {enabled}, autoExpunge: {result["autoExpunge"]}, expungeBehavior: {result["expungeBehavior"]}, maxFolderSize: {result["maxFolderSize"]} ({i}/{count})')
+        print(f'User: {user}, IMAP Enabled: {enabled}, autoExpunge: {result["autoExpunge"]}, expungeBehavior: {result["expungeBehavior"]}, maxFolderSize: {result["maxFolderSize"]}{currentCount(i, count)}')
       else:
-        print(f'User: {user}, IMAP Enabled: {enabled} ({i}/{count})')
+        print(f'User: {user}, IMAP Enabled: {enabled}{currentCount(i, count)}')
 
 def getProductAndSKU(sku):
   l_sku = sku.lower().replace('-', '').replace(' ', '')
@@ -5243,7 +5243,7 @@ def doPop(users):
     user, gmail = buildGmailGAPIObject(user)
     if not gmail:
       continue
-    print(f'Setting POP Access to {str(enable)} for {user} ({i}/{count})')
+    print(f'Setting POP Access to {str(enable)} for {user}{currentCount(i, count)}')
     gapi.call(gmail.users().settings(), 'updatePop',
               soft_errors=True,
               userId='me', body=body)
@@ -5262,9 +5262,9 @@ def getPop(users):
     if result:
       enabled = result['accessWindow'] != 'disabled'
       if enabled:
-        print(f'User: {user}, POP Enabled: {enabled}, For: {result["accessWindow"]}, Action: {result["disposition"]} ({i}/{count})')
+        print(f'User: {user}, POP Enabled: {enabled}, For: {result["accessWindow"]}, Action: {result["disposition"]}{currentCount(i, count)}')
       else:
-        print(f'User: {user}, POP Enabled: {enabled} ({i}/{count})')
+        print(f'User: {user}, POP Enabled: {enabled}{currentCount(i, count)}')
 
 SMTPMSA_DISPLAY_FIELDS = ['host', 'port', 'securityMode']
 
@@ -5415,7 +5415,7 @@ def addUpdateSendAs(users, i, addCmd):
     user, gmail = buildGmailGAPIObject(user)
     if not gmail:
       continue
-    print(f'Allowing {user} to send as {emailAddress} ({i}/{count})')
+    print(f'Allowing {user} to send as {emailAddress}{currentCount(i, count)}')
     gapi.call(gmail.users().settings().sendAs(), ['patch', 'create'][addCmd],
               soft_errors=True,
               userId='me', **kwargs)
@@ -5429,7 +5429,7 @@ def deleteSendAs(users):
     user, gmail = buildGmailGAPIObject(user)
     if not gmail:
       continue
-    print(f'Disallowing {user} to send as {emailAddress} ({i}/{count})')
+    print(f'Disallowing {user} to send as {emailAddress}{currentCount(i, count)}')
     gapi.call(gmail.users().settings().sendAs(), 'delete',
               soft_errors=True,
               userId='me', sendAsEmail=emailAddress)
@@ -5579,7 +5579,7 @@ def printShowSendAs(users, csvFormat):
                        userId='me')
     jcount = len(result.get('sendAs', [])) if (result) else 0
     if not csvFormat:
-      print(f'User: {user}, SendAs Addresses: ({i}/{count})')
+      print(f'User: {user}, SendAs Addresses:{currentCount(i, count)}')
       if jcount == 0:
         continue
       j = 0
@@ -5723,7 +5723,7 @@ def doLabel(users, i):
     user, gmail = buildGmailGAPIObject(user)
     if not gmail:
       continue
-    print(f'Creating label {label} for {user} ({i}/{count})')
+    print(f'Creating label {label} for {user}{currentCount(i, count)}')
     gapi.call(gmail.users().labels(), 'create', soft_errors=True, userId=user, body=body)
 
 PROCESS_MESSAGE_FUNCTION_TO_ACTION_MAP = {'delete': 'deleted', 'trash': 'trashed', 'untrash': 'untrashed', 'modify': 'modified'}
@@ -5810,7 +5810,7 @@ def doProcessMessagesOrThreads(users, function, unit='messages'):
       continue
     print(f'Searching {unit} for {user}')
     unitmethod = getattr(gmail.users(), unit)
-    page_message = gapi.setGotTotalItems(f'{unit} for user {user}')
+    page_message = gapi.got_total_items_msg(f'{unit} for user {user}')
     listResult = gapi.get_all_pages(unitmethod(), 'list', unit, page_message=page_message,
                                     userId='me', q=query, includeSpamTrash=True, soft_errors=True, fields=f'nextPageToken,{unit}(id)')
     result_count = len(listResult)
@@ -5845,7 +5845,7 @@ def doProcessMessagesOrThreads(users, function, unit='messages'):
       del kwargs['body']
     for a_unit in listResult:
       i += 1
-      print(f' {function} {unit} {a_unit["id"]} for user {user} ({i}/{result_count})')
+      print(f' {function} {unit} {a_unit["id"]} for user {user}{currentCount(i, result_count)}')
       gapi.call(unitmethod(), function,
                 id=a_unit['id'], userId='me', **kwargs)
 
@@ -5878,12 +5878,12 @@ def doDeleteLabel(users):
         print(f' Error: no such label for {user}')
         continue
     bcount = 0
-    j = 0
-    del_me_count = len(del_labels)
+    i = 0
+    count = len(del_labels)
     dbatch = gmail.new_batch_http_request(callback=gmail_del_result)
     for del_me in del_labels:
-      j += 1
-      print(f' deleting label {del_me["name"]} ({j}/{del_me_count})')
+      i += 1
+      print(f' deleting label {del_me["name"]}{currentCount(i, count)}')
       dbatch.add(gmail.users().labels().delete(userId=user, id=del_me['id']))
       bcount += 1
       if bcount == 10:
@@ -6045,11 +6045,12 @@ def renameLabels(users):
                   new_label_id = new_label['id']
                   body = {'addLabelIds': [new_label_id]}
                   break
-              j = 1
+              j = 0
+              jcount = len(messages_to_relabel)
               for message_to_relabel in messages_to_relabel:
-                print(f'    relabeling message {message_to_relabel["id"]} ({j}/{len(messages_to_relabel)})')
-                gapi.call(gmail.users().messages(), 'modify', userId=user, id=message_to_relabel['id'], body=body)
                 j += 1
+                print(f'    relabeling message {message_to_relabel["id"]}{currentCount(j, jcount)}')
+                gapi.call(gmail.users().messages(), 'modify', userId=user, id=message_to_relabel['id'], body=body)
             else:
               print(f'   no messages with {label["name"]} label')
             print(f'   Deleting label {label["name"]}')
@@ -6233,12 +6234,12 @@ def addFilter(users, i):
           continue
         addLabelId = result['id']
       body['action']['addLabelIds'].append(addLabelId)
-    print(f'Adding filter for {user} ({i}/{count})')
+    print(f'Adding filter for {user}{currentCount(i, count)}')
     result = gapi.call(gmail.users().settings().filters(), 'create',
                        soft_errors=True,
                        userId='me', body=body)
     if result:
-      print(f'User: {user}, Filter: {result["id"]}, Added ({i}/{count})')
+      print(f'User: {user}, Filter: {result["id"]}, Added{currentCount(i, count)}')
 
 def deleteFilters(users):
   filterId = sys.argv[5]
@@ -6249,7 +6250,7 @@ def deleteFilters(users):
     user, gmail = buildGmailGAPIObject(user)
     if not gmail:
       continue
-    print(f'Deleting filter {filterId} for {user} ({i}/{count})')
+    print(f'Deleting filter {filterId} for {user}{currentCount(i, count)}')
     gapi.call(gmail.users().settings().filters(), 'delete',
               soft_errors=True,
               userId='me', id=filterId)
@@ -6284,7 +6285,7 @@ def printShowFilters(users, csvFormat):
                        userId='me')
     jcount = len(result.get('filter', [])) if (result) else 0
     if not csvFormat:
-      print(f'User: {user}, Filters: ({i}/{count})')
+      print(f'User: {user}, Filters:{currentCount(i, count)}')
       if jcount == 0:
         continue
       j = 0
@@ -6322,7 +6323,7 @@ def infoFilters(users):
                        soft_errors=True,
                        userId='me', id=filterId)
     if result:
-      print(f'User: {user}, Filter: ({i}/{count})')
+      print(f'User: {user}, Filter:{currentCount(i, count)}')
       _showFilter(result, 1, 1, labels)
 
 def doForward(users):
@@ -6351,9 +6352,9 @@ def doForward(users):
     if not gmail:
       continue
     if enable:
-      print(f'User: {user}, Forward Enabled: {enable}, Forwarding Address: {body["emailAddress"]}, Action: {body["disposition"]} ({i}/{count})')
+      print(f'User: {user}, Forward Enabled: {enable}, Forwarding Address: {body["emailAddress"]}, Action: {body["disposition"]}{currentCount(i, count)}')
     else:
-      print(f'User: {user}, Forward Enabled: {enable} ({i}/{count})')
+      print(f'User: {user}, Forward Enabled: {enable}{currentCount(i, count)}')
     gapi.call(gmail.users().settings(), 'updateAutoForwarding',
               soft_errors=True,
               userId='me', body=body)
@@ -6363,15 +6364,15 @@ def printShowForward(users, csvFormat):
     if 'enabled' in result:
       enabled = result['enabled']
       if enabled:
-        print(f'User: {user}, Forward Enabled: {enabled}, Forwarding Address: {result["emailAddress"]}, Action: {result["disposition"]} ({i}/{count})')
+        print(f'User: {user}, Forward Enabled: {enabled}, Forwarding Address: {result["emailAddress"]}, Action: {result["disposition"]}{currentCount(i, count)}')
       else:
-        print(f'User: {user}, Forward Enabled: {enabled} ({i}/{count})')
+        print(f'User: {user}, Forward Enabled: {enabled}{currentCount(i, count)}')
     else:
       enabled = result['enable'] == 'true'
       if enabled:
-        print(f'User: {user}, Forward Enabled: {enabled}, Forwarding Address: {result["forwardTo"]}, Action: {EMAILSETTINGS_OLD_NEW_OLD_FORWARD_ACTION_MAP[result["action"]]} ({i}/{count})')
+        print(f'User: {user}, Forward Enabled: {enabled}, Forwarding Address: {result["forwardTo"]}, Action: {EMAILSETTINGS_OLD_NEW_OLD_FORWARD_ACTION_MAP[result["action"]]}{currentCount(i, count)}')
       else:
-        print(f'User: {user}, Forward Enabled: {enabled} ({i}/{count})')
+        print(f'User: {user}, Forward Enabled: {enabled}{currentCount(i, count)}')
 
   def _printForward(user, result):
     if 'enabled' in result:
@@ -6426,7 +6427,7 @@ def addForwardingAddresses(users):
     user, gmail = buildGmailGAPIObject(user)
     if not gmail:
       continue
-    print(f'Adding Forwarding Address {emailAddress} for {user} ({i}/{count})')
+    print(f'Adding Forwarding Address {emailAddress} for {user}{currentCount(i, count)}')
     gapi.call(gmail.users().settings().forwardingAddresses(), 'create',
               soft_errors=True,
               userId='me', body=body)
@@ -6440,7 +6441,7 @@ def deleteForwardingAddresses(users):
     user, gmail = buildGmailGAPIObject(user)
     if not gmail:
       continue
-    print(f'deleting Forwarding Address {emailAddress} for {user} ({i}/{count})')
+    print(f'deleting Forwarding Address {emailAddress} for {user}{currentCount(i, count)}')
     gapi.call(gmail.users().settings().forwardingAddresses(), 'delete',
               soft_errors=True,
               userId='me', forwardingEmail=emailAddress)
@@ -6470,13 +6471,13 @@ def printShowForwardingAddresses(users, csvFormat):
                        userId='me')
     jcount = len(result.get('forwardingAddresses', [])) if (result) else 0
     if not csvFormat:
-      print(f'User: {user}, Forwarding Addresses: ({i}/{count})')
+      print(f'User: {user}, Forwarding Addresses:{currentCount(i, count)}')
       if jcount == 0:
         continue
       j = 0
       for forward in result['forwardingAddresses']:
         j += 1
-        print(f'  Forwarding Address: {forward["forwardingEmail"]}, Verification Status: {forward["verificationStatus"]} ({j}/{jcount})')
+        print(f'  Forwarding Address: {forward["forwardingEmail"]}, Verification Status: {forward["verificationStatus"]}{currentCount(j, jcount)}')
     else:
       if jcount == 0:
         continue
@@ -6499,7 +6500,7 @@ def infoForwardingAddresses(users):
                         soft_errors=True,
                         userId='me', forwardingEmail=emailAddress)
     if forward:
-      print(f'User: {user}, Forwarding Address: {forward["forwardingEmail"]}, Verification Status: {forward["verificationStatus"]} ({i}/{count})')
+      print(f'User: {user}, Forwarding Address: {forward["forwardingEmail"]}, Verification Status: {forward["verificationStatus"]}{currentCount(i, count)}')
 
 def doSignature(users):
   tagReplacements = {}
@@ -6528,7 +6529,7 @@ def doSignature(users):
     user, gmail = buildGmailGAPIObject(user)
     if not gmail:
       continue
-    print(f'Setting Signature for {user} ({i}/{count})')
+    print(f'Setting Signature for {user}{currentCount(i, count)}')
     gapi.call(gmail.users().settings().sendAs(), 'patch',
               soft_errors=True,
               userId='me', body=body, sendAsEmail=user)
@@ -6615,7 +6616,7 @@ def doVacation(users):
     user, gmail = buildGmailGAPIObject(user)
     if not gmail:
       continue
-    print(f'Setting Vacation for {user} ({i}/{count})')
+    print(f'Setting Vacation for {user}{currentCount(i, count)}')
     gapi.call(gmail.users().settings(), 'updateVacation',
               soft_errors=True,
               userId='me', body=body)
@@ -6642,7 +6643,7 @@ def getVacation(users):
                        userId='me')
     if result:
       enabled = result['enableAutoReply']
-      print(f'User: {user}, Vacation: ({i}/{count})')
+      print(f'User: {user}, Vacation:{currentCount(i, count)}')
       print(f'  Enabled: {enabled}')
       if enabled:
         print(f'  Contacts Only: {result["restrictToContacts"]}')
@@ -8410,7 +8411,7 @@ def doDownloadCloudStorageBucket():
   else:
     controlflow.system_error_exit(5, 'Could not find a takeout-export-* bucket in that URL')
   s = buildGAPIObject('storage')
-  page_message = gapi.setGotTotalItems('files', '...')
+  page_message = gapi.got_total_items_msg('files', '...')
   objects = gapi.get_all_pages(s.objects(), 'list', 'items', page_message=page_message, bucket=bucket, projection='noAcl', fields='nextPageToken,items(name,id,md5Hash)')
   i = 1
   for object_ in objects:
@@ -9202,12 +9203,12 @@ def deleteUserFromGroups(users):
   cd = buildGAPIObject('directory')
   for user in users:
     user_groups = gapi.get_all_pages(cd.groups(), 'list', 'groups', userKey=user, fields='groups(id,email)')
-    num_groups = len(user_groups)
-    print(f'{user} is in {num_groups} groups')
+    jcount = len(user_groups)
+    print(f'{user} is in {jcount} groups')
     j = 0
     for user_group in user_groups:
       j += 1
-      print(f' removing {user} from {user_group["email"]} ({j}/{num_groups})')
+      print(f' removing {user} from {user_group["email"]}{currentCount(j, jcount)}')
       gapi.call(cd.members(), 'delete', soft_errors=True, groupKey=user_group['id'], memberKey=user)
     print('')
 
@@ -9425,7 +9426,7 @@ def doUpdateGroup():
       group = normalizeEmailAddressOrUID(group)
       member_type_message = f'{roles.lower()}s'
       sys.stderr.write(f'Getting {member_type_message} of {group} (may take some time for large groups)...\n')
-      page_message = gapi.setGotTotalItems(f'{member_type_message}', '...')
+      page_message = gapi.got_total_items_msg(f'{member_type_message}', '...')
       validRoles, listRoles, listFields = _getRoleVerification(roles, f'nextPageToken,members({",".join(fields)})')
       try:
         result = gapi.get_all_pages(cd.members(), 'list', 'members',
@@ -9587,13 +9588,13 @@ def doUpdateCros():
       sys.exit(3)
     for deviceId in devices:
       i += 1
-      print(f' performing action {action} for {deviceId} ({i}/{count})')
+      print(f' performing action {action} for {deviceId}{currentCount(i, count)}')
       gapi.call(cd.chromeosdevices(), function='action', customerId=GC_Values[GC_CUSTOMER_ID], resourceId=deviceId, body=action_body)
   else:
     if update_body:
       for deviceId in devices:
         i += 1
-        print(f' updating {deviceId} ({i}/{count})')
+        print(f' updating {deviceId}{currentCount(i, count)}')
         gapi.call(service=cd.chromeosdevices(), function='update', customerId=GC_Values[GC_CUSTOMER_ID], deviceId=deviceId, body=update_body)
     if orgUnitPath:
       #move_body[u'deviceIds'] = devices
@@ -9611,7 +9612,7 @@ def doUpdateMobile():
   if resourceIds[:6] == 'query:':
     query = resourceIds[6:]
     fields = 'nextPageToken,mobiledevices(resourceId,email)'
-    page_message = gapi.setGotTotalItems('Mobile Devices', '...\n')
+    page_message = gapi.got_total_items_msg('Mobile Devices', '...\n')
     devices = gapi.get_all_pages(cd.mobiledevices(), 'list',
                                  page_message=page_message,
                                  customerId=GC_Values[GC_CUSTOMER_ID],
@@ -9678,11 +9679,11 @@ def doUpdateOrg():
         print(f' moving {len(move_body["deviceIds"])} devices to {orgUnitPath}')
         gapi.call(cd.chromeosdevices(), 'moveDevicesToOu', customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=orgUnitPath, body=move_body)
     else:
-      current_user = 0
-      user_count = len(users)
+      i = 0
+      count = len(users)
       for user in users:
-        current_user += 1
-        sys.stderr.write(f' moving {user} to {orgUnitPath} ({current_user}/{user_count})\n')
+        i += 1
+        sys.stderr.write(f' moving {user} to {orgUnitPath}{currentCountNL(i, count)}')
         try:
           gapi.call(cd.users(), 'update', throw_reasons=[gapi.errors.ErrorReason.CONDITION_NOT_MET], userKey=user, body={'orgUnitPath': orgUnitPath})
         except gapi.errors.GapiConditionNotMetError:
@@ -10754,7 +10755,7 @@ def doGetOrgInfo(name=None, return_attrib=None):
   print_json(None, result)
   if get_users:
     name = result['orgUnitPath']
-    page_message = gapi.setGotTotalItemsFirsLast('Users')
+    page_message = gapi.got_total_items_first_last_msg('Users')
     users = gapi.get_all_pages(cd.users(), 'list', 'users', page_message=page_message,
                                message_attribute='primaryEmail', customer=GC_Values[GC_CUSTOMER_ID], query=orgUnitPathQuery(name, checkSuspended),
                                fields='users(primaryEmail,orgUnitPath),nextPageToken')
@@ -10926,7 +10927,7 @@ def printShowTokens(i, entityType, users, csvFormat):
                                  userKey=user, fields=f'items({fields})')
       jcount = len(results)
       if not csvFormat:
-        print(f'User: {user}, Access Tokens ({i}/{count})')
+        print(f'User: {user}, Access Tokens{currentCount(i, count)}')
         if jcount == 0:
           continue
         for token in results:
@@ -11491,7 +11492,7 @@ def doPrintUsers():
     fields = None
   for query in queries:
     printGettingAllItems('Users', query)
-    page_message = gapi.setGotTotalItemsFirsLast('Users')
+    page_message = gapi.got_total_items_first_last_msg('Users')
     all_users = gapi.get_all_pages(cd.users(), 'list', 'users', page_message=page_message,
                                    message_attribute='primaryEmail', customer=customer, domain=domain, fields=fields,
                                    showDeleted=deleted_only, orderBy=orderBy, sortOrder=sortOrder, viewType=viewType,
@@ -11505,15 +11506,15 @@ def doPrintUsers():
   if sortHeaders:
     sortCSVTitles(['primaryEmail',], titles)
   if getGroupFeed:
-    total_users = len(csvRows)
-    user_count = 1
+    i = 0
+    count = len(csvRows)
     titles.append('Groups')
     for user in csvRows:
+      i += 1
       user_email = user['primaryEmail']
-      sys.stderr.write(f'Getting Group Membership for {user_email} ({user_count}/{total_users})\r\n')
+      sys.stderr.write(f'Getting Group Membership for {user_email}{currentCountNL(i, count)}')
       groups = gapi.get_all_pages(cd.groups(), 'list', 'groups', userKey=user_email)
       user['Groups'] = groupDelimiter.join([groupname['email'] for groupname in groups])
-      user_count += 1
   if getLicenseFeed:
     titles.append('Licenses')
     licenses = doPrintLicenses(returnFields='userId,skuId')
@@ -11744,7 +11745,7 @@ def doPrintGroups():
       if not ownersCountOnly:
         addTitlesToCSVfile(['Owners',], titles)
   printGettingAllItems('Groups', None)
-  page_message = gapi.setGotTotalItemsFirsLast('Groups')
+  page_message = gapi.got_total_items_first_last_msg('Groups')
   entityList = gapi.get_all_pages(cd.groups(), 'list', 'groups',
                                   page_message=page_message, message_attribute='email',
                                   customer=customer, domain=usedomain, userKey=usemember, query=usequery,
@@ -11762,8 +11763,8 @@ def doPrintGroups():
         else:
           group[fieldsTitles[field]] = groupEntity[field]
     if roles:
-      sys.stderr.write(f' Getting {roles} for {groupEmail} ({i}/{count})\n')
-      page_message = gapi.setGotTotalItemsFirsLast('members')
+      sys.stderr.write(f' Getting {roles} for {groupEmail}{currentCountNL(i, count)}')
+      page_message = gapi.got_total_items_first_last_msg('members')
       validRoles, listRoles, listFields = _getRoleVerification(roles, 'nextPageToken,members(email,id,role)')
       groupMembers = gapi.get_all_pages(cd.members(), 'list', 'members',
                                         page_message=page_message, message_attribute='email',
@@ -11817,7 +11818,7 @@ def doPrintGroups():
         if not ownersCountOnly:
           group['Owners'] = memberDelimiter.join(ownersList)
     if getSettings and not GroupIsAbuseOrPostmaster(groupEmail):
-      sys.stderr.write(f' Retrieving Settings for group {groupEmail} ({i}/{count})...\r\n')
+      sys.stderr.write(f' Retrieving Settings for group {groupEmail}{currentCountNL(i, count)}')
       settings = gapi.call(gs.groups(), 'get',
                            soft_errors=True,
                            retry_reasons=['serviceLimit', 'invalid'],
@@ -11833,7 +11834,7 @@ def doPrintGroups():
             titles.append(key)
           group[key] = setting_value
       else:
-        sys.stderr.write(f" Settings unavailable for group {groupEmail} ({i}/{count})...\r\n")
+        sys.stderr.write(f" Settings unavailable for group {groupEmail}{currentCountNL(i, count)}")
     csvRows.append(group)
   if sortHeaders:
     sortCSVTitles(['Email',], titles)
@@ -11952,7 +11953,7 @@ def doPrintAliases():
   if doUsers:
     for query in queries:
       printGettingAllItems('User Aliases', query)
-      page_message = gapi.setGotTotalItemsFirsLast('Users')
+      page_message = gapi.got_total_items_first_last_msg('Users')
       all_users = gapi.get_all_pages(cd.users(), 'list', 'users', page_message=page_message,
                                      message_attribute='primaryEmail', customer=GC_Values[GC_CUSTOMER_ID], query=query,
                                      fields=f'nextPageToken,users({",".join(userFields)})')
@@ -11963,7 +11964,7 @@ def doPrintAliases():
           csvRows.append({'NonEditableAlias': alias, 'Target': user['primaryEmail'], 'TargetType': 'User'})
   if doGroups:
     printGettingAllItems('Group Aliases', None)
-    page_message = gapi.setGotTotalItemsFirsLast('Groups')
+    page_message = gapi.got_total_items_first_last_msg('Groups')
     all_groups = gapi.get_all_pages(cd.groups(), 'list', 'groups', page_message=page_message,
                                     message_attribute='email', customer=GC_Values[GC_CUSTOMER_ID],
                                     fields=f'nextPageToken,groups({",".join(groupFields)})')
@@ -12044,7 +12045,7 @@ def doPrintGroupMembers():
   for group in groups_to_get:
     i += 1
     group_email = group['email']
-    sys.stderr.write(f'Getting members for {group_email} ({i}/{count})\n')
+    sys.stderr.write(f'Getting members for {group_email}{currentCountNL(i, count)}')
     validRoles, listRoles, listFields = _getRoleVerification(','.join(roles), fields)
     group_members = gapi.get_all_pages(cd.members(), 'list', 'members',
                                        soft_errors=True,
@@ -12107,7 +12108,7 @@ def doPrintVaultMatters():
     else:
       controlflow.invalid_argument_exit(myarg, "gam print matters")
   printGettingAllItems('Vault Matters', None)
-  page_message = gapi.setGotTotalItems('Vault Matters', '...\n')
+  page_message = gapi.got_total_items_msg('Vault Matters', '...\n')
   matters = gapi.get_all_pages(v.matters(), 'list', 'matters', page_message=page_message, view=view)
   for matter in matters:
     addRowTitlesToCSVfile(flatten_json(matter), csvRows, titles)
@@ -12240,7 +12241,7 @@ def doPrintMobileDevices():
       controlflow.invalid_argument_exit(sys.argv[i], "gam print mobile")
   for query in queries:
     printGettingAllItems('Mobile Devices', query)
-    page_message = gapi.setGotTotalItems('Mobile Devices', '...\n')
+    page_message = gapi.got_total_items_msg('Mobile Devices', '...\n')
     all_mobile = gapi.get_all_pages(cd.mobiledevices(), 'list', 'mobiledevices', page_message=page_message,
                                     customerId=GC_Values[GC_CUSTOMER_ID], query=query, projection=projection, fields=fields,
                                     orderBy=orderBy, sortOrder=sortOrder)
@@ -12357,7 +12358,7 @@ def doPrintCrosActivity():
   fields = f'nextPageToken,chromeosdevices({",".join(fieldsList)})'
   for query in queries:
     printGettingAllItems('CrOS Devices', query)
-    page_message = gapi.setGotTotalItems('CrOS Devices', '...\n')
+    page_message = gapi.got_total_items_msg('CrOS Devices', '...\n')
     all_cros = gapi.get_all_pages(cd.chromeosdevices(), 'list', 'chromeosdevices', page_message=page_message,
                                   query=query, customerId=GC_Values[GC_CUSTOMER_ID], projection='FULL',
                                   fields=fields, orgUnitPath=orgUnitPath)
@@ -12538,7 +12539,7 @@ def doPrintCrosDevices():
     fields = None
   for query in queries:
     printGettingAllItems('CrOS Devices', query)
-    page_message = gapi.setGotTotalItems('CrOS Devices', '...\n')
+    page_message = gapi.got_total_items_msg('CrOS Devices', '...\n')
     all_cros = gapi.get_all_pages(cd.chromeosdevices(), 'list', 'chromeosdevices', page_message=page_message,
                                   query=query, customerId=GC_Values[GC_CUSTOMER_ID], projection=projection, orgUnitPath=orgUnitPath,
                                   orderBy=orderBy, sortOrder=sortOrder, fields=fields)
@@ -12668,7 +12669,7 @@ def doPrintLicenses(returnFields=None, skus=None, countsOnly=False, returnCounts
         product, sku = getProductAndSKU(sku)
       else:
         product = products[0]
-      page_message = gapi.setGotTotalItems(f'Licenses for {SKUS.get(sku, {"displayName": sku})["displayName"]}', '...\n')
+      page_message = gapi.got_total_items_msg(f'Licenses for {SKUS.get(sku, {"displayName": sku})["displayName"]}', '...\n')
       try:
         licenses += gapi.get_all_pages(lic.licenseAssignments(), 'listForProductAndSku', 'items', throw_reasons=[gapi.errors.ErrorReason.INVALID, gapi.errors.ErrorReason.FORBIDDEN], page_message=page_message,
                                        customerId=GC_Values[GC_DOMAIN], productId=product, skuId=sku, fields=fields)
@@ -12681,7 +12682,7 @@ def doPrintLicenses(returnFields=None, skus=None, countsOnly=False, returnCounts
     if not products:
       products = sorted(PRODUCTID_NAME_MAPPINGS)
     for productId in products:
-      page_message = gapi.setGotTotalItems(f'Licenses for {PRODUCTID_NAME_MAPPINGS.get(productId, productId)}', '...\n')
+      page_message = gapi.got_total_items_msg(f'Licenses for {PRODUCTID_NAME_MAPPINGS.get(productId, productId)}', '...\n')
       try:
         licenses += gapi.get_all_pages(lic.licenseAssignments(), 'listForProduct', 'items', throw_reasons=[gapi.errors.ErrorReason.INVALID, gapi.errors.ErrorReason.FORBIDDEN], page_message=page_message,
                                        customerId=GC_Values[GC_DOMAIN], productId=productId, fields=fields)
@@ -12886,7 +12887,7 @@ def doPrintResourceCalendars():
   if 'buildingId' in fieldsList:
     addFieldToCSVfile('buildingName', {'buildingName': ['buildingName',]}, fieldsList, fieldsTitles, titles)
   printGettingAllItems('Resource Calendars', None)
-  page_message = gapi.setGotTotalItemsFirsLast('Resource Calendars')
+  page_message = gapi.got_total_items_first_last_msg('Resource Calendars')
   resources = gapi.get_all_pages(cd.resources().calendars(), 'list', 'items',
                                  page_message=page_message, message_attribute='resourceId',
                                  customer=GC_Values[GC_CUSTOMER_ID], query=query,
@@ -12955,7 +12956,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
     page_message = None
     if not silent:
       sys.stderr.write(f'Getting {member_type_message} of {group} (may take some time for large groups)...\n')
-      page_message = gapi.setGotTotalItems(f'{member_type_message}', '...')
+      page_message = gapi.got_total_items_msg(f'{member_type_message}', '...')
     validRoles, listRoles, listFields = _getRoleVerification(member_type, 'nextPageToken,members(email,id,type,status)')
     members = gapi.get_all_pages(cd.members(), 'list', 'members', page_message=page_message,
                                  groupKey=group, roles=listRoles, fields=listFields)
@@ -12978,7 +12979,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
     page_message = None
     if not silent:
       printGettingAllItems('Users', query)
-      page_message = gapi.setGotTotalItems('Users', '...')
+      page_message = gapi.got_total_items_msg('Users', '...')
     members = gapi.get_all_pages(cd.users(), 'list', 'users', page_message=page_message,
                                  customer=GC_Values[GC_CUSTOMER_ID], fields='nextPageToken,users(primaryEmail,orgUnitPath)',
                                  query=query)
@@ -13000,7 +13001,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
     page_message = None
     if not silent:
       printGettingAllItems('Users', query)
-      page_message = gapi.setGotTotalItems('Users', '...')
+      page_message = gapi.got_total_items_msg('Users', '...')
     members = gapi.get_all_pages(cd.users(), 'list', 'users', page_message=page_message,
                                  customer=GC_Values[GC_CUSTOMER_ID], fields='nextPageToken,users(primaryEmail)',
                                  query=query)
@@ -13019,7 +13020,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
     for query in queries:
       if not silent:
         printGettingAllItems('Users', query)
-      page_message = gapi.setGotTotalItems('Users', '...')
+      page_message = gapi.got_total_items_msg('Users', '...')
       members = gapi.get_all_pages(cd.users(), 'list', 'users', page_message=page_message,
                                    customer=GC_Values[GC_CUSTOMER_ID], fields='nextPageToken,users(primaryEmail,suspended)',
                                    query=query)
@@ -13064,14 +13065,14 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
     users = []
     entity = addCourseIdScope(entity)
     if entity_type in ['courseparticipants', 'teachers']:
-      page_message = gapi.setGotTotalItems('Teachers', '...')
+      page_message = gapi.got_total_items_msg('Teachers', '...')
       teachers = gapi.get_all_pages(croom.courses().teachers(), 'list', 'teachers', page_message=page_message, courseId=entity)
       for teacher in teachers:
         email = teacher['profile'].get('emailAddress', None)
         if email:
           users.append(email)
     if entity_type in ['courseparticipants', 'students']:
-      page_message = gapi.setGotTotalItems('Students', '...')
+      page_message = gapi.got_total_items_msg('Students', '...')
       students = gapi.get_all_pages(croom.courses().students(), 'list', 'students', page_message=page_message, courseId=entity)
       for student in students:
         email = student['profile'].get('emailAddress', None)
@@ -13085,7 +13086,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
       query = 'isSuspended=False'
       if not silent:
         printGettingAllItems('Users', None)
-      page_message = gapi.setGotTotalItems('Users', '...')
+      page_message = gapi.got_total_items_msg('Users', '...')
       all_users = gapi.get_all_pages(cd.users(), 'list', 'users', page_message=page_message,
                                      customer=GC_Values[GC_CUSTOMER_ID], query=query,
                                      fields='nextPageToken,users(primaryEmail)')
@@ -13096,7 +13097,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
     elif entity == 'cros':
       if not silent:
         printGettingAllItems('CrOS Devices', None)
-      page_message = gapi.setGotTotalItems('CrOS Devices', '...')
+      page_message = gapi.got_total_items_msg('CrOS Devices', '...')
       all_cros = gapi.get_all_pages(cd.chromeosdevices(), 'list', 'chromeosdevices', page_message=page_message,
                                     customerId=GC_Values[GC_CUSTOMER_ID], fields='nextPageToken,chromeosdevices(deviceId)')
       for member in all_cros:
@@ -13120,7 +13121,7 @@ def getUsersToModify(entity_type=None, entity=None, silent=False, member_type=No
     for query in queries:
       if not silent:
         printGettingAllItems('CrOS Devices', query)
-      page_message = gapi.setGotTotalItems('CrOS Devices', '...')
+      page_message = gapi.got_total_items_msg('CrOS Devices', '...')
       members = gapi.get_all_pages(cd.chromeosdevices(), 'list', 'chromeosdevices', page_message=page_message,
                                    customerId=GC_Values[GC_CUSTOMER_ID], fields='nextPageToken,chromeosdevices(deviceId)',
                                    query=query)
