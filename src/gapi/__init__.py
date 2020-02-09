@@ -176,7 +176,7 @@ TOTAL_ITEMS_MARKER = '%%total_items%%'
 FIRST_ITEM_MARKER = '%%first_item%%'
 LAST_ITEM_MARKER = '%%last_item%%'
 
-def got_total_items_msg(items, eol=''):
+def got_total_items_msg(items, eol):
   """Format a page_message to be used by get_all_pages
 
   The page message indicates the number of items returned
