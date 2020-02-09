@@ -26,7 +26,7 @@ class _DeHTMLParser(HTMLParser):
     if cp:
       self.__text.append(chr(cp))
     else:
-      self.__text.append('&' + name)
+      self.__text.append('&'+name)
 
   def handle_starttag(self, tag, attrs):
     if tag == 'p':
@@ -36,21 +36,20 @@ class _DeHTMLParser(HTMLParser):
     elif tag == 'a':
       for attr in attrs:
         if attr[0] == 'href':
-          self.__text.append('({0}) '.format(attr[1]))
+          self.__text.append(f'({attr[1]}) ')
           break
     elif tag == 'div':
       if not attrs:
         self.__text.append('\n')
-    elif tag in ['http:', 'https']:
-      self.__text.append(' ({0}//{1}) '.format(tag, attrs[0][0]))
+    elif tag in {'http:', 'https'}:
+      self.__text.append(f' ({tag}//{attrs[0][0]}) ')
 
   def handle_startendtag(self, tag, attrs):
     if tag == 'br':
       self.__text.append('\n\n')
 
   def text(self):
-    return re.sub(r'\n{2}\n+', '\n\n',
-                  re.sub(r'\n +', '\n', ''.join(self.__text))).strip()
+    return re.sub(r'\n{2}\n+', '\n\n', re.sub(r'\n +', '\n', ''.join(self.__text))).strip()
 
 
 def dehtml(text):
@@ -85,14 +84,14 @@ def formatFileSize(fileSize):
   if fileSize < ONE_KILO_BYTES:
     return '1kb'
   if fileSize < ONE_MEGA_BYTES:
-    return '{0}kb'.format(fileSize // ONE_KILO_BYTES)
+    return f'{fileSize // ONE_KILO_BYTES}kb'
   if fileSize < ONE_GIGA_BYTES:
-    return '{0}mb'.format(fileSize // ONE_MEGA_BYTES)
-  return '{0}gb'.format(fileSize // ONE_GIGA_BYTES)
+    return f'{fileSize // ONE_MEGA_BYTES}mb'
+  return f'{fileSize // ONE_GIGA_BYTES}gb'
 
 
 def formatMilliSeconds(millis):
   seconds, millis = divmod(millis, 1000)
   minutes, seconds = divmod(seconds, 60)
   hours, minutes = divmod(minutes, 60)
-  return '%02d:%02d:%02d' % (hours, minutes, seconds)
+  return f'{hours:02d}:{minutes:02d}:{seconds:02d}'
