@@ -1236,8 +1236,7 @@ REPORT_CHOICE_MAP = {
 def showReport():
   rep = buildGAPIObject('reports')
   report = sys.argv[2].lower()
-  if report.replace('_', '') in REPORT_CHOICE_MAP:
-    report = REPORT_CHOICE_MAP[report.replace('_', '')]
+  report = REPORT_CHOICE_MAP.get(report.replace('_', ''), report)
   valid_apps = _getEnumValuesMinusUnspecified(rep._rootDesc['resources']['activities']['methods']['list']['parameters']['applicationName']['enum'])
   if report not in valid_apps:
     controlflow.expected_argument_exit("report", ", ".join(valid_apps), report)
