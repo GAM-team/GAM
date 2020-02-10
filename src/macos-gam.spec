@@ -13,7 +13,6 @@ for d in a.datas:
         a.datas.remove(d)
         break
 a.datas += [('cloudprint-v2.json', 'cloudprint-v2.json', 'DATA')]
-a.datas += [('admin-directory_v2.json', 'admin-directory_v2.json', 'DATA')]
 
 # dynamically determine where httplib2/cacerts.txt lives
 import importlib
