@@ -138,7 +138,7 @@ API_VER_MAPPING = {
   'classroom': 'v1',
   'cloudprint': 'v2',
   'datatransfer': 'datatransfer_v1',
-  'directory': 'directory_v1',
+  'directory': 'directory_v2',
   'drive': 'v2',
   'drive3': 'v3',
   'gmail': 'v1',
