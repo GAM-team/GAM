@@ -1219,6 +1219,7 @@ REPORT_CHOICE_MAP = {
   'admin': 'admin',
   'calendar': 'calendar',
   'calendars': 'calendar',
+  'chat': 'chat',
   'customer': 'customer',
   'customers': 'customer',
   'doc': 'drive',
