@@ -1215,7 +1215,6 @@ def _checkFullDataAvailable(warnings, tryDate, fullDataRequired):
 
 REPORT_CHOICE_MAP = {
   'access': 'access_transparency',
-  'accesstransparency': 'access_transparency',
   'calendars': 'calendar',
   'customers': 'customer',
   'doc': 'drive',
@@ -1224,13 +1223,11 @@ REPORT_CHOICE_MAP = {
   'enterprisegroups': 'groups_enterprise',
   'google+': 'gplus',
   'group': 'groups',
-  'groupsenterprise': 'groups_enterprise',
   'hangoutsmeet': 'meet',
   'logins': 'login',
   'oauthtoken': 'token',
   'tokens': 'token',
   'users': 'user',
-  'useraccounts': 'user_accounts',
   }
 
 def showReport():
