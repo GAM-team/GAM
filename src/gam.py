@@ -1213,9 +1213,47 @@ def _checkFullDataAvailable(warnings, tryDate, fullDataRequired):
           return (-1, tryDate)
   return (1, tryDate)
 
+REPORT_CHOICE_MAP = {
+  'access': 'access_transparency',
+  'accesstransparency': 'access_transparency',
+  'admin': 'admin',
+  'calendar': 'calendar',
+  'calendars': 'calendar',
+  'customer': 'customer',
+  'customers': 'customer',
+  'doc': 'drive',
+  'docs': 'drive',
+  'domain': 'customer',
+  'drive': 'drive',
+  'enterprisegroups': 'groups_enterprise',
+  'gcp': 'gcp',
+  'gplus': 'gplus',
+  'google+': 'gplus',
+  'group': 'groups',
+  'groups': 'groups',
+  'groupsenterprise': 'groups_enterprise',
+  'hangoutsmeet': 'meet',
+  'jamboard': 'jamboard',
+  'login': 'login',
+  'logins': 'login',
+  'meet': 'meet',
+  'mobile': 'mobile',
+  'oauthtoken': 'token',
+  'rules': 'rules',
+  'saml': 'saml',
+  'token': 'token',
+  'tokens': 'token',
+  'user': 'user',
+  'users': 'user',
+  'useraccounts': 'user_accounts',
+  }
+
 def showReport():
   rep = buildGAPIObject('reports')
-  report = sys.argv[2].lower()
+  report = sys.argv[2].lower().replace('_', '')
+  if report not in REPORT_CHOICE_MAP:
+    controlflow.expected_argument_exit("report", ", ".join(REPORT_CHOICE_MAP), report)
+  report = REPORT_CHOICE_MAP[report]
   customerId = GC_Values[GC_CUSTOMER_ID]
   if customerId == MY_CUSTOMER:
     customerId = None
@@ -1265,7 +1303,7 @@ def showReport():
       i += 1
     else:
       controlflow.invalid_argument_exit(sys.argv[i], "gam report")
-  if report in ['users', 'user']:
+  if report == 'user':
     while True:
       try:
         if fullDataRequired is not None:
@@ -1307,7 +1345,7 @@ def showReport():
           row[name] = ''
       csvRows.append(row)
     writeCSVfile(csvRows, titles, f'User Reports - {tryDate}', to_drive)
-  elif report in ['customer', 'customers', 'domain']:
+  elif report == 'customer':
     while True:
       try:
         if fullDataRequired is not None:
@@ -1372,16 +1410,6 @@ def showReport():
       csvRows.append(app)
     writeCSVfile(csvRows, titles, f'Customer Report - {tryDate}', todrive=to_drive)
   else:
-    if report in ['doc', 'docs']:
-      report = 'drive'
-    elif report in ['calendars']:
-      report = 'calendar'
-    elif report == 'logins':
-      report = 'login'
-    elif report == 'tokens':
-      report = 'token'
-    elif report == 'group':
-      report = 'groups'
     page_message = gapi.got_total_items_msg('Activities', '...\n')
     activities = gapi.get_all_pages(rep.activities(), 'list', 'items',
                                     page_message=page_message,
