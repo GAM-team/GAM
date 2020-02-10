@@ -1213,9 +1213,33 @@ def _checkFullDataAvailable(warnings, tryDate, fullDataRequired):
           return (-1, tryDate)
   return (1, tryDate)
 
+REPORT_CHOICE_MAP = {
+  'access': 'access_transparency',
+  'accesstransparency': 'access_transparency',
+  'calendars': 'calendar',
+  'customers': 'customer',
+  'doc': 'drive',
+  'docs': 'drive',
+  'domain': 'customer',
+  'enterprisegroups': 'groups_enterprise',
+  'google+': 'gplus',
+  'group': 'groups',
+  'groupsenterprise': 'groups_enterprise',
+  'hangoutsmeet': 'meet',
+  'logins': 'login',
+  'oauthtoken': 'token',
+  'tokens': 'token',
+  'users': 'user',
+  'useraccounts': 'user_accounts',
+  }
+
 def showReport():
   rep = buildGAPIObject('reports')
   report = sys.argv[2].lower()
+  report = REPORT_CHOICE_MAP.get(report.replace('_', ''), report)
+  valid_apps = _getEnumValuesMinusUnspecified(rep._rootDesc['resources']['activities']['methods']['list']['parameters']['applicationName']['enum'])
+  if report not in valid_apps:
+    controlflow.expected_argument_exit("report", ", ".join(valid_apps), report)
   customerId = GC_Values[GC_CUSTOMER_ID]
   if customerId == MY_CUSTOMER:
     customerId = None
@@ -1265,7 +1289,7 @@ def showReport():
       i += 1
     else:
       controlflow.invalid_argument_exit(sys.argv[i], "gam report")
-  if report in ['users', 'user']:
+  if report == 'user':
     while True:
       try:
         if fullDataRequired is not None:
@@ -1307,7 +1331,7 @@ def showReport():
           row[name] = ''
       csvRows.append(row)
     writeCSVfile(csvRows, titles, f'User Reports - {tryDate}', to_drive)
-  elif report in ['customer', 'customers', 'domain']:
+  elif report == 'customer':
     while True:
       try:
         if fullDataRequired is not None:
@@ -1372,16 +1396,6 @@ def showReport():
       csvRows.append(app)
     writeCSVfile(csvRows, titles, f'Customer Report - {tryDate}', todrive=to_drive)
   else:
-    if report in ['doc', 'docs']:
-      report = 'drive'
-    elif report in ['calendars']:
-      report = 'calendar'
-    elif report == 'logins':
-      report = 'login'
-    elif report == 'tokens':
-      report = 'token'
-    elif report == 'group':
-      report = 'groups'
     page_message = gapi.got_total_items_msg('Activities', '...\n')
     activities = gapi.get_all_pages(rep.activities(), 'list', 'items',
                                     page_message=page_message,
@@ -11553,7 +11567,6 @@ def doCreateAlertFeedback():
   alertId = sys.argv[3]
   body = {'type': sys.argv[4].upper()}
   if body['type'] not in valid_types:
-###
     controlflow.system_error_exit(2, f'{body["type"]} is not a valid feedback value, expected one of: {", ".join(valid_types)}')
   gapi.call(ac.alerts().feedback(), 'create', alertId=alertId, body=body)
 
