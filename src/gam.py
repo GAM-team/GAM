@@ -1216,45 +1216,31 @@ def _checkFullDataAvailable(warnings, tryDate, fullDataRequired):
 REPORT_CHOICE_MAP = {
   'access': 'access_transparency',
   'accesstransparency': 'access_transparency',
-  'admin': 'admin',
-  'calendar': 'calendar',
   'calendars': 'calendar',
-  'chat': 'chat',
-  'customer': 'customer',
   'customers': 'customer',
   'doc': 'drive',
   'docs': 'drive',
   'domain': 'customer',
-  'drive': 'drive',
   'enterprisegroups': 'groups_enterprise',
-  'gcp': 'gcp',
-  'gplus': 'gplus',
   'google+': 'gplus',
   'group': 'groups',
-  'groups': 'groups',
   'groupsenterprise': 'groups_enterprise',
   'hangoutsmeet': 'meet',
-  'jamboard': 'jamboard',
-  'login': 'login',
   'logins': 'login',
-  'meet': 'meet',
-  'mobile': 'mobile',
   'oauthtoken': 'token',
-  'rules': 'rules',
-  'saml': 'saml',
-  'token': 'token',
   'tokens': 'token',
-  'user': 'user',
   'users': 'user',
   'useraccounts': 'user_accounts',
   }
 
 def showReport():
   rep = buildGAPIObject('reports')
-  report = sys.argv[2].lower().replace('_', '')
-  if report not in REPORT_CHOICE_MAP:
-    controlflow.expected_argument_exit("report", ", ".join(REPORT_CHOICE_MAP), report)
-  report = REPORT_CHOICE_MAP[report]
+  report = sys.argv[2].lower()
+  if report.replace('_', '') in REPORT_CHOICE_MAP:
+    report = REPORT_CHOICE_MAP[report.replace('_', '')]
+  valid_apps = _getEnumValuesMinusUnspecified(rep._rootDesc['resources']['activities']['methods']['list']['parameters']['applicationName']['enum'])
+  if report not in valid_apps:
+    controlflow.expected_argument_exit("report", ", ".join(valid_apps), report)
   customerId = GC_Values[GC_CUSTOMER_ID]
   if customerId == MY_CUSTOMER:
     customerId = None
@@ -11582,7 +11568,6 @@ def doCreateAlertFeedback():
   alertId = sys.argv[3]
   body = {'type': sys.argv[4].upper()}
   if body['type'] not in valid_types:
-###
     controlflow.system_error_exit(2, f'{body["type"]} is not a valid feedback value, expected one of: {", ".join(valid_types)}')
   gapi.call(ac.alerts().feedback(), 'create', alertId=alertId, body=body)
 
