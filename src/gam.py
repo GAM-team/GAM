@@ -7331,7 +7331,7 @@ def shorten_url(long_url):
   simplehttp = transport.create_http(timeout=10)
   url_shortnr = 'https://gam-shortn.appspot.com/create'
   headers = {'Content-Type': 'application/json',
-             'User-Agent': 'GAM_INFO'}
+             'User-Agent': GAM_INFO}
   try:
     resp, content = simplehttp.request(url_shortnr, 'POST',
             f'{{"long_url": "{long_url}"}}', headers=headers)
