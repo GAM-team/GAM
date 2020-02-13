@@ -1109,7 +1109,7 @@ def doCheckServiceAccount(users):
     time_status = 'PASS'
   else:
     time_status = 'FAIL'
-  printPassFail(MESSAGE_YOUR_SYSTEM_TIME_DIFFERS_FROM_GOOGLE_BY % nicetime, time_status)
+  printPassFail(MESSAGE_YOUR_SYSTEM_TIME_DIFFERS_FROM_GOOGLE_BY % ('www.googleapis.com', nicetime), time_status)
   oa2 = googleapiclient.discovery.build('oauth2', 'v1', transport.create_http())
   print('Service Account Private Key Authentication:')
   # We are explicitly not doing DwD here, just confirming service account can auth
