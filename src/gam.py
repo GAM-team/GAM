@@ -1168,18 +1168,19 @@ def doCheckServiceAccount(users):
     user_domain = user[user.find('@')+1:]
     # Tack on email scope for more accurate checking
     check_scopes.append(USERINFO_EMAIL_SCOPE)
-    nl = ',\n'
-    scopes_failed = f'''Some scopes failed! Please go to:
+    long_url = (f'https://admin.google.com/{user_domain}/ManageOauthClients'
+               f'?clientScopeToAdd={",".join(check_scopes)}'
+               f'&clientNameToAdd={service_account}')
+    short_url = shorten_url(long_url)
+    scopes_failed = f'''Some scopes failed! To authorize them, please go to:
 
-https://admin.google.com/{user_domain}/AdminHome?#OGX:ManageOauthClients
+  {short_url}
 
-and grant Client name:
-
-{service_account}
-
-Access to scopes:
-
-{nl.join(check_scopes)}{nl}'''
+You will be redirected to the G Suite admin console. The Client Name and API
+Scopes fields will be pre-populated. Please click Authorize to allow these
+scopes access. After authorizing it may take some time for this test to pass so
+go grab a cup of coffee and then try this command again.
+'''
     controlflow.system_error_exit(1, scopes_failed)
 
 # Batch processing request_id fields
@@ -7326,25 +7327,29 @@ def getUserAttributes(i, cd, updateCmd):
     body['hashFunction'] = 'crypt'
   return body
 
+def shorten_url(long_url):
+  simplehttp = transport.create_http(timeout=10)
+  url_shortnr = 'https://gam-shortn.appspot.com/create'
+  headers = {'Content-Type': 'application/json',
+             'User-Agent': 'GAM_INFO'}
+  try:
+    resp, content = simplehttp.request(url_shortnr, 'POST',
+            f'{{"long_url": "{long_url}"}}', headers=headers)
+  except Exception as e:
+    return long_url
+  if resp.status != 200:
+    return long_url
+  try:
+    return json.loads(content).get('short_url', long_url)
+  except Exception as e:
+    print(content)
+    return long_url
+
 class ShortURLFlow(google_auth_oauthlib.flow.InstalledAppFlow):
   def authorization_url(self, **kwargs):
     long_url, state = super(ShortURLFlow, self).authorization_url(**kwargs)
-    simplehttp = transport.create_http(timeout=10)
-    url_shortnr = 'https://gam-shortn.appspot.com/create'
-    headers = {'Content-Type': 'application/json',
-               'user-agent': GAM_INFO}
-    try:
-      resp, content = simplehttp.request(url_shortnr, 'POST', f'{"long_url": "{long_url}"}', headers=headers)
-    except:
-      return long_url, state
-    if resp.status != 200:
-      return long_url, state
-    try:
-      if isinstance(content, bytes):
-        content = content.decode()
-      return json.loads(content).get('short_url', long_url), state
-    except:
-      return long_url, state
+    short_url = shorten_url(long_url)
+    return short_url, state
 
 def _run_oauth_flow(client_id, client_secret, scopes, access_type, login_hint=None):
   client_config = {
@@ -7467,6 +7472,7 @@ def _grantSARotateRights(iam, sa_email):
             body=body)
 
 def setGAMProjectConsentScreen(httpObj, projectId, login_hint):
+  print('Setting GAM project consent screen...')
   iap = googleapiclient.discovery.build('iap', 'v1',
                                         http=httpObj, cache_discovery=False,
                                         discoveryServiceUrl=googleapiclient.discovery.V2_DISCOVERY_URI)
