@@ -7391,6 +7391,11 @@ def getCRM2Service(httpc):
                                          discoveryServiceUrl=googleapiclient.discovery.V2_DISCOVERY_URI)
 
 def getGAMProjectFile(filepath):
+  # if file exists locally in GAM path then use it.
+  # allows for testing changes before updating project.
+  local_file = os.path.join(GM_Globals[GM_GAM_PATH], filepath)
+  if os.path.isfile(local_file):
+    return fileutils.read_file(local_file, continue_on_error=False, display_errors=True)
   file_url = GAM_PROJECT_FILEPATH+filepath
   httpObj = transport.create_http()
   _, c = httpObj.request(file_url, 'GET')
@@ -7461,7 +7466,15 @@ def _grantSARotateRights(iam, sa_email):
   gapi.call(iam.projects().serviceAccounts(), 'setIamPolicy', resource=f'projects/-/serviceAccounts/{sa_email}',
             body=body)
 
-def _createClientSecretsOauth2service(httpObj, projectId):
+def setGAMProjectConsentScreen(httpObj, projectId, login_hint):
+  iap = googleapiclient.discovery.build('iap', 'v1',
+                                        http=httpObj, cache_discovery=False,
+                                        discoveryServiceUrl=googleapiclient.discovery.V2_DISCOVERY_URI)
+  body = {'applicationTitle': 'GAM', 'supportEmail': login_hint}
+  gapi.call(iap.projects().brands(), 'create',
+            parent=f'projects/{projectId}', body=body)
+
+def _createClientSecretsOauth2service(httpObj, projectId, login_hint):
 
   def _checkClientAndSecret(simplehttp, client_id, client_secret):
     url = 'https://oauth2.googleapis.com/token'
@@ -7489,8 +7502,9 @@ def _createClientSecretsOauth2service(httpObj, projectId):
     print(f'Unknown error: {content}')
     return False
 
-  GAMProjectAPIs = getGAMProjectFile('src/project-apis.txt').splitlines()
+  GAMProjectAPIs = getGAMProjectFile('project-apis.txt').splitlines()
   enableGAMProjectAPIs(GAMProjectAPIs, httpObj, projectId, False)
+  setGAMProjectConsentScreen(httpObj, projectId, login_hint)
   iam = googleapiclient.discovery.build('iam', 'v1',
                                         http=httpObj, cache_discovery=False,
                                         discoveryServiceUrl=googleapiclient.discovery.V2_DISCOVERY_URI)
@@ -7513,16 +7527,16 @@ def _createClientSecretsOauth2service(httpObj, projectId):
                                      client_email=service_account['email'],
                                      client_id=service_account['uniqueId'])
   _grantSARotateRights(iam, service_account['name'].rsplit('/', 1)[-1])
-  console_credentials_url = f'https://console.developers.google.com/apis/credentials/consent/edit?createClient&newAppInternalUser=true&project={projectId}'
+  console_url = f'https://console.cloud.google.com/apis/credentials/oauthclient?project={projectId}'
   while True:
     print(f'''Please go to:
 
-{console_credentials_url}
+{console_url}
 
-1. Enter "GAM" for "Application name".
-2. Leave other fields blank. Click "Save" button.
-3. Choose "Other". Enter a desired value for "Name". Click the blue "Create" button.
-4. Copy your "client ID" value.
+1. Choose "Other".
+2. Enter a desired value for "Name" or leave as is.
+3. Click the blue "Create" button.
+4. Copy the "client ID" value that shows on the next page.
 
 ''')
 # If you use Firefox to copy the Client ID and Secret, the data has leading and trailing newlines
@@ -7540,17 +7554,18 @@ def _createClientSecretsOauth2service(httpObj, projectId):
     if client_valid:
       break
     print()
-  cs_data = '''{
-    "installed": {
+  cs_data = f'''{{
+    "installed": {{
         "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
         "auth_uri": "https://accounts.google.com/o/oauth2/v2/auth",
-        "client_id": "%s",
-        "client_secret": "%s",
-        "project_id": "%s",
+        "client_id": "{client_id}",
+        "client_secret": "{client_secret}",
+        "created_by": "{login_hint}",
+        "project_id": "{projectId}",
         "redirect_uris": ["http://localhost", "urn:ietf:wg:oauth:2.0:oob"],
         "token_uri": "https://oauth2.googleapis.com/token"
-    }
-}''' % (client_id, client_secret, projectId)
+    }}
+}}'''
   fileutils.write_file(GC_Values[GC_CLIENT_SECRETS_JSON], cs_data, continue_on_error=False)
   print('That\'s it! Your GAM Project is created and ready to use.')
 
@@ -7649,7 +7664,7 @@ def _getLoginHintProjectId(createCmd):
 PROJECTID_FILTER_REQUIRED = 'gam|<ProjectID>|(filter <String>)'
 def convertGCPFolderNameToID(parent, crm2):
   # crm2.folders() is broken requiring pageToken, etc in body, not URL.
-  # for now just use callGAPI and if user has that many folders they'll
+  # for now just use gapi.get_items and if user has that many folders they'll
   # just need to be specific.
   folders = gapi.get_items(crm2.folders(), 'search', items='folders',
                            body={'pageSize': 1000, 'query': f'displayName="{parent}"'})
@@ -7784,16 +7799,16 @@ and accept the Terms of Service (ToS). As soon as you've accepted the ToS popup,
     elif 'error' in status:
       controlflow.system_error_exit(2, status['error'])
     break
-  _createClientSecretsOauth2service(httpObj, projectId)
+  _createClientSecretsOauth2service(httpObj, projectId, login_hint)
 
 def doUseProject():
   _checkForExistingProjectFiles()
-  _, httpObj, _, projectId, _ = _getLoginHintProjectId(False)
-  _createClientSecretsOauth2service(httpObj, projectId)
+  _, httpObj, login_hint, projectId, _ = _getLoginHintProjectId(False)
+  _createClientSecretsOauth2service(httpObj, projectId, login_hint)
 
 def doUpdateProjects():
   _, httpObj, login_hint, projects, _ = _getLoginHintProjects(False)
-  GAMProjectAPIs = getGAMProjectFile('src/project-apis.txt').splitlines()
+  GAMProjectAPIs = getGAMProjectFile('project-apis.txt').splitlines()
   count = len(projects)
   print(f'User: {login_hint}, Update {count} Projects')
   i = 0
@@ -12415,7 +12430,7 @@ def _checkTPMVulnerability(cros):
 
 def _guessAUE(cros, guessedAUEs):
   if not GC_Values.get('CROS_AUE_DATES', None):
-    GC_Values['CROS_AUE_DATES'] = json.loads(getGAMProjectFile('src/cros-aue-dates.json'))
+    GC_Values['CROS_AUE_DATES'] = json.loads(getGAMProjectFile('cros-aue-dates.json'))
   crosModel = cros.get('model')
   if crosModel:
     if crosModel not in guessedAUEs:
