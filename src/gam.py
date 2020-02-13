@@ -755,7 +755,7 @@ def doGAMVersion(checkForArgs=True):
     print(MESSAGE_UPDATE_GAM_TO_64BIT)
   if timeOffset:
     offset, nicetime = getLocalGoogleTimeOffset(testLocation)
-    print(MESSAGE_YOUR_SYSTEM_TIME_DIFFERS_FROM_GOOGLE_BY % nicetime)
+    print(MESSAGE_YOUR_SYSTEM_TIME_DIFFERS_FROM_GOOGLE_BY % (testLocation, nicetime))
     if offset > MAX_LOCAL_GOOGLE_TIME_OFFSET:
       controlflow.system_error_exit(4, 'Please fix your system time.')
   if force_check:
