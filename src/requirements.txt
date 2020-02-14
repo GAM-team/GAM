@@ -3,7 +3,7 @@ python-dateutil
 distro; sys_platform == 'linux'
 filelock
 google-api-python-client>=1.7.10
-google-auth
+google-auth==1.11.0
 google-auth-httplib2
 google-auth-oauthlib>=0.4.1
 httplib2>=0.13.0
