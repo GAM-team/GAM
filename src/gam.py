@@ -7480,7 +7480,7 @@ def setGAMProjectConsentScreen(httpObj, projectId, login_hint):
   gapi.call(iap.projects().brands(), 'create',
             parent=f'projects/{projectId}', body=body)
 
-def _createClientSecretsOauth2service(httpObj, projectId, login_hint):
+def _createClientSecretsOauth2service(httpObj, projectId, login_hint, create_project):
 
   def _checkClientAndSecret(simplehttp, client_id, client_secret):
     url = 'https://oauth2.googleapis.com/token'
@@ -7510,7 +7510,8 @@ def _createClientSecretsOauth2service(httpObj, projectId, login_hint):
 
   GAMProjectAPIs = getGAMProjectFile('project-apis.txt').splitlines()
   enableGAMProjectAPIs(GAMProjectAPIs, httpObj, projectId, False)
-  setGAMProjectConsentScreen(httpObj, projectId, login_hint)
+  if create_project:
+    setGAMProjectConsentScreen(httpObj, projectId, login_hint)
   iam = googleapiclient.discovery.build('iam', 'v1',
                                         http=httpObj, cache_discovery=False,
                                         discoveryServiceUrl=googleapiclient.discovery.V2_DISCOVERY_URI)
@@ -7805,12 +7806,12 @@ and accept the Terms of Service (ToS). As soon as you've accepted the ToS popup,
     elif 'error' in status:
       controlflow.system_error_exit(2, status['error'])
     break
-  _createClientSecretsOauth2service(httpObj, projectId, login_hint)
+  _createClientSecretsOauth2service(httpObj, projectId, login_hint, True)
 
 def doUseProject():
   _checkForExistingProjectFiles()
   _, httpObj, login_hint, projectId, _ = _getLoginHintProjectId(False)
-  _createClientSecretsOauth2service(httpObj, projectId, login_hint)
+  _createClientSecretsOauth2service(httpObj, projectId, login_hint, False)
 
 def doUpdateProjects():
   _, httpObj, login_hint, projects, _ = _getLoginHintProjects(False)
