@@ -755,7 +755,7 @@ def doGAMVersion(checkForArgs=True):
     print(MESSAGE_UPDATE_GAM_TO_64BIT)
   if timeOffset:
     offset, nicetime = getLocalGoogleTimeOffset(testLocation)
-    print(MESSAGE_YOUR_SYSTEM_TIME_DIFFERS_FROM_GOOGLE_BY % nicetime)
+    print(MESSAGE_YOUR_SYSTEM_TIME_DIFFERS_FROM_GOOGLE_BY % (testLocation, nicetime))
     if offset > MAX_LOCAL_GOOGLE_TIME_OFFSET:
       controlflow.system_error_exit(4, 'Please fix your system time.')
   if force_check:
@@ -1109,7 +1109,7 @@ def doCheckServiceAccount(users):
     time_status = 'PASS'
   else:
     time_status = 'FAIL'
-  printPassFail(MESSAGE_YOUR_SYSTEM_TIME_DIFFERS_FROM_GOOGLE_BY % nicetime, time_status)
+  printPassFail(MESSAGE_YOUR_SYSTEM_TIME_DIFFERS_FROM_GOOGLE_BY % ('www.googleapis.com', nicetime), time_status)
   oa2 = googleapiclient.discovery.build('oauth2', 'v1', transport.create_http())
   print('Service Account Private Key Authentication:')
   # We are explicitly not doing DwD here, just confirming service account can auth
@@ -1168,18 +1168,19 @@ def doCheckServiceAccount(users):
     user_domain = user[user.find('@')+1:]
     # Tack on email scope for more accurate checking
     check_scopes.append(USERINFO_EMAIL_SCOPE)
-    nl = ',\n'
-    scopes_failed = f'''Some scopes failed! Please go to:
+    long_url = (f'https://admin.google.com/{user_domain}/ManageOauthClients'
+               f'?clientScopeToAdd={",".join(check_scopes)}'
+               f'&clientNameToAdd={service_account}')
+    short_url = shorten_url(long_url)
+    scopes_failed = f'''Some scopes failed! To authorize them, please go to:
 
-https://admin.google.com/{user_domain}/AdminHome?#OGX:ManageOauthClients
+  {short_url}
 
-and grant Client name:
-
-{service_account}
-
-Access to scopes:
-
-{nl.join(check_scopes)}{nl}'''
+You will be redirected to the G Suite admin console. The Client Name and API
+Scopes fields will be pre-populated. Please click Authorize to allow these
+scopes access. After authorizing it may take some time for this test to pass so
+go grab a cup of coffee and then try this command again.
+'''
     controlflow.system_error_exit(1, scopes_failed)
 
 # Batch processing request_id fields
@@ -1213,9 +1214,33 @@ def _checkFullDataAvailable(warnings, tryDate, fullDataRequired):
           return (-1, tryDate)
   return (1, tryDate)
 
+REPORT_CHOICE_MAP = {
+  'access': 'access_transparency',
+  'accesstransparency': 'access_transparency',
+  'calendars': 'calendar',
+  'customers': 'customer',
+  'doc': 'drive',
+  'docs': 'drive',
+  'domain': 'customer',
+  'enterprisegroups': 'groups_enterprise',
+  'google+': 'gplus',
+  'group': 'groups',
+  'groupsenterprise': 'groups_enterprise',
+  'hangoutsmeet': 'meet',
+  'logins': 'login',
+  'oauthtoken': 'token',
+  'tokens': 'token',
+  'users': 'user',
+  'useraccounts': 'user_accounts',
+  }
+
 def showReport():
   rep = buildGAPIObject('reports')
   report = sys.argv[2].lower()
+  report = REPORT_CHOICE_MAP.get(report.replace('_', ''), report)
+  valid_apps = _getEnumValuesMinusUnspecified(rep._rootDesc['resources']['activities']['methods']['list']['parameters']['applicationName']['enum'])
+  if report not in valid_apps:
+    controlflow.expected_argument_exit("report", ", ".join(valid_apps), report)
   customerId = GC_Values[GC_CUSTOMER_ID]
   if customerId == MY_CUSTOMER:
     customerId = None
@@ -1265,7 +1290,7 @@ def showReport():
       i += 1
     else:
       controlflow.invalid_argument_exit(sys.argv[i], "gam report")
-  if report in ['users', 'user']:
+  if report == 'user':
     while True:
       try:
         if fullDataRequired is not None:
@@ -1307,7 +1332,7 @@ def showReport():
           row[name] = ''
       csvRows.append(row)
     writeCSVfile(csvRows, titles, f'User Reports - {tryDate}', to_drive)
-  elif report in ['customer', 'customers', 'domain']:
+  elif report == 'customer':
     while True:
       try:
         if fullDataRequired is not None:
@@ -1372,16 +1397,6 @@ def showReport():
       csvRows.append(app)
     writeCSVfile(csvRows, titles, f'Customer Report - {tryDate}', todrive=to_drive)
   else:
-    if report in ['doc', 'docs']:
-      report = 'drive'
-    elif report in ['calendars']:
-      report = 'calendar'
-    elif report == 'logins':
-      report = 'login'
-    elif report == 'tokens':
-      report = 'token'
-    elif report == 'group':
-      report = 'groups'
     page_message = gapi.got_total_items_msg('Activities', '...\n')
     activities = gapi.get_all_pages(rep.activities(), 'list', 'items',
                                     page_message=page_message,
@@ -7312,25 +7327,29 @@ def getUserAttributes(i, cd, updateCmd):
     body['hashFunction'] = 'crypt'
   return body
 
+def shorten_url(long_url):
+  simplehttp = transport.create_http(timeout=10)
+  url_shortnr = 'https://gam-shortn.appspot.com/create'
+  headers = {'Content-Type': 'application/json',
+             'User-Agent': GAM_INFO}
+  try:
+    resp, content = simplehttp.request(url_shortnr, 'POST',
+            f'{{"long_url": "{long_url}"}}', headers=headers)
+  except Exception as e:
+    return long_url
+  if resp.status != 200:
+    return long_url
+  try:
+    return json.loads(content).get('short_url', long_url)
+  except Exception as e:
+    print(content)
+    return long_url
+
 class ShortURLFlow(google_auth_oauthlib.flow.InstalledAppFlow):
   def authorization_url(self, **kwargs):
     long_url, state = super(ShortURLFlow, self).authorization_url(**kwargs)
-    simplehttp = transport.create_http(timeout=10)
-    url_shortnr = 'https://gam-shortn.appspot.com/create'
-    headers = {'Content-Type': 'application/json',
-               'user-agent': GAM_INFO}
-    try:
-      resp, content = simplehttp.request(url_shortnr, 'POST', f'{"long_url": "{long_url}"}', headers=headers)
-    except:
-      return long_url, state
-    if resp.status != 200:
-      return long_url, state
-    try:
-      if isinstance(content, bytes):
-        content = content.decode()
-      return json.loads(content).get('short_url', long_url), state
-    except:
-      return long_url, state
+    short_url = shorten_url(long_url)
+    return short_url, state
 
 def _run_oauth_flow(client_id, client_secret, scopes, access_type, login_hint=None):
   client_config = {
@@ -7377,6 +7396,11 @@ def getCRM2Service(httpc):
                                          discoveryServiceUrl=googleapiclient.discovery.V2_DISCOVERY_URI)
 
 def getGAMProjectFile(filepath):
+  # if file exists locally in GAM path then use it.
+  # allows for testing changes before updating project.
+  local_file = os.path.join(GM_Globals[GM_GAM_PATH], filepath)
+  if os.path.isfile(local_file):
+    return fileutils.read_file(local_file, continue_on_error=False, display_errors=True)
   file_url = GAM_PROJECT_FILEPATH+filepath
   httpObj = transport.create_http()
   _, c = httpObj.request(file_url, 'GET')
@@ -7447,7 +7471,16 @@ def _grantSARotateRights(iam, sa_email):
   gapi.call(iam.projects().serviceAccounts(), 'setIamPolicy', resource=f'projects/-/serviceAccounts/{sa_email}',
             body=body)
 
-def _createClientSecretsOauth2service(httpObj, projectId):
+def setGAMProjectConsentScreen(httpObj, projectId, login_hint):
+  print('Setting GAM project consent screen...')
+  iap = googleapiclient.discovery.build('iap', 'v1',
+                                        http=httpObj, cache_discovery=False,
+                                        discoveryServiceUrl=googleapiclient.discovery.V2_DISCOVERY_URI)
+  body = {'applicationTitle': 'GAM', 'supportEmail': login_hint}
+  gapi.call(iap.projects().brands(), 'create',
+            parent=f'projects/{projectId}', body=body)
+
+def _createClientSecretsOauth2service(httpObj, projectId, login_hint, create_project):
 
   def _checkClientAndSecret(simplehttp, client_id, client_secret):
     url = 'https://oauth2.googleapis.com/token'
@@ -7475,8 +7508,10 @@ def _createClientSecretsOauth2service(httpObj, projectId):
     print(f'Unknown error: {content}')
     return False
 
-  GAMProjectAPIs = getGAMProjectFile('src/project-apis.txt').splitlines()
+  GAMProjectAPIs = getGAMProjectFile('project-apis.txt').splitlines()
   enableGAMProjectAPIs(GAMProjectAPIs, httpObj, projectId, False)
+  if create_project:
+    setGAMProjectConsentScreen(httpObj, projectId, login_hint)
   iam = googleapiclient.discovery.build('iam', 'v1',
                                         http=httpObj, cache_discovery=False,
                                         discoveryServiceUrl=googleapiclient.discovery.V2_DISCOVERY_URI)
@@ -7499,16 +7534,16 @@ def _createClientSecretsOauth2service(httpObj, projectId):
                                      client_email=service_account['email'],
                                      client_id=service_account['uniqueId'])
   _grantSARotateRights(iam, service_account['name'].rsplit('/', 1)[-1])
-  console_credentials_url = f'https://console.developers.google.com/apis/credentials/consent/edit?createClient&newAppInternalUser=true&project={projectId}'
+  console_url = f'https://console.cloud.google.com/apis/credentials/oauthclient?project={projectId}'
   while True:
     print(f'''Please go to:
 
-{console_credentials_url}
+{console_url}
 
-1. Enter "GAM" for "Application name".
-2. Leave other fields blank. Click "Save" button.
-3. Choose "Other". Enter a desired value for "Name". Click the blue "Create" button.
-4. Copy your "client ID" value.
+1. Choose "Other".
+2. Enter a desired value for "Name" or leave as is.
+3. Click the blue "Create" button.
+4. Copy the "client ID" value that shows on the next page.
 
 ''')
 # If you use Firefox to copy the Client ID and Secret, the data has leading and trailing newlines
@@ -7526,17 +7561,18 @@ def _createClientSecretsOauth2service(httpObj, projectId):
     if client_valid:
       break
     print()
-  cs_data = '''{
-    "installed": {
+  cs_data = f'''{{
+    "installed": {{
         "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
         "auth_uri": "https://accounts.google.com/o/oauth2/v2/auth",
-        "client_id": "%s",
-        "client_secret": "%s",
-        "project_id": "%s",
+        "client_id": "{client_id}",
+        "client_secret": "{client_secret}",
+        "created_by": "{login_hint}",
+        "project_id": "{projectId}",
         "redirect_uris": ["http://localhost", "urn:ietf:wg:oauth:2.0:oob"],
         "token_uri": "https://oauth2.googleapis.com/token"
-    }
-}''' % (client_id, client_secret, projectId)
+    }}
+}}'''
   fileutils.write_file(GC_Values[GC_CLIENT_SECRETS_JSON], cs_data, continue_on_error=False)
   print('That\'s it! Your GAM Project is created and ready to use.')
 
@@ -7635,7 +7671,7 @@ def _getLoginHintProjectId(createCmd):
 PROJECTID_FILTER_REQUIRED = 'gam|<ProjectID>|(filter <String>)'
 def convertGCPFolderNameToID(parent, crm2):
   # crm2.folders() is broken requiring pageToken, etc in body, not URL.
-  # for now just use callGAPI and if user has that many folders they'll
+  # for now just use gapi.get_items and if user has that many folders they'll
   # just need to be specific.
   folders = gapi.get_items(crm2.folders(), 'search', items='folders',
                            body={'pageSize': 1000, 'query': f'displayName="{parent}"'})
@@ -7770,16 +7806,16 @@ and accept the Terms of Service (ToS). As soon as you've accepted the ToS popup,
     elif 'error' in status:
       controlflow.system_error_exit(2, status['error'])
     break
-  _createClientSecretsOauth2service(httpObj, projectId)
+  _createClientSecretsOauth2service(httpObj, projectId, login_hint, True)
 
 def doUseProject():
   _checkForExistingProjectFiles()
-  _, httpObj, _, projectId, _ = _getLoginHintProjectId(False)
-  _createClientSecretsOauth2service(httpObj, projectId)
+  _, httpObj, login_hint, projectId, _ = _getLoginHintProjectId(False)
+  _createClientSecretsOauth2service(httpObj, projectId, login_hint, False)
 
 def doUpdateProjects():
   _, httpObj, login_hint, projects, _ = _getLoginHintProjects(False)
-  GAMProjectAPIs = getGAMProjectFile('src/project-apis.txt').splitlines()
+  GAMProjectAPIs = getGAMProjectFile('project-apis.txt').splitlines()
   count = len(projects)
   print(f'User: {login_hint}, Update {count} Projects')
   i = 0
@@ -11553,7 +11589,6 @@ def doCreateAlertFeedback():
   alertId = sys.argv[3]
   body = {'type': sys.argv[4].upper()}
   if body['type'] not in valid_types:
-###
     controlflow.system_error_exit(2, f'{body["type"]} is not a valid feedback value, expected one of: {", ".join(valid_types)}')
   gapi.call(ac.alerts().feedback(), 'create', alertId=alertId, body=body)
 
@@ -12402,7 +12437,7 @@ def _checkTPMVulnerability(cros):
 
 def _guessAUE(cros, guessedAUEs):
   if not GC_Values.get('CROS_AUE_DATES', None):
-    GC_Values['CROS_AUE_DATES'] = json.loads(getGAMProjectFile('src/cros-aue-dates.json'))
+    GC_Values['CROS_AUE_DATES'] = json.loads(getGAMProjectFile('cros-aue-dates.json'))
   crosModel = cros.get('model')
   if crosModel:
     if crosModel not in guessedAUEs:
