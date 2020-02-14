@@ -13268,7 +13268,8 @@ def writeCredentials(creds):
   expected_iss = ['https://accounts.google.com', 'accounts.google.com']
   if _getValueFromOAuth('iss', creds) not in expected_iss:
     controlflow.system_error_exit(13, f'Wrong OAuth 2.0 credentials issuer. Got {_getValueFromOAuth("iss", creds)} expected one of {", ".join(expected_iss)}')
-  creds_data['decoded_id_token'] = GC_Values[GC_DECODED_ID_TOKEN]
+  request = transport.create_request()
+  creds_data['decoded_id_token'] = google.oauth2.id_token.verify_oauth2_token(creds.id_token, request)
   data = json.dumps(creds_data, indent=2, sort_keys=True)
   fileutils.write_file(GC_Values[GC_OAUTH2_TXT], data)
 
