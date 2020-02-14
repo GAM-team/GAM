@@ -58,6 +58,7 @@ jobs:
       arch: arm64
       name: "Linux ARM64 Bionic"
       language: shell
+      filter_secrets: false
       env:
         - GAMOS=linux
         - PLATFORM=arm64
@@ -67,6 +68,7 @@ jobs:
       arch: arm64
       name: "Linux ARM64 Xenial"
       language: shell
+      filter_secrets: false
       env:
         - GAMOS=linux
         - PLATFORM=arm64
