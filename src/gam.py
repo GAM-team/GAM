@@ -1127,6 +1127,24 @@ def doCheckServiceAccount(users):
     sa_token_result = 'FAIL'
     auth_error = str(e.args[0])
   printPassFail(f'Authenticating...{auth_error}', sa_token_result)
+  if sa_token_result == 'FAIL':
+    controlflow.system_error_exit(3, 'Invalid private key in oauth2service.json. Please delete the file and then\nrecreate with "gam create project" or "gam use project"')
+  print('Checking key age. Google recommends rotating keys regularly...')
+  iam = buildGAPIServiceObject('iam', None)
+  project = GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID]
+  key_id = GM_Globals[GM_OAUTH2SERVICE_JSON_DATA]['private_key_id']
+  name = f'projects/-/serviceAccounts/{project}/keys/{key_id}'
+  key = gapi.call(iam.projects().serviceAccounts().keys(), 'get', name=name)
+  # Both Google and GAM set key valid after to day before creation
+  key_created = dateutil.parser.parse(key['validAfterTime'], ignoretz=True) + datetime.timedelta(days=1)
+  key_age = datetime.datetime.now() - key_created
+  key_days = key_age.days
+  if key_days > 30:
+    print('Your key is old. Recommend running "gam rotate sakey" to get a new key')
+    key_age_result = 'WARN'
+  else:
+    key_age_result = 'PASS'
+  printPassFail(f'Key is {key_days} days old', key_age_result)
   if not check_scopes:
     for _, scopes in list(API_SCOPE_MAPPING.items()):
       for scope in scopes:
