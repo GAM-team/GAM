@@ -750,7 +750,7 @@ def doGAMVersion(checkForArgs=True):
          f'{getOSPlatform()} {platform.machine()}\n'
          f'Path: {GM_Globals[GM_GAM_PATH]}'))
   if sys.platform.startswith('win') and \
-     cpu_bits != 32 and \
+     cpu_bits == 32 and \
      platform.machine().find('64') != -1:
     print(MESSAGE_UPDATE_GAM_TO_64BIT)
   if timeOffset:
