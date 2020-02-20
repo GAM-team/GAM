@@ -11332,7 +11332,7 @@ and follow recommend steps to authorize GAM for Drive access.''')
     else:
       mimeType = MIMETYPE_GA_SPREADSHEET
     body = {'description': QuotedArgumentList(sys.argv),
-            f'name': '{GC_Values[GC_DOMAIN]} - {list_type}',
+            'name': f'{GC_Values[GC_DOMAIN]} - {list_type}',
             'mimeType': mimeType}
     result = gapi.call(drive.files(), 'create', fields='webViewLink',
                        body=body,
