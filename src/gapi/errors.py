@@ -115,6 +115,7 @@ class ErrorReason(Enum):
   DUPLICATE = 'duplicate'
   FAILED_PRECONDITION = 'failedPrecondition'
   FORBIDDEN = 'forbidden'
+  FOUR_O_THREE = '403'
   GATEWAY_TIMEOUT = 'gatewayTimeout'
   GROUP_NOT_FOUND = 'groupNotFound'
   INTERNAL_ERROR = 'internalError'

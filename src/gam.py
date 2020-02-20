@@ -191,8 +191,16 @@ def createColoredText(text, color):
   return text # Hand back the plain text, uncolorized.
 
 def createRedText(text):
-  """Uses ANSI encoding to create red colored text, if supported."""
+  """Uses ANSI encoding to create red colored text if supported."""
   return createColoredText(text, '\033[91m')
+
+def createGreenText(text):
+  """Uses ANSI encoding to create green colored text if supported."""
+  return createColoredText(text, '\u001b[32m')
+
+def createYellowText(text):
+  """Uses ANSI encoding to create yellow text if supported."""
+  return createColoredText(text, '\u001b[33m')
 
 COLORHEX_PATTERN = re.compile(r'^#[0-9a-fA-F]{6}$')
 
@@ -1095,6 +1103,9 @@ def printPassFail(description, result):
 
 def doCheckServiceAccount(users):
   i = 5
+  test_pass = createGreenText('PASS')
+  test_fail = createRedText('FAIL')
+  test_warn = createYellowText('WARN')
   check_scopes = []
   while i < len(sys.argv):
     myarg = sys.argv[i].lower()
@@ -1106,9 +1117,9 @@ def doCheckServiceAccount(users):
   print('Computer clock status:')
   timeOffset, nicetime = getLocalGoogleTimeOffset()
   if timeOffset < MAX_LOCAL_GOOGLE_TIME_OFFSET:
-    time_status = 'PASS'
+    time_status = test_pass
   else:
-    time_status = 'FAIL'
+    time_status = test_fail
   printPassFail(MESSAGE_YOUR_SYSTEM_TIME_DIFFERS_FROM_GOOGLE_BY % ('www.googleapis.com', nicetime), time_status)
   oa2 = googleapiclient.discovery.build('oauth2', 'v1', transport.create_http())
   print('Service Account Private Key Authentication:')
@@ -1120,30 +1131,35 @@ def doCheckServiceAccount(users):
     credentials.refresh(request)
     sa_token_info = gapi.call(oa2, 'tokeninfo', access_token=credentials.token)
     if sa_token_info:
-      sa_token_result = 'PASS'
+      sa_token_result = test_pass
     else:
-      sa_token_result = 'FAIL'
+      sa_token_result = test_fail
   except google.auth.exceptions.RefreshError as e:
-    sa_token_result = 'FAIL'
+    sa_token_result = test_fail
     auth_error = str(e.args[0])
   printPassFail(f'Authenticating...{auth_error}', sa_token_result)
-  if sa_token_result == 'FAIL':
+  if sa_token_result == test_fail:
     controlflow.system_error_exit(3, 'Invalid private key in oauth2service.json. Please delete the file and then\nrecreate with "gam create project" or "gam use project"')
-  print('Checking key age. Google recommends rotating keys regularly...')
-  iam = buildGAPIServiceObject('iam', None)
-  project = GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID]
-  key_id = GM_Globals[GM_OAUTH2SERVICE_JSON_DATA]['private_key_id']
-  name = f'projects/-/serviceAccounts/{project}/keys/{key_id}'
-  key = gapi.call(iam.projects().serviceAccounts().keys(), 'get', name=name)
-  # Both Google and GAM set key valid after to day before creation
-  key_created = dateutil.parser.parse(key['validAfterTime'], ignoretz=True) + datetime.timedelta(days=1)
-  key_age = datetime.datetime.now() - key_created
-  key_days = key_age.days
-  if key_days > 30:
-    print('Your key is old. Recommend running "gam rotate sakey" to get a new key')
-    key_age_result = 'WARN'
-  else:
-    key_age_result = 'PASS'
+  print('Checking key age. Google recommends rotating keys on a routine basis...')
+  try:
+    iam = buildGAPIServiceObject('iam', None)
+    project = GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID]
+    key_id = GM_Globals[GM_OAUTH2SERVICE_JSON_DATA]['private_key_id']
+    name = f'projects/-/serviceAccounts/{project}/keys/{key_id}'
+    key = gapi.call(iam.projects().serviceAccounts().keys(), 'get', name=name, throw_reasons=[gapi.errors.ErrorReason.FOUR_O_THREE])
+    # Both Google and GAM set key valid after to day before creation
+    key_created = dateutil.parser.parse(key['validAfterTime'], ignoretz=True) + datetime.timedelta(days=1)
+    key_age = datetime.datetime.now() - key_created
+    key_days = key_age.days
+    if key_days > 30:
+      print('Your key is old. Recommend running "gam rotate sakey" to get a new key')
+      key_age_result = test_warn
+    else:
+      key_age_result = test_pass
+  except googleapiclient.errors.HttpError:
+    key_age_result = test_warn
+    key_days = 'UNKNOWN'
+    print('Unable to check key age, please run "gam update project"')
   printPassFail(f'Key is {key_days} days old', key_age_result)
   if not check_scopes:
     for _, scopes in list(API_SCOPE_MAPPING.items()):
@@ -1171,12 +1187,12 @@ def doCheckServiceAccount(users):
         token_info = gapi.call(oa2, 'tokeninfo', access_token=credentials.token)
         if scope in token_info.get('scope', '').split(' ') and \
            user == token_info.get('email', user).lower():
-          result = 'PASS'
+          result = test_pass
         else:
-          result = 'FAIL'
+          result = test_fail
           all_scopes_pass = False
       else:
-        result = 'FAIL'
+        result = test_fail
         all_scopes_pass = False
       printPassFail(scope, result)
     service_account = GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID]
