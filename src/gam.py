@@ -1272,9 +1272,9 @@ def showReport():
   rep = buildGAPIObject('reports')
   report = sys.argv[2].lower()
   report = REPORT_CHOICE_MAP.get(report.replace('_', ''), report)
-  valid_apps = _getEnumValuesMinusUnspecified(rep._rootDesc['resources']['activities']['methods']['list']['parameters']['applicationName']['enum'])
+  valid_apps = _getEnumValuesMinusUnspecified(rep._rootDesc['resources']['activities']['methods']['list']['parameters']['applicationName']['enum'])+['customer', 'user']
   if report not in valid_apps:
-    controlflow.expected_argument_exit("report", ", ".join(valid_apps), report)
+    controlflow.expected_argument_exit("report", ", ".join(sorted(valid_apps)), report)
   customerId = GC_Values[GC_CUSTOMER_ID]
   if customerId == MY_CUSTOMER:
     customerId = None
