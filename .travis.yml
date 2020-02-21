@@ -267,7 +267,9 @@ script:
 - if [ "$e2e" = true ]; then $gam print users query "travis.jid=$jid" | $gam csv - gam delete user ~primaryEmail; fi
 - if [ "$e2e" = true ]; then $gam print mobile; fi
 - if [ "$e2e" = true ]; then $gam print cros allfields nolists; fi
-- if [ "$TRAVIS_OS_NAME" != "windows" ]; then bash <(curl -s -S -L https://git.io/install-gam) -l; fi
+- if [ "$e2e" = true ]; then $gam report customer > customer.txt; fi
+- if [ "$e2e" = true ]; then $gam report users > users.txt; fi
+- if [ "$e2e" = true ]; then $gam report admin > admin.txt; fi
 
 before_deploy:
 - export TRAVIS_TAG="preview"
