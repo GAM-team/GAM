@@ -105,7 +105,6 @@ SKUS = {
 PRODUCTID_NAME_MAPPINGS = {
   '101001': 'Cloud Identity Free',
   '101005': 'Cloud Identity Premium',
-  '101006': 'Drive Enterprise',
   '101031': 'G Suite Enterprise for Education',
   '101033': 'Google Voice',
   '101034': 'G Suite Archived',
