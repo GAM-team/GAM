@@ -9,15 +9,18 @@ cd ~
 #fi
 #echo "Installing $exefile..."
 #powershell ".\\${exefile} /silent /sp- /suppressmsgboxes /DIR=C:\\ssl"
-cup -y chocolatey
-cinst -y python3
+#cup -y chocolatey
+#cinst -y python3
+export python_file=python-$BUILD_PYTHON_VERSION-amd64.exe
+wget --quiet https://www.python.org/ftp/python/$BUILD_PYTHON_VERSION/$python_file
+powershell ".\\${python_file} /quiet InstallAllUsers=1 TargetDir=c:\\python"
 until cinst -y wixtoolset; do echo "trying again..."; done
 #until cp -v /c/ssl/libcrypto-1_1-x64.dll /c/Python37/DLLs/libcrypto-1_1.dll; do echo "trying again..."; done
 #until cp -v /c/ssl/libssl-1_1-x64.dll /c/Python37/DLLs/libssl-1_1.dll; do echo "trying again..."; done
-export PATH=$PATH:/c/Python38/scripts
+export PATH=$PATH:/c/python/scripts
 cd $mypath
-export python=/c/Python38/python.exe
-export pip=/c/Python38/scripts/pip.exe
+export python=/c/python/python.exe
+export pip=/c/python/scripts/pip.exe
 
 $pip install --upgrade pip
 $pip list --outdated --format=freeze | grep -v '^\-e' | cut -d = -f 1  | xargs -n1 $pip install -U

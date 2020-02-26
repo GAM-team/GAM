@@ -2,13 +2,15 @@ echo "Installing Net-Framework-Core..."
 export mypath=$(pwd)
 cd ~
 until powershell Install-WindowsFeature Net-Framework-Core; do echo "trying again..."; done
-cup -y chocolatey
-cinst -y --forcex86 python3
+#cinst -y --forcex86 python3
+export python_file=python-$BUILD_PYTHON_VERSION.exe
+wget --quiet https://www.python.org/ftp/python/$BUILD_PYTHON_VERSION/$python_file
+powershell ".\\${python_file} /quiet InstallAllUsers=1 TargetDir=c:\\python"
 until cinst -y wixtoolset; do echo "trying again..."; done
-export PATH=$PATH:/c/Python38/scripts
+export PATH=$PATH:/c/python/scripts
 cd $mypath
-export python=/c/Python38/python.exe
-export pip=/c/Python38/scripts/pip.exe
+export python=/c/python/python.exe
+export pip=/c/python/scripts/pip.exe
 
 $pip install --upgrade pip
 $pip list --outdated --format=freeze | grep -v '^\-e' | cut -d = -f 1  | xargs -n1 $pip install -U
