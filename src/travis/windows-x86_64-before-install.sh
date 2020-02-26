@@ -9,6 +9,7 @@ cd ~
 #fi
 #echo "Installing $exefile..."
 #powershell ".\\${exefile} /silent /sp- /suppressmsgboxes /DIR=C:\\ssl"
+cup -y chocolatey
 cinst -y python3
 until cinst -y wixtoolset; do echo "trying again..."; done
 #until cp -v /c/ssl/libcrypto-1_1-x64.dll /c/Python37/DLLs/libcrypto-1_1.dll; do echo "trying again..."; done

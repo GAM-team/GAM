@@ -2,6 +2,7 @@ echo "Installing Net-Framework-Core..."
 export mypath=$(pwd)
 cd ~
 until powershell Install-WindowsFeature Net-Framework-Core; do echo "trying again..."; done
+cup -y chocolatey
 cinst -y --forcex86 python3
 until cinst -y wixtoolset; do echo "trying again..."; done
 export PATH=$PATH:/c/Python38/scripts

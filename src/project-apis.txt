@@ -4,6 +4,7 @@ appsactivity.googleapis.com
 calendar-json.googleapis.com
 chat.googleapis.com
 classroom.googleapis.com
+cloudidentity.googleapis.com
 contacts.googleapis.com
 drive.googleapis.com
 iap.googleapis.com
