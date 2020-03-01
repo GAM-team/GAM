@@ -1785,7 +1785,7 @@ def doGetDomainInfo():
     for i in range(0, len(result['domainAliases'])):
       if 'creationTime' in result['domainAliases'][i]:
         result['domainAliases'][i]['creationTime'] = utils.formatTimestampYMDHMSF(result['domainAliases'][i]['creationTime'])
-  print_json(None, result)
+  display.print_json(result)
 
 def doGetDomainAliasInfo():
   cd = buildGAPIObject('directory')
@@ -1793,7 +1793,7 @@ def doGetDomainAliasInfo():
   result = gapi.call(cd.domainAliases(), 'get', customer=GC_Values[GC_CUSTOMER_ID], domainAliasName=alias)
   if 'creationTime' in result:
     result['creationTime'] = utils.formatTimestampYMDHMSF(result['creationTime'])
-  print_json(None, result)
+  display.print_json(result)
 
 def doGetCustomerInfo():
   cd = buildGAPIObject('directory')
@@ -2182,9 +2182,7 @@ def doCreateDataTransfer():
 def doPrintTransferApps():
   dt = buildGAPIObject('datatransfer')
   apps = gapi.get_all_pages(dt.applications(), 'list', 'applications', customerId=GC_Values[GC_CUSTOMER_ID])
-  for app in apps:
-    print_json(None, app)
-    print()
+  display.print_json(apps)
 
 def doPrintDataTransfers():
   dt = buildGAPIObject('datatransfer')
@@ -2308,7 +2306,7 @@ def doPrintShowGuardians(csvFormat):
     if not csvFormat:
       print(f'Student: {studentId}, {itemName}:{currentCount(i, count)}')
       for guardian in guardians:
-        print_json(None, guardian, spacing='  ')
+        display.print_json(guardian, spacing='  ')
     else:
       for guardian in guardians:
         guardian['studentEmail'] = studentId
@@ -2435,7 +2433,7 @@ def doGetCourseInfo():
   courseId = addCourseIdScope(sys.argv[3])
   info = gapi.call(croom.courses(), 'get', id=courseId)
   info['ownerEmail'] = convertUIDtoEmailAddress(f'uid:{info["ownerId"]}')
-  print_json(None, info)
+  display.print_json(info)
   teachers = gapi.get_all_pages(croom.courses().teachers(), 'list', 'teachers', courseId=courseId)
   students = gapi.get_all_pages(croom.courses().students(), 'list', 'students', courseId=courseId)
   try:
@@ -3041,7 +3039,7 @@ def doPrinterShowACL():
   for acl in printer_info['printers'][0]['access']:
     if 'key' in acl:
       acl['accessURL'] = f'https://www.google.com/cloudprint/addpublicprinter.html?printerid={show_printer}&key={acl["key"]}'
-    print_json(None, acl)
+    display.print_json(acl)
     print()
 
 def doPrinterAddACL():
@@ -3278,7 +3276,7 @@ def doGetPrinterInfo():
   if not everything:
     del printer_info['capabilities']
     del printer_info['access']
-  print_json(None, printer_info)
+  display.print_json(printer_info)
 
 def doUpdatePrinter():
   cp = buildGAPIObject('cloudprint')
@@ -4948,7 +4946,7 @@ def showDriveFileInfo(users):
       continue
     feed = gapi.call(drive.files(), 'get', fileId=fileId, fields=fields, supportsAllDrives=True)
     if feed:
-      print_json(None, feed)
+      display.print_json(feed)
 
 def showDriveFileRevisions(users):
   fileId = sys.argv[5]
@@ -4958,7 +4956,7 @@ def showDriveFileRevisions(users):
       continue
     feed = gapi.call(drive.revisions(), 'list', fileId=fileId)
     if feed:
-      print_json(None, feed)
+      display.print_json(feed)
 
 def transferSecCals(users):
   target_user = sys.argv[5]
@@ -5595,7 +5593,7 @@ def printShowSmime(users, csvFormat):
         for smime in smimes:
           addRowTitlesToCSVfile(flatten_json(smime, flattened={'User': user}), csvRows, titles)
       else:
-        print_json(None, smimes)
+        display.print_json(smimes)
   if csvFormat:
     writeCSVfile(csvRows, titles, 'S/MIME', todrive)
 
@@ -7948,7 +7946,7 @@ def doShowServiceAccountKeys():
     key['name'] = key['name'].rsplit('/', 1)[-1]
     if key['name'] == currentPrivateKeyId:
       key['usedToAuthenticateThisRequest'] = True
-  print_json(None, keys)
+  display.print_json(keys)
 
 def doCreateOrRotateServiceAccountKeys(iam=None, project_id=None, client_email=None, client_id=None):
   local_key_size = 2048
@@ -8113,7 +8111,7 @@ def doGetTeamDriveInfo(users):
       continue
     result = gapi.call(drive.drives(), 'get', driveId=teamDriveId,
                        useDomainAdminAccess=useDomainAdminAccess, fields='*')
-    print_json(None, result)
+    display.print_json(result)
 
 def doCreateTeamDrive(users):
   body = {'name': sys.argv[5]}
@@ -8405,7 +8403,7 @@ def doCreateVaultExport():
       body['exportOptions'][options_field]['showConfidentialModeContent'] = showConfidentialModeContent
   results = gapi.call(v.matters().exports(), 'create', matterId=matterId, body=body)
   print(f'Created export {results["id"]}')
-  print_json(None, results)
+  display.print_json(results)
 
 def doDeleteVaultExport():
   v = buildGAPIObject('vault')
@@ -8419,7 +8417,7 @@ def doGetVaultExportInfo():
   matterId = getMatterItem(v, sys.argv[3])
   exportId = convertExportNameToID(v, sys.argv[4], matterId)
   export = gapi.call(v.matters().exports(), 'get', matterId=matterId, exportId=exportId)
-  print_json(None, export)
+  display.print_json(export)
 
 def _getCloudStorageObject(s, bucket, object_, local_file=None, expectedMd5=None):
   if not local_file:
@@ -8673,7 +8671,7 @@ def doGetVaultHoldInfo():
       results['accounts'][i]['email'] = acct_email
   if 'orgUnit' in results:
     results['orgUnit']['orgUnitPath'] = doGetOrgInfo(results['orgUnit']['orgUnitId'], return_attrib='orgUnitPath')
-  print_json(None, results)
+  display.print_json(results)
 
 def convertExportNameToID(v, nameOrID, matterId):
   nameOrID = nameOrID.lower()
@@ -8852,7 +8850,7 @@ def doGetVaultMatterInfo():
       uid = f'uid:{result["matterPermissions"][i]["accountId"]}'
       user_email = convertUIDtoEmailAddress(uid, cd)
       result['matterPermissions'][i]['email'] = user_email
-  print_json(None, result)
+  display.print_json(result)
 
 def doCreateUser():
   cd = buildGAPIObject('directory')
@@ -9127,7 +9125,7 @@ def doGetBuildingInfo():
     building['floorNames'] = ','.join(building['floorNames'])
   if 'buildingName' in building:
     sys.stdout.write(building.pop('buildingName'))
-  print_json(None, building)
+  display.print_json(building)
 
 def doDeleteBuilding():
   cd = buildGAPIObject('directory')
@@ -9834,7 +9832,7 @@ def doCreateResoldSubscription():
   customerAuthToken, body = _getResoldSubscriptionAttr(sys.argv[4:], customerId)
   result = gapi.call(res.subscriptions(), 'insert', customerId=customerId, customerAuthToken=customerAuthToken, body=body, fields='customerId')
   print('Created subscription:')
-  print_json(None, result)
+  display.print_json(result)
 
 def doUpdateResoldSubscription():
   res = buildGAPIObject('reseller')
@@ -9893,7 +9891,7 @@ def doUpdateResoldSubscription():
   result = gapi.call(res.subscriptions(), function, customerId=customerId, subscriptionId=subscriptionId, **kwargs)
   print(f'Updated {customerId} SKU {sku} subscription:')
   if result:
-    print_json(None, result)
+    display.print_json(result)
 
 def doGetResoldSubscriptions():
   res = buildGAPIObject('reseller')
@@ -9908,7 +9906,7 @@ def doGetResoldSubscriptions():
     else:
       controlflow.invalid_argument_exit(myarg, "gam info resoldsubscriptions")
   result = gapi.call(res.subscriptions(), 'list', customerId=customerId, customerAuthToken=customerAuthToken)
-  print_json(None, result)
+  display.print_json(result)
 
 def _getResoldSubscriptionAttr(arg, customerId):
   body = {'plan': {},
@@ -9942,7 +9940,7 @@ def doGetResoldCustomer():
   res = buildGAPIObject('reseller')
   customerId = sys.argv[3]
   result = gapi.call(res.customers(), 'get', customerId=customerId)
-  print_json(None, result)
+  display.print_json(result)
 
 def _getResoldCustomerAttr(arg):
   body = {}
@@ -9990,7 +9988,7 @@ def doGetMemberInfo():
   memberKey = normalizeEmailAddressOrUID(sys.argv[3])
   groupKey = normalizeEmailAddressOrUID(sys.argv[4])
   info = gapi.call(cd.members(), 'get', memberKey=memberKey, groupKey=groupKey)
-  print_json(None, info)
+  display.print_json(info)
 
 def doGetUserInfo(user_email=None):
 
@@ -10370,7 +10368,7 @@ def doGetResourceCalendarInfo():
   if 'buildingId' in resource:
     resource['buildingName'] = _getBuildingNameById(cd, resource['buildingId'])
     resource['buildingId'] = f'id:{resource["buildingId"]}'
-  print_json(None, resource)
+  display.print_json(resource)
 
 def _filterTimeRanges(activeTimeRanges, startDate, endDate):
   if startDate is None and endDate is None:
@@ -10487,7 +10485,7 @@ def doGetCrosInfo():
           print(f'  {up}: {cros[up]}')
         else:
           sys.stdout.write(f'  {up}:')
-          print_json(None, cros[up], '  ')
+          display.print_json(cros[up], '  ')
     if not noLists:
       activeTimeRanges = _filterTimeRanges(cros.get('activeTimeRanges', []), startDate, endDate)
       lenATR = len(activeTimeRanges)
@@ -10569,32 +10567,7 @@ def doGetMobileInfo():
   attrib = 'securityPatchLevel'
   if attrib in info and int(info[attrib]):
     info[attrib] = utils.formatTimestampYMDHMS(info[attrib])
-  print_json(None, info)
-
-def print_json(object_name, object_value, spacing=''):
-  if object_name in ['kind', 'etag', 'etags']:
-    return
-  if object_name is not None:
-    sys.stdout.write(f'{spacing}{object_name}: ')
-  if isinstance(object_value, list):
-    if len(object_value) == 1 and isinstance(object_value[0], (str, int, bool)):
-      sys.stdout.write(f'{object_value[0]}\n')
-      return
-    if object_name is not None:
-      sys.stdout.write('\n')
-    for a_value in object_value:
-      if isinstance(a_value, (str, int, bool)):
-        sys.stdout.write(f' {spacing}{a_value}\n')
-      else:
-        print_json(None, a_value, f' {spacing}')
-  elif isinstance(object_value, dict):
-    print()
-    if object_name is not None:
-      sys.stdout.write('\n')
-    for another_object in object_value:
-      print_json(another_object, object_value[another_object], f' {spacing}')
-  else:
-    sys.stdout.write(f'{object_value}\n')
+  display.print_json(info)
 
 def doSiteVerifyShow():
   verif = buildGAPIObject('siteVerification')
@@ -10822,7 +10795,7 @@ def doGetOrgInfo(name=None, return_attrib=None):
   result = gapi.call(cd.orgunits(), 'get', customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=encodeOrgUnitPath(name))
   if return_attrib:
     return result[return_attrib]
-  print_json(None, result)
+  display.print_json(result)
   if get_users:
     name = result['orgUnitPath']
     page_message = gapi.got_total_items_first_last_msg('Users')
