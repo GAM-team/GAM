@@ -1203,8 +1203,8 @@ def doCheckServiceAccount(users):
     # Tack on email scope for more accurate checking
     check_scopes.append(USERINFO_EMAIL_SCOPE)
     long_url = (f'https://admin.google.com/{user_domain}/ManageOauthClients'
-               f'?clientScopeToAdd={",".join(check_scopes)}'
-               f'&clientNameToAdd={service_account}')
+                f'?clientScopeToAdd={",".join(check_scopes)}'
+                f'&clientNameToAdd={service_account}')
     short_url = shorten_url(long_url)
     scopes_failed = f'''Some scopes failed! To authorize them, please go to:
 
@@ -7366,14 +7366,14 @@ def shorten_url(long_url):
              'User-Agent': GAM_INFO}
   try:
     resp, content = simplehttp.request(url_shortnr, 'POST',
-            f'{{"long_url": "{long_url}"}}', headers=headers)
-  except Exception as e:
+                                       f'{{"long_url": "{long_url}"}}', headers=headers)
+  except Exception:
     return long_url
   if resp.status != 200:
     return long_url
   try:
     return json.loads(content).get('short_url', long_url)
-  except Exception as e:
+  except Exception:
     print(content)
     return long_url
 
