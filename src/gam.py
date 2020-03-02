@@ -3724,6 +3724,9 @@ def doCalendarAddEvent():
     elif myarg == 'colorindex':
       body['colorId'] = getInteger(sys.argv[i+1], myarg, CALENDAR_EVENT_MIN_COLOR_INDEX, CALENDAR_EVENT_MAX_COLOR_INDEX)
       i += 2
+    elif myarg == 'hangoutsmeet':
+      body['conferenceData'] = {'createRequest': {'requestId': f'{str(uuid.uuid4())}'}}
+      i += 1
     else:
       controlflow.invalid_argument_exit(sys.argv[i], "gam calendar <email> addevent")
   if ('recurrence' in body) and (('start' in body) or ('end' in body)):

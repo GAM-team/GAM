@@ -1004,6 +1004,7 @@ The following attributes are equivalent:
 	(end (allday <Date>)|<Time>)|
 	guestscantinviteothers|
 	guestscantseeothers|
+	hangoutsmeet|
 	(id <String>)|
 	(location <String>)|
 	(noreminders| (reminder <Number> email|popup|sms))|
