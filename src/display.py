@@ -22,7 +22,7 @@ def print_json(object_value, spacing=''):
       return
     if spacing:
       sys.stdout.write('\n')
-    for i, a_value in enumerate(range):
+    for i, a_value in enumerate(object_value):
       if isinstance(a_value, (str, int, bool)):
         sys.stdout.write(f' {spacing}{i+1}) {a_value}\n')
       else:
