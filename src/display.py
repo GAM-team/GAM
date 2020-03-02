@@ -22,14 +22,15 @@ def print_json(object_value, spacing=''):
       return
     if spacing:
       sys.stdout.write('\n')
-    for i in range(0, len(object_value)):
-      if isinstance(object_value[i], (str, int, bool)):
+    for i, a_value in enumerate(range):
+      if isinstance(a_value, (str, int, bool)):
         sys.stdout.write(f' {spacing}{i+1}) {a_value}\n')
       else:
         sys.stdout.write(f' {spacing}{i+1}) ')
-        print_json(object_value[i], f' {spacing}')
+        print_json(a_value, f' {spacing}')
   elif isinstance(object_value, dict):
-    [object_value.pop(key, None) for key in ['kind', 'etag', 'etags']]
+    for key in ['kind', 'etag', 'etags']:
+      object_value.pop(key, None)
     for another_object, another_value in object_value.items():
       sys.stdout.write(f' {spacing}{another_object}: ')
       print_json(another_value, f' {spacing}')
