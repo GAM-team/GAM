@@ -3736,7 +3736,7 @@ def doCalendarAddEvent():
       body['start']['timeZone'] = timeZone
     if 'end' in body:
       body['end']['timeZone'] = timeZone
-  gapi.call(cal.events(), 'insert', calendarId=calendarId, sendUpdates=sendUpdates, body=body)
+  gapi.call(cal.events(), 'insert', conferenceDataVersion=1, calendarId=calendarId, sendUpdates=sendUpdates, body=body)
 
 def doCalendarModifySettings():
   calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
