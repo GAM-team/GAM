@@ -92,7 +92,7 @@ def close_file(f, force_flush=False):
     Boolean, True if the file was successfully closed. False if an error
         was encountered while closing.
   """
-  if force_to_disk:
+  if force_flush:
     f.flush()
     os.fsync(f.fileno())
   try:
