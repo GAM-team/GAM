@@ -5085,7 +5085,7 @@ def transferDriveFiles(users):
             pass
         if not target_parents:
           target_parents.append({'id': target_top_folder})
-        gapi.call(target_drive.files(), 'patch', soft_errors=True, retry_reasons=['notFound'], fileId=file_id, body={'parents': target_parents})
+        gapi.call(target_drive.files(), 'patch', soft_errors=True, retry_reasons=[gapi.errors.ErrorReason.NOT_FOUND], fileId=file_id, body={'parents': target_parents})
         if remove_source_user:
           gapi.call(target_drive.permissions(), 'delete', soft_errors=True, fileId=file_id, permissionId=source_permissionid)
       if not skipped_files:
@@ -8942,12 +8942,15 @@ def doCreateGroup():
   if gs and not GroupIsAbuseOrPostmaster(body['email']):
     if gs_get_before_update:
       current_settings = gapi.call(gs.groups(), 'get',
-                                   retry_reasons=['serviceLimit', 'notFound'],
+                                   retry_reasons=[gapi.errors.ErrorReason.SERVICE_LIMIT, gapi.errors.ErrorReason.NOT_FOUND],
                                    groupUniqueId=body['email'], fields='*')
       if current_settings is not None:
         gs_body = dict(list(current_settings.items()) + list(gs_body.items()))
     if gs_body:
-      gapi.call(gs.groups(), 'update', retry_reasons=['serviceLimit', 'notFound'], groupUniqueId=body['email'], body=gs_body)
+      gapi.call(gs.groups(), 'update', groupUniqueId=body['email'],
+          body=gs_body,
+          retry_reasons=[gapi.errors.ErrorReason.SERVICE_LIMIT,
+                         gapi.errors.ErrorReason.NOT_FOUND])
 
 def doCreateAlias():
   cd = buildGAPIObject('directory')
@@ -9548,12 +9551,12 @@ def doUpdateGroup():
       if not GroupIsAbuseOrPostmaster(group):
         if gs_get_before_update:
           current_settings = gapi.call(gs.groups(), 'get',
-                                       retry_reasons=['serviceLimit'],
+                                       retry_reasons=[gapi.errors.ErrorReason.SERVICE_LIMIT],
                                        groupUniqueId=group, fields='*')
           if current_settings is not None:
             gs_body = dict(list(current_settings.items()) + list(gs_body.items()))
         if gs_body:
-          gapi.call(gs.groups(), 'update', retry_reasons=['serviceLimit'], groupUniqueId=group, body=gs_body)
+          gapi.call(gs.groups(), 'update', retry_reasons=[gapi.errors.ErrorReason.SERVICE_LIMIT], groupUniqueId=group, body=gs_body)
     print(f'updated group {group}')
 
 def doUpdateAlias():
@@ -10301,7 +10304,7 @@ def doGetGroupInfo(group_name=None):
   settings = {}
   if not GroupIsAbuseOrPostmaster(basic_info['email']):
     try:
-      settings = gapi.call(gs.groups(), 'get', throw_reasons=[gapi.errors.ErrorReason.AUTH_ERROR], retry_reasons=['serviceLimit'],
+      settings = gapi.call(gs.groups(), 'get', throw_reasons=[gapi.errors.ErrorReason.AUTH_ERROR], retry_reasons=[gapi.errors.ErrorReason.SERVICE_LIMIT],
                            groupUniqueId=basic_info['email']) # Use email address retrieved from cd since GS API doesn't support uid
       if settings is None:
         settings = {}
@@ -11858,7 +11861,7 @@ def doPrintGroups():
       sys.stderr.write(f' Retrieving Settings for group {groupEmail}{currentCountNL(i, count)}')
       settings = gapi.call(gs.groups(), 'get',
                            soft_errors=True,
-                           retry_reasons=['serviceLimit', 'invalid'],
+                           retry_reasons=[gapi.errors.ErrorReason.SERVICE_LIMIT, gapi.errors.ErrorReason.INVALID],
                            groupUniqueId=groupEmail, fields=gsfields)
       if settings:
         for key in settings:

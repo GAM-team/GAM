@@ -130,6 +130,7 @@ class ErrorReason(Enum):
   RATE_LIMIT_EXCEEDED = 'rateLimitExceeded'
   RESOURCE_NOT_FOUND = 'resourceNotFound'
   SERVICE_NOT_AVAILABLE = 'serviceNotAvailable'
+  SERVICE_LIMIT = 'serviceLimit'
   SYSTEM_ERROR = 'systemError'
   USER_NOT_FOUND = 'userNotFound'
   USER_RATE_LIMIT_EXCEEDED = 'userRateLimitExceeded'
