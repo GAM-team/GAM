@@ -80,16 +80,21 @@ def open_file(filename,
     controlflow.system_error_exit(6, e)
 
 
-def close_file(f):
+def close_file(f, force_flush=False):
   """Closes a file.
 
   Args:
     f: The file to close
+    force_flush: Flush file to disk emptying Python and OS caches. See:
+       https://stackoverflow.com/a/13762137/1503886
 
   Returns:
     Boolean, True if the file was successfully closed. False if an error
         was encountered while closing.
   """
+  if force_to_disk:
+    f.flush()
+    os.fsync(f.fileno())
   try:
     f.close()
     return True

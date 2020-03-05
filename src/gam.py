@@ -8449,11 +8449,7 @@ def _getCloudStorageObject(s, bucket, object_, local_file=None, expectedMd5=None
     sys.stdout.write(f' Downloaded: {status.progress():>7.2%}\r')
     sys.stdout.flush()
   sys.stdout.write('\n Download complete. Flushing to disk...\n')
-  # Necessary to make sure file is flushed by both Python and OS
-  # https://stackoverflow.com/a/13762137/1503886
-  f.flush()
-  os.fsync(f.fileno())
-  fileutils.close_file(f)
+  fileutils.close_file(f, True)
   if expectedMd5:
     f = fileutils.open_file(local_file, 'rb')
     sys.stdout.write(f' Verifying file hash is {expectedMd5}...')
@@ -8529,11 +8525,7 @@ def doDownloadVaultExport():
       sys.stdout.write(' Downloaded: {0:>7.2%}\r'.format(status.progress()))
       sys.stdout.flush()
     sys.stdout.write('\n Download complete. Flushing to disk...\n')
-    # Necessary to make sure file is flushed by both Python and OS
-    # https://stackoverflow.com/a/13762137/1503886
-    f.flush()
-    os.fsync(f.fileno())
-    fileutils.close_file(f)
+    fileutils.close_file(f, True)
     if verifyFiles:
       expected_hash = s_file['md5Hash']
       sys.stdout.write(f' Verifying file hash is {expected_hash}...')
