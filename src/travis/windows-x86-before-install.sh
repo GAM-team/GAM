@@ -11,6 +11,8 @@ export PATH=$PATH:/c/python/scripts
 cd $mypath
 export python=/c/python/python.exe
 export pip=/c/python/scripts/pip.exe
+until [ -f $python ]; do :; done
+until [ -f $pip ]; do :; done
 
 $pip install --upgrade pip
 $pip list --outdated --format=freeze | grep -v '^\-e' | cut -d = -f 1  | xargs -n1 $pip install -U
