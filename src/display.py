@@ -52,7 +52,7 @@ def add_field_to_csv_file(fieldName, fieldNameMap, fieldsList, fieldsTitles, tit
     if ftList not in fieldsTitles:
       fieldsList.append(ftList)
       fieldsTitles[ftList] = ftList
-      addTitlesToCSVfile([ftList], titles)
+      add_titles_to_csv_file([ftList], titles)
 
 # fieldName is command line argument
 # fieldNameTitleMap maps fieldName to API field name and CSV file header
@@ -68,7 +68,7 @@ def add_field_title_to_csv_file(fieldName, fieldNameTitleMap, fieldsList, fields
     if ftList[i] not in fieldsTitles:
       fieldsList.append(ftList[i])
       fieldsTitles[ftList[i]] = ftList[i+1]
-      addTitlesToCSVfile([ftList[i+1]], titles)
+      add_titles_to_csv_file([ftList[i+1]], titles)
 
 def sort_csv_titles(firstTitle, titles):
   restoreTitles = []

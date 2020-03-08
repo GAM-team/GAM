@@ -56,9 +56,9 @@ def printShowACLs(csvFormat):
           titles.append(key)
       rows.append(row)
     else:
-      print(f'Calendar: {calendarId}, ACL: {formatACLRule(rule)}{currentCount(i, count)}')
+      print(f'Calendar: {calendarId}, ACL: {formatACLRule(rule)}{display.current_count(i, count)}')
   if csvFormat:
-    writeCSVfile(rows, titles, f'{calendarId} Calendar ACLs', toDrive)
+    display.write_csv_file(rows, titles, f'{calendarId} Calendar ACLs', toDrive)
 
 def _getCalendarACLScope(i, body):
   body['scope'] = {}
@@ -66,7 +66,7 @@ def _getCalendarACLScope(i, body):
   body['scope']['type'] = myarg
   i += 1
   if myarg in ['user', 'group']:
-    body['scope']['value'] = normalizeEmailAddressOrUID(sys.argv[i], noUid=True)
+    body['scope']['value'] = __main__.normalizeEmailAddressOrUID(sys.argv[i], noUid=True)
     i += 1
   elif myarg == 'domain':
     if i < len(sys.argv) and sys.argv[i].lower().replace('_', '') != 'sendnotifications':
@@ -76,7 +76,7 @@ def _getCalendarACLScope(i, body):
       body['scope']['value'] = GC_Values[GC_DOMAIN]
   elif myarg != 'default':
     body['scope']['type'] = 'user'
-    body['scope']['value'] = normalizeEmailAddressOrUID(myarg, noUid=True)
+    body['scope']['value'] = __main__.normalizeEmailAddressOrUID(myarg, noUid=True)
   return i
 
 CALENDAR_ACL_ROLES_MAP = {
@@ -607,7 +607,7 @@ def addCalendar(users):
     user, cal = buildCalendarGAPIObject(user)
     if not cal:
       continue
-    print(f'Subscribing {user} to calendar {calendarId}{currentCount(i, count)}')
+    print(f'Subscribing {user} to calendar {calendarId}{display.current_count(i, count)}')
     gapi.call(cal.calendarList(), 'insert', soft_errors=True, body=body, colorRgbFormat=colorRgbFormat)
 
 def updateCalendar(users):
@@ -621,12 +621,12 @@ def updateCalendar(users):
     user, cal = buildCalendarGAPIObject(user)
     if not cal:
       continue
-    print(f"Updating {user}'s subscription to calendar {calendarId}{currentCount(i, count)}")
+    print(f"Updating {user}'s subscription to calendar {calendarId}{display.current_count(i, count)}")
     calId = calendarId if calendarId != 'primary' else user
     gapi.call(cal.calendarList(), 'patch', soft_errors=True, calendarId=calId, body=body, colorRgbFormat=colorRgbFormat)
 
 def _showCalendar(userCalendar, j, jcount):
-  print(f'  Calendar: {userCalendar["id"]}{currentCount(j, jcount)}')
+  print(f'  Calendar: {userCalendar["id"]}{display.current_count(j, jcount)}')
   print(f'    Summary: {userCalendar.get("summaryOverride", userCalendar["summary"])}')
   print(f'    Description: {userCalendar.get("description", "")}')
   print(f'    Access Level: {userCalendar["accessRole"]}')
@@ -656,7 +656,7 @@ def infoCalendar(users):
                        soft_errors=True,
                        calendarId=calendarId)
     if result:
-      print(f'User: {user}, Calendar:{currentCount(i, count)}')
+      print(f'User: {user}, Calendar:{display.current_count(i, count)}')
       _showCalendar(result, 1, 1)
 
 def printShowCalendars(users, csvFormat):
@@ -682,7 +682,7 @@ def printShowCalendars(users, csvFormat):
     result = gapi.get_all_pages(cal.calendarList(), 'list', 'items', soft_errors=True)
     jcount = len(result)
     if not csvFormat:
-      print(f'User: {user}, Calendars:{currentCount(i, count)}')
+      print(f'User: {user}, Calendars:{display.current_count(i, count)}')
       if jcount == 0:
         continue
       j = 0
@@ -709,7 +709,7 @@ def showCalSettings(users):
       continue
     feed = gapi.get_all_pages(cal.settings(), 'list', 'items', soft_errors=True)
     if feed:
-      print(f'User: {user}, Calendar Settings:{currentCount(i, count)}')
+      print(f'User: {user}, Calendar Settings:{display.current_count(i, count)}')
       settings = {}
       for setting in feed:
         settings[setting['id']] = setting['value']
