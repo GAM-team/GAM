@@ -308,32 +308,32 @@ def getEventAttributes(i, cal, body, action):
       i += 3
     elif myarg == 'start':
       if sys.argv[i+1].lower() == 'allday':
-        body['start'] = {'date': getYYYYMMDD(sys.argv[i+2])}
+        body['start'] = {'date': __main__.getYYYYMMDD(sys.argv[i+2])}
         i += 3
       else:
-        body['start'] = {'dateTime': getTimeOrDeltaFromNow(sys.argv[i+1])}
+        body['start'] = {'dateTime': __main__.getTimeOrDeltaFromNow(sys.argv[i+1])}
         i += 2
     elif myarg == 'end':
       if sys.argv[i+1].lower() == 'allday':
         body['end'] = {'date': getYYYYMMDD(sys.argv[i+2])}
         i += 3
       else:
-        body['end'] = {'dateTime': getTimeOrDeltaFromNow(sys.argv[i+1])}
+        body['end'] = {'dateTime': __main__.getTimeOrDeltaFromNow(sys.argv[i+1])}
         i += 2
     elif myarg == 'guestscantinviteothers':
       body['guestsCanInviteOthers'] = False
       i += 1
     elif myarg == 'guestscaninviteothers':
-      body['guestsCanInviteTohters'] = getBoolean(sys.argv[i+1], 'guestscaninviteothers')
+      body['guestsCanInviteTohters'] = __main__.getBoolean(sys.argv[i+1], 'guestscaninviteothers')
       i += 2
     elif myarg == 'guestscantseeothers':
       body['guestsCanSeeOtherGuests'] = False
       i += 1
     elif myarg == 'guestscanseeothers':
-      body['guestsCanSeeOtherGuests'] = getBoolean(sys.argv[i+1], 'guestscanseeothers')
+      body['guestsCanSeeOtherGuests'] = __main__.getBoolean(sys.argv[i+1], 'guestscanseeothers')
       i += 2
     elif myarg == 'guestscanmodify':
-      body['guestsCanModify'] = getBoolean(sys.argv[i+1], 'guestscanmodify')
+      body['guestsCanModify'] = __main__.getBoolean(sys.argv[i+1], 'guestscanmodify')
       i += 2
     elif myarg == 'id':
       if action == 'update':
