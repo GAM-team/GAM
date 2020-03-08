@@ -1,4 +1,5 @@
 import sys
+import uuid
 
 # TODO: get rid of these hacks
 import __main__
