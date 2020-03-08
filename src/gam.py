@@ -74,6 +74,7 @@ from filelock import FileLock
 import controlflow
 import display
 import fileutils
+import gapi.calendar
 import gapi.errors
 import gapi
 import transport
@@ -1067,25 +1068,6 @@ def buildActivityGAPIObject(user):
   userEmail = convertUIDtoEmailAddress(user)
   return (userEmail, buildGAPIServiceObject('appsactivity', userEmail))
 
-def normalizeCalendarId(calname, checkPrimary=False):
-  if checkPrimary and calname.lower() == 'primary':
-    return calname
-  if not GC_Values[GC_DOMAIN]:
-    GC_Values[GC_DOMAIN] = _getValueFromOAuth('hd')
-  return convertUIDtoEmailAddress(calname, email_types=['user', 'resource'])
-
-def buildCalendarGAPIObject(calname):
-  calendarId = normalizeCalendarId(calname)
-  return (calendarId, buildGAPIServiceObject('calendar', calendarId))
-
-def buildCalendarDataGAPIObject(calname):
-  calendarId = normalizeCalendarId(calname)
-  # Force service account token request. If we fail fall back to using admin for authentication
-  cal = buildGAPIServiceObject('calendar', calendarId, False)
-  if cal is None:
-    _, cal = buildCalendarGAPIObject(_getValueFromOAuth('email'))
-  return (calendarId, cal)
-
 def buildDriveGAPIObject(user):
   userEmail = convertUIDtoEmailAddress(user)
   return (userEmail, buildGAPIServiceObject('drive', userEmail))
@@ -1365,7 +1347,7 @@ def showReport():
         else:
           row[name] = ''
       csvRows.append(row)
-    writeCSVfile(csvRows, titles, f'User Reports - {tryDate}', to_drive)
+    display.write_csv_file(csvRows, titles, f'User Reports - {tryDate}', to_drive)
   elif report == 'customer':
     while True:
       try:
@@ -1429,7 +1411,7 @@ def showReport():
       csvRows.append({'name': name, 'value': value})
     for app in auth_apps: # put apps at bottom
       csvRows.append(app)
-    writeCSVfile(csvRows, titles, f'Customer Report - {tryDate}', todrive=to_drive)
+    display.write_csv_file(csvRows, titles, f'Customer Report - {tryDate}', todrive=to_drive)
   else:
     page_message = gapi.got_total_items_msg('Activities', '...\n')
     activities = gapi.get_all_pages(rep.activities(), 'list', 'items',
@@ -1446,7 +1428,7 @@ def showReport():
       for activity in activities:
         events = activity['events']
         del activity['events']
-        activity_row = flatten_json(activity)
+        activity_row = utils.flatten_json(activity)
         purge_parameters = True
         for event in events:
           for item in event.get('parameters', []):
@@ -1479,14 +1461,14 @@ def showReport():
               purge_parameters = False
           if purge_parameters:
             event.pop('parameters', None)
-          row = flatten_json(event)
+          row = utils.flatten_json(event)
           row.update(activity_row)
           for item in row:
             if item not in titles:
               titles.append(item)
           csvRows.append(row)
-      sortCSVTitles(['name',], titles)
-      writeCSVfile(csvRows, titles, f'{report.capitalize()} Activity Report', to_drive)
+      display.sort_csv_titles(['name',], titles)
+      display.write_csv_file(csvRows, titles, f'{report.capitalize()} Activity Report', to_drive)
 
 def watchGmail(users):
   project = f'projects/{_getCurrentProjectID()}'
@@ -1615,7 +1597,7 @@ def printShowDelegates(users, csvFormat):
       if not csvFormat and not csvStyle and delegates['delegates']:
         print(f'Total {len(delegates["delegates"])}')
   if csvFormat:
-    writeCSVfile(csvRows, titles, 'Delegates', todrive)
+    display.write_csv_file(csvRows, titles, 'Delegates', todrive)
 
 def deleteDelegate(users):
   delegate = normalizeEmailAddressOrUID(sys.argv[5], noUid=True)
@@ -1935,7 +1917,7 @@ def doPrintDomains():
             titles.append(attr)
           aliasdomain_attributes[attr] = aliasdomain[attr]
         csvRows.append(aliasdomain_attributes)
-  writeCSVfile(csvRows, titles, 'Domains', todrive)
+  display.write_csv_file(csvRows, titles, 'Domains', todrive)
 
 def doPrintDomainAliases():
   cd = buildGAPIObject('directory')
@@ -1962,7 +1944,7 @@ def doPrintDomainAliases():
         titles.append(attr)
       domainAlias_attributes[attr] = domainAlias[attr]
     csvRows.append(domainAlias_attributes)
-  writeCSVfile(csvRows, titles, 'Domains', todrive)
+  display.write_csv_file(csvRows, titles, 'Domains', todrive)
 
 def doDelAdmin():
   cd = buildGAPIObject('directory')
@@ -2011,7 +1993,7 @@ def doPrintAdminRoles():
     for key, value in list(role.items()):
       role_attrib[key] = value
     csvRows.append(role_attrib)
-  writeCSVfile(csvRows, titles, 'Admin Roles', todrive)
+  display.write_csv_file(csvRows, titles, 'Admin Roles', todrive)
 
 def doPrintAdmins():
   cd = buildGAPIObject('directory')
@@ -2049,7 +2031,7 @@ def doPrintAdmins():
         admin_attrib['orgUnit'] = orgunit_from_orgunitid(value)
       admin_attrib[key] = value
     csvRows.append(admin_attrib)
-  writeCSVfile(csvRows, titles, 'Admins', todrive)
+  display.write_csv_file(csvRows, titles, 'Admins', todrive)
 
 def buildOrgUnitIdToNameMap():
   cd = buildGAPIObject('directory')
@@ -2229,7 +2211,7 @@ def doPrintDataTransfers():
       if title not in titles:
         titles.append(title)
     csvRows.append(a_transfer)
-  writeCSVfile(csvRows, titles, 'Data Transfers', todrive)
+  display.write_csv_file(csvRows, titles, 'Data Transfers', todrive)
 
 def doGetDataTransferInfo():
   dt = buildGAPIObject('datatransfer')
@@ -2310,10 +2292,10 @@ def doPrintShowGuardians(csvFormat):
     else:
       for guardian in guardians:
         guardian['studentEmail'] = studentId
-        addRowTitlesToCSVfile(flatten_json(guardian), csvRows, titles)
+        display.add_row_titles_to_csv_file(utils.flatten_json(guardian), csvRows, titles)
   if csvFormat:
     sys.stderr.write('\n')
-    writeCSVfile(csvRows, titles, itemName, todrive)
+    display.write_csv_file(csvRows, titles, itemName, todrive)
 
 def doInviteGuardian():
   croom = buildGAPIObject('classroom')
@@ -2492,7 +2474,7 @@ def doPrintCourses():
   def _saveParticipants(course, participants, role):
     jcount = len(participants)
     course[role] = jcount
-    addTitlesToCSVfile([role], titles)
+    display.add_titles_to_csv_file([role], titles)
     if countsOnly:
       return
     j = 0
@@ -2515,7 +2497,7 @@ def doPrintCourses():
         memberTitle = prefix+'name.fullName'
         course[memberTitle] = fullName
         memberTitles.append(memberTitle)
-      addTitlesToCSVfile(memberTitles, titles)
+      display.add_titles_to_csv_file(memberTitles, titles)
       j += 1
 
   croom = buildGAPIObject('classroom')
@@ -2587,7 +2569,7 @@ def doPrintCourses():
       course['ownerEmail'] = ownerEmails[ownerId]
     for field in skipFieldsList:
       course.pop(field, None)
-    addRowTitlesToCSVfile(flatten_json(course), csvRows, titles)
+    display.add_row_titles_to_csv_file(utils.flatten_json(course), csvRows, titles)
   if showAliases or showMembers:
     if showAliases:
       titles.append('Aliases')
@@ -2622,8 +2604,8 @@ def doPrintCourses():
                                        page_message=student_message,
                                        courseId=courseId, fields=studentsFields)
           _saveParticipants(course, results, 'students')
-  sortCSVTitles(['id', 'name'], titles)
-  writeCSVfile(csvRows, titles, 'Courses', todrive)
+  display.sort_csv_titles(['id', 'name'], titles)
+  display.write_csv_file(csvRows, titles, 'Courses', todrive)
 
 def doPrintCourseParticipants():
   croom = buildGAPIObject('classroom')
@@ -2679,14 +2661,14 @@ def doPrintCourseParticipants():
       page_message = gapi.got_total_items_msg(f'Teachers for course {courseId}{currentCount(i, count)}', '')
       teachers = gapi.get_all_pages(croom.courses().teachers(), 'list', 'teachers', page_message=page_message, courseId=courseId)
       for teacher in teachers:
-        addRowTitlesToCSVfile(flatten_json(teacher, flattened={'courseId': courseId, 'courseName': course['name'], 'userRole': 'TEACHER'}), csvRows, titles)
+        display.add_row_titles_to_csv_file(utils.flatten_json(teacher, flattened={'courseId': courseId, 'courseName': course['name'], 'userRole': 'TEACHER'}), csvRows, titles)
     if showMembers != 'teachers':
       page_message = gapi.got_total_items_msg(f'Students for course {courseId}{currentCount(i, count)}', '')
       students = gapi.get_all_pages(croom.courses().students(), 'list', 'students', page_message=page_message, courseId=courseId)
       for student in students:
-        addRowTitlesToCSVfile(flatten_json(student, flattened={'courseId': courseId, 'courseName': course['name'], 'userRole': 'STUDENT'}), csvRows, titles)
-  sortCSVTitles(['courseId', 'courseName', 'userRole', 'userId'], titles)
-  writeCSVfile(csvRows, titles, 'Course Participants', todrive)
+        display.add_row_titles_to_csv_file(utils.flatten_json(student, flattened={'courseId': courseId, 'courseName': course['name'], 'userRole': 'STUDENT'}), csvRows, titles)
+  display.sort_csv_titles(['courseId', 'courseName', 'userRole', 'userId'], titles)
+  display.write_csv_file(csvRows, titles, 'Course Participants', todrive)
 
 def doPrintPrintJobs():
   cp = buildGAPIObject('cloudprint')
@@ -2803,10 +2785,10 @@ def doPrintPrintJobs():
       job['createTime'] = utils.formatTimestampYMDHMS(job['createTime'])
       job['updateTime'] = utils.formatTimestampYMDHMS(job['updateTime'])
       job['tags'] = ' '.join(job['tags'])
-      addRowTitlesToCSVfile(flatten_json(job), csvRows, titles)
+      display.add_row_titles_to_csv_file(utils.flatten_json(job), csvRows, titles)
     if jobCount >= totalJobs:
       break
-  writeCSVfile(csvRows, titles, 'Print Jobs', todrive)
+  display.write_csv_file(csvRows, titles, 'Print Jobs', todrive)
 
 def doPrintPrinters():
   cp = buildGAPIObject('cloudprint')
@@ -2845,191 +2827,8 @@ def doPrintPrinters():
       printer['accessTime'] = utils.formatTimestampYMDHMS(printer['accessTime'])
       printer['updateTime'] = utils.formatTimestampYMDHMS(printer['updateTime'])
       printer['tags'] = ' '.join(printer['tags'])
-      addRowTitlesToCSVfile(flatten_json(printer), csvRows, titles)
-  writeCSVfile(csvRows, titles, 'Printers', todrive)
-
-def changeCalendarAttendees(users):
-  do_it = True
-  i = 5
-  allevents = False
-  start_date = end_date = None
-  while len(sys.argv) > i:
-    myarg = sys.argv[i].lower()
-    if myarg == 'csv':
-      csv_file = sys.argv[i+1]
-      i += 2
-    elif myarg == 'dryrun':
-      do_it = False
-      i += 1
-    elif myarg == 'start':
-      start_date = getTimeOrDeltaFromNow(sys.argv[i+1])
-      i += 2
-    elif myarg == 'end':
-      end_date = getTimeOrDeltaFromNow(sys.argv[i+1])
-      i += 2
-    elif myarg == 'allevents':
-      allevents = True
-      i += 1
-    else:
-      controlflow.invalid_argument_exit(sys.argv[i], "gam <users> update calattendees")
-  attendee_map = {}
-  f = fileutils.open_file(csv_file)
-  csvFile = csv.reader(f)
-  for row in csvFile:
-    attendee_map[row[0].lower()] = row[1].lower()
-  fileutils.close_file(f)
-  for user in users:
-    sys.stdout.write(f'Checking user {user}\n')
-    user, cal = buildCalendarGAPIObject(user)
-    if not cal:
-      continue
-    page_token = None
-    while True:
-      events_page = gapi.call(cal.events(), 'list', calendarId=user,
-                              pageToken=page_token, timeMin=start_date,
-                              timeMax=end_date, showDeleted=False,
-                              showHiddenInvitations=False)
-      print(f'Got {len(events_page.get("items", []))}')
-      for event in events_page.get('items', []):
-        if event['status'] == 'cancelled':
-          #print u' skipping cancelled event'
-          continue
-        try:
-          event_summary = event['summary']
-        except (KeyError, UnicodeEncodeError, UnicodeDecodeError):
-          event_summary = event['id']
-        try:
-          if not allevents and event['organizer']['email'].lower() != user:
-            #print(f' skipping not-my-event {event_summary}')
-            continue
-        except KeyError:
-          pass # no email for organizer
-        needs_update = False
-        try:
-          for attendee in event['attendees']:
-            try:
-              if attendee['email'].lower() in attendee_map:
-                old_email = attendee['email'].lower()
-                new_email = attendee_map[attendee['email'].lower()]
-                print(f' SWITCHING attendee {old_email} to {new_email} for {event_summary}')
-                event['attendees'].remove(attendee)
-                event['attendees'].append({'email': new_email})
-                needs_update = True
-            except KeyError: # no email for that attendee
-              pass
-        except KeyError:
-          continue # no attendees
-        if needs_update:
-          body = {}
-          body['attendees'] = event['attendees']
-          print(f'UPDATING {event_summary}')
-          if do_it:
-            gapi.call(cal.events(), 'patch', calendarId=user, eventId=event['id'], sendNotifications=False, body=body)
-          else:
-            print(' not pulling the trigger.')
-        #else:
-        #  print(f' no update needed for {event_summary}')
-      try:
-        page_token = events_page['nextPageToken']
-      except KeyError:
-        break
-
-def deleteCalendar(users):
-  calendarId = normalizeCalendarId(sys.argv[5])
-  for user in users:
-    user, cal = buildCalendarGAPIObject(user)
-    if not cal:
-      continue
-    gapi.call(cal.calendarList(), 'delete', soft_errors=True, calendarId=calendarId)
-
-CALENDAR_REMINDER_MAX_MINUTES = 40320
-
-CALENDAR_MIN_COLOR_INDEX = 1
-CALENDAR_MAX_COLOR_INDEX = 24
-
-CALENDAR_EVENT_MIN_COLOR_INDEX = 1
-CALENDAR_EVENT_MAX_COLOR_INDEX = 11
-
-def getCalendarAttributes(i, body, function):
-  colorRgbFormat = False
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower().replace('_', '')
-    if myarg == 'selected':
-      body['selected'] = getBoolean(sys.argv[i+1], myarg)
-      i += 2
-    elif myarg == 'hidden':
-      body['hidden'] = getBoolean(sys.argv[i+1], myarg)
-      i += 2
-    elif myarg == 'summary':
-      body['summaryOverride'] = sys.argv[i+1]
-      i += 2
-    elif myarg == 'colorindex':
-      body['colorId'] = getInteger(sys.argv[i+1], myarg, minVal=CALENDAR_MIN_COLOR_INDEX, maxVal=CALENDAR_MAX_COLOR_INDEX)
-      i += 2
-    elif myarg == 'backgroundcolor':
-      body['backgroundColor'] = getColor(sys.argv[i+1])
-      colorRgbFormat = True
-      i += 2
-    elif myarg == 'foregroundcolor':
-      body['foregroundColor'] = getColor(sys.argv[i+1])
-      colorRgbFormat = True
-      i += 2
-    elif myarg == 'reminder':
-      body.setdefault('defaultReminders', [])
-      method = sys.argv[i+1].lower()
-      if method not in CLEAR_NONE_ARGUMENT:
-        if method not in CALENDAR_REMINDER_METHODS:
-          controlflow.expected_argument_exit("Method", ", ".join(CALENDAR_REMINDER_METHODS+CLEAR_NONE_ARGUMENT), method)
-        minutes = getInteger(sys.argv[i+2], myarg, minVal=0, maxVal=CALENDAR_REMINDER_MAX_MINUTES)
-        body['defaultReminders'].append({'method': method, 'minutes': minutes})
-        i += 3
-      else:
-        i += 2
-    elif myarg == 'notification':
-      body.setdefault('notificationSettings', {'notifications': []})
-      method = sys.argv[i+1].lower()
-      if method not in CLEAR_NONE_ARGUMENT:
-        if method not in CALENDAR_NOTIFICATION_METHODS:
-          controlflow.expected_argument_exit("Method", ", ".join(CALENDAR_NOTIFICATION_METHODS+CLEAR_NONE_ARGUMENT), method)
-        eventType = sys.argv[i+2].lower()
-        if eventType not in CALENDAR_NOTIFICATION_TYPES_MAP:
-          controlflow.expected_argument_exit("Event", ", ".join(CALENDAR_NOTIFICATION_TYPES_MAP), eventType)
-        body['notificationSettings']['notifications'].append({'method': method, 'type': CALENDAR_NOTIFICATION_TYPES_MAP[eventType]})
-        i += 3
-      else:
-        i += 2
-    else:
-      controlflow.invalid_argument_exit(sys.argv[i], f"gam {function} calendar")
-  return colorRgbFormat
-
-def addCalendar(users):
-  calendarId = normalizeCalendarId(sys.argv[5])
-  body = {'id': calendarId, 'selected': True, 'hidden': False}
-  colorRgbFormat = getCalendarAttributes(6, body, 'add')
-  i = 0
-  count = len(users)
-  for user in users:
-    i += 1
-    user, cal = buildCalendarGAPIObject(user)
-    if not cal:
-      continue
-    print(f'Subscribing {user} to calendar {calendarId}{currentCount(i, count)}')
-    gapi.call(cal.calendarList(), 'insert', soft_errors=True, body=body, colorRgbFormat=colorRgbFormat)
-
-def updateCalendar(users):
-  calendarId = normalizeCalendarId(sys.argv[5], checkPrimary=True)
-  body = {}
-  colorRgbFormat = getCalendarAttributes(6, body, 'update')
-  i = 0
-  count = len(users)
-  for user in users:
-    i += 1
-    user, cal = buildCalendarGAPIObject(user)
-    if not cal:
-      continue
-    print(f"Updating {user}'s subscription to calendar {calendarId}{currentCount(i, count)}")
-    calId = calendarId if calendarId != 'primary' else user
-    gapi.call(cal.calendarList(), 'patch', soft_errors=True, calendarId=calId, body=body, colorRgbFormat=colorRgbFormat)
+      display.add_row_titles_to_csv_file(utils.flatten_json(printer), csvRows, titles)
+  display.write_csv_file(csvRows, titles, 'Printers', todrive)
 
 def doPrinterShowACL():
   cp = buildGAPIObject('cloudprint')
@@ -3417,421 +3216,6 @@ def checkCloudPrintResult(result):
   if not result['success']:
     controlflow.system_error_exit(result['errorCode'], f'{result["errorCode"]}: {result["message"]}')
 
-def formatACLScope(rule):
-  if rule['scope']['type'] != 'default':
-    return f'(Scope: {rule["scope"]["type"]}:{rule["scope"]["value"]})'
-  return f'(Scope: {rule["scope"]["type"]})'
-
-def formatACLRule(rule):
-  if rule['scope']['type'] != 'default':
-    return f'(Scope: {rule["scope"]["type"]}:{rule["scope"]["value"]}, Role: {rule["role"]})'
-  return f'(Scope: {rule["scope"]["type"]}, Role: {rule["role"]})'
-
-def doCalendarPrintShowACLs(csvFormat):
-  calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
-  if not cal:
-    return
-  toDrive = False
-  i = 4
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower().replace('_', '')
-    if csvFormat and myarg == 'todrive':
-      toDrive = True
-      i += 1
-    else:
-      controlflow.invalid_argument_exit(sys.argv[i], f"gam calendar <email> {['showacl', 'printacl'][csvFormat]}")
-  acls = gapi.get_all_pages(cal.acl(), 'list', 'items', calendarId=calendarId)
-  i = 0
-  if csvFormat:
-    titles = []
-    rows = []
-  else:
-    count = len(acls)
-  for rule in acls:
-    i += 1
-    if csvFormat:
-      row = flatten_json(rule, None)
-      for key in row:
-        if key not in titles:
-          titles.append(key)
-      rows.append(row)
-    else:
-      print(f'Calendar: {calendarId}, ACL: {formatACLRule(rule)}{currentCount(i, count)}')
-  if csvFormat:
-    writeCSVfile(rows, titles, f'{calendarId} Calendar ACLs', toDrive)
-
-def _getCalendarACLScope(i, body):
-  body['scope'] = {}
-  myarg = sys.argv[i].lower()
-  body['scope']['type'] = myarg
-  i += 1
-  if myarg in ['user', 'group']:
-    body['scope']['value'] = normalizeEmailAddressOrUID(sys.argv[i], noUid=True)
-    i += 1
-  elif myarg == 'domain':
-    if i < len(sys.argv) and sys.argv[i].lower().replace('_', '') != 'sendnotifications':
-      body['scope']['value'] = sys.argv[i].lower()
-      i += 1
-    else:
-      body['scope']['value'] = GC_Values[GC_DOMAIN]
-  elif myarg != 'default':
-    body['scope']['type'] = 'user'
-    body['scope']['value'] = normalizeEmailAddressOrUID(myarg, noUid=True)
-  return i
-
-CALENDAR_ACL_ROLES_MAP = {
-  'editor': 'writer',
-  'freebusy': 'freeBusyReader',
-  'freebusyreader': 'freeBusyReader',
-  'owner': 'owner',
-  'read': 'reader',
-  'reader': 'reader',
-  'writer': 'writer',
-  'none': 'none',
-  }
-
-def doCalendarAddACL(function):
-  calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
-  if not cal:
-    return
-  myarg = sys.argv[4].lower().replace('_', '')
-  if myarg not in CALENDAR_ACL_ROLES_MAP:
-    controlflow.expected_argument_exit("Role", ", ".join(CALENDAR_ACL_ROLES_MAP), myarg)
-  body = {'role': CALENDAR_ACL_ROLES_MAP[myarg]}
-  i = _getCalendarACLScope(5, body)
-  sendNotifications = True
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower().replace('_', '')
-    if myarg == 'sendnotifications':
-      sendNotifications = getBoolean(sys.argv[i+1], myarg)
-      i += 2
-    else:
-      controlflow.invalid_argument_exit(sys.argv[i], f"gam calendar <email> {function.lower()}")
-  print(f'Calendar: {calendarId}, {function} ACL: {formatACLRule(body)}')
-  gapi.call(cal.acl(), 'insert', calendarId=calendarId, body=body, sendNotifications=sendNotifications)
-
-def doCalendarDelACL():
-  calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
-  if not cal:
-    return
-  if sys.argv[4].lower() == 'id':
-    ruleId = sys.argv[5]
-    print(f'Removing rights for {ruleId} to {calendarId}')
-    gapi.call(cal.acl(), 'delete', calendarId=calendarId, ruleId=ruleId)
-  else:
-    body = {'role': 'none'}
-    _getCalendarACLScope(5, body)
-    print(f'Calendar: {calendarId}, Delete ACL: {formatACLScope(body)}')
-    gapi.call(cal.acl(), 'insert', calendarId=calendarId, body=body, sendNotifications=False)
-
-def doCalendarWipeData():
-  calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
-  if not cal:
-    return
-  gapi.call(cal.calendars(), 'clear', calendarId=calendarId)
-
-def doCalendarPrintEvents():
-  calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
-  if not cal:
-    return
-  q = showDeleted = showHiddenInvitations = timeMin = timeMax = timeZone = updatedMin = None
-  toDrive = False
-  titles = []
-  csvRows = []
-  i = 4
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower().replace('_', '')
-    if myarg == 'query':
-      q = sys.argv[i+1]
-      i += 2
-    elif myarg == 'includedeleted':
-      showDeleted = True
-      i += 1
-    elif myarg == 'includehidden':
-      showHiddenInvitations = True
-      i += 1
-    elif myarg == 'after':
-      timeMin = getTimeOrDeltaFromNow(sys.argv[i+1])
-      i += 2
-    elif myarg == 'before':
-      timeMax = getTimeOrDeltaFromNow(sys.argv[i+1])
-      i += 2
-    elif myarg == 'timezone':
-      timeZone = sys.argv[i+1]
-      i += 2
-    elif myarg == 'updated':
-      updatedMin = getTimeOrDeltaFromNow(sys.argv[i+1])
-      i += 2
-    elif myarg == 'todrive':
-      toDrive = True
-      i += 1
-    else:
-      controlflow.invalid_argument_exit(sys.argv[i], "gam calendar <email> printevents")
-  page_message = gapi.got_total_items_msg(f'Events for {calendarId}', '')
-  results = gapi.get_all_pages(cal.events(), 'list', 'items', page_message=page_message,
-                               calendarId=calendarId, q=q, showDeleted=showDeleted,
-                               showHiddenInvitations=showHiddenInvitations,
-                               timeMin=timeMin, timeMax=timeMax, timeZone=timeZone, updatedMin=updatedMin)
-  for result in results:
-    row = {'calendarId': calendarId}
-    addRowTitlesToCSVfile(flatten_json(result, flattened=row), csvRows, titles)
-  sortCSVTitles(['calendarId', 'id', 'summary', 'status'], titles)
-  writeCSVfile(csvRows, titles, 'Calendar Events', toDrive)
-
-def getSendUpdates(myarg, i, cal):
-  if myarg == 'notifyattendees':
-    sendUpdates = 'all'
-    i += 1
-  elif myarg == 'sendnotifications':
-    sendUpdates = 'all' if getBoolean(sys.argv[i+1], myarg) else 'none'
-    i += 2
-  else: #'sendupdates':
-    sendUpdatesMap = {}
-    for val in cal._rootDesc['resources']['events']['methods']['delete']['parameters']['sendUpdates']['enum']:
-      sendUpdatesMap[val.lower()] = val
-    sendUpdates = sendUpdatesMap.get(sys.argv[i+1].lower(), False)
-    if not sendUpdates:
-      controlflow.expected_argument_exit("sendupdates", ", ".join(sendUpdatesMap), sys.argv[i+1])
-    i += 2
-  return (sendUpdates, i)
-
-def doCalendarMoveOrDeleteEvent(moveOrDelete):
-  calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
-  if not cal:
-    return
-  sendUpdates = None
-  doit = False
-  kwargs = {}
-  i = 4
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower().replace('_', '')
-    if myarg in ['notifyattendees', 'sendnotifications', 'sendupdates']:
-      sendUpdates, i = getSendUpdates(myarg, i, cal)
-    elif myarg in ['id', 'eventid']:
-      eventId = sys.argv[i+1]
-      i += 2
-    elif myarg in ['query', 'eventquery']:
-      controlflow.system_error_exit(2, f'query is no longer supported for {moveOrDelete}event. Use "gam calendar <email> printevents query <query> | gam csv - gam {moveOrDelete}event id ~id" instead.')
-    elif myarg == 'doit':
-      doit = True
-      i += 1
-    elif moveOrDelete == 'move' and myarg == 'destination':
-      kwargs['destination'] = sys.argv[i+1]
-      i += 2
-    else:
-      controlflow.invalid_argument_exit(sys.argv[i], f"gam calendar <email> {moveOrDelete}event")
-  if doit:
-    print(f' going to {moveOrDelete} eventId {eventId}')
-    gapi.call(cal.events(), moveOrDelete, calendarId=calendarId, eventId=eventId, sendUpdates=sendUpdates, **kwargs)
-  else:
-    print(f' would {moveOrDelete} eventId {eventId}. Add doit to command to actually {moveOrDelete} event')
-
-def doCalendarInfoEvent():
-  calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
-  if not cal:
-    return
-  eventId = sys.argv[4]
-  result = gapi.call(cal.events(), 'get', calendarId=calendarId, eventId=eventId)
-  display.print_json(result)
-
-def doCalendarAddOrUpdateEvent(action):
-  calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
-  if not cal:
-    return
-  # only way for non-Google calendars to get updates is via email
-  timeZone = None
-  kwargs = {}
-  body = {}
-  if action == 'add':
-    i = 4
-    func = 'insert'
-  else:
-    eventId = sys.argv[4]
-    kwargs = {'eventId': eventId}
-    i = 5
-    func = 'patch'
-    requires_full_update = ['attendee', 'optionalattendee', 'removeattendee',
-                            'replacedescription']
-    for arg in sys.argv[i:]:
-      if arg.replace('_', '').lower() in requires_full_update:
-        func = 'update'
-        body = gapi.call(cal.events(), 'get', calendarId=calendarId, eventId=eventId)
-        break
-  sendUpdates, body = getCalendarEventAttributes(i, cal, body, action)
-  result = gapi.call(cal.events(), func, conferenceDataVersion=1,
-          supportsAttachments=True, calendarId=calendarId,
-          sendUpdates=sendUpdates, body=body, fields='id', **kwargs)
-  print(f'Event {result["id"]} {action} finished')
-
-def getCalendarEventAttributes(i, cal, body, action):
-  # Default to external only so non-Google
-  # calendars are notified of changes
-  sendUpdates = 'externalOnly'
-  action = 'update' if body else 'add'
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower().replace('_', '')
-    if myarg in ['notifyattendees', 'sendnotifications', 'sendupdates']:
-      sendUpdates, i = getSendUpdates(myarg, i, cal)
-    elif myarg == 'attendee':
-      body.setdefault('attendees', [])
-      body['attendees'].append({'email': sys.argv[i+1]})
-      i += 2
-    elif myarg == 'removeattendee' and action == 'update':
-      remove_email = sys.argv[i+1].lower()
-      body['attendees'] = [attendee for attendee in body['attendees'] \
-              if not (attendee['email'].lower() == remove_email)]
-      i += 2
-    elif myarg == 'optionalattendee':
-      body.setdefault('attendees', [])
-      body['attendees'].append({'email': sys.argv[i+1], 'optional': True})
-      i += 2
-    elif myarg == 'anyonecanaddself':
-      body['anyoneCanAddSelf'] = True
-      i += 1
-    elif myarg == 'description':
-      body['description'] = sys.argv[i+1].replace('\\n', '\n')
-      i += 2
-    elif myarg == 'replacedescription':
-      search = sys.argv[i+1]
-      replace = sys.argv[i+2]
-      body['description'] = re.sub(search, replace, body['description'])
-      i += 3
-    elif myarg == 'start':
-      if sys.argv[i+1].lower() == 'allday':
-        body['start'] = {'date': getYYYYMMDD(sys.argv[i+2])}
-        i += 3
-      else:
-        body['start'] = {'dateTime': getTimeOrDeltaFromNow(sys.argv[i+1])}
-        i += 2
-    elif myarg == 'end':
-      if sys.argv[i+1].lower() == 'allday':
-        body['end'] = {'date': getYYYYMMDD(sys.argv[i+2])}
-        i += 3
-      else:
-        body['end'] = {'dateTime': getTimeOrDeltaFromNow(sys.argv[i+1])}
-        i += 2
-    elif myarg == 'guestscantinviteothers':
-      body['guestsCanInviteOthers'] = False
-      i += 1
-    elif myarg == 'guestscaninviteothers':
-      body['guestsCanInviteTohters'] = getBoolean(sys.argv[i+1], 'guestscaninviteothers')
-      i += 2
-    elif myarg == 'guestscantseeothers':
-      body['guestsCanSeeOtherGuests'] = False
-      i += 1
-    elif myarg == 'guestscanseeothers':
-      body['guestsCanSeeOtherGuests'] = getBoolean(sys.argv[i+1], 'guestscanseeothers')
-      i += 2
-    elif myarg == 'guestscanmodify':
-      body['guestsCanModify'] = getBoolean(sys.argv[i+1], 'guestscanmodify')
-      i += 2
-    elif myarg == 'id':
-      if action == 'update':
-        controlflow.invalid_argument_exit('id', 'gam calendar <calendar> updateevent')
-      body['id'] = sys.argv[i+1]
-      i += 2
-    elif myarg == 'summary':
-      body['summary'] = sys.argv[i+1]
-      i += 2
-    elif myarg == 'location':
-      body['location'] = sys.argv[i+1]
-      i += 2
-    elif myarg == 'available':
-      body['transparency'] = 'transparent'
-      i += 1
-    elif myarg == 'transparency':
-      validTransparency = ['opaque', 'transparent']
-      if sys.argv[i+1].lower() in validTransparency:
-        body['transparency'] = sys.argv[i+1].lower()
-      else:
-        controlflow.expected_argument_exit('transparency', ", ".join(validTransparency), sys.argv[i+1])
-      i += 2
-    elif myarg == 'visibility':
-      validVisibility = ['default', 'public', 'private']
-      if sys.argv[i+1].lower() in validVisibility:
-        body['visibility'] = sys.argv[i+1].lower()
-      else:
-        controlflow.expected_argument_exit("visibility", ", ".join(validVisibility), sys.argv[i+1])
-      i += 2
-    elif myarg == 'tentative':
-      body['status'] = 'tentative'
-      i += 1
-    elif myarg == 'status':
-      validStatus = ['confirmed', 'tentative', 'cancelled']
-      if sys.argv[i+1].lower() in validStatus:
-        body['status'] = sys.argv[i+1].lower()
-      else:
-        controlflow.expected_argument_exit('visibility', ', '.join(validStatus), sys.argv[i+1])
-      i += 2
-    elif myarg == 'source':
-      body['source'] = {'title': sys.argv[i+1], 'url': sys.argv[i+2]}
-      i += 3
-    elif myarg == 'noreminders':
-      body['reminders'] = {'useDefault': False}
-      i += 1
-    elif myarg == 'reminder':
-      body.setdefault('reminders', {'overrides': [], 'useDefault': False})
-      body['reminders']['overrides'].append({'minutes': getInteger(sys.argv[i+1], myarg, minVal=0, maxVal=CALENDAR_REMINDER_MAX_MINUTES),
-                                             'method': sys.argv[i+2]})
-      i += 3
-    elif myarg == 'recurrence':
-      body.setdefault('recurrence', [])
-      body['recurrence'].append(sys.argv[i+1])
-      i += 2
-    elif myarg == 'timezone':
-      timeZone = sys.argv[i+1]
-      i += 2
-    elif myarg == 'privateproperty':
-      if 'extendedProperties' not in body:
-        body['extendedProperties'] = {'private': {}, 'shared': {}}
-      body['extendedProperties']['private'][sys.argv[i+1]] = sys.argv[i+2]
-      i += 3
-    elif myarg == 'sharedproperty':
-      if 'extendedProperties' not in body:
-        body['extendedProperties'] = {'private': {}, 'shared': {}}
-      body['extendedProperties']['shared'][sys.argv[i+1]] = sys.argv[i+2]
-      i += 3
-    elif myarg == 'colorindex':
-      body['colorId'] = getInteger(sys.argv[i+1], myarg, CALENDAR_EVENT_MIN_COLOR_INDEX, CALENDAR_EVENT_MAX_COLOR_INDEX)
-      i += 2
-    elif myarg == 'hangoutsmeet':
-      body['conferenceData'] = {'createRequest': {'requestId': f'{str(uuid.uuid4())}'}}
-      i += 1
-    else:
-      controlflow.invalid_argument_exit(sys.argv[i], f'gam calendar <email> {action}event')
-  if ('recurrence' in body) and (('start' in body) or ('end' in body)):
-    if not timeZone:
-      timeZone = gapi.call(cal.calendars(), 'get', calendarId=calendarId, fields='timeZone')['timeZone']
-    if 'start' in body:
-      body['start']['timeZone'] = timeZone
-    if 'end' in body:
-      body['end']['timeZone'] = timeZone
-  return (sendUpdates, body)
-
-def doCalendarModifySettings():
-  calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
-  if not cal:
-    return
-  body = {}
-  i = 4
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower().replace('_', '')
-    if myarg == 'description':
-      body['description'] = sys.argv[i+1]
-      i += 2
-    elif myarg == 'location':
-      body['location'] = sys.argv[i+1]
-      i += 2
-    elif myarg == 'summary':
-      body['summary'] = sys.argv[i+1]
-      i += 2
-    elif myarg == 'timezone':
-      body['timeZone'] = sys.argv[i+1]
-      i += 2
-    else:
-      controlflow.invalid_argument_exit(sys.argv[i], "gam calendar <email> modify")
-  gapi.call(cal.calendars(), 'patch', calendarId=calendarId, body=body)
-
 def doProfile(users):
   cd = buildGAPIObject('directory')
   myarg = sys.argv[4].lower()
@@ -3937,97 +3321,6 @@ def deletePhoto(users):
     print(f'Deleting photo for {user}{currentCount(i, count)}')
     gapi.call(cd.users().photos(), 'delete', userKey=user)
 
-def _showCalendar(userCalendar, j, jcount):
-  print(f'  Calendar: {userCalendar["id"]}{currentCount(j, jcount)}')
-  print(f'    Summary: {userCalendar.get("summaryOverride", userCalendar["summary"])}')
-  print(f'    Description: {userCalendar.get("description", "")}')
-  print(f'    Access Level: {userCalendar["accessRole"]}')
-  print(f'    Timezone: {userCalendar["timeZone"]}')
-  print(f'    Location: {userCalendar.get("location", "")}')
-  print(f'    Hidden: {userCalendar.get("hidden", "False")}')
-  print(f'    Selected: {userCalendar.get("selected", "False")}')
-  print(f'    Color ID: {userCalendar["colorId"]}, Background Color: {userCalendar["backgroundColor"]}, Foreground Color: {userCalendar["foregroundColor"]}')
-  print(f'    Default Reminders:')
-  for reminder in userCalendar.get('defaultReminders', []):
-    print(f'      Method: {reminder["method"]}, Minutes: {reminder["minutes"]}')
-  print('    Notifications:')
-  if 'notificationSettings' in userCalendar:
-    for notification in userCalendar['notificationSettings'].get('notifications', []):
-      print(f'      Method: {notification["method"]}, Type: {notification["type"]}')
-
-def infoCalendar(users):
-  calendarId = normalizeCalendarId(sys.argv[5], checkPrimary=True)
-  i = 0
-  count = len(users)
-  for user in users:
-    i += 1
-    user, cal = buildCalendarGAPIObject(user)
-    if not cal:
-      continue
-    result = gapi.call(cal.calendarList(), 'get',
-                       soft_errors=True,
-                       calendarId=calendarId)
-    if result:
-      print(f'User: {user}, Calendar:{currentCount(i, count)}')
-      _showCalendar(result, 1, 1)
-
-def printShowCalendars(users, csvFormat):
-  if csvFormat:
-    todrive = False
-    titles = []
-    csvRows = []
-  i = 5
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower()
-    if csvFormat and myarg == 'todrive':
-      todrive = True
-      i += 1
-    else:
-      controlflow.invalid_argument_exit(myarg, f"gam <users> {['show', 'print'][csvFormat]} calendars")
-  i = 0
-  count = len(users)
-  for user in users:
-    i += 1
-    user, cal = buildCalendarGAPIObject(user)
-    if not cal:
-      continue
-    result = gapi.get_all_pages(cal.calendarList(), 'list', 'items', soft_errors=True)
-    jcount = len(result)
-    if not csvFormat:
-      print(f'User: {user}, Calendars:{currentCount(i, count)}')
-      if jcount == 0:
-        continue
-      j = 0
-      for userCalendar in result:
-        j += 1
-        _showCalendar(userCalendar, j, jcount)
-    else:
-      if jcount == 0:
-        continue
-      for userCalendar in result:
-        row = {'primaryEmail': user}
-        addRowTitlesToCSVfile(flatten_json(userCalendar, flattened=row), csvRows, titles)
-  if csvFormat:
-    sortCSVTitles(['primaryEmail', 'id'], titles)
-    writeCSVfile(csvRows, titles, 'Calendars', todrive)
-
-def showCalSettings(users):
-  i = 0
-  count = len(users)
-  for user in users:
-    i += 1
-    user, cal = buildCalendarGAPIObject(user)
-    if not cal:
-      continue
-    feed = gapi.get_all_pages(cal.settings(), 'list', 'items', soft_errors=True)
-    if feed:
-      print(f'User: {user}, Calendar Settings:{currentCount(i, count)}')
-      settings = {}
-      for setting in feed:
-        settings[setting['id']] = setting['value']
-      for attr, value in sorted(settings.items()):
-        print(f'  {attr}: {value}')
-
 def printDriveSettings(users):
   todrive = False
   i = 5
@@ -4066,7 +3359,7 @@ def printDriveSettings(users):
       if setting not in titles:
         titles.append(setting)
     csvRows.append(row)
-  writeCSVfile(csvRows, titles, 'User Drive Settings', todrive)
+  display.write_csv_file(csvRows, titles, 'User Drive Settings', todrive)
 
 def getTeamDriveThemes(users):
   for user in users:
@@ -4111,8 +3404,8 @@ def printDriveActivity(users):
                               drive_ancestorId=drive_ancestorId, groupingStrategy='none',
                               drive_fileId=drive_fileId)
     for item in feed:
-      addRowTitlesToCSVfile(flatten_json(item['combinedEvent']), csvRows, titles)
-  writeCSVfile(csvRows, titles, 'Drive Activity', todrive)
+      display.add_row_titles_to_csv_file(utils.flatten_json(item['combinedEvent']), csvRows, titles)
+  display.write_csv_file(csvRows, titles, 'Drive Activity', todrive)
 
 def printPermission(permission):
   if 'name' in permission:
@@ -4353,10 +3646,10 @@ def printDriveFileList(users):
       allfields = True
       i += 1
     elif myarg in DRIVEFILE_FIELDS_CHOICES_MAP:
-      addFieldToCSVfile(myarg, {myarg: [DRIVEFILE_FIELDS_CHOICES_MAP[myarg]]}, fieldsList, fieldsTitles, titles)
+      display.add_field_to_csv_file(myarg, {myarg: [DRIVEFILE_FIELDS_CHOICES_MAP[myarg]]}, fieldsList, fieldsTitles, titles)
       i += 1
     elif myarg in DRIVEFILE_LABEL_CHOICES_MAP:
-      addFieldToCSVfile(myarg, {myarg: [DRIVEFILE_LABEL_CHOICES_MAP[myarg]]}, labelsList, fieldsTitles, titles)
+      display.add_field_to_csv_file(myarg, {myarg: [DRIVEFILE_LABEL_CHOICES_MAP[myarg]]}, labelsList, fieldsTitles, titles)
       i += 1
     else:
       controlflow.invalid_argument_exit(myarg, "gam <users> show filelist")
@@ -4371,7 +3664,7 @@ def printDriveFileList(users):
     fields += ')'
   elif not allfields:
     for field in ['name', 'alternatelink']:
-      addFieldToCSVfile(field, {field: [DRIVEFILE_FIELDS_CHOICES_MAP[field]]}, fieldsList, fieldsTitles, titles)
+      display.add_field_to_csv_file(field, {field: [DRIVEFILE_FIELDS_CHOICES_MAP[field]]}, fieldsList, fieldsTitles, titles)
     fields = f'nextPageToken,items({",".join(set(fieldsList))})'
   else:
     fields = '*'
@@ -4432,8 +3725,8 @@ def printDriveFileList(users):
             a_file[x_attrib] = f_file[attrib][dict_attrib]
       csvRows.append(a_file)
   if allfields:
-    sortCSVTitles(['Owner', 'id', 'title'], titles)
-  writeCSVfile(csvRows, titles, f'{sys.argv[1]} {sys.argv[2]} Drive Files', todrive)
+    display.sort_csv_titles(['Owner', 'id', 'title'], titles)
+  display.write_csv_file(csvRows, titles, f'{sys.argv[1]} {sys.argv[2]} Drive Files', todrive)
 
 def doDriveSearch(drive, query=None, quiet=False):
   if not quiet:
@@ -4797,7 +4090,7 @@ def createDriveFile(users):
         created_type = ['Folder', 'File'][result['mimeType'] != MIMETYPE_GA_FOLDER]
         print(f'Successfully created Drive {created_type} {titleInfo}')
   if csv_output:
-    writeCSVfile(csv_rows, csv_titles, 'Files', to_drive)
+    display.write_csv_file(csv_rows, csv_titles, 'Files', to_drive)
 
 HTTP_ERROR_PATTERN = re.compile(r'^.*returned "(.*)">$')
 
@@ -5030,39 +4323,6 @@ def showDriveFileRevisions(users):
     feed = gapi.call(drive.revisions(), 'list', fileId=fileId)
     if feed:
       display.print_json(feed)
-
-def transferSecCals(users):
-  target_user = sys.argv[5]
-  remove_source_user = sendNotifications = True
-  i = 6
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower().replace('_', '')
-    if myarg == 'keepuser':
-      remove_source_user = False
-      i += 1
-    elif myarg == 'sendnotifications':
-      sendNotifications = getBoolean(sys.argv[i+1], myarg)
-      i += 2
-    else:
-      controlflow.invalid_argument_exit(sys.argv[i], "gam <users> transfer seccals")
-  if remove_source_user:
-    target_user, target_cal = buildCalendarGAPIObject(target_user)
-    if not target_cal:
-      return
-  for user in users:
-    user, source_cal = buildCalendarGAPIObject(user)
-    if not source_cal:
-      continue
-    calendars = gapi.get_all_pages(source_cal.calendarList(), 'list', 'items', soft_errors=True,
-                                   minAccessRole='owner', showHidden=True, fields='items(id),nextPageToken')
-    for calendar in calendars:
-      calendarId = calendar['id']
-      if calendarId.find('@group.calendar.google.com') != -1:
-        gapi.call(source_cal.acl(), 'insert', calendarId=calendarId,
-                  body={'role': 'owner', 'scope': {'type': 'user', 'value': target_user}}, sendNotifications=sendNotifications)
-        if remove_source_user:
-          gapi.call(target_cal.acl(), 'insert', calendarId=calendarId,
-                    body={'role': 'none', 'scope': {'type': 'user', 'value': user}}, sendNotifications=sendNotifications)
 
 def transferDriveFiles(users):
   target_user = sys.argv[5]
@@ -5664,11 +4924,11 @@ def printShowSmime(users, csvFormat):
         smimes[j]['expiration'] = utils.formatTimestampYMDHMS(smimes[j]['expiration'])
       if csvFormat:
         for smime in smimes:
-          addRowTitlesToCSVfile(flatten_json(smime, flattened={'User': user}), csvRows, titles)
+          display.add_row_titles_to_csv_file(utils.flatten_json(smime, flattened={'User': user}), csvRows, titles)
       else:
         display.print_json(smimes)
   if csvFormat:
-    writeCSVfile(csvRows, titles, 'S/MIME', todrive)
+    display.write_csv_file(csvRows, titles, 'S/MIME', todrive)
 
 def printShowSendAs(users, csvFormat):
   if csvFormat:
@@ -5725,7 +4985,7 @@ def printShowSendAs(users, csvFormat):
                 row[title] = sendas[item][field]
         csvRows.append(row)
   if csvFormat:
-    writeCSVfile(csvRows, titles, 'SendAs', todrive)
+    display.write_csv_file(csvRows, titles, 'SendAs', todrive)
 
 def infoSendAs(users):
   emailAddress = normalizeEmailAddressOrUID(sys.argv[5], noUid=True)
@@ -6083,8 +5343,8 @@ def showGmailProfile(users):
         csvRows.append(results)
     except gapi.errors.GapiServiceNotAvailableError:
       entityServiceNotApplicableWarning('User', user, i, count)
-  sortCSVTitles(['emailAddress',], titles)
-  writeCSVfile(csvRows, titles, list_type='Gmail Profiles', todrive=todrive)
+  display.sort_csv_titles(['emailAddress',], titles)
+  display.write_csv_file(csvRows, titles, list_type='Gmail Profiles', todrive=todrive)
 
 def updateLabels(users):
   label_name = sys.argv[5]
@@ -6422,8 +5682,8 @@ def printShowFilters(users, csvFormat):
             titles.append(item)
         csvRows.append(row)
   if csvFormat:
-    sortCSVTitles(['User', 'id'], titles)
-    writeCSVfile(csvRows, titles, 'Filters', todrive)
+    display.sort_csv_titles(['User', 'id'], titles)
+    display.write_csv_file(csvRows, titles, 'Filters', todrive)
 
 def infoFilters(users):
   filterId = sys.argv[5]
@@ -6535,7 +5795,7 @@ def printShowForward(users, csvFormat):
       else:
         _printForward(user, result)
   if csvFormat:
-    writeCSVfile(csvRows, titles, 'Forward', todrive)
+    display.write_csv_file(csvRows, titles, 'Forward', todrive)
 
 def addForwardingAddresses(users):
   emailAddress = normalizeEmailAddressOrUID(sys.argv[5], noUid=True)
@@ -6605,7 +5865,7 @@ def printShowForwardingAddresses(users, csvFormat):
         row = {'User': user, 'forwardingEmail': forward['forwardingEmail'], 'verificationStatus': forward['verificationStatus']}
         csvRows.append(row)
   if csvFormat:
-    writeCSVfile(csvRows, titles, 'Forwarding Addresses', todrive)
+    display.write_csv_file(csvRows, titles, 'Forwarding Addresses', todrive)
 
 def infoForwardingAddresses(users):
   emailAddress = normalizeEmailAddressOrUID(sys.argv[5], noUid=True)
@@ -6894,10 +6154,10 @@ def doPrintShowUserSchemas(csvFormat):
       _showSchema(schema)
     else:
       row = {'fields.Count': len(schema['fields'])}
-      addRowTitlesToCSVfile(flatten_json(schema, flattened=row), csvRows, titles)
+      display.add_row_titles_to_csv_file(utils.flatten_json(schema, flattened=row), csvRows, titles)
   if csvFormat:
-    sortCSVTitles(['schemaId', 'schemaName', 'fields.Count'], titles)
-    writeCSVfile(csvRows, titles, 'User Schemas', todrive)
+    display.sort_csv_titles(['schemaId', 'schemaName', 'fields.Count'], titles)
+    display.write_csv_file(csvRows, titles, 'User Schemas', todrive)
 
 def doGetUserSchema():
   cd = buildGAPIObject('directory')
@@ -8163,8 +7423,8 @@ def doPrintShowProjects(csvFormat):
         print(f'      id: {project["parent"]["id"]}')
   else:
     for project in projects:
-      addRowTitlesToCSVfile(flatten_json(project, flattened={'User': login_hint}), csvRows, titles)
-    writeCSVfile(csvRows, titles, 'Projects', todrive)
+      display.add_row_titles_to_csv_file(utils.flatten_json(project, flattened={'User': login_hint}), csvRows, titles)
+    display.write_csv_file(csvRows, titles, 'Projects', todrive)
 
 def doGetTeamDriveInfo(users):
   teamDriveId = sys.argv[5]
@@ -8297,7 +7557,7 @@ def printShowTeamDrives(users, csvFormat):
       tds.append({'id': td['id'], 'name': td['name']})
   if csvFormat:
     titles = ['name', 'id']
-    writeCSVfile(tds, titles, 'Team Drives', todrive)
+    display.write_csv_file(tds, titles, 'Team Drives', todrive)
   else:
     for td in tds:
       print(f'Name: {td["name"]}  ID: {td["id"]}')
@@ -11055,7 +10315,7 @@ def printShowTokens(i, entityType, users, csvFormat):
     except (gapi.errors.GapiNotFoundError, gapi.errors.GapiUserNotFoundError, gapi.errors.GapiResourceNotFoundError):
       pass
   if csvFormat:
-    writeCSVfile(csvRows, titles, 'OAuth Tokens', todrive)
+    display.write_csv_file(csvRows, titles, 'OAuth Tokens', todrive)
 
 def doDeprovUser(users):
   cd = buildGAPIObject('directory')
@@ -11221,208 +10481,6 @@ def send_email(subject, body, recipient=None, sender=None, user=None, method='se
       method = 'import_'
   gapi.call(resource, method, userId=userId, body=api_body, **kwargs)
 
-def addFieldToFieldsList(fieldName, fieldsChoiceMap, fieldsList):
-  fields = fieldsChoiceMap[fieldName.lower()]
-  if isinstance(fields, list):
-    fieldsList.extend(fields)
-  else:
-    fieldsList.append(fields)
-
-# Write a CSV file
-def addTitlesToCSVfile(addTitles, titles):
-  for title in addTitles:
-    if title not in titles:
-      titles.append(title)
-
-def addRowTitlesToCSVfile(row, csvRows, titles):
-  csvRows.append(row)
-  for title in row:
-    if title not in titles:
-      titles.append(title)
-
-# fieldName is command line argument
-# fieldNameMap maps fieldName to API field names; CSV file header will be API field name
-#ARGUMENT_TO_PROPERTY_MAP = {
-#  u'admincreated': [u'adminCreated'],
-#  u'aliases': [u'aliases', u'nonEditableAliases'],
-#  }
-# fieldsList is the list of API fields
-# fieldsTitles maps the API field name to the CSV file header
-def addFieldToCSVfile(fieldName, fieldNameMap, fieldsList, fieldsTitles, titles):
-  for ftList in fieldNameMap[fieldName]:
-    if ftList not in fieldsTitles:
-      fieldsList.append(ftList)
-      fieldsTitles[ftList] = ftList
-      addTitlesToCSVfile([ftList], titles)
-
-# fieldName is command line argument
-# fieldNameTitleMap maps fieldName to API field name and CSV file header
-#ARGUMENT_TO_PROPERTY_TITLE_MAP = {
-#  u'admincreated': [u'adminCreated', u'Admin_Created'],
-#  u'aliases': [u'aliases', u'Aliases', u'nonEditableAliases', u'NonEditableAliases'],
-#  }
-# fieldsList is the list of API fields
-# fieldsTitles maps the API field name to the CSV file header
-def addFieldTitleToCSVfile(fieldName, fieldNameTitleMap, fieldsList, fieldsTitles, titles):
-  ftList = fieldNameTitleMap[fieldName]
-  for i in range(0, len(ftList), 2):
-    if ftList[i] not in fieldsTitles:
-      fieldsList.append(ftList[i])
-      fieldsTitles[ftList[i]] = ftList[i+1]
-      addTitlesToCSVfile([ftList[i+1]], titles)
-
-def sortCSVTitles(firstTitle, titles):
-  restoreTitles = []
-  for title in firstTitle:
-    if title in titles:
-      titles.remove(title)
-      restoreTitles.append(title)
-  titles.sort()
-  for title in restoreTitles[::-1]:
-    titles.insert(0, title)
-
-def QuotedArgumentList(items):
-  return ' '.join([item if item and (item.find(' ') == -1) and (item.find(',') == -1) else '"'+item+'"' for item in items])
-
-def writeCSVfile(csvRows, titles, list_type, todrive):
-  def rowDateTimeFilterMatch(dateMode, rowDate, op, filterDate):
-    if not rowDate or not isinstance(rowDate, str):
-      return False
-    try:
-      rowTime = dateutil.parser.parse(rowDate, ignoretz=True)
-      if dateMode:
-        rowDate = datetime.datetime(rowTime.year, rowTime.month, rowTime.day).isoformat()+'Z'
-    except ValueError:
-      rowDate = NEVER_TIME
-    if op == '<':
-      return rowDate < filterDate
-    if op == '<=':
-      return rowDate <= filterDate
-    if op == '>':
-      return rowDate > filterDate
-    if op == '>=':
-      return rowDate >= filterDate
-    if op == '!=':
-      return rowDate != filterDate
-    return rowDate == filterDate
-
-  def rowCountFilterMatch(rowCount, op, filterCount):
-    if isinstance(rowCount, str):
-      if not rowCount.isdigit():
-        return False
-      rowCount = int(rowCount)
-    elif not isinstance(rowCount, int):
-      return False
-    if op == '<':
-      return rowCount < filterCount
-    if op == '<=':
-      return rowCount <= filterCount
-    if op == '>':
-      return rowCount > filterCount
-    if op == '>=':
-      return rowCount >= filterCount
-    if op == '!=':
-      return rowCount != filterCount
-    return rowCount == filterCount
-
-  def rowBooleanFilterMatch(rowBoolean, filterBoolean):
-    if not isinstance(rowBoolean, bool):
-      return False
-    return rowBoolean == filterBoolean
-
-  def headerFilterMatch(title):
-    for filterStr in GC_Values[GC_CSV_HEADER_FILTER]:
-      if filterStr.match(title):
-        return True
-    return False
-
-  if GC_Values[GC_CSV_ROW_FILTER]:
-    for column, filterVal in iter(GC_Values[GC_CSV_ROW_FILTER].items()):
-      if column not in titles:
-        sys.stderr.write(f'WARNING: Row filter column "{column}" is not in output columns\n')
-        continue
-      if filterVal[0] == 'regex':
-        csvRows = [row for row in csvRows if filterVal[1].search(str(row.get(column, '')))]
-      elif filterVal[0] == 'notregex':
-        csvRows = [row for row in csvRows if not filterVal[1].search(str(row.get(column, '')))]
-      elif filterVal[0] in ['date', 'time']:
-        csvRows = [row for row in csvRows if rowDateTimeFilterMatch(filterVal[0] == 'date', row.get(column, ''), filterVal[1], filterVal[2])]
-      elif filterVal[0] == 'count':
-        csvRows = [row for row in csvRows if rowCountFilterMatch(row.get(column, 0), filterVal[1], filterVal[2])]
-      else: #boolean
-        csvRows = [row for row in csvRows if rowBooleanFilterMatch(row.get(column, False), filterVal[1])]
-  if GC_Values[GC_CSV_HEADER_FILTER]:
-    titles = [t for t in titles if headerFilterMatch(t)]
-    if not titles:
-      controlflow.system_error_exit(3, 'No columns selected with GAM_CSV_HEADER_FILTER\n')
-      return
-  csv.register_dialect('nixstdout', lineterminator='\n')
-  if todrive:
-    write_to = io.StringIO()
-  else:
-    write_to = sys.stdout
-  writer = csv.DictWriter(write_to, fieldnames=titles, dialect='nixstdout', extrasaction='ignore', quoting=csv.QUOTE_MINIMAL)
-  try:
-    writer.writerow(dict((item, item) for item in writer.fieldnames))
-    writer.writerows(csvRows)
-  except IOError as e:
-    controlflow.system_error_exit(6, e)
-  if todrive:
-    admin_email = _getValueFromOAuth('email')
-    _, drive = buildDrive3GAPIObject(admin_email)
-    if not drive:
-      print(f'''\nGAM is not authorized to create Drive files. Please run:
-
-gam user {admin_email} check serviceaccount
-
-and follow recommend steps to authorize GAM for Drive access.''')
-      sys.exit(5)
-    result = gapi.call(drive.about(), 'get', fields='maxImportSizes')
-    columns = len(titles)
-    rows = len(csvRows)
-    cell_count = rows * columns
-    data_size = len(write_to.getvalue())
-    max_sheet_bytes = int(result['maxImportSizes'][MIMETYPE_GA_SPREADSHEET])
-    if cell_count > MAX_GOOGLE_SHEET_CELLS or data_size > max_sheet_bytes:
-      print(f'{WARNING_PREFIX}{MESSAGE_RESULTS_TOO_LARGE_FOR_GOOGLE_SPREADSHEET}')
-      mimeType = 'text/csv'
-    else:
-      mimeType = MIMETYPE_GA_SPREADSHEET
-    body = {'description': QuotedArgumentList(sys.argv),
-            'name': f'{GC_Values[GC_DOMAIN]} - {list_type}',
-            'mimeType': mimeType}
-    result = gapi.call(drive.files(), 'create', fields='webViewLink',
-                       body=body,
-                       media_body=googleapiclient.http.MediaInMemoryUpload(write_to.getvalue().encode(),
-                                                                           mimetype='text/csv'))
-    file_url = result['webViewLink']
-    if GC_Values[GC_NO_BROWSER]:
-      msg_txt = f'Drive file uploaded to:\n {file_url}'
-      msg_subj = f'{GC_Values[GC_DOMAIN]} - {list_type}'
-      send_email(msg_subj, msg_txt)
-      print(msg_txt)
-    else:
-      webbrowser.open(file_url)
-
-def flatten_json(structure, key='', path='', flattened=None, listLimit=None):
-  if flattened is None:
-    flattened = {}
-  if not isinstance(structure, (dict, list)):
-    flattened[((path + '.') if path else '') + key] = structure
-  elif isinstance(structure, list):
-    for i, item in enumerate(structure):
-      if listLimit and (i >= listLimit):
-        break
-      flatten_json(item, f'{i}', '.'.join([item for item in [path, key] if item]), flattened=flattened, listLimit=listLimit)
-  else:
-    for new_key, value in list(structure.items()):
-      if new_key in ['kind', 'etag', '@type']:
-        continue
-      if value == NEVER_TIME:
-        value = 'Never'
-      flatten_json(value, new_key, '.'.join([item for item in [path, key] if item]), flattened=flattened, listLimit=listLimit)
-  return flattened
-
 USER_ARGUMENT_TO_PROPERTY_MAP = {
   'address': ['addresses',],
   'addresses': ['addresses',],
@@ -11505,7 +10563,7 @@ def doPrintUsers():
   fieldsTitles = {}
   titles = []
   csvRows = []
-  addFieldToCSVfile('primaryemail', USER_ARGUMENT_TO_PROPERTY_MAP, fieldsList, fieldsTitles, titles)
+  display.add_field_to_csv_file('primaryemail', USER_ARGUMENT_TO_PROPERTY_MAP, fieldsList, fieldsTitles, titles)
   customer = GC_Values[GC_CUSTOMER_ID]
   domain = None
   queries = [None]
@@ -11574,7 +10632,7 @@ def doPrintUsers():
     elif myarg in USER_ARGUMENT_TO_PROPERTY_MAP:
       if not fieldsList:
         fieldsList = ['primaryEmail',]
-      addFieldToCSVfile(myarg, USER_ARGUMENT_TO_PROPERTY_MAP, fieldsList, fieldsTitles, titles)
+      display.add_field_to_csv_file(myarg, USER_ARGUMENT_TO_PROPERTY_MAP, fieldsList, fieldsTitles, titles)
       i += 1
     elif myarg == 'fields':
       if not fieldsList:
@@ -11582,7 +10640,7 @@ def doPrintUsers():
       fieldNameList = sys.argv[i+1]
       for field in fieldNameList.lower().replace(',', ' ').split():
         if field in USER_ARGUMENT_TO_PROPERTY_MAP:
-          addFieldToCSVfile(field, USER_ARGUMENT_TO_PROPERTY_MAP, fieldsList, fieldsTitles, titles)
+          display.add_field_to_csv_file(field, USER_ARGUMENT_TO_PROPERTY_MAP, fieldsList, fieldsTitles, titles)
         else:
           controlflow.invalid_argument_exit(field, "gam print users fields")
       i += 2
@@ -11613,9 +10671,9 @@ def doPrintUsers():
         user_email = user['primaryEmail']
         if user_email.find('@') != -1:
           user['primaryEmailLocal'], user['primaryEmailDomain'] = splitEmailAddress(user_email)
-      addRowTitlesToCSVfile(flatten_json(user), csvRows, titles)
+      display.add_row_titles_to_csv_file(utils.flatten_json(user), csvRows, titles)
   if sortHeaders:
-    sortCSVTitles(['primaryEmail',], titles)
+    display.sort_csv_titles(['primaryEmail',], titles)
   if getGroupFeed:
     i = 0
     count = len(csvRows)
@@ -11634,7 +10692,7 @@ def doPrintUsers():
         u_licenses = licenses.get(user['primaryEmail'].lower())
         if u_licenses:
           user['Licenses'] = licenseDelimiter.join([_skuIdToDisplayName(skuId) for skuId in u_licenses])
-  writeCSVfile(csvRows, titles, 'Users', todrive)
+  display.write_csv_file(csvRows, titles, 'Users', todrive)
 
 def doPrintShowAlerts():
   _, ac = buildAlertCenterGAPIObject(_getValueFromOAuth('email'))
@@ -11642,12 +10700,12 @@ def doPrintShowAlerts():
   titles = []
   csv_rows = []
   for alert in alerts:
-    aj = flatten_json(alert)
+    aj = utils.flatten_json(alert)
     for field in aj:
       if field not in titles:
         titles.append(field)
     csv_rows.append(aj)
-  writeCSVfile(csv_rows, titles, 'Alerts', False)
+  display.write_csv_file(csv_rows, titles, 'Alerts', False)
 
 def doPrintShowAlertFeedback():
   _, ac = buildAlertCenterGAPIObject(_getValueFromOAuth('email'))
@@ -11756,7 +10814,7 @@ def doPrintGroups():
   fieldsTitles = {}
   titles = []
   csvRows = []
-  addFieldTitleToCSVfile('email', GROUP_ARGUMENT_TO_PROPERTY_TITLE_MAP, cdfieldsList, fieldsTitles, titles)
+  display.add_field_title_to_csv_file('email', GROUP_ARGUMENT_TO_PROPERTY_TITLE_MAP, cdfieldsList, fieldsTitles, titles)
   roles = []
   getSettings = sortHeaders = False
   while i < len(sys.argv):
@@ -11783,7 +10841,7 @@ def doPrintGroups():
       aliasDelimiter = memberDelimiter = sys.argv[i+1]
       i += 2
     elif myarg in GROUP_ARGUMENT_TO_PROPERTY_TITLE_MAP:
-      addFieldTitleToCSVfile(myarg, GROUP_ARGUMENT_TO_PROPERTY_TITLE_MAP, cdfieldsList, fieldsTitles, titles)
+      display.add_field_title_to_csv_file(myarg, GROUP_ARGUMENT_TO_PROPERTY_TITLE_MAP, cdfieldsList, fieldsTitles, titles)
       i += 1
     elif myarg == 'settings':
       getSettings = True
@@ -11794,7 +10852,7 @@ def doPrintGroups():
       gsfieldsList = []
       fieldsTitles = {}
       for field in GROUP_ARGUMENT_TO_PROPERTY_TITLE_MAP:
-        addFieldTitleToCSVfile(field, GROUP_ARGUMENT_TO_PROPERTY_TITLE_MAP, cdfieldsList, fieldsTitles, titles)
+        display.add_field_title_to_csv_file(field, GROUP_ARGUMENT_TO_PROPERTY_TITLE_MAP, cdfieldsList, fieldsTitles, titles)
       i += 1
     elif myarg == 'sortheaders':
       sortHeaders = True
@@ -11803,12 +10861,12 @@ def doPrintGroups():
       fieldNameList = sys.argv[i+1]
       for field in fieldNameList.lower().replace(',', ' ').split():
         if field in GROUP_ARGUMENT_TO_PROPERTY_TITLE_MAP:
-          addFieldTitleToCSVfile(field, GROUP_ARGUMENT_TO_PROPERTY_TITLE_MAP, cdfieldsList, fieldsTitles, titles)
+          display.add_field_title_to_csv_file(field, GROUP_ARGUMENT_TO_PROPERTY_TITLE_MAP, cdfieldsList, fieldsTitles, titles)
         elif field in GROUP_ATTRIBUTES_ARGUMENT_TO_PROPERTY_MAP:
-          addFieldToCSVfile(field, {field: [GROUP_ATTRIBUTES_ARGUMENT_TO_PROPERTY_MAP[field]]}, gsfieldsList, fieldsTitles, titles)
+          display.add_field_to_csv_file(field, {field: [GROUP_ATTRIBUTES_ARGUMENT_TO_PROPERTY_MAP[field]]}, gsfieldsList, fieldsTitles, titles)
         elif field == 'collaborative':
           for attrName in COLLABORATIVE_INBOX_ATTRIBUTES:
-            addFieldToCSVfile(attrName, {attrName: [attrName]}, gsfieldsList, fieldsTitles, titles)
+            display.add_field_to_csv_file(attrName, {attrName: [attrName]}, gsfieldsList, fieldsTitles, titles)
         else:
           controlflow.invalid_argument_exit(field, "gam print groups fields")
       i += 2
@@ -11843,17 +10901,17 @@ def doPrintGroups():
   roles = ','.join(sorted(set(roles)))
   if roles:
     if members:
-      addTitlesToCSVfile(['MembersCount',], titles)
+      display.add_titles_to_csv_file(['MembersCount',], titles)
       if not membersCountOnly:
-        addTitlesToCSVfile(['Members',], titles)
+        display.add_titles_to_csv_file(['Members',], titles)
     if managers:
-      addTitlesToCSVfile(['ManagersCount',], titles)
+      display.add_titles_to_csv_file(['ManagersCount',], titles)
       if not managersCountOnly:
-        addTitlesToCSVfile(['Managers',], titles)
+        display.add_titles_to_csv_file(['Managers',], titles)
     if owners:
-      addTitlesToCSVfile(['OwnersCount',], titles)
+      display.add_titles_to_csv_file(['OwnersCount',], titles)
       if not ownersCountOnly:
-        addTitlesToCSVfile(['Owners',], titles)
+        display.add_titles_to_csv_file(['Owners',], titles)
   printGettingAllItems('Groups', None)
   page_message = gapi.got_total_items_first_last_msg('Groups')
   entityList = gapi.get_all_pages(cd.groups(), 'list', 'groups',
@@ -11947,8 +11005,8 @@ def doPrintGroups():
         sys.stderr.write(f" Settings unavailable for group {groupEmail}{currentCountNL(i, count)}")
     csvRows.append(group)
   if sortHeaders:
-    sortCSVTitles(['Email',], titles)
-  writeCSVfile(csvRows, titles, 'Groups', todrive)
+    display.sort_csv_titles(['Email',], titles)
+  display.write_csv_file(csvRows, titles, 'Groups', todrive)
 
 def doPrintOrgs():
   print_order = ['orgUnitPath', 'orgUnitId', 'name', 'description',
@@ -12025,7 +11083,7 @@ def doPrintOrgs():
   titles = sorted(titles, key=print_order.index)
   # sort results similar to how they list in admin console
   csvRows.sort(key=lambda x: x['orgUnitPath'].lower(), reverse=False)
-  writeCSVfile(csvRows, titles, 'Orgs', todrive)
+  display.write_csv_file(csvRows, titles, 'Orgs', todrive)
 
 def doPrintAliases():
   cd = buildGAPIObject('directory')
@@ -12083,7 +11141,7 @@ def doPrintAliases():
         csvRows.append({'Alias': alias, 'Target': group['email'], 'TargetType': 'Group'})
       for alias in group.get('nonEditableAliases', []):
         csvRows.append({'NonEditableAlias': alias, 'Target': group['email'], 'TargetType': 'Group'})
-  writeCSVfile(csvRows, titles, 'Aliases', todrive)
+  display.write_csv_file(csvRows, titles, 'Aliases', todrive)
 
 def doPrintGroupMembers():
   cd = buildGAPIObject('directory')
@@ -12197,7 +11255,7 @@ def doPrintGroupMembers():
           memberName = 'Unknown'
         member['name'] = memberName
       csvRows.append(member)
-  writeCSVfile(csvRows, titles, 'Group Members', todrive)
+  display.write_csv_file(csvRows, titles, 'Group Members', todrive)
 
 def doPrintVaultMatters():
   v = buildGAPIObject('vault')
@@ -12221,9 +11279,9 @@ def doPrintVaultMatters():
   page_message = gapi.got_total_items_msg('Vault Matters', '...\n')
   matters = gapi.get_all_pages(v.matters(), 'list', 'matters', page_message=page_message, view=view)
   for matter in matters:
-    addRowTitlesToCSVfile(flatten_json(matter), csvRows, titles)
-  sortCSVTitles(initialTitles, titles)
-  writeCSVfile(csvRows, titles, 'Vault Matters', todrive)
+    display.add_row_titles_to_csv_file(utils.flatten_json(matter), csvRows, titles)
+  display.sort_csv_titles(initialTitles, titles)
+  display.write_csv_file(csvRows, titles, 'Vault Matters', todrive)
 
 def doPrintVaultExports():
   v = buildGAPIObject('vault')
@@ -12258,9 +11316,9 @@ def doPrintVaultExports():
     sys.stderr.write(f'Retrieving exports for matter {matterId}\n')
     exports = gapi.get_all_pages(v.matters().exports(), 'list', 'exports', matterId=matterId)
     for export in exports:
-      addRowTitlesToCSVfile(flatten_json(export, flattened={'matterId': matterId}), csvRows, titles)
-  sortCSVTitles(initialTitles, titles)
-  writeCSVfile(csvRows, titles, 'Vault Exports', todrive)
+      display.add_row_titles_to_csv_file(utils.flatten_json(export, flattened={'matterId': matterId}), csvRows, titles)
+  display.sort_csv_titles(initialTitles, titles)
+  display.write_csv_file(csvRows, titles, 'Vault Exports', todrive)
 
 def doPrintVaultHolds():
   v = buildGAPIObject('vault')
@@ -12295,9 +11353,9 @@ def doPrintVaultHolds():
     sys.stderr.write(f'Retrieving holds for matter {matterId}\n')
     holds = gapi.get_all_pages(v.matters().holds(), 'list', 'holds', matterId=matterId)
     for hold in holds:
-      addRowTitlesToCSVfile(flatten_json(hold, flattened={'matterId': matterId}), csvRows, titles)
-  sortCSVTitles(initialTitles, titles)
-  writeCSVfile(csvRows, titles, 'Vault Holds', todrive)
+      display.add_row_titles_to_csv_file(utils.flatten_json(hold, flattened={'matterId': matterId}), csvRows, titles)
+  display.sort_csv_titles(initialTitles, titles)
+  display.write_csv_file(csvRows, titles, 'Vault Holds', todrive)
 
 def doPrintMobileDevices():
   cd = buildGAPIObject('directory')
@@ -12398,8 +11456,8 @@ def doPrintMobileDevices():
           else:
             row[attrib] = mobile[attrib]
       csvRows.append(row)
-  sortCSVTitles(['resourceId', 'deviceId', 'serialNumber', 'name', 'email', 'status'], titles)
-  writeCSVfile(csvRows, titles, 'Mobile', todrive)
+  display.sort_csv_titles(['resourceId', 'deviceId', 'serialNumber', 'name', 'email', 'status'], titles)
+  display.write_csv_file(csvRows, titles, 'Mobile', todrive)
 
 def doPrintCrosActivity():
   cd = buildGAPIObject('directory')
@@ -12458,13 +11516,13 @@ def doPrintCrosActivity():
     selectActiveTimeRanges = selectRecentUsers = True
   if selectRecentUsers:
     fieldsList.append('recentUsers')
-    addTitlesToCSVfile(['recentUsers.email',], titles)
+    display.add_titles_to_csv_file(['recentUsers.email',], titles)
   if selectActiveTimeRanges:
     fieldsList.append('activeTimeRanges')
-    addTitlesToCSVfile(['activeTimeRanges.date', 'activeTimeRanges.duration', 'activeTimeRanges.minutes'], titles)
+    display.add_titles_to_csv_file(['activeTimeRanges.date', 'activeTimeRanges.duration', 'activeTimeRanges.minutes'], titles)
   if selectDeviceFiles:
     fieldsList.append('deviceFiles')
-    addTitlesToCSVfile(['deviceFiles.type', 'deviceFiles.createTime'], titles)
+    display.add_titles_to_csv_file(['deviceFiles.type', 'deviceFiles.createTime'], titles)
   fields = f'nextPageToken,chromeosdevices({",".join(fieldsList)})'
   for query in queries:
     printGettingAllItems('CrOS Devices', query)
@@ -12499,7 +11557,7 @@ def doPrintCrosActivity():
           new_row['deviceFiles.type'] = deviceFile['type']
           new_row['deviceFiles.createTime'] = deviceFile['createTime']
           csvRows.append(new_row)
-  writeCSVfile(csvRows, titles, 'CrOS Activity', todrive)
+  display.write_csv_file(csvRows, titles, 'CrOS Activity', todrive)
 
 def _checkTPMVulnerability(cros):
   if 'tpmVersionInfo' in cros and 'firmwareVersion' in cros['tpmVersionInfo']:
@@ -12546,7 +11604,7 @@ def doPrintCrosDevices():
   fieldsTitles = {}
   titles = []
   csvRows = []
-  addFieldToCSVfile('deviceid', CROS_ARGUMENT_TO_PROPERTY_MAP, fieldsList, fieldsTitles, titles)
+  display.add_field_to_csv_file('deviceid', CROS_ARGUMENT_TO_PROPERTY_MAP, fieldsList, fieldsTitles, titles)
   projection = orderBy = sortOrder = orgUnitPath = None
   queries = [None]
   guess_aue = noLists = sortHeaders = False
@@ -12621,7 +11679,7 @@ def doPrintCrosDevices():
       _getSelectedLists(myarg)
       i += 1
     elif myarg in CROS_ARGUMENT_TO_PROPERTY_MAP:
-      addFieldToFieldsList(myarg, CROS_ARGUMENT_TO_PROPERTY_MAP, fieldsList)
+      display.add_field_to_fields_list(myarg, CROS_ARGUMENT_TO_PROPERTY_MAP, fieldsList)
       i += 1
     elif myarg == 'fields':
       fieldNameList = sys.argv[i+1]
@@ -12629,7 +11687,7 @@ def doPrintCrosDevices():
         if field in CROS_LISTS_ARGUMENTS:
           _getSelectedLists(field)
         elif field in CROS_ARGUMENT_TO_PROPERTY_MAP:
-          addFieldToFieldsList(field, CROS_ARGUMENT_TO_PROPERTY_MAP, fieldsList)
+          display.add_field_to_fields_list(field, CROS_ARGUMENT_TO_PROPERTY_MAP, fieldsList)
         else:
           controlflow.invalid_argument_exit(field, "gam print cros fields")
       i += 2
@@ -12639,7 +11697,7 @@ def doPrintCrosDevices():
     noLists = False
     projection = 'FULL'
     for selectList in selectedLists:
-      addFieldToFieldsList(selectList, CROS_ARGUMENT_TO_PROPERTY_MAP, fieldsList)
+      display.add_field_to_fields_list(selectList, CROS_ARGUMENT_TO_PROPERTY_MAP, fieldsList)
   if fieldsList:
     fieldsList.append('deviceId')
     if guess_aue:
@@ -12666,7 +11724,7 @@ def doPrintCrosDevices():
         for cpuStatusReport in cros.get('cpuStatusReports', []):
           for tempInfo in cpuStatusReport.get('cpuTemperatureInfo', []):
             tempInfo['label'] = tempInfo['label'].strip()
-        addRowTitlesToCSVfile(flatten_json(cros, listLimit=listLimit), csvRows, titles)
+        display.add_row_titles_to_csv_file(utils.flatten_json(cros, listLimit=listLimit), csvRows, titles)
       continue
     for cros in all_cros:
       if 'notes' in cros:
@@ -12686,7 +11744,7 @@ def doPrintCrosDevices():
       systemRamFreeReports = _filterCreateReportTime(cros.get('systemRamFreeReports', []) if selectedLists.get('systemRamFreeReports') else [], 'reportTime', startDate, endDate)
       if noLists or (not activeTimeRanges and not recentUsers and not deviceFiles and
                      not cpuStatusReports and not diskVolumeReports and not systemRamFreeReports):
-        addRowTitlesToCSVfile(row, csvRows, titles)
+        display.add_row_titles_to_csv_file(row, csvRows, titles)
         continue
       lenATR = len(activeTimeRanges)
       lenRU = len(recentUsers)
@@ -12723,10 +11781,10 @@ def doPrintCrosDevices():
         if i < lenSRFR:
           new_row['systemRamFreeReports.reportTime'] = systemRamFreeReports[i]['reportTime']
           new_row['systenRamFreeReports.systemRamFreeInfo'] = ','.join([str(x) for x in systemRamFreeReports[i]['systemRamFreeInfo']])
-        addRowTitlesToCSVfile(new_row, csvRows, titles)
+        display.add_row_titles_to_csv_file(new_row, csvRows, titles)
   if sortHeaders:
-    sortCSVTitles(['deviceId',], titles)
-  writeCSVfile(csvRows, titles, 'CrOS', todrive)
+    display.sort_csv_titles(['deviceId',], titles)
+  display.write_csv_file(csvRows, titles, 'CrOS', todrive)
 
 def doPrintLicenses(returnFields=None, skus=None, countsOnly=False, returnCounts=False):
   lic = buildGAPIObject('licensing')
@@ -12810,7 +11868,7 @@ def doPrintLicenses(returnFields=None, skus=None, countsOnly=False, returnCounts
     else:
       for u_license in licenseCounts:
         csvRows.append({'productId': u_license[1], 'licenses': u_license[3]})
-    writeCSVfile(csvRows, titles, 'Licenses', todrive)
+    display.write_csv_file(csvRows, titles, 'Licenses', todrive)
     return
   if returnFields:
     if returnFields == 'userId':
@@ -12833,7 +11891,7 @@ def doPrintLicenses(returnFields=None, skus=None, countsOnly=False, returnCounts
     skuId = u_license.get('skuId', '')
     csvRows.append({'userId': userId, 'productId': u_license.get('productId', ''),
                     'skuId': _skuIdToDisplayName(skuId)})
-  writeCSVfile(csvRows, titles, 'Licenses', todrive)
+  display.write_csv_file(csvRows, titles, 'Licenses', todrive)
 
 def doShowLicenses():
   licenseCounts = doPrintLicenses(countsOnly=True, returnCounts=True)
@@ -12902,13 +11960,13 @@ def doPrintFeatures():
     feature.pop('etags', None)
     feature.pop('etag', None)
     feature.pop('kind', None)
-    feature = flatten_json(feature)
+    feature = utils.flatten_json(feature)
     for item in feature:
       if item not in titles:
         titles.append(item)
     csvRows.append(feature)
-  sortCSVTitles('name', titles)
-  writeCSVfile(csvRows, titles, 'Features', to_drive)
+  display.sort_csv_titles('name', titles)
+  display.write_csv_file(csvRows, titles, 'Features', to_drive)
 
 def doPrintBuildings():
   to_drive = False
@@ -12953,13 +12011,13 @@ def doPrintBuildings():
       building['buildingId'] = f'id:{building["buildingId"]}'
     if 'floorNames' in building:
       building['floorNames'] = ','.join(building['floorNames'])
-    building = flatten_json(building)
+    building = utils.flatten_json(building)
     for item in building:
       if item not in titles:
         titles.append(item)
     csvRows.append(building)
-  sortCSVTitles('buildingId', titles)
-  writeCSVfile(csvRows, titles, 'Buildings', to_drive)
+  display.sort_csv_titles('buildingId', titles)
+  display.write_csv_file(csvRows, titles, 'Buildings', to_drive)
 
 def doPrintResourceCalendars():
   cd = buildGAPIObject('directory')
@@ -12983,19 +12041,19 @@ def doPrintResourceCalendars():
       fieldsTitles = {}
       titles = []
       for field in RESCAL_ALLFIELDS:
-        addFieldToCSVfile(field, RESCAL_ARGUMENT_TO_PROPERTY_MAP, fieldsList, fieldsTitles, titles)
+        display.add_field_to_csv_file(field, RESCAL_ARGUMENT_TO_PROPERTY_MAP, fieldsList, fieldsTitles, titles)
       i += 1
     elif myarg in RESCAL_ARGUMENT_TO_PROPERTY_MAP:
-      addFieldToCSVfile(myarg, RESCAL_ARGUMENT_TO_PROPERTY_MAP, fieldsList, fieldsTitles, titles)
+      display.add_field_to_csv_file(myarg, RESCAL_ARGUMENT_TO_PROPERTY_MAP, fieldsList, fieldsTitles, titles)
       i += 1
     else:
       controlflow.invalid_argument_exit(sys.argv[i], "gam print resources")
   if not fieldsList:
     for field in RESCAL_DFLTFIELDS:
-      addFieldToCSVfile(field, RESCAL_ARGUMENT_TO_PROPERTY_MAP, fieldsList, fieldsTitles, titles)
+      display.add_field_to_csv_file(field, RESCAL_ARGUMENT_TO_PROPERTY_MAP, fieldsList, fieldsTitles, titles)
   fields = f'nextPageToken,items({",".join(set(fieldsList))})'
   if 'buildingId' in fieldsList:
-    addFieldToCSVfile('buildingName', {'buildingName': ['buildingName',]}, fieldsList, fieldsTitles, titles)
+    display.add_field_to_csv_file('buildingName', {'buildingName': ['buildingName',]}, fieldsList, fieldsTitles, titles)
   printGettingAllItems('Resource Calendars', None)
   page_message = gapi.got_total_items_first_last_msg('Resource Calendars')
   resources = gapi.get_all_pages(cd.resources().calendars(), 'list', 'items',
@@ -13012,8 +12070,8 @@ def doPrintResourceCalendars():
     for field in fieldsList:
       resUnit[fieldsTitles[field]] = resource.get(field, '')
     csvRows.append(resUnit)
-  sortCSVTitles(['resourceId', 'resourceName', 'resourceEmail'], titles)
-  writeCSVfile(csvRows, titles, 'Resources', todrive)
+  display.sort_csv_titles(['resourceId', 'resourceName', 'resourceEmail'], titles)
+  display.write_csv_file(csvRows, titles, 'Resources', todrive)
 
 def shlexSplitList(entity, dataDelimiter=' ,'):
   lexer = shlex.shlex(entity, posix=True)
@@ -14445,31 +13503,31 @@ def ProcessGAMCommand(args):
     elif command == 'calendar':
       argument = sys.argv[3].lower()
       if argument == 'showacl':
-        doCalendarPrintShowACLs(False)
+        gapi.calendar.printShowACLs(False)
       elif argument == 'printacl':
-        doCalendarPrintShowACLs(True)
+        gapi.calendar.printShowACLs(True)
       elif argument == 'add':
-        doCalendarAddACL('Add')
+        gapi.calendar.addACL('Add')
       elif argument in ['del', 'delete']:
-        doCalendarDelACL()
+        gapi.calendar.delACL()
       elif argument == 'update':
-        doCalendarAddACL('Update')
+        gapi.calendar.addACL('Update')
       elif argument == 'wipe':
-        doCalendarWipeData()
+        gapi.calendar.wipeData()
       elif argument == 'addevent':
-        doCalendarAddOrUpdateEvent('add')
+        gapi.calendar.addOrUpdateEvent('add')
       elif argument == 'updateevent':
-        doCalendarAddOrUpdateEvent('update')
+        gapi.calendar.addOrUpdateEvent('update')
       elif argument == 'infoevent':
-        doCalendarInfoEvent()
+        gapi.calendar.infoEvent()
       elif argument == 'deleteevent':
-        doCalendarMoveOrDeleteEvent('delete')
+        gapi.calendar.moveOrDeleteEvent('delete')
       elif argument == 'moveevent':
-        doCalendarMoveOrDeleteEvent('move')
+        gapi.calendar.moveOrDeleteEvent('move')
       elif argument == 'printevents':
-        doCalendarPrintEvents()
+        gapi.calendar.printEvents()
       elif argument == 'modify':
-        doCalendarModifySettings()
+        gapi.calendar.modifySettings()
       else:
         controlflow.invalid_argument_exit(argument, "gam calendar")
       sys.exit(0)

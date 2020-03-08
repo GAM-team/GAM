@@ -4,6 +4,8 @@ import sys
 from html.entities import name2codepoint
 from html.parser import HTMLParser
 
+from var import *
+
 ONE_KILO_BYTES = 1000
 ONE_MEGA_BYTES = 1000000
 ONE_GIGA_BYTES = 1000000000
@@ -63,10 +65,27 @@ def dehtml(text):
     print_exc(file=sys.stderr)
     return text
 
-
 def indentMultiLineText(message, n=0):
   return message.replace('\n', '\n{0}'.format(' ' * n)).rstrip()
 
+def flatten_json(structure, key='', path='', flattened=None, listLimit=None):
+  if flattened is None:
+    flattened = {}
+  if not isinstance(structure, (dict, list)):
+    flattened[((path + '.') if path else '') + key] = structure
+  elif isinstance(structure, list):
+    for i, item in enumerate(structure):
+      if listLimit and (i >= listLimit):
+        break
+      flatten_json(item, f'{i}', '.'.join([item for item in [path, key] if item]), flattened=flattened, listLimit=listLimit)
+  else:
+    for new_key, value in list(structure.items()):
+      if new_key in ['kind', 'etag', '@type']:
+        continue
+      if value == NEVER_TIME:
+        value = 'Never'
+      flatten_json(value, new_key, '.'.join([item for item in [path, key] if item]), flattened=flattened, listLimit=listLimit)
+  return flattened
 
 def formatTimestampYMD(timestamp):
   return datetime.datetime.fromtimestamp(int(timestamp)/1000).strftime('%Y-%m-%d')
