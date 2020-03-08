@@ -3626,23 +3626,34 @@ def doCalendarMoveOrDeleteEvent(moveOrDelete):
   else:
     print(f' would {moveOrDelete} eventId {eventId}. Add doit to command to actually {moveOrDelete} event')
 
-def doCalendarAddEvent():
+def doCalendarAddOrUpdateEvent(action):
   calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
   if not cal:
     return
   # only way for non-Google calendars to get updates is via email
-  sendUpdates = 'externalOnly'
   timeZone = None
-  i = 4
-  body = getCalendarEventAttributes(i, cal)
-  gapi.call(cal.events(), 'insert', conferenceDataVersion=1, calendarId=calendarId, sendUpdates=sendUpdates, body=body)
-
-def getCalendarEventAttributes(i, cal, body={}):
-  eventId = None
-  if body:
-    action = 'add'
+  kwargs = {}
+  if action == 'add':
+    i = 4
+    body = {}
+    func = 'insert'
   else:
-    action = 'create'
+    eventId = sys.argv[4]
+    kwargs = {'eventId': eventId}
+    i = 5
+    func = 'update'
+    body = gapi.call(cal.events(), 'get', calendarId=calendarId, eventId=eventId)
+  sendUpdates, body = getCalendarEventAttributes(i, cal, body, action)
+  result = gapi.call(cal.events(), func, conferenceDataVersion=1,
+          supportsAttachments=True, calendarId=calendarId,
+          sendUpdates=sendUpdates, body=body, fields='id', **kwargs)
+  print(f'Event {result["id"]} {action} finished')
+
+def getCalendarEventAttributes(i, cal, body, action):
+  # Default to external only so non-Google
+  # calendars are notified of changes
+  sendUpdates = 'externalOnly'
+  action = 'update' if body else 'add'
   while i < len(sys.argv):
     myarg = sys.argv[i].lower().replace('_', '')
     if myarg in ['notifyattendees', 'sendnotifications', 'sendupdates']:
@@ -3650,6 +3661,11 @@ def getCalendarEventAttributes(i, cal, body={}):
     elif myarg == 'attendee':
       body.setdefault('attendees', [])
       body['attendees'].append({'email': sys.argv[i+1]})
+      i += 2
+    elif myarg == 'removeattendee' and action == 'update':
+      remove_email = sys.argv[i+1].lower()
+      body['attendees'] = [attendee for attendee in body['attendees'] \
+              if not (attendee['email'].lower() == remove_email)]
       i += 2
     elif myarg == 'optionalattendee':
       body.setdefault('attendees', [])
@@ -3661,6 +3677,11 @@ def getCalendarEventAttributes(i, cal, body={}):
     elif myarg == 'description':
       body['description'] = sys.argv[i+1].replace('\\n', '\n')
       i += 2
+    elif myarg == 'replacedescription':
+      search = sys.argv[i+1]
+      replace = sys.argv[i+2]
+      body['description'] = re.sub(search, replace, body['description'])
+      i += 3
     elif myarg == 'start':
       if sys.argv[i+1].lower() == 'allday':
         body['start'] = {'date': getYYYYMMDD(sys.argv[i+2])}
@@ -3678,14 +3699,22 @@ def getCalendarEventAttributes(i, cal, body={}):
     elif myarg == 'guestscantinviteothers':
       body['guestsCanInviteOthers'] = False
       i += 1
+    elif myarg == 'guestscaninviteothers':
+      body['guestsCanInviteTohters'] = getBoolean(sys.argv[i+1], 'guestscaninviteothers')
+      i += 2
     elif myarg == 'guestscantseeothers':
       body['guestsCanSeeOtherGuests'] = False
       i += 1
+    elif myarg == 'guestscanseeothers':
+      body['guestsCanSeeOtherGuests'] = getBoolean(sys.argv[i+1], 'guestscanseeothers')
+      i += 2
+    elif myarg == 'guestscanmodify':
+      body['guestsCanModify'] = getBoolean(sys.argv[i+1], 'guestscanmodify')
+      i += 2
     elif myarg == 'id':
       if action == 'update':
-        controlflow.invalid_argument_exit('id', 'gam calendar <calendar> updatevent') 
+        controlflow.invalid_argument_exit('id', 'gam calendar <calendar> updateevent')
       body['id'] = sys.argv[i+1]
-      eventId = body['id']
       i += 2
     elif myarg == 'summary':
       body['summary'] = sys.argv[i+1]
@@ -3696,6 +3725,13 @@ def getCalendarEventAttributes(i, cal, body={}):
     elif myarg == 'available':
       body['transparency'] = 'transparent'
       i += 1
+    elif myarg == 'transparency':
+      validTransparency = ['opaque', 'transparent']
+      if sys.argv[i+1].lower() in validTransparency:
+        body['transparency'] = sys.argv[i+1].lower()
+      else:
+        controlflow.expected_argument_exit('transparency', ", ".join(validTransparency), sys.argv[i+1])
+      i += 2
     elif myarg == 'visibility':
       validVisibility = ['default', 'public', 'private']
       if sys.argv[i+1].lower() in validVisibility:
@@ -3706,6 +3742,13 @@ def getCalendarEventAttributes(i, cal, body={}):
     elif myarg == 'tentative':
       body['status'] = 'tentative'
       i += 1
+    elif myarg == 'status':
+      validStatus = ['confirmed', 'tentative', 'cancelled']
+      if sys.argv[i+1].lower() in validStatus:
+        body['status'] = sys.argv[i+1].lower()
+      else:
+        controlflow.expected_argument_exit('visibility', ', '.join(validStatus), sys.argv[i+1])
+      i += 2
     elif myarg == 'source':
       body['source'] = {'title': sys.argv[i+1], 'url': sys.argv[i+2]}
       i += 3
@@ -3741,7 +3784,7 @@ def getCalendarEventAttributes(i, cal, body={}):
       body['conferenceData'] = {'createRequest': {'requestId': f'{str(uuid.uuid4())}'}}
       i += 1
     else:
-      controlflow.invalid_argument_exit(sys.argv[i], "gam calendar <email> {action}event")
+      controlflow.invalid_argument_exit(sys.argv[i], f'gam calendar <email> {action}event')
   if ('recurrence' in body) and (('start' in body) or ('end' in body)):
     if not timeZone:
       timeZone = gapi.call(cal.calendars(), 'get', calendarId=calendarId, fields='timeZone')['timeZone']
@@ -3749,21 +3792,7 @@ def getCalendarEventAttributes(i, cal, body={}):
       body['start']['timeZone'] = timeZone
     if 'end' in body:
       body['end']['timeZone'] = timeZone
-  return body
-
-def doCalendarUpdateEvent():
-  calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
-  if not cal:
-    return
-  # only way for non-Google calendars to get updates is via email
-  sendUpdates = 'externalOnly'
-  eventId = sys.argv[4]
-  i = 5
-  body = gapi.call(cal.events(), 'get', calendarId=calendarId, eventId=eventId)
-  getCalendarEventAttributes(i, cal, body=body)
-  result = gapi.call(cal.events(), 'update', calendarId=calendarId, eventId=eventId,
-          sendUpdates=sendUpdates, body=body, conferenceDataVersion=1)
-  display.print_json(result)
+  return (sendUpdates, body)
 
 def doCalendarModifySettings():
   calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
@@ -14414,9 +14443,9 @@ def ProcessGAMCommand(args):
       elif argument == 'wipe':
         doCalendarWipeData()
       elif argument == 'addevent':
-        doCalendarAddEvent()
+        doCalendarAddOrUpdateEvent('add')
       elif argument == 'updateevent':
-        doCalendarUpdateEvent()
+        doCalendarAddOrUpdateEvent('update')
       elif argument == 'deleteevent':
         doCalendarMoveOrDeleteEvent('delete')
       elif argument == 'moveevent':
