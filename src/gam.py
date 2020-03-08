@@ -3641,16 +3641,22 @@ def doCalendarAddOrUpdateEvent(action):
   # only way for non-Google calendars to get updates is via email
   timeZone = None
   kwargs = {}
+  body = {}
   if action == 'add':
     i = 4
-    body = {}
     func = 'insert'
   else:
     eventId = sys.argv[4]
     kwargs = {'eventId': eventId}
     i = 5
-    func = 'update'
-    body = gapi.call(cal.events(), 'get', calendarId=calendarId, eventId=eventId)
+    func = 'patch'
+    requires_full_update = ['attendee', 'optionalattendee', 'removeattendee',
+                            'replacedescription']
+    for arg in sys.argv[i:]:
+      if arg.replace('_', '').lower() in requires_full_update:
+        func = 'update'
+        body = gapi.call(cal.events(), 'get', calendarId=calendarId, eventId=eventId)
+        break
   sendUpdates, body = getCalendarEventAttributes(i, cal, body, action)
   result = gapi.call(cal.events(), func, conferenceDataVersion=1,
           supportsAttachments=True, calendarId=calendarId,
