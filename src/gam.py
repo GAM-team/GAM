@@ -13616,9 +13616,9 @@ def ProcessGAMCommand(args):
       elif showWhat == 'profile':
         showProfile(users)
       elif showWhat == 'calendars':
-        printShowCalendars(users, False)
+        gapi.calendar.printShowCalendars(users, False)
       elif showWhat == 'calsettings':
-        showCalSettings(users)
+        gapi.calendar.showCalSettings(users)
       elif showWhat == 'drivesettings':
         printDriveSettings(users)
       elif showWhat == 'teamdrivethemes':
@@ -13674,7 +13674,7 @@ def ProcessGAMCommand(args):
     elif command == 'print':
       printWhat = sys.argv[4].lower()
       if printWhat == 'calendars':
-        printShowCalendars(users, True)
+        gapi.calendar.printShowCalendars(users, True)
       elif printWhat in ['delegate', 'delegates']:
         printShowDelegates(users, True)
       elif printWhat == 'driveactivity':
@@ -13728,7 +13728,7 @@ def ProcessGAMCommand(args):
       if delWhat == 'delegate':
         deleteDelegate(users)
       elif delWhat == 'calendar':
-        deleteCalendar(users)
+        gapi.calendar.deleteCalendar(users)
       elif delWhat  in ['labels', 'label']:
         doDeleteLabel(users)
       elif delWhat in ['message', 'messages']:
@@ -13771,7 +13771,7 @@ def ProcessGAMCommand(args):
       addWhat = sys.argv[4].lower()
       if addWhat == 'calendar':
         if command == 'add':
-          addCalendar(users)
+          gapi.calendar.addCalendar(users)
         else:
           controlflow.system_error_exit(2, f'{addWhat} is not implemented for "gam <users> {command}"')
       elif addWhat == 'drivefile':
@@ -13799,9 +13799,9 @@ def ProcessGAMCommand(args):
     elif command == 'update':
       updateWhat = sys.argv[4].lower()
       if updateWhat == 'calendar':
-        updateCalendar(users)
+        gapi.calendar.updateCalendar(users)
       elif updateWhat == 'calattendees':
-        changeCalendarAttendees(users)
+        gapi.calendar.changeAttendees(users)
       elif updateWhat == 'photo':
         doPhoto(users)
       elif updateWhat in ['license', 'licence']:

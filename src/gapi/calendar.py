@@ -151,16 +151,16 @@ def printEvents():
       showHiddenInvitations = True
       i += 1
     elif myarg == 'after':
-      timeMin = getTimeOrDeltaFromNow(sys.argv[i+1])
+      timeMin = __main__.getTimeOrDeltaFromNow(sys.argv[i+1])
       i += 2
     elif myarg == 'before':
-      timeMax = getTimeOrDeltaFromNow(sys.argv[i+1])
+      timeMax = __main__.getTimeOrDeltaFromNow(sys.argv[i+1])
       i += 2
     elif myarg == 'timezone':
       timeZone = sys.argv[i+1]
       i += 2
     elif myarg == 'updated':
-      updatedMin = getTimeOrDeltaFromNow(sys.argv[i+1])
+      updatedMin = __main__.getTimeOrDeltaFromNow(sys.argv[i+1])
       i += 2
     elif myarg == 'todrive':
       toDrive = True
@@ -442,7 +442,7 @@ def modifySettings():
       controlflow.invalid_argument_exit(sys.argv[i], "gam calendar <email> modify")
   gapi.call(cal.calendars(), 'patch', calendarId=calendarId, body=body)
 
-def changeCalendarAttendees(users):
+def changeAttendees(users):
   do_it = True
   i = 5
   allevents = False
