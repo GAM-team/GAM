@@ -3626,6 +3626,14 @@ def doCalendarMoveOrDeleteEvent(moveOrDelete):
   else:
     print(f' would {moveOrDelete} eventId {eventId}. Add doit to command to actually {moveOrDelete} event')
 
+def doCalendarInfoEvent():
+  calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
+  if not cal:
+    return
+  eventId = sys.argv[4]
+  result = gapi.call(cal.events(), 'get', calendarId=calendarId, eventId=eventId)
+  display.print_json(result)
+
 def doCalendarAddOrUpdateEvent(action):
   calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
   if not cal:
@@ -14446,6 +14454,8 @@ def ProcessGAMCommand(args):
         doCalendarAddOrUpdateEvent('add')
       elif argument == 'updateevent':
         doCalendarAddOrUpdateEvent('update')
+      elif argument == 'infoevent':
+        doCalendarInfoEvent()
       elif argument == 'deleteevent':
         doCalendarMoveOrDeleteEvent('delete')
       elif argument == 'moveevent':

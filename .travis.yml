@@ -244,6 +244,8 @@ script:
 - if [ "$e2e" = true ]; then $gam calendar $gam_user add editor $newuser; fi
 - if [ "$e2e" = true ]; then $gam calendar $gam_user showacl; fi
 - if [ "$e2e" = true ]; then $gam calendar $gam_user printacl | $gam csv - gam calendar $gam_user delete id ~id; fi
+- if [ "$e2e" = true ]; then $gam calendar $gam_user addevent summary "Travis test event" start $(date '+%FT%T.%N%:z' -d "now + 1 hour") end $(date '+%FT%T.%N%:z' -d "now + 2 hours") attendee $gam_group hangoutsmeet guestscanmodify true sendupdates all; fi
+- if [ "$e2e" = true ]; then $gam calendar $gam_user printevents after -0d; fi
 - if [ "$e2e" = true ]; then $gam printer register; fi
 - if [ "$e2e" = true ]; then source travis/set_printer_csv_filter.sh; fi
 - if [ "$e2e" = true ]; then $gam print printers > printers.csv; fi
