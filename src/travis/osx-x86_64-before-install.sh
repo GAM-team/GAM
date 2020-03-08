@@ -6,7 +6,7 @@ whereibelong=$(pwd)
 #brew upgrade
 
 # prefer standard GNU tools like date over MacOS defaults
-export PATH="/usr/local/opt/coreutils/libexec/gnubin:$PATH
+export PATH="/usr/local/opt/coreutils/libexec/gnubin:$PATH"
 
 cd ~
 
