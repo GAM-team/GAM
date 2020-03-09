@@ -8,10 +8,6 @@ from html.parser import HTMLParser
 from var import *
 import fileutils
 
-ONE_KILO_BYTES = 1000
-ONE_MEGA_BYTES = 1000000
-ONE_GIGA_BYTES = 1000000000
-
 
 class _DeHTMLParser(HTMLParser):
 
@@ -55,7 +51,6 @@ class _DeHTMLParser(HTMLParser):
   def text(self):
     return re.sub(r'\n{2}\n+', '\n\n', re.sub(r'\n +', '\n', ''.join(self.__text))).strip()
 
-
 def dehtml(text):
   try:
     parser = _DeHTMLParser()
@@ -98,7 +93,6 @@ def formatTimestampYMDHMS(timestamp):
 def formatTimestampYMDHMSF(timestamp):
   return str(datetime.datetime.fromtimestamp(int(timestamp)/1000))
 
-
 def formatFileSize(fileSize):
   if fileSize == 0:
     return '0kb'
@@ -109,7 +103,6 @@ def formatFileSize(fileSize):
   if fileSize < ONE_GIGA_BYTES:
     return f'{fileSize // ONE_MEGA_BYTES}mb'
   return f'{fileSize // ONE_GIGA_BYTES}gb'
-
 
 def formatMilliSeconds(millis):
   seconds, millis = divmod(millis, 1000)
@@ -152,26 +145,17 @@ def get_delta(argstr, pattern):
     return -deltaTime
   return deltaTime
 
-DELTA_DATE_PATTERN = re.compile(r'^([+-])(\d+)([dwy])$')
-DELTA_DATE_FORMAT_REQUIRED = '(+|-)<Number>(d|w|y)'
-
 def get_delta_date(argstr):
   deltaDate = get_delta(argstr, DELTA_DATE_PATTERN)
   if deltaDate is None:
     controlflow.system_error_exit(2, f'expected a <{DELTA_DATE_FORMAT_REQUIRED}>; got {argstr}')
   return deltaDate
 
-DELTA_TIME_PATTERN = re.compile(r'^([+-])(\d+)([mhdwy])$')
-DELTA_TIME_FORMAT_REQUIRED = '(+|-)<Number>(m|h|d|w|y)'
-
 def get_delta_time(argstr):
   deltaTime = get_delta(argstr, DELTA_TIME_PATTERN)
   if deltaTime is None:
     controlflow.system_error_exit(2, f'expected a <{DELTA_TIME_FORMAT_REQUIRED}>; got {argstr}')
   return deltaTime
-
-YYYYMMDD_FORMAT = '%Y-%m-%d'
-YYYYMMDD_FORMAT_REQUIRED = 'yyyy-mm-dd'
 
 def get_yyyymmdd(argstr, minLen=1, returnTimeStamp=False, returnDateTime=False):
   argstr = argstr.strip()
@@ -191,8 +175,6 @@ def get_yyyymmdd(argstr, minLen=1, returnTimeStamp=False, returnDateTime=False):
   elif minLen == 0:
     return ''
   controlflow.system_error_exit(2, f'expected a <{YYYYMMDD_FORMAT_REQUIRED}>')
-
-YYYYMMDDTHHMMSS_FORMAT_REQUIRED = 'yyyy-mm-ddThh:mm:ss[.fff](Z|(+|-(hh:mm)))'
 
 def get_time_or_delta_from_now(time_string):
   """Get an ISO 8601 time or a positive/negative delta applied to now.
@@ -253,8 +235,6 @@ def get_row_filter_date_or_delta_from_now(time_string):
       pass
   return (False, YYYYMMDDTHHMMSS_FORMAT_REQUIRED)
 
-YYYYMMDD_PATTERN = re.compile(r'^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
-
 def get_date_zero_time_or_full_time(time_string):
   time_string = time_string.strip()
   if time_string:
@@ -272,4 +252,3 @@ def md5_matches_file(local_file, expected_md5, exitOnError):
   if exitOnError and actual_hash != expected_md5:
     controlflow.system_error_exit(6, f'actual hash was {actual_hash}. Exiting on corrupt file.')
   return actual_hash == expected_md5
-

@@ -1180,3 +1180,20 @@ MAX_RESULTS_API_EXCEPTIONS = {
   'directory.chromeosdevices.list': 200,
   'drive.files.list': 1000,
   }
+
+ONE_KILO_BYTES = 1000
+ONE_MEGA_BYTES = 1000000
+ONE_GIGA_BYTES = 1000000000
+
+DELTA_DATE_PATTERN = re.compile(r'^([+-])(\d+)([dwy])$')
+DELTA_DATE_FORMAT_REQUIRED = '(+|-)<Number>(d|w|y)'
+
+DELTA_TIME_PATTERN = re.compile(r'^([+-])(\d+)([mhdwy])$')
+DELTA_TIME_FORMAT_REQUIRED = '(+|-)<Number>(m|h|d|w|y)'
+
+YYYYMMDD_FORMAT = '%Y-%m-%d'
+YYYYMMDD_FORMAT_REQUIRED = 'yyyy-mm-dd'
+
+YYYYMMDDTHHMMSS_FORMAT_REQUIRED = 'yyyy-mm-ddThh:mm:ss[.fff](Z|(+|-(hh:mm)))'
+
+YYYYMMDD_PATTERN = re.compile(r'^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
