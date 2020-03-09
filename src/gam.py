@@ -1109,7 +1109,7 @@ def showReport():
   rep = buildGAPIObject('reports')
   report = sys.argv[2].lower()
   report = REPORT_CHOICE_MAP.get(report.replace('_', ''), report)
-  valid_apps = _getEnumValuesMinusUnspecified(rep._rootDesc['resources']['activities']['methods']['list']['parameters']['applicationName']['enum'])+['customer', 'user']
+  valid_apps = gapi.get_enum_values_minus_unspecified(rep._rootDesc['resources']['activities']['methods']['list']['parameters']['applicationName']['enum'])+['customer', 'user']
   if report not in valid_apps:
     controlflow.expected_argument_exit("report", ", ".join(sorted(valid_apps)), report)
   customerId = GC_Values[GC_CUSTOMER_ID]
@@ -1556,13 +1556,13 @@ def getCourseAttribute(myarg, value, body, croom, function):
   elif myarg in ['owner', 'ownerid', 'teacher']:
     body['ownerId'] = normalizeEmailAddressOrUID(value)
   elif myarg in ['state', 'status']:
-    validStates = _getEnumValuesMinusUnspecified(croom._rootDesc['schemas']['Course']['properties']['courseState']['enum'])
+    validStates = gapi.get_enum_values_minus_unspecified(croom._rootDesc['schemas']['Course']['properties']['courseState']['enum'])
     body['courseState'] = _getValidatedState(value, validStates)
   else:
     controlflow.invalid_argument_exit(myarg, f"gam {function} course")
 
 def _getCourseStates(croom, value, courseStates):
-  validStates = _getEnumValuesMinusUnspecified(croom._rootDesc['schemas']['Course']['properties']['courseState']['enum'])
+  validStates = gapi.get_enum_values_minus_unspecified(croom._rootDesc['schemas']['Course']['properties']['courseState']['enum'])
   for state in value.replace(',', ' ').split():
     courseStates.append(_getValidatedState(state, validStates))
 
@@ -7149,7 +7149,7 @@ def doCreateOrRotateServiceAccountKeys(iam=None, project_id=None, client_email=N
       myarg = sys.argv[i].lower().replace('_', '')
       if myarg == 'algorithm':
         body['keyAlgorithm'] = sys.argv[i+1].upper()
-        allowed_algorithms = _getEnumValuesMinusUnspecified(iam._rootDesc['schemas']['CreateServiceAccountKeyRequest']['properties']['keyAlgorithm']['enum'])
+        allowed_algorithms = gapi.get_enum_values_minus_unspecified(iam._rootDesc['schemas']['CreateServiceAccountKeyRequest']['properties']['keyAlgorithm']['enum'])
         if body['keyAlgorithm'] not in allowed_algorithms:
           controlflow.expected_argument_exit("algorithm", ", ".join(allowed_algorithms), body['keyAlgorithm'])
         local_key_size = 0
@@ -10033,7 +10033,7 @@ def doPrintShowAlertFeedback():
 
 def doCreateAlertFeedback():
   _, ac = buildAlertCenterGAPIObject(_getValueFromOAuth('email'))
-  valid_types = _getEnumValuesMinusUnspecified(ac._rootDesc['schemas']['AlertFeedback']['properties']['type']['enum'])
+  valid_types = gapi.get_enum_values_minus_unspecified(ac._rootDesc['schemas']['AlertFeedback']['properties']['type']['enum'])
   alertId = sys.argv[3]
   body = {'type': sys.argv[4].upper()}
   if body['type'] not in valid_types:

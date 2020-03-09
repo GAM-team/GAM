@@ -152,16 +152,16 @@ def printEvents():
       showHiddenInvitations = True
       i += 1
     elif myarg == 'after':
-      timeMin = __main__.getTimeOrDeltaFromNow(sys.argv[i+1])
+      timeMin = utils.get_time_or_delta_from_now(sys.argv[i+1])
       i += 2
     elif myarg == 'before':
-      timeMax = __main__.getTimeOrDeltaFromNow(sys.argv[i+1])
+      timeMax = utils.get_time_or_delta_from_now(sys.argv[i+1])
       i += 2
     elif myarg == 'timezone':
       timeZone = sys.argv[i+1]
       i += 2
     elif myarg == 'updated':
-      updatedMin = __main__.getTimeOrDeltaFromNow(sys.argv[i+1])
+      updatedMin = utils.get_time_or_delta_from_now(sys.argv[i+1])
       i += 2
     elif myarg == 'todrive':
       toDrive = True
@@ -312,14 +312,14 @@ def getEventAttributes(i, cal, body, action):
         body['start'] = {'date': __main__.getYYYYMMDD(sys.argv[i+2])}
         i += 3
       else:
-        body['start'] = {'dateTime': __main__.getTimeOrDeltaFromNow(sys.argv[i+1])}
+        body['start'] = {'dateTime': utils.get_time_or_delta_from_now(sys.argv[i+1])}
         i += 2
     elif myarg == 'end':
       if sys.argv[i+1].lower() == 'allday':
         body['end'] = {'date': getYYYYMMDD(sys.argv[i+2])}
         i += 3
       else:
-        body['end'] = {'dateTime': __main__.getTimeOrDeltaFromNow(sys.argv[i+1])}
+        body['end'] = {'dateTime': utils.get_time_or_delta_from_now(sys.argv[i+1])}
         i += 2
     elif myarg == 'guestscantinviteothers':
       body['guestsCanInviteOthers'] = False
@@ -457,10 +457,10 @@ def changeAttendees(users):
       do_it = False
       i += 1
     elif myarg == 'start':
-      start_date = __main__.getTimeOrDeltaFromNow(sys.argv[i+1])
+      start_date = utils.get_time_or_delta_from_now(sys.argv[i+1])
       i += 2
     elif myarg == 'end':
-      end_date = __main__.getTimeOrDeltaFromNow(sys.argv[i+1])
+      end_date = utils.get_time_or_delta_from_now(sys.argv[i+1])
       i += 2
     elif myarg == 'allevents':
       allevents = True

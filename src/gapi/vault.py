@@ -199,7 +199,7 @@ def getExportInfo():
 
 def createHold():
   v = buildGAPIObject()
-  allowed_corpuses = v._rootDesc['schemas']['Hold']['properties']['corpus']['enum']
+  allowed_corpuses = gapi.get_enum_values_minus_unspecified(v._rootDesc['schemas']['Hold']['properties']['corpus']['enum'])
   body = {'query': {}}
   i = 3
   query = None
