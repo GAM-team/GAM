@@ -595,7 +595,7 @@ def downloadExport():
     verifyFiles = True
     extractFiles = True
     v = buildGAPIObject()
-    s = __main__.buildGAPIObject('storage')
+    s = storage.build_gapi()
     matterId = getMatterItem(v, sys.argv[3])
     exportId = convertExportNameToID(v, sys.argv[4], matterId)
     targetFolder = GC_Values[GC_DRIVE_DIR]
@@ -698,7 +698,7 @@ def printExports():
         ), 'list', 'matters', view='BASIC', fields=fields)
         for matter in matters_results:
             matterState = matter['state']
-            matterIid = matter['id']
+            matterId = matter['matterId']
             if matterState != 'OPEN':
                 print(f'ignoring matter {matterId} in state {matterState}')
                 continue
@@ -742,7 +742,7 @@ def printHolds():
         ), 'list', 'matters', view='BASIC', fields=fields)
         for matter in matters_results:
             matterState = matter['state']
-            matterId = matter['id']
+            matterId = matter['matterId']
             if matterState != 'OPEN':
                 print(f'ignoring matter {matterId} in state {matterState}')
                 continue

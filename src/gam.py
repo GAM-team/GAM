@@ -76,6 +76,7 @@ import display
 import fileutils
 import gapi.calendar
 import gapi.errors
+import gapi.storage
 import gapi.vault
 import gapi
 import transport
@@ -7426,61 +7427,6 @@ def doDeleteTeamDrive(users):
     print(f'Deleting Team Drive {teamDriveId}')
     gapi.call(drive.drives(), 'delete', driveId=teamDriveId, soft_errors=True)
 
-def _getCloudStorageObject(s, bucket, object_, local_file=None, expectedMd5=None):
-  if not local_file:
-    local_file = object_
-  if os.path.exists(local_file):
-    sys.stdout.write(' File already exists. ')
-    sys.stdout.flush()
-    if expectedMd5:
-      sys.stdout.write(f'Verifying {expectedMd5} hash...')
-      sys.stdout.flush()
-      if utils.md5_matches_file(local_file, expectedMd5, False):
-        print('VERIFIED')
-        return
-      print('not verified. Downloading again and over-writing...')
-    else:
-      return # nothing to verify, just assume we're good.
-  print(f'saving to {local_file}')
-  request = s.objects().get_media(bucket=bucket, object=object_)
-  file_path = os.path.dirname(local_file)
-  if not os.path.exists(file_path):
-    os.makedirs(file_path)
-  f = fileutils.open_file(local_file, 'wb')
-  downloader = googleapiclient.http.MediaIoBaseDownload(f, request)
-  done = False
-  while not done:
-    status, done = downloader.next_chunk()
-    sys.stdout.write(f' Downloaded: {status.progress():>7.2%}\r')
-    sys.stdout.flush()
-  sys.stdout.write('\n Download complete. Flushing to disk...\n')
-  fileutils.close_file(f, True)
-  if expectedMd5:
-    f = fileutils.open_file(local_file, 'rb')
-    sys.stdout.write(f' Verifying file hash is {expectedMd5}...')
-    sys.stdout.flush()
-    utils.md5_matches_file(local_file, expectedMd5, True)
-    print('VERIFIED')
-    fileutils.close_file(f)
-
-def doDownloadCloudStorageBucket():
-  bucket_url = sys.argv[3]
-  bucket_regex = r'(takeout-export-[a-f,0-9,-]*)'
-  bucket_match = re.search(bucket_regex, bucket_url)
-  if bucket_match:
-    bucket = bucket_match.group(1)
-  else:
-    controlflow.system_error_exit(5, 'Could not find a takeout-export-* bucket in that URL')
-  s = buildGAPIObject('storage')
-  page_message = gapi.got_total_items_msg('Files', '...')
-  objects = gapi.get_all_pages(s.objects(), 'list', 'items', page_message=page_message, bucket=bucket, projection='noAcl', fields='nextPageToken,items(name,id,md5Hash)')
-  i = 1
-  for object_ in objects:
-    print(f'{i}/{len(objects)}')
-    expectedMd5 = base64.b64decode(object_['md5Hash']).hex()
-    _getCloudStorageObject(s, bucket, object_['name'], expectedMd5=expectedMd5)
-    i += 1
-
 def extract_nested_zip(zippedFile, toFolder, spacing=' '):
   """ Extract a zip file including any nested zip files
       Delete the zip file(s) after extraction
@@ -12797,7 +12743,7 @@ def ProcessGAMCommand(args):
       if argument in ['export', 'vaultexport']:
         gapi.vault.downloadExport()
       elif argument in ['storagebucket']:
-        doDownloadCloudStorageBucket()
+        gapi.storage.download_bucket()
       else:
         controlflow.invalid_argument_exit(argument, "gam download")
       sys.exit(0)
