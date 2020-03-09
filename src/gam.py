@@ -1125,7 +1125,7 @@ def showReport():
   while i < len(sys.argv):
     myarg = sys.argv[i].lower()
     if myarg == 'date':
-      tryDate = getYYYYMMDD(sys.argv[i+1])
+      tryDate = utils.get_yyyymmdd(sys.argv[i+1])
       i += 2
     elif myarg in ['orgunit', 'org', 'ou']:
       _, orgUnitId = getOrgUnitId(sys.argv[i+1])
@@ -1137,10 +1137,10 @@ def showReport():
         fullDataRequired = fdr.replace(',', ' ').split()
       i += 2
     elif myarg == 'start':
-      startTime = getTimeOrDeltaFromNow(sys.argv[i+1])
+      startTime = utils.get_time_or_delta_from_now(sys.argv[i+1])
       i += 2
     elif myarg == 'end':
-      endTime = getTimeOrDeltaFromNow(sys.argv[i+1])
+      endTime = utils.get_time_or_delta_from_now(sys.argv[i+1])
       i += 2
     elif myarg == 'event':
       eventName = sys.argv[i+1]
@@ -3392,7 +3392,7 @@ def addDriveFileACL(users):
       emailMessage = sys.argv[i+1]
       i += 2
     elif myarg == 'expires':
-      body['expirationTime'] = getTimeOrDeltaFromNow(sys.argv[i+1])
+      body['expirationTime'] = utils.get_time_or_delta_from_now(sys.argv[i+1])
       i += 2
     elif myarg == 'asadmin':
       useDomainAdminAccess = True
@@ -3797,10 +3797,10 @@ def getDriveFileAttribute(i, body, parameters, myarg, update=False):
       body['labels'][DRIVEFILE_LABEL_CHOICES_MAP[myarg]] = True
       i += 1
   elif myarg in ['lastviewedbyme', 'lastviewedbyuser', 'lastviewedbymedate', 'lastviewedbymetime']:
-    body['lastViewedByMeDate'] = getTimeOrDeltaFromNow(sys.argv[i+1])
+    body['lastViewedByMeDate'] = utils.get_time_or_delta_from_now(sys.argv[i+1])
     i += 2
   elif myarg in ['modifieddate', 'modifiedtime']:
-    body['modifiedDate'] = getTimeOrDeltaFromNow(sys.argv[i+1])
+    body['modifiedDate'] = utils.get_time_or_delta_from_now(sys.argv[i+1])
     i += 2
   elif myarg == 'description':
     body['description'] = sys.argv[i+1]
@@ -4315,7 +4315,7 @@ def sendOrDropEmail(users, method='send'):
       kwargs['deleted'] = True
       i += 1
     elif myarg == 'date':
-      msgHeaders['Date'] = getTimeOrDeltaFromNow(sys.argv[i+1])
+      msgHeaders['Date'] = utils.get_time_or_delta_from_now(sys.argv[i+1])
       if method in ['insert', 'import']:
         kwargs['internalDateSource'] = 'dateHeader'
       i += 2
@@ -5828,10 +5828,10 @@ def doVacation(users):
         body['restrictToDomain'] = True
         i += 1
       elif myarg == 'startdate':
-        body['startTime'] = getYYYYMMDD(sys.argv[i+1], returnTimeStamp=True)
+        body['startTime'] = utils.get_yyyymmdd(sys.argv[i+1], returnTimeStamp=True)
         i += 2
       elif myarg == 'enddate':
-        body['endTime'] = getYYYYMMDD(sys.argv[i+1], returnTimeStamp=True)
+        body['endTime'] = utils.get_yyyymmdd(sys.argv[i+1], returnTimeStamp=True)
         i += 2
       else:
         controlflow.invalid_argument_exit(sys.argv[i], "gam <users> vacation")
