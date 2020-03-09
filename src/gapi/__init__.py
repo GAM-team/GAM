@@ -323,3 +323,6 @@ def handle_oauth_token_error(e, soft_errors):
           MESSAGE_SERVICE_NOT_APPLICABLE.format(
               GM_Globals[GM_CURRENT_API_USER]))
   controlflow.system_error_exit(18, f'Authentication Token Error - {str(e)}')
+
+def get_enum_values_minus_unspecified(values):
+  return [a_type for a_type in values if '_UNSPECIFIED' not in a_type]

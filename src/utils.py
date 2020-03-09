@@ -1,10 +1,12 @@
 import datetime
 import re
 import sys
+from hashlib import md5
 from html.entities import name2codepoint
 from html.parser import HTMLParser
 
 from var import *
+import fileutils
 
 ONE_KILO_BYTES = 1000
 ONE_MEGA_BYTES = 1000000
@@ -114,3 +116,160 @@ def formatMilliSeconds(millis):
   minutes, seconds = divmod(seconds, 60)
   hours, minutes = divmod(minutes, 60)
   return f'{hours:02d}:{minutes:02d}:{seconds:02d}'
+
+def get_string(i, item, optional=False, minLen=1, maxLen=None):
+  if i < len(sys.argv):
+    argstr = sys.argv[i]
+    if argstr:
+      if (len(argstr) >= minLen) and ((maxLen is None) or (len(argstr) <= maxLen)):
+        return argstr
+      controlflow.system_error_exit(2, f'expected <{integerLimits(minLen, maxLen, "string length")} for {item}>')
+    if optional or (minLen == 0):
+      return ''
+    controlflow.system_error_exit(2, f'expected a Non-empty <{item}>')
+  elif optional:
+    return ''
+  controlflow.system_error_exit(2, f'expected a <{item}>')
+
+def get_delta(argstr, pattern):
+  tg = pattern.match(argstr.lower())
+  if tg is None:
+    return None
+  sign = tg.group(1)
+  delta = int(tg.group(2))
+  unit = tg.group(3)
+  if unit == 'y':
+    deltaTime = datetime.timedelta(days=delta*365)
+  elif unit == 'w':
+    deltaTime = datetime.timedelta(weeks=delta)
+  elif unit == 'd':
+    deltaTime = datetime.timedelta(days=delta)
+  elif unit == 'h':
+    deltaTime = datetime.timedelta(hours=delta)
+  elif unit == 'm':
+    deltaTime = datetime.timedelta(minutes=delta)
+  if sign == '-':
+    return -deltaTime
+  return deltaTime
+
+DELTA_DATE_PATTERN = re.compile(r'^([+-])(\d+)([dwy])$')
+DELTA_DATE_FORMAT_REQUIRED = '(+|-)<Number>(d|w|y)'
+
+def get_delta_date(argstr):
+  deltaDate = get_delta(argstr, DELTA_DATE_PATTERN)
+  if deltaDate is None:
+    controlflow.system_error_exit(2, f'expected a <{DELTA_DATE_FORMAT_REQUIRED}>; got {argstr}')
+  return deltaDate
+
+DELTA_TIME_PATTERN = re.compile(r'^([+-])(\d+)([mhdwy])$')
+DELTA_TIME_FORMAT_REQUIRED = '(+|-)<Number>(m|h|d|w|y)'
+
+def get_delta_time(argstr):
+  deltaTime = get_delta(argstr, DELTA_TIME_PATTERN)
+  if deltaTime is None:
+    controlflow.system_error_exit(2, f'expected a <{DELTA_TIME_FORMAT_REQUIRED}>; got {argstr}')
+  return deltaTime
+
+YYYYMMDD_FORMAT = '%Y-%m-%d'
+YYYYMMDD_FORMAT_REQUIRED = 'yyyy-mm-dd'
+
+def get_yyyymmdd(argstr, minLen=1, returnTimeStamp=False, returnDateTime=False):
+  argstr = argstr.strip()
+  if argstr:
+    if argstr[0] in ['+', '-']:
+      today = datetime.date.today()
+      argstr = (datetime.datetime(today.year, today.month, today.day)+getDeltaDate(argstr)).strftime(YYYYMMDD_FORMAT)
+    try:
+      dateTime = datetime.datetime.strptime(argstr, YYYYMMDD_FORMAT)
+      if returnTimeStamp:
+        return time.mktime(dateTime.timetuple())*1000
+      if returnDateTime:
+        return dateTime
+      return argstr
+    except ValueError:
+      controlflow.system_error_exit(2, f'expected a <{YYYYMMDD_FORMAT_REQUIRED}>; got {argstr}')
+  elif minLen == 0:
+    return ''
+  controlflow.system_error_exit(2, f'expected a <{YYYYMMDD_FORMAT_REQUIRED}>')
+
+YYYYMMDDTHHMMSS_FORMAT_REQUIRED = 'yyyy-mm-ddThh:mm:ss[.fff](Z|(+|-(hh:mm)))'
+
+def get_time_or_delta_from_now(time_string):
+  """Get an ISO 8601 time or a positive/negative delta applied to now.
+  Args:
+    time_string (string): The time or delta (e.g. '2017-09-01T12:34:56Z' or '-4h')
+  Returns:
+    string: iso8601 formatted datetime in UTC.
+  """
+  time_string = time_string.strip().upper()
+  if time_string:
+    if time_string[0] not in ['+', '-']:
+      return time_string
+    return (datetime.datetime.utcnow() + get_delta_time(time_string)).isoformat() + 'Z'
+  controlflow.system_error_exit(2, f'expected a <{YYYYMMDDTHHMMSS_FORMAT_REQUIRED}>')
+
+def get_row_filter_date_or_delta_from_now(date_string):
+  """Get an ISO 8601 date or a positive/negative delta applied to now.
+  Args:
+    date_string (string): The time or delta (e.g. '2017-09-01' or '-4y')
+  Returns:
+    string: iso8601 formatted datetime in UTC.
+  """
+  date_string = date_string.strip().upper()
+  if date_string:
+    if date_string[0] in ['+', '-']:
+      deltaDate = get_delta(date_string, DELTA_DATE_PATTERN)
+      if deltaDate is None:
+        return (False, DELTA_DATE_FORMAT_REQUIRED)
+      today = datetime.date.today()
+      return (True, (datetime.datetime(today.year, today.month, today.day)+deltaDate).isoformat()+'Z')
+    try:
+      deltaDate = dateutil.parser.parse(date_string, ignoretz=True)
+      return (True, datetime.datetime(deltaDate.year, deltaDate.month, deltaDate.day).isoformat()+'Z')
+    except ValueError:
+      pass
+  return (False, YYYYMMDD_FORMAT_REQUIRED)
+
+def get_row_filter_date_or_delta_from_now(time_string):
+  """Get an ISO 8601 time or a positive/negative delta applied to now.
+  Args:
+    time_string (string): The time or delta (e.g. '2017-09-01T12:34:56Z' or '-4h')
+  Returns:
+    string: iso8601 formatted datetime in UTC.
+  Exits:
+    2: Not a valid delta.
+  """
+  time_string = time_string.strip().upper()
+  if time_string:
+    if time_string[0] in ['+', '-']:
+      deltaTime = get_delta(time_string, DELTA_TIME_PATTERN)
+      if deltaTime is None:
+        return (False, DELTA_TIME_FORMAT_REQUIRED)
+      return (True, (datetime.datetime.utcnow()+deltaTime).isoformat()+'Z')
+    try:
+      deltaTime = dateutil.parser.parse(time_string, ignoretz=True)
+      return (True, deltaTime.isoformat()+'Z')
+    except ValueError:
+      pass
+  return (False, YYYYMMDDTHHMMSS_FORMAT_REQUIRED)
+
+YYYYMMDD_PATTERN = re.compile(r'^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+
+def get_date_zero_time_or_full_time(time_string):
+  time_string = time_string.strip()
+  if time_string:
+    if YYYYMMDD_PATTERN.match(time_string):
+      return get_yyyymmdd(time_string)+'T00:00:00.000Z'
+    return get_time_or_delta_from_now(time_string)
+  controlflow.system_error_exit(2, f'expected a <{YYYYMMDDTHHMMSS_FORMAT_REQUIRED}>')
+
+def md5_matches_file(local_file, expected_md5, exitOnError):
+  f = fileutils.open_file(local_file, 'rb')
+  hash_md5 = md5()
+  for chunk in iter(lambda: f.read(4096), b""):
+    hash_md5.update(chunk)
+  actual_hash = hash_md5.hexdigest()
+  if exitOnError and actual_hash != expected_md5:
+    controlflow.system_error_exit(6, f'actual hash was {actual_hash}. Exiting on corrupt file.')
+  return actual_hash == expected_md5
+

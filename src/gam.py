@@ -76,6 +76,7 @@ import display
 import fileutils
 import gapi.calendar
 import gapi.errors
+import gapi.vault
 import gapi
 import transport
 import utils
@@ -252,152 +253,6 @@ def addCourseIdScope(courseId):
     return f'd:{courseId}'
   return courseId
 
-def getString(i, item, optional=False, minLen=1, maxLen=None):
-  if i < len(sys.argv):
-    argstr = sys.argv[i]
-    if argstr:
-      if (len(argstr) >= minLen) and ((maxLen is None) or (len(argstr) <= maxLen)):
-        return argstr
-      controlflow.system_error_exit(2, f'expected <{integerLimits(minLen, maxLen, "string length")} for {item}>')
-    if optional or (minLen == 0):
-      return ''
-    controlflow.system_error_exit(2, f'expected a Non-empty <{item}>')
-  elif optional:
-    return ''
-  controlflow.system_error_exit(2, f'expected a <{item}>')
-
-def getDelta(argstr, pattern):
-  tg = pattern.match(argstr.lower())
-  if tg is None:
-    return None
-  sign = tg.group(1)
-  delta = int(tg.group(2))
-  unit = tg.group(3)
-  if unit == 'y':
-    deltaTime = datetime.timedelta(days=delta*365)
-  elif unit == 'w':
-    deltaTime = datetime.timedelta(weeks=delta)
-  elif unit == 'd':
-    deltaTime = datetime.timedelta(days=delta)
-  elif unit == 'h':
-    deltaTime = datetime.timedelta(hours=delta)
-  elif unit == 'm':
-    deltaTime = datetime.timedelta(minutes=delta)
-  if sign == '-':
-    return -deltaTime
-  return deltaTime
-
-DELTA_DATE_PATTERN = re.compile(r'^([+-])(\d+)([dwy])$')
-DELTA_DATE_FORMAT_REQUIRED = '(+|-)<Number>(d|w|y)'
-
-def getDeltaDate(argstr):
-  deltaDate = getDelta(argstr, DELTA_DATE_PATTERN)
-  if deltaDate is None:
-    controlflow.system_error_exit(2, f'expected a <{DELTA_DATE_FORMAT_REQUIRED}>; got {argstr}')
-  return deltaDate
-
-DELTA_TIME_PATTERN = re.compile(r'^([+-])(\d+)([mhdwy])$')
-DELTA_TIME_FORMAT_REQUIRED = '(+|-)<Number>(m|h|d|w|y)'
-
-def getDeltaTime(argstr):
-  deltaTime = getDelta(argstr, DELTA_TIME_PATTERN)
-  if deltaTime is None:
-    controlflow.system_error_exit(2, f'expected a <{DELTA_TIME_FORMAT_REQUIRED}>; got {argstr}')
-  return deltaTime
-
-YYYYMMDD_FORMAT = '%Y-%m-%d'
-YYYYMMDD_FORMAT_REQUIRED = 'yyyy-mm-dd'
-
-def getYYYYMMDD(argstr, minLen=1, returnTimeStamp=False, returnDateTime=False):
-  argstr = argstr.strip()
-  if argstr:
-    if argstr[0] in ['+', '-']:
-      today = datetime.date.today()
-      argstr = (datetime.datetime(today.year, today.month, today.day)+getDeltaDate(argstr)).strftime(YYYYMMDD_FORMAT)
-    try:
-      dateTime = datetime.datetime.strptime(argstr, YYYYMMDD_FORMAT)
-      if returnTimeStamp:
-        return time.mktime(dateTime.timetuple())*1000
-      if returnDateTime:
-        return dateTime
-      return argstr
-    except ValueError:
-      controlflow.system_error_exit(2, f'expected a <{YYYYMMDD_FORMAT_REQUIRED}>; got {argstr}')
-  elif minLen == 0:
-    return ''
-  controlflow.system_error_exit(2, f'expected a <{YYYYMMDD_FORMAT_REQUIRED}>')
-
-YYYYMMDDTHHMMSS_FORMAT_REQUIRED = 'yyyy-mm-ddThh:mm:ss[.fff](Z|(+|-(hh:mm)))'
-
-def getTimeOrDeltaFromNow(time_string):
-  """Get an ISO 8601 time or a positive/negative delta applied to now.
-  Args:
-    time_string (string): The time or delta (e.g. '2017-09-01T12:34:56Z' or '-4h')
-  Returns:
-    string: iso8601 formatted datetime in UTC.
-  """
-  time_string = time_string.strip().upper()
-  if time_string:
-    if time_string[0] not in ['+', '-']:
-      return time_string
-    return (datetime.datetime.utcnow() + getDeltaTime(time_string)).isoformat() + 'Z'
-  controlflow.system_error_exit(2, f'expected a <{YYYYMMDDTHHMMSS_FORMAT_REQUIRED}>')
-
-def getRowFilterDateOrDeltaFromNow(date_string):
-  """Get an ISO 8601 date or a positive/negative delta applied to now.
-  Args:
-    date_string (string): The time or delta (e.g. '2017-09-01' or '-4y')
-  Returns:
-    string: iso8601 formatted datetime in UTC.
-  """
-  date_string = date_string.strip().upper()
-  if date_string:
-    if date_string[0] in ['+', '-']:
-      deltaDate = getDelta(date_string, DELTA_DATE_PATTERN)
-      if deltaDate is None:
-        return (False, DELTA_DATE_FORMAT_REQUIRED)
-      today = datetime.date.today()
-      return (True, (datetime.datetime(today.year, today.month, today.day)+deltaDate).isoformat()+'Z')
-    try:
-      deltaDate = dateutil.parser.parse(date_string, ignoretz=True)
-      return (True, datetime.datetime(deltaDate.year, deltaDate.month, deltaDate.day).isoformat()+'Z')
-    except ValueError:
-      pass
-  return (False, YYYYMMDD_FORMAT_REQUIRED)
-
-def getRowFilterTimeOrDeltaFromNow(time_string):
-  """Get an ISO 8601 time or a positive/negative delta applied to now.
-  Args:
-    time_string (string): The time or delta (e.g. '2017-09-01T12:34:56Z' or '-4h')
-  Returns:
-    string: iso8601 formatted datetime in UTC.
-  Exits:
-    2: Not a valid delta.
-  """
-  time_string = time_string.strip().upper()
-  if time_string:
-    if time_string[0] in ['+', '-']:
-      deltaTime = getDelta(time_string, DELTA_TIME_PATTERN)
-      if deltaTime is None:
-        return (False, DELTA_TIME_FORMAT_REQUIRED)
-      return (True, (datetime.datetime.utcnow()+deltaTime).isoformat()+'Z')
-    try:
-      deltaTime = dateutil.parser.parse(time_string, ignoretz=True)
-      return (True, deltaTime.isoformat()+'Z')
-    except ValueError:
-      pass
-  return (False, YYYYMMDDTHHMMSS_FORMAT_REQUIRED)
-
-YYYYMMDD_PATTERN = re.compile(r'^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
-
-def getDateZeroTimeOrFullTime(time_string):
-  time_string = time_string.strip()
-  if time_string:
-    if YYYYMMDD_PATTERN.match(time_string):
-      return getYYYYMMDD(time_string)+'T00:00:00.000Z'
-    return getTimeOrDeltaFromNow(time_string)
-  controlflow.system_error_exit(2, f'expected a <{YYYYMMDDTHHMMSS_FORMAT_REQUIRED}>')
-
 # Get domain from email address
 def getEmailAddressDomain(emailAddress):
   atLoc = emailAddress.find('@')
@@ -527,9 +382,9 @@ def SetGlobalVariables():
       if mg:
         if mg.group(1) in ['date', 'time']:
           if mg.group(1) == 'date':
-            valid, filterValue = getRowFilterDateOrDeltaFromNow(mg.group(3))
+            valid, filterValue = utils.get_row_filter_date_or_delta_from_now(mg.group(3))
           else:
-            valid, filterValue = getRowFilterTimeOrDeltaFromNow(mg.group(3))
+            valid, filterValue = utils.get_row_filter_time_or_delta_from_now(mg.group(3))
           if valid:
             rowFilters[column] = (mg.group(1), mg.group(2), filterValue)
             continue
@@ -4702,8 +4557,8 @@ def _processSignature(tagReplacements, signature, html):
 
 def getSendAsAttributes(i, myarg, body, tagReplacements, command):
   if myarg == 'replace':
-    matchTag = getString(i+1, 'Tag')
-    matchReplacement = getString(i+2, 'String', minLen=0)
+    matchTag = utils.get_string(i+1, 'Tag')
+    matchReplacement = utils.get_string(i+2, 'String', minLen=0)
     tagReplacements[matchTag] = matchReplacement
     i += 3
   elif myarg == 'name':
@@ -5890,7 +5745,7 @@ def doSignature(users):
     i, encoding = getCharSet(i+2)
     signature = fileutils.read_file(filename, encoding=encoding)
   else:
-    signature = getString(i, 'String', minLen=0)
+    signature = utils.get_string(i, 'String', minLen=0)
     i += 1
   body = {}
   html = False
@@ -5958,8 +5813,8 @@ def doVacation(users):
         i, encoding = getCharSet(i+2)
         message = fileutils.read_file(filename, encoding=encoding)
       elif myarg == 'replace':
-        matchTag = getString(i+1, 'Tag')
-        matchReplacement = getString(i+2, 'String', minLen=0)
+        matchTag = utils.get_string(i+1, 'Tag')
+        matchReplacement = utils.get_string(i+2, 'String', minLen=0)
         tagReplacements[matchTag] = matchReplacement
         i += 3
       elif myarg == 'html':
@@ -6316,7 +6171,7 @@ def getUserAttributes(i, cd, updateCmd):
       gender = {}
       i = getEntryType(i, gender, USER_GENDER_TYPES, customKeyword='other', customTypeKeyword='customGender')
       if (i < len(sys.argv)) and (sys.argv[i].lower() == 'addressmeas'):
-        gender['addressMeAs'] = getString(i+1, 'String')
+        gender['addressMeAs'] = utils.get_string(i+1, 'String')
         i += 2
       body['gender'] = gender
     elif myarg in ['address', 'addresses']:
@@ -7571,187 +7426,6 @@ def doDeleteTeamDrive(users):
     print(f'Deleting Team Drive {teamDriveId}')
     gapi.call(drive.drives(), 'delete', driveId=teamDriveId, soft_errors=True)
 
-def validateCollaborators(collaboratorList, cd):
-  collaborators = []
-  for collaborator in collaboratorList.split(','):
-    collaborator_id = convertEmailAddressToUID(collaborator, cd)
-    if not collaborator_id:
-      controlflow.system_error_exit(4, f'failed to get a UID for {collaborator}. Please make sure this is a real user.')
-    collaborators.append({'email': collaborator, 'id': collaborator_id})
-  return collaborators
-
-def doCreateVaultMatter():
-  v = buildGAPIObject('vault')
-  body = {'name': f'New Matter - {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'}
-  collaborators = []
-  cd = None
-  i = 3
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower().replace('_', '')
-    if myarg == 'name':
-      body['name'] = sys.argv[i+1]
-      i += 2
-    elif myarg == 'description':
-      body['description'] = sys.argv[i+1]
-      i += 2
-    elif myarg in ['collaborator', 'collaborators']:
-      if not cd:
-        cd = buildGAPIObject('directory')
-      collaborators.extend(validateCollaborators(sys.argv[i+1], cd))
-      i += 2
-    else:
-      controlflow.invalid_argument_exit(sys.argv[i], "gam create matter")
-  matterId = gapi.call(v.matters(), 'create', body=body, fields='matterId')['matterId']
-  print(f'Created matter {matterId}')
-  for collaborator in collaborators:
-    print(f' adding collaborator {collaborator["email"]}')
-    gapi.call(v.matters(), 'addPermissions', matterId=matterId, body={'matterPermission': {'role': 'COLLABORATOR', 'accountId': collaborator['id']}})
-
-VAULT_SEARCH_METHODS_MAP = {
-  'account': 'ACCOUNT',
-  'accounts': 'ACCOUNT',
-  'entireorg': 'ENTIRE_ORG',
-  'everyone': 'ENTIRE_ORG',
-  'orgunit': 'ORG_UNIT',
-  'ou': 'ORG_UNIT',
-  'room': 'ROOM',
-  'rooms': 'ROOM',
-  'shareddrive': 'SHARED_DRIVE',
-  'shareddrives': 'SHARED_DRIVE',
-  'teamdrive': 'SHARED_DRIVE',
-  'teamdrives': 'SHARED_DRIVE',
-  }
-VAULT_SEARCH_METHODS_LIST = ['accounts', 'orgunit', 'shareddrives', 'rooms', 'everyone']
-
-def doCreateVaultExport():
-  v = buildGAPIObject('vault')
-  allowed_corpuses = _getEnumValuesMinusUnspecified(v._rootDesc['schemas']['Query']['properties']['corpus']['enum'])
-  allowed_scopes = _getEnumValuesMinusUnspecified(v._rootDesc['schemas']['Query']['properties']['dataScope']['enum'])
-  allowed_formats = _getEnumValuesMinusUnspecified(v._rootDesc['schemas']['MailExportOptions']['properties']['exportFormat']['enum'])
-  export_format = 'MBOX'
-  showConfidentialModeContent = None # default to not even set
-  matterId = None
-  body = {'query': {'dataScope': 'ALL_DATA'}, 'exportOptions': {}}
-  i = 3
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower().replace('_', '')
-    if myarg == 'matter':
-      matterId = getMatterItem(v, sys.argv[i+1])
-      body['matterId'] = matterId
-      i += 2
-    elif myarg == 'name':
-      body['name'] = sys.argv[i+1]
-      i += 2
-    elif myarg == 'corpus':
-      body['query']['corpus'] = sys.argv[i+1].upper()
-      if body['query']['corpus'] not in allowed_corpuses:
-        controlflow.expected_argument_exit("corpus", ", ".join(allowed_corpuses), sys.argv[i+1])
-      i += 2
-    elif myarg in VAULT_SEARCH_METHODS_MAP:
-      if body['query'].get('searchMethod'):
-        controlflow.system_error_exit(3, f'Multiple search methods ({", ".join(VAULT_SEARCH_METHODS_LIST)}) specified, only one is allowed')
-      searchMethod = VAULT_SEARCH_METHODS_MAP[myarg]
-      body['query']['searchMethod'] = searchMethod
-      if searchMethod == 'ACCOUNT':
-        body['query']['accountInfo'] = {'emails': sys.argv[i+1].split(',')}
-        i += 2
-      elif searchMethod == 'ORG_UNIT':
-        body['query']['orgUnitInfo'] = {'orgUnitId': getOrgUnitId(sys.argv[i+1])[1]}
-        i += 2
-      elif searchMethod == 'SHARED_DRIVE':
-        body['query']['sharedDriveInfo'] = {'sharedDriveIds': sys.argv[i+1].split(',')}
-        i += 2
-      elif searchMethod == 'ROOM':
-        body['query']['hangoutsChatInfo'] = {'roomId': sys.argv[i+1].split(',')}
-        i += 2
-      else:
-        i += 1
-    elif myarg == 'scope':
-      body['query']['dataScope'] = sys.argv[i+1].upper()
-      if body['query']['dataScope'] not in allowed_scopes:
-        controlflow.expected_argument_exit("scope", ", ".join(allowed_scopes), sys.argv[i+1])
-      i += 2
-    elif myarg in ['terms']:
-      body['query']['terms'] = sys.argv[i+1]
-      i += 2
-    elif myarg in ['start', 'starttime']:
-      body['query']['startTime'] = getDateZeroTimeOrFullTime(sys.argv[i+1])
-      i += 2
-    elif myarg in ['end', 'endtime']:
-      body['query']['endTime'] = getDateZeroTimeOrFullTime(sys.argv[i+1])
-      i += 2
-    elif myarg in ['timezone']:
-      body['query']['timeZone'] = sys.argv[i+1]
-      i += 2
-    elif myarg in ['excludedrafts']:
-      body['query']['mailOptions'] = {'excludeDrafts': getBoolean(sys.argv[i+1], myarg)}
-      i += 2
-    elif myarg in ['driveversiondate']:
-      body['query'].setdefault('driveOptions', {})['versionDate'] = getDateZeroTimeOrFullTime(sys.argv[i+1])
-      i += 2
-    elif myarg in ['includeshareddrives', 'includeteamdrives']:
-      body['query'].setdefault('driveOptions', {})['includeSharedDrives'] = getBoolean(sys.argv[i+1], myarg)
-      i += 2
-    elif myarg in ['includerooms']:
-      body['query']['hangoutsChatOptions'] = {'includeRooms': getBoolean(sys.argv[i+1], myarg)}
-      i += 2
-    elif myarg in ['format']:
-      export_format = sys.argv[i+1].upper()
-      if export_format not in allowed_formats:
-        controlflow.expected_argument_exit("export format", ", ".join(allowed_formats), export_format)
-      i += 2
-    elif myarg in ['showconfidentialmodecontent']:
-      showConfidentialModeContent = getBoolean(sys.argv[i+1], myarg)
-      i += 2
-    elif myarg in ['region']:
-      allowed_regions = _getEnumValuesMinusUnspecified(v._rootDesc['schemas']['ExportOptions']['properties']['region']['enum'])
-      body['exportOptions']['region'] = sys.argv[i+1].upper()
-      if body['exportOptions']['region'] not in allowed_regions:
-        controlflow.expected_argument_exit("region", ", ".join(allowed_regions), body['exportOptions']['region'])
-      i += 2
-    elif myarg in ['includeaccessinfo']:
-      body['exportOptions'].setdefault('driveOptions', {})['includeAccessInfo'] = getBoolean(sys.argv[i+1], myarg)
-      i += 2
-    else:
-      controlflow.invalid_argument_exit(sys.argv[i], "gam create export")
-  if not matterId:
-    controlflow.system_error_exit(3, 'you must specify a matter for the new export.')
-  if 'corpus' not in body['query']:
-    controlflow.system_error_exit(3, f'you must specify a corpus for the new export. Choose one of {", ".join(allowed_corpuses)}')
-  if 'searchMethod' not in body['query']:
-    controlflow.system_error_exit(3, f'you must specify a search method for the new export. Choose one of {", ".join(VAULT_SEARCH_METHODS_LIST)}')
-  if 'name' not in body:
-    body['name'] = f'GAM {body["query"]["corpus"]} export - {datetime.datetime.now()}'
-  options_field = None
-  if body['query']['corpus'] == 'MAIL':
-    options_field = 'mailOptions'
-  elif body['query']['corpus'] == 'GROUPS':
-    options_field = 'groupsOptions'
-  elif body['query']['corpus'] == 'HANGOUTS_CHAT':
-    options_field = 'hangoutsChatOptions'
-  if options_field:
-    body['exportOptions'].pop('driveOptions', None)
-    body['exportOptions'][options_field] = {'exportFormat': export_format}
-    if showConfidentialModeContent is not None:
-      body['exportOptions'][options_field]['showConfidentialModeContent'] = showConfidentialModeContent
-  results = gapi.call(v.matters().exports(), 'create', matterId=matterId, body=body)
-  print(f'Created export {results["id"]}')
-  display.print_json(results)
-
-def doDeleteVaultExport():
-  v = buildGAPIObject('vault')
-  matterId = getMatterItem(v, sys.argv[3])
-  exportId = convertExportNameToID(v, sys.argv[4], matterId)
-  print(f'Deleting export {sys.argv[4]} / {exportId}')
-  gapi.call(v.matters().exports(), 'delete', matterId=matterId, exportId=exportId)
-
-def doGetVaultExportInfo():
-  v = buildGAPIObject('vault')
-  matterId = getMatterItem(v, sys.argv[3])
-  exportId = convertExportNameToID(v, sys.argv[4], matterId)
-  export = gapi.call(v.matters().exports(), 'get', matterId=matterId, exportId=exportId)
-  display.print_json(export)
-
 def _getCloudStorageObject(s, bucket, object_, local_file=None, expectedMd5=None):
   if not local_file:
     local_file = object_
@@ -7761,7 +7435,7 @@ def _getCloudStorageObject(s, bucket, object_, local_file=None, expectedMd5=None
     if expectedMd5:
       sys.stdout.write(f'Verifying {expectedMd5} hash...')
       sys.stdout.flush()
-      if md5MatchesFile(local_file, expectedMd5, False):
+      if utils.md5_matches_file(local_file, expectedMd5, False):
         print('VERIFIED')
         return
       print('not verified. Downloading again and over-writing...')
@@ -7785,19 +7459,9 @@ def _getCloudStorageObject(s, bucket, object_, local_file=None, expectedMd5=None
     f = fileutils.open_file(local_file, 'rb')
     sys.stdout.write(f' Verifying file hash is {expectedMd5}...')
     sys.stdout.flush()
-    md5MatchesFile(local_file, expectedMd5, True)
+    utils.md5_matches_file(local_file, expectedMd5, True)
     print('VERIFIED')
     fileutils.close_file(f)
-
-def md5MatchesFile(local_file, expected_md5, exitOnError):
-  f = fileutils.open_file(local_file, 'rb')
-  hash_md5 = hashlib.md5()
-  for chunk in iter(lambda: f.read(4096), b""):
-    hash_md5.update(chunk)
-  actual_hash = hash_md5.hexdigest()
-  if exitOnError and actual_hash != expected_md5:
-    controlflow.system_error_exit(6, f'actual hash was {actual_hash}. Exiting on corrupt file.')
-  return actual_hash == expected_md5
 
 def doDownloadCloudStorageBucket():
   bucket_url = sys.argv[3]
@@ -7817,55 +7481,6 @@ def doDownloadCloudStorageBucket():
     _getCloudStorageObject(s, bucket, object_['name'], expectedMd5=expectedMd5)
     i += 1
 
-def doDownloadVaultExport():
-  verifyFiles = True
-  extractFiles = True
-  v = buildGAPIObject('vault')
-  s = buildGAPIObject('storage')
-  matterId = getMatterItem(v, sys.argv[3])
-  exportId = convertExportNameToID(v, sys.argv[4], matterId)
-  targetFolder = GC_Values[GC_DRIVE_DIR]
-  i = 5
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower().replace('_', '')
-    if myarg == 'targetfolder':
-      targetFolder = os.path.expanduser(sys.argv[i+1])
-      if not os.path.isdir(targetFolder):
-        os.makedirs(targetFolder)
-      i += 2
-    elif myarg == 'noverify':
-      verifyFiles = False
-      i += 1
-    elif myarg == 'noextract':
-      extractFiles = False
-      i += 1
-    else:
-      controlflow.invalid_argument_exit(sys.argv[i], "gam download export")
-  export = gapi.call(v.matters().exports(), 'get', matterId=matterId, exportId=exportId)
-  for s_file in export['cloudStorageSink']['files']:
-    bucket = s_file['bucketName']
-    s_object = s_file['objectName']
-    filename = os.path.join(targetFolder, s_object.replace('/', '-'))
-    print(f'saving to {filename}')
-    request = s.objects().get_media(bucket=bucket, object=s_object)
-    f = fileutils.open_file(filename, 'wb')
-    downloader = googleapiclient.http.MediaIoBaseDownload(f, request)
-    done = False
-    while not done:
-      status, done = downloader.next_chunk()
-      sys.stdout.write(' Downloaded: {0:>7.2%}\r'.format(status.progress()))
-      sys.stdout.flush()
-    sys.stdout.write('\n Download complete. Flushing to disk...\n')
-    fileutils.close_file(f, True)
-    if verifyFiles:
-      expected_hash = s_file['md5Hash']
-      sys.stdout.write(f' Verifying file hash is {expected_hash}...')
-      sys.stdout.flush()
-      md5MatchesFile(filename, expected_hash, True)
-      print('VERIFIED')
-    if extractFiles and re.search(r'\.zip$', filename):
-      extract_nested_zip(filename, targetFolder)
-
 def extract_nested_zip(zippedFile, toFolder, spacing=' '):
   """ Extract a zip file including any nested zip files
       Delete the zip file(s) after extraction
@@ -7879,303 +7494,6 @@ def extract_nested_zip(zippedFile, toFolder, spacing=' '):
       if re.search(r'\.zip$', inner_file.filename):
         extract_nested_zip(inner_file_path, toFolder, spacing=spacing+' ')
   os.remove(zippedFile)
-
-def doCreateVaultHold():
-  v = buildGAPIObject('vault')
-  allowed_corpuses = v._rootDesc['schemas']['Hold']['properties']['corpus']['enum']
-  body = {'query': {}}
-  i = 3
-  query = None
-  start_time = None
-  end_time = None
-  matterId = None
-  accounts = []
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower().replace('_', '')
-    if myarg == 'name':
-      body['name'] = sys.argv[i+1]
-      i += 2
-    elif myarg == 'query':
-      query = sys.argv[i+1]
-      i += 2
-    elif myarg == 'corpus':
-      body['corpus'] = sys.argv[i+1].upper()
-      if body['corpus'] not in allowed_corpuses:
-        controlflow.expected_argument_exit("corpus", ", ".join(allowed_corpuses), sys.argv[i+1])
-      i += 2
-    elif myarg in ['accounts', 'users', 'groups']:
-      accounts = sys.argv[i+1].split(',')
-      i += 2
-    elif myarg in ['orgunit', 'ou']:
-      body['orgUnit'] = {'orgUnitId': getOrgUnitId(sys.argv[i+1])[1]}
-      i += 2
-    elif myarg in ['start', 'starttime']:
-      start_time = getDateZeroTimeOrFullTime(sys.argv[i+1])
-      i += 2
-    elif myarg in ['end', 'endtime']:
-      end_time = getDateZeroTimeOrFullTime(sys.argv[i+1])
-      i += 2
-    elif myarg == 'matter':
-      matterId = getMatterItem(v, sys.argv[i+1])
-      i += 2
-    else:
-      controlflow.invalid_argument_exit(sys.argv[i], "gam create hold")
-  if not matterId:
-    controlflow.system_error_exit(3, 'you must specify a matter for the new hold.')
-  if not body.get('name'):
-    controlflow.system_error_exit(3, 'you must specify a name for the new hold.')
-  if not body.get('corpus'):
-    controlflow.system_error_exit(3, f'you must specify a corpus for the new hold. Choose one of {", ".join(allowed_corpuses)}')
-  if body['corpus'] == 'HANGOUTS_CHAT':
-    query_type = 'hangoutsChatQuery'
-  else:
-    query_type = f'{body["corpus"].lower()}Query'
-  body['query'][query_type] = {}
-  if body['corpus'] == 'DRIVE':
-    if query:
-      try:
-        body['query'][query_type] = json.loads(query)
-      except ValueError as e:
-        controlflow.system_error_exit(3, f'{str(e)}, query: {query}')
-  elif body['corpus'] in ['GROUPS', 'MAIL']:
-    if query:
-      body['query'][query_type] = {'terms': query}
-    if start_time:
-      body['query'][query_type]['startTime'] = start_time
-    if end_time:
-      body['query'][query_type]['endTime'] = end_time
-  if accounts:
-    body['accounts'] = []
-    cd = buildGAPIObject('directory')
-    account_type = 'group' if body['corpus'] == 'GROUPS' else 'user'
-    for account in accounts:
-      body['accounts'].append({'accountId': convertEmailAddressToUID(account, cd, account_type)})
-  holdId = gapi.call(v.matters().holds(), 'create', matterId=matterId, body=body, fields='holdId')['holdId']
-  print(f'Created hold {holdId}')
-
-def doDeleteVaultHold():
-  v = buildGAPIObject('vault')
-  hold = sys.argv[3]
-  matterId = None
-  i = 4
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower().replace('_', '')
-    if myarg == 'matter':
-      matterId = getMatterItem(v, sys.argv[i+1])
-      holdId = convertHoldNameToID(v, hold, matterId)
-      i += 2
-    else:
-      controlflow.invalid_argument_exit(myarg, "gam delete hold")
-  if not matterId:
-    controlflow.system_error_exit(3, 'you must specify a matter for the hold.')
-  print(f'Deleting hold {hold} / {holdId}')
-  gapi.call(v.matters().holds(), 'delete', matterId=matterId, holdId=holdId)
-
-def doGetVaultHoldInfo():
-  v = buildGAPIObject('vault')
-  hold = sys.argv[3]
-  matterId = None
-  i = 4
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower().replace('_', '')
-    if myarg == 'matter':
-      matterId = getMatterItem(v, sys.argv[i+1])
-      holdId = convertHoldNameToID(v, hold, matterId)
-      i += 2
-    else:
-      controlflow.invalid_argument_exit(myarg, "gam info hold")
-  if not matterId:
-    controlflow.system_error_exit(3, 'you must specify a matter for the hold.')
-  results = gapi.call(v.matters().holds(), 'get', matterId=matterId, holdId=holdId)
-  cd = buildGAPIObject('directory')
-  if 'accounts' in results:
-    account_type = 'group' if results['corpus'] == 'GROUPS' else 'user'
-    for i in range(0, len(results['accounts'])):
-      uid = f'uid:{results["accounts"][i]["accountId"]}'
-      acct_email = convertUIDtoEmailAddress(uid, cd, [account_type])
-      results['accounts'][i]['email'] = acct_email
-  if 'orgUnit' in results:
-    results['orgUnit']['orgUnitPath'] = doGetOrgInfo(results['orgUnit']['orgUnitId'], return_attrib='orgUnitPath')
-  display.print_json(results)
-
-def convertExportNameToID(v, nameOrID, matterId):
-  nameOrID = nameOrID.lower()
-  cg = UID_PATTERN.match(nameOrID)
-  if cg:
-    return cg.group(1)
-  exports = gapi.get_all_pages(v.matters().exports(), 'list', 'exports', matterId=matterId, fields='exports(id,name),nextPageToken')
-  for export in exports:
-    if export['name'].lower() == nameOrID:
-      return export['id']
-  controlflow.system_error_exit(4, f'could not find export name {nameOrID} in matter {matterId}')
-
-def convertHoldNameToID(v, nameOrID, matterId):
-  nameOrID = nameOrID.lower()
-  cg = UID_PATTERN.match(nameOrID)
-  if cg:
-    return cg.group(1)
-  holds = gapi.get_all_pages(v.matters().holds(), 'list', 'holds', matterId=matterId, fields='holds(holdId,name),nextPageToken')
-  for hold in holds:
-    if hold['name'].lower() == nameOrID:
-      return hold['holdId']
-  controlflow.system_error_exit(4, f'could not find hold name {nameOrID} in matter {matterId}')
-
-def convertMatterNameToID(v, nameOrID):
-  nameOrID = nameOrID.lower()
-  cg = UID_PATTERN.match(nameOrID)
-  if cg:
-    return cg.group(1)
-  matters = gapi.get_all_pages(v.matters(), 'list', 'matters', view='BASIC', fields='matters(matterId,name),nextPageToken')
-  for matter in matters:
-    if matter['name'].lower() == nameOrID:
-      return matter['matterId']
-  return None
-
-def getMatterItem(v, nameOrID):
-  matterId = convertMatterNameToID(v, nameOrID)
-  if not matterId:
-    controlflow.system_error_exit(4, f'could not find matter {nameOrID}')
-  return matterId
-
-def doUpdateVaultHold():
-  v = buildGAPIObject('vault')
-  hold = sys.argv[3]
-  matterId = None
-  body = {}
-  query = None
-  add_accounts = []
-  del_accounts = []
-  start_time = None
-  end_time = None
-  i = 4
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower().replace('_', '')
-    if myarg == 'matter':
-      matterId = getMatterItem(v, sys.argv[i+1])
-      holdId = convertHoldNameToID(v, hold, matterId)
-      i += 2
-    elif myarg == 'query':
-      query = sys.argv[i+1]
-      i += 2
-    elif myarg in ['orgunit', 'ou']:
-      body['orgUnit'] = {'orgUnitId': getOrgUnitId(sys.argv[i+1])[1]}
-      i += 2
-    elif myarg in ['start', 'starttime']:
-      start_time = getDateZeroTimeOrFullTime(sys.argv[i+1])
-      i += 2
-    elif myarg in ['end', 'endtime']:
-      end_time = getDateZeroTimeOrFullTime(sys.argv[i+1])
-      i += 2
-    elif myarg in ['addusers', 'addaccounts', 'addgroups']:
-      add_accounts = sys.argv[i+1].split(',')
-      i += 2
-    elif myarg in ['removeusers', 'removeaccounts', 'removegroups']:
-      del_accounts = sys.argv[i+1].split(',')
-      i += 2
-    else:
-      controlflow.invalid_argument_exit(myarg, "gam update hold")
-  if not matterId:
-    controlflow.system_error_exit(3, 'you must specify a matter for the hold.')
-  if query or start_time or end_time or body.get('orgUnit'):
-    old_body = gapi.call(v.matters().holds(), 'get', matterId=matterId, holdId=holdId, fields='corpus,query,orgUnit')
-    body['query'] = old_body['query']
-    body['corpus'] = old_body['corpus']
-    if 'orgUnit' in old_body and 'orgUnit' not in body:
-      # bah, API requires this to be sent on update even when it's not changing
-      body['orgUnit'] = old_body['orgUnit']
-    query_type = f'{body["corpus"].lower()}Query'
-    if body['corpus'] == 'DRIVE':
-      if query:
-        try:
-          body['query'][query_type] = json.loads(query)
-        except ValueError as e:
-          controlflow.system_error_exit(3, f'{str(e)}, query: {query}')
-    elif body['corpus'] in ['GROUPS', 'MAIL']:
-      if query:
-        body['query'][query_type]['terms'] = query
-      if start_time:
-        body['query'][query_type]['startTime'] = start_time
-      if end_time:
-        body['query'][query_type]['endTime'] = end_time
-  if body:
-    print(f'Updating hold {hold} / {holdId}')
-    gapi.call(v.matters().holds(), 'update', matterId=matterId, holdId=holdId, body=body)
-  if add_accounts or del_accounts:
-    cd = buildGAPIObject('directory')
-    for account in add_accounts:
-      print(f'adding {account} to hold.')
-      add_body = {'accountId': convertEmailAddressToUID(account, cd)}
-      gapi.call(v.matters().holds().accounts(), 'create', matterId=matterId, holdId=holdId, body=add_body)
-    for account in del_accounts:
-      print(f'removing {account} from hold.')
-      accountId = convertEmailAddressToUID(account, cd)
-      gapi.call(v.matters().holds().accounts(), 'delete', matterId=matterId, holdId=holdId, accountId=accountId)
-
-def doUpdateVaultMatter(action=None):
-  v = buildGAPIObject('vault')
-  matterId = getMatterItem(v, sys.argv[3])
-  body = {}
-  action_kwargs = {'body': {}}
-  add_collaborators = []
-  remove_collaborators = []
-  cd = None
-  i = 4
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower().replace('_', '')
-    if myarg == 'action':
-      action = sys.argv[i+1].lower()
-      if action not in VAULT_MATTER_ACTIONS:
-        controlflow.system_error_exit(3, f'allowed actions are {", ".join(VAULT_MATTER_ACTIONS)}, got {action}')
-      i += 2
-    elif myarg == 'name':
-      body['name'] = sys.argv[i+1]
-      i += 2
-    elif myarg == 'description':
-      body['description'] = sys.argv[i+1]
-      i += 2
-    elif myarg in ['addcollaborator', 'addcollaborators']:
-      if not cd:
-        cd = buildGAPIObject('directory')
-      add_collaborators.extend(validateCollaborators(sys.argv[i+1], cd))
-      i += 2
-    elif myarg in ['removecollaborator', 'removecollaborators']:
-      if not cd:
-        cd = buildGAPIObject('directory')
-      remove_collaborators.extend(validateCollaborators(sys.argv[i+1], cd))
-      i += 2
-    else:
-      controlflow.invalid_argument_exit(sys.argv[i], "gam update matter")
-  if action == 'delete':
-    action_kwargs = {}
-  if body:
-    print(f'Updating matter {sys.argv[3]}...')
-    if 'name' not in body or 'description' not in body:
-      # bah, API requires name/description to be sent on update even when it's not changing
-      result = gapi.call(v.matters(), 'get', matterId=matterId, view='BASIC')
-      body.setdefault('name', result['name'])
-      body.setdefault('description', result.get('description'))
-    gapi.call(v.matters(), 'update', body=body, matterId=matterId)
-  if action:
-    print(f'Performing {action} on matter {sys.argv[3]}')
-    gapi.call(v.matters(), action, matterId=matterId, **action_kwargs)
-  for collaborator in add_collaborators:
-    print(f' adding collaborator {collaborator["email"]}')
-    gapi.call(v.matters(), 'addPermissions', matterId=matterId, body={'matterPermission': {'role': 'COLLABORATOR', 'accountId': collaborator['id']}})
-  for collaborator in remove_collaborators:
-    print(f' removing collaborator {collaborator["email"]}')
-    gapi.call(v.matters(), 'removePermissions', matterId=matterId, body={'accountId': collaborator['id']})
-
-def doGetVaultMatterInfo():
-  v = buildGAPIObject('vault')
-  matterId = getMatterItem(v, sys.argv[3])
-  result = gapi.call(v.matters(), 'get', matterId=matterId, view='FULL')
-  if 'matterPermissions' in result:
-    cd = buildGAPIObject('directory')
-    for i in range(0, len(result['matterPermissions'])):
-      uid = f'uid:{result["matterPermissions"][i]["accountId"]}'
-      user_email = convertUIDtoEmailAddress(uid, cd)
-      result['matterPermissions'][i]['email'] = user_email
-  display.print_json(result)
 
 def doCreateUser():
   cd = buildGAPIObject('directory')
@@ -10713,9 +10031,6 @@ def doPrintShowAlertFeedback():
   for feedbac in feedback:
     print(feedbac)
 
-def _getEnumValuesMinusUnspecified(values):
-  return [a_type for a_type in values if '_UNSPECIFIED' not in a_type]
-
 def doCreateAlertFeedback():
   _, ac = buildAlertCenterGAPIObject(_getValueFromOAuth('email'))
   valid_types = _getEnumValuesMinusUnspecified(ac._rootDesc['schemas']['AlertFeedback']['properties']['type']['enum'])
@@ -11256,106 +10571,6 @@ def doPrintGroupMembers():
         member['name'] = memberName
       csvRows.append(member)
   display.write_csv_file(csvRows, titles, 'Group Members', todrive)
-
-def doPrintVaultMatters():
-  v = buildGAPIObject('vault')
-  todrive = False
-  csvRows = []
-  initialTitles = ['matterId', 'name', 'description', 'state']
-  titles = initialTitles[:]
-  view = 'FULL'
-  i = 3
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower().replace('_', '')
-    if myarg == 'todrive':
-      todrive = True
-      i += 1
-    elif myarg in PROJECTION_CHOICES_MAP:
-      view = PROJECTION_CHOICES_MAP[myarg]
-      i += 1
-    else:
-      controlflow.invalid_argument_exit(myarg, "gam print matters")
-  printGettingAllItems('Vault Matters', None)
-  page_message = gapi.got_total_items_msg('Vault Matters', '...\n')
-  matters = gapi.get_all_pages(v.matters(), 'list', 'matters', page_message=page_message, view=view)
-  for matter in matters:
-    display.add_row_titles_to_csv_file(utils.flatten_json(matter), csvRows, titles)
-  display.sort_csv_titles(initialTitles, titles)
-  display.write_csv_file(csvRows, titles, 'Vault Matters', todrive)
-
-def doPrintVaultExports():
-  v = buildGAPIObject('vault')
-  todrive = False
-  csvRows = []
-  initialTitles = ['matterId', 'id', 'name', 'createTime', 'status']
-  titles = initialTitles[:]
-  matters = []
-  matterIds = []
-  i = 3
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower().replace('_', '')
-    if myarg == 'todrive':
-      todrive = True
-      i += 1
-    elif myarg in ['matter', 'matters']:
-      matters = sys.argv[i+1].split(',')
-      i += 2
-    else:
-      controlflow.invalid_argument_exit(myarg, "gam print exports")
-  if not matters:
-    matters_results = gapi.get_all_pages(v.matters(), 'list', 'matters', view='BASIC', fields='matters(matterId,state),nextPageToken')
-    for matter in matters_results:
-      if matter['state'] != 'OPEN':
-        print(f'ignoring matter {matter["matterId"]} in state {matter["state"]}')
-        continue
-      matterIds.append(matter['matterId'])
-  else:
-    for matter in matters:
-      matterIds.append(getMatterItem(v, matter))
-  for matterId in matterIds:
-    sys.stderr.write(f'Retrieving exports for matter {matterId}\n')
-    exports = gapi.get_all_pages(v.matters().exports(), 'list', 'exports', matterId=matterId)
-    for export in exports:
-      display.add_row_titles_to_csv_file(utils.flatten_json(export, flattened={'matterId': matterId}), csvRows, titles)
-  display.sort_csv_titles(initialTitles, titles)
-  display.write_csv_file(csvRows, titles, 'Vault Exports', todrive)
-
-def doPrintVaultHolds():
-  v = buildGAPIObject('vault')
-  todrive = False
-  csvRows = []
-  initialTitles = ['matterId', 'holdId', 'name', 'corpus', 'updateTime']
-  titles = initialTitles[:]
-  matters = []
-  matterIds = []
-  i = 3
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower().replace('_', '')
-    if myarg == 'todrive':
-      todrive = True
-      i += 1
-    elif myarg in ['matter', 'matters']:
-      matters = sys.argv[i+1].split(',')
-      i += 2
-    else:
-      controlflow.invalid_argument_exit(myarg, "gam print holds")
-  if not matters:
-    matters_results = gapi.get_all_pages(v.matters(), 'list', 'matters', view='BASIC', fields='matters(matterId,state),nextPageToken')
-    for matter in matters_results:
-      if matter['state'] != 'OPEN':
-        print(f'ignoring matter {matter["matterId"]} in state {matter["state"]}')
-        continue
-      matterIds.append(matter['matterId'])
-  else:
-    for matter in matters:
-      matterIds.append(getMatterItem(v, matter))
-  for matterId in matterIds:
-    sys.stderr.write(f'Retrieving holds for matter {matterId}\n')
-    holds = gapi.get_all_pages(v.matters().holds(), 'list', 'holds', matterId=matterId)
-    for hold in holds:
-      display.add_row_titles_to_csv_file(utils.flatten_json(hold, flattened={'matterId': matterId}), csvRows, titles)
-  display.sort_csv_titles(initialTitles, titles)
-  display.write_csv_file(csvRows, titles, 'Vault Holds', todrive)
 
 def doPrintMobileDevices():
   cd = buildGAPIObject('directory')
@@ -13203,11 +12418,11 @@ def ProcessGAMCommand(args):
       elif argument in ['resoldsubscription', 'resellersubscription']:
         doCreateResoldSubscription()
       elif argument in ['matter', 'vaultmatter']:
-        doCreateVaultMatter()
+        gapi.vault.createMatter()
       elif argument in ['hold', 'vaulthold']:
-        doCreateVaultHold()
+        gapi.vault.createHold()
       elif argument in ['export', 'vaultexport']:
-        doCreateVaultExport()
+        gapi.vault.createExport()
       elif argument in ['building']:
         doCreateBuilding()
       elif argument in ['feature']:
@@ -13259,9 +12474,9 @@ def ProcessGAMCommand(args):
       elif argument in ['resoldsubscription', 'resellersubscription']:
         doUpdateResoldSubscription()
       elif argument in ['matter', 'vaultmatter']:
-        doUpdateVaultMatter()
+        gapi.vault.updateMatter()
       elif argument in ['hold', 'vaulthold']:
-        doUpdateVaultHold()
+        gapi.vault.updateHold()
       elif argument in ['project', 'projects', 'apiproject']:
         doUpdateProjects()
       elif argument in ['building']:
@@ -13312,11 +12527,11 @@ def ProcessGAMCommand(args):
       elif argument in ['resoldsubscription', 'resoldsubscriptions', 'resellersubscription', 'resellersubscriptions']:
         doGetResoldSubscriptions()
       elif argument in ['matter', 'vaultmatter']:
-        doGetVaultMatterInfo()
+        gapi.vault.getMatterInfo()
       elif argument in ['hold', 'vaulthold']:
-        doGetVaultHoldInfo()
+        gapi.vault.getHoldInfo()
       elif argument in ['export', 'vaultexport']:
-        doGetVaultExportInfo()
+        gapi.vault.getExportInfo()
       elif argument in ['building']:
         doGetBuildingInfo()
       else:
@@ -13362,11 +12577,11 @@ def ProcessGAMCommand(args):
       elif argument in ['resoldsubscription', 'resellersubscription']:
         doDeleteResoldSubscription()
       elif argument in ['matter', 'vaultmatter']:
-        doUpdateVaultMatter(action=command)
+        gapi.vault.updateMatter(action=command)
       elif argument in ['hold', 'vaulthold']:
-        doDeleteVaultHold()
+        gapi.vault.deleteHold()
       elif argument in ['export', 'vaultexport']:
-        doDeleteVaultExport()
+        gapi.vault.deleteExport()
       elif argument in ['building']:
         doDeleteBuilding()
       elif argument in ['feature']:
@@ -13383,7 +12598,7 @@ def ProcessGAMCommand(args):
       if argument == 'user':
         doUndeleteUser()
       elif argument in ['matter', 'vaultmatter']:
-        doUpdateVaultMatter(action=command)
+        gapi.vault.updateMatter(action=command)
       elif argument == 'alert':
         doDeleteOrUndeleteAlert('undelete')
       else:
@@ -13393,7 +12608,7 @@ def ProcessGAMCommand(args):
       # close and reopen will have to be split apart if either takes a new argument
       argument = sys.argv[2].lower()
       if argument in ['matter', 'vaultmatter']:
-        doUpdateVaultMatter(action=command)
+        gapi.vault.updateMatter(action=command)
       else:
         controlflow.invalid_argument_exit(argument, f"gam {command}")
       sys.exit(0)
@@ -13446,11 +12661,11 @@ def ProcessGAMCommand(args):
       elif argument in ['guardian', 'guardians']:
         doPrintShowGuardians(True)
       elif argument in ['matters', 'vaultmatters']:
-        doPrintVaultMatters()
+        gapi.vault.printMatters()
       elif argument in ['holds', 'vaultholds']:
-        doPrintVaultHolds()
+        gapi.vault.printHolds()
       elif argument in ['exports', 'vaultexports']:
-        doPrintVaultExports()
+        gapi.vault.printExports()
       elif argument in ['building', 'buildings']:
         doPrintBuildings()
       elif argument in ['feature', 'features']:
@@ -13580,7 +12795,7 @@ def ProcessGAMCommand(args):
     elif command == 'download':
       argument = sys.argv[2].lower()
       if argument in ['export', 'vaultexport']:
-        doDownloadVaultExport()
+        gapi.vault.downloadExport()
       elif argument in ['storagebucket']:
         doDownloadCloudStorageBucket()
       else:
