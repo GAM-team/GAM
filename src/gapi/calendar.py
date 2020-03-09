@@ -68,8 +68,8 @@ def printShowACLs(csvFormat):
             rows.append(row)
         else:
             formatted_acl = formatACLRule(rule)
-            count = display.current_count(i, count)
-            print(f'Calendar: {calendarId}, ACL: {formatted_acl}{count}')
+            current_count = display.current_count(i, count)
+            print(f'Calendar: {calendarId}, ACL: {formatted_acl}{current_count}')
     if csvFormat:
         display.write_csv_file(
             rows, titles, f'{calendarId} Calendar ACLs', toDrive)
