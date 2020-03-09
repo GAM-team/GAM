@@ -249,7 +249,7 @@ script:
 - if [ "$e2e" = true ]; then $gam create vaultmatter name "Travis matter $newbase" description "test matter" collaborators $newuser; fi
 - if [ "$e2e" = true ]; then $gam create vaulthold matter "Travis matter $newbase" name "Travis hold $newbase" corpus mail accounts $newuser; fi
 - if [ "$e2e" = true ]; then $gam print vaultmatters; fi
-- if [ "$e2e" = true ]; then $gam print vaultholds matter "Travis matter $newbase; fi
+- if [ "$e2e" = true ]; then $gam print vaultholds matter "Travis matter $newbase"; fi
 - if [ "$e2e" = true ]; then $gam create vaultexport matter "Travis matter $newbase" name "Travis export $newbase" corpus mail accounts $newuser; fi
 - if [ "$e2e" = true ]; then $gam print exports matter "Travis matter $newbase" | $gam csv - gam info export id:~~matterId~~ id:~~id~~; fi
 - if [ "$e2e" = true ]; then $gam printer register; fi
