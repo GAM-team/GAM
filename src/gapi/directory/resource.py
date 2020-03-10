@@ -471,7 +471,7 @@ def getResourceCalendarInfo():
         features = []
         for a_feature in resource.pop('featureInstances'):
             features.append(a_feature['feature']['name'])
-        resources['features'] = ', '.join(features)
+        resource['features'] = ', '.join(features)
     if 'buildingId' in resource:
         resource['buildingName'] = getBuildingNameById(
             cd, resource['buildingId'])
@@ -479,7 +479,7 @@ def getResourceCalendarInfo():
     display.print_json(resource)
 
 
-def doDeleteResourceCalendar():
+def deleteResourceCalendar():
     resId = sys.argv[3]
     cd = gapi.directory.buildGAPIObject()
     print(f'Deleting resource calendar {resId}')
