@@ -6,7 +6,7 @@ import platform
 import re
 
 gam_author = 'Jay Lee <jay0lee@gmail.com>'
-gam_version = '4.99'
+gam_version = '5.00'
 gam_license = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 GAM_URL = 'https://git.io/gam'
@@ -1197,3 +1197,5 @@ YYYYMMDD_FORMAT_REQUIRED = 'yyyy-mm-dd'
 YYYYMMDDTHHMMSS_FORMAT_REQUIRED = 'yyyy-mm-ddThh:mm:ss[.fff](Z|(+|-(hh:mm)))'
 
 YYYYMMDD_PATTERN = re.compile(r'^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+
+UID_PATTERN = re.compile(r'u?id: ?(.+)', re.IGNORECASE)

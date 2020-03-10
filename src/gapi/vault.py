@@ -384,7 +384,7 @@ def getHoldInfo():
 
 def convertExportNameToID(v, nameOrID, matterId):
     nameOrID = nameOrID.lower()
-    cg = __main__.UID_PATTERN.match(nameOrID)
+    cg = UID_PATTERN.match(nameOrID)
     if cg:
         return cg.group(1)
     fields = 'exports(id,name),nextPageToken'
@@ -399,7 +399,7 @@ def convertExportNameToID(v, nameOrID, matterId):
 
 def convertHoldNameToID(v, nameOrID, matterId):
     nameOrID = nameOrID.lower()
-    cg = __main__.UID_PATTERN.match(nameOrID)
+    cg = UID_PATTERN.match(nameOrID)
     if cg:
         return cg.group(1)
     fields = 'holds(holdId,name),nextPageToken'
@@ -414,7 +414,7 @@ def convertHoldNameToID(v, nameOrID, matterId):
 
 def convertMatterNameToID(v, nameOrID):
     nameOrID = nameOrID.lower()
-    cg = __main__.UID_PATTERN.match(nameOrID)
+    cg = UID_PATTERN.match(nameOrID)
     if cg:
         return cg.group(1)
     fields = 'matters(matterId,name),nextPageToken'
