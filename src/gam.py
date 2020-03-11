@@ -76,8 +76,11 @@ import display
 import fileutils
 import gapi.calendar
 import gapi.directory
+import gapi.directory.cros
+import gapi.directory.customer
 import gapi.directory.resource
 import gapi.errors
+import gapi.reports
 import gapi.storage
 import gapi.vault
 import gapi
@@ -1065,267 +1068,6 @@ RI_ROLE = 4
 def batchRequestID(entityName, j, jcount, item, role=''):
   return f'{entityName}\n{j}\n{jcount}\n{item}\n{role}'
 
-def _adjustDate(errMsg):
-  match_date = re.match('Data for dates later than (.*) is not yet available. Please check back later', errMsg)
-  if not match_date:
-    match_date = re.match('Start date can not be later than (.*)', errMsg)
-  if not match_date:
-    controlflow.system_error_exit(4, errMsg)
-  return str(match_date.group(1))
-
-def _checkFullDataAvailable(warnings, tryDate, fullDataRequired):
-  for warning in warnings:
-    if warning['code'] == 'PARTIAL_DATA_AVAILABLE':
-      for app in warning['data']:
-        if app['key'] == 'application' and app['value'] != 'docs' and (not fullDataRequired or app['value'] in fullDataRequired):
-          tryDateTime = datetime.datetime.strptime(tryDate, YYYYMMDD_FORMAT)-datetime.timedelta(days=1)
-          return (0, tryDateTime.strftime(YYYYMMDD_FORMAT))
-    elif warning['code'] == 'DATA_NOT_AVAILABLE':
-      for app in warning['data']:
-        if app['key'] == 'application' and app['value'] != 'docs' and (not fullDataRequired or app['value'] in fullDataRequired):
-          return (-1, tryDate)
-  return (1, tryDate)
-
-REPORT_CHOICE_MAP = {
-  'access': 'access_transparency',
-  'accesstransparency': 'access_transparency',
-  'calendars': 'calendar',
-  'customers': 'customer',
-  'doc': 'drive',
-  'docs': 'drive',
-  'domain': 'customer',
-  'enterprisegroups': 'groups_enterprise',
-  'google+': 'gplus',
-  'group': 'groups',
-  'groupsenterprise': 'groups_enterprise',
-  'hangoutsmeet': 'meet',
-  'logins': 'login',
-  'oauthtoken': 'token',
-  'tokens': 'token',
-  'users': 'user',
-  'useraccounts': 'user_accounts',
-  }
-
-def showReport():
-  rep = buildGAPIObject('reports')
-  report = sys.argv[2].lower()
-  report = REPORT_CHOICE_MAP.get(report.replace('_', ''), report)
-  valid_apps = gapi.get_enum_values_minus_unspecified(rep._rootDesc['resources']['activities']['methods']['list']['parameters']['applicationName']['enum'])+['customer', 'user']
-  if report not in valid_apps:
-    controlflow.expected_argument_exit("report", ", ".join(sorted(valid_apps)), report)
-  customerId = GC_Values[GC_CUSTOMER_ID]
-  if customerId == MY_CUSTOMER:
-    customerId = None
-  filters = parameters = actorIpAddress = startTime = endTime = eventName = orgUnitId = None
-  tryDate = datetime.date.today().strftime(YYYYMMDD_FORMAT)
-  to_drive = False
-  userKey = 'all'
-  fullDataRequired = None
-  i = 3
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower()
-    if myarg == 'date':
-      tryDate = utils.get_yyyymmdd(sys.argv[i+1])
-      i += 2
-    elif myarg in ['orgunit', 'org', 'ou']:
-      _, orgUnitId = getOrgUnitId(sys.argv[i+1])
-      i += 2
-    elif myarg == 'fulldatarequired':
-      fullDataRequired = []
-      fdr = sys.argv[i+1].lower()
-      if fdr and fdr != 'all':
-        fullDataRequired = fdr.replace(',', ' ').split()
-      i += 2
-    elif myarg == 'start':
-      startTime = utils.get_time_or_delta_from_now(sys.argv[i+1])
-      i += 2
-    elif myarg == 'end':
-      endTime = utils.get_time_or_delta_from_now(sys.argv[i+1])
-      i += 2
-    elif myarg == 'event':
-      eventName = sys.argv[i+1]
-      i += 2
-    elif myarg == 'user':
-      userKey = normalizeEmailAddressOrUID(sys.argv[i+1])
-      i += 2
-    elif myarg in ['filter', 'filters']:
-      filters = sys.argv[i+1]
-      i += 2
-    elif myarg in ['fields', 'parameters']:
-      parameters = sys.argv[i+1]
-      i += 2
-    elif myarg == 'ip':
-      actorIpAddress = sys.argv[i+1]
-      i += 2
-    elif myarg == 'todrive':
-      to_drive = True
-      i += 1
-    else:
-      controlflow.invalid_argument_exit(sys.argv[i], "gam report")
-  if report == 'user':
-    while True:
-      try:
-        if fullDataRequired is not None:
-          warnings = gapi.get_items(rep.userUsageReport(), 'get', 'warnings',
-                                    throw_reasons=[gapi.errors.ErrorReason.INVALID],
-                                    date=tryDate, userKey=userKey, customerId=customerId, orgUnitID=orgUnitId, fields='warnings')
-          fullData, tryDate = _checkFullDataAvailable(warnings, tryDate, fullDataRequired)
-          if fullData < 0:
-            print('No user report available.')
-            sys.exit(1)
-          if fullData == 0:
-            continue
-        page_message = gapi.got_total_items_msg('Users', '...\n')
-        usage = gapi.get_all_pages(rep.userUsageReport(), 'get', 'usageReports', page_message=page_message, throw_reasons=[gapi.errors.ErrorReason.INVALID],
-                                   date=tryDate, userKey=userKey, customerId=customerId, orgUnitID=orgUnitId, filters=filters, parameters=parameters)
-        break
-      except gapi.errors.GapiInvalidError as e:
-        tryDate = _adjustDate(str(e))
-    if not usage:
-      print('No user report available.')
-      sys.exit(1)
-    titles = ['email', 'date']
-    csvRows = []
-    for user_report in usage:
-      if 'entity' not in user_report:
-        continue
-      row = {'email': user_report['entity']['userEmail'], 'date': tryDate}
-      for item in user_report.get('parameters', []):
-        if 'name' not in item:
-          continue
-        name = item['name']
-        if not name in titles:
-          titles.append(name)
-        for ptype in ['intValue', 'boolValue', 'datetimeValue', 'stringValue']:
-          if ptype in item:
-            row[name] = item[ptype]
-            break
-        else:
-          row[name] = ''
-      csvRows.append(row)
-    display.write_csv_file(csvRows, titles, f'User Reports - {tryDate}', to_drive)
-  elif report == 'customer':
-    while True:
-      try:
-        if fullDataRequired is not None:
-          warnings = gapi.get_items(rep.customerUsageReports(), 'get', 'warnings',
-                                    throw_reasons=[gapi.errors.ErrorReason.INVALID],
-                                    customerId=customerId, date=tryDate, fields='warnings')
-          fullData, tryDate = _checkFullDataAvailable(warnings, tryDate, fullDataRequired)
-          if fullData < 0:
-            print('No customer report available.')
-            sys.exit(1)
-          if fullData == 0:
-            continue
-        usage = gapi.get_all_pages(rep.customerUsageReports(), 'get', 'usageReports', throw_reasons=[gapi.errors.ErrorReason.INVALID],
-                                   customerId=customerId, date=tryDate, parameters=parameters)
-        break
-      except gapi.errors.GapiInvalidError as e:
-        tryDate = _adjustDate(str(e))
-    if not usage:
-      print('No customer report available.')
-      sys.exit(1)
-    titles = ['name', 'value', 'client_id']
-    csvRows = []
-    auth_apps = list()
-    for item in usage[0]['parameters']:
-      if 'name' not in item:
-        continue
-      name = item['name']
-      if 'intValue' in item:
-        value = item['intValue']
-      elif 'msgValue' in item:
-        if name == 'accounts:authorized_apps':
-          for subitem in item['msgValue']:
-            app = {}
-            for an_item in subitem:
-              if an_item == 'client_name':
-                app['name'] = 'App: ' + subitem[an_item].replace('\n', '\\n')
-              elif an_item == 'num_users':
-                app['value'] = f'{subitem[an_item]} users'
-              elif an_item == 'client_id':
-                app['client_id'] = subitem[an_item]
-            auth_apps.append(app)
-          continue
-        values = []
-        for subitem in item['msgValue']:
-          if 'count' in subitem:
-            mycount = myvalue = None
-            for key, value in list(subitem.items()):
-              if key == 'count':
-                mycount = value
-              else:
-                myvalue = value
-              if mycount and myvalue:
-                values.append(f'{myvalue}:{mycount}')
-            value = ' '.join(values)
-          elif 'version_number' in subitem and 'num_devices' in subitem:
-            values.append(f'{subitem["version_number"]}:{subitem["num_devices"]}')
-          else:
-            continue
-          value = ' '.join(sorted(values, reverse=True))
-      csvRows.append({'name': name, 'value': value})
-    for app in auth_apps: # put apps at bottom
-      csvRows.append(app)
-    display.write_csv_file(csvRows, titles, f'Customer Report - {tryDate}', todrive=to_drive)
-  else:
-    page_message = gapi.got_total_items_msg('Activities', '...\n')
-    activities = gapi.get_all_pages(rep.activities(), 'list', 'items',
-                                    page_message=page_message,
-                                    applicationName=report, userKey=userKey,
-                                    customerId=customerId,
-                                    actorIpAddress=actorIpAddress,
-                                    startTime=startTime, endTime=endTime,
-                                    eventName=eventName, filters=filters,
-                                    orgUnitID=orgUnitId)
-    if activities:
-      titles = ['name']
-      csvRows = []
-      for activity in activities:
-        events = activity['events']
-        del activity['events']
-        activity_row = utils.flatten_json(activity)
-        purge_parameters = True
-        for event in events:
-          for item in event.get('parameters', []):
-            if set(item) == set(['value', 'name']):
-              event[item['name']] = item['value']
-            elif set(item) == set(['intValue', 'name']):
-              if item['name'] in ['start_time', 'end_time']:
-                val = item.get('intValue')
-                if val is not None:
-                  val = int(val)
-                  if val >= 62135683200:
-                    event[item['name']] = datetime.datetime.fromtimestamp(val-62135683200).isoformat()
-              else:
-                event[item['name']] = item['intValue']
-            elif set(item) == set(['boolValue', 'name']):
-              event[item['name']] = item['boolValue']
-            elif set(item) == set(['multiValue', 'name']):
-              event[item['name']] = ' '.join(item['multiValue'])
-            elif item['name'] == 'scope_data':
-              parts = {}
-              for message in item['multiMessageValue']:
-                for mess in message['parameter']:
-                  value = mess.get('value', ' '.join(mess.get('multiValue', [])))
-                  parts[mess['name']] = parts.get(mess['name'], [])+[value]
-              for part, v in parts.items():
-                if part == 'scope_name':
-                  part = 'scope'
-                event[part] = ' '.join(v)
-            else:
-              purge_parameters = False
-          if purge_parameters:
-            event.pop('parameters', None)
-          row = utils.flatten_json(event)
-          row.update(activity_row)
-          for item in row:
-            if item not in titles:
-              titles.append(item)
-          csvRows.append(row)
-      display.sort_csv_titles(['name',], titles)
-      display.write_csv_file(csvRows, titles, f'{report.capitalize()} Activity Report', to_drive)
-
 def watchGmail(users):
   project = f'projects/{_getCurrentProjectID()}'
   gamTopics = project+'/topics/gam-pubsub-gmail-'
@@ -1612,7 +1354,7 @@ def doUpdateDomain():
 
 def doGetDomainInfo():
   if (len(sys.argv) < 4) or (sys.argv[3] == 'logo'):
-    doGetCustomerInfo()
+    gapi.directory.customer.doGetCustomerInfo()
     return
   cd = buildGAPIObject('directory')
   domainName = sys.argv[3]
@@ -1632,95 +1374,6 @@ def doGetDomainAliasInfo():
   if 'creationTime' in result:
     result['creationTime'] = utils.formatTimestampYMDHMSF(result['creationTime'])
   display.print_json(result)
-
-def doGetCustomerInfo():
-  cd = buildGAPIObject('directory')
-  customer_info = gapi.call(cd.customers(), 'get', customerKey=GC_Values[GC_CUSTOMER_ID])
-  print(f'Customer ID: {customer_info["id"]}')
-  print(f'Primary Domain: {customer_info["customerDomain"]}')
-  result = gapi.call(cd.domains(), 'get',
-                     customer=customer_info['id'], domainName=customer_info['customerDomain'], fields='verified')
-  print(f'Primary Domain Verified: {result["verified"]}')
-  # If customer has changed primary domain customerCreationTime is date
-  # of current primary being added, not customer create date.
-  # We should also get all domains and use oldest date
-  oldest = datetime.datetime.strptime(customer_info['customerCreationTime'], '%Y-%m-%dT%H:%M:%S.%fZ')
-  domains = gapi.get_items(cd.domains(), 'list', 'domains',
-                           customer=GC_Values[GC_CUSTOMER_ID],
-                           fields='domains(creationTime)')
-  for domain in domains:
-    domain_creation = datetime.datetime.fromtimestamp(int(domain['creationTime'])/1000)
-    if domain_creation < oldest:
-      oldest = domain_creation
-  print(f'Customer Creation Time: {oldest.strftime("%Y-%m-%dT%H:%M:%SZ")}')
-  customer_language = customer_info.get('language', 'Unset (defaults to en)')
-  print(f'Default Language: {customer_language}')
-  if 'postalAddress' in customer_info:
-    print('Address:')
-    for field in ADDRESS_FIELDS_PRINT_ORDER:
-      if field in customer_info['postalAddress']:
-        print(f' {field}: {customer_info["postalAddress"][field]}')
-  if 'phoneNumber' in customer_info:
-    print(f'Phone: {customer_info["phoneNumber"]}')
-  print(f'Admin Secondary Email: {customer_info["alternateEmail"]}')
-  user_counts_map = {
-    'accounts:num_users': 'Total Users',
-    'accounts:gsuite_basic_total_licenses': 'G Suite Basic Licenses',
-    'accounts:gsuite_basic_used_licenses': 'G Suite Basic Users',
-    'accounts:gsuite_enterprise_total_licenses': 'G Suite Enterprise Licenses',
-    'accounts:gsuite_enterprise_used_licenses': 'G Suite Enterprise Users',
-    'accounts:gsuite_unlimited_total_licenses': 'G Suite Business Licenses',
-    'accounts:gsuite_unlimited_used_licenses': 'G Suite Business Users'
-    }
-  parameters = ','.join(list(user_counts_map))
-  tryDate = datetime.date.today().strftime(YYYYMMDD_FORMAT)
-  customerId = GC_Values[GC_CUSTOMER_ID]
-  if customerId == MY_CUSTOMER:
-    customerId = None
-  rep = buildGAPIObject('reports')
-  usage = None
-  while True:
-    try:
-      usage = gapi.get_all_pages(rep.customerUsageReports(), 'get', 'usageReports', throw_reasons=[gapi.errors.ErrorReason.INVALID],
-                                 customerId=customerId, date=tryDate, parameters=parameters)
-      break
-    except gapi.errors.GapiInvalidError as e:
-      tryDate = _adjustDate(str(e))
-  if not usage:
-    print('No user count data available.')
-    return
-  print(f'User counts as of {tryDate}:')
-  for item in usage[0]['parameters']:
-    api_name = user_counts_map.get(item['name'])
-    api_value = int(item.get('intValue', 0))
-    if api_name and api_value:
-      print(f'  {api_name}: {api_value:,}')
-
-def doUpdateCustomer():
-  cd = buildGAPIObject('directory')
-  body = {}
-  i = 3
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower().replace('_', '')
-    if myarg in ADDRESS_FIELDS_ARGUMENT_MAP:
-      body.setdefault('postalAddress', {})
-      body['postalAddress'][ADDRESS_FIELDS_ARGUMENT_MAP[myarg]] = sys.argv[i+1]
-      i += 2
-    elif myarg in ['adminsecondaryemail', 'alternateemail']:
-      body['alternateEmail'] = sys.argv[i+1]
-      i += 2
-    elif myarg in ['phone', 'phonenumber']:
-      body['phoneNumber'] = sys.argv[i+1]
-      i += 2
-    elif myarg == 'language':
-      body['language'] = sys.argv[i+1]
-      i += 2
-    else:
-      controlflow.invalid_argument_exit(myarg, "gam update customer")
-  if not body:
-    controlflow.system_error_exit(2, 'no arguments specified for "gam update customer"')
-  gapi.call(cd.customers(), 'patch', customerKey=GC_Values[GC_CUSTOMER_ID], body=body)
-  print('Updated customer')
 
 def doDelDomain():
   cd = buildGAPIObject('directory')
@@ -7950,95 +7603,6 @@ def doUpdateAlias():
       gapi.call(cd.groups().aliases(), 'insert', groupKey=target_email, body={'alias': alias})
   print(f'updated alias {alias}')
 
-def getCrOSDeviceEntity(i, cd):
-  myarg = sys.argv[i].lower()
-  if myarg == 'cros_sn':
-    return i+2, getUsersToModify('cros_sn', sys.argv[i+1])
-  if myarg == 'query':
-    return i+2, getUsersToModify('crosquery', sys.argv[i+1])
-  if myarg[:6] == 'query:':
-    query = sys.argv[i][6:]
-    if query[:12].lower() == 'orgunitpath:':
-      kwargs = {'orgUnitPath': query[12:]}
-    else:
-      kwargs = {'query': query}
-    devices = gapi.get_all_pages(cd.chromeosdevices(), 'list', 'chromeosdevices',
-                                 customerId=GC_Values[GC_CUSTOMER_ID],
-                                 fields='nextPageToken,chromeosdevices(deviceId)', **kwargs)
-    return i+1, [device['deviceId'] for device in devices]
-  return i+1, sys.argv[i].replace(',', ' ').split()
-
-def doUpdateCros():
-  cd = buildGAPIObject('directory')
-  i, devices = getCrOSDeviceEntity(3, cd)
-  update_body = {}
-  action_body = {}
-  orgUnitPath = None
-  ack_wipe = False
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower().replace('_', '')
-    if myarg == 'user':
-      update_body['annotatedUser'] = sys.argv[i+1]
-      i += 2
-    elif myarg == 'location':
-      update_body['annotatedLocation'] = sys.argv[i+1]
-      i += 2
-    elif myarg == 'notes':
-      update_body['notes'] = sys.argv[i+1].replace('\\n', '\n')
-      i += 2
-    elif myarg in ['tag', 'asset', 'assetid']:
-      update_body['annotatedAssetId'] = sys.argv[i+1]
-      i += 2
-    elif myarg in ['ou', 'org']:
-      orgUnitPath = getOrgUnitItem(sys.argv[i+1])
-      i += 2
-    elif myarg == 'action':
-      action = sys.argv[i+1].lower().replace('_', '').replace('-', '')
-      deprovisionReason = None
-      if action in ['deprovisionsamemodelreplace', 'deprovisionsamemodelreplacement']:
-        action = 'deprovision'
-        deprovisionReason = 'same_model_replacement'
-      elif action in ['deprovisiondifferentmodelreplace', 'deprovisiondifferentmodelreplacement']:
-        action = 'deprovision'
-        deprovisionReason = 'different_model_replacement'
-      elif action in ['deprovisionretiringdevice']:
-        action = 'deprovision'
-        deprovisionReason = 'retiring_device'
-      elif action not in ['disable', 'reenable']:
-        controlflow.system_error_exit(2, f'expected action of deprovision_same_model_replace, deprovision_different_model_replace, deprovision_retiring_device, disable or reenable, got {action}')
-      action_body = {'action': action}
-      if deprovisionReason:
-        action_body['deprovisionReason'] = deprovisionReason
-      i += 2
-    elif myarg == 'acknowledgedevicetouchrequirement':
-      ack_wipe = True
-      i += 1
-    else:
-      controlflow.invalid_argument_exit(sys.argv[i], "gam update cros")
-  i = 0
-  count = len(devices)
-  if action_body:
-    if action_body['action'] == 'deprovision' and not ack_wipe:
-      print(f'WARNING: Refusing to deprovision {count} devices because acknowledge_device_touch_requirement not specified. Deprovisioning a device means the device will have to be physically wiped and re-enrolled to be managed by your domain again. This requires physical access to the device and is very time consuming to perform for each device. Please add "acknowledge_device_touch_requirement" to the GAM command if you understand this and wish to proceed with the deprovision. Please also be aware that deprovisioning can have an effect on your device license count. See https://support.google.com/chrome/a/answer/3523633 for full details.')
-      sys.exit(3)
-    for deviceId in devices:
-      i += 1
-      print(f' performing action {action} for {deviceId}{currentCount(i, count)}')
-      gapi.call(cd.chromeosdevices(), function='action', customerId=GC_Values[GC_CUSTOMER_ID], resourceId=deviceId, body=action_body)
-  else:
-    if update_body:
-      for deviceId in devices:
-        i += 1
-        print(f' updating {deviceId}{currentCount(i, count)}')
-        gapi.call(service=cd.chromeosdevices(), function='update', customerId=GC_Values[GC_CUSTOMER_ID], deviceId=deviceId, body=update_body)
-    if orgUnitPath:
-      #move_body[u'deviceIds'] = devices
-      # split moves into max 50 devices per batch
-      for l in range(0, len(devices), 50):
-        move_body = {'deviceIds': devices[l:l+50]}
-        print(f' moving {len(move_body["deviceIds"])} devices to {orgUnitPath}')
-        gapi.call(cd.chromeosdevices(), 'moveDevicesToOu', customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=orgUnitPath, body=move_body)
-
 def doUpdateMobile():
   cd = buildGAPIObject('directory')
   resourceIds = sys.argv[3]
@@ -8724,194 +8288,6 @@ def doGetAliasInfo(alias_email=None):
   except KeyError:
     print(f' Group Email: {result["email"]}')
   print(f' Unique ID: {result["id"]}')
-
-def _filterTimeRanges(activeTimeRanges, startDate, endDate):
-  if startDate is None and endDate is None:
-    return activeTimeRanges
-  filteredTimeRanges = []
-  for timeRange in activeTimeRanges:
-    activityDate = datetime.datetime.strptime(timeRange['date'], YYYYMMDD_FORMAT)
-    if ((startDate is None) or (activityDate >= startDate)) and ((endDate is None) or (activityDate <= endDate)):
-      filteredTimeRanges.append(timeRange)
-  return filteredTimeRanges
-
-def _filterCreateReportTime(items, timeField, startTime, endTime):
-  if startTime is None and endTime is None:
-    return items
-  filteredItems = []
-  for item in items:
-    timeValue = datetime.datetime.strptime(item[timeField], '%Y-%m-%dT%H:%M:%S.%fZ')
-    if ((startTime is None) or (timeValue >= startTime)) and ((endTime is None) or (timeValue <= endTime)):
-      filteredItems.append(item)
-  return filteredItems
-
-def _getFilterDate(dateStr):
-  return datetime.datetime.strptime(dateStr, YYYYMMDD_FORMAT)
-
-def doGetCrosInfo():
-  cd = buildGAPIObject('directory')
-  i, devices = getCrOSDeviceEntity(3, cd)
-  downloadfile = None
-  targetFolder = GC_Values[GC_DRIVE_DIR]
-  projection = None
-  fieldsList = []
-  guess_aue = noLists = False
-  guessedAUEs = {}
-  startDate = endDate = None
-  listLimit = 0
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower().replace('_', '')
-    if myarg == 'nolists':
-      noLists = True
-      i += 1
-    elif myarg == 'listlimit':
-      listLimit = getInteger(sys.argv[i+1], myarg, minVal=-1)
-      i += 2
-    elif myarg == 'guessaue':
-      guess_aue = True
-      i += 1
-    elif myarg in CROS_START_ARGUMENTS:
-      startDate = _getFilterDate(sys.argv[i+1])
-      i += 2
-    elif myarg in CROS_END_ARGUMENTS:
-      endDate = _getFilterDate(sys.argv[i+1])
-      i += 2
-    elif myarg == 'allfields':
-      projection = 'FULL'
-      fieldsList = []
-      i += 1
-    elif myarg in PROJECTION_CHOICES_MAP:
-      projection = PROJECTION_CHOICES_MAP[myarg]
-      if projection == 'FULL':
-        fieldsList = []
-      else:
-        fieldsList = CROS_BASIC_FIELDS_LIST[:]
-      i += 1
-    elif myarg in CROS_ARGUMENT_TO_PROPERTY_MAP:
-      fieldsList.extend(CROS_ARGUMENT_TO_PROPERTY_MAP[myarg])
-      i += 1
-    elif myarg == 'fields':
-      fieldNameList = sys.argv[i+1]
-      for field in fieldNameList.lower().replace(',', ' ').split():
-        if field in CROS_ARGUMENT_TO_PROPERTY_MAP:
-          fieldsList.extend(CROS_ARGUMENT_TO_PROPERTY_MAP[field])
-          if field in CROS_ACTIVE_TIME_RANGES_ARGUMENTS+CROS_DEVICE_FILES_ARGUMENTS+CROS_RECENT_USERS_ARGUMENTS:
-            projection = 'FULL'
-            noLists = False
-        else:
-          controlflow.invalid_argument_exit(field, "gam info cros fields")
-      i += 2
-    elif myarg == 'downloadfile':
-      downloadfile = sys.argv[i+1]
-      if downloadfile.lower() == 'latest':
-        downloadfile = downloadfile.lower()
-      i += 2
-    elif myarg == 'targetfolder':
-      targetFolder = os.path.expanduser(sys.argv[i+1])
-      if not os.path.isdir(targetFolder):
-        os.makedirs(targetFolder)
-      i += 2
-    else:
-      controlflow.invalid_argument_exit(sys.argv[i], "gam info cros")
-  if fieldsList:
-    fieldsList.append('deviceId')
-    if guess_aue:
-      fieldsList.append('model')
-    fields = ','.join(set(fieldsList)).replace('.', '/')
-  else:
-    fields = None
-  i = 0
-  device_count = len(devices)
-  for deviceId in devices:
-    i += 1
-    cros = gapi.call(cd.chromeosdevices(), 'get', customerId=GC_Values[GC_CUSTOMER_ID],
-                     deviceId=deviceId, projection=projection, fields=fields)
-    print(f'CrOS Device: {deviceId} ({i} of {device_count})')
-    if 'notes' in cros:
-      cros['notes'] = cros['notes'].replace('\n', '\\n')
-    if 'autoUpdateExpiration' in cros:
-      cros['autoUpdateExpiration'] = utils.formatTimestampYMD(cros['autoUpdateExpiration'])
-    _checkTPMVulnerability(cros)
-    if guess_aue:
-      _guessAUE(cros, guessedAUEs)
-    for up in CROS_SCALAR_PROPERTY_PRINT_ORDER:
-      if up in cros:
-        if isinstance(cros[up], str):
-          print(f'  {up}: {cros[up]}')
-        else:
-          sys.stdout.write(f'  {up}:')
-          display.print_json(cros[up], '  ')
-    if not noLists:
-      activeTimeRanges = _filterTimeRanges(cros.get('activeTimeRanges', []), startDate, endDate)
-      lenATR = len(activeTimeRanges)
-      if lenATR:
-        print('  activeTimeRanges')
-        for activeTimeRange in activeTimeRanges[:min(lenATR, listLimit or lenATR)]:
-          print(f'    date: {activeTimeRange["date"]}')
-          print(f'      activeTime: {str(activeTimeRange["activeTime"])}')
-          print(f'      duration: {utils.formatMilliSeconds(activeTimeRange["activeTime"])}')
-          print(f'      minutes: {activeTimeRange["activeTime"]//60000}')
-      recentUsers = cros.get('recentUsers', [])
-      lenRU = len(recentUsers)
-      if lenRU:
-        print('  recentUsers')
-        for recentUser in recentUsers[:min(lenRU, listLimit or lenRU)]:
-          print(f'    type: {recentUser["type"]}')
-          print(f'      email: {recentUser.get("email", ["Unknown", "UnmanagedUser"][recentUser["type"] == "USER_TYPE_UNMANAGED"])}')
-      deviceFiles = _filterCreateReportTime(cros.get('deviceFiles', []), 'createTime', startDate, endDate)
-      lenDF = len(deviceFiles)
-      if lenDF:
-        print('  deviceFiles')
-        for deviceFile in deviceFiles[:min(lenDF, listLimit or lenDF)]:
-          print(f'    {deviceFile["type"]}: {deviceFile["createTime"]}')
-      if downloadfile:
-        deviceFiles = cros.get('deviceFiles', [])
-        lenDF = len(deviceFiles)
-        if lenDF:
-          if downloadfile == 'latest':
-            deviceFile = deviceFiles[-1]
-          else:
-            for deviceFile in deviceFiles:
-              if deviceFile['createTime'] == downloadfile:
-                break
-            else:
-              print(f'ERROR: file {downloadfile} not available to download.')
-              deviceFile = None
-          if deviceFile:
-            downloadfilename = os.path.join(targetFolder, f'cros-logs-{deviceId}-{deviceFile["createTime"]}.zip')
-            _, content = cd._http.request(deviceFile['downloadUrl'])
-            fileutils.write_file(downloadfilename, content, mode='wb', continue_on_error=True)
-            print(f'Downloaded: {downloadfilename}')
-        elif downloadfile:
-          print('ERROR: no files to download.')
-      cpuStatusReports = _filterCreateReportTime(cros.get('cpuStatusReports', []), 'reportTime', startDate, endDate)
-      lenCSR = len(cpuStatusReports)
-      if lenCSR:
-        print('  cpuStatusReports')
-        for cpuStatusReport in cpuStatusReports[:min(lenCSR, listLimit or lenCSR)]:
-          print(f'    reportTime: {cpuStatusReport["reportTime"]}')
-          print('      cpuTemperatureInfo')
-          for tempInfo in cpuStatusReport.get('cpuTemperatureInfo', []):
-            print(f'        {tempInfo["label"].strip()}: {tempInfo["temperature"]}')
-          print(f'      cpuUtilizationPercentageInfo: {",".join([str(x) for x in cpuStatusReport["cpuUtilizationPercentageInfo"]])}')
-      diskVolumeReports = cros.get('diskVolumeReports', [])
-      lenDVR = len(diskVolumeReports)
-      if lenDVR:
-        print('  diskVolumeReports')
-        print('    volumeInfo')
-        for diskVolumeReport in diskVolumeReports[:min(lenDVR, listLimit or lenDVR)]:
-          volumeInfo = diskVolumeReport['volumeInfo']
-          for volume in volumeInfo:
-            print(f'      volumeId: {volume["volumeId"]}')
-            print(f'        storageFree: {volume["storageFree"]}')
-            print(f'        storageTotal: {volume["storageTotal"]}')
-      systemRamFreeReports = _filterCreateReportTime(cros.get('systemRamFreeReports', []), 'reportTime', startDate, endDate)
-      lenSRFR = len(systemRamFreeReports)
-      if lenSRFR:
-        print('  systemRamFreeReports')
-        for systemRamFreeReport in systemRamFreeReports[:min(lenSRFR, listLimit or lenSRFR)]:
-          print(f'    reportTime: {systemRamFreeReport["reportTime"]}')
-          print(f'      systemRamFreeInfo: {",".join(systemRamFreeReport["systemRamFreeInfo"])}')
 
 def doGetMobileInfo():
   cd = buildGAPIObject('directory')
@@ -10376,333 +9752,6 @@ def doPrintMobileDevices():
   display.sort_csv_titles(['resourceId', 'deviceId', 'serialNumber', 'name', 'email', 'status'], titles)
   display.write_csv_file(csvRows, titles, 'Mobile', todrive)
 
-def doPrintCrosActivity():
-  cd = buildGAPIObject('directory')
-  todrive = False
-  titles = ['deviceId', 'annotatedAssetId', 'annotatedLocation', 'serialNumber', 'orgUnitPath']
-  csvRows = []
-  fieldsList = ['deviceId', 'annotatedAssetId', 'annotatedLocation', 'serialNumber', 'orgUnitPath']
-  startDate = endDate = None
-  selectActiveTimeRanges = selectDeviceFiles = selectRecentUsers = False
-  listLimit = 0
-  delimiter = ','
-  orgUnitPath = None
-  queries = [None]
-  i = 3
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower().replace('_', '')
-    if myarg in ['query', 'queries']:
-      queries = getQueries(myarg, sys.argv[i+1])
-      i += 2
-    elif myarg == 'limittoou':
-      orgUnitPath = getOrgUnitItem(sys.argv[i+1])
-      i += 2
-    elif myarg == 'todrive':
-      todrive = True
-      i += 1
-    elif myarg in CROS_ACTIVE_TIME_RANGES_ARGUMENTS:
-      selectActiveTimeRanges = True
-      i += 1
-    elif myarg in CROS_DEVICE_FILES_ARGUMENTS:
-      selectDeviceFiles = True
-      i += 1
-    elif myarg in CROS_RECENT_USERS_ARGUMENTS:
-      selectRecentUsers = True
-      i += 1
-    elif myarg == 'both':
-      selectActiveTimeRanges = selectRecentUsers = True
-      i += 1
-    elif myarg == 'all':
-      selectActiveTimeRanges = selectDeviceFiles = selectRecentUsers = True
-      i += 1
-    elif myarg in CROS_START_ARGUMENTS:
-      startDate = _getFilterDate(sys.argv[i+1])
-      i += 2
-    elif myarg in CROS_END_ARGUMENTS:
-      endDate = _getFilterDate(sys.argv[i+1])
-      i += 2
-    elif myarg == 'listlimit':
-      listLimit = getInteger(sys.argv[i+1], myarg, minVal=0)
-      i += 2
-    elif myarg == 'delimiter':
-      delimiter = sys.argv[i+1]
-      i += 2
-    else:
-      controlflow.invalid_argument_exit(sys.argv[i], "gam print crosactivity")
-  if not selectActiveTimeRanges and not selectDeviceFiles and not selectRecentUsers:
-    selectActiveTimeRanges = selectRecentUsers = True
-  if selectRecentUsers:
-    fieldsList.append('recentUsers')
-    display.add_titles_to_csv_file(['recentUsers.email',], titles)
-  if selectActiveTimeRanges:
-    fieldsList.append('activeTimeRanges')
-    display.add_titles_to_csv_file(['activeTimeRanges.date', 'activeTimeRanges.duration', 'activeTimeRanges.minutes'], titles)
-  if selectDeviceFiles:
-    fieldsList.append('deviceFiles')
-    display.add_titles_to_csv_file(['deviceFiles.type', 'deviceFiles.createTime'], titles)
-  fields = f'nextPageToken,chromeosdevices({",".join(fieldsList)})'
-  for query in queries:
-    printGettingAllItems('CrOS Devices', query)
-    page_message = gapi.got_total_items_msg('CrOS Devices', '...\n')
-    all_cros = gapi.get_all_pages(cd.chromeosdevices(), 'list', 'chromeosdevices', page_message=page_message,
-                                  query=query, customerId=GC_Values[GC_CUSTOMER_ID], projection='FULL',
-                                  fields=fields, orgUnitPath=orgUnitPath)
-    for cros in all_cros:
-      row = {}
-      for attrib in cros:
-        if attrib not in ['recentUsers', 'activeTimeRanges', 'deviceFiles']:
-          row[attrib] = cros[attrib]
-      if selectActiveTimeRanges:
-        activeTimeRanges = _filterTimeRanges(cros.get('activeTimeRanges', []), startDate, endDate)
-        lenATR = len(activeTimeRanges)
-        for activeTimeRange in activeTimeRanges[:min(lenATR, listLimit or lenATR)]:
-          new_row = row.copy()
-          new_row['activeTimeRanges.date'] = activeTimeRange['date']
-          new_row['activeTimeRanges.duration'] = utils.formatMilliSeconds(activeTimeRange['activeTime'])
-          new_row['activeTimeRanges.minutes'] = activeTimeRange['activeTime']//60000
-          csvRows.append(new_row)
-      if selectRecentUsers:
-        recentUsers = cros.get('recentUsers', [])
-        lenRU = len(recentUsers)
-        row['recentUsers.email'] = delimiter.join([recent_user.get('email', ['Unknown', 'UnmanagedUser'][recent_user['type'] == 'USER_TYPE_UNMANAGED']) for recent_user in recentUsers[:min(lenRU, listLimit or lenRU)]])
-        csvRows.append(row)
-      if selectDeviceFiles:
-        deviceFiles = _filterCreateReportTime(cros.get('deviceFiles', []), 'createTime', startDate, endDate)
-        lenDF = len(deviceFiles)
-        for deviceFile in deviceFiles[:min(lenDF, listLimit or lenDF)]:
-          new_row = row.copy()
-          new_row['deviceFiles.type'] = deviceFile['type']
-          new_row['deviceFiles.createTime'] = deviceFile['createTime']
-          csvRows.append(new_row)
-  display.write_csv_file(csvRows, titles, 'CrOS Activity', todrive)
-
-def _checkTPMVulnerability(cros):
-  if 'tpmVersionInfo' in cros and 'firmwareVersion' in cros['tpmVersionInfo']:
-    if cros['tpmVersionInfo']['firmwareVersion'] in CROS_TPM_VULN_VERSIONS:
-      cros['tpmVersionInfo']['tpmVulnerability'] = 'VULNERABLE'
-    elif cros['tpmVersionInfo']['firmwareVersion'] in CROS_TPM_FIXED_VERSIONS:
-      cros['tpmVersionInfo']['tpmVulnerability'] = 'UPDATED'
-    else:
-      cros['tpmVersionInfo']['tpmVulnerability'] = 'NOT IMPACTED'
-
-def _guessAUE(cros, guessedAUEs):
-  if not GC_Values.get('CROS_AUE_DATES', None):
-    GC_Values['CROS_AUE_DATES'] = json.loads(getGAMProjectFile('cros-aue-dates.json'))
-  crosModel = cros.get('model')
-  if crosModel:
-    if crosModel not in guessedAUEs:
-      closest_match = difflib.get_close_matches(crosModel.lower(), GC_Values['CROS_AUE_DATES'], n=1)
-      if closest_match:
-        guessedAUEs[crosModel] = {'guessedAUEDate': GC_Values['CROS_AUE_DATES'][closest_match[0]],
-                                  'guessedAUEModel': closest_match[0]}
-      else:
-        guessedAUEs[crosModel] = {'guessedAUEDate': u'',
-                                  'guessedAUEModel': u''}
-    cros.update(guessedAUEs[crosModel])
-
-def doPrintCrosDevices():
-  def _getSelectedLists(myarg):
-    if myarg in CROS_ACTIVE_TIME_RANGES_ARGUMENTS:
-      selectedLists['activeTimeRanges'] = True
-    elif myarg in CROS_RECENT_USERS_ARGUMENTS:
-      selectedLists['recentUsers'] = True
-    elif myarg in CROS_DEVICE_FILES_ARGUMENTS:
-      selectedLists['deviceFiles'] = True
-    elif myarg in CROS_CPU_STATUS_REPORTS_ARGUMENTS:
-      selectedLists['cpuStatusReports'] = True
-    elif myarg in CROS_DISK_VOLUME_REPORTS_ARGUMENTS:
-      selectedLists['diskVolumeReports'] = True
-    elif myarg in CROS_SYSTEM_RAM_FREE_REPORTS_ARGUMENTS:
-      selectedLists['systemRamFreeReports'] = True
-
-  cd = buildGAPIObject('directory')
-  todrive = False
-  fieldsList = []
-  fieldsTitles = {}
-  titles = []
-  csvRows = []
-  display.add_field_to_csv_file('deviceid', CROS_ARGUMENT_TO_PROPERTY_MAP, fieldsList, fieldsTitles, titles)
-  projection = orderBy = sortOrder = orgUnitPath = None
-  queries = [None]
-  guess_aue = noLists = sortHeaders = False
-  guessedAUEs = {}
-  selectedLists = {}
-  startDate = endDate = None
-  listLimit = 0
-  i = 3
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower().replace('_', '')
-    if myarg in ['query', 'queries']:
-      queries = getQueries(myarg, sys.argv[i+1])
-      i += 2
-    elif myarg == 'limittoou':
-      orgUnitPath = getOrgUnitItem(sys.argv[i+1])
-      i += 2
-    elif myarg == 'todrive':
-      todrive = True
-      i += 1
-    elif myarg == 'nolists':
-      noLists = True
-      selectedLists = {}
-      i += 1
-    elif myarg == 'listlimit':
-      listLimit = getInteger(sys.argv[i+1], myarg, minVal=0)
-      i += 2
-    elif myarg == 'guessaue':
-      guess_aue = True
-      i += 1
-    elif myarg in CROS_START_ARGUMENTS:
-      startDate = _getFilterDate(sys.argv[i+1])
-      i += 2
-    elif myarg in CROS_END_ARGUMENTS:
-      endDate = _getFilterDate(sys.argv[i+1])
-      i += 2
-    elif myarg == 'orderby':
-      orderBy = sys.argv[i+1].lower().replace('_', '')
-      validOrderBy = ['location', 'user', 'lastsync', 'notes', 'serialnumber', 'status', 'supportenddate']
-      if orderBy not in validOrderBy:
-        controlflow.expected_argument_exit("orderby", ", ".join(validOrderBy), orderBy)
-      if orderBy == 'location':
-        orderBy = 'annotatedLocation'
-      elif orderBy == 'user':
-        orderBy = 'annotatedUser'
-      elif orderBy == 'lastsync':
-        orderBy = 'lastSync'
-      elif orderBy == 'serialnumber':
-        orderBy = 'serialNumber'
-      elif orderBy == 'supportenddate':
-        orderBy = 'supportEndDate'
-      i += 2
-    elif myarg in SORTORDER_CHOICES_MAP:
-      sortOrder = SORTORDER_CHOICES_MAP[myarg]
-      i += 1
-    elif myarg in PROJECTION_CHOICES_MAP:
-      projection = PROJECTION_CHOICES_MAP[myarg]
-      sortHeaders = True
-      if projection == 'FULL':
-        fieldsList = []
-      else:
-        fieldsList = CROS_BASIC_FIELDS_LIST[:]
-      i += 1
-    elif myarg == 'allfields':
-      projection = 'FULL'
-      sortHeaders = True
-      fieldsList = []
-      i += 1
-    elif myarg == 'sortheaders':
-      sortHeaders = True
-      i += 1
-    elif myarg in CROS_LISTS_ARGUMENTS:
-      _getSelectedLists(myarg)
-      i += 1
-    elif myarg in CROS_ARGUMENT_TO_PROPERTY_MAP:
-      display.add_field_to_fields_list(myarg, CROS_ARGUMENT_TO_PROPERTY_MAP, fieldsList)
-      i += 1
-    elif myarg == 'fields':
-      fieldNameList = sys.argv[i+1]
-      for field in fieldNameList.lower().replace(',', ' ').split():
-        if field in CROS_LISTS_ARGUMENTS:
-          _getSelectedLists(field)
-        elif field in CROS_ARGUMENT_TO_PROPERTY_MAP:
-          display.add_field_to_fields_list(field, CROS_ARGUMENT_TO_PROPERTY_MAP, fieldsList)
-        else:
-          controlflow.invalid_argument_exit(field, "gam print cros fields")
-      i += 2
-    else:
-      controlflow.invalid_argument_exit(sys.argv[i], "gam print cros")
-  if selectedLists:
-    noLists = False
-    projection = 'FULL'
-    for selectList in selectedLists:
-      display.add_field_to_fields_list(selectList, CROS_ARGUMENT_TO_PROPERTY_MAP, fieldsList)
-  if fieldsList:
-    fieldsList.append('deviceId')
-    if guess_aue:
-      fieldsList.append('model')
-    fields = f'nextPageToken,chromeosdevices({",".join(set(fieldsList))})'.replace('.', '/')
-  else:
-    fields = None
-  for query in queries:
-    printGettingAllItems('CrOS Devices', query)
-    page_message = gapi.got_total_items_msg('CrOS Devices', '...\n')
-    all_cros = gapi.get_all_pages(cd.chromeosdevices(), 'list', 'chromeosdevices', page_message=page_message,
-                                  query=query, customerId=GC_Values[GC_CUSTOMER_ID], projection=projection, orgUnitPath=orgUnitPath,
-                                  orderBy=orderBy, sortOrder=sortOrder, fields=fields)
-    for cros in all_cros:
-      _checkTPMVulnerability(cros)
-      if guess_aue:
-        _guessAUE(cros, guessedAUEs)
-    if not noLists and not selectedLists:
-      for cros in all_cros:
-        if 'notes' in cros:
-          cros['notes'] = cros['notes'].replace('\n', '\\n')
-        if 'autoUpdateExpiration' in cros:
-          cros['autoUpdateExpiration'] = utils.formatTimestampYMD(cros['autoUpdateExpiration'])
-        for cpuStatusReport in cros.get('cpuStatusReports', []):
-          for tempInfo in cpuStatusReport.get('cpuTemperatureInfo', []):
-            tempInfo['label'] = tempInfo['label'].strip()
-        display.add_row_titles_to_csv_file(utils.flatten_json(cros, listLimit=listLimit), csvRows, titles)
-      continue
-    for cros in all_cros:
-      if 'notes' in cros:
-        cros['notes'] = cros['notes'].replace('\n', '\\n')
-      if 'autoUpdateExpiration' in cros:
-        cros['autoUpdateExpiration'] = utils.formatTimestampYMD(cros['autoUpdateExpiration'])
-      row = {}
-      for attrib in cros:
-        if attrib not in set(['kind', 'etag', 'tpmVersionInfo', 'recentUsers', 'activeTimeRanges',
-                              'deviceFiles', 'cpuStatusReports', 'diskVolumeReports', 'systemRamFreeReports']):
-          row[attrib] = cros[attrib]
-      activeTimeRanges = _filterTimeRanges(cros.get('activeTimeRanges', []) if selectedLists.get('activeTimeRanges') else [], startDate, endDate)
-      recentUsers = cros.get('recentUsers', []) if selectedLists.get('recentUsers') else []
-      deviceFiles = _filterCreateReportTime(cros.get('deviceFiles', []) if selectedLists.get('deviceFiles') else [], 'createTime', startDate, endDate)
-      cpuStatusReports = _filterCreateReportTime(cros.get('cpuStatusReports', []) if selectedLists.get('cpuStatusReports') else [], 'reportTime', startDate, endDate)
-      diskVolumeReports = cros.get('diskVolumeReports', []) if selectedLists.get('diskVolumeReports') else []
-      systemRamFreeReports = _filterCreateReportTime(cros.get('systemRamFreeReports', []) if selectedLists.get('systemRamFreeReports') else [], 'reportTime', startDate, endDate)
-      if noLists or (not activeTimeRanges and not recentUsers and not deviceFiles and
-                     not cpuStatusReports and not diskVolumeReports and not systemRamFreeReports):
-        display.add_row_titles_to_csv_file(row, csvRows, titles)
-        continue
-      lenATR = len(activeTimeRanges)
-      lenRU = len(recentUsers)
-      lenDF = len(deviceFiles)
-      lenCSR = len(cpuStatusReports)
-      lenDVR = len(diskVolumeReports)
-      lenSRFR = len(systemRamFreeReports)
-      for i in range(min(max(lenATR, lenRU, lenDF, lenCSR, lenDVR, lenSRFR), listLimit or max(lenATR, lenRU, lenDF, lenCSR, lenDVR, lenSRFR))):
-        new_row = row.copy()
-        if i < lenATR:
-          new_row['activeTimeRanges.date'] = activeTimeRanges[i]['date']
-          new_row['activeTimeRanges.activeTime'] = str(activeTimeRanges[i]['activeTime'])
-          new_row['activeTimeRanges.duration'] = utils.formatMilliSeconds(activeTimeRanges[i]['activeTime'])
-          new_row['activeTimeRanges.minutes'] = activeTimeRanges[i]['activeTime']//60000
-        if i < lenRU:
-          new_row['recentUsers.email'] = recentUsers[i].get('email', ['Unknown', 'UnmanagedUser'][recentUsers[i]['type'] == 'USER_TYPE_UNMANAGED'])
-          new_row['recentUsers.type'] = recentUsers[i]['type']
-        if i < lenDF:
-          new_row['deviceFiles.type'] = deviceFiles[i]['type']
-          new_row['deviceFiles.createTime'] = deviceFiles[i]['createTime']
-        if i < lenCSR:
-          new_row['cpuStatusReports.reportTime'] = cpuStatusReports[i]['reportTime']
-          for tempInfo in cpuStatusReports[i].get('cpuTemperatureInfo', []):
-            new_row[f'cpuStatusReports.cpuTemperatureInfo.{tempInfo["label"].strip()}'] = tempInfo['temperature']
-          new_row['cpuStatusReports.cpuUtilizationPercentageInfo'] = ','.join([str(x) for x in cpuStatusReports[i]['cpuUtilizationPercentageInfo']])
-        if i < lenDVR:
-          volumeInfo = diskVolumeReports[i]['volumeInfo']
-          j = 0
-          for volume in volumeInfo:
-            new_row[f'diskVolumeReports.volumeInfo.{j}.volumeId'] = volume['volumeId']
-            new_row[f'diskVolumeReports.volumeInfo.{j}.storageFree'] = volume['storageFree']
-            new_row[f'diskVolumeReports.volumeInfo.{j}.storageTotal'] = volume['storageTotal']
-            j += 1
-        if i < lenSRFR:
-          new_row['systemRamFreeReports.reportTime'] = systemRamFreeReports[i]['reportTime']
-          new_row['systenRamFreeReports.systemRamFreeInfo'] = ','.join([str(x) for x in systemRamFreeReports[i]['systemRamFreeInfo']])
-        display.add_row_titles_to_csv_file(new_row, csvRows, titles)
-  if sortHeaders:
-    display.sort_csv_titles(['deviceId',], titles)
-  display.write_csv_file(csvRows, titles, 'CrOS', todrive)
-
 def doPrintLicenses(returnFields=None, skus=None, countsOnly=False, returnCounts=False):
   lic = buildGAPIObject('licensing')
   products = []
@@ -11984,7 +11033,7 @@ def ProcessGAMCommand(args):
       elif argument == 'resource':
         gapi.directory.resource.updateResourceCalendar()
       elif argument == 'cros':
-        doUpdateCros()
+        gapi.directory.cros.doUpdateCros()
       elif argument == 'mobile':
         doUpdateMobile()
       elif argument in ['verify', 'verification']:
@@ -11998,7 +11047,7 @@ def ProcessGAMCommand(args):
       elif argument == 'domain':
         doUpdateDomain()
       elif argument == 'customer':
-        doUpdateCustomer()
+        gapi.directory.customer.doUpdateCustomer()
       elif argument in ['resoldcustomer', 'resellercustomer']:
         doUpdateResoldCustomer()
       elif argument in ['resoldsubscription', 'resellersubscription']:
@@ -12027,13 +11076,13 @@ def ProcessGAMCommand(args):
       elif argument in ['nickname', 'alias']:
         doGetAliasInfo()
       elif argument == 'instance':
-        doGetCustomerInfo()
+        gapi.directory.customer.doGetCustomerInfo()
       elif argument in ['org', 'ou']:
         doGetOrgInfo()
       elif argument == 'resource':
         gapi.directory.resource.getResourceCalendarInfo()
       elif argument == 'cros':
-        doGetCrosInfo()
+        gapi.directory.cros.doGetCrosInfo()
       elif argument == 'mobile':
         doGetMobileInfo()
       elif argument in ['verify', 'verification']:
@@ -12047,7 +11096,7 @@ def ProcessGAMCommand(args):
       elif argument in ['transfer', 'datatransfer']:
         doGetDataTransferInfo()
       elif argument == 'customer':
-        doGetCustomerInfo()
+        gapi.directory.customer.doGetCustomerInfo()
       elif argument == 'domain':
         doGetDomainInfo()
       elif argument in ['domainalias', 'aliasdomain']:
@@ -12157,9 +11206,9 @@ def ProcessGAMCommand(args):
       elif argument == 'resources':
         gapi.directory.resource.printResourceCalendars()
       elif argument == 'cros':
-        doPrintCrosDevices()
+        gapi.directory.cros.doPrintCrosDevices()
       elif argument == 'crosactivity':
-        doPrintCrosActivity()
+        gapi.directory.cros.doPrintCrosActivity()
       elif argument == 'mobile':
         doPrintMobileDevices()
       elif argument in ['license', 'licenses', 'licence', 'licences']:
@@ -12306,7 +11355,7 @@ def ProcessGAMCommand(args):
         controlflow.invalid_argument_exit(argument, "gam printjob")
       sys.exit(0)
     elif command == 'report':
-      showReport()
+      gapi.reports.showReport()
       sys.exit(0)
     elif command == 'whatis':
       doWhatIs()

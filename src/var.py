@@ -623,8 +623,6 @@ CROS_SCALAR_PROPERTY_PRINT_ORDER = [
   'manufactureDate',
   'supportEndDate',
   'autoUpdateExpiration',
-  'guessedAUEDate',
-  'guessedAUEModel',
   'tpmVersionInfo',
   'willAutoRenew',
   ]
