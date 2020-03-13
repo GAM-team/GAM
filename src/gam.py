@@ -6140,11 +6140,8 @@ def getUserAttributes(i, cd, updateCmd):
       i += 2
     elif myarg in ['recoveryphone']:
       body['recoveryPhone'] = sys.argv[i+1]
-      if body['recoveryPhone']:
-        if body['recoveryPhone'][0] != '+':
-          body['recoveryPhone'] = '+' + body['recoveryPhone']
-      else:
-        body['recoveryPhone'] = None
+      if body['recoveryPhone'] and body['recoveryPhone'][0] != '+':
+        body['recoveryPhone'] = '+' + body['recoveryPhone']
       i += 2
     elif myarg == 'clearschema':
       if not updateCmd:
