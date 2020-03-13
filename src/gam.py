@@ -7252,7 +7252,8 @@ def doCreateOrg():
     body['parentOrgUnitPath'] = '/'
     body['name'] = orgUnitPath[1:]
   parent = body['parentOrgUnitPath']
-  gapi.call(cd.orgunits(), 'insert', customerId=GC_Values[GC_CUSTOMER_ID], body=body)
+  gapi.call(cd.orgunits(), 'insert', customerId=GC_Values[GC_CUSTOMER_ID], body=body, retry_reasons=[gapi.errors.ErrorReason.DAILY_LIMIT_EXCEEDED])
+  print(f'Created OrgUnit {body["name"]}')
 
 def doUpdateUser(users, i):
   cd = buildGAPIObject('directory')

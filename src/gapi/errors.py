@@ -134,6 +134,7 @@ class ErrorReason(Enum):
   SYSTEM_ERROR = 'systemError'
   USER_NOT_FOUND = 'userNotFound'
   USER_RATE_LIMIT_EXCEEDED = 'userRateLimitExceeded'
+  DAILY_LIMIT_EXCEEDED = 'dailyLimitExceeded'
 
   def __str__(self):
     return str(self.value)
