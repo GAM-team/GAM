@@ -10,7 +10,7 @@ import controlflow
 import display
 import fileutils
 import gapi
-import storage
+import gapi.storage
 import utils
 
 
@@ -597,7 +597,7 @@ def downloadExport():
     verifyFiles = True
     extractFiles = True
     v = buildGAPIObject()
-    s = storage.build_gapi()
+    s = gapi.storage.build_gapi()
     matterId = getMatterItem(v, sys.argv[3])
     exportId = convertExportNameToID(v, sys.argv[4], matterId)
     targetFolder = GC_Values[GC_DRIVE_DIR]
