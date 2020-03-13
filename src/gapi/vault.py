@@ -1,4 +1,5 @@
 import datetime
+import json
 import sys
 
 import googleapiclient.http
@@ -9,6 +10,7 @@ import controlflow
 import display
 import fileutils
 import gapi
+import storage
 import utils
 
 
@@ -122,7 +124,7 @@ def createExport():
                 i += 2
             elif searchMethod == 'ORG_UNIT':
                 body['query']['orgUnitInfo'] = {
-                    'orgUnitId': getOrgUnitId(sys.argv[i+1])[1]}
+                    'orgUnitId': __main__.getOrgUnitId(sys.argv[i+1])[1]}
                 i += 2
             elif searchMethod == 'SHARED_DRIVE':
                 body['query']['sharedDriveInfo'] = {
@@ -156,7 +158,7 @@ def createExport():
             i += 2
         elif myarg in ['excludedrafts']:
             body['query']['mailOptions'] = {
-                'excludeDrafts': getBoolean(sys.argv[i+1], myarg)}
+                'excludeDrafts': __main__.getBoolean(sys.argv[i+1], myarg)}
             i += 2
         elif myarg in ['driveversiondate']:
             body['query'].setdefault('driveOptions', {})['versionDate'] = \
@@ -164,11 +166,11 @@ def createExport():
             i += 2
         elif myarg in ['includeshareddrives', 'includeteamdrives']:
             body['query'].setdefault('driveOptions', {})[
-                'includeSharedDrives'] = getBoolean(sys.argv[i+1], myarg)
+                'includeSharedDrives'] = __main__.getBoolean(sys.argv[i+1], myarg)
             i += 2
         elif myarg in ['includerooms']:
             body['query']['hangoutsChatOptions'] = {
-                'includeRooms': getBoolean(sys.argv[i+1], myarg)}
+                'includeRooms': __main__.getBoolean(sys.argv[i+1], myarg)}
             i += 2
         elif myarg in ['format']:
             export_format = sys.argv[i+1].upper()
@@ -177,7 +179,7 @@ def createExport():
                     "export format", ", ".join(allowed_formats), export_format)
             i += 2
         elif myarg in ['showconfidentialmodecontent']:
-            showConfidentialModeContent = getBoolean(sys.argv[i+1], myarg)
+            showConfidentialModeContent = __main__.getBoolean(sys.argv[i+1], myarg)
             i += 2
         elif myarg in ['region']:
             allowed_regions = gapi.get_enum_values_minus_unspecified(
@@ -190,7 +192,7 @@ def createExport():
             i += 2
         elif myarg in ['includeaccessinfo']:
             body['exportOptions'].setdefault('driveOptions', {})[
-                'includeAccessInfo'] = getBoolean(sys.argv[i+1], myarg)
+                'includeAccessInfo'] = __main__.getBoolean(sys.argv[i+1], myarg)
             i += 2
         else:
             controlflow.invalid_argument_exit(sys.argv[i], "gam create export")
@@ -377,7 +379,7 @@ def getHoldInfo():
                 uid, cd, [account_type])
             results['accounts'][i]['email'] = acct_email
     if 'orgUnit' in results:
-        results['orgUnit']['orgUnitPath'] = doGetOrgInfo(
+        results['orgUnit']['orgUnitPath'] = __main__.doGetOrgInfo(
             results['orgUnit']['orgUnitId'], return_attrib='orgUnitPath')
     display.print_json(results)
 
@@ -454,7 +456,7 @@ def updateHold():
             query = sys.argv[i+1]
             i += 2
         elif myarg in ['orgunit', 'ou']:
-            body['orgUnit'] = {'orgUnitId': getOrgUnitId(sys.argv[i+1])[1]}
+            body['orgUnit'] = {'orgUnitId': __main__.getOrgUnitId(sys.argv[i+1])[1]}
             i += 2
         elif myarg in ['start', 'starttime']:
             start_time = utils.get_date_zero_time_or_full_time(sys.argv[i+1])
@@ -506,7 +508,7 @@ def updateHold():
         cd = __main__.buildGAPIObject('directory')
         for account in add_accounts:
             print(f'adding {account} to hold.')
-            add_body = {'accountId': convertEmailAddressToUID(account, cd)}
+            add_body = {'accountId': __main__.convertEmailAddressToUID(account, cd)}
             gapi.call(v.matters().holds().accounts(), 'create',
                       matterId=matterId, holdId=holdId, body=add_body)
         for account in del_accounts:
@@ -586,7 +588,7 @@ def getMatterInfo():
         cd = __main__.buildGAPIObject('directory')
         for i in range(0, len(result['matterPermissions'])):
             uid = f'uid:{result["matterPermissions"][i]["accountId"]}'
-            user_email = convertUIDtoEmailAddress(uid, cd)
+            user_email = __main__.convertUIDtoEmailAddress(uid, cd)
             result['matterPermissions'][i]['email'] = user_email
     display.print_json(result)
 

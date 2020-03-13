@@ -1,3 +1,4 @@
+import csv
 import sys
 import uuid
 
@@ -5,7 +6,9 @@ import uuid
 import __main__
 from var import *
 
+import controlflow
 import display
+import fileutils
 import gapi
 import utils
 
@@ -124,7 +127,7 @@ def addACL(function):
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
         if myarg == 'sendnotifications':
-            sendNotifications = getBoolean(sys.argv[i+1], myarg)
+            sendNotifications = __main__.getBoolean(sys.argv[i+1], myarg)
             i += 2
         else:
             controlflow.invalid_argument_exit(
@@ -231,7 +234,7 @@ def getSendUpdates(myarg, i, cal):
         sendUpdates = 'all'
         i += 1
     elif myarg == 'sendnotifications':
-        sendUpdates = 'all' if getBoolean(sys.argv[i+1], myarg) else 'none'
+        sendUpdates = 'all' if __main__.getBoolean(sys.argv[i+1], myarg) else 'none'
         i += 2
     else:  # 'sendupdates':
         sendUpdatesMap = {}
@@ -319,7 +322,7 @@ def addOrUpdateEvent(action):
                 body = gapi.call(cal.events(), 'get',
                                  calendarId=calendarId, eventId=eventId)
                 break
-    sendUpdates, body = getEventAttributes(i, cal, body, action)
+    sendUpdates, body = getEventAttributes(i, calendarId, cal, body, action)
     result = gapi.call(cal.events(), func, conferenceDataVersion=1,
                        supportsAttachments=True, calendarId=calendarId,
                        sendUpdates=sendUpdates, body=body, fields='id',
@@ -328,11 +331,11 @@ def addOrUpdateEvent(action):
 
 
 def _remove_attendee(attendees, remove_email):
-    return [attendee for attendee in body['attendees']
+    return [attendee for attendee in attendees
             if not attendee['email'].lower() == remove_email]
 
 
-def getEventAttributes(i, cal, body, action):
+def getEventAttributes(i, calendarId, cal, body, action):
     # Default to external only so non-Google
     # calendars are notified of changes
     sendUpdates = 'externalOnly'
@@ -376,7 +379,7 @@ def getEventAttributes(i, cal, body, action):
                 i += 2
         elif myarg == 'end':
             if sys.argv[i+1].lower() == 'allday':
-                body['end'] = {'date': getYYYYMMDD(sys.argv[i+2])}
+                body['end'] = {'date': __main__.getYYYYMMDD(sys.argv[i+2])}
                 i += 3
             else:
                 end_time = utils.get_time_or_delta_from_now(sys.argv[i+1])
@@ -642,10 +645,10 @@ def getCalendarAttributes(i, body, function):
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
         if myarg == 'selected':
-            body['selected'] = getBoolean(sys.argv[i+1], myarg)
+            body['selected'] = __main__.getBoolean(sys.argv[i+1], myarg)
             i += 2
         elif myarg == 'hidden':
-            body['hidden'] = getBoolean(sys.argv[i+1], myarg)
+            body['hidden'] = __main__.getBoolean(sys.argv[i+1], myarg)
             i += 2
         elif myarg == 'summary':
             body['summaryOverride'] = sys.argv[i+1]
@@ -656,11 +659,11 @@ def getCalendarAttributes(i, body, function):
                 maxVal=CALENDAR_MAX_COLOR_INDEX)
             i += 2
         elif myarg == 'backgroundcolor':
-            body['backgroundColor'] = getColor(sys.argv[i+1])
+            body['backgroundColor'] = __main__.getColor(sys.argv[i+1])
             colorRgbFormat = True
             i += 2
         elif myarg == 'foregroundcolor':
-            body['foregroundColor'] = getColor(sys.argv[i+1])
+            body['foregroundColor'] = __main__.getColor(sys.argv[i+1])
             colorRgbFormat = True
             i += 2
         elif myarg == 'reminder':
@@ -855,7 +858,7 @@ def transferSecCals(users):
             remove_source_user = False
             i += 1
         elif myarg == 'sendnotifications':
-            sendNotifications = getBoolean(sys.argv[i+1], myarg)
+            sendNotifications = __main__.getBoolean(sys.argv[i+1], myarg)
             i += 2
         else:
             controlflow.invalid_argument_exit(

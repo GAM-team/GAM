@@ -60,7 +60,7 @@ def showReport():
             tryDate = utils.get_yyyymmdd(sys.argv[i+1])
             i += 2
         elif myarg in ['orgunit', 'org', 'ou']:
-            _, orgUnitId = getOrgUnitId(sys.argv[i+1])
+            _, orgUnitId = __main__.getOrgUnitId(sys.argv[i+1])
             i += 2
         elif myarg == 'fulldatarequired':
             fullDataRequired = []
