@@ -212,7 +212,7 @@ def get_row_filter_date_or_delta_from_now(date_string):
       pass
   return (False, YYYYMMDD_FORMAT_REQUIRED)
 
-def get_row_filter_date_or_delta_from_now(time_string):
+def get_row_filter_time_or_delta_from_now(time_string):
   """Get an ISO 8601 time or a positive/negative delta applied to now.
   Args:
     time_string (string): The time or delta (e.g. '2017-09-01T12:34:56Z' or '-4h')

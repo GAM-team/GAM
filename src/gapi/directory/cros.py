@@ -743,9 +743,9 @@ def doPrintCrosDevices():
 def getCrOSDeviceEntity(i, cd):
     myarg = sys.argv[i].lower()
     if myarg == 'cros_sn':
-        return i+2, getUsersToModify('cros_sn', sys.argv[i+1])
+        return i+2, __main__.getUsersToModify('cros_sn', sys.argv[i+1])
     if myarg == 'query':
-        return i+2, getUsersToModify('crosquery', sys.argv[i+1])
+        return i+2, __main__.getUsersToModify('crosquery', sys.argv[i+1])
     if myarg[:6] == 'query:':
         query = sys.argv[i][6:]
         if query[:12].lower() == 'orgunitpath:':

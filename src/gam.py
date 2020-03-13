@@ -705,7 +705,7 @@ def readDiscoveryFile(api_version):
 def getOauth2TxtStorageCredentials():
   oauth_string = fileutils.read_file(GC_Values[GC_OAUTH2_TXT], continue_on_error=True, display_errors=False)
   if not oauth_string:
-    return
+    return None
   oauth_data = json.loads(oauth_string)
   creds = google.oauth2.credentials.Credentials.from_authorized_user_file(GC_Values[GC_OAUTH2_TXT])
   creds.token = oauth_data.get('token', oauth_data.get('auth_token', ''))
@@ -6047,7 +6047,7 @@ def getUserAttributes(i, cd, updateCmd):
           location['area'] = sys.argv[i+1]
           i += 2
         elif myopt in ['building', 'buildingid']:
-          location['buildingId'] = gapi.directory.resources.getBuildingByNameOrId(cd, sys.argv[i+1])
+          location['buildingId'] = gapi.directory.resource.getBuildingByNameOrId(cd, sys.argv[i+1])
           i += 2
         elif myopt in ['desk', 'deskcode']:
           location['deskCode'] = sys.argv[i+1]
@@ -7195,9 +7195,9 @@ def doCreateGroup():
         gs_body = dict(list(current_settings.items()) + list(gs_body.items()))
     if gs_body:
       gapi.call(gs.groups(), 'update', groupUniqueId=body['email'],
-          body=gs_body,
-          retry_reasons=[gapi.errors.ErrorReason.SERVICE_LIMIT,
-                         gapi.errors.ErrorReason.NOT_FOUND])
+                retry_reasons=[gapi.errors.ErrorReason.SERVICE_LIMIT,
+                               gapi.errors.ErrorReason.NOT_FOUND],
+                body=gs_body)
 
 def doCreateAlias():
   cd = buildGAPIObject('directory')
@@ -11400,7 +11400,7 @@ def ProcessGAMCommand(args):
       if transferWhat == 'drive':
         transferDriveFiles(users)
       elif transferWhat == 'seccals':
-        transferSecCals(users)
+        gapi.calendar.transferSecCals(users)
       else:
         controlflow.invalid_argument_exit(transferWhat, "gam <users> transfer")
     elif command == 'show':
@@ -11639,7 +11639,7 @@ def ProcessGAMCommand(args):
     elif command == 'info':
       infoWhat = sys.argv[4].lower()
       if infoWhat == 'calendar':
-        infoCalendar(users)
+        gapi.calendar.infoCalendar(users)
       elif infoWhat in ['filter', 'filters']:
         infoFilters(users)
       elif infoWhat in ['forwardingaddress', 'forwardingaddresses']:
