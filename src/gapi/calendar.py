@@ -30,13 +30,17 @@ def buildCalendarGAPIObject(calname):
 
 def buildCalendarDataGAPIObject(calname):
     calendarId = normalizeCalendarId(calname)
-    # Force service account token request. If we fail fall back to using
-    # admin for authentication
-    cal = __main__.buildGAPIServiceObject('calendar', calendarId, False)
+
+    # Try to impersonate the calendar owner. If we fail, fall back to using
+    # admin for authentication. Resource calendars cannot be impersonated,
+    # so we need to access them as the admin.
+    cal = None
+    if (not calname.endswith('@resource.calendar.google.com') and
+        not calname.endswith('@group.calendar.google.com')):
+        cal = __main__.buildGAPIServiceObject('calendar', calendarId, False)
     if cal is None:
         _, cal = buildCalendarGAPIObject(__main__._getValueFromOAuth('email'))
     return (calendarId, cal)
-
 
 def printShowACLs(csvFormat):
     calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
