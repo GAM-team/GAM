@@ -36,7 +36,8 @@ def buildCalendarDataGAPIObject(calname):
     # so we need to access them as the admin.
     cal = None
     if (not calname.endswith('@resource.calendar.google.com') and
-        not calname.endswith('@group.calendar.google.com')):
+        not calname.endswith('@group.calendar.google.com') and
+        not calname.endswith('@group.v.calendar.google.com')):
         cal = __main__.buildGAPIServiceObject('calendar', calendarId, False)
     if cal is None:
         _, cal = buildCalendarGAPIObject(__main__._getValueFromOAuth('email'))
