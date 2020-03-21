@@ -51,16 +51,14 @@ import http.client as http_client
 from multiprocessing import Pool as mp_pool
 from multiprocessing import freeze_support as mp_freeze_support
 from multiprocessing import set_start_method as mp_set_start_method
-from urllib.parse import quote, urlencode, urlparse
+from urllib.parse import urlencode, urlparse
 import dateutil.parser
 
 import googleapiclient
 import googleapiclient.discovery
 import googleapiclient.errors
 import googleapiclient.http
-import google.oauth2.id_token
 import google.oauth2.service_account
-import google_auth_oauthlib.flow
 import httplib2
 
 from cryptography import x509
@@ -69,8 +67,7 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.x509.oid import NameOID
 
-from filelock import FileLock
-
+import auth.oauth
 import controlflow
 import display
 import fileutils
@@ -703,49 +700,24 @@ def readDiscoveryFile(api_version):
     controlflow.invalid_json_exit(disc_file)
 
 def getOauth2TxtStorageCredentials():
-  oauth_string = fileutils.read_file(GC_Values[GC_OAUTH2_TXT], continue_on_error=True, display_errors=False)
-  if not oauth_string:
+  try:
+    return auth.get_admin_credentials()
+  except auth.oauth.InvalidCredentialsFileError:
+    # Maintain legacy behavior of this method that returns None if no
+    # credential file is present.
     return None
-  oauth_data = json.loads(oauth_string)
-  creds = google.oauth2.credentials.Credentials.from_authorized_user_file(GC_Values[GC_OAUTH2_TXT])
-  creds.token = oauth_data.get('token', oauth_data.get('auth_token', ''))
-  creds._id_token = oauth_data.get('id_token_jwt', oauth_data.get('id_token', None))
-  token_expiry = oauth_data.get('token_expiry', '1970-01-01T00:00:01Z')
-  creds.expiry = datetime.datetime.strptime(token_expiry, '%Y-%m-%dT%H:%M:%SZ')
-  GC_Values[GC_DECODED_ID_TOKEN] = oauth_data.get('decoded_id_token', '')
-  return creds
 
 def getValidOauth2TxtCredentials(force_refresh=False):
-  """Gets OAuth2 credentials which are guaranteed to be fresh and valid.
-     Locks during read and possible write so that only one process will
-     attempt refresh/write when running in parallel. """
-  lock_file = f'{GC_Values[GC_OAUTH2_TXT]}.lock'
-  lock = FileLock(lock_file)
-  with lock:
-    credentials = getOauth2TxtStorageCredentials()
-    if (credentials and credentials.expired) or force_refresh:
-      retries = 3
-      for n in range(1, retries+1):
-        try:
-          credentials.refresh(transport.create_request())
-          writeCredentials(credentials)
-          break
-        except google.auth.exceptions.RefreshError as e:
-          try:
-            if e.args[0] in REFRESH_PERM_ERRORS:
-              # remove OAuth file so we kick off auth next time
-              os.remove(GC_Values[GC_OAUTH2_TXT])
-          except SyntaxError:
-            pass
-          controlflow.system_error_exit(18, str(e))
-        except (google.auth.exceptions.TransportError, httplib2.ServerNotFoundError, RuntimeError) as e:
-          if n != retries:
-            controlflow.wait_on_failure(n, retries, str(e))
-            continue
-          controlflow.system_error_exit(4, str(e))
-    elif credentials is None or not credentials.valid:
-      doRequestOAuth()
-      credentials = getOauth2TxtStorageCredentials()
+  """Gets OAuth2 credentials which are guaranteed to be fresh and valid."""
+  try:
+    credentials = auth.get_admin_credentials()
+  except auth.oauth.InvalidCredentialsFileError:
+    doRequestOAuth()  # Make a new request which should store new creds.
+    return getValidOauth2TxtCredentials(force_refresh=force_refresh)
+
+  if credentials.expired or force_refresh:
+    request = transport.create_request()
+    credentials.refresh(request)
   return credentials
 
 def getService(api, http):
@@ -6198,57 +6170,6 @@ def getUserAttributes(i, cd, updateCmd):
     body['hashFunction'] = 'crypt'
   return body
 
-def shorten_url(long_url):
-  simplehttp = transport.create_http(timeout=10)
-  url_shortnr = 'https://gam-shortn.appspot.com/create'
-  headers = {'Content-Type': 'application/json',
-             'User-Agent': GAM_INFO}
-  try:
-    resp, content = simplehttp.request(url_shortnr, 'POST',
-                                       f'{{"long_url": "{long_url}"}}', headers=headers)
-  except Exception:
-    return long_url
-  if resp.status != 200:
-    return long_url
-  try:
-    return json.loads(content).get('short_url', long_url)
-  except Exception:
-    print(content)
-    return long_url
-
-class ShortURLFlow(google_auth_oauthlib.flow.InstalledAppFlow):
-  def authorization_url(self, **kwargs):
-    long_url, state = super(ShortURLFlow, self).authorization_url(**kwargs)
-    short_url = shorten_url(long_url)
-    return short_url, state
-
-def _run_oauth_flow(client_id, client_secret, scopes, access_type, login_hint=None):
-  client_config = {
-    'installed': {
-      'client_id': client_id,
-      'client_secret': client_secret,
-      'redirect_uris': ['http://localhost', 'urn:ietf:wg:oauth:2.0:oob'],
-      'auth_uri': 'https://accounts.google.com/o/oauth2/v2/auth',
-      'token_uri': 'https://oauth2.googleapis.com/token',
-      }
-    }
-
-  flow = ShortURLFlow.from_client_config(client_config, scopes, autogenerate_code_verifier=True)
-  kwargs = {'access_type': access_type}
-  if login_hint:
-    kwargs['login_hint'] = login_hint
-  if not GC_Values[GC_OAUTH_BROWSER]:
-    flow.run_console(
-            authorization_prompt_message=MESSAGE_CONSOLE_AUTHORIZATION_PROMPT,
-            authorization_code_message=MESSAGE_CONSOLE_AUTHORIZATION_CODE,
-            **kwargs)
-  else:
-    flow.run_local_server(
-            authorization_prompt_message=MESSAGE_LOCAL_SERVER_AUTHORIZATION_PROMPT,
-            success_message=MESSAGE_LOCAL_SERVER_SUCCESS,
-            **kwargs)
-  return flow.credentials
-
 def getCRMService(login_hint):
   scopes = ['https://www.googleapis.com/auth/cloud-platform']
   client_id = '297408095146-fug707qsjv4ikron0hugpevbrjhkmsk7.apps.googleusercontent.com'
@@ -7906,11 +7827,9 @@ def doCreateResoldCustomer():
   print(f'Created customer {result["customerDomain"]} with id {result["customerId"]}')
 
 def _getValueFromOAuth(field, credentials=None):
-  if not GC_Values[GC_DECODED_ID_TOKEN]:
-    credentials = credentials if credentials is not None else getValidOauth2TxtCredentials()
-    request = transport.create_request()
-    GC_Values[GC_DECODED_ID_TOKEN] = google.oauth2.id_token.verify_oauth2_token(credentials.id_token, request)
-  return GC_Values[GC_DECODED_ID_TOKEN].get(field, 'Unknown')
+  if not credentials:
+    credentials = auth.get_admin_credentials()
+  return credentials.get_token_value(field)
 
 def doGetMemberInfo():
   cd = buildGAPIObject('directory')
@@ -10151,89 +10070,56 @@ def OAuthInfo():
       print(f'{key}: {value}')
 
 def doDeleteOAuth():
-  lock_file = f'{GC_Values[GC_OAUTH2_TXT]}.lock'
-  lock = FileLock(lock_file, timeout=10)
-  with lock:
-    credentials = getOauth2TxtStorageCredentials()
-    if credentials is None:
-      return
-    simplehttp = transport.create_http()
-    params = {'token': credentials.refresh_token}
-    revoke_uri = f'https://accounts.google.com/o/oauth2/revoke?{urlencode(params)}'
-    sys.stderr.write('This OAuth token will self-destruct in 3...')
-    sys.stderr.flush()
-    time.sleep(1)
-    sys.stderr.write('2...')
-    sys.stderr.flush()
-    time.sleep(1)
-    sys.stderr.write('1...')
-    sys.stderr.flush()
-    time.sleep(1)
-    sys.stderr.write('boom!\n')
-    sys.stderr.flush()
-    simplehttp.request(revoke_uri, 'GET')
-    os.remove(GC_Values[GC_OAUTH2_TXT])
-  if not GM_Globals[GM_WINDOWS]:
-    try:
-      os.remove(lock_file)
-    except IOError:
-      pass
-
-def writeCredentials(creds):
-  creds_data = {
-    'token': creds.token,
-    'refresh_token': creds.refresh_token,
-    'token_uri': creds.token_uri,
-    'client_id': creds.client_id,
-    'client_secret': creds.client_secret,
-    'id_token': creds.id_token,
-    'token_expiry': creds.expiry.strftime('%Y-%m-%dT%H:%M:%SZ'),
-    #'scopes': sorted(creds.scopes), # Google auth doesn't currently give us scopes back on refresh
-    }
-  expected_iss = ['https://accounts.google.com', 'accounts.google.com']
-  if _getValueFromOAuth('iss', creds) not in expected_iss:
-    controlflow.system_error_exit(13, f'Wrong OAuth 2.0 credentials issuer. Got {_getValueFromOAuth("iss", creds)} expected one of {", ".join(expected_iss)}')
-  request = transport.create_request()
-  creds_data['decoded_id_token'] = google.oauth2.id_token.verify_oauth2_token(creds.id_token, request)
-  data = json.dumps(creds_data, indent=2, sort_keys=True)
-  fileutils.write_file(GC_Values[GC_OAUTH2_TXT], data)
+  credentials = getOauth2TxtStorageCredentials()
+  if credentials is None:
+    return
+  sys.stderr.write('This OAuth token will self-destruct in 3...')
+  sys.stderr.flush()
+  time.sleep(1)
+  sys.stderr.write('2...')
+  sys.stderr.flush()
+  time.sleep(1)
+  sys.stderr.write('1...')
+  sys.stderr.flush()
+  time.sleep(1)
+  sys.stderr.write('boom!\n')
+  sys.stderr.flush()
+  credentials.revoke()
+  credentials.delete()
 
 def doRequestOAuth(login_hint=None):
-  credentials = getOauth2TxtStorageCredentials()
-  if credentials is None or not credentials.valid:
-    scopes = getScopesFromUser()
-    if scopes is None:
-      controlflow.system_error_exit(0, '')
-    client_id, client_secret = getOAuthClientIDAndSecret()
-    login_hint = _getValidateLoginHint(login_hint)
-    # Needs to be set so oauthlib doesn't puke when Google changes our scopes
-    os.environ['OAUTHLIB_RELAX_TOKEN_SCOPE'] = 'true'
-    creds = _run_oauth_flow(client_id, client_secret, scopes, 'offline', login_hint)
-    writeCredentials(creds)
-  else:
-    print(f'It looks like you\'ve already authorized GAM. Refusing to overwrite existing file:\n\n{GC_Values[GC_OAUTH2_TXT]}')
+  missing_client_secrets_message = ('To use GAM you need to create an API '
+                                    'project. Please run:\n\ngam create project')
+  client_secrets_file = GC_Values[GC_CLIENT_SECRETS_JSON]
+  invalid_client_secrets_format_message = ('The format of your client secrets '
+                                           'file:\n\n%s\n\nis incorrect. '
+                                           'Please recreate the file.' %
+                                           client_secrets_file)
+  stored_creds = getOauth2TxtStorageCredentials()
+  if stored_creds and stored_creds.valid:
+    print('It looks like you\'ve already authorized GAM. Refusing to overwrite existing file:\n\n%s' % stored_creds.filename)
+    return
 
-def getOAuthClientIDAndSecret():
-  """Retrieves the OAuth client ID and client secret from JSON."""
-  MISSING_CLIENT_SECRETS_MESSAGE = '''To use GAM you need to create an API project. Please run:
-
-gam create project
-'''
-  filename = GC_Values[GC_CLIENT_SECRETS_JSON]
-  cs_data = fileutils.read_file(filename, continue_on_error=True, display_errors=True)
-  if not cs_data:
-    controlflow.system_error_exit(14, MISSING_CLIENT_SECRETS_MESSAGE)
+  scopes = getScopesFromUser()
+  if scopes is None:
+    # There were no scopes selected. Exit cleanly.
+    controlflow.system_error_exit(0, '')
+  login_hint = _getValidateLoginHint(login_hint)
+  # Needs to be set so oauthlib doesn't puke when Google changes our scopes
+  os.environ['OAUTHLIB_RELAX_TOKEN_SCOPE'] = 'true'
   try:
-    cs_json = json.loads(cs_data)
-    client_id = cs_json['installed']['client_id']
-    # chop off .apps.googleusercontent.com suffix as it's not needed
-    # and we need to keep things short for the Auth URL.
-    client_id = re.sub(r'\.apps\.googleusercontent\.com$', '', client_id)
-    client_secret = cs_json['installed']['client_secret']
-  except (ValueError, IndexError, KeyError):
-    controlflow.system_error_exit(3, f'the format of your client secrets file:\n\n{filename}\n\n'
-                                  'is incorrect. Please recreate the file.')
-  return (client_id, client_secret)
+    creds = auth.oauth.Credentials.from_client_secrets_file(
+        client_secrets_file=client_secrets_file,
+        scopes=scopes,
+        access_type='offline',
+        login_hint=login_hint,
+        credentials_file=GC_Values[GC_OAUTH2_TXT],
+        use_console_flow=not GC_Values[GC_OAUTH_BROWSER])
+    creds.write()
+  except auth.oauth.InvalidClientSecretsFileError:
+    controlflow.system_error_exit(14, missing_client_secrets_message)
+  except auth.oauth.InvalidClientSecretsFileFormatError:
+    controlflow.system_error_exit(3, invalid_client_secrets_format_message)
 
 OAUTH2_SCOPES = [
   {'name': 'Classroom API - counts as 5 scopes',
