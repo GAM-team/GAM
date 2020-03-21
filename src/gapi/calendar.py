@@ -35,9 +35,7 @@ def buildCalendarDataGAPIObject(calname):
     # admin for authentication. Resource calendars cannot be impersonated,
     # so we need to access them as the admin.
     cal = None
-    if (not calname.endswith('@resource.calendar.google.com') and
-        not calname.endswith('@group.calendar.google.com') and
-        not calname.endswith('@group.v.calendar.google.com')):
+    if not calname.endswith('.calendar.google.com'):
         cal = __main__.buildGAPIServiceObject('calendar', calendarId, False)
     if cal is None:
         _, cal = buildCalendarGAPIObject(__main__._getValueFromOAuth('email'))
