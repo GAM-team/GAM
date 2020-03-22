@@ -5912,7 +5912,7 @@ def getUserAttributes(i, cd, updateCmd):
         i += 1
       im['im'] = sys.argv[i]
       i += 1
-      myopt = sys.argv[i].lower()
+      myopt = sys.argv[i].lower() if i < len(sys.argv) else ''
       if myopt in ['notprimary', 'primary']:
         im['primary'] = myopt == 'primary'
         i += 1
@@ -6011,7 +6011,7 @@ def getUserAttributes(i, cd, updateCmd):
       i = getEntryType(i, website, USER_WEBSITE_TYPES)
       website['value'] = sys.argv[i]
       i += 1
-      myopt = sys.argv[i].lower()
+      myopt = sys.argv[i].lower() if i < len(sys.argv) else ''
       if myopt in ['notprimary', 'primary']:
         website['primary'] = myopt == 'primary'
         i += 1
