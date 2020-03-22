@@ -6411,7 +6411,7 @@ def _createClientSecretsOauth2service(httpObj, projectId, login_hint, create_pro
 
 {console_url}
 
-1. Choose "Other".
+1. Choose "Desktop App" for "Application type".
 2. Enter a desired value for "Name" or leave as is.
 3. Click the blue "Create" button.
 4. Copy the "client ID" value that shows on the next page.
