@@ -24,6 +24,7 @@ else
     strip gam/gam-staticx
     rm gam/gam
     mv gam/gam-staticx gam/gam
+    chmod 755 gam/gam
     tar cfJ $GAM_LEGACY_ARCHIVE gam/
     echo "Legacy StaticX GAM info:"
     du -h gam/gam
