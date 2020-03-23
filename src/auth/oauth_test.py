@@ -3,6 +3,7 @@
 import datetime
 import json
 import os
+import platform
 import unittest
 from unittest.mock import MagicMock
 from unittest.mock import patch
@@ -506,6 +507,10 @@ class CredentialsTest(unittest.TestCase):
     creds.delete()
     self.assertFalse(os.path.exists(self.fake_filename))
 
+  @unittest.skipIf(
+      platform.system() == 'Windows',
+      reason=('On Windows, Filelock deletes the lock file each time the lock '
+              'is released. Delete does not remove it.'))
   def test_delete_removes_lock_file(self):
     creds = oauth.Credentials(
         token=None,
