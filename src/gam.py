@@ -6637,7 +6637,7 @@ def _generatePrivateKeyAndPublicCert(client_id, key_size):
   builder = builder.issuer_name(x509.Name([
         x509.NameAttribute(NameOID.COMMON_NAME, client_id)]))
   not_valid_before = datetime.datetime.today() - datetime.timedelta(days=1)
-  not_valid_after = datetime.datetime.today() + datetime.timedelta(days=365*10)
+  not_valid_after = datetime.datetime.today() + datetime.timedelta(days=365*10-1)
   builder = builder.not_valid_before(not_valid_before)
   builder = builder.not_valid_after(not_valid_after)
   builder = builder.serial_number(x509.random_serial_number())
