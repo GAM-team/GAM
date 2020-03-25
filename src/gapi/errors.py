@@ -134,6 +134,7 @@ class ErrorReason(Enum):
   SYSTEM_ERROR = 'systemError'
   USER_NOT_FOUND = 'userNotFound'
   USER_RATE_LIMIT_EXCEEDED = 'userRateLimitExceeded'
+  FOUR_TWO_NINE = '429'
 
   def __str__(self):
     return str(self.value)
@@ -144,7 +145,7 @@ DEFAULT_RETRY_REASONS = [
   ErrorReason.QUOTA_EXCEEDED, ErrorReason.RATE_LIMIT_EXCEEDED,
   ErrorReason.USER_RATE_LIMIT_EXCEEDED, ErrorReason.BACKEND_ERROR,
   ErrorReason.BAD_GATEWAY, ErrorReason.GATEWAY_TIMEOUT,
-  ErrorReason.INTERNAL_ERROR
+  ErrorReason.INTERNAL_ERROR, ErrorReason.FOUR_TWO_NINE,
   ]
 GMAIL_THROW_REASONS = [ErrorReason.SERVICE_NOT_AVAILABLE]
 GROUP_GET_THROW_REASONS = [
