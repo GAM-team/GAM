@@ -9,8 +9,6 @@ if [ ! -e $exefile ]; then
 fi
 echo "Installing $exefile..."
 powershell ".\\${exefile} /silent /sp- /suppressmsgboxes /DIR=C:\\ssl"
-#cup -y chocolatey
-#cinst -y python3
 export python_file=python-$BUILD_PYTHON_VERSION-amd64.exe
 wget --quiet https://www.python.org/ftp/python/$BUILD_PYTHON_VERSION/$python_file
 powershell ".\\${python_file} /quiet InstallAllUsers=1 TargetDir=c:\\python"
@@ -33,11 +31,8 @@ $pip install --upgrade -r src/requirements.txt
 # lots of malware uses PyInstaller default bootloader
 # https://stackoverflow.com/questions/53584395/how-to-recompile-the-bootloader-of-pyinstaller
 echo "Downloading PyInstaller..."
-#wget --quiet https://github.com/pyinstaller/pyinstaller/releases/download/v$PYINSTALLER_VERSION/PyInstaller-$PYINSTALLER_VERSION.tar.gz
 wget --quiet https://github.com/pyinstaller/pyinstaller/archive/develop.tar.gz
-#tar xf PyInstaller-$PYINSTALLER_VERSION.tar.gz
 tar xf develop.tar.gz
-#cd PyInstaller-$PYINSTALLER_VERSION/bootloader
 cd pyinstaller-develop/bootloader
 echo "bootloader before:"
 md5sum ../PyInstaller/bootloader/Windows-64bit/*
@@ -48,5 +43,4 @@ echo "PATH: $PATH"
 cd ..
 $python setup.py install
 echo "cd to $mypath"
-#until cp -v /c/ssl/*.dll /c/Python37/DLLs; do echo "trying again..."; done
 cd $mypath
