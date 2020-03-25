@@ -21,8 +21,8 @@ if [ ! -e $exefile ]; then
 fi
 echo "Installing $exefile..."
 powershell ".\\${exefile} /silent /sp- /suppressmsgboxes /DIR=C:\\ssl"
-until cp -v /c/ssl/libcrypto-1_1-x64.dll /c/python/DLLs/libcrypto-1_1.dll; do echo "trying again..."; done
-until cp -v /c/ssl/libssl-1_1-x64.dll /c/python/DLLs/libssl-1_1.dll; do echo "trying again..."; done
+until cp -v /c/ssl/libcrypto-1_1.dll /c/python/DLLs/libcrypto-1_1.dll; do echo "trying again..."; done
+until cp -v /c/ssl/libssl-1_1.dll /c/python/DLLs/libssl-1_1.dll; do echo "trying again..."; done
 
 $pip install --upgrade pip
 $pip list --outdated --format=freeze | grep -v '^\-e' | cut -d = -f 1  | xargs -n1 $pip install -U
