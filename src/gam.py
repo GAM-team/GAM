@@ -51,16 +51,14 @@ import http.client as http_client
 from multiprocessing import Pool as mp_pool
 from multiprocessing import freeze_support as mp_freeze_support
 from multiprocessing import set_start_method as mp_set_start_method
-from urllib.parse import quote, urlencode, urlparse
+from urllib.parse import urlencode, urlparse
 import dateutil.parser
 
 import googleapiclient
 import googleapiclient.discovery
 import googleapiclient.errors
 import googleapiclient.http
-import google.oauth2.id_token
 import google.oauth2.service_account
-import google_auth_oauthlib.flow
 import httplib2
 
 from cryptography import x509
@@ -69,12 +67,19 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.x509.oid import NameOID
 
-from filelock import FileLock
-
+import auth.oauth
 import controlflow
 import display
 import fileutils
+import gapi.calendar
+import gapi.directory
+import gapi.directory.cros
+import gapi.directory.customer
+import gapi.directory.resource
 import gapi.errors
+import gapi.reports
+import gapi.storage
+import gapi.vault
 import gapi
 import transport
 import utils
@@ -251,152 +256,6 @@ def addCourseIdScope(courseId):
     return f'd:{courseId}'
   return courseId
 
-def getString(i, item, optional=False, minLen=1, maxLen=None):
-  if i < len(sys.argv):
-    argstr = sys.argv[i]
-    if argstr:
-      if (len(argstr) >= minLen) and ((maxLen is None) or (len(argstr) <= maxLen)):
-        return argstr
-      controlflow.system_error_exit(2, f'expected <{integerLimits(minLen, maxLen, "string length")} for {item}>')
-    if optional or (minLen == 0):
-      return ''
-    controlflow.system_error_exit(2, f'expected a Non-empty <{item}>')
-  elif optional:
-    return ''
-  controlflow.system_error_exit(2, f'expected a <{item}>')
-
-def getDelta(argstr, pattern):
-  tg = pattern.match(argstr.lower())
-  if tg is None:
-    return None
-  sign = tg.group(1)
-  delta = int(tg.group(2))
-  unit = tg.group(3)
-  if unit == 'y':
-    deltaTime = datetime.timedelta(days=delta*365)
-  elif unit == 'w':
-    deltaTime = datetime.timedelta(weeks=delta)
-  elif unit == 'd':
-    deltaTime = datetime.timedelta(days=delta)
-  elif unit == 'h':
-    deltaTime = datetime.timedelta(hours=delta)
-  elif unit == 'm':
-    deltaTime = datetime.timedelta(minutes=delta)
-  if sign == '-':
-    return -deltaTime
-  return deltaTime
-
-DELTA_DATE_PATTERN = re.compile(r'^([+-])(\d+)([dwy])$')
-DELTA_DATE_FORMAT_REQUIRED = '(+|-)<Number>(d|w|y)'
-
-def getDeltaDate(argstr):
-  deltaDate = getDelta(argstr, DELTA_DATE_PATTERN)
-  if deltaDate is None:
-    controlflow.system_error_exit(2, f'expected a <{DELTA_DATE_FORMAT_REQUIRED}>; got {argstr}')
-  return deltaDate
-
-DELTA_TIME_PATTERN = re.compile(r'^([+-])(\d+)([mhdwy])$')
-DELTA_TIME_FORMAT_REQUIRED = '(+|-)<Number>(m|h|d|w|y)'
-
-def getDeltaTime(argstr):
-  deltaTime = getDelta(argstr, DELTA_TIME_PATTERN)
-  if deltaTime is None:
-    controlflow.system_error_exit(2, f'expected a <{DELTA_TIME_FORMAT_REQUIRED}>; got {argstr}')
-  return deltaTime
-
-YYYYMMDD_FORMAT = '%Y-%m-%d'
-YYYYMMDD_FORMAT_REQUIRED = 'yyyy-mm-dd'
-
-def getYYYYMMDD(argstr, minLen=1, returnTimeStamp=False, returnDateTime=False):
-  argstr = argstr.strip()
-  if argstr:
-    if argstr[0] in ['+', '-']:
-      today = datetime.date.today()
-      argstr = (datetime.datetime(today.year, today.month, today.day)+getDeltaDate(argstr)).strftime(YYYYMMDD_FORMAT)
-    try:
-      dateTime = datetime.datetime.strptime(argstr, YYYYMMDD_FORMAT)
-      if returnTimeStamp:
-        return time.mktime(dateTime.timetuple())*1000
-      if returnDateTime:
-        return dateTime
-      return argstr
-    except ValueError:
-      controlflow.system_error_exit(2, f'expected a <{YYYYMMDD_FORMAT_REQUIRED}>; got {argstr}')
-  elif minLen == 0:
-    return ''
-  controlflow.system_error_exit(2, f'expected a <{YYYYMMDD_FORMAT_REQUIRED}>')
-
-YYYYMMDDTHHMMSS_FORMAT_REQUIRED = 'yyyy-mm-ddThh:mm:ss[.fff](Z|(+|-(hh:mm)))'
-
-def getTimeOrDeltaFromNow(time_string):
-  """Get an ISO 8601 time or a positive/negative delta applied to now.
-  Args:
-    time_string (string): The time or delta (e.g. '2017-09-01T12:34:56Z' or '-4h')
-  Returns:
-    string: iso8601 formatted datetime in UTC.
-  """
-  time_string = time_string.strip().upper()
-  if time_string:
-    if time_string[0] not in ['+', '-']:
-      return time_string
-    return (datetime.datetime.utcnow() + getDeltaTime(time_string)).isoformat() + 'Z'
-  controlflow.system_error_exit(2, f'expected a <{YYYYMMDDTHHMMSS_FORMAT_REQUIRED}>')
-
-def getRowFilterDateOrDeltaFromNow(date_string):
-  """Get an ISO 8601 date or a positive/negative delta applied to now.
-  Args:
-    date_string (string): The time or delta (e.g. '2017-09-01' or '-4y')
-  Returns:
-    string: iso8601 formatted datetime in UTC.
-  """
-  date_string = date_string.strip().upper()
-  if date_string:
-    if date_string[0] in ['+', '-']:
-      deltaDate = getDelta(date_string, DELTA_DATE_PATTERN)
-      if deltaDate is None:
-        return (False, DELTA_DATE_FORMAT_REQUIRED)
-      today = datetime.date.today()
-      return (True, (datetime.datetime(today.year, today.month, today.day)+deltaDate).isoformat()+'Z')
-    try:
-      deltaDate = dateutil.parser.parse(date_string, ignoretz=True)
-      return (True, datetime.datetime(deltaDate.year, deltaDate.month, deltaDate.day).isoformat()+'Z')
-    except ValueError:
-      pass
-  return (False, YYYYMMDD_FORMAT_REQUIRED)
-
-def getRowFilterTimeOrDeltaFromNow(time_string):
-  """Get an ISO 8601 time or a positive/negative delta applied to now.
-  Args:
-    time_string (string): The time or delta (e.g. '2017-09-01T12:34:56Z' or '-4h')
-  Returns:
-    string: iso8601 formatted datetime in UTC.
-  Exits:
-    2: Not a valid delta.
-  """
-  time_string = time_string.strip().upper()
-  if time_string:
-    if time_string[0] in ['+', '-']:
-      deltaTime = getDelta(time_string, DELTA_TIME_PATTERN)
-      if deltaTime is None:
-        return (False, DELTA_TIME_FORMAT_REQUIRED)
-      return (True, (datetime.datetime.utcnow()+deltaTime).isoformat()+'Z')
-    try:
-      deltaTime = dateutil.parser.parse(time_string, ignoretz=True)
-      return (True, deltaTime.isoformat()+'Z')
-    except ValueError:
-      pass
-  return (False, YYYYMMDDTHHMMSS_FORMAT_REQUIRED)
-
-YYYYMMDD_PATTERN = re.compile(r'^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
-
-def getDateZeroTimeOrFullTime(time_string):
-  time_string = time_string.strip()
-  if time_string:
-    if YYYYMMDD_PATTERN.match(time_string):
-      return getYYYYMMDD(time_string)+'T00:00:00.000Z'
-    return getTimeOrDeltaFromNow(time_string)
-  controlflow.system_error_exit(2, f'expected a <{YYYYMMDDTHHMMSS_FORMAT_REQUIRED}>')
-
 # Get domain from email address
 def getEmailAddressDomain(emailAddress):
   atLoc = emailAddress.find('@')
@@ -410,8 +269,6 @@ def splitEmailAddress(emailAddress):
   if atLoc == -1:
     return (emailAddress.lower(), GC_Values[GC_DOMAIN].lower())
   return (emailAddress[:atLoc].lower(), emailAddress[atLoc+1:].lower())
-
-UID_PATTERN = re.compile(r'u?id: ?(.+)', re.IGNORECASE)
 
 # Normalize user/group email address/uid
 # uid:12345abc -> 12345abc
@@ -526,9 +383,9 @@ def SetGlobalVariables():
       if mg:
         if mg.group(1) in ['date', 'time']:
           if mg.group(1) == 'date':
-            valid, filterValue = getRowFilterDateOrDeltaFromNow(mg.group(3))
+            valid, filterValue = utils.get_row_filter_date_or_delta_from_now(mg.group(3))
           else:
-            valid, filterValue = getRowFilterTimeOrDeltaFromNow(mg.group(3))
+            valid, filterValue = utils.get_row_filter_time_or_delta_from_now(mg.group(3))
           if valid:
             rowFilters[column] = (mg.group(1), mg.group(2), filterValue)
             continue
@@ -843,49 +700,24 @@ def readDiscoveryFile(api_version):
     controlflow.invalid_json_exit(disc_file)
 
 def getOauth2TxtStorageCredentials():
-  oauth_string = fileutils.read_file(GC_Values[GC_OAUTH2_TXT], continue_on_error=True, display_errors=False)
-  if not oauth_string:
-    return
-  oauth_data = json.loads(oauth_string)
-  creds = google.oauth2.credentials.Credentials.from_authorized_user_file(GC_Values[GC_OAUTH2_TXT])
-  creds.token = oauth_data.get('token', oauth_data.get('auth_token', ''))
-  creds._id_token = oauth_data.get('id_token_jwt', oauth_data.get('id_token', None))
-  token_expiry = oauth_data.get('token_expiry', '1970-01-01T00:00:01Z')
-  creds.expiry = datetime.datetime.strptime(token_expiry, '%Y-%m-%dT%H:%M:%SZ')
-  GC_Values[GC_DECODED_ID_TOKEN] = oauth_data.get('decoded_id_token', '')
-  return creds
+  try:
+    return auth.get_admin_credentials()
+  except auth.oauth.InvalidCredentialsFileError:
+    # Maintain legacy behavior of this method that returns None if no
+    # credential file is present.
+    return None
 
 def getValidOauth2TxtCredentials(force_refresh=False):
-  """Gets OAuth2 credentials which are guaranteed to be fresh and valid.
-     Locks during read and possible write so that only one process will
-     attempt refresh/write when running in parallel. """
-  lock_file = f'{GC_Values[GC_OAUTH2_TXT]}.lock'
-  lock = FileLock(lock_file)
-  with lock:
-    credentials = getOauth2TxtStorageCredentials()
-    if (credentials and credentials.expired) or force_refresh:
-      retries = 3
-      for n in range(1, retries+1):
-        try:
-          credentials.refresh(transport.create_request())
-          writeCredentials(credentials)
-          break
-        except google.auth.exceptions.RefreshError as e:
-          try:
-            if e.args[0] in REFRESH_PERM_ERRORS:
-              # remove OAuth file so we kick off auth next time
-              os.remove(GC_Values[GC_OAUTH2_TXT])
-          except SyntaxError:
-            pass
-          controlflow.system_error_exit(18, str(e))
-        except (google.auth.exceptions.TransportError, httplib2.ServerNotFoundError, RuntimeError) as e:
-          if n != retries:
-            controlflow.wait_on_failure(n, retries, str(e))
-            continue
-          controlflow.system_error_exit(4, str(e))
-    elif credentials is None or not credentials.valid:
-      doRequestOAuth()
-      credentials = getOauth2TxtStorageCredentials()
+  """Gets OAuth2 credentials which are guaranteed to be fresh and valid."""
+  try:
+    credentials = auth.get_admin_credentials()
+  except auth.oauth.InvalidCredentialsFileError:
+    doRequestOAuth()  # Make a new request which should store new creds.
+    return getValidOauth2TxtCredentials(force_refresh=force_refresh)
+
+  if credentials.expired or force_refresh:
+    request = transport.create_request()
+    credentials.refresh(request)
   return credentials
 
 def getService(api, http):
@@ -1067,25 +899,6 @@ def buildActivityGAPIObject(user):
   userEmail = convertUIDtoEmailAddress(user)
   return (userEmail, buildGAPIServiceObject('appsactivity', userEmail))
 
-def normalizeCalendarId(calname, checkPrimary=False):
-  if checkPrimary and calname.lower() == 'primary':
-    return calname
-  if not GC_Values[GC_DOMAIN]:
-    GC_Values[GC_DOMAIN] = _getValueFromOAuth('hd')
-  return convertUIDtoEmailAddress(calname, email_types=['user', 'resource'])
-
-def buildCalendarGAPIObject(calname):
-  calendarId = normalizeCalendarId(calname)
-  return (calendarId, buildGAPIServiceObject('calendar', calendarId))
-
-def buildCalendarDataGAPIObject(calname):
-  calendarId = normalizeCalendarId(calname)
-  # Force service account token request. If we fail fall back to using admin for authentication
-  cal = buildGAPIServiceObject('calendar', calendarId, False)
-  if cal is None:
-    _, cal = buildCalendarGAPIObject(_getValueFromOAuth('email'))
-  return (calendarId, cal)
-
 def buildDriveGAPIObject(user):
   userEmail = convertUIDtoEmailAddress(user)
   return (userEmail, buildGAPIServiceObject('drive', userEmail))
@@ -1227,267 +1040,6 @@ RI_ROLE = 4
 def batchRequestID(entityName, j, jcount, item, role=''):
   return f'{entityName}\n{j}\n{jcount}\n{item}\n{role}'
 
-def _adjustDate(errMsg):
-  match_date = re.match('Data for dates later than (.*) is not yet available. Please check back later', errMsg)
-  if not match_date:
-    match_date = re.match('Start date can not be later than (.*)', errMsg)
-  if not match_date:
-    controlflow.system_error_exit(4, errMsg)
-  return str(match_date.group(1))
-
-def _checkFullDataAvailable(warnings, tryDate, fullDataRequired):
-  for warning in warnings:
-    if warning['code'] == 'PARTIAL_DATA_AVAILABLE':
-      for app in warning['data']:
-        if app['key'] == 'application' and app['value'] != 'docs' and (not fullDataRequired or app['value'] in fullDataRequired):
-          tryDateTime = datetime.datetime.strptime(tryDate, YYYYMMDD_FORMAT)-datetime.timedelta(days=1)
-          return (0, tryDateTime.strftime(YYYYMMDD_FORMAT))
-    elif warning['code'] == 'DATA_NOT_AVAILABLE':
-      for app in warning['data']:
-        if app['key'] == 'application' and app['value'] != 'docs' and (not fullDataRequired or app['value'] in fullDataRequired):
-          return (-1, tryDate)
-  return (1, tryDate)
-
-REPORT_CHOICE_MAP = {
-  'access': 'access_transparency',
-  'accesstransparency': 'access_transparency',
-  'calendars': 'calendar',
-  'customers': 'customer',
-  'doc': 'drive',
-  'docs': 'drive',
-  'domain': 'customer',
-  'enterprisegroups': 'groups_enterprise',
-  'google+': 'gplus',
-  'group': 'groups',
-  'groupsenterprise': 'groups_enterprise',
-  'hangoutsmeet': 'meet',
-  'logins': 'login',
-  'oauthtoken': 'token',
-  'tokens': 'token',
-  'users': 'user',
-  'useraccounts': 'user_accounts',
-  }
-
-def showReport():
-  rep = buildGAPIObject('reports')
-  report = sys.argv[2].lower()
-  report = REPORT_CHOICE_MAP.get(report.replace('_', ''), report)
-  valid_apps = _getEnumValuesMinusUnspecified(rep._rootDesc['resources']['activities']['methods']['list']['parameters']['applicationName']['enum'])+['customer', 'user']
-  if report not in valid_apps:
-    controlflow.expected_argument_exit("report", ", ".join(sorted(valid_apps)), report)
-  customerId = GC_Values[GC_CUSTOMER_ID]
-  if customerId == MY_CUSTOMER:
-    customerId = None
-  filters = parameters = actorIpAddress = startTime = endTime = eventName = orgUnitId = None
-  tryDate = datetime.date.today().strftime(YYYYMMDD_FORMAT)
-  to_drive = False
-  userKey = 'all'
-  fullDataRequired = None
-  i = 3
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower()
-    if myarg == 'date':
-      tryDate = getYYYYMMDD(sys.argv[i+1])
-      i += 2
-    elif myarg in ['orgunit', 'org', 'ou']:
-      _, orgUnitId = getOrgUnitId(sys.argv[i+1])
-      i += 2
-    elif myarg == 'fulldatarequired':
-      fullDataRequired = []
-      fdr = sys.argv[i+1].lower()
-      if fdr and fdr != 'all':
-        fullDataRequired = fdr.replace(',', ' ').split()
-      i += 2
-    elif myarg == 'start':
-      startTime = getTimeOrDeltaFromNow(sys.argv[i+1])
-      i += 2
-    elif myarg == 'end':
-      endTime = getTimeOrDeltaFromNow(sys.argv[i+1])
-      i += 2
-    elif myarg == 'event':
-      eventName = sys.argv[i+1]
-      i += 2
-    elif myarg == 'user':
-      userKey = normalizeEmailAddressOrUID(sys.argv[i+1])
-      i += 2
-    elif myarg in ['filter', 'filters']:
-      filters = sys.argv[i+1]
-      i += 2
-    elif myarg in ['fields', 'parameters']:
-      parameters = sys.argv[i+1]
-      i += 2
-    elif myarg == 'ip':
-      actorIpAddress = sys.argv[i+1]
-      i += 2
-    elif myarg == 'todrive':
-      to_drive = True
-      i += 1
-    else:
-      controlflow.invalid_argument_exit(sys.argv[i], "gam report")
-  if report == 'user':
-    while True:
-      try:
-        if fullDataRequired is not None:
-          warnings = gapi.get_items(rep.userUsageReport(), 'get', 'warnings',
-                                    throw_reasons=[gapi.errors.ErrorReason.INVALID],
-                                    date=tryDate, userKey=userKey, customerId=customerId, orgUnitID=orgUnitId, fields='warnings')
-          fullData, tryDate = _checkFullDataAvailable(warnings, tryDate, fullDataRequired)
-          if fullData < 0:
-            print('No user report available.')
-            sys.exit(1)
-          if fullData == 0:
-            continue
-        page_message = gapi.got_total_items_msg('Users', '...\n')
-        usage = gapi.get_all_pages(rep.userUsageReport(), 'get', 'usageReports', page_message=page_message, throw_reasons=[gapi.errors.ErrorReason.INVALID],
-                                   date=tryDate, userKey=userKey, customerId=customerId, orgUnitID=orgUnitId, filters=filters, parameters=parameters)
-        break
-      except gapi.errors.GapiInvalidError as e:
-        tryDate = _adjustDate(str(e))
-    if not usage:
-      print('No user report available.')
-      sys.exit(1)
-    titles = ['email', 'date']
-    csvRows = []
-    for user_report in usage:
-      if 'entity' not in user_report:
-        continue
-      row = {'email': user_report['entity']['userEmail'], 'date': tryDate}
-      for item in user_report.get('parameters', []):
-        if 'name' not in item:
-          continue
-        name = item['name']
-        if not name in titles:
-          titles.append(name)
-        for ptype in ['intValue', 'boolValue', 'datetimeValue', 'stringValue']:
-          if ptype in item:
-            row[name] = item[ptype]
-            break
-        else:
-          row[name] = ''
-      csvRows.append(row)
-    writeCSVfile(csvRows, titles, f'User Reports - {tryDate}', to_drive)
-  elif report == 'customer':
-    while True:
-      try:
-        if fullDataRequired is not None:
-          warnings = gapi.get_items(rep.customerUsageReports(), 'get', 'warnings',
-                                    throw_reasons=[gapi.errors.ErrorReason.INVALID],
-                                    customerId=customerId, date=tryDate, fields='warnings')
-          fullData, tryDate = _checkFullDataAvailable(warnings, tryDate, fullDataRequired)
-          if fullData < 0:
-            print('No customer report available.')
-            sys.exit(1)
-          if fullData == 0:
-            continue
-        usage = gapi.get_all_pages(rep.customerUsageReports(), 'get', 'usageReports', throw_reasons=[gapi.errors.ErrorReason.INVALID],
-                                   customerId=customerId, date=tryDate, parameters=parameters)
-        break
-      except gapi.errors.GapiInvalidError as e:
-        tryDate = _adjustDate(str(e))
-    if not usage:
-      print('No customer report available.')
-      sys.exit(1)
-    titles = ['name', 'value', 'client_id']
-    csvRows = []
-    auth_apps = list()
-    for item in usage[0]['parameters']:
-      if 'name' not in item:
-        continue
-      name = item['name']
-      if 'intValue' in item:
-        value = item['intValue']
-      elif 'msgValue' in item:
-        if name == 'accounts:authorized_apps':
-          for subitem in item['msgValue']:
-            app = {}
-            for an_item in subitem:
-              if an_item == 'client_name':
-                app['name'] = 'App: ' + subitem[an_item].replace('\n', '\\n')
-              elif an_item == 'num_users':
-                app['value'] = f'{subitem[an_item]} users'
-              elif an_item == 'client_id':
-                app['client_id'] = subitem[an_item]
-            auth_apps.append(app)
-          continue
-        values = []
-        for subitem in item['msgValue']:
-          if 'count' in subitem:
-            mycount = myvalue = None
-            for key, value in list(subitem.items()):
-              if key == 'count':
-                mycount = value
-              else:
-                myvalue = value
-              if mycount and myvalue:
-                values.append(f'{myvalue}:{mycount}')
-            value = ' '.join(values)
-          elif 'version_number' in subitem and 'num_devices' in subitem:
-            values.append(f'{subitem["version_number"]}:{subitem["num_devices"]}')
-          else:
-            continue
-          value = ' '.join(sorted(values, reverse=True))
-      csvRows.append({'name': name, 'value': value})
-    for app in auth_apps: # put apps at bottom
-      csvRows.append(app)
-    writeCSVfile(csvRows, titles, f'Customer Report - {tryDate}', todrive=to_drive)
-  else:
-    page_message = gapi.got_total_items_msg('Activities', '...\n')
-    activities = gapi.get_all_pages(rep.activities(), 'list', 'items',
-                                    page_message=page_message,
-                                    applicationName=report, userKey=userKey,
-                                    customerId=customerId,
-                                    actorIpAddress=actorIpAddress,
-                                    startTime=startTime, endTime=endTime,
-                                    eventName=eventName, filters=filters,
-                                    orgUnitID=orgUnitId)
-    if activities:
-      titles = ['name']
-      csvRows = []
-      for activity in activities:
-        events = activity['events']
-        del activity['events']
-        activity_row = flatten_json(activity)
-        purge_parameters = True
-        for event in events:
-          for item in event.get('parameters', []):
-            if set(item) == set(['value', 'name']):
-              event[item['name']] = item['value']
-            elif set(item) == set(['intValue', 'name']):
-              if item['name'] in ['start_time', 'end_time']:
-                val = item.get('intValue')
-                if val is not None:
-                  val = int(val)
-                  if val >= 62135683200:
-                    event[item['name']] = datetime.datetime.fromtimestamp(val-62135683200).isoformat()
-              else:
-                event[item['name']] = item['intValue']
-            elif set(item) == set(['boolValue', 'name']):
-              event[item['name']] = item['boolValue']
-            elif set(item) == set(['multiValue', 'name']):
-              event[item['name']] = ' '.join(item['multiValue'])
-            elif item['name'] == 'scope_data':
-              parts = {}
-              for message in item['multiMessageValue']:
-                for mess in message['parameter']:
-                  value = mess.get('value', ' '.join(mess.get('multiValue', [])))
-                  parts[mess['name']] = parts.get(mess['name'], [])+[value]
-              for part, v in parts.items():
-                if part == 'scope_name':
-                  part = 'scope'
-                event[part] = ' '.join(v)
-            else:
-              purge_parameters = False
-          if purge_parameters:
-            event.pop('parameters', None)
-          row = flatten_json(event)
-          row.update(activity_row)
-          for item in row:
-            if item not in titles:
-              titles.append(item)
-          csvRows.append(row)
-      sortCSVTitles(['name',], titles)
-      writeCSVfile(csvRows, titles, f'{report.capitalize()} Activity Report', to_drive)
-
 def watchGmail(users):
   project = f'projects/{_getCurrentProjectID()}'
   gamTopics = project+'/topics/gam-pubsub-gmail-'
@@ -1615,7 +1167,7 @@ def printShowDelegates(users, csvFormat):
       if not csvFormat and not csvStyle and delegates['delegates']:
         print(f'Total {len(delegates["delegates"])}')
   if csvFormat:
-    writeCSVfile(csvRows, titles, 'Delegates', todrive)
+    display.write_csv_file(csvRows, titles, 'Delegates', todrive)
 
 def deleteDelegate(users):
   delegate = normalizeEmailAddressOrUID(sys.argv[5], noUid=True)
@@ -1719,13 +1271,13 @@ def getCourseAttribute(myarg, value, body, croom, function):
   elif myarg in ['owner', 'ownerid', 'teacher']:
     body['ownerId'] = normalizeEmailAddressOrUID(value)
   elif myarg in ['state', 'status']:
-    validStates = _getEnumValuesMinusUnspecified(croom._rootDesc['schemas']['Course']['properties']['courseState']['enum'])
+    validStates = gapi.get_enum_values_minus_unspecified(croom._rootDesc['schemas']['Course']['properties']['courseState']['enum'])
     body['courseState'] = _getValidatedState(value, validStates)
   else:
     controlflow.invalid_argument_exit(myarg, f"gam {function} course")
 
 def _getCourseStates(croom, value, courseStates):
-  validStates = _getEnumValuesMinusUnspecified(croom._rootDesc['schemas']['Course']['properties']['courseState']['enum'])
+  validStates = gapi.get_enum_values_minus_unspecified(croom._rootDesc['schemas']['Course']['properties']['courseState']['enum'])
   for state in value.replace(',', ' ').split():
     courseStates.append(_getValidatedState(state, validStates))
 
@@ -1774,7 +1326,7 @@ def doUpdateDomain():
 
 def doGetDomainInfo():
   if (len(sys.argv) < 4) or (sys.argv[3] == 'logo'):
-    doGetCustomerInfo()
+    gapi.directory.customer.doGetCustomerInfo()
     return
   cd = buildGAPIObject('directory')
   domainName = sys.argv[3]
@@ -1794,95 +1346,6 @@ def doGetDomainAliasInfo():
   if 'creationTime' in result:
     result['creationTime'] = utils.formatTimestampYMDHMSF(result['creationTime'])
   display.print_json(result)
-
-def doGetCustomerInfo():
-  cd = buildGAPIObject('directory')
-  customer_info = gapi.call(cd.customers(), 'get', customerKey=GC_Values[GC_CUSTOMER_ID])
-  print(f'Customer ID: {customer_info["id"]}')
-  print(f'Primary Domain: {customer_info["customerDomain"]}')
-  result = gapi.call(cd.domains(), 'get',
-                     customer=customer_info['id'], domainName=customer_info['customerDomain'], fields='verified')
-  print(f'Primary Domain Verified: {result["verified"]}')
-  # If customer has changed primary domain customerCreationTime is date
-  # of current primary being added, not customer create date.
-  # We should also get all domains and use oldest date
-  oldest = datetime.datetime.strptime(customer_info['customerCreationTime'], '%Y-%m-%dT%H:%M:%S.%fZ')
-  domains = gapi.get_items(cd.domains(), 'list', 'domains',
-                           customer=GC_Values[GC_CUSTOMER_ID],
-                           fields='domains(creationTime)')
-  for domain in domains:
-    domain_creation = datetime.datetime.fromtimestamp(int(domain['creationTime'])/1000)
-    if domain_creation < oldest:
-      oldest = domain_creation
-  print(f'Customer Creation Time: {oldest.strftime("%Y-%m-%dT%H:%M:%SZ")}')
-  customer_language = customer_info.get('language', 'Unset (defaults to en)')
-  print(f'Default Language: {customer_language}')
-  if 'postalAddress' in customer_info:
-    print('Address:')
-    for field in ADDRESS_FIELDS_PRINT_ORDER:
-      if field in customer_info['postalAddress']:
-        print(f' {field}: {customer_info["postalAddress"][field]}')
-  if 'phoneNumber' in customer_info:
-    print(f'Phone: {customer_info["phoneNumber"]}')
-  print(f'Admin Secondary Email: {customer_info["alternateEmail"]}')
-  user_counts_map = {
-    'accounts:num_users': 'Total Users',
-    'accounts:gsuite_basic_total_licenses': 'G Suite Basic Licenses',
-    'accounts:gsuite_basic_used_licenses': 'G Suite Basic Users',
-    'accounts:gsuite_enterprise_total_licenses': 'G Suite Enterprise Licenses',
-    'accounts:gsuite_enterprise_used_licenses': 'G Suite Enterprise Users',
-    'accounts:gsuite_unlimited_total_licenses': 'G Suite Business Licenses',
-    'accounts:gsuite_unlimited_used_licenses': 'G Suite Business Users'
-    }
-  parameters = ','.join(list(user_counts_map))
-  tryDate = datetime.date.today().strftime(YYYYMMDD_FORMAT)
-  customerId = GC_Values[GC_CUSTOMER_ID]
-  if customerId == MY_CUSTOMER:
-    customerId = None
-  rep = buildGAPIObject('reports')
-  usage = None
-  while True:
-    try:
-      usage = gapi.get_all_pages(rep.customerUsageReports(), 'get', 'usageReports', throw_reasons=[gapi.errors.ErrorReason.INVALID],
-                                 customerId=customerId, date=tryDate, parameters=parameters)
-      break
-    except gapi.errors.GapiInvalidError as e:
-      tryDate = _adjustDate(str(e))
-  if not usage:
-    print('No user count data available.')
-    return
-  print(f'User counts as of {tryDate}:')
-  for item in usage[0]['parameters']:
-    api_name = user_counts_map.get(item['name'])
-    api_value = int(item.get('intValue', 0))
-    if api_name and api_value:
-      print(f'  {api_name}: {api_value:,}')
-
-def doUpdateCustomer():
-  cd = buildGAPIObject('directory')
-  body = {}
-  i = 3
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower().replace('_', '')
-    if myarg in ADDRESS_FIELDS_ARGUMENT_MAP:
-      body.setdefault('postalAddress', {})
-      body['postalAddress'][ADDRESS_FIELDS_ARGUMENT_MAP[myarg]] = sys.argv[i+1]
-      i += 2
-    elif myarg in ['adminsecondaryemail', 'alternateemail']:
-      body['alternateEmail'] = sys.argv[i+1]
-      i += 2
-    elif myarg in ['phone', 'phonenumber']:
-      body['phoneNumber'] = sys.argv[i+1]
-      i += 2
-    elif myarg == 'language':
-      body['language'] = sys.argv[i+1]
-      i += 2
-    else:
-      controlflow.invalid_argument_exit(myarg, "gam update customer")
-  if not body:
-    controlflow.system_error_exit(2, 'no arguments specified for "gam update customer"')
-  gapi.call(cd.customers(), 'patch', customerKey=GC_Values[GC_CUSTOMER_ID], body=body)
-  print('Updated customer')
 
 def doDelDomain():
   cd = buildGAPIObject('directory')
@@ -1935,7 +1398,7 @@ def doPrintDomains():
             titles.append(attr)
           aliasdomain_attributes[attr] = aliasdomain[attr]
         csvRows.append(aliasdomain_attributes)
-  writeCSVfile(csvRows, titles, 'Domains', todrive)
+  display.write_csv_file(csvRows, titles, 'Domains', todrive)
 
 def doPrintDomainAliases():
   cd = buildGAPIObject('directory')
@@ -1962,7 +1425,7 @@ def doPrintDomainAliases():
         titles.append(attr)
       domainAlias_attributes[attr] = domainAlias[attr]
     csvRows.append(domainAlias_attributes)
-  writeCSVfile(csvRows, titles, 'Domains', todrive)
+  display.write_csv_file(csvRows, titles, 'Domains', todrive)
 
 def doDelAdmin():
   cd = buildGAPIObject('directory')
@@ -2011,7 +1474,7 @@ def doPrintAdminRoles():
     for key, value in list(role.items()):
       role_attrib[key] = value
     csvRows.append(role_attrib)
-  writeCSVfile(csvRows, titles, 'Admin Roles', todrive)
+  display.write_csv_file(csvRows, titles, 'Admin Roles', todrive)
 
 def doPrintAdmins():
   cd = buildGAPIObject('directory')
@@ -2049,7 +1512,7 @@ def doPrintAdmins():
         admin_attrib['orgUnit'] = orgunit_from_orgunitid(value)
       admin_attrib[key] = value
     csvRows.append(admin_attrib)
-  writeCSVfile(csvRows, titles, 'Admins', todrive)
+  display.write_csv_file(csvRows, titles, 'Admins', todrive)
 
 def buildOrgUnitIdToNameMap():
   cd = buildGAPIObject('directory')
@@ -2229,7 +1692,7 @@ def doPrintDataTransfers():
       if title not in titles:
         titles.append(title)
     csvRows.append(a_transfer)
-  writeCSVfile(csvRows, titles, 'Data Transfers', todrive)
+  display.write_csv_file(csvRows, titles, 'Data Transfers', todrive)
 
 def doGetDataTransferInfo():
   dt = buildGAPIObject('datatransfer')
@@ -2310,10 +1773,10 @@ def doPrintShowGuardians(csvFormat):
     else:
       for guardian in guardians:
         guardian['studentEmail'] = studentId
-        addRowTitlesToCSVfile(flatten_json(guardian), csvRows, titles)
+        display.add_row_titles_to_csv_file(utils.flatten_json(guardian), csvRows, titles)
   if csvFormat:
     sys.stderr.write('\n')
-    writeCSVfile(csvRows, titles, itemName, todrive)
+    display.write_csv_file(csvRows, titles, itemName, todrive)
 
 def doInviteGuardian():
   croom = buildGAPIObject('classroom')
@@ -2492,7 +1955,7 @@ def doPrintCourses():
   def _saveParticipants(course, participants, role):
     jcount = len(participants)
     course[role] = jcount
-    addTitlesToCSVfile([role], titles)
+    display.add_titles_to_csv_file([role], titles)
     if countsOnly:
       return
     j = 0
@@ -2515,7 +1978,7 @@ def doPrintCourses():
         memberTitle = prefix+'name.fullName'
         course[memberTitle] = fullName
         memberTitles.append(memberTitle)
-      addTitlesToCSVfile(memberTitles, titles)
+      display.add_titles_to_csv_file(memberTitles, titles)
       j += 1
 
   croom = buildGAPIObject('classroom')
@@ -2587,7 +2050,7 @@ def doPrintCourses():
       course['ownerEmail'] = ownerEmails[ownerId]
     for field in skipFieldsList:
       course.pop(field, None)
-    addRowTitlesToCSVfile(flatten_json(course), csvRows, titles)
+    display.add_row_titles_to_csv_file(utils.flatten_json(course), csvRows, titles)
   if showAliases or showMembers:
     if showAliases:
       titles.append('Aliases')
@@ -2622,8 +2085,8 @@ def doPrintCourses():
                                        page_message=student_message,
                                        courseId=courseId, fields=studentsFields)
           _saveParticipants(course, results, 'students')
-  sortCSVTitles(['id', 'name'], titles)
-  writeCSVfile(csvRows, titles, 'Courses', todrive)
+  display.sort_csv_titles(['id', 'name'], titles)
+  display.write_csv_file(csvRows, titles, 'Courses', todrive)
 
 def doPrintCourseParticipants():
   croom = buildGAPIObject('classroom')
@@ -2679,14 +2142,14 @@ def doPrintCourseParticipants():
       page_message = gapi.got_total_items_msg(f'Teachers for course {courseId}{currentCount(i, count)}', '')
       teachers = gapi.get_all_pages(croom.courses().teachers(), 'list', 'teachers', page_message=page_message, courseId=courseId)
       for teacher in teachers:
-        addRowTitlesToCSVfile(flatten_json(teacher, flattened={'courseId': courseId, 'courseName': course['name'], 'userRole': 'TEACHER'}), csvRows, titles)
+        display.add_row_titles_to_csv_file(utils.flatten_json(teacher, flattened={'courseId': courseId, 'courseName': course['name'], 'userRole': 'TEACHER'}), csvRows, titles)
     if showMembers != 'teachers':
       page_message = gapi.got_total_items_msg(f'Students for course {courseId}{currentCount(i, count)}', '')
       students = gapi.get_all_pages(croom.courses().students(), 'list', 'students', page_message=page_message, courseId=courseId)
       for student in students:
-        addRowTitlesToCSVfile(flatten_json(student, flattened={'courseId': courseId, 'courseName': course['name'], 'userRole': 'STUDENT'}), csvRows, titles)
-  sortCSVTitles(['courseId', 'courseName', 'userRole', 'userId'], titles)
-  writeCSVfile(csvRows, titles, 'Course Participants', todrive)
+        display.add_row_titles_to_csv_file(utils.flatten_json(student, flattened={'courseId': courseId, 'courseName': course['name'], 'userRole': 'STUDENT'}), csvRows, titles)
+  display.sort_csv_titles(['courseId', 'courseName', 'userRole', 'userId'], titles)
+  display.write_csv_file(csvRows, titles, 'Course Participants', todrive)
 
 def doPrintPrintJobs():
   cp = buildGAPIObject('cloudprint')
@@ -2803,10 +2266,10 @@ def doPrintPrintJobs():
       job['createTime'] = utils.formatTimestampYMDHMS(job['createTime'])
       job['updateTime'] = utils.formatTimestampYMDHMS(job['updateTime'])
       job['tags'] = ' '.join(job['tags'])
-      addRowTitlesToCSVfile(flatten_json(job), csvRows, titles)
+      display.add_row_titles_to_csv_file(utils.flatten_json(job), csvRows, titles)
     if jobCount >= totalJobs:
       break
-  writeCSVfile(csvRows, titles, 'Print Jobs', todrive)
+  display.write_csv_file(csvRows, titles, 'Print Jobs', todrive)
 
 def doPrintPrinters():
   cp = buildGAPIObject('cloudprint')
@@ -2845,191 +2308,8 @@ def doPrintPrinters():
       printer['accessTime'] = utils.formatTimestampYMDHMS(printer['accessTime'])
       printer['updateTime'] = utils.formatTimestampYMDHMS(printer['updateTime'])
       printer['tags'] = ' '.join(printer['tags'])
-      addRowTitlesToCSVfile(flatten_json(printer), csvRows, titles)
-  writeCSVfile(csvRows, titles, 'Printers', todrive)
-
-def changeCalendarAttendees(users):
-  do_it = True
-  i = 5
-  allevents = False
-  start_date = end_date = None
-  while len(sys.argv) > i:
-    myarg = sys.argv[i].lower()
-    if myarg == 'csv':
-      csv_file = sys.argv[i+1]
-      i += 2
-    elif myarg == 'dryrun':
-      do_it = False
-      i += 1
-    elif myarg == 'start':
-      start_date = getTimeOrDeltaFromNow(sys.argv[i+1])
-      i += 2
-    elif myarg == 'end':
-      end_date = getTimeOrDeltaFromNow(sys.argv[i+1])
-      i += 2
-    elif myarg == 'allevents':
-      allevents = True
-      i += 1
-    else:
-      controlflow.invalid_argument_exit(sys.argv[i], "gam <users> update calattendees")
-  attendee_map = {}
-  f = fileutils.open_file(csv_file)
-  csvFile = csv.reader(f)
-  for row in csvFile:
-    attendee_map[row[0].lower()] = row[1].lower()
-  fileutils.close_file(f)
-  for user in users:
-    sys.stdout.write(f'Checking user {user}\n')
-    user, cal = buildCalendarGAPIObject(user)
-    if not cal:
-      continue
-    page_token = None
-    while True:
-      events_page = gapi.call(cal.events(), 'list', calendarId=user,
-                              pageToken=page_token, timeMin=start_date,
-                              timeMax=end_date, showDeleted=False,
-                              showHiddenInvitations=False)
-      print(f'Got {len(events_page.get("items", []))}')
-      for event in events_page.get('items', []):
-        if event['status'] == 'cancelled':
-          #print u' skipping cancelled event'
-          continue
-        try:
-          event_summary = event['summary']
-        except (KeyError, UnicodeEncodeError, UnicodeDecodeError):
-          event_summary = event['id']
-        try:
-          if not allevents and event['organizer']['email'].lower() != user:
-            #print(f' skipping not-my-event {event_summary}')
-            continue
-        except KeyError:
-          pass # no email for organizer
-        needs_update = False
-        try:
-          for attendee in event['attendees']:
-            try:
-              if attendee['email'].lower() in attendee_map:
-                old_email = attendee['email'].lower()
-                new_email = attendee_map[attendee['email'].lower()]
-                print(f' SWITCHING attendee {old_email} to {new_email} for {event_summary}')
-                event['attendees'].remove(attendee)
-                event['attendees'].append({'email': new_email})
-                needs_update = True
-            except KeyError: # no email for that attendee
-              pass
-        except KeyError:
-          continue # no attendees
-        if needs_update:
-          body = {}
-          body['attendees'] = event['attendees']
-          print(f'UPDATING {event_summary}')
-          if do_it:
-            gapi.call(cal.events(), 'patch', calendarId=user, eventId=event['id'], sendNotifications=False, body=body)
-          else:
-            print(' not pulling the trigger.')
-        #else:
-        #  print(f' no update needed for {event_summary}')
-      try:
-        page_token = events_page['nextPageToken']
-      except KeyError:
-        break
-
-def deleteCalendar(users):
-  calendarId = normalizeCalendarId(sys.argv[5])
-  for user in users:
-    user, cal = buildCalendarGAPIObject(user)
-    if not cal:
-      continue
-    gapi.call(cal.calendarList(), 'delete', soft_errors=True, calendarId=calendarId)
-
-CALENDAR_REMINDER_MAX_MINUTES = 40320
-
-CALENDAR_MIN_COLOR_INDEX = 1
-CALENDAR_MAX_COLOR_INDEX = 24
-
-CALENDAR_EVENT_MIN_COLOR_INDEX = 1
-CALENDAR_EVENT_MAX_COLOR_INDEX = 11
-
-def getCalendarAttributes(i, body, function):
-  colorRgbFormat = False
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower().replace('_', '')
-    if myarg == 'selected':
-      body['selected'] = getBoolean(sys.argv[i+1], myarg)
-      i += 2
-    elif myarg == 'hidden':
-      body['hidden'] = getBoolean(sys.argv[i+1], myarg)
-      i += 2
-    elif myarg == 'summary':
-      body['summaryOverride'] = sys.argv[i+1]
-      i += 2
-    elif myarg == 'colorindex':
-      body['colorId'] = getInteger(sys.argv[i+1], myarg, minVal=CALENDAR_MIN_COLOR_INDEX, maxVal=CALENDAR_MAX_COLOR_INDEX)
-      i += 2
-    elif myarg == 'backgroundcolor':
-      body['backgroundColor'] = getColor(sys.argv[i+1])
-      colorRgbFormat = True
-      i += 2
-    elif myarg == 'foregroundcolor':
-      body['foregroundColor'] = getColor(sys.argv[i+1])
-      colorRgbFormat = True
-      i += 2
-    elif myarg == 'reminder':
-      body.setdefault('defaultReminders', [])
-      method = sys.argv[i+1].lower()
-      if method not in CLEAR_NONE_ARGUMENT:
-        if method not in CALENDAR_REMINDER_METHODS:
-          controlflow.expected_argument_exit("Method", ", ".join(CALENDAR_REMINDER_METHODS+CLEAR_NONE_ARGUMENT), method)
-        minutes = getInteger(sys.argv[i+2], myarg, minVal=0, maxVal=CALENDAR_REMINDER_MAX_MINUTES)
-        body['defaultReminders'].append({'method': method, 'minutes': minutes})
-        i += 3
-      else:
-        i += 2
-    elif myarg == 'notification':
-      body.setdefault('notificationSettings', {'notifications': []})
-      method = sys.argv[i+1].lower()
-      if method not in CLEAR_NONE_ARGUMENT:
-        if method not in CALENDAR_NOTIFICATION_METHODS:
-          controlflow.expected_argument_exit("Method", ", ".join(CALENDAR_NOTIFICATION_METHODS+CLEAR_NONE_ARGUMENT), method)
-        eventType = sys.argv[i+2].lower()
-        if eventType not in CALENDAR_NOTIFICATION_TYPES_MAP:
-          controlflow.expected_argument_exit("Event", ", ".join(CALENDAR_NOTIFICATION_TYPES_MAP), eventType)
-        body['notificationSettings']['notifications'].append({'method': method, 'type': CALENDAR_NOTIFICATION_TYPES_MAP[eventType]})
-        i += 3
-      else:
-        i += 2
-    else:
-      controlflow.invalid_argument_exit(sys.argv[i], f"gam {function} calendar")
-  return colorRgbFormat
-
-def addCalendar(users):
-  calendarId = normalizeCalendarId(sys.argv[5])
-  body = {'id': calendarId, 'selected': True, 'hidden': False}
-  colorRgbFormat = getCalendarAttributes(6, body, 'add')
-  i = 0
-  count = len(users)
-  for user in users:
-    i += 1
-    user, cal = buildCalendarGAPIObject(user)
-    if not cal:
-      continue
-    print(f'Subscribing {user} to calendar {calendarId}{currentCount(i, count)}')
-    gapi.call(cal.calendarList(), 'insert', soft_errors=True, body=body, colorRgbFormat=colorRgbFormat)
-
-def updateCalendar(users):
-  calendarId = normalizeCalendarId(sys.argv[5], checkPrimary=True)
-  body = {}
-  colorRgbFormat = getCalendarAttributes(6, body, 'update')
-  i = 0
-  count = len(users)
-  for user in users:
-    i += 1
-    user, cal = buildCalendarGAPIObject(user)
-    if not cal:
-      continue
-    print(f"Updating {user}'s subscription to calendar {calendarId}{currentCount(i, count)}")
-    calId = calendarId if calendarId != 'primary' else user
-    gapi.call(cal.calendarList(), 'patch', soft_errors=True, calendarId=calId, body=body, colorRgbFormat=colorRgbFormat)
+      display.add_row_titles_to_csv_file(utils.flatten_json(printer), csvRows, titles)
+  display.write_csv_file(csvRows, titles, 'Printers', todrive)
 
 def doPrinterShowACL():
   cp = buildGAPIObject('cloudprint')
@@ -3417,351 +2697,6 @@ def checkCloudPrintResult(result):
   if not result['success']:
     controlflow.system_error_exit(result['errorCode'], f'{result["errorCode"]}: {result["message"]}')
 
-def formatACLScope(rule):
-  if rule['scope']['type'] != 'default':
-    return f'(Scope: {rule["scope"]["type"]}:{rule["scope"]["value"]})'
-  return f'(Scope: {rule["scope"]["type"]})'
-
-def formatACLRule(rule):
-  if rule['scope']['type'] != 'default':
-    return f'(Scope: {rule["scope"]["type"]}:{rule["scope"]["value"]}, Role: {rule["role"]})'
-  return f'(Scope: {rule["scope"]["type"]}, Role: {rule["role"]})'
-
-def doCalendarPrintShowACLs(csvFormat):
-  calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
-  if not cal:
-    return
-  toDrive = False
-  i = 4
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower().replace('_', '')
-    if csvFormat and myarg == 'todrive':
-      toDrive = True
-      i += 1
-    else:
-      controlflow.invalid_argument_exit(sys.argv[i], f"gam calendar <email> {['showacl', 'printacl'][csvFormat]}")
-  acls = gapi.get_all_pages(cal.acl(), 'list', 'items', calendarId=calendarId)
-  i = 0
-  if csvFormat:
-    titles = []
-    rows = []
-  else:
-    count = len(acls)
-  for rule in acls:
-    i += 1
-    if csvFormat:
-      row = flatten_json(rule, None)
-      for key in row:
-        if key not in titles:
-          titles.append(key)
-      rows.append(row)
-    else:
-      print(f'Calendar: {calendarId}, ACL: {formatACLRule(rule)}{currentCount(i, count)}')
-  if csvFormat:
-    writeCSVfile(rows, titles, f'{calendarId} Calendar ACLs', toDrive)
-
-def _getCalendarACLScope(i, body):
-  body['scope'] = {}
-  myarg = sys.argv[i].lower()
-  body['scope']['type'] = myarg
-  i += 1
-  if myarg in ['user', 'group']:
-    body['scope']['value'] = normalizeEmailAddressOrUID(sys.argv[i], noUid=True)
-    i += 1
-  elif myarg == 'domain':
-    if i < len(sys.argv) and sys.argv[i].lower().replace('_', '') != 'sendnotifications':
-      body['scope']['value'] = sys.argv[i].lower()
-      i += 1
-    else:
-      body['scope']['value'] = GC_Values[GC_DOMAIN]
-  elif myarg != 'default':
-    body['scope']['type'] = 'user'
-    body['scope']['value'] = normalizeEmailAddressOrUID(myarg, noUid=True)
-  return i
-
-CALENDAR_ACL_ROLES_MAP = {
-  'editor': 'writer',
-  'freebusy': 'freeBusyReader',
-  'freebusyreader': 'freeBusyReader',
-  'owner': 'owner',
-  'read': 'reader',
-  'reader': 'reader',
-  'writer': 'writer',
-  'none': 'none',
-  }
-
-def doCalendarAddACL(function):
-  calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
-  if not cal:
-    return
-  myarg = sys.argv[4].lower().replace('_', '')
-  if myarg not in CALENDAR_ACL_ROLES_MAP:
-    controlflow.expected_argument_exit("Role", ", ".join(CALENDAR_ACL_ROLES_MAP), myarg)
-  body = {'role': CALENDAR_ACL_ROLES_MAP[myarg]}
-  i = _getCalendarACLScope(5, body)
-  sendNotifications = True
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower().replace('_', '')
-    if myarg == 'sendnotifications':
-      sendNotifications = getBoolean(sys.argv[i+1], myarg)
-      i += 2
-    else:
-      controlflow.invalid_argument_exit(sys.argv[i], f"gam calendar <email> {function.lower()}")
-  print(f'Calendar: {calendarId}, {function} ACL: {formatACLRule(body)}')
-  gapi.call(cal.acl(), 'insert', calendarId=calendarId, body=body, sendNotifications=sendNotifications)
-
-def doCalendarDelACL():
-  calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
-  if not cal:
-    return
-  if sys.argv[4].lower() == 'id':
-    ruleId = sys.argv[5]
-    print(f'Removing rights for {ruleId} to {calendarId}')
-    gapi.call(cal.acl(), 'delete', calendarId=calendarId, ruleId=ruleId)
-  else:
-    body = {'role': 'none'}
-    _getCalendarACLScope(5, body)
-    print(f'Calendar: {calendarId}, Delete ACL: {formatACLScope(body)}')
-    gapi.call(cal.acl(), 'insert', calendarId=calendarId, body=body, sendNotifications=False)
-
-def doCalendarWipeData():
-  calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
-  if not cal:
-    return
-  gapi.call(cal.calendars(), 'clear', calendarId=calendarId)
-
-def doCalendarPrintEvents():
-  calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
-  if not cal:
-    return
-  q = showDeleted = showHiddenInvitations = timeMin = timeMax = timeZone = updatedMin = None
-  toDrive = False
-  titles = []
-  csvRows = []
-  i = 4
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower().replace('_', '')
-    if myarg == 'query':
-      q = sys.argv[i+1]
-      i += 2
-    elif myarg == 'includedeleted':
-      showDeleted = True
-      i += 1
-    elif myarg == 'includehidden':
-      showHiddenInvitations = True
-      i += 1
-    elif myarg == 'after':
-      timeMin = getTimeOrDeltaFromNow(sys.argv[i+1])
-      i += 2
-    elif myarg == 'before':
-      timeMax = getTimeOrDeltaFromNow(sys.argv[i+1])
-      i += 2
-    elif myarg == 'timezone':
-      timeZone = sys.argv[i+1]
-      i += 2
-    elif myarg == 'updated':
-      updatedMin = getTimeOrDeltaFromNow(sys.argv[i+1])
-      i += 2
-    elif myarg == 'todrive':
-      toDrive = True
-      i += 1
-    else:
-      controlflow.invalid_argument_exit(sys.argv[i], "gam calendar <email> printevents")
-  page_message = gapi.got_total_items_msg(f'Events for {calendarId}', '')
-  results = gapi.get_all_pages(cal.events(), 'list', 'items', page_message=page_message,
-                               calendarId=calendarId, q=q, showDeleted=showDeleted,
-                               showHiddenInvitations=showHiddenInvitations,
-                               timeMin=timeMin, timeMax=timeMax, timeZone=timeZone, updatedMin=updatedMin)
-  for result in results:
-    row = {'calendarId': calendarId}
-    addRowTitlesToCSVfile(flatten_json(result, flattened=row), csvRows, titles)
-  sortCSVTitles(['calendarId', 'id', 'summary', 'status'], titles)
-  writeCSVfile(csvRows, titles, 'Calendar Events', toDrive)
-
-def getSendUpdates(myarg, i, cal):
-  if myarg == 'notifyattendees':
-    sendUpdates = 'all'
-    i += 1
-  elif myarg == 'sendnotifications':
-    sendUpdates = 'all' if getBoolean(sys.argv[i+1], myarg) else 'none'
-    i += 2
-  else: #'sendupdates':
-    sendUpdatesMap = {}
-    for val in cal._rootDesc['resources']['events']['methods']['delete']['parameters']['sendUpdates']['enum']:
-      sendUpdatesMap[val.lower()] = val
-    sendUpdates = sendUpdatesMap.get(sys.argv[i+1].lower(), False)
-    if not sendUpdates:
-      controlflow.expected_argument_exit("sendupdates", ", ".join(sendUpdatesMap), sys.argv[i+1])
-    i += 2
-  return (sendUpdates, i)
-
-def doCalendarMoveOrDeleteEvent(moveOrDelete):
-  calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
-  if not cal:
-    return
-  sendUpdates = None
-  doit = False
-  kwargs = {}
-  i = 4
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower().replace('_', '')
-    if myarg in ['notifyattendees', 'sendnotifications', 'sendupdates']:
-      sendUpdates, i = getSendUpdates(myarg, i, cal)
-    elif myarg in ['id', 'eventid']:
-      eventId = sys.argv[i+1]
-      i += 2
-    elif myarg in ['query', 'eventquery']:
-      controlflow.system_error_exit(2, f'query is no longer supported for {moveOrDelete}event. Use "gam calendar <email> printevents query <query> | gam csv - gam {moveOrDelete}event id ~id" instead.')
-    elif myarg == 'doit':
-      doit = True
-      i += 1
-    elif moveOrDelete == 'move' and myarg == 'destination':
-      kwargs['destination'] = sys.argv[i+1]
-      i += 2
-    else:
-      controlflow.invalid_argument_exit(sys.argv[i], f"gam calendar <email> {moveOrDelete}event")
-  if doit:
-    print(f' going to {moveOrDelete} eventId {eventId}')
-    gapi.call(cal.events(), moveOrDelete, calendarId=calendarId, eventId=eventId, sendUpdates=sendUpdates, **kwargs)
-  else:
-    print(f' would {moveOrDelete} eventId {eventId}. Add doit to command to actually {moveOrDelete} event')
-
-def doCalendarAddEvent():
-  calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
-  if not cal:
-    return
-  sendUpdates = timeZone = None
-  i = 4
-  body = {}
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower().replace('_', '')
-    if myarg in ['notifyattendees', 'sendnotifications', 'sendupdates']:
-      sendUpdates, i = getSendUpdates(myarg, i, cal)
-    elif myarg == 'attendee':
-      body.setdefault('attendees', [])
-      body['attendees'].append({'email': sys.argv[i+1]})
-      i += 2
-    elif myarg == 'optionalattendee':
-      body.setdefault('attendees', [])
-      body['attendees'].append({'email': sys.argv[i+1], 'optional': True})
-      i += 2
-    elif myarg == 'anyonecanaddself':
-      body['anyoneCanAddSelf'] = True
-      i += 1
-    elif myarg == 'description':
-      body['description'] = sys.argv[i+1].replace('\\n', '\n')
-      i += 2
-    elif myarg == 'start':
-      if sys.argv[i+1].lower() == 'allday':
-        body['start'] = {'date': getYYYYMMDD(sys.argv[i+2])}
-        i += 3
-      else:
-        body['start'] = {'dateTime': getTimeOrDeltaFromNow(sys.argv[i+1])}
-        i += 2
-    elif myarg == 'end':
-      if sys.argv[i+1].lower() == 'allday':
-        body['end'] = {'date': getYYYYMMDD(sys.argv[i+2])}
-        i += 3
-      else:
-        body['end'] = {'dateTime': getTimeOrDeltaFromNow(sys.argv[i+1])}
-        i += 2
-    elif myarg == 'guestscantinviteothers':
-      body['guestsCanInviteOthers'] = False
-      i += 1
-    elif myarg == 'guestscantseeothers':
-      body['guestsCanSeeOtherGuests'] = False
-      i += 1
-    elif myarg == 'id':
-      body['id'] = sys.argv[i+1]
-      i += 2
-    elif myarg == 'summary':
-      body['summary'] = sys.argv[i+1]
-      i += 2
-    elif myarg == 'location':
-      body['location'] = sys.argv[i+1]
-      i += 2
-    elif myarg == 'available':
-      body['transparency'] = 'transparent'
-      i += 1
-    elif myarg == 'visibility':
-      validVisibility = ['default', 'public', 'private']
-      if sys.argv[i+1].lower() in validVisibility:
-        body['visibility'] = sys.argv[i+1].lower()
-      else:
-        controlflow.expected_argument_exit("visibility", ", ".join(validVisibility), sys.argv[i+1])
-      i += 2
-    elif myarg == 'tentative':
-      body['status'] = 'tentative'
-      i += 1
-    elif myarg == 'source':
-      body['source'] = {'title': sys.argv[i+1], 'url': sys.argv[i+2]}
-      i += 3
-    elif myarg == 'noreminders':
-      body['reminders'] = {'useDefault': False}
-      i += 1
-    elif myarg == 'reminder':
-      body.setdefault('reminders', {'overrides': [], 'useDefault': False})
-      body['reminders']['overrides'].append({'minutes': getInteger(sys.argv[i+1], myarg, minVal=0, maxVal=CALENDAR_REMINDER_MAX_MINUTES),
-                                             'method': sys.argv[i+2]})
-      i += 3
-    elif myarg == 'recurrence':
-      body.setdefault('recurrence', [])
-      body['recurrence'].append(sys.argv[i+1])
-      i += 2
-    elif myarg == 'timezone':
-      timeZone = sys.argv[i+1]
-      i += 2
-    elif myarg == 'privateproperty':
-      if 'extendedProperties' not in body:
-        body['extendedProperties'] = {'private': {}, 'shared': {}}
-      body['extendedProperties']['private'][sys.argv[i+1]] = sys.argv[i+2]
-      i += 3
-    elif myarg == 'sharedproperty':
-      if 'extendedProperties' not in body:
-        body['extendedProperties'] = {'private': {}, 'shared': {}}
-      body['extendedProperties']['shared'][sys.argv[i+1]] = sys.argv[i+2]
-      i += 3
-    elif myarg == 'colorindex':
-      body['colorId'] = getInteger(sys.argv[i+1], myarg, CALENDAR_EVENT_MIN_COLOR_INDEX, CALENDAR_EVENT_MAX_COLOR_INDEX)
-      i += 2
-    elif myarg == 'hangoutsmeet':
-      body['conferenceData'] = {'createRequest': {'requestId': f'{str(uuid.uuid4())}'}}
-      i += 1
-    else:
-      controlflow.invalid_argument_exit(sys.argv[i], "gam calendar <email> addevent")
-  if ('recurrence' in body) and (('start' in body) or ('end' in body)):
-    if not timeZone:
-      timeZone = gapi.call(cal.calendars(), 'get', calendarId=calendarId, fields='timeZone')['timeZone']
-    if 'start' in body:
-      body['start']['timeZone'] = timeZone
-    if 'end' in body:
-      body['end']['timeZone'] = timeZone
-  gapi.call(cal.events(), 'insert', calendarId=calendarId, sendUpdates=sendUpdates, body=body)
-
-def doCalendarModifySettings():
-  calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
-  if not cal:
-    return
-  body = {}
-  i = 4
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower().replace('_', '')
-    if myarg == 'description':
-      body['description'] = sys.argv[i+1]
-      i += 2
-    elif myarg == 'location':
-      body['location'] = sys.argv[i+1]
-      i += 2
-    elif myarg == 'summary':
-      body['summary'] = sys.argv[i+1]
-      i += 2
-    elif myarg == 'timezone':
-      body['timeZone'] = sys.argv[i+1]
-      i += 2
-    else:
-      controlflow.invalid_argument_exit(sys.argv[i], "gam calendar <email> modify")
-  gapi.call(cal.calendars(), 'patch', calendarId=calendarId, body=body)
-
 def doProfile(users):
   cd = buildGAPIObject('directory')
   myarg = sys.argv[4].lower()
@@ -3867,97 +2802,6 @@ def deletePhoto(users):
     print(f'Deleting photo for {user}{currentCount(i, count)}')
     gapi.call(cd.users().photos(), 'delete', userKey=user)
 
-def _showCalendar(userCalendar, j, jcount):
-  print(f'  Calendar: {userCalendar["id"]}{currentCount(j, jcount)}')
-  print(f'    Summary: {userCalendar.get("summaryOverride", userCalendar["summary"])}')
-  print(f'    Description: {userCalendar.get("description", "")}')
-  print(f'    Access Level: {userCalendar["accessRole"]}')
-  print(f'    Timezone: {userCalendar["timeZone"]}')
-  print(f'    Location: {userCalendar.get("location", "")}')
-  print(f'    Hidden: {userCalendar.get("hidden", "False")}')
-  print(f'    Selected: {userCalendar.get("selected", "False")}')
-  print(f'    Color ID: {userCalendar["colorId"]}, Background Color: {userCalendar["backgroundColor"]}, Foreground Color: {userCalendar["foregroundColor"]}')
-  print(f'    Default Reminders:')
-  for reminder in userCalendar.get('defaultReminders', []):
-    print(f'      Method: {reminder["method"]}, Minutes: {reminder["minutes"]}')
-  print('    Notifications:')
-  if 'notificationSettings' in userCalendar:
-    for notification in userCalendar['notificationSettings'].get('notifications', []):
-      print(f'      Method: {notification["method"]}, Type: {notification["type"]}')
-
-def infoCalendar(users):
-  calendarId = normalizeCalendarId(sys.argv[5], checkPrimary=True)
-  i = 0
-  count = len(users)
-  for user in users:
-    i += 1
-    user, cal = buildCalendarGAPIObject(user)
-    if not cal:
-      continue
-    result = gapi.call(cal.calendarList(), 'get',
-                       soft_errors=True,
-                       calendarId=calendarId)
-    if result:
-      print(f'User: {user}, Calendar:{currentCount(i, count)}')
-      _showCalendar(result, 1, 1)
-
-def printShowCalendars(users, csvFormat):
-  if csvFormat:
-    todrive = False
-    titles = []
-    csvRows = []
-  i = 5
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower()
-    if csvFormat and myarg == 'todrive':
-      todrive = True
-      i += 1
-    else:
-      controlflow.invalid_argument_exit(myarg, f"gam <users> {['show', 'print'][csvFormat]} calendars")
-  i = 0
-  count = len(users)
-  for user in users:
-    i += 1
-    user, cal = buildCalendarGAPIObject(user)
-    if not cal:
-      continue
-    result = gapi.get_all_pages(cal.calendarList(), 'list', 'items', soft_errors=True)
-    jcount = len(result)
-    if not csvFormat:
-      print(f'User: {user}, Calendars:{currentCount(i, count)}')
-      if jcount == 0:
-        continue
-      j = 0
-      for userCalendar in result:
-        j += 1
-        _showCalendar(userCalendar, j, jcount)
-    else:
-      if jcount == 0:
-        continue
-      for userCalendar in result:
-        row = {'primaryEmail': user}
-        addRowTitlesToCSVfile(flatten_json(userCalendar, flattened=row), csvRows, titles)
-  if csvFormat:
-    sortCSVTitles(['primaryEmail', 'id'], titles)
-    writeCSVfile(csvRows, titles, 'Calendars', todrive)
-
-def showCalSettings(users):
-  i = 0
-  count = len(users)
-  for user in users:
-    i += 1
-    user, cal = buildCalendarGAPIObject(user)
-    if not cal:
-      continue
-    feed = gapi.get_all_pages(cal.settings(), 'list', 'items', soft_errors=True)
-    if feed:
-      print(f'User: {user}, Calendar Settings:{currentCount(i, count)}')
-      settings = {}
-      for setting in feed:
-        settings[setting['id']] = setting['value']
-      for attr, value in sorted(settings.items()):
-        print(f'  {attr}: {value}')
-
 def printDriveSettings(users):
   todrive = False
   i = 5
@@ -3996,7 +2840,7 @@ def printDriveSettings(users):
       if setting not in titles:
         titles.append(setting)
     csvRows.append(row)
-  writeCSVfile(csvRows, titles, 'User Drive Settings', todrive)
+  display.write_csv_file(csvRows, titles, 'User Drive Settings', todrive)
 
 def getTeamDriveThemes(users):
   for user in users:
@@ -4041,8 +2885,8 @@ def printDriveActivity(users):
                               drive_ancestorId=drive_ancestorId, groupingStrategy='none',
                               drive_fileId=drive_fileId)
     for item in feed:
-      addRowTitlesToCSVfile(flatten_json(item['combinedEvent']), csvRows, titles)
-  writeCSVfile(csvRows, titles, 'Drive Activity', todrive)
+      display.add_row_titles_to_csv_file(utils.flatten_json(item['combinedEvent']), csvRows, titles)
+  display.write_csv_file(csvRows, titles, 'Drive Activity', todrive)
 
 def printPermission(permission):
   if 'name' in permission:
@@ -4173,7 +3017,7 @@ def addDriveFileACL(users):
       emailMessage = sys.argv[i+1]
       i += 2
     elif myarg == 'expires':
-      body['expirationTime'] = getTimeOrDeltaFromNow(sys.argv[i+1])
+      body['expirationTime'] = utils.get_time_or_delta_from_now(sys.argv[i+1])
       i += 2
     elif myarg == 'asadmin':
       useDomainAdminAccess = True
@@ -4283,10 +3127,10 @@ def printDriveFileList(users):
       allfields = True
       i += 1
     elif myarg in DRIVEFILE_FIELDS_CHOICES_MAP:
-      addFieldToCSVfile(myarg, {myarg: [DRIVEFILE_FIELDS_CHOICES_MAP[myarg]]}, fieldsList, fieldsTitles, titles)
+      display.add_field_to_csv_file(myarg, {myarg: [DRIVEFILE_FIELDS_CHOICES_MAP[myarg]]}, fieldsList, fieldsTitles, titles)
       i += 1
     elif myarg in DRIVEFILE_LABEL_CHOICES_MAP:
-      addFieldToCSVfile(myarg, {myarg: [DRIVEFILE_LABEL_CHOICES_MAP[myarg]]}, labelsList, fieldsTitles, titles)
+      display.add_field_to_csv_file(myarg, {myarg: [DRIVEFILE_LABEL_CHOICES_MAP[myarg]]}, labelsList, fieldsTitles, titles)
       i += 1
     else:
       controlflow.invalid_argument_exit(myarg, "gam <users> show filelist")
@@ -4301,7 +3145,7 @@ def printDriveFileList(users):
     fields += ')'
   elif not allfields:
     for field in ['name', 'alternatelink']:
-      addFieldToCSVfile(field, {field: [DRIVEFILE_FIELDS_CHOICES_MAP[field]]}, fieldsList, fieldsTitles, titles)
+      display.add_field_to_csv_file(field, {field: [DRIVEFILE_FIELDS_CHOICES_MAP[field]]}, fieldsList, fieldsTitles, titles)
     fields = f'nextPageToken,items({",".join(set(fieldsList))})'
   else:
     fields = '*'
@@ -4362,8 +3206,8 @@ def printDriveFileList(users):
             a_file[x_attrib] = f_file[attrib][dict_attrib]
       csvRows.append(a_file)
   if allfields:
-    sortCSVTitles(['Owner', 'id', 'title'], titles)
-  writeCSVfile(csvRows, titles, f'{sys.argv[1]} {sys.argv[2]} Drive Files', todrive)
+    display.sort_csv_titles(['Owner', 'id', 'title'], titles)
+  display.write_csv_file(csvRows, titles, f'{sys.argv[1]} {sys.argv[2]} Drive Files', todrive)
 
 def doDriveSearch(drive, query=None, quiet=False):
   if not quiet:
@@ -4578,10 +3422,10 @@ def getDriveFileAttribute(i, body, parameters, myarg, update=False):
       body['labels'][DRIVEFILE_LABEL_CHOICES_MAP[myarg]] = True
       i += 1
   elif myarg in ['lastviewedbyme', 'lastviewedbyuser', 'lastviewedbymedate', 'lastviewedbymetime']:
-    body['lastViewedByMeDate'] = getTimeOrDeltaFromNow(sys.argv[i+1])
+    body['lastViewedByMeDate'] = utils.get_time_or_delta_from_now(sys.argv[i+1])
     i += 2
   elif myarg in ['modifieddate', 'modifiedtime']:
-    body['modifiedDate'] = getTimeOrDeltaFromNow(sys.argv[i+1])
+    body['modifiedDate'] = utils.get_time_or_delta_from_now(sys.argv[i+1])
     i += 2
   elif myarg == 'description':
     body['description'] = sys.argv[i+1]
@@ -4727,7 +3571,7 @@ def createDriveFile(users):
         created_type = ['Folder', 'File'][result['mimeType'] != MIMETYPE_GA_FOLDER]
         print(f'Successfully created Drive {created_type} {titleInfo}')
   if csv_output:
-    writeCSVfile(csv_rows, csv_titles, 'Files', to_drive)
+    display.write_csv_file(csv_rows, csv_titles, 'Files', to_drive)
 
 HTTP_ERROR_PATTERN = re.compile(r'^.*returned "(.*)">$')
 
@@ -4961,39 +3805,6 @@ def showDriveFileRevisions(users):
     if feed:
       display.print_json(feed)
 
-def transferSecCals(users):
-  target_user = sys.argv[5]
-  remove_source_user = sendNotifications = True
-  i = 6
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower().replace('_', '')
-    if myarg == 'keepuser':
-      remove_source_user = False
-      i += 1
-    elif myarg == 'sendnotifications':
-      sendNotifications = getBoolean(sys.argv[i+1], myarg)
-      i += 2
-    else:
-      controlflow.invalid_argument_exit(sys.argv[i], "gam <users> transfer seccals")
-  if remove_source_user:
-    target_user, target_cal = buildCalendarGAPIObject(target_user)
-    if not target_cal:
-      return
-  for user in users:
-    user, source_cal = buildCalendarGAPIObject(user)
-    if not source_cal:
-      continue
-    calendars = gapi.get_all_pages(source_cal.calendarList(), 'list', 'items', soft_errors=True,
-                                   minAccessRole='owner', showHidden=True, fields='items(id),nextPageToken')
-    for calendar in calendars:
-      calendarId = calendar['id']
-      if calendarId.find('@group.calendar.google.com') != -1:
-        gapi.call(source_cal.acl(), 'insert', calendarId=calendarId,
-                  body={'role': 'owner', 'scope': {'type': 'user', 'value': target_user}}, sendNotifications=sendNotifications)
-        if remove_source_user:
-          gapi.call(target_cal.acl(), 'insert', calendarId=calendarId,
-                    body={'role': 'none', 'scope': {'type': 'user', 'value': user}}, sendNotifications=sendNotifications)
-
 def transferDriveFiles(users):
   target_user = sys.argv[5]
   remove_source_user = True
@@ -5129,7 +3940,7 @@ def sendOrDropEmail(users, method='send'):
       kwargs['deleted'] = True
       i += 1
     elif myarg == 'date':
-      msgHeaders['Date'] = getTimeOrDeltaFromNow(sys.argv[i+1])
+      msgHeaders['Date'] = utils.get_time_or_delta_from_now(sys.argv[i+1])
       if method in ['insert', 'import']:
         kwargs['internalDateSource'] = 'dateHeader'
       i += 2
@@ -5372,8 +4183,8 @@ def _processSignature(tagReplacements, signature, html):
 
 def getSendAsAttributes(i, myarg, body, tagReplacements, command):
   if myarg == 'replace':
-    matchTag = getString(i+1, 'Tag')
-    matchReplacement = getString(i+2, 'String', minLen=0)
+    matchTag = utils.get_string(i+1, 'Tag')
+    matchReplacement = utils.get_string(i+2, 'String', minLen=0)
     tagReplacements[matchTag] = matchReplacement
     i += 3
   elif myarg == 'name':
@@ -5594,11 +4405,11 @@ def printShowSmime(users, csvFormat):
         smimes[j]['expiration'] = utils.formatTimestampYMDHMS(smimes[j]['expiration'])
       if csvFormat:
         for smime in smimes:
-          addRowTitlesToCSVfile(flatten_json(smime, flattened={'User': user}), csvRows, titles)
+          display.add_row_titles_to_csv_file(utils.flatten_json(smime, flattened={'User': user}), csvRows, titles)
       else:
         display.print_json(smimes)
   if csvFormat:
-    writeCSVfile(csvRows, titles, 'S/MIME', todrive)
+    display.write_csv_file(csvRows, titles, 'S/MIME', todrive)
 
 def printShowSendAs(users, csvFormat):
   if csvFormat:
@@ -5655,7 +4466,7 @@ def printShowSendAs(users, csvFormat):
                 row[title] = sendas[item][field]
         csvRows.append(row)
   if csvFormat:
-    writeCSVfile(csvRows, titles, 'SendAs', todrive)
+    display.write_csv_file(csvRows, titles, 'SendAs', todrive)
 
 def infoSendAs(users):
   emailAddress = normalizeEmailAddressOrUID(sys.argv[5], noUid=True)
@@ -6013,8 +4824,8 @@ def showGmailProfile(users):
         csvRows.append(results)
     except gapi.errors.GapiServiceNotAvailableError:
       entityServiceNotApplicableWarning('User', user, i, count)
-  sortCSVTitles(['emailAddress',], titles)
-  writeCSVfile(csvRows, titles, list_type='Gmail Profiles', todrive=todrive)
+  display.sort_csv_titles(['emailAddress',], titles)
+  display.write_csv_file(csvRows, titles, list_type='Gmail Profiles', todrive=todrive)
 
 def updateLabels(users):
   label_name = sys.argv[5]
@@ -6352,8 +5163,8 @@ def printShowFilters(users, csvFormat):
             titles.append(item)
         csvRows.append(row)
   if csvFormat:
-    sortCSVTitles(['User', 'id'], titles)
-    writeCSVfile(csvRows, titles, 'Filters', todrive)
+    display.sort_csv_titles(['User', 'id'], titles)
+    display.write_csv_file(csvRows, titles, 'Filters', todrive)
 
 def infoFilters(users):
   filterId = sys.argv[5]
@@ -6465,7 +5276,7 @@ def printShowForward(users, csvFormat):
       else:
         _printForward(user, result)
   if csvFormat:
-    writeCSVfile(csvRows, titles, 'Forward', todrive)
+    display.write_csv_file(csvRows, titles, 'Forward', todrive)
 
 def addForwardingAddresses(users):
   emailAddress = normalizeEmailAddressOrUID(sys.argv[5], noUid=True)
@@ -6535,7 +5346,7 @@ def printShowForwardingAddresses(users, csvFormat):
         row = {'User': user, 'forwardingEmail': forward['forwardingEmail'], 'verificationStatus': forward['verificationStatus']}
         csvRows.append(row)
   if csvFormat:
-    writeCSVfile(csvRows, titles, 'Forwarding Addresses', todrive)
+    display.write_csv_file(csvRows, titles, 'Forwarding Addresses', todrive)
 
 def infoForwardingAddresses(users):
   emailAddress = normalizeEmailAddressOrUID(sys.argv[5], noUid=True)
@@ -6560,7 +5371,7 @@ def doSignature(users):
     i, encoding = getCharSet(i+2)
     signature = fileutils.read_file(filename, encoding=encoding)
   else:
-    signature = getString(i, 'String', minLen=0)
+    signature = utils.get_string(i, 'String', minLen=0)
     i += 1
   body = {}
   html = False
@@ -6628,8 +5439,8 @@ def doVacation(users):
         i, encoding = getCharSet(i+2)
         message = fileutils.read_file(filename, encoding=encoding)
       elif myarg == 'replace':
-        matchTag = getString(i+1, 'Tag')
-        matchReplacement = getString(i+2, 'String', minLen=0)
+        matchTag = utils.get_string(i+1, 'Tag')
+        matchReplacement = utils.get_string(i+2, 'String', minLen=0)
         tagReplacements[matchTag] = matchReplacement
         i += 3
       elif myarg == 'html':
@@ -6642,10 +5453,10 @@ def doVacation(users):
         body['restrictToDomain'] = True
         i += 1
       elif myarg == 'startdate':
-        body['startTime'] = getYYYYMMDD(sys.argv[i+1], returnTimeStamp=True)
+        body['startTime'] = utils.get_yyyymmdd(sys.argv[i+1], returnTimeStamp=True)
         i += 2
       elif myarg == 'enddate':
-        body['endTime'] = getYYYYMMDD(sys.argv[i+1], returnTimeStamp=True)
+        body['endTime'] = utils.get_yyyymmdd(sys.argv[i+1], returnTimeStamp=True)
         i += 2
       else:
         controlflow.invalid_argument_exit(sys.argv[i], "gam <users> vacation")
@@ -6824,10 +5635,10 @@ def doPrintShowUserSchemas(csvFormat):
       _showSchema(schema)
     else:
       row = {'fields.Count': len(schema['fields'])}
-      addRowTitlesToCSVfile(flatten_json(schema, flattened=row), csvRows, titles)
+      display.add_row_titles_to_csv_file(utils.flatten_json(schema, flattened=row), csvRows, titles)
   if csvFormat:
-    sortCSVTitles(['schemaId', 'schemaName', 'fields.Count'], titles)
-    writeCSVfile(csvRows, titles, 'User Schemas', todrive)
+    display.sort_csv_titles(['schemaId', 'schemaName', 'fields.Count'], titles)
+    display.write_csv_file(csvRows, titles, 'User Schemas', todrive)
 
 def doGetUserSchema():
   cd = buildGAPIObject('directory')
@@ -6986,7 +5797,7 @@ def getUserAttributes(i, cd, updateCmd):
       gender = {}
       i = getEntryType(i, gender, USER_GENDER_TYPES, customKeyword='other', customTypeKeyword='customGender')
       if (i < len(sys.argv)) and (sys.argv[i].lower() == 'addressmeas'):
-        gender['addressMeAs'] = getString(i+1, 'String')
+        gender['addressMeAs'] = utils.get_string(i+1, 'String')
         i += 2
       body['gender'] = gender
     elif myarg in ['address', 'addresses']:
@@ -7073,7 +5884,7 @@ def getUserAttributes(i, cd, updateCmd):
         i += 1
       im['im'] = sys.argv[i]
       i += 1
-      myopt = sys.argv[i].lower()
+      myopt = sys.argv[i].lower() if i < len(sys.argv) else ''
       if myopt in ['notprimary', 'primary']:
         im['primary'] = myopt == 'primary'
         i += 1
@@ -7172,7 +5983,7 @@ def getUserAttributes(i, cd, updateCmd):
       i = getEntryType(i, website, USER_WEBSITE_TYPES)
       website['value'] = sys.argv[i]
       i += 1
-      myopt = sys.argv[i].lower()
+      myopt = sys.argv[i].lower() if i < len(sys.argv) else ''
       if myopt in ['notprimary', 'primary']:
         website['primary'] = myopt == 'primary'
         i += 1
@@ -7208,7 +6019,7 @@ def getUserAttributes(i, cd, updateCmd):
           location['area'] = sys.argv[i+1]
           i += 2
         elif myopt in ['building', 'buildingid']:
-          location['buildingId'] = _getBuildingByNameOrId(cd, sys.argv[i+1])
+          location['buildingId'] = gapi.directory.resource.getBuildingByNameOrId(cd, sys.argv[i+1])
           i += 2
         elif myopt in ['desk', 'deskcode']:
           location['deskCode'] = sys.argv[i+1]
@@ -7301,11 +6112,8 @@ def getUserAttributes(i, cd, updateCmd):
       i += 2
     elif myarg in ['recoveryphone']:
       body['recoveryPhone'] = sys.argv[i+1]
-      if body['recoveryPhone']:
-        if body['recoveryPhone'][0] != '+':
-          body['recoveryPhone'] = '+' + body['recoveryPhone']
-      else:
-        body['recoveryPhone'] = None
+      if body['recoveryPhone'] and body['recoveryPhone'][0] != '+':
+        body['recoveryPhone'] = '+' + body['recoveryPhone']
       i += 2
     elif myarg == 'clearschema':
       if not updateCmd:
@@ -7361,57 +6169,6 @@ def getUserAttributes(i, cd, updateCmd):
     body['password'] = gen_sha512_hash(body['password'])
     body['hashFunction'] = 'crypt'
   return body
-
-def shorten_url(long_url):
-  simplehttp = transport.create_http(timeout=10)
-  url_shortnr = 'https://gam-shortn.appspot.com/create'
-  headers = {'Content-Type': 'application/json',
-             'User-Agent': GAM_INFO}
-  try:
-    resp, content = simplehttp.request(url_shortnr, 'POST',
-                                       f'{{"long_url": "{long_url}"}}', headers=headers)
-  except Exception:
-    return long_url
-  if resp.status != 200:
-    return long_url
-  try:
-    return json.loads(content).get('short_url', long_url)
-  except Exception:
-    print(content)
-    return long_url
-
-class ShortURLFlow(google_auth_oauthlib.flow.InstalledAppFlow):
-  def authorization_url(self, **kwargs):
-    long_url, state = super(ShortURLFlow, self).authorization_url(**kwargs)
-    short_url = shorten_url(long_url)
-    return short_url, state
-
-def _run_oauth_flow(client_id, client_secret, scopes, access_type, login_hint=None):
-  client_config = {
-    'installed': {
-      'client_id': client_id,
-      'client_secret': client_secret,
-      'redirect_uris': ['http://localhost', 'urn:ietf:wg:oauth:2.0:oob'],
-      'auth_uri': 'https://accounts.google.com/o/oauth2/v2/auth',
-      'token_uri': 'https://oauth2.googleapis.com/token',
-      }
-    }
-
-  flow = ShortURLFlow.from_client_config(client_config, scopes, autogenerate_code_verifier=True)
-  kwargs = {'access_type': access_type}
-  if login_hint:
-    kwargs['login_hint'] = login_hint
-  if not GC_Values[GC_OAUTH_BROWSER]:
-    flow.run_console(
-            authorization_prompt_message=MESSAGE_CONSOLE_AUTHORIZATION_PROMPT,
-            authorization_code_message=MESSAGE_CONSOLE_AUTHORIZATION_CODE,
-            **kwargs)
-  else:
-    flow.run_local_server(
-            authorization_prompt_message=MESSAGE_LOCAL_SERVER_AUTHORIZATION_PROMPT,
-            success_message=MESSAGE_LOCAL_SERVER_SUCCESS,
-            **kwargs)
-  return flow.credentials
 
 def getCRMService(login_hint):
   scopes = ['https://www.googleapis.com/auth/cloud-platform']
@@ -7575,7 +6332,7 @@ def _createClientSecretsOauth2service(httpObj, projectId, login_hint, create_pro
 
 {console_url}
 
-1. Choose "Other".
+1. Choose "Desktop App" for "Application type".
 2. Enter a desired value for "Name" or leave as is.
 3. Click the blue "Create" button.
 4. Copy the "client ID" value that shows on the next page.
@@ -7880,7 +6637,7 @@ def _generatePrivateKeyAndPublicCert(client_id, key_size):
   builder = builder.issuer_name(x509.Name([
         x509.NameAttribute(NameOID.COMMON_NAME, client_id)]))
   not_valid_before = datetime.datetime.today() - datetime.timedelta(days=1)
-  not_valid_after = datetime.datetime.today() + datetime.timedelta(days=365*10)
+  not_valid_after = datetime.datetime.today() + datetime.timedelta(days=365*10-1)
   builder = builder.not_valid_before(not_valid_before)
   builder = builder.not_valid_after(not_valid_after)
   builder = builder.serial_number(x509.random_serial_number())
@@ -7964,7 +6721,7 @@ def doCreateOrRotateServiceAccountKeys(iam=None, project_id=None, client_email=N
       myarg = sys.argv[i].lower().replace('_', '')
       if myarg == 'algorithm':
         body['keyAlgorithm'] = sys.argv[i+1].upper()
-        allowed_algorithms = _getEnumValuesMinusUnspecified(iam._rootDesc['schemas']['CreateServiceAccountKeyRequest']['properties']['keyAlgorithm']['enum'])
+        allowed_algorithms = gapi.get_enum_values_minus_unspecified(iam._rootDesc['schemas']['CreateServiceAccountKeyRequest']['properties']['keyAlgorithm']['enum'])
         if body['keyAlgorithm'] not in allowed_algorithms:
           controlflow.expected_argument_exit("algorithm", ", ".join(allowed_algorithms), body['keyAlgorithm'])
         local_key_size = 0
@@ -8093,8 +6850,8 @@ def doPrintShowProjects(csvFormat):
         print(f'      id: {project["parent"]["id"]}')
   else:
     for project in projects:
-      addRowTitlesToCSVfile(flatten_json(project, flattened={'User': login_hint}), csvRows, titles)
-    writeCSVfile(csvRows, titles, 'Projects', todrive)
+      display.add_row_titles_to_csv_file(utils.flatten_json(project, flattened={'User': login_hint}), csvRows, titles)
+    display.write_csv_file(csvRows, titles, 'Projects', todrive)
 
 def doGetTeamDriveInfo(users):
   teamDriveId = sys.argv[5]
@@ -8227,7 +6984,7 @@ def printShowTeamDrives(users, csvFormat):
       tds.append({'id': td['id'], 'name': td['name']})
   if csvFormat:
     titles = ['name', 'id']
-    writeCSVfile(tds, titles, 'Team Drives', todrive)
+    display.write_csv_file(tds, titles, 'Team Drives', todrive)
   else:
     for td in tds:
       print(f'Name: {td["name"]}  ID: {td["id"]}')
@@ -8240,301 +6997,6 @@ def doDeleteTeamDrive(users):
       continue
     print(f'Deleting Team Drive {teamDriveId}')
     gapi.call(drive.drives(), 'delete', driveId=teamDriveId, soft_errors=True)
-
-def validateCollaborators(collaboratorList, cd):
-  collaborators = []
-  for collaborator in collaboratorList.split(','):
-    collaborator_id = convertEmailAddressToUID(collaborator, cd)
-    if not collaborator_id:
-      controlflow.system_error_exit(4, f'failed to get a UID for {collaborator}. Please make sure this is a real user.')
-    collaborators.append({'email': collaborator, 'id': collaborator_id})
-  return collaborators
-
-def doCreateVaultMatter():
-  v = buildGAPIObject('vault')
-  body = {'name': f'New Matter - {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'}
-  collaborators = []
-  cd = None
-  i = 3
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower().replace('_', '')
-    if myarg == 'name':
-      body['name'] = sys.argv[i+1]
-      i += 2
-    elif myarg == 'description':
-      body['description'] = sys.argv[i+1]
-      i += 2
-    elif myarg in ['collaborator', 'collaborators']:
-      if not cd:
-        cd = buildGAPIObject('directory')
-      collaborators.extend(validateCollaborators(sys.argv[i+1], cd))
-      i += 2
-    else:
-      controlflow.invalid_argument_exit(sys.argv[i], "gam create matter")
-  matterId = gapi.call(v.matters(), 'create', body=body, fields='matterId')['matterId']
-  print(f'Created matter {matterId}')
-  for collaborator in collaborators:
-    print(f' adding collaborator {collaborator["email"]}')
-    gapi.call(v.matters(), 'addPermissions', matterId=matterId, body={'matterPermission': {'role': 'COLLABORATOR', 'accountId': collaborator['id']}})
-
-VAULT_SEARCH_METHODS_MAP = {
-  'account': 'ACCOUNT',
-  'accounts': 'ACCOUNT',
-  'entireorg': 'ENTIRE_ORG',
-  'everyone': 'ENTIRE_ORG',
-  'orgunit': 'ORG_UNIT',
-  'ou': 'ORG_UNIT',
-  'room': 'ROOM',
-  'rooms': 'ROOM',
-  'shareddrive': 'SHARED_DRIVE',
-  'shareddrives': 'SHARED_DRIVE',
-  'teamdrive': 'SHARED_DRIVE',
-  'teamdrives': 'SHARED_DRIVE',
-  }
-VAULT_SEARCH_METHODS_LIST = ['accounts', 'orgunit', 'shareddrives', 'rooms', 'everyone']
-
-def doCreateVaultExport():
-  v = buildGAPIObject('vault')
-  allowed_corpuses = _getEnumValuesMinusUnspecified(v._rootDesc['schemas']['Query']['properties']['corpus']['enum'])
-  allowed_scopes = _getEnumValuesMinusUnspecified(v._rootDesc['schemas']['Query']['properties']['dataScope']['enum'])
-  allowed_formats = _getEnumValuesMinusUnspecified(v._rootDesc['schemas']['MailExportOptions']['properties']['exportFormat']['enum'])
-  export_format = 'MBOX'
-  showConfidentialModeContent = None # default to not even set
-  matterId = None
-  body = {'query': {'dataScope': 'ALL_DATA'}, 'exportOptions': {}}
-  i = 3
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower().replace('_', '')
-    if myarg == 'matter':
-      matterId = getMatterItem(v, sys.argv[i+1])
-      body['matterId'] = matterId
-      i += 2
-    elif myarg == 'name':
-      body['name'] = sys.argv[i+1]
-      i += 2
-    elif myarg == 'corpus':
-      body['query']['corpus'] = sys.argv[i+1].upper()
-      if body['query']['corpus'] not in allowed_corpuses:
-        controlflow.expected_argument_exit("corpus", ", ".join(allowed_corpuses), sys.argv[i+1])
-      i += 2
-    elif myarg in VAULT_SEARCH_METHODS_MAP:
-      if body['query'].get('searchMethod'):
-        controlflow.system_error_exit(3, f'Multiple search methods ({", ".join(VAULT_SEARCH_METHODS_LIST)}) specified, only one is allowed')
-      searchMethod = VAULT_SEARCH_METHODS_MAP[myarg]
-      body['query']['searchMethod'] = searchMethod
-      if searchMethod == 'ACCOUNT':
-        body['query']['accountInfo'] = {'emails': sys.argv[i+1].split(',')}
-        i += 2
-      elif searchMethod == 'ORG_UNIT':
-        body['query']['orgUnitInfo'] = {'orgUnitId': getOrgUnitId(sys.argv[i+1])[1]}
-        i += 2
-      elif searchMethod == 'SHARED_DRIVE':
-        body['query']['sharedDriveInfo'] = {'sharedDriveIds': sys.argv[i+1].split(',')}
-        i += 2
-      elif searchMethod == 'ROOM':
-        body['query']['hangoutsChatInfo'] = {'roomId': sys.argv[i+1].split(',')}
-        i += 2
-      else:
-        i += 1
-    elif myarg == 'scope':
-      body['query']['dataScope'] = sys.argv[i+1].upper()
-      if body['query']['dataScope'] not in allowed_scopes:
-        controlflow.expected_argument_exit("scope", ", ".join(allowed_scopes), sys.argv[i+1])
-      i += 2
-    elif myarg in ['terms']:
-      body['query']['terms'] = sys.argv[i+1]
-      i += 2
-    elif myarg in ['start', 'starttime']:
-      body['query']['startTime'] = getDateZeroTimeOrFullTime(sys.argv[i+1])
-      i += 2
-    elif myarg in ['end', 'endtime']:
-      body['query']['endTime'] = getDateZeroTimeOrFullTime(sys.argv[i+1])
-      i += 2
-    elif myarg in ['timezone']:
-      body['query']['timeZone'] = sys.argv[i+1]
-      i += 2
-    elif myarg in ['excludedrafts']:
-      body['query']['mailOptions'] = {'excludeDrafts': getBoolean(sys.argv[i+1], myarg)}
-      i += 2
-    elif myarg in ['driveversiondate']:
-      body['query'].setdefault('driveOptions', {})['versionDate'] = getDateZeroTimeOrFullTime(sys.argv[i+1])
-      i += 2
-    elif myarg in ['includeshareddrives', 'includeteamdrives']:
-      body['query'].setdefault('driveOptions', {})['includeSharedDrives'] = getBoolean(sys.argv[i+1], myarg)
-      i += 2
-    elif myarg in ['includerooms']:
-      body['query']['hangoutsChatOptions'] = {'includeRooms': getBoolean(sys.argv[i+1], myarg)}
-      i += 2
-    elif myarg in ['format']:
-      export_format = sys.argv[i+1].upper()
-      if export_format not in allowed_formats:
-        controlflow.expected_argument_exit("export format", ", ".join(allowed_formats), export_format)
-      i += 2
-    elif myarg in ['showconfidentialmodecontent']:
-      showConfidentialModeContent = getBoolean(sys.argv[i+1], myarg)
-      i += 2
-    elif myarg in ['region']:
-      allowed_regions = _getEnumValuesMinusUnspecified(v._rootDesc['schemas']['ExportOptions']['properties']['region']['enum'])
-      body['exportOptions']['region'] = sys.argv[i+1].upper()
-      if body['exportOptions']['region'] not in allowed_regions:
-        controlflow.expected_argument_exit("region", ", ".join(allowed_regions), body['exportOptions']['region'])
-      i += 2
-    elif myarg in ['includeaccessinfo']:
-      body['exportOptions'].setdefault('driveOptions', {})['includeAccessInfo'] = getBoolean(sys.argv[i+1], myarg)
-      i += 2
-    else:
-      controlflow.invalid_argument_exit(sys.argv[i], "gam create export")
-  if not matterId:
-    controlflow.system_error_exit(3, 'you must specify a matter for the new export.')
-  if 'corpus' not in body['query']:
-    controlflow.system_error_exit(3, f'you must specify a corpus for the new export. Choose one of {", ".join(allowed_corpuses)}')
-  if 'searchMethod' not in body['query']:
-    controlflow.system_error_exit(3, f'you must specify a search method for the new export. Choose one of {", ".join(VAULT_SEARCH_METHODS_LIST)}')
-  if 'name' not in body:
-    body['name'] = f'GAM {body["query"]["corpus"]} export - {datetime.datetime.now()}'
-  options_field = None
-  if body['query']['corpus'] == 'MAIL':
-    options_field = 'mailOptions'
-  elif body['query']['corpus'] == 'GROUPS':
-    options_field = 'groupsOptions'
-  elif body['query']['corpus'] == 'HANGOUTS_CHAT':
-    options_field = 'hangoutsChatOptions'
-  if options_field:
-    body['exportOptions'].pop('driveOptions', None)
-    body['exportOptions'][options_field] = {'exportFormat': export_format}
-    if showConfidentialModeContent is not None:
-      body['exportOptions'][options_field]['showConfidentialModeContent'] = showConfidentialModeContent
-  results = gapi.call(v.matters().exports(), 'create', matterId=matterId, body=body)
-  print(f'Created export {results["id"]}')
-  display.print_json(results)
-
-def doDeleteVaultExport():
-  v = buildGAPIObject('vault')
-  matterId = getMatterItem(v, sys.argv[3])
-  exportId = convertExportNameToID(v, sys.argv[4], matterId)
-  print(f'Deleting export {sys.argv[4]} / {exportId}')
-  gapi.call(v.matters().exports(), 'delete', matterId=matterId, exportId=exportId)
-
-def doGetVaultExportInfo():
-  v = buildGAPIObject('vault')
-  matterId = getMatterItem(v, sys.argv[3])
-  exportId = convertExportNameToID(v, sys.argv[4], matterId)
-  export = gapi.call(v.matters().exports(), 'get', matterId=matterId, exportId=exportId)
-  display.print_json(export)
-
-def _getCloudStorageObject(s, bucket, object_, local_file=None, expectedMd5=None):
-  if not local_file:
-    local_file = object_
-  if os.path.exists(local_file):
-    sys.stdout.write(' File already exists. ')
-    sys.stdout.flush()
-    if expectedMd5:
-      sys.stdout.write(f'Verifying {expectedMd5} hash...')
-      sys.stdout.flush()
-      if md5MatchesFile(local_file, expectedMd5, False):
-        print('VERIFIED')
-        return
-      print('not verified. Downloading again and over-writing...')
-    else:
-      return # nothing to verify, just assume we're good.
-  print(f'saving to {local_file}')
-  request = s.objects().get_media(bucket=bucket, object=object_)
-  file_path = os.path.dirname(local_file)
-  if not os.path.exists(file_path):
-    os.makedirs(file_path)
-  f = fileutils.open_file(local_file, 'wb')
-  downloader = googleapiclient.http.MediaIoBaseDownload(f, request)
-  done = False
-  while not done:
-    status, done = downloader.next_chunk()
-    sys.stdout.write(f' Downloaded: {status.progress():>7.2%}\r')
-    sys.stdout.flush()
-  sys.stdout.write('\n Download complete. Flushing to disk...\n')
-  fileutils.close_file(f, True)
-  if expectedMd5:
-    f = fileutils.open_file(local_file, 'rb')
-    sys.stdout.write(f' Verifying file hash is {expectedMd5}...')
-    sys.stdout.flush()
-    md5MatchesFile(local_file, expectedMd5, True)
-    print('VERIFIED')
-    fileutils.close_file(f)
-
-def md5MatchesFile(local_file, expected_md5, exitOnError):
-  f = fileutils.open_file(local_file, 'rb')
-  hash_md5 = hashlib.md5()
-  for chunk in iter(lambda: f.read(4096), b""):
-    hash_md5.update(chunk)
-  actual_hash = hash_md5.hexdigest()
-  if exitOnError and actual_hash != expected_md5:
-    controlflow.system_error_exit(6, f'actual hash was {actual_hash}. Exiting on corrupt file.')
-  return actual_hash == expected_md5
-
-def doDownloadCloudStorageBucket():
-  bucket_url = sys.argv[3]
-  bucket_regex = r'(takeout-export-[a-f,0-9,-]*)'
-  bucket_match = re.search(bucket_regex, bucket_url)
-  if bucket_match:
-    bucket = bucket_match.group(1)
-  else:
-    controlflow.system_error_exit(5, 'Could not find a takeout-export-* bucket in that URL')
-  s = buildGAPIObject('storage')
-  page_message = gapi.got_total_items_msg('Files', '...')
-  objects = gapi.get_all_pages(s.objects(), 'list', 'items', page_message=page_message, bucket=bucket, projection='noAcl', fields='nextPageToken,items(name,id,md5Hash)')
-  i = 1
-  for object_ in objects:
-    print(f'{i}/{len(objects)}')
-    expectedMd5 = base64.b64decode(object_['md5Hash']).hex()
-    _getCloudStorageObject(s, bucket, object_['name'], expectedMd5=expectedMd5)
-    i += 1
-
-def doDownloadVaultExport():
-  verifyFiles = True
-  extractFiles = True
-  v = buildGAPIObject('vault')
-  s = buildGAPIObject('storage')
-  matterId = getMatterItem(v, sys.argv[3])
-  exportId = convertExportNameToID(v, sys.argv[4], matterId)
-  targetFolder = GC_Values[GC_DRIVE_DIR]
-  i = 5
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower().replace('_', '')
-    if myarg == 'targetfolder':
-      targetFolder = os.path.expanduser(sys.argv[i+1])
-      if not os.path.isdir(targetFolder):
-        os.makedirs(targetFolder)
-      i += 2
-    elif myarg == 'noverify':
-      verifyFiles = False
-      i += 1
-    elif myarg == 'noextract':
-      extractFiles = False
-      i += 1
-    else:
-      controlflow.invalid_argument_exit(sys.argv[i], "gam download export")
-  export = gapi.call(v.matters().exports(), 'get', matterId=matterId, exportId=exportId)
-  for s_file in export['cloudStorageSink']['files']:
-    bucket = s_file['bucketName']
-    s_object = s_file['objectName']
-    filename = os.path.join(targetFolder, s_object.replace('/', '-'))
-    print(f'saving to {filename}')
-    request = s.objects().get_media(bucket=bucket, object=s_object)
-    f = fileutils.open_file(filename, 'wb')
-    downloader = googleapiclient.http.MediaIoBaseDownload(f, request)
-    done = False
-    while not done:
-      status, done = downloader.next_chunk()
-      sys.stdout.write(' Downloaded: {0:>7.2%}\r'.format(status.progress()))
-      sys.stdout.flush()
-    sys.stdout.write('\n Download complete. Flushing to disk...\n')
-    fileutils.close_file(f, True)
-    if verifyFiles:
-      expected_hash = s_file['md5Hash']
-      sys.stdout.write(f' Verifying file hash is {expected_hash}...')
-      sys.stdout.flush()
-      md5MatchesFile(filename, expected_hash, True)
-      print('VERIFIED')
-    if extractFiles and re.search(r'\.zip$', filename):
-      extract_nested_zip(filename, targetFolder)
 
 def extract_nested_zip(zippedFile, toFolder, spacing=' '):
   """ Extract a zip file including any nested zip files
@@ -8549,303 +7011,6 @@ def extract_nested_zip(zippedFile, toFolder, spacing=' '):
       if re.search(r'\.zip$', inner_file.filename):
         extract_nested_zip(inner_file_path, toFolder, spacing=spacing+' ')
   os.remove(zippedFile)
-
-def doCreateVaultHold():
-  v = buildGAPIObject('vault')
-  allowed_corpuses = v._rootDesc['schemas']['Hold']['properties']['corpus']['enum']
-  body = {'query': {}}
-  i = 3
-  query = None
-  start_time = None
-  end_time = None
-  matterId = None
-  accounts = []
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower().replace('_', '')
-    if myarg == 'name':
-      body['name'] = sys.argv[i+1]
-      i += 2
-    elif myarg == 'query':
-      query = sys.argv[i+1]
-      i += 2
-    elif myarg == 'corpus':
-      body['corpus'] = sys.argv[i+1].upper()
-      if body['corpus'] not in allowed_corpuses:
-        controlflow.expected_argument_exit("corpus", ", ".join(allowed_corpuses), sys.argv[i+1])
-      i += 2
-    elif myarg in ['accounts', 'users', 'groups']:
-      accounts = sys.argv[i+1].split(',')
-      i += 2
-    elif myarg in ['orgunit', 'ou']:
-      body['orgUnit'] = {'orgUnitId': getOrgUnitId(sys.argv[i+1])[1]}
-      i += 2
-    elif myarg in ['start', 'starttime']:
-      start_time = getDateZeroTimeOrFullTime(sys.argv[i+1])
-      i += 2
-    elif myarg in ['end', 'endtime']:
-      end_time = getDateZeroTimeOrFullTime(sys.argv[i+1])
-      i += 2
-    elif myarg == 'matter':
-      matterId = getMatterItem(v, sys.argv[i+1])
-      i += 2
-    else:
-      controlflow.invalid_argument_exit(sys.argv[i], "gam create hold")
-  if not matterId:
-    controlflow.system_error_exit(3, 'you must specify a matter for the new hold.')
-  if not body.get('name'):
-    controlflow.system_error_exit(3, 'you must specify a name for the new hold.')
-  if not body.get('corpus'):
-    controlflow.system_error_exit(3, f'you must specify a corpus for the new hold. Choose one of {", ".join(allowed_corpuses)}')
-  if body['corpus'] == 'HANGOUTS_CHAT':
-    query_type = 'hangoutsChatQuery'
-  else:
-    query_type = f'{body["corpus"].lower()}Query'
-  body['query'][query_type] = {}
-  if body['corpus'] == 'DRIVE':
-    if query:
-      try:
-        body['query'][query_type] = json.loads(query)
-      except ValueError as e:
-        controlflow.system_error_exit(3, f'{str(e)}, query: {query}')
-  elif body['corpus'] in ['GROUPS', 'MAIL']:
-    if query:
-      body['query'][query_type] = {'terms': query}
-    if start_time:
-      body['query'][query_type]['startTime'] = start_time
-    if end_time:
-      body['query'][query_type]['endTime'] = end_time
-  if accounts:
-    body['accounts'] = []
-    cd = buildGAPIObject('directory')
-    account_type = 'group' if body['corpus'] == 'GROUPS' else 'user'
-    for account in accounts:
-      body['accounts'].append({'accountId': convertEmailAddressToUID(account, cd, account_type)})
-  holdId = gapi.call(v.matters().holds(), 'create', matterId=matterId, body=body, fields='holdId')['holdId']
-  print(f'Created hold {holdId}')
-
-def doDeleteVaultHold():
-  v = buildGAPIObject('vault')
-  hold = sys.argv[3]
-  matterId = None
-  i = 4
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower().replace('_', '')
-    if myarg == 'matter':
-      matterId = getMatterItem(v, sys.argv[i+1])
-      holdId = convertHoldNameToID(v, hold, matterId)
-      i += 2
-    else:
-      controlflow.invalid_argument_exit(myarg, "gam delete hold")
-  if not matterId:
-    controlflow.system_error_exit(3, 'you must specify a matter for the hold.')
-  print(f'Deleting hold {hold} / {holdId}')
-  gapi.call(v.matters().holds(), 'delete', matterId=matterId, holdId=holdId)
-
-def doGetVaultHoldInfo():
-  v = buildGAPIObject('vault')
-  hold = sys.argv[3]
-  matterId = None
-  i = 4
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower().replace('_', '')
-    if myarg == 'matter':
-      matterId = getMatterItem(v, sys.argv[i+1])
-      holdId = convertHoldNameToID(v, hold, matterId)
-      i += 2
-    else:
-      controlflow.invalid_argument_exit(myarg, "gam info hold")
-  if not matterId:
-    controlflow.system_error_exit(3, 'you must specify a matter for the hold.')
-  results = gapi.call(v.matters().holds(), 'get', matterId=matterId, holdId=holdId)
-  cd = buildGAPIObject('directory')
-  if 'accounts' in results:
-    account_type = 'group' if results['corpus'] == 'GROUPS' else 'user'
-    for i in range(0, len(results['accounts'])):
-      uid = f'uid:{results["accounts"][i]["accountId"]}'
-      acct_email = convertUIDtoEmailAddress(uid, cd, [account_type])
-      results['accounts'][i]['email'] = acct_email
-  if 'orgUnit' in results:
-    results['orgUnit']['orgUnitPath'] = doGetOrgInfo(results['orgUnit']['orgUnitId'], return_attrib='orgUnitPath')
-  display.print_json(results)
-
-def convertExportNameToID(v, nameOrID, matterId):
-  nameOrID = nameOrID.lower()
-  cg = UID_PATTERN.match(nameOrID)
-  if cg:
-    return cg.group(1)
-  exports = gapi.get_all_pages(v.matters().exports(), 'list', 'exports', matterId=matterId, fields='exports(id,name),nextPageToken')
-  for export in exports:
-    if export['name'].lower() == nameOrID:
-      return export['id']
-  controlflow.system_error_exit(4, f'could not find export name {nameOrID} in matter {matterId}')
-
-def convertHoldNameToID(v, nameOrID, matterId):
-  nameOrID = nameOrID.lower()
-  cg = UID_PATTERN.match(nameOrID)
-  if cg:
-    return cg.group(1)
-  holds = gapi.get_all_pages(v.matters().holds(), 'list', 'holds', matterId=matterId, fields='holds(holdId,name),nextPageToken')
-  for hold in holds:
-    if hold['name'].lower() == nameOrID:
-      return hold['holdId']
-  controlflow.system_error_exit(4, f'could not find hold name {nameOrID} in matter {matterId}')
-
-def convertMatterNameToID(v, nameOrID):
-  nameOrID = nameOrID.lower()
-  cg = UID_PATTERN.match(nameOrID)
-  if cg:
-    return cg.group(1)
-  matters = gapi.get_all_pages(v.matters(), 'list', 'matters', view='BASIC', fields='matters(matterId,name),nextPageToken')
-  for matter in matters:
-    if matter['name'].lower() == nameOrID:
-      return matter['matterId']
-  return None
-
-def getMatterItem(v, nameOrID):
-  matterId = convertMatterNameToID(v, nameOrID)
-  if not matterId:
-    controlflow.system_error_exit(4, f'could not find matter {nameOrID}')
-  return matterId
-
-def doUpdateVaultHold():
-  v = buildGAPIObject('vault')
-  hold = sys.argv[3]
-  matterId = None
-  body = {}
-  query = None
-  add_accounts = []
-  del_accounts = []
-  start_time = None
-  end_time = None
-  i = 4
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower().replace('_', '')
-    if myarg == 'matter':
-      matterId = getMatterItem(v, sys.argv[i+1])
-      holdId = convertHoldNameToID(v, hold, matterId)
-      i += 2
-    elif myarg == 'query':
-      query = sys.argv[i+1]
-      i += 2
-    elif myarg in ['orgunit', 'ou']:
-      body['orgUnit'] = {'orgUnitId': getOrgUnitId(sys.argv[i+1])[1]}
-      i += 2
-    elif myarg in ['start', 'starttime']:
-      start_time = getDateZeroTimeOrFullTime(sys.argv[i+1])
-      i += 2
-    elif myarg in ['end', 'endtime']:
-      end_time = getDateZeroTimeOrFullTime(sys.argv[i+1])
-      i += 2
-    elif myarg in ['addusers', 'addaccounts', 'addgroups']:
-      add_accounts = sys.argv[i+1].split(',')
-      i += 2
-    elif myarg in ['removeusers', 'removeaccounts', 'removegroups']:
-      del_accounts = sys.argv[i+1].split(',')
-      i += 2
-    else:
-      controlflow.invalid_argument_exit(myarg, "gam update hold")
-  if not matterId:
-    controlflow.system_error_exit(3, 'you must specify a matter for the hold.')
-  if query or start_time or end_time or body.get('orgUnit'):
-    old_body = gapi.call(v.matters().holds(), 'get', matterId=matterId, holdId=holdId, fields='corpus,query,orgUnit')
-    body['query'] = old_body['query']
-    body['corpus'] = old_body['corpus']
-    if 'orgUnit' in old_body and 'orgUnit' not in body:
-      # bah, API requires this to be sent on update even when it's not changing
-      body['orgUnit'] = old_body['orgUnit']
-    query_type = f'{body["corpus"].lower()}Query'
-    if body['corpus'] == 'DRIVE':
-      if query:
-        try:
-          body['query'][query_type] = json.loads(query)
-        except ValueError as e:
-          controlflow.system_error_exit(3, f'{str(e)}, query: {query}')
-    elif body['corpus'] in ['GROUPS', 'MAIL']:
-      if query:
-        body['query'][query_type]['terms'] = query
-      if start_time:
-        body['query'][query_type]['startTime'] = start_time
-      if end_time:
-        body['query'][query_type]['endTime'] = end_time
-  if body:
-    print(f'Updating hold {hold} / {holdId}')
-    gapi.call(v.matters().holds(), 'update', matterId=matterId, holdId=holdId, body=body)
-  if add_accounts or del_accounts:
-    cd = buildGAPIObject('directory')
-    for account in add_accounts:
-      print(f'adding {account} to hold.')
-      add_body = {'accountId': convertEmailAddressToUID(account, cd)}
-      gapi.call(v.matters().holds().accounts(), 'create', matterId=matterId, holdId=holdId, body=add_body)
-    for account in del_accounts:
-      print(f'removing {account} from hold.')
-      accountId = convertEmailAddressToUID(account, cd)
-      gapi.call(v.matters().holds().accounts(), 'delete', matterId=matterId, holdId=holdId, accountId=accountId)
-
-def doUpdateVaultMatter(action=None):
-  v = buildGAPIObject('vault')
-  matterId = getMatterItem(v, sys.argv[3])
-  body = {}
-  action_kwargs = {'body': {}}
-  add_collaborators = []
-  remove_collaborators = []
-  cd = None
-  i = 4
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower().replace('_', '')
-    if myarg == 'action':
-      action = sys.argv[i+1].lower()
-      if action not in VAULT_MATTER_ACTIONS:
-        controlflow.system_error_exit(3, f'allowed actions are {", ".join(VAULT_MATTER_ACTIONS)}, got {action}')
-      i += 2
-    elif myarg == 'name':
-      body['name'] = sys.argv[i+1]
-      i += 2
-    elif myarg == 'description':
-      body['description'] = sys.argv[i+1]
-      i += 2
-    elif myarg in ['addcollaborator', 'addcollaborators']:
-      if not cd:
-        cd = buildGAPIObject('directory')
-      add_collaborators.extend(validateCollaborators(sys.argv[i+1], cd))
-      i += 2
-    elif myarg in ['removecollaborator', 'removecollaborators']:
-      if not cd:
-        cd = buildGAPIObject('directory')
-      remove_collaborators.extend(validateCollaborators(sys.argv[i+1], cd))
-      i += 2
-    else:
-      controlflow.invalid_argument_exit(sys.argv[i], "gam update matter")
-  if action == 'delete':
-    action_kwargs = {}
-  if body:
-    print(f'Updating matter {sys.argv[3]}...')
-    if 'name' not in body or 'description' not in body:
-      # bah, API requires name/description to be sent on update even when it's not changing
-      result = gapi.call(v.matters(), 'get', matterId=matterId, view='BASIC')
-      body.setdefault('name', result['name'])
-      body.setdefault('description', result.get('description'))
-    gapi.call(v.matters(), 'update', body=body, matterId=matterId)
-  if action:
-    print(f'Performing {action} on matter {sys.argv[3]}')
-    gapi.call(v.matters(), action, matterId=matterId, **action_kwargs)
-  for collaborator in add_collaborators:
-    print(f' adding collaborator {collaborator["email"]}')
-    gapi.call(v.matters(), 'addPermissions', matterId=matterId, body={'matterPermission': {'role': 'COLLABORATOR', 'accountId': collaborator['id']}})
-  for collaborator in remove_collaborators:
-    print(f' removing collaborator {collaborator["email"]}')
-    gapi.call(v.matters(), 'removePermissions', matterId=matterId, body={'accountId': collaborator['id']})
-
-def doGetVaultMatterInfo():
-  v = buildGAPIObject('vault')
-  matterId = getMatterItem(v, sys.argv[3])
-  result = gapi.call(v.matters(), 'get', matterId=matterId, view='FULL')
-  if 'matterPermissions' in result:
-    cd = buildGAPIObject('directory')
-    for i in range(0, len(result['matterPermissions'])):
-      uid = f'uid:{result["matterPermissions"][i]["accountId"]}'
-      user_email = convertUIDtoEmailAddress(uid, cd)
-      result['matterPermissions'][i]['email'] = user_email
-  display.print_json(result)
 
 def doCreateUser():
   cd = buildGAPIObject('directory')
@@ -8948,9 +7113,9 @@ def doCreateGroup():
         gs_body = dict(list(current_settings.items()) + list(gs_body.items()))
     if gs_body:
       gapi.call(gs.groups(), 'update', groupUniqueId=body['email'],
-          body=gs_body,
-          retry_reasons=[gapi.errors.ErrorReason.SERVICE_LIMIT,
-                         gapi.errors.ErrorReason.NOT_FOUND])
+                retry_reasons=[gapi.errors.ErrorReason.SERVICE_LIMIT,
+                               gapi.errors.ErrorReason.NOT_FOUND],
+                body=gs_body)
 
 def doCreateAlias():
   cd = buildGAPIObject('directory')
@@ -9005,232 +7170,8 @@ def doCreateOrg():
     body['parentOrgUnitPath'] = '/'
     body['name'] = orgUnitPath[1:]
   parent = body['parentOrgUnitPath']
-  gapi.call(cd.orgunits(), 'insert', customerId=GC_Values[GC_CUSTOMER_ID], body=body)
-
-def _getBuildingAttributes(args, body={}):
-  i = 0
-  while i < len(args):
-    myarg = args[i].lower().replace('_', '')
-    if myarg == 'id':
-      body['buildingId'] = args[i+1]
-      i += 2
-    elif myarg == 'name':
-      body['buildingName'] = args[i+1]
-      i += 2
-    elif myarg in ['lat', 'latitude']:
-      if 'coordinates' not in body:
-        body['coordinates'] = {}
-      body['coordinates']['latitude'] = args[i+1]
-      i += 2
-    elif myarg in ['long', 'lng', 'longitude']:
-      if 'coordinates' not in body:
-        body['coordinates'] = {}
-      body['coordinates']['longitude'] = args[i+1]
-      i += 2
-    elif myarg == 'description':
-      body['description'] = args[i+1]
-      i += 2
-    elif myarg == 'floors':
-      body['floorNames'] = args[i+1].split(',')
-      i += 2
-    else:
-      controlflow.invalid_argument_exit(myarg, "gam create|update building")
-  return body
-
-def doCreateBuilding():
-  cd = buildGAPIObject('directory')
-  body = {'floorNames': ['1'],
-          'buildingId': str(uuid.uuid4()),
-          'buildingName': sys.argv[3]}
-  body = _getBuildingAttributes(sys.argv[4:], body)
-  print(f'Creating building {body["buildingId"]}...')
-  gapi.call(cd.resources().buildings(), 'insert',
-            customer=GC_Values[GC_CUSTOMER_ID], body=body)
-
-def _makeBuildingIdNameMap(cd):
-  buildings = gapi.get_all_pages(cd.resources().buildings(), 'list', 'buildings',
-                                 customer=GC_Values[GC_CUSTOMER_ID],
-                                 fields='nextPageToken,buildings(buildingId,buildingName)')
-  GM_Globals[GM_MAP_BUILDING_ID_TO_NAME] = {}
-  GM_Globals[GM_MAP_BUILDING_NAME_TO_ID] = {}
-  for building in buildings:
-    GM_Globals[GM_MAP_BUILDING_ID_TO_NAME][building['buildingId']] = building['buildingName']
-    GM_Globals[GM_MAP_BUILDING_NAME_TO_ID][building['buildingName']] = building['buildingId']
-
-def _getBuildingByNameOrId(cd, which_building, minLen=1):
-  if not which_building or (minLen == 0 and which_building in ['id:', 'uid:']):
-    if minLen == 0:
-      return ''
-    controlflow.system_error_exit(3, 'Building id/name is empty')
-  cg = UID_PATTERN.match(which_building)
-  if cg:
-    return cg.group(1)
-  if GM_Globals[GM_MAP_BUILDING_NAME_TO_ID] is None:
-    _makeBuildingIdNameMap(cd)
-# Exact name match, return ID
-  if which_building in GM_Globals[GM_MAP_BUILDING_NAME_TO_ID]:
-    return GM_Globals[GM_MAP_BUILDING_NAME_TO_ID][which_building]
-# No exact name match, check for case insensitive name matches
-  which_building_lower = which_building.lower()
-  ci_matches = []
-  for buildingName, buildingId in GM_Globals[GM_MAP_BUILDING_NAME_TO_ID].items():
-    if buildingName.lower() == which_building_lower:
-      ci_matches.append({'buildingName': buildingName, 'buildingId': buildingId})
-# One match, return ID
-  if len(ci_matches) == 1:
-    return ci_matches[0]['buildingId']
-# No or multiple name matches, try ID
-# Exact ID match, return ID
-  if which_building in GM_Globals[GM_MAP_BUILDING_ID_TO_NAME]:
-    return which_building
-# No exact ID match, check for case insensitive id match
-  for buildingId in GM_Globals[GM_MAP_BUILDING_ID_TO_NAME]:
-# Match, return ID
-    if buildingId.lower() == which_building_lower:
-      return buildingId
-# Multiple name  matches
-  if len(ci_matches) > 1:
-    message = 'Multiple buildings with same name:\n'
-    for building in ci_matches:
-      message += f'  Name:{building["buildingName"]}  id:{building["buildingId"]}\n'
-    message += '\nPlease specify building name by exact case or by id.'
-    controlflow.system_error_exit(3, message)
-# No matches
-  else:
-    controlflow.system_error_exit(3, f'No such building {which_building}')
-
-def _getBuildingNameById(cd, buildingId):
-  if GM_Globals[GM_MAP_BUILDING_ID_TO_NAME] is None:
-    _makeBuildingIdNameMap(cd)
-  return GM_Globals[GM_MAP_BUILDING_ID_TO_NAME].get(buildingId, 'UNKNOWN')
-
-def doUpdateBuilding():
-  cd = buildGAPIObject('directory')
-  buildingId = _getBuildingByNameOrId(cd, sys.argv[3])
-  body = _getBuildingAttributes(sys.argv[4:])
-  print(f'Updating building {buildingId}...')
-  gapi.call(cd.resources().buildings(), 'patch',
-            customer=GC_Values[GC_CUSTOMER_ID], buildingId=buildingId, body=body)
-
-def doGetBuildingInfo():
-  cd = buildGAPIObject('directory')
-  buildingId = _getBuildingByNameOrId(cd, sys.argv[3])
-  building = gapi.call(cd.resources().buildings(), 'get',
-                       customer=GC_Values[GC_CUSTOMER_ID], buildingId=buildingId)
-  if 'buildingId' in building:
-    building['buildingId'] = f'id:{building["buildingId"]}'
-  if 'floorNames' in building:
-    building['floorNames'] = ','.join(building['floorNames'])
-  if 'buildingName' in building:
-    sys.stdout.write(building.pop('buildingName'))
-  display.print_json(building)
-
-def doDeleteBuilding():
-  cd = buildGAPIObject('directory')
-  buildingId = _getBuildingByNameOrId(cd, sys.argv[3])
-  print(f'Deleting building {buildingId}...')
-  gapi.call(cd.resources().buildings(), 'delete',
-            customer=GC_Values[GC_CUSTOMER_ID], buildingId=buildingId)
-
-def _getFeatureAttributes(args, body={}):
-  i = 0
-  while i < len(args):
-    myarg = args[i].lower().replace('_', '')
-    if myarg == 'name':
-      body['name'] = args[i+1]
-      i += 2
-    else:
-      controlflow.invalid_argument_exit(myarg, "gam create|update feature")
-  return body
-
-def doCreateFeature():
-  cd = buildGAPIObject('directory')
-  body = _getFeatureAttributes(sys.argv[3:])
-  print(f'Creating feature {body["name"]}...')
-  gapi.call(cd.resources().features(), 'insert',
-            customer=GC_Values[GC_CUSTOMER_ID], body=body)
-
-def doUpdateFeature():
-  # update does not work for name and name is only field to be updated
-  # if additional writable fields are added to feature in the future
-  # we'll add support for update as well as rename
-  cd = buildGAPIObject('directory')
-  oldName = sys.argv[3]
-  body = {'newName': sys.argv[5:]}
-  print(f'Updating feature {oldName}...')
-  gapi.call(cd.resources().features(), 'rename',
-            customer=GC_Values[GC_CUSTOMER_ID], oldName=oldName,
-            body=body)
-
-def doDeleteFeature():
-  cd = buildGAPIObject('directory')
-  featureKey = sys.argv[3]
-  print(f'Deleting feature {featureKey}...')
-  gapi.call(cd.resources().features(), 'delete',
-            customer=GC_Values[GC_CUSTOMER_ID], featureKey=featureKey)
-
-def _getResourceCalendarAttributes(cd, args, body={}):
-  i = 0
-  while i < len(args):
-    myarg = args[i].lower().replace('_', '')
-    if myarg == 'name':
-      body['resourceName'] = args[i+1]
-      i += 2
-    elif myarg == 'description':
-      body['resourceDescription'] = args[i+1].replace('\\n', '\n')
-      i += 2
-    elif myarg == 'type':
-      body['resourceType'] = args[i+1]
-      i += 2
-    elif myarg in ['building', 'buildingid']:
-      body['buildingId'] = _getBuildingByNameOrId(cd, args[i+1], minLen=0)
-      i += 2
-    elif myarg in ['capacity']:
-      body['capacity'] = getInteger(args[i+1], myarg, minVal=0)
-      i += 2
-    elif myarg in ['feature', 'features']:
-      features = args[i+1].split(',')
-      body['featureInstances'] = []
-      for feature in features:
-        body['featureInstances'].append({'feature': {'name': feature}})
-      i += 2
-    elif myarg in ['floor', 'floorname']:
-      body['floorName'] = args[i+1]
-      i += 2
-    elif myarg in ['floorsection']:
-      body['floorSection'] = args[i+1]
-      i += 2
-    elif myarg in ['category']:
-      body['resourceCategory'] = args[i+1].upper()
-      if body['resourceCategory'] == 'ROOM':
-        body['resourceCategory'] = 'CONFERENCE_ROOM'
-      i += 2
-    elif myarg in ['uservisibledescription', 'userdescription']:
-      body['userVisibleDescription'] = args[i+1]
-      i += 2
-    else:
-      controlflow.invalid_argument_exit(args[i], "gam create|update resource")
-  return body
-
-def doCreateResourceCalendar():
-  cd = buildGAPIObject('directory')
-  body = {'resourceId': sys.argv[3],
-          'resourceName': sys.argv[4]}
-  body = _getResourceCalendarAttributes(cd, sys.argv[5:], body)
-  print(f'Creating resource {body["resourceId"]}...')
-  gapi.call(cd.resources().calendars(), 'insert',
-            customer=GC_Values[GC_CUSTOMER_ID], body=body)
-
-def doUpdateResourceCalendar():
-  cd = buildGAPIObject('directory')
-  resId = sys.argv[3]
-  body = _getResourceCalendarAttributes(cd, sys.argv[4:])
-  # Use patch since it seems to work better.
-  # update requires name to be set.
-  gapi.call(cd.resources().calendars(), 'patch',
-            customer=GC_Values[GC_CUSTOMER_ID], calendarResourceId=resId, body=body,
-            fields='')
-  print(f'updated resource {resId}')
+  gapi.call(cd.orgunits(), 'insert', customerId=GC_Values[GC_CUSTOMER_ID], body=body, retry_reasons=[gapi.errors.ErrorReason.DAILY_LIMIT_EXCEEDED])
+  print(f'Created OrgUnit {body["name"]}')
 
 def doUpdateUser(users, i):
   cd = buildGAPIObject('directory')
@@ -9581,95 +7522,6 @@ def doUpdateAlias():
       gapi.call(cd.groups().aliases(), 'insert', groupKey=target_email, body={'alias': alias})
   print(f'updated alias {alias}')
 
-def getCrOSDeviceEntity(i, cd):
-  myarg = sys.argv[i].lower()
-  if myarg == 'cros_sn':
-    return i+2, getUsersToModify('cros_sn', sys.argv[i+1])
-  if myarg == 'query':
-    return i+2, getUsersToModify('crosquery', sys.argv[i+1])
-  if myarg[:6] == 'query:':
-    query = sys.argv[i][6:]
-    if query[:12].lower() == 'orgunitpath:':
-      kwargs = {'orgUnitPath': query[12:]}
-    else:
-      kwargs = {'query': query}
-    devices = gapi.get_all_pages(cd.chromeosdevices(), 'list', 'chromeosdevices',
-                                 customerId=GC_Values[GC_CUSTOMER_ID],
-                                 fields='nextPageToken,chromeosdevices(deviceId)', **kwargs)
-    return i+1, [device['deviceId'] for device in devices]
-  return i+1, sys.argv[i].replace(',', ' ').split()
-
-def doUpdateCros():
-  cd = buildGAPIObject('directory')
-  i, devices = getCrOSDeviceEntity(3, cd)
-  update_body = {}
-  action_body = {}
-  orgUnitPath = None
-  ack_wipe = False
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower().replace('_', '')
-    if myarg == 'user':
-      update_body['annotatedUser'] = sys.argv[i+1]
-      i += 2
-    elif myarg == 'location':
-      update_body['annotatedLocation'] = sys.argv[i+1]
-      i += 2
-    elif myarg == 'notes':
-      update_body['notes'] = sys.argv[i+1].replace('\\n', '\n')
-      i += 2
-    elif myarg in ['tag', 'asset', 'assetid']:
-      update_body['annotatedAssetId'] = sys.argv[i+1]
-      i += 2
-    elif myarg in ['ou', 'org']:
-      orgUnitPath = getOrgUnitItem(sys.argv[i+1])
-      i += 2
-    elif myarg == 'action':
-      action = sys.argv[i+1].lower().replace('_', '').replace('-', '')
-      deprovisionReason = None
-      if action in ['deprovisionsamemodelreplace', 'deprovisionsamemodelreplacement']:
-        action = 'deprovision'
-        deprovisionReason = 'same_model_replacement'
-      elif action in ['deprovisiondifferentmodelreplace', 'deprovisiondifferentmodelreplacement']:
-        action = 'deprovision'
-        deprovisionReason = 'different_model_replacement'
-      elif action in ['deprovisionretiringdevice']:
-        action = 'deprovision'
-        deprovisionReason = 'retiring_device'
-      elif action not in ['disable', 'reenable']:
-        controlflow.system_error_exit(2, f'expected action of deprovision_same_model_replace, deprovision_different_model_replace, deprovision_retiring_device, disable or reenable, got {action}')
-      action_body = {'action': action}
-      if deprovisionReason:
-        action_body['deprovisionReason'] = deprovisionReason
-      i += 2
-    elif myarg == 'acknowledgedevicetouchrequirement':
-      ack_wipe = True
-      i += 1
-    else:
-      controlflow.invalid_argument_exit(sys.argv[i], "gam update cros")
-  i = 0
-  count = len(devices)
-  if action_body:
-    if action_body['action'] == 'deprovision' and not ack_wipe:
-      print(f'WARNING: Refusing to deprovision {count} devices because acknowledge_device_touch_requirement not specified. Deprovisioning a device means the device will have to be physically wiped and re-enrolled to be managed by your domain again. This requires physical access to the device and is very time consuming to perform for each device. Please add "acknowledge_device_touch_requirement" to the GAM command if you understand this and wish to proceed with the deprovision. Please also be aware that deprovisioning can have an effect on your device license count. See https://support.google.com/chrome/a/answer/3523633 for full details.')
-      sys.exit(3)
-    for deviceId in devices:
-      i += 1
-      print(f' performing action {action} for {deviceId}{currentCount(i, count)}')
-      gapi.call(cd.chromeosdevices(), function='action', customerId=GC_Values[GC_CUSTOMER_ID], resourceId=deviceId, body=action_body)
-  else:
-    if update_body:
-      for deviceId in devices:
-        i += 1
-        print(f' updating {deviceId}{currentCount(i, count)}')
-        gapi.call(service=cd.chromeosdevices(), function='update', customerId=GC_Values[GC_CUSTOMER_ID], deviceId=deviceId, body=update_body)
-    if orgUnitPath:
-      #move_body[u'deviceIds'] = devices
-      # split moves into max 50 devices per batch
-      for l in range(0, len(devices), 50):
-        move_body = {'deviceIds': devices[l:l+50]}
-        print(f' moving {len(move_body["deviceIds"])} devices to {orgUnitPath}')
-        gapi.call(cd.chromeosdevices(), 'moveDevicesToOu', customerId=GC_Values[GC_CUSTOMER_ID], orgUnitPath=orgUnitPath, body=move_body)
-
 def doUpdateMobile():
   cd = buildGAPIObject('directory')
   resourceIds = sys.argv[3]
@@ -9975,11 +7827,9 @@ def doCreateResoldCustomer():
   print(f'Created customer {result["customerDomain"]} with id {result["customerId"]}')
 
 def _getValueFromOAuth(field, credentials=None):
-  if not GC_Values[GC_DECODED_ID_TOKEN]:
-    credentials = credentials if credentials is not None else getValidOauth2TxtCredentials()
-    request = transport.create_request()
-    GC_Values[GC_DECODED_ID_TOKEN] = google.oauth2.id_token.verify_oauth2_token(credentials.id_token, request)
-  return GC_Values[GC_DECODED_ID_TOKEN].get(field, 'Unknown')
+  if not credentials:
+    credentials = auth.get_admin_credentials()
+  return credentials.get_token_value(field)
 
 def doGetMemberInfo():
   cd = buildGAPIObject('directory')
@@ -10355,206 +8205,6 @@ def doGetAliasInfo(alias_email=None):
   except KeyError:
     print(f' Group Email: {result["email"]}')
   print(f' Unique ID: {result["id"]}')
-
-def doGetResourceCalendarInfo():
-  cd = buildGAPIObject('directory')
-  resId = sys.argv[3]
-  resource = gapi.call(cd.resources().calendars(), 'get',
-                       customer=GC_Values[GC_CUSTOMER_ID], calendarResourceId=resId)
-  if 'featureInstances' in resource:
-    resource['features'] = ', '.join([a_feature['feature']['name'] for a_feature in resource.pop('featureInstances')])
-  if 'buildingId' in resource:
-    resource['buildingName'] = _getBuildingNameById(cd, resource['buildingId'])
-    resource['buildingId'] = f'id:{resource["buildingId"]}'
-  display.print_json(resource)
-
-def _filterTimeRanges(activeTimeRanges, startDate, endDate):
-  if startDate is None and endDate is None:
-    return activeTimeRanges
-  filteredTimeRanges = []
-  for timeRange in activeTimeRanges:
-    activityDate = datetime.datetime.strptime(timeRange['date'], YYYYMMDD_FORMAT)
-    if ((startDate is None) or (activityDate >= startDate)) and ((endDate is None) or (activityDate <= endDate)):
-      filteredTimeRanges.append(timeRange)
-  return filteredTimeRanges
-
-def _filterCreateReportTime(items, timeField, startTime, endTime):
-  if startTime is None and endTime is None:
-    return items
-  filteredItems = []
-  for item in items:
-    timeValue = datetime.datetime.strptime(item[timeField], '%Y-%m-%dT%H:%M:%S.%fZ')
-    if ((startTime is None) or (timeValue >= startTime)) and ((endTime is None) or (timeValue <= endTime)):
-      filteredItems.append(item)
-  return filteredItems
-
-def _getFilterDate(dateStr):
-  return datetime.datetime.strptime(dateStr, YYYYMMDD_FORMAT)
-
-def doGetCrosInfo():
-  cd = buildGAPIObject('directory')
-  i, devices = getCrOSDeviceEntity(3, cd)
-  downloadfile = None
-  targetFolder = GC_Values[GC_DRIVE_DIR]
-  projection = None
-  fieldsList = []
-  guess_aue = noLists = False
-  guessedAUEs = {}
-  startDate = endDate = None
-  listLimit = 0
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower().replace('_', '')
-    if myarg == 'nolists':
-      noLists = True
-      i += 1
-    elif myarg == 'listlimit':
-      listLimit = getInteger(sys.argv[i+1], myarg, minVal=-1)
-      i += 2
-    elif myarg == 'guessaue':
-      guess_aue = True
-      i += 1
-    elif myarg in CROS_START_ARGUMENTS:
-      startDate = _getFilterDate(sys.argv[i+1])
-      i += 2
-    elif myarg in CROS_END_ARGUMENTS:
-      endDate = _getFilterDate(sys.argv[i+1])
-      i += 2
-    elif myarg == 'allfields':
-      projection = 'FULL'
-      fieldsList = []
-      i += 1
-    elif myarg in PROJECTION_CHOICES_MAP:
-      projection = PROJECTION_CHOICES_MAP[myarg]
-      if projection == 'FULL':
-        fieldsList = []
-      else:
-        fieldsList = CROS_BASIC_FIELDS_LIST[:]
-      i += 1
-    elif myarg in CROS_ARGUMENT_TO_PROPERTY_MAP:
-      fieldsList.extend(CROS_ARGUMENT_TO_PROPERTY_MAP[myarg])
-      i += 1
-    elif myarg == 'fields':
-      fieldNameList = sys.argv[i+1]
-      for field in fieldNameList.lower().replace(',', ' ').split():
-        if field in CROS_ARGUMENT_TO_PROPERTY_MAP:
-          fieldsList.extend(CROS_ARGUMENT_TO_PROPERTY_MAP[field])
-          if field in CROS_ACTIVE_TIME_RANGES_ARGUMENTS+CROS_DEVICE_FILES_ARGUMENTS+CROS_RECENT_USERS_ARGUMENTS:
-            projection = 'FULL'
-            noLists = False
-        else:
-          controlflow.invalid_argument_exit(field, "gam info cros fields")
-      i += 2
-    elif myarg == 'downloadfile':
-      downloadfile = sys.argv[i+1]
-      if downloadfile.lower() == 'latest':
-        downloadfile = downloadfile.lower()
-      i += 2
-    elif myarg == 'targetfolder':
-      targetFolder = os.path.expanduser(sys.argv[i+1])
-      if not os.path.isdir(targetFolder):
-        os.makedirs(targetFolder)
-      i += 2
-    else:
-      controlflow.invalid_argument_exit(sys.argv[i], "gam info cros")
-  if fieldsList:
-    fieldsList.append('deviceId')
-    if guess_aue:
-      fieldsList.append('model')
-    fields = ','.join(set(fieldsList)).replace('.', '/')
-  else:
-    fields = None
-  i = 0
-  device_count = len(devices)
-  for deviceId in devices:
-    i += 1
-    cros = gapi.call(cd.chromeosdevices(), 'get', customerId=GC_Values[GC_CUSTOMER_ID],
-                     deviceId=deviceId, projection=projection, fields=fields)
-    print(f'CrOS Device: {deviceId} ({i} of {device_count})')
-    if 'notes' in cros:
-      cros['notes'] = cros['notes'].replace('\n', '\\n')
-    if 'autoUpdateExpiration' in cros:
-      cros['autoUpdateExpiration'] = utils.formatTimestampYMD(cros['autoUpdateExpiration'])
-    _checkTPMVulnerability(cros)
-    if guess_aue:
-      _guessAUE(cros, guessedAUEs)
-    for up in CROS_SCALAR_PROPERTY_PRINT_ORDER:
-      if up in cros:
-        if isinstance(cros[up], str):
-          print(f'  {up}: {cros[up]}')
-        else:
-          sys.stdout.write(f'  {up}:')
-          display.print_json(cros[up], '  ')
-    if not noLists:
-      activeTimeRanges = _filterTimeRanges(cros.get('activeTimeRanges', []), startDate, endDate)
-      lenATR = len(activeTimeRanges)
-      if lenATR:
-        print('  activeTimeRanges')
-        for activeTimeRange in activeTimeRanges[:min(lenATR, listLimit or lenATR)]:
-          print(f'    date: {activeTimeRange["date"]}')
-          print(f'      activeTime: {str(activeTimeRange["activeTime"])}')
-          print(f'      duration: {utils.formatMilliSeconds(activeTimeRange["activeTime"])}')
-          print(f'      minutes: {activeTimeRange["activeTime"]//60000}')
-      recentUsers = cros.get('recentUsers', [])
-      lenRU = len(recentUsers)
-      if lenRU:
-        print('  recentUsers')
-        for recentUser in recentUsers[:min(lenRU, listLimit or lenRU)]:
-          print(f'    type: {recentUser["type"]}')
-          print(f'      email: {recentUser.get("email", ["Unknown", "UnmanagedUser"][recentUser["type"] == "USER_TYPE_UNMANAGED"])}')
-      deviceFiles = _filterCreateReportTime(cros.get('deviceFiles', []), 'createTime', startDate, endDate)
-      lenDF = len(deviceFiles)
-      if lenDF:
-        print('  deviceFiles')
-        for deviceFile in deviceFiles[:min(lenDF, listLimit or lenDF)]:
-          print(f'    {deviceFile["type"]}: {deviceFile["createTime"]}')
-      if downloadfile:
-        deviceFiles = cros.get('deviceFiles', [])
-        lenDF = len(deviceFiles)
-        if lenDF:
-          if downloadfile == 'latest':
-            deviceFile = deviceFiles[-1]
-          else:
-            for deviceFile in deviceFiles:
-              if deviceFile['createTime'] == downloadfile:
-                break
-            else:
-              print(f'ERROR: file {downloadfile} not available to download.')
-              deviceFile = None
-          if deviceFile:
-            downloadfilename = os.path.join(targetFolder, f'cros-logs-{deviceId}-{deviceFile["createTime"]}.zip')
-            _, content = cd._http.request(deviceFile['downloadUrl'])
-            fileutils.write_file(downloadfilename, content, mode='wb', continue_on_error=True)
-            print(f'Downloaded: {downloadfilename}')
-        elif downloadfile:
-          print('ERROR: no files to download.')
-      cpuStatusReports = _filterCreateReportTime(cros.get('cpuStatusReports', []), 'reportTime', startDate, endDate)
-      lenCSR = len(cpuStatusReports)
-      if lenCSR:
-        print('  cpuStatusReports')
-        for cpuStatusReport in cpuStatusReports[:min(lenCSR, listLimit or lenCSR)]:
-          print(f'    reportTime: {cpuStatusReport["reportTime"]}')
-          print('      cpuTemperatureInfo')
-          for tempInfo in cpuStatusReport.get('cpuTemperatureInfo', []):
-            print(f'        {tempInfo["label"].strip()}: {tempInfo["temperature"]}')
-          print(f'      cpuUtilizationPercentageInfo: {",".join([str(x) for x in cpuStatusReport["cpuUtilizationPercentageInfo"]])}')
-      diskVolumeReports = cros.get('diskVolumeReports', [])
-      lenDVR = len(diskVolumeReports)
-      if lenDVR:
-        print('  diskVolumeReports')
-        print('    volumeInfo')
-        for diskVolumeReport in diskVolumeReports[:min(lenDVR, listLimit or lenDVR)]:
-          volumeInfo = diskVolumeReport['volumeInfo']
-          for volume in volumeInfo:
-            print(f'      volumeId: {volume["volumeId"]}')
-            print(f'        storageFree: {volume["storageFree"]}')
-            print(f'        storageTotal: {volume["storageTotal"]}')
-      systemRamFreeReports = _filterCreateReportTime(cros.get('systemRamFreeReports', []), 'reportTime', startDate, endDate)
-      lenSRFR = len(systemRamFreeReports)
-      if lenSRFR:
-        print('  systemRamFreeReports')
-        for systemRamFreeReport in systemRamFreeReports[:min(lenSRFR, listLimit or lenSRFR)]:
-          print(f'    reportTime: {systemRamFreeReport["reportTime"]}')
-          print(f'      systemRamFreeInfo: {",".join(systemRamFreeReport["systemRamFreeInfo"])}')
 
 def doGetMobileInfo():
   cd = buildGAPIObject('directory')
@@ -10985,7 +8635,7 @@ def printShowTokens(i, entityType, users, csvFormat):
     except (gapi.errors.GapiNotFoundError, gapi.errors.GapiUserNotFoundError, gapi.errors.GapiResourceNotFoundError):
       pass
   if csvFormat:
-    writeCSVfile(csvRows, titles, 'OAuth Tokens', todrive)
+    display.write_csv_file(csvRows, titles, 'OAuth Tokens', todrive)
 
 def doDeprovUser(users):
   cd = buildGAPIObject('directory')
@@ -11098,13 +8748,6 @@ def doDeleteAlias(alias_email=None):
   if not is_user or (not is_user and not is_group):
     gapi.call(cd.groups().aliases(), 'delete', groupKey=alias_email, alias=alias_email)
 
-def doDeleteResourceCalendar():
-  resId = sys.argv[3]
-  cd = buildGAPIObject('directory')
-  print(f'Deleting resource calendar {resId}')
-  gapi.call(cd.resources().calendars(), 'delete',
-            customer=GC_Values[GC_CUSTOMER_ID], calendarResourceId=resId)
-
 def doDeleteOrg():
   cd = buildGAPIObject('directory')
   name = getOrgUnitItem(sys.argv[3])
@@ -11150,208 +8793,6 @@ def send_email(subject, body, recipient=None, sender=None, user=None, method='se
     if method == 'import':
       method = 'import_'
   gapi.call(resource, method, userId=userId, body=api_body, **kwargs)
-
-def addFieldToFieldsList(fieldName, fieldsChoiceMap, fieldsList):
-  fields = fieldsChoiceMap[fieldName.lower()]
-  if isinstance(fields, list):
-    fieldsList.extend(fields)
-  else:
-    fieldsList.append(fields)
-
-# Write a CSV file
-def addTitlesToCSVfile(addTitles, titles):
-  for title in addTitles:
-    if title not in titles:
-      titles.append(title)
-
-def addRowTitlesToCSVfile(row, csvRows, titles):
-  csvRows.append(row)
-  for title in row:
-    if title not in titles:
-      titles.append(title)
-
-# fieldName is command line argument
-# fieldNameMap maps fieldName to API field names; CSV file header will be API field name
-#ARGUMENT_TO_PROPERTY_MAP = {
-#  u'admincreated': [u'adminCreated'],
-#  u'aliases': [u'aliases', u'nonEditableAliases'],
-#  }
-# fieldsList is the list of API fields
-# fieldsTitles maps the API field name to the CSV file header
-def addFieldToCSVfile(fieldName, fieldNameMap, fieldsList, fieldsTitles, titles):
-  for ftList in fieldNameMap[fieldName]:
-    if ftList not in fieldsTitles:
-      fieldsList.append(ftList)
-      fieldsTitles[ftList] = ftList
-      addTitlesToCSVfile([ftList], titles)
-
-# fieldName is command line argument
-# fieldNameTitleMap maps fieldName to API field name and CSV file header
-#ARGUMENT_TO_PROPERTY_TITLE_MAP = {
-#  u'admincreated': [u'adminCreated', u'Admin_Created'],
-#  u'aliases': [u'aliases', u'Aliases', u'nonEditableAliases', u'NonEditableAliases'],
-#  }
-# fieldsList is the list of API fields
-# fieldsTitles maps the API field name to the CSV file header
-def addFieldTitleToCSVfile(fieldName, fieldNameTitleMap, fieldsList, fieldsTitles, titles):
-  ftList = fieldNameTitleMap[fieldName]
-  for i in range(0, len(ftList), 2):
-    if ftList[i] not in fieldsTitles:
-      fieldsList.append(ftList[i])
-      fieldsTitles[ftList[i]] = ftList[i+1]
-      addTitlesToCSVfile([ftList[i+1]], titles)
-
-def sortCSVTitles(firstTitle, titles):
-  restoreTitles = []
-  for title in firstTitle:
-    if title in titles:
-      titles.remove(title)
-      restoreTitles.append(title)
-  titles.sort()
-  for title in restoreTitles[::-1]:
-    titles.insert(0, title)
-
-def QuotedArgumentList(items):
-  return ' '.join([item if item and (item.find(' ') == -1) and (item.find(',') == -1) else '"'+item+'"' for item in items])
-
-def writeCSVfile(csvRows, titles, list_type, todrive):
-  def rowDateTimeFilterMatch(dateMode, rowDate, op, filterDate):
-    if not rowDate or not isinstance(rowDate, str):
-      return False
-    try:
-      rowTime = dateutil.parser.parse(rowDate, ignoretz=True)
-      if dateMode:
-        rowDate = datetime.datetime(rowTime.year, rowTime.month, rowTime.day).isoformat()+'Z'
-    except ValueError:
-      rowDate = NEVER_TIME
-    if op == '<':
-      return rowDate < filterDate
-    if op == '<=':
-      return rowDate <= filterDate
-    if op == '>':
-      return rowDate > filterDate
-    if op == '>=':
-      return rowDate >= filterDate
-    if op == '!=':
-      return rowDate != filterDate
-    return rowDate == filterDate
-
-  def rowCountFilterMatch(rowCount, op, filterCount):
-    if isinstance(rowCount, str):
-      if not rowCount.isdigit():
-        return False
-      rowCount = int(rowCount)
-    elif not isinstance(rowCount, int):
-      return False
-    if op == '<':
-      return rowCount < filterCount
-    if op == '<=':
-      return rowCount <= filterCount
-    if op == '>':
-      return rowCount > filterCount
-    if op == '>=':
-      return rowCount >= filterCount
-    if op == '!=':
-      return rowCount != filterCount
-    return rowCount == filterCount
-
-  def rowBooleanFilterMatch(rowBoolean, filterBoolean):
-    if not isinstance(rowBoolean, bool):
-      return False
-    return rowBoolean == filterBoolean
-
-  def headerFilterMatch(title):
-    for filterStr in GC_Values[GC_CSV_HEADER_FILTER]:
-      if filterStr.match(title):
-        return True
-    return False
-
-  if GC_Values[GC_CSV_ROW_FILTER]:
-    for column, filterVal in iter(GC_Values[GC_CSV_ROW_FILTER].items()):
-      if column not in titles:
-        sys.stderr.write(f'WARNING: Row filter column "{column}" is not in output columns\n')
-        continue
-      if filterVal[0] == 'regex':
-        csvRows = [row for row in csvRows if filterVal[1].search(str(row.get(column, '')))]
-      elif filterVal[0] == 'notregex':
-        csvRows = [row for row in csvRows if not filterVal[1].search(str(row.get(column, '')))]
-      elif filterVal[0] in ['date', 'time']:
-        csvRows = [row for row in csvRows if rowDateTimeFilterMatch(filterVal[0] == 'date', row.get(column, ''), filterVal[1], filterVal[2])]
-      elif filterVal[0] == 'count':
-        csvRows = [row for row in csvRows if rowCountFilterMatch(row.get(column, 0), filterVal[1], filterVal[2])]
-      else: #boolean
-        csvRows = [row for row in csvRows if rowBooleanFilterMatch(row.get(column, False), filterVal[1])]
-  if GC_Values[GC_CSV_HEADER_FILTER]:
-    titles = [t for t in titles if headerFilterMatch(t)]
-    if not titles:
-      controlflow.system_error_exit(3, 'No columns selected with GAM_CSV_HEADER_FILTER\n')
-      return
-  csv.register_dialect('nixstdout', lineterminator='\n')
-  if todrive:
-    write_to = io.StringIO()
-  else:
-    write_to = sys.stdout
-  writer = csv.DictWriter(write_to, fieldnames=titles, dialect='nixstdout', extrasaction='ignore', quoting=csv.QUOTE_MINIMAL)
-  try:
-    writer.writerow(dict((item, item) for item in writer.fieldnames))
-    writer.writerows(csvRows)
-  except IOError as e:
-    controlflow.system_error_exit(6, e)
-  if todrive:
-    admin_email = _getValueFromOAuth('email')
-    _, drive = buildDrive3GAPIObject(admin_email)
-    if not drive:
-      print(f'''\nGAM is not authorized to create Drive files. Please run:
-
-gam user {admin_email} check serviceaccount
-
-and follow recommend steps to authorize GAM for Drive access.''')
-      sys.exit(5)
-    result = gapi.call(drive.about(), 'get', fields='maxImportSizes')
-    columns = len(titles)
-    rows = len(csvRows)
-    cell_count = rows * columns
-    data_size = len(write_to.getvalue())
-    max_sheet_bytes = int(result['maxImportSizes'][MIMETYPE_GA_SPREADSHEET])
-    if cell_count > MAX_GOOGLE_SHEET_CELLS or data_size > max_sheet_bytes:
-      print(f'{WARNING_PREFIX}{MESSAGE_RESULTS_TOO_LARGE_FOR_GOOGLE_SPREADSHEET}')
-      mimeType = 'text/csv'
-    else:
-      mimeType = MIMETYPE_GA_SPREADSHEET
-    body = {'description': QuotedArgumentList(sys.argv),
-            'name': f'{GC_Values[GC_DOMAIN]} - {list_type}',
-            'mimeType': mimeType}
-    result = gapi.call(drive.files(), 'create', fields='webViewLink',
-                       body=body,
-                       media_body=googleapiclient.http.MediaInMemoryUpload(write_to.getvalue().encode(),
-                                                                           mimetype='text/csv'))
-    file_url = result['webViewLink']
-    if GC_Values[GC_NO_BROWSER]:
-      msg_txt = f'Drive file uploaded to:\n {file_url}'
-      msg_subj = f'{GC_Values[GC_DOMAIN]} - {list_type}'
-      send_email(msg_subj, msg_txt)
-      print(msg_txt)
-    else:
-      webbrowser.open(file_url)
-
-def flatten_json(structure, key='', path='', flattened=None, listLimit=None):
-  if flattened is None:
-    flattened = {}
-  if not isinstance(structure, (dict, list)):
-    flattened[((path + '.') if path else '') + key] = structure
-  elif isinstance(structure, list):
-    for i, item in enumerate(structure):
-      if listLimit and (i >= listLimit):
-        break
-      flatten_json(item, f'{i}', '.'.join([item for item in [path, key] if item]), flattened=flattened, listLimit=listLimit)
-  else:
-    for new_key, value in list(structure.items()):
-      if new_key in ['kind', 'etag', '@type']:
-        continue
-      if value == NEVER_TIME:
-        value = 'Never'
-      flatten_json(value, new_key, '.'.join([item for item in [path, key] if item]), flattened=flattened, listLimit=listLimit)
-  return flattened
 
 USER_ARGUMENT_TO_PROPERTY_MAP = {
   'address': ['addresses',],
@@ -11435,7 +8876,7 @@ def doPrintUsers():
   fieldsTitles = {}
   titles = []
   csvRows = []
-  addFieldToCSVfile('primaryemail', USER_ARGUMENT_TO_PROPERTY_MAP, fieldsList, fieldsTitles, titles)
+  display.add_field_to_csv_file('primaryemail', USER_ARGUMENT_TO_PROPERTY_MAP, fieldsList, fieldsTitles, titles)
   customer = GC_Values[GC_CUSTOMER_ID]
   domain = None
   queries = [None]
@@ -11504,7 +8945,7 @@ def doPrintUsers():
     elif myarg in USER_ARGUMENT_TO_PROPERTY_MAP:
       if not fieldsList:
         fieldsList = ['primaryEmail',]
-      addFieldToCSVfile(myarg, USER_ARGUMENT_TO_PROPERTY_MAP, fieldsList, fieldsTitles, titles)
+      display.add_field_to_csv_file(myarg, USER_ARGUMENT_TO_PROPERTY_MAP, fieldsList, fieldsTitles, titles)
       i += 1
     elif myarg == 'fields':
       if not fieldsList:
@@ -11512,7 +8953,7 @@ def doPrintUsers():
       fieldNameList = sys.argv[i+1]
       for field in fieldNameList.lower().replace(',', ' ').split():
         if field in USER_ARGUMENT_TO_PROPERTY_MAP:
-          addFieldToCSVfile(field, USER_ARGUMENT_TO_PROPERTY_MAP, fieldsList, fieldsTitles, titles)
+          display.add_field_to_csv_file(field, USER_ARGUMENT_TO_PROPERTY_MAP, fieldsList, fieldsTitles, titles)
         else:
           controlflow.invalid_argument_exit(field, "gam print users fields")
       i += 2
@@ -11543,9 +8984,9 @@ def doPrintUsers():
         user_email = user['primaryEmail']
         if user_email.find('@') != -1:
           user['primaryEmailLocal'], user['primaryEmailDomain'] = splitEmailAddress(user_email)
-      addRowTitlesToCSVfile(flatten_json(user), csvRows, titles)
+      display.add_row_titles_to_csv_file(utils.flatten_json(user), csvRows, titles)
   if sortHeaders:
-    sortCSVTitles(['primaryEmail',], titles)
+    display.sort_csv_titles(['primaryEmail',], titles)
   if getGroupFeed:
     i = 0
     count = len(csvRows)
@@ -11564,7 +9005,7 @@ def doPrintUsers():
         u_licenses = licenses.get(user['primaryEmail'].lower())
         if u_licenses:
           user['Licenses'] = licenseDelimiter.join([_skuIdToDisplayName(skuId) for skuId in u_licenses])
-  writeCSVfile(csvRows, titles, 'Users', todrive)
+  display.write_csv_file(csvRows, titles, 'Users', todrive)
 
 def doPrintShowAlerts():
   _, ac = buildAlertCenterGAPIObject(_getValueFromOAuth('email'))
@@ -11572,12 +9013,12 @@ def doPrintShowAlerts():
   titles = []
   csv_rows = []
   for alert in alerts:
-    aj = flatten_json(alert)
+    aj = utils.flatten_json(alert)
     for field in aj:
       if field not in titles:
         titles.append(field)
     csv_rows.append(aj)
-  writeCSVfile(csv_rows, titles, 'Alerts', False)
+  display.write_csv_file(csv_rows, titles, 'Alerts', False)
 
 def doPrintShowAlertFeedback():
   _, ac = buildAlertCenterGAPIObject(_getValueFromOAuth('email'))
@@ -11585,12 +9026,9 @@ def doPrintShowAlertFeedback():
   for feedbac in feedback:
     print(feedbac)
 
-def _getEnumValuesMinusUnspecified(values):
-  return [a_type for a_type in values if '_UNSPECIFIED' not in a_type]
-
 def doCreateAlertFeedback():
   _, ac = buildAlertCenterGAPIObject(_getValueFromOAuth('email'))
-  valid_types = _getEnumValuesMinusUnspecified(ac._rootDesc['schemas']['AlertFeedback']['properties']['type']['enum'])
+  valid_types = gapi.get_enum_values_minus_unspecified(ac._rootDesc['schemas']['AlertFeedback']['properties']['type']['enum'])
   alertId = sys.argv[3]
   body = {'type': sys.argv[4].upper()}
   if body['type'] not in valid_types:
@@ -11686,7 +9124,7 @@ def doPrintGroups():
   fieldsTitles = {}
   titles = []
   csvRows = []
-  addFieldTitleToCSVfile('email', GROUP_ARGUMENT_TO_PROPERTY_TITLE_MAP, cdfieldsList, fieldsTitles, titles)
+  display.add_field_title_to_csv_file('email', GROUP_ARGUMENT_TO_PROPERTY_TITLE_MAP, cdfieldsList, fieldsTitles, titles)
   roles = []
   getSettings = sortHeaders = False
   while i < len(sys.argv):
@@ -11713,7 +9151,7 @@ def doPrintGroups():
       aliasDelimiter = memberDelimiter = sys.argv[i+1]
       i += 2
     elif myarg in GROUP_ARGUMENT_TO_PROPERTY_TITLE_MAP:
-      addFieldTitleToCSVfile(myarg, GROUP_ARGUMENT_TO_PROPERTY_TITLE_MAP, cdfieldsList, fieldsTitles, titles)
+      display.add_field_title_to_csv_file(myarg, GROUP_ARGUMENT_TO_PROPERTY_TITLE_MAP, cdfieldsList, fieldsTitles, titles)
       i += 1
     elif myarg == 'settings':
       getSettings = True
@@ -11724,7 +9162,7 @@ def doPrintGroups():
       gsfieldsList = []
       fieldsTitles = {}
       for field in GROUP_ARGUMENT_TO_PROPERTY_TITLE_MAP:
-        addFieldTitleToCSVfile(field, GROUP_ARGUMENT_TO_PROPERTY_TITLE_MAP, cdfieldsList, fieldsTitles, titles)
+        display.add_field_title_to_csv_file(field, GROUP_ARGUMENT_TO_PROPERTY_TITLE_MAP, cdfieldsList, fieldsTitles, titles)
       i += 1
     elif myarg == 'sortheaders':
       sortHeaders = True
@@ -11733,12 +9171,12 @@ def doPrintGroups():
       fieldNameList = sys.argv[i+1]
       for field in fieldNameList.lower().replace(',', ' ').split():
         if field in GROUP_ARGUMENT_TO_PROPERTY_TITLE_MAP:
-          addFieldTitleToCSVfile(field, GROUP_ARGUMENT_TO_PROPERTY_TITLE_MAP, cdfieldsList, fieldsTitles, titles)
+          display.add_field_title_to_csv_file(field, GROUP_ARGUMENT_TO_PROPERTY_TITLE_MAP, cdfieldsList, fieldsTitles, titles)
         elif field in GROUP_ATTRIBUTES_ARGUMENT_TO_PROPERTY_MAP:
-          addFieldToCSVfile(field, {field: [GROUP_ATTRIBUTES_ARGUMENT_TO_PROPERTY_MAP[field]]}, gsfieldsList, fieldsTitles, titles)
+          display.add_field_to_csv_file(field, {field: [GROUP_ATTRIBUTES_ARGUMENT_TO_PROPERTY_MAP[field]]}, gsfieldsList, fieldsTitles, titles)
         elif field == 'collaborative':
           for attrName in COLLABORATIVE_INBOX_ATTRIBUTES:
-            addFieldToCSVfile(attrName, {attrName: [attrName]}, gsfieldsList, fieldsTitles, titles)
+            display.add_field_to_csv_file(attrName, {attrName: [attrName]}, gsfieldsList, fieldsTitles, titles)
         else:
           controlflow.invalid_argument_exit(field, "gam print groups fields")
       i += 2
@@ -11773,17 +9211,17 @@ def doPrintGroups():
   roles = ','.join(sorted(set(roles)))
   if roles:
     if members:
-      addTitlesToCSVfile(['MembersCount',], titles)
+      display.add_titles_to_csv_file(['MembersCount',], titles)
       if not membersCountOnly:
-        addTitlesToCSVfile(['Members',], titles)
+        display.add_titles_to_csv_file(['Members',], titles)
     if managers:
-      addTitlesToCSVfile(['ManagersCount',], titles)
+      display.add_titles_to_csv_file(['ManagersCount',], titles)
       if not managersCountOnly:
-        addTitlesToCSVfile(['Managers',], titles)
+        display.add_titles_to_csv_file(['Managers',], titles)
     if owners:
-      addTitlesToCSVfile(['OwnersCount',], titles)
+      display.add_titles_to_csv_file(['OwnersCount',], titles)
       if not ownersCountOnly:
-        addTitlesToCSVfile(['Owners',], titles)
+        display.add_titles_to_csv_file(['Owners',], titles)
   printGettingAllItems('Groups', None)
   page_message = gapi.got_total_items_first_last_msg('Groups')
   entityList = gapi.get_all_pages(cd.groups(), 'list', 'groups',
@@ -11877,8 +9315,8 @@ def doPrintGroups():
         sys.stderr.write(f" Settings unavailable for group {groupEmail}{currentCountNL(i, count)}")
     csvRows.append(group)
   if sortHeaders:
-    sortCSVTitles(['Email',], titles)
-  writeCSVfile(csvRows, titles, 'Groups', todrive)
+    display.sort_csv_titles(['Email',], titles)
+  display.write_csv_file(csvRows, titles, 'Groups', todrive)
 
 def doPrintOrgs():
   print_order = ['orgUnitPath', 'orgUnitId', 'name', 'description',
@@ -11955,7 +9393,7 @@ def doPrintOrgs():
   titles = sorted(titles, key=print_order.index)
   # sort results similar to how they list in admin console
   csvRows.sort(key=lambda x: x['orgUnitPath'].lower(), reverse=False)
-  writeCSVfile(csvRows, titles, 'Orgs', todrive)
+  display.write_csv_file(csvRows, titles, 'Orgs', todrive)
 
 def doPrintAliases():
   cd = buildGAPIObject('directory')
@@ -12013,7 +9451,7 @@ def doPrintAliases():
         csvRows.append({'Alias': alias, 'Target': group['email'], 'TargetType': 'Group'})
       for alias in group.get('nonEditableAliases', []):
         csvRows.append({'NonEditableAlias': alias, 'Target': group['email'], 'TargetType': 'Group'})
-  writeCSVfile(csvRows, titles, 'Aliases', todrive)
+  display.write_csv_file(csvRows, titles, 'Aliases', todrive)
 
 def doPrintGroupMembers():
   cd = buildGAPIObject('directory')
@@ -12127,107 +9565,7 @@ def doPrintGroupMembers():
           memberName = 'Unknown'
         member['name'] = memberName
       csvRows.append(member)
-  writeCSVfile(csvRows, titles, 'Group Members', todrive)
-
-def doPrintVaultMatters():
-  v = buildGAPIObject('vault')
-  todrive = False
-  csvRows = []
-  initialTitles = ['matterId', 'name', 'description', 'state']
-  titles = initialTitles[:]
-  view = 'FULL'
-  i = 3
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower().replace('_', '')
-    if myarg == 'todrive':
-      todrive = True
-      i += 1
-    elif myarg in PROJECTION_CHOICES_MAP:
-      view = PROJECTION_CHOICES_MAP[myarg]
-      i += 1
-    else:
-      controlflow.invalid_argument_exit(myarg, "gam print matters")
-  printGettingAllItems('Vault Matters', None)
-  page_message = gapi.got_total_items_msg('Vault Matters', '...\n')
-  matters = gapi.get_all_pages(v.matters(), 'list', 'matters', page_message=page_message, view=view)
-  for matter in matters:
-    addRowTitlesToCSVfile(flatten_json(matter), csvRows, titles)
-  sortCSVTitles(initialTitles, titles)
-  writeCSVfile(csvRows, titles, 'Vault Matters', todrive)
-
-def doPrintVaultExports():
-  v = buildGAPIObject('vault')
-  todrive = False
-  csvRows = []
-  initialTitles = ['matterId', 'id', 'name', 'createTime', 'status']
-  titles = initialTitles[:]
-  matters = []
-  matterIds = []
-  i = 3
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower().replace('_', '')
-    if myarg == 'todrive':
-      todrive = True
-      i += 1
-    elif myarg in ['matter', 'matters']:
-      matters = sys.argv[i+1].split(',')
-      i += 2
-    else:
-      controlflow.invalid_argument_exit(myarg, "gam print exports")
-  if not matters:
-    matters_results = gapi.get_all_pages(v.matters(), 'list', 'matters', view='BASIC', fields='matters(matterId,state),nextPageToken')
-    for matter in matters_results:
-      if matter['state'] != 'OPEN':
-        print(f'ignoring matter {matter["matterId"]} in state {matter["state"]}')
-        continue
-      matterIds.append(matter['matterId'])
-  else:
-    for matter in matters:
-      matterIds.append(getMatterItem(v, matter))
-  for matterId in matterIds:
-    sys.stderr.write(f'Retrieving exports for matter {matterId}\n')
-    exports = gapi.get_all_pages(v.matters().exports(), 'list', 'exports', matterId=matterId)
-    for export in exports:
-      addRowTitlesToCSVfile(flatten_json(export, flattened={'matterId': matterId}), csvRows, titles)
-  sortCSVTitles(initialTitles, titles)
-  writeCSVfile(csvRows, titles, 'Vault Exports', todrive)
-
-def doPrintVaultHolds():
-  v = buildGAPIObject('vault')
-  todrive = False
-  csvRows = []
-  initialTitles = ['matterId', 'holdId', 'name', 'corpus', 'updateTime']
-  titles = initialTitles[:]
-  matters = []
-  matterIds = []
-  i = 3
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower().replace('_', '')
-    if myarg == 'todrive':
-      todrive = True
-      i += 1
-    elif myarg in ['matter', 'matters']:
-      matters = sys.argv[i+1].split(',')
-      i += 2
-    else:
-      controlflow.invalid_argument_exit(myarg, "gam print holds")
-  if not matters:
-    matters_results = gapi.get_all_pages(v.matters(), 'list', 'matters', view='BASIC', fields='matters(matterId,state),nextPageToken')
-    for matter in matters_results:
-      if matter['state'] != 'OPEN':
-        print(f'ignoring matter {matter["matterId"]} in state {matter["state"]}')
-        continue
-      matterIds.append(matter['matterId'])
-  else:
-    for matter in matters:
-      matterIds.append(getMatterItem(v, matter))
-  for matterId in matterIds:
-    sys.stderr.write(f'Retrieving holds for matter {matterId}\n')
-    holds = gapi.get_all_pages(v.matters().holds(), 'list', 'holds', matterId=matterId)
-    for hold in holds:
-      addRowTitlesToCSVfile(flatten_json(hold, flattened={'matterId': matterId}), csvRows, titles)
-  sortCSVTitles(initialTitles, titles)
-  writeCSVfile(csvRows, titles, 'Vault Holds', todrive)
+  display.write_csv_file(csvRows, titles, 'Group Members', todrive)
 
 def doPrintMobileDevices():
   cd = buildGAPIObject('directory')
@@ -12328,335 +9666,8 @@ def doPrintMobileDevices():
           else:
             row[attrib] = mobile[attrib]
       csvRows.append(row)
-  sortCSVTitles(['resourceId', 'deviceId', 'serialNumber', 'name', 'email', 'status'], titles)
-  writeCSVfile(csvRows, titles, 'Mobile', todrive)
-
-def doPrintCrosActivity():
-  cd = buildGAPIObject('directory')
-  todrive = False
-  titles = ['deviceId', 'annotatedAssetId', 'annotatedLocation', 'serialNumber', 'orgUnitPath']
-  csvRows = []
-  fieldsList = ['deviceId', 'annotatedAssetId', 'annotatedLocation', 'serialNumber', 'orgUnitPath']
-  startDate = endDate = None
-  selectActiveTimeRanges = selectDeviceFiles = selectRecentUsers = False
-  listLimit = 0
-  delimiter = ','
-  orgUnitPath = None
-  queries = [None]
-  i = 3
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower().replace('_', '')
-    if myarg in ['query', 'queries']:
-      queries = getQueries(myarg, sys.argv[i+1])
-      i += 2
-    elif myarg == 'limittoou':
-      orgUnitPath = getOrgUnitItem(sys.argv[i+1])
-      i += 2
-    elif myarg == 'todrive':
-      todrive = True
-      i += 1
-    elif myarg in CROS_ACTIVE_TIME_RANGES_ARGUMENTS:
-      selectActiveTimeRanges = True
-      i += 1
-    elif myarg in CROS_DEVICE_FILES_ARGUMENTS:
-      selectDeviceFiles = True
-      i += 1
-    elif myarg in CROS_RECENT_USERS_ARGUMENTS:
-      selectRecentUsers = True
-      i += 1
-    elif myarg == 'both':
-      selectActiveTimeRanges = selectRecentUsers = True
-      i += 1
-    elif myarg == 'all':
-      selectActiveTimeRanges = selectDeviceFiles = selectRecentUsers = True
-      i += 1
-    elif myarg in CROS_START_ARGUMENTS:
-      startDate = _getFilterDate(sys.argv[i+1])
-      i += 2
-    elif myarg in CROS_END_ARGUMENTS:
-      endDate = _getFilterDate(sys.argv[i+1])
-      i += 2
-    elif myarg == 'listlimit':
-      listLimit = getInteger(sys.argv[i+1], myarg, minVal=0)
-      i += 2
-    elif myarg == 'delimiter':
-      delimiter = sys.argv[i+1]
-      i += 2
-    else:
-      controlflow.invalid_argument_exit(sys.argv[i], "gam print crosactivity")
-  if not selectActiveTimeRanges and not selectDeviceFiles and not selectRecentUsers:
-    selectActiveTimeRanges = selectRecentUsers = True
-  if selectRecentUsers:
-    fieldsList.append('recentUsers')
-    addTitlesToCSVfile(['recentUsers.email',], titles)
-  if selectActiveTimeRanges:
-    fieldsList.append('activeTimeRanges')
-    addTitlesToCSVfile(['activeTimeRanges.date', 'activeTimeRanges.duration', 'activeTimeRanges.minutes'], titles)
-  if selectDeviceFiles:
-    fieldsList.append('deviceFiles')
-    addTitlesToCSVfile(['deviceFiles.type', 'deviceFiles.createTime'], titles)
-  fields = f'nextPageToken,chromeosdevices({",".join(fieldsList)})'
-  for query in queries:
-    printGettingAllItems('CrOS Devices', query)
-    page_message = gapi.got_total_items_msg('CrOS Devices', '...\n')
-    all_cros = gapi.get_all_pages(cd.chromeosdevices(), 'list', 'chromeosdevices', page_message=page_message,
-                                  query=query, customerId=GC_Values[GC_CUSTOMER_ID], projection='FULL',
-                                  fields=fields, orgUnitPath=orgUnitPath)
-    for cros in all_cros:
-      row = {}
-      for attrib in cros:
-        if attrib not in ['recentUsers', 'activeTimeRanges', 'deviceFiles']:
-          row[attrib] = cros[attrib]
-      if selectActiveTimeRanges:
-        activeTimeRanges = _filterTimeRanges(cros.get('activeTimeRanges', []), startDate, endDate)
-        lenATR = len(activeTimeRanges)
-        for activeTimeRange in activeTimeRanges[:min(lenATR, listLimit or lenATR)]:
-          new_row = row.copy()
-          new_row['activeTimeRanges.date'] = activeTimeRange['date']
-          new_row['activeTimeRanges.duration'] = utils.formatMilliSeconds(activeTimeRange['activeTime'])
-          new_row['activeTimeRanges.minutes'] = activeTimeRange['activeTime']//60000
-          csvRows.append(new_row)
-      if selectRecentUsers:
-        recentUsers = cros.get('recentUsers', [])
-        lenRU = len(recentUsers)
-        row['recentUsers.email'] = delimiter.join([recent_user.get('email', ['Unknown', 'UnmanagedUser'][recent_user['type'] == 'USER_TYPE_UNMANAGED']) for recent_user in recentUsers[:min(lenRU, listLimit or lenRU)]])
-        csvRows.append(row)
-      if selectDeviceFiles:
-        deviceFiles = _filterCreateReportTime(cros.get('deviceFiles', []), 'createTime', startDate, endDate)
-        lenDF = len(deviceFiles)
-        for deviceFile in deviceFiles[:min(lenDF, listLimit or lenDF)]:
-          new_row = row.copy()
-          new_row['deviceFiles.type'] = deviceFile['type']
-          new_row['deviceFiles.createTime'] = deviceFile['createTime']
-          csvRows.append(new_row)
-  writeCSVfile(csvRows, titles, 'CrOS Activity', todrive)
-
-def _checkTPMVulnerability(cros):
-  if 'tpmVersionInfo' in cros and 'firmwareVersion' in cros['tpmVersionInfo']:
-    if cros['tpmVersionInfo']['firmwareVersion'] in CROS_TPM_VULN_VERSIONS:
-      cros['tpmVersionInfo']['tpmVulnerability'] = 'VULNERABLE'
-    elif cros['tpmVersionInfo']['firmwareVersion'] in CROS_TPM_FIXED_VERSIONS:
-      cros['tpmVersionInfo']['tpmVulnerability'] = 'UPDATED'
-    else:
-      cros['tpmVersionInfo']['tpmVulnerability'] = 'NOT IMPACTED'
-
-def _guessAUE(cros, guessedAUEs):
-  if not GC_Values.get('CROS_AUE_DATES', None):
-    GC_Values['CROS_AUE_DATES'] = json.loads(getGAMProjectFile('cros-aue-dates.json'))
-  crosModel = cros.get('model')
-  if crosModel:
-    if crosModel not in guessedAUEs:
-      closest_match = difflib.get_close_matches(crosModel.lower(), GC_Values['CROS_AUE_DATES'], n=1)
-      if closest_match:
-        guessedAUEs[crosModel] = {'guessedAUEDate': GC_Values['CROS_AUE_DATES'][closest_match[0]],
-                                  'guessedAUEModel': closest_match[0]}
-      else:
-        guessedAUEs[crosModel] = {'guessedAUEDate': u'',
-                                  'guessedAUEModel': u''}
-    cros.update(guessedAUEs[crosModel])
-
-def doPrintCrosDevices():
-  def _getSelectedLists(myarg):
-    if myarg in CROS_ACTIVE_TIME_RANGES_ARGUMENTS:
-      selectedLists['activeTimeRanges'] = True
-    elif myarg in CROS_RECENT_USERS_ARGUMENTS:
-      selectedLists['recentUsers'] = True
-    elif myarg in CROS_DEVICE_FILES_ARGUMENTS:
-      selectedLists['deviceFiles'] = True
-    elif myarg in CROS_CPU_STATUS_REPORTS_ARGUMENTS:
-      selectedLists['cpuStatusReports'] = True
-    elif myarg in CROS_DISK_VOLUME_REPORTS_ARGUMENTS:
-      selectedLists['diskVolumeReports'] = True
-    elif myarg in CROS_SYSTEM_RAM_FREE_REPORTS_ARGUMENTS:
-      selectedLists['systemRamFreeReports'] = True
-
-  cd = buildGAPIObject('directory')
-  todrive = False
-  fieldsList = []
-  fieldsTitles = {}
-  titles = []
-  csvRows = []
-  addFieldToCSVfile('deviceid', CROS_ARGUMENT_TO_PROPERTY_MAP, fieldsList, fieldsTitles, titles)
-  projection = orderBy = sortOrder = orgUnitPath = None
-  queries = [None]
-  guess_aue = noLists = sortHeaders = False
-  guessedAUEs = {}
-  selectedLists = {}
-  startDate = endDate = None
-  listLimit = 0
-  i = 3
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower().replace('_', '')
-    if myarg in ['query', 'queries']:
-      queries = getQueries(myarg, sys.argv[i+1])
-      i += 2
-    elif myarg == 'limittoou':
-      orgUnitPath = getOrgUnitItem(sys.argv[i+1])
-      i += 2
-    elif myarg == 'todrive':
-      todrive = True
-      i += 1
-    elif myarg == 'nolists':
-      noLists = True
-      selectedLists = {}
-      i += 1
-    elif myarg == 'listlimit':
-      listLimit = getInteger(sys.argv[i+1], myarg, minVal=0)
-      i += 2
-    elif myarg == 'guessaue':
-      guess_aue = True
-      i += 1
-    elif myarg in CROS_START_ARGUMENTS:
-      startDate = _getFilterDate(sys.argv[i+1])
-      i += 2
-    elif myarg in CROS_END_ARGUMENTS:
-      endDate = _getFilterDate(sys.argv[i+1])
-      i += 2
-    elif myarg == 'orderby':
-      orderBy = sys.argv[i+1].lower().replace('_', '')
-      validOrderBy = ['location', 'user', 'lastsync', 'notes', 'serialnumber', 'status', 'supportenddate']
-      if orderBy not in validOrderBy:
-        controlflow.expected_argument_exit("orderby", ", ".join(validOrderBy), orderBy)
-      if orderBy == 'location':
-        orderBy = 'annotatedLocation'
-      elif orderBy == 'user':
-        orderBy = 'annotatedUser'
-      elif orderBy == 'lastsync':
-        orderBy = 'lastSync'
-      elif orderBy == 'serialnumber':
-        orderBy = 'serialNumber'
-      elif orderBy == 'supportenddate':
-        orderBy = 'supportEndDate'
-      i += 2
-    elif myarg in SORTORDER_CHOICES_MAP:
-      sortOrder = SORTORDER_CHOICES_MAP[myarg]
-      i += 1
-    elif myarg in PROJECTION_CHOICES_MAP:
-      projection = PROJECTION_CHOICES_MAP[myarg]
-      sortHeaders = True
-      if projection == 'FULL':
-        fieldsList = []
-      else:
-        fieldsList = CROS_BASIC_FIELDS_LIST[:]
-      i += 1
-    elif myarg == 'allfields':
-      projection = 'FULL'
-      sortHeaders = True
-      fieldsList = []
-      i += 1
-    elif myarg == 'sortheaders':
-      sortHeaders = True
-      i += 1
-    elif myarg in CROS_LISTS_ARGUMENTS:
-      _getSelectedLists(myarg)
-      i += 1
-    elif myarg in CROS_ARGUMENT_TO_PROPERTY_MAP:
-      addFieldToFieldsList(myarg, CROS_ARGUMENT_TO_PROPERTY_MAP, fieldsList)
-      i += 1
-    elif myarg == 'fields':
-      fieldNameList = sys.argv[i+1]
-      for field in fieldNameList.lower().replace(',', ' ').split():
-        if field in CROS_LISTS_ARGUMENTS:
-          _getSelectedLists(field)
-        elif field in CROS_ARGUMENT_TO_PROPERTY_MAP:
-          addFieldToFieldsList(field, CROS_ARGUMENT_TO_PROPERTY_MAP, fieldsList)
-        else:
-          controlflow.invalid_argument_exit(field, "gam print cros fields")
-      i += 2
-    else:
-      controlflow.invalid_argument_exit(sys.argv[i], "gam print cros")
-  if selectedLists:
-    noLists = False
-    projection = 'FULL'
-    for selectList in selectedLists:
-      addFieldToFieldsList(selectList, CROS_ARGUMENT_TO_PROPERTY_MAP, fieldsList)
-  if fieldsList:
-    fieldsList.append('deviceId')
-    if guess_aue:
-      fieldsList.append('model')
-    fields = f'nextPageToken,chromeosdevices({",".join(set(fieldsList))})'.replace('.', '/')
-  else:
-    fields = None
-  for query in queries:
-    printGettingAllItems('CrOS Devices', query)
-    page_message = gapi.got_total_items_msg('CrOS Devices', '...\n')
-    all_cros = gapi.get_all_pages(cd.chromeosdevices(), 'list', 'chromeosdevices', page_message=page_message,
-                                  query=query, customerId=GC_Values[GC_CUSTOMER_ID], projection=projection, orgUnitPath=orgUnitPath,
-                                  orderBy=orderBy, sortOrder=sortOrder, fields=fields)
-    for cros in all_cros:
-      _checkTPMVulnerability(cros)
-      if guess_aue:
-        _guessAUE(cros, guessedAUEs)
-    if not noLists and not selectedLists:
-      for cros in all_cros:
-        if 'notes' in cros:
-          cros['notes'] = cros['notes'].replace('\n', '\\n')
-        if 'autoUpdateExpiration' in cros:
-          cros['autoUpdateExpiration'] = utils.formatTimestampYMD(cros['autoUpdateExpiration'])
-        for cpuStatusReport in cros.get('cpuStatusReports', []):
-          for tempInfo in cpuStatusReport.get('cpuTemperatureInfo', []):
-            tempInfo['label'] = tempInfo['label'].strip()
-        addRowTitlesToCSVfile(flatten_json(cros, listLimit=listLimit), csvRows, titles)
-      continue
-    for cros in all_cros:
-      if 'notes' in cros:
-        cros['notes'] = cros['notes'].replace('\n', '\\n')
-      if 'autoUpdateExpiration' in cros:
-        cros['autoUpdateExpiration'] = utils.formatTimestampYMD(cros['autoUpdateExpiration'])
-      row = {}
-      for attrib in cros:
-        if attrib not in set(['kind', 'etag', 'tpmVersionInfo', 'recentUsers', 'activeTimeRanges',
-                              'deviceFiles', 'cpuStatusReports', 'diskVolumeReports', 'systemRamFreeReports']):
-          row[attrib] = cros[attrib]
-      activeTimeRanges = _filterTimeRanges(cros.get('activeTimeRanges', []) if selectedLists.get('activeTimeRanges') else [], startDate, endDate)
-      recentUsers = cros.get('recentUsers', []) if selectedLists.get('recentUsers') else []
-      deviceFiles = _filterCreateReportTime(cros.get('deviceFiles', []) if selectedLists.get('deviceFiles') else [], 'createTime', startDate, endDate)
-      cpuStatusReports = _filterCreateReportTime(cros.get('cpuStatusReports', []) if selectedLists.get('cpuStatusReports') else [], 'reportTime', startDate, endDate)
-      diskVolumeReports = cros.get('diskVolumeReports', []) if selectedLists.get('diskVolumeReports') else []
-      systemRamFreeReports = _filterCreateReportTime(cros.get('systemRamFreeReports', []) if selectedLists.get('systemRamFreeReports') else [], 'reportTime', startDate, endDate)
-      if noLists or (not activeTimeRanges and not recentUsers and not deviceFiles and
-                     not cpuStatusReports and not diskVolumeReports and not systemRamFreeReports):
-        addRowTitlesToCSVfile(row, csvRows, titles)
-        continue
-      lenATR = len(activeTimeRanges)
-      lenRU = len(recentUsers)
-      lenDF = len(deviceFiles)
-      lenCSR = len(cpuStatusReports)
-      lenDVR = len(diskVolumeReports)
-      lenSRFR = len(systemRamFreeReports)
-      for i in range(min(max(lenATR, lenRU, lenDF, lenCSR, lenDVR, lenSRFR), listLimit or max(lenATR, lenRU, lenDF, lenCSR, lenDVR, lenSRFR))):
-        new_row = row.copy()
-        if i < lenATR:
-          new_row['activeTimeRanges.date'] = activeTimeRanges[i]['date']
-          new_row['activeTimeRanges.activeTime'] = str(activeTimeRanges[i]['activeTime'])
-          new_row['activeTimeRanges.duration'] = utils.formatMilliSeconds(activeTimeRanges[i]['activeTime'])
-          new_row['activeTimeRanges.minutes'] = activeTimeRanges[i]['activeTime']//60000
-        if i < lenRU:
-          new_row['recentUsers.email'] = recentUsers[i].get('email', ['Unknown', 'UnmanagedUser'][recentUsers[i]['type'] == 'USER_TYPE_UNMANAGED'])
-          new_row['recentUsers.type'] = recentUsers[i]['type']
-        if i < lenDF:
-          new_row['deviceFiles.type'] = deviceFiles[i]['type']
-          new_row['deviceFiles.createTime'] = deviceFiles[i]['createTime']
-        if i < lenCSR:
-          new_row['cpuStatusReports.reportTime'] = cpuStatusReports[i]['reportTime']
-          for tempInfo in cpuStatusReports[i].get('cpuTemperatureInfo', []):
-            new_row[f'cpuStatusReports.cpuTemperatureInfo.{tempInfo["label"].strip()}'] = tempInfo['temperature']
-          new_row['cpuStatusReports.cpuUtilizationPercentageInfo'] = ','.join([str(x) for x in cpuStatusReports[i]['cpuUtilizationPercentageInfo']])
-        if i < lenDVR:
-          volumeInfo = diskVolumeReports[i]['volumeInfo']
-          j = 0
-          for volume in volumeInfo:
-            new_row[f'diskVolumeReports.volumeInfo.{j}.volumeId'] = volume['volumeId']
-            new_row[f'diskVolumeReports.volumeInfo.{j}.storageFree'] = volume['storageFree']
-            new_row[f'diskVolumeReports.volumeInfo.{j}.storageTotal'] = volume['storageTotal']
-            j += 1
-        if i < lenSRFR:
-          new_row['systemRamFreeReports.reportTime'] = systemRamFreeReports[i]['reportTime']
-          new_row['systenRamFreeReports.systemRamFreeInfo'] = ','.join([str(x) for x in systemRamFreeReports[i]['systemRamFreeInfo']])
-        addRowTitlesToCSVfile(new_row, csvRows, titles)
-  if sortHeaders:
-    sortCSVTitles(['deviceId',], titles)
-  writeCSVfile(csvRows, titles, 'CrOS', todrive)
+  display.sort_csv_titles(['resourceId', 'deviceId', 'serialNumber', 'name', 'email', 'status'], titles)
+  display.write_csv_file(csvRows, titles, 'Mobile', todrive)
 
 def doPrintLicenses(returnFields=None, skus=None, countsOnly=False, returnCounts=False):
   lic = buildGAPIObject('licensing')
@@ -12740,7 +9751,7 @@ def doPrintLicenses(returnFields=None, skus=None, countsOnly=False, returnCounts
     else:
       for u_license in licenseCounts:
         csvRows.append({'productId': u_license[1], 'licenses': u_license[3]})
-    writeCSVfile(csvRows, titles, 'Licenses', todrive)
+    display.write_csv_file(csvRows, titles, 'Licenses', todrive)
     return
   if returnFields:
     if returnFields == 'userId':
@@ -12763,7 +9774,7 @@ def doPrintLicenses(returnFields=None, skus=None, countsOnly=False, returnCounts
     skuId = u_license.get('skuId', '')
     csvRows.append({'userId': userId, 'productId': u_license.get('productId', ''),
                     'skuId': _skuIdToDisplayName(skuId)})
-  writeCSVfile(csvRows, titles, 'Licenses', todrive)
+  display.write_csv_file(csvRows, titles, 'Licenses', todrive)
 
 def doShowLicenses():
   licenseCounts = doPrintLicenses(countsOnly=True, returnCounts=True)
@@ -12772,178 +9783,6 @@ def doShowLicenses():
     for i in range(0, len(u_license), 2):
       line += f'{u_license[i]}: {u_license[i+1]}, '
     print(line[:-2])
-
-RESCAL_DFLTFIELDS = ['id', 'name', 'email',]
-RESCAL_ALLFIELDS = ['id', 'name', 'email', 'description', 'type', 'buildingid', 'category', 'capacity',
-                    'features', 'floor', 'floorsection', 'generatedresourcename', 'uservisibledescription',]
-
-RESCAL_ARGUMENT_TO_PROPERTY_MAP = {
-  'description': ['resourceDescription'],
-  'building': ['buildingId',],
-  'buildingid': ['buildingId',],
-  'capacity': ['capacity',],
-  'category': ['resourceCategory',],
-  'email': ['resourceEmail'],
-  'feature': ['featureInstances',],
-  'features': ['featureInstances',],
-  'floor': ['floorName',],
-  'floorname': ['floorName',],
-  'floorsection': ['floorSection',],
-  'generatedresourcename': ['generatedResourceName',],
-  'id': ['resourceId'],
-  'name': ['resourceName'],
-  'type': ['resourceType'],
-  'userdescription': ['userVisibleDescription',],
-  'uservisibledescription': ['userVisibleDescription',],
-  }
-
-def doPrintFeatures():
-  to_drive = False
-  cd = buildGAPIObject('directory')
-  titles = []
-  csvRows = []
-  fieldsList = ['name']
-  fields = 'nextPageToken,features(%s)'
-  possible_fields = {}
-  for pfield in cd._rootDesc['schemas']['Feature']['properties']:
-    possible_fields[pfield.lower()] = pfield
-  i = 3
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower()
-    if myarg == 'todrive':
-      to_drive = True
-      i += 1
-    elif myarg == 'allfields':
-      fields = None
-      i += 1
-    elif myarg in possible_fields:
-      fieldsList.append(possible_fields[myarg])
-      i += 1
-    elif 'feature'+myarg in possible_fields:
-      fieldsList.append(possible_fields['feature'+myarg])
-      i += 1
-    else:
-      controlflow.invalid_argument_exit(sys.argv[i], "gam print features")
-  if fields:
-    fields = fields % ','.join(fieldsList)
-  features = gapi.get_all_pages(cd.resources().features(), 'list', 'features',
-                                customer=GC_Values[GC_CUSTOMER_ID], fields=fields)
-  for feature in features:
-    feature.pop('etags', None)
-    feature.pop('etag', None)
-    feature.pop('kind', None)
-    feature = flatten_json(feature)
-    for item in feature:
-      if item not in titles:
-        titles.append(item)
-    csvRows.append(feature)
-  sortCSVTitles('name', titles)
-  writeCSVfile(csvRows, titles, 'Features', to_drive)
-
-def doPrintBuildings():
-  to_drive = False
-  cd = buildGAPIObject('directory')
-  titles = []
-  csvRows = []
-  fieldsList = ['buildingId']
-  # buildings.list() currently doesn't support paging
-  # but should soon, attempt to use it now so we
-  # won't break when it's turned on.
-  fields = 'nextPageToken,buildings(%s)'
-  possible_fields = {}
-  for pfield in cd._rootDesc['schemas']['Building']['properties']:
-    possible_fields[pfield.lower()] = pfield
-  i = 3
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower()
-    if myarg == 'todrive':
-      to_drive = True
-      i += 1
-    elif myarg == 'allfields':
-      fields = None
-      i += 1
-    elif myarg in possible_fields:
-      fieldsList.append(possible_fields[myarg])
-      i += 1
-    # Allows shorter arguments like "name" instead of "buildingname"
-    elif 'building'+myarg in possible_fields:
-      fieldsList.append(possible_fields['building'+myarg])
-      i += 1
-    else:
-      controlflow.invalid_argument_exit(sys.argv[i], "gam print buildings")
-  if fields:
-    fields = fields % ','.join(fieldsList)
-  buildings = gapi.get_all_pages(cd.resources().buildings(), 'list', 'buildings',
-                                 customer=GC_Values[GC_CUSTOMER_ID], fields=fields)
-  for building in buildings:
-    building.pop('etags', None)
-    building.pop('etag', None)
-    building.pop('kind', None)
-    if 'buildingId' in building:
-      building['buildingId'] = f'id:{building["buildingId"]}'
-    if 'floorNames' in building:
-      building['floorNames'] = ','.join(building['floorNames'])
-    building = flatten_json(building)
-    for item in building:
-      if item not in titles:
-        titles.append(item)
-    csvRows.append(building)
-  sortCSVTitles('buildingId', titles)
-  writeCSVfile(csvRows, titles, 'Buildings', to_drive)
-
-def doPrintResourceCalendars():
-  cd = buildGAPIObject('directory')
-  todrive = False
-  fieldsList = []
-  fieldsTitles = {}
-  titles = []
-  csvRows = []
-  query = None
-  i = 3
-  while i < len(sys.argv):
-    myarg = sys.argv[i].lower()
-    if myarg == 'todrive':
-      todrive = True
-      i += 1
-    elif myarg == 'query':
-      query = sys.argv[i+1]
-      i += 2
-    elif myarg == 'allfields':
-      fieldsList = []
-      fieldsTitles = {}
-      titles = []
-      for field in RESCAL_ALLFIELDS:
-        addFieldToCSVfile(field, RESCAL_ARGUMENT_TO_PROPERTY_MAP, fieldsList, fieldsTitles, titles)
-      i += 1
-    elif myarg in RESCAL_ARGUMENT_TO_PROPERTY_MAP:
-      addFieldToCSVfile(myarg, RESCAL_ARGUMENT_TO_PROPERTY_MAP, fieldsList, fieldsTitles, titles)
-      i += 1
-    else:
-      controlflow.invalid_argument_exit(sys.argv[i], "gam print resources")
-  if not fieldsList:
-    for field in RESCAL_DFLTFIELDS:
-      addFieldToCSVfile(field, RESCAL_ARGUMENT_TO_PROPERTY_MAP, fieldsList, fieldsTitles, titles)
-  fields = f'nextPageToken,items({",".join(set(fieldsList))})'
-  if 'buildingId' in fieldsList:
-    addFieldToCSVfile('buildingName', {'buildingName': ['buildingName',]}, fieldsList, fieldsTitles, titles)
-  printGettingAllItems('Resource Calendars', None)
-  page_message = gapi.got_total_items_first_last_msg('Resource Calendars')
-  resources = gapi.get_all_pages(cd.resources().calendars(), 'list', 'items',
-                                 page_message=page_message, message_attribute='resourceId',
-                                 customer=GC_Values[GC_CUSTOMER_ID], query=query,
-                                 fields=fields)
-  for resource in resources:
-    if 'featureInstances' in resource:
-      resource['featureInstances'] = ','.join([a_feature['feature']['name'] for a_feature in resource.pop('featureInstances')])
-    if 'buildingId' in resource:
-      resource['buildingName'] = _getBuildingNameById(cd, resource['buildingId'])
-      resource['buildingId'] = f'id:{resource["buildingId"]}'
-    resUnit = {}
-    for field in fieldsList:
-      resUnit[fieldsTitles[field]] = resource.get(field, '')
-    csvRows.append(resUnit)
-  sortCSVTitles(['resourceId', 'resourceName', 'resourceEmail'], titles)
-  writeCSVfile(csvRows, titles, 'Resources', todrive)
 
 def shlexSplitList(entity, dataDelimiter=' ,'):
   lexer = shlex.shlex(entity, posix=True)
@@ -13231,89 +10070,56 @@ def OAuthInfo():
       print(f'{key}: {value}')
 
 def doDeleteOAuth():
-  lock_file = f'{GC_Values[GC_OAUTH2_TXT]}.lock'
-  lock = FileLock(lock_file, timeout=10)
-  with lock:
-    credentials = getOauth2TxtStorageCredentials()
-    if credentials is None:
-      return
-    simplehttp = transport.create_http()
-    params = {'token': credentials.refresh_token}
-    revoke_uri = f'https://accounts.google.com/o/oauth2/revoke?{urlencode(params)}'
-    sys.stderr.write('This OAuth token will self-destruct in 3...')
-    sys.stderr.flush()
-    time.sleep(1)
-    sys.stderr.write('2...')
-    sys.stderr.flush()
-    time.sleep(1)
-    sys.stderr.write('1...')
-    sys.stderr.flush()
-    time.sleep(1)
-    sys.stderr.write('boom!\n')
-    sys.stderr.flush()
-    simplehttp.request(revoke_uri, 'GET')
-    os.remove(GC_Values[GC_OAUTH2_TXT])
-  if not GM_Globals[GM_WINDOWS]:
-    try:
-      os.remove(lock_file)
-    except IOError:
-      pass
-
-def writeCredentials(creds):
-  creds_data = {
-    'token': creds.token,
-    'refresh_token': creds.refresh_token,
-    'token_uri': creds.token_uri,
-    'client_id': creds.client_id,
-    'client_secret': creds.client_secret,
-    'id_token': creds.id_token,
-    'token_expiry': creds.expiry.strftime('%Y-%m-%dT%H:%M:%SZ'),
-    #'scopes': sorted(creds.scopes), # Google auth doesn't currently give us scopes back on refresh
-    }
-  expected_iss = ['https://accounts.google.com', 'accounts.google.com']
-  if _getValueFromOAuth('iss', creds) not in expected_iss:
-    controlflow.system_error_exit(13, f'Wrong OAuth 2.0 credentials issuer. Got {_getValueFromOAuth("iss", creds)} expected one of {", ".join(expected_iss)}')
-  request = transport.create_request()
-  creds_data['decoded_id_token'] = google.oauth2.id_token.verify_oauth2_token(creds.id_token, request)
-  data = json.dumps(creds_data, indent=2, sort_keys=True)
-  fileutils.write_file(GC_Values[GC_OAUTH2_TXT], data)
+  credentials = getOauth2TxtStorageCredentials()
+  if credentials is None:
+    return
+  sys.stderr.write('This OAuth token will self-destruct in 3...')
+  sys.stderr.flush()
+  time.sleep(1)
+  sys.stderr.write('2...')
+  sys.stderr.flush()
+  time.sleep(1)
+  sys.stderr.write('1...')
+  sys.stderr.flush()
+  time.sleep(1)
+  sys.stderr.write('boom!\n')
+  sys.stderr.flush()
+  credentials.revoke()
+  credentials.delete()
 
 def doRequestOAuth(login_hint=None):
-  credentials = getOauth2TxtStorageCredentials()
-  if credentials is None or not credentials.valid:
-    scopes = getScopesFromUser()
-    if scopes is None:
-      controlflow.system_error_exit(0, '')
-    client_id, client_secret = getOAuthClientIDAndSecret()
-    login_hint = _getValidateLoginHint(login_hint)
-    # Needs to be set so oauthlib doesn't puke when Google changes our scopes
-    os.environ['OAUTHLIB_RELAX_TOKEN_SCOPE'] = 'true'
-    creds = _run_oauth_flow(client_id, client_secret, scopes, 'offline', login_hint)
-    writeCredentials(creds)
-  else:
-    print(f'It looks like you\'ve already authorized GAM. Refusing to overwrite existing file:\n\n{GC_Values[GC_OAUTH2_TXT]}')
+  missing_client_secrets_message = ('To use GAM you need to create an API '
+                                    'project. Please run:\n\ngam create project')
+  client_secrets_file = GC_Values[GC_CLIENT_SECRETS_JSON]
+  invalid_client_secrets_format_message = ('The format of your client secrets '
+                                           'file:\n\n%s\n\nis incorrect. '
+                                           'Please recreate the file.' %
+                                           client_secrets_file)
+  stored_creds = getOauth2TxtStorageCredentials()
+  if stored_creds and stored_creds.valid:
+    print('It looks like you\'ve already authorized GAM. Refusing to overwrite existing file:\n\n%s' % stored_creds.filename)
+    return
 
-def getOAuthClientIDAndSecret():
-  """Retrieves the OAuth client ID and client secret from JSON."""
-  MISSING_CLIENT_SECRETS_MESSAGE = '''To use GAM you need to create an API project. Please run:
-
-gam create project
-'''
-  filename = GC_Values[GC_CLIENT_SECRETS_JSON]
-  cs_data = fileutils.read_file(filename, continue_on_error=True, display_errors=True)
-  if not cs_data:
-    controlflow.system_error_exit(14, MISSING_CLIENT_SECRETS_MESSAGE)
+  scopes = getScopesFromUser()
+  if scopes is None:
+    # There were no scopes selected. Exit cleanly.
+    controlflow.system_error_exit(0, '')
+  login_hint = _getValidateLoginHint(login_hint)
+  # Needs to be set so oauthlib doesn't puke when Google changes our scopes
+  os.environ['OAUTHLIB_RELAX_TOKEN_SCOPE'] = 'true'
   try:
-    cs_json = json.loads(cs_data)
-    client_id = cs_json['installed']['client_id']
-    # chop off .apps.googleusercontent.com suffix as it's not needed
-    # and we need to keep things short for the Auth URL.
-    client_id = re.sub(r'\.apps\.googleusercontent\.com$', '', client_id)
-    client_secret = cs_json['installed']['client_secret']
-  except (ValueError, IndexError, KeyError):
-    controlflow.system_error_exit(3, f'the format of your client secrets file:\n\n{filename}\n\n'
-                                  'is incorrect. Please recreate the file.')
-  return (client_id, client_secret)
+    creds = auth.oauth.Credentials.from_client_secrets_file(
+        client_secrets_file=client_secrets_file,
+        scopes=scopes,
+        access_type='offline',
+        login_hint=login_hint,
+        credentials_file=GC_Values[GC_OAUTH2_TXT],
+        use_console_flow=not GC_Values[GC_OAUTH_BROWSER])
+    creds.write()
+  except auth.oauth.InvalidClientSecretsFileError:
+    controlflow.system_error_exit(14, missing_client_secrets_message)
+  except auth.oauth.InvalidClientSecretsFileFormatError:
+    controlflow.system_error_exit(3, invalid_client_secrets_format_message)
 
 OAUTH2_SCOPES = [
   {'name': 'Classroom API - counts as 5 scopes',
@@ -14051,7 +10857,7 @@ def ProcessGAMCommand(args):
       elif argument in ['org', 'ou']:
         doCreateOrg()
       elif argument == 'resource':
-        doCreateResourceCalendar()
+        gapi.directory.resource.createResourceCalendar()
       elif argument in ['verify', 'verification']:
         doSiteVerifyShow()
       elif argument == 'schema':
@@ -14075,15 +10881,15 @@ def ProcessGAMCommand(args):
       elif argument in ['resoldsubscription', 'resellersubscription']:
         doCreateResoldSubscription()
       elif argument in ['matter', 'vaultmatter']:
-        doCreateVaultMatter()
+        gapi.vault.createMatter()
       elif argument in ['hold', 'vaulthold']:
-        doCreateVaultHold()
+        gapi.vault.createHold()
       elif argument in ['export', 'vaultexport']:
-        doCreateVaultExport()
+        gapi.vault.createExport()
       elif argument in ['building']:
-        doCreateBuilding()
+        gapi.directory.resource.createBuilding()
       elif argument in ['feature']:
-        doCreateFeature()
+        gapi.directory.resource.createFeature()
       elif argument in ['alertfeedback']:
         doCreateAlertFeedback()
       elif argument in ['gcpfolder']:
@@ -14109,9 +10915,9 @@ def ProcessGAMCommand(args):
       elif argument in ['ou', 'org']:
         doUpdateOrg()
       elif argument == 'resource':
-        doUpdateResourceCalendar()
+        gapi.directory.resource.updateResourceCalendar()
       elif argument == 'cros':
-        doUpdateCros()
+        gapi.directory.cros.doUpdateCros()
       elif argument == 'mobile':
         doUpdateMobile()
       elif argument in ['verify', 'verification']:
@@ -14125,21 +10931,21 @@ def ProcessGAMCommand(args):
       elif argument == 'domain':
         doUpdateDomain()
       elif argument == 'customer':
-        doUpdateCustomer()
+        gapi.directory.customer.doUpdateCustomer()
       elif argument in ['resoldcustomer', 'resellercustomer']:
         doUpdateResoldCustomer()
       elif argument in ['resoldsubscription', 'resellersubscription']:
         doUpdateResoldSubscription()
       elif argument in ['matter', 'vaultmatter']:
-        doUpdateVaultMatter()
+        gapi.vault.updateMatter()
       elif argument in ['hold', 'vaulthold']:
-        doUpdateVaultHold()
+        gapi.vault.updateHold()
       elif argument in ['project', 'projects', 'apiproject']:
         doUpdateProjects()
       elif argument in ['building']:
-        doUpdateBuilding()
+        gapi.directory.resource.updateBuilding()
       elif argument in ['feature']:
-        doUpdateFeature()
+        gapi.directory.resource.updateFeature()
       else:
         controlflow.invalid_argument_exit(argument, "gam update")
       sys.exit(0)
@@ -14154,13 +10960,13 @@ def ProcessGAMCommand(args):
       elif argument in ['nickname', 'alias']:
         doGetAliasInfo()
       elif argument == 'instance':
-        doGetCustomerInfo()
+        gapi.directory.customer.doGetCustomerInfo()
       elif argument in ['org', 'ou']:
         doGetOrgInfo()
       elif argument == 'resource':
-        doGetResourceCalendarInfo()
+        gapi.directory.resource.getResourceCalendarInfo()
       elif argument == 'cros':
-        doGetCrosInfo()
+        gapi.directory.cros.doGetCrosInfo()
       elif argument == 'mobile':
         doGetMobileInfo()
       elif argument in ['verify', 'verification']:
@@ -14174,7 +10980,7 @@ def ProcessGAMCommand(args):
       elif argument in ['transfer', 'datatransfer']:
         doGetDataTransferInfo()
       elif argument == 'customer':
-        doGetCustomerInfo()
+        gapi.directory.customer.doGetCustomerInfo()
       elif argument == 'domain':
         doGetDomainInfo()
       elif argument in ['domainalias', 'aliasdomain']:
@@ -14184,13 +10990,13 @@ def ProcessGAMCommand(args):
       elif argument in ['resoldsubscription', 'resoldsubscriptions', 'resellersubscription', 'resellersubscriptions']:
         doGetResoldSubscriptions()
       elif argument in ['matter', 'vaultmatter']:
-        doGetVaultMatterInfo()
+        gapi.vault.getMatterInfo()
       elif argument in ['hold', 'vaulthold']:
-        doGetVaultHoldInfo()
+        gapi.vault.getHoldInfo()
       elif argument in ['export', 'vaultexport']:
-        doGetVaultExportInfo()
+        gapi.vault.getExportInfo()
       elif argument in ['building']:
-        doGetBuildingInfo()
+        gapi.directory.resource.getBuildingInfo()
       else:
         controlflow.invalid_argument_exit(argument, "gam info")
       sys.exit(0)
@@ -14212,7 +11018,7 @@ def ProcessGAMCommand(args):
       elif argument == 'org':
         doDeleteOrg()
       elif argument == 'resource':
-        doDeleteResourceCalendar()
+        gapi.directory.resource.deleteResourceCalendar()
       elif argument == 'mobile':
         doDeleteMobile()
       elif argument in ['schema', 'schemas']:
@@ -14234,15 +11040,15 @@ def ProcessGAMCommand(args):
       elif argument in ['resoldsubscription', 'resellersubscription']:
         doDeleteResoldSubscription()
       elif argument in ['matter', 'vaultmatter']:
-        doUpdateVaultMatter(action=command)
+        gapi.vault.updateMatter(action=command)
       elif argument in ['hold', 'vaulthold']:
-        doDeleteVaultHold()
+        gapi.vault.deleteHold()
       elif argument in ['export', 'vaultexport']:
-        doDeleteVaultExport()
+        gapi.vault.deleteExport()
       elif argument in ['building']:
-        doDeleteBuilding()
+        gapi.directory.resource.deleteBuilding()
       elif argument in ['feature']:
-        doDeleteFeature()
+        gapi.directory.resource.deleteFeature()
       elif argument in ['alert']:
         doDeleteOrUndeleteAlert('delete')
       elif argument in ['sakey', 'sakeys']:
@@ -14255,7 +11061,7 @@ def ProcessGAMCommand(args):
       if argument == 'user':
         doUndeleteUser()
       elif argument in ['matter', 'vaultmatter']:
-        doUpdateVaultMatter(action=command)
+        gapi.vault.updateMatter(action=command)
       elif argument == 'alert':
         doDeleteOrUndeleteAlert('undelete')
       else:
@@ -14265,7 +11071,7 @@ def ProcessGAMCommand(args):
       # close and reopen will have to be split apart if either takes a new argument
       argument = sys.argv[2].lower()
       if argument in ['matter', 'vaultmatter']:
-        doUpdateVaultMatter(action=command)
+        gapi.vault.updateMatter(action=command)
       else:
         controlflow.invalid_argument_exit(argument, f"gam {command}")
       sys.exit(0)
@@ -14282,11 +11088,11 @@ def ProcessGAMCommand(args):
       elif argument in ['orgs', 'ous']:
         doPrintOrgs()
       elif argument == 'resources':
-        doPrintResourceCalendars()
+        gapi.directory.resource.printResourceCalendars()
       elif argument == 'cros':
-        doPrintCrosDevices()
+        gapi.directory.cros.doPrintCrosDevices()
       elif argument == 'crosactivity':
-        doPrintCrosActivity()
+        gapi.directory.cros.doPrintCrosActivity()
       elif argument == 'mobile':
         doPrintMobileDevices()
       elif argument in ['license', 'licenses', 'licence', 'licences']:
@@ -14318,15 +11124,15 @@ def ProcessGAMCommand(args):
       elif argument in ['guardian', 'guardians']:
         doPrintShowGuardians(True)
       elif argument in ['matters', 'vaultmatters']:
-        doPrintVaultMatters()
+        gapi.vault.printMatters()
       elif argument in ['holds', 'vaultholds']:
-        doPrintVaultHolds()
+        gapi.vault.printHolds()
       elif argument in ['exports', 'vaultexports']:
-        doPrintVaultExports()
+        gapi.vault.printExports()
       elif argument in ['building', 'buildings']:
-        doPrintBuildings()
+        gapi.directory.resource.printBuildings()
       elif argument in ['feature', 'features']:
-        doPrintFeatures()
+        gapi.directory.resource.printFeatures()
       elif argument in ['project', 'projects']:
         doPrintShowProjects(True)
       elif argument in ['alert', 'alerts']:
@@ -14375,27 +11181,31 @@ def ProcessGAMCommand(args):
     elif command == 'calendar':
       argument = sys.argv[3].lower()
       if argument == 'showacl':
-        doCalendarPrintShowACLs(False)
+        gapi.calendar.printShowACLs(False)
       elif argument == 'printacl':
-        doCalendarPrintShowACLs(True)
+        gapi.calendar.printShowACLs(True)
       elif argument == 'add':
-        doCalendarAddACL('Add')
+        gapi.calendar.addACL('Add')
       elif argument in ['del', 'delete']:
-        doCalendarDelACL()
+        gapi.calendar.delACL()
       elif argument == 'update':
-        doCalendarAddACL('Update')
+        gapi.calendar.addACL('Update')
       elif argument == 'wipe':
-        doCalendarWipeData()
+        gapi.calendar.wipeData()
       elif argument == 'addevent':
-        doCalendarAddEvent()
+        gapi.calendar.addOrUpdateEvent('add')
+      elif argument == 'updateevent':
+        gapi.calendar.addOrUpdateEvent('update')
+      elif argument == 'infoevent':
+        gapi.calendar.infoEvent()
       elif argument == 'deleteevent':
-        doCalendarMoveOrDeleteEvent('delete')
+        gapi.calendar.moveOrDeleteEvent('delete')
       elif argument == 'moveevent':
-        doCalendarMoveOrDeleteEvent('move')
+        gapi.calendar.moveOrDeleteEvent('move')
       elif argument == 'printevents':
-        doCalendarPrintEvents()
+        gapi.calendar.printEvents()
       elif argument == 'modify':
-        doCalendarModifySettings()
+        gapi.calendar.modifySettings()
       else:
         controlflow.invalid_argument_exit(argument, "gam calendar")
       sys.exit(0)
@@ -14429,7 +11239,7 @@ def ProcessGAMCommand(args):
         controlflow.invalid_argument_exit(argument, "gam printjob")
       sys.exit(0)
     elif command == 'report':
-      showReport()
+      gapi.reports.showReport()
       sys.exit(0)
     elif command == 'whatis':
       doWhatIs()
@@ -14448,9 +11258,9 @@ def ProcessGAMCommand(args):
     elif command == 'download':
       argument = sys.argv[2].lower()
       if argument in ['export', 'vaultexport']:
-        doDownloadVaultExport()
+        gapi.vault.downloadExport()
       elif argument in ['storagebucket']:
-        doDownloadCloudStorageBucket()
+        gapi.storage.download_bucket()
       else:
         controlflow.invalid_argument_exit(argument, "gam download")
       sys.exit(0)
@@ -14474,7 +11284,7 @@ def ProcessGAMCommand(args):
       if transferWhat == 'drive':
         transferDriveFiles(users)
       elif transferWhat == 'seccals':
-        transferSecCals(users)
+        gapi.calendar.transferSecCals(users)
       else:
         controlflow.invalid_argument_exit(transferWhat, "gam <users> transfer")
     elif command == 'show':
@@ -14484,9 +11294,9 @@ def ProcessGAMCommand(args):
       elif showWhat == 'profile':
         showProfile(users)
       elif showWhat == 'calendars':
-        printShowCalendars(users, False)
+        gapi.calendar.printShowCalendars(users, False)
       elif showWhat == 'calsettings':
-        showCalSettings(users)
+        gapi.calendar.showCalSettings(users)
       elif showWhat == 'drivesettings':
         printDriveSettings(users)
       elif showWhat == 'teamdrivethemes':
@@ -14542,7 +11352,7 @@ def ProcessGAMCommand(args):
     elif command == 'print':
       printWhat = sys.argv[4].lower()
       if printWhat == 'calendars':
-        printShowCalendars(users, True)
+        gapi.calendar.printShowCalendars(users, True)
       elif printWhat in ['delegate', 'delegates']:
         printShowDelegates(users, True)
       elif printWhat == 'driveactivity':
@@ -14596,7 +11406,7 @@ def ProcessGAMCommand(args):
       if delWhat == 'delegate':
         deleteDelegate(users)
       elif delWhat == 'calendar':
-        deleteCalendar(users)
+        gapi.calendar.deleteCalendar(users)
       elif delWhat  in ['labels', 'label']:
         doDeleteLabel(users)
       elif delWhat in ['message', 'messages']:
@@ -14639,7 +11449,7 @@ def ProcessGAMCommand(args):
       addWhat = sys.argv[4].lower()
       if addWhat == 'calendar':
         if command == 'add':
-          addCalendar(users)
+          gapi.calendar.addCalendar(users)
         else:
           controlflow.system_error_exit(2, f'{addWhat} is not implemented for "gam <users> {command}"')
       elif addWhat == 'drivefile':
@@ -14667,9 +11477,9 @@ def ProcessGAMCommand(args):
     elif command == 'update':
       updateWhat = sys.argv[4].lower()
       if updateWhat == 'calendar':
-        updateCalendar(users)
+        gapi.calendar.updateCalendar(users)
       elif updateWhat == 'calattendees':
-        changeCalendarAttendees(users)
+        gapi.calendar.changeAttendees(users)
       elif updateWhat == 'photo':
         doPhoto(users)
       elif updateWhat in ['license', 'licence']:
@@ -14713,7 +11523,7 @@ def ProcessGAMCommand(args):
     elif command == 'info':
       infoWhat = sys.argv[4].lower()
       if infoWhat == 'calendar':
-        infoCalendar(users)
+        gapi.calendar.infoCalendar(users)
       elif infoWhat in ['filter', 'filters']:
         infoFilters(users)
       elif infoWhat in ['forwardingaddress', 'forwardingaddresses']:

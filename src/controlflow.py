@@ -24,7 +24,7 @@ def invalid_argument_exit(argument, command):
   '''Indicate that the argument is not valid for the command.
 
   Args:
-    argument: the invalid agrument
+    argument: the invalid argument
     command: the base GAM command
   '''
   system_error_exit(

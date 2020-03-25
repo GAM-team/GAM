@@ -6,5 +6,5 @@ google-api-python-client>=1.7.10
 google-auth>=1.11.2
 google-auth-httplib2
 google-auth-oauthlib>=0.4.1
-httplib2>=0.13.0
+httplib2>=0.17.0
 passlib>=1.7.2; sys_platform == 'win32'

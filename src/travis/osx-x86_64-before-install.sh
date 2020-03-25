@@ -5,6 +5,9 @@ whereibelong=$(pwd)
 
 #brew upgrade
 
+# prefer standard GNU tools like date over MacOS defaults
+export PATH="/usr/local/opt/coreutils/libexec/gnubin:$PATH"
+
 cd ~
 
 if [ ! -f python-$BUILD_PYTHON_VERSION-macosx10.9.pkg ]; then

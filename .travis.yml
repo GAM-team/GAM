@@ -244,6 +244,14 @@ script:
 - if [ "$e2e" = true ]; then $gam calendar $gam_user add editor $newuser; fi
 - if [ "$e2e" = true ]; then $gam calendar $gam_user showacl; fi
 - if [ "$e2e" = true ]; then $gam calendar $gam_user printacl | $gam csv - gam calendar $gam_user delete id ~id; fi
+- if [ "$e2e" = true ]; then $gam calendar $gam_user addevent summary "Travis test event" start $(date '+%FT%T.%N%:z' -d "now + 1 hour") end $(date '+%FT%T.%N%:z' -d "now + 2 hours") attendee $newgroup hangoutsmeet guestscanmodify true sendupdates all; fi
+- if [ "$e2e" = true ]; then $gam calendar $gam_user printevents after -0d; fi
+- if [ "$e2e" = true ]; then $gam create vaultmatter name "Travis matter $newbase" description "test matter" collaborators $newuser; fi
+- if [ "$e2e" = true ]; then $gam create vaulthold matter "Travis matter $newbase" name "Travis hold $newbase" corpus mail accounts $newuser; fi
+- if [ "$e2e" = true ]; then $gam print vaultmatters; fi
+- if [ "$e2e" = true ]; then $gam print vaultholds matter "Travis matter $newbase"; fi
+- if [ "$e2e" = true ]; then $gam create vaultexport matter "Travis matter $newbase" name "Travis export $newbase" corpus mail accounts $newuser; fi
+- if [ "$e2e" = true ]; then $gam print exports matter "Travis matter $newbase" | $gam csv - gam info export id:~~matterId~~ id:~~id~~; fi
 - if [ "$e2e" = true ]; then $gam printer register; fi
 - if [ "$e2e" = true ]; then source travis/set_printer_csv_filter.sh; fi
 - if [ "$e2e" = true ]; then $gam print printers > printers.csv; fi
@@ -264,6 +272,7 @@ script:
 - if [ "$e2e" = true ]; then $gam create alias $newalias user $newuser; fi
 - if [ "$e2e" = true ]; then $gam whatis $newuser; fi
 - if [ "$e2e" = true ]; then $gam user $gam_user show tokens; fi
+- if [ "$e2e" = true ]; then $gam print exports matter "Travis matter $newbase" | $gam csv - gam download export id:~~matterId~~ id:~~id~~; fi
 - if [ "$e2e" = true ]; then $gam delete user $newuser; fi
 - if [ "$e2e" = true ]; then $gam print users query "travis.jid=$jid" | $gam csv - gam delete user ~primaryEmail; fi
 - if [ "$e2e" = true ]; then $gam print mobile; fi

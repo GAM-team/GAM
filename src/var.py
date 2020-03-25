@@ -6,7 +6,7 @@ import platform
 import re
 
 gam_author = 'Jay Lee <jay0lee@gmail.com>'
-gam_version = '4.99'
+gam_version = '5.00'
 gam_license = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 GAM_URL = 'https://git.io/gam'
@@ -623,8 +623,6 @@ CROS_SCALAR_PROPERTY_PRINT_ORDER = [
   'manufactureDate',
   'supportEndDate',
   'autoUpdateExpiration',
-  'guessedAUEDate',
-  'guessedAUEModel',
   'tpmVersionInfo',
   'willAutoRenew',
   ]
@@ -938,15 +936,11 @@ CLEAR_NONE_ARGUMENT = ['clear', 'none',]
 #
 MESSAGE_API_ACCESS_CONFIG = 'API access is configured in your Control Panel under: Security-Show more-Advanced settings-Manage API client access'
 MESSAGE_API_ACCESS_DENIED = 'API access Denied.\n\nPlease make sure the Client ID: {0} is authorized for the API Scope(s): {1}'
-MESSAGE_CONSOLE_AUTHORIZATION_PROMPT = '\nGo to the following link in your browser:\n\n\t{url}\n'
-MESSAGE_CONSOLE_AUTHORIZATION_CODE = 'Enter verification code: '
 MESSAGE_GAM_EXITING_FOR_UPDATE = 'GAM is now exiting so that you can overwrite this old version with the latest release'
 MESSAGE_GAM_OUT_OF_MEMORY = 'GAM has run out of memory. If this is a large G Suite instance, you should use a 64-bit version of GAM on Windows or a 64-bit version of Python on other systems.'
 MESSAGE_HEADER_NOT_FOUND_IN_CSV_HEADERS = 'Header "{0}" not found in CSV headers of "{1}".'
 MESSAGE_HIT_CONTROL_C_TO_UPDATE = '\n\nHit CTRL+C to visit the GAM website and download the latest release or wait 15 seconds continue with this boring old version. GAM won\'t bother you with this announcement for 1 week or you can create a file named noupdatecheck.txt in the same location as gam.py or gam.exe and GAM won\'t ever check for updates.'
 MESSAGE_INVALID_JSON = 'The file {0} has an invalid format.'
-MESSAGE_LOCAL_SERVER_AUTHORIZATION_PROMPT = '\nYour browser has been opened to visit:\n\n\t{url}\n\nIf your browser is on a different machine then press CTRL+C and create a file called nobrowser.txt in the same folder as GAM.\n'
-MESSAGE_LOCAL_SERVER_SUCCESS = 'The authentication flow has completed. You may close this browser window and return to GAM.'
 MESSAGE_NO_DISCOVERY_INFORMATION = 'No online discovery doc and {0} does not exist locally'
 MESSAGE_NO_TRANSFER_LACK_OF_DISK_SPACE = 'Cowardly refusing to perform migration due to lack of target drive space. Source size: {0}mb Target Free: {1}mb'
 MESSAGE_RESULTS_TOO_LARGE_FOR_GOOGLE_SPREADSHEET = 'Results are too large for Google Spreadsheets. Uploading as a regular CSV file.'
@@ -1180,3 +1174,22 @@ MAX_RESULTS_API_EXCEPTIONS = {
   'directory.chromeosdevices.list': 200,
   'drive.files.list': 1000,
   }
+
+ONE_KILO_BYTES = 1000
+ONE_MEGA_BYTES = 1000000
+ONE_GIGA_BYTES = 1000000000
+
+DELTA_DATE_PATTERN = re.compile(r'^([+-])(\d+)([dwy])$')
+DELTA_DATE_FORMAT_REQUIRED = '(+|-)<Number>(d|w|y)'
+
+DELTA_TIME_PATTERN = re.compile(r'^([+-])(\d+)([mhdwy])$')
+DELTA_TIME_FORMAT_REQUIRED = '(+|-)<Number>(m|h|d|w|y)'
+
+YYYYMMDD_FORMAT = '%Y-%m-%d'
+YYYYMMDD_FORMAT_REQUIRED = 'yyyy-mm-dd'
+
+YYYYMMDDTHHMMSS_FORMAT_REQUIRED = 'yyyy-mm-ddThh:mm:ss[.fff](Z|(+|-(hh:mm)))'
+
+YYYYMMDD_PATTERN = re.compile(r'^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+
+UID_PATTERN = re.compile(r'u?id: ?(.+)', re.IGNORECASE)
