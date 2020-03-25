@@ -3,7 +3,7 @@ whereibelong=$(pwd)
 #echo "Brew installing xz..."
 #brew install xz > /dev/null
 
-brew upgrade
+#brew upgrade
 
 # prefer standard GNU tools like date over MacOS defaults
 export PATH="/usr/local/opt/coreutils/libexec/gnubin:$PATH"
