@@ -1,5 +1,8 @@
 mypath=$HOME
 whereibelong=$(pwd)
+cpucount=$(sysctl -n hw.ncpu)
+echo "This device has $cpucount CPUs for compiling..."
+
 #echo "Brew installing xz..."
 #brew install xz > /dev/null
 
@@ -44,8 +47,6 @@ export LD_LIBRARY_PATH=~/ssl/lib:~/python/lib
 export openssl=~/ssl/bin/openssl
 export python=~/python/bin/python3
 export pip=~/python/bin/pip3
-cpucount=$(nproc --all)
-echo "This device has $cpucount CPUs for compiling..."
 SSLVER=$($openssl version)
 SSLRESULT=$?
 PYVER=$($python -V)
