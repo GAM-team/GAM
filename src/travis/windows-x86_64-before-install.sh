@@ -2,21 +2,21 @@ echo "Installing Net-Framework-Core..."
 export mypath=$(pwd)
 until powershell Install-WindowsFeature Net-Framework-Core; do echo "trying again..."; done
 cd ~
-#export exefile=Win64OpenSSL_Light-${BUILD_OPENSSL_VERSION//./_}.exe
-#if [ ! -e $exefile ]; then
-#  echo "Downloading $exefile..."
-#  wget --quiet https://slproweb.com/download/$exefile
-#fi
-#echo "Installing $exefile..."
-#powershell ".\\${exefile} /silent /sp- /suppressmsgboxes /DIR=C:\\ssl"
+export exefile=Win64OpenSSL_Light-${BUILD_OPENSSL_VERSION//./_}.exe
+if [ ! -e $exefile ]; then
+  echo "Downloading $exefile..."
+  wget --quiet https://slproweb.com/download/$exefile
+fi
+echo "Installing $exefile..."
+powershell ".\\${exefile} /silent /sp- /suppressmsgboxes /DIR=C:\\ssl"
 #cup -y chocolatey
 #cinst -y python3
 export python_file=python-$BUILD_PYTHON_VERSION-amd64.exe
 wget --quiet https://www.python.org/ftp/python/$BUILD_PYTHON_VERSION/$python_file
 powershell ".\\${python_file} /quiet InstallAllUsers=1 TargetDir=c:\\python"
 until cinst -y wixtoolset; do echo "trying again..."; done
-#until cp -v /c/ssl/libcrypto-1_1-x64.dll /c/Python37/DLLs/libcrypto-1_1.dll; do echo "trying again..."; done
-#until cp -v /c/ssl/libssl-1_1-x64.dll /c/Python37/DLLs/libssl-1_1.dll; do echo "trying again..."; done
+until cp -v /c/ssl/libcrypto-1_1-x64.dll /c/python/DLLs/libcrypto-1_1.dll; do echo "trying again..."; done
+until cp -v /c/ssl/libssl-1_1-x64.dll /c/python/DLLs/libssl-1_1.dll; do echo "trying again..."; done
 export PATH=$PATH:/c/python/scripts
 cd $mypath
 export python=/c/python/python.exe

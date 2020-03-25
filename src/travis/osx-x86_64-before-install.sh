@@ -3,7 +3,7 @@ whereibelong=$(pwd)
 #echo "Brew installing xz..."
 #brew install xz > /dev/null
 
-#brew upgrade
+brew upgrade
 
 # prefer standard GNU tools like date over MacOS defaults
 export PATH="/usr/local/opt/coreutils/libexec/gnubin:$PATH"
@@ -15,7 +15,7 @@ if [ ! -f python-$BUILD_PYTHON_VERSION-macosx10.9.pkg ]; then
 fi
 sudo installer -pkg python-$BUILD_PYTHON_VERSION-macosx10.9.pkg -target /
 
-#brew install openssl@1.1
+brew install openssl@1.1
 #brew upgrade python
 
 export python=python3

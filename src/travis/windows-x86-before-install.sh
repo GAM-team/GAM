@@ -14,6 +14,16 @@ export pip=/c/python/scripts/pip.exe
 until [ -f $python ]; do :; done
 until [ -f $pip ]; do :; done
 
+export exefile=Win32OpenSSL_Light-${BUILD_OPENSSL_VERSION//./_}.exe
+if [ ! -e $exefile ]; then
+  echo "Downloading $exefile..."
+  wget --quiet https://slproweb.com/download/$exefile
+fi
+echo "Installing $exefile..."
+powershell ".\\${exefile} /silent /sp- /suppressmsgboxes /DIR=C:\\ssl"
+until cp -v /c/ssl/libcrypto-1_1-x64.dll /c/python/DLLs/libcrypto-1_1.dll; do echo "trying again..."; done
+until cp -v /c/ssl/libssl-1_1-x64.dll /c/python/DLLs/libssl-1_1.dll; do echo "trying again..."; done
+
 $pip install --upgrade pip
 $pip list --outdated --format=freeze | grep -v '^\-e' | cut -d = -f 1  | xargs -n1 $pip install -U
 $pip install --upgrade -r src/requirements.txt
