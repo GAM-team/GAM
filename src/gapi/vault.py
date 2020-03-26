@@ -697,12 +697,10 @@ def printExports():
     if not matters:
         fields = 'matters(matterId,state),nextPageToken'
         matters_results = gapi.get_all_pages(v.matters(
-        ), 'list', 'matters', view='BASIC', fields=fields)
+        ), 'list', 'matters', view='BASIC', state='OPEN', fields=fields)
         for matter in matters_results:
             matterState = matter['state']
             matterId = matter['matterId']
-            if matterState != 'OPEN':
-                continue
             matterIds.append(matterId)
     else:
         for matter in matters:
@@ -740,12 +738,10 @@ def printHolds():
     if not matters:
         fields = 'matters(matterId,state),nextPageToken'
         matters_results = gapi.get_all_pages(v.matters(
-        ), 'list', 'matters', view='BASIC', fields=fields)
+        ), 'list', 'matters', view='BASIC', state='OPEN', fields=fields)
         for matter in matters_results:
             matterState = matter['state']
             matterId = matter['matterId']
-            if matterState != 'OPEN':
-                continue
             matterIds.append(matterId)
     else:
         for matter in matters:
