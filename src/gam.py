@@ -752,7 +752,8 @@ def getService(api, http):
         controlflow.wait_on_failure(n, retries, str(e))
         continue
       controlflow.system_error_exit(17, str(e))
-    except (http_client.ResponseNotReady, socket.error) as e:
+    except (http_client.ResponseNotReady, socket.error,
+            googleapiclient.errors.HttpError) as e:
       if n != retries:
         controlflow.wait_on_failure(n, retries, str(e))
         continue
