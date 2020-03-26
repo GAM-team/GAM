@@ -275,6 +275,9 @@ script:
 - if [ "$e2e" = true ]; then $gam whatis $newuser; fi
 - if [ "$e2e" = true ]; then $gam user $gam_user show tokens; fi
 - if [ "$e2e" = true ]; then $gam print exports matter "Travis matter $newbase" | $gam csv - gam download export id:~~matterId~~ id:~~id~~; fi
+- if [ "$e2e" = true ]; then $gam delete hold "Travis hold $newbase" matter "Travis matter $newbase"; fi
+- if [ "$e2e" = true ]; then $gam update matter "Travis matter $newbase" action close; fi
+- if [ "$e2e" = true ]; then $gam update matter "Travis matter $newbase" action delete; fi
 - if [ "$e2e" = true ]; then $gam delete user $newuser; fi
 - if [ "$e2e" = true ]; then $gam print users query "travis.jid=$jid" | $gam csv - gam delete user ~primaryEmail; fi
 - if [ "$e2e" = true ]; then $gam print mobile; fi

@@ -702,7 +702,6 @@ def printExports():
             matterState = matter['state']
             matterId = matter['matterId']
             if matterState != 'OPEN':
-                print(f'ignoring matter {matterId} in state {matterState}')
                 continue
             matterIds.append(matterId)
     else:
@@ -746,7 +745,6 @@ def printHolds():
             matterState = matter['state']
             matterId = matter['matterId']
             if matterState != 'OPEN':
-                print(f'ignoring matter {matterId} in state {matterState}')
                 continue
             matterIds.append(matterId)
     else:

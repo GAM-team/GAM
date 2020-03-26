@@ -13,8 +13,10 @@ export python_file=python-$BUILD_PYTHON_VERSION-amd64.exe
 wget --quiet https://www.python.org/ftp/python/$BUILD_PYTHON_VERSION/$python_file
 powershell ".\\${python_file} /quiet InstallAllUsers=1 TargetDir=c:\\python"
 until cinst -y wixtoolset; do echo "trying again..."; done
-until cp -v /c/ssl/libcrypto-1_1-x64.dll /c/python/DLLs/libcrypto-1_1.dll; do echo "trying again..."; done
-until cp -v /c/ssl/libssl-1_1-x64.dll /c/python/DLLs/libssl-1_1.dll; do echo "trying again..."; done
+until cp -v /c/ssl/libcrypto-1_1-x64.dll /c/python/DLLs/; do echo "trying libcrypto copy again..."; done
+cp -v /c/python/DLLs/libcrypto-1_1-x64.dll /c/python/DLLs/libcrypto-1_1.dll
+until cp -v /c/ssl/libssl-1_1-x64.dll /c/python/DLLs/; do echo "trying libssl copy again..."; done
+cp -v /c/python/DLLs/libssl-1_1-x64.dll /c/python/DLLs/libssl-1_1.dll
 export PATH=$PATH:/c/python/scripts
 cd $mypath
 export python=/c/python/python.exe
