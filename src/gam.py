@@ -678,6 +678,8 @@ def getAPIVersion(api):
     api = 'admin'
   elif api == 'drive3':
     api = 'drive'
+  elif api == 'cloudresourcemanagerv1':
+    api = 'cloudresourcemanager'
   return (api, version, f'{api}-{version}')
 
 def readDiscoveryFile(api_version):
@@ -935,7 +937,7 @@ def doCheckServiceAccount(users):
   else:
     time_status = test_fail
   printPassFail(MESSAGE_YOUR_SYSTEM_TIME_DIFFERS_FROM_GOOGLE_BY % ('www.googleapis.com', nicetime), time_status)
-  oa2 = googleapiclient.discovery.build('oauth2', 'v1', transport.create_http())
+  oa2 = getService('oauth2', transport.create_http())
   print('Service Account Private Key Authentication:')
   # We are explicitly not doing DwD here, just confirming service account can auth
   auth_error = ''
@@ -984,7 +986,7 @@ def doCheckServiceAccount(users):
   for user in users:
     user = user.lower()
     all_scopes_pass = True
-    oa2 = googleapiclient.discovery.build('oauth2', 'v1', transport.create_http())
+    #oa2 = getService('oauth2', transport.create_http())
     print(f'Domain-Wide Delegation authentication as {user}:')
     for scope in check_scopes:
       # try with and without email scope
@@ -1012,7 +1014,7 @@ def doCheckServiceAccount(users):
     service_account = GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID]
     if all_scopes_pass:
       print(f'\nAll scopes passed!\nService account {service_account} is fully authorized.')
-      return
+      continue
     user_domain = user[user.find('@')+1:]
     # Tack on email scope for more accurate checking
     check_scopes.append(USERINFO_EMAIL_SCOPE)
@@ -6177,16 +6179,11 @@ def getCRMService(login_hint):
   client_secret = 'qM3dP8f_4qedwzWQE1VR4zzU'
   credentials = _run_oauth_flow(client_id, client_secret, scopes, 'online', login_hint)
   httpc = transport.AuthorizedHttp(credentials)
-  return (googleapiclient.discovery.build('cloudresourcemanager', 'v1',
-                                          http=httpc, cache_discovery=False,
-                                          discoveryServiceUrl=googleapiclient.discovery.V2_DISCOVERY_URI),
-          httpc)
+  return getService('cloudresourcemanagerv1', httpc)
 
 # Ugh, v2 doesn't contain all the operations of v1 so we need to use both here.
 def getCRM2Service(httpc):
-  return googleapiclient.discovery.build('cloudresourcemanager', 'v2',
-                                         http=httpc, cache_discovery=False,
-                                         discoveryServiceUrl=googleapiclient.discovery.V2_DISCOVERY_URI)
+  return getService('cloudresourcemanager', httpc)
 
 def getGAMProjectFile(filepath):
   # if file exists locally in GAM path then use it.
@@ -6202,9 +6199,7 @@ def getGAMProjectFile(filepath):
 def enableGAMProjectAPIs(GAMProjectAPIs, httpObj, projectId, checkEnabled, i=0, count=0):
   apis = GAMProjectAPIs[:]
   project_name = f'project:{projectId}'
-  serveman = googleapiclient.discovery.build('servicemanagement', 'v1',
-                                             http=httpObj, cache_discovery=False,
-                                             discoveryServiceUrl=googleapiclient.discovery.V2_DISCOVERY_URI)
+  serveman = getService('serveman', httpObj)
   status = True
   if checkEnabled:
     try:
@@ -6266,9 +6261,7 @@ def _grantSARotateRights(iam, sa_email):
 
 def setGAMProjectConsentScreen(httpObj, projectId, login_hint):
   print('Setting GAM project consent screen...')
-  iap = googleapiclient.discovery.build('iap', 'v1',
-                                        http=httpObj, cache_discovery=False,
-                                        discoveryServiceUrl=googleapiclient.discovery.V2_DISCOVERY_URI)
+  iap = getService('iap', httpObj)
   body = {'applicationTitle': 'GAM', 'supportEmail': login_hint}
   gapi.call(iap.projects().brands(), 'create',
             parent=f'projects/{projectId}', body=body)
@@ -6305,9 +6298,7 @@ def _createClientSecretsOauth2service(httpObj, projectId, login_hint, create_pro
   enableGAMProjectAPIs(GAMProjectAPIs, httpObj, projectId, False)
   if create_project:
     setGAMProjectConsentScreen(httpObj, projectId, login_hint)
-  iam = googleapiclient.discovery.build('iam', 'v1',
-                                        http=httpObj, cache_discovery=False,
-                                        discoveryServiceUrl=googleapiclient.discovery.V2_DISCOVERY_URI)
+  iam = getService('iam', httpObj)
   sa_list = gapi.call(iam.projects().serviceAccounts(), 'list',
                       name=f'projects/{projectId}')
   service_account = None
@@ -6616,9 +6607,7 @@ def doUpdateProjects():
     i += 1
     projectId = project['projectId']
     enableGAMProjectAPIs(GAMProjectAPIs, httpObj, projectId, True, i, count)
-    iam = googleapiclient.discovery.build('iam', 'v1',
-                                          http=httpObj, cache_discovery=False,
-                                          discoveryServiceUrl=googleapiclient.discovery.V2_DISCOVERY_URI)
+    iam = getService('iam', httpObj)
     _getSvcAcctData() # needed to read in GM_OAUTH2SERVICE_JSON_DATA
     sa_email = GM_Globals[GM_OAUTH2SERVICE_JSON_DATA]['client_email']
     _grantSARotateRights(iam, sa_email)
