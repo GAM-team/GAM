@@ -161,7 +161,7 @@ class Credentials(google.oauth2.credentials.Credentials):
     Raises:
       ValueError: If missing fields are detected in the info.
     """
-    keys_needed = set(('refresh_token', 'client_id', 'client_secret'))
+    keys_needed = set(('token', 'client_id', 'client_secret'))
     missing = keys_needed.difference(info.keys())
 
     if missing:
@@ -180,7 +180,7 @@ class Credentials(google.oauth2.credentials.Credentials):
     # were pickled.
     return cls(
         token=info.get('token', info.get('auth_token', '')),
-        refresh_token=info['refresh_token'],
+        refresh_token=info.get('refresh_token', ''),
         id_token=info.get('id_token_jwt', info.get('id_token')),
         token_uri=info.get('token_uri'),
         client_id=info['client_id'],

@@ -51,7 +51,7 @@ import http.client as http_client
 from multiprocessing import Pool as mp_pool
 from multiprocessing import freeze_support as mp_freeze_support
 from multiprocessing import set_start_method as mp_set_start_method
-from urllib.parse import urlencode, urlparse
+from urllib.parse import quote, urlencode, urlparse
 import dateutil.parser
 
 import googleapiclient
@@ -6177,9 +6177,12 @@ def getCRMService(login_hint):
   scopes = ['https://www.googleapis.com/auth/cloud-platform']
   client_id = '297408095146-fug707qsjv4ikron0hugpevbrjhkmsk7.apps.googleusercontent.com'
   client_secret = 'qM3dP8f_4qedwzWQE1VR4zzU'
-  credentials = _run_oauth_flow(client_id, client_secret, scopes, 'online', login_hint)
-  httpc = transport.AuthorizedHttp(credentials)
-  return getService('cloudresourcemanagerv1', httpc)
+  creds = auth.oauth.Credentials.from_client_secrets(client_id, client_secret,
+                                                     scopes, 'online',
+                                                     login_hint=login_hint,
+                                                     use_console_flow=not GC_Values[GC_OAUTH_BROWSER])
+  httpc = transport.AuthorizedHttp(creds)
+  return getService('cloudresourcemanagerv1', httpc), httpc
 
 # Ugh, v2 doesn't contain all the operations of v1 so we need to use both here.
 def getCRM2Service(httpc):
@@ -6199,7 +6202,7 @@ def getGAMProjectFile(filepath):
 def enableGAMProjectAPIs(GAMProjectAPIs, httpObj, projectId, checkEnabled, i=0, count=0):
   apis = GAMProjectAPIs[:]
   project_name = f'project:{projectId}'
-  serveman = getService('serveman', httpObj)
+  serveman = getService('servicemanagement', httpObj)
   status = True
   if checkEnabled:
     try:
@@ -6651,12 +6654,13 @@ def _generatePrivateKeyAndPublicCert(client_id, key_size):
   return private_pem, publicKeyData
 
 def _formatOAuth2ServiceData(project_id, client_email, client_id, private_key, private_key_id):
+  quoted_email = quote(client_email)
   key_json = {
     'auth_provider_x509_cert_url': 'https://www.googleapis.com/oauth2/v1/certs',
     'auth_uri': 'https://accounts.google.com/o/oauth2/auth',
     'client_email': client_email,
     'client_id': client_id,
-    'client_x509_cert_url': f'https://www.googleapis.com/robot/v1/metadata/x509/{quote(client_email)}',
+    'client_x509_cert_url': f'https://www.googleapis.com/robot/v1/metadata/x509/{quoted_email}',
     'private_key': private_key,
     'private_key_id': private_key_id,
     'project_id': project_id,
