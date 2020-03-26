@@ -27,20 +27,6 @@ cd ~
 #echo "Python location:"
 #which $python
 
-# Compile latest OpenSSL
-if [ ! -d openssl-$BUILD_OPENSSL_VERSION ]; then
-  wget --quiet https://www.openssl.org/source/openssl-$BUILD_OPENSSL_VERSION.tar.gz
-  echo "Extracting OpenSSL..."
-  tar xf openssl-$BUILD_OPENSSL_VERSION.tar.gz
-fi
-cd openssl-$BUILD_OPENSSL_VERSION
-echo "Compiling OpenSSL $BUILD_OPENSSL_VERSION..."
-./config shared --prefix=$mypath/ssl
-echo "Running make for OpenSSL..."
-make -j$cpucount -s
-echo "Running make install for OpenSSL..."
-make install > /dev/null
-export LD_LIBRARY_PATH=~/ssl/lib
 cd ~
 
 export LD_LIBRARY_PATH=~/ssl/lib:~/python/lib
@@ -67,7 +53,6 @@ if [ $SSLRESULT -ne 0 ] || [[ "$SSLVER" != "OpenSSL $BUILD_OPENSSL_VERSION "* ]]
   fi
 
   # Start clean
-  cd ~
   rm -rf python
   rm -rf ssl
   mkdir python
