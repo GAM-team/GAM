@@ -10104,7 +10104,7 @@ def doRequestOAuth(login_hint=None):
   try:
     creds = auth.oauth.Credentials.from_client_secrets_file(
         client_secrets_file=client_secrets_file,
-        scopes=scopes,
+        scopes=list(scopes),
         access_type='offline',
         login_hint=login_hint,
         credentials_file=GC_Values[GC_OAUTH2_TXT],
