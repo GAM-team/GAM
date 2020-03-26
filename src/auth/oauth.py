@@ -171,7 +171,7 @@ class Credentials(google.oauth2.credentials.Credentials):
       raise ValueError(
           'Authorized user info was not in the expected format, missing '
           f'fields {", ".join(missing)} and one of '
-          f'{", ".join(keys_need_one_of)}.'
+          f'{", ".join(keys_need_one_of)}.')
 
     expiry = info.get('token_expiry')
     if expiry:
