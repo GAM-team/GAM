@@ -170,12 +170,23 @@ class CredentialsTest(unittest.TestCase):
       oauth.Credentials.from_credentials_file(self.fake_filename)
 
   @patch.object(oauth.fileutils, 'read_file')
-  def test_from_credentials_file_missing_required_info_raises_error(
+  def test_from_credentials_file_missing_any_token_raises_error(
       self, mock_read_file):
     mock_read_file.return_value = json.dumps({
-        # This data is missing the required refresh_token key/value pair
+        # This data is missing a token key/value pair
         'client_id': self.fake_client_id,
         'client_secret': self.fake_client_secret,
+    })
+    with self.assertRaises(oauth.InvalidCredentialsFileError):
+      oauth.Credentials.from_credentials_file(self.fake_filename)
+
+  @patch.object(oauth.fileutils, 'read_file')
+  def test_from_credentials_file_missing_required_raises_error(
+      self, mock_read_file):
+    mock_read_file.return_value = json.dumps({
+        # This data is missing a client_secret key/value pair
+        'client_id': self.fake_client_id,
+        'refresh_token': self.fake_refresh_token,
     })
     with self.assertRaises(oauth.InvalidCredentialsFileError):
       oauth.Credentials.from_credentials_file(self.fake_filename)

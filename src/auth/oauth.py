@@ -161,13 +161,17 @@ class Credentials(google.oauth2.credentials.Credentials):
     Raises:
       ValueError: If missing fields are detected in the info.
     """
-    keys_needed = set(('token', 'client_id', 'client_secret'))
+    # We need all of these keys
+    keys_needed = set(('client_id', 'client_secret'))
+    # We need 1 or more of these keys
+    keys_need_one_of = set(('refresh_token', 'auth_token', 'token'))
     missing = keys_needed.difference(info.keys())
-
-    if missing:
+    has_one_of = set(info) & keys_need_one_of
+    if missing or not has_one_of:
       raise ValueError(
           'Authorized user info was not in the expected format, missing '
-          f'fields {", ".join(missing)}.')
+          f'fields {", ".join(missing)} and one of '
+          f'{", ".join(keys_need_one_of)}.'
 
     expiry = info.get('token_expiry')
     if expiry:
