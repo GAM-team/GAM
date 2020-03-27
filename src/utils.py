@@ -1,14 +1,17 @@
 import datetime
 import re
 import sys
+import time
 from hashlib import md5
 from html.entities import name2codepoint
 from html.parser import HTMLParser
 import json
+import dateutil.parser
 
-from var import *
+import controlflow
 import fileutils
 import transport
+from var import *
 
 class _DeHTMLParser(HTMLParser):
 
@@ -111,6 +114,15 @@ def formatMilliSeconds(millis):
   hours, minutes = divmod(minutes, 60)
   return f'{hours:02d}:{minutes:02d}:{seconds:02d}'
 
+def integerLimits(minVal, maxVal, item='integer'):
+  if (minVal is not None) and (maxVal is not None):
+    return f'{item} {minVal}<=x<={maxVal}'
+  if minVal is not None:
+    return f'{item} x>={minVal}'
+  if maxVal is not None:
+    return f'{item} x<={maxVal}'
+  return f'{item} x'
+
 def get_string(i, item, optional=False, minLen=1, maxLen=None):
   if i < len(sys.argv):
     argstr = sys.argv[i]
@@ -163,7 +175,7 @@ def get_yyyymmdd(argstr, minLen=1, returnTimeStamp=False, returnDateTime=False):
   if argstr:
     if argstr[0] in ['+', '-']:
       today = datetime.date.today()
-      argstr = (datetime.datetime(today.year, today.month, today.day)+getDeltaDate(argstr)).strftime(YYYYMMDD_FORMAT)
+      argstr = (datetime.datetime(today.year, today.month, today.day)+get_delta_date(argstr)).strftime(YYYYMMDD_FORMAT)
     try:
       dateTime = datetime.datetime.strptime(argstr, YYYYMMDD_FORMAT)
       if returnTimeStamp:
@@ -256,7 +268,7 @@ def md5_matches_file(local_file, expected_md5, exitOnError):
 
 URL_SHORTENER_ENDPOINT = 'https://gam-shortn.appspot.com/create'
 
-def shorten_url(long_url, httpc=None):    
+def shorten_url(long_url, httpc=None):
     if not httpc:
         httpc = transport.create_http(timeout=10)
     headers = {'Content-Type': 'application/json', 'User-Agent': GAM_INFO}

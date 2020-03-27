@@ -707,7 +707,6 @@ def doPrintCrosDevices():
                     tempInfos = cpuStatusReports[i].get('cpuTemperatureInfo',
                                                         [])
                     for tempInfo in tempInfos:
-                        temperature = tempInfo['temperature']
                         label = tempInfo["label"].strip()
                         base = 'cpuStatusReports.cpuTemperatureInfo.'
                         nrow[f'{base}{label}'] = tempInfo['temperature']
