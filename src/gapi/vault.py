@@ -653,6 +653,7 @@ def printMatters():
     initialTitles = ['matterId', 'name', 'description', 'state']
     titles = initialTitles[:]
     view = 'FULL'
+    state = None
     i = 3
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
@@ -662,12 +663,22 @@ def printMatters():
         elif myarg in PROJECTION_CHOICES_MAP:
             view = PROJECTION_CHOICES_MAP[myarg]
             i += 1
+        elif myarg == 'state':
+            valid_states = gapi.get_enum_values_minus_unspecified(
+                v._rootDesc['schemas']['Matter']['properties']['state'][
+                    'enum'])
+            state = sys.argv[i+1].upper()
+            if state not in valid_states:
+                controlflow.expected_argument_exit(
+                    'state', ', '.join(valid_states), state)
+            i += 2
         else:
             controlflow.invalid_argument_exit(myarg, "gam print matters")
     __main__.printGettingAllItems('Vault Matters', None)
     page_message = gapi.got_total_items_msg('Vault Matters', '...\n')
     matters = gapi.get_all_pages(
-        v.matters(), 'list', 'matters', page_message=page_message, view=view)
+        v.matters(), 'list', 'matters', page_message=page_message, view=view,
+        state=state)
     for matter in matters:
         display.add_row_titles_to_csv_file(
             utils.flatten_json(matter), csvRows, titles)
