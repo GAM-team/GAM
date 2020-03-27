@@ -43,6 +43,8 @@ md5sum ../PyInstaller/bootloader/Windows-64bit/*
 perl -i -p0e 's/#ifndef HAVE_STRLEN.*?#endif//se' src/pyi_utils.*
 
 $python ./waf all --target-arch=64bit
+cat build/config.log
+
 echo "bootloader after:"
 md5sum ../PyInstaller/bootloader/Windows-64bit/*
 echo "PATH: $PATH"
