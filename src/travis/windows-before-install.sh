@@ -1,3 +1,13 @@
+if [[ "$PLATFORM" == "x86_64" ]]; then
+  export BITS="64"
+  export PYTHONFILE_BITS="-amd64"
+  export WIX_BITS="x64"
+elif [[ "$PLATFORM" == "x86" ]]; then
+  export BITS="32"
+  export PYTHONFILE_BITS=""
+  export WIX_BITS="x86"
+fi
+echo "This is a ${BITS}-bit build for ${PLATFORM}"
 echo "Installing Net-Framework-Core..."
 export mypath=$(pwd)
 
@@ -5,21 +15,23 @@ choco install vcbuildtools
 
 until powershell Install-WindowsFeature Net-Framework-Core; do echo "trying again..."; done
 cd ~
-export exefile=Win64OpenSSL_Light-${BUILD_OPENSSL_VERSION//./_}.exe
+export exefile=Win${BITS}OpenSSL_Light-${BUILD_OPENSSL_VERSION//./_}.exe
 if [ ! -e $exefile ]; then
   echo "Downloading $exefile..."
   wget --quiet https://slproweb.com/download/$exefile
 fi
 echo "Installing $exefile..."
 powershell ".\\${exefile} /silent /sp- /suppressmsgboxes /DIR=C:\\ssl"
-export python_file=python-$BUILD_PYTHON_VERSION-amd64.exe
+export python_file=python-${BUILD_PYTHON_VERSION}${PYTHONFILE_BITS}.exe
 wget --quiet https://www.python.org/ftp/python/$BUILD_PYTHON_VERSION/$python_file
 powershell ".\\${python_file} /quiet InstallAllUsers=1 TargetDir=c:\\python"
-until cinst -y wixtoolset; do echo "trying again..."; done
+until cinst -y wixtoolset; do echo "trying wix install again..."; done
 until cp -v /c/ssl/libcrypto-1_1-x64.dll /c/python/DLLs/; do echo "trying libcrypto copy again..."; done
-cp -v /c/python/DLLs/libcrypto-1_1-x64.dll /c/python/DLLs/libcrypto-1_1.dll
 until cp -v /c/ssl/libssl-1_1-x64.dll /c/python/DLLs/; do echo "trying libssl copy again..."; done
-cp -v /c/python/DLLs/libssl-1_1-x64.dll /c/python/DLLs/libssl-1_1.dll
+if [[ "$PLATFORM" == "x86_64" ]]; then
+  cp -v /c/python/DLLs/libssl-1_1-x64.dll /c/python/DLLs/libssl-1_1.dll
+  cp -v /c/python/DLLs/libcrypto-1_1-x64.dll /c/python/DLLs/libcrypto-1_1.dll
+fi
 export PATH=$PATH:/c/python/scripts
 cd $mypath
 export python=/c/python/python.exe
@@ -40,12 +52,12 @@ wget --quiet https://github.com/pyinstaller/pyinstaller/archive/develop.tar.gz
 tar xf develop.tar.gz
 cd pyinstaller-develop/bootloader
 echo "bootloader before:"
-md5sum ../PyInstaller/bootloader/Windows-64bit/*
+md5sum ../PyInstaller/bootloader/Windows-${BITS}bit/*
 
-$python ./waf all --target-arch=64bit --msvc_version "msvc 14.0"
+$python ./waf all --target-arch=${BITS}bit --msvc_version "msvc 14.0"
 
 echo "bootloader after:"
-md5sum ../PyInstaller/bootloader/Windows-64bit/*
+md5sum ../PyInstaller/bootloader/Windows-${BITS}bit/*
 echo "PATH: $PATH"
 cd ..
 $python setup.py install

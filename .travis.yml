@@ -167,10 +167,10 @@ jobs:
         - VMTYPE=build
 
 before_install:
-- source src/travis/$TRAVIS_OS_NAME-$PLATFORM-before-install.sh
+- source src/travis/$TRAVIS_OS_NAME-before-install.sh
 
 install:
-- source src/travis/$TRAVIS_OS_NAME-$PLATFORM-install.sh
+- source src/travis/$TRAVIS_OS_NAME-install.sh
 
 script:
 # Discover and run all Python unit tests. Buffer output so that it's not sent to the build log.

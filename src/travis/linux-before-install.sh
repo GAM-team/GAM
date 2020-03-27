@@ -6,7 +6,7 @@ if [ "$VMTYPE" == "test" ]; then
 else
   export whereibelong=$(pwd)
   export dist=$(lsb_release --codename --short)
-  echo "We are running on Ubuntu $dist"
+  echo "We are running on Ubuntu $dist $PLATFORM"
   export LD_LIBRARY_PATH=~/ssl/lib:~/python/lib
   cpucount=$(nproc --all)
   echo "This device has $cpucount CPUs for compiling..."
