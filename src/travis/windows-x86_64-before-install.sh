@@ -1,5 +1,8 @@
 echo "Installing Net-Framework-Core..."
 export mypath=$(pwd)
+
+choco upgrade all
+
 until powershell Install-WindowsFeature Net-Framework-Core; do echo "trying again..."; done
 cd ~
 export exefile=Win64OpenSSL_Light-${BUILD_OPENSSL_VERSION//./_}.exe
@@ -38,9 +41,6 @@ tar xf develop.tar.gz
 cd pyinstaller-develop/bootloader
 echo "bootloader before:"
 md5sum ../PyInstaller/bootloader/Windows-64bit/*
-
-# hack to fix compile on Travis
-perl -i -p0e 's/#ifndef HAVE_STRLEN.*?#endif//se' src/pyi_utils.*
 
 $python ./waf all --target-arch=64bit
 cat build/config.log
