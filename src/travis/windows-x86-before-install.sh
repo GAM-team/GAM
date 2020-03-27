@@ -36,6 +36,10 @@ tar xf develop.tar.gz
 cd pyinstaller-develop/bootloader
 echo "bootloader before:"
 md5sum ../PyInstaller/bootloader/Windows-32bit/*
+
+# hack to fix compile on Travis
+perl -i -p0e 's/#ifndef HAVE_STRLEN.*?#endif//se' src/pyi_utils.*
+
 $python ./waf all --target-arch=32bit
 echo "bootloader after:"
 md5sum ../PyInstaller/bootloader/Windows-32bit/*
