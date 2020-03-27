@@ -17,6 +17,7 @@ import transport
 from var import GAM_INFO
 from var import GM_Globals
 from var import GM_WINDOWS
+import utils
 
 MESSAGE_CONSOLE_AUTHORIZATION_PROMPT = ('\nGo to the following link in your '
                                         'browser:\n\n\t{url}\n')
@@ -512,29 +513,8 @@ class _ShortURLFlow(google_auth_oauthlib.flow.InstalledAppFlow):
   def authorization_url(self, http=None, **kwargs):
     """Gets a shortened authorization URL."""
     long_url, state = super(_ShortURLFlow, self).authorization_url(**kwargs)
-    if not http:
-      http = transport.create_http(timeout=10)
-    headers = {'Content-Type': 'application/json', 'User-Agent': GAM_INFO}
-    try:
-      payload = json.dumps({'long_url': long_url})
-      resp, content = http.request(
-          _ShortURLFlow.URL_SHORTENER_ENDPOINT,
-          'POST',
-          payload,
-          headers=headers)
-    except:
-      return long_url, state
-
-    if resp.status != 200:
-      return long_url, state
-
-    try:
-      if isinstance(content, bytes):
-        content = content.decode()
-      return json.loads(content).get('short_url', long_url), state
-    except:
-      return long_url, state
-
+    short_url = utils.shorten_url(long_url)
+    return short_url, state
 
 class _FileLikeThreadLock(object):
   """A threading.lock which has the same interface as filelock.Filelock."""

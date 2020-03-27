@@ -4,10 +4,11 @@ import sys
 from hashlib import md5
 from html.entities import name2codepoint
 from html.parser import HTMLParser
+import json
 
 from var import *
 import fileutils
-
+import transport
 
 class _DeHTMLParser(HTMLParser):
 
@@ -252,3 +253,27 @@ def md5_matches_file(local_file, expected_md5, exitOnError):
   if exitOnError and actual_hash != expected_md5:
     controlflow.system_error_exit(6, f'actual hash was {actual_hash}. Exiting on corrupt file.')
   return actual_hash == expected_md5
+
+URL_SHORTENER_ENDPOINT = 'https://gam-shortn.appspot.com/create'
+
+def shorten_url(long_url, httpc=None):    
+    if not httpc:
+        httpc = transport.create_http(timeout=10)
+    headers = {'Content-Type': 'application/json', 'User-Agent': GAM_INFO}
+    try:
+        payload = json.dumps({'long_url': long_url})
+        resp, content = httpc.request(
+          URL_SHORTENER_ENDPOINT,
+          'POST',
+          payload,
+          headers=headers)
+    except:
+        return long_url
+    if resp.status != 200:
+        return long_url
+    try:
+        if isinstance(content, bytes):
+            content = content.decode()
+        return json.loads(content).get('short_url', long_url)
+    except:
+        return long_url

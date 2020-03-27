@@ -1021,7 +1021,7 @@ def doCheckServiceAccount(users):
     long_url = (f'https://admin.google.com/{user_domain}/ManageOauthClients'
                 f'?clientScopeToAdd={",".join(check_scopes)}'
                 f'&clientNameToAdd={service_account}')
-    short_url = shorten_url(long_url)
+    short_url = utils.shorten_url(long_url)
     scopes_failed = f'''Some scopes failed! To authorize them, please go to:
 
   {short_url}
@@ -10104,7 +10104,7 @@ def doRequestOAuth(login_hint=None):
   try:
     creds = auth.oauth.Credentials.from_client_secrets_file(
         client_secrets_file=client_secrets_file,
-        scopes=list(scopes),
+        scopes=scopes,
         access_type='offline',
         login_hint=login_hint,
         credentials_file=GC_Values[GC_OAUTH2_TXT],
@@ -10421,7 +10421,7 @@ class ScopeSelectionMenu():
     """Returns the aggregate set of oauth scopes currently selected."""
     selected_scopes = [scope for option in self.get_selected_options()
                        for scope in option.get_effective_scopes()]
-    return set(selected_scopes)
+    return list(set(selected_scopes))
 
   MENU_CHOICE = {
     'SELECT_ALL_SCOPES': 's',
