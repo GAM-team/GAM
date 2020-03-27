@@ -228,15 +228,6 @@ def getLabelColor(color):
     controlflow.expected_argument_exit("label color", ", ".join(LABEL_COLORS), color)
   controlflow.system_error_exit(2, f'A label color must be # and six hex characters (#012345); got {color}')
 
-def integerLimits(minVal, maxVal, item='integer'):
-  if (minVal is not None) and (maxVal is not None):
-    return f'{item} {minVal}<=x<={maxVal}'
-  if minVal is not None:
-    return f'{item} x>={minVal}'
-  if maxVal is not None:
-    return f'{item} x<={maxVal}'
-  return f'{item} x'
-
 def getInteger(value, item, minVal=None, maxVal=None):
   try:
     number = int(value.strip())
@@ -244,7 +235,7 @@ def getInteger(value, item, minVal=None, maxVal=None):
       return number
   except ValueError:
     pass
-  controlflow.system_error_exit(2, f'expected {item} in range <{integerLimits(minVal, maxVal)}>, got {value}')
+  controlflow.system_error_exit(2, f'expected {item} in range <{utils.integerLimits(minVal, maxVal)}>, got {value}')
 
 def removeCourseIdScope(courseId):
   if courseId.startswith('d:'):

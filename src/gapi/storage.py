@@ -18,7 +18,7 @@ def build_gapi():
 
 
 def get_cloud_storage_object(s, bucket, object_, local_file=None,
-                           expectedMd5=None):
+                             expectedMd5=None):
     if not local_file:
         local_file = object_
     if os.path.exists(local_file):

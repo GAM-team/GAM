@@ -695,13 +695,11 @@ def printExports():
         else:
             controlflow.invalid_argument_exit(myarg, "gam print exports")
     if not matters:
-        fields = 'matters(matterId,state),nextPageToken'
+        fields = 'matters(matterId),nextPageToken'
         matters_results = gapi.get_all_pages(v.matters(
         ), 'list', 'matters', view='BASIC', state='OPEN', fields=fields)
         for matter in matters_results:
-            matterState = matter['state']
-            matterId = matter['matterId']
-            matterIds.append(matterId)
+            matterIds.append(matter['matterId'])
     else:
         for matter in matters:
             matterIds.append(getMatterItem(v, matter))
@@ -736,13 +734,11 @@ def printHolds():
         else:
             controlflow.invalid_argument_exit(myarg, "gam print holds")
     if not matters:
-        fields = 'matters(matterId,state),nextPageToken'
+        fields = 'matters(matterId),nextPageToken'
         matters_results = gapi.get_all_pages(v.matters(
         ), 'list', 'matters', view='BASIC', state='OPEN', fields=fields)
         for matter in matters_results:
-            matterState = matter['state']
-            matterId = matter['matterId']
-            matterIds.append(matterId)
+            matterIds.append(matter['matterId'])
     else:
         for matter in matters:
             matterIds.append(getMatterItem(v, matter))

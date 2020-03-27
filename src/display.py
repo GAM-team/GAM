@@ -1,6 +1,7 @@
 """Methods related to display of information to the user."""
 
 import csv
+import datetime
 import io
 import sys
 import webbrowser
