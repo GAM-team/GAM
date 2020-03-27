@@ -1,7 +1,7 @@
 echo "Installing Net-Framework-Core..."
 export mypath=$(pwd)
 
-choco upgrade all
+choco install vcbuildtools
 
 until powershell Install-WindowsFeature Net-Framework-Core; do echo "trying again..."; done
 cd ~
@@ -42,8 +42,7 @@ cd pyinstaller-develop/bootloader
 echo "bootloader before:"
 md5sum ../PyInstaller/bootloader/Windows-64bit/*
 
-$python ./waf all --target-arch=64bit
-cat build/config.log
+$python ./waf all --target-arch=64bit --msvc_version "msvc 14.0"
 
 echo "bootloader after:"
 md5sum ../PyInstaller/bootloader/Windows-64bit/*
