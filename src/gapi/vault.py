@@ -663,7 +663,7 @@ def printMatters():
         elif myarg in PROJECTION_CHOICES_MAP:
             view = PROJECTION_CHOICES_MAP[myarg]
             i += 1
-        elif myarg == 'state':
+        elif myarg == 'matterstate':
             valid_states = gapi.get_enum_values_minus_unspecified(
                 v._rootDesc['schemas']['Matter']['properties']['state'][
                     'enum'])
