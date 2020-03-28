@@ -8,36 +8,50 @@ elif [[ "$PLATFORM" == "x86" ]]; then
   export WIX_BITS="x86"
 fi
 echo "This is a ${BITS}-bit build for ${PLATFORM}"
-echo "Installing Net-Framework-Core..."
+
 export mypath=$(pwd)
-
-choco install vcbuildtools
-
-until powershell Install-WindowsFeature Net-Framework-Core; do echo "trying again..."; done
 cd ~
+
+# .NET Core
+echo "Installing Net-Framework-Core..."
+until powershell Install-WindowsFeature Net-Framework-Core; do echo "trying again..."; done
+
+# VS 2015
+echo "Installing Visual Studio 2015.."
+until choco install vcbuildtools; do echo "Trying Visual Studio again..."; done
+
+# Python
+echo "Installing Python..."
+export python_file=python-${BUILD_PYTHON_VERSION}${PYTHONFILE_BITS}.exe
+if [ ! -e $python_file ]; then
+  echo "Downloading $python_file..."
+  wget --quiet https://www.python.org/ftp/python/$BUILD_PYTHON_VERSION/$python_file
+fi
+powershell ".\\${python_file} /quiet InstallAllUsers=1 TargetDir=c:\\python"
+export python=/c/python/python.exe
+export pip=/c/python/scripts/pip.exe
+until [ -f $python ]; do sleep 1; done
+export PATH=$PATH:/c/python/scripts
+
+# OpenSSL
+echo "Installing OpenSSL..."
 export exefile=Win${BITS}OpenSSL_Light-${BUILD_OPENSSL_VERSION//./_}.exe
 if [ ! -e $exefile ]; then
   echo "Downloading $exefile..."
   wget --quiet https://slproweb.com/download/$exefile
 fi
-echo "Installing $exefile..."
 powershell ".\\${exefile} /silent /sp- /suppressmsgboxes /DIR=C:\\ssl"
-export python_file=python-${BUILD_PYTHON_VERSION}${PYTHONFILE_BITS}.exe
-wget --quiet https://www.python.org/ftp/python/$BUILD_PYTHON_VERSION/$python_file
-powershell ".\\${python_file} /quiet InstallAllUsers=1 TargetDir=c:\\python"
-until cinst -y wixtoolset; do echo "trying wix install again..."; done
 until cp -v /c/ssl/libcrypto-1_1-x64.dll /c/python/DLLs/; do echo "trying libcrypto copy again..."; done
 until cp -v /c/ssl/libssl-1_1-x64.dll /c/python/DLLs/; do echo "trying libssl copy again..."; done
 if [[ "$PLATFORM" == "x86_64" ]]; then
   cp -v /c/python/DLLs/libssl-1_1-x64.dll /c/python/DLLs/libssl-1_1.dll
   cp -v /c/python/DLLs/libcrypto-1_1-x64.dll /c/python/DLLs/libcrypto-1_1.dll
 fi
-export PATH=$PATH:/c/python/scripts
+
+# WIX Toolset
+until cinst -y wixtoolset; do echo "trying wix install again..."; done
+
 cd $mypath
-export python=/c/python/python.exe
-export pip=/c/python/scripts/pip.exe
-until [ -f $python ]; do :; done
-until [ -f $pip ]; do :; done
 
 $pip install --upgrade pip
 $pip list --outdated --format=freeze | grep -v '^\-e' | cut -d = -f 1  | xargs -n1 $pip install -U
