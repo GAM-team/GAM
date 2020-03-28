@@ -14,7 +14,7 @@ cd ~
 
 # .NET Core
 echo "Installing Net-Framework-Core..."
-until powershell Install-WindowsFeature Net-Framework-Core; do echo "trying again..."; done
+until powershell Install-WindowsFeature Net-Framework-Core; do echo "trying .net again..."; done
 
 # VS 2015
 echo "Installing Visual Studio 2015.."
@@ -27,7 +27,7 @@ if [ ! -e $python_file ]; then
   echo "Downloading $python_file..."
   wget --quiet https://www.python.org/ftp/python/$BUILD_PYTHON_VERSION/$python_file
 fi
-powershell ".\\${python_file} /quiet InstallAllUsers=1 TargetDir=c:\\python"
+until powershell ".\\${python_file} /quiet InstallAllUsers=1 TargetDir=c:\\python"; do echo "trying python again..."; done
 export python=/c/python/python.exe
 export pip=/c/python/scripts/pip.exe
 until [ -f $python ]; do sleep 1; done
@@ -40,8 +40,8 @@ if [ ! -e $exefile ]; then
   echo "Downloading $exefile..."
   wget --quiet https://slproweb.com/download/$exefile
 fi
-powershell ".\\${exefile} /silent /sp- /suppressmsgboxes /DIR=C:\\ssl"
-until cp -v /c/ssl/libcrypto-1_1-x64.dll /c/python/DLLs/; do echo "trying libcrypto copy again..."; done
+until powershell ".\\${exefile} /silent /sp- /suppressmsgboxes /DIR=C:\\ssl"; do echo "trying openssl again..."; done
+until cp -v /c/ssl/libcrypto-1_1-x64.dll /c/python/DLLs/; do echo "trying libcrypto copy again..."; sleep 3; done
 until cp -v /c/ssl/libssl-1_1-x64.dll /c/python/DLLs/; do echo "trying libssl copy again..."; done
 if [[ "$PLATFORM" == "x86_64" ]]; then
   cp -v /c/python/DLLs/libssl-1_1-x64.dll /c/python/DLLs/libssl-1_1.dll
