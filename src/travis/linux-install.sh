@@ -25,9 +25,11 @@ else
     rm gam/gam
     mv gam/gam-staticx gam/gam
     chmod 755 gam/gam
-    tar cfJ $GAM_LEGACY_ARCHIVE gam/
+    tar cvfJ $GAM_LEGACY_ARCHIVE gam/
     echo "Legacy StaticX GAM info:"
     du -h gam/gam
     time $gam version extended
   fi
+  echo "GAM packages:"
+  ls -l gam-*.tar.xz
 fi

@@ -93,7 +93,6 @@ else
 
   if ([ "${dist}" == "precise" ] || [ "${dist}" == "trusty" ]); then
     echo "Installing deps for StaticX..."
-    sudo apt-get install --yes scons
     if [ ! -d patchelf-$PATCHELF_VERSION ]; then
       echo "Downloading PatchELF $PATCHELF_VERSION"
       wget https://nixos.org/releases/patchelf/patchelf-$PATCHELF_VERSION/patchelf-$PATCHELF_VERSION.tar.bz2
