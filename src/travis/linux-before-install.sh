@@ -91,7 +91,7 @@ else
   python=~/python/bin/python3
   pip=~/python/bin/pip3
 
-  if [[ "$dist" == "precise" ] || [ "$dist" == "trusty" ]]; then
+  if ([ "${dist}" == "precise" ] || [ "${dist}" == "trusty" ]); then
     echo "Installing deps for StaticX..."
     sudo apt-get install --yes scons
     if [ ! -d patchelf-$PATCHELF_VERSION ]; then
