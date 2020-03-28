@@ -1248,7 +1248,7 @@ gam reopen vaultmatter|matter <MatterItem>
 gam delete vaultmatter|matter <MatterItem>
 gam undelete vaultmatter|matter <MatterItem>
 gam info vaultmatter|matter <MatterItem>
-gam print vaultmatters|matters [todrive] [basic|full]
+gam print vaultmatters|matters [todrive] [basic|full] [matterstate open|closed|deleted]
 
 gam <UserTypeEntity> delete|del asp|asps|applicationspecificpasswords all|<ASPIDList>
 gam <UserTypeEntity> show asps|asp|applicationspecificpasswords
