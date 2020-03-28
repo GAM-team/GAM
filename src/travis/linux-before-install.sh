@@ -103,7 +103,7 @@ else
       make
       sudo make install
     fi
-    $pip install git+https://github.com/JonathonReinhart/staticx.git@master
+    $pip install staticx
   fi
 
   cd $whereibelong

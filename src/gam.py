@@ -98,12 +98,15 @@ if platform.system() == 'Linux':
 if os.environ.get('STATICX_PROG_PATH', False):
   # StaticX static executable
   GM_Globals[GM_GAM_PATH] = os.path.dirname(os.environ['STATICX_PROG_PATH'])
+  GM_Globals[GM_GAM_TYPE] = 'staticx'
   # Pyinstaller executable
 elif getattr(sys, 'frozen', False):
   GM_Globals[GM_GAM_PATH] = os.path.dirname(sys.executable)
+  GM_Globals[GM_GAM_TYPE] = 'pyinstaller'
 else:
   # Source code
   GM_Globals[GM_GAM_PATH] = os.path.dirname(os.path.realpath(__file__))
+  GM_Globals[GM_GAM_TYPE] = 'pythonsource'
 
 def showUsage():
   doGAMVersion(checkForArgs=False)
@@ -599,7 +602,7 @@ def doGAMVersion(checkForArgs=True):
     return
   pyversion = platform.python_version()
   cpu_bits = struct.calcsize('P') * 8
-  print((f'GAM {gam_version} - {GAM_URL}\n'
+  print((f'GAM {gam_version} - {GAM_URL} - {GM_Globals[GM_GAM_TYPE]}\n'
          f'{gam_author}\n'
          f'Python {pyversion} {cpu_bits}-bit {sys.version_info.releaselevel}\n'
          f'google-api-python-client {googleapiclient.__version__}\n'

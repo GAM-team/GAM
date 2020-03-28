@@ -725,6 +725,8 @@ GROUP_SETTINGS_BOOLEAN_ATTRIBUTES = set([
 GM_SYSEXITRC = 'sxrc'
 # Path to gam
 GM_GAM_PATH = 'gpth'
+# Python source, PyInstaller or StaticX?
+GM_GAM_TYPE = 'gtyp'
 # Are we on Windows?
 GM_WINDOWS = 'wndo'
 # Encodings
@@ -768,6 +770,7 @@ _FN_OAUTH2_TXT = 'oauth2.txt'
 GM_Globals = {
   GM_SYSEXITRC: 0,
   GM_GAM_PATH: None,
+  GM_GAM_TYPE: None,
   GM_WINDOWS: os.name == 'nt',
   GM_SYS_ENCODING: _DEFAULT_CHARSET,
   GM_EXTRA_ARGS_DICT:  {'prettyPrint': False},
