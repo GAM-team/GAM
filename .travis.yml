@@ -100,16 +100,16 @@ jobs:
 
 before_install:
 - if [ "${TRAVIS_OS_NAME}" == "osx" ]; then
-    export GAMOS="macos";
+    export GAMOS="macos"
   else
-    export GAMOS="${TRAVIS_OS_NAME}";
+    export GAMOS="${TRAVIS_OS_NAME}"
   fi
 - if [ "${TRAVIS_CPU_ARCH}" == "amd64" ]; then
-    export PLATFORM="x86_64";
+    export PLATFORM="x86_64"
   elif [ "${TRAVIS_OS_NAME}" == "Windows 32-bit" ];
-    then export PLATFORM="x86";
+    then export PLATFORM="x86"
   else
-    export PLATFORM="${TRAVIS_OS_NAME};
+    export PLATFORM="${TRAVIS_OS_NAME}"
   fi
 - source src/travis/${TRAVIS_OS_NAME}-before-install.sh
 
