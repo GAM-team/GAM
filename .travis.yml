@@ -60,10 +60,6 @@ jobs:
       language: shell
       filter_secrets: false
     - os: linux
-      name: "Linux 64-bit Trusty"
-      dist: trusty
-      language: shell
-    - os: linux
       name: "Python 3.6 Source Testing"
       dist: bionic
       language: python

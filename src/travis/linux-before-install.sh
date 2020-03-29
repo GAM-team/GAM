@@ -1,4 +1,4 @@
-if [ "$TRAVIS_JOB_NAME" == *"Testing" ]; then
+if [[ "$TRAVIS_JOB_NAME" == *"Testing" ]]; then
   export python="python"
   export pip="pip"
   echo "Travis setup Python $TRAVIS_PYTHON_VERSION"
@@ -91,7 +91,7 @@ else
   python=~/python/bin/python3
   pip=~/python/bin/pip3
 
-  if [ "${dist}" == "trusty" ]; then
+  if ([ "${dist}" == "trusty" ] || [ "${dist}" == "xenial" ]); then
     echo "Installing deps for StaticX..."
     if [ ! -d patchelf-$PATCHELF_VERSION ]; then
       echo "Downloading PatchELF $PATCHELF_VERSION"
