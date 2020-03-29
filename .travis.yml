@@ -43,118 +43,78 @@ jobs:
       name: "Linux 64-bit Bionic"
       dist: bionic
       language: shell
-      env:
-         - GAMOS=linux
-         - PLATFORM=x86_64
-         - VMTYPE=build
     - os: linux
       name: "Linux 64-bit Xenial"
       dist: xenial
       language: shell
-      env:
-        - GAMOS=linux
-        - PLATFORM=x86_64
-        - VMTYPE=build
     - os: linux
       dist: bionic
       arch: arm64
       name: "Linux ARM64 Bionic"
       language: shell
       filter_secrets: false
-      env:
-        - GAMOS=linux
-        - PLATFORM=arm64
-        - VMTYPE=build
     - os: linux
       dist: xenial
       arch: arm64
       name: "Linux ARM64 Xenial"
       language: shell
       filter_secrets: false
-      env:
-        - GAMOS=linux
-        - PLATFORM=arm64
-        - VMTYPE=build
     - os: linux
       name: "Linux 64-bit Trusty"
       dist: trusty
       language: shell
-      env:
-        - GAMOS=linux
-        - PLATFORM=x86_64
-        - VMTYPE=build
     - os: linux
       name: "Python 3.6 Source Testing"
       dist: bionic
       language: python
       python: 3.6
-      env:
-        - GAMOS=linux
-        - PLATFORM=x86_64
-        - VMTYPE=test
     - os: linux
       name: "Python 3.7 Source Testing"
       dist: bionic
       language: python
       python: 3.7
-      env:
-        - GAMOS=linux
-        - PLATFORM=x86_64
-        - VMTYPE=test
     - os: linux
       name: "Python nightly Source Testing"
       dist: bionic
       language: python
       python: nightly
-      env:
-        - GAMOS=linux
-        - PLATFORM=x86_64
-        - VMTYPE=test
     - os: linux
       name: "Python PyPi Source Testing"
       dist: xenial
       language: python
       python: pypy3
-      env:
-        - GAMOS=linux
-        - PLATFORM=x86_64
-        - VMTYPE=test
     - os: osx
       name: "MacOS 10.13"
       language: generic
       osx_image: xcode10.1
-      env:
-        - GAMOS=macos
-        - PLATFORM=x86_64
-        - VMTYPE=build
     - os: osx
       name: "MacOS 10.14"
       language: generic
       osx_image: xcode11.3
-      env:
-        - GAMOS=macos
-        - PLATFORM=x86_64
-        - VMTYPE=build
     - os: windows
       name: "Windows 64-bit"
       language: shell
-      env:
-        - GAMOS=windows
-        - PLATFORM=x86_64
-        - VMTYPE=build
     - os: windows
       name: "Windows 32-bit"
       language: shell
-      env:
-        - GAMOS=windows
-        - PLATFORM=x86
-        - VMTYPE=build
 
 before_install:
-- source src/travis/$TRAVIS_OS_NAME-before-install.sh
+- if [ "${TRAVIS_OS_NAME}" == "osx" ]; then
+    export GAMOS="macos";
+  else
+    export GAMOS="${TRAVIS_OS_NAME}";
+  fi
+- if [ "${TRAVIS_CPU_ARCH}" == "amd64" ]; then
+    export PLATFORM="x86_64";
+  elif [ "${TRAVIS_OS_NAME}" == "Windows 32-bit" ];
+    then export PLATFORM="x86";
+  else
+    export PLATFORM="${TRAVIS_OS_NAME};
+  fi
+- source src/travis/${TRAVIS_OS_NAME}-before-install.sh
 
 install:
-- source src/travis/$TRAVIS_OS_NAME-install.sh
+- source src/travis/${TRAVIS_OS_NAME}-install.sh
 
 script:
 # Discover and run all Python unit tests. Buffer output so that it's not sent to the build log.
@@ -274,4 +234,4 @@ deploy:
   draft: true
   on:
     repo: jay0lee/GAM
-    condition: $VMTYPE = build
+    condition: $TRAVIS_JOB_NAME != *"Testing"

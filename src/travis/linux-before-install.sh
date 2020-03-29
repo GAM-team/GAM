@@ -1,4 +1,4 @@
-if [ "$VMTYPE" == "test" ]; then
+if [ "$TRAVIS_JOB_NAME" == *"Testing" ]; then
   export python="python"
   export pip="pip"
   echo "Travis setup Python $TRAVIS_PYTHON_VERSION"
