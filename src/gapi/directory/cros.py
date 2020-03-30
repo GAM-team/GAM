@@ -421,7 +421,7 @@ def doPrintCrosActivity():
                         utils.formatMilliSeconds(active_time)
                     newrow['activeTimeRanges.minutes'] = \
                         activeTimeRange['activeTime']//60000
-                    csvRows.append(new_row)
+                    csvRows.append(newrow)
             if selectRecentUsers:
                 recentUsers = cros.get('recentUsers', [])
                 lenRU = len(recentUsers)
@@ -444,11 +444,11 @@ def doPrintCrosActivity():
                 lenDF = len(deviceFiles)
                 num_ranges = min(lenDF, listLimit or lenDF)
                 for deviceFile in deviceFiles[:num_ranges]:
-                    new_row = row.copy()
-                    new_row['deviceFiles.type'] = deviceFile['type']
+                    newrow = row.copy()
+                    newrow['deviceFiles.type'] = deviceFile['type']
                     create_time = deviceFile['createTime']
-                    new_row['deviceFiles.createTime'] = create_time
-                    csvRows.append(new_row)
+                    newrow['deviceFiles.createTime'] = create_time
+                    csvRows.append(newrow)
     display.write_csv_file(csvRows, titles, 'CrOS Activity', todrive)
 
 
