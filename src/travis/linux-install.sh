@@ -20,7 +20,7 @@ else
 
   if ([ "${TRAVIS_DIST}" == "trusty" ] || [ "${TRAVIS_DIST}" == "xenial" ]) && [ "${PLATFORM}" == "x86_64" ]; then
     GAM_LEGACY_ARCHIVE=gam-${GAMVERSION}-${GAMOS}-${PLATFORM}-legacy.tar.xz
-    $python -OO -m staticx gam/gam gam/gam-staticx
+    $python -OO -m staticx -l /lib/x86_64-linux-gnu/libresolv.so.2 -l /lib/x86_64-linux-gnu/libnss_dns.so.2 gam/gam gam/gam-staticx
     strip gam/gam-staticx
     rm gam/gam
     mv gam/gam-staticx gam/gam
