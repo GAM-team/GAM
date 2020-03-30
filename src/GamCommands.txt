@@ -1005,7 +1005,6 @@ The following attributes are equivalent:
 	guestscantinviteothers|
 	guestscantseeothers|
 	hangoutsmeet|
-	(id <String>)|
 	(location <String>)|
 	(noreminders| (reminder <Number> email|popup|sms))|
 	(optionalattendee <EmailAddress>)|
@@ -1019,6 +1018,11 @@ The following attributes are equivalent:
 	(timezone <Timezone>)|
 	(visibility default|public|prvate)
 
+<EventUpdateAttributes> ::=
+	<EventAttributes>|
+	(removeattendee <EmailAddress>)|
+	(replacedescription <RegularExpression> <String>)
+
 <EventSelectProperty:> ::=
 	(after <Time>)|
 	(before <Time>)|
@@ -1030,9 +1034,10 @@ The following attributes are equivalent:
 <EventDisplayProperty> ::=
 	(timezone <TimeZone>)
 
-gam calendar <CalendarItem> addevent <EventAttributes>+ [<EventNotificationAttribute>]
+gam calendar <CalendarItem> addevent [id <String>] <EventAttributes>+ [<EventNotificationAttribute>]
 gam calendar <CalendarItem> deleteevent id|eventid <EventID> [doit] [<EventNotificationAttribute>]
 gam calendar <CalendarItem> moveevent id|eventid <EventID> [doit] [<EventNotificationAttribute>]
+gam calendar <CalendarItem> updateevent id|eventid <EventID> <EventUpdateAttributes>+ [<EventNotificationAttribute>]
 gam calendar <CalendarItem> wipe
 gam calendar <CalendarItem> printevents <EventSelectProperty>* <EventDisplayProperty>* [todrive]
 
