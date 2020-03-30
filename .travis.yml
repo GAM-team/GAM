@@ -97,7 +97,7 @@ before_install:
   else
     export GAMOS="${TRAVIS_OS_NAME}";
   fi
-- if [ "${TRAVIS_OS_NAME}" == "Windows 32-bit" ]; then
+- if [ "${TRAVIS_JOB_NAME}" == "Windows 32-bit" ]; then
     export PLATFORM="x86";
   elif [ "${TRAVIS_CPU_ARCH}" == "amd64" ]; then
     export PLATFORM="x86_64";
