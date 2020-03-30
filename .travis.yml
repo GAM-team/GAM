@@ -61,22 +61,18 @@ jobs:
       filter_secrets: false
     - os: linux
       name: "Python 3.6 Source Testing"
-      dist: bionic
       language: python
       python: 3.6
     - os: linux
       name: "Python 3.7 Source Testing"
-      dist: bionic
       language: python
       python: 3.7
     - os: linux
       name: "Python nightly Source Testing"
-      dist: bionic
       language: python
       python: nightly
     - os: linux
       name: "Python PyPi Source Testing"
-      dist: xenial
       language: python
       python: pypy3
     - os: osx

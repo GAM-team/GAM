@@ -18,7 +18,7 @@ else
   du -h gam/gam
   time $gam version extended
 
-  if ([ "${dist}" == "trusty" ] || [ "${dist}" == "xenial" ]); then
+  if ([ "${TRAVIS_DIST}" == "trusty" ] || [ "${TRAVIS_DIST}" == "xenial" ]) && [ "${PLATFORM}" == "x86_64" ]; then
     GAM_LEGACY_ARCHIVE=gam-${GAMVERSION}-${GAMOS}-${PLATFORM}-legacy.tar.xz
     $python -OO -m staticx gam/gam gam/gam-staticx
     strip gam/gam-staticx

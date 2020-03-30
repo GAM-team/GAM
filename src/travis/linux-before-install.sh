@@ -5,8 +5,7 @@ if [[ "$TRAVIS_JOB_NAME" == *"Testing" ]]; then
   echo "running tests with this version"
 else
   export whereibelong=$(pwd)
-  export dist=$(lsb_release --codename --short)
-  echo "We are running on Ubuntu $dist $PLATFORM"
+  echo "We are running on Ubuntu $TRAVIS_DSIT $PLATFORM"
   export LD_LIBRARY_PATH=~/ssl/lib:~/python/lib
   cpucount=$(nproc --all)
   echo "This device has $cpucount CPUs for compiling..."
@@ -42,7 +41,7 @@ else
     echo "Installing deps for python3"
     sudo cp -v /etc/apt/sources.list /tmp
     sudo chmod a+rwx /tmp/sources.list
-    echo "deb-src http://archive.ubuntu.com/ubuntu/ $dist main" >> /tmp/sources.list
+    echo "deb-src http://archive.ubuntu.com/ubuntu/ $TRAVIS_DIST main" >> /tmp/sources.list
     sudo cp -v /tmp/sources.list /etc/apt
     sudo apt-get -qq --yes update > /dev/null
     sudo apt-get -qq --yes build-dep python3 > /dev/null
@@ -91,7 +90,7 @@ else
   python=~/python/bin/python3
   pip=~/python/bin/pip3
 
-  if ([ "${dist}" == "trusty" ] || [ "${dist}" == "xenial" ]); then
+  if ([ "${TRAVIS_DIST}" == "trusty" ] || [ "${TRAVIS_DIST}" == "xenial" ]) && [ "${PLATFORM}" == "x86_64" ]; then
     echo "Installing deps for StaticX..."
     if [ ! -d patchelf-$PATCHELF_VERSION ]; then
       echo "Downloading PatchELF $PATCHELF_VERSION"
