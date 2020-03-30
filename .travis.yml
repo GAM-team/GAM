@@ -1,6 +1,7 @@
 if: tag IS blank
 os: linux
 language: python
+dist: xenial
 
 env:
   global:
@@ -96,12 +97,12 @@ before_install:
   else
     export GAMOS="${TRAVIS_OS_NAME}";
   fi
-- if [ "${TRAVIS_CPU_ARCH}" == "amd64" ]; then
-    export PLATFORM="x86_64";
-  elif [ "${TRAVIS_OS_NAME}" == "Windows 32-bit" ]; then
+- if [ "${TRAVIS_OS_NAME}" == "Windows 32-bit" ]; then
     export PLATFORM="x86";
+  elif [ "${TRAVIS_CPU_ARCH}" == "amd64" ]; then
+    export PLATFORM="x86_64";
   else
-    export PLATFORM="${TRAVIS_OS_NAME}";
+    export PLATFORM="${TRAVIS_CPU_ARCH}";
   fi
 - source src/travis/${TRAVIS_OS_NAME}-before-install.sh
 
