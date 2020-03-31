@@ -306,7 +306,6 @@ def addOrUpdateEvent(action):
     if not cal:
         return
     # only way for non-Google calendars to get updates is via email
-    timeZone = None
     kwargs = {}
     body = {}
     if action == 'add':
@@ -353,8 +352,9 @@ def getEventAttributes(i, calendarId, cal, body, action):
             i += 2
         elif myarg == 'removeattendee' and action == 'update':
             remove_email = sys.argv[i+1].lower()
-            body['attendees'] = _remove_attendee(body['attendees'],
-                                                 remove_email)
+            if 'attendees' in body:
+                body['attendees'] = _remove_attendee(body['attendees'],
+                                                     remove_email)
             i += 2
         elif myarg == 'optionalattendee':
             body.setdefault('attendees', [])
@@ -367,14 +367,15 @@ def getEventAttributes(i, calendarId, cal, body, action):
         elif myarg == 'description':
             body['description'] = sys.argv[i+1].replace('\\n', '\n')
             i += 2
-        elif myarg == 'replacedescription':
+        elif myarg == 'replacedescription' and action == 'update':
             search = sys.argv[i+1]
             replace = sys.argv[i+2]
-            body['description'] = re.sub(search, replace, body['description'])
+            if 'description' in body:
+                body['description'] = re.sub(search, replace, body['description'])
             i += 3
         elif myarg == 'start':
             if sys.argv[i+1].lower() == 'allday':
-                body['start'] = {'date': __main__.getYYYYMMDD(sys.argv[i+2])}
+                body['start'] = {'date': utils.get_yyyymmdd(sys.argv[i+2])}
                 i += 3
             else:
                 start_time = utils.get_time_or_delta_from_now(sys.argv[i+1])
@@ -382,7 +383,7 @@ def getEventAttributes(i, calendarId, cal, body, action):
                 i += 2
         elif myarg == 'end':
             if sys.argv[i+1].lower() == 'allday':
-                body['end'] = {'date': __main__.getYYYYMMDD(sys.argv[i+2])}
+                body['end'] = {'date': utils.get_yyyymmdd(sys.argv[i+2])}
                 i += 3
             else:
                 end_time = utils.get_time_or_delta_from_now(sys.argv[i+1])
