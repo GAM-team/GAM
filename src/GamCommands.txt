@@ -1037,7 +1037,7 @@ The following attributes are equivalent:
 gam calendar <CalendarItem> addevent [id <String>] <EventAttributes>+ [<EventNotificationAttribute>]
 gam calendar <CalendarItem> deleteevent id|eventid <EventID> [doit] [<EventNotificationAttribute>]
 gam calendar <CalendarItem> moveevent id|eventid <EventID> [doit] [<EventNotificationAttribute>]
-gam calendar <CalendarItem> updateevent id|eventid <EventID> <EventUpdateAttributes>+ [<EventNotificationAttribute>]
+gam calendar <CalendarItem> updateevent <EventID> <EventUpdateAttributes>+ [<EventNotificationAttribute>]
 gam calendar <CalendarItem> wipe
 gam calendar <CalendarItem> printevents <EventSelectProperty>* <EventDisplayProperty>* [todrive]
 
