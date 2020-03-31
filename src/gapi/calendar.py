@@ -370,7 +370,8 @@ def getEventAttributes(i, calendarId, cal, body, action):
         elif myarg == 'replacedescription' and action == 'update':
             search = sys.argv[i+1]
             replace = sys.argv[i+2]
-            body['description'] = re.sub(search, replace, body['description'])
+            if 'description' in body:
+                body['description'] = re.sub(search, replace, body['description'])
             i += 3
         elif myarg == 'start':
             if sys.argv[i+1].lower() == 'allday':
