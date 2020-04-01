@@ -8748,6 +8748,8 @@ def send_email(subject, body, recipient=None, sender=None, user=None, method='se
   if not user:
     user = _getValueFromOAuth('email')
   userId, gmail = buildGmailGAPIObject(user)
+  if not gmail:
+    return
   resource = gmail.users().messages()
   if labels:
     api_body['labelIds'] = labelsToLabelIds(gmail, labels)
@@ -8757,6 +8759,11 @@ def send_email(subject, body, recipient=None, sender=None, user=None, method='se
   if not recipient:
     recipient = userId
     default_recipient = True
+  # Force ASCII for RFC compliance
+  # xmlcharref seems to work to display at least
+  # some unicode in HTML body and is ignored in
+  # plain text body.
+  body = body.encode('ascii', 'xmlcharrefreplace').decode()
   msg = message_from_string(body)
   for header, value in msgHeaders.items():
     msg.__delitem__(header) # can remove multiple case-insensitive matching headers
