@@ -108,7 +108,7 @@ class GapiTest(unittest.TestCase):
         self.mock_service, self.mock_method_name, soft_errors=True)
     self.assertEqual(response, fake_200_response)
     self.assertEqual(
-        self.mock_service._http.request.credentials.refresh.call_count, 1)
+        self.mock_service._http.credentials.refresh.call_count, 1)
     self.assertEqual(self.mock_method.return_value.execute.call_count, 2)
 
   def test_call_throws_for_provided_reason(self):

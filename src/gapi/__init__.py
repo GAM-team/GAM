@@ -63,7 +63,7 @@ def call(service,
       if http_status == -1:
         # The error detail indicated that we should retry this request
         # We'll refresh credentials and make another pass
-        service._http.request.credentials.refresh(transport.create_http())
+        service._http.credentials.refresh(transport.create_http())
         continue
       if http_status == 0:
         return None
