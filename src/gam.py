@@ -7817,6 +7817,9 @@ def doCreateResoldCustomer():
 def _getValueFromOAuth(field, credentials=None):
   if not credentials:
     credentials = auth.get_admin_credentials()
+  if credentials.expired:
+    request = transport.create_request()
+    credentials.refresh(request)
   return credentials.get_token_value(field)
 
 def doGetMemberInfo():
