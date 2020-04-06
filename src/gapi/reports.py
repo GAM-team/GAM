@@ -33,6 +33,8 @@ REPORT_CHOICE_MAP = {
     'logins': 'login',
     'oauthtoken': 'token',
     'tokens': 'token',
+    'usage': 'usage',
+    'usageparameters': 'usageparameters',
     'users': 'user',
     'useraccounts': 'user_accounts',
 }
@@ -42,7 +44,7 @@ def showUsageParameters():
     rep = buildGAPIObject()
     throw_reasons = [gapi.errors.ErrorReason.INVALID,
                      gapi.errors.ErrorReason.BAD_REQUEST]
-    report = sys.argv[2].lower()
+    report = sys.argv[3].lower()
     if report == 'customer':
         endpoint = rep.customerUsageReports()
         kwargs = {}
@@ -95,7 +97,7 @@ def showUsage():
     throw_reasons = [gapi.errors.ErrorReason.INVALID,
                      gapi.errors.ErrorReason.BAD_REQUEST]
     todrive = False
-    report = sys.argv[2].lower()
+    report = sys.argv[3].lower()
     titles = ['date']
     if report == 'customer':
         endpoint = rep.customerUsageReports()
@@ -110,11 +112,12 @@ def showUsage():
     customerId = GC_Values[GC_CUSTOMER_ID]
     if customerId == MY_CUSTOMER:
         customerId = None
-    parameters = filters = None
+    parameters = []
+    filters = None
     start_date = end_date = orgUnitId = None
     skip_day_numbers = []
     skip_dates = []
-    i = 3
+    i = 4
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
         if myarg == 'startdate':
@@ -218,6 +221,12 @@ def showReport():
     throw_reasons = [gapi.errors.ErrorReason.INVALID]
     report = sys.argv[2].lower()
     report = REPORT_CHOICE_MAP.get(report.replace('_', ''), report)
+    if report == 'usage':
+      showUsage()
+      return
+    if report == 'usageparameters':
+      showUsageParameters()
+      return
     valid_apps = gapi.get_enum_values_minus_unspecified(
         rep._rootDesc['resources']['activities']['methods']['list'][
             'parameters']['applicationName']['enum'])+['customer', 'user']
