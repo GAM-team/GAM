@@ -11236,12 +11236,6 @@ def ProcessGAMCommand(args):
     elif command == 'report':
       gapi.reports.showReport()
       sys.exit(0)
-    elif command == 'usage':
-      gapi.reports.showUsage()
-      sys.exit(0)
-    elif command == 'usageparameters':
-      gapi.reports.showUsageParameters()
-      sys.exit(0)
     elif command == 'whatis':
       doWhatIs()
       sys.exit(0)
