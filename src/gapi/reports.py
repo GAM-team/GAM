@@ -340,10 +340,6 @@ def showReport():
                                               customerId=customerId,
                                               date=tryDate,
                                               fields='warnings')
-                    print(warnings)
-                    #sys.exit(0)
-                    if not warnings:
-                        sys.exit(0)
                     fullData, tryDate = _check_full_data_available(
                         warnings, tryDate, fullDataRequired)
                     if fullData < 0:
