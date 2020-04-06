@@ -208,8 +208,8 @@ script:
 - if [ "$e2e" = true ]; then $gam print users query "travis.jid=$jid" | $gam csv - gam delete user ~primaryEmail; fi
 - if [ "$e2e" = true ]; then $gam print mobile; fi
 - if [ "$e2e" = true ]; then $gam print cros allfields nolists; fi
-- if [ "$e2e" = true ]; then $gam usageparameters customer
-- if [ "$e2e" = true ]; then $gam usage customer parameters gmail:num_emails_sent,accounts:num_1day_logins
+- if [ "$e2e" = true ]; then $gam usageparameters customer; fi
+- if [ "$e2e" = true ]; then $gam usage customer parameters gmail:num_emails_sent,accounts:num_1day_logins; fi
 - if [ "$e2e" = true ]; then $gam report customer todrive; fi
 - if [ "$e2e" = true ]; then $gam report users fields accounts:is_less_secure_apps_access_allowed,gmail:last_imap_time,gmail:last_pop_time filters "accounts:last_login_time>2019-01-01T00:00:00.000Z" todrive; fi
 - if [ "$e2e" = true ]; then $gam report admin start -3d todrive; fi
