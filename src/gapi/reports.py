@@ -298,7 +298,7 @@ def showReport():
                                            throw_reasons=throw_reasons,
                                            date=tryDate, userKey=userKey,
                                            customerId=customerId,
-                                           orgUnitId=orgUnitId,
+                                           orgUnitID=orgUnitId,
                                            filters=filters,
                                            parameters=parameters)
                 break
