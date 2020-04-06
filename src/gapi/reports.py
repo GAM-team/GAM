@@ -1,5 +1,9 @@
+import calendar
 import datetime
 import sys
+
+from dateutil.parser import parse
+from dateutil.relativedelta import relativedelta
 
 import __main__
 from var import *
@@ -32,6 +36,178 @@ REPORT_CHOICE_MAP = {
     'users': 'user',
     'useraccounts': 'user_accounts',
 }
+
+
+def showUsageParameters():
+    rep = buildGAPIObject()
+    throw_reasons = [gapi.errors.ErrorReason.INVALID,
+                     gapi.errors.ErrorReason.BAD_REQUEST]
+    report = sys.argv[2].lower()
+    if report == 'customer':
+        endpoint = rep.customerUsageReports()
+        kwargs = {}
+    elif report == 'user':
+        endpoint = rep.userUsageReport()
+        kwargs = {'userKey': __main__._getValueFromOAuth('email')}
+    else:
+        controlflow.expected_argument_exit(
+            'usageparameters', ['user', 'customer'], report)
+    customerId = GC_Values[GC_CUSTOMER_ID]
+    if customerId == MY_CUSTOMER:
+        customerId = None
+    tryDate = datetime.date.today().strftime(YYYYMMDD_FORMAT)
+    partial_apps = False
+    all_parameters = []
+    one_day = datetime.timedelta(days=1)
+    while True:
+        try:
+            response = gapi.call(endpoint, 'get',
+                                 throw_reasons=throw_reasons,
+                                 date=tryDate,
+                                 customerId=customerId,
+                                 **kwargs)
+            partial_on_thisday = []
+            for warning in response.get('warnings', []):
+                for data in warning.get('data', []):
+                    if data.get('key') == 'application':
+                        partial_on_thisday.append(data['value'])
+            if partial_apps:
+                partial_apps = [app for app in partial_apps if app in partial_on_thisday]
+            else:
+                partial_apps = partial_on_thisday
+            for parameter in response['usageReports'][0]['parameters']:
+                name = parameter.get('name')
+                if name and name not in all_parameters:
+                    all_parameters.append(name)
+            if not partial_apps:
+                break
+            tryDate = (utils.get_yyyymmdd(tryDate, returnDateTime=True) - \
+                    one_day).strftime(YYYYMMDD_FORMAT)
+        except gapi.errors.GapiInvalidError as e:
+            tryDate = _adjust_date(str(e))
+    all_parameters.sort()
+    for parameter in all_parameters:
+        print(parameter)
+
+
+def showUsage():
+    rep = buildGAPIObject()
+    throw_reasons = [gapi.errors.ErrorReason.INVALID,
+                     gapi.errors.ErrorReason.BAD_REQUEST]
+    todrive = False
+    report = sys.argv[2].lower()
+    titles = ['date']
+    if report == 'customer':
+        endpoint = rep.customerUsageReports()
+        kwargs = [{}]
+    elif report == 'user':
+        endpoint = rep.userUsageReport()
+        kwargs = [{'userKey': 'all'}]
+        titles.append('user')
+    else:
+        controlflow.expected_argument_exit(
+            'usage', ['user', 'customer'], report)
+    customerId = GC_Values[GC_CUSTOMER_ID]
+    if customerId == MY_CUSTOMER:
+        customerId = None
+    parameters = filters = None
+    start_date = end_date = orgUnitId = None
+    skip_day_numbers = []
+    skip_dates = []
+    i = 3
+    while i < len(sys.argv):
+        myarg = sys.argv[i].lower().replace('_', '')
+        if myarg == 'startdate':
+            start_date = parse(sys.argv[i+1])
+            i += 2
+        elif myarg == 'enddate':
+            end_date = parse(sys.argv[i+1])
+            i += 2
+        elif myarg == 'todrive':
+            todrive = True
+            i += 1
+        elif myarg in ['orgunit', 'org', 'ou']:
+            if report != 'user':
+                controlflow.invalid_argument_exit(myarg, f'gam usage {report}')
+            _, orgUnitId = __main__.getOrgUnitId(sys.argv[i+1])
+            i += 2
+        elif myarg == 'parameters':
+            parameters = sys.argv[i+1].split(',')
+            i += 2
+        elif myarg == 'skipdates':
+            skips = sys.argv[i+1].split(',')
+            skip_dates = [utils.get_yyyymmdd(d) for d in skips]
+            i += 2
+        elif myarg == 'skipdaysofweek':
+            skipdaynames = sys.argv[i+1].split(',')
+            dow = [d.lower() for d in calendar.day_abbr]
+            skip_day_numbers = [dow.index(d) for d in skipdaynames if d in dow]
+            i += 2
+        elif myarg in usergroup_types:
+            if report != 'user':
+                controlflow.invalid_argument_exit(myarg, f'gam usage {report}')
+            entity_type = myarg
+            entity = sys.argv[i+1]
+            users = __main__.getUsersToModify(entity_type, entity)
+            kwargs = [{'userKey': user} for user in users]
+            i += 3
+        else:
+            controlflow.invalid_argument_exit(sys.argv[i], "gam usage")
+    if not start_date:
+        start_date = datetime.datetime.now() + relativedelta(months=-1)
+    if not end_date:
+        end_date = datetime.datetime.now()
+    one_day = datetime.timedelta(days=1)
+    usage_on_date = start_date
+    titles.extend(parameters)
+    csvRows = []
+    vtypes = ['intValue', 'stringValue', 'intValue',
+              'boolValue', 'datetimeValue']
+    while usage_on_date <= end_date:
+        use_date = usage_on_date.strftime('%Y-%m-%d')
+        if usage_on_date.weekday() in skip_day_numbers or \
+           use_date in skip_dates:
+            usage_on_date += one_day
+            continue
+        usage_on_date += one_day
+        try:
+            for kwarg in kwargs:
+                try:
+                    usage = gapi.get_all_pages(endpoint, 'get',
+                                               'usageReports',
+                                               throw_reasons=throw_reasons,
+                                               customerId=customerId,
+                                               date=use_date,
+                                               parameters=','.join(parameters),
+                                               orgUnitId=orgUnitId, **kwarg)
+                except gapi.errors.GapiBadRequestError:
+                    continue
+                for entity in usage:
+                    row = {'date': use_date}
+                    if 'userEmail' in entity['entity']:
+                        row['user'] = entity['entity']['userEmail']
+                    for item in entity['parameters']:
+                        if 'name' not in item:
+                            continue
+                        name = item['name']
+                        if name == 'cros:device_version_distribution':
+                            for cros_ver in item['msgValue']:
+                                v = cros_ver['version_number']
+                                column_name = f'cros:num_devices_chrome_{v}'
+                                if column_name not in titles:
+                                    titles.append(column_name)
+                                row[column_name] = cros_ver['num_devices']
+                        else:
+                            for vtype in vtypes:
+                                if vtype in item:
+                                    value = item[vtype]
+                                    break
+                            row[name] = value
+                    csvRows.append(row)
+        except gapi.errors.GapiInvalidError:
+            continue
+    display.write_csv_file(
+        csvRows, titles, f'Usage Reports', todrive)
 
 
 def showReport():
@@ -161,6 +337,10 @@ def showReport():
                                               customerId=customerId,
                                               date=tryDate,
                                               fields='warnings')
+                    print(warnings)
+                    #sys.exit(0)
+                    if not warnings:
+                        sys.exit(0)
                     fullData, tryDate = _check_full_data_available(
                         warnings, tryDate, fullDataRequired)
                     if fullData < 0:
