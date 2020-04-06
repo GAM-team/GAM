@@ -23,8 +23,4 @@ def get_admin_credentials_filename():
 def get_admin_credentials():
     """Gets oauth.Credentials that are authenticated as the domain's admin user."""
     credential_file = get_admin_credentials_filename()
-    creds = oauth.Credentials.from_credentials_file(credential_file)
-    if creds.expired:
-        request = transport.create_request()
-        creds.refresh(request)
-    return creds
+    return oauth.Credentials.from_credentials_file(credential_file)
