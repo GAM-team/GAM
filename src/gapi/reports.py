@@ -157,6 +157,9 @@ def showUsage():
         start_date = datetime.datetime.now() + relativedelta(months=-1)
     if not end_date:
         end_date = datetime.datetime.now()
+    if orgUnitId:
+        for i in range(len(kwargs)):
+            kwargs[i-1]['orgUnitID'] = orgUnitId
     one_day = datetime.timedelta(days=1)
     usage_on_date = start_date
     titles.extend(parameters)
@@ -179,7 +182,7 @@ def showUsage():
                                                customerId=customerId,
                                                date=use_date,
                                                parameters=','.join(parameters),
-                                               orgUnitId=orgUnitId, **kwarg)
+                                               **kwarg)
                 except gapi.errors.GapiBadRequestError:
                     continue
                 for entity in usage:
@@ -295,7 +298,7 @@ def showReport():
                                            throw_reasons=throw_reasons,
                                            date=tryDate, userKey=userKey,
                                            customerId=customerId,
-                                           orgUnitID=orgUnitId,
+                                           orgUnitId=orgUnitId,
                                            filters=filters,
                                            parameters=parameters)
                 break
