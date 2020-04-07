@@ -153,9 +153,14 @@ def showUsage():
             entity = sys.argv[i+1]
             users = __main__.getUsersToModify(entity_type, entity)
             kwargs = [{'userKey': user} for user in users]
-            i += 3
+            i += 2
         else:
             controlflow.invalid_argument_exit(sys.argv[i], "gam usage")
+    if parameters:
+        titles.extend(parameters)
+        parameters = ','.join(parameters)
+    else:
+        parameters = None
     if not start_date:
         start_date = datetime.datetime.now() + relativedelta(months=-1)
     if not end_date:
@@ -165,7 +170,6 @@ def showUsage():
             kwargs[i-1]['orgUnitID'] = orgUnitId
     one_day = datetime.timedelta(days=1)
     usage_on_date = start_date
-    titles.extend(parameters)
     csvRows = []
     vtypes = ['intValue', 'stringValue', 'intValue',
               'boolValue', 'datetimeValue']
@@ -184,7 +188,7 @@ def showUsage():
                                                throw_reasons=throw_reasons,
                                                customerId=customerId,
                                                date=use_date,
-                                               parameters=','.join(parameters),
+                                               parameters=parameters,
                                                **kwarg)
                 except gapi.errors.GapiBadRequestError:
                     continue
@@ -192,7 +196,7 @@ def showUsage():
                     row = {'date': use_date}
                     if 'userEmail' in entity['entity']:
                         row['user'] = entity['entity']['userEmail']
-                    for item in entity['parameters']:
+                    for item in entity.get('parameters', []):
                         if 'name' not in item:
                             continue
                         name = item['name']
@@ -208,6 +212,8 @@ def showUsage():
                                 if vtype in item:
                                     value = item[vtype]
                                     break
+                            if not name in titles:
+                                titles.append(name)
                             row[name] = value
                     csvRows.append(row)
         except gapi.errors.GapiInvalidError:
