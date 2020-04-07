@@ -58,7 +58,7 @@ def showUsageParameters():
     if customerId == MY_CUSTOMER:
         customerId = None
     tryDate = datetime.date.today().strftime(YYYYMMDD_FORMAT)
-    partial_apps = False
+    partial_apps = []
     all_parameters = []
     one_day = datetime.timedelta(days=1)
     while True:
@@ -113,7 +113,6 @@ def showUsage():
     if customerId == MY_CUSTOMER:
         customerId = None
     parameters = []
-    filters = None
     start_date = end_date = orgUnitId = None
     skip_day_numbers = []
     skip_dates = []
