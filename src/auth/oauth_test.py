@@ -336,6 +336,26 @@ class CredentialsTest(unittest.TestCase):
         id_token_data=self.fake_token_data)
     self.assertEqual('Unknown', creds.get_token_value('unknown-field'))
 
+  @patch.object(oauth.google.oauth2.id_token, 'verify_oauth2_token')
+  def test_get_token_value_credentials_expired(self, mock_verify_oauth2_token):
+    mock_verify_oauth2_token.return_value = {'fetched-field': 'fetched-value'}
+    time_earlier_than_now = datetime.datetime.now() - datetime.timedelta(
+        minutes=5)
+    creds = oauth.Credentials(
+        token=self.fake_token,
+        client_id=self.fake_client_id,
+        client_secret=self.fake_client_secret,
+        expiry=time_earlier_than_now,
+        id_token=self.fake_id_token,
+        id_token_data=None)
+    self.assertTrue(creds.expired)
+    creds.refresh = MagicMock()
+
+    token_value = creds.get_token_value('fetched-field')
+
+    self.assertEqual('fetched-value', token_value)
+    self.assertTrue(creds.refresh.called)
+
   def test_to_json_contains_all_required_fields(self):
     creds = oauth.Credentials(
         token=self.fake_token,
@@ -585,7 +605,7 @@ class ShortUrlFlowTest(unittest.TestCase):
 
   @patch.object(oauth.google_auth_oauthlib.flow.InstalledAppFlow,
                 'authorization_url')
-  @unittest.skip("disable short url tests temporarily.")
+  @unittest.skip('disable short url tests temporarily.')
   def test_shorturlflow_returns_shortened_url(self, mock_super_auth_url):
     url_flow = oauth._ShortURLFlow.from_client_config(
         self.fake_client_config, scopes=self.fake_scopes)
@@ -609,7 +629,7 @@ class ShortUrlFlowTest(unittest.TestCase):
 
   @patch.object(oauth.google_auth_oauthlib.flow.InstalledAppFlow,
                 'authorization_url')
-  @unittest.skip("disable short url tests temporarily.")
+  @unittest.skip('disable short url tests temporarily.')
   def test_shorturlflow_falls_back_to_long_url_on_request_error(
       self, mock_super_auth_url):
     url_flow = oauth._ShortURLFlow.from_client_config(
@@ -625,7 +645,7 @@ class ShortUrlFlowTest(unittest.TestCase):
 
   @patch.object(oauth.google_auth_oauthlib.flow.InstalledAppFlow,
                 'authorization_url')
-  @unittest.skip("disable short url tests temporarily.")
+  @unittest.skip('disable short url tests temporarily.')
   def test_shorturlflow_falls_back_to_long_url_on_non_200_response_status(
       self, mock_super_auth_url):
     url_flow = oauth._ShortURLFlow.from_client_config(
@@ -644,7 +664,7 @@ class ShortUrlFlowTest(unittest.TestCase):
 
   @patch.object(oauth.google_auth_oauthlib.flow.InstalledAppFlow,
                 'authorization_url')
-  @unittest.skip("disable short url tests temporarily.")
+  @unittest.skip('disable short url tests temporarily.')
   def test_shorturlflow_falls_back_to_long_url_on_bad_json_response(
       self, mock_super_auth_url):
     url_flow = oauth._ShortURLFlow.from_client_config(
@@ -663,7 +683,7 @@ class ShortUrlFlowTest(unittest.TestCase):
 
   @patch.object(oauth.google_auth_oauthlib.flow.InstalledAppFlow,
                 'authorization_url')
-  @unittest.skip("disable short url tests temporarily.")
+  @unittest.skip('disable short url tests temporarily.')
   def test_shorturlflow_falls_back_to_long_url_on_empty_short_url_field(
       self, mock_super_auth_url):
     url_flow = oauth._ShortURLFlow.from_client_config(

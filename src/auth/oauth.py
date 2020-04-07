@@ -382,7 +382,12 @@ class Credentials(google.oauth2.credentials.Credentials):
     """
     if not self.id_token:
       raise CredentialsError('Failed to fetch token data. No id_token present.')
+
     request = transport.create_request()
+    if self.expired:
+      # The id_token needs to be unexpired, in order to request data about it.
+      self.refresh(request)
+
     self._id_token_data = google.oauth2.id_token.verify_oauth2_token(
         self.id_token, request)
 
