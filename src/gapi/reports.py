@@ -129,7 +129,7 @@ def showUsage():
         elif myarg == 'todrive':
             todrive = True
             i += 1
-        elif myarg in ['orgunit', 'org', 'ou']:
+        elif report == 'user' and myarg in ['orgunit', 'org', 'ou']:
             if report != 'user':
                 controlflow.invalid_argument_exit(myarg, f'gam usage {report}')
             _, orgUnitId = __main__.getOrgUnitId(sys.argv[i+1])
@@ -146,7 +146,7 @@ def showUsage():
             dow = [d.lower() for d in calendar.day_abbr]
             skip_day_numbers = [dow.index(d) for d in skipdaynames if d in dow]
             i += 2
-        elif myarg in usergroup_types:
+        elif report == 'user' and myarg in usergroup_types:
             if report != 'user':
                 controlflow.invalid_argument_exit(myarg, f'gam usage {report}')
             entity_type = myarg
@@ -167,7 +167,7 @@ def showUsage():
         end_date = datetime.datetime.now()
     if orgUnitId:
         for i in range(len(kwargs)):
-            kwargs[i-1]['orgUnitID'] = orgUnitId
+            kwargs[i]['orgUnitID'] = orgUnitId
     one_day = datetime.timedelta(days=1)
     usage_on_date = start_date
     csvRows = []
