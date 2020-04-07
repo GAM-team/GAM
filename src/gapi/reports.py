@@ -91,6 +91,7 @@ def showUsageParameters():
     for parameter in all_parameters:
         print(parameter)
 
+REPORTS_PARAMETERS_SIMPLE_TYPES = ['intValue', 'boolValue', 'datetimeValue', 'stringValue']
 
 def showUsage():
     rep = buildGAPIObject()
@@ -170,8 +171,6 @@ def showUsage():
     one_day = datetime.timedelta(days=1)
     usage_on_date = start_date
     csvRows = []
-    vtypes = ['intValue', 'stringValue', 'intValue',
-              'boolValue', 'datetimeValue']
     while usage_on_date <= end_date:
         use_date = usage_on_date.strftime('%Y-%m-%d')
         if usage_on_date.weekday() in skip_day_numbers or \
@@ -207,13 +206,14 @@ def showUsage():
                                     titles.append(column_name)
                                 row[column_name] = cros_ver['num_devices']
                         else:
-                            for vtype in vtypes:
-                                if vtype in item:
-                                    value = item[vtype]
-                                    break
                             if not name in titles:
                                 titles.append(name)
-                            row[name] = value
+                            for ptype in REPORTS_PARAMETERS_SIMPLE_TYPES:
+                                if ptype in item:
+                                    row[name] = item[ptype]
+                                    break
+                            else:
+                                row[name] = ''
                     csvRows.append(row)
         except gapi.errors.GapiInvalidError:
             continue
@@ -323,7 +323,6 @@ def showReport():
             sys.exit(1)
         titles = ['email', 'date']
         csvRows = []
-        ptypes = ['intValue', 'boolValue', 'datetimeValue', 'stringValue']
         for user_report in usage:
             if 'entity' not in user_report:
                 continue
@@ -335,7 +334,7 @@ def showReport():
                 name = item['name']
                 if not name in titles:
                     titles.append(name)
-                for ptype in ptypes:
+                for ptype in REPORTS_PARAMETERS_SIMPLE_TYPES:
                     if ptype in item:
                         row[name] = item[ptype]
                         break
