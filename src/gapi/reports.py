@@ -1,5 +1,6 @@
 import calendar
 import datetime
+import re
 import sys
 
 from dateutil.parser import parse
@@ -44,7 +45,12 @@ def showUsageParameters():
     rep = buildGAPIObject()
     throw_reasons = [gapi.errors.ErrorReason.INVALID,
                      gapi.errors.ErrorReason.BAD_REQUEST]
+    todrive = False
+    if len(sys.argv) == 3:
+        controlflow.missing_argument_exit(
+            'user or customer', 'report usageparameters')
     report = sys.argv[3].lower()
+    titles = ['parameter']
     if report == 'customer':
         endpoint = rep.customerUsageReports()
         kwargs = {}
@@ -61,6 +67,14 @@ def showUsageParameters():
     partial_apps = []
     all_parameters = []
     one_day = datetime.timedelta(days=1)
+    i = 4
+    while i < len(sys.argv):
+        myarg = sys.argv[i].lower().replace('_', '')
+        if myarg == 'todrive':
+            todrive = True
+            i += 1
+        else:
+            controlflow.invalid_argument_exit(sys.argv[i], "gam report usageparameters")
     while True:
         try:
             response = gapi.call(endpoint, 'get',
@@ -88,8 +102,11 @@ def showUsageParameters():
         except gapi.errors.GapiInvalidError as e:
             tryDate = _adjust_date(str(e))
     all_parameters.sort()
+    csvRows = []
     for parameter in all_parameters:
-        print(parameter)
+        csvRows.append({'parameter': parameter})
+    display.write_csv_file(
+        csvRows, titles, f'{report.capitalize()} Report Usage Parameters', todrive)
 
 REPORTS_PARAMETERS_SIMPLE_TYPES = ['intValue', 'boolValue', 'datetimeValue', 'stringValue']
 
@@ -98,6 +115,9 @@ def showUsage():
     throw_reasons = [gapi.errors.ErrorReason.INVALID,
                      gapi.errors.ErrorReason.BAD_REQUEST]
     todrive = False
+    if len(sys.argv) == 3:
+        controlflow.missing_argument_exit(
+            'user or customer', 'report usage')
     report = sys.argv[3].lower()
     titles = ['date']
     if report == 'customer':
@@ -121,20 +141,15 @@ def showUsage():
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
         if myarg == 'startdate':
-            start_date = parse(sys.argv[i+1])
+            start_date = utils.get_yyyymmdd(sys.argv[i+1], returnDateTime=True)
             i += 2
         elif myarg == 'enddate':
-            end_date = parse(sys.argv[i+1])
+            end_date = utils.get_yyyymmdd(sys.argv[i+1], returnDateTime=True)
             i += 2
         elif myarg == 'todrive':
             todrive = True
             i += 1
-        elif report == 'user' and myarg in ['orgunit', 'org', 'ou']:
-            if report != 'user':
-                controlflow.invalid_argument_exit(myarg, f'gam usage {report}')
-            _, orgUnitId = __main__.getOrgUnitId(sys.argv[i+1])
-            i += 2
-        elif myarg == 'parameters':
+        elif myarg in ['fields', 'parameters']:
             parameters = sys.argv[i+1].split(',')
             i += 2
         elif myarg == 'skipdates':
@@ -146,6 +161,11 @@ def showUsage():
             dow = [d.lower() for d in calendar.day_abbr]
             skip_day_numbers = [dow.index(d) for d in skipdaynames if d in dow]
             i += 2
+        elif report == 'user' and myarg in ['orgunit', 'org', 'ou']:
+            if report != 'user':
+                controlflow.invalid_argument_exit(myarg, f'gam usage {report}')
+            _, orgUnitId = __main__.getOrgUnitId(sys.argv[i+1])
+            i += 2
         elif report == 'user' and myarg in usergroup_types:
             if report != 'user':
                 controlflow.invalid_argument_exit(myarg, f'gam usage {report}')
@@ -155,7 +175,7 @@ def showUsage():
             kwargs = [{'userKey': user} for user in users]
             i += 2
         else:
-            controlflow.invalid_argument_exit(sys.argv[i], "gam usage")
+            controlflow.invalid_argument_exit(sys.argv[i], "gam report usage")
     if parameters:
         titles.extend(parameters)
         parameters = ','.join(parameters)
@@ -166,10 +186,11 @@ def showUsage():
     if not end_date:
         end_date = datetime.datetime.now()
     if orgUnitId:
-        for i in range(len(kwargs)):
-            kwargs[i]['orgUnitID'] = orgUnitId
+        for i, kw in enumerate(kwargs):
+            kw['orgUnitID'] = orgUnitId
     one_day = datetime.timedelta(days=1)
     usage_on_date = start_date
+    start_date = usage_on_date.strftime('%Y-%m-%d')
     csvRows = []
     while usage_on_date <= end_date:
         use_date = usage_on_date.strftime('%Y-%m-%d')
@@ -215,10 +236,11 @@ def showUsage():
                             else:
                                 row[name] = ''
                     csvRows.append(row)
-        except gapi.errors.GapiInvalidError:
-            continue
+        except gapi.errors.GapiInvalidError as e:
+            display.print_warning(str(e))
+            break
     display.write_csv_file(
-        csvRows, titles, f'Usage Reports', todrive)
+        csvRows, titles, f'{report.capitalize()} Usage Report - {start_date}:{use_date}', todrive)
 
 
 def showReport():

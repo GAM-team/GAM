@@ -38,6 +38,7 @@ If an item contains spaces, it should be surrounded by ".
 	papayawhip|peachpuff|peru|pink|plum|powderblue|purple|red|rosybrown|royalblue|
 	saddlebrown|salmon|sandybrown|seagreen|seashell|sienna|silver|skyblue|slateblue|slategray|slategrey|snow|springgreen|steelblue|
 	tan|teal|thistle|tomato|turquoise|violet|wheat|white|whitesmoke|yellow|yellowgreen
+<DayOfWeek> ::= mon|tue|wed|thu|fri|sat|sun
 <FileFormat> ::=
 	csv|html|txt|tsv|jpeg|jpg|png|svg|pdf|rtf|pptx|xlsx|docx|odt|ods|openoffice|ms|microsoft|micro$oft
 <LabelColorHex> ::=
@@ -914,12 +915,28 @@ gam info resoldsubscriptions <CustomerID> [customer_auth_token <String>]
 	sites
 <ReportsAppList> ::= "<ReportsApp>(,<ReportsApp>)*"
 
-gam report users|user [todrive] [date <Date>] [fulldatarequired all|<ReportsAppList>]
-	[(user <UserItem>)|(orgunit|org|ou <OrgUnitPath>)] [filter|filters <String>] [fields|parameters <String>]
-gam report customers|customer|domain [todrive] [date <Date>] [fulldatarequired all|<ReportsAppList>]
+gam report usageparameters customer|user [todrive]
+gam report usage user [todrive]
+	[<UserTypeItem>)|(orgunit|org|ou <OrgUnitPath>)]
+	[startdate <Date>] [enddate <Date>]
+	[skipdates <Date>(,<Date>)*] [skipdaysofweek <DayOfWeek>(,<DayOfWeek>)*]
+	[fields|parameters <String>]
+gam report usage customer [todrive]
+	[startdate <Date>] [enddate <Date>]
+	[skipdates <Date>(,<Date>)*] [skipdaysofweek <DayOfWeek>(,<DayOfWeek>)*]
+	[fields|parameters <String>]
+
+gam report users|user [todrive]
+	[(user <UserItem>)|(orgunit|org|ou <OrgUnitPath>)]
+	[date <Date>] [fulldatarequired all|<ReportsAppList>]
+	[filter|filters <String>] [fields|parameters <String>]
+gam report customers|customer|domain [todrive]
+	[date <Date>] [fulldatarequired all|<ReportsAppList>]
 	[fields|parameters <String>]
 gam report <ActivityApplicationName> [todrive]
-	[start <Time>] [end <Time>] [(user all|<UserItem>)] [event <String>] [filter|filters <String>] [ip <String>]
+	[user all|<UserItem>]
+	[start <Time>] [end <Time>]
+	[filter|filters <String>] [event <String>] [ip <String>]
 
 gam create admin <UserItem> <RoleItem> customer|(org_unit <OrgUnitItem>)
 gam delete admin <RoleAssignmentId>
