@@ -162,20 +162,14 @@ def showUsage():
             skip_day_numbers = [dow.index(d) for d in skipdaynames if d in dow]
             i += 2
         elif report == 'user' and myarg in ['orgunit', 'org', 'ou']:
-            if report != 'user':
-                controlflow.invalid_argument_exit(myarg, f'gam usage {report}')
             _, orgUnitId = __main__.getOrgUnitId(sys.argv[i+1])
             i += 2
         elif report == 'user' and myarg in usergroup_types:
-            if report != 'user':
-                controlflow.invalid_argument_exit(myarg, f'gam usage {report}')
-            entity_type = myarg
-            entity = sys.argv[i+1]
-            users = __main__.getUsersToModify(entity_type, entity)
+            users = __main__.getUsersToModify(myarg, sys.argv[i+1])
             kwargs = [{'userKey': user} for user in users]
             i += 2
         else:
-            controlflow.invalid_argument_exit(sys.argv[i], "gam report usage")
+            controlflow.invalid_argument_exit(sys.argv[i], f'gam report usage {report}')
     if parameters:
         titles.extend(parameters)
         parameters = ','.join(parameters)
@@ -186,7 +180,7 @@ def showUsage():
     if not end_date:
         end_date = datetime.datetime.now()
     if orgUnitId:
-        for i, kw in enumerate(kwargs):
+        for kw in kwargs:
             kw['orgUnitID'] = orgUnitId
     one_day = datetime.timedelta(days=1)
     usage_on_date = start_date
