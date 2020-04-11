@@ -11,8 +11,8 @@ gam_license = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 GAM_URL = 'https://git.io/gam'
 GAM_INFO = (f'GAM {gam_version} - {GAM_URL} / {gam_author} / '
-           f'Python {platform.python_version()} {sys.version_info.releaselevel} / '
-           f'{platform.platform()} {platform.machine()}')
+            f'Python {platform.python_version()} {sys.version_info.releaselevel} / '
+            f'{platform.platform()} {platform.machine()}')
 
 GAM_RELEASES = 'https://github.com/jay0lee/GAM/releases'
 GAM_WIKI = 'https://github.com/jay0lee/GAM/wiki'
@@ -843,6 +843,8 @@ GC_SHOW_GETTINGS = 'show_gettings'
 GC_SITE_DIR = 'site_dir'
 # CSV Columns GAM should show on CSV output
 GC_CSV_HEADER_FILTER = 'csv_header_filter'
+# CSV Columns GAM should not show on CSV output
+GC_CSV_HEADER_DROP_FILTER = 'csv_header_drop_filter'
 # CSV Rows GAM should filter
 GC_CSV_ROW_FILTER = 'csv_row_filter'
 # Minimum TLS Version required for HTTPS connections
@@ -878,6 +880,7 @@ GC_Defaults = {
   GC_SHOW_GETTINGS: True,
   GC_SITE_DIR: '',
   GC_CSV_HEADER_FILTER: '',
+  GC_CSV_HEADER_DROP_FILTER: '',
   GC_CSV_ROW_FILTER: '',
   GC_TLS_MIN_VERSION: tls_min,
   GC_TLS_MAX_VERSION: None,
@@ -925,6 +928,7 @@ GC_VAR_INFO = {
   GC_SHOW_GETTINGS: {GC_VAR_TYPE: GC_TYPE_BOOLEAN},
   GC_SITE_DIR: {GC_VAR_TYPE: GC_TYPE_DIRECTORY},
   GC_CSV_HEADER_FILTER: {GC_VAR_TYPE: GC_TYPE_HEADERFILTER},
+  GC_CSV_HEADER_DROP_FILTER: {GC_VAR_TYPE: GC_TYPE_HEADERFILTER},
   GC_CSV_ROW_FILTER: {GC_VAR_TYPE: GC_TYPE_ROWFILTER},
   GC_TLS_MIN_VERSION: {GC_VAR_TYPE: GC_TYPE_STRING},
   GC_TLS_MAX_VERSION: {GC_VAR_TYPE: GC_TYPE_STRING},
