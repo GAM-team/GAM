@@ -130,8 +130,8 @@ def write_csv_file(csvRows, titles, list_type, todrive):
       return False
     return rowBoolean == filterBoolean
 
-  def headerFilterMatch(title):
-    for filterStr in GC_Values[GC_CSV_HEADER_FILTER]:
+  def headerFilterMatch(filters, title):
+    for filterStr in filters:
       if filterStr.match(title):
         return True
     return False
@@ -151,10 +151,13 @@ def write_csv_file(csvRows, titles, list_type, todrive):
         csvRows = [row for row in csvRows if rowCountFilterMatch(row.get(column, 0), filterVal[1], filterVal[2])]
       else: #boolean
         csvRows = [row for row in csvRows if rowBooleanFilterMatch(row.get(column, False), filterVal[1])]
-  if GC_Values[GC_CSV_HEADER_FILTER]:
-    titles = [t for t in titles if headerFilterMatch(t)]
+  if GC_Values[GC_CSV_HEADER_FILTER] or GC_Values[GC_CSV_HEADER_DROP_FILTER]:
+    if GC_Values[GC_CSV_HEADER_DROP_FILTER]:
+      titles = [t for t in titles if not headerFilterMatch(GC_Values[GC_CSV_HEADER_DROP_FILTER], t)]
+    if GC_Values[GC_CSV_HEADER_FILTER]:
+      titles = [t for t in titles if headerFilterMatch(GC_Values[GC_CSV_HEADER_FILTER], t)]
     if not titles:
-      controlflow.system_error_exit(3, 'No columns selected with GAM_CSV_HEADER_FILTER\n')
+      controlflow.system_error_exit(3, 'No columns selected with GAM_CSV_HEADER_FILTER and GAM_CSV_HEADER_DROP_FILTER\n')
       return
   csv.register_dialect('nixstdout', lineterminator='\n')
   if todrive:
