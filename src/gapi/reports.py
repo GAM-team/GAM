@@ -1,5 +1,6 @@
 import calendar
 import datetime
+import re
 import sys
 
 from dateutil.parser import parse
@@ -44,7 +45,12 @@ def showUsageParameters():
     rep = buildGAPIObject()
     throw_reasons = [gapi.errors.ErrorReason.INVALID,
                      gapi.errors.ErrorReason.BAD_REQUEST]
+    todrive = False
+    if len(sys.argv) == 3:
+        controlflow.missing_argument_exit(
+            'user or customer', 'report usageparameters')
     report = sys.argv[3].lower()
+    titles = ['parameter']
     if report == 'customer':
         endpoint = rep.customerUsageReports()
         kwargs = {}
@@ -58,9 +64,17 @@ def showUsageParameters():
     if customerId == MY_CUSTOMER:
         customerId = None
     tryDate = datetime.date.today().strftime(YYYYMMDD_FORMAT)
-    partial_apps = False
+    partial_apps = []
     all_parameters = []
     one_day = datetime.timedelta(days=1)
+    i = 4
+    while i < len(sys.argv):
+        myarg = sys.argv[i].lower().replace('_', '')
+        if myarg == 'todrive':
+            todrive = True
+            i += 1
+        else:
+            controlflow.invalid_argument_exit(sys.argv[i], "gam report usageparameters")
     while True:
         try:
             response = gapi.call(endpoint, 'get',
@@ -88,15 +102,22 @@ def showUsageParameters():
         except gapi.errors.GapiInvalidError as e:
             tryDate = _adjust_date(str(e))
     all_parameters.sort()
+    csvRows = []
     for parameter in all_parameters:
-        print(parameter)
+        csvRows.append({'parameter': parameter})
+    display.write_csv_file(
+        csvRows, titles, f'{report.capitalize()} Report Usage Parameters', todrive)
 
+REPORTS_PARAMETERS_SIMPLE_TYPES = ['intValue', 'boolValue', 'datetimeValue', 'stringValue']
 
 def showUsage():
     rep = buildGAPIObject()
     throw_reasons = [gapi.errors.ErrorReason.INVALID,
                      gapi.errors.ErrorReason.BAD_REQUEST]
     todrive = False
+    if len(sys.argv) == 3:
+        controlflow.missing_argument_exit(
+            'user or customer', 'report usage')
     report = sys.argv[3].lower()
     titles = ['date']
     if report == 'customer':
@@ -113,7 +134,6 @@ def showUsage():
     if customerId == MY_CUSTOMER:
         customerId = None
     parameters = []
-    filters = None
     start_date = end_date = orgUnitId = None
     skip_day_numbers = []
     skip_dates = []
@@ -121,20 +141,15 @@ def showUsage():
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
         if myarg == 'startdate':
-            start_date = parse(sys.argv[i+1])
+            start_date = utils.get_yyyymmdd(sys.argv[i+1], returnDateTime=True)
             i += 2
         elif myarg == 'enddate':
-            end_date = parse(sys.argv[i+1])
+            end_date = utils.get_yyyymmdd(sys.argv[i+1], returnDateTime=True)
             i += 2
         elif myarg == 'todrive':
             todrive = True
             i += 1
-        elif myarg in ['orgunit', 'org', 'ou']:
-            if report != 'user':
-                controlflow.invalid_argument_exit(myarg, f'gam usage {report}')
-            _, orgUnitId = __main__.getOrgUnitId(sys.argv[i+1])
-            i += 2
-        elif myarg == 'parameters':
+        elif myarg in ['fields', 'parameters']:
             parameters = sys.argv[i+1].split(',')
             i += 2
         elif myarg == 'skipdates':
@@ -146,29 +161,31 @@ def showUsage():
             dow = [d.lower() for d in calendar.day_abbr]
             skip_day_numbers = [dow.index(d) for d in skipdaynames if d in dow]
             i += 2
-        elif myarg in usergroup_types:
-            if report != 'user':
-                controlflow.invalid_argument_exit(myarg, f'gam usage {report}')
-            entity_type = myarg
-            entity = sys.argv[i+1]
-            users = __main__.getUsersToModify(entity_type, entity)
+        elif report == 'user' and myarg in ['orgunit', 'org', 'ou']:
+            _, orgUnitId = __main__.getOrgUnitId(sys.argv[i+1])
+            i += 2
+        elif report == 'user' and myarg in usergroup_types:
+            users = __main__.getUsersToModify(myarg, sys.argv[i+1])
             kwargs = [{'userKey': user} for user in users]
-            i += 3
+            i += 2
         else:
-            controlflow.invalid_argument_exit(sys.argv[i], "gam usage")
+            controlflow.invalid_argument_exit(sys.argv[i], f'gam report usage {report}')
+    if parameters:
+        titles.extend(parameters)
+        parameters = ','.join(parameters)
+    else:
+        parameters = None
     if not start_date:
         start_date = datetime.datetime.now() + relativedelta(months=-1)
     if not end_date:
         end_date = datetime.datetime.now()
     if orgUnitId:
-        for i in range(len(kwargs)):
-            kwargs[i-1]['orgUnitID'] = orgUnitId
+        for kw in kwargs:
+            kw['orgUnitID'] = orgUnitId
     one_day = datetime.timedelta(days=1)
     usage_on_date = start_date
-    titles.extend(parameters)
+    start_date = usage_on_date.strftime('%Y-%m-%d')
     csvRows = []
-    vtypes = ['intValue', 'stringValue', 'intValue',
-              'boolValue', 'datetimeValue']
     while usage_on_date <= end_date:
         use_date = usage_on_date.strftime('%Y-%m-%d')
         if usage_on_date.weekday() in skip_day_numbers or \
@@ -184,7 +201,7 @@ def showUsage():
                                                throw_reasons=throw_reasons,
                                                customerId=customerId,
                                                date=use_date,
-                                               parameters=','.join(parameters),
+                                               parameters=parameters,
                                                **kwarg)
                 except gapi.errors.GapiBadRequestError:
                     continue
@@ -192,7 +209,7 @@ def showUsage():
                     row = {'date': use_date}
                     if 'userEmail' in entity['entity']:
                         row['user'] = entity['entity']['userEmail']
-                    for item in entity['parameters']:
+                    for item in entity.get('parameters', []):
                         if 'name' not in item:
                             continue
                         name = item['name']
@@ -204,16 +221,20 @@ def showUsage():
                                     titles.append(column_name)
                                 row[column_name] = cros_ver['num_devices']
                         else:
-                            for vtype in vtypes:
-                                if vtype in item:
-                                    value = item[vtype]
+                            if not name in titles:
+                                titles.append(name)
+                            for ptype in REPORTS_PARAMETERS_SIMPLE_TYPES:
+                                if ptype in item:
+                                    row[name] = item[ptype]
                                     break
-                            row[name] = value
+                            else:
+                                row[name] = ''
                     csvRows.append(row)
-        except gapi.errors.GapiInvalidError:
-            continue
+        except gapi.errors.GapiInvalidError as e:
+            display.print_warning(str(e))
+            break
     display.write_csv_file(
-        csvRows, titles, f'Usage Reports', todrive)
+        csvRows, titles, f'{report.capitalize()} Usage Report - {start_date}:{use_date}', todrive)
 
 
 def showReport():
@@ -318,7 +339,6 @@ def showReport():
             sys.exit(1)
         titles = ['email', 'date']
         csvRows = []
-        ptypes = ['intValue', 'boolValue', 'datetimeValue', 'stringValue']
         for user_report in usage:
             if 'entity' not in user_report:
                 continue
@@ -330,7 +350,7 @@ def showReport():
                 name = item['name']
                 if not name in titles:
                     titles.append(name)
-                for ptype in ptypes:
+                for ptype in REPORTS_PARAMETERS_SIMPLE_TYPES:
                     if ptype in item:
                         row[name] = item[ptype]
                         break
