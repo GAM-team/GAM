@@ -1299,7 +1299,7 @@ gam <UserTypeEntity> show fileinfo <DriveFileID> [allfields|<DriveFieldName>*]
 gam <UserTypeEntity> show filerevisions <DriveFileID>
 gam <UserTypeEntity> show filetree [anyowner] (orderby <DriveOrderByFieldName> [ascending|descending])*
 
-gam <UserTypeEntity> create|add drivefile [drivefilename <DriveFileName>] <DriveFileAddAttributes>* [csv] [todrive]
+gam <UserTypeEntity> create|add drivefile [drivefilename <DriveFileName>] <DriveFileAddAttributes>* [csv] [todrive] [returnidonly]
 gam <UserTypeEntity> update drivefile (id <DriveFileID)|(drivefilename <DriveFileName>)|(query <QueryDriveFile) [copy] [newfilename <DriveFileName>] <DriveFileUpdateAttributes>*
 gam <UserTypeEntity> get drivefile (id <DriveFileID>)|(drivefilename <DriveFileName>)|(query <QueryDriveFile>)
 	[revision <Number>] [(format <FileFormatList>)|(csvsheet <String>)]

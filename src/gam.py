@@ -3524,7 +3524,7 @@ def doUpdateDriveFile(users):
         print(f'Successfully copied {fileId} to {result["id"]}')
 
 def createDriveFile(users):
-  csv_output = to_drive = False
+  csv_output = return_id_only = to_drive = False
   csv_rows = []
   csv_titles = ['User', 'title', 'id']
   media_body = None
@@ -3540,6 +3540,9 @@ def createDriveFile(users):
       i += 1
     elif myarg == 'todrive':
       to_drive = True
+      i += 1
+    elif myarg == 'returnidonly':
+      return_id_only = True
       i += 1
     else:
       i = getDriveFileAttribute(i, body, parameters, myarg, False)
@@ -3559,10 +3562,12 @@ def createDriveFile(users):
                        ocrLanguage=parameters[DFA_OCRLANGUAGE],
                        media_body=media_body, body=body, fields='id,title,mimeType',
                        supportsAllDrives=True)
-    titleInfo = f'{result["title"]}({result["id"]})'
-    if csv_output:
+    if return_id_only:
+      sys.stdout.write(f"{result['id']}\n")
+    elif csv_output:
       csv_rows.append({'User': user, 'title': result['title'], 'id': result['id']})
     else:
+      titleInfo = f'{result["title"]}({result["id"]})'
       if parameters[DFA_LOCALFILENAME]:
         print(f'Successfully uploaded {parameters[DFA_LOCALFILENAME]} to Drive File {titleInfo}')
       else:
