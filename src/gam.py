@@ -33,6 +33,7 @@ import io
 import json
 import mimetypes
 import os
+import pkg_resources
 import platform
 import random
 from secrets import SystemRandom
@@ -603,10 +604,11 @@ def doGAMVersion(checkForArgs=True):
     return
   pyversion = platform.python_version()
   cpu_bits = struct.calcsize('P') * 8
+  api_client_ver = pkg_resources.get_distribution("google-api-python-client").version
   print((f'GAM {gam_version} - {GAM_URL} - {GM_Globals[GM_GAM_TYPE]}\n'
          f'{gam_author}\n'
          f'Python {pyversion} {cpu_bits}-bit {sys.version_info.releaselevel}\n'
-         f'google-api-python-client {googleapiclient.__version__}\n'
+         f'google-api-python-client {api_client_ver}\n'
          f'{getOSPlatform()} {platform.machine()}\n'
          f'Path: {GM_Globals[GM_GAM_PATH]}'))
   if sys.platform.startswith('win') and \
