@@ -8277,7 +8277,7 @@ def doSiteVerifyAttempt():
     print(f'Expected Token:      {verify_data["token"]}')
     if verify_data['method'] in ['DNS_CNAME', 'DNS_TXT']:
       simplehttp = transport.create_http()
-      base_url = 'https://dns.google/resolve?'
+      base_url = 'https://dns.google.com/resolve?'
       query_params = {}
       if verify_data['method'] == 'DNS_CNAME':
         cname_token = verify_data['token']
