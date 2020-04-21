@@ -1,6 +1,6 @@
 cd src
 echo "compiling GAM with pyinstaller..."
-pyinstaller --clean --noupx -F --distpath=gam $GAMOS-gam.spec
+pyinstaller --clean --noupx -F --distpath=gam gam.spec
 export gam="gam/gam"
 export gampath=$(readlink -e gam)
 echo "running compiled GAM..."
