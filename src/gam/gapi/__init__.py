@@ -6,14 +6,14 @@ import googleapiclient.errors
 import google.auth.exceptions
 import httplib2
 
-import controlflow
-import display
-from gapi import errors
-import transport
-from var import (GM_Globals, GM_CURRENT_API_SCOPES, GM_CURRENT_API_USER,
-                 GM_EXTRA_ARGS_DICT, GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID,
-                 MAX_RESULTS_API_EXCEPTIONS, MESSAGE_API_ACCESS_CONFIG,
-                 MESSAGE_API_ACCESS_DENIED, MESSAGE_SERVICE_NOT_APPLICABLE)
+from gam import controlflow
+from gam import display
+from gam.gapi import errors
+from gam import transport
+from gam.var import (GM_Globals, GM_CURRENT_API_SCOPES, GM_CURRENT_API_USER,
+                     GM_EXTRA_ARGS_DICT, GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID,
+                     MAX_RESULTS_API_EXCEPTIONS, MESSAGE_API_ACCESS_CONFIG,
+                     MESSAGE_API_ACCESS_DENIED, MESSAGE_SERVICE_NOT_APPLICABLE)
 
 
 def call(service,

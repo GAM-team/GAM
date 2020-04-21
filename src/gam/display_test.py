@@ -3,9 +3,9 @@
 import unittest
 from unittest.mock import patch
 
-import display
-from var import ERROR_PREFIX
-from var import WARNING_PREFIX
+from gam import display
+from gam.var import ERROR_PREFIX
+from gam.var import WARNING_PREFIX
 
 
 class DisplayTest(unittest.TestCase):

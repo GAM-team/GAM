@@ -1,17 +1,17 @@
 import datetime
 
-from var import *
-import __main__
-import controlflow
-import display
-import fileutils
-import gapi
-import gapi.directory
-import utils
+from gam.var import *
+import gam
+from gam import controlflow
+from gam import display
+from gam import fileutils
+from gam import gapi
+from gam.gapi import directory as gapi_directory
+from gam import utils
 
 
 def doUpdateCros():
-    cd = gapi.directory.buildGAPIObject()
+    cd = gapi_directory.buildGAPIObject()
     i, devices = getCrOSDeviceEntity(3, cd)
     update_body = {}
     action_body = {}
@@ -32,7 +32,7 @@ def doUpdateCros():
             update_body['annotatedAssetId'] = sys.argv[i+1]
             i += 2
         elif myarg in ['ou', 'org']:
-            orgUnitPath = __main__.getOrgUnitItem(sys.argv[i+1])
+            orgUnitPath = gam.getOrgUnitItem(sys.argv[i+1])
             i += 2
         elif myarg == 'action':
             action = sys.argv[i+1].lower().replace('_', '').replace('-', '')
@@ -84,7 +84,7 @@ def doUpdateCros():
             sys.exit(3)
         for deviceId in devices:
             i += 1
-            cur_count = __main__.currentCount(i, count)
+            cur_count = gam.currentCount(i, count)
             print(f' performing action {action} for {deviceId}{cur_count}')
             gapi.call(cd.chromeosdevices(), function='action',
                       customerId=GC_Values[GC_CUSTOMER_ID],
@@ -93,7 +93,7 @@ def doUpdateCros():
         if update_body:
             for deviceId in devices:
                 i += 1
-                current_count = __main__.currentCount(i, count)
+                current_count = gam.currentCount(i, count)
                 print(f' updating {deviceId}{current_count}')
                 gapi.call(cd.chromeosdevices(), 'update',
                           customerId=GC_Values[GC_CUSTOMER_ID],
@@ -110,7 +110,7 @@ def doUpdateCros():
 
 
 def doGetCrosInfo():
-    cd = gapi.directory.buildGAPIObject()
+    cd = gapi_directory.buildGAPIObject()
     i, devices = getCrOSDeviceEntity(3, cd)
     downloadfile = None
     targetFolder = GC_Values[GC_DRIVE_DIR]
@@ -125,7 +125,7 @@ def doGetCrosInfo():
             noLists = True
             i += 1
         elif myarg == 'listlimit':
-            listLimit = __main__.getInteger(sys.argv[i+1], myarg, minVal=-1)
+            listLimit = gam.getInteger(sys.argv[i+1], myarg, minVal=-1)
             i += 2
         elif myarg in CROS_START_ARGUMENTS:
             startDate = _getFilterDate(sys.argv[i+1])
@@ -318,7 +318,7 @@ def doGetCrosInfo():
 
 
 def doPrintCrosActivity():
-    cd = gapi.directory.buildGAPIObject()
+    cd = gapi_directory.buildGAPIObject()
     todrive = False
     titles = ['deviceId', 'annotatedAssetId',
               'annotatedLocation', 'serialNumber', 'orgUnitPath']
@@ -335,10 +335,10 @@ def doPrintCrosActivity():
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
         if myarg in ['query', 'queries']:
-            queries = __main__.getQueries(myarg, sys.argv[i+1])
+            queries = gam.getQueries(myarg, sys.argv[i+1])
             i += 2
         elif myarg == 'limittoou':
-            orgUnitPath = __main__.getOrgUnitItem(sys.argv[i+1])
+            orgUnitPath = gam.getOrgUnitItem(sys.argv[i+1])
             i += 2
         elif myarg == 'todrive':
             todrive = True
@@ -366,7 +366,7 @@ def doPrintCrosActivity():
             endDate = _getFilterDate(sys.argv[i+1])
             i += 2
         elif myarg == 'listlimit':
-            listLimit = __main__.getInteger(sys.argv[i+1], myarg, minVal=0)
+            listLimit = gam.getInteger(sys.argv[i+1], myarg, minVal=0)
             i += 2
         elif myarg == 'delimiter':
             delimiter = sys.argv[i+1]
@@ -393,7 +393,7 @@ def doPrintCrosActivity():
         display.add_titles_to_csv_file(titles_to_add, titles)
     fields = f'nextPageToken,chromeosdevices({",".join(fieldsList)})'
     for query in queries:
-        __main__.printGettingAllItems('CrOS Devices', query)
+        gam.printGettingAllItems('CrOS Devices', query)
         page_message = gapi.got_total_items_msg('CrOS Devices', '...\n')
         all_cros = gapi.get_all_pages(cd.chromeosdevices(), 'list',
                                       'chromeosdevices',
@@ -479,7 +479,7 @@ def doPrintCrosDevices():
         elif myarg in CROS_SYSTEM_RAM_FREE_REPORTS_ARGUMENTS:
             selectedLists['systemRamFreeReports'] = True
 
-    cd = gapi.directory.buildGAPIObject()
+    cd = gapi_directory.buildGAPIObject()
     todrive = False
     fieldsList = []
     fieldsTitles = {}
@@ -497,10 +497,10 @@ def doPrintCrosDevices():
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
         if myarg in ['query', 'queries']:
-            queries = __main__.getQueries(myarg, sys.argv[i+1])
+            queries = gam.getQueries(myarg, sys.argv[i+1])
             i += 2
         elif myarg == 'limittoou':
-            orgUnitPath = __main__.getOrgUnitItem(sys.argv[i+1])
+            orgUnitPath = gam.getOrgUnitItem(sys.argv[i+1])
             i += 2
         elif myarg == 'todrive':
             todrive = True
@@ -510,7 +510,7 @@ def doPrintCrosDevices():
             selectedLists = {}
             i += 1
         elif myarg == 'listlimit':
-            listLimit = __main__.getInteger(sys.argv[i+1], myarg, minVal=0)
+            listLimit = gam.getInteger(sys.argv[i+1], myarg, minVal=0)
             i += 2
         elif myarg in CROS_START_ARGUMENTS:
             startDate = _getFilterDate(sys.argv[i+1])
@@ -589,7 +589,7 @@ def doPrintCrosDevices():
     else:
         fields = None
     for query in queries:
-        __main__.printGettingAllItems('CrOS Devices', query)
+        gam.printGettingAllItems('CrOS Devices', query)
         page_message = gapi.got_total_items_msg('CrOS Devices', '...\n')
         all_cros = gapi.get_all_pages(cd.chromeosdevices(), 'list',
                                       'chromeosdevices',
@@ -742,9 +742,9 @@ def doPrintCrosDevices():
 def getCrOSDeviceEntity(i, cd):
     myarg = sys.argv[i].lower()
     if myarg == 'cros_sn':
-        return i+2, __main__.getUsersToModify('cros_sn', sys.argv[i+1])
+        return i+2, gam.getUsersToModify('cros_sn', sys.argv[i+1])
     if myarg == 'query':
-        return i+2, __main__.getUsersToModify('crosquery', sys.argv[i+1])
+        return i+2, gam.getUsersToModify('crosquery', sys.argv[i+1])
     if myarg[:6] == 'query:':
         query = sys.argv[i][6:]
         if query[:12].lower() == 'orgunitpath:':

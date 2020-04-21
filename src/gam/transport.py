@@ -3,11 +3,11 @@
 import google_auth_httplib2
 import httplib2
 
-from var import GAM_INFO
-from var import GC_CA_FILE
-from var import GC_TLS_MAX_VERSION
-from var import GC_TLS_MIN_VERSION
-from var import GC_Values
+from gam.var import GAM_INFO
+from gam.var import GC_CA_FILE
+from gam.var import GC_TLS_MAX_VERSION
+from gam.var import GC_TLS_MIN_VERSION
+from gam.var import GC_Values
 
 
 def create_http(cache=None,

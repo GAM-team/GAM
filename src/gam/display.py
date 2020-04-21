@@ -10,10 +10,10 @@ import dateutil
 import googleapiclient.http
 
 #TODO: get rid of these hacks
-import __main__
-from var import *
-import controlflow
-import gapi
+import gam
+from gam.var import *
+from gam import controlflow
+from gam import gapi
 
 
 def current_count(i, count):
@@ -171,8 +171,8 @@ def write_csv_file(csvRows, titles, list_type, todrive):
   except IOError as e:
     controlflow.system_error_exit(6, e)
   if todrive:
-    admin_email = __main__._getValueFromOAuth('email')
-    _, drive = __main__.buildDrive3GAPIObject(admin_email)
+    admin_email = gam._getValueFromOAuth('email')
+    _, drive = gam.buildDrive3GAPIObject(admin_email)
     if not drive:
       print(f'''\nGAM is not authorized to create Drive files. Please run:
 gam user {admin_email} check serviceaccount
@@ -200,7 +200,7 @@ and follow recommend steps to authorize GAM for Drive access.''')
     if GC_Values[GC_NO_BROWSER]:
       msg_txt = f'Drive file uploaded to:\n {file_url}'
       msg_subj = f'{GC_Values[GC_DOMAIN]} - {list_type}'
-      __main__.send_email(msg_subj, msg_txt)
+      gam.send_email(msg_subj, msg_txt)
       print(msg_txt)
     else:
       webbrowser.open(file_url)

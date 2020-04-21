@@ -6,7 +6,7 @@ import unittest
 from unittest.mock import patch
 
 import googleapiclient.errors
-from gapi import errors
+from gam.gapi import errors
 
 
 def create_simple_http_error(status, reason, message):

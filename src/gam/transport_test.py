@@ -8,7 +8,7 @@ from gam import SetGlobalVariables
 import google_auth_httplib2
 import httplib2
 
-import transport
+from gam import transport
 
 
 class CreateHttpTest(unittest.TestCase):

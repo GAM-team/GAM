@@ -5,16 +5,16 @@ import sys
 
 from dateutil.relativedelta import relativedelta
 
-import __main__
-from var import *
-import controlflow
-import display
-import gapi
-import utils
+import gam
+from gam.var import *
+from gam import controlflow
+from gam import display
+from gam import gapi
+from gam import utils
 
 
 def buildGAPIObject():
-    return __main__.buildGAPIObject('reports')
+    return gam.buildGAPIObject('reports')
 
 
 REPORT_CHOICE_MAP = {
@@ -286,7 +286,7 @@ def showReport():
             tryDate = utils.get_yyyymmdd(sys.argv[i+1])
             i += 2
         elif myarg in ['orgunit', 'org', 'ou']:
-            _, orgUnitId = __main__.getOrgUnitId(sys.argv[i+1])
+            _, orgUnitId = gam.getOrgUnitId(sys.argv[i+1])
             i += 2
         elif myarg == 'fulldatarequired':
             fullDataRequired = []
@@ -304,7 +304,7 @@ def showReport():
             eventName = sys.argv[i+1]
             i += 2
         elif myarg == 'user':
-            userKey = __main__.normalizeEmailAddressOrUID(sys.argv[i+1])
+            userKey = gam.normalizeEmailAddressOrUID(sys.argv[i+1])
             i += 2
         elif myarg in ['filter', 'filters']:
             filters = sys.argv[i+1]

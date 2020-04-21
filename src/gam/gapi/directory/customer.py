@@ -1,14 +1,14 @@
 import datetime
 
-from var import *
-import controlflow
-import gapi
-import gapi.directory
-import gapi.reports
+from gam.var import *
+from gam import controlflow
+from gam import gapi
+from gam.gapi import directory as gapi_directory
+from gam.gapi import reports as gapi_reports
 
 
 def doGetCustomerInfo():
-    cd = gapi.directory.buildGAPIObject()
+    cd = gapi_directory.buildGAPIObject()
     customer_info = gapi.call(cd.customers(), 'get',
                               customerKey=GC_Values[GC_CUSTOMER_ID])
     print(f'Customer ID: {customer_info["id"]}')
@@ -59,7 +59,7 @@ def doGetCustomerInfo():
     customerId = GC_Values[GC_CUSTOMER_ID]
     if customerId == MY_CUSTOMER:
         customerId = None
-    rep = gapi.reports.buildGAPIObject()
+    rep = gapi_reports.buildGAPIObject()
     usage = None
     throw_reasons = [gapi.errors.ErrorReason.INVALID]
     while True:
@@ -71,7 +71,7 @@ def doGetCustomerInfo():
                                        parameters=parameters)
             break
         except gapi.errors.GapiInvalidError as e:
-            tryDate = gapi.reports._adjust_date(str(e))
+            tryDate = gapi_reports._adjust_date(str(e))
     if not usage:
         print('No user count data available.')
         return
@@ -84,7 +84,7 @@ def doGetCustomerInfo():
 
 
 def doUpdateCustomer():
-    cd = gapi.directory.buildGAPIObject()
+    cd = gapi_directory.buildGAPIObject()
     body = {}
     i = 3
     while i < len(sys.argv):

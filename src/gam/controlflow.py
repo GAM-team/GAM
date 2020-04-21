@@ -3,9 +3,9 @@ import random
 import sys
 import time
 
-import display  # TODO: Change to relative import when gam is setup as a package
-from var import MESSAGE_HEADER_NOT_FOUND_IN_CSV_HEADERS
-from var import MESSAGE_INVALID_JSON
+from gam import display
+from gam.var import MESSAGE_HEADER_NOT_FOUND_IN_CSV_HEADERS
+from gam.var import MESSAGE_INVALID_JSON
 
 
 def system_error_exit(return_code, message):
@@ -21,38 +21,35 @@ def system_error_exit(return_code, message):
 
 
 def invalid_argument_exit(argument, command):
-  '''Indicate that the argument is not valid for the command.
+  """Indicate that the argument is not valid for the command.
 
   Args:
     argument: the invalid argument
     command: the base GAM command
-  '''
-  system_error_exit(
-      2,
-      f'{argument} is not a valid argument for "{command}"')
+  """
+  system_error_exit(2, f'{argument} is not a valid argument for "{command}"')
+
 
 def missing_argument_exit(argument, command):
-  '''Indicate that the argument is missing for the command.
+  """Indicate that the argument is missing for the command.
 
   Args:
     argument: the missingagrument
     command: the base GAM command
-  '''
-  system_error_exit(
-      2,
-      f'missing argument {argument} for "{command}"')
+  """
+  system_error_exit(2, f'missing argument {argument} for "{command}"')
+
 
 def expected_argument_exit(name, expected, argument):
-  '''Indicate that the argument does not have an expected value for the command.
+  """Indicate that the argument does not have an expected value for the command.
 
   Args:
     name: the field name
     expected: the expected values
     argument: the invalid argument
-  '''
-  system_error_exit(
-      2,
-      f'{name} must be one of {expected}; got {argument}')
+  """
+  system_error_exit(2, f'{name} must be one of {expected}; got {argument}')
+
 
 def csv_field_error_exit(field_name, field_names):
   """Raises a system exit when a CSV field is malformed.
@@ -93,7 +90,7 @@ def wait_on_failure(current_attempt_num,
                      60) + float(random.randint(1, 1000)) / 1000
   if current_attempt_num > error_print_threshold:
     sys.stderr.write((f'Temporary error: {error_message}, Backing off: '
-        f'{int(wait_on_fail)} seconds, Retry: '
-        f'{current_attempt_num}/{total_num_retries}\n'))
+                      f'{int(wait_on_fail)} seconds, Retry: '
+                      f'{current_attempt_num}/{total_num_retries}\n'))
     sys.stderr.flush()
   time.sleep(wait_on_fail)

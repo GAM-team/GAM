@@ -6,7 +6,7 @@ import unittest
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
-import fileutils
+from gam import fileutils
 
 
 class FileutilsTest(unittest.TestCase):

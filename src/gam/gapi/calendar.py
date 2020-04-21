@@ -3,28 +3,28 @@ import sys
 import uuid
 
 # TODO: get rid of these hacks
-import __main__
-from var import *
+import gam
+from gam.var import *
 
-import controlflow
-import display
-import fileutils
-import gapi
-import utils
+from gam import controlflow
+from gam import display
+from gam import fileutils
+from gam import gapi
+from gam import utils
 
 
 def normalizeCalendarId(calname, checkPrimary=False):
     if checkPrimary and calname.lower() == 'primary':
         return calname
     if not GC_Values[GC_DOMAIN]:
-        GC_Values[GC_DOMAIN] = __main__._getValueFromOAuth('hd')
-    return __main__.convertUIDtoEmailAddress(calname,
+        GC_Values[GC_DOMAIN] = gam._getValueFromOAuth('hd')
+    return gam.convertUIDtoEmailAddress(calname,
                                              email_types=['user', 'resource'])
 
 
 def buildCalendarGAPIObject(calname):
     calendarId = normalizeCalendarId(calname)
-    return (calendarId, __main__.buildGAPIServiceObject('calendar',
+    return (calendarId, gam.buildGAPIServiceObject('calendar',
                                                         calendarId))
 
 
@@ -36,9 +36,9 @@ def buildCalendarDataGAPIObject(calname):
     # so we need to access them as the admin.
     cal = None
     if not calname.endswith('.calendar.google.com'):
-        cal = __main__.buildGAPIServiceObject('calendar', calendarId, False)
+        cal = gam.buildGAPIServiceObject('calendar', calendarId, False)
     if cal is None:
-        _, cal = buildCalendarGAPIObject(__main__._getValueFromOAuth('email'))
+        _, cal = buildCalendarGAPIObject(gam._getValueFromOAuth('email'))
     return (calendarId, cal)
 
 def printShowACLs(csvFormat):
@@ -87,7 +87,7 @@ def _getCalendarACLScope(i, body):
     body['scope']['type'] = myarg
     i += 1
     if myarg in ['user', 'group']:
-        body['scope']['value'] = __main__.normalizeEmailAddressOrUID(
+        body['scope']['value'] = gam.normalizeEmailAddressOrUID(
             sys.argv[i], noUid=True)
         i += 1
     elif myarg == 'domain':
@@ -99,7 +99,7 @@ def _getCalendarACLScope(i, body):
             body['scope']['value'] = GC_Values[GC_DOMAIN]
     elif myarg != 'default':
         body['scope']['type'] = 'user'
-        body['scope']['value'] = __main__.normalizeEmailAddressOrUID(
+        body['scope']['value'] = gam.normalizeEmailAddressOrUID(
             myarg, noUid=True)
     return i
 
@@ -130,7 +130,7 @@ def addACL(function):
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
         if myarg == 'sendnotifications':
-            sendNotifications = __main__.getBoolean(sys.argv[i+1], myarg)
+            sendNotifications = gam.getBoolean(sys.argv[i+1], myarg)
             i += 2
         else:
             controlflow.invalid_argument_exit(
@@ -237,7 +237,7 @@ def getSendUpdates(myarg, i, cal):
         sendUpdates = 'all'
         i += 1
     elif myarg == 'sendnotifications':
-        sendUpdates = 'all' if __main__.getBoolean(sys.argv[i+1], myarg) else 'none'
+        sendUpdates = 'all' if gam.getBoolean(sys.argv[i+1], myarg) else 'none'
         i += 2
     else:  # 'sendupdates':
         sendUpdatesMap = {}
@@ -393,18 +393,18 @@ def getEventAttributes(i, calendarId, cal, body, action):
             body['guestsCanInviteOthers'] = False
             i += 1
         elif myarg == 'guestscaninviteothers':
-            body['guestsCanInviteTohters'] = __main__.getBoolean(
+            body['guestsCanInviteTohters'] = gam.getBoolean(
                 sys.argv[i+1], 'guestscaninviteothers')
             i += 2
         elif myarg == 'guestscantseeothers':
             body['guestsCanSeeOtherGuests'] = False
             i += 1
         elif myarg == 'guestscanseeothers':
-            body['guestsCanSeeOtherGuests'] = __main__.getBoolean(
+            body['guestsCanSeeOtherGuests'] = gam.getBoolean(
                 sys.argv[i+1], 'guestscanseeothers')
             i += 2
         elif myarg == 'guestscanmodify':
-            body['guestsCanModify'] = __main__.getBoolean(
+            body['guestsCanModify'] = gam.getBoolean(
                 sys.argv[i+1], 'guestscanmodify')
             i += 2
         elif myarg == 'id':
@@ -458,7 +458,7 @@ def getEventAttributes(i, calendarId, cal, body, action):
             i += 1
         elif myarg == 'reminder':
             minutes = \
-            __main__.getInteger(sys.argv[i+1], myarg, minVal=0,
+            gam.getInteger(sys.argv[i+1], myarg, minVal=0,
                                 maxVal=CALENDAR_REMINDER_MAX_MINUTES)
             reminder = {'minutes': minutes, 'method': sys.argv[i+2]}
             body.setdefault(
@@ -483,7 +483,7 @@ def getEventAttributes(i, calendarId, cal, body, action):
             body['extendedProperties']['shared'][sys.argv[i+1]] = sys.argv[i+2]
             i += 3
         elif myarg == 'colorindex':
-            body['colorId'] = __main__.getInteger(
+            body['colorId'] = gam.getInteger(
                 sys.argv[i+1], myarg, CALENDAR_EVENT_MIN_COLOR_INDEX,
                 CALENDAR_EVENT_MAX_COLOR_INDEX)
             i += 2
@@ -649,25 +649,25 @@ def getCalendarAttributes(i, body, function):
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
         if myarg == 'selected':
-            body['selected'] = __main__.getBoolean(sys.argv[i+1], myarg)
+            body['selected'] = gam.getBoolean(sys.argv[i+1], myarg)
             i += 2
         elif myarg == 'hidden':
-            body['hidden'] = __main__.getBoolean(sys.argv[i+1], myarg)
+            body['hidden'] = gam.getBoolean(sys.argv[i+1], myarg)
             i += 2
         elif myarg == 'summary':
             body['summaryOverride'] = sys.argv[i+1]
             i += 2
         elif myarg == 'colorindex':
-            body['colorId'] = __main__.getInteger(
+            body['colorId'] = gam.getInteger(
                 sys.argv[i+1], myarg, minVal=CALENDAR_MIN_COLOR_INDEX,
                 maxVal=CALENDAR_MAX_COLOR_INDEX)
             i += 2
         elif myarg == 'backgroundcolor':
-            body['backgroundColor'] = __main__.getColor(sys.argv[i+1])
+            body['backgroundColor'] = gam.getColor(sys.argv[i+1])
             colorRgbFormat = True
             i += 2
         elif myarg == 'foregroundcolor':
-            body['foregroundColor'] = __main__.getColor(sys.argv[i+1])
+            body['foregroundColor'] = gam.getColor(sys.argv[i+1])
             colorRgbFormat = True
             i += 2
         elif myarg == 'reminder':
@@ -677,7 +677,7 @@ def getCalendarAttributes(i, body, function):
                 if method not in CALENDAR_REMINDER_METHODS:
                     controlflow.expected_argument_exit("Method", ", ".join(
                         CALENDAR_REMINDER_METHODS+CLEAR_NONE_ARGUMENT), method)
-                minutes = __main__.getInteger(
+                minutes = gam.getInteger(
                     sys.argv[i+2], myarg, minVal=0,
                     maxVal=CALENDAR_REMINDER_MAX_MINUTES)
                 body['defaultReminders'].append(
@@ -862,7 +862,7 @@ def transferSecCals(users):
             remove_source_user = False
             i += 1
         elif myarg == 'sendnotifications':
-            sendNotifications = __main__.getBoolean(sys.argv[i+1], myarg)
+            sendNotifications = gam.getBoolean(sys.argv[i+1], myarg)
             i += 2
         else:
             controlflow.invalid_argument_exit(

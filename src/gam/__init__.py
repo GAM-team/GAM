@@ -1,26 +1,4 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-#
-# GAM
-#
-# Copyright 2019, LLC All Rights Reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-"""GAM is a command line tool which allows Administrators to control their G Suite domain and accounts.
-
-With GAM you can programmatically create users, turn on/off services for users like POP and Forwarding and much more.
-For more information, see https://git.io/gam
-"""
+"""Main behavioral methods and argument routing for GAM."""
 
 import base64
 import configparser
@@ -35,6 +13,7 @@ import mimetypes
 import os
 import pkg_resources
 import platform
+from pathlib import Path
 import random
 from secrets import SystemRandom
 import re
@@ -50,8 +29,6 @@ import webbrowser
 import zipfile
 import http.client as http_client
 from multiprocessing import Pool as mp_pool
-from multiprocessing import freeze_support as mp_freeze_support
-from multiprocessing import set_start_method as mp_set_start_method
 from urllib.parse import quote, urlencode, urlparse
 import dateutil.parser
 
@@ -68,23 +45,23 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.x509.oid import NameOID
 
-import auth.oauth
-import controlflow
-import display
-import fileutils
-import gapi.calendar
-import gapi.directory
-import gapi.directory.cros
-import gapi.directory.customer
-import gapi.directory.resource
-import gapi.errors
-import gapi.reports
-import gapi.storage
-import gapi.vault
-import gapi
-import transport
-import utils
-from var import *
+import gam.auth.oauth
+from gam import controlflow
+from gam import display
+from gam import fileutils
+from gam.gapi import calendar as gapi_calendar
+from gam.gapi import directory as gapi_directory
+from gam.gapi.directory import cros as gapi_directory_cros
+from gam.gapi.directory import customer as gapi_directory_customer
+from gam.gapi.directory import resource as gapi_directory_resource
+from gam.gapi import errors as gapi_errors
+from gam.gapi import reports as gapi_reports
+from gam.gapi import storage as gapi_storage
+from gam.gapi import vault as gapi_vault
+from gam import gapi
+from gam import transport
+from gam import utils
+from gam.var import *
 
 if platform.system() == 'Windows':
   # No crypt module on Win, use passlib
@@ -106,7 +83,7 @@ elif getattr(sys, 'frozen', False):
   GM_Globals[GM_GAM_TYPE] = 'pyinstaller'
 else:
   # Source code
-  GM_Globals[GM_GAM_PATH] = os.path.dirname(os.path.realpath(__file__))
+  GM_Globals[GM_GAM_PATH] = os.path.dirname(Path(os.path.realpath(__file__)).parent)
   GM_Globals[GM_GAM_TYPE] = 'pythonsource'
 
 def showUsage():
@@ -701,7 +678,7 @@ def readDiscoveryFile(api_version):
 def getOauth2TxtStorageCredentials():
   try:
     return auth.get_admin_credentials()
-  except auth.oauth.InvalidCredentialsFileError:
+  except gam.auth.oauth.InvalidCredentialsFileError:
     # Maintain legacy behavior of this method that returns None if no
     # credential file is present.
     return None
@@ -710,7 +687,7 @@ def getValidOauth2TxtCredentials(force_refresh=False):
   """Gets OAuth2 credentials which are guaranteed to be fresh and valid."""
   try:
     credentials = auth.get_admin_credentials()
-  except auth.oauth.InvalidCredentialsFileError:
+  except gam.auth.oauth.InvalidCredentialsFileError:
     doRequestOAuth()  # Make a new request which should store new creds.
     return getValidOauth2TxtCredentials(force_refresh=force_refresh)
 
@@ -811,30 +788,30 @@ def convertUIDtoEmailAddress(emailAddressOrUID, cd=None, email_types=['user']):
   if 'user' in email_types:
     try:
       result = gapi.call(cd.users(), 'get',
-                         throw_reasons=[gapi.errors.ErrorReason.USER_NOT_FOUND],
+                         throw_reasons=[gapi_errors.ErrorReason.USER_NOT_FOUND],
                          userKey=normalizedEmailAddressOrUID, fields='primaryEmail')
       if 'primaryEmail' in result:
         return result['primaryEmail'].lower()
-    except gapi.errors.GapiUserNotFoundError:
+    except gapi_errors.GapiUserNotFoundError:
       pass
   if 'group' in email_types:
     try:
       result = gapi.call(cd.groups(), 'get',
-                         throw_reasons=[gapi.errors.ErrorReason.GROUP_NOT_FOUND],
+                         throw_reasons=[gapi_errors.ErrorReason.GROUP_NOT_FOUND],
                          groupKey=normalizedEmailAddressOrUID, fields='email')
       if 'email' in result:
         return result['email'].lower()
-    except gapi.errors.GapiGroupNotFoundError:
+    except gapi_errors.GapiGroupNotFoundError:
       pass
   if 'resource' in email_types:
     try:
       result = gapi.call(cd.resources().calendars(), 'get',
-                         throw_reasons=[gapi.errors.ErrorReason.RESOURCE_NOT_FOUND],
+                         throw_reasons=[gapi_errors.ErrorReason.RESOURCE_NOT_FOUND],
                          calendarResourceId=normalizedEmailAddressOrUID,
                          customer=GC_Values[GC_CUSTOMER_ID], fields='resourceEmail')
       if 'resourceEmail' in result:
         return result['resourceEmail'].lower()
-    except gapi.errors.GapiResourceNotFoundError:
+    except gapi_errors.GapiResourceNotFoundError:
       pass
   return normalizedEmailAddressOrUID
 
@@ -847,19 +824,19 @@ def convertEmailAddressToUID(emailAddressOrUID, cd=None, email_type='user'):
     if email_type != 'group':
       try:
         result = gapi.call(cd.users(), 'get',
-                           throw_reasons=[gapi.errors.ErrorReason.USER_NOT_FOUND],
+                           throw_reasons=[gapi_errors.ErrorReason.USER_NOT_FOUND],
                            userKey=normalizedEmailAddressOrUID, fields='id')
         if 'id' in result:
           return result['id']
-      except gapi.errors.GapiUserNotFoundError:
+      except gapi_errors.GapiUserNotFoundError:
         pass
     try:
       result = gapi.call(cd.groups(), 'get',
-                         throw_reasons=[gapi.errors.ErrorReason.NOT_FOUND],
+                         throw_reasons=[gapi_errors.ErrorReason.NOT_FOUND],
                          groupKey=normalizedEmailAddressOrUID, fields='id')
       if 'id' in result:
         return result['id']
-    except gapi.errors.GapiNotFoundError:
+    except gapi_errors.GapiNotFoundError:
       pass
     return None
   return normalizedEmailAddressOrUID
@@ -959,7 +936,7 @@ def doCheckServiceAccount(users):
     project = GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID]
     key_id = GM_Globals[GM_OAUTH2SERVICE_JSON_DATA]['private_key_id']
     name = f'projects/-/serviceAccounts/{project}/keys/{key_id}'
-    key = gapi.call(iam.projects().serviceAccounts().keys(), 'get', name=name, throw_reasons=[gapi.errors.ErrorReason.FOUR_O_THREE])
+    key = gapi.call(iam.projects().serviceAccounts().keys(), 'get', name=name, throw_reasons=[gapi_errors.ErrorReason.FOUR_O_THREE])
     # Both Google and GAM set key valid after to day before creation
     key_created = dateutil.parser.parse(key['validAfterTime'], ignoretz=True) + datetime.timedelta(days=1)
     key_age = datetime.datetime.now() - key_created
@@ -1326,7 +1303,7 @@ def doUpdateDomain():
 
 def doGetDomainInfo():
   if (len(sys.argv) < 4) or (sys.argv[3] == 'logo'):
-    gapi.directory.customer.doGetCustomerInfo()
+    gapi_directory_customer.doGetCustomerInfo()
     return
   cd = buildGAPIObject('directory')
   domainName = sys.argv[3]
@@ -1601,15 +1578,15 @@ def convertToUserID(user):
   if user.find('@') == -1:
     user = f'{user}@{GC_Values[GC_DOMAIN]}'
   try:
-    return gapi.call(cd.users(), 'get', throw_reasons=[gapi.errors.ErrorReason.USER_NOT_FOUND, gapi.errors.ErrorReason.BAD_REQUEST, gapi.errors.ErrorReason.FORBIDDEN], userKey=user, fields='id')['id']
-  except (gapi.errors.GapiUserNotFoundError, gapi.errors.GapiBadRequestError, gapi.errors.GapiForbiddenError):
+    return gapi.call(cd.users(), 'get', throw_reasons=[gapi_errors.ErrorReason.USER_NOT_FOUND, gapi_errors.ErrorReason.BAD_REQUEST, gapi_errors.ErrorReason.FORBIDDEN], userKey=user, fields='id')['id']
+  except (gapi_errors.GapiUserNotFoundError, gapi_errors.GapiBadRequestError, gapi_errors.GapiForbiddenError):
     controlflow.system_error_exit(3, f'no such user {user}')
 
 def convertUserIDtoEmail(uid):
   cd = buildGAPIObject('directory')
   try:
-    return gapi.call(cd.users(), 'get', throw_reasons=[gapi.errors.ErrorReason.USER_NOT_FOUND, gapi.errors.ErrorReason.BAD_REQUEST, gapi.errors.ErrorReason.FORBIDDEN], userKey=uid, fields='primaryEmail')['primaryEmail']
-  except (gapi.errors.GapiUserNotFoundError, gapi.errors.GapiBadRequestError, gapi.errors.GapiForbiddenError):
+    return gapi.call(cd.users(), 'get', throw_reasons=[gapi_errors.ErrorReason.USER_NOT_FOUND, gapi_errors.ErrorReason.BAD_REQUEST, gapi_errors.ErrorReason.FORBIDDEN], userKey=uid, fields='primaryEmail')['primaryEmail']
+  except (gapi_errors.GapiUserNotFoundError, gapi_errors.GapiBadRequestError, gapi_errors.GapiForbiddenError):
     return f'uid:{uid}'
 
 def doCreateDataTransfer():
@@ -1788,18 +1765,18 @@ def doInviteGuardian():
 def _cancelGuardianInvitation(croom, studentId, invitationId):
   try:
     result = gapi.call(croom.userProfiles().guardianInvitations(), 'patch',
-                       throw_reasons=[gapi.errors.ErrorReason.FAILED_PRECONDITION, gapi.errors.ErrorReason.FORBIDDEN, gapi.errors.ErrorReason.NOT_FOUND],
+                       throw_reasons=[gapi_errors.ErrorReason.FAILED_PRECONDITION, gapi_errors.ErrorReason.FORBIDDEN, gapi_errors.ErrorReason.NOT_FOUND],
                        studentId=studentId, invitationId=invitationId, updateMask='state', body={'state': 'COMPLETE'})
     print(f'Cancelled PENDING guardian invitation for {result["invitedEmailAddress"]} as guardian of {studentId}')
     return True
-  except gapi.errors.GapiFailedPreconditionError:
+  except gapi_errors.GapiFailedPreconditionError:
     display.print_error(f'Guardian invitation {invitationId} for {studentId} status is not PENDING')
     GM_Globals[GM_SYSEXITRC] = 3
     return True
-  except gapi.errors.GapiForbiddenError:
+  except gapi_errors.GapiForbiddenError:
     entityUnknownWarning('Student', studentId, 0, 0)
     sys.exit(3)
-  except gapi.errors.GapiNotFoundError:
+  except gapi_errors.GapiNotFoundError:
     return False
 
 def doCancelGuardianInvitation():
@@ -1812,14 +1789,14 @@ def doCancelGuardianInvitation():
 def _deleteGuardian(croom, studentId, guardianId, guardianEmail):
   try:
     gapi.call(croom.userProfiles().guardians(), 'delete',
-              throw_reasons=[gapi.errors.ErrorReason.FORBIDDEN, gapi.errors.ErrorReason.NOT_FOUND],
+              throw_reasons=[gapi_errors.ErrorReason.FORBIDDEN, gapi_errors.ErrorReason.NOT_FOUND],
               studentId=studentId, guardianId=guardianId)
     print(f'Deleted {guardianEmail} as a guardian of {studentId}')
     return True
-  except gapi.errors.GapiForbiddenError:
+  except gapi_errors.GapiForbiddenError:
     entityUnknownWarning('Student', studentId, 0, 0)
     sys.exit(3)
-  except gapi.errors.GapiNotFoundError:
+  except gapi_errors.GapiNotFoundError:
     return False
 
 def doDeleteGuardian():
@@ -1840,14 +1817,14 @@ def doDeleteGuardian():
     if guardianIdIsEmail:
       try:
         results = gapi.get_all_pages(croom.userProfiles().guardians(), 'list', 'guardians',
-                                     throw_reasons=[gapi.errors.ErrorReason.FORBIDDEN],
+                                     throw_reasons=[gapi_errors.ErrorReason.FORBIDDEN],
                                      studentId=studentId, invitedEmailAddress=guardianId,
                                      fields='nextPageToken,guardians(studentId,guardianId)')
         if results:
           for result in results:
             _deleteGuardian(croom, result['studentId'], result['guardianId'], guardianId)
           return
-      except gapi.errors.GapiForbiddenError:
+      except gapi_errors.GapiForbiddenError:
         entityUnknownWarning('Student', studentId, 0, 0)
         sys.exit(3)
     else:
@@ -1857,14 +1834,14 @@ def doDeleteGuardian():
   if guardianIdIsEmail:
     try:
       results = gapi.get_all_pages(croom.userProfiles().guardianInvitations(), 'list', 'guardianInvitations',
-                                   throw_reasons=[gapi.errors.ErrorReason.FORBIDDEN],
+                                   throw_reasons=[gapi_errors.ErrorReason.FORBIDDEN],
                                    studentId=studentId, invitedEmailAddress=guardianId, states=['PENDING',],
                                    fields='nextPageToken,guardianInvitations(studentId,invitationId)')
       if results:
         for result in results:
           status = _cancelGuardianInvitation(croom, result['studentId'], result['invitationId'])
         sys.exit(status)
-    except gapi.errors.GapiForbiddenError:
+    except gapi_errors.GapiForbiddenError:
       entityUnknownWarning('Student', studentId, 0, 0)
       sys.exit(3)
   else:
@@ -1900,8 +1877,8 @@ def doGetCourseInfo():
   teachers = gapi.get_all_pages(croom.courses().teachers(), 'list', 'teachers', courseId=courseId)
   students = gapi.get_all_pages(croom.courses().students(), 'list', 'students', courseId=courseId)
   try:
-    aliases = gapi.get_all_pages(croom.courses().aliases(), 'list', 'aliases', throw_reasons=[gapi.errors.ErrorReason.NOT_IMPLEMENTED], courseId=courseId)
-  except gapi.errors.GapiNotImplementedError:
+    aliases = gapi.get_all_pages(croom.courses().aliases(), 'list', 'aliases', throw_reasons=[gapi_errors.ErrorReason.NOT_IMPLEMENTED], courseId=courseId)
+  except gapi_errors.GapiNotImplementedError:
     aliases = []
   if aliases:
     print('Aliases:')
@@ -2776,11 +2753,11 @@ def getPhoto(users):
     filename = os.path.join(targetFolder, f'{user}.jpg')
     print(f'Saving photo to {filename}{currentCount(i, count)}')
     try:
-      photo = gapi.call(cd.users().photos(), 'get', throw_reasons=[gapi.errors.ErrorReason.USER_NOT_FOUND, gapi.errors.ErrorReason.RESOURCE_NOT_FOUND], userKey=user)
-    except gapi.errors.GapiUserNotFoundError:
+      photo = gapi.call(cd.users().photos(), 'get', throw_reasons=[gapi_errors.ErrorReason.USER_NOT_FOUND, gapi_errors.ErrorReason.RESOURCE_NOT_FOUND], userKey=user)
+    except gapi_errors.GapiUserNotFoundError:
       print(f' unknown user {user}')
       continue
-    except gapi.errors.GapiResourceNotFoundError:
+    except gapi_errors.GapiResourceNotFoundError:
       print(f' no photo for {user}')
       continue
     try:
@@ -3901,7 +3878,7 @@ def transferDriveFiles(users):
             pass
         if not target_parents:
           target_parents.append({'id': target_top_folder})
-        gapi.call(target_drive.files(), 'patch', soft_errors=True, retry_reasons=[gapi.errors.ErrorReason.NOT_FOUND], fileId=file_id, body={'parents': target_parents})
+        gapi.call(target_drive.files(), 'patch', soft_errors=True, retry_reasons=[gapi_errors.ErrorReason.NOT_FOUND], fileId=file_id, body={'parents': target_parents})
         if remove_source_user:
           gapi.call(target_drive.permissions(), 'delete', soft_errors=True, fileId=file_id, permissionId=source_permissionid)
       if not skipped_files:
@@ -4820,14 +4797,14 @@ def showGmailProfile(users):
     sys.stderr.write(f'Getting Gmail profile for {user}\n')
     try:
       results = gapi.call(gmail.users(), 'getProfile',
-                          throw_reasons=gapi.errors.GMAIL_THROW_REASONS,
+                          throw_reasons=gapi_errors.GMAIL_THROW_REASONS,
                           userId='me')
       if results:
         for item in results:
           if item not in titles:
             titles.append(item)
         csvRows.append(results)
-    except gapi.errors.GapiServiceNotAvailableError:
+    except gapi_errors.GapiServiceNotAvailableError:
       entityServiceNotApplicableWarning('User', user, i, count)
   display.sort_csv_titles(['emailAddress',], titles)
   display.write_csv_file(csvRows, titles, list_type='Gmail Profiles', todrive=todrive)
@@ -4899,8 +4876,8 @@ def renameLabels(users):
           controlflow.system_error_exit(2, f'The number of subfields ({len(match_result.groups())}) in search "{search}" does not match the number of subfields ({replace.count("%s")}) in replace "{replace}"')
         print(f' Renaming "{label["name"]}" to "{new_label_name}"')
         try:
-          gapi.call(gmail.users().labels(), 'patch', soft_errors=True, throw_reasons=[gapi.errors.ErrorReason.ABORTED], id=label['id'], userId=user, body={'name': new_label_name})
-        except gapi.errors.GapiAbortedError:
+          gapi.call(gmail.users().labels(), 'patch', soft_errors=True, throw_reasons=[gapi_errors.ErrorReason.ABORTED], id=label['id'], userId=user, body={'name': new_label_name})
+        except gapi_errors.GapiAbortedError:
           if merge:
             print(f'  Merging {label["name"]} label to existing {new_label_name} label')
             messages_to_relabel = gapi.get_all_pages(gmail.users().messages(), 'list', 'messages',
@@ -4927,12 +4904,12 @@ def renameLabels(users):
 def _getUserGmailLabels(gmail, user, i, count, **kwargs):
   try:
     labels = gapi.call(gmail.users().labels(), 'list',
-                       throw_reasons=gapi.errors.GMAIL_THROW_REASONS,
+                       throw_reasons=gapi_errors.GMAIL_THROW_REASONS,
                        userId='me', **kwargs)
     if not labels:
       labels = {'labels': []}
     return labels
-  except gapi.errors.GapiServiceNotAvailableError:
+  except gapi_errors.GapiServiceNotAvailableError:
     entityServiceNotApplicableWarning('User', user, i, count)
     return None
 
@@ -5546,8 +5523,8 @@ def doCreateOrUpdateUserSchema(updateCmd):
   if updateCmd:
     cmd = 'update'
     try:
-      body = gapi.call(cd.schemas(), 'get', throw_reasons=[gapi.errors.ErrorReason.NOT_FOUND], customerId=GC_Values[GC_CUSTOMER_ID], schemaKey=schemaKey)
-    except gapi.errors.GapiNotFoundError:
+      body = gapi.call(cd.schemas(), 'get', throw_reasons=[gapi_errors.ErrorReason.NOT_FOUND], customerId=GC_Values[GC_CUSTOMER_ID], schemaKey=schemaKey)
+    except gapi_errors.GapiNotFoundError:
       controlflow.system_error_exit(3, f'Schema {schemaKey} does not exist.')
   else: # create
     cmd = 'create'
@@ -6024,7 +6001,7 @@ def getUserAttributes(i, cd, updateCmd):
           location['area'] = sys.argv[i+1]
           i += 2
         elif myopt in ['building', 'buildingid']:
-          location['buildingId'] = gapi.directory.resource.getBuildingByNameOrId(cd, sys.argv[i+1])
+          location['buildingId'] = gapi_directory_resource.getBuildingByNameOrId(cd, sys.argv[i+1])
           i += 2
         elif myopt in ['desk', 'deskcode']:
           location['deskCode'] = sys.argv[i+1]
@@ -6179,10 +6156,11 @@ def getCRMService(login_hint):
   scopes = ['https://www.googleapis.com/auth/cloud-platform']
   client_id = '297408095146-fug707qsjv4ikron0hugpevbrjhkmsk7.apps.googleusercontent.com'
   client_secret = 'qM3dP8f_4qedwzWQE1VR4zzU'
-  creds = auth.oauth.Credentials.from_client_secrets(client_id, client_secret,
-                                                     scopes, 'online',
-                                                     login_hint=login_hint,
-                                                     use_console_flow=not GC_Values[GC_OAUTH_BROWSER])
+  creds = gam.auth.oauth.Credentials.from_client_secrets(
+      client_id, client_secret,
+      scopes, 'online',
+      login_hint=login_hint,
+      use_console_flow=not GC_Values[GC_OAUTH_BROWSER])
   httpc = transport.AuthorizedHttp(creds)
   return getService('cloudresourcemanagerv1', httpc), httpc
 
@@ -6209,7 +6187,7 @@ def enableGAMProjectAPIs(GAMProjectAPIs, httpObj, projectId, checkEnabled, i=0, 
   if checkEnabled:
     try:
       services = gapi.get_all_pages(serveman.services(), 'list', 'services',
-                                    throw_reasons=[gapi.errors.ErrorReason.NOT_FOUND],
+                                    throw_reasons=[gapi_errors.ErrorReason.NOT_FOUND],
                                     consumerId=project_name, fields='nextPageToken,services(serviceName)')
       jcount = len(services)
       print(f'  Project: {projectId}, Check {jcount} APIs{currentCount(i, count)}')
@@ -6222,7 +6200,7 @@ def enableGAMProjectAPIs(GAMProjectAPIs, httpObj, projectId, checkEnabled, i=0, 
             apis.remove(service['serviceName'])
           else:
             print(f'    API: {service["serviceName"]}, Already enabled (non-GAM which is fine){currentCount(j, jcount)}')
-    except gapi.errors.GapiNotFoundError as e:
+    except gapi_errors.GapiNotFoundError as e:
       print(f'  Project: {projectId}, Update Failed: {str(e)}{currentCount(i, count)}')
       status = False
   jcount = len(apis)
@@ -6234,17 +6212,17 @@ def enableGAMProjectAPIs(GAMProjectAPIs, httpObj, projectId, checkEnabled, i=0, 
       while True:
         try:
           gapi.call(serveman.services(), 'enable',
-                    throw_reasons=[gapi.errors.ErrorReason.FAILED_PRECONDITION, gapi.errors.ErrorReason.FORBIDDEN, gapi.errors.ErrorReason.PERMISSION_DENIED],
+                    throw_reasons=[gapi_errors.ErrorReason.FAILED_PRECONDITION, gapi_errors.ErrorReason.FORBIDDEN, gapi_errors.ErrorReason.PERMISSION_DENIED],
                     serviceName=api, body={'consumerId': project_name})
           print(f'    API: {api}, Enabled{currentCount(j, jcount)}')
           break
-        except gapi.errors.GapiFailedPreconditionError as e:
+        except gapi_errors.GapiFailedPreconditionError as e:
           print(f'\nThere was an error enabling {api}. Please resolve error as described below:')
           print()
           print(f'\n{str(e)}\n')
           print()
           input('Press enter once resolved and we will try enabling the API again.')
-        except (gapi.errors.GapiForbiddenError, gapi.errors.GapiPermissionDeniedError) as e:
+        except (gapi_errors.GapiForbiddenError, gapi_errors.GapiPermissionDeniedError) as e:
           print(f'    API: {api}, Enable Failed: {str(e)}{currentCount(j, jcount)}')
           status = False
   return status
@@ -6389,8 +6367,8 @@ def _getCurrentProjectID():
 
 def _getProjects(crm, pfilter):
   try:
-    return gapi.get_all_pages(crm.projects(), 'list', 'projects', throw_reasons=[gapi.errors.ErrorReason.BAD_REQUEST], filter=pfilter)
-  except gapi.errors.GapiBadRequestError as e:
+    return gapi.get_all_pages(crm.projects(), 'list', 'projects', throw_reasons=[gapi_errors.ErrorReason.BAD_REQUEST], filter=pfilter)
+  except gapi_errors.GapiBadRequestError as e:
     controlflow.system_error_exit(2, f'Project: {pfilter}, {str(e)}')
 
 PROJECTID_PATTERN = re.compile(r'^[a-z][a-z0-9-]{4,28}[a-z0-9]$')
@@ -6806,9 +6784,9 @@ def doDelProjects():
     i += 1
     projectId = project['projectId']
     try:
-      gapi.call(crm.projects(), 'delete', throw_reasons=[gapi.errors.ErrorReason.FORBIDDEN], projectId=projectId)
+      gapi.call(crm.projects(), 'delete', throw_reasons=[gapi_errors.ErrorReason.FORBIDDEN], projectId=projectId)
       print(f'  Project: {projectId} Deleted{currentCount(i, count)}')
-    except gapi.errors.GapiForbiddenError as e:
+    except gapi_errors.GapiForbiddenError as e:
       print(f'  Project: {projectId} Delete Failed: {str(e)}{currentCount(i, count)}')
 
 def doPrintShowProjects(csvFormat):
@@ -7103,14 +7081,14 @@ def doCreateGroup():
   if gs and not GroupIsAbuseOrPostmaster(body['email']):
     if gs_get_before_update:
       current_settings = gapi.call(gs.groups(), 'get',
-                                   retry_reasons=[gapi.errors.ErrorReason.SERVICE_LIMIT, gapi.errors.ErrorReason.NOT_FOUND],
+                                   retry_reasons=[gapi_errors.ErrorReason.SERVICE_LIMIT, gapi_errors.ErrorReason.NOT_FOUND],
                                    groupUniqueId=body['email'], fields='*')
       if current_settings is not None:
         gs_body = dict(list(current_settings.items()) + list(gs_body.items()))
     if gs_body:
       gapi.call(gs.groups(), 'update', groupUniqueId=body['email'],
-                retry_reasons=[gapi.errors.ErrorReason.SERVICE_LIMIT,
-                               gapi.errors.ErrorReason.NOT_FOUND],
+                retry_reasons=[gapi_errors.ErrorReason.SERVICE_LIMIT,
+                               gapi_errors.ErrorReason.NOT_FOUND],
                 body=gs_body)
 
 def doCreateAlias():
@@ -7127,8 +7105,8 @@ def doCreateAlias():
     gapi.call(cd.groups().aliases(), 'insert', groupKey=targetKey, body=body)
   elif target_type == 'target':
     try:
-      gapi.call(cd.users().aliases(), 'insert', throw_reasons=[gapi.errors.ErrorReason.INVALID, gapi.errors.ErrorReason.BAD_REQUEST], userKey=targetKey, body=body)
-    except (gapi.errors.GapiInvalidError, gapi.errors.GapiBadRequestError):
+      gapi.call(cd.users().aliases(), 'insert', throw_reasons=[gapi_errors.ErrorReason.INVALID, gapi_errors.ErrorReason.BAD_REQUEST], userKey=targetKey, body=body)
+    except (gapi_errors.GapiInvalidError, gapi_errors.GapiBadRequestError):
       gapi.call(cd.groups().aliases(), 'insert', groupKey=targetKey, body=body)
 
 def doCreateOrg():
@@ -7166,7 +7144,7 @@ def doCreateOrg():
     body['parentOrgUnitPath'] = '/'
     body['name'] = orgUnitPath[1:]
   parent = body['parentOrgUnitPath']
-  gapi.call(cd.orgunits(), 'insert', customerId=GC_Values[GC_CUSTOMER_ID], body=body, retry_reasons=[gapi.errors.ErrorReason.DAILY_LIMIT_EXCEEDED])
+  gapi.call(cd.orgunits(), 'insert', customerId=GC_Values[GC_CUSTOMER_ID], body=body, retry_reasons=[gapi_errors.ErrorReason.DAILY_LIMIT_EXCEEDED])
   print(f'Created OrgUnit {body["name"]}')
 
 def doUpdateUser(users, i):
@@ -7219,9 +7197,9 @@ def checkGroupExists(cd, group, i=0, count=0):
   group = normalizeEmailAddressOrUID(group)
   try:
     return gapi.call(cd.groups(), 'get',
-                     throw_reasons=gapi.errors.GROUP_GET_THROW_REASONS, retry_reasons=gapi.errors.GROUP_GET_RETRY_REASONS,
+                     throw_reasons=gapi_errors.GROUP_GET_THROW_REASONS, retry_reasons=gapi_errors.GROUP_GET_RETRY_REASONS,
                      groupKey=group, fields='email')['email']
-  except (gapi.errors.GapiGroupNotFoundError, gapi.errors.GapiDomainNotFoundError, gapi.errors.GapiDomainCannotUseApisError, gapi.errors.GapiForbiddenError, gapi.errors.GapiBadRequestError):
+  except (gapi_errors.GapiGroupNotFoundError, gapi_errors.GapiDomainNotFoundError, gapi_errors.GapiDomainCannotUseApisError, gapi_errors.GapiForbiddenError, gapi_errors.GapiBadRequestError):
     entityUnknownWarning('Group', group, i, count)
     return None
 
@@ -7308,22 +7286,22 @@ def doUpdateGroup():
         for i in range(2):
           try:
             gapi.call(cd.members(), 'insert',
-                      throw_reasons=[gapi.errors.ErrorReason.DUPLICATE, gapi.errors.ErrorReason.MEMBER_NOT_FOUND, gapi.errors.ErrorReason.RESOURCE_NOT_FOUND, gapi.errors.ErrorReason.INVALID_MEMBER, gapi.errors.ErrorReason.CYCLIC_MEMBERSHIPS_NOT_ALLOWED],
+                      throw_reasons=[gapi_errors.ErrorReason.DUPLICATE, gapi_errors.ErrorReason.MEMBER_NOT_FOUND, gapi_errors.ErrorReason.RESOURCE_NOT_FOUND, gapi_errors.ErrorReason.INVALID_MEMBER, gapi_errors.ErrorReason.CYCLIC_MEMBERSHIPS_NOT_ALLOWED],
                       groupKey=group, body=body)
             print(f' Group: {group}, {users_email[0]} Added {" ".join(add_text)}')
             break
-          except gapi.errors.GapiDuplicateError as e:
+          except gapi_errors.GapiDuplicateError as e:
             # check if user is a full member, not pending
             try:
-              result = gapi.call(cd.members(), 'get', throw_reasons=[gapi.errors.ErrorReason.MEMBER_NOT_FOUND], memberKey=users_email[0], groupKey=group, fields='role')
+              result = gapi.call(cd.members(), 'get', throw_reasons=[gapi_errors.ErrorReason.MEMBER_NOT_FOUND], memberKey=users_email[0], groupKey=group, fields='role')
               print(f' Group: {group}, {users_email[0]} Add {" ".join(add_text)} Failed: Duplicate, already a {result["role"]}')
               break # if get succeeds, user is a full member and we throw duplicate error
-            except gapi.errors.GapiMemberNotFoundError:
+            except gapi_errors.GapiMemberNotFoundError:
               # insert fails on duplicate and get fails on not found, user is pending
               print(f' Group: {group}, {users_email[0]} member is pending, deleting and re-adding to solve...')
               gapi.call(cd.members(), 'delete', memberKey=users_email[0], groupKey=group)
               continue # 2nd insert should succeed now that pending is clear
-          except (gapi.errors.GapiMemberNotFoundError, gapi.errors.GapiResourceNotFoundError, gapi.errors.GapiInvalidMemberError, gapi.errors.GapiCyclicMembershipsNotAllowedError) as e:
+          except (gapi_errors.GapiMemberNotFoundError, gapi_errors.GapiResourceNotFoundError, gapi_errors.GapiInvalidMemberError, gapi_errors.GapiCyclicMembershipsNotAllowedError) as e:
             print(f' Group: {group}, {users_email[0]} Add {" ".join(add_text)} Failed: {str(e)}')
             break
     elif myarg == 'sync':
@@ -7369,10 +7347,10 @@ def doUpdateGroup():
       else:
         try:
           gapi.call(cd.members(), 'delete',
-                    throw_reasons=[gapi.errors.ErrorReason.MEMBER_NOT_FOUND, gapi.errors.ErrorReason.INVALID_MEMBER],
+                    throw_reasons=[gapi_errors.ErrorReason.MEMBER_NOT_FOUND, gapi_errors.ErrorReason.INVALID_MEMBER],
                     groupKey=group, memberKey=users_email[0])
           print(f' Group: {group}, {users_email[0]} Removed')
-        except (gapi.errors.GapiMemberNotFoundError, gapi.errors.GapiInvalidMemberError) as e:
+        except (gapi_errors.GapiMemberNotFoundError, gapi_errors.GapiInvalidMemberError) as e:
           print(f' Group: {group}, {users_email[0]} Remove Failed: {str(e)}')
     elif myarg == 'update':
       role, users_email, delivery = _getRoleAndUsers()
@@ -7401,10 +7379,10 @@ def doUpdateGroup():
             update_text.append(f'delivery {delivery}')
           try:
             gapi.call(cd.members(), 'update',
-                      throw_reasons=[gapi.errors.ErrorReason.MEMBER_NOT_FOUND, gapi.errors.ErrorReason.INVALID_MEMBER],
+                      throw_reasons=[gapi_errors.ErrorReason.MEMBER_NOT_FOUND, gapi_errors.ErrorReason.INVALID_MEMBER],
                       groupKey=group, memberKey=users_email[0], body=body)
             print(f' Group: {group}, {users_email[0]} Updated {" ".join(update_text)}')
-          except (gapi.errors.GapiMemberNotFoundError, gapi.errors.GapiInvalidMemberError) as e:
+          except (gapi_errors.GapiMemberNotFoundError, gapi_errors.GapiInvalidMemberError) as e:
             print(f' Group: {group}, {users_email[0]} Update to {role} Failed: {str(e)}')
     else: # clear
       checkSuspended = None
@@ -7434,7 +7412,7 @@ def doUpdateGroup():
       try:
         result = gapi.get_all_pages(cd.members(), 'list', 'members',
                                     page_message=page_message,
-                                    throw_reasons=gapi.errors.MEMBERS_THROW_REASONS,
+                                    throw_reasons=gapi_errors.MEMBERS_THROW_REASONS,
                                     groupKey=group, roles=listRoles, fields=listFields)
         if not result:
           print('Group already has 0 members')
@@ -7447,12 +7425,12 @@ def doUpdateGroup():
         else:
           try:
             gapi.call(cd.members(), 'delete',
-                      throw_reasons=[gapi.errors.ErrorReason.MEMBER_NOT_FOUND, gapi.errors.ErrorReason.INVALID_MEMBER],
+                      throw_reasons=[gapi_errors.ErrorReason.MEMBER_NOT_FOUND, gapi_errors.ErrorReason.INVALID_MEMBER],
                       groupKey=group, memberKey=users_email[0])
             print(f' Group: {group}, {users_email[0]} Removed')
-          except (gapi.errors.GapiMemberNotFoundError, gapi.errors.GapiInvalidMemberError) as e:
+          except (gapi_errors.GapiMemberNotFoundError, gapi_errors.GapiInvalidMemberError) as e:
             print(f' Group: {group}, {users_email[0]} Remove Failed: {str(e)}')
-      except (gapi.errors.GapiGroupNotFoundError, gapi.errors.GapiDomainNotFoundError, gapi.errors.GapiInvalidError, gapi.errors.GapiForbiddenError):
+      except (gapi_errors.GapiGroupNotFoundError, gapi_errors.GapiDomainNotFoundError, gapi_errors.GapiInvalidError, gapi_errors.GapiForbiddenError):
         entityUnknownWarning('Group', group, 0, 0)
     if items:
       run_batch(items)
@@ -7488,12 +7466,12 @@ def doUpdateGroup():
       if not GroupIsAbuseOrPostmaster(group):
         if gs_get_before_update:
           current_settings = gapi.call(gs.groups(), 'get',
-                                       retry_reasons=[gapi.errors.ErrorReason.SERVICE_LIMIT],
+                                       retry_reasons=[gapi_errors.ErrorReason.SERVICE_LIMIT],
                                        groupUniqueId=group, fields='*')
           if current_settings is not None:
             gs_body = dict(list(current_settings.items()) + list(gs_body.items()))
         if gs_body:
-          gapi.call(gs.groups(), 'update', retry_reasons=[gapi.errors.ErrorReason.SERVICE_LIMIT], groupUniqueId=group, body=gs_body)
+          gapi.call(gs.groups(), 'update', retry_reasons=[gapi_errors.ErrorReason.SERVICE_LIMIT], groupUniqueId=group, body=gs_body)
     print(f'updated group {group}')
 
 def doUpdateAlias():
@@ -7504,8 +7482,8 @@ def doUpdateAlias():
     controlflow.expected_argument_exit("target type", ", ".join(['user', 'group', 'target']), target_type)
   target_email = normalizeEmailAddressOrUID(sys.argv[5])
   try:
-    gapi.call(cd.users().aliases(), 'delete', throw_reasons=[gapi.errors.ErrorReason.INVALID], userKey=alias, alias=alias)
-  except gapi.errors.GapiInvalidError:
+    gapi.call(cd.users().aliases(), 'delete', throw_reasons=[gapi_errors.ErrorReason.INVALID], userKey=alias, alias=alias)
+  except gapi_errors.GapiInvalidError:
     gapi.call(cd.groups().aliases(), 'delete', groupKey=alias, alias=alias)
   if target_type == 'user':
     gapi.call(cd.users().aliases(), 'insert', userKey=target_email, body={'alias': alias})
@@ -7513,8 +7491,8 @@ def doUpdateAlias():
     gapi.call(cd.groups().aliases(), 'insert', groupKey=target_email, body={'alias': alias})
   elif target_type == 'target':
     try:
-      gapi.call(cd.users().aliases(), 'insert', throw_reasons=[gapi.errors.ErrorReason.INVALID], userKey=target_email, body={'alias': alias})
-    except gapi.errors.GapiInvalidError:
+      gapi.call(cd.users().aliases(), 'insert', throw_reasons=[gapi_errors.ErrorReason.INVALID], userKey=target_email, body={'alias': alias})
+    except gapi_errors.GapiInvalidError:
       gapi.call(cd.groups().aliases(), 'insert', groupKey=target_email, body={'alias': alias})
   print(f'updated alias {alias}')
 
@@ -7599,8 +7577,8 @@ def doUpdateOrg():
         i += 1
         sys.stderr.write(f' moving {user} to {orgUnitPath}{currentCountNL(i, count)}')
         try:
-          gapi.call(cd.users(), 'update', throw_reasons=[gapi.errors.ErrorReason.CONDITION_NOT_MET], userKey=user, body={'orgUnitPath': orgUnitPath})
-        except gapi.errors.GapiConditionNotMetError:
+          gapi.call(cd.users(), 'update', throw_reasons=[gapi_errors.ErrorReason.CONDITION_NOT_MET], userKey=user, body={'orgUnitPath': orgUnitPath})
+        except gapi_errors.GapiConditionNotMetError:
           pass
   else:
     body = {}
@@ -7634,7 +7612,7 @@ def doWhatIs():
   cd = buildGAPIObject('directory')
   email = normalizeEmailAddressOrUID(sys.argv[2])
   try:
-    user_or_alias = gapi.call(cd.users(), 'get', throw_reasons=[gapi.errors.ErrorReason.NOT_FOUND, gapi.errors.ErrorReason.BAD_REQUEST, gapi.errors.ErrorReason.INVALID], userKey=email, fields='id,primaryEmail')
+    user_or_alias = gapi.call(cd.users(), 'get', throw_reasons=[gapi_errors.ErrorReason.NOT_FOUND, gapi_errors.ErrorReason.BAD_REQUEST, gapi_errors.ErrorReason.INVALID], userKey=email, fields='id,primaryEmail')
     if (user_or_alias['primaryEmail'].lower() == email) or (user_or_alias['id'] == email):
       sys.stderr.write(f'{email} is a user\n\n')
       doGetUserInfo(user_email=email)
@@ -7642,12 +7620,12 @@ def doWhatIs():
     sys.stderr.write(f'{email} is a user alias\n\n')
     doGetAliasInfo(alias_email=email)
     return
-  except (gapi.errors.GapiNotFoundError, gapi.errors.GapiBadRequestError, gapi.errors.GapiInvalidError):
+  except (gapi_errors.GapiNotFoundError, gapi_errors.GapiBadRequestError, gapi_errors.GapiInvalidError):
     sys.stderr.write(f'{email} is not a user...\n')
     sys.stderr.write(f'{email} is is not a user alias...\n')
   try:
-    group = gapi.call(cd.groups(), 'get', throw_reasons=[gapi.errors.ErrorReason.NOT_FOUND, gapi.errors.ErrorReason.BAD_REQUEST], groupKey=email, fields='id,email')
-  except (gapi.errors.GapiNotFoundError, gapi.errors.GapiBadRequestError):
+    group = gapi.call(cd.groups(), 'get', throw_reasons=[gapi_errors.ErrorReason.NOT_FOUND, gapi_errors.ErrorReason.BAD_REQUEST], groupKey=email, fields='id,email')
+  except (gapi_errors.GapiNotFoundError, gapi_errors.GapiBadRequestError):
     controlflow.system_error_exit(1, f'{email} is not a group either!\n\nDoesn\'t seem to exist!\n\n')
   if (group['email'].lower() == email) or (group['id'] == email):
     sys.stderr.write(f'{email} is a group\n\n')
@@ -8150,11 +8128,11 @@ def doGetGroupInfo(group_name=None):
   settings = {}
   if not GroupIsAbuseOrPostmaster(basic_info['email']):
     try:
-      settings = gapi.call(gs.groups(), 'get', throw_reasons=[gapi.errors.ErrorReason.AUTH_ERROR], retry_reasons=[gapi.errors.ErrorReason.SERVICE_LIMIT],
+      settings = gapi.call(gs.groups(), 'get', throw_reasons=[gapi_errors.ErrorReason.AUTH_ERROR], retry_reasons=[gapi_errors.ErrorReason.SERVICE_LIMIT],
                            groupUniqueId=basic_info['email']) # Use email address retrieved from cd since GS API doesn't support uid
       if settings is None:
         settings = {}
-    except gapi.errors.GapiAuthErrorError:
+    except gapi_errors.GapiAuthErrorError:
       pass
   print('')
   print('Group Settings:')
@@ -8190,8 +8168,8 @@ def doGetAliasInfo(alias_email=None):
   if alias_email is None:
     alias_email = normalizeEmailAddressOrUID(sys.argv[3])
   try:
-    result = gapi.call(cd.users(), 'get', throw_reasons=[gapi.errors.ErrorReason.INVALID, gapi.errors.ErrorReason.BAD_REQUEST], userKey=alias_email)
-  except (gapi.errors.GapiInvalidError, gapi.errors.GapiBadRequestError):
+    result = gapi.call(cd.users(), 'get', throw_reasons=[gapi_errors.ErrorReason.INVALID, gapi_errors.ErrorReason.BAD_REQUEST], userKey=alias_email)
+  except (gapi_errors.GapiInvalidError, gapi_errors.GapiBadRequestError):
     result = gapi.call(cd.groups(), 'get', groupKey=alias_email)
   print(f' Alias Email: {alias_email}')
   try:
@@ -8269,8 +8247,8 @@ def doSiteVerifyAttempt():
     identifier = f'http://{a_domain}/'
   body = {'site':{'type':verify_type, 'identifier':identifier}, 'verificationMethod':verificationMethod}
   try:
-    verify_result = gapi.call(verif.webResource(), 'insert', throw_reasons=[gapi.errors.ErrorReason.BAD_REQUEST], verificationMethod=verificationMethod, body=body)
-  except gapi.errors.GapiBadRequestError as e:
+    verify_result = gapi.call(verif.webResource(), 'insert', throw_reasons=[gapi_errors.ErrorReason.BAD_REQUEST], verificationMethod=verificationMethod, body=body)
+  except gapi_errors.GapiBadRequestError as e:
     print(f'ERROR: {str(e)}')
     verify_data = gapi.call(verif.webResource(), 'getToken', body=body)
     print(f'Method:  {verify_data["method"]}')
@@ -8514,8 +8492,8 @@ def doGetBackupCodes(users):
   cd = buildGAPIObject('directory')
   for user in users:
     try:
-      codes = gapi.get_items(cd.verificationCodes(), 'list', 'items', throw_reasons=[gapi.errors.ErrorReason.INVALID_ARGUMENT, gapi.errors.ErrorReason.INVALID], userKey=user)
-    except (gapi.errors.GapiInvalidArgumentError, gapi.errors.GapiInvalidError):
+      codes = gapi.get_items(cd.verificationCodes(), 'list', 'items', throw_reasons=[gapi_errors.ErrorReason.INVALID_ARGUMENT, gapi_errors.ErrorReason.INVALID], userKey=user)
+    except (gapi_errors.GapiInvalidArgumentError, gapi_errors.GapiInvalidError):
       codes = []
     printBackupCodes(user, codes)
 
@@ -8530,8 +8508,8 @@ def doDelBackupCodes(users):
   cd = buildGAPIObject('directory')
   for user in users:
     try:
-      gapi.call(cd.verificationCodes(), 'invalidate', soft_errors=True, throw_reasons=[gapi.errors.ErrorReason.INVALID], userKey=user)
-    except gapi.errors.GapiInvalidError:
+      gapi.call(cd.verificationCodes(), 'invalidate', soft_errors=True, throw_reasons=[gapi_errors.ErrorReason.INVALID], userKey=user)
+    except gapi_errors.GapiInvalidError:
       print(f'No 2SV backup codes for {user}')
       continue
     print(f'2SV backup codes for {user} invalidated')
@@ -8556,8 +8534,8 @@ def doDelTokens(users):
     controlflow.system_error_exit(3, 'you must specify a clientid for "gam <users> delete token"')
   for user in users:
     try:
-      gapi.call(cd.tokens(), 'get', throw_reasons=[gapi.errors.ErrorReason.NOT_FOUND, gapi.errors.ErrorReason.RESOURCE_NOT_FOUND], userKey=user, clientId=clientId)
-    except (gapi.errors.GapiNotFoundError, gapi.errors.GapiResourceNotFoundError):
+      gapi.call(cd.tokens(), 'get', throw_reasons=[gapi_errors.ErrorReason.NOT_FOUND, gapi_errors.ErrorReason.RESOURCE_NOT_FOUND], userKey=user, clientId=clientId)
+    except (gapi_errors.GapiNotFoundError, gapi_errors.GapiResourceNotFoundError):
       print(f'User {user} did not authorize {clientId}')
       continue
     gapi.call(cd.tokens(), 'delete', userKey=user, clientId=clientId)
@@ -8606,11 +8584,11 @@ def printShowTokens(i, entityType, users, csvFormat):
         sys.stderr.write(f'Getting Access Tokens for {user}\n')
       if clientId:
         results = [gapi.call(cd.tokens(), 'get',
-                             throw_reasons=[gapi.errors.ErrorReason.NOT_FOUND, gapi.errors.ErrorReason.USER_NOT_FOUND, gapi.errors.ErrorReason.RESOURCE_NOT_FOUND],
+                             throw_reasons=[gapi_errors.ErrorReason.NOT_FOUND, gapi_errors.ErrorReason.USER_NOT_FOUND, gapi_errors.ErrorReason.RESOURCE_NOT_FOUND],
                              userKey=user, clientId=clientId, fields=fields)]
       else:
         results = gapi.get_items(cd.tokens(), 'list', 'items',
-                                 throw_reasons=[gapi.errors.ErrorReason.USER_NOT_FOUND],
+                                 throw_reasons=[gapi_errors.ErrorReason.USER_NOT_FOUND],
                                  userKey=user, fields=f'items({fields})')
       jcount = len(results)
       if not csvFormat:
@@ -8628,7 +8606,7 @@ def printShowTokens(i, entityType, users, csvFormat):
             if item not in ['scopes']:
               row[item] = token.get(item, '')
           csvRows.append(row)
-    except (gapi.errors.GapiNotFoundError, gapi.errors.GapiUserNotFoundError, gapi.errors.GapiResourceNotFoundError):
+    except (gapi_errors.GapiNotFoundError, gapi_errors.GapiUserNotFoundError, gapi_errors.GapiResourceNotFoundError):
       pass
   if csvFormat:
     display.write_csv_file(csvRows, titles, 'OAuth Tokens', todrive)
@@ -8649,8 +8627,8 @@ def doDeprovUser(users):
       print('No ASPs')
     print(f'Invalidating 2SV Backup Codes for {user}')
     try:
-      gapi.call(cd.verificationCodes(), 'invalidate', soft_errors=True, throw_reasons=[gapi.errors.ErrorReason.INVALID], userKey=user)
-    except gapi.errors.GapiInvalidError:
+      gapi.call(cd.verificationCodes(), 'invalidate', soft_errors=True, throw_reasons=[gapi_errors.ErrorReason.INVALID], userKey=user)
+    except gapi_errors.GapiInvalidError:
       print('No 2SV Backup Codes')
     print(f'Getting tokens for {user}...')
     tokens = gapi.get_items(cd.tokens(), 'list', 'items', userKey=user, fields='items/clientId')
@@ -8735,11 +8713,11 @@ def doDeleteAlias(alias_email=None):
   print(f'Deleting alias {alias_email}')
   if is_user or (not is_user and not is_group):
     try:
-      gapi.call(cd.users().aliases(), 'delete', throw_reasons=[gapi.errors.ErrorReason.INVALID, gapi.errors.ErrorReason.BAD_REQUEST, gapi.errors.ErrorReason.NOT_FOUND], userKey=alias_email, alias=alias_email)
+      gapi.call(cd.users().aliases(), 'delete', throw_reasons=[gapi_errors.ErrorReason.INVALID, gapi_errors.ErrorReason.BAD_REQUEST, gapi_errors.ErrorReason.NOT_FOUND], userKey=alias_email, alias=alias_email)
       return
-    except (gapi.errors.GapiInvalidError, gapi.errors.GapiBadRequestError):
+    except (gapi_errors.GapiInvalidError, gapi_errors.GapiBadRequestError):
       pass
-    except gapi.errors.GapiNotFoundError:
+    except gapi_errors.GapiNotFoundError:
       controlflow.system_error_exit(4, f'The alias {alias_email} does not exist')
   if not is_user or (not is_user and not is_group):
     gapi.call(cd.groups().aliases(), 'delete', groupKey=alias_email, alias=alias_email)
@@ -9302,7 +9280,7 @@ def doPrintGroups():
       sys.stderr.write(f' Retrieving Settings for group {groupEmail}{currentCountNL(i, count)}')
       settings = gapi.call(gs.groups(), 'get',
                            soft_errors=True,
-                           retry_reasons=[gapi.errors.ErrorReason.SERVICE_LIMIT, gapi.errors.ErrorReason.INVALID],
+                           retry_reasons=[gapi_errors.ErrorReason.SERVICE_LIMIT, gapi_errors.ErrorReason.INVALID],
                            groupUniqueId=groupEmail, fields=gsfields)
       if settings:
         for key in settings:
@@ -9543,26 +9521,26 @@ def doPrintGroupMembers():
         if member['type'] == 'USER':
           try:
             mbinfo = gapi.call(cd.users(), 'get',
-                               throw_reasons=[gapi.errors.ErrorReason.USER_NOT_FOUND, gapi.errors.ErrorReason.NOT_FOUND, gapi.errors.ErrorReason.FORBIDDEN],
+                               throw_reasons=[gapi_errors.ErrorReason.USER_NOT_FOUND, gapi_errors.ErrorReason.NOT_FOUND, gapi_errors.ErrorReason.FORBIDDEN],
                                userKey=member['id'], fields='name')
             memberName = mbinfo['name']['fullName']
-          except (gapi.errors.GapiUserNotFoundError, gapi.errors.GapiNotFoundError, gapi.errors.GapiForbiddenError):
+          except (gapi_errors.GapiUserNotFoundError, gapi_errors.GapiNotFoundError, gapi_errors.GapiForbiddenError):
             memberName = 'Unknown'
         elif member['type'] == 'GROUP':
           try:
             mbinfo = gapi.call(cd.groups(), 'get',
-                               throw_reasons=[gapi.errors.ErrorReason.NOT_FOUND, gapi.errors.ErrorReason.FORBIDDEN],
+                               throw_reasons=[gapi_errors.ErrorReason.NOT_FOUND, gapi_errors.ErrorReason.FORBIDDEN],
                                groupKey=member['id'], fields='name')
             memberName = mbinfo['name']
-          except (gapi.errors.GapiNotFoundError, gapi.errors.GapiForbiddenError):
+          except (gapi_errors.GapiNotFoundError, gapi_errors.GapiForbiddenError):
             memberName = 'Unknown'
         elif member['type'] == 'CUSTOMER':
           try:
             mbinfo = gapi.call(cd.customers(), 'get',
-                               throw_reasons=[gapi.errors.ErrorReason.BAD_REQUEST, gapi.errors.ErrorReason.RESOURCE_NOT_FOUND, gapi.errors.ErrorReason.FORBIDDEN],
+                               throw_reasons=[gapi_errors.ErrorReason.BAD_REQUEST, gapi_errors.ErrorReason.RESOURCE_NOT_FOUND, gapi_errors.ErrorReason.FORBIDDEN],
                                customerKey=member['id'], fields='customerDomain')
             memberName = mbinfo['customerDomain']
-          except (gapi.errors.GapiBadRequestError, gapi.errors.GapiResourceNotFoundError, gapi.errors.GapiForbiddenError):
+          except (gapi_errors.GapiBadRequestError, gapi_errors.GapiResourceNotFoundError, gapi_errors.GapiForbiddenError):
             memberName = 'Unknown'
         else:
           memberName = 'Unknown'
@@ -9725,12 +9703,12 @@ def doPrintLicenses(returnFields=None, skus=None, countsOnly=False, returnCounts
         product = products[0]
       page_message = gapi.got_total_items_msg(f'Licenses for {SKUS.get(sku, {"displayName": sku})["displayName"]}', '...\n')
       try:
-        licenses += gapi.get_all_pages(lic.licenseAssignments(), 'listForProductAndSku', 'items', throw_reasons=[gapi.errors.ErrorReason.INVALID, gapi.errors.ErrorReason.FORBIDDEN], page_message=page_message,
+        licenses += gapi.get_all_pages(lic.licenseAssignments(), 'listForProductAndSku', 'items', throw_reasons=[gapi_errors.ErrorReason.INVALID, gapi_errors.ErrorReason.FORBIDDEN], page_message=page_message,
                                        customerId=GC_Values[GC_DOMAIN], productId=product, skuId=sku, fields=fields)
         if countsOnly:
           licenseCounts.append(['Product', product, 'SKU', sku, 'Licenses', len(licenses)])
           licenses = []
-      except (gapi.errors.GapiInvalidError, gapi.errors.GapiForbiddenError):
+      except (gapi_errors.GapiInvalidError, gapi_errors.GapiForbiddenError):
         pass
   else:
     if not products:
@@ -9738,12 +9716,12 @@ def doPrintLicenses(returnFields=None, skus=None, countsOnly=False, returnCounts
     for productId in products:
       page_message = gapi.got_total_items_msg(f'Licenses for {PRODUCTID_NAME_MAPPINGS.get(productId, productId)}', '...\n')
       try:
-        licenses += gapi.get_all_pages(lic.licenseAssignments(), 'listForProduct', 'items', throw_reasons=[gapi.errors.ErrorReason.INVALID, gapi.errors.ErrorReason.FORBIDDEN], page_message=page_message,
+        licenses += gapi.get_all_pages(lic.licenseAssignments(), 'listForProduct', 'items', throw_reasons=[gapi_errors.ErrorReason.INVALID, gapi_errors.ErrorReason.FORBIDDEN], page_message=page_message,
                                        customerId=GC_Values[GC_DOMAIN], productId=productId, fields=fields)
         if countsOnly:
           licenseCounts.append(['Product', productId, 'Licenses', len(licenses)])
           licenses = []
-      except (gapi.errors.GapiInvalidError, gapi.errors.GapiForbiddenError):
+      except (gapi_errors.GapiInvalidError, gapi_errors.GapiForbiddenError):
         pass
   if countsOnly:
     if returnCounts:
@@ -10111,7 +10089,7 @@ def doRequestOAuth(login_hint=None):
   # Needs to be set so oauthlib doesn't puke when Google changes our scopes
   os.environ['OAUTHLIB_RELAX_TOKEN_SCOPE'] = 'true'
   try:
-    creds = auth.oauth.Credentials.from_client_secrets_file(
+    creds = gam.auth.oauth.Credentials.from_client_secrets_file(
         client_secrets_file=client_secrets_file,
         scopes=scopes,
         access_type='offline',
@@ -10119,9 +10097,9 @@ def doRequestOAuth(login_hint=None):
         credentials_file=GC_Values[GC_OAUTH2_TXT],
         use_console_flow=not GC_Values[GC_OAUTH_BROWSER])
     creds.write()
-  except auth.oauth.InvalidClientSecretsFileError:
+  except gam.auth.oauth.InvalidClientSecretsFileError:
     controlflow.system_error_exit(14, missing_client_secrets_message)
-  except auth.oauth.InvalidClientSecretsFileFormatError:
+  except gam.auth.oauth.InvalidClientSecretsFileFormatError:
     controlflow.system_error_exit(3, invalid_client_secrets_format_message)
 
 OAUTH2_SCOPES = [
@@ -10860,7 +10838,7 @@ def ProcessGAMCommand(args):
       elif argument in ['org', 'ou']:
         doCreateOrg()
       elif argument == 'resource':
-        gapi.directory.resource.createResourceCalendar()
+        gapi_directory_resource.createResourceCalendar()
       elif argument in ['verify', 'verification']:
         doSiteVerifyShow()
       elif argument == 'schema':
@@ -10884,15 +10862,15 @@ def ProcessGAMCommand(args):
       elif argument in ['resoldsubscription', 'resellersubscription']:
         doCreateResoldSubscription()
       elif argument in ['matter', 'vaultmatter']:
-        gapi.vault.createMatter()
+        gapi_vault.createMatter()
       elif argument in ['hold', 'vaulthold']:
-        gapi.vault.createHold()
+        gapi_vault.createHold()
       elif argument in ['export', 'vaultexport']:
-        gapi.vault.createExport()
+        gapi_vault.createExport()
       elif argument in ['building']:
-        gapi.directory.resource.createBuilding()
+        gapi_directory_resource.createBuilding()
       elif argument in ['feature']:
-        gapi.directory.resource.createFeature()
+        gapi_directory_resource.createFeature()
       elif argument in ['alertfeedback']:
         doCreateAlertFeedback()
       elif argument in ['gcpfolder']:
@@ -10918,9 +10896,9 @@ def ProcessGAMCommand(args):
       elif argument in ['ou', 'org']:
         doUpdateOrg()
       elif argument == 'resource':
-        gapi.directory.resource.updateResourceCalendar()
+        gapi_directory_resource.updateResourceCalendar()
       elif argument == 'cros':
-        gapi.directory.cros.doUpdateCros()
+        gapi_directory_cros.doUpdateCros()
       elif argument == 'mobile':
         doUpdateMobile()
       elif argument in ['verify', 'verification']:
@@ -10934,21 +10912,21 @@ def ProcessGAMCommand(args):
       elif argument == 'domain':
         doUpdateDomain()
       elif argument == 'customer':
-        gapi.directory.customer.doUpdateCustomer()
+        gapi_directory_customer.doUpdateCustomer()
       elif argument in ['resoldcustomer', 'resellercustomer']:
         doUpdateResoldCustomer()
       elif argument in ['resoldsubscription', 'resellersubscription']:
         doUpdateResoldSubscription()
       elif argument in ['matter', 'vaultmatter']:
-        gapi.vault.updateMatter()
+        gapi_vault.updateMatter()
       elif argument in ['hold', 'vaulthold']:
-        gapi.vault.updateHold()
+        gapi_vault.updateHold()
       elif argument in ['project', 'projects', 'apiproject']:
         doUpdateProjects()
       elif argument in ['building']:
-        gapi.directory.resource.updateBuilding()
+        gapi_directory_resource.updateBuilding()
       elif argument in ['feature']:
-        gapi.directory.resource.updateFeature()
+        gapi_directory_resource.updateFeature()
       else:
         controlflow.invalid_argument_exit(argument, "gam update")
       sys.exit(0)
@@ -10963,13 +10941,13 @@ def ProcessGAMCommand(args):
       elif argument in ['nickname', 'alias']:
         doGetAliasInfo()
       elif argument == 'instance':
-        gapi.directory.customer.doGetCustomerInfo()
+        gapi_directory_customer.doGetCustomerInfo()
       elif argument in ['org', 'ou']:
         doGetOrgInfo()
       elif argument == 'resource':
-        gapi.directory.resource.getResourceCalendarInfo()
+        gapi_directory_resource.getResourceCalendarInfo()
       elif argument == 'cros':
-        gapi.directory.cros.doGetCrosInfo()
+        gapi_directory_cros.doGetCrosInfo()
       elif argument == 'mobile':
         doGetMobileInfo()
       elif argument in ['verify', 'verification']:
@@ -10983,7 +10961,7 @@ def ProcessGAMCommand(args):
       elif argument in ['transfer', 'datatransfer']:
         doGetDataTransferInfo()
       elif argument == 'customer':
-        gapi.directory.customer.doGetCustomerInfo()
+        gapi_directory_customer.doGetCustomerInfo()
       elif argument == 'domain':
         doGetDomainInfo()
       elif argument in ['domainalias', 'aliasdomain']:
@@ -10993,13 +10971,13 @@ def ProcessGAMCommand(args):
       elif argument in ['resoldsubscription', 'resoldsubscriptions', 'resellersubscription', 'resellersubscriptions']:
         doGetResoldSubscriptions()
       elif argument in ['matter', 'vaultmatter']:
-        gapi.vault.getMatterInfo()
+        gapi_vault.getMatterInfo()
       elif argument in ['hold', 'vaulthold']:
-        gapi.vault.getHoldInfo()
+        gapi_vault.getHoldInfo()
       elif argument in ['export', 'vaultexport']:
-        gapi.vault.getExportInfo()
+        gapi_vault.getExportInfo()
       elif argument in ['building']:
-        gapi.directory.resource.getBuildingInfo()
+        gapi_directory_resource.getBuildingInfo()
       else:
         controlflow.invalid_argument_exit(argument, "gam info")
       sys.exit(0)
@@ -11021,7 +10999,7 @@ def ProcessGAMCommand(args):
       elif argument == 'org':
         doDeleteOrg()
       elif argument == 'resource':
-        gapi.directory.resource.deleteResourceCalendar()
+        gapi_directory_resource.deleteResourceCalendar()
       elif argument == 'mobile':
         doDeleteMobile()
       elif argument in ['schema', 'schemas']:
@@ -11043,15 +11021,15 @@ def ProcessGAMCommand(args):
       elif argument in ['resoldsubscription', 'resellersubscription']:
         doDeleteResoldSubscription()
       elif argument in ['matter', 'vaultmatter']:
-        gapi.vault.updateMatter(action=command)
+        gapi_vault.updateMatter(action=command)
       elif argument in ['hold', 'vaulthold']:
-        gapi.vault.deleteHold()
+        gapi_vault.deleteHold()
       elif argument in ['export', 'vaultexport']:
-        gapi.vault.deleteExport()
+        gapi_vault.deleteExport()
       elif argument in ['building']:
-        gapi.directory.resource.deleteBuilding()
+        gapi_directory_resource.deleteBuilding()
       elif argument in ['feature']:
-        gapi.directory.resource.deleteFeature()
+        gapi_directory_resource.deleteFeature()
       elif argument in ['alert']:
         doDeleteOrUndeleteAlert('delete')
       elif argument in ['sakey', 'sakeys']:
@@ -11064,7 +11042,7 @@ def ProcessGAMCommand(args):
       if argument == 'user':
         doUndeleteUser()
       elif argument in ['matter', 'vaultmatter']:
-        gapi.vault.updateMatter(action=command)
+        gapi_vault.updateMatter(action=command)
       elif argument == 'alert':
         doDeleteOrUndeleteAlert('undelete')
       else:
@@ -11074,7 +11052,7 @@ def ProcessGAMCommand(args):
       # close and reopen will have to be split apart if either takes a new argument
       argument = sys.argv[2].lower()
       if argument in ['matter', 'vaultmatter']:
-        gapi.vault.updateMatter(action=command)
+        gapi_vault.updateMatter(action=command)
       else:
         controlflow.invalid_argument_exit(argument, f"gam {command}")
       sys.exit(0)
@@ -11091,11 +11069,11 @@ def ProcessGAMCommand(args):
       elif argument in ['orgs', 'ous']:
         doPrintOrgs()
       elif argument == 'resources':
-        gapi.directory.resource.printResourceCalendars()
+        gapi_directory_resource.printResourceCalendars()
       elif argument == 'cros':
-        gapi.directory.cros.doPrintCrosDevices()
+        gapi_directory_cros.doPrintCrosDevices()
       elif argument == 'crosactivity':
-        gapi.directory.cros.doPrintCrosActivity()
+        gapi_directory_cros.doPrintCrosActivity()
       elif argument == 'mobile':
         doPrintMobileDevices()
       elif argument in ['license', 'licenses', 'licence', 'licences']:
@@ -11127,15 +11105,15 @@ def ProcessGAMCommand(args):
       elif argument in ['guardian', 'guardians']:
         doPrintShowGuardians(True)
       elif argument in ['matters', 'vaultmatters']:
-        gapi.vault.printMatters()
+        gapi_vault.printMatters()
       elif argument in ['holds', 'vaultholds']:
-        gapi.vault.printHolds()
+        gapi_vault.printHolds()
       elif argument in ['exports', 'vaultexports']:
-        gapi.vault.printExports()
+        gapi_vault.printExports()
       elif argument in ['building', 'buildings']:
-        gapi.directory.resource.printBuildings()
+        gapi_directory_resource.printBuildings()
       elif argument in ['feature', 'features']:
-        gapi.directory.resource.printFeatures()
+        gapi_directory_resource.printFeatures()
       elif argument in ['project', 'projects']:
         doPrintShowProjects(True)
       elif argument in ['alert', 'alerts']:
@@ -11184,31 +11162,31 @@ def ProcessGAMCommand(args):
     elif command == 'calendar':
       argument = sys.argv[3].lower()
       if argument == 'showacl':
-        gapi.calendar.printShowACLs(False)
+        gapi_calendar.printShowACLs(False)
       elif argument == 'printacl':
-        gapi.calendar.printShowACLs(True)
+        gapi_calendar.printShowACLs(True)
       elif argument == 'add':
-        gapi.calendar.addACL('Add')
+        gapi_calendar.addACL('Add')
       elif argument in ['del', 'delete']:
-        gapi.calendar.delACL()
+        gapi_calendar.delACL()
       elif argument == 'update':
-        gapi.calendar.addACL('Update')
+        gapi_calendar.addACL('Update')
       elif argument == 'wipe':
-        gapi.calendar.wipeData()
+        gapi_calendar.wipeData()
       elif argument == 'addevent':
-        gapi.calendar.addOrUpdateEvent('add')
+        gapi_calendar.addOrUpdateEvent('add')
       elif argument == 'updateevent':
-        gapi.calendar.addOrUpdateEvent('update')
+        gapi_calendar.addOrUpdateEvent('update')
       elif argument == 'infoevent':
-        gapi.calendar.infoEvent()
+        gapi_calendar.infoEvent()
       elif argument == 'deleteevent':
-        gapi.calendar.moveOrDeleteEvent('delete')
+        gapi_calendar.moveOrDeleteEvent('delete')
       elif argument == 'moveevent':
-        gapi.calendar.moveOrDeleteEvent('move')
+        gapi_calendar.moveOrDeleteEvent('move')
       elif argument == 'printevents':
-        gapi.calendar.printEvents()
+        gapi_calendar.printEvents()
       elif argument == 'modify':
-        gapi.calendar.modifySettings()
+        gapi_calendar.modifySettings()
       else:
         controlflow.invalid_argument_exit(argument, "gam calendar")
       sys.exit(0)
@@ -11242,7 +11220,7 @@ def ProcessGAMCommand(args):
         controlflow.invalid_argument_exit(argument, "gam printjob")
       sys.exit(0)
     elif command == 'report':
-      gapi.reports.showReport()
+      gapi_reports.showReport()
       sys.exit(0)
     elif command == 'whatis':
       doWhatIs()
@@ -11261,9 +11239,9 @@ def ProcessGAMCommand(args):
     elif command == 'download':
       argument = sys.argv[2].lower()
       if argument in ['export', 'vaultexport']:
-        gapi.vault.downloadExport()
+        gapi_vault.downloadExport()
       elif argument in ['storagebucket']:
-        gapi.storage.download_bucket()
+        gapi_storage.download_bucket()
       else:
         controlflow.invalid_argument_exit(argument, "gam download")
       sys.exit(0)
@@ -11287,7 +11265,7 @@ def ProcessGAMCommand(args):
       if transferWhat == 'drive':
         transferDriveFiles(users)
       elif transferWhat == 'seccals':
-        gapi.calendar.transferSecCals(users)
+        gapi_calendar.transferSecCals(users)
       else:
         controlflow.invalid_argument_exit(transferWhat, "gam <users> transfer")
     elif command == 'show':
@@ -11297,9 +11275,9 @@ def ProcessGAMCommand(args):
       elif showWhat == 'profile':
         showProfile(users)
       elif showWhat == 'calendars':
-        gapi.calendar.printShowCalendars(users, False)
+        gapi_calendar.printShowCalendars(users, False)
       elif showWhat == 'calsettings':
-        gapi.calendar.showCalSettings(users)
+        gapi_calendar.showCalSettings(users)
       elif showWhat == 'drivesettings':
         printDriveSettings(users)
       elif showWhat == 'teamdrivethemes':
@@ -11355,7 +11333,7 @@ def ProcessGAMCommand(args):
     elif command == 'print':
       printWhat = sys.argv[4].lower()
       if printWhat == 'calendars':
-        gapi.calendar.printShowCalendars(users, True)
+        gapi_calendar.printShowCalendars(users, True)
       elif printWhat in ['delegate', 'delegates']:
         printShowDelegates(users, True)
       elif printWhat == 'driveactivity':
@@ -11409,7 +11387,7 @@ def ProcessGAMCommand(args):
       if delWhat == 'delegate':
         deleteDelegate(users)
       elif delWhat == 'calendar':
-        gapi.calendar.deleteCalendar(users)
+        gapi_calendar.deleteCalendar(users)
       elif delWhat  in ['labels', 'label']:
         doDeleteLabel(users)
       elif delWhat in ['message', 'messages']:
@@ -11452,7 +11430,7 @@ def ProcessGAMCommand(args):
       addWhat = sys.argv[4].lower()
       if addWhat == 'calendar':
         if command == 'add':
-          gapi.calendar.addCalendar(users)
+          gapi_calendar.addCalendar(users)
         else:
           controlflow.system_error_exit(2, f'{addWhat} is not implemented for "gam <users> {command}"')
       elif addWhat == 'drivefile':
@@ -11480,9 +11458,9 @@ def ProcessGAMCommand(args):
     elif command == 'update':
       updateWhat = sys.argv[4].lower()
       if updateWhat == 'calendar':
-        gapi.calendar.updateCalendar(users)
+        gapi_calendar.updateCalendar(users)
       elif updateWhat == 'calattendees':
-        gapi.calendar.changeAttendees(users)
+        gapi_calendar.changeAttendees(users)
       elif updateWhat == 'photo':
         doPhoto(users)
       elif updateWhat in ['license', 'licence']:
@@ -11526,7 +11504,7 @@ def ProcessGAMCommand(args):
     elif command == 'info':
       infoWhat = sys.argv[4].lower()
       if infoWhat == 'calendar':
-        gapi.calendar.infoCalendar(users)
+        gapi_calendar.infoCalendar(users)
       elif infoWhat in ['filter', 'filters']:
         infoFilters(users)
       elif infoWhat in ['forwardingaddress', 'forwardingaddresses']:
@@ -11595,15 +11573,3 @@ def ProcessGAMCommand(args):
   except SystemExit as e:
     GM_Globals[GM_SYSEXITRC] = e.code
   return GM_Globals[GM_SYSEXITRC]
-
-# Run from command line
-if __name__ == "__main__":
-  mp_freeze_support()
-  if sys.platform == 'darwin':
-    # https://bugs.python.org/issue33725 in Python 3.8.0 seems
-    # to break parallel operations with errors about extra -b
-    # command line arguments
-    mp_set_start_method('fork')
-  if sys.version_info[0] < 3 or sys.version_info[1] < 6:
-    controlflow.system_error_exit(5, f'GAM requires Python 3.6 or newer. You are running %s.%s.%s. Please upgrade your Python version or use one of the binary GAM downloads.' % sys.version_info[:3])
-  sys.exit(ProcessGAMCommand(sys.argv))
