@@ -3,7 +3,6 @@ import datetime
 import re
 import sys
 
-from dateutil.parser import parse
 from dateutil.relativedelta import relativedelta
 
 import __main__
@@ -136,7 +135,8 @@ def showUsage():
     parameters = []
     start_date = end_date = orgUnitId = None
     skip_day_numbers = []
-    skip_dates = []
+    skip_dates = set()
+    one_day = datetime.timedelta(days=1)
     i = 4
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
@@ -153,8 +153,16 @@ def showUsage():
             parameters = sys.argv[i+1].split(',')
             i += 2
         elif myarg == 'skipdates':
-            skips = sys.argv[i+1].split(',')
-            skip_dates = [utils.get_yyyymmdd(d) for d in skips]
+            for skip in sys.argv[i+1].split(','):
+                if skip.find(':') == -1:
+                    skip_dates.add(utils.get_yyyymmdd(skip, returnDateTime=True))
+                else:
+                    skip_start, skip_end = skip.split(':', 1)
+                    skip_start = utils.get_yyyymmdd(skip_start, returnDateTime=True)
+                    skip_end = utils.get_yyyymmdd(skip_end, returnDateTime=True)
+                    while skip_start <= skip_end:
+                        skip_dates.add(skip_start)
+                        skip_start += one_day
             i += 2
         elif myarg == 'skipdaysofweek':
             skipdaynames = sys.argv[i+1].split(',')
@@ -175,23 +183,25 @@ def showUsage():
         parameters = ','.join(parameters)
     else:
         parameters = None
-    if not start_date:
-        start_date = datetime.datetime.now() + relativedelta(months=-1)
     if not end_date:
         end_date = datetime.datetime.now()
+    if not start_date:
+        start_date = end_date + relativedelta(months=-1)
     if orgUnitId:
         for kw in kwargs:
             kw['orgUnitID'] = orgUnitId
-    one_day = datetime.timedelta(days=1)
     usage_on_date = start_date
-    start_date = usage_on_date.strftime('%Y-%m-%d')
+    start_date = usage_on_date.strftime(YYYYMMDD_FORMAT)
+    usage_end_date = end_date
+    end_date = end_date.strftime(YYYYMMDD_FORMAT)
+    start_use_date = end_use_date = None
     csvRows = []
-    while usage_on_date <= end_date:
-        use_date = usage_on_date.strftime('%Y-%m-%d')
+    while usage_on_date <= usage_end_date:
         if usage_on_date.weekday() in skip_day_numbers or \
-           use_date in skip_dates:
+           usage_on_date in skip_dates:
             usage_on_date += one_day
             continue
+        use_date = usage_on_date.strftime(YYYYMMDD_FORMAT)
         usage_on_date += one_day
         try:
             for kwarg in kwargs:
@@ -229,12 +239,19 @@ def showUsage():
                                     break
                             else:
                                 row[name] = ''
+                    if not start_use_date:
+                        start_use_date = use_date
+                    end_use_date = use_date
                     csvRows.append(row)
         except gapi.errors.GapiInvalidError as e:
             display.print_warning(str(e))
             break
+    if start_use_date:
+        report_name = f'{report.capitalize()} Usage Report - {start_use_date}:{end_use_date}'
+    else:
+        report_name = f'{report.capitalize()} Usage Report - {start_date}:{end_date} - No Data'
     display.write_csv_file(
-        csvRows, titles, f'{report.capitalize()} Usage Report - {start_date}:{use_date}', todrive)
+        csvRows, titles, report_name, todrive)
 
 
 def showReport():
