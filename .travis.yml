@@ -7,8 +7,8 @@ env:
   global:
     - BUILD_PYTHON_VERSION=3.8.2
     - MIN_PYTHON_VERSION=3.8.2
-    - BUILD_OPENSSL_VERSION=1.1.1f
-    - MIN_OPENSSL_VERSION=1.1.1f
+    - BUILD_OPENSSL_VERSION=1.1.1g
+    - MIN_OPENSSL_VERSION=1.1.1g
     - PATCHELF_VERSION=0.10
     - PYINSTALLER_VERSION=3.5
     - secure: "FSKvLaiqhKz21SVgAQZI3bSX34Ffyev4l+R2G//QXNDu6UVQcuFsykzw+eZEG7fkhotXr8BMDL7xIkookiL8eLwUtcd/Z95HCjPBBHcmCSQleyvuuJBxdrQ9xldmiGLzMCYiumSH9OH4uJhQ39Yjnjsa8TK+PlTci6a/BTzlYyBSyDYDf7Iv/uhfQPDHL3pNwrQPHf4fL6/jcvo+uaPcv83AVZkNzZjjyoi9Aa+uh9xlbyHg11jp44463qqxoxTdYik3pYuXRBPjknjOGcnFHqn+QOVSdRQoiwbmT8xVuYuCzTv9THhuJ//i5u7s4y3Xyl7u17B3tdm86UlMpQHy/w9EsYaSBPOU4oPNomRtOnTSugh0v9ZBwptP5XfbslII/iA+LQdzTHhchn0W0CRyDqjOMSestWlrsq5NZJtBJTYHbebllOhEI7xbj9tY+re1zFWSPMOPgHJP23ovsdk3hD9OT93AzRHInCx5IxL6QvEgRhAancRuGkf2rGP0g/vX9fQ0Il3rNMSQxHB5CyHUBtUJ9nhU79YkMDZicD0jFMEwjWJO3itAp3ynoLXRgktgQCYUfgc9SpdWKD5SXLCYnSo22JD3D1P6h2EertRHaoKRLb+CRXQC/lM8uh/W+BjA2Xe6Vut2I/72ndjM+10T7E2xk1CFyCH37a5p8cH26Fs="
@@ -185,12 +185,12 @@ script:
 - if [ "$e2e" = true ]; then $gam calendar $gam_user printacl | $gam csv - gam calendar $gam_user delete id ~id; fi
 - if [ "$e2e" = true ]; then $gam calendar $gam_user addevent summary "Travis test event" start $(date '+%FT%T.%N%:z' -d "now + 1 hour") end $(date '+%FT%T.%N%:z' -d "now + 2 hours") attendee $newgroup hangoutsmeet guestscanmodify true sendupdates all; fi
 - if [ "$e2e" = true ]; then $gam calendar $gam_user printevents after -0d; fi
-- if [ "$e2e" = true ]; then $gam create vaultmatter name "Travis matter $newbase" description "test matter" collaborators $newuser; fi
-- if [ "$e2e" = true ]; then $gam create vaulthold matter "Travis matter $newbase" name "Travis hold $newbase" corpus mail accounts $newuser; fi
+- if [ "$e2e" = true ]; then matterid=uid:$($gam create vaultmatter name "Travis matter $newbase" description "test matter" collaborators $newuser) | cut -d ' ' -f 3; fi
+- if [ "$e2e" = true ]; then $gam create vaulthold matter $matterid name "Travis hold $newbase" corpus mail accounts $newuser; fi
 - if [ "$e2e" = true ]; then $gam print vaultmatters matterstate open; fi
-- if [ "$e2e" = true ]; then $gam print vaultholds matter "Travis matter $newbase"; fi
-- if [ "$e2e" = true ]; then $gam create vaultexport matter "Travis matter $newbase" name "Travis export $newbase" corpus mail accounts $newuser; fi
-- if [ "$e2e" = true ]; then $gam print exports matter "Travis matter $newbase" | $gam csv - gam info export id:~~matterId~~ id:~~id~~; fi
+- if [ "$e2e" = true ]; then $gam print vaultholds matter $matterid; fi
+- if [ "$e2e" = true ]; then $gam create vaultexport matter $matterid name "Travis export $newbase" corpus mail accounts $newuser; fi
+- if [ "$e2e" = true ]; then $gam print exports matter $matterid | $gam csv - gam info export $matterid id:~~id~~; fi
 - if [ "$e2e" = true ]; then $gam csv sample.csv gam user ~email add calendar id:$newresource; fi
 - if [ "$e2e" = true ]; then $gam delete resource $newresource; fi
 - if [ "$e2e" = true ]; then $gam delete feature Whiteboard-$newbase; fi
@@ -200,10 +200,10 @@ script:
 - if [ "$e2e" = true ]; then $gam create alias $newalias user $newuser; fi
 - if [ "$e2e" = true ]; then $gam whatis $newuser; fi
 - if [ "$e2e" = true ]; then $gam user $gam_user show tokens; fi
-- if [ "$e2e" = true ]; then $gam print exports matter "Travis matter $newbase" | $gam csv - gam download export id:~~matterId~~ id:~~id~~; fi
-- if [ "$e2e" = true ]; then $gam delete hold "Travis hold $newbase" matter "Travis matter $newbase"; fi
-- if [ "$e2e" = true ]; then $gam update matter "Travis matter $newbase" action close; fi
-- if [ "$e2e" = true ]; then $gam update matter "Travis matter $newbase" action delete; fi
+- if [ "$e2e" = true ]; then $gam print exports matter $matterid | $gam csv - gam download export $matterid id:~~id~~; fi
+- if [ "$e2e" = true ]; then $gam delete hold "Travis hold $newbase" matter $matterid; fi
+- if [ "$e2e" = true ]; then $gam update matter $matterid action close; fi
+- if [ "$e2e" = true ]; then $gam update matter $matterid action delete; fi
 - if [ "$e2e" = true ]; then $gam delete user $newuser; fi
 - if [ "$e2e" = true ]; then $gam print users query "travis.jid=$jid" | $gam csv - gam delete user ~primaryEmail; fi
 - if [ "$e2e" = true ]; then $gam print mobile; fi
