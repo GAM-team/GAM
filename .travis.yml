@@ -185,7 +185,7 @@ script:
 - if [ "$e2e" = true ]; then $gam calendar $gam_user printacl | $gam csv - gam calendar $gam_user delete id ~id; fi
 - if [ "$e2e" = true ]; then $gam calendar $gam_user addevent summary "Travis test event" start $(date '+%FT%T.%N%:z' -d "now + 1 hour") end $(date '+%FT%T.%N%:z' -d "now + 2 hours") attendee $newgroup hangoutsmeet guestscanmodify true sendupdates all; fi
 - if [ "$e2e" = true ]; then $gam calendar $gam_user printevents after -0d; fi
-- if [ "$e2e" = true ]; then matterid=uid:$($gam create vaultmatter name "Travis matter $newbase" description "test matter" collaborators $newuser | cut -d ' ' -f 3); fi
+- if [ "$e2e" = true ]; then matterid=uid:$($gam create vaultmatter name "Travis matter $newbase" description "test matter" collaborators $newuser | head -1 | cut -d ' ' -f 3); fi
 - if [ "$e2e" = true ]; then $gam create vaulthold matter $matterid name "Travis hold $newbase" corpus mail accounts $newuser; fi
 - if [ "$e2e" = true ]; then $gam print vaultmatters matterstate open; fi
 - if [ "$e2e" = true ]; then $gam print vaultholds matter $matterid; fi
