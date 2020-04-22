@@ -5,6 +5,7 @@ import gam
 from gam.var import *
 from gam import controlflow
 from gam import display
+from gam import gapi
 from gam.gapi import directory as gapi_directory
 from gam import utils
 

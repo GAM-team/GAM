@@ -46,6 +46,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.x509.oid import NameOID
 
 import gam.auth.oauth
+from gam import auth
 from gam import controlflow
 from gam import display
 from gam import fileutils
@@ -660,7 +661,7 @@ def readDiscoveryFile(api_version):
   disc_filename = f'{api_version}.json'
   disc_file = os.path.join(GM_Globals[GM_GAM_PATH], disc_filename)
   if hasattr(sys, '_MEIPASS'):
-    pyinstaller_disc_file = os.path.join(sys._MEIPASS, disc_filename)
+    pyinstaller_disc_file = os.path.join(sys._MEIPASS, disc_filename)  #pylint: disable=no-member
   else:
     pyinstaller_disc_file = None
   if os.path.isfile(disc_file):

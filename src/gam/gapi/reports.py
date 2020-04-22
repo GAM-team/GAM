@@ -55,7 +55,7 @@ def showUsageParameters():
         kwargs = {}
     elif report == 'user':
         endpoint = rep.userUsageReport()
-        kwargs = {'userKey': __main__._getValueFromOAuth('email')}
+        kwargs = {'userKey': gam._getValueFromOAuth('email')}
     else:
         controlflow.expected_argument_exit(
             'usageparameters', ['user', 'customer'], report)
@@ -170,10 +170,10 @@ def showUsage():
             skip_day_numbers = [dow.index(d) for d in skipdaynames if d in dow]
             i += 2
         elif report == 'user' and myarg in ['orgunit', 'org', 'ou']:
-            _, orgUnitId = __main__.getOrgUnitId(sys.argv[i+1])
+            _, orgUnitId = gam.getOrgUnitId(sys.argv[i+1])
             i += 2
         elif report == 'user' and myarg in usergroup_types:
-            users = __main__.getUsersToModify(myarg, sys.argv[i+1])
+            users = gam.getUsersToModify(myarg, sys.argv[i+1])
             kwargs = [{'userKey': user} for user in users]
             i += 2
         else:
