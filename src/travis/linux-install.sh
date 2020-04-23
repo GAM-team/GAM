@@ -16,8 +16,8 @@ else
   this_glibc_ver=$(ldd --version | awk '/ldd/{print $NF}')
   GAM_ARCHIVE=gam-$GAMVERSION-$GAMOS-$PLATFORM-glibc$this_glibc_ver.tar.xz
   rm $gampath/lastupdatecheck.txt
-  # tar will cd to dist and compres gam/
-  tar cfJ -C dist/ $GAM_ARCHIVE gam/
+  # tar will cd to dist and tar up gam/
+  tar -C dist/ --create --file $GAM_ARCHIVE --xz gam
   echo "PyInstaller GAM info:"
   du -h $gam
   time $gam version extended
@@ -28,7 +28,7 @@ else
     rm $gampath/gam
     mv $gam-staticx $gam
     chmod 755 $gam
-    tar cvfJ -C dist/ $GAM_LEGACY_ARCHIVE gam/
+    tar -C dist/ --create --file $GAM_LEGACY_ARCHIVE --xz gam
     echo "Legacy StaticX GAM info:"
     du -h $gam
     time $gam version extended

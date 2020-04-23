@@ -14,4 +14,4 @@ MACOSVERSION=$(defaults read loginwindow SystemVersionStampAsString)
 GAM_ARCHIVE=gam-$GAMVERSION-$GAMOS-$PLATFORM-MacOS$MACOSVERSION.tar.xz
 rm $gampath/lastupdatecheck.txt
 # tar will cd to dist/ and tar up gam/
-tar cfJ -C dist/ $GAM_ARCHIVE gam/
+tar -C dist/ --create --file $GAM_ARCHIVE --xz gam
