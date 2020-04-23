@@ -4,11 +4,11 @@ import io
 import os
 import sys
 
-import controlflow
-import display
-from var import GM_Globals
-from var import GM_SYS_ENCODING
-from var import UTF8_SIG
+from gam import controlflow
+from gam import display
+from gam.var import GM_Globals
+from gam.var import GM_SYS_ENCODING
+from gam.var import UTF8_SIG
 
 
 def _open_file(filename, mode, encoding=None, newline=None):

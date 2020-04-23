@@ -3,7 +3,7 @@
 import unittest
 from unittest.mock import patch
 
-import controlflow
+from gam import controlflow
 
 
 class ControlFlowTest(unittest.TestCase):

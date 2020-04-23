@@ -8,10 +8,10 @@ from html.parser import HTMLParser
 import json
 import dateutil.parser
 
-import controlflow
-import fileutils
-import transport
-from var import *
+from gam import controlflow
+from gam import fileutils
+from gam import transport
+from gam.var import *
 
 class _DeHTMLParser(HTMLParser):
 

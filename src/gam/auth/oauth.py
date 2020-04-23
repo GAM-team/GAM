@@ -12,12 +12,11 @@ import google_auth_oauthlib.flow
 import google.oauth2.credentials
 import google.oauth2.id_token
 
-import fileutils
-import transport
-from var import GAM_INFO
-from var import GM_Globals
-from var import GM_WINDOWS
-import utils
+from gam import fileutils
+from gam import transport
+from gam.var import GM_Globals
+from gam.var import GM_WINDOWS
+from gam import utils
 
 MESSAGE_CONSOLE_AUTHORIZATION_PROMPT = ('\nGo to the following link in your '
                                         'browser:\n\n\t{url}\n')

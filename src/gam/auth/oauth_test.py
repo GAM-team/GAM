@@ -10,7 +10,7 @@ from unittest.mock import patch
 
 import google.oauth2.credentials
 
-from auth import oauth
+from gam.auth import oauth
 
 
 class CredentialsTest(unittest.TestCase):

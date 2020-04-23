@@ -1,10 +1,10 @@
 """Authentication/Credentials general purpose and convenience methods."""
 
-import transport
-from var import _FN_OAUTH2_TXT
-from var import GC_OAUTH2_TXT
-from var import GC_Values
-from . import oauth
+from gam.auth import oauth
+from gam.var import _FN_OAUTH2_TXT
+from gam.var import GC_OAUTH2_TXT
+from gam.var import GC_Values
+
 # TODO: Move logic that determines file name into this module. We should be able
 # to discover the file location without accessing a private member or waiting
 # for a global initialization.

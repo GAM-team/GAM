@@ -5,16 +5,16 @@ import sys
 
 from dateutil.relativedelta import relativedelta
 
-import __main__
-from var import *
-import controlflow
-import display
-import gapi
-import utils
+import gam
+from gam.var import *
+from gam import controlflow
+from gam import display
+from gam import gapi
+from gam import utils
 
 
 def buildGAPIObject():
-    return __main__.buildGAPIObject('reports')
+    return gam.buildGAPIObject('reports')
 
 
 REPORT_CHOICE_MAP = {
@@ -55,7 +55,7 @@ def showUsageParameters():
         kwargs = {}
     elif report == 'user':
         endpoint = rep.userUsageReport()
-        kwargs = {'userKey': __main__._getValueFromOAuth('email')}
+        kwargs = {'userKey': gam._getValueFromOAuth('email')}
     else:
         controlflow.expected_argument_exit(
             'usageparameters', ['user', 'customer'], report)
@@ -170,10 +170,10 @@ def showUsage():
             skip_day_numbers = [dow.index(d) for d in skipdaynames if d in dow]
             i += 2
         elif report == 'user' and myarg in ['orgunit', 'org', 'ou']:
-            _, orgUnitId = __main__.getOrgUnitId(sys.argv[i+1])
+            _, orgUnitId = gam.getOrgUnitId(sys.argv[i+1])
             i += 2
         elif report == 'user' and myarg in usergroup_types:
-            users = __main__.getUsersToModify(myarg, sys.argv[i+1])
+            users = gam.getUsersToModify(myarg, sys.argv[i+1])
             kwargs = [{'userKey': user} for user in users]
             i += 2
         else:
@@ -286,7 +286,7 @@ def showReport():
             tryDate = utils.get_yyyymmdd(sys.argv[i+1])
             i += 2
         elif myarg in ['orgunit', 'org', 'ou']:
-            _, orgUnitId = __main__.getOrgUnitId(sys.argv[i+1])
+            _, orgUnitId = gam.getOrgUnitId(sys.argv[i+1])
             i += 2
         elif myarg == 'fulldatarequired':
             fullDataRequired = []
@@ -304,7 +304,7 @@ def showReport():
             eventName = sys.argv[i+1]
             i += 2
         elif myarg == 'user':
-            userKey = __main__.normalizeEmailAddressOrUID(sys.argv[i+1])
+            userKey = gam.normalizeEmailAddressOrUID(sys.argv[i+1])
             i += 2
         elif myarg in ['filter', 'filters']:
             filters = sys.argv[i+1]

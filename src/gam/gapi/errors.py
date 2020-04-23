@@ -3,9 +3,9 @@
 from enum import Enum
 import json
 
-import controlflow
-import display  # TODO: Change to relative import when gam is setup as a package
-from var import UTF8
+from gam import controlflow
+from gam import display
+from gam.var import UTF8
 
 
 class GapiAbortedError(Exception):

@@ -6,8 +6,8 @@ from unittest.mock import MagicMock
 from unittest.mock import patch
 
 from gam import SetGlobalVariables
-import gapi
-from gapi import errors
+import gam.gapi as gapi
+from gam.gapi import errors
 
 
 def create_http_error(status, reason, message):

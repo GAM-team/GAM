@@ -5,16 +5,15 @@ import sys
 
 import googleapiclient
 
-import __main__
-from var import *
-import controlflow
-import fileutils
-import gapi
-import utils
+import gam
+from gam.var import *
+from gam import fileutils
+from gam import gapi
+from gam import utils
 
 
 def build_gapi():
-    return __main__.buildGAPIObject('storage')
+    return gam.buildGAPIObject('storage')
 
 
 def get_cloud_storage_object(s, bucket, object_, local_file=None,

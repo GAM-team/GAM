@@ -4,24 +4,24 @@ import sys
 
 import googleapiclient.http
 
-import __main__
-from var import *
-import controlflow
-import display
-import fileutils
-import gapi
-import gapi.storage
-import utils
+import gam
+from gam.var import *
+from gam import controlflow
+from gam import display
+from gam import fileutils
+from gam import gapi
+from gam.gapi import storage as gapi_storage
+from gam import utils
 
 
 def buildGAPIObject():
-    return __main__.buildGAPIObject('vault')
+    return gam.buildGAPIObject('vault')
 
 
 def validateCollaborators(collaboratorList, cd):
     collaborators = []
     for collaborator in collaboratorList.split(','):
-        collaborator_id = __main__.convertEmailAddressToUID(collaborator, cd)
+        collaborator_id = gam.convertEmailAddressToUID(collaborator, cd)
         if not collaborator_id:
             controlflow.system_error_exit(4, f'failed to get a UID for '
                                              f'{collaborator}. Please make '
@@ -47,7 +47,7 @@ def createMatter():
             i += 2
         elif myarg in ['collaborator', 'collaborators']:
             if not cd:
-                cd = __main__.buildGAPIObject('directory')
+                cd = gam.buildGAPIObject('directory')
             collaborators.extend(validateCollaborators(sys.argv[i+1], cd))
             i += 2
         else:
@@ -124,7 +124,7 @@ def createExport():
                 i += 2
             elif searchMethod == 'ORG_UNIT':
                 body['query']['orgUnitInfo'] = {
-                    'orgUnitId': __main__.getOrgUnitId(sys.argv[i+1])[1]}
+                    'orgUnitId': gam.getOrgUnitId(sys.argv[i+1])[1]}
                 i += 2
             elif searchMethod == 'SHARED_DRIVE':
                 body['query']['sharedDriveInfo'] = {
@@ -158,7 +158,7 @@ def createExport():
             i += 2
         elif myarg in ['excludedrafts']:
             body['query']['mailOptions'] = {
-                'excludeDrafts': __main__.getBoolean(sys.argv[i+1], myarg)}
+                'excludeDrafts': gam.getBoolean(sys.argv[i+1], myarg)}
             i += 2
         elif myarg in ['driveversiondate']:
             body['query'].setdefault('driveOptions', {})['versionDate'] = \
@@ -166,11 +166,11 @@ def createExport():
             i += 2
         elif myarg in ['includeshareddrives', 'includeteamdrives']:
             body['query'].setdefault('driveOptions', {})[
-                'includeSharedDrives'] = __main__.getBoolean(sys.argv[i+1], myarg)
+                'includeSharedDrives'] = gam.getBoolean(sys.argv[i+1], myarg)
             i += 2
         elif myarg in ['includerooms']:
             body['query']['hangoutsChatOptions'] = {
-                'includeRooms': __main__.getBoolean(sys.argv[i+1], myarg)}
+                'includeRooms': gam.getBoolean(sys.argv[i+1], myarg)}
             i += 2
         elif myarg in ['format']:
             export_format = sys.argv[i+1].upper()
@@ -179,7 +179,7 @@ def createExport():
                     "export format", ", ".join(allowed_formats), export_format)
             i += 2
         elif myarg in ['showconfidentialmodecontent']:
-            showConfidentialModeContent = __main__.getBoolean(sys.argv[i+1], myarg)
+            showConfidentialModeContent = gam.getBoolean(sys.argv[i+1], myarg)
             i += 2
         elif myarg in ['region']:
             allowed_regions = gapi.get_enum_values_minus_unspecified(
@@ -192,7 +192,7 @@ def createExport():
             i += 2
         elif myarg in ['includeaccessinfo']:
             body['exportOptions'].setdefault('driveOptions', {})[
-                'includeAccessInfo'] = __main__.getBoolean(sys.argv[i+1], myarg)
+                'includeAccessInfo'] = gam.getBoolean(sys.argv[i+1], myarg)
             i += 2
         else:
             controlflow.invalid_argument_exit(sys.argv[i], "gam create export")
@@ -277,7 +277,7 @@ def createHold():
             i += 2
         elif myarg in ['orgunit', 'ou']:
             body['orgUnit'] = {
-                'orgUnitId': __main__.getOrgUnitId(sys.argv[i+1])[1]}
+                'orgUnitId': gam.getOrgUnitId(sys.argv[i+1])[1]}
             i += 2
         elif myarg in ['start', 'starttime']:
             start_time = utils.get_date_zero_time_or_full_time(sys.argv[i+1])
@@ -319,11 +319,11 @@ def createHold():
             body['query'][query_type]['endTime'] = end_time
     if accounts:
         body['accounts'] = []
-        cd = __main__.buildGAPIObject('directory')
+        cd = gam.buildGAPIObject('directory')
         account_type = 'group' if body['corpus'] == 'GROUPS' else 'user'
         for account in accounts:
             body['accounts'].append(
-                {'accountId': __main__.convertEmailAddressToUID(account,
+                {'accountId': gam.convertEmailAddressToUID(account,
                                                                 cd,
                                                                 account_type)}
             )
@@ -370,16 +370,16 @@ def getHoldInfo():
             3, 'you must specify a matter for the hold.')
     results = gapi.call(v.matters().holds(), 'get',
                         matterId=matterId, holdId=holdId)
-    cd = __main__.buildGAPIObject('directory')
+    cd = gam.buildGAPIObject('directory')
     if 'accounts' in results:
         account_type = 'group' if results['corpus'] == 'GROUPS' else 'user'
         for i in range(0, len(results['accounts'])):
             uid = f'uid:{results["accounts"][i]["accountId"]}'
-            acct_email = __main__.convertUIDtoEmailAddress(
+            acct_email = gam.convertUIDtoEmailAddress(
                 uid, cd, [account_type])
             results['accounts'][i]['email'] = acct_email
     if 'orgUnit' in results:
-        results['orgUnit']['orgUnitPath'] = __main__.doGetOrgInfo(
+        results['orgUnit']['orgUnitPath'] = gam.doGetOrgInfo(
             results['orgUnit']['orgUnitId'], return_attrib='orgUnitPath')
     display.print_json(results)
 
@@ -456,7 +456,7 @@ def updateHold():
             query = sys.argv[i+1]
             i += 2
         elif myarg in ['orgunit', 'ou']:
-            body['orgUnit'] = {'orgUnitId': __main__.getOrgUnitId(sys.argv[i+1])[1]}
+            body['orgUnit'] = {'orgUnitId': gam.getOrgUnitId(sys.argv[i+1])[1]}
             i += 2
         elif myarg in ['start', 'starttime']:
             start_time = utils.get_date_zero_time_or_full_time(sys.argv[i+1])
@@ -505,15 +505,15 @@ def updateHold():
         gapi.call(v.matters().holds(), 'update',
                   matterId=matterId, holdId=holdId, body=body)
     if add_accounts or del_accounts:
-        cd = __main__.buildGAPIObject('directory')
+        cd = gam.buildGAPIObject('directory')
         for account in add_accounts:
             print(f'adding {account} to hold.')
-            add_body = {'accountId': __main__.convertEmailAddressToUID(account, cd)}
+            add_body = {'accountId': gam.convertEmailAddressToUID(account, cd)}
             gapi.call(v.matters().holds().accounts(), 'create',
                       matterId=matterId, holdId=holdId, body=add_body)
         for account in del_accounts:
             print(f'removing {account} from hold.')
-            accountId = __main__.convertEmailAddressToUID(account, cd)
+            accountId = gam.convertEmailAddressToUID(account, cd)
             gapi.call(v.matters().holds().accounts(), 'delete',
                       matterId=matterId, holdId=holdId, accountId=accountId)
 
@@ -543,12 +543,12 @@ def updateMatter(action=None):
             i += 2
         elif myarg in ['addcollaborator', 'addcollaborators']:
             if not cd:
-                cd = __main__.buildGAPIObject('directory')
+                cd = gam.buildGAPIObject('directory')
             add_collaborators.extend(validateCollaborators(sys.argv[i+1], cd))
             i += 2
         elif myarg in ['removecollaborator', 'removecollaborators']:
             if not cd:
-                cd = __main__.buildGAPIObject('directory')
+                cd = gam.buildGAPIObject('directory')
             remove_collaborators.extend(
                 validateCollaborators(sys.argv[i+1], cd))
             i += 2
@@ -585,10 +585,10 @@ def getMatterInfo():
     matterId = getMatterItem(v, sys.argv[3])
     result = gapi.call(v.matters(), 'get', matterId=matterId, view='FULL')
     if 'matterPermissions' in result:
-        cd = __main__.buildGAPIObject('directory')
+        cd = gam.buildGAPIObject('directory')
         for i in range(0, len(result['matterPermissions'])):
             uid = f'uid:{result["matterPermissions"][i]["accountId"]}'
-            user_email = __main__.convertUIDtoEmailAddress(uid, cd)
+            user_email = gam.convertUIDtoEmailAddress(uid, cd)
             result['matterPermissions'][i]['email'] = user_email
     display.print_json(result)
 
@@ -597,7 +597,7 @@ def downloadExport():
     verifyFiles = True
     extractFiles = True
     v = buildGAPIObject()
-    s = gapi.storage.build_gapi()
+    s = gapi_storage.build_gapi()
     matterId = getMatterItem(v, sys.argv[3])
     exportId = convertExportNameToID(v, sys.argv[4], matterId)
     targetFolder = GC_Values[GC_DRIVE_DIR]
@@ -643,7 +643,7 @@ def downloadExport():
             utils.md5_matches_file(filename, expected_hash, True)
             print('VERIFIED')
         if extractFiles and re.search(r'\.zip$', filename):
-            __main__.extract_nested_zip(filename, targetFolder)
+            gam.extract_nested_zip(filename, targetFolder)
 
 
 def printMatters():
@@ -674,7 +674,7 @@ def printMatters():
             i += 2
         else:
             controlflow.invalid_argument_exit(myarg, "gam print matters")
-    __main__.printGettingAllItems('Vault Matters', None)
+    gam.printGettingAllItems('Vault Matters', None)
     page_message = gapi.got_total_items_msg('Vault Matters', '...\n')
     matters = gapi.get_all_pages(
         v.matters(), 'list', 'matters', page_message=page_message, view=view,
