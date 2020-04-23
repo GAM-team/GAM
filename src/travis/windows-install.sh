@@ -1,7 +1,10 @@
 cd src
 echo "compiling GAM with pyinstaller..."
-pyinstaller --clean --noupx -F gam.spec
-export gampath=$(readlink -e dist)
+export gampath="dist/gam"
+rm -rf $gampath
+mkdir -p $gampath
+export gampath=$(readlink -e $gampath)
+pyinstaller --clean --noupx -F --distpath $gampath gam.spec
 export gam="${gampath}/gam"
 echo "running compiled GAM..."
 $gam version
@@ -13,7 +16,6 @@ cp whatsnew.txt $gampath
 cp gam-setup.bat $gampath
 GAM_ARCHIVE=gam-$GAMVERSION-$GAMOS-$PLATFORM.zip
 /c/Program\ Files/7-Zip/7z.exe a -tzip $GAM_ARCHIVE $gampath -xr!.svn
-/c/Program\ Files/7-Zip/7z.exe rn $GAM_ARCHIVE dist\ gam\
 
 echo "Running WIX candle $WIX_BITS..."
 /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.11/bin/candle.exe -arch $WIX_BITS gam.wxs

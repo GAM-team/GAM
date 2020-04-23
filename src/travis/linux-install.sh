@@ -3,8 +3,11 @@ if [[ "$TRAVIS_JOB_NAME" == *"Testing" ]]; then
   export gam="$python -m gam"
   export gampath=$(readlink -e .)
 else
-  $python -OO -m PyInstaller --clean --noupx --strip -F gam.spec
-  export gampath=$(readlink -e dist)
+  export gampath="dist/gam"
+  rm -rf $gampath
+  mkdir -p $gampath
+  export gampath=$(readlink -e $gampath)
+  $python -OO -m PyInstaller --clean --noupx --strip -F --distpath $gampath gam.spec
   export gam="${gampath}/gam"
   export GAMVERSION=`$gam version simple`
   cp LICENSE $gampath
@@ -13,11 +16,11 @@ else
   this_glibc_ver=$(ldd --version | awk '/ldd/{print $NF}')
   GAM_ARCHIVE=gam-$GAMVERSION-$GAMOS-$PLATFORM-glibc$this_glibc_ver.tar.xz
   rm $gampath/lastupdatecheck.txt
-  tar cfJ $GAM_ARCHIVE $gampath --transform s/.*dist/gam/
+  # tar will cd to dist and compres gam/
+  tar cfJ -C dist/ $GAM_ARCHIVE gam/
   echo "PyInstaller GAM info:"
   du -h $gam
   time $gam version extended
-
   if [ "${TRAVIS_DIST}" == "xenial" ] && [ "${PLATFORM}" == "x86_64" ]; then
     GAM_LEGACY_ARCHIVE=gam-${GAMVERSION}-${GAMOS}-${PLATFORM}-legacy.tar.xz
     $python -OO -m staticx -l /lib/x86_64-linux-gnu/libresolv.so.2 -l /lib/x86_64-linux-gnu/libnss_dns.so.2 $gam $gam-staticx
@@ -25,7 +28,7 @@ else
     rm $gampath/gam
     mv $gam-staticx $gam
     chmod 755 $gam
-    tar cvfJ --transform s/dist/gam/ $GAM_LEGACY_ARCHIVE $gampath
+    tar cvfJ -C dist/ $GAM_LEGACY_ARCHIVE gam/
     echo "Legacy StaticX GAM info:"
     du -h $gam
     time $gam version extended
