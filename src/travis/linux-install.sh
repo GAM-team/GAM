@@ -4,7 +4,7 @@ if [[ "$TRAVIS_JOB_NAME" == *"Testing" ]]; then
   export gampath=$(readlink -e .)
 else
   $python -OO -m PyInstaller --clean --noupx --strip -F gam.spec
-  export gampath=$(readlink -e gam)
+  export gampath=$(readlink -e dist)
   export gam="${gampath}/gam"
   export GAMVERSION=`$gam version simple`
   cp LICENSE $gampath

@@ -12,4 +12,4 @@ cp GamCommands.txt $gampath
 MACOSVERSION=$(defaults read loginwindow SystemVersionStampAsString)
 GAM_ARCHIVE=gam-$GAMVERSION-$GAMOS-$PLATFORM-MacOS$MACOSVERSION.tar.xz
 rm $gampath/lastupdatecheck.txt
-tar cfJ $GAM_ARCHIVE --transform s/$gampath/gam $gampath
+gtar cfJ $GAM_ARCHIVE --transform s/$gampath/gam $gampath

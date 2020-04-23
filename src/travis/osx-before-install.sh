@@ -61,7 +61,7 @@ if [ $SSLRESULT -ne 0 ] || [[ "$SSLVER" != "OpenSSL $BUILD_OPENSSL_VERSION "* ]]
   # Compile latest OpenSSL
   wget --quiet https://www.openssl.org/source/openssl-$BUILD_OPENSSL_VERSION.tar.gz
   echo "Extracting OpenSSL..."
-  tar xf openssl-$BUILD_OPENSSL_VERSION.tar.gz
+  gtar xf openssl-$BUILD_OPENSSL_VERSION.tar.gz
   cd openssl-$BUILD_OPENSSL_VERSION
   echo "Compiling OpenSSL $BUILD_OPENSSL_VERSION..."
   ./config shared --prefix=$HOME/ssl
@@ -75,7 +75,7 @@ if [ $SSLRESULT -ne 0 ] || [[ "$SSLVER" != "OpenSSL $BUILD_OPENSSL_VERSION "* ]]
   echo "Downloading Python $BUILD_PYTHON_VERSION..."
   curl -O https://www.python.org/ftp/python/$BUILD_PYTHON_VERSION/Python-$BUILD_PYTHON_VERSION.tar.xz
   echo "Extracting Python..."
-  tar xf Python-$BUILD_PYTHON_VERSION.tar.xz
+  gtar xf Python-$BUILD_PYTHON_VERSION.tar.xz
   cd Python-$BUILD_PYTHON_VERSION
   echo "Compiling Python $BUILD_PYTHON_VERSION..."
   safe_flags="--with-openssl=$HOME/ssl --enable-shared --prefix=$HOME/python --with-ensurepip=upgrade"

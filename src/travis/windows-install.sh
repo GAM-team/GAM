@@ -1,7 +1,7 @@
 cd src
 echo "compiling GAM with pyinstaller..."
 pyinstaller --clean --noupx -F gam.spec
-export gampath=$(readlink -e gam)
+export gampath=$(readlink -e dist)
 export gam="${gampath}/gam"
 echo "running compiled GAM..."
 $gam version
