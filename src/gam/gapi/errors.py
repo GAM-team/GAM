@@ -110,12 +110,15 @@ class ErrorReason(Enum):
   BAD_REQUEST = 'badRequest'
   CONDITION_NOT_MET = 'conditionNotMet'
   CYCLIC_MEMBERSHIPS_NOT_ALLOWED = 'cyclicMembershipsNotAllowed'
+  DAILY_LIMIT_EXCEEDED = 'dailyLimitExceeded'
   DOMAIN_CANNOT_USE_APIS = 'domainCannotUseApis'
   DOMAIN_NOT_FOUND = 'domainNotFound'
   DUPLICATE = 'duplicate'
   FAILED_PRECONDITION = 'failedPrecondition'
   FORBIDDEN = 'forbidden'
+  FOUR_O_NINE = '409'
   FOUR_O_THREE = '403'
+  FOUR_TWO_NINE = '429'
   GATEWAY_TIMEOUT = 'gatewayTimeout'
   GROUP_NOT_FOUND = 'groupNotFound'
   INTERNAL_ERROR = 'internalError'
@@ -134,8 +137,6 @@ class ErrorReason(Enum):
   SYSTEM_ERROR = 'systemError'
   USER_NOT_FOUND = 'userNotFound'
   USER_RATE_LIMIT_EXCEEDED = 'userRateLimitExceeded'
-  FOUR_TWO_NINE = '429'
-  DAILY_LIMIT_EXCEEDED = 'dailyLimitExceeded'
 
   def __str__(self):
     return str(self.value)

@@ -6247,8 +6247,12 @@ def setGAMProjectConsentScreen(httpObj, projectId, login_hint):
   print('Setting GAM project consent screen...')
   iap = getService('iap', httpObj)
   body = {'applicationTitle': 'GAM', 'supportEmail': login_hint}
-  gapi.call(iap.projects().brands(), 'create',
-            parent=f'projects/{projectId}', body=body)
+  try:
+    gapi.call(iap.projects().brands(), 'create',
+              parent=f'projects/{projectId}', body=body,
+              throw_reasons=[gapi_errors.ErrorReason.FOUR_O_NINE])
+  except googleapiclient.errors.HttpError:
+    pass
 
 def _createClientSecretsOauth2service(httpObj, projectId, login_hint, create_project):
 
@@ -6579,6 +6583,7 @@ and accept the Terms of Service (ToS). As soon as you've accepted the ToS popup,
 def doUseProject():
   _checkForExistingProjectFiles()
   _, httpObj, login_hint, projectId, _ = _getLoginHintProjectId(False)
+  setGAMProjectConsentScreen(httpObj, projectId, login_hint)
   _createClientSecretsOauth2service(httpObj, projectId, login_hint, False)
 
 def doUpdateProjects():
