@@ -6254,7 +6254,7 @@ def setGAMProjectConsentScreen(httpObj, projectId, login_hint):
   except googleapiclient.errors.HttpError:
     pass
 
-def _createClientSecretsOauth2service(httpObj, projectId, login_hint, create_project):
+def _createClientSecretsOauth2service(httpObj, projectId, login_hint):
 
   def _checkClientAndSecret(simplehttp, client_id, client_secret):
     url = 'https://oauth2.googleapis.com/token'
@@ -6284,8 +6284,7 @@ def _createClientSecretsOauth2service(httpObj, projectId, login_hint, create_pro
 
   GAMProjectAPIs = getGAMProjectFile('project-apis.txt').splitlines()
   enableGAMProjectAPIs(GAMProjectAPIs, httpObj, projectId, False)
-  if create_project:
-    setGAMProjectConsentScreen(httpObj, projectId, login_hint)
+  setGAMProjectConsentScreen(httpObj, projectId, login_hint)
   iam = getService('iam', httpObj)
   sa_list = gapi.call(iam.projects().serviceAccounts(), 'list',
                       name=f'projects/{projectId}')
@@ -6578,13 +6577,12 @@ and accept the Terms of Service (ToS). As soon as you've accepted the ToS popup,
     elif 'error' in status:
       controlflow.system_error_exit(2, status['error'])
     break
-  _createClientSecretsOauth2service(httpObj, projectId, login_hint, True)
+  _createClientSecretsOauth2service(httpObj, projectId, login_hint)
 
 def doUseProject():
   _checkForExistingProjectFiles()
   _, httpObj, login_hint, projectId, _ = _getLoginHintProjectId(False)
-  setGAMProjectConsentScreen(httpObj, projectId, login_hint)
-  _createClientSecretsOauth2service(httpObj, projectId, login_hint, False)
+  _createClientSecretsOauth2service(httpObj, projectId, login_hint)
 
 def doUpdateProjects():
   _, httpObj, login_hint, projects, _ = _getLoginHintProjects(False)
@@ -10074,7 +10072,29 @@ def doDeleteOAuth():
   credentials.revoke()
   credentials.delete()
 
-def doRequestOAuth(login_hint=None):
+def createOAuth():
+  '''Explicit command line to create OAuth credentials'''
+  login_hint = None
+  scopes = None
+  if len(sys.argv) >= 4 and sys.argv[3].lower() not in ['admin', 'scopes']:
+    # legacy "gam oauth create/request <email>
+    login_hint = sys.argv[3]
+  else:
+    i = 3
+    while i < len(sys.argv):
+      myarg = sys.argv[i].lower().replace('_', '')
+      if myarg == 'admin':
+        login_hint = sys.argv[i+1]
+        i += 2
+      elif myarg == 'scopes':
+        scopes = sys.argv[i+1].split(',')
+        i += 2
+      else:
+        controlflow.system_error_exit(3, f'{myarg} is not a valid argument for "gam oauth create"')
+  login_hint = _getValidateLoginHint(login_hint)
+  doRequestOAuth(login_hint, scopes)
+
+def doRequestOAuth(login_hint=None, scopes=None):
   missing_client_secrets_message = ('To use GAM you need to create an API '
                                     'project. Please run:\n\ngam create project')
   client_secrets_file = GC_Values[GC_CLIENT_SECRETS_JSON]
@@ -10087,7 +10107,8 @@ def doRequestOAuth(login_hint=None):
     print('It looks like you\'ve already authorized GAM. Refusing to overwrite existing file:\n\n%s' % stored_creds.filename)
     return
 
-  scopes = getScopesFromUser()
+  if scopes is None:
+    scopes = getScopesFromUser()
   if scopes is None:
     # There were no scopes selected. Exit cleanly.
     controlflow.system_error_exit(0, '')
@@ -11147,11 +11168,7 @@ def ProcessGAMCommand(args):
     elif command in ['oauth', 'oauth2']:
       argument = sys.argv[2].lower()
       if argument in ['request', 'create']:
-        try:
-          login_hint = sys.argv[3].strip()
-        except IndexError:
-          login_hint = None
-        doRequestOAuth(login_hint)
+        createOAuth()
       elif argument in ['info', 'verify']:
         OAuthInfo()
       elif argument in ['delete', 'revoke']:
