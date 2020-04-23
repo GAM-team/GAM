@@ -1,15 +1,15 @@
 cd src
 echo "MacOS Version Info According to Python:"
 python -c "import platform; print(platform.mac_ver())"
-$python -OO -m PyInstaller --clean --noupx --strip -F --distpath=gam gam.spec
-export gam="gam/gam"
-export gampath=gam
+$python -OO -m PyInstaller --clean --noupx --strip -F gam.spec
+export gampath=dist
+export gam="$gampath/gam"
 $gam version extended
-export GAMVERSION=`gam/gam version simple`
-cp LICENSE gam
-cp whatsnew.txt gam
-cp GamCommands.txt gam
+export GAMVERSION=`$gam version simple`
+cp LICENSE $gampath
+cp whatsnew.txt $gampath
+cp GamCommands.txt $gampath
 MACOSVERSION=$(defaults read loginwindow SystemVersionStampAsString)
 GAM_ARCHIVE=gam-$GAMVERSION-$GAMOS-$PLATFORM-MacOS$MACOSVERSION.tar.xz
-rm gam/lastupdatecheck.txt
-tar cfJ $GAM_ARCHIVE gam/
+rm $gampath/lastupdatecheck.txt
+tar cfJ $GAM_ARCHIVE --transform s/$gampath/gam $gampath

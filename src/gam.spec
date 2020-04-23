@@ -15,7 +15,7 @@ extra_files += [(os.path.join(proot, 'cacerts.txt'), 'httplib2')]
 
 extra_files += copy_metadata('google-api-python-client')
 
-a = Analysis(['gam.py'],
+a = Analysis(['gam/__main__.py'],
              hiddenimports=[],
              hookspath=None,
              excludes=['FixTk', 'tcl', 'tk', '_tkinter', 'tkinter', 'Tkinter'],
