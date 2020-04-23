@@ -9,7 +9,7 @@ echo "This device has $cpucount CPUs for compiling..."
 #brew upgrade
 
 # prefer standard GNU tools like date over MacOS defaults
-export PATH="/usr/local/opt/coreutils/libexec/gnubin:$PATH"
+export PATH="/usr/local/opt/coreutils/libexec/gnubin:$(brew --prefix)/opt/gnu-tar/libexec/gnubin:$PATH"
 
 cd ~
 
@@ -61,7 +61,7 @@ if [ $SSLRESULT -ne 0 ] || [[ "$SSLVER" != "OpenSSL $BUILD_OPENSSL_VERSION "* ]]
   # Compile latest OpenSSL
   wget --quiet https://www.openssl.org/source/openssl-$BUILD_OPENSSL_VERSION.tar.gz
   echo "Extracting OpenSSL..."
-  gtar xf openssl-$BUILD_OPENSSL_VERSION.tar.gz
+  tar xf openssl-$BUILD_OPENSSL_VERSION.tar.gz
   cd openssl-$BUILD_OPENSSL_VERSION
   echo "Compiling OpenSSL $BUILD_OPENSSL_VERSION..."
   ./config shared --prefix=$HOME/ssl
@@ -75,7 +75,7 @@ if [ $SSLRESULT -ne 0 ] || [[ "$SSLVER" != "OpenSSL $BUILD_OPENSSL_VERSION "* ]]
   echo "Downloading Python $BUILD_PYTHON_VERSION..."
   curl -O https://www.python.org/ftp/python/$BUILD_PYTHON_VERSION/Python-$BUILD_PYTHON_VERSION.tar.xz
   echo "Extracting Python..."
-  gtar xf Python-$BUILD_PYTHON_VERSION.tar.xz
+  tar xf Python-$BUILD_PYTHON_VERSION.tar.xz
   cd Python-$BUILD_PYTHON_VERSION
   echo "Compiling Python $BUILD_PYTHON_VERSION..."
   safe_flags="--with-openssl=$HOME/ssl --enable-shared --prefix=$HOME/python --with-ensurepip=upgrade"
