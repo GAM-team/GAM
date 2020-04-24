@@ -49,9 +49,6 @@
       <Component Id="license" Guid="7a15de2e-fb91-4d0a-b8bf-c8b19c68f569">
         <File Name="LICENSE" KeyPath="yes" />
       </Component>
-      <Component Id="whatsnew_txt" Guid="6aa9863c-90d9-412f-9b73-fda82549a950">
-        <File Name="whatsnew.txt" KeyPath="yes" />
-      </Component>
       <Component Id="gam_setup_bat" Guid="ef01f93a-4b50-488a-9c04-ec5e13e66218">
         <File Name="gam-setup.bat" KeyPath="yes" />
       </Component>
