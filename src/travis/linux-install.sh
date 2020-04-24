@@ -11,7 +11,6 @@ else
   export gam="${gampath}/gam"
   export GAMVERSION=`$gam version simple`
   cp LICENSE $gampath
-  cp whatsnew.txt $gampath
   cp GamCommands.txt $gampath
   this_glibc_ver=$(ldd --version | awk '/ldd/{print $NF}')
   GAM_ARCHIVE=gam-$GAMVERSION-$GAMOS-$PLATFORM-glibc$this_glibc_ver.tar.xz
@@ -28,6 +27,7 @@ else
     rm $gampath/gam
     mv $gam-staticx $gam
     chmod 755 $gam
+    rm $gampath/lastupdatecheck.txt
     tar -C dist/ --create --file $GAM_LEGACY_ARCHIVE --xz gam
     echo "Legacy StaticX GAM info:"
     du -h $gam

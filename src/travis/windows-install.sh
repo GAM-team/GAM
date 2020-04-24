@@ -12,7 +12,6 @@ export GAMVERSION=`$gam version simple`
 rm $gampath/lastupdatecheck.txt
 cp LICENSE $gampath
 cp GamCommands.txt $gampath
-cp whatsnew.txt $gampath
 cp gam-setup.bat $gampath
 GAM_ARCHIVE=gam-$GAMVERSION-$GAMOS-$PLATFORM.zip
 /c/Program\ Files/7-Zip/7z.exe a -tzip $GAM_ARCHIVE $gampath -xr!.svn
