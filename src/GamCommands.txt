@@ -845,6 +845,7 @@ gam delete sakey|sakeys <ServiceAccountKeyList>+ [doit]
 gam show sakey|sakeys [all|system|user]
 
 gam oauth|oauth2 create|request [<EmailAddress>]
+gam oauth|oauth2 create|request [admin <EmailAddress>] [scope|scopes <APIScopeURLList>]
 gam oauth|oauth2 delete|revoke
 gam oauth|oauth2 info|verify [accesstoken <AccessToken>] [idtoken <IDToken>] [showsecret]
 gam oauth|oauth2 refresh
