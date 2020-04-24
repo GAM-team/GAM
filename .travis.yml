@@ -215,7 +215,7 @@ script:
 - if [ "$e2e" = true ]; then $gam report admin start -3d todrive; fi
 - if ([ "$e2e" = true ] && [[ "$TRAVIS_JOB_NAME" != *"Testing" ]]); then
     for gamfile in gam-$GAMVERSION-*; do
-      fileid=$($gam user $gam_user add drivefile localfile $gamfile drivefilename $GAMVERSION-$TRAVIS_COMMIT-$gamfile parentid 1N2zbO33qzUQFsGM49-m9AQC1ijzd_ru1);
+      fileid=$($gam user $gam_user add drivefile localfile $gamfile drivefilename $GAMVERSION-$TRAVIS_COMMIT-$gamfile parentid 1N2zbO33qzUQFsGM49-m9AQC1ijzd_ru1 returnidonly);
       $gam user $gam_user add drivefileacl $fileid anyone role reader withlink;
     done;
   fi
