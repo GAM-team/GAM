@@ -41,6 +41,10 @@ cache:
 jobs:
   include:
     - os: linux
+      name: "Linux 64-bit Focal"
+      dist: focal
+      language: shell
+    - os: linux
       name: "Linux 64-bit Bionic"
       dist: bionic
       language: shell
@@ -48,6 +52,12 @@ jobs:
       name: "Linux 64-bit Xenial"
       dist: xenial
       language: shell
+    - os: linux
+      dist: focal
+      arch: arm64
+      name: "Linux ARM64 Focal"
+      language: shell
+      filter_secrets: false
     - os: linux
       dist: bionic
       arch: arm64
