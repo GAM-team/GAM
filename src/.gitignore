@@ -64,6 +64,7 @@ nobrowser.txt
 nocache.txt
 noverifyssl.txt
 gamcache/
+dist/
 gam-64/
 *.zip
 *.msi

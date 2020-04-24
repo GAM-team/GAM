@@ -8,7 +8,6 @@ export gam="$gampath/gam"
 $gam version extended
 export GAMVERSION=`$gam version simple`
 cp LICENSE $gampath
-cp whatsnew.txt $gampath
 cp GamCommands.txt $gampath
 MACOSVERSION=$(defaults read loginwindow SystemVersionStampAsString)
 GAM_ARCHIVE=gam-$GAMVERSION-$GAMOS-$PLATFORM-MacOS$MACOSVERSION.tar.xz
