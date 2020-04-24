@@ -10076,7 +10076,7 @@ def createOAuth():
   '''Explicit command line to create OAuth credentials'''
   login_hint = None
   scopes = None
-  if len(sys.argv) >= 4 and sys.argv[3].lower() not in ['admin', 'scopes']:
+  if len(sys.argv) >= 4 and sys.argv[3].lower() not in ['admin', 'scope', 'scopes']:
     # legacy "gam oauth create/request <email>
     login_hint = sys.argv[3]
   else:
@@ -10086,7 +10086,7 @@ def createOAuth():
       if myarg == 'admin':
         login_hint = sys.argv[i+1]
         i += 2
-      elif myarg == 'scopes':
+      elif myarg in ['scope', 'scopes']:
         scopes = sys.argv[i+1].split(',')
         i += 2
       else:
