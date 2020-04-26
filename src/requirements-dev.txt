@@ -1,0 +1,7 @@
+# This file contains all requirements needed for GAM development work
+
+# Include all build requirements
+-r requirements.txt
+
+# Dev-specific requirements
+pre-commit
