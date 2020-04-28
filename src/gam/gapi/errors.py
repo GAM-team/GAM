@@ -224,6 +224,7 @@ OAUTH2_TOKEN_ERRORS = [
   'invalid_grant: Invalid email or User ID',
   'invalid_grant: Not a valid email',
   'invalid_grant: Invalid JWT: No valid verifier found for issuer',
+  'invalid_grant: The account has been deleted',
   'invalid_request: Invalid impersonation prn email address',
   'invalid_request: Invalid impersonation &quot;sub&quot; field',
   'unauthorized_client: Client is unauthorized to retrieve access tokens '
