@@ -7,5 +7,5 @@ import sys
 from gam.__main__ import main
 
 # Run from command line
-if __name__ == "__main__":
+if __name__ == '__main__':
     main(sys.argv)

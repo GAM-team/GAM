@@ -142,7 +142,7 @@
        "location": "query"
       }
      }
-    }, 
+    },
     "list": {
      "id": "cloudprint.jobs.list",
      "path": "jobs",
@@ -347,7 +347,7 @@
        "type": "boolean",
        "location": "query"
       }
-     } 
+     }
     },
     "unshare": {
      "id": "cloudprint.printers.unshare",
@@ -479,7 +479,7 @@
        "location": "query"
       }
      }
-    } 
+    }
    }
   }
  }

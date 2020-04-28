@@ -12,17 +12,19 @@ from gam.var import UTF8_SIG
 
 
 def _open_file(filename, mode, encoding=None, newline=None):
-  """Opens a file with no error handling."""
-  # Determine which encoding to use
-  if 'b' in mode:
-    encoding = None
-  elif not encoding:
-    encoding = GM_Globals[GM_SYS_ENCODING]
-  elif 'r' in mode and encoding.lower().replace('-', '') == 'utf8':
-    encoding = UTF8_SIG
+    """Opens a file with no error handling."""
+    # Determine which encoding to use
+    if 'b' in mode:
+        encoding = None
+    elif not encoding:
+        encoding = GM_Globals[GM_SYS_ENCODING]
+    elif 'r' in mode and encoding.lower().replace('-', '') == 'utf8':
+        encoding = UTF8_SIG
 
-  return open(
-      os.path.expanduser(filename), mode, newline=newline, encoding=encoding)
+    return open(os.path.expanduser(filename),
+                mode,
+                newline=newline,
+                encoding=encoding)
 
 
 def open_file(filename,
@@ -30,7 +32,7 @@ def open_file(filename,
               encoding=None,
               newline=None,
               strip_utf_bom=False):
-  """Opens a file.
+    """Opens a file.
 
   Args:
     filename: String, the name of the file to open, or '-' to use stdin/stdout,
@@ -47,41 +49,42 @@ def open_file(filename,
   Returns:
     The opened file.
   """
-  try:
-    if filename == '-':
-      # Read from stdin, rather than a file
-      if 'r' in mode:
-        return io.StringIO(str(sys.stdin.read()))
-      return sys.stdout
+    try:
+        if filename == '-':
+            # Read from stdin, rather than a file
+            if 'r' in mode:
+                return io.StringIO(str(sys.stdin.read()))
+            return sys.stdout
 
-    # Open a file on disk
-    f = _open_file(filename, mode, newline=newline, encoding=encoding)
-    if strip_utf_bom:
-      utf_bom = u'\ufeff'
-      has_bom = False
+        # Open a file on disk
+        f = _open_file(filename, mode, newline=newline, encoding=encoding)
+        if strip_utf_bom:
+            utf_bom = u'\ufeff'
+            has_bom = False
 
-      if 'b' in mode:
-        has_bom = f.read(3).decode('UTF-8') == utf_bom
-      elif f.encoding and not f.encoding.lower().startswith('utf'):
-        # Convert UTF BOM into ISO-8859-1 via Bytes
-        utf8_bom_bytes = utf_bom.encode('UTF-8')
-        iso_8859_1_bom = utf8_bom_bytes.decode('iso-8859-1').encode(
-            'iso-8859-1')
-        has_bom = f.read(3).encode('iso-8859-1', 'replace') == iso_8859_1_bom
-      else:
-        has_bom = f.read(1) == utf_bom
+            if 'b' in mode:
+                has_bom = f.read(3).decode('UTF-8') == utf_bom
+            elif f.encoding and not f.encoding.lower().startswith('utf'):
+                # Convert UTF BOM into ISO-8859-1 via Bytes
+                utf8_bom_bytes = utf_bom.encode('UTF-8')
+                iso_8859_1_bom = utf8_bom_bytes.decode('iso-8859-1').encode(
+                    'iso-8859-1')
+                has_bom = f.read(3).encode('iso-8859-1',
+                                           'replace') == iso_8859_1_bom
+            else:
+                has_bom = f.read(1) == utf_bom
 
-      if not has_bom:
-        f.seek(0)
+            if not has_bom:
+                f.seek(0)
 
-    return f
+        return f
 
-  except IOError as e:
-    controlflow.system_error_exit(6, e)
+    except IOError as e:
+        controlflow.system_error_exit(6, e)
 
 
 def close_file(f, force_flush=False):
-  """Closes a file.
+    """Closes a file.
 
   Args:
     f: The file to close
@@ -92,15 +95,15 @@ def close_file(f, force_flush=False):
     Boolean, True if the file was successfully closed. False if an error
         was encountered while closing.
   """
-  if force_flush:
-    f.flush()
-    os.fsync(f.fileno())
-  try:
-    f.close()
-    return True
-  except IOError as e:
-    display.print_error(e)
-    return False
+    if force_flush:
+        f.flush()
+        os.fsync(f.fileno())
+    try:
+        f.close()
+        return True
+    except IOError as e:
+        display.print_error(e)
+        return False
 
 
 def read_file(filename,
@@ -109,7 +112,7 @@ def read_file(filename,
               newline=None,
               continue_on_error=False,
               display_errors=True):
-  """Reads a file from disk.
+    """Reads a file from disk.
 
   Args:
     filename: String, the path of the file to open from disk, or "-" to read
@@ -128,22 +131,23 @@ def read_file(filename,
     The contents of the file, or stdin if filename == "-". Returns None if
     an error is encountered and continue_on_errors is True.
   """
-  try:
-    if filename == '-':
-      # Read from stdin, rather than a file.
-      return str(sys.stdin.read())
+    try:
+        if filename == '-':
+            # Read from stdin, rather than a file.
+            return str(sys.stdin.read())
 
-    with _open_file(filename, mode, newline=newline, encoding=encoding) as f:
-      return f.read()
+        with _open_file(filename, mode, newline=newline,
+                        encoding=encoding) as f:
+            return f.read()
 
-  except IOError as e:
-    if continue_on_error:
-      if display_errors:
-        display.print_warning(e)
-      return None
-    controlflow.system_error_exit(6, e)
-  except (LookupError, UnicodeDecodeError, UnicodeError) as e:
-    controlflow.system_error_exit(2, str(e))
+    except IOError as e:
+        if continue_on_error:
+            if display_errors:
+                display.print_warning(e)
+            return None
+        controlflow.system_error_exit(6, e)
+    except (LookupError, UnicodeDecodeError, UnicodeError) as e:
+        controlflow.system_error_exit(2, str(e))
 
 
 def write_file(filename,
@@ -151,7 +155,7 @@ def write_file(filename,
                mode='w',
                continue_on_error=False,
                display_errors=True):
-  """Writes data to a file.
+    """Writes data to a file.
 
   Args:
     filename: String, the path of the file to write to disk.
@@ -165,15 +169,15 @@ def write_file(filename,
   Returns:
     Boolean, True if the write operation succeeded, or False if not.
   """
-  try:
-    with _open_file(filename, mode) as f:
-      f.write(data)
-    return True
+    try:
+        with _open_file(filename, mode) as f:
+            f.write(data)
+        return True
 
-  except IOError as e:
-    if continue_on_error:
-      if display_errors:
-        display.print_error(e)
-      return False
-    else:
-      controlflow.system_error_exit(6, e)
+    except IOError as e:
+        if continue_on_error:
+            if display_errors:
+                display.print_error(e)
+            return False
+        else:
+            controlflow.system_error_exit(6, e)

@@ -57,7 +57,7 @@ if [ $SSLRESULT -ne 0 ] || [[ "$SSLVER" != "OpenSSL $BUILD_OPENSSL_VERSION "* ]]
   rm -rf ssl
   mkdir python
   mkdir ssl
-  
+
   # Compile latest OpenSSL
   wget --quiet https://www.openssl.org/source/openssl-$BUILD_OPENSSL_VERSION.tar.gz
   echo "Extracting OpenSSL..."
@@ -107,4 +107,4 @@ cd $whereibelong
 $pip install --upgrade pip
 $pip list --outdated --format=freeze | grep -v '^\-e' | cut -d = -f 1  | xargs -n1 $pip install -U
 $pip install --upgrade -r src/requirements.txt
-$pip install --upgrade https://github.com/pyinstaller/pyinstaller/archive/develop.tar.gz 
+$pip install --upgrade https://github.com/pyinstaller/pyinstaller/archive/develop.tar.gz

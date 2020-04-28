@@ -16,7 +16,10 @@ def build_gapi():
     return gam.buildGAPIObject('storage')
 
 
-def get_cloud_storage_object(s, bucket, object_, local_file=None,
+def get_cloud_storage_object(s,
+                             bucket,
+                             object_,
+                             local_file=None,
                              expectedMd5=None):
     if not local_file:
         local_file = object_
@@ -60,13 +63,19 @@ def download_bucket():
     s = build_gapi()
     page_message = gapi.got_total_items_msg('Files', '...')
     fields = 'nextPageToken,items(name,id,md5Hash)'
-    objects = gapi.get_all_pages(s.objects(), 'list', 'items',
-                                 page_message=page_message, bucket=bucket,
-                                 projection='noAcl', fields=fields)
+    objects = gapi.get_all_pages(s.objects(),
+                                 'list',
+                                 'items',
+                                 page_message=page_message,
+                                 bucket=bucket,
+                                 projection='noAcl',
+                                 fields=fields)
     i = 1
     for object_ in objects:
         print(f'{i}/{len(objects)}')
         expectedMd5 = base64.b64decode(object_['md5Hash']).hex()
-        get_cloud_storage_object(
-            s, bucket, object_['name'], expectedMd5=expectedMd5)
+        get_cloud_storage_object(s,
+                                 bucket,
+                                 object_['name'],
+                                 expectedMd5=expectedMd5)
         i += 1
