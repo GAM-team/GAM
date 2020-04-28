@@ -224,7 +224,7 @@ If an item contains spaces, it should be surrounded by ".
 <Section> ::= <String>
 <SerialNumber> ::= <String>
 <ServiceAccountKey> ::= <String>
-<S/MIMEID> ::= <String>	
+<S/MIMEID> ::= <String>
 <SMTPHostName> ::= <String>
 <StudentItem> ::= <EmailAddress>|<UniqueID>|<String>
 <TeamDriveID> ::= <String>
@@ -773,7 +773,7 @@ Specify a collection of Users by directly specifying them or by specifiying item
 	(name <String>)|
 	(type <String>)|
 	(uservisibledescription <String>)
-	
+
 <SchemaFieldDefinition> ::=
 	field <FieldName> (type bool|date|double|email|int64|phone|string) [multivalued|multivalue] [indexed] [restricted] [range <Number> <Number>] endfield
 
@@ -1253,10 +1253,10 @@ gam download export <MatterItem> <ExportItem> [noverify] [noextract] [targetfold
 
 gam create vaulthold|hold corpus drive|groups|mail matter <MatterItem> [name <String>] [query <QueryVaultCorpus>]
 	[(accounts|groups|users <EmailItemList>) | (orgunit|ou <OrgUnit>)]
-	[start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>] 
+	[start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
 gam update vaulthold|hold <HoldItem> matter <MatterItem> [query <QueryVaultCorpus>]
 	[([addaccounts|addgroups|addusers <EmailItemList>] [removeaccounts|removegroups|removeusers <EmailItemList>]) | (orgunit|ou <OrgUnit>)]
-	[start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>] 
+	[start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
 gam delete vaulthold|hold <HoldItem> matter <MatterItem>
 gam info vaulthold|hold <HoldItem> matter <MatterItem>
 gam print vaultholds|holds [todrive] [matters <MatterItemList>]
@@ -1369,7 +1369,7 @@ gam <UserTypeEntity> insertemail [recipient|to <EmailAddress>] [from <EmailAddre
 	[deleted] [date <Time>]
 gam <UserTypeEntity> sendemail [recipient|to <EmailAddress>] [from <EmailAddress>]
 	[subject <String>] [(message <String>)|(file <FileName> [charset <Charset>])]
-	(header <String> <String>)* 
+	(header <String> <String>)*
 
 gam <UserTypeEntity> create|add delegate|delegates <EmailAddress>
 gam <UserTypeEntity> delegate|delegates to <EmailAddress>

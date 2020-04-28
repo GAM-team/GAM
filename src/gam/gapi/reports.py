@@ -42,12 +42,13 @@ REPORT_CHOICE_MAP = {
 
 def showUsageParameters():
     rep = buildGAPIObject()
-    throw_reasons = [gapi.errors.ErrorReason.INVALID,
-                     gapi.errors.ErrorReason.BAD_REQUEST]
+    throw_reasons = [
+        gapi.errors.ErrorReason.INVALID, gapi.errors.ErrorReason.BAD_REQUEST
+    ]
     todrive = False
     if len(sys.argv) == 3:
-        controlflow.missing_argument_exit(
-            'user or customer', 'report usageparameters')
+        controlflow.missing_argument_exit('user or customer',
+                                          'report usageparameters')
     report = sys.argv[3].lower()
     titles = ['parameter']
     if report == 'customer':
@@ -57,8 +58,8 @@ def showUsageParameters():
         endpoint = rep.userUsageReport()
         kwargs = {'userKey': gam._getValueFromOAuth('email')}
     else:
-        controlflow.expected_argument_exit(
-            'usageparameters', ['user', 'customer'], report)
+        controlflow.expected_argument_exit('usageparameters',
+                                           ['user', 'customer'], report)
     customerId = GC_Values[GC_CUSTOMER_ID]
     if customerId == MY_CUSTOMER:
         customerId = None
@@ -73,10 +74,12 @@ def showUsageParameters():
             todrive = True
             i += 1
         else:
-            controlflow.invalid_argument_exit(sys.argv[i], "gam report usageparameters")
+            controlflow.invalid_argument_exit(sys.argv[i],
+                                              'gam report usageparameters')
     while True:
         try:
-            response = gapi.call(endpoint, 'get',
+            response = gapi.call(endpoint,
+                                 'get',
                                  throw_reasons=throw_reasons,
                                  date=tryDate,
                                  customerId=customerId,
@@ -87,7 +90,9 @@ def showUsageParameters():
                     if data.get('key') == 'application':
                         partial_on_thisday.append(data['value'])
             if partial_apps:
-                partial_apps = [app for app in partial_apps if app in partial_on_thisday]
+                partial_apps = [
+                    app for app in partial_apps if app in partial_on_thisday
+                ]
             else:
                 partial_apps = partial_on_thisday
             for parameter in response['usageReports'][0]['parameters']:
@@ -104,19 +109,24 @@ def showUsageParameters():
     csvRows = []
     for parameter in all_parameters:
         csvRows.append({'parameter': parameter})
-    display.write_csv_file(
-        csvRows, titles, f'{report.capitalize()} Report Usage Parameters', todrive)
+    display.write_csv_file(csvRows, titles,
+                           f'{report.capitalize()} Report Usage Parameters',
+                           todrive)
 
-REPORTS_PARAMETERS_SIMPLE_TYPES = ['intValue', 'boolValue', 'datetimeValue', 'stringValue']
+
+REPORTS_PARAMETERS_SIMPLE_TYPES = [
+    'intValue', 'boolValue', 'datetimeValue', 'stringValue'
+]
+
 
 def showUsage():
     rep = buildGAPIObject()
-    throw_reasons = [gapi.errors.ErrorReason.INVALID,
-                     gapi.errors.ErrorReason.BAD_REQUEST]
+    throw_reasons = [
+        gapi.errors.ErrorReason.INVALID, gapi.errors.ErrorReason.BAD_REQUEST
+    ]
     todrive = False
     if len(sys.argv) == 3:
-        controlflow.missing_argument_exit(
-            'user or customer', 'report usage')
+        controlflow.missing_argument_exit('user or customer', 'report usage')
     report = sys.argv[3].lower()
     titles = ['date']
     if report == 'customer':
@@ -127,8 +137,8 @@ def showUsage():
         kwargs = [{'userKey': 'all'}]
         titles.append('user')
     else:
-        controlflow.expected_argument_exit(
-            'usage', ['user', 'customer'], report)
+        controlflow.expected_argument_exit('usage', ['user', 'customer'],
+                                           report)
     customerId = GC_Values[GC_CUSTOMER_ID]
     if customerId == MY_CUSTOMER:
         customerId = None
@@ -141,43 +151,47 @@ def showUsage():
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
         if myarg == 'startdate':
-            start_date = utils.get_yyyymmdd(sys.argv[i+1], returnDateTime=True)
+            start_date = utils.get_yyyymmdd(sys.argv[i + 1],
+                                            returnDateTime=True)
             i += 2
         elif myarg == 'enddate':
-            end_date = utils.get_yyyymmdd(sys.argv[i+1], returnDateTime=True)
+            end_date = utils.get_yyyymmdd(sys.argv[i + 1], returnDateTime=True)
             i += 2
         elif myarg == 'todrive':
             todrive = True
             i += 1
         elif myarg in ['fields', 'parameters']:
-            parameters = sys.argv[i+1].split(',')
+            parameters = sys.argv[i + 1].split(',')
             i += 2
         elif myarg == 'skipdates':
-            for skip in sys.argv[i+1].split(','):
+            for skip in sys.argv[i + 1].split(','):
                 if skip.find(':') == -1:
-                    skip_dates.add(utils.get_yyyymmdd(skip, returnDateTime=True))
+                    skip_dates.add(utils.get_yyyymmdd(skip,
+                                                      returnDateTime=True))
                 else:
                     skip_start, skip_end = skip.split(':', 1)
-                    skip_start = utils.get_yyyymmdd(skip_start, returnDateTime=True)
+                    skip_start = utils.get_yyyymmdd(skip_start,
+                                                    returnDateTime=True)
                     skip_end = utils.get_yyyymmdd(skip_end, returnDateTime=True)
                     while skip_start <= skip_end:
                         skip_dates.add(skip_start)
                         skip_start += one_day
             i += 2
         elif myarg == 'skipdaysofweek':
-            skipdaynames = sys.argv[i+1].split(',')
+            skipdaynames = sys.argv[i + 1].split(',')
             dow = [d.lower() for d in calendar.day_abbr]
             skip_day_numbers = [dow.index(d) for d in skipdaynames if d in dow]
             i += 2
         elif report == 'user' and myarg in ['orgunit', 'org', 'ou']:
-            _, orgUnitId = gam.getOrgUnitId(sys.argv[i+1])
+            _, orgUnitId = gam.getOrgUnitId(sys.argv[i + 1])
             i += 2
         elif report == 'user' and myarg in usergroup_types:
-            users = gam.getUsersToModify(myarg, sys.argv[i+1])
+            users = gam.getUsersToModify(myarg, sys.argv[i + 1])
             kwargs = [{'userKey': user} for user in users]
             i += 2
         else:
-            controlflow.invalid_argument_exit(sys.argv[i], f'gam report usage {report}')
+            controlflow.invalid_argument_exit(sys.argv[i],
+                                              f'gam report usage {report}')
     if parameters:
         titles.extend(parameters)
         parameters = ','.join(parameters)
@@ -206,7 +220,8 @@ def showUsage():
         try:
             for kwarg in kwargs:
                 try:
-                    usage = gapi.get_all_pages(endpoint, 'get',
+                    usage = gapi.get_all_pages(endpoint,
+                                               'get',
                                                'usageReports',
                                                throw_reasons=throw_reasons,
                                                customerId=customerId,
@@ -250,8 +265,7 @@ def showUsage():
         report_name = f'{report.capitalize()} Usage Report - {start_use_date}:{end_use_date}'
     else:
         report_name = f'{report.capitalize()} Usage Report - {start_date}:{end_date} - No Data'
-    display.write_csv_file(
-        csvRows, titles, report_name, todrive)
+    display.write_csv_file(csvRows, titles, report_name, todrive)
 
 
 def showReport():
@@ -260,17 +274,18 @@ def showReport():
     report = sys.argv[2].lower()
     report = REPORT_CHOICE_MAP.get(report.replace('_', ''), report)
     if report == 'usage':
-      showUsage()
-      return
+        showUsage()
+        return
     if report == 'usageparameters':
-      showUsageParameters()
-      return
+        showUsageParameters()
+        return
     valid_apps = gapi.get_enum_values_minus_unspecified(
-        rep._rootDesc['resources']['activities']['methods']['list'][
-            'parameters']['applicationName']['enum'])+['customer', 'user']
+        rep._rootDesc['resources']['activities']['methods']['list']
+        ['parameters']['applicationName']['enum']) + ['customer', 'user']
     if report not in valid_apps:
-        controlflow.expected_argument_exit(
-            "report", ", ".join(sorted(valid_apps)), report)
+        controlflow.expected_argument_exit('report',
+                                           ', '.join(sorted(valid_apps)),
+                                           report)
     customerId = GC_Values[GC_CUSTOMER_ID]
     if customerId == MY_CUSTOMER:
         customerId = None
@@ -283,51 +298,53 @@ def showReport():
     while i < len(sys.argv):
         myarg = sys.argv[i].lower()
         if myarg == 'date':
-            tryDate = utils.get_yyyymmdd(sys.argv[i+1])
+            tryDate = utils.get_yyyymmdd(sys.argv[i + 1])
             i += 2
         elif myarg in ['orgunit', 'org', 'ou']:
-            _, orgUnitId = gam.getOrgUnitId(sys.argv[i+1])
+            _, orgUnitId = gam.getOrgUnitId(sys.argv[i + 1])
             i += 2
         elif myarg == 'fulldatarequired':
             fullDataRequired = []
-            fdr = sys.argv[i+1].lower()
+            fdr = sys.argv[i + 1].lower()
             if fdr and fdr != 'all':
                 fullDataRequired = fdr.replace(',', ' ').split()
             i += 2
         elif myarg == 'start':
-            startTime = utils.get_time_or_delta_from_now(sys.argv[i+1])
+            startTime = utils.get_time_or_delta_from_now(sys.argv[i + 1])
             i += 2
         elif myarg == 'end':
-            endTime = utils.get_time_or_delta_from_now(sys.argv[i+1])
+            endTime = utils.get_time_or_delta_from_now(sys.argv[i + 1])
             i += 2
         elif myarg == 'event':
-            eventName = sys.argv[i+1]
+            eventName = sys.argv[i + 1]
             i += 2
         elif myarg == 'user':
-            userKey = gam.normalizeEmailAddressOrUID(sys.argv[i+1])
+            userKey = gam.normalizeEmailAddressOrUID(sys.argv[i + 1])
             i += 2
         elif myarg in ['filter', 'filters']:
-            filters = sys.argv[i+1]
+            filters = sys.argv[i + 1]
             i += 2
         elif myarg in ['fields', 'parameters']:
-            parameters = sys.argv[i+1]
+            parameters = sys.argv[i + 1]
             i += 2
         elif myarg == 'ip':
-            actorIpAddress = sys.argv[i+1]
+            actorIpAddress = sys.argv[i + 1]
             i += 2
         elif myarg == 'todrive':
             to_drive = True
             i += 1
         else:
-            controlflow.invalid_argument_exit(sys.argv[i], "gam report")
+            controlflow.invalid_argument_exit(sys.argv[i], 'gam report')
     if report == 'user':
         while True:
             try:
                 if fullDataRequired is not None:
-                    warnings = gapi.get_items(rep.userUsageReport(), 'get',
+                    warnings = gapi.get_items(rep.userUsageReport(),
+                                              'get',
                                               'warnings',
                                               throw_reasons=throw_reasons,
-                                              date=tryDate, userKey=userKey,
+                                              date=tryDate,
+                                              userKey=userKey,
                                               customerId=customerId,
                                               orgUnitID=orgUnitId,
                                               fields='warnings')
@@ -339,11 +356,13 @@ def showReport():
                     if fullData == 0:
                         continue
                 page_message = gapi.got_total_items_msg('Users', '...\n')
-                usage = gapi.get_all_pages(rep.userUsageReport(), 'get',
+                usage = gapi.get_all_pages(rep.userUsageReport(),
+                                           'get',
                                            'usageReports',
                                            page_message=page_message,
                                            throw_reasons=throw_reasons,
-                                           date=tryDate, userKey=userKey,
+                                           date=tryDate,
+                                           userKey=userKey,
                                            customerId=customerId,
                                            orgUnitID=orgUnitId,
                                            filters=filters,
@@ -359,8 +378,7 @@ def showReport():
         for user_report in usage:
             if 'entity' not in user_report:
                 continue
-            row = {'email': user_report['entity']
-                            ['userEmail'], 'date': tryDate}
+            row = {'email': user_report['entity']['userEmail'], 'date': tryDate}
             for item in user_report.get('parameters', []):
                 if 'name' not in item:
                     continue
@@ -374,14 +392,15 @@ def showReport():
                 else:
                     row[name] = ''
             csvRows.append(row)
-        display.write_csv_file(
-            csvRows, titles, f'User Reports - {tryDate}', to_drive)
+        display.write_csv_file(csvRows, titles, f'User Reports - {tryDate}',
+                               to_drive)
     elif report == 'customer':
         while True:
             try:
                 if fullDataRequired is not None:
                     warnings = gapi.get_items(rep.customerUsageReports(),
-                                              'get', 'warnings',
+                                              'get',
+                                              'warnings',
                                               throw_reasons=throw_reasons,
                                               customerId=customerId,
                                               date=tryDate,
@@ -393,7 +412,8 @@ def showReport():
                         sys.exit(1)
                     if fullData == 0:
                         continue
-                usage = gapi.get_all_pages(rep.customerUsageReports(), 'get',
+                usage = gapi.get_all_pages(rep.customerUsageReports(),
+                                           'get',
                                            'usageReports',
                                            throw_reasons=throw_reasons,
                                            customerId=customerId,
@@ -442,27 +462,32 @@ def showReport():
                         value = ' '.join(values)
                     elif 'version_number' in subitem \
                          and 'num_devices' in subitem:
-                        values.append(
-                            f'{subitem["version_number"]}:'
-                            f'{subitem["num_devices"]}')
+                        values.append(f'{subitem["version_number"]}:'
+                                      f'{subitem["num_devices"]}')
                     else:
                         continue
                     value = ' '.join(sorted(values, reverse=True))
             csvRows.append({'name': name, 'value': value})
         for app in auth_apps:  # put apps at bottom
             csvRows.append(app)
-        display.write_csv_file(
-            csvRows, titles, f'Customer Report - {tryDate}', todrive=to_drive)
+        display.write_csv_file(csvRows,
+                               titles,
+                               f'Customer Report - {tryDate}',
+                               todrive=to_drive)
     else:
         page_message = gapi.got_total_items_msg('Activities', '...\n')
-        activities = gapi.get_all_pages(rep.activities(), 'list', 'items',
+        activities = gapi.get_all_pages(rep.activities(),
+                                        'list',
+                                        'items',
                                         page_message=page_message,
                                         applicationName=report,
                                         userKey=userKey,
                                         customerId=customerId,
                                         actorIpAddress=actorIpAddress,
-                                        startTime=startTime, endTime=endTime,
-                                        eventName=eventName, filters=filters,
+                                        startTime=startTime,
+                                        endTime=endTime,
+                                        eventName=eventName,
+                                        filters=filters,
                                         orgUnitID=orgUnitId)
         if activities:
             titles = ['name']
@@ -495,10 +520,11 @@ def showReport():
                             parts = {}
                             for message in item['multiMessageValue']:
                                 for mess in message['parameter']:
-                                    value = mess.get('value', ' '.join(
-                                        mess.get('multiValue', [])))
+                                    value = mess.get(
+                                        'value',
+                                        ' '.join(mess.get('multiValue', [])))
                                     parts[mess['name']] = parts.get(
-                                        mess['name'], [])+[value]
+                                        mess['name'], []) + [value]
                             for part, v in parts.items():
                                 if part == 'scope_name':
                                     part = 'scope'
@@ -513,15 +539,18 @@ def showReport():
                         if item not in titles:
                             titles.append(item)
                     csvRows.append(row)
-            display.sort_csv_titles(['name', ], titles)
-            display.write_csv_file(
-                csvRows, titles, f'{report.capitalize()} Activity Report',
-                to_drive)
+            display.sort_csv_titles([
+                'name',
+            ], titles)
+            display.write_csv_file(csvRows, titles,
+                                   f'{report.capitalize()} Activity Report',
+                                   to_drive)
 
 
 def _adjust_date(errMsg):
-    match_date = re.match('Data for dates later than (.*) is not yet '
-                          'available. Please check back later', errMsg)
+    match_date = re.match(
+        'Data for dates later than (.*) is not yet '
+        'available. Please check back later', errMsg)
     if not match_date:
         match_date = re.match('Start date can not be later than (.*)', errMsg)
     if not match_date:

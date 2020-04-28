@@ -9,11 +9,14 @@ from gam.gapi import reports as gapi_reports
 
 def doGetCustomerInfo():
     cd = gapi_directory.buildGAPIObject()
-    customer_info = gapi.call(cd.customers(), 'get',
+    customer_info = gapi.call(cd.customers(),
+                              'get',
                               customerKey=GC_Values[GC_CUSTOMER_ID])
     print(f'Customer ID: {customer_info["id"]}')
     print(f'Primary Domain: {customer_info["customerDomain"]}')
-    result = gapi.call(cd.domains(), 'get', customer=customer_info['id'],
+    result = gapi.call(cd.domains(),
+                       'get',
+                       customer=customer_info['id'],
                        domainName=customer_info['customerDomain'],
                        fields='verified')
     print(f'Primary Domain Verified: {result["verified"]}')
@@ -23,11 +26,13 @@ def doGetCustomerInfo():
     customer_creation = customer_info['customerCreationTime']
     date_format = '%Y-%m-%dT%H:%M:%S.%fZ'
     oldest = datetime.datetime.strptime(customer_creation, date_format)
-    domains = gapi.get_items(cd.domains(), 'list', 'domains',
+    domains = gapi.get_items(cd.domains(),
+                             'list',
+                             'domains',
                              customer=GC_Values[GC_CUSTOMER_ID],
                              fields='domains(creationTime)')
     for domain in domains:
-        creation_timestamp = int(domain['creationTime'])/1000
+        creation_timestamp = int(domain['creationTime']) / 1000
         domain_creation = datetime.datetime.fromtimestamp(creation_timestamp)
         if domain_creation < oldest:
             oldest = domain_creation
@@ -64,10 +69,12 @@ def doGetCustomerInfo():
     throw_reasons = [gapi.errors.ErrorReason.INVALID]
     while True:
         try:
-            usage = gapi.get_all_pages(rep.customerUsageReports(), 'get',
+            usage = gapi.get_all_pages(rep.customerUsageReports(),
+                                       'get',
                                        'usageReports',
                                        throw_reasons=throw_reasons,
-                                       customerId=customerId, date=tryDate,
+                                       customerId=customerId,
+                                       date=tryDate,
                                        parameters=parameters)
             break
         except gapi.errors.GapiInvalidError as e:
@@ -92,22 +99,25 @@ def doUpdateCustomer():
         if myarg in ADDRESS_FIELDS_ARGUMENT_MAP:
             body.setdefault('postalAddress', {})
             arg = ADDRESS_FIELDS_ARGUMENT_MAP[myarg]
-            body['postalAddress'][arg] = sys.argv[i+1]
+            body['postalAddress'][arg] = sys.argv[i + 1]
             i += 2
         elif myarg in ['adminsecondaryemail', 'alternateemail']:
-            body['alternateEmail'] = sys.argv[i+1]
+            body['alternateEmail'] = sys.argv[i + 1]
             i += 2
         elif myarg in ['phone', 'phonenumber']:
-            body['phoneNumber'] = sys.argv[i+1]
+            body['phoneNumber'] = sys.argv[i + 1]
             i += 2
         elif myarg == 'language':
-            body['language'] = sys.argv[i+1]
+            body['language'] = sys.argv[i + 1]
             i += 2
         else:
-            controlflow.invalid_argument_exit(myarg, "gam update customer")
+            controlflow.invalid_argument_exit(myarg, 'gam update customer')
     if not body:
-        controlflow.system_error_exit(2, 'no arguments specified for "gam '
-                                         'update customer"')
-    gapi.call(cd.customers(), 'patch', customerKey=GC_Values[GC_CUSTOMER_ID],
+        controlflow.system_error_exit(
+            2, 'no arguments specified for "gam '
+            'update customer"')
+    gapi.call(cd.customers(),
+              'patch',
+              customerKey=GC_Values[GC_CUSTOMER_ID],
               body=body)
     print('Updated customer')

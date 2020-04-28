@@ -202,12 +202,12 @@
 
 
 
-APACHE HTTP SERVER SUBCOMPONENTS: 
+APACHE HTTP SERVER SUBCOMPONENTS:
 
 The Apache HTTP Server includes a number of subcomponents with
 separate copyright notices and license terms. Your use of the source
 code for the these subcomponents is subject to the terms and
-conditions of the following licenses. 
+conditions of the following licenses.
 
 For the mod_mime_magic component:
 
@@ -273,7 +273,7 @@ For the  server\util_md5.c component:
  *  Original Code Copyright (C) 1994, Jeff Hostetler, Spyglass, Inc.
  *  Portions of Content-MD5 code Copyright (C) 1993, 1994 by Carnegie Mellon
  *     University (see Copyright below).
- *  Portions of Content-MD5 code Copyright (C) 1991 Bell Communications 
+ *  Portions of Content-MD5 code Copyright (C) 1991 Bell Communications
  *     Research, Inc. (Bellcore) (see Copyright below).
  *  Portions extracted from mpack, John G. Myers - jgm+@cmu.edu
  *  Content-MD5 Code contributed by Martin Hamilton (martin@net.lut.ac.uk)
@@ -319,10 +319,10 @@ For the  server\util_md5.c component:
  * of an authorized representative of Bellcore.  BELLCORE
  * MAKES NO REPRESENTATIONS ABOUT THE ACCURACY OR SUITABILITY
  * OF THIS MATERIAL FOR ANY PURPOSE.  IT IS PROVIDED "AS IS",
- * WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES.  
+ * WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES.
  */
 
-For the  srclib\apr\include\apr_md5.h component: 
+For the  srclib\apr\include\apr_md5.h component:
 /*
  * This is work is derived from material Copyright RSA Data Security, Inc.
  *
@@ -501,21 +501,21 @@ This program is Copyright (C) Zeus Technology Limited 1996.
 This program may be used and copied freely providing this copyright notice
 is not removed.
 
-This software is provided "as is" and any express or implied waranties, 
+This software is provided "as is" and any express or implied waranties,
 including but not limited to, the implied warranties of merchantability and
-fitness for a particular purpose are disclaimed.  In no event shall 
-Zeus Technology Ltd. be liable for any direct, indirect, incidental, special, 
-exemplary, or consequential damaged (including, but not limited to, 
+fitness for a particular purpose are disclaimed.  In no event shall
+Zeus Technology Ltd. be liable for any direct, indirect, incidental, special,
+exemplary, or consequential damaged (including, but not limited to,
 procurement of substitute good or services; loss of use, data, or profits;
 or business interruption) however caused and on theory of liability.  Whether
-in contract, strict liability or tort (including negligence or otherwise) 
+in contract, strict liability or tort (including negligence or otherwise)
 arising in any way out of the use of this software, even if advised of the
 possibility of such damage.
 
      Written by Adam Twiss (adam@zeus.co.uk).  March 1996
 
 Thanks to the following people for their input:
-  Mike Belshe (mbelshe@netscape.com) 
+  Mike Belshe (mbelshe@netscape.com)
   Michael Campanella (campanella@stevms.enet.dec.com)
 
 */
@@ -532,10 +532,10 @@ without limitation the rights to use, copy, modify, merge, publish,
 distribute, sublicense, and/or sell copies of the Software, and to
 permit persons to whom the Software is furnished to do so, subject to
 the following conditions:
-	
+
 The above copyright notice and this permission notice shall be included
 in all copies or substantial portions of the Software.
-	
+
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.

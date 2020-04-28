@@ -19,13 +19,12 @@ def normalizeCalendarId(calname, checkPrimary=False):
     if not GC_Values[GC_DOMAIN]:
         GC_Values[GC_DOMAIN] = gam._getValueFromOAuth('hd')
     return gam.convertUIDtoEmailAddress(calname,
-                                             email_types=['user', 'resource'])
+                                        email_types=['user', 'resource'])
 
 
 def buildCalendarGAPIObject(calname):
     calendarId = normalizeCalendarId(calname)
-    return (calendarId, gam.buildGAPIServiceObject('calendar',
-                                                        calendarId))
+    return (calendarId, gam.buildGAPIServiceObject('calendar', calendarId))
 
 
 def buildCalendarDataGAPIObject(calname):
@@ -41,6 +40,7 @@ def buildCalendarDataGAPIObject(calname):
         _, cal = buildCalendarGAPIObject(gam._getValueFromOAuth('email'))
     return (calendarId, cal)
 
+
 def printShowACLs(csvFormat):
     calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
     if not cal:
@@ -54,10 +54,9 @@ def printShowACLs(csvFormat):
             i += 1
         else:
             action = ['showacl', 'printacl'][csvFormat]
-            message = f"gam calendar <email> {action}"
+            message = f'gam calendar <email> {action}'
             controlflow.invalid_argument_exit(sys.argv[i], message)
-    acls = gapi.get_all_pages(
-        cal.acl(), 'list', 'items', calendarId=calendarId)
+    acls = gapi.get_all_pages(cal.acl(), 'list', 'items', calendarId=calendarId)
     i = 0
     if csvFormat:
         titles = []
@@ -75,10 +74,11 @@ def printShowACLs(csvFormat):
         else:
             formatted_acl = formatACLRule(rule)
             current_count = display.current_count(i, count)
-            print(f'Calendar: {calendarId}, ACL: {formatted_acl}{current_count}')
+            print(
+                f'Calendar: {calendarId}, ACL: {formatted_acl}{current_count}')
     if csvFormat:
-        display.write_csv_file(
-            rows, titles, f'{calendarId} Calendar ACLs', toDrive)
+        display.write_csv_file(rows, titles, f'{calendarId} Calendar ACLs',
+                               toDrive)
 
 
 def _getCalendarACLScope(i, body):
@@ -87,8 +87,8 @@ def _getCalendarACLScope(i, body):
     body['scope']['type'] = myarg
     i += 1
     if myarg in ['user', 'group']:
-        body['scope']['value'] = gam.normalizeEmailAddressOrUID(
-            sys.argv[i], noUid=True)
+        body['scope']['value'] = gam.normalizeEmailAddressOrUID(sys.argv[i],
+                                                                noUid=True)
         i += 1
     elif myarg == 'domain':
         if i < len(sys.argv) and \
@@ -99,8 +99,8 @@ def _getCalendarACLScope(i, body):
             body['scope']['value'] = GC_Values[GC_DOMAIN]
     elif myarg != 'default':
         body['scope']['type'] = 'user'
-        body['scope']['value'] = gam.normalizeEmailAddressOrUID(
-            myarg, noUid=True)
+        body['scope']['value'] = gam.normalizeEmailAddressOrUID(myarg,
+                                                                noUid=True)
     return i
 
 
@@ -122,22 +122,26 @@ def addACL(function):
         return
     myarg = sys.argv[4].lower().replace('_', '')
     if myarg not in CALENDAR_ACL_ROLES_MAP:
-        controlflow.expected_argument_exit(
-            "Role", ", ".join(CALENDAR_ACL_ROLES_MAP), myarg)
+        controlflow.expected_argument_exit('Role',
+                                           ', '.join(CALENDAR_ACL_ROLES_MAP),
+                                           myarg)
     body = {'role': CALENDAR_ACL_ROLES_MAP[myarg]}
     i = _getCalendarACLScope(5, body)
     sendNotifications = True
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
         if myarg == 'sendnotifications':
-            sendNotifications = gam.getBoolean(sys.argv[i+1], myarg)
+            sendNotifications = gam.getBoolean(sys.argv[i + 1], myarg)
             i += 2
         else:
             controlflow.invalid_argument_exit(
-                sys.argv[i], f"gam calendar <email> {function.lower()}")
+                sys.argv[i], f'gam calendar <email> {function.lower()}')
     print(f'Calendar: {calendarId}, {function} ACL: {formatACLRule(body)}')
-    gapi.call(cal.acl(), 'insert', calendarId=calendarId,
-              body=body, sendNotifications=sendNotifications)
+    gapi.call(cal.acl(),
+              'insert',
+              calendarId=calendarId,
+              body=body,
+              sendNotifications=sendNotifications)
 
 
 def delACL():
@@ -152,8 +156,11 @@ def delACL():
         body = {'role': 'none'}
         _getCalendarACLScope(5, body)
         print(f'Calendar: {calendarId}, Delete ACL: {formatACLScope(body)}')
-        gapi.call(cal.acl(), 'insert', calendarId=calendarId,
-                  body=body, sendNotifications=False)
+        gapi.call(cal.acl(),
+                  'insert',
+                  calendarId=calendarId,
+                  body=body,
+                  sendNotifications=False)
 
 
 def wipeData():
@@ -176,7 +183,7 @@ def printEvents():
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
         if myarg == 'query':
-            q = sys.argv[i+1]
+            q = sys.argv[i + 1]
             i += 2
         elif myarg == 'includedeleted':
             showDeleted = True
@@ -185,30 +192,34 @@ def printEvents():
             showHiddenInvitations = True
             i += 1
         elif myarg == 'after':
-            timeMin = utils.get_time_or_delta_from_now(sys.argv[i+1])
+            timeMin = utils.get_time_or_delta_from_now(sys.argv[i + 1])
             i += 2
         elif myarg == 'before':
-            timeMax = utils.get_time_or_delta_from_now(sys.argv[i+1])
+            timeMax = utils.get_time_or_delta_from_now(sys.argv[i + 1])
             i += 2
         elif myarg == 'timezone':
-            timeZone = sys.argv[i+1]
+            timeZone = sys.argv[i + 1]
             i += 2
         elif myarg == 'updated':
-            updatedMin = utils.get_time_or_delta_from_now(sys.argv[i+1])
+            updatedMin = utils.get_time_or_delta_from_now(sys.argv[i + 1])
             i += 2
         elif myarg == 'todrive':
             toDrive = True
             i += 1
         else:
             controlflow.invalid_argument_exit(
-                sys.argv[i], "gam calendar <email> printevents")
+                sys.argv[i], 'gam calendar <email> printevents')
     page_message = gapi.got_total_items_msg(f'Events for {calendarId}', '')
-    results = gapi.get_all_pages(cal.events(), 'list', 'items',
+    results = gapi.get_all_pages(cal.events(),
+                                 'list',
+                                 'items',
                                  page_message=page_message,
-                                 calendarId=calendarId, q=q,
+                                 calendarId=calendarId,
+                                 q=q,
                                  showDeleted=showDeleted,
                                  showHiddenInvitations=showHiddenInvitations,
-                                 timeMin=timeMin, timeMax=timeMax,
+                                 timeMin=timeMin,
+                                 timeMax=timeMax,
                                  timeZone=timeZone,
                                  updatedMin=updatedMin)
     for result in results:
@@ -237,17 +248,19 @@ def getSendUpdates(myarg, i, cal):
         sendUpdates = 'all'
         i += 1
     elif myarg == 'sendnotifications':
-        sendUpdates = 'all' if gam.getBoolean(sys.argv[i+1], myarg) else 'none'
+        sendUpdates = 'all' if gam.getBoolean(sys.argv[i +
+                                                       1], myarg) else 'none'
         i += 2
     else:  # 'sendupdates':
         sendUpdatesMap = {}
         for val in cal._rootDesc['resources']['events']['methods']['delete'][
                 'parameters']['sendUpdates']['enum']:
             sendUpdatesMap[val.lower()] = val
-        sendUpdates = sendUpdatesMap.get(sys.argv[i+1].lower(), False)
+        sendUpdates = sendUpdatesMap.get(sys.argv[i + 1].lower(), False)
         if not sendUpdates:
-            controlflow.expected_argument_exit(
-                "sendupdates", ", ".join(sendUpdatesMap), sys.argv[i+1])
+            controlflow.expected_argument_exit('sendupdates',
+                                               ', '.join(sendUpdatesMap),
+                                               sys.argv[i + 1])
         i += 2
     return (sendUpdates, i)
 
@@ -265,7 +278,7 @@ def moveOrDeleteEvent(moveOrDelete):
         if myarg in ['notifyattendees', 'sendnotifications', 'sendupdates']:
             sendUpdates, i = getSendUpdates(myarg, i, cal)
         elif myarg in ['id', 'eventid']:
-            eventId = sys.argv[i+1]
+            eventId = sys.argv[i + 1]
             i += 2
         elif myarg in ['query', 'eventquery']:
             controlflow.system_error_exit(
@@ -276,15 +289,19 @@ def moveOrDeleteEvent(moveOrDelete):
             doit = True
             i += 1
         elif moveOrDelete == 'move' and myarg == 'destination':
-            kwargs['destination'] = sys.argv[i+1]
+            kwargs['destination'] = sys.argv[i + 1]
             i += 2
         else:
             controlflow.invalid_argument_exit(
-                sys.argv[i], f"gam calendar <email> {moveOrDelete}event")
+                sys.argv[i], f'gam calendar <email> {moveOrDelete}event')
     if doit:
         print(f' going to {moveOrDelete} eventId {eventId}')
-        gapi.call(cal.events(), moveOrDelete, calendarId=calendarId,
-                  eventId=eventId, sendUpdates=sendUpdates, **kwargs)
+        gapi.call(cal.events(),
+                  moveOrDelete,
+                  calendarId=calendarId,
+                  eventId=eventId,
+                  sendUpdates=sendUpdates,
+                  **kwargs)
     else:
         print(
             f' would {moveOrDelete} eventId {eventId}. Add doit to command ' \
@@ -296,8 +313,10 @@ def infoEvent():
     if not cal:
         return
     eventId = sys.argv[4]
-    result = gapi.call(cal.events(), 'get',
-                       calendarId=calendarId, eventId=eventId)
+    result = gapi.call(cal.events(),
+                       'get',
+                       calendarId=calendarId,
+                       eventId=eventId)
     display.print_json(result)
 
 
@@ -316,25 +335,36 @@ def addOrUpdateEvent(action):
         kwargs = {'eventId': eventId}
         i = 5
         func = 'patch'
-        requires_full_update = ['attendee', 'optionalattendee',
-                                'removeattendee', 'replacedescription']
+        requires_full_update = [
+            'attendee', 'optionalattendee', 'removeattendee',
+            'replacedescription'
+        ]
         for arg in sys.argv[i:]:
             if arg.replace('_', '').lower() in requires_full_update:
                 func = 'update'
-                body = gapi.call(cal.events(), 'get',
-                                 calendarId=calendarId, eventId=eventId)
+                body = gapi.call(cal.events(),
+                                 'get',
+                                 calendarId=calendarId,
+                                 eventId=eventId)
                 break
     sendUpdates, body = getEventAttributes(i, calendarId, cal, body, action)
-    result = gapi.call(cal.events(), func, conferenceDataVersion=1,
-                       supportsAttachments=True, calendarId=calendarId,
-                       sendUpdates=sendUpdates, body=body, fields='id',
+    result = gapi.call(cal.events(),
+                       func,
+                       conferenceDataVersion=1,
+                       supportsAttachments=True,
+                       calendarId=calendarId,
+                       sendUpdates=sendUpdates,
+                       body=body,
+                       fields='id',
                        **kwargs)
     print(f'Event {result["id"]} {action} finished')
 
 
 def _remove_attendee(attendees, remove_email):
-    return [attendee for attendee in attendees
-            if not attendee['email'].lower() == remove_email]
+    return [
+        attendee for attendee in attendees
+        if not attendee['email'].lower() == remove_email
+    ]
 
 
 def getEventAttributes(i, calendarId, cal, body, action):
@@ -348,45 +378,48 @@ def getEventAttributes(i, calendarId, cal, body, action):
             sendUpdates, i = getSendUpdates(myarg, i, cal)
         elif myarg == 'attendee':
             body.setdefault('attendees', [])
-            body['attendees'].append({'email': sys.argv[i+1]})
+            body['attendees'].append({'email': sys.argv[i + 1]})
             i += 2
         elif myarg == 'removeattendee' and action == 'update':
-            remove_email = sys.argv[i+1].lower()
+            remove_email = sys.argv[i + 1].lower()
             if 'attendees' in body:
                 body['attendees'] = _remove_attendee(body['attendees'],
                                                      remove_email)
             i += 2
         elif myarg == 'optionalattendee':
             body.setdefault('attendees', [])
-            body['attendees'].append(
-                {'email': sys.argv[i+1], 'optional': True})
+            body['attendees'].append({
+                'email': sys.argv[i + 1],
+                'optional': True
+            })
             i += 2
         elif myarg == 'anyonecanaddself':
             body['anyoneCanAddSelf'] = True
             i += 1
         elif myarg == 'description':
-            body['description'] = sys.argv[i+1].replace('\\n', '\n')
+            body['description'] = sys.argv[i + 1].replace('\\n', '\n')
             i += 2
         elif myarg == 'replacedescription' and action == 'update':
-            search = sys.argv[i+1]
-            replace = sys.argv[i+2]
+            search = sys.argv[i + 1]
+            replace = sys.argv[i + 2]
             if 'description' in body:
-                body['description'] = re.sub(search, replace, body['description'])
+                body['description'] = re.sub(search, replace,
+                                             body['description'])
             i += 3
         elif myarg == 'start':
-            if sys.argv[i+1].lower() == 'allday':
-                body['start'] = {'date': utils.get_yyyymmdd(sys.argv[i+2])}
+            if sys.argv[i + 1].lower() == 'allday':
+                body['start'] = {'date': utils.get_yyyymmdd(sys.argv[i + 2])}
                 i += 3
             else:
-                start_time = utils.get_time_or_delta_from_now(sys.argv[i+1])
+                start_time = utils.get_time_or_delta_from_now(sys.argv[i + 1])
                 body['start'] = {'dateTime': start_time}
                 i += 2
         elif myarg == 'end':
-            if sys.argv[i+1].lower() == 'allday':
-                body['end'] = {'date': utils.get_yyyymmdd(sys.argv[i+2])}
+            if sys.argv[i + 1].lower() == 'allday':
+                body['end'] = {'date': utils.get_yyyymmdd(sys.argv[i + 2])}
                 i += 3
             else:
-                end_time = utils.get_time_or_delta_from_now(sys.argv[i+1])
+                end_time = utils.get_time_or_delta_from_now(sys.argv[i + 1])
                 body['end'] = {'dateTime': end_time}
                 i += 2
         elif myarg == 'guestscantinviteothers':
@@ -394,64 +427,66 @@ def getEventAttributes(i, calendarId, cal, body, action):
             i += 1
         elif myarg == 'guestscaninviteothers':
             body['guestsCanInviteTohters'] = gam.getBoolean(
-                sys.argv[i+1], 'guestscaninviteothers')
+                sys.argv[i + 1], 'guestscaninviteothers')
             i += 2
         elif myarg == 'guestscantseeothers':
             body['guestsCanSeeOtherGuests'] = False
             i += 1
         elif myarg == 'guestscanseeothers':
             body['guestsCanSeeOtherGuests'] = gam.getBoolean(
-                sys.argv[i+1], 'guestscanseeothers')
+                sys.argv[i + 1], 'guestscanseeothers')
             i += 2
         elif myarg == 'guestscanmodify':
-            body['guestsCanModify'] = gam.getBoolean(
-                sys.argv[i+1], 'guestscanmodify')
+            body['guestsCanModify'] = gam.getBoolean(sys.argv[i + 1],
+                                                     'guestscanmodify')
             i += 2
         elif myarg == 'id':
             if action == 'update':
                 controlflow.invalid_argument_exit(
                     'id', 'gam calendar <calendar> updateevent')
-            body['id'] = sys.argv[i+1]
+            body['id'] = sys.argv[i + 1]
             i += 2
         elif myarg == 'summary':
-            body['summary'] = sys.argv[i+1]
+            body['summary'] = sys.argv[i + 1]
             i += 2
         elif myarg == 'location':
-            body['location'] = sys.argv[i+1]
+            body['location'] = sys.argv[i + 1]
             i += 2
         elif myarg == 'available':
             body['transparency'] = 'transparent'
             i += 1
         elif myarg == 'transparency':
             validTransparency = ['opaque', 'transparent']
-            if sys.argv[i+1].lower() in validTransparency:
-                body['transparency'] = sys.argv[i+1].lower()
+            if sys.argv[i + 1].lower() in validTransparency:
+                body['transparency'] = sys.argv[i + 1].lower()
             else:
-                controlflow.expected_argument_exit(
-                    'transparency',
-                    ", ".join(validTransparency), sys.argv[i+1])
+                controlflow.expected_argument_exit('transparency',
+                                                   ', '.join(validTransparency),
+                                                   sys.argv[i + 1])
             i += 2
         elif myarg == 'visibility':
             validVisibility = ['default', 'public', 'private']
-            if sys.argv[i+1].lower() in validVisibility:
-                body['visibility'] = sys.argv[i+1].lower()
+            if sys.argv[i + 1].lower() in validVisibility:
+                body['visibility'] = sys.argv[i + 1].lower()
             else:
-                controlflow.expected_argument_exit(
-                    "visibility", ", ".join(validVisibility), sys.argv[i+1])
+                controlflow.expected_argument_exit('visibility',
+                                                   ', '.join(validVisibility),
+                                                   sys.argv[i + 1])
             i += 2
         elif myarg == 'tentative':
             body['status'] = 'tentative'
             i += 1
         elif myarg == 'status':
             validStatus = ['confirmed', 'tentative', 'cancelled']
-            if sys.argv[i+1].lower() in validStatus:
-                body['status'] = sys.argv[i+1].lower()
+            if sys.argv[i + 1].lower() in validStatus:
+                body['status'] = sys.argv[i + 1].lower()
             else:
-                controlflow.expected_argument_exit(
-                    'visibility', ', '.join(validStatus), sys.argv[i+1])
+                controlflow.expected_argument_exit('visibility',
+                                                   ', '.join(validStatus),
+                                                   sys.argv[i + 1])
             i += 2
         elif myarg == 'source':
-            body['source'] = {'title': sys.argv[i+1], 'url': sys.argv[i+2]}
+            body['source'] = {'title': sys.argv[i + 1], 'url': sys.argv[i + 2]}
             i += 3
         elif myarg == 'noreminders':
             body['reminders'] = {'useDefault': False}
@@ -460,43 +495,48 @@ def getEventAttributes(i, calendarId, cal, body, action):
             minutes = \
             gam.getInteger(sys.argv[i+1], myarg, minVal=0,
                                 maxVal=CALENDAR_REMINDER_MAX_MINUTES)
-            reminder = {'minutes': minutes, 'method': sys.argv[i+2]}
-            body.setdefault(
-                'reminders', {'overrides': [], 'useDefault': False})
+            reminder = {'minutes': minutes, 'method': sys.argv[i + 2]}
+            body.setdefault('reminders', {'overrides': [], 'useDefault': False})
             body['reminders']['overrides'].append(reminder)
             i += 3
         elif myarg == 'recurrence':
             body.setdefault('recurrence', [])
-            body['recurrence'].append(sys.argv[i+1])
+            body['recurrence'].append(sys.argv[i + 1])
             i += 2
         elif myarg == 'timezone':
-            timeZone = sys.argv[i+1]
+            timeZone = sys.argv[i + 1]
             i += 2
         elif myarg == 'privateproperty':
             if 'extendedProperties' not in body:
                 body['extendedProperties'] = {'private': {}, 'shared': {}}
-            body['extendedProperties']['private'][sys.argv[i+1]] = sys.argv[i+2]
+            body['extendedProperties']['private'][sys.argv[i +
+                                                           1]] = sys.argv[i + 2]
             i += 3
         elif myarg == 'sharedproperty':
             if 'extendedProperties' not in body:
                 body['extendedProperties'] = {'private': {}, 'shared': {}}
-            body['extendedProperties']['shared'][sys.argv[i+1]] = sys.argv[i+2]
+            body['extendedProperties']['shared'][sys.argv[i + 1]] = sys.argv[i +
+                                                                             2]
             i += 3
         elif myarg == 'colorindex':
-            body['colorId'] = gam.getInteger(
-                sys.argv[i+1], myarg, CALENDAR_EVENT_MIN_COLOR_INDEX,
-                CALENDAR_EVENT_MAX_COLOR_INDEX)
+            body['colorId'] = gam.getInteger(sys.argv[i + 1], myarg,
+                                             CALENDAR_EVENT_MIN_COLOR_INDEX,
+                                             CALENDAR_EVENT_MAX_COLOR_INDEX)
             i += 2
         elif myarg == 'hangoutsmeet':
-            body['conferenceData'] = {'createRequest': {
-                'requestId': f'{str(uuid.uuid4())}'}}
+            body['conferenceData'] = {
+                'createRequest': {
+                    'requestId': f'{str(uuid.uuid4())}'
+                }
+            }
             i += 1
         else:
             controlflow.invalid_argument_exit(
                 sys.argv[i], f'gam calendar <email> {action}event')
     if ('recurrence' in body) and (('start' in body) or ('end' in body)):
         if not timeZone:
-            timeZone = gapi.call(cal.calendars(), 'get',
+            timeZone = gapi.call(cal.calendars(),
+                                 'get',
                                  calendarId=calendarId,
                                  fields='timeZone')['timeZone']
         if 'start' in body:
@@ -515,20 +555,20 @@ def modifySettings():
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
         if myarg == 'description':
-            body['description'] = sys.argv[i+1]
+            body['description'] = sys.argv[i + 1]
             i += 2
         elif myarg == 'location':
-            body['location'] = sys.argv[i+1]
+            body['location'] = sys.argv[i + 1]
             i += 2
         elif myarg == 'summary':
-            body['summary'] = sys.argv[i+1]
+            body['summary'] = sys.argv[i + 1]
             i += 2
         elif myarg == 'timezone':
-            body['timeZone'] = sys.argv[i+1]
+            body['timeZone'] = sys.argv[i + 1]
             i += 2
         else:
-            controlflow.invalid_argument_exit(
-                sys.argv[i], "gam calendar <email> modify")
+            controlflow.invalid_argument_exit(sys.argv[i],
+                                              'gam calendar <email> modify')
     gapi.call(cal.calendars(), 'patch', calendarId=calendarId, body=body)
 
 
@@ -540,23 +580,23 @@ def changeAttendees(users):
     while len(sys.argv) > i:
         myarg = sys.argv[i].lower()
         if myarg == 'csv':
-            csv_file = sys.argv[i+1]
+            csv_file = sys.argv[i + 1]
             i += 2
         elif myarg == 'dryrun':
             do_it = False
             i += 1
         elif myarg == 'start':
-            start_date = utils.get_time_or_delta_from_now(sys.argv[i+1])
+            start_date = utils.get_time_or_delta_from_now(sys.argv[i + 1])
             i += 2
         elif myarg == 'end':
-            end_date = utils.get_time_or_delta_from_now(sys.argv[i+1])
+            end_date = utils.get_time_or_delta_from_now(sys.argv[i + 1])
             i += 2
         elif myarg == 'allevents':
             allevents = True
             i += 1
         else:
             controlflow.invalid_argument_exit(
-                sys.argv[i], "gam <users> update calattendees")
+                sys.argv[i], 'gam <users> update calattendees')
     attendee_map = {}
     f = fileutils.open_file(csv_file)
     csvFile = csv.reader(f)
@@ -570,9 +610,13 @@ def changeAttendees(users):
             continue
         page_token = None
         while True:
-            events_page = gapi.call(cal.events(), 'list', calendarId=user,
-                                    pageToken=page_token, timeMin=start_date,
-                                    timeMax=end_date, showDeleted=False,
+            events_page = gapi.call(cal.events(),
+                                    'list',
+                                    calendarId=user,
+                                    pageToken=page_token,
+                                    timeMin=start_date,
+                                    timeMax=end_date,
+                                    showDeleted=False,
                                     showHiddenInvitations=False)
             print(f'Got {len(events_page.get("items", []))}')
             for event in events_page.get('items', []):
@@ -596,8 +640,8 @@ def changeAttendees(users):
                         try:
                             if attendee['email'].lower() in attendee_map:
                                 old_email = attendee['email'].lower()
-                                new_email = attendee_map[attendee['email'].lower(
-                                )]
+                                new_email = attendee_map[
+                                    attendee['email'].lower()]
                                 print(f' SWITCHING attendee {old_email} to ' \
                                     f'{new_email} for {event_summary}')
                                 event['attendees'].remove(attendee)
@@ -612,9 +656,12 @@ def changeAttendees(users):
                     body['attendees'] = event['attendees']
                     print(f'UPDATING {event_summary}')
                     if do_it:
-                        gapi.call(cal.events(), 'patch', calendarId=user,
+                        gapi.call(cal.events(),
+                                  'patch',
+                                  calendarId=user,
                                   eventId=event['id'],
-                                  sendNotifications=False, body=body)
+                                  sendNotifications=False,
+                                  body=body)
                     else:
                         print(' not pulling the trigger.')
                 # else:
@@ -631,8 +678,10 @@ def deleteCalendar(users):
         user, cal = buildCalendarGAPIObject(user)
         if not cal:
             continue
-        gapi.call(cal.calendarList(), 'delete',
-                  soft_errors=True, calendarId=calendarId)
+        gapi.call(cal.calendarList(),
+                  'delete',
+                  soft_errors=True,
+                  calendarId=calendarId)
 
 
 CALENDAR_REMINDER_MAX_MINUTES = 40320
@@ -649,62 +698,71 @@ def getCalendarAttributes(i, body, function):
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
         if myarg == 'selected':
-            body['selected'] = gam.getBoolean(sys.argv[i+1], myarg)
+            body['selected'] = gam.getBoolean(sys.argv[i + 1], myarg)
             i += 2
         elif myarg == 'hidden':
-            body['hidden'] = gam.getBoolean(sys.argv[i+1], myarg)
+            body['hidden'] = gam.getBoolean(sys.argv[i + 1], myarg)
             i += 2
         elif myarg == 'summary':
-            body['summaryOverride'] = sys.argv[i+1]
+            body['summaryOverride'] = sys.argv[i + 1]
             i += 2
         elif myarg == 'colorindex':
-            body['colorId'] = gam.getInteger(
-                sys.argv[i+1], myarg, minVal=CALENDAR_MIN_COLOR_INDEX,
-                maxVal=CALENDAR_MAX_COLOR_INDEX)
+            body['colorId'] = gam.getInteger(sys.argv[i + 1],
+                                             myarg,
+                                             minVal=CALENDAR_MIN_COLOR_INDEX,
+                                             maxVal=CALENDAR_MAX_COLOR_INDEX)
             i += 2
         elif myarg == 'backgroundcolor':
-            body['backgroundColor'] = gam.getColor(sys.argv[i+1])
+            body['backgroundColor'] = gam.getColor(sys.argv[i + 1])
             colorRgbFormat = True
             i += 2
         elif myarg == 'foregroundcolor':
-            body['foregroundColor'] = gam.getColor(sys.argv[i+1])
+            body['foregroundColor'] = gam.getColor(sys.argv[i + 1])
             colorRgbFormat = True
             i += 2
         elif myarg == 'reminder':
             body.setdefault('defaultReminders', [])
-            method = sys.argv[i+1].lower()
+            method = sys.argv[i + 1].lower()
             if method not in CLEAR_NONE_ARGUMENT:
                 if method not in CALENDAR_REMINDER_METHODS:
-                    controlflow.expected_argument_exit("Method", ", ".join(
-                        CALENDAR_REMINDER_METHODS+CLEAR_NONE_ARGUMENT), method)
-                minutes = gam.getInteger(
-                    sys.argv[i+2], myarg, minVal=0,
-                    maxVal=CALENDAR_REMINDER_MAX_MINUTES)
-                body['defaultReminders'].append(
-                    {'method': method, 'minutes': minutes})
+                    controlflow.expected_argument_exit(
+                        'Method', ', '.join(CALENDAR_REMINDER_METHODS +
+                                            CLEAR_NONE_ARGUMENT), method)
+                minutes = gam.getInteger(sys.argv[i + 2],
+                                         myarg,
+                                         minVal=0,
+                                         maxVal=CALENDAR_REMINDER_MAX_MINUTES)
+                body['defaultReminders'].append({
+                    'method': method,
+                    'minutes': minutes
+                })
                 i += 3
             else:
                 i += 2
         elif myarg == 'notification':
             body.setdefault('notificationSettings', {'notifications': []})
-            method = sys.argv[i+1].lower()
+            method = sys.argv[i + 1].lower()
             if method not in CLEAR_NONE_ARGUMENT:
                 if method not in CALENDAR_NOTIFICATION_METHODS:
-                    controlflow.expected_argument_exit("Method", ", ".join(
-                        CALENDAR_NOTIFICATION_METHODS+CLEAR_NONE_ARGUMENT), method)
-                eventType = sys.argv[i+2].lower()
+                    controlflow.expected_argument_exit(
+                        'Method', ', '.join(CALENDAR_NOTIFICATION_METHODS +
+                                            CLEAR_NONE_ARGUMENT), method)
+                eventType = sys.argv[i + 2].lower()
                 if eventType not in CALENDAR_NOTIFICATION_TYPES_MAP:
-                    controlflow.expected_argument_exit("Event", ", ".join(
-                        CALENDAR_NOTIFICATION_TYPES_MAP), eventType)
-                notice = {'method': method,
-                          'type': CALENDAR_NOTIFICATION_TYPES_MAP[eventType]}
+                    controlflow.expected_argument_exit(
+                        'Event', ', '.join(CALENDAR_NOTIFICATION_TYPES_MAP),
+                        eventType)
+                notice = {
+                    'method': method,
+                    'type': CALENDAR_NOTIFICATION_TYPES_MAP[eventType]
+                }
                 body['notificationSettings']['notifications'].append(notice)
                 i += 3
             else:
                 i += 2
         else:
-            controlflow.invalid_argument_exit(
-                sys.argv[i], f"gam {function} calendar")
+            controlflow.invalid_argument_exit(sys.argv[i],
+                                              f'gam {function} calendar')
     return colorRgbFormat
 
 
@@ -721,8 +779,11 @@ def addCalendar(users):
             continue
         current_count = display.current_count(i, count)
         print(f'Subscribing {user} to calendar {calendarId}{current_count}')
-        gapi.call(cal.calendarList(), 'insert', soft_errors=True,
-                  body=body, colorRgbFormat=colorRgbFormat)
+        gapi.call(cal.calendarList(),
+                  'insert',
+                  soft_errors=True,
+                  body=body,
+                  colorRgbFormat=colorRgbFormat)
 
 
 def updateCalendar(users):
@@ -740,13 +801,17 @@ def updateCalendar(users):
         print(f"Updating {user}'s subscription to calendar ' \
               f'{calendarId}{current_count}")
         calId = calendarId if calendarId != 'primary' else user
-        gapi.call(cal.calendarList(), 'patch', soft_errors=True,
-                  calendarId=calId, body=body, colorRgbFormat=colorRgbFormat)
+        gapi.call(cal.calendarList(),
+                  'patch',
+                  soft_errors=True,
+                  calendarId=calId,
+                  body=body,
+                  colorRgbFormat=colorRgbFormat)
 
 
 def _showCalendar(userCalendar, j, jcount):
     current_count = display.current_count(j, jcount)
-    summary = userCalendar.get("summaryOverride", userCalendar["summary"])
+    summary = userCalendar.get('summaryOverride', userCalendar['summary'])
     print(f'  Calendar: {userCalendar["id"]}{current_count}')
     print(f'    Summary: {summary}')
     print(f'    Description: {userCalendar.get("description", "")}')
@@ -780,7 +845,8 @@ def infoCalendar(users):
         user, cal = buildCalendarGAPIObject(user)
         if not cal:
             continue
-        result = gapi.call(cal.calendarList(), 'get',
+        result = gapi.call(cal.calendarList(),
+                           'get',
                            soft_errors=True,
                            calendarId=calendarId)
         if result:
@@ -809,8 +875,10 @@ def printShowCalendars(users, csvFormat):
         user, cal = buildCalendarGAPIObject(user)
         if not cal:
             continue
-        result = gapi.get_all_pages(
-            cal.calendarList(), 'list', 'items', soft_errors=True)
+        result = gapi.get_all_pages(cal.calendarList(),
+                                    'list',
+                                    'items',
+                                    soft_errors=True)
         jcount = len(result)
         if not csvFormat:
             print(f'User: {user}, Calendars:{display.current_count(i, count)}')
@@ -825,8 +893,9 @@ def printShowCalendars(users, csvFormat):
                 continue
             for userCalendar in result:
                 row = {'primaryEmail': user}
-                display.add_row_titles_to_csv_file(utils.flatten_json(
-                    userCalendar, flattened=row), csvRows, titles)
+                display.add_row_titles_to_csv_file(
+                    utils.flatten_json(userCalendar, flattened=row), csvRows,
+                    titles)
     if csvFormat:
         display.sort_csv_titles(['primaryEmail', 'id'], titles)
         display.write_csv_file(csvRows, titles, 'Calendars', todrive)
@@ -840,8 +909,10 @@ def showCalSettings(users):
         user, cal = buildCalendarGAPIObject(user)
         if not cal:
             continue
-        feed = gapi.get_all_pages(
-            cal.settings(), 'list', 'items', soft_errors=True)
+        feed = gapi.get_all_pages(cal.settings(),
+                                  'list',
+                                  'items',
+                                  soft_errors=True)
         if feed:
             current_count = display.current_count(i, count)
             print(f'User: {user}, Calendar Settings:{current_count}')
@@ -862,11 +933,11 @@ def transferSecCals(users):
             remove_source_user = False
             i += 1
         elif myarg == 'sendnotifications':
-            sendNotifications = gam.getBoolean(sys.argv[i+1], myarg)
+            sendNotifications = gam.getBoolean(sys.argv[i + 1], myarg)
             i += 2
         else:
-            controlflow.invalid_argument_exit(
-                sys.argv[i], "gam <users> transfer seccals")
+            controlflow.invalid_argument_exit(sys.argv[i],
+                                              'gam <users> transfer seccals')
     if remove_source_user:
         target_user, target_cal = buildCalendarGAPIObject(target_user)
         if not target_cal:
@@ -875,20 +946,38 @@ def transferSecCals(users):
         user, source_cal = buildCalendarGAPIObject(user)
         if not source_cal:
             continue
-        calendars = gapi.get_all_pages(source_cal.calendarList(), 'list',
-                                       'items', soft_errors=True,
-                                       minAccessRole='owner', showHidden=True,
+        calendars = gapi.get_all_pages(source_cal.calendarList(),
+                                       'list',
+                                       'items',
+                                       soft_errors=True,
+                                       minAccessRole='owner',
+                                       showHidden=True,
                                        fields='items(id),nextPageToken')
         for calendar in calendars:
             calendarId = calendar['id']
             if calendarId.find('@group.calendar.google.com') != -1:
-                body = {'role': 'owner',
-                        'scope': {'type': 'user', 'value': target_user}}
-                gapi.call(source_cal.acl(), 'insert', calendarId=calendarId,
-                          body=body, sendNotifications=sendNotifications)
+                body = {
+                    'role': 'owner',
+                    'scope': {
+                        'type': 'user',
+                        'value': target_user
+                    }
+                }
+                gapi.call(source_cal.acl(),
+                          'insert',
+                          calendarId=calendarId,
+                          body=body,
+                          sendNotifications=sendNotifications)
                 if remove_source_user:
-                    body = {'role': 'none',
-                            'scope': {'type': 'user', 'value': user}}
-                    gapi.call(target_cal.acl(), 'insert',
-                              calendarId=calendarId, body=body,
+                    body = {
+                        'role': 'none',
+                        'scope': {
+                            'type': 'user',
+                            'value': user
+                        }
+                    }
+                    gapi.call(target_cal.acl(),
+                              'insert',
+                              calendarId=calendarId,
+                              body=body,
                               sendNotifications=sendNotifications)

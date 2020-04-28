@@ -5,7 +5,7 @@ Please confirm the following:
 * I am typing the command as described in the GAM Wiki at https://github.com/jay0lee/gam/wiki
 
 Full steps to reproduce the issue:
-1. 
+1.
 2.
 3.
 

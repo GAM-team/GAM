@@ -20,29 +20,33 @@ def doUpdateCros():
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
         if myarg == 'user':
-            update_body['annotatedUser'] = sys.argv[i+1]
+            update_body['annotatedUser'] = sys.argv[i + 1]
             i += 2
         elif myarg == 'location':
-            update_body['annotatedLocation'] = sys.argv[i+1]
+            update_body['annotatedLocation'] = sys.argv[i + 1]
             i += 2
         elif myarg == 'notes':
-            update_body['notes'] = sys.argv[i+1].replace('\\n', '\n')
+            update_body['notes'] = sys.argv[i + 1].replace('\\n', '\n')
             i += 2
         elif myarg in ['tag', 'asset', 'assetid']:
-            update_body['annotatedAssetId'] = sys.argv[i+1]
+            update_body['annotatedAssetId'] = sys.argv[i + 1]
             i += 2
         elif myarg in ['ou', 'org']:
-            orgUnitPath = gam.getOrgUnitItem(sys.argv[i+1])
+            orgUnitPath = gam.getOrgUnitItem(sys.argv[i + 1])
             i += 2
         elif myarg == 'action':
-            action = sys.argv[i+1].lower().replace('_', '').replace('-', '')
+            action = sys.argv[i + 1].lower().replace('_', '').replace('-', '')
             deprovisionReason = None
-            if action in ['deprovisionsamemodelreplace',
-                          'deprovisionsamemodelreplacement']:
+            if action in [
+                    'deprovisionsamemodelreplace',
+                    'deprovisionsamemodelreplacement'
+            ]:
                 action = 'deprovision'
                 deprovisionReason = 'same_model_replacement'
-            elif action in ['deprovisiondifferentmodelreplace',
-                            'deprovisiondifferentmodelreplacement']:
+            elif action in [
+                    'deprovisiondifferentmodelreplace',
+                    'deprovisiondifferentmodelreplacement'
+            ]:
                 action = 'deprovision'
                 deprovisionReason = 'different_model_replacement'
             elif action in ['deprovisionretiringdevice']:
@@ -62,7 +66,7 @@ def doUpdateCros():
             ack_wipe = True
             i += 1
         else:
-            controlflow.invalid_argument_exit(sys.argv[i], "gam update cros")
+            controlflow.invalid_argument_exit(sys.argv[i], 'gam update cros')
     i = 0
     count = len(devices)
     if action_body:
@@ -86,27 +90,33 @@ def doUpdateCros():
             i += 1
             cur_count = gam.currentCount(i, count)
             print(f' performing action {action} for {deviceId}{cur_count}')
-            gapi.call(cd.chromeosdevices(), function='action',
+            gapi.call(cd.chromeosdevices(),
+                      function='action',
                       customerId=GC_Values[GC_CUSTOMER_ID],
-                      resourceId=deviceId, body=action_body)
+                      resourceId=deviceId,
+                      body=action_body)
     else:
         if update_body:
             for deviceId in devices:
                 i += 1
                 current_count = gam.currentCount(i, count)
                 print(f' updating {deviceId}{current_count}')
-                gapi.call(cd.chromeosdevices(), 'update',
+                gapi.call(cd.chromeosdevices(),
+                          'update',
                           customerId=GC_Values[GC_CUSTOMER_ID],
-                          deviceId=deviceId, body=update_body)
+                          deviceId=deviceId,
+                          body=update_body)
         if orgUnitPath:
             # split moves into max 50 devices per batch
             for l in range(0, len(devices), 50):
-                move_body = {'deviceIds': devices[l:l+50]}
+                move_body = {'deviceIds': devices[l:l + 50]}
                 print(f' moving {len(move_body["deviceIds"])} devices to ' \
                       f'{orgUnitPath}')
-                gapi.call(cd.chromeosdevices(), 'moveDevicesToOu',
+                gapi.call(cd.chromeosdevices(),
+                          'moveDevicesToOu',
                           customerId=GC_Values[GC_CUSTOMER_ID],
-                          orgUnitPath=orgUnitPath, body=move_body)
+                          orgUnitPath=orgUnitPath,
+                          body=move_body)
 
 
 def doGetCrosInfo():
@@ -125,13 +135,13 @@ def doGetCrosInfo():
             noLists = True
             i += 1
         elif myarg == 'listlimit':
-            listLimit = gam.getInteger(sys.argv[i+1], myarg, minVal=-1)
+            listLimit = gam.getInteger(sys.argv[i + 1], myarg, minVal=-1)
             i += 2
         elif myarg in CROS_START_ARGUMENTS:
-            startDate = _getFilterDate(sys.argv[i+1])
+            startDate = _getFilterDate(sys.argv[i + 1])
             i += 2
         elif myarg in CROS_END_ARGUMENTS:
-            endDate = _getFilterDate(sys.argv[i+1])
+            endDate = _getFilterDate(sys.argv[i + 1])
             i += 2
         elif myarg == 'allfields':
             projection = 'FULL'
@@ -148,7 +158,7 @@ def doGetCrosInfo():
             fieldsList.extend(CROS_ARGUMENT_TO_PROPERTY_MAP[myarg])
             i += 1
         elif myarg == 'fields':
-            fieldNameList = sys.argv[i+1]
+            fieldNameList = sys.argv[i + 1]
             for field in fieldNameList.lower().replace(',', ' ').split():
                 if field in CROS_ARGUMENT_TO_PROPERTY_MAP:
                     fieldsList.extend(CROS_ARGUMENT_TO_PROPERTY_MAP[field])
@@ -158,21 +168,21 @@ def doGetCrosInfo():
                         projection = 'FULL'
                         noLists = False
                 else:
-                    controlflow.invalid_argument_exit(
-                        field, "gam info cros fields")
+                    controlflow.invalid_argument_exit(field,
+                                                      'gam info cros fields')
             i += 2
         elif myarg == 'downloadfile':
-            downloadfile = sys.argv[i+1]
+            downloadfile = sys.argv[i + 1]
             if downloadfile.lower() == 'latest':
                 downloadfile = downloadfile.lower()
             i += 2
         elif myarg == 'targetfolder':
-            targetFolder = os.path.expanduser(sys.argv[i+1])
+            targetFolder = os.path.expanduser(sys.argv[i + 1])
             if not os.path.isdir(targetFolder):
                 os.makedirs(targetFolder)
             i += 2
         else:
-            controlflow.invalid_argument_exit(sys.argv[i], "gam info cros")
+            controlflow.invalid_argument_exit(sys.argv[i], 'gam info cros')
     if fieldsList:
         fieldsList.append('deviceId')
         fields = ','.join(set(fieldsList)).replace('.', '/')
@@ -182,9 +192,11 @@ def doGetCrosInfo():
     device_count = len(devices)
     for deviceId in devices:
         i += 1
-        cros = gapi.call(cd.chromeosdevices(), 'get',
+        cros = gapi.call(cd.chromeosdevices(),
+                         'get',
                          customerId=GC_Values[GC_CUSTOMER_ID],
-                         deviceId=deviceId, projection=projection,
+                         deviceId=deviceId,
+                         projection=projection,
                          fields=fields)
         print(f'CrOS Device: {deviceId} ({i} of {device_count})')
         if 'notes' in cros:
@@ -208,8 +220,8 @@ def doGetCrosInfo():
                 print('  activeTimeRanges')
                 num_ranges = min(lenATR, listLimit or lenATR)
                 for activeTimeRange in activeTimeRanges[:num_ranges]:
-                    active_date = activeTimeRange["date"]
-                    active_time = activeTimeRange["activeTime"]
+                    active_date = activeTimeRange['date']
+                    active_time = activeTimeRange['activeTime']
                     duration = utils.formatMilliSeconds(active_time)
                     minutes = active_time // 60000
                     print(f'    date: {active_date}')
@@ -222,16 +234,17 @@ def doGetCrosInfo():
                 print('  recentUsers')
                 num_ranges = min(lenRU, listLimit or lenRU)
                 for recentUser in recentUsers[:num_ranges]:
-                    useremail = recentUser.get("email")
+                    useremail = recentUser.get('email')
                     if not useremail:
-                        if recentUser["type"] == "USER_TYPE_UNMANAGED":
+                        if recentUser['type'] == 'USER_TYPE_UNMANAGED':
                             useremail = 'UnmanagedUser'
                         else:
                             useremail = 'Unknown'
                     print(f'    type: {recentUser["type"]}')
                     print(f'      email: {useremail}')
-            deviceFiles = _filterCreateReportTime(
-                cros.get('deviceFiles', []), 'createTime', startDate, endDate)
+            deviceFiles = _filterCreateReportTime(cros.get('deviceFiles',
+                                                           []), 'createTime',
+                                                  startDate, endDate)
             lenDF = len(deviceFiles)
             if lenDF:
                 num_ranges = min(lenDF, listLimit or lenDF)
@@ -255,22 +268,21 @@ def doGetCrosInfo():
                                   f'available to download.')
                             deviceFile = None
                     if deviceFile:
-                        created = deviceFile["createTime"]
+                        created = deviceFile['createTime']
                         downloadfile = f'cros-logs-{deviceId}-{created}.zip'
                         downloadfilename = os.path.join(targetFolder,
                                                         downloadfile)
                         dl_url = deviceFile['downloadUrl']
                         _, content = cd._http.request(dl_url)
-                        fileutils.write_file(downloadfilename, content,
+                        fileutils.write_file(downloadfilename,
+                                             content,
                                              mode='wb',
                                              continue_on_error=True)
                         print(f'Downloaded: {downloadfilename}')
                 elif downloadfile:
                     print('ERROR: no files to download.')
             cpuStatusReports = _filterCreateReportTime(
-                cros.get('cpuStatusReports', []),
-                'reportTime',
-                startDate,
+                cros.get('cpuStatusReports', []), 'reportTime', startDate,
                 endDate)
             lenCSR = len(cpuStatusReports)
             if lenCSR:
@@ -284,8 +296,8 @@ def doGetCrosInfo():
                         temp_label = tempInfo['label'].strip()
                         temperature = tempInfo['temperature']
                         print(f'        {temp_label}: {temperature}')
-                    pct_info = cpuStatusReport["cpuUtilizationPercentageInfo"]
-                    util = ",".join([str(x) for x in pct_info])
+                    pct_info = cpuStatusReport['cpuUtilizationPercentageInfo']
+                    util = ','.join([str(x) for x in pct_info])
                     print(f'      cpuUtilizationPercentageInfo: {util}')
             diskVolumeReports = cros.get('diskVolumeReports', [])
             lenDVR = len(diskVolumeReports)
@@ -303,16 +315,16 @@ def doGetCrosInfo():
                         print(f'        storageFree: {vstorage_free}')
                         print(f'        storageTotal: {vstorage_total}')
             systemRamFreeReports = _filterCreateReportTime(
-                cros.get('systemRamFreeReports', []),
-                'reportTime', startDate, endDate)
+                cros.get('systemRamFreeReports', []), 'reportTime', startDate,
+                endDate)
             lenSRFR = len(systemRamFreeReports)
             if lenSRFR:
                 print('  systemRamFreeReports')
                 num_ranges = min(lenSRFR, listLimit or lenSRFR)
                 for systemRamFreeReport in systemRamFreeReports[:num_ranges]:
-                    report_time = systemRamFreeReport["reportTime"]
-                    free_info = systemRamFreeReport["systemRamFreeInfo"]
-                    free_ram = ",".join(free_info)
+                    report_time = systemRamFreeReport['reportTime']
+                    free_info = systemRamFreeReport['systemRamFreeInfo']
+                    free_ram = ','.join(free_info)
                     print(f'    reportTime: {report_time}')
                     print(f'      systemRamFreeInfo: {free_ram}')
 
@@ -320,11 +332,15 @@ def doGetCrosInfo():
 def doPrintCrosActivity():
     cd = gapi_directory.buildGAPIObject()
     todrive = False
-    titles = ['deviceId', 'annotatedAssetId',
-              'annotatedLocation', 'serialNumber', 'orgUnitPath']
+    titles = [
+        'deviceId', 'annotatedAssetId', 'annotatedLocation', 'serialNumber',
+        'orgUnitPath'
+    ]
     csvRows = []
-    fieldsList = ['deviceId', 'annotatedAssetId',
-                  'annotatedLocation', 'serialNumber', 'orgUnitPath']
+    fieldsList = [
+        'deviceId', 'annotatedAssetId', 'annotatedLocation', 'serialNumber',
+        'orgUnitPath'
+    ]
     startDate = endDate = None
     selectActiveTimeRanges = selectDeviceFiles = selectRecentUsers = False
     listLimit = 0
@@ -335,10 +351,10 @@ def doPrintCrosActivity():
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
         if myarg in ['query', 'queries']:
-            queries = gam.getQueries(myarg, sys.argv[i+1])
+            queries = gam.getQueries(myarg, sys.argv[i + 1])
             i += 2
         elif myarg == 'limittoou':
-            orgUnitPath = gam.getOrgUnitItem(sys.argv[i+1])
+            orgUnitPath = gam.getOrgUnitItem(sys.argv[i + 1])
             i += 2
         elif myarg == 'todrive':
             todrive = True
@@ -360,32 +376,35 @@ def doPrintCrosActivity():
             selectRecentUsers = True
             i += 1
         elif myarg in CROS_START_ARGUMENTS:
-            startDate = _getFilterDate(sys.argv[i+1])
+            startDate = _getFilterDate(sys.argv[i + 1])
             i += 2
         elif myarg in CROS_END_ARGUMENTS:
-            endDate = _getFilterDate(sys.argv[i+1])
+            endDate = _getFilterDate(sys.argv[i + 1])
             i += 2
         elif myarg == 'listlimit':
-            listLimit = gam.getInteger(sys.argv[i+1], myarg, minVal=0)
+            listLimit = gam.getInteger(sys.argv[i + 1], myarg, minVal=0)
             i += 2
         elif myarg == 'delimiter':
-            delimiter = sys.argv[i+1]
+            delimiter = sys.argv[i + 1]
             i += 2
         else:
-            controlflow.invalid_argument_exit(
-                sys.argv[i], "gam print crosactivity")
+            controlflow.invalid_argument_exit(sys.argv[i],
+                                              'gam print crosactivity')
     if not selectActiveTimeRanges and \
        not selectDeviceFiles and \
        not selectRecentUsers:
         selectActiveTimeRanges = selectRecentUsers = True
     if selectRecentUsers:
         fieldsList.append('recentUsers')
-        display.add_titles_to_csv_file(['recentUsers.email', ], titles)
+        display.add_titles_to_csv_file([
+            'recentUsers.email',
+        ], titles)
     if selectActiveTimeRanges:
         fieldsList.append('activeTimeRanges')
-        titles_to_add = ['activeTimeRanges.date',
-                         'activeTimeRanges.duration',
-                         'activeTimeRanges.minutes']
+        titles_to_add = [
+            'activeTimeRanges.date', 'activeTimeRanges.duration',
+            'activeTimeRanges.minutes'
+        ]
         display.add_titles_to_csv_file(titles_to_add, titles)
     if selectDeviceFiles:
         fieldsList.append('deviceFiles')
@@ -395,13 +414,15 @@ def doPrintCrosActivity():
     for query in queries:
         gam.printGettingAllItems('CrOS Devices', query)
         page_message = gapi.got_total_items_msg('CrOS Devices', '...\n')
-        all_cros = gapi.get_all_pages(cd.chromeosdevices(), 'list',
+        all_cros = gapi.get_all_pages(cd.chromeosdevices(),
+                                      'list',
                                       'chromeosdevices',
                                       page_message=page_message,
                                       query=query,
                                       customerId=GC_Values[GC_CUSTOMER_ID],
                                       projection='FULL',
-                                      fields=fields, orgUnitPath=orgUnitPath)
+                                      fields=fields,
+                                      orgUnitPath=orgUnitPath)
         for cros in all_cros:
             row = {}
             skip_attribs = ['recentUsers', 'activeTimeRanges', 'deviceFiles']
@@ -428,9 +449,9 @@ def doPrintCrosActivity():
                 num_ranges = min(lenRU, listLimit or lenRU)
                 recent_users = []
                 for recentUser in recentUsers[:num_ranges]:
-                    useremail = recentUser.get("email")
+                    useremail = recentUser.get('email')
                     if not useremail:
-                        if recentUser["type"] == "USER_TYPE_UNMANAGED":
+                        if recentUser['type'] == 'USER_TYPE_UNMANAGED':
                             useremail = 'UnmanagedUser'
                         else:
                             useremail = 'Unknown'
@@ -439,8 +460,8 @@ def doPrintCrosActivity():
                 csvRows.append(row)
             if selectDeviceFiles:
                 deviceFiles = _filterCreateReportTime(
-                    cros.get('deviceFiles', []),
-                    'createTime', startDate, endDate)
+                    cros.get('deviceFiles', []), 'createTime', startDate,
+                    endDate)
                 lenDF = len(deviceFiles)
                 num_ranges = min(lenDF, listLimit or lenDF)
                 for deviceFile in deviceFiles[:num_ranges]:
@@ -465,6 +486,7 @@ def _checkTPMVulnerability(cros):
 
 
 def doPrintCrosDevices():
+
     def _getSelectedLists(myarg):
         if myarg in CROS_ACTIVE_TIME_RANGES_ARGUMENTS:
             selectedLists['activeTimeRanges'] = True
@@ -485,8 +507,8 @@ def doPrintCrosDevices():
     fieldsTitles = {}
     titles = []
     csvRows = []
-    display.add_field_to_csv_file(
-        'deviceid', CROS_ARGUMENT_TO_PROPERTY_MAP, fieldsList, fieldsTitles, titles)
+    display.add_field_to_csv_file('deviceid', CROS_ARGUMENT_TO_PROPERTY_MAP,
+                                  fieldsList, fieldsTitles, titles)
     projection = orderBy = sortOrder = orgUnitPath = None
     queries = [None]
     noLists = sortHeaders = False
@@ -497,10 +519,10 @@ def doPrintCrosDevices():
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
         if myarg in ['query', 'queries']:
-            queries = gam.getQueries(myarg, sys.argv[i+1])
+            queries = gam.getQueries(myarg, sys.argv[i + 1])
             i += 2
         elif myarg == 'limittoou':
-            orgUnitPath = gam.getOrgUnitItem(sys.argv[i+1])
+            orgUnitPath = gam.getOrgUnitItem(sys.argv[i + 1])
             i += 2
         elif myarg == 'todrive':
             todrive = True
@@ -510,21 +532,24 @@ def doPrintCrosDevices():
             selectedLists = {}
             i += 1
         elif myarg == 'listlimit':
-            listLimit = gam.getInteger(sys.argv[i+1], myarg, minVal=0)
+            listLimit = gam.getInteger(sys.argv[i + 1], myarg, minVal=0)
             i += 2
         elif myarg in CROS_START_ARGUMENTS:
-            startDate = _getFilterDate(sys.argv[i+1])
+            startDate = _getFilterDate(sys.argv[i + 1])
             i += 2
         elif myarg in CROS_END_ARGUMENTS:
-            endDate = _getFilterDate(sys.argv[i+1])
+            endDate = _getFilterDate(sys.argv[i + 1])
             i += 2
         elif myarg == 'orderby':
-            orderBy = sys.argv[i+1].lower().replace('_', '')
-            validOrderBy = ['location', 'user', 'lastsync',
-                            'notes', 'serialnumber', 'status', 'supportenddate']
+            orderBy = sys.argv[i + 1].lower().replace('_', '')
+            validOrderBy = [
+                'location', 'user', 'lastsync', 'notes', 'serialnumber',
+                'status', 'supportenddate'
+            ]
             if orderBy not in validOrderBy:
-                controlflow.expected_argument_exit(
-                    "orderby", ", ".join(validOrderBy), orderBy)
+                controlflow.expected_argument_exit('orderby',
+                                                   ', '.join(validOrderBy),
+                                                   orderBy)
             if orderBy == 'location':
                 orderBy = 'annotatedLocation'
             elif orderBy == 'user':
@@ -559,11 +584,12 @@ def doPrintCrosDevices():
             _getSelectedLists(myarg)
             i += 1
         elif myarg in CROS_ARGUMENT_TO_PROPERTY_MAP:
-            display.add_field_to_fields_list(
-                myarg, CROS_ARGUMENT_TO_PROPERTY_MAP, fieldsList)
+            display.add_field_to_fields_list(myarg,
+                                             CROS_ARGUMENT_TO_PROPERTY_MAP,
+                                             fieldsList)
             i += 1
         elif myarg == 'fields':
-            fieldNameList = sys.argv[i+1]
+            fieldNameList = sys.argv[i + 1]
             for field in fieldNameList.lower().replace(',', ' ').split():
                 if field in CROS_LISTS_ARGUMENTS:
                     _getSelectedLists(field)
@@ -571,17 +597,18 @@ def doPrintCrosDevices():
                     display.add_field_to_fields_list(
                         field, CROS_ARGUMENT_TO_PROPERTY_MAP, fieldsList)
                 else:
-                    controlflow.invalid_argument_exit(
-                        field, "gam print cros fields")
+                    controlflow.invalid_argument_exit(field,
+                                                      'gam print cros fields')
             i += 2
         else:
-            controlflow.invalid_argument_exit(sys.argv[i], "gam print cros")
+            controlflow.invalid_argument_exit(sys.argv[i], 'gam print cros')
     if selectedLists:
         noLists = False
         projection = 'FULL'
         for selectList in selectedLists:
-            display.add_field_to_fields_list(
-                selectList, CROS_ARGUMENT_TO_PROPERTY_MAP, fieldsList)
+            display.add_field_to_fields_list(selectList,
+                                             CROS_ARGUMENT_TO_PROPERTY_MAP,
+                                             fieldsList)
     if fieldsList:
         fieldsList.append('deviceId')
         fields = f'nextPageToken,chromeosdevices({",".join(set(fieldsList))})'.replace(
@@ -591,13 +618,16 @@ def doPrintCrosDevices():
     for query in queries:
         gam.printGettingAllItems('CrOS Devices', query)
         page_message = gapi.got_total_items_msg('CrOS Devices', '...\n')
-        all_cros = gapi.get_all_pages(cd.chromeosdevices(), 'list',
+        all_cros = gapi.get_all_pages(cd.chromeosdevices(),
+                                      'list',
                                       'chromeosdevices',
-                                      page_message=page_message, query=query,
+                                      page_message=page_message,
+                                      query=query,
                                       customerId=GC_Values[GC_CUSTOMER_ID],
                                       projection=projection,
                                       orgUnitPath=orgUnitPath,
-                                      orderBy=orderBy, sortOrder=sortOrder,
+                                      orderBy=orderBy,
+                                      sortOrder=sortOrder,
                                       fields=fields)
         for cros in all_cros:
             _checkTPMVulnerability(cros)
@@ -612,8 +642,9 @@ def doPrintCrosDevices():
                     tempInfos = cpuStatusReport.get('cpuTemperatureInfo', [])
                     for tempInfo in tempInfos:
                         tempInfo['label'] = tempInfo['label'].strip()
-                display.add_row_titles_to_csv_file(utils.flatten_json(
-                    cros, listLimit=listLimit), csvRows, titles)
+                display.add_row_titles_to_csv_file(
+                    utils.flatten_json(cros, listLimit=listLimit), csvRows,
+                    titles)
             continue
         for cros in all_cros:
             if 'notes' in cros:
@@ -623,11 +654,11 @@ def doPrintCrosDevices():
                     cros['autoUpdateExpiration'])
             row = {}
             for attrib in cros:
-                if attrib not in set(['kind', 'etag', 'tpmVersionInfo',
-                                      'recentUsers', 'activeTimeRanges',
-                                      'deviceFiles', 'cpuStatusReports',
-                                      'diskVolumeReports',
-                                      'systemRamFreeReports']):
+                if attrib not in set([
+                        'kind', 'etag', 'tpmVersionInfo', 'recentUsers',
+                        'activeTimeRanges', 'deviceFiles', 'cpuStatusReports',
+                        'diskVolumeReports', 'systemRamFreeReports'
+                ]):
                     row[attrib] = cros[attrib]
             if selectedLists.get('activeTimeRanges'):
                 timergs = cros.get('activeTimeRanges', [])
@@ -649,8 +680,8 @@ def doPrintCrosDevices():
             else:
                 cpu_reports = []
             cpuStatusReports = _filterCreateReportTime(cpu_reports,
-                                                       'reportTime',
-                                                       startDate, endDate)
+                                                       'reportTime', startDate,
+                                                       endDate)
             if selectedLists.get('diskVolumeReports'):
                 diskVolumeReports = cros.get('diskVolumeReports', [])
             else:
@@ -659,10 +690,8 @@ def doPrintCrosDevices():
                 ram_reports = cros.get('systemRamFreeReports', [])
             else:
                 ram_reports = []
-            systemRamFreeReports = _filterCreateReportTime(ram_reports,
-                                                           'reportTime',
-                                                           startDate,
-                                                           endDate)
+            systemRamFreeReports = _filterCreateReportTime(
+                ram_reports, 'reportTime', startDate, endDate)
             if noLists or (not activeTimeRanges and \
                            not recentUsers and \
                            not deviceFiles and \
@@ -707,7 +736,7 @@ def doPrintCrosDevices():
                     tempInfos = cpuStatusReports[i].get('cpuTemperatureInfo',
                                                         [])
                     for tempInfo in tempInfos:
-                        label = tempInfo["label"].strip()
+                        label = tempInfo['label'].strip()
                         base = 'cpuStatusReports.cpuTemperatureInfo.'
                         nrow[f'{base}{label}'] = tempInfo['temperature']
                     cpu_field = 'cpuUtilizationPercentageInfo'
@@ -735,16 +764,18 @@ def doPrintCrosDevices():
                         ','.join(ram_info)
                 display.add_row_titles_to_csv_file(nrow, csvRows, titles)
     if sortHeaders:
-        display.sort_csv_titles(['deviceId', ], titles)
+        display.sort_csv_titles([
+            'deviceId',
+        ], titles)
     display.write_csv_file(csvRows, titles, 'CrOS', todrive)
 
 
 def getCrOSDeviceEntity(i, cd):
     myarg = sys.argv[i].lower()
     if myarg == 'cros_sn':
-        return i+2, gam.getUsersToModify('cros_sn', sys.argv[i+1])
+        return i + 2, gam.getUsersToModify('cros_sn', sys.argv[i + 1])
     if myarg == 'query':
-        return i+2, gam.getUsersToModify('crosquery', sys.argv[i+1])
+        return i + 2, gam.getUsersToModify('crosquery', sys.argv[i + 1])
     if myarg[:6] == 'query:':
         query = sys.argv[i][6:]
         if query[:12].lower() == 'orgunitpath:':
@@ -752,12 +783,14 @@ def getCrOSDeviceEntity(i, cd):
         else:
             kwargs = {'query': query}
         fields = 'nextPageToken,chromeosdevices(deviceId)'
-        devices = gapi.get_all_pages(cd.chromeosdevices(), 'list',
+        devices = gapi.get_all_pages(cd.chromeosdevices(),
+                                     'list',
                                      'chromeosdevices',
                                      customerId=GC_Values[GC_CUSTOMER_ID],
-                                     fields=fields, **kwargs)
-        return i+1, [device['deviceId'] for device in devices]
-    return i+1, sys.argv[i].replace(',', ' ').split()
+                                     fields=fields,
+                                     **kwargs)
+        return i + 1, [device['deviceId'] for device in devices]
+    return i + 1, sys.argv[i].replace(',', ' ').split()
 
 
 def _getFilterDate(dateStr):
@@ -769,8 +802,8 @@ def _filterTimeRanges(activeTimeRanges, startDate, endDate):
         return activeTimeRanges
     filteredTimeRanges = []
     for timeRange in activeTimeRanges:
-        activityDate = datetime.datetime.strptime(
-            timeRange['date'], YYYYMMDD_FORMAT)
+        activityDate = datetime.datetime.strptime(timeRange['date'],
+                                                  YYYYMMDD_FORMAT)
         if ((startDate is None) or \
             (activityDate >= startDate)) and \
            ((endDate is None) or \

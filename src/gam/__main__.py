@@ -29,6 +29,7 @@ from multiprocessing import set_start_method
 from gam import controlflow
 import gam
 
+
 def main(argv):
     freeze_support()
     if sys.platform == 'darwin':
@@ -37,11 +38,13 @@ def main(argv):
         # command line arguments
         set_start_method('fork')
     if sys.version_info[0] < 3 or sys.version_info[1] < 6:
-        controlflow.system_error_exit(5,
-                                      f'GAM requires Python 3.6 or newer. You are running %s.%s.%s. Please upgrade your Python version or use one of the binary GAM downloads.' % sys.version_info[
-                                                                                                                                                                                  :3])
+        controlflow.system_error_exit(
+            5,
+            f'GAM requires Python 3.6 or newer. You are running %s.%s.%s. Please upgrade your Python version or use one of the binary GAM downloads.'
+            % sys.version_info[:3])
     sys.exit(gam.ProcessGAMCommand(sys.argv))
 
+
 # Run from command line
-if __name__ == "__main__":
+if __name__ == '__main__':
     main(sys.argv)
