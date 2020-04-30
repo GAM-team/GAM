@@ -31,6 +31,7 @@ class GapiConditionNotMetError(Exception):
 class GapiCyclicMembershipsNotAllowedError(Exception):
     pass
 
+
 class GapiDomainCannotUseApisError(Exception):
     pass
 
