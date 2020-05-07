@@ -107,4 +107,5 @@ cd $whereibelong
 $pip install --upgrade pip
 $pip list --outdated --format=freeze | grep -v '^\-e' | cut -d = -f 1  | xargs -n1 $pip install -U
 $pip install --upgrade -r src/requirements.txt
-$pip install --upgrade https://github.com/pyinstaller/pyinstaller/archive/develop.tar.gz
+$pip install --upgrade git+git://github.com/pyinstaller/pyinstaller.git@$PYINSTALLER_COMMIT
+ 
