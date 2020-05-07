@@ -66,7 +66,8 @@ $pip install --upgrade -r src/requirements.txt
 echo "Downloading PyInstaller..."
 wget --quiet https://github.com/pyinstaller/pyinstaller/archive/$PYINSTALLER_COMMIT.tar.gz
 tar xf $PYINSTALLER_COMMIT.tar.gz
-cd pyinstaller-$PYINSTALLER_COMMIT/bootloader
+mv pyinstaller-$PYINSTALLER_COMMIT pyinstaller
+cd pyinstaller/bootloader
 echo "bootloader before:"
 md5sum ../PyInstaller/bootloader/Windows-${BITS}bit/*
 
