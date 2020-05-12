@@ -5,7 +5,7 @@ default_language_version:
 
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v2.4.0
+    rev: v2.5.0
     hooks:
     -   id: trailing-whitespace
     -   id: end-of-file-fixer
@@ -17,13 +17,13 @@ repos:
     -   id: check-merge-conflict
 
 -   repo: https://github.com/pre-commit/mirrors-yapf
-    rev: v0.29.0
+    rev: v0.30.0
     hooks:
     -   id: yapf
         args: [--style=google, --in-place]
 
 -   repo: https://github.com/PyCQA/pylint
-    rev: pylint-2.4.4
+    rev: pylint-2.5.0
     hooks:
     -   id: pylint
         args: [--output-format=colorized]

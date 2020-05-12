@@ -306,7 +306,9 @@ def showReport():
         elif myarg == 'fulldatarequired':
             fullDataRequired = []
             fdr = sys.argv[i + 1].lower()
-            if fdr and fdr != 'all':
+            if fdr and fdr == 'all':
+                fullDataRequired = 'all'
+            else:
                 fullDataRequired = fdr.replace(',', ' ').split()
             i += 2
         elif myarg == 'start':
@@ -338,23 +340,24 @@ def showReport():
     if report == 'user':
         while True:
             try:
-                if fullDataRequired is not None:
-                    warnings = gapi.get_items(rep.userUsageReport(),
-                                              'get',
-                                              'warnings',
-                                              throw_reasons=throw_reasons,
-                                              date=tryDate,
-                                              userKey=userKey,
-                                              customerId=customerId,
-                                              orgUnitID=orgUnitId,
-                                              fields='warnings')
-                    fullData, tryDate = _check_full_data_available(
-                        warnings, tryDate, fullDataRequired)
-                    if fullData < 0:
-                        print('No user report available.')
-                        sys.exit(1)
-                    if fullData == 0:
-                        continue
+                one_page = gapi.call(rep.userUsageReport(),
+                                     'get',
+                                     throw_reasons=throw_reasons,
+                                     date=tryDate,
+                                     userKey=userKey,
+                                     customerId=customerId,
+                                     orgUnitID=orgUnitId,
+                                     fields='warnings,usageReports',
+                                     maxResults=1)
+                warnings = one_page.get('warnings', [])
+                has_reports = bool(one_page.get('usageReports'))
+                fullData, tryDate = _check_full_data_available(
+                    warnings, tryDate, fullDataRequired, has_reports)
+                if fullData < 0:
+                    print('No user report available.')
+                    sys.exit(1)
+                if fullData == 0:
+                    continue
                 page_message = gapi.got_total_items_msg('Users', '...\n')
                 usage = gapi.get_all_pages(rep.userUsageReport(),
                                            'get',
@@ -397,21 +400,21 @@ def showReport():
     elif report == 'customer':
         while True:
             try:
-                if fullDataRequired is not None:
-                    warnings = gapi.get_items(rep.customerUsageReports(),
-                                              'get',
-                                              'warnings',
-                                              throw_reasons=throw_reasons,
-                                              customerId=customerId,
-                                              date=tryDate,
-                                              fields='warnings')
-                    fullData, tryDate = _check_full_data_available(
-                        warnings, tryDate, fullDataRequired)
-                    if fullData < 0:
-                        print('No customer report available.')
-                        sys.exit(1)
-                    if fullData == 0:
-                        continue
+                first_page = gapi.call(rep.customerUsageReports(),
+                                       'get',
+                                       throw_reasons=throw_reasons,
+                                       customerId=customerId,
+                                       date=tryDate,
+                                       fields='warnings,usageReports')
+                warnings = first_page.get('warnings', [])
+                has_reports = bool(first_page.get('usageReports'))
+                fullData, tryDate = _check_full_data_available(
+                    warnings, tryDate, fullDataRequired, has_reports)
+                if fullData < 0:
+                    print('No customer report available.')
+                    sys.exit(1)
+                if fullData == 0:
+                    continue
                 usage = gapi.get_all_pages(rep.customerUsageReports(),
                                            'get',
                                            'usageReports',
@@ -558,16 +561,21 @@ def _adjust_date(errMsg):
     return str(match_date.group(1))
 
 
-def _check_full_data_available(warnings, tryDate, fullDataRequired):
+def _check_full_data_available(warnings, tryDate, fullDataRequired,
+                               has_reports):
     one_day = datetime.timedelta(days=1)
+    tryDateTime = datetime.datetime.strptime(tryDate, YYYYMMDD_FORMAT)
+    # move to day before if we don't have at least one usageReport
+    if not has_reports:
+        tryDateTime -= one_day
+        return (0, tryDateTime.strftime(YYYYMMDD_FORMAT))
     for warning in warnings:
         if warning['code'] == 'PARTIAL_DATA_AVAILABLE':
             for app in warning['data']:
                 if app['key'] == 'application' and \
                    app['value'] != 'docs' and \
-                   (not fullDataRequired or app['value'] in fullDataRequired):
-                    tryDateTime = datetime.datetime.strptime(
-                        tryDate, YYYYMMDD_FORMAT)
+                   fullDataRequired is not None and \
+                   (fullDataRequired == 'all' or app['value'] in fullDataRequired):
                     tryDateTime -= one_day
                     return (0, tryDateTime.strftime(YYYYMMDD_FORMAT))
         elif warning['code'] == 'DATA_NOT_AVAILABLE':
