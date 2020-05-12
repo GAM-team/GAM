@@ -602,7 +602,7 @@ def doGAMCheckForUpdates(forceCheck=False):
             controlflow.system_error_exit(
                 4, 'GAM Latest Version information not available')
 
-    current_version = gam_version
+    current_version = GAM_VERSION
     now_time = int(time.time())
     if forceCheck:
         check_url = GAM_ALL_RELEASES  # includes pre-releases
@@ -709,15 +709,15 @@ def doGAMVersion(checkForArgs=True):
             else:
                 controlflow.invalid_argument_exit(sys.argv[i], 'gam version')
     if simple:
-        sys.stdout.write(gam_version)
+        sys.stdout.write(GAM_VERSION)
         return
     pyversion = platform.python_version()
     cpu_bits = struct.calcsize('P') * 8
     api_client_ver = pkg_resources.get_distribution(
         'google-api-python-client').version
     print(
-        (f'GAM {gam_version} - {GAM_URL} - {GM_Globals[GM_GAM_TYPE]}\n'
-         f'{gam_author}\n'
+        (f'GAM {GAM_VERSION} - {GAM_URL} - {GM_Globals[GM_GAM_TYPE]}\n'
+         f'{GAM_AUTHOR}\n'
          f'Python {pyversion} {cpu_bits}-bit {sys.version_info.releaselevel}\n'
          f'google-api-python-client {api_client_ver}\n'
          f'{getOSPlatform()} {platform.machine()}\n'
@@ -3296,7 +3296,7 @@ def doPrinterRegister():
         'uuid':
             _getValueFromOAuth('sub'),
         'manufacturer':
-            gam_author,
+            GAM_AUTHOR,
         'model':
             'cp1',
         'gcp_version':
@@ -3308,7 +3308,7 @@ def doPrinterRegister():
         'update_url':
             GAM_RELEASES,
         'firmware':
-            gam_version,
+            GAM_VERSION,
         'semantic_state': {
             'version': '1.0',
             'printer': {
@@ -8609,21 +8609,24 @@ def doCreateOrRotateServiceAccountKeys(iam=None,
             name, local_key_size)
         print(' Uploading new public certificate to Google...')
         max_retries = 10
-        for i in range(1, max_retries+1):
-          try:
-            result = gapi.call(iam.projects().serviceAccounts().keys(),
-                               'upload',
-                               throw_reasons=[gapi_errors.ErrorReason.NOT_FOUND],
-                               name=name,
-                               body={'publicKeyData': publicKeyData})
-            break
-          except gapi_errors.GapiNotFoundError as e:
-              if i == max_retries:
-                  raise e
-              sleep_time = i*5
-              if i > 3:
-                  print(f'Waiting for Service Account creation to complete. Sleeping {sleep_time} seconds\n')
-              time.sleep(sleep_time)
+        for i in range(1, max_retries + 1):
+            try:
+                result = gapi.call(
+                    iam.projects().serviceAccounts().keys(),
+                    'upload',
+                    throw_reasons=[gapi_errors.ErrorReason.NOT_FOUND],
+                    name=name,
+                    body={'publicKeyData': publicKeyData})
+                break
+            except gapi_errors.GapiNotFoundError as e:
+                if i == max_retries:
+                    raise e
+                sleep_time = i * 5
+                if i > 3:
+                    print(
+                        f'Waiting for Service Account creation to complete. Sleeping {sleep_time} seconds\n'
+                    )
+                time.sleep(sleep_time)
         private_key_id = result['name'].rsplit('/', 1)[-1]
         oauth2service_data = _formatOAuth2ServiceData(project_id, client_email,
                                                       client_id, private_key,
@@ -9894,8 +9897,8 @@ def doWhatIs():
                                   ],
                                   userKey=email,
                                   fields='id,primaryEmail')
-        if (user_or_alias['primaryEmail'].lower() == email) or (
-                user_or_alias['id'] == email):
+        if (user_or_alias['primaryEmail'].lower()
+                == email) or (user_or_alias['id'] == email):
             sys.stderr.write(f'{email} is a user\n\n')
             doGetUserInfo(user_email=email)
             return
@@ -12915,9 +12918,8 @@ def getUsersToModify(entity_type=None,
                 query=query)
             for member in members:
                 email = member['primaryEmail']
-                if (checkSuspended is None or
-                        checkSuspended == member['suspended']
-                   ) and email not in usersSet:
+                if (checkSuspended is None or checkSuspended
+                        == member['suspended']) and email not in usersSet:
                     usersSet.add(email)
                     users.append(email)
             if not silent:

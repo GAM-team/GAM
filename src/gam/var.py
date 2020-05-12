@@ -1,3 +1,4 @@
+"""Variables common across modules"""
 import os
 import ssl
 import string
@@ -5,13 +6,13 @@ import sys
 import platform
 import re
 
-gam_author = 'Jay Lee <jay0lee@gmail.com>'
-gam_version = '5.08'
-gam_license = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
+GAM_AUTHOR = 'Jay Lee <jay0lee@gmail.com>'
+GAM_VERSION = '5.09'
+GAM_LICENSE = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 GAM_URL = 'https://git.io/gam'
 GAM_INFO = (
-    f'GAM {gam_version} - {GAM_URL} / {gam_author} / '
+    f'GAM {GAM_VERSION} - {GAM_URL} / {GAM_AUTHOR} / '
     f'Python {platform.python_version()} {sys.version_info.releaselevel} / '
     f'{platform.platform()} {platform.machine()}')
 
@@ -930,7 +931,12 @@ CROS_DISK_VOLUME_REPORTS_ARGUMENTS = [
 CROS_SYSTEM_RAM_FREE_REPORTS_ARGUMENTS = [
     'systemramfreereports',
 ]
-CROS_LISTS_ARGUMENTS = CROS_ACTIVE_TIME_RANGES_ARGUMENTS + CROS_RECENT_USERS_ARGUMENTS + CROS_DEVICE_FILES_ARGUMENTS + CROS_CPU_STATUS_REPORTS_ARGUMENTS + CROS_DISK_VOLUME_REPORTS_ARGUMENTS + CROS_SYSTEM_RAM_FREE_REPORTS_ARGUMENTS
+CROS_LISTS_ARGUMENTS = CROS_ACTIVE_TIME_RANGES_ARGUMENTS + \
+                       CROS_RECENT_USERS_ARGUMENTS + \
+                       CROS_DEVICE_FILES_ARGUMENTS + \
+                       CROS_CPU_STATUS_REPORTS_ARGUMENTS + \
+                       CROS_DISK_VOLUME_REPORTS_ARGUMENTS + \
+                       CROS_SYSTEM_RAM_FREE_REPORTS_ARGUMENTS
 CROS_START_ARGUMENTS = ['start', 'startdate', 'oldestdate']
 CROS_END_ARGUMENTS = ['end', 'enddate']
 
@@ -1097,7 +1103,8 @@ GM_Globals = {
 #
 # Global variables defined by environment variables/signal files
 #
-# Automatically generate gam batch command if number of users specified in gam users xxx command exceeds this number
+# Automatically generate gam batch command if number of users specified in gam
+# users xxx command exceeds this number
 # Default: 0, don't automatically generate gam batch commands
 GC_AUTO_BATCH_MIN = 'auto_batch_min'
 # When processing items in batches, how many should be processed in each batch
@@ -1110,20 +1117,24 @@ GC_CACHE_DISCOVERY_ONLY = 'cache_discovery_only'
 GC_CHARSET = 'charset'
 # Path to client_secrets.json
 GC_CLIENT_SECRETS_JSON = 'client_secrets_json'
-# GAM config directory containing client_secrets.json, oauth2.txt, oauth2service.json, extra_args.txt
+# GAM config directory containing client_secrets.json, oauth2.txt,
+# oauth2service.json, extra_args.txt
 GC_CONFIG_DIR = 'config_dir'
 # custmerId from gam.cfg or retrieved from Google
 GC_CUSTOMER_ID = 'customer_id'
-# If debug_level > 0: extra_args[u'prettyPrint'] = True, httplib2.debuglevel = gam_debug_level, appsObj.debug = True
+# If debug_level > 0: extra_args[u'prettyPrint'] = True,
+# httplib2.debuglevel = gam_debug_level, appsObj.debug = True
 GC_DEBUG_LEVEL = 'debug_level'
-# ID Token decoded from OAuth 2.0 refresh token response. Includes hd (domain) and email of authorized user
+# ID Token decoded from OAuth 2.0 refresh token response. Includes hd (domain)
+# and email of authorized user
 GC_DECODED_ID_TOKEN = 'decoded_id_token'
 # Domain obtained from gam.cfg or oauth2.txt
 GC_DOMAIN = 'domain'
 # Google Drive download directory
 GC_DRIVE_DIR = 'drive_dir'
 # If no_browser is False, writeCSVfile won't open a browser when todrive is set
-# and doRequestOAuth prints a link and waits for the verification code when oauth2.txt is being created
+# and doRequestOAuth prints a link and waits for the verification code when
+# oauth2.txt is being created
 GC_NO_BROWSER = 'no_browser'
 # oauth_browser forces usage of web server OAuth flow that proved problematic.
 GC_OAUTH_BROWSER = 'oauth_browser'
@@ -1158,7 +1169,7 @@ GC_TLS_MAX_VERSION = 'tls_max_ver'
 # Path to certificate authority file for validating TLS hosts
 GC_CA_FILE = 'ca_file'
 
-tls_min = 'TLSv1_2' if hasattr(ssl.SSLContext(), 'minimum_version') else None
+TLS_MIN = 'TLSv1_2' if hasattr(ssl.SSLContext(), 'minimum_version') else None
 GC_Defaults = {
     GC_AUTO_BATCH_MIN: 0,
     GC_BATCH_SIZE: 50,
@@ -1186,7 +1197,7 @@ GC_Defaults = {
     GC_CSV_HEADER_FILTER: '',
     GC_CSV_HEADER_DROP_FILTER: '',
     GC_CSV_ROW_FILTER: '',
-    GC_TLS_MIN_VERSION: tls_min,
+    GC_TLS_MIN_VERSION: TLS_MIN,
     GC_TLS_MAX_VERSION: None,
     GC_CA_FILE: None,
 }
@@ -1321,20 +1332,52 @@ CLEAR_NONE_ARGUMENT = [
     'none',
 ]
 #
-MESSAGE_API_ACCESS_CONFIG = 'API access is configured in your Control Panel under: Security-Show more-Advanced settings-Manage API client access'
-MESSAGE_API_ACCESS_DENIED = 'API access Denied.\n\nPlease make sure the Client ID: {0} is authorized for the API Scope(s): {1}'
-MESSAGE_GAM_EXITING_FOR_UPDATE = 'GAM is now exiting so that you can overwrite this old version with the latest release'
-MESSAGE_GAM_OUT_OF_MEMORY = 'GAM has run out of memory. If this is a large G Suite instance, you should use a 64-bit version of GAM on Windows or a 64-bit version of Python on other systems.'
-MESSAGE_HEADER_NOT_FOUND_IN_CSV_HEADERS = 'Header "{0}" not found in CSV headers of "{1}".'
-MESSAGE_HIT_CONTROL_C_TO_UPDATE = '\n\nHit CTRL+C to visit the GAM website and download the latest release or wait 15 seconds continue with this boring old version. GAM won\'t bother you with this announcement for 1 week or you can create a file named noupdatecheck.txt in the same location as gam.py or gam.exe and GAM won\'t ever check for updates.'
+MESSAGE_API_ACCESS_CONFIG = 'API access is configured in your Control Panel' \
+                            ' under: Security-Show more-Advanced' \
+                            ' settings-Manage API client access'
+MESSAGE_API_ACCESS_DENIED = 'API access Denied.\n\nPlease make sure the Client' \
+                            ' ID: {0} is authorized for the API Scope(s): {1}'
+MESSAGE_GAM_EXITING_FOR_UPDATE = 'GAM is now exiting so that you can' \
+                                 ' overwrite this old version with the' \
+                                 ' latest release'
+MESSAGE_GAM_OUT_OF_MEMORY = 'GAM has run out of memory. If this is a large' \
+                            ' G Suite instance, you should use a 64-bit' \
+                            ' version of GAM on Windows or a 64-bit version' \
+                            ' of Python on other systems.'
+MESSAGE_HEADER_NOT_FOUND_IN_CSV_HEADERS = 'Header "{0}" not found in CSV' \
+                                          ' headers of "{1}".'
+MESSAGE_HIT_CONTROL_C_TO_UPDATE = '\n\nHit CTRL+C to visit the GAM website' \
+                                  ' and download the latest release or wait' \
+                                  ' 15 seconds continue with this boring old' \
+                                  ' version. GAM won\'t bother you with this ' \
+                                  ' announcement for 1 week or you can create' \
+                                  ' a file named noupdatecheck.txt in the same' \
+                                  ' location as gam.py or gam.exe and GAM' \
+                                  ' won\'t ever check for updates.'
 MESSAGE_INVALID_JSON = 'The file {0} has an invalid format.'
-MESSAGE_NO_DISCOVERY_INFORMATION = 'No online discovery doc and {0} does not exist locally'
-MESSAGE_NO_TRANSFER_LACK_OF_DISK_SPACE = 'Cowardly refusing to perform migration due to lack of target drive space. Source size: {0}mb Target Free: {1}mb'
-MESSAGE_RESULTS_TOO_LARGE_FOR_GOOGLE_SPREADSHEET = 'Results are too large for Google Spreadsheets. Uploading as a regular CSV file.'
-MESSAGE_SERVICE_NOT_APPLICABLE = 'Service not applicable for this address: {0}. Please make sure service is enabled for user and run\n\ngam user <user> check serviceaccount\n\nfor further instructions'
-MESSAGE_INSTRUCTIONS_OAUTH2SERVICE_JSON = 'Please run\n\ngam create project\ngam user <user> check serviceaccount\n\nto create and configure a service account.'
-MESSAGE_UPDATE_GAM_TO_64BIT = "You're running a 32-bit version of GAM on a 64-bit version of Windows, upgrade to a windows-x86_64 version of GAM"
-MESSAGE_YOUR_SYSTEM_TIME_DIFFERS_FROM_GOOGLE_BY = 'Your system time differs from %s by %s'
+MESSAGE_NO_DISCOVERY_INFORMATION = 'No online discovery doc and {0} does not' \
+                                   ' exist locally'
+MESSAGE_NO_TRANSFER_LACK_OF_DISK_SPACE = 'Cowardly refusing to perform' \
+                                         ' migration due to lack of target' \
+                                         ' drive space. Source size: {0}mb' \
+                                         ' Target Free: {1}mb'
+MESSAGE_RESULTS_TOO_LARGE_FOR_GOOGLE_SPREADSHEET = 'Results are too large for' \
+                                                   ' Google Spreadsheets.' \
+                                                   ' Uploading as a regular' \
+                                                   ' CSV file.'
+MESSAGE_SERVICE_NOT_APPLICABLE = 'Service not applicable for this address:' \
+                                 ' {0}. Please make sure service is enabled' \
+                                 ' for user and run\n\ngam user <user> check' \
+                                 ' serviceaccount\n\nfor further instructions'
+MESSAGE_INSTRUCTIONS_OAUTH2SERVICE_JSON = 'Please run\n\ngam create project\n' \
+                                          'gam user <user> check ' \
+                                          'serviceaccount\n\nto create and' \
+                                          ' configure a service account.'
+MESSAGE_UPDATE_GAM_TO_64BIT = 'You\'re running a 32-bit version of GAM on a' \
+                              ' 64-bit version of Windows, upgrade to a' \
+                              ' windows-x86_64 version of GAM'
+MESSAGE_YOUR_SYSTEM_TIME_DIFFERS_FROM_GOOGLE_BY = 'Your system time differs' \
+                                                  ' from %s by %s'
 
 USER_ADDRESS_TYPES = ['home', 'work', 'other']
 USER_EMAIL_TYPES = ['home', 'work', 'other']
@@ -1587,167 +1630,151 @@ LANGUAGE_CODES_MAP = {
     'ak': 'ak',
     'am': 'am',
     'ar': 'ar',
-    'az': 'az',  #Luo, Afrikaans, Irish, Akan, Amharic, Arabica, Azerbaijani
+    'az': 'az',
     'be': 'be',
     'bem': 'bem',
     'bg': 'bg',
     'bn': 'bn',
     'br': 'br',
     'bs': 'bs',
-    'ca':
-        'ca',  #Belarusian, Bemba, Bulgarian, Bengali, Breton, Bosnian, Catalan
+    'ca': 'ca',
     'chr': 'chr',
     'ckb': 'ckb',
     'co': 'co',
     'crs': 'crs',
     'cs': 'cs',
     'cy': 'cy',
-    'da':
-        'da',  #Cherokee, Kurdish (Sorani), Corsican, Seychellois Creole, Czech, Welsh, Danish
+    'da': 'da',
     'de': 'de',
     'ee': 'ee',
     'el': 'el',
     'en': 'en',
     'en-gb': 'en-GB',
     'en-us': 'en-US',
-    'eo':
-        'eo',  #German, Ewe, Greek, English, English (UK), English (US), Esperanto
+    'eo': 'eo',
     'es': 'es',
     'es-419': 'es-419',
     'et': 'et',
     'eu': 'eu',
     'fa': 'fa',
     'fi': 'fi',
-    'fo':
-        'fo',  #Spanish, Spanish (Latin American), Estonian, Basque, Persian, Finnish, Faroese
+    'fo': 'fo',
     'fr': 'fr',
     'fr-ca': 'fr-ca',
     'fy': 'fy',
     'ga': 'ga',
     'gaa': 'gaa',
     'gd': 'gd',
-    'gl':
-        'gl',  #French, French (Canada), Frisian, Irish, Ga, Scots Gaelic, Galician
+    'gl': 'gl',
     'gn': 'gn',
     'gu': 'gu',
     'ha': 'ha',
     'haw': 'haw',
     'he': 'he',
     'hi': 'hi',
-    'hr': 'hr',  #Guarani, Gujarati, Hausa, Hawaiian, Hebrew, Hindi, Croatian
+    'hr': 'hr',
     'ht': 'ht',
     'hu': 'hu',
     'hy': 'hy',
     'ia': 'ia',
     'id': 'id',
     'ig': 'ig',
-    'in':
-        'in',  #Haitian Creole, Hungarian, Armenian, Interlingua, Indonesian, Igbo, in
+    'in': 'in',
     'is': 'is',
     'it': 'it',
     'iw': 'iw',
     'ja': 'ja',
     'jw': 'jw',
     'ka': 'ka',
-    'kg':
-        'kg',  #Icelandic, Italian, Hebrew, Japanese, Javanese, Georgian, Kongo
+    'kg': 'kg',
     'kk': 'kk',
     'km': 'km',
     'kn': 'kn',
     'ko': 'ko',
     'kri': 'kri',
     'ku': 'ku',
-    'ky':
-        'ky',  #Kazakh, Khmer, Kannada, Korean, Krio (Sierra Leone), Kurdish, Kyrgyz
+    'ky': 'ky',
     'la': 'la',
     'lg': 'lg',
     'ln': 'ln',
     'lo': 'lo',
     'loz': 'loz',
     'lt': 'lt',
-    'lua':
-        'lua',  #Latin, Luganda, Lingala, Laothian, Lozi, Lithuanian, Tshiluba
+    'lua': 'lua',
     'lv': 'lv',
     'mfe': 'mfe',
     'mg': 'mg',
     'mi': 'mi',
     'mk': 'mk',
     'ml': 'ml',
-    'mn':
-        'mn',  #Latvian, Mauritian Creole, Malagasy, Maori, Macedonian, Malayalam, Mongolian
+    'mn': 'mn',
     'mo': 'mo',
     'mr': 'mr',
     'ms': 'ms',
     'mt': 'mt',
     'my': 'my',
     'ne': 'ne',
-    'nl': 'nl',  #Moldavian, Marathi, Malay, Maltese, Burmese, Nepali, Dutch
+    'nl': 'nl',
     'nn': 'nn',
     'no': 'no',
     'nso': 'nso',
     'ny': 'ny',
     'nyn': 'nyn',
     'oc': 'oc',
-    'om':
-        'om',  #Norwegian (Nynorsk), Norwegian, Northern Sotho, Chichewa, Runyakitara, Occitan, Oromo
+    'om': 'om',
     'or': 'or',
     'pa': 'pa',
     'pcm': 'pcm',
     'pl': 'pl',
     'ps': 'ps',
     'pt-br': 'pt-BR',
-    'pt-pt':
-        'pt-PT',  #Oriya, Punjabi, Nigerian Pidgin, Polish, Pashto, Portuguese (Brazil), Portuguese (Portugal)
+    'pt-pt': 'pt-PT',
     'qu': 'qu',
     'rm': 'rm',
     'rn': 'rn',
     'ro': 'ro',
     'ru': 'ru',
     'rw': 'rw',
-    'sd':
-        'sd',  #Quechua, Romansh, Kirundi, Romanian, Russian, Kinyarwanda, Sindhi
+    'sd': 'sd',
     'sh': 'sh',
     'si': 'si',
     'sk': 'sk',
     'sl': 'sl',
     'sn': 'sn',
     'so': 'so',
-    'sq':
-        'sq',  #Serbo-Croatian, Sinhalese, Slovak, Slovenian, Shona, Somali, Albanian
+    'sq': 'sq',
     'sr': 'sr',
     'sr-me': 'sr-ME',
     'st': 'st',
     'su': 'su',
     'sv': 'sv',
     'sw': 'sw',
-    'ta':
-        'ta',  #Serbian, Montenegrin, Sesotho, Sundanese, Swedish, Swahili, Tamil
+    'ta': 'ta',
     'te': 'te',
     'tg': 'tg',
     'th': 'th',
     'ti': 'ti',
     'tk': 'tk',
     'tl': 'tl',
-    'tn': 'tn',  #Telugu, Tajik, Thai, Tigrinya, Turkmen, Tagalog, Setswana
+    'tn': 'tn',
     'to': 'to',
     'tr': 'tr',
     'tt': 'tt',
     'tum': 'tum',
     'tw': 'tw',
     'ug': 'ug',
-    'uk': 'uk',  #Tonga, Turkish, Tatar, Tumbuka, Twi, Uighur, Ukrainian
+    'uk': 'uk',
     'ur': 'ur',
     'uz': 'uz',
     'vi': 'vi',
     'wo': 'wo',
     'xh': 'xh',
     'yi': 'yi',
-    'yo': 'yo',  #Urdu, Uzbek, Vietnamese, Wolof, Xhosa, Yiddish, Yoruba
+    'yo': 'yo',
     'zh-cn': 'zh-CN',
     'zh-hk': 'zh-HK',
     'zh-tw': 'zh-TW',
-    'zu':
-        'zu',  #Chinese (Simplified), Chinese (Hong Kong/Traditional), Chinese (Taiwan/Traditional), Zulu
+    'zu': 'zu',
 }
 
 # maxResults exception values for API list calls. Should only be listed if:
