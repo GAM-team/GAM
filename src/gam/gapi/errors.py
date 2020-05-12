@@ -328,6 +328,10 @@ def get_gapi_error_detail(e,
             message = error['error']['errors'][0]['message']
         except KeyError:
             message = error['error']['message']
+        if http_status == 404:
+            if 'Requested entity was not found' in message or 'does not exist' in message:
+                error = _create_http_error_dict(404, ErrorReason.NOT_FOUND.value,
+                                                message)
     else:
         if 'error_description' in error:
             if error['error_description'] == 'Invalid Value':
