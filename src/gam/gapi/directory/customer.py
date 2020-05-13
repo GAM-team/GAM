@@ -69,19 +69,27 @@ def doGetCustomerInfo():
     throw_reasons = [gapi.errors.ErrorReason.INVALID]
     while True:
         try:
-            usage = gapi.get_all_pages(rep.customerUsageReports(),
-                                       'get',
-                                       'usageReports',
-                                       throw_reasons=throw_reasons,
-                                       customerId=customerId,
-                                       date=tryDate,
-                                       parameters=parameters)
-            break
+            result = gapi.call(rep.customerUsageReports(),
+                               'get',
+                               throw_reasons=throw_reasons,
+                               customerId=customerId,
+                               date=tryDate,
+                               parameters=parameters)
         except gapi.errors.GapiInvalidError as e:
             tryDate = gapi_reports._adjust_date(str(e))
-    if not usage:
-        print('No user count data available.')
-        return
+            continue
+        warnings = result.get('warnings', [])
+        fullDataRequired = ['accounts']
+        usage = result.get('usageReports')
+        has_reports = bool(usage)
+        fullData, tryDate = gapi_reports._check_full_data_available(
+            warnings, tryDate, fullDataRequired, has_reports)
+        if fullData < 0:
+            print('No user report available.')
+            sys.exit(1)
+        if fullData == 0:
+            continue
+        break
     print(f'User counts as of {tryDate}:')
     for item in usage[0]['parameters']:
         api_name = user_counts_map.get(item['name'])
