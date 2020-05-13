@@ -95,10 +95,11 @@ def showUsageParameters():
                 ]
             else:
                 partial_apps = partial_on_thisday
-            for parameter in response['usageReports'][0]['parameters']:
-                name = parameter.get('name')
-                if name and name not in all_parameters:
-                    all_parameters.append(name)
+            if response.get('usageReports'):
+                for parameter in response['usageReports'][0]['parameters']:
+                    name = parameter.get('name')
+                    if name and name not in all_parameters:
+                        all_parameters.append(name)
             if not partial_apps:
                 break
             tryDate = (utils.get_yyyymmdd(tryDate, returnDateTime=True) - \
