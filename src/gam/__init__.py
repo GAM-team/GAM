@@ -3832,6 +3832,7 @@ DRIVEFILE_ACL_ROLES_MAP = {
 def addDriveFileACL(users):
     fileId = sys.argv[5]
     body = {'type': sys.argv[6].lower()}
+    ubody = {}
     sendNotificationEmail = False
     emailMessage = None
     transferOwnership = None
@@ -3865,6 +3866,7 @@ def addDriveFileACL(users):
             if body['role'] == 'owner':
                 sendNotificationEmail = True
                 transferOwnership = True
+            ubody['role'] = body['role']
             i += 2
         elif myarg == 'sendemail':
             sendNotificationEmail = True
@@ -3874,7 +3876,7 @@ def addDriveFileACL(users):
             emailMessage = sys.argv[i + 1]
             i += 2
         elif myarg == 'expires':
-            body['expirationTime'] = utils.get_time_or_delta_from_now(
+            ubody['expirationTime'] = utils.get_time_or_delta_from_now(
                 sys.argv[i + 1])
             i += 2
         elif myarg == 'asadmin':
@@ -3897,6 +3899,17 @@ def addDriveFileACL(users):
                            supportsAllDrives=True,
                            transferOwnership=transferOwnership,
                            useDomainAdminAccess=useDomainAdminAccess)
+        if 'expirationTime' in ubody:
+            result = gapi.call(drive.permissions(),
+                               'update',
+                               fields='*',
+                               fileId=fileId,
+                               permissionId=result['id'],
+                               removeExpiration=False,
+                               transferOwnership=False,
+                               body=ubody,
+                               supportsAllDrives=True,
+                               useDomainAdminAccess=useDomainAdminAccess)
         printPermission(result)
 
 
