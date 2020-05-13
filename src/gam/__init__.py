@@ -3899,16 +3899,16 @@ def addDriveFileACL(users):
                            transferOwnership=transferOwnership,
                            useDomainAdminAccess=useDomainAdminAccess)
         if 'expirationTime' in ubody:
-          result = gapi.call(drive.permissions(),
-                             'update',
-                             fields='*',
-                             fileId=fileId,
-                             permissionId=result['id'],
-                             removeExpiration=False,
-                             transferOwnership=False,
-                             body=ubody,
-                             supportsAllDrives=True,
-                             useDomainAdminAccess=useDomainAdminAccess)
+            result = gapi.call(drive.permissions(),
+                               'update',
+                               fields='*',
+                               fileId=fileId,
+                               permissionId=result['id'],
+                               removeExpiration=False,
+                               transferOwnership=False,
+                               body=ubody,
+                               supportsAllDrives=True,
+                               useDomainAdminAccess=useDomainAdminAccess)
         printPermission(result)
 
 
