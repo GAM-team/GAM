@@ -521,6 +521,7 @@ def SetGlobalVariables():
                       'allcache.txt',
                       filePresentValue=False,
                       fileAbsentValue=True)
+    _getOldSignalFile(GC_NO_SHORT_URLS, 'noshorturls.txt')
     _getOldSignalFile(GC_NO_UPDATE_CHECK, 'noupdatecheck.txt')
     # Assign directories first
     for itemName in GC_VAR_INFO:

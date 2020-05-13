@@ -1140,6 +1140,8 @@ GC_NO_BROWSER = 'no_browser'
 GC_OAUTH_BROWSER = 'oauth_browser'
 # Disable GAM API caching
 GC_NO_CACHE = 'no_cache'
+# Disable Short URLs
+GC_NO_SHORT_URLS = 'no_short_urls'
 # Disable GAM update check
 GC_NO_UPDATE_CHECK = 'no_update_check'
 # Number of threads for gam batch
@@ -1185,6 +1187,7 @@ GC_Defaults = {
     GC_DRIVE_DIR: '',
     GC_NO_BROWSER: False,
     GC_NO_CACHE: False,
+    GC_NO_SHORT_URLS: False,
     GC_NO_UPDATE_CHECK: False,
     GC_NUM_THREADS: 25,
     GC_OAUTH_BROWSER: False,
@@ -1262,6 +1265,9 @@ GC_VAR_INFO = {
         GC_VAR_TYPE: GC_TYPE_BOOLEAN
     },
     GC_NO_CACHE: {
+        GC_VAR_TYPE: GC_TYPE_BOOLEAN
+    },
+    GC_NO_SHORT_URLS: {
         GC_VAR_TYPE: GC_TYPE_BOOLEAN
     },
     GC_NO_UPDATE_CHECK: {

@@ -320,6 +320,8 @@ URL_SHORTENER_ENDPOINT = 'https://gam-shortn.appspot.com/create'
 
 
 def shorten_url(long_url, httpc=None):
+    if GC_Defaults[GC_NO_SHORT_URLS]:
+        return long_url
     if not httpc:
         httpc = transport.create_http(timeout=10)
     headers = {'Content-Type': 'application/json', 'User-Agent': GAM_INFO}
