@@ -61,11 +61,13 @@ def doGetCustomerInfo():
     }
     parameters = ','.join(list(user_counts_map))
     tryDate = datetime.date.today().strftime(YYYYMMDD_FORMAT)
+    oneDay = datetime.timedelta(days=1)
+    retry = 0
+    max_retries = 10
     customerId = GC_Values[GC_CUSTOMER_ID]
     if customerId == MY_CUSTOMER:
         customerId = None
     rep = gapi_reports.buildGAPIObject()
-    usage = None
     throw_reasons = [gapi.errors.ErrorReason.INVALID]
     while True:
         try:
@@ -76,12 +78,16 @@ def doGetCustomerInfo():
                                        customerId=customerId,
                                        date=tryDate,
                                        parameters=parameters)
-            break
+            if usage:
+                break
+            retry += 1
+            if retry == max_retries:
+                print('No user count data available.')
+                return
+            tryDateTime = datetime.datetime.strptime(tryDate, YYYYMMDD_FORMAT)-oneDay
+            tryDate = tryDateTime.strftime(YYYYMMDD_FORMAT)
         except gapi.errors.GapiInvalidError as e:
             tryDate = gapi_reports._adjust_date(str(e))
-    if not usage:
-        print('No user count data available.')
-        return
     print(f'User counts as of {tryDate}:')
     for item in usage[0]['parameters']:
         api_name = user_counts_map.get(item['name'])
