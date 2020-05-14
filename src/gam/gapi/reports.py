@@ -74,6 +74,7 @@ def showUsageParameters():
         else:
             controlflow.invalid_argument_exit(sys.argv[i],
                                               'gam report usageparameters')
+    fullDataRequired = ['all']
     while True:
         try:
             result = gapi.call(endpoint,
@@ -84,7 +85,6 @@ def showUsageParameters():
                                fields='warnings,usageReports(parameters(name))',
                                **kwargs)
             warnings = result.get('warnings', [])
-            fullDataRequired = ['all']
             usage = result.get('usageReports')
             has_reports = bool(usage)
             fullData, tryDate = gapi_reports._check_full_data_available(
