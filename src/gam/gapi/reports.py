@@ -64,9 +64,7 @@ def showUsageParameters():
     if customerId == MY_CUSTOMER:
         customerId = None
     tryDate = datetime.date.today().strftime(YYYYMMDD_FORMAT)
-    partial_apps = []
-    all_parameters = []
-    one_day = datetime.timedelta(days=1)
+    all_parameters = set()
     i = 4
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
@@ -78,37 +76,33 @@ def showUsageParameters():
                                               'gam report usageparameters')
     while True:
         try:
-            response = gapi.call(endpoint,
-                                 'get',
-                                 throw_reasons=throw_reasons,
-                                 date=tryDate,
-                                 customerId=customerId,
-                                 **kwargs)
-            partial_on_thisday = []
-            for warning in response.get('warnings', []):
-                for data in warning.get('data', []):
-                    if data.get('key') == 'application':
-                        partial_on_thisday.append(data['value'])
-            if partial_apps:
-                partial_apps = [
-                    app for app in partial_apps if app in partial_on_thisday
-                ]
-            else:
-                partial_apps = partial_on_thisday
-            if response.get('usageReports'):
-                for parameter in response['usageReports'][0]['parameters']:
+            result = gapi.call(endpoint,
+                               'get',
+                               throw_reasons=throw_reasons,
+                               date=tryDate,
+                               customerId=customerId,
+                               fields='warnings,usageReports(parameters(name))',
+                               **kwargs)
+            warnings = result.get('warnings', [])
+            fullDataRequired = ['all']
+            usage = result.get('usageReports')
+            has_reports = bool(usage)
+            fullData, tryDate = gapi_reports._check_full_data_available(
+                warnings, tryDate, fullDataRequired, has_reports)
+            if fullData < 0:
+                print('No usage parameters available.')
+                sys.exit(1)
+            if has_reports:
+                for parameter in usage[0]['parameters']:
                     name = parameter.get('name')
-                    if name and name not in all_parameters:
-                        all_parameters.append(name)
-            if not partial_apps:
+                    if name:
+                        all_parameters.add(name)
+            if fullData == 1:
                 break
-            tryDate = (utils.get_yyyymmdd(tryDate, returnDateTime=True) - \
-                    one_day).strftime(YYYYMMDD_FORMAT)
         except gapi.errors.GapiInvalidError as e:
             tryDate = _adjust_date(str(e))
-    all_parameters.sort()
     csvRows = []
-    for parameter in all_parameters:
+    for parameter in sorted(all_parameters):
         csvRows.append({'parameter': parameter})
     display.write_csv_file(csvRows, titles,
                            f'{report.capitalize()} Report Usage Parameters',
