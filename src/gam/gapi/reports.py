@@ -84,6 +84,11 @@ def showUsageParameters():
                                  date=tryDate,
                                  customerId=customerId,
                                  **kwargs)
+            hasReports = bool(response.get('usageReports', []))
+            if not hasReports:
+                tryDate = (utils.get_yyyymmdd(tryDate, returnDateTime=True) - \
+                               one_day).strftime(YYYYMMDD_FORMAT)
+                continue
             partial_on_thisday = []
             for warning in response.get('warnings', []):
                 for data in warning.get('data', []):
@@ -95,11 +100,10 @@ def showUsageParameters():
                 ]
             else:
                 partial_apps = partial_on_thisday
-            if response.get('usageReports'):
-                for parameter in response['usageReports'][0]['parameters']:
-                    name = parameter.get('name')
-                    if name and name not in all_parameters:
-                        all_parameters.append(name)
+            for parameter in response['usageReports'][0]['parameters']:
+                name = parameter.get('name')
+                if name and name not in all_parameters:
+                    all_parameters.append(name)
             if not partial_apps:
                 break
             tryDate = (utils.get_yyyymmdd(tryDate, returnDateTime=True) - \
