@@ -14,11 +14,16 @@ def doGetCustomerInfo():
                               customerKey=GC_Values[GC_CUSTOMER_ID])
     print(f'Customer ID: {customer_info["id"]}')
     print(f'Primary Domain: {customer_info["customerDomain"]}')
-    result = gapi.call(cd.domains(),
-                       'get',
-                       customer=customer_info['id'],
-                       domainName=customer_info['customerDomain'],
-                       fields='verified')
+    try:
+        result = gapi.call(
+            cd.domains(),
+            'get',
+            customer=customer_info['id'],
+            domainName=customer_info['customerDomain'],
+            fields='verified',
+            throw_reasons=[gapi.errors.ErrorReason.DOMAIN_NOT_FOUND])
+    except gapi.errors.GapiDomainNotFoundError:
+        result = {'verified': False}
     print(f'Primary Domain Verified: {result["verified"]}')
     # If customer has changed primary domain customerCreationTime is date
     # of current primary being added, not customer create date.
@@ -66,7 +71,9 @@ def doGetCustomerInfo():
         customerId = None
     rep = gapi_reports.buildGAPIObject()
     usage = None
-    throw_reasons = [gapi.errors.ErrorReason.INVALID]
+    throw_reasons = [
+        gapi.errors.ErrorReason.INVALID, gapi.errors.ErrorReason.FORBIDDEN
+    ]
     while True:
         try:
             result = gapi.call(rep.customerUsageReports(),
@@ -78,6 +85,8 @@ def doGetCustomerInfo():
         except gapi.errors.GapiInvalidError as e:
             tryDate = gapi_reports._adjust_date(str(e))
             continue
+        except gapi.errors.GapiForbiddenError:
+            return
         warnings = result.get('warnings', [])
         fullDataRequired = ['accounts']
         usage = result.get('usageReports')

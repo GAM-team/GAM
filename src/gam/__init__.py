@@ -940,6 +940,9 @@ def buildGAPIObject(api):
                 GC_Values[GC_CUSTOMER_ID] = MY_CUSTOMER
     else:
         GC_Values[GC_DOMAIN] = _getValueFromOAuth('hd', credentials=credentials)
+        if GC_Values[GC_DOMAIN] == 'Unknown':
+            GC_Values[GC_DOMAIN] = getEmailAddressDomain(
+                _getValueFromOAuth('email'))
         if not GC_Values[GC_CUSTOMER_ID]:
             GC_Values[GC_CUSTOMER_ID] = MY_CUSTOMER
     return service
@@ -1725,7 +1728,7 @@ def doPrintDomains():
     results = gapi.call(cd.domains(),
                         'list',
                         customer=GC_Values[GC_CUSTOMER_ID])
-    for domain in results['domains']:
+    for domain in results.get('domains', []):
         domain_attributes = {}
         domain['type'] = ['secondary', 'primary'][domain['isPrimary']]
         for attr in domain:
@@ -10443,15 +10446,21 @@ def doGetUserInfo(user_email=None):
             for alias in user['nonEditableAliases']:
                 print(f'  {alias}')
     if getGroups:
-        groups = gapi.get_all_pages(cd.groups(),
-                                    'list',
-                                    'groups',
-                                    userKey=user_email,
-                                    fields='groups(name,email),nextPageToken')
-        if groups:
-            print(f'Groups: ({len(groups)})')
-            for group in groups:
-                print(f'   {group["name"]} <{group["email"]}>')
+        throw_reasons = [gapi_errors.ErrorReason.FORBIDDEN]
+        try:
+            groups = gapi.get_all_pages(
+                cd.groups(),
+                'list',
+                'groups',
+                userKey=user_email,
+                fields='groups(name,email),nextPageToken',
+                throw_reasons=throw_reasons)
+            if groups:
+                print(f'Groups: ({len(groups)})')
+                for group in groups:
+                    print(f'   {group["name"]} <{group["email"]}>')
+        except gapi.errors.GapiForbiddenError:
+            print('No access to show user groups.')
     if getLicenses:
         print('Licenses:')
         lic = buildGAPIObject('licensing')

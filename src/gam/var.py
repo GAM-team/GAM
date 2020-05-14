@@ -130,7 +130,7 @@ SKUS = {
     '1010060001': {
         'product': 'Google-Apps',
         'aliases': ['d4e', 'driveenterprise', 'drive4enterprise'],
-        'displayName': 'Drive Enterprise'
+        'displayName': 'G Suite Essentials'
     },
     'Google-Drive-storage-20GB': {
         'product': 'Google-Drive-storage',
