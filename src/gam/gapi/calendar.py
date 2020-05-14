@@ -269,7 +269,7 @@ def moveOrDeleteEvent(moveOrDelete):
     calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
     if not cal:
         return
-    sendUpdates = None
+    sendUpdates = 'none'
     doit = False
     kwargs = {}
     i = 4
