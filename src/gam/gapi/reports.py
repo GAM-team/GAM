@@ -87,7 +87,7 @@ def showUsageParameters():
             warnings = result.get('warnings', [])
             usage = result.get('usageReports')
             has_reports = bool(usage)
-            fullData, tryDate = gapi_reports._check_full_data_available(
+            fullData, tryDate = _check_full_data_available(
                 warnings, tryDate, fullDataRequired, has_reports)
             if fullData < 0:
                 print('No usage parameters available.')
