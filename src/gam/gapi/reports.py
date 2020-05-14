@@ -64,7 +64,6 @@ def showUsageParameters():
     if customerId == MY_CUSTOMER:
         customerId = None
     tryDate = datetime.date.today().strftime(YYYYMMDD_FORMAT)
-    all_parameters = []
     i = 4
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
@@ -81,7 +80,7 @@ def showUsageParameters():
                                throw_reasons=throw_reasons,
                                date=tryDate,
                                customerId=customerId,
-                               fields='warnings,usageReports',
+                               fields='warnings,usageReports(parameters(name))',
                                **kwargs)
             warnings = result.get('warnings', [])
             fullDataRequired = ['all']
@@ -94,13 +93,14 @@ def showUsageParameters():
                 sys.exit(1)
             if fullData == 0:
                 continue
-            for parameter in usage[0]['parameters']:
-                name = parameter.get('name')
-                if name and name not in all_parameters:
-                    all_parameters.append(name)
             break
         except gapi.errors.GapiInvalidError as e:
             tryDate = _adjust_date(str(e))
+    all_parameters = []
+    for parameter in usage[0]['parameters']:
+        name = parameter.get('name')
+        if name and name not in all_parameters:
+            all_parameters.append(name)
     all_parameters.sort()
     csvRows = []
     for parameter in all_parameters:
