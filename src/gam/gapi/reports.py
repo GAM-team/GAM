@@ -64,9 +64,7 @@ def showUsageParameters():
     if customerId == MY_CUSTOMER:
         customerId = None
     tryDate = datetime.date.today().strftime(YYYYMMDD_FORMAT)
-    partial_apps = []
     all_parameters = []
-    one_day = datetime.timedelta(days=1)
     i = 4
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
@@ -78,36 +76,29 @@ def showUsageParameters():
                                               'gam report usageparameters')
     while True:
         try:
-            response = gapi.call(endpoint,
-                                 'get',
-                                 throw_reasons=throw_reasons,
-                                 date=tryDate,
-                                 customerId=customerId,
-                                 **kwargs)
-            hasReports = bool(response.get('usageReports', []))
-            if not hasReports:
-                tryDate = (utils.get_yyyymmdd(tryDate, returnDateTime=True) - \
-                               one_day).strftime(YYYYMMDD_FORMAT)
+            result = gapi.call(endpoint,
+                               'get',
+                               throw_reasons=throw_reasons,
+                               date=tryDate,
+                               customerId=customerId,
+                               fields='warnings,usageReports',
+                               **kwargs)
+            warnings = result.get('warnings', [])
+            fullDataRequired = ['all']
+            usage = result.get('usageReports')
+            has_reports = bool(usage)
+            fullData, tryDate = gapi_reports._check_full_data_available(
+                warnings, tryDate, fullDataRequired, has_reports)
+            if fullData < 0:
+                print('No usage parameters available.')
+                sys.exit(1)
+            if fullData == 0:
                 continue
-            partial_on_thisday = []
-            for warning in response.get('warnings', []):
-                for data in warning.get('data', []):
-                    if data.get('key') == 'application':
-                        partial_on_thisday.append(data['value'])
-            if partial_apps:
-                partial_apps = [
-                    app for app in partial_apps if app in partial_on_thisday
-                ]
-            else:
-                partial_apps = partial_on_thisday
-            for parameter in response['usageReports'][0]['parameters']:
+            for parameter in usage[0]['parameters']:
                 name = parameter.get('name')
                 if name and name not in all_parameters:
                     all_parameters.append(name)
-            if not partial_apps:
-                break
-            tryDate = (utils.get_yyyymmdd(tryDate, returnDateTime=True) - \
-                    one_day).strftime(YYYYMMDD_FORMAT)
+            break
         except gapi.errors.GapiInvalidError as e:
             tryDate = _adjust_date(str(e))
     all_parameters.sort()
