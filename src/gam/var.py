@@ -1,4 +1,5 @@
 """Variables common across modules"""
+# pylint: disable=too-many-lines
 import os
 import ssl
 import string
@@ -128,8 +129,11 @@ SKUS = {
         'displayName': 'G Suite Enterprise Archived'
     },
     '1010060001': {
-        'product': 'Google-Apps',
-        'aliases': ['d4e', 'driveenterprise', 'drive4enterprise'],
+        'product': '101006',
+        'aliases': [
+            'gsuiteessentials', 'essentials', 'd4e', 'driveenterprise',
+            'drive4enterprise'
+        ],
         'displayName': 'G Suite Essentials'
     },
     'Google-Drive-storage-20GB': {
