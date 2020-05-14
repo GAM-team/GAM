@@ -96,14 +96,13 @@ def showUsageParameters():
             break
         except gapi.errors.GapiInvalidError as e:
             tryDate = _adjust_date(str(e))
-    all_parameters = []
+    all_parameters = set()
     for parameter in usage[0]['parameters']:
         name = parameter.get('name')
-        if name and name not in all_parameters:
-            all_parameters.append(name)
-    all_parameters.sort()
+        if name:
+            all_parameters.add(name)
     csvRows = []
-    for parameter in all_parameters:
+    for parameter in sorted(all_parameters):
         csvRows.append({'parameter': parameter})
     display.write_csv_file(csvRows, titles,
                            f'{report.capitalize()} Report Usage Parameters',
