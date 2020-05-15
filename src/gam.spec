@@ -7,11 +7,9 @@ from PyInstaller.utils.hooks import copy_metadata
 
 sys.modules['FixTk'] = None
 
-extra_files = [('cloudprint-v2.json', 'cloudprint-v2.json')]
-
 # dynamically determine where httplib2/cacerts.txt lives
 proot = os.path.dirname(importlib.import_module('httplib2').__file__)
-extra_files += [(os.path.join(proot, 'cacerts.txt'), 'httplib2')]
+extra_files = [(os.path.join(proot, 'cacerts.txt'), 'httplib2')]
 
 extra_files += copy_metadata('google-api-python-client')
 

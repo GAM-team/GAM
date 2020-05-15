@@ -236,7 +236,6 @@ API_VER_MAPPING = {
     'appsactivity': 'v1',
     'calendar': 'v3',
     'classroom': 'v1',
-    'cloudprint': 'v2',
     'cloudresourcemanager': 'v2',
     'cloudresourcemanagerv1': 'v1',
     'datatransfer': 'datatransfer_v1',
