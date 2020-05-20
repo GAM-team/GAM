@@ -34,9 +34,9 @@ else
     mkdir python
     echo "RUNNING: apt update..."
     sudo apt-get -qq --yes update > /dev/null
-    echo "RUNNING: apt dist-upgrade..."
+    echo "RUNNING: apt upgrade..."
     #sudo apt-get -qq --yes dist-upgrade > /dev/null
-    #sudo apt-get --yes dist-upgrade
+    sudo apt-get --yes upgrade
     echo "Installing build tools..."
     #sudo apt-get -qq --yes install build-essential
     sudo apt-get --yes install build-essential
