@@ -35,7 +35,7 @@ else
     echo "RUNNING: apt update..."
     sudo apt-get -qq --yes update > /dev/null
     echo "RUNNING: apt upgrade..."
-    sudo apt-get -qq --yes --with-new-pkgs upgrade > /dev/null
+    sudo apt-get --yes --with-new-pkgs upgrade
     echo "Installing build tools..."
     sudo apt-get -qq --yes install build-essential
     echo "Installing deps for python3"
