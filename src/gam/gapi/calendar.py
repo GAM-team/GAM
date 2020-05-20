@@ -372,6 +372,7 @@ def getEventAttributes(i, calendarId, cal, body, action):
     # calendars are notified of changes
     sendUpdates = 'externalOnly'
     action = 'update' if body else 'add'
+    timeZone = None
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
         if myarg in ['notifyattendees', 'sendnotifications', 'sendupdates']:
