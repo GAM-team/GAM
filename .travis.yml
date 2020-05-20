@@ -41,6 +41,10 @@ cache:
 jobs:
   include:
     - os: linux
+      name: "Linux 64-bit Focal"
+      dist: focal
+      language: shell
+    - os: linux
       name: "Linux 64-bit Bionic"
       dist: bionic
       language: shell
