@@ -4096,9 +4096,9 @@ def downloadDriveFile(users):
                                                       revisionId=revisionId)
                 fh = None
                 try:
-                    fh = open(filename,
-                              'wb') if not targetStdout else sys.stdout
                     if not spreadsheetUrl:
+                        fh = open(filename,
+                                  'wb') if not targetStdout else sys.stdout
                         downloader = googleapiclient.http.MediaIoBaseDownload(
                             fh, request)
                         done = False
@@ -4108,6 +4108,9 @@ def downloadDriveFile(users):
                                 print('Downloaded: {0:>7.2%}'.format(
                                     status.progress()))
                     else:
+                        fh = open(filename,
+                                  'w',
+                                  newline='') if not targetStdout else sys.stdout
                         _, content = drive._http.request(uri=spreadsheetUrl,
                                                          method='GET')
                         fh.write(content)
