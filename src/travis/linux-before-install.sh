@@ -72,7 +72,7 @@ else
     unsafe_flags="--enable-optimizations --with-lto"
     if [ ! -e Makefile ]; then
       echo "running configure with safe and unsafe"
-      ./configure $safe_flags $unsafe_flags > /dev/null
+      ./configure $safe_flags # $unsafe_flags > /dev/null
     fi
     make -j$cpucount PROFILE_TASK="-m test.regrtest --pgo -j$(( $cpucount * 2 ))" -s
     RESULT=$?
