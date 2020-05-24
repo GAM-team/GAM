@@ -39,6 +39,9 @@ cache:
     - $HOME/ssl
 
 jobs:
+  allow_failures:
+    - dist: focal
+  fast_finish: true
   include:
     - os: linux
       name: "Linux 64-bit Focal"
