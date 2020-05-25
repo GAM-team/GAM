@@ -12163,7 +12163,7 @@ def getUsersToModify(entity_type=None,
                                      fields=listFields)
         users = []
         for member in members:
-            if ((not groupUserMembersOnly) or
+            if ((not groupUserMembersOnly and not includeDerivedMembership) or
                 (member['type'] == 'USER')) and _checkMemberRoleIsSuspended(
                     member, validRoles, checkSuspended):
                 users.append(member.get('email', member['id']))
