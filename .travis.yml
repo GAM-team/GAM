@@ -47,6 +47,7 @@ jobs:
       name: "Linux 64-bit Focal"
       dist: focal
       language: shell
+      filter_secrets: false
     - os: linux
       name: "Linux 64-bit Bionic"
       dist: bionic
