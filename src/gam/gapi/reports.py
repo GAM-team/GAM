@@ -316,7 +316,9 @@ def showReport():
             eventName = sys.argv[i + 1]
             i += 2
         elif myarg == 'user':
-            userKey = gam.normalizeEmailAddressOrUID(sys.argv[i + 1])
+            userKey = sys.argv[i + 1].lower()
+            if userKey != 'all':
+                userKey = gam.normalizeEmailAddressOrUID(sys.argv[i + 1])
             i += 2
         elif myarg in ['filter', 'filters']:
             filters = sys.argv[i + 1]
