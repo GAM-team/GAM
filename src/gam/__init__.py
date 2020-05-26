@@ -12118,7 +12118,6 @@ def getUsersToModify(entity_type=None,
                      checkSuspended=None,
                      groupUserMembersOnly=True):
     got_uids = False
-    includeDerivedMembership = False
     if entity_type is None:
         entity_type = sys.argv[1].lower()
     if entity is None:
@@ -12130,13 +12129,12 @@ def getUsersToModify(entity_type=None,
         ]
     elif entity_type == 'users':
         users = entity.replace(',', ' ').split()
-    elif entity_type in ['group', 'group_ns', 'group_susp','group_inde']:
+    elif entity_type in ['group', 'group_ns', 'group_susp', 'group_inde']:
         if entity_type == 'group_ns':
             checkSuspended = False
         elif entity_type == 'group_susp':
             checkSuspended = True
-        if entity_type == 'group_inde':
-            includeDerivedMembership = True
+        includeDerivedMembership = entity_type == 'group_inde'
         got_uids = True
         group = entity
         if member_type is None:
