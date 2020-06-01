@@ -8683,7 +8683,7 @@ def doUpdateGroup():
                         item.append(delivery)
                     item.append(user_email)
                     items.append(item)
-            else:
+            elif len(users_email) > 0:
                 body = {
                     'role':
                         role,
@@ -8809,7 +8809,7 @@ def doUpdateGroup():
                 for user_email in users_email:
                     items.append(
                         ['gam', 'update', 'group', group, 'remove', user_email])
-            else:
+            elif len(users_email) > 0:
                 try:
                     gapi.call(cd.members(),
                               'delete',
@@ -8843,7 +8843,7 @@ def doUpdateGroup():
                             item.append(delivery)
                         item.append(user_email)
                         items.append(item)
-                else:
+                elif len(users_email) > 0:
                     body = {}
                     update_text = []
                     if role:
@@ -8928,7 +8928,7 @@ def doUpdateGroup():
                             'gam', 'update', 'group', group, 'remove',
                             user_email
                         ])
-                else:
+                elif len(users_email) > 0:
                     try:
                         gapi.call(cd.members(),
                                   'delete',
