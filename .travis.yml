@@ -40,14 +40,13 @@ cache:
 
 jobs:
   allow_failures:
-    - dist: focal
+    - python: nightly
   fast_finish: true
   include:
     - os: linux
       name: "Linux 64-bit Focal"
       dist: focal
       language: shell
-      filter_secrets: false
     - os: linux
       name: "Linux 64-bit Bionic"
       dist: bionic
@@ -77,7 +76,11 @@ jobs:
       language: python
       python: 3.7
     - os: linux
-      name: "Python nightly Source Testing"
+      name: "Python 3.9 dev Source Testing"
+      language: python
+      python: 3.9-dev
+    - os: linux
+      name: "Python trunk nightly Source Testing"
       language: python
       python: nightly
     - os: linux
