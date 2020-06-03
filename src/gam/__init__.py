@@ -12151,14 +12151,15 @@ def getUsersToModify(entity_type=None,
                                                     '...')
         validRoles, listRoles, listFields = _getRoleVerification(
             member_type, 'nextPageToken,members(email,id,type,status)')
-        members = gapi.get_all_pages(cd.members(),
-                                     'list',
-                                     'members',
-                                     page_message=page_message,
-                                     groupKey=group,
-                                     roles=listRoles,
-                                     includeDerivedMembership=includeDerivedMembership,
-                                     fields=listFields)
+        members = gapi.get_all_pages(
+            cd.members(),
+            'list',
+            'members',
+            page_message=page_message,
+            groupKey=group,
+            roles=listRoles,
+            includeDerivedMembership=includeDerivedMembership,
+            fields=listFields)
         users = []
         for member in members:
             if ((not groupUserMembersOnly and not includeDerivedMembership) or
@@ -13342,7 +13343,7 @@ def ProcessGAMCommand(args):
                     2,
                     f'batch file: {filename}, not processed, {errors} error{["", "s"][errors != 1]}'
                 )
-        elif command == 'csv':
+        elif command in ['csv', 'csvtest']:
             if httplib2.debuglevel > 0:
                 controlflow.system_error_exit(
                     1,
@@ -13366,7 +13367,19 @@ def ProcessGAMCommand(args):
                 items.append(['gam'] +
                              processSubFields(GAM_argv, row, subFields))
             fileutils.close_file(f)
-            run_batch(items)
+            if command == 'csv':
+                run_batch(items)
+            else:
+                print('The CSV file has the following headers:')
+                for field in csvFile.fieldnames:
+                    print(f'  {field}')
+                print()
+                print(
+                    'Here are the first 10 commands GAM will run (note that quoting may be lost/invalid in this output):\n'
+                )
+                for item in items[:10]:
+                    c = '" "'.join(item)
+                    print(f'  "{c}"')
             sys.exit(0)
         elif command == 'version':
             doGAMVersion()
