@@ -13374,12 +13374,17 @@ def ProcessGAMCommand(args):
                 for field in csvFile.fieldnames:
                     print(f'  {field}')
                 print()
+                num_items = min(len(items), 10)
                 print(
-                    'Here are the first 10 commands GAM will run (note that quoting may be lost/invalid in this output):\n'
+                    f'Here are the first {num_items} commands GAM will run (note that quoting may be lost/invalid in this output):\n'
                 )
-                for item in items[:10]:
-                    c = '" "'.join(item)
-                    print(f'  "{c}"')
+                for i in range(num_items):
+                    c = ' '.join([item if (item and
+                                           (item.find(' ') == -1) and
+                                           (item.find(',') == -1) and
+                                           (item.find("'") == -1))
+                                       else '"'+item+'"' for item in items[i]])
+                    print(f'  {c}')
             sys.exit(0)
         elif command == 'version':
             doGAMVersion()
