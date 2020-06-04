@@ -6637,6 +6637,7 @@ def getUserAttributes(i, cd, updateCmd):
         i += 1
         need_password = True
     need_to_hash_password = True
+    need_to_b64_decrypt_password = False
     while i < len(sys.argv):
         myarg = sys.argv[i].lower()
         if myarg in ['firstname', 'givenname']:
@@ -6677,13 +6678,17 @@ def getUserAttributes(i, cd, updateCmd):
             body['includeInGlobalAddressList'] = getBoolean(
                 sys.argv[i + 1], myarg)
             i += 2
-        elif myarg in ['sha', 'sha1', 'sha-1']:
+        elif myarg in ['sha', 'sha1', 'sha-1', 'base64-sha1']:
             body['hashFunction'] = 'SHA-1'
             need_to_hash_password = False
+            if myarg == 'base64-sha1':
+                need_to_b64_decrypt_password = True
             i += 1
-        elif myarg == 'md5':
+        elif myarg in ['md5', 'base64-md5']:
             body['hashFunction'] = 'MD5'
             need_to_hash_password = False
+            if myarg == 'base64-md5':
+                need_to_b64_decrypt_password = True
             i += 1
         elif myarg == 'crypt':
             body['hashFunction'] = 'crypt'
@@ -7157,6 +7162,10 @@ def getUserAttributes(i, cd, updateCmd):
     if 'password' in body and need_to_hash_password:
         body['password'] = gen_sha512_hash(body['password'])
         body['hashFunction'] = 'crypt'
+    elif 'password' in body and need_to_b64_decrypt_password:
+        if body['password'].lower()[:5] in ['{md5}', '{sha}']:
+            body['password'] = body['password'][5:]
+        body['password'] = base64.b64decode(body['password']).hex()
     return body
 
 
