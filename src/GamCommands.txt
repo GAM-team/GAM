@@ -780,7 +780,7 @@ Specify a collection of Users by directly specifying them or by specifiying item
 <UserBasicAttribute> ::=
 	(agreed2terms|agreedtoterms <Boolean>)|
 	(changepassword|changepasswordatnextlogin <Boolean>)|
-	(crypt|sha|sha1|sha-1|md5|nohash)|
+	(base64-md5|base64-sha1|crypt|sha|sha1|sha-1|md5|nohash)|
 	(customerid <String>)|
 	(email|primaryemail|username <EmailAddress>)|
 	(firstname|givenname <String>)|
@@ -822,6 +822,7 @@ gam help
 
 gam batch <FileName>|- [charset <Charset>]
 gam csv <FileName>|- [charset <Charset>] gam <GAM argument list>
+gam csvtest <FileName>|- [charset <Charset>] gam <GAM argument list>
 
 You can make substitutions in <GAMArgumentList> with values from the CSV file.
 An argument containing exactly ~xxx is replaced by the value of field xxx from the CSV file
