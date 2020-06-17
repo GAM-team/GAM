@@ -8,7 +8,7 @@ import platform
 import re
 
 GAM_AUTHOR = 'Jay Lee <jay0lee@gmail.com>'
-GAM_VERSION = '5.10'
+GAM_VERSION = '5.11'
 GAM_LICENSE = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 GAM_URL = 'https://git.io/gam'
@@ -26,12 +26,12 @@ GAM_PROJECT_FILEPATH = 'https://raw.githubusercontent.com/jay0lee/GAM/master/src
 true_values = ['on', 'yes', 'enabled', 'true', '1']
 false_values = ['off', 'no', 'disabled', 'false', '0']
 usergroup_types = [
-    'user', 'users', 'group', 'group_ns', 'group_susp', 'group_inde', 'ou', 'org', 'ou_ns',
-    'org_ns', 'ou_susp', 'org_susp', 'ou_and_children', 'ou_and_child',
-    'ou_and_children_ns', 'ou_and_child_ns', 'ou_and_children_susp',
-    'ou_and_child_susp', 'query', 'queries', 'license', 'licenses', 'licence',
-    'licences', 'file', 'csv', 'csvfile', 'all', 'cros', 'cros_sn', 'crosquery',
-    'crosqueries', 'crosfile', 'croscsv', 'croscsvfile'
+    'user', 'users', 'group', 'group_ns', 'group_susp', 'group_inde', 'ou',
+    'org', 'ou_ns', 'org_ns', 'ou_susp', 'org_susp', 'ou_and_children',
+    'ou_and_child', 'ou_and_children_ns', 'ou_and_child_ns',
+    'ou_and_children_susp', 'ou_and_child_susp', 'query', 'queries', 'license',
+    'licenses', 'licence', 'licences', 'file', 'csv', 'csvfile', 'all', 'cros',
+    'cros_sn', 'crosquery', 'crosqueries', 'crosfile', 'croscsv', 'croscsvfile'
 ]
 ERROR_PREFIX = 'ERROR: '
 WARNING_PREFIX = 'WARNING: '
