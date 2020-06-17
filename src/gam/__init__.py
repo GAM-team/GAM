@@ -7210,34 +7210,36 @@ def enableGAMProjectAPIs(GAMProjectAPIs,
                          i=0,
                          count=0):
     apis = GAMProjectAPIs[:]
-    project_name = f'project:{projectId}'
-    serveman = getService('servicemanagement', httpObj)
+    project_name = f'projects/{projectId}'
+    serveu = getService('serviceusage', httpObj)
     status = True
     if checkEnabled:
         try:
             services = gapi.get_all_pages(
-                serveman.services(),
+                serveu.services(),
                 'list',
                 'services',
                 throw_reasons=[gapi_errors.ErrorReason.NOT_FOUND],
-                consumerId=project_name,
-                fields='nextPageToken,services(serviceName)')
+                parent=project_name,
+                filter='state:ENABLED',
+                fields='nextPageToken,services(name)')
             jcount = len(services)
             print(
                 f'  Project: {projectId}, Check {jcount} APIs{currentCount(i, count)}'
             )
             j = 0
-            for service in sorted(services, key=lambda k: k['serviceName']):
+            for service in sorted(services, key=lambda k: k['name']):
                 j += 1
-                if 'serviceName' in service:
-                    if service['serviceName'] in apis:
+                if 'name' in service:
+                    service_name = service['name'].split('/')[-1]
+                    if service_name in apis:
                         print(
-                            f'    API: {service["serviceName"]}, Already enabled{currentCount(j, jcount)}'
+                            f'    API: {service_name}, Already enabled{currentCount(j, jcount)}'
                         )
-                        apis.remove(service['serviceName'])
+                        apis.remove(service_name)
                     else:
                         print(
-                            f'    API: {service["serviceName"]}, Already enabled (non-GAM which is fine){currentCount(j, jcount)}'
+                            f'    API: {service_name}, Already enabled (non-GAM which is fine){currentCount(j, jcount)}'
                         )
         except gapi_errors.GapiNotFoundError as e:
             print(
@@ -7251,18 +7253,18 @@ def enableGAMProjectAPIs(GAMProjectAPIs,
         )
         j = 0
         for api in apis:
+            service_name = f'projects/{projectId}/services/{api}'
             j += 1
             while True:
                 try:
-                    gapi.call(serveman.services(),
+                    gapi.call(serveu.services(),
                               'enable',
                               throw_reasons=[
                                   gapi_errors.ErrorReason.FAILED_PRECONDITION,
                                   gapi_errors.ErrorReason.FORBIDDEN,
                                   gapi_errors.ErrorReason.PERMISSION_DENIED
                               ],
-                              serviceName=api,
-                              body={'consumerId': project_name})
+                              name=service_name)
                     print(f'    API: {api}, Enabled{currentCount(j, jcount)}')
                     break
                 except gapi_errors.GapiFailedPreconditionError as e:

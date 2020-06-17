@@ -252,6 +252,7 @@ API_VER_MAPPING = {
     'reports': 'reports_v1',
     'reseller': 'v1',
     'servicemanagement': 'v1',
+    'serviceusage': 'v1',
     'sheets': 'v4',
     'siteVerification': 'v1',
     'storage': 'v1',
