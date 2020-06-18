@@ -117,6 +117,7 @@ class ErrorReason(Enum):
     FAILED_PRECONDITION = 'failedPrecondition'
     FORBIDDEN = 'forbidden'
     FOUR_O_NINE = '409'
+    FOUR_O_O = '400'
     FOUR_O_THREE = '403'
     FOUR_TWO_NINE = '429'
     GATEWAY_TIMEOUT = 'gatewayTimeout'

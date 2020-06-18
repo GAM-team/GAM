@@ -7306,12 +7306,15 @@ def setGAMProjectConsentScreen(httpObj, projectId, login_hint):
     print('Setting GAM project consent screen...')
     iap = getService('iap', httpObj)
     body = {'applicationTitle': 'GAM', 'supportEmail': login_hint}
+    throw_reasons = [
+        gapi_errors.ErrorReason.FOUR_O_NINE, gapi_errors.ErrorReason.FOUR_O_O
+    ]
     try:
         gapi.call(iap.projects().brands(),
                   'create',
                   parent=f'projects/{projectId}',
                   body=body,
-                  throw_reasons=[gapi_errors.ErrorReason.FOUR_O_NINE])
+                  throw_reasons=throw_reasons)
     except googleapiclient.errors.HttpError:
         pass
 
@@ -13390,11 +13393,12 @@ def ProcessGAMCommand(args):
                     f'Here are the first {num_items} commands GAM will run (note that quoting may be lost/invalid in this output):\n'
                 )
                 for i in range(num_items):
-                    c = ' '.join([item if (item and
-                                           (item.find(' ') == -1) and
-                                           (item.find(',') == -1) and
-                                           (item.find("'") == -1))
-                                       else '"'+item+'"' for item in items[i]])
+                    c = ' '.join([
+                        item if (item and (item.find(' ') == -1) and
+                                 (item.find(',') == -1) and
+                                 (item.find("'") == -1)) else '"' + item + '"'
+                        for item in items[i]
+                    ])
                     print(f'  {c}')
             sys.exit(0)
         elif command == 'version':
