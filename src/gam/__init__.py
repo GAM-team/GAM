@@ -56,6 +56,7 @@ from gam.gapi.directory import asps as gapi_directory_asps
 from gam.gapi.directory import cros as gapi_directory_cros
 from gam.gapi.directory import customer as gapi_directory_customer
 from gam.gapi.directory import domainaliases as gapi_directory_domainaliases
+from gam.gapi.directory import domains as gapi_directory_domains
 from gam.gapi.directory import resource as gapi_directory_resource
 from gam.gapi import errors as gapi_errors
 from gam.gapi import reports as gapi_reports
@@ -1616,120 +1617,6 @@ def doUpdateCourse():
                        body=body,
                        updateMask=updateMask)
     print(f'Updated Course {result["id"]}')
-
-
-def doCreateDomain():
-    cd = buildGAPIObject('directory')
-    domain_name = sys.argv[3]
-    body = {'domainName': domain_name}
-    gapi.call(cd.domains(),
-              'insert',
-              customer=GC_Values[GC_CUSTOMER_ID],
-              body=body)
-    print(f'Added domain {domain_name}')
-
-
-def doUpdateDomain():
-    cd = buildGAPIObject('directory')
-    domain_name = sys.argv[3]
-    i = 4
-    body = {}
-    while i < len(sys.argv):
-        myarg = sys.argv[i].lower()
-        if myarg == 'primary':
-            body['customerDomain'] = domain_name
-            i += 1
-        else:
-            controlflow.invalid_argument_exit(sys.argv[i], 'gam update domain')
-    gapi.call(cd.customers(),
-              'update',
-              customerKey=GC_Values[GC_CUSTOMER_ID],
-              body=body)
-    print(f'{domain_name} is now the primary domain.')
-
-
-def doGetDomainInfo():
-    if (len(sys.argv) < 4) or (sys.argv[3] == 'logo'):
-        gapi_directory_customer.doGetCustomerInfo()
-        return
-    cd = buildGAPIObject('directory')
-    domainName = sys.argv[3]
-    result = gapi.call(cd.domains(),
-                       'get',
-                       customer=GC_Values[GC_CUSTOMER_ID],
-                       domainName=domainName)
-    if 'creationTime' in result:
-        result['creationTime'] = utils.formatTimestampYMDHMSF(
-            result['creationTime'])
-    if 'domainAliases' in result:
-        for i in range(0, len(result['domainAliases'])):
-            if 'creationTime' in result['domainAliases'][i]:
-                result['domainAliases'][i][
-                    'creationTime'] = utils.formatTimestampYMDHMSF(
-                        result['domainAliases'][i]['creationTime'])
-    display.print_json(result)
-
-
-def doDelDomain():
-    cd = buildGAPIObject('directory')
-    domainName = sys.argv[3]
-    gapi.call(cd.domains(),
-              'delete',
-              customer=GC_Values[GC_CUSTOMER_ID],
-              domainName=domainName)
-
-
-def doPrintDomains():
-    cd = buildGAPIObject('directory')
-    todrive = False
-    titles = [
-        'domainName',
-    ]
-    csvRows = []
-    i = 3
-    while i < len(sys.argv):
-        myarg = sys.argv[i].lower()
-        if myarg == 'todrive':
-            todrive = True
-            i += 1
-        else:
-            controlflow.invalid_argument_exit(sys.argv[i], 'gam print domains')
-    results = gapi.call(cd.domains(),
-                        'list',
-                        customer=GC_Values[GC_CUSTOMER_ID])
-    for domain in results.get('domains', []):
-        domain_attributes = {}
-        domain['type'] = ['secondary', 'primary'][domain['isPrimary']]
-        for attr in domain:
-            if attr in ['kind', 'etag', 'domainAliases', 'isPrimary']:
-                continue
-            if attr in [
-                    'creationTime',
-            ]:
-                domain[attr] = utils.formatTimestampYMDHMSF(domain[attr])
-            if attr not in titles:
-                titles.append(attr)
-            domain_attributes[attr] = domain[attr]
-        csvRows.append(domain_attributes)
-        if 'domainAliases' in domain:
-            for aliasdomain in domain['domainAliases']:
-                aliasdomain['domainName'] = aliasdomain['domainAliasName']
-                del aliasdomain['domainAliasName']
-                aliasdomain['type'] = 'alias'
-                aliasdomain_attributes = {}
-                for attr in aliasdomain:
-                    if attr in ['kind', 'etag']:
-                        continue
-                    if attr in [
-                            'creationTime',
-                    ]:
-                        aliasdomain[attr] = utils.formatTimestampYMDHMSF(
-                            aliasdomain[attr])
-                    if attr not in titles:
-                        titles.append(attr)
-                    aliasdomain_attributes[attr] = aliasdomain[attr]
-                csvRows.append(aliasdomain_attributes)
-    display.write_csv_file(csvRows, titles, 'Domains', todrive)
 
 
 def doDelAdmin():
@@ -13299,7 +13186,7 @@ def ProcessGAMCommand(args):
             elif argument in ['transfer', 'datatransfer']:
                 doCreateDataTransfer()
             elif argument == 'domain':
-                doCreateDomain()
+                gapi_directory_domains.create()
             elif argument in ['domainalias', 'aliasdomain']:
                 gapi_directory_domainaliases.create()
             elif argument == 'admin':
@@ -13359,7 +13246,7 @@ def ProcessGAMCommand(args):
             elif argument in ['course', 'class']:
                 doUpdateCourse()
             elif argument == 'domain':
-                doUpdateDomain()
+                gapi_directory_domains.update()
             elif argument == 'customer':
                 gapi_directory_customer.doUpdateCustomer()
             elif argument in ['resoldcustomer', 'resellercustomer']:
@@ -13410,7 +13297,7 @@ def ProcessGAMCommand(args):
             elif argument == 'customer':
                 gapi_directory_customer.doGetCustomerInfo()
             elif argument == 'domain':
-                doGetDomainInfo()
+                gapi_directory_domains.info()
             elif argument in ['domainalias', 'aliasdomain']:
                 gapi_directory_domainaliases.info()
             elif argument in ['resoldcustomer', 'resellercustomer']:
@@ -13539,7 +13426,7 @@ def ProcessGAMCommand(args):
             elif argument == 'transferapps':
                 doPrintTransferApps()
             elif argument == 'domains':
-                doPrintDomains()
+                gapi_directory_domains.print_()
             elif argument in ['domainaliases', 'aliasdomains']:
                 gapi_directory_domainaliases.print_()
             elif argument == 'admins':
