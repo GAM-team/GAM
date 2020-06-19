@@ -52,8 +52,10 @@ from gam import display
 from gam import fileutils
 from gam.gapi import calendar as gapi_calendar
 from gam.gapi import directory as gapi_directory
+from gam.gapi.directory import asps as gapi_directory_asps
 from gam.gapi.directory import cros as gapi_directory_cros
 from gam.gapi.directory import customer as gapi_directory_customer
+from gam.gapi.directory import domainaliases as gapi_directory_domainaliases
 from gam.gapi.directory import resource as gapi_directory_resource
 from gam.gapi import errors as gapi_errors
 from gam.gapi import reports as gapi_reports
@@ -1627,17 +1629,6 @@ def doCreateDomain():
     print(f'Added domain {domain_name}')
 
 
-def doCreateDomainAlias():
-    cd = buildGAPIObject('directory')
-    body = {}
-    body['domainAliasName'] = sys.argv[3]
-    body['parentDomainName'] = sys.argv[4]
-    gapi.call(cd.domainAliases(),
-              'insert',
-              customer=GC_Values[GC_CUSTOMER_ID],
-              body=body)
-
-
 def doUpdateDomain():
     cd = buildGAPIObject('directory')
     domain_name = sys.argv[3]
@@ -1679,19 +1670,6 @@ def doGetDomainInfo():
     display.print_json(result)
 
 
-def doGetDomainAliasInfo():
-    cd = buildGAPIObject('directory')
-    alias = sys.argv[3]
-    result = gapi.call(cd.domainAliases(),
-                       'get',
-                       customer=GC_Values[GC_CUSTOMER_ID],
-                       domainAliasName=alias)
-    if 'creationTime' in result:
-        result['creationTime'] = utils.formatTimestampYMDHMSF(
-            result['creationTime'])
-    display.print_json(result)
-
-
 def doDelDomain():
     cd = buildGAPIObject('directory')
     domainName = sys.argv[3]
@@ -1699,15 +1677,6 @@ def doDelDomain():
               'delete',
               customer=GC_Values[GC_CUSTOMER_ID],
               domainName=domainName)
-
-
-def doDelDomainAlias():
-    cd = buildGAPIObject('directory')
-    domainAliasName = sys.argv[3]
-    gapi.call(cd.domainAliases(),
-              'delete',
-              customer=GC_Values[GC_CUSTOMER_ID],
-              domainAliasName=domainAliasName)
 
 
 def doPrintDomains():
@@ -1760,40 +1729,6 @@ def doPrintDomains():
                         titles.append(attr)
                     aliasdomain_attributes[attr] = aliasdomain[attr]
                 csvRows.append(aliasdomain_attributes)
-    display.write_csv_file(csvRows, titles, 'Domains', todrive)
-
-
-def doPrintDomainAliases():
-    cd = buildGAPIObject('directory')
-    todrive = False
-    titles = [
-        'domainAliasName',
-    ]
-    csvRows = []
-    i = 3
-    while i < len(sys.argv):
-        myarg = sys.argv[i].lower()
-        if myarg == 'todrive':
-            todrive = True
-            i += 1
-        else:
-            controlflow.invalid_argument_exit(sys.argv[i],
-                                              'gam print domainaliases')
-    results = gapi.call(cd.domainAliases(),
-                        'list',
-                        customer=GC_Values[GC_CUSTOMER_ID])
-    for domainAlias in results['domainAliases']:
-        domainAlias_attributes = {}
-        for attr in domainAlias:
-            if attr in ['kind', 'etag']:
-                continue
-            if attr == 'creationTime':
-                domainAlias[attr] = utils.formatTimestampYMDHMSF(
-                    domainAlias[attr])
-            if attr not in titles:
-                titles.append(attr)
-            domainAlias_attributes[attr] = domainAlias[attr]
-        csvRows.append(domainAlias_attributes)
     display.write_csv_file(csvRows, titles, 'Domains', todrive)
 
 
@@ -10294,50 +10229,6 @@ def doGetOrgInfo(name=None, return_attrib=None):
                     print('')
 
 
-def doGetASPs(users):
-    cd = buildGAPIObject('directory')
-    for user in users:
-        asps = gapi.get_items(cd.asps(), 'list', 'items', userKey=user)
-        if asps:
-            print(f'Application-Specific Passwords for {user}')
-            for asp in asps:
-                if asp['creationTime'] == '0':
-                    created_date = 'Unknown'
-                else:
-                    created_date = utils.formatTimestampYMDHMS(
-                        asp['creationTime'])
-                if asp['lastTimeUsed'] == '0':
-                    used_date = 'Never'
-                else:
-                    used_date = utils.formatTimestampYMDHMS(asp['lastTimeUsed'])
-                print(
-                    f' ID: {asp["codeId"]}\n  Name: {asp["name"]}\n  Created: {created_date}\n  Last Used: {used_date}\n'
-                )
-        else:
-            print(f' no ASPs for {user}\n')
-
-
-def doDelASP(users):
-    cd = buildGAPIObject('directory')
-    codeIdList = sys.argv[5].lower()
-    if codeIdList == 'all':
-        allCodeIds = True
-    else:
-        allCodeIds = False
-        codeIds = codeIdList.replace(',', ' ').split()
-    for user in users:
-        if allCodeIds:
-            asps = gapi.get_items(cd.asps(),
-                                  'list',
-                                  'items',
-                                  userKey=user,
-                                  fields='items/codeId')
-            codeIds = [asp['codeId'] for asp in asps]
-        for codeId in codeIds:
-            gapi.call(cd.asps(), 'delete', userKey=user, codeId=codeId)
-            print(f'deleted ASP {codeId} for {user}')
-
-
 def printBackupCodes(user, codes):
     jcount = len(codes)
     realcount = 0
@@ -10540,24 +10431,7 @@ def printShowTokens(i, entityType, users, csvFormat):
 def doDeprovUser(users):
     cd = buildGAPIObject('directory')
     for user in users:
-        print(f'Getting Application Specific Passwords for {user}')
-        asps = gapi.get_items(cd.asps(),
-                              'list',
-                              'items',
-                              userKey=user,
-                              fields='items/codeId')
-        jcount = len(asps)
-        if jcount > 0:
-            j = 0
-            for asp in asps:
-                j += 1
-                print(f' deleting ASP {j} of {jcount}')
-                gapi.call(cd.asps(),
-                          'delete',
-                          userKey=user,
-                          codeId=asp['codeId'])
-        else:
-            print('No ASPs')
+        gapi_directory_asps.delete([user], cd=cd, codeIdList='all')
         print(f'Invalidating 2SV Backup Codes for {user}')
         try:
             gapi.call(cd.verificationCodes(),
@@ -13427,7 +13301,7 @@ def ProcessGAMCommand(args):
             elif argument == 'domain':
                 doCreateDomain()
             elif argument in ['domainalias', 'aliasdomain']:
-                doCreateDomainAlias()
+                gapi_directory_domainaliases.create()
             elif argument == 'admin':
                 doCreateAdmin()
             elif argument in ['guardianinvite', 'inviteguardian', 'guardian']:
@@ -13538,7 +13412,7 @@ def ProcessGAMCommand(args):
             elif argument == 'domain':
                 doGetDomainInfo()
             elif argument in ['domainalias', 'aliasdomain']:
-                doGetDomainAliasInfo()
+                gapi_directory_domainaliases.info()
             elif argument in ['resoldcustomer', 'resellercustomer']:
                 doGetResoldCustomer()
             elif argument in [
@@ -13585,7 +13459,7 @@ def ProcessGAMCommand(args):
             elif argument == 'domain':
                 doDelDomain()
             elif argument in ['domainalias', 'aliasdomain']:
-                doDelDomainAlias()
+                gapi_directory_domainaliases.delete()
             elif argument == 'admin':
                 doDelAdmin()
             elif argument in ['guardian', 'guardians']:
@@ -13667,7 +13541,7 @@ def ProcessGAMCommand(args):
             elif argument == 'domains':
                 doPrintDomains()
             elif argument in ['domainaliases', 'aliasdomains']:
-                doPrintDomainAliases()
+                gapi_directory_domainaliases.print_()
             elif argument == 'admins':
                 doPrintAdmins()
             elif argument in ['roles', 'adminroles']:
@@ -13855,7 +13729,7 @@ def ProcessGAMCommand(args):
             elif showWhat in ['backupcode', 'backupcodes', 'verificationcodes']:
                 doGetBackupCodes(users)
             elif showWhat in ['asp', 'asps', 'applicationspecificpasswords']:
-                doGetASPs(users)
+                gapi_directory_asps.info(users)
             elif showWhat in ['token', 'tokens', 'oauth', '3lo']:
                 printShowTokens(5, 'users', users, False)
             elif showWhat == 'driveactivity':
@@ -13953,7 +13827,7 @@ def ProcessGAMCommand(args):
             elif delWhat in ['backupcode', 'backupcodes', 'verificationcodes']:
                 doDelBackupCodes(users)
             elif delWhat in ['asp', 'asps', 'applicationspecificpasswords']:
-                doDelASP(users)
+                gapi_directory_asps.delete(users)
             elif delWhat in ['token', 'tokens', 'oauth', '3lo']:
                 doDelTokens(users)
             elif delWhat in ['group', 'groups']:
