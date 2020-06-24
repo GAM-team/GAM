@@ -218,6 +218,10 @@ fi
 # Temp dir for archive
 #temp_archive_dir=$(mktemp -d)
 temp_archive_dir=$(mktemp -d 2>/dev/null || mktemp -d -t 'mytmpdir')
+
+# Clean up after ourselves even if we are killed with CTRL-C
+trap "rm -rf $temp_archive_dir" EXIT
+
 echo_yellow "Downloading file $name from $browser_download_url to $temp_archive_dir."
 # Save archive to temp w/o losing our path
 (cd $temp_archive_dir && curl -O -L $browser_download_url)
@@ -372,6 +376,3 @@ echo_green "GAM installation and setup complete!"
 if [ "$update_profile" = true ]; then
   echo_green "Please restart your terminal shell or to get started right away run:\n\n$alias_line"
 fi
-
-# Clean up after ourselves even if we are killed with CTRL-C
-trap "rm -rf $temp_archive_dir" EXIT
