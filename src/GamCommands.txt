@@ -1068,7 +1068,15 @@ gam calendar <CalendarItem> printevents <EventSelectProperty>* <EventDisplayProp
 
 gam calendar <CalendarItem> modify <CalendarSettings>+
 
-gam update cros <CrOSEntity> (<CrOSAttributes>+)|(action deprovision_same_model_replace|deprovision_different_model_replace|deprovision_retiring_device|disable|reenable [acknowledge_device_touch_requirement])
+<CrOSAction> ::=
+	deprovision_same_model_replace|
+	deprovision_different_model_replace|
+	deprovision_retiring_device|
+	deprovision_upgrade_transfer|
+	disable|
+	reenable
+
+gam update cros <CrOSEntity> (<CrOSAttributes>+)|(action <CrOSAction> [acknowledge_device_touch_requirement])
 gam info cros <CrOSEntity> [nolists] [listlimit <Number>] [start <Date>] [end <Date>]
 	[basic|full|allfields] <CrOSFieldName>* [fields <CrOSFieldNameList>] [downloadfile latest|<Time>] [targetfolder <FilePath>]
 
