@@ -99,7 +99,7 @@ else
       echo "Downloading PatchELF $PATCHELF_VERSION"
       wget https://github.com/NixOS/patchelf/archive/$PATCHELF_VERSION.tar.gz 
       tar xf $PATCHELF_VERSION.tar.gz
-      cd patchelf-$PATCHELF_VERSION
+      cd patchelf-$PATCHELF_VERSION/src
       ./configure
       make
       sudo make install
