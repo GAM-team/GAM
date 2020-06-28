@@ -11,7 +11,7 @@ from gam import utils
 
 
 def doUpdateCros():
-    cd = gapi_directory.buildGAPIObject()
+    cd = gapi_directory.build()
     i, devices = getCrOSDeviceEntity(3, cd)
     update_body = {}
     action_body = {}
@@ -52,15 +52,11 @@ def doUpdateCros():
             elif action in ['deprovisionretiringdevice']:
                 action = 'deprovision'
                 deprovisionReason = 'retiring_device'
-            elif action == 'deprovisionupgradetransfer':
-                action = 'deprovision'
-                deprovisionReason = 'upgrade_transfer'
             elif action not in ['disable', 'reenable']:
                 controlflow.system_error_exit(2, f'expected action of ' \
                     f'deprovision_same_model_replace, ' \
                     f'deprovision_different_model_replace, ' \
-                    f'deprovision_retiring_device, ' \
-                    f'deprovision_upgrade_transfer, disable or reenable,'
+                    f'deprovision_retiring_device, disable or reenable,'
                     f' got {action}')
             action_body = {'action': action}
             if deprovisionReason:
@@ -124,7 +120,7 @@ def doUpdateCros():
 
 
 def doGetCrosInfo():
-    cd = gapi_directory.buildGAPIObject()
+    cd = gapi_directory.build()
     i, devices = getCrOSDeviceEntity(3, cd)
     downloadfile = None
     targetFolder = GC_Values[GC_DRIVE_DIR]
@@ -334,7 +330,7 @@ def doGetCrosInfo():
 
 
 def doPrintCrosActivity():
-    cd = gapi_directory.buildGAPIObject()
+    cd = gapi_directory.build()
     todrive = False
     titles = [
         'deviceId', 'annotatedAssetId', 'annotatedLocation', 'serialNumber',
@@ -505,7 +501,7 @@ def doPrintCrosDevices():
         elif myarg in CROS_SYSTEM_RAM_FREE_REPORTS_ARGUMENTS:
             selectedLists['systemRamFreeReports'] = True
 
-    cd = gapi_directory.buildGAPIObject()
+    cd = gapi_directory.build()
     todrive = False
     fieldsList = []
     fieldsTitles = {}

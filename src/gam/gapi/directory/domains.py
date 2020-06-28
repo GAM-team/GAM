@@ -10,7 +10,7 @@ from gam import utils
 
 
 def create():
-    cd = gapi_directory.buildGAPIObject()
+    cd = gapi_directory.build()
     domain_name = sys.argv[3]
     body = {'domainName': domain_name}
     gapi.call(cd.domains(),
@@ -24,7 +24,7 @@ def info():
     if (len(sys.argv) < 4) or (sys.argv[3] == 'logo'):
         gapi_directory_customer.doGetCustomerInfo()
         return
-    cd = gapi_directory.buildGAPIObject()
+    cd = gapi_directory.build()
     domainName = sys.argv[3]
     result = gapi.call(cd.domains(),
                        'get',
@@ -43,7 +43,7 @@ def info():
 
 
 def update():
-    cd = gapi_directory.buildGAPIObject()
+    cd = gapi_directory.build()
     domain_name = sys.argv[3]
     i = 4
     body = {}
@@ -62,7 +62,7 @@ def update():
 
 
 def delete():
-    cd = gapi_directory.buildGAPIObject()
+    cd = gapi_directory.build()
     domainName = sys.argv[3]
     print(f'Deleting domain {domainName}')
     gapi.call(cd.domains(),
@@ -72,7 +72,7 @@ def delete():
 
 
 def print_():
-    cd = gapi_directory.buildGAPIObject()
+    cd = gapi_directory.build()
     todrive = False
     titles = [
         'domainName',

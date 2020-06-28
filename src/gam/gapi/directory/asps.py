@@ -7,8 +7,8 @@ from gam.gapi import directory as gapi_directory
 from gam import utils
 
 
-def get(users):
-    cd = gapi_directory.buildGAPIObject()
+def info(users):
+    cd = gapi_directory.build()
     for user in users:
         asps = gapi.get_items(cd.asps(), 'list', 'items', userKey=user)
         if asps:
@@ -34,7 +34,7 @@ def get(users):
 
 def delete(users, cd=None, codeIdList=None):
     if not cd:
-        cd = gapi_directory.buildGAPIObject()
+        cd = gapi_directory.build()
     if not codeIdList:
         codeIdList = sys.argv[5].lower()
     if codeIdList == 'all':
