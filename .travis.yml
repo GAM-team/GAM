@@ -175,7 +175,8 @@ script:
 - if [ "$e2e" = true ]; then $gam user $newuser show imap; fi
 - if [ "$e2e" = true ]; then $gam csv sample.csv gam user $newuser delegate to ~email; fi
 - if [ "$e2e" = true ]; then $gam user $newuser show delegates; fi
-- if [ "$e2e" = true ]; then $gam user $newuser label "✔ unicode checkmark ✔"; fi
+- if [ "$e2d" = true ]; then export biohazard=$(echo -e '\xe2\x98\xa3')
+- if [ "$e2e" = true ]; then $gam user $newuser label "$biohazard unicode biohazard $biohazard"; fi
 - if [ "$e2e" = true ]; then $gam user $newuser show labels; fi
 - if [ "$e2e" = true ]; then $gam user $newuser show labels > labels.txt; fi
 - if [ "$e2e" = true ]; then $gam user $gam_user importemail subject "Travis import $newbase" message "This is a test import" labels IMPORTANT,UNREAD,INBOX,STARRED; fi
