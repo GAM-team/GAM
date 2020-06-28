@@ -97,8 +97,8 @@ else
     echo "Installing deps for StaticX..."
     if [ ! -d patchelf-$PATCHELF_VERSION ]; then
       echo "Downloading PatchELF $PATCHELF_VERSION"
-      wget https://nixos.org/releases/patchelf/patchelf-$PATCHELF_VERSION/patchelf-$PATCHELF_VERSION.tar.bz2
-      tar xf patchelf-$PATCHELF_VERSION.tar.bz2
+      wget https://github.com/NixOS/patchelf/archive/$PATCHELF_VERSION.tar.gz 
+      tar xf $PATCHELF_VERSION.tar.gz
       cd patchelf-$PATCHELF_VERSION
       ./configure
       make
