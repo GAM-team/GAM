@@ -38,7 +38,7 @@ def create():
                 if description.find(c) != -1:
                     gs_body['description'] = description
                     if not gs:
-                        gs = build('groupssettings')
+                        gs = gam.buildGAPIObject'groupssettings')
                         gs_object = gs._rootDesc
                     break
             else:
@@ -49,7 +49,7 @@ def create():
             i += 1
         else:
             if not gs:
-                gs = build('groupssettings')
+                gs = gam.buildGAPIObject('groupssettings')
                 gs_object = gs._rootDesc
             getGroupAttrValue(myarg, sys.argv[i + 1], gs_object, gs_body,
                               'create')
@@ -464,7 +464,7 @@ def print_():
     elif getSettings:
         gsfields = None
     if getSettings:
-        gs = gam.build('groupssettings')
+        gs = gam.buildGAPIObject('groupssettings')
     roles = ','.join(sorted(set(roles)))
     if roles:
         if members:
