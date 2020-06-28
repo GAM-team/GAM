@@ -38,7 +38,7 @@ def create():
                 if description.find(c) != -1:
                     gs_body['description'] = description
                     if not gs:
-                        gs = gam.buildGAPIObject'groupssettings')
+                        gs = gam.buildGAPIObject('groupssettings')
                         gs_object = gs._rootDesc
                     break
             else:
