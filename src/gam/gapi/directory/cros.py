@@ -52,11 +52,15 @@ def doUpdateCros():
             elif action in ['deprovisionretiringdevice']:
                 action = 'deprovision'
                 deprovisionReason = 'retiring_device'
+            elif action == 'deprovisionupgradetransfer':
+                action = 'deprovision'
+                deprovisionReason = 'upgrade_transfer'
             elif action not in ['disable', 'reenable']:
                 controlflow.system_error_exit(2, f'expected action of ' \
                     f'deprovision_same_model_replace, ' \
                     f'deprovision_different_model_replace, ' \
-                    f'deprovision_retiring_device, disable or reenable,'
+                    f'deprovision_retiring_device, ' \
+                    f'deprovision_upgrade_transfer, disable or reenable,'
                     f' got {action}')
             action_body = {'action': action}
             if deprovisionReason:

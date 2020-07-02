@@ -6990,7 +6990,7 @@ def getCRMService(login_hint):
         'online',
         login_hint=login_hint,
         use_console_flow=not GC_Values[GC_OAUTH_BROWSER])
-    httpc = transport.AuthorizedHttp(creds)
+    httpc = transport.AuthorizedHttp(creds, transport.create_http())
     return getService('cloudresourcemanagerv1', httpc), httpc
 
 
@@ -11365,7 +11365,7 @@ def ProcessGAMCommand(args):
             elif argument in ['course', 'class']:
                 doDelCourse()
             elif argument == 'domain':
-                doDelDomain()
+                gapi_directory_domains.delete()
             elif argument in ['domainalias', 'aliasdomain']:
                 gapi_directory_domainaliases.delete()
             elif argument == 'admin':
@@ -11745,7 +11745,7 @@ def ProcessGAMCommand(args):
             elif delWhat in ['token', 'tokens', 'oauth', '3lo']:
                 doDelTokens(users)
             elif delWhat in ['group', 'groups']:
-                deleteUserFromGroups(users)
+                gapi_directory_groups.deleteUserFromGroups(users)
             elif delWhat in ['alias', 'aliases']:
                 doRemoveUsersAliases(users)
             elif delWhat == 'emptydrivefolders':
