@@ -9,6 +9,13 @@ from gam.gapi import reports as gapi_reports
 
 
 def doGetCustomerInfo():
+    def numUsersAvailable(usage):
+        if usage and 'parameters' in usage[0]:
+            for item in usage[0]['parameters']:
+              if item['name'] == 'accounts:num_users':
+                return True
+        return False
+
     cd = gapi_directory.build()
     customer_info = gapi.call(cd.customers(),
                               'get',
@@ -91,6 +98,8 @@ def doGetCustomerInfo():
         warnings = result.get('warnings', [])
         fullDataRequired = ['accounts']
         usage = result.get('usageReports')
+        if numUsersAvailable(usage):
+            break
         has_reports = bool(usage)
         fullData, tryDate = gapi_reports._check_full_data_available(
             warnings, tryDate, fullDataRequired, has_reports)
