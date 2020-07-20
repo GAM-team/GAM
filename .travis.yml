@@ -5,7 +5,7 @@ dist: xenial
 
 env:
   global:
-    - BUILD_PYTHON_VERSION=3.8.4
+    - BUILD_PYTHON_VERSION=3.8.5
     - MIN_PYTHON_VERSION=3.8.4
     - BUILD_OPENSSL_VERSION=1.1.1g
     - MIN_OPENSSL_VERSION=1.1.1g
