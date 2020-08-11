@@ -7,6 +7,7 @@ from gam import display
 from gam import fileutils
 from gam import gapi
 from gam.gapi import directory as gapi_directory
+from gam.gapi.directory import orgunits as gapi_directory_orgunits
 from gam import utils
 
 
@@ -32,7 +33,7 @@ def doUpdateCros():
             update_body['annotatedAssetId'] = sys.argv[i + 1]
             i += 2
         elif myarg in ['ou', 'org']:
-            orgUnitPath = gam.getOrgUnitItem(sys.argv[i + 1])
+            orgUnitPath = gapi_directory_orgunits.getOrgUnitItem(sys.argv[i + 1])
             i += 2
         elif myarg == 'action':
             action = sys.argv[i + 1].lower().replace('_', '').replace('-', '')
@@ -358,7 +359,7 @@ def doPrintCrosActivity():
             queries = gam.getQueries(myarg, sys.argv[i + 1])
             i += 2
         elif myarg == 'limittoou':
-            orgUnitPath = gam.getOrgUnitItem(sys.argv[i + 1])
+            orgUnitPath = gapi_directory_orgunits.getOrgUnitItem(sys.argv[i + 1])
             i += 2
         elif myarg == 'todrive':
             todrive = True
@@ -526,7 +527,7 @@ def doPrintCrosDevices():
             queries = gam.getQueries(myarg, sys.argv[i + 1])
             i += 2
         elif myarg == 'limittoou':
-            orgUnitPath = gam.getOrgUnitItem(sys.argv[i + 1])
+            orgUnitPath = gapi_directory_orgunits.getOrgUnitItem(sys.argv[i + 1])
             i += 2
         elif myarg == 'todrive':
             todrive = True

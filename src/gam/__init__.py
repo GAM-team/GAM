@@ -10959,7 +10959,7 @@ def run_batch(items):
     if not items:
         return
     num_worker_threads = min(len(items), GC_Values[GC_NUM_THREADS])
-    pool = mp_pool(num_worker_threads, init_gam_worker)
+    pool = mp_pool(num_worker_threads, init_gam_worker, maxtasksperchild=200)
     sys.stderr.write(f'Using {num_worker_threads} processes...\n')
     try:
         results = []
