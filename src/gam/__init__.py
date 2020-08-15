@@ -3891,7 +3891,7 @@ def downloadDriveFile(users):
                             if sheet['properties']['title'].lower(
                             ) == csvSheetTitleLower:
                                 spreadsheetUrl = '{0}?format=csv&id={1}&gid={2}'.format(
-                                    re.sub('/edit$', '/export',
+                                    re.sub('/edit.*$', '/export',
                                            spreadsheet['spreadsheetUrl']),
                                     fileId, sheet['properties']['sheetId'])
                                 break
