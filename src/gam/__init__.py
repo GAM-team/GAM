@@ -1218,12 +1218,11 @@ def doCheckServiceAccount(users):
                 f'\nAll scopes passed!\nService account {service_account} is fully authorized.'
             )
             continue
-        user_domain = user[user.find('@') + 1:]
         # Tack on email scope for more accurate checking
         check_scopes.append(USERINFO_EMAIL_SCOPE)
-        long_url = (f'https://admin.google.com/{user_domain}/ManageOauthClients'
+        long_url = ('https://admin.google.com/ac/owl/domainwidedelegation'
                     f'?clientScopeToAdd={",".join(check_scopes)}'
-                    f'&clientNameToAdd={service_account}')
+                    f'&clientIdToAdd={service_account}')
         short_url = utils.shorten_url(long_url)
         scopes_failed = f'''Some scopes failed! To authorize them, please go to:
 
