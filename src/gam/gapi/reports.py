@@ -13,7 +13,7 @@ from gam import gapi
 from gam import utils
 
 
-def buildGAPIObject():
+def build():
     return gam.buildGAPIObject('reports')
 
 
@@ -41,7 +41,7 @@ REPORT_CHOICE_MAP = {
 
 
 def showUsageParameters():
-    rep = buildGAPIObject()
+    rep = build()
     throw_reasons = [
         gapi.errors.ErrorReason.INVALID, gapi.errors.ErrorReason.BAD_REQUEST
     ]
@@ -115,7 +115,7 @@ REPORTS_PARAMETERS_SIMPLE_TYPES = [
 
 
 def showUsage():
-    rep = buildGAPIObject()
+    rep = build()
     throw_reasons = [
         gapi.errors.ErrorReason.INVALID, gapi.errors.ErrorReason.BAD_REQUEST
     ]
@@ -264,7 +264,7 @@ def showUsage():
 
 
 def showReport():
-    rep = buildGAPIObject()
+    rep = build()
     throw_reasons = [gapi.errors.ErrorReason.INVALID]
     report = sys.argv[2].lower()
     report = REPORT_CHOICE_MAP.get(report.replace('_', ''), report)

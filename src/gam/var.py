@@ -8,7 +8,7 @@ import platform
 import re
 
 GAM_AUTHOR = 'Jay Lee <jay0lee@gmail.com>'
-GAM_VERSION = '5.11'
+GAM_VERSION = '5.12'
 GAM_LICENSE = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 GAM_URL = 'https://git.io/gam'
@@ -233,6 +233,7 @@ API_VER_MAPPING = {
     'appsactivity': 'v1',
     'calendar': 'v3',
     'classroom': 'v1',
+    'cloudidentity': 'v1beta1',
     'cloudresourcemanager': 'v2',
     'cloudresourcemanagerv1': 'v1',
     'datatransfer': 'datatransfer_v1',

@@ -1,5 +1,5 @@
 import gam
 
 
-def buildGAPIObject():
+def build():
     return gam.buildGAPIObject('directory')

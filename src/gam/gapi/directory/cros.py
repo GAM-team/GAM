@@ -7,11 +7,12 @@ from gam import display
 from gam import fileutils
 from gam import gapi
 from gam.gapi import directory as gapi_directory
+from gam.gapi.directory import orgunits as gapi_directory_orgunits
 from gam import utils
 
 
 def doUpdateCros():
-    cd = gapi_directory.buildGAPIObject()
+    cd = gapi_directory.build()
     i, devices = getCrOSDeviceEntity(3, cd)
     update_body = {}
     action_body = {}
@@ -32,7 +33,7 @@ def doUpdateCros():
             update_body['annotatedAssetId'] = sys.argv[i + 1]
             i += 2
         elif myarg in ['ou', 'org']:
-            orgUnitPath = gam.getOrgUnitItem(sys.argv[i + 1])
+            orgUnitPath = gapi_directory_orgunits.getOrgUnitItem(sys.argv[i + 1])
             i += 2
         elif myarg == 'action':
             action = sys.argv[i + 1].lower().replace('_', '').replace('-', '')
@@ -124,7 +125,7 @@ def doUpdateCros():
 
 
 def doGetCrosInfo():
-    cd = gapi_directory.buildGAPIObject()
+    cd = gapi_directory.build()
     i, devices = getCrOSDeviceEntity(3, cd)
     downloadfile = None
     targetFolder = GC_Values[GC_DRIVE_DIR]
@@ -334,7 +335,7 @@ def doGetCrosInfo():
 
 
 def doPrintCrosActivity():
-    cd = gapi_directory.buildGAPIObject()
+    cd = gapi_directory.build()
     todrive = False
     titles = [
         'deviceId', 'annotatedAssetId', 'annotatedLocation', 'serialNumber',
@@ -358,7 +359,7 @@ def doPrintCrosActivity():
             queries = gam.getQueries(myarg, sys.argv[i + 1])
             i += 2
         elif myarg == 'limittoou':
-            orgUnitPath = gam.getOrgUnitItem(sys.argv[i + 1])
+            orgUnitPath = gapi_directory_orgunits.getOrgUnitItem(sys.argv[i + 1])
             i += 2
         elif myarg == 'todrive':
             todrive = True
@@ -505,7 +506,7 @@ def doPrintCrosDevices():
         elif myarg in CROS_SYSTEM_RAM_FREE_REPORTS_ARGUMENTS:
             selectedLists['systemRamFreeReports'] = True
 
-    cd = gapi_directory.buildGAPIObject()
+    cd = gapi_directory.build()
     todrive = False
     fieldsList = []
     fieldsTitles = {}
@@ -526,7 +527,7 @@ def doPrintCrosDevices():
             queries = gam.getQueries(myarg, sys.argv[i + 1])
             i += 2
         elif myarg == 'limittoou':
-            orgUnitPath = gam.getOrgUnitItem(sys.argv[i + 1])
+            orgUnitPath = gapi_directory_orgunits.getOrgUnitItem(sys.argv[i + 1])
             i += 2
         elif myarg == 'todrive':
             todrive = True

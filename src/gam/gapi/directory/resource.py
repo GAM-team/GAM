@@ -12,7 +12,7 @@ from gam import utils
 
 def printBuildings():
     to_drive = False
-    cd = gapi_directory.buildGAPIObject()
+    cd = gapi_directory.build()
     titles = []
     csvRows = []
     fieldsList = ['buildingId']
@@ -67,7 +67,7 @@ def printBuildings():
 
 
 def printResourceCalendars():
-    cd = gapi_directory.buildGAPIObject()
+    cd = gapi_directory.build()
     todrive = False
     fieldsList = []
     fieldsTitles = {}
@@ -182,7 +182,7 @@ RESCAL_ARGUMENT_TO_PROPERTY_MAP = {
 
 def printFeatures():
     to_drive = False
-    cd = gapi_directory.buildGAPIObject()
+    cd = gapi_directory.build()
     titles = []
     csvRows = []
     fieldsList = ['name']
@@ -260,7 +260,7 @@ def _getBuildingAttributes(args, body={}):
 
 
 def createBuilding():
-    cd = gapi_directory.buildGAPIObject()
+    cd = gapi_directory.build()
     body = {
         'floorNames': ['1'],
         'buildingId': str(uuid.uuid4()),
@@ -346,7 +346,7 @@ def getBuildingNameById(cd, buildingId):
 
 
 def updateBuilding():
-    cd = gapi_directory.buildGAPIObject()
+    cd = gapi_directory.build()
     buildingId = getBuildingByNameOrId(cd, sys.argv[3])
     body = _getBuildingAttributes(sys.argv[4:])
     print(f'Updating building {buildingId}...')
@@ -358,7 +358,7 @@ def updateBuilding():
 
 
 def getBuildingInfo():
-    cd = gapi_directory.buildGAPIObject()
+    cd = gapi_directory.build()
     buildingId = getBuildingByNameOrId(cd, sys.argv[3])
     building = gapi.call(cd.resources().buildings(),
                          'get',
@@ -374,7 +374,7 @@ def getBuildingInfo():
 
 
 def deleteBuilding():
-    cd = gapi_directory.buildGAPIObject()
+    cd = gapi_directory.build()
     buildingId = getBuildingByNameOrId(cd, sys.argv[3])
     print(f'Deleting building {buildingId}...')
     gapi.call(cd.resources().buildings(),
@@ -397,7 +397,7 @@ def _getFeatureAttributes(args, body={}):
 
 
 def createFeature():
-    cd = gapi_directory.buildGAPIObject()
+    cd = gapi_directory.build()
     body = _getFeatureAttributes(sys.argv[3:])
     print(f'Creating feature {body["name"]}...')
     gapi.call(cd.resources().features(),
@@ -410,7 +410,7 @@ def updateFeature():
     # update does not work for name and name is only field to be updated
     # if additional writable fields are added to feature in the future
     # we'll add support for update as well as rename
-    cd = gapi_directory.buildGAPIObject()
+    cd = gapi_directory.build()
     oldName = sys.argv[3]
     body = {'newName': sys.argv[5:]}
     print(f'Updating feature {oldName}...')
@@ -422,7 +422,7 @@ def updateFeature():
 
 
 def deleteFeature():
-    cd = gapi_directory.buildGAPIObject()
+    cd = gapi_directory.build()
     featureKey = sys.argv[3]
     print(f'Deleting feature {featureKey}...')
     gapi.call(cd.resources().features(),
@@ -480,7 +480,7 @@ def _getResourceCalendarAttributes(cd, args, body={}):
 
 
 def createResourceCalendar():
-    cd = gapi_directory.buildGAPIObject()
+    cd = gapi_directory.build()
     body = {'resourceId': sys.argv[3], 'resourceName': sys.argv[4]}
     body = _getResourceCalendarAttributes(cd, sys.argv[5:], body)
     print(f'Creating resource {body["resourceId"]}...')
@@ -491,7 +491,7 @@ def createResourceCalendar():
 
 
 def updateResourceCalendar():
-    cd = gapi_directory.buildGAPIObject()
+    cd = gapi_directory.build()
     resId = sys.argv[3]
     body = _getResourceCalendarAttributes(cd, sys.argv[4:])
     # Use patch since it seems to work better.
@@ -506,7 +506,7 @@ def updateResourceCalendar():
 
 
 def getResourceCalendarInfo():
-    cd = gapi_directory.buildGAPIObject()
+    cd = gapi_directory.build()
     resId = sys.argv[3]
     resource = gapi.call(cd.resources().calendars(),
                          'get',
@@ -526,7 +526,7 @@ def getResourceCalendarInfo():
 
 def deleteResourceCalendar():
     resId = sys.argv[3]
-    cd = gapi_directory.buildGAPIObject()
+    cd = gapi_directory.build()
     print(f'Deleting resource calendar {resId}')
     gapi.call(cd.resources().calendars(),
               'delete',

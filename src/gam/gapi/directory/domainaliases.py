@@ -9,7 +9,7 @@ from gam import utils
 
 
 def create():
-    cd = gapi_directory.buildGAPIObject()
+    cd = gapi_directory.build()
     body = {'domainAliasName': sys.argv[3], 'parentDomainName': sys.argv[4]}
     print(f'Adding {body["domainAliasName"]} alias for ' \
        f'{body["parentDomainName"]}')
@@ -20,7 +20,7 @@ def create():
 
 
 def delete():
-    cd = gapi_directory.buildGAPIObject()
+    cd = gapi_directory.build()
     domainAliasName = sys.argv[3]
     print(f'Deleting domain alias {domainAliasName}')
     gapi.call(cd.domainAliases(),
@@ -30,7 +30,7 @@ def delete():
 
 
 def info():
-    cd = gapi_directory.buildGAPIObject()
+    cd = gapi_directory.build()
     alias = sys.argv[3]
     result = gapi.call(cd.domainAliases(),
                        'get',
@@ -43,7 +43,7 @@ def info():
 
 
 def print_():
-    cd = gapi_directory.buildGAPIObject()
+    cd = gapi_directory.build()
     todrive = False
     titles = [
         'domainAliasName',

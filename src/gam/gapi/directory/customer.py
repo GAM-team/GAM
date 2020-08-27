@@ -1,5 +1,6 @@
 import datetime
 
+import gam
 from gam.var import *
 from gam import controlflow
 from gam import gapi
@@ -8,7 +9,7 @@ from gam.gapi import reports as gapi_reports
 
 
 def doGetCustomerInfo():
-    cd = gapi_directory.buildGAPIObject()
+    cd = gapi_directory.build()
     customer_info = gapi.call(cd.customers(),
                               'get',
                               customerKey=GC_Values[GC_CUSTOMER_ID])
@@ -69,7 +70,7 @@ def doGetCustomerInfo():
     customerId = GC_Values[GC_CUSTOMER_ID]
     if customerId == MY_CUSTOMER:
         customerId = None
-    rep = gapi_reports.buildGAPIObject()
+    rep = gapi_reports.build()
     usage = None
     throw_reasons = [
         gapi.errors.ErrorReason.INVALID, gapi.errors.ErrorReason.FORBIDDEN
@@ -108,7 +109,7 @@ def doGetCustomerInfo():
 
 
 def doUpdateCustomer():
-    cd = gapi_directory.buildGAPIObject()
+    cd = gapi_directory.build()
     body = {}
     i = 3
     while i < len(sys.argv):
@@ -138,3 +139,11 @@ def doUpdateCustomer():
               customerKey=GC_Values[GC_CUSTOMER_ID],
               body=body)
     print('Updated customer')
+
+
+def setTrueCustomerId():
+    if GC_Values[GC_CUSTOMER_ID] == MY_CUSTOMER:
+        cd = gapi_directory.build()
+        GC_Values[GC_CUSTOMER_ID] = gapi.call(cd.customers(), 'get',
+            customerKey=GC_Values[GC_CUSTOMER_ID],
+            fields='id').get('id', GC_Values[GC_CUSTOMER_ID])
