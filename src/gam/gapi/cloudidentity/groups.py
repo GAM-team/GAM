@@ -17,12 +17,10 @@ def create():
     initialGroupConfig = 'EMPTY'
     gapi_directory_customer.setTrueCustomerId()
     parent = f'customers/{GC_Values[GC_CUSTOMER_ID]}'
-    body = {'groupKey': {
-               'id': gam.normalizeEmailAddressOrUID(sys.argv[3], noUid=True)
-           },
-           'parent': parent,
-           'labels': {'cloudidentity.googleapis.com/groups.discussion_forum': ''},
-    }
+    body = {'groupKey': {'id': gam.normalizeEmailAddressOrUID(sys.argv[3], noUid=True)},
+            'parent': parent,
+            'labels': {'cloudidentity.googleapis.com/groups.discussion_forum': ''},
+            }
     i = 4
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
@@ -44,8 +42,8 @@ def create():
             body['dynamicGroupMetadata'] = {'queries': [{'query': sys.argv[i+1]}]}
             i += 2
         elif myarg in ['makeowner']:
-        	initialGroupConfig = 'WITH_INITIAL_OWNER'
-        	i += 1
+            initialGroupConfig = 'WITH_INITIAL_OWNER'
+            i += 1
         else:
             print('should not get here')
             sys.exit(5)
@@ -148,7 +146,6 @@ def print_():
     members = membersCountOnly = managers = managersCountOnly = owners = ownersCountOnly = False
     gapi_directory_customer.setTrueCustomerId()
     parent = f'customers/{GC_Values[GC_CUSTOMER_ID]}'
-    aliasDelimiter = ' '
     memberDelimiter = '\n'
     todrive = False
     titles = []
@@ -161,7 +158,7 @@ def print_():
             todrive = True
             i += 1
         elif myarg == 'delimiter':
-            aliasDelimiter = memberDelimiter = sys.argv[i + 1]
+            memberDelimiter = sys.argv[i + 1]
             i += 2
         elif myarg == 'sortheaders':
             sortHeaders = True
@@ -235,7 +232,7 @@ def print_():
             sys.stderr.write(
                 f' Getting {roles} for {groupEmail}{gam.currentCountNL(i, count)}')
             page_message = gapi.got_total_items_first_last_msg('Members')
-            validRoles, listRoles, listFields = gam._getRoleVerification(
+            validRoles, _, _ = gam._getRoleVerification(
                 roles, 'nextPageToken,members(email,id,role)')
             groupMembers = gapi.get_all_pages(ci.groups().memberships(),
                                               'list',
@@ -420,7 +417,7 @@ def update():
     if myarg in UPDATE_GROUP_SUBCMDS:
         group = gam.normalizeEmailAddressOrUID(group)
         if group.startswith('groups/'):
-        	parent = group
+            parent = group
         else:
             parent = group_email_to_id(ci, group)
         if not parent:
@@ -445,7 +442,7 @@ def update():
                     }]
                 }
                 if role != ROLE_MEMBER:
-                	body['roles'].append({'name': role})
+                    body['roles'].append({'name': role})
                 add_text = [f'as {role}']
                 for i in range(2):
                     try:
@@ -555,20 +552,19 @@ def update():
                 name = membership_email_to_id(ci, parent, users_email[0])
                 addRoles = []
                 removeRoles = []
-                new_role = {'role': role}
                 current_roles = gapi.call(ci.groups().memberships(), 'get', name=name,
                                           fields='roles').get('roles', [])
                 current_roles = [role['name'] for role in current_roles]
                 for crole in current_roles:
                     if crole != ROLE_MEMBER and crole != role:
-                	    removeRoles.append(crole)
+                        removeRoles.append(crole)
                 if role not in current_roles:
                     addRoles.append({'name': role})
                 bodys = []
                 if addRoles:
-                	bodys.append({'addRoles': addRoles})
+                    bodys.append({'addRoles': addRoles})
                 if removeRoles:
-                	bodys.append({'removeRoles': removeRoles})
+                    bodys.append({'removeRoles': removeRoles})
                 for body in bodys:
                     try:
                         gapi.call(ci.groups().memberships(),
@@ -588,7 +584,7 @@ def update():
                 print(
                   f' Group: {group}, {users_email[0]} Updated to {role}'
                 )
-                
+
         else:  # clear
             roles = []
             i = 5
@@ -670,7 +666,7 @@ def group_email_to_id(ci, group, i=0, count=0):
             gapi_errors.GapiDomainNotFoundError,
             gapi_errors.GapiDomainCannotUseApisError,
             gapi_errors.GapiForbiddenError, gapi_errors.GapiBadRequestError):
-        entityUnknownWarning('Group', group, i, count)
+        gam.entityUnknownWarning('Group', group, i, count)
         return None
 
 def membership_email_to_id(ci, parent, membership, i=0, count=0):
@@ -687,7 +683,7 @@ def membership_email_to_id(ci, parent, membership, i=0, count=0):
             gapi_errors.GapiDomainNotFoundError,
             gapi_errors.GapiDomainCannotUseApisError,
             gapi_errors.GapiForbiddenError, gapi_errors.GapiBadRequestError):
-        entityUnknownWarning('Membership', member_email, i, count)
+        gam.entityUnknownWarning('Membership', membership, i, count)
         return None
 
 
@@ -695,7 +691,7 @@ def get_single_role(roles):
     ''' returns the highest role of member '''
     roles = [role.get('name') for role in roles]
     if not roles:
-        return
+        return ROLE_MEMBER
     for a_role in [ROLE_OWNER, ROLE_MANAGER, ROLE_MEMBER]:
       if a_role in roles:
         return a_role
@@ -706,6 +702,5 @@ def filter_members_to_roles(members, roles):
     for member in members:
         role = get_single_role(member.get('roles', []))
         if role in roles:
-            filtered_members.include(member)
+            filtered_members.append(member)
     return filtered_members
-
