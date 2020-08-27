@@ -222,13 +222,10 @@ V1_DISCOVERY_APIS = {
     'appsactivity',
     'calendar',
     'drive',
-    'gmail',
-    'groupssettings',
     'licensing',
     'oauth2',
     'reseller',
     'siteVerification',
-    'storage',
 }
 
 API_VER_MAPPING = {
