@@ -1228,10 +1228,17 @@ def doCheckServiceAccount(users):
 
   {short_url}
 
-You will be redirected to the G Suite admin console. The Client Name and API
-Scopes fields will be pre-populated. Please click Authorize to allow these
-scopes access. After authorizing it may take some time for this test to pass so
-go grab a cup of coffee and then try this command again.
+You will be directed to the G Suite admin console Security/API controls/Domain-wide Delegation page
+In the Add a new Client ID box click AUTHORIZE
+If the box closes you're done
+If you get the message "Client ID already exists", do the following:
+Note the Client ID and then click CANCEL
+Find your Client ID in the Client ID column, move the mouse over that row and click Delete at the right end of the row
+In the Delete box that pops up, verify your Client ID and then click DELETE
+Refresh the browser page
+In the Add a new Client ID box click AUTHORIZE
+When the box closes you're done
+After authorizing it may take some time for this test to pass so go grab a cup of coffee and then try this command again.
 '''
         controlflow.system_error_exit(1, scopes_failed)
 
