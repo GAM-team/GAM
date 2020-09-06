@@ -233,7 +233,7 @@ def print_():
                                     page_message=page_message,
                                     message_attribute=['groupKey', 'id'],
                                     parent=parent,
-                                    srcview='FULL',
+                                    view='FULL',
                                     pageSize=500)
     i = 0
     count = len(entityList)
