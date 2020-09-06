@@ -163,7 +163,6 @@ def print_():
     members = membersCountOnly = managers = managersCountOnly = owners = ownersCountOnly = False
     gapi_directory_customer.setTrueCustomerId()
     parent = f'customers/{GC_Values[GC_CUSTOMER_ID]}'
-    aliasDelimiter = ' '
     memberDelimiter = '\n'
     todrive = False
     titles = []
@@ -176,7 +175,7 @@ def print_():
             todrive = True
             i += 1
         elif myarg == 'delimiter':
-            aliasDelimiter = memberDelimiter = sys.argv[i + 1]
+            memberDelimiter = sys.argv[i + 1]
             i += 2
         elif myarg == 'sortheaders':
             sortHeaders = True
@@ -251,7 +250,7 @@ def print_():
                 f' Getting {roles} for {groupEmail}{gam.currentCountNL(i, count)}'
             )
             page_message = gapi.got_total_items_first_last_msg('Members')
-            validRoles, listRoles, listFields = gam._getRoleVerification(
+            validRoles, _, _ = gam._getRoleVerification(
                 roles, 'nextPageToken,members(email,id,role)')
             groupMembers = gapi.get_all_pages(ci.groups().memberships(),
                                               'list',
@@ -616,7 +615,9 @@ def update():
                             f' Group: {group}, {users_email[0]} Update to {role} Failed: {str(e)}'
                         )
                         break
-                print(f' Group: {group}, {users_email[0]} Updated to {role}')
+                print(
+                  f' Group: {group}, {users_email[0]} Updated to {role}'
+                )
 
         else:  # clear
             roles = []
@@ -709,7 +710,7 @@ def group_email_to_id(ci, group, i=0, count=0):
             gapi_errors.GapiDomainNotFoundError,
             gapi_errors.GapiDomainCannotUseApisError,
             gapi_errors.GapiForbiddenError, gapi_errors.GapiBadRequestError):
-        entityUnknownWarning('Group', group, i, count)
+        gam.entityUnknownWarning('Group', group, i, count)
         return None
 
 
@@ -727,7 +728,7 @@ def membership_email_to_id(ci, parent, membership, i=0, count=0):
             gapi_errors.GapiDomainNotFoundError,
             gapi_errors.GapiDomainCannotUseApisError,
             gapi_errors.GapiForbiddenError, gapi_errors.GapiBadRequestError):
-        entityUnknownWarning('Membership', member_email, i, count)
+        gam.entityUnknownWarning('Membership', membership, i, count)
         return None
 
 
@@ -735,7 +736,7 @@ def get_single_role(roles):
     ''' returns the highest role of member '''
     roles = [role.get('name') for role in roles]
     if not roles:
-        return
+        return ROLE_MEMBER
     for a_role in [ROLE_OWNER, ROLE_MANAGER, ROLE_MEMBER]:
         if a_role in roles:
             return a_role
@@ -747,5 +748,5 @@ def filter_members_to_roles(members, roles):
     for member in members:
         role = get_single_role(member.get('roles', []))
         if role in roles:
-            filtered_members.include(member)
+            filtered_members.append(member)
     return filtered_members
