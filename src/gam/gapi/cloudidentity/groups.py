@@ -251,14 +251,14 @@ def print_():
             )
             page_message = gapi.got_total_items_first_last_msg('Members')
             validRoles, _, _ = gam._getRoleVerification(
-                roles, 'nextPageToken,members(email,id,role)')
+                '.'.join(roles), 'nextPageToken,members(email,id,role)')
             groupMembers = gapi.get_all_pages(ci.groups().memberships(),
                                               'list',
                                               'memberships',
                                               page_message=page_message,
-                                              message_attribute='email',
+                                              message_attribute=['memberKey', 'id'],
                                               soft_errors=True,
-                                              groupKey_id=groupKey_id,
+                                              parent=groupKey_id,
                                               view='BASIC')
             if members:
                 membersList = []
