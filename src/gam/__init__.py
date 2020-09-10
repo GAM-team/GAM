@@ -64,6 +64,7 @@ from gam.gapi.directory import mobiledevices as gapi_directory_mobiledevices
 from gam.gapi.directory import orgunits as gapi_directory_orgunits
 from gam.gapi.directory import privileges as gapi_directory_privileges
 from gam.gapi.directory import resource as gapi_directory_resource
+from gam.gapi.directory import roles as gapi_directory_roles
 from gam.gapi import siteverification as gapi_siteverification
 from gam.gapi import errors as gapi_errors
 from gam.gapi import reports as gapi_reports
@@ -843,14 +844,14 @@ def getOauth2TxtStorageCredentials():
         return None
 
 
-def getValidOauth2TxtCredentials(force_refresh=False):
+def getValidOauth2TxtCredentials(force_refresh=False, api=None):
     """Gets OAuth2 credentials which are guaranteed to be fresh and valid."""
     try:
-        credentials = auth.get_admin_credentials()
+        credentials = auth.get_admin_credentials(api)
     except gam.auth.oauth.InvalidCredentialsFileError:
         doRequestOAuth()  # Make a new request which should store new creds.
-        return getValidOauth2TxtCredentials(force_refresh=force_refresh)
-
+        return getValidOauth2TxtCredentials(force_refresh=force_refresh,
+                                            api=api)
     if credentials.expired or force_refresh:
         request = transport.create_request()
         credentials.refresh(request)
@@ -922,7 +923,7 @@ def getService(api, http):
 
 def buildGAPIObject(api):
     GM_Globals[GM_CURRENT_API_USER] = None
-    credentials = getValidOauth2TxtCredentials()
+    credentials = getValidOauth2TxtCredentials(api=getAPIVersion(api)[0])
     credentials.user_agent = GAM_INFO
     http = transport.AuthorizedHttp(
         credentials, transport.create_http(cache=GM_Globals[GM_CACHE_DIR]))
@@ -1647,7 +1648,8 @@ def doCreateAdmin():
                                            ', '.join(['customer', 'org_unit']),
                                            body['scopeType'])
     if body['scopeType'] == 'ORG_UNIT':
-        orgUnit, orgUnitId = gapi_directory_orgunits.getOrgUnitId(sys.argv[6], cd)
+        orgUnit, orgUnitId = gapi_directory_orgunits.getOrgUnitId(
+            sys.argv[6], cd)
         body['orgUnitId'] = orgUnitId[3:]
         scope = f'ORG_UNIT {orgUnit}'
     else:
@@ -1657,37 +1659,6 @@ def doCreateAdmin():
               'insert',
               customer=GC_Values[GC_CUSTOMER_ID],
               body=body)
-
-
-def doPrintAdminRoles():
-    cd = buildGAPIObject('directory')
-    todrive = False
-    titles = [
-        'roleId', 'roleName', 'roleDescription', 'isSuperAdminRole',
-        'isSystemRole'
-    ]
-    fields = f'nextPageToken,items({",".join(titles)})'
-    csvRows = []
-    i = 3
-    while i < len(sys.argv):
-        myarg = sys.argv[i].lower()
-        if myarg == 'todrive':
-            todrive = True
-            i += 1
-        else:
-            controlflow.invalid_argument_exit(sys.argv[i],
-                                              'gam print adminroles')
-    roles = gapi.get_all_pages(cd.roles(),
-                               'list',
-                               'items',
-                               customer=GC_Values[GC_CUSTOMER_ID],
-                               fields=fields)
-    for role in roles:
-        role_attrib = {}
-        for key, value in list(role.items()):
-            role_attrib[key] = value
-        csvRows.append(role_attrib)
-    display.write_csv_file(csvRows, titles, 'Admin Roles', todrive)
 
 
 def doPrintAdmins():
@@ -1731,7 +1702,9 @@ def doPrintAdmins():
                 admin_attrib['role'] = role_from_roleid(value)
             elif key == 'orgUnitId':
                 value = f'id:{value}'
-                admin_attrib['orgUnit'] = gapi_directory_orgunits.orgunit_from_orgunitid(value)
+                admin_attrib[
+                    'orgUnit'] = gapi_directory_orgunits.orgunit_from_orgunitid(
+                        value)
             admin_attrib[key] = value
         csvRows.append(admin_attrib)
     display.write_csv_file(csvRows, titles, 'Admins', todrive)
@@ -6517,7 +6490,8 @@ def getUserAttributes(i, cd, updateCmd):
             body['agreedToTerms'] = getBoolean(sys.argv[i + 1], myarg)
             i += 2
         elif myarg in ['org', 'ou']:
-            body['orgUnitPath'] = gapi_directory_orgunits.getOrgUnitItem(sys.argv[i + 1], pathOnly=True)
+            body['orgUnitPath'] = gapi_directory_orgunits.getOrgUnitItem(
+                sys.argv[i + 1], pathOnly=True)
             i += 2
         elif myarg in ['language', 'languages']:
             i += 1
@@ -8799,6 +8773,7 @@ def doGetUserInfo(user_email=None):
                 'list',
                 'groups',
                 userKey=user_email,
+                customer=GC_Values[GC_CUSTOMER_ID],
                 fields='groups(name,email),nextPageToken',
                 throw_reasons=throw_reasons)
             if groups:
@@ -9108,7 +9083,8 @@ def doUndeleteUser():
     while i < len(sys.argv):
         myarg = sys.argv[i].lower()
         if myarg in ['ou', 'org']:
-            orgUnit = gapi_directory_orgunits.makeOrgUnitPathAbsolute(sys.argv[i + 1])
+            orgUnit = gapi_directory_orgunits.makeOrgUnitPathAbsolute(
+                sys.argv[i + 1])
             i += 2
         else:
             controlflow.invalid_argument_exit(sys.argv[i], 'gam undelete user')
@@ -9911,8 +9887,9 @@ def getUsersToModify(entity_type=None,
         users = []
         for member in members:
             if ((not groupUserMembersOnly and not includeDerivedMembership) or
-                (member['type'] == 'USER')) and gapi_directory_groups._checkMemberRoleIsSuspended(
-                    member, validRoles, checkSuspended):
+                (member['type'] == 'USER')
+               ) and gapi_directory_groups._checkMemberRoleIsSuspended(
+                   member, validRoles, checkSuspended):
                 users.append(member.get('email', member['id']))
     elif entity_type in ['cigroup']:
         got_uids = False
@@ -9934,15 +9911,15 @@ def getUsersToModify(entity_type=None,
             )
             page_message = gapi.got_total_items_msg(f'{member_type_message}',
                                                     '...')
-        members = gapi.get_all_pages(
-            ci.groups().memberships(),
-            'list',
-            'memberships',
-            page_message=page_message,
-            parent=parent,
-            fields=fields)
+        members = gapi.get_all_pages(ci.groups().memberships(),
+                                     'list',
+                                     'memberships',
+                                     page_message=page_message,
+                                     parent=parent,
+                                     fields=fields)
         if member_type:
-            members = gapi_cloudidentity_groups.filter_members_to_roles(members, [member_type])
+            members = gapi_cloudidentity_groups.filter_members_to_roles(
+                members, [member_type])
         users = []
         for member in members:
             users.append(member['memberKey']['id'])
@@ -11225,6 +11202,8 @@ def ProcessGAMCommand(args):
                 doCreateAlertFeedback()
             elif argument in ['gcpfolder']:
                 createGCPFolder()
+            elif argument in ['adminrole']:
+                gapi_directory_roles.create()
             else:
                 controlflow.invalid_argument_exit(argument, 'gam create')
             sys.exit(0)
@@ -11458,7 +11437,7 @@ def ProcessGAMCommand(args):
             elif argument == 'admins':
                 doPrintAdmins()
             elif argument in ['roles', 'adminroles']:
-                doPrintAdminRoles()
+                gapi_directory_roles.print_()
             elif argument in ['guardian', 'guardians']:
                 doPrintShowGuardians(True)
             elif argument in ['matters', 'vaultmatters']:

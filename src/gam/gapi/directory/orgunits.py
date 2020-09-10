@@ -404,7 +404,7 @@ def getOrgUnitId(orgUnit, cd=None):
 
 
 def buildOrgUnitIdToNameMap():
-    cd = buildGAPIObject('directory')
+    cd = gapi_directory.build()
     result = gapi.call(cd.orgunits(),
                        'list',
                        customerId=GC_Values[GC_CUSTOMER_ID],
@@ -420,5 +420,3 @@ def orgunit_from_orgunitid(orgunitid):
     if not GM_Globals[GM_MAP_ORGUNIT_ID_TO_NAME]:
         buildOrgUnitIdToNameMap()
     return GM_Globals[GM_MAP_ORGUNIT_ID_TO_NAME].get(orgunitid, orgunitid)
-
-
