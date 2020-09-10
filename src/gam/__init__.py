@@ -8415,12 +8415,12 @@ def _getResoldSubscriptionAttr(arg, customerId):
         elif myarg in ['purchaseorderid', 'po']:
             body['purchaseOrderId'] = arg[i + 1]
         elif myarg in ['seats']:
-            body['seats']['numberOfSeats'] = getInteger(sys.argv[i + 1],
+            body['seats']['numberOfSeats'] = getInteger(arg[i + 1],
                                                         'numberOfSeats',
                                                         minVal=0)
             if len(arg) > i + 2 and arg[i + 2].isdigit():
                 body['seats']['maximumNumberOfSeats'] = getInteger(
-                    sys.argv[i + 2], 'maximumNumberOfSeats', minVal=0)
+                    arg[i + 2], 'maximumNumberOfSeats', minVal=0)
                 i += 1
         elif myarg in ['sku', 'skuid']:
             _, body['skuId'] = getProductAndSKU(arg[i + 1])
