@@ -1134,6 +1134,8 @@ GC_DECODED_ID_TOKEN = 'decoded_id_token'
 GC_DOMAIN = 'domain'
 # Google Drive download directory
 GC_DRIVE_DIR = 'drive_dir'
+# Enable Delegated Admin Service Accounts
+GC_ENABLE_DASA = 'enabledasa'
 # If no_browser is False, writeCSVfile won't open a browser when todrive is set
 # and doRequestOAuth prints a link and waits for the verification code when
 # oauth2.txt is being created
@@ -1187,6 +1189,7 @@ GC_Defaults = {
     GC_DECODED_ID_TOKEN: '',
     GC_DOMAIN: '',
     GC_DRIVE_DIR: '',
+    GC_ENABLE_DASA: False,
     GC_NO_BROWSER: False,
     GC_NO_CACHE: False,
     GC_NO_SHORT_URLS: False,
@@ -1262,6 +1265,9 @@ GC_VAR_INFO = {
     },
     GC_DRIVE_DIR: {
         GC_VAR_TYPE: GC_TYPE_DIRECTORY
+    },
+    GC_ENABLE_DASA: {
+        GC_VAR_TYPE: GC_TYPE_BOOLEAN
     },
     GC_NO_BROWSER: {
         GC_VAR_TYPE: GC_TYPE_BOOLEAN
