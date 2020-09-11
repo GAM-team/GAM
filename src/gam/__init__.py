@@ -8773,7 +8773,6 @@ def doGetUserInfo(user_email=None):
                 'list',
                 'groups',
                 userKey=user_email,
-                customer=GC_Values[GC_CUSTOMER_ID],
                 fields='groups(name,email),nextPageToken',
                 throw_reasons=throw_reasons)
             if groups:
