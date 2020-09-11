@@ -534,6 +534,7 @@ def SetGlobalVariables():
                       fileAbsentValue=True)
     _getOldSignalFile(GC_NO_SHORT_URLS, 'noshorturls.txt')
     _getOldSignalFile(GC_NO_UPDATE_CHECK, 'noupdatecheck.txt')
+    _getOldSignalFile(GC_ENABLE_DASA, 'enabledasa.txt')
     # Assign directories first
     for itemName in GC_VAR_INFO:
         if GC_VAR_INFO[itemName][GC_VAR_TYPE] == GC_TYPE_DIRECTORY:
