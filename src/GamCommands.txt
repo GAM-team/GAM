@@ -944,6 +944,8 @@ gam create admin <UserItem> <RoleItem> customer|(org_unit <OrgUnitItem>)
 gam delete admin <RoleAssignmentId>
 gam print admins [todrive] [user <UserItem>] [role <RoleItem>]
 gam create adminrole <String> privileges <PrivilegesList> [description <String>]
+gam update adminrole <RoleItem> [name <String>] [privileges <PrivilegesList>] [description <String>]
+gam delete adminrole <RoleItem>
 gam print adminroles|roles [todrive]
 
 gam create domain <DomainName>
