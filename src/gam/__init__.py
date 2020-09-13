@@ -6186,6 +6186,34 @@ def getVacation(users):
                     print('None')
 
 
+def doSignout(users):
+    cd = buildGAPIObject('directory')
+    i = 0
+    count = len(users)
+    for user in users:
+        i += 1
+        user = normalizeEmailAddressOrUID(user)
+        print(f'Signing Out {user}{currentCount(i, count)}')
+        gapi.call(cd.users(),
+                  'signOut',
+                  soft_errors=True,
+                  userKey=user)
+
+
+def doTurnoff2sv(users):
+    cd = buildGAPIObject('directory')
+    i = 0
+    count = len(users)
+    for user in users:
+        i += 1
+        user = normalizeEmailAddressOrUID(user)
+        print(f'Turning Off 2-Step Verification for {user}{currentCount(i, count)}')
+        gapi.call(cd.twoStepVerification(),
+                  'turnOff',
+                  soft_errors=True,
+                  userKey=user)
+
+
 def doDelSchema():
     cd = buildGAPIObject('directory')
     schemaKey = sys.argv[3]
@@ -11891,6 +11919,10 @@ def ProcessGAMCommand(args):
             else:
                 controlflow.invalid_argument_exit(watchWhat,
                                                   'gam <users> watch')
+        elif command == 'signout':
+            doSignout(users)
+        elif command == 'turnoff2sv':
+            doTurnoff2sv(users)
         else:
             controlflow.invalid_argument_exit(command, 'gam')
     except IndexError:

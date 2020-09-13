@@ -1453,3 +1453,7 @@ gam <UserTypeEntity> vacation <FalseValues>
 gam <UserTypeEntity> vacation <TrueValues> subject <String> (message <String>)|(file <FileName> [charset <Charset>]) (replace <Tag> <String>)* [html]
 	[contactsonly] [domainonly] [startdate <Date>] [enddate <Date>]
 gam <UserTypeEntity> show vacation [format]
+
+gam <UserTypeEntity> signout
+gam <UserTypeEntity> turnoff2sv
+
