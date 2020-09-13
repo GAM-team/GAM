@@ -11203,7 +11203,7 @@ def ProcessGAMCommand(args):
             elif argument in ['gcpfolder']:
                 createGCPFolder()
             elif argument in ['adminrole']:
-                gapi_directory_roles.createUpdate(False)
+                gapi_directory_roles.create()
             else:
                 controlflow.invalid_argument_exit(argument, 'gam create')
             sys.exit(0)
@@ -11257,7 +11257,7 @@ def ProcessGAMCommand(args):
             elif argument in ['feature']:
                 gapi_directory_resource.updateFeature()
             elif argument in ['adminrole']:
-                gapi_directory_roles.createUpdate(True)
+                gapi_directory_roles.update()
             else:
                 controlflow.invalid_argument_exit(argument, 'gam update')
             sys.exit(0)
