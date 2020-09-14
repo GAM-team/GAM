@@ -65,6 +65,7 @@ from gam.gapi.directory import orgunits as gapi_directory_orgunits
 from gam.gapi.directory import privileges as gapi_directory_privileges
 from gam.gapi.directory import resource as gapi_directory_resource
 from gam.gapi.directory import roles as gapi_directory_roles
+from gam.gapi.directory import users as gapi_directory_users
 from gam.gapi import siteverification as gapi_siteverification
 from gam.gapi import errors as gapi_errors
 from gam.gapi import reports as gapi_reports
@@ -11256,6 +11257,8 @@ def ProcessGAMCommand(args):
                 gapi_directory_resource.updateBuilding()
             elif argument in ['feature']:
                 gapi_directory_resource.updateFeature()
+            elif argument in ['adminrole']:
+                gapi_directory_roles.update()
             else:
                 controlflow.invalid_argument_exit(argument, 'gam update')
             sys.exit(0)
@@ -11368,6 +11371,8 @@ def ProcessGAMCommand(args):
                 doDeleteOrUndeleteAlert('delete')
             elif argument in ['sakey', 'sakeys']:
                 doDeleteServiceAccountKeys()
+            elif argument in ['adminrole']:
+                gapi_directory_roles.delete()
             else:
                 controlflow.invalid_argument_exit(argument, 'gam delete')
             sys.exit(0)
@@ -11887,6 +11892,10 @@ def ProcessGAMCommand(args):
             else:
                 controlflow.invalid_argument_exit(watchWhat,
                                                   'gam <users> watch')
+        elif command == 'signout':
+            gapi_directory_users.signout(users)
+        elif command == 'turnoff2sv':
+            gapi_directory_users.turn_off_2sv(users)
         else:
             controlflow.invalid_argument_exit(command, 'gam')
     except IndexError:
