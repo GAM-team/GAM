@@ -65,6 +65,7 @@ from gam.gapi.directory import orgunits as gapi_directory_orgunits
 from gam.gapi.directory import privileges as gapi_directory_privileges
 from gam.gapi.directory import resource as gapi_directory_resource
 from gam.gapi.directory import roles as gapi_directory_roles
+from gam.gapi.directory import users as gapi_directory_users
 from gam.gapi import siteverification as gapi_siteverification
 from gam.gapi import errors as gapi_errors
 from gam.gapi import reports as gapi_reports
@@ -6186,34 +6187,6 @@ def getVacation(users):
                     print('None')
 
 
-def doSignout(users):
-    cd = buildGAPIObject('directory')
-    i = 0
-    count = len(users)
-    for user in users:
-        i += 1
-        user = normalizeEmailAddressOrUID(user)
-        print(f'Signing Out {user}{currentCount(i, count)}')
-        gapi.call(cd.users(),
-                  'signOut',
-                  soft_errors=True,
-                  userKey=user)
-
-
-def doTurnoff2sv(users):
-    cd = buildGAPIObject('directory')
-    i = 0
-    count = len(users)
-    for user in users:
-        i += 1
-        user = normalizeEmailAddressOrUID(user)
-        print(f'Turning Off 2-Step Verification for {user}{currentCount(i, count)}')
-        gapi.call(cd.twoStepVerification(),
-                  'turnOff',
-                  soft_errors=True,
-                  userKey=user)
-
-
 def doDelSchema():
     cd = buildGAPIObject('directory')
     schemaKey = sys.argv[3]
@@ -11920,9 +11893,9 @@ def ProcessGAMCommand(args):
                 controlflow.invalid_argument_exit(watchWhat,
                                                   'gam <users> watch')
         elif command == 'signout':
-            doSignout(users)
+            gapi_directory_users.signout(users)
         elif command == 'turnoff2sv':
-            doTurnoff2sv(users)
+            gapi_directory_users.turn_off_2sv(users)
         else:
             controlflow.invalid_argument_exit(command, 'gam')
     except IndexError:
