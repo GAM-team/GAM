@@ -35,6 +35,12 @@ jobs:
       dist: xenial
       language: shell
     - os: linux
+      name: "Linux ARM64 Focal"
+      dist: focal
+      language: shell
+      arch: arm64
+      filter_secrets: false
+    - os: linux
       dist: bionic
       arch: arm64
       name: "Linux ARM64 Bionic"
@@ -77,7 +83,7 @@ jobs:
     - os: osx
       name: "MacOS 10.15"
       language: generic
-      osx_image: xcode11.5
+      osx_image: xcode11.7
     - os: windows
       name: "Windows 64-bit"
       language: shell
