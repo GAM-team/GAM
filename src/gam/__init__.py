@@ -555,6 +555,18 @@ def SetGlobalVariables():
     if not GC_Values[GC_NO_UPDATE_CHECK]:
         doGAMCheckForUpdates()
 
+# domain must be set and customer_id must be set and != my_customer when enable_dasa = true
+    if GC_Values[GC_ENABLE_DASA]:
+        if not GC_Values[GC_DOMAIN]:
+            controlflow.system_error_exit(
+                3,
+                f'Environment variable GA_DOMAIN must be set when enabledasa.txt is present'
+                )
+        if not GC_Values[GC_CUSTOMER_ID] or GC_Values[GC_CUSTOMER_ID] == MY_CUSTOMER:
+            controlflow.system_error_exit(
+                3,
+                f'Environment variable CUSTOMER_ID must be set and not equal to my_customer when enabledasa.txt is present'
+                )
 
 # Globals derived from config file values
     GM_Globals[GM_OAUTH2SERVICE_JSON_DATA] = None
@@ -11481,6 +11493,9 @@ def ProcessGAMCommand(args):
             sys.exit(0)
         elif command in ['oauth', 'oauth2']:
             argument = sys.argv[2].lower()
+            if GC_Values[GC_ENABLE_DASA]:
+                controlflow.system_error_exit(5,
+                                              f'gam {command} {argument} not allowed when enabledasa.txt is present')
             if argument in ['request', 'create']:
                 createOAuth()
             elif argument in ['info', 'verify']:
