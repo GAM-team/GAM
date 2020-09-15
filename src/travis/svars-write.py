@@ -10,3 +10,4 @@ gampath = os.getenv('gampath')
 out_file = os.path.join(gampath, 'oauth2.txt')
 with open(out_file, 'w') as f:
     json.dump(cfg, f)
+print(f'Wrote {out_file} with {len(cfg["client_secret"]} char client secret and {len(cfg["refresh_token"])} char refresh token.')
