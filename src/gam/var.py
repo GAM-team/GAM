@@ -1124,6 +1124,8 @@ GC_CLIENT_SECRETS_JSON = 'client_secrets_json'
 GC_CONFIG_DIR = 'config_dir'
 # custmerId from gam.cfg or retrieved from Google
 GC_CUSTOMER_ID = 'customer_id'
+# Enable Delegated Admin Service Accounts admin user
+GC_DASA_ADMIN = 'dasa_admin'
 # If debug_level > 0: extra_args[u'prettyPrint'] = True,
 # httplib2.debuglevel = gam_debug_level, appsObj.debug = True
 GC_DEBUG_LEVEL = 'debug_level'
@@ -1185,6 +1187,7 @@ GC_Defaults = {
     GC_CLIENT_SECRETS_JSON: _FN_CLIENT_SECRETS_JSON,
     GC_CONFIG_DIR: '',
     GC_CUSTOMER_ID: MY_CUSTOMER,
+    GC_DASA_ADMIN: '',
     GC_DEBUG_LEVEL: 0,
     GC_DECODED_ID_TOKEN: '',
     GC_DOMAIN: '',
@@ -1251,6 +1254,9 @@ GC_VAR_INFO = {
         GC_VAR_TYPE: GC_TYPE_DIRECTORY
     },
     GC_CUSTOMER_ID: {
+        GC_VAR_TYPE: GC_TYPE_STRING
+    },
+    GC_DASA_ADMIN: {
         GC_VAR_TYPE: GC_TYPE_STRING
     },
     GC_DEBUG_LEVEL: {

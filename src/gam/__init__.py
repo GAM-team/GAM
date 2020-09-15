@@ -535,6 +535,7 @@ def SetGlobalVariables():
                       fileAbsentValue=True)
     _getOldSignalFile(GC_NO_SHORT_URLS, 'noshorturls.txt')
     _getOldSignalFile(GC_NO_UPDATE_CHECK, 'noupdatecheck.txt')
+    _getOldEnvVar(GC_DASA_ADMIN, 'DASA_ADMIN')
     _getOldSignalFile(GC_ENABLE_DASA, 'enabledasa.txt')
     # Assign directories first
     for itemName in GC_VAR_INFO:
@@ -566,6 +567,11 @@ def SetGlobalVariables():
             controlflow.system_error_exit(
                 3,
                 f'Environment variable CUSTOMER_ID must be set and not equal to my_customer when enabledasa.txt is present'
+                )
+        if not GC_Values[GC_DASA_ADMIN]:
+            controlflow.system_error_exit(
+                3,
+                f'Environment variable DASA_ADMIN must be set when enabledasa.txt is present'
                 )
 
 # Globals derived from config file values
@@ -8505,6 +8511,12 @@ def doCreateResoldCustomer():
 
 
 def _getValueFromOAuth(field, credentials=None):
+    if GC_Values[GC_ENABLE_DASA]:
+        if field == 'email':
+            return GC_Values[GC_DASA_ADMIN]
+        if field == 'hd':
+            return GC_Values[GC_DOMAIN]
+        return None
     if not credentials:
         credentials = auth.get_admin_credentials()
     return credentials.get_token_value(field)
