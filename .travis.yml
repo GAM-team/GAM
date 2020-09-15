@@ -118,7 +118,7 @@ script:
 - export jid="$(cut -d'.' -f2 <<<"$TRAVIS_JOB_NUMBER")"
 - if [ "$TRAVIS_EVENT_TYPE" != "pull_request" ]; then export e2e=true; fi
 - if [ "$e2e" = true ]; then export gam_user=gam-travis-$jid@pdl.jaylee.us; fi
-- if [ "$e2e" = true ]; then openssl aes-256-cbc -K $encrypted_6294a53f809d_key -iv $encrypted_6294a53f809d_iv -in $gampath/travis/creds.tar.enc -out $gampath/travis/creds.tar -d; fi
+- if [ "$e2e" = true ]; then openssl aes-256-cbc -K $encrypted_6294a53f809d_key -iv $encrypted_6294a53f809d_iv -in travis/creds.tar.enc -out travis/creds.tar -d; fi
 - if [ "$e2e" = true ]; then tar xvf travis/creds.tar -C $gampath; fi
 - if [ "$e2e" = true ]; then export OAUTHFILE=oauth2.txt-gam-travis-$jid; fi
 - if [ "$e2e" = true ]; then $gam oauth info; fi
