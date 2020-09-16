@@ -85,6 +85,10 @@ jobs:
       name: "MacOS 10.15"
       language: generic
       osx_image: xcode11.7
+    - os: osx
+      name: "MacOS 10.15 Universal"
+      language: generic
+      osx_image: xcode12u
     - os: windows
       name: "Windows 64-bit"
       language: shell
