@@ -1,6 +1,8 @@
 cd src
 echo "MacOS Version Info According to Python:"
 python -c "import platform; print(platform.mac_ver())"
+echo "Xcode versionn:"
+xcodebuild -version
 export gampath=dist/gam
 rm -rf $gampath
 $python -OO -m PyInstaller --clean --noupx --strip -F --distpath $gampath gam.spec
