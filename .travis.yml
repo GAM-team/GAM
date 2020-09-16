@@ -64,6 +64,7 @@ jobs:
       name: "Python 3.9 dev Source Testing"
       language: python
       python: 3.9-dev
+      dist: focal
     - os: linux
       name: "Python trunk nightly Source Testing"
       language: python
