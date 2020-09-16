@@ -210,6 +210,7 @@ script:
 - if [ "$e2e" = true ]; then $gam delete user $newuser; fi
 - if [ "$e2e" = true ]; then $gam print users query "travis.jid=$jid" | $gam csv - gam delete user ~primaryEmail; fi
 - if [ "$e2e" = true ]; then $gam print mobile; fi
+- if [ "$e2e" = true ]; then $gam print devices; fi
 - if [ "$e2e" = true ]; then $gam print cros allfields nolists; fi
 - if [ "$e2e" = true ]; then $gam report usageparameters customer; fi
 - if [ "$e2e" = true ]; then $gam report usage customer parameters gmail:num_emails_sent,accounts:num_1day_logins; fi
