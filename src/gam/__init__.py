@@ -52,6 +52,7 @@ from gam import display
 from gam import fileutils
 from gam.gapi import calendar as gapi_calendar
 from gam.gapi import cloudidentity as gapi_cloudidentity
+from gam.gapi.cloudidentity import devices as gapi_cloudidentity_devices
 from gam.gapi.cloudidentity import groups as gapi_cloudidentity_groups
 from gam.gapi import directory as gapi_directory
 from gam.gapi.directory import asps as gapi_directory_asps
@@ -807,12 +808,7 @@ def getSvcAcctCredentials(scopes, act_as):
 
 def getAPIVersion(api):
     version = API_VER_MAPPING.get(api, 'v1')
-    if api in ['directory', 'reports', 'datatransfer']:
-        api = 'admin'
-    elif api == 'drive3':
-        api = 'drive'
-    elif api == 'cloudresourcemanagerv1':
-        api = 'cloudresourcemanager'
+    api = API_NAME_MAPPING.get(api, api)
     return (api, version, f'{api}-{version}')
 
 
@@ -11177,6 +11173,8 @@ def ProcessGAMCommand(args):
                 doCreateDataTransfer()
             elif argument == 'domain':
                 gapi_directory_domains.create()
+            elif argument == 'device':
+                gapi_cloudidentity_devices.create()
             elif argument in ['domainalias', 'aliasdomain']:
                 gapi_directory_domainaliases.create()
             elif argument == 'admin':
@@ -11315,6 +11313,8 @@ def ProcessGAMCommand(args):
                 gapi_vault.getExportInfo()
             elif argument in ['building']:
                 gapi_directory_resource.getBuildingInfo()
+            elif argument in ['device']:
+                gapi_cloudidentity_devices.info()
             else:
                 controlflow.invalid_argument_exit(argument, 'gam info')
             sys.exit(0)
@@ -11331,6 +11331,10 @@ def ProcessGAMCommand(args):
                 doDeleteUser()
             elif argument == 'group':
                 gapi_directory_groups.delete()
+            elif argument == 'device':
+                gapi_cloudidentity_devices.delete()
+            elif argument == 'deviceuser':
+                gapi_cloudidentity_devices.delete_user()
             elif argument == 'cigroup':
                 gapi_cloudidentity_groups.delete()
             elif argument in ['nickname', 'alias']:
@@ -11405,8 +11409,12 @@ def ProcessGAMCommand(args):
                 gapi_directory_groups.print_()
             elif argument == 'cigroups':
                 gapi_cloudidentity_groups.print_()
+            elif argument == 'devices':
+                gapi_cloudidentity_devices.print_()
             elif argument in ['groupmembers', 'groupsmembers']:
                 gapi_directory_groups.print_members()
+            elif argument == 'devices':
+                gapi_cloudidentity_devices.print_()
             elif argument in ['cigroupmembers', 'cigroupsmembers']:
                 gapi_cloudidentity_groups.print_members()
             elif argument in ['orgs', 'ous']:
@@ -11560,6 +11568,25 @@ def ProcessGAMCommand(args):
                 doCreateOrRotateServiceAccountKeys()
             else:
                 controlflow.invalid_argument_exit(argument, 'gam rotate')
+            sys.exit(0)
+        elif command in ['cancelwipe', 'wipe', 'approve', 'block', 'sync']:
+            target = sys.argv[2].lower().replace('_', '')
+            if target in ['device', 'devices']:
+                if command == 'cancelwipe':
+                    gapi_cloudidentity_devices.cancel_wipe()
+                elif command == 'wipe':
+                    gapi_cloudidentity_devices.wipe()
+                elif command == 'sync':
+                    gapi_cloudidentity_devices.sync()
+            elif target == 'deviceuser':
+                if command == 'cancelwipe':
+                    gapi_cloudidentity_devices.cancel_wipe_user()
+                elif command == 'wipe':
+                    gapi_cloudidentity_devices.wipe_user()
+                elif command == 'approve':
+                    gapi_cloudidentity_devices.approve_user()
+                elif command == 'block':
+                    gapi_cloudidentity_devices.block_user()
             sys.exit(0)
         users = getUsersToModify()
         command = sys.argv[3].lower()

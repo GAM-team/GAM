@@ -13,7 +13,7 @@ from gam.gapi.directory import groups as gapi_directory_groups
 
 
 def create():
-    ci = gapi_cloudidentity.build()
+    ci = gapi_cloudidentity.build('cloudidentity_beta')
     initialGroupConfig = 'EMPTY'
     gapi_directory_customer.setTrueCustomerId()
     parent = f'customers/{GC_Values[GC_CUSTOMER_ID]}'
@@ -65,7 +65,7 @@ def create():
 
 
 def delete():
-    ci = gapi_cloudidentity.build()
+    ci = gapi_cloudidentity.build('cloudidentity_beta')
     group = sys.argv[3]
     name = group_email_to_id(ci, group)
     print(f'Deleting group {group}')
@@ -73,7 +73,7 @@ def delete():
 
 
 def info():
-    ci = gapi_cloudidentity.build()
+    ci = gapi_cloudidentity.build('cloudidentity_beta')
     group = gam.normalizeEmailAddressOrUID(sys.argv[3])
     getUsers = True
     showJoinDate = True
@@ -128,7 +128,7 @@ def info():
 
 
 def info_member():
-    ci = gapi_cloudidentity.build()
+    ci = gapi_cloudidentity.build('cloudidentity_beta')
     member = gam.normalizeEmailAddressOrUID(sys.argv[3])
     group = gam.normalizeEmailAddressOrUID(sys.argv[4])
     group_name = gapi.call(ci.groups(),
@@ -158,7 +158,7 @@ GROUP_ROLES_MAP = {
 
 
 def print_():
-    ci = gapi_cloudidentity.build()
+    ci = gapi_cloudidentity.build('cloudidentity_beta')
     i = 3
     members = membersCountOnly = managers = managersCountOnly = owners = ownersCountOnly = False
     gapi_directory_customer.setTrueCustomerId()
@@ -313,7 +313,7 @@ def print_():
 
 
 def print_members():
-    ci = gapi_cloudidentity.build()
+    ci = gapi_cloudidentity.build('cloudidentity_beta')
     todrive = False
     gapi_directory_customer.setTrueCustomerId()
     parent = f'customers/{GC_Values[GC_CUSTOMER_ID]}'
@@ -429,7 +429,7 @@ def update():
             ]
         return (role, users_email)
 
-    ci = gapi_cloudidentity.build()
+    ci = gapi_cloudidentity.build('cloudidentity_beta')
     group = sys.argv[3]
     myarg = sys.argv[4].lower()
     items = []

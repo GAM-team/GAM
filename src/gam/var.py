@@ -228,12 +228,22 @@ V1_DISCOVERY_APIS = {
     'siteVerification',
 }
 
+API_NAME_MAPPING = {
+    'directory': 'admin',
+    'reports': 'admin',
+    'datatransfer': 'admin',
+    'drive3': 'drive',
+    'cloudresourcemanagerv1': 'cloudresourcemanager',
+    'cloudidentity_beta': 'cloudidentity',
+}
+
 API_VER_MAPPING = {
     'alertcenter': 'v1beta1',
     'appsactivity': 'v1',
     'calendar': 'v3',
     'classroom': 'v1',
-    'cloudidentity': 'v1beta1',
+    'cloudidentity': 'v1',
+    'cloudidentity_beta': 'v1beta1',
     'cloudresourcemanager': 'v2',
     'cloudresourcemanagerv1': 'v1',
     'datatransfer': 'datatransfer_v1',
@@ -266,6 +276,7 @@ API_SCOPE_MAPPING = {
         'https://www.googleapis.com/auth/drive',
     ],
     'calendar': ['https://www.googleapis.com/auth/calendar',],
+    'cloudidentity': ['https://www.googleapis.com/auth/cloud-identity',],
     'drive': ['https://www.googleapis.com/auth/drive',],
     'drive3': ['https://www.googleapis.com/auth/drive',],
     'gmail': [
