@@ -215,6 +215,9 @@ script:
 - if [ "$e2e" = true ]; then $gam print users query "travis.jid=$jid" | $gam csv - gam delete user ~primaryEmail; fi
 - if [ "$e2e" = true ]; then $gam print mobile; fi
 - if [ "$e2e" = true ]; then $gam print devices; fi
+- if [ "$e2e" = true ]; then export sn="$jid$jid$jid$jid$jid-$(openssl rand -base64 32 | sed 's/[^a-zA-Z0-9]//g')"; fi
+- if [ "$e2e" = true ]; then $gam create device serialnumber $sn devicetype android; fi
+- if [ "$e2e" = true ]; then $gam print devices filter "serialnumber:$jid$jid$jid$jid$jid-" | $gam csv - gam delete device ~name; fi
 - if [ "$e2e" = true ]; then $gam print cros allfields nolists; fi
 - if [ "$e2e" = true ]; then $gam report usageparameters customer; fi
 - if [ "$e2e" = true ]; then $gam report usage customer parameters gmail:num_emails_sent,accounts:num_1day_logins; fi

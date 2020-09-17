@@ -47,11 +47,14 @@ def info():
     ci = gapi_cloudidentity.build_dwd()
     customer = f'customers/{GC_Values[GC_CUSTOMER_ID]}'
     name = sys.argv[3]
+    if not name.startswith('devices/'):
+        name = f'devices/{name}'
     device = gapi.call(ci.devices(), 'get', name=name, customer=customer)
     device_users = gapi.get_all_pages(ci.devices().deviceUsers(), 'list',
         'deviceUsers', parent=name, customer=customer)
-    print(device)
-    print(device_users)
+    display.print_json(device)
+    print('Device Users:')
+    display.print_json(device_users)
 
 def _generic_action(action, device_user=False):
     ci = gapi_cloudidentity.build_dwd()
@@ -169,9 +172,7 @@ def print_():
                 titles.append(a_key)
         csvRows.append(device)
     if sortHeaders:
-        display.sort_csv_titles([
-            'name',
-        ], titles)
+        display.sort_csv_titles(['name',], titles)
     display.write_csv_file(csvRows, titles, 'Devices', todrive)
 
 
