@@ -37,7 +37,7 @@ def buildCalendarDataGAPIObject(calname):
     if not calname.endswith('.calendar.google.com'):
         cal = gam.buildGAPIServiceObject('calendar', calendarId, False)
     if cal is None:
-        _, cal = buildCalendarGAPIObject(gam._getValueFromOAuth('email'))
+        _, cal = buildCalendarGAPIObject(gam._get_admin_email()
     return (calendarId, cal)
 
 

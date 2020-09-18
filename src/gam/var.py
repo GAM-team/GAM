@@ -37,6 +37,7 @@ ERROR_PREFIX = 'ERROR: '
 WARNING_PREFIX = 'WARNING: '
 UTF8 = 'utf-8'
 UTF8_SIG = 'utf-8-sig'
+FN_ENABLEDASA_TXT = 'enabledasa.txt'
 FN_EXTRA_ARGS_TXT = 'extra-args.txt'
 FN_LAST_UPDATE_CHECK_TXT = 'lastupdatecheck.txt'
 MY_CUSTOMER = 'my_customer'
@@ -1063,6 +1064,8 @@ GM_CURRENT_API_SCOPES = 'scoc'
 # Values retrieved from oauth2service.json
 GM_OAUTH2SERVICE_JSON_DATA = 'oajd'
 GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID = 'oaci'
+# Full path to enabledasa.txt
+GM_ENABLEDASA_TXT = 'enda'
 # File containing time of last GAM update check
 GM_LAST_UPDATE_CHECK_TXT = 'lupc'
 # Dictionary mapping OrgUnit ID to Name
@@ -1102,6 +1105,7 @@ GM_Globals = {
     GM_CURRENT_API_SCOPES: [],
     GM_OAUTH2SERVICE_JSON_DATA: None,
     GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID: None,
+    GM_ENABLEDASA_TXT: '',
     GM_LAST_UPDATE_CHECK_TXT: '',
     GM_MAP_ORGUNIT_ID_TO_NAME: None,
     GM_MAP_ROLE_ID_TO_NAME: None,
@@ -1135,6 +1139,8 @@ GC_CLIENT_SECRETS_JSON = 'client_secrets_json'
 GC_CONFIG_DIR = 'config_dir'
 # custmerId from gam.cfg or retrieved from Google
 GC_CUSTOMER_ID = 'customer_id'
+# Enable Delegated Admin Service Accounts admin user
+GC_ADMIN_EMAIL = 'admin_email'
 # If debug_level > 0: extra_args[u'prettyPrint'] = True,
 # httplib2.debuglevel = gam_debug_level, appsObj.debug = True
 GC_DEBUG_LEVEL = 'debug_level'
@@ -1188,6 +1194,7 @@ GC_CA_FILE = 'ca_file'
 
 TLS_MIN = 'TLSv1_2' if hasattr(ssl.SSLContext(), 'minimum_version') else None
 GC_Defaults = {
+    GC_ADMIN_EMAIL: '',
     GC_AUTO_BATCH_MIN: 0,
     GC_BATCH_SIZE: 50,
     GC_CACHE_DIR: '',
@@ -1238,6 +1245,9 @@ GC_VAR_TYPE = 'type'
 GC_VAR_LIMITS = 'lmit'
 
 GC_VAR_INFO = {
+    GC_ADMIN_EMAIL: {
+        GC_VAR_TYPE: GC_TYPE_STRING
+    },
     GC_AUTO_BATCH_MIN: {
         GC_VAR_TYPE: GC_TYPE_INTEGER,
         GC_VAR_LIMITS: (0, None)
