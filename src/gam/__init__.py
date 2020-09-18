@@ -11446,8 +11446,6 @@ def ProcessGAMCommand(args):
                 gapi_cloudidentity_devices.print_()
             elif argument in ['groupmembers', 'groupsmembers']:
                 gapi_directory_groups.print_members()
-            elif argument == 'devices':
-                gapi_cloudidentity_devices.print_()
             elif argument in ['cigroupmembers', 'cigroupsmembers']:
                 gapi_cloudidentity_groups.print_members()
             elif argument in ['orgs', 'ous']:
