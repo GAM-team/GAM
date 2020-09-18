@@ -536,7 +536,7 @@ def SetGlobalVariables():
                       fileAbsentValue=True)
     _getOldSignalFile(GC_NO_SHORT_URLS, 'noshorturls.txt')
     _getOldSignalFile(GC_NO_UPDATE_CHECK, 'noupdatecheck.txt')
-    _getOldSignalFile(GC_ENABLE_DASA, 'enabledasa.txt')
+    _getOldSignalFile(GC_ENABLE_DASA, FN_ENABLEDASA_TXT)
     # Assign directories first
     for itemName in GC_VAR_INFO:
         if GC_VAR_INFO[itemName][GC_VAR_TYPE] == GC_TYPE_DIRECTORY:
@@ -553,8 +553,24 @@ def SetGlobalVariables():
             GC_Values[itemName] = GC_Defaults[itemName]
     GM_Globals[GM_LAST_UPDATE_CHECK_TXT] = os.path.join(
         GC_Values[GC_CONFIG_DIR], FN_LAST_UPDATE_CHECK_TXT)
+    GM_Globals[GM_ENABLEDASA_TXT] = os.path.join(
+        GC_Values[GC_CONFIG_DIR], FN_ENABLEDASA_TXT)
     if not GC_Values[GC_NO_UPDATE_CHECK]:
         doGAMCheckForUpdates()
+
+# domain must be set and customer_id must be set and != my_customer when enable_dasa = true
+    if GC_Values[GC_ENABLE_DASA]:
+        if not GC_Values[GC_DOMAIN]:
+            controlflow.system_error_exit(
+                3,
+                f'Environment variable GA_DOMAIN must be set when {GM_Globals[GM_ENABLEDASA_TXT]} is present'
+                )
+        if not GC_Values[GC_CUSTOMER_ID] or GC_Values[GC_CUSTOMER_ID] == MY_CUSTOMER:
+            controlflow.system_error_exit(
+                3,
+                f'Environment variable CUSTOMER_ID must be set and not equal to {MY_CUSTOMER} when {GM_Globals[GM_ENABLEDASA_TXT]} is present\n'
+                'Your customer ID can be found at admin.google.com > Account settings > Profile.'
+                )
 
 
 # Globals derived from config file values
@@ -951,7 +967,7 @@ def buildGAPIObject(api):
         GC_Values[GC_DOMAIN] = _getValueFromOAuth('hd', credentials=credentials)
         if GC_Values[GC_DOMAIN] == 'Unknown':
             GC_Values[GC_DOMAIN] = getEmailAddressDomain(
-                _getValueFromOAuth('email'))
+                _get_admin_email())
         if not GC_Values[GC_CUSTOMER_ID]:
             GC_Values[GC_CUSTOMER_ID] = MY_CUSTOMER
     return service
@@ -2877,7 +2893,7 @@ def getPermissionId(argstr):
         permissionId = f'{permissionId}@{GC_Values[GC_DOMAIN].lower()}'
     # We have to use v2 here since v3 has no permissions.getIdForEmail equivalent
     # https://code.google.com/a/google.com/p/apps-api-issues/issues/detail?id=4313
-    _, drive2 = buildDriveGAPIObject(_getValueFromOAuth('email'))
+    _, drive2 = buildDriveGAPIObject(_get_admin_email())
     return gapi.call(drive2.permissions(),
                      'getIdForEmail',
                      email=permissionId,
@@ -8487,12 +8503,23 @@ def doCreateResoldCustomer():
         f'Created customer {result["customerDomain"]} with id {result["customerId"]}'
     )
 
-
 def _getValueFromOAuth(field, credentials=None):
     if not credentials:
         credentials = auth.get_admin_credentials()
     return credentials.get_token_value(field)
 
+
+def _get_admin_email():
+    if GC_Values[GC_ENABLE_DASA]:
+        if not GC_Values[GC_ADMIN_EMAIL]:
+            GC_Values[GC_ADMIN_EMAIL] = os.environ.get('GA_ADMIN_EMAIL', GC_Defaults[GC_ADMIN_EMAIL])
+            if not GC_Values[GC_ADMIN_EMAIL]:
+                controlflow.system_error_exit(
+                    3,
+                    f'Environment variable GA_ADMIN_EMAIL must be set when {GM_Globals[GM_ENABLEDASA_TXT]} is present'
+                    )
+        return GC_Values[GC_ADMIN_EMAIL]
+    return _getValueFromOAuth('email')
 
 def doGetUserInfo(user_email=None):
 
@@ -8507,7 +8534,7 @@ def doGetUserInfo(user_email=None):
             user_email = normalizeEmailAddressOrUID(sys.argv[3])
             i = 4
         else:
-            user_email = _getValueFromOAuth('email')
+            user_email = _get_admin_email()
     getSchemas = getAliases = getGroups = getLicenses = True
     projection = 'full'
     customFieldMask = viewType = None
@@ -9179,7 +9206,7 @@ def send_email(subject,
     api_body = {}
     default_sender = default_recipient = False
     if not user:
-        user = _getValueFromOAuth('email')
+        user = _get_admin_email()
     userId, gmail = buildGmailGAPIObject(user)
     if not gmail:
         return
@@ -9504,7 +9531,7 @@ def doPrintUsers():
 
 
 def doPrintShowAlerts():
-    _, ac = buildAlertCenterGAPIObject(_getValueFromOAuth('email'))
+    _, ac = buildAlertCenterGAPIObject(_get_admin_email())
     alerts = gapi.get_all_pages(ac.alerts(), 'list', 'alerts')
     titles = []
     csv_rows = []
@@ -9518,7 +9545,7 @@ def doPrintShowAlerts():
 
 
 def doPrintShowAlertFeedback():
-    _, ac = buildAlertCenterGAPIObject(_getValueFromOAuth('email'))
+    _, ac = buildAlertCenterGAPIObject(_get_admin_email())
     feedback = gapi.get_all_pages(ac.alerts().feedback(),
                                   'list',
                                   'feedback',
@@ -9528,7 +9555,7 @@ def doPrintShowAlertFeedback():
 
 
 def doCreateAlertFeedback():
-    _, ac = buildAlertCenterGAPIObject(_getValueFromOAuth('email'))
+    _, ac = buildAlertCenterGAPIObject(_get_admin_email())
     valid_types = gapi.get_enum_values_minus_unspecified(
         ac._rootDesc['schemas']['AlertFeedback']['properties']['type']['enum'])
     alertId = sys.argv[3]
@@ -9542,7 +9569,7 @@ def doCreateAlertFeedback():
 
 
 def doDeleteOrUndeleteAlert(action):
-    _, ac = buildAlertCenterGAPIObject(_getValueFromOAuth('email'))
+    _, ac = buildAlertCenterGAPIObject(_get_admin_email())
     alertId = sys.argv[3]
     kwargs = {}
     if action == 'undelete':
