@@ -56,7 +56,7 @@ def showUsageParameters():
         kwargs = {}
     elif report == 'user':
         endpoint = rep.userUsageReport()
-        kwargs = {'userKey': gam._get_admin_email()
+        kwargs = {'userKey': gam._get_admin_email()}
     else:
         controlflow.expected_argument_exit('usageparameters',
                                            ['user', 'customer'], report)
