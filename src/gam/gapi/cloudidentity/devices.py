@@ -115,7 +115,7 @@ def print_():
     ci = gapi_cloudidentity.build_dwd()
     customer = f'customers/{GC_Values[GC_CUSTOMER_ID]}'
     parent = 'devices/-'
-    filter = None
+    device_filter = None
     get_device_users = True
     get_device_views = ['COMPANY_INVENTORY', 'USER_ASSIGNED_DEVICES']
     titles = []
@@ -126,7 +126,7 @@ def print_():
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
         if myarg in ['filter', 'query']:
-          filter = sys.argv[i+1]
+          device_filter = sys.argv[i+1]
           i += 2
         elif myarg == 'nocompanydevices':
             get_device_views.remove('COMPANY_INVENTORY')
@@ -152,12 +152,12 @@ def print_():
         page_message = gapi.got_total_items_msg(view_name, '...\n')
         devices += gapi.get_all_pages(ci.devices(), 'list', 'devices',
             customer=customer, page_message=page_message,
-            pageSize=100, filter=filter, view=view)
+            pageSize=100, filter=device_filter, view=view)
     if get_device_users:
         page_message = gapi.got_total_items_msg('Device Users', '...\n')
         device_users = gapi.get_all_pages(ci.devices().deviceUsers(), 'list',
             'deviceUsers', customer=customer, parent=parent,
-            page_message=page_message, pageSize=20, filter=filter)
+            page_message=page_message, pageSize=20, filter=device_filter)
         for device_user in device_users:
             for device in devices:
                 if device_user.get('name').startswith(device.get('name')):
@@ -181,7 +181,7 @@ def sync():
     device_types = gapi.get_enum_values_minus_unspecified(
         ci._rootDesc['schemas']['GoogleAppsCloudidentityDevicesV1Device']['properties']['deviceType']['enum'])
     customer = f'customers/{GC_Values[GC_CUSTOMER_ID]}'
-    filter = None
+    device_filter = None
     csv_file = None
     serialnumber_column = 'serialNumber'
     devicetype_column = 'deviceType'
@@ -194,7 +194,7 @@ def sync():
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
         if myarg in ['filter', 'query']:
-          filter = sys.argv[i+1]
+          device_filter = sys.argv[i+1]
           i += 2
         elif myarg == 'csvfile':
           csv_file = sys.argv[i+1]
@@ -260,7 +260,7 @@ def sync():
     fields = f'nextPageToken,devices({",".join(device_fields)})'
     remote_devices = gapi.get_all_pages(ci.devices(), 'list', 'devices',
             customer=customer, page_message=page_message,
-            pageSize=100, filter=filter, view='COMPANY_INVENTORY', fields=fields)
+            pageSize=100, filter=device_filter, view='COMPANY_INVENTORY', fields=fields)
     remote_device_map = {}
     for remote_device in remote_devices:
         sn = remote_device['serialNumber']
