@@ -29,7 +29,7 @@ gamversion="latest"
 adminuser=""
 regularuser=""
 gam_glibc_vers="2.27 2.23"
-gam_macos_vers="10.15.4 10.14.6 10.13.6"
+gam_macos_vers="10.15.6 10.14.6 10.13.6"
 
 while getopts "hd:a:o:b:lp:u:r:v:" OPTION
 do

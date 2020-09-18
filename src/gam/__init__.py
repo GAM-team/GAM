@@ -8792,6 +8792,12 @@ def doGetUserInfo(user_email=None):
                 print(f'  {alias}')
     if getGroups:
         throw_reasons = [gapi_errors.ErrorReason.FORBIDDEN]
+        kwargs = {}
+        if GC_Values[GC_ENABLE_DASA]:
+            # Allows groups.list() to function but will limit
+            # returned groups to those in same domain as user
+            # so only do this for DASA admins
+            kwargs['domain'] = GC_Values[GC_DOMAIN]
         try:
             groups = gapi.get_all_pages(
                 cd.groups(),
@@ -8799,7 +8805,7 @@ def doGetUserInfo(user_email=None):
                 'groups',
                 userKey=user_email,
                 fields='groups(name,email),nextPageToken',
-                throw_reasons=throw_reasons)
+                throw_reasons=throw_reasons, **kwargs)
             if groups:
                 print(f'Groups: ({len(groups)})')
                 for group in groups:
