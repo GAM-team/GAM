@@ -220,7 +220,7 @@ def write_csv_file(csvRows, titles, list_type, todrive):
     except IOError as e:
         controlflow.system_error_exit(6, e)
     if todrive:
-        admin_email = gam._getValueFromOAuth('email')
+        admin_email = gam._get_admin_email()
         _, drive = gam.buildDrive3GAPIObject(admin_email)
         if not drive:
             print(f'''\nGAM is not authorized to create Drive files. Please run:
