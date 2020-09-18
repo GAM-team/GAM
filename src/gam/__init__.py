@@ -536,7 +536,7 @@ def SetGlobalVariables():
                       fileAbsentValue=True)
     _getOldSignalFile(GC_NO_SHORT_URLS, 'noshorturls.txt')
     _getOldSignalFile(GC_NO_UPDATE_CHECK, 'noupdatecheck.txt')
-    _getOldSignalFile(GC_ENABLE_DASA, 'enabledasa.txt')
+    _getOldSignalFile(GC_ENABLE_DASA, FN_ENABLEDASA_TXT)
     # Assign directories first
     for itemName in GC_VAR_INFO:
         if GC_VAR_INFO[itemName][GC_VAR_TYPE] == GC_TYPE_DIRECTORY:
@@ -553,8 +553,24 @@ def SetGlobalVariables():
             GC_Values[itemName] = GC_Defaults[itemName]
     GM_Globals[GM_LAST_UPDATE_CHECK_TXT] = os.path.join(
         GC_Values[GC_CONFIG_DIR], FN_LAST_UPDATE_CHECK_TXT)
+    GM_Globals[GM_ENABLEDASA_TXT] = os.path.join(
+        GC_Values[GC_CONFIG_DIR], FN_ENABLEDASA_TXT)
     if not GC_Values[GC_NO_UPDATE_CHECK]:
         doGAMCheckForUpdates()
+
+# domain must be set and customer_id must be set and != my_customer when enable_dasa = true
+    if GC_Values[GC_ENABLE_DASA]:
+        if not GC_Values[GC_DOMAIN]:
+            controlflow.system_error_exit(
+                3,
+                f'Environment variable GA_DOMAIN must be set when {GM_Globals[GM_ENABLEDASA_TXT]} is present'
+                )
+        if not GC_Values[GC_CUSTOMER_ID] or GC_Values[GC_CUSTOMER_ID] == MY_CUSTOMER:
+            controlflow.system_error_exit(
+                3,
+                f'Environment variable CUSTOMER_ID must be set and not equal to {MY_CUSTOMER} when {GM_Globals[GM_ENABLEDASA_TXT]} is present\n'
+                'Your customer ID can be found at admin.google.com > Account settings > Profile.'
+                )
 
 
 # Globals derived from config file values
@@ -8488,7 +8504,23 @@ def doCreateResoldCustomer():
     )
 
 
+def _get_admin_email():
+    if not GC_Values[GC_ADMIN_EMAIL]:
+        GC_Values[GC_ADMIN_EMAIL] = os.environ.get('GA_ADMIN_EMAIL', GC_Defaults[GC_ADMIN_EMAIL])
+        if not GC_Values[GC_ADMIN_EMAIL]:
+            controlflow.system_error_exit(
+                3,
+                f'Environment variable GA_ADMIN_EMAIL must be set when {GM_Globals[GM_ENABLEDASA_TXT]} is present'
+                )
+    return GC_Values[GC_ADMIN_EMAIL]
+
 def _getValueFromOAuth(field, credentials=None):
+    if GC_Values[GC_ENABLE_DASA]:
+        if field == 'email':
+            return _get_admin_email()
+        if field == 'hd':
+            return GC_Values[GC_DOMAIN]
+        return None
     if not credentials:
         credentials = auth.get_admin_credentials()
     return credentials.get_token_value(field)
