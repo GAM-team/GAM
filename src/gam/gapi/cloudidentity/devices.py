@@ -215,14 +215,14 @@ def sync():
         elif myarg == 'assetidcolumn':
           assetid_column = sys.argv[i+1]
           i += 2
-        elif myarg == 'unassigned_missing_action':
+        elif myarg == 'unassignedmissingaction':
           unassigned_missing_action = sys.argv[i+1].lower().replace('_', '')
           if unassigned_missing_action not in missing_actions:
               controlflow.expected_argument_exit('unassigned_missing_action',
                                                    ', '.join(missing_actions),
                                                    sys.argv[i+1])
           i += 2
-        elif myarg == 'assigned_missing_action':
+        elif myarg == 'assignedmissingaction':
           assigned_missing_action = sys.argv[i+1].lower().replace('_', '')
           if assigned_missing_action not in missing_actions:
               controlflow.expected_argument_exit('assigned_missing_action',
@@ -231,6 +231,9 @@ def sync():
           i += 2
         else:
            controlflow.invalid_argument_exit(sys.argv[i], 'gam sync devices')
+    if not csv_file:
+        controlflow.system_error_exit(
+            3, 'csvfile is a required argument for "gam sync devices".') 
     f = fileutils.open_file(csv_file)
     input_file = csv.DictReader(f, restval='')
     if serialnumber_column not in input_file.fieldnames:
