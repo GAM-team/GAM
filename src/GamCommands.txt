@@ -1144,8 +1144,7 @@ gam block deviceuser [id] <DeviceUserID>
 gam delete deviceuser [id] <DeviceUserID>
 gam cancelwipe deviceuser [id] <DeviceUserID>
 gam wipe deviceuser [id] <DeviceUserID>
-gam print devices [todrive <ToDriveAttribute>*]
-	[query <QueryDevice>]
+gam print devices [todrive] [query <QueryDevice>]
 	[nocompanydevices] [nouserdevices] [nousers]
 	[formatjson [quotechar <Character>]]
 gam sync devices
