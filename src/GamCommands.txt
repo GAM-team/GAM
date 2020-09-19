@@ -158,6 +158,9 @@ If an item contains spaces, it should be surrounded by ".
 <CourseState> ::= active|archived|provisioned|declined
 <CrOSID> ::= <String>
 <CustomerID> ::= <String>
+<DeviceID> ::= devices/<String>
+<DeviceType> ::= android|chrome_os|google_sync|ios|linux|mac_os|windows
+<DeviceUserID> ::= devices/<String>/deviceUsers/<String>
 <DomainAlias> ::= <String>
 <DriveFileACLRole> ::= commenter|contentmanager|editor|fileorganizer|organizer|owner|reader|writer
 <DriveFileID> ::= <String>
@@ -1126,6 +1129,33 @@ The default is to include recentusers and timeranges.
 The listlimit <Number> argument limits the number of recent users, time ranges and device files to <Number>; if not specified or <Number> equals zero, there is no limit.
 The start <Date> and end <Date> arguments filter the time ranges.
 Delimiter defaults to comma.
+
+<DeviceID> ::= devices/<String>
+<DeviceType> ::= android|chrome_os|google_sync|ios|linux|mac_os|windows
+<DeviceUserID> ::= devices/<String>/deviceUsers/<String>
+
+gam create device serialnumber <String> devicetype <DeviceType>
+gam info device [id] <DeviceID>
+gam delete device [id] <DeviceID>
+gam cancelwipe device [id] <DeviceID>
+gam wipe device [id] <DeviceID>
+gam approve deviceuser [id] <DeviceUserID>
+gam block deviceuser [id] <DeviceUserID>
+gam delete deviceuser [id] <DeviceUserID>
+gam cancelwipe deviceuser [id] <DeviceUserID>
+gam wipe deviceuser [id] <DeviceUserID>
+gam print devices [todrive <ToDriveAttribute>*]
+	[query <QueryDevice>]
+	[nocompanydevices] [nouserdevices] [nousers]
+	[formatjson [quotechar <Character>]]
+gam sync devices
+	csvfile <FileName>
+	[serialnumber_column <String>]
+	[devicetype_column <String>]
+	[assetid_column <String>]
+	[static_devicetype <DeviceType>]
+	[unassigned_missing_action delete|wipe|nonothing]
+	[assigned_missing_action delete|wipe|nonothing]
 
 gam update mobile <MobileID>|query:<QueryMobile> action <MobileAction> [doit] [if_users|match_users <UserTypeEntity>]
 gam delete mobile <MobileID>

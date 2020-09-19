@@ -3,7 +3,6 @@ import sys
 
 import googleapiclient
 
-import gam
 from gam.var import *
 from gam import controlflow
 from gam import display
@@ -12,8 +11,6 @@ from gam import gapi
 from gam import utils
 from gam.gapi import errors as gapi_errors
 from gam.gapi import cloudidentity as gapi_cloudidentity
-from gam.gapi.directory import customer as gapi_directory_customer
-from gam.gapi.directory import groups as gapi_directory_groups
 
 
 def create():
@@ -36,19 +33,26 @@ def create():
                                                    sys.argv[i+1])
             i += 2
         else:
-           controlflow.invalid_argument_exit(sys.argv[i], 'gam create device') 
+            controlflow.invalid_argument_exit(sys.argv[i], 'gam create device')
     if not body.get('serialNumber') or not body.get('deviceType'):
         controlflow.system_error_exit(
-            3, 'serial_number and device_type are required arguments for "gam create device".') 
+            3, 'serial_number and device_type are required arguments for "gam create device".')
     result = gapi.call(ci.devices(), 'create', customer=customer, body=body)
     print(f'Created device {result["response"]["name"]}')
+
+def _get_device_name():
+    name = sys.argv[3]
+    if name == 'id':
+        name = sys.argv[4]
+    if not name.startswith('devices/'):
+        name = f'devices/{name}'
+    return name
+
 
 def info():
     ci = gapi_cloudidentity.build_dwd()
     customer = f'customers/{GC_Values[GC_CUSTOMER_ID]}'
-    name = sys.argv[3]
-    if not name.startswith('devices/'):
-        name = f'devices/{name}'
+    name = _get_device_name()
     device = gapi.call(ci.devices(), 'get', name=name, customer=customer)
     device_users = gapi.get_all_pages(ci.devices().deviceUsers(), 'list',
         'deviceUsers', parent=name, customer=customer)
@@ -59,7 +63,8 @@ def info():
 def _generic_action(action, device_user=False):
     ci = gapi_cloudidentity.build_dwd()
     customer = f'customers/{GC_Values[GC_CUSTOMER_ID]}'
-    
+    name = _get_device_name()
+
     # bah, inconsistencies in API
     if action == 'delete':
         kwargs = {'customer': customer}
@@ -70,31 +75,17 @@ def _generic_action(action, device_user=False):
         endpoint = ci.devices().deviceUsers()
     else:
         endpoint = ci.devices()
-    name = None
-    i = 3
-    while i < len(sys.argv):
-        myarg = sys.argv[i].lower().replace('_', '')
-        # The API calls it "name" but GAM will expose as "id" to avoid admin confusion.
-        if myarg == 'id':
-            name = sys.argv[i+1]
-            if not name.startswith('devices/'):
-                name = f'devices/{name}'
-            i += 2
-        else:
-            controlflow.invalid_argument_exit(sys.argv[i], f'gam {action} device')
-    if not name:
-        controlflow.system_error_exit(3, f'id is a required argument for "gam {action} device".')
     op = gapi.call(endpoint, action, name=name, **kwargs)
-    print(op) 
+    print(op)
 
 def delete():
-     _generic_action('delete')
+    _generic_action('delete')
 
 def cancel_wipe():
-     _generic_action('cancelWipe')
+    _generic_action('cancelWipe')
 
 def wipe():
-     _generic_action('wipe')
+    _generic_action('wipe')
 
 def approve_user():
     _generic_action('approve', True)
@@ -134,6 +125,9 @@ def print_():
         elif myarg == 'nopersonaldevices':
             get_device_views.remove('USER_ASSIGNED_DEVICES')
             i += 1
+        elif myarg == 'nodeviceusers':
+            get_device_users = False
+            i += 1
         elif myarg == 'todrive':
             todrive = True
             i += 1
@@ -141,7 +135,7 @@ def print_():
             sortHeaders = True
             i += 1
         else:
-           controlflow.invalid_argument_exit(sys.argv[i], 'gam print devices')
+            controlflow.invalid_argument_exit(sys.argv[i], 'gam print devices')
     view_name_map = {
       'COMPANY_INVENTORY': 'Company Devices',
       'USER_ASSIGNED_DEVICES': 'Personal Devices',
@@ -233,7 +227,7 @@ def sync():
            controlflow.invalid_argument_exit(sys.argv[i], 'gam sync devices')
     if not csv_file:
         controlflow.system_error_exit(
-            3, 'csvfile is a required argument for "gam sync devices".') 
+            3, 'csvfile is a required argument for "gam sync devices".')
     f = fileutils.open_file(csv_file)
     input_file = csv.DictReader(f, restval='')
     if serialnumber_column not in input_file.fieldnames:
