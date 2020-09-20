@@ -18,7 +18,7 @@ def create():
     customer = f'customers/{GC_Values[GC_CUSTOMER_ID]}'
     device_types = gapi.get_enum_values_minus_unspecified(
         ci._rootDesc['schemas']['GoogleAppsCloudidentityDevicesV1Device']['properties']['deviceType']['enum'])
-    body = {'deviceType': '', 'serialNumber': ''
+    body = {'deviceType': '', 'serialNumber': ''}
     i = 3
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
@@ -251,7 +251,7 @@ def sync():
                                                    sys.argv[i+1])
           i += 2
         else:
-           controlflow.invalid_argument_exit(sys.argv[i], 'gam sync devices')
+            controlflow.invalid_argument_exit(sys.argv[i], 'gam sync devices')
     if not csv_file:
         controlflow.system_error_exit(
             3, 'csvfile is a required argument for "gam sync devices".')
