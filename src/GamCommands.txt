@@ -1136,7 +1136,7 @@ Delimiter defaults to comma.
 <DeviceOrderbyFieldName> ::= 
 	createtime|devicetype|lastsynctime|model|osversion|serialnumber
 
-gam create device serialnumber <String> devicetype <DeviceType>
+gam create device serialnumber <String> devicetype <DeviceType> [assetid <String>]
 gam info device [id] <DeviceID>
 gam delete device [id] <DeviceID>
 gam cancelwipe device [id] <DeviceID>

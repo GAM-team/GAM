@@ -18,7 +18,7 @@ def create():
     customer = f'customers/{GC_Values[GC_CUSTOMER_ID]}'
     device_types = gapi.get_enum_values_minus_unspecified(
         ci._rootDesc['schemas']['GoogleAppsCloudidentityDevicesV1Device']['properties']['deviceType']['enum'])
-    body = {}
+    body = {'deviceType': '', 'serialNumber': ''
     i = 3
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
@@ -32,9 +32,12 @@ def create():
                                                    ', '.join(device_types),
                                                    sys.argv[i+1])
             i += 2
+        elif myarg in {'assettag', 'assetid'}:
+            body['assetTag'] = sys.argv[i+1]
+            i += 2
         else:
             controlflow.invalid_argument_exit(sys.argv[i], 'gam create device')
-    if not body.get('serialNumber') or not body.get('deviceType'):
+    if not body['serialNumber'] or not body['deviceType']:
         controlflow.system_error_exit(
             3, 'serial_number and device_type are required arguments for "gam create device".')
     result = gapi.call(ci.devices(), 'create', customer=customer, body=body)
@@ -204,7 +207,7 @@ def sync():
     serialnumber_column = 'serialNumber'
     devicetype_column = 'deviceType'
     static_devicetype = None
-    assetid_column = None
+    assettag_column = None
     unassigned_missing_action = 'delete'
     assigned_missing_action = 'donothing'
     missing_actions = ['delete', 'wipe', 'donothing']
@@ -230,8 +233,8 @@ def sync():
                                                    ', '.join(device_types),
                                                    sys.argv[i+1])
           i += 2
-        elif myarg == 'assetidcolumn':
-          assetid_column = sys.argv[i+1]
+        elif myarg in {'assettagcolumn', 'assetidcolumn'}:
+          assettag_column = sys.argv[i+1]
           i += 2
         elif myarg == 'unassignedmissingaction':
           unassigned_missing_action = sys.argv[i+1].lower().replace('_', '')
@@ -258,8 +261,8 @@ def sync():
         controlflow.csv_field_error_exit(serialnumber_column, input_file.fieldnames)
     if not static_devicetype and devicetype_column not in input_file.fieldnames:
         controlflow.csv_field_error_exit(devicetype_column, input_file.fieldnames)
-    if assetid_column and assetid_column not in input_file.fieldnames:
-        controlflow.csv_field_error_exit(assetid_column, input_file.fieldnames)
+    if assettag_column and assettag_column not in input_file.fieldnames:
+        controlflow.csv_field_error_exit(assettag_column, input_file.fieldnames)
     local_devices = []
     for row in input_file:
         # upper() is very important to comparison since Google
@@ -270,13 +273,13 @@ def sync():
             local_device['deviceType'] = static_devicetype
         else:
             local_device['deviceType'] = row[devicetype_column].strip()
-        if assetid_column:
-            local_device['assetTag'] = row[assetid_column].strip()
+        if assettag_column:
+            local_device['assetTag'] = row[assettag_column].strip()
         local_devices.append(local_device)
     fileutils.close_file(f)
     page_message = gapi.got_total_items_msg('Company Devices', '...\n')
     device_fields = ['serialNumber', 'deviceType', 'lastSyncTime', 'name']
-    if assetid_column:
+    if assettag_column:
        device_fields.append('assetTag')
     fields = f'nextPageToken,devices({",".join(device_fields)})'
     remote_devices = gapi.get_all_pages(ci.devices(), 'list', 'devices',
