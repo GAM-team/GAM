@@ -13,9 +13,15 @@ from gam.gapi import errors as gapi_errors
 from gam.gapi import cloudidentity as gapi_cloudidentity
 
 
+def _get_device_customerid():
+  customer = GC_Values[GC_CUSTOMER_ID]
+  if customer.startswith('C'):
+    customer = customer[1:]
+  return f'customers/{customer}'
+
 def create():
     ci = gapi_cloudidentity.build_dwd()
-    customer = f'customers/{GC_Values[GC_CUSTOMER_ID]}'
+    customer = _get_device_customerid()
     device_types = gapi.get_enum_values_minus_unspecified(
         ci._rootDesc['schemas']['GoogleAppsCloudidentityDevicesV1Device']['properties']['deviceType']['enum'])
     body = {'deviceType': '', 'serialNumber': ''}
@@ -54,7 +60,7 @@ def _get_device_name():
 
 def info():
     ci = gapi_cloudidentity.build_dwd()
-    customer = f'customers/{GC_Values[GC_CUSTOMER_ID]}'
+    customer = _get_device_customerid()
     name = _get_device_name()
     device = gapi.call(ci.devices(), 'get', name=name, customer=customer)
     device_users = gapi.get_all_pages(ci.devices().deviceUsers(), 'list',
@@ -65,7 +71,7 @@ def info():
 
 def _generic_action(action, device_user=False):
     ci = gapi_cloudidentity.build_dwd()
-    customer = f'customers/{GC_Values[GC_CUSTOMER_ID]}'
+    customer = _get_device_customerid()
     name = _get_device_name()
 
     # bah, inconsistencies in API
@@ -107,7 +113,7 @@ def wipe_user():
 
 def print_():
     ci = gapi_cloudidentity.build_dwd()
-    customer = f'customers/{GC_Values[GC_CUSTOMER_ID]}'
+    customer = _get_device_customerid()
     parent = 'devices/-'
     device_filter = None
     get_device_users = True
@@ -201,7 +207,7 @@ def sync():
     ci = gapi_cloudidentity.build_dwd()
     device_types = gapi.get_enum_values_minus_unspecified(
         ci._rootDesc['schemas']['GoogleAppsCloudidentityDevicesV1Device']['properties']['deviceType']['enum'])
-    customer = f'customers/{GC_Values[GC_CUSTOMER_ID]}'
+    customer = _get_device_customerid()
     device_filter = None
     csv_file = None
     serialnumber_column = 'serialNumber'
