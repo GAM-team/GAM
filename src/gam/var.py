@@ -367,6 +367,15 @@ CALENDAR_NOTIFICATION_TYPES_MAP = {
     'agenda': 'agenda',
 }
 
+DEVICE_ORDERBY_CHOICES_MAP = {
+  'createtime': 'create_time',
+  'devicetype': 'device_type',
+  'lastsynctime': 'last_sync_time',
+  'model': 'model',
+  'osversion': 'os_version',
+  'serialnumber': 'serial_number'
+  }
+
 DRIVEFILE_FIELDS_CHOICES_MAP = {
     'alternatelink': 'alternateLink',
     'appdatacontents': 'appDataContents',

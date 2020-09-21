@@ -3,7 +3,6 @@ import sys
 
 import googleapiclient
 
-import gam
 from gam.var import *
 from gam import controlflow
 from gam import display
@@ -12,16 +11,20 @@ from gam import gapi
 from gam import utils
 from gam.gapi import errors as gapi_errors
 from gam.gapi import cloudidentity as gapi_cloudidentity
-from gam.gapi.directory import customer as gapi_directory_customer
-from gam.gapi.directory import groups as gapi_directory_groups
 
+
+def _get_device_customerid():
+  customer = GC_Values[GC_CUSTOMER_ID]
+  if customer.startswith('C'):
+    customer = customer[1:]
+  return f'customers/{customer}'
 
 def create():
     ci = gapi_cloudidentity.build_dwd()
-    customer = f'customers/{GC_Values[GC_CUSTOMER_ID]}'
+    customer = _get_device_customerid()
     device_types = gapi.get_enum_values_minus_unspecified(
         ci._rootDesc['schemas']['GoogleAppsCloudidentityDevicesV1Device']['properties']['deviceType']['enum'])
-    body = {}
+    body = {'deviceType': '', 'serialNumber': ''}
     i = 3
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
@@ -35,20 +38,30 @@ def create():
                                                    ', '.join(device_types),
                                                    sys.argv[i+1])
             i += 2
+        elif myarg in {'assettag', 'assetid'}:
+            body['assetTag'] = sys.argv[i+1]
+            i += 2
         else:
-           controlflow.invalid_argument_exit(sys.argv[i], 'gam create device') 
-    if not body.get('serialNumber') or not body.get('deviceType'):
+            controlflow.invalid_argument_exit(sys.argv[i], 'gam create device')
+    if not body['serialNumber'] or not body['deviceType']:
         controlflow.system_error_exit(
-            3, 'serial_number and device_type are required arguments for "gam create device".') 
+            3, 'serial_number and device_type are required arguments for "gam create device".')
     result = gapi.call(ci.devices(), 'create', customer=customer, body=body)
     print(f'Created device {result["response"]["name"]}')
 
-def info():
-    ci = gapi_cloudidentity.build_dwd()
-    customer = f'customers/{GC_Values[GC_CUSTOMER_ID]}'
+def _get_device_name():
     name = sys.argv[3]
+    if name == 'id':
+        name = sys.argv[4]
     if not name.startswith('devices/'):
         name = f'devices/{name}'
+    return name
+
+
+def info():
+    ci = gapi_cloudidentity.build_dwd()
+    customer = _get_device_customerid()
+    name = _get_device_name()
     device = gapi.call(ci.devices(), 'get', name=name, customer=customer)
     device_users = gapi.get_all_pages(ci.devices().deviceUsers(), 'list',
         'deviceUsers', parent=name, customer=customer)
@@ -58,8 +71,9 @@ def info():
 
 def _generic_action(action, device_user=False):
     ci = gapi_cloudidentity.build_dwd()
-    customer = f'customers/{GC_Values[GC_CUSTOMER_ID]}'
-    
+    customer = _get_device_customerid()
+    name = _get_device_name()
+
     # bah, inconsistencies in API
     if action == 'delete':
         kwargs = {'customer': customer}
@@ -70,31 +84,17 @@ def _generic_action(action, device_user=False):
         endpoint = ci.devices().deviceUsers()
     else:
         endpoint = ci.devices()
-    name = None
-    i = 3
-    while i < len(sys.argv):
-        myarg = sys.argv[i].lower().replace('_', '')
-        # The API calls it "name" but GAM will expose as "id" to avoid admin confusion.
-        if myarg == 'id':
-            name = sys.argv[i+1]
-            if not name.startswith('devices/'):
-                name = f'devices/{name}'
-            i += 2
-        else:
-            controlflow.invalid_argument_exit(sys.argv[i], f'gam {action} device')
-    if not name:
-        controlflow.system_error_exit(3, f'id is a required argument for "gam {action} device".')
     op = gapi.call(endpoint, action, name=name, **kwargs)
-    print(op) 
+    print(op)
 
 def delete():
-     _generic_action('delete')
+    _generic_action('delete')
 
 def cancel_wipe():
-     _generic_action('cancelWipe')
+    _generic_action('cancelWipe')
 
 def wipe():
-     _generic_action('wipe')
+    _generic_action('wipe')
 
 def approve_user():
     _generic_action('approve', True)
@@ -113,11 +113,12 @@ def wipe_user():
 
 def print_():
     ci = gapi_cloudidentity.build_dwd()
-    customer = f'customers/{GC_Values[GC_CUSTOMER_ID]}'
+    customer = _get_device_customerid()
     parent = 'devices/-'
     device_filter = None
     get_device_users = True
     get_device_views = ['COMPANY_INVENTORY', 'USER_ASSIGNED_DEVICES']
+    orderByList = []
     titles = []
     csvRows = []
     todrive = False
@@ -134,25 +135,51 @@ def print_():
         elif myarg == 'nopersonaldevices':
             get_device_views.remove('USER_ASSIGNED_DEVICES')
             i += 1
+        elif myarg == 'nodeviceusers':
+            get_device_users = False
+            i += 1
         elif myarg == 'todrive':
             todrive = True
             i += 1
+        elif myarg == 'orderby':
+            fieldName = sys.argv[i + 1].lower()
+            i += 2
+            if fieldName in DEVICE_ORDERBY_CHOICES_MAP:
+                fieldName = DEVICE_ORDERBY_CHOICES_MAP[fieldName]
+                orderBy = ''
+                if i < len(sys.argv):
+                    orderBy = sys.argv[i].lower()
+                    if orderBy in SORTORDER_CHOICES_MAP:
+                        orderBy = SORTORDER_CHOICES_MAP[orderBy]
+                        i += 1
+                if orderBy != 'DESCENDING':
+                    orderByList.append(fieldName)
+                else:
+                    orderByList.append(f'{fieldName} desc')
+            else:
+                controlflow.expected_argument_exit(
+                    'orderby', ', '.join(sorted(DEVICE_ORDERBY_CHOICES_MAP)),
+                    fieldName)
         elif myarg == 'sortheaders':
             sortHeaders = True
             i += 1
         else:
-           controlflow.invalid_argument_exit(sys.argv[i], 'gam print devices')
+            controlflow.invalid_argument_exit(sys.argv[i], 'gam print devices')
     view_name_map = {
       'COMPANY_INVENTORY': 'Company Devices',
       'USER_ASSIGNED_DEVICES': 'Personal Devices',
       }
+    if orderByList:
+        orderBy = ','.join(orderByList)
+    else:
+        orderBy = None
     devices = []
     for view in get_device_views:
         view_name = view_name_map.get(view, 'Devices')
         page_message = gapi.got_total_items_msg(view_name, '...\n')
         devices += gapi.get_all_pages(ci.devices(), 'list', 'devices',
             customer=customer, page_message=page_message,
-            pageSize=100, filter=device_filter, view=view)
+                                      pageSize=100, filter=device_filter, view=view, orderBy=orderBy)
     if get_device_users:
         page_message = gapi.got_total_items_msg('Device Users', '...\n')
         device_users = gapi.get_all_pages(ci.devices().deviceUsers(), 'list',
@@ -180,13 +207,13 @@ def sync():
     ci = gapi_cloudidentity.build_dwd()
     device_types = gapi.get_enum_values_minus_unspecified(
         ci._rootDesc['schemas']['GoogleAppsCloudidentityDevicesV1Device']['properties']['deviceType']['enum'])
-    customer = f'customers/{GC_Values[GC_CUSTOMER_ID]}'
+    customer = _get_device_customerid()
     device_filter = None
     csv_file = None
     serialnumber_column = 'serialNumber'
     devicetype_column = 'deviceType'
     static_devicetype = None
-    assetid_column = None
+    assettag_column = None
     unassigned_missing_action = 'delete'
     assigned_missing_action = 'donothing'
     missing_actions = ['delete', 'wipe', 'donothing']
@@ -212,8 +239,8 @@ def sync():
                                                    ', '.join(device_types),
                                                    sys.argv[i+1])
           i += 2
-        elif myarg == 'assetidcolumn':
-          assetid_column = sys.argv[i+1]
+        elif myarg in {'assettagcolumn', 'assetidcolumn'}:
+          assettag_column = sys.argv[i+1]
           i += 2
         elif myarg == 'unassignedmissingaction':
           unassigned_missing_action = sys.argv[i+1].lower().replace('_', '')
@@ -230,18 +257,18 @@ def sync():
                                                    sys.argv[i+1])
           i += 2
         else:
-           controlflow.invalid_argument_exit(sys.argv[i], 'gam sync devices')
+            controlflow.invalid_argument_exit(sys.argv[i], 'gam sync devices')
     if not csv_file:
         controlflow.system_error_exit(
-            3, 'csvfile is a required argument for "gam sync devices".') 
+            3, 'csvfile is a required argument for "gam sync devices".')
     f = fileutils.open_file(csv_file)
     input_file = csv.DictReader(f, restval='')
     if serialnumber_column not in input_file.fieldnames:
         controlflow.csv_field_error_exit(serialnumber_column, input_file.fieldnames)
     if not static_devicetype and devicetype_column not in input_file.fieldnames:
         controlflow.csv_field_error_exit(devicetype_column, input_file.fieldnames)
-    if assetid_column and assetid_column not in input_file.fieldnames:
-        controlflow.csv_field_error_exit(assetid_column, input_file.fieldnames)
+    if assettag_column and assettag_column not in input_file.fieldnames:
+        controlflow.csv_field_error_exit(assettag_column, input_file.fieldnames)
     local_devices = []
     for row in input_file:
         # upper() is very important to comparison since Google
@@ -252,13 +279,13 @@ def sync():
             local_device['deviceType'] = static_devicetype
         else:
             local_device['deviceType'] = row[devicetype_column].strip()
-        if assetid_column:
-            local_device['assetTag'] = row[assetid_column].strip()
+        if assettag_column:
+            local_device['assetTag'] = row[assettag_column].strip()
         local_devices.append(local_device)
     fileutils.close_file(f)
     page_message = gapi.got_total_items_msg('Company Devices', '...\n')
     device_fields = ['serialNumber', 'deviceType', 'lastSyncTime', 'name']
-    if assetid_column:
+    if assettag_column:
        device_fields.append('assetTag')
     fields = f'nextPageToken,devices({",".join(device_fields)})'
     remote_devices = gapi.get_all_pages(ci.devices(), 'list', 'devices',
