@@ -4,10 +4,7 @@ import base64
 import configparser
 import csv
 import datetime
-import difflib
 from email import message_from_string
-import hashlib
-import io
 import json
 import mimetypes
 import os
@@ -54,7 +51,6 @@ from gam.gapi import calendar as gapi_calendar
 from gam.gapi import cloudidentity as gapi_cloudidentity
 from gam.gapi.cloudidentity import devices as gapi_cloudidentity_devices
 from gam.gapi.cloudidentity import groups as gapi_cloudidentity_groups
-from gam.gapi import directory as gapi_directory
 from gam.gapi.directory import asps as gapi_directory_asps
 from gam.gapi.directory import cros as gapi_directory_cros
 from gam.gapi.directory import customer as gapi_directory_customer
@@ -510,6 +506,7 @@ def SetGlobalVariables():
     if GC_Defaults[GC_OAUTH2SERVICE_JSON].find('.') == -1:
         GC_Defaults[GC_OAUTH2SERVICE_JSON] += '.json'
     _getOldEnvVar(GC_CLIENT_SECRETS_JSON, 'CLIENTSECRETS')
+    _getOldEnvVar(GC_ADMIN_EMAIL, 'GA_ADMIN_EMAIL')
     _getOldEnvVar(GC_DOMAIN, 'GA_DOMAIN')
     _getOldEnvVar(GC_CUSTOMER_ID, 'CUSTOMER_ID')
     _getOldEnvVar(GC_CHARSET, 'GAM_CHARSET')
@@ -8510,15 +8507,13 @@ def _getValueFromOAuth(field, credentials=None):
 
 
 def _get_admin_email():
-    if GC_Values[GC_ENABLE_DASA]:
-        if not GC_Values[GC_ADMIN_EMAIL]:
-            GC_Values[GC_ADMIN_EMAIL] = os.environ.get('GA_ADMIN_EMAIL', GC_Defaults[GC_ADMIN_EMAIL])
-            if not GC_Values[GC_ADMIN_EMAIL]:
-                controlflow.system_error_exit(
-                    3,
-                    f'Environment variable GA_ADMIN_EMAIL must be set when {GM_Globals[GM_ENABLEDASA_TXT]} is present'
-                    )
+    if GC_Values[GC_ADMIN_EMAIL]:
         return GC_Values[GC_ADMIN_EMAIL]
+    if GC_Values[GC_ENABLE_DASA]:
+        controlflow.system_error_exit(
+            3,
+            f'Environment variable GA_ADMIN_EMAIL must be set when {GM_Globals[GM_ENABLEDASA_TXT]} is present'
+            )
     return _getValueFromOAuth('email')
 
 def doGetUserInfo(user_email=None):
