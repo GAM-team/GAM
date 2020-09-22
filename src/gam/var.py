@@ -1148,7 +1148,7 @@ GC_CLIENT_SECRETS_JSON = 'client_secrets_json'
 GC_CONFIG_DIR = 'config_dir'
 # custmerId from gam.cfg or retrieved from Google
 GC_CUSTOMER_ID = 'customer_id'
-# Enable Delegated Admin Service Accounts admin user
+# Admin email address, required when enable_dasa is true, overrides oauth2.txt value otherwise
 GC_ADMIN_EMAIL = 'admin_email'
 # If debug_level > 0: extra_args[u'prettyPrint'] = True,
 # httplib2.debuglevel = gam_debug_level, appsObj.debug = True
