@@ -1368,6 +1368,7 @@ gam <UserTypeEntity> delete|del group|groups
 gam <UserTypeEntity> create|add license <SKUID> [product|productid <ProductID>]
 gam <UserTypeEntity> update license <SKUID> [product|productid <ProductID>] [from] <SKUID>
 gam <UserTypeEntity> delete|del license <SKUID> [product|productid <ProductID>]
+gam <UserTypeEntity> sync license <SKUID> [product|productid <ProductID>]
 
 gam <UserTypeEntity> update photo <FileNamePattern>
 gam <UserTypeEntity> delete|del photo

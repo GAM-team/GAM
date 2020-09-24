@@ -11262,7 +11262,7 @@ def ProcessGAMCommand(args):
             elif argument in ['guardian', 'guardians']:
                 doPrintShowGuardians(False)
             elif argument in ['license', 'licenses', 'licence', 'licences']:
-                gapi_licensing.show_()
+                gapi_licensing.show()
             elif argument in ['project', 'projects']:
                 doPrintShowProjects(False)
             elif argument in ['sakey', 'sakeys']:
@@ -11351,13 +11351,6 @@ def ProcessGAMCommand(args):
                 doCreateOrRotateServiceAccountKeys()
             else:
                 controlflow.invalid_argument_exit(argument, 'gam rotate')
-            sys.exit(0)
-        elif command == 'sync':
-            argument = sys.argv[2].lower()
-            if argument in ['sku', 'skus', 'license', 'licenses']:
-                gapi_licensing.sync()
-            else:
-                controlflow.invalid_argument_exit(argument, 'gam sync')
             sys.exit(0)
         elif command in ['cancelwipe', 'wipe', 'approve', 'block', 'sync']:
             target = sys.argv[2].lower().replace('_', '')
@@ -11598,6 +11591,13 @@ def ProcessGAMCommand(args):
                 doCreateTeamDrive(users)
             else:
                 controlflow.invalid_argument_exit(addWhat,
+                                                  f'gam <users> {command}')
+        elif command == 'sync':
+            syncWhat = sys.argv[4].lower()
+            if syncWhat in ['license', 'licence']:
+                gapi_licensing.sync(users)
+            else:
+                controlflow.invalid_argument_exit(syncWhat,
                                                   f'gam <users> {command}')
         elif command == 'update':
             updateWhat = sys.argv[4].lower()
