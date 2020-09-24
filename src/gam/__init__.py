@@ -63,6 +63,7 @@ from gam.gapi.directory import privileges as gapi_directory_privileges
 from gam.gapi.directory import resource as gapi_directory_resource
 from gam.gapi.directory import roles as gapi_directory_roles
 from gam.gapi.directory import users as gapi_directory_users
+from gam.gapi import licensing as gapi_licensing
 from gam.gapi import siteverification as gapi_siteverification
 from gam.gapi import errors as gapi_errors
 from gam.gapi import reports as gapi_reports
@@ -4305,73 +4306,6 @@ def getImap(users):
                 )
 
 
-def getProductAndSKU(sku):
-    l_sku = sku.lower().replace('-', '').replace(' ', '')
-    for a_sku, sku_values in list(SKUS.items()):
-        if l_sku == a_sku.lower().replace(
-                '-',
-                '') or l_sku in sku_values['aliases'] or l_sku == sku_values[
-                    'displayName'].lower().replace(' ', ''):
-            return (sku_values['product'], a_sku)
-    try:
-        product = re.search('^([A-Z,a-z]*-[A-Z,a-z]*)', sku).group(1)
-    except AttributeError:
-        product = sku
-    return (product, sku)
-
-
-def doLicense(users, operation):
-    lic = buildGAPIObject('licensing')
-    sku = sys.argv[5]
-    productId, skuId = getProductAndSKU(sku)
-    i = 6
-    if len(sys.argv) > 6 and sys.argv[i].lower() in ['product', 'productid']:
-        productId = sys.argv[i + 1]
-        i += 2
-    for user in users:
-        if operation == 'delete':
-            print(
-                f'Removing license {_formatSKUIdDisplayName(skuId)} from user {user}'
-            )
-            gapi.call(lic.licenseAssignments(),
-                      operation,
-                      soft_errors=True,
-                      productId=productId,
-                      skuId=skuId,
-                      userId=user)
-        elif operation == 'insert':
-            print(
-                f'Adding license {_formatSKUIdDisplayName(skuId)} to user {user}'
-            )
-            gapi.call(lic.licenseAssignments(),
-                      operation,
-                      soft_errors=True,
-                      productId=productId,
-                      skuId=skuId,
-                      body={'userId': user})
-        elif operation == 'patch':
-            try:
-                old_sku = sys.argv[i]
-                if old_sku.lower() == 'from':
-                    old_sku = sys.argv[i + 1]
-            except KeyError:
-                controlflow.system_error_exit(
-                    2,
-                    'You need to specify the user\'s old SKU as the last argument'
-                )
-            _, old_sku = getProductAndSKU(old_sku)
-            print(
-                f'Changing user {user} from license {_formatSKUIdDisplayName(old_sku)} to {_formatSKUIdDisplayName(skuId)}'
-            )
-            gapi.call(lic.licenseAssignments(),
-                      operation,
-                      soft_errors=True,
-                      productId=productId,
-                      skuId=old_sku,
-                      userId=user,
-                      body={'skuId': skuId})
-
-
 def doPop(users):
     enable = getBoolean(sys.argv[4], 'gam <users> pop')
     body = {
@@ -8434,7 +8368,7 @@ def _getResoldSubscriptionAttr(arg, customerId):
                     arg[i + 2], 'maximumNumberOfSeats', minVal=0)
                 i += 1
         elif myarg in ['sku', 'skuid']:
-            _, body['skuId'] = getProductAndSKU(arg[i + 1])
+            _, body['skuId'] = gapi_licensing.getProductAndSKU(arg[i + 1])
         elif myarg in ['customerauthtoken', 'transfertoken']:
             customerAuthToken = arg[i + 1]
         else:
@@ -8813,25 +8747,14 @@ def doGetUserInfo(user_email=None):
         lbatch = lic.new_batch_http_request(callback=user_lic_result)
         user_licenses = []
         for sku in skus:
-            productId, skuId = getProductAndSKU(sku)
+            productId, skuId = gapi_licensing.getProductAndSKU(sku)
             lbatch.add(lic.licenseAssignments().get(userId=user_email,
                                                     productId=productId,
                                                     skuId=skuId,
                                                     fields='skuId'))
         lbatch.execute()
         for user_license in user_licenses:
-            print(f'  {_formatSKUIdDisplayName(user_license)}')
-
-
-def _skuIdToDisplayName(skuId):
-    return SKUS[skuId]['displayName'] if skuId in SKUS else skuId
-
-
-def _formatSKUIdDisplayName(skuId):
-    skuIdDisplay = _skuIdToDisplayName(skuId)
-    if skuId == skuIdDisplay:
-        return skuId
-    return f'{skuId} ({skuIdDisplay})'
+            print(f'  {gapi_licensing._formatSKUIdDisplayName(user_license)}')
 
 
 def doGetAliasInfo(alias_email=None):
@@ -9521,13 +9444,13 @@ def doPrintUsers():
                 [groupname['email'] for groupname in groups])
     if getLicenseFeed:
         titles.append('Licenses')
-        licenses = doPrintLicenses(returnFields='userId,skuId')
+        licenses = gapi_licensing.print_(returnFields='userId,skuId')
         if licenses:
             for user in csvRows:
                 u_licenses = licenses.get(user['primaryEmail'].lower())
                 if u_licenses:
                     user['Licenses'] = licenseDelimiter.join(
-                        [_skuIdToDisplayName(skuId) for skuId in u_licenses])
+                        [gapi_licensing._skuIdToDisplayName(skuId) for skuId in u_licenses])
     display.write_csv_file(csvRows, titles, 'Users', todrive)
 
 
@@ -9662,172 +9585,6 @@ def doPrintAliases():
                     'TargetType': 'Group'
                 })
     display.write_csv_file(csvRows, titles, 'Aliases', todrive)
-
-
-def doPrintLicenses(returnFields=None,
-                    skus=None,
-                    countsOnly=False,
-                    returnCounts=False):
-    lic = buildGAPIObject('licensing')
-    products = []
-    licenses = []
-    licenseCounts = []
-    if not returnFields:
-        csvRows = []
-        todrive = False
-        i = 3
-        while i < len(sys.argv):
-            myarg = sys.argv[i].lower()
-            if not returnCounts and myarg == 'todrive':
-                todrive = True
-                i += 1
-            elif myarg in ['products', 'product']:
-                products = sys.argv[i + 1].split(',')
-                i += 2
-            elif myarg in ['sku', 'skus']:
-                skus = sys.argv[i + 1].split(',')
-                i += 2
-            elif myarg == 'allskus':
-                skus = sorted(SKUS)
-                products = []
-                i += 1
-            elif myarg == 'gsuite':
-                skus = [
-                    skuId for skuId in SKUS
-                    if SKUS[skuId]['product'] in ['Google-Apps', '101031']
-                ]
-                products = []
-                i += 1
-            elif myarg == 'countsonly':
-                countsOnly = True
-                i += 1
-            else:
-                controlflow.invalid_argument_exit(sys.argv[i],
-                                                  'gam print licenses')
-        if not countsOnly:
-            fields = 'nextPageToken,items(productId,skuId,userId)'
-            titles = ['userId', 'productId', 'skuId']
-        else:
-            fields = 'nextPageToken,items(userId)'
-            if not returnCounts:
-                if skus:
-                    titles = ['productId', 'skuId', 'licenses']
-                else:
-                    titles = ['productId', 'licenses']
-    else:
-        fields = f'nextPageToken,items({returnFields})'
-    if skus:
-        for sku in skus:
-            if not products:
-                product, sku = getProductAndSKU(sku)
-            else:
-                product = products[0]
-            page_message = gapi.got_total_items_msg(
-                f'Licenses for {SKUS.get(sku, {"displayName": sku})["displayName"]}',
-                '...\n')
-            try:
-                licenses += gapi.get_all_pages(
-                    lic.licenseAssignments(),
-                    'listForProductAndSku',
-                    'items',
-                    throw_reasons=[
-                        gapi_errors.ErrorReason.INVALID,
-                        gapi_errors.ErrorReason.FORBIDDEN
-                    ],
-                    page_message=page_message,
-                    customerId=GC_Values[GC_DOMAIN],
-                    productId=product,
-                    skuId=sku,
-                    fields=fields)
-                if countsOnly:
-                    licenseCounts.append([
-                        'Product', product, 'SKU', sku, 'Licenses',
-                        len(licenses)
-                    ])
-                    licenses = []
-            except (gapi_errors.GapiInvalidError,
-                    gapi_errors.GapiForbiddenError):
-                pass
-    else:
-        if not products:
-            products = sorted(PRODUCTID_NAME_MAPPINGS)
-        for productId in products:
-            page_message = gapi.got_total_items_msg(
-                f'Licenses for {PRODUCTID_NAME_MAPPINGS.get(productId, productId)}',
-                '...\n')
-            try:
-                licenses += gapi.get_all_pages(
-                    lic.licenseAssignments(),
-                    'listForProduct',
-                    'items',
-                    throw_reasons=[
-                        gapi_errors.ErrorReason.INVALID,
-                        gapi_errors.ErrorReason.FORBIDDEN
-                    ],
-                    page_message=page_message,
-                    customerId=GC_Values[GC_DOMAIN],
-                    productId=productId,
-                    fields=fields)
-                if countsOnly:
-                    licenseCounts.append(
-                        ['Product', productId, 'Licenses',
-                         len(licenses)])
-                    licenses = []
-            except (gapi_errors.GapiInvalidError,
-                    gapi_errors.GapiForbiddenError):
-                pass
-    if countsOnly:
-        if returnCounts:
-            return licenseCounts
-        if skus:
-            for u_license in licenseCounts:
-                csvRows.append({
-                    'productId': u_license[1],
-                    'skuId': u_license[3],
-                    'licenses': u_license[5]
-                })
-        else:
-            for u_license in licenseCounts:
-                csvRows.append({
-                    'productId': u_license[1],
-                    'licenses': u_license[3]
-                })
-        display.write_csv_file(csvRows, titles, 'Licenses', todrive)
-        return
-    if returnFields:
-        if returnFields == 'userId':
-            userIds = []
-            for u_license in licenses:
-                userId = u_license.get('userId', '').lower()
-                if userId:
-                    userIds.append(userId)
-            return userIds
-        userSkuIds = {}
-        for u_license in licenses:
-            userId = u_license.get('userId', '').lower()
-            skuId = u_license.get('skuId')
-            if userId and skuId:
-                userSkuIds.setdefault(userId, [])
-                userSkuIds[userId].append(skuId)
-        return userSkuIds
-    for u_license in licenses:
-        userId = u_license.get('userId', '').lower()
-        skuId = u_license.get('skuId', '')
-        csvRows.append({
-            'userId': userId,
-            'productId': u_license.get('productId', ''),
-            'skuId': _skuIdToDisplayName(skuId)
-        })
-    display.write_csv_file(csvRows, titles, 'Licenses', todrive)
-
-
-def doShowLicenses():
-    licenseCounts = doPrintLicenses(countsOnly=True, returnCounts=True)
-    for u_license in licenseCounts:
-        line = ''
-        for i in range(0, len(u_license), 2):
-            line += f'{u_license[i]}: {u_license[i+1]}, '
-        print(line[:-2])
 
 
 def shlexSplitList(entity, dataDelimiter=' ,'):
@@ -10044,7 +9801,7 @@ def getUsersToModify(entity_type=None,
             if not silent:
                 sys.stderr.write('done.\r\n')
     elif entity_type in ['license', 'licenses', 'licence', 'licences']:
-        users = doPrintLicenses(returnFields='userId', skus=entity.split(','))
+        users = gapi_licensing.print_(returnFields='userId', skus=entity.split(','))
     elif entity_type in ['file', 'crosfile']:
         users = []
         f = fileutils.open_file(entity, strip_utf_bom=True)
@@ -11456,7 +11213,7 @@ def ProcessGAMCommand(args):
             elif argument == 'mobile':
                 gapi_directory_mobiledevices.print_()
             elif argument in ['license', 'licenses', 'licence', 'licences']:
-                doPrintLicenses()
+                gapi_licensing.print_()
             elif argument in ['token', 'tokens', 'oauth', '3lo']:
                 printShowTokens(3, None, None, True)
             elif argument in ['schema', 'schemas']:
@@ -11505,7 +11262,7 @@ def ProcessGAMCommand(args):
             elif argument in ['guardian', 'guardians']:
                 doPrintShowGuardians(False)
             elif argument in ['license', 'licenses', 'licence', 'licences']:
-                doShowLicenses()
+                gapi_licensing.show_()
             elif argument in ['project', 'projects']:
                 doPrintShowProjects(False)
             elif argument in ['sakey', 'sakeys']:
@@ -11594,6 +11351,13 @@ def ProcessGAMCommand(args):
                 doCreateOrRotateServiceAccountKeys()
             else:
                 controlflow.invalid_argument_exit(argument, 'gam rotate')
+            sys.exit(0)
+        elif command == 'sync':
+            argument = sys.argv[2].lower()
+            if argument in ['sku', 'skus', 'license', 'licenses']:
+                gapi_licensing.sync()
+            else:
+                controlflow.invalid_argument_exit(argument, 'gam sync')
             sys.exit(0)
         elif command in ['cancelwipe', 'wipe', 'approve', 'block', 'sync']:
             target = sys.argv[2].lower().replace('_', '')
@@ -11773,7 +11537,7 @@ def ProcessGAMCommand(args):
             elif delWhat == 'photo':
                 deletePhoto(users)
             elif delWhat in ['license', 'licence']:
-                doLicense(users, 'delete')
+                gapi_licensing.delete(users)
             elif delWhat in ['backupcode', 'backupcodes', 'verificationcodes']:
                 doDelBackupCodes(users)
             elif delWhat in ['asp', 'asps', 'applicationspecificpasswords']:
@@ -11815,7 +11579,7 @@ def ProcessGAMCommand(args):
             elif addWhat == 'drivefile':
                 createDriveFile(users)
             elif addWhat in ['license', 'licence']:
-                doLicense(users, 'insert')
+                gapi_licensing.create(users)
             elif addWhat in ['drivefileacl', 'drivefileacls']:
                 addDriveFileACL(users)
             elif addWhat in ['label', 'labels']:
@@ -11844,7 +11608,7 @@ def ProcessGAMCommand(args):
             elif updateWhat == 'photo':
                 doPhoto(users)
             elif updateWhat in ['license', 'licence']:
-                doLicense(users, 'patch')
+                gapi_licensing.update(users)
             elif updateWhat == 'user':
                 doUpdateUser(users, 5)
             elif updateWhat in [
