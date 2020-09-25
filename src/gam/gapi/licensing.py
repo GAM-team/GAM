@@ -1,19 +1,12 @@
-import base64
-import json
-import os
 import re
 import sys
 
-import googleapiclient
-
 import gam
 from gam.var import *
+from gam import controlflow
 from gam import display
 from gam import gapi
-from gam import fileutils
 from gam.gapi import errors as gapi_errors
-from gam.gapi.directory import groups as gapi_directory_groups
-from gam import utils
 
 
 def build():
@@ -85,16 +78,12 @@ def delete(users, sku=None):
     if len(lbatch._order) > 0:
         lbatch.execute()
 
-def sync():
-    lic = build()
-    sku = sys.argv[3]
-    entity_type = sys.argv[4].lower()
-    entity = sys.argv[5].lower()
-    current_users = gam.getUsersToModify(entity_type, entity)
+def sync(users):
+    sku = sys.argv[5]
     current_licenses = gam.getUsersToModify(entity_type='license',
         entity=sku)
-    users_to_license = [user for user in current_users if user not in current_licenses]
-    users_to_unlicense = [user for user in current_licenses if user not in current_users]
+    users_to_license = [user for user in users if user not in current_licenses]
+    users_to_unlicense = [user for user in current_licenses if user not in users]
     print(f'Need to remove license from {len(users_to_unlicense)} and add to ' \
           f'{len(users_to_license)} users...')
     # do the remove first to free up seats
@@ -136,7 +125,7 @@ def update(users, sku=None, old_sku=None):
           lbatch = lic.new_batch_http_request(callback=user_lic_result)
     if len(lbatch._order) > 0:
         lbatch.execute()
- 
+
 
 def print_(returnFields=None,
                     skus=None,
@@ -296,7 +285,7 @@ def print_(returnFields=None,
 
 
 def show():
-    licenseCounts = doPrintLicenses(countsOnly=True, returnCounts=True)
+    licenseCounts = print_(countsOnly=True, returnCounts=True)
     for u_license in licenseCounts:
         line = ''
         for i in range(0, len(u_license), 2):
@@ -313,6 +302,3 @@ def _formatSKUIdDisplayName(skuId):
     if skuId == skuIdDisplay:
         return skuId
     return f'{skuId} ({skuIdDisplay})'
-
-
-
