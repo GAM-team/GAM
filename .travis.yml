@@ -149,6 +149,7 @@ script:
   done; fi
 - if [ "$e2e" = true ]; then $gam create user $newuser firstname Travis lastname $jid password random recoveryphone 12125121110 recoveryemail jay0lee@gmail.com travis.jid $jid; fi
 - if [ "$e2e" = true ]; then $gam user $gam_user sendemail recipient $newuser subject "test message $newbase" message "Travis test message"; fi
+- if [ "$e2e" = true ]; then $gam user $gam_user sendemail recipient exchange@pdl.jaylee.us subject "test ${tstamp}" message "test message"; fi
 - if [ "$e2e" = true ]; then $gam create group $newgroup name "Travis $jid group" description "This is a description" isarchived true; fi
 - if [ "$e2e" = true ]; then $gam user $newuser add license gsuitebusiness; fi
 - if [ "$e2e" = true ]; then $gam update group $newgroup add owner $gam_user; fi
