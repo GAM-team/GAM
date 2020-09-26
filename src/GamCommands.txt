@@ -1148,8 +1148,8 @@ gam cancelwipe deviceuser [id] <DeviceUserID>
 gam wipe deviceuser [id] <DeviceUserID>
 gam print devices [todrive] [query <QueryDevice>]
 	[orderby <DeviceOrderByFieldName> [ascending|descending]]
-	[nocompanydevices] [nouserdevices] [nousers]
-	[formatjson [quotechar <Character>]]
+	[(view all|company|personal)|([nocompanydevices] [nopersonaldevices])]
+	[nodeviceusers]
 gam sync devices
 	csvfile <FileName>
 	[serialnumber_column <String>]
