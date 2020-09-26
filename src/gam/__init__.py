@@ -1235,15 +1235,17 @@ def doCheckServiceAccount(users):
         check_scopes.append(USERINFO_EMAIL_SCOPE)
         long_url = ('https://admin.google.com/ac/owl/domainwidedelegation'
                     f'?clientScopeToAdd={",".join(check_scopes)}'
-                    f'&clientIdToAdd={service_account}')
+                    f'&clientIdToAdd={service_account}&overwriteClientId=true')
         short_url = utils.shorten_url(long_url)
         scopes_failed = f'''Some scopes failed! To authorize them, please go to:
 
   {short_url}
 
-You will be redirected to the G Suite admin console. The Client Name and API
-Scopes fields will be pre-populated. Please click Authorize to allow these
-scopes access. After authorizing it may take some time for this test to pass so
+You will be directed to the G Suite admin console Security/API Controls/Domain-wide Delegation page
+The "Add a new Client ID" box will open
+Make sure that "Overwrite existing client ID" is checked
+Please click Authorize to allow these scopes access.
+After authorizing it may take some time for this test to pass so
 go grab a cup of coffee and then try this command again.
 '''
         controlflow.system_error_exit(1, scopes_failed)
