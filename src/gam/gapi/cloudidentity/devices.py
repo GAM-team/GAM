@@ -288,8 +288,7 @@ def sync():
     for row in input_file:
         # upper() is very important to comparison since Google
         # always return uppercase serials
-        serialnumber = row[serialnumber_column].strip().upper()
-        local_device = {'serialNumber': serialnumber}
+        local_device = {'serialNumber': row[serialnumber_column].strip().upper()}
         if static_devicetype:
             local_device['deviceType'] = static_devicetype
         else:
@@ -309,10 +308,10 @@ def sync():
     remote_device_map = {}
     for remote_device in remote_devices:
         sn = remote_device['serialNumber']
-        last_sync = remote_device.pop('lastSyncTime')
+        last_sync = remote_device.pop('lastSyncTime', NEVER_TIME_NOMS)
         name = remote_device.pop('name')
         remote_device_map[sn] = {'name': name}
-        if last_sync == '1970-01-01T00:00:00Z':
+        if last_sync == NEVER_TIME_NOMS:
             remote_device_map[sn]['unassigned'] = True
     devices_to_add = [device for device in local_devices if device not in remote_devices]
     missing_devices = [device for device in remote_devices if device not in local_devices]

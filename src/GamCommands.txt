@@ -1146,11 +1146,11 @@ gam block deviceuser [id] <DeviceUserID>
 gam delete deviceuser [id] <DeviceUserID>
 gam cancelwipe deviceuser [id] <DeviceUserID>
 gam wipe deviceuser [id] <DeviceUserID>
-gam print devices [todrive] [query <QueryDevice>]
+gam print devices [todrive] [filter|query <QueryDevice>]
 	[orderby <DeviceOrderByFieldName> [ascending|descending]]
 	[(view all|company|personal)|([nocompanydevices] [nopersonaldevices])]
 	[nodeviceusers]
-gam sync devices
+gam sync devices [filter|query <QueryDevice>]
 	csvfile <FileName>
 	[serialnumber_column <String>]
 	[devicetype_column <String>]
