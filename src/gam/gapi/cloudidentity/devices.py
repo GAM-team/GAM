@@ -117,7 +117,7 @@ def print_():
     parent = 'devices/-'
     device_filter = None
     get_device_users = True
-    get_device_views = ['COMPANY_INVENTORY', 'USER_ASSIGNED_DEVICES']
+    view = None
     orderByList = []
     titles = []
     csvRows = []
@@ -132,23 +132,21 @@ def print_():
         elif myarg == 'view':
             view = sys.argv[i+1].lower()
             if view == 'all':
-                get_device_views = [None]
+                view = None
             elif view == 'company':
-                get_device_views = ['COMPANY_INVENTORY']
+                view = 'COMPANY_INVENTORY'
             elif view == 'personal':
-                get_device_views = ['USER_ASSIGNED_DEVICES']
+                view = 'USER_ASSIGNED_DEVICES'
             else:
                 controlflow.expected_argument_exit(
                     'view', ', '.join(['all', 'company', 'personal']),
                     view)
             i += 2
         elif myarg == 'nocompanydevices':
-            if 'COMPANY_INVENTORY' in get_device_views:
-                get_device_views.remove('COMPANY_INVENTORY')
+            view = 'USER_ASSIGNED_DEVICES'
             i += 1
         elif myarg == 'nopersonaldevices':
-            if 'USER_ASSIGNED_DEVICES' in get_device_views:
-                get_device_views.remove('USER_ASSIGNED_DEVICES')
+            view = 'COMPANY_INVENTORY'
             i += 1
         elif myarg == 'nodeviceusers':
             get_device_users = False
@@ -190,11 +188,10 @@ def print_():
     else:
         orderBy = None
     devices = []
-    for view in get_device_views:
-        page_message = gapi.got_total_items_msg(view_name_map[view], '...\n')
-        devices += gapi.get_all_pages(ci.devices(), 'list', 'devices',
-            customer=customer, page_message=page_message,
-                                      pageSize=100, filter=device_filter, view=view, orderBy=orderBy)
+    page_message = gapi.got_total_items_msg(view_name_map[view], '...\n')
+    devices += gapi.get_all_pages(ci.devices(), 'list', 'devices',
+        customer=customer, page_message=page_message,
+        pageSize=100, filter=device_filter, view=view, orderBy=orderBy)
     if get_device_users:
         page_message = gapi.got_total_items_msg('Device Users', '...\n')
         device_users = gapi.get_all_pages(ci.devices().deviceUsers(), 'list',
