@@ -1148,7 +1148,7 @@ gam cancelwipe deviceuser [id] <DeviceUserID>
 gam wipe deviceuser [id] <DeviceUserID>
 gam print devices [todrive] [filter|query <QueryDevice>]
 	[orderby <DeviceOrderByFieldName> [ascending|descending]]
-	[(view all|company|personal)|([nocompanydevices] [nopersonaldevices])]
+	[company|personal|nocompanydevices|nopersonaldevices]
 	[nodeviceusers]
 gam sync devices [filter|query <QueryDevice>]
 	csvfile <FileName>

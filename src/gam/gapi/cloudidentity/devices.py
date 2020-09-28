@@ -127,21 +127,14 @@ def print_():
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
         if myarg in ['filter', 'query']:
-          device_filter = sys.argv[i+1]
-          i += 2
-        elif myarg == 'view':
-            view = sys.argv[i+1].lower()
-            if view == 'all':
-                view = None
-            elif view == 'company':
-                view = 'COMPANY_INVENTORY'
-            elif view == 'personal':
-                view = 'USER_ASSIGNED_DEVICES'
-            else:
-                controlflow.expected_argument_exit(
-                    'view', ', '.join(['all', 'company', 'personal']),
-                    view)
+            device_filter = sys.argv[i+1]
             i += 2
+        elif myarg == 'company':
+            view = 'COMPANY_INVENTORY'
+            i += 1
+        elif myarg == 'personal':
+            view = 'USER_ASSIGNED_DEVICES'
+            i += 1
         elif myarg == 'nocompanydevices':
             view = 'USER_ASSIGNED_DEVICES'
             i += 1
