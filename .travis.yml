@@ -223,7 +223,7 @@ script:
 - if [ "$e2e" = true ]; then $gam report customer todrive; fi
 - if [ "$e2e" = true ]; then $gam report users fields accounts:is_less_secure_apps_access_allowed,gmail:last_imap_time,gmail:last_pop_time filters "accounts:last_login_time>2019-01-01T00:00:00.000Z" todrive; fi
 - if [ "$e2e" = true ]; then $gam report admin start -3d todrive; fi
-- if [ "$e2e" = true ]; then $gam print devices filter "serial:$jid$jid$jid$jid$jid-" | $gam csv - gam delete device id ~name; fi
+- if [ "$e2e" = true ]; then $gam print devices nopersonaldevices nodeviceusers filter "serial:$jid$jid$jid$jid$jid-" | $gam csv - gam delete device id ~name; fi
 - if ([ "$e2e" = true ] && [[ "$TRAVIS_JOB_NAME" != *"Testing" ]]); then
     for gamfile in gam-$GAMVERSION-*; do
       fileid=$($gam user $gam_user add drivefile localfile $gamfile drivefilename $GAMVERSION-${TRAVIS_COMMIT:0:7}-$gamfile parentid 1N2zbO33qzUQFsGM49-m9AQC1ijzd_ru1 returnidonly);
