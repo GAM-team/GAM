@@ -1146,18 +1146,17 @@ gam block deviceuser [id] <DeviceUserID>
 gam delete deviceuser [id] <DeviceUserID>
 gam cancelwipe deviceuser [id] <DeviceUserID>
 gam wipe deviceuser [id] <DeviceUserID>
-gam print devices [todrive] [query <QueryDevice>]
+gam print devices [todrive] [filter|query <QueryDevice>]
 	[orderby <DeviceOrderByFieldName> [ascending|descending]]
-	[nocompanydevices] [nouserdevices] [nousers]
-	[formatjson [quotechar <Character>]]
-gam sync devices
+	[company|personal|nocompanydevices|nopersonaldevices]
+	[nodeviceusers]
+gam sync devices [filter|query <QueryDevice>]
 	csvfile <FileName>
-	[serialnumber_column <String>]
-	[devicetype_column <String>]
-	[assetid_column <String>]
-	[static_devicetype <DeviceType>]
-	[unassigned_missing_action delete|wipe|nonothing]
-	[assigned_missing_action delete|wipe|nonothing]
+	(devicetype_column <String>)|(static_devicetype <DeviceType>)
+	serialnumber_column <String>
+	[assettag_column <String>]
+	[unassigned_missing_action delete|wipe|donothing]
+	[assigned_missing_action delete|wipe|donothing]
 
 gam update mobile <MobileID>|query:<QueryMobile> action <MobileAction> [doit] [if_users|match_users <UserTypeEntity>]
 gam delete mobile <MobileID>
