@@ -7,7 +7,6 @@ from gam import display
 from gam import gapi
 from gam.gapi import directory as gapi_directory
 from gam.gapi import errors as gapi_errors
-from gam import utils
 
 
 def create():
@@ -229,12 +228,12 @@ def update():
     if sys.argv[4].lower() in ['move', 'add']:
         entity_type = sys.argv[5].lower()
         if entity_type in usergroup_types:
-            users = getUsersToModify(entity_type=entity_type,
-                                     entity=sys.argv[6])
+            users = gam.getUsersToModify(entity_type=entity_type,
+                                         entity=sys.argv[6])
         else:
             entity_type = 'users'
-            users = getUsersToModify(entity_type=entity_type,
-                                     entity=sys.argv[5])
+            users = gam.getUsersToModify(entity_type=entity_type,
+                                         entity=sys.argv[5])
         if (entity_type.startswith('cros')) or (
             (entity_type == 'all') and (sys.argv[6].lower() == 'cros')):
             for l in range(0, len(users), 50):
@@ -253,7 +252,7 @@ def update():
             for user in users:
                 i += 1
                 sys.stderr.write(
-                    f' moving {user} to {orgUnitPath}{currentCountNL(i, count)}'
+                    f' moving {user} to {orgUnitPath}{gam.currentCountNL(i, count)}'
                 )
                 try:
                     gapi.call(cd.users(),
@@ -377,7 +376,7 @@ def getTopLevelOrgId(cd, orgUnitPath):
 
 def getOrgUnitId(orgUnit, cd=None):
     if cd is None:
-        cd = buildGAPIObject('directory')
+        cd = gapi_directory.build()
     orgUnit = getOrgUnitItem(orgUnit)
     if orgUnit[:3] == 'id:':
         return (orgUnit, orgUnit)
