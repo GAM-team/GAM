@@ -221,11 +221,11 @@ def info_member():
     cd = gapi_directory.build()
     memberKey = gam.normalizeEmailAddressOrUID(sys.argv[3])
     groupKey = gam.normalizeEmailAddressOrUID(sys.argv[4])
-    info = gapi.call(cd.members(),
-                     'get',
-                     memberKey=memberKey,
-                     groupKey=groupKey)
-    display.print_json(info)
+    member_info = gapi.call(cd.members(),
+                            'get',
+                            memberKey=memberKey,
+                            groupKey=groupKey)
+    display.print_json(member_info)
 
 
 GROUP_ARGUMENT_TO_PROPERTY_TITLE_MAP = {
@@ -1146,7 +1146,7 @@ def update():
                 i += 2
             elif myarg == 'admincreated':
                 use_cd_api = True
-                cd_body['adminCreated'] = getBoolean(sys.argv[i + 1], myarg)
+                cd_body['adminCreated'] = gam.getBoolean(sys.argv[i + 1], myarg)
                 i += 2
             elif myarg == 'getbeforeupdate':
                 gs_get_before_update = True
@@ -1242,5 +1242,3 @@ def getGroupAttrValue(myarg, value, gs_object, gs_body, function):
             gs_body[attrib] = value
             return
     controlflow.invalid_argument_exit(myarg, f'gam {function} group')
-
-

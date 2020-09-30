@@ -28,5 +28,3 @@ def turn_off_2sv(users):
                   'turnOff',
                   soft_errors=True,
                   userKey=user)
-
-

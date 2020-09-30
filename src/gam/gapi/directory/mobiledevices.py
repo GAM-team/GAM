@@ -23,16 +23,16 @@ def delete():
 def info():
     cd = gapi_directory.build()
     resourceId = sys.argv[3]
-    info = gapi.call(cd.mobiledevices(),
-                     'get',
-                     customerId=GC_Values[GC_CUSTOMER_ID],
-                     resourceId=resourceId)
+    device_info = gapi.call(cd.mobiledevices(),
+                            'get',
+                            customerId=GC_Values[GC_CUSTOMER_ID],
+                            resourceId=resourceId)
     if 'deviceId' in info:
-        info['deviceId'] = info['deviceId'].encode('unicode-escape').decode(
+        device_info['deviceId'] = device_info['deviceId'].encode('unicode-escape').decode(
             UTF8)
     attrib = 'securityPatchLevel'
-    if attrib in info and int(info[attrib]):
-        info[attrib] = utils.formatTimestampYMDHMS(info[attrib])
+    if attrib in info and int(device_info[attrib]):
+        device_info[attrib] = utils.formatTimestampYMDHMS(device_info[attrib])
     display.print_json(info)
 
 
@@ -161,7 +161,7 @@ def print_():
 
 
 def update():
-    cd = gapi_directory.build
+    cd = gapi_directory.build()
     resourceIds = sys.argv[3]
     match_users = None
     doit = False
@@ -235,5 +235,3 @@ def update():
                               resourceId=device['resourceId'],
                               body=body,
                               customerId=GC_Values[GC_CUSTOMER_ID])
-
-
