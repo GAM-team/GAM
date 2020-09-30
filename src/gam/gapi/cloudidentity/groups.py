@@ -1,5 +1,3 @@
-import csv
-
 import gam
 from gam.var import *
 from gam import controlflow
@@ -9,7 +7,6 @@ from gam import utils
 from gam.gapi import errors as gapi_errors
 from gam.gapi import cloudidentity as gapi_cloudidentity
 from gam.gapi.directory import customer as gapi_directory_customer
-from gam.gapi.directory import groups as gapi_directory_groups
 
 
 def create():
@@ -583,14 +580,13 @@ def update():
                 name = membership_email_to_id(ci, parent, users_email[0])
                 addRoles = []
                 removeRoles = []
-                new_role = {'role': role}
                 current_roles = gapi.call(ci.groups().memberships(),
                                           'get',
                                           name=name,
                                           fields='roles').get('roles', [])
                 current_roles = [role['name'] for role in current_roles]
                 for crole in current_roles:
-                    if crole != ROLE_MEMBER and crole != role:
+                    if crole not in {ROLE_MEMBER, role}:
                         removeRoles.append(crole)
                 if role not in current_roles:
                     addRoles.append({'name': role})
