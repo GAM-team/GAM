@@ -11,6 +11,7 @@ from gam import controlflow
 from gam import display
 from gam import gapi
 from gam import utils
+from gam.gapi.directory import orgunits as gapi_directory_orgunits
 
 
 def build():
@@ -178,7 +179,7 @@ def showUsage():
             skip_day_numbers = [dow.index(d) for d in skipdaynames if d in dow]
             i += 2
         elif report == 'user' and myarg in ['orgunit', 'org', 'ou']:
-            _, orgUnitId = gam.getOrgUnitId(sys.argv[i + 1])
+            _, orgUnitId = gapi_directory_orgunits.getOrgUnitId(sys.argv[i + 1])
             i += 2
         elif report == 'user' and myarg in usergroup_types:
             users = gam.getUsersToModify(myarg, sys.argv[i + 1])
@@ -296,7 +297,7 @@ def showReport():
             tryDate = utils.get_yyyymmdd(sys.argv[i + 1])
             i += 2
         elif myarg in ['orgunit', 'org', 'ou']:
-            _, orgUnitId = gam.getOrgUnitId(sys.argv[i + 1])
+            _, orgUnitId = gapi_directory_orgunits.getOrgUnitId(sys.argv[i + 1])
             i += 2
         elif myarg == 'fulldatarequired':
             fullDataRequired = []
