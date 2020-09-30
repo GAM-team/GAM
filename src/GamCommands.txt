@@ -1027,7 +1027,10 @@ The following attributes are equivalent:
 	(colorindex|colorid <EventColorIndex>)
 	(description <String>)|
 	(end (allday <Date>)|<Time>)|
+	(guestscaninviteothers <Boolean>)|
 	guestscantinviteothers|
+	(guestscanmodify <Boolean>)|
+	(guestscanseeothers <Boolean>)|
 	guestscantseeothers|
 	hangoutsmeet|
 	(location <String>)|
