@@ -15,7 +15,7 @@ def flatten_privilege_list(privs, parent=None):
                                               parent=priv['privilegeName'])
             priv['children'] = ' '.join(
                 [child['privilegeName'] for child in children])
-            del (priv['childPrivileges'])
+            del priv['childPrivileges']
         flat_privs = flat_privs + children
         flat_privs.append(priv)
     return flat_privs
