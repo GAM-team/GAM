@@ -64,14 +64,14 @@ jobs:
       name: "Python 3.9 dev Source Testing"
       language: python
       python: 3.9-dev
-    - os: linux
-      name: "Python trunk nightly Source Testing"
-      language: python
-      python: nightly
-    - os: linux
-      name: "Python PyPi Source Testing"
-      language: python
-      python: pypy3
+#    - os: linux
+#      name: "Python trunk nightly Source Testing"
+#      language: python
+#      python: nightly
+#    - os: linux
+#      name: "Python PyPi Source Testing"
+#      language: python
+#      python: pypy3
     - os: osx
       name: "MacOS 10.13"
       language: generic
