@@ -35,6 +35,7 @@ def user_lic_result(request_id, response, exception):
                 soft_errors=True)
         print(f'ERROR: {request_id}: {http_status} - {reason} {message}')
 
+
 def create(users, sku=None):
     lic = build()
     if not sku:
@@ -45,17 +46,15 @@ def create(users, sku=None):
     if len(sys.argv) > 6 and sys.argv[i].lower() in ['product', 'productid']:
         productId = sys.argv[i+1]
         i += 2
-    lbatch = lic.new_batch_http_request(callback=user_lic_result)
     for user in users:
-        print(f'Adding license {sku_name} from user {user}')
-        body = {'userId': user}
-        lbatch.add(lic.licenseAssignments().insert(
-            productId=productId, skuId=skuId, body=body), request_id=user)
-        if len(lbatch._order) == 1000:
-          lbatch.execute()
-          lbatch = lic.new_batch_http_request(callback=user_lic_result)
-    if len(lbatch._order) > 0:
-        lbatch.execute()
+        print(f'Adding license {sku_name} from to {user}')
+        gapi.call(lic.licenseAssignments(),
+                  'insert',
+                  soft_errors=True,
+                  productId=productId,
+                  skuId=skuId,
+                  body={'userId': user})
+
 
 def delete(users, sku=None):
     lic = build()
@@ -67,16 +66,15 @@ def delete(users, sku=None):
     if len(sys.argv) > 6 and sys.argv[i].lower() in ['product', 'productid']:
         productId = sys.argv[i+1]
         i += 2
-    lbatch = lic.new_batch_http_request(callback=user_lic_result)
     for user in users:
-        print(f'Removing license {sku_name} from user {user}')
-        lbatch.add(lic.licenseAssignments().delete(
-            productId=productId, skuId=skuId, userId=user), request_id=user)
-        if len(lbatch._order) == 1000:
-          lbatch.execute()
-          lbatch = lic.new_batch_http_request(callback=user_lic_result)
-    if len(lbatch._order) > 0:
-        lbatch.execute()
+         print(f'Removing license {sku_name} from user {user}')
+         gapi.call(lic.licenseAssignments(),
+                   'delete',
+                   soft_errors=True,
+                   productId=productId,
+                   skuId=skuId,
+                   userId=user)
+
 
 def sync(users):
     sku = sys.argv[5]
@@ -113,18 +111,15 @@ def update(users, sku=None, old_sku=None):
             )
         _, old_sku = getProductAndSKU(old_sku)
     old_sku_name = _formatSKUIdDisplayName(old_sku)
-    lbatch = lic.new_batch_http_request(callback=user_lic_result)
     for user in users:
         print(f'Changing user {user} from license {old_sku_name} to {sku_name}')
-        body = {'skuId': skuId}
-        lbatch.add(lic.licenseAssignments().patch(
-            productId=productId, skuId=old_sku, userId=user, body=body),
-            request_id=user)
-        if len(lbatch._order) == 1000:
-          lbatch.execute()
-          lbatch = lic.new_batch_http_request(callback=user_lic_result)
-    if len(lbatch._order) > 0:
-        lbatch.execute()
+        gapi.call(lic.licenseAssignments(),
+                  'patch',
+                  soft_errors=True,
+                  productId=productId,
+                  skuId=old_sku,
+                  userId=user,
+                  body={'skuId': skuId})
 
 
 def print_(returnFields=None,
