@@ -326,6 +326,6 @@ def sync():
                 kwargs = {'customer': customer}
             else:
                 kwargs = {'body': {'customer': customer}}
-            gapi.call(ci.devices(), unassigned_missing_action,
+            gapi.call(ci.devices(), action,
                 name=name, **kwargs)
             print(f'{action}d {sn}')
