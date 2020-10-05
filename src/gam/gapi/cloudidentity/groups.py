@@ -407,6 +407,7 @@ def update():
     def _getRoleAndUsers():
         checkSuspended = None
         role = None
+        expireTime = None
         i = 5
         if sys.argv[i].lower() in GROUP_ROLES_MAP:
             role = GROUP_ROLES_MAP[sys.argv[i].lower()]
@@ -414,6 +415,9 @@ def update():
         if sys.argv[i].lower() in ['suspended', 'notsuspended']:
             checkSuspended = sys.argv[i].lower() == 'suspended'
             i += 1
+        if sys.argv[i].lower() in ['expire', 'expires']:
+            expireTime = sys.argv[i+1]
+            i += 2
         if sys.argv[i].lower() in usergroup_types:
             users_email = gam.getUsersToModify(entity_type=sys.argv[i].lower(),
                                                entity=sys.argv[i + 1],
@@ -424,7 +428,7 @@ def update():
                 gam.normalizeEmailAddressOrUID(sys.argv[i],
                                                checkForCustomerId=True)
             ]
-        return (role, users_email)
+        return (role, expireTime, users_email)
 
     ci = gapi_cloudidentity.build('cloudidentity_beta')
     group = sys.argv[3]
@@ -439,7 +443,7 @@ def update():
         if not parent:
             return
         if myarg == 'add':
-            role, users_email = _getRoleAndUsers()
+            role, expireTime, users_email = _getRoleAndUsers()
             if not role:
                 role = ROLE_MEMBER
             if len(users_email) > 1:
@@ -448,8 +452,10 @@ def update():
                 for user_email in users_email:
                     item = [
                         'gam', 'update', 'cigroup', f'id:{parent}', 'add', role,
-                        user_email
                     ]
+                    if expireTime:
+                        item.extend(['expires', expireTime])
+                    item.append(user_email)
                     items.append(item)
             elif len(users_email) > 0:
                 body = {
@@ -462,6 +468,10 @@ def update():
                 }
                 if role != ROLE_MEMBER:
                     body['roles'].append({'name': role})
+                if expireTime:
+                    for role in body['roles']:
+                        if role['name'] == ROLE_MEMBER:
+                            role['expiryDetail'] = {'expireTime': expireTime}
                 add_text = [f'as {role}']
                 for i in range(2):
                     try:
@@ -494,7 +504,7 @@ def update():
         elif myarg == 'sync':
             syncMembersSet = set()
             syncMembersMap = {}
-            role, users_email = _getRoleAndUsers()
+            role, expireTime, users_email = _getRoleAndUsers()
             for user_email in users_email:
                 if user_email in ('*', GC_Values[GC_CUSTOMER_ID]):
                     syncMembersSet.add(GC_Values[GC_CUSTOMER_ID])
@@ -527,17 +537,18 @@ def update():
                 f'Group: {group}, Will add {len(to_add)} and remove {len(to_remove)} {role}s.\n'
             )
             for user in to_add:
-                item = [
-                    'gam', 'update', 'cigroup', f'id:{parent}', 'add', role,
-                    user
-                ]
+                item = ['gam', 'update', 'cigroup', f'id:{parent}', 'add',
+                        role,]
+                if expireTime:
+                    item.extend(['expires', expireTime])
+                item.append(user)
                 items.append(item)
             for user in to_remove:
                 items.append([
                     'gam', 'update', 'cigroup', f'id:{parent}', 'remove', user
                 ])
         elif myarg in ['delete', 'remove']:
-            _, users_email = _getRoleAndUsers()
+            _, _, users_email = _getRoleAndUsers()
             if len(users_email) > 1:
                 sys.stderr.write(
                     f'Group: {group}, Will remove {len(users_email)} emails.\n')
@@ -563,7 +574,7 @@ def update():
                         f' Group: {group}, {users_email[0]} Remove Failed: {str(e)}'
                     )
         elif myarg == 'update':
-            role, users_email = _getRoleAndUsers()
+            role, expireTime, users_email = _getRoleAndUsers()
             if not role:
                 role = ROLE_MEMBER
             if len(users_email) > 1:
@@ -573,8 +584,10 @@ def update():
                 for user_email in users_email:
                     item = [
                         'gam', 'update', 'cigroup', f'id:{parent}', 'update',
-                        role, user_email
-                    ]
+                        role,]
+                    if expireTime:
+                        item.extend(['expires', expireTime])
+                    item.append(user_email)
                     items.append(item)
             elif len(users_email) > 0:
                 name = membership_email_to_id(ci, parent, users_email[0])
@@ -589,12 +602,25 @@ def update():
                     if crole not in {ROLE_MEMBER, role}:
                         removeRoles.append(crole)
                 if role not in current_roles:
-                    addRoles.append({'name': role})
+                    new_role = {'name': role}
+                    if role == ROLE_MEMBER and expireTime:
+                        new_role['expiryDetail'] = {'expireTime': expireTime}
+                        expireTime = None
+                    addRoles.append(new_role)
                 bodys = []
                 if addRoles:
                     bodys.append({'addRoles': addRoles})
                 if removeRoles:
                     bodys.append({'removeRoles': removeRoles})
+                if expireTime:
+                    bodys.append({
+                      'name': ROLE_MEMBER,
+                      # Note this doesn't actually work for some reason. Only known method to change
+                      # expire time right now is to remove/re-add member.
+                      'expiryDetail': {
+                         'expireTime': expireTime
+                       }
+                      })
                 for body in bodys:
                     try:
                         gapi.call(ci.groups().memberships(),
