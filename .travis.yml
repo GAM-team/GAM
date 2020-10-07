@@ -61,9 +61,13 @@ jobs:
       language: python
       python: 3.7
     - os: linux
-      name: "Python 3.9 dev Source Testing"
+      name: "Python 3.8 Source Testing"
       language: python
-      python: 3.9-dev
+      python: 3.8
+    - os: linux
+      name: "Python 3.10 dev Source Testing"
+      language: python
+      python: 3.10-dev
 #    - os: linux
 #      name: "Python trunk nightly Source Testing"
 #      language: python
