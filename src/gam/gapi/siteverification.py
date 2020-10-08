@@ -184,5 +184,5 @@ def update():
         pass
     print()
     print(
-        f'You can now add {a_domain} or it\'s subdomains as secondary or domain aliases of the {GC_Values[GC_DOMAIN]} G Suite Account.'
+        f'You can now add {a_domain} or it\'s subdomains as secondary or domain aliases of the {GC_Values[GC_DOMAIN]} Google Workspace Account.'
     )
