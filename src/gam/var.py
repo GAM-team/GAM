@@ -117,7 +117,7 @@ SKUS = {
     '1010020020': {
         'product': 'Google-Apps',
         'aliases': ['gae', 'gse', 'enterprise', 'gsuiteenterprise'],
-        'displayName': 'G Suite Enterprise'
+        'displayName': 'Google Workspace Enterprise Plus (fka G Suite Enterprise)'
     },
     '1010340002': {
         'product': '101034',
@@ -127,7 +127,7 @@ SKUS = {
     '1010340001': {
         'product': '101034',
         'aliases': ['gseau', 'enterprisearchived', 'gsuiteenterprisearchived'],
-        'displayName': 'G Suite Enterprise Archived'
+        'displayName': 'Google Workspace Enterprise Plus Archived'
     },
     '1010060001': {
         'product': '101006',
@@ -135,7 +135,7 @@ SKUS = {
             'gsuiteessentials', 'essentials', 'd4e', 'driveenterprise',
             'drive4enterprise'
         ],
-        'displayName': 'G Suite Essentials'
+        'displayName': 'Google Workspace Essentials'
     },
     'Google-Drive-storage-20GB': {
         'product': 'Google-Drive-storage',
@@ -210,7 +210,7 @@ PRODUCTID_NAME_MAPPINGS = {
     '101031': 'G Suite Enterprise for Education',
     '101033': 'Google Voice',
     '101034': 'G Suite Archived',
-    'Google-Apps': 'G Suite',
+    'Google-Apps': 'Google Workspace',
     'Google-Chrome-Device-Management': 'Google Chrome Device Management',
     'Google-Coordinate': 'Google Coordinate',
     'Google-Drive-storage': 'Google Drive Storage',
