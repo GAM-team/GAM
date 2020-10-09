@@ -237,6 +237,11 @@ def print_():
     for groupEntity in entityList:
         i += 1
         groupEmail = groupEntity['groupKey']['id']
+        for k, v in iter(groupEntity.pop('labels', {}).items()):
+            if v == '':
+                groupEntity[f'labels.{k}'] = True
+            else:
+                groupEntity[f'labels.{k}'] = v
         group = utils.flatten_json(groupEntity)
         for a_key in group:
             if a_key not in titles:
@@ -304,7 +309,7 @@ def print_():
         csvRows.append(group)
     if sortHeaders:
         display.sort_csv_titles([
-            'Email',
+            'name', 'groupKey.id'
         ], titles)
     display.write_csv_file(csvRows, titles, 'Groups', todrive)
 
