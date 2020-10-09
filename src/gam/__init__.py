@@ -3197,10 +3197,21 @@ def printDriveFileList(users):
                                                 'kind', 'etag', 'selfLink'
                                         ]:
                                             continue
-                                        x_attrib = f'{attrib}.{j}.{list_attrib}'
-                                        if x_attrib not in titles:
-                                            titles.append(x_attrib)
-                                        a_file[x_attrib] = l_attrib[list_attrib]
+                                        if not isinstance(l_attrib[list_attrib], dict):
+                                            x_attrib = f'{attrib}.{j}.{list_attrib}'
+                                            if x_attrib not in titles:
+                                                titles.append(x_attrib)
+                                            a_file[x_attrib] = l_attrib[list_attrib]
+                                        else:
+                                            for sl_attrib in l_attrib[list_attrib]:
+                                                if sl_attrib in [
+                                                        'kind', 'etag', 'selfLink'
+                                                ]:
+                                                    continue
+                                                x_attrib = f'{attrib}.{j}.{list_attrib}.{sl_attrib}'
+                                                if x_attrib not in titles:
+                                                    titles.append(x_attrib)
+                                                a_file[x_attrib] = l_attrib[list_attrib][sl_attrib]
                     elif isinstance(f_file[attrib], (str, int, bool)):
                         if attrib not in titles:
                             titles.append(attrib)
