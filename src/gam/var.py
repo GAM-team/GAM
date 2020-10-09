@@ -114,10 +114,44 @@ SKUS = {
         'aliases': ['gau', 'gsb', 'unlimited', 'gsuitebusiness'],
         'displayName': 'G Suite Business'
     },
+    '1010020027': {
+         'product': 'Google-Apps',
+         'aliases': ['wsbizstart', 'workspacebusinessstarter'],
+         'displayName': 'Workspace Business Starter'
+    },
+    '1010020028': {
+         'product': 'Google-Apps',
+         'aliases': ['wsbizstan', 'workspacebusinessstandard'],
+         'displayName': 'Workspace Business Standard'
+    },
+    '1010020025': {
+         'product': 'Google-Apps',
+         'aliases': ['wsbizplus', 'workspacebusinessplus'],
+         'displayName': 'Workspace Business Plus'
+    },
+    '1010060001': {
+        'product': 'Google-Apps',
+        'aliases': [
+            'gsuiteessentials', 'essentials', 'd4e', 'driveenterprise',
+            'drive4enterprise', 'wsess', 'workspaceesentials'
+        ],
+        'displayName': 'Google Workspace Essentials'
+    },
+    '1010060003': {
+         'product': 'Google-Apps',
+         'aliases': ['wsentess', 'workspaceenterpriseessentials'],
+         'displayName': 'Workspace Enterprise Essentials'
+    },
+    '1010020026': {
+         'product': 'Google-Apps',
+         'aliases': ['wsentstan', 'workspaceenterprisestandard'],
+         'displayName': 'Workspace Enterprise Standard'
+    },
     '1010020020': {
         'product': 'Google-Apps',
-        'aliases': ['gae', 'gse', 'enterprise', 'gsuiteenterprise'],
-        'displayName': 'G Suite Enterprise'
+        'aliases': ['gae', 'gse', 'enterprise', 'gsuiteenterprise',
+                    'wsentplus', 'workspaceenterpriseplus'],
+        'displayName': 'Workspace Enterprise Plus'
     },
     '1010340002': {
         'product': '101034',
@@ -128,14 +162,6 @@ SKUS = {
         'product': '101034',
         'aliases': ['gseau', 'enterprisearchived', 'gsuiteenterprisearchived'],
         'displayName': 'G Suite Enterprise Archived'
-    },
-    '1010060001': {
-        'product': '101006',
-        'aliases': [
-            'gsuiteessentials', 'essentials', 'd4e', 'driveenterprise',
-            'drive4enterprise'
-        ],
-        'displayName': 'G Suite Essentials'
     },
     'Google-Drive-storage-20GB': {
         'product': 'Google-Drive-storage',
@@ -191,11 +217,6 @@ SKUS = {
         'product': 'Google-Vault',
         'aliases': ['vfe', 'googlevaultformeremployee'],
         'displayName': 'Google Vault Former Employee'
-    },
-    'Google-Coordinate': {
-        'product': 'Google-Coordinate',
-        'aliases': ['coordinate', 'googlecoordinate'],
-        'displayName': 'Google Coordinate'
     },
     'Google-Chrome-Device-Management': {
         'product': 'Google-Chrome-Device-Management',
