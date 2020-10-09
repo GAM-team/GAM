@@ -161,7 +161,7 @@ SKUS = {
     '1010340001': {
         'product': '101034',
         'aliases': ['gseau', 'enterprisearchived', 'gsuiteenterprisearchived'],
-        'displayName': 'G Suite Enterprise Archived'
+        'displayName': 'Google Workspace Enterprise Plus Archived'
     },
     'Google-Drive-storage-20GB': {
         'product': 'Google-Drive-storage',
@@ -231,7 +231,7 @@ PRODUCTID_NAME_MAPPINGS = {
     '101031': 'G Suite Enterprise for Education',
     '101033': 'Google Voice',
     '101034': 'G Suite Archived',
-    'Google-Apps': 'G Suite',
+    'Google-Apps': 'Google Workspace',
     'Google-Chrome-Device-Management': 'Google Chrome Device Management',
     'Google-Coordinate': 'Google Coordinate',
     'Google-Drive-storage': 'Google Drive Storage',
@@ -401,6 +401,7 @@ DRIVEFILE_FIELDS_CHOICES_MAP = {
     'appdatacontents': 'appDataContents',
     'cancomment': 'canComment',
     'canreadrevisions': 'canReadRevisions',
+    'contentrestrictions': 'contentRestrictions',
     'copyable': 'copyable',
     'copyrequireswriterpermission': 'copyRequiresWriterPermission',
     'createddate': 'createdDate',
@@ -520,6 +521,7 @@ MIMETYPE_GA_SCRIPT = f'{APPLICATION_VND_GOOGLE_APPS}script'
 MIMETYPE_GA_SITES = f'{APPLICATION_VND_GOOGLE_APPS}sites'
 MIMETYPE_GA_SPREADSHEET = f'{APPLICATION_VND_GOOGLE_APPS}spreadsheet'
 MIMETYPE_GA_SHORTCUT = f'{APPLICATION_VND_GOOGLE_APPS}shortcut'
+MIMETYPE_GA_3P_SHORTCUT = f'{APPLICATION_VND_GOOGLE_APPS}drive-sdk'
 
 MIMETYPE_CHOICES_MAP = {
     'gdoc': MIMETYPE_GA_DOCUMENT,
@@ -531,6 +533,8 @@ MIMETYPE_CHOICES_MAP = {
     'gfusion': MIMETYPE_GA_FUSIONTABLE,
     'gpresentation': MIMETYPE_GA_PRESENTATION,
     'gscript': MIMETYPE_GA_SCRIPT,
+    'gshortcut': MIMETYPE_GA_SHORTCUT,
+    'g3pshortcut': MIMETYPE_GA_3P_SHORTCUT,
     'gsite': MIMETYPE_GA_SITES,
     'gsheet': MIMETYPE_GA_SPREADSHEET,
     'gspreadsheet': MIMETYPE_GA_SPREADSHEET,

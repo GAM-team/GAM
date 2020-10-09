@@ -28,7 +28,7 @@ upgrade_only=false
 gamversion="latest"
 adminuser=""
 regularuser=""
-gam_glibc_vers="2.27 2.23"
+gam_glibc_vers="2.31 2.27 2.23"
 gam_macos_vers="10.15.6 10.14.6 10.13.6"
 
 while getopts "hd:a:o:b:lp:u:r:v:" OPTION
@@ -288,7 +288,7 @@ while true; do
   case $yn in
     [Yy]*)
       if [ "$adminuser" == "" ]; then
-        read -p "Please enter your G Suite admin email address: " adminuser
+        read -p "Please enter your Google Workspace admin email address: " adminuser
       fi
       "$target_dir/gam/gam" create project $adminuser
       rc=$?
@@ -312,7 +312,7 @@ done
 
 admin_authorized=false
 while $project_created; do
-  read -p "Are you ready to authorize GAM to perform G Suite management operations as your admin account? (yes or no) " yn
+  read -p "Are you ready to authorize GAM to perform Google Workspace management operations as your admin account? (yes or no) " yn
   case $yn in
     [Yy]*)
       "$target_dir/gam/gam" oauth create $adminuser
@@ -337,11 +337,11 @@ done
 
 service_account_authorized=false
 while $project_created; do
-  read -p "Are you ready to authorize GAM to manage G Suite user data and settings? (yes or no) " yn
+  read -p "Are you ready to authorize GAM to manage Google Workspace user data and settings? (yes or no) " yn
   case $yn in
     [Yy]*)
       if [ "$regularuser" == "" ]; then
-        read -p "Please enter the email address of a regular G Suite user: " regularuser
+        read -p "Please enter the email address of a regular Google Workspace user: " regularuser
       fi
       echo_yellow "Great! Checking service account scopes.This will fail the first time. Follow the steps to authorize and retry. It can take a few minutes for scopes to PASS after they've been authorized in the admin console."
       "$target_dir/gam/gam" user $adminuser check serviceaccount

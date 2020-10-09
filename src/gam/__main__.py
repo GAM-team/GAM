@@ -16,7 +16,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""GAM is a command line tool which allows Administrators to control their G Suite domain and accounts.
+"""GAM is a command line tool which allows Administrators to control their Google Workspace domain and accounts.
 
 With GAM you can programmatically create users, turn on/off services for users like POP and Forwarding and much more.
 For more information, see https://git.io/gam

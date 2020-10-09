@@ -3538,7 +3538,11 @@ def getDriveFileAttribute(i, body, parameters, myarg, update=False):
                 sys.argv[i+2], f'gam <users> {operation} drivefile')
             i += 3
             if len(sys.argv) > i and sys.argv[i].lower() == 'reason':
-                body['contentRestrictions'][0]['reason'] = sys.argv[i+1]
+                if body['contentRestrictions'][0]['readOnly']:
+                    body['contentRestrictions'][0]['reason'] = sys.argv[i+1]
+                else:
+                    controlflow.invalid_argument_exit(
+                        'reason', 'contentrestrictions readonly false')
                 i += 2
         else:
             controlflow.invalid_argument_exit(
