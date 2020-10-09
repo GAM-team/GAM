@@ -223,7 +223,6 @@ V1_DISCOVERY_APIS = {
     'appsactivity',
     'calendar',
     'drive',
-    'licensing',
     'oauth2',
     'reseller',
     'siteVerification',

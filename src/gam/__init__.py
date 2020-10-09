@@ -3454,6 +3454,7 @@ def initializeDriveFileAttributes():
 
 
 def getDriveFileAttribute(i, body, parameters, myarg, update=False):
+    operation = 'update' if update else 'add'
     if myarg == 'localfile':
         parameters[DFA_LOCALFILEPATH] = sys.argv[i + 1]
         parameters[DFA_LOCALFILENAME] = os.path.basename(
@@ -3529,9 +3530,22 @@ def getDriveFileAttribute(i, body, parameters, myarg, update=False):
     elif myarg == 'writerscantshare':
         body['writersCanShare'] = False
         i += 1
+    elif myarg == 'contentrestrictions':
+        body['contentRestrictions'] = [{}]
+        restriction = sys.argv[i+1].lower().replace('_', '')
+        if restriction == 'readonly':
+            body['contentRestrictions'][0]['readOnly'] = getBoolean(
+                sys.argv[i+2], f'gam <users> {operation} drivefile')
+            i += 3
+            if len(sys.argv) > i and sys.argv[i].lower() == 'reason':
+                body['contentRestrictions'][0]['reason'] = sys.argv[i+1]
+                i += 2
+        else:
+            controlflow.invalid_argument_exit(
+                restriction, f'gam <users> {operation} drivefile')
     else:
         controlflow.invalid_argument_exit(
-            myarg, f"gam <users> {['add', 'update'][update]} drivefile")
+            myarg, f"gam <users> {operation} drivefile")
     return i
 
 
