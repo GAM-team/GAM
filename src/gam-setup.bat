@@ -27,7 +27,7 @@
 @  goto createproject
    )
 @echo(
-@set /p adminemail= "Please enter your G Suite admin email address: "
+@set /p adminemail= "Please enter your Google Workspace admin email address: "
 @gam create project %adminemail%
 @if not ERRORLEVEL 1 goto projectdone
 @echo(
@@ -37,7 +37,7 @@
 
 :adminauth
 @echo(
-@set /p yn= "Are you ready to authorize GAM to perform G Suite management operations as your admin account? [y or n] "
+@set /p yn= "Are you ready to authorize GAM to perform Google Workspace management operations as your admin account? [y or n] "
 @if /I "%yn%"=="n" (
 @  echo(
 @  echo You can authorize an admin later by running:
@@ -59,7 +59,7 @@
 
 :saauth
 @echo(
-@set /p yn= "Are you ready to authorize GAM to manage G Suite user data and settings? [y or n] "
+@set /p yn= "Are you ready to authorize GAM to manage Google Workspace user data and settings? [y or n] "
 @if /I "%yn%"=="n" (
 @  echo(
 @  echo You can authorize a service account later by running:
@@ -73,7 +73,7 @@
 @  goto saauth
    )
 @echo(
-@set /p regularuser= "Please enter the email address of a regular G Suite user: "
+@set /p regularuser= "Please enter the email address of a regular Google Workspace user: "
 @echo Great! Checking service account scopes. This will fail the first time. Follow the steps to authorize and retry. It can take a few minutes for scopes to PASS after they've been authorized in the admin console.
 @gam user %regularuser% check serviceaccount
 @if not ERRORLEVEL 1 goto sadone
