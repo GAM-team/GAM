@@ -3543,6 +3543,10 @@ def getDriveFileAttribute(i, body, parameters, myarg, update=False):
         else:
             controlflow.invalid_argument_exit(
                 restriction, f'gam <users> {operation} drivefile')
+    elif myarg == 'shortcut':
+        body['mimeType'] = MIMETYPE_GA_SHORTCUT
+        body['shortcutDetails'] = {'targetId': sys.argv[i+1]}
+        i += 2
     else:
         controlflow.invalid_argument_exit(
             myarg, f"gam <users> {operation} drivefile")
