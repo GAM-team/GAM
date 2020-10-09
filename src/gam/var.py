@@ -380,6 +380,7 @@ DRIVEFILE_FIELDS_CHOICES_MAP = {
     'appdatacontents': 'appDataContents',
     'cancomment': 'canComment',
     'canreadrevisions': 'canReadRevisions',
+    'contentrestrictions': 'contentRestrictions',
     'copyable': 'copyable',
     'copyrequireswriterpermission': 'copyRequiresWriterPermission',
     'createddate': 'createdDate',
