@@ -1249,6 +1249,7 @@ gam course <CourseID> add alias <CourseAlias>
 gam course <CourseID> delete alias <CourseAlias>
 gam course <CourseID> add teachers|students <UserItem>
 gam course <CourseID> delete|remove teachers|students <UserItem>
+gam course <CourseID> invite teachers|students|owners <UserItem>
 gam course <CourseID> sync teachers|students <UserTypeEntity>
 gam print course-participants [todrive] (course|class <CourseID>)*|([teacher <UserItem>] [student <UserItem>] [states <CourseStateList>]) [show all|students|teachers]
 
