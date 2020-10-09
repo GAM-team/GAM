@@ -1512,6 +1512,22 @@ def doAddCourseParticipant():
     else:
         controlflow.invalid_argument_exit(participant_type, 'gam course ID add')
 
+def doInviteCourseParticipant():
+    croom = buildGAPIObject('classroom')
+    courseId = addCourseIdScope(sys.argv[2])
+    noScopeCourseId = removeCourseIdScope(courseId)
+    participant_type = sys.argv[4].lower()
+    new_id = sys.argv[5]
+    if participant_type in ['owner', 'owners', 'students', 'teacher', 'teachers', 'student']:
+        if participant_type.endswith('s'):
+            participant_type = participant_type[:-1]
+        new_id = normalizeEmailAddressOrUID(new_id)
+        gapi.call(croom.invitations(),
+                  'create',
+                  body={'userId': new_id, "courseId": courseId, "role": participant_type})
+        print(f'Invited {new_id} as a {participant_type} of course {noScopeCourseId}')
+    else:
+        controlflow.invalid_argument_exit(participant_type, 'gam course ID add')
 
 def doSyncCourseParticipants():
     courseId = addCourseIdScope(sys.argv[2])
@@ -11353,6 +11369,8 @@ def ProcessGAMCommand(args):
             argument = sys.argv[3].lower()
             if argument in ['add', 'create']:
                 doAddCourseParticipant()
+            elif argument in ['invite']:
+                doInviteCourseParticipant()
             elif argument in ['del', 'delete', 'remove']:
                 doDelCourseParticipant()
             elif argument == 'sync':
