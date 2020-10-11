@@ -233,7 +233,6 @@ PRODUCTID_NAME_MAPPINGS = {
     '101034': 'G Suite Archived',
     'Google-Apps': 'Google Workspace',
     'Google-Chrome-Device-Management': 'Google Chrome Device Management',
-    'Google-Coordinate': 'Google Coordinate',
     'Google-Drive-storage': 'Google Drive Storage',
     'Google-Vault': 'Google Vault',
 }

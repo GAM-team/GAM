@@ -243,7 +243,7 @@ def print_():
         entityList = []
         for entity in result:
             if entity['relationType'] == 'DIRECT':
-                entityList.append(gapi.call(ci.groups(), 'get', name=entity['name']))
+                entityList.append(gapi.call(ci.groups(), 'get', name=entity['group']))
     else:
         entityList = gapi.get_all_pages(ci.groups(),
                                         'list',
