@@ -175,7 +175,7 @@ def print_():
             todrive = True
             i += 1
         elif myarg == 'member':
-            member = gam.convertUIDtoEmailAddress(sys.argv[i + 1])
+            member = gam.convertUIDtoEmailAddress(sys.argv[i + 1], email_types=['user', 'group'])
             usemember = f"member_key_id == '{member}' && 'cloudidentity.googleapis.com/groups.discussion_forum' in labels"
             i += 2
         elif myarg == 'delimiter':
@@ -362,7 +362,7 @@ def print_members():
                     )
             i += 2
         elif myarg == 'member':
-            member = gam.convertUIDtoEmailAddress(sys.argv[i + 1])
+            member = gam.convertUIDtoEmailAddress(sys.argv[i + 1], email_types=['user', 'group'])
             usemember = f"member_key_id == '{member}' && 'cloudidentity.googleapis.com/groups.discussion_forum' in labels"
             i += 2
         elif myarg in ['cigroup', 'cigroups']:
