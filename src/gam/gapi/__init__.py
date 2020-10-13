@@ -218,6 +218,60 @@ def got_total_items_first_last_msg(items):
     return f'Got {TOTAL_ITEMS_MARKER} {items}: {FIRST_ITEM_MARKER} - {LAST_ITEM_MARKER}' + '\n'
 
 
+def process_all_pages_result(page, items, all_items, total_items, page_message, message_attribute):
+    """Process one page of a Google service function response.
+
+  Append a list of items to the aggregate list of items
+
+  Args:
+    page: list of items
+    items: see get_all_pages
+    all_items: aggregate list of items
+    total_items: length of all_items
+    page_message: see get_all_pages
+    message_attribute: get_all_pages
+  Returns:
+    The page token and total number of items
+  """
+    if page:
+        page_token = page.get('nextPageToken')
+        page_items = page.get(items, [])
+        num_page_items = len(page_items)
+        total_items += num_page_items
+        if all_items is not None:
+            all_items.extend(page_items)
+    else:
+        page_token = None
+        num_page_items = 0
+
+    # Show a paging message to the user that indicates paging progress
+    if page_message:
+        show_message = page_message.replace(TOTAL_ITEMS_MARKER,
+                                            str(total_items))
+        if message_attribute:
+            first_item = page_items[0] if num_page_items > 0 else {}
+            last_item = page_items[-1] if num_page_items > 1 else first_item
+            if isinstance(message_attribute, str):
+                first_item = str(first_item.get(message_attribute, ''))
+                last_item = str(last_item.get(message_attribute, ''))
+            else:
+                for attr in message_attribute:
+                    first_item = first_item.get(attr, {})
+                    last_item = last_item.get(attr, {})
+                first_item = str(first_item)
+                last_item = str(last_item)
+            show_message = show_message.replace(FIRST_ITEM_MARKER, first_item)
+            show_message = show_message.replace(LAST_ITEM_MARKER, last_item)
+        sys.stderr.write('\r')
+        sys.stderr.flush()
+        sys.stderr.write(show_message)
+    return (page_token, total_items)
+
+def finalize_all_pages_result(page_message):
+    if page_message and (page_message[-1] != '\n'):
+        sys.stderr.write('\r\n')
+        sys.stderr.flush()
+
 def get_all_pages(service,
                   function,
                   items='items',
@@ -274,46 +328,12 @@ def get_all_pages(service,
                     soft_errors=soft_errors,
                     throw_reasons=throw_reasons,
                     retry_reasons=retry_reasons,
-                    pageToken=page_token,
                     **kwargs)
-        if page:
-            page_token = page.get('nextPageToken')
-            page_items = page.get(items, [])
-            num_page_items = len(page_items)
-            total_items += num_page_items
-            all_items.extend(page_items)
-        else:
-            page_token = None
-            num_page_items = 0
-
-        # Show a paging message to the user that indicates paging progress
-        if page_message:
-            show_message = page_message.replace(TOTAL_ITEMS_MARKER,
-                                                str(total_items))
-            if message_attribute:
-                first_item = page_items[0] if num_page_items > 0 else {}
-                last_item = page_items[-1] if num_page_items > 1 else first_item
-                if type(message_attribute) is str:
-                    first_item = str(first_item.get(message_attribute, ''))
-                    last_item = str(last_item.get(message_attribute, ''))
-                else:
-                    for attr in message_attribute:
-                        first_item = first_item.get(attr, {})
-                        last_item = last_item.get(attr, {})
-                    first_item = str(first_item)
-                    last_item = str(last_item)
-                show_message = show_message.replace(FIRST_ITEM_MARKER, first_item)
-                show_message = show_message.replace(LAST_ITEM_MARKER, last_item)
-            sys.stderr.write('\r')
-            sys.stderr.flush()
-            sys.stderr.write(show_message)
-
+        page_token, total_items = process_all_pages_result(page, items, all_items, total_items, page_message, message_attribute)
         if not page_token:
-            # End the paging status message and return all items.
-            if page_message and (page_message[-1] != '\n'):
-                sys.stderr.write('\r\n')
-                sys.stderr.flush()
+            finalize_all_pages_result(page_message)
             return all_items
+        kwargs['pageToken'] = page_token
 
 
 # TODO: Make this private once all execution related items that use this method

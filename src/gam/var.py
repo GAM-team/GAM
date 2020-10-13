@@ -240,7 +240,6 @@ PRODUCTID_NAME_MAPPINGS = {
 # Legacy APIs that use v1 discovery. Newer APIs should all use v2.
 V1_DISCOVERY_APIS = {
     'admin',
-    'appsactivity',
     'calendar',
     'drive',
     'oauth2',
@@ -259,7 +258,7 @@ API_NAME_MAPPING = {
 
 API_VER_MAPPING = {
     'alertcenter': 'v1beta1',
-    'appsactivity': 'v1',
+    'driveactivity': 'v2',
     'calendar': 'v3',
     'classroom': 'v1',
     'cloudidentity': 'v1',
@@ -291,8 +290,8 @@ USERINFO_EMAIL_SCOPE = 'https://www.googleapis.com/auth/userinfo.email'
 
 API_SCOPE_MAPPING = {
     'alertcenter': ['https://www.googleapis.com/auth/apps.alerts',],
-    'appsactivity': [
-        'https://www.googleapis.com/auth/activity',
+    'driveactivity': [
+        'https://www.googleapis.com/auth/drive.activity',
         'https://www.googleapis.com/auth/drive',
     ],
     'calendar': ['https://www.googleapis.com/auth/calendar',],
