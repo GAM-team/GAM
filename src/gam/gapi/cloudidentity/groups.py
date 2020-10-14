@@ -162,6 +162,7 @@ def print_():
     members = membersCountOnly = managers = managersCountOnly = owners = ownersCountOnly = False
     gapi_directory_customer.setTrueCustomerId()
     parent = f'customers/{GC_Values[GC_CUSTOMER_ID]}'
+    usemember = None
     memberDelimiter = '\n'
     todrive = False
     titles = []
@@ -173,6 +174,10 @@ def print_():
         if myarg == 'todrive':
             todrive = True
             i += 1
+        elif myarg == 'member':
+            member = gam.convertUIDtoEmailAddress(sys.argv[i + 1], email_types=['user', 'group'])
+            usemember = f"member_key_id == '{member}' && 'cloudidentity.googleapis.com/groups.discussion_forum' in labels"
+            i += 2
         elif myarg == 'delimiter':
             memberDelimiter = sys.argv[i + 1]
             i += 2
@@ -224,16 +229,30 @@ def print_():
                 display.add_titles_to_csv_file([
                     'Owners',
                 ], titles)
-    gam.printGettingAllItems('Groups', None)
+    gam.printGettingAllItems('Groups', usemember)
     page_message = gapi.got_total_items_first_last_msg('Groups')
-    entityList = gapi.get_all_pages(ci.groups(),
-                                    'list',
-                                    'groups',
+    if usemember:
+        result = gapi.get_all_pages(ci.groups().memberships(),
+                                    'searchTransitiveGroups',
+                                    'memberships',
                                     page_message=page_message,
                                     message_attribute=['groupKey', 'id'],
-                                    parent=parent,
-                                    view='FULL',
-                                    pageSize=500)
+                                    parent='groups/-', query=usemember,
+                                    fields='nextPageToken,memberships(group,groupKey(id),relationType)',
+                                    pageSize=1000)
+        entityList = []
+        for entity in result:
+            if entity['relationType'] == 'DIRECT':
+                entityList.append(gapi.call(ci.groups(), 'get', name=entity['group']))
+    else:
+        entityList = gapi.get_all_pages(ci.groups(),
+                                        'list',
+                                        'groups',
+                                        page_message=page_message,
+                                        message_attribute=['groupKey', 'id'],
+                                        parent=parent,
+                                        view='FULL',
+                                        pageSize=500)
     i = 0
     count = len(entityList)
     for groupEntity in entityList:
@@ -321,6 +340,7 @@ def print_members():
     todrive = False
     gapi_directory_customer.setTrueCustomerId()
     parent = f'customers/{GC_Values[GC_CUSTOMER_ID]}'
+    usemember = None
     roles = []
     titles = ['group']
     csvRows = []
@@ -341,6 +361,10 @@ def print_members():
                         f'{role} is not a valid role for "gam print group-members {myarg}"'
                     )
             i += 2
+        elif myarg == 'member':
+            member = gam.convertUIDtoEmailAddress(sys.argv[i + 1], email_types=['user', 'group'])
+            usemember = f"member_key_id == '{member}' && 'cloudidentity.googleapis.com/groups.discussion_forum' in labels"
+            i += 2
         elif myarg in ['cigroup', 'cigroups']:
             group_email = gam.normalizeEmailAddressOrUID(sys.argv[i + 1])
             groups_to_get = [group_email]
@@ -349,19 +373,30 @@ def print_members():
             controlflow.invalid_argument_exit(sys.argv[i],
                                               'gam print cigroup-members')
     if not groups_to_get:
-        gam.printGettingAllItems('Groups', None)
+        gam.printGettingAllItems('Groups', usemember)
         page_message = gapi.got_total_items_first_last_msg('Groups')
-        groups_to_get = gapi.get_all_pages(
-            ci.groups(),
-            'list',
-            'groups',
-            message_attribute=['groupKey', 'id'],
-            page_message=page_message,
-            parent=parent,
-            view='BASIC',
-            pageSize=1000,
-            fields='nextPageToken,groups(groupKey(id))')
-        groups_to_get = [group['groupKey']['id'] for group in groups_to_get]
+        if usemember:
+            groups_to_get = gapi.get_all_pages(ci.groups().memberships(),
+                                               'searchTransitiveGroups',
+                                               'memberships',
+                                               message_attribute=['groupKey', 'id'],
+                                               page_message=page_message,
+                                               parent='groups/-', query=usemember,
+                                               pageSize=1000,
+                                               fields='nextPageToken,memberships(groupKey(id),relationType)')
+            groups_to_get = [group['groupKey']['id'] for group in groups_to_get if group['relationType'] == 'DIRECT']
+        else:
+            groups_to_get = gapi.get_all_pages(
+                ci.groups(),
+                'list',
+                'groups',
+                message_attribute=['groupKey', 'id'],
+                page_message=page_message,
+                parent=parent,
+                view='BASIC',
+                pageSize=1000,
+                fields='nextPageToken,groups(groupKey(id))')
+            groups_to_get = [group['groupKey']['id'] for group in groups_to_get]
     i = 0
     count = len(groups_to_get)
     for group_email in groups_to_get:
