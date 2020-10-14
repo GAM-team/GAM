@@ -1188,13 +1188,12 @@ gam delete cigroup <GroupItem>
 gam info cigroup <GroupItem> [nousers] [nojoindate] [showupdatedate]
 
 gam print cigroups [todrive]
-	[member <UserItem>]
 	[members|memberscount] [managers|managerscount] [owners|ownerscount]
 	[delimiter <Character>] [sortheaders]
 
 gam info cimember <UserItem> <GroupItem>
 gam print cigroup-members|cigroups-members [todrive]
-	([member <UserItem>]|(cigroup <GroupItem>)]
+	(cigroup <GroupItem>]
 	[roles <GroupRoleList>]
 
 gam create group <EmailAddress> <GroupAttribute>*
