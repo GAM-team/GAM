@@ -2857,7 +2857,7 @@ def printDriveActivity(users):
         page_message = gapi.got_total_items_msg(f'Activities for {user}', '')
         while True:
           feed = gapi.call(activity.activity(), 'query', body=kwargs)
-          page_token, total_items = gapi.process_all_pages_result(feed, 'activities', None, total_items, page_message, None)
+          page_token, total_items = gapi.process_page(feed, 'activities', None, total_items, page_message, None)
           kwargs['pageToken'] = page_token
           if feed:
               for activity_event in feed.get('activities', []):
@@ -2893,7 +2893,7 @@ def printDriveActivity(users):
                       utils.flatten_json(activity_event, flattened=event_row), csvRows, titles)
               del feed
           if not page_token:
-              gapi.finalize_all_pages_result(page_message)
+              gapi.finalize_page_message(page_message)
               break
     display.sort_csv_titles(sort_titles, titles)
     display.write_csv_file(csvRows, titles, 'Drive Activity', todrive)
