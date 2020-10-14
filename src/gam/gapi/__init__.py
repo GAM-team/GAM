@@ -218,7 +218,7 @@ def got_total_items_first_last_msg(items):
     return f'Got {TOTAL_ITEMS_MARKER} {items}: {FIRST_ITEM_MARKER} - {LAST_ITEM_MARKER}' + '\n'
 
 
-def process_all_pages_result(page, items, all_items, total_items, page_message, message_attribute):
+def process_page(page, items, all_items, total_items, page_message, message_attribute):
     """Process one page of a Google service function response.
 
   Append a list of items to the aggregate list of items
@@ -267,7 +267,8 @@ def process_all_pages_result(page, items, all_items, total_items, page_message, 
         sys.stderr.write(show_message)
     return (page_token, total_items)
 
-def finalize_all_pages_result(page_message):
+def finalize_page_message(page_message):
+    """ Issue final page_message """
     if page_message and (page_message[-1] != '\n'):
         sys.stderr.write('\r\n')
         sys.stderr.flush()
@@ -329,9 +330,9 @@ def get_all_pages(service,
                     throw_reasons=throw_reasons,
                     retry_reasons=retry_reasons,
                     **kwargs)
-        page_token, total_items = process_all_pages_result(page, items, all_items, total_items, page_message, message_attribute)
+        page_token, total_items = process_page(page, items, all_items, total_items, page_message, message_attribute)
         if not page_token:
-            finalize_all_pages_result(page_message)
+            finalize_page_message(page_message)
             return all_items
         kwargs['pageToken'] = page_token
 
