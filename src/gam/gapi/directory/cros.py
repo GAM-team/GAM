@@ -1,4 +1,5 @@
 import datetime
+import json
 import time
 
 import googleapiclient
@@ -40,7 +41,7 @@ def issue_command():
              body['commandType'] = command_map[command]
              i += 2
              if command == 'setvolume':
-                 body['payload'] = {'volume': int(sys.argv[i])}
+                 body['payload'] = json.dumps({'volume': sys.argv[i]})
                  i += 1
         elif myarg == 'timestocheckstatus':
             times_to_check_status = int(sys.argv[i+1])
