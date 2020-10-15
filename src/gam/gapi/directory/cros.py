@@ -1,4 +1,7 @@
 import datetime
+import time
+
+import googleapiclient
 
 from gam.var import *
 import gam
@@ -7,9 +10,93 @@ from gam import display
 from gam import fileutils
 from gam import gapi
 from gam.gapi import directory as gapi_directory
+from gam.gapi import errors as gapi_errors
 from gam.gapi.directory import orgunits as gapi_directory_orgunits
 from gam import utils
 
+
+def issue_command():
+    cd = gapi_directory.build()
+    i, devices = getCrOSDeviceEntity(3, cd)
+    body = {}
+    final_states = ['EXPIRED', 'CANCELLED', 'EXECUTED_BY_CLIENT']
+    valid_commands = gapi.get_enum_values_minus_unspecified(
+            cd._rootDesc['schemas']
+            ['DirectoryChromeosdevicesIssueCommandRequest']
+            ['properties']['commandType']['enum'])
+    command_map = {}
+    for valid_command in valid_commands:
+        v = valid_command.lower().replace('_', '')
+        command_map[v] = valid_command
+    times_to_check_status = 1
+    doit = False
+    while i < len(sys.argv):
+        myarg = sys.argv[i].lower().replace('_', '')
+        if myarg == 'command':
+             command = sys.argv[i+1].lower().replace('_', '')
+             if command not in command_map:
+                 controlflow.system_error_exit(2, f'expected command of ' \
+                     f'{", ".join(valid_commands)} got {command}')
+             body['commandType'] = command_map[command]
+             i += 2
+             if command == 'setvolume':
+                 body['payload'] = {'volume': int(sys.argv[i])}
+                 i += 1
+        elif myarg == 'timestocheckstatus':
+            times_to_check_status = int(sys.argv[i+1])
+            i += 2
+        elif myarg == 'doit':
+            doit = True
+            i += 1
+        else:
+            controlflow.invalid_argument_exit(sys.argv[i], 'gam issuecommand cros')
+    if body['commandType'] == 'WIPE_USERS' and not doit:
+        controlflow.system_error_exit(2, 'wipe_users command requires admin ' \
+            'acknowledge user data will be destroyed with the ' \
+            'doit argument')
+    if body['commandType'] == 'REMOTE_POWERWASH' and not doit:
+        controlflow.system_error_exit(2, 'remote_powerwash command requires ' \
+            'admin acknowledge user data will be destroyed, device will need' \
+            ' to be reconnected to WiFi and re-enrolled with the doit argument')
+    for device_id in devices:
+        try:
+            result = gapi.call(cd.customer().devices().chromeos(), 'issueCommand',
+                  customerId=GC_Values[GC_CUSTOMER_ID], deviceId=device_id,
+                  throw_reasons=[gapi_errors.ErrorReason.FOUR_O_O],
+                  body=body)
+        except googleapiclient.errors.HttpError:
+            controlflow.system_error_exit(4, '400 response from Google. This ' \
+              'usually indicates the devices was not in a state where it will' \
+              ' accept the command. For example, reboot and take_a_screenshot' \
+              ' require the device to be in auto-start kiosk app mode.')
+        display.print_json(result)
+        command_id = result.get('commandId')
+        for i in range(0, times_to_check_status):
+            time.sleep(2)
+            result = gapi.call(cd.customer().devices().chromeos().commands(), 'get',
+              customerId=GC_Values[GC_CUSTOMER_ID], deviceId=device_id,
+              commandId=command_id)
+            display.print_json(result)
+            state = result.get('state')
+            if state in final_states:
+                break
+
+def get_command():
+    cd = gapi_directory.build()
+    i, devices = getCrOSDeviceEntity(3, cd)
+    command_id = None
+    while i < len(sys.argv):
+        myarg = sys.argv[i].lower().replace('_', '')
+        if myarg == 'commandid':
+            command_id = sys.argv[i+1]
+            i += 2
+        else:
+            controlflow.invalid_argument_exit(sys.argv[i], 'gam getcommand cros')
+    for device_id in devices:
+        result = gapi.call(cd.customer().devices().chromeos().commands(), 'get',
+                  customerId=GC_Values[GC_CUSTOMER_ID], deviceId=device_id,
+                  commandId=command_id)
+        display.print_json(result)
 
 def doUpdateCros():
     cd = gapi_directory.build()

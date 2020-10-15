@@ -11406,6 +11406,14 @@ def ProcessGAMCommand(args):
                 elif command == 'block':
                     gapi_cloudidentity_devices.block_user()
             sys.exit(0)
+        elif command in ['issuecommand', 'getcommand']:
+            target = sys.argv[2].lower().replace('_', '')
+            if target == 'cros':
+                if command == 'issuecommand':
+                    gapi_directory_cros.issue_command()
+                elif command == 'getcommand':
+                    gapi_directory_cros.get_command()
+            sys.exit(0)
         users = getUsersToModify()
         command = sys.argv[3].lower()
         if command == 'print' and len(sys.argv) == 4:
