@@ -200,10 +200,6 @@ If an item contains spaces, it should be surrounded by ".
 <ParameterValue> ::= <String>
 <Password> ::= <String>
 <PermissionID> ::= id:<String>|<EmailAddress>|anyone|anyonewithlink
-<PrinterID> ::= <String>
-<PrintJobAge> ::= <Number>[m|h|d]
-<PrintJobID> ::= <String>
-<PrintJobStatus> ::= done|error|held|in_progress|queued|submitted
 <PropertyKey> ::= <String>
 <PropertyValue> ::= <String>
 <QueryCalendar> ::= <String>
@@ -213,7 +209,6 @@ If an item contains spaces, it should be surrounded by ".
 <QueryGmail> ::= <String> See: https://support.google.com/mail/answer/7190
 <QueryGroup> ::= <String> See: https://developers.google.com/admin-sdk/directory/v1/guides/search-groups
 <QueryMobile> ::= <String> See: https://support.google.com/a/answer/7549103
-<QueryPrinter> ::= <String> See: https://developers.google.com/cloud-print/docs/appInterfaces#search
 <QueryPrintJob> ::= <String> See: https://developers.google.com/cloud-print/docs/appInterfaces#parameters_3
 <QueryUser> ::= <String> See: https://developers.google.com/admin-sdk/directory/v1/guides/search-users
 <QueryVaultCorpus> ::= <String> See: https://developers.google.com/vault/reference/rest/v1/matters.holds#CorpusQuery
@@ -585,12 +580,10 @@ Items, separated by spaces, with spaces, commas or single quotes in the items th
 <MembersFieldNameList> ::= "<MembersFieldName>(,<MembersFieldName>)*"
 <MobileList> ::= "<MobileId>(,<MobileId>)*"
 <OrgUnitList> ::= "<OrgUnitPath>(,<OrgUnitPath>)*"
-<PrinterIDList> ::= "<PrinterID>(,<PrinterID>)*"
 <ProductIDList> ::= "(<ProductID>|SKUID>)(,<ProductID>|SKUID>)*"
 <PrintJobIDList> ::= "<PrintJobID>(,<PrintJobID>)*"
 <QueryCrOSList> ::= "<QueryCrOS>(,<QueryCrOS>)*"
 <QueryMobileList> ::= "<QueryMobile>(,<QueryMobile>)*"
-<QueryPrinterList> ::= "<QueryPrinter>(,<QueryPrinter>)*"
 <QueryUserList> ::= "<QueryUser>(,<QueryUser>)*"
 <ResourceIDList> ::= "<ResourceID>(,<ResourceID>)*"
 <SKUIDList> ="<SKUID>(,<SKUID>)*"
@@ -767,12 +760,6 @@ Specify a collection of Users by directly specifying them or by specifiying item
 
 <MobileAction> ::=
 	admin_remote_wipe|wipe|admin_account_wipe|accountwipe|wipeaccount|approve|block|cancel_remote_wipe_then_activate|cancel_remote_wipe_then_block
-
-<PrinterAttribute> ::= (currentquota <Number>)|(dailyquota <Number>)|
-	(defaultdisplayname <String>)|(description <String>)|(displayname <String>)|(firmware <String>)|(gcpversion <String>)|
-	(istosaccepted <Boolean>)|(manufacturer <String>)|(model <String>)|(name <String>)|(ownerid <EmailAddress>)|(proxy <String>)|(public <Boolean>)|
-	(quotaenabled <Boolean>)|(status <Number>)|(type <String>)|(uuid <String>)|
-	(setupurl <URL>)|(supporturl <URL>)|(updateurl <URL>)
 
 <ResourceAttribute> ::=
 	(buildingid <BuildingID>)|
@@ -1298,32 +1285,6 @@ gam delete guardian|guardians <GuardianItem> <StudentItem> [invitation]
 gam show guardian|guardians [invitedguardian <EmailAddress>] [student <StudentItem>] [invitations] [states <GuardianStateList>] [<UserTypeEntity>]
 gam print guardian|guardians [todrive] [invitedguardian <EmailAddress>] [student <StudentItem>] [invitations [states <GuardianStateList>]] [<UserTypeEntity>]
 gam cancel guardianinvitation|guardianinvitations <GuardianInvitationID> <StudentItem>
-
-gam update printer <PrinterID> <PrinterAttribute>+
-gam delete printer <PrinterID>
-gam info printer <PrinterID> [everything]
-gam print printers [todrive] [(query <QueryPrinter>)|(queries <QueryPrinterList>)] [type <String>] [status <String>] [extrafields <String>]
-
-gam printer <PrinterID> add user|manager|owner <EmailAddress>|[domain:]<DomainName>|public [notify]
-gam printer <PrinterID> delete <EmailAddress>|[domain:]<DomainName>|public
-gam printer <PrinterID> showacl
-gam printjob <PrintJobID> cancel
-gam printjob <PrintJobID> delete
-gam printjob <PrintJobID> resubmit <PrinterID>
-
-gam printjob <PrinterID>|any fetch
-	[olderthan|newerthan <PrintJobAge>] [query <QueryPrintJob>]
-	[status <PrintJobStatus>]
-	[orderby <PrintJobOrderByFieldName> [ascending|descending]]
-	[owner|user <EmailAddress>]
-	[limit <Number>] [drivedir|(targetfolder <FilePath>)]
-gam printjob <PrinterID> submit <FileName>|<URL> [name|title <String>] (tag <String>)*
-gam print printjobs [todrive] [printer|printerid <PrinterID>]
-	[olderthan|newerthan <PrintJobAge>] [query <QueryPrintJob>]
-	[status <PrintJobStatus>]
-	[orderby <PrintJobOrderByFieldName> [ascending|descending]]
-	[owner|user <EmailAddress>]
-	[limit <Number>]
 
 gam create vaultexport|export matter <MatterItem> [name <name>] corpus <drive|mail|groups|hangouts_chat>
 	(accounts <EmailAddressList>) | (orgunit|ou <OrgUnitPath>) | (teamdrives <TeamDriveList>) | (rooms <ChatRoomList>) | everyone
