@@ -68,14 +68,6 @@ jobs:
       name: "Python 3.10 dev Source Testing"
       language: python
       python: 3.10-dev
-#    - os: linux
-#      name: "Python trunk nightly Source Testing"
-#      language: python
-#      python: nightly
-#    - os: linux
-#      name: "Python PyPi Source Testing"
-#      language: python
-#      python: pypy3
     - os: osx
       name: "MacOS 10.13"
       language: generic
@@ -87,7 +79,7 @@ jobs:
     - os: osx
       name: "MacOS 10.15"
       language: generic
-      osx_image: xcode11.7
+      osx_image: xcode12
     - os: osx
       name: "MacOS 10.15 Universal Testing"
       language: generic
