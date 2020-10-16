@@ -73,17 +73,9 @@ If an item contains spaces, it should be surrounded by ".
 <ProductID> ::=
 	Google-Apps|
 	Google-Chrome-Device-Management|
-	Google-Coordinate|
 	Google-Drive-storage|
 	Google-Vault|
-	101001|101005|101031
-<ProductID> ::=
-	Google-Apps|
-	Google-Chrome-Device-Management|
-	Google-Coordinate|
-	Google-Drive-storage|
-	Google-Vault|
-	101001|101005|101006|101031|101033|101034
+	101001|101005|101031|101033|101034
 <SKUID> ::=
 	cloudidentity|identity|1010010001|
 	cloudidentitypremium|identitypremium|1010050001|
@@ -103,7 +95,6 @@ If an item contains spaces, it should be surrounded by ".
 	gsbau|businessarchived|gsuitebusinessarchived|
 	gseau|enterprisearchived|gsuiteenterprisearchived|
 	chrome|cdm|googlechromedevicemanagement|Google-Chrome-Device-Management|
-	coordinate|googlecoordinate|Google-Coordinate|
 	wsess|workspaceesentials|gsuiteessentials|essentials|d4e|driveenterprise|drive4enterprise|1010060001|
 	wsentess|workspaceenterpriseessentials|1010060003|
 	drive20gb|20gb|googledrivestorage20gb|Google-Drive-storage-20GB|
@@ -209,10 +200,6 @@ If an item contains spaces, it should be surrounded by ".
 <ParameterValue> ::= <String>
 <Password> ::= <String>
 <PermissionID> ::= id:<String>|<EmailAddress>|anyone|anyonewithlink
-<PrinterID> ::= <String>
-<PrintJobAge> ::= <Number>[m|h|d]
-<PrintJobID> ::= <String>
-<PrintJobStatus> ::= done|error|held|in_progress|queued|submitted
 <PropertyKey> ::= <String>
 <PropertyValue> ::= <String>
 <QueryCalendar> ::= <String>
@@ -222,7 +209,6 @@ If an item contains spaces, it should be surrounded by ".
 <QueryGmail> ::= <String> See: https://support.google.com/mail/answer/7190
 <QueryGroup> ::= <String> See: https://developers.google.com/admin-sdk/directory/v1/guides/search-groups
 <QueryMobile> ::= <String> See: https://support.google.com/a/answer/7549103
-<QueryPrinter> ::= <String> See: https://developers.google.com/cloud-print/docs/appInterfaces#search
 <QueryPrintJob> ::= <String> See: https://developers.google.com/cloud-print/docs/appInterfaces#parameters_3
 <QueryUser> ::= <String> See: https://developers.google.com/admin-sdk/directory/v1/guides/search-users
 <QueryVaultCorpus> ::= <String> See: https://developers.google.com/vault/reference/rest/v1/matters.holds#CorpusQuery
@@ -594,12 +580,10 @@ Items, separated by spaces, with spaces, commas or single quotes in the items th
 <MembersFieldNameList> ::= "<MembersFieldName>(,<MembersFieldName>)*"
 <MobileList> ::= "<MobileId>(,<MobileId>)*"
 <OrgUnitList> ::= "<OrgUnitPath>(,<OrgUnitPath>)*"
-<PrinterIDList> ::= "<PrinterID>(,<PrinterID>)*"
 <ProductIDList> ::= "(<ProductID>|SKUID>)(,<ProductID>|SKUID>)*"
 <PrintJobIDList> ::= "<PrintJobID>(,<PrintJobID>)*"
 <QueryCrOSList> ::= "<QueryCrOS>(,<QueryCrOS>)*"
 <QueryMobileList> ::= "<QueryMobile>(,<QueryMobile>)*"
-<QueryPrinterList> ::= "<QueryPrinter>(,<QueryPrinter>)*"
 <QueryUserList> ::= "<QueryUser>(,<QueryUser>)*"
 <ResourceIDList> ::= "<ResourceID>(,<ResourceID>)*"
 <SKUIDList> ="<SKUID>(,<SKUID>)*"
@@ -653,7 +637,7 @@ Specify a collection of Users by directly specifying them or by specifiying item
 
 ## Item attributes
 
-<BuildingAttributes> ::=
+<BuildingAttribute> ::=
 	(description <String>)|
 	(floors <FloorNameList>)|
 	(id <String>)|
@@ -661,7 +645,7 @@ Specify a collection of Users by directly specifying them or by specifiying item
 	(longitude <Float>)|
 	(name <String>)
 
-<CalendarAttributes> ::=
+<CalendarAttribute> ::=
 	(selected <Boolean>)|(hidden <Boolean>)|(summary <String>)|(colorindex|colorid <CalendarColorIndex>)|(backgroundcolor <ColorValue>)|(foregroundcolor <ColorValue>)|
 	(reminder clear|(email|sms|pop <Number>))|
 	(notification clear|(email|sms eventcreation|eventchange|eventcancellation|eventresponse|agenda))
@@ -669,7 +653,7 @@ Specify a collection of Users by directly specifying them or by specifiying item
 <CalendarSettings> ::=
 	(summary <String>)|(description <String>)|(location <String>)|(timezone <TimeZone>)
 
-<CourseAttributes> ::=
+<CourseAttribute> ::=
 	(description <String>)|
 	(heading <String>)|
 	(name <String>)|
@@ -678,14 +662,18 @@ Specify a collection of Users by directly specifying them or by specifiying item
 	(state|status <CourseState>)|
 	(owner|ownerid|teacher <UserItem>)
 
-<CrOSAttributes> ::=
+<CrOSAttribute> ::=
 	(asset|assetid|tag <String>)|
 	(location <String>)|
 	(notes <String>)|
 	(org|ou <OrgUnitPath>)|
 	(user <Name>)
 
-<DriveFileAddAttributes> ::=
+<CIGroupAttribute> ::=
+	(description <String>)|
+	(name <String>)
+
+<DriveFileAddAttribute> ::=
 	(localfile <FileName>)|
 	(convert)|(ocr)|(ocrlanguage <Language>)|
 	(restricted|restrict)|(starred|star)|(trashed|trash)|(viewed|view)|
@@ -695,7 +683,7 @@ Specify a collection of Users by directly specifying them or by specifiying item
 	(lastviewedbyme <Time>)|(modifieddate|modifiedtime <Time>)|(description <String>)|(mimetype <MimeType>)|
 	(parentid <DriveFolderID>)|(parentname <DriveFolderName>)|(anyownerparentname <DriveFolderName>)|writerscantshare|
 	(shortcut <DriveFileID>)
-<DriveFileUpdateAttributes> ::=
+<DriveFileUpdateAttribute> ::=
 	(localfile <FileName>)|
 	(convert)|(ocr)|(ocrlanguage <Language>)|
 	(restricted|restrict <Boolean>)|(starred|star <Boolean>)|(trashed|trash <Boolean>)|(viewed|view <Boolean>)|
@@ -773,13 +761,7 @@ Specify a collection of Users by directly specifying them or by specifiying item
 <MobileAction> ::=
 	admin_remote_wipe|wipe|admin_account_wipe|accountwipe|wipeaccount|approve|block|cancel_remote_wipe_then_activate|cancel_remote_wipe_then_block
 
-<PrinterAttributes> ::= (currentquota <Number>)|(dailyquota <Number>)|
-	(defaultdisplayname <String>)|(description <String>)|(displayname <String>)|(firmware <String>)|(gcpversion <String>)|
-	(istosaccepted <Boolean>)|(manufacturer <String>)|(model <String>)|(name <String>)|(ownerid <EmailAddress>)|(proxy <String>)|(public <Boolean>)|
-	(quotaenabled <Boolean>)|(status <Number>)|(type <String>)|(uuid <String>)|
-	(setupurl <URL>)|(supporturl <URL>)|(updateurl <URL>)
-
-<ResourceAttributes> ::=
+<ResourceAttribute> ::=
 	(buildingid <BuildingID>)|
 	(capacity <Number>)|
 	(category other|room|conference_room|category_unknown)|
@@ -813,7 +795,7 @@ Specify a collection of Users by directly specifying them or by specifiying item
 	(recoveryphone <string>)|
 	(suspended <Boolean>)|
 	(<SchemaName>.<FieldName> [multivalued|multivalue|value|multinonempty [type home|other|work|(custom <String>)]] <String>)
-<UserMultiAttributes> ::=
+<UserMultiAttribute> ::=
 	(address clear|(type home|other|work|(custom <String>) [unstructured|formatted <String>] [pobox <String>] [extendedaddress <String>] [streetaddress <String>]
 		[locality <String>] [region <String>] [postalcode <String>] [country <String>] [countrycode <String>] notprimary|primary))|
 	(otheremail clear|(home|other|work|<String> <String>))|
@@ -872,7 +854,7 @@ gam <UserTypeEntity> check serviceaccount [scope|scopes <APIScopeURLList>]
 
 gam whatis <EmailItem>
 
-<ResoldCustomerAttributes> ::=
+<ResoldCustomerAttribute> ::=
 	(email|alternateemail <EmailAddress>)|
 	(contact|contactname <String>)|
 	(phone|phonenumber <String>)|
@@ -885,7 +867,7 @@ gam whatis <EmailItem>
 	(zipcode|postal|postalcode <String>)|
 	(country|countrycode <String>)
 
-gam create resoldcustomer <CustomerDomain> (customer_auth_token <String>) <ResoldCustomerAttributes>+
+gam create resoldcustomer <CustomerDomain> (customer_auth_token <String>) <ResoldCustomerAttribute>+
 gam update resoldcustomer <CustomerID> [customer_auth_token <String>] <ResoldCustomerAttribues>+
 gam info resoldcustomer <CustomerID>
 
@@ -976,7 +958,7 @@ gam delete domainalias|aliasdomain <DomainAlias>
 gam info domainalias|aliasdomain <DomainAlias>
 gam print domainaliases|aliasdomains [todrive]
 
-<CustomerAttributes> ::=
+<CustomerAttribute> ::=
 	(primary <DomainName>)|
 	(adminsecondaryemail|alternateemail <EmailAddress>)|
 	(contact|contactname <String>)|
@@ -991,7 +973,7 @@ gam print domainaliases|aliasdomains [todrive]
 	(zipcode|postal|postalcode <String>)|
 	(country|countrycode <String>)
 
-gam update customer <CustomerAttributes>*
+gam update customer <CustomerAttribute>*
 
 gam info customer
 
@@ -1034,7 +1016,7 @@ The following attributes are equivalent:
 	sendnotifications false - sendupdates none
 	sendnotifications true - sendupdates all
 
-<EventAttributes> ::=
+<EventAttribute> ::=
 	anyonecanaddself|
 	(attendee <EmailAddress>)|
 	available|
@@ -1060,8 +1042,8 @@ The following attributes are equivalent:
 	(timezone <Timezone>)|
 	(visibility default|public|prvate)
 
-<EventUpdateAttributes> ::=
-	<EventAttributes>|
+<EventUpdateAttribute> ::=
+	<EventAttribute>|
 	(removeattendee <EmailAddress>)|
 	(replacedescription <RegularExpression> <String>)
 
@@ -1076,10 +1058,10 @@ The following attributes are equivalent:
 <EventDisplayProperty> ::=
 	(timezone <TimeZone>)
 
-gam calendar <CalendarItem> addevent [id <String>] <EventAttributes>+ [<EventNotificationAttribute>]
+gam calendar <CalendarItem> addevent [id <String>] <EventAttribute>+ [<EventNotificationAttribute>]
 gam calendar <CalendarItem> deleteevent id|eventid <EventID> [doit] [<EventNotificationAttribute>]
 gam calendar <CalendarItem> moveevent id|eventid <EventID> [doit] [<EventNotificationAttribute>]
-gam calendar <CalendarItem> updateevent <EventID> <EventUpdateAttributes>+ [<EventNotificationAttribute>]
+gam calendar <CalendarItem> updateevent <EventID> <EventUpdateAttribute>+ [<EventNotificationAttribute>]
 gam calendar <CalendarItem> wipe
 gam calendar <CalendarItem> printevents <EventSelectProperty>* <EventDisplayProperty>* [todrive]
 
@@ -1099,7 +1081,19 @@ gam calendar <CalendarItem> modify <CalendarSettings>+
 	disable|
 	reenable
 
-gam update cros <CrOSEntity> (<CrOSAttributes>+)|(action <CrOSAction> [acknowledge_device_touch_requirement])
+gam update cros <CrOSEntity> action <CrOSAction> [acknowledge_device_touch_requirement]
+
+<CrOSCommand>
+	wipe_users|
+	remote_powerwash|
+	reboot|
+	set_volume <0-100>|
+	take_a_screenshot
+
+gam issuecommand cros <CrOSEntity> command <CrOSCommand> [times_to_check_status <0-1000+>] [doit]
+gam getcommand cros <CrOSEntity> commandid <CommandID> [times_to_check_status <0-1000+>]
+
+gam update cros <CrOSEntity> <CrOSAttribute>+
 gam info cros <CrOSEntity> [nolists] [listlimit <Number>] [start <Date>] [end <Date>]
 	[basic|full|allfields] <CrOSFieldName>* [fields <CrOSFieldNameList>] [downloadfile latest|<Time>] [targetfolder <FilePath>]
 
@@ -1181,8 +1175,29 @@ gam info mobile <MobileID>
 gam print mobile [todrive] [(query <QueryMobile>)|(queries <QueryMobileList>)] [basic|full] [orderby <MobileOrderByFieldName> [ascending|descending]]
 	fields <MobileFieldNameList>] [delimiter <Character>] [appslimit <Number>] [listlimit <Number>]
 
-gam create group <EmailAddress> <GroupAttributes>*
-gam update group <GroupItem> [email <EmailAddress>] <GroupAttributes>*
+gam create cigroup <EmailAddress> <CIGroupAttribute>*
+	[makeowner] [alias|aliases <AliasList>] [dynamic <QueryDynamicGroup>]
+gam update cigroup <GroupItem> [email <EmailAddress>] <CIGroupAttribute>* [security]
+gam update cigroup <GroupItem> add [owner|manager|member] [notsuspended|suspended] [expiretime <Time>] <UserTypeEntity>
+gam update cigroup <GroupItem> delete|remove [owner|manager|member] [notsuspended|suspended] <UserTypeEntity>
+gam update cigroup <GroupItem> sync [owner|manager|member] [notsuspended|suspended] [expiretime <Time>] <UserTypeEntity>
+gam update cigroup <GroupItem> update [owner|manager|member] [notsuspended|suspended] [expiretime <Time>] <UserTypeEntity>
+gam update cigroup <GroupItem> clear [member] [manager] [owner] [notsuspended|suspended]
+gam delete cigroup <GroupItem>
+gam info cigroup <GroupItem> [nousers] [nojoindate] [showupdatedate]
+
+gam print cigroups [todrive]
+	[member <UserItem>]
+	[members|memberscount] [managers|managerscount] [owners|ownerscount]
+	[delimiter <Character>] [sortheaders]
+
+gam info cimember <UserItem> <GroupItem>
+gam print cigroup-members|cigroups-members [todrive]
+	[(member <UserItem>)|(cigroup <GroupItem>)]
+	[roles <GroupRoleList>]
+
+gam create group <EmailAddress> <GroupAttribute>*
+gam update group <GroupItem> [email <EmailAddress>] <GroupAttribute>*
 gam update group <GroupItem> add [owner|manager|member] [notsuspended|suspended] [allmail|daily|digest|none|nomail] <UserTypeEntity>
 gam update group <GroupItem> delete|remove [owner|manager|member] <UserTypeEntity>
 gam update group <GroupItem> sync [owner|manager|member] [notsuspended|suspended] [allmail|daily|digest|none|nomail] <UserTypeEntity>
@@ -1205,8 +1220,8 @@ gam print group-members|groups-members [todrive]
 gam print licenses [todrive] [(products|product <ProductIDList>)|(skus|sku <SKUIDList>)|allskus|gsuite] [countsonly]
 gam show license|licenses|licence|licences [(products|product <ProductIDList>)|(skus|sku <SKUIDList>)|allskus|gsuite]
 
-gam create building <Name> <BuildingAttributes>*
-gam update building <BuildIngID> <BuildingAttributes>*
+gam create building <Name> <BuildingAttribute>*
+gam update building <BuildIngID> <BuildingAttribute>*
 gam delete building <BuildingID>
 gam info building <BuildingID>
 gam print buildings [todrive]
@@ -1216,8 +1231,8 @@ gam update feature <Name> name <Name>
 gam delete feature <Name>
 gam print features [todrive]
 
-gam create resource <ResourceID> <Name> <ResourceAttributes>*
-gam update resource <ResourceID> <ResourceAttributes>*
+gam create resource <ResourceID> <Name> <ResourceAttribute>*
+gam update resource <ResourceID> <ResourceAttribute>*
 gam delete resource <ResourceID>
 gam info resource <ResourceID>
 gam print resources [todrive] [allfields] <ResourceFieldName>* [query <String>]
@@ -1229,8 +1244,8 @@ gam info schema <SchemaName>
 gam show schema|schemas
 gam print schema|schemas
 
-gam create user <EmailAddress> <UserAttributes>*
-gam update user <UserItem> <UserAttributes>* [clearschema <SchemaName>] [clearschema <SchemaName>.<FieldName>]
+gam create user <EmailAddress> <UserAttribute>*
+gam update user <UserItem> <UserAttribute>* [clearschema <SchemaName>] [clearschema <SchemaName>.<FieldName>]
 gam delete user <UserItem>
 gam undelete user <UserItem> [org|ou <OrgUnitPath>]
 gam info user [<UserItem>] [noaliases] [nogroups] [nolicenses|nolicences] [noschemas] [schemas|custom <SchemaNameList>] [userview] [skus|sku <SKUIDList>]
@@ -1251,8 +1266,8 @@ gam create verify|verification <DomainName>
 gam update verify|verification <DomainName> cname|txt|text|site|file
 gam info verify|verification
 
-gam create course [id|alias <CourseAlias>] <CourseAttributes>*
-gam update course <CourseID> <CourseAttributes>+
+gam create course [id|alias <CourseAlias>] <CourseAttribute>*
+gam update course <CourseID> <CourseAttribute>+
 gam delete course <CourseID>
 gam info course <CourseID>
 gam print courses [todrive] [teacher <UserItem>] [student <UserItem>] [states <CourseStateList>]
@@ -1271,32 +1286,6 @@ gam delete guardian|guardians <GuardianItem> <StudentItem> [invitation]
 gam show guardian|guardians [invitedguardian <EmailAddress>] [student <StudentItem>] [invitations] [states <GuardianStateList>] [<UserTypeEntity>]
 gam print guardian|guardians [todrive] [invitedguardian <EmailAddress>] [student <StudentItem>] [invitations [states <GuardianStateList>]] [<UserTypeEntity>]
 gam cancel guardianinvitation|guardianinvitations <GuardianInvitationID> <StudentItem>
-
-gam update printer <PrinterID> <PrinterAttributes>+
-gam delete printer <PrinterID>
-gam info printer <PrinterID> [everything]
-gam print printers [todrive] [(query <QueryPrinter>)|(queries <QueryPrinterList>)] [type <String>] [status <String>] [extrafields <String>]
-
-gam printer <PrinterID> add user|manager|owner <EmailAddress>|[domain:]<DomainName>|public [notify]
-gam printer <PrinterID> delete <EmailAddress>|[domain:]<DomainName>|public
-gam printer <PrinterID> showacl
-gam printjob <PrintJobID> cancel
-gam printjob <PrintJobID> delete
-gam printjob <PrintJobID> resubmit <PrinterID>
-
-gam printjob <PrinterID>|any fetch
-	[olderthan|newerthan <PrintJobAge>] [query <QueryPrintJob>]
-	[status <PrintJobStatus>]
-	[orderby <PrintJobOrderByFieldName> [ascending|descending]]
-	[owner|user <EmailAddress>]
-	[limit <Number>] [drivedir|(targetfolder <FilePath>)]
-gam printjob <PrinterID> submit <FileName>|<URL> [name|title <String>] (tag <String>)*
-gam print printjobs [todrive] [printer|printerid <PrinterID>]
-	[olderthan|newerthan <PrintJobAge>] [query <QueryPrintJob>]
-	[status <PrintJobStatus>]
-	[orderby <PrintJobOrderByFieldName> [ascending|descending]]
-	[owner|user <EmailAddress>]
-	[limit <Number>]
 
 gam create vaultexport|export matter <MatterItem> [name <name>] corpus <drive|mail|groups|hangouts_chat>
 	(accounts <EmailAddressList>) | (orgunit|ou <OrgUnitPath>) | (teamdrives <TeamDriveList>) | (rooms <ChatRoomList>) | everyone
@@ -1340,8 +1329,8 @@ gam <UserTypeEntity> update backupcodes|backupcode|verificationcodes
 gam <UserTypeEntity> delete|del backupcodes|backupcode|verificationcodes
 gam <UserTypeEntity> show backupcodes|backupcode|verificationcodes
 
-gam <UserTypeEntity> add calendar <CalendarItem> <CalendarAttributes>*
-gam <UserTypeEntity> update calendar <CalendarItem>|primary <CalendarAttributes>+
+gam <UserTypeEntity> add calendar <CalendarItem> <CalendarAttribute>*
+gam <UserTypeEntity> update calendar <CalendarItem>|primary <CalendarAttribute>+
 gam <UserTypeEntity> delete|del calendar <CalendarItem>
 gam <UserTypeEntity> show calendars
 gam <UserTypeEntity> info calendar <CalendarItem>|primary
@@ -1360,8 +1349,8 @@ gam <UserTypeEntity> show fileinfo <DriveFileID> [allfields|<DriveFieldName>*]
 gam <UserTypeEntity> show filerevisions <DriveFileID>
 gam <UserTypeEntity> show filetree [anyowner] (orderby <DriveOrderByFieldName> [ascending|descending])*
 
-gam <UserTypeEntity> create|add drivefile [drivefilename <DriveFileName>] <DriveFileAddAttributes>* [csv] [todrive] [returnidonly]
-gam <UserTypeEntity> update drivefile (id <DriveFileID)|(drivefilename <DriveFileName>)|(query <QueryDriveFile) [copy] [newfilename <DriveFileName>] <DriveFileUpdateAttributes>*
+gam <UserTypeEntity> create|add drivefile [drivefilename <DriveFileName>] <DriveFileAddAttribute>* [csv] [todrive] [returnidonly]
+gam <UserTypeEntity> update drivefile (id <DriveFileID)|(drivefilename <DriveFileName>)|(query <QueryDriveFile) [copy] [newfilename <DriveFileName>] <DriveFileUpdateAttribute>*
 gam <UserTypeEntity> get drivefile (id <DriveFileID>)|(drivefilename <DriveFileName>)|(query <QueryDriveFile>)
 	[revision <Number>] [(format <FileFormatList>)|(csvsheet <String>)]
 	[targetfolder <FilePath>] [targetname -|<FileName>] [overwrite] [showprogress]
@@ -1398,7 +1387,7 @@ gam <UserTypeEntity> show tokens|token [clientid <ClientID>]
 gam <UserTypeEntity> print tokens|token [todrive] [clientid <ClientID>]
 gam print tokens|token [todrive] [clientid <ClientID>] [<UserTypeEntity>]
 
-gam <UserTypeEntity> update user <UserAttributes>
+gam <UserTypeEntity> update user <UserAttribute>
 
 gam <UserTypeEntity> deprovision|deprov
 

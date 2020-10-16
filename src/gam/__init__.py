@@ -1091,7 +1091,7 @@ def buildAlertCenterGAPIObject(user):
 
 def buildActivityGAPIObject(user):
     userEmail = convertUIDtoEmailAddress(user)
-    return (userEmail, buildGAPIServiceObject('appsactivity', userEmail))
+    return (userEmail, buildGAPIServiceObject('driveactivity', userEmail))
 
 
 def buildDriveGAPIObject(user):
@@ -2786,23 +2786,58 @@ def getTeamDriveThemes(users):
 
 
 def printDriveActivity(users):
-    drive_ancestorId = 'root'
-    drive_fileId = None
+    def _get_user_info(user_id):
+        if user_id.startswith('people/'):
+            user_id = user_id[7:]
+        entry = user_info.get(user_id)
+        if entry is None:
+            result = gapi.call(cd.users(), 'get',
+                              soft_errors=True,
+                              userKey=user_id, fields='primaryEmail,name.fullName')
+            if result:
+                entry = (result['primaryEmail'], result['name']['fullName'])
+            else:
+                entry = (f'uid:{user_id}', 'Unknown')
+            user_info[user_id] = entry
+        return entry
+
+    def _update_known_users(structure):
+        if isinstance(structure, list):
+          for v in structure:
+              if isinstance(v, (dict, list)):
+                  _update_known_users(v)
+        elif isinstance(structure, dict):
+          for k, v in sorted(iter(structure.items())):
+              if k != 'knownUser':
+                  if isinstance(v, (dict, list)):
+                      _update_known_users(v)
+              else:
+                  entry = _get_user_info(v['personName'])
+                  v['emailAddress'] = entry[0]
+                  v['personName'] = entry[1]
+                  break
+
+    cd = buildGAPIObject('directory')
+    drive_key = 'ancestorName'
+    drive_fileId = 'root'
+    user_info = {}
     todrive = False
     titles = [
-        'user.name', 'user.permissionId', 'target.id', 'target.name',
-        'target.mimeType'
+        'user.name', 'user.emailAddress', 'target.id', 'target.name',
+        'target.mimeType', 'eventTime'
     ]
+    sort_titles = titles[:]
     csvRows = []
     i = 5
     while i < len(sys.argv):
         activity_object = sys.argv[i].lower().replace('_', '')
         if activity_object == 'fileid':
             drive_fileId = sys.argv[i + 1]
-            drive_ancestorId = None
+            drive_key = 'itemName'
             i += 2
         elif activity_object == 'folderid':
-            drive_ancestorId = sys.argv[i + 1]
+            drive_fileId = sys.argv[i + 1]
+            drive_key = 'ancestorName'
             i += 2
         elif activity_object == 'todrive':
             todrive = True
@@ -2810,23 +2845,57 @@ def printDriveActivity(users):
         else:
             controlflow.invalid_argument_exit(sys.argv[i],
                                               'gam <users> show driveactivity')
+
     for user in users:
         user, activity = buildActivityGAPIObject(user)
         if not activity:
             continue
+        page_token = None
+        total_items = 0
+        kwargs = {drive_key: f'items/{drive_fileId}',
+                  'pageToken': page_token}
         page_message = gapi.got_total_items_msg(f'Activities for {user}', '')
-        feed = gapi.get_all_pages(activity.activities(),
-                                  'list',
-                                  'activities',
-                                  page_message=page_message,
-                                  source='drive.google.com',
-                                  userId='me',
-                                  drive_ancestorId=drive_ancestorId,
-                                  groupingStrategy='none',
-                                  drive_fileId=drive_fileId)
-        for item in feed:
-            display.add_row_titles_to_csv_file(
-                utils.flatten_json(item['combinedEvent']), csvRows, titles)
+        while True:
+          feed = gapi.call(activity.activity(), 'query', body=kwargs)
+          page_token, total_items = gapi.process_page(feed, 'activities', None, total_items, page_message, None)
+          kwargs['pageToken'] = page_token
+          if feed:
+              for activity_event in feed.get('activities', []):
+                  event_row = {}
+                  actors = activity_event.get('actors', [])
+                  if actors:
+                      userId = actors[0].get('user', {}).get('knownUser', {}).get('personName', '')
+                      if not userId:
+                          userId = actors[0].get('impersonation', {}).get('impersonatedUser', {}).get('knownUser', {}).get('personName', '')
+                      if userId:
+                          entry = _get_user_info(userId)
+                          event_row['user.name'] = entry[1]
+                          event_row['user.emailAddress'] = entry[0]
+                  targets = activity_event.get('targets', [])
+                  if targets:
+                      driveItem = targets[0].get('driveItem')
+                      if driveItem:
+                          event_row['target.id'] = driveItem['name'][6:]
+                          event_row['target.name'] = driveItem['title']
+                          event_row['target.mimeType'] = driveItem['mimeType']
+                      else:
+                          teamDrive = targets[0].get('teamDrive')
+                          if teamDrive:
+                              event_row['target.id'] = teamDrive['name'][11:]
+                              event_row['target.name'] = teamDrive['title']
+                  if 'timestamp' in activity_event:
+                      event_row['eventTime'] = activity_event.pop('timestamp')
+                  elif 'timeRange' in activity_event:
+                      timeRange = activity_event.pop('timeRange')
+                      event_row['eventTime'] = f'{timeRange["startTime"]}-{timeRange["endTime"]}'
+                  _update_known_users(activity_event)
+                  display.add_row_titles_to_csv_file(
+                      utils.flatten_json(activity_event, flattened=event_row), csvRows, titles)
+              del feed
+          if not page_token:
+              gapi.finalize_page_message(page_message)
+              break
+    display.sort_csv_titles(sort_titles, titles)
     display.write_csv_file(csvRows, titles, 'Drive Activity', todrive)
 
 
@@ -3568,6 +3637,10 @@ def getDriveFileAttribute(i, body, parameters, myarg, update=False):
     return i
 
 
+def has_multiple_parents(body):
+    return not len(body.get('parents', [])) > 1
+
+
 def doUpdateDriveFile(users):
     fileIdSelection = {'fileIds': [], 'query': None}
     media_body = None
@@ -3616,6 +3689,9 @@ def doUpdateDriveFile(users):
             body.setdefault('parents', [])
             for a_parent in more_parents:
                 body['parents'].append({'id': a_parent})
+        if has_multiple_parents(body):
+            sys.stderr.write(f"Multiple parents ({len(body['parents'])}) specified for {user}, only one is allowed.\n")
+            continue
         if fileIdSelection['query']:
             fileIdSelection['fileIds'] = doDriveSearch(
                 drive, query=fileIdSelection['query'])
@@ -3703,6 +3779,9 @@ def createDriveFile(users):
             body.setdefault('parents', [])
             for a_parent in more_parents:
                 body['parents'].append({'id': a_parent})
+        if has_multiple_parents(body):
+            sys.stderr.write(f"Multiple parents ({len(body['parents'])}) specified for {user}, only one is allowed.\n")
+            continue
         if parameters[DFA_LOCALFILEPATH]:
             media_body = googleapiclient.http.MediaFileUpload(
                 parameters[DFA_LOCALFILEPATH],
