@@ -11,6 +11,7 @@ from gam import display
 from gam import fileutils
 from gam import gapi
 from gam.gapi import storage as gapi_storage
+from gam.gapi.directory import orgunits as gapi_directory_orgunits
 from gam import utils
 
 
@@ -131,7 +132,7 @@ def createExport():
                 i += 2
             elif searchMethod == 'ORG_UNIT':
                 body['query']['orgUnitInfo'] = {
-                    'orgUnitId': gam.getOrgUnitId(sys.argv[i + 1])[1]
+                    'orgUnitId': gapi_directory_orgunits.getOrgUnitId(sys.argv[i + 1])[1]
                 }
                 i += 2
             elif searchMethod == 'SHARED_DRIVE':
@@ -301,7 +302,7 @@ def createHold():
             i += 2
         elif myarg in ['orgunit', 'ou']:
             body['orgUnit'] = {
-                'orgUnitId': gam.getOrgUnitId(sys.argv[i + 1])[1]
+                'orgUnitId': gapi_directory_orgunits.getOrgUnitId(sys.argv[i + 1])[1]
             }
             i += 2
         elif myarg in ['start', 'starttime']:
@@ -407,7 +408,7 @@ def getHoldInfo():
             acct_email = gam.convertUIDtoEmailAddress(uid, cd, [account_type])
             results['accounts'][i]['email'] = acct_email
     if 'orgUnit' in results:
-        results['orgUnit']['orgUnitPath'] = gam.doGetOrgInfo(
+        results['orgUnit']['orgUnitPath'] = gapi_directory_orgunits.info(
             results['orgUnit']['orgUnitId'], return_attrib='orgUnitPath')
     display.print_json(results)
 
@@ -496,7 +497,7 @@ def updateHold():
             i += 2
         elif myarg in ['orgunit', 'ou']:
             body['orgUnit'] = {
-                'orgUnitId': gam.getOrgUnitId(sys.argv[i + 1])[1]
+                'orgUnitId': gapi_directory_orgunits.getOrgUnitId(sys.argv[i + 1])[1]
             }
             i += 2
         elif myarg in ['start', 'starttime']:
