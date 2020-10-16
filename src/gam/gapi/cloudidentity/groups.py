@@ -1,5 +1,7 @@
 import sys
 
+import googleapiclient
+
 import gam
 from gam.var import *
 from gam import controlflow
@@ -174,7 +176,7 @@ def print_():
         if myarg == 'todrive':
             todrive = True
             i += 1
-        elif myarg == 'member':
+        elif myarg == 'enterprisemember':
             member = gam.convertUIDtoEmailAddress(sys.argv[i + 1], email_types=['user', 'group'])
             usemember = f"member_key_id == '{member}' && 'cloudidentity.googleapis.com/groups.discussion_forum' in labels"
             i += 2
@@ -232,14 +234,20 @@ def print_():
     gam.printGettingAllItems('Groups', usemember)
     page_message = gapi.got_total_items_first_last_msg('Groups')
     if usemember:
-        result = gapi.get_all_pages(ci.groups().memberships(),
-                                    'searchTransitiveGroups',
-                                    'memberships',
-                                    page_message=page_message,
-                                    message_attribute=['groupKey', 'id'],
-                                    parent='groups/-', query=usemember,
-                                    fields='nextPageToken,memberships(group,groupKey(id),relationType)',
-                                    pageSize=1000)
+        try:
+            result = gapi.get_all_pages(ci.groups().memberships(),
+                                        'searchTransitiveGroups',
+                                        'memberships',
+                                        throw_reasons=[gapi_errors.ErrorReason.FOUR_O_O],
+                                        page_message=page_message,
+                                        message_attribute=['groupKey', 'id'],
+                                        parent='groups/-', query=usemember,
+                                        fields='nextPageToken,memberships(group,groupKey(id),relationType)',
+                                        pageSize=1000)
+        except googleapiclient.errors.HttpError:
+            controlflow.system_error_exit(
+                2,
+                f'enterprisemember requires Enterprise license')
         entityList = []
         for entity in result:
             if entity['relationType'] == 'DIRECT':
@@ -361,7 +369,7 @@ def print_members():
                         f'{role} is not a valid role for "gam print group-members {myarg}"'
                     )
             i += 2
-        elif myarg == 'member':
+        elif myarg == 'enterprisemember':
             member = gam.convertUIDtoEmailAddress(sys.argv[i + 1], email_types=['user', 'group'])
             usemember = f"member_key_id == '{member}' && 'cloudidentity.googleapis.com/groups.discussion_forum' in labels"
             i += 2
@@ -376,14 +384,20 @@ def print_members():
         gam.printGettingAllItems('Groups', usemember)
         page_message = gapi.got_total_items_first_last_msg('Groups')
         if usemember:
-            groups_to_get = gapi.get_all_pages(ci.groups().memberships(),
-                                               'searchTransitiveGroups',
-                                               'memberships',
-                                               message_attribute=['groupKey', 'id'],
-                                               page_message=page_message,
-                                               parent='groups/-', query=usemember,
-                                               pageSize=1000,
-                                               fields='nextPageToken,memberships(groupKey(id),relationType)')
+            try:
+                groups_to_get = gapi.get_all_pages(ci.groups().memberships(),
+                                                   'searchTransitiveGroups',
+                                                   'memberships',
+                                                   throw_reasons=[gapi_errors.ErrorReason.FOUR_O_O],
+                                                   message_attribute=['groupKey', 'id'],
+                                                   page_message=page_message,
+                                                   parent='groups/-', query=usemember,
+                                                   pageSize=1000,
+                                                   fields='nextPageToken,memberships(groupKey(id),relationType)')
+            except googleapiclient.errors.HttpError:
+                controlflow.system_error_exit(
+                        2,
+                        f'enterprisemember requires Enterprise license')
             groups_to_get = [group['groupKey']['id'] for group in groups_to_get if group['relationType'] == 'DIRECT']
         else:
             groups_to_get = gapi.get_all_pages(
