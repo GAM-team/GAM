@@ -1,4 +1,5 @@
 import datetime
+import json
 import time
 
 import googleapiclient
@@ -15,11 +16,20 @@ from gam.gapi.directory import orgunits as gapi_directory_orgunits
 from gam import utils
 
 
+def _display_cros_command_result(cd, device_id, command_id, times_to_check_status):
+    for _ in range(0, times_to_check_status):
+        time.sleep(2)
+        result = gapi.call(cd.customer().devices().chromeos().commands(), 'get',
+            customerId=GC_Values[GC_CUSTOMER_ID], deviceId=device_id,
+            commandId=command_id)
+        display.print_json(result)
+        if result.get('state') in {'EXPIRED', 'CANCELLED', 'EXECUTED_BY_CLIENT'}:
+            return
+
 def issue_command():
     cd = gapi_directory.build()
     i, devices = getCrOSDeviceEntity(3, cd)
     body = {}
-    final_states = ['EXPIRED', 'CANCELLED', 'EXECUTED_BY_CLIENT']
     valid_commands = gapi.get_enum_values_minus_unspecified(
             cd._rootDesc['schemas']
             ['DirectoryChromeosdevicesIssueCommandRequest']
@@ -40,7 +50,7 @@ def issue_command():
              body['commandType'] = command_map[command]
              i += 2
              if command == 'setvolume':
-                 body['payload'] = {'volume': int(sys.argv[i])}
+                 body['payload'] = json.dumps({'volume': sys.argv[i]})
                  i += 1
         elif myarg == 'timestocheckstatus':
             times_to_check_status = int(sys.argv[i+1])
@@ -67,36 +77,28 @@ def issue_command():
         except googleapiclient.errors.HttpError:
             controlflow.system_error_exit(4, '400 response from Google. This ' \
               'usually indicates the devices was not in a state where it will' \
-              ' accept the command. For example, reboot and take_a_screenshot' \
+              ' accept the command. For example, reboot, set_volume and take_a_screenshot' \
               ' require the device to be in auto-start kiosk app mode.')
-        display.print_json(result)
         command_id = result.get('commandId')
-        for i in range(0, times_to_check_status):
-            time.sleep(2)
-            result = gapi.call(cd.customer().devices().chromeos().commands(), 'get',
-              customerId=GC_Values[GC_CUSTOMER_ID], deviceId=device_id,
-              commandId=command_id)
-            display.print_json(result)
-            state = result.get('state')
-            if state in final_states:
-                break
+        _display_cros_command_result(cd, device_id, command_id, times_to_check_status)
 
 def get_command():
     cd = gapi_directory.build()
     i, devices = getCrOSDeviceEntity(3, cd)
     command_id = None
+    times_to_check_status = 1
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
         if myarg == 'commandid':
             command_id = sys.argv[i+1]
             i += 2
+        elif myarg == 'timestocheckstatus':
+            times_to_check_status = int(sys.argv[i+1])
+            i += 2
         else:
             controlflow.invalid_argument_exit(sys.argv[i], 'gam getcommand cros')
     for device_id in devices:
-        result = gapi.call(cd.customer().devices().chromeos().commands(), 'get',
-                  customerId=GC_Values[GC_CUSTOMER_ID], deviceId=device_id,
-                  commandId=command_id)
-        display.print_json(result)
+        _display_cros_command_result(cd, device_id, command_id, times_to_check_status)
 
 def doUpdateCros():
     cd = gapi_directory.build()
