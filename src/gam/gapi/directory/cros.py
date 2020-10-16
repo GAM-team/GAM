@@ -17,6 +17,7 @@ from gam import utils
 
 
 def _display_cros_command_result(cd, device_id, command_id, times_to_check_status):
+    print(f'deviceId: {device_id}, commandId: {command_id}')
     for _ in range(0, times_to_check_status):
         time.sleep(2)
         result = gapi.call(cd.customer().devices().chromeos().commands(), 'get',
