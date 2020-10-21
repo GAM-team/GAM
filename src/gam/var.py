@@ -904,6 +904,7 @@ CROS_ARGUMENT_TO_PROPERTY_MAP = {
     'ethernetmacaddress0': ['ethernetMacAddress0',],
     'firmwareversion': ['firmwareVersion',],
     'lastenrollmenttime': ['lastEnrollmentTime',],
+    'lastknownnetwork': ['lastKnownNetwork'],
     'lastsync': ['lastSync',],
     'location': ['annotatedLocation',],
     'macaddress': ['macAddress',],
