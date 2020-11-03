@@ -1,12 +1,12 @@
 admin.googleapis.com
 alertcenter.googleapis.com
-appsactivity.googleapis.com
 calendar-json.googleapis.com
 chat.googleapis.com
 classroom.googleapis.com
 cloudidentity.googleapis.com
 contacts.googleapis.com
 drive.googleapis.com
+driveactivity.googleapis.com
 iap.googleapis.com
 gmail.googleapis.com
 groupssettings.googleapis.com
