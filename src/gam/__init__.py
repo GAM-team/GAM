@@ -2718,7 +2718,7 @@ def deletePhoto(users):
     for user in users:
         i += 1
         print(f'Deleting photo for {user}{currentCount(i, count)}')
-        gapi.call(cd.users().photos(), 'delete', userKey=user)
+        gapi.call(cd.users().photos(), 'delete', userKey=user, soft_errors=True)
 
 
 def printDriveSettings(users):
