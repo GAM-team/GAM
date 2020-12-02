@@ -3638,7 +3638,7 @@ def getDriveFileAttribute(i, body, parameters, myarg, update=False):
 
 
 def has_multiple_parents(body):
-    return not len(body.get('parents', [])) > 1
+    return len(body.get('parents', [])) > 1
 
 
 def doUpdateDriveFile(users):
