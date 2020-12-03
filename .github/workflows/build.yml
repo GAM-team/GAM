@@ -1,0 +1,22 @@
+name: Build and test GAM
+
+on:
+  push:
+    branches: [ master ]
+  schedule:
+    - cron: '37 22 * * *'
+
+jobs:
+  runs-on: ${{ matrix.os }}
+  strategy:
+    matrix:
+      os: [ubuntu-16.04, ubuntu-18.04, ubuntu-20.04, macos-10.15, windows-2019]
+      include:
+        - os: windows-2019
+        - 32_bit: true
+  steps:
+    - name: Show env
+    - run: |
+        set
+        ls
+        uname -a
