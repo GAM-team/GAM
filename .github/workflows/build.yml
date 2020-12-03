@@ -37,6 +37,7 @@ jobs:
       - name: Before Build
         run: |
              set
+             brew list
              export GAMOS=$"${RUNNER_OS,,}"
              if [ "${ImageOS}" == "win16" ]; then
                export PLATFORM="x86";
