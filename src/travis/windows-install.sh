@@ -1,4 +1,3 @@
-cd src
 echo "compiling GAM with pyinstaller..."
 export gampath="dist/gam"
 rm -rf $gampath

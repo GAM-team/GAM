@@ -115,4 +115,4 @@ fi
 
 echo "Upgrading pip packages..."
 $pip list --outdated --format=freeze | grep -v '^\-e' | cut -d = -f 1  | xargs -n1 $pip install -U
-$pip install --upgrade -r src/requirements.txt
+$pip install --upgrade -r requirements.txt

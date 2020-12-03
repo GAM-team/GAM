@@ -1,4 +1,3 @@
-cd src
 if [[ "$TRAVIS_JOB_NAME" == *"Testing" ]]; then
   export gam="$python -m gam"
   export gampath=$(readlink -e .)
