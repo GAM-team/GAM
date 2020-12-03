@@ -5,7 +5,7 @@ if [[ "$TRAVIS_JOB_NAME" == *"Testing" ]]; then
   echo "running tests with this version"
 else
   export whereibelong=$(pwd)
-  echo "We are running on Ubuntu $TRAVIS_DIST $PLATFORM"
+  echo "We are running on $ImageOS $ImageVersion"
   export LD_LIBRARY_PATH=~/ssl/lib:~/python/lib
   cpucount=$(nproc --all)
   echo "This device has $cpucount CPUs for compiling..."
