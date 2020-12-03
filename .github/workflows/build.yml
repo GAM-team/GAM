@@ -17,8 +17,16 @@ jobs:
       matrix:
         os: [ubuntu-16.04, ubuntu-18.04, ubuntu-20.04, macos-10.15, windows-2019, windows-2016]
     steps:
-      - name: Show env
+      - name: Before Build
         run: |
-             set
+             export GAMOS=$"${RUNNER_OS,,}"
+             if [ "${ImageOS}" == "win16" ]; then
+               export PLATFORM="x86";
+             else
+               export PLATFORM="x86_64"
+             fi
+             echo "pwd"
+             pwd
+             echo "ls"
              ls
-             uname -a
+             source src/travis/${GAMOS}-before-install.sh
