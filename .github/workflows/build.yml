@@ -34,6 +34,7 @@ jobs:
 
       - name: Before Build
         run: |
+             set +e
              if [ "${RUNNER_OS}" == "macOS" ]; then
                export GAMOS="macos"
              else
