@@ -9,6 +9,7 @@ on:
 defaults:
   run:
     shell: bash
+    default-directory: ..
 
 jobs:
   build:
