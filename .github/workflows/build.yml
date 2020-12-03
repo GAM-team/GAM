@@ -16,8 +16,8 @@ jobs:
           - os: windows-2019
           - 32_bit: true
     steps:
-      - name: Show env
-      - run: |
+      name: Show env
+      run: |
           set
           ls
           uname -a
