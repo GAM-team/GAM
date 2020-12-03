@@ -36,16 +36,12 @@ jobs:
 
       - name: Before Build
         run: |
-             set +e
+             set
              export GAMOS=$"${RUNNER_OS,,}"
              if [ "${ImageOS}" == "win16" ]; then
                export PLATFORM="x86";
              else
                export PLATFORM="x86_64"
              fi
-             echo "pwd"
-             pwd
-             echo "ls"
-             ls -al
              cd src
              source travis/${GAMOS}-before-install.sh
