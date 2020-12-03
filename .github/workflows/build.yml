@@ -34,7 +34,10 @@ jobs:
 
       - name: Before Build
         run: |
-             declare -l GAMOS=$"${RUNNER_OS}" # compat with MacOS and Bash 3
+             if [ "${RUNNER_OS}" == "macOS" ]; then
+               export GAMOS="macos"
+             else
+               export GAMOS=$"${RUNNER_OS,,}"
              if [ "${ImageOS}" == "win16" ]; then
                export PLATFORM="x86";
              else
