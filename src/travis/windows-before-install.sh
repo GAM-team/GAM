@@ -27,7 +27,7 @@ echo "Installing Python..."
 export python_file=python-${BUILD_PYTHON_VERSION}${PYTHONFILE_BITS}.exe
 if [ ! -e $python_file ]; then
   echo "Downloading $python_file..."
-  wget --quiet https://www.python.org/ftp/python/$BUILD_PYTHON_VERSION/$python_file
+  curl -O https://www.python.org/ftp/python/$BUILD_PYTHON_VERSION/$python_file
 fi
 until powershell ".\\${python_file} /quiet InstallAllUsers=1 TargetDir=c:\\python"; do echo "trying python again..."; done
 export python=/c/python/python.exe
@@ -40,7 +40,7 @@ echo "Installing OpenSSL..."
 export exefile=Win${BITS}OpenSSL_Light-${BUILD_OPENSSL_VERSION//./_}.exe
 if [ ! -e $exefile ]; then
   echo "Downloading $exefile..."
-  wget --quiet https://slproweb.com/download/$exefile
+  curl -O https://slproweb.com/download/$exefile
 fi
 until powershell ".\\${exefile} /silent /sp- /suppressmsgboxes /DIR=C:\\ssl"; do echo "trying openssl again..."; done
 until cp -v /c/ssl/libcrypto-1_1${OPENSSL_BITS}.dll /c/python/DLLs/; do echo "trying libcrypto copy again..."; sleep 3; done
@@ -64,7 +64,7 @@ $pip install --upgrade -r src/requirements.txt
 # lots of malware uses PyInstaller default bootloader
 # https://stackoverflow.com/questions/53584395/how-to-recompile-the-bootloader-of-pyinstaller
 echo "Downloading PyInstaller..."
-wget --quiet https://github.com/pyinstaller/pyinstaller/archive/$PYINSTALLER_COMMIT.tar.gz
+curl -O https://github.com/pyinstaller/pyinstaller/archive/$PYINSTALLER_COMMIT.tar.gz
 tar xf $PYINSTALLER_COMMIT.tar.gz
 mv pyinstaller-$PYINSTALLER_COMMIT pyinstaller
 cd pyinstaller/bootloader
