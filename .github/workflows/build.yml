@@ -34,5 +34,5 @@ jobs:
              pwd
              echo "ls"
              ls -al
-             cd GAM/src
+             cd src
              source travis/${GAMOS}-before-install.sh
