@@ -9,7 +9,7 @@ on:
 defaults:
   run:
     shell: bash
-    working-directory: ./src
+    working-directory: src
 
 jobs:
   build:
@@ -29,5 +29,5 @@ jobs:
              echo "pwd"
              pwd
              echo "ls"
-             ls
+             ls -al
              source travis/${GAMOS}-before-install.sh
