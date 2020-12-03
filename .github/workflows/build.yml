@@ -31,6 +31,7 @@ jobs:
              if [ "${RUNNER_OS}" == "macOS" ]; then
                # prefer standard GNU tools like date over MacOS defaults
                export PATH="/usr/local/opt/coreutils/libexec/gnubin:$(brew --prefix)/opt/gnu-tar/libexec/gnubin:$PATH"
+             fi
              set +e
              bash --version
 
