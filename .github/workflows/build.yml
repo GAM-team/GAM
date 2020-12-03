@@ -9,7 +9,6 @@ on:
 defaults:
   run:
     shell: bash
-    continue-on-error: true
 
 jobs:
   build:
@@ -17,6 +16,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-16.04, ubuntu-18.04, ubuntu-20.04, macos-10.15, windows-2019, windows-2016]
+    continue-on-error: true
     steps:
       - uses: actions/checkout@master
         with:
