@@ -39,6 +39,7 @@ jobs:
                export GAMOS="macos"
              else
                export GAMOS=$"${RUNNER_OS,,}"
+             fi
              if [ "${ImageOS}" == "win16" ]; then
                export PLATFORM="x86";
              else
