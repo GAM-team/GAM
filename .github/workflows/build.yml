@@ -9,6 +9,7 @@ on:
 defaults:
   run:
     shell: bash
+    working-directory: ./src
 
 jobs:
   build:
@@ -29,4 +30,4 @@ jobs:
              pwd
              echo "ls"
              ls
-             source src/travis/${GAMOS}-before-install.sh
+             source travis/${GAMOS}-before-install.sh
