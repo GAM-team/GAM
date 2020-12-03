@@ -15,10 +15,7 @@ jobs:
     runs-on: ${{ matrix.os }} ${{ matrix.include }}
     strategy:
       matrix:
-        os: [ubuntu-16.04, ubuntu-18.04, ubuntu-20.04, macos-10.15, windows-2019]
-        include:
-          - os: windows-2019
-          - 32_bit: true
+        os: [ubuntu-16.04, ubuntu-18.04, ubuntu-20.04, macos-10.15, windows-2019, windows-2016]
     steps:
       - name: Show env
         run: |
