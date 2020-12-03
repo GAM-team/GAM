@@ -26,14 +26,6 @@ jobs:
         os: [ubuntu-16.04, ubuntu-18.04, ubuntu-20.04, macos-10.15, windows-2019, windows-2016]
     continue-on-error: true
     steps:
-      - name: Bash setup
-        run: |
-             if [ "${RUNNER_OS}" == "macOS" ]; then
-               # prefer standard GNU tools like date over MacOS defaults
-               export PATH="/usr/local/opt/coreutils/libexec/gnubin:$(brew --prefix)/opt/gnu-tar/libexec/gnubin:$PATH"
-             fi
-             set +e
-             bash --version
 
       - uses: actions/checkout@master
         with:
@@ -42,9 +34,7 @@ jobs:
 
       - name: Before Build
         run: |
-             set
-             brew list
-             export GAMOS=$"${RUNNER_OS,,}"
+             declare -l GAMOS=$"${RUNNER_OS}" # compat with MacOS and Bash 3
              if [ "${ImageOS}" == "win16" ]; then
                export PLATFORM="x86";
              else
