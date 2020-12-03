@@ -9,6 +9,7 @@ on:
 defaults:
   run:
     shell: bash
+    continue-on-error: true
 
 jobs:
   build:
