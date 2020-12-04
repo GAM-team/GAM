@@ -54,6 +54,8 @@ jobs:
              else
                export PLATFORM="x86_64"
              fi
+             echo "GAMOS=${GAMOS}" >> $GITHUB_ENV
+             echo "PLATFORM=${PLATFORM}" >> $GITHUB_ENV
              cd src
              source travis/${GAMOS}-before-install.sh
 
