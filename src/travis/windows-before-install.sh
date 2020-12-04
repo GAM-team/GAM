@@ -8,14 +8,16 @@ elif [[ "$PLATFORM" == "x86" ]]; then
   export PYTHONFILE_BITS=""
   export OPENSSL_BITS=""
   export WIX_BITS="x86"
-  export $CHOCO_OPTIONS="--forcex86"
+  export CHOCOPTIONS="--forcex86"
 fi
 echo "This is a ${BITS}-bit build for ${PLATFORM}"
 
 export mypath=$(pwd)
 cd ~
 
-choco install python $CHOCO_OPTIONS
+choco install python $CHOCOPTIONS
+export python=python3
+export pip=pip3
 
 # Python
 #echo "Installing Python..."
