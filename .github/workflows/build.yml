@@ -181,6 +181,8 @@ jobs:
 
       - name: Live API tests push only
         if: github.event_name == 'push'
+        env: # Or as an environment variable
+          PASSCODE: ${{ secrets.PASSCODE }}
         run: |
              source .github/actions/decrypt.sh
              cd src

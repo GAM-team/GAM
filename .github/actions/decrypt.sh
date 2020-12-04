@@ -5,7 +5,7 @@ echo "running from ${mydir}"
 credsfile="${gampath}/creds.tar"
 echo "target file is ${credsfile}"
 gpgfile="${mypath}/creds.tar.gpg"
-echo "source file is ${credsfile}"
+echo "source file is ${gpgfile}"
 if [ -z ${PASSCODE+x} ]; then
   echo "PASSCODE is unset";
 else
