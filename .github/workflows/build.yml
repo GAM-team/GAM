@@ -60,6 +60,7 @@ jobs:
              source travis/${GAMOS}-before-install.sh
              echo "python=$python" >> $GITHUB_ENV
              echo "pip=$pip" >> $GITHUB_ENV
+             echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" >> $GITHUB_ENV
 
       - name: Build GAM
         run: |
