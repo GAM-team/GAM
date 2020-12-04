@@ -113,7 +113,7 @@ jobs:
              echo "gam=${gam}" >> $GITHUB_ENV
              echo "gampath=${gampath}" >> $GITHUB_ENV
 
-      - name: Build and install Python and OpenSSL
+      - name: Build and install Python, OpenSSL and PyInstaller
         if: matrix.goal != 'test' && steps.cache-primes.outputs.cache-hit != 'true'
         run: |
              set +e
@@ -123,6 +123,20 @@ jobs:
              echo "pip=$pip" >> $GITHUB_ENV
              echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" >> $GITHUB_ENV
              echo -e "Python: $python\nPip: $pip\nLD_LIB...: $LD_LIBRARY_PATH"
+             echo "Downloading PyInstaller..."
+             curl -O https://github.com/pyinstaller/pyinstaller/archive/$PYINSTALLER_COMMIT.tar.gz
+             tar xf $PYINSTALLER_COMMIT.tar.gz
+             mv pyinstaller-$PYINSTALLER_COMMIT pyinstaller
+             cd pyinstaller/bootloader
+             if [ "${PLATFORM}" == "x86" ]; then
+               BITS="32"
+             else
+               BITS="64"
+             echo "bootloader before:"
+             md5sum ../PyInstaller/bootloader/*/*
+             $python ./waf all --target-arch=${BITS}bit
+             echo "bootloader after:"
+             md5sum ../PyInstaller/bootloader/*/*
 
       - name: Install pip requirements
         run: |

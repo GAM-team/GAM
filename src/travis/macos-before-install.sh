@@ -103,5 +103,3 @@ $python -V
 
 cd $whereibelong
 
-$pip install --upgrade git+git://github.com/pyinstaller/pyinstaller.git@$PYINSTALLER_COMMIT
- 
