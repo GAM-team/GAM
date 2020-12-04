@@ -111,7 +111,7 @@ jobs:
              touch $gampath/nobrowser.txt
              $gam version extended
              $gam version | grep runner # runner should be part of the path (not /tmp or such)
-
+	
       - name: Basic Tests - build jobs only
         run: |
              cd src
@@ -119,12 +119,13 @@ jobs:
              vline=$($gam version | grep "Python ")
              python_line=($vline)
              this_python=${python_line[1]}
-             $python tools/a_atleast_b.py $this_python $MIN_PYTHON_VERSION
+             $python tools/a_atleast_b.py "${this_python}" "${MIN_PYTHON_VERSION}"
              # Check OpenSSL version
              vline=$($gam version extended | grep "OpenSSL ")
              openssl_line=($vline)
              this_openssl="${openssl_line[1]}"
              $python tools/a_atleast_b.py "${this_openssl}" "${MIN_OPENSSL_VERSION}"
+             # done
 
        - name: Live API tests - build jobs only
          run: |
