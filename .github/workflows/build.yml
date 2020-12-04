@@ -111,7 +111,7 @@ jobs:
              touch "${gampath}/nobrowser.txt"
              $gam version extended
              $gam version | grep runner
-	
+
       - name: Basic Tests - build jobs only
         run: |
              cd src
