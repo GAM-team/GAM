@@ -93,6 +93,22 @@ jobs:
           echo "GOAL=${GOAL}" >> $GITHUB_ENV
           echo "JID=${JID}" >> $GITHUB_ENV
 
+      - name: Use pre-compiled Python for testing old versions
+        if: matrix.goal == 'test'
+        uses: actions/checkout@v2
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python }}
+        run: |
+             export python=$(which python3)
+             export pip=$(which pip3)
+             export gam="${python} -m gam"
+             export gampath=$(readlink -e .)
+             echo "python=${python}" >> $GITHUB_ENV
+             echo "pip=${pip}" >> $GITHUB_ENV
+             echo "gam="${gam}" >> $GITHUB_ENV
+             echo "gampath="${gampath}" >> $GITHUB_ENV
+
       - name: Build and install Python and OpenSSL
         if: matrix.goal != 'test' && steps.cache-primes.outputs.cache-hit != 'true'
         run: |
@@ -103,7 +119,8 @@ jobs:
              echo "pip=$pip" >> $GITHUB_ENV
              echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" >> $GITHUB_ENV
 
-      - name: Build GAM
+      - name: Build GAM with PyInstaller
+        if: matrix.goal != 'test'
         run: |
              set +e
              cd src
