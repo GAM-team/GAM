@@ -163,7 +163,6 @@ jobs:
              $python -m unittest discover --start-directory ./ --pattern "*_test.py" --buffer
              touch "${gampath}/nobrowser.txt"
              $gam version extended
-             $gam version | grep runner
 
       - name: Basic Tests build jobs only
         if: matrix.goal != 'test'
