@@ -184,7 +184,7 @@ jobs:
         env: # Or as an environment variable
           PASSCODE: ${{ secrets.PASSCODE }}
         run: |
-             source .github/actions/decrypt.sh
+             source .github/actions/decrypt.sh .github/actions/creds.tar.gpg src/creds.tar
              cd src
              export OAUTHFILE="oauth2.txt-gam-gha-${JID}"
              $gam oauth info

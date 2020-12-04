@@ -1,10 +1,8 @@
 #!/bin/sh
 
-mydir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-echo "running from ${mydir}"
-credsfile="${gampath}/creds.tar"
+credsfile="$1"
 echo "target file is ${credsfile}"
-gpgfile="${mydir}/creds.tar.gpg"
+gpgfile="$2"
 echo "source file is ${gpgfile}"
 if [ -z ${PASSCODE+x} ]; then
   echo "PASSCODE is unset";
