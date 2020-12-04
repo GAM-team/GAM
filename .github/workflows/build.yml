@@ -38,7 +38,7 @@ jobs:
           path: |
             ~/python
             ~/ssl
-          key: ${{ image.os }}
+          key: ${{ matrix.os }}
 
       - name: Build and install Python/OpenSSL
         if: steps.cache-primes.outputs.cache-hit != 'true'
