@@ -32,7 +32,16 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
 
-      - name: Before Build
+      - name: Cache multiple paths
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/python
+            ~/ssl
+        key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
+
+      - name: Build and install Python/OpenSSL
+        if: steps.cache-primes.outputs.cache-hit != 'true'
         run: |
              set +e
              if [ "${RUNNER_OS}" == "macOS" ]; then
@@ -47,3 +56,5 @@ jobs:
              fi
              cd src
              source travis/${GAMOS}-before-install.sh
+
+
