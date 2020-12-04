@@ -130,4 +130,4 @@ jobs:
              cd src
              $gam oauth info
              $gam info user
-             $gam  
+             $gam user admin@pdl.jaylee.us check serviceaccount
