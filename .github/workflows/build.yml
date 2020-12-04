@@ -40,16 +40,6 @@ jobs:
             jid: 4
             goal: "build"
             gamos: "macos"
-          - os: windows-2019
-            jid: 5
-            goal: "build"
-            PLATFORM: "x86_64"
-            gamos: "windows"
-          - os: windows-2019
-            jid: 6
-            goal: "build"
-            PLATFORM: "x86"
-            gamos: "windows"
           - os: ubuntu-20.04
             goal: "test"
             python: "3.6"
