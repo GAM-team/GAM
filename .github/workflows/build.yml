@@ -124,11 +124,7 @@ jobs:
              else
                BITS="64"
              fi
-             echo "bootloader before:"
-             md5sum ../PyInstaller/bootloader/*/*
              $python ./waf all --target-arch=${BITS}bit
-             echo "bootloader after:"
-             md5sum ../PyInstaller/bootloader/*/*
 
       - name: Install pip requirements
         run: |
