@@ -94,6 +94,7 @@ jobs:
              echo "python=$python" >> $GITHUB_ENV
              echo "pip=$pip" >> $GITHUB_ENV
              echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" >> $GITHUB_ENV
+             # done
 
       - name: Build GAM
         run: |
@@ -102,6 +103,7 @@ jobs:
              source travis/${GAMOS}-install.sh
              echo "gampath=$gampath" >> $GITHUB_ENV
              echo "gam=$gam" >> $GITHUB_ENV
+             # done
 
       - name: Basic Tests - all jobs
         run: |
@@ -111,6 +113,7 @@ jobs:
              touch $gampath/nobrowser.txt
              $gam version extended
              $gam version | grep runner # runner should be part of the path (not /tmp or such)
+             # done
 	
       - name: Basic Tests - build jobs only
         run: |
