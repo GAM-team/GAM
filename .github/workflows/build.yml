@@ -106,6 +106,7 @@ jobs:
              export pip=$(which pip3)
              export gam="${python} -m gam"
              export gampath=$(readlink -e .)
+             echo -e "Python: $python\nPip: $pip\nGAM: $gam\nGAMPATH: $gampath\n"
              echo "python=${python}" >> $GITHUB_ENV
              echo "pip=${pip}" >> $GITHUB_ENV
              echo "gam="${gam}" >> $GITHUB_ENV
@@ -120,6 +121,7 @@ jobs:
              echo "python=$python" >> $GITHUB_ENV
              echo "pip=$pip" >> $GITHUB_ENV
              echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" >> $GITHUB_ENV
+             echo -e "Python: $python\nPip: $pip\nLD_LIB...: $LD_LIBRARY_PATH"
 
       - name: Install pip requirements
         run: |
@@ -136,6 +138,7 @@ jobs:
              source travis/${GAMOS}-install.sh
              echo "gampath=$gampath" >> $GITHUB_ENV
              echo "gam=$gam" >> $GITHUB_ENV
+             echo -e "GAM: $gam\nGAMPATH: $gampath\n"
 
       - name: Basic Tests all jobs
         run: |
