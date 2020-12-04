@@ -93,7 +93,7 @@ else
   python=~/python/bin/python3
   pip=~/python/bin/pip3
 
-  if ([ "${TRAVIS_DIST}" == "trusty" ] || [ "${TRAVIS_DIST}" == "xenial" ]) && [ "${PLATFORM}" == "x86_64" ]; then
+  if ([ "${ImageOS}" == "ubuntu16" ]) && [ "${HOSTTYPE}" == "x86_64" ]; then
     echo "Installing deps for StaticX..."
     if [ ! -d patchelf-$PATCHELF_VERSION ]; then
       echo "Downloading PatchELF $PATCHELF_VERSION"
