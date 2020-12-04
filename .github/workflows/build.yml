@@ -125,6 +125,8 @@ jobs:
                BITS="64"
              fi
              $python ./waf all --target-arch=${BITS}bit
+             cd ..
+             $python setup.py install
 
       - name: Install pip requirements
         run: |
