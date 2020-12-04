@@ -48,7 +48,7 @@ jobs:
             jid: 6
             goal: "build"
             gamos: "windows"
-            PLATFORM="x86"
+            PLATFORM: "x86"
           - os: ubuntu-20.04
             goal: "test"
             python: "3.6"
