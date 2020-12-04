@@ -14,14 +14,6 @@ echo "This is a ${BITS}-bit build for ${PLATFORM}"
 export mypath=$(pwd)
 cd ~
 
-# .NET Core
-echo "Installing Net-Framework-Core..."
-until powershell Install-WindowsFeature Net-Framework-Core; do echo "trying .net again..."; done
-
-# VS 2015
-echo "Installing Visual Studio 2015.."
-until choco install vcbuildtools; do echo "Trying Visual Studio again..."; done
-
 # Python
 echo "Installing Python..."
 export python_file=python-${BUILD_PYTHON_VERSION}${PYTHONFILE_BITS}.exe
@@ -29,7 +21,7 @@ if [ ! -e $python_file ]; then
   echo "Downloading $python_file..."
   curl -O https://www.python.org/ftp/python/$BUILD_PYTHON_VERSION/$python_file
 fi
-until powershell ".\\${python_file} /quiet InstallAllUsers=1 TargetDir=c:\\python"; do echo "trying python again..."; done
+until ".\\${python_file} /quiet InstallAllUsers=1 TargetDir=c:\\python"; do echo "trying python again..."; done
 export python=/c/python/python.exe
 export pip=/c/python/scripts/pip.exe
 until [ -f $python ]; do sleep 1; done
@@ -42,16 +34,13 @@ if [ ! -e $exefile ]; then
   echo "Downloading $exefile..."
   curl -O https://slproweb.com/download/$exefile
 fi
-until powershell ".\\${exefile} /silent /sp- /suppressmsgboxes /DIR=C:\\ssl"; do echo "trying openssl again..."; done
+until ".\\${exefile} /silent /sp- /suppressmsgboxes /DIR=C:\\ssl"; do echo "trying openssl again..."; done
 until cp -v /c/ssl/libcrypto-1_1${OPENSSL_BITS}.dll /c/python/DLLs/; do echo "trying libcrypto copy again..."; sleep 3; done
 until cp -v /c/ssl/libssl-1_1${OPENSSL_BITS}.dll /c/python/DLLs/; do echo "trying libssl copy again..."; done
 if [[ "$PLATFORM" == "x86_64" ]]; then
   cp -v /c/python/DLLs/libssl-1_1-x64.dll /c/python/DLLs/libssl-1_1.dll
   cp -v /c/python/DLLs/libcrypto-1_1-x64.dll /c/python/DLLs/libcrypto-1_1.dll
 fi
-
-# WIX Toolset
-until cinst -y wixtoolset; do echo "trying wix install again..."; done
 
 cd $mypath
 
