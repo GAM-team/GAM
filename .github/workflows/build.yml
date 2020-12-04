@@ -110,8 +110,8 @@ jobs:
              echo -e "python: $python\npip: $pip\ngam: $gam\ngampath: $gampath\n"
              echo "python=${python}" >> $GITHUB_ENV
              echo "pip=${pip}" >> $GITHUB_ENV
-             echo "gam="${gam}" >> $GITHUB_ENV
-             echo "gampath="${gampath}" >> $GITHUB_ENV
+             echo "gam=${gam}" >> $GITHUB_ENV
+             echo "gampath=${gampath}" >> $GITHUB_ENV
 
       - name: Build and install Python and OpenSSL
         if: matrix.goal != 'test' && steps.cache-primes.outputs.cache-hit != 'true'
