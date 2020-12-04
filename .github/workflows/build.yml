@@ -123,8 +123,8 @@ jobs:
              # Check OpenSSL version
              vline=$($gam version extended | grep "OpenSSL ")
              openssl_line=($vline)
-             this_openssl=${openssl_line[1]}
-             $python tools/a_atleast_b.py $this_openssl $MIN_OPENSSL_VERSION
+             this_openssl="${openssl_line[1]}"
+             $python tools/a_atleast_b.py "${this_openssl}" "${MIN_OPENSSL_VERSION}"
 
        - name: Live API tests - build jobs only
          run: |
