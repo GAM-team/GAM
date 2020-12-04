@@ -24,13 +24,14 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-16.04, ubuntu-18.04, ubuntu-20.04, macos-10.15, windows-2016, windows-2019]
+        goal: build
         include:
-          - os: ubuntu-20.04
-            TESTING: "python_36"
-          - os: ubuntu-20.04
-            TESTING: "python_37"
-          - os: ubuntu-20.04
-            TESTING: "python_38"
+          - goal: test
+            python: 3.6
+          - goal: test
+            python: 3.7
+          - goal: test
+            python: 3.8
 
     steps:
 
@@ -41,7 +42,7 @@ jobs:
 
       - name: Cache multiple paths
         uses: actions/cache@v2
-        if: matrix.TESTING == '' 
+        if: matrix.goal == 'test'
         with:
           path: |
             ~/python
