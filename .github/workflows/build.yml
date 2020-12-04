@@ -75,3 +75,32 @@ jobs:
              set +e
              cd src
              source travis/${GAMOS}-install.sh
+             echo "gampath=$gampath" >> $GITHUB_ENV
+             echo "gam=$gam" >> $GITHUB_ENV
+
+      - name: Basic Tests - all jobs
+        run: |
+             set +e
+             cd src
+             $python -m unittest discover --start-directory ./ --pattern "*_test.py" --buffer
+             touch $gampath/nobrowser.txt
+             $gam version extended
+             $gam version | grep runner # runner should be part of the path (not /tmp or such)
+
+      - name: Basic Tests - builds jobs only
+        run: |
+             cd src
+             # Check Python version
+             vline=$($gam version | grep "Python ")
+             python_line=($vline)
+             this_python=${python_line[1]}
+             $python tools/a_atleast_b.py $this_python $MIN_PYTHON_VERSION
+             # Check OpenSSL version
+             vline=$($gam version extended | grep "OpenSSL ")
+             openssl_line=($vline)
+             this_openssl=${openssl_line[1]}
+             $python tools/a_atleast_b.py $this_openssl $MIN_OPENSSL_VERSION
+             Check TLS version in use
+             $gam version extended | grep TLSv1\.[23]; fi # Builds should default TLS 1.2 or 1.3 to Google
+             GAM_TLS_MIN_VERSION=TLSv1_2 $gam version extended location tls-v1-0.badssl.com:1010; [[ $? == 3 ]]; # expect fail since server doesn't support our TLS version
+
