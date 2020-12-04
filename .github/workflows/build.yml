@@ -106,8 +106,8 @@ jobs:
              export python=$(which python3)
              export pip=$(which pip3)
              export gam="${python} -m gam"
-             export gampath=$(readlink -e .)
-             echo -e "Python: $python\nPip: $pip\nGAM: $gam\nGAMPATH: $gampath\n"
+             export gampath="$(readlink -e .)"
+             echo -e "python: $python\npip: $pip\ngam: $gam\ngampath: $gampath\n"
              echo "python=${python}" >> $GITHUB_ENV
              echo "pip=${pip}" >> $GITHUB_ENV
              echo "gam="${gam}" >> $GITHUB_ENV
@@ -144,6 +144,7 @@ jobs:
       - name: Basic Tests all jobs
         run: |
              cd src
+             echo -e "python: $python\npip: $pip\ngam: $gam\ngampath: $gampath\n"
              $python -m unittest discover --start-directory ./ --pattern "*_test.py" --buffer
              touch "${gampath}/nobrowser.txt"
              $gam version extended
