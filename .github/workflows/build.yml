@@ -71,10 +71,10 @@ jobs:
           path: |
             ~/python
             ~/ssl
-          key: ${{ matrix.os }}-${ matrix.jid }}
+          key: ${{ matrix.os }}-${{ matrix.jid }}-20201204
 
       - name: Build and install Python and OpenSSL
-        if: steps.cache-primes.outputs.cache-hit != 'true'
+        if: matrix.goal != 'test' && steps.cache-primes.outputs.cache-hit != 'true'
         run: |
              set +e
              if [ "${RUNNER_OS}" == "macOS" ]; then
@@ -113,6 +113,7 @@ jobs:
              $gam version | grep runner
 
       - name: Basic Tests build jobs only
+        if: matrix.goal != 'test'
         run: |
              cd src
              export vline=$($gam version | grep "Python ")
