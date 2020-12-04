@@ -38,7 +38,7 @@ jobs:
           path: |
             ~/python
             ~/ssl
-        key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
+          key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
 
       - name: Build and install Python/OpenSSL
         if: steps.cache-primes.outputs.cache-hit != 'true'
