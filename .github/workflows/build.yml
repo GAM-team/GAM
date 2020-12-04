@@ -111,3 +111,16 @@ jobs:
              touch "${gampath}/nobrowser.txt"
              $gam version extended
              $gam version | grep runner
+
+      - name: Basic Tests build jobs only
+        run: |
+             cd src
+             export vline=$($gam version | grep "Python ")
+             export python_line=($vline)
+             export this_python=${python_line[1]}
+             $python tools/a_atleast_b.py "${this_python}" "${MIN_PYTHON_VERSION}"
+             export vline=$($gam version extended | grep "OpenSSL ")
+             export openssl_line=($vline)
+             export this_openssl="${openssl_line[1]}"
+             $python tools/a_atleast_b.py "${this_openssl}" "${MIN_OPENSSL_VERSION}"
+
