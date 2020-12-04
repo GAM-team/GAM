@@ -15,8 +15,8 @@ echo "This is a ${BITS}-bit build for ${PLATFORM}"
 export mypath=$(pwd)
 cd ~
 
-export python="python3"
-export pip="pip3"
+export python="python"
+export pip="pip"
 
 # Python
 #echo "Installing Python..."
