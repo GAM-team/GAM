@@ -73,7 +73,7 @@ jobs:
             ~/ssl
           key: ${{ matrix.os }}-${ matrix.jid }}
 
-      - name: Build and install Python/OpenSSL
+      - name: Build and install Python and OpenSSL
         if: steps.cache-primes.outputs.cache-hit != 'true'
         run: |
              set +e
@@ -103,7 +103,7 @@ jobs:
              echo "gampath=$gampath" >> $GITHUB_ENV
              echo "gam=$gam" >> $GITHUB_ENV
 
-      - name: Basic Tests - all jobs
+      - name: Basic Tests all jobs
         run: |
              set +e
              cd src
@@ -112,7 +112,7 @@ jobs:
              $gam version extended
              $gam version | grep runner
 
-      - name: Basic Tests - build jobs only
+      - name: Basic Tests build jobs only
         run: |
              cd src
              vline=$($gam version | grep "Python ")
@@ -124,7 +124,7 @@ jobs:
              this_openssl="${openssl_line[1]}"
              $python tools/a_atleast_b.py "${this_openssl}" "${MIN_OPENSSL_VERSION}"
 
-       - name: Live API tests - build jobs only
+       - name: Live API tests build jobs only
          run: |
              bash .github/actions/decrypt.sh
              cd src
