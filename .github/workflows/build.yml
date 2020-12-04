@@ -117,12 +117,13 @@ jobs:
              echo "Downloading ${url}"
              curl -o pyinstaller.tar.gz --compressed "${url}"
              tar xf pyinstaller.tar.gz
-             mv pyinstaller-$PYINSTALLER_COMMIT pyinstaller
+             mv "pyinstaller-${PYINSTALLER_COMMIT}" pyinstaller
              cd pyinstaller/bootloader
              if [ "${PLATFORM}" == "x86" ]; then
                BITS="32"
              else
                BITS="64"
+             fi
              echo "bootloader before:"
              md5sum ../PyInstaller/bootloader/*/*
              $python ./waf all --target-arch=${BITS}bit
