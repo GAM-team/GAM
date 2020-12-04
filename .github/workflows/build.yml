@@ -27,36 +27,44 @@ jobs:
           - os: ubuntu-16.04
             jid: 1
             goal: "build"
+            gamos: "linux"
           - os: ubuntu-18.04
             jid: 2
             goal: "build"
+            gamos: "linux"
           - os: ubuntu-20.04
             jid: 3
             goal: "build"
+            gamos: "linux"
           - os: macos-10.15
             jid: 4
             goal: "build"
+            gamos: "macos"
           - os: windows-2019
             jid: 5
             goal: "build"
             PLATFORM: "x86_64"
+            gamos: "windows"
           - os: windows-2019
             jid: 6
             goal: "build"
             PLATFORM: "x86"
+            gamos: "windows"
           - os: ubuntu-20.04
             goal: "test"
             python: "3.6"
             jid: 7
+            gamos: "linux"
           - os: ubuntu-20.04
             goal: "test"
             python: "3.7"
             jid: 8
+            gamos: "linux"
           - os: ubuntu-20.04
             goal: "test"
             python: "3.8"
             jid: 9
-
+            gamos: "linux"
     steps:
 
       - uses: actions/checkout@master
@@ -73,22 +81,22 @@ jobs:
             ~/ssl
           key: ${{ matrix.os }}-${{ matrix.jid }}-20201204
 
+      - name: Set env variables
+        env:
+          GAMOS: ${{ matrix.gamos }}
+          PLATFORM: ${{ matrix.platform }}
+          GOAL: ${{ matrix.goal }}
+          JID: ${{ matrix.jid }}
+        run: |
+          echo "GAMOS=${GAMOS}" >> $GITHUB_ENV
+          echo "PLATFORM=${PLATFORM}" >> $GITHUB_ENV
+          echo "GOAL=${GOAL}" >> $GITHUB_ENV
+          echo "JID=${JID}" >> $GITHUB_ENV
+
       - name: Build and install Python and OpenSSL
         if: matrix.goal != 'test' && steps.cache-primes.outputs.cache-hit != 'true'
         run: |
              set +e
-             if [ "${RUNNER_OS}" == "macOS" ]; then
-               export GAMOS="macos"
-             else
-               export GAMOS=$"${RUNNER_OS,,}"
-             fi
-             if [ "${ImageOS}" == "win16" ]; then
-               export PLATFORM="x86";
-             else
-               export PLATFORM="x86_64"
-             fi
-             echo "GAMOS=${GAMOS}" >> $GITHUB_ENV
-             echo "PLATFORM=${PLATFORM}" >> $GITHUB_ENV
              cd src
              source travis/${GAMOS}-before-install.sh
              echo "python=$python" >> $GITHUB_ENV
