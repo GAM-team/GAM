@@ -99,6 +99,7 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python }}
+          architecture: ${{ matrix.PLATFORM }}
 
       - name: Set env variables for pre-compiled Python
         if: matrix.goal == 'test'
