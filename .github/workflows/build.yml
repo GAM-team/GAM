@@ -95,10 +95,12 @@ jobs:
 
       - name: Use pre-compiled Python for testing old versions
         if: matrix.goal == 'test'
-        uses: actions/checkout@v2
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python }}
+
+      - name: Set env variables for pre-compiled Python
+        if: matrix.goal == 'test'
         run: |
              export python=$(which python3)
              export pip=$(which pip3)
