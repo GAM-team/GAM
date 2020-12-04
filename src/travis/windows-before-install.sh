@@ -16,8 +16,11 @@ export mypath=$(pwd)
 cd ~
 
 choco install python $CHOCOPTIONS
-export python=python3
-export pip=pip3
+export python="/c/Python39/bin/python3"
+export pip="/c/Python39/bin/pip3"
+ls -l /
+ls -l /c
+ls -l /c/Python39/
 
 # Python
 #echo "Installing Python..."
