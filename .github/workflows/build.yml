@@ -178,10 +178,11 @@ jobs:
              export this_openssl="${openssl_line[1]}"
              $python tools/a_atleast_b.py "${this_openssl}" "${MIN_OPENSSL_VERSION}"
 
-       - name: Live API tests push only
-         if: github.event_name == 'push'
-         run: |
-             bash .github/actions/decrypt.sh
+
+      - name: Live API tests push only
+        if: github.event_name == 'push'
+        run: |
+             source .github/actions/decrypt.sh
              cd src
              $gam oauth info
              $gam info user
