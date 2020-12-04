@@ -59,4 +59,6 @@ jobs:
 
       - name: Build GAM
         run: |
+             set +e
+             cd src
              source travis/${GAMOS}-install.sh
