@@ -44,7 +44,7 @@ jobs:
 
       - name: Cache multiple paths
         uses: actions/cache@v2
-        if: env.TESTING == ""
+        if: env.TESTING == '' 
         with:
           path: |
             ~/python
