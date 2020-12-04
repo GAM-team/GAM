@@ -44,11 +44,13 @@ jobs:
             jid: 5
             goal: "build"
             gamos: "windows"
+            python: ${{ env.BUILD_PYTHON_VERSION }}
           - os: windows-2019
             jid: 6
             goal: "build"
             gamos: "windows"
             PLATFORM: "x86"
+            python: ${{ env.BUILD_PYTHON_VERSION }}
           - os: ubuntu-20.04
             goal: "test"
             python: "3.6"
@@ -92,8 +94,8 @@ jobs:
           echo "GOAL=${GOAL}" >> $GITHUB_ENV
           echo "JID=${JID}" >> $GITHUB_ENV
 
-      - name: Use pre-compiled Python for testing old versions
-        if: matrix.goal == 'test'
+      - name: Use pre-compiled Python for testing and Windows
+        if: matrix.python != ''
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python }}

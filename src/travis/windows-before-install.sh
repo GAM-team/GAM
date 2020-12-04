@@ -15,13 +15,8 @@ echo "This is a ${BITS}-bit build for ${PLATFORM}"
 export mypath=$(pwd)
 cd ~
 
-choco install python --limit-output $CHOCOPTIONS
-until [ -f "/c/Python39/bin/python3.exe" ]; do
-  sleep 5
-  ls -l /c/Python39/
-done
-export python="/c/Python39/bin/python3"
-export pip="/c/Python39/bin/pip3"
+export python="python3"
+export pip="pip3"
 
 # Python
 #echo "Installing Python..."
