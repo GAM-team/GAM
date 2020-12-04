@@ -9,7 +9,7 @@ echo "source file is ${gpgfile}"
 if [ -z ${PASSCODE+x} ]; then
   echo "PASSCODE is unset";
 else
-  echo "PASSCODE is set'";
+  echo "PASSCODE is set";
 fi
 
 gpg --quiet --batch --yes --decrypt --passphrase="${PASSCODE}" \
