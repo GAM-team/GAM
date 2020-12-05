@@ -278,8 +278,12 @@ jobs:
              $gam report users fields accounts:is_less_secure_apps_access_allowed,gmail:last_imap_time,gmail:last_pop_time filters "accounts:last_login_time>2019-01-01T00:00:00.000Z" todrive
              $gam report admin start -3d todrive
              $gam print devices nopersonaldevices nodeviceusers filter "serial:$JID$JID$JID$JID-" | $gam csv - gam delete device id ~name
+
+      - name: Upload to Google Drive, build only.
+        if: github.event_name == 'push' && matrix.goal != 'test'
+        run: |
              export filepattern="gam-${GAMVERSION}-*"
-             for gamfile in $filepattern; do
+             for gamfile in "${filepattern}"; do
                echo "Uploading file ${gamfile} to Google Drive..."
                fileid=$($gam user $gam_user add drivefile localfile $gamfile drivefilename $GAMVERSION-${GITHUB_SHA:0:7}-$gamfile parentid 1N2zbO33qzUQFsGM49-m9AQC1ijzd_ru1 returnidonly)
                echo "file uploaded as ${fileid}, setting ACL..."
