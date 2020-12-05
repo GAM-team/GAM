@@ -1,9 +1,9 @@
 #!/bin/sh
 
-credsfile="$1"
-echo "target file is ${credsfile}"
-gpgfile="$2"
+gpgfile="$1"
 echo "source file is ${gpgfile}"
+credsfile="$2"
+echo "target file is ${credsfile}"
 if [ -z ${PASSCODE+x} ]; then
   echo "PASSCODE is unset";
 else
