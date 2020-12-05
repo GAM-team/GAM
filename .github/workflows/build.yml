@@ -18,7 +18,6 @@ env:
   MIN_OPENSSL_VERSION: "1.1.1g"
   PATCHELF_VERSION: "0.12"
   PYINSTALLER_COMMIT: "61d846d46bdc8b6d926bb57ae05e6c9bb884a144"
-  PLATFORM: "x86_64"
 
 jobs:
   build:
@@ -30,45 +29,52 @@ jobs:
             jid: 1
             goal: "build"
             gamos: "linux"
+            platform: "x86_64"
           - os: ubuntu-18.04
             jid: 2
             goal: "build"
             gamos: "linux"
+            platform: "x86_64"
           - os: ubuntu-20.04
             jid: 3
             goal: "build"
             gamos: "linux"
+            platform: "x86_64"
           - os: macos-10.15
             jid: 4
             goal: "build"
             gamos: "macos"
+            platform: "x86_64"
           - os: windows-2019
             jid: 5
             goal: "build"
             gamos: "windows"
             python: 3.9.0 
+            platform: "x86_64"
           - os: windows-2019
             jid: 6
             goal: "build"
             gamos: "windows"
-            env:
-              PLATFORM: "x86"
+            platform: "x86"
             python: 3.9.0
           - os: ubuntu-20.04
             goal: "test"
             python: "3.6"
             jid: 7
             gamos: "linux"
+            platform: "x86_64"
           - os: ubuntu-20.04
             goal: "test"
             python: "3.7"
             jid: 8
             gamos: "linux"
+            platform: "x86_64"
           - os: ubuntu-20.04
             goal: "test"
             python: "3.8"
             jid: 9
             gamos: "linux"
+            platform: "x86_64"
     steps:
 
       - uses: actions/checkout@master
@@ -90,10 +96,12 @@ jobs:
           GAMOS: ${{ matrix.gamos }}
           GOAL: ${{ matrix.goal }}
           JID: ${{ matrix.jid }}
+          PLATFORM: ${{ matrix.platform }}
         run: |
           echo "GAMOS=${GAMOS}" >> $GITHUB_ENV
           echo "GOAL=${GOAL}" >> $GITHUB_ENV
           echo "JID=${JID}" >> $GITHUB_ENV
+          echo "PLATFORM=${PLATFORM}" >> $GITHUB_ENV
 
       - name: Use pre-compiled Python for testing and Windows
         if: matrix.python != ''
