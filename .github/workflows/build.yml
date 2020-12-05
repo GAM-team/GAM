@@ -9,6 +9,7 @@ on:
 defaults:
   run:
     shell: bash
+    working-directory: src
 
 env:
   BUILD_PYTHON_VERSION: "3.9.0"
@@ -104,7 +105,6 @@ jobs:
       - name: Set env variables for pre-compiled Python
         if: matrix.goal == 'test'
         run: |
-             cd src
              export python=$(which python3)
              export pip=$(which pip3)
              export gam="${python} -m gam"
@@ -119,7 +119,6 @@ jobs:
         if: matrix.goal != 'test' && steps.cache-primes.outputs.cache-hit != 'true'
         run: |
              set +e
-             cd src
              source travis/${GAMOS}-before-install.sh
              echo "python=$python" >> $GITHUB_ENV
              echo "pip=$pip" >> $GITHUB_ENV
@@ -143,7 +142,6 @@ jobs:
       - name: Install pip requirements
         run: |
              set +e
-             cd src
              $pip list --outdated --format=freeze | grep -v '^\-e' | cut -d = -f 1  | xargs -n1 $pip install -U
              $pip install --upgrade -r requirements.txt
 
@@ -151,7 +149,6 @@ jobs:
         if: matrix.goal != 'test'
         run: |
              set +e
-             cd src
              source travis/${GAMOS}-install.sh
              echo "gampath=$gampath" >> $GITHUB_ENV
              echo "gam=$gam" >> $GITHUB_ENV
@@ -159,7 +156,6 @@ jobs:
 
       - name: Basic Tests all jobs
         run: |
-             cd src
              echo -e "python: $python\npip: $pip\ngam: $gam\ngampath: $gampath\n"
              $python -m unittest discover --start-directory ./ --pattern "*_test.py" --buffer
              touch "${gampath}/nobrowser.txt"
@@ -168,7 +164,6 @@ jobs:
       - name: Basic Tests build jobs only
         if: matrix.goal != 'test'
         run: |
-             cd src
              export vline=$($gam version | grep "Python ")
              export python_line=($vline)
              export this_python=${python_line[1]}
@@ -184,8 +179,7 @@ jobs:
         env: # Or as an environment variable
           PASSCODE: ${{ secrets.PASSCODE }}
         run: |
-             source .github/actions/decrypt.sh .github/actions/creds.tar.gpg src/creds.tar
-             cd src
+             source ../.github/actions/decrypt.sh ../.github/actions/creds.tar.gpg creds.tar
              export OAUTHFILE="oauth2.txt-gam-gha-${JID}"
              $gam oauth info
              $gam info user
