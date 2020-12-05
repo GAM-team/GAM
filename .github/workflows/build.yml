@@ -185,7 +185,7 @@ jobs:
         run: |
              source ../.github/actions/decrypt.sh ../.github/actions/creds.tar.gpg creds.tar
              export OAUTHFILE="oauth2.txt-gam-gha-${JID}"
-             export "OAUTHFILE=${OAUTHFILE}" >> $GITHUB_ENV
+             echo "OAUTHFILE=${OAUTHFILE}" >> $GITHUB_ENV
              export gam_user="gam-gha-${JID}@pdl.jaylee.us"
              echo "gam_user=${gam_user}" >> $GITHUB_ENV
              $gam oauth info
@@ -286,8 +286,7 @@ jobs:
       - name: Upload to Google Drive, build only.
         if: github.event_name == 'push' && matrix.goal != 'test'
         run: |
-             ls -l gam-$GAMVERSION-*
-             echo -e "gam_user: ${gam_user}\nOAUTHFILE: ${OAUTHFILE}"
+             ls gam-$GAMVERSION-*
              for gamfile in gam-$GAMVERSION-*; do
                echo "Uploading file ${gamfile} to Google Drive..."
                fileid=$($gam user $gam_user add drivefile localfile $gamfile drivefilename $GAMVERSION-${GITHUB_SHA:0:7}-$gamfile parentid 1N2zbO33qzUQFsGM49-m9AQC1ijzd_ru1 returnidonly)
