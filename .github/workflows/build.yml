@@ -187,7 +187,7 @@ jobs:
              $gam oauth refresh
              $gam info user
              export tstamp=$(date +%s%3N)
-             export newbase=travis-test-$jid-$tstamp
+             export newbase=travis-test-$JID-$tstamp
              export newuser=$newbase@pdl.jaylee.us
              export newgroup=$newbase-group@pdl.jaylee.us
              export newalias=$newbase-alias@pdl.jaylee.us
@@ -198,14 +198,14 @@ jobs:
              for i in {01..20}; do
                echo "${newbase}-bulkuser-$i" >> sample.csv;
              done
-             $gam create user $newuser firstname Travis lastname $jid password random recoveryphone 12125121110 recoveryemail jay0lee@gmail.com travis.jid $jid
+             $gam create user $newuser firstname Travis lastname $JID password random recoveryphone 12125121110 recoveryemail jay0lee@gmail.com travis.jid $JID
              $gam user $gam_user sendemail recipient $newuser subject "test message $newbase" message "Travis test message"
              $gam user $gam_user sendemail recipient exchange@pdl.jaylee.us subject "test ${tstamp}" message "test message"
-             $gam create group $newgroup name "Travis $jid group" description "This is a description" isarchived true
+             $gam create group $newgroup name "Travis $JID group" description "This is a description" isarchived true
              $gam user $newuser add license gsuitebusiness
              $gam update group $newgroup add owner $gam_user
              $gam update group $newgroup add member $newuser
-             $gam csv sample.csv gam create user ~~email~~ firstname "Travis Bulk" lastname ~~email~~ travis.jid $jid
+             $gam csv sample.csv gam create user ~~email~~ firstname "Travis Bulk" lastname ~~email~~ travis.jid $JID
              $gam csv sample.csv gam update user ~~email~~ recoveryphone 12125121110 recoveryemail jay0lee@gmail.com password random
              $gam csv sample.csv gam update user ~~email~~ recoveryphone "" recoveryemail ""
              $gam csv sample.csv gam user ~email add license gsuitebusiness
@@ -263,7 +263,7 @@ jobs:
              $gam update matter $matterid action close
              $gam update matter $matterid action delete
              $gam delete user $newuser
-             $gam print users query "travis.jid=$jid" | $gam csv - gam delete user ~primaryEmail
+             $gam print users query "travis.jid=$JID" | $gam csv - gam delete user ~primaryEmail
              $gam print mobile
              $gam print devices
              export sn="$JID$JID$JID$JID-$(openssl rand -base64 32 | sed 's/[^a-zA-Z0-9]//g')"
@@ -274,7 +274,7 @@ jobs:
              $gam report customer todrive
              $gam report users fields accounts:is_less_secure_apps_access_allowed,gmail:last_imap_time,gmail:last_pop_time filters "accounts:last_login_time>2019-01-01T00:00:00.000Z" todrive
              $gam report admin start -3d todrive
-             $gam print devices nopersonaldevices nodeviceusers filter "serial:$jid$jid$jid$jid$jid-" | $gam csv - gam delete device id ~name
+             $gam print devices nopersonaldevices nodeviceusers filter "serial:$JID$JID$JID$JID-" | $gam csv - gam delete device id ~name
              for gamfile in gam-$GAMVERSION-*; do
                fileid=$($gam user $gam_user add drivefile localfile $gamfile drivefilename $GAMVERSION-${GITHUB_SHA:0:7}-$gamfile parentid 1N2zbO33qzUQFsGM49-m9AQC1ijzd_ru1 returnidonly)
                $gam user $gam_user add drivefileacl $fileid anyone role reader withlink
