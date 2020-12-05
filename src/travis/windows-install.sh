@@ -1,3 +1,8 @@
+if [[ "$PLATFORM" == "x86_64" ]]; then
+  export WIX_BITS="x64"
+elif [[ "$PLATFORM" == "x86" ]]; then
+  export WIX_BITS="x86"
+fi
 echo "compiling GAM with pyinstaller..."
 export gampath="dist/gam"
 rm -rf $gampath
@@ -7,7 +12,7 @@ pyinstaller --clean --noupx -F --distpath $gampath gam.spec
 export gam="${gampath}/gam"
 echo "running compiled GAM..."
 $gam version
-export GAMVERSION=`$gam version simple`
+export GAMVERSION=$($gam version simple)
 rm $gampath/lastupdatecheck.txt
 cp LICENSE $gampath
 cp GamCommands.txt $gampath
