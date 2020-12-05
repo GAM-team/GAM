@@ -217,7 +217,7 @@ jobs:
              $gam user $newuser show imap
              $gam csv sample.csv gam user $newuser delegate to ~email
              $gam user $newuser show delegates
-             - if [ "$e2d" = true ]; then export biohazard=$(echo -e '\xe2\x98\xa3')
+             export biohazard=$(echo -e '\xe2\x98\xa3')
              $gam user $newuser label "$biohazard unicode biohazard $biohazard"
              $gam user $newuser show labels
              $gam user $newuser show labels > labels.txt
