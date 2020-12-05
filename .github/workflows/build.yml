@@ -109,7 +109,7 @@ jobs:
              export pip=$(which pip3)
              export gam="${python} -m gam"
              export gampath="$(readlink -e .)"
-             echo -e "python: $python\npip: $pip\ngam: $gam\ngampath: $gampath\nGAMVERSION: ${GAMVERSION}"
+             echo -e "python: $python\npip: $pip\ngam: $gam\ngampath: $gampath"
              echo "python=${python}" >> $GITHUB_ENV
              echo "pip=${pip}" >> $GITHUB_ENV
              echo "gam=${gam}" >> $GITHUB_ENV
@@ -161,6 +161,7 @@ jobs:
              touch "${gampath}/nobrowser.txt"
              $gam version extended
              export GAMVERSION=$($gam version simple)
+             echo "GAM Version ${GAMVERSION}"
              echo "GAMVERSION=${GAMVERSION}" >> $GITHUB_ENV
 
       - name: Basic Tests build jobs only
