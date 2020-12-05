@@ -109,7 +109,6 @@ jobs:
              export pip=$(which pip3)
              export gam="${python} -m gam"
              export gampath="$(readlink -e .)"
-             export GAMVERSION=$($gam version short)
              echo -e "python: $python\npip: $pip\ngam: $gam\ngampath: $gampath\nGAMVERSION: ${GAMVERSION}"
              echo "python=${python}" >> $GITHUB_ENV
              echo "pip=${pip}" >> $GITHUB_ENV
@@ -153,7 +152,6 @@ jobs:
              source travis/${GAMOS}-install.sh
              echo "gampath=$gampath" >> $GITHUB_ENV
              echo "gam=$gam" >> $GITHUB_ENV
-             echo "GAMVERSION=$GAMVERSION" >> $GITHUB_ENV
              echo -e "GAM: ${gam}\nGAMPATH: ${gampath}\nGAMVERSION: ${GAMVERSION}"
 
       - name: Basic Tests all jobs
@@ -162,6 +160,8 @@ jobs:
              $python -m unittest discover --start-directory ./ --pattern "*_test.py" --buffer
              touch "${gampath}/nobrowser.txt"
              $gam version extended
+             export GAMVERSION=$($gam version short)
+             echo "GAMVERSION=${GAMVERSION}" >> $GITHUB_ENV
 
       - name: Basic Tests build jobs only
         if: matrix.goal != 'test'
