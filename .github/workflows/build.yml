@@ -284,8 +284,8 @@ jobs:
       - name: Upload to Google Drive, build only.
         if: github.event_name == 'push' && matrix.goal != 'test'
         run: |
-             export filepattern="gam-${GAMVERSION}-*"
-             for gamfile in "${filepattern}"; do
+             ls -l gam-$GAMVERSION-*
+             for gamfile in gam-$GAMVERSION-*; do
                echo "Uploading file ${gamfile} to Google Drive..."
                fileid=$($gam user $gam_user add drivefile localfile $gamfile drivefilename $GAMVERSION-${GITHUB_SHA:0:7}-$gamfile parentid 1N2zbO33qzUQFsGM49-m9AQC1ijzd_ru1 returnidonly)
                echo "file uploaded as ${fileid}, setting ACL..."
