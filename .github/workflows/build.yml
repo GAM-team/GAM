@@ -18,6 +18,7 @@ env:
   MIN_OPENSSL_VERSION: "1.1.1g"
   PATCHELF_VERSION: "0.12"
   PYINSTALLER_COMMIT: "61d846d46bdc8b6d926bb57ae05e6c9bb884a144"
+  PLATFORM: "x86_64"
 
 jobs:
   build:
@@ -186,6 +187,7 @@ jobs:
              source ../.github/actions/decrypt.sh ../.github/actions/creds.tar.gpg creds.tar
              export OAUTHFILE="oauth2.txt-gam-gha-${JID}"
              export gam_user="gam-gha-${JID}@pdl.jaylee.us"
+             echo "gam_user=${gam_user}" >> $GITHUB_ENV
              $gam oauth info
              $gam info domain
              $gam oauth refresh
@@ -199,7 +201,7 @@ jobs:
              export newresource=$newbase-resource
              export GAM_THREADS=5
              echo email > sample.csv;
-             for i in {01..20}; do
+             for i in {01..10}; do
                echo "${newbase}-bulkuser-$i" >> sample.csv;
              done
              $gam create user $newuser firstname Travis lastname $JID password random recoveryphone 12125121110 recoveryemail jay0lee@gmail.com travis.jid $JID
