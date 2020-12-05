@@ -51,7 +51,8 @@ jobs:
             jid: 6
             goal: "build"
             gamos: "windows"
-            PLATFORM: "x86"
+            env:
+              PLATFORM: "x86"
             python: 3.9.0
           - os: ubuntu-20.04
             goal: "test"
@@ -87,12 +88,10 @@ jobs:
       - name: Set env variables
         env:
           GAMOS: ${{ matrix.gamos }}
-          PLATFORM: ${{ matrix.platform }}
           GOAL: ${{ matrix.goal }}
           JID: ${{ matrix.jid }}
         run: |
           echo "GAMOS=${GAMOS}" >> $GITHUB_ENV
-          echo "PLATFORM=${PLATFORM}" >> $GITHUB_ENV
           echo "GOAL=${GOAL}" >> $GITHUB_ENV
           echo "JID=${JID}" >> $GITHUB_ENV
 
@@ -186,6 +185,7 @@ jobs:
         run: |
              source ../.github/actions/decrypt.sh ../.github/actions/creds.tar.gpg creds.tar
              export OAUTHFILE="oauth2.txt-gam-gha-${JID}"
+             export "OAUTHFILE=${OAUTHFILE}" >> $GITHUB_ENV
              export gam_user="gam-gha-${JID}@pdl.jaylee.us"
              echo "gam_user=${gam_user}" >> $GITHUB_ENV
              $gam oauth info
