@@ -160,7 +160,7 @@ jobs:
              $python -m unittest discover --start-directory ./ --pattern "*_test.py" --buffer
              touch "${gampath}/nobrowser.txt"
              $gam version extended
-             export GAMVERSION=$($gam version short)
+             export GAMVERSION=$($gam version simple)
              echo "GAMVERSION=${GAMVERSION}" >> $GITHUB_ENV
 
       - name: Basic Tests build jobs only
