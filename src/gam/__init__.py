@@ -11398,6 +11398,8 @@ def ProcessGAMCommand(args):
                 doPrintShowProjects(False)
             elif argument in ['sakey', 'sakeys']:
                 doShowServiceAccountKeys()
+            elif argument in ['vaultcount']:
+                gapi_vault.get_count()
             else:
                 controlflow.invalid_argument_exit(argument, 'gam show')
             sys.exit(0)

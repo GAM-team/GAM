@@ -1,6 +1,7 @@
 import datetime
 import json
 import sys
+from time import sleep
 
 import googleapiclient.http
 
@@ -85,21 +86,120 @@ VAULT_SEARCH_METHODS_MAP = {
 VAULT_SEARCH_METHODS_LIST = [
     'accounts', 'orgunit', 'shareddrives', 'rooms', 'everyone'
 ]
+QUERY_ARGS = ['corpus', 'scope', 'terms', 'start', 'starttime',
+              'end', 'endtime', 'timezone', 'excludedrafts',
+              'driveversiondate', 'includeshareddrives', 'includeteamdrives',
+              'includerooms'] + list(VAULT_SEARCH_METHODS_MAP.keys())
+
+def _build_query(query, myarg, i, query_discovery):
+    if not query:
+        query = {'dataScope': 'ALL_DATA'}
+    if myarg == 'corpus':
+        query['corpus'] = sys.argv[i + 1].upper()
+        allowed_corpuses = gapi.get_enum_values_minus_unspecified(
+                  query_discovery['properties']['corpus']['enum'])
+        if query['corpus'] not in allowed_corpuses:
+            controlflow.expected_argument_exit('corpus',
+                                               ', '.join(allowed_corpuses),
+                                               sys.argv[i + 1])
+        i += 2
+    elif myarg in VAULT_SEARCH_METHODS_MAP:
+        if query.get('searchMethod'):
+            message = f'Multiple search methods ' \
+                      f'({", ".join(VAULT_SEARCH_METHODS_LIST)})' \
+                      f'specified, only one is allowed'
+            controlflow.system_error_exit(3, message)
+        searchMethod = VAULT_SEARCH_METHODS_MAP[myarg]
+        query['searchMethod'] = searchMethod
+        if searchMethod == 'ACCOUNT':
+            query['accountInfo'] = {
+                'emails': sys.argv[i + 1].split(',')
+            }
+            i += 2
+        elif searchMethod == 'ORG_UNIT':
+            query['orgUnitInfo'] = {
+                'orgUnitId': gapi_directory_orgunits.getOrgUnitId(sys.argv[i + 1])[1]
+            }
+            i += 2
+        elif searchMethod == 'SHARED_DRIVE':
+            query['sharedDriveInfo'] = {
+                'sharedDriveIds': sys.argv[i + 1].split(',')
+            }
+            i += 2
+        elif searchMethod == 'ROOM':
+            query['hangoutsChatInfo'] = {
+                'roomId': sys.argv[i + 1].split(',')
+            }
+            i += 2
+        else:
+            i += 1
+    elif myarg == 'scope':
+        query['dataScope'] = sys.argv[i + 1].upper()
+        allowed_scopes = gapi.get_enum_values_minus_unspecified(
+              query_discovery['properties']['dataScope']['enum'])
+        if query['dataScope'] not in allowed_scopes:
+            controlflow.expected_argument_exit('scope',
+                                               ', '.join(allowed_scopes),
+                                               sys.argv[i + 1])
+        i += 2
+    elif myarg in ['terms']:
+        query['terms'] = sys.argv[i + 1]
+        i += 2
+    elif myarg in ['start', 'starttime']:
+        query['startTime'] = utils.get_date_zero_time_or_full_time(
+            sys.argv[i + 1])
+        i += 2
+    elif myarg in ['end', 'endtime']:
+        query['endTime'] = utils.get_date_zero_time_or_full_time(
+            sys.argv[i + 1])
+        i += 2
+    elif myarg in ['timezone']:
+        query['timeZone'] = sys.argv[i + 1]
+        i += 2
+    elif myarg in ['excludedrafts']:
+        query['mailOptions'] = {
+           'excludeDrafts': gam.getBoolean(sys.argv[i + 1], myarg)
+        }
+        i += 2
+    elif myarg in ['driveversiondate']:
+        query.setdefault('driveOptions', {})['versionDate'] = \
+            utils.get_date_zero_time_or_full_time(sys.argv[i+1])
+        i += 2
+    elif myarg in ['includeshareddrives', 'includeteamdrives']:
+        query.setdefault(
+            'driveOptions', {})['includeSharedDrives'] = gam.getBoolean(
+                sys.argv[i + 1], myarg)
+        i += 2
+    elif myarg in ['includerooms']:
+        query['hangoutsChatOptions'] = {
+            'includeRooms': gam.getBoolean(sys.argv[i + 1], myarg)
+        }
+        i += 2
+    return (query, i)
+
+def _validate_query(query, query_discovery):
+    if 'corpus' not in query:
+        allowed_corpuses = gapi.get_enum_values_minus_unspecified(
+            query_discovery['properties']['corpus']['enum'])
+        controlflow.system_error_exit(3, 'you must specify a corpus. ' \
+          f'Choose one of {", ".join(allowed_corpuses)}')
+    if 'searchMethod' not in query:
+        controlflow.system_error_exit(3, f'you must specify a search method. ' \
+          'Choose one of ' \
+          f'{", ".join(VAULT_SEARCH_METHODS_LIST)}')
 
 
 def createExport():
     v = buildGAPIObject()
-    allowed_corpuses = gapi.get_enum_values_minus_unspecified(
-        v._rootDesc['schemas']['Query']['properties']['corpus']['enum'])
-    allowed_scopes = gapi.get_enum_values_minus_unspecified(
-        v._rootDesc['schemas']['Query']['properties']['dataScope']['enum'])
+    query_discovery = v._rootDesc['schemas']['Query']
     allowed_formats = gapi.get_enum_values_minus_unspecified(
         v._rootDesc['schemas']['MailExportOptions']['properties']
         ['exportFormat']['enum'])
     export_format = 'MBOX'
     showConfidentialModeContent = None  # default to not even set
     matterId = None
-    body = {'query': {'dataScope': 'ALL_DATA'}, 'exportOptions': {}}
+    query = None
+    body = {'exportOptions': {}}
     i = 3
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
@@ -110,83 +210,8 @@ def createExport():
         elif myarg == 'name':
             body['name'] = sys.argv[i + 1]
             i += 2
-        elif myarg == 'corpus':
-            body['query']['corpus'] = sys.argv[i + 1].upper()
-            if body['query']['corpus'] not in allowed_corpuses:
-                controlflow.expected_argument_exit('corpus',
-                                                   ', '.join(allowed_corpuses),
-                                                   sys.argv[i + 1])
-            i += 2
-        elif myarg in VAULT_SEARCH_METHODS_MAP:
-            if body['query'].get('searchMethod'):
-                message = f'Multiple search methods ' \
-                          f'({", ".join(VAULT_SEARCH_METHODS_LIST)})' \
-                          f'specified, only one is allowed'
-                controlflow.system_error_exit(3, message)
-            searchMethod = VAULT_SEARCH_METHODS_MAP[myarg]
-            body['query']['searchMethod'] = searchMethod
-            if searchMethod == 'ACCOUNT':
-                body['query']['accountInfo'] = {
-                    'emails': sys.argv[i + 1].split(',')
-                }
-                i += 2
-            elif searchMethod == 'ORG_UNIT':
-                body['query']['orgUnitInfo'] = {
-                    'orgUnitId': gapi_directory_orgunits.getOrgUnitId(sys.argv[i + 1])[1]
-                }
-                i += 2
-            elif searchMethod == 'SHARED_DRIVE':
-                body['query']['sharedDriveInfo'] = {
-                    'sharedDriveIds': sys.argv[i + 1].split(',')
-                }
-                i += 2
-            elif searchMethod == 'ROOM':
-                body['query']['hangoutsChatInfo'] = {
-                    'roomId': sys.argv[i + 1].split(',')
-                }
-                i += 2
-            else:
-                i += 1
-        elif myarg == 'scope':
-            body['query']['dataScope'] = sys.argv[i + 1].upper()
-            if body['query']['dataScope'] not in allowed_scopes:
-                controlflow.expected_argument_exit('scope',
-                                                   ', '.join(allowed_scopes),
-                                                   sys.argv[i + 1])
-            i += 2
-        elif myarg in ['terms']:
-            body['query']['terms'] = sys.argv[i + 1]
-            i += 2
-        elif myarg in ['start', 'starttime']:
-            body['query']['startTime'] = utils.get_date_zero_time_or_full_time(
-                sys.argv[i + 1])
-            i += 2
-        elif myarg in ['end', 'endtime']:
-            body['query']['endTime'] = utils.get_date_zero_time_or_full_time(
-                sys.argv[i + 1])
-            i += 2
-        elif myarg in ['timezone']:
-            body['query']['timeZone'] = sys.argv[i + 1]
-            i += 2
-        elif myarg in ['excludedrafts']:
-            body['query']['mailOptions'] = {
-                'excludeDrafts': gam.getBoolean(sys.argv[i + 1], myarg)
-            }
-            i += 2
-        elif myarg in ['driveversiondate']:
-            body['query'].setdefault('driveOptions', {})['versionDate'] = \
-                utils.get_date_zero_time_or_full_time(sys.argv[i+1])
-            i += 2
-        elif myarg in ['includeshareddrives', 'includeteamdrives']:
-            body['query'].setdefault(
-                'driveOptions', {})['includeSharedDrives'] = gam.getBoolean(
-                    sys.argv[i + 1], myarg)
-            i += 2
-        elif myarg in ['includerooms']:
-            body['query']['hangoutsChatOptions'] = {
-                'includeRooms': gam.getBoolean(sys.argv[i + 1], myarg)
-            }
-            i += 2
+        elif myarg in QUERY_ARGS:
+            query, i = _build_query(query, myarg, i, query_discovery)
         elif myarg in ['format']:
             export_format = sys.argv[i + 1].upper()
             if export_format not in allowed_formats:
@@ -217,13 +242,8 @@ def createExport():
     if not matterId:
         controlflow.system_error_exit(
             3, 'you must specify a matter for the new export.')
-    if 'corpus' not in body['query']:
-        controlflow.system_error_exit(3, f'you must specify a corpus for the ' \
-          f'new export. Choose one of {", ".join(allowed_corpuses)}')
-    if 'searchMethod' not in body['query']:
-        controlflow.system_error_exit(3, f'you must specify a search method ' \
-          'for the new export. Choose one of ' \
-          f'{", ".join(VAULT_SEARCH_METHODS_LIST)}')
+    _validate_query(query, query_discovery)
+    body['query'] = query
     if 'name' not in body:
         corpus_name = body['query']['corpus']
         corpus_date = datetime.datetime.now()
@@ -270,6 +290,78 @@ def getExportInfo():
                        exportId=exportId)
     display.print_json(export)
 
+
+def get_count():
+    v = buildGAPIObject()
+    query_discovery = v._rootDesc['schemas']['Query']
+    matterId = None
+    operation_wait = 15
+    query = None
+    body = {'view': 'ALL'}
+    name = None
+    todrive = False
+    i = 3
+    while i < len(sys.argv):
+        myarg = sys.argv[i].lower().replace('_', '')
+        if myarg == 'matter':
+            matterId = getMatterItem(v, sys.argv[i + 1])
+            i += 2
+        elif myarg == 'operation':
+            name = sys.argv[i+1]
+            i += 2
+        elif myarg in QUERY_ARGS:
+            query, i = _build_query(query, myarg, i, query_discovery)
+        elif myarg == 'wait':
+            operation_wait = int(sys.argv[i + 1])
+            i += 2
+        else:
+            controlflow.invalid_argument_exit(sys.argv[i], 'gam create export')
+    if not matterId:
+        controlflow.system_error_exit(
+            3, 'you must specify a matter for the count.')
+    if name:
+        operation = {'name': name}
+    else:
+        _validate_query(query, query_discovery)
+        body['query'] = query
+        operation = gapi.call(v.matters(), 'count', matterId=matterId, body=body)
+    print(f'Watching operation {operation["name"]}...')
+    while not operation.get('done'):
+        print(f' operation {operation["name"]} is not done yet. Checking again in {operation_wait} seconds')
+        sleep(operation_wait)
+        operation = gapi.call(v.operations(), 'get', name=operation['name'])
+    response = operation.get('response', {})
+    query = operation['metadata']['query']
+    search_method = query.get('searchMethod')
+    # ARGH count results don't include accounts with zero items.
+    # so we keep track of which accounts we searched and can report
+    # zero data for them.
+    if search_method == 'ACCOUNT':
+      query_accounts = query.get('accountInfo', [])
+    elif search_method == 'ENTIRE_ORG':
+      query_accounts = gam.getUsersToModify('all', 'users')
+    elif search_method == 'ORG_UNIT':
+      org_unit = query['orgUnitInfo']['orgUnitId']
+      query_accounts = gam.getUsersToModify('ou', org_unit)
+    mailcounts = response.get('mailCountResult', {})
+    groupcounts = response.get('groupsCountResult', {})
+    csv_rows = []
+    for a_count in [mailcounts, groupcounts]:
+        for errored_account in a_count.get('accountCountErrors', []):
+            account = errored_account.get('account')
+            csv_rows.append({'account': account, 'error': errored_account.get('errorType')})
+            if account in query_accounts: query_accounts.remove(account)
+        for account in a_count.get('nonQueryableAccounts', []):
+            csv_rows.append({'account': account, 'error': 'Not queried because not on hold'})
+            if account in query_accounts: query_accounts.remove(account)
+        for account in a_count.get('accountCounts', []):
+            email = account.get('account', {}).get('email', '')
+            csv_rows.append({'account': email, 'count': account.get('count')})
+            if email in query_accounts: query_accounts.remove(email)
+    for account in query_accounts:
+        csv_rows.append({'account': account, 'count': 0})
+    titles = ['account', 'count', 'error']
+    display.write_csv_file(csv_rows, titles, 'Vault Counts', todrive)
 
 def createHold():
     v = buildGAPIObject()

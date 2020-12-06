@@ -288,7 +288,7 @@ def print_json(object_value, spacing=''):
                 sys.stdout.write(f' {spacing}{i+1}) ')
                 print_json(a_value, f' {spacing}')
     elif isinstance(object_value, dict):
-        for key in ['kind', 'etag', 'etags']:
+        for key in ['kind', 'etag', 'etags', '@type']:
             object_value.pop(key, None)
         for another_object, another_value in object_value.items():
             sys.stdout.write(f' {spacing}{another_object}: ')
