@@ -298,7 +298,7 @@ API_SCOPE_MAPPING = {
         'https://www.googleapis.com/auth/drive',
     ],
     'calendar': ['https://www.googleapis.com/auth/calendar',],
-    'cloudidentity': ['https://www.googleapis.com/auth/cloud-identity', 'https://www.googleapis.com/auth/cloud-identity.devices.lookup'],
+    'cloudidentity': ['https://www.googleapis.com/auth/cloud-identity'],
     'drive': ['https://www.googleapis.com/auth/drive',],
     'drive3': ['https://www.googleapis.com/auth/drive',],
     'gmail': [
