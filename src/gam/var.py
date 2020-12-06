@@ -233,7 +233,6 @@ PRODUCTID_NAME_MAPPINGS = {
     '101034': 'G Suite Archived',
     'Google-Apps': 'Google Workspace',
     'Google-Chrome-Device-Management': 'Google Chrome Device Management',
-    'Google-Coordinate': 'Google Coordinate',
     'Google-Drive-storage': 'Google Drive Storage',
     'Google-Vault': 'Google Vault',
 }
@@ -241,7 +240,6 @@ PRODUCTID_NAME_MAPPINGS = {
 # Legacy APIs that use v1 discovery. Newer APIs should all use v2.
 V1_DISCOVERY_APIS = {
     'admin',
-    'appsactivity',
     'calendar',
     'drive',
     'oauth2',
@@ -260,7 +258,7 @@ API_NAME_MAPPING = {
 
 API_VER_MAPPING = {
     'alertcenter': 'v1beta1',
-    'appsactivity': 'v1',
+    'driveactivity': 'v2',
     'calendar': 'v3',
     'cbcm': 'v1.1beta1',
     'classroom': 'v1',
@@ -293,8 +291,8 @@ USERINFO_EMAIL_SCOPE = 'https://www.googleapis.com/auth/userinfo.email'
 
 API_SCOPE_MAPPING = {
     'alertcenter': ['https://www.googleapis.com/auth/apps.alerts',],
-    'appsactivity': [
-        'https://www.googleapis.com/auth/activity',
+    'driveactivity': [
+        'https://www.googleapis.com/auth/drive.activity',
         'https://www.googleapis.com/auth/drive',
     ],
     'calendar': ['https://www.googleapis.com/auth/calendar',],
@@ -907,6 +905,7 @@ CROS_ARGUMENT_TO_PROPERTY_MAP = {
     'ethernetmacaddress0': ['ethernetMacAddress0',],
     'firmwareversion': ['firmwareVersion',],
     'lastenrollmenttime': ['lastEnrollmentTime',],
+    'lastknownnetwork': ['lastKnownNetwork'],
     'lastsync': ['lastSync',],
     'location': ['annotatedLocation',],
     'macaddress': ['macAddress',],
