@@ -283,6 +283,7 @@ jobs:
              $gam print users query "travis.jid=$JID" | $gam csv - gam delete user ~primaryEmail
              $gam print mobile
              $gam print devices
+             $gam print browsers
              export sn="$JID$JID$JID$JID-$(openssl rand -base64 32 | sed 's/[^a-zA-Z0-9]//g')"
              $gam create device serialnumber $sn devicetype android
              $gam print cros allfields nolists

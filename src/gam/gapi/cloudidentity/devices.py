@@ -3,6 +3,7 @@ import sys
 
 import googleapiclient
 
+import gam
 from gam.var import *
 from gam import controlflow
 from gam import display
@@ -11,7 +12,7 @@ from gam import gapi
 from gam import utils
 from gam.gapi import errors as gapi_errors
 from gam.gapi import cloudidentity as gapi_cloudidentity
-
+from gam.gapi.directory import customer as gapi_directory_customer
 
 def _get_device_customerid():
   customer = GC_Values[GC_CUSTOMER_ID]
@@ -49,6 +50,7 @@ def create():
     result = gapi.call(ci.devices(), 'create', customer=customer, body=body)
     print(f'Created device {result["response"]["name"]}')
 
+
 def _get_device_name():
     name = sys.argv[3]
     if name == 'id':
@@ -65,9 +67,15 @@ def info():
     device = gapi.call(ci.devices(), 'get', name=name, customer=customer)
     device_users = gapi.get_all_pages(ci.devices().deviceUsers(), 'list',
         'deviceUsers', parent=name, customer=customer)
+    for device_user in device_users:
+        parent = device_user['name']
+        client_states = gapi.get_all_pages(ci.devices().deviceUsers().clientStates(), 'list', 'clientStates', parent=parent, customer=customer)
     display.print_json(device)
     print('Device Users:')
     display.print_json(device_users)
+    print('Client States:')
+    display.print_json(client_states)
+
 
 def _generic_action(action, device_user=False):
     ci = gapi_cloudidentity.build_dwd()
@@ -87,29 +95,125 @@ def _generic_action(action, device_user=False):
     op = gapi.call(endpoint, action, name=name, **kwargs)
     print(op)
 
+
 def delete():
     _generic_action('delete')
+
 
 def cancel_wipe():
     _generic_action('cancelWipe')
 
+
 def wipe():
     _generic_action('wipe')
+
 
 def approve_user():
     _generic_action('approve', True)
 
+
 def block_user():
     _generic_action('block', True)
+
 
 def cancel_wipe_user():
     _generic_action('cancelWipe', True)
 
+
 def delete_user():
     _generic_action('delete', True)
 
+
 def wipe_user():
     _generic_action('wipe', True)
+
+
+def update_state():
+    ci = gapi_cloudidentity.build_dwd()
+    gapi_directory_customer.setTrueCustomerId()
+    customer = _get_device_customerid()[10:]
+    client_id = f'{customer}-gam'
+    body = {}
+    i = 3
+    while i < len(sys.argv):
+        myarg = sys.argv[i].lower().replace('_', '')
+        if myarg == 'id':
+            deviceuser = sys.argv[i+1]
+            i += 2
+        elif myarg == 'clientid':
+            client_id = f'{customer}-{sys.argv[i+1]}'
+            i += 2
+        elif myarg in ['assettag', 'assettags']:
+            body['assetTags'] = sys.argv[i+1].split(',')
+            if body['assetTags'] == ['clear']:
+                # TODO: this doesn't work to clear
+                # existing values. Figure out why.
+                body['assetTags'] = [None]
+            i += 2
+        elif myarg in ['compliantstate', 'compliancestate']:
+            comp_states = gapi.get_enum_values_minus_unspecified(
+              ci._rootDesc['schemas']['GoogleAppsCloudidentityDevicesV1ClientState']['properties']['complianceState']['enum'])
+            body['complianceState'] = sys.argv[i+1].upper()
+            if body['complianceState'] not in comp_states:
+                controlflow.expected_argument_exit('compliant_state',
+                                                   ', '.join(comp_states),
+                                                   sys.argv[i+1])
+            i += 2
+        elif myarg == 'customid':
+            body['customId'] = sys.argv[i+1]
+            i += 2
+        elif myarg == 'healthscore':
+            health_scores = gapi.get_enum_values_minus_unspecified(
+            ci._rootDesc['schemas']['GoogleAppsCloudidentityDevicesV1ClientState']['properties']['healthScore']['enum'])
+            body['healthScore'] = sys.argv[i+1].upper()
+            if body['healthScore'] == 'CLEAR':
+                body['healthScore'] = None
+            if body['healthScore'] and body['healthScore'] not in health_scores:
+                controlflow.expected_argument_exit('health_score',
+                                                   ', '.join(health_scores),
+                                                   sys.argv[i+1])
+            i += 2
+        elif myarg == 'customvalue':
+            allowed_types = ['boolValue', 'numberValue', 'stringValue']
+            value_type = f'{sys.argv[i+1].lower()}Value'
+            if value_type not in allowed_types:
+                controlflow.expected_argument_exit('custom_value',
+                                                   ', '.join(allowed_types),
+                                                   sys.argv[i+1])
+            key = sys.argv[i+2]
+            value = sys.argv[i+3]
+            if value_type == 'boolValue':
+                value = gam.getBoolean(value, key)
+            elif value_type == 'numberValue':
+                value = int(value)
+            if 'keyValuePairs' not in body:
+                body['keyValuePairs'] = {}
+            body['keyValuePairs'][key] = {value_type: value}
+            i += 4
+        elif myarg in ['managedstate']:
+            managed_states = gapi.get_enum_values_minus_unspecified(
+              ci._rootDesc['schemas']['GoogleAppsCloudidentityDevicesV1ClientState']['properties']['managed']['enum'])
+            body['managed'] = sys.argv[i+1].upper()
+            if body['managed'] == 'CLEAR':
+                body['managed'] = None
+            if body['managed'] and body['managed'] not in managed_states:
+                controlflow.expected_argument_exit('managed_state',
+                                                   ', '.join(managed_states),
+                                                   sys.argv[i+1])
+            i += 2
+        elif myarg in ['scorereason']:
+            body['scoreReason'] = sys.argv[i+1]
+            if body['scoreReason'] == 'clear':
+                body['scoreReason'] = None
+            i += 2
+        else:
+            controlflow.invalid_argument_exit(sys.argv[i], 'gam update deviceuserstate')
+    name = f'{deviceuser}/clientStates/{client_id}'
+    updateMask = ','.join(body.keys())
+    result = gapi.call(ci.devices().deviceUsers().clientStates(), 'patch',
+     name=name, customer=f'customers/{customer}', updateMask=updateMask, body=body)
+    display.print_json(result)
+
 
 def print_():
     ci = gapi_cloudidentity.build_dwd()

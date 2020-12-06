@@ -1,5 +1,6 @@
 """Main behavioral methods and argument routing for GAM."""
 
+
 import base64
 import configparser
 import csv
@@ -49,6 +50,7 @@ from gam import display
 from gam import fileutils
 from gam.gapi import calendar as gapi_calendar
 from gam.gapi import cloudidentity as gapi_cloudidentity
+from gam.gapi import cbcm as gapi_cbcm
 from gam.gapi.cloudidentity import devices as gapi_cloudidentity_devices
 from gam.gapi.cloudidentity import groups as gapi_cloudidentity_groups
 from gam.gapi.directory import asps as gapi_directory_asps
@@ -10113,6 +10115,11 @@ def doRequestOAuth(login_hint=None, scopes=None):
 
 OAUTH2_SCOPES = [
     {
+        'name': 'Chrome Browser Cloud Management',
+        'subscopes': ['readonly'],
+        'scopes': 'https://www.googleapis.com/auth/admin.directory.device.chromebrowsers',
+    },
+    {
         'name':
             'Classroom API - counts as 5 scopes',
         'subscopes': [],
@@ -11077,6 +11084,10 @@ def ProcessGAMCommand(args):
                 gapi_directory_resource.updateFeature()
             elif argument in ['adminrole']:
                 gapi_directory_roles.update()
+            elif argument == 'deviceuserstate':
+                gapi_cloudidentity_devices.update_state()
+            elif argument in ['browser', 'browsers']:
+                gapi_cbcm.update()
             else:
                 controlflow.invalid_argument_exit(argument, 'gam update')
             sys.exit(0)
@@ -11135,6 +11146,8 @@ def ProcessGAMCommand(args):
                 gapi_directory_resource.getBuildingInfo()
             elif argument in ['device']:
                 gapi_cloudidentity_devices.info()
+            elif argument in ['browser', 'browsers']:
+                gapi_cbcm.info()
             else:
                 controlflow.invalid_argument_exit(argument, 'gam info')
             sys.exit(0)
@@ -11287,6 +11300,8 @@ def ProcessGAMCommand(args):
                 doPrintShowAlerts()
             elif argument in ['alertfeedback', 'alertsfeedback']:
                 doPrintShowAlertFeedback()
+            elif argument in ['browser', 'browsers']:
+                gapi_cbcm.print_()
             else:
                 controlflow.invalid_argument_exit(argument, 'gam print')
             sys.exit(0)
@@ -11304,6 +11319,11 @@ def ProcessGAMCommand(args):
                 doShowServiceAccountKeys()
             else:
                 controlflow.invalid_argument_exit(argument, 'gam show')
+            sys.exit(0)
+        elif command == 'move':
+            argument = sys.argv[2].lower()
+            if argument in ['browser', 'browsers']:
+                gapi_cbcm.move()
             sys.exit(0)
         elif command in ['oauth', 'oauth2']:
             argument = sys.argv[2].lower()

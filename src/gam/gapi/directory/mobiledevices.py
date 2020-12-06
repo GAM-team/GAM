@@ -27,13 +27,13 @@ def info():
                             'get',
                             customerId=GC_Values[GC_CUSTOMER_ID],
                             resourceId=resourceId)
-    if 'deviceId' in info:
+    if 'deviceId' in device_info:
         device_info['deviceId'] = device_info['deviceId'].encode('unicode-escape').decode(
             UTF8)
     attrib = 'securityPatchLevel'
-    if attrib in info and int(device_info[attrib]):
+    if attrib in device_info and int(device_info[attrib]):
         device_info[attrib] = utils.formatTimestampYMDHMS(device_info[attrib])
-    display.print_json(info)
+    display.print_json(device_info)
 
 
 
