@@ -11383,6 +11383,8 @@ def ProcessGAMCommand(args):
                 doPrintShowAlertFeedback()
             elif argument in ['browser', 'browsers']:
                 gapi_cbcm.print_()
+            elif argument in ['vaultcount']:
+                gapi_vault.print_count()
             else:
                 controlflow.invalid_argument_exit(argument, 'gam print')
             sys.exit(0)
@@ -11398,8 +11400,6 @@ def ProcessGAMCommand(args):
                 doPrintShowProjects(False)
             elif argument in ['sakey', 'sakeys']:
                 doShowServiceAccountKeys()
-            elif argument in ['vaultcount']:
-                gapi_vault.get_count()
             else:
                 controlflow.invalid_argument_exit(argument, 'gam show')
             sys.exit(0)

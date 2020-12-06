@@ -264,6 +264,7 @@ jobs:
              $gam create vaulthold matter $matterid name "Travis hold $newbase" corpus mail accounts $newuser
              $gam print vaultmatters matterstate open
              $gam print vaultholds matter $matterid
+             $gam print vaultcount matter $matterid corpus mail everyone todrive
              $gam create vaultexport matter $matterid name "Travis export $newbase" corpus mail accounts $newuser
              $gam print exports matter $matterid | $gam csv - gam info export $matterid id:~~id~~
              $gam csv sample.csv gam user ~email add calendar id:$newresource

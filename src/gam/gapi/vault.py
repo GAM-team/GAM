@@ -291,7 +291,7 @@ def getExportInfo():
     display.print_json(export)
 
 
-def get_count():
+def print_count():
     v = buildGAPIObject()
     query_discovery = v._rootDesc['schemas']['Query']
     matterId = None
@@ -309,6 +309,9 @@ def get_count():
         elif myarg == 'operation':
             name = sys.argv[i+1]
             i += 2
+        elif myarg == 'todrive':
+            todrive = True
+            i += 1
         elif myarg in QUERY_ARGS:
             query, i = _build_query(query, myarg, i, query_discovery)
         elif myarg == 'wait':
