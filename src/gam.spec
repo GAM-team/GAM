@@ -12,7 +12,7 @@ proot = os.path.dirname(importlib.import_module('httplib2').__file__)
 extra_files = [(os.path.join(proot, 'cacerts.txt'), 'httplib2')]
 
 extra_files += copy_metadata('google-api-python-client')
-extra_files += [('cbcm-v1.1beta1.json', 'cbcm-v1.1beta1.json')]
+extra_files += [('cbcm-v1.1beta1.json', '.')]
 
 a = Analysis(['gam/__main__.py'],
              hiddenimports=[],
