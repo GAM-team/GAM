@@ -11210,6 +11210,8 @@ def ProcessGAMCommand(args):
                 doDeleteServiceAccountKeys()
             elif argument in ['adminrole']:
                 gapi_directory_roles.delete()
+            elif argument in ['browser', 'browsers']:
+                gapi_cbcm.delete()
             else:
                 controlflow.invalid_argument_exit(argument, 'gam delete')
             sys.exit(0)

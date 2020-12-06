@@ -18,6 +18,14 @@ def build():
     return gam.buildGAPIObject('cbcm')
 
 
+def delete():
+    cbcm = build()
+    device_id = sys.argv[3]
+    gapi.call(cbcm.chromebrowsers(), 'delete', deviceId=device_id,
+              customer=GC_Values[GC_CUSTOMER_ID])
+    print(f'Deleted browser {device_id}')
+
+
 def info():
     cbcm = build()
     device_id = sys.argv[3]
