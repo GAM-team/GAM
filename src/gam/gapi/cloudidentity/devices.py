@@ -69,12 +69,12 @@ def info():
         'deviceUsers', parent=name, customer=customer)
     for device_user in device_users:
         parent = device_user['name']
-        client_states = gapi.get_all_pages(ci.devices().deviceUsers().clientStates(), 'list', 'clientStates', parent=parent, customer=customer)
+        device_user['client_states'] = gapi.get_all_pages(
+                  ci.devices().deviceUsers().clientStates(),
+                  'list', 'clientStates', parent=parent, customer=customer)
     display.print_json(device)
     print('Device Users:')
     display.print_json(device_users)
-    print('Client States:')
-    display.print_json(client_states)
 
 
 def _generic_action(action, device_user=False):
