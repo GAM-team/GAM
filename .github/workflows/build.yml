@@ -129,7 +129,7 @@ jobs:
         if: matrix.goal != 'test' && steps.cache-primes.outputs.cache-hit != 'true'
         run: |
              set +e
-             source travis/${GAMOS}-before-install.sh
+             source ../.github/actions/${GAMOS}-before-install.sh
              echo "PATH=$PATH" >> $GITHUB_ENV # keep gnutoosl for MacOS
              echo "python=$python" >> $GITHUB_ENV
              echo "pip=$pip" >> $GITHUB_ENV
@@ -160,7 +160,7 @@ jobs:
         if: matrix.goal != 'test'
         run: |
              set +e
-             source travis/${GAMOS}-install.sh
+             source ../.github/actions/${GAMOS}-install.sh
              echo "gampath=$gampath" >> $GITHUB_ENV
              echo "gam=$gam" >> $GITHUB_ENV
              echo -e "GAM: ${gam}\nGAMPATH: ${gampath}\nGAMVERSION: ${GAMVERSION}"
@@ -203,7 +203,7 @@ jobs:
              $gam oauth refresh
              $gam info user
              export tstamp=$(date +%s%3N)
-             export newbase=travis-test-$JID-$tstamp
+             export newbase=gha-test-$JID-$tstamp
              export newuser=$newbase@pdl.jaylee.us
              export newgroup=$newbase-group@pdl.jaylee.us
              export newalias=$newbase-alias@pdl.jaylee.us
@@ -214,18 +214,18 @@ jobs:
              for i in {01..10}; do
                echo "${newbase}-bulkuser-$i" >> sample.csv;
              done
-             $gam create user $newuser firstname Travis lastname $JID password random recoveryphone 12125121110 recoveryemail jay0lee@gmail.com travis.jid $JID
-             $gam user $gam_user sendemail recipient $newuser subject "test message $newbase" message "Travis test message"
+             $gam create user $newuser firstname GHA lastname $JID password random recoveryphone 12125121110 recoveryemail jay0lee@gmail.com gha.jid $JID
+             $gam user $gam_user sendemail recipient $newuser subject "test message $newbase" message "GHA test message"
              $gam user $gam_user sendemail recipient exchange@pdl.jaylee.us subject "test ${tstamp}" message "test message"
-             $gam create group $newgroup name "Travis $JID group" description "This is a description" isarchived true
+             $gam create group $newgroup name "GHA $JID group" description "This is a description" isarchived true
              $gam user $newuser add license gsuitebusiness
              $gam update group $newgroup add owner $gam_user
              $gam update group $newgroup add member $newuser
-             $gam csv sample.csv gam create user ~~email~~ firstname "Travis Bulk" lastname ~~email~~ travis.jid $JID
+             $gam csv sample.csv gam create user ~~email~~ firstname "GHA Bulk" lastname ~~email~~ gha.jid $JID
              $gam csv sample.csv gam update user ~~email~~ recoveryphone 12125121110 recoveryemail jay0lee@gmail.com password random
              $gam csv sample.csv gam update user ~~email~~ recoveryphone "" recoveryemail ""
              $gam csv sample.csv gam user ~email add license gsuitebusiness
-             $gam csv sample.csv gam user $gam_user sendemail recipient ~~email~~@pdl.jaylee.us subject "test message $newbase" message "Travis test message"
+             $gam csv sample.csv gam user $gam_user sendemail recipient ~~email~~@pdl.jaylee.us subject "test message $newbase" message "GHA test message"
              $gam csv sample.csv gam update group $newgroup add member ~email
              $gam info group $newgroup
              $gam user $gam_user check serviceaccount
@@ -237,10 +237,10 @@ jobs:
              $gam user $newuser label "$biohazard unicode biohazard $biohazard"
              $gam user $newuser show labels
              $gam user $newuser show labels > labels.txt
-             $gam user $gam_user importemail subject "Travis import $newbase" message "This is a test import" labels IMPORTANT,UNREAD,INBOX,STARRED
-             $gam user $gam_user insertemail subject "Travis insert $newbase" file gam.py labels INBOX,UNREAD # yep body is gam code
-             $gam user $gam_user sendemail subject "Travis send $gam_user $newbase" file gam.py recipient admin@pdl.jaylee.us
-             $gam user $gam_user draftemail subject "Travis draft $newbase" message "Draft message test"
+             $gam user $gam_user importemail subject "GHA import $newbase" message "This is a test import" labels IMPORTANT,UNREAD,INBOX,STARRED
+             $gam user $gam_user insertemail subject "GHA insert $newbase" file gam.py labels INBOX,UNREAD # yep body is gam code
+             $gam user $gam_user sendemail subject "GHA send $gam_user $newbase" file gam.py recipient admin@pdl.jaylee.us
+             $gam user $gam_user draftemail subject "GHA draft $newbase" message "Draft message test"
              $gam users "$gam_user $newbase-bulkuser-01 $newbase-bulkuser-02 $newbase-bulkuser-03" delete messages query in:anywhere maxtodelete 99999 doit
              $gam users "$newbase-bulkuser-04 $newbase-bulkuser-05 $newbase-bulkuser-06" trash messages query in:anywhere maxtotrash 99999 doit
              # disabling as we see a lot of errors here
@@ -258,14 +258,14 @@ jobs:
              $gam calendar $gam_user add editor $newuser
              $gam calendar $gam_user showacl
              $gam calendar $gam_user printacl | $gam csv - gam calendar $gam_user delete id ~id
-             $gam calendar $gam_user addevent summary "Travis test event" start $(date '+%FT%T.%N%:z' -d "now + 1 hour") end $(date '+%FT%T.%N%:z' -d "now + 2 hours") attendee $newgroup hangoutsmeet guestscanmodify true sendupdates all
+             $gam calendar $gam_user addevent summary "GHA test event" start $(date '+%FT%T.%N%:z' -d "now + 1 hour") end $(date '+%FT%T.%N%:z' -d "now + 2 hours") attendee $newgroup hangoutsmeet guestscanmodify true sendupdates all
              $gam calendar $gam_user printevents after -0d
-             matterid=uid:$($gam create vaultmatter name "Travis matter $newbase" description "test matter" collaborators $newuser | head -1 | cut -d ' ' -f 3)
-             $gam create vaulthold matter $matterid name "Travis hold $newbase" corpus mail accounts $newuser
+             matterid=uid:$($gam create vaultmatter name "GHA matter $newbase" description "test matter" collaborators $newuser | head -1 | cut -d ' ' -f 3)
+             $gam create vaulthold matter $matterid name "GHA hold $newbase" corpus mail accounts $newuser
              $gam print vaultmatters matterstate open
              $gam print vaultholds matter $matterid
              $gam print vaultcount matter $matterid corpus mail everyone todrive
-             $gam create vaultexport matter $matterid name "Travis export $newbase" corpus mail accounts $newuser
+             $gam create vaultexport matter $matterid name "GHA export $newbase" corpus mail accounts $newuser
              $gam print exports matter $matterid | $gam csv - gam info export $matterid id:~~id~~
              $gam csv sample.csv gam user ~email add calendar id:$newresource
              $gam delete resource $newresource
@@ -277,11 +277,11 @@ jobs:
              $gam whatis $newuser
              $gam user $gam_user show tokens
              $gam print exports matter $matterid | $gam csv - gam download export $matterid id:~~id~~
-             $gam delete hold "Travis hold $newbase" matter $matterid
+             $gam delete hold "GHA hold $newbase" matter $matterid
              $gam update matter $matterid action close
              $gam update matter $matterid action delete
              $gam delete user $newuser
-             $gam print users query "travis.jid=$JID" | $gam csv - gam delete user ~primaryEmail
+             $gam print users query "gha.jid=$JID" | $gam csv - gam delete user ~primaryEmail
              $gam print mobile
              $gam print devices
              $gam print browsers
