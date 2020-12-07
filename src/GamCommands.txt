@@ -1163,7 +1163,7 @@ gam wipe deviceuser [id] <DeviceUserID>
 gam update deviceuserstate [id] <DeviceUserID>
 	[clientid <String>] [customid <String>] [assettags clear|<AssetTagList>]
 	[compliantstate|compliancestate compliant|noncompliant] [managedstate clear|managed|unmanaged]
-	[healthscore verypoor|poor|neutral|good|verygood] [scorereason clear|<String>]
+	[healthscore very_poor|poor|neutral|good|very_good] [scorereason clear|<String>]
 	(customvalue (bool <Boolean>)|(number <Integer>)|(string <String>))*
 
 gam print devices [todrive] [filter|query <QueryDevice>]
