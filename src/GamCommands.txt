@@ -141,6 +141,7 @@ If an item contains spaces, it should be surrounded by ".
 <ACLScope> ::= [user:]<EmailAddress>|group:<EmailAddress>|domain[:<DomainName>]|default
 <APIScopeURL> ::= <String>
 <ASPID> ::= <String>
+<AssetTag> ::= <String>
 <BuildingID> ::= <String>|id:<String>
 <CalendarACLRole> ::= editor|freebusy|freebusyreader|owner|reader|writer
 <CalendarACLRuleID> ::= user:<EmailAddress>|group:<EmailAddress>|domain:<DomainName>|default
@@ -554,6 +555,7 @@ Items, separated by spaces, with spaces, commas or single quotes in the items th
 <ACLList> ::= "<ACLScope>(,<ACLScope>)*"
 <APIScopeURLList> ::= "<APIScopeURL>(,<APIScopeURL>)*"
 <ASPIDList> ::= "<ASPID>(,<ASPID>)*"
+<AssetTagList> ::= "<AssetTag>(,<AssetTa>g)*"
 <CalendarList> ::= "<CalendarItem>(,<CalendarItem>)*"
 <ChatRoomList> ::= "<ChatRoom>(,<ChatRoom>)*"
 <CollaboratorItemList> ::= "<CollaboratorItem>(,<CollaboratorItem>)*"
@@ -1152,11 +1154,18 @@ gam info device [id] <DeviceID>
 gam delete device [id] <DeviceID>
 gam cancelwipe device [id] <DeviceID>
 gam wipe device [id] <DeviceID>
+
 gam approve deviceuser [id] <DeviceUserID>
 gam block deviceuser [id] <DeviceUserID>
 gam delete deviceuser [id] <DeviceUserID>
 gam cancelwipe deviceuser [id] <DeviceUserID>
 gam wipe deviceuser [id] <DeviceUserID>
+gam update deviceuserstate [id] <DeviceUserID>
+	[clientid <String>] [customid <String>] [assettags clear|<AssetTagList>]
+	[compliantstate|compliancestate compliant|noncompliant] [managedstate clear|managed|unmanaged]
+	[healthscore verypoor|poor|neutral|good|verygood] [scorereason clear|<String>]
+	(customvalue (bool <Boolean>)|(number <Integer>)|(string <String>))*
+
 gam print devices [todrive] [filter|query <QueryDevice>]
 	[orderby <DeviceOrderByFieldName> [ascending|descending]]
 	[company|personal|nocompanydevices|nopersonaldevices]

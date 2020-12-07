@@ -146,7 +146,7 @@ def update_state():
             client_id = f'{customer}-{sys.argv[i+1]}'
             i += 2
         elif myarg in ['assettag', 'assettags']:
-            body['assetTags'] = sys.argv[i+1].split(',')
+            body['assetTags'] = gam.shlexSplitList(sys.argv[i+1])
             if body['assetTags'] == ['clear']:
                 # TODO: this doesn't work to clear
                 # existing values. Figure out why.
@@ -176,21 +176,20 @@ def update_state():
                                                    sys.argv[i+1])
             i += 2
         elif myarg == 'customvalue':
-            allowed_types = ['boolValue', 'numberValue', 'stringValue']
-            value_type = f'{sys.argv[i+1].lower()}Value'
+            allowed_types = ['bool', 'number', 'string']
+            value_type = sys.argv[i+1].lower()
             if value_type not in allowed_types:
                 controlflow.expected_argument_exit('custom_value',
                                                    ', '.join(allowed_types),
                                                    sys.argv[i+1])
             key = sys.argv[i+2]
             value = sys.argv[i+3]
-            if value_type == 'boolValue':
+            if value_type == 'bool':
                 value = gam.getBoolean(value, key)
-            elif value_type == 'numberValue':
+            elif value_type == 'number':
                 value = int(value)
-            if 'keyValuePairs' not in body:
-                body['keyValuePairs'] = {}
-            body['keyValuePairs'][key] = {value_type: value}
+            body.setdefault('keyValuePairs', {})
+            body['keyValuePairs'][key] = {f'{value_type}Value': value}
             i += 4
         elif myarg in ['managedstate']:
             managed_states = gapi.get_enum_values_minus_unspecified(
