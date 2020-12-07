@@ -11225,6 +11225,8 @@ def ProcessGAMCommand(args):
                 gapi_directory_resource.getBuildingInfo()
             elif argument in ['device']:
                 gapi_cloudidentity_devices.info()
+            elif argument == 'deviceuserstate':
+                gapi_cloudidentity_devices.info_state()
             elif argument in ['browser', 'browsers']:
                 gapi_cbcm.info()
             else:
