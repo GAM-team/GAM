@@ -1,8 +1,7 @@
 name: Build and test GAM
 
 on:
-  push:
-    branches: [ master ]
+  on: [push, pull_request]
   schedule:
     - cron: '37 22 * * *'
 
