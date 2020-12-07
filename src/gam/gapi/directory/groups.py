@@ -15,6 +15,10 @@ def GroupIsAbuseOrPostmaster(emailAddr):
     return emailAddr.startswith('abuse@') or emailAddr.startswith('postmaster@')
 
 
+def mapGroupEmailForSettings(emailAddr):
+  return emailAddr.replace('/', '%2F')
+
+
 def create():
     cd = gapi_directory.build()
     body = {'email': gam.normalizeEmailAddressOrUID(sys.argv[3], noUid=True)}
@@ -67,7 +71,7 @@ def create():
                     gapi_errors.ErrorReason.SERVICE_LIMIT,
                     gapi_errors.ErrorReason.NOT_FOUND
                 ],
-                groupUniqueId=body['email'],
+                groupUniqueId=mapGroupEmailForSettings(body['email']),
                 fields='*')
             if current_settings is not None:
                 gs_body = dict(
@@ -75,7 +79,7 @@ def create():
         if gs_body:
             gapi.call(gs.groups(),
                       'update',
-                      groupUniqueId=body['email'],
+                      groupUniqueId=mapGroupEmailForSettings(body['email']),
                       retry_reasons=[
                           gapi_errors.ErrorReason.SERVICE_LIMIT,
                           gapi_errors.ErrorReason.NOT_FOUND
@@ -170,7 +174,7 @@ def info(group_name=None):
                 'get',
                 throw_reasons=[gapi_errors.ErrorReason.AUTH_ERROR],
                 retry_reasons=[gapi_errors.ErrorReason.SERVICE_LIMIT],
-                groupUniqueId=basic_info['email']
+                groupUniqueId=mapGroupEmailForSettings(basic_info['email'])
             )  # Use email address retrieved from cd since GS API doesn't support uid
             if settings is None:
                 settings = {}
@@ -589,7 +593,7 @@ def print_():
                                      gapi_errors.ErrorReason.SERVICE_LIMIT,
                                      gapi_errors.ErrorReason.INVALID
                                  ],
-                                 groupUniqueId=groupEmail,
+                                 groupUniqueId=mapGroupEmailForSettings(groupEmail),
                                  fields=gsfields)
             if settings:
                 for key in settings:
@@ -1174,7 +1178,7 @@ def update():
                         gs.groups(),
                         'get',
                         retry_reasons=[gapi_errors.ErrorReason.SERVICE_LIMIT],
-                        groupUniqueId=group,
+                        groupUniqueId=mapGroupEmailForSettings(group),
                         fields='*')
                     if current_settings is not None:
                         gs_body = dict(
@@ -1185,7 +1189,7 @@ def update():
                         gs.groups(),
                         'update',
                         retry_reasons=[gapi_errors.ErrorReason.SERVICE_LIMIT],
-                        groupUniqueId=group,
+                        groupUniqueId=mapGroupEmailForSettings(group),
                         body=gs_body)
         print(f'updated group {group}')
 

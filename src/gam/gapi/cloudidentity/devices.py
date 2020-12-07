@@ -135,12 +135,14 @@ def update_state():
     client_id = f'{customer}-gam'
     body = {}
     i = 3
+    deviceuser = sys.argv[i]
+    if deviceuser == 'id':
+        i += 1
+        deviceuser = sys.argv[i]
+    i += 1
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
-        if myarg == 'id':
-            deviceuser = sys.argv[i+1]
-            i += 2
-        elif myarg == 'clientid':
+        if myarg == 'clientid':
             client_id = f'{customer}-{sys.argv[i+1]}'
             i += 2
         elif myarg in ['assettag', 'assettags']:
