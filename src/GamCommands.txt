@@ -1172,9 +1172,9 @@ gam delete deviceuser [id] <DeviceUserID>
 gam cancelwipe deviceuser [id] <DeviceUserID>
 gam wipe deviceuser [id] <DeviceUserID>
 
-gam info deviceuserstate [id] <DeviceUserID>
-gam update deviceuserstate [id] <DeviceUserID>
-	[clientid <String>] [customid <String>] [assettags clear|<AssetTagList>]
+gam info deviceuserstate [id] <DeviceUserID> [clientid <String>]
+gam update deviceuserstate [id] <DeviceUserID> [clientid <String>]
+	[customid <String>] [assettags clear|<AssetTagList>]
 	[compliantstate|compliancestate compliant|noncompliant] [managedstate clear|managed|unmanaged]
 	[healthscore very_poor|poor|neutral|good|very_good] [scorereason clear|<String>]
 	(customvalue (bool <Boolean>)|(number <Integer>)|(string <String>))*
