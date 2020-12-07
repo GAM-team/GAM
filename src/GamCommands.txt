@@ -1154,18 +1154,6 @@ gam info device [id] <DeviceID>
 gam delete device [id] <DeviceID>
 gam cancelwipe device [id] <DeviceID>
 gam wipe device [id] <DeviceID>
-
-gam approve deviceuser [id] <DeviceUserID>
-gam block deviceuser [id] <DeviceUserID>
-gam delete deviceuser [id] <DeviceUserID>
-gam cancelwipe deviceuser [id] <DeviceUserID>
-gam wipe deviceuser [id] <DeviceUserID>
-gam update deviceuserstate [id] <DeviceUserID>
-	[clientid <String>] [customid <String>] [assettags clear|<AssetTagList>]
-	[compliantstate|compliancestate compliant|noncompliant] [managedstate clear|managed|unmanaged]
-	[healthscore very_poor|poor|neutral|good|very_good] [scorereason clear|<String>]
-	(customvalue (bool <Boolean>)|(number <Integer>)|(string <String>))*
-
 gam print devices [todrive] [filter|query <QueryDevice>]
 	[orderby <DeviceOrderByFieldName> [ascending|descending]]
 	[company|personal|nocompanydevices|nopersonaldevices]
@@ -1177,6 +1165,19 @@ gam sync devices [filter|query <QueryDevice>]
 	[assettag_column <String>]
 	[unassigned_missing_action delete|wipe|donothing]
 	[assigned_missing_action delete|wipe|donothing]
+
+gam approve deviceuser [id] <DeviceUserID>
+gam block deviceuser [id] <DeviceUserID>
+gam delete deviceuser [id] <DeviceUserID>
+gam cancelwipe deviceuser [id] <DeviceUserID>
+gam wipe deviceuser [id] <DeviceUserID>
+
+gam info deviceuserstate [id] <DeviceUserID>
+gam update deviceuserstate [id] <DeviceUserID>
+	[clientid <String>] [customid <String>] [assettags clear|<AssetTagList>]
+	[compliantstate|compliancestate compliant|noncompliant] [managedstate clear|managed|unmanaged]
+	[healthscore very_poor|poor|neutral|good|very_good] [scorereason clear|<String>]
+	(customvalue (bool <Boolean>)|(number <Integer>)|(string <String>))*
 
 gam update mobile <MobileID>|query:<QueryMobile> action <MobileAction> [doit] [if_users|match_users <UserTypeEntity>]
 gam delete mobile <MobileID>

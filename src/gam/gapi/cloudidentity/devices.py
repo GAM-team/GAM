@@ -128,22 +128,47 @@ def wipe_user():
     _generic_action('wipe', True)
 
 
-def update_state():
+def _get_deviceuser_name():
+    i = 3
+    name = sys.argv[i]
+    if name == 'id':
+        i += 1
+        name = sys.argv[i]
+    if not name.startswith('devices/'):
+        name = f'devices/{name}'
+    return (i+1, name)
+
+def info_state():
     ci = gapi_cloudidentity.build_dwd()
     gapi_directory_customer.setTrueCustomerId()
-    customer = _get_device_customerid()[10:]
-    client_id = f'{customer}-gam'
-    body = {}
-    i = 3
-    deviceuser = sys.argv[i]
-    if deviceuser == 'id':
-        i += 1
-        deviceuser = sys.argv[i]
-    i += 1
+    customer = _get_device_customerid()
+    customer_id = customer[10:]
+    client_id = f'{customer_id}-gam'
+    i, deviceuser = _get_deviceuser_name()
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
         if myarg == 'clientid':
-            client_id = f'{customer}-{sys.argv[i+1]}'
+            client_id = f'{customer_id}-{sys.argv[i+1]}'
+            i += 2
+        else:
+            controlflow.invalid_argument_exit(sys.argv[i], 'gam info deviceuserstate')
+    result = gapi.call(ci.devices().deviceUsers().clientStates(), 'get',
+                       name=f'{deviceuser}/clientStates/{client_id}', customer=customer)
+    display.print_json(result)
+
+
+def update_state():
+    ci = gapi_cloudidentity.build_dwd()
+    gapi_directory_customer.setTrueCustomerId()
+    customer = _get_device_customerid()
+    customer_id = customer[10:]
+    client_id = f'{customer_id}-gam'
+    body = {}
+    i, deviceuser = _get_deviceuser_name()
+    while i < len(sys.argv):
+        myarg = sys.argv[i].lower().replace('_', '')
+        if myarg == 'clientid':
+            client_id = f'{customer_id}-{sys.argv[i+1]}'
             i += 2
         elif myarg in ['assettag', 'assettags']:
             body['assetTags'] = gam.shlexSplitList(sys.argv[i+1])
@@ -209,10 +234,9 @@ def update_state():
             i += 2
         else:
             controlflow.invalid_argument_exit(sys.argv[i], 'gam update deviceuserstate')
-    name = f'{deviceuser}/clientStates/{client_id}'
-    updateMask = ','.join(body.keys())
     result = gapi.call(ci.devices().deviceUsers().clientStates(), 'patch',
-     name=name, customer=f'customers/{customer}', updateMask=updateMask, body=body)
+                       name=f'{deviceuser}/clientStates/{client_id}', customer=customer,
+                       updateMask=','.join(body.keys()), body=body)
     display.print_json(result)
 
 
