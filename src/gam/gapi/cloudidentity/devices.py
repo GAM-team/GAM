@@ -152,8 +152,9 @@ def info_state():
             i += 2
         else:
             controlflow.invalid_argument_exit(sys.argv[i], 'gam info deviceuserstate')
+    name = f'{deviceuser}/clientStates/{client_id}'
     result = gapi.call(ci.devices().deviceUsers().clientStates(), 'get',
-                       name=f'{deviceuser}/clientStates/{client_id}', customer=customer)
+                       name=name, customer=customer)
     display.print_json(result)
 
 
@@ -234,9 +235,10 @@ def update_state():
             i += 2
         else:
             controlflow.invalid_argument_exit(sys.argv[i], 'gam update deviceuserstate')
+    name = f'{deviceuser}/clientStates/{client_id}'
+    updateMask = ','.join(body.keys())
     result = gapi.call(ci.devices().deviceUsers().clientStates(), 'patch',
-                       name=f'{deviceuser}/clientStates/{client_id}', customer=customer,
-                       updateMask=','.join(body.keys()), body=body)
+                       name=name, customer=customer, updateMask=updateMask, body=body)
     display.print_json(result)
 
 
