@@ -4,6 +4,7 @@ echo "Xcode versionn:"
 xcodebuild -version
 export gampath=dist/gam
 rm -rf $gampath
+export DYLD_LIBRARY_PATH="/Library/Frameworks/Python.framework/Versions/3.9/lib:$DYLD_LIBRARY_PATH"
 export DYLD_PRINT_LIBRARIES=YES
 $python ./gam.py version extended
 unset DYLD_PRINT_LIBRARIES
