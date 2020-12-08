@@ -17,7 +17,8 @@ env:
   BUILD_OPENSSL_VERSION: "1.1.1h"
   MIN_OPENSSL_VERSION: "1.1.1g"
   PATCHELF_VERSION: "0.12"
-  PYINSTALLER_COMMIT: "61d846d46bdc8b6d926bb57ae05e6c9bb884a144"
+  #PYINSTALLER_COMMIT: "61d846d46bdc8b6d926bb57ae05e6c9bb884a144"
+  PYINSTALLER_VERSION: "4.1"
 
 jobs:
   build:
@@ -130,26 +131,26 @@ jobs:
         run: |
              set +e
              source ../.github/actions/${GAMOS}-before-install.sh
-             echo "PATH=$PATH" >> $GITHUB_ENV # keep gnutoosl for MacOS
+             echo "PATH=$PATH" >> $GITHUB_ENV # keep gnutools for MacOS
              echo "python=$python" >> $GITHUB_ENV
              echo "pip=$pip" >> $GITHUB_ENV
              echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" >> $GITHUB_ENV
              echo -e "Python: $python\nPip: $pip\nLD_LIB...: $LD_LIBRARY_PATH"
-             #export url="https://codeload.github.com/pyinstaller/pyinstaller/tar.gz/${PYINSTALLER_COMMIT}"
-             #echo "Downloading ${url}"
-             #curl -o pyinstaller.tar.gz --compressed "${url}"
-             #tar xf pyinstaller.tar.gz
+             export url="https://codeload.github.com/pyinstaller/pyinstaller/tar.gz/v${PYINSTALLER_VERSION}"
+             echo "Downloading ${url}"
+             curl -o pyinstaller.tar.gz --compressed "${url}"
+             tar xf "v${PYINSTALLER_VERSION}.tar.gz"
              #mv "pyinstaller-${PYINSTALLER_COMMIT}" pyinstaller
-             #cd pyinstaller/bootloader
-             #if [ "${PLATFORM}" == "x86" ]; then
-             #  BITS="32"
-             #else
-             #  BITS="64"
-             #fi
-             #$python ./waf all --target-arch=${BITS}bit
-             #cd ..
-             #$python setup.py install
-             $pip install pyinstaller
+             cd "pyinstaller-${PYINSTALLER_VERSION}/bootloader"
+             if [ "${PLATFORM}" == "x86" ]; then
+               BITS="32"
+             else
+               BITS="64"
+             fi
+             $python ./waf all --target-arch=${BITS}bit
+             cd ..
+             $python setup.py install
+             #$pip install pyinstaller
 
       - name: Install pip requirements
         run: |
