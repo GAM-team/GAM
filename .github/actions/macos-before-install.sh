@@ -21,7 +21,7 @@ bash --version
 cd ~
 
 #brew install python@3.9
-wget https://www.python.org/ftp/python/3.9.1/python-3.9.1-macosx10.9.pkg
+wget https://www.python.org/ftp/python/3.9.0/python-3.9.0-macosx10.9.pkg
 echo "installing..."
 sudo installer -pkg ./python-3.9.1-macosx10.9.pkg -target /
 which python3
