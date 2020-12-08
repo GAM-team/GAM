@@ -38,10 +38,13 @@ brew install python@3.9
 
 cd ~
 
-export LD_LIBRARY_PATH=~/ssl/lib:~/python/lib
-export openssl=~/ssl/bin/openssl
-export python=~/python/bin/python3
-export pip=~/python/bin/pip3
+#export LD_LIBRARY_PATH=~/ssl/lib:~/python/lib
+#export openssl=~/ssl/bin/openssl
+#export python=~/python/bin/python3
+#export pip=~/python/bin/pip3
+
+export python=$(which python3)
+export pip=$(which pip3)
 SSLVER=$($openssl version)
 SSLRESULT=$?
 PYVER=$($python -V)
