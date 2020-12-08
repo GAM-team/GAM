@@ -12,6 +12,7 @@ brew install coreutils
 brew install bash
 
 # prefer standard GNU tools like date over MacOS defaults
+export OLDPATH=$PATH
 export PATH="/usr/local/opt/coreutils/libexec/gnubin:$(brew --prefix)/opt/gnu-tar/libexec/gnubin:$PATH"
 
 date --version
@@ -23,7 +24,7 @@ cd ~
 #brew install python@3.9
 wget https://www.python.org/ftp/python/3.9.0/python-3.9.0-macosx10.9.pkg
 echo "installing..."
-sudo installer -pkg ./python-3.9.1-macosx10.9.pkg -target /
+sudo installer -pkg ./python-3.9.0-macosx10.9.pkg -target /
 which python3
 export p3=$(which python3)
 $p3 -V
@@ -49,14 +50,14 @@ cd ~
 #export python=~/python/bin/python3
 #export pip=~/python/bin/pip3
 
-export python=$(which python3)
-export pip=$(which pip3)
+export python=/usr/local/bin/python3
+export pip=/usr/local/bin/pip3
 SSLVER=$($openssl version)
 SSLRESULT=$?
 PYVER=$($python -V)
 PYRESULT=$?
 
-wget --quiet https://www.python.org/ftp/python/$BUILD_PYTHON_VERSION/python-$BUILD_PYTHON_VERSION-macosx10.9.pkg
+#wget --quiet https://www.python.org/ftp/python/$BUILD_PYTHON_VERSION/python-$BUILD_PYTHON_VERSION-macosx10.9.pkg
 
 #if [ $SSLRESULT -ne 0 ] || [[ "$SSLVER" != "OpenSSL $BUILD_OPENSSL_VERSION "* ]] || [ $PYRESULT -ne 0 ] || [[ "$PYVER" != "Python $BUILD_PYTHON_VERSION"* ]]; then
 #  echo "SSL Result: $SSLRESULT - SSL Ver: $SSLVER - Py Result: $PYRESULT - Py Ver: $PYVER"
