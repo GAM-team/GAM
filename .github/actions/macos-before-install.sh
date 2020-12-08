@@ -20,10 +20,14 @@ bash --version
 
 cd ~
 
-#brew install python@3.9
-wget https://www.python.org/ftp/python/3.9.0/python-3.9.0-macosx10.9.pkg
-echo "installing..."
-sudo installer -pkg ./python-3.9.0-macosx10.9.pkg -target /
+# Use official Python.org version of Python which is backwards compatible
+# with older MacOS versions
+wget https://www.python.org/ftp/python/$BUILD_PYTHON_VERSION/python-$BUILD_PYTHON_VERSION-macosx10.9.pkg
+echo "installing Python $BUILD_PYTHON_VERSION..."
+sudo installer -pkg ./python-$BUILD_PYTHON_VERSION-macosx10.9.pkg -target /
+
+# This fixes https://github.com/pyinstaller/pyinstaller/issues/5062
+codesign --remove-signature /Library/Frameworks/Python.framework/Versions/3.9/Python
 
 #if [ ! -f python-$MIN_PYTHON_VERSION-macosx10.9.pkg ]; then
 #  wget --quiet https://www.python.org/ftp/python/$MIN_PYTHON_VERSION/python-$MIN_PYTHON_VERSION-macosx10.9.pkg
