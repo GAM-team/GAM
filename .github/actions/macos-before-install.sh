@@ -20,7 +20,13 @@ bash --version
 
 cd ~
 
-brew install python@3.9
+#brew install python@3.9
+wget https://www.python.org/ftp/python/3.9.1/python-3.9.1-macosx10.9.pkg
+echo "installing..."
+sudo installer -pkg ./python-3.9.1-macosx10.9.pkg -target /
+which python3
+export p3=$(which python3)
+$p3 -V
 
 #if [ ! -f python-$MIN_PYTHON_VERSION-macosx10.9.pkg ]; then
 #  wget --quiet https://www.python.org/ftp/python/$MIN_PYTHON_VERSION/python-$MIN_PYTHON_VERSION-macosx10.9.pkg
