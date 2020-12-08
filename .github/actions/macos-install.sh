@@ -4,12 +4,10 @@ echo "Xcode versionn:"
 xcodebuild -version
 export gampath=dist/gam
 rm -rf $gampath
-brew uninstall --ignore-dependencies openssl@1.1
 export DYLD_PRINT_LIBRARIES=YES
 $python ./gam.py version extended
 unset DYLD_PRINT_LIBRARIES
 $python -OO -m PyInstaller --clean --noupx --strip -F --distpath $gampath gam.spec
-brew install openssl@1.1
 export gam="$gampath/gam"
 $gam version extended
 export GAMVERSION=`$gam version simple`
