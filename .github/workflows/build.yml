@@ -91,7 +91,7 @@ jobs:
           path: |
             ~/python
             ~/ssl
-          key: ${{ matrix.os }}-${{ matrix.jid }}-20201207
+          key: ${{ matrix.os }}-${{ matrix.jid }}-20201207-1
 
       - name: Set env variables
         env:
@@ -135,20 +135,21 @@ jobs:
              echo "pip=$pip" >> $GITHUB_ENV
              echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" >> $GITHUB_ENV
              echo -e "Python: $python\nPip: $pip\nLD_LIB...: $LD_LIBRARY_PATH"
-             export url="https://codeload.github.com/pyinstaller/pyinstaller/tar.gz/${PYINSTALLER_COMMIT}"
-             echo "Downloading ${url}"
-             curl -o pyinstaller.tar.gz --compressed "${url}"
-             tar xf pyinstaller.tar.gz
-             mv "pyinstaller-${PYINSTALLER_COMMIT}" pyinstaller
-             cd pyinstaller/bootloader
-             if [ "${PLATFORM}" == "x86" ]; then
-               BITS="32"
-             else
-               BITS="64"
-             fi
-             $python ./waf all --target-arch=${BITS}bit
-             cd ..
-             $python setup.py install
+             #export url="https://codeload.github.com/pyinstaller/pyinstaller/tar.gz/${PYINSTALLER_COMMIT}"
+             #echo "Downloading ${url}"
+             #curl -o pyinstaller.tar.gz --compressed "${url}"
+             #tar xf pyinstaller.tar.gz
+             #mv "pyinstaller-${PYINSTALLER_COMMIT}" pyinstaller
+             #cd pyinstaller/bootloader
+             #if [ "${PLATFORM}" == "x86" ]; then
+             #  BITS="32"
+             #else
+             #  BITS="64"
+             #fi
+             #$python ./waf all --target-arch=${BITS}bit
+             #cd ..
+             #$python setup.py install
+             $pip install pyinstaller
 
       - name: Install pip requirements
         run: |
