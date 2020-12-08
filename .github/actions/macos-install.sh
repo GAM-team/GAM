@@ -4,13 +4,8 @@ echo "Xcode versionn:"
 xcodebuild -version
 export gampath=dist/gam
 rm -rf $gampath
-export DYLD_PRINT_LIBRARIES=YES
-$python ./gam.py version extended
-unset DYLD_PRINT_LIBRARIES
-codesign --remove-signature /Library/Frameworks/Python.framework/Versions/3.9/Python
 $python -OO -m PyInstaller --clean --noupx --strip -F --distpath $gampath gam.spec
 export gam="$gampath/gam"
-codesign --remove-signature $gam
 $gam version extended
 export GAMVERSION=`$gam version simple`
 cp LICENSE $gampath
