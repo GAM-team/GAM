@@ -9,6 +9,7 @@ $python ./gam.py version extended
 unset DYLD_PRINT_LIBRARIES
 $python -OO -m PyInstaller --clean --noupx --strip -F --distpath $gampath gam.spec
 export gam="$gampath/gam"
+codesign --remove-signature $gam
 $gam version extended
 export GAMVERSION=`$gam version simple`
 cp LICENSE $gampath
