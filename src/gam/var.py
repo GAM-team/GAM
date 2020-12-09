@@ -266,6 +266,7 @@ API_VER_MAPPING = {
     'cloudidentity_beta': 'v1beta1',
     'cloudresourcemanager': 'v2',
     'cloudresourcemanagerv1': 'v1',
+    'contactdelegation': 'v1',
     'datatransfer': 'datatransfer_v1',
     'directory': 'directory_v1',
     'drive': 'v2',

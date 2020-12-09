@@ -53,6 +53,7 @@ from gam.gapi import cloudidentity as gapi_cloudidentity
 from gam.gapi import cbcm as gapi_cbcm
 from gam.gapi.cloudidentity import devices as gapi_cloudidentity_devices
 from gam.gapi.cloudidentity import groups as gapi_cloudidentity_groups
+from gam.gapi import contactdelegation as gapi_contactdelegation
 from gam.gapi.directory import asps as gapi_directory_asps
 from gam.gapi.directory import cros as gapi_directory_cros
 from gam.gapi.directory import customer as gapi_directory_customer
@@ -10216,13 +10217,17 @@ OAUTH2_SCOPES = [
         'scopes': 'https://www.googleapis.com/auth/cloud-identity.groups'
     },
     {
+        'name': 'Contact Delegation',
+        'subscopes': ['readonly'],
+        'scopes': 'https://www.googleapis.com/auth/admin.contact.delegation'
+    },
+    {
         'name': 'Data Transfer API',
         'subscopes': ['readonly'],
         'scopes': 'https://www.googleapis.com/auth/admin.datatransfer'
     },
     {
-        'name':
-            'Directory API - Chrome OS Devices',
+        'name': 'Directory API - Chrome OS Devices',
         'subscopes': ['readonly'],
         'scopes':
             'https://www.googleapis.com/auth/admin.directory.device.chromeos'
@@ -11597,6 +11602,8 @@ def ProcessGAMCommand(args):
                 printShowTeamDrives(users, False)
             elif showWhat in ['teamdriveinfo']:
                 doGetTeamDriveInfo(users)
+            elif showWhat in ['contactdelegation']:
+                gapi_contactdelegation.print_(users)
             else:
                 controlflow.invalid_argument_exit(showWhat, 'gam <users> show')
         elif command == 'print':
@@ -11625,6 +11632,8 @@ def ProcessGAMCommand(args):
                 printShowTokens(5, 'users', users, True)
             elif printWhat in ['teamdrive', 'teamdrives']:
                 printShowTeamDrives(users, True)
+            elif printWhat in ['contactdelegation']:
+                gapi_contactdelegation.print_(users)
             else:
                 controlflow.invalid_argument_exit(printWhat,
                                                   'gam <users> print')
@@ -11705,6 +11714,8 @@ def ProcessGAMCommand(args):
                 deleteSmime(users)
             elif delWhat == 'teamdrive':
                 doDeleteTeamDrive(users)
+            elif delWhat == 'contactdelegate':
+                gapi_contactdelegation.delete(users)
             else:
                 controlflow.invalid_argument_exit(delWhat, 'gam <users> delete')
         elif command in ['add', 'create']:
@@ -11737,6 +11748,8 @@ def ProcessGAMCommand(args):
                 addSmime(users)
             elif addWhat == 'teamdrive':
                 doCreateTeamDrive(users)
+            elif addWhat == 'contactdelegation':
+                gapi_contactdelegation.create(users)
             else:
                 controlflow.invalid_argument_exit(addWhat,
                                                   f'gam <users> {command}')
