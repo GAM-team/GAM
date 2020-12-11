@@ -176,7 +176,7 @@ attributes = {
 def update():
     cbcm = build()
     device_id = sys.argv[3]
-    body = {'deviceId': device_id}
+    body = {}
     i = 4
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
@@ -186,7 +186,12 @@ def update():
         else:
             controlflow.invalid_argument_exit(sys.argv[i],
                                               'gam update browser')
+    browser = gapi.call(cbcm.chromebrowsers(), 'get', deviceId=device_id,
+                        customer=GC_Values[GC_CUSTOMER_ID],
+                        projection='BASIC',
+                        fields='deviceId,annotatedAssetId,annotatedLocation,annotatedNotes,annotatedUser')
+    browser.update(body)
     result = gapi.call(cbcm.chromebrowsers(), 'update', deviceId=device_id,
-                       customer=GC_Values[GC_CUSTOMER_ID], body=body,
+                       customer=GC_Values[GC_CUSTOMER_ID], body=browser,
                        projection='BASIC', fields="deviceId")
     print(f'Updated browser {result["deviceId"]}')
