@@ -172,6 +172,7 @@ attributes = {
     'notes': 'annotatedNotes',
     'user': 'annotatedUser'
     }
+attribute_fields = ','.join(list(attributes.values()))
 
 def update():
     cbcm = build()
@@ -186,7 +187,11 @@ def update():
         else:
             controlflow.invalid_argument_exit(sys.argv[i],
                                               'gam update browser')
+    browser = gapi.call(cbcm.chromebrowsers(), 'get', deviceId=device_id,
+                        customer=GC_Values[GC_CUSTOMER_ID],
+                        projection='BASIC', fields=attribute_fields)
+    browser.update(body)
     result = gapi.call(cbcm.chromebrowsers(), 'update', deviceId=device_id,
-                       customer=GC_Values[GC_CUSTOMER_ID], body=body,
+                       customer=GC_Values[GC_CUSTOMER_ID], body=browser,
                        projection='BASIC', fields="deviceId")
     print(f'Updated browser {result["deviceId"]}')
