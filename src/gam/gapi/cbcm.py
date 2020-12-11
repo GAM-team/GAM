@@ -103,12 +103,12 @@ def move():
             i += 2
         else:
             controlflow.invalid_argument_exit(sys.argv[i],
-                                              'gam update browsers')
+                                              'gam move browsers')
     if 'org_unit_path' not in body:
-        controlflow.missing_argument_exit('ou', 'gam update browsers')
+        controlflow.missing_argument_exit('ou', 'gam move browsers')
     elif not resource_ids:
         controlflow.missing_argument_exit('query or ids',
-                                          'gam update browsers')
+                                          'gam move browsers')
     # split moves into max 600 devices per batch
     for chunk in range(0, len(resource_ids), batch_size):
         body['resource_ids'] = resource_ids[chunk:chunk + batch_size]
