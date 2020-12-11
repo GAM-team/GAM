@@ -103,12 +103,12 @@ def move():
             i += 2
         else:
             controlflow.invalid_argument_exit(sys.argv[i],
-                                              'gam update browsers')
+                                              'gam move browsers')
     if 'org_unit_path' not in body:
-        controlflow.missing_argument_exit('ou', 'gam update browsers')
+        controlflow.missing_argument_exit('ou', 'gam move browsers')
     elif not resource_ids:
         controlflow.missing_argument_exit('query or ids',
-                                          'gam update browsers')
+                                          'gam move browsers')
     # split moves into max 600 devices per batch
     for chunk in range(0, len(resource_ids), batch_size):
         body['resource_ids'] = resource_ids[chunk:chunk + batch_size]
@@ -166,21 +166,26 @@ def print_():
         display.sort_csv_titles(['name',], titles)
     display.write_csv_file(csv_rows, titles, 'Browsers', todrive)
 
+attributes = {
+    'assetid': 'annotatedAssetId',
+    'location': 'annotatedLocation',
+    'notes': 'annotatedNotes',
+    'user': 'annotatedUser'
+    }
+
 def update():
     cbcm = build()
     device_id = sys.argv[3]
     body = {'deviceId': device_id}
-    attributes = ['user', 'location', 'notes', 'assetid']
     i = 4
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
         if myarg in attributes:
-            attribute = f'annotated{myarg.capitalize()}'
-            body[attribute] = sys.argv[i+1]
+            body[attributes[myarg]] = sys.argv[i+1]
             i += 2
         else:
             controlflow.invalid_argument_exit(sys.argv[i],
-                                              'gam print browsers')
+                                              'gam update browser')
     result = gapi.call(cbcm.chromebrowsers(), 'update', deviceId=device_id,
                        customer=GC_Values[GC_CUSTOMER_ID], body=body,
                        projection='BASIC', fields="deviceId")
