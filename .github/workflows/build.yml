@@ -41,13 +41,11 @@ jobs:
             goal: "build"
             gamos: "linux"
             platform: "x86_64"
-          - os: ubuntu-18.04
-            arch: "aarch64"
+          - arch: "aarch64"
             distro: "stretch"
             gamos: "linux"
             platform: "aarch64"
-          - os: ubuntu-18.04
-            arch: "armv6"
+          - arch: "armv6"
             distro: "jessie"
             gamos: "linux"
             platform: "armv6"
@@ -101,7 +99,7 @@ jobs:
         id: build
         with:
           arch: ${{ matrix.arch }}
-          distro: ${{ matrix.os }}
+          distro: ${{ matrix.distro }}
 
           # Not required, but speeds up builds
           githubToken: ${{ github.token }}
