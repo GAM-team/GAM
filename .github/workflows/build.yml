@@ -41,6 +41,14 @@ jobs:
             goal: "build"
             gamos: "linux"
             platform: "x86_64"
+          - os: ubuntu-18.04
+            arch: "aarch64"
+            gamos: "linux"
+            platform: "aarch64"
+          - os: ubuntu-18.04
+            arch: "armv6"
+            gamos: "linux"
+            platform: "armv6"
           - os: macos-10.15
             jid: 4
             goal: "build"
@@ -85,6 +93,58 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
 
+      - uses: uraimo/run-on-arch-action@v2.0.5
+        if: platform == "armv6" || "platform" == "aarch64"
+        name: Build artifact
+        id: build
+        with:
+          arch: ${{ matrix.arch }}
+          distro: ${{ matrix.os }}
+
+          # Not required, but speeds up builds
+          githubToken: ${{ github.token }}
+
+          # Create an artifacts directory
+          setup: |
+            mkdir -p "${PWD}/artifacts"
+
+          # Mount the artifacts directory as /artifacts in the container
+          dockerRunArgs: |
+            --volume "${PWD}/artifacts:/artifacts"
+
+          # Pass some environment variables to the container
+          env: | # YAML, but pipe character is necessary
+            artifact_name: git-${{ matrix.distro }}_${{ matrix.arch }}
+
+          # The shell to run commands with in the container
+          shell: /bin/sh
+
+          # Install some dependencies in the container. This speeds up builds if
+          # you are also using githubToken. Any dependencies installed here will
+          # be part of the container image that gets cached, so subsequent
+          # builds don't have to re-install them. The image layer is cached
+          # publicly in your project's package repository, so it is vital that
+          # no secrets are present in the container state or logs.
+          install: |
+            case "${{ matrix.distro }}" in
+              ubuntu*|jessie|stretch|buster)
+                apt-get update -q -y
+                apt-get install -q -y git
+                ;;
+              fedora*)
+                dnf -y update
+                dnf -y install git which
+                ;;
+              alpine*)
+                apk update
+                apk add git
+                ;;
+            esac
+
+          # Produce a binary artifact and place it in the mounted volume
+          run: |
+            uname -a
+
       - name: Cache multiple paths
         uses: actions/cache@v2
         if: matrix.goal != 'test'
@@ -105,6 +165,7 @@ jobs:
           echo "GOAL=${GOAL}" >> $GITHUB_ENV
           echo "JID=${JID}" >> $GITHUB_ENV
           echo "PLATFORM=${PLATFORM}" >> $GITHUB_ENV
+          uname -a
 
       - name: Use pre-compiled Python for testing and Windows
         if: matrix.python != ''
