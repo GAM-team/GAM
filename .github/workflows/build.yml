@@ -43,10 +43,12 @@ jobs:
             platform: "x86_64"
           - os: ubuntu-18.04
             arch: "aarch64"
+            distro: "stretch"
             gamos: "linux"
             platform: "aarch64"
           - os: ubuntu-18.04
             arch: "armv6"
+            distro: "jessie"
             gamos: "linux"
             platform: "armv6"
           - os: macos-10.15
