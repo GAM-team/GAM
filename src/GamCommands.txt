@@ -1437,9 +1437,10 @@ gam <UserTypeEntity> delete|del delegate|delegates <EmailAddress>
 gam <UserTypeEntity> show delegates|delegate [csv]
 gam <UserTypeEntity> print delegates [todrive]
 
-gam <UserTypeEntity> create|add contactdelegation <EmailAddress>
-gam <UserTypeEntity> delete|del contactdelegation <EmailAddress>
-gam <UserTypeEntity> print|show contactdelegation [todrive]
+gam <UserTypeEntity> create|add contactdelegate <EmailAddress>
+gam <UserTypeEntity> delete|del contactdelegate <EmailAddress>
+gam <UserTypeEntity> show contactdelegates [csv]
+gam <UserTypeEntity> print contactdelegates [todrive]
 
 gam <UserTypeEntity> [create|add] filter [from <EmailAddress>] [to <EmailAddress>] [subject <String>] [haswords|query <List>] [nowords|negatedquery <List>] [musthaveattachment|hasattachment] [excludechats] [size larger|smaller <ByteCount>]
 	[label <LabelID>] [important|notimportant] [star] [trash] [markread] [archive] [neverspam] [forward <EmailAddress>]
