@@ -1,7 +1,5 @@
 """Contact Delegation API calls"""
 
-import csv
-import os.path
 import sys
 
 import gam
@@ -25,7 +23,6 @@ def create(users):
         print(
             f'Granting {delegate} contact delegate access to {user}{gam.currentCount(i, count)}'
         )
-        body
         gapi.call(condel.delegates(),
                   'create',
                   soft_errors=True,
@@ -52,10 +49,10 @@ def delete(users):
 
 def print_(users):
     condel = build()
-    titles = ['user', 'delegate']
+    titles = ['User', 'delegateAddress']
     csv_rows = []
     todrive = False
-    i = 5 
+    i = 5
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
         if myarg == 'todrive':
@@ -63,7 +60,7 @@ def print_(users):
             i += 1
         else:
             controlflow.invalid_argument_exit(sys.argv[i],
-                                              'gam print browsers')
+                                              'gam print contactdelegation')
     page_message = gapi.got_total_items_msg('Contact Delegates', '...\n')
     for user in users:
         delegates = gapi.get_all_pages(condel.delegates(), 'list',
