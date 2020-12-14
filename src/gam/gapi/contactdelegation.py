@@ -5,6 +5,7 @@ import os.path
 import sys
 
 import gam
+from gam.gapi.directory import users as gapi_directory_users
 from gam import controlflow
 from gam import display
 from gam import gapi
@@ -17,7 +18,11 @@ def build():
 def create(users):
     condel = build()
     delegate = gam.normalizeEmailAddressOrUID(sys.argv[5], noUid=True)
+    delegate = gapi_directory_users.get_primary(delegate)
     body = {'email': delegate}
+    if not delegate:
+        controlflow.system_error_exit(5,
+                                      f'{sys.argv[5]} is not the primary address of a user.')
     i = 0
     count = len(users)
     for user in users:
@@ -25,7 +30,6 @@ def create(users):
         print(
             f'Granting {delegate} contact delegate access to {user}{gam.currentCount(i, count)}'
         )
-        body
         gapi.call(condel.delegates(),
                   'create',
                   soft_errors=True,

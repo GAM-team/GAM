@@ -2,6 +2,19 @@ import gam
 from gam import gapi
 from gam.gapi import directory as gapi_directory
 
+
+def get_primary(email):
+    '''returns primary email of user or empty if email is not a user primary or
+    alias address.'''
+    cd = gapi_directory.build()
+    result = gapi.call(cd.users(), 'get', userKey=email,
+            projection='basic', fields='primaryEmail',
+            soft_errors=True)
+    if not result:
+        return ''
+    return result.get('primaryEmail', '').lower()
+
+
 def signout(users):
     cd = gapi_directory.build()
     i = 0
