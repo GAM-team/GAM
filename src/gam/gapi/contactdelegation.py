@@ -19,10 +19,10 @@ def create(users):
     condel = build()
     delegate = gam.normalizeEmailAddressOrUID(sys.argv[5], noUid=True)
     delegate = gapi_directory_users.get_primary(delegate)
-    body = {'email': delegate}
     if not delegate:
         controlflow.system_error_exit(5,
                                       f'{sys.argv[5]} is not the primary address of a user.')
+    body = {'email': delegate}
     i = 0
     count = len(users)
     for user in users:
@@ -40,6 +40,10 @@ def create(users):
 def delete(users):
     condel = build()
     delegate = gam.normalizeEmailAddressOrUID(sys.argv[5], noUid=True)
+    delegate = gapi_directory_users.get_primary(delegate)
+    if not delegate:
+        controlflow.system_error_exit(5,
+                                      f'{sys.argv[5]} is not the primary address of a user.')
     i = 0
     count = len(users)
     for user in users:
