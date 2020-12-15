@@ -2,6 +2,7 @@ import gam
 from gam import gapi
 from gam.gapi import directory as gapi_directory
 
+
 def get_primary(email):
     '''returns primary email of user or empty if email is not a user primary or
     alias address.'''

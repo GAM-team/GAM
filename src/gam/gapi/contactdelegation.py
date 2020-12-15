@@ -15,7 +15,7 @@ def build():
 
 def create(users):
     condel = build()
-    delegate = gam.normalizeEmailAddressOrUID(sys.argv[5])
+    delegate = gam.normalizeEmailAddressOrUID(sys.argv[5], noUid=True)
     delegate = gapi_directory_users.get_primary(delegate)
     if not delegate:
         controlflow.system_error_exit(5,
@@ -37,7 +37,7 @@ def create(users):
 
 def delete(users):
     condel = build()
-    delegate = gam.normalizeEmailAddressOrUID(sys.argv[5])
+    delegate = gam.normalizeEmailAddressOrUID(sys.argv[5], noUid=True)
     delegate = gapi_directory_users.get_primary(delegate)
     if not delegate:
         controlflow.system_error_exit(5,
