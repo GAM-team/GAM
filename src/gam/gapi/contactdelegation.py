@@ -1,7 +1,5 @@
 """Contact Delegation API calls"""
 
-import csv
-import os.path
 import sys
 
 import gam
@@ -17,7 +15,7 @@ def build():
 
 def create(users):
     condel = build()
-    delegate = gam.normalizeEmailAddressOrUID(sys.argv[5], noUid=True)
+    delegate = gam.normalizeEmailAddressOrUID(sys.argv[5])
     delegate = gapi_directory_users.get_primary(delegate)
     if not delegate:
         controlflow.system_error_exit(5,
@@ -39,7 +37,7 @@ def create(users):
 
 def delete(users):
     condel = build()
-    delegate = gam.normalizeEmailAddressOrUID(sys.argv[5], noUid=True)
+    delegate = gam.normalizeEmailAddressOrUID(sys.argv[5])
     delegate = gapi_directory_users.get_primary(delegate)
     if not delegate:
         controlflow.system_error_exit(5,
@@ -58,20 +56,26 @@ def delete(users):
                   delegate=delegate)
 
 
-def print_(users):
+def print_(users, csvFormat):
     condel = build()
-    titles = ['user', 'delegate']
-    csv_rows = []
-    todrive = False
-    i = 5 
+    if csvFormat:
+        todrive = False
+        csv_rows = []
+        titles = ['User', 'delegateAddress']
+    else:
+        csvStyle = False
+    i = 5
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
-        if myarg == 'todrive':
+        if not csvFormat and myarg == 'csv':
+            csvStyle = True
+            i += 1
+        elif csvFormat and myarg == 'todrive':
             todrive = True
             i += 1
         else:
             controlflow.invalid_argument_exit(sys.argv[i],
-                                              'gam print browsers')
+                                              'gam print contactdelegation')
     page_message = gapi.got_total_items_msg('Contact Delegates', '...\n')
     for user in users:
         delegates = gapi.get_all_pages(condel.delegates(), 'list',
@@ -79,5 +83,14 @@ def print_(users):
                                        page_message=page_message,
                                        user=user)
         for delegate in delegates:
-            csv_rows.append({'user': user, 'delegate': delegate.get('email')})
-    display.write_csv_file(csv_rows, titles, 'Contact Delegates', todrive)
+            if csvFormat:
+                csv_rows.append({'User': user, 'delegateAddress': delegate['email']})
+            else:
+                if csvStyle:
+                    print(f'{user},{delegate["email"]}')
+                else:
+                    print(
+                        f'Delegator: {user}\n  Delegate Email: {delegate["email"]}\n'
+                    )
+    if csvFormat:
+        display.write_csv_file(csv_rows, titles, 'Contact Delegates', todrive)

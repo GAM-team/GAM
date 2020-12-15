@@ -11602,8 +11602,8 @@ def ProcessGAMCommand(args):
                 printShowTeamDrives(users, False)
             elif showWhat in ['teamdriveinfo']:
                 doGetTeamDriveInfo(users)
-            elif showWhat in ['contactdelegation']:
-                gapi_contactdelegation.print_(users)
+            elif showWhat in ['contactdelegate', 'contactdelegates']:
+                gapi_contactdelegation.print_(users, False)
             else:
                 controlflow.invalid_argument_exit(showWhat, 'gam <users> show')
         elif command == 'print':
@@ -11632,8 +11632,8 @@ def ProcessGAMCommand(args):
                 printShowTokens(5, 'users', users, True)
             elif printWhat in ['teamdrive', 'teamdrives']:
                 printShowTeamDrives(users, True)
-            elif printWhat in ['contactdelegation']:
-                gapi_contactdelegation.print_(users)
+            elif printWhat in ['contactdelegate', 'contactdelegates']:
+                gapi_contactdelegation.print_(users, True)
             else:
                 controlflow.invalid_argument_exit(printWhat,
                                                   'gam <users> print')
@@ -11748,7 +11748,7 @@ def ProcessGAMCommand(args):
                 addSmime(users)
             elif addWhat == 'teamdrive':
                 doCreateTeamDrive(users)
-            elif addWhat == 'contactdelegation':
+            elif addWhat == 'contactdelegate':
                 gapi_contactdelegation.create(users)
             else:
                 controlflow.invalid_argument_exit(addWhat,
