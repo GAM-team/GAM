@@ -22,7 +22,7 @@ env:
 
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}, self-hosted
     strategy:
       matrix:
         include:
