@@ -83,6 +83,7 @@ jobs:
             jid: 9
             gamos: "linux"
             platform: "x86_64"
+
     steps:
 
       - uses: actions/checkout@master
@@ -158,6 +159,7 @@ jobs:
              #$pip install pyinstaller
 
       - name: Install pip requirements
+        if: matrix.os != 'self-hosted'
         run: |
              set +e
              $pip list --outdated --format=freeze | grep -v '^\-e' | cut -d = -f 1  | xargs -n1 $pip install -U --force-reinstall
