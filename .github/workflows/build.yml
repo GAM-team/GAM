@@ -46,6 +46,11 @@ jobs:
             goal: "build"
             gamos: "linux"
             platform: "arm"
+          - os: self-hosted
+            jid: 11
+            goal: "build"
+            gamos: "linux"
+            platform: "arm64"
           - os: macos-10.15
             jid: 4
             goal: "build"
