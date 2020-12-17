@@ -41,12 +41,12 @@ jobs:
             goal: "build"
             gamos: "linux"
             platform: "x86_64"
-          - os: self-hosted
+          - os: [self-hosted, linux, ARM64]
             jid: 10
             goal: "build"
             gamos: "linux"
             platform: "arm"
-          - os: self-hosted
+          - os: [self-hosted, linux, ARM]
             jid: 11
             goal: "build"
             gamos: "linux"
