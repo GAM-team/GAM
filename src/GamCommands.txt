@@ -1243,10 +1243,10 @@ gam print mobile [todrive] [(query <QueryMobile>)|(queries <QueryMobileList>)] [
 gam create cigroup <EmailAddress> <CIGroupAttribute>*
 	[makeowner] [alias|aliases <AliasList>] [dynamic <QueryDynamicGroup>]
 gam update cigroup <GroupItem> [email <EmailAddress>] <CIGroupAttribute>* [security]
-gam update cigroup <GroupItem> add [owner|manager|member] [notsuspended|suspended] [expiretime <Time>] <UserTypeEntity>
+gam update cigroup <GroupItem> add [owner|manager|member] [notsuspended|suspended] [expires never|<Time>] <UserTypeEntity>
 gam update cigroup <GroupItem> delete|remove [owner|manager|member] [notsuspended|suspended] <UserTypeEntity>
-gam update cigroup <GroupItem> sync [owner|manager|member] [notsuspended|suspended] [expiretime <Time>] <UserTypeEntity>
-gam update cigroup <GroupItem> update [owner|manager|member] [notsuspended|suspended] [expiretime <Time>] <UserTypeEntity>
+gam update cigroup <GroupItem> sync [owner|manager|member] [notsuspended|suspended] [expires never|<Time>] <UserTypeEntity>
+gam update cigroup <GroupItem> update [owner|manager|member] [notsuspended|suspended] [expires never|<Time>] <UserTypeEntity>
 gam update cigroup <GroupItem> clear [member] [manager] [owner] [notsuspended|suspended]
 gam delete cigroup <GroupItem>
 gam info cigroup <GroupItem> [nousers] [nojoindate] [showupdatedate]
