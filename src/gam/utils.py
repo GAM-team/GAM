@@ -228,12 +228,14 @@ def get_yyyymmdd(argstr, minLen=1, returnTimeStamp=False, returnDateTime=False):
 def get_time_or_delta_from_now(time_string):
     """Get an ISO 8601 time or a positive/negative delta applied to now.
   Args:
-    time_string (string): The time or delta (e.g. '2017-09-01T12:34:56Z' or '-4h')
+    time_string (string): The time or delta (e.g. '2017-09-01T12:34:56Z' or '-4h') or never
   Returns:
     string: iso8601 formatted datetime in UTC.
   """
     time_string = time_string.strip().upper()
     if time_string:
+        if time_string == 'NEVER':
+            return NEVER_TIME
         if time_string[0] not in ['+', '-']:
             return time_string
         return (datetime.datetime.utcnow() +

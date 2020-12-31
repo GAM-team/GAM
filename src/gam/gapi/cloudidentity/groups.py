@@ -475,7 +475,7 @@ def update():
             if role != ROLE_MEMBER:
                 controlflow.invalid_argument_exit(
                     sys.argv[i], f'role {role}')
-            expireTime = sys.argv[i+1]
+            expireTime = utils.get_time_or_delta_from_now(sys.argv[i+1])
             i += 2
         if sys.argv[i].lower() in usergroup_types:
             users_email = gam.getUsersToModify(entity_type=sys.argv[i].lower(),
@@ -525,7 +525,7 @@ def update():
                 }
                 if role != ROLE_MEMBER:
                     body['roles'].append({'name': role})
-                if expireTime:
+                elif expireTime not in {None, NEVER_TIME}:
                     for role in body['roles']:
                         if role['name'] == ROLE_MEMBER:
                             role['expiryDetail'] = {'expireTime': expireTime}
@@ -596,7 +596,7 @@ def update():
             for user in to_add:
                 item = ['gam', 'update', 'cigroup', f'id:{parent}', 'add',
                         role,]
-                if expireTime:
+                if role == ROLE_MEMBER and expireTime not in {None, NEVER_TIME}:
                     item.extend(['expires', expireTime])
                 item.append(user)
                 items.append(item)
@@ -646,39 +646,48 @@ def update():
                     items.append(item)
             elif len(users_email) > 0:
                 name = membership_email_to_id(ci, parent, users_email[0])
+                preUpdateRoles = []
                 addRoles = []
                 removeRoles = []
-                updateRoles = []
-                current_roles = gapi.call(ci.groups().memberships(),
-                                          'get',
-                                          name=name,
-                                          fields='roles').get('roles', [])
-                current_roles = [crole['name'] for crole in current_roles]
-                if expireTime:
-                    if ROLE_MEMBER in current_roles:
-                        updateRoles.append(
-                            {'fieldMask': 'expiryDetail.expireTime',
-                             'membershipRole': {'name': role,
-                                                'expiryDetail': {'expireTime': expireTime}}})
-                    else:
-                        addRoles.append(
-                            {'name': role, 'expiryDetail': {'expireTime': expireTime}})
-                else:
-                    for crole in current_roles:
-                        if crole not in {ROLE_MEMBER, role}:
-                            removeRoles.append(crole)
-                    if role not in current_roles:
-                        new_role = {'name': role}
-                        if role == ROLE_MEMBER and expireTime:
-                            new_role['expiryDetail'] = {'expireTime': expireTime}
-                        addRoles.append(new_role)
+                postUpdateRoles = []
+                member_roles = gapi.call(ci.groups().memberships(),
+                                         'get',
+                                         name=name,
+                                         fields='roles').get('roles', [{'name': ROLE_MEMBER}])
+                current_roles = [crole['name'] for crole in member_roles]
+                # When upgrading role, strip any expiryDetail from member before role changes
+                if role != ROLE_MEMBER:
+                    for crole in member_roles:
+                        if 'expiryDetail' in crole:
+                            preUpdateRoles.append(
+                                {'fieldMask': 'expiryDetail.expireTime',
+                                 'membershipRole': {'name': ROLE_MEMBER,
+                                                    'expiryDetail': {'expireTime': None}}})
+                            break
+                # When downgrading role or simply updating member expireTime, update expiryDetail after role changes
+                elif expireTime:
+                    postUpdateRoles.append(
+                        {'fieldMask': 'expiryDetail.expireTime',
+                         'membershipRole': {'name': role,
+                                            'expiryDetail': {'expireTime':  expireTime if expireTime != NEVER_TIME else None}}})
+                for crole in current_roles:
+                    if crole not in {ROLE_MEMBER, role}:
+                        removeRoles.append(crole)
+                if role not in current_roles:
+                    new_role = {'name': role}
+                    if role == ROLE_MEMBER and expireTime not in {None, NEVER_TIME}:
+                        new_role['expiryDetail'] = {'expireTime': expireTime}
+                        postUpdateRoles = []
+                    addRoles.append(new_role)
                 bodys = []
+                if preUpdateRoles:
+                    bodys.append({'updateRolesParams': preUpdateRoles})
                 if addRoles:
                     bodys.append({'addRoles': addRoles})
                 if removeRoles:
                     bodys.append({'removeRoles': removeRoles})
-                if updateRoles:
-                    bodys.append({'updateRolesParams': updateRoles})
+                if postUpdateRoles:
+                    bodys.append({'updateRolesParams': postUpdateRoles})
                 for body in bodys:
                     try:
                         gapi.call(ci.groups().memberships(),
