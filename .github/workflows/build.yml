@@ -65,7 +65,7 @@ jobs:
             jid: 5
             goal: "build"
             gamos: "windows"
-            python: 3.9.0
+            python: 3.9.1
             pyarch: "x64" 
             platform: "x86_64"
           - os: windows-2019
@@ -73,7 +73,7 @@ jobs:
             goal: "build"
             gamos: "windows"
             platform: "x86"
-            python: 3.9.0
+            python: 3.9.1
             pyarch: "x86"
           - os: ubuntu-20.04
             goal: "test"
