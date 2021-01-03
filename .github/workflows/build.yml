@@ -108,7 +108,7 @@ jobs:
           path: |
             ~/python
             ~/ssl
-          key: ${{ matrix.os }}-${{ matrix.jid }}-20201207-1
+          key: ${{ matrix.os }}-${{ matrix.jid }}-20210103
 
       - name: Set env variables
         env:
