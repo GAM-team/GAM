@@ -22,9 +22,15 @@ cd ~
 
 # Use official Python.org version of Python which is backwards compatible
 # with older MacOS versions
-wget https://www.python.org/ftp/python/$BUILD_PYTHON_VERSION/python-$BUILD_PYTHON_VERSION-macosx10.9.pkg
+if [ "$PLATFORM" == "x86_64" ]; then
+  export pyfile=python-$BUILD_PYTHON_VERSION-macosx10.9.pkg
+else
+  export pyfile=python-$BUILD_PYTHON_VERSION-macos11.0.pkg
+fi
+
+wget https://www.python.org/ftp/python/$BUILD_PYTHON_VERSION/$pyfile
 echo "installing Python $BUILD_PYTHON_VERSION..."
-sudo installer -pkg ./python-$BUILD_PYTHON_VERSION-macosx10.9.pkg -target /
+sudo installer -pkg ./$pyfile -target /
 
 # This fixes https://github.com/pyinstaller/pyinstaller/issues/5062
 codesign --remove-signature /Library/Frameworks/Python.framework/Versions/3.9/Python
