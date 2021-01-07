@@ -208,7 +208,7 @@ jobs:
 
 
       - name: Live API tests push only
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' || github.event_name == 'schedule'
         env: # Or as an environment variable
           PASSCODE: ${{ secrets.PASSCODE }}
         run: |
