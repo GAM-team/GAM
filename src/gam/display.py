@@ -154,39 +154,66 @@ def write_csv_file(csvRows, titles, list_type, todrive):
                 return True
         return False
 
-    if GC_Values[GC_CSV_ROW_FILTER]:
-        for column, filterVal in iter(GC_Values[GC_CSV_ROW_FILTER].items()):
-            if column not in titles:
-                sys.stderr.write(
-                    f'WARNING: Row filter column "{column}" is not in output columns\n'
-                )
-                continue
-            if filterVal[0] == 'regex':
-                csvRows = [
-                    row for row in csvRows
-                    if filterVal[1].search(str(row.get(column, '')))
-                ]
-            elif filterVal[0] == 'notregex':
-                csvRows = [
-                    row for row in csvRows
-                    if not filterVal[1].search(str(row.get(column, '')))
-                ]
-            elif filterVal[0] in ['date', 'time']:
-                csvRows = [
-                    row for row in csvRows if rowDateTimeFilterMatch(
-                        filterVal[0] == 'date', row.get(column, ''),
-                        filterVal[1], filterVal[2])
-                ]
-            elif filterVal[0] == 'count':
-                csvRows = [
-                    row for row in csvRows if rowCountFilterMatch(
-                        row.get(column, 0), filterVal[1], filterVal[2])
-                ]
-            else:  #boolean
-                csvRows = [
-                    row for row in csvRows if rowBooleanFilterMatch(
-                        row.get(column, False), filterVal[1])
-                ]
+    def rowFilterMatch(filters, columns, row):
+        for c, filterVal in iter(filters.items()):
+            for column in columns[c]:
+                if filterVal[1] == 'regex':
+                    if filterVal[2].search(str(row.get(column, ''))):
+                        return True
+                elif filterVal[1] == 'notregex':
+                    if not filterVal[2].search(str(row.get(column, ''))):
+                        return True
+                elif filterVal[1] in ['date', 'time']:
+                    if rowDateTimeFilterMatch(
+                        filterVal[1] == 'date', row.get(column, ''),
+                        filterVal[2], filterVal[3]):
+                        return True
+                elif filterVal[1] == 'count':
+                    if rowCountFilterMatch(
+                        row.get(column, 0), filterVal[2], filterVal[3]):
+                        return True
+                else:  #boolean
+                    if rowBooleanFilterMatch(
+                        row.get(column, False), filterVal[2]):
+                        return True
+        return False
+
+    if GC_Values[GC_CSV_ROW_FILTER] or GC_Values[GC_CSV_ROW_DROP_FILTER]:
+        if GC_Values[GC_CSV_ROW_FILTER]:
+            keepColumns = {}
+            for column, filterVal in iter(GC_Values[GC_CSV_ROW_FILTER].items()):
+                columns = [t for t in titles if filterVal[0].match(t)]
+                if columns:
+                    keepColumns[column] = columns
+                else:
+                    keepColumns[column] = [None]
+                    sys.stderr.write(
+                        f'WARNING: Row filter column pattern "{column}" does not match any output columns\n'
+                        )
+        else:
+            keepColumns = None
+        if GC_Values[GC_CSV_ROW_DROP_FILTER]:
+            dropColumns = {}
+            for column, filterVal in iter(GC_Values[GC_CSV_ROW_DROP_FILTER].items()):
+                columns = [t for t in titles if filterVal[0].match(t)]
+                if columns:
+                    dropColumns[column] = columns
+                else:
+                    dropColumns[column] = [None]
+                    sys.stderr.write(
+                        f'WARNING: Row drop filter column pattern "{column}" does not match any output columns\n'
+                        )
+        else:
+            dropColumns = None
+        rows = []
+        for row in csvRows:
+            if (((keepColumns is None) or
+                 rowFilterMatch(GC_Values[GC_CSV_ROW_FILTER], keepColumns, row)) and
+                ((dropColumns is None) or
+                 not rowFilterMatch(GC_Values[GC_CSV_ROW_DROP_FILTER], dropColumns, row))):
+                rows.append(row)
+        csvRows = rows
+
     if GC_Values[GC_CSV_HEADER_FILTER] or GC_Values[GC_CSV_HEADER_DROP_FILTER]:
         if GC_Values[GC_CSV_HEADER_DROP_FILTER]:
             titles = [
