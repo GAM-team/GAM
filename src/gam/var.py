@@ -1221,6 +1221,8 @@ GC_CSV_HEADER_FILTER = 'csv_header_filter'
 GC_CSV_HEADER_DROP_FILTER = 'csv_header_drop_filter'
 # CSV Rows GAM should filter
 GC_CSV_ROW_FILTER = 'csv_row_filter'
+# CSV Rows GAM should filter/drop
+GC_CSV_ROW_DROP_FILTER = 'csv_row_drop_filter'
 # Minimum TLS Version required for HTTPS connections
 GC_TLS_MIN_VERSION = 'tls_min_ver'
 # Maximum TLS Version used for HTTPS connections
@@ -1259,6 +1261,7 @@ GC_Defaults = {
     GC_CSV_HEADER_FILTER: '',
     GC_CSV_HEADER_DROP_FILTER: '',
     GC_CSV_ROW_FILTER: '',
+    GC_CSV_ROW_DROP_FILTER: '',
     GC_TLS_MIN_VERSION: TLS_MIN,
     GC_TLS_MAX_VERSION: None,
     GC_CA_FILE: None,
@@ -1371,6 +1374,9 @@ GC_VAR_INFO = {
         GC_VAR_TYPE: GC_TYPE_HEADERFILTER
     },
     GC_CSV_ROW_FILTER: {
+        GC_VAR_TYPE: GC_TYPE_ROWFILTER
+    },
+    GC_CSV_ROW_DROP_FILTER: {
         GC_VAR_TYPE: GC_TYPE_ROWFILTER
     },
     GC_TLS_MIN_VERSION: {

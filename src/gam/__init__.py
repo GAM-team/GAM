@@ -400,8 +400,8 @@ def SetGlobalVariables():
     ROW_FILTER_COMP_PATTERN = re.compile(
         r'^(date|time|count)\s*([<>]=?|=|!=)\s*(.+)$', re.IGNORECASE)
     ROW_FILTER_BOOL_PATTERN = re.compile(r'^(boolean):(.+)$', re.IGNORECASE)
-    ROW_FILTER_RE_PATTERN = re.compile(r'^(regex|notregex):(.+)$',
-                                       re.IGNORECASE)
+    ROW_FILTER_RE_PATTERN = re.compile(r'^(regex|notregex):(.+)$', re.IGNORECASE)
+    REGEX_CHARS = '^$*+|$[{('
 
     def _getCfgRowFilter(itemName):
         value = GC_Defaults[itemName]
@@ -439,6 +439,17 @@ def SetGlobalVariables():
                     )
                 filterDict[column] = filterStr
         for column, filterStr in iter(filterDict.items()):
+            for c in REGEX_CHARS:
+                if c in column:
+                    columnPat = column
+                    break
+            else:
+                columnPat = f'^{column}$'
+            try:
+                columnPat = re.compile(columnPat, re.IGNORECASE)
+            except re.error as e:
+                controlflow.system_error_exit(
+                    3, f'Item: {itemName}: "{column}", Invalid RE: {str(e)}')
             mg = ROW_FILTER_COMP_PATTERN.match(filterStr)
             if mg:
                 if mg.group(1) in ['date', 'time']:
@@ -449,7 +460,7 @@ def SetGlobalVariables():
                         valid, filterValue = utils.get_row_filter_time_or_delta_from_now(
                             mg.group(3))
                     if valid:
-                        rowFilters[column] = (mg.group(1), mg.group(2),
+                        rowFilters[column] = (columnPat, mg.group(1), mg.group(2),
                                               filterValue)
                         continue
                     controlflow.system_error_exit(
@@ -458,7 +469,7 @@ def SetGlobalVariables():
                     )
                 else:  #count
                     if mg.group(3).isdigit():
-                        rowFilters[column] = (mg.group(1), mg.group(2),
+                        rowFilters[column] = (columnPat, mg.group(1), mg.group(2),
                                               int(mg.group(3)))
                         continue
                     controlflow.system_error_exit(
@@ -477,12 +488,12 @@ def SetGlobalVariables():
                         3,
                         f'Item: {itemName}, Value: "{column}": "{filterStr}", Expected true|false'
                     )
-                rowFilters[column] = (mg.group(1), filterValue)
+                rowFilters[column] = (columnPat, mg.group(1), filterValue)
                 continue
             mg = ROW_FILTER_RE_PATTERN.match(filterStr)
             if mg:
                 try:
-                    rowFilters[column] = (mg.group(1), re.compile(mg.group(2)))
+                    rowFilters[column] = (columnPat, mg.group(1), re.compile(mg.group(2)))
                     continue
                 except re.error as e:
                     controlflow.system_error_exit(
@@ -520,6 +531,7 @@ def SetGlobalVariables():
     _getOldEnvVar(GC_CSV_HEADER_FILTER, 'GAM_CSV_HEADER_FILTER')
     _getOldEnvVar(GC_CSV_HEADER_DROP_FILTER, 'GAM_CSV_HEADER_DROP_FILTER')
     _getOldEnvVar(GC_CSV_ROW_FILTER, 'GAM_CSV_ROW_FILTER')
+    _getOldEnvVar(GC_CSV_ROW_DROP_FILTER, 'GAM_CSV_ROW_DROP_FILTER')
     _getOldEnvVar(GC_TLS_MIN_VERSION, 'GAM_TLS_MIN_VERSION')
     _getOldEnvVar(GC_TLS_MAX_VERSION, 'GAM_TLS_MAX_VERSION')
     _getOldEnvVar(GC_CA_FILE, 'GAM_CA_FILE')
