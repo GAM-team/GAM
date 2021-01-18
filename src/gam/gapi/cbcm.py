@@ -143,13 +143,14 @@ def print_():
             sort_headers = True
             i += 1
         elif myarg == 'fields':
-            fields = sys.argv[i + 1]
+            fields = sys.argv[i + 1].replace(',', ' ').split()
             i += 2
         else:
             controlflow.invalid_argument_exit(sys.argv[i],
                                               'gam print browsers')
     if fields:
-        fields = f'browsers({fields}),nextPageToken'
+        fields.append('deviceId')
+        fields = f'browsers({",".join(set(fields))}),nextPageToken'
     page_message = gapi.got_total_items_msg('Browsers', '...\n')
     browsers = gapi.get_all_pages(cbcm.chromebrowsers(), 'list',
                          'browsers', page_message=page_message,
@@ -163,8 +164,9 @@ def print_():
                 titles.append(a_key)
         csv_rows.append(browser)
     if sort_headers:
-        display.sort_csv_titles(['name',], titles)
+        display.sort_csv_titles(['deviceId',], titles)
     display.write_csv_file(csv_rows, titles, 'Browsers', todrive)
+
 
 attributes = {
     'assetid': 'annotatedAssetId',
@@ -195,3 +197,88 @@ def update():
                        customer=GC_Values[GC_CUSTOMER_ID], body=browser,
                        projection='BASIC', fields="deviceId")
     print(f'Updated browser {result["deviceId"]}')
+
+
+def createtoken():
+    cbcm = build()
+    body = {'token_type': 'CHROME_BROWSER'}
+    i = 3
+    while i < len(sys.argv):
+        myarg = sys.argv[i].lower().replace('_', '')
+        if myarg in ['ou', 'orgunit', 'org']:
+            body['org_unit_path'] = gapi_directory_orgunits.getOrgUnitItem(sys.argv[i + 1])
+            i += 2
+        elif myarg in ['expire', 'expires']:
+            body['expire_time'] = utils.get_time_or_delta_from_now(sys.argv[i + 1])
+            i += 2
+        else:
+            controlflow.invalid_argument_exit(sys.argv[i],
+                                              'gam create browsertoken')
+    browser = gapi.call(cbcm.enrollmentTokens(), 'create',
+                        customer=GC_Values[GC_CUSTOMER_ID], body=body)
+    print(f'Created browser enrollment token {browser["token"]}')
+
+
+def revoketoken():
+    cbcm = build()
+    token_permanent_id = sys.argv[3]
+    gapi.call(cbcm.enrollmentTokens(), 'revoke', tokenPermanentId=token_permanent_id,
+              customer=GC_Values[GC_CUSTOMER_ID])
+    print(f'Deleted browser enrollment token {token_permanent_id}')
+
+
+def printshowtokens(csvFormat):
+    cbcm = build()
+    query = None
+    fields = []
+    if csvFormat:
+        titles = ['token']
+        csv_rows = []
+        todrive = False
+        sort_headers = False
+    i = 3
+    while i < len(sys.argv):
+        myarg = sys.argv[i].lower().replace('_', '')
+        if myarg == 'query':
+            query = sys.argv[i+1]
+            i += 2
+        elif csvFormat and myarg == 'todrive':
+            todrive = True
+            i += 1
+        elif csvFormat and myarg == 'sortheaders':
+            sort_headers = True
+            i += 1
+        elif myarg == 'fields':
+            fields = sys.argv[i + 1].replace(',', ' ').split()
+            i += 2
+        else:
+            controlflow.invalid_argument_exit(sys.argv[i],
+                f"gam {['show', 'print'][csvFormat]} browsertokens")
+    if fields:
+        fields.append('token')
+        fields = f'chromeEnrollmentTokens({",".join(set(fields))}),nextPageToken'
+    page_message = gapi.got_total_items_msg('Chrome Browser Enrollment Tokens', '...\n')
+    browsers = gapi.get_all_pages(cbcm.enrollmentTokens(), 'list',
+                         'chromeEnrollmentTokens', page_message=page_message,
+                         customer=GC_Values[GC_CUSTOMER_ID],
+                         query=query, fields=fields)
+    if not csvFormat:
+        count = len(browsers)
+        print(f'Show {count} Chrome Browser Enrollment Tokens')
+        i = 0
+        for browser in browsers:
+            i += 1
+            print(f'  Chrome Browser Enrollment Token: {browser["token"]}{gam.currentCount(i, count)}')
+            browser.pop('kind', None)
+            for field in browser:
+                print(f'    {field}: {browser[field]}')
+    else:
+        for browser in browsers:
+            browser = utils.flatten_json(browser)
+            for a_key in browser:
+                if a_key not in titles:
+                    titles.append(a_key)
+            csv_rows.append(browser)
+        if sort_headers:
+            display.sort_csv_titles(['token',], titles)
+        display.write_csv_file(csv_rows, titles, 'Chrome Browser Enrollment Tokens', todrive)

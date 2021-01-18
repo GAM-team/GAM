@@ -142,6 +142,7 @@ If an item contains spaces, it should be surrounded by ".
 <APIScopeURL> ::= <String>
 <ASPID> ::= <String>
 <AssetTag> ::= <String>
+<BrowserTokenPermanentID> ::= <String>
 <BuildingID> ::= <String>|id:<String>
 <CalendarACLRole> ::= editor|freebusy|freebusyreader|owner|reader|writer
 <CalendarACLRuleID> ::= user:<EmailAddress>|group:<EmailAddress>|domain:<DomainName>|default
@@ -204,6 +205,7 @@ If an item contains spaces, it should be surrounded by ".
 <PropertyKey> ::= <String>
 <PropertyValue> ::= <String>
 <QueryBrowser> ::= <String> See: https://support.google.com/chrome/a/answer/9681204#retrieve_all_chrome_devices_for_an_account
+<QueryBrowserToken> ::= <String> See: https://support.google.com/chrome/a/answer/9949706?ref_topic=9301744
 <QueryCalendar> ::= <String>
 <QueryContact> ::= <String> See: https://developers.google.com/google-apps/contacts/v3/reference#contacts-query-parameters-reference
 <QueryCrOS> ::= <String> See: https://support.google.com/chrome/a/answer/1698333?hl=en
@@ -1128,6 +1130,32 @@ gam print browsers [todrive]
 	[query <QueryBrowser>]
 	[projection basic|full]
 	[fields <BrowserFieldNameList>]
+	[sortheaders]
+
+gam create browsertoken
+        [ou|org|orgunit <OrgUnitPath>] [expire|expires <Time>]
+gam revoke browsertoken <BrowserTokenPermanentID>
+
+<BrowserTokenFieldName> ::=
+        createTime|
+        creatorId|
+        customerId|
+        expireTime|
+        orgUnitPath|
+        revokeTime|
+        revokerId|
+        state|
+        token|
+        tokenPermanentId
+<BrowserTokenFieldNameList> ::= "<BrowseTokenFieldName>(,<BrowserTokenFieldName>)*"
+
+gam show browsertokens
+	[query <QueryBrowserToken>]
+	[fields <BrowserTokenFieldNameList>]
+
+gam print browsertokens [todrive]
+	[query <QueryBrowserToken>]
+	[fields <BrowserTokenFieldNameList>]
 	[sortheaders]
 
 <CrOSAction> ::=

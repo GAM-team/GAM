@@ -1438,7 +1438,7 @@ def printShowDelegates(users, csvFormat):
             i += 1
         else:
             controlflow.invalid_argument_exit(sys.argv[i],
-                                              'gam <users> show delegates')
+                f"gam <users> {['show', 'print'][csvFormat]} delegates")
     count = len(users)
     i = 1
     for user in users:
@@ -7936,7 +7936,7 @@ def doPrintShowProjects(csvFormat):
             i += 1
         else:
             controlflow.invalid_argument_exit(
-                myarg, f"gam <users> {['show', 'print'][csvFormat]} projects")
+                myarg, f"gam {['show', 'print'][csvFormat]} projects")
     if not csvFormat:
         count = len(projects)
         print(f'User: {login_hint}, Show {count} Projects')
@@ -8096,7 +8096,7 @@ def printShowTeamDrives(users, csvFormat):
             i += 2
         else:
             controlflow.invalid_argument_exit(
-                myarg, 'gam <users> print|show teamdrives')
+                myarg, f"gam {['show', 'print'][csvFormat]} teamdrives")
     tds = []
     for user in users:
         sys.stderr.write(f'Getting Team Drives for {user}\n')
@@ -11126,6 +11126,8 @@ def ProcessGAMCommand(args):
                 createGCPFolder()
             elif argument in ['adminrole']:
                 gapi_directory_roles.create()
+            elif argument in ['browsertoken', 'browsertokens']:
+                gapi_cbcm.createtoken()
             else:
                 controlflow.invalid_argument_exit(argument, 'gam create')
             sys.exit(0)
@@ -11324,6 +11326,11 @@ def ProcessGAMCommand(args):
             else:
                 controlflow.invalid_argument_exit(argument, 'gam undelete')
             sys.exit(0)
+        elif command == 'revoke':
+            argument = sys.argv[2].lower()
+            if argument in ['browsertoken', 'browserokens']:
+                gapi_cbcm.revoketoken()
+            sys.exit(0)
         elif command in ['close', 'reopen']:
             # close and reopen will have to be split apart if either takes a new argument
             argument = sys.argv[2].lower()
@@ -11402,6 +11409,8 @@ def ProcessGAMCommand(args):
                 doPrintShowAlertFeedback()
             elif argument in ['browser', 'browsers']:
                 gapi_cbcm.print_()
+            elif argument in ['browsertoken', 'browsertokens']:
+                gapi_cbcm.printshowtokens(True)
             elif argument in ['vaultcount']:
                 gapi_vault.print_count()
             else:
@@ -11419,6 +11428,8 @@ def ProcessGAMCommand(args):
                 doPrintShowProjects(False)
             elif argument in ['sakey', 'sakeys']:
                 doShowServiceAccountKeys()
+            elif argument in ['browsertoken', 'browsertokens']:
+                gapi_cbcm.printshowtokens(False)
             else:
                 controlflow.invalid_argument_exit(argument, 'gam show')
             sys.exit(0)
