@@ -154,7 +154,11 @@ def delACL():
         gapi.call(cal.acl(), 'delete', calendarId=calendarId, ruleId=ruleId)
     else:
         body = {'role': 'none'}
-        _getCalendarACLScope(5, body)
+        i = 4
+        myarg = sys.argv[i].lower().replace('_', '')
+        if myarg in CALENDAR_ACL_ROLES_MAP:
+            i += 1
+        _getCalendarACLScope(i, body)
         print(f'Calendar: {calendarId}, Delete ACL: {formatACLScope(body)}')
         gapi.call(cal.acl(),
                   'insert',
@@ -824,7 +828,7 @@ def _showCalendar(userCalendar, j, jcount):
     print(f'    Color ID: {userCalendar["colorId"]}, ' \
           f'Background Color: {userCalendar["backgroundColor"]}, ' \
           f'Foreground Color: {userCalendar["foregroundColor"]}')
-    print(f'    Default Reminders:')
+    print('    Default Reminders:')
     for reminder in userCalendar.get('defaultReminders', []):
         print(f'      Method: {reminder["method"]}, ' \
               f'Minutes: {reminder["minutes"]}')
