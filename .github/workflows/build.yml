@@ -250,8 +250,10 @@ jobs:
              $gam user $gam_user check serviceaccount
              $gam user $newuser imap on
              $gam user $newuser show imap
-             $gam csv sample.csv gam user $newuser delegate to ~email
+             $gam user $newuser delegate to "${newbase}-bulkuser-01"
              $gam user $newuser show delegates
+             $gam user $newuser add contactdelegate "${newbase}-bulkuser-01"
+             $gam user $newuser print contactdelegates
              export biohazard=$(echo -e '\xe2\x98\xa3')
              $gam user $newuser label "$biohazard unicode biohazard $biohazard"
              $gam user $newuser show labels
