@@ -10979,10 +10979,13 @@ def ProcessGAMCommand(args):
     try:
         SetGlobalVariables()
         if sys.version_info[1] >= 7:
-            sys.stdout.reconfigure(encoding=GC_Values[GC_CHARSET],
-                                   errors='backslashreplace')
-            sys.stdin.reconfigure(encoding=GC_Values[GC_CHARSET],
-                                  errors='backslashreplace')
+            try:
+                sys.stdout.reconfigure(encoding=GC_Values[GC_CHARSET],
+                                       errors='backslashreplace')
+                sys.stdin.reconfigure(encoding=GC_Values[GC_CHARSET],
+                                      errors='backslashreplace')
+            except AttributeError:
+                pass
         command = sys.argv[1].lower()
         if command == 'batch':
             i = 2
