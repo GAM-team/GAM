@@ -160,7 +160,7 @@ else
 fi
 
 echo_yellow "Checking GitHub URL $release_url for $gamversion GAM release..."
-release_json=$(curl -s $release_url 2>&1 /dev/null)
+release_json=$(curl -s $GHCLIENT $release_url 2>&1 /dev/null)
 
 echo_yellow "Getting file and download URL..."
 # Python is sadly the nearest to universal way to safely handle JSON with Bash
@@ -229,7 +229,7 @@ trap "rm -rf $temp_archive_dir" EXIT
 
 echo_yellow "Downloading file $name from $browser_download_url to $temp_archive_dir."
 # Save archive to temp w/o losing our path
-(cd $temp_archive_dir && curl -O -L $browser_download_url)
+(cd $temp_archive_dir && curl -O -L $GHCLIENT $browser_download_url)
 
 mkdir -p "$target_dir"
 
