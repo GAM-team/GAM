@@ -159,7 +159,13 @@ else
   release_url="https://api.github.com/repos/jay0lee/GAM/releases/tags/v$gamversion"
 fi
 
-echo_yellow "Checking GitHub URL $release_url for $gamversion GAM release..."
+if [ -z ${GHCLIENT+x} ]; then
+  check_type="unauthenticated"
+else
+  check_type="authenticated"
+fi
+
+echo_yellow "Checking GitHub URL $release_url for $gamversion GAM release ($check_type)..."
 release_json=$(curl -s $GHCLIENT $release_url 2>&1 /dev/null)
 
 echo_yellow "Getting file and download URL..."
@@ -227,7 +233,7 @@ temp_archive_dir=$(mktemp -d 2>/dev/null || mktemp -d -t 'mytmpdir')
 # Clean up after ourselves even if we are killed with CTRL-C
 trap "rm -rf $temp_archive_dir" EXIT
 
-echo_yellow "Downloading file $name from $browser_download_url to $temp_archive_dir."
+echo_yellow "Downloading file $name from $browser_download_url to $temp_archive_dir ($check_type)..."
 # Save archive to temp w/o losing our path
 (cd $temp_archive_dir && curl -O -L $GHCLIENT $browser_download_url)
 
