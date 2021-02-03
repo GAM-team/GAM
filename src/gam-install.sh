@@ -140,8 +140,12 @@ case $gamos in
       echo_red "Sorry, you need to be running at least MacOS $gam_macos_ver to run GAM"
       exit
     fi
-    #gamfile="macos-x86_64-$use_macos_ver.tar.xz"
     gamfile="macos-x86_64.tar.xz"
+    ;;
+  MINGW64_NT*)
+    gamos="windows"
+    echo "You are running Windows"
+    gamfile="-windows-x86_64.zip"
     ;;
   *)
     echo_red "Sorry, this installer currently only supports Linux and MacOS. Looks like you're runnning on $gamos. Exiting."
@@ -230,7 +234,11 @@ echo_yellow "Downloading file $name from $browser_download_url to $temp_archive_
 mkdir -p "$target_dir"
 
 echo_yellow "Extracting archive to $target_dir"
-tar xf $temp_archive_dir/$name -C "$target_dir"
+if [[ "${name}" == *.tar.xz ]]; then
+  tar xf $temp_archive_dir/$name -C "$target_dir"
+else
+  unzip "${temp_archive_dir}/${name}" -d "${target_dir}"
+fi
 rc=$?
 if (( $rc != 0 )); then
   echo_red "ERROR: extracting the GAM archive with tar failed with error $rc. Exiting."
