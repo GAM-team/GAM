@@ -9757,7 +9757,10 @@ def getUsersToModify(entity_type=None,
         entity_type = sys.argv[1].lower()
     if entity is None:
         entity = sys.argv[2]
-    cd = buildGAPIObject('directory')
+    # avoid building cd for user/users since it
+    # unnnecesarily pushes user through admin auth
+    if entity_type not in ['user', 'users']:
+        cd = buildGAPIObject('directory')
     if entity_type == 'user':
         users = [
             entity,
