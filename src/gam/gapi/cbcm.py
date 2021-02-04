@@ -230,7 +230,7 @@ def revoketoken():
 def printshowtokens(csvFormat):
     cbcm = build()
     query = None
-    fields = []
+    fields = None
     if csvFormat:
         titles = ['token']
         csv_rows = []
