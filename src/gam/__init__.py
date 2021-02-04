@@ -9759,12 +9759,11 @@ def getUsersToModify(entity_type=None,
         entity = sys.argv[2]
     # avoid building cd for user/users since it
     # unnnecesarily pushes user through admin auth
-    if entity_type not in ['user', 'users']:
+    if entity_type not in ['user', 'users'] or \
+       ('@' not in entity and not GC_Values[GC_DOMAIN]):
         cd = buildGAPIObject('directory')
     if entity_type == 'user':
-        users = [
-            entity,
-        ]
+        users = [entity]
     elif entity_type == 'users':
         users = entity.replace(',', ' ').split()
     elif entity_type in ['group', 'group_ns', 'group_susp', 'group_inde']:
