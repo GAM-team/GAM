@@ -2434,7 +2434,7 @@ def doPrintCourses():
         if ownerEmails is not None:
             ownerId = course['ownerId']
             if ownerId not in ownerEmails:
-                ownerEmails[ownerId] = convertUIDtoEmailAddress(f'uid{ownerId}',
+                ownerEmails[ownerId] = convertUIDtoEmailAddress(f'uid:{ownerId}',
                                                                 cd=cd)
             course['ownerEmail'] = ownerEmails[ownerId]
         for field in skipFieldsList:
