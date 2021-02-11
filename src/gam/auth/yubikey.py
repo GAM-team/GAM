@@ -7,6 +7,12 @@ class fake_open():
 sys.modules['ykman.driver_otp'] = fake_open
 
 import ykman.descriptor
+
+# hack to avoid deprecation notice from cryptography
+# remove after this lands:
+# https://github.com/Yubico/yubikey-manager/pull/385
+sys.modules['ykman.utils.int_from_bytes'] = int.from_bytes
+
 from ykman.piv import SLOT, ALGO, PivController, DEFAULT_MANAGEMENT_KEY
 from ykman.util import TRANSPORT
 
