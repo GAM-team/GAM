@@ -1,3 +1,6 @@
+echo "RUNNING: apt update..."
+sudo apt-get -qq --yes update > /dev/null
+sudo apt-get -qq --yes install swig libpcslite-dev
 if [[ "$TRAVIS_JOB_NAME" == *"Testing" ]]; then
   export python="python"
   export pip="pip"
@@ -32,8 +35,6 @@ else
     rm -rf python
     mkdir ssl
     mkdir python
-    echo "RUNNING: apt update..."
-    sudo apt-get -qq --yes update > /dev/null
     echo "RUNNING: apt upgrade..."
     sudo apt-mark hold openssh-server
     sudo apt-get --yes upgrade
