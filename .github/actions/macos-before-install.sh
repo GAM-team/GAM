@@ -63,7 +63,7 @@ SSLRESULT=$?
 PYVER=$($python -V)
 PYRESULT=$?
 
-homebrew install swig
+brew install swig
 $pip install pyscard
 
 #wget --quiet https://www.python.org/ftp/python/$BUILD_PYTHON_VERSION/python-$BUILD_PYTHON_VERSION-macosx10.9.pkg
