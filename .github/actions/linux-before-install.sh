@@ -1,6 +1,6 @@
 echo "RUNNING: apt update..."
 sudo apt-get -qq --yes update > /dev/null
-sudo apt-get -qq --yes install swig libpcslite-dev
+sudo apt-get -qq --yes install swig libpcsclite-dev
 if [[ "$TRAVIS_JOB_NAME" == *"Testing" ]]; then
   export python="python"
   export pip="pip"

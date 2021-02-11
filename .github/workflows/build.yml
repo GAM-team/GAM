@@ -144,7 +144,7 @@ jobs:
              echo "gampath=${gampath}" >> $GITHUB_ENV
              echo "RUNNING: apt update..."
              sudo apt-get -qq --yes update > /dev/null
-             sudo apt-get -qq --yes install swig libpcslite-dev
+             sudo apt-get -qq --yes install swig libpcsclite-dev
 
       - name: Build and install Python, OpenSSL and PyInstaller
         if: matrix.goal != 'test' && steps.cache-primes.outputs.cache-hit != 'true'
