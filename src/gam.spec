@@ -11,6 +11,10 @@ sys.modules['FixTk'] = None
 proot = os.path.dirname(importlib.import_module('httplib2').__file__)
 extra_files = [(os.path.join(proot, 'cacerts.txt'), 'httplib2')]
 
+# dynamically determine where ykman/VERSION lives
+yroot = os.path.dirname(importlib.import_module('ykman').__file__)
+extra_files += [(os.path.join(yroot, 'VERSION'), 'ykman')]
+
 extra_files += copy_metadata('google-api-python-client')
 extra_files += [('cbcm-v1.1beta1.json', '.')]
 extra_files += [('contactdelegation-v1.json', '.')]
