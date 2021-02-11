@@ -27,6 +27,7 @@ import webbrowser
 import zipfile
 import http.client as http_client
 from multiprocessing import Pool as mp_pool
+from multiprocessing import Lock as mp_lock
 from urllib.parse import quote, urlencode, urlparse
 import dateutil.parser
 
@@ -45,6 +46,7 @@ from cryptography.x509.oid import NameOID
 
 import gam.auth.oauth
 from gam import auth
+from gam.auth import yubikey
 from gam import controlflow
 from gam import display
 from gam import fileutils
@@ -822,8 +824,14 @@ def _getSvcAcctData():
 def getSvcAcctCredentials(scopes, act_as):
     try:
         _getSvcAcctData()
-        credentials = google.oauth2.service_account.Credentials.from_service_account_info(
-            GM_Globals[GM_OAUTH2SERVICE_JSON_DATA])
+        sign_method = GM_Globals[GM_OAUTH2SERVICE_JSON_DATA].get('key_type', 'default')
+        if sign_method == 'default':
+            credentials = google.oauth2.service_account.Credentials.from_service_account_info(
+                GM_Globals[GM_OAUTH2SERVICE_JSON_DATA])
+        elif sign_method == 'yubikey':
+            yksigner = yubikey.YubiKey(GM_Globals[GM_OAUTH2SERVICE_JSON_DATA])
+            credentials = google.oauth2.service_account.Credentials._from_signer_and_info(yksigner,
+                GM_Globals[GM_OAUTH2SERVICE_JSON_DATA])
         credentials = credentials.with_scopes(scopes)
         if act_as:
             credentials = credentials.with_subject(act_as)
@@ -10849,7 +10857,9 @@ Append an 'r' to grant read-only access or an 'a' to grant action-only access.
                 )
 
 
-def init_gam_worker():
+def init_gam_worker(l):
+    global mplock
+    mplock = l
     signal.signal(signal.SIGINT, signal.SIG_IGN)
 
 
@@ -10857,7 +10867,8 @@ def run_batch(items):
     if not items:
         return
     num_worker_threads = min(len(items), GC_Values[GC_NUM_THREADS])
-    pool = mp_pool(num_worker_threads, init_gam_worker, maxtasksperchild=200)
+    l = mp_lock()
+    pool = mp_pool(num_worker_threads, init_gam_worker, maxtasksperchild=200, initargs=(l,))
     sys.stderr.write(f'Using {num_worker_threads} processes...\n')
     try:
         results = []
@@ -10868,7 +10879,7 @@ def run_batch(items):
                 )
                 pool.close()
                 pool.join()
-                pool = mp_pool(num_worker_threads, init_gam_worker)
+                pool = mp_pool(num_worker_threads, init_gam_worker, maxtasksperchild=200, initargs=(1,))
                 sys.stderr.write(
                     'commit-batch - running processes finished, proceeding\n')
                 continue

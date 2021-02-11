@@ -8,3 +8,4 @@ google-auth>=1.11.2
 httplib2>=0.17.0
 passlib>=1.7.2; sys_platform == 'win32'
 python-dateutil
+yubikey-manager
