@@ -16,7 +16,7 @@ cd ~
 export python="python"
 export pip="pip"
 
-choco install $CHOCOPTIONS yubikey-manager
+choco install $CHOCOPTIONS swig
 
 # Python
 #echo "Installing Python..."
