@@ -63,6 +63,9 @@ SSLRESULT=$?
 PYVER=$($python -V)
 PYRESULT=$?
 
+homebrew install swig
+$pip install pyscard
+
 #wget --quiet https://www.python.org/ftp/python/$BUILD_PYTHON_VERSION/python-$BUILD_PYTHON_VERSION-macosx10.9.pkg
 
 #if [ $SSLRESULT -ne 0 ] || [[ "$SSLVER" != "OpenSSL $BUILD_OPENSSL_VERSION "* ]] || [ $PYRESULT -ne 0 ] || [[ "$PYVER" != "Python $BUILD_PYTHON_VERSION"* ]]; then
