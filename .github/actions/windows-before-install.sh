@@ -16,6 +16,8 @@ cd ~
 export python="python"
 export pip="pip"
 
+choco install $CHOCOPTIONS yubikey-manager
+
 # Python
 #echo "Installing Python..."
 #export python_file=python-${BUILD_PYTHON_VERSION}${PYTHONFILE_BITS}.exe
