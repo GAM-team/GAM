@@ -1,69 +1,51 @@
 import sys
 from threading import Timer
 
-# hack to avoid ImportError on unneccessary libraries
-class fake_open():
-    open_devices = None
-sys.modules['ykman.driver_otp'] = fake_open
-
-import ykman.descriptor
-
-# hack to avoid deprecation notice from cryptography
-# remove after this lands:
-# https://github.com/Yubico/yubikey-manager/pull/385
-sys.modules['cryptography.utils'].int_from_bytes = int.from_bytes
-
-from ykman.piv import SLOT, ALGO, PivController, DEFAULT_MANAGEMENT_KEY
-from ykman.util import TRANSPORT
-
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.asymmetric import padding
+from ykman.device import connect_to_device
+from yubikit.piv import KEY_TYPE, SLOT, InvalidPinError, PivSession
+from yubikit.core.smartcard import ApduError
 from gam import controlflow
 
 class YubiKey():
 
     def __init__(self, service_account_info):
-        algo = service_account_info.get('yubikey_algo', 'RSA2048')
+        key_type = service_account_info.get('yubikey_key_type', 'RSA2048')
         try:
-            self.algo = getattr(ALGO, algo.upper())
+            self.key_type = getattr(KEY_TYPE, key_type.upper())
         except AttributeError:
-            controlflow.system_error_exit(6, f'{algo} is not a valid value for yubikey_algo')
+            controlflow.system_error_exit(6, f'{key_type} is not a valid value for yubikey_key_type')
         slot = service_account_info.get('yubikey_slot', 'AUTHENTICATION')
         try:
             self.slot = getattr(SLOT, slot.upper())
         except AttributeError:
             controlflow.system_error_exit(6, f'{slot} is not a valid value for yubikey_slot')
+        self.serial_number = service_account_info.get('yubikey_serial_number')
         self.pin = service_account_info.get('yubikey_pin')
         self.key_id = service_account_info.get('private_key_id')
 
-    def touch_callback(self):
-        sys.stderr.write('\nTouch your YubiKey...\n')
-
     def sign(self, message):
-        timer = Timer(0.5, self.touch_callback)
         if 'mplock' in globals():
             mplock.acquire()
         try:
-            with ykman.descriptor.open_device(transports=TRANSPORT.CCID) as yk:
-                controller = PivController(yk.driver)
-                if self.pin:
-                    controller.verify(self.pin)
-                timer.start() # if sign() takes more than .5 sec we need touch
+            conn, _, _ = connect_to_device(self.serial_number)
+            session = PivSession(conn)
+            if self.pin:
                 try:
-                    signed = controller.sign(self.slot, self.algo, message)
-                except ykman.driver_ccid.APDUError: # We need PIN
-                    timer.cancel() # reset timer while user enters PIN
-                    sys.stderr.write('\nEnter your YubiKey PIN:\n')
-                    self.pin = input()
-                    timer = Timer(0.5, self.touch_callback)
-                    controller.verify(self.pin)
-                    timer.start()
-                    signed = controller.sign(self.slot, self.algo, message)
-                timer.cancel()
-        except ykman.descriptor.FailedOpeningDeviceException:
-            controlflow.system_error_exit(5, 'No YubiKey found. Is it plugged in?')
-        except ykman.piv.WrongPin:
-            controlflow.system_error_exit(7, 'Wrong PIN for YubiKey.')
-        except ykman.piv.AuthenticationBlocked:
-            controlflow.system_error_exit(8, 'YubiKey PIN is blocked.')
+                    session.verify_pin(self.pin)
+                except InvalidPinError as err:
+                    controlflow.system_error_exit(7, f'YubiKey - {err}')
+            try:
+                signed = session.sign(slot=self.slot,
+                                      key_type=self.key_type,
+                                      message=message,
+                                      hash_algorithm=hashes.SHA256(),
+                                      padding=padding.PKCS1v15())
+            except ApduError as err:
+                controlflow.system_error_exit(8, f'YubiKey = {err}')
+        except ValueError as err:
+            controlflow.system_error_exit(9, f'YubiKey - {err}')
         if 'mplock' in globals():
             mplock.release()
         return signed
