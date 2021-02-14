@@ -1,5 +1,7 @@
 import datetime
 import json
+import os
+import sys
 import time
 
 import googleapiclient
@@ -62,6 +64,8 @@ def issue_command():
             i += 1
         else:
             controlflow.invalid_argument_exit(sys.argv[i], 'gam issuecommand cros')
+    if 'commandType' not in body:
+        controlflow.missing_argument_exit('command <CrOSCommand>', 'gam issuecommand cros')
     if body['commandType'] == 'WIPE_USERS' and not doit:
         controlflow.system_error_exit(2, 'wipe_users command requires admin ' \
             'acknowledge user data will be destroyed with the ' \
@@ -392,9 +396,10 @@ def doGetCrosInfo():
                         temp_label = tempInfo['label'].strip()
                         temperature = tempInfo['temperature']
                         print(f'        {temp_label}: {temperature}')
-                    pct_info = cpuStatusReport['cpuUtilizationPercentageInfo']
-                    util = ','.join([str(x) for x in pct_info])
-                    print(f'      cpuUtilizationPercentageInfo: {util}')
+                    if 'cpuUtilizationPercentageInfo' in cpuStatusReport:
+                        pct_info = cpuStatusReport['cpuUtilizationPercentageInfo']
+                        util = ','.join([str(x) for x in pct_info])
+                        print(f'      cpuUtilizationPercentageInfo: {util}')
             diskVolumeReports = cros.get('diskVolumeReports', [])
             lenDVR = len(diskVolumeReports)
             if lenDVR:
@@ -829,16 +834,16 @@ def doPrintCrosDevices():
                 if i < lenCSR:
                     nrow['cpuStatusReports.reportTime'] = \
                         cpuStatusReports[i]['reportTime']
-                    tempInfos = cpuStatusReports[i].get('cpuTemperatureInfo',
-                                                        [])
+                    tempInfos = cpuStatusReports[i].get('cpuTemperatureInfo', [])
                     for tempInfo in tempInfos:
                         label = tempInfo['label'].strip()
                         base = 'cpuStatusReports.cpuTemperatureInfo.'
                         nrow[f'{base}{label}'] = tempInfo['temperature']
                     cpu_field = 'cpuUtilizationPercentageInfo'
-                    cpu_reports = cpuStatusReports[i][cpu_field]
-                    cpu_pcts = [str(x) for x in cpu_reports]
-                    nrow[f'cpuStatusReports.{cpu_field}'] = ','.join(cpu_pcts)
+                    if cpu_field in cpuStatusReports[i]:
+                        cpu_reports = cpuStatusReports[i][cpu_field]
+                        cpu_pcts = [str(x) for x in cpu_reports]
+                        nrow[f'cpuStatusReports.{cpu_field}'] = ','.join(cpu_pcts)
                 if i < lenDVR:
                     volumeInfo = diskVolumeReports[i]['volumeInfo']
                     j = 0
