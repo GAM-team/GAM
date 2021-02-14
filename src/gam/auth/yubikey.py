@@ -1,7 +1,8 @@
+from base64 import b64encode
 import sys
 from threading import Timer
 
-from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
 from ykman.device import connect_to_device
 from yubikit.piv import KEY_TYPE, SLOT, InvalidPinError, PivSession
@@ -24,6 +25,28 @@ class YubiKey():
         self.serial_number = service_account_info.get('yubikey_serial_number')
         self.pin = service_account_info.get('yubikey_pin')
         self.key_id = service_account_info.get('private_key_id')
+
+    def get_certificate(self):
+        try:
+            conn, _, _ = connect_to_device(self.serial_number)
+            session = PivSession(conn)
+            if self.pin:
+                try:
+                    session.verify_pin(self.pin)
+                except InvalidPinError as err:
+                    controlflow.system_error_exit(7, f'YubiKey - {err}')
+            try:
+                cert = session.get_certificate(self.slot)
+                cert_pem = cert.public_bytes(
+                     serialization.Encoding.PEM).decode()
+                publicKeyData = b64encode(cert_pem.encode())
+                if isinstance(publicKeyData, bytes):
+                    publicKeyData = publicKeyData.decode()
+                return publicKeyData
+            except ApduError as err:
+                controlflow.system_error_exit(8, f'YubiKey - {err}')
+        except ValueError as err:
+            controlflow.system_error_exit(9, f'YubiKey - {err}')
 
     def sign(self, message):
         if 'mplock' in globals():
