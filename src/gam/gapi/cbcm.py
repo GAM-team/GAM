@@ -121,7 +121,7 @@ def move():
 def print_():
     cbcm = build()
     projection = 'BASIC'
-    query = None
+    orgUnitPath = query = None
     fields = None
     titles = []
     csv_rows = []
@@ -132,6 +132,9 @@ def print_():
         myarg = sys.argv[i].lower().replace('_', '')
         if myarg == 'query':
             query = sys.argv[i+1]
+            i += 2
+        elif myarg in ['ou', 'org', 'orgunit']:
+            orgUnitPath = gapi_directory_orgunits.getOrgUnitItem(sys.argv[i + 1], pathOnly=True, absolutePath=True)
             i += 2
         elif myarg == 'projection':
             projection = sys.argv[i + 1].upper()
@@ -155,7 +158,7 @@ def print_():
     browsers = gapi.get_all_pages(cbcm.chromebrowsers(), 'list',
                          'browsers', page_message=page_message,
                          customer=GC_Values[GC_CUSTOMER_ID],
-                         query=query, projection=projection,
+                         orgUnitPath=orgUnitPath, query=query, projection=projection,
                          fields=fields)
     for browser in browsers:
         browser = utils.flatten_json(browser)

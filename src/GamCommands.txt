@@ -1127,7 +1127,7 @@ gam info browser <DeviceID>
 	[fields <BrowserFieldNameList>]
 
 gam print browsers [todrive]
-	[query <QueryBrowser>]
+	[ou|org|orgunit <OrgUnitPath>] [query <QueryBrowser>]
 	[projection basic|full]
 	[fields <BrowserFieldNameList>]
 	[sortheaders]
