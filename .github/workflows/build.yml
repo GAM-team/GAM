@@ -65,7 +65,7 @@ jobs:
             jid: 5
             goal: "build"
             gamos: "windows"
-            python: ${{ env.BUILD_PYTHON_VERSION }}
+            python: ${{ BUILD_PYTHON_VERSION }}
             pyarch: "x64" 
             platform: "x86_64"
           - os: windows-2019
@@ -73,7 +73,7 @@ jobs:
             goal: "build"
             gamos: "windows"
             platform: "x86"
-            python: ${{ env.BUILD_PYTHON_VERSION }}
+            python: ${{ BUILD_PYTHON_VERSION }}
             pyarch: "x86"
           - os: ubuntu-20.04
             goal: "test"
