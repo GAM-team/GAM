@@ -75,7 +75,7 @@ If an item contains spaces, it should be surrounded by ".
 	Google-Chrome-Device-Management|
 	Google-Drive-storage|
 	Google-Vault|
-	101001|101005|101031|101033|101034
+	101001|101005|101031|101033|101034|101037
 <SKUID> ::=
 	cloudidentity|identity|1010010001|
 	cloudidentitypremium|identitypremium|1010050001|
@@ -85,6 +85,13 @@ If an item contains spaces, it should be surrounded by ".
 	gams|postini|gsuitegams|gsuitepostini|gsuitemessagesecurity|Google-Apps-For-Postini|
 	gal|gsl|lite|gsuitelite|Google-Apps-Lite|
 	gau|gsb|unlimited|gsuitebusiness|Google-Apps-Unlimited|
+	gwep|workspaceeducationplus|1010310008|
+	gwepstaff|workspaceeducationplusstaff|1010310009|
+	gwepstudent|workspaceeducationplusstudent|1010310010|
+	gwes|workspaceeducationstandard|1010310005|
+	gwesstaff|workspaceeducationstandardstaff|1010310006|
+	gwesstudent|workspaceeducationstandardstudent|1010310007|
+	gwetlu|workspaceeducationupgrade|1010370001|
 	wsentplus|workspaceenterpriseplus|gae|gse|enterprise|gsuiteenterprise|1010020020|
 	wsbizplus|workspacebusinessplus|1010020025|
 	wsentstan|workspaceenterprisestandard|'1010020026|
@@ -1133,20 +1140,20 @@ gam print browsers [todrive]
 	[sortheaders]
 
 gam create browsertoken
-        [ou|org|orgunit <OrgUnitPath>] [expire|expires <Time>]
+	[ou|org|orgunit <OrgUnitPath>] [expire|expires <Time>]
 gam revoke browsertoken <BrowserTokenPermanentID>
 
 <BrowserTokenFieldName> ::=
-        createTime|
-        creatorId|
-        customerId|
-        expireTime|
-        orgUnitPath|
-        revokeTime|
-        revokerId|
-        state|
-        token|
-        tokenPermanentId
+	createTime|
+	creatorId|
+	customerId|
+	expireTime|
+	orgUnitPath|
+	revokeTime|
+	revokerId|
+	state|
+	token|
+	tokenPermanentId
 <BrowserTokenFieldNameList> ::= "<BrowseTokenFieldName>(,<BrowserTokenFieldName>)*"
 
 gam show browsertokens
