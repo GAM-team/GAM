@@ -6,6 +6,6 @@ google-auth-httplib2
 google-auth-oauthlib>=0.4.1
 google-auth>=1.11.2
 httplib2>=0.17.0
-passlib>=1.7.2; sys_platform == 'win32'
+passlib>=1.7.2
 python-dateutil
 yubikey-manager
