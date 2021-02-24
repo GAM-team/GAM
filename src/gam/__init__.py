@@ -79,11 +79,7 @@ from gam import transport
 from gam import utils
 from gam.var import *
 
-if platform.system() == 'Windows':
-    # No crypt module on Win, use passlib
-    from passlib.hash import sha512_crypt
-else:
-    from crypt import crypt
+from passlib.hash import sha512_crypt
 
 if platform.system() == 'Linux':
     import distro
@@ -1423,9 +1419,7 @@ def addDelegates(users, i):
 
 
 def gen_sha512_hash(password):
-    if platform.system() == 'Windows':
-        return sha512_crypt.hash(password, rounds=5000)
-    return crypt(password)
+    return sha512_crypt.hash(password, rounds=5000)
 
 
 def printShowDelegates(users, csvFormat):
