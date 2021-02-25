@@ -14,6 +14,8 @@ Download the MSI Installer from the [GitHub Releases] page. Install the MSI and 
 The GAM documentation is hosted in the [GitHub Wiki]
 # Mailing List / Discussion group
 The GAM mailing list / discussion group is hosted on [Google Groups].  You can join the list and interact via email, or just post from the web itself.
+# Chat Room
+There is a public chat room hosted in Google Chat. [Instructions to join](https://git.io/gam-chat).
 # Author
 GAM is maintained by <a href="mailto:jay0lee@gmail.com">Jay Lee</a>. Please direct "how do I?" questions to [Google Groups].
 
