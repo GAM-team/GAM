@@ -3627,6 +3627,9 @@ def getDriveFileAttribute(i, body, parameters, myarg, update=False):
     elif myarg == 'writerscantshare':
         body['writersCanShare'] = False
         i += 1
+    elif myarg == 'writerscanshare':
+        body['writersCanShare'] = True
+        i += 1
     elif myarg == 'contentrestrictions':
         body['contentRestrictions'] = [{}]
         restriction = sys.argv[i+1].lower().replace('_', '')
