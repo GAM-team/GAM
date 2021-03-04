@@ -8,4 +8,4 @@ google-auth>=1.11.2
 httplib2>=0.17.0
 passlib>=1.7.2
 python-dateutil
-yubikey-manager
+yubikey-manager>=4.0.0
