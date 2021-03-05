@@ -7791,7 +7791,12 @@ def doCreateOrRotateServiceAccountKeys(iam=None,
                 new_data['yubikey_pin'] = input('Enter your YubiKey PIN: ')
                 i += 1
             elif myarg == 'yubikeyserialnumber':
-                new_data['yubikey_serial_number'] = sys.argv[i+1]
+                try:
+                    new_data['yubikey_serial_number'] = int(sys.argv[i+1])
+                except ValueError:
+                    controlflow.system_error_exit(
+                            3,
+                            'yubikey_serial_number must be a number')
                 i += 2
             elif myarg in ['retainnone', 'retainexisting', 'replacecurrent']:
                 mode = myarg
