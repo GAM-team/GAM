@@ -55,6 +55,7 @@ from gam.gapi import cloudidentity as gapi_cloudidentity
 from gam.gapi import cbcm as gapi_cbcm
 from gam.gapi.cloudidentity import devices as gapi_cloudidentity_devices
 from gam.gapi.cloudidentity import groups as gapi_cloudidentity_groups
+from gam.gapi.cloudidentity import userinvitations as gapi_cloudidentity_userinvitations
 from gam.gapi import contactdelegation as gapi_contactdelegation
 from gam.gapi.directory import asps as gapi_directory_asps
 from gam.gapi.directory import cros as gapi_directory_cros
@@ -10263,6 +10264,11 @@ OAUTH2_SCOPES = [
         'scopes': 'https://www.googleapis.com/auth/cloud-identity.groups'
     },
     {
+        'name': 'Cloud Identity - User Invitations',
+        'subscopes': ['readonly'],
+        'scopes': 'https://www.googleapis.com/auth/cloud-identity.userinvitations'
+    },
+    {
         'name': 'Contact Delegation',
         'subscopes': ['readonly'],
         'scopes': 'https://www.googleapis.com/auth/admin.contact.delegation'
@@ -11168,6 +11174,8 @@ def ProcessGAMCommand(args):
                 gapi_directory_roles.create()
             elif argument in ['browsertoken', 'browsertokens']:
                 gapi_cbcm.createtoken()
+            elif argument in ['userinvitation', 'userinvitations']:
+                gapi_cloudidentity_userinvitations.send()
             else:
                 controlflow.invalid_argument_exit(argument, 'gam create')
             sys.exit(0)
@@ -11288,6 +11296,8 @@ def ProcessGAMCommand(args):
                 gapi_cloudidentity_devices.info_state()
             elif argument in ['browser', 'browsers']:
                 gapi_cbcm.info()
+            elif argument in ['userinvitation', 'userinvitations']:
+                gapi_cloudidentity_userinvitations.get()
             else:
                 controlflow.invalid_argument_exit(argument, 'gam info')
             sys.exit(0)
@@ -11295,6 +11305,8 @@ def ProcessGAMCommand(args):
             argument = sys.argv[2].lower()
             if argument in ['guardianinvitation', 'guardianinvitations']:
                 doCancelGuardianInvitation()
+            elif argument in ['userinvitation', 'userinvitations']:
+                gapi_cloudidentity_userinvitations.cancel()
             else:
                 controlflow.invalid_argument_exit(argument, 'gam cancel')
             sys.exit(0)
@@ -11453,6 +11465,8 @@ def ProcessGAMCommand(args):
                 gapi_cbcm.printshowtokens(True)
             elif argument in ['vaultcount']:
                 gapi_vault.print_count()
+            elif argument in ['userinvitations']:
+                gapi_cloudidentity_userinvitations.print_()
             else:
                 controlflow.invalid_argument_exit(argument, 'gam print')
             sys.exit(0)
@@ -11559,6 +11573,11 @@ def ProcessGAMCommand(args):
                 doCreateOrRotateServiceAccountKeys()
             else:
                 controlflow.invalid_argument_exit(argument, 'gam rotate')
+            sys.exit(0)
+        elif command == 'check':
+            argument = sys.argv[2].lower()
+            if argument in ['userinvitation', 'userinvitations']:
+                gapi_cloudidentity_userinvitations.is_invitable_user()
             sys.exit(0)
         elif command in ['cancelwipe', 'wipe', 'approve', 'block', 'sync']:
             target = sys.argv[2].lower().replace('_', '')
@@ -11889,6 +11908,8 @@ def ProcessGAMCommand(args):
             checkWhat = sys.argv[4].replace('_', '').lower()
             if checkWhat == 'serviceaccount':
                 doCheckServiceAccount(users)
+            elif checkWhat == 'isinvitable':
+                gapi_cloudidentity_userinvitations.bulk_is_invitable(users)
             else:
                 controlflow.invalid_argument_exit(checkWhat,
                                                   'gam <users> check')
