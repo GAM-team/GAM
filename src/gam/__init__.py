@@ -910,6 +910,7 @@ def getService(api, http):
                 version,
                 http=http,
                 cache_discovery=False,
+                static_discovery=False,
                 discoveryServiceUrl=discoveryServiceUrl)
             GM_Globals[GM_CURRENT_API_SERVICES].setdefault(api, {})
             GM_Globals[GM_CURRENT_API_SERVICES][api][
@@ -3277,6 +3278,7 @@ def printDriveFileList(users):
                                     titles.append(attrib)
                                 a_file[attrib] = ' '.join(f_file[attrib])
                             else:
+                                a_file[attrib] = len(f_file[attrib])
                                 for j, l_attrib in enumerate(f_file[attrib]):
                                     for list_attrib in l_attrib:
                                         if list_attrib in [
