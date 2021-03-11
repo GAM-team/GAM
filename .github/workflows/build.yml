@@ -252,6 +252,8 @@ jobs:
              $gam csv sample.csv gam update group $newgroup add member ~email
              $gam info group $newgroup
              $gam user $gam_user check serviceaccount
+             # confirm mailbox is working before continuing
+             rc=0; while [ "${rc}" == "0" ]; do $gam user $newuser show labels 2>&1 | grep ERROR; rc=$?;  done
              $gam user $newuser imap on
              $gam user $newuser show imap
              $gam user $newuser delegate to "${newbase}-bulkuser-01"
