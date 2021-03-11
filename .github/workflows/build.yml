@@ -256,7 +256,6 @@ jobs:
              $gam user $newuser waitformailbox
              $gam user $newuser imap on
              $gam user $newuser show imap
-             $gam user $newuser delegate to "${newbase}-bulkuser-01"
              $gam user $newuser show delegates
              #$gam user $newuser add contactdelegate "${newbase}-bulkuser-01"
              #$gam user $newuser print contactdelegates
@@ -269,6 +268,7 @@ jobs:
              $gam user $gam_user sendemail subject "GHA send $gam_user $newbase" file gam.py recipient admin@pdl.jaylee.us
              $gam user $gam_user draftemail subject "GHA draft $newbase" message "Draft message test"
              $gam csvfile sample.csv:email waitformailbox
+             $gam user $newuser delegate to "${newbase}-bulkuser-01"
              $gam users "$gam_user $newbase-bulkuser-01 $newbase-bulkuser-02 $newbase-bulkuser-03" delete messages query in:anywhere maxtodelete 99999 doit
              $gam users "$newbase-bulkuser-04 $newbase-bulkuser-05 $newbase-bulkuser-06" trash messages query in:anywhere maxtotrash 99999 doit
              $gam users "$newbase-bulkuser-07 $newbase-bulkuser-08 $newbase-bulkuser-09" modify messages query in:anywhere maxtomodify 99999 addlabel IMPORTANT addlabel STARRED doit
@@ -310,17 +310,17 @@ jobs:
              $gam delete user $newuser
              $gam print users query "gha.jid=$JID" | $gam csv - gam delete user ~primaryEmail
              $gam print mobile
-             $gam print devices
+             #$gam print devices
              $gam print browsers
-             export sn="$JID$JID$JID$JID-$(openssl rand -base64 32 | sed 's/[^a-zA-Z0-9]//g')"
-             $gam create device serialnumber $sn devicetype android
+             #export sn="$JID$JID$JID$JID-$(openssl rand -base64 32 | sed 's/[^a-zA-Z0-9]//g')"
+             #$gam create device serialnumber $sn devicetype android
              $gam print cros allfields nolists
              $gam report usageparameters customer
              $gam report usage customer parameters gmail:num_emails_sent,accounts:num_1day_logins
              $gam report customer todrive
              $gam report users fields accounts:is_less_secure_apps_access_allowed,gmail:last_imap_time,gmail:last_pop_time filters "accounts:last_login_time>2019-01-01T00:00:00.000Z" todrive
              $gam report admin start -3d todrive
-             $gam print devices nopersonaldevices nodeviceusers filter "serial:$JID$JID$JID$JID-" | $gam csv - gam delete device id ~name
+             #$gam print devices nopersonaldevices nodeviceusers filter "serial:$JID$JID$JID$JID-" | $gam csv - gam delete device id ~name
 
       - name: Upload to Google Drive, build only.
         if: github.event_name == 'push' && matrix.goal != 'test'
