@@ -11937,6 +11937,8 @@ def ProcessGAMCommand(args):
             gapi_directory_users.signout(users)
         elif command == 'turnoff2sv':
             gapi_directory_users.turn_off_2sv(users)
+        elif command == 'waitformailbox':
+            gapi_directory_users.wait_for_mailbox(users)
         else:
             controlflow.invalid_argument_exit(command, 'gam')
     except IndexError:

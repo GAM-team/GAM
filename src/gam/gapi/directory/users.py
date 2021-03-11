@@ -41,3 +41,22 @@ def turn_off_2sv(users):
                   'turnOff',
                   soft_errors=True,
                   userKey=user)
+
+def wait_for_mailbox(users):
+    '''Wait until users mailbox is provisioned.'''
+    cd = gapi_directory.build()
+    i = 0
+    count = len(users)
+    for user in users:
+        i += 1
+        user = gam.normalizeEmailAddressOrUID(user)
+        while True:
+            result = gapi.call(cd.users(),
+                               'get',
+                               'fields=isMailboxSetup',
+                               userKey=user)
+            mailbox_is_setup = result.get('isMailboxSetup')
+            print(f'{user} mailboxIsSetup: {mailbox_is_setup}')
+            if mailbox_is_setup:
+                break
+            sleep(3)
