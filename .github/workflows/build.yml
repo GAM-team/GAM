@@ -253,7 +253,7 @@ jobs:
              $gam info group $newgroup
              $gam user $gam_user check serviceaccount
              # confirm mailbox is provisoned before continuing
-             $gam user $newuser wait_for_mailbox
+             $gam user $newuser waitformailbox
              $gam user $newuser imap on
              $gam user $newuser show imap
              $gam user $newuser delegate to "${newbase}-bulkuser-01"
@@ -268,7 +268,7 @@ jobs:
              $gam user $gam_user insertemail subject "GHA insert $newbase" file gam.py labels INBOX,UNREAD # yep body is gam code
              $gam user $gam_user sendemail subject "GHA send $gam_user $newbase" file gam.py recipient admin@pdl.jaylee.us
              $gam user $gam_user draftemail subject "GHA draft $newbase" message "Draft message test"
-             $gam csv sample.csv gam user ~email wait_for_mailbox
+             $gam csvfile sample.csv:email waitformailbox
              $gam users "$gam_user $newbase-bulkuser-01 $newbase-bulkuser-02 $newbase-bulkuser-03" delete messages query in:anywhere maxtodelete 99999 doit
              $gam users "$newbase-bulkuser-04 $newbase-bulkuser-05 $newbase-bulkuser-06" trash messages query in:anywhere maxtotrash 99999 doit
              $gam users "$newbase-bulkuser-07 $newbase-bulkuser-08 $newbase-bulkuser-09" modify messages query in:anywhere maxtomodify 99999 addlabel IMPORTANT addlabel STARRED doit
