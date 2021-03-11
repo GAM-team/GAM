@@ -910,6 +910,7 @@ def getService(api, http):
                 version,
                 http=http,
                 cache_discovery=False,
+                static_discovery=False,
                 discoveryServiceUrl=discoveryServiceUrl)
             GM_Globals[GM_CURRENT_API_SERVICES].setdefault(api, {})
             GM_Globals[GM_CURRENT_API_SERVICES][api][
