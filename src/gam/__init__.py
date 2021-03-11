@@ -3278,6 +3278,7 @@ def printDriveFileList(users):
                                     titles.append(attrib)
                                 a_file[attrib] = ' '.join(f_file[attrib])
                             else:
+                                a_file[attrib] = len(f_file[attrib])
                                 for j, l_attrib in enumerate(f_file[attrib]):
                                     for list_attrib in l_attrib:
                                         if list_attrib in [
@@ -3627,6 +3628,9 @@ def getDriveFileAttribute(i, body, parameters, myarg, update=False):
         i += 2
     elif myarg == 'writerscantshare':
         body['writersCanShare'] = False
+        i += 1
+    elif myarg == 'writerscanshare':
+        body['writersCanShare'] = True
         i += 1
     elif myarg == 'contentrestrictions':
         body['contentRestrictions'] = [{}]
