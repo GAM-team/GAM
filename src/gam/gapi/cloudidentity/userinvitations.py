@@ -13,10 +13,7 @@ from gam.gapi import cloudidentity as gapi_cloudidentity
 
 def _get_customerid():
     ''' returns customer in format needed for this API'''
-    customer = GC_Values[GC_CUSTOMER_ID]
-#    if customer.startswith('C'):
-#        customer = customer[1:]
-    return f'customers/{customer}'
+    return f'customers/{GC_Values[GC_CUSTOMER_ID]}'
 
 def _reduce_name(name):
     ''' converts long name into email address'''
