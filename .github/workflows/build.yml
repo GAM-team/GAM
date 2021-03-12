@@ -330,6 +330,7 @@ jobs:
              $gam print printermodels | wc -l
              #$gam print printers
              #$gam create printer displayname "${newbase}" uri ipp://localhost:631 driverless description "made by $(date)"
+             rm $gampath/enabledasa.txt
 
       - name: Upload to Google Drive, build only.
         if: github.event_name == 'push' && matrix.goal != 'test'
