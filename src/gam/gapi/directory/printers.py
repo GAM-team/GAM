@@ -107,7 +107,6 @@ def print_():
                                   'list',
                                   items='printers',
                                   parent=parent,
-                                  pageSize=10000,
                                   filter=filter_)
     for printer in printers:
         row = {}
