@@ -65,6 +65,7 @@ from gam.gapi.directory import domains as gapi_directory_domains
 from gam.gapi.directory import groups as gapi_directory_groups
 from gam.gapi.directory import mobiledevices as gapi_directory_mobiledevices
 from gam.gapi.directory import orgunits as gapi_directory_orgunits
+from gam.gapi.directory import printers as gapi_directory_printers
 from gam.gapi.directory import privileges as gapi_directory_privileges
 from gam.gapi.directory import resource as gapi_directory_resource
 from gam.gapi.directory import roles as gapi_directory_roles
@@ -10300,11 +10301,16 @@ OAUTH2_SCOPES = [
         'scopes': 'https://www.googleapis.com/auth/admin.directory.group'
     },
     {
-        'name':
-            'Directory API - Mobile Devices',
+        'name': 'Directory API - Mobile Devices',
         'subscopes': ['readonly', 'action'],
         'scopes':
             'https://www.googleapis.com/auth/admin.directory.device.mobile'
+    },
+    {
+        'name': 'Directory API - Printers',
+        'subscopes': ['readonly'],
+        # note - currently DASA only but admin credentials should work soon
+        'scopes': 'https://www.googleapis.com/auth/admin.chrome.printers'
     },
     {
         'name': 'Directory API - Organizational Units',
@@ -11176,6 +11182,8 @@ def ProcessGAMCommand(args):
                 gapi_cbcm.createtoken()
             elif argument in ['userinvitation', 'userinvitations']:
                 gapi_cloudidentity_userinvitations.send()
+            elif argument in ['printer']:
+                gapi_directory_printers.create()
             else:
                 controlflow.invalid_argument_exit(argument, 'gam create')
             sys.exit(0)
@@ -11234,6 +11242,8 @@ def ProcessGAMCommand(args):
                 gapi_cloudidentity_devices.update_state()
             elif argument in ['browser', 'browsers']:
                 gapi_cbcm.update()
+            elif argument in ['printer']:
+                gapi_directory_printers.update()
             else:
                 controlflow.invalid_argument_exit(argument, 'gam update')
             sys.exit(0)
@@ -11364,6 +11374,8 @@ def ProcessGAMCommand(args):
                 gapi_directory_roles.delete()
             elif argument in ['browser', 'browsers']:
                 gapi_cbcm.delete()
+            elif argument in ['printer']:
+                gapi_directory_printers.delete()
             else:
                 controlflow.invalid_argument_exit(argument, 'gam delete')
             sys.exit(0)
@@ -11467,6 +11479,10 @@ def ProcessGAMCommand(args):
                 gapi_vault.print_count()
             elif argument in ['userinvitations']:
                 gapi_cloudidentity_userinvitations.print_()
+            elif argument in ['printermodels']:
+                gapi_directory_printers.print_models()
+            elif argument in ['printers']:
+                gapi_directory_printers.print_()
             else:
                 controlflow.invalid_argument_exit(argument, 'gam print')
             sys.exit(0)
@@ -11960,6 +11976,8 @@ def ProcessGAMCommand(args):
             gapi_directory_users.turn_off_2sv(users)
         elif command == 'waitformailbox':
             gapi_directory_users.wait_for_mailbox(users)
+        elif command == 'deleteprinters':
+            gapi_directory_printers.batch_delete(users)
         else:
             controlflow.invalid_argument_exit(command, 'gam')
     except IndexError:

@@ -116,6 +116,7 @@ class ErrorReason(Enum):
     DUPLICATE = 'duplicate'
     FAILED_PRECONDITION = 'failedPrecondition'
     FORBIDDEN = 'forbidden'
+    FIVE_O_THREE = '503'
     FOUR_O_NINE = '409'
     FOUR_O_O = '400'
     FOUR_O_THREE = '403'
@@ -153,6 +154,7 @@ DEFAULT_RETRY_REASONS = [
     ErrorReason.GATEWAY_TIMEOUT,
     ErrorReason.INTERNAL_ERROR,
     ErrorReason.FOUR_TWO_NINE,
+    ErrorReason.FIVE_O_THREE,
 ]
 GMAIL_THROW_REASONS = [ErrorReason.SERVICE_NOT_AVAILABLE]
 GROUP_GET_THROW_REASONS = [
