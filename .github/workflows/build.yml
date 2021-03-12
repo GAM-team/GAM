@@ -326,7 +326,8 @@ jobs:
              export CUSTOMER_ID="C01wfv983"
              export GA_DOMAIN="pdl.jaylee.us"
              touch $gampath/enabledasa.txt
-             $gam print printermodels
+             echo "printer model count:"
+             $gam print printermodels | wc -l
              $gam print printers
              $gam create printer displayname "${newbase}" uri ipp://localhost:631 driverless description "made by $(date)"
 
