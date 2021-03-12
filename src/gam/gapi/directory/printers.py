@@ -10,8 +10,10 @@ from gam.gapi.directory import orgunits as gapi_directory_orgunits
 
 
 def _get_customerid():
-    ''' returns customer in format needed for this API'''
+    ''' returns customer in "customers/C{customer}" format needed for this API'''
     customer = GC_Values[GC_CUSTOMER_ID]
+    if customer != MY_CUSTOMER and customer[0] != 'C':
+        customer = 'C' + customer
     return f'customers/{customer}'
 
 def _get_printer_attributes(i, cdapi=None):
