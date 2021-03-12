@@ -14,8 +14,8 @@ from gam.gapi import cloudidentity as gapi_cloudidentity
 def _get_customerid():
     ''' returns customer in format needed for this API'''
     customer = GC_Values[GC_CUSTOMER_ID]
-    if customer.startswith('C'):
-        customer = customer[1:]
+#    if customer.startswith('C'):
+#        customer = customer[1:]
     return f'customers/{customer}'
 
 def _reduce_name(name):
@@ -33,12 +33,9 @@ def _generic_action(action):
             'send': 'Sending'
             }
     print_action = action_map[action]
-    kwargs = {}
-    if action != 'get':
-        kwargs['body'] = {}
     print(f'{print_action} user invite...')
     result = gapi.call(svc.customers().userinvitations(), action,
-            name=name, **kwargs)
+            name=name)
     name = result.get('response', {}).get('name')
     if name:
         result['response']['name'] = _reduce_name(name)
