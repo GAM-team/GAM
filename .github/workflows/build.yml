@@ -322,7 +322,7 @@ jobs:
              $gam report admin start -3d todrive
              $gam print devices nopersonaldevices nodeviceusers filter "serial:$JID$JID$JID$JID-" | $gam csv - gam delete device id ~name
              $gam print userinvitations
-             $gam print userinvitations filter | $gam csv - gam create userinvitation ~name
+             $gam print userinvitations | $gam csv - gam create userinvitation ~name
              export CUSTOMER_ID="C01wfv983"
              export GA_DOMAIN="pdl.jaylee.us"
              touch $gampath/enabledasa.txt
