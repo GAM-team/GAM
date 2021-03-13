@@ -113,7 +113,7 @@ def print_():
                 titles.append(key)
             row[key] = val
         rows.append(row)
-    display.write_csv_file(rows, titles, 'Printer', todrive)
+    display.write_csv_file(rows, titles, 'Printers', todrive)
 
 
 def print_models():

@@ -1,14 +1,11 @@
 """Chrome Browser Cloud Management API calls"""
-  
+
 import json
-import os.path
 import sys
 
 import gam
 from gam.var import *
 from gam import controlflow
-from gam import display
-from gam import fileutils
 from gam import gapi
 from gam.gapi import errors as gapi_errors
 from gam.gapi.directory import orgunits as gapi_directory_orgunits
@@ -56,7 +53,6 @@ def print_policies():
     body = {
              'policyTargetKey': {
                'targetResource': orgunit,
-             
              }
            }
     throw_reasons = [gapi_errors.ErrorReason.FOUR_O_O,]
@@ -68,7 +64,7 @@ def print_policies():
                                           throw_reasons=throw_reasons,
                                           customer=customer,
                                           body=body)
-        except googleapiclient.errors.HttpError as err:
+        except googleapiclient.errors.HttpError:
             policies = []
         for policy in policies:
             #print(json.dumps(policy, indent=2))
@@ -77,7 +73,7 @@ def print_policies():
             print(name)
             values = policy.get('value', {}).get('value', {})
             for setting, value in values.items():
-                if type(value) is str and value.find('_ENUM_') != -1:
+                if isinstance(value, str) and value.find('_ENUM_') != -1:
                     value = value.split('_ENUM_')[-1]
                 print(f' {setting}: {value}')
             print()
@@ -156,11 +152,11 @@ def print_schemas():
             elif vtype == 'TYPE_BOOL':
                 pvs = v.get('descriptions')
                 for pv in pvs:
-                    if type(pv) is dict:
+                    if isinstance(pv, dict):
                         pvalue = pv.get('value')
                         pdescription = pv.get('description')
                         print(f'    {pvalue} - {pdescription}')
-                    elif type(pv) is list:
+                    elif isinstance(pv, list):
                         print(f'    {pv[0]}')
             else:
                 print(f'    {v.get("descriptions")[0]}')
@@ -212,7 +208,7 @@ def update_policy():
                 field = sys.argv[i].lower()
                 if field == 'orgunit' or '.' in field:
                     break # field is actually a new policy name or orgunit
-                expected_fields = ', '.join([setting for setting in schemas[myarg].settings])
+                expected_fields = ', '.join(schemas[myarg].settings)
                 if field not in expected_fields:
                     controlflow.system_error_exit(4, f'Expected {myarg} field of {expected_fields}. Got {field}.')
                 value = sys.argv[i+1]
@@ -243,4 +239,3 @@ def update_policy():
     for request in body['requests']:
         request['policyTargetKey'] = {'targetResource': orgunit}
     gapi.call(cp.customers().policies().orgunits(), 'batchModify', customer=customer, body=body)
-

@@ -17,7 +17,7 @@ from gam import utils
 def _get_customerid():
     ''' returns customer id without C prefix'''
     customer_id = GC_Values[GC_CUSTOMER_ID]
-    if customer_id != MY_CUSTOMER and customer_id[0] == 'C':
+    if customer_id[0] == 'C':
         customer_id = customer_id[1:]
     return customer_id
 
