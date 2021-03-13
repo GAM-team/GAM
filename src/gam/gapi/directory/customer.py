@@ -1,6 +1,5 @@
 import datetime
 
-import gam
 from gam.var import *
 from gam import controlflow
 from gam import gapi
@@ -26,7 +25,7 @@ def doGetCustomerInfo():
         result = gapi.call(
             cd.domains(),
             'get',
-            customer=customer_id,
+            customer=customer_info['id'],
             domainName=customer_info['customerDomain'],
             fields='verified',
             throw_reasons=[gapi.errors.ErrorReason.DOMAIN_NOT_FOUND])
@@ -42,7 +41,7 @@ def doGetCustomerInfo():
     domains = gapi.get_items(cd.domains(),
                              'list',
                              'domains',
-                             customer=customer_id,
+                             customer=customer_info['id'],
                              fields='domains(creationTime)')
     for domain in domains:
         creation_timestamp = int(domain['creationTime']) / 1000
@@ -74,9 +73,6 @@ def doGetCustomerInfo():
     }
     parameters = ','.join(list(user_counts_map))
     tryDate = datetime.date.today().strftime(YYYYMMDD_FORMAT)
-    reports_customer_id = customer_id
-    if reports_customer_id == MY_CUSTOMER:
-        reports_customer_id = None
     rep = gapi_reports.build()
     usage = None
     throw_reasons = [
@@ -87,7 +83,7 @@ def doGetCustomerInfo():
             result = gapi.call(rep.customerUsageReports(),
                                'get',
                                throw_reasons=throw_reasons,
-                               customerId=reports_customer_id,
+                               customerId=customer_info['id'],
                                date=tryDate,
                                parameters=parameters)
         except gapi.errors.GapiInvalidError as e:
