@@ -35,10 +35,19 @@ def build():
 def print_policies():
     cp = build()
     customer = _get_customerid()
-    if len(sys.argv) < 4:
-        orgunit = '/'
-    else:
-        orgunit = sys.argv[3]
+    orgunit = '/'
+    todrive = False
+    i = 3
+    while i < len(sys.argv):
+        myarg = sys.argv[i].lower()
+        if myarg == 'todrive':
+            todrive = True
+            i += 1
+        elif myarg == 'orgunit':
+            orgunit = sys.argv[i+1]
+            i += 2
+        else:
+            controlflow.system_error_exit(3, f'{myarg} is not a valid argument to "gam print chromepolicy"')
     orgunit = _get_orgunit(orgunit)
     namespaces = [
             'chrome.users',
@@ -138,6 +147,15 @@ def build_schemas(cp=None):
 def print_schemas():
     cp = build()
     schemas = build_schemas(cp)
+    todrive = False
+    i = 3
+    while i < len(sys.argv):
+        myarg = sys.argv[i].lower()
+        if myarg == 'todrive':
+            todrive = True
+            i += 1
+        else:
+            controlflow.system_error_exit(3, f'{myarg} is not a valid argument to "gam print chromeschema"')
     for val in schemas.values():
         print(f'{val.get("name")} - {val.get("description")}')
         for v in val['settings'].values():
@@ -167,21 +185,16 @@ def delete_policy():
     cp = build()
     customer = _get_customerid()
     schemas = build_schemas(cp)
-    orgunit = None
-    i = 3
+    orgunit = _get_orgunit(sys.argv[3])
+    i = 4
     body = {'requests': []}
     while i < len(sys.argv):
         myarg = sys.argv[i].lower()
-        if myarg == 'orgunit':
-            orgunit = _get_orgunit(sys.argv[i+1])
-            i += 2
-        elif myarg in schemas:
+        if myarg in schemas:
             body['requests'].append({'policySchema': schemas[myarg].name})
             i += 1
         else:
             controlflow.system_error_exit(3, f'{myarg} is not a valid argument to "gam delete chromepolicy"')
-    if not orgunit:
-        controlflow.system_error_exit(3, 'You must specify an orgunit.')
     for request in body['requests']:
         request['policyTargetKey'] = {'targetResource': orgunit}
     gapi.call(cp.customers().policies().orgunits(), 'batchInherit', customer=customer, body=body)
@@ -191,15 +204,12 @@ def update_policy():
     cp = build()
     customer = _get_customerid()
     schemas = build_schemas(cp)
-    i = 3
+    orgunit = _get_orgunit(sys.argv[3])
+    i = 4
     body = {'requests': []}
-    orgunit = None
     while i < len(sys.argv):
         myarg = sys.argv[i].lower()
-        if myarg == 'orgunit':
-            orgunit = _get_orgunit(sys.argv[i+1])
-            i += 2
-        elif myarg in schemas:
+        if myarg in schemas:
             body['requests'].append({'policyValue': {'policySchema': schemas[myarg].name,
                                                      'value': {}},
                                      'updateMask': ''})
@@ -234,8 +244,6 @@ def update_policy():
                 i += 2
         else:
             controlflow.system_error_exit(4, f'{myarg} is not a valid argument to "gam update chromepolicy"')
-    if not orgunit:
-        controlflow.system_error_exit(3, 'You must specify an orgunit')
     for request in body['requests']:
         request['policyTargetKey'] = {'targetResource': orgunit}
     gapi.call(cp.customers().policies().orgunits(), 'batchModify', customer=customer, body=body)
