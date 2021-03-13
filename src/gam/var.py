@@ -297,6 +297,7 @@ API_VER_MAPPING = {
     'driveactivity': 'v2',
     'calendar': 'v3',
     'cbcm': 'v1.1beta1',
+    'chromepolicy': 'v1',
     'classroom': 'v1',
     'cloudidentity': 'v1',
     'cloudidentity_beta': 'v1beta1',

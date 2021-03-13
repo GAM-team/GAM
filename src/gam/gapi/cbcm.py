@@ -14,6 +14,14 @@ from gam.gapi.directory import orgunits as gapi_directory_orgunits
 from gam import utils
 
 
+def _get_customerid():
+    ''' returns customer id without C prefix'''
+    customer_id = GC_Values[GC_CUSTOMER_ID]
+    if customer_id != MY_CUSTOMER and customer_id[0] == 'C':
+        customer_id = customer_id[1:]
+    return customer_id
+
+
 def build():
     return gam.buildGAPIObject('cbcm')
 
@@ -21,8 +29,9 @@ def build():
 def delete():
     cbcm = build()
     device_id = sys.argv[3]
+    customer_id = _get_customerid()
     gapi.call(cbcm.chromebrowsers(), 'delete', deviceId=device_id,
-              customer=GC_Values[GC_CUSTOMER_ID])
+              customer=customer_id)
     print(f'Deleted browser {device_id}')
 
 
@@ -31,6 +40,7 @@ def info():
     device_id = sys.argv[3]
     projection = 'BASIC'
     fields = None
+    customer_id = _get_customerid()
     i = 4
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
@@ -43,7 +53,7 @@ def info():
         else:
             controlflow.invalid_argument_exit(sys.argv[i], 'gam info browser')
     browser = gapi.call(cbcm.chromebrowsers(), 'get',
-                        customer=GC_Values[GC_CUSTOMER_ID],
+                        customer=customer_id,
                         fields=fields, deviceId=device_id,
                         projection=projection)
     display.print_json(browser)
@@ -52,6 +62,7 @@ def info():
 def move():
     cbcm = build()
     body = {'resource_ids': []}
+    customer_id = _get_customerid()
     i = 3
     resource_ids = []
     batch_size = 600
@@ -65,7 +76,7 @@ def move():
             page_message = gapi.got_total_items_msg('Browsers', '...\n')
             browsers = gapi.get_all_pages(cbcm.chromebrowsers(), 'list',
                          'browsers', page_message=page_message,
-                         customer=GC_Values[GC_CUSTOMER_ID],
+                         customer=customer_id,
                          query=query, projection='BASIC',
                          fields='browsers(deviceId),nextPageToken')
             ids = [browser['deviceId'] for browser in browsers]
@@ -115,11 +126,12 @@ def move():
         print(f' moving {len(body["resource_ids"])} browsers to ' \
                        f'{body["org_unit_path"]}')
         gapi.call(cbcm.chromebrowsers(), 'moveChromeBrowsersToOu',
-                  customer=GC_Values[GC_CUSTOMER_ID], body=body)
+                  customer=customer_id, body=body)
 
 
 def print_():
     cbcm = build()
+    customer_id = _get_customerid()
     projection = 'BASIC'
     orgUnitPath = query = None
     fields = None
@@ -157,7 +169,7 @@ def print_():
     page_message = gapi.got_total_items_msg('Browsers', '...\n')
     browsers = gapi.get_all_pages(cbcm.chromebrowsers(), 'list',
                          'browsers', page_message=page_message,
-                         customer=GC_Values[GC_CUSTOMER_ID],
+                         customer=customer_id,
                          orgUnitPath=orgUnitPath, query=query, projection=projection,
                          fields=fields)
     for browser in browsers:
@@ -181,6 +193,7 @@ attribute_fields = ','.join(list(attributes.values()))
 
 def update():
     cbcm = build()
+    customer_id = _get_customerid()
     device_id = sys.argv[3]
     body = {'deviceId': device_id}
     i = 4
@@ -193,17 +206,18 @@ def update():
             controlflow.invalid_argument_exit(sys.argv[i],
                                               'gam update browser')
     browser = gapi.call(cbcm.chromebrowsers(), 'get', deviceId=device_id,
-                        customer=GC_Values[GC_CUSTOMER_ID],
+                        customer=customer_id,
                         projection='BASIC', fields=attribute_fields)
     browser.update(body)
     result = gapi.call(cbcm.chromebrowsers(), 'update', deviceId=device_id,
-                       customer=GC_Values[GC_CUSTOMER_ID], body=browser,
+                       customer=customer_id, body=browser,
                        projection='BASIC', fields="deviceId")
     print(f'Updated browser {result["deviceId"]}')
 
 
 def createtoken():
     cbcm = build()
+    customer_id = _get_customerid()
     body = {'token_type': 'CHROME_BROWSER'}
     i = 3
     while i < len(sys.argv):
@@ -218,20 +232,22 @@ def createtoken():
             controlflow.invalid_argument_exit(sys.argv[i],
                                               'gam create browsertoken')
     browser = gapi.call(cbcm.enrollmentTokens(), 'create',
-                        customer=GC_Values[GC_CUSTOMER_ID], body=body)
+                        customer=customer_id, body=body)
     print(f'Created browser enrollment token {browser["token"]}')
 
 
 def revoketoken():
     cbcm = build()
+    customer_id = _get_customerid()
     token_permanent_id = sys.argv[3]
     gapi.call(cbcm.enrollmentTokens(), 'revoke', tokenPermanentId=token_permanent_id,
-              customer=GC_Values[GC_CUSTOMER_ID])
+              customer=customer_id)
     print(f'Deleted browser enrollment token {token_permanent_id}')
 
 
 def printshowtokens(csvFormat):
     cbcm = build()
+    customer_id = _get_customerid()
     query = None
     fields = None
     if csvFormat:
@@ -263,7 +279,7 @@ def printshowtokens(csvFormat):
     page_message = gapi.got_total_items_msg('Chrome Browser Enrollment Tokens', '...\n')
     browsers = gapi.get_all_pages(cbcm.enrollmentTokens(), 'list',
                          'chromeEnrollmentTokens', page_message=page_message,
-                         customer=GC_Values[GC_CUSTOMER_ID],
+                         customer=customer_id,
                          query=query, fields=fields)
     if not csvFormat:
         count = len(browsers)

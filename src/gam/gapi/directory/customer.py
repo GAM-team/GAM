@@ -8,18 +8,25 @@ from gam.gapi import directory as gapi_directory
 from gam.gapi import reports as gapi_reports
 
 
+def _get_customerid():
+    customer = GC_Values[GC_CUSTOMER_ID]
+    if customer != MY_CUSTOMER and customer[0] != 'C':
+        customer = 'C' + customer
+    return customer
+
 def doGetCustomerInfo():
     cd = gapi_directory.build()
+    customer_id = _get_customerid()
     customer_info = gapi.call(cd.customers(),
                               'get',
-                              customerKey=GC_Values[GC_CUSTOMER_ID])
+                              customerKey=customer_id)
     print(f'Customer ID: {customer_info["id"]}')
     print(f'Primary Domain: {customer_info["customerDomain"]}')
     try:
         result = gapi.call(
             cd.domains(),
             'get',
-            customer=customer_info['id'],
+            customer=customer_id,
             domainName=customer_info['customerDomain'],
             fields='verified',
             throw_reasons=[gapi.errors.ErrorReason.DOMAIN_NOT_FOUND])
@@ -35,7 +42,7 @@ def doGetCustomerInfo():
     domains = gapi.get_items(cd.domains(),
                              'list',
                              'domains',
-                             customer=GC_Values[GC_CUSTOMER_ID],
+                             customer=customer_id,
                              fields='domains(creationTime)')
     for domain in domains:
         creation_timestamp = int(domain['creationTime']) / 1000
@@ -67,9 +74,9 @@ def doGetCustomerInfo():
     }
     parameters = ','.join(list(user_counts_map))
     tryDate = datetime.date.today().strftime(YYYYMMDD_FORMAT)
-    customerId = GC_Values[GC_CUSTOMER_ID]
-    if customerId == MY_CUSTOMER:
-        customerId = None
+    reports_customer_id = customer_id
+    if reports_customer_id == MY_CUSTOMER:
+        reports_customer_id = None
     rep = gapi_reports.build()
     usage = None
     throw_reasons = [
@@ -80,7 +87,7 @@ def doGetCustomerInfo():
             result = gapi.call(rep.customerUsageReports(),
                                'get',
                                throw_reasons=throw_reasons,
-                               customerId=customerId,
+                               customerId=reports_customer_id,
                                date=tryDate,
                                parameters=parameters)
         except gapi.errors.GapiInvalidError as e:
@@ -111,6 +118,7 @@ def doGetCustomerInfo():
 def doUpdateCustomer():
     cd = gapi_directory.build()
     body = {}
+    customer_id = _get_customerid()
     i = 3
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
@@ -136,14 +144,19 @@ def doUpdateCustomer():
             'update customer"')
     gapi.call(cd.customers(),
               'patch',
-              customerKey=GC_Values[GC_CUSTOMER_ID],
+              customerKey=customer_id,
               body=body)
     print('Updated customer')
 
 
-def setTrueCustomerId():
-    if GC_Values[GC_CUSTOMER_ID] == MY_CUSTOMER:
-        cd = gapi_directory.build()
-        GC_Values[GC_CUSTOMER_ID] = gapi.call(cd.customers(), 'get',
-            customerKey=GC_Values[GC_CUSTOMER_ID],
-            fields='id').get('id', GC_Values[GC_CUSTOMER_ID])
+def setTrueCustomerId(cd=None):
+    customer_id = GC_Values[GC_CUSTOMER_ID]
+    if customer_id == MY_CUSTOMER:
+        if not cd:
+            cd = gapi_directory.build()
+        result = gapi.call(cd.customers(),
+                           'get',
+                            customerKey=customer_id,
+                            fields='id')
+        GC_Values[GC_CUSTOMER_ID] = result.get('id',
+                                               customer_id)

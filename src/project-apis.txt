@@ -2,6 +2,7 @@ admin.googleapis.com
 alertcenter.googleapis.com
 calendar-json.googleapis.com
 chat.googleapis.com
+chromepolicy.googleapis.com
 classroom.googleapis.com
 cloudidentity.googleapis.com
 contacts.googleapis.com

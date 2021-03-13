@@ -59,6 +59,16 @@ class _DeHTMLParser(HTMLParser):
                       re.sub(r'\n +', '\n', ''.join(self.__text))).strip()
 
 
+def commonprefix(m):
+    '''Given a list of strings m, return string which is prefix common to all'''
+    s1 = min(m)
+    s2 = max(m)
+    for i, c in enumerate(s1):
+        if c != s2[i]:
+            return s1[:i]
+    return s1
+
+
 def dehtml(text):
     try:
         parser = _DeHTMLParser()

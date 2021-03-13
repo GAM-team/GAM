@@ -53,6 +53,7 @@ from gam import fileutils
 from gam.gapi import calendar as gapi_calendar
 from gam.gapi import cloudidentity as gapi_cloudidentity
 from gam.gapi import cbcm as gapi_cbcm
+from gam.gapi import chromepolicy as gapi_chromepolicy
 from gam.gapi.cloudidentity import devices as gapi_cloudidentity_devices
 from gam.gapi.cloudidentity import groups as gapi_cloudidentity_groups
 from gam.gapi.cloudidentity import userinvitations as gapi_cloudidentity_userinvitations
@@ -933,7 +934,7 @@ def getService(api, http):
                 controlflow.wait_on_failure(n, retries, str(e))
                 continue
             controlflow.system_error_exit(17, str(e))
-        except (http_client.ResponseNotReady, socket.error,
+        except (http_client.ResponseNotReady, OSError,
                 googleapiclient.errors.HttpError) as e:
             if n != retries:
                 controlflow.wait_on_failure(n, retries, str(e))
@@ -10248,6 +10249,11 @@ OAUTH2_SCOPES = [
         'scopes': 'https://www.googleapis.com/auth/admin.directory.device.chromebrowsers',
     },
     {
+        'name': 'Chrome Policy API',
+        'subscope': ['readonly'],
+        'scopes': ['https://www.googleapis.com/auth/chrome.management.policy'],
+    },
+    {
         'name':
             'Classroom API - counts as 5 scopes',
         'subscopes': [],
@@ -11242,6 +11248,8 @@ def ProcessGAMCommand(args):
                 gapi_cloudidentity_devices.update_state()
             elif argument in ['browser', 'browsers']:
                 gapi_cbcm.update()
+            elif argument == 'chromepolicy':
+                gapi_chromepolicy.update_policy()
             elif argument in ['printer']:
                 gapi_directory_printers.update()
             else:
@@ -11376,6 +11384,8 @@ def ProcessGAMCommand(args):
                 gapi_cbcm.delete()
             elif argument in ['printer']:
                 gapi_directory_printers.delete()
+            elif argument == 'chromepolicy':
+                gapi_chromepolicy.delete_policy()
             else:
                 controlflow.invalid_argument_exit(argument, 'gam delete')
             sys.exit(0)
@@ -11483,6 +11493,10 @@ def ProcessGAMCommand(args):
                 gapi_directory_printers.print_models()
             elif argument in ['printers']:
                 gapi_directory_printers.print_()
+            elif argument == 'chromeschema':
+                gapi_chromepolicy.print_schemas()
+            elif argument == 'chromepolicy':
+                gapi_chromepolicy.print_policies()
             else:
                 controlflow.invalid_argument_exit(argument, 'gam print')
             sys.exit(0)
@@ -11985,7 +11999,7 @@ def ProcessGAMCommand(args):
         sys.exit(2)
     except KeyboardInterrupt:
         sys.exit(50)
-    except socket.error as e:
+    except OSError as e:
         controlflow.system_error_exit(3, str(e))
     except MemoryError:
         controlflow.system_error_exit(99, MESSAGE_GAM_OUT_OF_MEMORY)
