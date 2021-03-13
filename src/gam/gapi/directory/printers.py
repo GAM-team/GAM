@@ -3,10 +3,10 @@
 
 import sys
 
+import gam
 from gam import controlflow
 from gam import display
 from gam import gapi
-from gam import getUsersToModify
 from gam.var import *
 from gam.gapi import directory as gapi_directory
 from gam.gapi.directory import orgunits as gapi_directory_orgunits
@@ -66,7 +66,7 @@ def delete():
     if printer_id.lower() not in {'file', 'csvfile'}:
         printer_ids = printer_id.replace(',', ' ').split()
     else:
-        printer_ids = getUsersToModify(f'cros{printer_id.lower()}', sys.argv[4])
+        printer_ids = gam.getUsersToModify(f'cros{printer_id.lower()}', sys.argv[4])
     # max 50 per API call
     batch_size = 50
     for chunk in range(0, len(printer_ids), batch_size):
