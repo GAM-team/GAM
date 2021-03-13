@@ -216,8 +216,8 @@ def update_policy():
             i += 1
             while i < len(sys.argv):
                 field = sys.argv[i].lower()
-                if field == 'orgunit' or '.' in field:
-                    break # field is actually a new policy name or orgunit
+                if '.' in field:
+                    break # field is actually a new policy name
                 expected_fields = ', '.join(schemas[myarg].settings)
                 if field not in expected_fields:
                     controlflow.system_error_exit(4, f'Expected {myarg} field of {expected_fields}. Got {field}.')
