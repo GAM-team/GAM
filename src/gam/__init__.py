@@ -7862,7 +7862,7 @@ def doCreateOrRotateServiceAccountKeys(iam=None,
         # Ask Google to generate private key, store locally
         result = gapi.call(iam.projects().serviceAccounts().keys(),
                            'create',
-                           name=name,
+                           name=sa_name,
                            body=body)
         new_data_str = base64.b64decode(
             result['privateKeyData']).decode(UTF8)
@@ -11976,8 +11976,6 @@ def ProcessGAMCommand(args):
             gapi_directory_users.turn_off_2sv(users)
         elif command == 'waitformailbox':
             gapi_directory_users.wait_for_mailbox(users)
-        elif command == 'deleteprinters':
-            gapi_directory_printers.batch_delete(users)
         else:
             controlflow.invalid_argument_exit(command, 'gam')
     except IndexError:
