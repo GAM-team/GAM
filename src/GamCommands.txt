@@ -221,7 +221,6 @@ If an item contains spaces, it should be surrounded by ".
 <QueryGmail> ::= <String> See: https://support.google.com/mail/answer/7190
 <QueryGroup> ::= <String> See: https://developers.google.com/admin-sdk/directory/v1/guides/search-groups
 <QueryMobile> ::= <String> See: https://support.google.com/a/answer/7549103
-<QueryPrintJob> ::= <String> See: https://developers.google.com/cloud-print/docs/appInterfaces#parameters_3
 <QueryUser> ::= <String> See: https://developers.google.com/admin-sdk/directory/v1/guides/search-users
 <QueryVaultCorpus> ::= <String> See: https://developers.google.com/vault/reference/rest/v1/matters.holds#CorpusQuery
 <RequestID> ::= <String>
@@ -490,9 +489,6 @@ If an item contains spaces, it should be surrounded by ".
 	description|id|inherit|name|orgunitpath|parent|parentid|inherit
 <OrgUnitFieldNameList> ::= "<OrgUnitFieldName>(,<OrgUnitFieldName>)*"
 
-<PrintJobOrderByFieldName> ::=
-	create_time|status|title
-
 <ResourceFieldName> ::=
 	buildingid|
 	capacity|
@@ -593,8 +589,8 @@ Items, separated by spaces, with spaces, commas or single quotes in the items th
 <MembersFieldNameList> ::= "<MembersFieldName>(,<MembersFieldName>)*"
 <MobileList> ::= "<MobileId>(,<MobileId>)*"
 <OrgUnitList> ::= "<OrgUnitPath>(,<OrgUnitPath>)*"
+<PrinterIDList> ::= "<PrinterID>)(,<PrinterID>)*"
 <ProductIDList> ::= "(<ProductID>|SKUID>)(,<ProductID>|SKUID>)*"
-<PrintJobIDList> ::= "<PrintJobID>(,<PrintJobID>)*"
 <QueryCrOSList> ::= "<QueryCrOS>(,<QueryCrOS>)*"
 <QueryMobileList> ::= "<QueryMobile>(,<QueryMobile>)*"
 <QueryUserList> ::= "<QueryUser>(,<QueryUser>)*"
@@ -1283,11 +1279,11 @@ gam print mobile [todrive] [(query <QueryMobile>)|(queries <QueryMobileList>)] [
 	(ou|org|orgunit|orgunitid <OrgUnitItem>)|
 	(ownerid <EmailAddress>)|
 	(uri <String>)|
-	(driverless|usedriverlessconfig <Boolean>)
+	(driverless|usedriverlessconfig)
 
 gam create printer <PrinterAttribute>+
 gam update printer <PrinterID> <PrinterAttribute>+
-gam delete printer <PrinterID>|(crosfile <FileName>)|(croscsvfile <FileName>:<FieldName>)
+gam delete printer <PrinterIDList>|(file <FileName>)|(csvfile <FileName>:<FieldName>)
 
 gam print printers [todrive] [filter <String>]
 gam print printermodels [todrive] [filter <String>]

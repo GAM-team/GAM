@@ -1,10 +1,11 @@
 '''Commands to manage directory printers.'''
 # pylint: disable=unused-wildcard-import wildcard-import
 
+import sys
+
 from gam import controlflow
 from gam import display
 from gam import gapi
-from gam import getBoolean
 from gam import getUsersToModify
 from gam.var import *
 from gam.gapi import directory as gapi_directory
@@ -40,8 +41,8 @@ def _get_printer_attributes(i, cdapi=None):
             body['uri'] = sys.argv[i+1]
             i += 2
         elif myarg in {'driverless', 'usedriverlessconfig'}:
-            body['useDriverlessConfig'] = getBoolean(sys.argv[i+1], myarg)
-            i += 2
+            body['useDriverlessConfig'] = True
+            i += 1
     return body
 
 
@@ -58,18 +59,14 @@ def create():
 
 
 def delete():
-    '''gam delete printer <PrinterID>|(crosfile <FileName>)|(croscsvfile <FileName>:<FieldName>)'''
+    '''gam delete printer <PrinterIDList>|(file <FileName>)|(csvfile <FileName>:<FieldName>)'''
     cdapi = gapi_directory.build()
     customer_id = _get_customerid()
     printer_id = sys.argv[3]
-    if printer_id.lower() not in {'crosfile', 'croscsvfile'}:
-        name = f'{customer_id}/chrome/printers/{printer_id}'
-        gapi.call(cdapi.customers().chrome().printers(),
-                           'delete',
-                           name=name)
-        print(f'Deleted printer {printer_id}')
-        return
-    printer_ids = getUsersToModify(printer_id.lower(), sys.argv[4])
+    if printer_id.lower() not in {'file', 'csvfile'}:
+        printer_ids = printer_id.replace(',', ' ').split()
+    else:
+        printer_ids = getUsersToModify(f'cros{printer_id.lower()}', sys.argv[4])
     # max 50 per API call
     batch_size = 50
     for chunk in range(0, len(printer_ids), batch_size):
