@@ -7,7 +7,16 @@ from gam import controlflow
 from gam import display
 from gam import gapi
 from gam.gapi import errors as gapi_errors
+from gam.gapi.directory import customer as gapi_directory_customer
 
+
+def _get_customerid():
+    ''' returns customerId with format C{customer_id}'''
+    gapi_directory_customer.setTrueCustomerId()
+    customer_id = GC_Values[GC_CUSTOMER_ID]
+    if customer_id[0] != 'C':
+        customer_id = 'C' + customer_id
+    return customer_id
 
 def build():
     return gam.buildGAPIObject('licensing')
@@ -127,6 +136,7 @@ def print_(returnFields=None,
                     countsOnly=False,
                     returnCounts=False):
     lic = build()
+    customer_id = _get_customerid()
     products = []
     licenses = []
     licenseCounts = []
@@ -174,6 +184,7 @@ def print_(returnFields=None,
                     titles = ['productId', 'licenses']
     else:
         fields = f'nextPageToken,items({returnFields})'
+    customer_id = _get_customerid()
     if skus:
         for sku in skus:
             if not products:
@@ -193,7 +204,7 @@ def print_(returnFields=None,
                         gapi_errors.ErrorReason.FORBIDDEN
                     ],
                     page_message=page_message,
-                    customerId=GC_Values[GC_DOMAIN],
+                    customerId=customer_id,
                     productId=product,
                     skuId=sku,
                     fields=fields)
@@ -223,7 +234,7 @@ def print_(returnFields=None,
                         gapi_errors.ErrorReason.FORBIDDEN
                     ],
                     page_message=page_message,
-                    customerId=GC_Values[GC_DOMAIN],
+                    customerId=customer_id,
                     productId=productId,
                     fields=fields)
                 if countsOnly:
