@@ -184,7 +184,6 @@ def print_(returnFields=None,
                     titles = ['productId', 'licenses']
     else:
         fields = f'nextPageToken,items({returnFields})'
-    customer_id = _get_customerid()
     if skus:
         for sku in skus:
             if not products:
