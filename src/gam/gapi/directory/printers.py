@@ -1,9 +1,12 @@
 '''Commands to manage directory printers.'''
 # pylint: disable=unused-wildcard-import wildcard-import
 
+import sys
+
 from gam import controlflow
 from gam import display
 from gam import gapi
+from gam import getUsersToModify
 from gam.var import *
 from gam.gapi import directory as gapi_directory
 from gam.gapi.directory import orgunits as gapi_directory_orgunits
@@ -30,37 +33,17 @@ def _get_printer_attributes(i, cdapi=None):
         elif myarg == 'makeandmodel':
             body['makeAndModel'] = sys.argv[i+1]
             i += 2
-        elif myarg in ['ou', 'orgunit']:
+        elif myarg in ['ou', 'org', 'orgunit', 'orgunitid']:
             _, body['orgUnitId'] = gapi_directory_orgunits.getOrgUnitId(sys.argv[i+1], cdapi)
             body['orgUnitId'] = body['orgUnitId'][3:]
             i += 2
         elif myarg == 'uri':
             body['uri'] = sys.argv[i+1]
             i += 2
-        elif myarg == 'driverless':
+        elif myarg in {'driverless', 'usedriverlessconfig'}:
             body['useDriverlessConfig'] = True
             i += 1
     return body
-
-
-def batch_delete(printer_ids):
-    '''gam croscsvfile file:column deleteprinters'''
-    cdapi = gapi_directory.build()
-    parent = _get_customerid()
-    # max 50 per API call
-    batch_size = 50
-    for chunk in range(0, len(printer_ids), batch_size):
-        body = {
-                 'printerIds': printer_ids[chunk:chunk + batch_size]
-               }
-        result = gapi.call(cdapi.customers().chrome().printers(),
-                           'batchDeletePrinters',
-                           parent=parent,
-                           body=body)
-        for printer_id in result.get('printerIds', []):
-            print(f'Deleted printer {printer_id}')
-        for printer_id in result.get('failedPrinters', []):
-            print(f'ERROR: failed to delete {printer_id.get("printerIds")}')
 
 
 def create():
@@ -76,15 +59,28 @@ def create():
 
 
 def delete():
-    '''gam delete printer'''
+    '''gam delete printer <PrinterIDList>|(file <FileName>)|(csvfile <FileName>:<FieldName>)'''
     cdapi = gapi_directory.build()
     customer_id = _get_customerid()
     printer_id = sys.argv[3]
-    name = f'{customer_id}/chrome/printers/{printer_id}'
-    gapi.call(cdapi.customers().chrome().printers(),
-                       'delete',
-                       name=name)
-    print(f'Deleted printer {printer_id}')
+    if printer_id.lower() not in {'file', 'csvfile'}:
+        printer_ids = printer_id.replace(',', ' ').split()
+    else:
+        printer_ids = getUsersToModify(f'cros{printer_id.lower()}', sys.argv[4])
+    # max 50 per API call
+    batch_size = 50
+    for chunk in range(0, len(printer_ids), batch_size):
+        body = {
+                 'printerIds': printer_ids[chunk:chunk + batch_size]
+               }
+        result = gapi.call(cdapi.customers().chrome().printers(),
+                           'batchDeletePrinters',
+                           parent=customer_id,
+                           body=body)
+        for printer_id in result.get('printerIds', []):
+            print(f'Deleted printer {printer_id}')
+        for printer_id in result.get('failedPrinters', []):
+            print(f'ERROR: failed to delete {printer_id.get("printerIds")}')
 
 def print_():
     '''gam print printers'''

@@ -209,6 +209,7 @@ If an item contains spaces, it should be surrounded by ".
 <ParameterValue> ::= <String>
 <Password> ::= <String>
 <PermissionID> ::= id:<String>|<EmailAddress>|anyone|anyonewithlink
+<PrinterID> ::= <String>
 <PropertyKey> ::= <String>
 <PropertyValue> ::= <String>
 <QueryBrowser> ::= <String> See: https://support.google.com/chrome/a/answer/9681204#retrieve_all_chrome_devices_for_an_account
@@ -220,7 +221,6 @@ If an item contains spaces, it should be surrounded by ".
 <QueryGmail> ::= <String> See: https://support.google.com/mail/answer/7190
 <QueryGroup> ::= <String> See: https://developers.google.com/admin-sdk/directory/v1/guides/search-groups
 <QueryMobile> ::= <String> See: https://support.google.com/a/answer/7549103
-<QueryPrintJob> ::= <String> See: https://developers.google.com/cloud-print/docs/appInterfaces#parameters_3
 <QueryUser> ::= <String> See: https://developers.google.com/admin-sdk/directory/v1/guides/search-users
 <QueryVaultCorpus> ::= <String> See: https://developers.google.com/vault/reference/rest/v1/matters.holds#CorpusQuery
 <RequestID> ::= <String>
@@ -489,9 +489,6 @@ If an item contains spaces, it should be surrounded by ".
 	description|id|inherit|name|orgunitpath|parent|parentid|inherit
 <OrgUnitFieldNameList> ::= "<OrgUnitFieldName>(,<OrgUnitFieldName>)*"
 
-<PrintJobOrderByFieldName> ::=
-	create_time|status|title
-
 <ResourceFieldName> ::=
 	buildingid|
 	capacity|
@@ -592,8 +589,8 @@ Items, separated by spaces, with spaces, commas or single quotes in the items th
 <MembersFieldNameList> ::= "<MembersFieldName>(,<MembersFieldName>)*"
 <MobileList> ::= "<MobileId>(,<MobileId>)*"
 <OrgUnitList> ::= "<OrgUnitPath>(,<OrgUnitPath>)*"
+<PrinterIDList> ::= "<PrinterID>)(,<PrinterID>)*"
 <ProductIDList> ::= "(<ProductID>|SKUID>)(,<ProductID>|SKUID>)*"
-<PrintJobIDList> ::= "<PrintJobID>(,<PrintJobID>)*"
 <QueryCrOSList> ::= "<QueryCrOS>(,<QueryCrOS>)*"
 <QueryMobileList> ::= "<QueryMobile>(,<QueryMobile>)*"
 <QueryUserList> ::= "<QueryUser>(,<QueryUser>)*"
@@ -1275,6 +1272,22 @@ gam info mobile <MobileID>
 gam print mobile [todrive] [(query <QueryMobile>)|(queries <QueryMobileList>)] [basic|full] [orderby <MobileOrderByFieldName> [ascending|descending]]
 	fields <MobileFieldNameList>] [delimiter <Character>] [appslimit <Number>] [listlimit <Number>]
 
+<PrinterAttribute> ::=
+	(description <String>)|
+	(displayname <String>)|
+	(makeandmodel <String>)|
+	(ou|org|orgunit|orgunitid <OrgUnitItem>)|
+	(ownerid <EmailAddress>)|
+	(uri <String>)|
+	(driverless|usedriverlessconfig)
+
+gam create printer <PrinterAttribute>+
+gam update printer <PrinterID> <PrinterAttribute>+
+gam delete printer <PrinterIDList>|(file <FileName>)|(csvfile <FileName>:<FieldName>)
+
+gam print printers [todrive] [filter <String>]
+gam print printermodels [todrive] [filter <String>]
+
 gam create cigroup <EmailAddress> <CIGroupAttribute>*
 	[makeowner] [alias|aliases <AliasList>] [dynamic <QueryDynamicGroup>]
 gam update cigroup <GroupItem> [email <EmailAddress>] <CIGroupAttribute>* [security]
@@ -1316,6 +1329,13 @@ gam print group-members|groups-members [todrive]
 	([domain <DomainName>] ([member <UserItem>]|[query <QueryGroup>]))|[group|group_ns|group_susp <GroupItem>] [notsuspended|suspended]
 	[roles <GroupRoleList>] [membernames] [fields <MembersFieldNameList>]
 	[includederivedmembership]
+
+gam create userinvitation <EmailAddress>
+gam cancel userinvitation <EmailAddress>
+gam check userinvitation <EmailAddress>
+gam info userinvitation <EmailAddress>
+gam print userinvitations [todrive] [filter <String>]
+gam <UserTypeEntity> check isinvitable [todrive]
 
 gam print licenses [todrive] [(products|product <ProductIDList>)|(skus|sku <SKUIDList>)|allskus|gsuite] [countsonly]
 gam show license|licenses|licence|licences [(products|product <ProductIDList>)|(skus|sku <SKUIDList>)|allskus|gsuite]
