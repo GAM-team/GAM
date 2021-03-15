@@ -42,7 +42,7 @@ def doGetCustomerInfo():
     domains = gapi.get_items(cd.domains(),
                              'list',
                              'domains',
-                             customer=customer_info['id'],
+                             customer=customer_id,
                              fields='domains(creationTime)')
     for domain in domains:
         creation_timestamp = int(domain['creationTime']) / 1000
