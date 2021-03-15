@@ -1,4 +1,5 @@
 import datetime
+import sys
 
 from gam.var import *
 from gam import controlflow
@@ -25,7 +26,7 @@ def doGetCustomerInfo():
         result = gapi.call(
             cd.domains(),
             'get',
-            customer=customer_info['id'],
+            customer=customer_id,
             domainName=customer_info['customerDomain'],
             fields='verified',
             throw_reasons=[gapi.errors.ErrorReason.DOMAIN_NOT_FOUND])
@@ -83,7 +84,7 @@ def doGetCustomerInfo():
             result = gapi.call(rep.customerUsageReports(),
                                'get',
                                throw_reasons=throw_reasons,
-                               customerId=customer_info['id'],
+                               customerId=customer_id,
                                date=tryDate,
                                parameters=parameters)
         except gapi.errors.GapiInvalidError as e:
