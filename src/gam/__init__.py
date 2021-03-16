@@ -6312,7 +6312,7 @@ def doCreateOrUpdateUserSchema(updateCmd):
                 if myarg == 'type':
                     a_field['fieldType'] = sys.argv[i + 1].upper()
                     validTypes = [
-                        'BOOL', 'DOUBLE', 'EMAIL', 'INT64', 'PHONE', 'STRING'
+                        'BOOL', 'DATE', 'DOUBLE', 'EMAIL', 'INT64', 'PHONE', 'STRING'
                     ]
                     if a_field['fieldType'] not in validTypes:
                         controlflow.expected_argument_exit(
