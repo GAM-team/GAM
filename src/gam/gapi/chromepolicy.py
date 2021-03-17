@@ -159,7 +159,9 @@ def print_schemas():
                     elif isinstance(pv, list):
                         print(f'    {pv[0]}')
             else:
-                print(f'    {v.get("descriptions")[0]}')
+                description = v.get('descriptions')
+                if len(description) > 0:
+                    print(f'    {description[0]}')
         print()
 
 
@@ -200,7 +202,7 @@ def update_policy():
             orgunit = _get_orgunit(sys.argv[i+1])
             i += 2
         elif myarg in schemas:
-            body['requests'].append({'policyValue': {'policySchema': schemas[myarg].name,
+            body['requests'].append({'policyValue': {'policySchema': schemas[myarg]['name'],
                                                      'value': {}},
                                      'updateMask': ''})
             i += 1
@@ -208,11 +210,12 @@ def update_policy():
                 field = sys.argv[i].lower()
                 if field == 'orgunit' or '.' in field:
                     break # field is actually a new policy name or orgunit
-                expected_fields = ', '.join(schemas[myarg].settings)
+                expected_fields = ', '.join(schemas[myarg]['settings'])
                 if field not in expected_fields:
                     controlflow.system_error_exit(4, f'Expected {myarg} field of {expected_fields}. Got {field}.')
+                cased_field = schemas[myarg]['settings'][field]['name']
                 value = sys.argv[i+1]
-                vtype = schemas[myarg].settings[field].type
+                vtype = schemas[myarg]['settings'][field]['type']
                 if vtype in ['TYPE_INT64', 'TYPE_INT32', 'TYPE_UINT64']:
                     if not value.isnumeric():
                         controlflow.system_error_exit(7, f'Value for {myarg} {field} must be a number, got {value}')
@@ -229,8 +232,8 @@ def update_policy():
                     value = f'{prefix}{value}'
                 elif vtype in ['TYPE_LIST']:
                     value = value.split(',')
-                body['requests'][-1]['policyValue']['value'][field] = value
-                body['requests'][-1]['updateMask'] += f'{field},'
+                body['requests'][-1]['policyValue']['value'][cased_field] = value
+                body['requests'][-1]['updateMask'] += f'{cased_field},'
                 i += 2
         else:
             controlflow.system_error_exit(4, f'{myarg} is not a valid argument to "gam update chromepolicy"')
