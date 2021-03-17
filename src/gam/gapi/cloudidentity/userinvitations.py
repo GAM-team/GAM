@@ -33,7 +33,7 @@ def _generic_action(action):
             'send': 'Sending'
             }
     print_action = action_map[action]
-    print(f'{print_action} user invite...')
+    print(f'{print_action} user invitation...')
     result = gapi.call(svc.customers().userinvitations(), action,
             name=name)
     name = result.get('response', {}).get('name')
@@ -58,7 +58,7 @@ def _generic_get(get_type):
 # Current serial implementation will be SLOW...
 def bulk_is_invitable(emails):
     '''gam <users> check isinvitable'''
-    def _invite_result(request_id, response, _):
+    def _invitation_result(request_id, response, _):
         if response.get('isInvitableUser'):
             rows.append({'invitableUsers': request_id})
 
@@ -66,7 +66,7 @@ def bulk_is_invitable(emails):
     customer = _get_customerid()
     todrive = False
     #batch_size = 1000
-    #ebatch = svc.new_batch_http_request(callback=_invite_result)
+    #ebatch = svc.new_batch_http_request(callback=_invitation_result)
     rows = []
     throw_reasons = [gapi_errors.ErrorReason.FOUR_O_THREE]
     for email in emails:
@@ -74,7 +74,7 @@ def bulk_is_invitable(emails):
         endpoint = svc.customers().userinvitations()
         #if len(ebatch._order) == batch_size:
         #    ebatch.execute()
-        #    ebatch = svc.new_batch_http_request(callback=_invite_result)
+        #    ebatch = svc.new_batch_http_request(callback=_invitation_result)
         #req = endpoint.isInvitableUser(name=name)
         #ebatch.add(req, request_id=email)
         try:
@@ -131,15 +131,15 @@ def print_():
         else:
             controlflow.invalid_argument_exit(sys.argv[i],
                                               'gam print userinvitations')
-    invites = gapi.get_all_pages(svc.customers().userinvitations(),
+    invitations = gapi.get_all_pages(svc.customers().userinvitations(),
                                 'list',
                                 'userInvitations',
                                 parent=customer,
                                 filter=filter_)
-    for invite in invites:
-        invite['name'] = _reduce_name(invite['name'])
+    for invitation in invitations:
+        invitation['name'] = _reduce_name(invitation['name'])
         row = {}
-        for key, val in invite.items():
+        for key, val in invitation.items():
             if key not in titles:
                 titles.append(key)
             row[key] = val
