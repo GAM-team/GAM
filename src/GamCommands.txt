@@ -1337,7 +1337,7 @@ gam print group-members|groups-members [todrive]
 
 gam create userinvitation <EmailAddress>
 gam cancel userinvitation <EmailAddress>
-gam check userinvitation <EmailAddress>
+gam check userinvitation|isinvitable <EmailAddress>
 gam info userinvitation <EmailAddress>
 gam print userinvitations [todrive] [filter <String>]
 gam <UserTypeEntity> check isinvitable [todrive]
