@@ -11606,7 +11606,7 @@ def ProcessGAMCommand(args):
             sys.exit(0)
         elif command == 'check':
             argument = sys.argv[2].lower()
-            if argument in ['userinvitation', 'userinvitations']:
+            if argument in ['isinvitable', 'userinvitation', 'userinvitations']:
                 gapi_cloudidentity_userinvitations.is_invitable_user()
             sys.exit(0)
         elif command in ['cancelwipe', 'wipe', 'approve', 'block', 'sync']:
