@@ -1230,6 +1230,11 @@ The listlimit <Number> argument limits the number of recent users, time ranges a
 The start <Date> and end <Date> arguments filter the time ranges.
 Delimiter defaults to comma.
 
+gam delete chromepolicy <SchemaName>+ orgunit <OrgUnitItem>
+gam update chromepolicy (<SchemaName> (<Field> <Value>)+)+ orgunit <OrgUnitItem>
+gam print chromepolicy [todrive] [orgunit <OrgUnitItem>]
+gam print chromeschema [todrive]
+
 <DeviceID> ::= devices/<String>
 <DeviceType> ::= android|chrome_os|google_sync|ios|linux|mac_os|windows
 <DeviceUserID> ::= devices/<String>/deviceUsers/<String>
@@ -1332,7 +1337,7 @@ gam print group-members|groups-members [todrive]
 
 gam create userinvitation <EmailAddress>
 gam cancel userinvitation <EmailAddress>
-gam check userinvitation <EmailAddress>
+gam check userinvitation|isinvitable <EmailAddress>
 gam info userinvitation <EmailAddress>
 gam print userinvitations [todrive] [filter <String>]
 gam <UserTypeEntity> check isinvitable [todrive]

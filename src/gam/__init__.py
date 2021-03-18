@@ -6312,7 +6312,7 @@ def doCreateOrUpdateUserSchema(updateCmd):
                 if myarg == 'type':
                     a_field['fieldType'] = sys.argv[i + 1].upper()
                     validTypes = [
-                        'BOOL', 'DOUBLE', 'EMAIL', 'INT64', 'PHONE', 'STRING'
+                        'BOOL', 'DATE', 'DOUBLE', 'EMAIL', 'INT64', 'PHONE', 'STRING'
                     ]
                     if a_field['fieldType'] not in validTypes:
                         controlflow.expected_argument_exit(
@@ -11606,7 +11606,7 @@ def ProcessGAMCommand(args):
             sys.exit(0)
         elif command == 'check':
             argument = sys.argv[2].lower()
-            if argument in ['userinvitation', 'userinvitations']:
+            if argument in ['isinvitable', 'userinvitation', 'userinvitations']:
                 gapi_cloudidentity_userinvitations.is_invitable_user()
             sys.exit(0)
         elif command in ['cancelwipe', 'wipe', 'approve', 'block', 'sync']:
