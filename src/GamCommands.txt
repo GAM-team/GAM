@@ -1290,6 +1290,7 @@ gam create printer <PrinterAttribute>+
 gam update printer <PrinterID> <PrinterAttribute>+
 gam delete printer <PrinterIDList>|(file <FileName>)|(csvfile <FileName>:<FieldName>)
 
+gam info printer <PrinterID>
 gam print printers [todrive] [filter <String>]
 gam print printermodels [todrive] [filter <String>]
 

@@ -11295,6 +11295,8 @@ def ProcessGAMCommand(args):
                 gapi_directory_domainaliases.info()
             elif argument in ['resoldcustomer', 'resellercustomer']:
                 doGetResoldCustomer()
+            elif argument in ['printer']:
+                gapi_directory_printers.info()
             elif argument in [
                     'resoldsubscription', 'resoldsubscriptions',
                     'resellersubscription', 'resellersubscriptions'
