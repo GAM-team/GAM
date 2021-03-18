@@ -1,10 +1,9 @@
 """Methods related to Cloud Identity User Invitation API"""
-# pylint: disable=unused-wildcard-import wildcard-import
 import sys
 
 import googleapiclient
 
-from gam.var import *
+from gam.var import GC_CUSTOMER_ID, GC_Values, MY_CUSTOMER
 from gam import controlflow
 from gam import display
 from gam import gapi
