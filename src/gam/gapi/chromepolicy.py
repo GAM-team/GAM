@@ -53,16 +53,6 @@ def print_policies():
             msg = f'{myarg} is not a valid argument to "gam print chromepolicy"'
             controlflow.system_error_exit(3, msg)
     orgunit = _get_orgunit(orgunit)
-    namespaces = [
-            'chrome.users',
-#            'chrome.users.apps',
-#            'chrome.devices',
-#            'chrome.devices.managedGuest',
-#            'chrome.devices.managedGuest.apps',
-#            'chrome.devices.kiosk',
-#            'chrome.devices.kiosk.apps',
-            'chrome.printers',
-            ]
     body = {
              'policyTargetKey': {
                'targetResource': orgunit,
@@ -70,8 +60,20 @@ def print_policies():
            }
     if printer_id:
         body['policyTargetKey']['additionalTargetKeys'] = {'printer_id': printer_id}
+        namespaces = ['chrome.printers']
     elif app_id:
         body['policyTargetKey']['additionalTargetKeys'] = {'app_id': app_id}
+        namespaces = ['chrome.users.apps',
+                      'chrome.devices.managedGuest.apps',
+                      'chrome.devices.kiosk.apps']
+    else:
+        namespaces = [
+            'chrome.users',
+#           Not yet implemented:
+#           'chrome.devices',
+#           'chrome.devices.managedGuest',
+#           'chrome.devices.kiosk',
+            ]
     throw_reasons = [gapi_errors.ErrorReason.FOUR_O_O,]
     for namespace in namespaces:
         body['policySchemaFilter'] = f'{namespace}.*'

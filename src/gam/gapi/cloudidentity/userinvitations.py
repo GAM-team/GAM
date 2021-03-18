@@ -1,5 +1,6 @@
 """Methods related to Cloud Identity User Invitation API"""
 import sys
+from urllib.parse import quote_plus
 
 import googleapiclient
 
@@ -26,7 +27,8 @@ def _generic_action(action):
     svc = gapi_cloudidentity.build('cloudidentity_beta')
     customer = _get_customerid()
     email = sys.argv[3].lower()
-    name = f'{customer}/userinvitations/{email}'
+    encoded_email = quote_plus(email)
+    name = f'{customer}/userinvitations/{encoded_email}'
     action_map = {
             'cancel': 'Cancelling',
             'send': 'Sending'
@@ -45,7 +47,8 @@ def _generic_get(get_type):
     svc = gapi_cloudidentity.build('cloudidentity_beta')
     customer = _get_customerid()
     email = sys.argv[3].lower()
-    name = f'{customer}/userinvitations/{email}'
+    encoded_email = quote_plus(email)
+    name = f'{customer}/userinvitations/{encoded_email}'
     result = gapi.call(svc.customers().userinvitations(), get_type,
             name=name)
     if 'name' in result:
@@ -69,7 +72,8 @@ def bulk_is_invitable(emails):
     rows = []
     throw_reasons = [gapi_errors.ErrorReason.FOUR_O_THREE]
     for email in emails:
-        name = f'{customer}/userinvitations/{email}'
+        encoded_email = quote_plus(email)
+        name = f'{customer}/userinvitations/{encoded_email}'
         endpoint = svc.customers().userinvitations()
         #if len(ebatch._order) == batch_size:
         #    ebatch.execute()
