@@ -31,17 +31,15 @@ def build():
     return gam.buildGAPIObject('chromepolicy')
 
 
-def print_policies():
+def printshow_policies():
     svc = build()
     customer = _get_customerid()
-    orgunit = '/'
-    printer_id = None
-    app_id = None
+    orgunit = printer_id = app_id = None
     i = 3
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
-        if myarg in ['orgunit', 'ou']:
-            orgunit = sys.argv[i+1]
+        if myarg in ['ou', 'org', 'orgunit']:
+            orgunit = _get_orgunit(sys.argv[i+1])
             i += 2
         elif myarg == 'printerid':
             printer_id = sys.argv[i+1]
@@ -52,7 +50,8 @@ def print_policies():
         else:
             msg = f'{myarg} is not a valid argument to "gam print chromepolicy"'
             controlflow.system_error_exit(3, msg)
-    orgunit = _get_orgunit(orgunit)
+    if not orgunit:
+        controlflow.system_error_exit(3, 'You must specify an orgunit')
     body = {
              'policyTargetKey': {
                'targetResource': orgunit,
@@ -155,7 +154,7 @@ def build_schemas(svc=None, sfilter=None):
     return schema_objects
 
 
-def print_schemas():
+def printshow_schemas():
     svc = build()
     sfilter = None
     i = 3
@@ -198,15 +197,13 @@ def delete_policy():
     svc = build()
     customer = _get_customerid()
     schemas = build_schemas(svc)
-    orgunit = '/'
-    printer_id = None
-    app_id = None
+    orgunit = printer_id = app_id = None
     i = 3
     body = {'requests': []}
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
-        if myarg in ['orgunit', 'ou']:
-            orgunit = sys.argv[i+1]
+        if myarg in ['ou', 'org', 'orgunit']:
+            orgunit = _get_orgunit(sys.argv[i+1])
             i += 2
         elif myarg == 'printerid':
             printer_id = sys.argv[i+1]
@@ -220,7 +217,8 @@ def delete_policy():
         else:
             msg = f'{myarg} is not a valid argument to "gam delete chromepolicy"'
             controlflow.system_error_exit(3, msg)
-    orgunit = _get_orgunit(orgunit)
+    if not orgunit:
+        controlflow.system_error_exit(3, 'You must specify an orgunit')
     for request in body['requests']:
         request['policyTargetKey'] = {'targetResource': orgunit}
         if printer_id:
@@ -234,15 +232,13 @@ def update_policy():
     svc = build()
     customer = _get_customerid()
     schemas = build_schemas(svc)
+    orgunit = printer_id = app_id = None
     i = 3
     body = {'requests': []}
-    orgunit = '/'
-    printer_id = None
-    app_id = None
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
-        if myarg in ['orgunit', 'ou']:
-            orgunit = sys.argv[i+1]
+        if myarg in ['ou', 'org', 'orgunit']:
+            orgunit = _get_orgunit(sys.argv[i+1])
             i += 2
         elif myarg == 'printerid':
             printer_id = sys.argv[i+1]
@@ -291,7 +287,8 @@ def update_policy():
         else:
             msg = f'{myarg} is not a valid argument to "gam update chromepolicy"'
             controlflow.system_error_exit(4, msg)
-    orgunit = _get_orgunit(orgunit)
+    if not orgunit:
+        controlflow.system_error_exit(3, 'You must specify an orgunit')
     for request in body['requests']:
         request['policyTargetKey'] = {'targetResource': orgunit}
         if printer_id:

@@ -11495,10 +11495,6 @@ def ProcessGAMCommand(args):
                 gapi_directory_printers.print_models()
             elif argument in ['printers']:
                 gapi_directory_printers.print_()
-            elif argument == 'chromeschema':
-                gapi_chromepolicy.print_schemas()
-            elif argument == 'chromepolicy':
-                gapi_chromepolicy.print_policies()
             else:
                 controlflow.invalid_argument_exit(argument, 'gam print')
             sys.exit(0)
@@ -11516,6 +11512,10 @@ def ProcessGAMCommand(args):
                 doShowServiceAccountKeys()
             elif argument in ['browsertoken', 'browsertokens']:
                 gapi_cbcm.printshowtokens(False)
+            elif argument == 'chromeschema':
+                gapi_chromepolicy.printshow_schemas()
+            elif argument == 'chromepolicy':
+                gapi_chromepolicy.printshow_policies()
             else:
                 controlflow.invalid_argument_exit(argument, 'gam show')
             sys.exit(0)
