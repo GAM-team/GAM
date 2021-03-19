@@ -92,7 +92,7 @@ def print_policies():
             for setting, value in values.items():
                 if isinstance(value, str) and value.find('_ENUM_') != -1:
                     value = value.split('_ENUM_')[-1]
-                print(f' {setting}: {value}')
+                print(f'  {setting}: {value}')
             print()
 
 
