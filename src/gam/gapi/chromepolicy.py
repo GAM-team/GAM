@@ -34,7 +34,9 @@ def build():
 def printshow_policies():
     svc = build()
     customer = _get_customerid()
-    orgunit = printer_id = app_id = None
+    orgunit = None
+    printer_id = None
+    app_id = None
     i = 3
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
@@ -197,7 +199,9 @@ def delete_policy():
     svc = build()
     customer = _get_customerid()
     schemas = build_schemas(svc)
-    orgunit = printer_id = app_id = None
+    orgunit = None
+    printer_id = None
+    app_id = None
     i = 3
     body = {'requests': []}
     while i < len(sys.argv):
@@ -232,7 +236,9 @@ def update_policy():
     svc = build()
     customer = _get_customerid()
     schemas = build_schemas(svc)
-    orgunit = printer_id = app_id = None
+    orgunit = None
+    printer_id = None
+    app_id = None
     i = 3
     body = {'requests': []}
     while i < len(sys.argv):
