@@ -89,10 +89,13 @@ def info():
     customer = _get_customerid()
     printer_id = sys.argv[3]
     name = f'{customer}/chrome/printers/{printer_id}'
-    result = gapi.call(cdapi.customers().chrome().printers(),
+    printer = gapi.call(cdapi.customers().chrome().printers(),
                        'get',
                        name=name)
-    display.print_json(result)
+    if 'orgUnitId' in printer:
+        printer['orgUnitPath'] = gapi_directory_orgunits.orgunit_from_orgunitid(
+            printer['orgUnitId'], cdapi)
+    display.print_json(printer)
 
 
 def print_():
@@ -120,6 +123,9 @@ def print_():
                                   parent=parent,
                                   filter=filter_)
     for printer in printers:
+        if 'orgUnitId' in printer:
+            printer['orgUnitPath'] = gapi_directory_orgunits.orgunit_from_orgunitid(
+                printer['orgUnitId'], cdapi)
         row = {}
         for key, val in printer.items():
             if key not in titles:

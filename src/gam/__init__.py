@@ -1739,7 +1739,7 @@ def doPrintAdmins():
                 value = f'id:{value}'
                 admin_attrib[
                     'orgUnit'] = gapi_directory_orgunits.orgunit_from_orgunitid(
-                        value)
+                        value, cd)
             admin_attrib[key] = value
         csvRows.append(admin_attrib)
     display.write_csv_file(csvRows, titles, 'Admins', todrive)
