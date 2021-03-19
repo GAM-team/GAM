@@ -82,6 +82,19 @@ def delete():
         for printer_id in result.get('failedPrinters', []):
             print(f'ERROR: failed to delete {printer_id.get("printerIds")}')
 
+
+def info():
+    '''gam info printer'''
+    cdapi = gapi_directory.build()
+    customer = _get_customerid()
+    printer_id = sys.argv[3]
+    name = f'{customer}/chrome/printers/{printer_id}'
+    result = gapi.call(cdapi.customers().chrome().printers(),
+                       'get',
+                       name=name)
+    display.print_json(result)
+
+
 def print_():
     '''gam print printers'''
     cdapi = gapi_directory.build()
@@ -161,8 +174,8 @@ def update():
     update_mask = ','.join(body)
     # note clearMask seems unnecessary. Updating field to '' clears it.
     result = gapi.call(cdapi.customers().chrome().printers(),
-                        'patch',
-                        name=name,
-                        updateMask=update_mask,
-                        body=body)
+                       'patch',
+                       name=name,
+                       updateMask=update_mask,
+                       body=body)
     display.print_json(result)

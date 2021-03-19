@@ -147,6 +147,7 @@ If an item contains spaces, it should be surrounded by ".
 <AccessToken> ::= <String>
 <ACLScope> ::= [user:]<EmailAddress>|group:<EmailAddress>|domain[:<DomainName>]|default
 <APIScopeURL> ::= <String>
+<APPID> ::= <String>
 <ASPID> ::= <String>
 <AssetTag> ::= <String>
 <BrowserTokenPermanentID> ::= <String>
@@ -1230,10 +1231,10 @@ The listlimit <Number> argument limits the number of recent users, time ranges a
 The start <Date> and end <Date> arguments filter the time ranges.
 Delimiter defaults to comma.
 
-gam delete chromepolicy <SchemaName>+ [ou|orgunit <OrgUnitItem>] [(printerid <PrinterID>)|(appid <AppID>)]
-gam update chromepolicy (<SchemaName> (<Field> <Value>)+)+ ou|orgunit <OrgUnitItem> [(printerid <PrinterID>)|(appid <AppID>)]
-gam print chromepolicy [ou|orgunit <OrgUnitItem>] [(printerid <PrinterID>)|(appid <AppID>)]
-gam print chromeschema
+gam delete chromepolicy <SchemaName>+ ou|org|orgunit <OrgUnitItem> [(printerid <PrinterID>)|(appid <AppID>)]
+gam update chromepolicy (<SchemaName> (<Field> <Value>)+)+ ou|org|orgunit <OrgUnitItem> [(printerid <PrinterID>)|(appid <AppID>)]
+gam show chromepolicy ou|org|orgunit <OrgUnitItem> [(printerid <PrinterID>)|(appid <AppID>)]
+gam show chromeschema [filter <String>]
 
 <DeviceID> ::= devices/<String>
 <DeviceType> ::= android|chrome_os|google_sync|ios|linux|mac_os|windows
@@ -1290,6 +1291,7 @@ gam create printer <PrinterAttribute>+
 gam update printer <PrinterID> <PrinterAttribute>+
 gam delete printer <PrinterIDList>|(file <FileName>)|(csvfile <FileName>:<FieldName>)
 
+gam info printer <PrinterID>
 gam print printers [todrive] [filter <String>]
 gam print printermodels [todrive] [filter <String>]
 
