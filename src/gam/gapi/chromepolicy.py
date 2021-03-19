@@ -253,7 +253,7 @@ def update_policy():
             i += 1
             while i < len(sys.argv):
                 field = sys.argv[i].lower()
-                if field in ['orgunit', 'ou', 'printerid', 'appid'] or '.' in field:
+                if field in ['ou', 'org', 'orgunit', 'printerid', 'appid'] or '.' in field:
                     break # field is actually a new policy, orgunit or app/printer id
                 expected_fields = ', '.join(schemas[myarg]['settings'])
                 if field not in expected_fields:
