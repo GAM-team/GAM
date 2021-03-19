@@ -95,12 +95,13 @@ def print_policies():
                 print(f' {setting}: {value}')
             print()
 
-def build_schemas(svc=None):
+
+def build_schemas(svc=None, sfilter=None):
     if not svc:
         svc = build()
     parent = _get_customerid()
     schemas = gapi.get_all_pages(svc.customers().policySchemas(), 'list',
-            items='policySchemas', parent=parent)
+            items='policySchemas', parent=parent, filter=sfilter)
     schema_objects = {}
     for schema in schemas:
         schema_name = schema.get('name', '').split('/')[-1]
@@ -153,9 +154,20 @@ def build_schemas(svc=None):
         schema_objects[schema_name.lower()] = schema_dict
     return schema_objects
 
+
 def print_schemas():
     svc = build()
-    schemas = build_schemas(svc)
+    sfilter = None
+    i = 3
+    while i < len(sys.argv):
+        myarg = sys.argv[i].lower().replace('_', '')
+        if myarg == 'filter':
+            sfilter = sys.argv[i+1]
+            i += 2
+        else:
+            msg = f'{myarg} is not a valid argument to "gam print chromeschema"'
+            controlflow.system_error_exit(3, msg)
+    schemas = build_schemas(svc, sfilter)
     for value in schemas.values():
         print(f'{value.get("name")} - {value.get("description")}')
         for val in value['settings'].values():
@@ -224,13 +236,13 @@ def update_policy():
     schemas = build_schemas(svc)
     i = 3
     body = {'requests': []}
-    orgunit = None
+    orgunit = '/'
     printer_id = None
     app_id = None
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
         if myarg in ['orgunit', 'ou']:
-            orgunit = _get_orgunit(sys.argv[i+1])
+            orgunit = sys.argv[i+1]
             i += 2
         elif myarg == 'printerid':
             printer_id = sys.argv[i+1]
@@ -279,15 +291,12 @@ def update_policy():
         else:
             msg = f'{myarg} is not a valid argument to "gam update chromepolicy"'
             controlflow.system_error_exit(4, msg)
-    if not orgunit:
-        controlflow.system_error_exit(3, 'You must specify an orgunit')
+    orgunit = _get_orgunit(orgunit)
     for request in body['requests']:
         request['policyTargetKey'] = {'targetResource': orgunit}
-    if printer_id:
-        for request in body['requests']:
+        if printer_id:
             request['policyTargetKey']['additionalTargetKeys'] = {'printer_id': printer_id}
-    elif app_id:
-        for request in body['requests']:
+        elif app_id:
             request['policyTargetKey']['additionalTargetKeys'] = {'app_id': app_id}
     gapi.call(svc.customers().policies().orgunits(),
               'batchModify',
