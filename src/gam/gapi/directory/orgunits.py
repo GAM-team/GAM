@@ -402,20 +402,16 @@ def getOrgUnitId(orgUnit, cd=None):
     return (orgUnit, result['orgUnitId'])
 
 
-def buildOrgUnitIdToNameMap():
-    cd = gapi_directory.build()
-    result = gapi.call(cd.orgunits(),
-                       'list',
-                       customerId=GC_Values[GC_CUSTOMER_ID],
-                       fields='organizationUnits(orgUnitPath,orgUnitId)',
-                       type='all')
-    GM_Globals[GM_MAP_ORGUNIT_ID_TO_NAME] = {}
-    for orgUnit in result['organizationUnits']:
-        GM_Globals[GM_MAP_ORGUNIT_ID_TO_NAME][
-            orgUnit['orgUnitId']] = orgUnit['orgUnitPath']
-
-
-def orgunit_from_orgunitid(orgunitid):
-    if not GM_Globals[GM_MAP_ORGUNIT_ID_TO_NAME]:
-        buildOrgUnitIdToNameMap()
-    return GM_Globals[GM_MAP_ORGUNIT_ID_TO_NAME].get(orgunitid, orgunitid)
+def orgunit_from_orgunitid(orgunitid, cd):
+    orgunitpath = GM_Globals[GM_MAP_ORGUNIT_ID_TO_NAME].get(orgunitid)
+    if not orgunitpath:
+        try:
+            orgunitpath = gapi.call(cd.orgunits(),
+                                    'get',
+                                    customerId=GC_Values[GC_CUSTOMER_ID],
+                                    orgUnitPath=f'id:{orgunitid}' if not orgunitid.startswith('id:') else orgunitid,
+                                    fields='orgUnitPath')['orgUnitPath']
+        except:
+            orgunitpath = orgunitid
+        GM_Globals[GM_MAP_ORGUNIT_ID_TO_NAME][orgunitid] = orgunitpath
+    return orgunitpath
