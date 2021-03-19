@@ -169,7 +169,7 @@ def print_schemas():
             controlflow.system_error_exit(3, msg)
     schemas = build_schemas(svc, sfilter)
     for value in schemas.values():
-        print(f'{value.get("name")} - {value.get("description")}')
+        print(f'{value.get("name")}: {value.get("description")}')
         for val in value['settings'].values():
             vtype = val.get('type')
             print(f'  {val.get("name")}: {vtype}')
@@ -177,14 +177,14 @@ def print_schemas():
                 enums = val.get('enums', [])
                 descriptions = val.get('descriptions', [])
                 for i in range(len(val.get('enums', []))):
-                    print(f'    {enums[i]} - {descriptions[i]}')
+                    print(f'    {enums[i]}: {descriptions[i]}')
             elif vtype == 'TYPE_BOOL':
                 pvs = val.get('descriptions')
                 for pvi in pvs:
                     if isinstance(pvi, dict):
                         pvalue = pvi.get('value')
                         pdescription = pvi.get('description')
-                        print(f'    {pvalue} - {pdescription}')
+                        print(f'    {pvalue}: {pdescription}')
                     elif isinstance(pvi, list):
                         print(f'    {pvi[0]}')
             else:
