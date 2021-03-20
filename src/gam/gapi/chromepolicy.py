@@ -169,7 +169,7 @@ def printshow_schemas():
             msg = f'{myarg} is not a valid argument to "gam print chromeschema"'
             controlflow.system_error_exit(3, msg)
     schemas = build_schemas(svc, sfilter)
-    for value in schemas.values():
+    for _, value in sorted(iter(schemas.items())):
         print(f'{value.get("name")}: {value.get("description")}')
         for val in value['settings'].values():
             vtype = val.get('type')
