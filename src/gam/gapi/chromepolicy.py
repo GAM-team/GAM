@@ -86,7 +86,7 @@ def printshow_policies():
                                           body=body)
         except googleapiclient.errors.HttpError:
             policies = []
-        for policy in policies:
+        for policy in sorted(policies, key=lambda k: k.get('value', {}).get('policySchema', '')):
             name = policy.get('value', {}).get('policySchema', '')
             print(name)
             values = policy.get('value', {}).get('value', {})
