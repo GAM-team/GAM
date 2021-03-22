@@ -4,7 +4,8 @@ from urllib.parse import quote_plus
 
 import googleapiclient
 
-from gam.var import GC_CUSTOMER_ID, GC_Values, MY_CUSTOMER
+import gam
+from gam.var import GC_CUSTOMER_ID, GC_Values, MY_CUSTOMER, SORTORDER_CHOICES_MAP
 from gam import controlflow
 from gam import display
 from gam import gapi
@@ -114,31 +115,77 @@ def send():
     _generic_action('send')
 
 
+USERINVITATION_ORDERBY_CHOICES_MAP = {
+    'email': 'email',
+    'updatetime': 'update_time',
+    }
+
+USERINVITATION_STATE_CHOICES_MAP = {
+    'accepted': 'ACCEPTED',
+    'declined': 'DECLINED',
+    'invited': 'INVITED',
+    'notyetsent': 'NOT_YET_SENT',
+    }
+
 def print_():
     '''gam print userinvitations'''
     svc = gapi_cloudidentity.build('cloudidentity_beta')
     customer = _get_customerid()
     todrive = False
-    titles = []
+    titles = ['name', 'state', 'updateTime']
     rows = []
     filter_ = None
+    orderByList = []
     i = 3
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
-        if myarg == 'filter':
-            filter_ = sys.argv[i+1]
+        if myarg == 'state':
+            state = sys.argv[i + 1].lower().replace('_', '')
+            if state in USERINVITATION_STATE_CHOICES_MAP:
+                filter_ = f"state=='{USERINVITATION_STATE_CHOICES_MAP[state]}'"
+            else:
+                controlflow.expected_argument_exit('state',
+                                                   ', '.join(USERINVITATION_STATE_CHOICES_MAP),
+                                                   state)
             i += 2
+        elif myarg == 'orderby':
+            fieldName = sys.argv[i + 1].lower()
+            i += 2
+            if fieldName in USERINVITATION_ORDERBY_CHOICES_MAP:
+                fieldName = USERINVITATION_ORDERBY_CHOICES_MAP[fieldName]
+                orderBy = ''
+                if i < len(sys.argv):
+                    orderBy = sys.argv[i].lower()
+                    if orderBy in SORTORDER_CHOICES_MAP:
+                        orderBy = SORTORDER_CHOICES_MAP[orderBy]
+                        i += 1
+                if orderBy != 'DESCENDING':
+                    orderByList.append(fieldName)
+                else:
+                    orderByList.append(f'{fieldName} desc')
+            else:
+                controlflow.expected_argument_exit(
+                    'orderby', ', '.join(sorted(USERINVITATION_ORDERBY_CHOICES_MAP)),
+                    fieldName)
         elif myarg == 'todrive':
             todrive = True
             i += 1
         else:
             controlflow.invalid_argument_exit(sys.argv[i],
                                               'gam print userinvitations')
+    if orderByList:
+        orderBy = ' '.join(orderByList)
+    else:
+        orderBy = None
+    gam.printGettingAllItems('User Invitations', filter_)
+    page_message = gapi.got_total_items_msg('User Invitations', '...\n')
     invitations = gapi.get_all_pages(svc.customers().userinvitations(),
                                 'list',
                                 'userInvitations',
+                                page_message=page_message,
                                 parent=customer,
-                                filter=filter_)
+                                filter=filter_,
+                                orderBy=orderBy)
     for invitation in invitations:
         invitation['name'] = _reduce_name(invitation['name'])
         row = {}

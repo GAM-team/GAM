@@ -11186,8 +11186,6 @@ def ProcessGAMCommand(args):
                 gapi_directory_roles.create()
             elif argument in ['browsertoken', 'browsertokens']:
                 gapi_cbcm.createtoken()
-            elif argument in ['userinvitation', 'userinvitations']:
-                gapi_cloudidentity_userinvitations.send()
             elif argument in ['printer']:
                 gapi_directory_printers.create()
             else:
@@ -11498,6 +11496,13 @@ def ProcessGAMCommand(args):
             else:
                 controlflow.invalid_argument_exit(argument, 'gam print')
             sys.exit(0)
+        elif command == 'send':
+            argument = sys.argv[2].lower()
+            if argument in ['userinvitation', 'userinvitations']:
+                gapi_cloudidentity_userinvitations.send()
+            else:
+                controlflow.invalid_argument_exit(argument, 'gam send')
+            sys.exit(0)
         elif command == 'show':
             argument = sys.argv[2].lower()
             if argument in ['schema', 'schemas']:
@@ -11512,9 +11517,9 @@ def ProcessGAMCommand(args):
                 doShowServiceAccountKeys()
             elif argument in ['browsertoken', 'browsertokens']:
                 gapi_cbcm.printshowtokens(False)
-            elif argument == 'chromeschema':
+            elif argument in ['chromeschema', 'chromeschemas']:
                 gapi_chromepolicy.printshow_schemas()
-            elif argument == 'chromepolicy':
+            elif argument in ['chromepolicy', 'chromepolicies']:
                 gapi_chromepolicy.printshow_policies()
             else:
                 controlflow.invalid_argument_exit(argument, 'gam show')

@@ -1337,11 +1337,13 @@ gam print group-members|groups-members [todrive]
 	[roles <GroupRoleList>] [membernames] [fields <MembersFieldNameList>]
 	[includederivedmembership]
 
-gam create userinvitation <EmailAddress>
+gam send userinvitation <EmailAddress>
 gam cancel userinvitation <EmailAddress>
 gam check userinvitation|isinvitable <EmailAddress>
 gam info userinvitation <EmailAddress>
-gam print userinvitations [todrive] [filter <String>]
+gam print userinvitations [todrive]
+	[state notyetsent|invited|accepted|declined]]
+	[orderby email|updatetime [ascending|descending]]
 gam <UserTypeEntity> check isinvitable [todrive]
 
 gam print licenses [todrive] [(products|product <ProductIDList>)|(skus|sku <SKUIDList>)|allskus|gsuite] [countsonly]
