@@ -111,6 +111,7 @@ def build_schemas(svc=None, sfilter=None):
                 'description': schema.get('policyDescription', ''),
                 'settings': {},
                 }
+        field_descriptions = schema.get('fieldDescriptions', [])
         for mtype in schema.get('definition', {}).get('messageType', {}):
             for setting in mtype.get('field', {}):
                 setting_name = setting.get('name', '')
@@ -133,13 +134,16 @@ def build_schemas(svc=None, sfilter=None):
                             setting_dict['enums'] = [enum[prefix_len:] for enum \
                                                      in setting_dict['enums'] \
                                                      if not enum.endswith('UNSPECIFIED')]
-                            break
-                    for fdesc in schema.get('fieldDescriptions', []):
-                        if fdesc.get('field') == setting_name:
-                            setting_dict['descriptions'] = [d['description'] \
-                                                            for d in \
-                                                            fdesc.get('knownValueDescriptions', \
-                                                            [])]
+                            setting_dict['descriptions'] = ['']*len(setting_dict['enums'])
+                            if field_descriptions:
+                                for i, an in enumerate(setting_dict['enums']):
+                                    for fdesc in field_descriptions:
+                                      if fdesc.get('field') == setting_name:
+                                          for d in fdesc.get('knownValueDescriptions', []):
+                                              if d['value'][prefix_len:] == an:
+                                                  setting_dict['descriptions'][i] = d['description']
+                                                  break
+                                          break
                             break
                 elif setting_dict['type'] == 'TYPE_MESSAGE':
                     continue
