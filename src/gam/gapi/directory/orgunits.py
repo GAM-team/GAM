@@ -402,7 +402,9 @@ def getOrgUnitId(orgUnit, cd=None):
     return (orgUnit, result['orgUnitId'])
 
 
-def orgunit_from_orgunitid(orgunitid, cd):
+def orgunit_from_orgunitid(orgunitid, cd=None):
+    if cd is None:
+        cd = gapi_directory.build()
     orgunitpath = GM_Globals[GM_MAP_ORGUNIT_ID_TO_NAME].get(orgunitid)
     if not orgunitpath:
         try:
