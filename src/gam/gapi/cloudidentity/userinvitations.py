@@ -111,7 +111,7 @@ def is_invitable_user():
 
 
 def send():
-    '''gam create userinvitation <email>'''
+    '''gam send userinvitation <email>'''
     _generic_action('send')
 
 
