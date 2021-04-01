@@ -256,8 +256,10 @@ def printVersions():
                                   'browserVersions',
                                   page_message=page_message,
                                   customer=customer, orgUnitId=orgunit, filter=pfilter)
-    for version in sorted(versions, key=lambda k: k['version'], reverse=reverse):
+    for version in sorted(versions, key=lambda k: k.get('version', 'Unknown'), reverse=reverse):
         if orgunit:
             version['orgUnitPath'] = orgUnitPath
+        if 'version' not in version:
+            version['version'] = 'Unknown'
         csvRows.append(version)
     display.write_csv_file(csvRows, titles, 'Chrome Versions', todrive)
