@@ -53,6 +53,7 @@ from gam import fileutils
 from gam.gapi import calendar as gapi_calendar
 from gam.gapi import cloudidentity as gapi_cloudidentity
 from gam.gapi import cbcm as gapi_cbcm
+from gam.gapi import chromemanagement as gapi_chromemanagement
 from gam.gapi import chromepolicy as gapi_chromepolicy
 from gam.gapi.cloudidentity import devices as gapi_cloudidentity_devices
 from gam.gapi.cloudidentity import groups as gapi_cloudidentity_groups
@@ -10249,6 +10250,11 @@ OAUTH2_SCOPES = [
         'scopes': 'https://www.googleapis.com/auth/admin.directory.device.chromebrowsers',
     },
     {
+        'name': 'Chrome Management API - read only',
+        'subscope': [],
+        'scopes': ['https://www.googleapis.com/auth/chrome.management.reports.readonly'],
+    },
+    {
         'name': 'Chrome Policy API',
         'subscope': ['readonly'],
         'scopes': ['https://www.googleapis.com/auth/chrome.management.policy'],
@@ -11493,6 +11499,12 @@ def ProcessGAMCommand(args):
                 gapi_directory_printers.print_models()
             elif argument in ['printers']:
                 gapi_directory_printers.print_()
+            elif argument in ['chromeapps']:
+                gapi_chromemanagement.printApps()
+            elif argument in ['chromeappdevices']:
+                gapi_chromemanagement.printAppDevices()
+            elif argument in ['chromeversions']:
+                gapi_chromemanagement.printVersions()
             else:
                 controlflow.invalid_argument_exit(argument, 'gam print')
             sys.exit(0)
