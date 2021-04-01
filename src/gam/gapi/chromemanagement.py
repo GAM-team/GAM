@@ -125,6 +125,8 @@ def printAppDevices():
     orgunit = None
     appId = None
     appType = None
+    startDate = None
+    endDate = None
     pfilter = None
     orderBy = None
     i = 3
@@ -147,8 +149,11 @@ def printAppDevices():
                                                    appType)
             appType = CHROME_APP_DEVICES_APPTYPE_CHOICE_MAP[appType]
             i += 2
-        elif myarg == 'filter':
-            pfilter = sys.argv[i + 1]
+        elif myarg in CROS_START_ARGUMENTS:
+            startDate = _getFilterDate(sys.argv[i + 1]).strftime(YYYYMMDD_FORMAT)
+            i += 2
+        elif myarg in CROS_END_ARGUMENTS:
+            endDate = _getFilterDate(sys.argv[i + 1]).strftime(YYYYMMDD_FORMAT)
             i += 2
         elif myarg == 'orderby':
             orderBy = sys.argv[i + 1].lower().replace('_', '')
@@ -165,6 +170,14 @@ def printAppDevices():
         controlflow.system_error_exit(3, 'You must specify an appid')
     if not appType:
         controlflow.system_error_exit(3, 'You must specify an apptype')
+    if endDate:
+        pfilter = f'last_active_date<={endDate}'
+    if startDate:
+        if pfilter:
+            pfilter += ' AND '
+        else:
+            pfilter = ''
+        pfilter += f'last_active_date>={startDate}'
     if orgunit:
         orgUnitPath = gapi_directory_orgunits.orgunit_from_orgunitid(orgunit, None)
         titles.append('orgUnitPath')

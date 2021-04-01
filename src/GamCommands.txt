@@ -1239,7 +1239,7 @@ gam print chromeapps [todrive]
 gam print chromeappdevices [todrive]
 	appid <AppID> apptype extension|app|theme|hostedapp|androidapp
 	[ou|org|orgunit <OrgUnitItem>]
-	[filter <String>]
+	[start <Date>] [end <Date>]
 	[orderby deviceid|machine]
 
 gam print chromeversions [todrive]
