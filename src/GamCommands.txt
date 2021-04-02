@@ -1005,8 +1005,8 @@ gam delete org|ou <OrgUnitPath>
 gam info org|ou <OrgUnitPath> [nousers|notsuspended|suspended] [children|child]
 gam print orgs|ous [todrive] [toplevelonly] [from_parent <OrgUnitPath>] [allfields|(fields <OrgUnitFieldNameList>)]
 
-gam create alias|nickname <EmailAddress> user|group|target <UniqueID>|<EmailAddress>
-gam update alias|nickname <EmailAddress> user|group|target <UniqueID>|<EmailAddress>
+gam create alias|nickname <EmailAddress> user|group|target <UniqueID>|<EmailAddress> [verifynotinvitable]
+gam update alias|nickname <EmailAddress> user|group|target <UniqueID>|<EmailAddress> [verifynotinvitable]
 gam delete alias|nickname [user|group|target] <UniqueID>|<EmailAddress>
 gam info alias|nickname <EmailAddress>
 gam print aliases|nicknames [todrive] [shownoneditable] [nogroups] [nousers] [(query <QueryUser>)|(queries <QueryUserList)]
@@ -1331,8 +1331,8 @@ gam print cigroup-members|cigroups-members [todrive]
 	[(enterprisemember <UserItem>)|(cigroup <GroupItem>)]
 	[roles <GroupRoleList>]
 
-gam create group <EmailAddress> <GroupAttribute>*
-gam update group <GroupItem> [email <EmailAddress>] <GroupAttribute>*
+gam create group <EmailAddress> <GroupAttribute>* [verifynotinvitable]
+gam update group <GroupItem> [email <EmailAddress>] <GroupAttribute>* [verifynotinvitable]
 gam update group <GroupItem> add [owner|manager|member] [notsuspended|suspended] [allmail|daily|digest|none|nomail] <UserTypeEntity>
 gam update group <GroupItem> delete|remove [owner|manager|member] <UserTypeEntity>
 gam update group <GroupItem> sync [owner|manager|member] [notsuspended|suspended] [allmail|daily|digest|none|nomail] <UserTypeEntity>
@@ -1388,8 +1388,8 @@ gam info schema <SchemaName>
 gam show schema|schemas
 gam print schema|schemas
 
-gam create user <EmailAddress> <UserAttribute>*
-gam update user <UserItem> <UserAttribute>* [clearschema <SchemaName>] [clearschema <SchemaName>.<FieldName>]
+gam create user <EmailAddress> <UserAttribute>* [verifynotinvitable]
+gam update user <UserItem> <UserAttribute>* [clearschema <SchemaName>] [clearschema <SchemaName>.<FieldName>] [verifynotinvitable]
 gam delete user <UserItem>
 gam undelete user <UserItem> [org|ou <OrgUnitPath>]
 gam info user [<UserItem>] [noaliases] [nogroups] [nolicenses|nolicences] [noschemas] [schemas|custom <SchemaNameList>] [userview] [skus|sku <SKUIDList>]
