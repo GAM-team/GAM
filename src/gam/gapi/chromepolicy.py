@@ -76,6 +76,13 @@ def printshow_policies():
 #           'chrome.devices.kiosk',
             ]
     throw_reasons = [gapi_errors.ErrorReason.FOUR_O_O,]
+    orgunitPath = gapi_directory_orgunits.orgunit_from_orgunitid(orgunit[9:], None)
+    header = f'Organizational Unit: {orgunitPath}'
+    if printer_id:
+        header += f', printerid: {printer_id}'
+    elif app_id:
+        header += f', appid: {app_id}'
+    print(header)
     for namespace in namespaces:
         body['policySchemaFilter'] = f'{namespace}.*'
         try:
@@ -87,6 +94,7 @@ def printshow_policies():
         except googleapiclient.errors.HttpError:
             policies = []
         for policy in sorted(policies, key=lambda k: k.get('value', {}).get('policySchema', '')):
+            print()
             name = policy.get('value', {}).get('policySchema', '')
             print(name)
             values = policy.get('value', {}).get('value', {})
@@ -94,7 +102,6 @@ def printshow_policies():
                 if isinstance(value, str) and value.find('_ENUM_') != -1:
                     value = value.split('_ENUM_')[-1]
                 print(f'  {setting}: {value}')
-            print()
 
 
 def build_schemas(svc=None, sfilter=None):
