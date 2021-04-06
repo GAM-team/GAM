@@ -7,8 +7,7 @@ from gam import display
 from gam import gapi
 from gam.gapi import directory as gapi_directory
 from gam.gapi import errors as gapi_errors
-from gam.gapi.directory import customer as gapi_directory_customer
-from gam import utils
+from gam.gapi.cloudidentity import userinvitations as gapi_cloudidentity_userinvitations
 
 
 def GroupIsAbuseOrPostmaster(emailAddr):
@@ -23,6 +22,7 @@ def create():
     cd = gapi_directory.build()
     body = {'email': gam.normalizeEmailAddressOrUID(sys.argv[3], noUid=True)}
     gs_get_before_update = got_name = False
+    verifyNotInvitable = False
     i = 4
     gs_body = {}
     gs = None
@@ -51,6 +51,9 @@ def create():
         elif myarg == 'getbeforeupdate':
             gs_get_before_update = True
             i += 1
+        elif myarg == 'verifynotinvitable':
+            verifyNotInvitable = True
+            i += 1
         else:
             if not gs:
                 gs = gam.buildGAPIObject('groupssettings')
@@ -60,6 +63,10 @@ def create():
             i += 2
     if not got_name:
         body['name'] = body['email']
+    if (verifyNotInvitable and
+        gapi_cloudidentity_userinvitations.get_is_invitable_user(body['email'])):
+        sys.stderr.write(f'Group not created, {body["email"]} is an unmanaged account\n')
+        sys.exit(51)
     print(f'Creating group {body["email"]}')
     gapi.call(cd.groups(), 'insert', body=body, fields='email')
     if gs and not GroupIsAbuseOrPostmaster(body['email']):
@@ -1138,6 +1145,7 @@ def update():
     else:
         i = 4
         use_cd_api = False
+        verifyNotInvitable = False
         gs = None
         gs_body = {}
         cd_body = {}
@@ -1155,6 +1163,9 @@ def update():
             elif myarg == 'getbeforeupdate':
                 gs_get_before_update = True
                 i += 1
+            elif myarg == 'verifynotinvitable':
+                verifyNotInvitable = True
+                i += 1
             else:
                 if not gs:
                     gs = gam.buildGAPIObject('groupssettings')
@@ -1166,6 +1177,10 @@ def update():
         if use_cd_api or (
                 group.find('@') == -1
         ):  # group settings API won't take uid so we make sure cd API is used so that we can grab real email.
+            if (verifyNotInvitable and 'email' in cd_body and
+                gapi_cloudidentity_userinvitations.get_is_invitable_user(cd_body['email'])):
+                sys.stderr.write(f'Group {group} not updated, new email {cd_body["email"]} is an unmanaged account\n')
+                sys.exit(51)
             group = gapi.call(cd.groups(),
                               'update',
                               groupKey=group,
