@@ -64,7 +64,7 @@ class TransportTest(unittest.TestCase):
         self.assertEqual(request.http, mock_create_http.return_value)
 
     def test_create_request_uses_provided_http(self):
-        request = transport.create_request(http=self.mock_http)
+        request = transport.create_request(httpObj=self.mock_http)
         self.assertEqual(request.http, self.mock_http)
 
     def test_create_request_returns_request_with_forced_user_agent(self):
