@@ -8,7 +8,7 @@ import platform
 import re
 
 GAM_AUTHOR = 'Jay Lee <jay0lee@gmail.com>'
-GAM_VERSION = '6.00'
+GAM_VERSION = '6.01'
 GAM_LICENSE = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 GAM_URL = 'https://git.io/gam'
@@ -337,6 +337,7 @@ API_SCOPE_MAPPING = {
     ],
     'calendar': ['https://www.googleapis.com/auth/calendar',],
     'cloudidentity': ['https://www.googleapis.com/auth/cloud-identity'],
+    'cloudidentity_beta': ['https://www.googleapis.com/auth/cloud-identity'],
     'drive': ['https://www.googleapis.com/auth/drive',],
     'drive3': ['https://www.googleapis.com/auth/drive',],
     'gmail': [

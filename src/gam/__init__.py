@@ -10326,7 +10326,8 @@ OAUTH2_SCOPES = [
     {
         'name': 'Cloud Identity - User Invitations',
         'subscopes': ['readonly'],
-        'scopes': 'https://www.googleapis.com/auth/cloud-identity.userinvitations'
+        'scopes': 'https://www.googleapis.com/auth/cloud-identity.userinvitations',
+        'offByDefault': True,
     },
     {
         'name': 'Contact Delegation',
