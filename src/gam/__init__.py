@@ -53,6 +53,7 @@ from gam import fileutils
 from gam.gapi import calendar as gapi_calendar
 from gam.gapi import cloudidentity as gapi_cloudidentity
 from gam.gapi import cbcm as gapi_cbcm
+from gam.gapi import chromehistory as gapi_chromehistory
 from gam.gapi import chromemanagement as gapi_chromemanagement
 from gam.gapi import chromepolicy as gapi_chromepolicy
 from gam.gapi.cloudidentity import devices as gapi_cloudidentity_devices
@@ -937,6 +938,8 @@ def getService(api, http):
             controlflow.system_error_exit(17, str(e))
         except (http_client.ResponseNotReady, OSError,
                 googleapiclient.errors.HttpError) as e:
+            if 'The request is missing a valid API key' in str(e):
+                break
             if n != retries:
                 controlflow.wait_on_failure(n, retries, str(e))
                 continue
@@ -994,6 +997,12 @@ def buildGAPIObject(api):
             GC_Values[GC_CUSTOMER_ID] = MY_CUSTOMER
     return service
 
+
+def buildGAPIObjectNoAuthentication(api):
+    GM_Globals[GM_CURRENT_API_USER] = None
+    http = transport.create_http(cache=GM_Globals[GM_CACHE_DIR])
+    service = getService(api, http)
+    return service
 
 # Convert UID to email address
 def convertUIDtoEmailAddress(emailAddressOrUID, cd=None, email_types=['user']):
@@ -11533,6 +11542,8 @@ def ProcessGAMCommand(args):
                 gapi_chromemanagement.printAppDevices()
             elif argument in ['chromeversions']:
                 gapi_chromemanagement.printVersions()
+            elif argument in ['chromehistory']:
+                gapi_chromehistory.printHistory()
             else:
                 controlflow.invalid_argument_exit(argument, 'gam print')
             sys.exit(0)
