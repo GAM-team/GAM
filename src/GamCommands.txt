@@ -1246,6 +1246,49 @@ gam print chromeversions [todrive]
 	[ou|org|orgunit <OrgUnitItem>]
 	[start <Date>] [end <Date>] [recentfirst]
 
+<ChromePlatformType>> ::=
+	all'|
+	android'|
+	ios'|
+	lacros'|
+	linux'|
+	mac'|
+	macarm64'|
+	sebview'|
+	win'|
+	win64'
+<ChromeChannelType> ::=
+	beta'|
+	canary'|
+	canaryasan'|
+	dev'|
+	stable'
+<ChromeVersionsOrderByFieldName> ::=
+	channel|
+	name|
+	platform|
+	version|
+<ChromeReleasesOrderByFieldName> ::= 
+	channel|
+	endtime|
+	fraction|
+	name|
+	platform|
+	starttime|
+	version
+
+gam print chromehistory platforms [todrive]
+gam print chromehistory channels [todrive]
+	[platform <ChromePlatformType>]
+gam print chromehistory versions [todrive]
+	[platform <ChromePlatformType>] [channel <ChromeChannelType>]
+	[filter <String>]
+        (orderby <ChromeVersionsOrderByFieldName> [ascending|descending])*
+gam print chromehistory releases [todrive]
+	[platform <ChromePlatformType>] [channel <ChromeChannelType>] [version <String>]
+	[filter <String>]
+        (orderby <ChromeReleasessOrderByFieldName> [ascending|descending])*
+
 gam delete chromepolicy <SchemaName>+ ou|org|orgunit <OrgUnitItem> [(printerid <PrinterID>)|(appid <AppID>)]
 gam update chromepolicy (<SchemaName> (<Field> <Value>)+)+ ou|org|orgunit <OrgUnitItem> [(printerid <PrinterID>)|(appid <AppID>)]
 gam show chromepolicy ou|org|orgunit <OrgUnitItem> [(printerid <PrinterID>)|(appid <AppID>)]
