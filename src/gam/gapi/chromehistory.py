@@ -20,6 +20,7 @@ CHROME_HISTORY_ENTITY_CHOICES = {
   'versions',
   'releases',
   }
+
 CHROME_PLATFORM_CHOICE_MAP = {
   'all': 'all',
   'android': 'android',
@@ -32,6 +33,7 @@ CHROME_PLATFORM_CHOICE_MAP = {
   'win': 'win',
   'win64': 'win64',
   }
+
 CHROME_CHANNEL_CHOICE_MAP = {
   'beta': 'beta',
   'canary': 'canary',
@@ -39,6 +41,7 @@ CHROME_CHANNEL_CHOICE_MAP = {
   'dev': 'dev',
   'stable': 'stable',
   }
+
 CHROME_VERSIONHISTORY_ORDERBY_CHOICE_MAP = {
   'versions':  {
     'channel': 'channel',
@@ -56,12 +59,37 @@ CHROME_VERSIONHISTORY_ORDERBY_CHOICE_MAP = {
     'version': 'version'
     }
   }
+
 CHROME_VERSIONHISTORY_TITLES = {
   'platforms': ['name', 'platformType'],
   'channels':  ['name', 'channelType'],
   'versions': ['name', 'version'],
   'releases': ['name', 'version', 'fraction', 'serving.startTime', 'serving.endTime']
   }
+
+def get_relative_milestone(channel='stable', minus=0):
+    ''' takes a channel and minus_versions like stable and -1. returns current given  milestone number '''
+    cv = build()
+    svc = cv.platforms().channels().versions().releases()
+    parent = f'chrome/platforms/all/channels/{channel}/versions/all'
+    releases = gapi.get_all_pages(cv.platforms().channels().versions().releases(),
+                                  'list',
+                                  'releases',
+                                  parent=parent,
+                                  fields='releases/version,nextPageToken')
+    milestones = []
+    # Note that milestones are usually sequential but some numbers
+    # may be skipped. For example, there was no Chrome 82 stable.
+    # Thus we need to do more than find the latest version and subtract.
+    for release in releases:
+        milestone = release.get('version').split('.')[0]
+        if milestone not in milestones:
+            milestones.append(milestone)
+    milestones.sort(reverse=True)
+    try:
+        return milestones[minus]
+    except IndexError:
+        return ''
 
 def printHistory():
     cv = build()

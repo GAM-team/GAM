@@ -9,6 +9,7 @@ from gam.var import GC_CUSTOMER_ID, GC_Values, MY_CUSTOMER
 from gam import controlflow
 from gam import gapi
 from gam.gapi import errors as gapi_errors
+from gam.gapi import chromehistory as gapi_chromehistory
 from gam.gapi.directory import orgunits as gapi_directory_orgunits
 from gam import utils
 
@@ -298,6 +299,12 @@ def update_policy():
                     value = f'{prefix}{value}'
                 elif vtype in ['TYPE_LIST']:
                     value = value.split(',')
+                if myarg == 'chrome.users.chromebrowserupdates' and \
+                   cased_field == 'targetVersionPrefixSetting':
+                       if value.find('-') != -1:
+                           channel, minus = value.split('-')
+                           milestone = gapi_chromehistory.get_relative_milestone(channel, int(minus))
+                           value = f'{milestone}.'
                 body['requests'][-1]['policyValue']['value'][cased_field] = value
                 body['requests'][-1]['updateMask'] += f'{cased_field},'
                 i += 2
