@@ -1,7 +1,7 @@
 cryptography
 distro; sys_platform == 'linux'
 filelock
-google-api-python-client>=2.0.0
+google-api-python-client==2.0.2
 google-auth-httplib2
 google-auth-oauthlib>=0.4.1
 google-auth>=1.11.2
