@@ -23,7 +23,7 @@ def _reduce_name(name):
     ''' converts long name into email address'''
     return name.split('/')[-1]
 
-def get_is_invitable_user(email):
+def is_invitable_user(email):
     '''return email isInvitableUser'''
     svc = gapi_cloudidentity.build('cloudidentity_beta')
     customer = _get_customerid()
@@ -115,7 +115,7 @@ def get():
     _generic_get('get')
 
 
-def is_invitable_user():
+def check():
     '''gam check userinvitation <email>'''
     _generic_get('isInvitableUser')
 

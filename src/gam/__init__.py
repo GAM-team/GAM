@@ -6505,6 +6505,7 @@ def getUserAttributes(i, cd, updateCmd):
         need_password = True
     need_to_hash_password = True
     need_to_b64_decrypt_password = False
+    verifyNotInvitable = False
     while i < len(sys.argv):
         myarg = sys.argv[i].lower()
         if myarg in ['firstname', 'givenname']:
@@ -7021,7 +7022,7 @@ def getUserAttributes(i, cd, updateCmd):
                 body[up][schemaName][fieldName] = sys.argv[i]
             i += 1
         elif myarg == 'verifynotinvitable':
-            body['verifyNotInvitable'] = True
+            verifyNotInvitable = True
             i += 1
         else:
             controlflow.invalid_argument_exit(
@@ -7037,7 +7038,7 @@ def getUserAttributes(i, cd, updateCmd):
         if body['password'].lower()[:5] in ['{md5}', '{sha}']:
             body['password'] = body['password'][5:]
         body['password'] = base64.b64decode(body['password']).hex()
-    return body
+    return (body, verifyNotInvitable)
 
 
 def getCRMService(login_hint):
@@ -8200,11 +8201,10 @@ def extract_nested_zip(zippedFile, toFolder, spacing=' '):
 
 def doCreateUser():
     cd = buildGAPIObject('directory')
-    body = getUserAttributes(3, cd, False)
-    if (body.pop('verifyNotInvitable', False) and
-        gapi_cloudidentity_userinvitations.get_is_invitable_user(body['primaryEmail'])):
-        sys.stderr.write(f'User not created, {body["primaryEmail"]} is an unmanaged account\n')
-        sys.exit(51)
+    body, verifyNotInvitable = getUserAttributes(3, cd, False)
+    if (verifyNotInvitable and
+        gapi_cloudidentity_userinvitations.is_invitable_user(body['primaryEmail'])):
+        controlflow.system_error_exit(51, f'User not created, {body["primaryEmail"]} is an unmanaged account')
     print(f'Creating account for {body["primaryEmail"]}')
     gapi.call(cd.users(), 'insert', body=body, fields='primaryEmail')
 
@@ -8221,15 +8221,14 @@ def doCreateAlias():
             'target type', ', '.join(['user', 'group', 'target']), target_type)
     targetKey = normalizeEmailAddressOrUID(sys.argv[5])
     if len(sys.argv) > 6:
-        myarg = sys.argv[6].lower()
+        myarg = sys.argv[6].lower().replace('_', '')
         if myarg != 'verifynotinvitable':
             controlflow.system_error_exit(
                 3,
                 f'{myarg} is not a valid argument for "gam create alias"'
                 )
-        if gapi_cloudidentity_userinvitations.get_is_invitable_user(body['alias']):
-            sys.stderr.write(f'Alias not created, {body["alias"]} is an unmanaged account\n')
-            sys.exit(51)
+        if gapi_cloudidentity_userinvitations.is_invitable_user(body['alias']):
+            controlflow.system_error_exit(51, f'Alias not created, {body["alias"]} is an unmanaged account')
     print(f'Creating alias {body["alias"]} for {target_type} {targetKey}')
     if target_type == 'user':
         gapi.call(cd.users().aliases(), 'insert', userKey=targetKey, body=body)
@@ -8259,8 +8258,7 @@ def doUpdateUser(users, i):
     cd = buildGAPIObject('directory')
     if users is None:
         users = [normalizeEmailAddressOrUID(sys.argv[3])]
-    body = getUserAttributes(i, cd, True)
-    verifyNotInvitable = body.pop('verifyNotInvitable', False)
+    body, verifyNotInvitable = getUserAttributes(i, cd, True)
     vfe = 'primaryEmail' in body and body['primaryEmail'][:4].lower() == 'vfe@'
     for user in users:
         userKey = user
@@ -8281,9 +8279,8 @@ def doUpdateUser(users, i):
                 'address': user_primary
             }]
         if (verifyNotInvitable and'primaryEmail' in body and
-            gapi_cloudidentity_userinvitations.get_is_invitable_user(body['primaryEmail'])):
-            sys.stderr.write(f'User {user} not updated, new primaryEmail {body["primaryEmail"]} is an unmanaged account\n')
-            sys.exit(51)
+            gapi_cloudidentity_userinvitations.is_invitable_user(body['primaryEmail'])):
+            controlflow.system_error_exit(51, f'User {user} not updated, new primaryEmail {body["primaryEmail"]} is an unmanaged account')
         sys.stdout.write(f'updating user {user}...\n')
         if body:
             gapi.call(cd.users(), 'update', userKey=userKey, body=body)
@@ -8319,15 +8316,14 @@ def doUpdateAlias():
             'target type', ', '.join(['user', 'group', 'target']), target_type)
     target_email = normalizeEmailAddressOrUID(sys.argv[5])
     if len(sys.argv) > 6:
-        myarg = sys.argv[6].lower()
+        myarg = sys.argv[6].lower().replace('_', '')
         if myarg != 'verifynotinvitable':
             controlflow.system_error_exit(
                 3,
                 f'{myarg} is not a valid argument for "gam update alias"'
                 )
-        if gapi_cloudidentity_userinvitations.get_is_invitable_user(alias):
-            sys.stderr.write(f'Alias not updated, {alias} is an unmanaged account\n')
-            sys.exit(51)
+        if gapi_cloudidentity_userinvitations.is_invitable_user(alias):
+            controlflow.system_error_exit(51, f'Alias not updated, {alias} is an unmanaged account')
     try:
         gapi.call(cd.users().aliases(),
                   'delete',
@@ -11658,7 +11654,7 @@ def ProcessGAMCommand(args):
         elif command == 'check':
             argument = sys.argv[2].lower()
             if argument in ['isinvitable', 'userinvitation', 'userinvitations']:
-                gapi_cloudidentity_userinvitations.is_invitable_user()
+                gapi_cloudidentity_userinvitations.check()
             sys.exit(0)
         elif command in ['cancelwipe', 'wipe', 'approve', 'block', 'sync']:
             target = sys.argv[2].lower().replace('_', '')
