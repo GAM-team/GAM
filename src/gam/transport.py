@@ -40,19 +40,19 @@ def create_http(cache=None,
     return httpObj
 
 
-def create_request(http=None):
+def create_request(httpObj=None):
     """Creates a uniform Request object with a default http, if not provided.
 
   Args:
-    http: Optional httplib2.Http compatible object to be used with the request.
+    httpObj: Optional httplib2.Http compatible object to be used with the request.
       If not provided, a default HTTP will be used.
 
   Returns:
     Request: A google_auth_httplib2.Request compatible Request.
   """
-    if not http:
-        http = create_http()
-    return Request(http)
+    if not httpObj:
+        httpObj = create_http()
+    return Request(httpObj)
 
 
 GAM_USER_AGENT = GAM_INFO

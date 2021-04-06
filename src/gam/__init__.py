@@ -894,14 +894,14 @@ def getValidOauth2TxtCredentials(force_refresh=False, api=None):
     return credentials
 
 
-def getService(api, http):
+def getService(api, httpObj):
     api, version, api_version = getAPIVersion(api)
     if api in GM_Globals[GM_CURRENT_API_SERVICES] and version in GM_Globals[
             GM_CURRENT_API_SERVICES][api]:
         service = googleapiclient.discovery.build_from_document(
-            GM_Globals[GM_CURRENT_API_SERVICES][api][version], http=http)
+            GM_Globals[GM_CURRENT_API_SERVICES][api][version], http=httpObj)
         if GM_Globals[GM_CACHE_DISCOVERY_ONLY]:
-            http.cache = None
+            httpObj.cache = None
         return service
     if api in V1_DISCOVERY_APIS:
         discoveryServiceUrl = googleapiclient.discovery.DISCOVERY_URI
@@ -913,7 +913,7 @@ def getService(api, http):
             service = googleapiclient.discovery.build(
                 api,
                 version,
-                http=http,
+                http=httpObj,
                 cache_discovery=False,
                 static_discovery=False,
                 discoveryServiceUrl=discoveryServiceUrl)
@@ -921,17 +921,17 @@ def getService(api, http):
             GM_Globals[GM_CURRENT_API_SERVICES][api][
                 version] = service._rootDesc.copy()
             if GM_Globals[GM_CACHE_DISCOVERY_ONLY]:
-                http.cache = None
+                httpObj.cache = None
             return service
         except (httplib2.ServerNotFoundError, RuntimeError) as e:
             if n != retries:
-                http.connections = {}
+                httpObj.connections = {}
                 controlflow.wait_on_failure(n, retries, str(e))
                 continue
             controlflow.system_error_exit(4, str(e))
         except (googleapiclient.errors.InvalidJsonError, KeyError,
                 ValueError) as e:
-            http.cache = None
+            httpObj.cache = None
             if n != retries:
                 controlflow.wait_on_failure(n, retries, str(e))
                 continue
@@ -949,12 +949,12 @@ def getService(api, http):
     disc_file, discovery = readDiscoveryFile(api_version)
     try:
         service = googleapiclient.discovery.build_from_document(discovery,
-                                                                http=http)
+                                                                http=httpObj)
         GM_Globals[GM_CURRENT_API_SERVICES].setdefault(api, {})
         GM_Globals[GM_CURRENT_API_SERVICES][api][
             version] = service._rootDesc.copy()
         if GM_Globals[GM_CACHE_DISCOVERY_ONLY]:
-            http.cache = None
+            httpObj.cache = None
         return service
     except (KeyError, ValueError):
         controlflow.invalid_json_exit(disc_file)
@@ -964,9 +964,9 @@ def buildGAPIObject(api):
     GM_Globals[GM_CURRENT_API_USER] = None
     credentials = getValidOauth2TxtCredentials(api=getAPIVersion(api)[0])
     credentials.user_agent = GAM_INFO
-    http = transport.AuthorizedHttp(
+    httpObj = transport.AuthorizedHttp(
         credentials, transport.create_http(cache=GM_Globals[GM_CACHE_DIR]))
-    service = getService(api, http)
+    service = getService(api, httpObj)
     if GC_Values[GC_DOMAIN]:
         if not GC_Values[GC_CUSTOMER_ID]:
             resp, result = service._http.request(
@@ -1000,8 +1000,8 @@ def buildGAPIObject(api):
 
 def buildGAPIObjectNoAuthentication(api):
     GM_Globals[GM_CURRENT_API_USER] = None
-    http = transport.create_http(cache=GM_Globals[GM_CACHE_DIR])
-    service = getService(api, http)
+    httpObj = transport.create_http(cache=GM_Globals[GM_CACHE_DIR])
+    service = getService(api, httpObj)
     return service
 
 # Convert UID to email address
@@ -1087,23 +1087,23 @@ def convertEmailAddressToUID(emailAddressOrUID, cd=None, email_type='user'):
 
 
 def buildGAPIServiceObject(api, act_as, showAuthError=True):
-    http = transport.create_http(cache=GM_Globals[GM_CACHE_DIR])
-    service = getService(api, http)
+    httpObj = transport.create_http(cache=GM_Globals[GM_CACHE_DIR])
+    service = getService(api, httpObj)
     GM_Globals[GM_CURRENT_API_USER] = act_as
     GM_Globals[GM_CURRENT_API_SCOPES] = API_SCOPE_MAPPING.get(
         api, service._rootDesc['auth']['oauth2']['scopes'])
     credentials = getSvcAcctCredentials(GM_Globals[GM_CURRENT_API_SCOPES],
                                         act_as)
-    request = transport.create_request(http)
+    request = transport.create_request(httpObj)
     retries = 3
     for n in range(1, retries + 1):
         try:
             credentials.refresh(request)
-            service._http = transport.AuthorizedHttp(credentials, http=http)
+            service._http = transport.AuthorizedHttp(credentials, http=httpObj)
             break
         except (httplib2.ServerNotFoundError, RuntimeError) as e:
             if n != retries:
-                http.connections = {}
+                httpObj.connections = {}
                 controlflow.wait_on_failure(n, retries, str(e))
                 continue
             controlflow.system_error_exit(4, e)
