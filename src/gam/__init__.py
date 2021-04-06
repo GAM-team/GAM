@@ -8398,7 +8398,8 @@ def doWhatIs():
                           throw_reasons=[
                               gapi_errors.ErrorReason.GROUP_NOT_FOUND,
                               gapi_errors.ErrorReason.NOT_FOUND,
-                              gapi_errors.ErrorReason.BAD_REQUEST
+                              gapi_errors.ErrorReason.BAD_REQUEST,
+                              gapi_errors.ErrorReason.FORBIDDEN
                           ],
                           groupKey=email,
                           fields='id,email')
@@ -8410,7 +8411,7 @@ def doWhatIs():
         doGetAliasInfo(alias_email=email)
         return
     except (gapi_errors.GapiGroupNotFoundError, gapi_errors.GapiNotFoundError,
-            gapi_errors.GapiBadRequestError):
+            gapi_errors.GapiBadRequestError, gapi_errors.GapiForbiddenError):
         sys.stderr.write(f'{email} is not a group...\n')
         sys.stderr.write(f'{email} is not a proup alias...\n')
     if gapi_cloudidentity_userinvitations.is_invitable_user(email):
