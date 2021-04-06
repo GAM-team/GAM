@@ -8373,6 +8373,7 @@ def doWhatIs():
         user_or_alias = gapi.call(cd.users(),
                                   'get',
                                   throw_reasons=[
+                                      gapi_errors.ErrorReason.USER_NOT_FOUND,
                                       gapi_errors.ErrorReason.NOT_FOUND,
                                       gapi_errors.ErrorReason.BAD_REQUEST,
                                       gapi_errors.ErrorReason.INVALID
@@ -8387,28 +8388,37 @@ def doWhatIs():
         sys.stderr.write(f'{email} is a user alias\n\n')
         doGetAliasInfo(alias_email=email)
         return
-    except (gapi_errors.GapiNotFoundError, gapi_errors.GapiBadRequestError,
-            gapi_errors.GapiInvalidError):
+    except (gapi_errors.GapiUserNotFoundError, gapi_errors.GapiNotFoundError,
+            gapi_errors.GapiBadRequestError, gapi_errors.GapiInvalidError):
         sys.stderr.write(f'{email} is not a user...\n')
-        sys.stderr.write(f'{email} is is not a user alias...\n')
+        sys.stderr.write(f'{email} is not a user alias...\n')
     try:
         group = gapi.call(cd.groups(),
                           'get',
                           throw_reasons=[
+                              gapi_errors.ErrorReason.GROUP_NOT_FOUND,
                               gapi_errors.ErrorReason.NOT_FOUND,
-                              gapi_errors.ErrorReason.BAD_REQUEST
+                              gapi_errors.ErrorReason.BAD_REQUEST,
+                              gapi_errors.ErrorReason.FORBIDDEN
                           ],
                           groupKey=email,
                           fields='id,email')
-    except (gapi_errors.GapiNotFoundError, gapi_errors.GapiBadRequestError):
-        controlflow.system_error_exit(
-            1, f'{email} is not a group either!\n\nDoesn\'t seem to exist!\n\n')
-    if (group['email'].lower() == email) or (group['id'] == email):
-        sys.stderr.write(f'{email} is a group\n\n')
-        gapi_directory_groups.info(group_name=email)
-    else:
+        if (group['email'].lower() == email) or (group['id'] == email):
+            sys.stderr.write(f'{email} is a group\n\n')
+            gapi_directory_groups.info(group_name=email)
+            return
         sys.stderr.write(f'{email} is a group alias\n\n')
         doGetAliasInfo(alias_email=email)
+        return
+    except (gapi_errors.GapiGroupNotFoundError, gapi_errors.GapiNotFoundError,
+            gapi_errors.GapiBadRequestError, gapi_errors.GapiForbiddenError):
+        sys.stderr.write(f'{email} is not a group...\n')
+        sys.stderr.write(f'{email} is not a proup alias...\n')
+    if gapi_cloudidentity_userinvitations.is_invitable_user(email):
+        sys.stderr.write(f'{email} is an unmanaged account\n\n')
+    else:
+        controlflow.system_error_exit(
+            1, f'{email} doesn\'t seem to exist!\n\n')
 
 
 def convertSKU2ProductId(res, sku, customerId):
