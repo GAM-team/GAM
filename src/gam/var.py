@@ -324,6 +324,7 @@ API_VER_MAPPING = {
     'siteVerification': 'v1',
     'storage': 'v1',
     'vault': 'v1',
+    'versionhistory': 'v1',
 }
 
 USERINFO_EMAIL_SCOPE = 'https://www.googleapis.com/auth/userinfo.email'
