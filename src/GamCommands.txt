@@ -1231,6 +1231,21 @@ The listlimit <Number> argument limits the number of recent users, time ranges a
 The start <Date> and end <Date> arguments filter the time ranges.
 Delimiter defaults to comma.
 
+gam print chromeapps [todrive]
+	[ou|org|orgunit <OrgUnitItem>]
+	[filter <String>]
+	[orderby appname|apptype|installtype|numberofpermissions|totalinstallcount]
+
+gam print chromeappdevices [todrive]
+	appid <AppID> apptype extension|app|theme|hostedapp|androidapp
+	[ou|org|orgunit <OrgUnitItem>]
+	[start <Date>] [end <Date>]
+	[orderby deviceid|machine]
+
+gam print chromeversions [todrive]
+	[ou|org|orgunit <OrgUnitItem>]
+	[start <Date>] [end <Date>] [recentfirst]
+
 gam delete chromepolicy <SchemaName>+ ou|org|orgunit <OrgUnitItem> [(printerid <PrinterID>)|(appid <AppID>)]
 gam update chromepolicy (<SchemaName> (<Field> <Value>)+)+ ou|org|orgunit <OrgUnitItem> [(printerid <PrinterID>)|(appid <AppID>)]
 gam show chromepolicy ou|org|orgunit <OrgUnitItem> [(printerid <PrinterID>)|(appid <AppID>)]
