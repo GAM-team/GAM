@@ -301,10 +301,10 @@ def update_policy():
                     value = value.split(',')
                 if myarg == 'chrome.users.chromebrowserupdates' and \
                    cased_field == 'targetVersionPrefixSetting':
-                       if value.find('-') != -1:
-                           channel, minus = value.split('-')
-                           milestone = gapi_chromehistory.get_relative_milestone(channel, int(minus))
-                           value = f'{milestone}.'
+                   if value.find('-') != -1:
+                       channel, minus = value.split('-')
+                       milestone = gapi_chromehistory.get_relative_milestone(channel, int(minus))
+                       value = f'{milestone}.'
                 body['requests'][-1]['policyValue']['value'][cased_field] = value
                 body['requests'][-1]['updateMask'] += f'{cased_field},'
                 i += 2
