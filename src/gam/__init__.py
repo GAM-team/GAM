@@ -46,7 +46,6 @@ from cryptography.x509.oid import NameOID
 
 import gam.auth.oauth
 from gam import auth
-from gam.auth import yubikey
 from gam import controlflow
 from gam import display
 from gam import fileutils
@@ -84,6 +83,7 @@ from gam import transport
 from gam import utils
 from gam.var import *
 
+yubikey = utils.LazyLoader('yubikey', globals(), 'gam.auth.yubikey')
 from passlib.hash import sha512_crypt
 
 if platform.system() == 'Linux':

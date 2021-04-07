@@ -6,8 +6,9 @@ import os
 from google.auth.jwt import Credentials as JWTCredentials
 
 import gam
+from gam import utils
+
 from gam.auth import oauth
-from gam.auth import yubikey
 from gam.var import _FN_OAUTH2_TXT
 from gam.var import _FN_OAUTH2SERVICE_JSON
 from gam.var import GC_OAUTH2_TXT
@@ -15,6 +16,7 @@ from gam.var import GC_OAUTH2SERVICE_JSON
 from gam.var import GC_ENABLE_DASA
 from gam.var import GC_Values
 
+yubikey = utils.LazyLoader('yubikey', globals(), 'gam.auth.yubikey')
 # TODO: Move logic that determines file name into this module. We should be able
 # to discover the file location without accessing a private member or waiting
 # for a global initialization.

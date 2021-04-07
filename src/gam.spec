@@ -16,8 +16,12 @@ extra_files += [('cbcm-v1.1beta1.json', '.')]
 extra_files += [('contactdelegation-v1.json', '.')]
 extra_files += [('versionhistory-v1.json', '.')]
 
+hidden_imports = [
+     'gam.auth.yubikey',
+     ]
+
 a = Analysis(['gam/__main__.py'],
-             hiddenimports=[],
+             hiddenimports=hidden_imports,
              hookspath=None,
              excludes=['FixTk', 'tcl', 'tk', '_tkinter', 'tkinter', 'Tkinter'],
              datas=extra_files,
