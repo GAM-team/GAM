@@ -1,5 +1,6 @@
 """Chrome Browser Cloud Management API calls"""
 
+import re
 import sys
 
 import googleapiclient.errors
@@ -300,11 +301,22 @@ def update_policy():
                 elif vtype in ['TYPE_LIST']:
                     value = value.split(',')
                 if myarg == 'chrome.users.chromebrowserupdates' and \
-                   cased_field == 'targetVersionPrefixSetting':
-                       if value.find('-') != -1:
-                           channel, minus = value.split('-')
-                           milestone = gapi_chromehistory.get_relative_milestone(channel, int(minus))
-                           value = f'{milestone}.'
+                      cased_field == 'targetVersionPrefixSetting':
+                    mg = re.compile(r'^([a-z]+)-(\d+)$').match(value)
+                    if mg:
+                        channel = mg.group(1).lower().replace('_', '')
+                        minus = mg.group(2)
+                        if channel not in gapi_chromehistory.CHROME_CHANNEL_CHOICE_MAP:
+                            expected_channels = ', '.join(gapi_chromehistory.CHROME_CHANNEL_CHOICE_MAP)
+                            msg = f'Expected {myarg} {cased_field} channel to be one of ' \
+                                f'{expected_channels}, got {channel}'
+                            controlflow.system_error_exit(8, msg)
+                        milestone = gapi_chromehistory.get_relative_milestone(
+                            gapi_chromehistory.CHROME_CHANNEL_CHOICE_MAP[channel], int(minus))
+                        if not milestone:
+                            msg = f'{myarg} {cased_field} channel {channel} offset {minus} does not exist'
+                            controlflow.system_error_exit(8, msg)
+                        value = f'{milestone}.'
                 body['requests'][-1]['policyValue']['value'][cased_field] = value
                 body['requests'][-1]['updateMask'] += f'{cased_field},'
                 i += 2
