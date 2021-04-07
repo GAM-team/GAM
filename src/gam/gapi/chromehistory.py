@@ -29,7 +29,7 @@ CHROME_PLATFORM_CHOICE_MAP = {
   'linux': 'linux',
   'mac': 'mac',
   'macarm64': 'mac_arm64',
-  'sebview': 'webview',
+  'webview': 'webview',
   'win': 'win',
   'win64': 'win64',
   }
@@ -39,6 +39,7 @@ CHROME_CHANNEL_CHOICE_MAP = {
   'canary': 'canary',
   'canaryasan': 'canary_asan',
   'dev': 'dev',
+  'extended': 'extended',
   'stable': 'stable',
   }
 
