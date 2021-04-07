@@ -1,5 +1,6 @@
 """Chrome Version History API calls"""
 
+import re
 import sys
 
 import gam
@@ -39,6 +40,7 @@ CHROME_CHANNEL_CHOICE_MAP = {
   'canary': 'canary',
   'canaryasan': 'canary_asan',
   'dev': 'dev',
+  'extended': 'extended',
   'stable': 'stable',
   }
 
@@ -62,13 +64,19 @@ CHROME_VERSIONHISTORY_ORDERBY_CHOICE_MAP = {
 
 CHROME_VERSIONHISTORY_TITLES = {
   'platforms': ['name', 'platformType'],
-  'channels':  ['name', 'channelType'],
-  'versions': ['name', 'version'],
-  'releases': ['name', 'version', 'fraction', 'serving.startTime', 'serving.endTime']
+  'channels':  ['name', 'channelType', 'platformType'],
+  'versions': ['name', 'version', 'platformType', 'channelType',
+               'major_version', 'minor_version', 'build', 'patch'],
+  'releases': ['name', 'version', 'fraction', 'serving.startTime',
+               'serving.endTime', 'platformType', 'channelType',
+               'major_version', 'minor_version', 'build', 'patch']
   }
 
 def get_relative_milestone(channel='stable', minus=0):
-    ''' takes a channel and minus_versions like stable and -1. returns current given  milestone number '''
+    '''
+    takes a channel and minus like stable and -1.
+    returns current given milestone number
+    '''
     cv = build()
     svc = cv.platforms().channels().versions().releases()
     parent = f'chrome/platforms/all/channels/{channel}/versions/all'
@@ -177,5 +185,24 @@ def printHistory():
                                 fields=f'nextPageToken,{entityType}',
                                 **kwargs)
     for citem in citems:
+        if 'channelType' not in citem:
+            channel_match = re.search(r"\/channels\/([^/]*)", citem['name'])
+            if channel_match:
+                try:
+                    citem['channelType'] = channel_match.group(1)
+                except IndexError:
+                    pass
+        if 'platformType' not in citem:
+            platform_match = re.search(r"\/platforms\/([^/]*)", citem['name'])
+            if platform_match:
+                try:
+                    citem['platformType'] = platform_match.group(1)
+                except IndexError:
+                    pass
+        if citem.get('version', '').count('.') == 3:
+            citem['major_version'], \
+            citem['minor_version'], \
+            citem['build'], \
+            citem['patch'] = citem['version'].split('.')
         csvRows.append(utils.flatten_json(citem))
     display.write_csv_file(csvRows, CHROME_VERSIONHISTORY_TITLES[entityType], reportTitle, todrive)
