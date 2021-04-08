@@ -114,7 +114,8 @@ If an item contains spaces, it should be surrounded by ".
 	drive8tb|8tb|googledrivestorage8tb|Google-Drive-storage-8TB|
 	drive16tb|16tb|googledrivestorage16tb|Google-Drive-storage-16TB|
 	vault|googlevault|Google-Vault|
-	vfe|googlevaultformeremployee|Google-Vault-Former-Employee
+	vfe|googlevaultformeremployee|Google-Vault-Former-Employee|
+	workspacefrontline|workspacefrontlineworker|1010020030
 
 ## Basic items built from primitives
 
