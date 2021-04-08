@@ -64,9 +64,9 @@ def doGetCustomerInfo():
         'accounts:num_users': 'Total Users',
         'accounts:gsuite_basic_total_licenses': 'G Suite Basic Licenses',
         'accounts:gsuite_basic_used_licenses': 'G Suite Basic Users',
-        'accounts:gsuite_enterprise_total_licenses': 'G Suite Enterprise ' \
+        'accounts:gsuite_enterprise_total_licenses': 'Workspace Enterprise Plus ' \
         'Licenses',
-        'accounts:gsuite_enterprise_used_licenses': 'G Suite Enterprise ' \
+        'accounts:gsuite_enterprise_used_licenses': 'Workspace Enterprise Plus ' \
         'Users',
         'accounts:gsuite_unlimited_total_licenses': 'G Suite Business ' \
         'Licenses',

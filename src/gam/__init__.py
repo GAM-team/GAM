@@ -110,7 +110,7 @@ def showUsage():
     print('''
 Usage: gam [OPTIONS]...
 
-GAM. Retrieve or set G Suite domain,
+GAM. Retrieve or set Google Workspace domain,
 user, group and alias settings. Exhaustive list of commands
 can be found at: https://github.com/jay0lee/GAM/wiki
 
@@ -136,11 +136,11 @@ def currentCountNL(i, count):
 def printGettingAllItems(items, query):
     if query:
         sys.stderr.write(
-            f'Getting all {items} in G Suite account that match query ({query}) (may take some time on a large account)...\n'
+            f'Getting all {items} in Google Workspace account that match query ({query}) (may take some time on a large account)...\n'
         )
     else:
         sys.stderr.write(
-            f'Getting all {items} in G Suite account (may take some time on a large account)...\n'
+            f'Getting all {items} in Google Workspace account (may take some time on a large account)...\n'
         )
 
 
@@ -1274,7 +1274,7 @@ def doCheckServiceAccount(users):
 
   {short_url}
 
-You will be directed to the G Suite admin console Security/API Controls/Domain-wide Delegation page
+You will be directed to the Google Workspace admin console Security/API Controls/Domain-wide Delegation page
 The "Add a new Client ID" box will open
 Make sure that "Overwrite existing client ID" is checked
 Please click Authorize to allow these scopes access.
@@ -7329,7 +7329,7 @@ def _getValidateLoginHint(login_hint=None):
     while True:
         if not login_hint:
             login_hint = input(
-                '\nWhat is your G Suite admin email address? ').strip()
+                '\nWhat is your Google Workspace admin email address? ').strip()
         if login_hint.find('@') == -1 and GC_Values[GC_DOMAIN]:
             login_hint = f'{login_hint}@{GC_Values[GC_DOMAIN].lower()}'
         if VALIDEMAIL_PATTERN.match(login_hint):
@@ -10194,7 +10194,7 @@ def OAuthInfo():
         for scope in sorted(scopes):
             print(f'  {scope}')
     if 'email' in token_info:
-        print(f'G Suite Admin: {token_info["email"]}')
+        print(f'Google Workspace Admin: {token_info["email"]}')
     if 'expires_in' in token_info:
         expires = (
             datetime.datetime.now() +
