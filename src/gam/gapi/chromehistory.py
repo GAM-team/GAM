@@ -76,8 +76,10 @@ def get_relative_milestone(channel='stable', minus=0):
     except IndexError:
         return ''
 
-def _get_platform_map(cv):
+def get_platform_map(cv=None):
     '''returns dict mapping of platform choices'''
+    if cv is None:
+        cv = build()
     result = gapi.get_all_pages(cv.platforms(),
                                 'list',
                                 'platforms',
@@ -127,7 +129,7 @@ def printHistory():
             i += 1
         elif entityType != 'platforms' and myarg == 'platform':
             cplatform = sys.argv[i + 1].lower().replace('_', '')
-            platform_map = _get_platform_map(cv)
+            platform_map = get_platform_map(cv)
             if cplatform not in platform_map:
                 controlflow.expected_argument_exit('platform',
                                                    ', '.join(platform_map),
