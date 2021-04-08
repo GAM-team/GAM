@@ -43,11 +43,11 @@ CHROME_VERSIONHISTORY_ORDERBY_CHOICE_MAP = {
 CHROME_VERSIONHISTORY_TITLES = {
   'platforms': ['platform'],
   'channels':  ['channel', 'platform'],
-  'versions': ['version', 'platform', 'channel',
+  'versions': ['version', 'channel', 'platform',
                'major_version', 'minor_version', 'build', 'patch'],
-  'releases': ['version', 'fraction', 'serving.startTime',
-               'serving.endTime', 'platform', 'channel',
-               'major_version', 'minor_version', 'build', 'patch']
+  'releases': ['version', 'channel', 'platform',
+               'major_version', 'minor_version', 'build', 'patch',
+               'fraction', 'serving.startTime','serving.endTime']
   }
 
 def get_relative_milestone(channel='stable', minus=0):
@@ -76,22 +76,26 @@ def get_relative_milestone(channel='stable', minus=0):
     except IndexError:
         return ''
 
-def _get_platform_map(cv):
+def get_platform_map(cv=None):
     '''returns dict mapping of platform choices'''
+    if cv is None:
+        cv = build()
     result = gapi.get_all_pages(cv.platforms(),
                                 'list',
                                 'platforms',
                                 parent='chrome')
     platforms = [p.get('platformType', '').lower() for p in result]
     platform_map = {'all': 'all'}
-    for platform in platforms:
-        key = platform.replace('_', '')
-        platform_map[key] = platform
+    for cplatform in platforms:
+        key = cplatform.replace('_', '')
+        platform_map[key] = cplatform
     return platform_map
 
 
-def _get_channel_map(cv):
+def get_channel_map(cv=None):
     '''returns dict mapping of channel choices'''
+    if cv is None:
+        cv = build()
     result = gapi.get_all_pages(cv.platforms().channels(),
                                 'list',
                                 'channels',
@@ -125,7 +129,7 @@ def printHistory():
             i += 1
         elif entityType != 'platforms' and myarg == 'platform':
             cplatform = sys.argv[i + 1].lower().replace('_', '')
-            platform_map = _get_platform_map(cv)
+            platform_map = get_platform_map(cv)
             if cplatform not in platform_map:
                 controlflow.expected_argument_exit('platform',
                                                    ', '.join(platform_map),
@@ -134,7 +138,7 @@ def printHistory():
             i += 2
         elif entityType in {'versions', 'releases'} and myarg == 'channel':
             channel = sys.argv[i + 1].lower().replace('_', '')
-            channel_map = _get_channel_map(cv)
+            channel_map = get_channel_map(cv)
             if channel not in channel_map:
                 controlflow.expected_argument_exit('channel',
                                                    ', '.join(channel_map),
