@@ -64,12 +64,12 @@ CHROME_VERSIONHISTORY_ORDERBY_CHOICE_MAP = {
 
 CHROME_VERSIONHISTORY_TITLES = {
   'platforms': ['name', 'platformType'],
-  'channels':  ['name', 'channelType', 'platformType'],
-  'versions': ['name', 'version', 'platformType', 'channelType',
+  'channels':  ['name', 'platformType', 'channelType'],
+  'versions': ['name', 'platformType', 'channelType', 'version',
                'major_version', 'minor_version', 'build', 'patch'],
-  'releases': ['name', 'version', 'fraction', 'serving.startTime',
-               'serving.endTime', 'platformType', 'channelType',
-               'major_version', 'minor_version', 'build', 'patch']
+  'releases': ['name', 'platformType', 'channelType', 'version',
+               'major_version', 'minor_version', 'build', 'patch',
+               'fraction', 'serving.startTime','serving.endTime']
   }
 
 def get_relative_milestone(channel='stable', minus=0):
@@ -78,7 +78,6 @@ def get_relative_milestone(channel='stable', minus=0):
     returns current given milestone number
     '''
     cv = build()
-    svc = cv.platforms().channels().versions().releases()
     parent = f'chrome/platforms/all/channels/{channel}/versions/all'
     releases = gapi.get_all_pages(cv.platforms().channels().versions().releases(),
                                   'list',
