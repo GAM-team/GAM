@@ -78,7 +78,6 @@ def get_relative_milestone(channel='stable', minus=0):
     returns current given milestone number
     '''
     cv = build()
-    svc = cv.platforms().channels().versions().releases()
     parent = f'chrome/platforms/all/channels/{channel}/versions/all'
     releases = gapi.get_all_pages(cv.platforms().channels().versions().releases(),
                                   'list',

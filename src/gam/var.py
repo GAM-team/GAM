@@ -384,16 +384,21 @@ ADDRESS_FIELDS_ARGUMENT_MAP = {
 }
 
 SERVICE_NAME_TO_ID_MAP = {
+    'Calendar': '435070579839',
+    'Currents': '553547912911',
     'Drive and Docs': '55656082996',
-    'Calendar': '435070579839'
+    'Google Data Studio': '810260081642',
 }
 
 SERVICE_NAME_CHOICES_MAP = {
+    'calendar': 'Calendar',
+    'currents': 'Currents',
+    'datastudio': 'Google Data Studio',
+    'google data studio': 'Google Data Studio',
     'drive': 'Drive and Docs',
     'drive and docs': 'Drive and Docs',
     'googledrive': 'Drive and Docs',
     'gdrive': 'Drive and Docs',
-    'calendar': 'Calendar',
 }
 
 PRINTJOB_ASCENDINGORDER_MAP = {
