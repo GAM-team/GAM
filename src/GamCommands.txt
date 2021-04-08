@@ -989,6 +989,8 @@ gam info customer
 
 <DataTransferService> ::=
 	calendar|
+	currents|
+	datastudio|"google data studio"|
 	googledrive|gdrive|drive|"drive and docs"
 <DataTransferServiceList> ::= "<DataTransferService>(,<DataTransferService>)*"
 
