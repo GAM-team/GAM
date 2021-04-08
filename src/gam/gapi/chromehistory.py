@@ -22,28 +22,6 @@ CHROME_HISTORY_ENTITY_CHOICES = {
   'releases',
   }
 
-CHROME_PLATFORM_CHOICE_MAP = {
-  'all': 'all',
-  'android': 'android',
-  'ios': 'ios',
-  'lacros': 'lacros',
-  'linux': 'linux',
-  'mac': 'mac',
-  'macarm64': 'mac_arm64',
-  'webview': 'webview',
-  'win': 'win',
-  'win64': 'win64',
-  }
-
-CHROME_CHANNEL_CHOICE_MAP = {
-  'beta': 'beta',
-  'canary': 'canary',
-  'canaryasan': 'canary_asan',
-  'dev': 'dev',
-  'extended': 'extended',
-  'stable': 'stable',
-  }
-
 CHROME_VERSIONHISTORY_ORDERBY_CHOICE_MAP = {
   'versions':  {
     'channel': 'channel',
@@ -98,6 +76,34 @@ def get_relative_milestone(channel='stable', minus=0):
     except IndexError:
         return ''
 
+def _get_platform_map(cv):
+    '''returns dict mapping of platform choices'''
+    result = gapi.get_all_pages(cv.platforms(),
+                                'list',
+                                'platforms',
+                                parent='chrome')
+    platforms = [p.get('platformType', '').lower() for p in result]
+    platform_map = {'all': 'all'}
+    for platform in platforms:
+        key = platform.replace('_', '')
+        platform_map[key] = platform
+    return platform_map
+
+
+def _get_channel_map(cv):
+    '''returns dict mapping of channel choices'''
+    result = gapi.get_all_pages(cv.platforms().channels(),
+                                'list',
+                                'channels',
+                                parent='chrome/platforms/all')
+    channels = [c.get('channelType', '').lower() for c in result]
+    channels = list(set(channels))
+    channel_map = {'all': 'all'}
+    for channel in channels:
+        key = channel.replace('_', '')
+        channel_map[key] = channel
+    return channel_map
+
 def printHistory():
     cv = build()
     entityType = sys.argv[3].lower().replace('_', '')
@@ -119,19 +125,21 @@ def printHistory():
             i += 1
         elif entityType != 'platforms' and myarg == 'platform':
             cplatform = sys.argv[i + 1].lower().replace('_', '')
-            if cplatform not in CHROME_PLATFORM_CHOICE_MAP:
+            platform_map = _get_platform_map(cv)
+            if cplatform not in platform_map:
                 controlflow.expected_argument_exit('platform',
-                                                   ', '.join(CHROME_PLATFORM_CHOICE_MAP),
+                                                   ', '.join(platform_map),
                                                    cplatform)
-            cplatform = CHROME_PLATFORM_CHOICE_MAP[cplatform]
+            cplatform = platform_map[cplatform]
             i += 2
         elif entityType in {'versions', 'releases'} and myarg == 'channel':
             channel = sys.argv[i + 1].lower().replace('_', '')
-            if channel not in CHROME_CHANNEL_CHOICE_MAP:
+            channel_map = _get_channel_map(cv)
+            if channel not in channel_map:
                 controlflow.expected_argument_exit('channel',
-                                                   ', '.join(CHROME_CHANNEL_CHOICE_MAP),
+                                                   ', '.join(channel_map),
                                                    channel)
-            channel = CHROME_CHANNEL_CHOICE_MAP[channel]
+            channel = channel_map[channel]
             i += 2
         elif entityType == 'releases' and myarg == 'version':
             version = sys.argv[i + 1]
