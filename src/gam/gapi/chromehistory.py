@@ -63,12 +63,12 @@ CHROME_VERSIONHISTORY_ORDERBY_CHOICE_MAP = {
   }
 
 CHROME_VERSIONHISTORY_TITLES = {
-  'platforms': ['name', 'platformType'],
-  'channels':  ['name', 'channelType', 'platformType'],
-  'versions': ['name', 'version', 'platformType', 'channelType',
+  'platforms': ['platform'],
+  'channels':  ['channel', 'platform'],
+  'versions': ['version', 'platform', 'channel',
                'major_version', 'minor_version', 'build', 'patch'],
-  'releases': ['name', 'version', 'fraction', 'serving.startTime',
-               'serving.endTime', 'platformType', 'channelType',
+  'releases': ['version', 'fraction', 'serving.startTime',
+               'serving.endTime', 'platform', 'channel',
                'major_version', 'minor_version', 'build', 'patch']
   }
 
@@ -185,24 +185,34 @@ def printHistory():
                                 fields=f'nextPageToken,{entityType}',
                                 **kwargs)
     for citem in citems:
-        if 'channelType' not in citem:
+        for key in list(citem):
+            if key.endswith('Type'):
+                newkey = key[:-4]
+                citem[newkey] = citem.pop(key)
+        if 'channel' in citem:
+            citem['channel'] = citem['channel'].lower()
+        else:
             channel_match = re.search(r"\/channels\/([^/]*)", citem['name'])
             if channel_match:
                 try:
-                    citem['channelType'] = channel_match.group(1)
+                    citem['channel'] = channel_match.group(1)
                 except IndexError:
                     pass
-        if 'platformType' not in citem:
+        if 'platform' in citem:
+            citem['platform'] = citem['platform'].lower()
+        else:
             platform_match = re.search(r"\/platforms\/([^/]*)", citem['name'])
             if platform_match:
                 try:
-                    citem['platformType'] = platform_match.group(1)
+                    citem['platform'] = platform_match.group(1)
                 except IndexError:
                     pass
+
         if citem.get('version', '').count('.') == 3:
             citem['major_version'], \
             citem['minor_version'], \
             citem['build'], \
             citem['patch'] = citem['version'].split('.')
+        citem.pop('name')
         csvRows.append(utils.flatten_json(citem))
     display.write_csv_file(csvRows, CHROME_VERSIONHISTORY_TITLES[entityType], reportTitle, todrive)
