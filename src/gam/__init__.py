@@ -1415,10 +1415,12 @@ def addDelegates(users, i):
             controlflow.missing_argument_exit('to', 'gam <users> delegate')
         i += 1
     delegate = normalizeEmailAddressOrUID(sys.argv[i], noUid=True)
+    delegate = gapi_directory_users.get_primary(delegate)
     i = 0
     count = len(users)
     for delegator in users:
         i += 1
+        delegator = gapi_directory_users.get_primary(delegator)
         delegator, gmail = buildGmailGAPIObject(delegator)
         if not gmail:
             continue
