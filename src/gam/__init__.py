@@ -8149,6 +8149,7 @@ def printShowTeamDrives(users, csvFormat):
             controlflow.invalid_argument_exit(
                 myarg, f"gam {['show', 'print'][csvFormat]} teamdrives")
     tds = []
+    titles = []
     for user in users:
         sys.stderr.write(f'Getting Team Drives for {user}\n')
         user, drive = buildDrive3GAPIObject(user)
@@ -8164,20 +8165,21 @@ def printShowTeamDrives(users, csvFormat):
         if not results:
             continue
         for td in results:
-            if 'id' not in td:
-                continue
-            if 'name' not in td:
-                td['name'] = '<Unknown Team Drive>'
-            this_td = {'id': td['id'], 'name': td['name']}
-            if this_td in tds:
-                continue
-            tds.append({'id': td['id'], 'name': td['name']})
+            td = utils.flatten_json(td)
+            for key in td:
+                if key not in titles:
+                    titles.append(key)
+            tds.append(td)
     if csvFormat:
-        titles = ['name', 'id']
         display.write_csv_file(tds, titles, 'Team Drives', todrive)
     else:
         for td in tds:
-            print(f'Name: {td["name"]}  ID: {td["id"]}')
+            name = td.pop('name')
+            my_id = td.pop('id')
+            print(f'Name: {name}  ID: {my_id}')
+            display.print_json(td)
+            print()
+
 
 
 def doDeleteTeamDrive(users):
