@@ -6,6 +6,7 @@ import configparser
 import csv
 import datetime
 from email import message_from_string
+import io
 import json
 import mimetypes
 import os
@@ -3571,14 +3572,19 @@ def getDriveFileAttribute(i, body, parameters, myarg, update=False):
     operation = 'update' if update else 'add'
     if myarg == 'localfile':
         parameters[DFA_LOCALFILEPATH] = sys.argv[i + 1]
-        parameters[DFA_LOCALFILENAME] = os.path.basename(
-            parameters[DFA_LOCALFILEPATH])
-        body.setdefault('title', parameters[DFA_LOCALFILENAME])
-        body['mimeType'] = mimetypes.guess_type(
-            parameters[DFA_LOCALFILEPATH])[0]
-        if body['mimeType'] is None:
-            body['mimeType'] = 'application/octet-stream'
-        parameters[DFA_LOCALMIMETYPE] = body['mimeType']
+        if parameters[DFA_LOCALFILEPATH] != '-':
+            parameters[DFA_LOCALFILENAME] = os.path.basename(
+                parameters[DFA_LOCALFILEPATH])
+            body.setdefault('title', parameters[DFA_LOCALFILENAME])
+            body['mimeType'] = mimetypes.guess_type(
+                parameters[DFA_LOCALFILEPATH])[0]
+            if body['mimeType'] is None:
+                body['mimeType'] = 'application/octet-stream'
+            parameters[DFA_LOCALMIMETYPE] = body['mimeType']
+        else:
+            parameters[DFA_LOCALFILENAME] = '-'
+            if body.get('mimeType') is None:
+                body['mimeType'] = 'application/octet-stream'
         i += 2
     elif myarg == 'convert':
         parameters[DFA_CONVERT] = True
@@ -3674,6 +3680,22 @@ def getDriveFileAttribute(i, body, parameters, myarg, update=False):
     return i
 
 
+def get_media_body(parameters, body):
+    if parameters[DFA_LOCALFILEPATH] != '-':
+        media_body = googleapiclient.http.MediaFileUpload(parameters[DFA_LOCALFILEPATH], mimetype=parameters[DFA_LOCALMIMETYPE], resumable=True)
+    else:
+        if body['mimeType'] == MIMETYPE_GA_SPREADSHEET:
+            mimetype = 'text/csv'
+        elif body['mimeType'] == MIMETYPE_GA_DOCUMENT:
+            mimetype = 'text/plain'
+        else:
+            mimetype = 'application/octet-stream'
+        media_body = googleapiclient.http.MediaIoBaseUpload(io.BytesIO(sys.stdin.buffer.read()), mimetype, resumable=True)
+    if media_body.size() == 0:
+        media_body = None
+    return media_body
+
+
 def has_multiple_parents(body):
     return len(body.get('parents', [])) > 1
 
@@ -3716,6 +3738,8 @@ def doUpdateDriveFile(users):
             2,
             'you cannot specify multiple file identifiers. Choose one of id, drivefilename, query.'
         )
+    if operation == 'update' and parameters[DFA_LOCALFILEPATH]:
+        media_body = get_media_body(parameters, body)
     for user in users:
         user, drive = buildDriveGAPIObject(user)
         if not drive:
@@ -3736,11 +3760,6 @@ def doUpdateDriveFile(users):
             print(f'No files to {operation} for {user}')
             continue
         if operation == 'update':
-            if parameters[DFA_LOCALFILEPATH]:
-                media_body = googleapiclient.http.MediaFileUpload(
-                    parameters[DFA_LOCALFILEPATH],
-                    mimetype=parameters[DFA_LOCALMIMETYPE],
-                    resumable=True)
             for fileId in fileIdSelection['fileIds']:
                 if media_body:
                     result = gapi.call(drive.files(),
@@ -3806,6 +3825,8 @@ def createDriveFile(users):
             i += 1
         else:
             i = getDriveFileAttribute(i, body, parameters, myarg, False)
+    if parameters[DFA_LOCALFILEPATH]:
+        media_body = get_media_body(parameters, body)
     for user in users:
         user, drive = buildDriveGAPIObject(user)
         if not drive:
@@ -3819,11 +3840,6 @@ def createDriveFile(users):
         if has_multiple_parents(body):
             sys.stderr.write(f"Multiple parents ({len(body['parents'])}) specified for {user}, only one is allowed.\n")
             continue
-        if parameters[DFA_LOCALFILEPATH]:
-            media_body = googleapiclient.http.MediaFileUpload(
-                parameters[DFA_LOCALFILEPATH],
-                mimetype=parameters[DFA_LOCALMIMETYPE],
-                resumable=True)
         result = gapi.call(drive.files(),
                            'insert',
                            convert=parameters[DFA_CONVERT],
