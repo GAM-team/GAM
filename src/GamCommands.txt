@@ -685,7 +685,7 @@ Specify a collection of Users by directly specifying them or by specifiying item
 	(name <String>)
 
 <DriveFileAddAttribute> ::=
-	(localfile <FileName>)|
+	(localfile <FileName>|-)|
 	(convert)|(ocr)|(ocrlanguage <Language>)|
 	(restricted|restrict)|(starred|star)|(trashed|trash)|(viewed|view)|
 	(contentrestrictions readonly false)|
@@ -695,7 +695,7 @@ Specify a collection of Users by directly specifying them or by specifiying item
 	(parentid <DriveFolderID>)|(parentname <DriveFolderName>)|(anyownerparentname <DriveFolderName>)|writerscantshare|writerscanshare
 	(shortcut <DriveFileID>)
 <DriveFileUpdateAttribute> ::=
-	(localfile <FileName>)|
+	(localfile <FileName>|-)|
 	(convert)|(ocr)|(ocrlanguage <Language>)|
 	(restricted|restrict <Boolean>)|(starred|star <Boolean>)|(trashed|trash <Boolean>)|(viewed|view <Boolean>)|
 	(contentrestrictions readonly false)|
