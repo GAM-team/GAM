@@ -5326,20 +5326,27 @@ def gmail_del_result(request_id, response, exception):
         print(exception)
 
 
-def showLabels(users):
+def printShowLabels(users, show=True):
     i = 5
-    onlyUser = showCounts = False
+    onlyUser = False
+    showCounts = False
+    todrive = False
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
         if myarg == 'onlyuser':
             onlyUser = True
+            i += 1
+        elif myarg == 'todrive':
+            todrive = True
             i += 1
         elif myarg == 'showcounts':
             showCounts = True
             i += 1
         else:
             controlflow.invalid_argument_exit(sys.argv[i],
-                                              'gam <users> show labels')
+                                          'gam <users> show labels')
+    if not show:
+        titles = ['email']
     for user in users:
         user, gmail = buildGmailGAPIObject(user)
         if not gmail:
@@ -5347,28 +5354,45 @@ def showLabels(users):
         labels = gapi.call(gmail.users().labels(),
                            'list',
                            userId=user,
-                           soft_errors=True)
-        if labels:
-            for label in labels['labels']:
-                if onlyUser and (label['type'] == 'system'):
-                    continue
+                           soft_errors=True).get('labels', [])
+        i = 0
+        for label in labels:
+            i += 1
+            if onlyUser and (label['type'] == 'system'):
+                continue
+            if showCounts:
+                if i >= 50 and not i % 50:
+                    # show label get count for greater than 100 labels
+                    # every 100 labels
+                    sys.stderr.write('\r')
+                    sys.stderr.flush()
+                    sys.stderr.write(f'Getting counts for label {i} of {len(labels)}')
+                counts = gapi.call(
+                    gmail.users().labels(),
+                    'get',
+                    userId=user,
+                    id=label['id'],
+                    fields=
+                   'messagesTotal,messagesUnread,threadsTotal,threadsUnread'
+                )
+                label.update(counts)
+            if show:
                 print(label['name'])
                 for a_key in label:
                     if a_key == 'name':
                         continue
                     print(f' {a_key}: {label[a_key]}')
-                if showCounts:
-                    counts = gapi.call(
-                        gmail.users().labels(),
-                        'get',
-                        userId=user,
-                        id=label['id'],
-                        fields=
-                        'messagesTotal,messagesUnread,threadsTotal,threadsUnread'
-                    )
-                    for a_key in counts:
-                        print(f' {a_key}: {counts[a_key]}')
                 print('')
+            else:
+                for key in label:
+                    if key not in titles:
+                        titles.append(key)
+                label['email'] = user
+        if not show:
+            display.write_csv_file(labels,
+                           titles,
+                           list_type='Gmail Labels',
+                           todrive=False)
 
 
 def showGmailProfile(users):
@@ -11730,7 +11754,7 @@ def ProcessGAMCommand(args):
         elif command == 'show':
             showWhat = sys.argv[4].lower()
             if showWhat in ['labels', 'label']:
-                showLabels(users)
+                printShowLabels(users)
             elif showWhat == 'profile':
                 showProfile(users)
             elif showWhat == 'calendars':
@@ -11819,6 +11843,8 @@ def ProcessGAMCommand(args):
                 printShowTeamDrives(users, True)
             elif printWhat in ['contactdelegate', 'contactdelegates']:
                 gapi_contactdelegation.print_(users, True)
+            elif printWhat in ['labels']:
+                printShowLabels(users, show=False)
             else:
                 controlflow.invalid_argument_exit(printWhat,
                                                   'gam <users> print')
