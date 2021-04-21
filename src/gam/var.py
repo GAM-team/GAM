@@ -276,6 +276,7 @@ PRODUCTID_NAME_MAPPINGS = {
     '101031': 'G Suite Workspace for Education',
     '101033': 'Google Voice',
     '101034': 'G Suite Archived',
+    '101035': 'Cloud Search',
     '101037': 'G Suite Workspace for Education',
     'Google-Apps': 'Google Workspace',
     'Google-Chrome-Device-Management': 'Google Chrome Device Management',
