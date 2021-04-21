@@ -56,6 +56,11 @@ SKUS = {
         'aliases': ['identitypremium', 'cloudidentitypremium'],
         'displayName': 'Cloud Identity Premium'
     },
+    '1010350001': {
+        'product': '101035',
+        'aliases': ['cloudsearch'],
+        'displayName': 'Google Cloud Search',
+    },
     '1010310002': {
         'product': '101031',
         'aliases': ['gsefe', 'e4e', 'gsuiteenterpriseeducation'],
