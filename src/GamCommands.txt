@@ -1623,9 +1623,9 @@ gam <UserTypeEntity> sendemail [recipient|to <EmailAddress>] [from <EmailAddress
 	[subject <String>] [(message <String>)|(file <FileName> [charset <Charset>])]
 	(header <String> <String>)*
 
-gam <UserTypeEntity> create|add delegate|delegates <EmailAddress>
-gam <UserTypeEntity> delegate|delegates to <EmailAddress>
-gam <UserTypeEntity> delete|del delegate|delegates <EmailAddress>
+gam <UserTypeEntity> create|add delegate|delegates [convertalias] <EmailAddress>
+gam <UserTypeEntity> delegate|delegates to [convertalias] <EmailAddress>
+gam <UserTypeEntity> delete|del delegate|delegates [convertalias] <EmailAddress>
 gam <UserTypeEntity> show delegates|delegate [csv]
 gam <UserTypeEntity> print delegates [todrive]
 

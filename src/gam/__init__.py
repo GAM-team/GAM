@@ -1415,13 +1415,17 @@ def addDelegates(users, i):
         if sys.argv[i].lower() != 'to':
             controlflow.missing_argument_exit('to', 'gam <users> delegate')
         i += 1
+    convertAlias = False
+    if sys.argv[i].lower().replace('_', '') == 'convertalias':
+        convertAlias = True
+        i += 1
     delegate = normalizeEmailAddressOrUID(sys.argv[i], noUid=True)
-    delegate = gapi_directory_users.get_primary(delegate)
+    if convertAlias:
+        delegate = gapi_directory_users.get_primary(delegate)
     i = 0
     count = len(users)
     for delegator in users:
         i += 1
-        delegator = gapi_directory_users.get_primary(delegator)
         delegator, gmail = buildGmailGAPIObject(delegator)
         if not gmail:
             continue
@@ -1496,7 +1500,14 @@ def printShowDelegates(users, csvFormat):
 
 
 def deleteDelegate(users):
-    delegate = normalizeEmailAddressOrUID(sys.argv[5], noUid=True)
+    convertAlias = False
+    i = 5
+    if sys.argv[i].lower().replace('_', '') == 'convertalias':
+        convertAlias = True
+        i += 1
+    delegate = normalizeEmailAddressOrUID(sys.argv[i], noUid=True)
+    if convertAlias:
+        delegate = gapi_directory_users.get_primary(delegate)
     i = 0
     count = len(users)
     for user in users:
