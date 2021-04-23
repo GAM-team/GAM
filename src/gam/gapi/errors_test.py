@@ -7,6 +7,7 @@ from unittest.mock import patch
 
 import googleapiclient.errors
 from gam.gapi import errors
+import httplib2
 
 
 def create_simple_http_error(status, reason, message):
@@ -15,10 +16,10 @@ def create_simple_http_error(status, reason, message):
 
 
 def create_http_error(status, content):
-    response = {
+    response = httplib2.Response({
         'status': status,
         'content-type': 'application/json',
-    }
+    })
     content_as_bytes = json.dumps(content).encode('UTF-8')
     return googleapiclient.errors.HttpError(response, content_as_bytes)
 
@@ -73,6 +74,7 @@ class ErrorsTest(unittest.TestCase):
     def test_get_gapi_error_extracts_user_not_found(self):
         err = create_simple_http_error(404, 'notFound',
                                        'Resource Not Found: userKey.')
+        print(err)
         http_status, reason, message = errors.get_gapi_error_detail(err)
         self.assertEqual(http_status, 404)
         self.assertEqual(reason, errors.ErrorReason.USER_NOT_FOUND.value)
@@ -158,7 +160,7 @@ class ErrorsTest(unittest.TestCase):
 
     def test_get_gapi_error_extracts_single_error_with_message(self):
         status_code = 999
-        response = {'status': status_code}
+        response = httplib2.Response({'status': status_code})
         # This error does not have an "errors" key describing each error.
         content = {'error': {'code': status_code, 'message': 'unknown error'}}
         content_as_bytes = json.dumps(content).encode('UTF-8')
@@ -172,7 +174,7 @@ class ErrorsTest(unittest.TestCase):
     def test_get_gapi_error_exits_code_4_on_malformed_error_with_unknown_description(
         self):
         status_code = 999
-        response = {'status': status_code}
+        response = httplib2.Response({'status': status_code})
         # This error only has an error_description_field and an unknown description.
         content = {'error_description': 'something errored'}
         content_as_bytes = json.dumps(content).encode('UTF-8')
@@ -184,7 +186,7 @@ class ErrorsTest(unittest.TestCase):
 
     def test_get_gapi_error_exits_on_invalid_error_description(self):
         status_code = 400
-        response = {'status': status_code}
+        response = httplib2.Response({'status': status_code})
         content = {'error_description': 'Invalid Value'}
         content_as_bytes = json.dumps(content).encode('UTF-8')
         err = googleapiclient.errors.HttpError(response, content_as_bytes)
@@ -196,7 +198,7 @@ class ErrorsTest(unittest.TestCase):
 
     def test_get_gapi_error_exits_code_4_on_unexpected_error_contents(self):
         status_code = 900
-        response = {'status': status_code}
+        response = httplib2.Response({'status': status_code})
         content = {'notErrorContentThatIsExpected': 'foo'}
         content_as_bytes = json.dumps(content).encode('UTF-8')
         err = googleapiclient.errors.HttpError(response, content_as_bytes)
