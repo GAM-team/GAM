@@ -8,6 +8,7 @@ from unittest.mock import patch
 from gam import SetGlobalVariables
 import gam.gapi as gapi
 from gam.gapi import errors
+import httplib2
 
 
 def create_http_error(status, reason, message):
@@ -21,10 +22,10 @@ def create_http_error(status, reason, message):
   Returns:
     googleapiclient.errors.HttpError
   """
-    response = {
+    response = httplib2.Response({
         'status': status,
         'content-type': 'application/json',
-    }
+    })
     content = {
         'error': {
             'code': status,
