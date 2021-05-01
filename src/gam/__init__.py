@@ -8468,7 +8468,7 @@ def doWhatIs():
     except (gapi_errors.GapiGroupNotFoundError, gapi_errors.GapiNotFoundError,
             gapi_errors.GapiBadRequestError, gapi_errors.GapiForbiddenError):
         sys.stderr.write(f'{email} is not a group...\n')
-        sys.stderr.write(f'{email} is not a proup alias...\n')
+        sys.stderr.write(f'{email} is not a group alias...\n')
     if gapi_cloudidentity_userinvitations.is_invitable_user(email):
         sys.stderr.write(f'{email} is an unmanaged account\n\n')
     else:
