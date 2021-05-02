@@ -245,6 +245,25 @@ def delete_policy():
     gapi.call(svc.customers().policies().orgunits(), 'batchInherit', customer=customer, body=body)
 
 
+CHROME_SCHEMA_TYPE_MESSAGE = {
+  'chrome.users.SessionLength':
+    {'field': 'sessiondurationlimit', 'casedField': 'sessionDurationLimit',
+     'type': 'duration', 'minVal': 1, 'maxVal': 1440, 'scale': 60},
+  'chrome.users.BrowserSwitcherDelayDuration':
+    {'field': 'browserswitcherdelayduration', 'casedField': 'browserSwitcherDelayDuration',
+     'type': 'duration', 'minVal': 0, 'maxVal': 30, 'scale': 1},
+  'chrome.users.MaxInvalidationFetchDelay':
+    {'field': 'maxinvalidationfetchdelay', 'casedField': 'maxInvalidationFetchDelay',
+     'type': 'duration', 'minVal': 1, 'maxVal': 30, 'scale': 1},
+  'chrome.users.SecurityTokenSessionSettings':
+    {'field': 'securitytokensessionnotificationseconds', 'casedField': 'securityTokenSessionNotificationSeconds',
+     'type': 'duration', 'minVal': 0, 'maxVal': 9999, 'scale': 1},
+  'chrome.users.PrintingMaxSheetsAllowed':
+    {'field': 'printingmaxsheetsallowednullable', 'casedField': 'printingMaxSheetsAllowedNullable',
+     'type': 'value', 'minVal': 1, 'maxVal': None, 'scale': 1},
+  }
+
+
 def update_policy():
     svc = build()
     customer = _get_customerid()
@@ -266,7 +285,8 @@ def update_policy():
             app_id = sys.argv[i+1]
             i += 2
         elif myarg in schemas:
-            body['requests'].append({'policyValue': {'policySchema': schemas[myarg]['name'],
+            schemaName = schemas[myarg]['name']
+            body['requests'].append({'policyValue': {'policySchema': schemaName,
                                                      'value': {}},
                                      'updateMask': ''})
             i += 1
@@ -274,6 +294,19 @@ def update_policy():
                 field = sys.argv[i].lower()
                 if field in ['ou', 'org', 'orgunit', 'printerid', 'appid'] or '.' in field:
                     break # field is actually a new policy, orgunit or app/printer id
+                # Handle TYPE_MESSAGE fields with durations or counts as a special case
+                schema = CHROME_SCHEMA_TYPE_MESSAGE.get(schemaName)
+                if schema and field == schema['field']:
+                  casedField = schema['casedField']
+                  value = gam.getInteger(sys.argv[i+1], casedField,
+                                         minVal=schema['minVal'], maxVal=schema['maxVal'])*schema['scale']
+                  if schema['type'] == 'duration':
+                    body['requests'][-1]['policyValue']['value'][casedField] = {schema['type']: f'{value}s'}
+                  else:
+                    body['requests'][-1]['policyValue']['value'][casedField] = {schema['type']: value}
+                  body['requests'][-1]['updateMask'] += f'{casedField},'
+                  i += 2
+                  continue
                 expected_fields = ', '.join(schemas[myarg]['settings'])
                 if field not in expected_fields:
                     msg = f'Expected {myarg} field of {expected_fields}. Got {field}.'
