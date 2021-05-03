@@ -98,10 +98,18 @@ def printshow_policies():
         for policy in sorted(policies, key=lambda k: k.get('value', {}).get('policySchema', '')):
             print()
             name = policy.get('value', {}).get('policySchema', '')
+            schema = CHROME_SCHEMA_TYPE_MESSAGE.get(name)
             print(name)
             values = policy.get('value', {}).get('value', {})
             for setting, value in values.items():
-                if isinstance(value, str) and value.find('_ENUM_') != -1:
+                # Handle TYPE_MESSAGE fields with durations or counts as a special case
+                if schema and setting == schema['casedField']:
+                  value = value.get(schema['type'], '')
+                  if value:
+                      if value.endswith('s'):
+                          value = value[:-1]
+                      value = int(value) // schema['scale']
+                elif isinstance(value, str) and value.find('_ENUM_') != -1:
                     value = value.split('_ENUM_')[-1]
                 print(f'  {setting}: {value}')
 
