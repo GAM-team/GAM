@@ -225,7 +225,7 @@ jobs:
              $gam info domain
              $gam oauth refresh
              $gam info user
-             $gam info user grouptree
+             $gam info user $gam_user grouptree
              export tstamp=$(date +%s%3N)
              export newbase=gha-test-$JID-$tstamp
              export newuser=$newbase@pdl.jaylee.us
@@ -252,7 +252,7 @@ jobs:
              $gam csv sample.csv gam user $gam_user sendemail recipient ~~email~~@pdl.jaylee.us subject "test message $newbase" message "GHA test message"
              $gam csv sample.csv gam update group $newgroup add member ~email
              $gam info group $newgroup
-             $gam info cigroup membertree
+             $gam info cigroup $newgroup membertree
              $gam user $gam_user check serviceaccount
              # confirm mailbox is provisoned before continuing
              $gam user $newuser waitformailbox
