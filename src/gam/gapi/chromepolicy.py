@@ -98,10 +98,18 @@ def printshow_policies():
         for policy in sorted(policies, key=lambda k: k.get('value', {}).get('policySchema', '')):
             print()
             name = policy.get('value', {}).get('policySchema', '')
+            schema = CHROME_SCHEMA_TYPE_MESSAGE.get(name)
             print(name)
             values = policy.get('value', {}).get('value', {})
             for setting, value in values.items():
-                if isinstance(value, str) and value.find('_ENUM_') != -1:
+                # Handle TYPE_MESSAGE fields with durations or counts as a special case
+                if schema and setting == schema['casedField']:
+                  value = value.get(schema['type'], '')
+                  if value:
+                      if value.endswith('s'):
+                          value = value[:-1]
+                      value = int(value) // schema['scale']
+                elif isinstance(value, str) and value.find('_ENUM_') != -1:
                     value = value.split('_ENUM_')[-1]
                 print(f'  {setting}: {value}')
 
@@ -323,14 +331,17 @@ def update_policy():
                     value = gam.getBoolean(value, field)
                 elif vtype in ['TYPE_ENUM']:
                     value = value.upper()
+                    prefix = schemas[myarg]['settings'][field]['enum_prefix']
                     enum_values = schemas[myarg]['settings'][field]['enums']
-                    if value not in enum_values:
+                    if value in enum_values:
+                        value = f'{prefix}{value}'
+                    elif value.replace(prefix, '') in enum_values:
+                        pass
+                    else:
                         expected_enums = ', '.join(enum_values)
                         msg = f'Expected {myarg} {field} value to be one of ' \
                               f'{expected_enums}, got {value}'
                         controlflow.system_error_exit(8, msg)
-                    prefix = schemas[myarg]['settings'][field]['enum_prefix']
-                    value = f'{prefix}{value}'
                 elif vtype in ['TYPE_LIST']:
                     value = value.split(',')
                 if myarg == 'chrome.users.chromebrowserupdates' and \
