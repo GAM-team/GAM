@@ -12,10 +12,10 @@ defaults:
     working-directory: src
 
 env:
-  BUILD_PYTHON_VERSION: "3.9.4"
-  MIN_PYTHON_VERSION: "3.9.4"
+  BUILD_PYTHON_VERSION: "3.9.5"
+  MIN_PYTHON_VERSION: "3.9.5"
   BUILD_OPENSSL_VERSION: "1.1.1k"
-  MIN_OPENSSL_VERSION: "1.1.1i"
+  MIN_OPENSSL_VERSION: "1.1.1k"
   PATCHELF_VERSION: "0.12"
   # PYINSTALLER_VERSION can be full commit hash or version like v4.20
   PYINSTALLER_VERSION: "e20e74c03768d432d48665b8ef1e02511b16e4be"
@@ -65,7 +65,7 @@ jobs:
             jid: 5
             goal: "build"
             gamos: "windows"
-            python: 3.9.4
+            python: 3.9 5
             pyarch: "x64" 
             platform: "x86_64"
           - os: windows-2019
@@ -73,7 +73,7 @@ jobs:
             goal: "build"
             gamos: "windows"
             platform: "x86"
-            python: 3.9.4
+            python: 3.9.5
             pyarch: "x86"
           - os: ubuntu-20.04
             goal: "test"
