@@ -41,16 +41,6 @@ jobs:
             goal: "build"
             gamos: "linux"
             platform: "x86_64"
-#          - os: [self-hosted, linux, ARM]
-#            jid: 10
-#            goal: "build"
-#            gamos: "linux"
-#            platform: "arm"
-#          - os: [self-hosted, linux, ARM64]
-#            jid: 11
-#            goal: "build"
-#            gamos: "linux"
-#            platform: "arm64"
           - os: macos-10.15
             jid: 4
             goal: "build"
@@ -93,6 +83,12 @@ jobs:
             jid: 9
             gamos: "linux"
             platform: "x86_64"
+          - os: ubuntu-20.04
+            goal: test
+            python: 3.10
+            jid: 10
+            gamos: linux
+            platform: x86_64
 
     steps:
 
