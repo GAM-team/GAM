@@ -225,6 +225,7 @@ jobs:
              $gam info domain
              $gam oauth refresh
              $gam info user
+             $gam info user grouptree
              export tstamp=$(date +%s%3N)
              export newbase=gha-test-$JID-$tstamp
              export newuser=$newbase@pdl.jaylee.us
@@ -251,6 +252,7 @@ jobs:
              $gam csv sample.csv gam user $gam_user sendemail recipient ~~email~~@pdl.jaylee.us subject "test message $newbase" message "GHA test message"
              $gam csv sample.csv gam update group $newgroup add member ~email
              $gam info group $newgroup
+             $gam info cigroup membertree
              $gam user $gam_user check serviceaccount
              # confirm mailbox is provisoned before continuing
              $gam user $newuser waitformailbox
@@ -322,7 +324,7 @@ jobs:
              $gam report admin start -3d todrive
              $gam print devices nopersonaldevices nodeviceusers filter "serial:$JID$JID$JID$JID-" | $gam csv - gam delete device id ~name
              $gam print userinvitations
-             $gam print userinvitations | $gam csv - gam create userinvitation ~name
+             $gam print userinvitations | $gam csv - gam send userinvitation ~name
              export CUSTOMER_ID="C01wfv983"
              export GA_DOMAIN="pdl.jaylee.us"
              touch $gampath/enabledasa.txt
