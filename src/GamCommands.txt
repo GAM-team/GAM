@@ -1365,7 +1365,7 @@ gam update cigroup <GroupItem> sync [owner|manager|member] [notsuspended|suspend
 gam update cigroup <GroupItem> update [owner|manager|member] [notsuspended|suspended] [expires never|<Time>] <UserTypeEntity>
 gam update cigroup <GroupItem> clear [member] [manager] [owner] [notsuspended|suspended]
 gam delete cigroup <GroupItem>
-gam info cigroup <GroupItem> [nousers] [nojoindate] [showupdatedate]
+gam info cigroup <GroupItem> [nousers] [nojoindate] [showupdatedate] [membertree]
 
 gam print cigroups [todrive]
 	[enterprisemember <UserItem>]
@@ -1438,7 +1438,7 @@ gam create user <EmailAddress> <UserAttribute>* [verifynotinvitable]
 gam update user <UserItem> <UserAttribute>* [clearschema <SchemaName>] [clearschema <SchemaName>.<FieldName>] [verifynotinvitable]
 gam delete user <UserItem>
 gam undelete user <UserItem> [org|ou <OrgUnitPath>]
-gam info user [<UserItem>] [noaliases] [nogroups] [nolicenses|nolicences] [noschemas] [schemas|custom <SchemaNameList>] [userview] [skus|sku <SKUIDList>]
+gam info user [<UserItem>] [noaliases] [nogroups] [nolicenses|nolicences] [noschemas] [schemas|custom <SchemaNameList>] [userview] [skus|sku <SKUIDList>] [grouptree]
 
 Print fields for selected users; use domain, query/queries and deleted_only to select users to print;
 if none of these options are specified, all users are printed.
