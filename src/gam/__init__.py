@@ -9018,7 +9018,7 @@ def doGetUserInfo(user_email=None):
             print('No access to show user groups.')
     elif getCIGroups:
         memberships = gapi_cloudidentity_groups.get_membership_graph(user_email)
-        print('\nGroup Mmebership Tree:')
+        print('\nGroup Membership Tree:')
         group_name_mapping = {}
         group_displayname_mapping = {}
         groups = memberships.get('groups', [])
