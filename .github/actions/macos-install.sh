@@ -4,11 +4,7 @@ echo "Xcode versionn:"
 xcodebuild -version
 export gampath=dist/gam
 rm -rf $gampath
-if [ "$PLATFORM" == "x86_64" ]; then
-    export specfile="gam.spec"
-else
-    export specfile="gam-universal2.spec"
-fi
+export specfile="gam.spec"
 $python -OO -m PyInstaller --clean --noupx --strip -F --distpath "${gampath}" "${specfile}"
 export gam="${gampath}/gam"
 $gam version extended

@@ -56,11 +56,11 @@ jobs:
             goal: "build"
             gamos: "macos"
             platform: "x86_64"
-#          - os: macos-11.0
-            #jid: 12
-            #goal: "build"
-            #gamos: "macos"
-            #platform: "universal2"
+          - os: macos-11.0
+            jid: 12
+            goal: "build"
+            gamos: "macos"
+            platform: "universal2"
           - os: windows-2019
             jid: 5
             goal: "build"

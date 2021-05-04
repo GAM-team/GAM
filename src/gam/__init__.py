@@ -619,7 +619,7 @@ TIME_OFFSET_UNITS = [('day', 86400), ('hour', 3600), ('minute', 60),
                      ('second', 1)]
 
 
-def getLocalGoogleTimeOffset(testLocation='www.googleapis.com'):
+def getLocalGoogleTimeOffset(testLocation='admin.googleapis.com'):
     localUTC = datetime.datetime.now(datetime.timezone.utc)
     try:
         # we disable SSL verify so we can still get time even if clock
@@ -733,7 +733,7 @@ def getOSPlatform():
 
 def doGAMVersion(checkForArgs=True):
     force_check = extended = simple = timeOffset = False
-    testLocation = 'www.googleapis.com'
+    testLocation = 'admin.googleapis.com'
     if checkForArgs:
         i = 2
         while i < len(sys.argv):
@@ -1169,7 +1169,7 @@ def doCheckServiceAccount(users):
         time_status = test_fail
     printPassFail(
         MESSAGE_YOUR_SYSTEM_TIME_DIFFERS_FROM_GOOGLE_BY %
-        ('www.googleapis.com', nicetime), time_status)
+        ('admin.googleapis.com', nicetime), time_status)
     oa2 = getService('oauth2', transport.create_http())
     print('Service Account Private Key Authentication:')
     # We are explicitly not doing DwD here, just confirming service account can auth
