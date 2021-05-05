@@ -138,10 +138,10 @@ def info():
         print(' Member tree:')
         global cached_group_members
         cached_group_members = {}
-        print_member_tree(ci, name)
+        print_member_tree(ci, name, 2)
 
 
-def print_member_tree(ci, group_id, spaces=2):
+def print_member_tree(ci, group_id, spaces):
     if not group_id in cached_group_members:
         cached_group_members[group_id] = gapi.get_all_pages(ci.groups().memberships(),
                                                             'list',
@@ -157,7 +157,6 @@ def print_member_tree(ci, group_id, spaces=2):
         else:
             member_type = 'group'
         member_email = member.get('preferredMemberKey', {}).get('id')
-        relation_type = member.get('relationType', '').lower()
         if member_type == 'user':
             print(f'{" " * spaces}{member_email} - user')
         elif member_type == 'group':
@@ -287,7 +286,7 @@ def print_():
         except googleapiclient.errors.HttpError:
             controlflow.system_error_exit(
                 2,
-                f'enterprisemember requires Enterprise license')
+                'enterprisemember requires Enterprise license')
         entityList = []
         for entity in result:
             if entity['relationType'] == 'DIRECT':
@@ -407,7 +406,7 @@ def _get_groups_list(ci=None, member=None, parent=None):
         except googleapiclient.errors.HttpError:
             controlflow.system_error_exit(
                     2,
-                    f'enterprisemember requires Enterprise license')
+                    'enterprisemember requires Enterprise license')
         return [group['groupKey']['id'] for group in groups_to_get if group['relationType'] == 'DIRECT']
     else:
         groups_to_get = gapi.get_all_pages(
