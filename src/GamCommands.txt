@@ -1600,6 +1600,7 @@ gam <UserTypeEntity> update labelsettings <LabelName> [name <Name>] [messagelist
 gam <UserTypeEntity> update label|labels [search <RegularExpression>] [replace <LabelReplacement>] [merge]
 gam <UserTypeEntity> delete|del label|labels <LabelName>|regex:<RegularExpression>|--ALL_LABELS--
 gam <UserTypeEntity> show labels|label [onlyuser] [showcounts]
+gam <UserTypeEntity> print labels|label [todrive] [onlyuser] [showcounts]
 
 gam <UserTypeEntity> delete messages query <QueryGmail> [doit] [max_to_delete|max_to_process <Number>]
 gam <UserTypeEntity> modify messages query <QueryGmail> [doit] [max_to_modify|max_to_process <Number>] (addlabel <LabelName>)* (removelabel <LabelName>)*
