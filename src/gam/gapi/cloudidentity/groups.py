@@ -13,12 +13,8 @@ from gam.gapi import cloudidentity as gapi_cloudidentity
 from gam.gapi.directory import customer as gapi_directory_customer
 
 
-def build():
-    return gapi_cloudidentity.build('cloudidentity')
-
-
 def create():
-    ci = build()
+    ci = gapi_cloudidentity.build()
     initialGroupConfig = 'EMPTY'
     gapi_directory_customer.setTrueCustomerId()
     parent = f'customers/{GC_Values[GC_CUSTOMER_ID]}'
@@ -70,7 +66,7 @@ def create():
 
 
 def delete():
-    ci = build()
+    ci = gapi_cloudidentity.build()
     group = sys.argv[3]
     name = group_email_to_id(ci, group)
     print(f'Deleting group {group}')
@@ -78,7 +74,7 @@ def delete():
 
 
 def info():
-    ci = build()
+    ci = gapi_cloudidentity.build('cloudidentity_beta')
     group = gam.normalizeEmailAddressOrUID(sys.argv[3])
     getUsers = True
     showJoinDate = True
@@ -118,10 +114,10 @@ def info():
                                      fields='*',
                                      pageSize=pageSize,
                                      view=view)
-        print('Members:')
+        print(' Members:')
         for member in members:
             role = get_single_role(member.get('roles', [])).lower()
-            email = member.get('preferredMemberKey', {}).get('id')
+            email = member.get('memberKey', {}).get('id')
             jc_string = ''
             if showJoinDate:
                 joined = member.get('createTime', 'Unknown')
@@ -130,7 +126,7 @@ def info():
                 updated = member.get('updateTime', 'Unknown')
                 jc_string += f'  updated {updated}'
             print(
-                f'{role}: {email}{jc_string}'
+                f'  {role}: {email}{jc_string}'
                 # f' {member.get("role", ROLE_MEMBER).lower()}: {member.get("email", member["id"])} ({member["type"].lower()})'
             )
         print(f'Total {len(members)} users in group')
@@ -156,7 +152,7 @@ def print_member_tree(ci, group_id, spaces):
             member_type = 'user'
         else:
             member_type = 'group'
-        member_email = member.get('preferredMemberKey', {}).get('id')
+        member_email = member.get('memberKey', {}).get('id')
         if member_type == 'user':
             print(f'{" " * spaces}{member_email} - user')
         elif member_type == 'group':
@@ -168,7 +164,7 @@ def print_member_tree(ci, group_id, spaces):
 
 
 def info_member():
-    ci = build()
+    ci = gapi_cloudidentity.build()
     member = gam.normalizeEmailAddressOrUID(sys.argv[3])
     group = gam.normalizeEmailAddressOrUID(sys.argv[4])
     group_name = gapi.call(ci.groups(),
@@ -198,7 +194,7 @@ GROUP_ROLES_MAP = {
 
 
 def print_():
-    ci = build()
+    ci = gapi_cloudidentity.build('cloudidentity_beta')
     i = 3
     members = membersCountOnly = managers = managersCountOnly = owners = ownersCountOnly = False
     gapi_directory_customer.setTrueCustomerId()
@@ -326,7 +322,7 @@ def print_():
                                               'list',
                                               'memberships',
                                               page_message=page_message,
-                                              message_attribute=['preferredMemberKey', 'id'],
+                                              message_attribute=['memberKey', 'id'],
                                               soft_errors=True,
                                               parent=groupKey_id,
                                               view='BASIC')
@@ -340,7 +336,7 @@ def print_():
                 ownersList = []
                 ownersCount = 0
             for member in groupMembers:
-                member_email = member['preferredMemberKey']['id']
+                member_email = member['memberKey']['id']
                 role = get_single_role(member.get('roles'))
                 if not validRoles or role in validRoles:
                     if role == ROLE_MEMBER:
@@ -384,7 +380,7 @@ def print_():
 
 def _get_groups_list(ci=None, member=None, parent=None):
     if not ci:
-        ci = build()
+        ci = gapi_cloudidentity.build()
     if not parent:
             gapi_directory_customer.setTrueCustomerId()
             parent = f'customers/{GC_Values[GC_CUSTOMER_ID]}'
@@ -423,7 +419,7 @@ def _get_groups_list(ci=None, member=None, parent=None):
 
 
 def get_membership_graph(member):
-    ci = build()
+    ci = gapi_cloudidentity.build()
     query = f"member_key_id == '{member}' && 'cloudidentity.googleapis.com/groups.discussion_forum' in labels"
     result = gapi.call(ci.groups().memberships(),
                      'getMembershipGraph',
@@ -433,7 +429,7 @@ def get_membership_graph(member):
 
 
 def print_members():
-    ci = build()
+    ci = gapi_cloudidentity.build('cloudidentity_beta')
     todrive = False
     gapi_directory_customer.setTrueCustomerId()
     parent = f'customers/{GC_Values[GC_CUSTOMER_ID]}'
@@ -490,8 +486,8 @@ def print_members():
             view='FULL',
             pageSize=500,
             page_message=page_message,
-            message_attribute=['preferredMemberKey', 'id'])
-        #fields='nextPageToken,memberships(preferredMemberKey,roles,createTime,updateTime)')
+            message_attribute=['memberKey', 'id'])
+        #fields='nextPageToken,memberships(memberKey,roles,createTime,updateTime)')
         if roles:
             group_members = filter_members_to_roles(group_members, roles)
         for member in group_members:
@@ -549,7 +545,7 @@ def update():
             ]
         return (role, expireTime, users_email)
 
-    ci = build()
+    ci = gapi_cloudidentity.build('cloudidentity_beta')
     group = sys.argv[3]
     myarg = sys.argv[4].lower()
     items = []
@@ -576,7 +572,7 @@ def update():
                     items.append(item)
             elif len(users_email) > 0:
                 body = {
-                    'preferredMemberKey': {
+                    'memberKey': {
                         'id': users_email[0]
                     },
                     'roles': [{
@@ -796,12 +792,12 @@ def update():
                     page_message=page_message,
                     throw_reasons=gapi_errors.MEMBERS_THROW_REASONS,
                     parent=parent,
-                    fields='nextPageToken,memberships(preferredMemberKey,roles)')
+                    fields='nextPageToken,memberships(memberKey,roles)')
                 result = filter_members_to_roles(result, roles)
                 if not result:
                     print('Group already has 0 members')
                     return
-                users_email = [member['preferredMemberKey']['id'] for member in result]
+                users_email = [member['memberKey']['id'] for member in result]
                 sys.stderr.write(
                     f'Group: {group}, Will remove {len(users_email)} {", ".join(roles).lower()}s.\n'
                 )

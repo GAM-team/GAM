@@ -9018,8 +9018,8 @@ def doGetUserInfo(user_email=None):
             print('No access to show user groups.')
     elif getCIGroups:
         memberships = gapi_cloudidentity_groups.get_membership_graph(user_email)
+        print('\nGroup Membership Tree:')
         if memberships:
-            print('\nGroup Membership Tree:')
             group_name_mapping = {}
             group_displayname_mapping = {}
             groups = memberships.get('groups', [])
@@ -9043,7 +9043,7 @@ def doGetUserInfo(user_email=None):
             if seen_group_count and max(seen_group_count.values()) > 1:
                 print()
                 print('   * user has multiple direct or inherited memberships in group')
-            print()
+        print()
     if getLicenses:
         print('Licenses:')
         lic = buildGAPIObject('licensing')
