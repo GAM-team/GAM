@@ -5417,9 +5417,9 @@ def printShowLabels(users, show=True):
                 label['email'] = user
         if not show:
             display.write_csv_file(labels,
-                           titles,
-                           list_type='Gmail Labels',
-                           todrive)
+                                   titles,
+                                   'Gmail Labels',
+                                   todrive)
 
 
 def showGmailProfile(users):
