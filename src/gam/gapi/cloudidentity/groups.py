@@ -148,19 +148,13 @@ def print_member_tree(ci, group_id, spaces):
     for member in cached_group_members[group_id]:
         member_id = member.get('name', '')
         member_id = member_id.split('/')[-1]
-        if member_id.isdigit():
-            member_type = 'user'
-        else:
-            member_type = 'group'
         member_email = member.get('memberKey', {}).get('id')
-        if member_type == 'user':
+        if member_id.isdigit():
             print(f'{" " * spaces}{member_email} - user')
-        elif member_type == 'group':
+        else:
             print(f'{" " * spaces}{member_email} - group')
             group_id = group_email_to_id(ci, member_email)
             print_member_tree(ci, group_id, spaces + 2)
-        else:
-            print(f'unknown member type: {member_type} for {member_email}')
 
 
 def info_member():
