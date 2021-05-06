@@ -1365,7 +1365,7 @@ gam update cigroup <GroupItem> sync [owner|manager|member] [notsuspended|suspend
 gam update cigroup <GroupItem> update [owner|manager|member] [notsuspended|suspended] [expires never|<Time>] <UserTypeEntity>
 gam update cigroup <GroupItem> clear [member] [manager] [owner] [notsuspended|suspended]
 gam delete cigroup <GroupItem>
-gam info cigroup <GroupItem> [nousers] [nojoindate] [showupdatedate]
+gam info cigroup <GroupItem> [nousers] [nojoindate] [showupdatedate] [membertree]
 
 gam print cigroups [todrive]
 	[enterprisemember <UserItem>]
@@ -1438,7 +1438,7 @@ gam create user <EmailAddress> <UserAttribute>* [verifynotinvitable]
 gam update user <UserItem> <UserAttribute>* [clearschema <SchemaName>] [clearschema <SchemaName>.<FieldName>] [verifynotinvitable]
 gam delete user <UserItem>
 gam undelete user <UserItem> [org|ou <OrgUnitPath>]
-gam info user [<UserItem>] [noaliases] [nogroups] [nolicenses|nolicences] [noschemas] [schemas|custom <SchemaNameList>] [userview] [skus|sku <SKUIDList>]
+gam info user [<UserItem>] [noaliases] [nogroups] [nolicenses|nolicences] [noschemas] [schemas|custom <SchemaNameList>] [userview] [skus|sku <SKUIDList>] [grouptree]
 
 Print fields for selected users; use domain, query/queries and deleted_only to select users to print;
 if none of these options are specified, all users are printed.
@@ -1600,6 +1600,7 @@ gam <UserTypeEntity> update labelsettings <LabelName> [name <Name>] [messagelist
 gam <UserTypeEntity> update label|labels [search <RegularExpression>] [replace <LabelReplacement>] [merge]
 gam <UserTypeEntity> delete|del label|labels <LabelName>|regex:<RegularExpression>|--ALL_LABELS--
 gam <UserTypeEntity> show labels|label [onlyuser] [showcounts]
+gam <UserTypeEntity> print labels|label [todrive] [onlyuser] [showcounts]
 
 gam <UserTypeEntity> delete messages query <QueryGmail> [doit] [max_to_delete|max_to_process <Number>]
 gam <UserTypeEntity> modify messages query <QueryGmail> [doit] [max_to_modify|max_to_process <Number>] (addlabel <LabelName>)* (removelabel <LabelName>)*

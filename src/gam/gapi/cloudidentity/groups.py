@@ -13,12 +13,8 @@ from gam.gapi import cloudidentity as gapi_cloudidentity
 from gam.gapi.directory import customer as gapi_directory_customer
 
 
-def build():
-    return gapi_cloudidentity.build('cloudidentity')
-
-
 def create():
-    ci = build()
+    ci = gapi_cloudidentity.build()
     initialGroupConfig = 'EMPTY'
     gapi_directory_customer.setTrueCustomerId()
     parent = f'customers/{GC_Values[GC_CUSTOMER_ID]}'
@@ -70,7 +66,7 @@ def create():
 
 
 def delete():
-    ci = build()
+    ci = gapi_cloudidentity.build()
     group = sys.argv[3]
     name = group_email_to_id(ci, group)
     print(f'Deleting group {group}')
@@ -78,7 +74,7 @@ def delete():
 
 
 def info():
-    ci = build()
+    ci = gapi_cloudidentity.build('cloudidentity_beta')
     group = gam.normalizeEmailAddressOrUID(sys.argv[3])
     getUsers = True
     showJoinDate = True
@@ -118,7 +114,7 @@ def info():
                                      fields='*',
                                      pageSize=pageSize,
                                      view=view)
-        print('Members:')
+        print(' Members:')
         for member in members:
             role = get_single_role(member.get('roles', [])).lower()
             email = member.get('memberKey', {}).get('id')
@@ -130,7 +126,7 @@ def info():
                 updated = member.get('updateTime', 'Unknown')
                 jc_string += f'  updated {updated}'
             print(
-                f'{role}: {email}{jc_string}'
+                f'  {role}: {email}{jc_string}'
                 # f' {member.get("role", ROLE_MEMBER).lower()}: {member.get("email", member["id"])} ({member["type"].lower()})'
             )
         print(f'Total {len(members)} users in group')
@@ -138,10 +134,10 @@ def info():
         print(' Member tree:')
         global cached_group_members
         cached_group_members = {}
-        print_member_tree(ci, name)
+        print_member_tree(ci, name, 2)
 
 
-def print_member_tree(ci, group_id, spaces=2):
+def print_member_tree(ci, group_id, spaces):
     if not group_id in cached_group_members:
         cached_group_members[group_id] = gapi.get_all_pages(ci.groups().memberships(),
                                                             'list',
@@ -152,24 +148,17 @@ def print_member_tree(ci, group_id, spaces=2):
     for member in cached_group_members[group_id]:
         member_id = member.get('name', '')
         member_id = member_id.split('/')[-1]
+        member_email = member.get('memberKey', {}).get('id')
         if member_id.isdigit():
-            member_type = 'user'
-        else:
-            member_type = 'group'
-        member_email = member.get('preferredMemberKey', {}).get('id')
-        relation_type = member.get('relationType', '').lower()
-        if member_type == 'user':
             print(f'{" " * spaces}{member_email} - user')
-        elif member_type == 'group':
+        else:
             print(f'{" " * spaces}{member_email} - group')
             group_id = group_email_to_id(ci, member_email)
             print_member_tree(ci, group_id, spaces + 2)
-        else:
-            print(f'unknown member type: {member_type} for {member_email}')
 
 
 def info_member():
-    ci = build()
+    ci = gapi_cloudidentity.build()
     member = gam.normalizeEmailAddressOrUID(sys.argv[3])
     group = gam.normalizeEmailAddressOrUID(sys.argv[4])
     group_name = gapi.call(ci.groups(),
@@ -199,7 +188,7 @@ GROUP_ROLES_MAP = {
 
 
 def print_():
-    ci = build()
+    ci = gapi_cloudidentity.build('cloudidentity_beta')
     i = 3
     members = membersCountOnly = managers = managersCountOnly = owners = ownersCountOnly = False
     gapi_directory_customer.setTrueCustomerId()
@@ -287,7 +276,7 @@ def print_():
         except googleapiclient.errors.HttpError:
             controlflow.system_error_exit(
                 2,
-                f'enterprisemember requires Enterprise license')
+                'enterprisemember requires Enterprise license')
         entityList = []
         for entity in result:
             if entity['relationType'] == 'DIRECT':
@@ -385,7 +374,7 @@ def print_():
 
 def _get_groups_list(ci=None, member=None, parent=None):
     if not ci:
-        ci = build()
+        ci = gapi_cloudidentity.build()
     if not parent:
             gapi_directory_customer.setTrueCustomerId()
             parent = f'customers/{GC_Values[GC_CUSTOMER_ID]}'
@@ -407,7 +396,7 @@ def _get_groups_list(ci=None, member=None, parent=None):
         except googleapiclient.errors.HttpError:
             controlflow.system_error_exit(
                     2,
-                    f'enterprisemember requires Enterprise license')
+                    'enterprisemember requires Enterprise license')
         return [group['groupKey']['id'] for group in groups_to_get if group['relationType'] == 'DIRECT']
     else:
         groups_to_get = gapi.get_all_pages(
@@ -424,7 +413,7 @@ def _get_groups_list(ci=None, member=None, parent=None):
 
 
 def get_membership_graph(member):
-    ci = build()
+    ci = gapi_cloudidentity.build()
     query = f"member_key_id == '{member}' && 'cloudidentity.googleapis.com/groups.discussion_forum' in labels"
     result = gapi.call(ci.groups().memberships(),
                      'getMembershipGraph',
@@ -434,7 +423,7 @@ def get_membership_graph(member):
 
 
 def print_members():
-    ci = build()
+    ci = gapi_cloudidentity.build('cloudidentity_beta')
     todrive = False
     gapi_directory_customer.setTrueCustomerId()
     parent = f'customers/{GC_Values[GC_CUSTOMER_ID]}'
@@ -550,7 +539,7 @@ def update():
             ]
         return (role, expireTime, users_email)
 
-    ci = build()
+    ci = gapi_cloudidentity.build('cloudidentity_beta')
     group = sys.argv[3]
     myarg = sys.argv[4].lower()
     items = []

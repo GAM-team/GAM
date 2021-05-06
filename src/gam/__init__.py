@@ -5417,9 +5417,9 @@ def printShowLabels(users, show=True):
                 label['email'] = user
         if not show:
             display.write_csv_file(labels,
-                           titles,
-                           list_type='Gmail Labels',
-                           todrive=False)
+                                   titles,
+                                   'Gmail Labels',
+                                   todrive)
 
 
 def showGmailProfile(users):
@@ -9019,30 +9019,30 @@ def doGetUserInfo(user_email=None):
     elif getCIGroups:
         memberships = gapi_cloudidentity_groups.get_membership_graph(user_email)
         print('\nGroup Membership Tree:')
-        group_name_mapping = {}
-        group_displayname_mapping = {}
-        groups = memberships.get('groups', [])
-        for group in groups:
-            group_name = group.get('name')
-            group_key = group.get('groupKey', {})
-            group_email = group_key.get('id', '')
-            group_display_name = group.get('displayName', '')
-            group_name_mapping[group_name] = group_email
-            group_displayname_mapping[group_email] = group_display_name
-        edges = []
-        seen_group_count = {}
-        groups_with_multi_memberships = []
-        for adj in memberships.get('adjacencyList', []):
-            group_name = adj.get('group', '')
-            group_email = group_name_mapping[group_name]
-            for edge in adj.get('edges', []):
-                seen_group_count[group_email] = seen_group_count.get(group_email, 0) + 1
-                member_email = edge.get('preferredMemberKey', {}).get('id')
-                edges.append((member_email, group_email))
-        print_group_map(user_email, group_displayname_mapping, seen_group_count, edges, spaces=3, direct=True)
-        if max(seen_group_count.values()) > 1:
-            print()
-            print('   * user has multiple direct or inherited memberships in group')
+        if memberships:
+            group_name_mapping = {}
+            group_displayname_mapping = {}
+            groups = memberships.get('groups', [])
+            for group in groups:
+                group_name = group.get('name')
+                group_key = group.get('groupKey', {})
+                group_email = group_key.get('id', '')
+                group_display_name = group.get('displayName', '')
+                group_name_mapping[group_name] = group_email
+                group_displayname_mapping[group_email] = group_display_name
+            edges = []
+            seen_group_count = {}
+            for adj in memberships.get('adjacencyList', []):
+                group_name = adj.get('group', '')
+                group_email = group_name_mapping[group_name]
+                for edge in adj.get('edges', []):
+                    seen_group_count[group_email] = seen_group_count.get(group_email, 0) + 1
+                    member_email = edge.get('preferredMemberKey', {}).get('id')
+                    edges.append((member_email, group_email))
+            print_group_map(user_email, group_displayname_mapping, seen_group_count, edges, 3, 'direct')
+            if seen_group_count and max(seen_group_count.values()) > 1:
+                print()
+                print('   * user has multiple direct or inherited memberships in group')
         print()
     if getLicenses:
         print('Licenses:')
@@ -9059,19 +9059,15 @@ def doGetUserInfo(user_email=None):
         for user_license in user_licenses:
             print(f'  {gapi_licensing._formatSKUIdDisplayName(user_license)}')
 
-def print_group_map(parent, group_name_mappings, seen_group_count, edges, spaces=3, direct=False):
+def print_group_map(parent, group_name_mappings, seen_group_count, edges, spaces, direction):
     for a_parent, a_child in edges:
         if a_parent == parent:
             group_display_name = group_name_mappings[a_child]
-            if direct:
-                direction = 'direct'
-            else:
-                direction = 'inherited'
             output = f'{" " * spaces}{group_display_name} <{a_child}> ({direction})'
             if seen_group_count[a_child] > 1:
                 output += ' *'
             print(output)
-            print_group_map(a_child, group_name_mappings, seen_group_count, edges, spaces+2)
+            print_group_map(a_child, group_name_mappings, seen_group_count, edges, spaces+2, 'inherited')
 
 def doGetAliasInfo(alias_email=None):
     cd = buildGAPIObject('directory')
