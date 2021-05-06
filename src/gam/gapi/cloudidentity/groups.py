@@ -144,13 +144,14 @@ def print_member_tree(ci, group_id, cached_group_members, spaces):
                                                             fields='*',
                                                             pageSize=1000)
     for member in cached_group_members[group_id]:
+        member_id = member.get('name', '')
+        member_id = member_id.split('/')[-1]
         role = get_single_role(member.get('roles', [])).lower()
         email = member.get('memberKey', {}).get('id')
         member_type = member.get('type', 'USER').lower()
         print(f'{" " * spaces}{role}: {email} ({member_type})')
         if member_type == 'group':
-            group_id = group_email_to_id(ci, email)
-            print_member_tree(ci, group_id, cached_group_members, spaces + 2)
+            print_member_tree(ci, f'groups/{member_id}', cached_group_members, spaces + 2)
 
 
 def info_member():
