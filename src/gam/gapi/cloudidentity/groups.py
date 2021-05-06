@@ -132,29 +132,29 @@ def info():
         print(f'Total {len(members)} users in group')
     elif showMemberTree:
         print(' Member tree:')
-        global cached_group_members
         cached_group_members = {}
-        print_member_tree(ci, name, 2)
+        print_member_tree(ci, name, cached_group_members, 2)
 
 
-def print_member_tree(ci, group_id, spaces):
+def print_member_tree(ci, group_id, cached_group_members, spaces):
     if not group_id in cached_group_members:
         cached_group_members[group_id] = gapi.get_all_pages(ci.groups().memberships(),
                                                             'list',
                                                             'memberships',
                                                             parent=group_id,
+                                                            view='FULL',
                                                             fields='*',
                                                             pageSize=1000)
     for member in cached_group_members[group_id]:
         member_id = member.get('name', '')
         member_id = member_id.split('/')[-1]
         member_email = member.get('memberKey', {}).get('id')
-        if member_id.isdigit():
-            print(f'{" " * spaces}{member_email} - user')
-        else:
-            print(f'{" " * spaces}{member_email} - group')
+        member_type = member.get('type', 'USER').lower()
+        role = get_single_role(member.get('roles', [])).lower()
+        print(f'{" " * spaces}{role}: {member_email} ({member_type})')
+        if member_type == 'group':
             group_id = group_email_to_id(ci, member_email)
-            print_member_tree(ci, group_id, spaces + 2)
+            print_member_tree(ci, group_id, cached_group_members, spaces + 2)
 
 
 def info_member():
@@ -331,7 +331,7 @@ def print_():
                 ownersCount = 0
             for member in groupMembers:
                 member_email = member['memberKey']['id']
-                role = get_single_role(member.get('roles'))
+                role = get_single_role(member.get('roles', []))
                 if not validRoles or role in validRoles:
                     if role == ROLE_MEMBER:
                         if members:
