@@ -129,7 +129,7 @@ def info():
             print(f'  {role}: {email} ({member_type}){jc_string}')
         print(f'Total {len(members)} users in group')
     elif showMemberTree:
-        print(' Member tree:')
+        print(' Member Tree:')
         cached_group_members = {}
         print_member_tree(ci, name, cached_group_members, 2, True)
 
@@ -413,7 +413,7 @@ def _get_groups_list(ci=None, member=None, parent=None):
 
 
 def get_membership_graph(member):
-    ci = gapi_cloudidentity.build()
+    ci = gapi_cloudidentity.build('cloudidentity_beta')
     query = f"member_key_id == '{member}' && 'cloudidentity.googleapis.com/groups.discussion_forum' in labels"
     result = gapi.call(ci.groups().memberships(),
                      'getMembershipGraph',

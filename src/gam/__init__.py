@@ -9018,7 +9018,7 @@ def doGetUserInfo(user_email=None):
             print('No access to show user groups.')
     elif getCIGroups:
         memberships = gapi_cloudidentity_groups.get_membership_graph(user_email)
-        print('\nGroup Membership Tree:')
+        print('Group Membership Tree:')
         if memberships:
             group_name_mapping = {}
             group_displayname_mapping = {}
@@ -9037,7 +9037,7 @@ def doGetUserInfo(user_email=None):
                 group_email = group_name_mapping[group_name]
                 for edge in adj.get('edges', []):
                     seen_group_count[group_email] = seen_group_count.get(group_email, 0) + 1
-                    member_email = edge.get('preferredMemberKey', {}).get('id')
+                    member_email = edge.get('memberKey', {}).get('id')
                     edges.append((member_email, group_email))
             print_group_map(user_email, group_displayname_mapping, seen_group_count, edges, 3, 'direct')
             if seen_group_count and max(seen_group_count.values()) > 1:
