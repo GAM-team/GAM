@@ -131,10 +131,10 @@ def info():
     elif showMemberTree:
         print(' Member tree:')
         cached_group_members = {}
-        print_member_tree(ci, name, cached_group_members, 2)
+        print_member_tree(ci, name, cached_group_members, 2, True)
 
 
-def print_member_tree(ci, group_id, cached_group_members, spaces):
+def print_member_tree(ci, group_id, cached_group_members, spaces, show_role):
     if not group_id in cached_group_members:
         cached_group_members[group_id] = gapi.get_all_pages(ci.groups().memberships(),
                                                             'list',
@@ -146,12 +146,15 @@ def print_member_tree(ci, group_id, cached_group_members, spaces):
     for member in cached_group_members[group_id]:
         member_id = member.get('name', '')
         member_id = member_id.split('/')[-1]
-        role = get_single_role(member.get('roles', [])).lower()
         email = member.get('memberKey', {}).get('id')
         member_type = member.get('type', 'USER').lower()
-        print(f'{" " * spaces}{role}: {email} ({member_type})')
+        if show_role:
+            role = get_single_role(member.get('roles', [])).lower()
+            print(f'{" " * spaces}{role}: {email} ({member_type})')
+        else:
+            print(f'{" " * spaces}{email} ({member_type})')
         if member_type == 'group':
-            print_member_tree(ci, f'groups/{member_id}', cached_group_members, spaces + 2)
+            print_member_tree(ci, f'groups/{member_id}', cached_group_members, spaces + 2, False)
 
 
 def info_member():
