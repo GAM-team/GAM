@@ -129,7 +129,7 @@ def info():
             print(f'  {role}: {email} ({member_type}){jc_string}')
         print(f'Total {len(members)} users in group')
     elif showMemberTree:
-        print(' Member Tree:')
+        print(' Membership Tree:')
         cached_group_members = {}
         print_member_tree(ci, name, cached_group_members, 2, True)
 
