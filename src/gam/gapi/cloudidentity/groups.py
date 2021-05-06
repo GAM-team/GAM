@@ -118,6 +118,7 @@ def info():
         for member in members:
             role = get_single_role(member.get('roles', [])).lower()
             email = member.get('memberKey', {}).get('id')
+            member_type = member.get('type', 'USER').lower()
             jc_string = ''
             if showJoinDate:
                 joined = member.get('createTime', 'Unknown')
@@ -125,10 +126,7 @@ def info():
             if showUpdateDate:
                 updated = member.get('updateTime', 'Unknown')
                 jc_string += f'  updated {updated}'
-            print(
-                f'  {role}: {email}{jc_string}'
-                # f' {member.get("role", ROLE_MEMBER).lower()}: {member.get("email", member["id"])} ({member["type"].lower()})'
-            )
+            print(f'  {role}: {email} ({member_type}){jc_string}')
         print(f'Total {len(members)} users in group')
     elif showMemberTree:
         print(' Member tree:')
@@ -146,14 +144,12 @@ def print_member_tree(ci, group_id, cached_group_members, spaces):
                                                             fields='*',
                                                             pageSize=1000)
     for member in cached_group_members[group_id]:
-        member_id = member.get('name', '')
-        member_id = member_id.split('/')[-1]
-        member_email = member.get('memberKey', {}).get('id')
-        member_type = member.get('type', 'USER').lower()
         role = get_single_role(member.get('roles', [])).lower()
-        print(f'{" " * spaces}{role}: {member_email} ({member_type})')
+        email = member.get('memberKey', {}).get('id')
+        member_type = member.get('type', 'USER').lower()
+        print(f'{" " * spaces}{role}: {email} ({member_type})')
         if member_type == 'group':
-            group_id = group_email_to_id(ci, member_email)
+            group_id = group_email_to_id(ci, email)
             print_member_tree(ci, group_id, cached_group_members, spaces + 2)
 
 
