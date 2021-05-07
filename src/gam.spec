@@ -34,13 +34,22 @@ for d in a.datas:
 
 
 pyz = PYZ(a.pure)
+
 exe = EXE(pyz,
           a.scripts,
-          a.binaries,
-          a.zipfiles,
-          a.datas,
+          exclude_binaries=True,
           name='gam',
           debug=False,
-          strip=None,
+          strip=True,
+          bootloader_ignore_signals=False,
           upx=False,
-          console=True )
+          console=True)
+
+coll = COLLECT(exe,
+               a.binaries,
+               a.zipfiles,
+               a.datas,
+               strip=True,
+               upx=False,
+               upx_exclude=[],
+               name='gam')
