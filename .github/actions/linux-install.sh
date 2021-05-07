@@ -1,4 +1,4 @@
-export gampath="dist/gam"
+export gampath="dist"
 rm -rf $gampath
 mkdir -p $gampath
 export gampath=$(readlink -e $gampath)
