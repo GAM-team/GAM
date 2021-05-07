@@ -9,7 +9,7 @@ rm -rf $gampath
 mkdir -p $gampath
 export gampath=$(readlink -e $gampath)
 pyinstaller --clean --noupx -F --distpath $gampath gam.spec
-export gam="${gampath}/gam"
+export gam="${gampath}/gam/gam"
 echo "running compiled GAM..."
 $gam version
 export GAMVERSION=$($gam version simple)

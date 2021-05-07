@@ -3,7 +3,7 @@ rm -rf $gampath
 mkdir -p $gampath
 export gampath=$(readlink -e $gampath)
 $python -OO -m PyInstaller --clean --noupx --strip -F --distpath $gampath gam.spec
-export gam="${gampath}/gam"
+export gam="${gampath}/gam/gam"
 export GAMVERSION=`$gam version simple`
 cp LICENSE $gampath
 cp GamCommands.txt $gampath

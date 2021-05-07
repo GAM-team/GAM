@@ -6,7 +6,7 @@ export gampath=dist
 rm -rf $gampath
 export specfile="gam.spec"
 $python -OO -m PyInstaller --clean --noupx --strip -F --distpath "${gampath}" "${specfile}"
-export gam="${gampath}/gam"
+export gam="${gampath}/gam/gam"
 $gam version extended
 export GAMVERSION=`$gam version simple`
 cp LICENSE "${gampath}"
