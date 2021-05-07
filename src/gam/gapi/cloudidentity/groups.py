@@ -118,6 +118,7 @@ def info():
         for member in members:
             role = get_single_role(member.get('roles', [])).lower()
             email = member.get('memberKey', {}).get('id')
+            member_type = member.get('type', 'USER').lower()
             jc_string = ''
             if showJoinDate:
                 joined = member.get('createTime', 'Unknown')
@@ -125,36 +126,35 @@ def info():
             if showUpdateDate:
                 updated = member.get('updateTime', 'Unknown')
                 jc_string += f'  updated {updated}'
-            print(
-                f'  {role}: {email}{jc_string}'
-                # f' {member.get("role", ROLE_MEMBER).lower()}: {member.get("email", member["id"])} ({member["type"].lower()})'
-            )
+            print(f'  {role}: {email} ({member_type}){jc_string}')
         print(f'Total {len(members)} users in group')
     elif showMemberTree:
-        print(' Member tree:')
-        global cached_group_members
+        print(' Membership Tree:')
         cached_group_members = {}
-        print_member_tree(ci, name, 2)
+        print_member_tree(ci, name, cached_group_members, 2, True)
 
 
-def print_member_tree(ci, group_id, spaces):
+def print_member_tree(ci, group_id, cached_group_members, spaces, show_role):
     if not group_id in cached_group_members:
         cached_group_members[group_id] = gapi.get_all_pages(ci.groups().memberships(),
                                                             'list',
                                                             'memberships',
                                                             parent=group_id,
+                                                            view='FULL',
                                                             fields='*',
                                                             pageSize=1000)
     for member in cached_group_members[group_id]:
         member_id = member.get('name', '')
         member_id = member_id.split('/')[-1]
-        member_email = member.get('memberKey', {}).get('id')
-        if member_id.isdigit():
-            print(f'{" " * spaces}{member_email} - user')
+        email = member.get('memberKey', {}).get('id')
+        member_type = member.get('type', 'USER').lower()
+        if show_role:
+            role = get_single_role(member.get('roles', [])).lower()
+            print(f'{" " * spaces}{role}: {email} ({member_type})')
         else:
-            print(f'{" " * spaces}{member_email} - group')
-            group_id = group_email_to_id(ci, member_email)
-            print_member_tree(ci, group_id, spaces + 2)
+            print(f'{" " * spaces}{email} ({member_type})')
+        if member_type == 'group':
+            print_member_tree(ci, f'groups/{member_id}', cached_group_members, spaces + 2, False)
 
 
 def info_member():
@@ -331,7 +331,7 @@ def print_():
                 ownersCount = 0
             for member in groupMembers:
                 member_email = member['memberKey']['id']
-                role = get_single_role(member.get('roles'))
+                role = get_single_role(member.get('roles', []))
                 if not validRoles or role in validRoles:
                     if role == ROLE_MEMBER:
                         if members:
@@ -413,7 +413,7 @@ def _get_groups_list(ci=None, member=None, parent=None):
 
 
 def get_membership_graph(member):
-    ci = gapi_cloudidentity.build()
+    ci = gapi_cloudidentity.build('cloudidentity_beta')
     query = f"member_key_id == '{member}' && 'cloudidentity.googleapis.com/groups.discussion_forum' in labels"
     result = gapi.call(ci.groups().memberships(),
                      'getMembershipGraph',
