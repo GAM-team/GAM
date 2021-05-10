@@ -2,11 +2,12 @@ echo "MacOS Version Info According to Python:"
 python -c "import platform; print(platform.mac_ver())"
 echo "Xcode versionn:"
 xcodebuild -version
-export gampath=dist
+export distpath="dist/"
+export gampath="${distpath}/gam"
 rm -rf $gampath
 export specfile="gam.spec"
-$python -OO -m PyInstaller --clean --noupx --strip -F --distpath "${gampath}" "${specfile}"
-export gam="${gampath}/gam/gam"
+$python -OO -m PyInstaller --clean --noupx --strip -F --distpath "${distpath}" "${specfile}"
+export gam="${gampath}/gam"
 $gam version extended
 export GAMVERSION=`$gam version simple`
 cp LICENSE "${gampath}"

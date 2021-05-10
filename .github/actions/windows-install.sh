@@ -4,12 +4,13 @@ elif [[ "$PLATFORM" == "x86" ]]; then
   export WIX_BITS="x86"
 fi
 echo "compiling GAM with pyinstaller..."
-export gampath="dist"
+export distpath="dist/"
+export gampath="${distpath}/gam"
 rm -rf $gampath
 mkdir -p $gampath
 export gampath=$(readlink -e $gampath)
-pyinstaller --clean --noupx -F --distpath $gampath gam.spec
-export gam="${gampath}/gam/gam"
+pyinstaller --clean --noupx -F --distpath $distpath gam.spec
+export gam="${gampath}/gam"
 echo "running compiled GAM..."
 $gam version
 export GAMVERSION=$($gam version simple)
