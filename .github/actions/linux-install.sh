@@ -1,7 +1,7 @@
 export distpath="dist/"
 export gampath="${distpath}/gam"
 rm -rf $gampath
-mkdir -p $gampath
+#mkdir -p $gampath
 export gampath=$(readlink -e $gampath)
 $python -OO -m PyInstaller --clean --noupx --strip -F --distpath $distpath gam.spec
 export gam="${gampath}/gam"
