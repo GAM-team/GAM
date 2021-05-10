@@ -8,7 +8,7 @@ export distpath="dist/"
 export gampath="${distpath}/gam"
 rm -rf $gampath
 #mkdir -p $gampath
-export gampath=$(readlink -e $gampath)
+#export gampath=$(readlink -e $gampath)
 pyinstaller --clean --noupx -F --distpath $distpath gam.spec
 export gam="${gampath}/gam"
 echo "running compiled GAM..."
