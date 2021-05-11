@@ -1,12 +1,18 @@
 echo "MacOS Version Info According to Python:"
-python -c "import platform; print(platform.mac_ver())"
+macver=$(python -c "import platform; print(platform.mac_ver().version)")
+echo $macver
 echo "Xcode version:"
 xcodebuild -version
 export distpath="dist"
 export gampath="${distpath}/gam"
 rm -rf $gampath
 export specfile="gam.spec"
-$python -OO -m PyInstaller --clean --noupx --strip --distpath "${distpath}" --universal2 "${specfile}"
+if [ "$macver" == "10.15.7" ]; then
+	youtoo="--universal2"
+else
+	youtoo=""
+fi
+$python -OO -m PyInstaller --clean --noupx --strip --distpath "${distpath}" $youtoo "${specfile}"
 export gam="${gampath}/gam"
 $gam version extended
 export GAMVERSION=`$gam version simple`
