@@ -18,7 +18,7 @@ env:
   MIN_OPENSSL_VERSION: "1.1.1k"
   PATCHELF_VERSION: "0.12"
   # PYINSTALLER_VERSION can be full commit hash or version like v4.20
-  PYINSTALLER_VERSION: "ae28d2ce57e7f12faf01e80d26e064dbfa903e40"
+  PYINSTALLER_VERSION: "81f558ba265896cddc856b0bfa7948f79b459dc7"
 
 jobs:
   build:
@@ -153,7 +153,7 @@ jobs:
              echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" >> $GITHUB_ENV
              echo -e "Python: $python\nPip: $pip\nLD_LIB...: $LD_LIBRARY_PATH"
              $pip install wheel
-             export url="https://codeload.github.com/pyinstaller/pyinstaller/tar.gz/${PYINSTALLER_VERSION}"
+             export url="https://codeload.github.com/rokm/pyinstaller/tar.gz/${PYINSTALLER_VERSION}"
              echo "Downloading ${url}"
              curl -o pyinstaller.tar.gz --compressed "${url}"
              tar xf pyinstaller.tar.gz
