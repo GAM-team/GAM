@@ -223,6 +223,7 @@ If an item contains spaces, it should be surrounded by ".
 <QueryGmail> ::= <String> See: https://support.google.com/mail/answer/7190
 <QueryGroup> ::= <String> See: https://developers.google.com/admin-sdk/directory/v1/guides/search-groups
 <QueryMobile> ::= <String> See: https://support.google.com/a/answer/7549103
+<QueryTeamDrive> ::= <String> See: https://developers.google.com/drive/api/v3/search-shareddrives
 <QueryUser> ::= <String> See: https://developers.google.com/admin-sdk/directory/v1/guides/search-users
 <QueryVaultCorpus> ::= <String> See: https://developers.google.com/vault/reference/rest/v1/matters.holds#CorpusQuery
 <RequestID> ::= <String>
@@ -1691,8 +1692,8 @@ gam <UserTypeEntity> update teamdrive <TeamDriveID> [asadmin] [name <Name>]
 	(<TeamDriveRestrictionsSubfieldName> <Boolean>)*
 gam <UserTypeEntity> delete teamdrive <TeamDriveID>
 gam <UserTypeEntity> show teamdriveinfo <TeamDriveID> [asadmin]
-gam <UserTypeEntity> show teamdrives [asadmin]
-gam <UserTypeEntity> print teamdrives [todrive] [asadmin]
+gam <UserTypeEntity> show teamdrives [query <QueryTeamDrive>] [asadmin]
+gam <UserTypeEntity> print teamdrives [query <QueryTeamDrive>] [todrive] [asadmin]
 gam <UserTypeEntity> show teamdrivethemes
 
 gam <UserTypeEntity> vacation <FalseValues>
