@@ -104,7 +104,7 @@ jobs:
           path: |
             ~/python
             ~/ssl
-          key: ${{ matrix.os }}-${{ matrix.jid }}-20210504
+          key: ${{ matrix.os }}-${{ matrix.jid }}-20210511
 
       - name: Set env variables
         env:
@@ -159,11 +159,11 @@ jobs:
              tar xf pyinstaller.tar.gz
              cd "pyinstaller-${PYINSTALLER_VERSION}/bootloader"
              if [ "${PLATFORM}" == "x86" ]; then
-               BITS="32"
+               TARGETARCH="--target-arch=32bit"
              else
-               BITS="64"
+               TARGETARCH=""
              fi
-             $python ./waf all --target-arch=${BITS}bit
+             $python ./waf all $TARGETARCH
              cd ..
              $python setup.py install
              #$pip install pyinstaller
