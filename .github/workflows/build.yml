@@ -342,3 +342,10 @@ jobs:
                echo "file uploaded as ${fileid}, setting ACL..."
                $gam user $gam_user add drivefileacl $fileid anyone role reader withlink
              done
+
+      - name: Archive production artifacts
+        uses: actions/upload-artifact@v2
+        if: github.event_name == 'push' && matrix.goal != 'test'
+        with:
+          path: |
+            gam-$GAMVERSION-*
