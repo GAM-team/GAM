@@ -181,6 +181,7 @@ jobs:
         run: |
              set +e
              source ../.github/actions/${GAMOS}-install.sh
+             ls -alRF $gampath
              echo "gampath=$gampath" >> $GITHUB_ENV
              echo "gam=$gam" >> $GITHUB_ENV
              echo -e "GAM: ${gam}\nGAMPATH: ${gampath}\nGAMVERSION: ${GAMVERSION}"
