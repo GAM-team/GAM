@@ -6,7 +6,7 @@ export distpath="dist/"
 export gampath="${distpath}/gam"
 rm -rf $gampath
 export specfile="gam.spec"
-$python -OO -m PyInstaller --clean --noupx --strip -F --distpath "${distpath}" "${specfile}"
+$python -OO -m PyInstaller --clean --noupx --strip --distpath "${distpath}" "${specfile}"
 export gam="${gampath}/gam"
 $gam version extended
 export GAMVERSION=`$gam version simple`
