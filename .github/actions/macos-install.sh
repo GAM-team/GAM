@@ -1,5 +1,5 @@
 echo "MacOS Version Info According to Python:"
-macver=$(python -c "import platform; print(platform.mac_ver().version)")
+macver=$(python -c "import platform; print(platform.mac_ver()[0])")
 echo $macver
 echo "Xcode version:"
 xcodebuild -version
