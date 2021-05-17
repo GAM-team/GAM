@@ -44,7 +44,6 @@ def create():
                 body['additionalGroupKeys'].append({'id': alias})
             i += 2
         elif myarg in ['dynamic']:
-            # As of 2020/06/25 this doesn't work (yet?)
             body['dynamicGroupMetadata'] = {
                 'queries': [{
                     'query': sys.argv[i + 1],
@@ -823,6 +822,14 @@ def update():
                     'cloudidentity.googleapis.com/groups.discussion_forum': ''
                 }
                 i += 1
+            elif myarg in ['dynamic']:
+                body['dynamicGroupMetadata'] = {
+                    'queries': [{
+                        'query': sys.argv[i + 1],
+                        'resourceType': 'USER'
+                    }]
+                }
+                i += 2
             else:
                 controlflow.invalid_argument_exit(sys.argv[i],
                                                   'gam update cigroup')
