@@ -347,7 +347,7 @@ jobs:
         uses: actions/upload-artifact@v2
         if: github.event_name == 'push' && matrix.goal != 'test'
         with:
-          name: gam-binaries.zip
+          name: gam-binaries
           path: |
             src/*.tar.xz
             src/*.zip

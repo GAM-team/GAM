@@ -119,6 +119,7 @@ class ErrorReason(Enum):
     FIVE_O_THREE = '503'
     FOUR_O_NINE = '409'
     FOUR_O_O = '400'
+    FOUR_O_FOUR = '404'
     FOUR_O_THREE = '403'
     FOUR_TWO_NINE = '429'
     GATEWAY_TIMEOUT = 'gatewayTimeout'

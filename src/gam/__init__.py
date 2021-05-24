@@ -38,6 +38,7 @@ import googleapiclient.errors
 import googleapiclient.http
 import google.oauth2.service_account
 import httplib2
+from google.auth.jwt import Credentials as JWTCredentials
 
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
@@ -53,6 +54,7 @@ from gam import fileutils
 from gam.gapi import calendar as gapi_calendar
 from gam.gapi import cloudidentity as gapi_cloudidentity
 from gam.gapi import cbcm as gapi_cbcm
+from gam.gapi import chat as gapi_chat
 from gam.gapi import chromehistory as gapi_chromehistory
 from gam.gapi import chromemanagement as gapi_chromemanagement
 from gam.gapi import chromepolicy as gapi_chromepolicy
@@ -822,21 +824,32 @@ def _getSvcAcctData():
             controlflow.system_error_exit(6, None)
         GM_Globals[GM_OAUTH2SERVICE_JSON_DATA] = json.loads(json_string)
 
-
-def getSvcAcctCredentials(scopes, act_as):
+jwt_apis = ['chat'] # APIs which can handle OAuthless JWT tokens
+def getSvcAcctCredentials(scopes, act_as, api=None):
     try:
         _getSvcAcctData()
         sign_method = GM_Globals[GM_OAUTH2SERVICE_JSON_DATA].get('key_type', 'default')
-        if sign_method == 'default':
-            credentials = google.oauth2.service_account.Credentials.from_service_account_info(
-                GM_Globals[GM_OAUTH2SERVICE_JSON_DATA])
-        elif sign_method == 'yubikey':
-            yksigner = yubikey.YubiKey(GM_Globals[GM_OAUTH2SERVICE_JSON_DATA])
-            credentials = google.oauth2.service_account.Credentials._from_signer_and_info(yksigner,
-                GM_Globals[GM_OAUTH2SERVICE_JSON_DATA])
-        credentials = credentials.with_scopes(scopes)
-        if act_as:
-            credentials = credentials.with_subject(act_as)
+        if act_as or api not in jwt_apis:
+            if sign_method == 'default':
+                credentials = google.oauth2.service_account.Credentials.from_service_account_info(
+                    GM_Globals[GM_OAUTH2SERVICE_JSON_DATA])
+            elif sign_method == 'yubikey':
+                yksigner = yubikey.YubiKey(GM_Globals[GM_OAUTH2SERVICE_JSON_DATA])
+                credentials = google.oauth2.service_account.Credentials._from_signer_and_info(yksigner,
+                    GM_Globals[GM_OAUTH2SERVICE_JSON_DATA])
+            credentials = credentials.with_scopes(scopes)
+            if act_as:
+                credentials = credentials.with_subject(act_as)
+        else:
+            audience = f'https://{api}.googleapis.com/'
+            if sign_method == 'default':
+                return JWTCredentials.from_service_account_info(GM_Globals[GM_OAUTH2SERVICE_JSON_DATA],
+                                                            audience=audience)
+            elif sign_method == 'yubikey':
+                yksigner = yubikey.YubiKey(GM_Globals[GM_OAUTH2SERVICE_JSON_DATA])
+            credentials = JWTCredentials._from_signer_and_info(yksigner,
+                                                             GM_Globals[GM_OAUTH2SERVICE_JSON_DATA],
+                                                             audience=audience)
         GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID] = GM_Globals[
             GM_OAUTH2SERVICE_JSON_DATA]['client_id']
         return credentials
@@ -1087,14 +1100,17 @@ def convertEmailAddressToUID(emailAddressOrUID, cd=None, email_type='user'):
     return normalizedEmailAddressOrUID
 
 
-def buildGAPIServiceObject(api, act_as, showAuthError=True):
+def buildGAPIServiceObject(api, act_as, showAuthError=True, scopes=None):
     httpObj = transport.create_http(cache=GM_Globals[GM_CACHE_DIR])
     service = getService(api, httpObj)
     GM_Globals[GM_CURRENT_API_USER] = act_as
-    GM_Globals[GM_CURRENT_API_SCOPES] = API_SCOPE_MAPPING.get(
-        api, service._rootDesc['auth']['oauth2']['scopes'])
+    if scopes:
+        GM_Globals[GM_CURRENT_API_SCOPES] = scopes
+    else:
+        GM_Globals[GM_CURRENT_API_SCOPES] = API_SCOPE_MAPPING.get(
+              api, service._rootDesc['auth']['oauth2']['scopes'])
     credentials = getSvcAcctCredentials(GM_Globals[GM_CURRENT_API_SCOPES],
-                                        act_as)
+                                        act_as, api)
     request = transport.create_request(httpObj)
     retries = 3
     for n in range(1, retries + 1):
@@ -11342,6 +11358,8 @@ def ProcessGAMCommand(args):
                 gapi_cbcm.createtoken()
             elif argument in ['printer']:
                 gapi_directory_printers.create()
+            elif argument in ['chatmessage']:
+                gapi_chat.create_message()
             else:
                 controlflow.invalid_argument_exit(argument, 'gam create')
             sys.exit(0)
@@ -11404,6 +11422,8 @@ def ProcessGAMCommand(args):
                 gapi_chromepolicy.update_policy()
             elif argument in ['printer']:
                 gapi_directory_printers.update()
+            elif argument in ['chatmessage']:
+                gapi_chat.update_message()
             else:
                 controlflow.invalid_argument_exit(argument, 'gam update')
             sys.exit(0)
@@ -11540,6 +11560,8 @@ def ProcessGAMCommand(args):
                 gapi_directory_printers.delete()
             elif argument == 'chromepolicy':
                 gapi_chromepolicy.delete_policy()
+            elif argument == 'chatmessage':
+                gapi_chat.delete_message()
             else:
                 controlflow.invalid_argument_exit(argument, 'gam delete')
             sys.exit(0)
@@ -11655,6 +11677,10 @@ def ProcessGAMCommand(args):
                 gapi_chromemanagement.printVersions()
             elif argument in ['chromehistory']:
                 gapi_chromehistory.printHistory()
+            elif argument in ['chatspaces']:
+                gapi_chat.print_spaces()
+            elif argument in ['chatmembers']:
+                gapi_chat.print_members()
             else:
                 controlflow.invalid_argument_exit(argument, 'gam print')
             sys.exit(0)
