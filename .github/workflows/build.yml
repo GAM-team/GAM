@@ -348,4 +348,6 @@ jobs:
         if: github.event_name == 'push' && matrix.goal != 'test'
         with:
           path: |
-            ./gam-${{ env.GAMVERSION }}-*
+            *.tar.xz
+            *.zip
+            *.msi
