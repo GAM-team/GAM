@@ -5,7 +5,7 @@ elif [[ "$PLATFORM" == "x86" ]]; then
 fi
 echo "compiling GAM with pyinstaller..."
 export distpath="dist/"
-export gampath="${distpath}/gam"
+export gampath="${distpath}"
 rm -rf $gampath
 #mkdir -p $gampath
 #export gampath=$(readlink -e $gampath)

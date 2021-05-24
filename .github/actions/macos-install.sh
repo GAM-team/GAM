@@ -3,8 +3,8 @@ macver=$(python -c "import platform; print(platform.mac_ver()[0])")
 echo $macver
 echo "Xcode version:"
 xcodebuild -version
-export distpath="dist"
-export gampath="${distpath}/gam"
+export distpath="dist/"
+export gampath="${distpath}"
 rm -rf $gampath
 export specfile="gam.spec"
 if [ "$macver" == "10.15.7" ]; then
