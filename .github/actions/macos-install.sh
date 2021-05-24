@@ -8,7 +8,7 @@ export gampath="${distpath}/gam"
 rm -rf $gampath
 export specfile="gam.spec"
 if [ "$macver" == "10.15.7" ]; then
-	youtoo="--universal2"
+	youtoo=""
 else
 	youtoo=""
 fi
