@@ -37,19 +37,11 @@ pyz = PYZ(a.pure)
 
 exe = EXE(pyz,
           a.scripts,
-          exclude_binaries=True,
+          a.binaries,
+          a.zipfiles,
+          a.datas,
           name='gam',
           debug=False,
-          strip=False,
-          bootloader_ignore_signals=False,
+          strip=None,
           upx=False,
           console=True)
-
-coll = COLLECT(exe,
-               a.binaries,
-               a.zipfiles,
-               a.datas,
-               strip=False,
-               upx=False,
-               upx_exclude=[],
-               name='gam')
