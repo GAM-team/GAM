@@ -348,4 +348,4 @@ jobs:
         if: github.event_name == 'push' && matrix.goal != 'test'
         with:
           path: |
-            gam-$GAMVERSION-*
+            ./gam-$GAMVERSION-*
