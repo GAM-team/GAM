@@ -7251,19 +7251,19 @@ def enableGAMProjectAPIs(GAMProjectAPIs,
     return status
 
 
-def _grantSARotateRights(iam, sa_email):
-    print(f'Giving service account {sa_email} rights to rotate own private key')
+def _grantRotateRights(iam, service_account, email, account_type='serviceAccount'):
+    print(f'Giving account {email} rights to rotate {service_account} private key')
     body = {
         'policy': {
             'bindings': [{
                 'role': 'roles/iam.serviceAccountKeyAdmin',
-                'members': [f'serviceAccount:{sa_email}']
+                'members': [f'{account_type}:{email}']
             }]
         }
     }
     gapi.call(iam.projects().serviceAccounts(),
               'setIamPolicy',
-              resource=f'projects/-/serviceAccounts/{sa_email}',
+              resource=f'projects/-/serviceAccounts/{service_account}',
               body=body)
 
 
@@ -7355,11 +7355,12 @@ def _createClientSecretsOauth2service(httpObj, projectId, login_hint):
                                     })
         GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID] = service_account[
             'uniqueId']
+    sa_email = service_account['name'].rsplit('/', 1)[-1]
     doCreateOrRotateServiceAccountKeys(iam,
                                        project_id=service_account['projectId'],
                                        client_email=service_account['email'],
                                        client_id=service_account['uniqueId'])
-    _grantSARotateRights(iam, service_account['name'].rsplit('/', 1)[-1])
+    _grantRotateRights(iam, sa_email, sa_email)
     console_url = f'https://console.cloud.google.com/apis/credentials/oauthclient?project={projectId}'
     while True:
         print(f'''Please go to:
@@ -7740,7 +7741,7 @@ def doUpdateProjects():
         iam = getService('iam', httpObj)
         _getSvcAcctData()  # needed to read in GM_OAUTH2SERVICE_JSON_DATA
         sa_email = GM_Globals[GM_OAUTH2SERVICE_JSON_DATA]['client_email']
-        _grantSARotateRights(iam, sa_email)
+        _grantRotateRights(iam, sa_email, sa_email)
 
 
 def _generatePrivateKeyAndPublicCert(client_id, key_size):
@@ -7938,6 +7939,7 @@ def doCreateOrRotateServiceAccountKeys(iam=None,
                     iam.projects().serviceAccounts().keys(),
                     'upload',
                     throw_reasons=throw_reasons,
+                    retry_reasons=[gapi_errors.ErrorReason.FOUR_O_THREE],
                     name=sa_name,
                     body={'publicKeyData': publicKeyData})
                 break
@@ -7962,6 +7964,7 @@ def doCreateOrRotateServiceAccountKeys(iam=None,
         result = gapi.call(iam.projects().serviceAccounts().keys(),
                            'create',
                            name=sa_name,
+                           retry_reasons=[gapi_errors.ErrorReason.FOUR_O_THREE],
                            body=body)
         new_data_str = base64.b64decode(
             result['privateKeyData']).decode(UTF8)
@@ -7987,6 +7990,7 @@ def doCreateOrRotateServiceAccountKeys(iam=None,
                 print(f'  Revoking existing key {keyName} for service account')
                 gapi.call(iam.projects().serviceAccounts().keys(),
                           'delete',
+                          retry_reasons=[gapi_errors.ErrorReason.FOUR_O_THREE],
                           name=key['name'])
                 if mode != 'retainnone':
                     break
