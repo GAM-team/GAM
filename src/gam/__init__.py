@@ -6,7 +6,10 @@ import configparser
 import csv
 import datetime
 from email import message_from_string
-from importlib.metadata import version as lib_version
+try:
+    from importlib.metadata import version as lib_version
+except ImportError:
+    from importlib_metadata import version as lib_version
 import io
 import json
 import mimetypes
