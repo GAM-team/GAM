@@ -6,11 +6,11 @@ import configparser
 import csv
 import datetime
 from email import message_from_string
+from importlib.metadata import version as lib_version
 import io
 import json
 import mimetypes
 import os
-import pkg_resources
 import platform
 from pathlib import Path
 import random
@@ -763,8 +763,7 @@ def doGAMVersion(checkForArgs=True):
         return
     pyversion = platform.python_version()
     cpu_bits = struct.calcsize('P') * 8
-    api_client_ver = pkg_resources.get_distribution(
-        'google-api-python-client').version
+    api_client_ver = lib_version('google-api-python-client')
     print(
         (f'GAM {GAM_VERSION} - {GAM_URL} - {GM_Globals[GM_GAM_TYPE]}\n'
          f'{GAM_AUTHOR}\n'
@@ -786,6 +785,21 @@ def doGAMVersion(checkForArgs=True):
         doGAMCheckForUpdates(forceCheck=True)
     if extended:
         print(ssl.OPENSSL_VERSION)
+        libs = ['cryptography',
+                'filelock',
+                'google-auth-httplib2',
+                'google-auth-oauthlib',
+                'google-auth',
+                'httplib2',
+                'passlib',
+                'python-dateutil',
+                'yubikey-manager',
+                'yomama']
+        for lib in libs:
+            try:
+                print(f'{lib} {lib_version(lib)}')
+            except:
+                pass
         tls_ver, cipher_name, used_ip = _getServerTLSUsed(testLocation)
         print(
             f'{testLocation} ({used_ip}) connects using {tls_ver} {cipher_name}'
