@@ -23,7 +23,6 @@ def build():
 
 THROW_REASONS = [
         gapi_errors.ErrorReason.FOUR_O_FOUR,     # Chat API not configured
-        gapi_errors.ErrorReason.FOUR_O_THREE,    # Bot not added to room
         ]
 
 def _chat_error_handler(chat, err):
@@ -32,16 +31,25 @@ def _chat_error_handler(chat, err):
         url = f'https://console.cloud.google.com/apis/api/chat.googleapis.com/hangouts-chat?project={project_id}'
         print('ERROR: you need to configure Google Chat for your API project. Please go to:')
         print()
-        print(url)
+        print(f'  {url}')
         print()
         print('and complete all fields.')
-    elif err.status_code == 403:
-        print('ERROR: no access to that Chat space or message. Make sure your bot created the mesage and the user has chatted the bot first or added it to the Chat room')
+    else:
+        raise err
     sys.exit(1)
 
 
 def print_spaces():
     chat = build()
+    todrive = False
+    i =3
+    while i < len(sys.argv):
+        myarg = sys.argv[i].lower()
+        if myarg == 'todrive':
+            todrive = True
+            i += 1
+        else:
+            controlflow.invalid_argument_exit(myarg, 'gam print chatspaces')
     try:
         spaces = gapi.get_all_pages(chat.spaces(), 'list', 'spaces', throw_reasons=THROW_REASONS)
     except googleapiclient.errors.HttpError as err:
@@ -49,12 +57,13 @@ def print_spaces():
     if not spaces:
         print('Bot not added to any Chat rooms or users yet.')
     else:
-        display.write_csv_file(spaces, spaces[0].keys(), 'Chat Spaces', False)
+        display.write_csv_file(spaces, spaces[0].keys(), 'Chat Spaces', todrive)
 
 
 def print_members():
     chat = build()
     space = None
+    todrive = False
     i = 3
     while i < len(sys.argv):
         myarg = sys.argv[i].lower()
@@ -63,6 +72,9 @@ def print_members():
             if space[:7] != 'spaces/':
                 space = f'spaces/{space}'
             i += 2
+        elif myarg == 'todrive':
+            todrive = True
+            i += 1
         else:
             controlflow.invalid_argument_exit(myarg, "gam print chatmembers")
     try:
@@ -77,7 +89,7 @@ def print_members():
             if key not in titles:
                 titles.append(key)
         members.append(utils.flatten_json(result))
-    display.write_csv_file(members, titles, 'Chat Members', False)
+    display.write_csv_file(members, titles, 'Chat Members', todrive)
 
 
 def create_message():

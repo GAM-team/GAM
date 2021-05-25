@@ -843,13 +843,14 @@ def getSvcAcctCredentials(scopes, act_as, api=None):
         else:
             audience = f'https://{api}.googleapis.com/'
             if sign_method == 'default':
-                return JWTCredentials.from_service_account_info(GM_Globals[GM_OAUTH2SERVICE_JSON_DATA],
+                credentials = JWTCredentials.from_service_account_info(GM_Globals[GM_OAUTH2SERVICE_JSON_DATA],
                                                             audience=audience)
             elif sign_method == 'yubikey':
                 yksigner = yubikey.YubiKey(GM_Globals[GM_OAUTH2SERVICE_JSON_DATA])
-            credentials = JWTCredentials._from_signer_and_info(yksigner,
-                                                             GM_Globals[GM_OAUTH2SERVICE_JSON_DATA],
-                                                             audience=audience)
+                credentials = JWTCredentials._from_signer_and_info(yksigner,
+                                                                   GM_Globals[GM_OAUTH2SERVICE_JSON_DATA],
+                                                                   audience=audience)
+            credentials.project_id = GM_Globals[GM_OAUTH2SERVICE_JSON_DATA]['project_id']
         GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID] = GM_Globals[
             GM_OAUTH2SERVICE_JSON_DATA]['client_id']
         return credentials
