@@ -18,8 +18,7 @@ $gam version extended
 export GAMVERSION=`$gam version simple`
 cp LICENSE "${gampath}"
 cp GamCommands.txt "${gampath}"
-MACOSVERSION=$(defaults read loginwindow SystemVersionStampAsString)
-GAM_ARCHIVE="gam-${GAMVERSION}-${GAMOS}-${PLATFORM}-MacOS${MACOSVERSION}.tar.xz"
+GAM_ARCHIVE="gam-${GAMVERSION}-${GAMOS}-${PLATFORM}.tar.xz"
 rm "${gampath}/lastupdatecheck.txt"
 # tar will cd to dist/ and tar up gam/
 tar -C dist/ --create --file $GAM_ARCHIVE --xz gam

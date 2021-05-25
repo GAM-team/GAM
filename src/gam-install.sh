@@ -29,7 +29,7 @@ gamversion="latest"
 adminuser=""
 regularuser=""
 gam_glibc_vers="2.31 2.27 2.23"
-gam_macos_vers="10.15.6 10.14.6 10.13.6"
+#gam_macos_vers="10.15.6 10.14.6 10.13.6"
 
 while getopts "hd:a:o:b:lp:u:r:v:" OPTION
 do
@@ -128,18 +128,6 @@ case $gamos in
       this_macos_ver=$osversion
     fi
     echo "You are running MacOS $this_macos_ver"
-    use_macos_ver=""
-    for gam_macos_ver in $gam_macos_vers; do
-      if version_gt $this_macos_ver $gam_macos_ver; then
-        use_macos_ver="MacOS$gam_macos_ver"
-        echo_green "Using GAM compiled on $use_macos_ver"
-        break
-      fi
-    done
-    if [ "$use_macos_ver" == "" ]; then
-      echo_red "Sorry, you need to be running at least MacOS $gam_macos_ver to run GAM"
-      exit
-    fi
     gamfile="macos-x86_64.tar.xz"
     ;;
   MINGW64_NT*)
