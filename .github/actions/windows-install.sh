@@ -19,8 +19,11 @@ cp LICENSE $gampath
 cp GamCommands.txt $gampath
 cp gam-setup.bat $gampath
 GAM_ARCHIVE=gam-$GAMVERSION-$GAMOS-$PLATFORM.zip
-/c/Program\ Files/7-Zip/7z.exe a -tzip $GAM_ARCHIVE $gampath -xr!.svn
-
+cwd=$(pwd)
+cd "${distpath}"
+/c/Program\ Files/7-Zip/7z.exe a -tzip $GAM_ARCHIVE gam -xr!.svn
+mv "${GAM_ARCHIVE}" "${cwd}"
+cd "${cwd}"
 echo "Running WIX candle $WIX_BITS..."
 /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.11/bin/candle.exe -arch $WIX_BITS gam.wxs
 echo "Done with WIX candle..."
