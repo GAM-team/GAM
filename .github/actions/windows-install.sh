@@ -5,11 +5,11 @@ elif [[ "$PLATFORM" == "x86" ]]; then
 fi
 echo "compiling GAM with pyinstaller..."
 export distpath="dist/"
-export gampath="${distpath}"
+export gampath="${distpath}gam"
 rm -rf $gampath
 #mkdir -p $gampath
 #export gampath=$(readlink -e $gampath)
-pyinstaller --clean --noupx --distpath $distpath gam.spec
+pyinstaller --clean --noupx --distpath $gampath gam.spec
 export gam="${gampath}/gam"
 echo "running compiled GAM..."
 $gam version

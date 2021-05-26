@@ -1,10 +1,10 @@
 export distpath="dist/"
-export gampath="${distpath}"
+export gampath="${distpath}gam"
 rm -rf $gampath
 #mkdir -p $gampath
 #export gampath=$(readlink -e $gampath)
 $pip install wheel
-$python -OO -m PyInstaller --clean --noupx --strip --distpath $distpath gam.spec
+$python -OO -m PyInstaller --clean --noupx --strip --distpath $gampath gam.spec
 export gam="${gampath}/gam"
 export GAMVERSION=`$gam version simple`
 cp LICENSE $gampath
