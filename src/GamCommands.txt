@@ -1167,6 +1167,14 @@ gam print browsertokens [todrive]
 	[fields <BrowserTokenFieldNameList>]
 	[sortheaders]
 
+gam print chatspaces [todrive]
+gam print chatmembers space <ChatRoom> [todrive]
+gam create chat space <ChatRoom> [thread <String>]
+	(text <String>)|(textfile <FileName> [charset <CharSet>])
+gam delete chat name <String>
+gam update chat name <String>
+	(text <String>)|(textfile <FileName> [charset <CharSet>])
+
 <CrOSAction> ::=
 	deprovision_same_model_replace|
 	deprovision_different_model_replace|
