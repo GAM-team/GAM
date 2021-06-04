@@ -1520,7 +1520,7 @@ USER_EXTERNALID_TYPES = [
 ]
 USER_GENDER_TYPES = ['female', 'male', 'unknown']
 USER_IM_TYPES = ['home', 'work', 'other']
-USER_KEYWORD_TYPES = ['occupation', 'outlook']
+USER_KEYWORD_TYPES = ['occupation', 'outlook', 'mission']
 USER_LOCATION_TYPES = ['default', 'desk']
 USER_ORGANIZATION_TYPES = ['domain_only', 'school', 'unknown', 'work']
 USER_PHONE_TYPES = [
@@ -1535,7 +1535,7 @@ USER_RELATION_TYPES = [
 ]
 USER_WEBSITE_TYPES = [
     'app_install_page', 'blog', 'ftp', 'home', 'home_page', 'other', 'profile',
-    'reservations', 'work'
+    'reservations', 'resume', 'work'
 ]
 
 WEBCOLOR_MAP = {
