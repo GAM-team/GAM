@@ -158,6 +158,7 @@ If an item contains spaces, it should be surrounded by ".
 <CalendarColorIndex> ::= <Number in range 1-24>
 <CalendarItem> ::= <EmailAddress>|<String>
 <ChatRoom> ::= <String>
+<ChatSpace> ::= <String>
 <ClientID> ::= <String>
 <ColorValue> ::= <ColorName>|<ColorHex>
 <CollaboratorItem> ::= <EmailAddress>|<UniqueID>|<String>
@@ -1168,11 +1169,11 @@ gam print browsertokens [todrive]
 	[sortheaders]
 
 gam print chatspaces [todrive]
-gam print chatmembers space <ChatRoom> [todrive]
-gam create chat space <ChatRoom> [thread <String>]
+gam print chatmembers space <ChatSpace> [todrive]
+gam create chatmessage space <ChatSpace> [thread <String>]
 	(text <String>)|(textfile <FileName> [charset <CharSet>])
-gam delete chat name <String>
-gam update chat name <String>
+gam delete chatmessage name <String>
+gam update chatmessage name <String>
 	(text <String>)|(textfile <FileName> [charset <CharSet>])
 
 <CrOSAction> ::=

@@ -53,7 +53,7 @@ def print_spaces():
     try:
         spaces = gapi.get_all_pages(chat.spaces(), 'list', 'spaces', throw_reasons=THROW_REASONS)
     except googleapiclient.errors.HttpError as err:
-        _chat_error_handler(chat, err) 
+        _chat_error_handler(chat, err)
     if not spaces:
         print('Bot not added to any Chat rooms or users yet.')
     else:
@@ -77,6 +77,9 @@ def print_members():
             i += 1
         else:
             controlflow.invalid_argument_exit(myarg, "gam print chatmembers")
+    if not space:
+        controlflow.system_error_exit(2,
+                                      'space <ChatSpace> is required.')
     try:
         results = gapi.get_all_pages(chat.spaces().members(), 'list', 'memberships', parent=space)
     except googleapiclient.errors.HttpError as err:
@@ -115,6 +118,12 @@ def create_message():
           i += 2
       else:
           controlflow.invalid_argument_exit(myarg, "gam create chat")
+    if not space:
+        controlflow.system_error_exit(2,
+                                      'space <ChatSpace> is required.')
+    if 'text' not in body:
+        controlflow.system_error_exit(2,
+                                      'text <String> or textfile <FileName> is required.')
     if len(body['text']) > 4096:
         body['text'] = body['text'][:4095]
         print('WARNING: trimmed message longer than 4k to be 4k in length.')
@@ -143,6 +152,9 @@ def delete_message():
             i += 2
         else:
           controlflow.invalid_argument_exit(myarg, "gam delete chat")
+    if not name:
+        controlflow.system_error_exit(2,
+                                      'name <String> is required.')
     try:
         gapi.call(chat.spaces().messages(),
                   'delete',
@@ -171,6 +183,12 @@ def update_message():
             i += 2
         else:
           controlflow.invalid_argument_exit(myarg, "gam update chat")
+    if not name:
+        controlflow.system_error_exit(2,
+                                      'name <String> is required.')
+    if 'text' not in body:
+        controlflow.system_error_exit(2,
+                                      'text <String> or textfile <FileName> is required.')
     if len(body['text']) > 4096:
         body['text'] = body['text'][:4095]
         print('WARNING: trimmed message longer than 4k to be 4k in length.')
