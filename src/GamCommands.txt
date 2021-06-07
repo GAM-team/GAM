@@ -1170,10 +1170,10 @@ gam print browsertokens [todrive]
 
 gam print chatspaces [todrive]
 gam print chatmembers space <ChatSpace> [todrive]
-gam create chat space <ChatSpace> [thread <String>]
+gam create chatmessage space <ChatSpace> [thread <String>]
 	(text <String>)|(textfile <FileName> [charset <CharSet>])
-gam delete chat name <String>
-gam update chat name <String>
+gam delete chatmessage name <String>
+gam update chatmessage name <String>
 	(text <String>)|(textfile <FileName> [charset <CharSet>])
 
 <CrOSAction> ::=
