@@ -102,7 +102,7 @@ def create_message():
     while i < len(sys.argv):
       myarg = sys.argv[i].lower()
       if myarg == 'text':
-          body['text'] = sys.argv[i+1]
+          body['text'] = sys.argv[i+1].replace('\\r', '\r').replace('\\n', '\n')
           i += 2
       elif myarg == 'textfile':
           filename = sys.argv[i + 1]
@@ -172,7 +172,7 @@ def update_message():
     while i < len(sys.argv):
         myarg = sys.argv[i].lower()
         if myarg == 'text':
-            body['text'] = sys.argv[i+1]
+            body['text'] = sys.argv[i+1].replace('\\r', '\r').replace('\\n', '\n')
             i += 2
         elif myarg == 'textfile':
             filename = sys.argv[i + 1]

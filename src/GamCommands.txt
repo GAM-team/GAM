@@ -896,23 +896,27 @@ gam delete resoldsubscription <CustomerID> <SKUID> cancel|downgrade|transfer_to_
 gam info resoldsubscriptions <CustomerID> [customer_auth_token <String>]
 
 <ActivityApplicationName> ::=
-	access|accesstransparency|
+	access_transparency|
 	admin|
-	calendar|calendars|
+	calendar|
 	chat|
-	drive|doc|docs|
-	enterprisegroups|groupsenterprise|
+	chrome|
+	context_aware_access|
+	data_studio|
+	drive|
 	gcp|
-	google+|gplus|
-	group|groups|
-	hangoutsmeet|meet|
+	gplus|
+	groups|
+	groups_enterprise|
 	jamboard|
-	login|logins|
+	keep|
+	login|
+	meet|
 	mobile|
-	oauthtoken|token|tokens|
 	rules|
 	saml|
-	useraccounts
+	token|
+	user_accounts
 
 <ReportsApp> ::=
 	accounts|
