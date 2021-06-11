@@ -797,7 +797,7 @@ def doGAMVersion(checkForArgs=True):
                 'passlib',
                 'python-dateutil',
                 'yubikey-manager',
-                'yomama']
+                ]
         for lib in libs:
             try:
                 print(f'{lib} {lib_version(lib)}')
