@@ -18,7 +18,7 @@ env:
   MIN_OPENSSL_VERSION: "1.1.1k"
   PATCHELF_VERSION: "0.12"
   # PYINSTALLER_VERSION can be full commit hash or version like v4.20
-  PYINSTALLER_VERSION: "660a2e3e0b818862aa7efc158fbfca114377fd02"
+  PYINSTALLER_VERSION: "e5dbb051bd3d53d6c2c70cbd87270eec1765da2e"
 
 jobs:
   build:
@@ -104,7 +104,7 @@ jobs:
           path: |
             ~/python
             ~/ssl
-          key: ${{ matrix.os }}-${{ matrix.jid }}-20210511
+          key: ${{ matrix.os }}-${{ matrix.jid }}-20210611
 
       - name: Set env variables
         env:
