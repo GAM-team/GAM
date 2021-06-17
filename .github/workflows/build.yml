@@ -18,7 +18,7 @@ env:
   MIN_OPENSSL_VERSION: "1.1.1k"
   PATCHELF_VERSION: "0.12"
   # PYINSTALLER_VERSION can be full commit hash or version like v4.20
-  PYINSTALLER_VERSION: "e5dbb051bd3d53d6c2c70cbd87270eec1765da2e"
+  PYINSTALLER_VERSION: "000275e409640320cdd995a7f077abfdece86749"
 
 jobs:
   build:
