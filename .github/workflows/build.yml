@@ -161,7 +161,8 @@ jobs:
              cd "pyinstaller-${PYINSTALLER_VERSION}/"
              if [ $GAMOS == "windows" ]; then
                # remove pre-compiled bootloaders so we fail if bootloader compile fails
-               rm -rf ../PyInstaller/bootloader/*bit
+               rm -rf PyInstaller/bootloader/*bit
+               cd bootloader
                if [ "${PLATFORM}" == "x86" ]; then
                  TARGETARCH="--target-arch=32bit"
                else
