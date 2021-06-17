@@ -159,12 +159,14 @@ jobs:
              curl -o pyinstaller.tar.gz --compressed "${url}"
              tar xf pyinstaller.tar.gz
              cd "pyinstaller-${PYINSTALLER_VERSION}/bootloader"
+             # remove pre-compiled bootloaders so we fail if bootloader compile fails
+             rm -rf ../PyInstaller/bootloader/*bit
              if [ "${PLATFORM}" == "x86" ]; then
                TARGETARCH="--target-arch=32bit"
              else
                TARGETARCH=""
              fi
-             #$python ./waf all $TARGETARCH
+             $python ./waf all $TARGETARCH
              cd ..
              $python setup.py install
              #$pip install pyinstaller
