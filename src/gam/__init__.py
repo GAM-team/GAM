@@ -3719,6 +3719,10 @@ def getDriveFileAttribute(i, body, parameters, myarg, update=False):
         body['mimeType'] = MIMETYPE_GA_SHORTCUT
         body['shortcutDetails'] = {'targetId': sys.argv[i+1]}
         i += 2
+    elif myarg == 'securityupdate':
+        body['linkShareMetadata'] = {'securityUpdateEnabled': getBoolean(
+            sys.argv[i+1], f'gam <users> {operation} drivefile'), 'securityUpdateElibible': True}
+        i += 2
     else:
         controlflow.invalid_argument_exit(
             myarg, f"gam <users> {operation} drivefile")
