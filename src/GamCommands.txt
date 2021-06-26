@@ -333,6 +333,7 @@ If an item contains spaces, it should be surrounded by ".
 	lastmodifyinguser|
 	lastmodifyingusername|
 	lastviewedbyme|lastviewedbymedate|lastviewedbymetime|lastviewedbyuser|
+	linksharemetadata|
 	md5|md5checksum|md5sum|
 	mime|mimetype|
 	modifiedbyme|modifiedbymedate|modifiedbymetime|modifiedbyuser|
@@ -345,6 +346,7 @@ If an item contains spaces, it should be surrounded by ".
 	parents|
 	permissions|
 	quotabytesused|quotaused|
+	resourcekey|
 	restricted|
 	shareable|
 	shared|
