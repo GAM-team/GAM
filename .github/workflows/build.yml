@@ -123,6 +123,7 @@ jobs:
         if: matrix.os == 'windows-2019'
         run: |
           if ( $PLATFORM -eq "x86_64" )
+          {
             Set-Variable -name py_arch -value "-amd64"
           }
           else
