@@ -50,7 +50,6 @@ jobs:
             jid: 5
             goal: "build"
             gamos: "windows"
-            python: 3.9.5 
             pyarch: "x64" 
             platform: "x86_64"
           - os: windows-2019
@@ -58,7 +57,6 @@ jobs:
             goal: "build"
             gamos: "windows"
             platform: "x86"
-            python: 3.9.5
             pyarch: "x86"
           - os: ubuntu-20.04
             goal: "test"
@@ -114,13 +112,28 @@ jobs:
           echo "PLATFORM=${PLATFORM}" >> $GITHUB_ENV
           uname -a
 
-      - name: Use pre-compiled Python for testing and Windows
+      - name: Use pre-compiled Python for testing
         if: matrix.python != ''
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python }}
           architecture: ${{ matrix.pyarch }}
 
+      - name: Install Python on Windows
+        if: matrix.os == 'windows-2019'
+        run: |
+          if ( $PLATFORM -eq "x86_64" )
+            Set-Variable -name py_arch -value "-amd64"
+          }
+          else
+          {
+            Set-Variable -name py_arch -value ""
+          }
+          Set-Variable -name python_file -value "python-${BUILD_PYTHON_VERSION}${py_arch}.exe"
+          Set-Variable -name python_url -value "https://www.python.org/ftp/python/$BUILD_PYTHON_VERSION/$python_file"
+          Invoke-WebRequest -Uri $python_url -OutFile $python_file
+          Start-Process -wait -FilePath $python_file -ArgumentList "/quiet","InstallAllUsers=1","TargetDir=c:\\python"
+  
       - name: Set env variables for pre-compiled Python
         if: matrix.goal == 'test'
         run: |
