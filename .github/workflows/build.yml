@@ -12,8 +12,8 @@ defaults:
     working-directory: src
 
 env:
-  BUILD_PYTHON_VERSION: "3.9.5"
-  MIN_PYTHON_VERSION: "3.9.5"
+  BUILD_PYTHON_VERSION: "3.9.6"
+  MIN_PYTHON_VERSION: "3.9.6"
   BUILD_OPENSSL_VERSION: "1.1.1k"
   MIN_OPENSSL_VERSION: "1.1.1k"
   PATCHELF_VERSION: "0.12"
@@ -40,11 +40,6 @@ jobs:
             jid: 3
             goal: "build"
             gamos: "linux"
-            platform: "x86_64"
-          - os: macos-10.15
-            jid: 4
-            goal: "build"
-            gamos: "macos"
             platform: "x86_64"
           - os: macos-11.0
             jid: 12
