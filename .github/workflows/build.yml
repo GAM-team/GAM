@@ -130,8 +130,11 @@ jobs:
           {
             Set-Variable -name py_arch -value ""
           }
+          Write-Output "py_arch: $py_arch"
           Set-Variable -name python_file -value "python-${BUILD_PYTHON_VERSION}${py_arch}.exe"
+          Write-Output "python_file: $python_file"
           Set-Variable -name python_url -value "https://www.python.org/ftp/python/$BUILD_PYTHON_VERSION/$python_file"
+          Write-Output "python_url: $python_url"
           Invoke-WebRequest -Uri $python_url -OutFile $python_file
           Start-Process -wait -FilePath $python_file -ArgumentList "/quiet","InstallAllUsers=1","TargetDir=c:\\python"
         shell: pwsh
