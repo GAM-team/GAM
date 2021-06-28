@@ -7,7 +7,7 @@ echo "compiling GAM with pyinstaller..."
 export distpath="dist/"
 export gampath="${distpath}gam"
 rm -rf $gampath
-c:\python\scripts\pyinstaller --clean --noupx --distpath $gampath gam.spec
+/c/python/scripts/pyinstaller --clean --noupx --distpath $gampath gam.spec
 export gam="${gampath}/gam"
 echo "running compiled GAM..."
 $gam version
