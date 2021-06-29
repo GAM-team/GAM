@@ -5,8 +5,12 @@ import sys
 import importlib
 from PyInstaller.utils.hooks import copy_metadata
 
-sys.modules['FixTk'] = None
-
+import os
+import importlib.util
+var_file = os.path.join(os.getcwd(), 'gam/var.py')
+spec = importlib.util.spec_from_file_location('gam.var', var_file)
+gam_var = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(gam_var)
 # dynamically determine where httplib2/cacerts.txt lives
 proot = os.path.dirname(importlib.import_module('httplib2').__file__)
 extra_files = [(os.path.join(proot, 'cacerts.txt'), 'httplib2')]
@@ -44,4 +48,5 @@ exe = EXE(pyz,
           debug=False,
           strip=None,
           upx=False,
-          console=True)
+          console=True,
+          version=gam_var.GAM_VERSION)
