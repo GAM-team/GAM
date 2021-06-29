@@ -959,6 +959,7 @@ gam report <ActivityApplicationName> [todrive]
 	[(user all|<UserItem>)|(orgunit|org|ou <OrgUnitPath>)]
 	[start <Time>] [end <Time>]
 	[filter|filters <String>] [event <String>] [ip <String>]
+	[groupidfilter <String>]
 
 gam create admin <UserItem> <RoleItem> customer|(org_unit <OrgUnitItem>)
 gam delete admin <RoleAssignmentId>
