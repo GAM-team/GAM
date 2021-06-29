@@ -285,7 +285,7 @@ def showReport():
     customerId = GC_Values[GC_CUSTOMER_ID]
     if customerId == MY_CUSTOMER:
         customerId = None
-    filters = parameters = actorIpAddress = startTime = endTime = eventName = orgUnitId = None
+    filters = parameters = actorIpAddress = groupIdFilter = startTime = endTime = eventName = orgUnitId = None
     tryDate = datetime.date.today().strftime(YYYYMMDD_FORMAT)
     to_drive = False
     userKey = 'all'
@@ -329,6 +329,9 @@ def showReport():
             i += 2
         elif myarg == 'ip':
             actorIpAddress = sys.argv[i + 1]
+            i += 2
+        elif myarg == 'groupidfilter':
+            groupIdFilter = sys.argv[i + 1]
             i += 2
         elif myarg == 'todrive':
             to_drive = True
@@ -489,7 +492,8 @@ def showReport():
                                         endTime=endTime,
                                         eventName=eventName,
                                         filters=filters,
-                                        orgUnitID=orgUnitId)
+                                        orgUnitID=orgUnitId,
+                                        groupIdFilter=groupIdFilter)
         if activities:
             titles = ['name']
             csvRows = []
