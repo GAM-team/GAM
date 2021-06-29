@@ -3721,7 +3721,7 @@ def getDriveFileAttribute(i, body, parameters, myarg, update=False):
         i += 2
     elif myarg == 'securityupdate':
         body['linkShareMetadata'] = {'securityUpdateEnabled': getBoolean(
-            sys.argv[i+1], f'gam <users> {operation} drivefile'), 'securityUpdateElibible': True}
+            sys.argv[i+1], f'gam <users> {operation} drivefile'), 'securityUpdateEligible': True}
         i += 2
     else:
         controlflow.invalid_argument_exit(
