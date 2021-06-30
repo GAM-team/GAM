@@ -286,7 +286,6 @@ PRODUCTID_NAME_MAPPINGS = {
 
 # Legacy APIs that use v1 discovery. Newer APIs should all use v2.
 V1_DISCOVERY_APIS = {
-    'admin',
     'calendar',
     'drive',
     'oauth2',

@@ -39,6 +39,8 @@ def printshow_policies():
     orgunit = None
     printer_id = None
     app_id = None
+    body = {}
+    namespaces = []
     i = 3
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
@@ -51,16 +53,15 @@ def printshow_policies():
         elif myarg == 'appid':
             app_id = sys.argv[i+1]
             i += 2
+        elif myarg == 'namespace':
+            namespaces.append(sys.argv[i+1])
+            i += 2
         else:
             msg = f'{myarg} is not a valid argument to "gam print chromepolicy"'
             controlflow.system_error_exit(3, msg)
     if not orgunit:
         controlflow.system_error_exit(3, 'You must specify an orgunit')
-    body = {
-             'policyTargetKey': {
-               'targetResource': orgunit,
-             }
-           }
+    body['policyTargetKey'] = {'targetResource': orgunit}
     if printer_id:
         body['policyTargetKey']['additionalTargetKeys'] = {'printer_id': printer_id}
         namespaces = ['chrome.printers']
@@ -69,23 +70,19 @@ def printshow_policies():
         namespaces = ['chrome.users.apps',
                       'chrome.devices.managedGuest.apps',
                       'chrome.devices.kiosk.apps']
-    else:
+    if not namespaces:
         namespaces = [
             'chrome.users',
-#           Not yet implemented:
-#           'chrome.devices',
-#           'chrome.devices.managedGuest',
-#           'chrome.devices.kiosk',
+            'chrome.users.apps',
+            'chrome.devices',
+            'chrome.devices.kiosk',
+            'chrome.devices.managedGuest',
             ]
     throw_reasons = [gapi_errors.ErrorReason.FOUR_O_O,]
     orgunitPath = gapi_directory_orgunits.orgunit_from_orgunitid(orgunit[9:], None)
-    header = f'Organizational Unit: {orgunitPath}'
-    if printer_id:
-        header += f', printerid: {printer_id}'
-    elif app_id:
-        header += f', appid: {app_id}'
-    print(header)
+    print(f'Organizational Unit: {orgunitPath}')
     for namespace in namespaces:
+        spacing = '  '
         body['policySchemaFilter'] = f'{namespace}.*'
         try:
             policies = gapi.get_all_pages(svc.customers().policies(), 'resolve',
@@ -95,11 +92,23 @@ def printshow_policies():
                                           body=body)
         except googleapiclient.errors.HttpError:
             policies = []
-        for policy in sorted(policies, key=lambda k: k.get('value', {}).get('policySchema', '')):
+        # sort policies first by app/printer id then by schema name
+        policies = sorted(policies,
+                key=lambda k: (
+                    list(k.get('targetKey', {}).get('additionalTargetKeys', {}).values()),
+                    k.get('value', {}).get('policySchema', '')))
+        printed_ids = []
+        for policy in policies:
             print()
             name = policy.get('value', {}).get('policySchema', '')
             schema = CHROME_SCHEMA_TYPE_MESSAGE.get(name)
-            print(name)
+            for key, val in policy['targetKey'].get('additionalTargetKeys', {}).items():
+                additional_id = f'{key} - {val}'
+                if additional_id not in printed_ids:
+                    print(f'  {additional_id}')
+                    printed_ids.append(additional_id)
+                    spacing = '    '
+            print(f'{spacing}{name}')
             values = policy.get('value', {}).get('value', {})
             for setting, value in values.items():
                 # Handle TYPE_MESSAGE fields with durations or counts as a special case
@@ -111,7 +120,7 @@ def printshow_policies():
                       value = int(value) // schema['scale']
                 elif isinstance(value, str) and value.find('_ENUM_') != -1:
                     value = value.split('_ENUM_')[-1]
-                print(f'  {setting}: {value}')
+                print(f'{spacing}{setting}: {value}')
 
 
 def build_schemas(svc=None, sfilter=None):
