@@ -286,11 +286,8 @@ PRODUCTID_NAME_MAPPINGS = {
 
 # Legacy APIs that use v1 discovery. Newer APIs should all use v2.
 V1_DISCOVERY_APIS = {
-    'calendar',
     'drive',
     'oauth2',
-    'reseller',
-    'siteVerification',
 }
 
 API_NAME_MAPPING = {
@@ -298,6 +295,7 @@ API_NAME_MAPPING = {
     'reports': 'admin',
     'datatransfer': 'admin',
     'drive3': 'drive',
+    'calendar': 'calendar-json',
     'cloudresourcemanagerv1': 'cloudresourcemanager',
     'cloudidentity_beta': 'cloudidentity',
 }
