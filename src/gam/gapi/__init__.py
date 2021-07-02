@@ -281,6 +281,7 @@ def get_all_pages(service,
                   soft_errors=False,
                   throw_reasons=None,
                   retry_reasons=None,
+                  page_args_in_body=False,
                   **kwargs):
     """Aggregates and returns all pages of a Google service function response.
 
@@ -311,15 +312,21 @@ def get_all_pages(service,
     retry_reasons: A list of Google HTTP error reason strings indicating which
       error should be retried, using exponential backoff techniques, when the
       error reason is encountered.
+    page_args_in_body: Some APIs like Chrome Policy want pageToken and pageSize
+      in the body.
     **kwargs: Additional params to pass to the request method.
 
   Returns:
     A list of all items received from all paged responses.
   """
-    if 'maxResults' not in kwargs and 'pageSize' not in kwargs:
+    if 'maxResults' not in kwargs and 'pageSize' not in kwargs and 'pageSize' not in kwargs.get('body', {}):
         page_key = _get_max_page_size_for_api_call(service, function, **kwargs)
         if page_key:
-            kwargs.update(page_key)
+            if page_args_in_body:
+                kwargs['body'] = kwargs.get('body', {})
+                kwargs['body'].update(page_key)
+            else:
+                kwargs.update(page_key)
     all_items = []
     page_token = None
     total_items = 0
@@ -334,7 +341,10 @@ def get_all_pages(service,
         if not page_token:
             finalize_page_message(page_message)
             return all_items
-        kwargs['pageToken'] = page_token
+        if page_args_in_body:
+            kwargs['body']['pageToken'] = page_token
+        else:
+            kwargs['pageToken'] = page_token
 
 
 # TODO: Make this private once all execution related items that use this method

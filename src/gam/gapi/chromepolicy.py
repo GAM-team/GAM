@@ -89,7 +89,8 @@ def printshow_policies():
                                           items='resolvedPolicies',
                                           throw_reasons=throw_reasons,
                                           customer=customer,
-                                          body=body)
+                                          body=body,
+                                          page_args_in_body=True)
         except googleapiclient.errors.HttpError:
             policies = []
         # sort policies first by app/printer id then by schema name
