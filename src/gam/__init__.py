@@ -1473,8 +1473,8 @@ def addDelegates(users, i):
                   body={'delegateEmail': delegate})
 
 
-def gen_sha512_hash(password):
-    return sha512_crypt.hash(password, rounds=5000)
+def gen_sha512_hash(password, rounds=10000):
+    return sha512_crypt.hash(password, rounds=rounds)
 
 
 def printShowDelegates(users, csvFormat):
