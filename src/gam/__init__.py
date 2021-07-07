@@ -7128,9 +7128,14 @@ def getUserAttributes(i, cd, updateCmd):
             controlflow.invalid_argument_exit(
                 sys.argv[i], f"gam {['create', 'update'][updateCmd]} user")
     if need_password:
+        # generate a password with unicode chars that are not allowed in
+        # passwords. We expect "password random nohash" to fail but no one
+        # should be using that. Our goal here is to purposefully block login
+        # with this password.
+        pass_chars = [chr(i) for i in range(55296)]
         rnd = SystemRandom()
         body['password'] = ''.join(
-            rnd.choice(PASSWORD_SAFE_CHARS) for _ in range(100))
+            rnd.choice(pass_chars) for _ in range(2000))
     if 'password' in body and need_to_hash_password:
         body['password'] = gen_sha512_hash(body['password'])
         body['hashFunction'] = 'crypt'
