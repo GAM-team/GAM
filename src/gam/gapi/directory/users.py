@@ -3,6 +3,7 @@ from time import sleep
 import gam
 from gam import gapi
 from gam.gapi import directory as gapi_directory
+from gam.gapi import errors as gapi_errors
 
 
 def get_primary(email):
@@ -53,10 +54,16 @@ def wait_for_mailbox(users):
         i += 1
         user = gam.normalizeEmailAddressOrUID(user)
         while True:
-            result = gapi.call(cd.users(),
-                               'get',
-                               'fields=isMailboxSetup',
-                               userKey=user)
+            try:
+                result = gapi.call(cd.users(),
+                                   'get',
+                                   'fields=isMailboxSetup',
+                                   userKey=user,
+                                   throw_reasons=[gapi_errors.ErrorReason.USER_NOT_FOUND])
+            except gapi_errors.GapiUserNotFoundError:
+                print(f'{user} mailboxIsSetup: False (user does not exist yet)')
+                sleep(3)
+                continue
             mailbox_is_setup = result.get('isMailboxSetup')
             print(f'{user} mailboxIsSetup: {mailbox_is_setup}')
             if mailbox_is_setup:
