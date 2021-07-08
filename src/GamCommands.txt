@@ -204,6 +204,7 @@ If an item contains spaces, it should be surrounded by ".
 <MaximumNumberOfSeats> ::= <Number>
 <MobileID> ::= <String>
 <Name> ::= <String>
+<Namespace> ::= <String>
 <NotificationID> ::= <String>
 <NumberOfSeats> ::= <Number>
 <OrgUnitID> ::= <String>
@@ -594,6 +595,7 @@ Items, separated by spaces, with spaces, commas or single quotes in the items th
 <MatterItemList> ::= "<MatterItem>(,<MatterItem>)*"
 <MembersFieldNameList> ::= "<MembersFieldName>(,<MembersFieldName>)*"
 <MobileList> ::= "<MobileId>(,<MobileId>)*"
+<NamespaceList> ::= "<Namespace>(,<Namespace)*"
 <OrgUnitList> ::= "<OrgUnitPath>(,<OrgUnitPath>)*"
 <PrinterIDList> ::= "<PrinterID>)(,<PrinterID>)*"
 <ProductIDList> ::= "(<ProductID>|SKUID>)(,<ProductID>|SKUID>)*"
@@ -1313,7 +1315,7 @@ gam print chromehistory releases [todrive]
 
 gam delete chromepolicy <SchemaName>+ ou|org|orgunit <OrgUnitItem> [(printerid <PrinterID>)|(appid <AppID>)]
 gam update chromepolicy (<SchemaName> (<Field> <Value>)+)+ ou|org|orgunit <OrgUnitItem> [(printerid <PrinterID>)|(appid <AppID>)]
-gam show chromepolicy ou|org|orgunit <OrgUnitItem> [(printerid <PrinterID>)|(appid <AppID>)]
+gam show chromepolicy ou|org|orgunit <OrgUnitItem> [(printerid <PrinterID>)|(appid <AppID>)] [namespace <NamespaceList>]
 gam show chromeschema [filter <String>]
 
 <DeviceID> ::= devices/<String>

@@ -54,7 +54,7 @@ def printshow_policies():
             app_id = sys.argv[i+1]
             i += 2
         elif myarg == 'namespace':
-            namespaces.append(sys.argv[i+1])
+            namespaces.extend(sys.argv[i+1].replace(',', ' ').split())
             i += 2
         else:
             msg = f'{myarg} is not a valid argument to "gam print chromepolicy"'
@@ -64,13 +64,15 @@ def printshow_policies():
     body['policyTargetKey'] = {'targetResource': orgunit}
     if printer_id:
         body['policyTargetKey']['additionalTargetKeys'] = {'printer_id': printer_id}
-        namespaces = ['chrome.printers']
+        if not namespaces:
+            namespaces = ['chrome.printers']
     elif app_id:
         body['policyTargetKey']['additionalTargetKeys'] = {'app_id': app_id}
-        namespaces = ['chrome.users.apps',
-                      'chrome.devices.managedGuest.apps',
-                      'chrome.devices.kiosk.apps']
-    if not namespaces:
+        if not namespaces:
+            namespaces = ['chrome.users.apps',
+                          'chrome.devices.managedGuest.apps',
+                          'chrome.devices.kiosk.apps']
+    elif not namespaces:
         namespaces = [
             'chrome.users',
             'chrome.users.apps',
