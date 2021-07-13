@@ -7132,10 +7132,10 @@ def getUserAttributes(i, cd, updateCmd):
         # passwords. We expect "password random nohash" to fail but no one
         # should be using that. Our goal here is to purposefully block login
         # with this password.
-        pass_chars = [chr(i) for i in range(55296)]
+        pass_chars = [chr(i) for i in range(1, 55296)]
         rnd = SystemRandom()
         body['password'] = ''.join(
-            rnd.choice(pass_chars) for _ in range(2000))
+            rnd.choice(pass_chars) for _ in range(4096))
     if 'password' in body and need_to_hash_password:
         body['password'] = gen_sha512_hash(body['password'])
         body['hashFunction'] = 'crypt'
