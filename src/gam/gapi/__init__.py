@@ -319,11 +319,12 @@ def get_all_pages(service,
   Returns:
     A list of all items received from all paged responses.
   """
+    if page_args_in_body:
+        kwargs.setdefault('body', {})
     if 'maxResults' not in kwargs and 'pageSize' not in kwargs and 'pageSize' not in kwargs.get('body', {}):
         page_key = _get_max_page_size_for_api_call(service, function, **kwargs)
         if page_key:
             if page_args_in_body:
-                kwargs['body'] = kwargs.get('body', {})
                 kwargs['body'].update(page_key)
             else:
                 kwargs.update(page_key)
