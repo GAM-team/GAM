@@ -296,7 +296,6 @@ API_NAME_MAPPING = {
     'datatransfer': 'admin',
     'drive3': 'drive',
     'calendar': 'calendar-json',
-    'cloudresourcemanagerv1': 'cloudresourcemanager',
     'cloudidentity_beta': 'cloudidentity',
 }
 
@@ -310,8 +309,7 @@ API_VER_MAPPING = {
     'classroom': 'v1',
     'cloudidentity': 'v1',
     'cloudidentity_beta': 'v1beta1',
-    'cloudresourcemanager': 'v2',
-    'cloudresourcemanagerv1': 'v1',
+    'cloudresourcemanager': 'v3',
     'contactdelegation': 'v1',
     'datatransfer': 'datatransfer_v1',
     'directory': 'directory_v1',

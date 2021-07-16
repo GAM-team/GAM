@@ -7158,12 +7158,7 @@ def getCRMService(login_hint):
         login_hint=login_hint,
         use_console_flow=not GC_Values[GC_OAUTH_BROWSER])
     httpc = transport.AuthorizedHttp(creds, transport.create_http())
-    return getService('cloudresourcemanagerv1', httpc), httpc
-
-
-# Ugh, v2 doesn't contain all the operations of v1 so we need to use both here.
-def getCRM2Service(httpc):
-    return getService('cloudresourcemanager', httpc)
+    return getService('cloudresourcemanager', httpc), httpc
 
 
 def getGAMProjectFile(filepath):
@@ -7457,10 +7452,10 @@ def _getProjects(crm, pfilter):
     try:
         return gapi.get_all_pages(
             crm.projects(),
-            'list',
+            'search',
             'projects',
             throw_reasons=[gapi_errors.ErrorReason.BAD_REQUEST],
-            filter=pfilter)
+            query=pfilter)
     except gapi_errors.GapiBadRequestError as e:
         controlflow.system_error_exit(2, f'Project: {pfilter}, {str(e)}')
 
@@ -7524,7 +7519,6 @@ def _getLoginHintProjectId(createCmd):
     crm, httpObj = getCRMService(login_hint)
     if parent and not parent.startswith(
             'organizations/') and not parent.startswith('folders/'):
-        crm2 = getCRM2Service(httpObj)
         parent = convertGCPFolderNameToID(parent, crm2)
     if parent:
         parent_type, parent_id = parent.split('/')
@@ -7576,11 +7570,13 @@ def convertGCPFolderNameToID(parent, crm2):
 
 def createGCPFolder():
     login_hint = _getValidateLoginHint()
-    _, httpObj = getCRMService(login_hint)
-    crm2 = getCRM2Service(httpObj)
-    gapi.call(crm2.folders(),
+    login_domain = login_hint.split('@')[-1]
+    crm, _ = getCRMService(login_hint)
+    organization = getGCPOrg(crm, login_domain)
+    gapi.call(crm.folders(),
               'create',
               body={
+                  'parent': organization,
                   'name': sys.argv[3],
                   'displayName': sys.argv[3]
               })
@@ -7637,16 +7633,31 @@ def _checkForExistingProjectFiles():
             )
 
 
+def getGCPOrg(crm, domain):
+    resp = gapi.call(crm.organizations(),
+                     'search',
+                     query=f'domain:{domain}')
+    try:
+        organization = resp['organizations'][0]['name']
+        print(f'Your organization name is {organization}')
+        return organization
+    except (KeyError, IndexError):
+        controlflow.system_error_exit(
+             3,
+            'you have no rights to create projects for your organization and you don\'t seem to be a super admin! Sorry, there\'s nothing more I can do.'
+            )
+
+
 def doCreateProject():
     _checkForExistingProjectFiles()
     crm, httpObj, login_hint, projectId, parent = _getLoginHintProjectId(True)
     login_domain = login_hint[login_hint.find('@') + 1:]
-    body = {'projectId': projectId, 'name': 'GAM Project'}
+    body = {'projectId': projectId, 'displayName': 'GAM Project'}
     if parent:
         body['parent'] = parent
     while True:
         create_again = False
-        print(f'Creating project "{body["name"]}"...')
+        print(f'Creating project "{body["displayName"]}"...')
         create_operation = gapi.call(crm.projects(), 'create', body=body)
         operation_name = create_operation['name']
         time.sleep(8)  # Google recommends always waiting at least 5 seconds
@@ -7661,18 +7672,7 @@ def doCreateProject():
                         'Hmm... Looks like you have no rights to your Google Cloud Organization.'
                     )
                     print('Attempting to fix that...')
-                    getorg = gapi.call(
-                        crm.organizations(),
-                        'search',
-                        body={'filter': f'domain:{login_domain}'})
-                    try:
-                        organization = getorg['organizations'][0]['name']
-                        print(f'Your organization name is {organization}')
-                    except (KeyError, IndexError):
-                        controlflow.system_error_exit(
-                            3,
-                            'you have no rights to create projects for your organization and you don\'t seem to be a super admin! Sorry, there\'s nothing more I can do.'
-                        )
+                    organization = getGCPOrg(crm, login_domain)
                     org_policy = gapi.call(crm.organizations(),
                                            'getIamPolicy',
                                            resource=organization)
