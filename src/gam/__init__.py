@@ -7519,7 +7519,7 @@ def _getLoginHintProjectId(createCmd):
     crm, httpObj = getCRMService(login_hint)
     if parent and not parent.startswith(
             'organizations/') and not parent.startswith('folders/'):
-        parent = convertGCPFolderNameToID(parent, crm2)
+        parent = convertGCPFolderNameToID(parent, crm)
     if parent:
         parent_type, parent_id = parent.split('/')
         if parent_type[-1] == 's':
@@ -7545,17 +7545,11 @@ def _getLoginHintProjectId(createCmd):
 PROJECTID_FILTER_REQUIRED = 'gam|<ProjectID>|(filter <String>)'
 
 
-def convertGCPFolderNameToID(parent, crm2):
-    # crm2.folders() is broken requiring pageToken, etc in body, not URL.
-    # for now just use gapi.get_items and if user has that many folders they'll
-    # just need to be specific.
-    folders = gapi.get_items(crm2.folders(),
-                             'search',
-                             items='folders',
-                             body={
-                                 'pageSize': 1000,
-                                 'query': f'displayName="{parent}"'
-                             })
+def convertGCPFolderNameToID(parent, crm):
+    folders = gapi.get_all_pages(crm.folders(),
+                                 'search',
+                                 'folders',
+                                 query=f'displayName="{parent}"')
     if not folders:
         controlflow.system_error_exit(
             1, f'ERROR: No folder found matching displayName={parent}')
