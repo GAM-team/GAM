@@ -1933,6 +1933,9 @@ DELTA_DATE_FORMAT_REQUIRED = '(+|-)<Number>(d|w|y)'
 DELTA_TIME_PATTERN = re.compile(r'^([+-])(\d+)([mhdwy])$')
 DELTA_TIME_FORMAT_REQUIRED = '(+|-)<Number>(m|h|d|w|y)'
 
+HHMM_FORMAT = '%H:%M'
+HHMM_FORMAT_REQUIRED = 'hh:mm'
+
 YYYYMMDD_FORMAT = '%Y-%m-%d'
 YYYYMMDD_FORMAT_REQUIRED = 'yyyy-mm-dd'
 
