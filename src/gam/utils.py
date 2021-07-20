@@ -254,6 +254,18 @@ def get_delta_time(argstr):
     return deltaTime
 
 
+def get_hhmm(argstr):
+    argstr = argstr.strip()
+    if argstr:
+        try:
+            dateTime = datetime.datetime.strptime(argstr, HHMM_FORMAT)
+            return argstr
+        except ValueError:
+            controlflow.system_error_exit(
+                2, f'expected a <{HHMM_FORMAT_REQUIRED}>; got {argstr}')
+    controlflow.system_error_exit(2, f'expected a <{HHMM_FORMAT_REQUIRED}>')
+
+
 def get_yyyymmdd(argstr, minLen=1, returnTimeStamp=False, returnDateTime=False):
     argstr = argstr.strip()
     if argstr:

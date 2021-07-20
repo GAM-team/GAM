@@ -104,7 +104,6 @@ def printshow_policies():
         for policy in policies:
             print()
             name = policy.get('value', {}).get('policySchema', '')
-            schema = CHROME_SCHEMA_TYPE_MESSAGE.get(name)
             for key, val in policy['targetKey'].get('additionalTargetKeys', {}).items():
                 additional_id = f'{key} - {val}'
                 if additional_id not in printed_ids:
@@ -114,13 +113,22 @@ def printshow_policies():
             print(f'{spacing}{name}')
             values = policy.get('value', {}).get('value', {})
             for setting, value in values.items():
-                # Handle TYPE_MESSAGE fields with durations or counts as a special case
+                # Handle TYPE_MESSAGE fields with durations, values, counts and timeOfDay as special cases
+                schema = CHROME_SCHEMA_TYPE_MESSAGE.get(name, {}).get(setting.lower())
                 if schema and setting == schema['casedField']:
-                  value = value.get(schema['type'], '')
-                  if value:
-                      if value.endswith('s'):
-                          value = value[:-1]
-                      value = int(value) // schema['scale']
+                    vtype = schema['type']
+                    if vtype in {'duration', 'value'}:
+                        value = value.get(vtype, '')
+                        if value:
+                            if value.endswith('s'):
+                                value = value[:-1]
+                            value = int(value) // schema['scale']
+                    elif vtype == 'count':
+                        pass
+                    else: ##timeOfDay
+                        hours = value.get(vtype, {}).get('hours', 0)
+                        minutes = value.get(vtype, {}).get('minutes', 0)
+                        value = f'{hours:02}:{minutes:02}'
                 elif isinstance(value, str) and value.find('_ENUM_') != -1:
                     value = value.split('_ENUM_')[-1]
                 print(f'{spacing}{setting}: {value}')
@@ -266,21 +274,45 @@ def delete_policy():
 
 
 CHROME_SCHEMA_TYPE_MESSAGE = {
-  'chrome.users.SessionLength':
-    {'field': 'sessiondurationlimit', 'casedField': 'sessionDurationLimit',
-     'type': 'duration', 'minVal': 1, 'maxVal': 1440, 'scale': 60},
+  'chrome.users.AutoUpdateCheckPeriodNew': {
+    'autoupdatecheckperiodminutesnew':
+      {'casedField': 'autoUpdateCheckPeriodMinutesNew',
+       'type': 'duration', 'minVal': 1, 'maxVal': 720, 'scale': 60}},
   'chrome.users.BrowserSwitcherDelayDuration':
-    {'field': 'browserswitcherdelayduration', 'casedField': 'browserSwitcherDelayDuration',
-     'type': 'duration', 'minVal': 0, 'maxVal': 30, 'scale': 1},
+    {'browserswitcherdelayduration':
+       {'casedField': 'browserSwitcherDelayDuration',
+        'type': 'duration', 'minVal': 0, 'maxVal': 30, 'scale': 1}},
+  'chrome.users.FetchKeepaliveDurationSecondsOnShutdown':
+    {'fetchkeepalivedurationsecondsonshutdown':
+       {'casedField': 'fetchKeepaliveDurationSecondsOnShutdown',
+        'type': 'duration', 'minVal': 0, 'maxVal': 5, 'scale': 1}},
   'chrome.users.MaxInvalidationFetchDelay':
-    {'field': 'maxinvalidationfetchdelay', 'casedField': 'maxInvalidationFetchDelay',
-     'type': 'duration', 'minVal': 1, 'maxVal': 30, 'scale': 1},
-  'chrome.users.SecurityTokenSessionSettings':
-    {'field': 'securitytokensessionnotificationseconds', 'casedField': 'securityTokenSessionNotificationSeconds',
-     'type': 'duration', 'minVal': 0, 'maxVal': 9999, 'scale': 1},
+    {'maxinvalidationfetchdelay':
+       {'casedField': 'maxInvalidationFetchDelay',
+        'type': 'duration', 'minVal': 1, 'maxVal': 30, 'scale': 1, 'default': 10}},
   'chrome.users.PrintingMaxSheetsAllowed':
-    {'field': 'printingmaxsheetsallowednullable', 'casedField': 'printingMaxSheetsAllowedNullable',
-     'type': 'value', 'minVal': 1, 'maxVal': None, 'scale': 1},
+    {'printingmaxsheetsallowednullable':
+       {'casedField': 'printingMaxSheetsAllowedNullable',
+        'type': 'value', 'minVal': 1, 'maxVal': None, 'scale': 1}},
+  'chrome.users.PrintJobHistoryExpirationPeriodNew':
+    {'printjobhistoryexpirationperioddaysnew':
+       {'casedField': 'printJobHistoryExpirationPeriodDaysNew',
+        'type': 'duration', 'minVal': -1, 'maxVal': None, 'scale': 86400}},
+  'chrome.users.SecurityTokenSessionSettings':
+    {'securitytokensessionnotificationseconds':
+       {'casedField': 'securityTokenSessionNotificationSeconds',
+        'type': 'duration', 'minVal': 0, 'maxVal': 9999, 'scale': 1}},
+  'chrome.users.SessionLength':
+    {'sessiondurationlimit':
+       {'casedField': 'sessionDurationLimit',
+        'type': 'duration', 'minVal': 1, 'maxVal': 1440, 'scale': 60}},
+  'chrome.users.UpdatesSuppressed':
+    {'updatessuppresseddurationmin':
+       {'casedField': 'updatesSuppressedDurationMin',
+        'type': 'count', 'minVal': 1, 'maxVal': 1440, 'scale': 1},
+     'updatessuppressedstarttime':
+       {'casedField': 'updatesSuppressedStartTime',
+        'type': 'timeOfDay'}},
   }
 
 
@@ -314,19 +346,39 @@ def update_policy():
                 field = sys.argv[i].lower()
                 if field in ['ou', 'org', 'orgunit', 'printerid', 'appid'] or '.' in field:
                     break # field is actually a new policy, orgunit or app/printer id
-                # Handle TYPE_MESSAGE fields with durations or counts as a special case
-                schema = CHROME_SCHEMA_TYPE_MESSAGE.get(schemaName)
-                if schema and field == schema['field']:
-                  casedField = schema['casedField']
-                  value = gam.getInteger(sys.argv[i+1], casedField,
-                                         minVal=schema['minVal'], maxVal=schema['maxVal'])*schema['scale']
-                  if schema['type'] == 'duration':
-                    body['requests'][-1]['policyValue']['value'][casedField] = {schema['type']: f'{value}s'}
-                  else:
-                    body['requests'][-1]['policyValue']['value'][casedField] = {schema['type']: value}
-                  body['requests'][-1]['updateMask'] += f'{casedField},'
-                  i += 2
-                  continue
+                # Handle TYPE_MESSAGE fields with durations, values, counts and timeOfDay as special cases
+                schema = CHROME_SCHEMA_TYPE_MESSAGE.get(schemaName, {}).get(field)
+                if schema:
+                    i += 1
+                    casedField = schema['casedField']
+                    vtype = schema['type']
+                    if vtype != 'timeOfDay':
+                        if 'default' not in  schema:
+                            value = gam.getInteger(sys.argv[i], casedField,
+                                                   minVal=schema['minVal'], maxVal=schema['maxVal'])*schema['scale']
+                            i += 1
+                        elif i < len(sys.argv) and sys.argv[i].isdigit():
+                            value = gam.getInteger(sys.argv[i], casedField,
+                                                   minVal=schema['minVal'], maxVal=schema['maxVal'])*schema['scale']
+                            i += 1
+                        else: # Handle empty value for fields with default
+                            value = schema['default']*schema['scale']
+                            if i < len(sys.argv) and not sys.argv[i]:
+                                i += 1
+                    else:
+                        value = utils.get_hhmm(sys.argv[i])
+                        i += 1
+                    if vtype == 'duration':
+                        body['requests'][-1]['policyValue']['value'][casedField] = {vtype: f'{value}s'}
+                    elif vtype == 'value':
+                        body['requests'][-1]['policyValue']['value'][casedField] = {vtype: value}
+                    elif vtype == 'count':
+                        body['requests'][-1]['policyValue']['value'][casedField] = value
+                    else: ##timeOfDay
+                        hours, minutes = value.split(':')
+                        body['requests'][-1]['policyValue']['value'][casedField] = {vtype: {'hours': hours, 'minutes': minutes}}
+                    body['requests'][-1]['updateMask'] += f'{casedField},'
+                    continue
                 expected_fields = ', '.join(schemas[myarg]['settings'])
                 if field not in expected_fields:
                     msg = f'Expected {myarg} field of {expected_fields}. Got {field}.'
