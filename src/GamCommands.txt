@@ -849,6 +849,8 @@ An argument containing instances of ~~xxx~~ has xxx replaced by the value of fie
 Example: gam csv Users.csv gam update user "~primaryEmail" address type work unstructured "~~Street~~, ~~City~~, ~~State~~ ~~ZIP~~"
 Each user (~primaryEmail, e.g. foo@bar.com) would have their work address updated
 
+gam create gcpfolder <String>
+
 gam create project [<EmailAddress>] [<ProjectID>]
 gam create project [admin <EmailAddress>] [project <ProjectID>] [parent <String>]
 gam use project [<EmailAddress>] [<ProjectID>]
