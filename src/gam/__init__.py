@@ -7517,22 +7517,15 @@ def _getLoginHintProjectId(createCmd):
                 f'Invalid Project ID: {projectId}, expected <{PROJECTID_FORMAT_REQUIRED}>'
             )
     crm, httpObj = getCRMService(login_hint)
-    if parent and not parent.startswith(
-            'organizations/') and not parent.startswith('folders/'):
+    if parent and not parent.startswith('organizations/') and not parent.startswith('folders/'):
         parent = convertGCPFolderNameToID(parent, crm)
-    if parent:
-        parent_type, parent_id = parent.split('/')
-        if parent_type[-1] == 's':
-            parent_type = parent_type[:
-                                      -1]  # folders > folder, organizations > organization
-        parent = {'type': parent_type, 'id': parent_id}
     projects = _getProjects(crm, f'id:{projectId}')
     if not createCmd:
         if not projects:
             controlflow.system_error_exit(
                 2,
                 f'User: {login_hint}, Project ID: {projectId}, Does not exist')
-        if projects[0]['lifecycleState'] != 'ACTIVE':
+        if projects[0]['state'] != 'ACTIVE':
             controlflow.system_error_exit(
                 2, f'User: {login_hint}, Project ID: {projectId}, Not active')
     else:
@@ -7563,17 +7556,14 @@ def convertGCPFolderNameToID(parent, crm):
 
 
 def createGCPFolder():
+    displayName = sys.argv[3]
     login_hint = _getValidateLoginHint()
     login_domain = login_hint.split('@')[-1]
     crm, _ = getCRMService(login_hint)
     organization = getGCPOrg(crm, login_domain)
-    gapi.call(crm.folders(),
-              'create',
-              body={
-                  'parent': organization,
-                  'name': sys.argv[3],
-                  'displayName': sys.argv[3]
-              })
+    result = gapi.call(crm.folders(), 'create',
+                       body={'parent': organization, 'displayName': displayName})
+    print(f'User: {login_hint}, Folder: {displayName}, GCP Folder Name: {result["name"]}, Created')
 
 
 def _getLoginHintProjects(printShowCmd):
@@ -8069,8 +8059,9 @@ def doPrintShowProjects(csvFormat):
         csvRows = []
         todrive = False
         titles = [
-            'User', 'projectId', 'projectNumber', 'name', 'createTime',
-            'lifecycleState'
+            'User', 'projectId', 'name', 'displayName',
+            'createTime', 'updateTime', 'deleteTime',
+            'state'
         ]
     while i < len(sys.argv):
         myarg = sys.argv[i].lower()
@@ -8087,19 +8078,19 @@ def doPrintShowProjects(csvFormat):
         for project in projects:
             i += 1
             print(f'  Project: {project["projectId"]}{currentCount(i, count)}')
-            print(f'    projectNumber: {project["projectNumber"]}')
             print(f'    name: {project["name"]}')
-            print(f'    createTime: {project["createTime"]}')
-            print(f'    lifecycleState: {project["lifecycleState"]}')
+            print(f'    displayName: {project["displayName"]}')
+            for field in ['createTime', 'updateTime', 'deleteTime']:
+                if field in project:
+                    print(f'    {field}: {project[field]}')
+            print(f'    state: {project["state"]}')
             jcount = len(project.get('labels', []))
             if jcount > 0:
                 print('    labels:')
                 for k, v in list(project['labels'].items()):
                     print(f'      {k}: {v}')
             if 'parent' in project:
-                print('    parent:')
-                print(f'      type: {project["parent"]["type"]}')
-                print(f'      id: {project["parent"]["id"]}')
+                print(f'    parent: {project["parent"]}')
     else:
         for project in projects:
             display.add_row_titles_to_csv_file(
