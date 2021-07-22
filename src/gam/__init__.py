@@ -8045,7 +8045,7 @@ def doDelProjects():
             gapi.call(crm.projects(),
                       'delete',
                       throw_reasons=[gapi_errors.ErrorReason.FORBIDDEN],
-                      projectId=projectId)
+                      name=project['name'])
             print(f'  Project: {projectId} Deleted{currentCount(i, count)}')
         except gapi_errors.GapiForbiddenError as e:
             print(
