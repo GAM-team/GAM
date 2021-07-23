@@ -136,7 +136,8 @@ jobs:
           Set-Variable -name python_url -value "https://www.python.org/ftp/python/${Env:BUILD_PYTHON_VERSION}/${python_file}"
           Write-Output "python_url: $python_url"
           Invoke-WebRequest -Uri $python_url -OutFile $python_file
-          Start-Process -wait -FilePath $python_file -ArgumentList "/quiet","InstallAllUsers=1","TargetDir=c:\\python","AssociateFiles=1","PrependPath=1"
+          Start-Process -wait -FilePath $python_file -ArgumentList "/quiet","InstallAllUsers=1","TargetDir=c:\python","AssociateFiles=1","PrependPath=1"
+          Get-ChildItem -Path c:\python
         shell: pwsh
   
       - name: Set env variables for pre-compiled Python
