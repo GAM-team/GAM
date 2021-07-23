@@ -138,7 +138,7 @@ jobs:
           Invoke-WebRequest -Uri $python_url -OutFile $python_file
           Start-Process -wait -FilePath $python_file -ArgumentList "/quiet","InstallAllUsers=1","TargetDir=c:\\python","AssociateFiles=1","PrependPath=1"
           Write-Output "finished waiting on python install"
-          dir /s /a c:\python\
+          Get-ChildItem c:\python\ -Recurse
         shell: pwsh
   
       - name: Set env variables for pre-compiled Python
