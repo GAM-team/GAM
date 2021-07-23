@@ -137,10 +137,6 @@ jobs:
           Write-Output "python_url: $python_url"
           Invoke-WebRequest -Uri $python_url -OutFile $python_file
           Start-Process -wait -FilePath $python_file -ArgumentList "/quiet","InstallAllUsers=0","TargetDir=c:\\python","AssociateFiles=1","PrependPath=1"
-          Write-Output "finished waiting on python install"
-          Get-ChildItem c:\python\ -Recurse
-          while (!(Test-Path "C:\python\scripts\pip.exe")) { echo "no pip.exe"; Start-Sleep 10 }
-          Get-ChildItem c:\python\ -Recurse
         shell: pwsh
   
       - name: Set env variables for pre-compiled Python
