@@ -29,22 +29,23 @@ class YubiKey():
     def get_certificate(self):
         try:
             conn, _, _ = connect_to_device(self.serial_number)
-            session = PivSession(conn)
-            if self.pin:
+            with conn:
+                session = PivSession(conn)
+                if self.pin:
+                    try:
+                        session.verify_pin(self.pin)
+                    except InvalidPinError as err:
+                        controlflow.system_error_exit(7, f'YubiKey - {err}')
                 try:
-                    session.verify_pin(self.pin)
-                except InvalidPinError as err:
-                    controlflow.system_error_exit(7, f'YubiKey - {err}')
-            try:
-                cert = session.get_certificate(self.slot)
-                cert_pem = cert.public_bytes(
-                     serialization.Encoding.PEM).decode()
-                publicKeyData = b64encode(cert_pem.encode())
-                if isinstance(publicKeyData, bytes):
-                    publicKeyData = publicKeyData.decode()
-                return publicKeyData
-            except ApduError as err:
-                controlflow.system_error_exit(8, f'YubiKey - {err}')
+                    cert = session.get_certificate(self.slot)
+                except ApduError as err:
+                    controlflow.system_error_exit(9, f'Yubikey = {err}')
+            cert_pem = cert.public_bytes(
+                serialization.Encoding.PEM).decode()
+            publicKeyData = b64encode(cert_pem.encode())
+            if isinstance(publicKeyData, bytes):
+                publicKeyData = publicKeyData.decode()
+            return publicKeyData
         except ValueError as err:
             controlflow.system_error_exit(9, f'YubiKey - {err}')
 
@@ -53,20 +54,21 @@ class YubiKey():
             mplock.acquire()
         try:
             conn, _, _ = connect_to_device(self.serial_number)
-            session = PivSession(conn)
-            if self.pin:
+            with conn:
+                session = PivSession(conn)
+                if self.pin:
+                    try:
+                        session.verify_pin(self.pin)
+                    except InvalidPinError as err:
+                        controlflow.system_error_exit(7, f'YubiKey - {err}')
                 try:
-                    session.verify_pin(self.pin)
-                except InvalidPinError as err:
-                    controlflow.system_error_exit(7, f'YubiKey - {err}')
-            try:
-                signed = session.sign(slot=self.slot,
+                    signed = session.sign(slot=self.slot,
                                       key_type=self.key_type,
                                       message=message,
                                       hash_algorithm=hashes.SHA256(),
                                       padding=padding.PKCS1v15())
-            except ApduError as err:
-                controlflow.system_error_exit(8, f'YubiKey = {err}')
+                except ApduError as err:
+                    controlflow.system_error_exit(8, f'YubiKey = {err}')
         except ValueError as err:
             controlflow.system_error_exit(9, f'YubiKey - {err}')
         if 'mplock' in globals():
