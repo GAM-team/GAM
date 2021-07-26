@@ -871,9 +871,9 @@ def getSvcAcctCredentials(scopes, act_as, api=None):
         GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID] = GM_Globals[
             GM_OAUTH2SERVICE_JSON_DATA]['client_id']
         return credentials
-    except (ValueError, KeyError):
+    except (ValueError, KeyError) as err:
         printLine(MESSAGE_INSTRUCTIONS_OAUTH2SERVICE_JSON)
-        controlflow.invalid_json_exit(GC_Values[GC_OAUTH2SERVICE_JSON])
+        controlflow.invalid_json_exit(GC_Values[GC_OAUTH2SERVICE_JSON], err)
 
 
 def getAPIVersion(api):
@@ -899,8 +899,8 @@ def readDiscoveryFile(api_version):
     try:
         discovery = json.loads(json_string)
         return (disc_file, discovery)
-    except ValueError:
-        controlflow.invalid_json_exit(disc_file)
+    except ValueError as err:
+        controlflow.invalid_json_exit(disc_file, err)
 
 
 def getOauth2TxtStorageCredentials():
@@ -7889,7 +7889,7 @@ def doCreateOrRotateServiceAccountKeys(iam=None,
                 i += 1
             elif myarg == 'yubikeyslot':
                 new_data['yubikey_slot'] = sys.argv[i+1].upper()
-                i =+ 2
+                i += 2
             elif myarg == 'yubikeypin':
                 new_data['yubikey_pin'] = input('Enter your YubiKey PIN: ')
                 i += 1

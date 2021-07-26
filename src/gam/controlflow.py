@@ -65,9 +65,12 @@ def csv_field_error_exit(field_name, field_names):
                                                        ','.join(field_names)))
 
 
-def invalid_json_exit(file_name):
+def invalid_json_exit(file_name, err=None):
     """Raises a system exit when invalid JSON content is encountered."""
-    system_error_exit(17, MESSAGE_INVALID_JSON.format(file_name))
+    err_msg = MESSAGE_INVALID_JSON.format(file_name)
+    if err:
+        err_msg += f'\n\n{err}'
+    system_error_exit(17, err_msg)
 
 
 def wait_on_failure(current_attempt_num,
