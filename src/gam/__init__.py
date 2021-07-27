@@ -7912,6 +7912,10 @@ def doCreateOrRotateServiceAccountKeys(iam=None,
         new_data['yubikey_key_type'] = f'RSA{local_key_size}'
         new_data.pop('private_key', None)
         yk = yubikey.YubiKey(new_data)
+        if 'yubikey_serial_number' not in new_data:
+            new_data['yubikey_serial_number'] = yk.get_serial_number()
+        if 'yubikey_slot' not in new_data:
+            new_data['yubikey_slot'] = 'AUTHENTICATION'
         publicKeyData = yk.get_certificate()
     elif local_key_size:
         # Generate private key locally, store in file
@@ -11846,6 +11850,12 @@ def ProcessGAMCommand(args):
                     gapi_directory_cros.issue_command()
                 elif command == 'getcommand':
                     gapi_directory_cros.get_command()
+            sys.exit(0)
+        elif command in ['yubikey']:
+            action = sys.argv[2].lower().replace('_', '')
+            if action == 'resetpiv':
+                yk = yubikey.YubiKey()
+                yk.reset_piv()
             sys.exit(0)
         users = getUsersToModify()
         command = sys.argv[3].lower()
