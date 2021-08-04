@@ -1240,9 +1240,8 @@ def doCheckServiceAccount(users):
                         'get',
                         name=name,
                         throw_reasons=[gapi_errors.ErrorReason.FOUR_O_THREE])
-        # Both Google and GAM set key valid after to day before creation
         key_created = dateutil.parser.parse(
-            key['validAfterTime'], ignoretz=True) + datetime.timedelta(days=1)
+            key['validAfterTime'], ignoretz=True)
         key_age = datetime.datetime.now() - key_created
         key_days = key_age.days
         if key_days > 30:
@@ -7756,11 +7755,9 @@ def _generatePrivateKeyAndPublicCert(client_id, key_size):
         x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, client_id)]))
     builder = builder.issuer_name(
         x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, client_id)]))
-    not_valid_before = datetime.datetime.today() - datetime.timedelta(days=1)
-    not_valid_after = datetime.datetime.today() + datetime.timedelta(
-        days=365 * 10 - 1)
-    builder = builder.not_valid_before(not_valid_before)
-    builder = builder.not_valid_after(not_valid_after)
+    builder = builder.not_valid_before(datetime.datetime.today())
+    # Google uses 12/31/9999 date for end time
+    builder = builder.not_valid_after(datetime.datetime(9999, 12, 31, 23, 59))
     builder = builder.serial_number(x509.random_serial_number())
     builder = builder.public_key(public_key)
     builder = builder.add_extension(x509.BasicConstraints(ca=False,
@@ -7943,10 +7940,18 @@ def doCreateOrRotateServiceAccountKeys(iam=None,
                     name=sa_name,
                     body={'publicKeyData': publicKeyData})
                 break
-            except googleapiclient.errors.HttpError:
-                print('WARNING: that key already exists.')
-                result = {'name': oldPrivateKeyId}
-                break
+            except googleapiclient.errors.HttpError as err:
+                if hasattr(err, 'error_details') and \
+                   err.error_details == 'The given public key already exists.':
+                    print('WARNING: that key already exists.')
+                    result = {'name': oldPrivateKeyId}
+                    break
+                elif hasattr(err, 'error_details'):
+                    controlflow.system_error_exit(
+                            4, err.error_details)
+                else:
+                    controlflow.system_error_exit(
+                            4, err)
             except gapi_errors.GapiNotFoundError as e:
                 if i == max_retries:
                     raise e

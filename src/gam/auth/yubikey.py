@@ -7,6 +7,7 @@ from threading import Timer
 
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
+from smartcard.Exceptions import CardConnectionException
 from ykman.device import connect_to_device
 from ykman.piv import generate_self_signed_certificate, \
                       generate_chuid
@@ -46,7 +47,10 @@ class YubiKey():
             self.key_id = service_account_info.get('private_key_id')
 
     def _connect(self):
-        conn, _, _ = connect_to_device(self.serial_number)
+        try:
+            conn, _, _ = connect_to_device(self.serial_number)
+        except CardConnectionException as err:
+            controlflow.system_error_exit(9, f'YubiKey - {err}')
         return conn
 
     def get_certificate(self):
@@ -62,7 +66,7 @@ class YubiKey():
                 try:
                     cert = session.get_certificate(self.slot)
                 except ApduError as err:
-                    controlflow.system_error_exit(9, f'Yubikey = {err}')
+                    controlflow.system_error_exit(9, f'YubiKey - {err}')
             cert_pem = cert.public_bytes(
                 serialization.Encoding.PEM).decode()
             publicKeyData = b64encode(cert_pem.encode())
@@ -78,7 +82,7 @@ class YubiKey():
             _, _, info = connect_to_device(self.serial_number)
             return info.serial
         except ValueError as err:
-            controlflow.system_error_exit(9, f'YubikKey = {err}')
+            controlflow.system_error_exit(9, f'YubiKey - {err}')
 
     def reset_piv(self):
         '''Resets YubiKey PIV app and generates new key for GAM to use.'''
@@ -101,7 +105,7 @@ class YubiKey():
                                  DEFAULT_MANAGEMENT_KEY)
 
                 piv.verify_pin(new_pin)
-                print('Yubikey is generating a non-exportable private key...')
+                print('YubiKey is generating a non-exportable private key...')
                 pubkey = piv.generate_key(SLOT.AUTHENTICATION,
                                           KEY_TYPE.RSA2048,
                                           PIN_POLICY.ALWAYS,
@@ -123,7 +127,7 @@ class YubiKey():
                 piv.put_object(OBJECT_ID.CHUID,
                                generate_chuid())
         except ValueError as err:
-            controlflow.system_error_exit(8, f'Yubikey - {err}')
+            controlflow.system_error_exit(8, f'YubiKey - {err}')
 
 
     def sign(self, message):
@@ -145,7 +149,7 @@ class YubiKey():
                                       hash_algorithm=hashes.SHA256(),
                                       padding=padding.PKCS1v15())
                 except ApduError as err:
-                    controlflow.system_error_exit(8, f'YubiKey = {err}')
+                    controlflow.system_error_exit(8, f'YubiKey - {err}')
         except ValueError as err:
             controlflow.system_error_exit(9, f'YubiKey - {err}')
         if 'mplock' in globals():
