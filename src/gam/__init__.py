@@ -33,6 +33,7 @@ import http.client as http_client
 from multiprocessing import Pool as mp_pool
 from multiprocessing import Lock as mp_lock
 from urllib.parse import quote, urlencode, urlparse
+from pathvalidate import sanitize_filepath
 import dateutil.parser
 
 import googleapiclient
@@ -4056,8 +4057,7 @@ def downloadDriveFile(users):
                     if targetName:
                         safe_file_title = targetName
                     else:
-                        safe_file_title = ''.join(c for c in result['title']
-                                                  if c in FILENAME_SAFE_CHARS)
+                        safe_file_title = sanitize_filepath(result['title'])
                         if not safe_file_title:
                             safe_file_title = fileId
                     filename = os.path.join(targetFolder, safe_file_title)
