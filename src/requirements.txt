@@ -10,3 +10,4 @@ importlib.metadata; python_version < '3.8'
 passlib>=1.7.2
 python-dateutil
 yubikey-manager>=4.0.0
+pathvalidate
