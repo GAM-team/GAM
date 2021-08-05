@@ -1756,8 +1756,8 @@ def doCreateAdmin():
 def doPrintAdmins():
     cd = buildGAPIObject('directory')
     roleId = None
-    userKey = None
     todrive = False
+    kwargs = {}
     fields = 'nextPageToken,items(roleAssignmentId,roleId,assignedTo,scopeType,orgUnitId)'
     titles = [
         'roleAssignmentId', 'roleId', 'role', 'assignedTo', 'assignedToUser',
@@ -1768,7 +1768,7 @@ def doPrintAdmins():
     while i < len(sys.argv):
         myarg = sys.argv[i].lower()
         if myarg == 'user':
-            userKey = normalizeEmailAddressOrUID(sys.argv[i + 1])
+            kwargs['userKey'] = normalizeEmailAddressOrUID(sys.argv[i + 1])
             i += 2
         elif myarg == 'role':
             roleId = getRoleId(sys.argv[i + 1])
@@ -1778,14 +1778,18 @@ def doPrintAdmins():
             i += 1
         else:
             controlflow.invalid_argument_exit(sys.argv[i], 'gam print admins')
+    if roleId and not kwargs:
+        kwargs['roleId'] = roleId
+        roleId = None
     admins = gapi.get_all_pages(cd.roleAssignments(),
                                 'list',
                                 'items',
                                 customer=GC_Values[GC_CUSTOMER_ID],
-                                userKey=userKey,
-                                roleId=roleId,
-                                fields=fields)
+                                fields=fields,
+                                **kwargs)
     for admin in admins:
+        if roleId and roleId != admin['roleId']:
+            continue
         admin_attrib = {}
         for key, value in list(admin.items()):
             if key == 'assignedTo':
