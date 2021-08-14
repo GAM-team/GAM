@@ -728,8 +728,12 @@ def getOSPlatform():
     elif myos == 'Darwin':
         myos = 'MacOS'
         mac_ver = platform.mac_ver()[0]
+        major_ver = int(mac_ver.split('.')[0])  # macver 10.14.6 == major_ver 10
         minor_ver = int(mac_ver.split('.')[1])  # macver 10.14.6 == minor_ver 14
-        codename = MACOS_CODENAMES.get(minor_ver, '')
+        if major_ver == 10:
+            codename = MACOS_CODENAMES[major_ver].get(minor_ver, '')
+        else:
+            codename = MACOS_CODENAMES.get(major_ver, '')
         pltfrm = ' '.join([codename, mac_ver])
     else:
         pltfrm = platform.platform()

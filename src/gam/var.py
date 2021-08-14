@@ -616,17 +616,21 @@ GOOGLEDOC_VALID_EXTENSIONS_MAP = {
 }
 
 MACOS_CODENAMES = {
-    6: 'Snow Leopard',
-    7: 'Lion',
-    8: 'Mountain Lion',
-    9: 'Mavericks',
-    10: 'Yosemite',
-    11: 'El Capitan',
-    12: 'Sierra',
-    13: 'High Sierra',
-    14: 'Mojave',
-    15: 'Catalina'
-}
+    10: {
+        6:  'Snow Leopard',
+        7:  'Lion',
+        8:  'Mountain Lion',
+        9:  'Mavericks',
+        10: 'Yosemite',
+        11: 'El Capitan',
+        12: 'Sierra',
+        13: 'High Sierra',
+        14: 'Mojave',
+        15: 'Catalina',
+        16: 'Big Sur'
+        },
+    11: 'Big Sur',
+    }
 
 _MICROSOFT_FORMATS_LIST = [{
     'mime':
