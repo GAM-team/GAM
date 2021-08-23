@@ -891,7 +891,6 @@ RT_TAG_REPLACE_PATTERN = re.compile(r'{(.*?)}')
 LOWERNUMERIC_CHARS = string.ascii_lowercase + string.digits
 ALPHANUMERIC_CHARS = LOWERNUMERIC_CHARS + string.ascii_uppercase
 URL_SAFE_CHARS = ALPHANUMERIC_CHARS + '-._~'
-FILENAME_SAFE_CHARS = ALPHANUMERIC_CHARS + '-_.() '
 
 FILTER_ADD_LABEL_TO_ARGUMENT_MAP = {
     'IMPORTANT': 'important',
