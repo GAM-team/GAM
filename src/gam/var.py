@@ -500,6 +500,7 @@ DRIVEFILE_FIELDS_CHOICES_MAP = {
     'sharedwithmedate': 'sharedWithMeDate',
     'sharedwithmetime': 'sharedWithMeDate',
     'sharinguser': 'sharingUser',
+    'shortcutdetails': 'shortcutDetails',
     'spaces': 'spaces',
     'thumbnaillink': 'thumbnailLink',
     'title': 'title',

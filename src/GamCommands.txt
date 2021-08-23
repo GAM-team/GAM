@@ -353,6 +353,7 @@ If an item contains spaces, it should be surrounded by ".
 	shared|
 	sharedwithmedate|sharedwithmetime|
 	sharinguser|
+	shortcutdetails|
 	size|
 	spaces|
 	starred|
