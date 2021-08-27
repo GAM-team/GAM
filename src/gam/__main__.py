@@ -30,7 +30,7 @@ from gam import controlflow
 import gam
 
 
-def main(argv):
+def main():
     freeze_support()
     if sys.platform == 'darwin':
         # https://bugs.python.org/issue33725 in Python 3.8.0 seems
@@ -47,4 +47,4 @@ def main(argv):
 
 # Run from command line
 if __name__ == '__main__':
-    main(sys.argv)
+    main()
