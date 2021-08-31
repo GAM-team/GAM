@@ -186,7 +186,8 @@ jobs:
                $python ./waf all $TARGETARCH
                cd ..
              fi
-             $python setup.py install
+             $pip install .
+             #$python setup.py install
              #$pip install pyinstaller
 
       - name: Install pip requirements
