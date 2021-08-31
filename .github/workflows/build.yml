@@ -184,6 +184,12 @@ jobs:
                $python ./waf all $TARGETARCH
                cd ..
              fi
+             
+             # fix TLS errors by grabbing Digicert CA directly
+             curl -o digicert.crt https://cacerts.digicert.com/DigiCertHighAssuranceEVRootCA.crt
+             openssl x509 -in digicert.crt -out digicert.pem
+             export PIP_CERT= digicert.pem
+             
              $python setup.py install
              #$pip install pyinstaller
 
