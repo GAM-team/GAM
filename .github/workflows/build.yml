@@ -166,6 +166,7 @@ jobs:
              echo "pip=$pip" >> $GITHUB_ENV
              echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" >> $GITHUB_ENV
              echo -e "Python: $python\nPip: $pip\nLD_LIB...: $LD_LIBRARY_PATH"
+             $pip install --upgrade pip
              $pip install wheel
              export url="https://codeload.github.com/pyinstaller/pyinstaller/tar.gz/${PYINSTALLER_VERSION}"
              echo "Downloading ${url}"
@@ -184,12 +185,6 @@ jobs:
                $python ./waf all $TARGETARCH
                cd ..
              fi
-             
-             # fix TLS errors by grabbing Digicert CA directly
-             curl -o digicert.crt https://cacerts.digicert.com/DigiCertHighAssuranceEVRootCA.crt
-             openssl x509 -in digicert.crt -out digicert.pem
-             export PIP_CERT= digicert.pem
-             
              $python setup.py install
              #$pip install pyinstaller
 
