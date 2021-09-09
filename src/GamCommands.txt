@@ -720,6 +720,7 @@ Specify a collection of Users by directly specifying them or by specifiying item
 	(customfootertext <String>)|
 	(customreplyto <EmailAddress>)|
 	(defaultmessagedenynotificationtext <String>)|
+	(defaultsender default_self|group)|
 	(description <String>)|
 	(enablecollaborativeinbox|collaborative <Boolean>)|
 	(includeinglobaladdresslist|gal <Boolean>)|

@@ -86,6 +86,7 @@ def printshow_policies():
     for namespace in namespaces:
         spacing = '  '
         body['policySchemaFilter'] = f'{namespace}.*'
+        body['pageToken'] = None
         try:
             policies = gapi.get_all_pages(svc.customers().policies(), 'resolve',
                                           items='resolvedPolicies',
