@@ -266,6 +266,8 @@ GROUP_ATTRIBUTES_ARGUMENT_TO_PROPERTY_MAP = {
         'customReplyTo',
     'defaultmessagedenynotificationtext':
         'defaultMessageDenyNotificationText',
+    'defaultsender':
+        'defaultSender',
     'enablecollaborativeinbox':
         'enableCollaborativeInbox',
     'favoriterepliesontop':
@@ -1219,7 +1221,7 @@ def getGroupAttrValue(myarg, value, gs_object, gs_body, function):
          params) in list(gs_object['schemas']['Groups']['properties'].items()):
         if attrib in ['kind', 'etag', 'email']:
             continue
-        if myarg == attrib.lower():
+        if myarg == attrib.lower().replace('_', ''):
             if params['type'] == 'integer':
                 try:
                     if value[-1:].upper() == 'M':
