@@ -14,7 +14,7 @@ defaults:
 env:
   BUILD_PYTHON_VERSION: "3.9.7"
   MIN_PYTHON_VERSION: "3.9.7"
-  BUILD_OPENSSL_VERSION: "1.1.1l"
+  BUILD_OPENSSL_VERSION: "3.0.0"
   MIN_OPENSSL_VERSION: "1.1.1l"
   PATCHELF_VERSION: "0.12"
   # PYINSTALLER_VERSION can be full commit hash or version like v4.20
