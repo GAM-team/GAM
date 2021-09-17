@@ -798,7 +798,6 @@ Specify a collection of Users by directly specifying them or by specifiying item
 	field <FieldName> (type bool|date|double|email|int64|phone|string) [multivalued|multivalue] [indexed] [restricted] [range <Number> <Number>] endfield
 
 <UserBasicAttribute> ::=
-	(agreed2terms|agreedtoterms <Boolean>)|
 	(changepassword|changepasswordatnextlogin <Boolean>)|
 	(base64-md5|base64-sha1|crypt|sha|sha1|sha-1|md5|nohash)|
 	(customerid <String>)|

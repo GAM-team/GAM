@@ -6679,9 +6679,6 @@ def getUserAttributes(i, cd, updateCmd):
         elif myarg == 'ipwhitelisted':
             body['ipWhitelisted'] = getBoolean(sys.argv[i + 1], myarg)
             i += 2
-        elif myarg == 'agreedtoterms':
-            body['agreedToTerms'] = getBoolean(sys.argv[i + 1], myarg)
-            i += 2
         elif myarg in ['org', 'ou']:
             body['orgUnitPath'] = gapi_directory_orgunits.getOrgUnitItem(
                 sys.argv[i + 1], pathOnly=True)
