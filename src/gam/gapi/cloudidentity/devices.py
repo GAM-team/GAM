@@ -414,9 +414,10 @@ def sync():
             local_device['deviceType'] = static_devicetype
         else:
             local_device['deviceType'] = row[devicetype_column].strip()
+        sndt = f"{local_device['serialNumber']}-{local_device['deviceType']}"
         if assettag_column:
             local_device['assetTag'] = row[assettag_column].strip()
-        sndt = f"{local_device['serialNumber']}-{local_device['deviceType']}"
+            sndt += f"-{local_device['assetTag']}"
         local_devices[sndt] = local_device
     fileutils.close_file(f)
     page_message = gapi.got_total_items_msg('Company Devices', '...\n')
@@ -431,9 +432,11 @@ def sync():
             pageSize=100, filter=device_filter, view='COMPANY_INVENTORY', fields=fields)
     for remote_device in result:
         sn = remote_device['serialNumber']
-        sndt = f"{remote_device['serialNumber']}-{remote_device['deviceType']}"
         last_sync = remote_device.pop('lastSyncTime', NEVER_TIME_NOMS)
         name = remote_device.pop('name')
+        sndt = f"{remote_device['serialNumber']}-{remote_device['deviceType']}"
+        if assettag_column:
+          sndt += f"-{remote_device['assetTag']}"
         remote_devices[sndt] = remote_device
         remote_device_map[sndt] = {'name': name}
         if last_sync == NEVER_TIME_NOMS:
