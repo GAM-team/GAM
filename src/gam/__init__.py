@@ -6676,6 +6676,9 @@ def getUserAttributes(i, cd, updateCmd):
             body['changePasswordAtNextLogin'] = getBoolean(
                 sys.argv[i + 1], myarg)
             i += 2
+        elif myarg == 'agreedtoterms':
+            body['agreedToTerms'] = getBoolean(sys.argv[i + 1], myarg)
+            i += 2
         elif myarg == 'ipwhitelisted':
             body['ipWhitelisted'] = getBoolean(sys.argv[i + 1], myarg)
             i += 2
