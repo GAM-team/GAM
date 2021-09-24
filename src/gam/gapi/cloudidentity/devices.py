@@ -436,7 +436,7 @@ def sync():
         name = remote_device.pop('name')
         sndt = f"{remote_device['serialNumber']}-{remote_device['deviceType']}"
         if assettag_column:
-          sndt += f"-{remote_device['assetTag']}"
+          sndt += f"-{remote_device.get('assetTag', '')}"
         remote_devices[sndt] = remote_device
         remote_device_map[sndt] = {'name': name}
         if last_sync == NEVER_TIME_NOMS:
@@ -461,6 +461,8 @@ def sync():
     for missing_device in missing_devices:
         sn = missing_device['serialNumber']
         sndt = f"{sn}-{missing_device['deviceType']}"
+        if assettag_column:
+          sndt += f"-{missing_device.get('assetTag', '')}"
         name = remote_device_map[sndt]['name']
         unassigned = remote_device_map[sndt].get('unassigned')
         action = unassigned_missing_action if unassigned else assigned_missing_action
