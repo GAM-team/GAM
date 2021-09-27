@@ -368,7 +368,7 @@
               "required": true,
               "type": "string"
             }
-	  },
+          },
           "path": "{customer}/chrome/enrollmentTokens",
           "request": {
             "$ref": "CreateEnrollmentTokenRequest"
@@ -379,7 +379,7 @@
           "scopes": [
             "https://www.googleapis.com/auth/admin.directory.device.chromebrowsers"
           ]
-	},
+        },
         "revoke": {
           "description": "Revokes a browser enrollment token in a domain.",
           "flatPath": "{customer}/chrome/enrollmentTokens/{tokenPermanentId}:revoke",
@@ -387,7 +387,7 @@
           "id": "cbcm.enrollmentTokens.revoke",
           "parameterOrder": [
             "customer",
-	    "tokenPermanentId"
+            "tokenPermanentId"
           ],
           "parameters": {
             "customer": {
@@ -402,12 +402,12 @@
               "required": true,
               "type": "string"
             }
-	  },
+          },
           "path": "{customer}/chrome/enrollmentTokens/{tokenPermanentId}:revoke",
           "scopes": [
             "https://www.googleapis.com/auth/admin.directory.device.chromebrowsers"
           ]
-	}
+        }
       }
     }
   },
@@ -491,23 +491,23 @@
           "description": "Immutable ID of the G Suite account.",
           "type": "string"
         },
-	"orgUnitPath": {
+        "orgUnitPath": {
           "description": "The full path of the organizational unit or its unique ID.",
           "type": "string"
         },
-	"creatorId": {
+        "creatorId": {
           "description": "Creator ID.",
           "type": "string"
         },
-	"createTime": {
+        "createTime": {
           "description": "Creation Time.",
           "type": "string"
         },
-	"revokerId": {
+        "revokerId": {
           "description": "Revoker ID.",
           "type": "string"
         },
-	"revokeTime": {
+        "revokeTime": {
           "description": "Revoke Time",
           "type": "string"
         }
@@ -538,16 +538,18 @@
     },
     "CreateEnrollmentTokenRequest": {
       "id": "CreateEnrollmentTokenRequest",
+      "type": "object",
       "properties": {
-	"org_unit_path": {
+        "org_unit_path": {
           "description": "The full path of the organizational unit or its unique ID.",
           "type": "string"
         },
-	"expire_time": {
+        "expire_time": {
           "description": "Expiration Time.",
           "type": "string"
         },
-	"token_type": {
+        "token_type": {
+          "id": "token_type",
           "annotations": {
             "required": [
               "cbcm.enrollmentTokens.create"
@@ -559,6 +561,8 @@
       }
     },
     "MoveChromeBrowsersRequest": {
+      "id": "MoveChromeBrowsersRequest",
+      "type": "object",
       "properties": {
         "org_unit_path": {
           "annotations": {
@@ -576,7 +580,10 @@
             ]
           },
           "description": "List of unique device IDs of Chrome Browser Devices to move. A maximum of 600 browsers may be moved per request.",
-          "type": "array"
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     }
