@@ -266,6 +266,8 @@ GROUP_ATTRIBUTES_ARGUMENT_TO_PROPERTY_MAP = {
         'customReplyTo',
     'defaultmessagedenynotificationtext':
         'defaultMessageDenyNotificationText',
+    'defaultsender':
+        'defaultSender',
     'enablecollaborativeinbox':
         'enableCollaborativeInbox',
     'favoriterepliesontop':
@@ -979,6 +981,9 @@ def update():
                 sys.stderr.write(
                     f'Group: {group}, Will add {len(to_add)} and remove {len(to_remove)} {role}s.\n'
                 )
+                for user in to_remove:
+                    items.append(
+                        ['gam', 'update', 'group', group, 'remove', user])
                 for user in to_add:
                     item = ['gam', 'update', 'group', group, 'add']
                     if role:
@@ -987,9 +992,6 @@ def update():
                         item.append(delivery)
                     item.append(user)
                     items.append(item)
-                for user in to_remove:
-                    items.append(
-                        ['gam', 'update', 'group', group, 'remove', user])
         elif myarg in ['delete', 'remove']:
             _, users_email, _ = _getRoleAndUsers()
             if not exists(cd, group):
@@ -1219,7 +1221,7 @@ def getGroupAttrValue(myarg, value, gs_object, gs_body, function):
          params) in list(gs_object['schemas']['Groups']['properties'].items()):
         if attrib in ['kind', 'etag', 'email']:
             continue
-        if myarg == attrib.lower():
+        if myarg == attrib.lower().replace('_', ''):
             if params['type'] == 'integer':
                 try:
                     if value[-1:].upper() == 'M':

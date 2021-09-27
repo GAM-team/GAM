@@ -12,13 +12,13 @@ defaults:
     working-directory: src
 
 env:
-  BUILD_PYTHON_VERSION: "3.9.6"
-  MIN_PYTHON_VERSION: "3.9.6"
+  BUILD_PYTHON_VERSION: "3.9.7"
+  MIN_PYTHON_VERSION: "3.9.7"
   BUILD_OPENSSL_VERSION: "1.1.1l"
-  MIN_OPENSSL_VERSION: "1.1.1k"
+  MIN_OPENSSL_VERSION: "1.1.1l"
   PATCHELF_VERSION: "0.12"
   # PYINSTALLER_VERSION can be full commit hash or version like v4.20
-  PYINSTALLER_VERSION: "bcb824c1ad2989855a5fc01d95e5fc693b2f0966"
+  PYINSTALLER_VERSION: "5a02f55c696f16b98f23a8b487f3daa8f644a8d2"
 
 jobs:
   build:
@@ -97,7 +97,7 @@ jobs:
           path: |
             ~/python
             ~/ssl
-          key: ${{ matrix.os }}-${{ matrix.jid }}-20210628
+          key: ${{ matrix.os }}-${{ matrix.jid }}-20210910
 
       - name: Set env variables
         env:
@@ -166,6 +166,7 @@ jobs:
              echo "pip=$pip" >> $GITHUB_ENV
              echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" >> $GITHUB_ENV
              echo -e "Python: $python\nPip: $pip\nLD_LIB...: $LD_LIBRARY_PATH"
+             $pip install --upgrade pip
              $pip install wheel
              export url="https://codeload.github.com/pyinstaller/pyinstaller/tar.gz/${PYINSTALLER_VERSION}"
              echo "Downloading ${url}"
@@ -184,7 +185,8 @@ jobs:
                $python ./waf all $TARGETARCH
                cd ..
              fi
-             $python setup.py install
+             $pip install .
+             #$python setup.py install
              #$pip install pyinstaller
 
       - name: Install pip requirements
