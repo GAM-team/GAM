@@ -17,7 +17,7 @@ tar -C ${distpath} --create --file $GAM_ARCHIVE --xz gam
 echo "PyInstaller GAM info:"
 du -h $gam
 time $gam version extended
-if ([ "${ImageOS}" == "ubuntu16" ]) && [ "${HOSTTYPE}" == "x86_64" ]; then
+if ([ "${ImageOS}" == "ubuntu18" ]) && [ "${HOSTTYPE}" == "x86_64" ]; then
   GAM_LEGACY_ARCHIVE=gam-${GAMVERSION}-${GAMOS}-${PLATFORM}-legacy.tar.xz
   $python -OO -m staticx -l /lib/x86_64-linux-gnu/libresolv.so.2 -l /lib/x86_64-linux-gnu/libnss_dns.so.2 $gam $gam-staticx
   strip $gam-staticx
