@@ -26,34 +26,29 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: ubuntu-16.04
+          - os: ubuntu-18.04
             jid: 1
             goal: "build"
             gamos: "linux"
             platform: "x86_64"
-          - os: ubuntu-18.04
+          - os: ubuntu-20.04
             jid: 2
             goal: "build"
             gamos: "linux"
             platform: "x86_64"
-          - os: ubuntu-20.04
-            jid: 3
-            goal: "build"
-            gamos: "linux"
-            platform: "x86_64"
           - os: macos-11.0
-            jid: 12
+            jid: 3
             goal: "build"
             gamos: "macos"
             platform: "universal2"
           - os: windows-2019
-            jid: 5
+            jid: 4
             goal: "build"
             gamos: "windows"
             pyarch: "x64" 
             platform: "x86_64"
           - os: windows-2019
-            jid: 6
+            jid: 5
             goal: "build"
             gamos: "windows"
             platform: "x86"
@@ -61,25 +56,25 @@ jobs:
           - os: ubuntu-20.04
             goal: "test"
             python: "3.6"
-            jid: 7
+            jid: 6
             gamos: "linux"
             platform: "x86_64"
           - os: ubuntu-20.04
             goal: "test"
             python: "3.7"
-            jid: 8
+            jid: 7
             gamos: "linux"
             platform: "x86_64"
           - os: ubuntu-20.04
             goal: "test"
             python: "3.8"
-            jid: 9
+            jid: 8
             gamos: "linux"
             platform: "x86_64"
           - os: ubuntu-20.04
             goal: test
             python: "3.10.0-beta.1"
-            jid: 10
+            jid: 9
             gamos: linux
             platform: x86_64
 
@@ -97,7 +92,7 @@ jobs:
           path: |
             ~/python
             ~/ssl
-          key: ${{ matrix.os }}-${{ matrix.jid }}-20210910
+          key: ${{ matrix.os }}-${{ matrix.jid }}-20210930
 
       - name: Set env variables
         env:
