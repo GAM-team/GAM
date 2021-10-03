@@ -124,7 +124,7 @@ SKUS = {
     'Google-Apps': {
         'product': 'Google-Apps',
         'aliases': ['standard', 'free'],
-        'displayName': 'G Suite Free/Standard'
+        'displayName': 'G Suite Legacy'
     },
     'Google-Apps-For-Business': {
         'product': 'Google-Apps',
