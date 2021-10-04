@@ -12,8 +12,8 @@ defaults:
     working-directory: src
 
 env:
-  BUILD_PYTHON_VERSION: "3.9.7"
-  MIN_PYTHON_VERSION: "3.9.7"
+  BUILD_PYTHON_VERSION: "3.10.0"
+  MIN_PYTHON_VERSION: "3.10.0"
   BUILD_OPENSSL_VERSION: "1.1.1l"
   MIN_OPENSSL_VERSION: "1.1.1l"
   PATCHELF_VERSION: "0.12"
@@ -92,7 +92,7 @@ jobs:
           path: |
             ~/python
             ~/ssl
-          key: ${{ matrix.os }}-${{ matrix.jid }}-20210930
+          key: ${{ matrix.os }}-${{ matrix.jid }}-20211004
 
       - name: Set env variables
         env:
