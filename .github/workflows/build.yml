@@ -73,7 +73,7 @@ jobs:
             platform: "x86_64"
           - os: ubuntu-20.04
             goal: test
-            python: "3.10.0-beta.1"
+            python: "3.10.0"
             jid: 9
             gamos: linux
             platform: x86_64
