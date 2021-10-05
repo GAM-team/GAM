@@ -405,7 +405,7 @@ def sync():
         controlflow.csv_field_error_exit(devicetype_column, input_file.fieldnames)
     if assettag_column and assettag_column not in input_file.fieldnames:
         controlflow.csv_field_error_exit(assettag_column, input_file.fieldnames)
-    local_devices = []
+    local_devices = {}
     for row in input_file:
         # upper() is very important to comparison since Google
         # always return uppercase serials
@@ -414,28 +414,43 @@ def sync():
             local_device['deviceType'] = static_devicetype
         else:
             local_device['deviceType'] = row[devicetype_column].strip()
+        sndt = f"{local_device['serialNumber']}-{local_device['deviceType']}"
         if assettag_column:
             local_device['assetTag'] = row[assettag_column].strip()
-        local_devices.append(local_device)
+            sndt += f"-{local_device['assetTag']}"
+        local_devices[sndt] = local_device
     fileutils.close_file(f)
     page_message = gapi.got_total_items_msg('Company Devices', '...\n')
     device_fields = ['serialNumber', 'deviceType', 'lastSyncTime', 'name']
     if assettag_column:
        device_fields.append('assetTag')
     fields = f'nextPageToken,devices({",".join(device_fields)})'
-    remote_devices = gapi.get_all_pages(ci.devices(), 'list', 'devices',
+    remote_devices = {}
+    remote_device_map = {}
+    result = gapi.get_all_pages(ci.devices(), 'list', 'devices',
             customer=customer, page_message=page_message,
             pageSize=100, filter=device_filter, view='COMPANY_INVENTORY', fields=fields)
-    remote_device_map = {}
-    for remote_device in remote_devices:
+    for remote_device in result:
         sn = remote_device['serialNumber']
         last_sync = remote_device.pop('lastSyncTime', NEVER_TIME_NOMS)
         name = remote_device.pop('name')
-        remote_device_map[sn] = {'name': name}
+        sndt = f"{remote_device['serialNumber']}-{remote_device['deviceType']}"
+        if assettag_column:
+            if 'assetTag' not in remote_device:
+                remote_device['assetTag'] = ''
+            sndt += f"-{remote_device['assetTag']}"
+        remote_devices[sndt] = remote_device
+        remote_device_map[sndt] = {'name': name}
         if last_sync == NEVER_TIME_NOMS:
-            remote_device_map[sn]['unassigned'] = True
-    devices_to_add = [device for device in local_devices if device not in remote_devices]
-    missing_devices = [device for device in remote_devices if device not in local_devices]
+            remote_device_map[sndt]['unassigned'] = True
+    devices_to_add = []
+    for sndt, device in iter(local_devices.items()):
+      if sndt not in remote_devices:
+        devices_to_add.append(device)
+    missing_devices = []
+    for sndt, device in iter(remote_devices.items()):
+      if sndt not in local_devices:
+        missing_devices.append(device)
     print(f'Need to add {len(devices_to_add)} and remove {len(missing_devices)} devices...')
     for add_device in devices_to_add:
         print(f'Creating {add_device["serialNumber"]}')
@@ -447,8 +462,11 @@ def sync():
             print(f' {add_device["serialNumber"]} already exists')
     for missing_device in missing_devices:
         sn = missing_device['serialNumber']
-        name = remote_device_map[sn]['name']
-        unassigned = remote_device_map[sn].get('unassigned')
+        sndt = f"{sn}-{missing_device['deviceType']}"
+        if assettag_column:
+          sndt += f"-{missing_device['assetTag']}"
+        name = remote_device_map[sndt]['name']
+        unassigned = remote_device_map[sndt].get('unassigned')
         action = unassigned_missing_action if unassigned else assigned_missing_action
         if action == 'donothing':
             pass

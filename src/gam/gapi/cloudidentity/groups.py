@@ -116,7 +116,7 @@ def info():
         print(' Members:')
         for member in members:
             role = get_single_role(member.get('roles', [])).lower()
-            email = member.get('memberKey', {}).get('id')
+            email = member.get('preferredMemberKey', {}).get('id')
             member_type = member.get('type', 'USER').lower()
             jc_string = ''
             if showJoinDate:
@@ -145,7 +145,7 @@ def print_member_tree(ci, group_id, cached_group_members, spaces, show_role):
     for member in cached_group_members[group_id]:
         member_id = member.get('name', '')
         member_id = member_id.split('/')[-1]
-        email = member.get('memberKey', {}).get('id')
+        email = member.get('preferredMemberKey', {}).get('id')
         member_type = member.get('type', 'USER').lower()
         if show_role:
             role = get_single_role(member.get('roles', [])).lower()
@@ -315,7 +315,7 @@ def print_():
                                               'list',
                                               'memberships',
                                               page_message=page_message,
-                                              message_attribute=['memberKey', 'id'],
+                                              message_attribute=['preferredMemberKey', 'id'],
                                               soft_errors=True,
                                               parent=groupKey_id,
                                               view='BASIC')
@@ -329,7 +329,7 @@ def print_():
                 ownersList = []
                 ownersCount = 0
             for member in groupMembers:
-                member_email = member['memberKey']['id']
+                member_email = member['preferredMemberKey']['id']
                 role = get_single_role(member.get('roles', []))
                 if not validRoles or role in validRoles:
                     if role == ROLE_MEMBER:
@@ -479,8 +479,8 @@ def print_members():
             view='FULL',
             pageSize=500,
             page_message=page_message,
-            message_attribute=['memberKey', 'id'])
-        #fields='nextPageToken,memberships(memberKey,roles,createTime,updateTime)')
+            message_attribute=['preferredMemberKey', 'id'])
+        #fields='nextPageToken,memberships(preferredMemberKey,roles,createTime,updateTime)')
         if roles:
             group_members = filter_members_to_roles(group_members, roles)
         for member in group_members:
@@ -565,7 +565,7 @@ def update():
                     items.append(item)
             elif len(users_email) > 0:
                 body = {
-                    'memberKey': {
+                    'preferredMemberKey': {
                         'id': users_email[0]
                     },
                     'roles': [{
@@ -785,12 +785,12 @@ def update():
                     page_message=page_message,
                     throw_reasons=gapi_errors.MEMBERS_THROW_REASONS,
                     parent=parent,
-                    fields='nextPageToken,memberships(memberKey,roles)')
+                    fields='nextPageToken,memberships(preferredMemberKey,roles)')
                 result = filter_members_to_roles(result, roles)
                 if not result:
                     print('Group already has 0 members')
                     return
-                users_email = [member['memberKey']['id'] for member in result]
+                users_email = [member['preferredMemberKey']['id'] for member in result]
                 sys.stderr.write(
                     f'Group: {group}, Will remove {len(users_email)} {", ".join(roles).lower()}s.\n'
                 )
