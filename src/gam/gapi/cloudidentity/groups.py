@@ -3,7 +3,7 @@ import sys
 import googleapiclient
 
 import gam
-from gam.var import *
+from gam.var import * # pylint: disable=unused-wildcard-import
 from gam import controlflow
 from gam import display
 from gam import gapi
@@ -76,6 +76,7 @@ def info():
     ci = gapi_cloudidentity.build('cloudidentity_beta')
     group = gam.normalizeEmailAddressOrUID(sys.argv[3])
     getUsers = True
+    getSecuritySettings = True
     showJoinDate = True
     showUpdateDate = False
     showMemberTree = False
@@ -94,11 +95,20 @@ def info():
         elif myarg == 'membertree':
             showMemberTree = True
             i += 1
+        elif myarg in ['nosecurity', 'nosecuritysettings']:
+            getSecuritySettings = False
         else:
             controlflow.invalid_argument_exit(myarg, 'gam info cigroup')
     name = group_email_to_id(ci, group)
     basic_info = gapi.call(ci.groups(), 'get', name=name)
     display.print_json(basic_info)
+    if getSecuritySettings:
+        sec_info = gapi.call(ci.groups(),
+                             'getSecuritySettings',
+                             name=f'{name}/securitySettings',
+                             readMask='*')
+        print(' Security settings:')
+        display.print_json(sec_info, spacing=' ')
     if getUsers and not showMemberTree:
         if not showJoinDate and not showUpdateDate:
             view = 'BASIC'
@@ -189,7 +199,13 @@ GROUP_ROLES_MAP = {
 def print_():
     ci = gapi_cloudidentity.build('cloudidentity_beta')
     i = 3
-    members = membersCountOnly = managers = managersCountOnly = owners = ownersCountOnly = False
+    members = False
+    membersCountOnly = False
+    managers = False
+    managersCountOnly = False
+    owners = False
+    ownersCountOnly = False
+    memberRestrictions = False
     gapi_directory_customer.setTrueCustomerId()
     parent = f'customers/{GC_Values[GC_CUSTOMER_ID]}'
     usemember = None
@@ -231,6 +247,15 @@ def print_():
             managers = True
             if myarg == 'managerscount':
                 managersCountOnly = True
+            i += 1
+        elif myarg in ['memberrestrictions']:
+            memberRestrictions = True
+            display.add_titles_to_csv_file(
+                    ['memberRestrictionQuery',],
+                    titles)
+            display.add_titles_to_csv_file(
+                    ['memberRestrictionEvaluation',],
+                    titles)
             i += 1
         else:
             controlflow.invalid_argument_exit(sys.argv[i], 'gam print cigroups')
@@ -363,6 +388,16 @@ def print_():
                 group['OwnersCount'] = ownersCount
                 if not ownersCountOnly:
                     group['Owners'] = memberDelimiter.join(ownersList)
+        if memberRestrictions:
+           name = f'{groupKey_id}/securitySettings'
+           print(f'Getting member restrictions for {groupEmail} ({i}/{count}')
+           sec_info = gapi.call(ci.groups(),
+                                'getSecuritySettings',
+                                name=name,
+                                readMask='*')
+           if 'memberRestriction' in sec_info:
+               group['memberRestrictionQuery'] = sec_info['memberRestriction'].get('query', '')
+               group['memberRestrictionEvaluation'] = sec_info['memberRestriction'].get('evaluation', {}).get('state', '')
         csvRows.append(group)
     if sortHeaders:
         display.sort_csv_titles([
@@ -808,6 +843,7 @@ def update():
     else:
         i = 4
         body = {}
+        sec_body = {}
         while i < len(sys.argv):
             myarg = sys.argv[i].lower().replace('_', '')
             if myarg == 'name':
@@ -830,17 +866,41 @@ def update():
                     }]
                 }
                 i += 2
+            elif myarg in ['memberrestriction', 'memberrestrictions']:
+                query = sys.argv[i + 1]
+                member_types = {
+                  'USER': '1',
+                  'SERVICE_ACCOUNT': '2',
+                  'GROUP': '3',
+                  }
+                for key, val in member_types.items():
+                    query = query.replace(key, val)
+                sec_body['memberRestriction'] = {'query': query}
+                i += 2
             else:
                 controlflow.invalid_argument_exit(sys.argv[i],
                                                   'gam update cigroup')
-        updateMask = ','.join(body.keys())
-        name = group_email_to_id(ci, group)
-        print(f'Updating group {group}')
-        gapi.call(ci.groups(),
-                  'patch',
-                  updateMask=updateMask,
-                  name=name,
-                  body=body)
+        if body:
+            updateMask = ','.join(body.keys())
+            name = group_email_to_id(ci, group)
+            print(f'Updating group {group}')
+            gapi.call(ci.groups(),
+                      'patch',
+                      updateMask=updateMask,
+                      name=name,
+                      body=body)
+        if sec_body:
+            updateMask = 'member_restriction.query'
+            # it seems like a bug that API requires /securitySettings
+            # appended to name. We'll see if Google servers change this
+            # at some point.
+            name = f'{group_email_to_id(ci, group)}/securitySettings'
+            print(f'Updating group {group} security settings')
+            gapi.call(ci.groups(),
+                    'updateSecuritySettings',
+                    name=name,
+                    updateMask=updateMask,
+                    body=sec_body)
 
 
 def group_email_to_id(ci, group, i=0, count=0):
