@@ -17,7 +17,7 @@ tar -C ${distpath} --create --file $GAM_ARCHIVE --xz gam
 echo "PyInstaller GAM info:"
 du -h $gam
 time $gam version extended
-if ([ "${ImageOS}" == "ubuntu18" ]) && [ "${HOSTTYPE}" == "x86_64" ]; then
+if ([ "${ImageOS}" == "ubuntu20" ]) && [ "${HOSTTYPE}" == "x86_64" ]; then
   GAM_LEGACY_ARCHIVE=gam-${GAMVERSION}-${GAMOS}-${PLATFORM}-legacy.tar.xz
   $python -OO -m staticx $gam $gam-staticx
   #strip $gam-staticx
