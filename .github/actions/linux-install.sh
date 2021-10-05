@@ -19,8 +19,8 @@ du -h $gam
 time $gam version extended
 if ([ "${ImageOS}" == "ubuntu18" ]) && [ "${HOSTTYPE}" == "x86_64" ]; then
   GAM_LEGACY_ARCHIVE=gam-${GAMVERSION}-${GAMOS}-${PLATFORM}-legacy.tar.xz
-  $python -OO -m staticx -l /lib/x86_64-linux-gnu/libresolv.so.2 -l /lib/x86_64-linux-gnu/libnss_dns.so.2 $gam $gam-staticx
-  strip $gam-staticx
+  $python -OO -m staticx $gam $gam-staticx
+  #strip $gam-staticx
   rm $gampath/gam
   mv $gam-staticx $gam
   chmod 755 $gam
