@@ -1246,10 +1246,12 @@ GC_DOMAIN = 'domain'
 GC_DRIVE_DIR = 'drive_dir'
 # Enable Delegated Admin Service Accounts
 GC_ENABLE_DASA = 'enabledasa'
-# If no_browser is False, writeCSVfile won't open a browser when todrive is set
+# If no_browser is True, writeCSVfile won't open a browser when todrive is set
 # and doRequestOAuth prints a link and waits for the verification code when
 # oauth2.txt is being created
 GC_NO_BROWSER = 'no_browser'
+# If no_tdemail is True, writeCSVfile won't send an email
+GC_NO_TDEMAIL = 'no_tdemail'
 # oauth_browser forces usage of web server OAuth flow that proved problematic.
 GC_OAUTH_BROWSER = 'oauth_browser'
 # Disable GAM API caching
@@ -1304,6 +1306,7 @@ GC_Defaults = {
     GC_DRIVE_DIR: '',
     GC_ENABLE_DASA: False,
     GC_NO_BROWSER: False,
+    GC_NO_TDEMAIL: False,
     GC_NO_CACHE: False,
     GC_NO_SHORT_URLS: False,
     GC_NO_UPDATE_CHECK: False,
@@ -1387,6 +1390,9 @@ GC_VAR_INFO = {
         GC_VAR_TYPE: GC_TYPE_BOOLEAN
     },
     GC_NO_BROWSER: {
+        GC_VAR_TYPE: GC_TYPE_BOOLEAN
+    },
+    GC_NO_TDEMAIL: {
         GC_VAR_TYPE: GC_TYPE_BOOLEAN
     },
     GC_NO_CACHE: {

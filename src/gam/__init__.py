@@ -550,6 +550,7 @@ def SetGlobalVariables():
                       filePresentValue=4,
                       fileAbsentValue=0)
     _getOldSignalFile(GC_NO_BROWSER, 'nobrowser.txt')
+    _getOldSignalFile(GC_NO_TDEMAIL, 'notdemail.txt')
     _getOldSignalFile(GC_OAUTH_BROWSER, 'oauthbrowser.txt')
     #  _getOldSignalFile(GC_NO_CACHE, u'nocache.txt')
     #  _getOldSignalFile(GC_CACHE_DISCOVERY_ONLY, u'allcache.txt', filePresentValue=False, fileAbsentValue=True)

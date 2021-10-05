@@ -283,7 +283,8 @@ and follow recommend steps to authorize GAM for Drive access.''')
         if GC_Values[GC_NO_BROWSER]:
             msg_txt = f'Drive file uploaded to:\n {file_url}'
             msg_subj = f'{GC_Values[GC_DOMAIN]} - {list_type}'
-            gam.send_email(msg_subj, msg_txt)
+            if not GC_Values[GC_NO_TDEMAIL]:
+                gam.send_email(msg_subj, msg_txt)
             print(msg_txt)
         else:
             webbrowser.open(file_url)
