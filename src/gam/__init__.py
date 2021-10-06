@@ -9680,6 +9680,8 @@ def doPrintUsers():
             sortHeaders = True
             i += 1
         elif myarg in ['custom', 'schemas']:
+            if not fieldsList:
+                fieldsList = ['primaryEmail']
             fieldsList.append('customSchemas')
             if sys.argv[i + 1].lower() == 'all':
                 projection = 'full'
