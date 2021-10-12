@@ -158,25 +158,25 @@ def write_csv_file(csvRows, titles, list_type, todrive):
         for c, filterVal in iter(filters.items()):
             for column in columns[c]:
                 if filterVal[1] == 'regex':
-                    if filterVal[2].search(str(row.get(column, ''))):
-                        return True
-                elif filterVal[1] == 'notregex':
                     if not filterVal[2].search(str(row.get(column, ''))):
-                        return True
+                        return False
+                elif filterVal[1] == 'notregex':
+                    if filterVal[2].search(str(row.get(column, ''))):
+                        return False
                 elif filterVal[1] in ['date', 'time']:
-                    if rowDateTimeFilterMatch(
+                    if not rowDateTimeFilterMatch(
                         filterVal[1] == 'date', row.get(column, ''),
                         filterVal[2], filterVal[3]):
-                        return True
+                        return False
                 elif filterVal[1] == 'count':
-                    if rowCountFilterMatch(
+                    if not rowCountFilterMatch(
                         row.get(column, 0), filterVal[2], filterVal[3]):
-                        return True
+                        return False
                 else:  #boolean
-                    if rowBooleanFilterMatch(
+                    if not rowBooleanFilterMatch(
                         row.get(column, False), filterVal[2]):
-                        return True
-        return False
+                        return False
+        return True
 
     if GC_Values[GC_CSV_ROW_FILTER] or GC_Values[GC_CSV_ROW_DROP_FILTER]:
         if GC_Values[GC_CSV_ROW_FILTER]:
