@@ -215,6 +215,7 @@ jobs:
       - name: Basic Tests build jobs only
         if: matrix.goal != 'test'
         run: |
+             $pip install packaging
              export vline=$($gam version | grep "Python ")
              export python_line=($vline)
              export this_python=${python_line[1]}
