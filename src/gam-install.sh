@@ -28,7 +28,7 @@ upgrade_only=false
 gamversion="latest"
 adminuser=""
 regularuser=""
-gam_glibc_vers="2.31 2.27 2.23"
+gam_glibc_vers="2.31 2.27"
 #gam_macos_vers="10.15.6 10.14.6 10.13.6"
 
 while getopts "hd:a:o:b:lp:u:r:v:" OPTION
@@ -128,7 +128,7 @@ case $gamos in
       this_macos_ver=$osversion
     fi
     echo "You are running MacOS $this_macos_ver"
-    gamfile="macos-x86_64.tar.xz"
+    gamfile="macos-universal2.tar.xz"
     ;;
   MINGW64_NT*)
     gamos="windows"
