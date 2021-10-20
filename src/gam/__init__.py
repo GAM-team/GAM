@@ -7244,6 +7244,7 @@ def enableGAMProjectAPIs(GAMProjectAPIs,
                                   gapi_errors.ErrorReason.FORBIDDEN,
                                   gapi_errors.ErrorReason.PERMISSION_DENIED
                               ],
+                              retry_reasons=[gapi_errors.ErrorReason.INTERNAL_SERVER_ERROR],
                               name=service_name)
                     print(f'    API: {api}, Enabled{currentCount(j, jcount)}')
                     break

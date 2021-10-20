@@ -60,6 +60,10 @@ class GapiGroupNotFoundError(Exception):
     pass
 
 
+class GapiInternalServerError(Exception):
+    pass
+
+
 class GapiInvalidError(Exception):
     pass
 
@@ -125,6 +129,7 @@ class ErrorReason(Enum):
     GATEWAY_TIMEOUT = 'gatewayTimeout'
     GROUP_NOT_FOUND = 'groupNotFound'
     INTERNAL_ERROR = 'internalError'
+    INTERNAL_SERVER_ERROR = 'internalServerError'
     INVALID = 'invalid'
     INVALID_ARGUMENT = 'invalidArgument'
     INVALID_MEMBER = 'invalidMember'
@@ -199,6 +204,8 @@ ERROR_REASON_TO_EXCEPTION = {
         GapiGatewayTimeoutError,
     ErrorReason.GROUP_NOT_FOUND:
         GapiGroupNotFoundError,
+    ErrorReason.INTERNAL_SERVER_ERROR:
+        GapiInternalServerError,
     ErrorReason.INVALID:
         GapiInvalidError,
     ErrorReason.INVALID_ARGUMENT:
@@ -335,6 +342,10 @@ def get_gapi_error_detail(e,
         if http_status == 404:
             if 'Requested entity was not found' in message or 'does not exist' in message:
                 error = _create_http_error_dict(404, ErrorReason.NOT_FOUND.value,
+                                                message)
+        elif http_status == 500:
+            if 'Failed to convert server response to JSON' in message:
+                error = _create_http_error_dict(500, ErrorReason.INTERNAL_SERVER_ERROR.value,
                                                 message)
     else:
         if 'error_description' in error:
