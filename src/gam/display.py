@@ -240,7 +240,8 @@ def write_csv_file(csvRows, titles, list_type, todrive):
                             fieldnames=titles,
                             dialect='nixstdout',
                             extrasaction='ignore',
-                            quoting=csv.QUOTE_MINIMAL)
+                            quoting=csv.QUOTE_MINIMAL,
+                            escapechar='\\')
     try:
         writer.writerow(dict((item, item) for item in writer.fieldnames))
         writer.writerows(csvRows)
