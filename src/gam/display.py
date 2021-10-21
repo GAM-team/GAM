@@ -231,9 +231,14 @@ def write_csv_file(csvRows, titles, list_type, todrive):
                 'No columns selected with GAM_CSV_HEADER_FILTER and GAM_CSV_HEADER_DROP_FILTER\n'
             )
             return
-    csv.register_dialect('nixstdout',
-                         lineterminator='\n',
-                         quoting=csv.QUOTE_MINIMAL)
+    nixstdout_dialect = {'lineterminator': '\n',
+                         'quoting': csv.QUOTE_MINIMAL}
+    # fix issue with Python 3.10.0 and no escape char
+    # 3.10.1+ may fix this within Python so hopefully
+    # this is short-lived.
+    if sys.version_info.minor >= 10:
+        nixstdout_dialect['escapechar'] = '\\'
+    csv.register_dialect('nixstdout', **nixstdout_dialect)
     if todrive:
         write_to = io.StringIO()
     else:
