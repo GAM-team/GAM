@@ -238,15 +238,14 @@ def write_csv_file(csvRows, titles, list_type, todrive):
     # this is short-lived.
     if sys.version_info.minor >= 10:
         nixstdout_dialect['escapechar'] = '\\'
-    csv.register_dialect('nixstdout', **nixstdout_dialect)
     if todrive:
         write_to = io.StringIO()
     else:
         write_to = sys.stdout
     writer = csv.DictWriter(write_to,
                             fieldnames=titles,
-                            dialect='nixstdout',
-                            extrasaction='ignore')
+                            extrasaction='ignore',
+                            **nixstdout_dialect)
     try:
         writer.writerow(dict((item, item) for item in writer.fieldnames))
         writer.writerows(csvRows)
