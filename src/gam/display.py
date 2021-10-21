@@ -231,7 +231,9 @@ def write_csv_file(csvRows, titles, list_type, todrive):
                 'No columns selected with GAM_CSV_HEADER_FILTER and GAM_CSV_HEADER_DROP_FILTER\n'
             )
             return
-    csv.register_dialect('nixstdout', lineterminator='\n')
+    csv.register_dialect('nixstdout',
+                         lineterminator='\n',
+                         quoting=csv.QUOTE_MINIMAL)
     if todrive:
         write_to = io.StringIO()
     else:
@@ -239,8 +241,7 @@ def write_csv_file(csvRows, titles, list_type, todrive):
     writer = csv.DictWriter(write_to,
                             fieldnames=titles,
                             dialect='nixstdout',
-                            extrasaction='ignore',
-                            quoting=csv.QUOTE_MINIMAL)
+                            extrasaction='ignore')
     try:
         writer.writerow(dict((item, item) for item in writer.fieldnames))
         writer.writerows(csvRows)
