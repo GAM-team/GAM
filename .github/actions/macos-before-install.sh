@@ -29,7 +29,7 @@ echo "installing Python $BUILD_PYTHON_VERSION..."
 sudo installer -pkg ./$pyfile -target /
 
 # This fixes https://github.com/pyinstaller/pyinstaller/issues/5062
-codesign --remove-signature /Library/Frameworks/Python.framework/Versions/3.10/Python
+#codesign --remove-signature /Library/Frameworks/Python.framework/Versions/3.10/Python
 
 #if [ ! -f python-$MIN_PYTHON_VERSION-macosx10.9.pkg ]; then
 #  wget --quiet https://www.python.org/ftp/python/$MIN_PYTHON_VERSION/python-$MIN_PYTHON_VERSION-macosx10.9.pkg
