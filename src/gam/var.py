@@ -631,6 +631,7 @@ MACOS_CODENAMES = {
         16: 'Big Sur'
         },
     11: 'Big Sur',
+    12: 'Monterey',
     }
 
 _MICROSOFT_FORMATS_LIST = [{
