@@ -395,7 +395,7 @@ class Credentials(google.oauth2.credentials.Credentials):
             self.refresh(request)
 
         self._id_token_data = google.oauth2.id_token.verify_oauth2_token(
-            self.id_token, request)
+            self.id_token, request, clock_skew_in_seconds=10)
 
     def get_token_value(self, field):
         """Retrieves data from the OAuth ID token.
