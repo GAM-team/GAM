@@ -154,28 +154,33 @@ def write_csv_file(csvRows, titles, list_type, todrive):
                 return True
         return False
 
+    def filterMatch(filterVal, columns, row):
+        for column in columns:
+            if filterVal[1] == 'regex':
+                if filterVal[2].search(str(row.get(column, ''))):
+                    return True
+            elif filterVal[1] == 'notregex':
+                if not filterVal[2].search(str(row.get(column, ''))):
+                    return True
+            elif filterVal[1] in ['date', 'time']:
+                if rowDateTimeFilterMatch(
+                    filterVal[1] == 'date', row.get(column, ''),
+                    filterVal[2], filterVal[3]):
+                    return True
+            elif filterVal[1] == 'count':
+                if rowCountFilterMatch(
+                    row.get(column, 0), filterVal[2], filterVal[3]):
+                    return True
+            else:  #boolean
+                if rowBooleanFilterMatch(
+                    row.get(column, False), filterVal[2]):
+                    return True
+        return False
+
     def rowFilterMatch(filters, columns, row):
         for c, filterVal in iter(filters.items()):
-            for column in columns[c]:
-                if filterVal[1] == 'regex':
-                    if not filterVal[2].search(str(row.get(column, ''))):
-                        return False
-                elif filterVal[1] == 'notregex':
-                    if filterVal[2].search(str(row.get(column, ''))):
-                        return False
-                elif filterVal[1] in ['date', 'time']:
-                    if not rowDateTimeFilterMatch(
-                        filterVal[1] == 'date', row.get(column, ''),
-                        filterVal[2], filterVal[3]):
-                        return False
-                elif filterVal[1] == 'count':
-                    if not rowCountFilterMatch(
-                        row.get(column, 0), filterVal[2], filterVal[3]):
-                        return False
-                else:  #boolean
-                    if not rowBooleanFilterMatch(
-                        row.get(column, False), filterVal[2]):
-                        return False
+            if not filterMatch(filterVal, columns[c], row):
+                return False
         return True
 
     if GC_Values[GC_CSV_ROW_FILTER] or GC_Values[GC_CSV_ROW_DROP_FILTER]:
