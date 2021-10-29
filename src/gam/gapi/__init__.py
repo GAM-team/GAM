@@ -359,7 +359,7 @@ def handle_oauth_token_error(e, soft_errors):
       returns to the caller.
   """
     token_error = str(e).replace('.', '')
-    if token_error in errors.OAUTH2_TOKEN_ERRORS or e.startswith(
+    if token_error in errors.OAUTH2_TOKEN_ERRORS or token_error.startswith(
             'Invalid response'):
         if soft_errors:
             return
