@@ -183,6 +183,12 @@ def write_csv_file(csvRows, titles, list_type, todrive):
                 return False
         return True
 
+    def rowDropFilterMatch(filters, columns, row):
+        for c, filterVal in iter(filters.items()):
+            if filterMatch(filterVal, columns[c], row):
+                return True
+        return False
+
     if GC_Values[GC_CSV_ROW_FILTER] or GC_Values[GC_CSV_ROW_DROP_FILTER]:
         if GC_Values[GC_CSV_ROW_FILTER]:
             keepColumns = {}
@@ -215,7 +221,7 @@ def write_csv_file(csvRows, titles, list_type, todrive):
             if (((keepColumns is None) or
                  rowFilterMatch(GC_Values[GC_CSV_ROW_FILTER], keepColumns, row)) and
                 ((dropColumns is None) or
-                 not rowFilterMatch(GC_Values[GC_CSV_ROW_DROP_FILTER], dropColumns, row))):
+                 not rowDropFilterMatch(GC_Values[GC_CSV_ROW_DROP_FILTER], dropColumns, row))):
                 rows.append(row)
         csvRows = rows
 
