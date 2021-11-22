@@ -33,6 +33,11 @@ for d in a.datas:
 
 pyz = PYZ(a.pure)
 
+if sys.platform == "darwin":
+     target_arch="universal2"
+else:
+     target_arch=None
+
 exe = EXE(pyz,
           a.scripts,
           a.binaries,
@@ -42,4 +47,5 @@ exe = EXE(pyz,
           debug=False,
           strip=None,
           upx=False,
+          target_arch=target_arch,
           console=True)
