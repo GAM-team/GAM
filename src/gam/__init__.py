@@ -7765,7 +7765,9 @@ def _generatePrivateKeyAndPublicCert(client_id, key_size):
         x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, client_id)]))
     builder = builder.issuer_name(
         x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, client_id)]))
-    builder = builder.not_valid_before(datetime.datetime.today())
+    # Gooogle seems to enforce the not before date strictly. Set the not before
+    # date to be UTC one hour ago should cover any clock skew.
+    builder = builder.not_valid_before(datetime.datetime.utcnow() - datetime.timedelta(hours=1))
     # Google uses 12/31/9999 date for end time
     builder = builder.not_valid_after(datetime.datetime(9999, 12, 31, 23, 59))
     builder = builder.serial_number(x509.random_serial_number())
