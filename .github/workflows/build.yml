@@ -162,7 +162,7 @@ jobs:
              echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" >> $GITHUB_ENV
              echo -e "Python: $python\nPip: $pip\nLD_LIB...: $LD_LIBRARY_PATH"
              if [ $GAMOS == "macos" ]; then
-               export pipoptions='--nobnary ":all:"'
+               export pipoptions='--no-binary ":all:"'
                export MACOSX_DEPLOYMENT_TARGET="10.9"
                export CFLAGS="-arch arm64 -arch x86_64"
              fi
