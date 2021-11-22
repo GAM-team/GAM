@@ -173,7 +173,7 @@ jobs:
              curl -o pyinstaller.tar.gz --compressed "${url}"
              tar xf pyinstaller.tar.gz
              cd "pyinstaller-${PYINSTALLER_VERSION}/"
-             if [ $GAMOS == "windows" ]; then
+             if [ $GAMOS != "linux" ]; then
                # remove pre-compiled bootloaders so we fail if bootloader compile fails
                rm -rf PyInstaller/bootloader/*bit
                cd bootloader
@@ -185,11 +185,7 @@ jobs:
                $python ./waf all $TARGETARCH
                cd ..
              fi
-             if [ $GAMOS == "macos" ]; then
-               $pip install pyinstaller $pipoptions
-             else
-               $pip install .
-             fi
+             $pip install .
              #$python setup.py install
              #$pip install pyinstaller
 
