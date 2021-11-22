@@ -198,7 +198,7 @@ jobs:
         run: |
              set +e
              if [ $GAMOS == "macos" ]; then
-               export pipoptions='--nobnary ":all:"'
+               export pipoptions='--no-binary ":all:"'
                export MACOSX_DEPLOYMENT_TARGET="10.9"
                export CFLAGS="-arch arm64 -arch x86_64"
              fi
