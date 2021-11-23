@@ -14,14 +14,6 @@ bash <(curl -s -S -L https://git.io/install-gam)
 
 this will download GAM, install it and start setup.
 
-To install with `pip`, run
-
-```sh
-pip install git+https://github.com/jay0lee/GAM.git#subdirectory=src
-```
-
-This will only download and install GAM. To start setup, simply invoke the `gam` CLI.
-
 ## Windows
 
 Download the MSI Installer from the [GitHub Releases] page. Install the MSI and you'll be prompted to setup GAM.
