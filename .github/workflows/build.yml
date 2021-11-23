@@ -173,7 +173,7 @@ jobs:
              curl -o pyinstaller.tar.gz --compressed "${url}"
              tar xf pyinstaller.tar.gz
              cd "pyinstaller-${PYINSTALLER_VERSION}/"
-             if [ $GAMOS != "linux" ]; then
+             if [ $GAMOS == "windows" ]; then
                # remove pre-compiled bootloaders so we fail if bootloader compile fails
                rm -rf PyInstaller/bootloader/*bit
                cd bootloader
