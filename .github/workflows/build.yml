@@ -162,7 +162,7 @@ jobs:
              echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" >> $GITHUB_ENV
              echo -e "Python: $python\nPip: $pip\nLD_LIB...: $LD_LIBRARY_PATH"
              if [ $GAMOS == "macos" ]; then
-               export pipoptions='--no-binary ":all:"'
+               #export pipoptions='--no-binary ":all:"'
                export MACOSX_DEPLOYMENT_TARGET="10.9"
                export CFLAGS="-arch arm64 -arch x86_64"
              fi
@@ -173,7 +173,7 @@ jobs:
              curl -o pyinstaller.tar.gz --compressed "${url}"
              tar xf pyinstaller.tar.gz
              cd "pyinstaller-${PYINSTALLER_VERSION}/"
-             if [ $GAMOS == "windows" ]; then
+             if [ $GAMOS != "linux" ]; then
                # remove pre-compiled bootloaders so we fail if bootloader compile fails
                rm -rf PyInstaller/bootloader/*bit
                cd bootloader
@@ -194,7 +194,7 @@ jobs:
         run: |
              set +e
              if [ $GAMOS == "macos" ]; then
-               export pipoptions='--no-binary ":all:"'
+               #export pipoptions='--no-binary ":all:"'
                export MACOSX_DEPLOYMENT_TARGET="10.9"
                export CFLAGS="-arch arm64 -arch x86_64"
              fi
