@@ -1,4 +1,4 @@
-GAM is a command line tool for Google Workspace (fka G Suite) Administrators to manage domain and user settings quickly and easily.
+GAM is a command line tool for Google Workspace admins to manage domain and user settings quickly and easily.
 
 ![Build Status](https://github.com/jay0lee/GAM/workflows/Build%20and%20test%20GAM/badge.svg)
 
@@ -13,14 +13,6 @@ bash <(curl -s -S -L https://git.io/install-gam)
 ```
 
 this will download GAM, install it and start setup.
-
-To install with `pip`, run
-
-```sh
-pip install git+https://github.com/jay0lee/GAM.git#subdirectory=src
-```
-
-This will only download and install GAM. To start setup, simply invoke the `gam` CLI.
 
 ## Windows
 
