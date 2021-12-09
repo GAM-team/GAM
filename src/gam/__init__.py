@@ -6703,6 +6703,7 @@ def getUserAttributes(i, cd, updateCmd):
                 if language.lower() in LANGUAGE_CODES_MAP:
                     lang_item['languageCode'] = LANGUAGE_CODES_MAP[language.lower()]
                 else:
+                    lang_item.pop('preference', None)
                     lang_item['customLanguage'] = language
                 appendItemToBodyList(body, 'languages', lang_item)
             i += 1
@@ -8856,7 +8857,7 @@ def doGetUserInfo(user_email=None):
                 lang = language.get('customLanguage')
             languages.append(lang)
         if languages:
-            print(f'Custom Languages: {",".join(languages)}')
+            print(f'Languages: {",".join(languages)}')
     if 'isAdmin' in user:
         print(f'Is a Super Admin: {user["isAdmin"]}')
     if 'isDelegatedAdmin' in user:
