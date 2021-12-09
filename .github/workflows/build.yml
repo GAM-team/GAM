@@ -12,13 +12,13 @@ defaults:
     working-directory: src
 
 env:
-  BUILD_PYTHON_VERSION: "3.10.0"
-  MIN_PYTHON_VERSION: "3.10.0"
+  BUILD_PYTHON_VERSION: "3.10.1"
+  MIN_PYTHON_VERSION: "3.10.1"
   BUILD_OPENSSL_VERSION: "3.0.0"
   MIN_OPENSSL_VERSION: "1.1.1l"
   PATCHELF_VERSION: "0.13"
   # PYINSTALLER_VERSION can be full commit hash or version like v4.20
-  PYINSTALLER_VERSION: "41842f5ad31dd33d7ba4ae03daace2287c80dcb7"
+  PYINSTALLER_VERSION: "86eeca8b4ba8012ab2df19ca206cafbe263b6a81"
 
 jobs:
   build:
@@ -92,7 +92,7 @@ jobs:
           path: |
             ~/python
             ~/ssl
-          key: ${{ matrix.os }}-${{ matrix.jid }}-20211124
+          key: ${{ matrix.os }}-${{ matrix.jid }}-20211207
 
       - name: Set env variables
         env:
