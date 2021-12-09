@@ -262,7 +262,7 @@ jobs:
              for i in {01..10}; do
                echo "${newbase}-bulkuser-$i" >> sample.csv;
              done
-             $gam create user $newuser firstname GHA lastname $JID password random recoveryphone 12125121110 recoveryemail jay0lee@gmail.com gha.jid $JID
+             $gam create user $newuser firstname GHA lastname $JID password random recoveryphone 12125121110 recoveryemail jay0lee@gmail.com gha.jid $JID languages en+,en-GB-
              $gam user $gam_user sendemail recipient $newuser subject "test message $newbase" message "GHA test message"
              $gam user $gam_user sendemail recipient exchange@pdl.jaylee.us subject "test ${tstamp}" message "test message"
              $gam create group $newgroup name "GHA $JID group" description "This is a description" isarchived true

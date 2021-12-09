@@ -6693,13 +6693,18 @@ def getUserAttributes(i, cd, updateCmd):
                 i += 1
                 continue
             for language in sys.argv[i].replace(',', ' ').split():
+                lang_item = {}
+                if language[-1] == '+':
+                    language = language[:-1]
+                    lang_item['preference'] = 'preferred'
+                elif language[-1] == '-':
+                    language = language[:-1]
+                    lang_item['preference'] = 'not_preferred'
                 if language.lower() in LANGUAGE_CODES_MAP:
-                    appendItemToBodyList(
-                        body, 'languages',
-                        {'languageCode': LANGUAGE_CODES_MAP[language.lower()]})
+                    lang_item['languageCode'] = LANGUAGE_CODES_MAP[language.lower()]
                 else:
-                    appendItemToBodyList(body, 'languages',
-                                         {'customLanguage': language})
+                    lang_item['customLanguage'] = language
+                appendItemToBodyList(body, 'languages', lang_item)
             i += 1
         elif myarg == 'gender':
             i += 1
@@ -8839,12 +8844,17 @@ def doGetUserInfo(user_email=None):
     if 'name' in user and 'familyName' in user['name']:
         print(f'Last Name: {user["name"]["familyName"]}')
     if 'languages' in user:
-        up = 'languageCode'
-        languages = [row[up] for row in user['languages'] if up in row]
-        if languages:
-            print(f'Languages: {",".join(languages)}')
-        up = 'customLanguage'
-        languages = [row[up] for row in user['languages'] if up in row]
+        languages = []
+        for language in user['languages']:
+            if 'languageCode' in language:
+                lang = language['languageCode']
+                if language.get('preference') == 'preferred':
+                    lang += '+'
+                elif language.get('preference') == 'not_preferred':
+                    lang += '-'
+            else:
+                lang = language.get('customLanguage')
+            languages.append(lang)
         if languages:
             print(f'Custom Languages: {",".join(languages)}')
     if 'isAdmin' in user:
