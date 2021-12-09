@@ -1018,7 +1018,8 @@ gam info customer
 
 gam create datatransfer|transfer <OldOwnerID> <DataTransferServiceList> <NewOwnerID> (<ParameterKey> <ParameterValue>)*
 gam info datatransfer|transfer <TransferID>
-gam print datatransfers|transfers [todrive] [olduser|oldowner <UserItem>] [newuser|newowner <UserItem>] [status <String>]
+gam print datatransfers|transfers [todrive] [olduser|oldowner <UserItem>] [newuser|newowner <UserItem>]
+	[status completed|failed|inprogress]
 
 gam print transferapps
 
