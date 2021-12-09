@@ -9661,6 +9661,7 @@ def doPrintUsers():
     customFieldMask = None
     sortHeaders = getGroupFeed = getLicenseFeed = email_parts = False
     viewType = deleted_only = orderBy = sortOrder = None
+    orgUnitPath = orgUnitPathLower = None
     groupDelimiter = ' '
     licenseDelimiter = ','
     i = 3
@@ -9725,6 +9726,10 @@ def doPrintUsers():
         elif myarg in ['query', 'queries']:
             queries = getQueries(myarg, sys.argv[i + 1])
             i += 2
+        elif myarg == 'limittoou':
+            orgUnitPath = gapi_directory_orgunits.getOrgUnitItem(sys.argv[i + 1], pathOnly=True)
+            orgUnitPathLower = orgUnitPath.lower()
+            i += 2
         elif myarg in USER_ARGUMENT_TO_PROPERTY_MAP:
             if not fieldsList:
                 fieldsList = [
@@ -9760,10 +9765,21 @@ def doPrintUsers():
         else:
             controlflow.invalid_argument_exit(sys.argv[i], 'gam print users')
     if fieldsList:
+        if orgUnitPath is not None:
+            fieldsList.append('orgUnitPath')
         fields = f'nextPageToken,users({",".join(set(fieldsList)).replace(".", "/")})'
     else:
         fields = None
     for query in queries:
+        if orgUnitPath is not None:
+            if query is not None and query.find(orgUnitPath) == -1:
+                query += f" orgUnitPath='{orgUnitPath}'"
+            else:
+                if query is None:
+                    query = ''
+                else:
+                    query += ' '
+                query += f"orgUnitPath='{orgUnitPath}'"
         printGettingAllItems('Users', query)
         page_message = gapi.got_total_items_first_last_msg('Users')
         all_users = gapi.get_all_pages(cd.users(),
@@ -9782,13 +9798,14 @@ def doPrintUsers():
                                        projection=projection,
                                        customFieldMask=customFieldMask)
         for user in all_users:
-            if email_parts and ('primaryEmail' in user):
-                user_email = user['primaryEmail']
-                if user_email.find('@') != -1:
-                    user['primaryEmailLocal'], user[
-                        'primaryEmailDomain'] = splitEmailAddress(user_email)
-            display.add_row_titles_to_csv_file(utils.flatten_json(user),
-                                               csvRows, titles)
+            if orgUnitPathLower is None or orgUnitPathLower == user.get('orgUnitPath', '').lower():
+                if email_parts and ('primaryEmail' in user):
+                    user_email = user['primaryEmail']
+                    if user_email.find('@') != -1:
+                        user['primaryEmailLocal'], user[
+                            'primaryEmailDomain'] = splitEmailAddress(user_email)
+                display.add_row_titles_to_csv_file(utils.flatten_json(user),
+                                                   csvRows, titles)
     if sortHeaders:
         display.sort_csv_titles([
             'primaryEmail',

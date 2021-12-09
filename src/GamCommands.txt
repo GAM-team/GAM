@@ -207,8 +207,9 @@ If an item contains spaces, it should be surrounded by ".
 <Namespace> ::= <String>
 <NotificationID> ::= <String>
 <NumberOfSeats> ::= <Number>
-<OrgUnitID> ::= <String>
+<OrgUnitID> ::= id:<String>
 <OrgUnitPath> ::= /|(/<String)+
+<OrgUnitItem> ::= <OrgUnitID>|<OrgUnitPath>
 <ParameterKey> ::= <String>
 <ParameterValue> ::= <String>
 <Password> ::= <String>
@@ -1477,7 +1478,8 @@ The first column will always be primaryEmail; the remaining field names will be 
 otherwise, the remaining field names will appear in the order specified.
 
 gam print users [todrive]
-	([domain <DomainName>] [(query <QueryUser>)|(queries <QueryUserList>)] [deleted_only|only_deleted])
+	([domain <DomainName>] [(query <QueryUser>)|(queries <QueryUserList>)]
+	[limittoou <OrgUnitPath>] [deleted_only|only_deleted])
 	[groups] [license|licenses|licence|licences] [emailpart|emailparts|username]
 	[orderby <UserOrderByFieldName> [ascending|descending]] [userview]
 	[allfields|basic|full | ((<UserFieldName>* | fields <UserFieldNameList>) [schemas|custom all|<SchemaNameList>])]
