@@ -8776,6 +8776,20 @@ def _get_admin_email():
             )
     return _getValueFromOAuth('email')
 
+def _formatLanguagesList(propertyValue, delimiter):
+    languages = []
+    for language in propertyValue:
+        if 'languageCode' in language:
+            lang = language['languageCode']
+            if language.get('preference') == 'preferred':
+                lang += '+'
+            elif language.get('preference') == 'not_preferred':
+                lang += '-'
+        else:
+            lang = language.get('customLanguage')
+        languages.append(lang)
+    return delimiter.join(languages)
+
 def doGetUserInfo(user_email=None):
 
     def user_lic_result(request_id, response, exception):
@@ -8845,19 +8859,7 @@ def doGetUserInfo(user_email=None):
     if 'name' in user and 'familyName' in user['name']:
         print(f'Last Name: {user["name"]["familyName"]}')
     if 'languages' in user:
-        languages = []
-        for language in user['languages']:
-            if 'languageCode' in language:
-                lang = language['languageCode']
-                if language.get('preference') == 'preferred':
-                    lang += '+'
-                elif language.get('preference') == 'not_preferred':
-                    lang += '-'
-            else:
-                lang = language.get('customLanguage')
-            languages.append(lang)
-        if languages:
-            print(f'Languages: {",".join(languages)}')
+        print(f"Languages: {_formatLanguagesList(user['languages'], ',')}")
     if 'isAdmin' in user:
         print(f'Is a Super Admin: {user["isAdmin"]}')
     if 'isDelegatedAdmin' in user:
@@ -9815,6 +9817,9 @@ def doPrintUsers():
                     if user_email.find('@') != -1:
                         user['primaryEmailLocal'], user[
                             'primaryEmailDomain'] = splitEmailAddress(user_email)
+                up = 'languages'
+                if up in user:
+                    user[up] = _formatLanguagesList(user.pop(up), ' ')
                 display.add_row_titles_to_csv_file(utils.flatten_json(user),
                                                    csvRows, titles)
     if sortHeaders:
