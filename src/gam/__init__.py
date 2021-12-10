@@ -9840,9 +9840,8 @@ def doPrintUsers():
                     if user_email.find('@') != -1:
                         user['primaryEmailLocal'], user[
                             'primaryEmailDomain'] = splitEmailAddress(user_email)
-                up = 'languages'
-                if up in user:
-                    user[up] = _formatLanguagesList(user.pop(up), ' ')
+                if 'languages' in user:
+                    user['languages'] = _formatLanguagesList(user.pop('languages'), ' ')
                 display.add_row_titles_to_csv_file(utils.flatten_json(user),
                                                    csvRows, titles)
     if sortHeaders:
