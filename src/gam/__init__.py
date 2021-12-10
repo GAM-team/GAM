@@ -6695,15 +6695,23 @@ def getUserAttributes(i, cd, updateCmd):
             for language in sys.argv[i].replace(',', ' ').split():
                 lang_item = {}
                 if language[-1] == '+':
+                    suffix = '+'
                     language = language[:-1]
                     lang_item['preference'] = 'preferred'
                 elif language[-1] == '-':
+                    suffix = '-'
                     language = language[:-1]
                     lang_item['preference'] = 'not_preferred'
+                else:
+                    suffix = ''
                 if language.lower() in LANGUAGE_CODES_MAP:
                     lang_item['languageCode'] = LANGUAGE_CODES_MAP[language.lower()]
                 else:
-                    lang_item.pop('preference', None)
+                    if suffix:
+                        controlflow.system_error_exit(
+                            2,
+                            f'suffix {suffix} not allowed with customLanguage {language}'
+                            )
                     lang_item['customLanguage'] = language
                 appendItemToBodyList(body, 'languages', lang_item)
             i += 1
