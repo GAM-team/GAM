@@ -8804,6 +8804,7 @@ def doGetUserInfo(user_email=None):
             i = 4
         else:
             user_email = _get_admin_email()
+    fieldsList = []
     getSchemas = True
     getAliases = True
     getGroups = True
@@ -8834,10 +8835,35 @@ def doGetUserInfo(user_email=None):
             getSchemas = False
             projection = 'basic'
             i += 1
+        elif myarg == 'quick':
+            getAliases = getCIGroups = getGroups = getLicenses = getSchemas = False
+            i += 1
         elif myarg in ['custom', 'schemas']:
             getSchemas = True
-            projection = 'custom'
-            customFieldMask = sys.argv[i + 1]
+            if not fieldsList:
+                fieldsList = ['primaryEmail']
+            fieldsList.append('customSchemas')
+            if sys.argv[i + 1].lower() == 'all':
+                projection = 'full'
+            else:
+                projection = 'custom'
+                customFieldMask = sys.argv[i + 1].replace(' ', ',')
+            i += 2
+        elif myarg in USER_ARGUMENT_TO_PROPERTY_MAP:
+            if not fieldsList:
+                fieldsList = ['primaryEmail',]
+            fieldsList.extend(USER_ARGUMENT_TO_PROPERTY_MAP[myarg])
+            i += 1
+        elif myarg == 'fields':
+            if not fieldsList:
+                fieldsList = ['primaryEmail',]
+            fieldNameList = sys.argv[i + 1]
+            for field in fieldNameList.lower().replace(',', ' ').split():
+                if field in USER_ARGUMENT_TO_PROPERTY_MAP:
+                    fieldsList.extend(USER_ARGUMENT_TO_PROPERTY_MAP[field])
+                else:
+                    controlflow.invalid_argument_exit(field,
+                                                      'gam info users fields')
             i += 2
         elif myarg == 'userview':
             viewType = 'domain_public'
@@ -8851,6 +8877,7 @@ def doGetUserInfo(user_email=None):
                      'get',
                      userKey=user_email,
                      projection=projection,
+                     fields=','.join(set(fieldsList)) if fieldsList else '*',
                      customFieldMask=customFieldMask,
                      viewType=viewType)
     print(f'User: {user["primaryEmail"]}')
@@ -9704,7 +9731,7 @@ def doPrintUsers():
                 projection = 'full'
             else:
                 projection = 'custom'
-                customFieldMask = sys.argv[i + 1]
+                customFieldMask = sys.argv[i + 1].replace(' ', ',')
             i += 2
         elif myarg == 'todrive':
             todrive = True
@@ -9745,17 +9772,13 @@ def doPrintUsers():
             i += 2
         elif myarg in USER_ARGUMENT_TO_PROPERTY_MAP:
             if not fieldsList:
-                fieldsList = [
-                    'primaryEmail',
-                ]
+                fieldsList = ['primaryEmail',]
             display.add_field_to_csv_file(myarg, USER_ARGUMENT_TO_PROPERTY_MAP,
                                           fieldsList, fieldsTitles, titles)
             i += 1
         elif myarg == 'fields':
             if not fieldsList:
-                fieldsList = [
-                    'primaryEmail',
-                ]
+                fieldsList = ['primaryEmail',]
             fieldNameList = sys.argv[i + 1]
             for field in fieldNameList.lower().replace(',', ' ').split():
                 if field in USER_ARGUMENT_TO_PROPERTY_MAP:

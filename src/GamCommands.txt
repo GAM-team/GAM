@@ -1471,7 +1471,11 @@ gam create user <EmailAddress> <UserAttribute>* [verifynotinvitable]
 gam update user <UserItem> <UserAttribute>* [clearschema <SchemaName>] [clearschema <SchemaName>.<FieldName>] [verifynotinvitable]
 gam delete user <UserItem>
 gam undelete user <UserItem> [org|ou <OrgUnitPath>]
-gam info user [<UserItem>] [noaliases] [nogroups] [nolicenses|nolicences] [noschemas] [schemas|custom <SchemaNameList>] [userview] [skus|sku <SKUIDList>] [grouptree]
+gam info user [<UserItem>]
+	[quick] [noaliases] [nogroups] [nolicenses|nolicences] [noschemas]
+	[skus|sku <SKUIDList>] [grouptree]
+	[userview] <UserFieldName>* [fields <UserFieldNameList>]
+	[schemas|custom all|<SchemaNameList>]
 
 Print fields for selected users; use domain, query/queries and deleted_only to select users to print;
 if none of these options are specified, all users are printed.
@@ -1482,8 +1486,9 @@ gam print users [todrive]
 	([domain <DomainName>] [(query <QueryUser>)|(queries <QueryUserList>)]
 	[limittoou <OrgUnitPath>] [deleted_only|only_deleted])
 	[groups] [license|licenses|licence|licences] [emailpart|emailparts|username]
-	[orderby <UserOrderByFieldName> [ascending|descending]] [userview]
-	[allfields|basic|full | ((<UserFieldName>* | fields <UserFieldNameList>) [schemas|custom all|<SchemaNameList>])]
+	[orderby <UserOrderByFieldName> [ascending|descending]]
+	[userview] [allfields|basic|full | (<UserFieldName>* | fields <UserFieldNameList>)]
+	[schemas|custom all|<SchemaNameList>])]
 	[delimiter <Character>] [sortheaders]
 
 gam create verify|verification <DomainName>
