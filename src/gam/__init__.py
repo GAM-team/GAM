@@ -3273,7 +3273,7 @@ def printDriveFileList(users):
                     'orderby', ', '.join(sorted(DRIVEFILE_ORDERBY_CHOICES_MAP)),
                     fieldName)
         elif myarg == 'query':
-            query += f' and {sys.argv[i+1]}'
+            query += f' and ({sys.argv[i+1]})'
             i += 2
         elif myarg == 'fullquery':
             query = sys.argv[i + 1]
