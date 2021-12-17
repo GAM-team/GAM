@@ -458,6 +458,7 @@ DRIVEFILE_FIELDS_CHOICES_MAP = {
     'createddate': 'createdDate',
     'createdtime': 'createdDate',
     'description': 'description',
+    'driveid': 'driveId',
     'editable': 'editable',
     'explicitlytrashed': 'explicitlyTrashed',
     'fileextension': 'fileExtension',

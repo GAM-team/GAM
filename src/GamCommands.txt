@@ -327,6 +327,7 @@ If an item contains spaces, it should be surrounded by ".
 	description|
 	editable|
 	explicitlytrashed|
+	driveid|
 	fileextension|
 	filesize|
 	foldercolorrgb|
