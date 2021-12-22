@@ -168,7 +168,7 @@ jobs:
              "${python}" -V
              "${pip}" -V
 
-      - name: Build and install Python, OpenSSL and PyInstaller
+      - name: Build and install Python and OpenSSL
         if: matrix.goal == 'build' && steps.cache-primes.outputs.cache-hit != 'true'
         run: |
              set +e
@@ -185,6 +185,10 @@ jobs:
              fi
              $pip install --upgrade pip $pipoptions
              $pip install wheel $pipoptions
+
+      - name: Install PyInstaller
+        if: matrix.goal != test
+        run: |
              export url="https://codeload.github.com/pyinstaller/pyinstaller/tar.gz/${PYINSTALLER_VERSION}"
              echo "Downloading ${url}"
              curl -o pyinstaller.tar.gz --compressed "${url}"
@@ -203,8 +207,6 @@ jobs:
                cd ..
              fi
              $pip install .
-             #$python setup.py install
-             #$pip install pyinstaller
 
       - name: Install pip requirements
         run: |
