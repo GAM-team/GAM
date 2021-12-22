@@ -3273,7 +3273,7 @@ def printDriveFileList(users):
                     'orderby', ', '.join(sorted(DRIVEFILE_ORDERBY_CHOICES_MAP)),
                     fieldName)
         elif myarg == 'query':
-            query += f' and {sys.argv[i+1]}'
+            query += f' and ({sys.argv[i+1]})'
             i += 2
         elif myarg == 'fullquery':
             query = sys.argv[i + 1]
@@ -6695,14 +6695,23 @@ def getUserAttributes(i, cd, updateCmd):
             for language in sys.argv[i].replace(',', ' ').split():
                 lang_item = {}
                 if language[-1] == '+':
+                    suffix = '+'
                     language = language[:-1]
                     lang_item['preference'] = 'preferred'
                 elif language[-1] == '-':
+                    suffix = '-'
                     language = language[:-1]
                     lang_item['preference'] = 'not_preferred'
+                else:
+                    suffix = ''
                 if language.lower() in LANGUAGE_CODES_MAP:
                     lang_item['languageCode'] = LANGUAGE_CODES_MAP[language.lower()]
                 else:
+                    if suffix:
+                        controlflow.system_error_exit(
+                            2,
+                            f'suffix {suffix} not allowed with customLanguage {language}'
+                            )
                     lang_item['customLanguage'] = language
                 appendItemToBodyList(body, 'languages', lang_item)
             i += 1
@@ -8775,6 +8784,20 @@ def _get_admin_email():
             )
     return _getValueFromOAuth('email')
 
+def _formatLanguagesList(propertyValue, delimiter):
+    languages = []
+    for language in propertyValue:
+        if 'languageCode' in language:
+            lang = language['languageCode']
+            if language.get('preference') == 'preferred':
+                lang += '+'
+            elif language.get('preference') == 'not_preferred':
+                lang += '-'
+        else:
+            lang = language.get('customLanguage')
+        languages.append(lang)
+    return delimiter.join(languages)
+
 def doGetUserInfo(user_email=None):
 
     def user_lic_result(request_id, response, exception):
@@ -8789,6 +8812,7 @@ def doGetUserInfo(user_email=None):
             i = 4
         else:
             user_email = _get_admin_email()
+    fieldsList = []
     getSchemas = True
     getAliases = True
     getGroups = True
@@ -8819,10 +8843,35 @@ def doGetUserInfo(user_email=None):
             getSchemas = False
             projection = 'basic'
             i += 1
+        elif myarg == 'quick':
+            getAliases = getCIGroups = getGroups = getLicenses = getSchemas = False
+            i += 1
         elif myarg in ['custom', 'schemas']:
             getSchemas = True
-            projection = 'custom'
-            customFieldMask = sys.argv[i + 1]
+            if not fieldsList:
+                fieldsList = ['primaryEmail']
+            fieldsList.append('customSchemas')
+            if sys.argv[i + 1].lower() == 'all':
+                projection = 'full'
+            else:
+                projection = 'custom'
+                customFieldMask = sys.argv[i + 1].replace(' ', ',')
+            i += 2
+        elif myarg in USER_ARGUMENT_TO_PROPERTY_MAP:
+            if not fieldsList:
+                fieldsList = ['primaryEmail',]
+            fieldsList.extend(USER_ARGUMENT_TO_PROPERTY_MAP[myarg])
+            i += 1
+        elif myarg == 'fields':
+            if not fieldsList:
+                fieldsList = ['primaryEmail',]
+            fieldNameList = sys.argv[i + 1]
+            for field in fieldNameList.lower().replace(',', ' ').split():
+                if field in USER_ARGUMENT_TO_PROPERTY_MAP:
+                    fieldsList.extend(USER_ARGUMENT_TO_PROPERTY_MAP[field])
+                else:
+                    controlflow.invalid_argument_exit(field,
+                                                      'gam info users fields')
             i += 2
         elif myarg == 'userview':
             viewType = 'domain_public'
@@ -8836,6 +8885,7 @@ def doGetUserInfo(user_email=None):
                      'get',
                      userKey=user_email,
                      projection=projection,
+                     fields=','.join(set(fieldsList)) if fieldsList else '*',
                      customFieldMask=customFieldMask,
                      viewType=viewType)
     print(f'User: {user["primaryEmail"]}')
@@ -8844,19 +8894,7 @@ def doGetUserInfo(user_email=None):
     if 'name' in user and 'familyName' in user['name']:
         print(f'Last Name: {user["name"]["familyName"]}')
     if 'languages' in user:
-        languages = []
-        for language in user['languages']:
-            if 'languageCode' in language:
-                lang = language['languageCode']
-                if language.get('preference') == 'preferred':
-                    lang += '+'
-                elif language.get('preference') == 'not_preferred':
-                    lang += '-'
-            else:
-                lang = language.get('customLanguage')
-            languages.append(lang)
-        if languages:
-            print(f'Custom Languages: {",".join(languages)}')
+        print(f"Languages: {_formatLanguagesList(user['languages'], ',')}")
     if 'isAdmin' in user:
         print(f'Is a Super Admin: {user["isAdmin"]}')
     if 'isDelegatedAdmin' in user:
@@ -9701,7 +9739,7 @@ def doPrintUsers():
                 projection = 'full'
             else:
                 projection = 'custom'
-                customFieldMask = sys.argv[i + 1]
+                customFieldMask = sys.argv[i + 1].replace(' ', ',')
             i += 2
         elif myarg == 'todrive':
             todrive = True
@@ -9742,17 +9780,13 @@ def doPrintUsers():
             i += 2
         elif myarg in USER_ARGUMENT_TO_PROPERTY_MAP:
             if not fieldsList:
-                fieldsList = [
-                    'primaryEmail',
-                ]
+                fieldsList = ['primaryEmail',]
             display.add_field_to_csv_file(myarg, USER_ARGUMENT_TO_PROPERTY_MAP,
                                           fieldsList, fieldsTitles, titles)
             i += 1
         elif myarg == 'fields':
             if not fieldsList:
-                fieldsList = [
-                    'primaryEmail',
-                ]
+                fieldsList = ['primaryEmail',]
             fieldNameList = sys.argv[i + 1]
             for field in fieldNameList.lower().replace(',', ' ').split():
                 if field in USER_ARGUMENT_TO_PROPERTY_MAP:
@@ -9814,6 +9848,8 @@ def doPrintUsers():
                     if user_email.find('@') != -1:
                         user['primaryEmailLocal'], user[
                             'primaryEmailDomain'] = splitEmailAddress(user_email)
+                if 'languages' in user:
+                    user['languages'] = _formatLanguagesList(user.pop('languages'), ' ')
                 display.add_row_titles_to_csv_file(utils.flatten_json(user),
                                                    csvRows, titles)
     if sortHeaders:

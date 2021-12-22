@@ -8,7 +8,7 @@ import platform
 import re
 
 GAM_AUTHOR = 'Jay Lee <jay0lee@gmail.com>'
-GAM_VERSION = '6.11'
+GAM_VERSION = '6.12'
 GAM_LICENSE = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 GAM_URL = 'https://git.io/gam'
@@ -458,6 +458,7 @@ DRIVEFILE_FIELDS_CHOICES_MAP = {
     'createddate': 'createdDate',
     'createdtime': 'createdDate',
     'description': 'description',
+    'driveid': 'driveId',
     'editable': 'editable',
     'explicitlytrashed': 'explicitlyTrashed',
     'fileextension': 'fileExtension',

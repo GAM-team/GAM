@@ -327,6 +327,7 @@ If an item contains spaces, it should be surrounded by ".
 	description|
 	editable|
 	explicitlytrashed|
+	driveid|
 	fileextension|
 	filesize|
 	foldercolorrgb|
@@ -595,7 +596,7 @@ Items, separated by spaces, with spaces, commas or single quotes in the items th
 <GroupRoleList> ::= "<GroupRole>(,<GroupRole>)*"
 <GuardianStateList> ::= "<GuardianState>(,<GuardianState>)*"
 <LabelNameList> ::= "<LabelName>(,<LabelName)*"
-<LanguageList> ::= "<Language>(,<Language)*"
+<LanguageList> ::= "<Language>[+|-](,<Language>[+|-])*"
 <MatterItemList> ::= "<MatterItem>(,<MatterItem>)*"
 <MembersFieldNameList> ::= "<MembersFieldName>(,<MembersFieldName>)*"
 <MobileList> ::= "<MobileId>(,<MobileId>)*"
@@ -1018,7 +1019,8 @@ gam info customer
 
 gam create datatransfer|transfer <OldOwnerID> <DataTransferServiceList> <NewOwnerID> (<ParameterKey> <ParameterValue>)*
 gam info datatransfer|transfer <TransferID>
-gam print datatransfers|transfers [todrive] [olduser|oldowner <UserItem>] [newuser|newowner <UserItem>] [status <String>]
+gam print datatransfers|transfers [todrive] [olduser|oldowner <UserItem>] [newuser|newowner <UserItem>]
+	[status completed|failed|inprogress]
 
 gam print transferapps
 
@@ -1470,7 +1472,11 @@ gam create user <EmailAddress> <UserAttribute>* [verifynotinvitable]
 gam update user <UserItem> <UserAttribute>* [clearschema <SchemaName>] [clearschema <SchemaName>.<FieldName>] [verifynotinvitable]
 gam delete user <UserItem>
 gam undelete user <UserItem> [org|ou <OrgUnitPath>]
-gam info user [<UserItem>] [noaliases] [nogroups] [nolicenses|nolicences] [noschemas] [schemas|custom <SchemaNameList>] [userview] [skus|sku <SKUIDList>] [grouptree]
+gam info user [<UserItem>]
+	[quick] [noaliases] [nogroups] [nolicenses|nolicences] [noschemas]
+	[skus|sku <SKUIDList>] [grouptree]
+	[userview] <UserFieldName>* [fields <UserFieldNameList>]
+	[schemas|custom all|<SchemaNameList>]
 
 Print fields for selected users; use domain, query/queries and deleted_only to select users to print;
 if none of these options are specified, all users are printed.
@@ -1481,8 +1487,9 @@ gam print users [todrive]
 	([domain <DomainName>] [(query <QueryUser>)|(queries <QueryUserList>)]
 	[limittoou <OrgUnitPath>] [deleted_only|only_deleted])
 	[groups] [license|licenses|licence|licences] [emailpart|emailparts|username]
-	[orderby <UserOrderByFieldName> [ascending|descending]] [userview]
-	[allfields|basic|full | ((<UserFieldName>* | fields <UserFieldNameList>) [schemas|custom all|<SchemaNameList>])]
+	[orderby <UserOrderByFieldName> [ascending|descending]]
+	[userview] [allfields|basic|full | (<UserFieldName>* | fields <UserFieldNameList>)]
+	[schemas|custom all|<SchemaNameList>])]
 	[delimiter <Character>] [sortheaders]
 
 gam create verify|verification <DomainName>
