@@ -9,6 +9,7 @@ from gam.var import YYYYMMDD_FORMAT
 from gam import controlflow
 from gam import display
 from gam import gapi
+from gam import utils
 from gam.gapi.directory import orgunits as gapi_directory_orgunits
 from gam.gapi.directory.cros import _getFilterDate
 
@@ -199,6 +200,79 @@ def printAppDevices():
         device['appType'] = appType
         csvRows.append(device)
     display.write_csv_file(csvRows, titles, 'Chrome Installed Application Devices', todrive)
+
+
+def printShowCrosTelemetry(show=False):
+    cm = build()
+    parent = _get_customerid()
+    todrive = False
+    filter_ = None
+    readMask = []
+    diskpercentonly = False
+    supported_readmask_values = list(cm._rootDesc['schemas']['GoogleChromeManagementV1TelemetryDevice']['properties'].keys())
+    supported_readmask_values.sort()
+    supported_readmask_map = {item.lower():item for item in supported_readmask_values}
+    listLimit = 0
+    i = 3
+    while i < len(sys.argv):
+        myarg = sys.argv[i].lower().replace('_', '')
+        if myarg == 'fields':
+            field_list = sys.argv[i+1].lower().split(',')
+            for field_item in field_list:
+                if field_item not in supported_readmask_map:
+                    controlflow.expected_argument_exit('fields',
+                                                   ', '.join(supported_readmask_values),
+                                                   field_item)
+                else:
+                    readMask.append(supported_readmask_map[field_item])
+            i += 2
+        elif myarg == 'filter':
+            filter_ = sys.argv[i+1]
+            i += 2
+        elif myarg == 'todrive':
+            todrive = True
+            i += 1
+        elif myarg == 'storagepercentonly':
+            diskpercentonly = True
+            i += 1
+        else:
+            msg = f'{myarg} is not a valid argument to "gam print crostelemetry"'
+            controlflow.system_error_exit(3, msg)
+    if not readMask:
+        readMask = ','.join(supported_readmask_values)
+    else:
+        if 'deviceId' not in readMask:
+            readMask.append('deviceId')
+        readMask = ','.join(readMask)
+    gam.printGettingAllItems('Chrome Device Telemetry...', filter_)
+    page_message = gapi.got_total_items_msg('Chrome Device Telemetry', '...\n')
+    devices = gapi.get_all_pages(cm.customers().telemetry().devices(),
+                                 'list',
+                                 'devices',
+                                 page_message=page_message,
+                                 parent=parent,
+                                 filter=filter_,
+                                 readMask=readMask)
+    for device in devices:
+        if 'totalDiskBytes' in device.get('storageInfo', {}) and 'availableDiskBytes' in device.get('storageInfo', {}):
+            disk_avail = int(device['storageInfo']['availableDiskBytes'])
+            disk_size = int(device['storageInfo']['totalDiskBytes'])
+            if diskpercentonly:
+                device['storageInfo'] = {}
+            device['storageInfo']['percentDiskFree'] = int((disk_avail / disk_size) * 100)
+            device['storageInfo']['percentDiskUsed'] = 100 - device['storageInfo']['percentDiskFree']
+    if show:
+        for device in devices:
+            display.print_json(device)
+            print()
+            print()
+    else:
+        csvRows = []
+        titles = []
+        for device in devices:
+           display.add_row_titles_to_csv_file(utils.flatten_json(device),
+                                                   csvRows, titles)
+        display.write_csv_file(csvRows, titles, 'Telemetry Devices', todrive)
 
 
 CHROME_VERSIONS_TITLES = [

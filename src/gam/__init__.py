@@ -10479,9 +10479,10 @@ OAUTH2_SCOPES = [
         'scopes': 'https://www.googleapis.com/auth/admin.directory.device.chromebrowsers',
     },
     {
-        'name': 'Chrome Management API - read only',
+        'name': 'Chrome Management API - read only (2 scopes)',
         'subscope': [],
-        'scopes': ['https://www.googleapis.com/auth/chrome.management.reports.readonly'],
+        'scopes': ['https://www.googleapis.com/auth/chrome.management.reports.readonly',
+                   'https://www.googleapis.com/auth/chrome.management.telemetry.readonly'],
     },
     {
         'name': 'Chrome Policy API',
@@ -11667,6 +11668,8 @@ def ProcessGAMCommand(args):
                 gapi_cloudidentity_groups.print_()
             elif argument == 'devices':
                 gapi_cloudidentity_devices.print_()
+            elif argument == 'crostelemetry':
+                gapi_chromemanagement.printShowCrosTelemetry()
             elif argument in ['groupmembers', 'groupsmembers']:
                 gapi_directory_groups.print_members()
             elif argument in ['cigroupmembers', 'cigroupsmembers']:
@@ -11775,6 +11778,8 @@ def ProcessGAMCommand(args):
                 gapi_chromepolicy.printshow_schemas()
             elif argument in ['chromepolicy', 'chromepolicies']:
                 gapi_chromepolicy.printshow_policies()
+            elif argument == 'crostelemetry':
+                gapi_chromemanagement.printShowCrosTelemetry(True)
             else:
                 controlflow.invalid_argument_exit(argument, 'gam show')
             sys.exit(0)
