@@ -187,25 +187,20 @@ jobs:
              $pip install wheel $pipoptions
 
       - name: Install PyInstaller
-        if: matrix.gamos != 'windows' && matrix.goal != 'test'
+        if: matrix.goal != 'test'
         run: |
              export url="https://codeload.github.com/pyinstaller/pyinstaller/tar.gz/${PYINSTALLER_VERSION}"
              echo "Downloading ${url}"
              curl -o pyinstaller.tar.gz --compressed "${url}"
              tar xf pyinstaller.tar.gz
              cd "pyinstaller-${PYINSTALLER_VERSION}/"
-             if [ $GAMOS != "linux" ]; then
-               # remove pre-compiled bootloaders so we fail if bootloader compile fails
-               rm -rf PyInstaller/bootloader/*bit
-               cd bootloader
-               if [ "${PLATFORM}" == "x86" ]; then
-                 TARGETARCH="--target-arch=32bit"
-               else
-                 TARGETARCH=""
-               fi
-               $python ./waf all $TARGETARCH
-               cd ..
-             fi
+             # remove pre-compiled bootloaders so we fail if bootloader compile fails
+             rm -rf PyInstaller/bootloader/*/*
+             cd bootloader
+             if [ "${PLATFORM}" == "x86" ]; then
+               TARGETARCH="--target-arch=32bit"
+             $python ./waf all $TARGETARCH
+             cd ..
              $pip install .
 
       - name: Install pip requirements
