@@ -95,18 +95,8 @@ else
   pip=~/python/bin/pip3
 
   if ([ "${ImageOS}" == "ubuntu20" ]) && [ "${HOSTTYPE}" == "x86_64" ]; then
-    echo "Installing deps for StaticX..."
-    if [ ! -d patchelf-$PATCHELF_VERSION ]; then
-      echo "Downloading PatchELF $PATCHELF_VERSION"
-      wget https://github.com/NixOS/patchelf/archive/$PATCHELF_VERSION.tar.gz 
-      tar xf $PATCHELF_VERSION.tar.gz
-      cd patchelf-$PATCHELF_VERSION/
-      ./bootstrap.sh
-      ./configure
-      make
-      sudo make install
-    fi
-    $pip install staticx
+    "${python}" -m pip install --upgrade patchelf-wrapper
+    "${python}" -m pip install --upgrade staticx
   fi
 
   cd $whereibelong
