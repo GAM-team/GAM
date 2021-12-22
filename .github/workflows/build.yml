@@ -187,7 +187,7 @@ jobs:
              $pip install wheel $pipoptions
 
       - name: Install PyInstaller
-        if: matrix.goal != test
+        if: matrix.goal != 'test'
         run: |
              export url="https://codeload.github.com/pyinstaller/pyinstaller/tar.gz/${PYINSTALLER_VERSION}"
              echo "Downloading ${url}"
