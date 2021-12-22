@@ -235,6 +235,20 @@ jobs:
              echo "GAM Version ${GAMVERSION}"
              echo "GAMVERSION=${GAMVERSION}" >> $GITHUB_ENV
 
+      - name: Linux package GYB
+        if: matrix.os != 'windows-2022' && matrix.os != 'macos-10.15' && matrix.goal != 'test'
+        run: |
+          this_glibc_ver=$(ldd --version | awk '/ldd/{print $NF}')
+          GAM_ARCHIVE="gam-${GAMVERSION}-linux-$(arch)-glibc${this_glibc_ver}.tar.xz"
+          tar -C dist/ --create --file $GAM_ARCHIVE --xz gam
+
+      - name: MacOS package GYB
+        if: matrix.os == 'macos-10.15' && matrix.goal != 'test'
+        run: |
+          MACOSVERSION=$(defaults read loginwindow SystemVersionStampAsString)
+          GAM_ARCHIVE="gam-${GAMVERSION}-macos-x86_64-MacOS${MACOSVERSION}.tar.xz"
+          tar -C dist/ --create --file $GAM_ARCHIVE --xz gam
+
       - name: Basic Tests build jobs only
         if: matrix.goal != 'test'
         run: |
