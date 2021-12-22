@@ -343,6 +343,7 @@ jobs:
              export sn="$JID$JID$JID$JID-$(openssl rand -base64 32 | sed 's/[^a-zA-Z0-9]//g')"
              $gam create device serialnumber $sn devicetype android
              $gam print cros allfields orderby serialnumber
+             $gam show crostelemetry storagepercentonly
              $gam report usageparameters customer
              $gam report usage customer parameters gmail:num_emails_sent,accounts:num_1day_logins
              $gam report customer todrive
