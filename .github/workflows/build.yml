@@ -77,6 +77,15 @@ jobs:
             jid: 9
             gamos: linux
             platform: x86_64
+          - os: [self-hosted, linux, arm64]
+            jid: 10
+            goal: "self-build"
+            platform: "aarch64"
+          - os: [self-hosted, linux, arm]
+            jid: 11
+            goal: "self-build"
+            platform: "armv7l"
+
 
     steps:
 
@@ -134,8 +143,15 @@ jobs:
           Start-Process -wait -FilePath $python_file -ArgumentList "/quiet","InstallAllUsers=0","TargetDir=c:\\python","AssociateFiles=1","PrependPath=1"
         shell: pwsh
   
-      - name: Set env variables for pre-compiled Python
+      - name: Install packages for test
         if: matrix.goal == 'test'
+        run: |
+          echo "RUNNING: apt update..."
+          sudo apt-get -qq --yes update > /dev/null
+          sudo apt-get -qq --yes install swig libpcsclite-dev
+
+      - name: Set env variables for pre-compiled Python
+        if: matrix.goal != 'build'
         run: |
              export python=$(which python3)
              export pip=$(which pip3)
@@ -146,13 +162,12 @@ jobs:
              echo "pip=${pip}" >> $GITHUB_ENV
              echo "gam=${gam}" >> $GITHUB_ENV
              echo "gampath=${gampath}" >> $GITHUB_ENV
-             echo "RUNNING: apt update..."
-             sudo apt-get -qq --yes update > /dev/null
-             sudo apt-get -qq --yes install swig libpcsclite-dev
              $pip install --upgrade pip
+             "${python}" -V
+             "${pip}" -V
 
       - name: Build and install Python, OpenSSL and PyInstaller
-        if: matrix.goal != 'test' && steps.cache-primes.outputs.cache-hit != 'true'
+        if: matrix.goal == 'build' && steps.cache-primes.outputs.cache-hit != 'true'
         run: |
              set +e
              source ../.github/actions/${GAMOS}-before-install.sh
@@ -190,7 +205,6 @@ jobs:
              #$pip install pyinstaller
 
       - name: Install pip requirements
-        if: matrix.os != 'self-hosted'
         run: |
              set +e
              if [ $GAMOS == "macos" ]; then
@@ -237,7 +251,7 @@ jobs:
 
       - name: Live API tests push only
         if: github.event_name == 'push' || github.event_name == 'schedule'
-        env: # Or as an environment variable
+        env:
           PASSCODE: ${{ secrets.PASSCODE }}
         run: |
              source ../.github/actions/decrypt.sh ../.github/actions/creds.tar.gpg creds.tar
