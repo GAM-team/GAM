@@ -183,7 +183,9 @@ jobs:
         if: matrix.goal != 'test' && matrix.os == 'windows-2022'
         shell: powershell
         run: |
-          & cmd /c 'call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat" && set MAKE=nmake && set > %temp%\vcvars.txt'
+          choco install nasm --no-progress
+          $env:PATH="$ENV:PATH;c:\Program Files\NASM\"
+          cmd /c 'call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat" && set MAKE=nmake && set > %temp%\vcvars.txt'
           Get-Content "$env:temp\vcvars.txt" | Foreach-Object {
            if ($_ -match "^(.*?)=(.*)$") {
              Set-Content "env:\$($matches[1])" $matches[2]
