@@ -180,10 +180,11 @@ jobs:
              $pip install --upgrade pip $pipoptions
              $pip install wheel $pipoptions
 
-      - name: Install Windows 10 SDK
+      - name: Windows SDK Install
+        uses: fbactions/setup-winsdk@v1
         if: matrix.os == 'windows-2022'
-        run: |
-          choco install windows-sdk-10.0
+        with:
+          winsdk-build-version: 20348
 
       - name: Install PyInstaller
         if: matrix.goal != 'test'
