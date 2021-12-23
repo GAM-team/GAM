@@ -193,7 +193,7 @@ jobs:
                TARGETARCH="--target-arch=32bit"
              fi
              $python ./waf all $TARGETARCH
-             cat build\config.log
+             cat build/config.log
              cd ..
              $pip install .
 
