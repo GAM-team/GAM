@@ -181,7 +181,7 @@ jobs:
              $pip install wheel $pipoptions
 
       - name: Windows Install PyInstaller
-        if: matrix.goal != 'test' ^^ matrix.gamos == 'windows'
+        if: matrix.goal != 'test' && matrix.gamos == 'windows'
         shell: powershell
         run: |
           git clone https://github.com/pyinstaller/pyinstaller.git
