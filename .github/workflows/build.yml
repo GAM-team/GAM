@@ -18,7 +18,7 @@ env:
   MIN_OPENSSL_VERSION: "1.1.1l"
   PATCHELF_VERSION: "0.13"
   # PYINSTALLER_VERSION can be full commit hash or version like v4.20
-  PYINSTALLER_VERSION: "86eeca8b4ba8012ab2df19ca206cafbe263b6a81"
+  #PYINSTALLER_VERSION: "86eeca8b4ba8012ab2df19ca206cafbe263b6a81"
 
 jobs:
   build:
@@ -103,7 +103,7 @@ jobs:
           path: |
             ~/python
             ~/ssl
-          key: ${{ matrix.os }}-${{ matrix.jid }}-20211215
+          key: ${{ matrix.os }}-${{ matrix.jid }}-20211222
 
       - name: Set env variables
         env:
@@ -189,11 +189,7 @@ jobs:
       - name: Install PyInstaller
         if: matrix.goal != 'test'
         run: |
-             export url="https://codeload.github.com/pyinstaller/pyinstaller/tar.gz/${PYINSTALLER_VERSION}"
-             echo "Downloading ${url}"
-             curl -o pyinstaller.tar.gz --compressed "${url}"
-             tar xf pyinstaller.tar.gz
-             mv "pyinstaller-${PYINSTALLER_VERSION}/" pyinstaller
+             git clone https://github.com/pyinstaller/pyinstaller.git
              cd pyinstaller
              # remove pre-compiled bootloaders so we fail if bootloader compile fails
              rm -rf PyInstaller/bootloader/*/*
