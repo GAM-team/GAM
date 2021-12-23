@@ -180,12 +180,6 @@ jobs:
              $pip install --upgrade pip $pipoptions
              $pip install wheel $pipoptions
 
-      - name: Windows SDK Install
-        uses: fbactions/setup-winsdk@v1
-        if: matrix.os == 'windows-2022'
-        with:
-          winsdk-build-version: 20348
-
       - name: Install PyInstaller
         if: matrix.goal != 'test'
         run: |
@@ -195,6 +189,7 @@ jobs:
              # remove pre-compiled bootloaders so we fail if bootloader compile fails
              rm -rf PyInstaller/bootloader/*/*
              cd bootloader
+             export DefaultWindowsSDKVersion="10.0.20348.0"
              if [ "${PLATFORM}" == "x86" ]; then
                TARGETARCH="--target-arch=32bit"
              fi
