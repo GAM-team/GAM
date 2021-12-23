@@ -47,12 +47,12 @@ jobs:
             gamos: "windows"
             pyarch: "x64" 
             platform: "x86_64"
-          - os: windows-2022
-            jid: 5
-            goal: "build"
-            gamos: "windows"
-            platform: "x86"
-            pyarch: "x86"
+#          - os: windows-2022
+#            jid: 5
+#            goal: "build"
+#            gamos: "windows"
+#            platform: "x86"
+#            pyarch: "x86"
           - os: ubuntu-20.04
             goal: "test"
             python: "3.6"
