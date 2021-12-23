@@ -197,7 +197,7 @@ jobs:
              if [ "${PLATFORM}" == "x86" ]; then
                TARGETARCH="--target-arch=32bit"
              fi
-             $python ./waf all $TARGETARCH
+             #$python ./waf all $TARGETARCH
              cd ..
              $pip install .
 
