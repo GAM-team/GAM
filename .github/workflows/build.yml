@@ -41,13 +41,13 @@ jobs:
             goal: "build"
             gamos: "macos"
             platform: "universal2"
-          - os: windows-2019
+          - os: windows-2022
             jid: 4
             goal: "build"
             gamos: "windows"
             pyarch: "x64" 
             platform: "x86_64"
-          - os: windows-2019
+          - os: windows-2022
             jid: 5
             goal: "build"
             gamos: "windows"
@@ -126,7 +126,7 @@ jobs:
           architecture: ${{ matrix.pyarch }}
 
       - name: Install Python on Windows
-        if: matrix.os == 'windows-2019'
+        if: matrix.os == 'windows-2022'
         run: |
           if ( ${Env:PLATFORM} -eq "x86_64" )
           {
