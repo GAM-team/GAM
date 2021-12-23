@@ -55,35 +55,29 @@ jobs:
 #            pyarch: "x86"
           - os: ubuntu-20.04
             goal: "test"
-            python: "3.6"
+            python: "3.7"
             jid: 6
             gamos: "linux"
             platform: "x86_64"
           - os: ubuntu-20.04
             goal: "test"
-            python: "3.7"
-            jid: 7
-            gamos: "linux"
-            platform: "x86_64"
-          - os: ubuntu-20.04
-            goal: "test"
             python: "3.8"
-            jid: 8
+            jid: 7
             gamos: "linux"
             platform: "x86_64"
           - os: ubuntu-20.04
             goal: test
             python: "3.9"
-            jid: 9
+            jid: 8
             gamos: linux
             platform: x86_64
           - os: [self-hosted, linux, arm64]
-            jid: 10
+            jid: 9
             goal: "self-build"
             platform: "aarch64"
             gamos: linux
           - os: [self-hosted, linux, arm]
-            jid: 11
+            jid: 10
             goal: "self-build"
             platform: "armv7l"
             gamos: linux
