@@ -193,7 +193,8 @@ jobs:
              echo "Downloading ${url}"
              curl -o pyinstaller.tar.gz --compressed "${url}"
              tar xf pyinstaller.tar.gz
-             cd "pyinstaller-${PYINSTALLER_VERSION}/"
+             mv "pyinstaller-${PYINSTALLER_VERSION}/" pyinstaller
+             cd pyinstaller
              # remove pre-compiled bootloaders so we fail if bootloader compile fails
              rm -rf PyInstaller/bootloader/*/*
              cd bootloader
