@@ -180,7 +180,12 @@ jobs:
              $pip install --upgrade pip $pipoptions
              $pip install wheel $pipoptions
 
-      - name: Mac/Linux Install PyInstaller
+      - name: Install Windows 10 SDK
+        if: matrix.os == 'windows-2022'
+        run: |
+          choco install windows-sdk-10.0
+
+      - name: Install PyInstaller
         if: matrix.goal != 'test'
         run: |
              set +e
