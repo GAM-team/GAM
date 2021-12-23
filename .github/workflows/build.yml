@@ -180,6 +180,18 @@ jobs:
              $pip install --upgrade pip $pipoptions
              $pip install wheel $pipoptions
 
+      - name: Set Windows Powershell env variables
+        if: matrix.goal != 'test' && matrix.os == 'windows-2022'
+        shell: powershell
+        run: |
+          cmd /c 'call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat" && set MAKE=nmake && set > %temp%\vcvars.txt'
+          Get-Content "$env:temp\vcvars.txt" | Foreach-Object {
+           if ($_ -match "^(.*?)=(.*)$") {
+             Set-Content "env:\$($matches[1])" $matches[2]
+             Add-Content -Path $env:GITHUB_ENV -Value "$($matches[1])=$($matches[2])"
+           }
+          }
+
       - name: Install PyInstaller
         if: matrix.goal != 'test'
         run: |
