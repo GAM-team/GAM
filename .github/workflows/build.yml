@@ -188,9 +188,9 @@ jobs:
           cd pyinstaller
           Remove-Item PyInstaller\bootloader\*\*
           cd bootloader
-          python3 ./waf all
+          c:\python\python3 ./waf all
           cd ..
-          python3 -m pip install .
+          c:\python\python3 -m pip install .
 
       - name: Mac/Linux Install PyInstaller
         if: matrix.goal != 'test' && matrix.gamos != 'windows'
