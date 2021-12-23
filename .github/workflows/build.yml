@@ -180,21 +180,10 @@ jobs:
              $pip install --upgrade pip $pipoptions
              $pip install wheel $pipoptions
 
-      - name: Windows Install PyInstaller
-        if: matrix.goal != 'test' && matrix.gamos == 'windows'
-        shell: powershell
-        run: |
-          & "C:\Program Files\Git\bin\git.exe" clone https://github.com/pyinstaller/pyinstaller.git
-          cd pyinstaller
-          Remove-Item PyInstaller\bootloader\*\*
-          cd bootloader
-          c:\python\python.exe ./waf all
-          cd ..
-          c:\python\python.exe -m pip install .
-
       - name: Mac/Linux Install PyInstaller
-        if: matrix.goal != 'test' && matrix.gamos != 'windows'
+        if: matrix.goal != 'test'
         run: |
+             set +e
              git clone https://github.com/pyinstaller/pyinstaller.git
              cd pyinstaller
              # remove pre-compiled bootloaders so we fail if bootloader compile fails
@@ -204,6 +193,7 @@ jobs:
                TARGETARCH="--target-arch=32bit"
              fi
              $python ./waf all $TARGETARCH
+             cat build\config.log
              cd ..
              $pip install .
 
