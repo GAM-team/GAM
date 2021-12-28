@@ -166,7 +166,7 @@ jobs:
         run: |
              set +e
              source ../.github/actions/${GAMOS}-before-install.sh
-             echo "PATH=$PATH" >> $GITHUB_ENV # keep gnutools for MacOS
+             #echo "PATH=$PATH" >> $GITHUB_ENV # keep gnutools for MacOS
              echo "python=$python" >> $GITHUB_ENV
              echo "pip=$pip" >> $GITHUB_ENV
              echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" >> $GITHUB_ENV
