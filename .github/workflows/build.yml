@@ -47,12 +47,12 @@ jobs:
             gamos: "windows"
             pyarch: "x64" 
             platform: "x86_64"
-#          - os: windows-2022
-#            jid: 5
-#            goal: "build"
-#            gamos: "windows"
-#            platform: "x86"
-#            pyarch: "x86"
+          - os: windows-2022
+            jid: 5
+            goal: "build"
+            gamos: "windows"
+            platform: "x86"
+            pyarch: "x86"
           - os: ubuntu-20.04
             goal: "test"
             python: "3.7"
@@ -166,13 +166,13 @@ jobs:
         run: |
              set +e
              source ../.github/actions/${GAMOS}-before-install.sh
-             #echo "PATH=$PATH" >> $GITHUB_ENV # keep gnutools for MacOS
              echo "python=$python" >> $GITHUB_ENV
              echo "pip=$pip" >> $GITHUB_ENV
              echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" >> $GITHUB_ENV
              echo -e "Python: $python\nPip: $pip\nLD_LIB...: $LD_LIBRARY_PATH"
              if [ $GAMOS == "macos" ]; then
-               #export pipoptions='--no-binary ":all:"'
+               export pipoptions='--no-binary ":all:"'
+               echo "PATH=$PATH" >> $GITHUB_ENV # keep gnutools for MacOS
                export MACOSX_DEPLOYMENT_TARGET="10.9"
                export CFLAGS="-arch arm64 -arch x86_64"
              fi
