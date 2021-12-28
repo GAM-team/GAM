@@ -261,6 +261,9 @@ def printShowCrosTelemetry(show=False):
                 device['storageInfo'] = {}
             device['storageInfo']['percentDiskFree'] = int((disk_avail / disk_size) * 100)
             device['storageInfo']['percentDiskUsed'] = 100 - device['storageInfo']['percentDiskFree']
+        for cpuStatusReport in device.get('cpuStatusReport', []):
+            for tempInfo in cpuStatusReport.pop('cpuTemperatureInfo', []):
+                cpuStatusReport[f"cpuTemperatureInfo.{tempInfo['label'].strip()}"] = tempInfo['temperatureCelsius']
     if show:
         for device in devices:
             display.print_json(device)
