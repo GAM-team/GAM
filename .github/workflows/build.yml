@@ -180,7 +180,7 @@ jobs:
              $pip install wheel $pipoptions
 
       - name: Set Windows Powershell env variables
-        if: matrix.goal != 'test' && matrix.os == 'windows-2022'
+        if: matrix.goal != 'test' && matrix.os == 'windows-2022' && matrix.platform == 'x86_64'
         shell: powershell
         run: |
           choco install nasm --no-progress
