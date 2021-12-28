@@ -188,6 +188,9 @@ jobs:
           cmd /c 'call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat" && set MAKE=nmake && set > %temp%\vcvars.txt'
           Get-Content "$env:temp\vcvars.txt" | Foreach-Object {
            if ($_ -match "^(.*?)=(.*)$") {
+             if ($matches[1] -eq "PATH" -or $matches[1] -eq "PLATFORM") {
+               continue
+             }
              Set-Content "env:\$($matches[1])" $matches[2]
              Add-Content -Path $env:GITHUB_ENV -Value "$($matches[1])=$($matches[2])"
            }
