@@ -317,23 +317,23 @@ If an item contains spaces, it should be surrounded by ".
 	lastsync|location|notes|serialnumber|status|supportenddate|user
 
 <CrOSTelemetryFieldName> ::=
-	batteryInfo|
-	batteryStatusReport|
-	cpuInfo|
-	cpuStatusReport|
+	batteryinfo|
+	batterystatusreport|
+	cpuinfo|
+	cpustatusreport|
 	customer|
-	deviceId|
-	graphicsInfo|
-	graphicsStatusReport|
-	memoryInfo|
-	memoryStatusReport|
+	deviceid|
+	graphicsinfo|
+	graphicsstatusreport|
+	memoryinfo|
+	memorystatusreport|
 	name|
-	networkStatusReport|
-	orgUnitId|
-	osUpdateStatus|
-	serialNumber|
-	storageInfo|
-	storageStatusReport
+	networkstatusreport|
+	orgunitid|
+	osupdatestatus|
+	serialnumber|
+	storageinfo|
+	storagestatusreport
 
 <DriveFieldName> ::=
 	appdatacontents|
@@ -1286,11 +1286,13 @@ The start <Date> and end <Date> arguments filter the time ranges.
 Delimiter defaults to comma.
 
 gam show crostelemetry
-	[filter (orgUnitId=<String>)|(serialNumber=<String>)]
-	[fields <CrOSTelemetryFieldNameList>] [storagepercentonly]	
+	[(ou|org|orgunit <OrgUnitItem>)|(cros_sn <SerialNumber>)|(filter <String>)]
+	<CrOSTelemetryFieldName>* [fields <CrOSTelemetryFieldNameList>]
+	[storagepercentonly] [showorgunitpath]
 gam print crostelemetry [todrive]
-	[filter (orgUnitId=<String>)|(serialNumber=<String>)]
-	[fields <CrOSTelemetryFieldNameList>] [storagepercentonly]	
+	[(ou|org|orgunit <OrgUnitItem>)|(cros_sn <SerialNumber>)|(filter <String>)]
+	<CrOSTelemetryFieldName>* [fields <CrOSTelemetryFieldNameList>]
+	[storagepercentonly] [showorgunitpath]
 
 gam print chromeapps [todrive]
 	[ou|org|orgunit <OrgUnitItem>]
