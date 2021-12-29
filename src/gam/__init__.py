@@ -11552,6 +11552,8 @@ def ProcessGAMCommand(args):
                 gapi_directory_resource.getResourceCalendarInfo()
             elif argument == 'cros':
                 gapi_directory_cros.doGetCrosInfo()
+            elif argument == 'crostelemetry':
+                gapi_chromemanagement.printShowCrosTelemetry('info')
             elif argument == 'mobile':
                 gapi_directory_mobiledevices.info()
             elif argument in ['verify', 'verification']:
@@ -11705,7 +11707,7 @@ def ProcessGAMCommand(args):
             elif argument == 'devices':
                 gapi_cloudidentity_devices.print_()
             elif argument == 'crostelemetry':
-                gapi_chromemanagement.printShowCrosTelemetry()
+                gapi_chromemanagement.printShowCrosTelemetry('print')
             elif argument in ['groupmembers', 'groupsmembers']:
                 gapi_directory_groups.print_members()
             elif argument in ['cigroupmembers', 'cigroupsmembers']:
@@ -11815,7 +11817,7 @@ def ProcessGAMCommand(args):
             elif argument in ['chromepolicy', 'chromepolicies']:
                 gapi_chromepolicy.printshow_policies()
             elif argument == 'crostelemetry':
-                gapi_chromemanagement.printShowCrosTelemetry(True)
+                gapi_chromemanagement.printShowCrosTelemetry('show')
             else:
                 controlflow.invalid_argument_exit(argument, 'gam show')
             sys.exit(0)
