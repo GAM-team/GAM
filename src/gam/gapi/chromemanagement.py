@@ -10,6 +10,7 @@ from gam import controlflow
 from gam import display
 from gam import gapi
 from gam import utils
+from gam.gapi import directory as gapi_directory
 from gam.gapi.directory import orgunits as gapi_directory_orgunits
 from gam.gapi.directory.cros import _getFilterDate
 
@@ -204,15 +205,17 @@ def printAppDevices():
 
 def printShowCrosTelemetry(show=False):
     cm = build()
+    cd = None
     parent = _get_customerid()
     todrive = False
     filter_ = None
     readMask = []
+    orgUnitIdPathMap = {}
     diskpercentonly = False
+    showOrgUnitPath = False
     supported_readmask_values = list(cm._rootDesc['schemas']['GoogleChromeManagementV1TelemetryDevice']['properties'].keys())
     supported_readmask_values.sort()
     supported_readmask_map = {item.lower():item for item in supported_readmask_values}
-    listLimit = 0
     i = 3
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
@@ -226,11 +229,25 @@ def printShowCrosTelemetry(show=False):
                 else:
                     readMask.append(supported_readmask_map[field_item])
             i += 2
+        elif myarg in supported_readmask_map:
+            readMask.append(supported_readmask_map[myarg])
+            i += 1
         elif myarg == 'filter':
             filter_ = sys.argv[i+1]
             i += 2
+        elif myarg in ['ou', 'org', 'orgunit']:
+            _, orgUnitId = gapi_directory_orgunits.getOrgUnitId(sys.argv[i + 1], None)
+            filter_ = f'orgUnitId={orgUnitId[3:]}'
+            i += 2
+        elif myarg == 'crossn':
+            filter_ = f'serialNumber={sys.argv[i + 1]}'
+            i += 2
         elif myarg == 'todrive':
             todrive = True
+            i += 1
+        elif myarg == 'showorgunitpath':
+            showOrgUnitPath = True
+            cd = gapi_directory.build()
             i += 1
         elif myarg == 'storagepercentonly':
             diskpercentonly = True
@@ -261,6 +278,14 @@ def printShowCrosTelemetry(show=False):
                 device['storageInfo'] = {}
             device['storageInfo']['percentDiskFree'] = int((disk_avail / disk_size) * 100)
             device['storageInfo']['percentDiskUsed'] = 100 - device['storageInfo']['percentDiskFree']
+        for cpuStatusReport in device.get('cpuStatusReport', []):
+            for tempInfo in cpuStatusReport.pop('cpuTemperatureInfo', []):
+                cpuStatusReport[f"cpuTemperatureInfo.{tempInfo['label'].strip()}"] = tempInfo['temperatureCelsius']
+        if showOrgUnitPath:
+            orgUnitId = device.get('orgUnitId')
+            if orgUnitId not in orgUnitIdPathMap:
+                orgUnitIdPathMap[orgUnitId] = gapi_directory_orgunits.orgunit_from_orgunitid(orgUnitId, cd)
+            device['orgUnitPath'] = orgUnitIdPathMap[orgUnitId]
     if show:
         for device in devices:
             display.print_json(device)

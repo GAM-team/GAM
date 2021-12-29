@@ -316,6 +316,25 @@ If an item contains spaces, it should be surrounded by ".
 <CrOSOrderByFieldName> ::=
 	lastsync|location|notes|serialnumber|status|supportenddate|user
 
+<CrOSTelemetryFieldName> ::=
+	batteryinfo|
+	batterystatusreport|
+	cpuinfo|
+	cpustatusreport|
+	customer|
+	deviceid|
+	graphicsinfo|
+	graphicsstatusreport|
+	memoryinfo|
+	memorystatusreport|
+	name|
+	networkstatusreport|
+	orgunitid|
+	osupdatestatus|
+	serialnumber|
+	storageinfo|
+	storagestatusreport
+
 <DriveFieldName> ::=
 	appdatacontents|
 	cancomment|
@@ -583,6 +602,7 @@ Items, separated by spaces, with spaces, commas or single quotes in the items th
 <CourseStateList> ::= "<CourseState>(,<CourseState>)*"
 <CrOSFieldNameList> ::= "<CrOSFieldName>(,<CrOSFieldName>)*"
 <CrOSIDList> ::= "<CrOSID>(,<CrOSID>)*"
+<CrOSTelemetryFieldNameList> ::= "<CrOSFieldName>(,<CrOSFieldName>)*"
 <DriveFileList> ::= "<DriveFileItem>(,<DriveFileItem>)*"
 <EmailAddressList> ::= "<EmailAddress>(,<EmailAddress>)*"
 <EmailItemList> ::= "<EmailItem>(,<EmailItem>)*"
@@ -1264,6 +1284,15 @@ The default is to include recentusers and timeranges.
 The listlimit <Number> argument limits the number of recent users, time ranges and device files to <Number>; if not specified or <Number> equals zero, there is no limit.
 The start <Date> and end <Date> arguments filter the time ranges.
 Delimiter defaults to comma.
+
+gam show crostelemetry
+	[(ou|org|orgunit <OrgUnitItem>)|(cros_sn <SerialNumber>)|(filter <String>)]
+	<CrOSTelemetryFieldName>* [fields <CrOSTelemetryFieldNameList>]
+	[storagepercentonly] [showorgunitpath]
+gam print crostelemetry [todrive]
+	[(ou|org|orgunit <OrgUnitItem>)|(cros_sn <SerialNumber>)|(filter <String>)]
+	<CrOSTelemetryFieldName>* [fields <CrOSTelemetryFieldNameList>]
+	[storagepercentonly] [showorgunitpath]
 
 gam print chromeapps [todrive]
 	[ou|org|orgunit <OrgUnitItem>]
