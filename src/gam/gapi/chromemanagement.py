@@ -218,6 +218,8 @@ def printShowCrosTelemetry(mode):
     supported_readmask_map = {item.lower():item for item in supported_readmask_values}
     i = 3
     if mode == 'info':
+        if i >= len(sys.argv):
+            controlflow.system_error_exit(3, f'<SerialNumber> required for "gam info crostelemetry"')
         filter_ = f'serialNumber={sys.argv[i]}'
         i += 1
         mode = 'show'
