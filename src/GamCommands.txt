@@ -1285,6 +1285,9 @@ The listlimit <Number> argument limits the number of recent users, time ranges a
 The start <Date> and end <Date> arguments filter the time ranges.
 Delimiter defaults to comma.
 
+gam info crostelemetry <SerialNumber>
+	<CrOSTelemetryFieldName>* [fields <CrOSTelemetryFieldNameList>]
+	[storagepercentonly] [showorgunitpath]
 gam show crostelemetry
 	[(ou|org|orgunit <OrgUnitItem>)|(cros_sn <SerialNumber>)|(filter <String>)]
 	<CrOSTelemetryFieldName>* [fields <CrOSTelemetryFieldNameList>]

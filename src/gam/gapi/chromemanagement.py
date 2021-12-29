@@ -203,7 +203,7 @@ def printAppDevices():
     display.write_csv_file(csvRows, titles, 'Chrome Installed Application Devices', todrive)
 
 
-def printShowCrosTelemetry(show=False):
+def printShowCrosTelemetry(mode):
     cm = build()
     cd = None
     parent = _get_customerid()
@@ -217,6 +217,10 @@ def printShowCrosTelemetry(show=False):
     supported_readmask_values.sort()
     supported_readmask_map = {item.lower():item for item in supported_readmask_values}
     i = 3
+    if mode == 'info':
+        filter_ = f'serialNumber={sys.argv[i]}'
+        i += 1
+        mode = 'show'
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
         if myarg == 'fields':
@@ -286,7 +290,7 @@ def printShowCrosTelemetry(show=False):
             if orgUnitId not in orgUnitIdPathMap:
                 orgUnitIdPathMap[orgUnitId] = gapi_directory_orgunits.orgunit_from_orgunitid(orgUnitId, cd)
             device['orgUnitPath'] = orgUnitIdPathMap[orgUnitId]
-    if show:
+    if mode == 'show':
         for device in devices:
             display.print_json(device)
             print()
