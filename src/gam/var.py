@@ -1291,7 +1291,7 @@ GC_TLS_MAX_VERSION = 'tls_max_ver'
 # Path to certificate authority file for validating TLS hosts
 GC_CA_FILE = 'ca_file'
 
-TLS_MIN = 'TLSv1_2' if hasattr(ssl.SSLContext(), 'minimum_version') else None
+TLS_MIN = 'TLSv1_3' if hasattr(ssl.SSLContext(), 'minimum_version') else None
 GC_Defaults = {
     GC_ADMIN_EMAIL: '',
     GC_AUTO_BATCH_MIN: 0,
