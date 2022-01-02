@@ -37,10 +37,10 @@ def main():
         # to break parallel operations with errors about extra -b
         # command line arguments
         set_start_method('fork')
-    if sys.version_info[0] < 3 or sys.version_info[1] < 6:
+    if sys.version_info[0] < 3 or sys.version_info[1] < 7:
         controlflow.system_error_exit(
             5,
-            f'GAM requires Python 3.6 or newer. You are running %s.%s.%s. Please upgrade your Python version or use one of the binary GAM downloads.'
+            f'GAM requires Python 3.7 or newer. You are running %s.%s.%s. Please upgrade your Python version or use one of the binary GAM downloads.'
             % sys.version_info[:3])
     sys.exit(gam.ProcessGAMCommand(sys.argv))
 
