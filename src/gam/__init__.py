@@ -774,12 +774,12 @@ def doGAMVersion(checkForArgs=True):
     cpu_bits = struct.calcsize('P') * 8
     api_client_ver = lib_version('google-api-python-client')
     print(
-        (f'GAM {GAM_VERSION} - {GAM_URL} - {GM_Globals[GM_GAM_TYPE]}\n'
+        f'GAM {GAM_VERSION} - {GAM_URL} - {GM_Globals[GM_GAM_TYPE]}\n'
          f'{GAM_AUTHOR}\n'
          f'Python {pyversion} {cpu_bits}-bit {sys.version_info.releaselevel}\n'
          f'google-api-python-client {api_client_ver}\n'
          f'{getOSPlatform()} {platform.machine()}\n'
-         f'Path: {GM_Globals[GM_GAM_PATH]}'))
+         f'Path: {GM_Globals[GM_GAM_PATH]}')
     if sys.platform.startswith('win') and \
        cpu_bits == 32 and \
        platform.machine().find('64') != -1:
@@ -4098,7 +4098,7 @@ def downloadDriveFile(users):
                         for sheet in spreadsheet['sheets']:
                             if sheet['properties']['title'].lower(
                             ) == csvSheetTitleLower:
-                                spreadsheetUrl = '{0}?format=csv&id={1}&gid={2}'.format(
+                                spreadsheetUrl = '{}?format=csv&id={}&gid={}'.format(
                                     re.sub('/edit.*$', '/export',
                                            spreadsheet['spreadsheetUrl']),
                                     fileId, sheet['properties']['sheetId'])
@@ -4123,7 +4123,7 @@ def downloadDriveFile(users):
                         while not done:
                             status, done = downloader.next_chunk()
                             if showProgress:
-                                print('Downloaded: {0:>7.2%}'.format(
+                                print('Downloaded: {:>7.2%}'.format(
                                     status.progress()))
                     else:
                         _, content = drive._http.request(uri=spreadsheetUrl,
@@ -4135,7 +4135,7 @@ def downloadDriveFile(users):
                         fileutils.close_file(fh)
                     fileDownloaded = True
                     break
-                except (IOError, httplib2.HttpLib2Error) as e:
+                except (OSError, httplib2.HttpLib2Error) as e:
                     display.print_error(str(e))
                     GM_Globals[GM_SYSEXITRC] = 6
                     fileDownloadFailed = True

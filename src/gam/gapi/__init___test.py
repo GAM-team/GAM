@@ -80,7 +80,7 @@ class GapiTest(unittest.TestCase):
         ]
         self.empty_items_response = {'items': []}
 
-        super(GapiTest, self).setUp()
+        super().setUp()
 
     def test_call_returns_basic_200_response(self):
         response = gapi.call(self.mock_service, self.mock_method_name)

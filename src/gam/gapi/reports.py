@@ -504,9 +504,9 @@ def showReport():
                 purge_parameters = True
                 for event in events:
                     for item in event.get('parameters', []):
-                        if set(item) == set(['value', 'name']):
+                        if set(item) == {'value', 'name'}:
                             event[item['name']] = item['value']
-                        elif set(item) == set(['intValue', 'name']):
+                        elif set(item) == {'intValue', 'name'}:
                             if item['name'] in ['start_time', 'end_time']:
                                 val = item.get('intValue')
                                 if val is not None:
@@ -517,9 +517,9 @@ def showReport():
                                                 val-62135683200).isoformat()
                             else:
                                 event[item['name']] = item['intValue']
-                        elif set(item) == set(['boolValue', 'name']):
+                        elif set(item) == {'boolValue', 'name'}:
                             event[item['name']] = item['boolValue']
-                        elif set(item) == set(['multiValue', 'name']):
+                        elif set(item) == {'multiValue', 'name'}:
                             event[item['name']] = ' '.join(item['multiValue'])
                         elif item['name'] == 'scope_data':
                             parts = {}

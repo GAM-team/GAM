@@ -59,7 +59,7 @@ def open_file(filename,
         # Open a file on disk
         f = _open_file(filename, mode, newline=newline, encoding=encoding)
         if strip_utf_bom:
-            utf_bom = u'\ufeff'
+            utf_bom = '\ufeff'
             has_bom = False
 
             if 'b' in mode:
@@ -79,7 +79,7 @@ def open_file(filename,
 
         return f
 
-    except IOError as e:
+    except OSError as e:
         controlflow.system_error_exit(6, e)
 
 
@@ -101,7 +101,7 @@ def close_file(f, force_flush=False):
     try:
         f.close()
         return True
-    except IOError as e:
+    except OSError as e:
         display.print_error(e)
         return False
 
@@ -140,7 +140,7 @@ def read_file(filename,
                         encoding=encoding) as f:
             return f.read()
 
-    except IOError as e:
+    except OSError as e:
         if continue_on_error:
             if display_errors:
                 display.print_warning(e)
@@ -174,7 +174,7 @@ def write_file(filename,
             f.write(data)
         return True
 
-    except IOError as e:
+    except OSError as e:
         if continue_on_error:
             if display_errors:
                 display.print_error(e)

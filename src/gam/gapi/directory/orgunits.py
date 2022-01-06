@@ -299,7 +299,7 @@ def update():
 
 
 def orgUnitPathQuery(path, checkSuspended):
-    query = "orgUnitPath='{0}'".format(path.replace(
+    query = "orgUnitPath='{}'".format(path.replace(
         "'", "\\'")) if path != '/' else ''
     if checkSuspended is not None:
         query += f' isSuspended={checkSuspended}'

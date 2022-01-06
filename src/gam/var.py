@@ -1076,7 +1076,7 @@ COLLABORATIVE_INBOX_ATTRIBUTES = [
     'favoriteRepliesOnTop',
 ]
 
-GROUP_SETTINGS_LIST_ATTRIBUTES = set([
+GROUP_SETTINGS_LIST_ATTRIBUTES = {
     # ACL choices
     'whoCanAdd',
     'whoCanApproveMembers',
@@ -1117,8 +1117,8 @@ GROUP_SETTINGS_LIST_ATTRIBUTES = set([
     'messageModerationLevel',
     'replyTo',
     'spamModerationLevel',
-])
-GROUP_SETTINGS_BOOLEAN_ATTRIBUTES = set([
+}
+GROUP_SETTINGS_BOOLEAN_ATTRIBUTES = {
     'allowExternalMembers',
     'allowGoogleCommunication',
     'allowWebPosting',
@@ -1131,7 +1131,7 @@ GROUP_SETTINGS_BOOLEAN_ATTRIBUTES = set([
     'membersCanPostAsTheGroup',
     'sendMessageDenyNotification',
     'showInGroupDirectory',
-])
+}
 
 #
 # Global variables

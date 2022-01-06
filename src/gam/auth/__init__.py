@@ -37,7 +37,7 @@ def get_admin_credentials(api=None):
     credential_file = get_admin_credentials_filename()
     if not os.path.isfile(credential_file):
         raise oauth.InvalidCredentialsFileError
-    with open(credential_file, 'r') as f:
+    with open(credential_file) as f:
         creds_data = json.load(f)
     # Validate that enable DASA matches content of authorization file
     if GC_Values[GC_ENABLE_DASA] and 'private_key_id' in creds_data:
