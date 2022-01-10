@@ -96,7 +96,7 @@ jobs:
           path: |
             ~/python
             ~/ssl
-          key: ${{ matrix.os }}-${{ matrix.jid }}-20211228
+          key: ${{ matrix.os }}-${{ matrix.jid }}-20220110
 
       - name: Set env variables
         env:
@@ -171,10 +171,10 @@ jobs:
              echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" >> $GITHUB_ENV
              echo -e "Python: $python\nPip: $pip\nLD_LIB...: $LD_LIBRARY_PATH"
              if [ $GAMOS == "macos" ]; then
-               export pipoptions='--no-binary ":all:"'
+               #export pipoptions='--no-binary ":all:"'
                echo "PATH=$PATH" >> $GITHUB_ENV # keep gnutools for MacOS
                export MACOSX_DEPLOYMENT_TARGET="10.9"
-               export CFLAGS="-arch arm64 -arch x86_64"
+               #export CFLAGS="-arch arm64 -arch x86_64"
              fi
              $pip install --upgrade pip $pipoptions
              $pip install wheel $pipoptions
