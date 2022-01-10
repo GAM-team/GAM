@@ -353,13 +353,13 @@ jobs:
              $gam delete building $newbuilding
              $gam delete group $newgroup
              $gam create alias $newalias user $newuser
+             $gam user $newuser delete license gsuitebusiness
              $gam whatis $newuser
              $gam user $gam_user show tokens
              $gam print exports matter $matterid | $gam csv - gam download export $matterid id:~~id~~
              $gam delete hold "GHA hold $newbase" matter $matterid
              $gam update matter $matterid action close
              $gam update matter $matterid action delete
-             $gam user $newuser delete license gsuitebusiness
              $gam delete user $newuser
              $gam print users query "gha.jid=$JID" | $gam csv - gam delete user ~primaryEmail
              $gam print mobile
