@@ -292,13 +292,13 @@ jobs:
              $gam create group $newgroup name "GHA $JID group" description "This is a description" isarchived true
              $gam update cigroup $newgroup memberrestriction 'member.type == 1 || member.customer_id == groupCustomerId()'
              $gam info cigroup $newgroup
-             $gam user $newuser add license gsuitebusiness
+             $gam user $newuser add license workspaceenterpriseplus
              $gam update group $newgroup add owner $gam_user
              $gam update group $newgroup add member $newuser
              $gam csv sample.csv gam create user ~~email~~ firstname "GHA Bulk" lastname ~~email~~ gha.jid $JID
              $gam csv sample.csv gam update user ~~email~~ recoveryphone 12125121110 recoveryemail jay0lee@gmail.com password random
              $gam csv sample.csv gam update user ~~email~~ recoveryphone "" recoveryemail ""
-             $gam csv sample.csv gam user ~email add license gsuitebusiness
+             $gam csv sample.csv gam user ~email add license workspaceenterpriseplus
              $gam csv sample.csv gam user $gam_user sendemail recipient ~~email~~@pdl.jaylee.us subject "test message $newbase" message "GHA test message"
              $gam csv sample.csv gam update group $newgroup add member ~email
              $gam info group $newgroup
@@ -353,7 +353,7 @@ jobs:
              $gam delete building $newbuilding
              $gam delete group $newgroup
              $gam create alias $newalias user $newuser
-             $gam user $newuser delete license gsuitebusiness
+             $gam user $newuser delete license workspaceenterpriseplus
              $gam whatis $newuser
              $gam user $gam_user show tokens
              $gam print exports matter $matterid | $gam csv - gam download export $matterid id:~~id~~
