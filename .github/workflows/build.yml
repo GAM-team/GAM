@@ -359,6 +359,7 @@ jobs:
              $gam delete hold "GHA hold $newbase" matter $matterid
              $gam update matter $matterid action close
              $gam update matter $matterid action delete
+             $gam user $newuser delete license gsuitebusiness
              $gam delete user $newuser
              $gam print users query "gha.jid=$JID" | $gam csv - gam delete user ~primaryEmail
              $gam print mobile
