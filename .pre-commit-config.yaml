@@ -27,3 +27,9 @@ repos:
     hooks:
     -   id: pylint
         args: [--output-format=colorized]
+
+-   repo: https://github.com/asottile/pyupgrade
+    rev: v2.31.0
+    hooks:
+    -   id: pyupgrade
+        args: [--py37-plus]
