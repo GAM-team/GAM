@@ -54,8 +54,8 @@ cd ~
 
 export python=/usr/local/bin/python3
 export pip=/usr/local/bin/pip3
-SSLVER=$($openssl version)
-SSLRESULT=$?
+#SSLVER=$($openssl version)
+#SSLRESULT=$?
 PYVER=$($python -V)
 PYRESULT=$?
 
