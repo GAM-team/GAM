@@ -3734,7 +3734,7 @@ def getDriveFileAttribute(i, body, parameters, myarg, update=False):
         i += 2
     else:
         controlflow.invalid_argument_exit(
-            myarg, f"gam <users> {operation} drivefile")
+            myarg, f'gam <users> {operation} drivefile')
     return i
 
 

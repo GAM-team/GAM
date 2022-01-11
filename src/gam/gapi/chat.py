@@ -76,7 +76,7 @@ def print_members():
             todrive = True
             i += 1
         else:
-            controlflow.invalid_argument_exit(myarg, "gam print chatmembers")
+            controlflow.invalid_argument_exit(myarg, 'gam print chatmembers')
     if not space:
         controlflow.system_error_exit(2,
                                       'space <ChatSpace> is required.')
@@ -117,7 +117,7 @@ def create_message():
           body['thread'] = {'name': sys.argv[i+1]}
           i += 2
       else:
-          controlflow.invalid_argument_exit(myarg, "gam create chat")
+          controlflow.invalid_argument_exit(myarg, 'gam create chat')
     if not space:
         controlflow.system_error_exit(2,
                                       'space <ChatSpace> is required.')
@@ -151,7 +151,7 @@ def delete_message():
             name = sys.argv[i+1]
             i += 2
         else:
-          controlflow.invalid_argument_exit(myarg, "gam delete chat")
+          controlflow.invalid_argument_exit(myarg, 'gam delete chat')
     if not name:
         controlflow.system_error_exit(2,
                                       'name <String> is required.')
@@ -182,7 +182,7 @@ def update_message():
             name = sys.argv[i+1]
             i += 2
         else:
-          controlflow.invalid_argument_exit(myarg, "gam update chat")
+          controlflow.invalid_argument_exit(myarg, 'gam update chat')
     if not name:
         controlflow.system_error_exit(2,
                                       'name <String> is required.')
