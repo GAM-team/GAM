@@ -94,7 +94,7 @@ jobs:
           path: |
             ~/python
             ~/ssl
-          key: ${{ matrix.os }}-${{ matrix.jid }}-20220111-01
+          key: ${{ matrix.os }}-${{ matrix.jid }}-20220111-02
 
       - name: Set env variables
         env:
@@ -211,9 +211,11 @@ jobs:
              cd bootloader
              export DefaultWindowsSDKVersion="10.0.20348.0"
              if [ "${PLATFORM}" == "x86" ]; then
-               TARGETARCH="--target-arch=32bit"
+               TARGETARCH="32bit"
+             else
+               TARGETARCH="64bit"
              fi
-             $python ./waf all $TARGETARCH
+             $python ./waf all --target-arch=$TARGETARCH
              cat build/config.log
              cd ..
              $pip install . $pipoptions
