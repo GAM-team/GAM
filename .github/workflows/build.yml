@@ -94,7 +94,7 @@ jobs:
           path: |
             ~/python
             ~/ssl
-          key: ${{ matrix.os }}-${{ matrix.jid }}-20220111
+          key: ${{ matrix.os }}-${{ matrix.jid }}-20220111-01
 
       - name: Set env variables
         env:
@@ -173,9 +173,9 @@ jobs:
                echo "PATH=$PATH" >> $GITHUB_ENV # keep gnutools for MacOS
                export MACOSX_DEPLOYMENT_TARGET="10.9"
                export CFLAGS="-arch arm64 -arch x86_64"
-               echo "pipoptions=$pipoptions" >> $GITHUB_ENV
-               echo "MACOSX_DEPLOYMENT_TARGET=$MACOS_DEPLOYMENT_TARGET" >> $GITHUB_ENV
-               echo "CFLAGS=$CGLAGS" >> $GITHUB_ENV
+               echo "pipoptions=${pipoptions}" >> $GITHUB_ENV
+               echo "MACOSX_DEPLOYMENT_TARGET=${MACOSX_DEPLOYMENT_TARGET}" >> $GITHUB_ENV
+               echo "CFLAGS=$CFLAGS}" >> $GITHUB_ENV
              fi
              $pip install --upgrade pip $pipoptions
              $pip install wheel $pipoptions
