@@ -129,4 +129,3 @@ $pip install pyscard
 $python -V
 
 cd $whereibelong
-
