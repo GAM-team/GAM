@@ -215,7 +215,10 @@ jobs:
              else
                TARGETARCH="64bit"
              fi
-             $python ./waf all --target-arch=$TARGETARCH
+             if [ $GAMOS == "macos" ]; then
+               UNIVERsAL="--universal2"
+             fi
+             $python ./waf all --target-arch=$TARGETARCH $UNIVERSAL
              cat build/config.log
              cd ..
              $pip install . $pipoptions
