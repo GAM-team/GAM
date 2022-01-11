@@ -17,8 +17,6 @@ env:
   BUILD_OPENSSL_VERSION: "3.0.1"
   MIN_OPENSSL_VERSION: "1.1.1l"
   PATCHELF_VERSION: "0.13"
-  # PYINSTALLER_VERSION can be full commit hash or version like v4.20
-  #PYINSTALLER_VERSION: "86eeca8b4ba8012ab2df19ca206cafbe263b6a81"
 
 jobs:
   build:
@@ -96,7 +94,7 @@ jobs:
           path: |
             ~/python
             ~/ssl
-          key: ${{ matrix.os }}-${{ matrix.jid }}-20220110
+          key: ${{ matrix.os }}-${{ matrix.jid }}-20220111
 
       - name: Set env variables
         env:
@@ -225,6 +223,8 @@ jobs:
              set +e
              $pip list --outdated --format=freeze | grep -v '^\-e' | cut -d = -f 1  | xargs -n1 $pip install -U --force-reinstall $pipoptions
              $pip install --upgrade -r requirements.txt $pipoptions
+             # yubikey-manager holds cryptography to old version, force upgrade
+             $pip install --upgrade --no-deps cryptography $pipoptions
 
       - name: Build GAM with PyInstaller
         if: matrix.goal != 'test'
