@@ -15,7 +15,7 @@ class CreateHttpTest(unittest.TestCase):
 
     def setUp(self):
         SetGlobalVariables()
-        super(CreateHttpTest, self).setUp()
+        super().setUp()
 
     def test_create_http_sets_default_values_on_http(self):
         http = transport.create_http()
@@ -56,7 +56,7 @@ class TransportTest(unittest.TestCase):
                                                self.mock_content)
         self.mock_credentials = MagicMock()
         self.test_uri = 'http://example.com'
-        super(TransportTest, self).setUp()
+        super().setUp()
 
     @patch.object(transport, 'create_http')
     def test_create_request_uses_default_http(self, mock_create_http):

@@ -13,7 +13,7 @@ class FileutilsTest(unittest.TestCase):
 
     def setUp(self):
         self.fake_path = '/some/path/to/file'
-        super(FileutilsTest, self).setUp()
+        super().setUp()
 
     @patch.object(fileutils.sys, 'stdin')
     def test_open_file_stdin(self, mock_stdin):
@@ -63,7 +63,7 @@ class FileutilsTest(unittest.TestCase):
         self.assertEqual(fileutils.UTF8_SIG, mock_open.call_args[1]['encoding'])
 
     def test_open_file_strips_utf_bom_in_utf(self):
-        bom_prefixed_data = u'\ufefffoobar'
+        bom_prefixed_data = '\ufefffoobar'
         fake_file = io.StringIO(bom_prefixed_data)
         mock_open = MagicMock(spec=open, return_value=fake_file)
         with patch.object(fileutils, 'open', mock_open):
@@ -89,7 +89,7 @@ class FileutilsTest(unittest.TestCase):
             self.assertEqual('foobar', f.read())
 
     def test_open_file_strips_utf_bom_in_binary(self):
-        bom_prefixed_data = u'\ufefffoobar'.encode('UTF-8')
+        bom_prefixed_data = '\ufefffoobar'.encode()
         fake_file = io.BytesIO(bom_prefixed_data)
         mock_open = MagicMock(spec=open, return_value=fake_file)
         with patch.object(fileutils, 'open', mock_open):

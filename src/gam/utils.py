@@ -1,7 +1,3 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import datetime
 import re
 import sys
@@ -32,7 +28,7 @@ class LazyLoader(types.ModuleType):
     self._local_name = local_name
     self._parent_module_globals = parent_module_globals
 
-    super(LazyLoader, self).__init__(name)
+    super().__init__(name)
 
   def _load(self):
     # Import the target module and insert it into the parent's namespace
@@ -123,7 +119,7 @@ def dehtml(text):
 
 
 def indentMultiLineText(message, n=0):
-    return message.replace('\n', '\n{0}'.format(' ' * n)).rstrip()
+    return message.replace('\n', '\n{}'.format(' ' * n)).rstrip()
 
 
 def flatten_json(structure, key='', path='', flattened=None, listLimit=None):

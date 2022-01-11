@@ -90,7 +90,7 @@ class Request(google_auth_httplib2.Request):
     @_force_user_agent(GAM_USER_AGENT)
     def __call__(self, *args, **kwargs):
         """Inserts the GAM user-agent header in requests."""
-        return super(Request, self).__call__(*args, **kwargs)
+        return super().__call__(*args, **kwargs)
 
 
 class AuthorizedHttp(google_auth_httplib2.AuthorizedHttp):
@@ -99,4 +99,4 @@ class AuthorizedHttp(google_auth_httplib2.AuthorizedHttp):
     @_force_user_agent(GAM_USER_AGENT)
     def request(self, *args, **kwargs):
         """Inserts the GAM user-agent header in requests."""
-        return super(AuthorizedHttp, self).request(*args, **kwargs)
+        return super().request(*args, **kwargs)

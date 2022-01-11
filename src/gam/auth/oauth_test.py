@@ -38,7 +38,7 @@ class CredentialsTest(unittest.TestCase):
             'client_id': self.fake_client_id,
             'client_secret': self.fake_client_secret,
         }
-        super(CredentialsTest, self).setUp()
+        super().setUp()
 
     def tearDown(self):
         # Remove any credential files that may have been created.
@@ -46,7 +46,7 @@ class CredentialsTest(unittest.TestCase):
             os.remove(self.fake_filename)
         if os.path.exists('%s.lock' % self.fake_filename):
             os.remove('%s.lock' % self.fake_filename)
-        super(CredentialsTest, self).tearDown()
+        super().tearDown()
 
     def test_from_authorized_user_info_only_required_info(self):
         creds = oauth.Credentials.from_authorized_user_info(
@@ -592,7 +592,7 @@ class ShortUrlFlowTest(unittest.TestCase):
         }
         self.long_url = 'http://example.com/some/long/url'
         self.short_url = 'http://ex.co/short'
-        super(ShortUrlFlowTest, self).setUp()
+        super().setUp()
 
     @patch.object(oauth.google_auth_oauthlib.flow.InstalledAppFlow,
                   'authorization_url')

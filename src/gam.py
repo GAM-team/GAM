@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """Provides backwards compatibility for calling gam as a single .py file"""
 
 import sys

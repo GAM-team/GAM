@@ -755,11 +755,11 @@ def doPrintCrosDevices():
                     cros['autoUpdateExpiration'])
             row = {}
             for attrib in cros:
-                if attrib not in set([
+                if attrib not in {
                         'kind', 'etag', 'tpmVersionInfo', 'recentUsers',
                         'activeTimeRanges', 'deviceFiles', 'cpuStatusReports',
                         'diskVolumeReports', 'systemRamFreeReports'
-                ]):
+                }:
                     row[attrib] = cros[attrib]
             if selectedLists.get('activeTimeRanges'):
                 timergs = cros.get('activeTimeRanges', [])

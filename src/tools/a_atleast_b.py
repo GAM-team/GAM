@@ -7,7 +7,7 @@ a = sys.argv[1]
 b = sys.argv[2]
 result = version.parse(a) >= version.parse(b)
 if result:
-    print('OK: %s is equal or newer than %s' % (a, b))
+    print(f'OK: {a} is equal or newer than {b}')
 else:
-    print('ERROR: %s is older than %s' % (a, b))
+    print(f'ERROR: {a} is older than {b}')
 sys.exit(not result)

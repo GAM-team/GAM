@@ -115,7 +115,7 @@ class Credentials(google.oauth2.credentials.Credentials):
     Raises:
       TypeError: If id_token_data is not the required dict type.
     """
-        super(Credentials, self).__init__(token=token,
+        super().__init__(token=token,
                                           refresh_token=refresh_token,
                                           id_token=id_token,
                                           token_uri=token_uri,
@@ -161,9 +161,9 @@ class Credentials(google.oauth2.credentials.Credentials):
       ValueError: If missing fields are detected in the info.
     """
         # We need all of these keys
-        keys_needed = set(('client_id', 'client_secret'))
+        keys_needed = {'client_id', 'client_secret'}
         # We need 1 or more of these keys
-        keys_need_one_of = set(('refresh_token', 'auth_token', 'token'))
+        keys_need_one_of = {'refresh_token', 'auth_token', 'token'}
         missing = keys_needed.difference(info.keys())
         has_one_of = set(info) & keys_need_one_of
         if missing or not has_one_of:
@@ -472,7 +472,7 @@ class Credentials(google.oauth2.credentials.Credentials):
     def _locked_refresh(self, request):
         """Refreshes the credential's access token while the file lock is held."""
         assert self._lock.is_locked
-        super(Credentials, self).refresh(request)
+        super().refresh(request)
 
     def write(self):
         """Writes credentials to disk."""
@@ -523,12 +523,12 @@ class _ShortURLFlow(google_auth_oauthlib.flow.InstalledAppFlow):
 
     def authorization_url(self, http=None, **kwargs):
         """Gets a shortened authorization URL."""
-        long_url, state = super(_ShortURLFlow, self).authorization_url(**kwargs)
+        long_url, state = super().authorization_url(**kwargs)
         short_url = utils.shorten_url(long_url)
         return short_url, state
 
 
-class _FileLikeThreadLock(object):
+class _FileLikeThreadLock:
     """A threading.lock which has the same interface as filelock.Filelock."""
 
     def __init__(self):

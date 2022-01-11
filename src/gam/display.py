@@ -259,9 +259,9 @@ def write_csv_file(csvRows, titles, list_type, todrive):
                             dialect='nixstdout',
                             extrasaction='ignore')
     try:
-        writer.writerow(dict((item, item) for item in writer.fieldnames))
+        writer.writerow({item: item for item in writer.fieldnames})
         writer.writerows(csvRows)
-    except IOError as e:
+    except OSError as e:
         controlflow.system_error_exit(6, e)
     if todrive:
         admin_email = gam._get_admin_email()
@@ -309,12 +309,12 @@ and follow recommend steps to authorize GAM for Drive access.''')
 
 def print_error(message):
     """Prints a one-line error message to stderr in a standard format."""
-    sys.stderr.write('\n{0}{1}\n'.format(ERROR_PREFIX, message))
+    sys.stderr.write(f'\n{ERROR_PREFIX}{message}\n')
 
 
 def print_warning(message):
     """Prints a one-line warning message to stderr in a standard format."""
-    sys.stderr.write('\n{0}{1}\n'.format(WARNING_PREFIX, message))
+    sys.stderr.write(f'\n{WARNING_PREFIX}{message}\n')
 
 
 def print_json(object_value, spacing=''):
