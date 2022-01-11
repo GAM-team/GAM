@@ -167,18 +167,21 @@ jobs:
              echo "python=$python" >> $GITHUB_ENV
              echo "pip=$pip" >> $GITHUB_ENV
              echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" >> $GITHUB_ENV
-             echo -e "Python: $python\nPip: $pip\nLD_LIB...: $LD_LIBRARY_PATH"
              if [ $GAMOS == "macos" ]; then
-               export pipoptions='--no-binary ":all:"'
+               brew install openssl@1.1 rust
+               export LDFLAGS="-L$(brew --prefix openssl@1.1/lib)"
+               export pipoptions='--no-binary :all:'
                echo "PATH=$PATH" >> $GITHUB_ENV # keep gnutools for MacOS
                export MACOSX_DEPLOYMENT_TARGET="10.9"
-               export CFLAGS="-arch arm64 -arch x86_64"
+               export CFLAGS="-arch arm64 -arch x86_64 -I$(brew --prefix openssl@1.1)/include)"
                echo "pipoptions=${pipoptions}" >> $GITHUB_ENV
                echo "MACOSX_DEPLOYMENT_TARGET=${MACOSX_DEPLOYMENT_TARGET}" >> $GITHUB_ENV
                echo "CFLAGS=${CFLAGS}" >> $GITHUB_ENV
+               echo "LDFLAGS=${LDFLAGS}" >> $GITHUB_ENV
              fi
+             echo -e "Python: $python\nPip: $pip\nLD_LIB...: $LD_LIBRARY_PATH"
              $pip install --upgrade pip $pipoptions
-             $pip install wheel $pipoptions
+             $pip install --upgrade wheel $pipoptions
 
       - name: Set Windows Powershell env variables
         if: matrix.goal != 'test' && matrix.os == 'windows-2022' && matrix.platform == 'x86_64'
