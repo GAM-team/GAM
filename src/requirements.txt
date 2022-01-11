@@ -1,4 +1,3 @@
-yubikey-manager>=4.0.0
 cryptography
 distro; sys_platform == 'linux'
 filelock
@@ -9,5 +8,6 @@ google-auth>=2.3.2
 httplib2>=0.17.0
 importlib.metadata; python_version < '3.8'
 passlib>=1.7.2
-python-dateutil
 pathvalidate
+python-dateutil
+yubikey-manager>=4.0.0
