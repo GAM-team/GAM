@@ -1151,6 +1151,7 @@ gam calendar <CalendarItem> modify <CalendarSettings>+
 	lastPolicyFetchTime|
 	lastRegistrationTime|
 	lastStatusReportTime|
+	machineextensionpolicies|
 	machineName|
 	machinePolicies|
 	orgUnitPath|

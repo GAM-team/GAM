@@ -179,7 +179,7 @@ def build_schemas(svc=None, sfilter=None):
                                       if fdesc.get('field') == setting_name:
                                           for d in fdesc.get('knownValueDescriptions', []):
                                               if d['value'][prefix_len:] == an:
-                                                  setting_dict['descriptions'][i] = d['description']
+                                                  setting_dict['descriptions'][i] = d.get('description', '')
                                                   break
                                           break
                             break
