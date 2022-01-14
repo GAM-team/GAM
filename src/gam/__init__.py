@@ -8196,6 +8196,7 @@ def doUpdateTeamDrive(users):
     teamDriveId = sys.argv[5]
     body = {}
     useDomainAdminAccess = False
+    change_hide = None
     i = 6
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
@@ -8219,6 +8220,15 @@ def doUpdateTeamDrive(users):
         elif myarg == 'asadmin':
             useDomainAdminAccess = True
             i += 1
+        elif myarg in ['ou', 'orgunit']:
+            body['orgUnitId'] = sys.argv[i+1]
+            i += 2
+        elif myarg in ['hidden']:
+            if getBoolean(sys.argv[i+1], myarg):
+                change_hide = 'hide'
+            else:
+                change_hide = 'unhide'
+            i += 2
         elif myarg in TEAMDRIVE_RESTRICTIONS_MAP:
             body.setdefault('restrictions', {})
             body['restrictions'][
@@ -8228,24 +8238,30 @@ def doUpdateTeamDrive(users):
         else:
             controlflow.invalid_argument_exit(sys.argv[i],
                                               'gam <users> update teamdrive')
-    if not body:
+    if not body and not change_hide:
         controlflow.system_error_exit(
             4, 'nothing to update. Need at least a name argument.')
     for user in users:
         user, drive = buildDrive3GAPIObject(user)
         if not drive:
             continue
-        result = gapi.call(drive.drives(),
+        if body:
+            result = gapi.call(drive.drives(),
                            'update',
                            useDomainAdminAccess=useDomainAdminAccess,
                            body=body,
                            driveId=teamDriveId,
                            fields='id',
                            soft_errors=True)
-        if not result:
-            continue
+            if not result:
+                continue
+        if change_hide:
+            ch_result = gapi.call(drive.drives(),
+                    change_hide,
+                    driveId=teamDriveId,
+                    fields='id',
+                    soft_errors=True)
         print(f'Updated Team Drive {teamDriveId}')
-
 
 def printShowTeamDrives(users, csvFormat):
     todrive = False
@@ -12026,6 +12042,8 @@ def ProcessGAMCommand(args):
                 doGetTeamDriveInfo(users)
             elif showWhat in ['contactdelegate', 'contactdelegates']:
                 gapi_contactdelegation.print_(users, False)
+            elif showWhat in ['holds', 'vaultholds']:
+                gapi_vault.showHoldsForUsers(users)
             else:
                 controlflow.invalid_argument_exit(showWhat, 'gam <users> show')
         elif command == 'print':

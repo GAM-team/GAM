@@ -9,6 +9,27 @@ from gam.gapi import directory as gapi_directory
 from gam.gapi import errors as gapi_errors
 
 
+def _getAllParentOrgUnitIdsForUser(user, cd=None):
+    if not cd:
+        cd = gapi_directory.build()
+    parent_path = gapi.call(
+            cd.users(),
+            'get',
+            userKey=user,
+            fields='orgUnitPath',
+            projection='basic').get('orgUnitPath')
+    orgunit_ids = []
+    all_parent_paths = ['/']
+    path_split = parent_path.split('/')
+    for i in range(len(path_split)):
+        a_parent = '/'.join(path_split[:i])
+        if a_parent and a_parent not in all_parent_paths:
+            all_parent_paths.append(a_parent)
+    if parent_path not in all_parent_paths:
+        all_parent_paths.append(parent_path)
+    return [getOrgUnitId(a_parent, cd)[1] for a_parent in all_parent_paths]
+
+
 def create():
     cd = gapi_directory.build()
     name = getOrgUnitItem(sys.argv[3], pathOnly=True, absolutePath=False)

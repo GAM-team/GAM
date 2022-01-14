@@ -667,6 +667,28 @@ def updateHold():
                       accountId=accountId)
 
 
+def showHoldsForUsers(users):
+    v = buildGAPIObject()
+    for user in users:
+        user = user.lower()
+        org_ids = gapi_directory_orgunits._getAllParentOrgUnitIdsForUser(user)
+    matterIds = _getAllMatterIds(v)
+    for matterId in matterIds:
+        holds = gapi.get_all_pages(v.matters().holds(),
+                                   'list',
+                                   'holds',
+                                   fields='holds(holdId,name,accounts,orgUnit),nextPageToken',
+                                   matterId=matterId)
+        for hold in holds:
+            if 'orgUnit' in hold:
+                if hold['orgUnit'].get('orgUnitId') in org_ids:
+                    print(f'FOUND: User\'s OrgUnit is on hold in matterId {matterId} and holdId {hold["holdId"]} named "{hold["name"]}"')
+            else:
+                for account in hold.get('accounts', []):
+                    if user in account.get('email', '').lower():
+                        print(f'FOUND: User account is on hold in matterId {matterId} and holdId {hold["holdId"]} named "{hold["name"]}"')
+
+
 def updateMatter(action=None):
     v = buildGAPIObject()
     matterId = getMatterItem(v, sys.argv[3])
@@ -894,6 +916,19 @@ def printExports():
     display.write_csv_file(csvRows, titles, 'Vault Exports', todrive)
 
 
+def _getAllMatterIds(v=None, state='OPEN'):
+    if not v:
+        v = buildGAPIObject()
+    fields = 'matters(matterId),nextPageToken'
+    results = gapi.get_all_pages(v.matters(),
+            'list',
+            'matters',
+            view='BASIC',
+            state=state,
+            fields=fields)
+    return [matter['matterId'] for matter in results]
+
+
 def printHolds():
     v = buildGAPIObject()
     todrive = False
@@ -914,20 +949,15 @@ def printHolds():
         else:
             controlflow.invalid_argument_exit(myarg, 'gam print holds')
     if not matters:
-        fields = 'matters(matterId),nextPageToken'
-        matters_results = gapi.get_all_pages(v.matters(),
-                                             'list',
-                                             'matters',
-                                             view='BASIC',
-                                             state='OPEN',
-                                             fields=fields)
-        for matter in matters_results:
-            matterIds.append(matter['matterId'])
+        matterIds = _getAllMatterIds(v)
     else:
         for matter in matters:
             matterIds.append(getMatterItem(v, matter))
+    i = 0
+    matter_count = len(matterIds)
     for matterId in matterIds:
-        sys.stderr.write(f'Retrieving holds for matter {matterId}\n')
+        i += 1
+        sys.stderr.write(f'Retrieving holds for matter {matterId} ({i}/{matter_count})\n')
         holds = gapi.get_all_pages(v.matters().holds(),
                                    'list',
                                    'holds',
