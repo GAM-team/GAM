@@ -1,6 +1,6 @@
 GAM is a command line tool for Google Workspace admins to manage domain and user settings quickly and easily.
 
-![Build Status](https://github.com/jay0lee/GAM/workflows/Build%20and%20test%20GAM/badge.svg)
+![Build Status](https://github.com/GAM-team/GAM/workflows/Build%20and%20test%20GAM/badge.svg)
 
 # Quick Start
 
@@ -35,7 +35,7 @@ There is a public chat room hosted in Google Chat. [Instructions to join](https:
 GAM is maintained by [Jay Lee](mailto:jay0lee@gmail.com). Please direct "how do I?" questions to [Google Groups].
 
 [GAM release]: https://git.io/gamreleases
-[GitHub Releases]: https://github.com/jay0lee/GAM/releases
-[GitHub]: https://github.com/jay0lee/GAM/tree/master
-[GitHub Wiki]: https://github.com/jay0lee/GAM/wiki/
+[GitHub Releases]: https://github.com/GAM-team/GAM/releases
+[GitHub]: https://github.com/GAM-team/GAM/tree/master
+[GitHub Wiki]: https://github.com/GAM-team/GAM/wiki/
 [Google Groups]: http://groups.google.com/group/google-apps-manager
