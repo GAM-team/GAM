@@ -9445,13 +9445,6 @@ def doDeprovUser(users):
         print(f'Done deprovisioning {user}')
 
 
-def doDeleteUser():
-    cd = buildGAPIObject('directory')
-    user_email = normalizeEmailAddressOrUID(sys.argv[3])
-    print(f'Deleting account for {user_email}')
-    gapi.call(cd.users(), 'delete', userKey=user_email)
-
-
 def doUndeleteUser():
     cd = buildGAPIObject('directory')
     user = normalizeEmailAddressOrUID(sys.argv[3])
@@ -11626,7 +11619,7 @@ def ProcessGAMCommand(args):
         elif command == 'delete':
             argument = sys.argv[2].lower()
             if argument == 'user':
-                doDeleteUser()
+                gapi_directory_users.delete()
             elif argument == 'group':
                 gapi_directory_groups.delete()
             elif argument == 'device':

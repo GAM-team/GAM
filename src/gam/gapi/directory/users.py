@@ -1,9 +1,26 @@
+import sys
 from time import sleep
 
 import gam
+from gam import display
 from gam import gapi
 from gam.gapi import directory as gapi_directory
 from gam.gapi import errors as gapi_errors
+
+
+def delete():
+    cd = gapi_directory.build()
+    user_email = gam.normalizeEmailAddressOrUID(sys.argv[3])
+    print(f'Deleting account for {user_email}')
+    try:
+        gapi.call(cd.users(),
+                  'delete',
+                  userKey=user_email,
+                  throw_reasons=[gapi_errors.ErrorReason.CONDITION_NOT_MET])
+    except gam.gapi.errors.GapiConditionNotMetError as err:
+        display.print_error(
+            f'{err} The user {user_email} may be (or have recently been) on Google Vault Hold and thus not eligible for deletion. You can check holds with "gam user <email> show vaultholds".'
+        )
 
 
 def get_primary(email):
