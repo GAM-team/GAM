@@ -17,11 +17,11 @@ GAM_INFO = (
     f'Python {platform.python_version()} {sys.version_info.releaselevel} / '
     f'{platform.platform()} {platform.machine()}')
 
-GAM_RELEASES = 'https://github.com/jay0lee/GAM/releases'
-GAM_WIKI = 'https://github.com/jay0lee/GAM/wiki'
-GAM_ALL_RELEASES = 'https://api.github.com/repos/jay0lee/GAM/releases'
+GAM_RELEASES = 'https://github.com/GAM-team/GAM/releases'
+GAM_WIKI = 'https://github.com/GAM-team/GAM/wiki'
+GAM_ALL_RELEASES = 'https://api.github.com/repos/GAM-team/GAM/releases'
 GAM_LATEST_RELEASE = GAM_ALL_RELEASES + '/latest'
-GAM_PROJECT_FILEPATH = 'https://raw.githubusercontent.com/jay0lee/GAM/master/src/'
+GAM_PROJECT_FILEPATH = 'https://raw.githubusercontent.com/GAM-team/GAM/master/src/'
 
 true_values = ['on', 'yes', 'enabled', 'true', '1']
 false_values = ['off', 'no', 'disabled', 'false', '0']
