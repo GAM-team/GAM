@@ -143,9 +143,9 @@ case $gamos in
 esac
 
 if [ "$gamversion" == "latest" -o "$gamversion" == "prerelease" -o "$gamversion" == "draft" ]; then
-  release_url="https://api.github.com/repos/jay0lee/GAM/releases"
+  release_url="https://api.github.com/repos/GAM-team/GAM/releases"
 else
-  release_url="https://api.github.com/repos/jay0lee/GAM/releases/tags/v$gamversion"
+  release_url="https://api.github.com/repos/GAM-team/GAM/releases/tags/v$gamversion"
 fi
 
 if [ -z ${GHCLIENT+x} ]; then
