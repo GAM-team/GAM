@@ -12,6 +12,7 @@ from gam import display
 from gam import fileutils
 from gam import gapi
 from gam.gapi import storage as gapi_storage
+from gam.gapi import directory as gapi_directory
 from gam.gapi.directory import orgunits as gapi_directory_orgunits
 from gam import utils
 
@@ -668,26 +669,34 @@ def updateHold():
 
 
 def showHoldsForUsers(users):
+    cd = gapi_directory.build()
     v = buildGAPIObject()
+    matterIds = _getAllMatterIds(v)
+    matterHolds = {}
+    for matterId in matterIds:
+        matterHolds[matterId] = gapi.get_all_pages(v.matters().holds(),
+                                                   'list',
+                                                   'holds',
+                                                   fields='holds(holdId,name,accounts(accountId,email),orgUnit),nextPageToken',
+                                                   matterId=matterId)
+    totalHolds = 0
     for user in users:
         user = user.lower()
-        org_ids = gapi_directory_orgunits._getAllParentOrgUnitIdsForUser(user)
-    matterIds = _getAllMatterIds(v)
-    for matterId in matterIds:
-        holds = gapi.get_all_pages(v.matters().holds(),
-                                   'list',
-                                   'holds',
-                                   fields='holds(holdId,name,accounts,orgUnit),nextPageToken',
-                                   matterId=matterId)
-        for hold in holds:
-            if 'orgUnit' in hold:
-                if hold['orgUnit'].get('orgUnitId') in org_ids:
-                    print(f'FOUND: User\'s OrgUnit is on hold in matterId {matterId} and holdId {hold["holdId"]} named "{hold["name"]}"')
-            else:
-                for account in hold.get('accounts', []):
-                    if user == account.get('email', '').lower():
-                        print(f'FOUND: User account is on hold in matterId {matterId} and holdId {hold["holdId"]} named "{hold["name"]}"')
-                        break
+        orgUnits = gapi_directory_orgunits._getAllParentOrgUnitsForUser(user, cd)
+        for matterId in matterIds:
+            for hold in matterHolds[matterId]:
+                if 'orgUnit' in hold:
+                    orgUnitId = hold['orgUnit'].get('orgUnitId')
+                    if orgUnitId in orgUnits:
+                        print(f'FOUND: OrgUnit {orgUnits[orgUnitId]} for user {user} is on hold in matterId {matterId} and holdId {hold["holdId"]} named "{hold["name"]}"')
+                        totalHolds += 1
+                else:
+                    for account in hold.get('accounts', []):
+                        if (user == account.get('email', '').lower()) or (user == account.get('accountId', '')):
+                            print(f'FOUND: User account {user} is on hold in matterId {matterId} and holdId {hold["holdId"]} named "{hold["name"]}"')
+                            totalHolds += 1
+                            break
+    sys.stdout.write(f'Total Holds: {totalHolds}\n')
 
 
 def updateMatter(action=None):

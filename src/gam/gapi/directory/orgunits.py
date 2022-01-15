@@ -9,25 +9,30 @@ from gam.gapi import directory as gapi_directory
 from gam.gapi import errors as gapi_errors
 
 
-def _getAllParentOrgUnitIdsForUser(user, cd=None):
+def _getAllParentOrgUnitsForUser(user, cd=None):
     if not cd:
         cd = gapi_directory.build()
-    parent_path = gapi.call(
-            cd.users(),
-            'get',
-            userKey=user,
-            fields='orgUnitPath',
-            projection='basic').get('orgUnitPath')
-    orgunit_ids = []
-    all_parent_paths = ['/']
-    path_split = parent_path.split('/')
-    for i in range(len(path_split)):
-        a_parent = '/'.join(path_split[:i])
-        if a_parent and a_parent not in all_parent_paths:
-            all_parent_paths.append(a_parent)
-    if parent_path not in all_parent_paths:
-        all_parent_paths.append(parent_path)
-    return [getOrgUnitId(a_parent, cd)[1] for a_parent in all_parent_paths]
+    parent_path = gapi.call(cd.users(),
+                            'get',
+                            userKey=user,
+                            fields='orgUnitPath',
+                            projection='basic')['orgUnitPath']
+    if parent_path == '/':
+        orgUnitPath, orgUnitId = getOrgUnitId('/', cd)
+        return {orgUnitId: orgUnitPath}
+    parent_path = encodeOrgUnitPath(makeOrgUnitPathRelative(parent_path))
+    orgUnits = {}
+    while True:
+        result = gapi.call(cd.orgunits(),
+                           'get',
+                           customerId=GC_Values[GC_CUSTOMER_ID],
+                           orgUnitPath=parent_path,
+                           fields='orgUnitId,orgUnitPath,parentOrgUnitId')
+        orgUnits[result['orgUnitId']] = result['orgUnitPath']
+        if 'parentOrgUnitId' not in result:
+            break
+        parent_path = result['parentOrgUnitId']
+    return orgUnits
 
 
 def create():
