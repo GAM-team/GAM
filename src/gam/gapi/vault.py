@@ -677,7 +677,7 @@ def showHoldsForUsers(users):
         matterHolds[matterId] = gapi.get_all_pages(v.matters().holds(),
                                                    'list',
                                                    'holds',
-                                                   fields='holds(holdId,name,accounts(email),orgUnit),nextPageToken',
+                                                   fields='holds(holdId,name,accounts(accountId,email),orgUnit),nextPageToken',
                                                    matterId=matterId)
     totalHolds = 0
     for user in users:
@@ -692,11 +692,11 @@ def showHoldsForUsers(users):
                         totalHolds += 1
                 else:
                     for account in hold.get('accounts', []):
-                        if user == account.get('email', '').lower():
+                        if (user == account.get('email', '').lower()) or (user == account.get('accountId', '')):
                             print(f'FOUND: User account {user} is on hold in matterId {matterId} and holdId {hold["holdId"]} named "{hold["name"]}"')
                             totalHolds += 1
                             break
-    sys.exit(totalHolds)
+    sys.stdout.write(f'Total Holds: {totalHolds}\n')
 
 
 def updateMatter(action=None):
