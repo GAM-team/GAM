@@ -69,11 +69,11 @@ jobs:
             jid: 8
             gamos: linux
             platform: x86_64
-          #- os: [self-hosted, linux, arm64]
-          #  jid: 9
-          #  goal: "self-build"
-          #  platform: "aarch64"
-          #  gamos: linux
+          - os: [self-hosted, linux, arm64]
+            jid: 9
+            goal: "self-build"
+            platform: "aarch64"
+            gamos: linux
           - os: [self-hosted, linux, arm]
             jid: 10
             goal: "self-build"
