@@ -8220,8 +8220,8 @@ def doUpdateTeamDrive(users):
         elif myarg == 'asadmin':
             useDomainAdminAccess = True
             i += 1
-        elif myarg in ['ou', 'orgunit']:
-            body['orgUnitId'] = sys.argv[i+1]
+        elif myarg in ['ou', 'org', 'orgunit']:
+            body['orgUnitId'] = gapi_directory_orgunits.getOrgUnitId(sys.argv[i + 1])
             i += 2
         elif myarg in ['hidden']:
             if getBoolean(sys.argv[i+1], myarg):
