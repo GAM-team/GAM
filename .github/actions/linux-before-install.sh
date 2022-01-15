@@ -67,9 +67,8 @@ if [ $SSLRESULT -ne 0 ] || [[ "$SSLVER" != "OpenSSL $BUILD_OPENSSL_VERSION "* ]]
   tar xf "Python-${BUILD_PYTHON_VERSION}.tar.xz"
   cd Python-$BUILD_PYTHON_VERSION
   echo "Compiling Python $BUILD_PYTHON_VERSION..."
-  safe_flags="--with-openssl=$HOME/ssl --enable-shared --prefix=$HOME/python --with-ensurepip=upgrade"
-  unsafe_flags="--enable-optimizations --with-lto --with-openssl=~/ssl --with-openssl-rpath=~~/ssl/lib"
-  ./configure $safe_flags $unsafe_flags > /dev/null
+  flags="--with-openssl=${HOME}/ssl --with-openssl=${HOME}/ssl --with-openssl-rpath=${HOME}/ssl/lib --enable-shared --prefix=${HOME}/python --with-ensurepip=upgrade --enable-optimizations --with-lto"
+  ./configure $flags > /dev/null
   make -j$cpucount -s
   echo "Installing Python..."
   make install > /dev/null
