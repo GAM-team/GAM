@@ -119,6 +119,7 @@ jobs:
       - name: Install Python on Windows
         if: matrix.os == 'windows-2022'
         run: |
+          $Env:BUILD_PYTHON_VERSION = "3.10.1"
           if ( ${Env:PLATFORM} -eq "x86_64" )
           {
             Set-Variable -name py_arch -value "-amd64"
