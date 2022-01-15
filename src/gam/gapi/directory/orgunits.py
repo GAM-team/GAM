@@ -18,10 +18,8 @@ def _getAllParentOrgUnitsForUser(user, cd=None):
                             fields='orgUnitPath',
                             projection='basic')['orgUnitPath']
     if parent_path == '/':
-        topLevelOrgId = getTopLevelOrgId(cd, '/')
-        if topLevelOrgId:
-            return {topLevelOrgId: '/'}
-        return {'/': '/'}  #Bogus but should never happen
+        orgUnitPath, orgUnitId = getOrgUnitId('/', cd)
+        return {orgUnitId: orgUnitPath}
     parent_path = encodeOrgUnitPath(makeOrgUnitPathRelative(parent_path))
     orgUnits = {}
     while True:
