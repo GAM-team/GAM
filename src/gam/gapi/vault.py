@@ -685,8 +685,9 @@ def showHoldsForUsers(users):
                     print(f'FOUND: User\'s OrgUnit is on hold in matterId {matterId} and holdId {hold["holdId"]} named "{hold["name"]}"')
             else:
                 for account in hold.get('accounts', []):
-                    if user in account.get('email', '').lower():
+                    if user == account.get('email', '').lower():
                         print(f'FOUND: User account is on hold in matterId {matterId} and holdId {hold["holdId"]} named "{hold["name"]}"')
+                        break
 
 
 def updateMatter(action=None):

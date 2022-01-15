@@ -1572,6 +1572,7 @@ gam update vaulthold|hold <HoldItem> matter <MatterItem> [query <QueryVaultCorpu
 gam delete vaulthold|hold <HoldItem> matter <MatterItem>
 gam info vaulthold|hold <HoldItem> matter <MatterItem>
 gam print vaultholds|holds [todrive] [matters <MatterItemList>]
+gam <UserTypeEntity> show vaultholds|holds
 
 gam create vaultmatter|matter [name <String>] [description <string>]
 	[collaborator|collaborators <CollaboratorItemList>]
@@ -1762,6 +1763,7 @@ gam <UserTypeEntity> create|add teamdrive <Name>
 gam <UserTypeEntity> update teamdrive <TeamDriveID> [asadmin] [name <Name>]
 	[(theme|themeid <String>) | ([customtheme <DriveFileID> <Float> <Float> <Float>] [color <ColorValue>])]
 	(<TeamDriveRestrictionsSubfieldName> <Boolean>)*
+	[hidden <Boolean>]
 gam <UserTypeEntity> delete teamdrive <TeamDriveID>
 gam <UserTypeEntity> show teamdriveinfo <TeamDriveID> [asadmin]
 gam <UserTypeEntity> show teamdrives [query <QueryTeamDrive>] [asadmin]
