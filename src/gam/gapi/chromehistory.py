@@ -203,7 +203,7 @@ def printHistory():
         if 'channel' in citem:
             citem['channel'] = citem['channel'].lower()
         else:
-            channel_match = re.search(r"\/channels\/([^/]*)", citem['name'])
+            channel_match = re.search(r'\/channels\/([^/]*)', citem['name'])
             if channel_match:
                 try:
                     citem['channel'] = channel_match.group(1)
@@ -212,7 +212,7 @@ def printHistory():
         if 'platform' in citem:
             citem['platform'] = citem['platform'].lower()
         else:
-            platform_match = re.search(r"\/platforms\/([^/]*)", citem['name'])
+            platform_match = re.search(r'\/platforms\/([^/]*)', citem['name'])
             if platform_match:
                 try:
                     citem['platform'] = platform_match.group(1)

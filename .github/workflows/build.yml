@@ -43,7 +43,7 @@ jobs:
             jid: 4
             goal: "build"
             gamos: "windows"
-            pyarch: "x64" 
+            pyarch: "x64"
             platform: "x86_64"
           - os: windows-2022
             jid: 5
@@ -136,7 +136,7 @@ jobs:
           Invoke-WebRequest -Uri $python_url -OutFile $python_file
           Start-Process -wait -FilePath $python_file -ArgumentList "/quiet","InstallAllUsers=0","TargetDir=c:\\python","AssociateFiles=1","PrependPath=1"
         shell: pwsh
-  
+
       - name: Install packages for test
         if: matrix.goal == 'test'
         run: |

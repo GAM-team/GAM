@@ -4,13 +4,13 @@
       "scopes": {
         "https://www.googleapis.com/auth/admin.contact.delegation": {
           "description": "View and manage your Contact Delegation"
-        }, 
+        },
         "https://www.googleapis.com/auth/admin.contact.delegation.readonly": {
           "description": "View your Contact Delegation"
         }
       }
     }
-  }, 
+  },
   "basePath": "",
   "baseUrl": "https://admin.googleapis.com/admin/contacts/v1/",
   "batchPath": "batch",

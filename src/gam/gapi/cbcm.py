@@ -211,7 +211,7 @@ def update():
     browser.update(body)
     result = gapi.call(cbcm.chromebrowsers(), 'update', deviceId=device_id,
                        customer=customer_id, body=browser,
-                       projection='BASIC', fields="deviceId")
+                       projection='BASIC', fields='deviceId')
     print(f'Updated browser {result["deviceId"]}')
 
 

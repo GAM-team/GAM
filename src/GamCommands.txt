@@ -1335,7 +1335,7 @@ gam print chromeversions [todrive]
 	name|
 	platform|
 	version|
-<ChromeReleasesOrderByFieldName> ::= 
+<ChromeReleasesOrderByFieldName> ::=
 	channel|
 	endtime|
 	fraction|
@@ -1364,7 +1364,7 @@ gam show chromeschema [filter <String>]
 <DeviceID> ::= devices/<String>
 <DeviceType> ::= android|chrome_os|google_sync|ios|linux|mac_os|windows
 <DeviceUserID> ::= devices/<String>/deviceUsers/<String>
-<DeviceOrderbyFieldName> ::= 
+<DeviceOrderbyFieldName> ::=
 	createtime|devicetype|lastsynctime|model|osversion|serialnumber
 
 gam create device serialnumber <String> devicetype <DeviceType> [assetid <String>]

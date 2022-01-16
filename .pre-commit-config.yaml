@@ -1,7 +1,4 @@
 # See https://pre-commit.com for more information
-# See https://pre-commit.com/hooks.html for more hooks
-default_language_version:
-    python: python3.7
 
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
@@ -27,3 +24,9 @@ repos:
     hooks:
     -   id: pylint
         args: [--output-format=colorized]
+
+-   repo: https://github.com/asottile/pyupgrade
+    rev: v2.31.0
+    hooks:
+    -   id: pyupgrade
+        args: [--py37-plus]
