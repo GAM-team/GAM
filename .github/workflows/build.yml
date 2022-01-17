@@ -13,10 +13,9 @@ defaults:
 
 env:
   BUILD_PYTHON_VERSION: "3.10.2"
-  MIN_PYTHON_VERSION: "3.10.1"
+  MIN_PYTHON_VERSION: "3.10.2"
   BUILD_OPENSSL_VERSION: "3.0.1"
-  MIN_OPENSSL_VERSION: "1.1.1l"
-  PATCHELF_VERSION: "0.13"
+  MIN_OPENSSL_VERSION: "1.1.1m"
 
 jobs:
   build:
@@ -119,7 +118,6 @@ jobs:
       - name: Install Python on Windows
         if: matrix.os == 'windows-2022'
         run: |
-          $Env:BUILD_PYTHON_VERSION = "3.10.1"
           if ( ${Env:PLATFORM} -eq "x86_64" )
           {
             Set-Variable -name py_arch -value "-amd64"
