@@ -46,16 +46,16 @@ if [ $SSLRESULT -ne 0 ] || [[ "$SSLVER" != "OpenSSL $BUILD_OPENSSL_VERSION "* ]]
     sudo apt-get -qq --yes update > /dev/null
     sudo apt-get -qq --yes build-dep python3 > /dev/null
   fi
-  
+
   # Compile latest OpenSSL
   curl -O --silent "https://www.openssl.org/source/openssl-${BUILD_OPENSSL_VERSION}.tar.gz"
   echo "Extracting OpenSSL..."
-  tar xf openssl-$BUILD_OPENSSL_VERSION.tar.gz
-  cd openssl-$BUILD_OPENSSL_VERSION
+  tar xf openssl-"$BUILD_OPENSSL_VERSION".tar.gz
+  cd openssl-"$BUILD_OPENSSL_VERSION"
   echo "Compiling OpenSSL $BUILD_OPENSSL_VERSION..."
-  ./Configure --libdir=lib --prefix=$HOME/ssl
+  ./Configure --libdir=lib --prefix="$HOME"/ssl
   echo "Running make for OpenSSL..."
-  make -j$cpucount -s
+  make -j"$cpucount" -s
   echo "Running make install for OpenSSL..."
   make install > /dev/null
   cd ~
@@ -65,22 +65,21 @@ if [ $SSLRESULT -ne 0 ] || [[ "$SSLVER" != "OpenSSL $BUILD_OPENSSL_VERSION "* ]]
   curl -O --silent "https://www.python.org/ftp/python/${BUILD_PYTHON_VERSION}/Python-${BUILD_PYTHON_VERSION}.tar.xz"
   echo "Extracting Python..."
   tar xf "Python-${BUILD_PYTHON_VERSION}.tar.xz"
-  cd Python-$BUILD_PYTHON_VERSION
+  cd Python-"$BUILD_PYTHON_VERSION"
   echo "Compiling Python $BUILD_PYTHON_VERSION..."
   export flags="--with-openssl=${HOME}/ssl --enable-shared --prefix=${HOME}/python --with-ensurepip=upgrade --enable-optimizations --with-lto"
-  ./configure $flags > /dev/null
-  make -j$cpucount -s
+  ./configure "$flags" > /dev/null
+  make -j"$cpucount" -s
   echo "Installing Python..."
   make install > /dev/null
   cd ~
 fi
 
 python="${HOME}/python/bin/python3"
-pip="${HOME}/python/bin/pip3"
 
 if ([ "${ImageOS}" == "ubuntu20" ]) && [ "${HOSTTYPE}" == "x86_64" ]; then
   "${python}" -m pip install --upgrade patchelf-wrapper
   "${python}" -m pip install --upgrade staticx
 fi
 
-cd $whereibelong
+cd "$whereibelong"

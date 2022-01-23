@@ -44,8 +44,8 @@ class CredentialsTest(unittest.TestCase):
         # Remove any credential files that may have been created.
         if os.path.exists(self.fake_filename):
             os.remove(self.fake_filename)
-        if os.path.exists('%s.lock' % self.fake_filename):
-            os.remove('%s.lock' % self.fake_filename)
+        if os.path.exists(f'{self.fake_filename}.lock'):
+            os.remove(f'{self.fake_filename}.lock')
         super().tearDown()
 
     def test_from_authorized_user_info_only_required_info(self):
@@ -126,7 +126,7 @@ class CredentialsTest(unittest.TestCase):
                                   client_secret=self.fake_client_secret,
                                   filename=self.fake_filename)
         self.assertIsInstance(creds._lock, oauth.FileLock)
-        self.assertEqual(creds._lock.lock_file, '%s.lock' % creds.filename)
+        self.assertEqual(creds._lock.lock_file, f'{creds.filename}.lock')
 
     def test_credentials_uses_thread_lock_when_filename_not_provided(self):
         creds = oauth.Credentials(token=self.fake_token,
@@ -540,7 +540,7 @@ class CredentialsTest(unittest.TestCase):
                                   client_id=self.fake_client_id,
                                   client_secret=self.fake_client_secret,
                                   filename=self.fake_filename)
-        lock_file = '%s.lock' % creds.filename
+        lock_file = f'{creds.filename}.lock'
         creds.write()
         self.assertTrue(os.path.exists(lock_file))
         creds.delete()
@@ -564,9 +564,9 @@ class CredentialsTest(unittest.TestCase):
         creds.revoke(http=mock_http)
 
         uri = mock_http.request.call_args[0][0]
-        self.assertRegex(uri, '^%s' % oauth.Credentials._REVOKE_TOKEN_BASE_URI)
+        self.assertRegex(uri, f'^{oauth.Credentials._REVOKE_TOKEN_BASE_URI}')
         params = uri[uri.index('?'):]
-        self.assertIn('token=%s' % creds.refresh_token, params)
+        self.assertIn(f'token={creds.refresh_token}', params)
         self.assertEqual('GET', mock_http.request.call_args[0][1])
 
 

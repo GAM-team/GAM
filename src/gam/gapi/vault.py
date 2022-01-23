@@ -822,8 +822,7 @@ def downloadExport():
         done = False
         while not done:
             status, done = downloader.next_chunk()
-            sys.stdout.write(' Downloaded: {:>7.2%}\r'.format(
-                status.progress()))
+            sys.stdout.write(f' Downloaded: {status.progress():>7.2%}\r')
             sys.stdout.flush()
         sys.stdout.write('\n Download complete. Flushing to disk...\n')
         fileutils.close_file(f, True)

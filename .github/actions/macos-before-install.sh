@@ -24,9 +24,9 @@ cd ~
 # with older MacOS versions
 export pyfile=python-$BUILD_PYTHON_VERSION-macos11.pkg
 
-wget https://www.python.org/ftp/python/$BUILD_PYTHON_VERSION/$pyfile
+wget https://www.python.org/ftp/python/"$BUILD_PYTHON_VERSION"/"$pyfile"
 echo "installing Python $BUILD_PYTHON_VERSION..."
-sudo installer -pkg ./$pyfile -target /
+sudo installer -pkg ./"$pyfile" -target /
 
 # This fixes https://github.com/pyinstaller/pyinstaller/issues/5062
 #codesign --remove-signature /Library/Frameworks/Python.framework/Versions/3.10/Python
@@ -128,4 +128,4 @@ $pip install pyscard
 
 $python -V
 
-cd $whereibelong
+cd "$whereibelong"

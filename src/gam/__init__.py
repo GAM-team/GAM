@@ -4123,8 +4123,7 @@ def downloadDriveFile(users):
                         while not done:
                             status, done = downloader.next_chunk()
                             if showProgress:
-                                print('Downloaded: {:>7.2%}'.format(
-                                    status.progress()))
+                                print(f'Downloaded: {status.progress():>7.2%}')
                     else:
                         _, content = drive._http.request(uri=spreadsheetUrl,
                                                          method='GET')
@@ -11235,7 +11234,7 @@ def run_batch(items):
 # Otherwise, the argument is preserved as is
 #
 # SubFields is a dictionary; the key is the argument number, the value is a list of tuples that mark
-# the substition (fieldname, start, end).
+# the substitution (fieldname, start, end).
 # Example: update user '~User' address type work unstructured '~~Street~~, ~~City~~, ~~State~~ ~~ZIP~~' primary
 # {2: [('User', 0, 5)], 7: [('Street', 0, 10), ('City', 12, 20), ('State', 22, 31), ('ZIP', 32, 39)]}
 #

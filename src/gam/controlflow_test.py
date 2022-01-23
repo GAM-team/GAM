@@ -79,7 +79,7 @@ class ControlFlowTest(unittest.TestCase):
             controlflow.wait_on_failure(
                 attempt,
                 total_attempts,
-                'Attempt #%s' % attempt,
+                f'Attempt #{attempt}',
                 # Suppress messages while we make a lot of attempts.
                 error_print_threshold=total_attempts + 1)
             # Wait time may be between 60 and 61 secs, due to rand addition.
@@ -102,7 +102,7 @@ class ControlFlowTest(unittest.TestCase):
             for attempt in range(1, total_attempts + 1):
                 controlflow.wait_on_failure(attempt,
                                             total_attempts,
-                                            'Attempt #%s' % attempt,
+                                            f'Attempt #{attempt}',
                                             error_print_threshold=threshold)
         self.assertEqual(total_attempts - threshold,
                          mock_stderr_write.call_count)

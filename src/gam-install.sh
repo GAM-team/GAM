@@ -52,7 +52,7 @@ done
 target_dir=${target_dir%/}
 
 update_profile() {
-	[ $2 -eq 1 ] || [ -f "$1" ] || return 1
+	[ "$2" -eq 1 ] || [ -f "$1" ] || return 1
 
 	grep -F "$alias_line" "$1" > /dev/null 2>&1
 	if [ $? -ne 0 ]; then
@@ -106,7 +106,7 @@ case $gamos in
     echo "This Linux distribution uses glibc $this_glibc_ver"
     useglibc="legacy"
     for gam_glibc_ver in $gam_glibc_vers; do
-      if version_gt $this_glibc_ver $gam_glibc_ver; then
+      if version_gt "$this_glibc_ver" "$gam_glibc_ver"; then
         useglibc="glibc$gam_glibc_ver"
         echo_green "Using GAM compiled against $useglibc"
         break
@@ -137,7 +137,7 @@ case $gamos in
     gamfile="-windows-x86_64.zip"
     ;;
   *)
-    echo_red "Sorry, this installer currently only supports Linux and MacOS. Looks like you're runnning on $gamos. Exiting."
+    echo_red "Sorry, this installer currently only supports Linux and MacOS. Looks like you're running on $gamos. Exiting."
     exit
     ;;
 esac
@@ -155,7 +155,7 @@ else
 fi
 
 echo_yellow "Checking GitHub URL $release_url for $gamversion GAM release ($check_type)..."
-release_json=$(curl -s $GHCLIENT $release_url 2>&1 /dev/null)
+release_json=$(curl -s "$GHCLIENT" "$release_url" 2>&1 /dev/null)
 
 echo_yellow "Getting file and download URL..."
 # Python is sadly the nearest to universal way to safely handle JSON with Bash
@@ -205,12 +205,12 @@ if (( $rc != 0 )); then
   exit
 fi
 
-browser_download_url=$(echo "$release_json" | $pycmd -c "$pycode" browser_download_url $gamversion)
+browser_download_url=$(echo "$release_json" | $pycmd -c "$pycode" browser_download_url "$gamversion")
 if [[ ${browser_download_url:0:5} = "ERROR" ]]; then
   echo_red "${browser_download_url}"
   exit
 fi
-name=$(echo "$release_json" | $pycmd -c "$pycode" name $gamversion)
+name=$(echo "$release_json" | $pycmd -c "$pycode" name "$gamversion")
 if [[ ${name:0:5} = "ERROR" ]]; then
   echo_red "${name}"
   exit
@@ -224,13 +224,13 @@ trap "rm -rf $temp_archive_dir" EXIT
 
 echo_yellow "Downloading file $name from $browser_download_url to $temp_archive_dir ($check_type)..."
 # Save archive to temp w/o losing our path
-(cd $temp_archive_dir && curl -O -L $GHCLIENT $browser_download_url)
+(cd "$temp_archive_dir" && curl -O -L "$GHCLIENT" "$browser_download_url")
 
 mkdir -p "$target_dir"
 
 echo_yellow "Extracting archive to $target_dir"
 if [[ "${name}" == *.tar.xz ]]; then
-  tar xf $temp_archive_dir/$name -C "$target_dir"
+  tar xf "$temp_archive_dir"/"$name" -C "$target_dir"
 else
   unzip "${temp_archive_dir}/${name}" -d "${target_dir}"
 fi
@@ -294,7 +294,7 @@ while true; do
       if [ "$adminuser" == "" ]; then
         read -p "Please enter your Google Workspace admin email address: " adminuser
       fi
-      "$target_dir/gam/gam" create project $adminuser
+      "$target_dir/gam/gam" create project "$adminuser"
       rc=$?
       if (( $rc == 0 )); then
         echo_green "Project creation complete."
@@ -319,7 +319,7 @@ while $project_created; do
   read -p "Are you ready to authorize GAM to perform Google Workspace management operations as your admin account? (yes or no) " yn
   case $yn in
     [Yy]*)
-      "$target_dir/gam/gam" oauth create $adminuser
+      "$target_dir/gam/gam" oauth create "$adminuser"
       rc=$?
       if (( $rc == 0 )); then
         echo_green "Admin authorization complete."
@@ -348,7 +348,7 @@ while $project_created; do
         read -p "Please enter the email address of a regular Google Workspace user: " regularuser
       fi
       echo_yellow "Great! Checking service account scopes.This will fail the first time. Follow the steps to authorize and retry. It can take a few minutes for scopes to PASS after they've been authorized in the admin console."
-      "$target_dir/gam/gam" user $adminuser check serviceaccount
+      "$target_dir/gam/gam" user "$adminuser" check serviceaccount
       rc=$?
       if (( $rc == 0 )); then
         echo_green "Service account authorization complete."
