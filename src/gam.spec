@@ -12,7 +12,6 @@ extra_files = [(os.path.join(proot, 'cacerts.txt'), 'httplib2')]
 extra_files += copy_metadata('google-api-python-client')
 extra_files += [('cbcm-v1.1beta1.json', '.')]
 extra_files += [('contactdelegation-v1.json', '.')]
-extra_files += [('versionhistory-v1.json', '.')]
 
 hidden_imports = [
      'gam.auth.yubikey',
