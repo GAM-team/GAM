@@ -655,7 +655,7 @@ Specify a collection of ChromeOS devices by directly specifying them
 
 ## Collections of Users
 
-Specify a collection of Users by directly specifying them or by specifiying items that will yield a list of users
+Specify a collection of Users by directly specifying them or by specifying items that will yield a list of users
 
 <UserTypeEntity> ::=
 	(all users)|
