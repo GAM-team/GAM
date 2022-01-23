@@ -1,10 +1,9 @@
 """GAPI and OAuth Token related errors methods."""
 
-from enum import Enum
 import json
+from enum import Enum
 
-from gam import controlflow
-from gam import display
+from gam import controlflow, display
 from gam.var import UTF8
 
 
@@ -282,7 +281,7 @@ def get_gapi_error_detail(e,
 
   Args:
     e: googleapiclient.HttpError, The HTTP Error received.
-    soft_errors: Boolean, If true, causes error messages to be surpressed,
+    soft_errors: Boolean, If true, causes error messages to be suppressed,
       rather than sending them to stderr.
     silent_errors: Boolean, If true, suppresses and ignores any errors from
       being displayed

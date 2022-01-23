@@ -119,7 +119,7 @@ def dehtml(text):
 
 
 def indentMultiLineText(message, n=0):
-    return message.replace('\n', '\n{}'.format(' ' * n)).rstrip()
+    return message.replace('\n', f"\n{' ' * n}").rstrip()
 
 
 def flatten_json(structure, key='', path='', flattened=None, listLimit=None):
