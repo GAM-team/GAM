@@ -48,10 +48,10 @@ $pip install pyscard
 #  cp -v /c/python/DLLs/libcrypto-1_1-x64.dll /c/python/DLLs/libcrypto-1_1.dll
 #fi
 
-cd $mypath
+cd "$mypath"
 
 echo "PATH: $PATH"
 cd ..
 $python setup.py install
 echo "cd to $mypath"
-cd $mypath
+cd "$mypath"
