@@ -93,13 +93,13 @@ jobs:
         run: |
              export PYTHON=$(which python3)
              export PIP=$(which pip3)
-             export gyb="${PYTHON} -m gyb"
-             export gybpath="$(readlink -e .)"
-             echo -e "PYTHON: ${PYTHON}\nPIP: ${PIP}\ngyb: ${gyb}\ngybpath: ${gybpath}"
+             export gam="${PYTHON} -m src.gam"
+             export gampath="$(readlink -e src/)"
+             echo -e "PYTHON: ${PYTHON}\nPIP: ${PIP}\gam: ${gam}\ngampath: ${gampath}"
              echo "PYTHON=${PYTHON}" >> $GITHUB_ENV
              echo "PIP=${PIP}" >> $GITHUB_ENV
-             echo "gyb=${gyb}" >> $GITHUB_ENV
-             echo "gybpath=${gybpath}" >> $GITHUB_ENV
+             echo "gam=${gam}" >> $GITHUB_ENV
+             echo "gampath=${gampath}" >> $GITHUB_ENV
              echo "JID=${JID}" >> $GITHUB_ENV
              echo "ACTIONS_CACHE=${ACTIONS_CACHE}" >> $GITHUB_ENV
              echo "ACTIONS_GOAL=${ACTIONS_GOAL}" >> $GITHUB_ENV
@@ -330,7 +330,7 @@ jobs:
       - name: Build GAM with PyInstaller
         if: matrix.goal != 'test'
         run: |
-             "${PYTHON}" -OO -m PyInstaller --clean --noupx --strip --onefile --distpath=gyb gyb.spec
+             "${PYTHON}" -OO -m PyInstaller --clean --noupx --strip --onefile --distpath=dist gam.spec
              if [ -x "$(command -v realpath)" ]; then
                realpath=realpath
              else
