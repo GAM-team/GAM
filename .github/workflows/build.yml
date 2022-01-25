@@ -343,8 +343,8 @@ jobs:
  
       - name: Basic Tests all jobs
         run: |
-             echo -e "python: $python\npip: $pip\ngam: $gam\ngampath: $gampath\n"
-             $python -m unittest discover --start-directory ./ --pattern "*_test.py" --buffer
+             echo -e "python: $PYTHON\npip: $PIP\ngam: $gam\ngampath: $gampath\n"
+             $PYTHON -m unittest discover --start-directory ./ --pattern "*_test.py" --buffer
              touch "${gampath}/nobrowser.txt"
              $gam version extended
              export GAMVERSION=$($gam version simple)
@@ -358,11 +358,11 @@ jobs:
              export vline=$($gam version | grep "Python ")
              export python_line=($vline)
              export this_python=${python_line[1]}
-             $python tools/a_atleast_b.py "${this_python}" "${MIN_PYTHON_VERSION}"
+             $PYTHON tools/a_atleast_b.py "${this_python}" "${MIN_PYTHON_VERSION}"
              export vline=$($gam version extended | grep "OpenSSL ")
              export openssl_line=($vline)
              export this_openssl="${openssl_line[1]}"
-             $python tools/a_atleast_b.py "${this_openssl}" "${MIN_OPENSSL_VERSION}"
+             $PYTHON tools/a_atleast_b.py "${this_openssl}" "${MIN_OPENSSL_VERSION}"
 
 
       - name: Live API tests push only
