@@ -259,10 +259,10 @@ jobs:
           echo "Copying our OpenSSL to ${env:OPENSSL_EXT_TARGET_PATH}"
           mkdir -p -v "${env:OPENSSL_EXT_TARGET_PATH}\include\openssl\"
           Copy-Item -Path "${env:OPENSSL_SOURCE_PATH}\LICENSE.txt" -Destination "${env:OPENSSL_EXT_TARGET_PATH}\LICENSE"
-          cp "$env:OPENSSL_INSTALL_PATH\lib\*" "${env:OPENSSL_EXT_TARGET_PATH}"
-          cp "$env:OPENSSL_INSTALL_PATH\bin\*" "${env:OPENSSL_EXT_TARGET_PATH}"
-          cp "$env:OPENSSL_INSTALL_PATH\include\openssl\*" "${env:OPENSSL_EXT_TARGET_PATH}\include\openssl\"
-          cp "$env:OPENSSL_INSTALL_PATH\include\openssl\applink.c" "${env:OPENSSL_EXT_TARGET_PATH}\include\"
+          cp -v "$env:OPENSSL_INSTALL_PATH\lib\*" "${env:OPENSSL_EXT_TARGET_PATH}"
+          cp -v "$env:OPENSSL_INSTALL_PATH\bin\*" "${env:OPENSSL_EXT_TARGET_PATH}"
+          cp -v "$env:OPENSSL_INSTALL_PATH\include\openssl\*" "${env:OPENSSL_EXT_TARGET_PATH}\include\openssl\"
+          cp -v "$env:OPENSSL_INSTALL_PATH\include\openssl\applink.c" "${env:OPENSSL_EXT_TARGET_PATH}\include\"
 
       - name: Windows Install sphinx-build
         if: matrix.goal == 'build' && matrix.os == 'windows-2022' && steps.cache-python-ssl.outputs.cache-hit != 'true'
@@ -365,8 +365,8 @@ jobs:
       - name: Linux package GAM
         if: matrix.os != 'windows-2022' && matrix.os != 'macos-11' && matrix.goal == 'build'
         run: |
-          cp LICENSE $gampath
-          cp GamCommands.txt $gampath
+          cp -v LICENSE $gampath
+          cp -v GamCommands.txt $gampath
           this_glibc_ver=$(ldd --version | awk '/ldd/{print $NF}')
           GAM_ARCHIVE="gam-${GAMVERSION}-linux-$(arch)-glibc${this_glibc_ver}.tar.xz"
           tar cfJ $GYB_ARCHIVE dist/
@@ -397,17 +397,17 @@ jobs:
       - name: MacOS package
         if: matrix.os == 'macos-11' && matrix.goal != 'test'
         run: |
-          cp LICENSE $gampath
-          cp GamCommands.txt $gampath
+          cp -vLICENSE $gampath
+          cp -v GamCommands.txt $gampath
           GAM_ARCHIVE="gam-${GAMVERSION}-macos-x86_64.tar.xz"
           tar cfJ $GAM_ARCHIVE dist/
 
       - name: Windows package GYB
         if: matrix.os == 'windows-2022' && matrix.goal != 'test'
         run: |
-          cp LICENSE $gampath
-          cp GamCommands.txt $gampath
-          cp gam-setup.bat $gampath
+          cp -v LICENSE $gampath
+          cp -v GamCommands.txt $gampath
+          cp -v gam-setup.bat $gampath
           GAM_ARCHIVE=gam-$GAMVERSION-windows-x86_64.zip
           /c/Program\ Files/7-Zip/7z.exe a -tzip $GAM_ARCHIVE dist/ -xr!.svn
           /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.11/bin/candle.exe -arch x64 windows-gam.wxs
