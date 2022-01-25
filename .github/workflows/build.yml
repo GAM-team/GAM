@@ -9,7 +9,7 @@ on:
 defaults:
   run:
     shell: bash
-    path: src
+    working-directory: src
 
 env:
   OPENSSL_CONFIG_OPTS: no-asm no-fips
