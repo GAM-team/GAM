@@ -364,7 +364,7 @@ jobs:
       - name: Basic Tests build jobs only
         if: matrix.goal != 'test'
         run: |
-          export voutput=$($gam version)
+          export voutput=$($gam version extended)
           export python_line=$(echo -e "${voutput}" | grep "Python ")
           export python_arr=($python_line)
           export this_python=${python_arr[1]}
