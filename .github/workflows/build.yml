@@ -104,6 +104,7 @@ jobs:
              echo "JID=${JID}" >> $GITHUB_ENV
              echo "ACTIONS_CACHE=${ACTIONS_CACHE}" >> $GITHUB_ENV
              echo "ACTIONS_GOAL=${ACTIONS_GOAL}" >> $GITHUB_ENV
+             echo "date=date" >> $GITHUB_ENV
 
       - name: Install necessary hosted Linux packages
         if: matrix.os == 'ubuntu-20.04'
