@@ -9,7 +9,6 @@ on:
 defaults:
   run:
     shell: bash
-    working-directory: src
 
 env:
   OPENSSL_CONFIG_OPTS: no-asm no-fips
@@ -75,8 +74,8 @@ jobs:
         uses: actions/cache@v2
         with:
           path: |
-            ~/python
-            ~/ssl
+            ./python
+            ./ssl
           key: ${{ matrix.jid }}-20220125
 
       - name: Use pre-compiled Python for testing
@@ -104,6 +103,7 @@ jobs:
              echo "JID=${JID}" >> $GITHUB_ENV
              echo "ACTIONS_CACHE=${ACTIONS_CACHE}" >> $GITHUB_ENV
              echo "ACTIONS_GOAL=${ACTIONS_GOAL}" >> $GITHUB_ENV
+
       - name: Set Env Variables for build
         if: matrix.goal == 'build'
         env:
@@ -150,7 +150,6 @@ jobs:
           echo "OPENSSL_CONFIG_TARGET=${OPENSSL_CONFIG_TARGET}" >> $GITHUB_ENV
           echo "LD_LIBRARY_PATH=${OPENSSL_INSTALL_PATH}/lib:${PYTHON_INSTALL_PATH}/lib" >> $GITHUB_ENV
 
-
       - name: Get latest stable OpenSSL source
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit != 'true'
         run: |
@@ -161,6 +160,7 @@ jobs:
           git checkout "${LATEST_STABLE_TAG}"
           export COMPILED_OPENSSL_VERSION=${LATEST_STABLE_TAG:8} # Trim the openssl- prefix
           echo "COMPILED_OPENSSL_VERSION=${COMPILED_OPENSSL_VERSION}" >> $GITHUB_ENV
+
       - name: Windows Configure VCode
         uses: ilammy/msvc-dev-cmd@v1
         if: matrix.os == 'windows-2022' && steps.cache-python-ssl.outputs.cache-hit != 'true'
