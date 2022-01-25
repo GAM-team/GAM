@@ -375,7 +375,7 @@ jobs:
           cp -v GamCommands.txt $gampath
           this_glibc_ver=$(ldd --version | awk '/ldd/{print $NF}')
           GAM_ARCHIVE="gam-${GAMVERSION}-linux-$(arch)-glibc${this_glibc_ver}.tar.xz"
-          tar cfJ $GYB_ARCHIVE dist/
+          tar cfJ $GAM_ARCHIVE dist/
 
       - name: Linux install patchelf/staticx
         if: matrix.os == 'ubuntu-20.04' && matrix.goal != 'test'
