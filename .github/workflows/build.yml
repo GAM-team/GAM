@@ -13,10 +13,10 @@ defaults:
 
 env:
   OPENSSL_CONFIG_OPTS: no-asm no-fips
-  OPENSSL_INSTALL_PATH: ${{ github.workspace }}/ssl
-  OPENSSL_SOURCE_PATH: ${{ github.workspace }}/openssl
-  PYTHON_INSTALL_PATH: ${{ github.workspace }}/python
-  PYTHON_SOURCE_PATH: ${{ github.workspace }}/cpython
+  OPENSSL_INSTALL_PATH: ${{ github.workspace }}/src/ssl
+  OPENSSL_SOURCE_PATH: ${{ github.workspace }}/src/openssl
+  PYTHON_INSTALL_PATH: ${{ github.workspace }}/src/python
+  PYTHON_SOURCE_PATH: ${{ github.workspace }}/src/cpython
 
 jobs:
   build:
