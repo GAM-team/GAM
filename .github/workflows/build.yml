@@ -266,7 +266,7 @@ jobs:
         run: |
           cd "${env:PYTHON_SOURCE_PATH}"
           # We need out custom openssl.props which uses OpenSSL 3 DLL names
-          Copy-Item -Path "${env:GITHUB_WORKSPACE}\openssl.props" -Destination PCBuild\
+          Copy-Item -Path "${env:GITHUB_WORKSPACE}\src\tools\openssl.props" -Destination PCBuild\
           echo "Building for ${env:PYBUILDRELEASE_ARCH}..."
           PCBuild\build.bat -m --pgo -c Release -p "${env:PYBUILDRELEASE_ARCH}"
 
