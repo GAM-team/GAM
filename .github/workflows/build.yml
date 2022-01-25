@@ -260,7 +260,7 @@ jobs:
           # https://github.com/python/cpython/blob/main/PCbuild/openssl.vcxproj
           $env:OPENSSL_EXT_TARGET_PATH = "${env:OPENSSL_EXT_PATH}${env:PYEXTERNALS_PATH}"
           echo "Copying our OpenSSL to ${env:OPENSSL_EXT_TARGET_PATH}"
-          mkdir -p -v "${env:OPENSSL_EXT_TARGET_PATH}\include\openssl\"
+          mkdir "${env:OPENSSL_EXT_TARGET_PATH}\include\openssl\"
           Copy-Item -Path "${env:OPENSSL_SOURCE_PATH}\LICENSE.txt" -Destination "${env:OPENSSL_EXT_TARGET_PATH}\LICENSE"
           cp -v "$env:OPENSSL_INSTALL_PATH\lib\*" "${env:OPENSSL_EXT_TARGET_PATH}"
           cp -v "$env:OPENSSL_INSTALL_PATH\bin\*" "${env:OPENSSL_EXT_TARGET_PATH}"
