@@ -75,8 +75,8 @@ jobs:
         uses: actions/cache@v2
         with:
           path: |
-            ../python
-            ../ssl
+            python
+            ssl
           key: ${{ matrix.jid }}-20220125
 
       - name: Use pre-compiled Python for testing
