@@ -128,20 +128,21 @@ jobs:
             MACOSX_DEPLOYMENT_TARGET="10.15"
             echo "MACOSX_DEPLOYMENT_TARGET=${MACOSX_DEPLOYMENT_TARGET}" >> $GITHUB_ENV
             echo "PYTHON=${PYTHON_INSTALL_PATH}/bin/python3" >> $GITHUB_ENV
-            echo "date=gdate" >> $GITHUB_ENV
+            export date=gdate
           elif [[ "${RUNNER_OS}" == "Linux" ]]; then
             MAKE=make
             MAKEOPT="-j$(nproc)"
             PERL=perl
             echo "PYTHON=${PYTHON_INSTALL_PATH}/bin/python3" >> $GITHUB_ENV
-            echo "date=date" >> $GITHUB_ENV
+            export date=date
           elif [[ "${RUNNER_OS}" == "Windows" ]]; then
             MAKE=nmake
             MAKEOPT=""
             PERL="c:\strawberry\perl\bin\perl.exe"
             echo "PYTHON=${PYTHON_INSTALL_PATH}\python.exe" >> $GITHUB_ENV
-            echo "date=date" >> $GITHUB_ENV
+            export date=date
           fi
+          echo "date=${/date}" >> $GITHUB_ENV
           $date --help
           if [[ "${arch}" == "Win64" ]]; then
             PYEXTERNALS_PATH="amd64"
