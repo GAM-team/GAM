@@ -127,16 +127,19 @@ jobs:
             MACOSX_DEPLOYMENT_TARGET="10.15"
             echo "MACOSX_DEPLOYMENT_TARGET=${MACOSX_DEPLOYMENT_TARGET}" >> $GITHUB_ENV
             echo "PYTHON=${PYTHON_INSTALL_PATH}/bin/python3" >> $GITHUB_ENV
+            echo "date=gdate" >> $GITHUB_ENV
           elif [[ "${RUNNER_OS}" == "Linux" ]]; then
             MAKE=make
             MAKEOPT="-j$(nproc)"
             PERL=perl
             echo "PYTHON=${PYTHON_INSTALL_PATH}/bin/python3" >> $GITHUB_ENV
+            echo "date=date" >> $GITHUB_ENV
           elif [[ "${RUNNER_OS}" == "Windows" ]]; then
             MAKE=nmake
             MAKEOPT=""
             PERL="c:\strawberry\perl\bin\perl.exe"
             echo "PYTHON=${PYTHON_INSTALL_PATH}\python.exe" >> $GITHUB_ENV
+            echo "date=date" >> $GITHUB_ENV
           fi
           if [[ "${arch}" == "Win64" ]]; then
             PYEXTERNALS_PATH="amd64"
@@ -382,7 +385,8 @@ jobs:
              $gam oauth refresh
              $gam info user
              #$gam info user $gam_user grouptree
-             export tstamp=$(date +%s%3N)
+             if [[ 
+             export tstamp=$($date +%s%3N)
              export newbase=gha-test-$JID-$tstamp
              export newuser=$newbase@pdl.jaylee.us
              export newgroup=$newbase-group@pdl.jaylee.us
