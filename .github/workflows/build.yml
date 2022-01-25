@@ -142,7 +142,7 @@ jobs:
             echo "PYTHON=${PYTHON_INSTALL_PATH}\python.exe" >> $GITHUB_ENV
             export date=date
           fi
-          echo "date=${/date}" >> $GITHUB_ENV
+          echo "date=${date}" >> $GITHUB_ENV
           $date --help
           if [[ "${arch}" == "Win64" ]]; then
             PYEXTERNALS_PATH="amd64"
