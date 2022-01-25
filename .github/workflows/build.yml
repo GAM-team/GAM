@@ -131,21 +131,24 @@ jobs:
             echo "MACOSX_DEPLOYMENT_TARGET=${MACOSX_DEPLOYMENT_TARGET}" >> $GITHUB_ENV
             echo "PYTHON=${PYTHON_INSTALL_PATH}/bin/python3" >> $GITHUB_ENV
             export date=gdate
+            export realpath=grealpath
           elif [[ "${RUNNER_OS}" == "Linux" ]]; then
             MAKE=make
             MAKEOPT="-j$(nproc)"
             PERL=perl
             echo "PYTHON=${PYTHON_INSTALL_PATH}/bin/python3" >> $GITHUB_ENV
             export date=date
+            export realpath=realpath
           elif [[ "${RUNNER_OS}" == "Windows" ]]; then
             MAKE=nmake
             MAKEOPT=""
             PERL="c:\strawberry\perl\bin\perl.exe"
             echo "PYTHON=${PYTHON_INSTALL_PATH}\python.exe" >> $GITHUB_ENV
             export date=date
+            export realpath=realpath
           fi
           echo "date=${date}" >> $GITHUB_ENV
-          $date --help
+          echo "realpath=${realpath}" >> $GITHUB_ENV
           if [[ "${arch}" == "Win64" ]]; then
             PYEXTERNALS_PATH="amd64"
             PYBUILDRELEASE_ARCH="x64"
@@ -345,8 +348,11 @@ jobs:
         if: matrix.goal != 'test'
         run: |
              export gampath="./dist/gam"
+             echo "1 ${gampath}"
              mkdir -p -v "${gampath}"
-             export gampath="$(${realpath} "${gampath}")"
+             echo "2 ${gampath}"
+             export gampath="$($realpath $gampath)"
+             echo "3 ${gampath}"
              export gam="${gampath}/gam"
              echo "gampath=${gampath}" >> $GITHUB_ENV
              export "gam=${gam}" >> $GITHUB_ENV
