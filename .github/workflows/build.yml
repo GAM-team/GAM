@@ -104,6 +104,13 @@ jobs:
              echo "ACTIONS_CACHE=${ACTIONS_CACHE}" >> $GITHUB_ENV
              echo "ACTIONS_GOAL=${ACTIONS_GOAL}" >> $GITHUB_ENV
 
+      - name: Install necessary hosted Linux packages
+        if: matrix.os == 'ubuntu-20.04'
+        run: |
+          echo "RUNNING: apt update..."
+          sudo apt-get -qq --yes update
+          sudo apt-get -qq --yes install swig libpcsclite-dev
+
       - name: Set Env Variables for build
         if: matrix.goal == 'build'
         env:
