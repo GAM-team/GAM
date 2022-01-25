@@ -386,7 +386,6 @@ jobs:
              $gam oauth refresh
              $gam info user
              #$gam info user $gam_user grouptree
-             if [[ 
              export tstamp=$($date +%s%3N)
              export newbase=gha-test-$JID-$tstamp
              export newuser=$newbase@pdl.jaylee.us
