@@ -142,6 +142,7 @@ jobs:
             echo "PYTHON=${PYTHON_INSTALL_PATH}\python.exe" >> $GITHUB_ENV
             echo "date=date" >> $GITHUB_ENV
           fi
+          $date --help
           if [[ "${arch}" == "Win64" ]]; then
             PYEXTERNALS_PATH="amd64"
             PYBUILDRELEASE_ARCH="x64"
@@ -360,16 +361,22 @@ jobs:
       - name: Basic Tests build jobs only
         if: matrix.goal != 'test'
         run: |
-             $PYTHON -m pip install packaging
-             export vline=$($gam version | grep "Python ")
-             export python_line=($vline)
-             export this_python=${python_line[1]}
-             $PYTHON tools/a_atleast_b.py "${this_python}" "${MIN_PYTHON_VERSION}"
-             export vline=$($gam version extended | grep "OpenSSL ")
-             export openssl_line=($vline)
-             export this_openssl="${openssl_line[1]}"
-             $PYTHON tools/a_atleast_b.py "${this_openssl}" "${MIN_OPENSSL_VERSION}"
-
+          export voutput=$($gam version)
+          export python_line=$(echo -e "${voutput}" | grep "Python ")
+          export python_arr=($python_line)
+          export this_python=${python_arr[1]}
+          if [[ "${this_python}" != "${COMPILED_PYTHON_VERSION}" ]]; then
+            echo "ERROR: Tried to compile Python ${COMPILED_PYTHON_VERSION} but ended up with ${this_python}"
+            exit 1
+          fi
+          export openssl_line=$(echo -e "${voutput}" | grep "OpenSSL ")
+          export openssl_arr=($openssl_line)
+          export this_openssl=${openssl_arr[1]}
+          if [[ "${this_openssl}" != "${COMPILED_OPENSSL_VERSION}" ]]; then
+            echo "ERROR: Tried to compile OpenSSL ${COMPILED_OPENSSL_VERSION} but ended up with ${this_openssl}"
+            exit 1
+          fi
+          echo "We successfully compiled Python ${this_python} and OpenSSL ${this_openssl}"
 
       - name: Live API tests push only
         if: github.event_name == 'push' || github.event_name == 'schedule'
