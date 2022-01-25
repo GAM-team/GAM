@@ -373,8 +373,11 @@ jobs:
             exit 1
           fi
           export openssl_line=$(echo -e "${voutput}" | grep "OpenSSL ")
+          echo "OpenSSL line: ${openssl_line}"
           export openssl_arr=($openssl_line)
-          export this_openssl=${openssl_arr[1]}
+          echo "OpenSSL arr: ${openssl_arr}"
+          export this_openssl="${openssl_arr[1]}"
+          export "${openssl[0]}     ${openssl[1]}"
           if [[ "${this_openssl}" != "${COMPILED_OPENSSL_VERSION}" ]]; then
             echo "ERROR: Tried to compile OpenSSL ${COMPILED_OPENSSL_VERSION} but ended up with ${this_openssl}"
             exit 1
