@@ -355,7 +355,7 @@ jobs:
              echo "3 ${gampath}"
              export gam="${gampath}/gam"
              echo "gampath=${gampath}" >> $GITHUB_ENV
-             export "gam=${gam}" >> $GITHUB_ENV
+             echo "gam=${gam}" >> $GITHUB_ENV
              echo -e "GAM: ${gam}\nGAMPATH: ${gampath}"
              "${PYTHON}" -OO -m PyInstaller --clean --noupx --strip --onefile --distpath="${gampath}" gam.spec
  
