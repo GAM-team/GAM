@@ -344,7 +344,9 @@ jobs:
       - name: Build GAM with PyInstaller
         if: matrix.goal != 'test'
         run: |
-             export gampath="$(${realpath} ./dist/gam/)"
+             export gampath="./dist/gam"
+             mkdir -p "${gampath}"
+             export gampath="$(${realpath} "${gampath}")"
              export gam="${gampath}/gam"
              echo "gampath=${gampath}" >> $GITHUB_ENV
              export "gam=${gam}" >> $GITHUB_ENV
