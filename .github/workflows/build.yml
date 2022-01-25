@@ -204,16 +204,19 @@ jobs:
         run: |
           cd "${OPENSSL_SOURCE_PATH}"
           $MAKE "${MAKEOPT}"
+
       - name: Install OpenSSL
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit != 'true'
         run: |
           cd "${OPENSSL_SOURCE_PATH}"
           # install_sw saves us ages processing man pages :-)
           $MAKE install_sw
+
       - name: Run OpenSSL
         if: matrix.goal == 'build'
         run: |
           "${OPENSSL_INSTALL_PATH}/bin/openssl" version
+
       - name: Get latest stable Python source
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit != 'true'
         run: |
@@ -223,6 +226,7 @@ jobs:
           git checkout "${LATEST_STABLE_TAG}"
           export COMPILED_PYTHON_VERSION=${LATEST_STABLE_TAG:1} # Trim the "v" prefix
           echo "COMPILED_PYTHON_VERSION=${COMPILED_PYTHON_VERSION}" >> $GITHUB_ENV
+
       - name: Mac/Linux Configure Python
         if: matrix.goal == 'build' && matrix.os != 'windows-2022' && steps.cache-python-ssl.outputs.cache-hit != 'true'
         run: |
@@ -340,26 +344,73 @@ jobs:
       - name: Build GAM with PyInstaller
         if: matrix.goal != 'test'
         run: |
-             "${PYTHON}" -OO -m PyInstaller --clean --noupx --strip --onefile --distpath=dist gam.spec
-             if [ -x "$(command -v realpath)" ]; then
-               realpath=realpath
-             else
-               brew install coreutils
-               realpath=grealpath
-             fi
-             echo "gampath=$(${realpath} ./dist/)" >> $GITHUB_ENV
-             echo "gam=$(${realpath} ./dist/gam)" >> $GITHUB_ENV
+             export gampath="$(${realpath} ./dist/gam/)"
+             export gam="${gampath}/gam"
+             echo "gampath=${gampath}" >> $GITHUB_ENV
+             export "gam=${gam}" >> $GITHUB_ENV
              echo -e "GAM: ${gam}\nGAMPATH: ${gampath}"
+             "${PYTHON}" -OO -m PyInstaller --clean --noupx --strip --onefile --distpath="${gampath} gam.spec
  
       - name: Basic Tests all jobs
         run: |
-             echo -e "python: $PYTHON\npip: $PIP\ngam: $gam\ngampath: $gampath\n"
              $PYTHON -m unittest discover --start-directory ./ --pattern "*_test.py" --buffer
              touch "${gampath}/nobrowser.txt"
              $gam version extended
              export GAMVERSION=$($gam version simple)
              echo "GAM Version ${GAMVERSION}"
              echo "GAMVERSION=${GAMVERSION}" >> $GITHUB_ENV
+
+      - name: Linux package GAM
+        if: matrix.os != 'windows-2022' && matrix.os != 'macos-11' && matrix.goal == 'build'
+        run: |
+          cp LICENSE $gampath
+          cp GamCommands.txt $gampath
+          this_glibc_ver=$(ldd --version | awk '/ldd/{print $NF}')
+          GAM_ARCHIVE="gam-${GAMVERSION}-linux-$(arch)-glibc${this_glibc_ver}.tar.xz"
+          tar cfJ $GYB_ARCHIVE dist/
+
+      - name: Linux install patchelf/staticx
+        if: matrix.os == 'ubuntu-20.04' && matrix.goal != 'test'
+        run: |
+          "${PYTHON}" -m pip install --upgrade patchelf-wrapper
+          "${PYTHON}" -m pip install --upgrade staticx
+
+      - name: Linux Make Static
+        if: matrix.os == 'ubuntu-20.04' && matrix.goal != 'test'
+        run: |
+          $PYTHON -m staticx "${gam}" "${gam}-staticx"
+          
+      - name: Linux Run StaticX-ed
+        if: matrix.os == 'ubuntu-20.04' && matrix.goal != 'test'
+        run: |
+          "${gam}-staticx" version extended
+          mv "${gam}-staticx" "${gam}"
+
+      - name: Linux package staticx
+        if: matrix.os == 'ubuntu-20.04' && matrix.goal != 'test'
+        run: |
+          GAM_ARCHIVE="gam-${GAMVERSION}-linux-x86_64-legacy.tar.xz"
+          tar cfJ $GAM_ARCHIVE dist/
+
+      - name: MacOS package
+        if: matrix.os == 'macos-11' && matrix.goal != 'test'
+        run: |
+          cp LICENSE $gampath
+          cp GamCommands.txt $gampath
+          GAM_ARCHIVE="gam-${GAMVERSION}-macos-x86_64.tar.xz"
+          tar cfJ $GAM_ARCHIVE dist/
+
+      - name: Windows package GYB
+        if: matrix.os == 'windows-2022' && matrix.goal != 'test'
+        run: |
+          cp LICENSE $gampath
+          cp GamCommands.txt $gampath
+          cp gam-setup.bat $gampath
+          GAM_ARCHIVE=gam-$GAMVERSION-windows-x86_64.zip
+          /c/Program\ Files/7-Zip/7z.exe a -tzip $GAM_ARCHIVE dist/ -xr!.svn
+          /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.11/bin/candle.exe -arch x64 windows-gam.wxs
+          /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.11/bin/light.exe -ext /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.11/bin/WixUIExtension.dll windows-gam.wixobj -o gam-$GAMVERSION-windows-x86_64.msi || true;
+          rm -f *.wixpdb
 
       - name: Basic Tests build jobs only
         if: matrix.goal != 'test'
