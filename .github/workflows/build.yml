@@ -290,7 +290,7 @@ jobs:
         shell: powershell
         run: |
           cd "${env:PYTHON_SOURCE_PATH}"
-          mkdir -p -v "${env:PYTHON_INSTALL_PATH}\lib"
+          mkdir "${env:PYTHON_INSTALL_PATH}\lib"
           Copy-Item -Path "PCBuild\${env:PYEXTERNALS_PATH}\*" "${env:PYTHON_INSTALL_PATH}\"
           Copy-Item -Path "${env:PYTHON_SOURCE_PATH}\Lib\*" "${env:PYTHON_INSTALL_PATH}\lib\" -recurse
 
