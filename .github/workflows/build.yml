@@ -177,7 +177,7 @@ jobs:
           echo "PYBUILDRELEASE_ARCH=${PYBUILDRELEASE_ARCH}" >> $GITHUB_ENV
           echo "OPENSSL_CONFIG_TARGET=${OPENSSL_CONFIG_TARGET}" >> $GITHUB_ENV
           echo "LD_LIBRARY_PATH=${OPENSSL_INSTALL_PATH}/lib:${PYTHON_INSTALL_PATH}/lib" >> $GITHUB_ENV
-          echo "PATH=${PATH}:${PYTHON_INSTALL_PATH}/scripts" >> $GITHUB_ENV
+          #echo "PATH=${PATH}:${PYTHON_INSTALL_PATH}/scripts" >> $GITHUB_ENV
 
       - name: Get latest stable OpenSSL source
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit != 'true'
