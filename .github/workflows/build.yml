@@ -403,7 +403,7 @@ jobs:
       - name: MacOS package
         if: matrix.os == 'macos-11' && matrix.goal != 'test'
         run: |
-          cp -vLICENSE $gampath
+          cp -v LICENSE $gampath
           cp -v GamCommands.txt $gampath
           GAM_ARCHIVE="gam-${GAMVERSION}-macos-x86_64.tar.xz"
           tar cfJ $GAM_ARCHIVE dist/
