@@ -146,6 +146,7 @@ jobs:
             echo "PYTHON=${PYTHON_INSTALL_PATH}\python.exe" >> $GITHUB_ENV
             export date=date
             export realpath=realpath
+            choco install swig
           fi
           echo "date=${date}" >> $GITHUB_ENV
           echo "realpath=${realpath}" >> $GITHUB_ENV
