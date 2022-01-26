@@ -163,7 +163,6 @@ jobs:
             echo "PYTHON=${PYTHON_INSTALL_PATH}\python.exe" >> $GITHUB_ENV
             export date=date
             export realpath=realpath
-            choco install $CHOC_OPS swig
           fi
           echo "date=${date}" >> $GITHUB_ENV
           echo "realpath=${realpath}" >> $GITHUB_ENV
@@ -347,7 +346,11 @@ jobs:
              set +e
              PATH="${PATH}:${PYTHON_INSTALL_PATH}/scripts"
              echo $PATH
-             "${PYTHON}" -m pip list --outdated --format=freeze | grep -v '^\-e' | cut -d = -f 1  | xargs -n1 $PYTHON -m pip install -U --force-reinstall
+             if [[ "${arch} == "Win32" ]]; then
+               choco install --force --upgrade --forcex86 swig
+             elif [[ "${arch}" == "Win64" ]]; then
+               choco install --force --upgrade swig
+             fi
              "${PYTHON}" -m pip install --upgrade -r requirements.txt
 
       - name: Build GAM with PyInstaller
