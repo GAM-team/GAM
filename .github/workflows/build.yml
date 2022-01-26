@@ -346,7 +346,7 @@ jobs:
              set +e
              PATH="${PATH}:${PYTHON_INSTALL_PATH}/scripts"
              echo $PATH
-             if [[ "${arch} == "Win32" ]]; then
+             if [[ "${arch}" == "Win32" ]]; then
                choco install --force --upgrade --forcex86 swig
              elif [[ "${arch}" == "Win64" ]]; then
                choco install --force --upgrade swig
