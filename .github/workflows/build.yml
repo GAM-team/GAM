@@ -113,6 +113,12 @@ jobs:
           sudo apt-get -qq --yes update
           sudo apt-get -qq --yes install swig libpcsclite-dev
 
+      - name: Windows Configure VCode
+        uses: ilammy/msvc-dev-cmd@v1
+        if: matrix.os == 'windows-2022' && steps.cache-python-ssl.outputs.cache-hit != 'true'
+        with:
+          arch: ${{ matrix.arch }}
+
       - name: Set Env Variables for build
         if: matrix.goal == 'build'
         env:
@@ -120,6 +126,17 @@ jobs:
           jid: ${{ matrix.jid }}
         run: |
           echo "We are running on ${RUNNER_OS}"
+          if [[ "${arch}" == "Win64" ]]; then
+            PYEXTERNALS_PATH="amd64"
+            PYBUILDRELEASE_ARCH="x64"
+            OPENSSL_CONFIG_TARGET="VC-WIN64A"
+            CHOC_OPS=""
+          elif [[ "${arch}" == "Win32" ]]; then
+            PYEXTERNALS_PATH="win32"
+            PYBUILDRELEASE_ARCH="Win32"
+            OPENSSL_CONFIG_TARGET="VC-WIN32"
+            CHOC_OPS="--forcex86"
+          fi
           if [[ "${RUNNER_OS}" == "macOS" ]]; then
             brew install coreutils
             brew install bash
@@ -146,19 +163,10 @@ jobs:
             echo "PYTHON=${PYTHON_INSTALL_PATH}\python.exe" >> $GITHUB_ENV
             export date=date
             export realpath=realpath
-            choco install swig
+            choco install $CHOC_OPS swig
           fi
           echo "date=${date}" >> $GITHUB_ENV
           echo "realpath=${realpath}" >> $GITHUB_ENV
-          if [[ "${arch}" == "Win64" ]]; then
-            PYEXTERNALS_PATH="amd64"
-            PYBUILDRELEASE_ARCH="x64"
-            OPENSSL_CONFIG_TARGET="VC-WIN64A"
-          elif [[ "${arch}" == "Win32" ]]; then
-            PYEXTERNALS_PATH="win32"
-            PYBUILDRELEASE_ARCH="Win32"
-            OPENSSL_CONFIG_TARGET="VC-WIN32"
-          fi
           echo "We'll run make with: ${MAKEOPT}"
           echo "JID=${jid}" >> $GITHUB_ENV
           echo "arch=${arch}" >> $GITHUB_ENV
@@ -169,6 +177,7 @@ jobs:
           echo "PYBUILDRELEASE_ARCH=${PYBUILDRELEASE_ARCH}" >> $GITHUB_ENV
           echo "OPENSSL_CONFIG_TARGET=${OPENSSL_CONFIG_TARGET}" >> $GITHUB_ENV
           echo "LD_LIBRARY_PATH=${OPENSSL_INSTALL_PATH}/lib:${PYTHON_INSTALL_PATH}/lib" >> $GITHUB_ENV
+          echo "PATH=${PATH}:${PYTHON_INSTALL_PATH/scripts" >> $GITHUB_ENV
 
       - name: Get latest stable OpenSSL source
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit != 'true'
@@ -180,12 +189,6 @@ jobs:
           git checkout "${LATEST_STABLE_TAG}"
           export COMPILED_OPENSSL_VERSION=${LATEST_STABLE_TAG:8} # Trim the openssl- prefix
           echo "COMPILED_OPENSSL_VERSION=${COMPILED_OPENSSL_VERSION}" >> $GITHUB_ENV
-
-      - name: Windows Configure VCode
-        uses: ilammy/msvc-dev-cmd@v1
-        if: matrix.os == 'windows-2022' && steps.cache-python-ssl.outputs.cache-hit != 'true'
-        with:
-          arch: ${{ matrix.arch }}
 
       - name: Windows NASM Install
         uses: ilammy/setup-nasm@v1
