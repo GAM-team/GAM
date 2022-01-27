@@ -75,9 +75,9 @@ jobs:
         uses: actions/cache@v2
         with:
           path: |
-            python
-            ssl
-          key: gam-${{ matrix.jid }}-20220126
+            src/python
+            src/ssl
+          key: gam-${{ matrix.jid }}-20220126-01
 
       - name: Use pre-compiled Python for testing
         if: matrix.python != ''
