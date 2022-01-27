@@ -130,11 +130,15 @@ jobs:
             PYEXTERNALS_PATH="amd64"
             PYBUILDRELEASE_ARCH="x64"
             OPENSSL_CONFIG_TARGET="VC-WIN64A"
+            GAM_ARCHIVE_ARCH="x86_64"
+            WIX_ARCH="x64"
             CHOC_OPS=""
           elif [[ "${arch}" == "Win32" ]]; then
             PYEXTERNALS_PATH="win32"
             PYBUILDRELEASE_ARCH="Win32"
             OPENSSL_CONFIG_TARGET="VC-WIN32"
+            GAM_ARCHIVE_ARCH="x86"
+            WIX_ARCH="x86"
             CHOC_OPS="--forcex86"
           fi
           if [[ "${RUNNER_OS}" == "macOS" ]]; then
@@ -163,6 +167,8 @@ jobs:
             echo "PYTHON=${PYTHON_INSTALL_PATH}\python.exe" >> $GITHUB_ENV
             export date=date
             export realpath=realpath
+            echo "GAM_ARCHIVE_ARCH=${GAM_ARCHIVE_ARCH}" >> $GITHUB_ENV
+            echo "WIX_ARCH=${WIX_ARCH}" >> $GITHUB_ENV
           fi
           echo "date=${date}" >> $GITHUB_ENV
           echo "realpath=${realpath}" >> $GITHUB_ENV
@@ -419,10 +425,10 @@ jobs:
           cp -v LICENSE $gampath
           cp -v GamCommands.txt $gampath
           cp -v gam-setup.bat $gampath
-          GAM_ARCHIVE=gam-$GAMVERSION-windows-x86_64.zip
+          GAM_ARCHIVE="gam-${GAMVERSION}-windows-${GAM_ARCHIVE_ARCH}.zip"
           /c/Program\ Files/7-Zip/7z.exe a -tzip $GAM_ARCHIVE dist/ -xr!.svn
-          /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.11/bin/candle.exe -arch x64 gam.wxs
-          /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.11/bin/light.exe -ext /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.11/bin/WixUIExtension.dll gam.wixobj -o gam-$GAMVERSION-windows-x86_64.msi || true;
+          /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.11/bin/candle.exe -arch "${WIX_ARCH}" gam.wxs
+          /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.11/bin/light.exe -ext /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.11/bin/WixUIExtension.dll gam.wixobj -o "gam-${GAMVERSION}-windows-${GAM_ARCHIVE_ARCH}.msi" || true;
           rm -f *.wixpdb
 
       - name: Basic Tests build jobs only
