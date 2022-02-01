@@ -392,7 +392,7 @@ jobs:
               this_glibc_ver=$(ldd --version | awk '/ldd/{print $NF}')
               GAM_ARCHIVE="gam-${GAMVERSION}-linux-$(arch)-glibc${this_glibc_ver}.tar.xz"
           fi
-          tar -C dist/ --create --file $GAM_ARCHIVE --xvz gam
+          tar -C dist/ --create --verbose --file $GAM_ARCHIVE --xz gam
 
       - name: Linux install patchelf/staticx
         if: matrix.os == 'ubuntu-20.04' && matrix.goal != 'test'
@@ -416,7 +416,7 @@ jobs:
         if: matrix.os == 'ubuntu-20.04' && matrix.goal != 'test'
         run: |
           GAM_ARCHIVE="gam-${GAMVERSION}-linux-x86_64-legacy.tar.xz"
-          tar -C dist/ --create --file $GAM_ARCHIVE --xvz gam
+          tar -C dist/ --create --verbose --file $GAM_ARCHIVE --xz gam
 
       - name: Windows package
         if: matrix.os == 'windows-2022' && matrix.goal != 'test'
