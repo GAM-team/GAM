@@ -378,7 +378,7 @@ jobs:
              export GAMVERSION=$($gam version simple)
              echo "GAM Version ${GAMVERSION}"
              echo "GAMVERSION=${GAMVERSION}" >> $GITHUB_ENV
-             rm "${gampath}/lastupdatecheck.txt"
+             rm -v "${gampath}/lastup*.txt"
              
 
       - name: Linux/MacOS package
@@ -392,7 +392,7 @@ jobs:
               this_glibc_ver=$(ldd --version | awk '/ldd/{print $NF}')
               GAM_ARCHIVE="gam-${GAMVERSION}-linux-$(arch)-glibc${this_glibc_ver}.tar.xz"
           fi
-          tar -C dist/ --create --file $GAM_ARCHIVE --xz gam
+          tar -C dist/ --create --file $GAM_ARCHIVE --xvz gam
 
       - name: Linux install patchelf/staticx
         if: matrix.os == 'ubuntu-20.04' && matrix.goal != 'test'
@@ -409,14 +409,14 @@ jobs:
         if: matrix.os == 'ubuntu-20.04' && matrix.goal != 'test'
         run: |
           "${gam}-staticx" version extended
-          mv "${gam}-staticx" "${gam}"
-          rm "${gampath}/lastupdatecheck.txt"
+          mv -v "${gam}-staticx" "${gam}"
+          rm -v "${gampath}/lastup*.txt"
 
       - name: Linux package staticx
         if: matrix.os == 'ubuntu-20.04' && matrix.goal != 'test'
         run: |
           GAM_ARCHIVE="gam-${GAMVERSION}-linux-x86_64-legacy.tar.xz"
-          tar -C dist/ --create --file $GAM_ARCHIVE --xz gam
+          tar -C dist/ --create --file $GAM_ARCHIVE --xvz gam
 
       - name: Windows package
         if: matrix.os == 'windows-2022' && matrix.goal != 'test'
@@ -430,7 +430,7 @@ jobs:
           cd ..
           /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.11/bin/candle.exe -arch "${WIX_ARCH}" gam.wxs
           /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.11/bin/light.exe -ext /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.11/bin/WixUIExtension.dll gam.wixobj -o "gam-${GAMVERSION}-windows-${GAM_ARCHIVE_ARCH}.msi" || true;
-          rm -f *.wixpdb
+          rm -v -f *.wixpdb
 
       - name: Basic Tests build jobs only
         if: matrix.goal != 'test' && steps.cache-python-ssl.outputs.cache-hit != 'true'
