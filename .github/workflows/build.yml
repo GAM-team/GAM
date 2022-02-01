@@ -378,8 +378,6 @@ jobs:
              export GAMVERSION=$($gam version simple)
              echo "GAM Version ${GAMVERSION}"
              echo "GAMVERSION=${GAMVERSION}" >> $GITHUB_ENV
-             rm -v -f "${gampath}/lastup*.txt"
-             
 
       - name: Linux/MacOS package
         if: matrix.os != 'windows-2022' && matrix.goal == 'build'
@@ -392,7 +390,7 @@ jobs:
               this_glibc_ver=$(ldd --version | awk '/ldd/{print $NF}')
               GAM_ARCHIVE="gam-${GAMVERSION}-linux-$(arch)-glibc${this_glibc_ver}.tar.xz"
           fi
-          tar -C dist/ --create --verbose --file $GAM_ARCHIVE --xz gam
+          tar -C dist/ --create --verbose --exclude-from "${env:GITHUB_WORKSPACE}/.github/actions/package_exclusions.txt" --file $GAM_ARCHIVE --xz gam
 
       - name: Linux install patchelf/staticx
         if: matrix.os == 'ubuntu-20.04' && matrix.goal != 'test'
@@ -410,13 +408,12 @@ jobs:
         run: |
           "${gam}-staticx" version extended
           mv -v "${gam}-staticx" "${gam}"
-          rm -v -f "${gampath}/lastup*.txt"
 
       - name: Linux package staticx
         if: matrix.os == 'ubuntu-20.04' && matrix.goal != 'test'
         run: |
           GAM_ARCHIVE="gam-${GAMVERSION}-linux-x86_64-legacy.tar.xz"
-          tar -C dist/ --create --verbose --file $GAM_ARCHIVE --xz gam
+          tar -C dist/ --create --verbose --exclude-from "${env:GITHUB_WORKSPACE}/.github/actions/package_exclusions.txt" --file $GAM_ARCHIVE --xz gam
 
       - name: Windows package
         if: matrix.os == 'windows-2022' && matrix.goal != 'test'
@@ -426,7 +423,7 @@ jobs:
           cp -v gam-setup.bat $gampath
           GAM_ARCHIVE="gam-${GAMVERSION}-windows-${GAM_ARCHIVE_ARCH}.zip"
           cd dist/
-          /c/Program\ Files/7-Zip/7z.exe a -tzip $GAM_ARCHIVE gam -xr!.svn
+          /c/Program\ Files/7-Zip/7z.exe a -tzip $GAM_ARCHIVE gam "-xr@${env:GITHUB_WORKSPACE}/.github/actions/package_exclusions.txt"
           cd ..
           /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.11/bin/candle.exe -arch "${WIX_ARCH}" gam.wxs
           /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.11/bin/light.exe -ext /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.11/bin/WixUIExtension.dll gam.wixobj -o "gam-${GAMVERSION}-windows-${GAM_ARCHIVE_ARCH}.msi" || true;
