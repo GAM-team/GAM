@@ -374,20 +374,25 @@ jobs:
       - name: Basic Tests all jobs
         run: |
              $PYTHON -m unittest discover --start-directory ./ --pattern "*_test.py" --buffer
-             touch "${gampath}/nobrowser.txt"
              $gam version extended
              export GAMVERSION=$($gam version simple)
              echo "GAM Version ${GAMVERSION}"
              echo "GAMVERSION=${GAMVERSION}" >> $GITHUB_ENV
+             rm "${gampath}/lastupdatecheck.txt"
+             
 
-      - name: Linux package GAM
-        if: matrix.os != 'windows-2022' && matrix.os != 'macos-11' && matrix.goal == 'build'
+      - name: Linux/MacOS package
+        if: matrix.os != 'windows-2022' && matrix.goal == 'build'
         run: |
           cp -v LICENSE $gampath
           cp -v GamCommands.txt $gampath
-          this_glibc_ver=$(ldd --version | awk '/ldd/{print $NF}')
-          GAM_ARCHIVE="gam-${GAMVERSION}-linux-$(arch)-glibc${this_glibc_ver}.tar.xz"
-          tar cfJ $GAM_ARCHIVE dist/
+          if [[ "${RUNNER_OS}" == "macOS" ]]; then
+              GAM_ARCHIVE="gam-${GAMVERSION}-macos-x86_64.tar.xz"
+          elif [[ "${RUNNER_OS}" == "Linux" ]]; then
+              this_glibc_ver=$(ldd --version | awk '/ldd/{print $NF}')
+              GAM_ARCHIVE="gam-${GAMVERSION}-linux-$(arch)-glibc${this_glibc_ver}.tar.xz"
+          fi
+          tar -C dist/ --create --file $GAM_ARCHIVE --xz gam
 
       - name: Linux install patchelf/staticx
         if: matrix.os == 'ubuntu-20.04' && matrix.goal != 'test'
@@ -405,29 +410,24 @@ jobs:
         run: |
           "${gam}-staticx" version extended
           mv "${gam}-staticx" "${gam}"
+          rm "${gampath}/lastupdatecheck.txt"
 
       - name: Linux package staticx
         if: matrix.os == 'ubuntu-20.04' && matrix.goal != 'test'
         run: |
           GAM_ARCHIVE="gam-${GAMVERSION}-linux-x86_64-legacy.tar.xz"
-          tar cfJ $GAM_ARCHIVE dist/
+          tar -C dist/ --create --file $GAM_ARCHIVE --xz gam
 
-      - name: MacOS package
-        if: matrix.os == 'macos-11' && matrix.goal != 'test'
-        run: |
-          cp -v LICENSE $gampath
-          cp -v GamCommands.txt $gampath
-          GAM_ARCHIVE="gam-${GAMVERSION}-macos-x86_64.tar.xz"
-          tar cfJ $GAM_ARCHIVE dist/
-
-      - name: Windows package GYB
+      - name: Windows package
         if: matrix.os == 'windows-2022' && matrix.goal != 'test'
         run: |
           cp -v LICENSE $gampath
           cp -v GamCommands.txt $gampath
           cp -v gam-setup.bat $gampath
           GAM_ARCHIVE="gam-${GAMVERSION}-windows-${GAM_ARCHIVE_ARCH}.zip"
-          /c/Program\ Files/7-Zip/7z.exe a -tzip $GAM_ARCHIVE dist/ -xr!.svn
+          cd dist/
+          /c/Program\ Files/7-Zip/7z.exe a -tzip $GAM_ARCHIVE gam -xr!.svn
+          cd ..
           /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.11/bin/candle.exe -arch "${WIX_ARCH}" gam.wxs
           /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.11/bin/light.exe -ext /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.11/bin/WixUIExtension.dll gam.wixobj -o "gam-${GAMVERSION}-windows-${GAM_ARCHIVE_ARCH}.msi" || true;
           rm -f *.wixpdb
