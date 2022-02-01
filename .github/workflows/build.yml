@@ -515,6 +515,7 @@ jobs:
              $gam users "$newbase-bulkuser-04 $newbase-bulkuser-05 $newbase-bulkuser-06" trash messages query in:anywhere maxtotrash 99999 doit
              $gam users "$newbase-bulkuser-07 $newbase-bulkuser-08 $newbase-bulkuser-09" modify messages query in:anywhere maxtomodify 99999 addlabel IMPORTANT addlabel STARRED doit
              $gam user $newuser delete label --ALL_LABELS--
+             GAM_CSV_ROW_FILTER="name:regex:${gha-test-${JID}" $gam print features | $gam csv - gam delete feature ~name
              $gam create feature name Whiteboard-$newbase
              $gam create feature name VC-$newbase
              $gam create building "My Building - $newbase" id $newbuilding floors 1,2,3,4,5,6,7,8,9,10,11,12,14,15 description "No 13th floor here..."
