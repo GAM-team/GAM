@@ -330,7 +330,7 @@ jobs:
           curl -O https://bootstrap.pypa.io/get-pip.py
           "${PYTHON}" get-pip.py
           "${PYTHON}" -m pip install --upgrade pip
-          # "${PYTHON}" -m pip install --upgrade wheel
+          "${PYTHON}" -m pip install --upgrade wheel
           "${PYTHON}" -m pip install --upgrade setuptools==60.6.0
     
       - name: Install PyInstaller
