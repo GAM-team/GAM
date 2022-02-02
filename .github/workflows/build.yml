@@ -360,11 +360,8 @@ jobs:
         if: matrix.goal != 'test'
         run: |
              export gampath="./dist/gam"
-             echo "1 ${gampath}"
              mkdir -p -v "${gampath}"
-             echo "2 ${gampath}"
              export gampath="$($realpath $gampath)"
-             echo "3 ${gampath}"
              export gam="${gampath}/gam"
              echo "gampath=${gampath}" >> $GITHUB_ENV
              echo "gam=${gam}" >> $GITHUB_ENV
