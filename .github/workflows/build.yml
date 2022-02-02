@@ -355,6 +355,7 @@ jobs:
         run: |
              set +e
              "${PYTHON}" -m pip install --upgrade -r requirements.txt
+             "${PYTHON}" -m pip list
 
       - name: Build GAM with PyInstaller
         if: matrix.goal != 'test'
