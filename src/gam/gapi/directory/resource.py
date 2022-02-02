@@ -183,7 +183,7 @@ RESCAL_ARGUMENT_TO_PROPERTY_MAP = {
 def printFeatures():
     to_drive = False
     cd = gapi_directory.build()
-    titles = []
+    titles = ['name']
     csvRows = []
     fieldsList = ['name']
     fields = 'nextPageToken,features(%s)'
