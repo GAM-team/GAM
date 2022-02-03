@@ -78,6 +78,7 @@ from gam.gapi.directory import printers as gapi_directory_printers
 from gam.gapi.directory import privileges as gapi_directory_privileges
 from gam.gapi.directory import resource as gapi_directory_resource
 from gam.gapi.directory import roles as gapi_directory_roles
+from gam.gapi.directory import roleassignments as gapi_directory_roleassignments
 from gam.gapi.directory import users as gapi_directory_users
 from gam.gapi import licensing as gapi_licensing
 from gam.gapi import siteverification as gapi_siteverification
@@ -1033,6 +1034,7 @@ def buildGAPIObject(api):
                 _get_admin_email())
         if not GC_Values[GC_CUSTOMER_ID]:
             GC_Values[GC_CUSTOMER_ID] = MY_CUSTOMER
+        print(GC_Values[GC_CUSTOMER_ID])
     return service
 
 
@@ -1722,134 +1724,6 @@ def doUpdateCourse():
                        body=body,
                        updateMask=updateMask)
     print(f'Updated Course {result["id"]}')
-
-
-def doDelAdmin():
-    cd = buildGAPIObject('directory')
-    roleAssignmentId = sys.argv[3]
-    print(f'Deleting Admin Role Assignment {roleAssignmentId}')
-    gapi.call(cd.roleAssignments(),
-              'delete',
-              customer=GC_Values[GC_CUSTOMER_ID],
-              roleAssignmentId=roleAssignmentId)
-
-
-def doCreateAdmin():
-    cd = buildGAPIObject('directory')
-    user = normalizeEmailAddressOrUID(sys.argv[3])
-    body = {'assignedTo': convertEmailAddressToUID(user, cd)}
-    role = sys.argv[4]
-    body['roleId'] = getRoleId(role)
-    body['scopeType'] = sys.argv[5].upper()
-    if body['scopeType'] not in ['CUSTOMER', 'ORG_UNIT']:
-        controlflow.expected_argument_exit('scope type',
-                                           ', '.join(['customer', 'org_unit']),
-                                           body['scopeType'])
-    if body['scopeType'] == 'ORG_UNIT':
-        orgUnit, orgUnitId = gapi_directory_orgunits.getOrgUnitId(
-            sys.argv[6], cd)
-        body['orgUnitId'] = orgUnitId[3:]
-        scope = f'ORG_UNIT {orgUnit}'
-    else:
-        scope = 'CUSTOMER'
-    print(f'Giving {user} admin role {role} for {scope}')
-    gapi.call(cd.roleAssignments(),
-              'insert',
-              customer=GC_Values[GC_CUSTOMER_ID],
-              body=body)
-
-
-def doPrintAdmins():
-    cd = buildGAPIObject('directory')
-    roleId = None
-    todrive = False
-    kwargs = {}
-    fields = 'nextPageToken,items(roleAssignmentId,roleId,assignedTo,scopeType,orgUnitId)'
-    titles = [
-        'roleAssignmentId', 'roleId', 'role', 'assignedTo', 'assignedToUser',
-        'scopeType', 'orgUnitId', 'orgUnit'
-    ]
-    csvRows = []
-    i = 3
-    while i < len(sys.argv):
-        myarg = sys.argv[i].lower()
-        if myarg == 'user':
-            kwargs['userKey'] = normalizeEmailAddressOrUID(sys.argv[i + 1])
-            i += 2
-        elif myarg == 'role':
-            roleId = getRoleId(sys.argv[i + 1])
-            i += 2
-        elif myarg == 'todrive':
-            todrive = True
-            i += 1
-        else:
-            controlflow.invalid_argument_exit(sys.argv[i], 'gam print admins')
-    if roleId and not kwargs:
-        kwargs['roleId'] = roleId
-        roleId = None
-    admins = gapi.get_all_pages(cd.roleAssignments(),
-                                'list',
-                                'items',
-                                customer=GC_Values[GC_CUSTOMER_ID],
-                                fields=fields,
-                                **kwargs)
-    for admin in admins:
-        if roleId and roleId != admin['roleId']:
-            continue
-        admin_attrib = {}
-        for key, value in list(admin.items()):
-            if key == 'assignedTo':
-                admin_attrib['assignedToUser'] = user_from_userid(value)
-            elif key == 'roleId':
-                admin_attrib['role'] = role_from_roleid(value)
-            elif key == 'orgUnitId':
-                value = f'id:{value}'
-                admin_attrib[
-                    'orgUnit'] = gapi_directory_orgunits.orgunit_from_orgunitid(
-                        value, cd)
-            admin_attrib[key] = value
-        csvRows.append(admin_attrib)
-    display.write_csv_file(csvRows, titles, 'Admins', todrive)
-
-
-def buildRoleIdToNameToIdMap():
-    cd = buildGAPIObject('directory')
-    result = gapi.get_all_pages(cd.roles(),
-                                'list',
-                                'items',
-                                customer=GC_Values[GC_CUSTOMER_ID],
-                                fields='nextPageToken,items(roleId,roleName)')
-    GM_Globals[GM_MAP_ROLE_ID_TO_NAME] = {}
-    GM_Globals[GM_MAP_ROLE_NAME_TO_ID] = {}
-    for role in result:
-        GM_Globals[GM_MAP_ROLE_ID_TO_NAME][role['roleId']] = role['roleName']
-        GM_Globals[GM_MAP_ROLE_NAME_TO_ID][role['roleName']] = role['roleId']
-
-
-def role_from_roleid(roleid):
-    if not GM_Globals[GM_MAP_ROLE_ID_TO_NAME]:
-        buildRoleIdToNameToIdMap()
-    return GM_Globals[GM_MAP_ROLE_ID_TO_NAME].get(roleid, roleid)
-
-
-def roleid_from_role(role):
-    if not GM_Globals[GM_MAP_ROLE_NAME_TO_ID]:
-        buildRoleIdToNameToIdMap()
-    return GM_Globals[GM_MAP_ROLE_NAME_TO_ID].get(role, None)
-
-
-def getRoleId(role):
-    cg = UID_PATTERN.match(role)
-    if cg:
-        roleId = cg.group(1)
-    else:
-        roleId = roleid_from_role(role)
-        if not roleId:
-            controlflow.system_error_exit(
-                4,
-                f'{role} is not a valid role. Please ensure role name is exactly as shown in admin console.'
-            )
-    return roleId
 
 
 def buildUserIdToNameMap():
@@ -11440,7 +11314,7 @@ def ProcessGAMCommand(args):
             elif argument in ['domainalias', 'aliasdomain']:
                 gapi_directory_domainaliases.create()
             elif argument == 'admin':
-                doCreateAdmin()
+                gapi_directory_roleassignments.create()
             elif argument in ['guardianinvite', 'inviteguardian', 'guardian']:
                 doInviteGuardian()
             elif argument in ['project', 'apiproject']:
@@ -11644,7 +11518,7 @@ def ProcessGAMCommand(args):
             elif argument in ['domainalias', 'aliasdomain']:
                 gapi_directory_domainaliases.delete()
             elif argument == 'admin':
-                doDelAdmin()
+                gapi_directory_roleassignments.delete()
             elif argument in ['guardian', 'guardians']:
                 doDeleteGuardian()
             elif argument in ['project', 'projects']:
@@ -11751,7 +11625,7 @@ def ProcessGAMCommand(args):
             elif argument in ['domainaliases', 'aliasdomains']:
                 gapi_directory_domainaliases.print_()
             elif argument == 'admins':
-                doPrintAdmins()
+                gapi_directory_roleassignments.print_()
             elif argument in ['roles', 'adminroles']:
                 gapi_directory_roles.print_()
             elif argument in ['guardian', 'guardians']:

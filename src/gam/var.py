@@ -292,6 +292,7 @@ V1_DISCOVERY_APIS = {
 
 API_NAME_MAPPING = {
     'directory': 'admin',
+    'directory_beta': 'admin',
     'reports': 'admin',
     'datatransfer': 'admin',
     'drive3': 'drive',
@@ -313,6 +314,7 @@ API_VER_MAPPING = {
     'contactdelegation': 'v1',
     'datatransfer': 'datatransfer_v1',
     'directory': 'directory_v1',
+    'directory_beta': 'directory_v1.1beta1',
     'drive': 'v2',
     'drive3': 'v3',
     'gmail': 'v1',
