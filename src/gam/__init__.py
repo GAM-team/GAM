@@ -1034,7 +1034,6 @@ def buildGAPIObject(api):
                 _get_admin_email())
         if not GC_Values[GC_CUSTOMER_ID]:
             GC_Values[GC_CUSTOMER_ID] = MY_CUSTOMER
-        print(GC_Values[GC_CUSTOMER_ID])
     return service
 
 
