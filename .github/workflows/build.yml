@@ -483,7 +483,8 @@ jobs:
              $gam user $newuser add license workspaceenterpriseplus
              $gam update group $newgroup add owner $gam_user
              $gam update group $newgroup add member $newuser
-             $gam create admin $newuser _GROUPS_EDITOR_ROLE condition nonsecuritygroup
+             $gam print privileges
+             $gam create admin $newuser _GROUPS_EDITOR_ROLE CUSTOMER condition nonsecuritygroup
              $gam csv sample.csv gam create user ~~email~~ firstname "GHA Bulk" lastname ~~email~~ gha.jid $JID
              $gam csv sample.csv gam update user ~~email~~ recoveryphone 12125121110 recoveryemail jay0lee@gmail.com password random
              $gam csv sample.csv gam update user ~~email~~ recoveryphone "" recoveryemail ""
