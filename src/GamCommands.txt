@@ -994,7 +994,7 @@ gam report <ActivityApplicationName> [todrive]
 
 gam create admin <UserItem> <RoleItem> customer|(org_unit <OrgUnitItem>) [condition securitygroup|nonsecuritygroup]
 gam delete admin <RoleAssignmentId>
-gam print admins [todrive] [user <UserItem>] [role <RoleItem>]
+gam print admins [todrive] [user <UserItem>] [role <RoleItem>] [condition]
 gam create adminrole <String> privileges all|all_ou|<PrivilegesList> [description <String>]
 gam update adminrole <RoleItem> [name <String>] [privileges all|all_ou|<PrivilegesList>] [description <String>]
 gam delete adminrole <RoleItem>

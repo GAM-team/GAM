@@ -10,6 +10,9 @@ from gam.gapi.directory import orgunits as gapi_directory_orgunits
 from gam.gapi.directory import roles as gapi_directory_roles
 
 
+SECURITY_GROUP_CONDITION = "api.getAttribute('cloudidentity.googleapis.com/groups.labels', []).hasAny(['groups.security']) && resource.type == 'cloudidentity.googleapis.com/Group'"
+NONSECURITY_GROUP_CONDITION = f'!{SECURITY_GROUP_CONDITION}'
+
 def create():
     cd = gapi_directory.build()
     user = gam.normalizeEmailAddressOrUID(sys.argv[3])
@@ -24,9 +27,9 @@ def create():
             cd = gapi_directory.build_beta()
             body['condition'] = sys.argv[i+1]
             if body['condition'] == 'securitygroup':
-                body['condition'] = "api.getAttribute('cloudidentity.googleapis.com/groups.labels', []).hasAny(['groups.security']) && resource.type == 'cloudidentity.googleapis.com/Group'"
+                body['condition'] = SECURITY_GROUP_CONDITION
             elif body['condition'] == 'nonsecuritygroup':
-                body['condition'] = "!api.getAttribute('cloudidentity.googleapis.com/groups.labels', []).hasAny(['groups.security']) && resource.type == 'cloudidentity.googleapis.com/Group'"
+                body['condition'] = NONSECURITY_GROUP_CONDITION
             i += 2
         else:
             controlflow.invalid_argument_exit(sys.argv[i], 'gam create admin')
@@ -111,9 +114,13 @@ def print_():
                 admin_attrib[
                     'orgUnit'] = gapi_directory_orgunits.orgunit_from_orgunitid(
                         value, cd)
+            elif key == 'condition':
+                if value == SECURITY_GROUP_CONDITION:
+                    value = 'securitygroup'
+                elif value == NONSECURITY_GROUP_CONDITION:
+                    value = 'nonsecuritygroup'
             if key not in titles:
                 titles.append(key)
             admin_attrib[key] = value
         csvRows.append(admin_attrib)
     display.write_csv_file(csvRows, titles, 'Admins', todrive)
-
