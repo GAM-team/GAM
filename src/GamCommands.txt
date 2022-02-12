@@ -1052,7 +1052,7 @@ gam info org|ou <OrgUnitPath> [nousers|notsuspended|suspended] [children|child]
 gam print orgs|ous [todrive] [toplevelonly] [from_parent <OrgUnitPath>] [allfields|(fields <OrgUnitFieldNameList>)]
 
 gam create alias|nickname <EmailAddress> user|group|target <UniqueID>|<EmailAddress> [verifynotinvitable]
-gam update alias|nickname <EmailAddress> user|group|target <UniqueID>|<EmailAddress> [verifynotinvitable] [notargetverify]
+gam update alias|nickname <EmailAddress> user|group|target <UniqueID>|<EmailAddress> [notargetverify]
 gam delete alias|nickname [user|group|target] <UniqueID>|<EmailAddress>
 gam info alias|nickname <EmailAddress>
 gam print aliases|nicknames [todrive] [shownoneditable] [nogroups] [nousers] [(query <QueryUser>)|(queries <QueryUserList)]
