@@ -8352,6 +8352,7 @@ def doUpdateAlias():
         controlflow.expected_argument_exit(
             'target type', ', '.join(['user', 'group', 'target']), target_type)
     target_email = normalizeEmailAddressOrUID(sys.argv[5])
+    verifyTarget = True
     i = 6
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
@@ -8359,16 +8360,18 @@ def doUpdateAlias():
             if gapi_cloudidentity_userinvitations.is_invitable_user(alias):
                 controlflow.system_error_exit(51, f'Alias not updated, {alias} is an unmanaged account')
             i += 1
-        elif myarg == 'verifytarget':
-            target_type = verify_alias_target_exists()
-            if target_type is None:
-                controlflow.system_error_exit(51, f'Alias not updated, {target_email} does not exist')
+        elif myarg == 'noverifytarget':
+            verifyTarget = False
             i += 1
         else:
             controlflow.system_error_exit(
                 3,
                 f'{myarg} is not a valid argument for "gam update alias"'
                 )
+    if verifyTarget:
+        target_type = verify_alias_target_exists()
+        if target_type is None:
+            controlflow.system_error_exit(51, f'Alias not updated, {target_email} does not exist')
     try:
         gapi.call(cd.users().aliases(),
                   'delete',
