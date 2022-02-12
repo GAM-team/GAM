@@ -8327,6 +8327,24 @@ def doRemoveUsersAliases(users):
 
 
 def doUpdateAlias():
+    def verify_alias_target_exists():
+      if target_type != 'group':
+          try:
+              gapi.call(cd.users(), 'get',
+                        throw_reasons=[gapi_errors.ErrorReason.USER_NOT_FOUND],
+                        userKey=target_email)
+              return 'user'
+          except gapi_errors.GapiUserNotFoundError:
+              if target_type == 'user':
+                  return None
+      try:
+          gapi.call(cd.groups(), 'get',
+                    throw_reasons=[gapi_errors.ErrorReason.GROUP_NOT_FOUND],
+                    groupKey=target_email)
+          return 'group'
+      except gapi_errors.GapiGroupNotFoundError:
+          return None
+
     cd = buildGAPIObject('directory')
     alias = normalizeEmailAddressOrUID(sys.argv[3], noUid=True, noLower=True)
     target_type = sys.argv[4].lower()
@@ -8334,15 +8352,23 @@ def doUpdateAlias():
         controlflow.expected_argument_exit(
             'target type', ', '.join(['user', 'group', 'target']), target_type)
     target_email = normalizeEmailAddressOrUID(sys.argv[5])
-    if len(sys.argv) > 6:
-        myarg = sys.argv[6].lower().replace('_', '')
-        if myarg != 'verifynotinvitable':
+    i = 6
+    while i < len(sys.argv):
+        myarg = sys.argv[i].lower().replace('_', '')
+        if myarg == 'verifynotinvitable':
+            if gapi_cloudidentity_userinvitations.is_invitable_user(alias):
+                controlflow.system_error_exit(51, f'Alias not updated, {alias} is an unmanaged account')
+            i += 1
+        elif myarg == 'verifytarget':
+            target_type = verify_alias_target_exists()
+            if target_type is None:
+                controlflow.system_error_exit(51, f'Alias not updated, {target_email} does not exist')
+            i += 1
+        else:
             controlflow.system_error_exit(
                 3,
                 f'{myarg} is not a valid argument for "gam update alias"'
                 )
-        if gapi_cloudidentity_userinvitations.is_invitable_user(alias):
-            controlflow.system_error_exit(51, f'Alias not updated, {alias} is an unmanaged account')
     try:
         gapi.call(cd.users().aliases(),
                   'delete',
