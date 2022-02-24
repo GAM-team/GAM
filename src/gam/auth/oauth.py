@@ -611,7 +611,7 @@ class _ShortURLFlow(google_auth_oauthlib.flow.InstalledAppFlow):
             if not http_client.is_alive():
                 user_input.terminate()
                 break
-            if not user_input.is_alive():
+            elif not user_input.is_alive():
                 http_client.terminate()
                 break
         code = d['code']
