@@ -526,10 +526,10 @@ def _localhost_to_ip():
     ip4_local_range = ipaddress.ip_network('127.0.0.0/8')
     ip6_local_range = ipaddress.ip_network('::1/128')
     if local_ipaddress not in ip4_local_range and \
-       local_ipaddress not in ip6_local_ranage:
+       local_ipaddress not in ip6_local_range:
            local_ip = '127.0.0.1'
     return local_ip
-    
+
 def _wait_for_http_client(d):
     wsgi_app = google_auth_oauthlib.flow._RedirectWSGIApp('')
     wsgiref.simple_server.WSGIServer.allow_reuse_address = False
@@ -578,7 +578,6 @@ class _ShortURLFlow(google_auth_oauthlib.flow.InstalledAppFlow):
         """Gets a shortened authorization URL."""
         long_url, state = super().authorization_url(**kwargs)
         short_url = utils.shorten_url(long_url)
-        print(short_url)
         return short_url, state
 
 
@@ -589,7 +588,7 @@ class _ShortURLFlow(google_auth_oauthlib.flow.InstalledAppFlow):
                 web_success_message='',
                 open_browser=True,
                 redirect_uri_trailing_slash=True,
-                **kwargs): 
+                **kwargs):
         mgr = multiprocessing.Manager()
         d = mgr.dict()
         d['trailing_slash'] = redirect_uri_trailing_slash
@@ -605,8 +604,7 @@ class _ShortURLFlow(google_auth_oauthlib.flow.InstalledAppFlow):
             sleep(0.1)
         self.redirect_uri = d['redirect_uri']
         d['auth_url'], _ = self.authorization_url(**kwargs)
-        self.auth_url = d['auth_url']
-        print(f'URL is:     {self.auth_url}')
+        print(f"URL is:     {d['auth_url']}")
         user_input.start()
         while True:
             sleep(0.1)
