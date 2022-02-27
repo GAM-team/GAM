@@ -20,6 +20,8 @@ import google_auth_oauthlib.flow
 import google.oauth2.credentials
 import google.oauth2.id_token
 
+from gam import controlflow
+from gam import display
 from gam import fileutils
 from gam import transport
 from gam.var import GM_Globals, GM_WINDOWS
@@ -37,6 +39,8 @@ MESSAGE_LOCAL_SERVER_AUTHORIZATION_PROMPT = ('\nYour browser has been opened to'
                                              'same folder as GAM.\n')
 MESSAGE_LOCAL_SERVER_SUCCESS = ('The authentication flow has completed. You may'
                                 ' close this browser window and return to GAM.')
+
+MESSAGE_AUTHENTICATION_COMPLETE = ('\nThe authentication flow has completed.\n')
 
 
 class CredentialsError(Exception):
@@ -531,7 +535,7 @@ def _localhost_to_ip():
     return local_ip
 
 def _wait_for_http_client(d):
-    wsgi_app = google_auth_oauthlib.flow._RedirectWSGIApp('')
+    wsgi_app = google_auth_oauthlib.flow._RedirectWSGIApp(MESSAGE_LOCAL_SERVER_SUCCESS)
     wsgiref.simple_server.WSGIServer.allow_reuse_address = False
     # Convert hostn to IP since apparently binding to the IP
     # reduces odds of firewall blocking us
@@ -606,20 +610,31 @@ class _ShortURLFlow(google_auth_oauthlib.flow.InstalledAppFlow):
         d['auth_url'], _ = self.authorization_url(**kwargs)
         print(f"URL is:     {d['auth_url']}")
         user_input.start()
+        userInput = False
         while True:
             sleep(0.1)
             if not http_client.is_alive():
                 user_input.terminate()
                 break
             elif not user_input.is_alive():
+                userInput = True
                 http_client.terminate()
                 break
-        code = d['code']
-        if code.startswith('http'):
-            parsed_url = urlparse(code)
-            parsed_params = parse_qs(parsed_url.query)
-            code = parsed_params.get('code', [None])[0]
-        self.fetch_token(code=code)
+        while True:
+            code = d['code']
+            if code.startswith('http'):
+                parsed_url = urlparse(code)
+                parsed_params = parse_qs(parsed_url.query)
+                code = parsed_params.get('code', [None])[0]
+            try:
+                self.fetch_token(code=code)
+                break
+            except Exception as e:
+                if not userInput:
+                    controlflow.system_error_exit(8, str(e))
+                display.print_error(str(e))
+                _wait_for_user_input(d)
+        sys.stdout.write(MESSAGE_AUTHENTICATION_COMPLETE)
         return self.credentials
 
 class _FileLikeThreadLock:
