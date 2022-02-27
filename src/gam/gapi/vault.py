@@ -200,6 +200,7 @@ def createExport():
     showConfidentialModeContent = None  # default to not even set
     matterId = None
     query = None
+    useNewExport = None
     body = {'exportOptions': {}}
     i = 3
     while i < len(sys.argv):
@@ -213,6 +214,9 @@ def createExport():
             i += 2
         elif myarg in QUERY_ARGS:
             query, i = _build_query(query, myarg, i, query_discovery)
+        elif myarg == 'usenewexport':
+            useNewExport = gam.getBoolean(sys.argv[i+1], myarg)
+            i += 2
         elif myarg in ['format']:
             export_format = sys.argv[i + 1].upper()
             if export_format not in allowed_formats:
@@ -262,6 +266,9 @@ def createExport():
         if showConfidentialModeContent is not None:
             body['exportOptions'][options_field][
                 'showConfidentialModeContent'] = showConfidentialModeContent
+        if useNewExport is not None:
+            body['exportOptions'][options_field][
+                'useNewExport'] = useNewExport
     results = gapi.call(v.matters().exports(),
                         'create',
                         matterId=matterId,

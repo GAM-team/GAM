@@ -475,6 +475,9 @@ jobs:
                echo "${newbase}-bulkuser-$i" >> sample.csv;
              done
              $gam create user $newuser firstname GHA lastname $JID password random recoveryphone 12125121110 recoveryemail jay0lee@gmail.com gha.jid $JID languages en+,en-GB-
+             $gam user $newuser update photo https://dummyimage.com/400x600/000/fff
+             $gam user $newuser get photo
+             $gam user $newuser delete photo
              $gam create group $newgroup name "GHA $JID group" description "This is a description" isarchived true
              $gam user $gam_user sendemail recipient $newuser subject "test message $newbase" message "GHA test message"
              $gam user $gam_user sendemail recipient exchange@pdl.jaylee.us subject "test ${tstamp}" message "test message"
@@ -535,7 +538,7 @@ jobs:
              $gam print vaultmatters matterstate open
              $gam print vaultholds matter $matterid
              $gam print vaultcount matter $matterid corpus mail everyone todrive
-             $gam create vaultexport matter $matterid name "GHA export $newbase" corpus mail accounts $newuser
+             $gam create vaultexport matter $matterid name "GHA export $newbase" corpus mail accounts $newuser use_new_export
              $gam print exports matter $matterid | $gam csv - gam info export $matterid id:~~id~~
              $gam csv sample.csv gam user ~email add calendar id:$newresource
              $gam delete resource $newresource
@@ -551,6 +554,8 @@ jobs:
              $gam delete hold "GHA hold $newbase" matter $matterid
              $gam update matter $matterid action close
              $gam update matter $matterid action delete
+             $gam delete user $newuser
+             $gam undelete user $newuser
              $gam delete user $newuser
              $gam print users query "gha.jid=$JID" | $gam csv - gam delete user ~primaryEmail
              $gam print mobile
