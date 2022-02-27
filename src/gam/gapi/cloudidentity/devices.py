@@ -51,13 +51,30 @@ def create():
     print(f'Created device {result["response"]["name"]}')
 
 
-def _get_device_name():
-    name = sys.argv[3]
+def _parse_action(action):
+    kwargs = {}
+    i = 3
+    name = sys.argv[i]
     if name == 'id':
-        name = sys.argv[4]
+        i += 1
+        name = sys.argv[i]
+    i += 1
     if not name.startswith('devices/'):
         name = f'devices/{name}'
-    return name
+    customer = _get_device_customerid()
+    # bah, inconsistencies in API
+    if action == 'delete':
+        kwargs['customer'] = customer
+    else:
+        kwargs['body'] = {'customer': customer}
+    while i < len(sys.argv):
+        myarg = sys.argv[i].lower().replace('_', '')
+        if action == 'wipe' and myarg == 'removeresetlock':
+            kwargs['body']['removeResetLock'] = True
+            i += 1
+        else:
+            controlflow.invalid_argument_exit(sys.argv[i], f'gam {action} device')
+    return name, kwargs
 
 
 def info():
@@ -80,14 +97,7 @@ def info():
 def _generic_action(action, device_user=False):
     ci = gapi_cloudidentity.build_dwd()
     customer = _get_device_customerid()
-    name = _get_device_name()
-
-    # bah, inconsistencies in API
-    if action == 'delete':
-        kwargs = {'customer': customer}
-    else:
-        kwargs = {'body': {'customer': customer}}
-
+    name, kwargs = _parse_action(action)
     if device_user:
         endpoint = ci.devices().deviceUsers()
     else:
