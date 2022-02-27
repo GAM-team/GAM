@@ -28,9 +28,15 @@ from gam.var import GM_Globals, GM_WINDOWS
 from gam import utils
 
 
-MESSAGE_CONSOLE_AUTHORIZATION_PROMPT = ('\nGo to the following link in your '
-                                        'browser:\n\n\t{url}\n')
-MESSAGE_CONSOLE_AUTHORIZATION_CODE = 'Enter verification code: '
+MESSAGE_CONSOLE_AUTHORIZATION_PROMPT = '''\nGo to the following link in your browser:
+
+\t{url}
+
+IMPORTANT: If you get a browser error that the site can't be reached AFTER you
+click the Allow button, copy the URL from the browser where the error occurred
+and paste that here instead.
+'''
+MESSAGE_CONSOLE_AUTHORIZATION_CODE = 'Enter verification code or browser URL: '
 MESSAGE_LOCAL_SERVER_AUTHORIZATION_PROMPT = ('\nYour browser has been opened to'
                                              ' visit:\n\n\t{url}\n\nIf your '
                                              'browser is on a different machine'
@@ -570,7 +576,7 @@ def _wait_for_http_client(d):
 
 def _wait_for_user_input(d):
     sys.stdin = open(0)
-    code = input('enter the code:')
+    code = input(MESSAGE_CONSOLE_AUTHORIZATION_CODE)
     d['code'] = code
 
 
@@ -608,7 +614,7 @@ class _ShortURLFlow(google_auth_oauthlib.flow.InstalledAppFlow):
             sleep(0.1)
         self.redirect_uri = d['redirect_uri']
         d['auth_url'], _ = self.authorization_url(**kwargs)
-        print(f"URL is:     {d['auth_url']}")
+        print(MESSAGE_CONSOLE_AUTHORIZATION_PROMPT.format(url=d['auth_url']))
         user_input.start()
         userInput = False
         while True:
