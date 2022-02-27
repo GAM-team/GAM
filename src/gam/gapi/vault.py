@@ -206,7 +206,7 @@ def createExport():
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
         if myarg == 'matter':
-            matterId = getMatterItem(v, sys.argv[i + 1])
+            matterId = getMatterItem(v, sys.argv[i + 1], state='OPEN')
             body['matterId'] = matterId
             i += 2
         elif myarg == 'name':
@@ -554,7 +554,7 @@ def convertHoldNameToID(v, nameOrID, matterId):
         f'in matter {matterId}')
 
 
-def convertMatterNameToID(v, nameOrID):
+def convertMatterNameToID(v, nameOrID, state=None):
     nameOrID = nameOrID.lower()
     cg = UID_PATTERN.match(nameOrID)
     if cg:
@@ -564,6 +564,7 @@ def convertMatterNameToID(v, nameOrID):
                                  'list',
                                  'matters',
                                  view='BASIC',
+                                 state=state,
                                  fields=fields)
     for matter in matters:
         if matter['name'].lower() == nameOrID:
@@ -571,8 +572,8 @@ def convertMatterNameToID(v, nameOrID):
     return None
 
 
-def getMatterItem(v, nameOrID):
-    matterId = convertMatterNameToID(v, nameOrID)
+def getMatterItem(v, nameOrID, state=None):
+    matterId = convertMatterNameToID(v, nameOrID, state=state)
     if not matterId:
         controlflow.system_error_exit(4, f'could not find matter {nameOrID}')
     return matterId
