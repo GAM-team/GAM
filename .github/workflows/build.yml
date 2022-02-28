@@ -206,11 +206,11 @@ jobs:
           git checkout "${LATEST_STABLE_TAG}"
           export COMPILED_OPENSSL_VERSION=${LATEST_STABLE_TAG:8} # Trim the openssl- prefix
           echo "COMPILED_OPENSSL_VERSION=${COMPILED_OPENSSL_VERSION}" >> $GITHUB_ENV
-          cd ~
+          cd "${HOME}"
           for openssl_arch in $openssl_archs; do
             ssldir="${HOME}/openssl-${openssl_arch}"
             mkdir "${ssldir}"
-            cp -rf "${HOME}/openssl/* "${ssldir}/"
+            cp -rf ${HOME}/openssl/* "${ssldir}/"
           done
           rm -rf openssl
 
