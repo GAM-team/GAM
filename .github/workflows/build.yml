@@ -84,7 +84,7 @@ jobs:
           path: |
             src/python
             src/ssl
-          key: gam-${{ matrix.jid }}-20220228
+          key: gam-${{ matrix.jid }}-20220228-01
 
       - name: Use pre-compiled Python for testing
         if: matrix.python != ''
