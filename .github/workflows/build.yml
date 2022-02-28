@@ -13,9 +13,9 @@ defaults:
 
 env:
   OPENSSL_CONFIG_OPTS: no-asm no-fips
-  OPENSSL_INSTALL_PATH: ${{ github.workspace }}/src/ssl
+  OPENSSL_INSTALL_PATH: ${{ github.workspace }}/bin/ssl
   OPENSSL_SOURCE_PATH: ${{ github.workspace }}/src/openssl
-  PYTHON_INSTALL_PATH: ${{ github.workspace }}/src/python
+  PYTHON_INSTALL_PATH: ${{ github.workspace }}/bin/python
   PYTHON_SOURCE_PATH: ${{ github.workspace }}/src/cpython
 
 jobs:
@@ -82,8 +82,7 @@ jobs:
         id: cache-python-ssl
         with:
           path: |
-            src/python
-            src/ssl
+            bin
           key: gam-${{ matrix.jid }}-20220228-01
 
       - name: Use pre-compiled Python for testing
@@ -160,9 +159,9 @@ jobs:
             export date=gdate
             export realpath=grealpath
             echo "CRYPTOGRAPHY_SUPPRESS_LINK_FLAGS=1" >> $GITHUB_ENV
-            echo "CFLAGS=-I${HOME}/ssl/include -arch arm64 -arch x86_64" >> $GITHUB_ENV
+            echo "CFLAGS=-I${OPENSSL_INSTALL_PATH}/include -arch arm64 -arch x86_64" >> $GITHUB_ENV
             echo "MACOSX_DEPLOYMENT_TARGET=10.9" >> $GITHUB_ENV
-            echo "LDFLAGS=${HOME}/ssl/lib/libssl.a" >> $GITHUB_ENV
+            echo "LDFLAGS=${OPENSSL_INSTALL_PATH}/lib/libssl.a" >> $GITHUB_ENV
             echo "ARCHFLAGS=-arch x86_64 -arch arm64" >> $GITHUB_ENV
             echo 'PIP_ARGS=( "--no-binary" ":all:" )' >> $GITHUB_ENV
           elif [[ "${RUNNER_OS}" == "Linux" ]]; then
@@ -208,9 +207,9 @@ jobs:
           echo "COMPILED_OPENSSL_VERSION=${COMPILED_OPENSSL_VERSION}" >> $GITHUB_ENV
           cd "${HOME}"
           for openssl_arch in $openssl_archs; do
-            ssldir="${HOME}/openssl-${openssl_arch}"
+            ssldir="${HOME}/src/openssl-${openssl_arch}"
             mkdir "${ssldir}"
-            cp -rf ${HOME}/openssl/* "${ssldir}/"
+            cp -rf ${OPENSSL_SOURCE_PATH}/* "${ssldir}/"
           done
           rm -rf openssl
 
@@ -222,7 +221,7 @@ jobs:
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit != 'true'
         run: |
           for openssl_arch in $openssl_archs; do
-            cd "openssl-${openssl_arch}"
+            cd "src/openssl-${openssl_arch}"
             # --libdir=lib is needed so Python can find OpenSSL libraries
             "${PERL}" ./Configure "${openssl_archs}" --libdir=lib --prefix="${OPENSSL_INSTALL_PATH}-${openssl_arch}" $OPENSSL_CONFIG_OPTS
           done
@@ -236,7 +235,7 @@ jobs:
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit != 'true'
         run: |
           for openssl_arch in $openssl_archs; do
-            cd "openssl-${openssl_arch}"
+            cd "src/openssl-${openssl_arch}"
             $MAKE "${MAKEOPT}"
           done
 
@@ -244,27 +243,28 @@ jobs:
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit != 'true'
         run: |
           for openssl_arch in $openssl_archs; do
-            cd "openssl-${openssl_arch}"
+            cd "src/openssl-${openssl_arch}"
             # install_sw saves us ages processing man pages :-)
             $MAKE install_sw
           done
-          mkdir ssl
+          cd "${HOME}"
+          mkdir "{OPENSSL_INSTALL_PATH}"
           if [[ "${RUNNER_OS}" == "macOS" ]]; then
-            mkdir ssl/lib
-            mdkir ssl/bin
+            mkdir "${OPENSSL_INSTALL_PATH}/lib"
+            mdkir "${OPENSSL_INSTALL_PATH}/bin"
             for archlib in libcrypto.3.dylib libssl.3.dylib libcrypto.a libssl.a; do
-              lipo -create "ssl-darwin64-x86_64/lib/${archlib}" \
-                           "ssl-darwin64-arm64/lib/${archlib}" \
-                   -output "ssl/lib/${archlib}"
+              lipo -create "bin/ssl-darwin64-x86_64/lib/${archlib}" \
+                           "bin/ssl-darwin64-arm64/lib/${archlib}" \
+                   -output "bin/ssl/lib/${archlib}"
             done
-            mv ssl-darwin64-x86_64/include ssl/
-            lipo -create "ssl-darwin64-x86_64/bin/openssl" \
-                         "ssl-darwin64-arm64/bin/openssl" \
-                 -output "nssl/bin/openssl"
-            rm -rf ssl-darwin64-x86_64
-            rm -rf ssl-darwin64-arm64
+            mv bin/ssl-darwin64-x86_64/include bin/ssl/
+            lipo -create "bin/ssl-darwin64-x86_64/bin/openssl" \
+                         "bin/ssl-darwin64-arm64/bin/openssl" \
+                 -output "bin/ssl/bin/openssl"
+            rm -rf bin/ssl-darwin64-x86_64
+            rm -rf bin/ssl-darwin64-arm64
           else
-            mv "ssl-${openssl_archs}" ssl
+            mv "bin/ssl-${openssl_archs}" bin/ssl
           fi
 
       - name: Run OpenSSL
