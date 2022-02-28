@@ -198,6 +198,9 @@ jobs:
       - name: Get latest stable OpenSSL source
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit != 'true'
         run: |
+          echo "cwd: $(cwd)"
+          cd "${HOME}"
+          echo "HOME: ${HOME}"
           mkdir src
           cd src
           git clone https://github.com/openssl/openssl.git
