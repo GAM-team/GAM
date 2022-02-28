@@ -131,7 +131,7 @@ jobs:
         env:
           arch: ${{ matrix.arch }}
           jid: ${{ matrix.jid }}
-          openssl_archs: ${{ openssl_archs }}
+          openssl_archs: ${{ matrix.openssl_archs }}
         run: |
           echo "We are running on ${RUNNER_OS}"
           if [[ "${arch}" == "Win64" ]]; then
