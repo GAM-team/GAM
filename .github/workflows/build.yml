@@ -33,15 +33,17 @@ jobs:
             jid: 3
             goal: build
             arch: x86_64
-            openssl_archs: darwin64-x86_64,darwin64-arm64
+            openssl_archs: darwin64-x86_64 darwin64-arm64
           - os: windows-2022
             jid: 4
             goal: build
             arch: Win64
+            openssl_archs: VC-WIN64A
           - os: windows-2022
             jid: 5
             goal: build
             arch: Win32
+            openssl_archs: VC-WIN32
           - os: ubuntu-20.04
             goal: test
             python: "3.7"
@@ -61,10 +63,12 @@ jobs:
             jid: 9
             goal: build
             arch: aarch64
+            openssl_archs: linux-aarch64
           - os: [self-hosted, linux, arm]
             jid: 10
             goal: build
             arch: armv7l
+            openssl_archs: linux-armv4
 
     steps:
 
@@ -127,19 +131,18 @@ jobs:
         env:
           arch: ${{ matrix.arch }}
           jid: ${{ matrix.jid }}
+          openssl_archs: ${{ openssl_archs }}
         run: |
           echo "We are running on ${RUNNER_OS}"
           if [[ "${arch}" == "Win64" ]]; then
             PYEXTERNALS_PATH="amd64"
             PYBUILDRELEASE_ARCH="x64"
-            OPENSSL_CONFIG_TARGET="VC-WIN64A"
             GAM_ARCHIVE_ARCH="x86_64"
             WIX_ARCH="x64"
             CHOC_OPS=""
           elif [[ "${arch}" == "Win32" ]]; then
             PYEXTERNALS_PATH="win32"
             PYBUILDRELEASE_ARCH="Win32"
-            OPENSSL_CONFIG_TARGET="VC-WIN32"
             GAM_ARCHIVE_ARCH="x86"
             WIX_ARCH="x86"
             CHOC_OPS="--forcex86"
@@ -156,6 +159,12 @@ jobs:
             echo "PYTHON=${PYTHON_INSTALL_PATH}/bin/python3" >> $GITHUB_ENV
             export date=gdate
             export realpath=grealpath
+            echo "CRYPTOGRAPHY_SUPPRESS_LINK_FLAGS=1" >> $GITHUB_ENV
+            echo "CFLAGS=-I${HOME}/ssl/include -arch arm64 -arch x86_64" >> $GITHUB_ENV
+            echo "MACOSX_DEPLOYMENT_TARGET=10.9" >> $GITHUB_ENV
+            echo "LDFLAGS=${HOME}/ssl/lib/libssl.a" >> $GITHUB_ENV
+            echo "ARCHFLAGS=-arch x86_64 -arch arm64" >> $GITHUB_ENV
+            echo 'PIP_ARGS=( "--no-binary" ":all:" )' >> $GITHUB_ENV
           elif [[ "${RUNNER_OS}" == "Linux" ]]; then
             MAKE=make
             MAKEOPT="-j$(nproc)"
@@ -183,7 +192,7 @@ jobs:
           echo "PERL=${PERL}" >> $GITHUB_ENV
           echo "PYEXTERNALS_PATH=${PYEXTERNALS_PATH}" >> $GITHUB_ENV
           echo "PYBUILDRELEASE_ARCH=${PYBUILDRELEASE_ARCH}" >> $GITHUB_ENV
-          echo "OPENSSL_CONFIG_TARGET=${OPENSSL_CONFIG_TARGET}" >> $GITHUB_ENV
+          echo "openssl_archs=${openssl_archs}" >> $GITHUB_ENV
           echo "LD_LIBRARY_PATH=${OPENSSL_INSTALL_PATH}/lib:${PYTHON_INSTALL_PATH}/lib" >> $GITHUB_ENV
           #echo "PATH=${PATH}:${PYTHON_INSTALL_PATH}/scripts" >> $GITHUB_ENV
 
@@ -197,6 +206,13 @@ jobs:
           git checkout "${LATEST_STABLE_TAG}"
           export COMPILED_OPENSSL_VERSION=${LATEST_STABLE_TAG:8} # Trim the openssl- prefix
           echo "COMPILED_OPENSSL_VERSION=${COMPILED_OPENSSL_VERSION}" >> $GITHUB_ENV
+          cd ~
+          for openssl_arch in $openssl_archs; do
+            ssldir="openssl-${openssl_arch}"
+            mkdir "{ssldir}"
+            cp -rf openssl/* "${ssldir}/"
+          done
+          rm -rf openssl
 
       - name: Windows NASM Install
         uses: ilammy/setup-nasm@v1
@@ -205,9 +221,11 @@ jobs:
       - name: Config OpenSSL
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit != 'true'
         run: |
-          cd "${OPENSSL_SOURCE_PATH}"
-          # --libdir=lib is needed so Python can find OpenSSL libraries
-          "${PERL}" ./Configure "${OPENSSL_CONFIG_TARGET}" --libdir=lib --prefix="${OPENSSL_INSTALL_PATH}" $OPENSSL_CONFIG_OPTS
+          for openssl_arch in $openssl_archs; do
+            cd "openssl-${openssl_arch}"
+            # --libdir=lib is needed so Python can find OpenSSL libraries
+            "${PERL}" ./Configure "${openssl_archs}" --libdir=lib --prefix="${OPENSSL_INSTALL_PATH}-${openssl_arch}" $OPENSSL_CONFIG_OPTS
+          done
 
       - name: Rename GNU link on Windows
         if: matrix.goal == 'build' && matrix.os == 'windows-2022' && steps.cache-python-ssl.outputs.cache-hit != 'true'
@@ -217,20 +235,43 @@ jobs:
       - name: Make OpenSSL
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit != 'true'
         run: |
-          cd "${OPENSSL_SOURCE_PATH}"
-          $MAKE "${MAKEOPT}"
+          for openssl_arch in $openssl_archs; do
+            cd "openssl-${openssl_arch}"
+            $MAKE "${MAKEOPT}"
+          done
 
       - name: Install OpenSSL
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit != 'true'
         run: |
-          cd "${OPENSSL_SOURCE_PATH}"
-          # install_sw saves us ages processing man pages :-)
-          $MAKE install_sw
+          for openssl_arch in $openssl_archs; do
+            cd "openssl-${openssl_arch}"
+            # install_sw saves us ages processing man pages :-)
+            $MAKE install_sw
+          done
+          mkdir ssl
+          if [[ "${RUNNER_OS}" == "macOS" ]]; then
+            mkdir ssl/lib
+            mdkir ssl/bin
+            for archlib in libcrypto.3.dylib libssl.3.dylib libcrypto.a libssl.a; do
+              lipo -create "ssl-darwin64-x86_64/lib/${archlib}" \
+                           "ssl-darwin64-arm64/lib/${archlib}" \
+                   -output "ssl/lib/${archlib}"
+            done
+            mv ssl-darwin64-x86_64/include ssl/
+            lipo -create "ssl-darwin64-x86_64/bin/openssl" \
+                         "ssl-darwin64-arm64/bin/openssl" \
+                 -output "nssl/bin/openssl"
+            rm -rf ssl-darwin64-x86_64
+            rm -rf ssl-darwin64-arm64
+          else
+            mv "ssl-${openssl_archs}" ssl
+          fi
 
       - name: Run OpenSSL
         if: matrix.goal == 'build'
         run: |
           "${OPENSSL_INSTALL_PATH}/bin/openssl" version
+          file "${OPENSSL_INSTALL_PATH}/bin/openssl"
 
       - name: Get latest stable Python source
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit != 'true'
@@ -246,12 +287,17 @@ jobs:
         if: matrix.goal == 'build' && matrix.os != 'windows-2022' && steps.cache-python-ssl.outputs.cache-hit != 'true'
         run: |
           cd "${PYTHON_SOURCE_PATH}"
+          if [[ "${RUNNER_OS}" == "macOS" ]]; then
+            extra_args=( "--enable-universalsdk" "--with-universal-archs=universal2" )
+          else
+            extra_args=( )
           ./configure --with-openssl="${OPENSSL_INSTALL_PATH}" \
                       --prefix="${PYTHON_INSTALL_PATH}" \
                       --enable-shared \
                       --with-ensurepip=upgrade \
                       --enable-optimizations \
-                      --with-lto
+                      --with-lto \
+                      "${extra_args[@]}"
 
       - name: Windows Get External Python deps
         if: matrix.goal == 'build' && matrix.os == 'windows-2022' && steps.cache-python-ssl.outputs.cache-hit != 'true'
@@ -356,7 +402,7 @@ jobs:
       - name: Install pip requirements
         run: |
              set +e
-             "${PYTHON}" -m pip install --upgrade -r requirements.txt
+             "${PYTHON}" -m pip install --upgrade -r requirements.txt "${PIP_ARGS[@]}"
              "${PYTHON}" -m pip list
 
       - name: Build GAM with PyInstaller
