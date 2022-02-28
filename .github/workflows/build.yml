@@ -208,9 +208,9 @@ jobs:
           echo "COMPILED_OPENSSL_VERSION=${COMPILED_OPENSSL_VERSION}" >> $GITHUB_ENV
           cd ~
           for openssl_arch in $openssl_archs; do
-            ssldir="openssl-${openssl_arch}"
-            mkdir "{ssldir}"
-            cp -rf openssl/* "${ssldir}/"
+            ssldir="${HOME}/openssl-${openssl_arch}"
+            mkdir "${ssldir}"
+            cp -rf "${HOME}/openssl/* "${ssldir}/"
           done
           rm -rf openssl
 
