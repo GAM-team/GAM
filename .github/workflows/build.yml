@@ -113,7 +113,7 @@ jobs:
              echo "date=date" >> $GITHUB_ENV
 
       - name: Install necessary hosted Linux packages
-        if: matrix.os == 'ubuntu-20.04' && steps.cache-python-ssl.outputs.cache-hit != 'true'
+        if: matrix.os == 'ubuntu-20.04'
         run: |
           echo "RUNNING: apt update..."
           sudo apt-get -qq --yes update
