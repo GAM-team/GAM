@@ -250,16 +250,16 @@ jobs:
             mkdir -vp "${OPENSSL_INSTALL_PATH}/lib"
             mkdir -vp "${OPENSSL_INSTALL_PATH}/bin"
             for archlib in libcrypto.3.dylib libssl.3.dylib libcrypto.a libssl.a; do
-              lipo -create "bin/ssl-darwin64-x86_64/lib/${archlib}" \
-                           "bin/ssl-darwin64-arm64/lib/${archlib}" \
-                   -output "bin/ssl/lib/${archlib}"
+              lipo -create "${GITHUB_WORKSPACE}/bin/ssl-darwin64-x86_64/lib/${archlib}" \
+                           "${GITHUB_WORKSPACE}/bin/ssl-darwin64-arm64/lib/${archlib}" \
+                   -output "${GITHUB_WORKSPACE}/bin/ssl/lib/${archlib}"
             done
-            mv bin/ssl-darwin64-x86_64/include bin/ssl/
-            lipo -create "bin/ssl-darwin64-x86_64/bin/openssl" \
-                         "bin/ssl-darwin64-arm64/bin/openssl" \
-                 -output "bin/ssl/bin/openssl"
-            rm -rf bin/ssl-darwin64-x86_64
-            rm -rf bin/ssl-darwin64-arm64
+            mv ${GITHUB_WORKSPACE}/bin/ssl-darwin64-x86_64/include ${GITHUB_WORKSPACE}/bin/ssl/
+            lipo -create "${GITHUB_WORKSPACE}/bin/ssl-darwin64-x86_64/bin/openssl" \
+                         "${GITHUB_WORKSPACE}/bin/ssl-darwin64-arm64/bin/openssl" \
+                 -output "${GITHUB_WORKSPACE}/bin/ssl/bin/openssl"
+            rm -rf ${GITHUB_WORKSPACE}/bin/ssl-darwin64-x86_64
+            rm -rf ${GITHUB_WORKSPACE}/bin/ssl-darwin64-arm64
             echo "LDFLAGS=${OPENSSL_INSTALL_PATH}/lib/libssl.a" >> $GITHUB_ENV
             echo "CRYPTOGRAPHY_SUPPRESS_LINK_FLAGS=1" >> $GITHUB_ENV
             echo "CFLAGS=-I${OPENSSL_INSTALL_PATH}/include -arch arm64 -arch x86_64" >> $GITHUB_ENV
