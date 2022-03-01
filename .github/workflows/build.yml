@@ -198,7 +198,7 @@ jobs:
       - name: Get latest stable OpenSSL source
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit != 'true'
         run: |
-          mkdir -p "${GITHUB_WORKSPACE}/src"
+          mkdir -vp "${GITHUB_WORKSPACE}/src"
           cd "${GITHUB_WORKSPACE}/src"
           git clone https://github.com/openssl/openssl.git
           cd "${OPENSSL_SOURCE_PATH}"
@@ -210,12 +210,12 @@ jobs:
           if [[ "${RUNNER_OS}" == "macOS" ]]; then
             for openssl_arch in $openssl_archs; do
               ssldir="${GITHUB_WORKSPACE}/src/openssl-${openssl_arch}"
-              mkdir "${ssldir}"
-              cp -rf ${OPENSSL_SOURCE_PATH}/* "${ssldir}/"
+              mkdir -v "${ssldir}"
+              cp -vrf ${OPENSSL_SOURCE_PATH}/* "${ssldir}/"
             done
-            rm -rf "${OPENSSL_SOURCE_PATH}"
+            rm -vrf "${OPENSSL_SOURCE_PATH}"
           else
-            mv "${OPENSSL_SOURCE_PATH}" "${GITHUB_WORKSPACE}/src/openssl-${openssl_arch}"
+            mv -v "${OPENSSL_SOURCE_PATH}" "${GITHUB_WORKSPACE}/src/openssl-${openssl_arch}"
           fi
 
       - name: Windows NASM Install
@@ -226,7 +226,7 @@ jobs:
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit != 'true'
         run: |
           for openssl_arch in $openssl_archs; do
-            cd "${OPENSSL_SOURCE_PATH}-${openssl_arch}"
+            cd "${GITHUB_WORKSPACE}/src/openssl-${openssl_arch}"
             # --libdir=lib is needed so Python can find OpenSSL libraries
             "${PERL}" ./Configure "${openssl_arch}" --libdir=lib --prefix="${OPENSSL_INSTALL_PATH}-${openssl_arch}" $OPENSSL_CONFIG_OPTS
           done
@@ -240,7 +240,7 @@ jobs:
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit != 'true'
         run: |
           for openssl_arch in $openssl_archs; do
-            cd "${OPENSSL_SOURCE_PATH}-${openssl_arch}"
+            cd "${GITHUB_WORKSPACE}/src/openssl-${openssl_arch}"
             $MAKE "${MAKEOPT}"
           done
 
@@ -248,7 +248,7 @@ jobs:
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit != 'true'
         run: |
           for openssl_arch in $openssl_archs; do
-            cd "${OPENSSL_SOURCE_PATH}-${openssl_arch}"
+            cd "${GITHUB_WORKSPACE}/src/openssl-${openssl_arch}"
             # install_sw saves us ages processing man pages :-)
             $MAKE install_sw
           done
