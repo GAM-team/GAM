@@ -239,6 +239,8 @@ jobs:
       - name: Make OpenSSL
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit != 'true'
         run: |
+          # clear LDFLAGS for now
+          unset LDFLAGS
           for openssl_arch in $openssl_archs; do
             cd "${GITHUB_WORKSPACE}/src/openssl-${openssl_arch}"
             $MAKE "${MAKEOPT}"
