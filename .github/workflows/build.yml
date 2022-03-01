@@ -298,6 +298,7 @@ jobs:
             extra_args=( "--enable-universalsdk" "--with-universal-archs=universal2" )
           else
             extra_args=( )
+          fi
           ./configure --with-openssl="${OPENSSL_INSTALL_PATH}" \
                       --prefix="${PYTHON_INSTALL_PATH}" \
                       --enable-shared \
