@@ -251,7 +251,7 @@ jobs:
           mkdir -vp "{OPENSSL_INSTALL_PATH}"
           if [[ "${RUNNER_OS}" == "macOS" ]]; then
             mkdir -vp "${OPENSSL_INSTALL_PATH}/lib"
-            mdkir -vp "${OPENSSL_INSTALL_PATH}/bin"
+            mkdir -vp "${OPENSSL_INSTALL_PATH}/bin"
             for archlib in libcrypto.3.dylib libssl.3.dylib libcrypto.a libssl.a; do
               lipo -create "bin/ssl-darwin64-x86_64/lib/${archlib}" \
                            "bin/ssl-darwin64-arm64/lib/${archlib}" \
