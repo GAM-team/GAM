@@ -209,13 +209,13 @@ jobs:
           echo "COMPILED_OPENSSL_VERSION=${COMPILED_OPENSSL_VERSION}" >> $GITHUB_ENV
           if [[ "${RUNNER_OS}" == "macOS" ]]; then
             for openssl_arch in $openssl_archs; do
-              ssldir="${GITHUB_WORKSPACE}/src/openssl-${openssl_arch}"
+              ssldir="${OPENSSL_SOURCE_PATH}-${openssl_arch}"
               mkdir -v "${ssldir}"
               cp -vrf ${OPENSSL_SOURCE_PATH}/* "${ssldir}/"
             done
             rm -vrf "${OPENSSL_SOURCE_PATH}"
           else
-            mv -v "${OPENSSL_SOURCE_PATH}" "${GITHUB_WORKSPACE}/src/openssl-${openssl_arch}"
+            mv -v "${OPENSSL_SOURCE_PATH}" "${OPENSSL_SOURCE_PATH}-${openssl_archs}"
           fi
 
       - name: Windows NASM Install
