@@ -221,7 +221,7 @@ jobs:
           for openssl_arch in $openssl_archs; do
             cd "${GITHUB_WORKSPACE}/src/openssl-${openssl_arch}"
             # --libdir=lib is needed so Python can find OpenSSL libraries
-            "${PERL}" ./Configure "${openssl_arch}" --libdir=lib --prefix="${OPENSSL_INSTALL_PATH}-${openssl_arch}" $OPENSSL_CONFIG_OPTS
+            "${PERL}" ./Configure "${openssl_arch}" --libdir=lib --prefix="${OPENSSL_INSTALL_PATH}" $OPENSSL_CONFIG_OPTS
           done
 
       - name: Rename GNU link on Windows
@@ -240,14 +240,13 @@ jobs:
       - name: Install OpenSSL
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit != 'true'
         run: |
-          for openssl_arch in $openssl_archs; do
-            cd "${GITHUB_WORKSPACE}/src/openssl-${openssl_arch}"
-            # install_sw saves us ages processing man pages :-)
-            $MAKE install_sw
-          done
-          cd "${GITHUB_WORKSPACE}"
-          mkdir -vp "{OPENSSL_INSTALL_PATH}"
           if [[ "${RUNNER_OS}" == "macOS" ]]; then
+            for openssl_arch in $openssl_archs; do
+              cd "${GITHUB_WORKSPACE}/src/openssl-${openssl_arch}"
+              # install_sw saves us ages processing man pages :-)
+              $MAKE install_sw
+              mv "{OPENSSL_INSTALL_PATH}" "${GITHUB_WORKSPACE}/bin/ssl-${openssl_arch}"
+            done
             mkdir -vp "${OPENSSL_INSTALL_PATH}/lib"
             mkdir -vp "${OPENSSL_INSTALL_PATH}/bin"
             for archlib in libcrypto.3.dylib libssl.3.dylib libcrypto.a libssl.a; do
@@ -266,14 +265,16 @@ jobs:
             echo "CFLAGS=-I${OPENSSL_INSTALL_PATH}/include -arch arm64 -arch x86_64" >> $GITHUB_ENV
             echo "ARCHFLAGS=-arch x86_64 -arch arm64" >> $GITHUB_ENV
           else
-            mv "bin/ssl-${openssl_archs}" bin/ssl
+            cd "${GITHUB_WORKSPACE}/src/openssl-${openssl_arch}"
+            # install_sw saves us ages processing man pages :-)
+            $MAKE install_sw
           fi
 
-   #   - name: Run OpenSSL
-   #     if: matrix.goal == 'build'
-   #     run: |
-   #       "${OPENSSL_INSTALL_PATH}/bin/openssl" version
-   #       file "${OPENSSL_INSTALL_PATH}/bin/openssl"
+      - name: Run OpenSSL
+        if: matrix.goal == 'build'
+        run: |
+          "${OPENSSL_INSTALL_PATH}/bin/openssl" version
+          file "${OPENSSL_INSTALL_PATH}/bin/openssl"
 
       - name: Get latest stable Python source
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit != 'true'
