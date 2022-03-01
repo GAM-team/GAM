@@ -152,9 +152,7 @@ jobs:
             MAKE=make
             MAKEOPT="-j$(sysctl -n hw.logicalcpu)"
             PERL=perl
-            # We only care about non-deprecated OSes
-            MACOSX_DEPLOYMENT_TARGET="10.15"
-            echo "MACOSX_DEPLOYMENT_TARGET=${MACOSX_DEPLOYMENT_TARGET}" >> $GITHUB_ENV
+            echo "MACOSX_DEPLOYMENT_TARGET=10.9" >> $GITHUB_ENV
             echo "PYTHON=${PYTHON_INSTALL_PATH}/bin/python3" >> $GITHUB_ENV
             export date=gdate
             export realpath=grealpath
@@ -266,17 +264,16 @@ jobs:
             echo "LDFLAGS=${OPENSSL_INSTALL_PATH}/lib/libssl.a" >> $GITHUB_ENV
             echo "CRYPTOGRAPHY_SUPPRESS_LINK_FLAGS=1" >> $GITHUB_ENV
             echo "CFLAGS=-I${OPENSSL_INSTALL_PATH}/include -arch arm64 -arch x86_64" >> $GITHUB_ENV
-            echo "MACOSX_DEPLOYMENT_TARGET=10.9" >> $GITHUB_ENV
             echo "ARCHFLAGS=-arch x86_64 -arch arm64" >> $GITHUB_ENV
           else
             mv "bin/ssl-${openssl_archs}" bin/ssl
           fi
 
-      - name: Run OpenSSL
-        if: matrix.goal == 'build'
-        run: |
-          "${OPENSSL_INSTALL_PATH}/bin/openssl" version
-          file "${OPENSSL_INSTALL_PATH}/bin/openssl"
+   #   - name: Run OpenSSL
+   #     if: matrix.goal == 'build'
+   #     run: |
+   #       "${OPENSSL_INSTALL_PATH}/bin/openssl" version
+   #       file "${OPENSSL_INSTALL_PATH}/bin/openssl"
 
       - name: Get latest stable Python source
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit != 'true'
