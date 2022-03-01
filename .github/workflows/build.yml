@@ -207,12 +207,15 @@ jobs:
           git checkout "${LATEST_STABLE_TAG}"
           export COMPILED_OPENSSL_VERSION=${LATEST_STABLE_TAG:8} # Trim the openssl- prefix
           echo "COMPILED_OPENSSL_VERSION=${COMPILED_OPENSSL_VERSION}" >> $GITHUB_ENV
-          for openssl_arch in $openssl_archs; do
-            ssldir="${GITHUB_WORKSPACE}/src/openssl-${openssl_arch}"
-            mkdir "${ssldir}"
-            cp -rf ${OPENSSL_SOURCE_PATH}/* "${ssldir}/"
-          done
-          rm -rf "${OPENSSL_SOURCE_PATH}"
+          if [[ "${RUNNER_OS}" == "macOS" ]]; then
+            for openssl_arch in $openssl_archs; do
+              ssldir="${GITHUB_WORKSPACE}/src/openssl-${openssl_arch}"
+              mkdir "${ssldir}"
+              cp -rf ${OPENSSL_SOURCE_PATH}/* "${ssldir}/"
+            done
+            rm -rf "${OPENSSL_SOURCE_PATH}"
+          else
+            mv "${GITHUB_WORKSPACE}/src/openssl-${openssl_arch}" "${OPENSSL_SOURCE_PATH}"
 
       - name: Windows NASM Install
         uses: ilammy/setup-nasm@v1
