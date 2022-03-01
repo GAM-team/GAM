@@ -245,7 +245,7 @@ jobs:
               cd "${GITHUB_WORKSPACE}/src/openssl-${openssl_arch}"
               # install_sw saves us ages processing man pages :-)
               $MAKE install_sw
-              mv "{OPENSSL_INSTALL_PATH}" "${GITHUB_WORKSPACE}/bin/ssl-${openssl_arch}"
+              mv "${OPENSSL_INSTALL_PATH}" "${GITHUB_WORKSPACE}/bin/ssl-${openssl_arch}"
             done
             mkdir -vp "${OPENSSL_INSTALL_PATH}/lib"
             mkdir -vp "${OPENSSL_INSTALL_PATH}/bin"
