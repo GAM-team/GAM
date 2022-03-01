@@ -119,6 +119,12 @@ jobs:
           sudo apt-get -qq --yes update
           sudo apt-get -qq --yes install swig libpcsclite-dev
 
+      - name: Install necessary MacOS tools
+        if: matrix.os == 'macos-11'
+        run: |
+          # needed for Rust to compile cryptography Python package for universal2
+          rustup target add aarch64-apple-darwin
+
       - name: Windows Configure VCode
         uses: ilammy/msvc-dev-cmd@v1
         if: matrix.os == 'windows-2022' && steps.cache-python-ssl.outputs.cache-hit != 'true'
