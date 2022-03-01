@@ -215,7 +215,8 @@ jobs:
             done
             rm -rf "${OPENSSL_SOURCE_PATH}"
           else
-            mv "${GITHUB_WORKSPACE}/src/openssl-${openssl_arch}" "${OPENSSL_SOURCE_PATH}"
+            mv "${OPENSSL_SOURCE_PATH}" "${GITHUB_WORKSPACE}/src/openssl-${openssl_arch}"
+          fi
 
       - name: Windows NASM Install
         uses: ilammy/setup-nasm@v1
