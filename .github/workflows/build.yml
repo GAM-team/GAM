@@ -158,11 +158,6 @@ jobs:
             echo "PYTHON=${PYTHON_INSTALL_PATH}/bin/python3" >> $GITHUB_ENV
             export date=gdate
             export realpath=grealpath
-            echo "CRYPTOGRAPHY_SUPPRESS_LINK_FLAGS=1" >> $GITHUB_ENV
-            echo "CFLAGS=-I${OPENSSL_INSTALL_PATH}/include -arch arm64 -arch x86_64" >> $GITHUB_ENV
-            echo "MACOSX_DEPLOYMENT_TARGET=10.9" >> $GITHUB_ENV
-            echo "LDFLAGS=${OPENSSL_INSTALL_PATH}/lib/libssl.a" >> $GITHUB_ENV
-            echo "ARCHFLAGS=-arch x86_64 -arch arm64" >> $GITHUB_ENV
             echo 'PIP_ARGS=( "--no-binary" ":all:" )' >> $GITHUB_ENV
           elif [[ "${RUNNER_OS}" == "Linux" ]]; then
             MAKE=make
@@ -239,8 +234,6 @@ jobs:
       - name: Make OpenSSL
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit != 'true'
         run: |
-          # clear LDFLAGS for now
-          unset LDFLAGS
           for openssl_arch in $openssl_archs; do
             cd "${GITHUB_WORKSPACE}/src/openssl-${openssl_arch}"
             $MAKE "${MAKEOPT}"
@@ -270,6 +263,11 @@ jobs:
                  -output "bin/ssl/bin/openssl"
             rm -rf bin/ssl-darwin64-x86_64
             rm -rf bin/ssl-darwin64-arm64
+            echo "LDFLAGS=${OPENSSL_INSTALL_PATH}/lib/libssl.a" >> $GITHUB_ENV
+            echo "CRYPTOGRAPHY_SUPPRESS_LINK_FLAGS=1" >> $GITHUB_ENV
+            echo "CFLAGS=-I${OPENSSL_INSTALL_PATH}/include -arch arm64 -arch x86_64" >> $GITHUB_ENV
+            echo "MACOSX_DEPLOYMENT_TARGET=10.9" >> $GITHUB_ENV
+            echo "ARCHFLAGS=-arch x86_64 -arch arm64" >> $GITHUB_ENV
           else
             mv "bin/ssl-${openssl_archs}" bin/ssl
           fi
