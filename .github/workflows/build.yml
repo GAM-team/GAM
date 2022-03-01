@@ -224,7 +224,7 @@ jobs:
           for openssl_arch in $openssl_archs; do
             cd "${OPENSSL_SOURCE_PATH}-${openssl_arch}"
             # --libdir=lib is needed so Python can find OpenSSL libraries
-            "${PERL}" ./Configure "${openssl_archs}" --libdir=lib --prefix="${OPENSSL_INSTALL_PATH}-${openssl_arch}" $OPENSSL_CONFIG_OPTS
+            "${PERL}" ./Configure "${openssl_arch}" --libdir=lib --prefix="${OPENSSL_INSTALL_PATH}-${openssl_arch}" $OPENSSL_CONFIG_OPTS
           done
 
       - name: Rename GNU link on Windows
