@@ -265,7 +265,7 @@ jobs:
             echo "CFLAGS=-I${OPENSSL_INSTALL_PATH}/include -arch arm64 -arch x86_64" >> $GITHUB_ENV
             echo "ARCHFLAGS=-arch x86_64 -arch arm64" >> $GITHUB_ENV
           else
-            cd "${GITHUB_WORKSPACE}/src/openssl-${openssl_arch}"
+            cd "${GITHUB_WORKSPACE}/src/openssl-${openssl_archs}"
             # install_sw saves us ages processing man pages :-)
             $MAKE install_sw
           fi
