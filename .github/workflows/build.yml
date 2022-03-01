@@ -124,6 +124,8 @@ jobs:
         run: |
           # needed for Rust to compile cryptography Python package for universal2
           rustup target add aarch64-apple-darwin
+          # Brew's xz isn't universal2. We want to use XCode version
+          brew uninstall xz
 
       - name: Windows Configure VCode
         uses: ilammy/msvc-dev-cmd@v1
