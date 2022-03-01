@@ -156,7 +156,7 @@ jobs:
             echo "PYTHON=${PYTHON_INSTALL_PATH}/bin/python3" >> $GITHUB_ENV
             export date=gdate
             export realpath=grealpath
-            echo 'PIP_ARGS=( "--no-binary" ":all:" )' >> $GITHUB_ENV
+            echo 'PIP_ARGS="--no-binary :all:"' >> $GITHUB_ENV
           elif [[ "${RUNNER_OS}" == "Linux" ]]; then
             MAKE=make
             MAKEOPT="-j$(nproc)"
@@ -406,7 +406,7 @@ jobs:
       - name: Install pip requirements
         run: |
              set +e
-             "${PYTHON}" -m pip install --upgrade -r requirements.txt "${PIP_ARGS[@]}"
+             "${PYTHON}" -m pip install --upgrade -r requirements.txt ${PIP_ARGS}
              "${PYTHON}" -m pip list
 
       - name: Build GAM with PyInstaller
