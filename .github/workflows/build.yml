@@ -12,7 +12,7 @@ defaults:
     working-directory: src
 
 env:
-  OPENSSL_CONFIG_OPTS: no-asm no-fips
+  OPENSSL_CONFIG_OPTS: no-fips
   OPENSSL_INSTALL_PATH: ${{ github.workspace }}/bin/ssl
   OPENSSL_SOURCE_PATH: ${{ github.workspace }}/src/openssl
   PYTHON_INSTALL_PATH: ${{ github.workspace }}/bin/python
@@ -83,7 +83,7 @@ jobs:
         with:
           path: |
             bin
-          key: gam-${{ matrix.jid }}-20220228-01
+          key: gam-${{ matrix.jid }}-20220301
 
       - name: Use pre-compiled Python for testing
         if: matrix.python != ''
@@ -160,7 +160,7 @@ jobs:
             MAKE=make
             MAKEOPT="-j$(sysctl -n hw.logicalcpu)"
             PERL=perl
-            echo "MACOSX_DEPLOYMENT_TARGET=10.9" >> $GITHUB_ENV
+            echo "MACOSX_DEPLOYMENT_TARGET=10.15" >> $GITHUB_ENV
             echo "PYTHON=${PYTHON_INSTALL_PATH}/bin/python3" >> $GITHUB_ENV
             export date=gdate
             export realpath=grealpath
