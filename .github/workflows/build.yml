@@ -417,7 +417,10 @@ jobs:
         run: |
              export gampath="./dist/gam"
              mkdir -p -v "${gampath}"
-             export gampath=$($PYTHON -c "import os; print(os.path.realpath('$gampath'))")
+             if [[ "${RUNNER_OS}" == "macOS" ]]; then
+               export gampath=$($PYTHON -c "import os; print(os.path.realpath('$gampath'))")
+             else
+               export gampath=$(realpath "${gampath}")
              export gam="${gampath}/gam"
              echo "gampath=${gampath}" >> $GITHUB_ENV
              echo "gam=${gam}" >> $GITHUB_ENV
