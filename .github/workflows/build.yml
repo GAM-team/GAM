@@ -83,7 +83,7 @@ jobs:
         with:
           path: |
             bin
-          key: gam-${{ matrix.jid }}-20220301
+          key: gam-${{ matrix.jid }}-20220301-01
 
       - name: Use pre-compiled Python for testing
         if: matrix.python != ''
@@ -124,8 +124,9 @@ jobs:
         run: |
           # needed for Rust to compile cryptography Python package for universal2
           rustup target add aarch64-apple-darwin
-          # Brew's xz isn't universal2. We want to use XCode version
-          brew uninstall --ignore-dependencies xz libffi
+          # Kill brew so Python is happy and uses XCode libraries
+          curl -fsSLO https://raw.githubusercontent.com/Homebrew/install/HEAD/uninstall.sh
+          /bin/bash uninstall.sh -f
 
       - name: Windows Configure VCode
         uses: ilammy/msvc-dev-cmd@v1
