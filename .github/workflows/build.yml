@@ -156,8 +156,8 @@ jobs:
             CHOC_OPS="--forcex86"
           fi
           if [[ "${RUNNER_OS}" == "macOS" ]]; then
-            brew install coreutils
-            brew install bash
+            #brew install coreutils
+            #brew install bash
             MAKE=make
             MAKEOPT="-j$(sysctl -n hw.logicalcpu)"
             PERL=perl
