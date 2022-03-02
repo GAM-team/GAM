@@ -110,7 +110,6 @@ jobs:
              echo "JID=${JID}" >> $GITHUB_ENV
              echo "ACTIONS_CACHE=${ACTIONS_CACHE}" >> $GITHUB_ENV
              echo "ACTIONS_GOAL=${ACTIONS_GOAL}" >> $GITHUB_ENV
-             echo "date=date" >> $GITHUB_ENV
 
       - name: Install necessary hosted Linux packages
         if: matrix.os == 'ubuntu-20.04'
@@ -163,28 +162,20 @@ jobs:
             PERL=perl
             echo "MACOSX_DEPLOYMENT_TARGET=10.15" >> $GITHUB_ENV
             echo "PYTHON=${PYTHON_INSTALL_PATH}/bin/python3" >> $GITHUB_ENV
-            export date='python3 -c "import time; print(time.time_ns())'
-            export realpath="python3 -c 'import os, sys; print(os.path.realpath(sys.argv[1]))'"
             echo 'PIP_ARGS=--no-binary=:all:' >> $GITHUB_ENV
           elif [[ "${RUNNER_OS}" == "Linux" ]]; then
             MAKE=make
             MAKEOPT="-j$(nproc)"
             PERL=perl
             echo "PYTHON=${PYTHON_INSTALL_PATH}/bin/python3" >> $GITHUB_ENV
-            export date=date
-            export realpath=realpath
           elif [[ "${RUNNER_OS}" == "Windows" ]]; then
             MAKE=nmake
             MAKEOPT=""
             PERL="c:\strawberry\perl\bin\perl.exe"
             echo "PYTHON=${PYTHON_INSTALL_PATH}\python.exe" >> $GITHUB_ENV
-            export date=date
-            export realpath=realpath
             echo "GAM_ARCHIVE_ARCH=${GAM_ARCHIVE_ARCH}" >> $GITHUB_ENV
             echo "WIX_ARCH=${WIX_ARCH}" >> $GITHUB_ENV
           fi
-          echo "date=${date}" >> $GITHUB_ENV
-          echo "realpath=${realpath}" >> $GITHUB_ENV
           echo "We'll run make with: ${MAKEOPT}"
           echo "JID=${jid}" >> $GITHUB_ENV
           echo "arch=${arch}" >> $GITHUB_ENV
@@ -426,7 +417,7 @@ jobs:
         run: |
              export gampath="./dist/gam"
              mkdir -p -v "${gampath}"
-             export gampath="$($realpath $gampath)"
+             export gampath=$($PYTHON -c "import os; print(os.path.realpath('$gampath'))")
              export gam="${gampath}/gam"
              echo "gampath=${gampath}" >> $GITHUB_ENV
              echo "gam=${gam}" >> $GITHUB_ENV
@@ -526,7 +517,7 @@ jobs:
              $gam oauth refresh
              $gam info user
              #$gam info user $gam_user grouptree
-             export tstamp=$($date +%s%3N)
+             export tstamp=$($PYTHON -c "import time; print(time.time_ns())")
              export newbase=gha-test-$JID-$tstamp
              export newuser=$newbase@pdl.jaylee.us
              export newgroup=$newbase-group@pdl.jaylee.us
@@ -595,7 +586,9 @@ jobs:
              $gam calendar $gam_user add editor $newuser
              $gam calendar $gam_user showacl
              $gam calendar $gam_user printacl | $gam csv - gam calendar $gam_user delete id ~id
-             $gam calendar $gam_user addevent summary "GHA test event" start $($date '+%FT%T.%N%:z' -d "now + 1 hour") end $($date '+%FT%T.%N%:z' -d "now + 2 hours") attendee $newgroup hangoutsmeet guestscanmodify true sendupdates all
+             starttime=$($PYTHON -c "import datetime; print((datetime.datetime.now() + datetime.timedelta(hours=1)).strftime('%Y-%m-%dT%H:%M:%S.%f+00:00'))")
+             endtime=$($PYTHON -c "import datetime; print((datetime.datetime.now() + datetime.timedelta(hours=2)).strftime('%Y-%m-%dT%H:%M:%S.%f+00:00'))")
+             $gam calendar $gam_user addevent summary "GHA test event" start "${starttime}" end "${endtime}" attendee $newgroup hangoutsmeet guestscanmodify true sendupdates all
              $gam calendar $gam_user printevents after -0d
              matterid=uid:$($gam create vaultmatter name "GHA matter $newbase" description "test matter" collaborators $newuser | head -1 | cut -d ' ' -f 3)
              $gam create vaulthold matter $matterid name "GHA hold $newbase" corpus mail accounts $newuser
@@ -643,7 +636,7 @@ jobs:
              echo "printer model count:"
              $gam print printermodels | wc -l
              #$gam print printers
-             #$gam create printer displayname "${newbase}" uri ipp://localhost:631 driverless description "made by $(date)"
+             #$gam create printer displayname "${newbase}" uri ipp://localhost:631 driverless description "made by $(gam_user)"
              rm -f -v $gampath/enabledasa.txt
 
       - name: Upload to Google Drive, build only.
