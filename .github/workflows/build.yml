@@ -121,11 +121,17 @@ jobs:
       - name: Install necessary MacOS tools
         if: matrix.os == 'macos-11'
         run: |
+          # Kill brew so Python is happy and uses XCode libraries
+          curl -fsSL -o uninstall.sh https://raw.githubusercontent.com/Homebrew/install/HEAD/uninstall.sh
+          /bin/bash uninstall.sh -f
+          
+          # Install latest Rust
+          curl -fsS -o rust.sh https://sh.rustup.rs
+          bash ./rust.sh -y
+          source $HOME/.cargo/env
           # needed for Rust to compile cryptography Python package for universal2
           rustup target add aarch64-apple-darwin
-          # Kill brew so Python is happy and uses XCode libraries
-          curl -fsSLO https://raw.githubusercontent.com/Homebrew/install/HEAD/uninstall.sh
-          /bin/bash uninstall.sh -f
+          
 
       - name: Windows Configure VCode
         uses: ilammy/msvc-dev-cmd@v1
