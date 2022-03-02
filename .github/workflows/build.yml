@@ -122,8 +122,9 @@ jobs:
         if: matrix.os == 'macos-11'
         run: |
           # Kill brew so Python is happy and uses XCode libraries
-          curl -fsSL -o uninstall.sh https://raw.githubusercontent.com/Homebrew/install/HEAD/uninstall.sh
-          /bin/bash uninstall.sh -f
+          #curl -fsSL -o uninstall.sh https://raw.githubusercontent.com/Homebrew/install/HEAD/uninstall.sh
+          #/bin/bash uninstall.sh -f
+          brew uninstall $(brew list | grep -v 'pcre\|swig\|pcsc-lite')
 
       - name: MacOS install tools
         if: matrix.os == 'macos-11'
@@ -134,7 +135,6 @@ jobs:
           source $HOME/.cargo/env
           # needed for Rust to compile cryptography Python package for universal2
           rustup target add aarch64-apple-darwin
-          
 
       - name: Windows Configure VCode
         uses: ilammy/msvc-dev-cmd@v1
