@@ -421,6 +421,7 @@ jobs:
                export gampath=$($PYTHON -c "import os; print(os.path.realpath('$gampath'))")
              else
                export gampath=$(realpath "${gampath}")
+             fi
              export gam="${gampath}/gam"
              echo "gampath=${gampath}" >> $GITHUB_ENV
              echo "gam=${gam}" >> $GITHUB_ENV
