@@ -118,13 +118,16 @@ jobs:
           sudo apt-get -qq --yes update
           sudo apt-get -qq --yes install swig libpcsclite-dev
 
-      - name: Install necessary MacOS tools
+      - name: MacOS remove Homebrew
         if: matrix.os == 'macos-11'
         run: |
           # Kill brew so Python is happy and uses XCode libraries
           curl -fsSL -o uninstall.sh https://raw.githubusercontent.com/Homebrew/install/HEAD/uninstall.sh
           /bin/bash uninstall.sh -f
-          
+
+      - name: MacOS install tools
+        if: matrix.os == 'macos-11'
+        run: |
           # Install latest Rust
           curl -fsS -o rust.sh https://sh.rustup.rs
           bash ./rust.sh -y
