@@ -675,3 +675,4 @@ jobs:
             src/*.tar.xz
             src/*.zip
             src/*.msi
+            bin/
