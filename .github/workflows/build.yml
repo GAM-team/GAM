@@ -83,7 +83,7 @@ jobs:
         with:
           path: |
             bin
-          key: gam-${{ matrix.jid }}-20220301-01
+          key: gam-${{ matrix.jid }}-20220303
 
       - name: Use pre-compiled Python for testing
         if: matrix.python != ''
@@ -269,7 +269,7 @@ jobs:
                  -output "${GITHUB_WORKSPACE}/bin/ssl/bin/openssl"
             rm -rf ${GITHUB_WORKSPACE}/bin/ssl-darwin64-x86_64
             rm -rf ${GITHUB_WORKSPACE}/bin/ssl-darwin64-arm64
-            echo "LDFLAGS=${OPENSSL_INSTALL_PATH}/lib/libssl.a" >> $GITHUB_ENV
+            echo "LDFLAGS=\"${OPENSSL_INSTALL_PATH}/lib/libssl.a ${OPENSSL_INSTALL_PATH}/lib/libcrypto.a\"" >> $GITHUB_ENV
             echo "CRYPTOGRAPHY_SUPPRESS_LINK_FLAGS=1" >> $GITHUB_ENV
             echo "CFLAGS=-I${OPENSSL_INSTALL_PATH}/include -arch arm64 -arch x86_64" >> $GITHUB_ENV
             echo "ARCHFLAGS=-arch x86_64 -arch arm64" >> $GITHUB_ENV
