@@ -520,6 +520,9 @@ jobs:
         env:
           PASSCODE: ${{ secrets.PASSCODE }}
         run: |
+             if [[ "${RUNNER_OS}" == "macOS" ]]; then
+               brew install gnupg
+             fi
              source ../.github/actions/decrypt.sh ../.github/actions/creds.tar.gpg creds.tar
              export OAUTHFILE="oauth2.txt-gam-gha-${JID}"
              echo "OAUTHFILE=${OAUTHFILE}" >> $GITHUB_ENV
