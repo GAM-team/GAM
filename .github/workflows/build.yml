@@ -419,6 +419,8 @@ jobs:
              "${PYTHON}" -m pip list
              if [[ "${RUNNER_OS}" == "macOS" ]]; then
                find $PYTHON_INSTALL_PATH/lib/python3.10/site-packages -type f -name "*.so" -exec file "{}" \;
+               find $PYTHON_INSTALL_PATH/lib/python3.10/site-packages -type f -name "*.so" -exec du -sh "{}" \;
+ 
              fi
 
       - name: Build GAM with PyInstaller
@@ -675,4 +677,3 @@ jobs:
             src/*.tar.xz
             src/*.zip
             src/*.msi
-            bin/
