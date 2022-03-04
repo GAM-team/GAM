@@ -118,14 +118,6 @@ jobs:
           sudo apt-get -qq --yes update
           sudo apt-get -qq --yes install swig libpcsclite-dev
 
-      - name: MacOS remove Homebrew
-        if: matrix.os == 'macos-11'
-        run: |
-          # Kill brew so Python is happy and uses XCode libraries
-          #curl -fsSL -o uninstall.sh https://raw.githubusercontent.com/Homebrew/install/HEAD/uninstall.sh
-          #/bin/bash uninstall.sh -f
-          brew uninstall $(brew list | grep -v 'pcre\|swig\|pcsc-lite')
-
       - name: MacOS install tools
         if: matrix.os == 'macos-11'
         run: |
