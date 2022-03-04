@@ -16,7 +16,6 @@ env:
   OPENSSL_INSTALL_PATH: ${{ github.workspace }}/bin/ssl
   OPENSSL_SOURCE_PATH: ${{ github.workspace }}/src/openssl
   PYTHON_INSTALL_PATH: ${{ github.workspace }}/bin/python
-  PYTHON_SOURCE_PATH: ${{ github.workspace }}/src/cpython
 
 jobs:
   build:
@@ -25,10 +24,20 @@ jobs:
       matrix:
         include:
           - os: ubuntu-20.04
-            jid: 2
+            jid: 0
             goal: build
             arch: x86_64
             openssl_archs: linux-x86_64
+          - os: [self-hosted, linux, arm64]
+            jid: 1
+            goal: build
+            arch: aarch64
+            openssl_archs: linux-aarch64
+          - os: [self-hosted, linux, arm]
+            jid: 2
+            goal: build
+            arch: armv7l
+            openssl_archs: linux-armv4
           - os: macos-11
             jid: 3
             goal: build
@@ -59,16 +68,6 @@ jobs:
             python: "3.9"
             jid: 8
             arch: x86_64
-          - os: [self-hosted, linux, arm64]
-            jid: 9
-            goal: build
-            arch: aarch64
-            openssl_archs: linux-aarch64
-          - os: [self-hosted, linux, arm]
-            jid: 10
-            goal: build
-            arch: armv7l
-            openssl_archs: linux-armv4
 
     steps:
 
@@ -83,7 +82,7 @@ jobs:
         with:
           path: |
             bin
-          key: gam-${{ matrix.jid }}-20220303
+          key: gam-${{ matrix.jid }}-20220304
 
       - name: Use pre-compiled Python for testing
         if: matrix.python != ''
