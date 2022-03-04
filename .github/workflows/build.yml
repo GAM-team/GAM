@@ -426,7 +426,7 @@ jobs:
                                              --platform macosx_10_15_universal2 \
                                              $package
                ls -l *.whl
-               "${PYTHON}" -m pip install --force $package*.whl
+               "${PYTHON}" -m pip install --force-reinstall --no-deps $package*.whl
                done
                find $PYTHON_INSTALL_PATH/lib/python3.10/site-packages -type f -name "*.so" -exec du -sh "{}" \;
              fi
