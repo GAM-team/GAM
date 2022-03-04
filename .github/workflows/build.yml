@@ -118,6 +118,12 @@ jobs:
           sudo apt-get -qq --yes update
           sudo apt-get -qq --yes install swig libpcsclite-dev
 
+     - name: MacOS remove Homebrew
+        if: matrix.os == 'macos-11'
+        run: |
+          # remove everything except the libraries needed by yubikey-manager
+          brew uninstall $(brew list | grep -v 'pcre\|swig\|pcsc-lite')
+
       - name: MacOS install tools
         if: matrix.os == 'macos-11'
         run: |
