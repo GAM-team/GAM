@@ -171,7 +171,7 @@ jobs:
             PERL=perl
             echo "MACOSX_DEPLOYMENT_TARGET=10.15" >> $GITHUB_ENV
             echo "PYTHON=${PYTHON_INSTALL_PATH}/bin/python3" >> $GITHUB_ENV
-            echo "PIP_ARGS=--only-binary=:all:" >> $GITHUB_ENV
+            echo "PIP_ARGS=--no-binary=:all:" >> $GITHUB_ENV
           elif [[ "${RUNNER_OS}" == "Linux" ]]; then
             MAKE=make
             MAKEOPT="-j$(nproc)"
