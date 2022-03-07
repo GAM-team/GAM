@@ -7118,6 +7118,7 @@ def enableGAMProjectAPIs(GAMProjectAPIs,
             f'  Project: {projectId}, Enable {jcount} APIs{currentCount(i, count)}'
         )
         j = 0
+        tried_universal_tos = False
         for api in apis:
             service_name = f'projects/{projectId}/services/{api}'
             j += 1
@@ -7128,19 +7129,26 @@ def enableGAMProjectAPIs(GAMProjectAPIs,
                               throw_reasons=[
                                   gapi_errors.ErrorReason.FAILED_PRECONDITION,
                                   gapi_errors.ErrorReason.FORBIDDEN,
-                                  gapi_errors.ErrorReason.PERMISSION_DENIED
+                                  gapi_errors.ErrorReason.PERMISSION_DENIED,
+                                  gapi_errors.ErrorReason.FOUR_O_O,
                               ],
                               retry_reasons=[gapi_errors.ErrorReason.INTERNAL_SERVER_ERROR],
                               name=service_name)
                     print(f'    API: {api}, Enabled{currentCount(j, jcount)}')
                     break
-                except gapi_errors.GapiFailedPreconditionError as e:
+                except (gapi_errors.GapiFailedPreconditionError,
+                        googleapiclient.errors.HttpError) as e:
+                    if hasattr(e, 'reason'):
+                        msg = e.reason
+                    else:
+                        msg = str(e)
+                    if 'terms of service' in msg.lower() and not tried_universal_tos:
+                        msg = '''You need to agree to the Google Cloud Terms of Service at:\n\n  https://console.developers.google.com'''
+                        tried_universal_tos = True
                     print(
                         f'\nThere was an error enabling {api}. Please resolve error as described below:'
                     )
-                    print()
-                    print(f'\n{str(e)}\n')
-                    print()
+                    print(f'\n\n{msg}\n\n')
                     input(
                         'Press enter once resolved and we will try enabling the API again.'
                     )
