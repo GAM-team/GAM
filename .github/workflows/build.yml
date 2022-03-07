@@ -41,7 +41,7 @@ jobs:
           - os: macos-11
             jid: 3
             goal: build
-            arch: x86_64
+            arch: universal2
             openssl_archs: darwin64-x86_64 darwin64-arm64
           - os: windows-2022
             jid: 4
@@ -458,7 +458,7 @@ jobs:
           cp -v LICENSE $gampath
           cp -v GamCommands.txt $gampath
           if [[ "${RUNNER_OS}" == "macOS" ]]; then
-              GAM_ARCHIVE="gam-${GAMVERSION}-macos-x86_64.tar.xz"
+              GAM_ARCHIVE="gam-${GAMVERSION}-macos-universal2.tar.xz"
           elif [[ "${RUNNER_OS}" == "Linux" ]]; then
               this_glibc_ver=$(ldd --version | awk '/ldd/{print $NF}')
               GAM_ARCHIVE="gam-${GAMVERSION}-linux-$(arch)-glibc${this_glibc_ver}.tar.xz"
