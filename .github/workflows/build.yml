@@ -25,49 +25,49 @@ jobs:
       matrix:
         include:
           - os: ubuntu-20.04
-            jid: 0
+            jid: 1
             goal: build
             arch: x86_64
             openssl_archs: linux-x86_64
           - os: [self-hosted, linux, arm64]
-            jid: 1
+            jid: 2
             goal: build
             arch: aarch64
             openssl_archs: linux-aarch64
           - os: [self-hosted, linux, arm]
-            jid: 2
+            jid: 3
             goal: build
             arch: armv7l
             openssl_archs: linux-armv4
           - os: macos-11
-            jid: 3
+            jid: 4
             goal: build
             arch: universal2
             openssl_archs: darwin64-x86_64 darwin64-arm64
           - os: windows-2022
-            jid: 4
+            jid: 5
             goal: build
             arch: Win64
             openssl_archs: VC-WIN64A
           - os: windows-2022
-            jid: 5
+            jid: 6
             goal: build
             arch: Win32
             openssl_archs: VC-WIN32
           - os: ubuntu-20.04
             goal: test
             python: "3.7"
-            jid: 6
-            arch: x86_64
-          - os: ubuntu-20.04
-            goal: test
-            python: "3.8"
             jid: 7
             arch: x86_64
           - os: ubuntu-20.04
             goal: test
-            python: "3.9"
+            python: "3.8"
             jid: 8
+            arch: x86_64
+          - os: ubuntu-20.04
+            goal: test
+            python: "3.9"
+            jid: 9
             arch: x86_64
 
     steps:
@@ -83,7 +83,7 @@ jobs:
         with:
           path: |
             bin
-          key: gam-${{ matrix.jid }}-20220304-01
+          key: gam-${{ matrix.jid }}-20220308
 
       - name: Use pre-compiled Python for testing
         if: matrix.python != ''
