@@ -128,7 +128,7 @@ case $gamos in
       this_macos_ver=$osversion
     fi
     echo "You are running MacOS $this_macos_ver"
-    gamfile="macos-x86_64.tar.xz"
+    gamfile="macos-universal2.tar.xz"
     ;;
   MINGW64_NT*)
     gamos="windows"
