@@ -348,7 +348,7 @@ def print_count():
     # so we keep track of which accounts we searched and can report
     # zero data for them.
     if search_method == 'ACCOUNT':
-      query_accounts = query.get('accountInfo', [])
+      query_accounts = query.get('accountInfo', {}).get('emails', [])
     elif search_method == 'ENTIRE_ORG':
       query_accounts = gam.getUsersToModify('all', 'users')
     elif search_method == 'ORG_UNIT':
@@ -367,8 +367,9 @@ def print_count():
             if account in query_accounts: query_accounts.remove(account)
         for account in a_count.get('accountCounts', []):
             email = account.get('account', {}).get('email', '')
-            csv_rows.append({'account': email, 'count': account.get('count')})
-            if email in query_accounts: query_accounts.remove(email)
+            if email:
+                csv_rows.append({'account': email, 'count': account.get('count', 0)})
+                if email in query_accounts: query_accounts.remove(email)
     for account in query_accounts:
         csv_rows.append({'account': account, 'count': 0})
     titles = ['account', 'count', 'error']
