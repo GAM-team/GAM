@@ -223,7 +223,7 @@ trap "rm -rf $temp_archive_dir" EXIT
 
 echo_yellow "Downloading file $name from $browser_download_url to $temp_archive_dir ($check_type)..."
 # Save archive to temp w/o losing our path
-(cd "$temp_archive_dir" && curl -O -L $GHCLIENT $browser_download_url)
+(cd "$temp_archive_dir" && curl -# -O -L $GHCLIENT $browser_download_url)
 
 mkdir -p "$target_dir"
 
