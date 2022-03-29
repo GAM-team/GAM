@@ -83,7 +83,7 @@ jobs:
         with:
           path: |
             bin
-          key: gam-${{ matrix.jid }}-20220328
+          key: gam-${{ matrix.jid }}-20220328-01
 
       - name: Use pre-compiled Python for testing
         if: matrix.python != ''
@@ -289,8 +289,7 @@ jobs:
           cd "${GITHUB_WORKSPACE}/src"
           git clone https://github.com/python/cpython.git
           cd "${PYTHON_SOURCE_PATH}"
-          #export LATEST_STABLE_TAG=$(git tag --list | grep -v a | grep -v rc | grep -v b | sort -Vr | head -n1)
-          export LATEST_STABLE_TAG=v3.10.2
+          export LATEST_STABLE_TAG=$(git tag --list | grep -v a | grep -v rc | grep -v b | sort -Vr | head -n1)
           git checkout "${LATEST_STABLE_TAG}"
           export COMPILED_PYTHON_VERSION=${LATEST_STABLE_TAG:1} # Trim the "v" prefix
           echo "COMPILED_PYTHON_VERSION=${COMPILED_PYTHON_VERSION}" >> $GITHUB_ENV
@@ -399,7 +398,8 @@ jobs:
         run: |
           git clone https://github.com/pyinstaller/pyinstaller.git
           cd pyinstaller
-          export latest_release=$(git tag --list | grep -v dev | grep -v rc | sort -Vr | head -n1)
+          #export latest_release=$(git tag --list | grep -v dev | grep -v rc | sort -Vr | head -n1)
+          latest_release=v4.9
           git checkout "${latest_release}"
           # remove pre-compiled bootloaders so we fail if bootloader compile fails
           rm -rvf PyInstaller/bootloader/*-*/*
