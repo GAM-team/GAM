@@ -391,7 +391,7 @@ jobs:
           "${PYTHON}" get-pip.py
           "${PYTHON}" -m pip install --upgrade pip
           "${PYTHON}" -m pip install --upgrade wheel
-          "${PYTHON}" -m pip install --upgrade setuptools==60.10.0
+          #"${PYTHON}" -m pip install --upgrade setuptools==60.10.0
     
       - name: Install PyInstaller
         if: matrix.goal == 'build'
