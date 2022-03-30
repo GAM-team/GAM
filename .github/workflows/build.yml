@@ -408,9 +408,9 @@ jobs:
           fi
           echo "PyInstaller build arguments: ${PYINSTALLER_BUILD_ARGS}"
           "${PYTHON}" ./waf all $PYINSTALLER_BUILD_ARGS
-          cd ..
+          cd ../..
           echo "---- Installing PyInstaller ----"
-          "${PYTHON}" -m pip install .
+          "${PYTHON}" -m pip install pyinstaller
 
       - name: Install pip requirements
         run: |
