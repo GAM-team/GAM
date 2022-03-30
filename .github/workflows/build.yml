@@ -445,7 +445,7 @@ jobs:
              echo "gampath=${gampath}" >> $GITHUB_ENV
              echo "gam=${gam}" >> $GITHUB_ENV
              echo -e "GAM: ${gam}\nGAMPATH: ${gampath}"
-             "${PYTHON}" -m PyInstaller --clean --noupx --strip --onefile --distpath="${gampath}" gam.spec
+             "${PYTHON}" -m PyInstaller --clean --distpath="${gampath}" gam.spec
  
       - name: Basic Tests all jobs
         run: |
