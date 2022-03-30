@@ -33,10 +33,14 @@ for d in a.datas:
 
 pyz = PYZ(a.pure)
 
+
 if sys.platform == "darwin":
      target_arch="universal2"
 else:
      target_arch=None
+
+# use strip on all non-Windows platforms
+strip = not sys.platform == 'win32'
 
 exe = EXE(pyz,
           a.scripts,
@@ -45,7 +49,7 @@ exe = EXE(pyz,
           a.datas,
           name='gam',
           debug=False,
-          strip=None,
+          strip=strip,
           upx=False,
           target_arch=target_arch,
           console=True)
