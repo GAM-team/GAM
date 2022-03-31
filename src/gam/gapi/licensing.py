@@ -56,7 +56,7 @@ def create(users, sku=None):
         productId = sys.argv[i+1]
         i += 2
     for user in users:
-        print(f'Adding license {sku_name} from to {user}')
+        print(f'Adding license {sku_name} to {user}')
         gapi.call(lic.licenseAssignments(),
                   'insert',
                   soft_errors=True,
