@@ -1,16 +1,7 @@
-import string
-import sys
-
-import googleapiclient.errors
-
 import gam
-from gam.var import *
+from gam.var import GC_Values, GC_CUSTOMER_ID
 from gam import controlflow
-from gam import display
-from gam import fileutils
 from gam import gapi
-from gam import utils
-from gam.gapi import errors as gapi_errors
 from gam.gapi.directory import customer as gapi_directory_customer
 
 def build():
@@ -27,5 +18,7 @@ def get_org_id():
                      'organizations',
                      query=query)
     if len(orgs) < 1:
-        controlflow.system_error_exit(2, 'Your service account needs permission to read org id')
+        # return nothing and let calling API deal with it
+        # since caller knows what GCP role would serve best
+        return 
     return orgs[0]['name']

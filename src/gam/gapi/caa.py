@@ -13,7 +13,15 @@ from gam import utils
 from gam.gapi import errors as gapi_errors
 from gam.gapi import cloudresourcemanager as gapi_crm
 
+
 THROW_REASONS = [gapi_errors.ErrorReason.FOUR_O_THREE]
+
+def _gen_role_error(caa):
+    sa_email = caa._http.credentials.signer_email
+    role_error = f'Please grant service account {sa_email} the Access Context Manager Editor role to your GCP organization.'
+    controlflow.system_error_exit(2, role_error)
+
+
 def build():
     return gam.buildGAPIServiceObject('accesscontextmanager',
                                       act_as=None)
@@ -23,6 +31,8 @@ def get_access_policy(caa=None):
     if not caa:
         build()
     parent = gapi_crm.get_org_id()
+    if not parent:
+        _gen_role_error(caa)
     try:
         aps = gapi.get_all_pages(caa.accessPolicies(),
                                  'list',
@@ -31,7 +41,7 @@ def get_access_policy(caa=None):
                                  parent=parent,
                                  fields='accessPolicies(name,title)')
     except googleapiclient.errors.HttpError:
-        controlflow.system_error_exit(2, 'Your service account needs the Access Context Manager Reader or Editor role for your organization.')
+        _gen_role_error(caa)
     if not aps:
         controlflow.system_error_exit(2, 'You don\'t seem to have any access policies. That is odd.')
     elif len(aps) == 1:
@@ -53,7 +63,7 @@ def print_access_levels():
                                     parent=ap_name,
                                     accessLevelFormat='CEL', fields='*')
     except googleapiclient.errors.HttpError:
-        controlflow.system_error_exit(2, 'Your service account needs the Access Context Manager Reader or Editor role for your organization.')
+        _gen_role_error(caa)
     for level in levels:
         display.print_json(level)
         print()
@@ -197,8 +207,7 @@ def create_access_level():
                   parent=ap_name,
                   body=body)
     except googleapiclient.errors.HttpError:
-        controlflow.system_error_exit(2, 'Your service account needs the Access Context Manager Editor role for your organization.')
-
+        _gen_role_error(caa)
 
 def update_access_level():
     caa = build()
@@ -229,8 +238,7 @@ def update_access_level():
                   updateMask=updateMask,
                   body=body)
     except googleapiclient.errors.HttpError:
-        controlflow.system_error_exit(2, 'Your service account needs the Access Context Manager Editor role for your organization.')
-
+        _gen_role_error(caa)
 
 def delete_access_level():
     caa = build()
@@ -244,5 +252,4 @@ def delete_access_level():
                   'delete',
                   name=name)
     except googleapiclient.errors.HttpError:
-        controlflow.system_error_exit(2, 'Your service account needs the Access Context Manager Editor role for your organization.')
-
+        _gen_role_error(caa)
