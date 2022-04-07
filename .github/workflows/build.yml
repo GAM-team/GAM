@@ -583,8 +583,8 @@ jobs:
              $gam user $newuser imap on
              $gam user $newuser show imap
              $gam user $newuser show delegates
-             #$gam user $newuser add contactdelegate "${newbase}-bulkuser-01"
-             #$gam user $newuser print contactdelegates
+             $gam user $newuser add contactdelegate "${newbase}-bulkuser-01"
+             $gam user $newuser print contactdelegates
              export biohazard=$(echo -e '\xe2\x98\xa3')
              $gam user $newuser label "$biohazard unicode biohazard $biohazard"
              $gam user $newuser show labels
@@ -647,7 +647,7 @@ jobs:
              export sn="$JID$JID$JID$JID-$(openssl rand -base64 32 | sed 's/[^a-zA-Z0-9]//g')"
              $gam create device serialnumber $sn devicetype android
              $gam print cros allfields orderby serialnumber
-             #$gam show crostelemetry storagepercentonly
+             $gam show crostelemetry storagepercentonly
              $gam report usageparameters customer
              $gam report usage customer parameters gmail:num_emails_sent,accounts:num_1day_logins
              $gam report customer todrive
@@ -660,7 +660,7 @@ jobs:
              $gam print caalevels
              $gam delete caalevel "zzz_${newbase}"
              $gam user $gam_user add shareddrive "${newbase}"
-             #$gam user $gam_user update shareddrive name "${newbase}" ou "/GitHub Actions Testing"
+             $gam user $gam_user update shareddrive name "${newbase}" ou "/GitHub Actions Testing"
              $gam user $gam_user delete shareddrive name "${newbase}"
              $gam user $gam_user show shareddrives asadmin
              export CUSTOMER_ID="C01wfv983"
@@ -668,8 +668,8 @@ jobs:
              touch $gampath/enabledasa.txt
              echo "printer model count:"
              $gam print printermodels | wc -l
-             #$gam print printers
-             #$gam create printer displayname "${newbase}" uri ipp://localhost:631 driverless description "made by $(gam_user)"
+             $gam print printers
+             $gam create printer displayname "${newbase}" uri ipp://localhost:631 driverless description "made by $(gam_user)"
              rm -f -v $gampath/enabledasa.txt
 
      # - name: Upload to Google Drive, build only.
