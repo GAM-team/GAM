@@ -29,13 +29,17 @@ def get_access_policy(caa=None):
                                  'accessPolicies',
                                  throw_reasons=THROW_REASONS,
                                  parent=parent,
-                                 fields='accessPolicies/name')
+                                 fields='accessPolicies(name,title)')
     except googleapiclient.errors.HttpError:
         controlflow.system_error_exit(2, 'Your service account needs the Access Context Manager Reader or Editor role for your organization.')
-    if len(aps) != 1:
-        print(f'expected 1 access policy, got {len(aps)}.')
-        return
-    return aps[0]['name']
+    if not aps:
+        controlflow.system_error_exit(2, 'You don\'t seem to have any access policies. That is odd.')
+    elif len(aps) == 1:
+        return aps[0]['name']
+    for ap in aps:
+        if ap.get('title') == 'Access policy created in Cloud Identity Console':
+            return ap['name']
+    controlflow.system_error_exit(2, ' Could not find a org level access policy. That is odd.')
 
 
 def print_access_levels():
