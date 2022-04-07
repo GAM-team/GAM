@@ -660,7 +660,8 @@ jobs:
              $gam print caalevels
              $gam delete caalevel "zzz_${newbase}"
              $gam user $gam_user add shareddrive "${newbase}"
-             $gam user $gam_user update shareddrive "name:${newbase}" ou "/GitHub Actions Testing"
+             $gam user $gam_user update shareddrive name "${newbase}" ou "/GitHub Actions Testing"
+             $gam user $gam_user delete shareddrive name "${newbase}"
              $gam user $gam_user show shareddrives asadmin
              export CUSTOMER_ID="C01wfv983"
              export GA_DOMAIN="pdl.jaylee.us"

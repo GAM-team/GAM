@@ -8080,14 +8080,16 @@ TEAMDRIVE_RESTRICTIONS_MAP = {
 
 
 def doUpdateSharedDrive(users):
-    teamDriveId = sys.argv[5]
+    i = 5
+    teamDriveId = sys.argv[i]
     if teamDriveId.lower().startswith('name'):
-        teamDriveId = gapi_drive_drives.drive_name_to_id(sys.argv[6])
+        i += 1
+        teamDriveId = gapi_drive_drives.drive_name_to_id(sys.argv[i])
+    i += 1
     body = {}
     useDomainAdminAccess = False
     change_hide = None
     orgUnit = None
-    i = 6
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
         if myarg == 'name':
@@ -8223,6 +8225,8 @@ def printShowSharedDrives(users, csvFormat):
 
 def doDeleteSharedDrive(users):
     teamDriveId = sys.argv[5]
+    if teamDriveId.lower().startswith('name'):
+        teamDriveId = gapi_drive_drives.drive_name_to_id(sys.argv[6])
     for user in users:
         user, drive = buildDrive3GAPIObject(user)
         if not drive:

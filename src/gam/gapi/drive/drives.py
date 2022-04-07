@@ -20,7 +20,7 @@ def drive_name_to_id(name, drive=None):
                              q=q,
                              useDomainAdminAccess=True)
     if len(sds) == 0:
-        controlflow.system_error_exit(f'Could not find shared drive named "{name}"')
+        controlflow.system_error_exit(3, f'Could not find shared drive named "{name}"')
     elif len(sds) > 1:
-        controlflow.system_error_exit(f'Got more than one shared drive named "{name}"')
+        controlflow.system_error_exit(3, f'Got more than one shared drive named "{name}"')
     return sds[0]['id']
