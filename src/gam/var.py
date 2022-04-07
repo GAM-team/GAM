@@ -8,7 +8,7 @@ import platform
 import re
 
 GAM_AUTHOR = 'Jay Lee <jay0lee@gmail.com>'
-GAM_VERSION = '6.18'
+GAM_VERSION = '6.19'
 GAM_LICENSE = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 GAM_URL = 'https://git.io/gam'
@@ -301,6 +301,7 @@ API_NAME_MAPPING = {
 }
 
 API_VER_MAPPING = {
+    'accesscontextmanager': 'v1',
     'alertcenter': 'v1beta1',
     'driveactivity': 'v2',
     'calendar': 'v3',

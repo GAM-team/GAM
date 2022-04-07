@@ -246,7 +246,7 @@ def delete_access_level():
     if not name.startswith('accessPolicies/'):
         ap_name = get_access_policy(caa)
         name = f'{ap_name}/accessLevels/{name}'
-    print('Deleting access level {name}...')
+    print(f'Deleting access level {name}...')
     try:
         gapi.call(caa.accessPolicies().accessLevels(),
                   'delete',

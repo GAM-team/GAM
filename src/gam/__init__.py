@@ -849,7 +849,9 @@ def _getSvcAcctData():
             controlflow.system_error_exit(6, None)
         GM_Globals[GM_OAUTH2SERVICE_JSON_DATA] = json.loads(json_string)
 
-jwt_apis = ['chat', 'accesscontextmanager'] # APIs which can handle OAuthless JWT tokens
+jwt_apis = ['chat',
+            'cloudresourcemanager',
+            'accesscontextmanager'] # APIs which can handle OAuthless JWT tokens
 def getSvcAcctCredentials(scopes, act_as, api=None):
     try:
         _getSvcAcctData()
