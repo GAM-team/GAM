@@ -544,7 +544,7 @@ jobs:
              $gam info user
              #$gam info user $gam_user grouptree
              export tstamp=$($PYTHON -c "import time; print(time.time_ns())")
-             export newbase=gha-test-$JID-$tstamp
+             export newbase=gha_test_$JID_$tstamp
              export newuser=$newbase@pdl.jaylee.us
              export newgroup=$newbase-group@pdl.jaylee.us
              export newalias=$newbase-alias@pdl.jaylee.us
