@@ -55,6 +55,7 @@ from gam import auth
 from gam import controlflow
 from gam import display
 from gam import fileutils
+from gam.gapi import caa as gapi_caa
 from gam.gapi import calendar as gapi_calendar
 from gam.gapi import cloudidentity as gapi_cloudidentity
 from gam.gapi import cbcm as gapi_cbcm
@@ -848,7 +849,7 @@ def _getSvcAcctData():
             controlflow.system_error_exit(6, None)
         GM_Globals[GM_OAUTH2SERVICE_JSON_DATA] = json.loads(json_string)
 
-jwt_apis = ['chat'] # APIs which can handle OAuthless JWT tokens
+jwt_apis = ['chat', 'accesscontextmanager'] # APIs which can handle OAuthless JWT tokens
 def getSvcAcctCredentials(scopes, act_as, api=None):
     try:
         _getSvcAcctData()
@@ -11374,6 +11375,8 @@ def ProcessGAMCommand(args):
                 gapi_directory_printers.create()
             elif argument in ['chatmessage']:
                 gapi_chat.create_message()
+            elif argument in ['caalevel']:
+                gapi_caa.create_access_level()
             else:
                 controlflow.invalid_argument_exit(argument, 'gam create')
             sys.exit(0)
@@ -11438,6 +11441,8 @@ def ProcessGAMCommand(args):
                 gapi_directory_printers.update()
             elif argument in ['chatmessage']:
                 gapi_chat.update_message()
+            elif argument in ['caalevel']:
+                gapi_caa.update_access_level()
             else:
                 controlflow.invalid_argument_exit(argument, 'gam update')
             sys.exit(0)
@@ -11578,6 +11583,8 @@ def ProcessGAMCommand(args):
                 gapi_chromepolicy.delete_policy()
             elif argument == 'chatmessage':
                 gapi_chat.delete_message()
+            elif argument == 'caalevel':
+                gapi_caa.delete_access_level()
             else:
                 controlflow.invalid_argument_exit(argument, 'gam delete')
             sys.exit(0)
@@ -11699,6 +11706,8 @@ def ProcessGAMCommand(args):
                 gapi_chat.print_spaces()
             elif argument in ['chatmembers']:
                 gapi_chat.print_members()
+            elif argument in ['caalevels']:
+                gapi_caa.print_access_levels()
             else:
                 controlflow.invalid_argument_exit(argument, 'gam print')
             sys.exit(0)

@@ -1,3 +1,4 @@
+accesscontextmanager.googleapis.com.
 admin.googleapis.com
 alertcenter.googleapis.com
 calendar-json.googleapis.com
@@ -6,6 +7,7 @@ chromemanagement.googleapis.com
 chromepolicy.googleapis.com
 classroom.googleapis.com
 cloudidentity.googleapis.com
+cloudresourcemanager.googleapis.com
 contacts.googleapis.com
 drive.googleapis.com
 driveactivity.googleapis.com
