@@ -1,4 +1,4 @@
-accesscontextmanager.googleapis.com.
+accesscontextmanager.googleapis.com
 admin.googleapis.com
 alertcenter.googleapis.com
 calendar-json.googleapis.com
