@@ -659,6 +659,9 @@ jobs:
              $gam create caalevel "zzz_${newbase}" basic condition ipsubnetworks 1.1.1.1/32,2.2.2.2/32 endcondition
              $gam print caalevels
              $gam delete caalevel "zzz_${newbase}"
+             $gam user $gamuser add shareddrive "${newbase}"
+             $gam user $gamuser update shareddrive "name:${newbase}" ou "/GitHub Actions Testing"
+             $gam user $gamuser show shareddrives asadmin
              export CUSTOMER_ID="C01wfv983"
              export GA_DOMAIN="pdl.jaylee.us"
              touch $gampath/enabledasa.txt

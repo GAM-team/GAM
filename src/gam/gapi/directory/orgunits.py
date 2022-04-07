@@ -160,42 +160,15 @@ def info(name=None, return_attrib=None):
                     print('')
 
 
-def print_():
-    print_order = [
-        'orgUnitPath', 'orgUnitId', 'name', 'description', 'parentOrgUnitPath',
-        'parentOrgUnitId', 'blockInheritance'
-    ]
-    cd = gapi_directory.build()
-    listType = 'all'
-    orgUnitPath = '/'
-    todrive = False
-    fields = ['orgUnitPath', 'name', 'orgUnitId', 'parentOrgUnitId']
-    titles = []
-    csvRows = []
-    parentOrgIds = []
+def list_orgunits(listType='all', orgUnitPath=None, fields=None):
     retrievedOrgIds = []
-    i = 3
-    while i < len(sys.argv):
-        myarg = sys.argv[i].lower().replace('_', '')
-        if myarg == 'todrive':
-            todrive = True
-            i += 1
-        elif myarg == 'toplevelonly':
-            listType = 'children'
-            i += 1
-        elif myarg == 'fromparent':
-            orgUnitPath = getOrgUnitItem(sys.argv[i + 1])
-            i += 2
-        elif myarg == 'allfields':
-            fields = None
-            i += 1
-        elif myarg == 'fields':
-            fields += sys.argv[i + 1].split(',')
-            i += 2
-        else:
-            controlflow.invalid_argument_exit(sys.argv[i], 'gam print orgs')
-    gam.printGettingAllItems('Organizational Units', None)
+    parentOrgIds = []
+    cd = gapi_directory.build()
     if fields:
+        # Always get parentOrgUnitId so we can
+        # find missing parents
+        if 'parentOrgUnitId' not in fields:
+            fields.append('parentOrgUnitId')
         get_fields = ','.join(fields)
         list_fields = f'organizationUnits({get_fields})'
     else:
@@ -230,6 +203,44 @@ def print_():
             orgunits.append(result)
         except:
             pass
+    return orgunits
+
+
+def print_():
+    print_order = [
+        'orgUnitPath', 'orgUnitId', 'name', 'description', 'parentOrgUnitPath',
+        'parentOrgUnitId', 'blockInheritance'
+    ]
+    listType = 'all'
+    orgUnitPath = '/'
+    todrive = False
+    fields = ['orgUnitPath', 'name', 'orgUnitId', 'parentOrgUnitId']
+    titles = []
+    csvRows = []
+    i = 3
+    while i < len(sys.argv):
+        myarg = sys.argv[i].lower().replace('_', '')
+        if myarg == 'todrive':
+            todrive = True
+            i += 1
+        elif myarg == 'toplevelonly':
+            listType = 'children'
+            i += 1
+        elif myarg == 'fromparent':
+            orgUnitPath = getOrgUnitItem(sys.argv[i + 1])
+            i += 2
+        elif myarg == 'allfields':
+            fields = None
+            i += 1
+        elif myarg == 'fields':
+            fields += sys.argv[i + 1].split(',')
+            i += 2
+        else:
+            controlflow.invalid_argument_exit(sys.argv[i], 'gam print orgs')
+    gam.printGettingAllItems('Organizational Units', None)
+    orgunits = list_orgunits(listType=listType,
+                             orgUnitPath=orgUnitPath,
+                             fields=fields) 
     for row in orgunits:
         orgEntity = {}
         for key, value in list(row.items()):
@@ -247,6 +258,11 @@ def print_():
     csvRows.sort(key=lambda x: x['orgUnitPath'].lower(), reverse=False)
     display.write_csv_file(csvRows, titles, 'Orgs', todrive)
 
+
+def orgid_to_org_map():
+    orgunits = list_orgunits(fields=['orgUnitPath', 'orgUnitId'])
+    result = {ou['orgUnitId']:ou['orgUnitPath'] for ou in orgunits}
+    return result
 
 def update():
     cd = gapi_directory.build()

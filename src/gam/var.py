@@ -1525,6 +1525,9 @@ MESSAGE_UPDATE_GAM_TO_64BIT = 'You\'re running a 32-bit version of GAM on a' \
 MESSAGE_YOUR_SYSTEM_TIME_DIFFERS_FROM_GOOGLE_BY = 'Your system time differs' \
                                                   ' from %s by %s'
 
+shared_drive_values = ['teamdrive', 'teamdrives',
+                       'shareddrive', 'shareddrives']
+
 USER_ADDRESS_TYPES = ['home', 'work', 'other']
 USER_EMAIL_TYPES = ['home', 'work', 'other']
 USER_EXTERNALID_TYPES = [

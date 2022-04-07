@@ -65,6 +65,7 @@ from gam.gapi import chromemanagement as gapi_chromemanagement
 from gam.gapi import chromepolicy as gapi_chromepolicy
 from gam.gapi.cloudidentity import devices as gapi_cloudidentity_devices
 from gam.gapi.cloudidentity import groups as gapi_cloudidentity_groups
+from gam.gapi.cloudidentity import orgunits as gapi_cloudidentity_orgunits
 from gam.gapi.cloudidentity import userinvitations as gapi_cloudidentity_userinvitations
 from gam.gapi import contactdelegation as gapi_contactdelegation
 from gam.gapi.directory import asps as gapi_directory_asps
@@ -81,6 +82,7 @@ from gam.gapi.directory import resource as gapi_directory_resource
 from gam.gapi.directory import roles as gapi_directory_roles
 from gam.gapi.directory import roleassignments as gapi_directory_roleassignments
 from gam.gapi.directory import users as gapi_directory_users
+from gam.gapi.drive import drives as gapi_drive_drives
 from gam.gapi import licensing as gapi_licensing
 from gam.gapi import siteverification as gapi_siteverification
 from gam.gapi import errors as gapi_errors
@@ -2733,7 +2735,7 @@ def printDriveSettings(users):
     display.write_csv_file(csvRows, titles, 'User Drive Settings', todrive)
 
 
-def getTeamDriveThemes(users):
+def getSharedDriveThemes(users):
     for user in users:
         user, drive = buildDrive3GAPIObject(user)
         if not drive:
@@ -8017,8 +8019,8 @@ def doPrintShowProjects(csvFormat):
         display.write_csv_file(csvRows, titles, 'Projects', todrive)
 
 
-def doGetTeamDriveInfo(users):
-    teamDriveId = sys.argv[5]
+def doGetSharedDriveInfo(users):
+    driveId = sys.argv[5]
     useDomainAdminAccess = False
     i = 6
     while i < len(sys.argv):
@@ -8028,7 +8030,7 @@ def doGetTeamDriveInfo(users):
             i += 1
         else:
             controlflow.invalid_argument_exit(myarg,
-                                              'gam <users> show teamdrive')
+                                              'gam <users> show shareddrive')
     for user in users:
         drive = buildGAPIServiceObject('drive3', user)
         if not drive:
@@ -8036,13 +8038,15 @@ def doGetTeamDriveInfo(users):
             continue
         result = gapi.call(drive.drives(),
                            'get',
-                           driveId=teamDriveId,
+                           driveId=driveId,
                            useDomainAdminAccess=useDomainAdminAccess,
                            fields='*')
+        if useDomainAdminAccess and 'orgUnitId' in result:
+            result['orgUnit'] = gapi_directory_orgunits.orgunit_from_orgunitid(f'id:{result["orgUnitId"]}')
         display.print_json(result)
 
 
-def doCreateTeamDrive(users):
+def doCreateSharedDrive(users):
     body = {'name': sys.argv[5]}
     i = 6
     while i < len(sys.argv):
@@ -8052,7 +8056,7 @@ def doCreateTeamDrive(users):
             i += 2
         else:
             controlflow.invalid_argument_exit(sys.argv[i],
-                                              'gam <users> create teamdrive')
+                                              'gam <users> create shareddrive')
     for user in users:
         drive = buildGAPIServiceObject('drive3', user)
         if not drive:
@@ -8064,7 +8068,7 @@ def doCreateTeamDrive(users):
                            requestId=requestId,
                            body=body,
                            fields='id')
-        print(f'Created Team Drive {body["name"]} with id {result["id"]}')
+        print(f'Created Shared Drive {body["name"]} with id {result["id"]}')
 
 
 TEAMDRIVE_RESTRICTIONS_MAP = {
@@ -8075,16 +8079,22 @@ TEAMDRIVE_RESTRICTIONS_MAP = {
 }
 
 
-def doUpdateTeamDrive(users):
+def doUpdateSharedDrive(users):
     teamDriveId = sys.argv[5]
+    if teamDriveId.lower().startswith('name'):
+        teamDriveId = gapi_drive_drives.drive_name_to_id(sys.argv[6])
     body = {}
     useDomainAdminAccess = False
     change_hide = None
+    orgUnit = None
     i = 6
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
         if myarg == 'name':
             body['name'] = sys.argv[i + 1]
+            i += 2
+        elif myarg in ['ou', 'orgunit']:
+            orgUnit = sys.argv[i+1]
             i += 2
         elif myarg == 'theme':
             body['themeId'] = sys.argv[i + 1]
@@ -8120,8 +8130,8 @@ def doUpdateTeamDrive(users):
             i += 2
         else:
             controlflow.invalid_argument_exit(sys.argv[i],
-                                              'gam <users> update teamdrive')
-    if not body and not change_hide:
+                                              'gam <users> update shareddrive')
+    if not body and not change_hide and not orgUnit:
         controlflow.system_error_exit(
             4, 'nothing to update. Need at least a name argument.')
     for user in users:
@@ -8144,12 +8154,16 @@ def doUpdateTeamDrive(users):
                     driveId=teamDriveId,
                     fields='id',
                     soft_errors=True)
-        print(f'Updated Team Drive {teamDriveId}')
+        if orgUnit:
+            gapi_cloudidentity_orgunits.move_shared_drive(teamDriveId,
+                                                          orgUnit)
+        print(f'Updated Shared Drive {teamDriveId}')
 
-def printShowTeamDrives(users, csvFormat):
+def printShowSharedDrives(users, csvFormat):
     todrive = False
     useDomainAdminAccess = False
     q = None
+    get_orgunits = True 
     i = 5
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
@@ -8162,13 +8176,18 @@ def printShowTeamDrives(users, csvFormat):
         elif myarg == 'query':
             q = sys.argv[i + 1]
             i += 2
+        elif myarg == 'noorgunits':
+            get_orgunits = False
+            i += 1
         else:
             controlflow.invalid_argument_exit(
-                myarg, f"gam {['show', 'print'][csvFormat]} teamdrives")
+                myarg, f"gam {['show', 'print'][csvFormat]} shareddrives")
     tds = []
     titles = []
+    if get_orgunits and useDomainAdminAccess:
+        ou_map = gapi_directory_orgunits.orgid_to_org_map() 
     for user in users:
-        sys.stderr.write(f'Getting Team Drives for {user}\n')
+        sys.stderr.write(f'Getting Shared Drives for {user}\n')
         user, drive = buildDrive3GAPIObject(user)
         if not drive:
             continue
@@ -8183,12 +8202,16 @@ def printShowTeamDrives(users, csvFormat):
             continue
         for td in results:
             td = utils.flatten_json(td)
+            if get_orgunits and useDomainAdminAccess:
+                td_ouid = td.get('orgUnitId')
+                if td_ouid:
+                    td['orgUnit'] = ou_map.get(f'id:{td_ouid}', 'Unknown')
             for key in td:
                 if key not in titles:
                     titles.append(key)
             tds.append(td)
     if csvFormat:
-        display.write_csv_file(tds, titles, 'Team Drives', todrive)
+        display.write_csv_file(tds, titles, 'Shared Drives', todrive)
     else:
         for td in tds:
             name = td.pop('name')
@@ -8198,14 +8221,13 @@ def printShowTeamDrives(users, csvFormat):
             print()
 
 
-
-def doDeleteTeamDrive(users):
+def doDeleteSharedDrive(users):
     teamDriveId = sys.argv[5]
     for user in users:
         user, drive = buildDrive3GAPIObject(user)
         if not drive:
             continue
-        print(f'Deleting Team Drive {teamDriveId}')
+        print(f'Deleting Shared Drive {teamDriveId}')
         gapi.call(drive.drives(),
                   'delete',
                   driveId=teamDriveId,
@@ -10457,6 +10479,11 @@ OAUTH2_SCOPES = [
         'scopes': 'https://www.googleapis.com/auth/cloud-identity.groups'
     },
     {
+        'name': 'Cloud Identity - OrgUnits',
+        'subscopes': ['readonly'],
+        'scopes': 'https://www.googleapis.com/auth/cloud-identity.orgunits',
+    },
+    {
         'name': 'Cloud Identity - User Invitations',
         'subscopes': ['readonly'],
         'scopes': 'https://www.googleapis.com/auth/cloud-identity.userinvitations',
@@ -11710,6 +11737,8 @@ def ProcessGAMCommand(args):
                 gapi_chat.print_members()
             elif argument in ['caalevels']:
                 gapi_caa.print_access_levels()
+            elif argument in ['oushareddrives', 'orgunitshareddrives']:
+                gapi_cloudidentity_orgunits.print_orgunit_shared_drives()
             else:
                 controlflow.invalid_argument_exit(argument, 'gam print')
             sys.exit(0)
@@ -11898,8 +11927,8 @@ def ProcessGAMCommand(args):
                 gapi_calendar.showCalSettings(users)
             elif showWhat == 'drivesettings':
                 printDriveSettings(users)
-            elif showWhat == 'teamdrivethemes':
-                getTeamDriveThemes(users)
+            elif showWhat in ['teamdrivethemes', 'shareddrivethemes']:
+                getSharedDriveThemes(users)
             elif showWhat == 'drivefileacl':
                 showDriveFileACL(users)
             elif showWhat == 'filelist':
@@ -11942,10 +11971,10 @@ def ProcessGAMCommand(args):
                 printShowFilters(users, False)
             elif showWhat in ['forwardingaddress', 'forwardingaddresses']:
                 printShowForwardingAddresses(users, False)
-            elif showWhat in ['teamdrive', 'teamdrives']:
-                printShowTeamDrives(users, False)
-            elif showWhat in ['teamdriveinfo']:
-                doGetTeamDriveInfo(users)
+            elif showWhat in shared_drive_values:
+                printShowSharedDrives(users, False)
+            elif showWhat in ['shareddriveinfo', 'teamdriveinfo']:
+                doGetSharedDriveInfo(users)
             elif showWhat in ['contactdelegate', 'contactdelegates']:
                 gapi_contactdelegation.print_(users, False)
             elif showWhat in ['holds', 'vaultholds']:
@@ -11976,8 +12005,8 @@ def ProcessGAMCommand(args):
                 printShowSmime(users, True)
             elif printWhat in ['token', 'tokens', 'oauth', '3lo']:
                 printShowTokens(5, 'users', users, True)
-            elif printWhat in ['teamdrive', 'teamdrives']:
-                printShowTeamDrives(users, True)
+            elif printWhat in shared_drive_values:
+                printShowSharedDrives(users, True)
             elif printWhat in ['contactdelegate', 'contactdelegates']:
                 gapi_contactdelegation.print_(users, True)
             elif printWhat in ['labels']:
@@ -12060,8 +12089,8 @@ def ProcessGAMCommand(args):
                 deleteSendAs(users)
             elif delWhat == 'smime':
                 deleteSmime(users)
-            elif delWhat == 'teamdrive':
-                doDeleteTeamDrive(users)
+            elif delWhat in shared_drive_values:
+                doDeleteSharedDrive(users)
             elif delWhat == 'contactdelegate':
                 gapi_contactdelegation.delete(users)
             else:
@@ -12094,8 +12123,8 @@ def ProcessGAMCommand(args):
                 addUpdateSendAs(users, 5, True)
             elif addWhat == 'smime':
                 addSmime(users)
-            elif addWhat == 'teamdrive':
-                doCreateTeamDrive(users)
+            elif addWhat in shared_drive_values:
+                doCreateSharedDrive(users)
             elif addWhat == 'contactdelegate':
                 gapi_contactdelegation.create(users)
             else:
@@ -12136,8 +12165,8 @@ def ProcessGAMCommand(args):
                 addUpdateSendAs(users, 5, False)
             elif updateWhat == 'smime':
                 updateSmime(users)
-            elif updateWhat == 'teamdrive':
-                doUpdateTeamDrive(users)
+            elif updateWhat in shared_drive_values:
+                doUpdateSharedDrive(users)
             else:
                 controlflow.invalid_argument_exit(updateWhat,
                                                   'gam <users> update')
