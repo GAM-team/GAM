@@ -29,7 +29,7 @@ def build():
 
 def get_access_policy(caa=None):
     if not caa:
-        build()
+        caa = build()
     parent = gapi_crm.get_org_id()
     if not parent:
         _gen_role_error(caa)
