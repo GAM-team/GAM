@@ -656,14 +656,14 @@ jobs:
              $gam print devices nopersonaldevices nodeviceusers filter "serial:$JID$JID$JID$JID-" | $gam csv - gam delete device id ~name
              $gam print userinvitations
              $gam print userinvitations | $gam csv - gam send userinvitation ~name
+             $gam create caalevel "zzz_${newbase}" basic condition ipsubnetworks 1.1.1.1/32,2.2.2.2/32 endcondition
+             $gam print caalevels
+             $gam delete caalevel "zzz_${newbase}"
              export CUSTOMER_ID="C01wfv983"
              export GA_DOMAIN="pdl.jaylee.us"
              touch $gampath/enabledasa.txt
              echo "printer model count:"
              $gam print printermodels | wc -l
-             $gam create caalevel "zzz_${newbase}" basic condition ipsubnetworks 1.1.1.1/32,2.2.2.2/32 endcondition
-             $gam print caalevels
-             $gam delete caalevel "zzz_${newbase}"
              #$gam print printers
              #$gam create printer displayname "${newbase}" uri ipp://localhost:631 driverless description "made by $(gam_user)"
              rm -f -v $gampath/enabledasa.txt
