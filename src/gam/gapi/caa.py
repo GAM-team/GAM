@@ -52,9 +52,22 @@ def get_access_policy(caa=None):
     controlflow.system_error_exit(2, ' Could not find a org level access policy. That is odd.')
 
 
-def print_access_levels():
+def printshow_access_levels(csvFormat):
     caa = build()
     ap_name = get_access_policy(caa)
+    if csvFormat:
+        todrive = False
+        csvRows = []
+        titles = ['name', 'title']
+    i = 3
+    while i < len(sys.argv):
+        myarg = sys.argv[i].lower()
+        if csvFormat and myarg == 'todrive':
+            todrive = True
+            i += 1
+        else:
+            controlflow.invalid_argument_exit(sys.argv[i],
+                f"gam {['show', 'print'][csvFormat]} caalevels")
     try:
         levels = gapi.get_all_pages(caa.accessPolicies().accessLevels(),
                                     'list',
@@ -64,9 +77,16 @@ def print_access_levels():
                                     accessLevelFormat='CEL', fields='*')
     except googleapiclient.errors.HttpError:
         _gen_role_error(caa)
-    for level in levels:
-        display.print_json(level)
-        print()
+    if not csvFormat:
+        for level in levels:
+            display.print_json(level)
+            print()
+    else:
+        for level in levels:
+            display.add_row_titles_to_csv_file(
+                utils.flatten_json(level),
+                csvRows, titles)
+        display.write_csv_file(csvRows, titles, 'CAA Levels', todrive)
 
 
 def build_os_constraints(constraints):
