@@ -668,9 +668,11 @@ jobs:
              export GA_DOMAIN="pdl.jaylee.us"
              echo "printer model count:"
              $gam print printermodels | wc -l
+             echo 1
              $gam print printers
-             $gam create printer displayname "${newbase}" uri ipp://localhost:631 driverless description "made by $(gam_user)"
-             
+             echo 2
+             $gam create printer displayname "${newbase}" uri ipp://localhost:631 driverless description "made by $(gam_user)" ou /
+             echo 3
              touch $gampath/enabledasa.txt
              echo "using delegated admin service account"
              $gam print users
