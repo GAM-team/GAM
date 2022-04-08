@@ -661,7 +661,7 @@ jobs:
              $gam delete caalevel "zzz_${newbase}"
              driveid=$($gam user $gam_user add shareddrive "${newbase}" | awk '{print $NF}')
              echo "Created shared drive ${driveid}"
-             $gam user $gam_user update shareddrive "${driveid}" ou "/GitHub Actions Testing"
+             $gam user $gam_user update shareddrive "${driveid}" ou "id:03ph8a2z1t2ph5z"
              $gam user $gam_user show shareddrives asadmin
              $gam user $gam_user delete shareddrive "${driveid}"
              echo "printer model count:"
