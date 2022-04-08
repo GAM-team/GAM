@@ -33,22 +33,22 @@ def move_shared_drive(driveId, orgUnit):
               body=body)
 
 def printshow_orgunit_shared_drives(csvFormat):
-    try:
-        orgunit = sys.argv[3]
-    except IndexError:
-        orgunit = '/'
+    orgunit = '/'
     if csvFormat:
         todrive = False
         csvRows = []
         titles = ['name']
-    i = 4
+    i = 3
     while i < len(sys.argv):
         myarg = sys.argv[i].lower()
         if csvFormat and myarg == 'todrive':
             todrive = True
             i += 1
-        else:
-            controlflow.invalid_argument_exit(sys.argv[i],
+        elif myarg in ['ou', 'org', 'orgunit']:
+          orgunit = sys.argv[i + 1]
+          i += 2
+    else:
+      controlflow.invalid_argument_exit(sys.argv[i],
                 f"gam {['show', 'print'][csvFormat]} oushareddrives")
     ci = gapi_cloudidentity.build('cloudidentity_beta')
     _, orgUnitId = gapi_directory_orgunits.getOrgUnitId(orgunit)
