@@ -179,7 +179,6 @@ def create_access_level():
     caa = build()
     ap_name = get_access_policy(caa)
     title = sys.argv[3].replace(' ', '_')
-    custom = {'expr': {'expression': sys.argv[4], 'title': 'expr'}}
     allowed_title_chars = string.ascii_letters + string.digits + '_'
     name = ''.join([c for c in title if c in allowed_title_chars])[:49]
     name = f'{ap_name}/accessLevels/{name}'
