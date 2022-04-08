@@ -11740,9 +11740,9 @@ def ProcessGAMCommand(args):
             elif argument in ['chatmembers']:
                 gapi_chat.print_members()
             elif argument in ['caalevels']:
-                gapi_caa.print_access_levels()
+                gapi_caa.printshow_access_levels(True)
             elif argument in ['oushareddrives', 'orgunitshareddrives']:
-                gapi_cloudidentity_orgunits.print_orgunit_shared_drives()
+                gapi_cloudidentity_orgunits.printshow_orgunit_shared_drives(True)
             else:
                 controlflow.invalid_argument_exit(argument, 'gam print')
             sys.exit(0)
@@ -11773,6 +11773,10 @@ def ProcessGAMCommand(args):
                 gapi_chromepolicy.printshow_policies()
             elif argument == 'crostelemetry':
                 gapi_chromemanagement.printShowCrosTelemetry('show')
+            elif argument in ['caalevels']:
+                gapi_caa.printshow_access_levels(False)
+            elif argument in ['oushareddrives', 'orgunitshareddrives']:
+                gapi_cloudidentity_orgunits.printshow_orgunit_shared_drives(False)
             else:
                 controlflow.invalid_argument_exit(argument, 'gam show')
             sys.exit(0)
