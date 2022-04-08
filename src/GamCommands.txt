@@ -632,6 +632,7 @@ Items, separated by spaces, with spaces, commas or single quotes in the items th
 <SchemaNameList> ::= "<SchemaName>(,<SchemaName>)*"
 <SerialNumberList> ::= "<SerialNumber>(,<SerialNumber>)*"
 <ServiceAccountKeyList> ::= "<ServiceAccountKey>(,<ServiceAccountKey>)*"
+<StringList> ::= "<String>(,<String>)*"
 <TeamDriveIDList> ::= "<TeamDriveID>(,<TeamDriveID>)*"
 <UserFieldNameList> ::= "<UserFieldName>(,<UserFieldName>)*"
 <UserList> ::= "<UserItem>(,<UserItem>)*"
@@ -1210,6 +1211,62 @@ gam print browsertokens [todrive]
 	[fields <BrowserTokenFieldNameList>]
 	[sortheaders]
 
+<CAAAllowedEncryptionStatus> ::=
+	encryption_unsupported |
+	encrypted |
+	unencrypted
+<CAAAllowedEncryptionStatusList> ::= "<CAAAllowedEncryptionStatus>(,<CAAAllowedEncryptionStatus>)"
+
+<CAAAllowedDeviceManagementLevel> ::=
+	basic |
+	advanced|complete |
+	none
+<CAAAllowedDeviceManagementLevelList> ::= "<CAAAllowedDeviceManagementLevel>(,<CAAAllowedDeviceManagementLevel>)"
+
+<CAACombiningFunction> ::=
+	and |
+	or
+
+<CAAOsType> ::=
+	DESKTOP_MAC |
+	DESKTOP_WINDOWS |
+	DESKTOP_LINUX |
+	DESKTOP_CHROMEOS |
+	VERIFIED_DESKTOP_CHROMEOS |
+	ANDROID |
+	IOS
+
+<CAAOsConstraint> ::=
+	<CAAOsType> |
+	<CAAOsType>:<String>.<String>.<String>
+<CAAOsConstraintList> ::= "<CAAOsConstraint>(,<CAAOsConstraint>)"
+
+<CAADevicePolicyAttribute> ::=
+	(requirescreenlock <Boolean>) |
+	(allowedencryptionstatuses <CAAAllowedEncryptionStatusList>) |
+	(osconstraints <CAAOsConstraintList>) |
+	(alloweddevicemanagementlevels <CAAAllowedDeviceManagementLevelList>) |
+	(requireadminapproval <Boolean>) |
+	(requirecorpowned <Boolean>)
+
+<CAAConditionAttribute> ::=
+	(ipsubnetworks <StringList>) |
+	(devicepolicy <CAADevicePolicyAttribute> enddevicepolicy) |
+	(requiredaccesslevels <StringList>) |
+	(negate <Boolean>) |
+	(members <StringList>) |
+	(regions <StringList>)
+	
+<CAABasicAttribute> ::+
+	(combiningfunction <CAACombiningFunction>) |
+	(condition <CAAConditionAttribute>+ endcondition)+
+
+gam create caalevel <String> (basic <CAABasicAttribute>+)|(custom <String>)
+gam update caalevel <CAALevelName> (basic <CAABasicAttribute>+)|(custom <String>)
+gam delete caalevel <CAALevelName>
+gam show caalevels
+gam print caalevels [todrive]
+
 gam print chatspaces [todrive]
 gam print chatmembers space <ChatSpace> [todrive]
 gam create chatmessage space <ChatSpace> [thread <String>]
@@ -1350,11 +1407,11 @@ gam print chromehistory channels [todrive]
 gam print chromehistory versions [todrive]
 	[platform <ChromePlatformType>] [channel <ChromeChannelType>]
 	[filter <String>]
-        (orderby <ChromeVersionsOrderByFieldName> [ascending|descending])*
+	(orderby <ChromeVersionsOrderByFieldName> [ascending|descending])*
 gam print chromehistory releases [todrive]
 	[platform <ChromePlatformType>] [channel <ChromeChannelType>] [version <String>]
 	[filter <String>]
-        (orderby <ChromeReleasessOrderByFieldName> [ascending|descending])*
+	(orderby <ChromeReleasessOrderByFieldName> [ascending|descending])*
 
 gam delete chromepolicy <SchemaName>+ ou|org|orgunit <OrgUnitItem> [(printerid <PrinterID>)|(appid <AppID>)]
 gam update chromepolicy (<SchemaName> (<Field> <Value>)+)+ ou|org|orgunit <OrgUnitItem> [(printerid <PrinterID>)|(appid <AppID>)]

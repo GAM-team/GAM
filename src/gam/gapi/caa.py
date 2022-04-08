@@ -92,15 +92,19 @@ def printshow_access_levels(csvFormat):
 def build_os_constraints(constraints):
     consts_obj = []
     constraints = constraints.upper().split(',')
-    valid_os_types = ['DESKTOP_MAC', 'DESKTOP_WINDOWS', 'DESKTOP_LINUX', 'DESKTOP_CHROMEOS', 'ANDROID', 'IOS'] 
+    valid_os_types = ['DESKTOP_MAC', 'DESKTOP_WINDOWS', 'DESKTOP_LINUX',
+                      'DESKTOP_CHROMEOS', 'VERIFIED_DESKTOP_CHROMEOS', 'ANDROID', 'IOS'] 
     for constraint in constraints:
         new_const = {}
-        new_const['osType'], new_const['minimumVersion'] = constraint.split(':')
+        if ':' in constraint:
+            new_const['osType'], new_const['minimumVersion'] = constraint.split(':')
+        else:
+            new_const['osType'] = constraint
+        if new_const['osType'] not in valid_os_types:
+            controlflow.system_error_exit(2, f'expected os type of {", ".join(valid_os_types)} got {new_const["osType"]}')
         if new_const['osType'] == 'VERIFIED_DESKTOP_CHROME_OS':
             new_const['osType'] = 'DESKTOP_CHROME_OS'
             new_const['requireVerifiedChromeOs'] = True
-        if new_const['osType'] not in valid_os_types:
-            controlflow.system_error_exit(2, f'expected os type of {", ".join(valid_os_types)} got {new_const["osType"]}')
         consts_obj.append(new_const)
     return consts_obj
 
