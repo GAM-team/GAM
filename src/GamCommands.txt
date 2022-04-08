@@ -1488,6 +1488,9 @@ gam update feature <Name> name <Name>
 gam delete feature <Name>
 gam print features [todrive]
 
+gam show oushareddrives|orgunitshareddrives [ou|org|orgunit <OrgUnitItem>]
+gam print oushareddrives|orgunitshareddrives [todrive] [ou|org|orgunit <OrgUnitItem>]
+
 gam create resource <ResourceID> <Name> <ResourceAttribute>*
 gam update resource <ResourceID> <ResourceAttribute>*
 gam delete resource <ResourceID>
