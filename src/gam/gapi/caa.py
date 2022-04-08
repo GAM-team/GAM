@@ -93,7 +93,7 @@ def build_os_constraints(constraints):
     consts_obj = []
     constraints = constraints.upper().split(',')
     valid_os_types = ['DESKTOP_MAC', 'DESKTOP_WINDOWS', 'DESKTOP_LINUX',
-                      'DESKTOP_CHROMEOS', 'VERIFIED_DESKTOP_CHROMEOS', 'ANDROID', 'IOS'] 
+                      'DESKTOP_CHROME_OS', 'VERIFIED_DESKTOP_CHROME_OS', 'ANDROID', 'IOS'] 
     for constraint in constraints:
         new_const = {}
         if ':' in constraint:
