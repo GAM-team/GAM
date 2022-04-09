@@ -243,6 +243,7 @@ If an item contains spaces, it should be surrounded by ".
 <SMTPHostName> ::= <String>
 <StudentItem> ::= <EmailAddress>|<UniqueID>|<String>
 <TeamDriveID> ::= <String>
+<TeamDriveName> ::= <String>
 <Timezone> ::= <String>
 <Title> ::= <String>
 <URI> ::= <String>
@@ -1259,7 +1260,7 @@ gam print browsertokens [todrive]
 	
 <CAABasicAttribute> ::+
 	(combiningfunction <CAACombiningFunction>) |
-	(condition <CAAConditionAttribute>+ endcondition)+
+	(condition <CAAConditionAttribute>+ endcondition)
 
 gam create caalevel <String> (basic <CAABasicAttribute>+)|(custom <String>)
 gam update caalevel <CAALevelName> (basic <CAABasicAttribute>+)|(custom <String>)
@@ -1820,12 +1821,12 @@ gam <UserTypeEntity> show signature|sig [format]
 	teammembersonly
 
 gam <UserTypeEntity> create|add teamdrive <Name>
-gam <UserTypeEntity> update teamdrive <TeamDriveID> [asadmin] [name <Name>]
+gam <UserTypeEntity> update teamdrive <TeamDriveID>|(name <TeamDriveName>) [asadmin] [name <Name>]
 	[(theme|themeid <String>) | ([customtheme <DriveFileID> <Float> <Float> <Float>] [color <ColorValue>])]
 	(<TeamDriveRestrictionsSubfieldName> <Boolean>)*
 	[hidden <Boolean>]
-gam <UserTypeEntity> delete teamdrive <TeamDriveID>
-gam <UserTypeEntity> show teamdriveinfo <TeamDriveID> [asadmin]
+gam <UserTypeEntity> delete teamdrive <TeamDriveID>|(name <TeamDriveName>)
+gam <UserTypeEntity> show teamdriveinfo <TeamDriveID>|(name <TeamDriveName>) [asadmin]
 gam <UserTypeEntity> show teamdrives [query <QueryTeamDrive>] [asadmin]
 gam <UserTypeEntity> print teamdrives [query <QueryTeamDrive>] [todrive] [asadmin]
 gam <UserTypeEntity> show teamdrivethemes
