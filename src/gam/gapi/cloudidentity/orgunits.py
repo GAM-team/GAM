@@ -47,9 +47,9 @@ def printshow_orgunit_shared_drives(csvFormat):
         elif myarg in ['ou', 'org', 'orgunit']:
           orgunit = sys.argv[i + 1]
           i += 2
-    else:
-      controlflow.invalid_argument_exit(sys.argv[i],
-                f"gam {['show', 'print'][csvFormat]} oushareddrives")
+        else:
+          controlflow.invalid_argument_exit(sys.argv[i],
+                                            f"gam {['show', 'print'][csvFormat]} oushareddrives")
     ci = gapi_cloudidentity.build('cloudidentity_beta')
     _, orgUnitId = gapi_directory_orgunits.getOrgUnitId(orgunit)
     parent = f'orgUnits/{orgUnitId[3:]}'
