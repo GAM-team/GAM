@@ -8019,10 +8019,17 @@ def doPrintShowProjects(csvFormat):
         display.write_csv_file(csvRows, titles, 'Projects', todrive)
 
 
+def getSharedDriveId(i):
+    driveId = sys.argv[i]
+    if driveId.lower() == 'name':
+        i += 1
+        driveId = gapi_drive_drives.drive_name_to_id(sys.argv[i])
+    return (i+1, driveId)
+
+
 def doGetSharedDriveInfo(users):
-    driveId = sys.argv[5]
+    i, driveId = getSharedDriveId(5)
     useDomainAdminAccess = False
-    i = 6
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
         if myarg == 'asadmin':
@@ -8080,12 +8087,7 @@ TEAMDRIVE_RESTRICTIONS_MAP = {
 
 
 def doUpdateSharedDrive(users):
-    i = 5
-    teamDriveId = sys.argv[i]
-    if teamDriveId.lower().startswith('name'):
-        i += 1
-        teamDriveId = gapi_drive_drives.drive_name_to_id(sys.argv[i])
-    i += 1
+    i, driveId = getSharedDriveId(5)
     body = {}
     useDomainAdminAccess = False
     change_hide = None
@@ -8145,7 +8147,7 @@ def doUpdateSharedDrive(users):
                            'update',
                            useDomainAdminAccess=useDomainAdminAccess,
                            body=body,
-                           driveId=teamDriveId,
+                           driveId=driveId,
                            fields='id',
                            soft_errors=True)
             if not result:
@@ -8153,13 +8155,13 @@ def doUpdateSharedDrive(users):
         if change_hide:
             ch_result = gapi.call(drive.drives(),
                     change_hide,
-                    driveId=teamDriveId,
+                    driveId=driveId,
                     fields='id',
                     soft_errors=True)
         if orgUnit:
-            gapi_cloudidentity_orgunits.move_shared_drive(teamDriveId,
+            gapi_cloudidentity_orgunits.move_shared_drive(driveId,
                                                           orgUnit)
-        print(f'Updated Shared Drive {teamDriveId}')
+        print(f'Updated Shared Drive {driveId}')
 
 def printShowSharedDrives(users, csvFormat):
     todrive = False
@@ -8224,17 +8226,15 @@ def printShowSharedDrives(users, csvFormat):
 
 
 def doDeleteSharedDrive(users):
-    teamDriveId = sys.argv[5]
-    if teamDriveId.lower().startswith('name'):
-        teamDriveId = gapi_drive_drives.drive_name_to_id(sys.argv[6])
+    _, driveId = getSharedDriveId(5)
     for user in users:
         user, drive = buildDrive3GAPIObject(user)
         if not drive:
             continue
-        print(f'Deleting Shared Drive {teamDriveId}')
+        print(f'Deleting Shared Drive {driveId}')
         gapi.call(drive.drives(),
                   'delete',
-                  driveId=teamDriveId,
+                  driveId=driveId,
                   soft_errors=True)
 
 
