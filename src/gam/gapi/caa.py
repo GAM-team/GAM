@@ -7,7 +7,6 @@ import gam
 from gam.var import *
 from gam import controlflow
 from gam import display
-from gam import fileutils
 from gam import gapi
 from gam import utils
 from gam.gapi import errors as gapi_errors
@@ -93,7 +92,7 @@ def build_os_constraints(constraints):
     consts_obj = []
     constraints = constraints.upper().split(',')
     valid_os_types = ['DESKTOP_MAC', 'DESKTOP_WINDOWS', 'DESKTOP_LINUX',
-                      'DESKTOP_CHROME_OS', 'VERIFIED_DESKTOP_CHROME_OS', 'ANDROID', 'IOS'] 
+                      'DESKTOP_CHROME_OS', 'VERIFIED_DESKTOP_CHROME_OS', 'ANDROID', 'IOS']
     for constraint in constraints:
         new_const = {}
         if ':' in constraint:
@@ -131,7 +130,7 @@ def build_device_policy(i, schemas):
             device_policy['allowedDeviceManagementLevels'] = sys.argv[i+1].upper().split(',')
             for level in device_policy['allowedDeviceManagementLevels']:
                 if level == 'ADVANCED':
-                    level == 'COMPLETE'
+                    level = 'COMPLETE'
                 if level not in allowed_levels:
                     controlflow.system_error_exit(2, f'expected device management level of {", ".join(allowed_levels)} got {level}')
             i += 2
@@ -195,8 +194,25 @@ def build_basic_level(i, schemas):
             i, condition = build_condition(i, schemas)
             basic_level['conditions'].append(condition)
         else:
-            controlflow.invalid_argument_exit(myarg, 'gam create/update caalevel') 
+            controlflow.invalid_argument_exit(myarg, 'gam create/update caalevel')
     return i, basic_level
+
+
+def build_caa_level(i, caa, body):
+    while i < len(sys.argv):
+        myarg = sys.argv[i].lower().replace('_', '')
+        if myarg == 'basic':
+            schemas = caa._rootDesc['schemas']
+            i += 1
+            i, body['basic'] = build_basic_level(i, schemas)
+        elif myarg == 'custom':
+            body['custom'] = {'expr': {'expression': sys.argv[i+1], 'title': 'expr'}}
+            i += 2
+        elif myarg == 'description':
+            body['description'] = sys.argv[i+1]
+            i += 2
+        else:
+            controlflow.invalid_argument_exit(myarg, 'gam create/update caalevel')
 
 
 def create_access_level():
@@ -210,18 +226,7 @@ def create_access_level():
             'name': name,
             'title': title,
            }
-    i = 4
-    while i < len(sys.argv):
-        myarg = sys.argv[i].lower().replace('_', '')
-        if myarg == 'basic':
-            schemas = caa._rootDesc['schemas']
-            i += 1
-            i, body['basic'] = build_basic_level(i, schemas)
-        elif myarg == 'custom':
-            body['custom'] = {'expr': {'expression': sys.argv[i+1], 'title': 'expr'}}
-            i += 2
-        else:
-            controlflow.invalid_argument_exit(myarg, 'gam create caalevel')
+    build_caa_level(4, caa, body)
     print(f'Creating access level {name}...')
     try:
         gapi.call(caa.accessPolicies().accessLevels(),
@@ -232,25 +237,19 @@ def create_access_level():
     except googleapiclient.errors.HttpError:
         _gen_role_error(caa)
 
-def update_access_level():
-    caa = build()
-    name = sys.argv[3]
+def get_access_level_name(i, caa):
+    name = sys.argv[i]
     if not name.startswith('accessPolicies/'):
         ap_name = get_access_policy(caa)
         name = f'{ap_name}/accessLevels/{name}'
+    return name
+
+
+def update_access_level():
+    caa = build()
+    name = get_access_level_name(3, caa)
     body = {}
-    i = 4
-    while i < len(sys.argv):
-        myarg = sys.argv[i].lower().replace('_', '')
-        if myarg == 'basic':
-            schemas = caa._rootDesc['schemas']
-            i += 1
-            i, body['basic'] = build_basic_level(i, schemas)
-        elif myarg == 'custom':
-            body['custom'] = {'expr': {'expression': sys.argv[i+1], 'title': 'expr'}}
-            i += 2
-        else:
-            controlflow.invalid_argument_exit(myarg, 'gam update caalevel')
+    build_caa_level(4, caa, body)
     updateMask = ','.join(body.keys())
     print(f'Updating access level {name}...')
     try:
@@ -265,10 +264,7 @@ def update_access_level():
 
 def delete_access_level():
     caa = build()
-    name = sys.argv[3]
-    if not name.startswith('accessPolicies/'):
-        ap_name = get_access_policy(caa)
-        name = f'{ap_name}/accessLevels/{name}'
+    name = get_access_level_name(3, caa)
     print(f'Deleting access level {name}...')
     try:
         gapi.call(caa.accessPolicies().accessLevels(),
