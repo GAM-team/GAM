@@ -159,7 +159,7 @@ def build_condition(i, schemas):
             i += 1
             i, condition['devicePolicy'] = build_device_policy(i, schemas)
         elif myarg == 'requiredaccesslevels':
-            condition['requiredaccesslevels'] = sys.argv[i+1].split(',')
+            condition['requiredAccessLevels'] = sys.argv[i+1].split(',')
             i += 2
         elif myarg == 'negate':
             condition['negate'] = gam.getBoolean(sys.argv[i+1], myarg)
@@ -168,7 +168,7 @@ def build_condition(i, schemas):
             condition['members'] = sys.argv[i+1].split(',')
             i += 2
         elif myarg == 'regions':
-            condition['regions'] = sys.argv[i+1].split(',')
+            condition['regions'] = sys.argv[i+1].upper().split(',')
             i += 2
         elif myarg == 'endcondition':
             i += 1
