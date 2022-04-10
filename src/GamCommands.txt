@@ -1228,6 +1228,15 @@ gam print browsertokens [todrive]
 	and |
 	or
 
+<CAAIPSubNetwork> ::=
+	<CIDRnetmask>
+<CAAIPSubNetworkList> ::= "<CAAIPSubNetwork>(,<CAAIPSubNetwork>)"
+
+<CAAMember> ::=
+	user:<EmailAddress> |
+	serviceAccount:<EmailAddress>
+<CAAMemberList> ::= "<CAAMember>(,<CAAMember>)"
+
 <CAAOsType> ::=
 	DESKTOP_MAC |
 	DESKTOP_WINDOWS |
@@ -1242,6 +1251,11 @@ gam print browsertokens [todrive]
 	<CAAOsType>:<String>.<String>.<String>
 <CAAOsConstraintList> ::= "<CAAOsConstraint>(,<CAAOsConstraint>)"
 
+<CAARegion> ::=
+	<Character><Character>
+<CAARegionList> ::= "<CAARegion>(,<CAARegion>)"
+	See: https://www.iso.org/obp/ui/#search
+
 <CAADevicePolicyAttribute> ::=
 	(requirescreenlock <Boolean>) |
 	(allowedencryptionstatuses <CAAAllowedEncryptionStatusList>) |
@@ -1251,12 +1265,12 @@ gam print browsertokens [todrive]
 	(requirecorpowned <Boolean>)
 
 <CAAConditionAttribute> ::=
-	(ipsubnetworks <StringList>) |
+	(ipsubnetworks <CAAIPSubNetworkList>) |
 	(devicepolicy <CAADevicePolicyAttribute> enddevicepolicy) |
 	(requiredaccesslevels <StringList>) |
 	(negate <Boolean>) |
-	(members <StringList>) |
-	(regions <StringList>)
+	(members <CAARegionList>) |
+	(regions <CAAMemberList>)
 	
 <CAABasicAttribute> ::+
 	(combiningfunction <CAACombiningFunction>) |
