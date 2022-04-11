@@ -8097,7 +8097,7 @@ def doUpdateSharedDrive(users):
         if myarg == 'name':
             body['name'] = sys.argv[i + 1]
             i += 2
-        elif myarg in ['ou', 'orgunit']:
+        elif myarg in ['ou', 'org', 'orgunit']:
             orgUnit = sys.argv[i+1]
             i += 2
         elif myarg == 'theme':
@@ -8117,9 +8117,9 @@ def doUpdateSharedDrive(users):
         elif myarg == 'asadmin':
             useDomainAdminAccess = True
             i += 1
-        elif myarg in ['ou', 'org', 'orgunit']:
-            body['orgUnitId'] = gapi_directory_orgunits.getOrgUnitId(sys.argv[i + 1])
-            i += 2
+#        elif myarg in ['ou', 'org', 'orgunit']:
+#            body['orgUnitId'] = gapi_directory_orgunits.getOrgUnitId(sys.argv[i + 1])
+#            i += 2
         elif myarg in ['hidden']:
             if getBoolean(sys.argv[i+1], myarg):
                 change_hide = 'hide'
