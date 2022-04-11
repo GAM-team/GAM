@@ -193,6 +193,11 @@ SKUS = {
                     'wsentplus', 'workspaceenterpriseplus'],
         'displayName': 'Workspace Enterprise Plus'
     },
+    '1010020029': {
+        'product': 'Google-Apps',
+        'aliases': ['wes', 'workspaceenterprisestarter'],
+        'displayName': 'Workspace Enterprise Starter'
+    },
     '1010020030': {
         'product': 'Google-Apps',
         'aliases': ['workspacefrontline', 'workspacefrontlineworker'],
