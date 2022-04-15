@@ -866,6 +866,13 @@ def update():
                     'cloudidentity.googleapis.com/groups.discussion_forum': ''
                 }
                 i += 1
+            elif myarg == 'dynamicsecurity':
+                body['labels'] = {
+                    'cloudidentity.googleapis.com/groups.dynamic': '',
+                    'cloudidentity.googleapis.com/groups.security': '',
+                    'cloudidentity.googleapis.com/groups.discussion_forum': ''
+                }
+                i += 1
             elif myarg in ['dynamic']:
                 body['dynamicGroupMetadata'] = {
                     'queries': [{
