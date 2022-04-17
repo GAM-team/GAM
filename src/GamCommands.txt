@@ -1495,7 +1495,7 @@ gam print printermodels [todrive] [filter <String>]
 gam create cigroup <EmailAddress> <CIGroupAttribute>*
 	[makeowner] [alias|aliases <AliasList>] [dynamic <QueryDynamicGroup>]
 gam update cigroup <GroupItem> [email <EmailAddress>] <CIGroupAttribute>*
-	[security] [dynamic <QueryDynamicGroup>]
+	[security|dynamicsecurity] [dynamic <QueryDynamicGroup>]
 	[memberrestrictions <QueryMemberRestrictions>]
 gam update cigroup <GroupItem> add [owner|manager|member] [notsuspended|suspended] [expires never|<Time>] <UserTypeEntity>
 gam update cigroup <GroupItem> delete|remove [owner|manager|member] [notsuspended|suspended] <UserTypeEntity>
