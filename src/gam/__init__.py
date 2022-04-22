@@ -8227,6 +8227,23 @@ def printShowSharedDrives(users, csvFormat):
 
 def doDeleteSharedDrive(users):
     _, driveId = getSharedDriveId(5)
+    allowItemDeletion = False
+    useDomainAdminAccess = False
+    i = 6
+    if driveId.lower().startswith('name'):
+        driveId = gapi_drive_drives.drive_name_to_id(sys.argv[i])
+        i += 1
+    while i < len(sys.argv):
+        myarg = sys.argv[i].lower().replace('_', '')
+        if myarg in ['nukefromorbit', 'allowitemdeletion']:
+            print("I say we take off and nuke the entire site from orbit. It's the only way to be sure...")
+            print('(deleting the shared drive and all files on it...)')
+            allowItemDeletion = True
+            useDomainAdminAccess = True
+            i += 1
+        else:
+            controlflow.invalid_argument_exit(
+                myarg, 'gam delete shareddrive')
     for user in users:
         user, drive = buildDrive3GAPIObject(user)
         if not drive:
@@ -8235,6 +8252,8 @@ def doDeleteSharedDrive(users):
         gapi.call(drive.drives(),
                   'delete',
                   driveId=driveId,
+                  allowItemDeletion=allowItemDeletion,
+                  useDomainAdminAccess=useDomainAdminAccess,
                   soft_errors=True)
 
 
