@@ -9,7 +9,7 @@ GAM is a command line tool for Google Workspace admins to manage domain and user
 Open a terminal and run:
 
 ```sh
-bash <(curl -s -S -L https://git.io/install-gam)
+bash <(curl -s -S -L https://gam-shortn.appspot.com/gam-install)
 ```
 
 this will download GAM, install it and start setup.
@@ -28,13 +28,13 @@ The GAM mailing list / discussion group is hosted on [Google Groups].  You can j
 
 # Chat Room
 
-There is a public chat room hosted in Google Chat. [Instructions to join](https://git.io/gam-chat).
+There is a public chat room hosted in Google Chat. [Instructions to join](https://github.com/GAM-team/GAM/wiki/GAM-Public-Chat-Room).
 
 # Author
 
 GAM is maintained by [Jay Lee](mailto:jay0lee@gmail.com). Please direct "how do I?" questions to [Google Groups].
 
-[GAM release]: https://git.io/gamreleases
+[GAM release]: https://github.com/GAM-team/GAM/releases
 [GitHub Releases]: https://github.com/GAM-team/GAM/releases
 [GitHub]: https://github.com/GAM-team/GAM/tree/master
 [GitHub Wiki]: https://github.com/GAM-team/GAM/wiki/
