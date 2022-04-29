@@ -11,7 +11,7 @@ GAM_AUTHOR = 'Jay Lee <jay0lee@gmail.com>'
 GAM_VERSION = '6.21'
 GAM_LICENSE = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
-GAM_URL = 'https://git.io/gam'
+GAM_URL = 'https://jaylee.us/gam'
 GAM_INFO = (
     f'GAM {GAM_VERSION} - {GAM_URL} / {GAM_AUTHOR} / '
     f'Python {platform.python_version()} {sys.version_info.releaselevel} / '
