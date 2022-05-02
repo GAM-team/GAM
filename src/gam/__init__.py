@@ -9042,8 +9042,9 @@ def doGetUserInfo(user_email=None):
                     if isinstance(user['customSchemas'][schema][field], list):
                         print(f'  {field}:')
                         for an_item in user['customSchemas'][schema][field]:
-                            print(f'   type: {an_item["type"]}')
-                            if an_item['type'] == 'custom':
+                            an_type = an_item.get('type', 'work')
+                            print(f'   type: {an_type}')
+                            if an_type == 'custom':
                                 print(
                                     f'    customType: {an_item["customType"]}')
                             print(f'    value: {an_item["value"]}')
