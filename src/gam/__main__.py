@@ -18,7 +18,7 @@
 """GAM is a command line tool which allows Administrators to control their Google Workspace domain and accounts.
 
 With GAM you can programmatically create users, turn on/off services for users like POP and Forwarding and much more.
-For more information, see https://jaylee.us/gam
+For more information, see https://github.com/GAM-team/GAM
 """
 
 import sys
