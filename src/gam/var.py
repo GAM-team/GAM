@@ -116,6 +116,11 @@ SKUS = {
         'aliases': ['gvpremier', 'voicepremier', 'googlevoicepremier'],
         'displayName': 'Google Voice Premier'
     },
+    '1010360001': {
+        'product': '101036',
+        'aliases': ['meetdialing','googlemeetglobaldialing'],
+        'displayName': 'Google Meet Global Dialing'
+    },
     '1010370001': {
         'product': '101037',
         'aliases': ['gwetlu', 'workspaceeducationupgrade'],
@@ -282,6 +287,7 @@ PRODUCTID_NAME_MAPPINGS = {
     '101033': 'Google Voice',
     '101034': 'G Suite Archived',
     '101035': 'Cloud Search',
+    '101036': 'Google Meet Global Dialing',
     '101037': 'G Suite Workspace for Education',
     'Google-Apps': 'Google Workspace',
     'Google-Chrome-Device-Management': 'Google Chrome Device Management',
