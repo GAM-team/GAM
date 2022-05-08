@@ -7014,6 +7014,8 @@ def getUserAttributes(i, cd, updateCmd):
                     if schemaValue['type'] == 'custom':
                         schemaValue['customType'] = sys.argv[i]
                         i += 1
+                else:
+                    schemaValue['type'] = 'work'
                 schemaValue['value'] = sys.argv[i]
                 if schemaValue['value'] or multivalue != 'multinonempty':
                     body[up][schemaName][fieldName].append(schemaValue)
