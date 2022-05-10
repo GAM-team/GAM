@@ -304,6 +304,8 @@ def doGetCrosInfo():
         if 'autoUpdateExpiration' in cros:
             cros['autoUpdateExpiration'] = utils.formatTimestampYMD(
                 cros['autoUpdateExpiration'])
+        if 'orgUnitId' in cros:
+            cros['orgUnitId'] = f"id:{cros['orgUnitId']}"
         _checkTPMVulnerability(cros)
         for up in CROS_SCALAR_PROPERTY_PRINT_ORDER:
             if up in cros:
@@ -739,6 +741,8 @@ def doPrintCrosDevices():
                 if 'autoUpdateExpiration' in cros:
                     cros['autoUpdateExpiration'] = utils.formatTimestampYMD(
                         cros['autoUpdateExpiration'])
+                if 'orgUnitId' in cros:
+                    cros['orgUnitId'] = f"id:{cros['orgUnitId']}"
                 for cpuStatusReport in cros.get('cpuStatusReports', []):
                     tempInfos = cpuStatusReport.get('cpuTemperatureInfo', [])
                     for tempInfo in tempInfos:
@@ -753,6 +757,8 @@ def doPrintCrosDevices():
             if 'autoUpdateExpiration' in cros:
                 cros['autoUpdateExpiration'] = utils.formatTimestampYMD(
                     cros['autoUpdateExpiration'])
+            if 'orgUnitId' in cros:
+                cros['orgUnitId'] = f"id:{cros['orgUnitId']}"
             row = {}
             for attrib in cros:
                 if attrib not in {
