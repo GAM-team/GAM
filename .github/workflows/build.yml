@@ -69,9 +69,13 @@ jobs:
             python: "3.9"
             jid: 9
             arch: x86_64
+          - os: ubuntu-20.04
+            goal: test
+            python: "3.11"
+            jid: 10
+            arch: x86_64
 
     steps:
-
       - uses: actions/checkout@master
         with:
           persist-credentials: false
