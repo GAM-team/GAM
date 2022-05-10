@@ -39,7 +39,7 @@ jobs:
             goal: build
             arch: armv7l
             openssl_archs: linux-armv4
-          - os: macos-11
+          - os: macos-12
             jid: 4
             goal: build
             arch: universal2
