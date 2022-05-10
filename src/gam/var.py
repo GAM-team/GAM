@@ -988,6 +988,7 @@ CROS_ARGUMENT_TO_PROPERTY_MAP = {
     'notes': ['notes',],
     'ordernumber': ['orderNumber',],
     'org': ['orgUnitPath',],
+    'orgunitid': ['orgUnitId',],
     'orgunitpath': ['orgUnitPath',],
     'osversion': ['osVersion',],
     'ou': ['orgUnitPath',],
@@ -1013,6 +1014,7 @@ CROS_BASIC_FIELDS_LIST = [
 ]
 
 CROS_SCALAR_PROPERTY_PRINT_ORDER = [
+    'orgUnitId',
     'orgUnitPath',
     'annotatedAssetId',
     'annotatedLocation',
