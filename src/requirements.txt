@@ -1,6 +1,6 @@
 cryptography
 distro; sys_platform == 'linux'
-filelock
+filelock==3.6.0
 google-api-python-client>=2.1
 google-auth-httplib2
 google-auth-oauthlib>=0.4.1
