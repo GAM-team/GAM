@@ -418,7 +418,6 @@ jobs:
 
       - name: Install pip requirements
         run: |
-             set +e
              if [[ "${RUNNER_OS}" == "macOS" ]]; then
                for package in cryptography; do
                  "${PYTHON}" -m pip install --upgrade cffi ${PIP_ARGS}
