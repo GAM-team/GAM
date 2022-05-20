@@ -431,7 +431,12 @@ jobs:
                done
                find $PYTHON_INSTALL_PATH/lib/python3.10/site-packages -type f -name "*.so" -exec du -sh "{}" \;
              fi
-             "${PYTHON}" -m pip install --upgrade -r requirements.txt ${PIP_ARGS}
+             #"${PYTHON}" -m pip install --upgrade -r requirements.txt ${PIP_ARGS}
+             while read line; do
+               echo "installing ${line}..."
+               "${PYTHON}" -m pip install --upgrade "${line}" ${PIP_ARGS}
+               echo "done installing ${line}"
+             done < requirements.txt
              "${PYTHON}" -m pip list
 
       - name: Build GAM with PyInstaller
