@@ -29,11 +29,11 @@ jobs:
             goal: build
             arch: x86_64
             openssl_archs: linux-x86_64
-          - os: ubuntu-22.04
-            jid: 11
-            goal: build
-            arch: x86_64
-            openssl_archs: linux-x86_64
+          #- os: ubuntu-22.04
+          #  jid: 11
+          #  goal: build
+          #  arch: x86_64
+          #  openssl_archs: linux-x86_64
           - os: [self-hosted, linux, arm64]
             jid: 2
             goal: build
@@ -398,10 +398,7 @@ jobs:
         run: |
           curl -O https://bootstrap.pypa.io/get-pip.py
           "${PYTHON}" get-pip.py
-          #"${PYTHON}" -m pip install --upgrade pip
-          # temp install pip ToT to solve
-          # https://github.com/pypa/setuptools_scm/issues/713
-          "${PYTHON}" -m pip install --upgrade git+https://github.com/pypa/pip
+          "${PYTHON}" -m pip install --upgrade pip
           "${PYTHON}" -m pip install --upgrade wheel
           "${PYTHON}" -m pip install --upgrade setuptools
     
@@ -488,7 +485,7 @@ jobs:
       - name: Linux 64-bit Make Static
         if: runner.os == 'Linux' && contains(runner.arch, '64') && matrix.goal != 'test'
         run: |
-          $PYTHON -m staticx --debug "${gam}" "${gam}-staticx"
+          $PYTHON -m staticx "${gam}" "${gam}-staticx"
           
       - name: Linux Run StaticX-ed
         if: runner.os == 'Linux' && contains(runner.arch, '64') && matrix.goal != 'test'
