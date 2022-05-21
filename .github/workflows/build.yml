@@ -496,7 +496,11 @@ jobs:
       - name: Linux package staticx
         if: runner.os == 'Linux' && contains(runner.arch, '64') && matrix.goal != 'test'
         run: |
-          GAM_ARCHIVE="gam-${GAMVERSION}-linux-${RUNNER_ARCH}-legacy.tar.xz"
+          gamarch="${RUNNER_ARCH}"
+          if [[ "${gamarch}" == "X64" ]]; then
+            gamarch="x86_64"
+          fi
+          GAM_ARCHIVE="gam-${GAMVERSION}-linux-${gamarch}-legacy.tar.xz"
           tar -C dist/ --create --verbose --exclude-from "${GITHUB_WORKSPACE}/.github/actions/package_exclusions.txt" --file $GAM_ARCHIVE --xz gam
 
       - name: Windows package
