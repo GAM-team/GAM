@@ -123,13 +123,13 @@ jobs:
           sudo apt-get -qq --yes install swig libpcsclite-dev
 
       - name: MacOS remove Homebrew
-        if: matrix.os == 'macos-11'
+        if: runner.os == 'macOS'
         run: |
           # remove everything except the libraries needed by yubikey-manager
           brew uninstall $(brew list | grep -v 'pcre\|swig\|pcsc-lite')
 
       - name: MacOS install tools
-        if: matrix.os == 'macos-11'
+        if: runner.os == 'macOS'
         run: |
           # Install latest Rust
           curl -fsS -o rust.sh https://sh.rustup.rs
@@ -140,7 +140,7 @@ jobs:
 
       - name: Windows Configure VCode
         uses: ilammy/msvc-dev-cmd@v1
-        if: matrix.os == 'windows-2022' && steps.cache-python-ssl.outputs.cache-hit != 'true'
+        if: runner.os == 'Windows' && steps.cache-python-ssl.outputs.cache-hit != 'true'
         with:
           arch: ${{ matrix.arch }}
 
@@ -224,7 +224,7 @@ jobs:
 
       - name: Windows NASM Install
         uses: ilammy/setup-nasm@v1
-        if: matrix.goal == 'build' && matrix.os == 'windows-2022' && steps.cache-python-ssl.outputs.cache-hit != 'true'
+        if: matrix.goal == 'build' && runner.os == 'Windows' && steps.cache-python-ssl.outputs.cache-hit != 'true'
 
       - name: Config OpenSSL
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit != 'true'
@@ -236,7 +236,7 @@ jobs:
           done
 
       - name: Rename GNU link on Windows
-        if: matrix.goal == 'build' && matrix.os == 'windows-2022' && steps.cache-python-ssl.outputs.cache-hit != 'true'
+        if: matrix.goal == 'build' && runner.os == 'Windows' && steps.cache-python-ssl.outputs.cache-hit != 'true'
         shell: bash
         run: mv /usr/bin/link /usr/bin/gnulink
 
@@ -299,7 +299,7 @@ jobs:
           echo "COMPILED_PYTHON_VERSION=${COMPILED_PYTHON_VERSION}" >> $GITHUB_ENV
 
       - name: Mac/Linux Configure Python
-        if: matrix.goal == 'build' && matrix.os != 'windows-2022' && steps.cache-python-ssl.outputs.cache-hit != 'true'
+        if: matrix.goal == 'build' && runner.os != 'Windows' && steps.cache-python-ssl.outputs.cache-hit != 'true'
         run: |
           cd "${PYTHON_SOURCE_PATH}"
           if [[ "${RUNNER_OS}" == "macOS" ]]; then
@@ -316,14 +316,14 @@ jobs:
                       "${extra_args[@]}"
 
       - name: Windows Get External Python deps
-        if: matrix.goal == 'build' && matrix.os == 'windows-2022' && steps.cache-python-ssl.outputs.cache-hit != 'true'
+        if: matrix.goal == 'build' && runner.os == 'Windows' && steps.cache-python-ssl.outputs.cache-hit != 'true'
         shell: powershell
         run: |
           cd "${env:PYTHON_SOURCE_PATH}"
           PCBuild\get_externals.bat
 
       - name: Windows overwrite external OpenSSL with local
-        if: matrix.goal == 'build' && matrix.os == 'windows-2022' && steps.cache-python-ssl.outputs.cache-hit != 'true'
+        if: matrix.goal == 'build' && runner.os == 'Windows' && steps.cache-python-ssl.outputs.cache-hit != 'true'
         shell: powershell
         run: |
           cd "${env:PYTHON_SOURCE_PATH}"
@@ -342,7 +342,7 @@ jobs:
           cp -v "$env:OPENSSL_INSTALL_PATH\include\openssl\applink.c" "${env:OPENSSL_EXT_TARGET_PATH}\include\"
 
       - name: Windows Install sphinx-build
-        if: matrix.goal == 'build' && matrix.os == 'windows-2022' && steps.cache-python-ssl.outputs.cache-hit != 'true'
+        if: matrix.goal == 'build' && runner.os == 'Windows' && steps.cache-python-ssl.outputs.cache-hit != 'true'
         shell: powershell
         run: |
           pip install --upgrade pip
@@ -350,7 +350,7 @@ jobs:
           sphinx-build --version
 
       - name: Windows Config/Build Python
-        if: matrix.goal == 'build' && matrix.os == 'windows-2022' && steps.cache-python-ssl.outputs.cache-hit != 'true'
+        if: matrix.goal == 'build' && runner.os == 'Windows' && steps.cache-python-ssl.outputs.cache-hit != 'true'
         shell: powershell
         run: |
           cd "${env:PYTHON_SOURCE_PATH}"
@@ -360,7 +360,7 @@ jobs:
           PCBuild\build.bat -m --pgo -c Release -p "${env:PYBUILDRELEASE_ARCH}"
 
       - name: Windows Install Python
-        if: matrix.goal == 'build' && matrix.os == 'windows-2022' && steps.cache-python-ssl.outputs.cache-hit != 'true'
+        if: matrix.goal == 'build' && runner.os == 'Windows' && steps.cache-python-ssl.outputs.cache-hit != 'true'
         shell: powershell
         run: |
           cd "${env:PYTHON_SOURCE_PATH}"
@@ -372,14 +372,14 @@ jobs:
           Copy-Item -Path "${env:PYTHON_SOURCE_PATH}\PC\*.h" "${env:PYTHON_INSTALL_PATH}\include\"
 
       - name: Mac/Linux Build Python
-        if: matrix.goal == 'build' && matrix.os != 'windows-2022' && steps.cache-python-ssl.outputs.cache-hit != 'true'
+        if: matrix.goal == 'build' && runner.os != 'Windows' && steps.cache-python-ssl.outputs.cache-hit != 'true'
         run: |
           cd "${PYTHON_SOURCE_PATH}"
           echo "Running: ${MAKE} ${MAKEOPT}"
           $MAKE $MAKEOPT
 
       - name: Mac/Linux Install Python
-        if: matrix.goal == 'build' && matrix.os != 'windows-2022' && steps.cache-python-ssl.outputs.cache-hit != 'true'
+        if: matrix.goal == 'build' && runner.os != 'Windows' && steps.cache-python-ssl.outputs.cache-hit != 'true'
         run: |
           cd "${PYTHON_SOURCE_PATH}"
           $MAKE altinstall
@@ -462,7 +462,7 @@ jobs:
              echo "GAMVERSION=${GAMVERSION}" >> $GITHUB_ENV
 
       - name: Linux/MacOS package
-        if: matrix.os != 'windows-2022' && matrix.goal == 'build'
+        if: runner.os != 'Windows' && matrix.goal == 'build'
         run: |
           cp -v LICENSE $gampath
           cp -v GamCommands.txt $gampath
@@ -498,7 +498,7 @@ jobs:
           tar -C dist/ --create --verbose --exclude-from "${GITHUB_WORKSPACE}/.github/actions/package_exclusions.txt" --file $GAM_ARCHIVE --xz gam
 
       - name: Windows package
-        if: matrix.os == 'windows-2022' && matrix.goal != 'test'
+        if: runner.os == 'Windows' && matrix.goal != 'test'
         run: |
           cp -v LICENSE $gampath
           cp -v GamCommands.txt $gampath
