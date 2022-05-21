@@ -479,27 +479,27 @@ jobs:
           fi
           tar -C dist/ --create --verbose --exclude-from "${GITHUB_WORKSPACE}/.github/actions/package_exclusions.txt" --file $GAM_ARCHIVE --xz gam
 
-      - name: Linux install patchelf/staticx
-        if: runner.os == 'Linux' && runner.arch == 'X64' && matrix.goal != 'test'
+      - name: Linux 64-bit install patchelf/staticx
+        if: runner.os == 'Linux' && contains(runner.arch, '64') && matrix.goal != 'test'
         run: |
           "${PYTHON}" -m pip install --upgrade patchelf-wrapper
           "${PYTHON}" -m pip install --upgrade staticx
 
-      - name: Linux Make Static
-        if: runner.os == 'Linux' && runner.arch == 'X64' && matrix.goal != 'test'
+      - name: Linux 64-bit Make Static
+        if: runner.os == 'Linux' && contains(runner.arch, '64') && matrix.goal != 'test'
         run: |
           $PYTHON -m staticx --debug "${gam}" "${gam}-staticx"
           
       - name: Linux Run StaticX-ed
-        if: runner.os == 'Linux' && runner.arch == 'X64' && matrix.goal != 'test'
+        if: runner.os == 'Linux' && contains(runner.arch, '64') && matrix.goal != 'test'
         run: |
           "${gam}-staticx" version extended
           mv -v "${gam}-staticx" "${gam}"
 
       - name: Linux package staticx
-        if: runner.os == 'Linux' && runner.arch == 'X64' && matrix.goal != 'test'
+        if: runner.os == 'Linux' && contains(runner.arch, '64') && matrix.goal != 'test'
         run: |
-          GAM_ARCHIVE="gam-${GAMVERSION}-linux-x86_64-legacy.tar.xz"
+          GAM_ARCHIVE="gam-${GAMVERSION}-linux-${RUNNER_ARCH}-legacy.tar.xz"
           tar -C dist/ --create --verbose --exclude-from "${GITHUB_WORKSPACE}/.github/actions/package_exclusions.txt" --file $GAM_ARCHIVE --xz gam
 
       - name: Windows package
