@@ -488,7 +488,7 @@ jobs:
       - name: Linux Make Static
         if: runner.os == 'Linux' && runner.arch == 'X64' && matrix.goal != 'test'
         run: |
-          $PYTHON -m staticx "${gam}" "${gam}-staticx"
+          $PYTHON -m staticx --debug "${gam}" "${gam}-staticx"
           
       - name: Linux Run StaticX-ed
         if: runner.os == 'Linux' && runner.arch == 'X64' && matrix.goal != 'test'
