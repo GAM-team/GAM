@@ -396,7 +396,7 @@ jobs:
           #"${PYTHON}" -m pip install --upgrade pip
           # temp install pip ToT to solve
           # https://github.com/pypa/setuptools_scm/issues/713
-          git install --upgrade git+https://github.com/pypa/pip
+          "${PYTHON}" -m pip install --upgrade git+https://github.com/pypa/pip
           "${PYTHON}" -m pip install --upgrade wheel
           "${PYTHON}" -m pip install --upgrade setuptools
     
