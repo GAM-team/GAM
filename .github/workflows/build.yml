@@ -115,8 +115,8 @@ jobs:
              echo "ACTIONS_CACHE=${ACTIONS_CACHE}" >> $GITHUB_ENV
              echo "ACTIONS_GOAL=${ACTIONS_GOAL}" >> $GITHUB_ENV
 
-      - name: Install necessary hosted Linux packages
-        if: matrix.os == 'ubuntu-20.04'
+      - name: Install necessary Github-hosted Linux packages
+        if: runner.os == 'Linux' && runner.arch == 'X64'
         run: |
           echo "RUNNING: apt update..."
           sudo apt-get -qq --yes update
@@ -475,24 +475,24 @@ jobs:
           tar -C dist/ --create --verbose --exclude-from "${GITHUB_WORKSPACE}/.github/actions/package_exclusions.txt" --file $GAM_ARCHIVE --xz gam
 
       - name: Linux install patchelf/staticx
-        if: matrix.os == 'ubuntu-20.04' && matrix.goal != 'test'
+        if: runner.os == 'Linux' && runner.arch == 'X64' && matrix.goal != 'test'
         run: |
           "${PYTHON}" -m pip install --upgrade patchelf-wrapper
           "${PYTHON}" -m pip install --upgrade staticx
 
       - name: Linux Make Static
-        if: matrix.os == 'ubuntu-20.04' && matrix.goal != 'test'
+        if: runner.os == 'Linux' && runner.arch == 'X64' && matrix.goal != 'test'
         run: |
           $PYTHON -m staticx "${gam}" "${gam}-staticx"
           
       - name: Linux Run StaticX-ed
-        if: matrix.os == 'ubuntu-20.04' && matrix.goal != 'test'
+        if: runner.os == 'Linux' && runner.arch == 'X64' && matrix.goal != 'test'
         run: |
           "${gam}-staticx" version extended
           mv -v "${gam}-staticx" "${gam}"
 
       - name: Linux package staticx
-        if: matrix.os == 'ubuntu-20.04' && matrix.goal != 'test'
+        if: runner.os == 'Linux' && runner.arch == 'X64' && matrix.goal != 'test'
         run: |
           GAM_ARCHIVE="gam-${GAMVERSION}-linux-x86_64-legacy.tar.xz"
           tar -C dist/ --create --verbose --exclude-from "${GITHUB_WORKSPACE}/.github/actions/package_exclusions.txt" --file $GAM_ARCHIVE --xz gam
