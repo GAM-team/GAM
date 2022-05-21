@@ -29,6 +29,11 @@ jobs:
             goal: build
             arch: x86_64
             openssl_archs: linux-x86_64
+          - os: ubuntu-22.04
+            jid: 11
+            goal: build
+            arch: x86_64
+            openssl_archs: linux-x86_64
           - os: [self-hosted, linux, arm64]
             jid: 2
             goal: build
