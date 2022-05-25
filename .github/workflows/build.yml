@@ -39,11 +39,6 @@ jobs:
             goal: build
             arch: aarch64
             openssl_archs: linux-aarch64
-          - os: [self-hosted, linux, arm]
-            jid: 3
-            goal: build
-            arch: armv7l
-            openssl_archs: linux-armv4
           - os: macos-12
             jid: 4
             goal: build
