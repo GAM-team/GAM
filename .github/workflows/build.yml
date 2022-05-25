@@ -24,16 +24,11 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: ubuntu-20.04
+          - os: ubuntu-22.04
             jid: 1
             goal: build
             arch: x86_64
             openssl_archs: linux-x86_64
-          #- os: ubuntu-22.04
-          #  jid: 11
-          #  goal: build
-          #  arch: x86_64
-          #  openssl_archs: linux-x86_64
           - os: [self-hosted, linux, arm64]
             jid: 2
             goal: build
@@ -87,7 +82,7 @@ jobs:
         with:
           path: |
             bin
-          key: gam-${{ matrix.jid }}-20220517
+          key: gam-${{ matrix.jid }}-20220525
 
       - name: Use pre-compiled Python for testing
         if: matrix.python != ''
