@@ -475,7 +475,16 @@ jobs:
       - name: Linux 64-bit Make Static
         if: runner.os == 'Linux' && contains(runner.arch, '64') && matrix.goal != 'test'
         run: |
-          $PYTHON -m staticx "${gam}" "${gam}-staticx"
+          case $RUNNER_ARCH in
+            X64)
+              ldlib=/lib64/ld-linux-x86-64.so.2
+              ;;
+            ARM64)
+              ldlib=/lib/ld-linux-aarch64.so.1
+              ;;
+          esac
+          echo "ldlib=${ldlib}"
+          $PYTHON -m staticx -l "${ldlib}" "${gam}" "${gam}-staticx"
           
       - name: Linux Run StaticX-ed
         if: runner.os == 'Linux' && contains(runner.arch, '64') && matrix.goal != 'test'
