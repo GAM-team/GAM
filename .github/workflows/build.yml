@@ -480,7 +480,7 @@ jobs:
               ldlib=/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
               ;;
             ARM64)
-              ldlib=/lib/ld-linux-aarch64.so.1
+              ldlib=/lib/aarch64-linux-gnu/ld-linux-aarch64.so.1
               ;;
           esac
           echo "ldlib=${ldlib}"
