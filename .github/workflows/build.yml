@@ -477,7 +477,7 @@ jobs:
         run: |
           case $RUNNER_ARCH in
             X64)
-              ldlib=/lib64/ld-linux-x86-64.so.2
+              ldlib=/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
               ;;
             ARM64)
               ldlib=/lib/ld-linux-aarch64.so.1
