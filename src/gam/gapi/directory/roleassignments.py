@@ -21,6 +21,18 @@ def create():
     body['roleId'] = gapi_directory_roles.getRoleId(role)
     body['scopeType'] = sys.argv[5].upper()
     i = 6
+    if body['scopeType'] not in ['CUSTOMER', 'ORG_UNIT']:
+        controlflow.expected_argument_exit('scope type',
+                                           ', '.join(['customer', 'org_unit']),
+                                           body['scopeType'])
+    if body['scopeType'] == 'ORG_UNIT':
+        orgUnit, orgUnitId = gapi_directory_orgunits.getOrgUnitId(
+            sys.argv[6], cd)
+        body['orgUnitId'] = orgUnitId[3:]
+        scope = f'ORG_UNIT {orgUnit}'
+        i = 7
+    else:
+        scope = 'CUSTOMER'
     while i < len(sys.argv):
         myarg = sys.argv[i].lower()
         if myarg == 'condition':
@@ -33,17 +45,6 @@ def create():
             i += 2
         else:
             controlflow.invalid_argument_exit(sys.argv[i], 'gam create admin')
-    if body['scopeType'] not in ['CUSTOMER', 'ORG_UNIT']:
-        controlflow.expected_argument_exit('scope type',
-                                           ', '.join(['customer', 'org_unit']),
-                                           body['scopeType'])
-    if body['scopeType'] == 'ORG_UNIT':
-        orgUnit, orgUnitId = gapi_directory_orgunits.getOrgUnitId(
-            sys.argv[6], cd)
-        body['orgUnitId'] = orgUnitId[3:]
-        scope = f'ORG_UNIT {orgUnit}'
-    else:
-        scope = 'CUSTOMER'
     print(f'Giving {user} admin role {role} for {scope}')
     gapi.call(cd.roleAssignments(),
               'insert',
