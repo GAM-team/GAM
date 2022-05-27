@@ -24,26 +24,16 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: ubuntu-20.04
+          - os: ubuntu-22.04
             jid: 1
             goal: build
             arch: x86_64
             openssl_archs: linux-x86_64
-          #- os: ubuntu-22.04
-          #  jid: 11
-          #  goal: build
-          #  arch: x86_64
-          #  openssl_archs: linux-x86_64
           - os: [self-hosted, linux, arm64]
             jid: 2
             goal: build
             arch: aarch64
             openssl_archs: linux-aarch64
-          - os: [self-hosted, linux, arm]
-            jid: 3
-            goal: build
-            arch: armv7l
-            openssl_archs: linux-armv4
           - os: macos-12
             jid: 4
             goal: build
@@ -92,7 +82,7 @@ jobs:
         with:
           path: |
             bin
-          key: gam-${{ matrix.jid }}-20220517
+          key: gam-${{ matrix.jid }}-20220525
 
       - name: Use pre-compiled Python for testing
         if: matrix.python != ''
@@ -485,7 +475,16 @@ jobs:
       - name: Linux 64-bit Make Static
         if: runner.os == 'Linux' && contains(runner.arch, '64') && matrix.goal != 'test'
         run: |
-          $PYTHON -m staticx "${gam}" "${gam}-staticx"
+          case $RUNNER_ARCH in
+            X64)
+              ldlib=/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
+              ;;
+            ARM64)
+              ldlib=/lib/aarch64-linux-gnu/ld-linux-aarch64.so.1
+              ;;
+          esac
+          echo "ldlib=${ldlib}"
+          $PYTHON -m staticx -l "${ldlib}" "${gam}" "${gam}-staticx"
           
       - name: Linux Run StaticX-ed
         if: runner.os == 'Linux' && contains(runner.arch, '64') && matrix.goal != 'test'

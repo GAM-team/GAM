@@ -233,6 +233,7 @@ ERROR_REASON_TO_EXCEPTION = {
 OAUTH2_TOKEN_ERRORS = [
     'access_denied',
     'access_denied: Requested client not authorized',
+    'access_denied: Account restricted',
     'internal_failure: Backend Error',
     'internal_failure: None',
     'invalid_grant',
