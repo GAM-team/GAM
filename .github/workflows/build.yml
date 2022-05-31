@@ -49,22 +49,22 @@ jobs:
             goal: build
             arch: Win32
             openssl_archs: VC-WIN32
-          - os: ubuntu-20.04
+          - os: ubuntu-22.04
             goal: test
             python: "3.7"
             jid: 7
             arch: x86_64
-          - os: ubuntu-20.04
+          - os: ubuntu-22.04
             goal: test
             python: "3.8"
             jid: 8
             arch: x86_64
-          - os: ubuntu-20.04
+          - os: ubuntu-22.04
             goal: test
             python: "3.9"
             jid: 9
             arch: x86_64
-          - os: ubuntu-20.04
+          - os: ubuntu-22.04
             goal: test
             python: "3.11-dev"
             jid: 10
