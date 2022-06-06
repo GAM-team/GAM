@@ -82,7 +82,7 @@ jobs:
         with:
           path: |
             bin
-          key: gam-${{ matrix.jid }}-20220525
+          key: gam-${{ matrix.jid }}-20220606
 
       - name: Use pre-compiled Python for testing
         if: matrix.python != ''
