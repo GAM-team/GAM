@@ -682,12 +682,19 @@ Specify a collection of Users by directly specifying them or by specifying items
 ## Item attributes
 
 <BuildingAttribute> ::=
+	(address|addresslines <String>)|
+	(city|locality <String>)|
+	(country|regioncode <String>)|
 	(description <String>)|
 	(floors <FloorNameList>)|
 	(id <String>)|
+	(language|languageCode <Language>)|
 	(latitude <Float>)|
 	(longitude <Float>)|
 	(name <String>)
+	(state|administrativearea <String>)|
+	(sublocality <String>)|
+	(zipcode|postalcode <String>)
 
 <CalendarAttribute> ::=
 	(selected <Boolean>)|(hidden <Boolean>)|(summary <String>)|(colorindex|colorid <CalendarColorIndex>)|(backgroundcolor <ColorValue>)|(foregroundcolor <ColorValue>)|
