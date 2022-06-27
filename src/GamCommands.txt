@@ -1846,7 +1846,7 @@ gam <UserTypeEntity> update teamdrive <TeamDriveID>|(name <TeamDriveName>) [asad
 	[(theme|themeid <String>) | ([customtheme <DriveFileID> <Float> <Float> <Float>] [color <ColorValue>])]
 	(<TeamDriveRestrictionsSubfieldName> <Boolean>)*
 	[hidden <Boolean>]
-gam <UserTypeEntity> delete teamdrive <TeamDriveID>|(name <TeamDriveName>) [allowitemdeletion|nukefromorbit]
+gam <UserTypeEntity> delete teamdrive <TeamDriveID>|(name <TeamDriveName>) [asadmin] [allowitemdeletion|nukefromorbit]
 gam <UserTypeEntity> show teamdriveinfo <TeamDriveID>|(name <TeamDriveName>) [asadmin]
 gam <UserTypeEntity> show teamdrives [query <QueryTeamDrive>] [asadmin]
 gam <UserTypeEntity> print teamdrives [query <QueryTeamDrive>] [todrive] [asadmin]

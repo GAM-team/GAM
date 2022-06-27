@@ -8243,6 +8243,9 @@ def doDeleteSharedDrive(users):
             allowItemDeletion = True
             useDomainAdminAccess = True
             i += 1
+        elif myarg == 'asadmin':
+            useDomainAdminAccess = True
+            i += 1
         else:
             controlflow.invalid_argument_exit(
                 myarg, 'gam delete shareddrive')
