@@ -253,6 +253,13 @@ def update_state():
 
 
 def print_():
+    # This function is rather messy thanks to
+    # https://github.com/GAM-team/GAM/issues/1534
+    # I'd prefer to keep it all in this function for now but if:
+    #  - we find other list() operations that also hit this bug OR
+    #  - it looks like this issue is going to exist on Google's side
+    #    for a long time.
+    # I'll enterain some cleanup here to "functionalize" (yuck) all of this.
     ci = gapi_cloudidentity.build_dwd()
     customer = _get_device_customerid()
     parent = 'devices/-'
@@ -260,6 +267,8 @@ def print_():
     get_device_users = True
     view = None
     orderByList = []
+    # default sort order needed by our 1 hour bug workaround
+    orderBy = 'create_time'
     titles = []
     csvRows = []
     todrive = False
@@ -319,26 +328,96 @@ def print_():
       }
     if orderByList:
         orderBy = ','.join(orderByList)
-    else:
-        orderBy = None
-    devices = []
+    custom_device_filter = bool(device_filter)
+    # we store the devices in a dict keyed by name which is a unique ID.
+    # that way when we get duplicate devices we just overwrite the name
+    # with the latest copy we saw.
+    devices = {}
     page_message = gapi.got_total_items_msg(view_name_map[view], '...\n')
-    devices += gapi.get_all_pages(ci.devices(), 'list', 'devices',
-        customer=customer, page_message=page_message,
-        pageSize=100, filter=device_filter, view=view, orderBy=orderBy)
+    pageToken = None
+    newest_device_date = ''
+    total_items = 0
+    while True:
+        try:
+            a_page = gapi.call(ci.devices(),
+                               'list',
+                               customer=customer,
+                               pageSize=100,
+                               pageToken=pageToken,
+                               filter=device_filter,
+                               view=view,
+                               orderBy=orderBy,
+                               throw_reasons=[gapi_errors.ErrorReason.FOUR_O_O])
+        except googleapiclient.errors.HttpError:
+            sys.stderr.write('WARNING: GAM hit Google internal bug 237397223. Please file a Google Support ticket stating that you are encountering this bug.\n') 
+            if orderBy != 'create_time' or custom_device_filter:
+                controlflow.system_error_exit(5, 'GAM workaround for this issue only works if filter and orderby arguments are not used.\n')
+            sys.stderr.write(f' attempting to work around the bug by filtering for devices created on or after the newest we\'ve seen ({newest_device_date})...')
+            device_filter = f'register:{newest_device_date}..'
+            pageToken = None
+            continue
+        for dev in a_page.get('devices', []):
+            total_items += 1
+            devices[dev['name']] = dev
+            dev_date = dev.get('createTime', '')
+            # remove the Z
+            dev_date = dev_date[:-1]
+            # remove microseconds
+            dev_date = dev_date.split('.')[0]
+            if dev_date > newest_device_date:
+                newest_device_date = dev_date
+        pageToken = a_page.get('nextPageToken')
+        if not pageToken:
+            break
+        sys.stderr.write(page_message.replace('%%total_items%%', str(total_items)))
     if get_device_users:
         page_message = gapi.got_total_items_msg('Device Users', '...\n')
-        device_users = gapi.get_all_pages(ci.devices().deviceUsers(), 'list',
-            'deviceUsers', customer=customer, parent=parent,
-            page_message=page_message, pageSize=20, filter=device_filter)
-        for device_user in device_users:
-            for device in devices:
-                if device_user.get('name').startswith(device.get('name')):
-                    if 'users' not in device:
-                        device['users'] = []
-                    device['users'].append(device_user)
-                    break
-    for device in devices:
+        pageToken = None
+        newest_deviceuser_date = ''
+        total_items = 0
+        if not custom_device_filter:
+            device_filter = None
+        while True:
+            try:
+                a_page = gapi.call(ci.devices().deviceUsers(),
+                                   'list',
+                                   customer=customer,
+                                   parent=parent,
+                                   pageSize=1,
+                                   orderBy=orderBy,
+                                   filter=device_filter,
+                                   pageToken=pageToken,
+                                   throw_reasons=[gapi_errors.ErrorReason.FOUR_O_O])
+            except googleapiclient.errors.HttpError:
+                sys.stderr.write('WARNING: GAM hit Google internal bug 237397223. Please file a Google Support ticket stating that you are encountering this bug.\n')
+                if orderBy != 'create_time' or custom_device_filter:
+                    controlflow.system_error_exit(5, 'GAM workaround for this issue only works if filter and orderby arguments are not used.\n')
+                sys.stderr.write(f' attempting to work around the bug by filtering for device users created on or after the newest we\'ve seen ({newest_deviceuser_date})...')
+                device_filter = f'register:{newest_deviceuser_date}..'
+                pageToken = None
+                continue
+            for device_user in a_page.get('deviceUsers', []):
+                total_items += 1
+                dev_date = device_user.get('createTime', '')
+                # remove the Z
+                dev_date = dev_date[:-1]
+                # remove microseconds
+                dev_date = dev_date.split('.')[0]
+                if dev_date > newest_deviceuser_date:
+                    newest_deviceuser_date = dev_date
+                device_id = device_user['name'].split('/')[1]
+                device_name = f'devices/{device_id}'
+                if 'users' not in devices[device_name]:
+                    devices[device_name]['users'] = {}
+                devices[device_name]['users'][device_id] = device_user
+            pageToken = a_page.get('nextPageToken')
+            if not pageToken:
+                break
+            sys.stderr.write(page_message.replace('%%total_items%%', str(total_items)))
+        for device in devices:
+            if 'user' in device:
+                device['users'] = list(device['user'].values())
+    for device in devices.values():
         device = utils.flatten_json(device)
         for a_key in device:
             if a_key not in titles:
