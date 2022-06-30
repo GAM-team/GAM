@@ -383,7 +383,7 @@ def print_():
                                    'list',
                                    customer=customer,
                                    parent=parent,
-                                   pageSize=1,
+                                   pageSize=20,
                                    orderBy=orderBy,
                                    filter=device_filter,
                                    pageToken=pageToken,
