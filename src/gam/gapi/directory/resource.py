@@ -227,6 +227,22 @@ def printFeatures():
     display.write_csv_file(csvRows, titles, 'Features', to_drive)
 
 
+BUILDING_ADDRESS_FIELD_MAP = {
+    'address': 'addressLines',
+    'addresslines': 'addressLines',
+    'administrativearea': 'administrativeArea',
+    'city': 'locality',
+    'country': 'regionCode',
+    'language': 'languageCode',
+    'languagecode': 'languageCode',
+    'locality': 'locality',
+    'postalcode': 'postalCode',
+    'regioncode': 'regionCode',
+    'state': 'administrativeArea',
+    'sublocality': 'sublocality',
+    'zipcode': 'postalCode',
+    }
+
 def _getBuildingAttributes(args, body={}):
     i = 0
     while i < len(args):
@@ -252,6 +268,16 @@ def _getBuildingAttributes(args, body={}):
             i += 2
         elif myarg == 'floors':
             body['floorNames'] = args[i + 1].split(',')
+            i += 2
+        elif myarg in BUILDING_ADDRESS_FIELD_MAP:
+            myarg = BUILDING_ADDRESS_FIELD_MAP[myarg]
+            body.setdefault('address', {})
+            if myarg == 'addressLines':
+                body['address'][myarg] = args[i + 1].split('\n')
+            elif myarg == 'languageCode':
+                body['address'][myarg] = LANGUAGE_CODES_MAP.get(args[i + 1].lower(), args[i + 1])
+            else:
+                body['address'][myarg] = args[i + 1]
             i += 2
         else:
             controlflow.invalid_argument_exit(myarg,

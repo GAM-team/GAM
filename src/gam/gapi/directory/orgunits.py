@@ -373,17 +373,20 @@ def makeOrgUnitPathRelative(path):
 
 
 def encodeOrgUnitPath(path):
-    if path.find('+') == -1 and path.find('%') == -1:
-        return path
-    encpath = ''
-    for c in path:
-        if c == '+':
-            encpath += '%2B'
-        elif c == '%':
-            encpath += '%25'
-        else:
-            encpath += c
-    return encpath
+# 6.22 - This method no longer works.
+# % no longer needs encoding and + is handled incorrectly in API with or without encoding
+    return path
+#    if path.find('+') == -1 and path.find('%') == -1:
+#        return path
+#    encpath = ''
+#    for c in path:
+#        if c == '+':
+#            encpath += '%2B'
+#        elif c == '%':
+#            encpath += '%25'
+#        else:
+#            encpath += c
+#    return encpath
 
 
 def getOrgUnitItem(orgUnit, pathOnly=False, absolutePath=True):

@@ -49,22 +49,22 @@ jobs:
             goal: build
             arch: Win32
             openssl_archs: VC-WIN32
-          - os: ubuntu-20.04
+          - os: ubuntu-22.04
             goal: test
             python: "3.7"
             jid: 7
             arch: x86_64
-          - os: ubuntu-20.04
+          - os: ubuntu-22.04
             goal: test
             python: "3.8"
             jid: 8
             arch: x86_64
-          - os: ubuntu-20.04
+          - os: ubuntu-22.04
             goal: test
             python: "3.9"
             jid: 9
             arch: x86_64
-          - os: ubuntu-20.04
+          - os: ubuntu-22.04
             goal: test
             python: "3.11-dev"
             jid: 10
@@ -82,7 +82,7 @@ jobs:
         with:
           path: |
             bin
-          key: gam-${{ matrix.jid }}-20220525
+          key: gam-${{ matrix.jid }}-20220621
 
       - name: Use pre-compiled Python for testing
         if: matrix.python != ''
@@ -628,7 +628,7 @@ jobs:
              $gam print vaultmatters matterstate open
              $gam print vaultholds matter $matterid
              $gam print vaultcount matter $matterid corpus mail everyone todrive
-             $gam create vaultexport matter $matterid name "GHA export $newbase" corpus mail accounts $newuser use_new_export true
+             $gam create vaultexport matter $matterid name "GHA export $newbase" corpus mail accounts $newuser use_new_export false
              $gam print exports matter $matterid | $gam csv - gam info export $matterid id:~~id~~
              $gam csv sample.csv gam user ~email add calendar id:$newresource
              $gam delete resource $newresource

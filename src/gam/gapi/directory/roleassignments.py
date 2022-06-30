@@ -27,7 +27,7 @@ def create():
                                            body['scopeType'])
     if body['scopeType'] == 'ORG_UNIT':
         orgUnit, orgUnitId = gapi_directory_orgunits.getOrgUnitId(
-            sys.argv[6], cd)
+            sys.argv[i], cd)
         body['orgUnitId'] = orgUnitId[3:]
         scope = f'ORG_UNIT {orgUnit}'
         i = 7

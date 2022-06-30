@@ -682,12 +682,19 @@ Specify a collection of Users by directly specifying them or by specifying items
 ## Item attributes
 
 <BuildingAttribute> ::=
+	(address|addresslines <String>)|
+	(city|locality <String>)|
+	(country|regioncode <String>)|
 	(description <String>)|
 	(floors <FloorNameList>)|
 	(id <String>)|
+	(language|languageCode <Language>)|
 	(latitude <Float>)|
 	(longitude <Float>)|
 	(name <String>)
+	(state|administrativearea <String>)|
+	(sublocality <String>)|
+	(zipcode|postalcode <String>)
 
 <CalendarAttribute> ::=
 	(selected <Boolean>)|(hidden <Boolean>)|(summary <String>)|(colorindex|colorid <CalendarColorIndex>)|(backgroundcolor <ColorValue>)|(foregroundcolor <ColorValue>)|
@@ -1839,7 +1846,7 @@ gam <UserTypeEntity> update teamdrive <TeamDriveID>|(name <TeamDriveName>) [asad
 	[(theme|themeid <String>) | ([customtheme <DriveFileID> <Float> <Float> <Float>] [color <ColorValue>])]
 	(<TeamDriveRestrictionsSubfieldName> <Boolean>)*
 	[hidden <Boolean>]
-gam <UserTypeEntity> delete teamdrive <TeamDriveID>|(name <TeamDriveName>) [allowitemdeletion|nukefromorbit]
+gam <UserTypeEntity> delete teamdrive <TeamDriveID>|(name <TeamDriveName>) [asadmin] [allowitemdeletion|nukefromorbit]
 gam <UserTypeEntity> show teamdriveinfo <TeamDriveID>|(name <TeamDriveName>) [asadmin]
 gam <UserTypeEntity> show teamdrives [query <QueryTeamDrive>] [asadmin]
 gam <UserTypeEntity> print teamdrives [query <QueryTeamDrive>] [todrive] [asadmin]
