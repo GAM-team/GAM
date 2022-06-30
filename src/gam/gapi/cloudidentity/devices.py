@@ -375,6 +375,7 @@ def print_():
         pageToken = None
         newest_deviceuser_date = ''
         total_items = 0
+        device_users = {}
         if not custom_device_filter:
             device_filter = None
         while True:
@@ -405,18 +406,18 @@ def print_():
                 dev_date = dev_date.split('.')[0]
                 if dev_date > newest_deviceuser_date:
                     newest_deviceuser_date = dev_date
-                device_id = device_user['name'].split('/')[1]
-                device_name = f'devices/{device_id}'
-                if 'users' not in devices[device_name]:
-                    devices[device_name]['users'] = {}
-                devices[device_name]['users'][device_id] = device_user
+                deviceuser_name = device_user['name']
+                device_users[deviceuser_name] = device_user
             pageToken = a_page.get('nextPageToken')
             if not pageToken:
                 break
             sys.stderr.write(page_message.replace('%%total_items%%', str(total_items)))
-        for device in devices:
-            if 'user' in device:
-                device['users'] = list(device['user'].values())
+        for deviceuser_name, device_user in device_users.items():
+            device_id = deviceuser_name.split('/')[1]
+            device_name = f'devices/{device_id}'
+            if 'users' not in devices[device_name]:
+                devices[device_name]['users'] = []
+            devices[device_name]['users'].append(device_user)
     for device in devices.values():
         device = utils.flatten_json(device)
         for a_key in device:
