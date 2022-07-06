@@ -58,22 +58,32 @@ def getRoleId(role):
 
 
 def getPrivileges(body, privs, action):
-    all_privileges = gapi_directory_privileges.print_(return_only=True)
+    def expandChildPrivileges(privilege):
+        for childPrivilege in privilege.get('childPrivileges', []):
+            childPrivileges[childPrivilege['privilegeName']] = childPrivilege['serviceId']
+            expandChildPrivileges(childPrivilege)
+
+    allPrivileges = {}
+    ouPrivileges = {}
+    childPrivileges = {}
+    for privilege in gapi_directory_privileges.print_(return_only=True):
+        allPrivileges[privilege['privilegeName']] = privilege['serviceId']
+        if privilege['isOuScopable']:
+            ouPrivileges[privilege['privilegeName']] = privilege['serviceId']
+        expandChildPrivileges(privilege)
     if privs == 'ALL':
-        body['rolePrivileges'] = [
-            {'privilegeName': p['privilegeName'], 'serviceId': p['serviceId']} for p in all_privileges
-            ]
+        body['rolePrivileges'] = [{'privilegeName': priv, 'serviceId': v} for priv, v in allPrivileges.items()]
     elif privs == 'ALL_OU':
-        body['rolePrivileges'] = [
-            {'privilegeName': p['privilegeName'], 'serviceId': p['serviceId']} for p in all_privileges if p.get('isOuScopable')
-            ]
+        body['rolePrivileges'] = [{'privilegeName': priv, 'serviceId': v} for priv, v in ouPrivileges.items()]
     else:
       body.setdefault('rolePrivileges', [])
       for priv in privs.split(','):
-          for p in all_privileges:
-              if priv == p['privilegeName']:
-                body['rolePrivileges'].append({'privilegeName': p['privilegeName'], 'serviceId': p['serviceId']})
-                break
+          if priv in allPrivileges:
+              body['rolePrivileges'].append({'privilegeName': priv, 'serviceId': allPrivileges[priv]})
+          elif priv in ouPrivileges:
+              body['rolePrivileges'].append({'privilegeName': priv, 'serviceId': ouPrivileges[priv]})
+          elif priv in childPrivileges:
+              body['rolePrivileges'].append({'privilegeName': priv, 'serviceId': childPrivileges[priv]})
           else:
               controlflow.invalid_argument_exit(priv,
                                                 f'gam {action} adminrole privileges')
