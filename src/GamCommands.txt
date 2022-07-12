@@ -1303,7 +1303,9 @@ gam update chatmessage name <String>
 	deprovision_retiring_device|
 	deprovision_upgrade_transfer|
 	disable|
-	reenable
+	reenable|
+	pre_provisioned_disable|
+	pre_provisioned_reenable
 
 gam update cros <CrOSEntity> action <CrOSAction> [acknowledge_device_touch_requirement]
 
