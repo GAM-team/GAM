@@ -455,7 +455,7 @@ def doPrintCrosActivity():
     selectActiveTimeRanges = selectDeviceFiles = selectRecentUsers = False
     listLimit = 0
     delimiter = ','
-    orgUnitPath = None
+    orgUnitPath = includeChildOrgunits = None
     queries = [None]
     i = 3
     while i < len(sys.argv):
@@ -463,8 +463,9 @@ def doPrintCrosActivity():
         if myarg in ['query', 'queries']:
             queries = gam.getQueries(myarg, sys.argv[i + 1])
             i += 2
-        elif myarg == 'limittoou':
+        elif myarg in {'limittoou', 'crosou', 'crosouandchildren'}:
             orgUnitPath = gapi_directory_orgunits.getOrgUnitItem(sys.argv[i + 1])
+            includeChildOrgunits = myarg == 'crosouandchildren'
             i += 2
         elif myarg == 'todrive':
             todrive = True
@@ -531,8 +532,9 @@ def doPrintCrosActivity():
                                       query=query,
                                       customerId=GC_Values[GC_CUSTOMER_ID],
                                       projection='FULL',
-                                      fields=fields,
-                                      orgUnitPath=orgUnitPath)
+                                      orgUnitPath=orgUnitPath,
+                                      includeChildOrgunits=includeChildOrgunits,
+                                      fields=fields)
         for cros in all_cros:
             row = {}
             skip_attribs = ['recentUsers', 'activeTimeRanges', 'deviceFiles']
@@ -619,7 +621,7 @@ def doPrintCrosDevices():
     csvRows = []
     display.add_field_to_csv_file('deviceid', CROS_ARGUMENT_TO_PROPERTY_MAP,
                                   fieldsList, fieldsTitles, titles)
-    projection = orderBy = sortOrder = orgUnitPath = None
+    projection = orderBy = sortOrder = orgUnitPath = includeChildOrgunits = None
     queries = [None]
     noLists = sortHeaders = False
     selectedLists = {}
@@ -631,8 +633,9 @@ def doPrintCrosDevices():
         if myarg in ['query', 'queries']:
             queries = gam.getQueries(myarg, sys.argv[i + 1])
             i += 2
-        elif myarg == 'limittoou':
+        elif myarg in {'limittoou', 'crosou', 'crosouandchildren'}:
             orgUnitPath = gapi_directory_orgunits.getOrgUnitItem(sys.argv[i + 1])
+            includeChildOrgunits = myarg == 'crosouandchildren'
             i += 2
         elif myarg == 'todrive':
             todrive = True
@@ -736,6 +739,7 @@ def doPrintCrosDevices():
                                       customerId=GC_Values[GC_CUSTOMER_ID],
                                       projection=projection,
                                       orgUnitPath=orgUnitPath,
+                                      includeChildOrgunits=includeChildOrgunits,
                                       orderBy=orderBy,
                                       sortOrder=sortOrder,
                                       fields=fields)
