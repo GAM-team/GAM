@@ -1323,7 +1323,7 @@ gam update cros <CrOSEntity> <CrOSAttribute>+
 gam info cros <CrOSEntity> [nolists] [listlimit <Number>] [start <Date>] [end <Date>]
 	[basic|full|allfields] <CrOSFieldName>* [fields <CrOSFieldNameList>] [downloadfile latest|<Time>] [targetfolder <FilePath>]
 
-gam print cros [todrive] [(query <QueryCrOS>)|(queries <QueryCrOSList>)] [limittoou <OrgUnitItem>]
+gam print cros [todrive] [(query <QueryCrOS>)|(queries <QueryCrOSList>)] [limittoou|cros_ou|cros_ou_and_children <OrgUnitItem>]
 	[orderby <CrOSOrderByFieldName> [ascending|descending]] [nolists|<CrOSListFieldName>*] [listlimit <Number>] [start <Date>] [end <Date>]
 	[basic|full|allfields] <CrOSFieldName>* [fields <CrOSFieldNameList>] [sortheaders]
 gam <CrOSTypeEntity> print
@@ -1345,7 +1345,7 @@ One set of values for all <CrOSListFieldName> fields specified will be output on
 The listlimit <Number> argument limits the number of repetitions to <Number>; if not specified or <Number> equals zero, there is no limit.
 The start <Date> and end <Date> arguments constrain activeTimeRanges, cpuStatusReports, deviceFiles and systemRamFreeReports to fall within the specified <Dates>.
 
-gam print crosactivity [todrive] [(query <QueryCrOS>)|(queries <QueryCrOSList>)] [limittoou <OrgUnitItem>]
+gam print crosactivity [todrive] [(query <QueryCrOS>)|(queries <QueryCrOSList>)] [limittoou|cros_ou|cros_ou_and_children <OrgUnitItem>]
 	[recentusers] [timeranges] [both] [devicefiles] [all] [listlimit <Number>] [start <Date>] [end <Date>] [delimiter <Character>]
 
 The basic column headers are: deviceId,annotatedAssetId,annotatedLocation,serialNumber,orgUnitPath.
