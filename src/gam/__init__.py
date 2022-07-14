@@ -7854,14 +7854,13 @@ def doCreateOrRotateServiceAccountKeys(iam=None,
                     body={'publicKeyData': publicKeyData})
                 break
             except googleapiclient.errors.HttpError as err:
-                if hasattr(err, 'error_details') and \
-                   err.error_details == 'The given public key already exists.':
-                    print('WARNING: that key already exists.')
-                    result = {'name': oldPrivateKeyId}
-                    break
-                elif hasattr(err, 'error_details'):
-                    controlflow.system_error_exit(
-                            4, err.error_details)
+                if hasattr(err, 'error_details'):
+                   if err.error_details == 'The given public key already exists.':
+                       print('WARNING: that key already exists.')
+                       result = {'name': oldPrivateKeyId}
+                       break
+                   controlflow.system_error_exit(
+                       4, err.error_details)
                 else:
                     controlflow.system_error_exit(
                             4, err)
@@ -8169,7 +8168,7 @@ def printShowSharedDrives(users, csvFormat):
     todrive = False
     useDomainAdminAccess = False
     q = None
-    get_orgunits = True 
+    get_orgunits = True
     i = 5
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
@@ -8191,7 +8190,7 @@ def printShowSharedDrives(users, csvFormat):
     tds = []
     titles = []
     if get_orgunits and useDomainAdminAccess:
-        ou_map = gapi_directory_orgunits.orgid_to_org_map() 
+        ou_map = gapi_directory_orgunits.orgid_to_org_map()
     for user in users:
         sys.stderr.write(f'Getting Shared Drives for {user}\n')
         user, drive = buildDrive3GAPIObject(user)
