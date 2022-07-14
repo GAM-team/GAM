@@ -653,7 +653,8 @@ Specify a collection of ChromeOS devices by directly specifying them
 	(crosfile <FileName>)|
 	(croscsvfile <FileName>:<FieldName>)|
 	(crosquery <QueryCrOS>)|
-	(crosqueries <QueryCrOSList>)
+	(crosqueries <QueryCrOSList>)|
+	(cros_ou|cros_ou_and_children <OrgUnitPath>)
 
 ## Collections of Users
 

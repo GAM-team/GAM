@@ -10294,8 +10294,13 @@ def getUsersToModify(entity_type=None,
     elif entity_type == 'cros':
         users = entity.replace(',', ' ').split()
         entity = 'cros'
-    elif entity_type in ['crosquery', 'crosqueries', 'cros_sn']:
-        if entity_type == 'cros_sn':
+    elif entity_type in ['crosquery', 'crosqueries', 'cros_sn', 'cros_ou', 'cros_ou_and_children']:
+        orgUnitPath = includeChildOrgunits = None
+        if entity_type in {'cros_ou', 'cros_ou_and_children'}:
+            orgUnitPath = entity
+            includeChildOrgunits = entity_type == 'cros_ou_and_children'
+            queries = [None]
+        elif entity_type == 'cros_sn':
             queries = [f'id:{sn}' for sn in shlexSplitList(entity)]
         elif entity_type == 'crosqueries':
             queries = shlexSplitList(entity)
@@ -10312,9 +10317,11 @@ def getUsersToModify(entity_type=None,
                 'list',
                 'chromeosdevices',
                 page_message=page_message,
+                query=query,
                 customerId=GC_Values[GC_CUSTOMER_ID],
-                fields='nextPageToken,chromeosdevices(deviceId)',
-                query=query)
+                orgUnitPath=orgUnitPath,
+                includeChildOrgunits=includeChildOrgunits,
+                fields='nextPageToken,chromeosdevices(deviceId)')
             for member in members:
                 deviceId = member['deviceId']
                 if deviceId not in usersSet:
