@@ -31,7 +31,8 @@ usergroup_types = [
     'ou_and_child', 'ou_and_children_ns', 'ou_and_child_ns',
     'ou_and_children_susp', 'ou_and_child_susp', 'query', 'queries', 'license',
     'licenses', 'licence', 'licences', 'file', 'csv', 'csvfile', 'all', 'cros',
-    'cros_sn', 'crosquery', 'crosqueries', 'crosfile', 'croscsv', 'croscsvfile'
+    'cros_sn', 'crosquery', 'crosqueries', 'crosfile', 'croscsv', 'croscsvfile',
+    'cros_ou', 'cros_ou_and_children'
 ]
 ERROR_PREFIX = 'ERROR: '
 WARNING_PREFIX = 'WARNING: '

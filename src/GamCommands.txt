@@ -653,7 +653,8 @@ Specify a collection of ChromeOS devices by directly specifying them
 	(crosfile <FileName>)|
 	(croscsvfile <FileName>:<FieldName>)|
 	(crosquery <QueryCrOS>)|
-	(crosqueries <QueryCrOSList>)
+	(crosqueries <QueryCrOSList>)|
+	(cros_ou|cros_ou_and_children <OrgUnitPath>)
 
 ## Collections of Users
 
@@ -1331,7 +1332,7 @@ gam <CrOSTypeEntity> print
 Summary of printing:
 gam print cros
 Prints a header row and deviceId for all CrOS devices.
-gam <CrOSTypeEntity> print cros
+gam <CrOSTypeEntity> print
 Prints no header row and deviceId for specified CrOS devices.
 gam print cros ... basic|full
 Prints a header row and selected fields for specified CrOS devices.
