@@ -7614,7 +7614,7 @@ and accept the Terms of Service (ToS). As soon as you've accepted the ToS popup,
                 controlflow.system_error_exit(1, status)
             if status.get('done', False):
                 break
-            sleep_time = i**2
+            sleep_time = min(2**i, 60)
             print(f'Project still being created. Sleeping {sleep_time} seconds')
             time.sleep(sleep_time)
         if create_again:
