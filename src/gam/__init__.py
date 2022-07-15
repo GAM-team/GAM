@@ -7555,7 +7555,7 @@ def doCreateProject():
         create_operation = gapi.call(crm.projects(), 'create', body=body)
         operation_name = create_operation['name']
         time.sleep(8)  # Google recommends always waiting at least 5 seconds
-        for i in range(1, 5):
+        for i in range(1, 10):
             print('Checking project status...')
             status = gapi.call(crm.operations(), 'get', name=operation_name)
             if 'error' in status:
