@@ -2247,6 +2247,7 @@ def doGetCourseInfo():
 
 COURSE_ARGUMENT_TO_PROPERTY_MAP = {
     'alternatelink': 'alternateLink',
+    'calendarid': 'calendarId',
     'coursegroupemail': 'courseGroupEmail',
     'coursematerialsets': 'courseMaterialSets',
     'coursestate': 'courseState',
@@ -2254,7 +2255,9 @@ COURSE_ARGUMENT_TO_PROPERTY_MAP = {
     'description': 'description',
     'descriptionheading': 'descriptionHeading',
     'enrollmentcode': 'enrollmentCode',
+    'gradebooksettings': 'gradebookSettings',
     'guardiansenabled': 'guardiansEnabled',
+    'heading': 'descriptionHeading',
     'id': 'id',
     'name': 'name',
     'ownerid': 'ownerId',
