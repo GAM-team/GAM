@@ -25,7 +25,7 @@ def _reduce_name(name):
 
 def is_invitable_user(email):
     '''return email isInvitableUser'''
-    svc = gapi_cloudidentity.build_dwd('cloudidentity_beta')
+    svc = gapi_cloudidentity.build_dwd('cloudidentity')
     customer = _get_customerid()
     encoded_email = quote_plus(email)
     name = f'{customer}/userinvitations/{encoded_email}'
@@ -35,7 +35,7 @@ def is_invitable_user(email):
 
 def _generic_action(action):
     '''generic function to call actionable APIs'''
-    svc = gapi_cloudidentity.build_dwd('cloudidentity_beta')
+    svc = gapi_cloudidentity.build_dwd('cloudidentity')
     customer = _get_customerid()
     email = sys.argv[3].lower()
     encoded_email = quote_plus(email)
@@ -55,7 +55,7 @@ def _generic_action(action):
 
 def _generic_get(get_type):
     '''generic function to call read data APIs'''
-    svc = gapi_cloudidentity.build_dwd('cloudidentity_beta')
+    svc = gapi_cloudidentity.build_dwd('cloudidentity')
     customer = _get_customerid()
     email = sys.argv[3].lower()
     encoded_email = quote_plus(email)
@@ -75,7 +75,7 @@ def bulk_is_invitable(emails):
         if response.get('isInvitableUser'):
             rows.append({'invitableUsers': request_id})
 
-    svc = gapi_cloudidentity.build_dwd('cloudidentity_beta')
+    svc = gapi_cloudidentity.build_dwd('cloudidentity')
     customer = _get_customerid()
     todrive = False
     #batch_size = 1000
@@ -139,7 +139,7 @@ USERINVITATION_STATE_CHOICES_MAP = {
 
 def print_():
     '''gam print userinvitations'''
-    svc = gapi_cloudidentity.build_dwd('cloudidentity_beta')
+    svc = gapi_cloudidentity.build_dwd('cloudidentity')
     customer = _get_customerid()
     todrive = False
     titles = ['name', 'state', 'updateTime']
