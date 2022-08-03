@@ -24,7 +24,10 @@ from gam import controlflow
 from gam import display
 from gam import fileutils
 from gam import transport
-from gam.var import GM_Globals, GM_WINDOWS
+from gam.var import GC_CA_FILE,
+                    GC_Values,
+                    GM_Globals,
+                    GM_WINDOWS
 from gam import utils
 
 
@@ -633,7 +636,10 @@ class _ShortURLFlow(google_auth_oauthlib.flow.InstalledAppFlow):
                 parsed_params = parse_qs(parsed_url.query)
                 code = parsed_params.get('code', [None])[0]
             try:
-                self.fetch_token(code=code)
+                fetch_args = {'code': code}
+                if GC_Values.get('GC_CA_FILE'):
+                    fetch_args['verify'] = GC_Values.get('GC_CA_FILE')
+                self.fetch_token(**fetch_args)
                 break
             except Exception as e:
                 if not userInput:
