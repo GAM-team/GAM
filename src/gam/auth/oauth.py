@@ -24,10 +24,10 @@ from gam import controlflow
 from gam import display
 from gam import fileutils
 from gam import transport
-from gam.var import GC_CA_FILE,
+from gam.var import (GC_CA_FILE,
                     GC_Values,
                     GM_Globals,
-                    GM_WINDOWS
+                    GM_WINDOWS)
 from gam import utils
 
 
