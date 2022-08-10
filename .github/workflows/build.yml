@@ -16,7 +16,7 @@ env:
   OPENSSL_INSTALL_PATH: ${{ github.workspace }}/bin/ssl
   OPENSSL_SOURCE_PATH: ${{ github.workspace }}/src/openssl
   PYTHON_INSTALL_PATH: ${{ github.workspace }}/bin/python
-  PYTHON_SOURCE_PATH: ${{ github.workspace }}/src/cpython00:18:DD:0A:1D:76
+  PYTHON_SOURCE_PATH: ${{ github.workspace }}/src/cpython
 
 jobs:
   build:
