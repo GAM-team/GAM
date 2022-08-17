@@ -382,7 +382,7 @@ def showReport():
         for user_report in usage:
             if 'entity' not in user_report:
                 continue
-            row = {'email': user_report['entity']['userEmail'], 'date': tryDate}
+            row = {'email': user_report['entity'].get('userEmail', user_report['entity']['profileId']), 'date': tryDate}
             for item in user_report.get('parameters', []):
                 if 'name' not in item:
                     continue
