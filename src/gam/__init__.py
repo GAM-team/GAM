@@ -719,7 +719,10 @@ def doGAMCheckForUpdates(forceCheck=False):
                              continue_on_error=True,
                              display_errors=forceCheck)
         return
-    except (httplib2.HttpLib2Error, httplib2.ServerNotFoundError, RuntimeError,
+    except (httplib2.HttpLib2Error,
+            httplib2.ServerNotFoundError,
+            RuntimeError,
+            ConnectionError,
             socket.timeout):
         return
 
@@ -745,6 +748,64 @@ def getOSPlatform():
         pltfrm = platform.platform()
     return f'{myos} {pltfrm}'
 
+
+def checkConnection():
+    hosts = [
+            # TODO: first three are optional. If they (and only they?) fail
+            # instruct admin how to avoid using them as described at:
+            #
+            # https://github.com/GAM-team/GAM/wiki#hostnames-used-by-gam
+            'api.github.com',
+            'raw.githubusercontent.com',
+            'gam-shortn.appspot.com',
+            'accounts.google.com',
+            ]
+    # TODO: is there a better way to build this list accurately
+    # that won't involve talking to the hosts before we get to
+    # the below error checking? The dicovery file has a baseUrl
+    # value but building the API via discovery involves talking
+    # to the remote server first :-(
+    fix_hosts = {
+            'calendar-json.googleapis.com': 'www.googleapis.com',
+            'storage-api.googleapis.com': 'storage.googleapis.com',
+            }
+    hosts.extend(getGAMProjectFile('project-apis.txt').splitlines())
+    httpc = transport.create_http(timeout=10)
+    okay = createGreenText('OK')
+    not_okay = createRedText('ERROR!')
+    for host in hosts:
+        host = fix_hosts.get(host, host)
+        check_line = f'Checking {host}...'
+        sys.stdout.write(f'{check_line:<70}')
+        sys.stdout.flush()
+        gen_firewall = 'You probably have security software or a firewall on your machine or network that is preventing GAM from making Internet connections. Check your network configuration or try running GAM on a hotspot or home network to see if the problem exists only on your organization\'s network.'
+        try:
+            httpc.request(f'https://{host}/', 'HEAD')
+            print(okay)
+        except ConnectionRefusedError:
+            print(f'\n{not_okay} Connection refused. {gen_firewall}')
+        except ConnectionResetError:
+            print(f'\n{not_okay} Connection reset by peer. {gen_firewall}')
+        except httplib2.error.ServerNotFoundError:
+            print(f'\n{not_okay} Failed to find server. Your DNS is probably misconfigured.')
+        except ssl.SSLError as e:
+            if e.reason == 'SSLV3_ALERT_HANDSHAKE_FAILURE':
+                print(f'\n{not_okay} GAM expects to connect with TLS 1.3 or newer and that failed. If you\'re proxy / firewall is not compatible with TLS 1.3 then you can tell GAM to allow TLS 1.2 by setting GAM_TLS_MIN_VERSION=TLSv1_2 as an environment variable.')
+            elif e.reason == 'CERTIFICATE_VERIFY_FAILED':
+                print(f'\n{not_okay} Certificate verification failed. If you are behind a firewall / proxy server that does TLS / SSL inspection you may need to point GAM at your certificate authority file by setting the GAM_CA_FILE=/path/to/your/certauth.pem environment variable.')
+            elif e.strerror.startswith('TLS/SSL connection has been closed'):
+                print(f'\n{not_okay} TLS connection was closed. {gen_firewall}')
+            else:
+                print(e)
+                print(e.strerror)
+                print(dir(e))
+                print(f'\n{not_okay} {e.reason}')
+        except TimeoutError:
+            print('\n{not_okay} timed out trying to connect to host')
+        except Exception as e:
+            print('Generic catchall exception...')
+            print(type(e))
+            print(e)
 
 def doGAMVersion(checkForArgs=True):
     force_check = extended = simple = timeOffset = False
@@ -11381,6 +11442,9 @@ def ProcessGAMCommand(args):
             sys.exit(0)
         elif command == 'version':
             doGAMVersion()
+            sys.exit(0)
+        elif command in ['checkconnection', 'checkconn']:
+            checkConnection()
             sys.exit(0)
         elif command == 'create':
             argument = sys.argv[2].lower()
