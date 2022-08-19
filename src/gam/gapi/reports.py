@@ -85,15 +85,13 @@ def showUsageParameters():
                                customerId=customerId,
                                fields='warnings,usageReports(parameters(name))',
                                **kwargs)
-            warnings = result.get('warnings', [])
             usage = result.get('usageReports')
-            has_reports = bool(usage)
             fullData, tryDate = _check_full_data_available(
-                warnings, tryDate, fullDataRequired, has_reports)
+                result, tryDate, fullDataRequired, False)
             if fullData < 0:
                 print('No usage parameters available.')
                 sys.exit(1)
-            if has_reports:
+            if usage:
                 for parameter in usage[0]['parameters']:
                     name = parameter.get('name')
                     if name:
@@ -350,10 +348,8 @@ def showReport():
                                      orgUnitID=orgUnitId,
                                      fields='warnings,usageReports',
                                      maxResults=1)
-                warnings = one_page.get('warnings', [])
-                has_reports = bool(one_page.get('usageReports'))
                 fullData, tryDate = _check_full_data_available(
-                    warnings, tryDate, fullDataRequired, has_reports)
+                    one_page, tryDate, fullDataRequired, True)
                 if fullData < 0:
                     print('No user report available.')
                     sys.exit(1)
@@ -382,7 +378,7 @@ def showReport():
         for user_report in usage:
             if 'entity' not in user_report:
                 continue
-            row = {'email': user_report['entity']['userEmail'], 'date': tryDate}
+            row = {'email': user_report['entity'].get('userEmail', 'Unknown'), 'date': tryDate}
             for item in user_report.get('parameters', []):
                 if 'name' not in item:
                     continue
@@ -407,10 +403,8 @@ def showReport():
                                        customerId=customerId,
                                        date=tryDate,
                                        fields='warnings,usageReports')
-                warnings = first_page.get('warnings', [])
-                has_reports = bool(first_page.get('usageReports'))
                 fullData, tryDate = _check_full_data_available(
-                    warnings, tryDate, fullDataRequired, has_reports)
+                    first_page, tryDate, fullDataRequired, False)
                 if fullData < 0:
                     print('No customer report available.')
                     sys.exit(1)
@@ -563,15 +557,16 @@ def _adjust_date(errMsg):
     return str(match_date.group(1))
 
 
-def _check_full_data_available(warnings, tryDate, fullDataRequired,
-                               has_reports):
+def _check_full_data_available(result, tryDate, fullDataRequired,
+                               checkUserEmail):
     one_day = datetime.timedelta(days=1)
     tryDateTime = datetime.datetime.strptime(tryDate, YYYYMMDD_FORMAT)
     # move to day before if we don't have at least one usageReport
-    if not has_reports:
+    usage = result.get('usageReports')
+    if not usage:
         tryDateTime -= one_day
         return (0, tryDateTime.strftime(YYYYMMDD_FORMAT))
-    for warning in warnings:
+    for warning in result.get('warnings', []):
         if warning['code'] == 'PARTIAL_DATA_AVAILABLE':
             for app in warning['data']:
                 if app['key'] == 'application' and \
@@ -586,4 +581,8 @@ def _check_full_data_available(warnings, tryDate, fullDataRequired,
                    app['value'] != 'docs' and \
                    (not fullDataRequired or app['value'] in fullDataRequired):
                     return (-1, tryDate)
+    if checkUserEmail:
+        if 'entity' not in usage[0] or 'userEmail' not in usage[0]['entity']:
+            tryDateTime -= one_day
+            return (0, tryDateTime.strftime(YYYYMMDD_FORMAT))
     return (1, tryDate)
