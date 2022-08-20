@@ -95,12 +95,10 @@ def doGetCustomerInfo():
             continue
         except gapi.errors.GapiForbiddenError:
             return
-        warnings = result.get('warnings', [])
         fullDataRequired = ['accounts']
         usage = result.get('usageReports')
-        has_reports = bool(usage)
         fullData, tryDate = gapi_reports._check_full_data_available(
-            warnings, tryDate, fullDataRequired, has_reports)
+            result, tryDate, fullDataRequired, False)
         if fullData < 0:
             print('No user report available.')
             sys.exit(1)
