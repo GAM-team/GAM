@@ -545,6 +545,7 @@ jobs:
              echo "OAUTHFILE=${OAUTHFILE}" >> $GITHUB_ENV
              export gam_user="gam-gha-${JID}@pdl.jaylee.us"
              echo "gam_user=${gam_user}" >> $GITHUB_ENV
+             $gam checkconn
              $gam oauth info
              $gam info domain
              $gam oauth refresh
