@@ -723,7 +723,7 @@ def doGAMCheckForUpdates(forceCheck=False):
             httplib2.ServerNotFoundError,
             RuntimeError,
             ConnectionError,
-            socket.timeout):
+            TimeoutError):
         return
 
 
@@ -776,36 +776,31 @@ def checkConnection():
     for host in hosts:
         host = fix_hosts.get(host, host)
         check_line = f'Checking {host}...'
-        sys.stdout.write(f'{check_line:<70}')
+        sys.stdout.write(f'{check_line:<50}')
         sys.stdout.flush()
         gen_firewall = 'You probably have security software or a firewall on your machine or network that is preventing GAM from making Internet connections. Check your network configuration or try running GAM on a hotspot or home network to see if the problem exists only on your organization\'s network.'
         try:
             httpc.request(f'https://{host}/', 'HEAD')
             print(okay)
         except ConnectionRefusedError:
-            print(f'\n{not_okay} Connection refused. {gen_firewall}')
+            print(f'{not_okay}\n    Connection refused. {gen_firewall}')
         except ConnectionResetError:
-            print(f'\n{not_okay} Connection reset by peer. {gen_firewall}')
+            print(f'{not_okay}\n    Connection reset by peer. {gen_firewall}')
         except httplib2.error.ServerNotFoundError:
-            print(f'\n{not_okay} Failed to find server. Your DNS is probably misconfigured.')
+            print(f'{not_okay}\n    Failed to find server. Your DNS is probably misconfigured.')
         except ssl.SSLError as e:
             if e.reason == 'SSLV3_ALERT_HANDSHAKE_FAILURE':
-                print(f'\n{not_okay} GAM expects to connect with TLS 1.3 or newer and that failed. If you\'re proxy / firewall is not compatible with TLS 1.3 then you can tell GAM to allow TLS 1.2 by setting GAM_TLS_MIN_VERSION=TLSv1_2 as an environment variable.')
+                print(f'{not_okay}\n    GAM expects to connect with TLS 1.3 or newer and that failed. If your firewall / proxy server is not compatible with TLS 1.3 then you can tell GAM to allow TLS 1.2 by setting the GAM_TLS_MIN_VERSION=TLSv1_2 environment variable.')
             elif e.reason == 'CERTIFICATE_VERIFY_FAILED':
-                print(f'\n{not_okay} Certificate verification failed. If you are behind a firewall / proxy server that does TLS / SSL inspection you may need to point GAM at your certificate authority file by setting the GAM_CA_FILE=/path/to/your/certauth.pem environment variable.')
+                print(f'{not_okay}\n    Certificate verification failed. If you are behind a firewall / proxy server that does TLS / SSL inspection you may need to point GAM at your certificate authority file by setting the GAM_CA_FILE=/path/to/your/certauth.pem environment variable.')
             elif e.strerror.startswith('TLS/SSL connection has been closed'):
-                print(f'\n{not_okay} TLS connection was closed. {gen_firewall}')
+                print(f'{not_okay}\n    TLS connection was closed. {gen_firewall}')
             else:
-                print(e)
-                print(e.strerror)
-                print(dir(e))
-                print(f'\n{not_okay} {e.reason}')
+                print(f'{not_okay}\n    {e.reason}: {str(e)}')
         except TimeoutError:
-            print('\n{not_okay} timed out trying to connect to host')
+            print(f'{not_okay}\n    Timed out trying to connect to host')
         except Exception as e:
-            print('Generic catchall exception...')
-            print(type(e))
-            print(e)
+            print(f'{not_okay}\n    {str(e)}')
 
 def doGAMVersion(checkForArgs=True):
     force_check = extended = simple = timeOffset = False

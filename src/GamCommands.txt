@@ -872,6 +872,7 @@ Specify a collection of Users by directly specifying them or by specifying items
 	<UserBasicAttribute>|
 	<UserMultiAttribute>
 
+gam checkconnection
 gam version [check|checkrc|simple|extended] [timeoffset] [location <HostName>]
 gam help
 
