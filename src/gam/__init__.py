@@ -751,37 +751,43 @@ def getOSPlatform():
 
 def checkConnection():
     hosts = [
-            # TODO: first three are optional. If they (and only they?) fail
-            # instruct admin how to avoid using them as described at:
-            #
-            # https://github.com/GAM-team/GAM/wiki#hostnames-used-by-gam
             'api.github.com',
             'raw.githubusercontent.com',
             'gam-shortn.appspot.com',
             'accounts.google.com',
+            'oauth2.googleapis.com',
+            'www.googleapis.com',
             ]
-    # TODO: is there a better way to build this list accurately
-    # that won't involve talking to the hosts before we get to
-    # the below error checking? The dicovery file has a baseUrl
-    # value but building the API via discovery involves talking
-    # to the remote server first :-(
-    fix_hosts = {
-            'calendar-json.googleapis.com': 'www.googleapis.com',
-            'storage-api.googleapis.com': 'storage.googleapis.com',
-            }
-    hosts.extend(getGAMProjectFile('project-apis.txt').splitlines())
+    api_hosts = []
+    for api in API_VER_MAPPING:
+        api = API_NAME_MAPPING.get(api, api)
+        api = f'{api}.googleapis.com'
+        if api not in api_hosts and api not in hosts:
+            api_hosts.append(api)
+    api_hosts.sort()
+    hosts.extend(api_hosts)
     httpc = transport.create_http(timeout=10)
+    httpc.follow_redirects = False
+    headers = {'user-agent': GAM_INFO}
     okay = createGreenText('OK')
-    not_okay = createRedText('ERROR!')
+    not_okay = createRedText('ERROR')
+    gen_firewall = 'You may have security software or a firewall on your machine or network that is preventing GAM from making a secure connection to this host. Check your network configuration or try running GAM on a hotspot or home network to see if the problem exists only on your organization\'s network.'
+    host_count = len(hosts)
+    try_count = 0
+    success_count = 0
     for host in hosts:
-        host = fix_hosts.get(host, host)
-        check_line = f'Checking {host}...'
-        sys.stdout.write(f'{check_line:<50}')
+        try_count += 1
+        check_line = f'Checking {host} ({try_count}/{host_count})...'
+        sys.stdout.write(f'{check_line:<60}')
         sys.stdout.flush()
-        gen_firewall = 'You probably have security software or a firewall on your machine or network that is preventing GAM from making Internet connections. Check your network configuration or try running GAM on a hotspot or home network to see if the problem exists only on your organization\'s network.'
         try:
-            httpc.request(f'https://{host}/', 'HEAD')
+            httpc.request(f'https://{host}/', 'HEAD', headers=headers)
+            success_count += 1
             print(okay)
+        except BrokenPipeError:
+            print(f'{not_okay}\n    Broken pipe. {gen_firewall}')
+        except ConnectionAbortedError:
+            print(f'{not_okay}\n    Connection aborted. {gen_firewall}')
         except ConnectionRefusedError:
             print(f'{not_okay}\n    Connection refused. {gen_firewall}')
         except ConnectionResetError:
@@ -798,9 +804,15 @@ def checkConnection():
             else:
                 print(f'{not_okay}\n    {e.reason}: {str(e)}')
         except TimeoutError:
-            print(f'{not_okay}\n    Timed out trying to connect to host')
+            print(f'{not_okay}\n    Timed out trying to connect to host. {gen_firewall}')
         except Exception as e:
-            print(f'{not_okay}\n    {str(e)}')
+            # include the exception class so we know what to catch in the future
+            print(f'{not_okay}\n    {type(e).__name__} - {str(e)}')
+    print()
+    if success_count == host_count:
+        print(createGreenText('All hosts passed!'))
+    else:
+        controlflow.system_error_exit(3, createYellowText('Some hosts failed to connect! Please follow the recommendations for those hosts to correct any issues and try again.'))
 
 def doGAMVersion(checkForArgs=True):
     force_check = extended = simple = timeOffset = False
