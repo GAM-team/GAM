@@ -777,8 +777,9 @@ def checkConnection():
     success_count = 0
     for host in hosts:
         try_count += 1
-        check_line = f'Checking {host} ({try_count}/{host_count})...'
-        sys.stdout.write(f'{check_line:<60}')
+        ip = socket.gethostbyname(host)
+        check_line = f'Checking {host} ({ip}) ({try_count}/{host_count})...'
+        sys.stdout.write(f'{check_line:<80}')
         sys.stdout.flush()
         try:
             httpc.request(f'https://{host}/', 'HEAD', headers=headers)
@@ -10593,7 +10594,6 @@ OAUTH2_SCOPES = [
         'name': 'Cloud Identity - User Invitations',
         'subscopes': ['readonly'],
         'scopes': 'https://www.googleapis.com/auth/cloud-identity.userinvitations',
-        'offByDefault': True,
     },
     {
         'name': 'Contact Delegation',
