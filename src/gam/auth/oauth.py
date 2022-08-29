@@ -637,8 +637,8 @@ class _ShortURLFlow(google_auth_oauthlib.flow.InstalledAppFlow):
                 code = parsed_params.get('code', [None])[0]
             try:
                 fetch_args = {'code': code}
-                if GC_Values.get('GC_CA_FILE'):
-                    fetch_args['verify'] = GC_Values.get('GC_CA_FILE')
+                if GC_Values.get(GC_CA_FILE):
+                    fetch_args['verify'] = GC_Values.get(GC_CA_FILE)
                 self.fetch_token(**fetch_args)
                 break
             except Exception as e:
