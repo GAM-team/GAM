@@ -7284,8 +7284,6 @@ def _createClientSecretsOauth2service(httpObj, projectId, login_hint):
                 client_secret,
             'code':
                 'ThisIsAnInvalidCodeOnlyBeingUsedToTestIfClientAndSecretAreValid',
-            'redirect_uri':
-                'urn:ietf:wg:oauth:2.0:oob',
             'grant_type':
                 'authorization_code'
         }
