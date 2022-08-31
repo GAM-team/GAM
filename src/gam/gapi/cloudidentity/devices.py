@@ -80,7 +80,7 @@ def _parse_action(action):
 def info():
     ci = gapi_cloudidentity.build_dwd()
     customer = _get_device_customerid()
-    name = _get_device_name()
+    _, name = _get_deviceuser_name()
     device = gapi.call(ci.devices(), 'get', name=name, customer=customer)
     device_users = gapi.get_all_pages(ci.devices().deviceUsers(), 'list',
         'deviceUsers', parent=name, customer=customer)
