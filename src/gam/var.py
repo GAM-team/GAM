@@ -1202,6 +1202,7 @@ _DEFAULT_CHARSET = UTF8
 _FN_CLIENT_SECRETS_JSON = 'client_secrets.json'
 _FN_OAUTH2SERVICE_JSON = 'oauth2service.json'
 _FN_OAUTH2_TXT = 'oauth2.txt'
+_FN_ROOTS_PEM = 'roots.pem'
 #
 GM_Globals = {
     GM_SYSEXITRC: 0,
@@ -1343,7 +1344,7 @@ GC_Defaults = {
     GC_CSV_ROW_DROP_FILTER: '',
     GC_TLS_MIN_VERSION: TLS_MIN,
     GC_TLS_MAX_VERSION: None,
-    GC_CA_FILE: None,
+    GC_CA_FILE: _FN_ROOTS_PEM,
 }
 
 GC_Values = {}
