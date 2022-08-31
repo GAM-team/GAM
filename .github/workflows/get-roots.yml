@@ -2,9 +2,14 @@ name: Check for Google Root CA Updates
 
 on:
   push:
-    branches: [ master ]
+  pull_request:
   schedule:
     - cron: '23 23 * * *'
+
+defaults:
+  run:
+    shell: bash
+    working-directory: src
 
 jobs:
   check-apis:
