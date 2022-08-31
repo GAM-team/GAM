@@ -456,6 +456,7 @@ jobs:
       - name: Linux/MacOS package
         if: runner.os != 'Windows' && matrix.goal == 'build'
         run: |
+          cp -v roots.pem $gampath
           cp -v LICENSE $gampath
           cp -v GamCommands.txt $gampath
           if [[ "${RUNNER_OS}" == "macOS" ]]; then
@@ -501,6 +502,7 @@ jobs:
       - name: Windows package
         if: runner.os == 'Windows' && matrix.goal != 'test'
         run: |
+          cp -v roots.pem $gampath
           cp -v LICENSE $gampath
           cp -v GamCommands.txt $gampath
           cp -v gam-setup.bat $gampath
