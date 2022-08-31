@@ -1,6 +1,8 @@
 name: Check for Google Root CA Updates
 
 on:
+  push:
+    branches: [ master ]
   schedule:
     - cron: '23 23 * * *'
 
