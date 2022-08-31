@@ -446,6 +446,7 @@ jobs:
              "${PYTHON}" -m PyInstaller --clean --distpath="${gampath}" gam.spec
  
       - name: Copy extra package files
+        if: matrix.goal == 'build'
         run: |
           cp -v roots.pem $gampath
           cp -v LICENSE $gampath
