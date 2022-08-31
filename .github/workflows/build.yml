@@ -445,6 +445,15 @@ jobs:
              echo -e "GAM: ${gam}\nGAMPATH: ${gampath}"
              "${PYTHON}" -m PyInstaller --clean --distpath="${gampath}" gam.spec
  
+      - name: Copy extra package files
+        run: |
+          cp -v roots.pem $gampath
+          cp -v LICENSE $gampath
+          cp -v GamCommands.txt $gampath
+          if [[ "${RUNNER_OS}" == "Windows" ]]; then
+              cp -v gam-setup.bat $gampath
+          fi
+
       - name: Basic Tests all jobs
         run: |
              $PYTHON -m unittest discover --start-directory ./ --pattern "*_test.py" --buffer
@@ -456,9 +465,6 @@ jobs:
       - name: Linux/MacOS package
         if: runner.os != 'Windows' && matrix.goal == 'build'
         run: |
-          cp -v roots.pem $gampath
-          cp -v LICENSE $gampath
-          cp -v GamCommands.txt $gampath
           if [[ "${RUNNER_OS}" == "macOS" ]]; then
               GAM_ARCHIVE="gam-${GAMVERSION}-macos-universal2.tar.xz"
           elif [[ "${RUNNER_OS}" == "Linux" ]]; then
@@ -502,10 +508,6 @@ jobs:
       - name: Windows package
         if: runner.os == 'Windows' && matrix.goal != 'test'
         run: |
-          cp -v roots.pem $gampath
-          cp -v LICENSE $gampath
-          cp -v GamCommands.txt $gampath
-          cp -v gam-setup.bat $gampath
           cd dist/
           GAM_ARCHIVE="../gam-${GAMVERSION}-windows-${GAM_ARCHIVE_ARCH}.zip"
           /c/Program\ Files/7-Zip/7z.exe a -tzip $GAM_ARCHIVE gam "-xr@${GITHUB_WORKSPACE}/.github/actions/package_exclusions.txt" -bb3
