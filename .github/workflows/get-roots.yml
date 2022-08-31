@@ -20,11 +20,17 @@ jobs:
           persist-credentials: false # otherwise, the token used is the GITHUB_TOKEN, instead of your personal token
           fetch-depth: 0 # otherwise, you will failed to push refs to dest repo
 
-      - name: pwd
-        run: pwd
-      
-      - name: ls
-        run: ls -alRF
-
       - name: Check for updates
-        run: curl -o src/roots.pem -vvvv https://pki.goog/roots.pem
+        run: curl -o ./roots.pem -vvvv https://pki.goog/roots.pem
+
+      - name: Commit file
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add roots.pem
+          git diff --quiet && git diff --staged --quiet || git commit -am '[ci skip] Updated roots.pem'
+
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }} 
