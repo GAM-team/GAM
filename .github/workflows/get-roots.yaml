@@ -17,6 +17,9 @@ jobs:
 
       - name: pwd
         run: pwd
+      
+      - name: ls
+        run: ls -alRF
 
       - name: Check for updates
-        run: curl -o src/roots.pem https://pki.goog/roots.pem
+        run: curl -o src/roots.pem -vvvv https://pki.goog/roots.pem
