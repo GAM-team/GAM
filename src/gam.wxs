@@ -55,6 +55,9 @@
       <Component Id="gamcommands_txt" Guid="58ff9c45-a7c9-4e22-8845-a9a92610c1f3">
         <File Name="gamcommands.txt" KeyPath="yes" />
       </Component>
+      <Component Id="roots_pem" Guid="18ff9c45-a3c9-4e22-8445-a8a92610c1f3">
+        <File Name="roots.pem" KeyPath="yes" />
+      </Component>
     </ComponentGroup>
   </Fragment>
 
