@@ -8,7 +8,7 @@ import platform
 import re
 
 GAM_AUTHOR = 'Jay Lee <jay0lee@gmail.com>'
-GAM_VERSION = '6.24'
+GAM_VERSION = '6.25'
 GAM_LICENSE = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 GAM_URL = 'https://jaylee.us/gam'
