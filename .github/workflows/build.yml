@@ -71,22 +71,22 @@ jobs:
             arch: x86_64
 
     steps:
-      - uses: actions/checkout@master
+      - uses: actions/checkout@v3
         with:
           persist-credentials: false
           fetch-depth: 0
 
       - name: Cache multiple paths
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: cache-python-ssl
         with:
           path: |
             bin
-          key: gam-${{ matrix.jid }}-20220831
+          key: gam-${{ matrix.jid }}-20220901
 
       - name: Use pre-compiled Python for testing
         if: matrix.python != ''
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
 
@@ -700,7 +700,7 @@ jobs:
      #        done
 
       - name: Archive production artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         if: github.event_name == 'push' && matrix.goal != 'test'
         with:
           name: gam-binaries
