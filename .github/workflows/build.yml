@@ -88,6 +88,7 @@ jobs:
 
       - name: Untar Cache archive
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit == 'true'
+        working-directory: ${{ github.workspace }}
         run: |
           tar xvvf bin.tar.xz
 
@@ -718,6 +719,7 @@ jobs:
 
       - name: Tar Cache archive
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit != 'true'
+        working-directory: ${{ github.workspace }}
         run: |
           tar cJvvf bin.tar.xz bin/
 
