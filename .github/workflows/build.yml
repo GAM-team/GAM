@@ -71,6 +71,7 @@ jobs:
             arch: x86_64
 
     steps:
+
       - uses: actions/checkout@v3
         with:
           persist-credentials: false
@@ -81,8 +82,13 @@ jobs:
         id: cache-python-ssl
         with:
           path: |
-            bin
-          key: gam-${{ matrix.jid }}-20220901
+            bin.tar.xz
+          key: gam-${{ matrix.jid }}-20220901-01
+
+      - name: Untar Cache archive
+        if: steps.cache-python-ssl.outputs.cache-hit == 'true'
+        run: |
+          tar xvvf bin.tar.xz
 
       - name: Use pre-compiled Python for testing
         if: matrix.python != ''
@@ -708,6 +714,11 @@ jobs:
             src/*.tar.xz
             src/*.zip
             src/*.msi
+
+      - name: Tar Cache archive
+        if: steps.cache-python-ssl.outputs.cache-hit != 'true'
+        run: |
+          tar cJvvf bin.tar.xz bin/
 
   publish:
     runs-on: ubuntu-latest
