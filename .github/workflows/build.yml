@@ -709,7 +709,7 @@ jobs:
             src/*.zip
             src/*.msi
 
-publish:
+  publish:
     runs-on: ubuntu-latest
     needs: build
     steps:
