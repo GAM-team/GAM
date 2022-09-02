@@ -708,3 +708,27 @@ jobs:
             src/*.tar.xz
             src/*.zip
             src/*.msi
+
+publish:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v3
+        
+      - name: Set datetime version string
+        id: dateversion
+        run: |
+          echo "::set-output name=dateversion::$(date +'%Y%m%d.%k%M%S')"
+
+      - uses: "marvinpinto/action-automatic-releases@latest"
+        name: Publish draft release
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: ${{ steps.dateversion.outputs.dateversion }}
+          prerelease: false
+          draft: true
+          title: "GAM ${{ steps.dateversion.outputs.dateversion }}"
+          files: |
+            gam-binaries/*
