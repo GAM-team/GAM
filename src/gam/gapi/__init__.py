@@ -339,9 +339,10 @@ def get_all_pages(service,
             else:
                 kwargs.update(page_key)
     if GC_Values[GC_LOW_MEMORY]:
-        tempdir = TemporaryDirectory(
-                prefix='GAM-',
-                ignore_cleanup_errors=True)
+        kwargs = {'prefix': 'GAM-'}
+        if sys.version_info.minor >= 10:
+            kwargs['ignore_cleanup_errors'] = True
+        tempdir = TemporaryDirectory(**kwargs)
         tempfile = os.path.join(tempdir.name, 'gapi_pages')
         all_items = shelve.open(tempfile)
         # attach tempdir to all_items so we
