@@ -242,13 +242,14 @@ def process_page(page, items, all_items, total_items, page_message, message_attr
         page_items = page.get(items, [])
         num_page_items = len(page_items)
         total_items += num_page_items
-        if type(all_items) is list:
-            all_items.extend(page_items)
-        elif all_items is not None:
-            i = len(all_items)
-            for item in page_items:
-                all_items[str(i)] = item
-                i += 1
+        if all_items is not None:
+            if isinstance(all_items, list):
+                all_items.extend(page_items)
+            else:
+                i = len(all_items)
+                for item in page_items:
+                    all_items[str(i)] = item
+                    i += 1
     else:
         page_token = None
         num_page_items = 0
@@ -361,9 +362,9 @@ def get_all_pages(service,
         page_token, total_items = process_page(page, items, all_items, total_items, page_message, message_attribute)
         if not page_token:
             finalize_page_message(page_message)
-            if type(all_items) is not list:
-                all_items = all_items.values()
-            return all_items
+            if isinstance(all_items, list):
+                return all_items
+            return all_items.values()
         if page_args_in_body:
             kwargs['body']['pageToken'] = page_token
         else:
