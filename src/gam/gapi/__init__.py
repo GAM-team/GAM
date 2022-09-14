@@ -1,6 +1,9 @@
 """Methods related to execution of GAPI requests."""
 
+import os.path
+import shelve
 import sys
+from tempfile import TemporaryDirectory
 
 import googleapiclient.errors
 import google.auth.exceptions
@@ -10,7 +13,8 @@ from gam import controlflow
 from gam import display
 from gam.gapi import errors
 from gam import transport
-from gam.var import (GM_Globals, GM_CURRENT_API_SCOPES, GM_CURRENT_API_USER,
+from gam.var import (GC_Values, GC_LOW_MEMORY, GM_Globals,
+                     GM_CURRENT_API_SCOPES, GM_CURRENT_API_USER,
                      GM_EXTRA_ARGS_DICT, GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID,
                      MAX_RESULTS_API_EXCEPTIONS, MESSAGE_API_ACCESS_CONFIG,
                      MESSAGE_API_ACCESS_DENIED, MESSAGE_SERVICE_NOT_APPLICABLE)
@@ -238,8 +242,13 @@ def process_page(page, items, all_items, total_items, page_message, message_attr
         page_items = page.get(items, [])
         num_page_items = len(page_items)
         total_items += num_page_items
-        if all_items is not None:
+        if type(all_items) is list:
             all_items.extend(page_items)
+        elif all_items is not None:
+            i = len(all_items)
+            for item in page_items:
+                all_items[str(i)] = item
+                i += 1
     else:
         page_token = None
         num_page_items = 0
@@ -272,6 +281,7 @@ def finalize_page_message(page_message):
     if page_message and (page_message[-1] != '\n'):
         sys.stderr.write('\r\n')
         sys.stderr.flush()
+
 
 def get_all_pages(service,
                   function,
@@ -328,7 +338,17 @@ def get_all_pages(service,
                 kwargs['body'].update(page_key)
             else:
                 kwargs.update(page_key)
-    all_items = []
+    if GC_Values[GC_LOW_MEMORY]:
+        tempdir = TemporaryDirectory(
+                prefix='GAM-',
+                ignore_cleanup_errors=True)
+        tempfile = os.path.join(tempdir.name, 'gapi_pages')
+        all_items = shelve.open(tempfile)
+        # attach tempdir to all_items so we
+        # don't cleanup tempdir early
+        all_items._tempdir = tempdir
+    else:
+        all_items = []
     page_token = None
     total_items = 0
     while True:
@@ -341,12 +361,13 @@ def get_all_pages(service,
         page_token, total_items = process_page(page, items, all_items, total_items, page_message, message_attribute)
         if not page_token:
             finalize_page_message(page_message)
+            if type(all_items) is not list:
+                all_items = all_items.values()
             return all_items
         if page_args_in_body:
             kwargs['body']['pageToken'] = page_token
         else:
             kwargs['pageToken'] = page_token
-
 
 # TODO: Make this private once all execution related items that use this method
 # have been brought into this file

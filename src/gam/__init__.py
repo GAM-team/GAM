@@ -553,6 +553,7 @@ def SetGlobalVariables():
                       'debug.gam',
                       filePresentValue=4,
                       fileAbsentValue=0)
+    _getOldSignalFile(GC_LOW_MEMORY, 'lowmemory.txt')
     _getOldSignalFile(GC_NO_BROWSER, 'nobrowser.txt')
     _getOldSignalFile(GC_NO_TDEMAIL, 'notdemail.txt')
     _getOldSignalFile(GC_OAUTH_BROWSER, 'oauthbrowser.txt')

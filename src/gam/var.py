@@ -1270,6 +1270,9 @@ GC_ENABLE_DASA = 'enabledasa'
 # and doRequestOAuth prints a link and waits for the verification code when
 # oauth2.txt is being created
 GC_NO_BROWSER = 'no_browser'
+# If low memory is True, GAM tries to save RAM by writing pages to disk
+# temporarily
+GC_LOW_MEMORY = 'low_memory'
 # If no_tdemail is True, writeCSVfile won't send an email
 GC_NO_TDEMAIL = 'no_tdemail'
 # oauth_browser forces usage of web server OAuth flow that proved problematic.
@@ -1325,6 +1328,7 @@ GC_Defaults = {
     GC_DOMAIN: '',
     GC_DRIVE_DIR: '',
     GC_ENABLE_DASA: False,
+    GC_LOW_MEMORY: False,
     GC_NO_BROWSER: False,
     GC_NO_TDEMAIL: False,
     GC_NO_CACHE: False,
@@ -1407,6 +1411,9 @@ GC_VAR_INFO = {
         GC_VAR_TYPE: GC_TYPE_DIRECTORY
     },
     GC_ENABLE_DASA: {
+        GC_VAR_TYPE: GC_TYPE_BOOLEAN
+    },
+    GC_LOW_MEMORY: {
         GC_VAR_TYPE: GC_TYPE_BOOLEAN
     },
     GC_NO_BROWSER: {
