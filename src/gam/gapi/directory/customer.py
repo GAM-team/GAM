@@ -21,36 +21,36 @@ def doGetCustomerInfo():
                               'get',
                               customerKey=customer_id)
     print(f'Customer ID: {customer_info["id"]}')
-    print(f'Primary Domain: {customer_info["customerDomain"]}')
+    fields = 'domains(creationTime,domainName,isPrimary,verified)'
     try:
-        result = gapi.call(
+        domains = gapi.call(
             cd.domains(),
-            'get',
+            'list',
+            fields=fields,
             customer=customer_id,
-            domainName=customer_info['customerDomain'],
-            fields='verified',
-            throw_reasons=[gapi.errors.ErrorReason.DOMAIN_NOT_FOUND])
+            throw_reasons=[gapi.errors.ErrorReason.DOMAIN_NOT_FOUND]).get('domains', [])
+        for domain in domains:
+            if domain.get('isPrimary'):
+                primary_domain = domain
+                break
+        else:
+            primary_domain = {}
     except gapi.errors.GapiDomainNotFoundError:
-        result = {'verified': False}
-    print(f'Primary Domain Verified: {result["verified"]}')
-    # If customer has changed primary domain customerCreationTime is date
-    # of current primary being added, not customer create date.
-    # We should also get all domains and use oldest date
-    customer_creation = customer_info['customerCreationTime']
-    date_format = '%Y-%m-%dT%H:%M:%S.%fZ'
-    oldest = datetime.datetime.strptime(customer_creation, date_format)
-    domains = gapi.get_items(cd.domains(),
-                             'list',
-                             'domains',
-                             customer=customer_id,
-                             fields='domains(creationTime)')
+        primary_domain = {}
+    print(f'Primary Domain: {primary_domain.get("domainName", "Unknown")}')
+    print(f'Primary Domain Verified: {primary_domain.get("verified", "Unknown")}')
+    # we'll assume creation time is time of oldest domain customer has
+    oldest = 'Unknown' 
     for domain in domains:
         creation_timestamp = int(domain['creationTime']) / 1000
         domain_creation = datetime.datetime.fromtimestamp(creation_timestamp)
-        if domain_creation < oldest:
+        if oldest == 'Unknown' or domain_creation < oldest:
             oldest = domain_creation
-    print(f'Customer Creation Time: {oldest.strftime(date_format)}')
-    customer_language = customer_info.get('language', 'Unset (defaults to en)')
+    if oldest != 'Unknown':
+        date_format = '%Y-%m-%dT%H:%M:%S.%fZ'
+        oldest = oldest.strftime(date_format)
+    print(f'Customer Creation Time: {oldest}')
+    customer_language = customer_info.get('language', 'Unset or Unknown (defaults to en)')
     print(f'Default Language: {customer_language}')
     if 'postalAddress' in customer_info:
         print('Address:')
@@ -59,7 +59,7 @@ def doGetCustomerInfo():
                 print(f' {field}: {customer_info["postalAddress"][field]}')
     if 'phoneNumber' in customer_info:
         print(f'Phone: {customer_info["phoneNumber"]}')
-    print(f'Admin Secondary Email: {customer_info["alternateEmail"]}')
+    print(f'Admin Secondary Email: {customer_info.get("alternateEmail", "Unknown")}')
     user_counts_map = {
         'accounts:num_users': 'Total Users',
         'accounts:gsuite_basic_total_licenses': 'G Suite Basic Licenses',
