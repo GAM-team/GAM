@@ -13,12 +13,14 @@ def get_org_id():
     gapi_directory_customer.setTrueCustomerId()
     crm = build()
     query = f'directorycustomerid:{GC_Values[GC_CUSTOMER_ID]}'
-    orgs = gapi.get_all_pages(crm.organizations(),
+    results = gapi.call(crm.organizations(),
                      'search',
-                     'organizations',
+                     pageSize=1,
+                     fields='organizations/name',
                      query=query)
-    if len(orgs) < 1:
+    orgs = results.get('organizations')
+    if not orgs:
         # return nothing and let calling API deal with it
         # since caller knows what GCP role would serve best
         return 
-    return orgs[0]['name']
+    return orgs[0].get('name')
