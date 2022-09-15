@@ -426,6 +426,7 @@ def showReport():
         titles = ['name', 'value', 'client_id']
         csvRows = []
         auth_apps = list()
+        usage = list(usage)
         for item in usage[0]['parameters']:
             if 'name' not in item:
                 continue
