@@ -9863,32 +9863,33 @@ def doPrintUsers():
                 query += f"orgUnitPath='{orgUnitPath}'"
         printGettingAllItems('Users', query)
         page_message = gapi.got_total_items_first_last_msg('Users')
-        all_users = gapi.get_all_pages(cd.users(),
-                                       'list',
-                                       'users',
-                                       page_message=page_message,
-                                       message_attribute='primaryEmail',
-                                       customer=customer,
-                                       domain=domain,
-                                       fields=fields,
-                                       showDeleted=deleted_only,
-                                       orderBy=orderBy,
-                                       sortOrder=sortOrder,
-                                       viewType=viewType,
-                                       query=query,
-                                       projection=projection,
-                                       customFieldMask=customFieldMask)
-        for user in all_users:
-            if orgUnitPathLower is None or orgUnitPathLower == user.get('orgUnitPath', '').lower():
-                if email_parts and ('primaryEmail' in user):
-                    user_email = user['primaryEmail']
-                    if user_email.find('@') != -1:
-                        user['primaryEmailLocal'], user[
-                            'primaryEmailDomain'] = splitEmailAddress(user_email)
-                if 'languages' in user:
-                    user['languages'] = _formatLanguagesList(user.pop('languages'), ' ')
-                display.add_row_titles_to_csv_file(utils.flatten_json(user),
-                                                   csvRows, titles)
+        feed = gapi.yield_all_pages(cd.users(),
+                                    'list',
+                                    'users',
+                                    page_message=page_message,
+                                    message_attribute='primaryEmail',
+                                    customer=customer,
+                                    domain=domain,
+                                    fields=fields,
+                                    showDeleted=deleted_only,
+                                    orderBy=orderBy,
+                                    sortOrder=sortOrder,
+                                    viewType=viewType,
+                                    query=query,
+                                    projection=projection,
+                                    customFieldMask=customFieldMask)
+        for page in feed:
+            for user in page:
+                if orgUnitPathLower is None or orgUnitPathLower == user.get('orgUnitPath', '').lower():
+                    if email_parts and ('primaryEmail' in user):
+                        user_email = user['primaryEmail']
+                        if user_email.find('@') != -1:
+                            user['primaryEmailLocal'], user[
+                                'primaryEmailDomain'] = splitEmailAddress(user_email)
+                    if 'languages' in user:
+                        user['languages'] = _formatLanguagesList(user.pop('languages'), ' ')
+                    display.add_row_titles_to_csv_file(utils.flatten_json(user),
+                                                       csvRows, titles)
     if sortHeaders:
         display.sort_csv_titles([
             'primaryEmail',

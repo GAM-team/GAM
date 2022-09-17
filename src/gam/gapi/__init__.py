@@ -221,6 +221,28 @@ def got_total_items_first_last_msg(items):
 
     return f'Got {TOTAL_ITEMS_MARKER} {items}: {FIRST_ITEM_MARKER} - {LAST_ITEM_MARKER}' + '\n'
 
+def show_page_message(page_items, num_page_items, total_items, page_message, message_attribute):
+    # Show a paging message to the user that indicates paging progress
+    if page_message:
+        show_message = page_message.replace(TOTAL_ITEMS_MARKER,
+                                            str(total_items))
+        if message_attribute:
+            first_item = page_items[0] if num_page_items > 0 else {}
+            last_item = page_items[-1] if num_page_items > 1 else first_item
+            if isinstance(message_attribute, str):
+                first_item = str(first_item.get(message_attribute, ''))
+                last_item = str(last_item.get(message_attribute, ''))
+            else:
+                for attr in message_attribute:
+                    first_item = first_item.get(attr, {})
+                    last_item = last_item.get(attr, {})
+                first_item = str(first_item)
+                last_item = str(last_item)
+            show_message = show_message.replace(FIRST_ITEM_MARKER, first_item)
+            show_message = show_message.replace(LAST_ITEM_MARKER, last_item)
+        sys.stderr.write('\r')
+        sys.stderr.flush()
+        sys.stderr.write(show_message)
 
 def process_page(page, items, all_items, total_items, page_message, message_attribute):
     """Process one page of a Google service function response.
@@ -255,25 +277,7 @@ def process_page(page, items, all_items, total_items, page_message, message_attr
 
     # Show a paging message to the user that indicates paging progress
     if page_message:
-        show_message = page_message.replace(TOTAL_ITEMS_MARKER,
-                                            str(total_items))
-        if message_attribute:
-            first_item = page_items[0] if num_page_items > 0 else {}
-            last_item = page_items[-1] if num_page_items > 1 else first_item
-            if isinstance(message_attribute, str):
-                first_item = str(first_item.get(message_attribute, ''))
-                last_item = str(last_item.get(message_attribute, ''))
-            else:
-                for attr in message_attribute:
-                    first_item = first_item.get(attr, {})
-                    last_item = last_item.get(attr, {})
-                first_item = str(first_item)
-                last_item = str(last_item)
-            show_message = show_message.replace(FIRST_ITEM_MARKER, first_item)
-            show_message = show_message.replace(LAST_ITEM_MARKER, last_item)
-        sys.stderr.write('\r')
-        sys.stderr.flush()
-        sys.stderr.write(show_message)
+        show_page_message(page_items, num_page_items, total_items, page_message, message_attribute)
     return (page_token, total_items)
 
 def finalize_page_message(page_message):
@@ -365,6 +369,91 @@ def get_all_pages(service,
             if type(all_items) is not list:
                 all_items = all_items.values()
             return all_items
+        if page_args_in_body:
+            kwargs['body']['pageToken'] = page_token
+        else:
+            kwargs['pageToken'] = page_token
+
+def yield_all_pages(service,
+                    function,
+                    items='items',
+                    page_message=None,
+                    message_attribute=None,
+                    soft_errors=False,
+                    throw_reasons=None,
+                    retry_reasons=None,
+                    page_args_in_body=False,
+                    **kwargs):
+    """Yields all pages of a Google service function response.
+
+  All pages of items are aggregated and returned as a single list.
+
+  Args:
+    service: A Google service object for the desired API.
+    function: String, The name of a service request method to execute.
+    items: String, the name of the resulting "items" field within the method's
+      response object. The items in this field will be aggregated across all
+      pages and returned.
+    page_message: String, a message to be displayed to the user during paging.
+      Template strings allow for dynamic content to be inserted during paging.
+        Supported template strings:
+          TOTAL_ITEMS_MARKER : The current number of items discovered across all
+            pages.
+          FIRST_ITEM_MARKER  : In conjunction with `message_attribute` arg, will
+            display a unique property of the first item in the current page.
+          LAST_ITEM_MARKER   : In conjunction with `message_attribute` arg, will
+            display a unique property of the last item in the current page.
+    message_attribute: String or list, the name of a signature field within a
+    single returned item which identifies that unique item. This field is used
+    with `page_message` to templatize a paging status message.
+    soft_errors: Bool, If True, writes non-fatal errors to stderr.
+    throw_reasons: A list of Google HTTP error reason strings indicating the
+      errors generated by this request should be re-thrown. All other HTTP
+      errors are consumed.
+    retry_reasons: A list of Google HTTP error reason strings indicating which
+      error should be retried, using exponential backoff techniques, when the
+      error reason is encountered.
+    page_args_in_body: Some APIs like Chrome Policy want pageToken and pageSize
+      in the body.
+    **kwargs: Additional params to pass to the request method.
+
+  Returns:
+    A list of all items received from all paged responses.
+  """
+    if page_args_in_body:
+        kwargs.setdefault('body', {})
+    if 'maxResults' not in kwargs and 'pageSize' not in kwargs and 'pageSize' not in kwargs.get('body', {}):
+        page_key = _get_max_page_size_for_api_call(service, function, **kwargs)
+        if page_key:
+            if page_args_in_body:
+                kwargs['body'].update(page_key)
+            else:
+                kwargs.update(page_key)
+    total_items = 0
+    while True:
+        page = call(service,
+                    function,
+                    soft_errors=soft_errors,
+                    throw_reasons=throw_reasons,
+                    retry_reasons=retry_reasons,
+                    **kwargs)
+        if page:
+            page_token = page.get('nextPageToken')
+            page_items = page.get(items, [])
+            num_page_items = len(page_items)
+            total_items += num_page_items
+        else:
+            page_token = None
+            page_items = []
+            num_page_items = 0
+
+        # Show a paging message to the user that indicates paging progress
+        if page_message:
+            show_page_message(page_items, num_page_items, total_items, page_message, message_attribute)
+        yield page_items
+        if not page_token:
+            finalize_page_message(page_message)
+            return
         if page_args_in_body:
             kwargs['body']['pageToken'] = page_token
         else:
