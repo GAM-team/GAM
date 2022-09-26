@@ -84,7 +84,7 @@ jobs:
         with:
           path: |
             bin.tar.xz
-          key: gam-${{ matrix.jid }}-20220907
+          key: gam-${{ matrix.jid }}-20220926
 
       - name: Untar Cache archive
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit == 'true'
@@ -415,7 +415,7 @@ jobs:
           fi
           echo "PyInstaller build arguments: ${PYINSTALLER_BUILD_ARGS}"
           "${PYTHON}" ./waf all $PYINSTALLER_BUILD_ARGS
-          cd ../..
+          cd ..
           echo "---- Installing PyInstaller ----"
           "${PYTHON}" -m pip install .
 
