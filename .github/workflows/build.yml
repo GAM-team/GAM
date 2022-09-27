@@ -739,11 +739,18 @@ jobs:
 
       - name: Download artifacts
         uses: actions/download-artifact@v3
-        
+
       - name: Set datetime version string
         id: dateversion
         run: |
           echo "::set-output name=dateversion::$(date +'%Y%m%d.%k%M%S')"
+
+      - name: VirusTotal Scan
+        uses: crazy-max/ghaction-virustotal@v3
+        with:
+          vt_api_key: ${{ secrets.VT_API_KEY }}
+          files: |
+            gam-binaries/*
 
       - uses: "marvinpinto/action-automatic-releases@latest"
         name: Publish draft release
