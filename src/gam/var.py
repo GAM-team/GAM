@@ -206,7 +206,7 @@ SKUS = {
     },
     '1010020030': {
         'product': 'Google-Apps',
-        'aliases': ['workspacefrontline', 'workspacefrontlineworker'],
+        'aliases': ['wsflw', 'workspacefrontline', 'workspacefrontlineworker'],
         'displayName': 'Workspace Frontline'
     },
     '1010340002': {
