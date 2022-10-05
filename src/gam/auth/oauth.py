@@ -482,7 +482,11 @@ class Credentials(google.oauth2.credentials.Credentials):
     def _locked_refresh(self, request):
         """Refreshes the credential's access token while the file lock is held."""
         assert self._lock.is_locked
-        super().refresh(request)
+        try:
+            super().refresh(request)
+        except google.auth.exceptions.RefreshError as e:
+            controlflow.system_error_exit(9, str(e))
+
 
     def write(self):
         """Writes credentials to disk."""
