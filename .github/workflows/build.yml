@@ -555,7 +555,7 @@ jobs:
              if [[ "${RUNNER_OS}" == "macOS" ]]; then
                brew install gnupg
              fi
-             source ../.github/actions/decrypt.sh ../.github/actions/creds.tar.gpg creds.tar
+             source ../.github/actions/decrypt.sh ../.github/actions/creds.tar.xz.gpg creds.tar.xz
              export OAUTHFILE="oauth2.txt-gam-gha-${JID}"
              echo "OAUTHFILE=${OAUTHFILE}" >> $GITHUB_ENV
              export gam_user="gam-gha-${JID}@pdl.jaylee.us"
