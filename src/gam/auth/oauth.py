@@ -272,6 +272,7 @@ class Credentials(google.oauth2.credentials.Credentials):
                             access_type='offline',
                             login_hint=None,
                             filename=None,
+                            open_browser=True,
                             use_console_flow=False):
         """Runs an OAuth Flow from client secrets to generate credentials.
 
@@ -291,8 +292,11 @@ class Credentials(google.oauth2.credentials.Credentials):
       login_hint: String, The email address that will be displayed on the Google
         login page as a hint for the user to login to the correct account.
       filename: String, the path to a file to use to save the credentials.
-      use_console_flow: Boolean, True if the authentication flow should be run
-        strictly from a console; False to launch a browser for authentication.
+      use_console_flow: OBSOLETE: Boolean, True if the authentication flow
+        should be run strictly from a console; False to launch a browser
+        for authentication.
+      open_browser: Boolean: whether or not GAM should try to open the browser
+        automatically.
 
     Returns:
       Credentials
@@ -312,12 +316,11 @@ class Credentials(google.oauth2.credentials.Credentials):
         flow = _ShortURLFlow.from_client_config(client_config,
                                                 scopes,
                                                 autogenerate_code_verifier=True)
-        flow_kwargs = {'access_type': access_type}
+        flow_kwargs = {'access_type': access_type,
+                       'open_browser': open_browser}
         if login_hint:
             flow_kwargs['login_hint'] = login_hint
-
-        flow.run_dual(use_console_flow,
-                **flow_kwargs)
+        flow.run_dual(**flow_kwargs)
         return cls.from_google_oauth2_credentials(flow.credentials,
                                                   filename=filename)
 
@@ -328,6 +331,7 @@ class Credentials(google.oauth2.credentials.Credentials):
                                  access_type='offline',
                                  login_hint=None,
                                  credentials_file=None,
+                                 open_browser=True,
                                  use_console_flow=False):
         """Runs an OAuth Flow from secrets stored on disk to generate credentials.
 
@@ -348,8 +352,11 @@ class Credentials(google.oauth2.credentials.Credentials):
         login page as a hint for the user to login to the correct account.
       credentials_file: String, the path to a file to use to save the
         credentials.
-      use_console_flow: Boolean, True if the authentication flow should be run
-        strictly from a console; False to launch a browser for authentication.
+      use_console_flow: OBSOLETE: Boolean, True if the authentication flow
+        should be run strictly from a console; False to launch a browser for
+        authentication.
+      open_browser: Boolean, whether or not GAM should try to open the browser
+        directly.
 
     Raises:
       InvalidClientSecretsFileError: If the client secrets file cannot be
@@ -378,14 +385,13 @@ class Credentials(google.oauth2.credentials.Credentials):
             raise InvalidClientSecretsFileFormatError(
                 f'Could not extract Client ID or Client Secret from file {client_secrets_file}'
             )
-
         return cls.from_client_secrets(client_id,
                                        client_secret,
                                        scopes,
                                        access_type=access_type,
                                        login_hint=login_hint,
                                        filename=credentials_file,
-                                       use_console_flow=use_console_flow)
+                                       open_browser=open_browser)
 
     def _fetch_id_token_data(self):
         """Fetches verification details from Google for the OAuth2.0 token.
@@ -599,7 +605,6 @@ class _ShortURLFlow(google_auth_oauthlib.flow.InstalledAppFlow):
 
 
     def run_dual(self,
-                use_console_flow,
                 authorization_prompt_message='',
                 console_prompt_message='',
                 web_success_message='',
@@ -609,7 +614,7 @@ class _ShortURLFlow(google_auth_oauthlib.flow.InstalledAppFlow):
         mgr = multiprocessing.Manager()
         d = mgr.dict()
         d['trailing_slash'] = redirect_uri_trailing_slash
-        d['open_browser'] = use_console_flow
+        d['open_browser'] = open_browser
         http_client = multiprocessing.Process(target=_wait_for_http_client,
                                               args=(d,))
         user_input = multiprocessing.Process(target=_wait_for_user_input,

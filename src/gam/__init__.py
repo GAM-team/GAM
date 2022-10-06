@@ -556,7 +556,9 @@ def SetGlobalVariables():
     _getOldSignalFile(GC_LOW_MEMORY, 'lowmemory.txt')
     _getOldSignalFile(GC_NO_BROWSER, 'nobrowser.txt')
     _getOldSignalFile(GC_NO_TDEMAIL, 'notdemail.txt')
-    _getOldSignalFile(GC_OAUTH_BROWSER, 'oauthbrowser.txt')
+    # oauthbrowser.txt is deprecated as we now always
+    # use the localhost flow.
+    #_getOldSignalFile(GC_OAUTH_BROWSER, 'oauthbrowser.txt')
     #  _getOldSignalFile(GC_NO_CACHE, u'nocache.txt')
     #  _getOldSignalFile(GC_CACHE_DISCOVERY_ONLY, u'allcache.txt', filePresentValue=False, fileAbsentValue=True)
     _getOldSignalFile(GC_NO_CACHE,
@@ -7130,7 +7132,7 @@ def getCRMService(login_hint):
         scopes,
         'online',
         login_hint=login_hint,
-        use_console_flow=not GC_Values[GC_OAUTH_BROWSER])
+        open_browser=not GC_Values[GC_NO_BROWSER])
     httpc = transport.AuthorizedHttp(creds, transport.create_http())
     return getService('cloudresourcemanager', httpc), httpc
 
@@ -10544,7 +10546,7 @@ def doRequestOAuth(login_hint=None, scopes=None):
             access_type='offline',
             login_hint=login_hint,
             credentials_file=GC_Values[GC_OAUTH2_TXT],
-            use_console_flow=not GC_Values[GC_OAUTH_BROWSER])
+            open_browser=not GC_Values[GC_NO_BROWSER])
         creds.write()
     except gam.auth.oauth.InvalidClientSecretsFileError:
         controlflow.system_error_exit(14, missing_client_secrets_message)
