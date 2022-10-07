@@ -281,9 +281,6 @@ jobs:
             cd "${GITHUB_WORKSPACE}/src/openssl-${openssl_archs}"
             # install_sw saves us ages processing man pages :-)
             $MAKE install_sw
-            export PATH="${OPENSSL_INSTALL_PATH}/bin:${PATH}"
-            echo "PATH=${PATH}" >> $GITHUB_ENV
-            echo "PATH: ${PATH}"
           fi
 
       - name: Run OpenSSL
