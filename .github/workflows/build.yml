@@ -200,7 +200,6 @@ jobs:
           echo "PYBUILDRELEASE_ARCH=${PYBUILDRELEASE_ARCH}" >> $GITHUB_ENV
           echo "openssl_archs=${openssl_archs}" >> $GITHUB_ENV
           echo "LD_LIBRARY_PATH=${OPENSSL_INSTALL_PATH}/lib:${PYTHON_INSTALL_PATH}/lib" >> $GITHUB_ENV
-          #echo "PATH=${PATH}:${PYTHON_INSTALL_PATH}/scripts" >> $GITHUB_ENV
 
       - name: Get latest stable OpenSSL source
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit != 'true'
@@ -282,6 +281,9 @@ jobs:
             cd "${GITHUB_WORKSPACE}/src/openssl-${openssl_archs}"
             # install_sw saves us ages processing man pages :-)
             $MAKE install_sw
+            export PATH="${OPENSSL_INSTALL_PATH}/bin:${PATH}"
+            echo "PATH=${PATH}" >> $GITHUB_ENV
+            echo "PATH: ${PATH}"
           fi
 
       - name: Run OpenSSL
@@ -373,6 +375,9 @@ jobs:
           Copy-Item -Path "${env:PYTHON_SOURCE_PATH}\Lib\*" "${env:PYTHON_INSTALL_PATH}\lib\" -recurse
           Copy-Item -Path "${env:PYTHON_SOURCE_PATH}\Include\*" "${env:PYTHON_INSTALL_PATH}\include\" -recurse
           Copy-Item -Path "${env:PYTHON_SOURCE_PATH}\PC\*.h" "${env:PYTHON_INSTALL_PATH}\include\"
+          export PATH="${PYTHON_INSTALL_PATH}/bin:${PATH}"
+          echo "PATH=${PATH}" >> $GITHUB_ENV
+          echo "PATH: ${PATH}"
 
       - name: Mac/Linux Build Python
         if: matrix.goal == 'build' && runner.os != 'Windows' && steps.cache-python-ssl.outputs.cache-hit != 'true'
@@ -387,6 +392,9 @@ jobs:
           cd "${PYTHON_SOURCE_PATH}"
           $MAKE altinstall
           $MAKE bininstall
+          export PATH="${PYTHON_INSTALL_PATH}/bin:${PATH}"
+          echo "PATH=${PATH}" >> $GITHUB_ENV
+          echo "PATH: ${PATH}"
 
       - name: Run Python
         run: |
