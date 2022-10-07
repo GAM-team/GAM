@@ -372,9 +372,9 @@ jobs:
           Copy-Item -Path "${env:PYTHON_SOURCE_PATH}\Lib\*" "${env:PYTHON_INSTALL_PATH}\lib\" -recurse
           Copy-Item -Path "${env:PYTHON_SOURCE_PATH}\Include\*" "${env:PYTHON_INSTALL_PATH}\include\" -recurse
           Copy-Item -Path "${env:PYTHON_SOURCE_PATH}\PC\*.h" "${env:PYTHON_INSTALL_PATH}\include\"
-          export PATH="${PYTHON_INSTALL_PATH}/bin:${PATH}"
-          echo "PATH=${PATH}" >> $GITHUB_ENV
-          echo "PATH: ${PATH}"
+          $env:Path = '${PYTHON_INSTALL_PATH}/bin' + $env:Path
+          echo "Path=$env:Path" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "PATH: ${env:Path}"
 
       - name: Mac/Linux Build Python
         if: matrix.goal == 'build' && runner.os != 'Windows' && steps.cache-python-ssl.outputs.cache-hit != 'true'
@@ -389,7 +389,7 @@ jobs:
           cd "${PYTHON_SOURCE_PATH}"
           $MAKE altinstall
           $MAKE bininstall
-          export PATH="${PYTHON_INSTALL_PATH}/bin:${PATH}"
+          export PATH="${PATH}:${PYTHON_INSTALL_PATH}/bin"
           echo "PATH=${PATH}" >> $GITHUB_ENV
           echo "PATH: ${PATH}"
 
