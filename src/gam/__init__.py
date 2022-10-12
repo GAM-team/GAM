@@ -11244,7 +11244,7 @@ def run_batch(items):
                 )
                 pool.close()
                 pool.join()
-                pool = mp_pool(num_worker_threads, init_gam_worker, maxtasksperchild=200, initargs=(1,))
+                pool = mp_pool(num_worker_threads, init_gam_worker, maxtasksperchild=200, initargs=(l,))
                 sys.stderr.write(
                     'commit-batch - running processes finished, proceeding\n')
                 continue
