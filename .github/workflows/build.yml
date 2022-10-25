@@ -187,6 +187,7 @@ jobs:
             MAKE=nmake
             MAKEOPT=""
             PERL="c:\strawberry\perl\bin\perl.exe"
+            echo "PIP_ARGS=--no-binary=:all:" >> $GITHUB_ENV
             echo "PYTHON=${PYTHON_SOURCE_PATH}/PCbuild/${PYEXTERNALS_PATH}/python.exe" >> $GITHUB_ENV
             echo "GAM_ARCHIVE_ARCH=${GAM_ARCHIVE_ARCH}" >> $GITHUB_ENV
             echo "WIX_ARCH=${WIX_ARCH}" >> $GITHUB_ENV
