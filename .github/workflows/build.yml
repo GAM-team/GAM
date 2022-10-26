@@ -156,6 +156,7 @@ jobs:
           openssl_archs: ${{ matrix.openssl_archs }}
         run: |
           echo "We are running on ${RUNNER_OS}"
+          echo "LD_LIBRARY_PATH=${OPENSSL_INSTALL_PATH}/lib:${PYTHON_INSTALL_PATH}/lib" >> $GITHUB_ENV
           if [[ "${arch}" == "Win64" ]]; then
             PYEXTERNALS_PATH="amd64"
             PYBUILDRELEASE_ARCH="x64"
@@ -201,7 +202,6 @@ jobs:
           echo "PYEXTERNALS_PATH=${PYEXTERNALS_PATH}" >> $GITHUB_ENV
           echo "PYBUILDRELEASE_ARCH=${PYBUILDRELEASE_ARCH}" >> $GITHUB_ENV
           echo "openssl_archs=${openssl_archs}" >> $GITHUB_ENV
-          echo "LD_LIBRARY_PATH=${OPENSSL_INSTALL_PATH}/lib:${PYTHON_INSTALL_PATH}/lib" >> $GITHUB_ENV
 
       - name: Get latest stable OpenSSL source
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit != 'true'
