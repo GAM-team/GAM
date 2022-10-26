@@ -189,6 +189,8 @@ jobs:
             MAKEOPT=""
             PERL="c:\strawberry\perl\bin\perl.exe"
             LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${PYTHON_SOURCE_PATH}/PCbuild/${PYEXTERNALS_PATH}"
+            echo "LIB=${OPENSSL_INSTALL_PATH}/lib:${PYTHON_SOURCE_PATH}/PCbuild/${PYEXTERNALS_PATH}" >> $GITHUB_ENV
+            echo "INCLUDE=${OPENSSL_INSTALL_PATH}/include:${PYTHON_SOURCE_PATH}/include" >> $GITHUB_ENV
             echo "PYTHON=${PYTHON_SOURCE_PATH}/PCbuild/${PYEXTERNALS_PATH}/python.exe" >> $GITHUB_ENV
             echo "GAM_ARCHIVE_ARCH=${GAM_ARCHIVE_ARCH}" >> $GITHUB_ENV
             echo "WIX_ARCH=${WIX_ARCH}" >> $GITHUB_ENV
