@@ -391,7 +391,7 @@ jobs:
           "${PYTHON}" get-pip.py
           "${PYTHON}" -m pip install --upgrade pip
           "${PYTHON}" -m pip install --upgrade wheel
-          "${PYTHON}" -m pip install --upgrade setuptools==65.4.1
+          "${PYTHON}" -m pip install --upgrade setuptools
 
       - name: Install pip requirements
         run: |
@@ -408,9 +408,8 @@ jobs:
                done
                find $PYTHON_INSTALL_PATH/lib/python3.10/site-packages -type f -name "*.so" -exec du -sh "{}" \;
              else
-               export LIB="${OPENSSL_INSTALL_PATH}/lib:${PYTHON_SOURCE_PATH}/PCbuild/${PYEXTERNALS_PATH}"
-               export INCLUDE="${OPENSSL_INSTALL_PATH}/include:${PYTHON_SOURCE_PATH}/include"
-               "${PYTHON}" -m pip install --upgrade --no-binary=:all: cryptography
+               "${PYTHON}" -m pip install --upgrade --no-binary=:all: cffi
+               "${PYTHON}" -m pip install --upgrade cryptography
              fi
              "${PYTHON}" -m pip install --upgrade -r requirements.txt ${PIP_ARGS}
              "${PYTHON}" -m pip list
