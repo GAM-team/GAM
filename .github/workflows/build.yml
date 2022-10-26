@@ -187,7 +187,6 @@ jobs:
             MAKE=nmake
             MAKEOPT=""
             PERL="c:\strawberry\perl\bin\perl.exe"
-            echo "PIP_ARGS=--no-binary=:all:" >> $GITHUB_ENV
             echo "PYTHON=${PYTHON_SOURCE_PATH}/PCbuild/${PYEXTERNALS_PATH}/python.exe" >> $GITHUB_ENV
             echo "GAM_ARCHIVE_ARCH=${GAM_ARCHIVE_ARCH}" >> $GITHUB_ENV
             echo "WIX_ARCH=${WIX_ARCH}" >> $GITHUB_ENV
@@ -406,6 +405,8 @@ jobs:
                "${PYTHON}" -m pip install --force-reinstall --no-deps $package*.whl
                done
                find $PYTHON_INSTALL_PATH/lib/python3.10/site-packages -type f -name "*.so" -exec du -sh "{}" \;
+             else
+               "${PYTHON}" -m pip install --upgrade --no-binary=:all: cryptography
              fi
              "${PYTHON}" -m pip install --upgrade -r requirements.txt ${PIP_ARGS}
              "${PYTHON}" -m pip list
