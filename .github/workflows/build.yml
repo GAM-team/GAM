@@ -66,7 +66,7 @@ jobs:
             arch: x86_64
           - os: ubuntu-22.04
             goal: test
-            python: "3.11-dev"
+            python: "3.10"
             jid: 10
             arch: x86_64
 
@@ -85,7 +85,7 @@ jobs:
           path: |
             bin.tar.xz
             src/cpython/PCbuild
-          key: gam-${{ matrix.jid }}-20221024
+          key: gam-${{ matrix.jid }}-20221027
 
       - name: Untar Cache archive
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit == 'true'
