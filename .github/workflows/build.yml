@@ -396,20 +396,14 @@ jobs:
       - name: Install pip requirements
         run: |
              if [[ "${RUNNER_OS}" == "macOS" ]]; then
-               for package in cryptography; do
-                 "${PYTHON}" -m pip install --upgrade cffi ${PIP_ARGS}
-                 "${PYTHON}" -m pip download --only-binary :all: \
+               "${PYTHON}" -m pip install --upgrade cffi ${PIP_ARGS}
+               "${PYTHON}" -m pip download --only-binary :all: \
                                              --dest . \
                                              --no-cache \
                                              --no-deps \
                                              --platform macosx_10_15_universal2 \
-                                             $package
-               "${PYTHON}" -m pip install --force-reinstall --no-deps $package*.whl
-               done
-               find $PYTHON_INSTALL_PATH/lib/python3.10/site-packages -type f -name "*.so" -exec du -sh "{}" \;
-             else
-               "${PYTHON}" -m pip install --upgrade --no-binary=:all: cffi
-               "${PYTHON}" -m pip install --upgrade cryptography
+                                             cryptography
+               "${PYTHON}" -m pip install --force-reinstall --no-deps cryptography*.whl
              fi
              "${PYTHON}" -m pip install --upgrade -r requirements.txt ${PIP_ARGS}
              "${PYTHON}" -m pip list
@@ -696,17 +690,6 @@ jobs:
              #touch $gampath/enabledasa.txt
              #echo "using delegated admin service account"
              #$gam print users
-
-     # - name: Upload to Google Drive, build only.
-     #   if: github.event_name == 'push' && matrix.goal != 'test'
-     #   run: |
-     #        ls gam-$GAMVERSION-*
-     #        for gamfile in gam-$GAMVERSION-*; do
-     #          echo "Uploading file ${gamfile} to Google Drive..."
-     #          fileid=$($gam user $gam_user add drivefile localfile $gamfile drivefilename $GAMVERSION-${GITHUB_SHA:0:7}-$gamfile parentid 1N2zbO33qzUQFsGM49-m9AQC1ijzd_ru1 returnidonly)
-     #          echo "file uploaded as ${fileid}, setting ACL..."
-     #          $gam user $gam_user add drivefileacl $fileid anyone role reader withlink
-     #        done
 
       - name: Archive production artifacts
         uses: actions/upload-artifact@v3
