@@ -440,6 +440,10 @@ jobs:
              mkdir -p -v "${gampath}"
              if [[ "${RUNNER_OS}" == "macOS" ]]; then
                export gampath=$($PYTHON -c "import os; print(os.path.realpath('$gampath'))")
+             elif [[ "${RUNNER_OS}" == "Windows" ]]; then
+               # Work around issue where PyInstaller picks up python3.dll from other Python versions
+               # https://github.com/pyinstaller/pyinstaller/issues/7102
+               export PATH="/usr/bin"
              else
                export gampath=$(realpath "${gampath}")
              fi
