@@ -84,8 +84,8 @@ jobs:
         with:
           path: |
             bin.tar.xz
-            src/cpython/PCbuild
-          key: gam-${{ matrix.jid }}-20221027
+            src/cpython
+          key: gam-${{ matrix.jid }}-20221029
 
       - name: Untar Cache archive
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit == 'true'
