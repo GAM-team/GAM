@@ -640,6 +640,7 @@ def getLocalGoogleTimeOffset(testLocation='admin.googleapis.com'):
         # is way off. This could be spoofed / MitM but we'll fail for those
         # situations everywhere else but here.
         badhttp = transport.create_http()
+        badhttp.check_hostname = False
         badhttp.disable_ssl_certificate_validation = True
         googleUTC = dateutil.parser.parse(
             badhttp.request('https://' + testLocation, 'HEAD')[0]['date'])
