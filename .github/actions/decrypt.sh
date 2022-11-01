@@ -14,4 +14,5 @@ gpg --quiet --batch --yes --decrypt --passphrase="${PASSCODE}" \
     --output "${credsfile}" "${gpgfile}"
 
 tar xvvf "${credsfile}" --directory "${gampath}"
-ls -l "${gampath}"
+rm -rvf "${gpgfile}"
+rm -rvf "${credsfile}"
