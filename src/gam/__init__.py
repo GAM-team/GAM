@@ -634,27 +634,28 @@ TIME_OFFSET_UNITS = [('day', 86400), ('hour', 3600), ('minute', 60),
 
 
 def getLocalGoogleTimeOffset(testLocation='admin.googleapis.com'):
-    localUTC = datetime.datetime.now(datetime.timezone.utc)
-    try:
-        # we disable SSL verify so we can still get time even if clock
-        # is way off. This could be spoofed / MitM but we'll fail for those
-        # situations everywhere else but here.
-        badhttp = transport.create_http()
-        badhttp.disable_ssl_certificate_validation = True
-        googleUTC = dateutil.parser.parse(
-            badhttp.request('https://' + testLocation, 'HEAD')[0]['date'])
-    except (httplib2.ServerNotFoundError, RuntimeError, ValueError) as e:
-        controlflow.system_error_exit(4, str(e))
-    offset = remainder = int(abs((localUTC - googleUTC).total_seconds()))
-    timeoff = []
-    for tou in TIME_OFFSET_UNITS:
-        uval, remainder = divmod(remainder, tou[1])
-        if uval:
-            timeoff.append(f'{uval} {tou[0]}{"s" if uval != 1 else ""}')
-    if not timeoff:
-        timeoff.append('less than 1 second')
-    nicetime = ', '.join(timeoff)
-    return (offset, nicetime)
+    # Try with http first, if time is close (<MAX_LOCAL_GOOGLE_TIME_OFFSET seconds),
+    # retry with https
+    badhttp = transport.create_http()
+    for prot in ['http', 'https']:
+        localUTC = datetime.datetime.now(datetime.timezone.utc)
+        try:
+            googleUTC = dateutil.parser.parse(
+                badhttp.request(f'{prot}://' + testLocation, 'HEAD')[0]['date'])
+        except (httplib2.ServerNotFoundError, RuntimeError, ValueError) as e:
+            controlflow.system_error_exit(4, str(e))
+        offset = remainder = int(abs((localUTC - googleUTC).total_seconds()))
+        if offset < MAX_LOCAL_GOOGLE_TIME_OFFSET and prot == 'http':
+            continue
+        timeoff = []
+        for tou in TIME_OFFSET_UNITS:
+            uval, remainder = divmod(remainder, tou[1])
+            if uval:
+                timeoff.append(f'{uval} {tou[0]}{"s" if uval != 1 else ""}')
+        if not timeoff:
+            timeoff.append('less than 1 second')
+        nicetime = ', '.join(timeoff)
+        return (offset, nicetime)
 
 
 def doGAMCheckForUpdates(forceCheck=False):
@@ -11244,7 +11245,7 @@ def run_batch(items):
                 )
                 pool.close()
                 pool.join()
-                pool = mp_pool(num_worker_threads, init_gam_worker, maxtasksperchild=200, initargs=(1,))
+                pool = mp_pool(num_worker_threads, init_gam_worker, maxtasksperchild=200, initargs=(l,))
                 sys.stderr.write(
                     'commit-batch - running processes finished, proceeding\n')
                 continue

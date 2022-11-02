@@ -29,7 +29,7 @@ jobs:
             goal: build
             arch: x86_64
             openssl_archs: linux-x86_64
-          - os: [self-hosted, linux, arm64]
+          - os: [self-hosted, linux, arm64, gcp]
             jid: 2
             goal: build
             arch: aarch64
@@ -66,7 +66,7 @@ jobs:
             arch: x86_64
           - os: ubuntu-22.04
             goal: test
-            python: "3.11-dev"
+            python: "3.10"
             jid: 10
             arch: x86_64
 
@@ -84,7 +84,8 @@ jobs:
         with:
           path: |
             bin.tar.xz
-          key: gam-${{ matrix.jid }}-20221006
+            src/cpython
+          key: gam-${{ matrix.jid }}-20221101
 
       - name: Untar Cache archive
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit == 'true'
@@ -155,6 +156,7 @@ jobs:
           openssl_archs: ${{ matrix.openssl_archs }}
         run: |
           echo "We are running on ${RUNNER_OS}"
+          LD_LIBRARY_PATH="${OPENSSL_INSTALL_PATH}/lib:${PYTHON_INSTALL_PATH}/lib"
           if [[ "${arch}" == "Win64" ]]; then
             PYEXTERNALS_PATH="amd64"
             PYBUILDRELEASE_ARCH="x64"
@@ -186,21 +188,21 @@ jobs:
             MAKE=nmake
             MAKEOPT=""
             PERL="c:\strawberry\perl\bin\perl.exe"
-            echo "PYTHON=${PYTHON_INSTALL_PATH}\python.exe" >> $GITHUB_ENV
+            LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${PYTHON_SOURCE_PATH}/PCbuild/${PYEXTERNALS_PATH}"
+            echo "PYTHON=${PYTHON_SOURCE_PATH}/PCbuild/${PYEXTERNALS_PATH}/python.exe" >> $GITHUB_ENV
             echo "GAM_ARCHIVE_ARCH=${GAM_ARCHIVE_ARCH}" >> $GITHUB_ENV
             echo "WIX_ARCH=${WIX_ARCH}" >> $GITHUB_ENV
           fi
           echo "We'll run make with: ${MAKEOPT}"
           echo "JID=${jid}" >> $GITHUB_ENV
           echo "arch=${arch}" >> $GITHUB_ENV
+          echo "LD_LIBRARY_PATH=${LD_LIBRARY_PATH}" >> $GITHUB_ENV
           echo "MAKE=${MAKE}" >> $GITHUB_ENV
           echo "MAKEOPT=${MAKEOPT}" >> $GITHUB_ENV
           echo "PERL=${PERL}" >> $GITHUB_ENV
           echo "PYEXTERNALS_PATH=${PYEXTERNALS_PATH}" >> $GITHUB_ENV
           echo "PYBUILDRELEASE_ARCH=${PYBUILDRELEASE_ARCH}" >> $GITHUB_ENV
           echo "openssl_archs=${openssl_archs}" >> $GITHUB_ENV
-          echo "LD_LIBRARY_PATH=${OPENSSL_INSTALL_PATH}/lib:${PYTHON_INSTALL_PATH}/lib" >> $GITHUB_ENV
-          #echo "PATH=${PATH}:${PYTHON_INSTALL_PATH}/scripts" >> $GITHUB_ENV
 
       - name: Get latest stable OpenSSL source
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit != 'true'
@@ -338,7 +340,7 @@ jobs:
           $env:OPENSSL_EXT_TARGET_PATH = "${env:OPENSSL_EXT_PATH}${env:PYEXTERNALS_PATH}"
           echo "Copying our OpenSSL to ${env:OPENSSL_EXT_TARGET_PATH}"
           mkdir "${env:OPENSSL_EXT_TARGET_PATH}\include\openssl\"
-          Copy-Item -Path "${env:GITHUB_WORKSPACE}/src/openssl-${env:openssl_archs}\LICENSE.txt" -Destination "${env:OPENSSL_EXT_TARGET_PATH}\LICENSE"
+          Copy-Item -Path "${env:GITHUB_WORKSPACE}/src/openssl-${env:openssl_archs}\LICENSE.txt" -Destination "${env:OPENSSL_EXT_TARGET_PATH}\LICENSE" -Verbose
           cp -v "$env:OPENSSL_INSTALL_PATH\lib\*" "${env:OPENSSL_EXT_TARGET_PATH}"
           cp -v "$env:OPENSSL_INSTALL_PATH\bin\*" "${env:OPENSSL_EXT_TARGET_PATH}"
           cp -v "$env:OPENSSL_INSTALL_PATH\include\openssl\*" "${env:OPENSSL_EXT_TARGET_PATH}\include\openssl\"
@@ -358,21 +360,9 @@ jobs:
         run: |
           cd "${env:PYTHON_SOURCE_PATH}"
           # We need out custom openssl.props which uses OpenSSL 3 DLL names
-          Copy-Item -Path "${env:GITHUB_WORKSPACE}\src\tools\openssl.props" -Destination PCBuild\
+          Copy-Item -Path "${env:GITHUB_WORKSPACE}\src\tools\openssl.props" -Destination PCBuild\ -Verbose
           echo "Building for ${env:PYBUILDRELEASE_ARCH}..."
           PCBuild\build.bat -m --pgo -c Release -p "${env:PYBUILDRELEASE_ARCH}"
-
-      - name: Windows Install Python
-        if: matrix.goal == 'build' && runner.os == 'Windows' && steps.cache-python-ssl.outputs.cache-hit != 'true'
-        shell: powershell
-        run: |
-          cd "${env:PYTHON_SOURCE_PATH}"
-          mkdir "${env:PYTHON_INSTALL_PATH}\lib"
-          mkdir "${env:PYTHON_INSTALL_PATH}\include"
-          Copy-Item -Path "PCBuild\${env:PYEXTERNALS_PATH}\*" "${env:PYTHON_INSTALL_PATH}\"
-          Copy-Item -Path "${env:PYTHON_SOURCE_PATH}\Lib\*" "${env:PYTHON_INSTALL_PATH}\lib\" -recurse
-          Copy-Item -Path "${env:PYTHON_SOURCE_PATH}\Include\*" "${env:PYTHON_INSTALL_PATH}\include\" -recurse
-          Copy-Item -Path "${env:PYTHON_SOURCE_PATH}\PC\*.h" "${env:PYTHON_INSTALL_PATH}\include\"
 
       - name: Mac/Linux Build Python
         if: matrix.goal == 'build' && runner.os != 'Windows' && steps.cache-python-ssl.outputs.cache-hit != 'true'
@@ -387,6 +377,9 @@ jobs:
           cd "${PYTHON_SOURCE_PATH}"
           $MAKE altinstall
           $MAKE bininstall
+          export PATH="${PATH}:${PYTHON_INSTALL_PATH}/bin"
+          echo "PATH=${PATH}" >> $GITHUB_ENV
+          echo "PATH: ${PATH}"
 
       - name: Run Python
         run: |
@@ -403,17 +396,14 @@ jobs:
       - name: Install pip requirements
         run: |
              if [[ "${RUNNER_OS}" == "macOS" ]]; then
-               for package in cryptography; do
-                 "${PYTHON}" -m pip install --upgrade cffi ${PIP_ARGS}
-                 "${PYTHON}" -m pip download --only-binary :all: \
+               "${PYTHON}" -m pip install --upgrade cffi ${PIP_ARGS}
+               "${PYTHON}" -m pip download --only-binary :all: \
                                              --dest . \
                                              --no-cache \
                                              --no-deps \
                                              --platform macosx_10_15_universal2 \
-                                             $package
-               "${PYTHON}" -m pip install --force-reinstall --no-deps $package*.whl
-               done
-               find $PYTHON_INSTALL_PATH/lib/python3.10/site-packages -type f -name "*.so" -exec du -sh "{}" \;
+                                             cryptography
+               "${PYTHON}" -m pip install --force-reinstall --no-deps cryptography*.whl
              fi
              "${PYTHON}" -m pip install --upgrade -r requirements.txt ${PIP_ARGS}
              "${PYTHON}" -m pip list
@@ -424,8 +414,6 @@ jobs:
           git clone https://github.com/pyinstaller/pyinstaller.git
           cd pyinstaller
           export latest_release=$(git tag --list | grep -v dev | grep -v rc | sort -Vr | head -n1)
-          # temp freeze PyInstaller at 5.3
-          export latest_release="v5.3"
           git checkout "${latest_release}"
           # remove pre-compiled bootloaders so we fail if bootloader compile fails
           rm -rvf PyInstaller/bootloader/*-*/*
@@ -446,6 +434,10 @@ jobs:
              mkdir -p -v "${gampath}"
              if [[ "${RUNNER_OS}" == "macOS" ]]; then
                export gampath=$($PYTHON -c "import os; print(os.path.realpath('$gampath'))")
+             elif [[ "${RUNNER_OS}" == "Windows" ]]; then
+               # Work around issue where PyInstaller picks up python3.dll from other Python versions
+               # https://github.com/pyinstaller/pyinstaller/issues/7102
+               export PATH="/usr/bin"
              else
                export gampath=$(realpath "${gampath}")
              fi
@@ -698,17 +690,6 @@ jobs:
              #touch $gampath/enabledasa.txt
              #echo "using delegated admin service account"
              #$gam print users
-
-     # - name: Upload to Google Drive, build only.
-     #   if: github.event_name == 'push' && matrix.goal != 'test'
-     #   run: |
-     #        ls gam-$GAMVERSION-*
-     #        for gamfile in gam-$GAMVERSION-*; do
-     #          echo "Uploading file ${gamfile} to Google Drive..."
-     #          fileid=$($gam user $gam_user add drivefile localfile $gamfile drivefilename $GAMVERSION-${GITHUB_SHA:0:7}-$gamfile parentid 1N2zbO33qzUQFsGM49-m9AQC1ijzd_ru1 returnidonly)
-     #          echo "file uploaded as ${fileid}, setting ACL..."
-     #          $gam user $gam_user add drivefileacl $fileid anyone role reader withlink
-     #        done
 
       - name: Archive production artifacts
         uses: actions/upload-artifact@v3
