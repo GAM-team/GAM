@@ -552,19 +552,18 @@ jobs:
              echo "OAUTHFILE=${OAUTHFILE}" >> $GITHUB_ENV
              export gam_user="gam-gha-${JID}@pdl.jaylee.us"
              echo "gam_user=${gam_user}" >> $GITHUB_ENV
-             touch "${gampath}/lowmemory.txt"
              $gam checkconn
              $gam oauth info
              $gam info domain
              $gam oauth refresh
              $gam info user
              export tstamp=$($PYTHON -c "import time; print(time.time_ns())")
-             export newbase=gha_test_$JID_$tstamp
-             export newuser=$newbase@pdl.jaylee.us
-             export newgroup=$newbase-group@pdl.jaylee.us
-             export newalias=$newbase-alias@pdl.jaylee.us
-             export newbuilding=$newbase-building
-             export newresource=$newbase-resource
+             export newbase="gha_test_${JID}_${tstamp}"
+             export newuser="${newbase}@pdl.jaylee.us"
+             export newgroup="${newbase}-group@pdl.jaylee.us"
+             export newalias="${newbase}-alias@pdl.jaylee.us"
+             export newbuilding="${newbase}-building"
+             export newresource="${newbase}-resource"
              export newou="/## Github Actions/${newbase}"
              $gam create ou "${newou}"
              export GAM_THREADS=5
