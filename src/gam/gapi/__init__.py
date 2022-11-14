@@ -1,7 +1,6 @@
 """Methods related to execution of GAPI requests."""
 
 import os.path
-import shelve
 import sys
 from tempfile import TemporaryDirectory
 
@@ -13,7 +12,7 @@ from gam import controlflow
 from gam import display
 from gam.gapi import errors
 from gam import transport
-from gam.var import (GC_Values, GC_LOW_MEMORY, GM_Globals,
+from gam.var import (GC_Values, GM_Globals,
                      GM_CURRENT_API_SCOPES, GM_CURRENT_API_USER,
                      GM_EXTRA_ARGS_DICT, GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID,
                      MAX_RESULTS_API_EXCEPTIONS, MESSAGE_API_ACCESS_CONFIG,
@@ -338,18 +337,7 @@ def get_all_pages(service,
                 kwargs['body'].update(page_key)
             else:
                 kwargs.update(page_key)
-    if GC_Values[GC_LOW_MEMORY]:
-        td_args = {'prefix': 'GAM-'}
-        if sys.version_info.minor >= 10:
-            td_args['ignore_cleanup_errors'] = True
-        tempdir = TemporaryDirectory(**td_args)
-        tempfile = os.path.join(tempdir.name, 'gapi_pages')
-        all_items = shelve.open(tempfile)
-        # attach tempdir to all_items so we
-        # don't cleanup tempdir early
-        all_items._tempdir = tempdir
-    else:
-        all_items = []
+    all_items = []
     page_token = None
     total_items = 0
     while True:

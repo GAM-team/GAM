@@ -34,7 +34,7 @@ def missing_argument_exit(argument, command):
     """Indicate that the argument is missing for the command.
 
   Args:
-    argument: the missingagrument
+    argument: the missing argument
     command: the base GAM command
   """
     system_error_exit(2, f'missing argument {argument} for "{command}"')
