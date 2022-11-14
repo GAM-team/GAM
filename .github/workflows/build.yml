@@ -684,7 +684,7 @@ jobs:
              $gam user $gam_user delete shareddrive "${driveid}" nukefromorbit
              echo "printer model count:"
              $gam print printermodels | wc -l
-             $gam create inboundssoprofile name "El Goog ${newbase}" signinurl https://www.google.com signouturl https://www.google.com changepasswordurl https://www.google.com entityid ElGoog
+             $gam create inboundssoprofile name "El Goog ${newbase}" loginurl https://www.google.com logouturl https://www.google.com changepasswordurl https://www.google.com entityid ElGoog
              $gam create inboundssocredential profile "El Goog ${newbase}" generate_key
              $gam create inboundssoassignment profile "El Goog ${newbase}" orgunit "${newou}" mode SAML_SSO
              $gam delete ou "${newou}"
