@@ -65,6 +65,7 @@ from gam.gapi import chromemanagement as gapi_chromemanagement
 from gam.gapi import chromepolicy as gapi_chromepolicy
 from gam.gapi.cloudidentity import devices as gapi_cloudidentity_devices
 from gam.gapi.cloudidentity import groups as gapi_cloudidentity_groups
+from gam.gapi.cloudidentity import inboundsso as gapi_cloudidentity_inboundsso
 from gam.gapi.cloudidentity import orgunits as gapi_cloudidentity_orgunits
 from gam.gapi.cloudidentity import userinvitations as gapi_cloudidentity_userinvitations
 from gam.gapi import contactdelegation as gapi_contactdelegation
@@ -7726,7 +7727,7 @@ def doUpdateProjects():
         _grantRotateRights(iam, sa_email, sa_email)
 
 
-def _generatePrivateKeyAndPublicCert(client_id, key_size):
+def _generatePrivateKeyAndPublicCert(client_id, key_size, b64enc_pub=True):
     print(' Generating new private key...')
     private_key = rsa.generate_private_key(public_exponent=65537,
                                            key_size=key_size,
@@ -7770,6 +7771,8 @@ def _generatePrivateKeyAndPublicCert(client_id, key_size):
                                backend=default_backend())
     public_cert_pem = certificate.public_bytes(
         serialization.Encoding.PEM).decode()
+    if not b64enc_pub:
+        return private_pem, public_cert_pem
     publicKeyData = base64.b64encode(public_cert_pem.encode())
     if isinstance(publicKeyData, bytes):
         publicKeyData = publicKeyData.decode()
@@ -10590,6 +10593,11 @@ OAUTH2_SCOPES = [
         'scopes': 'https://www.googleapis.com/auth/cloud-identity.groups'
     },
     {
+        'name': 'Cloud Identity - Inbound SSO Settings',
+        'subscopes': ['readonly'],
+        'scopes': 'https://www.googleapis.com/auth/cloud-identity.inboundsso',
+    },
+    {
         'name': 'Cloud Identity - OrgUnits',
         'subscopes': ['readonly'],
         'scopes': 'https://www.googleapis.com/auth/cloud-identity.orgunits',
@@ -11467,7 +11475,13 @@ def ProcessGAMCommand(args):
                 gapi_cloudidentity_groups.create()
             elif argument in ['nickname', 'alias']:
                 doCreateAlias()
-            elif argument in ['org', 'ou']:
+            elif argument in ['inboundssoprofile', 'inboundssoprofiles']:
+                gapi_cloudidentity_inboundsso.create_profile()
+            elif argument in ['inboundssocredential', 'inboundssocredentials']:
+                gapi_cloudidentity_inboundsso.create_credentials()
+            elif argument in ['inboundssoassignment', 'inboundssoassignments']:
+                gapi_cloudidentity_inboundsso.create_assignment()
+            elif argument in ['org', 'orgunit', 'ou']:
                 gapi_directory_orgunits.create()
             elif argument == 'resource':
                 gapi_directory_resource.createResourceCalendar()
@@ -11539,10 +11553,14 @@ def ProcessGAMCommand(args):
                 gapi_cloudidentity_groups.update()
             elif argument in ['nickname', 'alias']:
                 doUpdateAlias()
-            elif argument in ['ou', 'org']:
+            elif argument in ['inboundssoassignment', 'inboundssoasignments']:
+                gapi_cloudidentity_inboundsso.update_assignment()
+            elif argument in ['ou', 'org', 'orgunit']:
                 gapi_directory_orgunits.update()
             elif argument == 'resource':
                 gapi_directory_resource.updateResourceCalendar()
+            elif argument in ['inboundssoprofile', 'inboundssoprofiles']:
+                gapi_cloudidentity_inboundsso.update_profile()
             elif argument == 'cros':
                 gapi_directory_cros.doUpdateCros()
             elif argument == 'mobile':
@@ -11604,7 +11622,9 @@ def ProcessGAMCommand(args):
                 doGetAliasInfo()
             elif argument == 'instance':
                 gapi_directory_customer.doGetCustomerInfo()
-            elif argument in ['org', 'ou']:
+            elif argument in ['inboundssoprofile', 'inboundssoprofiles']:
+                gapi_cloudidentity_inboundsso.info_profile()
+            elif argument in ['org', 'ou', 'orgunit']:
                 gapi_directory_orgunits.info()
             elif argument == 'resource':
                 gapi_directory_resource.getResourceCalendarInfo()
@@ -11677,10 +11697,14 @@ def ProcessGAMCommand(args):
                 gapi_cloudidentity_devices.delete_user()
             elif argument == 'cigroup':
                 gapi_cloudidentity_groups.delete()
+            elif argument in ['inboundssoprofile', 'inboundssoprofiles']:
+                gapi_cloudidentity_inboundsso.delete_profile()
             elif argument in ['nickname', 'alias']:
                 doDeleteAlias()
             elif argument == 'org':
                 gapi_directory_orgunits.delete()
+            elif argument in ['inboundssocredential', 'inboundssocredentials']:
+                gapi_cloudidentity_inboundsso.delete_credentials()
             elif argument == 'resource':
                 gapi_directory_resource.deleteResourceCalendar()
             elif argument == 'mobile':
@@ -11770,8 +11794,14 @@ def ProcessGAMCommand(args):
                 gapi_chromemanagement.printShowCrosTelemetry('print')
             elif argument in ['groupmembers', 'groupsmembers']:
                 gapi_directory_groups.print_members()
+            elif argument in ['inboundssoassignment', 'inboundssoassignments']:
+                gapi_cloudidentity_inboundsso.print_assignments()
             elif argument in ['cigroupmembers', 'cigroupsmembers']:
                 gapi_cloudidentity_groups.print_members()
+            elif argument in ['inboundssoprofile', 'inboundssoprofiles']:
+                gapi_cloudidentity_inboundsso.print_profiles()
+            elif argument in ['inboundssocredential', 'inboundssocredentials']:
+                gapi_cloudidentity_inboundsso.print_credentials()
             elif argument in ['orgs', 'ous']:
                 gapi_directory_orgunits.print_()
             elif argument == 'privileges':

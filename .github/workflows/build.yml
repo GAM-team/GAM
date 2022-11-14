@@ -557,8 +557,7 @@ jobs:
              $gam oauth info
              $gam info domain
              $gam oauth refresh
-             $gam info user
-             #$gam info user $gam_user grouptree
+             $gam info use
              export tstamp=$($PYTHON -c "import time; print(time.time_ns())")
              export newbase=gha_test_$JID_$tstamp
              export newuser=$newbase@pdl.jaylee.us
@@ -566,12 +565,14 @@ jobs:
              export newalias=$newbase-alias@pdl.jaylee.us
              export newbuilding=$newbase-building
              export newresource=$newbase-resource
+             export newou="/## Github Actions/${newbase}"
+             $gam create ou "${newou}"
              export GAM_THREADS=5
              echo email > sample.csv;
              for i in {1..10}; do
                echo "${newbase}-bulkuser-$i" >> sample.csv;
              done
-             $gam create user $newuser firstname GHA lastname $JID password random recoveryphone 12125121110 recoveryemail jay0lee@gmail.com gha.jid $JID languages en+,en-GB-
+             $gam create user $newuser firstname GHA lastname $JID password random ou "${newou}" recoveryphone 12125121110 recoveryemail jay0lee@gmail.com gha.jid $JID languages en+,en-GB-
              $gam user $newuser update photo https://dummyimage.com/400x600/000/fff
              $gam user $newuser get photo
              $gam user $newuser delete photo
@@ -585,7 +586,7 @@ jobs:
              $gam update group $newgroup add owner $gam_user
              $gam update group $newgroup add member $newuser
              $gam create admin $newuser _GROUPS_EDITOR_ROLE CUSTOMER # condition nonsecuritygroup
-             $gam csv sample.csv gam create user ~~email~~ firstname "GHA Bulk" lastname ~~email~~ gha.jid $JID
+             $gam csv sample.csv gam create user ~~email~~ firstname "GHA Bulk" lastname ~~email~~ gha.jid $JID ou "${newou}"
              $gam csv sample.csv gam update user ~~email~~ recoveryphone 12125121110 recoveryemail jay0lee@gmail.com password random
              $gam csv sample.csv gam update user ~~email~~ recoveryphone "" recoveryemail ""
              $gam csv sample.csv gam user ~email add license workspaceenterpriseplus
@@ -678,11 +679,15 @@ jobs:
              driveid=$($gam user $gam_user add shareddrive "${newbase}" | awk '{print $NF}')
              echo "Created shared drive ${driveid}"
              $gam user $gam_user add drivefile localfile gam.py parentid "${driveid}"
-             $gam user $gam_user update shareddrive "${driveid}" ou "id:03ph8a2z1t2ph5z"
+             $gam user $gam_user update shareddrive "${driveid}" ou "${newou}"
              $gam user $gam_user show shareddrives asadmin
              $gam user $gam_user delete shareddrive "${driveid}" nukefromorbit
              echo "printer model count:"
              $gam print printermodels | wc -l
+             $gam create inboundssoprofile name "El Goog ${newbase}" signinurl https://www.google.com signouturl https://www.google.com changepasswordurl https://www.google.com entityid ElGoog
+             $gam create inboundssocredential profile "El Goog ${newbase}" generate_key
+             $gam create inboundssoassignment profile "El Goog ${newbase}" orgunit "${newou}" mode SAML_SSO
+             $gam delete ou "${newou}"
              #$gam print printers
              #$gam create printer displayname "${newbase}" uri ipp://localhost:631 driverless description "made by $(gam_user)" ou /
              #export CUSTOMER_ID="C01wfv983"

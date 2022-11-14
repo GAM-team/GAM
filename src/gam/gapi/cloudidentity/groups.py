@@ -935,6 +935,12 @@ def group_email_to_id(ci, group, i=0, count=0):
         return None
 
 
+def group_id_to_email(ci, group_id):
+    return gapi.call(ci.groups(),
+                         'get',
+                         fields='groupKey/id',
+                         name=group_id).get('groupKey', {}).get('id')
+
 def membership_email_to_id(ci, parent, membership, i=0, count=0):
     membership = gam.normalizeEmailAddressOrUID(membership)
     try:
