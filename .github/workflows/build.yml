@@ -565,6 +565,7 @@ jobs:
              export newbuilding="${newbase}-building"
              export newresource="${newbase}-resource"
              export newou="/aaaGithub Actions/${newbase}"
+             echo "Creating OrgUnit ${newou}"
              $gam create ou "${newou}"
              export GAM_THREADS=5
              echo email > sample.csv;
