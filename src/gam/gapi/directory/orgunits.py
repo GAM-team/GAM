@@ -37,9 +37,7 @@ def _getAllParentOrgUnitsForUser(user, cd=None):
 
 def create():
     cd = gapi_directory.build()
-    print(f'sys.arg: {sys.argv[3]}')
     name = getOrgUnitItem(sys.argv[3], pathOnly=True, absolutePath=False)
-    print(f'name: {name}')
     parent = ''
     body = {}
     i = 4
@@ -69,15 +67,12 @@ def create():
         orgUnitPath = parent + name
     else:
         orgUnitPath = parent + '/' + name
-    print(f'orgunitPath: {orgUnitPath}')
     if orgUnitPath.count('/') > 1:
         body['parentOrgUnitPath'], body['name'] = orgUnitPath.rsplit('/', 1)
     else:
         body['parentOrgUnitPath'] = '/'
         body['name'] = orgUnitPath[1:]
     parent = body['parentOrgUnitPath']
-    print('DEBUG DEBUG DEBUG')
-    print(f'body: {body}')
     gapi.call(cd.orgunits(),
               'insert',
               customerId=GC_Values[GC_CUSTOMER_ID],

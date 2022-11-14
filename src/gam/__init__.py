@@ -11701,7 +11701,7 @@ def ProcessGAMCommand(args):
                 gapi_cloudidentity_inboundsso.delete_profile()
             elif argument in ['nickname', 'alias']:
                 doDeleteAlias()
-            elif argument == 'org':
+            elif argument in ['org', 'ou', 'orgunit']:
                 gapi_directory_orgunits.delete()
             elif argument in ['inboundssocredential', 'inboundssocredentials']:
                 gapi_cloudidentity_inboundsso.delete_credentials()
