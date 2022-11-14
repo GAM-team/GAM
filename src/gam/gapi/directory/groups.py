@@ -189,7 +189,7 @@ def info(group_name=None):
             pass
     print('')
     print('Group Settings:')
-    for key, value in list(basic_info.items()):
+    for key, value in sorted(list(basic_info.items())):
         if (key in ['kind', 'etag']) or ((key == 'aliases') and
                                          (not getAliases)):
             continue
@@ -199,7 +199,7 @@ def info(group_name=None):
                 print(f'  {val}')
         else:
             print(f' {key}: {value}')
-    for key, value in list(settings.items()):
+    for key, value in sorted(list(settings.items())):
         if key in ['kind', 'etag', 'description', 'email', 'name']:
             continue
         print(f' {key}: {value}')
@@ -1217,6 +1217,8 @@ GROUP_SETTINGS_LIST_PATTERN = re.compile(r'([A-Z][A-Z_]+[A-Z]?)')
 def getGroupAttrValue(myarg, value, gs_object, gs_body, function):
     if myarg == 'collaborative':
         myarg = 'enablecollaborativeinbox'
+    elif myarg == 'gal':
+        myarg = 'includeinglobaladdresslist'
     for (attrib,
          params) in list(gs_object['schemas']['Groups']['properties'].items()):
         if attrib in ['kind', 'etag', 'email']:
