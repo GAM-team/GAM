@@ -681,6 +681,7 @@ jobs:
              $gam user $gam_user add drivefile localfile gam.py parentid "${driveid}"
              $gam user $gam_user update shareddrive "${driveid}" ou "${newou}"
              $gam user $gam_user show shareddrives asadmin
+             $gam user $gam_user update shareddrive "${driveid}" ou / # so we can delete our OU...
              $gam user $gam_user delete shareddrive "${driveid}" nukefromorbit
              echo "printer model count:"
              $gam print printermodels | wc -l
