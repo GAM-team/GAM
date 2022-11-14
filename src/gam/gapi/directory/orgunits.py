@@ -73,6 +73,8 @@ def create():
         body['parentOrgUnitPath'] = '/'
         body['name'] = orgUnitPath[1:]
     parent = body['parentOrgUnitPath']
+    print('DEBUG DEBUG DEBUG')
+    print(body)
     gapi.call(cd.orgunits(),
               'insert',
               customerId=GC_Values[GC_CUSTOMER_ID],
