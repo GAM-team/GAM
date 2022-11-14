@@ -557,7 +557,7 @@ jobs:
              $gam oauth info
              $gam info domain
              $gam oauth refresh
-             $gam info use
+             $gam info user
              export tstamp=$($PYTHON -c "import time; print(time.time_ns())")
              export newbase=gha_test_$JID_$tstamp
              export newuser=$newbase@pdl.jaylee.us

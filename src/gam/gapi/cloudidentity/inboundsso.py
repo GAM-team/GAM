@@ -239,6 +239,8 @@ def create_credentials():
         controlflow.system_error_exit(3,
                                       'Create did not finish {result}')
 
+
+'''gam delete inboundssocredential'''
 def delete_credentials(ci=None, name=None):
     if not ci:
         ci = build()
@@ -253,6 +255,7 @@ def delete_credentials(ci=None, name=None):
         controlflow.system_error_exit(3, 'Delete did not finish {result}')
 
 
+'''gam print inboundssocredentials'''
 def print_credentials():
     ci = build()
     i = 3
@@ -284,6 +287,8 @@ def print_credentials():
             display.print_json(c)
             print()
 
+
+'''parse command for create/update inboundssoassignment'''
 def parse_assignment(body, i, ci):
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
@@ -326,6 +331,7 @@ def parse_assignment(body, i, ci):
     return body
 
 
+'''gam create inboundssoassignment'''
 def create_assignment():
     ci = build()
     body = {
@@ -338,6 +344,7 @@ def create_assignment():
     display.print_json(result)
 
 
+'''gam update inboundssoassignment'''
 def update_assignment():
     ci = build()
     name = sys.argv[3]
@@ -352,6 +359,8 @@ def update_assignment():
                        )
     display.print_json(result)
 
+
+'''gam print inboundssoassignments'''
 def print_assignments():
     ci = build()
     customer = get_sso_customer()
