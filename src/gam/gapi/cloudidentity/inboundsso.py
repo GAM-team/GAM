@@ -323,7 +323,7 @@ def parse_assignment(body, i, ci):
                     ci,
                     group)
             i += 2
-        elif myarg in ['ou', 'orgunit']:
+        elif myarg in ['ou', 'org', 'orgunit']:
             body['targetOrgUnit'] = get_orgunit_id(sys.argv[i+1])
             i += 2
         else:
