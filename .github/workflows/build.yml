@@ -727,11 +727,6 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v3
 
-      - name: Set datetime version string
-        id: dateversion
-        run: |
-          echo "dateversion=$(date +'%Y%m%d.%k%M%S')" >> $GITHUB_OUTPUT
-
       - name: VirusTotal Scan
         uses: crazy-max/ghaction-virustotal@v3
         with:
@@ -743,9 +738,8 @@ jobs:
         name: Publish draft release
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: ${{ steps.dateversion.outputs.dateversion }}
+          automatic_release_tag: latest
           prerelease: false
           draft: true
-          title: "GAM ${{ steps.dateversion.outputs.dateversion }}"
           files: |
             gam-binaries/*
