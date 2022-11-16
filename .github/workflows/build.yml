@@ -566,11 +566,11 @@ jobs:
              export newresource="${newbase}-resource"
              export newou="aaaGithub Actions/${newbase}"
              # cleanup old runs
+             GAM_CSV_ROW_FILTER="name:regex:gha_test_${JID}" $gam print vaultholds | $gam csv - gam delete vaulthold "id:~~holdId~~" matter "id:~~matterId~~"
              GAM_CSV_ROW_FILTER="name:regex:gha_test_${JID}" $gam print features | $gam csv - gam delete feature ~name
-             $gam print users query "gha.jid=$JID" | $gam csv - gam delete user ~primaryEmail
              GAM_CSV_ROW_FILTER="name:regex:^gha_test_${JID}" $gam user $gam_user print shareddrives asadmin | $gam csv - gam user $gam_user delete shareddrive ~id nukefromorbit
+             $gam print users query "gha.jid=$JID" | $gam csv - gam delete user ~primaryEmail
              GAM_CSV_ROW_FILTER="name:regex:^gha_test_${JID}" $gam print ous fromparent "aaaGithub Actions" | $gam csv - gam delete ou ~orgUnitId
-             
              echo "Creating OrgUnit ${newou}"
              $gam create ou "${newou}"
              export GAM_THREADS=5
