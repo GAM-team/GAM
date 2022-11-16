@@ -11,6 +11,7 @@ from gam import controlflow
 from gam import display
 from gam import fileutils
 from gam import gapi
+from gam.gapi import errors as gapi_errors
 from gam.gapi import storage as gapi_storage
 from gam.gapi import directory as gapi_directory
 from gam.gapi.directory import orgunits as gapi_directory_orgunits
