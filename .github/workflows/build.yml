@@ -571,6 +571,9 @@ jobs:
              GAM_CSV_ROW_FILTER="name:regex:^gha_test_${JID}" $gam user $gam_user print shareddrives asadmin | $gam csv - gam user $gam_user delete shareddrive ~id nukefromorbit
              $gam print users query "gha.jid=$JID" | $gam csv - gam delete user ~primaryEmail
              GAM_CSV_ROW_FILTER="name:regex:^gha_test_${JID}" $gam print ous fromparent "aaaGithub Actions" | $gam csv - gam delete ou ~orgUnitId
+             GAM_CSV_ROW_FILTER="groupKey.id:regex:^gha_test_${JID}" $gam print cigroups | $gam csv - gam delete cigroup ~groupKey.id
+             GAM_CSV_ROW_FILTER="resourceId:regex:^gha_test_${JID}" $gam print resources | $gam csv - gam delete resource ~resourceId
+             GAM_CSV_ROW_FILTER="buildingId:regex:^gha_test_${JID}" $gam print buildings | $gam csv - gam delete building ~buildingId
              echo "Creating OrgUnit ${newou}"
              $gam create ou "${newou}"
              export GAM_THREADS=5
