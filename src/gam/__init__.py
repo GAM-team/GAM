@@ -11426,6 +11426,8 @@ def ProcessGAMCommand(args):
             i, encoding = getCharSet(i + 1)
             f = fileutils.open_file(filename, encoding=encoding)
             csvFile = csv.DictReader(f)
+            if not csvFile.fieldnames:
+                controlflow.system_error_exit(0, f'CSV file {filename} is empty')
             if (i == len(sys.argv)) or (sys.argv[i].lower() !=
                                         'gam') or (i + 1 == len(sys.argv)):
                 controlflow.system_error_exit(
