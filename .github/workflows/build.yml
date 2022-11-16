@@ -660,8 +660,10 @@ jobs:
              $gam delete hold "GHA hold $newbase" matter $matterid
              $gam update matter $matterid action close
              $gam update matter $matterid action delete
-             #$gam delete user $newuser
-             #$gam undelete user $newuser
+             # shakes off vault hold on user so we can delete
+             $gam print users query "email:${newuser}" orgunitpath | $gam csv - gam update user ~primaryEmail ou ~orgUnitPath
+             $gam delete user $newuser
+             $gam undelete user $newuser
              $gam delete user $newuser
              $gam print users query "gha.jid=$JID" | $gam csv - gam delete user ~primaryEmail
              $gam print mobile
@@ -677,8 +679,8 @@ jobs:
              $gam report users fields accounts:is_less_secure_apps_access_allowed,gmail:last_imap_time,gmail:last_pop_time filters "accounts:last_login_time>2019-01-01T00:00:00.000Z" todrive
              $gam report admin start -3d todrive
              $gam print devices nopersonaldevices nodeviceusers filter "serial:$JID$JID$JID$JID-" | $gam csv - gam delete device id ~name
-             #$gam print userinvitations
-             #$gam print userinvitations | $gam csv - gam send userinvitation ~name
+             $gam print userinvitations
+             $gam print userinvitations | $gam csv - gam send userinvitation ~name
              $gam create caalevel "zzz_${newbase}" basic condition ipsubnetworks 1.1.1.1/32,2.2.2.2/32 endcondition
              $gam print caalevels
              $gam delete caalevel "zzz_${newbase}"
