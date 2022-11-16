@@ -566,10 +566,11 @@ jobs:
              export newresource="${newbase}-resource"
              export newou="aaaGithub Actions/${newbase}"
              # cleanup old runs
-             GAM_CSV_ROW_FILTER="name:regex:^VC-gha_test_${JID}" $gam print features | $gam csv - gam delete feature ~name
+             GAM_CSV_ROW_FILTER="name:regex:gha_test_${JID}" $gam print features | $gam csv - gam delete feature ~name
              $gam print users query "gha.jid=$JID" | $gam csv - gam delete user ~primaryEmail
              GAM_CSV_ROW_FILTER="name:regex:^gha_test_${JID}" $gam user $gam_user print shareddrives asadmin | $gam csv - gam user $gam_user delete shareddrive ~id nukefromorbit
              GAM_CSV_ROW_FILTER="name:regex:^gha_test_${JID}" $gam print ous fromparent "aaaGithub Actions" | $gam csv - gam delete ou ~orgUnitId
+             
              echo "Creating OrgUnit ${newou}"
              $gam create ou "${newou}"
              export GAM_THREADS=5
@@ -623,6 +624,7 @@ jobs:
              $gam user $newuser delete label --ALL_LABELS--
              GAM_CSV_ROW_FILTER="name:regex:gha-test-${JID}" $gam print features | $gam csv - gam delete feature ~name
              $gam create feature name VC-$newbase
+             $gam create feature name Whiteboard-$newbase
              $gam create building "My Building - $newbase" id $newbuilding floors 1,2,3,4,5,6,7,8,9,10,11,12,14,15 description "No 13th floor here..."
              $gam create resource $newresource "Resource Calendar $tstamp" capacity 25 features Whiteboard-$newbase,VC-$newbase building $newbuilding floor 15 type Room
              $gam info resource $newresource
