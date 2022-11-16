@@ -663,8 +663,6 @@ jobs:
              # shakes off vault hold on user so we can delete
              $gam print users query "email:${newuser}" orgunitpath | $gam csv - gam update user ~primaryEmail ou ~orgUnitPath
              $gam delete user $newuser
-             $gam undelete user $newuser
-             $gam delete user $newuser
              $gam print users query "gha.jid=$JID" | $gam csv - gam delete user ~primaryEmail
              $gam print mobile
              $gam print devices
