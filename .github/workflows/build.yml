@@ -568,7 +568,7 @@ jobs:
              # cleanup old runs
              GAM_CSV_ROW_FILTER="name:regex:^VC-gha_test_${JID}" $gam print features | $gam csv - gam delete feature ~name
              $gam print users query "gha.jid=$JID" | $gam csv - gam delete user ~primaryEmail
-             GAM_CSV_ROW_FILTER="name:regex:^gha_test_${JID}" gamd user $gam_user print shareddrives asadmin | gamd csv - gam user $gam_user delete shareddrive ~id nukefromorbit
+             GAM_CSV_ROW_FILTER="name:regex:^gha_test_${JID}" $gam user $gam_user print shareddrives asadmin | $gam csv - gam user $gam_user delete shareddrive ~id nukefromorbit
              GAM_CSV_ROW_FILTER="name:regex:^gha_test_${JID}" $gam print ous fromparent "aaaGithub Actions" | $gam csv - gam delete ou ~orgUnitId
              echo "Creating OrgUnit ${newou}"
              $gam create ou "${newou}"
