@@ -663,6 +663,7 @@ jobs:
              #$gam delete user $newuser
              #$gam undelete user $newuser
              $gam delete user $newuser
+             $gam print users query "gha.jid=$JID" | $gam csv - gam delete user ~primaryEmail
              $gam print mobile
              $gam print devices
              $gam print browsers
