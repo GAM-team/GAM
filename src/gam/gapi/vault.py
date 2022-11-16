@@ -983,7 +983,7 @@ def printHolds():
                                    'holds',
                                    throw_reasons=[gapi_errors.ErrorReason.FOUR_O_O],
                                    matterId=matterId)
-        except gapi_errors.GapiInvalidError:
+        except googleapiclient.errors.HttpError:
             continue
         for hold in holds:
             display.add_row_titles_to_csv_file(
