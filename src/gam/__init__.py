@@ -11624,6 +11624,8 @@ def ProcessGAMCommand(args):
                 gapi_directory_customer.doGetCustomerInfo()
             elif argument in ['inboundssoprofile', 'inboundssoprofiles']:
                 gapi_cloudidentity_inboundsso.info_profile()
+            elif argument in ['inboundssoassignment', 'inboundssoassignments']:
+                gapi_cloudidentity_inboundsso.info_assignment()
             elif argument in ['org', 'ou', 'orgunit']:
                 gapi_directory_orgunits.info()
             elif argument == 'resource':
@@ -11795,13 +11797,13 @@ def ProcessGAMCommand(args):
             elif argument in ['groupmembers', 'groupsmembers']:
                 gapi_directory_groups.print_members()
             elif argument in ['inboundssoassignment', 'inboundssoassignments']:
-                gapi_cloudidentity_inboundsso.print_assignments()
+                gapi_cloudidentity_inboundsso.print_show_assignments()
             elif argument in ['cigroupmembers', 'cigroupsmembers']:
                 gapi_cloudidentity_groups.print_members()
             elif argument in ['inboundssoprofile', 'inboundssoprofiles']:
-                gapi_cloudidentity_inboundsso.print_profiles()
+                gapi_cloudidentity_inboundsso.print_show_profiles()
             elif argument in ['inboundssocredential', 'inboundssocredentials']:
-                gapi_cloudidentity_inboundsso.print_credentials()
+                gapi_cloudidentity_inboundsso.print_show_credentials()
             elif argument in ['orgs', 'ous']:
                 gapi_directory_orgunits.print_()
             elif argument == 'privileges':
@@ -11902,6 +11904,12 @@ def ProcessGAMCommand(args):
                 gapi_licensing.show()
             elif argument in ['project', 'projects']:
                 doPrintShowProjects(False)
+            elif argument in ['inboundssoprofile', 'inboundssoprofiles']:
+                gapi_cloudidentity_inboundsso.print_show_profiles('show')
+            elif argument in ['inboundssocredential', 'inboundssocredentials']:
+                gapi_cloudidentity_inboundsso.print_show_credentials('show')
+            elif argument in ['inboundssoassignment', 'inboundssoassignments']:
+                gapi_cloudidentity_inboundsso.print_show_assignments('show')
             elif argument in ['sakey', 'sakeys']:
                 doShowServiceAccountKeys()
             elif argument in ['browsertoken', 'browsertokens']:

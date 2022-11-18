@@ -1,5 +1,6 @@
 """Methods related to Cloud Identity Inbound (Google as SP) SAML SSO"""
 from datetime import datetime
+import re
 import sys
 
 import dateutil.parser
@@ -11,6 +12,7 @@ from gam import controlflow
 from gam import display
 from gam import fileutils
 from gam import gapi
+from gam import utils
 from gam.gapi import errors as gapi_errors
 from gam.gapi import cloudidentity as gapi_cloudidentity
 from gam.gapi import directory as gapi_directory
@@ -91,6 +93,41 @@ def profile_displayname_to_name(displayName, ci=None):
         controlflow.system_error_exit(3, err_text)
 
 
+'''get an assignment based on target'''
+def assignment_by_target(target, ci=None):
+    if not ci:
+        ci = build()
+    group_pattern = r'^groups/[^/]+$'
+    ou_pattern = r'^orgUnits/[^/]+$'
+    if re.match(group_pattern, target):
+        target_type = 'targetGroup'
+    elif re.match(ou_pattern, target):
+        target_type = 'targetOrgUnit'
+    elif target.lower().startswith('group:'):
+        target_type = 'targetGroup'
+        group_email = target[6:]
+        target = gapi_cloudidentity_groups.group_email_to_id(
+                    ci,
+                    group_email)
+    elif target.lower().startswith('orgunit:'):
+        target_type = 'targetOrgUnit'
+        ou_name = target[8:]
+        target = get_orgunit_id(ou_name)
+    else:
+        controlflow.system_error_exit(3, 'assignments should be prefixed with group: or orgunit:')
+    customer = get_sso_customer()
+    _filter = f'customer=="{customer}"'
+    assignments = gapi.get_all_pages(ci.inboundSsoAssignments(),
+                                     'list',
+                                     'inboundSsoAssignments',
+                                     filter=_filter,
+                                     )
+    for assignment in assignments:
+        if target_type in assignment and assignment[target_type] == target:
+            return assignment
+    controlflow.system_error_exit(3, f'No SSO profile assigned to group {target}')
+
+
 '''gam create inboundssoprofile'''
 def create_profile():
     ci = build() 
@@ -104,18 +141,42 @@ def create_profile():
 
 
 '''gam print inboundssoprofiles'''
-def print_profiles():
+def print_show_profiles(action='print'):
     customer = get_sso_customer()
     _filter = f'customer=="{customer}"'
     ci = build() 
+    todrive = False
+    i = 3
+    while i < len(sys.argv):
+        myarg = sys.argv[i].lower().replace('_', '')
+        if myarg == 'todrive':
+            todrive = True
+            i += 1
+        else:
+            controlflow.invalid_argument_exit(myarg, 'gam print inboundssoprofiles')
+
     profiles = gapi.get_all_pages(ci.inboundSamlSsoProfiles(),
                                 'list',
                                 'inboundSamlSsoProfiles',
                                 filter=_filter,
                                 )
-    for profile in profiles:
-        display.print_json(profile)
-        print()
+    if action == 'show':
+        for profile in profiles:
+            display.print_json(profile)
+            print()
+    elif action == 'print':
+        csv_rows = []
+        titles = []
+        for profile in profiles:
+            row = utils.flatten_json(profile)
+            for item in row:
+                if item not in titles:
+                    titles.append(item)
+            csv_rows.append(row)
+        display.write_csv_file(csv_rows,
+                               titles,
+                               'Inbound SSO Profiles',
+                               todrive)
 
 
 '''gam update inboundssoprofile'''
@@ -134,15 +195,19 @@ def update_profile():
 
 
 '''gam info inboundssoprofile'''
-def info_profile():
-    ci = build()
-    name = profile_displayname_to_name(sys.argv[3], ci)
+def info_profile(return_only=False, displayName=None, ci=None):
+    if not ci:
+        ci = build()
+    if not displayName:
+        displayName = sys.argv[3]
+    name = profile_displayname_to_name(displayName, ci)
     result = gapi.call(ci.inboundSamlSsoProfiles(),
                        'get',
                        name=name,
                        )
+    if return_only:
+        return result
     display.print_json(result)
-
 
 '''gam delete inboundssoprofile'''
 def delete_profile():
@@ -256,16 +321,20 @@ def delete_credentials(ci=None, name=None):
 
 
 '''gam print inboundssocredentials'''
-def print_credentials():
+def print_show_credentials(action='print'):
     ci = build()
+    todrive = False
     i = 3
     profiles = []
-    while i > len(sys.argv):
+    while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
         if myarg in ['profile', 'profiles']:
             profiles = sys.argv[i+1].split(',')
             for profile in profiles:
                 profile = profile_displayname_to_name(profile, ci)
+        elif myarg == 'todrive':
+            todrive = True
+            i += 1
         else:
             controlflow.invalid_argument_exit(myarg, 'gam print inboundssocredentials')
     if not profiles:
@@ -278,15 +347,31 @@ def print_credentials():
                                       filter=_filter,
                                       )
         profiles = [p['name'] for p in profiles]
+    if action == 'print':
+        titles = []
+        csv_rows = []
+    credentials = []
     for profile in profiles:
-        credentials = gapi.get_all_pages(ci.inboundSamlSsoProfiles().idpCredentials(),
+        results = gapi.get_all_pages(ci.inboundSamlSsoProfiles().idpCredentials(),
                                          'list',
                                          'idpCredentials',
                                          parent=profile)
+        credentials.extend(results)
+    if action == 'show':
         for c in credentials:
             display.print_json(c)
             print()
-
+    elif action == 'print':
+        for c in credentials:
+            csv_row = utils.flatten_json(c)
+            for item in csv_row:
+                if item not in titles:
+                    titles.append(item)
+            csv_rows.append(csv_row)
+        display.write_csv_file(csv_rows,
+                               titles,
+                               'Inbound SSO Credentials',
+                               todrive)
 
 '''parse command for create/update inboundssoassignment'''
 def parse_assignment(body, i, ci):
@@ -347,7 +432,7 @@ def create_assignment():
 '''gam update inboundssoassignment'''
 def update_assignment():
     ci = build()
-    name = sys.argv[3]
+    name = assignment_target_to_name(sys.argv[3], ci)
     body = {}
     body = parse_assignment(body, 4, ci)
     updateMask = ','.join(list(body.keys()))
@@ -360,11 +445,32 @@ def update_assignment():
     display.print_json(result)
 
 
+'''gam info inboundssoassignment'''
+def info_assignment():
+    ci = build()
+    assignment = assignment_by_target(sys.argv[3], ci)
+    profile = assignment.get('samlSsoInfo', {}).get('inboundSamlSsoProfile')
+    if profile:
+        assignment['samlSsoInfo']['inboundSamlSsoProfile'] = info_profile(return_only=True,
+                displayName=f'id:{profile}',
+                                                                       ci=ci)
+    display.print_json(assignment)
+
+
 '''gam print inboundssoassignments'''
-def print_assignments():
+def print_show_assignments(action='print'):
     ci = build()
     customer = get_sso_customer()
     _filter = f'customer=="{customer}"'
+    todrive = False
+    i = 3
+    while i < len(sys.argv):
+        myarg = sys.argv[i].lower().replace('_', '')
+        if myarg == 'todrive':
+            todrive = True
+            i += 1
+        else:
+            controlflow.invalid_argument_exit(myarg, 'gam print inboundssoassignments')
     assignments = gapi.get_all_pages(ci.inboundSsoAssignments(),
                                 'list',
                                 'inboundSsoAssignments',
@@ -379,6 +485,20 @@ def print_assignments():
             ou_id = ou_id.split('/')[1]
             ou_id = f'id:{ou_id}'
             assignment['orgUnit'] = gapi_directory_orgunits.orgunit_from_orgunitid(ou_id, cd)
-        display.print_json(assignment)
-        print()
-
+    if action == 'show':
+        for assignment in assignments:
+            display.print_json(assignment)
+            print()
+    elif action == 'print':
+        titles = []
+        csv_rows = []
+        for assignment in assignments:
+            csv_row = utils.flatten_json(assignment)
+            for item in csv_row:
+                if item not in titles:
+                    titles.append(item)
+            csv_rows.append(csv_row)
+        display.write_csv_file(csv_rows,
+                               titles,
+                               'Inbound SSO Assignments',
+                               todrive)

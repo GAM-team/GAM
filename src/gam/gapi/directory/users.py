@@ -2,6 +2,7 @@ import sys
 from time import sleep
 
 import gam
+from gam import controlflow
 from gam import display
 from gam import gapi
 from gam.gapi import directory as gapi_directory
@@ -18,7 +19,7 @@ def delete():
                   userKey=user_email,
                   throw_reasons=[gapi_errors.ErrorReason.CONDITION_NOT_MET])
     except gam.gapi.errors.GapiConditionNotMetError as err:
-        display.print_error(
+        controlflow.system_error_exit(3,
             f'{err} The user {user_email} may be (or have recently been) on Google Vault Hold and thus not eligible for deletion. You can check holds with "gam user <email> show vaultholds".'
         )
 
