@@ -329,14 +329,11 @@ def print_show_credentials(action='print'):
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
         if myarg in ['profile', 'profiles']:
-            profiles = sys.argv[i+1].split(',')
-            for profile in profiles:
-                profile = profile_displayname_to_name(profile, ci)
+            profiles = [profile_displayname_to_name(profile, ci) for profile in sys.argv[i+1].split(',')]
+            i += 2
         elif myarg == 'todrive':
             todrive = True
             i += 1
-            for profile in sys.argv[i+1].replace(',', ' ').split():
-                profiles.append(profile_displayname_to_name(profile, ci))
         else:
             controlflow.invalid_argument_exit(myarg, 'gam print inboundssocredentials')
     if not profiles:
@@ -486,7 +483,7 @@ def print_show_assignments(action='print'):
             ou_id = assignment['targetOrgUnit']
             ou_id = ou_id.split('/')[1]
             ou_id = f'id:{ou_id}'
-            assignment['orgUnit'] = gapi_directory_orgunits.orgunit_from_orgunitid(ou_id, cd)
+            assignment['targetOrgUnitPath'] = gapi_directory_orgunits.orgunit_from_orgunitid(ou_id, cd)
     if action == 'show':
         for assignment in assignments:
             display.print_json(assignment)
