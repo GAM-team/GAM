@@ -565,6 +565,17 @@ jobs:
              export newbuilding="${newbase}-building"
              export newresource="${newbase}-resource"
              export newou="aaaGithub Actions/${newbase}"
+             
+             # cleanup old runs
+             GAM_CSV_ROW_FILTER="name:regex:gha_test_${JID}_" $gam print vaultholds | $gam csv - gam delete vaulthold "id:~~holdId~~" matter "id:~~matterId~~"
+             GAM_CSV_ROW_FILTER="name:regex:gha_test_${JID}_" $gam print features | $gam csv - gam delete feature ~name
+             GAM_CSV_ROW_FILTER="name:regex:^gha_test_${JID}_" $gam user $gam_user print shareddrives asadmin | $gam csv - gam user $gam_user delete shareddrive ~id nukefromorbit
+             $gam print users query "gha.jid=$JID" | $gam csv - gam delete user ~primaryEmail
+             GAM_CSV_ROW_FILTER="name:regex:^gha_test_${JID}_" $gam print ous fromparent "aaaGithub Actions" | $gam csv - gam delete ou ~orgUnitId
+             GAM_CSV_ROW_FILTER="groupKey.id:regex:^gha_test_${JID}_" $gam print cigroups | $gam csv - gam delete cigroup ~groupKey.id
+             GAM_CSV_ROW_FILTER="resourceId:regex:^gha_test_${JID}_" $gam print resources | $gam csv - gam delete resource ~resourceId
+             GAM_CSV_ROW_FILTER="buildingId:regex:^gha_test_${JID}_" $gam print buildings | $gam csv - gam delete building ~buildingId
+             
              echo "Creating OrgUnit ${newou}"
              $gam create ou "${newou}"
              export GAM_THREADS=5
@@ -617,8 +628,8 @@ jobs:
              $gam users "$newbase-bulkuser-7 $newbase-bulkuser-8 $newbase-bulkuser-9" modify messages query in:anywhere maxtomodify 99999 addlabel IMPORTANT addlabel STARRED doit
              $gam user $newuser delete label --ALL_LABELS--
              GAM_CSV_ROW_FILTER="name:regex:gha-test-${JID}" $gam print features | $gam csv - gam delete feature ~name
-             $gam create feature name Whiteboard-$newbase
              $gam create feature name VC-$newbase
+             $gam create feature name Whiteboard-$newbase
              $gam create building "My Building - $newbase" id $newbuilding floors 1,2,3,4,5,6,7,8,9,10,11,12,14,15 description "No 13th floor here..."
              $gam create resource $newresource "Resource Calendar $tstamp" capacity 25 features Whiteboard-$newbase,VC-$newbase building $newbuilding floor 15 type Room
              $gam info resource $newresource
@@ -654,8 +665,8 @@ jobs:
              $gam delete hold "GHA hold $newbase" matter $matterid
              $gam update matter $matterid action close
              $gam update matter $matterid action delete
-             #$gam delete user $newuser
-             #$gam undelete user $newuser
+             # shakes off vault hold on user so we can delete
+             $gam print users query "email:${newuser}" orgunitpath | $gam csv - gam update user ~primaryEmail ou ~orgUnitPath
              $gam delete user $newuser
              $gam print users query "gha.jid=$JID" | $gam csv - gam delete user ~primaryEmail
              $gam print mobile
@@ -671,8 +682,8 @@ jobs:
              $gam report users fields accounts:is_less_secure_apps_access_allowed,gmail:last_imap_time,gmail:last_pop_time filters "accounts:last_login_time>2019-01-01T00:00:00.000Z" todrive
              $gam report admin start -3d todrive
              $gam print devices nopersonaldevices nodeviceusers filter "serial:$JID$JID$JID$JID-" | $gam csv - gam delete device id ~name
-             #$gam print userinvitations
-             #$gam print userinvitations | $gam csv - gam send userinvitation ~name
+             $gam print userinvitations
+             $gam print userinvitations | $gam csv - gam send userinvitation ~name
              $gam create caalevel "zzz_${newbase}" basic condition ipsubnetworks 1.1.1.1/32,2.2.2.2/32 endcondition
              $gam print caalevels
              $gam delete caalevel "zzz_${newbase}"
@@ -727,11 +738,6 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v3
 
-      - name: Set datetime version string
-        id: dateversion
-        run: |
-          echo "dateversion=$(date +'%Y%m%d.%k%M%S')" >> $GITHUB_STATE
-
       - name: VirusTotal Scan
         uses: crazy-max/ghaction-virustotal@v3
         with:
@@ -743,9 +749,8 @@ jobs:
         name: Publish draft release
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: ${{ steps.dateversion.outputs.dateversion }}
+          automatic_release_tag: latest
           prerelease: false
           draft: true
-          title: "GAM ${{ steps.dateversion.outputs.dateversion }}"
           files: |
             gam-binaries/*

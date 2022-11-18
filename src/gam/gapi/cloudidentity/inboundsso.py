@@ -252,7 +252,7 @@ def create_credentials():
             key_size = int(sys.argv[i+1])
             if key_size not in allowed_sizes:
                 controlflow.expected_argument_exit('key_size',
-                                                   ALLOWED_KEY_SIZES,
+                                                   allowed_sizes,
                                                    key_size)
             i += 2
         else:
@@ -335,6 +335,8 @@ def print_show_credentials(action='print'):
         elif myarg == 'todrive':
             todrive = True
             i += 1
+            for profile in sys.argv[i+1].replace(',', ' ').split():
+                profiles.append(profile_displayname_to_name(profile, ci))
         else:
             controlflow.invalid_argument_exit(myarg, 'gam print inboundssocredentials')
     if not profiles:
@@ -408,7 +410,7 @@ def parse_assignment(body, i, ci):
                     ci,
                     group)
             i += 2
-        elif myarg in ['ou', 'orgunit']:
+        elif myarg in ['ou', 'org', 'orgunit']:
             body['targetOrgUnit'] = get_orgunit_id(sys.argv[i+1])
             i += 2
         else:

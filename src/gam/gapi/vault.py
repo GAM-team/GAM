@@ -11,6 +11,7 @@ from gam import controlflow
 from gam import display
 from gam import fileutils
 from gam import gapi
+from gam.gapi import errors as gapi_errors
 from gam.gapi import storage as gapi_storage
 from gam.gapi import directory as gapi_directory
 from gam.gapi.directory import orgunits as gapi_directory_orgunits
@@ -976,10 +977,14 @@ def printHolds():
     for matterId in matterIds:
         i += 1
         sys.stderr.write(f'Retrieving holds for matter {matterId} ({i}/{matter_count})\n')
-        holds = gapi.get_all_pages(v.matters().holds(),
+        try:
+            holds = gapi.get_all_pages(v.matters().holds(),
                                    'list',
                                    'holds',
+                                   throw_reasons=[gapi_errors.ErrorReason.FOUR_O_O],
                                    matterId=matterId)
+        except googleapiclient.errors.HttpError:
+            continue
         for hold in holds:
             display.add_row_titles_to_csv_file(
                 utils.flatten_json(hold, flattened={'matterId': matterId}),
