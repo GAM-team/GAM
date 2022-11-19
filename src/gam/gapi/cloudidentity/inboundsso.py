@@ -113,7 +113,7 @@ def assignment_by_target(target, ci=None):
         ou_name = target[8:]
         target = get_orgunit_id(ou_name)
     else:
-        controlflow.system_error_exit(3, 'assignments should be prefixed with group: or orgunit:')
+        controlflow.system_error_exit(3, 'assignments should be prefixed with group:, groups/, orgunit: or orgunist/')
     customer = get_sso_customer()
     _filter = f'customer=="{customer}"'
     assignments = gapi.get_all_pages(ci.inboundSsoAssignments(),
@@ -123,7 +123,7 @@ def assignment_by_target(target, ci=None):
     for assignment in assignments:
         if target_type in assignment and assignment[target_type] == target:
             return assignment
-    controlflow.system_error_exit(3, f'No SSO profile assigned to group {target}')
+    controlflow.system_error_exit(3, f'No SSO profile assigned to {target_type} {target}')
 
 
 '''gam create inboundssoprofile'''
@@ -407,9 +407,18 @@ def parse_assignment(body, i, ci):
     return body
 
 
+def update_assignment_target_names(assignment, ci, cd):
+    if 'targetGroup' in assignment:
+        assignment['targetGroupEmail'] = gapi_cloudidentity_groups.group_id_to_email(ci, assignment['targetGroup'])
+    elif 'targetOrgUnit' in assignment:
+        ou_id = assignment['targetOrgUnit'].split('/')[1]
+        assignment['targetOrgUnitPath'] = gapi_directory_orgunits.orgunit_from_orgunitid(f'id:{ou_id}', cd)
+
+
 '''gam create inboundssoassignment'''
 def create_assignment():
     ci = build()
+    cd = gapi_directory.build()
     body = {
             'customer': get_sso_customer(),
            }
@@ -419,6 +428,7 @@ def create_assignment():
                        body=body)
     if result.get('done'):
        print(f'Created assignment {result["response"]["name"]}')
+       update_assignment_target_names(result['response'], ci, cd)
        display.print_json(result['response'])
     else:
         controlflow.system_error_exit(3, 'Create did not finish {result}')
@@ -431,9 +441,11 @@ def get_assignment_name(name):
     name = f'inboundSsoAssignments/{name}'
   return name
 
+
 '''gam update inboundssoassignment'''
 def update_assignment():
     ci = build()
+    cd = gapi_directory.build()
     name = get_assignment_name(sys.argv[3])
     body = parse_assignment({}, 4, ci)
     updateMask = ','.join(list(body.keys()))
@@ -444,6 +456,7 @@ def update_assignment():
                        body=body)
     if result.get('done'):
        print(f'Updated assignment {result["response"]["name"]}')
+       update_assignment_target_names(result['response'], ci, cd)
        display.print_json(result['response'])
     else:
         controlflow.system_error_exit(3, 'Update did not finish {result}')
@@ -452,7 +465,9 @@ def update_assignment():
 '''gam info inboundssoassignment'''
 def info_assignment():
     ci = build()
+    cd = gapi_directory.build()
     assignment = assignment_by_target(sys.argv[3], ci)
+    update_assignment_target_names(assignment, ci, cd)
     profile = assignment.get('samlSsoInfo', {}).get('inboundSamlSsoProfile')
     if profile:
         assignment['samlSsoInfo']['inboundSamlSsoProfile'] = info_profile(return_only=True,
@@ -464,6 +479,7 @@ def info_assignment():
 '''gam print inboundssoassignments'''
 def print_show_assignments(action='print'):
     ci = build()
+    cd = gapi_directory.build()
     customer = get_sso_customer()
     _filter = f'customer=="{customer}"'
     todrive = False
@@ -479,23 +495,16 @@ def print_show_assignments(action='print'):
                                      'list',
                                      'inboundSsoAssignments',
                                      filter=_filter)
-    cd = gapi_directory.build()
-    for assignment in assignments:
-        if 'targetGroup' in assignment:
-            assignment['groupEmail'] = gapi_cloudidentity_groups.group_id_to_email(ci, assignment['targetGroup'])
-        if 'targetOrgUnit' in assignment:
-            ou_id = assignment['targetOrgUnit']
-            ou_id = ou_id.split('/')[1]
-            ou_id = f'id:{ou_id}'
-            assignment['targetOrgUnitPath'] = gapi_directory_orgunits.orgunit_from_orgunitid(ou_id, cd)
     if action == 'show':
         for assignment in assignments:
+            update_assignment_target_names(assignment, ci, cd)
             display.print_json(assignment)
             print()
     elif action == 'print':
         titles = []
         csv_rows = []
         for assignment in assignments:
+            update_assignment_target_names(assignment, ci, cd)
             csv_row = utils.flatten_json(assignment)
             for item in csv_row:
                 if item not in titles:

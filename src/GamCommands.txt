@@ -1548,21 +1548,41 @@ gam print group-members|groups-members [todrive]
 	[roles <GroupRoleList>] [membernames] [fields <MembersFieldNameList>]
 	[includederivedmembership]
 
-gam create inboundssoprofile name <String> entityid <String> loginurl <URL> logouturl <URL> changepasswordurl <URL>
-gam update inboundssoprofile <String> [entityid <String>] [loginurl <URL>] [logouturl <URL>] [changepasswordurl <URL>]
-gam info inboundssoprofile <String>
-gam delete inboundssoprofile <String>
-gam print inboundssoprofiles
+<SSOProfileDisplayName> ::= <String>
+<SSOProfileName> ::= id:inboundSamlSsoProfiles/<String>
+<SSOProfileItem> ::= <SSOProfileDisplayName>|<SSOProfileName>
+<SSOProfileItemList> ::= "<SSOProfileItem>(,<SSOProfileItem>)*"
 
-gam create inboundssocredentials profile <String> (pemfile <FileName>)|(generatekey [keysize 1024|2048|4096]) [replaceolddest]
-gam delete inboundssocredentials <String>
-gam print inboundssocredentials [profile|profiles <StringList>]
+gam create inboundssoprofile [name <SSOProfileDisplayName>]
+	[entityid <String>] [loginurl <URL>] [logouturl <URL>] [changepasswordurl <URL>]
+gam update inboundssoprofile <SSOProfileItem>
+	[entityid <String>] [loginurl <URL>] [logouturl <URL>] [changepasswordurl <URL>]
+gam delete inboundssoprofile <SSOProfileItem>
+gam info inboundssoprofile <SSOProfileItem>
+gam show inboundssoprofiles
+gam print inboundssoprofiles [todrive]
+
+<SSOCredentialsName> ::= [id:]inboundSamlSsoProfiles/<String>/idpCredentials/<String>
+
+gam create inboundssocredential profile <SSOProfileItem>
+	(pemfile <FileName>)|(generatekey [keysize 1024|2048|4096]) [replaceolddest]
+gam delete inboundssocredential <SSOCredentialsName>
+gam show inboundssocredentials [profile|profiles <SSOProfileItemList>]
+gam print inboundssocredentials [profile|profiles <SSOProfileItemList>] [todrive]
+
+<SSOAssignmentSelector> ::=
+	groups/<String> |
+	group:<EmailAddress> |
+	orgunits/<String> |
+	orgunit:<OrgUnitPath>
 
 gam create inboundssoassignment (group <GroupItem> rank <Number>)|(ou|org|orgunit <OrgUnitItem>)
-	 (mode sso_off)|(mode saml_sso profile <String>)(mode domain_wide_saml_if_enabled) [neverredirect]
+	(mode sso_off)|(mode saml_sso profile <SSOProfileItem>)(mode domain_wide_saml_if_enabled) [neverredirect]
 gam update inboundssoassignment [(group <GroupItem> rank <Number>)|(ou|org|orgunit <OrgUnitItem>)]
-	 [(mode sso_off)|(mode saml_sso profile <String>)(mode domain_wide_saml_if_enabled)] [neverredirect]
-gam print inboundssoassignments
+	[(mode sso_off)|(mode saml_sso profile <SSOProfileItem>)(mode domain_wide_saml_if_enabled)] [neverredirect]
+gam info inboundssoassignment <SSOAssignmentSelector>
+gam show inboundssoassignments
+gam print inboundssoassignments [todrive]
 
 gam send userinvitation <EmailAddress>
 gam cancel userinvitation <EmailAddress>
