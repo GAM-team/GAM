@@ -113,7 +113,7 @@ def assignment_by_target(target, ci=None):
         ou_name = target[8:]
         target = get_orgunit_id(ou_name)
     else:
-        controlflow.system_error_exit(3, 'assignments should be prefixed with group:, groups/, orgunit: or orgunist/')
+        controlflow.system_error_exit(3, 'assignments should be prefixed with group:, groups/, orgunit: or orgunits/')
     customer = get_sso_customer()
     _filter = f'customer=="{customer}"'
     assignments = gapi.get_all_pages(ci.inboundSsoAssignments(),
