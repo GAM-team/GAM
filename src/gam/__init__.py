@@ -9486,7 +9486,7 @@ def doUndeleteUser():
     i = 4
     while i < len(sys.argv):
         myarg = sys.argv[i].lower()
-        if myarg in ['ou', 'org']:
+        if myarg in ['ou', 'org', 'orgunit']:
             orgUnit = gapi_directory_orgunits.makeOrgUnitPathAbsolute(
                 sys.argv[i + 1])
             i += 2
@@ -10187,7 +10187,7 @@ def getUsersToModify(entity_type=None,
             'org_ns',
             'ou_susp',
             'org_susp',
-    ]:
+            ]:
         if entity_type in ['ou_ns', 'org_ns']:
             checkSuspended = False
         elif entity_type in ['ou_susp', 'org_susp']:
@@ -11555,14 +11555,14 @@ def ProcessGAMCommand(args):
                 gapi_cloudidentity_groups.update()
             elif argument in ['nickname', 'alias']:
                 doUpdateAlias()
-            elif argument in ['inboundssoassignment', 'inboundssoasignments']:
-                gapi_cloudidentity_inboundsso.update_assignment()
             elif argument in ['ou', 'org', 'orgunit']:
                 gapi_directory_orgunits.update()
             elif argument == 'resource':
                 gapi_directory_resource.updateResourceCalendar()
             elif argument in ['inboundssoprofile', 'inboundssoprofiles']:
                 gapi_cloudidentity_inboundsso.update_profile()
+            elif argument in ['inboundssoassignment', 'inboundssoasignments']:
+                gapi_cloudidentity_inboundsso.update_assignment()
             elif argument == 'cros':
                 gapi_directory_cros.doUpdateCros()
             elif argument == 'mobile':
@@ -11628,7 +11628,7 @@ def ProcessGAMCommand(args):
                 gapi_cloudidentity_inboundsso.info_profile()
             elif argument in ['inboundssoassignment', 'inboundssoassignments']:
                 gapi_cloudidentity_inboundsso.info_assignment()
-            elif argument in ['org', 'ou', 'orgunit']:
+            elif argument in ['ou', 'org', 'orgunit']:
                 gapi_directory_orgunits.info()
             elif argument == 'resource':
                 gapi_directory_resource.getResourceCalendarInfo()
@@ -11701,12 +11701,12 @@ def ProcessGAMCommand(args):
                 gapi_cloudidentity_devices.delete_user()
             elif argument == 'cigroup':
                 gapi_cloudidentity_groups.delete()
-            elif argument in ['inboundssoprofile', 'inboundssoprofiles']:
-                gapi_cloudidentity_inboundsso.delete_profile()
             elif argument in ['nickname', 'alias']:
                 doDeleteAlias()
-            elif argument in ['org', 'ou', 'orgunit']:
+            elif argument in ['ou', 'org', 'orgunit']:
                 gapi_directory_orgunits.delete()
+            elif argument in ['inboundssoprofile', 'inboundssoprofiles']:
+                gapi_cloudidentity_inboundsso.delete_profile()
             elif argument in ['inboundssocredential', 'inboundssocredentials']:
                 gapi_cloudidentity_inboundsso.delete_credentials()
             elif argument == 'resource':
@@ -11798,14 +11798,14 @@ def ProcessGAMCommand(args):
                 gapi_chromemanagement.printShowCrosTelemetry('print')
             elif argument in ['groupmembers', 'groupsmembers']:
                 gapi_directory_groups.print_members()
-            elif argument in ['inboundssoassignment', 'inboundssoassignments']:
-                gapi_cloudidentity_inboundsso.print_show_assignments()
             elif argument in ['cigroupmembers', 'cigroupsmembers']:
                 gapi_cloudidentity_groups.print_members()
             elif argument in ['inboundssoprofile', 'inboundssoprofiles']:
                 gapi_cloudidentity_inboundsso.print_show_profiles()
             elif argument in ['inboundssocredential', 'inboundssocredentials']:
                 gapi_cloudidentity_inboundsso.print_show_credentials()
+            elif argument in ['inboundssoassignment', 'inboundssoassignments']:
+                gapi_cloudidentity_inboundsso.print_show_assignments()
             elif argument in ['orgs', 'ous']:
                 gapi_directory_orgunits.print_()
             elif argument == 'privileges':
