@@ -583,7 +583,7 @@ jobs:
              for i in {1..10}; do
                echo "${newbase}-bulkuser-$i" >> sample.csv;
              done
-             $gam create user $newuser firstname GHA lastname $JID password random ou "${newou}" recoveryphone 12125121110 recoveryemail jay0lee@gmail.com gha.jid $JID languages en+,en-GB-
+             $gam create user $newuser firstname GHA lastname $JID displayname "Github Actions ${JID}" password random ou "${newou}" recoveryphone 12125121110 recoveryemail jay0lee@gmail.com gha.jid $JID languages en+,en-GB-
              $gam user $newuser update photo https://dummyimage.com/400x600/000/fff
              $gam user $newuser get photo
              $gam user $newuser delete photo
@@ -598,7 +598,7 @@ jobs:
              $gam update group $newgroup add member $newuser
              $gam create admin $newuser _GROUPS_EDITOR_ROLE CUSTOMER # condition nonsecuritygroup
              $gam csv sample.csv gam create user ~~email~~ firstname "GHA Bulk" lastname ~~email~~ gha.jid $JID ou "${newou}"
-             $gam csv sample.csv gam update user ~~email~~ recoveryphone 12125121110 recoveryemail jay0lee@gmail.com password random
+             $gam csv sample.csv gam update user ~~email~~ recoveryphone 12125121110 recoveryemail jay0lee@gmail.com password random displayname "GitHub Actions Bulk ${JID}"
              $gam csv sample.csv gam update user ~~email~~ recoveryphone "" recoveryemail ""
              $gam csv sample.csv gam user ~email add license workspaceenterpriseplus
              $gam csv sample.csv gam user $gam_user sendemail recipient ~~email~~@pdl.jaylee.us subject "test message $newbase" message "GHA test message"
