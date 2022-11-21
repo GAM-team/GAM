@@ -286,7 +286,8 @@ def printShowCrosTelemetry(mode):
             device['storageInfo']['percentDiskUsed'] = 100 - device['storageInfo']['percentDiskFree']
         for cpuStatusReport in device.get('cpuStatusReport', []):
             for tempInfo in cpuStatusReport.pop('cpuTemperatureInfo', []):
-                cpuStatusReport[f"cpuTemperatureInfo.{tempInfo['label'].strip()}"] = tempInfo['temperatureCelsius']
+                if 'temperatureCelsius' in tempInfo:
+                    cpuStatusReport[f"cpuTemperatureInfo.{tempInfo['label'].strip()}"] = tempInfo['temperatureCelsius']
         if showOrgUnitPath:
             orgUnitId = device.get('orgUnitId')
             if orgUnitId not in orgUnitIdPathMap:
