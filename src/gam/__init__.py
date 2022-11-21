@@ -6578,6 +6578,15 @@ def getUserAttributes(i, cd, updateCmd):
             body.setdefault('name', {})
             body['name']['familyName'] = sys.argv[i + 1]
             i += 2
+        elif myarg in ['displayname']:
+            body.setdefault('name', {})
+            body['name']['displayName'] = sys.argv[i + 1]
+            # sigh, the API is wonky. If we set just displayName
+            # we get an error. But if we also "set" fullName which is
+            # really just a concat of first/last name and can't be set
+            # then it works. Go figure.
+            body['name']['fullName'] = sys.argv[i+1]
+            i += 2
         elif myarg in ['username', 'email', 'primaryemail'] and updateCmd:
             body['primaryEmail'] = normalizeEmailAddressOrUID(sys.argv[i + 1],
                                                               noUid=True)
@@ -8938,10 +8947,16 @@ def doGetUserInfo(user_email=None):
                      customFieldMask=customFieldMask,
                      viewType=viewType)
     print(f'User: {user["primaryEmail"]}')
-    if 'name' in user and 'givenName' in user['name']:
-        print(f'First Name: {user["name"]["givenName"]}')
-    if 'name' in user and 'familyName' in user['name']:
-        print(f'Last Name: {user["name"]["familyName"]}')
+    if 'name' in user:
+        names = {
+                  'givenName': 'First Name',
+                  'familyName': 'Last Name',
+                  'fullName': 'Full Name',
+                  'displayName': 'Display Name',
+                }
+        for field, description in names.items():
+            if field in user['name']:
+                print(f'{description}: {user["name"][field]}')
     if 'languages' in user:
         print(f"Languages: {_formatLanguagesList(user['languages'], ',')}")
     if 'isAdmin' in user:
@@ -9649,6 +9664,7 @@ USER_ARGUMENT_TO_PROPERTY_MAP = {
     'changepasswordatnextlogin': ['changePasswordAtNextLogin',],
     'creationtime': ['creationTime',],
     'deletiontime': ['deletionTime',],
+    'displayname': ['displayName',],
     'email': ['emails',],
     'emails': ['emails',],
     'externalid': ['externalIds',],
@@ -9690,6 +9706,7 @@ USER_ARGUMENT_TO_PROPERTY_MAP = {
     'location': ['locations',],
     'locations': ['locations',],
     'name': [
+        'name.displayName',
         'name.givenName',
         'name.familyName',
         'name.fullName',
