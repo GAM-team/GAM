@@ -40,6 +40,7 @@ def build():
 
 '''parse cmd for profile create/update'''
 def parse_profile(body, i):
+    name_only = False
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
         if myarg == 'name':
@@ -48,6 +49,9 @@ def parse_profile(body, i):
         elif myarg == 'entityid':
             body.setdefault('idpConfig', {})['entityId'] = sys.argv[i+1]
             i += 2
+        elif myarg == 'nameonly':
+            name_only = True
+            i += 1
         elif myarg == 'loginurl':
             body.setdefault('idpConfig', {})['singleSignOnServiceUri'] = sys.argv[i+1]
             i += 2
@@ -59,7 +63,7 @@ def parse_profile(body, i):
             i += 2
         else:
             controlflow.invalid_argument_exit(myarg, 'gam create/update inboundssoprofile')
-    return body
+    return (name_only, body)
 
 
 '''convert profile nice names to unique ID'''
@@ -135,9 +139,12 @@ def create_profile():
           'customer': get_sso_customer(),
           'displayName': 'SSO Profile'
           }
-    body = parse_profile(body, 3)
+    name_only, body = parse_profile(body, 3)
     result = gapi.call(ci.inboundSamlSsoProfiles(), 'create', body=body)
-    display.print_json(result)
+    if name_only:
+        print(result['response']['name'])
+    else:
+        display.print_json(result)
 
 
 '''gam print inboundssoprofiles'''
@@ -184,14 +191,17 @@ def update_profile():
     ci = build() 
     name = profile_displayname_to_name(sys.argv[3], ci)
     body = {}
-    body = parse_profile(body, 4)
+    name_only, body = parse_profile(body, 4)
     updateMask = ','.join(body.keys())
     result = gapi.call(ci.inboundSamlSsoProfiles(),
                        'patch',
                        name=name,
                        updateMask=updateMask,
                        body=body)
-    display.print_json(result)
+    if name_only:
+        print(result['response']['name'])
+    else:
+        display.print_json(result)
 
 
 '''gam info inboundssoprofile'''
