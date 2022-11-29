@@ -80,18 +80,17 @@ def profile_displayname_to_name(displayName, ci=None):
     profiles = gapi.get_all_pages(ci.inboundSamlSsoProfiles(),
                                   'list',
                                   'inboundSamlSsoProfiles',
-                                  filter=_filter,
-                                  )
+                                  filter=_filter)
     matches = []
     for profile in profiles:
         if displayName.lower() == profile.get('displayName', '').lower():
             matches.append(profile)
     if len(matches) == 1:
         return matches[0]['name']
-    elif len(matches) == 0:
-        controlflow.system_error_exit(3, f'No Inbound SSO profile matching the name {displayName}')
+    if len(matches) == 0:
+        controlflow.system_error_exit(3, f'No Inbound SSO profile matches the name {displayName}')
     else:
-        err_text = f'Multiple profiles matching {displayName}:\n\n'
+        err_text = f'Multiple profiles match {displayName}:\n\n'
         for m in matches:
             err_text += f'  {m["name"]}  {m["displayName"]}\n'
         controlflow.system_error_exit(3, err_text)
@@ -118,40 +117,46 @@ def assignment_by_target(target, ci=None):
         ou_name = target[8:]
         target = get_orgunit_id(ou_name)
     else:
-        controlflow.system_error_exit(3, 'assignments should be prefixed with group: or orgunit:')
+        controlflow.system_error_exit(3, 'assignments should be prefixed with ' +
+                                         'group:, groups/, orgunit: or orgunits/')
     customer = get_sso_customer()
     _filter = f'customer=="{customer}"'
     assignments = gapi.get_all_pages(ci.inboundSsoAssignments(),
                                      'list',
                                      'inboundSsoAssignments',
-                                     filter=_filter,
-                                     )
+                                     filter=_filter)
     for assignment in assignments:
         if target_type in assignment and assignment[target_type] == target:
             return assignment
-    controlflow.system_error_exit(3, f'No SSO profile assigned to group {target}')
+    controlflow.system_error_exit(3, f'No SSO profile assigned to {target_type} {target}')
 
 
 '''gam create inboundssoprofile'''
 def create_profile():
-    ci = build() 
+    ci = build()
     body = {
           'customer': get_sso_customer(),
           'displayName': 'SSO Profile'
           }
     name_only, body = parse_profile(body, 3)
-    result = gapi.call(ci.inboundSamlSsoProfiles(), 'create', body=body)
-    if name_only:
-        print(result['response']['name'])
+    result = gapi.call(ci.inboundSamlSsoProfiles(),
+                       'create',
+                       body=body)
+    if result.get('done'):
+        if name_only:
+            print(result['response']['name'])
+        else:
+            print(f'Created profile {result["response"]["name"]}')
+            display.print_json(result['response'])
     else:
-        display.print_json(result)
+        controlflow.system_error_exit(3, 'Create did not finish {result}')
 
 
 '''gam print inboundssoprofiles'''
 def print_show_profiles(action='print'):
     customer = get_sso_customer()
     _filter = f'customer=="{customer}"'
-    ci = build() 
+    ci = build()
     todrive = False
     i = 3
     while i < len(sys.argv):
@@ -160,13 +165,12 @@ def print_show_profiles(action='print'):
             todrive = True
             i += 1
         else:
-            controlflow.invalid_argument_exit(myarg, 'gam print inboundssoprofiles')
+            controlflow.invalid_argument_exit(myarg, f'gam {action} inboundssoprofiles')
 
     profiles = gapi.get_all_pages(ci.inboundSamlSsoProfiles(),
-                                'list',
-                                'inboundSamlSsoProfiles',
-                                filter=_filter,
-                                )
+                                  'list',
+                                  'inboundSamlSsoProfiles',
+                                  filter=_filter)
     if action == 'show':
         for profile in profiles:
             display.print_json(profile)
@@ -188,7 +192,7 @@ def print_show_profiles(action='print'):
 
 '''gam update inboundssoprofile'''
 def update_profile():
-    ci = build() 
+    ci = build()
     name = profile_displayname_to_name(sys.argv[3], ci)
     body = {}
     name_only, body = parse_profile(body, 4)
@@ -213,8 +217,7 @@ def info_profile(return_only=False, displayName=None, ci=None):
     name = profile_displayname_to_name(displayName, ci)
     result = gapi.call(ci.inboundSamlSsoProfiles(),
                        'get',
-                       name=name,
-                       )
+                       name=name)
     if return_only:
         return result
     display.print_json(result)
@@ -227,7 +230,7 @@ def delete_profile():
                        'delete',
                        name=name)
     if result.get('done'):
-        print(f' deleted profile {name}.')
+        print(f'Deleted profile {name}.')
     else:
         controlflow.system_error_exit(3, 'Delete did not finish: {result}')
 
@@ -266,11 +269,9 @@ def create_credentials():
                                                    key_size)
             i += 2
         else:
-            controlflow.invalid_argument_exit(myarg,
-                                              'gam create inboundssocredential')
+            controlflow.invalid_argument_exit(myarg, 'gam create inboundssocredential')
     if not parent:
-        controlflow.missing_argument_exit('profile',
-                                          'gam create inboundssocredential')
+        controlflow.missing_argument_exit('profile', 'gam create inboundssocredential')
     if replace_oldest:
         fields='nextPageToken,idpCredentials(name,updateTime)'
         current_creds = gapi.get_all_pages(
@@ -289,8 +290,8 @@ def create_credentials():
             print(' profile has {len(current_creds)} credentials. We only replace if there are 2.')
     if generate_key:
         privKey, pemData = gam._generatePrivateKeyAndPublicCert('GAM',
-                                                       key_size,
-                                                       b64enc_pub=False) 
+                                                                key_size,
+                                                                b64enc_pub=False)
         timestamp = datetime.now().strftime('%Y%m%d-%I%M%S')
         priv_file = f'privatekey-{timestamp}.pem'
         pub_file = f'publiccert-{timestamp}.pem'
@@ -306,13 +307,12 @@ def create_credentials():
     result = gapi.call(ci.inboundSamlSsoProfiles().idpCredentials(),
                        'add',
                        parent=parent,
-                       fields='done,response',
                        body=body)
     if result.get('done'):
        print(f'Created credential {result["response"]["name"]}')
+       display.print_json(result['response'])
     else:
-        controlflow.system_error_exit(3,
-                                      'Create did not finish {result}')
+        controlflow.system_error_exit(3, 'Create did not finish {result}')
 
 
 '''gam delete inboundssocredential'''
@@ -320,12 +320,12 @@ def delete_credentials(ci=None, name=None):
     if not ci:
         ci = build()
     if not name:
-        name = sys.argv[3] 
+        name = sys.argv[3]
     result = gapi.call(ci.inboundSamlSsoProfiles().idpCredentials(),
                        'delete',
                        name=name)
     if result.get('done'):
-        print(f' deleted credential {name}')
+        print(f'Deleted credential {name}')
     else:
         controlflow.system_error_exit(3, 'Delete did not finish {result}')
 
@@ -339,16 +339,14 @@ def print_show_credentials(action='print'):
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
         if myarg in ['profile', 'profiles']:
-            profiles = sys.argv[i+1].split(',')
-            for profile in profiles:
-                profile = profile_displayname_to_name(profile, ci)
+            profiles = [profile_displayname_to_name(profile, ci)
+                            for profile in sys.argv[i+1].split(',')]
+            i += 2
         elif myarg == 'todrive':
             todrive = True
             i += 1
-            for profile in sys.argv[i+1].replace(',', ' ').split():
-                profiles.append(profile_displayname_to_name(profile, ci))
         else:
-            controlflow.invalid_argument_exit(myarg, 'gam print inboundssocredentials')
+            controlflow.invalid_argument_exit(myarg, f'gam {action} inboundssocredentials')
     if not profiles:
         customer = get_sso_customer()
         _filter = f'customer=="{customer}"'
@@ -356,8 +354,7 @@ def print_show_credentials(action='print'):
                                       'list',
                                       'inboundSamlSsoProfiles',
                                       fields='inboundSamlSsoProfiles/name',
-                                      filter=_filter,
-                                      )
+                                      filter=_filter)
         profiles = [p['name'] for p in profiles]
     if action == 'print':
         titles = []
@@ -365,9 +362,9 @@ def print_show_credentials(action='print'):
     credentials = []
     for profile in profiles:
         results = gapi.get_all_pages(ci.inboundSamlSsoProfiles().idpCredentials(),
-                                         'list',
-                                         'idpCredentials',
-                                         parent=profile)
+                                     'list',
+                                     'idpCredentials',
+                                     parent=profile)
         credentials.extend(results)
     if action == 'show':
         for c in credentials:
@@ -393,8 +390,9 @@ def parse_assignment(body, i, ci):
             body['rank'] = int(sys.argv[i+1])
             i += 2
         elif myarg == 'mode':
-            mode_choices = gapi.get_enum_values_minus_unspecified(
-                ci._rootDesc['schemas']['InboundSsoAssignment']['properties']['ssoMode']['enum'])
+            mode_choices = \
+                gapi.get_enum_values_minus_unspecified(
+                    ci._rootDesc['schemas']['InboundSsoAssignment']['properties']['ssoMode']['enum'])
             body['ssoMode'] = sys.argv[i+1].upper()
             if body['ssoMode'] not in mode_choices:
                 controlflow.expected_argument_exit('mode',
@@ -428,9 +426,21 @@ def parse_assignment(body, i, ci):
     return body
 
 
+def update_assignment_target_names(assignment, ci, cd):
+    if 'targetGroup' in assignment:
+        assignment['targetGroupEmail'] = \
+            gapi_cloudidentity_groups.group_id_to_email(ci,
+                                                        assignment['targetGroup'])
+    elif 'targetOrgUnit' in assignment:
+        ou_id = assignment['targetOrgUnit'].split('/')[1]
+        assignment['targetOrgUnitPath'] = \
+            gapi_directory_orgunits.orgunit_from_orgunitid(f'id:{ou_id}', cd)
+
+
 '''gam create inboundssoassignment'''
 def create_assignment():
     ci = build()
+    cd = gapi_directory.build()
     body = {
             'customer': get_sso_customer(),
            }
@@ -438,40 +448,59 @@ def create_assignment():
     result = gapi.call(ci.inboundSsoAssignments(),
                        'create',
                        body=body)
-    display.print_json(result)
+    if result.get('done'):
+       print(f'Created assignment {result["response"]["name"]}')
+       update_assignment_target_names(result['response'], ci, cd)
+       display.print_json(result['response'])
+    else:
+        controlflow.system_error_exit(3, 'Create did not finish {result}')
+
+
+def get_assignment_name(name):
+  if name.startswith('id:') or name.startswith('uid:'):
+    name = name.split(':', 1)[1]
+  if not name.startswith('inboundSsoAssignments/'):
+    name = f'inboundSsoAssignments/{name}'
+  return name
 
 
 '''gam update inboundssoassignment'''
 def update_assignment():
     ci = build()
-    name = assignment_target_to_name(sys.argv[3], ci)
-    body = {}
-    body = parse_assignment(body, 4, ci)
+    cd = gapi_directory.build()
+    name = get_assignment_name(sys.argv[3])
+    body = parse_assignment({}, 4, ci)
     updateMask = ','.join(list(body.keys()))
     result = gapi.call(ci.inboundSsoAssignments(),
                        'patch',
                        name=name,
                        updateMask=updateMask,
-                       body=body,
-                       )
-    display.print_json(result)
+                       body=body)
+    if result.get('done'):
+       print(f'Updated assignment {result["response"]["name"]}')
+       update_assignment_target_names(result['response'], ci, cd)
+       display.print_json(result['response'])
+    else:
+        controlflow.system_error_exit(3, 'Update did not finish {result}')
 
 
 '''gam info inboundssoassignment'''
 def info_assignment():
     ci = build()
+    cd = gapi_directory.build()
     assignment = assignment_by_target(sys.argv[3], ci)
+    update_assignment_target_names(assignment, ci, cd)
     profile = assignment.get('samlSsoInfo', {}).get('inboundSamlSsoProfile')
     if profile:
-        assignment['samlSsoInfo']['inboundSamlSsoProfile'] = info_profile(return_only=True,
-                displayName=f'id:{profile}',
-                                                                       ci=ci)
+        assignment['samlSsoInfo']['inboundSamlSsoProfile'] = \
+            info_profile(return_only=True, displayName=f'id:{profile}', ci=ci)
     display.print_json(assignment)
 
 
 '''gam print inboundssoassignments'''
 def print_show_assignments(action='print'):
     ci = build()
+    cd = gapi_directory.build()
     customer = get_sso_customer()
     _filter = f'customer=="{customer}"'
     todrive = False
@@ -482,29 +511,22 @@ def print_show_assignments(action='print'):
             todrive = True
             i += 1
         else:
-            controlflow.invalid_argument_exit(myarg, 'gam print inboundssoassignments')
+            controlflow.invalid_argument_exit(myarg,
+                                              f'gam {action} inboundssoassignments')
     assignments = gapi.get_all_pages(ci.inboundSsoAssignments(),
-                                'list',
-                                'inboundSsoAssignments',
-                                filter=_filter,
-                                )
-    cd = gapi_directory.build()
-    for assignment in assignments:
-        if 'targetGroup' in assignment:
-            assignment['groupEmail'] = gapi_cloudidentity_groups.group_id_to_email(ci, assignment['targetGroup']) 
-        if 'targetOrgUnit' in assignment:
-            ou_id = assignment['targetOrgUnit']
-            ou_id = ou_id.split('/')[1]
-            ou_id = f'id:{ou_id}'
-            assignment['orgUnit'] = gapi_directory_orgunits.orgunit_from_orgunitid(ou_id, cd)
+                                     'list',
+                                     'inboundSsoAssignments',
+                                     filter=_filter)
     if action == 'show':
         for assignment in assignments:
+            update_assignment_target_names(assignment, ci, cd)
             display.print_json(assignment)
             print()
     elif action == 'print':
         titles = []
         csv_rows = []
         for assignment in assignments:
+            update_assignment_target_names(assignment, ci, cd)
             csv_row = utils.flatten_json(assignment)
             for item in csv_row:
                 if item not in titles:
