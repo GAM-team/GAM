@@ -451,7 +451,7 @@ jobs:
              echo "gampath=${gampath}" >> $GITHUB_ENV
              echo "gam=${gam}" >> $GITHUB_ENV
              echo -e "GAM: ${gam}\nGAMPATH: ${gampath}"
-             "${PYTHON}" -m PyInstaller --clean --distpath="${distpath}" gam.spec
+             "${PYTHON}" -m PyInstaller --clean --noconfirm --distpath="${distpath}" gam.spec
  
       - name: Copy extra package files
         if: matrix.goal == 'build'
