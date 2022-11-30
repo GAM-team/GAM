@@ -49,7 +49,7 @@ def parse_profile(body, i):
         elif myarg == 'entityid':
             body.setdefault('idpConfig', {})['entityId'] = sys.argv[i+1]
             i += 2
-        elif myarg == 'nameonly':
+        elif myarg == 'returnnameonly':
             name_only = True
             i += 1
         elif myarg == 'loginurl':

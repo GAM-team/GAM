@@ -1555,8 +1555,10 @@ gam print group-members|groups-members [todrive]
 
 gam create inboundssoprofile [name <SSOProfileDisplayName>]
 	[entityid <String>] [loginurl <URL>] [logouturl <URL>] [changepasswordurl <URL>]
+	[returnnameonly]
 gam update inboundssoprofile <SSOProfileItem>
 	[entityid <String>] [loginurl <URL>] [logouturl <URL>] [changepasswordurl <URL>]
+	[returnnameonly]
 gam delete inboundssoprofile <SSOProfileItem>
 gam info inboundssoprofile <SSOProfileItem>
 gam show inboundssoprofiles
