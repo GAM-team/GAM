@@ -435,7 +435,8 @@ jobs:
       - name: Build GAM with PyInstaller
         if: matrix.goal != 'test'
         run: |
-             export gampath="./dist/gam"
+             export distpath="./dist"
+             export gampath="${distpath}/gam"
              mkdir -p -v "${gampath}"
              if [[ "${RUNNER_OS}" == "macOS" ]]; then
                export gampath=$($PYTHON -c "import os; print(os.path.realpath('$gampath'))")
@@ -450,7 +451,7 @@ jobs:
              echo "gampath=${gampath}" >> $GITHUB_ENV
              echo "gam=${gam}" >> $GITHUB_ENV
              echo -e "GAM: ${gam}\nGAMPATH: ${gampath}"
-             "${PYTHON}" -m PyInstaller --clean --distpath="${gampath}" gam.spec
+             "${PYTHON}" -m PyInstaller --clean --distpath="${distpath}" gam.spec
  
       - name: Copy extra package files
         if: matrix.goal == 'build'
