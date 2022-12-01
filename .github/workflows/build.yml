@@ -24,7 +24,7 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: ubuntu-22.04
+          - os: ubuntu-20.04
             jid: 1
             goal: build
             arch: x86_64
@@ -34,7 +34,7 @@ jobs:
             goal: build
             arch: aarch64
             openssl_archs: linux-aarch64
-          - os: ubuntu-22.04
+          - os: ubuntu-20.04
             jid: 3
             goal: build
             arch: x86_64
