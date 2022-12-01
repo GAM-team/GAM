@@ -1,5 +1,7 @@
 # -*- mode: python ; coding: utf-8 -*-
+from os import getenv
 from sys import platform
+
 from PyInstaller.utils.hooks import copy_metadata
 
 
@@ -46,31 +48,63 @@ match platform:
     case _:
         target_arch = None
         strip = True
-exe = EXE(
-    pyz,
-    a.scripts,
-    [],
-    exclude_binaries=True,
-    name='gam',
-    debug=False,
-    bootloader_ignore_signals=False,
-    strip=strip,
-    upx=False,
-    console=True,
-    disable_windowed_traceback=False,
-    argv_emulation=False,
-    target_arch=target_arch,
-    codesign_identity=None,
-    entitlements_file=None,
-)
-coll = COLLECT(
-    exe,
-    a.binaries,
-    a.zipfiles,
-    a.datas,
-    strip=strip,
-    upx=False,
-    upx_exclude=[],
-    name='gam',
-)
+name = 'gam'
+debug = False
+bootloader_ignore_signals = False
+upx = False
+console = True
+disable_windowed_traceback = False
+argv_emulation = False
+codesign_identity = None
+entitlements_file = None
+if getenv('PYINSTALLER_BUILD_ONEFILE') == 'yes':
+    # Build one file
+    exe = EXE(
+              pyz,
+              a.scripts,
+              a.binaries,
+              a.zipfiles,
+              a.datas,
+              [],
+              name=name,
+              debug=debug,
+              bootloader_ignore_signals=bootloader_ignore_signals,
+              strip=strip,
+              upx=upx,
+              console=console,
+              disable_windowed_traceback=disable_windowed_traceback,
+              argv_emulation=argv_emulation,
+              target_arch=target_arch,
+              codesign_identity=codesign_identity,
+              entitlements_file=entitlements_file,
+              )
+else:
+    # Build one folder
+    exe = EXE(
+              pyz,
+              a.scripts,
+              [],
+              exclude_binaries=True,
+              name=name,
+              debug=debug,
+              bootloader_ignore_signals=bootloader_ignore_signals,
+              strip=strip,
+              upx=upx,
+              console=console,
+              disable_windowed_traceback=disable_windowed_traceback,
+              argv_emulation=argv_emulation,
+              target_arch=target_arch,
+              codesign_identity=codesign_identity,
+              entitlements_file=entitlements_file,
+              )
+    coll = COLLECT(
+        exe,
+        a.binaries,
+        a.zipfiles,
+        a.datas,
+        strip=strip,
+        upx=upx,
+        upx_exclude=[],
+        name=name,
+        )
 
