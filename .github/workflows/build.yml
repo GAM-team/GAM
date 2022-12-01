@@ -451,9 +451,12 @@ jobs:
         run: |
              if [[ "${staticx}" == "yes" ]]; then
                export PYINSTALLER_BUILD_ONEFILE="yes"
+               export distpath="./dist/gam"
+               export gampath="${distpath}"
+             else
+               export distpath="./dist"
+               export gampath="${distpath}/gam"
              fi
-             export distpath="./dist"
-             export gampath="${distpath}/gam"
              mkdir -p -v "${gampath}"
              if [[ "${RUNNER_OS}" == "macOS" ]]; then
                export gampath=$($PYTHON -c "import os; print(os.path.realpath('$gampath'))")
