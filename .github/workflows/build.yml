@@ -449,6 +449,9 @@ jobs:
       - name: Build GAM with PyInstaller
         if: matrix.goal != 'test'
         run: |
+             if [[ "${staticx}" == "yes" ]]; then
+               export PYINSTALLER_BUILD_ONEFILE="yes"
+             fi
              export distpath="./dist"
              export gampath="${distpath}/gam"
              mkdir -p -v "${gampath}"
@@ -470,7 +473,7 @@ jobs:
       - name: Copy extra package files
         if: matrix.goal == 'build'
         run: |
-          #cp -v roots.pem $gampath
+          cp -v roots.pem $gampath
           cp -v LICENSE $gampath
           cp -v GamCommands.txt $gampath
           if [[ "${RUNNER_OS}" == "Windows" ]]; then
@@ -496,13 +499,13 @@ jobs:
           fi
           tar -C dist/ --create --verbose --exclude-from "${GITHUB_WORKSPACE}/.github/actions/package_exclusions.txt" --file $GAM_ARCHIVE --xz gam
 
-      - name: Install patchelf/staticx
+      - name: Install StaticX
         if: matrix.staticx == 'yes'
         run: |
           "${PYTHON}" -m pip install --upgrade patchelf-wrapper
           "${PYTHON}" -m pip install --upgrade staticx
 
-      - name: Make Static
+      - name: Make StaticX
         if: matrix.staticx == 'yes'
         run: |
           case $RUNNER_ARCH in
@@ -516,7 +519,7 @@ jobs:
           echo "ldlib=${ldlib}"
           $PYTHON -m staticx -l "${ldlib}" "${gam}" "${gam}-staticx"
           
-      - name: Run StaticX-ed
+      - name: Run StaticX
         if: matrix.staticx == 'yes'
         run: |
           "${gam}-staticx" version extended
