@@ -96,9 +96,13 @@ class _DeHTMLParser(HTMLParser):
                       re.sub(r'\n +', '\n', ''.join(self.__text))).strip()
 
 
-def commonprefix(m):
+def commonprefix(m, checkEnum=False):
     '''Given a list of strings m, return string which is prefix common to all'''
     s1 = min(m)
+    if checkEnum:
+        loc = s1.find('ENUM_')
+        if loc > 0:
+            return s1[:loc+5]
     s2 = max(m)
     for i, c in enumerate(s1):
         if c != s2[i]:
