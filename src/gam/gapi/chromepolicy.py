@@ -167,7 +167,7 @@ def build_schemas(svc=None, sfilter=None):
                     for an_enum in schema['definition']['enumType']:
                         if an_enum['name'] == type_name:
                             setting_dict['enums'] = [enum['name'] for enum in an_enum['value']]
-                            setting_dict['enum_prefix'] = utils.commonprefix(setting_dict['enums'])
+                            setting_dict['enum_prefix'] = utils.commonprefix(setting_dict['enums'], True)
                             prefix_len = len(setting_dict['enum_prefix'])
                             setting_dict['enums'] = [enum[prefix_len:] for enum \
                                                      in setting_dict['enums'] \
