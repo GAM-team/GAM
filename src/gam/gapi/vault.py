@@ -683,9 +683,9 @@ def showHoldsForUsers(users):
     v = buildGAPIObject()
     matterIds = _getAllMatterIds(v)
     matterHolds = {}
+    fields = 'holds(holdId,name,accounts(accountId,email),orgUnit),nextPageToken'
     for matterId in matterIds:
         try:
-            fields = 'holds(holdId,name,accounts(accountId,email),orgUnit),nextPageToken'
             matterHolds[matterId] = gapi.get_all_pages(v.matters().holds(),
                                                        'list',
                                                        'holds',
@@ -698,8 +698,8 @@ def showHoldsForUsers(users):
     for user in users:
         user = user.lower()
         orgUnits = gapi_directory_orgunits._getAllParentOrgUnitsForUser(user, cd)
-        for matterId in matterIds:
-            for hold in matterHolds[matterId]:
+        for matterId, holds in matterHolds.items():
+            for hold in holds:
                 if 'orgUnit' in hold:
                     orgUnitId = hold['orgUnit'].get('orgUnitId')
                     if orgUnitId in orgUnits:
