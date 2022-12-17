@@ -8,7 +8,7 @@ from threading import Timer
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
 from smartcard.Exceptions import CardConnectionException
-from ykman.device import connect_to_device
+from ykman.device import list_all_devices
 from ykman.piv import generate_self_signed_certificate, \
                       generate_chuid
 from yubikit.piv import DEFAULT_MANAGEMENT_KEY, \
@@ -20,10 +20,13 @@ from yubikit.piv import DEFAULT_MANAGEMENT_KEY, \
                         OBJECT_ID, \
                         SLOT, \
                         TOUCH_POLICY
-from yubikit.core.smartcard import ApduError
+from yubikit.core.smartcard import ApduError, \
+                                   SmartCardConnection
 from gam import controlflow
 
+
 class YubiKey():
+
 
     def __init__(self, service_account_info=None):
         self.key_type = None
@@ -46,12 +49,16 @@ class YubiKey():
             self.pin = service_account_info.get('yubikey_pin')
             self.key_id = service_account_info.get('private_key_id')
 
+
     def _connect(self):
         try:
-            conn, _, _ = connect_to_device(self.serial_number)
+            devices = list_all_devices()
+            for (device, info) in devices:
+                if info.serial == self.serial_number:
+                    return device.open_connection(SmartCardConnection)
         except CardConnectionException as err:
             controlflow.system_error_exit(9, f'YubiKey - {err}')
-        return conn
+
 
     def get_certificate(self):
         try:
@@ -79,10 +86,21 @@ class YubiKey():
 
     def get_serial_number(self):
         try:
-            _, _, info = connect_to_device(self.serial_number)
-            return info.serial
+            devices = list_all_devices()
+            if self.serial_number:
+                for (device, info) in devices:
+                    if info.serial == self.serial_number:
+                        return info.serial
+                msg = f'Could not find YubiKey with serial {self.serial_number}'
+                controlflow.system_error_exit(3, msg)
+            if len(devices) > 1:
+                serials = ', '.join([str(info.serial) for (_, info) in devices])
+                msg = f'Multiple YubiKeys connected. Specify yubikey_serial_number and one of {serials}'
+                controlflow.system_error_exit(4, msg)
+            return devices[0][1].serial
         except ValueError as err:
             controlflow.system_error_exit(9, f'YubiKey - {err}')
+
 
     def reset_piv(self):
         '''Resets YubiKey PIV app and generates new key for GAM to use.'''
@@ -95,7 +113,9 @@ class YubiKey():
                 piv = PivSession(conn)
                 piv.reset()
                 rnd = SystemRandom()
-                pin_puk_chars = string.ascii_letters + string.digits + string.punctuation
+                pin_puk_chars = string.ascii_letters + \
+                                string.digits + \
+                                string.punctuation
                 new_puk = ''.join(rnd.choice(pin_puk_chars) for _ in range(8))
                 new_pin = ''.join(rnd.choice(pin_puk_chars) for _ in range(8))
                 piv.change_puk('12345678', new_puk)
@@ -155,3 +175,4 @@ class YubiKey():
         if 'mplock' in globals():
             mplock.release()
         return signed
+

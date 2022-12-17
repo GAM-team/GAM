@@ -1314,34 +1314,38 @@ def doCheckServiceAccount(users):
             3,
             'Invalid private key in oauth2service.json. Please delete the file and then\nrecreate with "gam create project" or "gam use project"'
         )
-    print(
-        'Checking key age. Google recommends rotating keys on a routine basis...'
+    key_type = GM_Globals[GM_OAUTH2SERVICE_JSON_DATA].get('key_type', 'default')
+    if key_type == 'yubikey':
+        printPassFail('Skipping age check. YubiKey rotation not necessary.', test_pass)
+    else:
+        print(
+            'Checking key age. Google recommends rotating keys on a routine basis...'
     )
-    try:
-        iam = buildGAPIServiceObject('iam', None)
-        project = GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID]
-        key_id = GM_Globals[GM_OAUTH2SERVICE_JSON_DATA]['private_key_id']
-        name = f'projects/-/serviceAccounts/{project}/keys/{key_id}'
-        key = gapi.call(iam.projects().serviceAccounts().keys(),
-                        'get',
-                        name=name,
-                        throw_reasons=[gapi_errors.ErrorReason.FOUR_O_THREE])
-        key_created = dateutil.parser.parse(
-            key['validAfterTime'], ignoretz=True)
-        key_age = datetime.datetime.now() - key_created
-        key_days = key_age.days
-        if key_days > 30:
-            print(
-                'Your key is old. Recommend running "gam rotate sakey" to get a new key'
-            )
+        try:
+            iam = buildGAPIServiceObject('iam', None)
+            project = GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID]
+            key_id = GM_Globals[GM_OAUTH2SERVICE_JSON_DATA]['private_key_id']
+            name = f'projects/-/serviceAccounts/{project}/keys/{key_id}'
+            key = gapi.call(iam.projects().serviceAccounts().keys(),
+                            'get',
+                            name=name,
+                            throw_reasons=[gapi_errors.ErrorReason.FOUR_O_THREE])
+            key_created = dateutil.parser.parse(
+                key['validAfterTime'], ignoretz=True)
+            key_age = datetime.datetime.now() - key_created
+            key_days = key_age.days
+            if key_days > 30:
+                print(
+                    'Your key is old. Recommend running "gam rotate sakey" to get a new key'
+                )
+                key_age_result = test_warn
+            else:
+                key_age_result = test_pass
+        except googleapiclient.errors.HttpError:
             key_age_result = test_warn
-        else:
-            key_age_result = test_pass
-    except googleapiclient.errors.HttpError:
-        key_age_result = test_warn
-        key_days = 'UNKNOWN'
-        print('Unable to check key age, please run "gam update project"')
-    printPassFail(f'Key is {key_days} days old', key_age_result)
+            key_days = 'UNKNOWN'
+            print('Unable to check key age, please run "gam update project"')
+        printPassFail(f'Key is {key_days} days old', key_age_result)
     if not check_scopes:
         for _, scopes in list(API_SCOPE_MAPPING.items()):
             for scope in scopes:
@@ -4473,15 +4477,7 @@ def getImap(users):
                            soft_errors=True,
                            userId='me')
         if result:
-            enabled = result['enabled']
-            if enabled:
-                print(
-                    f'User: {user}, IMAP Enabled: {enabled}, autoExpunge: {result["autoExpunge"]}, expungeBehavior: {result["expungeBehavior"]}, maxFolderSize: {result["maxFolderSize"]}{currentCount(i, count)}'
-                )
-            else:
-                print(
-                    f'User: {user}, IMAP Enabled: {enabled}{currentCount(i, count)}'
-                )
+            display.print_json(result)
 
 
 def doPop(users):
@@ -7912,6 +7908,7 @@ def doCreateOrRotateServiceAccountKeys(iam=None,
         yk = yubikey.YubiKey(new_data)
         if 'yubikey_serial_number' not in new_data:
             new_data['yubikey_serial_number'] = yk.get_serial_number()
+            yk = yubikey.YubiKey(new_data)
         if 'yubikey_slot' not in new_data:
             new_data['yubikey_slot'] = 'AUTHENTICATION'
         publicKeyData = yk.get_certificate()
@@ -12069,6 +12066,7 @@ def ProcessGAMCommand(args):
             action = sys.argv[2].lower().replace('_', '')
             if action == 'resetpiv':
                 yk = yubikey.YubiKey()
+                yk.serial_number = yk.get_serial_number()
                 yk.reset_piv()
             sys.exit(0)
         users = getUsersToModify()
