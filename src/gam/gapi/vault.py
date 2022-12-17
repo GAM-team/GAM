@@ -337,9 +337,9 @@ def print_count():
         _validate_query(query, query_discovery)
         body['query'] = query
         operation = gapi.call(v.matters(), 'count', matterId=matterId, body=body)
-    print(f'Watching operation {operation["name"]}...')
+    sys.stderr.write(f'Watching operation {operation["name"]}...\n')
     while not operation.get('done'):
-        print(f' operation {operation["name"]} is not done yet. Checking again in {operation_wait} seconds')
+        sys.stderr.write(f' operation {operation["name"]} is not done yet. Checking again in {operation_wait} seconds\n')
         sleep(operation_wait)
         operation = gapi.call(v.operations(), 'get', name=operation['name'])
     response = operation.get('response', {})
@@ -684,11 +684,16 @@ def showHoldsForUsers(users):
     matterIds = _getAllMatterIds(v)
     matterHolds = {}
     for matterId in matterIds:
-        matterHolds[matterId] = gapi.get_all_pages(v.matters().holds(),
-                                                   'list',
-                                                   'holds',
-                                                   fields='holds(holdId,name,accounts(accountId,email),orgUnit),nextPageToken',
-                                                   matterId=matterId)
+        try:
+            fields = 'holds(holdId,name,accounts(accountId,email),orgUnit),nextPageToken'
+            matterHolds[matterId] = gapi.get_all_pages(v.matters().holds(),
+                                                       'list',
+                                                       'holds',
+                                                       fields=fields,
+                                                       throw_reasons=[gapi_errors.ErrorReason.FOUR_O_O],
+                                                       matterId=matterId)
+        except googleapiclient.errors.HttpError:
+            continue
     totalHolds = 0
     for user in users:
         user = user.lower()
