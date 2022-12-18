@@ -217,6 +217,7 @@ def print_():
     gapi_directory_customer.setTrueCustomerId()
     parent = f'customers/{GC_Values[GC_CUSTOMER_ID]}'
     usemember = None
+    query = None
     memberDelimiter = '\n'
     todrive = False
     titles = []
@@ -234,6 +235,9 @@ def print_():
             i += 2
         elif myarg == 'delimiter':
             memberDelimiter = sys.argv[i + 1]
+            i += 2
+        elif myarg == 'query':
+            query = sys.argv[i + 1]
             i += 2
         elif myarg == 'sortheaders':
             sortHeaders = True
@@ -314,14 +318,20 @@ def print_():
             if entity['relationType'] == 'DIRECT':
                 entityList.append(gapi.call(ci.groups(), 'get', name=entity['group']))
     else:
+        if query:
+            method = 'search'
+            kwargs = {'query': query}
+        else:
+            method = 'list'
+            kwargs = {'parent': parent}
         entityList = gapi.get_all_pages(ci.groups(),
-                                        'list',
+                                        method,
                                         'groups',
                                         page_message=page_message,
                                         message_attribute=['groupKey', 'id'],
-                                        parent=parent,
                                         view='FULL',
-                                        pageSize=500)
+                                        pageSize=500,
+                                        **kwargs)
     i = 0
     count = len(entityList)
     for groupEntity in entityList:
