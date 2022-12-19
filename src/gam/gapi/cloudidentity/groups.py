@@ -320,6 +320,8 @@ def print_():
     else:
         if query:
             method = 'search'
+            if 'parent' not in query:
+                query += f" && parent == '{parent}'"
             kwargs = {'query': query}
         else:
             method = 'list'
