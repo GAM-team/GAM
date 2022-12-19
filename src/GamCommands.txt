@@ -1517,6 +1517,7 @@ gam delete cigroup <GroupItem>
 gam info cigroup <GroupItem> [nousers] [nojoindate] [showupdatedate] [membertree] [nosecurity|nosecuritysettings]
 
 gam print cigroups [todrive]
+	[query <String>]
 	[enterprisemember <UserItem>]
 	[members|memberscount] [managers|managerscount] [owners|ownerscount]
 	[memberrestrictions]
