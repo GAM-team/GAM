@@ -127,6 +127,11 @@ SKUS = {
         'aliases': ['gwetlu', 'workspaceeducationupgrade'],
         'displayName': 'Google Workspace for Education: Teaching and Learning Upgrade'
     },
+    '1010390001': {
+        'product': '101039',
+        'aliases': ['assuredcontrols'],
+        'displayName': 'Assured Controls',
+    },
     'Google-Apps': {
         'product': 'Google-Apps',
         'aliases': ['standard', 'free'],
