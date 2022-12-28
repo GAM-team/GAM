@@ -132,6 +132,11 @@ SKUS = {
         'aliases': ['assuredcontrols'],
         'displayName': 'Assured Controls',
     },
+    '1010400001': {
+        'product': '101040',
+        'aliases': ['beyondcorp', 'beyondcorpenterprise', 'bce'],
+        'displayName': 'Beyond Corp Enterprise',
+    },
     'Google-Apps': {
         'product': 'Google-Apps',
         'aliases': ['standard', 'free'],
