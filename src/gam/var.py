@@ -300,6 +300,8 @@ PRODUCTID_NAME_MAPPINGS = {
     '101035': 'Cloud Search',
     '101036': 'Google Meet Global Dialing',
     '101037': 'G Suite Workspace for Education',
+    '101039': 'Assured Controls',
+    '101040': 'Beyond Corp',
     'Google-Apps': 'Google Workspace',
     'Google-Chrome-Device-Management': 'Google Chrome Device Management',
     'Google-Drive-storage': 'Google Drive Storage',
