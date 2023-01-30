@@ -219,7 +219,7 @@ def printShowCrosTelemetry(mode):
     i = 3
     if mode == 'info':
         if i >= len(sys.argv):
-            controlflow.system_error_exit(3, f'<SerialNumber> required for "gam info crostelemetry"')
+            controlflow.system_error_exit(3, '<SerialNumber> required for "gam info crostelemetry"')
         filter_ = f'serialNumber={sys.argv[i]}'
         i += 1
         mode = 'show'
@@ -305,6 +305,53 @@ def printShowCrosTelemetry(mode):
            display.add_row_titles_to_csv_file(utils.flatten_json(device),
                                                    csvRows, titles)
         display.write_csv_file(csvRows, titles, 'Telemetry Devices', todrive)
+
+
+CHROME_AUES_TITLES = [
+    'model', 'count', 'aueMonth', 'aueYear', 'expired'
+    ]
+def printAUEs():
+    cm = build()
+    customer = _get_customerid()
+    todrive = False
+    titles = CHROME_AUES_TITLES
+    csvRows = []
+    orgunit = None
+    minAueDate = None
+    maxAueDate = None
+    i = 3
+    while i < len(sys.argv):
+        myarg = sys.argv[i].lower().replace('_', '')
+        if myarg == 'todrive':
+            todrive = True
+            i += 1
+        elif myarg in ['ou', 'org', 'orgunit']:
+            orgunit = _get_orgunit(sys.argv[i+1])
+            i += 2
+        elif myarg == 'minauedate':
+            minAueDate = _getFilterDate(sys.argv[i + 1]).strftime(YYYYMMDD_FORMAT)
+            i += 2
+        elif myarg == 'maxauedate':
+            maxAueDate = _getFilterDate(sys.argv[i + 1]).strftime(YYYYMMDD_FORMAT)
+            i += 2
+        else:
+            msg = f'{myarg} is not a valid argument to "gam print chromeversions"'
+            controlflow.system_error_exit(3, msg)
+    if orgunit:
+        orgUnitPath = gapi_directory_orgunits.orgunit_from_orgunitid(orgunit, None)
+        titles.append('orgUnitPath')
+    else:
+        orgUnitPath = '/'
+    gam.printGettingAllItems('Chrome Auto Update Expirations', orgUnitPath)
+    aues = gapi.call(cm.customers().reports(),
+                     'countChromeDevicesReachingAutoExpirationDate',
+                     customer=customer, orgUnitId=orgunit,
+                     minAueDate=minAueDate, maxAueDate=maxAueDate).get('deviceAueCountReports', [])
+    for aue in sorted(aues, key=lambda k: k.get('model', 'Unknown')):
+        if orgunit:
+            aue['orgUnitPath'] = orgUnitPath
+        csvRows.append(aue)
+    display.write_csv_file(csvRows, titles, 'Chrome AUEs', todrive)
 
 
 CHROME_VERSIONS_TITLES = [

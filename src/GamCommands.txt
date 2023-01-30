@@ -1392,6 +1392,10 @@ gam print chromeappdevices [todrive]
 	[start <Date>] [end <Date>]
 	[orderby deviceid|machine]
 
+gam print chromeaues [todrive]
+	[ou|org|orgunit <OrgUnitItem>]
+	[minauedate <Date>] [maxauedate <Date>]
+
 gam print chromeversions [todrive]
 	[ou|org|orgunit <OrgUnitItem>]
 	[start <Date>] [end <Date>] [recentfirst]
