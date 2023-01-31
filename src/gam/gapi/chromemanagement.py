@@ -449,7 +449,7 @@ def printVersions():
             query += ' AND '
         else:
             query = ''
-        query += f'orgUnitPath>={orgUnitPath}'
+        query += f'orgUnitPath={orgUnitPath}'
         titles.append('orgUnitPath')
     else:
         orgUnitPath = '/'
