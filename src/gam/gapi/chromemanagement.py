@@ -335,14 +335,16 @@ def printAUEs():
             maxAueDate = _getFilterDate(sys.argv[i + 1]).strftime(YYYYMMDD_FORMAT)
             i += 2
         else:
-            msg = f'{myarg} is not a valid argument to "gam print chromeversions"'
+            msg = f'{myarg} is not a valid argument to "gam print chromeaues"'
             controlflow.system_error_exit(3, msg)
     if orgunit:
         orgUnitPath = gapi_directory_orgunits.orgunit_from_orgunitid(orgunit, None)
+        query = f'orgUnitPath={orgUnitPath}'
         titles.append('orgUnitPath')
     else:
         orgUnitPath = '/'
-    gam.printGettingAllItems('Chrome Auto Update Expirations', orgUnitPath)
+        query = None
+    gam.printGettingAllItems('Chrome Auto Update Expirations', query)
     aues = gapi.call(cm.customers().reports(),
                      'countChromeDevicesReachingAutoExpirationDate',
                      customer=customer, orgUnitId=orgunit,
@@ -352,6 +354,48 @@ def printAUEs():
             aue['orgUnitPath'] = orgUnitPath
         csvRows.append(aue)
     display.write_csv_file(csvRows, titles, 'Chrome AUEs', todrive)
+
+
+CHROME_NEEDSATTN_TITLES = [
+    'noRecentPolicySyncCount', 'noRecentUserActivityCount', 'pendingUpdate',
+    'osVersionNotCompliantCount', 'unsupportedPolicyCount'
+    ]
+def printNeedsAttn():
+    cm = build()
+    customer = _get_customerid()
+    todrive = False
+    titles = CHROME_NEEDSATTN_TITLES[:]
+    csvRows = []
+    orgunit = None
+    i = 3
+    while i < len(sys.argv):
+        myarg = sys.argv[i].lower().replace('_', '')
+        if myarg == 'todrive':
+            todrive = True
+            i += 1
+        elif myarg in ['ou', 'org', 'orgunit']:
+            orgunit = _get_orgunit(sys.argv[i+1])
+            i += 2
+        else:
+            msg = f'{myarg} is not a valid argument to "gam print chromeneedsattn"'
+            controlflow.system_error_exit(3, msg)
+    if orgunit:
+        orgUnitPath = gapi_directory_orgunits.orgunit_from_orgunitid(orgunit, None)
+        query = f'orgUnitPath={orgUnitPath}'
+        titles.append('orgUnitPath')
+    else:
+        orgUnitPath = '/'
+        query = None
+    gam.printGettingAllItems('Chrome Devices Needing Attention', query)
+    result = gapi.call(cm.customers().reports(),
+                     'countChromeDevicesThatNeedAttention',
+                     customer=customer, orgUnitId=orgunit, readMask=','.join(CHROME_NEEDSATTN_TITLES))
+    for field in CHROME_NEEDSATTN_TITLES:
+        result.setdefault(field, 0)
+    if orgunit:
+        result['orgUnitPath'] = orgUnitPath
+    csvRows.append(result)
+    display.write_csv_file(csvRows, titles, 'Chrome Devices Needing Attention', todrive)
 
 
 CHROME_VERSIONS_TITLES = [
@@ -367,6 +411,7 @@ def printVersions():
     startDate = None
     endDate = None
     pfilter = None
+    query = None
     reverse = False
     i = 3
     while i < len(sys.argv):
@@ -397,12 +442,18 @@ def printVersions():
         else:
             pfilter = ''
         pfilter += f'last_active_date>={startDate}'
+    query = pfilter
     if orgunit:
         orgUnitPath = gapi_directory_orgunits.orgunit_from_orgunitid(orgunit, None)
+        if query:
+            query += ' AND '
+        else:
+            query = ''
+        query += f'orgUnitPath={orgUnitPath}'
         titles.append('orgUnitPath')
     else:
         orgUnitPath = '/'
-    gam.printGettingAllItems('Chrome Versions', pfilter)
+    gam.printGettingAllItems('Chrome Versions', query)
     page_message = gapi.got_total_items_msg('Chrome Versions', '...\n')
     versions = gapi.get_all_pages(cm.customers().reports(),
                                   'countChromeVersions',

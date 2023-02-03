@@ -11890,6 +11890,8 @@ def ProcessGAMCommand(args):
                 gapi_chromemanagement.printAppDevices()
             elif argument in ['chromeaues']:
                 gapi_chromemanagement.printAUEs()
+            elif argument in ['chromeneedsattn']:
+                gapi_chromemanagement.printNeedsAttn()
             elif argument in ['chromeversions']:
                 gapi_chromemanagement.printVersions()
             elif argument in ['chromehistory']:
