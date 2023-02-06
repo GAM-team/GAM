@@ -12045,7 +12045,7 @@ def ProcessGAMCommand(args):
             argument = sys.argv[2].lower()
             if argument in ['export', 'vaultexport']:
                 gapi_vault.downloadExport()
-            elif argument in ['storagebucket']:
+            elif argument in ['storagebucket', 'bucket']:
                 gapi_storage.download_bucket()
             else:
                 controlflow.invalid_argument_exit(argument, 'gam download')

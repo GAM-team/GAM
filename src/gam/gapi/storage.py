@@ -24,6 +24,7 @@ def copy_bucket():
     source_bucket = None
     target_bucket = None
     prefix = None
+    target_prefix = ''
     i = 3
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
