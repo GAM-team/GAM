@@ -1,3 +1,4 @@
+from base64 import b64encode
 import datetime
 import json
 import sys
@@ -519,7 +520,6 @@ def getHoldInfo():
 
 
 def convertExportNameToID(v, nameOrID, matterId):
-    nameOrID = nameOrID.lower()
     cg = UID_PATTERN.match(nameOrID)
     if cg:
         return cg.group(1)
@@ -530,7 +530,7 @@ def convertExportNameToID(v, nameOrID, matterId):
                                  matterId=matterId,
                                  fields=fields)
     for export in exports:
-        if export['name'].lower() == nameOrID:
+        if export['name'].lower() == nameOrID.lower():
             return export['id']
     controlflow.system_error_exit(
         4, f'could not find export name {nameOrID} '
@@ -797,11 +797,49 @@ def getMatterInfo():
     display.print_json(result)
 
 
+def copyExport():
+    v = buildGAPIObject()
+    s = gapi_storage.build()
+    matterId = getMatterItem(v, sys.argv[3])
+    exportId = convertExportNameToID(v, sys.argv[4], matterId)
+    target_bucket = None
+    target_prefix = ''
+    i = 5
+    while i < len(sys.argv):
+        myarg = sys.argv[i].lower().replace('_', '')
+        if myarg == 'targetbucket':
+            target_bucket = sys.argv[i+1]
+            i += 2
+        elif myarg == 'targetprefix':
+            target_prefix = sys.argv[i+1]
+            i += 2
+        else:
+            controlflow.invalid_argument_exit(sys.argv[i],
+                                              'gam copy export')
+    if not target_bucket:
+        controlflow.missing_argument_exit('target_bucket', 'gam copy export')
+    export = gapi.call(v.matters().exports(),
+                       'get',
+                       matterId=matterId,
+                       exportId=exportId)
+    objects = []
+    for s_file in export['cloudStorageSink']['files']:
+        # Convert to md5Hash format Storage API uses
+        # because OF COURSE they differ
+        md5Hash = b64encode(bytes.fromhex(s_file['md5Hash'])).decode()
+        objects.append({'bucket': s_file['bucketName'],
+                        'name': s_file['objectName'],
+                        'md5Hash': md5Hash})
+    gapi_storage.copy_objects(objects,
+                              target_bucket,
+                              target_prefix)
+
+
 def downloadExport():
     verifyFiles = True
     extractFiles = True
     v = buildGAPIObject()
-    s = gapi_storage.build_gapi()
+    s = gapi_storage.build()
     matterId = getMatterItem(v, sys.argv[3])
     exportId = convertExportNameToID(v, sys.argv[4], matterId)
     targetFolder = GC_Values[GC_DRIVE_DIR]

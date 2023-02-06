@@ -7442,12 +7442,21 @@ def _getCurrentProjectID():
 
 def _getProjects(crm, pfilter):
     try:
-        return gapi.get_all_pages(
+        projects = gapi.get_all_pages(
             crm.projects(),
             'search',
             'projects',
             throw_reasons=[gapi_errors.ErrorReason.BAD_REQUEST],
             query=pfilter)
+        if projects:
+            return projects
+        if pfilter.startswith('id:'):
+            pfilter = pfilter[3:]
+        return [gapi.call(
+                    crm.projects(),
+                    'get',
+                    name=f'projects/{pfilter}',
+                    throw_reasons=[gapi_errors.ErrorReason.BAD_REQUEST])]
     except gapi_errors.GapiBadRequestError as e:
         controlflow.system_error_exit(2, f'Project: {pfilter}, {str(e)}')
 
@@ -10742,11 +10751,17 @@ OAUTH2_SCOPES = [
         'subscopes': ['readonly'],
         'scopes': 'https://www.googleapis.com/auth/ediscovery'
     },
+    # off by default to avoid reauth issues with GCP APIs
+    # and since many admins never use Vault API.
     {
-        'name': 'Cloud Storage (Vault Export - read only)',
-        'subscopes': [],
-        'scopes': 'https://www.googleapis.com/auth/devstorage.read_only'
-    },
+        'name': 'Cloud Storage - Vault/Takeout Download/Copy',
+        'subscopes': ['readonly'],
+        'offByDefault': True,
+        'restricted_scopes': {
+            'readonly': 'https://www.googleapis.com/auth/devstorage.read_only'
+            },
+        'scopes': 'https://www.googleapis.com/auth/devstorage.read_write'
+    },    
     {
         'name': 'User Profile (Email address - read only)',
         'subscopes': [],
@@ -10791,6 +10806,7 @@ class ScopeMenuOption():
                  is_required=False,
                  is_selected=False,
                  supported_restrictions=None,
+                 restricted_scopes=None,
                  restriction=None):
         """A data structure for storing and toggling feature/API scope attributes.
 
@@ -10820,6 +10836,7 @@ class ScopeMenuOption():
         self._restriction = None
 
         self.scopes = oauth_scopes
+        self.restricted_scopes = restricted_scopes
         self.description = description
         self.is_required = is_required
         # Required scopes must be selected
@@ -10910,7 +10927,10 @@ class ScopeMenuOption():
         effective_scopes = []
         for scope in self.scopes:
             if self.is_restricted:
-                scope = f'{scope}.{self._restriction}'
+                if self.restricted_scopes.get(self._restriction):
+                    scope = self.restricted_scopes.get(self._restriction)
+                else:
+                    scope = f'{scope}.{self._restriction}'
             effective_scopes.append(scope)
         return effective_scopes
 
@@ -10922,7 +10942,10 @@ class ScopeMenuOption():
         name: Some description of the API/feature.
         subscopes: A list of compatible scope restrictions such as 'action' or
             'readonly'. Each scope in the scopes list must support this
-            restriction text appended to the end of its normal scope text.
+            restriction text appended to the end of its normal scope text or
+            be defined in the restricted_scopes attribute.
+        restricted_scopes: A dict of scopes to be used for restrictions. If not
+            defined then {scope}.{subscope} is used.
         scopes: A list of scopes that are required for the API/feature.
         offByDefault: A bool indicating whether this feature/scope should be off
             by default (when no prior selection has been made). Default is False
@@ -10951,8 +10974,8 @@ class ScopeMenuOption():
                    description=scope_definition.get('name'),
                    is_selected=not scope_definition.get('offByDefault'),
                    supported_restrictions=scope_definition.get('subscopes', []),
-                   is_required=scope_definition.get('required', False))
-
+                   is_required=scope_definition.get('required', False),
+                   restricted_scopes=scope_definition.get('restricted_scopes', {}))
 
 class ScopeSelectionMenu():
     """A text menu which prompts the user to select the scopes to authorize."""
@@ -12027,6 +12050,16 @@ def ProcessGAMCommand(args):
             else:
                 controlflow.invalid_argument_exit(argument, 'gam download')
             sys.exit(0)
+        elif command == 'copy':
+            argument = sys.argv[2].lower().replace('_', '')
+            if argument in ['export', 'vaultexport']:
+                gapi_vault.copyExport()
+            elif argument in ['storagebucket', 'bucket']:
+                gapi_storage.copy_bucket()
+            else:
+                controlflow.invalid_argument_exit(argument, 'gam copy')
+            sys.exit(0)
+
         elif command == 'rotate':
             argument = sys.argv[2].lower()
             if argument in ['sakey', 'sakeys']:

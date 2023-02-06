@@ -12,7 +12,7 @@
     }
   },
   "basePath": "",
-  "baseUrl": "https://www.googleapis.com/admin/directory/v1.1beta1/customer/",
+  "baseUrl": "https://admin.googleapis.com/admin/directory/v1.1beta1/customer/",
   "batchPath": "batch",
   "canonicalName": "cbcm",
   "discoveryVersion": "v1",
