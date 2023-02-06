@@ -1681,6 +1681,9 @@ gam show guardian|guardians [invitedguardian <EmailAddress>] [student <StudentIt
 gam print guardian|guardians [todrive] [invitedguardian <EmailAddress>] [student <StudentItem>] [invitations [states <GuardianStateList>]] [<UserTypeEntity>]
 gam cancel guardianinvitation|guardianinvitations <GuardianInvitationID> <StudentItem>
 
+gam download storagebucket <URL>
+gam copy storagebucket sourcebucket <URL> targetbucket <URL> [sourceprefix <String>] [targetprefix <String>]
+
 gam create vaultexport|export matter <MatterItem> [name <name>] corpus <drive|mail|groups|hangouts_chat>
 	(accounts <EmailAddressList>) | (orgunit|ou <OrgUnitPath>) | (teamdrives <TeamDriveList>) | (rooms <ChatRoomList>) | everyone
 	[scope <all_data|held_data|unprocessed_data>]
@@ -1693,6 +1696,7 @@ gam delete export <MatterItem> <ExportItem>
 gam info export <MatterItem> <ExportItem>
 gam print exports [todrive] [matters <MatterItemList>]
 gam download export <MatterItem> <ExportItem> [noverify] [noextract] [targetfolder <FilePath>]
+gam copy export <MatterItem> <ExportItem> targetbucket <URL> [targetprefix <String>]
 
 gam create vaulthold|hold corpus drive|groups|mail matter <MatterItem> [name <String>] [query <QueryVaultCorpus>]
 	[(accounts|groups|users <EmailItemList>) | (orgunit|ou <OrgUnit>)]
