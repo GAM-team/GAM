@@ -867,24 +867,17 @@ def downloadExport():
     for s_file in export['cloudStorageSink']['files']:
         bucket = s_file['bucketName']
         s_object = s_file['objectName']
-        filename = os.path.join(targetFolder, s_object.replace('/', '-'))
-        print(f'saving to {filename}')
-        request = s.objects().get_media(bucket=bucket, object=s_object)
-        f = fileutils.open_file(filename, 'wb')
-        downloader = googleapiclient.http.MediaIoBaseDownload(f, request)
-        done = False
-        while not done:
-            status, done = downloader.next_chunk()
-            sys.stdout.write(f' Downloaded: {status.progress():>7.2%}\r')
-            sys.stdout.flush()
-        sys.stdout.write('\n Download complete. Flushing to disk...\n')
-        fileutils.close_file(f, True)
         if verifyFiles:
             expected_hash = s_file['md5Hash']
-            sys.stdout.write(f' Verifying file hash is {expected_hash}...')
-            sys.stdout.flush()
-            utils.md5_matches_file(filename, expected_hash, True)
-            print('VERIFIED')
+        else:
+            expected_hash = None
+        local_file = s_object.replace('/', '-').replace(':', '-')
+        filename = os.path.join(targetFolder, local_file)
+        gapi_storage.get_cloud_storage_object(s,
+                             bucket,
+                             s_object,
+                             local_file=filename,
+                             expectedMd5=expected_hash)
         if extractFiles and re.search(r'\.zip$', filename):
             gam.extract_nested_zip(filename, targetFolder)
 

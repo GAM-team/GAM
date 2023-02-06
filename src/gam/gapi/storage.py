@@ -5,6 +5,7 @@ import sys
 import time
 
 import googleapiclient
+from pathvalidate import sanitize_filepath
 
 import gam
 from gam.gapi import errors as gapi_errors
@@ -152,11 +153,12 @@ def get_cloud_storage_object(s,
                              expectedMd5=None):
     if not local_file:
         local_file = object_
+    local_file = sanitize_filepath(local_file, platform='auto')
     if os.path.exists(local_file):
-        sys.stdout.write(' File already exists. ')
+        sys.stdout.write(f'File {local_file} already exists.')
         sys.stdout.flush()
         if expectedMd5:
-            sys.stdout.write(f'Verifying {expectedMd5} hash...')
+            sys.stdout.write(f' verifying {expectedMd5} hash...')
             sys.stdout.flush()
             if utils.md5_matches_file(local_file, expectedMd5, False):
                 print('VERIFIED')
@@ -164,7 +166,7 @@ def get_cloud_storage_object(s,
             print('not verified. Downloading again and over-writing...')
         else:
             return  # nothing to verify, just assume we're good.
-    print(f'saving to {local_file}')
+    print(f'Saving to {local_file}')
     request = s.objects().get_media(bucket=bucket, object=object_)
     file_path = os.path.dirname(local_file)
     if not os.path.exists(file_path):
