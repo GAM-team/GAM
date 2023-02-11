@@ -28,7 +28,7 @@ upgrade_only=false
 gamversion="latest"
 adminuser=""
 regularuser=""
-gam_glibc_vers="2.35"
+gam_glibc_vers="2.31"
 
 while getopts "hd:a:o:b:lp:u:r:v:" OPTION
 do
