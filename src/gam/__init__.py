@@ -7456,10 +7456,12 @@ def _getProjects(crm, pfilter):
                     crm.projects(),
                     'get',
                     name=f'projects/{pfilter}',
-                    throw_reasons=[gapi_errors.ErrorReason.BAD_REQUEST])]
+                    throw_reasons=[gapi_errors.ErrorReason.BAD_REQUEST,
+                                   gapi_errors.ErrorReason.FOUR_O_THREE])]
     except gapi_errors.GapiBadRequestError as e:
         controlflow.system_error_exit(2, f'Project: {pfilter}, {str(e)}')
-
+    except googleapiclient.errors.HttpError:
+        return []
 
 PROJECTID_PATTERN = re.compile(r'^[a-z][a-z0-9-]{4,28}[a-z0-9]$')
 PROJECTID_FORMAT_REQUIRED = '[a-z][a-z0-9-]{4,28}[a-z0-9]'
