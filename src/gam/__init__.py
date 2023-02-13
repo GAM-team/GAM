@@ -8175,20 +8175,14 @@ def doCreateSharedDrive(users):
         print(f'Created Shared Drive {body["name"]} with id {result["id"]}')
 
 
-TEAMDRIVE_RESTRICTIONS_MAP = {
-    'adminmanagedrestrictions': 'adminManagedRestrictions',
-    'copyrequireswriterpermission': 'copyRequiresWriterPermission',
-    'domainusersonly': 'domainUsersOnly',
-    'teammembersonly': 'teamMembersOnly',
-}
-
-
 def doUpdateSharedDrive(users):
     i, driveId = getSharedDriveId(5)
     body = {}
     useDomainAdminAccess = False
     change_hide = None
     orgUnit = None
+    _, d = buildDrive3GAPIObject(_get_admin_email())
+    restrictions_map = {r.lower(): r for r in d._rootDesc['schemas']['Drive']['properties']['restrictions']['properties'].keys()}
     while i < len(sys.argv):
         myarg = sys.argv[i].lower().replace('_', '')
         if myarg == 'name':
@@ -8214,19 +8208,15 @@ def doUpdateSharedDrive(users):
         elif myarg == 'asadmin':
             useDomainAdminAccess = True
             i += 1
-#        elif myarg in ['ou', 'org', 'orgunit']:
-#            body['orgUnitId'] = gapi_directory_orgunits.getOrgUnitId(sys.argv[i + 1])
-#            i += 2
         elif myarg in ['hidden']:
             if getBoolean(sys.argv[i+1], myarg):
                 change_hide = 'hide'
             else:
                 change_hide = 'unhide'
             i += 2
-        elif myarg in TEAMDRIVE_RESTRICTIONS_MAP:
+        elif myarg in restrictions_map:
             body.setdefault('restrictions', {})
-            body['restrictions'][
-                TEAMDRIVE_RESTRICTIONS_MAP[myarg]] = getBoolean(
+            body['restrictions'][restrictions_map[myarg]] = getBoolean(
                     sys.argv[i + 1], myarg)
             i += 2
         else:
