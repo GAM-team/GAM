@@ -782,9 +782,9 @@ def checkConnection():
     success_count = 0
     for host in hosts:
         try_count += 1
-        ip = socket.gethostbyname(host)
+        ip = socket.getaddrinfo(host, None)[0][-1][0] # works with ipv6
         check_line = f'Checking {host} ({ip}) ({try_count}/{host_count})...'
-        sys.stdout.write(f'{check_line:<80}')
+        sys.stdout.write(f'{check_line:<100}')
         sys.stdout.flush()
         try:
             httpc.request(f'https://{host}/', 'HEAD', headers=headers)
