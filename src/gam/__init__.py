@@ -51,6 +51,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.x509.oid import NameOID
 
 import gam.auth.oauth
+from gam.auth import signjwt
 from gam import auth
 from gam import controlflow
 from gam import display
@@ -925,14 +926,12 @@ def _getSvcAcctData():
             controlflow.system_error_exit(6, None)
         GM_Globals[GM_OAUTH2SERVICE_JSON_DATA] = json.loads(json_string)
 
-jwt_apis = ['chat',
-            'cloudresourcemanager',
-            'accesscontextmanager'] # APIs which can handle OAuthless JWT tokens
 def getSvcAcctCredentials(scopes, act_as, api=None):
     try:
         _getSvcAcctData()
         sign_method = GM_Globals[GM_OAUTH2SERVICE_JSON_DATA].get('key_type', 'default')
-        if act_as or api not in jwt_apis:
+        if act_as:
+            # DwD means we need to go about things differently...
             if sign_method == 'default':
                 credentials = google.oauth2.service_account.Credentials.from_service_account_info(
                     GM_Globals[GM_OAUTH2SERVICE_JSON_DATA])
@@ -940,6 +939,10 @@ def getSvcAcctCredentials(scopes, act_as, api=None):
                 yksigner = yubikey.YubiKey(GM_Globals[GM_OAUTH2SERVICE_JSON_DATA])
                 credentials = google.oauth2.service_account.Credentials._from_signer_and_info(yksigner,
                     GM_Globals[GM_OAUTH2SERVICE_JSON_DATA])
+            elif sign_method == 'signjwt':
+                sjsigner = signjwt.SignJwt(GM_Globals[GM_OAUTH2SERVICE_JSON_DATA])
+                credentials = signjwt.Credentials._from_signer_and_info(sjsigner.sign,
+                        GM_Globals[GM_OAUTH2SERVICE_JSON_DATA])
             credentials = credentials.with_scopes(scopes)
             if act_as:
                 credentials = credentials.with_subject(act_as)
@@ -951,6 +954,11 @@ def getSvcAcctCredentials(scopes, act_as, api=None):
             elif sign_method == 'yubikey':
                 yksigner = yubikey.YubiKey(GM_Globals[GM_OAUTH2SERVICE_JSON_DATA])
                 credentials = JWTCredentials._from_signer_and_info(yksigner,
+                                                                   GM_Globals[GM_OAUTH2SERVICE_JSON_DATA],
+                                                                   audience=audience)
+            elif sign_method == 'signjwt':
+                sjsigner = signjwt.SignJwt(GM_Globals[GM_OAUTH2SERVICE_JSON_DATA])
+                credentials = signjwt.JWTCredentials._from_signer_and_info(sjsigner,
                                                                    GM_Globals[GM_OAUTH2SERVICE_JSON_DATA],
                                                                    audience=audience)
             credentials.project_id = GM_Globals[GM_OAUTH2SERVICE_JSON_DATA]['project_id']
@@ -1315,12 +1323,10 @@ def doCheckServiceAccount(users):
             'Invalid private key in oauth2service.json. Please delete the file and then\nrecreate with "gam create project" or "gam use project"'
         )
     key_type = GM_Globals[GM_OAUTH2SERVICE_JSON_DATA].get('key_type', 'default')
-    if key_type == 'yubikey':
-        printPassFail('Skipping age check. YubiKey rotation not necessary.', test_pass)
-    else:
+    if key_type == 'default':
         print(
             'Checking key age. Google recommends rotating keys on a routine basis...'
-    )
+        )
         try:
             iam = buildGAPIServiceObject('iam', None)
             project = GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID]
@@ -1346,6 +1352,8 @@ def doCheckServiceAccount(users):
             key_days = 'UNKNOWN'
             print('Unable to check key age, please run "gam update project"')
         printPassFail(f'Key is {key_days} days old', key_age_result)
+    else:
+        printPassFail(f'Skipping age check. {key_type} rotation not necessary.', test_pass)
     if not check_scopes:
         for _, scopes in list(API_SCOPE_MAPPING.items()):
             for scope in scopes:
@@ -7824,8 +7832,7 @@ def doShowServiceAccountKeys():
         else:
             controlflow.invalid_argument_exit(myarg, 'gam show sakeys')
     name = f'projects/-/serviceAccounts/{GM_Globals[GM_OAUTH2SERVICE_ACCOUNT_CLIENT_ID]}'
-    currentPrivateKeyId = GM_Globals[GM_OAUTH2SERVICE_JSON_DATA][
-        'private_key_id']
+    currentPrivateKeyId = GM_Globals[GM_OAUTH2SERVICE_JSON_DATA].get('private_key_id')
     keys = gapi.get_items(iam.projects().serviceAccounts().keys(),
                           'list',
                           'keys',
