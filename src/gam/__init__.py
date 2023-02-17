@@ -926,11 +926,11 @@ def _getSvcAcctData():
             controlflow.system_error_exit(6, None)
         GM_Globals[GM_OAUTH2SERVICE_JSON_DATA] = json.loads(json_string)
 
-def getSvcAcctCredentials(scopes, act_as, api=None):
+def getSvcAcctCredentials(scopes, act_as, api=None, force_oauth=False):
     try:
         _getSvcAcctData()
         sign_method = GM_Globals[GM_OAUTH2SERVICE_JSON_DATA].get('key_type', 'default')
-        if act_as:
+        if act_as or force_oauth:
             # DwD means we need to go about things differently...
             if sign_method == 'default':
                 credentials = google.oauth2.service_account.Credentials.from_service_account_info(
@@ -1303,7 +1303,9 @@ def doCheckServiceAccount(users):
     # We are explicitly not doing DwD here, just confirming service account can auth
     auth_error = ''
     try:
-        credentials = getSvcAcctCredentials([USERINFO_EMAIL_SCOPE], None)
+        credentials = getSvcAcctCredentials([USERINFO_EMAIL_SCOPE],
+                                            None,
+                                            force_oauth=True)
         request = transport.create_request()
         credentials.refresh(request)
         sa_token_info = gapi.call(oa2,
