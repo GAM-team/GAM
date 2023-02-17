@@ -7178,7 +7178,7 @@ def signjwt_enable_apis():
     GAMProjectAPIs = getGAMProjectFile('project-apis.txt').splitlines()
     enableGAMProjectAPIs(GAMProjectAPIs,
             httpObj,
-            projectID=project_id,
+            projectId=project_id,
             checkEnabled=True)
 
 
