@@ -7168,6 +7168,20 @@ def getGAMProjectFile(filepath):
     return c.decode(UTF8)
 
 
+def signjwt_enable_apis():
+    try:
+        creds, project_id = google.auth.default()
+    except google.auth.exceptions.DefaultCredentialsError as e:
+        controlflow.system_error_exit(2, e)
+    httpObj = transport.AuthorizedHttp(
+        creds, transport.create_http(cache=GM_Globals[GM_CACHE_DIR]))
+    GAMProjectAPIs = getGAMProjectFile('project-apis.txt').splitlines()
+    enableGAMProjectAPIs(GAMProjectAPIs,
+            httpObj,
+            projectID=project_id,
+            checkEnabled=True)
+
+
 def enableGAMProjectAPIs(GAMProjectAPIs,
                          httpObj,
                          projectId,
@@ -12131,6 +12145,11 @@ def ProcessGAMCommand(args):
                 yk = yubikey.YubiKey()
                 yk.serial_number = yk.get_serial_number()
                 yk.reset_piv()
+            sys.exit(0)
+        elif command == 'enable':
+            enable_what = sys.argv[2].lower().replace('_', '')
+            if enable_what in ['api', 'apis']:
+                signjwt_enable_apis()
             sys.exit(0)
         users = getUsersToModify()
         command = sys.argv[3].lower()
