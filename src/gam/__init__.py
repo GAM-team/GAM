@@ -7168,18 +7168,32 @@ def getGAMProjectFile(filepath):
     return c.decode(UTF8)
 
 
-def signjwt_enable_apis():
-    try:
-        creds, project_id = google.auth.default()
-    except google.auth.exceptions.DefaultCredentialsError as e:
-        controlflow.system_error_exit(2, e)
-    httpObj = transport.AuthorizedHttp(
-        creds, transport.create_http(cache=GM_Globals[GM_CACHE_DIR]))
+def enable_apis():
     GAMProjectAPIs = getGAMProjectFile('project-apis.txt').splitlines()
-    enableGAMProjectAPIs(GAMProjectAPIs,
-            httpObj,
-            projectId=project_id,
-            checkEnabled=True)
+    try:
+        _, projectId = google.auth.default()
+    except google.auth.exceptions.DefaultCredentialsError as e:
+        projectId = input('Please enter your project ID: ')
+    while True:
+        a_or_m = input('Do you want to enable projects [a]utomatically or [m]anually? (a/m): ').strip().lower()
+        if a_or_m in ['a', 'm']:
+            break
+        else:
+            print('Please enter A or M....')
+    if a_or_m == 'a':
+        login_hint = _getValidateLoginHint()
+        _, httpObj = getCRMService(login_hint)
+        enableGAMProjectAPIs(GAMProjectAPIs,
+                httpObj,
+                projectId=projectId,
+                checkEnabled=True)
+    else:
+        chunk_size = 20
+        print('Using an account with project access, please use ALL of these URLs to enable 20 APIs at a time:\n\n')
+        for chunk in range(0, len(GAMProjectAPIs), chunk_size):
+            apiid = ",".join(GAMProjectAPIs[chunk:chunk+chunk_size])
+            url = f'https://console.cloud.google.com/apis/enableflow?apiid={apiid}&project={projectId}'
+            print(f'    {url}\n\n')
 
 
 def enableGAMProjectAPIs(GAMProjectAPIs,
@@ -12149,7 +12163,7 @@ def ProcessGAMCommand(args):
         elif command == 'enable':
             enable_what = sys.argv[2].lower().replace('_', '')
             if enable_what in ['api', 'apis']:
-                signjwt_enable_apis()
+                enable_apis()
             sys.exit(0)
         users = getUsersToModify()
         command = sys.argv[3].lower()
