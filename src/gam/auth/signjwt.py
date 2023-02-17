@@ -2,10 +2,12 @@
 import datetime
 import json
 
-from google.auth import _helpers, default
+import google.auth
+from google.auth._helpers import datetime_to_secs, scopes_to_string, utcnow
 import google.oauth2.service_account
 from googleapiclient.discovery import build
 
+from gam import controlflow
 from gam import gapi
 
 _DEFAULT_TOKEN_LIFETIME_SECS = 3600  # 1 hour in seconds
@@ -15,14 +17,14 @@ _GOOGLE_OAUTH2_TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token"
 class JWTCredentials(google.auth.jwt.Credentials):
     ''' Class used for DASA '''
     def _make_jwt(self):
-        now = _helpers.utcnow()
+        now = utcnow()
         lifetime = datetime.timedelta(seconds=self._token_lifetime)
         expiry = now + lifetime
         payload = {
             "iss": self._issuer,
             "sub": self._subject,
-            "iat": _helpers.datetime_to_secs(now),
-            "exp": _helpers.datetime_to_secs(expiry),
+            "iat": datetime_to_secs(now),
+            "exp": datetime_to_secs(expiry),
         }
         if self._audience:
             payload["aud"] = self._audience
@@ -35,15 +37,15 @@ class Credentials(google.oauth2.service_account.Credentials):
     ''' Class used for DwD '''
 
     def _make_authorization_grant_assertion(self):
-        now = _helpers.utcnow()
+        now = utcnow()
         lifetime = datetime.timedelta(seconds=_DEFAULT_TOKEN_LIFETIME_SECS)
         expiry = now + lifetime
         payload = {
-            "iat": _helpers.datetime_to_secs(now),
-            "exp": _helpers.datetime_to_secs(expiry),
+            "iat": datetime_to_secs(now),
+            "exp": datetime_to_secs(expiry),
             "iss": self._service_account_email,
             "aud": _GOOGLE_OAUTH2_TOKEN_ENDPOINT,
-            "scope": _helpers.scopes_to_string(self._scopes or ()),
+            "scope": scopes_to_string(self._scopes or ()),
         }
 
         payload.update(self._additional_claims)
@@ -69,7 +71,10 @@ class SignJwt(google.auth.crypt.Signer):
 
     def sign(self, message):
         ''' Call IAM Credentials SignJWT API to get our signed JWT '''
-        credentials, _ = default()
+        try:
+            credentials, _ = google.auth.default()
+        except google.auth.exceptions.DefaultCredentialsError as e:
+            controlflow.system_error_exit(2, e)
         iamc = build('iamcredentials', 'v1', credentials=credentials)
         response = gapi.call(iamc.projects().serviceAccounts(),
                              'signJwt',

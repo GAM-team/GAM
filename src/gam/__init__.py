@@ -7853,6 +7853,29 @@ def doShowServiceAccountKeys():
     display.print_json(keys)
 
 
+def create_signjwt_serviceaccount():
+    _checkForExistingProjectFiles()
+    sa_info = {
+            'type': 'service_account',
+            'key_type': 'signjwt',
+            'token_uri': 'https://oauth2.googleapis.com/token'
+            }
+    try:
+        creds, sa_info['project_id'] = google.auth.default()
+    except google.auth.exceptions.DefaultCredentialsError as e:
+        controlflow.system_error_exit(2, e)
+    request = transport.create_request()
+    creds.refresh(request)
+    sa_info['client_email'] = creds.service_account_email
+    oa2 = buildGAPIObjectNoAuthentication('oauth2')
+    token_info = gapi.call(oa2, 'tokeninfo', access_token=creds.token)
+    sa_info['client_id'] = token_info['issued_to']
+    sa_output = json.dumps(sa_info, indent=4, sort_keys=True)
+    fileutils.write_file(GC_Values[GC_OAUTH2SERVICE_JSON],
+                          sa_output,
+                          continue_on_error=False)
+
+
 def doCreateOrRotateServiceAccountKeys(iam=None,
                                        project_id=None,
                                        client_email=None,
@@ -11573,6 +11596,8 @@ def ProcessGAMCommand(args):
                 gapi_chat.create_message()
             elif argument in ['caalevel']:
                 gapi_caa.create_access_level()
+            elif argument in ['signjwtserviceaccount']:
+                create_signjwt_serviceaccount()
             else:
                 controlflow.invalid_argument_exit(argument, 'gam create')
             sys.exit(0)
