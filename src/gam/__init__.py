@@ -1086,9 +1086,10 @@ def getService(api, httpObj):
         controlflow.invalid_json_exit(disc_file)
 
 
-def buildGAPIObject(api):
+def buildGAPIObject(api, credentials=None):
     GM_Globals[GM_CURRENT_API_USER] = None
-    credentials = getValidOauth2TxtCredentials(api=getAPIVersion(api)[0])
+    if not credentials:
+        credentials = getValidOauth2TxtCredentials(api=getAPIVersion(api)[0])
     credentials.user_agent = GAM_INFO
     httpObj = transport.AuthorizedHttp(
         credentials, transport.create_http(cache=GM_Globals[GM_CACHE_DIR]))

@@ -5,10 +5,12 @@ import json
 import google.auth
 from google.auth._helpers import datetime_to_secs, scopes_to_string, utcnow
 import google.oauth2.service_account
-from googleapiclient.discovery import build
 
+import gam
 from gam import controlflow
 from gam import gapi
+from gam import transport
+from gam.var import GM_Globals, GM_CACHE_DIR
 
 _DEFAULT_TOKEN_LIFETIME_SECS = 3600  # 1 hour in seconds
 _GOOGLE_OAUTH2_TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token"
@@ -75,7 +77,10 @@ class SignJwt(google.auth.crypt.Signer):
             credentials, _ = google.auth.default()
         except google.auth.exceptions.DefaultCredentialsError as e:
             controlflow.system_error_exit(2, e)
-        iamc = build('iamcredentials', 'v1', credentials=credentials)
+        httpObj = transport.AuthorizedHttp(
+                credentials,
+                transport.create_http(cache=GM_Globals[GM_CACHE_DIR]))
+        iamc = gam.getService('iamcredentials', httpObj)
         response = gapi.call(iamc.projects().serviceAccounts(),
                              'signJwt',
                              name=self.name,
