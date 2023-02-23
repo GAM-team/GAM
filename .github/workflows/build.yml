@@ -25,16 +25,16 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-20.04
-            jid: 1
-            goal: build
-            arch: x86_64
-            openssl_archs: linux-x86_64
-          - os: [self-hosted, linux, arm64, gcp]
-            jid: 2
-            goal: build
-            arch: aarch64
-            openssl_archs: linux-aarch64
+          #- os: ubuntu-20.04
+          #  jid: 1
+          #  goal: build
+          #  arch: x86_64
+          #  openssl_archs: linux-x86_64
+          #- os: [self-hosted, linux, arm64, gcp]
+          #  jid: 2
+          #  goal: build
+          #  arch: aarch64
+          #  openssl_archs: linux-aarch64
           - os: ubuntu-20.04
             jid: 3
             goal: build
