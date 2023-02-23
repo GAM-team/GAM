@@ -7170,17 +7170,26 @@ def getGAMProjectFile(filepath):
 
 
 def enable_apis():
+    a_or_m = None
+    i = 3
+    while i < len(sys.argv):
+        myarg = sys.argv[i].lower()
+        if myarg in ['auto', 'manual']:
+            a_or_m = myarg[0]
+            i += 1
+        else:
+            controlflow.invalid_argument_exit(sys.argv[i],
+                                              'gam enable apis')
     GAMProjectAPIs = getGAMProjectFile('project-apis.txt').splitlines()
     try:
         _, projectId = google.auth.default()
     except google.auth.exceptions.DefaultCredentialsError as e:
         projectId = input('Please enter your project ID: ')
-    while True:
+    while a_or_m not in ['a', 'm']:
         a_or_m = input('Do you want to enable projects [a]utomatically or [m]anually? (a/m): ').strip().lower()
         if a_or_m in ['a', 'm']:
             break
-        else:
-            print('Please enter A or M....')
+        print('Please enter A or M....')
     if a_or_m == 'a':
         login_hint = _getValidateLoginHint()
         _, httpObj = getCRMService(login_hint)
@@ -7883,6 +7892,9 @@ def doShowServiceAccountKeys():
 
 
 def create_signjwt_serviceaccount():
+    i = 3
+    if i < len(sys.argv):
+        controlflow.invalid_argument_exit(sys.argv[i], f'gam create {sys.argv[2]}')
     _checkForExistingProjectFiles()
     sa_info = {
             'type': 'service_account',
@@ -11625,7 +11637,7 @@ def ProcessGAMCommand(args):
                 gapi_chat.create_message()
             elif argument in ['caalevel']:
                 gapi_caa.create_access_level()
-            elif argument in ['signjwtserviceaccount']:
+            elif argument in ['gcpserviceaccount', 'signjwtserviceaccount']:
                 create_signjwt_serviceaccount()
             else:
                 controlflow.invalid_argument_exit(argument, 'gam create')
