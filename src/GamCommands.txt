@@ -873,7 +873,7 @@ Specify a collection of Users by directly specifying them or by specifying items
 	<UserMultiAttribute>
 
 gam checkconnection
-gam version [check|checkrc|simple|extended] [timeoffset] [location <HostName>]
+gam version [check|simple|extended] [timeoffset] [location <HostName>]
 gam help
 
 gam batch <FileName>|- [charset <Charset>]
