@@ -834,7 +834,7 @@ def doGAMVersion(checkForArgs=True):
             if myarg == 'check':
                 force_check = 1
                 i += 1
-            if myarg == 'checkrc':
+            elif myarg == 'checkrc':
                 force_check = -1
                 i += 1
             elif myarg == 'simple':
