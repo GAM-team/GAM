@@ -589,7 +589,7 @@ def SetGlobalVariables():
     GM_Globals[GM_ENABLEDASA_TXT] = os.path.join(
         GC_Values[GC_CONFIG_DIR], FN_ENABLEDASA_TXT)
     if not GC_Values[GC_NO_UPDATE_CHECK]:
-        doGAMCheckForUpdates()
+        doGAMCheckForUpdates(forceCheck=0)
 
 # domain must be set and customer_id must be set and != my_customer when enable_dasa = true
     if GC_Values[GC_ENABLE_DASA]:
@@ -660,7 +660,7 @@ def getLocalGoogleTimeOffset(testLocation='admin.googleapis.com'):
         return (offset, nicetime)
 
 
-def doGAMCheckForUpdates(forceCheck=False):
+def doGAMCheckForUpdates(forceCheck=0):
 
     def _gamLatestVersionNotAvailable():
         if forceCheck:
@@ -703,6 +703,8 @@ def doGAMCheckForUpdates(forceCheck=False):
             print(
                 f'Version Check:\n Current: {current_version}\n Latest: {latest_version}'
             )
+            if forceCheck < 0:
+                sys.exit(1 if latest_version > current_version else 0)
         if latest_version <= current_version:
             fileutils.write_file(GM_Globals[GM_LAST_UPDATE_CHECK_TXT],
                                  str(now_time),
@@ -822,14 +824,18 @@ def checkConnection():
         controlflow.system_error_exit(3, createYellowText('Some hosts failed to connect! Please follow the recommendations for those hosts to correct any issues and try again.'))
 
 def doGAMVersion(checkForArgs=True):
-    force_check = extended = simple = timeOffset = False
+    forceCheck = 0
+    extended = simple = timeOffset = False
     testLocation = 'admin.googleapis.com'
     if checkForArgs:
         i = 2
         while i < len(sys.argv):
             myarg = sys.argv[i].lower().replace('_', '')
             if myarg == 'check':
-                force_check = True
+                forceCheck = 1
+                i += 1
+            elif myarg == 'checkrc':
+                forceCheck = -1
                 i += 1
             elif myarg == 'simple':
                 simple = True
@@ -869,8 +875,8 @@ def doGAMVersion(checkForArgs=True):
               (testLocation, nicetime))
         if offset > MAX_LOCAL_GOOGLE_TIME_OFFSET:
             controlflow.system_error_exit(4, 'Please fix your system time.')
-    if force_check:
-        doGAMCheckForUpdates(forceCheck=True)
+    if forceCheck:
+        doGAMCheckForUpdates(forceCheck)
     if extended:
         print(ssl.OPENSSL_VERSION)
         libs = ['cryptography',
