@@ -87,6 +87,9 @@ class YubiKey():
     def get_serial_number(self):
         try:
             devices = list_all_devices()
+            if not devices:
+                msg = f'Could not find any YubiKey'
+                controlflow.system_error_exit(3, msg)
             if self.serial_number:
                 for (device, info) in devices:
                     if info.serial == self.serial_number:
