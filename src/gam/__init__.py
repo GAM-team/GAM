@@ -7897,6 +7897,28 @@ def doShowServiceAccountKeys():
     display.print_json(keys)
 
 
+def getYubiKeySerialNumber(new_data, serial_number):
+    try:
+        new_data['yubikey_serial_number'] = int(serial_number)
+    except ValueError:
+        controlflow.system_error_exit(
+            3,
+            'yubikey_serial_number must be a number')
+        
+def doResetYubiKeyPIV():
+    new_data = {}
+    i = 3
+    while i < len(sys.argv):
+        myarg = sys.argv[i].lower().replace('_', '')
+        if myarg == 'yubikeyserialnumber':
+            getYubiKeySerialNumber(new_data, sys.argv[i+1])
+            i += 2
+        else:
+            controlflow.invalid_argument_exit(myarg, 'gam yubikey resetpiv')
+    yk = yubikey.YubiKey(new_data)
+    yk.serial_number = yk.get_serial_number()
+    yk.reset_piv()
+
 def create_signjwt_serviceaccount():
     i = 3
     if i < len(sys.argv):
@@ -7978,12 +8000,7 @@ def doCreateOrRotateServiceAccountKeys(iam=None,
                 new_data['yubikey_pin'] = input('Enter your YubiKey PIN: ')
                 i += 1
             elif myarg == 'yubikeyserialnumber':
-                try:
-                    new_data['yubikey_serial_number'] = int(sys.argv[i+1])
-                except ValueError:
-                    controlflow.system_error_exit(
-                            3,
-                            'yubikey_serial_number must be a number')
+                getYubiKeySerialNumber(new_data, sys.argv[i+1])
                 i += 2
             elif myarg in ['retainnone', 'retainexisting', 'replacecurrent']:
                 mode = myarg
@@ -12185,9 +12202,7 @@ def ProcessGAMCommand(args):
         elif command in ['yubikey']:
             action = sys.argv[2].lower().replace('_', '')
             if action == 'resetpiv':
-                yk = yubikey.YubiKey()
-                yk.serial_number = yk.get_serial_number()
-                yk.reset_piv()
+                doResetYubiKeyPIV()
             else:
                 controlflow.invalid_argument_exit(action, f'gam yubikey')
             sys.exit(0)

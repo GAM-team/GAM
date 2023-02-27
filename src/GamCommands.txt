@@ -911,8 +911,8 @@ gam oauth|oauth2 refresh
 
 gam <UserTypeEntity> check serviceaccount [scope|scopes <APIScopeURLList>]
 
-gam yubikey [resetpiv]
-gam rotate sakey yubikey yubikey_pin yubikey_slot AUTHENTICATION yubikeypin <String> yubikeyserialnumber <String>
+gam yubikey resetpiv [yubikeyserialnumber <Number>]
+gam rotate sakey yubikey yubikey_pin yubikey_slot AUTHENTICATION yubikeyserialnumber <Number>
 
 gam create [gcpserviceaccount|signjwtserviceaccount]
 gam enable apis [auto|manual]
