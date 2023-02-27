@@ -11883,6 +11883,8 @@ def ProcessGAMCommand(args):
             argument = sys.argv[2].lower()
             if argument in ['browsertoken', 'browserokens']:
                 gapi_cbcm.revoketoken()
+            else:
+                controlflow.invalid_argument_exit(argument, 'gam revoke')
             sys.exit(0)
         elif command in ['close', 'reopen']:
             # close and reopen will have to be split apart if either takes a new argument
@@ -12047,6 +12049,8 @@ def ProcessGAMCommand(args):
             argument = sys.argv[2].lower()
             if argument in ['browser', 'browsers']:
                 gapi_cbcm.move()
+            else:
+                controlflow.invalid_argument_exit(argument, 'gam move')
             sys.exit(0)
         elif command in ['oauth', 'oauth2']:
             argument = sys.argv[2].lower()
@@ -12144,6 +12148,8 @@ def ProcessGAMCommand(args):
             argument = sys.argv[2].lower()
             if argument in ['isinvitable', 'userinvitation', 'userinvitations']:
                 gapi_cloudidentity_userinvitations.check()
+            else:
+                controlflow.invalid_argument_exit(argument, 'gam check')
             sys.exit(0)
         elif command in ['cancelwipe', 'wipe', 'approve', 'block', 'sync']:
             target = sys.argv[2].lower().replace('_', '')
@@ -12163,6 +12169,8 @@ def ProcessGAMCommand(args):
                     gapi_cloudidentity_devices.approve_user()
                 elif command == 'block':
                     gapi_cloudidentity_devices.block_user()
+            else:
+                controlflow.invalid_argument_exit(target, f'gam {command}')
             sys.exit(0)
         elif command in ['issuecommand', 'getcommand']:
             target = sys.argv[2].lower().replace('_', '')
@@ -12171,6 +12179,8 @@ def ProcessGAMCommand(args):
                     gapi_directory_cros.issue_command()
                 elif command == 'getcommand':
                     gapi_directory_cros.get_command()
+            else:
+                controlflow.invalid_argument_exit(target, f'gam {command}')
             sys.exit(0)
         elif command in ['yubikey']:
             action = sys.argv[2].lower().replace('_', '')
@@ -12178,11 +12188,15 @@ def ProcessGAMCommand(args):
                 yk = yubikey.YubiKey()
                 yk.serial_number = yk.get_serial_number()
                 yk.reset_piv()
+            else:
+                controlflow.invalid_argument_exit(action, f'gam yubikey')
             sys.exit(0)
         elif command == 'enable':
             enable_what = sys.argv[2].lower().replace('_', '')
             if enable_what in ['api', 'apis']:
                 enable_apis()
+            else:
+                controlflow.invalid_argument_exit(enable_what, 'gam enable')
             sys.exit(0)
         users = getUsersToModify()
         command = sys.argv[3].lower()
