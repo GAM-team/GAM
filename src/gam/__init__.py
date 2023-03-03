@@ -8315,11 +8315,6 @@ def doUpdateSharedDrive(users):
             body['restrictions'][restrictions_map[myarg]] = getBoolean(
                     sys.argv[i + 1], myarg)
             i += 2
-        elif myarg == 'allowcontentmanagerstosharefolders':
-            body.setdefault('restrictions', {})
-            body['restrictions']['sharingFoldersRequiresOrganizerPermission'] = not getBoolean(
-                    sys.argv[i + 1], myarg)
-            i += 2
         else:
             controlflow.invalid_argument_exit(sys.argv[i],
                                               'gam <users> update shareddrive')
