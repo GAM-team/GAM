@@ -12,7 +12,7 @@ defaults:
     working-directory: src
 
 env:
-  OPENSSL_CONFIG_OPTS: no-fips
+  OPENSSL_CONFIG_OPTS: no-fips --api=3.0.0
   OPENSSL_INSTALL_PATH: ${{ github.workspace }}/bin/ssl
   OPENSSL_SOURCE_PATH: ${{ github.workspace }}/src/openssl
   PYTHON_INSTALL_PATH: ${{ github.workspace }}/bin/python
@@ -103,7 +103,7 @@ jobs:
           path: |
             bin.tar.xz
             src/cpython
-          key: gam-${{ matrix.jid }}-20230208
+          key: gam-${{ matrix.jid }}-20230303
 
       - name: Untar Cache archive
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit == 'true'
@@ -332,6 +332,8 @@ jobs:
           else
             extra_args=( )
           fi
+          export CFLAGS="-DOPENSSL_NO_SSL2_METHOD -DOPENSSL_NO_SSL2 -DOPENSSL_NO_SSL3_METHOD -DOPENSSL_NO_SSL3 -DOPENSSL_NO_TLS1_METHOD -DOPENSSL_NO_TLS1 -DOPENSSL_NO_TLS1_1_METHOD -DOPENSSL_NO_TLS1_1"
+          echo "CFLAGS=${CFLAGS}" >> $GITHUB_ENV
           ./configure --with-openssl="${OPENSSL_INSTALL_PATH}" \
                       --prefix="${PYTHON_INSTALL_PATH}" \
                       --enable-shared \
