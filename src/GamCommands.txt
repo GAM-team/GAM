@@ -1898,7 +1898,8 @@ gam <UserTypeEntity> show signature|sig [format]
 	adminmanagedrestrictions|
 	copyrequireswriterpermission|
 	domainusersonly|
-	teammembersonly
+	teammembersonly|
+	sharingfoldersrequiresorganizerpermission
 
 gam <UserTypeEntity> create|add teamdrive <Name>
 gam <UserTypeEntity> update teamdrive <TeamDriveID>|(name <TeamDriveName>) [asadmin] [name <Name>]
