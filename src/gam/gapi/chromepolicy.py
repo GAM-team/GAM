@@ -408,7 +408,7 @@ def update_policy():
                               f'{expected_enums}, got {value}'
                         controlflow.system_error_exit(8, msg)
                 elif vtype in ['TYPE_LIST']:
-                    value = value.split(',')
+                    value = value.split(',') if value else []
                 if myarg == 'chrome.users.chromebrowserupdates' and \
                       cased_field == 'targetVersionPrefixSetting':
                     mg = re.compile(r'^([a-z]+)-(\d+)$').match(value)
