@@ -17,7 +17,8 @@ env:
   OPENSSL_SOURCE_PATH: ${{ github.workspace }}/src/openssl
   PYTHON_INSTALL_PATH: ${{ github.workspace }}/bin/python
   PYTHON_SOURCE_PATH: ${{ github.workspace }}/src/cpython
-
+  CFLAGS="-DOPENSSL_TLS_SECURITY_LEVEL=2 -DOPENSSL_NO_SSL2_METHOD -DOPENSSL_NO_SSL2 -DOPENSSL_NO_SSL3_METHOD -DOPENSSL_NO_SSL3 -DOPENSSL_NO_TLS1_METHOD -DOPENSSL_NO_TLS1 -DOPENSSL_NO_TLS1_1_METHOD -DOPENSSL_NO_TLS1_1"
+  
 jobs:
   build:
     runs-on: ${{ matrix.os }}
@@ -103,7 +104,7 @@ jobs:
           path: |
             bin.tar.xz
             src/cpython
-          key: gam-${{ matrix.jid }}-20230303
+          key: gam-${{ matrix.jid }}-20230305
 
       - name: Untar Cache archive
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit == 'true'
@@ -143,12 +144,6 @@ jobs:
           echo "RUNNING: apt update..."
           sudo apt-get -qq --yes update
           sudo apt-get -qq --yes install swig libpcsclite-dev
-
-     #- name: MacOS remove Homebrew
-     #  if: runner.os == 'macOS'
-     #  run: |
-     #    # remove everything except the libraries needed by yubikey-manager
-     #    brew uninstall $(brew list | grep -v 'pcre\|swig\|pcsc-lite')
 
       - name: MacOS install tools
         if: runner.os == 'macOS'
@@ -298,7 +293,7 @@ jobs:
             rm -rf ${GITHUB_WORKSPACE}/bin/ssl-darwin64-arm64
             echo "LDFLAGS=-L${OPENSSL_INSTALL_PATH}/lib" >> $GITHUB_ENV
             echo "CRYPTOGRAPHY_SUPPRESS_LINK_FLAGS=1" >> $GITHUB_ENV
-            echo "CFLAGS=-I${OPENSSL_INSTALL_PATH}/include -arch arm64 -arch x86_64" >> $GITHUB_ENV
+            echo "CFLAGS=-I${OPENSSL_INSTALL_PATH}/include -arch arm64 -arch x86_64 ${CFLAGS}" >> $GITHUB_ENV
             echo "ARCHFLAGS=-arch x86_64 -arch arm64" >> $GITHUB_ENV
           else
             cd "${GITHUB_WORKSPACE}/src/openssl-${openssl_archs}"
@@ -332,8 +327,6 @@ jobs:
           else
             extra_args=( )
           fi
-          export CFLAGS="-DOPENSSL_NO_SSL2_METHOD -DOPENSSL_NO_SSL2 -DOPENSSL_NO_SSL3_METHOD -DOPENSSL_NO_SSL3 -DOPENSSL_NO_TLS1_METHOD -DOPENSSL_NO_TLS1 -DOPENSSL_NO_TLS1_1_METHOD -DOPENSSL_NO_TLS1_1"
-          echo "CFLAGS=${CFLAGS}" >> $GITHUB_ENV
           ./configure --with-openssl="${OPENSSL_INSTALL_PATH}" \
                       --prefix="${PYTHON_INSTALL_PATH}" \
                       --enable-shared \
