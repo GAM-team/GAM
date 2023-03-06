@@ -103,7 +103,7 @@ jobs:
           path: |
             bin.tar.xz
             src/cpython
-          key: gam-${{ matrix.jid }}-20230305
+          key: gam-${{ matrix.jid }}-20230306
 
       - name: Untar Cache archive
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit == 'true'
@@ -211,6 +211,7 @@ jobs:
           fi
           echo "We'll run make with: ${MAKEOPT}"
           echo "JID=${jid}" >> $GITHUB_ENV
+          echo "CFLAGS=${CFLAGS}" >> $GITHUB_ENV
           echo "staticx=${staticx}" >> $GITHUB_ENV
           echo "arch=${arch}" >> $GITHUB_ENV
           echo "LD_LIBRARY_PATH=${LD_LIBRARY_PATH}" >> $GITHUB_ENV
