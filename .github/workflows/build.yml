@@ -12,7 +12,6 @@ defaults:
     working-directory: src
 
 env:
-  CFLAGS=: "-D\"OPENSSL_TLS_SECURITY_LEVEL=2\""
   OPENSSL_CONFIG_OPTS: no-fips --api=3.0.0
   OPENSSL_INSTALL_PATH: ${{ github.workspace }}/bin/ssl
   OPENSSL_SOURCE_PATH: ${{ github.workspace }}/src/openssl
